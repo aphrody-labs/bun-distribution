@@ -4,7 +4,17 @@
 //! owns only presentation state ([`state::UiState`]), GPU textures, the playback clock and the
 //! control-channel handlers. Swap it for another toolkit without touching the engine.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 /// A literal UI string in the language the interface is drawn in (`i18n::t`). Only literals: the
 /// i18n tests read every `tl!` literal in the crate and require a Spanish translation for it.
@@ -100,7 +110,12 @@ pub trait AudioOut {
     /// Apply Settings ▸ Audio Hardware (device class/output, buffer size, sample rate). Takes
     /// effect at the next `start`; `document_rate` is the sequence sample rate for "Attempt to
     /// force hardware to document sample rate".
-    fn configure(&mut self, _hw: &filmcraft_engine::settings::AudioHardwarePrefs, _document_rate: Option<u32>) {}
+    fn configure(
+        &mut self,
+        _hw: &filmcraft_engine::settings::AudioHardwarePrefs,
+        _document_rate: Option<u32>,
+    ) {
+    }
     /// A hardware note for the status bar — e.g. the default output device could not be opened
     /// and a fallback device is in use, or no output device was found — or None.
     fn note(&self) -> Option<String> {
@@ -177,7 +192,11 @@ pub enum ClipboardMedia {
     /// Files copied in the file manager.
     Files(Vec<String>),
     /// An image (a screenshot, an image copied in a browser): 8-bit RGBA, row by row.
-    Image { width: usize, height: usize, rgba: Vec<u8> },
+    Image {
+        width: usize,
+        height: usize,
+        rgba: Vec<u8>,
+    },
 }
 
 /// Reads the system appearance (Settings ▸ Appearance ▸ Appearance Mode ▸ Sync with system).
@@ -418,7 +437,11 @@ pub fn software_rasterizer(info: &eframe::wgpu::AdapterInfo) -> Option<String> {
 
 fn rasterizer_reason(name: &str, device_type: eframe::wgpu::DeviceType) -> Option<String> {
     let lower = name.to_ascii_lowercase();
-    if device_type == eframe::wgpu::DeviceType::Cpu || ["llvmpipe", "swiftshader", "softpipe"].iter().any(|s| lower.contains(s)) {
+    if device_type == eframe::wgpu::DeviceType::Cpu
+        || ["llvmpipe", "swiftshader", "softpipe"]
+            .iter()
+            .any(|s| lower.contains(s))
+    {
         return Some(format!("software rasterizer ({name}, {device_type:?})"));
     }
     None
@@ -434,7 +457,10 @@ pub fn gpu_compositor_unsupported(adapter: &eframe::wgpu::Adapter) -> Option<Str
         return Some(why);
     }
     let f = adapter.get_texture_format_features(TextureFormat::Rgba16Float);
-    if !f.allowed_usages.contains(U::RENDER_ATTACHMENT | U::TEXTURE_BINDING) {
+    if !f
+        .allowed_usages
+        .contains(U::RENDER_ATTACHMENT | U::TEXTURE_BINDING)
+    {
         return Some("Rgba16Float is not renderable".into());
     }
     if !f.flags.contains(F::BLENDABLE | F::FILTERABLE) {
@@ -454,7 +480,10 @@ impl FilmcraftApp {
             log::warn!("GPU compositor disabled ({why}); compositing on the CPU");
             // Say so instead of letting the preview quietly crawl: "GPU 0 %, CPU 100 %" with no
             // explanation read like a renderer bug when the machine simply has no GPU access.
-            self.ui.status = format!("{} ({why})", tl!("GPU acceleration is unavailable; preview renders on the CPU"));
+            self.ui.status = format!(
+                "{} ({why})",
+                tl!("GPU acceleration is unavailable; preview renders on the CPU")
+            );
             return;
         }
         // wgpu's default reaction to a validation error or lost device is to panic, which closed
@@ -462,15 +491,27 @@ impl FilmcraftApp {
         // fall back to the CPU compositor.
         let broken = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let flag = broken.clone();
-        rs.device.on_uncaptured_error(std::sync::Arc::new(move |e: eframe::wgpu::Error| {
-            log::error!("GPU error, switching to the CPU compositor: {e}");
-            flag.store(true, std::sync::atomic::Ordering::Relaxed);
+        rs.device
+            .on_uncaptured_error(std::sync::Arc::new(move |e: eframe::wgpu::Error| {
+                log::error!("GPU error, switching to the CPU compositor: {e}");
+                flag.store(true, std::sync::atomic::Ordering::Relaxed);
+            }));
+        let made = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            filmcraft_gpu::GpuCompositor::new(&rs.device, &rs.queue)
         }));
-        let made = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| filmcraft_gpu::GpuCompositor::new(&rs.device, &rs.queue)));
         match made {
             Ok(compositor) if !broken.load(std::sync::atomic::Ordering::Relaxed) => {
                 let max_texture = rs.device.limits().max_texture_dimension_2d;
-                self.gpu = Some(GpuState { render_state: rs, compositor, texture: None, last_key: None, size: (0, 0), last_ms: 0.0, broken, max_texture });
+                self.gpu = Some(GpuState {
+                    render_state: rs,
+                    compositor,
+                    texture: None,
+                    last_key: None,
+                    size: (0, 0),
+                    last_ms: 0.0,
+                    broken,
+                    max_texture,
+                });
             }
             _ => log::error!("GPU compositor failed to initialise; compositing on the CPU"),
         }
@@ -488,8 +529,17 @@ impl FilmcraftApp {
     }
 
     /// Composite a plan on the GPU and return the egui texture showing it.
-    pub fn gpu_present(&mut self, key: FrameKey, plan: &frames::GpuPlan) -> Option<(egui::TextureId, (u32, u32))> {
-        if self.gpu.as_ref()?.broken.load(std::sync::atomic::Ordering::Relaxed) {
+    pub fn gpu_present(
+        &mut self,
+        key: FrameKey,
+        plan: &frames::GpuPlan,
+    ) -> Option<(egui::TextureId, (u32, u32))> {
+        if self
+            .gpu
+            .as_ref()?
+            .broken
+            .load(std::sync::atomic::Ordering::Relaxed)
+        {
             self.disable_gpu("device error");
             return None;
         }
@@ -505,7 +555,9 @@ impl FilmcraftApp {
         }
         let t0 = web_time::Instant::now();
         let ran = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            let (view, size) = g.compositor.composite_prepared(&plan.plan, Some(&plan.prepared));
+            let (view, size) = g
+                .compositor
+                .composite_prepared(&plan.plan, Some(&plan.prepared));
             (view.clone(), size)
         }));
         let Ok((view, size)) = ran else {
@@ -517,10 +569,19 @@ impl FilmcraftApp {
         let mut renderer = g.render_state.renderer.write();
         let id = match g.texture {
             Some(id) => {
-                renderer.update_egui_texture_from_wgpu_texture(&g.render_state.device, &view, eframe::wgpu::FilterMode::Linear, id);
+                renderer.update_egui_texture_from_wgpu_texture(
+                    &g.render_state.device,
+                    &view,
+                    eframe::wgpu::FilterMode::Linear,
+                    id,
+                );
                 id
             }
-            None => renderer.register_native_texture(&g.render_state.device, &view, eframe::wgpu::FilterMode::Linear),
+            None => renderer.register_native_texture(
+                &g.render_state.device,
+                &view,
+                eframe::wgpu::FilterMode::Linear,
+            ),
         };
         g.texture = Some(id);
         g.last_key = Some(key);
@@ -531,18 +592,36 @@ impl FilmcraftApp {
 
 impl FilmcraftApp {
     pub fn new(mut session: Session) -> Self {
-        session.shortcuts.register_external(menus::external_commands());
+        session
+            .shortcuts
+            .register_external(menus::external_commands());
         let recovery = !session.recovery_candidates().is_empty();
-        let frames = Arc::new(FrameServer::new(session.media.clone(), session.services.clone(), session.previews.clone(), FrameServer::default_workers()));
-        let workspaces =
-            session.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| dock::WorkspacePrefs::load(&d.join(dock::WORKSPACES_FILE))).unwrap_or_default();
-        let language = i18n::Language::parse(&session.prefs.general.interface_language).unwrap_or_default();
+        let frames = Arc::new(FrameServer::new(
+            session.media.clone(),
+            session.services.clone(),
+            session.previews.clone(),
+            FrameServer::default_workers(),
+        ));
+        let workspaces = session
+            .prefs_path
+            .as_ref()
+            .and_then(|p| p.parent())
+            .map(|d| dock::WorkspacePrefs::load(&d.join(dock::WORKSPACES_FILE)))
+            .unwrap_or_default();
+        let language =
+            i18n::Language::parse(&session.prefs.general.interface_language).unwrap_or_default();
         Self {
             session,
-            ui: UiState { language, ..UiState::default() },
+            ui: UiState {
+                language,
+                ..UiState::default()
+            },
             tokens: Tokens::for_kind(ThemeKind::Dark),
             frames,
-            playback: Playback { speed: 1.0, ..Default::default() },
+            playback: Playback {
+                speed: 1.0,
+                ..Default::default()
+            },
             source_playback: Default::default(),
             audio: None,
             scrub: Default::default(),
@@ -625,7 +704,9 @@ impl FilmcraftApp {
 
     /// Rebuild the frame server if the session's media pool was replaced (e.g. project opened).
     fn sync_pool(&mut self) {
-        if !Arc::ptr_eq(&self.frames.pool, &self.session.media) || !Arc::ptr_eq(&self.frames.previews, &self.session.previews) {
+        if !Arc::ptr_eq(&self.frames.pool, &self.session.media)
+            || !Arc::ptr_eq(&self.frames.previews, &self.session.previews)
+        {
             self.frames = Arc::new(FrameServer::new(
                 self.session.media.clone(),
                 self.session.services.clone(),
@@ -651,7 +732,11 @@ impl FilmcraftApp {
 
     /// The system appearance: the host's reading, else what the windowing toolkit reports.
     pub fn system_theme(&self, ctx: &egui::Context) -> Option<egui::Theme> {
-        self.hooks.system_theme.as_ref().and_then(|read| read(ctx)).or_else(|| ctx.system_theme())
+        self.hooks
+            .system_theme
+            .as_ref()
+            .and_then(|read| read(ctx))
+            .or_else(|| ctx.system_theme())
     }
 
     /// The theme Settings ▸ Appearance selects: the light or dark theme of the Appearance Mode,
@@ -663,7 +748,11 @@ impl FilmcraftApp {
 
     fn apply_tooltips(&self, ctx: &egui::Context) {
         // Settings ▸ General ▸ Show Tool Tips
-        let delay = if self.session.prefs.general.show_tool_tips { 0.5 } else { 1.0e9 };
+        let delay = if self.session.prefs.general.show_tool_tips {
+            0.5
+        } else {
+            1.0e9
+        };
         ctx.global_style_mut(|s| s.interaction.tooltip_delay = delay);
     }
 
@@ -673,7 +762,10 @@ impl FilmcraftApp {
     /// restores the system's scale.
     fn apply_ui_scale(&mut self, ctx: &egui::Context) {
         let want = self.session.prefs.appearance.ui_scale_factor();
-        let native = ctx.native_pixels_per_point().filter(|v| v.is_finite() && *v > 0.0).unwrap_or(1.0);
+        let native = ctx
+            .native_pixels_per_point()
+            .filter(|v| v.is_finite() && *v > 0.0)
+            .unwrap_or(1.0);
         if self.applied_ui_scale == Some((want, native)) {
             return;
         }
@@ -702,47 +794,77 @@ impl FilmcraftApp {
         }
         let p = self.session.prefs.clone();
         let prev = self.applied_prefs.take();
-        if prev.as_ref().is_none_or(|q| q.appearance != p.appearance || q.general.show_tool_tips != p.general.show_tool_tips) {
+        if prev.as_ref().is_none_or(|q| {
+            q.appearance != p.appearance || q.general.show_tool_tips != p.general.show_tool_tips
+        }) {
             let k = self.appearance_kind(ctx);
             self.set_theme(ctx, k);
         }
-        if prev.as_ref().is_none_or(|q| q.general.interface_language != p.general.interface_language) {
+        if prev
+            .as_ref()
+            .is_none_or(|q| q.general.interface_language != p.general.interface_language)
+        {
             let language = match i18n::Language::parse(&p.general.interface_language) {
                 Some(l) => l,
-                None if p.general.interface_language == "system" => {
-                    i18n::Language::from_locales(&self.hooks.system_languages.as_ref().map(|f| f()).unwrap_or_default())
-                }
+                None if p.general.interface_language == "system" => i18n::Language::from_locales(
+                    &self
+                        .hooks
+                        .system_languages
+                        .as_ref()
+                        .map(|f| f())
+                        .unwrap_or_default(),
+                ),
                 None => i18n::Language::default(),
             };
             if language == i18n::Language::Ja && !i18n::install_japanese_font(ctx) {
                 self.ui.language = i18n::Language::En;
-                self.ui.status = tl!("no Japanese font is installed on this system; the interface stays in English").into();
+                self.ui.status = tl!(
+                    "no Japanese font is installed on this system; the interface stays in English"
+                )
+                .into();
             } else if language == i18n::Language::ZhCn && !i18n::chinese_font_available() {
                 self.ui.language = i18n::Language::En;
-                self.ui.status = tl!("no Chinese font is installed on this system; the interface stays in English").into();
+                self.ui.status = tl!(
+                    "no Chinese font is installed on this system; the interface stays in English"
+                )
+                .into();
             } else if language == i18n::Language::Ko && !i18n::korean_font_available() {
                 self.ui.language = i18n::Language::En;
-                self.ui.status = tl!("no Korean font is installed on this system; the interface stays in English").into();
+                self.ui.status = tl!(
+                    "no Korean font is installed on this system; the interface stays in English"
+                )
+                .into();
             } else {
                 self.ui.language = language;
             }
             i18n::set_current(self.ui.language);
         }
-        self.frames.set_cache_budget(p.memory.frame_cache_mb as usize * (1 << 20));
+        self.frames
+            .set_cache_budget(p.memory.frame_cache_mb as usize * (1 << 20));
         self.ui.play_after_render = p.timeline.play_after_rendering;
-        let hardware_changed = prev.as_ref().is_none_or(|q| q.audio_hardware != p.audio_hardware);
-        let pitch_changed = prev.as_ref().is_some_and(|q| q.audio.maintain_pitch_shuttling != p.audio.maintain_pitch_shuttling);
+        let hardware_changed = prev
+            .as_ref()
+            .is_none_or(|q| q.audio_hardware != p.audio_hardware);
+        let pitch_changed = prev
+            .as_ref()
+            .is_some_and(|q| q.audio.maintain_pitch_shuttling != p.audio.maintain_pitch_shuttling);
         if hardware_changed {
             if let Some(input) = self.session.voiceover.input.as_mut() {
                 input.configure_host(&p.audio_hardware.device_class);
             }
-            let rate = self.session.active_sequence().map(|q| q.settings.sample_rate);
+            let rate = self
+                .session
+                .active_sequence()
+                .map(|q| q.settings.sample_rate);
             if let Some(a) = self.audio.as_mut() {
                 a.stop();
                 a.configure(&p.audio_hardware, rate);
             }
         }
-        if (hardware_changed || pitch_changed) && self.playback.playing && self.playback.preroll.is_none() {
+        if (hardware_changed || pitch_changed)
+            && self.playback.playing
+            && self.playback.preroll.is_none()
+        {
             self.playback.anchor_tick = self.session.playhead();
             let now = ctx.input(|i| i.time);
             self.playback.anchor_time = now;
@@ -787,7 +909,8 @@ impl FilmcraftApp {
         };
         let show = |v: &mut state::TimelineView, s: filmcraft_engine::project::SequenceView| {
             (v.pps, v.target_pps, v.scroll, v.target_scroll) = (s.pps, s.pps, s.scroll, s.scroll);
-            (v.v_scroll, v.a_scroll, v.video_track_h, v.audio_track_h) = (s.v_scroll, s.a_scroll, s.video_track_h, s.audio_track_h);
+            (v.v_scroll, v.a_scroll, v.video_track_h, v.audio_track_h) =
+                (s.v_scroll, s.a_scroll, s.video_track_h, s.audio_track_h);
             (v.fit_pending, v.fit_empty) = (false, None);
         };
         if self.timeline_view_of != Some(active) {
@@ -799,7 +922,8 @@ impl FilmcraftApp {
                 }
                 None => {
                     let d = state::TimelineView::default();
-                    (v.v_scroll, v.a_scroll, v.video_track_h, v.audio_track_h) = (0.0, 0.0, d.video_track_h, d.audio_track_h);
+                    (v.v_scroll, v.a_scroll, v.video_track_h, v.audio_track_h) =
+                        (0.0, 0.0, d.video_track_h, d.audio_track_h);
                     (v.fit_pending, v.fit_empty) = (true, None);
                     self.timeline_view_last = None;
                 }
@@ -817,14 +941,21 @@ impl FilmcraftApp {
     }
 
     fn workspaces_path(&self) -> Option<std::path::PathBuf> {
-        self.session.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| d.join(dock::WORKSPACES_FILE))
+        self.session
+            .prefs_path
+            .as_ref()
+            .and_then(|p| p.parent())
+            .map(|d| d.join(dock::WORKSPACES_FILE))
     }
 
     /// Replace the saved workspaces and write them to the data directory.
     pub fn set_workspaces(&mut self, w: dock::WorkspacePrefs) -> Result<(), String> {
         self.workspaces = w;
         match self.workspaces_path() {
-            Some(p) => self.workspaces.save(&p).map_err(|e| format!("saving workspaces: {e}")),
+            Some(p) => self
+                .workspaces
+                .save(&p)
+                .map_err(|e| format!("saving workspaces: {e}")),
             None => Ok(()),
         }
     }
@@ -849,17 +980,36 @@ impl FilmcraftApp {
     }
 
     pub fn show_panel(&mut self, p: PanelKind) {
-        if p == PanelKind::Timeline && !self.ui.floating.iter().any(|group| group.panels.contains(&p)) {
+        if p == PanelKind::Timeline
+            && !self
+                .ui
+                .floating
+                .iter()
+                .any(|group| group.panels.contains(&p))
+        {
             self.ui.dock.restore_timeline();
         }
-        if !self.ui.dock.contains(p) && !self.ui.floating.iter().any(|group| group.panels.contains(&p)) {
+        if !self.ui.dock.contains(p)
+            && !self
+                .ui
+                .floating
+                .iter()
+                .any(|group| group.panels.contains(&p))
+        {
             let near = match p {
                 // a side panel beside Properties (or Essential Sound), never over the Program monitor
-                PanelKind::TextToSpeech => [PanelKind::Properties, PanelKind::EssentialSound, PanelKind::EssentialGraphics]
-                    .into_iter()
-                    .find(|k| self.ui.dock.contains(*k))
-                    .unwrap_or(PanelKind::Program),
-                PanelKind::LumetriColor | PanelKind::EssentialGraphics | PanelKind::EssentialSound | PanelKind::Properties => PanelKind::Program,
+                PanelKind::TextToSpeech => [
+                    PanelKind::Properties,
+                    PanelKind::EssentialSound,
+                    PanelKind::EssentialGraphics,
+                ]
+                .into_iter()
+                .find(|k| self.ui.dock.contains(*k))
+                .unwrap_or(PanelKind::Program),
+                PanelKind::LumetriColor
+                | PanelKind::EssentialGraphics
+                | PanelKind::EssentialSound
+                | PanelKind::Properties => PanelKind::Program,
                 PanelKind::Source
                 | PanelKind::EffectControls
                 | PanelKind::AudioClipMixer
@@ -881,7 +1031,12 @@ impl FilmcraftApp {
     /// the search cleared, so the (already selected) item is on show.
     fn reveal_in_project(&mut self, item: filmcraft_project::ItemId) {
         // the bins on the way down to the item (bounded: a project file can nest bins arbitrarily deep)
-        fn path(b: &filmcraft_project::Bin, item: filmcraft_project::ItemId, depth: usize, out: &mut Vec<u64>) -> bool {
+        fn path(
+            b: &filmcraft_project::Bin,
+            item: filmcraft_project::ItemId,
+            depth: usize,
+            out: &mut Vec<u64>,
+        ) -> bool {
             if depth > 256 {
                 return false;
             }
@@ -904,8 +1059,13 @@ impl FilmcraftApp {
         let found = path(&self.session.project.root, item, 0, &mut bins);
         // the list shows the whole tree: open the bins on the way. Icons and freeform show one bin
         // at a time: go into the one that holds the item.
-        let list = self.session.prefs.project_panel.view.mode == filmcraft_engine::project_panel::ViewMode::List;
-        self.ui.project_panel.bin = if list || !found { None } else { bins.last().copied() };
+        let list = self.session.prefs.project_panel.view.mode
+            == filmcraft_engine::project_panel::ViewMode::List;
+        self.ui.project_panel.bin = if list || !found {
+            None
+        } else {
+            bins.last().copied()
+        };
         if list {
             for b in bins {
                 if !self.ui.expanded_bins.contains(&b) {
@@ -940,7 +1100,11 @@ impl FilmcraftApp {
         }
         // restart from the end → from the start (Settings ▸ Timeline ▸ "At playback end, return to
         // beginning when restarting playback")
-        let dur = self.session.active_sequence().map(|q| q.duration()).unwrap_or_default();
+        let dur = self
+            .session
+            .active_sequence()
+            .map(|q| q.duration())
+            .unwrap_or_default();
         // (not while a voice-over take starts: it was put exactly where the take must begin, e.g. on empty timeline past the end)
         if speed > 0.0
             && self.session.prefs.timeline.return_to_beginning
@@ -975,7 +1139,9 @@ impl FilmcraftApp {
         // Audio Track Mixer: an automation pass runs while playing forward in real time
         if (self.playback.speed - 1.0).abs() < 1e-9 && !self.session.mixrec.active() {
             let t = self.session.playhead();
-            let _ = self.session.execute("mixer.recordStart", json!({"time": t.0}));
+            let _ = self
+                .session
+                .execute("mixer.recordStart", json!({"time": t.0}));
         }
         // Multi-Camera view: playing records live cuts (keys 1–9 / clicking angles)
         panels::multicam::on_play(self);
@@ -986,11 +1152,18 @@ impl FilmcraftApp {
     /// Play the last Text to Speech preview (`Session::tts_preview`) on the audio output, stopping
     /// timeline playback first. Starting playback again takes the output back.
     pub fn play_tts_preview(&mut self) -> Result<f64, String> {
-        let audio = self.session.tts_preview.clone().ok_or("nothing to preview")?;
+        let audio = self
+            .session
+            .tts_preview
+            .clone()
+            .ok_or("nothing to preview")?;
         if self.playback.playing {
             self.stop();
         }
-        let a = self.audio.as_mut().ok_or("no audio output (check Settings ▸ Audio Hardware)")?;
+        let a = self
+            .audio
+            .as_mut()
+            .ok_or("no audio output (check Settings ▸ Audio Hardware)")?;
         let sr = a.sample_rate().max(1);
         a.stop();
         let step = f64::from(audio.sample_rate.max(1)) / f64::from(sr);
@@ -1025,7 +1198,10 @@ impl FilmcraftApp {
         self.playback.audio_clock = false;
         if self.session.mixrec.active() {
             let t = self.session.playhead();
-            if let Err(e) = self.session.execute("mixer.recordStop", json!({"time": t.0})) {
+            if let Err(e) = self
+                .session
+                .execute("mixer.recordStop", json!({"time": t.0}))
+            {
                 self.ui.status = e.to_string();
             }
         }
@@ -1034,13 +1210,16 @@ impl FilmcraftApp {
     }
 
     fn start_audio(&mut self) {
-        let Some(seq_id) = self.session.state.active_sequence else { return };
+        let Some(seq_id) = self.session.state.active_sequence else {
+            return;
+        };
         let start_tick = self.session.playhead();
         let Some(a) = self.audio.as_mut() else { return };
         let sr = a.sample_rate();
         // Output frames still follow the accelerated timeline. The pitch preference selects
         // either the original rate conversion or pitch-corrected program audio.
-        let Some((mix_rate, mix)) = shuttle::mix(&self.session, seq_id, sr, self.playback.speed) else {
+        let Some((mix_rate, mix)) = shuttle::mix(&self.session, seq_id, sr, self.playback.speed)
+        else {
             a.stop();
             return;
         };
@@ -1049,7 +1228,13 @@ impl FilmcraftApp {
         a.stop();
         // Desktop: mix ahead on a thread so the device callback never waits on decoding.
         #[cfg(not(target_arch = "wasm32"))]
-        let fill = play_ahead::spawn(mix, cursor, sr, a.channels(), self.playback.audio_stats.clone());
+        let fill = play_ahead::spawn(
+            mix,
+            cursor,
+            sr,
+            a.channels(),
+            self.playback.audio_stats.clone(),
+        );
         #[cfg(target_arch = "wasm32")]
         let fill = {
             let (mut mix, mut cursor) = (mix, cursor);
@@ -1096,7 +1281,13 @@ impl FilmcraftApp {
         {
             audio.recover();
         }
-        let reading = if self.playback.audio_clock { self.audio.as_ref().and_then(|a| a.played_frames().map(|f| (f, a.sample_rate()))) } else { None };
+        let reading = if self.playback.audio_clock {
+            self.audio
+                .as_ref()
+                .and_then(|a| a.played_frames().map(|f| (f, a.sample_rate())))
+        } else {
+            None
+        };
         if self.playback.audio_clock && reading.is_none() {
             // A device error relinquishes its clock immediately. Resume from the displayed
             // frame, rather than jumping to the old wall-clock anchor after buffered playback.
@@ -1107,7 +1298,9 @@ impl FilmcraftApp {
                 audio.stop();
             }
             log::warn!("audio output lost its playback clock; playing without sound");
-            self.ui.status = tl!("Audio output failed: playing without sound (check Settings ▸ Audio Hardware)").into();
+            self.ui.status =
+                tl!("Audio output failed: playing without sound (check Settings ▸ Audio Hardware)")
+                    .into();
         }
         if let Some((f, sr)) = reading {
             if f != self.playback.audio_seen.0 {
@@ -1122,7 +1315,9 @@ impl FilmcraftApp {
                 if let Some(a) = self.audio.as_mut() {
                     a.stop();
                 }
-                log::warn!("audio output stalled (no samples consumed for {AUDIO_STALL_S} s); playing without sound");
+                log::warn!(
+                    "audio output stalled (no samples consumed for {AUDIO_STALL_S} s); playing without sound"
+                );
                 self.ui.status = tl!("Audio output is not responding: playing without sound (check Settings ▸ Audio Hardware)").into();
             }
         }
@@ -1134,14 +1329,27 @@ impl FilmcraftApp {
         let seq = self.session.active_sequence();
         let dur = seq.map(|q| q.duration()).unwrap_or_default();
         let (lo, hi) = if self.playback.looping {
-            (seq.and_then(|q| q.mark_in).unwrap_or(Tick::ZERO), seq.and_then(|q| q.mark_out).map(|o| o + rate.frame_duration()).unwrap_or(dur))
+            (
+                seq.and_then(|q| q.mark_in).unwrap_or(Tick::ZERO),
+                seq.and_then(|q| q.mark_out)
+                    .map(|o| o + rate.frame_duration())
+                    .unwrap_or(dur),
+            )
         } else {
             (Tick::ZERO, dur)
         };
-        if let Some(end) = self.playback.stop_at.filter(|e| t >= *e && self.playback.speed > 0.0 && !self.playback.looping) {
-            self.session.set_playhead(self.playback.rest_at.unwrap_or(end));
+        if let Some(end) = self
+            .playback
+            .stop_at
+            .filter(|e| t >= *e && self.playback.speed > 0.0 && !self.playback.looping)
+        {
+            self.session
+                .set_playhead(self.playback.rest_at.unwrap_or(end));
             self.stop();
-        } else if t >= hi && self.playback.speed > 0.0 && (self.playback.looping || !self.session.voiceover.recording()) {
+        } else if t >= hi
+            && self.playback.speed > 0.0
+            && (self.playback.looping || !self.session.voiceover.recording())
+        {
             // a voice-over take keeps playing (and recording) into the empty timeline past the end
             if self.playback.looping {
                 self.session.set_playhead(lo);
@@ -1162,15 +1370,28 @@ impl FilmcraftApp {
     // ---------------------------------------------------------------- textures
 
     /// Upload a rendered frame into a named texture (only when the key changed).
-    pub fn texture_for(&mut self, ctx: &egui::Context, name: &str, key: FrameKey, img: &frames::Rgba) -> egui::TextureId {
+    pub fn texture_for(
+        &mut self,
+        ctx: &egui::Context,
+        name: &str,
+        key: FrameKey,
+        img: &frames::Rgba,
+    ) -> egui::TextureId {
         if let Some((k, tex)) = self.textures.get_mut(name) {
             if *k != key {
-                tex.set(egui::ColorImage::from_rgba_unmultiplied([img.w, img.h], &img.px), TextureOptions::LINEAR);
+                tex.set(
+                    egui::ColorImage::from_rgba_unmultiplied([img.w, img.h], &img.px),
+                    TextureOptions::LINEAR,
+                );
                 *k = key;
             }
             return tex.id();
         }
-        let tex = ctx.load_texture(name, egui::ColorImage::from_rgba_unmultiplied([img.w, img.h], &img.px), TextureOptions::LINEAR);
+        let tex = ctx.load_texture(
+            name,
+            egui::ColorImage::from_rgba_unmultiplied([img.w, img.h], &img.px),
+            TextureOptions::LINEAR,
+        );
         let id = tex.id();
         self.textures.insert(name.to_string(), (key, tex));
         id
@@ -1188,20 +1409,29 @@ impl FilmcraftApp {
         if let Some((k, tex)) = self.textures.get_mut(name) {
             if *k != key {
                 let m = map(img);
-                tex.set(egui::ColorImage::from_rgba_unmultiplied([m.w, m.h], &m.px), TextureOptions::LINEAR);
+                tex.set(
+                    egui::ColorImage::from_rgba_unmultiplied([m.w, m.h], &m.px),
+                    TextureOptions::LINEAR,
+                );
                 *k = key;
             }
             return tex.id();
         }
         let m = map(img);
-        let tex = ctx.load_texture(name, egui::ColorImage::from_rgba_unmultiplied([m.w, m.h], &m.px), TextureOptions::LINEAR);
+        let tex = ctx.load_texture(
+            name,
+            egui::ColorImage::from_rgba_unmultiplied([m.w, m.h], &m.px),
+            TextureOptions::LINEAR,
+        );
         let id = tex.id();
         self.textures.insert(name.to_string(), (key, tex));
         id
     }
 
     pub fn texture_existing(&self, name: &str) -> Option<(egui::TextureId, egui::Vec2)> {
-        self.textures.get(name).map(|(_, t)| (t.id(), t.size_vec2()))
+        self.textures
+            .get(name)
+            .map(|(_, t)| (t.id(), t.size_vec2()))
     }
 
     /// The frame a named texture shows.
@@ -1237,7 +1467,13 @@ impl FilmcraftApp {
         }
     }
 
-    pub fn thumbnail(&mut self, ctx: &egui::Context, item: filmcraft_project::ItemId, t: Tick, width: u32) -> Option<(egui::TextureId, egui::Vec2)> {
+    pub fn thumbnail(
+        &mut self,
+        ctx: &egui::Context,
+        item: filmcraft_project::ItemId,
+        t: Tick,
+        width: u32,
+    ) -> Option<(egui::TextureId, egui::Vec2)> {
         let pi = self.session.project.item(item)?;
         let src_w = match &pi.kind {
             filmcraft_project::ItemKind::Media(m) => m.info.video.as_ref()?.width,
@@ -1247,7 +1483,13 @@ impl FilmcraftApp {
         let rate = pi.frame_rate();
         let frame = rate.frame_at(t);
         let rev = self.item_revision(item);
-        let key = FrameKey { target: Target::Item(item), frame, size: width, revision: rev, draft: false };
+        let key = FrameKey {
+            target: Target::Item(item),
+            frame,
+            size: width,
+            revision: rev,
+            draft: false,
+        };
         let name = format!("thumb-{}-{}-{}", item.0, frame, width);
         if let Some(img) = self.frames.get(&key) {
             let id = self.texture_for(ctx, &name, key, &img);
@@ -1255,7 +1497,8 @@ impl FilmcraftApp {
         }
         let scale = width as f32 / src_w.max(1) as f32;
         let project = self.session.project.clone();
-        self.frames.request(key, rate.tick_of(frame), scale, &project, 50);
+        self.frames
+            .request(key, rate.tick_of(frame), scale, &project, 50);
         self.texture_existing(&name)
     }
 
@@ -1273,7 +1516,9 @@ impl FilmcraftApp {
                     .iter()
                     .chain(filmcraft_media::AUDIO_EXTENSIONS)
                     .chain(filmcraft_media::STILL_EXTENSIONS)
-                    .chain(&["srt", "vtt", "scc", "edl", "xml", "fcpxml", "otio", "aaf", "omf"])
+                    .chain(&[
+                        "srt", "vtt", "scc", "edl", "xml", "fcpxml", "otio", "aaf", "omf",
+                    ])
                     .copied()
                     .collect();
                 let bin = params.get("bin").cloned();
@@ -1282,51 +1527,105 @@ impl FilmcraftApp {
                         return Ok(Value::Null);
                     }
                     let bin = bin.unwrap_or_else(|| json!(app.import_bin().0));
-                    let r = app.session.execute("file.import", json!({"paths": paths, "bin": bin})).map_err(|e| e.to_string());
+                    let r = app
+                        .session
+                        .execute("file.import", json!({"paths": paths, "bin": bin}))
+                        .map_err(|e| e.to_string());
                     if let Ok(v) = &r
                         && let Some(errs) = v.get("errors").and_then(Value::as_array)
                         && !errs.is_empty()
                     {
-                        app.ui.status = errs.iter().filter_map(Value::as_str).collect::<Vec<_>>().join("; ");
+                        app.ui.status = errs
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .collect::<Vec<_>>()
+                            .join("; ");
                     }
                     r
                 })
             }
             // File ▸ Import with Image Sequence: choose the first numbered still
-            "file.importImageSequence" => self.pick(FileDialog::open_files(filmcraft_media::STILL_EXTENSIONS), |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                let r = app.session.execute("file.importImageSequence", json!({"path": path})).map_err(|e| e.to_string());
-                if let Err(e) = &r {
-                    app.ui.status = e.clone();
-                }
-                r
-            }),
+            "file.importImageSequence" => self.pick(
+                FileDialog::open_files(filmcraft_media::STILL_EXTENSIONS),
+                |app, paths| {
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    let r = app
+                        .session
+                        .execute("file.importImageSequence", json!({"path": path}))
+                        .map_err(|e| e.to_string());
+                    if let Err(e) = &r {
+                        app.ui.status = e.clone();
+                    }
+                    r
+                },
+            ),
             "file.saveAs" | "file.save" | "file.saveCopy" => {
-                let suggested =
-                    if id == "file.saveCopy" { format!("{} copy.fcproj", self.session.project.name) } else { format!("{}.fcproj", self.session.project.name) };
-                let cmd = if id == "file.saveCopy" { "file.saveCopy" } else { "file.saveAs" };
-                self.pick(FileDialog::SaveProject { name: suggested }, move |app, paths| {
-                    let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                    app.session.execute(cmd, json!({"path": path})).map_err(|e| e.to_string())
-                })
+                let suggested = if id == "file.saveCopy" {
+                    format!("{} copy.fcproj", self.session.project.name)
+                } else {
+                    format!("{}.fcproj", self.session.project.name)
+                };
+                let cmd = if id == "file.saveCopy" {
+                    "file.saveCopy"
+                } else {
+                    "file.saveAs"
+                };
+                self.pick(
+                    FileDialog::SaveProject { name: suggested },
+                    move |app, paths| {
+                        let Some(path) = paths.into_iter().next() else {
+                            return Ok(Value::Null);
+                        };
+                        app.session
+                            .execute(cmd, json!({"path": path}))
+                            .map_err(|e| e.to_string())
+                    },
+                )
             }
             "file.open" => self.pick(FileDialog::OpenProject, |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                app.session.execute("file.open", json!({"path": path})).map_err(|e| e.to_string())
+                let Some(path) = paths.into_iter().next() else {
+                    return Ok(Value::Null);
+                };
+                app.session
+                    .execute("file.open", json!({"path": path}))
+                    .map_err(|e| e.to_string())
             }),
             "graphics.newFromFile" => {
-                let exts: Vec<&str> = filmcraft_media::STILL_EXTENSIONS.iter().chain(filmcraft_media::VIDEO_EXTENSIONS).copied().collect();
+                let exts: Vec<&str> = filmcraft_media::STILL_EXTENSIONS
+                    .iter()
+                    .chain(filmcraft_media::VIDEO_EXTENSIONS)
+                    .copied()
+                    .collect();
                 self.pick(FileDialog::open_files(&exts), |app, paths| {
-                    let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                    app.session.execute("graphics.newFromFile", json!({"path": path})).map_err(|e| e.to_string())
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    app.session
+                        .execute("graphics.newFromFile", json!({"path": path}))
+                        .map_err(|e| e.to_string())
                 })
             }
-            "captions.import" => self.pick(FileDialog::open_files(&["srt", "vtt", "scc", "mcc", "stl", "ttml", "dfxp", "xml"]), |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                app.session.execute("captions.import", json!({"path": path})).map_err(|e| e.to_string())
-            }),
+            "captions.import" => self.pick(
+                FileDialog::open_files(&["srt", "vtt", "scc", "mcc", "stl", "ttml", "dfxp", "xml"]),
+                |app, paths| {
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    app.session
+                        .execute("captions.import", json!({"path": path}))
+                        .map_err(|e| e.to_string())
+                },
+            ),
             "captions.export" => {
-                let name = self.session.state.active_sequence.and_then(|s| self.session.project.item(s)).map(|i| i.name.clone()).unwrap_or_default();
+                let name = self
+                    .session
+                    .state
+                    .active_sequence
+                    .and_then(|s| self.session.project.item(s))
+                    .map(|i| i.name.clone())
+                    .unwrap_or_default();
                 let suggested = format!("{}.srt", name.replace(' ', "_"));
                 let dialog = FileDialog::save_as(
                     "Captions (SRT, WebVTT, SCC, MCC, EBU STL, TTML, DFXP)",
@@ -1335,9 +1634,13 @@ impl FilmcraftApp {
                 );
                 let mut p = params.clone();
                 self.pick(dialog, move |app, paths| {
-                    let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
                     p["path"] = json!(path);
-                    app.session.execute("captions.export", p).map_err(|e| e.to_string())
+                    app.session
+                        .execute("captions.export", p)
+                        .map_err(|e| e.to_string())
                 })
             }
             _ => match EXPORT_SAVE_DIALOGS.iter().find(|(c, ..)| *c == id) {
@@ -1349,32 +1652,64 @@ impl FilmcraftApp {
 
     /// File ▸ Export ▸ EDL…, Final Cut Pro XML… etc. from the menus (#382): ask where to save, then
     /// run the command with that `path` and the rest of `params`.
-    fn export_save_dialog(&mut self, id: &str, filter: &str, ext: &str, params: &Value) -> Result<Value, String> {
+    fn export_save_dialog(
+        &mut self,
+        id: &str,
+        filter: &str,
+        ext: &str,
+        params: &Value,
+    ) -> Result<Value, String> {
         filmcraft_engine::find_command(id).map_or(Ok(()), |c| (c.enabled)(&self.session))?;
         if !FileDialog::save_as(filter, &[ext], "").available(&self.hooks) {
             return Err("no save dialog available: run the command with a `path`".into());
         }
         // Timelines are named after the sequence; a selection must not suggest the open project's file.
-        let sequence = self.session.state.active_sequence.and_then(|s| self.session.project.item(s)).map(|i| i.name.clone());
+        let sequence = self
+            .session
+            .state
+            .active_sequence
+            .and_then(|s| self.session.project.item(s))
+            .map(|i| i.name.clone());
         let stem = match id {
             "file.exportAle" => self.session.project.name.clone(),
             "file.exportSelectionProject" => format!("{} selection", self.session.project.name),
             _ => sequence.unwrap_or_else(|| self.session.project.name.clone()),
         };
-        let stem: String = stem.chars().map(|c| if matches!(c, '/' | '\\') || c.is_control() { '-' } else { c }).collect();
-        let stem = if stem.trim().is_empty() { "Untitled".to_string() } else { stem };
+        let stem: String = stem
+            .chars()
+            .map(|c| {
+                if matches!(c, '/' | '\\') || c.is_control() {
+                    '-'
+                } else {
+                    c
+                }
+            })
+            .collect();
+        let stem = if stem.trim().is_empty() {
+            "Untitled".to_string()
+        } else {
+            stem
+        };
         let mut p = params.as_object().cloned().unwrap_or_default();
         let id = id.to_string();
-        self.pick(FileDialog::save_as(filter, &[ext], &format!("{stem}.{ext}")), move |app, paths| {
-            let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-            p.insert("path".into(), json!(path));
-            let r = app.session.execute(&id, Value::Object(p)).map_err(|e| e.to_string());
-            app.ui.status = match &r {
-                Ok(_) => tlf!("Exported {path}", path),
-                Err(e) => e.clone(),
-            };
-            r
-        })
+        self.pick(
+            FileDialog::save_as(filter, &[ext], &format!("{stem}.{ext}")),
+            move |app, paths| {
+                let Some(path) = paths.into_iter().next() else {
+                    return Ok(Value::Null);
+                };
+                p.insert("path".into(), json!(path));
+                let r = app
+                    .session
+                    .execute(&id, Value::Object(p))
+                    .map_err(|e| e.to_string());
+                app.ui.status = match &r {
+                    Ok(_) => tlf!("Exported {path}", path),
+                    Err(e) => e.clone(),
+                };
+                r
+            },
+        )
     }
 
     /// Import dropped files. With Timeline ▸ drop imports to the timeline, the new items are also
@@ -1382,12 +1717,13 @@ impl FilmcraftApp {
     fn handle_drops(&mut self, ctx: &egui::Context) {
         // While files hover, the OS sends no cursor events: poll the cursor each frame to draw the Timeline preview.
         let hovering = ctx.input(|i| i.raw.hovered_files.len());
-        self.file_drag_hover = if hovering > 0 && self.session.prefs.timeline.drop_import_to_timeline {
-            ctx.request_repaint();
-            self.drop_pointer(ctx).map(|p| (hovering, p))
-        } else {
-            None
-        };
+        self.file_drag_hover =
+            if hovering > 0 && self.session.prefs.timeline.drop_import_to_timeline {
+                ctx.request_repaint();
+                self.drop_pointer(ctx).map(|p| (hovering, p))
+            } else {
+                None
+            };
         let dropped = ctx.input(|i| i.raw.dropped_files.clone());
         let mut paths = Vec::new();
         for f in dropped {
@@ -1398,13 +1734,23 @@ impl FilmcraftApp {
         }
         if !paths.is_empty() {
             let pointer = self.drop_pointer(ctx);
-            let imported = self.session.execute("file.import", json!({"paths": paths, "bin": self.import_bin().0}));
+            let imported = self.session.execute(
+                "file.import",
+                json!({"paths": paths, "bin": self.import_bin().0}),
+            );
             if let Ok(v) = imported
                 && let Some(pos) = pointer
                 && self.session.prefs.timeline.drop_import_to_timeline
             {
-                let items: Vec<filmcraft_engine::project::ItemId> =
-                    v["items"].as_array().map(|a| a.iter().filter_map(|i| i.as_u64()).map(filmcraft_engine::project::ItemId).collect()).unwrap_or_default();
+                let items: Vec<filmcraft_engine::project::ItemId> = v["items"]
+                    .as_array()
+                    .map(|a| {
+                        a.iter()
+                            .filter_map(|i| i.as_u64())
+                            .map(filmcraft_engine::project::ItemId)
+                            .collect()
+                    })
+                    .unwrap_or_default();
                 if !items.is_empty() {
                     self.pending_timeline_drop = Some((items, pos));
                 }
@@ -1420,7 +1766,13 @@ impl FilmcraftApp {
             .cursor_screen_position
             .as_ref()
             .and_then(|f| f())
-            .and_then(|px| ctx.input(|i| i.viewport().inner_rect.map(|r| screen_px_to_ui(px, i.pixels_per_point, r.min))));
+            .and_then(|px| {
+                ctx.input(|i| {
+                    i.viewport()
+                        .inner_rect
+                        .map(|r| screen_px_to_ui(px, i.pixels_per_point, r.min))
+                })
+            });
         os_pointer.or_else(|| ctx.input(|i| i.pointer.hover_pos().or(i.pointer.latest_pos())))
     }
 
@@ -1445,16 +1797,21 @@ impl FilmcraftApp {
 
     /// Whether keyboard focus is on a dock divider or a floating panel's resize grip, as drawn last pass.
     fn divider_focused(&self, ctx: &egui::Context) -> bool {
-        let Some(focused) = ctx.memory(|m| m.focused()) else { return false };
-        self.auto
-            .previous
-            .iter()
-            .any(|e| e.response_id == Some(focused) && (e.id.starts_with("dock.gutter.") || (e.id.starts_with("panel.float.") && e.id.ends_with(".resize"))))
+        let Some(focused) = ctx.memory(|m| m.focused()) else {
+            return false;
+        };
+        self.auto.previous.iter().any(|e| {
+            e.response_id == Some(focused)
+                && (e.id.starts_with("dock.gutter.")
+                    || (e.id.starts_with("panel.float.") && e.id.ends_with(".resize")))
+        })
     }
 
     fn handle_shortcuts(&mut self, ctx: &egui::Context) {
         let workspaces = (dock::names(&self.workspaces), self.ui.workspace.clone());
-        if self.bindings_rev != self.session.shortcuts.revision || workspaces != self.menu_workspaces {
+        if self.bindings_rev != self.session.shortcuts.revision
+            || workspaces != self.menu_workspaces
+        {
             self.menu_workspaces = workspaces;
             self.bindings = menus::bindings(self);
             self.bindings_rev = self.session.shortcuts.revision;
@@ -1462,7 +1819,9 @@ impl FilmcraftApp {
         // A pane divider or floating-panel grip keeps focus after a pointer drag so arrows can
         // nudge it, but it takes no other key: Space and the other shortcuts keep working (#1482).
         let divider_focused = self.divider_focused(ctx);
-        if (ctx.egui_wants_keyboard_input() && !divider_focused) || self.dialog == Some(Dialog::Shortcuts) {
+        if (ctx.egui_wants_keyboard_input() && !divider_focused)
+            || self.dialog == Some(Dialog::Shortcuts)
+        {
             return;
         }
         // A focused text field takes every unmodified key, including the ones our shortest
@@ -1472,7 +1831,9 @@ impl FilmcraftApp {
         // would leave the editor without its single-key tool shortcuts while a slider has focus.
         let text_focused = ctx.text_edit_focused();
         // Esc cancels a dynamic trim in progress
-        if self.session.trim_play.dynamic.is_some() && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+        if self.session.trim_play.dynamic.is_some()
+            && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+        {
             let _ = self.session.execute("trim.cancelDynamic", json!({}));
         }
         panels::masks::pen_take_back(self, ctx, text_focused);
@@ -1489,7 +1850,12 @@ impl FilmcraftApp {
             let mut swallowed = None;
             for e in &i.events {
                 match e {
-                    egui::Event::Key { key: egui::Key::V, pressed, modifiers: m, .. } => {
+                    egui::Event::Key {
+                        key: egui::Key::V,
+                        pressed,
+                        modifiers: m,
+                        ..
+                    } => {
                         if !pressed && !self.v_down {
                             swallowed = Some(*m);
                         }
@@ -1509,7 +1875,10 @@ impl FilmcraftApp {
                 });
             }
             clipboard_events_as_keys(&mut i.events, modifiers);
-            let panel = self.bindings.iter().filter(|b| b.3.as_deref() == Some(focused));
+            let panel = self
+                .bindings
+                .iter()
+                .filter(|b| b.3.as_deref() == Some(focused));
             let app_wide = self.bindings.iter().filter(|b| b.3.is_none());
             let mut candidates: Vec<&menus::KeyBinding> = panel.chain(app_wide).collect();
             candidates.sort_by_key(|b| std::cmp::Reverse(menus::specificity(b.0)));
@@ -1522,7 +1891,15 @@ impl FilmcraftApp {
                     continue;
                 }
                 // The focused divider consumes the arrows itself (egui matches them with any Shift/Alt).
-                if divider_focused && matches!(k, egui::Key::ArrowLeft | egui::Key::ArrowRight | egui::Key::ArrowUp | egui::Key::ArrowDown) {
+                if divider_focused
+                    && matches!(
+                        k,
+                        egui::Key::ArrowLeft
+                            | egui::Key::ArrowRight
+                            | egui::Key::ArrowUp
+                            | egui::Key::ArrowDown
+                    )
+                {
                     continue;
                 }
                 if i.consume_key(*m, *k) {
@@ -1546,7 +1923,10 @@ impl FilmcraftApp {
             // Clear in the Project panel removes the selected bin when no item is selected (#587).
             let clear = if self.ui.focused == PanelKind::Project && id == "project.delete" {
                 self.ui.project_panel.rename = None;
-                crate::panels::project_views::clear_params(&self.session.state.project_selection, self.ui.project_panel.selected_bin)
+                crate::panels::project_views::clear_params(
+                    &self.session.state.project_selection,
+                    self.ui.project_panel.selected_bin,
+                )
             } else {
                 None
             };
@@ -1554,8 +1934,10 @@ impl FilmcraftApp {
             let params = if let Some(p) = clear {
                 p
             } else if self.ui.focused == PanelKind::Source
-                && (matches!(id.as_str(), "markers.markIn" | "markers.markOut" | "markers.clearInOut")
-                    || id.starts_with("markers.markSplit")
+                && (matches!(
+                    id.as_str(),
+                    "markers.markIn" | "markers.markOut" | "markers.clearInOut"
+                ) || id.starts_with("markers.markSplit")
                     || id.starts_with("markers.goToSplit"))
             {
                 json!({"target": "source"})
@@ -1579,7 +1961,9 @@ impl FilmcraftApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         let now = ctx.input(|i| i.time);
         let mut reqs: Vec<(ControlRequest, f64)> = std::mem::take(&mut self.deferred);
         while let Ok(req) = rx.try_recv() {
@@ -1610,7 +1994,13 @@ impl FilmcraftApp {
                     self.next_token += 1;
                     let settle = ctx.input(|i| i.time) + 0.25;
                     self.queued_screenshots.push((token, settle, 0));
-                    self.pending_screenshots.push((token, path, crop, reply, settle + SCREENSHOT_TIMEOUT_S));
+                    self.pending_screenshots.push((
+                        token,
+                        path,
+                        crop,
+                        reply,
+                        settle + SCREENSHOT_TIMEOUT_S,
+                    ));
                 }
             }
         }
@@ -1627,7 +2017,9 @@ impl FilmcraftApp {
             *frames += 1;
             any = true;
             if now >= *at && *frames >= 3 && (settled || now >= *at + SCREENSHOT_SETTLE_MAX_S) {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -1659,8 +2051,14 @@ impl FilmcraftApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -1668,7 +2066,11 @@ impl FilmcraftApp {
                 .collect()
         });
         for (token, image) in events {
-            if let Some(i) = self.pending_screenshots.iter().position(|(t, ..)| *t == token) {
+            if let Some(i) = self
+                .pending_screenshots
+                .iter()
+                .position(|(t, ..)| *t == token)
+            {
                 let (_, path, crop, reply, _) = self.pending_screenshots.remove(i);
                 let r = control::save_screenshot(ctx, &image, path.as_deref(), crop);
                 let _ = reply.send(r);
@@ -1688,15 +2090,24 @@ impl FilmcraftApp {
             match r {
                 Ok(r) => {
                     if let Some(n) = r["refreshed"].as_array().map(Vec::len).filter(|n| *n > 0) {
-                        self.toast = Some((format!("Refreshed {n} media item(s) changed on disk"), ctx.input(|i| i.time)));
+                        self.toast = Some((
+                            format!("Refreshed {n} media item(s) changed on disk"),
+                            ctx.input(|i| i.time),
+                        ));
                     }
                 }
                 Err(e) => self.toast = Some((e.to_string(), ctx.input(|i| i.time))),
             }
         }
         let media = &self.session.prefs.media;
-        let (on, every) = (media.refresh_growing_files, f64::from(media.growing_refresh_seconds.max(1)));
-        let (last_key, focus_key) = (egui::Id::new("mediaWatch.lastScan"), egui::Id::new("mediaWatch.focused"));
+        let (on, every) = (
+            media.refresh_growing_files,
+            f64::from(media.growing_refresh_seconds.max(1)),
+        );
+        let (last_key, focus_key) = (
+            egui::Id::new("mediaWatch.lastScan"),
+            egui::Id::new("mediaWatch.focused"),
+        );
         let now = ctx.input(|i| i.time);
         let focused = ctx.input(|i| i.focused);
         let was_focused: bool = ctx.data(|d| d.get_temp(focus_key)).unwrap_or(focused);
@@ -1704,12 +2115,18 @@ impl FilmcraftApp {
         if !on || filmcraft_engine::media_watch::media_files(&self.session.project).is_empty() {
             return;
         }
-        let last: f64 = ctx.data(|d| d.get_temp(last_key)).unwrap_or(f64::NEG_INFINITY);
+        let last: f64 = ctx
+            .data(|d| d.get_temp(last_key))
+            .unwrap_or(f64::NEG_INFINITY);
         if now - last >= every || (focused && !was_focused) {
             ctx.data_mut(|d| d.insert_temp(last_key, now));
             self.session.start_media_scan();
         }
-        let wait = if self.session.media_scan.is_some() { 0.1 } else { (every - (now - last)).clamp(0.1, every) };
+        let wait = if self.session.media_scan.is_some() {
+            0.1
+        } else {
+            (every - (now - last)).clamp(0.1, every)
+        };
         ctx.request_repaint_after(std::time::Duration::from_secs_f64(wait));
     }
 
@@ -1737,16 +2154,27 @@ impl FilmcraftApp {
                 filmcraft_engine::Event::OpenSequence(_) => {
                     // show the sequence with its own view (or fitted, the first time)
                     self.timeline_view_of = None;
-                    if !self.ui.floating.iter().any(|group| group.panels.contains(&PanelKind::Timeline)) {
+                    if !self
+                        .ui
+                        .floating
+                        .iter()
+                        .any(|group| group.panels.contains(&PanelKind::Timeline))
+                    {
                         self.ui.dock.restore_timeline();
                     }
-                    let _ = self.apply_dock(craft_ui::docking::Action::Activate { panel: PanelKind::Timeline });
+                    let _ = self.apply_dock(craft_ui::docking::Action::Activate {
+                        panel: PanelKind::Timeline,
+                    });
                 }
                 filmcraft_engine::Event::OpenSource(_) => {
-                    let _ = self.apply_dock(craft_ui::docking::Action::Activate { panel: PanelKind::Source });
+                    let _ = self.apply_dock(craft_ui::docking::Action::Activate {
+                        panel: PanelKind::Source,
+                    });
                 }
                 filmcraft_engine::Event::RevealInProject(item) => self.reveal_in_project(item),
-                filmcraft_engine::Event::Toast { message, .. } => self.toast = Some((message, ctx.input(|i| i.time))),
+                filmcraft_engine::Event::Toast { message, .. } => {
+                    self.toast = Some((message, ctx.input(|i| i.time)))
+                }
                 filmcraft_engine::Event::ProjectChanged { .. } => {}
             }
         }
@@ -1783,7 +2211,10 @@ impl FilmcraftApp {
             header::show(self, ui, header);
         }
         let status_h = if self.ui.show_status_bar { 20.0 } else { 0.0 };
-        let body = egui::Rect::from_min_max(egui::pos2(full.min.x + 1.0, header.max.y + 1.0), egui::pos2(full.max.x - 1.0, full.max.y - status_h - 2.0));
+        let body = egui::Rect::from_min_max(
+            egui::pos2(full.min.x + 1.0, header.max.y + 1.0),
+            egui::pos2(full.max.x - 1.0, full.max.y - status_h - 2.0),
+        );
         match self.ui.mode {
             state::Mode::Edit => self.dock_area(ui, body),
             state::Mode::Import => panels::import_mode::show(self, ui, body),
@@ -1807,11 +2238,22 @@ impl FilmcraftApp {
             if now - self.status_seen.1 > 8.0 {
                 self.ui.status.clear();
             } else {
-                ui.ctx().request_repaint_after(std::time::Duration::from_secs(1));
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_secs(1));
             }
         }
-        let hint = if !self.ui.status.is_empty() { self.ui.status.clone() } else { self.hint_text() };
-        ui.painter().text(egui::pos2(sb.min.x + 10.0, sb.center().y), egui::Align2::LEFT_CENTER, hint, Tokens::ui(11.0), t.text_dim);
+        let hint = if !self.ui.status.is_empty() {
+            self.ui.status.clone()
+        } else {
+            self.hint_text()
+        };
+        ui.painter().text(
+            egui::pos2(sb.min.x + 10.0, sb.center().y),
+            egui::Align2::LEFT_CENTER,
+            hint,
+            Tokens::ui(11.0),
+            t.text_dim,
+        );
         let resp = ui.interact(sb, egui::Id::new("status-bar"), egui::Sense::click());
         if resp.clicked() {
             self.ui.status.clear();
@@ -1823,22 +2265,40 @@ impl FilmcraftApp {
     /// render completes. Runs every frame, with or without the status bar.
     fn watch_jobs(&mut self, ctx: &egui::Context) -> Option<filmcraft_engine::Job> {
         use std::sync::atomic::Ordering;
-        let running = self.session.jobs.iter().rev().find(|j| !j.progress.finished.load(Ordering::Relaxed)).cloned();
+        let running = self
+            .session
+            .jobs
+            .iter()
+            .rev()
+            .find(|j| !j.progress.finished.load(Ordering::Relaxed))
+            .cloned();
         // Play after rendering previews.
         if let Some((id, from)) = self.watched_render
             && let Some(j) = self.session.jobs.iter().find(|j| j.id == id)
             && j.progress.finished.load(Ordering::Relaxed)
         {
             self.watched_render = None;
-            let ok = j.progress.error.lock().map(|e| e.is_none()).unwrap_or(false);
+            let ok = j
+                .progress
+                .error
+                .lock()
+                .map(|e| e.is_none())
+                .unwrap_or(false);
             if ok && self.ui.play_after_render && !self.playback.playing {
                 self.session.set_playhead(from);
                 self.play(1.0);
             }
         }
         let job = running?;
-        if job.label.starts_with("Rendering ") && !job.label.contains("audio") && self.watched_render.is_none_or(|w| w.0 != job.id) {
-            let from = self.session.active_sequence().and_then(|q| q.mark_in).unwrap_or(Tick::ZERO);
+        if job.label.starts_with("Rendering ")
+            && !job.label.contains("audio")
+            && self.watched_render.is_none_or(|w| w.0 != job.id)
+        {
+            let from = self
+                .session
+                .active_sequence()
+                .and_then(|q| q.mark_in)
+                .unwrap_or(Tick::ZERO);
             self.watched_render = Some((job.id, from));
         }
         ctx.request_repaint_after(std::time::Duration::from_millis(150));
@@ -1849,15 +2309,35 @@ impl FilmcraftApp {
     /// bar and a cancel button.
     fn job_status(&mut self, ui: &mut egui::Ui, sb: egui::Rect, t: &Tokens) {
         use std::sync::atomic::Ordering;
-        let Some(job) = self.watch_jobs(ui.ctx()) else { return };
+        let Some(job) = self.watch_jobs(ui.ctx()) else {
+            return;
+        };
         let f = job.progress.fraction().clamp(0.0, 1.0);
-        let left = job.progress.eta().map(panels::left_text).unwrap_or_default();
-        let cancel = egui::Rect::from_center_size(egui::pos2(sb.max.x - 14.0, sb.center().y), egui::vec2(14.0, 14.0));
-        let bar = egui::Rect::from_min_size(egui::pos2(cancel.min.x - 128.0, sb.center().y - 3.0), egui::vec2(120.0, 6.0));
+        let left = job
+            .progress
+            .eta()
+            .map(panels::left_text)
+            .unwrap_or_default();
+        let cancel = egui::Rect::from_center_size(
+            egui::pos2(sb.max.x - 14.0, sb.center().y),
+            egui::vec2(14.0, 14.0),
+        );
+        let bar = egui::Rect::from_min_size(
+            egui::pos2(cancel.min.x - 128.0, sb.center().y - 3.0),
+            egui::vec2(120.0, 6.0),
+        );
         let p = ui.painter();
         p.rect_filled(bar, 3.0, t.separator);
-        p.rect_filled(egui::Rect::from_min_size(bar.min, egui::vec2(bar.width() * f, bar.height())), 3.0, t.accent);
-        let verb = if job.label.starts_with("Rendering") { crate::i18n::t(&job.label).to_string() } else { tl!("Exporting").to_string() };
+        p.rect_filled(
+            egui::Rect::from_min_size(bar.min, egui::vec2(bar.width() * f, bar.height())),
+            3.0,
+            t.accent,
+        );
+        let verb = if job.label.starts_with("Rendering") {
+            crate::i18n::t(&job.label).to_string()
+        } else {
+            tl!("Exporting").to_string()
+        };
         p.text(
             egui::pos2(bar.min.x - 8.0, sb.center().y),
             egui::Align2::RIGHT_CENTER,
@@ -1865,13 +2345,41 @@ impl FilmcraftApp {
             Tokens::ui(11.0),
             t.text_dim,
         );
-        let resp = ui.interact(cancel, egui::Id::new(("job-cancel", job.id)), egui::Sense::click());
-        let c = if resp.hovered() { t.hot_text } else { t.text_dim };
+        let resp = ui.interact(
+            cancel,
+            egui::Id::new(("job-cancel", job.id)),
+            egui::Sense::click(),
+        );
+        let c = if resp.hovered() {
+            t.hot_text
+        } else {
+            t.text_dim
+        };
         let k = 3.5;
-        p.line_segment([cancel.center() - egui::vec2(k, k), cancel.center() + egui::vec2(k, k)], egui::Stroke::new(1.4, c));
-        p.line_segment([cancel.center() + egui::vec2(-k, k), cancel.center() + egui::vec2(k, -k)], egui::Stroke::new(1.4, c));
-        self.auto.add("status.job.cancel", cancel, &format!("Cancel {}", job.label));
-        self.auto.add("status.job.progress", bar, &format!("{:.0}%{left}", f * 100.0));
+        p.line_segment(
+            [
+                cancel.center() - egui::vec2(k, k),
+                cancel.center() + egui::vec2(k, k),
+            ],
+            egui::Stroke::new(1.4, c),
+        );
+        p.line_segment(
+            [
+                cancel.center() + egui::vec2(-k, k),
+                cancel.center() + egui::vec2(k, -k),
+            ],
+            egui::Stroke::new(1.4, c),
+        );
+        self.auto.add(
+            "status.job.cancel",
+            cancel,
+            &format!("Cancel {}", job.label),
+        );
+        self.auto.add(
+            "status.job.progress",
+            bar,
+            &format!("{:.0}%{left}", f * 100.0),
+        );
         if resp.on_hover_text(tl!("Cancel")).clicked() {
             job.progress.cancel.store(true, Ordering::Relaxed);
             self.watched_render = None;
@@ -1906,7 +2414,11 @@ impl FilmcraftApp {
     /// Remember the undo history as a mouse press begins, before any panel acts on it (a color
     /// picker sets its color on the press itself), for [`Self::cancel_value_drag`].
     fn begin_press(&mut self, ctx: &egui::Context) {
-        match ctx.input(|i| i.pointer.press_start_time().filter(|_| i.pointer.any_down())) {
+        match ctx.input(|i| {
+            i.pointer
+                .press_start_time()
+                .filter(|_| i.pointer.any_down())
+        }) {
             None => self.value_press = None,
             Some(p) if self.value_press.is_some_and(|(q, _)| q == p) => {}
             Some(p) => self.value_press = Some((p, self.session.undo_mark())),
@@ -1931,7 +2443,9 @@ impl FilmcraftApp {
     /// The "FilmCraft hit an error" window after a caught UI panic. Automation ids:
     /// `error.dismiss`, `error.save`.
     fn error_window(&mut self, ctx: &egui::Context) {
-        let Some(msg) = self.ui_error.clone() else { return };
+        let Some(msg) = self.ui_error.clone() else {
+            return;
+        };
         let mut close = false;
         egui::Window::new(tl!("FilmCraft hit an error"))
             .id(egui::Id::new("FilmCraft hit an error"))
@@ -1975,7 +2489,12 @@ impl FilmcraftApp {
 fn synthesize_mac_ctrl_click(armed: &mut bool, raw_input: &mut egui::RawInput) {
     for event in &mut raw_input.events {
         match event {
-            egui::Event::PointerButton { button, pressed, modifiers, .. } if *button == egui::PointerButton::Primary => {
+            egui::Event::PointerButton {
+                button,
+                pressed,
+                modifiers,
+                ..
+            } if *button == egui::PointerButton::Primary => {
                 if *pressed {
                     if modifiers.ctrl {
                         *button = egui::PointerButton::Secondary;
@@ -2005,14 +2524,18 @@ impl eframe::App for FilmcraftApp {
         }
         if self.control_input_only {
             // Preserve screenshot responses and all viewport lifecycle/geometry metadata.
-            raw_input.events.retain(|event| matches!(event, egui::Event::Screenshot { .. }));
+            raw_input
+                .events
+                .retain(|event| matches!(event, egui::Event::Screenshot { .. }));
             raw_input.hovered_files.clear();
             raw_input.dropped_files.clear();
         }
         if self.control_input_only || !self.synthetic.is_empty() {
             // Native modifiers cannot replace those requested by a control gesture. A queued
             // reset runs in the frame after release, so clicked() still sees Shift/Alt.
-            raw_input.events.push(egui::Event::ModifiersChanged(self.synthetic_modifiers));
+            raw_input
+                .events
+                .push(egui::Event::ModifiersChanged(self.synthetic_modifiers));
             // Widget keyboard handling requires effective egui focus. Control input must work
             // in a background window without activating it or taking the user's OS keyboard.
             raw_input.focused = true;
@@ -2020,14 +2543,29 @@ impl eframe::App for FilmcraftApp {
         if !self.synthetic.is_empty() {
             // Pointer events go one per frame so egui sees press → moves → release as a real drag
             // (all in one frame reads as a click); key/text runs go together up to a key release.
-            let pointer = |e: &egui::Event| matches!(e, egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. } | egui::Event::MouseWheel { .. });
+            let pointer = |e: &egui::Event| {
+                matches!(
+                    e,
+                    egui::Event::PointerMoved(_)
+                        | egui::Event::PointerButton { .. }
+                        | egui::Event::MouseWheel { .. }
+                )
+            };
             let n = if pointer(&self.synthetic[0]) {
                 1
             } else {
                 self.synthetic
                     .iter()
-                    .position(|e| pointer(e) || matches!(e, egui::Event::Key { pressed: false, .. }))
-                    .map_or(self.synthetic.len(), |i| if pointer(&self.synthetic[i]) { i.max(1) } else { i + 1 })
+                    .position(|e| {
+                        pointer(e) || matches!(e, egui::Event::Key { pressed: false, .. })
+                    })
+                    .map_or(self.synthetic.len(), |i| {
+                        if pointer(&self.synthetic[i]) {
+                            i.max(1)
+                        } else {
+                            i + 1
+                        }
+                    })
             };
             for event in self.synthetic.drain(..n) {
                 if let egui::Event::ModifiersChanged(modifiers) = event {
@@ -2046,7 +2584,8 @@ impl eframe::App for FilmcraftApp {
             // theme::install replaces the fonts: add the system Japanese font back (or fall back to
             // English when a saved Japanese setting meets a system without one)
             // (likewise Chinese without a Chinese face, Korean without a Hangul one)
-            let japanese_missing = self.ui.language == i18n::Language::Ja && !i18n::install_japanese_font(ctx);
+            let japanese_missing =
+                self.ui.language == i18n::Language::Ja && !i18n::install_japanese_font(ctx);
             if japanese_missing
                 || (self.ui.language == i18n::Language::ZhCn && !i18n::chinese_font_available())
                 || (self.ui.language == i18n::Language::Ko && !i18n::korean_font_available())
@@ -2068,9 +2607,15 @@ impl eframe::App for FilmcraftApp {
             // Nothing is shown while the window is hidden: not a dropped frame.
             self.playback.hidden = true;
         }
-        self.timeline_still = if self.ui.timeline.animating() { 0 } else { self.timeline_still.saturating_add(1) };
+        self.timeline_still = if self.ui.timeline.animating() {
+            0
+        } else {
+            self.timeline_still.saturating_add(1)
+        };
         // Quitting with unsaved changes asks to save them first.
-        if ctx.input(|i| i.viewport().close_requested()) && panels::clip_dialogs::intercept_quit(self) {
+        if ctx.input(|i| i.viewport().close_requested())
+            && panels::clip_dialogs::intercept_quit(self)
+        {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
         }
         let had_synthetic = !self.synthetic.is_empty();
@@ -2105,7 +2650,12 @@ impl eframe::App for FilmcraftApp {
         }
         // No frame worker threads on the web: render queued frames here, within a time budget
         // that leaves room for the UI pass (a no-op where workers run).
-        self.frames.pump(std::time::Duration::from_millis(if self.playback.playing { 24 } else { 40 }));
+        self.frames
+            .pump(std::time::Duration::from_millis(if self.playback.playing {
+                24
+            } else {
+                40
+            }));
         // A panic in one panel must not close the app (losing unsaved work) or leave a blank
         // window: catch it, keep the session, and say what happened.
         if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.frame(ui))).is_err() {
@@ -2113,7 +2663,11 @@ impl eframe::App for FilmcraftApp {
             self.playback.playing = false;
         }
         self.error_window(ui.ctx());
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| graphics_notice::show(self, ui.ctx()))).is_err() {
+        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            graphics_notice::show(self, ui.ctx())
+        }))
+        .is_err()
+        {
             // a broken notice must not take the session down: drop it
             self.graphics_notice = None;
         }
@@ -2150,20 +2704,35 @@ fn shuttle_mix_rate(device_rate: u32, speed: f64) -> Option<u32> {
 /// The program mix that playback plays: `mix(device_frame, interleaved, channels)` renders the
 /// active sequence at device rate `sr` from `device_frame`, with the live project snapshot (edits
 /// made while playing are heard), Output Mapping, the 5.1 mixdown and voice-over cues.
-pub fn playback_mix(session: &Session, seq_id: filmcraft_project::ItemId, sr: u32) -> impl FnMut(i64, &mut [f32], usize) + Send + 'static {
+pub fn playback_mix(
+    session: &Session,
+    seq_id: filmcraft_project::ItemId,
+    sr: u32,
+) -> impl FnMut(i64, &mut [f32], usize) + Send + 'static {
     let project = session.project.clone();
-    let provider = session.media.provider(project.clone(), session.services.clone());
+    let provider = session
+        .media
+        .provider(project.clone(), session.services.clone());
     let previews = session.previews.clone();
     // Settings ▸ Audio Hardware ▸ Output Mapping
-    let map = [session.prefs.audio_hardware.map_left, session.prefs.audio_hardware.map_right];
+    let map = [
+        session.prefs.audio_hardware.map_left,
+        session.prefs.audio_hardware.map_right,
+    ];
     // Preferences ▸ Audio ▸ 5.1 Mixdown Type: how a 5.1 Mix plays on a stereo device
-    let mixdown = filmcraft_audio_dsp::channels::Mixdown::from_id(&session.prefs.audio.mixdown_type).unwrap_or_default();
+    let mixdown =
+        filmcraft_audio_dsp::channels::Mixdown::from_id(&session.prefs.audio.mixdown_type)
+            .unwrap_or_default();
     let cues = panels::voiceover::cues(session, sr);
     previews.live.publish_project(project.clone());
     let mut resampler = None;
     move |cursor: i64, buf: &mut [f32], ch: usize| {
         // the newest project snapshot: mixer moves and other edits are heard while playing
-        let project = previews.live.project().filter(|p| p.sequence(seq_id).is_some()).unwrap_or_else(|| project.clone());
+        let project = previews
+            .live
+            .project()
+            .filter(|p| p.sequence(seq_id).is_some())
+            .unwrap_or_else(|| project.clone());
         let Some(seq) = project.sequence(seq_id) else {
             buf.fill(0.0);
             return;
@@ -2172,7 +2741,13 @@ pub fn playback_mix(session: &Session, seq_id: filmcraft_project::ItemId, sr: u3
         let seq_sr = seq.settings.sample_rate;
         // a 5.1 Mix plays as six channels (L, R, C, LFE, Ls, Rs) on a device with at least six
         use filmcraft_audio_dsp::channels::Layout;
-        let layout = if ch >= 6 && seq.settings.audio_master == filmcraft_project::AudioChannels::Surround51 { Layout::Surround51 } else { Layout::Stereo };
+        let layout = if ch >= 6
+            && seq.settings.audio_master == filmcraft_project::AudioChannels::Surround51
+        {
+            Layout::Surround51
+        } else {
+            Layout::Stereo
+        };
         let mix = if seq_sr == sr {
             previews.mix_layout(&project, seq_id, cursor, n, &provider, layout, mixdown)
         } else {
@@ -2180,14 +2755,24 @@ pub fn playback_mix(session: &Session, seq_id: filmcraft_project::ItemId, sr: u3
             // (started afresh when the rate or the channel layout changes while playing).
             let key = (seq_sr, layout);
             if resampler.as_ref().is_none_or(|(k, _)| *k != key) {
-                resampler = Some((key, filmcraft_audio_dsp::resample::StreamResampler::new(seq_sr, sr)));
+                resampler = Some((
+                    key,
+                    filmcraft_audio_dsp::resample::StreamResampler::new(seq_sr, sr),
+                ));
             }
             let Some((_, r)) = resampler.as_mut() else {
                 buf.fill(0.0);
                 return;
             };
-            let channels = r.process(cursor, n, |s0, m| previews.mix_layout(&project, seq_id, s0, m, &provider, layout, mixdown).channels);
-            filmcraft_frame::AudioBuffer { sample_rate: sr, channels }
+            let channels = r.process(cursor, n, |s0, m| {
+                previews
+                    .mix_layout(&project, seq_id, s0, m, &provider, layout, mixdown)
+                    .channels
+            });
+            filmcraft_frame::AudioBuffer {
+                sample_rate: sr,
+                channels,
+            }
         };
         if layout == Layout::Surround51 {
             buf.fill(0.0);
@@ -2197,7 +2782,13 @@ pub fn playback_mix(session: &Session, seq_id: filmcraft_project::ItemId, sr: u3
                 }
             }
         } else {
-            filmcraft_engine::settings::map_output(&mix.channels[0], &mix.channels[1.min(mix.channels.len() - 1)], buf, ch, map);
+            filmcraft_engine::settings::map_output(
+                &mix.channels[0],
+                &mix.channels[1.min(mix.channels.len() - 1)],
+                buf,
+                ch,
+                map,
+            );
         }
         panels::voiceover::mix_cues(buf, ch, cursor, &cues);
     }
@@ -2229,7 +2820,13 @@ fn clipboard_events_as_keys(events: &mut Vec<egui::Event>, modifiers: egui::Modi
             _ => None,
         })
         .collect();
-    events.extend(keys.into_iter().map(|key| Event::Key { key, physical_key: Some(key), pressed: true, repeat: false, modifiers }));
+    events.extend(keys.into_iter().map(|key| Event::Key {
+        key,
+        physical_key: Some(key),
+        pressed: true,
+        repeat: false,
+        modifiers,
+    }));
 }
 
 #[cfg(test)]
@@ -2239,7 +2836,22 @@ mod clipboard_key_tests {
     fn keys(events: Vec<Event>, m: Modifiers) -> Vec<(Key, Modifiers)> {
         let mut events = events;
         super::clipboard_events_as_keys(&mut events, m);
-        events.into_iter().filter_map(|e| if let Event::Key { key, modifiers, pressed: true, .. } = e { Some((key, modifiers)) } else { None }).collect()
+        events
+            .into_iter()
+            .filter_map(|e| {
+                if let Event::Key {
+                    key,
+                    modifiers,
+                    pressed: true,
+                    ..
+                } = e
+                {
+                    Some((key, modifiers))
+                } else {
+                    None
+                }
+            })
+            .collect()
     }
 
     #[test]
@@ -2262,8 +2874,14 @@ mod clipboard_key_tests {
     #[test]
     fn windows_insert_and_delete_variants() {
         // Shift+Delete (Ripple Delete) arrives as Cut on Windows; Shift+Insert as Paste
-        assert_eq!(keys(vec![Event::Cut], Modifiers::SHIFT), vec![(Key::Delete, Modifiers::SHIFT)]);
-        assert_eq!(keys(vec![Event::Paste("x".into())], Modifiers::SHIFT), vec![(Key::Insert, Modifiers::SHIFT)]);
+        assert_eq!(
+            keys(vec![Event::Cut], Modifiers::SHIFT),
+            vec![(Key::Delete, Modifiers::SHIFT)]
+        );
+        assert_eq!(
+            keys(vec![Event::Paste("x".into())], Modifiers::SHIFT),
+            vec![(Key::Insert, Modifiers::SHIFT)]
+        );
     }
 
     #[test]
@@ -2281,14 +2899,25 @@ mod mac_ctrl_click_tests {
     use egui::{Event, Modifiers, PointerButton, RawInput};
 
     fn click(button: PointerButton, pressed: bool, ctrl: bool) -> Event {
-        Event::PointerButton { pos: egui::pos2(40.0, 12.0), button, pressed, modifiers: if ctrl { Modifiers::CTRL } else { Modifiers::NONE } }
+        Event::PointerButton {
+            pos: egui::pos2(40.0, 12.0),
+            button,
+            pressed,
+            modifiers: if ctrl {
+                Modifiers::CTRL
+            } else {
+                Modifiers::NONE
+            },
+        }
     }
 
     fn buttons(raw: &mut RawInput) -> Vec<(PointerButton, bool)> {
         raw.events
             .iter()
             .filter_map(|e| match e {
-                Event::PointerButton { button, pressed, .. } => Some((*button, *pressed)),
+                Event::PointerButton {
+                    button, pressed, ..
+                } => Some((*button, *pressed)),
                 _ => None,
             })
             .collect()
@@ -2298,11 +2927,23 @@ mod mac_ctrl_click_tests {
     /// egui as a secondary click so `secondary_clicked()` (the context menus) fires on macOS.
     #[test]
     fn ctrl_click_is_a_secondary_click() {
-        let mut raw = RawInput { events: vec![click(PointerButton::Primary, true, true), click(PointerButton::Primary, false, true)], ..Default::default() };
+        let mut raw = RawInput {
+            events: vec![
+                click(PointerButton::Primary, true, true),
+                click(PointerButton::Primary, false, true),
+            ],
+            ..Default::default()
+        };
         let mut armed = false;
         super::synthesize_mac_ctrl_click(&mut armed, &mut raw);
         assert!(!armed);
-        assert_eq!(buttons(&mut raw), vec![(PointerButton::Secondary, true), (PointerButton::Secondary, false)]);
+        assert_eq!(
+            buttons(&mut raw),
+            vec![
+                (PointerButton::Secondary, true),
+                (PointerButton::Secondary, false)
+            ]
+        );
     }
 
     /// End to end: the rewritten events are what egui's pointer state sees, so the context
@@ -2310,13 +2951,21 @@ mod mac_ctrl_click_tests {
     #[test]
     fn synthesized_click_fires_secondary_clicked() {
         let ctx = egui::Context::default();
-        let mut raw = RawInput { events: vec![click(PointerButton::Primary, true, true), click(PointerButton::Primary, false, true)], ..Default::default() };
+        let mut raw = RawInput {
+            events: vec![
+                click(PointerButton::Primary, true, true),
+                click(PointerButton::Primary, false, true),
+            ],
+            ..Default::default()
+        };
         let mut armed = false;
         super::synthesize_mac_ctrl_click(&mut armed, &mut raw);
         let mut secondary = false;
         // No renderer here: drop the pass output, clearing its texture deltas so epaint's drop
         // guard does not panic on the font texture.
-        let mut out = ctx.run_ui(raw, |ctx| secondary = ctx.input(|i| i.pointer.secondary_clicked()));
+        let mut out = ctx.run_ui(raw, |ctx| {
+            secondary = ctx.input(|i| i.pointer.secondary_clicked())
+        });
         out.textures_delta.clear();
         assert!(secondary);
     }
@@ -2335,15 +2984,33 @@ mod mac_ctrl_click_tests {
         let mut armed = false;
         super::synthesize_mac_ctrl_click(&mut armed, &mut raw);
         assert!(!armed);
-        assert_eq!(buttons(&mut raw), vec![(PointerButton::Secondary, true), (PointerButton::Secondary, false)]);
+        assert_eq!(
+            buttons(&mut raw),
+            vec![
+                (PointerButton::Secondary, true),
+                (PointerButton::Secondary, false)
+            ]
+        );
     }
 
     /// A plain click keeps its meaning (on macOS Cmd is the selection modifier, not Control).
     #[test]
     fn plain_click_is_untouched() {
-        let mut raw = RawInput { events: vec![click(PointerButton::Primary, true, false), click(PointerButton::Primary, false, false)], ..Default::default() };
+        let mut raw = RawInput {
+            events: vec![
+                click(PointerButton::Primary, true, false),
+                click(PointerButton::Primary, false, false),
+            ],
+            ..Default::default()
+        };
         super::synthesize_mac_ctrl_click(&mut false, &mut raw);
-        assert_eq!(buttons(&mut raw), vec![(PointerButton::Primary, true), (PointerButton::Primary, false)]);
+        assert_eq!(
+            buttons(&mut raw),
+            vec![
+                (PointerButton::Primary, true),
+                (PointerButton::Primary, false)
+            ]
+        );
     }
 
     /// A half-open pairing (pointer left the window mid-click) must not turn the next plain click
@@ -2362,7 +3029,14 @@ mod mac_ctrl_click_tests {
         let mut armed = false;
         super::synthesize_mac_ctrl_click(&mut armed, &mut raw);
         assert!(!armed);
-        assert_eq!(buttons(&mut raw), vec![(PointerButton::Secondary, true), (PointerButton::Primary, true), (PointerButton::Primary, false),]);
+        assert_eq!(
+            buttons(&mut raw),
+            vec![
+                (PointerButton::Secondary, true),
+                (PointerButton::Primary, true),
+                (PointerButton::Primary, false),
+            ]
+        );
     }
 }
 
@@ -2386,7 +3060,13 @@ mod gpu_fallback_tests {
 
     #[test]
     fn plan_side_covers_output_and_every_layer() {
-        let frame = |w: u32, h: u32| std::sync::Arc::new(filmcraft_frame::VideoFrame::rgba_f32(w, h, vec![0.0; (w * h * 4) as usize]));
+        let frame = |w: u32, h: u32| {
+            std::sync::Arc::new(filmcraft_frame::VideoFrame::rgba_f32(
+                w,
+                h,
+                vec![0.0; (w * h * 4) as usize],
+            ))
+        };
         let layer = |w, h| PlanLayer {
             frame: frame(w, h),
             matrix: filmcraft_geom::Affine::IDENTITY,
@@ -2396,9 +3076,17 @@ mod gpu_fallback_tests {
             input: None,
         };
         // a 4K source in an HD sequence still needs a 3840-wide texture on the GPU
-        let p = FramePlan::Layers { width: 1920, height: 1080, layers: vec![layer(64, 64), layer(3840, 2160)] };
+        let p = FramePlan::Layers {
+            width: 1920,
+            height: 1080,
+            layers: vec![layer(64, 64), layer(3840, 2160)],
+        };
         assert_eq!(super::plan_side(&p), 3840);
-        let p = FramePlan::Layers { width: 1920, height: 1080, layers: vec![] };
+        let p = FramePlan::Layers {
+            width: 1920,
+            height: 1080,
+            layers: vec![],
+        };
         assert_eq!(super::plan_side(&p), 1920);
         let p = FramePlan::Image(filmcraft_render::Image::new(800, 4000));
         assert_eq!(super::plan_side(&p), 4000);
@@ -2426,12 +3114,20 @@ mod audio_recovery_tests {
         fn channels(&self) -> usize {
             2
         }
-        fn configure(&mut self, hardware: &filmcraft_engine::settings::AudioHardwarePrefs, _: Option<u32>) {
+        fn configure(
+            &mut self,
+            hardware: &filmcraft_engine::settings::AudioHardwarePrefs,
+            _: Option<u32>,
+        ) {
             self.ready = hardware.default_output == "available";
         }
         fn start(&mut self, _: Box<dyn FnMut(&mut [f32], usize) + Send>) -> Result<u32, String> {
             self.starts.fetch_add(1, Ordering::Relaxed);
-            if self.ready { Ok(48000) } else { Err("device unavailable".into()) }
+            if self.ready {
+                Ok(48000)
+            } else {
+                Err("device unavailable".into())
+            }
         }
         fn stop(&mut self) {}
         fn played_frames(&self) -> Option<u64> {
@@ -2449,14 +3145,27 @@ mod audio_recovery_tests {
         assert_eq!(shuttle_mix_rate(48_000, f64::NAN), None);
 
         let mut session = Session::default();
-        session.execute("file.newSequence", json!({"width":16,"height":16})).unwrap();
+        session
+            .execute("file.newSequence", json!({"width":16,"height":16}))
+            .unwrap();
         let mut app = FilmcraftApp::new(session);
         let starts = Arc::new(AtomicUsize::new(0));
-        app.audio = Some(Box::new(Device { ready: true, starts: starts.clone(), reading: Some(0) }));
+        app.audio = Some(Box::new(Device {
+            ready: true,
+            starts: starts.clone(),
+            reading: Some(0),
+        }));
         app.play(2.0);
         app.end_preroll(0.0);
-        assert_eq!(starts.load(Ordering::Relaxed), 1, "2x playback must start audio output");
-        assert!(app.playback.audio_clock, "the device is still the master clock");
+        assert_eq!(
+            starts.load(Ordering::Relaxed),
+            1,
+            "2x playback must start audio output"
+        );
+        assert!(
+            app.playback.audio_clock,
+            "the device is still the master clock"
+        );
         app.stop();
     }
 
@@ -2467,7 +3176,10 @@ mod audio_recovery_tests {
         use std::sync::Mutex;
         struct Capture(Arc<Mutex<Vec<f32>>>);
         impl AudioOut for Capture {
-            fn start(&mut self, mut fill: Box<dyn FnMut(&mut [f32], usize) + Send>) -> Result<u32, String> {
+            fn start(
+                &mut self,
+                mut fill: Box<dyn FnMut(&mut [f32], usize) + Send>,
+            ) -> Result<u32, String> {
                 let mut buf = vec![0.0; 2048];
                 fill(&mut buf, 2);
                 *self.0.lock().unwrap() = buf;
@@ -2491,12 +3203,30 @@ mod audio_recovery_tests {
             2.0 * re.hypot(im) / (samples.len() / 2) as f64
         };
         let mut session = Session::default();
-        session.execute("file.newSequence", json!({"width":16,"height":16})).unwrap();
-        let inter: Vec<f32> =
-            (0..48_000 * 8).flat_map(|i| [440.0, 660.0].map(|hz| (0.2 * (std::f64::consts::TAU * hz * i as f64 / 48_000.0).sin()) as f32)).collect();
+        session
+            .execute("file.newSequence", json!({"width":16,"height":16}))
+            .unwrap();
+        let inter: Vec<f32> = (0..48_000 * 8)
+            .flat_map(|i| {
+                [440.0, 660.0].map(|hz| {
+                    (0.2 * (std::f64::consts::TAU * hz * i as f64 / 48_000.0).sin()) as f32
+                })
+            })
+            .collect();
         let bytes: Arc<[u8]> = filmcraft_engine::previews::write_wav_f32(&inter, 48_000).into();
-        let item = filmcraft_engine::commands::import_bytes(&mut session, "/shuttle-tone.wav", bytes, None).unwrap();
-        session.execute("timeline.place", json!({"item":item.0,"audioTrack":"A1","seconds":0.0})).unwrap();
+        let item = filmcraft_engine::commands::import_bytes(
+            &mut session,
+            "/shuttle-tone.wav",
+            bytes,
+            None,
+        )
+        .unwrap();
+        session
+            .execute(
+                "timeline.place",
+                json!({"item":item.0,"audioTrack":"A1","seconds":0.0}),
+            )
+            .unwrap();
         let mut app = FilmcraftApp::new(session);
         let samples = Arc::new(Mutex::new(Vec::new()));
         app.audio = Some(Box::new(Capture(samples.clone())));
@@ -2505,7 +3235,10 @@ mod audio_recovery_tests {
             app.session.prefs.audio.maintain_pitch_shuttling = maintain;
             for speed in [0.5, 1.0, 1.5, 2.0, 4.0] {
                 app.session.set_playhead(Tick::from_seconds_f64(1.0));
-                let expected = app.session.sequence_rate().snap(app.session.playhead() + Tick::from_seconds_f64(0.1 * speed));
+                let expected = app
+                    .session
+                    .sequence_rate()
+                    .snap(app.session.playhead() + Tick::from_seconds_f64(0.1 * speed));
                 app.play(speed);
                 app.end_preroll(0.0);
                 assert!(app.playback.audio_clock);
@@ -2513,10 +3246,16 @@ mod audio_recovery_tests {
                 for (ch, tone) in [440.0, 660.0].into_iter().enumerate() {
                     let hz = if maintain { tone } else { tone * speed };
                     let level = amplitude(&buf, ch, hz);
-                    assert!(level > 0.08, "maintain={maintain}, speed={speed}, channel={ch}: {hz} Hz level={level}");
+                    assert!(
+                        level > 0.08,
+                        "maintain={maintain}, speed={speed}, channel={ch}: {hz} Hz level={level}"
+                    );
                     if speed != 1.0 {
                         let wrong = if maintain { tone * speed } else { tone };
-                        assert!(amplitude(&buf, ch, wrong) < level * 0.3, "wrong pitch {wrong} Hz at {speed}x, maintain={maintain}");
+                        assert!(
+                            amplitude(&buf, ch, wrong) < level * 0.3,
+                            "wrong pitch {wrong} Hz at {speed}x, maintain={maintain}"
+                        );
                     }
                 }
                 if speed == 1.0 {
@@ -2528,7 +3267,11 @@ mod audio_recovery_tests {
                 }
                 drop(buf);
                 app.advance_playback(&egui::Context::default());
-                assert_eq!(app.session.playhead(), expected, "the device clock must advance the timeline at {speed}x, snapped to a video frame");
+                assert_eq!(
+                    app.session.playhead(),
+                    expected,
+                    "the device clock must advance the timeline at {speed}x, snapped to a video frame"
+                );
                 app.stop();
             }
         }
@@ -2537,11 +3280,17 @@ mod audio_recovery_tests {
     #[test]
     fn changing_pitch_preference_restarts_audio_at_the_current_playhead() {
         let mut session = Session::default();
-        session.execute("file.newSequence", json!({"width":16,"height":16})).unwrap();
+        session
+            .execute("file.newSequence", json!({"width":16,"height":16}))
+            .unwrap();
         let ctx = egui::Context::default();
         let mut app = FilmcraftApp::new(session);
         let starts = Arc::new(AtomicUsize::new(0));
-        app.audio = Some(Box::new(Device { ready: true, starts: starts.clone(), reading: Some(0) }));
+        app.audio = Some(Box::new(Device {
+            ready: true,
+            starts: starts.clone(),
+            reading: Some(0),
+        }));
         app.session.prefs.audio_hardware.default_output = "available".into();
         app.apply_prefs(&ctx);
         app.play(2.0);
@@ -2550,7 +3299,12 @@ mod audio_recovery_tests {
         app.session.set_playhead(Tick::from_seconds_f64(2.0));
         let position = app.session.playhead();
         for (maintain, expected_starts) in [(false, 2), (true, 3)] {
-            app.session.execute("prefs.set", json!({"key":"audio.maintainPitchShuttling","value":maintain})).unwrap();
+            app.session
+                .execute(
+                    "prefs.set",
+                    json!({"key":"audio.maintainPitchShuttling","value":maintain}),
+                )
+                .unwrap();
             app.apply_prefs(&ctx);
             assert_eq!(starts.load(Ordering::Relaxed), expected_starts);
             assert!(app.playback.audio_clock);
@@ -2558,12 +3312,19 @@ mod audio_recovery_tests {
             assert_eq!(app.playback.anchor_tick, app.session.playhead());
             assert_eq!(app.session.playhead(), position);
             app.apply_prefs(&ctx);
-            assert_eq!(starts.load(Ordering::Relaxed), expected_starts, "unchanged settings do not restart");
+            assert_eq!(
+                starts.load(Ordering::Relaxed),
+                expected_starts,
+                "unchanged settings do not restart"
+            );
         }
         for speed in [-1.0, 8.0] {
             app.play(speed);
             app.end_preroll(0.0);
-            assert!(!app.playback.audio_clock, "unsupported speed {speed} remains silent");
+            assert!(
+                !app.playback.audio_clock,
+                "unsupported speed {speed} remains silent"
+            );
         }
         assert_eq!(starts.load(Ordering::Relaxed), 3);
         app.stop();
@@ -2572,11 +3333,17 @@ mod audio_recovery_tests {
     #[test]
     fn changing_hardware_recovers_wall_clock_playback_without_rewinding() {
         let mut session = Session::default();
-        session.execute("file.newSequence", json!({"width":16,"height":16})).unwrap();
+        session
+            .execute("file.newSequence", json!({"width":16,"height":16}))
+            .unwrap();
         let ctx = egui::Context::default();
         let mut app = FilmcraftApp::new(session);
         let starts = Arc::new(AtomicUsize::new(0));
-        app.audio = Some(Box::new(Device { ready: false, starts: starts.clone(), reading: Some(0) }));
+        app.audio = Some(Box::new(Device {
+            ready: false,
+            starts: starts.clone(),
+            reading: Some(0),
+        }));
         app.apply_prefs(&ctx);
         app.play(1.0);
         app.end_preroll(0.0);
@@ -2596,14 +3363,24 @@ mod audio_recovery_tests {
         session.execute("file.openDemoProject", json!({})).unwrap();
         let ctx = egui::Context::default();
         let mut app = FilmcraftApp::new(session);
-        app.audio = Some(Box::new(Device { ready: true, starts: Arc::new(AtomicUsize::new(0)), reading: None }));
+        app.audio = Some(Box::new(Device {
+            ready: true,
+            starts: Arc::new(AtomicUsize::new(0)),
+            reading: None,
+        }));
         let displayed = app.session.sequence_rate().tick_of(48);
         app.session.set_playhead(displayed);
         app.playback.playing = true;
         app.playback.audio_clock = true;
         app.playback.anchor_tick = Tick::ZERO;
         app.playback.anchor_time = 0.0;
-        let mut output = ctx.run_ui(egui::RawInput { time: Some(10.0), ..Default::default() }, |ui| app.advance_playback(ui.ctx()));
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                time: Some(10.0),
+                ..Default::default()
+            },
+            |ui| app.advance_playback(ui.ctx()),
+        );
         output.textures_delta.clear();
         assert!(!app.playback.audio_clock);
         assert_eq!(app.playback.anchor_tick, displayed);
@@ -2645,9 +3422,18 @@ mod audio_recovery_tests {
         app.playback.anchor_tick = Tick::ZERO;
         app.playback.anchor_time = 0.0;
         app.playback.audio_seen = (0, 10.0);
-        let mut output = ctx.run_ui(egui::RawInput { time: Some(10.0), ..Default::default() }, |ui| app.advance_playback(ui.ctx()));
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                time: Some(10.0),
+                ..Default::default()
+            },
+            |ui| app.advance_playback(ui.ctx()),
+        );
         output.textures_delta.clear();
-        assert!(app.playback.audio_clock, "the restarted stream is still the master clock");
+        assert!(
+            app.playback.audio_clock,
+            "the restarted stream is still the master clock"
+        );
         assert!(!app.ui.status.contains("Audio output failed"));
         // 48 000 frames played at 48 kHz: one second in, on a frame boundary
         let (shown, second) = (app.session.playhead(), Tick::from_seconds_f64(1.0));
@@ -2680,7 +3466,10 @@ mod text_focus_shortcut_tests {
     /// keys must reach the field, or no diacritic can ever be typed (#243).
     #[test]
     fn an_unmodified_key_reaches_a_focused_text_field() {
-        assert!(lets_text_field_keep(Modifiers::NONE, true), "the IME needs the plain letter keys");
+        assert!(
+            lets_text_field_keep(Modifiers::NONE, true),
+            "the IME needs the plain letter keys"
+        );
     }
 
     /// Without a text field the editor keeps its single-key tool shortcuts.
@@ -2692,7 +3481,13 @@ mod text_focus_shortcut_tests {
     /// A modifier chord is not what a text field or an IME consumes, so it keeps firing either way.
     #[test]
     fn a_modified_chord_still_fires_while_text_is_focused() {
-        for m in [Modifiers::COMMAND, Modifiers::CTRL, Modifiers::SHIFT, Modifiers::ALT, Modifiers::COMMAND | Modifiers::SHIFT] {
+        for m in [
+            Modifiers::COMMAND,
+            Modifiers::CTRL,
+            Modifiers::SHIFT,
+            Modifiers::ALT,
+            Modifiers::COMMAND | Modifiers::SHIFT,
+        ] {
             assert!(!lets_text_field_keep(m, true), "{m:?} is not an IME key");
         }
     }
@@ -2702,13 +3497,19 @@ mod text_focus_shortcut_tests {
     fn the_telex_trigger_keys_are_left_to_the_field() {
         // s=acute, f=grave, r=hook above, x=tilde, j=dot below, w=horn, z=remove diacritic
         for key in [Key::S, Key::F, Key::R, Key::X, Key::J, Key::W, Key::Z] {
-            assert!(lets_text_field_keep(Modifiers::NONE, true), "{key:?} must reach the IME");
+            assert!(
+                lets_text_field_keep(Modifiers::NONE, true),
+                "{key:?} must reach the IME"
+            );
         }
         // The letters the editor binds as tools are the ones Telex composes with, so they must be
         // left to the field too: `A` (Track Select Forward), `R` (Rate Stretch), `J` (Shuttle Left),
         // `Z` (Zoom), `C` (Razor), `T` (Type).
         for key in [Key::A, Key::R, Key::J, Key::Z, Key::C, Key::T] {
-            assert!(lets_text_field_keep(Modifiers::NONE, true), "{key:?} is a Telex key the tools stole");
+            assert!(
+                lets_text_field_keep(Modifiers::NONE, true),
+                "{key:?} is a Telex key the tools stole"
+            );
         }
     }
 }
@@ -2721,13 +3522,18 @@ mod voiceover_playback_tests {
     fn a_voice_over_take_records_into_the_empty_timeline_past_the_end() {
         let mut session = Session::default();
         session.execute("file.openDemoProject", json!({})).unwrap();
-        session.execute("audio.voiceover.settings", json!({"prerollSeconds": 0.0})).unwrap();
+        session
+            .execute("audio.voiceover.settings", json!({"prerollSeconds": 0.0}))
+            .unwrap();
         session.prefs.timeline.return_to_beginning = true;
         let ctx = egui::Context::default();
         let mut app = FilmcraftApp::new(session);
         app.audio = None;
         let dur = app.session.active_sequence().map(|q| q.duration()).unwrap();
-        let from = app.session.sequence_rate().snap(dur + Tick::from_seconds_f64(60.0));
+        let from = app
+            .session
+            .sequence_rate()
+            .snap(dur + Tick::from_seconds_f64(60.0));
         app.session.set_playhead(from);
         panels::voiceover::toggle(&mut app, None).unwrap();
         // play() keeps the record point instead of returning to the beginning
@@ -2735,12 +3541,24 @@ mod voiceover_playback_tests {
         assert_eq!(app.session.playhead(), from);
         app.end_preroll(0.0);
         // and one second later the take is still playing and recording, not stopped at the end
-        let mut output = ctx.run_ui(egui::RawInput { time: Some(1.0), ..Default::default() }, |ui| app.advance_playback(ui.ctx()));
+        let mut output = ctx.run_ui(
+            egui::RawInput {
+                time: Some(1.0),
+                ..Default::default()
+            },
+            |ui| app.advance_playback(ui.ctx()),
+        );
         output.textures_delta.clear();
         assert!(app.playback.playing);
         assert!(app.session.voiceover.recording());
-        assert!(app.session.playhead() > from, "{:?} <= {from:?}", app.session.playhead());
-        app.session.execute("audio.voiceover.stop", json!({"discard": true})).unwrap();
+        assert!(
+            app.session.playhead() > from,
+            "{:?} <= {from:?}",
+            app.session.playhead()
+        );
+        app.session
+            .execute("audio.voiceover.stop", json!({"discard": true}))
+            .unwrap();
         app.stop();
     }
 }
@@ -2750,8 +3568,15 @@ mod voiceover_playback_tests {
 /// Assumes the whole virtual screen uses the window's `pixels_per_point`: with monitors of mixed
 /// DPI the point can be off when the cursor and the window's origin are on different monitors.
 fn screen_px_to_ui(px: (i32, i32), pixels_per_point: f32, content_min: egui::Pos2) -> egui::Pos2 {
-    let ppp = if pixels_per_point.is_finite() && pixels_per_point > 0.0 { pixels_per_point } else { 1.0 };
-    egui::pos2(px.0 as f32 / ppp - content_min.x, px.1 as f32 / ppp - content_min.y)
+    let ppp = if pixels_per_point.is_finite() && pixels_per_point > 0.0 {
+        pixels_per_point
+    } else {
+        1.0
+    };
+    egui::pos2(
+        px.0 as f32 / ppp - content_min.x,
+        px.1 as f32 / ppp - content_min.y,
+    )
 }
 
 #[cfg(test)]
@@ -2790,25 +3615,51 @@ mod native_menu_tests {
         let sent: Rc<RefCell<Vec<Vec<menus::MenuItem>>>> = Rc::default();
         let mut app = FilmcraftApp::new(Session::default());
         let sink = sent.clone();
-        app.hooks.menu_changed = Some(Box::new(move |items: &[menus::MenuItem]| sink.borrow_mut().push(items.to_vec())));
+        app.hooks.menu_changed = Some(Box::new(move |items: &[menus::MenuItem]| {
+            sink.borrow_mut().push(items.to_vec())
+        }));
 
         app.sync_native_menu();
-        let last = |sent: &Rc<RefCell<Vec<Vec<menus::MenuItem>>>>, id: &str| sent.borrow().last().and_then(|items| enabled(items, id));
-        assert_eq!(last(&sent, "edit.undo"), Some(false), "nothing to undo in an empty project");
-        assert_eq!(last(&sent, "edit.redo"), Some(false), "nothing to redo in an empty project");
+        let last = |sent: &Rc<RefCell<Vec<Vec<menus::MenuItem>>>>, id: &str| {
+            sent.borrow().last().and_then(|items| enabled(items, id))
+        };
+        assert_eq!(
+            last(&sent, "edit.undo"),
+            Some(false),
+            "nothing to undo in an empty project"
+        );
+        assert_eq!(
+            last(&sent, "edit.redo"),
+            Some(false),
+            "nothing to redo in an empty project"
+        );
         assert_eq!(last(&sent, "file.newProject"), Some(true));
 
         app.sync_native_menu();
-        assert_eq!(sent.borrow().len(), 1, "an unchanged menu is not sent again");
+        assert_eq!(
+            sent.borrow().len(),
+            1,
+            "an unchanged menu is not sent again"
+        );
 
-        app.session.execute("file.newSequence", json!({"width":16,"height":16})).unwrap();
+        app.session
+            .execute("file.newSequence", json!({"width":16,"height":16}))
+            .unwrap();
         app.sync_native_menu();
-        assert_eq!(last(&sent, "edit.undo"), Some(true), "an edit can be undone");
+        assert_eq!(
+            last(&sent, "edit.undo"),
+            Some(true),
+            "an edit can be undone"
+        );
         assert_eq!(last(&sent, "edit.redo"), Some(false));
 
         app.session.execute("edit.undo", json!({})).unwrap();
         app.sync_native_menu();
         assert_eq!(last(&sent, "edit.undo"), Some(false));
-        assert_eq!(last(&sent, "edit.redo"), Some(true), "the undone edit can be redone");
+        assert_eq!(
+            last(&sent, "edit.redo"),
+            Some(true),
+            "the undone edit can be redone"
+        );
     }
 }

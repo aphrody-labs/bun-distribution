@@ -67,7 +67,10 @@ impl ArtifactFormat {
     /// Whether aphrody has a local inference backend able to load this format.
     #[must_use]
     pub const fn is_loadable(self) -> bool {
-        matches!(self, Self::Gguf | Self::Ggml | Self::Onnx | Self::Safetensors)
+        matches!(
+            self,
+            Self::Gguf | Self::Ggml | Self::Onnx | Self::Safetensors
+        )
     }
 }
 
@@ -129,7 +132,9 @@ impl GgufHeader {
     /// `general.architecture`, the single most useful routing key.
     #[must_use]
     pub fn architecture(&self) -> Option<&str> {
-        self.metadata.get("general.architecture").map(String::as_str)
+        self.metadata
+            .get("general.architecture")
+            .map(String::as_str)
     }
 
     /// `general.name`, the human label baked in at conversion time.
@@ -297,8 +302,10 @@ pub fn inspect_prefix(prefix: &[u8], hint_name: &str) -> Inspection {
                 details: Some(Details::Gguf(header)),
                 warning,
             },
-            Err(reason) => {
-                Inspection { format: ArtifactFormat::Gguf, details: None, warning: Some(reason) }
+            Err(reason) => Inspection {
+                format: ArtifactFormat::Gguf,
+                details: None,
+                warning: Some(reason),
             },
         };
     }
@@ -312,15 +319,21 @@ pub fn inspect_prefix(prefix: &[u8], hint_name: &str) -> Inspection {
                 details: Some(Details::Ggml(h)),
                 warning: None,
             },
-            Err(reason) => {
-                Inspection { format: ArtifactFormat::Ggml, details: None, warning: Some(reason) }
+            Err(reason) => Inspection {
+                format: ArtifactFormat::Ggml,
+                details: None,
+                warning: Some(reason),
             },
         };
     }
 
     // Zip local-file header: PyTorch `.pt` / `.bin` archives.
     if prefix.starts_with(b"PK\x03\x04") {
-        return Inspection { format: ArtifactFormat::PyTorch, details: None, warning: None };
+        return Inspection {
+            format: ArtifactFormat::PyTorch,
+            details: None,
+            warning: None,
+        };
     }
 
     if let Some(result) = try_safetensors(prefix) {
@@ -332,20 +345,33 @@ pub fn inspect_prefix(prefix: &[u8], hint_name: &str) -> Inspection {
     }
 
     if has_json_extension(hint_name) || looks_like_json(prefix) {
-        return Inspection { format: ArtifactFormat::Json, details: None, warning: None };
+        return Inspection {
+            format: ArtifactFormat::Json,
+            details: None,
+            warning: None,
+        };
     }
 
-    Inspection { format: ArtifactFormat::Unknown, details: None, warning: None }
+    Inspection {
+        format: ArtifactFormat::Unknown,
+        details: None,
+        warning: None,
+    }
 }
 
 /// Whether a file name ends in a `.json` extension, case-insensitively:
 /// `Tokenizer.JSON` off a Windows share is the same sidecar.
 fn has_json_extension(hint_name: &str) -> bool {
-    std::path::Path::new(hint_name).extension().is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+    std::path::Path::new(hint_name)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
 }
 
 fn looks_like_json(prefix: &[u8]) -> bool {
-    prefix.iter().find(|b| !b.is_ascii_whitespace()).is_some_and(|b| *b == b'{' || *b == b'[')
+    prefix
+        .iter()
+        .find(|b| !b.is_ascii_whitespace())
+        .is_some_and(|b| *b == b'{' || *b == b'[')
 }
 
 // ---------------------------------------------------------------------------
@@ -367,7 +393,10 @@ impl<'a> Cursor<'a> {
     }
 
     fn take(&mut self, n: usize) -> core::result::Result<&'a [u8], String> {
-        let end = self.pos.checked_add(n).ok_or_else(|| "length overflow".to_owned())?;
+        let end = self
+            .pos
+            .checked_add(n)
+            .ok_or_else(|| "length overflow".to_owned())?;
         let slice = self
             .buf
             .get(self.pos..end)
@@ -392,7 +421,9 @@ impl<'a> Cursor<'a> {
 
     fn u64(&mut self) -> core::result::Result<u64, String> {
         let b = self.take(8)?;
-        Ok(u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
+        Ok(u64::from_le_bytes([
+            b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+        ]))
     }
 
     fn i32(&mut self) -> core::result::Result<i32, String> {
@@ -411,7 +442,11 @@ impl<'a> Cursor<'a> {
     ///
     /// GGUF v1 used a `u32` length; v2 widened it to `u64`.
     fn gguf_string(&mut self, wide_len: bool) -> core::result::Result<String, String> {
-        let len = if wide_len { self.u64()? } else { u64::from(self.u32()?) };
+        let len = if wide_len {
+            self.u64()?
+        } else {
+            u64::from(self.u32()?)
+        };
         let len = usize::try_from(len).map_err(|_| "string length exceeds usize".to_owned())?;
         // Guard against a corrupt length claiming more than the whole prefix.
         if len > self.buf.len() {
@@ -446,19 +481,30 @@ fn parse_gguf(prefix: &[u8]) -> core::result::Result<(GgufHeader, Option<String>
         match read_gguf_kv(&mut c, wide) {
             Ok((key, value)) => {
                 metadata.insert(key, value);
-            },
+            }
             Err(e) => {
                 truncated_at = Some(format!("metadata pair {i}/{metadata_count}: {e}"));
                 break;
-            },
+            }
         }
     }
 
     let warning = truncated_at.map(|reason| {
-        format!("decoded {} of {metadata_count} metadata pairs before {reason}", metadata.len())
+        format!(
+            "decoded {} of {metadata_count} metadata pairs before {reason}",
+            metadata.len()
+        )
     });
 
-    Ok((GgufHeader { version, tensor_count, metadata_count, metadata }, warning))
+    Ok((
+        GgufHeader {
+            version,
+            tensor_count,
+            metadata_count,
+            metadata,
+        },
+        warning,
+    ))
 }
 
 fn read_gguf_kv(c: &mut Cursor<'_>, wide: bool) -> core::result::Result<(String, String), String> {
@@ -494,7 +540,7 @@ fn read_gguf_value(
             // payload and record the shape instead.
             skip_gguf_array(c, elem_type, len, wide)?;
             format!("[{} x {len}]", gguf_type_name(elem_type))
-        },
+        }
         other => return Err(format!("unknown GGUF value type {other}")),
     })
 }
@@ -516,7 +562,9 @@ fn skip_gguf_array(
     };
     if let Some(width) = fixed {
         let len = usize::try_from(len).map_err(|_| "array length exceeds usize".to_owned())?;
-        let total = len.checked_mul(width).ok_or_else(|| "array size overflow".to_owned())?;
+        let total = len
+            .checked_mul(width)
+            .ok_or_else(|| "array size overflow".to_owned())?;
         c.take(total)?;
         return Ok(());
     }
@@ -524,12 +572,12 @@ fn skip_gguf_array(
         match elem_type {
             GGUF_STRING => {
                 c.gguf_string(wide)?;
-            },
+            }
             GGUF_ARRAY => {
                 let inner_type = c.u32()?;
                 let inner_len = if wide { c.u64()? } else { u64::from(c.u32()?) };
                 skip_gguf_array(c, inner_type, inner_len, wide)?;
-            },
+            }
             other => return Err(format!("unknown GGUF array element type {other}")),
         }
     }
@@ -626,7 +674,10 @@ fn try_safetensors(prefix: &[u8]) -> Option<Inspection> {
     let mut metadata = BTreeMap::new();
     if let Some(serde_json::Value::Object(m)) = table.get("__metadata__") {
         for (k, v) in m {
-            metadata.insert(k.clone(), v.as_str().map_or_else(|| v.to_string(), ToOwned::to_owned));
+            metadata.insert(
+                k.clone(),
+                v.as_str().map_or_else(|| v.to_string(), ToOwned::to_owned),
+            );
         }
     }
 
@@ -637,7 +688,9 @@ fn try_safetensors(prefix: &[u8]) -> Option<Inspection> {
         if name == "__metadata__" {
             continue;
         }
-        let Some(obj) = entry.as_object() else { continue };
+        let Some(obj) = entry.as_object() else {
+            continue;
+        };
         tensor_count += 1;
         if let Some(dt) = obj.get("dtype").and_then(serde_json::Value::as_str) {
             let dt = dt.to_owned();
@@ -752,19 +805,23 @@ impl<'a> Pb<'a> {
         match wire {
             WIRE_VARINT => {
                 self.varint()?;
-            },
+            }
             WIRE_I64 => {
                 self.pos = self.pos.checked_add(8)?;
-            },
+            }
             WIRE_LEN => {
                 self.bytes()?;
-            },
+            }
             WIRE_I32 => {
                 self.pos = self.pos.checked_add(4)?;
-            },
+            }
             _ => return None,
         }
-        if self.pos > self.buf.len() { None } else { Some(()) }
+        if self.pos > self.buf.len() {
+            None
+        } else {
+            Some(())
+        }
     }
 }
 
@@ -822,7 +879,7 @@ fn parse_onnx(buf: &[u8]) -> Option<OnnxHeader> {
                         header.graph_truncated = true;
                         None
                     }
-                },
+                }
                 None => None,
             },
             // ModelProto.opset_import (repeated OperatorSetIdProto)
@@ -916,7 +973,19 @@ mod tests {
 
     fn build_whisper_ggml(n_audio_state: i32, n_vocab: i32) -> Vec<u8> {
         let mut v = b"lmgg".to_vec();
-        for field in [n_vocab, 1500, n_audio_state, 6, 4, 448, n_audio_state, 6, 4, 80, 1] {
+        for field in [
+            n_vocab,
+            1500,
+            n_audio_state,
+            6,
+            4,
+            448,
+            n_audio_state,
+            6,
+            4,
+            80,
+            1,
+        ] {
             v.extend_from_slice(&field.to_le_bytes());
         }
         v
@@ -977,13 +1046,21 @@ mod tests {
         let got = inspect_prefix(&bytes, "model.gguf");
         assert_eq!(got.format, ArtifactFormat::Gguf);
         assert!(got.warning.is_none(), "{:?}", got.warning);
-        let Some(Details::Gguf(h)) = got.details else { panic!("no gguf details") };
+        let Some(Details::Gguf(h)) = got.details else {
+            panic!("no gguf details")
+        };
         assert_eq!(h.version, 3);
         assert_eq!(h.tensor_count, 291);
         assert_eq!(h.architecture(), Some("llama"));
-        assert_eq!(h.metadata.get("llama.context_length").map(String::as_str), Some("4096"));
+        assert_eq!(
+            h.metadata.get("llama.context_length").map(String::as_str),
+            Some("4096")
+        );
         // The vocab array is summarised, never expanded.
-        assert_eq!(h.metadata.get("tokenizer.ggml.tokens").map(String::as_str), Some("[str x 2]"));
+        assert_eq!(
+            h.metadata.get("tokenizer.ggml.tokens").map(String::as_str),
+            Some("[str x 2]")
+        );
     }
 
     #[test]
@@ -1000,12 +1077,18 @@ mod tests {
 
         // The header that WAS decoded must still be reported: counts, and the
         // `general.*` keys that come first on disk.
-        let Some(Details::Gguf(header)) = got.details else { panic!("partial header was dropped") };
+        let Some(Details::Gguf(header)) = got.details else {
+            panic!("partial header was dropped")
+        };
         assert_eq!(header.version, 3);
         assert_eq!(header.tensor_count, 291);
         assert_eq!(header.metadata_count, 3);
         assert_eq!(header.architecture(), Some("llama"));
-        assert!(header.metadata.len() < 3, "expected a partial map, got {:?}", header.metadata);
+        assert!(
+            header.metadata.len() < 3,
+            "expected a partial map, got {:?}",
+            header.metadata
+        );
     }
 
     #[test]
@@ -1033,7 +1116,9 @@ mod tests {
     fn whisper_ggml_hyperparameters_are_decoded() {
         let got = inspect_prefix(&build_whisper_ggml(512, 51_864), "ggml-base.en.bin");
         assert_eq!(got.format, ArtifactFormat::Ggml);
-        let Some(Details::Ggml(h)) = got.details else { panic!("no ggml details") };
+        let Some(Details::Ggml(h)) = got.details else {
+            panic!("no ggml details")
+        };
         assert_eq!(h.variant, "base");
         assert!(h.english_only);
         assert_eq!(h.n_mels, 80);
@@ -1043,7 +1128,9 @@ mod tests {
     #[test]
     fn multilingual_whisper_is_not_flagged_english_only() {
         let got = inspect_prefix(&build_whisper_ggml(1280, 51_865), "ggml-large-v3.bin");
-        let Some(Details::Ggml(h)) = got.details else { panic!() };
+        let Some(Details::Ggml(h)) = got.details else {
+            panic!()
+        };
         assert_eq!(h.variant, "large");
         assert!(!h.english_only);
     }
@@ -1065,7 +1152,9 @@ mod tests {
         let json = r#"{"__metadata__":{"format":"pt"},"a":{"dtype":"F32","shape":[2,3],"data_offsets":[0,24]},"b":{"dtype":"F16","shape":[4],"data_offsets":[24,32]}}"#;
         let got = inspect_prefix(&build_safetensors(json), "model.safetensors");
         assert_eq!(got.format, ArtifactFormat::Safetensors);
-        let Some(Details::Safetensors(h)) = got.details else { panic!("no details") };
+        let Some(Details::Safetensors(h)) = got.details else {
+            panic!("no details")
+        };
         assert_eq!(h.tensor_count, 2);
         assert_eq!(h.total_elements, 10); // 2*3 + 4
         assert_eq!(h.dtypes, vec!["F16".to_owned(), "F32".to_owned()]);
@@ -1087,7 +1176,9 @@ mod tests {
     fn onnx_modelproto_top_level_is_decoded() {
         let got = inspect_prefix(&build_onnx(), "det.onnx");
         assert_eq!(got.format, ArtifactFormat::Onnx);
-        let Some(Details::Onnx(h)) = got.details else { panic!("no onnx details") };
+        let Some(Details::Onnx(h)) = got.details else {
+            panic!("no onnx details")
+        };
         assert_eq!(h.ir_version, 8);
         assert_eq!(h.producer_name, "paddle2onnx");
         assert_eq!(h.producer_version, "1.0.6");
@@ -1113,7 +1204,9 @@ mod tests {
 
         let got = inspect_prefix(&v, "inference.onnx");
         assert_eq!(got.format, ArtifactFormat::Onnx);
-        let Some(Details::Onnx(h)) = got.details else { panic!("no onnx details") };
+        let Some(Details::Onnx(h)) = got.details else {
+            panic!("no onnx details")
+        };
         assert_eq!(h.ir_version, 6);
         assert_eq!(h.graph_name, "PaddlePaddle Graph in PIR mode");
         assert_eq!(h.input_count, 1);
@@ -1126,7 +1219,9 @@ mod tests {
     #[test]
     fn a_complete_graph_is_not_flagged_as_truncated() {
         let got = inspect_prefix(&build_onnx(), "det.onnx");
-        let Some(Details::Onnx(h)) = got.details else { panic!() };
+        let Some(Details::Onnx(h)) = got.details else {
+            panic!()
+        };
         assert!(!h.graph_truncated);
         assert_eq!(h.opsets, vec![":17".to_owned()]);
     }
@@ -1136,7 +1231,9 @@ mod tests {
         let full = build_onnx();
         let got = inspect_prefix(&full[..12], "det.onnx");
         assert_eq!(got.format, ArtifactFormat::Onnx);
-        let Some(Details::Onnx(h)) = got.details else { panic!() };
+        let Some(Details::Onnx(h)) = got.details else {
+            panic!()
+        };
         assert_eq!(h.ir_version, 8);
     }
 
@@ -1150,8 +1247,14 @@ mod tests {
 
     #[test]
     fn json_sidecars_are_detected_by_content_and_by_name() {
-        assert_eq!(inspect_prefix(b"  {\"a\":1}", "").format, ArtifactFormat::Json);
-        assert_eq!(inspect_prefix(b"", "tokenizer.json").format, ArtifactFormat::Json);
+        assert_eq!(
+            inspect_prefix(b"  {\"a\":1}", "").format,
+            ArtifactFormat::Json
+        );
+        assert_eq!(
+            inspect_prefix(b"", "tokenizer.json").format,
+            ArtifactFormat::Json
+        );
     }
 
     #[test]
@@ -1176,7 +1279,11 @@ mod tests {
         ] {
             assert!(f.is_loadable(), "{f} should be loadable");
         }
-        for f in [ArtifactFormat::PyTorch, ArtifactFormat::Json, ArtifactFormat::Unknown] {
+        for f in [
+            ArtifactFormat::PyTorch,
+            ArtifactFormat::Json,
+            ArtifactFormat::Unknown,
+        ] {
             assert!(!f.is_loadable(), "{f} should not be loadable");
         }
     }

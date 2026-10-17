@@ -51,7 +51,10 @@ impl Roi {
     pub fn to_frame(&self, u: f32, v: f32) -> [f32; 2] {
         let (s, c) = self.angle.sin_cos();
         let (x, y) = ((u - 0.5) * self.size, (v - 0.5) * self.size);
-        [self.center[0] + c * x - s * y, self.center[1] + s * x + c * y]
+        [
+            self.center[0] + c * x - s * y,
+            self.center[1] + s * x + c * y,
+        ]
     }
 }
 
@@ -72,7 +75,15 @@ pub enum Border {
 /// index with no half-pixel shift, and the result is rounded to a whole 0–255 value before the range
 /// map. Outside the frame it reads `border`. A frame whose buffer is shorter than `w·h`, or whose
 /// size overflows, yields `lo` everywhere.
-pub fn crop(rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi, n: usize, [lo, hi]: [f32; 2], border: Border) -> Vec<f32> {
+pub fn crop(
+    rgb: &[[f32; 3]],
+    w: usize,
+    h: usize,
+    roi: &Roi,
+    n: usize,
+    [lo, hi]: [f32; 2],
+    border: Border,
+) -> Vec<f32> {
     let mut out = vec![lo; n.saturating_mul(n).saturating_mul(3)];
     if w == 0 || h == 0 || n == 0 || w.checked_mul(h).is_none_or(|len| rgb.len() < len) {
         return out;
@@ -85,7 +96,9 @@ pub fn crop(rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi, n: usize, [lo, hi]:
             Border::Zero => (x, y),
             Border::Replicate => (x.clamp(0, wi - 1), y.clamp(0, hi_ - 1)),
         };
-        rgb.get(y as usize * w + x as usize).copied().unwrap_or([0.0; 3])
+        rgb.get(y as usize * w + x as usize)
+            .copied()
+            .unwrap_or([0.0; 3])
     };
     for j in 0..n {
         for i in 0..n {
@@ -97,8 +110,13 @@ pub fn crop(rgb: &[[f32; 3]], w: usize, h: usize, roi: &Roi, n: usize, [lo, hi]:
             let (x1, y1) = (x0.saturating_add(1), y0.saturating_add(1));
             let (a, b, c, d) = (px(x0, y0), px(x1, y0), px(x0, y1), px(x1, y1));
             for k in 0..3 {
-                let v = (a[k] * (1.0 - fx) + b[k] * fx) * (1.0 - fy) + (c[k] * (1.0 - fx) + d[k] * fx) * fy;
-                let v = if v.is_finite() { (v * 255.0).round().clamp(0.0, 255.0) / 255.0 } else { 0.0 };
+                let v = (a[k] * (1.0 - fx) + b[k] * fx) * (1.0 - fy)
+                    + (c[k] * (1.0 - fx) + d[k] * fx) * fy;
+                let v = if v.is_finite() {
+                    (v * 255.0).round().clamp(0.0, 255.0) / 255.0
+                } else {
+                    0.0
+                };
                 out[(j * n + i) * 3 + k] = lo + v * (hi - lo);
             }
         }
@@ -116,11 +134,18 @@ mod tests {
 
     #[test]
     fn roi_maps_corners_and_rotates() {
-        let r = Roi { center: [10.0, 20.0], size: 4.0, angle: 0.0 };
+        let r = Roi {
+            center: [10.0, 20.0],
+            size: 4.0,
+            angle: 0.0,
+        };
         assert_eq!(r.to_frame(0.0, 0.0), [8.0, 18.0]);
         assert_eq!(r.to_frame(1.0, 1.0), [12.0, 22.0]);
         // A quarter turn: the square's x axis points down the frame.
-        let q = Roi { angle: std::f32::consts::FRAC_PI_2, ..r };
+        let q = Roi {
+            angle: std::f32::consts::FRAC_PI_2,
+            ..r
+        };
         let p = q.to_frame(1.0, 0.5);
         assert!((p[0] - 10.0).abs() < 1e-5 && (p[1] - 22.0).abs() < 1e-5);
     }
@@ -128,45 +153,109 @@ mod tests {
     #[test]
     fn crop_follows_mediapipe_corner_aligned_sampling() {
         // A 4×4 ramp cropped 1:1 reproduces it: output pixel i is at u = i/n, a source pixel centre.
-        let rgb: Vec<[f32; 3]> = (0..16).map(|i| [(i * 16) as f32 / 255.0, 0.0, 1.0]).collect();
-        let at = |cx: f32| crop(&rgb, 4, 4, &Roi { center: [cx, 2.0], size: 4.0, angle: 0.0 }, 4, [0.0, 255.0], Border::Zero)[0];
-        let c = crop(&rgb, 4, 4, &Roi { center: [2.0, 2.0], size: 4.0, angle: 0.0 }, 4, [0.0, 1.0], Border::Zero);
+        let rgb: Vec<[f32; 3]> = (0..16)
+            .map(|i| [(i * 16) as f32 / 255.0, 0.0, 1.0])
+            .collect();
+        let at = |cx: f32| {
+            crop(
+                &rgb,
+                4,
+                4,
+                &Roi {
+                    center: [cx, 2.0],
+                    size: 4.0,
+                    angle: 0.0,
+                },
+                4,
+                [0.0, 255.0],
+                Border::Zero,
+            )[0]
+        };
+        let c = crop(
+            &rgb,
+            4,
+            4,
+            &Roi {
+                center: [2.0, 2.0],
+                size: 4.0,
+                angle: 0.0,
+            },
+            4,
+            [0.0, 1.0],
+            Border::Zero,
+        );
         for i in 0..16 {
             assert!((c[i * 3] - (i * 16) as f32 / 255.0).abs() < 1e-6);
         }
         // Half a pixel to the right is halfway between ramp values 0 and 16.
         assert!((at(2.5) - 8.0).abs() < 1e-3, "{}", at(2.5));
         // The result is rounded to a whole 0-255 value: a third of the way from 0 to 16 is 5.33.
-        assert!((at(2.0 + 1.0 / 3.0) - 5.0).abs() < 1e-3, "{}", at(2.0 + 1.0 / 3.0));
+        assert!(
+            (at(2.0 + 1.0 / 3.0) - 5.0).abs() < 1e-3,
+            "{}",
+            at(2.0 + 1.0 / 3.0)
+        );
     }
 
     #[test]
     fn crop_borders_are_zero_or_replicated() {
-        let rgb: Vec<[f32; 3]> = (0..16).map(|i| [(i * 16) as f32 / 255.0, 0.0, 1.0]).collect();
-        let far = Roi { center: [-10.0, -10.0], size: 4.0, angle: 0.0 };
+        let rgb: Vec<[f32; 3]> = (0..16)
+            .map(|i| [(i * 16) as f32 / 255.0, 0.0, 1.0])
+            .collect();
+        let far = Roi {
+            center: [-10.0, -10.0],
+            size: 4.0,
+            angle: 0.0,
+        };
         let c = crop(&rgb, 4, 4, &far, 2, [-1.0, 1.0], Border::Zero);
         assert!(c.iter().all(|v| *v == -1.0));
         // Replicated, the top-left pixel (0, 0, 255) fills the crop.
         let c = crop(&rgb, 4, 4, &far, 2, [0.0, 255.0], Border::Replicate);
         for p in c.chunks(3) {
-            assert!(p[0].abs() < 1e-3 && p[1].abs() < 1e-3 && (p[2] - 255.0).abs() < 1e-3, "{p:?}");
+            assert!(
+                p[0].abs() < 1e-3 && p[1].abs() < 1e-3 && (p[2] - 255.0).abs() < 1e-3,
+                "{p:?}"
+            );
         }
         // Half outside on the left: zero blends toward black, replicate keeps the edge value.
-        let edge = Roi { center: [0.0, 2.0], size: 4.0, angle: 0.0 };
+        let edge = Roi {
+            center: [0.0, 2.0],
+            size: 4.0,
+            angle: 0.0,
+        };
         let z = crop(&rgb, 4, 4, &edge, 4, [0.0, 255.0], Border::Zero);
         let r = crop(&rgb, 4, 4, &edge, 4, [0.0, 255.0], Border::Replicate);
-        assert!(z[2] == 0.0 && (r[2] - 255.0).abs() < 1e-3, "{} {}", z[2], r[2]);
+        assert!(
+            z[2] == 0.0 && (r[2] - 255.0).abs() < 1e-3,
+            "{} {}",
+            z[2],
+            r[2]
+        );
     }
 
     #[test]
     fn crop_survives_absurd_frame_sizes() {
         let rgb = [[0.5f32; 3]; 4];
-        let roi = Roi { center: [1e30, -1e30], size: 1e30, angle: 1.0 };
-        for (w, h) in [(usize::MAX, 2), (2, usize::MAX), (usize::MAX, usize::MAX), (1 << 40, 1 << 40), (0, 4), (4, 0)] {
+        let roi = Roi {
+            center: [1e30, -1e30],
+            size: 1e30,
+            angle: 1.0,
+        };
+        for (w, h) in [
+            (usize::MAX, 2),
+            (2, usize::MAX),
+            (usize::MAX, usize::MAX),
+            (1 << 40, 1 << 40),
+            (0, 4),
+            (4, 0),
+        ] {
             for border in [Border::Zero, Border::Replicate] {
                 let c = crop(&rgb, w, h, &roi, 4, [-1.0, 1.0], border);
                 assert_eq!(c.len(), 48);
-                assert!(c.iter().all(|v| *v == -1.0), "{w}x{h}: an unreadable frame gives `lo`");
+                assert!(
+                    c.iter().all(|v| *v == -1.0),
+                    "{w}x{h}: an unreadable frame gives `lo`"
+                );
             }
         }
     }

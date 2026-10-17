@@ -5,10 +5,10 @@
 
 use common::math_util::Rectangle;
 use ruzu_core::hle::service::nvnflinger::buffer_transform_flags::BufferTransformFlags;
-use ruzu_core::hle::service::nvnflinger::pixel_format::PixelFormat;
 use ruzu_core::hle::service::nvnflinger::hwc_layer::{
     layer_stack_bit, LayerStackId, DEFAULT_LAYER_STACK_MASK,
 };
+use ruzu_core::hle::service::nvnflinger::pixel_format::PixelFormat;
 
 /// Represents a pointer in the device-specific virtual address space.
 pub type DAddr = u64;
@@ -131,9 +131,19 @@ mod tests {
     #[test]
     fn stack_filter_preserves_order_and_borrows_when_all_match() {
         let layers = vec![
-            FramebufferConfig { address: 1, ..Default::default() },
-            FramebufferConfig { address: 2, layer_stack_mask: 1, ..Default::default() },
-            FramebufferConfig { address: 3, ..Default::default() },
+            FramebufferConfig {
+                address: 1,
+                ..Default::default()
+            },
+            FramebufferConfig {
+                address: 2,
+                layer_stack_mask: 1,
+                ..Default::default()
+            },
+            FramebufferConfig {
+                address: 3,
+                ..Default::default()
+            },
         ];
         let mut scratch = vec![FramebufferConfig::default()];
         assert_eq!(FramebufferConfig::default().layer_stack_mask, 0x1d);
@@ -141,7 +151,13 @@ mod tests {
         assert_eq!(all.as_ptr(), layers.as_ptr());
         assert_eq!(scratch.len(), 1);
         let filtered = filter_layer_stack(&layers, LayerStackId::LastFrame, &mut scratch);
-        assert_eq!(filtered.iter().map(|layer| layer.address).collect::<Vec<_>>(), [1, 3]);
+        assert_eq!(
+            filtered
+                .iter()
+                .map(|layer| layer.address)
+                .collect::<Vec<_>>(),
+            [1, 3]
+        );
         assert!(filter_layer_stack(&layers, LayerStackId::Null, &mut scratch).is_empty());
         scratch.push(FramebufferConfig::default());
         assert!(filter_layer_stack(&[], LayerStackId::Default, &mut scratch).is_empty());

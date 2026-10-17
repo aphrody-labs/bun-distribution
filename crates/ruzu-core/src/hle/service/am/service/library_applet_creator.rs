@@ -511,13 +511,19 @@ mod tests {
         let system_ref = SystemRef::from_ref(&system);
         let parent = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), true)));
         let window = Arc::new(Mutex::new(WindowSystem::new(system_ref)));
-        let creator = ILibraryAppletCreator::new(system_ref, Arc::clone(&parent), Arc::downgrade(&window));
+        let creator =
+            ILibraryAppletCreator::new(system_ref, Arc::clone(&parent), Arc::downgrade(&window));
         for _ in 0..64 {
-            let accessor = creator.create_frontend_applet(AppletId::Controller, LibraryAppletMode::AllForeground);
+            let accessor = creator
+                .create_frontend_applet(AppletId::Controller, LibraryAppletMode::AllForeground);
             let child = accessor.get_applet();
             let weak = Arc::downgrade(&child);
             let pid = child.lock().unwrap().aruid.pid;
-            assert!(window.lock().unwrap().get_by_applet_resource_user_id(pid).is_none());
+            assert!(window
+                .lock()
+                .unwrap()
+                .get_by_applet_resource_user_id(pid)
+                .is_none());
             assert_eq!(parent.lock().unwrap().child_applets.len(), 1);
             crate::hle::service::am::frontend::applets::exit(system_ref, &weak);
             assert!(parent.lock().unwrap().child_applets.is_empty());

@@ -26,10 +26,17 @@ pub fn check_document(doc: &Document) -> Result<(), String> {
             err = Some(format!("duplicate id {}", n.id));
         }
         match &n.kind {
-            NodeKind::Group { children, .. } if children.iter().any(|c| c.is_layer()) && err.is_none() => {
+            NodeKind::Group { children, .. }
+                if children.iter().any(|c| c.is_layer()) && err.is_none() =>
+            {
                 err = Some(format!("group {} contains a layer", n.id));
             }
-            NodeKind::Compound { children, .. } if children.iter().any(|c| !matches!(c.kind, NodeKind::Path { .. })) && err.is_none() => {
+            NodeKind::Compound { children, .. }
+                if children
+                    .iter()
+                    .any(|c| !matches!(c.kind, NodeKind::Path { .. }))
+                    && err.is_none() =>
+            {
                 err = Some(format!("compound {} has a non-path child", n.id));
             }
             _ => {}
@@ -42,7 +49,10 @@ pub fn check_document(doc: &Document) -> Result<(), String> {
         return Err(e);
     }
     if walked != doc.node_count() {
-        return Err(format!("node_count {} != walked {walked}", doc.node_count()));
+        return Err(format!(
+            "node_count {} != walked {walked}",
+            doc.node_count()
+        ));
     }
     if doc.peek_next_id() <= max {
         return Err(format!("next_id {} <= max id {max}", doc.peek_next_id()));
@@ -93,7 +103,12 @@ pub fn check_session(s: &Session) -> Result<(), String> {
 fn native_roundtrip(doc: &Document) -> Result<(Value, Value), String> {
     let bytes = vectorcraft_format::save(doc, false);
     let back = vectorcraft_format::load(&bytes).map_err(|e| format!("load: {e}"))?;
-    if let Some(k) = back.images.iter().find(|(k, b)| doc.images.get(*k).map(|d| &d.bytes) != Some(&b.bytes)).map(|(k, _)| k) {
+    if let Some(k) = back
+        .images
+        .iter()
+        .find(|(k, b)| doc.images.get(*k).map(|d| &d.bytes) != Some(&b.bytes))
+        .map(|(k, _)| k)
+    {
         return Err(format!("native round trip changed image `{k}`"));
     }
     let mut lost = None;
@@ -111,7 +126,9 @@ fn native_roundtrip(doc: &Document) -> Result<(Value, Value), String> {
         }
     });
     if let Some(k) = lost {
-        return Err(format!("native round trip lost image `{k}`, which is in use"));
+        return Err(format!(
+            "native round trip lost image `{k}`, which is in use"
+        ));
     }
     let strip = |mut v: Value| {
         if let Some(o) = v.as_object_mut() {
@@ -127,7 +144,10 @@ fn native_roundtrip(doc: &Document) -> Result<(Value, Value), String> {
 pub fn check_native_roundtrip(doc: &Document) -> Result<(), String> {
     let (a, b) = native_roundtrip(doc)?;
     if !json_approx_eq(&a, &b, 1e-12) {
-        return Err(format!("native round trip differs:\n{}", first_diff(&a, &b, "$")));
+        return Err(format!(
+            "native round trip differs:\n{}",
+            first_diff(&a, &b, "$")
+        ));
     }
     Ok(())
 }
@@ -136,7 +156,10 @@ pub fn check_native_roundtrip(doc: &Document) -> Result<(), String> {
 pub fn check_native_roundtrip_exact(doc: &Document) -> Result<(), String> {
     let (a, b) = native_roundtrip(doc)?;
     if a != b {
-        return Err(format!("native round trip differs:\n{}", first_diff(&a, &b, "$")));
+        return Err(format!(
+            "native round trip differs:\n{}",
+            first_diff(&a, &b, "$")
+        ));
     }
     Ok(())
 }
@@ -148,8 +171,14 @@ pub fn json_approx_eq(a: &Value, b: &Value, rel: f64) -> bool {
             (Some(x), Some(y)) => x == y || (x - y).abs() <= rel * x.abs().max(y.abs()),
             _ => x == y,
         },
-        (Value::Array(x), Value::Array(y)) => x.len() == y.len() && x.iter().zip(y).all(|(p, q)| json_approx_eq(p, q, rel)),
-        (Value::Object(x), Value::Object(y)) => x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| json_approx_eq(v, w, rel))),
+        (Value::Array(x), Value::Array(y)) => {
+            x.len() == y.len() && x.iter().zip(y).all(|(p, q)| json_approx_eq(p, q, rel))
+        }
+        (Value::Object(x), Value::Object(y)) => {
+            x.len() == y.len()
+                && x.iter()
+                    .all(|(k, v)| y.get(k).is_some_and(|w| json_approx_eq(v, w, rel)))
+        }
         _ => a == b,
     }
 }
@@ -165,7 +194,9 @@ pub fn check_inspect(s: &mut Session) -> Result<(), String> {
     if s.active().is_none() {
         return Ok(());
     }
-    let v = s.execute("document.inspect", &json!({})).map_err(|e| format!("inspect: {e}"))?;
+    let v = s
+        .execute("document.inspect", &json!({}))
+        .map_err(|e| format!("inspect: {e}"))?;
     serde_json::to_string(&v).map_err(|e| e.to_string())?;
     Ok(())
 }

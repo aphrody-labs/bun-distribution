@@ -50,7 +50,9 @@ impl Budget {
     fn cell(&mut self) -> Result<(), IoError> {
         self.cells += 1;
         if self.cells > MAX_CELLS {
-            return Err(IoError::TooLarge("XLSB exceeds 1 million imported cells".into()));
+            return Err(IoError::TooLarge(
+                "XLSB exceeds 1 million imported cells".into(),
+            ));
         }
         Ok(())
     }
@@ -62,11 +64,16 @@ pub fn read_xlsb(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
     let mut package = Package::open(bytes)?;
     let types = content_types(&mut package)?;
     let roots = relationships(&mut package, "")?;
-    let roots: Vec<_> = roots.iter().filter(|r| r.kind == "officeDocument").collect();
+    let roots: Vec<_> = roots
+        .iter()
+        .filter(|r| r.kind == "officeDocument")
+        .collect();
     if roots.len() != 1 {
         return Err(invalid("expected one workbook relationship"));
     }
-    let root = roots.first().ok_or_else(|| invalid("missing workbook relationship"))?;
+    let root = roots
+        .first()
+        .ok_or_else(|| invalid("missing workbook relationship"))?;
     if root.external {
         return Err(invalid("external workbook relationship"));
     }
@@ -88,7 +95,11 @@ pub fn read_xlsb(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
             return Err(invalid("external shared-string relationship"));
         }
         check_type(&types, &rel.target, STRINGS)?;
-        shared_strings(&required(&mut package, &rel.target)?, &mut budget, &mut report)?
+        shared_strings(
+            &required(&mut package, &rel.target)?,
+            &mut budget,
+            &mut report,
+        )?
     } else {
         vec![]
     };
@@ -100,12 +111,18 @@ pub fn read_xlsb(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
             report.warn("XLSB module sheets were skipped.");
             continue;
         };
-        let rel = rels.iter().find(|r| r.id == id).ok_or_else(|| invalid("worksheet relationship is missing"))?;
+        let rel = rels
+            .iter()
+            .find(|r| r.id == id)
+            .ok_or_else(|| invalid("worksheet relationship is missing"))?;
         if rel.external {
             return Err(invalid("external sheet relationship"));
         }
         if rel.kind != "worksheet" {
-            if !matches!(rel.kind.as_str(), "chartsheet" | "dialogsheet" | "xlMacrosheet" | "xlIntlMacrosheet") {
+            if !matches!(
+                rel.kind.as_str(),
+                "chartsheet" | "dialogsheet" | "xlMacrosheet" | "xlIntlMacrosheet"
+            ) {
                 return Err(invalid("unknown sheet relationship type"));
             }
             report.warn("XLSB non-worksheet sheets were skipped.");
@@ -113,14 +130,24 @@ pub fn read_xlsb(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
         }
         check_type(&types, &rel.target, WORKSHEET)?;
         wb.check_sheet_name(&info.name, None).map_err(invalid)?;
-        let mut sheet = worksheet(&required(&mut package, &rel.target)?, &info.name, &strings, &mut budget, &mut report)?;
+        let mut sheet = worksheet(
+            &required(&mut package, &rel.target)?,
+            &info.name,
+            &strings,
+            &mut budget,
+            &mut report,
+        )?;
         sheet.visibility = info.visibility;
         wb.sheets.push(Arc::new(sheet));
     }
     if wb.sheets.is_empty() {
         return Err(invalid("no supported worksheets"));
     }
-    wb.active_sheet = wb.sheets.iter().position(|s| s.visibility == Visibility::Visible).unwrap_or(0);
+    wb.active_sheet = wb
+        .sheets
+        .iter()
+        .position(|s| s.visibility == Visibility::Visible)
+        .unwrap_or(0);
     Ok((wb, report))
 }
 
@@ -130,14 +157,20 @@ pub(crate) fn is_xlsb(bytes: &[u8]) -> bool {
         let types = content_types(&mut package)?;
         let roots = relationships(&mut package, "")?;
         let mut books = roots.iter().filter(|r| r.kind == "officeDocument");
-        let Some(root) = books.next() else { return Ok(false) };
-        Ok(books.next().is_none() && !root.external && check_type(&types, &root.target, MAIN).is_ok())
+        let Some(root) = books.next() else {
+            return Ok(false);
+        };
+        Ok(books.next().is_none()
+            && !root.external
+            && check_type(&types, &root.target, MAIN).is_ok())
     };
     inspect().unwrap_or(false)
 }
 
 fn required(package: &mut Package<'_>, path: &str) -> Result<Vec<u8>, IoError> {
-    package.read(path)?.ok_or_else(|| invalid(format!("missing part {path}")))
+    package
+        .read(path)?
+        .ok_or_else(|| invalid(format!("missing part {path}")))
 }
 
 struct Entry {
@@ -146,7 +179,10 @@ struct Entry {
 }
 impl Entry {
     fn attr(&self, name: &str) -> Option<&str> {
-        self.attrs.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
+        self.attrs
+            .iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| v.as_str())
     }
 }
 
@@ -158,7 +194,9 @@ fn metadata(bytes: &[u8], ns: &[u8], root_name: &[u8]) -> Result<Vec<Entry>, IoE
     let mut seen = false;
     let mut entries = vec![];
     loop {
-        let event = reader.read_event().map_err(|e| IoError::Xml(e.to_string()))?;
+        let event = reader
+            .read_event()
+            .map_err(|e| IoError::Xml(e.to_string()))?;
         match &event {
             Event::Start(e) | Event::Empty(e) => {
                 let (namespace, local) = reader.resolver_mut().resolve_element(e.name());
@@ -175,11 +213,16 @@ fn metadata(bytes: &[u8], ns: &[u8], root_name: &[u8]) -> Result<Vec<Entry>, IoE
                         if !a.key.as_ref().contains(&b':') {
                             attrs.push((
                                 String::from_utf8_lossy(a.key.as_ref()).into_owned(),
-                                a.normalized_value(XmlVersion::Explicit1_0).map_err(|e| IoError::Xml(e.to_string()))?.into_owned(),
+                                a.normalized_value(XmlVersion::Explicit1_0)
+                                    .map_err(|e| IoError::Xml(e.to_string()))?
+                                    .into_owned(),
                             ));
                         }
                     }
-                    entries.push(Entry { name: String::from_utf8_lossy(local.as_ref()).into_owned(), attrs });
+                    entries.push(Entry {
+                        name: String::from_utf8_lossy(local.as_ref()).into_owned(),
+                        attrs,
+                    });
                 }
                 if matches!(event, Event::Start(_)) {
                     depth += 1;
@@ -188,8 +231,19 @@ fn metadata(bytes: &[u8], ns: &[u8], root_name: &[u8]) -> Result<Vec<Entry>, IoE
                     }
                 }
             }
-            Event::End(_) => depth = depth.checked_sub(1).ok_or_else(|| invalid("unexpected metadata end"))?,
-            Event::Text(t) if depth == 0 && !t.xml_content(XmlVersion::Explicit1_0).map_err(|e| IoError::Xml(e.to_string()))?.trim().is_empty() => {
+            Event::End(_) => {
+                depth = depth
+                    .checked_sub(1)
+                    .ok_or_else(|| invalid("unexpected metadata end"))?
+            }
+            Event::Text(t)
+                if depth == 0
+                    && !t
+                        .xml_content(XmlVersion::Explicit1_0)
+                        .map_err(|e| IoError::Xml(e.to_string()))?
+                        .trim()
+                        .is_empty() =>
+            {
                 return Err(invalid("text outside package metadata"));
             }
             Event::DocType(_) => return Err(invalid("DOCTYPE in package metadata is unsupported")),
@@ -204,16 +258,30 @@ fn metadata(bytes: &[u8], ns: &[u8], root_name: &[u8]) -> Result<Vec<Entry>, IoE
 }
 
 fn content_types(package: &mut Package<'_>) -> Result<Vec<Entry>, IoError> {
-    let data = package.read_limited("[Content_Types].xml", MAX_META)?.ok_or_else(|| invalid("missing content types"))?;
+    let data = package
+        .read_limited("[Content_Types].xml", MAX_META)?
+        .ok_or_else(|| invalid("missing content types"))?;
     metadata(&data, CT_NS, b"Types")
 }
 
 fn check_type(types: &[Entry], path: &str, expected: &str) -> Result<(), IoError> {
-    let found = types.iter().find(|e| e.name == "Override" && e.attr("PartName").is_some_and(|p| normalize(p) == normalize(path))).or_else(|| {
-        types.iter().find(|e| {
-            e.name == "Default" && e.attr("Extension").is_some_and(|ext| path.rsplit('.').next().is_some_and(|p| p.eq_ignore_ascii_case(ext)))
+    let found = types
+        .iter()
+        .find(|e| {
+            e.name == "Override"
+                && e.attr("PartName")
+                    .is_some_and(|p| normalize(p) == normalize(path))
         })
-    });
+        .or_else(|| {
+            types.iter().find(|e| {
+                e.name == "Default"
+                    && e.attr("Extension").is_some_and(|ext| {
+                        path.rsplit('.')
+                            .next()
+                            .is_some_and(|p| p.eq_ignore_ascii_case(ext))
+                    })
+            })
+        });
     let actual = found.and_then(|e| e.attr("ContentType"));
     if actual != Some(expected) && !(expected == MAIN && actual == Some(BINARY_MAIN)) {
         return Err(invalid(format!("wrong or missing content type for {path}")));
@@ -223,27 +291,49 @@ fn check_type(types: &[Entry], path: &str, expected: &str) -> Result<(), IoError
 
 fn relationships(package: &mut Package<'_>, path: &str) -> Result<Vec<Rel>, IoError> {
     let (dir, file) = split_dir(path);
-    let relpath = if dir.is_empty() { format!("_rels/{file}.rels") } else { format!("{dir}/_rels/{file}.rels") };
-    let data = package.read_limited(&relpath, MAX_META)?.ok_or_else(|| invalid(format!("missing relationships for {path}")))?;
+    let relpath = if dir.is_empty() {
+        format!("_rels/{file}.rels")
+    } else {
+        format!("{dir}/_rels/{file}.rels")
+    };
+    let data = package
+        .read_limited(&relpath, MAX_META)?
+        .ok_or_else(|| invalid(format!("missing relationships for {path}")))?;
     let mut out: Vec<Rel> = vec![];
     for e in metadata(&data, REL_NS, b"Relationships")? {
         if e.name != "Relationship" {
             continue;
         }
-        let id = e.attr("Id").filter(|s| !s.is_empty()).ok_or_else(|| invalid("relationship has no ID"))?;
+        let id = e
+            .attr("Id")
+            .filter(|s| !s.is_empty())
+            .ok_or_else(|| invalid("relationship has no ID"))?;
         if out.iter().any(|r| r.id == id) {
             return Err(invalid("duplicate relationship ID"));
         }
-        let ty = e.attr("Type").ok_or_else(|| invalid("relationship has no type"))?;
+        let ty = e
+            .attr("Type")
+            .ok_or_else(|| invalid("relationship has no type"))?;
         let kind = ty
             .strip_prefix(REL_TYPE)
             .or_else(|| ty.strip_prefix(STRICT_REL_TYPE))
             .or_else(|| ty.strip_prefix(MS_REL_TYPE))
             .map(str::to_owned)
             .unwrap_or_else(|| format!("unsupported:{ty}"));
-        let target = e.attr("Target").ok_or_else(|| invalid("relationship has no target"))?;
+        let target = e
+            .attr("Target")
+            .ok_or_else(|| invalid("relationship has no target"))?;
         let external = e.attr("TargetMode") == Some("External");
-        out.push(Rel { id: id.into(), kind, target: if external { target.into() } else { resolve(dir, target) }, external });
+        out.push(Rel {
+            id: id.into(),
+            kind,
+            target: if external {
+                target.into()
+            } else {
+                resolve(dir, target)
+            },
+            external,
+        });
     }
     Ok(out)
 }
@@ -256,21 +346,42 @@ impl<'a> Bytes<'a> {
         Self { rest: bytes }
     }
     fn take(&mut self, n: usize) -> Result<&'a [u8], IoError> {
-        let out = self.rest.get(..n).ok_or_else(|| invalid("truncated record or string"))?;
-        self.rest = self.rest.get(n..).ok_or_else(|| invalid("truncated record"))?;
+        let out = self
+            .rest
+            .get(..n)
+            .ok_or_else(|| invalid("truncated record or string"))?;
+        self.rest = self
+            .rest
+            .get(n..)
+            .ok_or_else(|| invalid("truncated record"))?;
         Ok(out)
     }
     fn u8(&mut self) -> Result<u8, IoError> {
-        self.take(1)?.first().copied().ok_or_else(|| invalid("truncated byte"))
+        self.take(1)?
+            .first()
+            .copied()
+            .ok_or_else(|| invalid("truncated byte"))
     }
     fn u16(&mut self) -> Result<u16, IoError> {
-        Ok(u16::from_le_bytes(self.take(2)?.try_into().map_err(|_| invalid("truncated u16"))?))
+        Ok(u16::from_le_bytes(
+            self.take(2)?
+                .try_into()
+                .map_err(|_| invalid("truncated u16"))?,
+        ))
     }
     fn u32(&mut self) -> Result<u32, IoError> {
-        Ok(u32::from_le_bytes(self.take(4)?.try_into().map_err(|_| invalid("truncated u32"))?))
+        Ok(u32::from_le_bytes(
+            self.take(4)?
+                .try_into()
+                .map_err(|_| invalid("truncated u32"))?,
+        ))
     }
     fn f64(&mut self) -> Result<f64, IoError> {
-        let n = f64::from_le_bytes(self.take(8)?.try_into().map_err(|_| invalid("truncated number"))?);
+        let n = f64::from_le_bytes(
+            self.take(8)?
+                .try_into()
+                .map_err(|_| invalid("truncated number"))?,
+        );
         if !n.is_finite() {
             return Err(invalid("nonfinite numeric value"));
         }
@@ -282,18 +393,30 @@ impl<'a> Bytes<'a> {
             return Ok(None);
         }
         if count > max {
-            return Err(IoError::TooLarge("XLSB string length exceeds its limit".into()));
+            return Err(IoError::TooLarge(
+                "XLSB string length exceeds its limit".into(),
+            ));
         }
-        let size = (count as usize).checked_mul(2).ok_or_else(|| invalid("string length overflow"))?;
+        let size = (count as usize)
+            .checked_mul(2)
+            .ok_or_else(|| invalid("string length overflow"))?;
         let bytes = self.take(size)?;
         let mut text = String::new();
-        for ch in char::decode_utf16(bytes.as_chunks::<2>().0.iter().copied().map(u16::from_le_bytes)) {
+        for ch in char::decode_utf16(
+            bytes
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .copied()
+                .map(u16::from_le_bytes),
+        ) {
             text.push(ch.map_err(|_| invalid("invalid UTF-16 string"))?);
         }
         Ok(Some(text))
     }
     fn text(&mut self, max: u32) -> Result<String, IoError> {
-        self.string(max, false)?.ok_or_else(|| invalid("null string"))
+        self.string(max, false)?
+            .ok_or_else(|| invalid("null string"))
     }
     fn finish(self) -> Result<(), IoError> {
         if !self.rest.is_empty() {
@@ -310,13 +433,19 @@ struct Records<'a> {
 }
 impl<'a> Records<'a> {
     fn new(bytes: &'a [u8]) -> Self {
-        Self { bytes: Bytes::new(bytes), count: 0, blocks: vec![] }
+        Self {
+            bytes: Bytes::new(bytes),
+            count: 0,
+            blocks: vec![],
+        }
     }
     fn next(&mut self, report: &mut ReadReport) -> Result<Option<(u16, &'a [u8])>, IoError> {
         while !self.bytes.rest.is_empty() {
             self.count += 1;
             if self.count > MAX_RECORDS {
-                return Err(IoError::TooLarge("XLSB part contains too many records".into()));
+                return Err(IoError::TooLarge(
+                    "XLSB part contains too many records".into(),
+                ));
             }
             let first = self.bytes.u8()?;
             let id = if first & 0x80 == 0 {
@@ -355,7 +484,9 @@ impl<'a> Records<'a> {
                         return Err(invalid("extension blocks nested too deeply"));
                     }
                     self.blocks.push(id + 1);
-                    report.warn("Unsupported XLSB future-record and alternate-content blocks were skipped.");
+                    report.warn(
+                        "Unsupported XLSB future-record and alternate-content blocks were skipped.",
+                    );
                 }
                 36 | 38 => {
                     if self.blocks.pop() != Some(id) || !payload.is_empty() {
@@ -390,7 +521,11 @@ struct SheetInfo {
     rel: Option<String>,
     visibility: Visibility,
 }
-fn workbook(bytes: &[u8], wb: &mut Workbook, report: &mut ReadReport) -> Result<Vec<SheetInfo>, IoError> {
+fn workbook(
+    bytes: &[u8],
+    wb: &mut Workbook,
+    report: &mut ReadReport,
+) -> Result<Vec<SheetInfo>, IoError> {
     let mut records = Records::new(bytes);
     records.first(131, report)?;
     let mut sheets = vec![];
@@ -422,7 +557,11 @@ fn workbook(bytes: &[u8], wb: &mut Workbook, report: &mut ReadReport) -> Result<
                 b.finish()?;
             }
             153 => {
-                wb.date_system = if b.u32()? & 1 != 0 { DateSystem::D1904 } else { DateSystem::D1900 };
+                wb.date_system = if b.u32()? & 1 != 0 {
+                    DateSystem::D1904
+                } else {
+                    DateSystem::D1900
+                };
                 b.u32()?;
                 b.text(31)?;
                 b.finish()?;
@@ -447,7 +586,11 @@ fn workbook(bytes: &[u8], wb: &mut Workbook, report: &mut ReadReport) -> Result<
                 let rel = b.string(255, true)?;
                 let name = b.text(31)?;
                 b.finish()?;
-                sheets.push(SheetInfo { name, rel, visibility });
+                sheets.push(SheetInfo {
+                    name,
+                    rel,
+                    visibility,
+                });
             }
             _ => {}
         }
@@ -482,7 +625,11 @@ fn rich_string(b: &mut Bytes<'_>) -> Result<String, IoError> {
     Ok(text)
 }
 
-fn shared_strings(bytes: &[u8], budget: &mut Budget, report: &mut ReadReport) -> Result<Vec<Arc<str>>, IoError> {
+fn shared_strings(
+    bytes: &[u8],
+    budget: &mut Budget,
+    report: &mut ReadReport,
+) -> Result<Vec<Arc<str>>, IoError> {
     let mut records = Records::new(bytes);
     let Some((159, payload)) = records.next(report)? else {
         return Err(invalid("missing shared-string begin record"));
@@ -492,7 +639,9 @@ fn shared_strings(bytes: &[u8], budget: &mut Budget, report: &mut ReadReport) ->
     let unique = header.u32()?;
     header.finish()?;
     if unique > total || unique as usize > MAX_STRINGS {
-        return Err(IoError::TooLarge("invalid or oversized shared-string count".into()));
+        return Err(IoError::TooLarge(
+            "invalid or oversized shared-string count".into(),
+        ));
     }
     let mut strings = vec![];
     while let Some((id, payload)) = records.next(report)? {
@@ -551,12 +700,21 @@ fn cached_formula(b: &mut Bytes<'_>) -> Result<(), IoError> {
     b.take(extra as usize)?;
     Ok(())
 }
-fn value(id: u16, b: &mut Bytes<'_>, strings: &[Arc<str>], budget: &mut Budget) -> Result<Value, IoError> {
+fn value(
+    id: u16,
+    b: &mut Bytes<'_>,
+    strings: &[Arc<str>],
+    budget: &mut Budget,
+) -> Result<Value, IoError> {
     let value = match id {
         1 => Value::Empty,
         2 => {
             let rk = b.u32()?;
-            let n = if rk & 2 != 0 { ((rk as i32) >> 2) as f64 } else { f64::from_bits(u64::from(rk & !3) << 32) };
+            let n = if rk & 2 != 0 {
+                ((rk as i32) >> 2) as f64
+            } else {
+                f64::from_bits(u64::from(rk & !3) << 32)
+            };
             let n = if rk & 1 != 0 { n / 100.0 } else { n };
             if !n.is_finite() {
                 return Err(invalid("nonfinite RK number"));
@@ -567,11 +725,20 @@ fn value(id: u16, b: &mut Bytes<'_>, strings: &[Arc<str>], budget: &mut Budget) 
         4 | 10 => Value::Bool(boolean(b)?),
         5 | 9 => Value::Number(b.f64()?),
         6 | 8 | 62 => {
-            let s = if id == 62 { rich_string(b)? } else { b.text(32767)? };
+            let s = if id == 62 {
+                rich_string(b)?
+            } else {
+                b.text(32767)?
+            };
             budget.text(s.len())?;
             Value::Text(Arc::from(s))
         }
-        7 => Value::Text(strings.get(b.u32()? as usize).cloned().ok_or_else(|| invalid("shared-string index is out of bounds"))?),
+        7 => Value::Text(
+            strings
+                .get(b.u32()? as usize)
+                .cloned()
+                .ok_or_else(|| invalid("shared-string index is out of bounds"))?,
+        ),
         _ => return Err(invalid("unsupported cell record")),
     };
     if (8..=11).contains(&id) {
@@ -580,7 +747,13 @@ fn value(id: u16, b: &mut Bytes<'_>, strings: &[Arc<str>], budget: &mut Budget) 
     Ok(value)
 }
 
-fn worksheet(bytes: &[u8], name: &str, strings: &[Arc<str>], budget: &mut Budget, report: &mut ReadReport) -> Result<Sheet, IoError> {
+fn worksheet(
+    bytes: &[u8],
+    name: &str,
+    strings: &[Arc<str>],
+    budget: &mut Budget,
+    report: &mut ReadReport,
+) -> Result<Sheet, IoError> {
     let mut records = Records::new(bytes);
     records.first(129, report)?;
     let mut sheet = Sheet::new(name);
@@ -665,7 +838,9 @@ fn worksheet(bytes: &[u8], name: &str, strings: &[Arc<str>], budget: &mut Budget
                 if sheet.merges.len() >= 100_000 {
                     return Err(IoError::TooLarge("XLSB exceeds 100000 merges".into()));
                 }
-                sheet.merges.push(RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)));
+                sheet
+                    .merges
+                    .push(RangeRef::new(CellRef::new(r0, c0), CellRef::new(r1, c1)));
             }
             _ => {}
         }

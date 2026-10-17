@@ -30,7 +30,11 @@ pub struct MicData {
 
 impl MicData {
     pub fn new(backend: Box<dyn MicBackend>) -> Self {
-        MicData { backend, read_in_current_frame: false, samples: zeroed_box() }
+        MicData {
+            backend,
+            read_in_current_frame: false,
+            samples: zeroed_box(),
+        }
     }
 }
 
@@ -152,7 +156,7 @@ impl Tsc {
                     );
                 }
                 0xFFF
-            },
+            }
             1 => self.y_pos,
             2 => {
                 #[cfg(feature = "log")]
@@ -163,17 +167,23 @@ impl Tsc {
                     );
                 }
                 0xFFF
-            },
+            }
             3 => {
                 #[cfg(feature = "log")]
-                slog::debug!(self.logger, "Reading from unimplemented channel 3 (Z1-position)");
+                slog::debug!(
+                    self.logger,
+                    "Reading from unimplemented channel 3 (Z1-position)"
+                );
                 0xFFF
-            },
+            }
             4 => {
                 #[cfg(feature = "log")]
-                slog::debug!(self.logger, "Reading from unimplemented channel 4 (Z2-position)");
+                slog::debug!(
+                    self.logger,
+                    "Reading from unimplemented channel 4 (Z2-position)"
+                );
                 0xFFF
-            },
+            }
             5 => self.x_pos,
             6 => {
                 if value.single_ended_mode() {
@@ -211,7 +221,7 @@ impl Tsc {
                     }
                     0xFFF
                 }
-            },
+            }
             _ => {
                 #[cfg(feature = "log")]
                 if value.single_ended_mode() {
@@ -226,9 +236,13 @@ impl Tsc {
                     );
                 }
                 0xFFF
-            },
+            }
         };
-        (if value.res_8_bit() { result & !0xF } else { result }) << 3
+        (if value.res_8_bit() {
+            result & !0xF
+        } else {
+            result
+        }) << 3
     }
 
     pub(super) fn handle_byte(

@@ -27,7 +27,10 @@ pub const TAGS: u32 = 0x1254_C367;
 /// True for IDs that can only appear directly inside a Segment (or are the EBML/Segment headers):
 /// used to find the end of unknown-size elements.
 pub fn is_top_level(id: u32) -> bool {
-    matches!(id, EBML | SEGMENT | SEEK_HEAD | INFO | TRACKS | CLUSTER | CUES | ATTACHMENTS | CHAPTERS | TAGS)
+    matches!(
+        id,
+        EBML | SEGMENT | SEEK_HEAD | INFO | TRACKS | CLUSTER | CUES | ATTACHMENTS | CHAPTERS | TAGS
+    )
 }
 
 // SeekHead
@@ -65,7 +68,18 @@ pub const CODEC_STATE: u32 = 0xA4;
 pub const DISCARD_PADDING: u32 = 0x75A2;
 
 pub fn is_cluster_child(id: u32) -> bool {
-    matches!(id, TIMESTAMP | POSITION | PREV_SIZE | SIMPLE_BLOCK | BLOCK_GROUP | ENCRYPTED_BLOCK | SILENT_TRACKS | CRC32 | VOID)
+    matches!(
+        id,
+        TIMESTAMP
+            | POSITION
+            | PREV_SIZE
+            | SIMPLE_BLOCK
+            | BLOCK_GROUP
+            | ENCRYPTED_BLOCK
+            | SILENT_TRACKS
+            | CRC32
+            | VOID
+    )
 }
 
 // Tracks

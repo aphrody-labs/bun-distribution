@@ -58,14 +58,22 @@ pub fn plates(doc: &Document) -> Vec<Plate> {
         .map(|(i, n)| {
             let mut ink = [0.0; 4];
             ink[i] = 1.0;
-            Plate { name: (*n).into(), spot: false, rgb: c.cmyk_to_srgb(ink, false) }
+            Plate {
+                name: (*n).into(),
+                spot: false,
+                rgb: c.cmyk_to_srgb(ink, false),
+            }
         })
         .collect();
     for sw in doc.swatches_iter() {
         if let (true, Paint::Solid { color, .. }) = (sw.spot, &sw.paint)
             && !v.iter().any(|p| p.name == sw.name)
         {
-            v.push(Plate { name: sw.name.clone(), spot: true, rgb: c.display_rgb(&doc.linked_color(*color, true)) });
+            v.push(Plate {
+                name: sw.name.clone(),
+                spot: true,
+                rgb: c.display_rgb(&doc.linked_color(*color, true)),
+            });
         }
     }
     v
@@ -84,14 +92,28 @@ pub type Link<'a> = Option<(&'a str, f32)>;
 /// its tint; one linked to the Registration swatch prints its tint on every plate.
 pub fn inks(doc: &Document, c: &Cms, color: &Color, link: Link, intent: Intent) -> Inks {
     if let Some((REGISTRATION, tint)) = link {
-        return Inks { cmyk: [tint.clamp(0.0, 1.0); 4], spot: None, registration: true };
+        return Inks {
+            cmyk: [tint.clamp(0.0, 1.0); 4],
+            spot: None,
+            registration: true,
+        };
     }
     if let Some((name, tint)) = link
-        && doc.swatch(name).is_some_and(|s| s.spot && s.paint.color().is_some())
+        && doc
+            .swatch(name)
+            .is_some_and(|s| s.spot && s.paint.color().is_some())
     {
-        return Inks { cmyk: [0.0; 4], spot: Some((name.to_string(), tint.clamp(0.0, 1.0))), registration: false };
+        return Inks {
+            cmyk: [0.0; 4],
+            spot: Some((name.to_string(), tint.clamp(0.0, 1.0))),
+            registration: false,
+        };
     }
-    Inks { cmyk: c.to_cmyk(color, intent), spot: None, registration: false }
+    Inks {
+        cmyk: c.to_cmyk(color, intent),
+        spot: None,
+        registration: false,
+    }
 }
 
 /// Visits one colour: the colour, its swatch link and its tint, all of which it may change.
@@ -99,7 +121,11 @@ pub type ColorVisitor<'a> = dyn FnMut(&mut Color, &mut Option<String>, &mut f32)
 
 fn visit_paint(p: &mut Paint, f: &mut ColorVisitor) {
     match p {
-        Paint::Solid { color, swatch, tint } => f(color, swatch, tint),
+        Paint::Solid {
+            color,
+            swatch,
+            tint,
+        } => f(color, swatch, tint),
         Paint::Gradient(g) => {
             for s in &mut g.gradient.stops {
                 f(&mut s.color, &mut s.swatch, &mut s.tint);
@@ -143,7 +169,9 @@ pub fn visit_node_colors(n: &mut Node, f: &mut ColorVisitor) {
 /// Apply `f` to every colour of a node tree (fills, strokes, gradient stops, text runs, mesh
 /// points) given its swatch link and tint, keeping the links.
 pub fn map_node_colors(n: &mut Node, f: &mut dyn FnMut(&Color, Link) -> Color) {
-    visit_node_colors(n, &mut |c, swatch, tint| *c = f(c, swatch.as_deref().map(|s| (s, *tint))));
+    visit_node_colors(n, &mut |c, swatch, tint| {
+        *c = f(c, swatch.as_deref().map(|s| (s, *tint)))
+    });
 }
 
 /// Apply `f` to every colour in the document's art and symbol definitions.

@@ -12,7 +12,13 @@ pub struct ScanData {
 
 impl Default for ScanData {
     fn default() -> Self {
-        Self { ssid_len: 0, ssid: [0; 0x21], quality: 0, padding: 0, flags: 0 }
+        Self {
+            ssid_len: 0,
+            ssid: [0; 0x21],
+            quality: 0,
+            padding: 0,
+            flags: 0,
+        }
     }
 }
 

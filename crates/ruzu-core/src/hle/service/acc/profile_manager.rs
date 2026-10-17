@@ -537,37 +537,65 @@ mod tests {
                     let mut name = [0; PROFILE_USERNAME_SIZE];
                     name[..8].copy_from_slice(b"Homebrew");
                     for index in 0..count {
-                        assert_eq!(manager.create_new_user(index as u128 + 1, &name), super::RESULT_SUCCESS);
+                        assert_eq!(
+                            manager.create_new_user(index as u128 + 1, &name),
+                            super::RESULT_SUCCESS
+                        );
                     }
                     assert!(manager.remove_user(removed as u128 + 1));
                     let expected: Vec<_> = (1..=count as u128)
-                        .filter(|uuid| *uuid != removed as u128 + 1).collect();
+                        .filter(|uuid| *uuid != removed as u128 + 1)
+                        .collect();
                     assert_eq!(manager.user_count, expected.len());
-                    assert_eq!(&manager.get_all_users()[..expected.len()], expected.as_slice());
-                    assert!(manager.profiles[expected.len()..].iter().all(|p| p.user_uuid == 0));
+                    assert_eq!(
+                        &manager.get_all_users()[..expected.len()],
+                        expected.as_slice()
+                    );
+                    assert!(manager.profiles[expected.len()..]
+                        .iter()
+                        .all(|p| p.user_uuid == 0));
                     assert!(!manager.remove_user(removed as u128 + 1));
                     manager.write_user_save_file();
-                    let bytes = std::fs::read(std::path::Path::new(&root)
-                        .join("system/save/8000000000000010/su/avators/profiles.dat")).unwrap();
-                    assert!(bytes[0x10 + expected.len() * 0xc8..].iter().all(|b| *b == 0));
+                    let bytes = std::fs::read(
+                        std::path::Path::new(&root)
+                            .join("system/save/8000000000000010/su/avators/profiles.dat"),
+                    )
+                    .unwrap();
+                    assert!(bytes[0x10 + expected.len() * 0xc8..]
+                        .iter()
+                        .all(|b| *b == 0));
                     // Parse directly: the constructor deliberately creates a new
                     // default user when the last profile has been removed.
                     manager.profiles = Default::default();
                     manager.user_count = 0;
                     manager.parse_user_save_file();
                     assert_eq!(manager.user_count, expected.len());
-                    assert_eq!(&manager.get_all_users()[..expected.len()], expected.as_slice());
+                    assert_eq!(
+                        &manager.get_all_users()[..expected.len()],
+                        expected.as_slice()
+                    );
                 }
             }
             return;
         }
-        let root = std::env::temp_dir().join(format!("ruzu-profile-removal-{}-{}",
-            std::process::id(), std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let root = std::env::temp_dir().join(format!(
+            "ruzu-profile-removal-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         std::fs::create_dir(&root).unwrap();
         let status = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", std::thread::current().name().unwrap(), "--test-threads=1"])
-            .env(CHILD, &root).status().unwrap();
+            .args([
+                "--exact",
+                std::thread::current().name().unwrap(),
+                "--test-threads=1",
+            ])
+            .env(CHILD, &root)
+            .status()
+            .unwrap();
         std::fs::remove_dir_all(&root).unwrap();
         assert!(status.success());
     }

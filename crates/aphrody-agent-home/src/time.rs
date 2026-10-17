@@ -45,7 +45,9 @@ pub fn now_iso8601() -> String {
 #[must_use]
 pub fn file_stamp() -> String {
     let now = SystemTime::now();
-    let nanos = now.duration_since(UNIX_EPOCH).map_or(0, |d| d.subsec_nanos());
+    let nanos = now
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| d.subsec_nanos());
     let iso = iso8601(unix_secs(now)).replace([':', '-'], "");
     format!("{iso}-{}-{nanos:09}", std::process::id())
 }
@@ -64,6 +66,9 @@ mod tests {
     #[test]
     fn file_stamp_has_no_path_separators_or_colons() {
         let s = file_stamp();
-        assert!(!s.contains(':') && !s.contains('/') && !s.contains('\\'), "{s}");
+        assert!(
+            !s.contains(':') && !s.contains('/') && !s.contains('\\'),
+            "{s}"
+        );
     }
 }

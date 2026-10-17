@@ -10,7 +10,10 @@ use crate::bridge::t2b_value_to_json;
 
 /// Return the alphabetically first VFS path accepted by `predicate`.
 pub fn find_path(vfs: &Vfs, predicate: impl Fn(&str) -> bool) -> Option<String> {
-    vfs.iter().map(|(path, _)| path.to_string()).filter(|path| predicate(path)).min()
+    vfs.iter()
+        .map(|(path, _)| path.to_string())
+        .filter(|path| predicate(path))
+        .min()
 }
 
 /// Return the final component of a normalized VFS path.
@@ -30,7 +33,9 @@ pub fn load_rdbn(
     let bytes = vfs.read(&path).map_err(|error| error.to_string())?;
     let parsed = aphrody_nie_formats::cfgbin::parse(&bytes)
         .map_err(|error| format!("parse RDBN {path} : {error}"))?;
-    Ok(crate::bridge::rdbn_to_json(&aphrody_nie_formats::cfgbin::read_values(&parsed, &bytes)))
+    Ok(crate::bridge::rdbn_to_json(
+        &aphrody_nie_formats::cfgbin::read_values(&parsed, &bytes),
+    ))
 }
 
 /// Convert sibling T2B entries to the indexed JSON shape expected by `aphrody-nie-data`.
@@ -78,7 +83,9 @@ pub fn decode_cfgbin(vfs: &Vfs, path: &str) -> Result<Value, String> {
     if aphrody_nie_formats::cfgbin::is_rdbn(&bytes) {
         let parsed = aphrody_nie_formats::cfgbin::parse(&bytes)
             .map_err(|error| format!("parse RDBN {path}: {error}"))?;
-        Ok(crate::bridge::rdbn_to_json(&aphrody_nie_formats::cfgbin::read_values(&parsed, &bytes)))
+        Ok(crate::bridge::rdbn_to_json(
+            &aphrody_nie_formats::cfgbin::read_values(&parsed, &bytes),
+        ))
     } else {
         let parsed = aphrody_nie_formats::cfgbin::parse_t2b(&bytes)
             .map_err(|error| format!("parse T2B {path}: {error}"))?;
@@ -130,7 +137,9 @@ pub fn load_text(
     vfs: &Vfs,
     text_type: &str,
 ) -> Result<Vec<(aphrody_nie_data::HashId, String)>, String> {
-    Ok(aphrody_nie_data::text::parse_text_file(&load_text_json(vfs, text_type)?))
+    Ok(aphrody_nie_data::text::parse_text_file(&load_text_json(
+        vfs, text_type,
+    )?))
 }
 
 #[cfg(test)]
@@ -143,8 +152,10 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .expect("system clock")
             .as_nanos();
-        std::env::temp_dir()
-            .join(format!("nie-explore-{label}-{}-{stamp}.cfg.bin", std::process::id()))
+        std::env::temp_dir().join(format!(
+            "nie-explore-{label}-{}-{stamp}.cfg.bin",
+            std::process::id()
+        ))
     }
 
     fn overlay(bytes: &[u8], logical_path: &str) -> (Vfs, std::path::PathBuf) {
@@ -187,7 +198,10 @@ mod tests {
 
     #[test]
     fn base_names_are_transport_neutral() {
-        assert_eq!(base_name("data/common/text/fr/item_text.cfg.bin"), "item_text.cfg.bin");
+        assert_eq!(
+            base_name("data/common/text/fr/item_text.cfg.bin"),
+            "item_text.cfg.bin"
+        );
         assert_eq!(base_name("item_text.cfg.bin"), "item_text.cfg.bin");
     }
 

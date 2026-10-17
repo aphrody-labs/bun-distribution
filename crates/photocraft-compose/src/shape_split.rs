@@ -49,9 +49,20 @@ pub fn split(sh: &ShapeLayer, canvas: Rect, depth: SampleType) -> Option<(Surfac
         }
     }
     let fmt = PixelFormat::RGBA8.with_sample(depth);
-    let fill_only = ShapeLayer { stroke: None, cache: None, ..sh.clone() };
-    let stroke_only = ShapeLayer { fill: None, cache: None, ..sh.clone() };
-    let mut parts = (photocraft_vector::render_shape(&fill_only, fmt, canvas), photocraft_vector::render_shape(&stroke_only, fmt, canvas));
+    let fill_only = ShapeLayer {
+        stroke: None,
+        cache: None,
+        ..sh.clone()
+    };
+    let stroke_only = ShapeLayer {
+        fill: None,
+        cache: None,
+        ..sh.clone()
+    };
+    let mut parts = (
+        photocraft_vector::render_shape(&fill_only, fmt, canvas),
+        photocraft_vector::render_shape(&stroke_only, fmt, canvas),
+    );
     if let Some(cache) = &sh.cache {
         fit_stroke(&parts.0, &mut parts.1, cache, canvas);
     }
@@ -75,7 +86,10 @@ pub fn split(sh: &ShapeLayer, canvas: Rect, depth: SampleType) -> Option<(Surfac
 /// too dark.
 fn fit_stroke(fill: &Surface, stroke: &mut Surface, cache: &Surface, canvas: Rect) {
     // Where either has pixels (the stroke may reach past the shape's pixels, and vice versa).
-    let (cb, sb) = (crate::bounds::content_bounds(cache), crate::bounds::content_bounds(stroke));
+    let (cb, sb) = (
+        crate::bounds::content_bounds(cache),
+        crate::bounds::content_bounds(stroke),
+    );
     let r = if cb.is_empty() {
         sb
     } else if sb.is_empty() {
@@ -88,7 +102,11 @@ fn fit_stroke(fill: &Surface, stroke: &mut Surface, cache: &Surface, canvas: Rec
         return;
     }
     let n = r.width() as usize * r.height() as usize;
-    let (mut f, mut s, mut c) = (vec![[0.0f32; 4]; n], vec![[0.0f32; 4]; n], vec![[0.0f32; 4]; n]);
+    let (mut f, mut s, mut c) = (
+        vec![[0.0f32; 4]; n],
+        vec![[0.0f32; 4]; n],
+        vec![[0.0f32; 4]; n],
+    );
     fill.read_rgba_into(r, &mut f);
     stroke.read_rgba_into(r, &mut s);
     cache.read_rgba_into(r, &mut c);

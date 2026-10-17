@@ -34,12 +34,15 @@ pub struct Rel {
 }
 
 pub fn normalize(name: &str) -> String {
-    name.replace('\\', "/").trim_start_matches('/').to_ascii_lowercase()
+    name.replace('\\', "/")
+        .trim_start_matches('/')
+        .to_ascii_lowercase()
 }
 
 impl<'a> Package<'a> {
     pub fn open(bytes: &'a [u8]) -> Result<Package<'a>, IoError> {
-        let zip = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| IoError::Zip(e.to_string()))?;
+        let zip =
+            zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| IoError::Zip(e.to_string()))?;
         if zip.len() > MAX_ENTRIES {
             return Err(IoError::TooLarge(format!("{} zip entries", zip.len())));
         }
@@ -49,7 +52,11 @@ impl<'a> Package<'a> {
                 names.entry(normalize(n)).or_insert(i);
             }
         }
-        Ok(Package { zip, names, total: 0 })
+        Ok(Package {
+            zip,
+            names,
+            total: 0,
+        })
     }
 
     pub fn has(&self, part: &str) -> bool {
@@ -67,14 +74,23 @@ impl<'a> Package<'a> {
         let Some(&idx) = self.names.get(&normalize(part)) else {
             return Ok(None);
         };
-        let mut f = self.zip.by_index(idx).map_err(|e| IoError::Zip(format!("{part}: {e}")))?;
+        let mut f = self
+            .zip
+            .by_index(idx)
+            .map_err(|e| IoError::Zip(format!("{part}: {e}")))?;
         if f.size() > maximum {
-            return Err(IoError::TooLarge(format!("{part} expands to {} bytes", f.size())));
+            return Err(IoError::TooLarge(format!(
+                "{part} expands to {} bytes",
+                f.size()
+            )));
         }
         let remaining = MAX_TOTAL.saturating_sub(self.total);
         let limit = maximum.min(remaining);
         let mut out = Vec::with_capacity(f.size().min(16 * 1024 * 1024) as usize);
-        (&mut f).take(limit + 1).read_to_end(&mut out).map_err(|e| IoError::Zip(format!("{part}: {e}")))?;
+        (&mut f)
+            .take(limit + 1)
+            .read_to_end(&mut out)
+            .map_err(|e| IoError::Zip(format!("{part}: {e}")))?;
         if out.len() as u64 > limit {
             return Err(IoError::TooLarge(if remaining < maximum {
                 "package expands to more than 1 GB".into()
@@ -97,7 +113,11 @@ impl<'a> Package<'a> {
     /// broken rels parts give an empty list.
     pub fn rels(&mut self, part: &str) -> Result<Vec<Rel>, IoError> {
         let (dir, file) = split_dir(part);
-        let rels_name = if dir.is_empty() { format!("_rels/{file}.rels") } else { format!("{dir}/_rels/{file}.rels") };
+        let rels_name = if dir.is_empty() {
+            format!("_rels/{file}.rels")
+        } else {
+            format!("{dir}/_rels/{file}.rels")
+        };
         let root = match self.read(&rels_name)? {
             Some(b) => match xml::parse(&b) {
                 Ok(r) => r,
@@ -112,9 +132,20 @@ impl<'a> Package<'a> {
                 let ty = r.attr("Type").unwrap_or("");
                 let kind = ty.rsplit('/').next().unwrap_or("").to_string();
                 let target_raw = r.attr("Target")?;
-                let external = r.attr("TargetMode").is_some_and(|m| m.eq_ignore_ascii_case("External"));
-                let target = if external { target_raw.to_string() } else { resolve(dir, target_raw) };
-                Some(Rel { id, kind, target, external })
+                let external = r
+                    .attr("TargetMode")
+                    .is_some_and(|m| m.eq_ignore_ascii_case("External"));
+                let target = if external {
+                    target_raw.to_string()
+                } else {
+                    resolve(dir, target_raw)
+                };
+                Some(Rel {
+                    id,
+                    kind,
+                    target,
+                    external,
+                })
             })
             .collect())
     }
@@ -140,7 +171,11 @@ pub fn split_dir(part: &str) -> (&str, &str) {
 pub fn resolve(dir: &str, target: &str) -> String {
     let target = target.replace('\\', "/");
     let target = target.split('#').next().unwrap_or("").to_string();
-    let mut segs: Vec<&str> = if target.starts_with('/') { vec![] } else { dir.split('/').filter(|s| !s.is_empty()).collect() };
+    let mut segs: Vec<&str> = if target.starts_with('/') {
+        vec![]
+    } else {
+        dir.split('/').filter(|s| !s.is_empty()).collect()
+    };
     for s in target.split('/') {
         match s {
             "" | "." => {}
@@ -161,7 +196,9 @@ pub struct ZipOut {
 
 impl ZipOut {
     pub fn new() -> ZipOut {
-        ZipOut { zip: zip::ZipWriter::new(Cursor::new(Vec::new())) }
+        ZipOut {
+            zip: zip::ZipWriter::new(Cursor::new(Vec::new())),
+        }
     }
     pub fn add(&mut self, name: &str, data: &[u8]) -> Result<(), IoError> {
         let opts = zip::write::SimpleFileOptions::default()
@@ -169,12 +206,19 @@ impl ZipOut {
             .compression_level(Some(6))
             .last_modified_time(zip::DateTime::default())
             .large_file(data.len() as u64 >= u32::MAX as u64);
-        self.zip.start_file(name, opts).map_err(|e| IoError::Zip(e.to_string()))?;
-        self.zip.write_all(data).map_err(|e| IoError::Zip(e.to_string()))?;
+        self.zip
+            .start_file(name, opts)
+            .map_err(|e| IoError::Zip(e.to_string()))?;
+        self.zip
+            .write_all(data)
+            .map_err(|e| IoError::Zip(e.to_string()))?;
         Ok(())
     }
     pub fn finish(self) -> Result<Vec<u8>, IoError> {
-        self.zip.finish().map(|c| c.into_inner()).map_err(|e| IoError::Zip(e.to_string()))
+        self.zip
+            .finish()
+            .map(|c| c.into_inner())
+            .map_err(|e| IoError::Zip(e.to_string()))
     }
 }
 
@@ -184,9 +228,18 @@ mod tests {
 
     #[test]
     fn resolving() {
-        assert_eq!(resolve("xl", "worksheets/sheet1.xml"), "xl/worksheets/sheet1.xml");
-        assert_eq!(resolve("xl/worksheets", "../drawings/d1.xml"), "xl/drawings/d1.xml");
-        assert_eq!(resolve("xl/worksheets", "/xl/tables/t.xml"), "xl/tables/t.xml");
+        assert_eq!(
+            resolve("xl", "worksheets/sheet1.xml"),
+            "xl/worksheets/sheet1.xml"
+        );
+        assert_eq!(
+            resolve("xl/worksheets", "../drawings/d1.xml"),
+            "xl/drawings/d1.xml"
+        );
+        assert_eq!(
+            resolve("xl/worksheets", "/xl/tables/t.xml"),
+            "xl/tables/t.xml"
+        );
         assert_eq!(resolve("", "xl/workbook.xml"), "xl/workbook.xml");
         assert_eq!(resolve("a", "../../../x"), "x");
         assert_eq!(split_dir("xl/workbook.xml"), ("xl", "workbook.xml"));

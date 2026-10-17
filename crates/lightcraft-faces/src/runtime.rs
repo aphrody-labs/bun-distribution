@@ -54,7 +54,9 @@ pub struct Embedder {
 fn guarded<T>(what: &str, f: impl FnOnce() -> Result<T, RuntimeError>) -> Result<T, RuntimeError> {
     match catch_unwind(AssertUnwindSafe(f)) {
         Ok(r) => r,
-        Err(_) => Err(RuntimeError::Run(format!("the runtime gave up on this model while {what}"))),
+        Err(_) => Err(RuntimeError::Run(format!(
+            "the runtime gave up on this model while {what}"
+        ))),
     }
 }
 
@@ -64,30 +66,57 @@ impl Embedder {
         let OutputSpec::Embedding { dim } = manifest.output else {
             return Err(RuntimeError::Load("this is not a recognition model".into()));
         };
-        let (w, h) = (manifest.input.width as usize, manifest.input.height as usize);
+        let (w, h) = (
+            manifest.input.width as usize,
+            manifest.input.height as usize,
+        );
         let started = Instant::now();
         crate::manifest::validate(manifest).map_err(|e| RuntimeError::Load(e.to_string()))?;
         let mut file = std::fs::File::open(path).map_err(|e| RuntimeError::Load(e.to_string()))?;
-        let length = file.metadata().map_err(|e| RuntimeError::Load(e.to_string()))?.len();
+        let length = file
+            .metadata()
+            .map_err(|e| RuntimeError::Load(e.to_string()))?
+            .len();
         if length == 0 || length > 512 * 1024 * 1024 {
-            return Err(RuntimeError::Load("the model file is empty or exceeds 512 MiB".into()));
+            return Err(RuntimeError::Load(
+                "the model file is empty or exceeds 512 MiB".into(),
+            ));
         }
         let mut bytes = Vec::new();
         bytes
-            .try_reserve_exact(usize::try_from(length).map_err(|_| RuntimeError::Load("model size overflow".into()))?)
+            .try_reserve_exact(
+                usize::try_from(length)
+                    .map_err(|_| RuntimeError::Load("model size overflow".into()))?,
+            )
             .map_err(|_| RuntimeError::Load("not enough memory for the model".into()))?;
         use std::io::Read;
-        (&mut file).take(512 * 1024 * 1024 + 1).read_to_end(&mut bytes).map_err(|e| RuntimeError::Load(e.to_string()))?;
+        (&mut file)
+            .take(512 * 1024 * 1024 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|e| RuntimeError::Load(e.to_string()))?;
         let graph = graph::load(&bytes).map_err(|e| RuntimeError::Load(e.to_string()))?;
-        let input = graph.inputs.first().ok_or_else(|| RuntimeError::Load("no input".into()))?;
+        let input = graph
+            .inputs
+            .first()
+            .ok_or_else(|| RuntimeError::Load("no input".into()))?;
         let want = [1, 3, h, w];
         if input.1.len() != 4 || input.1.iter().zip(want).any(|(&d, w)| d != 0 && d != w) {
-            return Err(RuntimeError::Load("the graph input differs from the manifest's [1,3,H,W]".into()));
+            return Err(RuntimeError::Load(
+                "the graph input differs from the manifest's [1,3,H,W]".into(),
+            ));
         }
         let plan = Net::new(graph).map_err(|e| RuntimeError::Load(e.to_string()))?;
-        let shapes = plan.validate_input(&want).map_err(|e| RuntimeError::Load(e.to_string()))?;
-        if shapes.len() != 1 || shapes.first().is_none_or(|s| s.first() != Some(&1) || s.iter().product::<usize>() != dim as usize) {
-            return Err(RuntimeError::Load("the graph output differs from the manifest's embedding dimension".into()));
+        let shapes = plan
+            .validate_input(&want)
+            .map_err(|e| RuntimeError::Load(e.to_string()))?;
+        if shapes.len() != 1
+            || shapes.first().is_none_or(|s| {
+                s.first() != Some(&1) || s.iter().product::<usize>() != dim as usize
+            })
+        {
+            return Err(RuntimeError::Load(
+                "the graph output differs from the manifest's embedding dimension".into(),
+            ));
         }
         Ok(Embedder {
             plan: Arc::new(plan),
@@ -111,38 +140,72 @@ impl Embedder {
     /// The face as a unit-length vector. `rgb` is an aligned face at exactly [`Self::input_size`], 8-bit RGB.
     pub fn embed(&self, rgb: &[u8]) -> Result<Vec<f32>, RuntimeError> {
         if rgb.len() != self.width * self.height * 3 {
-            return Err(RuntimeError::Input("the face picture is not the size the model wants".into()));
+            return Err(RuntimeError::Input(
+                "the face picture is not the size the model wants".into(),
+            ));
         }
-        let (mean, std, bgr) = (self.manifest.input.mean, self.manifest.input.std, self.manifest.input.colour == Colour::Bgr);
+        let (mean, std, bgr) = (
+            self.manifest.input.mean,
+            self.manifest.input.std,
+            self.manifest.input.colour == Colour::Bgr,
+        );
         let plane = self.width * self.height;
         let mut data = vec![0.0f32; 3 * plane];
         for (i, px) in rgb.as_chunks::<3>().0.iter().enumerate() {
             for c in 0..3 {
                 let src = if bgr { 2 - c } else { c };
-                if let (Some(v), Some(m), Some(s), Some(o)) = (px.get(src), mean.get(c), std.get(c), data.get_mut(c * plane + i)) {
+                if let (Some(v), Some(m), Some(s), Some(o)) = (
+                    px.get(src),
+                    mean.get(c),
+                    std.get(c),
+                    data.get_mut(c * plane + i),
+                ) {
                     *o = (f32::from(*v) - m) / s;
                 }
             }
         }
         let out = guarded("running it", || {
-            let input = Tensor::new(vec![1, 3, self.height, self.width], data).map_err(|e| RuntimeError::Input(e.to_string()))?;
-            let mut result = self.plan.run(input).map_err(|e| RuntimeError::Run(e.to_string()))?;
+            let input = Tensor::new(vec![1, 3, self.height, self.width], data)
+                .map_err(|e| RuntimeError::Input(e.to_string()))?;
+            let mut result = self
+                .plan
+                .run(input)
+                .map_err(|e| RuntimeError::Run(e.to_string()))?;
             if result.len() != 1 {
-                return Err(RuntimeError::Run("the model must give one embedding".into()));
+                return Err(RuntimeError::Run(
+                    "the model must give one embedding".into(),
+                ));
             }
-            Ok(result.pop().ok_or_else(|| RuntimeError::Run("no output".into()))?.1.data)
+            Ok(result
+                .pop()
+                .ok_or_else(|| RuntimeError::Run("no output".into()))?
+                .1
+                .data)
         })?;
         if out.len() != self.dim {
-            return Err(RuntimeError::Run(format!("the model gave {} numbers per face, not the {} its description says", out.len(), self.dim)));
+            return Err(RuntimeError::Run(format!(
+                "the model gave {} numbers per face, not the {} its description says",
+                out.len(),
+                self.dim
+            )));
         }
         if out.iter().any(|v| !v.is_finite()) {
-            return Err(RuntimeError::Run("the model gave numbers that are not finite".into()));
+            return Err(RuntimeError::Run(
+                "the model gave numbers that are not finite".into(),
+            ));
         }
-        let norm = out.iter().map(|&v| f64::from(v).powi(2)).sum::<f64>().sqrt();
+        let norm = out
+            .iter()
+            .map(|&v| f64::from(v).powi(2))
+            .sum::<f64>()
+            .sqrt();
         if !norm.is_finite() || norm < 1e-9 {
             return Err(RuntimeError::Run("the model gave an all-zero face".into()));
         }
-        Ok(out.into_iter().map(|v| (f64::from(v) / norm) as f32).collect())
+        Ok(out
+            .into_iter()
+            .map(|v| (f64::from(v) / norm) as f32)
+            .collect())
     }
 
     /// Check the model does something sensible before it is ever used on a photo: the right number of finite
@@ -161,7 +224,11 @@ impl Embedder {
             })
             .collect();
         let gradient: Vec<u8> = (0..n)
-            .map(|i| (((i / 3) % self.width + (i / 3) / self.width) * 255 / (self.width + self.height) + (i % 3) * 40).min(255) as u8)
+            .map(|i| {
+                (((i / 3) % self.width + (i / 3) / self.width) * 255 / (self.width + self.height)
+                    + (i % 3) * 40)
+                    .min(255) as u8
+            })
             .collect();
         let mut times = Vec::new();
         let mut run = |img: &[u8]| {
@@ -175,10 +242,18 @@ impl Embedder {
         match (&a, &a2, &b) {
             (Ok(a), Ok(a2), Ok(b)) => {
                 checks.push((format!("gives {} finite numbers per face", a.len()), true));
-                checks.push(("gives the same face for the same picture".into(), dot(a, a2) > 0.9999));
-                checks.push(("gives different faces for different pictures".into(), dot(a, b) < 0.9995));
+                checks.push((
+                    "gives the same face for the same picture".into(),
+                    dot(a, a2) > 0.9999,
+                ));
+                checks.push((
+                    "gives different faces for different pictures".into(),
+                    dot(a, b) < 0.9995,
+                ));
             }
-            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => checks.push((format!("runs: {e}"), false)),
+            (Err(e), _, _) | (_, Err(e), _) | (_, _, Err(e)) => {
+                checks.push((format!("runs: {e}"), false))
+            }
         }
         times.sort_by(|x, y| x.total_cmp(y));
         SelfTest {
@@ -215,7 +290,10 @@ mod tests {
     }
 
     fn temp_model(name: &str, bytes: &[u8]) -> std::path::PathBuf {
-        let p = std::env::temp_dir().join(format!("lc-faces-runtime-{name}-{}.onnx", std::process::id()));
+        let p = std::env::temp_dir().join(format!(
+            "lc-faces-runtime-{name}-{}.onnx",
+            std::process::id()
+        ));
         std::fs::write(&p, bytes).unwrap();
         p
     }
@@ -227,7 +305,10 @@ mod tests {
         assert_eq!(e.input_size(), (112, 112));
         let v = e.embed(&vec![100u8; 112 * 112 * 3]).unwrap();
         assert_eq!(v.len(), 16);
-        assert!((v.iter().map(|x| x * x).sum::<f32>() - 1.0).abs() < 1e-4, "unit length");
+        assert!(
+            (v.iter().map(|x| x * x).sum::<f32>() - 1.0).abs() < 1e-4,
+            "unit length"
+        );
         let t = e.self_test();
         assert!(t.ok, "{t:?}");
         assert_eq!(t.dimension, 16);
@@ -242,15 +323,27 @@ mod tests {
         // the manifest promises 32 numbers, the model gives 16
         assert!(Embedder::load(&p, &manifest(32)).is_err());
         // not a model, an empty file, a graph with no layers, a detector-shaped manifest
-        for (name, bytes) in [("junk", b"nonsense".to_vec()), ("empty", Vec::new()), ("nolayers", crate::synthetic::embedder_model(16))] {
+        for (name, bytes) in [
+            ("junk", b"nonsense".to_vec()),
+            ("empty", Vec::new()),
+            ("nolayers", crate::synthetic::embedder_model(16)),
+        ] {
             let q = temp_model(name, &bytes);
             assert!(Embedder::load(&q, &manifest(16)).is_err(), "{name}");
             let _ = std::fs::remove_file(q);
         }
         let mut detector = manifest(16);
-        detector.output = OutputSpec::Detector { decoder: "yunet-v2".into() };
+        detector.output = OutputSpec::Detector {
+            decoder: "yunet-v2".into(),
+        };
         assert!(Embedder::load(&p, &detector).is_err());
-        assert!(Embedder::load(&std::env::temp_dir().join("does-not-exist.onnx"), &manifest(16)).is_err());
+        assert!(
+            Embedder::load(
+                &std::env::temp_dir().join("does-not-exist.onnx"),
+                &manifest(16)
+            )
+            .is_err()
+        );
         let _ = std::fs::remove_file(p);
     }
 
@@ -280,14 +373,23 @@ mod tests {
     #[test]
     #[ignore = "needs real model files: set LC_FACE_MODELS"]
     fn real_models_pass_the_self_test() {
-        let Some(dir) = std::env::var_os("LC_FACE_MODELS") else { return };
+        let Some(dir) = std::env::var_os("LC_FACE_MODELS") else {
+            return;
+        };
         for entry in std::fs::read_dir(dir).unwrap().flatten() {
             let path = entry.path();
-            let Ok(sha) = crate::hash::sha256_file(&path) else { continue };
-            let Some(m) = crate::known::lookup(&sha).filter(|m| m.role == Role::Embedder) else { continue };
+            let Ok(sha) = crate::hash::sha256_file(&path) else {
+                continue;
+            };
+            let Some(m) = crate::known::lookup(&sha).filter(|m| m.role == Role::Embedder) else {
+                continue;
+            };
             let e = Embedder::load(&path, &m).unwrap();
             let t = e.self_test();
-            println!("{}: ok {} | load {:.0} ms | {:.0} ms per face | {} numbers | {:?}", m.id, t.ok, t.load_ms, t.embed_ms, t.dimension, t.checks);
+            println!(
+                "{}: ok {} | load {:.0} ms | {:.0} ms per face | {} numbers | {:?}",
+                m.id, t.ok, t.load_ms, t.embed_ms, t.dimension, t.checks
+            );
             assert!(t.ok);
         }
     }
@@ -317,7 +419,10 @@ mod tests {
     }
     #[test]
     fn invalid_manifest_numbers_are_rejected_before_preprocessing() {
-        let p = temp_model("invalid-manifest", &crate::synthetic::tiny_embedder_model(16));
+        let p = temp_model(
+            "invalid-manifest",
+            &crate::synthetic::tiny_embedder_model(16),
+        );
         for case in 0..5 {
             let mut m = manifest(16);
             match case {

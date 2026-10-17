@@ -7,7 +7,14 @@
 //! finite and sane, and a malformed file is an error, never a panic. Detection and recognition run
 //! on the same checked, single-thread pure-Rust CPU interpreter.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod align;
 pub mod catalog;
@@ -23,4 +30,7 @@ pub mod suggest;
 pub mod synthetic;
 pub mod yunet;
 
-pub use manifest::{Colour, Commercial, InputSpec, Licence, ManifestError, ModelManifest, OutputSpec, Resize, Role, Thresholds};
+pub use manifest::{
+    Colour, Commercial, InputSpec, Licence, ManifestError, ModelManifest, OutputSpec, Resize, Role,
+    Thresholds,
+};

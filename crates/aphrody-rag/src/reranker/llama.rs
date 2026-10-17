@@ -35,10 +35,17 @@ impl LlamaServerReranker {
             format!("{}/v1/rerank", raw.trim_end_matches('/'))
         };
 
-        let client =
-            reqwest::Client::builder().timeout(Duration::from_secs(60)).build().unwrap_or_default();
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(60))
+            .build()
+            .unwrap_or_default();
 
-        Self { endpoint_url, model_id: model_id.into(), client, api_key: None }
+        Self {
+            endpoint_url,
+            model_id: model_id.into(),
+            client,
+            api_key: None,
+        }
     }
 
     /// Set an optional API key / bearer token.
@@ -113,7 +120,10 @@ impl Reranker for LlamaServerReranker {
 
         if !resp.status().is_success() {
             let status = resp.status();
-            let body = resp.text().await.unwrap_or_else(|_| "<unreadable body>".to_string());
+            let body = resp
+                .text()
+                .await
+                .unwrap_or_else(|_| "<unreadable body>".to_string());
             return Err(RagError::RerankFailed(format!(
                 "Reranker endpoint error {status}: {body}"
             )));

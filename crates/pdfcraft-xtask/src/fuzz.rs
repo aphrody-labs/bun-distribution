@@ -29,7 +29,10 @@ use anyhow::{Result, bail};
 use crate::gates::{release_cli, root};
 
 fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).map(String::as_str)
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .map(String::as_str)
 }
 
 /// xorshift64*: small, deterministic, good enough for mutation choices.
@@ -44,7 +47,11 @@ impl Rng {
         self.0.wrapping_mul(0x2545_F491_4F6C_DD1D)
     }
     fn below(&mut self, n: usize) -> usize {
-        if n == 0 { 0 } else { (self.next() % n as u64) as usize }
+        if n == 0 {
+            0
+        } else {
+            (self.next() % n as u64) as usize
+        }
     }
 }
 
@@ -119,8 +126,17 @@ fn mutate(rng: &mut Rng, seed: &[u8], other: &[u8]) -> Vec<u8> {
             7 => {
                 // Replace a run of digits with an extreme number.
                 if let Some(start) = d[at..].iter().position(u8::is_ascii_digit).map(|p| p + at) {
-                    let end = d[start..].iter().position(|c| !c.is_ascii_digit()).map_or(d.len(), |p| p + start);
-                    let v: &[u8] = [&b"0"[..], b"4294967295", b"9223372036854775807", b"65535", b"1"][rng.below(5)];
+                    let end = d[start..]
+                        .iter()
+                        .position(|c| !c.is_ascii_digit())
+                        .map_or(d.len(), |p| p + start);
+                    let v: &[u8] = [
+                        &b"0"[..],
+                        b"4294967295",
+                        b"9223372036854775807",
+                        b"65535",
+                        b"1",
+                    ][rng.below(5)];
                     d.splice(start..end, v.iter().copied());
                 }
             }
@@ -155,15 +171,26 @@ fn synthetic_seeds() -> Vec<Vec<u8>> {
             out.extend_from_slice(format!("{} 0 obj\n{o}\nendobj\n", i + 1).as_bytes());
         }
         let x = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes(),
+        );
         for o in offs {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} {trailer} >>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} {trailer} >>\nstartxref\n{x}\n%%EOF\n",
+                objs.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     };
     let content = "BT /F1 24 Tf 20 150 Td (Hello) Tj ET 0 0 1 rg 10 10 50 50 re f q 20 0 0 20 100 100 cm BI /W 2 /H 2 /BPC 8 /CS /G ID \u{0}\u{ff}\u{ff}\u{0} EI Q";
-    let stream = format!("<< /Length {} >>\nstream\n{content}\nendstream", content.len());
+    let stream = format!(
+        "<< /Length {} >>\nstream\n{content}\nendstream",
+        content.len()
+    );
     vec![
         build(
             &[
@@ -192,26 +219,52 @@ fn synthetic_seeds() -> Vec<Vec<u8>> {
 }
 
 fn seeds() -> Vec<(String, Vec<u8>)> {
-    let mut out: Vec<(String, Vec<u8>)> = synthetic_seeds().into_iter().enumerate().map(|(i, b)| (format!("synthetic-{i}"), b)).collect();
+    let mut out: Vec<(String, Vec<u8>)> = synthetic_seeds()
+        .into_iter()
+        .enumerate()
+        .map(|(i, b)| (format!("synthetic-{i}"), b))
+        .collect();
     // Seeds the corpus sweep already knows to hang only rediscover that hang.
-    let known_hangs: std::collections::HashSet<String> = std::fs::read_to_string(root().join("xtask/baselines/pdfjs.json"))
-        .ok()
-        .and_then(|t| serde_json::from_str::<std::collections::BTreeMap<String, String>>(&t).ok())
-        .map(|m| m.into_iter().filter(|(_, v)| v == "timeout").map(|(k, _)| k).collect())
-        .unwrap_or_default();
+    let known_hangs: std::collections::HashSet<String> =
+        std::fs::read_to_string(root().join("xtask/baselines/pdfjs.json"))
+            .ok()
+            .and_then(|t| {
+                serde_json::from_str::<std::collections::BTreeMap<String, String>>(&t).ok()
+            })
+            .map(|m| {
+                m.into_iter()
+                    .filter(|(_, v)| v == "timeout")
+                    .map(|(k, _)| k)
+                    .collect()
+            })
+            .unwrap_or_default();
     let dir = root().join("corpus/pdfjs/test/pdfs");
     if let Ok(rd) = std::fs::read_dir(&dir) {
-        let mut files: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.extension().is_some_and(|e| e == "pdf")).collect();
+        let mut files: Vec<PathBuf> = rd
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|e| e == "pdf"))
+            .collect();
         files.sort();
         for f in files {
-            let name = f.file_name().unwrap_or_default().to_string_lossy().into_owned();
+            let name = f
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
             if known_hangs.contains(&name) {
                 continue;
             }
             if let Ok(b) = std::fs::read(&f)
                 && b.len() <= 64 * 1024
             {
-                out.push((f.file_name().unwrap_or_default().to_string_lossy().into_owned(), b));
+                out.push((
+                    f.file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned(),
+                    b,
+                ));
             }
         }
     }
@@ -235,7 +288,11 @@ const CHILD_ADDRESS_SPACE_KIB: u64 = 4 * 1024 * 1024;
 fn child_command(exe: &Path) -> Command {
     if cfg!(any(target_os = "linux", target_os = "freebsd")) {
         let mut c = Command::new("sh");
-        c.args(["-c", &format!("ulimit -v {CHILD_ADDRESS_SPACE_KIB} && exec \"$0\" \"$@\"")]).arg(exe);
+        c.args([
+            "-c",
+            &format!("ulimit -v {CHILD_ADDRESS_SPACE_KIB} && exec \"$0\" \"$@\""),
+        ])
+        .arg(exe);
         c
     } else {
         Command::new(exe)
@@ -243,9 +300,20 @@ fn child_command(exe: &Path) -> Command {
 }
 
 fn run_one(exe: &Path, file: &Path, timeout: Duration) -> (Outcome, String) {
-    let child =
-        child_command(exe).args(["check-one", &file.to_string_lossy(), "--dpi", "18", "--edit"]).stdout(Stdio::null()).stderr(Stdio::piped()).spawn();
-    let Ok(mut child) = child else { return (Outcome::Ok, String::new()) };
+    let child = child_command(exe)
+        .args([
+            "check-one",
+            &file.to_string_lossy(),
+            "--dpi",
+            "18",
+            "--edit",
+        ])
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn();
+    let Ok(mut child) = child else {
+        return (Outcome::Ok, String::new());
+    };
     let start = Instant::now();
     loop {
         match child.try_wait() {
@@ -261,14 +329,21 @@ fn run_one(exe: &Path, file: &Path, timeout: Duration) -> (Outcome, String) {
                 // Keep the first panic location or abort message: it identifies the bug.
                 let what = err
                     .lines()
-                    .find(|l| l.contains("panicked at") || l.contains("overflow") || l.contains("fatal") || l.contains("memory allocation"))
+                    .find(|l| {
+                        l.contains("panicked at")
+                            || l.contains("overflow")
+                            || l.contains("fatal")
+                            || l.contains("memory allocation")
+                    })
                     .unwrap_or("")
                     .trim();
                 // Drop the per-process thread id ("thread 'main' (12345)") so runs compare equal.
                 let what: String = what
                     .split(" (")
                     .map(|part| match part.split_once(')') {
-                        Some((id, rest)) if id.chars().all(|c| c.is_ascii_digit()) => rest.to_string(),
+                        Some((id, rest)) if id.chars().all(|c| c.is_ascii_digit()) => {
+                            rest.to_string()
+                        }
                         _ => format!(" ({part}"),
                     })
                     .collect::<String>()
@@ -288,7 +363,14 @@ fn run_one(exe: &Path, file: &Path, timeout: Duration) -> (Outcome, String) {
 }
 
 /// Remove chunks while the input still fails with the same outcome and message.
-fn minimize(exe: &Path, work: &Path, data: Vec<u8>, outcome: Outcome, what: &str, timeout: Duration) -> Vec<u8> {
+fn minimize(
+    exe: &Path,
+    work: &Path,
+    data: Vec<u8>,
+    outcome: Outcome,
+    what: &str,
+    timeout: Duration,
+) -> Vec<u8> {
     let mut best = data;
     let mut chunk = best.len() / 2;
     let mut tries = 0;
@@ -321,11 +403,18 @@ fn minimize(exe: &Path, work: &Path, data: Vec<u8>, outcome: Outcome, what: &str
 
 pub fn run(args: &[String]) -> Result<()> {
     let time = Duration::from_secs(flag(args, "--time").unwrap_or("300").parse()?);
-    let iterations: usize = flag(args, "--iterations").map(str::parse).transpose()?.unwrap_or(usize::MAX);
+    let iterations: usize = flag(args, "--iterations")
+        .map(str::parse)
+        .transpose()?
+        .unwrap_or(usize::MAX);
     let seed: u64 = flag(args, "--seed").unwrap_or("1").parse()?;
     // Half the cores by default: a saturated machine turns slow inputs into false hangs.
-    let jobs: usize =
-        flag(args, "--jobs").map(str::parse).transpose()?.unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| (n.get() / 2).max(1)));
+    let jobs: usize = flag(args, "--jobs")
+        .map(str::parse)
+        .transpose()?
+        .unwrap_or_else(|| {
+            std::thread::available_parallelism().map_or(2, |n| (n.get() / 2).max(1))
+        });
     let timeout = Duration::from_secs(flag(args, "--timeout").unwrap_or("10").parse()?);
 
     let status = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
@@ -346,7 +435,12 @@ pub fn run(args: &[String]) -> Result<()> {
     std::fs::create_dir_all(&work)?;
     std::fs::create_dir_all(&findings)?;
     let seeds = Arc::new(seeds());
-    println!("fuzz: {} seeds, {jobs} jobs, {} s, timeout {} s, seed {seed}", seeds.len(), time.as_secs(), timeout.as_secs());
+    println!(
+        "fuzz: {} seeds, {jobs} jobs, {} s, timeout {} s, seed {seed}",
+        seeds.len(),
+        time.as_secs(),
+        timeout.as_secs()
+    );
 
     let done = Arc::new(AtomicUsize::new(0));
     let found: Arc<Mutex<Vec<(Outcome, String, String)>>> = Arc::default();
@@ -356,8 +450,15 @@ pub fn run(args: &[String]) -> Result<()> {
     let start = Instant::now();
     std::thread::scope(|s| {
         for job in 0..jobs {
-            let (seeds, done, found, exe, work, findings, solo) =
-                (seeds.clone(), done.clone(), found.clone(), exe.clone(), work.clone(), findings.clone(), solo.clone());
+            let (seeds, done, found, exe, work, findings, solo) = (
+                seeds.clone(),
+                done.clone(),
+                found.clone(),
+                exe.clone(),
+                work.clone(),
+                findings.clone(),
+                solo.clone(),
+            );
             s.spawn(move || {
                 let mut rng = Rng(seed.wrapping_mul(0x9E37_79B9_7F4A_7C15).wrapping_add(job as u64 + 1) | 1);
                 let file = work.join(format!("job{job}.pdf"));
@@ -423,5 +524,7 @@ pub fn run(args: &[String]) -> Result<()> {
 }
 
 fn fxhash(b: &[u8]) -> u64 {
-    b.iter().fold(0xcbf2_9ce4_8422_2325u64, |h, x| (h ^ u64::from(*x)).wrapping_mul(0x100_0000_01b3))
+    b.iter().fold(0xcbf2_9ce4_8422_2325u64, |h, x| {
+        (h ^ u64::from(*x)).wrapping_mul(0x100_0000_01b3)
+    })
 }

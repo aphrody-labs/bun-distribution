@@ -33,8 +33,12 @@ impl PieceTable {
         if lcb == 0 {
             return Err(DocbinError::Malformed("empty Clx".into()));
         }
-        let end = fc.checked_add(lcb).ok_or_else(|| DocbinError::Malformed("Clx offset overflow".into()))?;
-        let clx = table.get(fc..end).ok_or_else(|| DocbinError::Malformed(format!("Clx at {fc}+{lcb} is outside the Table stream")))?;
+        let end = fc
+            .checked_add(lcb)
+            .ok_or_else(|| DocbinError::Malformed("Clx offset overflow".into()))?;
+        let clx = table.get(fc..end).ok_or_else(|| {
+            DocbinError::Malformed(format!("Clx at {fc}+{lcb} is outside the Table stream"))
+        })?;
         // A Clx is an array of Prc (clxt 0x01, each holding a grpprl that Prm1 values can
         // reference) followed by the Pcdt (clxt 0x02) that holds the piece table.
         let mut prc_grpprls = Vec::new();
@@ -49,7 +53,10 @@ impl PieceTable {
                         .get(i + 1..i + 3)
                         .map(|b| u16::from_le_bytes([b[0], b[1]]) as usize)
                         .ok_or_else(|| DocbinError::Malformed("truncated Prc".into()))?;
-                    let stop = i.checked_add(3).and_then(|v| v.checked_add(cb)).ok_or_else(|| DocbinError::Malformed("Prc size overflow".into()))?;
+                    let stop = i
+                        .checked_add(3)
+                        .and_then(|v| v.checked_add(cb))
+                        .ok_or_else(|| DocbinError::Malformed("Prc size overflow".into()))?;
                     if let Some(g) = clx.get(i + 3..stop)
                         && prc_grpprls.len() < MAX_PIECES
                     {
@@ -62,16 +69,29 @@ impl PieceTable {
                         .get(i + 1..i + 5)
                         .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]) as usize)
                         .ok_or_else(|| DocbinError::Malformed("truncated Pcdt".into()))?;
-                    let start = i.checked_add(5).ok_or_else(|| DocbinError::Malformed("Pcdt offset overflow".into()))?;
-                    let stop = start.checked_add(lcb_plc).ok_or_else(|| DocbinError::Malformed("Pcdt size overflow".into()))?;
-                    break clx.get(start..stop).ok_or_else(|| DocbinError::Malformed("PlcPcd is outside the Clx".into()))?;
+                    let start = i
+                        .checked_add(5)
+                        .ok_or_else(|| DocbinError::Malformed("Pcdt offset overflow".into()))?;
+                    let stop = start
+                        .checked_add(lcb_plc)
+                        .ok_or_else(|| DocbinError::Malformed("Pcdt size overflow".into()))?;
+                    break clx.get(start..stop).ok_or_else(|| {
+                        DocbinError::Malformed("PlcPcd is outside the Clx".into())
+                    })?;
                 }
-                other => return Err(DocbinError::Malformed(format!("unexpected Clx item 0x{other:02X}"))),
+                other => {
+                    return Err(DocbinError::Malformed(format!(
+                        "unexpected Clx item 0x{other:02X}"
+                    )));
+                }
             }
         };
         // PlcPcd: aCp[n+1] u32s followed by aPcd[n] Pcds (8 bytes each).
         if plc.len() < 4 || (plc.len() - 4) % 12 != 0 {
-            return Err(DocbinError::Malformed(format!("PlcPcd is {} bytes", plc.len())));
+            return Err(DocbinError::Malformed(format!(
+                "PlcPcd is {} bytes",
+                plc.len()
+            )));
         }
         let n = (plc.len() - 4) / 12;
         if n > MAX_PIECES {
@@ -91,13 +111,27 @@ impl PieceTable {
         let mut pieces = Vec::with_capacity(n);
         for j in 0..n {
             let at = (n + 1) * 4 + j * 8 + 2;
-            let Some(fc_raw) = plc.get(at..at + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]])) else {
+            let Some(fc_raw) = plc
+                .get(at..at + 4)
+                .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            else {
                 return Err(DocbinError::Malformed("truncated aPcd".into()));
             };
-            let prm = plc.get(at + 4..at + 6).map(|b| u16::from_le_bytes([b[0], b[1]])).unwrap_or(0);
-            pieces.push(Pcd { fc: fc_raw & 0x3FFF_FFFF, compressed: fc_raw & 0x4000_0000 != 0, prm });
+            let prm = plc
+                .get(at + 4..at + 6)
+                .map(|b| u16::from_le_bytes([b[0], b[1]]))
+                .unwrap_or(0);
+            pieces.push(Pcd {
+                fc: fc_raw & 0x3FFF_FFFF,
+                compressed: fc_raw & 0x4000_0000 != 0,
+                prm,
+            });
         }
-        Ok(PieceTable { cps, pieces, prc_grpprls })
+        Ok(PieceTable {
+            cps,
+            pieces,
+            prc_grpprls,
+        })
     }
 
     /// The Prls this piece's `Prm` adds. Bit 0 (`fComplex`) discriminates: a Prm0
@@ -105,15 +139,24 @@ impl PieceTable {
     /// bits 8-15; a Prm1 (§2.9.216) holds a zero-based index into the Clx's Prcs in bits
     /// 1-15.
     pub(crate) fn piece_prm(&self, cp: u32) -> PrmRef<'_> {
-        let Some(p) = self.piece_of(cp) else { return PrmRef::None };
+        let Some(p) = self.piece_of(cp) else {
+            return PrmRef::None;
+        };
         if p.prm & 1 == 0 {
             let isprm = ((p.prm >> 1) & 0x7F) as u8;
             if isprm == 0 {
                 return PrmRef::None;
             }
-            PrmRef::Sprm0 { isprm, val: (p.prm >> 8) as u8 }
+            PrmRef::Sprm0 {
+                isprm,
+                val: (p.prm >> 8) as u8,
+            }
         } else {
-            PrmRef::Grpprl(self.prc_grpprls.get((p.prm >> 1) as usize).map(|v| v.as_slice()))
+            PrmRef::Grpprl(
+                self.prc_grpprls
+                    .get((p.prm >> 1) as usize)
+                    .map(|v| v.as_slice()),
+            )
         }
     }
 
@@ -134,7 +177,11 @@ impl PieceTable {
         let i = self.cps.partition_point(|&c| c <= cp).checked_sub(1)?;
         let cp0 = *self.cps.get(i)?;
         let step = cp.checked_sub(cp0)?.checked_mul(2)?;
-        if p.compressed { p.fc.checked_add(step)?.checked_div(2) } else { p.fc.checked_add(step) }
+        if p.compressed {
+            p.fc.checked_add(step)?.checked_div(2)
+        } else {
+            p.fc.checked_add(step)
+        }
     }
 
     /// The CP just past the last piece: no text exists at or beyond it.
@@ -151,10 +198,21 @@ impl PieceTable {
     pub(crate) fn char_at(&self, word: &[u8], cp: u32) -> Result<(char, u32), u32> {
         let i = self.cps.partition_point(|&c| c <= cp);
         // The next piece boundary above `cp`, or the end of the CP space.
-        let next = self.cps.get(i).copied().filter(|&n| n > cp).unwrap_or(u32::MAX);
-        let Some(i) = i.checked_sub(1) else { return Err(next) };
-        let (Some(p), Some(&cp0)) = (self.pieces.get(i), self.cps.get(i)) else { return Err(u32::MAX) };
-        let Some(off) = cp.checked_sub(cp0) else { return Err(next) };
+        let next = self
+            .cps
+            .get(i)
+            .copied()
+            .filter(|&n| n > cp)
+            .unwrap_or(u32::MAX);
+        let Some(i) = i.checked_sub(1) else {
+            return Err(next);
+        };
+        let (Some(p), Some(&cp0)) = (self.pieces.get(i), self.cps.get(i)) else {
+            return Err(u32::MAX);
+        };
+        let Some(off) = cp.checked_sub(cp0) else {
+            return Err(next);
+        };
         let off = off as usize;
         if p.compressed {
             // 8-bit, Windows-1252, one byte per character, stored at fc/2.
@@ -167,7 +225,8 @@ impl PieceTable {
         // UTF-16LE, one 16-bit unit per character, stored at fc.
         let unit = |k: usize| -> Option<u16> {
             let at = (p.fc as usize).checked_add(k.checked_mul(2)?)?;
-            word.get(at..at.checked_add(2)?).map(|b| u16::from_le_bytes([b[0], b[1]]))
+            word.get(at..at.checked_add(2)?)
+                .map(|b| u16::from_le_bytes([b[0], b[1]]))
         };
         let Some(u) = unit(off) else { return Err(next) };
         if (0xD800..0xDC00).contains(&u)

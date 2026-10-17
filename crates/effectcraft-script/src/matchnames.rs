@@ -51,8 +51,12 @@ const TRANSFORM: &[(&str, &str)] = &[
     ("opacity", "ADBE Opacity"),
 ];
 
-const MASK: &[(&str, &str)] =
-    &[("path", "ADBE Mask Shape"), ("feather", "ADBE Mask Feather"), ("opacity", "ADBE Mask Opacity"), ("expansion", "ADBE Mask Offset")];
+const MASK: &[(&str, &str)] = &[
+    ("path", "ADBE Mask Shape"),
+    ("feather", "ADBE Mask Feather"),
+    ("opacity", "ADBE Mask Opacity"),
+    ("expansion", "ADBE Mask Offset"),
+];
 
 const TEXT: &[(&str, &str)] = &[
     ("sourceText", "ADBE Text Document"),
@@ -72,12 +76,22 @@ const TEXT_PATH_OPTIONS: &[(&str, &str)] = &[
     ("lastMargin", "ADBE Text Last Margin"),
 ];
 
-const TEXT_ANIMATOR: &[(&str, &str)] = &[("selectors", "ADBE Text Selectors"), ("properties", "ADBE Text Animator Properties")];
+const TEXT_ANIMATOR: &[(&str, &str)] = &[
+    ("selectors", "ADBE Text Selectors"),
+    ("properties", "ADBE Text Animator Properties"),
+];
 
-const TEXT_SELECTORS: &[(&str, &str)] =
-    &[("rangeSelector", "ADBE Text Selector"), ("wigglySelector", "ADBE Text Wiggly Selector"), ("expressionSelector", "ADBE Text Expressible Selector")];
+const TEXT_SELECTORS: &[(&str, &str)] = &[
+    ("rangeSelector", "ADBE Text Selector"),
+    ("wigglySelector", "ADBE Text Wiggly Selector"),
+    ("expressionSelector", "ADBE Text Expressible Selector"),
+];
 
-const TEXT_RANGE_SELECTOR: &[(&str, &str)] = &[("start", "ADBE Text Percent Start"), ("end", "ADBE Text Percent End"), ("offset", "ADBE Text Percent Offset")];
+const TEXT_RANGE_SELECTOR: &[(&str, &str)] = &[
+    ("start", "ADBE Text Percent Start"),
+    ("end", "ADBE Text Percent End"),
+    ("offset", "ADBE Text Percent Offset"),
+];
 
 const CAMERA: &[(&str, &str)] = &[
     ("zoom", "ADBE Camera Zoom"),
@@ -216,7 +230,10 @@ pub const EFFECTS: &[(&str, &str)] = &[
     ("ec.channel.arithmetic", "ADBE Arithmetic"),
     ("ec.channel.calculations", "ADBE Calculations"),
     ("ec.channel.solidcomposite", "ADBE Solid Composite"),
-    ("ec.color.brightnesscontrast", "ADBE Brightness & Contrast 2"),
+    (
+        "ec.color.brightnesscontrast",
+        "ADBE Brightness & Contrast 2",
+    ),
     ("ec.color.curves", "ADBE CurvesCustom"),
     ("ec.color.levels", "ADBE Easy Levels2"),
     ("ec.color.levelsic", "ADBE Pro Levels2"),
@@ -344,21 +361,33 @@ fn find<'a>(t: &'a [(&str, &'a str)], k: &str) -> Option<&'a str> {
 
 /// AE match name of an effect id (falls back to the id).
 pub fn effect(id: &str) -> String {
-    find(EFFECTS, id).map(str::to_string).unwrap_or_else(|| id.to_string())
+    find(EFFECTS, id)
+        .map(str::to_string)
+        .unwrap_or_else(|| id.to_string())
 }
 
 /// Our effect id for an AE effect match name.
 pub fn effect_from_match(m: &str) -> Option<&'static str> {
-    EFFECTS.iter().find(|(_, b)| b.eq_ignore_ascii_case(m)).map(|(a, _)| *a)
+    EFFECTS
+        .iter()
+        .find(|(_, b)| b.eq_ignore_ascii_case(m))
+        .map(|(a, _)| *a)
 }
 
 /// Our shape item kind (`layer.addShapeItem`) for an AE match name, our match id or a display
 /// name (`Rectangle`, `Fill`, `Trim Paths`).
 pub fn shape_kind(name: &str) -> Option<&'static str> {
-    if let Some((k, _)) = SHAPE_ITEMS.iter().find(|(k, m)| m.eq_ignore_ascii_case(name) || k.eq_ignore_ascii_case(name)) {
+    if let Some((k, _)) = SHAPE_ITEMS
+        .iter()
+        .find(|(k, m)| m.eq_ignore_ascii_case(name) || k.eq_ignore_ascii_case(name))
+    {
         return Some(k);
     }
-    let n: String = name.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase();
+    let n: String = name
+        .chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase();
     Some(match n.as_str() {
         "rectangle" | "rectanglepath" => "rect",
         "ellipsepath" => "ellipse",
@@ -397,18 +426,24 @@ const PARAM_NUMBERS: &[(&str, &str, usize)] = &[
 /// Match name of the node at the end of `chain` (layer root's children → … → node). `effect`
 /// params are numbered `<effect match name>-0001…` in parameter order, like After Effects.
 pub fn node(chain: &[&Node]) -> String {
-    let Some(last) = chain.last() else { return String::new() };
+    let Some(last) = chain.last() else {
+        return String::new();
+    };
     let id = last.match_id();
     let parent = chain.len().checked_sub(2).map(|i| chain[i]);
     let grand = chain.len().checked_sub(3).map(|i| chain[i]);
     let top = chain.first().map(|n| n.match_id()).unwrap_or("");
     let own = || id.to_string();
     if chain.len() == 1 {
-        return find(LAYER_GROUPS, id).map(str::to_string).unwrap_or_else(own);
+        return find(LAYER_GROUPS, id)
+            .map(str::to_string)
+            .unwrap_or_else(own);
     }
     let pid = parent.map(|p| p.match_id()).unwrap_or("");
     match top {
-        "transform" if chain.len() == 2 => find(TRANSFORM, id).map(str::to_string).unwrap_or_else(own),
+        "transform" if chain.len() == 2 => {
+            find(TRANSFORM, id).map(str::to_string).unwrap_or_else(own)
+        }
         "masks" if chain.len() == 2 => "ADBE Mask Atom".into(),
         "masks" if chain.len() == 3 => find(MASK, id).map(str::to_string).unwrap_or_else(own),
         "effects" if chain.len() == 2 => effect(id),
@@ -420,18 +455,32 @@ pub fn node(chain: &[&Node]) -> String {
                         .iter()
                         .find(|(fx, p, _)| *fx == g.match_id && *p == id)
                         .map(|(_, _, n)| *n)
-                        .unwrap_or_else(|| g.children.iter().position(|c| c.uid() == last.uid()).unwrap_or(0) + 1);
+                        .unwrap_or_else(|| {
+                            g.children
+                                .iter()
+                                .position(|c| c.uid() == last.uid())
+                                .unwrap_or(0)
+                                + 1
+                        });
                     format!("{}-{i:04}", effect(&g.match_id))
                 }
                 None => own(),
             }
         }
         "text" if chain.len() == 2 => find(TEXT, id).map(str::to_string).unwrap_or_else(own),
-        "text" if pid == "pathOptions" => find(TEXT_PATH_OPTIONS, id).map(str::to_string).unwrap_or_else(own),
+        "text" if pid == "pathOptions" => find(TEXT_PATH_OPTIONS, id)
+            .map(str::to_string)
+            .unwrap_or_else(own),
         "text" if pid == "animators" => "ADBE Text Animator".into(),
-        "text" if pid == "selectors" => find(TEXT_SELECTORS, id).map(str::to_string).unwrap_or_else(own),
-        "text" if pid == "rangeSelector" => find(TEXT_RANGE_SELECTOR, id).map(str::to_string).unwrap_or_else(own),
-        "text" if grand.map(|g| g.match_id()) == Some("animators") => find(TEXT_ANIMATOR, id).map(str::to_string).unwrap_or_else(own),
+        "text" if pid == "selectors" => find(TEXT_SELECTORS, id)
+            .map(str::to_string)
+            .unwrap_or_else(own),
+        "text" if pid == "rangeSelector" => find(TEXT_RANGE_SELECTOR, id)
+            .map(str::to_string)
+            .unwrap_or_else(own),
+        "text" if grand.map(|g| g.match_id()) == Some("animators") => find(TEXT_ANIMATOR, id)
+            .map(str::to_string)
+            .unwrap_or_else(own),
         "cameraOptions" => find(CAMERA, id).map(str::to_string).unwrap_or_else(own),
         "lightOptions" => find(LIGHT, id).map(str::to_string).unwrap_or_else(own),
         "materialOptions" => find(MATERIAL, id).map(str::to_string).unwrap_or_else(own),
@@ -442,9 +491,14 @@ pub fn node(chain: &[&Node]) -> String {
                 if id == "star" || id == "polygon" {
                     return "ADBE Vector Shape - Star".into();
                 }
-                return find(SHAPE_ITEMS, id).map(str::to_string).unwrap_or_else(own);
+                return find(SHAPE_ITEMS, id)
+                    .map(str::to_string)
+                    .unwrap_or_else(own);
             }
-            if let Some((_, _, m)) = SHAPE_PROPS.iter().find(|(item, prop, _)| *item == pid && *prop == id) {
+            if let Some((_, _, m)) = SHAPE_PROPS
+                .iter()
+                .find(|(item, prop, _)| *item == pid && *prop == id)
+            {
                 return m.to_string();
             }
             own()
@@ -481,11 +535,31 @@ mod tests {
     #[test]
     fn text_range_selector_names() {
         let n = |m: &str| Node::from(effectcraft_project::PropGroup::new(1, m, m));
-        let (text, animators, animator, selectors, range, start, end, offset) =
-            (n("text"), n("animators"), n("animator"), n("selectors"), n("rangeSelector"), n("start"), n("end"), n("offset"));
-        assert_eq!(node(&[&text, &animators, &animator, &selectors, &range]), "ADBE Text Selector");
-        assert_eq!(node(&[&text, &animators, &animator, &selectors, &range, &start]), "ADBE Text Percent Start");
-        assert_eq!(node(&[&text, &animators, &animator, &selectors, &range, &end]), "ADBE Text Percent End");
-        assert_eq!(node(&[&text, &animators, &animator, &selectors, &range, &offset]), "ADBE Text Percent Offset");
+        let (text, animators, animator, selectors, range, start, end, offset) = (
+            n("text"),
+            n("animators"),
+            n("animator"),
+            n("selectors"),
+            n("rangeSelector"),
+            n("start"),
+            n("end"),
+            n("offset"),
+        );
+        assert_eq!(
+            node(&[&text, &animators, &animator, &selectors, &range]),
+            "ADBE Text Selector"
+        );
+        assert_eq!(
+            node(&[&text, &animators, &animator, &selectors, &range, &start]),
+            "ADBE Text Percent Start"
+        );
+        assert_eq!(
+            node(&[&text, &animators, &animator, &selectors, &range, &end]),
+            "ADBE Text Percent End"
+        );
+        assert_eq!(
+            node(&[&text, &animators, &animator, &selectors, &range, &offset]),
+            "ADBE Text Percent Offset"
+        );
     }
 }

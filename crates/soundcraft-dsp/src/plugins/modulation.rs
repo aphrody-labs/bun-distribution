@@ -1,7 +1,9 @@
 //! Delay and modulation effects: Mod Delay, Chorus, Flanger, Phaser.
 
 use crate::params::{Params, choice, lin, log, param_plumbing};
-use crate::util::{DelayLine, Lfo, Smoother, flush, frames_in, ms_to_samples, sane_channels, sane_sr};
+use crate::util::{
+    DelayLine, Lfo, Smoother, flush, frames_in, ms_to_samples, sane_channels, sane_sr,
+};
 use crate::{Category, ParamInfo, Plugin, PluginInfo, Unit};
 
 /// Per-channel LFO phase offset for stereo movement (channel 1 is offset by `spread` cycles).
@@ -125,7 +127,11 @@ impl Plugin for ModDelay {
             let m = self.mix.next();
             let depth = self.depth.next();
             for c in 0..ch {
-                let (Some(buf), Some(line), Some(lp)) = (io.get_mut(c), self.lines.get_mut(c), self.lp.get_mut(c)) else { continue };
+                let (Some(buf), Some(line), Some(lp)) =
+                    (io.get_mut(c), self.lines.get_mut(c), self.lp.get_mut(c))
+                else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 let modv = depth * 0.5 * (1.0 + Lfo::sin_at(channel_phase(phase, c, 0.25)));
@@ -141,7 +147,11 @@ impl Plugin for ModDelay {
     fn tail_samples(&self) -> usize {
         // Time for feedback to fall by 60 dB.
         let fb = (self.p.v(1).abs() / 100.0).clamp(0.0, 0.99);
-        let repeats = if fb < 1e-3 { 1.0 } else { (-60.0 / (20.0 * fb.log10())).min(500.0) + 1.0 };
+        let repeats = if fb < 1e-3 {
+            1.0
+        } else {
+            (-60.0 / (20.0 * fb.log10())).min(500.0) + 1.0
+        };
         ms_to_samples(self.p.v(0) * repeats, self.sr) as usize
     }
 }
@@ -215,7 +225,11 @@ impl ModFx {
     }
 
     fn build(kind: ModKind) -> Self {
-        let info = if kind == ModKind::Chorus { &CHORUS_INFO } else { &FLANGER_INFO };
+        let info = if kind == ModKind::Chorus {
+            &CHORUS_INFO
+        } else {
+            &FLANGER_INFO
+        };
         let mut m = Self {
             kind,
             p: Params::new(info.params),
@@ -242,7 +256,11 @@ impl ModFx {
 
 impl Plugin for ModFx {
     fn info(&self) -> &'static PluginInfo {
-        if self.kind == ModKind::Chorus { &CHORUS_INFO } else { &FLANGER_INFO }
+        if self.kind == ModKind::Chorus {
+            &CHORUS_INFO
+        } else {
+            &FLANGER_INFO
+        }
     }
 
     fn set_param(&mut self, id: &str, value: f32) -> bool {
@@ -269,7 +287,12 @@ impl Plugin for ModFx {
             })
             .collect();
         self.fbs = vec![0.0; self.lines.len()];
-        for s in [&mut self.delay, &mut self.depth, &mut self.fb, &mut self.mix] {
+        for s in [
+            &mut self.delay,
+            &mut self.depth,
+            &mut self.fb,
+            &mut self.mix,
+        ] {
             s.set_time(30.0, self.sr);
         }
         self.update();
@@ -280,7 +303,12 @@ impl Plugin for ModFx {
         self.lines.iter_mut().for_each(DelayLine::clear);
         self.fbs.iter_mut().for_each(|v| *v = 0.0);
         self.lfo.reset();
-        for s in [&mut self.delay, &mut self.depth, &mut self.fb, &mut self.mix] {
+        for s in [
+            &mut self.delay,
+            &mut self.depth,
+            &mut self.fb,
+            &mut self.mix,
+        ] {
             s.snap();
         }
     }
@@ -289,7 +317,11 @@ impl Plugin for ModFx {
         let ch = self.lines.len().min(io.len());
         let frames = frames_in(io, frames, ch);
         let inc = self.p.v(0) / self.sr;
-        let spread = if self.kind == ModKind::Chorus { 0.25 * self.p.v(5) / 100.0 } else { 0.25 };
+        let spread = if self.kind == ModKind::Chorus {
+            0.25 * self.p.v(5) / 100.0
+        } else {
+            0.25
+        };
         for n in 0..frames {
             let phase = self.lfo.tick(inc);
             let base = self.delay.next();
@@ -297,7 +329,11 @@ impl Plugin for ModFx {
             let fb = self.fb.next();
             let m = self.mix.next();
             for c in 0..ch {
-                let (Some(buf), Some(line), Some(fbs)) = (io.get_mut(c), self.lines.get_mut(c), self.fbs.get_mut(c)) else { continue };
+                let (Some(buf), Some(line), Some(fbs)) =
+                    (io.get_mut(c), self.lines.get_mut(c), self.fbs.get_mut(c))
+                else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 let s = Lfo::sin_at(channel_phase(phase, c, spread));
@@ -399,7 +435,12 @@ impl Plugin for Phaser {
         self.ch = sane_channels(channels);
         self.z = vec![[0.0; MAX_STAGES]; self.ch];
         self.fbs = vec![0.0; self.ch];
-        for s in [&mut self.depth, &mut self.fb, &mut self.center, &mut self.mix] {
+        for s in [
+            &mut self.depth,
+            &mut self.fb,
+            &mut self.center,
+            &mut self.mix,
+        ] {
             s.set_time(30.0, self.sr);
         }
         self.update();
@@ -410,7 +451,12 @@ impl Plugin for Phaser {
         self.z.iter_mut().for_each(|z| *z = [0.0; MAX_STAGES]);
         self.fbs.iter_mut().for_each(|v| *v = 0.0);
         self.lfo.reset();
-        for s in [&mut self.depth, &mut self.fb, &mut self.center, &mut self.mix] {
+        for s in [
+            &mut self.depth,
+            &mut self.fb,
+            &mut self.center,
+            &mut self.mix,
+        ] {
             s.snap();
         }
     }
@@ -428,7 +474,11 @@ impl Plugin for Phaser {
             let center = self.center.next();
             let m = self.mix.next();
             for c in 0..ch {
-                let (Some(buf), Some(z), Some(fbs)) = (io.get_mut(c), self.z.get_mut(c), self.fbs.get_mut(c)) else { continue };
+                let (Some(buf), Some(z), Some(fbs)) =
+                    (io.get_mut(c), self.z.get_mut(c), self.fbs.get_mut(c))
+                else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 let s = Lfo::sin_at(channel_phase(phase, c, 0.25));

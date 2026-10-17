@@ -21,9 +21,14 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 
 use filmcraft_engine::Session;
-use filmcraft_project::{ItemId, ParamValue, Project, SequenceSettings, TrackKind, find_effect, resolve_auto_points};
+use filmcraft_project::{
+    ItemId, ParamValue, Project, SequenceSettings, TrackKind, find_effect, resolve_auto_points,
+};
 use filmcraft_time::{FrameRate, Tick, TimeRange};
-use filmcraft_ui_egui::frames::{FrameKey, FrameServer, JobRecord, PREROLL_TIMEOUT_S, PlaybackMeter, Target, process_cpu_time, thread_cpu_time};
+use filmcraft_ui_egui::frames::{
+    FrameKey, FrameServer, JobRecord, PREROLL_TIMEOUT_S, PlaybackMeter, Target, process_cpu_time,
+    thread_cpu_time,
+};
 use serde_json::{Value, json};
 
 use crate::fixtures::fixture;
@@ -31,33 +36,69 @@ use crate::fixtures::fixture;
 // ------------------------------------------------------------------------------------ projects
 
 pub fn import(s: &mut Session, path: &Path) -> ItemId {
-    let r = s.execute("file.import", json!({ "paths": [path.to_string_lossy()] })).expect("import");
-    ItemId(r["items"].as_array().and_then(|a| a.first()).and_then(Value::as_u64).unwrap_or_else(|| panic!("import {}: {r}", path.display())))
+    let r = s
+        .execute("file.import", json!({ "paths": [path.to_string_lossy()] }))
+        .expect("import");
+    ItemId(
+        r["items"]
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(Value::as_u64)
+            .unwrap_or_else(|| panic!("import {}: {r}", path.display())),
+    )
 }
 
 /// One clip per track from t = 0 (`layers[0]` on V1), with (scale %, position, rotation°,
 /// opacity %) Motion/Opacity settings per layer.
-pub fn build_sequence(s: &mut Session, w: u32, h: u32, layers: &[(ItemId, f64, Option<(f64, f64)>, f64, f64)], effects: &[&str], secs: f64) -> ItemId {
-    let per_layer: Vec<&[&str]> = (0..layers.len()).map(|i| if i == 0 { effects } else { &[][..] }).collect();
+pub fn build_sequence(
+    s: &mut Session,
+    w: u32,
+    h: u32,
+    layers: &[(ItemId, f64, Option<(f64, f64)>, f64, f64)],
+    effects: &[&str],
+    secs: f64,
+) -> ItemId {
+    let per_layer: Vec<&[&str]> = (0..layers.len())
+        .map(|i| if i == 0 { effects } else { &[][..] })
+        .collect();
     build_sequence_fx(s, w, h, layers, &per_layer, secs)
 }
 
 /// As [`build_sequence`], with the effect ids of each layer (`per_layer[i]` on V(i+1)).
-pub fn build_sequence_fx(s: &mut Session, w: u32, h: u32, layers: &[(ItemId, f64, Option<(f64, f64)>, f64, f64)], per_layer: &[&[&str]], secs: f64) -> ItemId {
+pub fn build_sequence_fx(
+    s: &mut Session,
+    w: u32,
+    h: u32,
+    layers: &[(ItemId, f64, Option<(f64, f64)>, f64, f64)],
+    per_layer: &[&[&str]],
+    secs: f64,
+) -> ItemId {
     let rate = FrameRate::FPS_23_976;
     let sizes: Vec<(u32, u32)> = layers
         .iter()
         .map(|l| match s.project.item(l.0).map(|i| &i.kind) {
-            Some(filmcraft_project::ItemKind::Media(m)) => m.info.video.as_ref().map(|v| (v.width, v.height)).unwrap_or((w, h)),
+            Some(filmcraft_project::ItemKind::Media(m)) => m
+                .info
+                .video
+                .as_ref()
+                .map(|v| (v.width, v.height))
+                .unwrap_or((w, h)),
             _ => (w, h),
         })
         .collect();
     s.edit("bench sequence", |p: &mut Project, st| {
-        let settings = SequenceSettings { width: w, height: h, frame_rate: rate, ..SequenceSettings::default() };
+        let settings = SequenceSettings {
+            width: w,
+            height: h,
+            frame_rate: rate,
+            ..SequenceSettings::default()
+        };
         let seq = p.new_sequence("Bench", settings, layers.len().max(1), 1, None);
         for (i, &(item, scale, pos, rot, opacity)) in layers.iter().enumerate() {
             let range = TimeRange::new(Tick::ZERO, rate.snap(Tick::from_seconds_f64(secs)));
-            let mut v = p.make_track_item(item, TrackKind::Video, Tick::ZERO, range, rate).expect("track item");
+            let mut v = p
+                .make_track_item(item, TrackKind::Video, Tick::ZERO, range, rate)
+                .expect("track item");
             for e in &mut v.effects {
                 resolve_auto_points(e, (w, h), sizes[i]);
             }
@@ -72,12 +113,17 @@ pub fn build_sequence_fx(s: &mut Session, w: u32, h: u32, layers: &[(ItemId, f64
                     x.value = ParamValue::Float(rot);
                 }
             }
-            if let Some(o) = v.effect_mut("opacity").and_then(|o| o.params.get_mut("opacity")) {
+            if let Some(o) = v
+                .effect_mut("opacity")
+                .and_then(|o| o.params.get_mut("opacity"))
+            {
                 o.value = ParamValue::Float(opacity);
             }
             {
                 for (k, id) in per_layer.get(i).copied().unwrap_or(&[]).iter().enumerate() {
-                    let mut e = find_effect(id).unwrap_or_else(|| panic!("effect {id}")).instance();
+                    let mut e = find_effect(id)
+                        .unwrap_or_else(|| panic!("effect {id}"))
+                        .instance();
                     let set: &[(&str, f64)] = match *id {
                         "lumetri" => &[("temperature", 18.0), ("contrast", 22.0)],
                         "sharpen" => &[("amount", 40.0)],
@@ -94,7 +140,9 @@ pub fn build_sequence_fx(s: &mut Session, w: u32, h: u32, layers: &[(ItemId, f64
                     v.effects.insert(k, e);
                 }
             }
-            p.sequence_mut(seq).expect("seq").video_tracks[i].items.push(v);
+            p.sequence_mut(seq).expect("seq").video_tracks[i]
+                .items
+                .push(v);
         }
         st.active_sequence = Some(seq);
         st.open_sequences = vec![seq];
@@ -120,15 +168,29 @@ impl Display {
     pub fn new(gpu: bool) -> Self {
         let gpu = if gpu {
             let instance = eframe::wgpu::Instance::default();
-            let adapter = pollster::block_on(instance.request_adapter(&eframe::wgpu::RequestAdapterOptions::default())).ok();
-            adapter.and_then(|a| pollster::block_on(a.request_device(&eframe::wgpu::DeviceDescriptor::default())).ok()).map(|(d, q)| {
-                let c = filmcraft_gpu::GpuCompositor::new(&d, &q);
-                (c, d)
-            })
+            let adapter = pollster::block_on(
+                instance.request_adapter(&eframe::wgpu::RequestAdapterOptions::default()),
+            )
+            .ok();
+            adapter
+                .and_then(|a| {
+                    pollster::block_on(a.request_device(&eframe::wgpu::DeviceDescriptor::default()))
+                        .ok()
+                })
+                .map(|(d, q)| {
+                    let c = filmcraft_gpu::GpuCompositor::new(&d, &q);
+                    (c, d)
+                })
         } else {
             None
         };
-        Self { gpu, last: None, present: Vec::new(), ui_cpu: Duration::ZERO, uploaded: 0 }
+        Self {
+            gpu,
+            last: None,
+            present: Vec::new(),
+            ui_cpu: Duration::ZERO,
+            uploaded: 0,
+        }
     }
 
     pub fn gpu_available(&self) -> bool {
@@ -136,7 +198,11 @@ impl Display {
     }
 
     fn target(&self, seq: ItemId) -> Target {
-        if self.gpu.is_some() { Target::SequencePlan(seq) } else { Target::Sequence(seq) }
+        if self.gpu.is_some() {
+            Target::SequencePlan(seq)
+        } else {
+            Target::Sequence(seq)
+        }
     }
 
     /// Show the exact frame, or the nearest earlier cached one; returns whether it was exact.
@@ -161,7 +227,19 @@ impl Display {
         } else {
             let img = server.get(&key).map(|i| (key, i));
             exact = img.is_some();
-            let near = img.or_else(|| server.nearest(key.target, key.frame, key.size, key.revision, 6).map(|i| (FrameKey { frame: key.frame - 1, ..key }, i)));
+            let near = img.or_else(|| {
+                server
+                    .nearest(key.target, key.frame, key.size, key.revision, 6)
+                    .map(|i| {
+                        (
+                            FrameKey {
+                                frame: key.frame - 1,
+                                ..key
+                            },
+                            i,
+                        )
+                    })
+            });
             if let Some((k, img)) = near
                 && self.last != Some(k)
             {
@@ -236,7 +314,12 @@ pub fn load_avg() -> String {
         .args(["-n", "vm.loadavg"])
         .output()
         .ok()
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().trim_matches(['{', '}', ' ']).to_string())
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .trim()
+                .trim_matches(['{', '}', ' '])
+                .to_string()
+        })
         .unwrap_or_default()
 }
 
@@ -251,7 +334,15 @@ pub struct Bench {
 
 impl Bench {
     /// Play `seconds` from `start` at `scale`, refreshing like the UI.
-    pub fn play(&self, s: &Session, seq: ItemId, display: &mut Display, scale: f32, start: Tick, label: &str) -> PlayReport {
+    pub fn play(
+        &self,
+        s: &Session,
+        seq: ItemId,
+        display: &mut Display,
+        scale: f32,
+        start: Tick,
+        label: &str,
+    ) -> PlayReport {
         let q = s.project.sequence(seq).expect("seq");
         let rate = q.settings.frame_rate;
         let end = (start + Tick::from_seconds_f64(self.seconds)).min(q.duration());
@@ -262,7 +353,11 @@ impl Bench {
         meter.start(1.0);
         self.server.take_records();
         let gop0 = filmcraft_codecs::gop_stats();
-        let (p0, ui0, up0) = (process_cpu_time().unwrap_or_default(), display.ui_cpu, display.uploaded);
+        let (p0, ui0, up0) = (
+            process_cpu_time().unwrap_or_default(),
+            display.ui_cpu,
+            display.uploaded,
+        );
         display.present.clear();
         let period = Duration::from_secs_f64(1.0 / self.refresh_hz);
         // Preroll as the app does: refresh without moving the playhead until the first frames are
@@ -271,11 +366,20 @@ impl Bench {
         let last_frame = rate.frame_at(q.duration()) - 1;
         let t_pre = Instant::now();
         loop {
-            let key = FrameKey { target, frame: first, size, revision: s.revision, draft: self.draft };
-            self.server.schedule_playback(key, rate, scale, &project, 1.0, true);
+            let key = FrameKey {
+                target,
+                frame: first,
+                size,
+                revision: s.revision,
+                draft: self.draft,
+            };
+            self.server
+                .schedule_playback(key, rate, scale, &project, 1.0, true);
             let exact = display.refresh(&self.server, key);
             meter.refresh(first, exact);
-            if self.server.preroll_ready(key, 1.0, last_frame) || t_pre.elapsed().as_secs_f64() >= PREROLL_TIMEOUT_S {
+            if self.server.preroll_ready(key, 1.0, last_frame)
+                || t_pre.elapsed().as_secs_f64() >= PREROLL_TIMEOUT_S
+            {
                 break;
             }
             std::thread::sleep(period);
@@ -293,8 +397,15 @@ impl Bench {
             }
             frame = rate.frame_at(t);
             due_at.entry(frame).or_insert(now);
-            let key = FrameKey { target, frame, size, revision: s.revision, draft: self.draft };
-            self.server.schedule_playback(key, rate, scale, &project, 1.0, false);
+            let key = FrameKey {
+                target,
+                frame,
+                size,
+                revision: s.revision,
+                draft: self.draft,
+            };
+            self.server
+                .schedule_playback(key, rate, scale, &project, 1.0, false);
             let exact = display.refresh(&self.server, key);
             meter.refresh(frame, exact);
             next += period;
@@ -349,7 +460,8 @@ impl Bench {
         for r in &recs {
             // Preroll jobs run before the play clock; counting them as on-clock latency made
             // the LongGOP seek look like a mid-play stall (`lat.max` ≈ `preroll_ms`).
-            let on_clock = r.queued >= anchor && due_at.contains_key(&r.key.frame) && r.key.target == target;
+            let on_clock =
+                r.queued >= anchor && due_at.contains_key(&r.key.frame) && r.key.target == target;
             if on_clock {
                 rep.latency.push(ms(r.finished - r.queued));
                 rep.service.push(ms(r.finished - r.started));
@@ -372,7 +484,15 @@ impl Bench {
     }
 
     /// Scrub: jump to a new random frame every `dwell` and measure how long the exact frame takes.
-    pub fn seek_storm(&self, s: &Session, seq: ItemId, display: &mut Display, scale: f32, jumps: usize, dwell: Duration) -> PlayReport {
+    pub fn seek_storm(
+        &self,
+        s: &Session,
+        seq: ItemId,
+        display: &mut Display,
+        scale: f32,
+        jumps: usize,
+        dwell: Duration,
+    ) -> PlayReport {
         let q = s.project.sequence(seq).expect("seq");
         let rate = q.settings.frame_rate;
         let frames = rate.frame_at(q.duration()).max(1);
@@ -384,19 +504,29 @@ impl Bench {
         let p0 = process_cpu_time().unwrap_or_default();
         let t0 = Instant::now();
         let mut rng = 0x2545_f491_4f6c_dd1du64;
-        let mut rep = PlayReport { label: format!("seek storm ({jumps} jumps, {} ms)", dwell.as_millis()), ..Default::default() };
+        let mut rep = PlayReport {
+            label: format!("seek storm ({jumps} jumps, {} ms)", dwell.as_millis()),
+            ..Default::default()
+        };
         let period = Duration::from_secs_f64(1.0 / self.refresh_hz);
         for _ in 0..jumps {
             rng ^= rng << 13;
             rng ^= rng >> 7;
             rng ^= rng << 17;
             let frame = (rng % frames as u64) as i64;
-            let key = FrameKey { target, frame, size, revision: s.revision, draft: false };
+            let key = FrameKey {
+                target,
+                frame,
+                size,
+                revision: s.revision,
+                draft: false,
+            };
             let start = Instant::now();
             rep.due += 1;
             loop {
                 // As the monitor does while not playing: request the frame under the playhead.
-                self.server.request(key, rate.tick_of(frame), scale, &project, 0);
+                self.server
+                    .request(key, rate.tick_of(frame), scale, &project, 0);
                 if display.refresh(&self.server, key) {
                     rep.on_time += 1;
                     rep.latency.push(ms(start.elapsed()));
@@ -455,7 +585,10 @@ impl Bench {
         let period = Duration::from_secs_f64(1.0 / self.refresh_hz);
         let gop0 = filmcraft_codecs::gop_stats();
         let p0 = process_cpu_time().unwrap_or_default();
-        let mut rep = ScrubReport { load: load_avg(), ..Default::default() };
+        let mut rep = ScrubReport {
+            load: load_avg(),
+            ..Default::default()
+        };
         let mut rng = 0x9e37_79b9_7f4a_7c15u64;
         let mut next = move || {
             rng ^= rng << 13;
@@ -465,7 +598,8 @@ impl Bench {
         };
         let wait = |display: &mut Display, key: FrameKey, start: Instant| -> Option<f64> {
             loop {
-                self.server.request(key, rate.tick_of(key.frame), scale, &project, 0);
+                self.server
+                    .request(key, rate.tick_of(key.frame), scale, &project, 0);
                 if display.refresh(&self.server, key) {
                     return Some(ms(start.elapsed()));
                 }
@@ -477,7 +611,13 @@ impl Bench {
         };
         for _ in 0..seeks {
             let frame = (next() % frames as u64) as i64;
-            let key = FrameKey { target, frame, size, revision: s.revision, draft: false };
+            let key = FrameKey {
+                target,
+                frame,
+                size,
+                revision: s.revision,
+                draft: false,
+            };
             match wait(display, key, Instant::now()) {
                 Some(l) => rep.seek_ms.push(l),
                 None => rep.timeouts += 1,
@@ -486,15 +626,28 @@ impl Bench {
         for _ in 0..drags {
             let from = (next() % (frames - drag_frames).max(1) as u64) as i64;
             for f in from..from + drag_frames {
-                let key = FrameKey { target, frame: f.min(frames - 1), size, revision: s.revision, draft: false };
-                self.server.request(key, rate.tick_of(key.frame), scale, &project, 0);
+                let key = FrameKey {
+                    target,
+                    frame: f.min(frames - 1),
+                    size,
+                    revision: s.revision,
+                    draft: false,
+                };
+                self.server
+                    .request(key, rate.tick_of(key.frame), scale, &project, 0);
                 if display.refresh(&self.server, key) {
                     rep.drag_shown += 1;
                 }
                 rep.drag_steps += 1;
                 std::thread::sleep(period);
             }
-            let key = FrameKey { target, frame: (from + drag_frames).min(frames - 1), size, revision: s.revision, draft: false };
+            let key = FrameKey {
+                target,
+                frame: (from + drag_frames).min(frames - 1),
+                size,
+                revision: s.revision,
+                draft: false,
+            };
             match wait(display, key, Instant::now()) {
                 Some(l) => rep.settle_ms.push(l),
                 None => rep.timeouts += 1,
@@ -624,7 +777,9 @@ fn parse_args() -> Args {
     let mut it = std::env::args().skip(1);
     while let Some(x) = it.next() {
         match x.as_str() {
-            "--scenario" | "-s" => a.scenarios.extend(it.next().unwrap_or_default().split(',').map(str::to_string)),
+            "--scenario" | "-s" => a
+                .scenarios
+                .extend(it.next().unwrap_or_default().split(',').map(str::to_string)),
             "--res" => {
                 a.res = it
                     .next()
@@ -654,10 +809,20 @@ fn parse_args() -> Args {
         }
     }
     if a.scenarios.is_empty() {
-        a.scenarios = ["h264-1080", "stack3", "stack3-blend", "stack3-fx", "h264-2160", "hevc-2160", "demo", "after-preview", "seek-storm"]
-            .iter()
-            .map(|s| s.to_string())
-            .collect();
+        a.scenarios = [
+            "h264-1080",
+            "stack3",
+            "stack3-blend",
+            "stack3-fx",
+            "h264-2160",
+            "hevc-2160",
+            "demo",
+            "after-preview",
+            "seek-storm",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
     }
     a
 }
@@ -668,16 +833,31 @@ pub fn scenario_session(name: &str) -> Option<(Session, ItemId)> {
     let seq = match name {
         "h264-1080" | "seek-storm" => {
             let a = import(&mut s, &fixture("a1080.mp4")?);
-            build_sequence(&mut s, 1920, 1080, &[(a, 100.0, None, 0.0, 100.0)], &[], 20.0)
+            build_sequence(
+                &mut s,
+                1920,
+                1080,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &[],
+                20.0,
+            )
         }
         "stack3" | "stack3-blend" | "stack3-fx" => {
-            let (a, b, c) = (fixture("a1080.mp4")?, fixture("b1080.mp4")?, fixture("c1080.mp4")?);
+            let (a, b, c) = (
+                fixture("a1080.mp4")?,
+                fixture("b1080.mp4")?,
+                fixture("c1080.mp4")?,
+            );
             let (a, b, c) = (import(&mut s, &a), import(&mut s, &b), import(&mut s, &c));
             let seq = build_sequence(
                 &mut s,
                 1920,
                 1080,
-                &[(a, 100.0, None, 0.0, 100.0), (b, 60.0, Some((700.0, 420.0)), 0.0, 70.0), (c, 40.0, Some((1450.0, 760.0)), 12.0, 85.0)],
+                &[
+                    (a, 100.0, None, 0.0, 100.0),
+                    (b, 60.0, Some((700.0, 420.0)), 0.0, 70.0),
+                    (c, 40.0, Some((1450.0, 760.0)), 12.0, 85.0),
+                ],
                 &[],
                 20.0,
             );
@@ -686,9 +866,15 @@ pub fn scenario_session(name: &str) -> Option<(Session, ItemId)> {
                 s.edit("blend modes", |p, _| {
                     let q = p.sequence_mut(seq).expect("seq");
                     for (track, mode) in [(1, "Screen"), (2, "Overlay")] {
-                        let i = filmcraft_project::effect::BLEND_MODES.iter().position(|b| *b == mode).expect("blend mode") as u32;
+                        let i = filmcraft_project::effect::BLEND_MODES
+                            .iter()
+                            .position(|b| *b == mode)
+                            .expect("blend mode") as u32;
                         for it in &mut q.video_tracks[track].items {
-                            if let Some(b) = it.effect_mut("opacity").and_then(|o| o.params.get_mut("blend")) {
+                            if let Some(b) = it
+                                .effect_mut("opacity")
+                                .and_then(|o| o.params.get_mut("blend"))
+                            {
                                 b.value = ParamValue::Choice(i);
                             }
                         }
@@ -702,7 +888,11 @@ pub fn scenario_session(name: &str) -> Option<(Session, ItemId)> {
                 s.edit("effects", |p, _| {
                     let q = p.sequence_mut(seq).expect("seq");
                     let fx: [(usize, &str, &[(&str, f64)]); 3] = [
-                        (1, "brightness_contrast", &[("brightness", 12.0), ("contrast", 25.0)]),
+                        (
+                            1,
+                            "brightness_contrast",
+                            &[("brightness", 12.0), ("contrast", 25.0)],
+                        ),
                         (1, "gaussian_blur", &[("blurriness", 8.0)]),
                         (2, "tint", &[("amount", 70.0)]),
                     ];
@@ -725,23 +915,58 @@ pub fn scenario_session(name: &str) -> Option<(Session, ItemId)> {
         }
         "h264-2160" | "seek-storm-2160" => {
             let a = import(&mut s, &fixture("a2160.mp4")?);
-            build_sequence(&mut s, 3840, 2160, &[(a, 100.0, None, 0.0, 100.0)], &[], 10.0)
+            build_sequence(
+                &mut s,
+                3840,
+                2160,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &[],
+                10.0,
+            )
         }
         "hevc-2160" | "seek-storm-hevc-2160" => {
             let a = import(&mut s, &fixture("hevc2160.mp4")?);
-            build_sequence(&mut s, 3840, 2160, &[(a, 100.0, None, 0.0, 100.0)], &[], 10.0)
+            build_sequence(
+                &mut s,
+                3840,
+                2160,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &[],
+                10.0,
+            )
         }
         "vp9-2160" => {
             let a = import(&mut s, &fixture("vp92160.webm")?);
-            build_sequence(&mut s, 3840, 2160, &[(a, 100.0, None, 0.0, 100.0)], &[], 10.0)
+            build_sequence(
+                &mut s,
+                3840,
+                2160,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &[],
+                10.0,
+            )
         }
         "av1-2160" => {
             let a = import(&mut s, &fixture("av12160.mp4")?);
-            build_sequence(&mut s, 3840, 2160, &[(a, 100.0, None, 0.0, 100.0)], &[], 10.0)
+            build_sequence(
+                &mut s,
+                3840,
+                2160,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &[],
+                10.0,
+            )
         }
         "after-preview" => {
             let a = import(&mut s, &fixture("a1080.mp4")?);
-            let seq = build_sequence(&mut s, 1920, 1080, &[(a, 100.0, None, 0.0, 100.0)], &["lumetri", "sharpen", "levels", "tint"], 20.0);
+            let seq = build_sequence(
+                &mut s,
+                1920,
+                1080,
+                &[(a, 100.0, None, 0.0, 100.0)],
+                &["lumetri", "sharpen", "levels", "tint"],
+                20.0,
+            );
             s.edit("marks", |p, _| {
                 let q = p.sequence_mut(seq).expect("seq");
                 q.mark_in = Some(Tick::ZERO);
@@ -766,7 +991,9 @@ pub fn scenario_session(name: &str) -> Option<(Session, ItemId)> {
 /// `bench_playback` / `cargo xtask bench-playback`.
 pub fn cli_main() {
     let args = parse_args();
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     println!(
         "FilmCraft playback bench: {} path, {} frame workers, {} cores, refresh {} Hz, {} s per play; load avg {}",
         if args.gpu { "GPU" } else { "CPU" },
@@ -790,36 +1017,96 @@ pub fn cli_main() {
                 println!("{name}: skipped (fixtures unavailable: is ffmpeg installed?)");
                 continue;
             };
-            let fps = s.project.sequence(seq).map(|q| q.settings.frame_rate.as_f64()).unwrap_or(24.0);
+            let fps = s
+                .project
+                .sequence(seq)
+                .map(|q| q.settings.frame_rate.as_f64())
+                .unwrap_or(24.0);
             for rep_i in 0..args.repeat {
                 // A fresh frame server per run so caches start cold, as after opening a project.
-                let server = FrameServer::new(s.media.clone(), s.services.clone(), s.previews.clone(), args.workers);
+                let server = FrameServer::new(
+                    s.media.clone(),
+                    s.services.clone(),
+                    s.previews.clone(),
+                    args.workers,
+                );
                 server.set_profiling(true);
-                let bench = Bench { server, refresh_hz: args.refresh, seconds: args.seconds, draft: false };
+                let bench = Bench {
+                    server,
+                    refresh_hz: args.refresh,
+                    seconds: args.seconds,
+                    draft: false,
+                };
                 let mut display = Display::new(args.gpu);
                 if args.gpu && display.gpu.is_none() {
                     eprintln!("no GPU adapter; using the CPU path");
                 }
                 let path = if display.gpu.is_some() { "gpu" } else { "cpu" };
-                let tag = |l: &str| if args.repeat > 1 { format!("{name} {res_name} {l} #{}", rep_i + 1) } else { format!("{name} {res_name} {l}") };
+                let tag = |l: &str| {
+                    if args.repeat > 1 {
+                        format!("{name} {res_name} {l} #{}", rep_i + 1)
+                    } else {
+                        format!("{name} {res_name} {l}")
+                    }
+                };
                 let mut reports = Vec::new();
                 match name.as_str() {
                     "seek-storm" => {
-                        let mut r = bench.seek_storm(&s, seq, &mut display, *scale, 40, Duration::from_millis(150));
+                        let mut r = bench.seek_storm(
+                            &s,
+                            seq,
+                            &mut display,
+                            *scale,
+                            40,
+                            Duration::from_millis(150),
+                        );
                         r.label = tag("seek");
                         reports.push(r);
                     }
                     "after-preview" => {
                         // Live play (effects rendered per frame), render previews, then play twice.
-                        reports.push(bench.play(&s, seq, &mut display, *scale, Tick::ZERO, &tag("live")));
+                        reports.push(bench.play(
+                            &s,
+                            seq,
+                            &mut display,
+                            *scale,
+                            Tick::ZERO,
+                            &tag("live"),
+                        ));
                         let t0 = Instant::now();
-                        s.execute("sequence.renderEffectsInToOut", json!({"wait": true})).expect("render previews");
-                        eprintln!("  rendered previews in {:.1}s (load {})", t0.elapsed().as_secs_f64(), load_avg());
-                        reports.push(bench.play(&s, seq, &mut display, *scale, Tick::ZERO, &tag("1st after")));
-                        reports.push(bench.play(&s, seq, &mut display, *scale, Tick::ZERO, &tag("2nd after")));
+                        s.execute("sequence.renderEffectsInToOut", json!({"wait": true}))
+                            .expect("render previews");
+                        eprintln!(
+                            "  rendered previews in {:.1}s (load {})",
+                            t0.elapsed().as_secs_f64(),
+                            load_avg()
+                        );
+                        reports.push(bench.play(
+                            &s,
+                            seq,
+                            &mut display,
+                            *scale,
+                            Tick::ZERO,
+                            &tag("1st after"),
+                        ));
+                        reports.push(bench.play(
+                            &s,
+                            seq,
+                            &mut display,
+                            *scale,
+                            Tick::ZERO,
+                            &tag("2nd after"),
+                        ));
                         s.previews.delete(None);
                     }
-                    _ => reports.push(bench.play(&s, seq, &mut display, *scale, Tick::ZERO, &tag("play"))),
+                    _ => reports.push(bench.play(
+                        &s,
+                        seq,
+                        &mut display,
+                        *scale,
+                        Tick::ZERO,
+                        &tag("play"),
+                    )),
                 }
                 for r in &reports {
                     print_row(r, fps);

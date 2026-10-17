@@ -112,7 +112,10 @@ impl Timings {
         self.set_cpu_local_range(
             map_mask,
             new_timings,
-            (map_bounds.0.max(region_bounds.0), map_bounds.1.min(region_bounds.1)),
+            (
+                map_bounds.0.max(region_bounds.0),
+                map_bounds.1.min(region_bounds.1),
+            ),
         );
     }
 
@@ -170,7 +173,10 @@ impl Timings {
 
         self.unset_cpu_local_range(
             map_mask,
-            (map_bounds.0.max(region_bounds.0), map_bounds.1.min(region_bounds.1)),
+            (
+                map_bounds.0.max(region_bounds.0),
+                map_bounds.1.min(region_bounds.1),
+            ),
             sys_bus_timings,
         );
     }

@@ -35,5 +35,10 @@ pub fn fetch_html(url: &str) -> crate::Result<String> {
 /// Returns [`crate::Error::Fetch`] if [`fetch_html`] fails.
 pub fn plan_from_url(url: &str) -> crate::Result<crate::ReproductionPlan> {
     let html = fetch_html(url)?;
-    Ok(crate::ReproductionPlan::from_html(&html, ReproductionSource::Url { url: url.to_owned() }))
+    Ok(crate::ReproductionPlan::from_html(
+        &html,
+        ReproductionSource::Url {
+            url: url.to_owned(),
+        },
+    ))
 }

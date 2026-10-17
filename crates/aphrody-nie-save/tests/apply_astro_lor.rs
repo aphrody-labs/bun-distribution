@@ -54,7 +54,10 @@ struct Patch {
 }
 
 fn workspace_root() -> &'static Path {
-    Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(3).expect("workspace root")
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .ancestors()
+        .nth(3)
+        .expect("workspace root")
 }
 
 /// Rewrites the roster of the AUTOSAVE blob in place.
@@ -73,25 +76,36 @@ fn apply_astro_lor(container: &mut LivesContainer) -> Patch {
         .position(|w| w == ROSTER_TLV_HASH)
         .expect("roster TLV not found in AUTOSAVE");
     let roster_data_pos = roster_hash_pos + 8; // hash (4) + length (4)
-    assert!(roster_data_pos + 24_000 <= autosave.body.len(), "roster overflows the AUTOSAVE body");
+    assert!(
+        roster_data_pos + 24_000 <= autosave.body.len(),
+        "roster overflows the AUTOSAVE body"
+    );
 
     let old_slot0 = read_u32(&autosave.body, roster_data_pos);
     eprintln!("previous slot-0 avatar: 0x{old_slot0:08X}");
 
     write_u32(&mut autosave.body, roster_data_pos, ASTRO_LOR_OG_ID);
-    write_u32(&mut autosave.body, roster_data_pos + 12 * 4, ASTRO_LOR_VR_ID);
+    write_u32(
+        &mut autosave.body,
+        roster_data_pos + 12 * 4,
+        ASTRO_LOR_VR_ID,
+    );
     if old_slot0 != 0 && old_slot0 != ASTRO_LOR_OG_ID && old_slot0 != ASTRO_LOR_VR_ID {
         write_u32(&mut autosave.body, roster_data_pos + 13 * 4, old_slot0);
         eprintln!("previous avatar moved to slot 13");
     }
 
-    Patch { roster_data_pos, old_slot0 }
+    Patch {
+        roster_data_pos,
+        old_slot0,
+    }
 }
 
 /// Checks a re-read save against the patch and returns the number of owned characters.
 fn verify(container: &LivesContainer, patch: &Patch) -> usize {
-    let autosave =
-        container.blob_by_subtype(BlobSubtype::Autosave).expect("AUTOSAVE absent after reload");
+    let autosave = container
+        .blob_by_subtype(BlobSubtype::Autosave)
+        .expect("AUTOSAVE absent after reload");
     let roster = parse_autosave_roster(&autosave.body).expect("roster of the patched save");
 
     assert!(
@@ -130,8 +144,9 @@ fn apply_and_verify_astro_lor_avatar() {
     let work = workspace_root().join("var/save_work");
     // The `.bak` wins: earlier revisions of this test patched the plain file in place, so on a
     // machine that ran them the plain file is no longer the player's original.
-    let Some(source) =
-        [work.join(format!("{SLOT}.bak")), work.join(SLOT)].into_iter().find(|path| path.is_file())
+    let Some(source) = [work.join(format!("{SLOT}.bak")), work.join(SLOT)]
+        .into_iter()
+        .find(|path| path.is_file())
     else {
         // A real player save is local state git does not track. Without it there is nothing to
         // check, and the skip is announced — a silent skip would read exactly like a pass.
@@ -165,9 +180,11 @@ fn apply_and_verify_astro_lor_avatar() {
 #[test]
 #[ignore = "replaces a live save: set NIE_SAVE_LIVE_DEST to its path and pass --ignored"]
 fn install_astro_lor_avatar_into_live_save() {
-    let dest = std::env::var_os(LIVE_DEST_ENV).map(PathBuf::from).unwrap_or_else(|| {
-        panic!("{LIVE_DEST_ENV} must name the live {SLOT} file to patch; nothing was written")
-    });
+    let dest = std::env::var_os(LIVE_DEST_ENV)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| {
+            panic!("{LIVE_DEST_ENV} must name the live {SLOT} file to patch; nothing was written")
+        });
     assert_eq!(
         dest.file_name().and_then(|name| name.to_str()),
         Some(SLOT),
@@ -181,11 +198,17 @@ fn install_astro_lor_avatar_into_live_save() {
     let patch = apply_astro_lor(&mut container);
     let patched = container.encrypt().expect("re-encrypt the patched save");
     // Validated in memory before a single byte reaches the destination directory.
-    verify(&aphrody_nie_save::parse(&patched, SLOT).expect("decrypt the patched save"), &patch);
+    verify(
+        &aphrody_nie_save::parse(&patched, SLOT).expect("decrypt the patched save"),
+        &patch,
+    );
 
     // `create_new` makes the backup name unique by construction: a second install can never
     // overwrite the backup of the first.
-    let stamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("clock after 1970").as_secs();
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("clock after 1970")
+        .as_secs();
     let backup = dest.with_file_name(format!("{SLOT}.bak-{stamp}"));
     fs::OpenOptions::new()
         .write(true)

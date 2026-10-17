@@ -38,12 +38,23 @@ fn develop_commands_do_not_reserialize_unchanged_presets() {
     let added = s.add_presets(many(2000));
     assert_eq!(added.len(), 2000);
     s.persist().unwrap();
-    assert!(std::fs::metadata(lib.join("presets.json")).unwrap().len() > 100_000, "presets saved");
+    assert!(
+        std::fs::metadata(lib.join("presets.json")).unwrap().len() > 100_000,
+        "presets saved"
+    );
     let before = crate::library::presets_serialized();
     for i in 0..20 {
-        s.execute("develop.set", &json!({"control": "light.exposure", "value": i as f64 / 10.0})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "light.exposure", "value": i as f64 / 10.0}),
+        )
+        .unwrap();
     }
-    assert_eq!(crate::library::presets_serialized(), before, "slider commands left the preset list alone");
+    assert_eq!(
+        crate::library::presets_serialized(),
+        before,
+        "slider commands left the preset list alone"
+    );
     // a preset change is still saved
     let pid = added[7].clone();
     s.execute("preset.favorite", &json!({"id": pid})).unwrap();
@@ -52,7 +63,10 @@ fn develop_commands_do_not_reserialize_unchanged_presets() {
     drop(s);
     let mut t = Session::new();
     t.open_library(&lib, false).unwrap();
-    assert!(t.presets.iter().any(|p| p.id == pid && p.favorite), "favourite persisted");
+    assert!(
+        t.presets.iter().any(|p| p.id == pid && p.favorite),
+        "favourite persisted"
+    );
     assert_eq!(t.presets.iter().filter(|p| !p.builtin).count(), 2000);
     let _ = std::fs::remove_dir_all(&lib);
 }
@@ -109,15 +123,30 @@ fn presets_scale_bench() {
     let mut s = Session::new();
     let t = Instant::now();
     s.open_library(&lib, true).unwrap();
-    eprintln!("open library: {:?} ({} presets)", t.elapsed(), s.presets.len());
+    eprintln!(
+        "open library: {:?} ({} presets)",
+        t.elapsed(),
+        s.presets.len()
+    );
     let t = Instant::now();
     for i in 0..20 {
-        s.execute("develop.set", &json!({"control": "light.exposure", "value": i as f64 / 10.0})).unwrap();
+        s.execute(
+            "develop.set",
+            &json!({"control": "light.exposure", "value": i as f64 / 10.0}),
+        )
+        .unwrap();
     }
     eprintln!("develop.set: {:?} per command", t.elapsed() / 20);
-    let pid = s.presets.iter().rev().find(|p| !p.builtin).map(|p| p.id.clone()).unwrap();
+    let pid = s
+        .presets
+        .iter()
+        .rev()
+        .find(|p| !p.builtin)
+        .map(|p| p.id.clone())
+        .unwrap();
     let t = Instant::now();
-    s.execute("preset.apply", &json!({"id": pid, "amount": 100})).unwrap();
+    s.execute("preset.apply", &json!({"id": pid, "amount": 100}))
+        .unwrap();
     eprintln!("preset.apply: {:?}", t.elapsed());
     let t = Instant::now();
     s.execute("preset.favorite", &json!({"id": pid})).unwrap();

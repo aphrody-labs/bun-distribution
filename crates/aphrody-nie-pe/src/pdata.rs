@@ -84,14 +84,20 @@ pub fn scan(img: &PeImage) -> (Vec<CodeRange>, PdataStats) {
             stats.degenerate += 1;
             continue;
         }
-        let chained =
-            img.slice_rva(unwind & !1, 1).is_some_and(|u| (u[0] >> 3) & UNW_FLAG_CHAININFO != 0);
+        let chained = img
+            .slice_rva(unwind & !1, 1)
+            .is_some_and(|u| (u[0] >> 3) & UNW_FLAG_CHAININFO != 0);
         if chained {
             stats.chained += 1;
         } else {
             stats.roots += 1;
         }
-        out.push(CodeRange { begin, end, unwind, chained });
+        out.push(CodeRange {
+            begin,
+            end,
+            unwind,
+            chained,
+        });
     }
     out.sort_unstable();
     (out, stats)
@@ -111,7 +117,7 @@ pub fn merge(ranges: &[CodeRange]) -> Vec<CodeRange> {
         match out.last_mut() {
             Some(prev) if r.chained && r.begin <= prev.end => {
                 prev.end = prev.end.max(r.end);
-            },
+            }
             _ => out.push(*r),
         }
     }
@@ -153,7 +159,12 @@ pub fn emit(img: &PeImage) -> Option<Vec<u8>> {
     // Le reste de la section est le bourrage d'alignement du linker : il doit
     // être nul, sinon il porte de l'information qu'on ne saurait régénérer.
     let start = sec.ptr_raw as usize + out.len();
-    if img.bytes.get(start..sec.ptr_raw as usize + raw)?.iter().any(|b| *b != 0) {
+    if img
+        .bytes
+        .get(start..sec.ptr_raw as usize + raw)?
+        .iter()
+        .any(|b| *b != 0)
+    {
         return None;
     }
     out.resize(raw, 0);
@@ -165,7 +176,12 @@ mod tests {
     use super::*;
 
     fn range(begin: u32, end: u32, chained: bool) -> CodeRange {
-        CodeRange { begin, end, unwind: 0, chained }
+        CodeRange {
+            begin,
+            end,
+            unwind: 0,
+            chained,
+        }
     }
 
     #[test]
@@ -191,7 +207,12 @@ mod tests {
 
     #[test]
     fn region_degeneree_est_vide() {
-        let r = CodeRange { begin: 0x20, end: 0x20, unwind: 0, chained: false };
+        let r = CodeRange {
+            begin: 0x20,
+            end: 0x20,
+            unwind: 0,
+            chained: false,
+        };
         assert!(r.is_empty());
         assert_eq!(r.len(), 0);
     }

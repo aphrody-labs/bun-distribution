@@ -24,8 +24,14 @@ pub enum ChannelLayout {
 }
 
 impl ChannelLayout {
-    pub const ALL: [ChannelLayout; 6] =
-        [ChannelLayout::Gray, ChannelLayout::GrayA, ChannelLayout::Rgb, ChannelLayout::Rgba, ChannelLayout::Cmyk, ChannelLayout::CmykA];
+    pub const ALL: [ChannelLayout; 6] = [
+        ChannelLayout::Gray,
+        ChannelLayout::GrayA,
+        ChannelLayout::Rgb,
+        ChannelLayout::Rgba,
+        ChannelLayout::Cmyk,
+        ChannelLayout::CmykA,
+    ];
 
     /// Total number of channels including alpha.
     pub const fn channels(self) -> usize {
@@ -44,7 +50,10 @@ impl ChannelLayout {
     }
 
     pub const fn has_alpha(self) -> bool {
-        matches!(self, ChannelLayout::GrayA | ChannelLayout::Rgba | ChannelLayout::CmykA)
+        matches!(
+            self,
+            ChannelLayout::GrayA | ChannelLayout::Rgba | ChannelLayout::CmykA
+        )
     }
 
     pub const fn is_gray(self) -> bool {
@@ -79,7 +88,9 @@ impl ChannelLayout {
 
     /// `true` if both layouts share a colour model (ignoring alpha).
     pub const fn same_model(self, other: Self) -> bool {
-        (self.is_gray() && other.is_gray()) || (self.is_rgb() && other.is_rgb()) || (self.is_cmyk() && other.is_cmyk())
+        (self.is_gray() && other.is_gray())
+            || (self.is_rgb() && other.is_rgb())
+            || (self.is_cmyk() && other.is_cmyk())
     }
 }
 
@@ -94,7 +105,12 @@ pub enum SampleType {
 }
 
 impl SampleType {
-    pub const ALL: [SampleType; 4] = [SampleType::U8, SampleType::U16, SampleType::F16, SampleType::F32];
+    pub const ALL: [SampleType; 4] = [
+        SampleType::U8,
+        SampleType::U16,
+        SampleType::F16,
+        SampleType::F32,
+    ];
 
     pub const fn bytes(self) -> usize {
         match self {
@@ -155,7 +171,10 @@ pub enum DecodeWarning {
     Truncated { format: Format },
     /// Deep image data (per-pixel sample lists) was composited into the flat image; the samples
     /// themselves (Z and other deep channels) are not part of the flat result.
-    DeepFlattened { format: Format, max_samples_per_pixel: u32 },
+    DeepFlattened {
+        format: Format,
+        max_samples_per_pixel: u32,
+    },
     /// Only the first image element of a DPX file was decoded; `total` counts them all.
     MoreElements { total: u32 },
     /// A DPX element's transfer characteristic and colorimetric specification (SMPTE 268M codes,
@@ -187,22 +206,46 @@ fn dpx_code_name(code: u8) -> &'static str {
 impl fmt::Display for DecodeWarning {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DecodeWarning::MoreFrames { total: Some(n) } => write!(f, "only the first of {n} frames was imported"),
-            DecodeWarning::MoreFrames { total: None } => write!(f, "only the first frame of the animation was imported"),
-            DecodeWarning::MorePages { total: Some(n) } => write!(f, "only the first of {n} pages was imported"),
-            DecodeWarning::MorePages { total: None } => write!(f, "only the first page of the file was imported"),
-            DecodeWarning::MoreParts { total: Some(n) } => write!(f, "only one of {n} EXR parts was imported"),
-            DecodeWarning::MoreParts { total: None } => write!(f, "only one EXR part of the file was imported"),
-            DecodeWarning::Truncated { format } => {
-                write!(f, "{} data ends early (the file is truncated or damaged); part of the image is missing", format.name())
+            DecodeWarning::MoreFrames { total: Some(n) } => {
+                write!(f, "only the first of {n} frames was imported")
             }
-            DecodeWarning::DeepFlattened { format, max_samples_per_pixel } => write!(
+            DecodeWarning::MoreFrames { total: None } => {
+                write!(f, "only the first frame of the animation was imported")
+            }
+            DecodeWarning::MorePages { total: Some(n) } => {
+                write!(f, "only the first of {n} pages was imported")
+            }
+            DecodeWarning::MorePages { total: None } => {
+                write!(f, "only the first page of the file was imported")
+            }
+            DecodeWarning::MoreParts { total: Some(n) } => {
+                write!(f, "only one of {n} EXR parts was imported")
+            }
+            DecodeWarning::MoreParts { total: None } => {
+                write!(f, "only one EXR part of the file was imported")
+            }
+            DecodeWarning::Truncated { format } => {
+                write!(
+                    f,
+                    "{} data ends early (the file is truncated or damaged); part of the image is missing",
+                    format.name()
+                )
+            }
+            DecodeWarning::DeepFlattened {
+                format,
+                max_samples_per_pixel,
+            } => write!(
                 f,
                 "{format} deep data was composited into a flat image (up to {max_samples_per_pixel} samples per pixel); per-pixel depth is not kept",
                 format = format.name()
             ),
-            DecodeWarning::MoreElements { total } => write!(f, "only the first of {total} image elements was imported"),
-            DecodeWarning::DpxEncoding { transfer, colorimetric } => write!(
+            DecodeWarning::MoreElements { total } => {
+                write!(f, "only the first of {total} image elements was imported")
+            }
+            DecodeWarning::DpxEncoding {
+                transfer,
+                colorimetric,
+            } => write!(
                 f,
                 "DPX transfer characteristic: {} ({transfer}), colorimetric: {} ({colorimetric}); the code values were imported as stored, without a colour transform",
                 dpx_code_name(*transfer),
@@ -294,7 +337,11 @@ impl ExrPartInfo {
     /// 4 RGBA, 3 RGB, 2 YA, 1 any-single-channel, 0 anything else (e.g. `Z` beside `A`).
     /// The auto-pick takes the highest rank; ties go to the earlier part.
     pub fn color_rank(&self) -> u8 {
-        let has = |n: &str| self.channels.iter().any(|c| base_channel_name(&c.name) == n);
+        let has = |n: &str| {
+            self.channels
+                .iter()
+                .any(|c| base_channel_name(&c.name) == n)
+        };
         if has("R") && has("G") && has("B") {
             return if has("A") { 4 } else { 3 };
         }
@@ -337,7 +384,10 @@ pub struct CryptomatteLayer {
 impl CryptomatteLayer {
     /// The manifest name for an ID value, when the manifest lists it.
     pub fn name_of(&self, id: f32) -> Option<&str> {
-        self.manifest.iter().find(|(i, _)| *i == id).map(|(_, n)| n.as_str())
+        self.manifest
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, n)| n.as_str())
     }
 }
 
@@ -376,47 +426,113 @@ pub struct Image {
 }
 
 fn byte_len(width: u32, height: u32, layout: ChannelLayout, sample: SampleType) -> Option<usize> {
-    (width as usize).checked_mul(height as usize)?.checked_mul(layout.channels())?.checked_mul(sample.bytes())
+    (width as usize)
+        .checked_mul(height as usize)?
+        .checked_mul(layout.channels())?
+        .checked_mul(sample.bytes())
 }
 
 impl Image {
     /// A zero-filled image, or an error if the byte size overflows `usize`.
-    pub fn new(width: u32, height: u32, layout: ChannelLayout, sample: SampleType) -> Result<Self, CodecError> {
-        let len = byte_len(width, height, layout, sample).ok_or_else(|| CodecError::InvalidImage("image size overflows usize".into()))?;
-        Ok(Image { width, height, layout, sample, data: vec![0; len], icc: None, meta: Metadata::default(), warnings: Vec::new() })
+    pub fn new(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        sample: SampleType,
+    ) -> Result<Self, CodecError> {
+        let len = byte_len(width, height, layout, sample)
+            .ok_or_else(|| CodecError::InvalidImage("image size overflows usize".into()))?;
+        Ok(Image {
+            width,
+            height,
+            layout,
+            sample,
+            data: vec![0; len],
+            icc: None,
+            meta: Metadata::default(),
+            warnings: Vec::new(),
+        })
     }
 
     /// Wrap raw interleaved, native-endian bytes.
-    pub fn from_raw(width: u32, height: u32, layout: ChannelLayout, sample: SampleType, data: Vec<u8>) -> Result<Self, CodecError> {
-        let expected = byte_len(width, height, layout, sample).ok_or_else(|| CodecError::InvalidImage("image size overflows usize".into()))?;
+    pub fn from_raw(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        sample: SampleType,
+        data: Vec<u8>,
+    ) -> Result<Self, CodecError> {
+        let expected = byte_len(width, height, layout, sample)
+            .ok_or_else(|| CodecError::InvalidImage("image size overflows usize".into()))?;
         if data.len() != expected {
-            return Err(CodecError::InvalidImage(format!("buffer has {} bytes, expected {expected} for {width}x{height} {layout:?} {sample:?}", data.len())));
+            return Err(CodecError::InvalidImage(format!(
+                "buffer has {} bytes, expected {expected} for {width}x{height} {layout:?} {sample:?}",
+                data.len()
+            )));
         }
-        Ok(Image { width, height, layout, sample, data, icc: None, meta: Metadata::default(), warnings: Vec::new() })
+        Ok(Image {
+            width,
+            height,
+            layout,
+            sample,
+            data,
+            icc: None,
+            meta: Metadata::default(),
+            warnings: Vec::new(),
+        })
     }
 
-    pub fn from_u8(width: u32, height: u32, layout: ChannelLayout, data: Vec<u8>) -> Result<Self, CodecError> {
+    pub fn from_u8(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        data: Vec<u8>,
+    ) -> Result<Self, CodecError> {
         Self::from_raw(width, height, layout, SampleType::U8, data)
     }
 
-    pub fn from_u16(width: u32, height: u32, layout: ChannelLayout, data: &[u16]) -> Result<Self, CodecError> {
+    pub fn from_u16(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        data: &[u16],
+    ) -> Result<Self, CodecError> {
         let bytes = data.iter().flat_map(|v| v.to_ne_bytes()).collect();
         Self::from_raw(width, height, layout, SampleType::U16, bytes)
     }
 
-    pub fn from_f16(width: u32, height: u32, layout: ChannelLayout, data: &[f16]) -> Result<Self, CodecError> {
-        let bytes = data.iter().flat_map(|v| v.to_bits().to_ne_bytes()).collect();
+    pub fn from_f16(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        data: &[f16],
+    ) -> Result<Self, CodecError> {
+        let bytes = data
+            .iter()
+            .flat_map(|v| v.to_bits().to_ne_bytes())
+            .collect();
         Self::from_raw(width, height, layout, SampleType::F16, bytes)
     }
 
-    pub fn from_f32(width: u32, height: u32, layout: ChannelLayout, data: &[f32]) -> Result<Self, CodecError> {
+    pub fn from_f32(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        data: &[f32],
+    ) -> Result<Self, CodecError> {
         let bytes = data.iter().flat_map(|v| v.to_ne_bytes()).collect();
         Self::from_raw(width, height, layout, SampleType::F32, bytes)
     }
 
     /// Build an image from normalized f32 samples (`[0,1]` for integer
     /// targets; values are clamped and rounded when quantizing).
-    pub fn from_normalized(width: u32, height: u32, layout: ChannelLayout, sample: SampleType, values: &[f32]) -> Result<Self, CodecError> {
+    pub fn from_normalized(
+        width: u32,
+        height: u32,
+        layout: ChannelLayout,
+        sample: SampleType,
+        values: &[f32],
+    ) -> Result<Self, CodecError> {
         let data = quantize(values, sample);
         Self::from_raw(width, height, layout, sample, data)
     }
@@ -471,17 +587,38 @@ impl Image {
 
     /// Copy samples out as `u16` (only when the sample type is `U16`).
     pub fn to_u16_samples(&self) -> Option<Vec<u16>> {
-        (self.sample == SampleType::U16).then(|| self.data.as_chunks::<2>().0.iter().map(|c| u16::from_ne_bytes([c[0], c[1]])).collect())
+        (self.sample == SampleType::U16).then(|| {
+            self.data
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| u16::from_ne_bytes([c[0], c[1]]))
+                .collect()
+        })
     }
 
     /// Copy samples out as `f16` (only when the sample type is `F16`).
     pub fn to_f16_samples(&self) -> Option<Vec<f16>> {
-        (self.sample == SampleType::F16).then(|| self.data.as_chunks::<2>().0.iter().map(|c| f16::from_bits(u16::from_ne_bytes([c[0], c[1]]))).collect())
+        (self.sample == SampleType::F16).then(|| {
+            self.data
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| f16::from_bits(u16::from_ne_bytes([c[0], c[1]])))
+                .collect()
+        })
     }
 
     /// Copy samples out as `f32` (only when the sample type is `F32`).
     pub fn to_f32_samples(&self) -> Option<Vec<f32>> {
-        (self.sample == SampleType::F32).then(|| self.data.as_chunks::<4>().0.iter().map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]])).collect())
+        (self.sample == SampleType::F32).then(|| {
+            self.data
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]]))
+                .collect()
+        })
     }
 
     /// Sample `index` (in samples, not bytes) as a normalized f32.
@@ -529,7 +666,10 @@ impl Image {
         if layout == self.layout && sample == self.sample {
             return self.clone();
         }
-        let data = if sample == self.sample && !self.layout.has_alpha() && layout == self.layout.with_alpha() {
+        let data = if sample == self.sample
+            && !self.layout.has_alpha()
+            && layout == self.layout.with_alpha()
+        {
             // Fast path (opening any opaque file): copy the samples, append an opaque alpha.
             let bps = sample.bytes();
             let src = self.layout.channels() * bps;
@@ -560,7 +700,11 @@ impl Image {
             layout,
             sample,
             data,
-            icc: if layout.same_model(self.layout) { self.icc.clone() } else { None },
+            icc: if layout.same_model(self.layout) {
+                self.icc.clone()
+            } else {
+                None
+            },
             meta: self.meta.clone(),
             warnings: self.warnings.clone(),
         }
@@ -608,17 +752,29 @@ impl Image {
         }
         match (self.sample, sample) {
             (SampleType::U8, SampleType::U8) => run!(|s: &[u8], o: &mut Vec<u8>| o.push(s[0])),
-            (SampleType::U16, SampleType::U16) => run!(|s: &[u8], o: &mut Vec<u8>| o.extend_from_slice(s)),
-            (SampleType::U8, SampleType::U16) => run!(|s: &[u8], o: &mut Vec<u8>| o.extend_from_slice(&(u16::from(s[0]) * 257).to_ne_bytes())),
-            _ => run!(|s: &[u8], o: &mut Vec<u8>| o.push(((u32::from(u16::from_ne_bytes([s[0], s[1]])) + 128) / 257) as u8)),
+            (SampleType::U16, SampleType::U16) => {
+                run!(|s: &[u8], o: &mut Vec<u8>| o.extend_from_slice(s))
+            }
+            (SampleType::U8, SampleType::U16) => run!(|s: &[u8], o: &mut Vec<u8>| o
+                .extend_from_slice(&(u16::from(s[0]) * 257).to_ne_bytes())),
+            _ => run!(|s: &[u8], o: &mut Vec<u8>| o
+                .push(((u32::from(u16::from_ne_bytes([s[0], s[1]])) + 128) / 257) as u8)),
         }
         Some(out)
     }
 
     /// [`Image::convert`], borrowing `self` when it already has that layout and sample type
     /// (encoders use it so a full-size image isn't copied for nothing).
-    pub fn converted(&self, layout: ChannelLayout, sample: SampleType) -> std::borrow::Cow<'_, Image> {
-        if layout == self.layout && sample == self.sample { std::borrow::Cow::Borrowed(self) } else { std::borrow::Cow::Owned(self.convert(layout, sample)) }
+    pub fn converted(
+        &self,
+        layout: ChannelLayout,
+        sample: SampleType,
+    ) -> std::borrow::Cow<'_, Image> {
+        if layout == self.layout && sample == self.sample {
+            std::borrow::Cow::Borrowed(self)
+        } else {
+            std::borrow::Cow::Owned(self.convert(layout, sample))
+        }
     }
 
     /// Interleaved RGBA, 8 bits per sample.
@@ -628,7 +784,9 @@ impl Image {
 
     /// Interleaved RGBA, 16 bits per sample.
     pub fn to_rgba16(&self) -> Vec<u16> {
-        self.convert(ChannelLayout::Rgba, SampleType::U16).to_u16_samples().unwrap_or_default()
+        self.convert(ChannelLayout::Rgba, SampleType::U16)
+            .to_u16_samples()
+            .unwrap_or_default()
     }
 
     /// Interleaved RGBA as f32 (integer inputs normalized to `[0,1]`).
@@ -646,17 +804,39 @@ pub(crate) fn read_normalized(data: &[u8], sample: SampleType, i: usize) -> f32 
     match sample {
         SampleType::U8 => data[i] as f32 / 255.0,
         SampleType::U16 => u16::from_ne_bytes([data[2 * i], data[2 * i + 1]]) as f32 / 65535.0,
-        SampleType::F16 => f16::from_bits(u16::from_ne_bytes([data[2 * i], data[2 * i + 1]])).to_f32(),
-        SampleType::F32 => f32::from_ne_bytes([data[4 * i], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]]),
+        SampleType::F16 => {
+            f16::from_bits(u16::from_ne_bytes([data[2 * i], data[2 * i + 1]])).to_f32()
+        }
+        SampleType::F32 => f32::from_ne_bytes([
+            data[4 * i],
+            data[4 * i + 1],
+            data[4 * i + 2],
+            data[4 * i + 3],
+        ]),
     }
 }
 
 pub(crate) fn to_normalized(data: &[u8], sample: SampleType) -> Vec<f32> {
     match sample {
         SampleType::U8 => data.iter().map(|&v| v as f32 / 255.0).collect(),
-        SampleType::U16 => data.as_chunks::<2>().0.iter().map(|c| u16::from_ne_bytes([c[0], c[1]]) as f32 / 65535.0).collect(),
-        SampleType::F16 => data.as_chunks::<2>().0.iter().map(|c| f16::from_bits(u16::from_ne_bytes([c[0], c[1]])).to_f32()).collect(),
-        SampleType::F32 => data.as_chunks::<4>().0.iter().map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]])).collect(),
+        SampleType::U16 => data
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_ne_bytes([c[0], c[1]]) as f32 / 65535.0)
+            .collect(),
+        SampleType::F16 => data
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| f16::from_bits(u16::from_ne_bytes([c[0], c[1]])).to_f32())
+            .collect(),
+        SampleType::F32 => data
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| f32::from_ne_bytes([c[0], c[1], c[2], c[3]]))
+            .collect(),
     }
 }
 
@@ -667,9 +847,18 @@ fn clamp01(v: f32) -> f32 {
 
 pub(crate) fn quantize(values: &[f32], sample: SampleType) -> Vec<u8> {
     match sample {
-        SampleType::U8 => values.iter().map(|&v| (clamp01(v) * 255.0).round() as u8).collect(),
-        SampleType::U16 => values.iter().flat_map(|&v| ((clamp01(v) * 65535.0).round() as u16).to_ne_bytes()).collect(),
-        SampleType::F16 => values.iter().flat_map(|&v| f16::from_f32(v).to_bits().to_ne_bytes()).collect(),
+        SampleType::U8 => values
+            .iter()
+            .map(|&v| (clamp01(v) * 255.0).round() as u8)
+            .collect(),
+        SampleType::U16 => values
+            .iter()
+            .flat_map(|&v| ((clamp01(v) * 65535.0).round() as u16).to_ne_bytes())
+            .collect(),
+        SampleType::F16 => values
+            .iter()
+            .flat_map(|&v| f16::from_f32(v).to_bits().to_ne_bytes())
+            .collect(),
         SampleType::F32 => values.iter().flat_map(|&v| v.to_ne_bytes()).collect(),
     }
 }
@@ -678,7 +867,11 @@ pub(crate) fn quantize(values: &[f32], sample: SampleType) -> Vec<u8> {
 const LUMA: [f32; 3] = [0.2126, 0.7152, 0.0722];
 
 fn cmyk_to_rgb(c: f32, m: f32, y: f32, k: f32) -> [f32; 3] {
-    [(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)]
+    [
+        (1.0 - c) * (1.0 - k),
+        (1.0 - m) * (1.0 - k),
+        (1.0 - y) * (1.0 - k),
+    ]
 }
 
 fn rgb_to_cmyk(r: f32, g: f32, b: f32) -> [f32; 4] {
@@ -710,14 +903,18 @@ pub(crate) fn convert_layout(src: &[f32], from: ChannelLayout, to: ChannelLayout
             let rgb = match from {
                 ChannelLayout::Gray | ChannelLayout::GrayA => [color[0]; 3],
                 ChannelLayout::Rgb | ChannelLayout::Rgba => [color[0], color[1], color[2]],
-                ChannelLayout::Cmyk | ChannelLayout::CmykA => cmyk_to_rgb(color[0], color[1], color[2], color[3]),
+                ChannelLayout::Cmyk | ChannelLayout::CmykA => {
+                    cmyk_to_rgb(color[0], color[1], color[2], color[3])
+                }
             };
             match to {
                 ChannelLayout::Gray | ChannelLayout::GrayA => {
                     out.push(rgb[0] * LUMA[0] + rgb[1] * LUMA[1] + rgb[2] * LUMA[2]);
                 }
                 ChannelLayout::Rgb | ChannelLayout::Rgba => out.extend_from_slice(&rgb),
-                ChannelLayout::Cmyk | ChannelLayout::CmykA => out.extend_from_slice(&rgb_to_cmyk(rgb[0], rgb[1], rgb[2])),
+                ChannelLayout::Cmyk | ChannelLayout::CmykA => {
+                    out.extend_from_slice(&rgb_to_cmyk(rgb[0], rgb[1], rgb[2]))
+                }
             }
         }
         if to.has_alpha() {
@@ -737,7 +934,10 @@ mod tests {
                 let vals: Vec<f32> = (0..n).map(|i| (i as f32 * 0.137) % 1.0).collect();
                 let img = super::Image::from_normalized(7, 3, layout, sample, &vals).unwrap();
                 let fast = img.convert(layout.with_alpha(), sample);
-                let slow = super::quantize(&super::convert_layout(&img.to_normalized(), layout, layout.with_alpha()), sample);
+                let slow = super::quantize(
+                    &super::convert_layout(&img.to_normalized(), layout, layout.with_alpha()),
+                    sample,
+                );
                 assert_eq!(fast.data(), &slow[..], "{layout:?} {sample:?}");
             }
         }
@@ -747,7 +947,10 @@ mod tests {
 
     /// The generic f32 route `convert` used before the integer fast paths (the reference).
     fn convert_via_f32(img: &Image, layout: ChannelLayout, sample: SampleType) -> Vec<u8> {
-        quantize(&convert_layout(&img.to_normalized(), img.layout, layout), sample)
+        quantize(
+            &convert_layout(&img.to_normalized(), img.layout, layout),
+            sample,
+        )
     }
 
     #[test]
@@ -755,16 +958,23 @@ mod tests {
         // Every U8 and every U16 value through every depth pair (alpha goes through the same per-sample conversion; covered by the layout test).
         let all8: Vec<u8> = (0..=255).collect();
         let all16: Vec<u16> = (0..=65535).collect();
-        for (src, to) in
-            [(SampleType::U8, SampleType::U8), (SampleType::U8, SampleType::U16), (SampleType::U16, SampleType::U8), (SampleType::U16, SampleType::U16)]
-        {
+        for (src, to) in [
+            (SampleType::U8, SampleType::U8),
+            (SampleType::U8, SampleType::U16),
+            (SampleType::U16, SampleType::U8),
+            (SampleType::U16, SampleType::U16),
+        ] {
             let img = if src == SampleType::U8 {
                 Image::from_u8(256, 1, ChannelLayout::Gray, all8.clone()).unwrap()
             } else {
                 Image::from_u16(65536, 1, ChannelLayout::Gray, &all16).unwrap()
             };
             for layout in [ChannelLayout::Gray, ChannelLayout::Rgb] {
-                assert_eq!(img.convert(layout, to).data(), &convert_via_f32(&img, layout, to)[..], "{src:?}->{to:?} {layout:?}");
+                assert_eq!(
+                    img.convert(layout, to).data(),
+                    &convert_via_f32(&img, layout, to)[..],
+                    "{src:?}->{to:?} {layout:?}"
+                );
             }
         }
     }
@@ -798,7 +1008,11 @@ mod tests {
                 for to_l in ChannelLayout::ALL {
                     for to_s in SampleType::ALL {
                         let got = img.convert(to_l, to_s);
-                        assert_eq!(got.data(), &convert_via_f32(&img, to_l, to_s)[..], "{from_l:?}/{from_s:?} -> {to_l:?}/{to_s:?}");
+                        assert_eq!(
+                            got.data(),
+                            &convert_via_f32(&img, to_l, to_s)[..],
+                            "{from_l:?}/{from_s:?} -> {to_l:?}/{to_s:?}"
+                        );
                     }
                 }
             }
@@ -809,7 +1023,9 @@ mod tests {
     fn u8_u16_roundtrip_exact() {
         let v: Vec<u8> = (0..=255).collect();
         let img = Image::from_u8(256, 1, ChannelLayout::Gray, v.clone()).unwrap();
-        let back = img.convert(ChannelLayout::Gray, SampleType::U16).convert(ChannelLayout::Gray, SampleType::U8);
+        let back = img
+            .convert(ChannelLayout::Gray, SampleType::U16)
+            .convert(ChannelLayout::Gray, SampleType::U8);
         assert_eq!(back.data(), &v[..]);
     }
 
@@ -817,15 +1033,27 @@ mod tests {
     fn u16_f32_roundtrip_exact() {
         let v: Vec<u16> = (0..=65535u32).step_by(7).map(|x| x as u16).collect();
         let img = Image::from_u16(v.len() as u32, 1, ChannelLayout::Gray, &v).unwrap();
-        let back = img.convert(ChannelLayout::Gray, SampleType::F32).convert(ChannelLayout::Gray, SampleType::U16);
+        let back = img
+            .convert(ChannelLayout::Gray, SampleType::F32)
+            .convert(ChannelLayout::Gray, SampleType::U16);
         assert_eq!(back.to_u16_samples().unwrap(), v);
     }
 
     #[test]
     fn icc_dropped_on_model_change() {
-        let img = Image::new(2, 2, ChannelLayout::Cmyk, SampleType::U8).unwrap().with_icc(Some(vec![1, 2, 3]));
-        assert!(img.convert(ChannelLayout::Rgb, SampleType::U8).icc.is_none());
-        assert!(img.convert(ChannelLayout::CmykA, SampleType::U16).icc.is_some());
+        let img = Image::new(2, 2, ChannelLayout::Cmyk, SampleType::U8)
+            .unwrap()
+            .with_icc(Some(vec![1, 2, 3]));
+        assert!(
+            img.convert(ChannelLayout::Rgb, SampleType::U8)
+                .icc
+                .is_none()
+        );
+        assert!(
+            img.convert(ChannelLayout::CmykA, SampleType::U16)
+                .icc
+                .is_some()
+        );
     }
 
     #[test]

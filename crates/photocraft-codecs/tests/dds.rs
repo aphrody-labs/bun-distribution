@@ -1,5 +1,6 @@
 use photocraft_codecs::{
-    ChannelLayout, CodecError, DecodeOptions, Format, Limits, SampleType, caps, decode, decode_as, decode_as_with, detect, encode, from_extension,
+    ChannelLayout, CodecError, DecodeOptions, Format, Limits, SampleType, caps, decode, decode_as,
+    decode_as_with, detect, encode, from_extension,
 };
 
 const DDPF_ALPHAPIXELS: u32 = 0x1;
@@ -8,7 +9,14 @@ const DDPF_RGB: u32 = 0x40;
 const DDPF_LUMINANCE: u32 = 0x2_0000;
 
 /// A DDS_HEADER for a single-level 2D texture, after the `DDS ` signature.
-fn header(width: u32, height: u32, pf_flags: u32, fourcc: &[u8; 4], bits: u32, masks: [u32; 4]) -> Vec<u8> {
+fn header(
+    width: u32,
+    height: u32,
+    pf_flags: u32,
+    fourcc: &[u8; 4],
+    bits: u32,
+    masks: [u32; 4],
+) -> Vec<u8> {
     let mut b = vec![0u8; 128];
     b[0..4].copy_from_slice(b"DDS ");
     let mut put = |at: usize, v: u32| b[at..at + 4].copy_from_slice(&v.to_le_bytes());
@@ -62,8 +70,12 @@ const INDICES_0123: [u8; 4] = [0x04, 0x0e, 0, 0];
 fn dds_is_readable_but_not_writable() {
     assert_eq!(from_extension("texture.DDS"), Some(Format::Dds));
     assert!(caps(Format::Dds).read && !caps(Format::Dds).write);
-    let img = photocraft_codecs::Image::from_u8(1, 1, ChannelLayout::Rgba, vec![0, 0, 0, 0]).unwrap();
-    assert!(matches!(encode(&img, Format::Dds, &Default::default()), Err(CodecError::Unsupported { .. })));
+    let img =
+        photocraft_codecs::Image::from_u8(1, 1, ChannelLayout::Rgba, vec![0, 0, 0, 0]).unwrap();
+    assert!(matches!(
+        encode(&img, Format::Dds, &Default::default()),
+        Err(CodecError::Unsupported { .. })
+    ));
 }
 
 #[test]
@@ -73,8 +85,16 @@ fn decodes_bc1_four_colour_blocks() {
     b.extend(bc1_block(RED, BLUE, INDICES_0123));
     assert_eq!(detect(&b), Some(Format::Dds));
     let im = decode(&b).unwrap();
-    assert_eq!((im.dimensions(), im.layout(), im.sample_type()), ((2, 2), ChannelLayout::Rgba, SampleType::U8));
-    assert_eq!(im.data(), &[255, 0, 0, 255, 0, 0, 255, 255, 170, 0, 85, 255, 85, 0, 170, 255]);
+    assert_eq!(
+        (im.dimensions(), im.layout(), im.sample_type()),
+        ((2, 2), ChannelLayout::Rgba, SampleType::U8)
+    );
+    assert_eq!(
+        im.data(),
+        &[
+            255, 0, 0, 255, 0, 0, 255, 255, 170, 0, 85, 255, 85, 0, 170, 255
+        ]
+    );
 }
 
 #[test]
@@ -82,7 +102,10 @@ fn decodes_bc1_one_bit_alpha_blocks() {
     // c0 <= c1: three colours (the third halfway) and index 3 is transparent black.
     let mut b = compressed(2, 2, b"DXT1");
     b.extend(bc1_block(BLUE, RED, INDICES_0123));
-    assert_eq!(decode(&b).unwrap().data(), &[0, 0, 255, 255, 255, 0, 0, 255, 128, 0, 128, 255, 0, 0, 0, 0]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[0, 0, 255, 255, 255, 0, 0, 255, 128, 0, 128, 255, 0, 0, 0, 0]
+    );
 }
 
 #[test]
@@ -94,7 +117,12 @@ fn decodes_bc2_explicit_alpha_with_four_colour_blocks() {
     b.extend(bc1_block(BLACK, WHITE, [0x04, 0x0b, 0, 0]));
     let im = decode(&b).unwrap();
     assert_eq!(im.layout(), ChannelLayout::Rgba);
-    assert_eq!(im.data(), &[0, 0, 0, 255, 255, 255, 255, 0, 170, 170, 170, 136, 85, 85, 85, 17]);
+    assert_eq!(
+        im.data(),
+        &[
+            0, 0, 0, 255, 255, 255, 255, 0, 170, 170, 170, 136, 85, 85, 85, 17
+        ]
+    );
 }
 
 #[test]
@@ -103,7 +131,12 @@ fn decodes_bc3_interpolated_alpha() {
     let mut b = compressed(2, 2, b"DXT5");
     b.extend([255, 0, 0x08, 0xa0, 0x03, 0, 0, 0]);
     b.extend(bc1_block(BLACK, WHITE, [0x04, 0x0b, 0, 0]));
-    assert_eq!(decode(&b).unwrap().data(), &[0, 0, 0, 255, 255, 255, 255, 0, 170, 170, 170, 219, 85, 85, 85, 36]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[
+            0, 0, 0, 255, 255, 255, 255, 0, 170, 170, 170, 219, 85, 85, 85, 36
+        ]
+    );
 
     // a0 <= a1: six values, four interpolated at fifths, then 0 and 255. Indices 2, 5 / 6, 7.
     let mut b = compressed(2, 2, b"DXT5");
@@ -111,7 +144,10 @@ fn decodes_bc3_interpolated_alpha() {
     b.extend([0, 255]);
     b.extend(&bits.to_le_bytes()[..6]);
     b.extend(bc1_block(GREEN, GREEN, [0; 4]));
-    assert_eq!(decode(&b).unwrap().data(), &[0, 255, 0, 51, 0, 255, 0, 204, 0, 255, 0, 0, 0, 255, 0, 255]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[0, 255, 0, 51, 0, 255, 0, 204, 0, 255, 0, 0, 0, 255, 0, 255]
+    );
 }
 
 #[test]
@@ -123,7 +159,14 @@ fn bc_textures_need_not_be_a_multiple_of_four() {
     let im = decode(&b).unwrap();
     assert_eq!(im.dimensions(), (5, 3));
     let px = |x: usize, y: usize| &im.data()[(y * 5 + x) * 4..(y * 5 + x + 1) * 4];
-    assert_eq!((px(3, 2), px(4, 0), px(4, 2)), (&[255, 0, 0, 255][..], &[0, 0, 255, 255][..], &[0, 0, 255, 255][..]));
+    assert_eq!(
+        (px(3, 2), px(4, 0), px(4, 2)),
+        (
+            &[255, 0, 0, 255][..],
+            &[0, 0, 255, 255][..],
+            &[0, 0, 255, 255][..]
+        )
+    );
 }
 
 #[test]
@@ -138,13 +181,19 @@ fn decodes_uncompressed_rgba_and_bgra_masks() {
     let bgra = [0xff_0000, 0xff00, 0xff, 0xff00_0000];
     let mut b = header(2, 1, DDPF_RGB | DDPF_ALPHAPIXELS, &[0; 4], 32, bgra);
     b.extend([3, 2, 1, 4, 252, 251, 250, 253]);
-    assert_eq!(decode(&b).unwrap().data(), &[1, 2, 3, 4, 250, 251, 252, 253]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[1, 2, 3, 4, 250, 251, 252, 253]
+    );
 
     // An alpha mask without DDPF_ALPHAPIXELS is not alpha: X8R8G8B8 opens as RGB.
     let mut b = header(1, 1, DDPF_RGB, &[0; 4], 32, bgra);
     b.extend([3, 2, 1, 0]);
     let im = decode(&b).unwrap();
-    assert_eq!((im.layout(), im.data()), (ChannelLayout::Rgb, &[1u8, 2, 3][..]));
+    assert_eq!(
+        (im.layout(), im.data()),
+        (ChannelLayout::Rgb, &[1u8, 2, 3][..])
+    );
 }
 
 #[test]
@@ -161,12 +210,25 @@ fn decodes_packed_masks_and_luminance() {
     // 24-bit rows are packed three bytes a pixel, without padding.
     let mut b = header(2, 2, DDPF_RGB, &[0; 4], 24, [0xff_0000, 0xff00, 0xff, 0]);
     b.extend([3, 2, 1, 6, 5, 4, 9, 8, 7, 12, 11, 10]);
-    assert_eq!(decode(&b).unwrap().data(), &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    );
 
-    let mut b = header(2, 1, DDPF_LUMINANCE | DDPF_ALPHAPIXELS, &[0; 4], 16, [0xff, 0, 0, 0xff00]);
+    let mut b = header(
+        2,
+        1,
+        DDPF_LUMINANCE | DDPF_ALPHAPIXELS,
+        &[0; 4],
+        16,
+        [0xff, 0, 0, 0xff00],
+    );
     b.extend([10, 20, 30, 40]);
     let im = decode(&b).unwrap();
-    assert_eq!((im.layout(), im.data()), (ChannelLayout::GrayA, &[10u8, 20, 30, 40][..]));
+    assert_eq!(
+        (im.layout(), im.data()),
+        (ChannelLayout::GrayA, &[10u8, 20, 30, 40][..])
+    );
 }
 
 #[test]
@@ -181,7 +243,10 @@ fn decodes_dx10_headers() {
 
     let mut b = dx10(2, 2, 71, 3, 0, 1); // BC1_UNORM
     b.extend(bc1_block(BLUE, RED, INDICES_0123));
-    assert_eq!(decode(&b).unwrap().data(), &[0, 0, 255, 255, 255, 0, 0, 255, 128, 0, 128, 255, 0, 0, 0, 0]);
+    assert_eq!(
+        decode(&b).unwrap().data(),
+        &[0, 0, 255, 255, 255, 0, 0, 255, 128, 0, 128, 255, 0, 0, 0, 0]
+    );
 }
 
 #[test]
@@ -226,12 +291,19 @@ fn rejects_truncated_files_at_every_length_without_panicking() {
     b.extend([0x5a; 32]);
     assert!(decode(&b).is_ok());
     for n in 0..b.len() {
-        assert!(decode_as(Format::Dds, &b[..n]).is_err(), "decoded {n} of {} bytes", b.len());
+        assert!(
+            decode_as(Format::Dds, &b[..n]).is_err(),
+            "decoded {n} of {} bytes",
+            b.len()
+        );
     }
     let mut b = header(3, 2, DDPF_RGB, &[0; 4], 24, [0xff_0000, 0xff00, 0xff, 0]);
     b.extend([7; 18]);
     assert!(decode(&b).is_ok());
-    assert!(decode_as(Format::Dds, &b[..b.len() - 1]).is_err(), "one byte short");
+    assert!(
+        decode_as(Format::Dds, &b[..b.len() - 1]).is_err(),
+        "one byte short"
+    );
 }
 
 #[test]
@@ -239,17 +311,38 @@ fn rejects_bogus_sizes_and_pixel_formats() {
     // Huge dimensions are refused before anything is allocated.
     let mut huge = compressed(u32::MAX, u32::MAX, b"DXT1");
     huge.extend([0; 8]);
-    assert!(matches!(decode_as(Format::Dds, &huge), Err(CodecError::LimitExceeded(_))));
-    let opts = DecodeOptions { limits: Limits { max_alloc: 1024, ..Default::default() }, ..Default::default() };
+    assert!(matches!(
+        decode_as(Format::Dds, &huge),
+        Err(CodecError::LimitExceeded(_))
+    ));
+    let opts = DecodeOptions {
+        limits: Limits {
+            max_alloc: 1024,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
     let mut tight = header(64, 64, DDPF_RGB, &[0; 4], 32, [0xff, 0xff00, 0xff_0000, 0]);
     tight.extend(vec![0; 64 * 64 * 4]);
-    assert!(matches!(decode_as_with(Format::Dds, &tight, &opts), Err(CodecError::LimitExceeded(_))));
-    assert!(decode_as(Format::Dds, &compressed(0, 4, b"DXT1")).is_err(), "zero width");
+    assert!(matches!(
+        decode_as_with(Format::Dds, &tight, &opts),
+        Err(CodecError::LimitExceeded(_))
+    ));
+    assert!(
+        decode_as(Format::Dds, &compressed(0, 4, b"DXT1")).is_err(),
+        "zero width"
+    );
 
     let mut bad_size = compressed(4, 4, b"DXT1");
     bad_size[4..8].copy_from_slice(&100u32.to_le_bytes());
     bad_size.extend([0; 8]);
-    assert!(matches!(decode_as(Format::Dds, &bad_size), Err(CodecError::Malformed { .. })), "header size must be 124");
+    assert!(
+        matches!(
+            decode_as(Format::Dds, &bad_size),
+            Err(CodecError::Malformed { .. })
+        ),
+        "header size must be 124"
+    );
 
     for (bits, masks) in [
         (12, [0xf00, 0xf0, 0xf, 0]),        // not a whole number of bytes
@@ -260,9 +353,15 @@ fn rejects_bogus_sizes_and_pixel_formats() {
     ] {
         let mut b = header(1, 1, DDPF_RGB, &[0; 4], bits, masks);
         b.extend([0; 4]);
-        assert!(decode_as(Format::Dds, &b).is_err(), "{bits} bits, masks {masks:x?}");
+        assert!(
+            decode_as(Format::Dds, &b).is_err(),
+            "{bits} bits, masks {masks:x?}"
+        );
     }
     let mut no_format = header(1, 1, 0, &[0; 4], 32, [0xff, 0xff00, 0xff_0000, 0]);
     no_format.extend([0; 4]);
-    assert!(matches!(decode_as(Format::Dds, &no_format), Err(CodecError::Unsupported { .. })));
+    assert!(matches!(
+        decode_as(Format::Dds, &no_format),
+        Err(CodecError::Unsupported { .. })
+    ));
 }

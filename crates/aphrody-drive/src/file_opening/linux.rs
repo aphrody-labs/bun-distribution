@@ -38,17 +38,22 @@ pub(super) fn parse_desktop_entry(text: &str) -> Option<DesktopEntry> {
         if !in_group || line.starts_with('#') {
             continue;
         }
-        let Some((key, value)) = line.split_once('=') else { continue };
+        let Some((key, value)) = line.split_once('=') else {
+            continue;
+        };
         match (key.trim(), value.trim()) {
             ("Name", value) => name = Some(value.to_string()),
             ("MimeType", value) => {
-                mime_types =
-                    value.split(';').filter(|mime| !mime.is_empty()).map(str::to_string).collect();
-            },
+                mime_types = value
+                    .split(';')
+                    .filter(|mime| !mime.is_empty())
+                    .map(str::to_string)
+                    .collect();
+            }
             ("Type", value) => is_application = value == "Application",
             ("Exec", value) => has_exec = !value.is_empty(),
             ("NoDisplay" | "Hidden", "true") => hidden = true,
-            _ => {},
+            _ => {}
         }
     }
     (is_application && has_exec).then(|| DesktopEntry {
@@ -67,8 +72,9 @@ pub(super) fn application_dirs(
     if let Some(home) = data_home {
         dirs.push(home.join("applications"));
     }
-    let data_dirs =
-        data_dirs.filter(|value| !value.is_empty()).unwrap_or("/usr/local/share:/usr/share");
+    let data_dirs = data_dirs
+        .filter(|value| !value.is_empty())
+        .unwrap_or("/usr/local/share:/usr/share");
     dirs.extend(
         data_dirs
             .split(':')
@@ -82,8 +88,10 @@ pub(super) fn application_dirs(
 /// `kde-foo.desktop`).
 pub(super) fn desktop_id(root: &Path, file: &Path) -> Option<String> {
     let relative = file.strip_prefix(root).ok()?;
-    let parts: Vec<_> =
-        relative.components().map(|part| part.as_os_str().to_string_lossy().into_owned()).collect();
+    let parts: Vec<_> = relative
+        .components()
+        .map(|part| part.as_os_str().to_string_lossy().into_owned())
+        .collect();
     Some(parts.join("-"))
 }
 
@@ -94,7 +102,9 @@ pub(super) fn apps_for_mime(dirs: &[PathBuf], mime: &str) -> Vec<OpenWithApp> {
     for root in dirs {
         let mut stack = vec![root.clone()];
         while let Some(dir) = stack.pop() {
-            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            let Ok(entries) = std::fs::read_dir(&dir) else {
+                continue;
+            };
             for entry in entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
@@ -104,13 +114,19 @@ pub(super) fn apps_for_mime(dirs: &[PathBuf], mime: &str) -> Vec<OpenWithApp> {
                 if path.extension().and_then(|extension| extension.to_str()) != Some("desktop") {
                     continue;
                 }
-                let Some(id) = desktop_id(root, &path) else { continue };
+                let Some(id) = desktop_id(root, &path) else {
+                    continue;
+                };
                 // A higher-precedence directory shadows the same ID, even when it hides it.
                 if !seen.insert(id.clone()) {
                     continue;
                 }
-                let Ok(text) = std::fs::read_to_string(&path) else { continue };
-                let Some(entry) = parse_desktop_entry(&text) else { continue };
+                let Ok(text) = std::fs::read_to_string(&path) else {
+                    continue;
+                };
+                let Some(entry) = parse_desktop_entry(&text) else {
+                    continue;
+                };
                 if entry.hidden || !entry.mime_types.iter().any(|candidate| candidate == mime) {
                     continue;
                 }
@@ -119,7 +135,11 @@ pub(super) fn apps_for_mime(dirs: &[PathBuf], mime: &str) -> Vec<OpenWithApp> {
                 } else {
                     entry.name
                 };
-                apps.push(OpenWithApp { id, name, icon: None });
+                apps.push(OpenWithApp {
+                    id,
+                    name,
+                    icon: None,
+                });
             }
         }
     }
@@ -128,7 +148,11 @@ pub(super) fn apps_for_mime(dirs: &[PathBuf], mime: &str) -> Vec<OpenWithApp> {
 
 /// The MIME type of a file according to the desktop's shared MIME database.
 fn mime_type(path: &Path) -> Option<String> {
-    let output = Command::new("xdg-mime").args(["query", "filetype"]).arg(path).output().ok()?;
+    let output = Command::new("xdg-mime")
+        .args(["query", "filetype"])
+        .arg(path)
+        .output()
+        .ok()?;
     let mime = String::from_utf8_lossy(&output.stdout).trim().to_string();
     (output.status.success() && !mime.is_empty()).then_some(mime)
 }
@@ -137,9 +161,13 @@ pub(super) struct LinuxFileOpener;
 
 impl FileOpener for LinuxFileOpener {
     fn get_apps_for_file(&self, path: &Path) -> Result<Vec<OpenWithApp>, String> {
-        let Some(mime) = mime_type(path) else { return Ok(Vec::new()) };
-        let dirs =
-            application_dirs(dirs::data_dir(), std::env::var("XDG_DATA_DIRS").ok().as_deref());
+        let Some(mime) = mime_type(path) else {
+            return Ok(Vec::new());
+        };
+        let dirs = application_dirs(
+            dirs::data_dir(),
+            std::env::var("XDG_DATA_DIRS").ok().as_deref(),
+        );
         let mut apps = apps_for_mime(&dirs, &mime);
         apps.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(apps)
@@ -151,7 +179,9 @@ impl FileOpener for LinuxFileOpener {
         }
         Ok(match open::that(path) {
             Ok(()) => OpenResult::Success,
-            Err(error) => OpenResult::PlatformError { message: error.to_string() },
+            Err(error) => OpenResult::PlatformError {
+                message: error.to_string(),
+            },
         })
     }
 

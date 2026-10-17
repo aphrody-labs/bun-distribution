@@ -11,8 +11,21 @@ use rayon::prelude::*;
 use crate::util::{Plane, gauss_plane, lerp3, premul, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Color Correction", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Color Correction",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pct() -> ParamUi {
@@ -73,12 +86,18 @@ impl Curve {
         let xs: Vec<f32> = pts.iter().map(|p| p.0).collect();
         let ys: Vec<f32> = pts.iter().map(|p| p.1).collect();
         let n = xs.len();
-        let d: Vec<f32> = (0..n - 1).map(|k| (ys[k + 1] - ys[k]) / (xs[k + 1] - xs[k])).collect();
+        let d: Vec<f32> = (0..n - 1)
+            .map(|k| (ys[k + 1] - ys[k]) / (xs[k + 1] - xs[k]))
+            .collect();
         let mut ms = vec![0.0f32; n];
         ms[0] = d[0];
         ms[n - 1] = d[n - 2];
         for k in 1..n - 1 {
-            ms[k] = if d[k - 1] * d[k] <= 0.0 { 0.0 } else { (d[k - 1] + d[k]) * 0.5 };
+            ms[k] = if d[k - 1] * d[k] <= 0.0 {
+                0.0
+            } else {
+                (d[k - 1] + d[k]) * 0.5
+            };
         }
         for k in 0..n - 1 {
             if d[k].abs() < 1e-12 {
@@ -95,8 +114,15 @@ impl Curve {
                 }
             }
         }
-        let mut c = Curve { xs, ys, ms, lut: Vec::new() };
-        c.lut = (0..=LUT_N).map(|i| c.eval_exact(i as f32 / LUT_N as f32)).collect();
+        let mut c = Curve {
+            xs,
+            ys,
+            ms,
+            lut: Vec::new(),
+        };
+        c.lut = (0..=LUT_N)
+            .map(|i| c.eval_exact(i as f32 / LUT_N as f32))
+            .collect();
         Some(c)
     }
 
@@ -108,7 +134,11 @@ impl Curve {
         if x >= self.xs[n - 1] {
             return self.ys[n - 1] + (x - self.xs[n - 1]) * self.ms[n - 1];
         }
-        let k = self.xs.partition_point(|&v| v <= x).saturating_sub(1).min(n - 2);
+        let k = self
+            .xs
+            .partition_point(|&v| v <= x)
+            .saturating_sub(1)
+            .min(n - 2);
         let h = self.xs[k + 1] - self.xs[k];
         let t = (x - self.xs[k]) / h;
         let (t2, t3) = (t * t, t * t * t);
@@ -145,7 +175,8 @@ fn ev(c: &Option<Curve>, v: f32) -> f32 {
 /// sorted on load); the default `"0,0 1,1"` is the identity. Colour channels go through the
 /// master RGB curve first, then their own curve.
 fn curves(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let [m, r, g, bl, a] = ["rgb", "red", "green", "blue", "alpha"].map(|id| Curve::parse(ctx.params.s(id)));
+    let [m, r, g, bl, a] =
+        ["rgb", "red", "green", "blue", "alpha"].map(|id| Curve::parse(ctx.params.s(id)));
     if m.is_none() && r.is_none() && g.is_none() && bl.is_none() && a.is_none() {
         return b;
     }
@@ -163,18 +194,78 @@ fn curves(ctx: &EffectCtx, mut b: Buf) -> Buf {
 /// Levels (Individual Controls) parameter ids: each channel's controls sit in its own
 /// twirl-down group (RGB, Red, Green, Blue, Alpha).
 const LV_IDS: [[&str; 5]; 5] = [
-    ["rgb/rgbInBlack", "rgb/rgbInWhite", "rgb/rgbGamma", "rgb/rgbOutBlack", "rgb/rgbOutWhite"],
-    ["red/redInBlack", "red/redInWhite", "red/redGamma", "red/redOutBlack", "red/redOutWhite"],
-    ["green/greenInBlack", "green/greenInWhite", "green/greenGamma", "green/greenOutBlack", "green/greenOutWhite"],
-    ["blue/blueInBlack", "blue/blueInWhite", "blue/blueGamma", "blue/blueOutBlack", "blue/blueOutWhite"],
-    ["alpha/alphaInBlack", "alpha/alphaInWhite", "alpha/alphaGamma", "alpha/alphaOutBlack", "alpha/alphaOutWhite"],
+    [
+        "rgb/rgbInBlack",
+        "rgb/rgbInWhite",
+        "rgb/rgbGamma",
+        "rgb/rgbOutBlack",
+        "rgb/rgbOutWhite",
+    ],
+    [
+        "red/redInBlack",
+        "red/redInWhite",
+        "red/redGamma",
+        "red/redOutBlack",
+        "red/redOutWhite",
+    ],
+    [
+        "green/greenInBlack",
+        "green/greenInWhite",
+        "green/greenGamma",
+        "green/greenOutBlack",
+        "green/greenOutWhite",
+    ],
+    [
+        "blue/blueInBlack",
+        "blue/blueInWhite",
+        "blue/blueGamma",
+        "blue/blueOutBlack",
+        "blue/blueOutWhite",
+    ],
+    [
+        "alpha/alphaInBlack",
+        "alpha/alphaInWhite",
+        "alpha/alphaGamma",
+        "alpha/alphaOutBlack",
+        "alpha/alphaOutWhite",
+    ],
 ];
 const LV_NAMES: [[&str; 5]; 5] = [
-    ["Input Black", "Input White", "Gamma", "Output Black", "Output White"],
-    ["Red Input Black", "Red Input White", "Red Gamma", "Red Output Black", "Red Output White"],
-    ["Green Input Black", "Green Input White", "Green Gamma", "Green Output Black", "Green Output White"],
-    ["Blue Input Black", "Blue Input White", "Blue Gamma", "Blue Output Black", "Blue Output White"],
-    ["Alpha Input Black", "Alpha Input White", "Alpha Gamma", "Alpha Output Black", "Alpha Output White"],
+    [
+        "Input Black",
+        "Input White",
+        "Gamma",
+        "Output Black",
+        "Output White",
+    ],
+    [
+        "Red Input Black",
+        "Red Input White",
+        "Red Gamma",
+        "Red Output Black",
+        "Red Output White",
+    ],
+    [
+        "Green Input Black",
+        "Green Input White",
+        "Green Gamma",
+        "Green Output Black",
+        "Green Output White",
+    ],
+    [
+        "Blue Input Black",
+        "Blue Input White",
+        "Blue Gamma",
+        "Blue Output Black",
+        "Blue Output White",
+    ],
+    [
+        "Alpha Input Black",
+        "Alpha Input White",
+        "Alpha Gamma",
+        "Alpha Output Black",
+        "Alpha Output White",
+    ],
 ];
 
 #[derive(Clone, Copy)]
@@ -217,7 +308,12 @@ fn levels_ic(ctx: &EffectCtx, mut b: Buf) -> Buf {
         return b;
     }
     let clip = crate::color_fx::levels_clip(ctx);
-    map_ca(&mut b.img, |c, a| ([0, 1, 2].map(|i| lv[i + 1].apply(lv[0].apply(c[i], clip), clip)), lv[4].apply(a, clip).clamp(0.0, 1.0)));
+    map_ca(&mut b.img, |c, a| {
+        (
+            [0, 1, 2].map(|i| lv[i + 1].apply(lv[0].apply(c[i], clip), clip)),
+            lv[4].apply(a, clip).clamp(0.0, 1.0),
+        )
+    });
     b
 }
 
@@ -237,7 +333,9 @@ fn histograms(img: &Image) -> [Vec<f64>; 4] {
                 if a <= 1e-4 {
                     continue;
                 }
-                let bin = |v: f32| ((v.clamp(0.0, 1.0) * (BINS - 1) as f32).round() as usize).min(BINS - 1);
+                let bin = |v: f32| {
+                    ((v.clamp(0.0, 1.0) * (BINS - 1) as f32).round() as usize).min(BINS - 1)
+                };
                 for k in 0..3 {
                     h[k][bin(c[k])] += a as f64;
                 }
@@ -293,7 +391,11 @@ fn hist_mean(h: &[f64]) -> f64 {
         s += v * i as f64;
         w += v;
     }
-    if w > 0.0 { s / w / (BINS - 1) as f64 } else { 0.5 }
+    if w > 0.0 {
+        s / w / (BINS - 1) as f64
+    } else {
+        0.5
+    }
 }
 
 /// The histograms the automatic corrections analyse: the current frame's, or with Temporal
@@ -302,14 +404,19 @@ fn hist_mean(h: &[f64]) -> f64 {
 fn smoothed_histograms(ctx: &EffectCtx, img: &Image) -> [Vec<f64>; 4] {
     let mut h = histograms(img);
     let secs = ctx.params.f("temporalSmoothing");
-    let Some(host) = ctx.env.host.filter(|_| secs > 0.0) else { return h };
+    let Some(host) = ctx.env.host.filter(|_| secs > 0.0) else {
+        return h;
+    };
     let fps = ctx.fps();
     let n = (secs * fps).round().clamp(0.0, 240.0) as i64;
     let scene = ctx.params.b("sceneDetect");
     let m0 = hist_mean(&h[3]);
     for dir in [-1i64, 1] {
         for k in 1..=n {
-            let Some(nb) = host.self_at(ctx.time + (dir * k) as f64 / fps, ctx.env.effect_index) else { break };
+            let Some(nb) = host.self_at(ctx.time + (dir * k) as f64 / fps, ctx.env.effect_index)
+            else {
+                break;
+            };
             let hn = histograms(&nb.img);
             if scene && (hist_mean(&hn[3]) - m0).abs() > 0.15 {
                 break;
@@ -341,7 +448,11 @@ fn auto_correct(ctx: &EffectCtx, mut b: Buf, kind: u32) -> Buf {
 
 /// What Auto Levels (`kind` 0), Auto Contrast (1) and Auto Color (2) measure on `img`: each
 /// channel's input range (low, high) and gamma. (The GPU effects apply them.)
-pub fn auto_correct_settings(ctx: &EffectCtx, img: &Image, kind: u32) -> ([(f32, f32); 3], [f32; 3]) {
+pub fn auto_correct_settings(
+    ctx: &EffectCtx,
+    img: &Image,
+    kind: u32,
+) -> ([(f32, f32); 3], [f32; 3]) {
     let black = ctx.params.f("blackClip").clamp(0.0, 49.0) / 100.0;
     let white = ctx.params.f("whiteClip").clamp(0.0, 49.0) / 100.0;
     let h = smoothed_histograms(ctx, img);
@@ -430,21 +541,31 @@ fn equalize(ctx: &EffectCtx, mut b: Buf) -> Buf {
     }
     let style = ctx.params.e("style");
     let t = equalize_tables(&b.img, style);
-    let look = |c: &Vec<f32>, v: f32| c[((v.clamp(0.0, 1.0) * (BINS - 1) as f32).round() as usize).min(BINS - 1)];
+    let look = |c: &Vec<f32>, v: f32| {
+        c[((v.clamp(0.0, 1.0) * (BINS - 1) as f32).round() as usize).min(BINS - 1)]
+    };
     match style {
         1 => {
             map_ca(&mut b.img, |col, a| {
                 let l = luminance(col[0], col[1], col[2]);
                 let nl = look(&t[0], l);
-                let o = if l > 1e-5 { col.map(|v| v * nl / l) } else { [nl; 3] };
+                let o = if l > 1e-5 {
+                    col.map(|v| v * nl / l)
+                } else {
+                    [nl; 3]
+                };
                 (lerp3(col, o, amt), a)
             });
         }
         2 => {
-            map_ca(&mut b.img, |col, a| (lerp3(col, col.map(|v| look(&t[0], v)), amt), a));
+            map_ca(&mut b.img, |col, a| {
+                (lerp3(col, col.map(|v| look(&t[0], v)), amt), a)
+            });
         }
         _ => {
-            map_ca(&mut b.img, |col, a| (lerp3(col, [0, 1, 2].map(|k| look(&t[k], col[k])), amt), a));
+            map_ca(&mut b.img, |col, a| {
+                (lerp3(col, [0, 1, 2].map(|k| look(&t[k], col[k])), amt), a)
+            });
         }
     }
     b
@@ -455,10 +576,17 @@ fn equalize(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 /// Shadow/Highlight's shadow and highlight amounts for `img` (Auto Amounts measures them).
 pub fn shadow_highlight_amounts(ctx: &EffectCtx, img: &Image) -> (f32, f32) {
-    let (mut s_amt, mut h_amt) = (ctx.params.f("shadowAmount") as f32 / 100.0, ctx.params.f("highlightAmount") as f32 / 100.0);
+    let (mut s_amt, mut h_amt) = (
+        ctx.params.f("shadowAmount") as f32 / 100.0,
+        ctx.params.f("highlightAmount") as f32 / 100.0,
+    );
     if ctx.params.b("autoAmounts") {
         // Temporal Smoothing / Scene Detect average the analysis over neighbouring frames.
-        let mean = if ctx.params.f("temporalSmoothing") > 0.0 { hist_mean(&smoothed_histograms(ctx, img)[3]) } else { hist_mean(&histograms(img)[3]) } as f32;
+        let mean = if ctx.params.f("temporalSmoothing") > 0.0 {
+            hist_mean(&smoothed_histograms(ctx, img)[3])
+        } else {
+            hist_mean(&histograms(img)[3])
+        } as f32;
         s_amt = ((0.6 - mean) * 1.5).clamp(0.0, 1.0) * 0.8 + 0.1;
         h_amt = ((mean - 0.6) * 1.5).clamp(0.0, 1.0) * 0.8;
     }
@@ -474,7 +602,10 @@ pub fn luma_clip_points(img: &Image, black: f64, white: f64) -> (f32, f32) {
 fn shadow_highlight(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let (s_amt, h_amt) = shadow_highlight_amounts(ctx, &b.img);
     let luma = Plane::luma(&b.img);
-    let (bc, wc) = (ctx.params.f("moreOptions/blackClip").clamp(0.0, 49.0) / 100.0, ctx.params.f("moreOptions/whiteClip").clamp(0.0, 49.0) / 100.0);
+    let (bc, wc) = (
+        ctx.params.f("moreOptions/blackClip").clamp(0.0, 49.0) / 100.0,
+        ctx.params.f("moreOptions/whiteClip").clamp(0.0, 49.0) / 100.0,
+    );
     let clip0 = (bc > 0.0 || wc > 0.0).then(|| luma_clip_points(&b.img, bc, wc));
     let s_tw = (ctx.params.f("moreOptions/shadowTonalWidth") as f32 / 100.0).max(0.01);
     let h_tw = (ctx.params.f("moreOptions/highlightTonalWidth") as f32 / 100.0).max(0.01);
@@ -484,14 +615,20 @@ fn shadow_highlight(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let mc = ctx.params.f("moreOptions/midtoneContrast") as f32 / 100.0;
     let blend = (ctx.params.f("blend") / 100.0).clamp(0.0, 1.0) as f32;
     let base_s = gauss_plane(&luma, s_r, s_r);
-    let base_h = if (h_r - s_r).abs() < 1e-9 { base_s.clone() } else { gauss_plane(&luma, h_r, h_r) };
+    let base_h = if (h_r - s_r).abs() < 1e-9 {
+        base_s.clone()
+    } else {
+        gauss_plane(&luma, h_r, h_r)
+    };
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let (c, a) = unpremul(*px);
         if a <= 0.0 {
             return;
         }
         let ws = (1.0 - base_s.data[i] / s_tw).clamp(0.0, 1.0).powi(2);
-        let wh = ((base_h.data[i] - (1.0 - h_tw)) / h_tw).clamp(0.0, 1.0).powi(2);
+        let wh = ((base_h.data[i] - (1.0 - h_tw)) / h_tw)
+            .clamp(0.0, 1.0)
+            .powi(2);
         let gain = (1.0 + s_amt * ws * 2.0) * (1.0 - h_amt * wh * 0.5);
         let l = luminance(c[0], c[1], c[2]);
         let nl = l * gain;
@@ -511,7 +648,9 @@ fn shadow_highlight(ctx: &EffectCtx, mut b: Buf) -> Buf {
         let (lo1, hi1) = luma_clip_points(&b.img, bc, wc);
         if (lo0, hi0) != (lo1, hi1) && hi1 - lo1 > 1e-3 {
             let k = (hi0 - lo0) / (hi1 - lo1);
-            map_ca(&mut b.img, |c, a| (c.map(|v| (lo0 + (v - lo1) * k).max(0.0)), a));
+            map_ca(&mut b.img, |c, a| {
+                (c.map(|v| (lo0 + (v - lo1) * k).max(0.0)), a)
+            });
         }
     }
     b
@@ -522,19 +661,38 @@ fn shadow_highlight(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 const SC_IDS: [[&str; 4]; 9] = [
     ["redsCyan", "redsMagenta", "redsYellow", "redsBlack"],
-    ["yellowsCyan", "yellowsMagenta", "yellowsYellow", "yellowsBlack"],
+    [
+        "yellowsCyan",
+        "yellowsMagenta",
+        "yellowsYellow",
+        "yellowsBlack",
+    ],
     ["greensCyan", "greensMagenta", "greensYellow", "greensBlack"],
     ["cyansCyan", "cyansMagenta", "cyansYellow", "cyansBlack"],
     ["bluesCyan", "bluesMagenta", "bluesYellow", "bluesBlack"],
-    ["magentasCyan", "magentasMagenta", "magentasYellow", "magentasBlack"],
+    [
+        "magentasCyan",
+        "magentasMagenta",
+        "magentasYellow",
+        "magentasBlack",
+    ],
     ["whitesCyan", "whitesMagenta", "whitesYellow", "whitesBlack"],
-    ["neutralsCyan", "neutralsMagenta", "neutralsYellow", "neutralsBlack"],
+    [
+        "neutralsCyan",
+        "neutralsMagenta",
+        "neutralsYellow",
+        "neutralsBlack",
+    ],
     ["blacksCyan", "blacksMagenta", "blacksYellow", "blacksBlack"],
 ];
 /// Selective Color's Colors popup (the range whose controls Effect Controls shows) and the
 /// Details twirl-down group of each range.
-pub const SC_COLORS: [&str; 9] = ["Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks"];
-pub const SC_GROUPS: [&str; 9] = ["reds", "yellows", "greens", "cyans", "blues", "magentas", "whites", "neutrals", "blacks"];
+pub const SC_COLORS: [&str; 9] = [
+    "Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks",
+];
+pub const SC_GROUPS: [&str; 9] = [
+    "reds", "yellows", "greens", "cyans", "blues", "magentas", "whites", "neutrals", "blacks",
+];
 
 /// Spec id of range `r`'s control `leaf` (`details/reds/redsCyan`).
 fn sc_param_id(r: usize, leaf: &str) -> String {
@@ -543,14 +701,44 @@ fn sc_param_id(r: usize, leaf: &str) -> String {
 
 const SC_NAMES: [[&str; 4]; 9] = [
     ["Reds Cyan", "Reds Magenta", "Reds Yellow", "Reds Black"],
-    ["Yellows Cyan", "Yellows Magenta", "Yellows Yellow", "Yellows Black"],
-    ["Greens Cyan", "Greens Magenta", "Greens Yellow", "Greens Black"],
+    [
+        "Yellows Cyan",
+        "Yellows Magenta",
+        "Yellows Yellow",
+        "Yellows Black",
+    ],
+    [
+        "Greens Cyan",
+        "Greens Magenta",
+        "Greens Yellow",
+        "Greens Black",
+    ],
     ["Cyans Cyan", "Cyans Magenta", "Cyans Yellow", "Cyans Black"],
     ["Blues Cyan", "Blues Magenta", "Blues Yellow", "Blues Black"],
-    ["Magentas Cyan", "Magentas Magenta", "Magentas Yellow", "Magentas Black"],
-    ["Whites Cyan", "Whites Magenta", "Whites Yellow", "Whites Black"],
-    ["Neutrals Cyan", "Neutrals Magenta", "Neutrals Yellow", "Neutrals Black"],
-    ["Blacks Cyan", "Blacks Magenta", "Blacks Yellow", "Blacks Black"],
+    [
+        "Magentas Cyan",
+        "Magentas Magenta",
+        "Magentas Yellow",
+        "Magentas Black",
+    ],
+    [
+        "Whites Cyan",
+        "Whites Magenta",
+        "Whites Yellow",
+        "Whites Black",
+    ],
+    [
+        "Neutrals Cyan",
+        "Neutrals Magenta",
+        "Neutrals Yellow",
+        "Neutrals Black",
+    ],
+    [
+        "Blacks Cyan",
+        "Blacks Magenta",
+        "Blacks Yellow",
+        "Blacks Black",
+    ],
 ];
 
 /// How much a colour belongs to each Selective Color range.
@@ -571,7 +759,9 @@ fn sc_weights(c: [f32; 3]) -> [f32; 9] {
 }
 
 fn selective_color(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let adj: [[f32; 4]; 9] = std::array::from_fn(|r| SC_IDS[r].map(|id| ctx.params.f(&sc_param_id(r, id)) as f32 / 100.0));
+    let adj: [[f32; 4]; 9] = std::array::from_fn(|r| {
+        SC_IDS[r].map(|id| ctx.params.f(&sc_param_id(r, id)) as f32 / 100.0)
+    });
     if adj.iter().all(|r| r.iter().all(|v| *v == 0.0)) {
         return b;
     }
@@ -587,7 +777,11 @@ fn selective_color(ctx: &EffectCtx, mut b: Buf) -> Buf {
             for i in 0..3 {
                 let ink = 1.0 - c[i];
                 let delta = adj[r][i] + k;
-                let delta = if relative { delta * ink.max(0.0) } else { delta };
+                let delta = if relative {
+                    delta * ink.max(0.0)
+                } else {
+                    delta
+                };
                 o[i] -= wr * delta;
             }
         }
@@ -608,8 +802,16 @@ fn color_balance_hls(ctx: &EffectCtx, mut b: Buf) -> Buf {
     }
     b.img.map_straight(|c| {
         let (h, s, l) = rgb_to_hsl(c[0], c[1], c[2]);
-        let l = if dl > 0.0 { l + (1.0 - l) * dl } else { l + l * dl };
-        let s = if ds > 0.0 { s + (1.0 - s) * ds } else { s + s * ds };
+        let l = if dl > 0.0 {
+            l + (1.0 - l) * dl
+        } else {
+            l + l * dl
+        };
+        let s = if ds > 0.0 {
+            s + (1.0 - s) * ds
+        } else {
+            s + s * ds
+        };
         let (r, g, bb) = hsl_to_rgb(h + dh, s.clamp(0.0, 1.0), l.clamp(0.0, 1.0));
         [r, g, bb]
     });
@@ -633,8 +835,18 @@ const LINK_MODES: [(&str, BlendMode); 13] = [
 ];
 
 /// Color Link's Sample options.
-pub const LINK_SAMPLES: [&str; 10] =
-    ["Average", "Median", "Brightest", "Darkest", "Max RGB", "Min RGB", "Average Alpha", "Median Alpha", "Max Alpha", "Min Alpha"];
+pub const LINK_SAMPLES: [&str; 10] = [
+    "Average",
+    "Median",
+    "Brightest",
+    "Darkest",
+    "Max RGB",
+    "Min RGB",
+    "Average Alpha",
+    "Median Alpha",
+    "Max Alpha",
+    "Min Alpha",
+];
 
 /// Element of sorted `v` at fraction `q`.
 fn quantile(v: &[f32], q: f64) -> f32 {
@@ -652,7 +864,11 @@ fn trimmed_mean(v: &mut [f32], clip: f64) -> f32 {
     v.sort_by(f32::total_cmp);
     let cut = (v.len() as f64 * clip) as usize;
     let s = &v[cut..v.len() - cut];
-    if s.is_empty() { quantile(v, 0.5) } else { (s.iter().map(|x| *x as f64).sum::<f64>() / s.len() as f64) as f32 }
+    if s.is_empty() {
+        quantile(v, 0.5)
+    } else {
+        (s.iter().map(|x| *x as f64).sum::<f64>() / s.len() as f64) as f32
+    }
 }
 
 /// Representative colour (RGB) and alpha of an image for a Sample option (see [`LINK_SAMPLES`]),
@@ -735,7 +951,9 @@ pub fn color_link_mode(ctx: &EffectCtx) -> BlendMode {
 
 fn color_link(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let how = ctx.params.e("sampleSource");
-    let Some((c, sa)) = color_link_sample(ctx, Some(&b.img)) else { return b };
+    let Some((c, sa)) = color_link_sample(ctx, Some(&b.img)) else {
+        return b;
+    };
     let op = (ctx.params.f("opacity") / 100.0).clamp(0.0, 1.0) as f32;
     let stencil = ctx.params.b("stencilOriginalAlpha");
     if how >= 6 {
@@ -833,7 +1051,13 @@ fn cc_toner(ctx: &EffectCtx, mut b: Buf) -> Buf {
     };
     let stops: Vec<[f32; 3]> = match ctx.params.e("tones") {
         0 => vec![g("shadows"), g("highlights")],
-        2 => vec![g("shadows"), g("darktones"), g("midtones"), g("brights"), g("highlights")],
+        2 => vec![
+            g("shadows"),
+            g("darktones"),
+            g("midtones"),
+            g("brights"),
+            g("highlights"),
+        ],
         _ => vec![g("shadows"), g("midtones"), g("highlights")],
     };
     let blend = (ctx.params.f("blend") / 100.0).clamp(0.0, 1.0) as f32;
@@ -848,7 +1072,8 @@ fn cc_toner(ctx: &EffectCtx, mut b: Buf) -> Buf {
 }
 
 fn cc_color_offset(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let offs = ["redPhase", "greenPhase", "bluePhase"].map(|id| (ctx.params.f(id) / 360.0).rem_euclid(1.0) as f32);
+    let offs = ["redPhase", "greenPhase", "bluePhase"]
+        .map(|id| (ctx.params.f(id) / 360.0).rem_euclid(1.0) as f32);
     if offs.iter().all(|o| *o == 0.0) {
         return b;
     }
@@ -879,14 +1104,27 @@ fn cc_color_offset(ctx: &EffectCtx, mut b: Buf) -> Buf {
 }
 
 const K_IDS: [&str; 9] = ["k1", "k2", "k3", "k4", "k5", "k6", "k7", "k8", "k9"];
-const K_NAMES: [&str; 9] = ["Top Left", "Top", "Top Right", "Left", "Center", "Right", "Bottom Left", "Bottom", "Bottom Right"];
+const K_NAMES: [&str; 9] = [
+    "Top Left",
+    "Top",
+    "Top Right",
+    "Left",
+    "Center",
+    "Right",
+    "Bottom Left",
+    "Bottom",
+    "Bottom Right",
+];
 
 fn cc_kernel(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let k = K_IDS.map(|id| ctx.params.f(id) as f32);
     let scale = ctx.params.f("scale") as f32;
     let offset = ctx.params.f("offset") as f32;
     let abs = ctx.params.b("absolute");
-    let identity = k.iter().enumerate().all(|(i, v)| if i == 4 { *v == 1.0 } else { *v == 0.0 });
+    let identity = k
+        .iter()
+        .enumerate()
+        .all(|(i, v)| if i == 4 { *v == 1.0 } else { *v == 0.0 });
     if identity && scale == 1.0 && offset == 0.0 {
         return b;
     }
@@ -924,15 +1162,58 @@ fn cc_kernel(ctx: &EffectCtx, mut b: Buf) -> Buf {
 pub fn specs() -> Vec<EffectSpec> {
     let mut lv_params = Vec::new();
     for (ids, names) in LV_IDS.iter().zip(LV_NAMES.iter()) {
-        lv_params.push(p(ids[0], names[0], num(0.0), slider(-1.0, 2.0, 0.0, 1.0, 3)));
-        lv_params.push(p(ids[1], names[1], num(1.0), slider(-1.0, 2.0, 0.0, 1.0, 3)));
-        lv_params.push(p(ids[2], names[2], num(1.0), slider(0.1, 10.0, 0.1, 3.0, 2)));
-        lv_params.push(p(ids[3], names[3], num(0.0), slider(-1.0, 2.0, 0.0, 1.0, 3)));
-        lv_params.push(p(ids[4], names[4], num(1.0), slider(-1.0, 2.0, 0.0, 1.0, 3)));
+        lv_params.push(p(
+            ids[0],
+            names[0],
+            num(0.0),
+            slider(-1.0, 2.0, 0.0, 1.0, 3),
+        ));
+        lv_params.push(p(
+            ids[1],
+            names[1],
+            num(1.0),
+            slider(-1.0, 2.0, 0.0, 1.0, 3),
+        ));
+        lv_params.push(p(
+            ids[2],
+            names[2],
+            num(1.0),
+            slider(0.1, 10.0, 0.1, 3.0, 2),
+        ));
+        lv_params.push(p(
+            ids[3],
+            names[3],
+            num(0.0),
+            slider(-1.0, 2.0, 0.0, 1.0, 3),
+        ));
+        lv_params.push(p(
+            ids[4],
+            names[4],
+            num(1.0),
+            slider(-1.0, 2.0, 0.0, 1.0, 3),
+        ));
     }
-    lv_params.push(p("clipToOutputBlack", "Clip To Output Black", Value::Enum(2), popup(&crate::color_fx::LEVELS_CLIP)));
-    lv_params.push(p("clipToOutputWhite", "Clip To Output White", Value::Enum(2), popup(&crate::color_fx::LEVELS_CLIP)));
-    let mut sc_params = vec![p("method", "Method", Value::Enum(0), popup(&["Relative", "Absolute"])), p("colors", "Colors", Value::Enum(0), popup(&SC_COLORS))];
+    lv_params.push(p(
+        "clipToOutputBlack",
+        "Clip To Output Black",
+        Value::Enum(2),
+        popup(&crate::color_fx::LEVELS_CLIP),
+    ));
+    lv_params.push(p(
+        "clipToOutputWhite",
+        "Clip To Output White",
+        Value::Enum(2),
+        popup(&crate::color_fx::LEVELS_CLIP),
+    ));
+    let mut sc_params = vec![
+        p(
+            "method",
+            "Method",
+            Value::Enum(0),
+            popup(&["Relative", "Absolute"]),
+        ),
+        p("colors", "Colors", Value::Enum(0), popup(&SC_COLORS)),
+    ];
     // Details: every range's Cyan / Magenta / Yellow / Black in its own twirl-down.
     let leak = |s: String| -> &'static str { Box::leak(s.into_boxed_str()) };
     for (r, (ids, names)) in SC_IDS.iter().zip(SC_NAMES.iter()).enumerate() {
@@ -942,23 +1223,83 @@ pub fn specs() -> Vec<EffectSpec> {
     }
     let clip_params = |extra: bool| {
         let mut v = vec![
-            p("temporalSmoothing", "Temporal Smoothing (seconds)", num(0.0), slider(0.0, 4.0, 0.0, 4.0, 2)),
-            p("sceneDetect", "Scene Detect", Value::Bool(false), ParamUi::Checkbox),
-            p("blackClip", "Black Clip", num(0.1), slider(0.0, 49.0, 0.0, 10.0, 2)),
-            p("whiteClip", "White Clip", num(0.1), slider(0.0, 49.0, 0.0, 10.0, 2)),
-            p("blend", "Blend With Original", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+            p(
+                "temporalSmoothing",
+                "Temporal Smoothing (seconds)",
+                num(0.0),
+                slider(0.0, 4.0, 0.0, 4.0, 2),
+            ),
+            p(
+                "sceneDetect",
+                "Scene Detect",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "blackClip",
+                "Black Clip",
+                num(0.1),
+                slider(0.0, 49.0, 0.0, 10.0, 2),
+            ),
+            p(
+                "whiteClip",
+                "White Clip",
+                num(0.1),
+                slider(0.0, 49.0, 0.0, 10.0, 2),
+            ),
+            p(
+                "blend",
+                "Blend With Original",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 1),
+            ),
         ];
         if extra {
-            v.insert(4, p("snapNeutralMidtones", "Snap Neutral Midtones", Value::Bool(true), ParamUi::Checkbox));
+            v.insert(
+                4,
+                p(
+                    "snapNeutralMidtones",
+                    "Snap Neutral Midtones",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+            );
         }
         v
     };
-    let mut k_params: Vec<crate::ParamSpec> =
-        K_IDS.iter().zip(K_NAMES.iter()).map(|(id, n)| p(id, n, num(if *id == "k5" { 1.0 } else { 0.0 }), slider(-100.0, 100.0, -10.0, 10.0, 2))).collect();
-    k_params.push(p("scale", "Scale", num(1.0), slider(-100.0, 100.0, 0.0, 4.0, 3)));
-    k_params.push(p("offset", "Offset", num(0.0), slider(-1.0, 1.0, -1.0, 1.0, 3)));
-    k_params.push(p("absolute", "Absolute Value", Value::Bool(false), ParamUi::Checkbox));
-    let curve = |id: &'static str, name: &'static str| p(id, name, Value::Str("0,0 1,1".into()), ParamUi::Hidden);
+    let mut k_params: Vec<crate::ParamSpec> = K_IDS
+        .iter()
+        .zip(K_NAMES.iter())
+        .map(|(id, n)| {
+            p(
+                id,
+                n,
+                num(if *id == "k5" { 1.0 } else { 0.0 }),
+                slider(-100.0, 100.0, -10.0, 10.0, 2),
+            )
+        })
+        .collect();
+    k_params.push(p(
+        "scale",
+        "Scale",
+        num(1.0),
+        slider(-100.0, 100.0, 0.0, 4.0, 3),
+    ));
+    k_params.push(p(
+        "offset",
+        "Offset",
+        num(0.0),
+        slider(-1.0, 1.0, -1.0, 1.0, 3),
+    ));
+    k_params.push(p(
+        "absolute",
+        "Absolute Value",
+        Value::Bool(false),
+        ParamUi::Checkbox,
+    ));
+    let curve = |id: &'static str, name: &'static str| {
+        p(id, name, Value::Str("0,0 1,1".into()), ParamUi::Hidden)
+    };
     vec![
         spec(
             "ec.color.curves",
@@ -974,16 +1315,46 @@ pub fn specs() -> Vec<EffectSpec> {
             ],
             curves,
         ),
-        spec("ec.color.levelsic", "Levels (Individual Controls)", lv_params, levels_ic),
-        spec("ec.color.autolevels", "Auto Levels", clip_params(false), auto_levels),
-        spec("ec.color.autocontrast", "Auto Contrast", clip_params(false), auto_contrast),
-        spec("ec.color.autocolor", "Auto Color", clip_params(true), auto_color),
+        spec(
+            "ec.color.levelsic",
+            "Levels (Individual Controls)",
+            lv_params,
+            levels_ic,
+        ),
+        spec(
+            "ec.color.autolevels",
+            "Auto Levels",
+            clip_params(false),
+            auto_levels,
+        ),
+        spec(
+            "ec.color.autocontrast",
+            "Auto Contrast",
+            clip_params(false),
+            auto_contrast,
+        ),
+        spec(
+            "ec.color.autocolor",
+            "Auto Color",
+            clip_params(true),
+            auto_color,
+        ),
         spec(
             "ec.color.equalize",
             "Equalize",
             vec![
-                p("style", "Equalize", Value::Enum(0), popup(&["RGB", "Brightness", "Photoshop Style"])),
-                p("amount", "Amount to Equalize", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "style",
+                    "Equalize",
+                    Value::Enum(0),
+                    popup(&["RGB", "Brightness", "Photoshop Style"]),
+                ),
+                p(
+                    "amount",
+                    "Amount to Equalize",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             equalize,
         ),
@@ -991,42 +1362,151 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.color.shadowhighlight",
             "Shadow/Highlight",
             vec![
-                p("autoAmounts", "Auto Amounts", Value::Bool(true), ParamUi::Checkbox),
-                p("shadowAmount", "Shadow Amount", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-                p("highlightAmount", "Highlight Amount", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-                p("temporalSmoothing", "Temporal Smoothing (seconds)", num(0.0), slider(0.0, 4.0, 0.0, 4.0, 2)),
-                p("sceneDetect", "Scene Detect", Value::Bool(false), ParamUi::Checkbox),
-                p("moreOptions/shadowTonalWidth", "Shadow Tonal Width", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-                p("moreOptions/shadowRadius", "Shadow Radius", num(30.0), slider(0.0, 2500.0, 0.0, 100.0, 0)),
-                p("moreOptions/highlightTonalWidth", "Highlight Tonal Width", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-                p("moreOptions/highlightRadius", "Highlight Radius", num(30.0), slider(0.0, 2500.0, 0.0, 100.0, 0)),
-                p("moreOptions/colorCorrection", "Color Correction", num(20.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
-                p("moreOptions/midtoneContrast", "Midtone Contrast", num(0.0), pct()),
-                p("moreOptions/blackClip", "Black Clip", num(0.01), slider(0.0, 49.0, 0.0, 10.0, 2)),
-                p("moreOptions/whiteClip", "White Clip", num(0.01), slider(0.0, 49.0, 0.0, 10.0, 2)),
-                p("blend", "Blend With Original", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "autoAmounts",
+                    "Auto Amounts",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "shadowAmount",
+                    "Shadow Amount",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "highlightAmount",
+                    "Highlight Amount",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "temporalSmoothing",
+                    "Temporal Smoothing (seconds)",
+                    num(0.0),
+                    slider(0.0, 4.0, 0.0, 4.0, 2),
+                ),
+                p(
+                    "sceneDetect",
+                    "Scene Detect",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "moreOptions/shadowTonalWidth",
+                    "Shadow Tonal Width",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "moreOptions/shadowRadius",
+                    "Shadow Radius",
+                    num(30.0),
+                    slider(0.0, 2500.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "moreOptions/highlightTonalWidth",
+                    "Highlight Tonal Width",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "moreOptions/highlightRadius",
+                    "Highlight Radius",
+                    num(30.0),
+                    slider(0.0, 2500.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "moreOptions/colorCorrection",
+                    "Color Correction",
+                    num(20.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 0),
+                ),
+                p(
+                    "moreOptions/midtoneContrast",
+                    "Midtone Contrast",
+                    num(0.0),
+                    pct(),
+                ),
+                p(
+                    "moreOptions/blackClip",
+                    "Black Clip",
+                    num(0.01),
+                    slider(0.0, 49.0, 0.0, 10.0, 2),
+                ),
+                p(
+                    "moreOptions/whiteClip",
+                    "White Clip",
+                    num(0.01),
+                    slider(0.0, 49.0, 0.0, 10.0, 2),
+                ),
+                p(
+                    "blend",
+                    "Blend With Original",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             shadow_highlight,
         ),
-        spec("ec.color.selectivecolor", "Selective Color", sc_params, selective_color),
+        spec(
+            "ec.color.selectivecolor",
+            "Selective Color",
+            sc_params,
+            selective_color,
+        ),
         spec(
             "ec.color.colorbalancehls",
             "Color Balance (HLS)",
-            vec![p("hue", "Hue", num(0.0), ParamUi::Angle), p("lightness", "Lightness", num(0.0), pct()), p("saturation", "Saturation", num(0.0), pct())],
+            vec![
+                p("hue", "Hue", num(0.0), ParamUi::Angle),
+                p("lightness", "Lightness", num(0.0), pct()),
+                p("saturation", "Saturation", num(0.0), pct()),
+            ],
             color_balance_hls,
         ),
         spec(
             "ec.color.colorlink",
             "Color Link",
             vec![
-                p("sourceLayer", "Source Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "sourceLayer",
+                    "Source Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 // A chosen source layer is sampled without its masks and effects.
-                p("sourceLayerSource", "Source Layer Source", Value::Enum(0), ParamUi::Hidden),
-                p("sampleSource", "Sample", Value::Enum(0), popup(&LINK_SAMPLES)),
+                p(
+                    "sourceLayerSource",
+                    "Source Layer Source",
+                    Value::Enum(0),
+                    ParamUi::Hidden,
+                ),
+                p(
+                    "sampleSource",
+                    "Sample",
+                    Value::Enum(0),
+                    popup(&LINK_SAMPLES),
+                ),
                 p("clip", "Clip", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("stencilOriginalAlpha", "Stencil Original Alpha", Value::Bool(true), ParamUi::Checkbox),
-                p("opacity", "Opacity", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("blendingMode", "Blending Mode", Value::Enum(0), popup(&LINK_MODES.map(|m| m.0))),
+                p(
+                    "stencilOriginalAlpha",
+                    "Stencil Original Alpha",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "opacity",
+                    "Opacity",
+                    num(100.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(0),
+                    popup(&LINK_MODES.map(|m| m.0)),
+                ),
             ],
             color_link,
         ),
@@ -1034,14 +1514,29 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.color.broadcast",
             "Broadcast Colors",
             vec![
-                p("locale", "Broadcast Locale", Value::Enum(0), popup(&["NTSC", "PAL"])),
+                p(
+                    "locale",
+                    "Broadcast Locale",
+                    Value::Enum(0),
+                    popup(&["NTSC", "PAL"]),
+                ),
                 p(
                     "howToMakeSafe",
                     "How To Make Color Safe",
                     Value::Enum(0),
-                    popup(&["Reduce Luminance", "Reduce Saturation", "Key Out Unsafe", "Key Out Safe"]),
+                    popup(&[
+                        "Reduce Luminance",
+                        "Reduce Saturation",
+                        "Key Out Unsafe",
+                        "Key Out Safe",
+                    ]),
                 ),
-                p("maxSignal", "Maximum Signal Amplitude (IRE)", num(110.0), slider(90.0, 120.0, 90.0, 120.0, 0)),
+                p(
+                    "maxSignal",
+                    "Maximum Signal Amplitude (IRE)",
+                    num(110.0),
+                    slider(90.0, 120.0, 90.0, 120.0, 0),
+                ),
             ],
             broadcast_colors,
         ),
@@ -1049,13 +1544,38 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.color.cctoner",
             "CC Toner",
             vec![
-                p("tones", "Tones", Value::Enum(1), popup(&["Duotone", "Tritone", "Pentone"])),
-                p("highlights", "Highlights", col(1.0, 1.0, 1.0), ParamUi::Color),
+                p(
+                    "tones",
+                    "Tones",
+                    Value::Enum(1),
+                    popup(&["Duotone", "Tritone", "Pentone"]),
+                ),
+                p(
+                    "highlights",
+                    "Highlights",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
                 p("brights", "Brights", col(0.86, 0.78, 0.64), ParamUi::Color),
-                p("midtones", "Midtones", col(0.55, 0.43, 0.28), ParamUi::Color),
-                p("darktones", "Darktones", col(0.26, 0.18, 0.1), ParamUi::Color),
+                p(
+                    "midtones",
+                    "Midtones",
+                    col(0.55, 0.43, 0.28),
+                    ParamUi::Color,
+                ),
+                p(
+                    "darktones",
+                    "Darktones",
+                    col(0.26, 0.18, 0.1),
+                    ParamUi::Color,
+                ),
                 p("shadows", "Shadows", col(0.0, 0.0, 0.0), ParamUi::Color),
-                p("blend", "Blend w. Original", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "blend",
+                    "Blend w. Original",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             cc_toner,
         ),
@@ -1066,7 +1586,12 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("redPhase", "Red Phase", num(0.0), ParamUi::Angle),
                 p("greenPhase", "Green Phase", num(0.0), ParamUi::Angle),
                 p("bluePhase", "Blue Phase", num(0.0), ParamUi::Angle),
-                p("overflow", "Overflow", Value::Enum(0), popup(&["Wrap", "Solarize", "Polarize"])),
+                p(
+                    "overflow",
+                    "Overflow",
+                    Value::Enum(0),
+                    popup(&["Wrap", "Solarize", "Polarize"]),
+                ),
             ],
             cc_color_offset,
         ),
@@ -1081,13 +1606,33 @@ mod tests {
 
     fn run(id: &str, img: &Image, over: &[(&str, Value)]) -> Image {
         let s = find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in over {
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx =
-            EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: false, env: Default::default() };
-        (s.render)(&ctx, Buf { img: img.clone(), offset: [0.0, 0.0], scale: 1.0 }).img
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        (s.render)(
+            &ctx,
+            Buf {
+                img: img.clone(),
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
+        .img
     }
 
     fn ramp() -> Image {
@@ -1103,7 +1648,10 @@ mod tests {
     }
 
     fn close(a: &Image, b: &Image, eps: f32) -> bool {
-        a.data.iter().zip(&b.data).all(|(p, q)| (0..4).all(|i| (p[i] - q[i]).abs() <= eps))
+        a.data
+            .iter()
+            .zip(&b.data)
+            .all(|(p, q)| (0..4).all(|i| (p[i] - q[i]).abs() <= eps))
     }
 
     #[test]
@@ -1126,16 +1674,28 @@ mod tests {
     fn curves_identity_is_identity() {
         let img = ramp();
         assert_eq!(run("ec.color.curves", &img, &[]), img);
-        let explicit = run("ec.color.curves", &img, &[("rgb", Value::Str("0,0 0.25,0.25 1,1".into()))]);
+        let explicit = run(
+            "ec.color.curves",
+            &img,
+            &[("rgb", Value::Str("0,0 0.25,0.25 1,1".into()))],
+        );
         assert!(close(&explicit, &img, 1e-4));
     }
 
     #[test]
     fn curves_midpoint_brightens() {
         let img = Image::filled(4, 4, [0.5, 0.5, 0.5, 1.0]);
-        let out = run("ec.color.curves", &img, &[("rgb", Value::Str("0,0 0.5,0.75 1,1".into()))]);
+        let out = run(
+            "ec.color.curves",
+            &img,
+            &[("rgb", Value::Str("0,0 0.5,0.75 1,1".into()))],
+        );
         assert!((out.data[0][0] - 0.75).abs() < 1e-3);
-        let red = run("ec.color.curves", &img, &[("red", Value::Str("0,1 1,1".into()))]);
+        let red = run(
+            "ec.color.curves",
+            &img,
+            &[("red", Value::Str("0,1 1,1".into()))],
+        );
         assert!((red.data[0][0] - 1.0).abs() < 1e-4 && (red.data[0][1] - 0.5).abs() < 1e-6);
     }
 
@@ -1157,11 +1717,19 @@ mod tests {
                 img.set(x, y, [v, v, v, 1.0]);
             }
         }
-        let out = run("ec.color.autolevels", &img, &[("blackClip", num(0.0)), ("whiteClip", num(0.0))]);
+        let out = run(
+            "ec.color.autolevels",
+            &img,
+            &[("blackClip", num(0.0)), ("whiteClip", num(0.0))],
+        );
         let lo = out.data.iter().map(|p| p[0]).fold(1.0, f32::min);
         let hi = out.data.iter().map(|p| p[0]).fold(0.0, f32::max);
         assert!(lo < 0.02 && hi > 0.98, "{lo} {hi}");
-        let ac = run("ec.color.autocontrast", &img, &[("blackClip", num(0.0)), ("whiteClip", num(0.0))]);
+        let ac = run(
+            "ec.color.autocontrast",
+            &img,
+            &[("blackClip", num(0.0)), ("whiteClip", num(0.0))],
+        );
         assert!(ac.data.iter().map(|p| p[0]).fold(0.0, f32::max) > 0.98);
     }
 
@@ -1176,7 +1744,10 @@ mod tests {
         }
         let out = run("ec.color.autocolor", &img, &[]);
         let p = out.get(8, 1);
-        assert!((p[0] - p[1]).abs() < 0.08 && (p[1] - p[2]).abs() < 0.08, "{p:?}");
+        assert!(
+            (p[0] - p[1]).abs() < 0.08 && (p[1] - p[2]).abs() < 0.08,
+            "{p:?}"
+        );
     }
 
     #[test]
@@ -1198,16 +1769,34 @@ mod tests {
         let img = ramp();
         assert_eq!(run("ec.color.selectivecolor", &img, &[]), img);
         let red = Image::filled(2, 2, [1.0, 0.1, 0.1, 1.0]);
-        let out = run("ec.color.selectivecolor", &red, &[("details/reds/redsCyan", num(100.0)), ("method", Value::Enum(1))]);
+        let out = run(
+            "ec.color.selectivecolor",
+            &red,
+            &[
+                ("details/reds/redsCyan", num(100.0)),
+                ("method", Value::Enum(1)),
+            ],
+        );
         assert!(out.data[0][0] < 0.3, "{:?}", out.data[0]);
         let blue = Image::filled(2, 2, [0.1, 0.1, 1.0, 1.0]);
-        assert_eq!(run("ec.color.selectivecolor", &blue, &[("details/reds/redsCyan", num(100.0))]), blue);
+        assert_eq!(
+            run(
+                "ec.color.selectivecolor",
+                &blue,
+                &[("details/reds/redsCyan", num(100.0))]
+            ),
+            blue
+        );
     }
 
     #[test]
     fn color_offset_full_turn_is_identity() {
         let img = ramp();
-        let out = run("ec.color.cccoloroffset", &img, &[("redPhase", num(360.0)), ("greenPhase", num(720.0))]);
+        let out = run(
+            "ec.color.cccoloroffset",
+            &img,
+            &[("redPhase", num(360.0)), ("greenPhase", num(720.0))],
+        );
         assert_eq!(out, img);
         let out = run("ec.color.cccoloroffset", &img, &[("redPhase", num(180.0))]);
         assert!((out.get(0, 3)[0] - 0.5).abs() < 1e-4);
@@ -1218,7 +1807,11 @@ mod tests {
         let img = Image::filled(2, 2, [1.0, 1.0, 0.0, 1.0]);
         let out = run("ec.color.broadcast", &img, &[]);
         assert!(out.data[0][0] < 1.0);
-        let key = run("ec.color.broadcast", &img, &[("howToMakeSafe", Value::Enum(2))]);
+        let key = run(
+            "ec.color.broadcast",
+            &img,
+            &[("howToMakeSafe", Value::Enum(2))],
+        );
         assert_eq!(key.data[0][3], 0.0);
         let gray = Image::filled(2, 2, [0.5, 0.5, 0.5, 1.0]);
         assert_eq!(run("ec.color.broadcast", &gray, &[]), gray);
@@ -1241,7 +1834,10 @@ mod tests {
         let out = run("ec.color.colorlink", &img, &[]);
         assert!((out.data[1][3] - 0.5).abs() < 1e-5);
         let (c, _) = unpremul(out.data[0]);
-        assert!((c[0] - 2.0 / 3.0).abs() < 1e-3 && (c[2] - 1.0 / 3.0).abs() < 1e-3, "{c:?}");
+        assert!(
+            (c[0] - 2.0 / 3.0).abs() < 1e-3 && (c[2] - 1.0 / 3.0).abs() < 1e-3,
+            "{c:?}"
+        );
     }
 
     #[test]
@@ -1249,14 +1845,25 @@ mod tests {
         let img = ramp();
         assert_eq!(run("ec.color.cckernel", &img, &[]), img);
         let g = Image::filled(1, 1, [0.5, 0.5, 0.5, 1.0]);
-        let t = run("ec.color.cctoner", &g, &[("tones", Value::Enum(0)), ("highlights", col(1.0, 0.0, 0.0))]);
+        let t = run(
+            "ec.color.cctoner",
+            &g,
+            &[
+                ("tones", Value::Enum(0)),
+                ("highlights", col(1.0, 0.0, 0.0)),
+            ],
+        );
         assert!((t.data[0][0] - 0.5).abs() < 1e-3 && t.data[0][1] < 1e-3);
     }
 
     #[test]
     fn shadow_highlight_lifts_shadows() {
         let img = Image::filled(8, 8, [0.1, 0.1, 0.1, 1.0]);
-        let out = run("ec.color.shadowhighlight", &img, &[("autoAmounts", Value::Bool(false))]);
+        let out = run(
+            "ec.color.shadowhighlight",
+            &img,
+            &[("autoAmounts", Value::Bool(false))],
+        );
         assert!(out.data[0][0] > 0.15);
     }
 
@@ -1265,7 +1872,10 @@ mod tests {
         let img = Image::filled(2, 2, [0.9, 0.9, 0.9, 1.0]);
         let lv = [("rgb/rgbInWhite", num(0.5))];
         assert!((run("ec.color.levelsic", &img, &lv).data[0][0] - 1.0).abs() < 1e-6);
-        let off = [("rgb/rgbInWhite", num(0.5)), ("clipToOutputWhite", Value::Enum(0))];
+        let off = [
+            ("rgb/rgbInWhite", num(0.5)),
+            ("clipToOutputWhite", Value::Enum(0)),
+        ];
         assert!(run("ec.color.levelsic", &img, &off).data[0][0] > 1.5);
     }
 
@@ -1273,18 +1883,33 @@ mod tests {
     struct ImgHost(Image);
     impl crate::EffectHost for ImgHost {
         fn layer(&self, _: u64, _: bool) -> Option<crate::LayerPixels> {
-            Some(crate::LayerPixels { buf: Buf { img: self.0.clone(), offset: [0.0; 2], scale: 1.0 }, size: [2.0, 2.0] })
+            Some(crate::LayerPixels {
+                buf: Buf {
+                    img: self.0.clone(),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [2.0, 2.0],
+            })
         }
         fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
             None
         }
         fn self_at(&self, _: f64, _: usize) -> Option<Buf> {
-            Some(Buf { img: self.0.clone(), offset: [0.0; 2], scale: 1.0 })
+            Some(Buf {
+                img: self.0.clone(),
+                offset: [0.0; 2],
+                scale: 1.0,
+            })
         }
     }
 
     fn run_host(id: &str, img: &Image, over: &[(&str, Value)], host: &ImgHost) -> Image {
-        let env = crate::EffectEnv { host: Some(host), frame_rate: 10.0, ..Default::default() };
+        let env = crate::EffectEnv {
+            host: Some(host),
+            frame_rate: 10.0,
+            ..Default::default()
+        };
         crate::run_fx(id, over, img.clone(), 1.0, env).img
     }
 
@@ -1295,17 +1920,38 @@ mod tests {
             img.set(x as u32, 0, [*v, *v, *v, 1.0]);
         }
         // Median ignores the outlier the average follows.
-        let med = run("ec.color.colorlink", &img, &[("sampleSource", Value::Enum(1))]);
+        let med = run(
+            "ec.color.colorlink",
+            &img,
+            &[("sampleSource", Value::Enum(1))],
+        );
         assert!((med.data[0][0] - 0.2).abs() < 1e-5);
         // Brightest with 20 % clip skips the brightest pixel.
-        let br = run("ec.color.colorlink", &img, &[("sampleSource", Value::Enum(2)), ("clip", num(20.0))]);
+        let br = run(
+            "ec.color.colorlink",
+            &img,
+            &[("sampleSource", Value::Enum(2)), ("clip", num(20.0))],
+        );
         assert!((br.data[0][0] - 0.3).abs() < 1e-5);
         // Min Alpha of a half-transparent source layer sets the alpha.
         let host = ImgHost(Image::filled(2, 2, [0.25, 0.25, 0.25, 0.5]));
-        let out = run_host("ec.color.colorlink", &img, &[("sourceLayer", Value::Layer(Some(9))), ("sampleSource", Value::Enum(9))], &host);
+        let out = run_host(
+            "ec.color.colorlink",
+            &img,
+            &[
+                ("sourceLayer", Value::Layer(Some(9))),
+                ("sampleSource", Value::Enum(9)),
+            ],
+            &host,
+        );
         assert!((out.data[4][3] - 0.5).abs() < 1e-5);
         // Average of the source layer (not the effect's own pixels).
-        let out = run_host("ec.color.colorlink", &img, &[("sourceLayer", Value::Layer(Some(9)))], &host);
+        let out = run_host(
+            "ec.color.colorlink",
+            &img,
+            &[("sourceLayer", Value::Layer(Some(9)))],
+            &host,
+        );
         assert!((out.data[4][0] - 0.5).abs() < 1e-5);
     }
 
@@ -1319,7 +1965,16 @@ mod tests {
         let wide = ImgHost(ramp());
         let p0 = [("blackClip", num(0.0)), ("whiteClip", num(0.0))];
         let alone = run_host("ec.color.autolevels", &img, &p0, &wide);
-        let smooth = run_host("ec.color.autolevels", &img, &[p0[0].clone(), p0[1].clone(), ("temporalSmoothing", num(0.2))], &wide);
+        let smooth = run_host(
+            "ec.color.autolevels",
+            &img,
+            &[
+                p0[0].clone(),
+                p0[1].clone(),
+                ("temporalSmoothing", num(0.2)),
+            ],
+            &wide,
+        );
         // Alone the frame is stretched to full range; with full-range neighbours much less.
         assert!(alone.data[0][0] < 0.01);
         assert!(smooth.data[0][0] > 0.1, "{:?}", smooth.data[0]);
@@ -1328,14 +1983,36 @@ mod tests {
     #[test]
     fn shadow_highlight_clip_keeps_the_tonal_range() {
         let img = ramp();
-        let lift = [("autoAmounts", Value::Bool(false)), ("shadowAmount", num(80.0))];
+        let lift = [
+            ("autoAmounts", Value::Bool(false)),
+            ("shadowAmount", num(80.0)),
+        ];
         let unclipped = run(
             "ec.color.shadowhighlight",
             &img,
-            &[lift[0].clone(), lift[1].clone(), ("moreOptions/blackClip", num(0.0)), ("moreOptions/whiteClip", num(0.0))],
+            &[
+                lift[0].clone(),
+                lift[1].clone(),
+                ("moreOptions/blackClip", num(0.0)),
+                ("moreOptions/whiteClip", num(0.0)),
+            ],
         );
-        let clipped = run("ec.color.shadowhighlight", &img, &[lift[0].clone(), lift[1].clone(), ("moreOptions/blackClip", num(1.0))]);
-        let min = |im: &Image| im.data.iter().filter(|p| p[3] > 0.99).map(|p| luminance(p[0], p[1], p[2])).fold(f32::MAX, f32::min);
+        let clipped = run(
+            "ec.color.shadowhighlight",
+            &img,
+            &[
+                lift[0].clone(),
+                lift[1].clone(),
+                ("moreOptions/blackClip", num(1.0)),
+            ],
+        );
+        let min = |im: &Image| {
+            im.data
+                .iter()
+                .filter(|p| p[3] > 0.99)
+                .map(|p| luminance(p[0], p[1], p[2]))
+                .fold(f32::MAX, f32::min)
+        };
         assert!(min(&clipped) < min(&unclipped));
     }
 }

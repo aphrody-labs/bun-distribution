@@ -51,7 +51,13 @@ fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: 
                         Some(InlineObject::FieldEnd) => match open.pop() {
                             Some((instr, locked, start)) => {
                                 let depth = open.len();
-                                out.ranges.push(FieldRange { instr, locked, start, end: Pos::new(story, path.clone(), off), depth });
+                                out.ranges.push(FieldRange {
+                                    instr,
+                                    locked,
+                                    start,
+                                    end: Pos::new(story, path.clone(), off),
+                                    depth,
+                                });
                             }
                             None => out.orphans.push((path.clone(), off)),
                         },
@@ -73,29 +79,42 @@ fn scan(story: StoryRef, bl: &Blocks, prefix: &mut Vec<u32>, depth: usize, out: 
         }
         prefix.pop();
     }
-    out.orphans.extend(open.into_iter().map(|(_, _, p)| (p.path, p.off)));
+    out.orphans
+        .extend(open.into_iter().map(|(_, _, p)| (p.path, p.off)));
 }
 
 fn scan_story(story: StoryRef, bl: &Blocks) -> Scan {
     let mut out = Scan::default();
     scan(story, bl, &mut Vec::new(), 0, &mut out);
-    out.ranges.sort_by(|a, b| a.start.path.cmp(&b.start.path).then(a.start.off.cmp(&b.start.off)));
+    out.ranges.sort_by(|a, b| {
+        a.start
+            .path
+            .cmp(&b.start.path)
+            .then(a.start.off.cmp(&b.start.off))
+    });
     out
 }
 
 impl Document {
     fn story_refs(&self) -> Vec<StoryRef> {
-        std::iter::once(StoryRef::Body).chain(self.parts.keys().map(|k| StoryRef::Part(*k))).collect()
+        std::iter::once(StoryRef::Body)
+            .chain(self.parts.keys().map(|k| StoryRef::Part(*k)))
+            .collect()
     }
 
     /// The whole range fields of a story, in document order of their starts.
     pub fn field_ranges(&self, story: StoryRef) -> Vec<FieldRange> {
-        self.story(story).map(|bl| scan_story(story, bl).ranges).unwrap_or_default()
+        self.story(story)
+            .map(|bl| scan_story(story, bl).ranges)
+            .unwrap_or_default()
     }
 
     /// Whether any story holds a range-field marker without its partner.
     pub fn has_unbalanced_field_ranges(&self) -> bool {
-        self.story_refs().into_iter().any(|s| self.story(s).is_some_and(|bl| !scan_story(s, bl).orphans.is_empty()))
+        self.story_refs().into_iter().any(|s| {
+            self.story(s)
+                .is_some_and(|bl| !scan_story(s, bl).orphans.is_empty())
+        })
     }
 
     /// Remove range-field markers that have no partner. Returns how many were removed.

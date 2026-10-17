@@ -12,7 +12,8 @@ pub fn box_radii(sigma: f32) -> [usize; 3] {
         wl -= 1;
     }
     let wu = wl + 2;
-    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f32 - 4.0 * n * wl as f32 - 3.0 * n) / (-4.0 * wl as f32 - 4.0);
+    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f32 - 4.0 * n * wl as f32 - 3.0 * n)
+        / (-4.0 * wl as f32 - 4.0);
     let m = m_ideal.round() as i32;
     std::array::from_fn(|i| (((if (i as i32) < m { wl } else { wu }) - 1) / 2).max(0) as usize)
 }
@@ -35,7 +36,9 @@ fn box_row<T: Pixel>(row: &mut [T], tmp: &mut Vec<T>, r: usize) {
     }
     for x in 0..w {
         row[x] = T::zero().madd(acc, inv);
-        acc = acc.madd(s[(x + r + 1).min(last)], 1.0).madd(s[x.saturating_sub(r)], -1.0);
+        acc = acc
+            .madd(s[(x + r + 1).min(last)], 1.0)
+            .madd(s[x.saturating_sub(r)], -1.0);
     }
 }
 
@@ -120,7 +123,12 @@ mod tests {
         imp.set(100, 0, 1.0);
         let sigma = 8.0;
         let b = gaussian(&imp, sigma);
-        let var: f32 = b.data.iter().enumerate().map(|(i, v)| v * ((i as f32 - 100.0).powi(2))).sum();
+        let var: f32 = b
+            .data
+            .iter()
+            .enumerate()
+            .map(|(i, v)| v * ((i as f32 - 100.0).powi(2)))
+            .sum();
         assert!((var.sqrt() - sigma).abs() / sigma < 0.1, "{}", var.sqrt());
     }
 }

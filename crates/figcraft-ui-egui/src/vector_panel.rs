@@ -15,7 +15,12 @@ use crate::right::{CAP_ART_W, cap_art, join_label, menu_item, menu_item_with, me
 use crate::widgets::{self, FieldEdit, Lead, PAD};
 
 /// Run a point command from a field: typed values are one step, scrubs one step when released.
-fn point_field(app: &mut FigApp, cmd: &str, edit: Option<FieldEdit>, params: impl Fn(f64) -> Value) {
+fn point_field(
+    app: &mut FigApp,
+    cmd: &str,
+    edit: Option<FieldEdit>,
+    params: impl Fn(f64) -> Value,
+) {
     match edit {
         Some(FieldEdit::Set(v)) => {
             app.run(cmd, params(v));
@@ -35,12 +40,18 @@ fn point_field(app: &mut FigApp, cmd: &str, edit: Option<FieldEdit>, params: imp
 fn width_point(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
     widgets::section_header(ui, tr("Width point"), &[], false);
     let stroke = doc.node(ve.id).map(|n| &n.stroke);
-    let sel = ve.width_point.and_then(|i| Some((i, *stroke?.profile()?.points.get(i)?)));
+    let sel = ve
+        .width_point
+        .and_then(|i| Some((i, *stroke?.profile()?.points.get(i)?)));
     let Some((i, p)) = sel else {
         let t = crate::theme::Tokens::get(ui.ctx());
         ui.horizontal(|ui| {
             ui.add_space(PAD);
-            widgets::label(ui, tr("Drag the stroke to add a width point"), t.text_secondary);
+            widgets::label(
+                ui,
+                tr("Drag the stroke to add a width point"),
+                t.text_secondary,
+            );
         });
         ui.add_space(8.0);
         return;
@@ -50,16 +61,45 @@ fn width_point(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
     let round = |v: f64| (v * 100.0).round() / 100.0;
     widgets::sublabels(ui, tr("Position"), Some(tr("Width")));
     row(ui, 32.0, |ui| {
-        let e = widgets::number_field(ui, Id::new("wpt_t"), Lead::None, Some(round(p.t * 100.0)), "%", col, 1.0);
-        point_field(app, "vector.edit.widthPoint", e, |v| json!({"index": i, "t": v / 100.0}));
-        let e = widgets::number_field(ui, Id::new("wpt_w"), Lead::Icon(Icon::StrokeIcon, tr("Width")), Some(round(p.scale * weight)), "", col, 1.0);
-        point_field(app, "vector.edit.widthPoint", e, |v| json!({"index": i, "width": v.max(0.0)}));
+        let e = widgets::number_field(
+            ui,
+            Id::new("wpt_t"),
+            Lead::None,
+            Some(round(p.t * 100.0)),
+            "%",
+            col,
+            1.0,
+        );
+        point_field(
+            app,
+            "vector.edit.widthPoint",
+            e,
+            |v| json!({"index": i, "t": v / 100.0}),
+        );
+        let e = widgets::number_field(
+            ui,
+            Id::new("wpt_w"),
+            Lead::Icon(Icon::StrokeIcon, tr("Width")),
+            Some(round(p.scale * weight)),
+            "",
+            col,
+            1.0,
+        );
+        point_field(
+            app,
+            "vector.edit.widthPoint",
+            e,
+            |v| json!({"index": i, "width": v.max(0.0)}),
+        );
     });
     // Each side's reach from the centre line (Alt-drag a handle on the canvas for one side).
     let (l, r) = p.sides();
     widgets::sublabels(ui, tr("Left side"), Some(tr("Right side")));
     row(ui, 32.0, |ui| {
-        for (side, scale, name) in [("left", l, tr("Left side width")), ("right", r, tr("Right side width"))] {
+        for (side, scale, name) in [
+            ("left", l, tr("Left side width")),
+            ("right", r, tr("Right side width")),
+        ] {
             let e = widgets::number_field(
                 ui,
                 Id::new(("wpt_side", side)),
@@ -69,7 +109,12 @@ fn width_point(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
                 col,
                 1.0,
             );
-            point_field(app, "vector.edit.widthPoint", e, |v| json!({"index": i, "side": side, "width": v.max(0.0)}));
+            point_field(
+                app,
+                "vector.edit.widthPoint",
+                e,
+                |v| json!({"index": i, "side": side, "width": v.max(0.0)}),
+            );
         }
     });
     ui.add_space(8.0);
@@ -80,14 +125,29 @@ pub fn points(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
         width_point(app, ui, doc, ve);
         return;
     }
-    let Some(net) = vectoredit::network(doc, ve.id) else { return };
+    let Some(net) = vectoredit::network(doc, ve.id) else {
+        return;
+    };
     let pts = vectoredit::selected_points(net, ve);
-    widgets::section_header(ui, if pts.len() > 1 { tr("Points") } else { tr("Point") }, &[], false);
+    widgets::section_header(
+        ui,
+        if pts.len() > 1 {
+            tr("Points")
+        } else {
+            tr("Point")
+        },
+        &[],
+        false,
+    );
     if pts.is_empty() {
         let t = crate::theme::Tokens::get(ui.ctx());
         ui.horizontal(|ui| {
             ui.add_space(PAD);
-            widgets::label(ui, tr("Select points to edit their position, radius and mirroring"), t.text_secondary);
+            widgets::label(
+                ui,
+                tr("Select points to edit their position, radius and mirroring"),
+                t.text_secondary,
+            );
         });
         ui.add_space(8.0);
         return;
@@ -97,18 +157,60 @@ pub fn points(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
     let round = |v: f64| (v * 100.0).round() / 100.0;
     widgets::sublabels(ui, tr("Position"), None);
     row(ui, 32.0, |ui| {
-        let e = widgets::number_field(ui, Id::new("vpt_x"), Lead::Text("X"), pos.map(|p| round(p.x)), "", col, 1.0);
+        let e = widgets::number_field(
+            ui,
+            Id::new("vpt_x"),
+            Lead::Text("X"),
+            pos.map(|p| round(p.x)),
+            "",
+            col,
+            1.0,
+        );
         point_field(app, "vector.edit.position", e, |v| json!({"x": v}));
-        let e = widgets::number_field(ui, Id::new("vpt_y"), Lead::Text("Y"), pos.map(|p| round(p.y)), "", col, 1.0);
+        let e = widgets::number_field(
+            ui,
+            Id::new("vpt_y"),
+            Lead::Text("Y"),
+            pos.map(|p| round(p.y)),
+            "",
+            col,
+            1.0,
+        );
         point_field(app, "vector.edit.position", e, |v| json!({"y": v}));
     });
     if let Some(b) = vectoredit::transform::point_box(doc, ve).filter(|b| b.points.len() > 1) {
         widgets::sublabels(ui, tr("Dimensions"), None);
         row(ui, 32.0, |ui| {
-            let e = widgets::number_field(ui, Id::new("vpt_w"), Lead::Text("W"), Some(round(b.width)), "", col, 1.0);
-            point_field(app, "vector.edit.resize", e, |v| json!({"width": v.max(0.0)}));
-            let e = widgets::number_field(ui, Id::new("vpt_h"), Lead::Text("H"), Some(round(b.height)), "", col, 1.0);
-            point_field(app, "vector.edit.resize", e, |v| json!({"height": v.max(0.0)}));
+            let e = widgets::number_field(
+                ui,
+                Id::new("vpt_w"),
+                Lead::Text("W"),
+                Some(round(b.width)),
+                "",
+                col,
+                1.0,
+            );
+            point_field(
+                app,
+                "vector.edit.resize",
+                e,
+                |v| json!({"width": v.max(0.0)}),
+            );
+            let e = widgets::number_field(
+                ui,
+                Id::new("vpt_h"),
+                Lead::Text("H"),
+                Some(round(b.height)),
+                "",
+                col,
+                1.0,
+            );
+            point_field(
+                app,
+                "vector.edit.resize",
+                e,
+                |v| json!({"height": v.max(0.0)}),
+            );
         });
     }
     let vertex = |v: &usize| net.vertices.get(*v).copied();
@@ -119,9 +221,21 @@ pub fn points(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
     let join = same(pts.iter().map(|v| vertex(v).map(|x| x.join))).flatten();
     widgets::sublabels(ui, tr("Corner radius"), None);
     row(ui, 32.0, |ui| {
-        let e =
-            widgets::number_field(ui, Id::new("vpt_radius"), Lead::Icon(Icon::CornerRadius, tr("Corner radius")), radius.map(round), "", col, 1.0);
-        point_field(app, "vector.edit.cornerRadius", e, |v| json!({"radius": v.max(0.0)}));
+        let e = widgets::number_field(
+            ui,
+            Id::new("vpt_radius"),
+            Lead::Icon(Icon::CornerRadius, tr("Corner radius")),
+            radius.map(round),
+            "",
+            col,
+            1.0,
+        );
+        point_field(
+            app,
+            "vector.edit.cornerRadius",
+            e,
+            |v| json!({"radius": v.max(0.0)}),
+        );
     });
     widgets::sublabels(ui, tr("Mirroring"), None);
     row(ui, 32.0, |ui| {
@@ -130,9 +244,18 @@ pub fn points(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
             HandleMirroring::Angle => tr("Mirror angle"),
             HandleMirroring::AngleAndLength => tr("Mirror angle and length"),
         };
-        let resp = widgets::dropdown(ui, mirror.map(label).unwrap_or(tr("Mixed")), col * 2.0 + 8.0, None);
+        let resp = widgets::dropdown(
+            ui,
+            mirror.map(label).unwrap_or(tr("Mixed")),
+            col * 2.0 + 8.0,
+            None,
+        );
         menu_popup(&resp).show(|ui| {
-            for m in [HandleMirroring::None, HandleMirroring::Angle, HandleMirroring::AngleAndLength] {
+            for m in [
+                HandleMirroring::None,
+                HandleMirroring::Angle,
+                HandleMirroring::AngleAndLength,
+            ] {
                 if menu_item(ui, label(m), "") {
                     app.run("vector.edit.mirroring", json!({"mode": m.id()}));
                     ui.close();
@@ -155,7 +278,9 @@ pub fn points(app: &mut FigApp, ui: &mut Ui, doc: &Document, ve: &VectorEdit) {
                 ui.close();
             }
             for c in StrokeCap::ALL {
-                if menu_item_with(ui, tr(c.label()), "", CAP_ART_W, |p, r, col| cap_art(p, r, col, c, false)) {
+                if menu_item_with(ui, tr(c.label()), "", CAP_ART_W, |p, r, col| {
+                    cap_art(p, r, col, c, false)
+                }) {
                     app.run("vector.edit.strokeCap", json!({"cap": c}));
                     ui.close();
                 }

@@ -64,15 +64,21 @@ fn skin_mask(img: &Rgba8, f: &FaceBox, x0: usize, y0: usize, cw: usize, ch: usiz
             if py > eye_y - fh * 0.32 && py < eye_y + fh * 0.05 {
                 continue;
             }
-            let near = |(lx, ly): (f64, f64), r: f64| (px - lx).powi(2) + (py - ly).powi(2) <= r * r;
+            let near =
+                |(lx, ly): (f64, f64), r: f64| (px - lx).powi(2) + (py - ly).powi(2) <= r * r;
             if near(re, fw * 0.12) || near(le, fw * 0.12) || near(mouth, fw * 0.16) {
                 continue;
             }
             // nostrils: an ellipse at and below the nose tip
-            if ((px - nose.0) / (fw * 0.20)).powi(2) + ((py - nose.1 - fw * 0.02) / (fw * 0.16)).powi(2) <= 1.0 {
+            if ((px - nose.0) / (fw * 0.20)).powi(2)
+                + ((py - nose.1 - fw * 0.02) / (fw * 0.16)).powi(2)
+                <= 1.0
+            {
                 continue;
             }
-            let Some(p) = img.data.get((y0 + yy) * img.width + x0 + xx) else { continue };
+            let Some(p) = img.data.get((y0 + yy) * img.width + x0 + xx) else {
+                continue;
+            };
             let (r, g, b) = (f64::from(p[0]), f64::from(p[1]), f64::from(p[2]));
             let cr = 128.0 + 0.5 * r - 0.4187 * g - 0.0813 * b;
             let cb = 128.0 - 0.1687 * r - 0.3313 * g + 0.5 * b;
@@ -112,7 +118,12 @@ pub fn detect(img: &Rgba8, faces: &[FaceBox], sensitivity: f32) -> Vec<Blemish> 
             continue;
         }
         let skin = skin_mask(img, f, x0, y0, cw, ch);
-        let px = |xx: usize, yy: usize| img.data.get((y0 + yy) * w + x0 + xx).copied().unwrap_or([0; 4]);
+        let px = |xx: usize, yy: usize| {
+            img.data
+                .get((y0 + yy) * w + x0 + xx)
+                .copied()
+                .unwrap_or([0; 4])
+        };
         let lum = Plane::from_fn(cw, ch, |xx, yy| {
             let p = px(xx, yy);
             (0.2126 * f32::from(p[0]) + 0.7152 * f32::from(p[1]) + 0.0722 * f32::from(p[2])) / 255.0
@@ -127,20 +138,24 @@ pub fn detect(img: &Rgba8, faces: &[FaceBox], sensitivity: f32) -> Vec<Blemish> 
         let around_r = gaussian(&red, sigma);
         let detail = Plane::from_fn(cw, ch, |xx, yy| {
             let i = yy * cw + xx;
-            (lum.data.get(i).copied().unwrap_or(0.0) - around_l.data.get(i).copied().unwrap_or(0.0)).abs()
+            (lum.data.get(i).copied().unwrap_or(0.0) - around_l.data.get(i).copied().unwrap_or(0.0))
+                .abs()
         });
         let texture = gaussian(&detail, (0.06 * fw as f32).max(3.0));
         let resp: Vec<f32> = (0..cw * ch)
             .map(|i| {
-                let dark = around_l.data.get(i).copied().unwrap_or(0.0) - lum.data.get(i).copied().unwrap_or(0.0);
-                let redder = red.data.get(i).copied().unwrap_or(0.0) - around_r.data.get(i).copied().unwrap_or(0.0);
+                let dark = around_l.data.get(i).copied().unwrap_or(0.0)
+                    - lum.data.get(i).copied().unwrap_or(0.0);
+                let redder = red.data.get(i).copied().unwrap_or(0.0)
+                    - around_r.data.get(i).copied().unwrap_or(0.0);
                 dark.max(redder).max(0.0)
             })
             .collect();
         let candidate = |i: usize| {
             skin.get(i).copied().unwrap_or(false)
                 && resp.get(i).copied().unwrap_or(0.0) > thr
-                && resp.get(i).copied().unwrap_or(0.0) > 2.5 * texture.data.get(i).copied().unwrap_or(0.0)
+                && resp.get(i).copied().unwrap_or(0.0)
+                    > 2.5 * texture.data.get(i).copied().unwrap_or(0.0)
         };
         // blobs of candidate pixels (4-connected), small and roundish
         let mut seen = vec![false; cw * ch];
@@ -167,7 +182,9 @@ pub fn detect(img: &Rgba8, faces: &[FaceBox], sensitivity: f32) -> Vec<Blemish> 
                     break; // too big to be a blemish: a shadow or a feature
                 }
                 for j in [i.wrapping_sub(1), i + 1, i.wrapping_sub(cw), i + cw] {
-                    let ok = j < cw * ch && !seen.get(j).copied().unwrap_or(true) && (j % cw).abs_diff(xx) <= 1;
+                    let ok = j < cw * ch
+                        && !seen.get(j).copied().unwrap_or(true)
+                        && (j % cw).abs_diff(xx) <= 1;
                     if ok && candidate(j) {
                         if let Some(s) = seen.get_mut(j) {
                             *s = true;
@@ -220,7 +237,9 @@ mod tests {
             let (sx, sy) = (cx + dx * fw, cy + dy * fh);
             for y in 0..h {
                 for x in 0..w {
-                    if (x as f64 + 0.5 - sx).powi(2) + (y as f64 + 0.5 - sy).powi(2) <= (0.012 * fw).max(1.5).powi(2) {
+                    if (x as f64 + 0.5 - sx).powi(2) + (y as f64 + 0.5 - sy).powi(2)
+                        <= (0.012 * fw).max(1.5).powi(2)
+                    {
                         img.data[y * w + x] = [150, 90, 85, 255]; // a dark red spot
                     }
                 }
@@ -251,18 +270,39 @@ mod tests {
         assert_eq!(found.len(), 3, "{found:?}");
         for (dx, dy) in dots {
             let (ex, ey) = (0.5 + dx * 300.0 / 800.0, 0.5 + dy * 390.0 / 600.0);
-            assert!(found.iter().any(|b| (b.x - ex).abs() < 0.01 && (b.y - ey).abs() < 0.01), "{found:?} lacks {ex},{ey}");
+            assert!(
+                found
+                    .iter()
+                    .any(|b| (b.x - ex).abs() < 0.01 && (b.y - ey).abs() < 0.01),
+                "{found:?} lacks {ex},{ey}"
+            );
         }
-        assert!(found.iter().all(|b| b.face == 0 && b.radius > 0.0 && b.radius < 0.02 && b.strength > 0.0));
+        assert!(
+            found
+                .iter()
+                .all(|b| b.face == 0 && b.radius > 0.0 && b.radius < 0.02 && b.strength > 0.0)
+        );
         let (clean, face) = scene(800, 600, 300.0, &[]);
-        assert!(detect(&clean, &[face], 50.0).is_empty(), "a clean face has no blemishes");
+        assert!(
+            detect(&clean, &[face], 50.0).is_empty(),
+            "a clean face has no blemishes"
+        );
     }
 
     #[test]
     fn features_and_small_faces_are_left_alone() {
         // spots on the eyes, the nose tip and the mouth: all inside the cut-outs
-        let (img, face) = scene(800, 600, 300.0, &[(-0.2, -0.12), (0.2, -0.12), (0.0, 0.1), (0.0, 0.28)]);
-        assert!(detect(&img, &[face], 80.0).is_empty(), "{:?}", detect(&img, &[face], 80.0));
+        let (img, face) = scene(
+            800,
+            600,
+            300.0,
+            &[(-0.2, -0.12), (0.2, -0.12), (0.0, 0.1), (0.0, 0.28)],
+        );
+        assert!(
+            detect(&img, &[face], 80.0).is_empty(),
+            "{:?}",
+            detect(&img, &[face], 80.0)
+        );
         // the same cheek spots on a face below the size floor
         let (img, face) = scene(800, 600, 120.0, &[(-0.28, 0.08), (0.3, 0.12)]);
         assert!(detect(&img, &[face], 50.0).is_empty());
@@ -271,17 +311,34 @@ mod tests {
     #[test]
     fn a_speckled_face_is_texture_not_blemishes() {
         // 24 spots on the cheeks, all outside the eye, nose and mouth cut-outs
-        let dots: Vec<(f64, f64)> =
-            [-0.42, -0.32, -0.22, 0.22, 0.32, 0.42].iter().flat_map(|&dx| (0..4).map(move |j| (dx, 0.0 + 0.08 * j as f64))).collect();
+        let dots: Vec<(f64, f64)> = [-0.42, -0.32, -0.22, 0.22, 0.32, 0.42]
+            .iter()
+            .flat_map(|&dx| (0..4).map(move |j| (dx, 0.0 + 0.08 * j as f64)))
+            .collect();
         let (img, face) = scene(800, 600, 300.0, &dots);
-        assert!(detect(&img, &[face], 50.0).is_empty(), "more than {MAX_CANDIDATES_PER_FACE} candidates means stubble or freckles");
+        assert!(
+            detect(&img, &[face], 50.0).is_empty(),
+            "more than {MAX_CANDIDATES_PER_FACE} candidates means stubble or freckles"
+        );
     }
 
     #[test]
     fn hostile_faces_do_not_panic() {
         let (img, _) = scene(64, 48, 20.0, &[]);
-        let weird = FaceBox { x0: -2.0, y0: 0.5, x1: 9.0, y1: f64::NAN, landmarks: [(f64::INFINITY, 0.0); 5] };
-        let inverted = FaceBox { x0: 0.9, y0: 0.9, x1: 0.1, y1: 0.1, landmarks: [(0.5, 0.5); 5] };
+        let weird = FaceBox {
+            x0: -2.0,
+            y0: 0.5,
+            x1: 9.0,
+            y1: f64::NAN,
+            landmarks: [(f64::INFINITY, 0.0); 5],
+        };
+        let inverted = FaceBox {
+            x0: 0.9,
+            y0: 0.9,
+            x1: 0.1,
+            y1: 0.1,
+            landmarks: [(0.5, 0.5); 5],
+        };
         assert!(detect(&img, &[weird, inverted], 100.0).is_empty());
         assert!(detect(&Rgba8::new(0, 0), &[inverted], 50.0).is_empty());
     }

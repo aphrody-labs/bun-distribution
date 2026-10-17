@@ -721,15 +721,19 @@ mod tests {
             .build();
 
         let component = &dynamic_world.entities[0].components[0];
-        assert!(component
-            .try_as_reflect()
-            .expect("component should be concrete due to `FromReflect`")
-            .is::<SomeType>());
+        assert!(
+            component
+                .try_as_reflect()
+                .expect("component should be concrete due to `FromReflect`")
+                .is::<SomeType>()
+        );
 
         let resource = &dynamic_world.resources[0];
-        assert!(resource
-            .try_as_reflect()
-            .expect("resource should be concrete due to `FromReflect`")
-            .is::<SomeResource>());
+        assert!(
+            resource
+                .try_as_reflect()
+                .expect("resource should be concrete due to `FromReflect`")
+                .is::<SomeResource>()
+        );
     }
 }

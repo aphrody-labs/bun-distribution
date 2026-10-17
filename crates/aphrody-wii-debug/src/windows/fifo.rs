@@ -56,9 +56,11 @@ pub fn show_fifo_recorder(
                         *action = Some(FifoRecorderAction::Start);
                     }
                     ui.label(
-                        egui::RichText::new("Starts at the next presented frame").small().weak(),
+                        egui::RichText::new("Starts at the next presented frame")
+                            .small()
+                            .weak(),
                     );
-                },
+                }
                 Some(rec) => {
                     let state_label = match rec.state() {
                         RecorderState::Waiting => "waiting for a frame",
@@ -89,7 +91,7 @@ pub fn show_fifo_recorder(
                     {
                         *action = Some(FifoRecorderAction::Cancel);
                     }
-                },
+                }
             }
 
             if !last_result.is_empty() {

@@ -13,8 +13,9 @@ pub const MAX_CSV_BYTES: usize = 512 << 20;
 
 /// Windows-1252 code points for bytes 0x80–0x9F (others map to Latin-1).
 const CP1252: [u32; 32] = [
-    0x20AC, 0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039, 0x0152, 0x8D, 0x017D, 0x8F, 0x90, 0x2018, 0x2019,
-    0x201C, 0x201D, 0x2022, 0x2013, 0x2014, 0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x9D, 0x017E, 0x0178,
+    0x20AC, 0x81, 0x201A, 0x0192, 0x201E, 0x2026, 0x2020, 0x2021, 0x02C6, 0x2030, 0x0160, 0x2039,
+    0x0152, 0x8D, 0x017D, 0x8F, 0x90, 0x2018, 0x2019, 0x201C, 0x201D, 0x2022, 0x2013, 0x2014,
+    0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x9D, 0x017E, 0x0178,
 ];
 
 /// Decodes CSV bytes: UTF-8/UTF-16 BOMs, else UTF-8, else Windows-1252.
@@ -23,8 +24,16 @@ pub fn decode_text(bytes: &[u8]) -> String {
         return String::from_utf8_lossy(rest).into_owned();
     }
     let utf16 = |b: &[u8], le: bool| -> String {
-        let units = b.as_chunks::<2>().0.iter().map(|c| if le { u16::from_le_bytes(*c) } else { u16::from_be_bytes(*c) });
-        char::decode_utf16(units).map(|r| r.unwrap_or('\u{FFFD}')).collect()
+        let units = b.as_chunks::<2>().0.iter().map(|c| {
+            if le {
+                u16::from_le_bytes(*c)
+            } else {
+                u16::from_be_bytes(*c)
+            }
+        });
+        char::decode_utf16(units)
+            .map(|r| r.unwrap_or('\u{FFFD}'))
+            .collect()
     };
     if let Some(rest) = bytes.strip_prefix(&[0xFF, 0xFE]) {
         return utf16(rest, true);
@@ -37,7 +46,10 @@ pub fn decode_text(bytes: &[u8]) -> String {
         Err(_) => bytes
             .iter()
             .map(|&b| match b {
-                0x80..=0x9F => char::from_u32(CP1252.get((b - 0x80) as usize).copied().unwrap_or(0xFFFD)).unwrap_or('\u{FFFD}'),
+                0x80..=0x9F => {
+                    char::from_u32(CP1252.get((b - 0x80) as usize).copied().unwrap_or(0xFFFD))
+                        .unwrap_or('\u{FFFD}')
+                }
                 _ => b as char,
             })
             .collect(),
@@ -88,7 +100,12 @@ pub fn sniff_delimiter(text: &str, quote: char) -> u8 {
 }
 
 /// Splits CSV text into records of fields.
-fn parse_records(text: &str, delim: char, quote: char, mut on_record: impl FnMut(Vec<String>) -> bool) {
+fn parse_records(
+    text: &str,
+    delim: char,
+    quote: char,
+    mut on_record: impl FnMut(Vec<String>) -> bool,
+) {
     let mut field = String::new();
     let mut record: Vec<String> = vec![];
     let mut in_q = false;
@@ -135,10 +152,20 @@ fn parse_records(text: &str, delim: char, quote: char, mut on_record: impl FnMut
 
 pub fn read_csv(bytes: &[u8], opts: &CsvOptions) -> Result<Workbook, IoError> {
     let text = decode_text(bytes);
-    let quote = if opts.quote == 0 { '"' } else { opts.quote as char };
-    let delim = if opts.delimiter == 0 { sniff_delimiter(&text, quote) } else { opts.delimiter } as char;
+    let quote = if opts.quote == 0 {
+        '"'
+    } else {
+        opts.quote as char
+    };
+    let delim = if opts.delimiter == 0 {
+        sniff_delimiter(&text, quote)
+    } else {
+        opts.delimiter
+    } as char;
     if delim == quote {
-        return Err(IoError::Format("the delimiter and quote character must differ".into()));
+        return Err(IoError::Format(
+            "the delimiter and quote character must differ".into(),
+        ));
     }
     let mut wb = Workbook::new();
     wb.date_system = opts.date_system;
@@ -166,14 +193,19 @@ pub fn read_csv(bytes: &[u8], opts: &CsvOptions) -> Result<Workbook, IoError> {
                     Some(code) => match fmt_cache.iter().find(|(c, _)| *c == code) {
                         Some((_, id)) => *id,
                         None => {
-                            let id = styles.derive(StyleId::DEFAULT, |s| s.num_fmt = NumFmt::new(code));
+                            let id =
+                                styles.derive(StyleId::DEFAULT, |s| s.num_fmt = NumFmt::new(code));
                             fmt_cache.push((code, id));
                             id
                         }
                     },
                     None => StyleId::DEFAULT,
                 };
-                Cell { value: p.value, formula: None, style }
+                Cell {
+                    value: p.value,
+                    formula: None,
+                    style,
+                }
             } else {
                 Cell::value(Value::Text(Arc::from(f)))
             };
@@ -196,24 +228,51 @@ pub fn read_csv(bytes: &[u8], opts: &CsvOptions) -> Result<Workbook, IoError> {
 /// An export that would pass the cap is refused before anything is allocated, or as soon as the
 /// text written so far passes it, with [`IoError::TooLarge`]; accepted exports keep every field in
 /// its place.
-pub fn write_csv(sheet: &Sheet, delimiter: u8, cell_text: impl FnMut(CellRef) -> String) -> Result<Vec<u8>, IoError> {
+pub fn write_csv(
+    sheet: &Sheet,
+    delimiter: u8,
+    cell_text: impl FnMut(CellRef) -> String,
+) -> Result<Vec<u8>, IoError> {
     write_csv_limited(sheet, delimiter, MAX_CSV_BYTES, cell_text)
 }
 
 /// [`write_csv`] with the output cap `limit` (bytes) given.
-pub fn write_csv_limited(sheet: &Sheet, delimiter: u8, limit: usize, mut cell_text: impl FnMut(CellRef) -> String) -> Result<Vec<u8>, IoError> {
-    let delim = if delimiter == 0 { ',' } else { delimiter as char };
+pub fn write_csv_limited(
+    sheet: &Sheet,
+    delimiter: u8,
+    limit: usize,
+    mut cell_text: impl FnMut(CellRef) -> String,
+) -> Result<Vec<u8>, IoError> {
+    let delim = if delimiter == 0 {
+        ','
+    } else {
+        delimiter as char
+    };
     let mut out = String::new();
-    let Some(r) = sheet.used_range() else { return Ok(Vec::new()) };
-    let too_large =
-        |what: String| IoError::TooLarge(format!("the CSV would be {what}, over the limit of {} MiB; export a smaller range", limit >> 20));
+    let Some(r) = sheet.used_range() else {
+        return Ok(Vec::new());
+    };
+    let too_large = |what: String| {
+        IoError::TooLarge(format!(
+            "the CSV would be {what}, over the limit of {} MiB; export a smaller range",
+            limit >> 20
+        ))
+    };
     // Every row has a delimiter between its fields and a CRLF, whatever the cells hold: a lower
     // bound on the output that needs no cell text.
-    let (rows, cols) = (u64::from(r.end.row - r.start.row) + 1, u64::from(r.end.col - r.start.col) + 1);
-    let per_row = (cols - 1).saturating_mul(delim.len_utf8() as u64).saturating_add(2);
+    let (rows, cols) = (
+        u64::from(r.end.row - r.start.row) + 1,
+        u64::from(r.end.col - r.start.col) + 1,
+    );
+    let per_row = (cols - 1)
+        .saturating_mul(delim.len_utf8() as u64)
+        .saturating_add(2);
     let least = rows.saturating_mul(per_row);
     if least > limit as u64 {
-        return Err(too_large(format!("at least {} MiB ({rows} rows by {cols} columns)", least >> 20)));
+        return Err(too_large(format!(
+            "at least {} MiB ({rows} rows by {cols} columns)",
+            least >> 20
+        )));
     }
     for row in r.start.row..=r.end.row {
         for col in r.start.col..=r.end.col {
@@ -231,7 +290,11 @@ pub fn write_csv_limited(sheet: &Sheet, delimiter: u8, limit: usize, mut cell_te
         }
         out.push_str("\r\n");
         if out.len() > limit {
-            return Err(too_large(format!("more than {} MiB (stopped at row {})", limit >> 20, row + 1)));
+            return Err(too_large(format!(
+                "more than {} MiB (stopped at row {})",
+                limit >> 20,
+                row + 1
+            )));
         }
     }
     Ok(out.into_bytes())

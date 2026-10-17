@@ -255,7 +255,11 @@ unsafe impl<A: AsAssetId> WorldQuery for AssetChanged<A> {
             component_access_set.add(filter);
             return;
         }
-        panic!("error[B0002]: AssetChanged<{}> in system {:?} conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002", DebugName::type_name::<A>(), system_name);
+        panic!(
+            "error[B0002]: AssetChanged<{}> in system {:?} conflicts with a previous system parameter. Consider removing the duplicate access. See: https://bevy.org/learn/errors/b0002",
+            DebugName::type_name::<A>(),
+            system_name
+        );
     }
 
     fn init_state(world: &mut World) -> AssetChangedState<A> {

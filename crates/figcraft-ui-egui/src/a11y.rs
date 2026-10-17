@@ -19,7 +19,10 @@
 //! first, as everything here does (`a11y_tests` runs every path with the tree on).
 
 use egui::accesskit::{self, Role, Toggled};
-use egui::{Context, CornerRadius, Event, FocusDirection, Id, Key, LayerId, Modifiers, Order, Pos2, Rect, Response, Stroke, StrokeKind, Ui};
+use egui::{
+    Context, CornerRadius, Event, FocusDirection, Id, Key, LayerId, Modifiers, Order, Pos2, Rect,
+    Response, Stroke, StrokeKind, Ui,
+};
 use figcraft_engine::keymap;
 
 use crate::FigApp;
@@ -42,7 +45,12 @@ pub enum Region {
 
 impl Region {
     /// In F6 order.
-    pub const ALL: [Region; 4] = [Region::Toolbar, Region::Layers, Region::Canvas, Region::Properties];
+    pub const ALL: [Region; 4] = [
+        Region::Toolbar,
+        Region::Layers,
+        Region::Canvas,
+        Region::Properties,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -54,7 +62,9 @@ impl Region {
     }
 
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|r| r.id().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|r| r.id().eq_ignore_ascii_case(s))
     }
 
     fn index(self) -> usize {
@@ -152,7 +162,9 @@ impl Nav {
                 return Some(r);
             }
         }
-        rect(Region::Canvas).filter(|r| r.contains(p)).map(|_| Region::Canvas)
+        rect(Region::Canvas)
+            .filter(|r| r.contains(p))
+            .map(|_| Region::Canvas)
     }
 
     fn shown(&self, r: Region) -> bool {
@@ -188,7 +200,8 @@ pub fn container(ui: &Ui, role: Role, label: &str) {
 
 /// `ui`'s container node covers `rect` (a container smaller than its `Ui`: the toolbar).
 pub fn container_bounds(ui: &Ui, rect: Rect) {
-    ui.ctx().accesskit_node_builder(ui.unique_id(), |n| n.set_bounds(bounds(rect)));
+    ui.ctx()
+        .accesskit_node_builder(ui.unique_id(), |n| n.set_bounds(bounds(rect)));
 }
 
 /// F6 into `region` lands on `id` (the active tool, the selected layer's row).
@@ -257,7 +270,8 @@ fn shared<R>(ctx: &Context, f: impl FnOnce(&mut Shared) -> R) -> R {
 /// canvas shortcuts stay off then.
 pub fn field_focused(ctx: &Context) -> bool {
     let canvas = shared(ctx, |s| s.canvas);
-    ctx.memory(|m| m.focused()).is_some_and(|f| Some(f) != canvas)
+    ctx.memory(|m| m.focused())
+        .is_some_and(|f| Some(f) != canvas)
 }
 
 /// The name of the control with the keyboard (empty when unnamed or nothing has it).
@@ -299,13 +313,20 @@ pub fn begin(app: &mut FigApp, ctx: &Context) {
 
 fn keys(app: &mut FigApp, ctx: &Context) {
     // A press hides the ring, and the keyboard goes to the region pressed in.
-    let press = ctx.input(|i| i.pointer.any_pressed().then(|| i.pointer.interact_pos()).flatten());
+    let press = ctx.input(|i| {
+        i.pointer
+            .any_pressed()
+            .then(|| i.pointer.interact_pos())
+            .flatten()
+    });
     if let Some(p) = press {
         let nav = &mut app.ui.nav;
         nav.keyboard = false;
         nav.opener = None;
         nav.refocus = 0;
-        if ctx.layer_id_at(p).is_none_or(|l| l == LayerId::background())
+        if ctx
+            .layer_id_at(p)
+            .is_none_or(|l| l == LayerId::background())
             && let Some(r) = nav.region_at(p)
         {
             nav.region = r;
@@ -376,12 +397,19 @@ fn keys(app: &mut FigApp, ctx: &Context) {
     }
     // egui moves the focus with the arrows too; here they belong to fields (steps), the toolbar
     // and the layer rows.
-    let arrows = [Key::ArrowLeft, Key::ArrowRight, Key::ArrowUp, Key::ArrowDown];
+    let arrows = [
+        Key::ArrowLeft,
+        Key::ArrowRight,
+        Key::ArrowUp,
+        Key::ArrowDown,
+    ];
     if focused.is_some() && arrows.iter().any(|k| ctx.input(|i| i.key_pressed(*k))) {
         ctx.memory_mut(|m| m.move_focus(FocusDirection::None));
     }
-    let in_region =
-        focused.is_some_and(|f| widget.is_some_and(|w| app.ui.nav.region_at(w.rect.center()) == Some(region)) && Some(f) != app.ui.nav.last.canvas);
+    let in_region = focused.is_some_and(|f| {
+        widget.is_some_and(|w| app.ui.nav.region_at(w.rect.center()) == Some(region))
+            && Some(f) != app.ui.nav.last.canvas
+    });
     match region {
         Region::Toolbar if in_region => {
             for (k, step) in [(Key::ArrowLeft, -1), (Key::ArrowRight, 1)] {
@@ -405,14 +433,25 @@ fn keys(app: &mut FigApp, ctx: &Context) {
         Region::Layers if in_region && app.ui.nav.last.row_focused => {
             // The canvas shortcuts are off while a row has the keyboard: rename (F2, Cmd/Ctrl+R)
             // and the context menu (Shift+F10) work on its layer here.
-            if let Some((id, key, m)) = binding_pressed(ctx, &["object.rename", "view.contextMenu"]) {
+            if let Some((id, key, m)) = binding_pressed(ctx, &["object.rename", "view.contextMenu"])
+            {
                 ctx.input_mut(|i| i.consume_key(m, key));
                 crate::shortcuts::run_binding(app, id);
             }
             for k in arrows {
-                let shift = matches!(k, Key::ArrowUp | Key::ArrowDown) && pressed(k, Modifiers::SHIFT);
+                let shift =
+                    matches!(k, Key::ArrowUp | Key::ArrowDown) && pressed(k, Modifiers::SHIFT);
                 if (pressed(k, Modifiers::NONE) || shift) && crate::layers::key_nav(app, k, shift) {
-                    ctx.input_mut(|i| i.consume_key(if shift { Modifiers::SHIFT } else { Modifiers::NONE }, k));
+                    ctx.input_mut(|i| {
+                        i.consume_key(
+                            if shift {
+                                Modifiers::SHIFT
+                            } else {
+                                Modifiers::NONE
+                            },
+                            k,
+                        )
+                    });
                     app.ui.nav.keyboard = true;
                     app.ui.nav.refocus = 3;
                 }
@@ -452,11 +491,15 @@ fn keys(app: &mut FigApp, ctx: &Context) {
 fn binding_pressed(ctx: &Context, ids: &[&str]) -> Option<(&'static str, Key, Modifiers)> {
     ctx.input(|i| {
         i.events.iter().find_map(|e| match e {
-            Event::Key { key, physical_key, pressed: true, modifiers, .. } => {
-                crate::shortcuts::lookup(keymap::Context::Canvas, *key, *physical_key, *modifiers)
-                    .filter(|b| ids.contains(&b.id))
-                    .map(|b| (b.id, *key, *modifiers))
-            }
+            Event::Key {
+                key,
+                physical_key,
+                pressed: true,
+                modifiers,
+                ..
+            } => crate::shortcuts::lookup(keymap::Context::Canvas, *key, *physical_key, *modifiers)
+                .filter(|b| ids.contains(&b.id))
+                .map(|b| (b.id, *key, *modifiers)),
             _ => None,
         })
     })
@@ -476,20 +519,45 @@ pub fn refocus_row(nav: &mut Nav) {
 /// and gives it back to the row or the canvas when it closes. Call after the panels drew.
 pub fn context_menu(app: &mut FigApp, ctx: &Context) {
     let nav = &app.ui.nav;
-    let rect_of = |id: Id| ctx.viewport(|v| v.this_pass.widgets.get(id).or_else(|| v.prev_pass.widgets.get(id)).map(|w| w.rect));
+    let rect_of = |id: Id| {
+        ctx.viewport(|v| {
+            v.this_pass
+                .widgets
+                .get(id)
+                .or_else(|| v.prev_pass.widgets.get(id))
+                .map(|w| w.rect)
+        })
+    };
     let row = (app.ui.layers_focus || nav.region == Region::Layers)
-        .then(|| Region::Layers.of(&nav.next.preferred).or(*Region::Layers.of(&nav.last.preferred)))
+        .then(|| {
+            Region::Layers
+                .of(&nav.next.preferred)
+                .or(*Region::Layers.of(&nav.last.preferred))
+        })
         .flatten()
         .and_then(|id| Some((id, rect_of(id)?)));
     let (opener, pos, region) = match row {
-        Some((id, r)) => (Some(id), egui::pos2(r.min.x + 40.0, r.max.y), Region::Layers),
+        Some((id, r)) => (
+            Some(id),
+            egui::pos2(r.min.x + 40.0, r.max.y),
+            Region::Layers,
+        ),
         None => {
             let canvas = app.canvas.rect;
             let below = app.session.ds().ok().and_then(|ds| {
-                let b = ds.selection.iter().filter_map(|i| ds.doc.world_bounds(*i)).reduce(|a, b| a.union(b))?;
-                Some(egui::pos2(app.to_screen(b.x0, b.y1).x, app.to_screen(b.x0, b.y1).y + 8.0))
+                let b = ds
+                    .selection
+                    .iter()
+                    .filter_map(|i| ds.doc.world_bounds(*i))
+                    .reduce(|a, b| a.union(b))?;
+                Some(egui::pos2(
+                    app.to_screen(b.x0, b.y1).x,
+                    app.to_screen(b.x0, b.y1).y + 8.0,
+                ))
             });
-            let pos = below.filter(|p| canvas.contains(*p)).unwrap_or(canvas.center());
+            let pos = below
+                .filter(|p| canvas.contains(*p))
+                .unwrap_or(canvas.center());
             (nav.next.canvas.or(nav.last.canvas), pos, Region::Canvas)
         }
     };
@@ -588,7 +656,10 @@ fn enter(app: &mut FigApp, ctx: &Context, region: Region) {
         return;
     }
     let list = focusables(ctx, nav, region);
-    let target = region.of(&nav.last.preferred).filter(|p| list.iter().any(|(id, _)| id == p)).or_else(|| list.first().map(|w| w.0));
+    let target = region
+        .of(&nav.last.preferred)
+        .filter(|p| list.iter().any(|(id, _)| id == p))
+        .or_else(|| list.first().map(|w| w.0));
     match target {
         Some(id) => focus(app, ctx, id),
         None => drop_focus(ctx),
@@ -632,7 +703,9 @@ fn step_within(app: &mut FigApp, ctx: &Context, region: Region, step: i32) {
     let mut i = cur as i32;
     for _ in 0..n {
         i = (i + step.signum()).rem_euclid(n);
-        let Some((id, rect)) = list.get(i as usize) else { break };
+        let Some((id, rect)) = list.get(i as usize) else {
+            break;
+        };
         // The control a focused field editor sits in.
         if here.is_some_and(|c| rect.contains(c)) && i as usize != cur {
             continue;
@@ -646,7 +719,10 @@ fn step_within(app: &mut FigApp, ctx: &Context, region: Region, step: i32) {
 /// them, are left out).
 fn focusables(ctx: &Context, nav: &Nav, region: Region) -> Vec<(Id, Rect)> {
     let canvas = nav.last.canvas;
-    let edges = [Id::new("left_panel").with("__resize"), Id::new("right_panel").with("__resize")];
+    let edges = [
+        Id::new("left_panel").with("__resize"),
+        Id::new("right_panel").with("__resize"),
+    ];
     ctx.viewport(|v| {
         v.prev_pass
             .widgets
@@ -674,7 +750,13 @@ fn last_widget(ctx: &Context, id: Id) -> Option<egui::WidgetRect> {
 fn first_in(ctx: &Context, layer: LayerId) -> Option<Id> {
     let background = layer.id.with("move");
     ctx.viewport(|v| {
-        v.prev_pass.widgets.get_layer(layer).find(|w| w.enabled && w.sense.is_focusable() && w.rect.is_positive() && w.id != background).map(|w| w.id)
+        v.prev_pass
+            .widgets
+            .get_layer(layer)
+            .find(|w| {
+                w.enabled && w.sense.is_focusable() && w.rect.is_positive() && w.id != background
+            })
+            .map(|w| w.id)
     })
 }
 
@@ -698,7 +780,10 @@ fn popups(app: &mut FigApp, ctx: &Context, focused: Option<Id>, widget: Option<e
     if !nav.keyboard {
         return;
     }
-    let Some(f) = focused.filter(|_| widget.is_some_and(|w| w.layer_id == LayerId::background())) else { return };
+    let Some(f) = focused.filter(|_| widget.is_some_and(|w| w.layer_id == LayerId::background()))
+    else {
+        return;
+    };
     let layer = match nav.last.popup {
         Some((opener, area)) if opener == f => LayerId::new(Order::Foreground, area),
         _ => {
@@ -719,12 +804,22 @@ fn popups(app: &mut FigApp, ctx: &Context, focused: Option<Id>, widget: Option<e
 
 /// The focus ring around the focused control (unless it showed its focus itself).
 fn ring(ctx: &Context) {
-    let Some(id) = ctx.memory(|m| m.focused()) else { return };
-    let (own, canvas, custom) = shared(ctx, |s| (s.ring == Some(id), s.canvas == Some(id), s.ring_rect.filter(|r| r.0 == id)));
+    let Some(id) = ctx.memory(|m| m.focused()) else {
+        return;
+    };
+    let (own, canvas, custom) = shared(ctx, |s| {
+        (
+            s.ring == Some(id),
+            s.canvas == Some(id),
+            s.ring_rect.filter(|r| r.0 == id),
+        )
+    });
     if own {
         return;
     }
-    let Some(w) = ctx.viewport(|v| v.this_pass.widgets.get(id).copied()) else { return };
+    let Some(w) = ctx.viewport(|v| v.this_pass.widgets.get(id).copied()) else {
+        return;
+    };
     let painter = ctx.layer_painter(w.layer_id);
     let (rect, painter) = match custom {
         Some((_, rect, clip)) => (rect.expand(1.0), painter.with_clip_rect(clip)),
@@ -738,7 +833,12 @@ fn ring(ctx: &Context) {
 
 fn paint_ring(painter: &egui::Painter, rect: Rect) {
     let t = Tokens::get(painter.ctx());
-    painter.rect_stroke(rect, CornerRadius::same(6), Stroke::new(2.0, t.focus), StrokeKind::Outside);
+    painter.rect_stroke(
+        rect,
+        CornerRadius::same(6),
+        Stroke::new(2.0, t.focus),
+        StrokeKind::Outside,
+    );
 }
 
 /// The focus ring goes round `rect` (inside `ui`'s clip) while `resp` has the keyboard: a control
@@ -761,7 +861,12 @@ pub fn own_focus(resp: &Response) {
 // Names, roles and states.
 
 fn bounds(r: Rect) -> accesskit::Rect {
-    accesskit::Rect { x0: r.min.x.into(), y0: r.min.y.into(), x1: r.max.x.into(), y1: r.max.y.into() }
+    accesskit::Rect {
+        x0: r.min.x.into(),
+        y0: r.min.y.into(),
+        x1: r.max.x.into(),
+        y1: r.max.y.into(),
+    }
 }
 
 fn toggled(on: bool) -> Toggled {

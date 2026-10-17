@@ -237,7 +237,10 @@ mod native_impl {
 
     #[cfg(not(target_family = "wasm"))]
     async fn try_post_msg(env: &Envelope) -> bool {
-        let client = match reqwest::Client::builder().timeout(Duration::from_millis(2000)).build() {
+        let client = match reqwest::Client::builder()
+            .timeout(Duration::from_millis(2000))
+            .build()
+        {
             Ok(c) => c,
             Err(_) => return false,
         };
@@ -283,7 +286,7 @@ mod native_impl {
             Err(e) => {
                 eprintln!("error: failed to serialize envelope: {e}");
                 return ExitCode::from(3);
-            },
+            }
         }
 
         if cli.dry_run {
@@ -296,11 +299,14 @@ mod native_impl {
             Err(e) => {
                 eprintln!("write failed: serialize: {e}");
                 return ExitCode::from(3);
-            },
+            }
         };
 
-        if let Err(e) =
-            OpenOptions::new().create(true).append(true).open(&my_inbox).and_then(|mut f| {
+        if let Err(e) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&my_inbox)
+            .and_then(|mut f| {
                 f.write_all(line.as_bytes())?;
                 f.write_all(b"\n")
             })
@@ -315,15 +321,25 @@ mod native_impl {
         }
 
         if !cli.no_http {
-            let rt = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+            let rt = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
                 Ok(rt) => rt,
                 Err(e) => {
                     eprintln!("error: failed to build tokio runtime: {e}");
                     return ExitCode::from(3);
-                },
+                }
             };
             let ok = rt.block_on(try_post_msg(&env));
-            println!("POST /msg: {}", if ok { "200 OK" } else { "skipped (listener unreachable)" });
+            println!(
+                "POST /msg: {}",
+                if ok {
+                    "200 OK"
+                } else {
+                    "skipped (listener unreachable)"
+                }
+            );
         }
 
         println!("appended to {}", my_inbox.display());

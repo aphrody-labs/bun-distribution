@@ -83,7 +83,11 @@ fn is_count(key: &str) -> bool {
 
 /// Flare Tool Options value `x` of `key` as JSON: a count as a whole number.
 fn option_json(key: &str, x: f64) -> Value {
-    if is_count(key) { json!(x as u64) } else { json!(x) }
+    if is_count(key) {
+        json!(x as u64)
+    } else {
+        json!(x)
+    }
 }
 
 /// `shape.flare`'s params for a flare at `c` drawn with the Flare Tool Options `o` (as the tool
@@ -91,7 +95,10 @@ fn option_json(key: &str, x: f64) -> Value {
 pub fn flare_params(o: &Value, c: Point) -> Value {
     let mut v = json!({ "cx": c.x, "cy": c.y });
     for (key, default, ..) in FLARE_OPTIONS {
-        v[key] = o.get(key).cloned().unwrap_or_else(|| option_json(key, default));
+        v[key] = o
+            .get(key)
+            .cloned()
+            .unwrap_or_else(|| option_json(key, default));
     }
     for (on, key) in [("raysOn", "rays"), ("ringsOn", "rings")] {
         if o.get(on).and_then(Value::as_bool) == Some(false) {
@@ -142,34 +149,54 @@ impl Tool for FlareTool {
                         self.began = true;
                         return vec![
                             Action::Begin("Flare".into()),
-                            Action::Preview("shape.flare".into(), self.params(c, 2.0 * ev.pos.distance(c), None)),
+                            Action::Preview(
+                                "shape.flare".into(),
+                                self.params(c, 2.0 * ev.pos.distance(c), None),
+                            ),
                         ];
                     }
                     if self.began {
-                        return vec![Action::Preview("shape.flare".into(), self.params(c, 2.0 * ev.pos.distance(c), None))];
+                        return vec![Action::Preview(
+                            "shape.flare".into(),
+                            self.params(c, 2.0 * ev.pos.distance(c), None),
+                        )];
                     }
                 } else if let Some((c, d)) = self.placed {
-                    return vec![Action::Preview("shape.flare".into(), self.params(c, d, Some(ev.pos)))];
+                    return vec![Action::Preview(
+                        "shape.flare".into(),
+                        self.params(c, d, Some(ev.pos)),
+                    )];
                 }
                 vec![]
             }
             PointerKind::Up => {
                 if let Some((c, d)) = self.placed.take() {
                     self.began = false;
-                    return vec![Action::Preview("shape.flare".into(), self.params(c, d, Some(ev.pos))), Action::Commit];
+                    return vec![
+                        Action::Preview("shape.flare".into(), self.params(c, d, Some(ev.pos))),
+                        Action::Commit,
+                    ];
                 }
-                let Some((c, p)) = self.drag.take() else { return vec![] };
+                let Some((c, p)) = self.drag.take() else {
+                    return vec![];
+                };
                 if self.began {
                     // Keep the interaction open: the next click places the end point.
                     self.placed = Some((c, 2.0 * p.distance(c)));
                     vec![]
                 } else {
-                    vec![Action::Dialog("flare".into(), json!({ "x": c.x, "y": c.y }))]
+                    vec![Action::Dialog(
+                        "flare".into(),
+                        json!({ "x": c.x, "y": c.y }),
+                    )]
                 }
             }
             PointerKind::Move => {
                 if let Some((c, d)) = self.placed {
-                    return vec![Action::Preview("shape.flare".into(), self.params(c, d, Some(ev.pos)))];
+                    return vec![Action::Preview(
+                        "shape.flare".into(),
+                        self.params(c, d, Some(ev.pos)),
+                    )];
                 }
                 vec![]
             }
@@ -179,8 +206,14 @@ impl Tool for FlareTool {
     fn key(&mut self, _cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
         // ↑/↓ while drawing add/remove rays.
         if matches!(key, ToolKey::Up | ToolKey::Down) && self.began && self.rays_on {
-            let r = self.rays.unwrap_or_else(|| self.options()["rays"].as_u64().unwrap_or(0));
-            self.rays = Some(if key == ToolKey::Up { (r + 1).min(50) } else { r.saturating_sub(1) });
+            let r = self
+                .rays
+                .unwrap_or_else(|| self.options()["rays"].as_u64().unwrap_or(0));
+            self.rays = Some(if key == ToolKey::Up {
+                (r + 1).min(50)
+            } else {
+                r.saturating_sub(1)
+            });
             let preview = match (self.drag, self.placed) {
                 (Some((c, p)), _) => self.params(c, 2.0 * p.distance(c), None),
                 (_, Some((c, d))) => self.params(c, d, Some(self.hover)),
@@ -200,14 +233,28 @@ impl Tool for FlareTool {
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         // Switching away after the centre drag keeps the flare with the rings its options give.
         self.drag = None;
-        if self.placed.take().is_some() && std::mem::take(&mut self.began) { vec![Action::Commit] } else { vec![] }
+        if self.placed.take().is_some() && std::mem::take(&mut self.began) {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
         match (self.drag, self.placed) {
             (Some((c, p)), _) => {
-                vec![Overlay::Path { path: ellipse_path(c, p.distance(c), p.distance(c), 0.0), color: BLUE, width: 1.0, dashed: false }]
+                vec![Overlay::Path {
+                    path: ellipse_path(c, p.distance(c), p.distance(c), 0.0),
+                    color: BLUE,
+                    width: 1.0,
+                    dashed: false,
+                }]
             }
-            (_, Some((c, _))) => vec![Overlay::Line { a: c, b: self.hover, color: BLUE, dashed: true }],
+            (_, Some((c, _))) => vec![Overlay::Line {
+                a: c,
+                b: self.hover,
+                color: BLUE,
+                dashed: true,
+            }],
             _ => vec![],
         }
     }
@@ -226,8 +273,19 @@ impl Tool for FlareTool {
             "raysOn" => self.rays_on = v.as_bool().unwrap_or(true),
             "ringsOn" => self.rings_on = v.as_bool().unwrap_or(true),
             _ => {
-                let Some((slot, (_, default, lo, hi))) = self.values.iter_mut().zip(FLARE_OPTIONS).find(|(_, (k, ..))| *k == key) else { return };
-                let x = v.as_f64().filter(|x| x.is_finite()).unwrap_or(default).clamp(lo, hi);
+                let Some((slot, (_, default, lo, hi))) = self
+                    .values
+                    .iter_mut()
+                    .zip(FLARE_OPTIONS)
+                    .find(|(_, (k, ..))| *k == key)
+                else {
+                    return;
+                };
+                let x = v
+                    .as_f64()
+                    .filter(|x| x.is_finite())
+                    .unwrap_or(default)
+                    .clamp(lo, hi);
                 *slot = if is_count(key) { x.round() } else { x };
             }
         }
@@ -246,11 +304,16 @@ impl ReshapeTool {
     /// The selected path under `p` (Reshape works on selected paths only, like Illustrator).
     fn hit(cx: &ToolContext, p: Point) -> Option<(vectorcraft_doc::NodeId, Point)> {
         let tol = cx.tol(4.0);
-        cx.selection.objects.iter().copied().filter(|id| cx.doc.is_editable(*id)).find_map(|id| {
-            let pd = cx.doc.node(id)?.path_data()?;
-            let (_, _, _, q, d) = pd.nearest(p)?;
-            (d <= tol).then_some((id, q))
-        })
+        cx.selection
+            .objects
+            .iter()
+            .copied()
+            .filter(|id| cx.doc.is_editable(*id))
+            .find_map(|id| {
+                let pd = cx.doc.node(id)?.path_data()?;
+                let (_, _, _, q, d) = pd.nearest(p)?;
+                (d <= tol).then_some((id, q))
+            })
     }
 }
 
@@ -269,7 +332,9 @@ impl Tool for ReshapeTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some((id, at)) = self.grab else { return vec![] };
+                let Some((id, at)) = self.grab else {
+                    return vec![];
+                };
                 let mut d: Vec2 = ev.pos - at;
                 if ev.mods.shift {
                     d = vectorcraft_geom::constrain_angle(d, 45.0);
@@ -290,7 +355,11 @@ impl Tool for ReshapeTool {
             }
             PointerKind::Up => {
                 self.grab = None;
-                if std::mem::take(&mut self.began) { vec![Action::Commit] } else { vec![] }
+                if std::mem::take(&mut self.began) {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![],
         }
@@ -302,7 +371,11 @@ impl Tool for ReshapeTool {
         vec![]
     }
     fn cursor(&self, cx: &ToolContext, p: Point, _mods: Mods) -> Cursor {
-        if self.grab.is_some() || Self::hit(cx, p).is_some() { Cursor::Move } else { Cursor::Arrow }
+        if self.grab.is_some() || Self::hit(cx, p).is_some() {
+            Cursor::Move
+        } else {
+            Cursor::Arrow
+        }
     }
 }
 
@@ -328,7 +401,13 @@ impl Tool for ShaperTool {
                 vec![]
             }
             PointerKind::Drag => {
-                if !self.points.is_empty() && self.points.len() < 4095 && self.points.last().is_none_or(|l| l.distance(ev.pos) >= cx.tol(1.5)) {
+                if !self.points.is_empty()
+                    && self.points.len() < 4095
+                    && self
+                        .points
+                        .last()
+                        .is_none_or(|l| l.distance(ev.pos) >= cx.tol(1.5))
+                {
                     self.points.push(ev.pos);
                 }
                 vec![]
@@ -339,15 +418,33 @@ impl Tool for ShaperTool {
                     self.points.push(ev.pos);
                 }
                 let pts = std::mem::take(&mut self.points);
-                if pts.first().is_some_and(|first| pts.iter().all(|p| p.distance(*first) < cx.tol(3.0))) {
-                    return vec![Action::Exec("shaper.select".into(), json!({"point": [ev.pos.x, ev.pos.y]}))];
+                if pts
+                    .first()
+                    .is_some_and(|first| pts.iter().all(|p| p.distance(*first) < cx.tol(3.0)))
+                {
+                    return vec![Action::Exec(
+                        "shaper.select".into(),
+                        json!({"point": [ev.pos.x, ev.pos.y]}),
+                    )];
                 }
                 let r = |x: vectorcraft_geom::Rect, rotation: f64| json!({ "x": x.x0, "y": x.y0, "width": x.width(), "height": x.height(), "rotation": rotation });
                 match recognize(&pts) {
-                    Some(Recognized::Line { a, b }) => vec![Action::Exec("shape.line".into(), json!({ "x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y }))],
-                    Some(Recognized::Rectangle { rect, rotation }) => vec![Action::Exec("shape.rectangle".into(), r(rect, rotation))],
-                    Some(Recognized::Ellipse { rect, rotation }) => vec![Action::Exec("shape.ellipse".into(), r(rect, rotation))],
-                    Some(Recognized::Polygon { center, radius, sides, rotation }) => {
+                    Some(Recognized::Line { a, b }) => vec![Action::Exec(
+                        "shape.line".into(),
+                        json!({ "x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y }),
+                    )],
+                    Some(Recognized::Rectangle { rect, rotation }) => {
+                        vec![Action::Exec("shape.rectangle".into(), r(rect, rotation))]
+                    }
+                    Some(Recognized::Ellipse { rect, rotation }) => {
+                        vec![Action::Exec("shape.ellipse".into(), r(rect, rotation))]
+                    }
+                    Some(Recognized::Polygon {
+                        center,
+                        radius,
+                        sides,
+                        rotation,
+                    }) => {
                         vec![Action::Exec(
                             "shape.polygon".into(),
                             json!({ "cx": center.x, "cy": center.y, "radius": radius, "sides": sides, "rotation": rotation }),
@@ -361,7 +458,10 @@ impl Tool for ShaperTool {
                 }
             }
             PointerKind::DoubleClick => vec![
-                Action::Exec("shaper.select".into(), json!({"point": [ev.pos.x, ev.pos.y], "source": true})),
+                Action::Exec(
+                    "shaper.select".into(),
+                    json!({"point": [ev.pos.x, ev.pos.y], "source": true}),
+                ),
                 Action::SwitchTool("selection".into()),
             ],
             _ => vec![],
@@ -377,7 +477,12 @@ impl Tool for ShaperTool {
         if self.points.len() < 2 {
             return vec![];
         }
-        vec![Overlay::Path { path: crate::draw2::polyline(&self.points), color: BLUE, width: 1.5, dashed: false }]
+        vec![Overlay::Path {
+            path: crate::draw2::polyline(&self.points),
+            color: BLUE,
+            width: 1.5,
+            dashed: false,
+        }]
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _mods: Mods) -> Cursor {
         Cursor::Crosshair
@@ -394,11 +499,19 @@ pub struct GraphTool {
 
 impl GraphTool {
     fn new(id: &str) -> Self {
-        let id = crate::catalog::tool_info(id).map(|t| t.id).unwrap_or("columnGraph");
-        Self { id, start: None, began: false }
+        let id = crate::catalog::tool_info(id)
+            .map(|t| t.id)
+            .unwrap_or("columnGraph");
+        Self {
+            id,
+            start: None,
+            began: false,
+        }
     }
     fn kind(&self) -> &'static str {
-        vectorcraft_doc::GraphKind::parse(self.id).unwrap_or_default().id()
+        vectorcraft_doc::GraphKind::parse(self.id)
+            .unwrap_or_default()
+            .id()
     }
     fn params(&self, s: Point, p: Point, m: Mods) -> Value {
         let mut d = p - s;
@@ -406,7 +519,11 @@ impl GraphTool {
             let k = d.x.abs().max(d.y.abs());
             d = Vec2::new(k * d.x.signum(), k * d.y.signum());
         }
-        let r = if m.alt { vectorcraft_geom::Rect::from_points(s - d, s + d) } else { vectorcraft_geom::Rect::from_points(s, s + d) };
+        let r = if m.alt {
+            vectorcraft_geom::Rect::from_points(s - d, s + d)
+        } else {
+            vectorcraft_geom::Rect::from_points(s, s + d)
+        };
         json!({ "type": self.kind(), "x": r.x0, "y": r.y0, "width": r.width().max(1.0), "height": r.height().max(1.0) })
     }
 }
@@ -435,11 +552,16 @@ impl Tool for GraphTool {
                     self.began = true;
                     out.push(Action::Begin("Graph".into()));
                 }
-                out.push(Action::Preview("graph.create".into(), self.params(s, ev.pos, ev.mods)));
+                out.push(Action::Preview(
+                    "graph.create".into(),
+                    self.params(s, ev.pos, ev.mods),
+                ));
                 out
             }
             PointerKind::Up => {
-                let Some(s) = self.start.take() else { return vec![] };
+                let Some(s) = self.start.take() else {
+                    return vec![];
+                };
                 if std::mem::take(&mut self.began) {
                     vec![
                         Action::Preview("graph.create".into(), self.params(s, ev.pos, ev.mods)),
@@ -447,14 +569,18 @@ impl Tool for GraphTool {
                         Action::Dialog("graphData".into(), json!({})),
                     ]
                 } else {
-                    vec![Action::Dialog("graph".into(), json!({ "x": s.x, "y": s.y, "type": self.kind() }))]
+                    vec![Action::Dialog(
+                        "graph".into(),
+                        json!({ "x": s.x, "y": s.y, "type": self.kind() }),
+                    )]
                 }
             }
             _ => vec![],
         }
     }
     fn key(&mut self, _cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
-        if key == ToolKey::Escape && self.start.take().is_some() && std::mem::take(&mut self.began) {
+        if key == ToolKey::Escape && self.start.take().is_some() && std::mem::take(&mut self.began)
+        {
             return vec![Action::Cancel];
         }
         vec![]
@@ -473,18 +599,37 @@ mod tests {
     fn flare_options_last_and_draw_the_next_flare() {
         let mut t = FlareTool::default();
         assert_eq!(t.options()["rays"], json!(15));
-        for (k, v) in [("diameter", json!(5000)), ("rays", json!(7.6)), ("opacity", json!("x")), ("ringsOn", json!(false)), ("nope", json!(1))] {
+        for (k, v) in [
+            ("diameter", json!(5000)),
+            ("rays", json!(7.6)),
+            ("opacity", json!("x")),
+            ("ringsOn", json!(false)),
+            ("nope", json!(1)),
+        ] {
             t.set_option(k, &v);
         }
         let o = t.options();
         assert_eq!(
-            (o["diameter"].as_f64(), o["rays"].as_u64(), o["opacity"].as_f64(), o["ringsOn"].as_bool()),
+            (
+                o["diameter"].as_f64(),
+                o["rays"].as_u64(),
+                o["opacity"].as_f64(),
+                o["ringsOn"].as_bool()
+            ),
             (Some(1000.0), Some(8), Some(50.0), Some(false))
         );
         assert!(o.get("nope").is_none());
         // A drag sets the centre and diameter; the options give the rest, rings off.
         let p = t.params(Point::new(10.0, 20.0), 40.0, None);
-        assert_eq!((p["cx"].as_f64(), p["diameter"].as_f64(), p["rays"].as_u64(), p["rings"].as_u64()), (Some(10.0), Some(40.0), Some(8), Some(0)));
+        assert_eq!(
+            (
+                p["cx"].as_f64(),
+                p["diameter"].as_f64(),
+                p["rays"].as_u64(),
+                p["rings"].as_u64()
+            ),
+            (Some(10.0), Some(40.0), Some(8), Some(0))
+        );
         assert_eq!(p["longest"].as_f64(), Some(300.0));
         t.set_option("raysOn", &json!(false));
         assert_eq!(t.params(Point::ZERO, 1.0, None)["rays"].as_u64(), Some(0));
@@ -496,9 +641,17 @@ mod tests {
         assert_eq!(create("reshape").unwrap().id(), "reshape");
         assert_eq!(create("shaper").unwrap().id(), "shaper");
         assert!(create("pen").is_none());
-        for g in
-            ["columnGraph", "stackedColumnGraph", "barGraph", "stackedBarGraph", "lineGraph", "areaGraph", "scatterGraph", "pieGraph", "radarGraph"]
-        {
+        for g in [
+            "columnGraph",
+            "stackedColumnGraph",
+            "barGraph",
+            "stackedBarGraph",
+            "lineGraph",
+            "areaGraph",
+            "scatterGraph",
+            "pieGraph",
+            "radarGraph",
+        ] {
             assert_eq!(create(g).unwrap().id(), g);
         }
     }

@@ -39,19 +39,32 @@ struct Params {
 /// The DXF import options in `p` (the `dxf` object of `document.open` and `file.place`).
 pub(super) fn options(cmd: &str, p: Option<&Value>) -> Result<ImportOptions> {
     let d = ImportOptions::default();
-    let Some(p) = p.filter(|v| !v.is_null()) else { return Ok(d) };
+    let Some(p) = p.filter(|v| !v.is_null()) else {
+        return Ok(d);
+    };
     if !p.is_object() {
         return Err(bad(cmd, "dxf must be an object of DXF import options"));
     }
     let q = Params::deserialize(p).map_err(|e| bad(cmd, format!("dxf: {e}")))?;
     let unit = match q.unit.as_deref() {
         None => None,
-        Some(u) => Some(Unit::named(u).ok_or_else(|| bad(cmd, format!("dxf unit `{u}`: a unit such as mm, cm, in or pt")))?),
+        Some(u) => Some(Unit::named(u).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("dxf unit `{u}`: a unit such as mm, cm, in or pt"),
+            )
+        })?),
     };
     if let Some(s) = q.scale
         && !(s.is_finite() && vectorcraft_cad::SCALE_RANGE.contains(&s))
     {
-        return Err(bad(cmd, format!("dxf scale must be a positive number up to {}, not {s}", vectorcraft_cad::SCALE_RANGE.end())));
+        return Err(bad(
+            cmd,
+            format!(
+                "dxf scale must be a positive number up to {}, not {s}",
+                vectorcraft_cad::SCALE_RANGE.end()
+            ),
+        ));
     }
     let fit_to = match q.fit_to {
         None => d.fit_to,

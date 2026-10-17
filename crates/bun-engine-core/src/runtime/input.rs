@@ -1,12 +1,9 @@
 //! The one input layer: Bevy keyboard and gamepads (gilrs) folded into the machine key bitmask
 //! ([`crate::machine::keys`]) and the touch point of the second screen.
 
-use crate::bevy::{
-    ecs::prelude::*,
-    platform::collections::HashMap,
-};
 #[cfg(feature = "render")]
 use crate::bevy::input::{ButtonInput, keyboard::KeyCode};
+use crate::bevy::{ecs::prelude::*, platform::collections::HashMap};
 
 use crate::machine::{Input, keys};
 
@@ -20,7 +17,10 @@ pub struct EngineInput {
 
 impl EngineInput {
     pub fn machine(&self) -> Input {
-        Input { keys: self.keys, touch: self.touch }
+        Input {
+            keys: self.keys,
+            touch: self.touch,
+        }
     }
 }
 
@@ -81,7 +81,10 @@ pub fn gamepad_keys(pad: &crate::bevy::input::gamepad::Gamepad, dead_zone: f32) 
         (B::DPadLeft, keys::LEFT),
         (B::DPadRight, keys::RIGHT),
     ];
-    let mut bits = MAP.iter().filter(|(b, _)| pad.pressed(*b)).fold(0, |acc, (_, k)| acc | k);
+    let mut bits = MAP
+        .iter()
+        .filter(|(b, _)| pad.pressed(*b))
+        .fold(0, |acc, (_, k)| acc | k);
     let stick = pad.left_stick();
     if stick.x < -dead_zone {
         bits |= keys::LEFT;
@@ -108,7 +111,11 @@ pub(crate) fn gather(
     let mut bits = external.0.values().fold(0, |acc, k| acc | k);
     #[cfg(feature = "render")]
     if let Some(keyboard) = keyboard {
-        bits |= map.keys.iter().filter(|(k, _)| keyboard.pressed(*k)).fold(0, |acc, (_, b)| acc | b);
+        bits |= map
+            .keys
+            .iter()
+            .filter(|(k, _)| keyboard.pressed(*k))
+            .fold(0, |acc, (_, b)| acc | b);
     }
     #[cfg(feature = "gamepad")]
     for pad in &pads {

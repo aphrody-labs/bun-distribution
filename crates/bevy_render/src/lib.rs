@@ -57,7 +57,7 @@ pub mod extract_resource {
     pub type ExtractResourcePlugin<R, F = ()> =
         bevy_extract::extract_resource::ExtractResourcePlugin<R, crate::RenderApp, F>;
 
-    pub use bevy_extract::extract_resource::{extract_resource, ExtractResource};
+    pub use bevy_extract::extract_resource::{ExtractResource, extract_resource};
 }
 pub mod globals;
 pub mod gpu_component_array_buffer;
@@ -101,8 +101,8 @@ pub mod view;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        camera::NormalizedRenderTargetExt as _, renderer::RenderGraph, texture::ManualTextureViews,
-        view::Msaa, ExtractSchedule,
+        ExtractSchedule, camera::NormalizedRenderTargetExt as _, renderer::RenderGraph,
+        texture::ManualTextureViews, view::Msaa,
     };
 }
 pub use bevy_extract::{
@@ -118,7 +118,7 @@ use crate::{
     mesh::{MeshRenderAssetPlugin, RenderMesh},
     render_asset::prepare_assets,
     render_resource::{PipelineCache, SparseBufferPlugin},
-    renderer::{render_system, RenderAdapterInfo, RenderGraph},
+    renderer::{RenderAdapterInfo, RenderGraph, render_system},
     settings::{RenderCreation, WgpuLimits},
     storage::StoragePlugin,
     texture::TexturePlugin,
@@ -135,15 +135,15 @@ use bevy_ecs::{
 };
 use bevy_extract::ExtractPlugin;
 use bevy_platform::time::Instant;
-use bevy_shader::{load_shader_library, Shader, ShaderLoader};
+use bevy_shader::{Shader, ShaderLoader, load_shader_library};
 use bevy_time::TimeSender;
 use bevy_window::{PrimaryWindow, RawHandleWrapperHolder};
 use bitflags::bitflags;
 use globals::GlobalsPlugin;
 use occlusion_culling::OcclusionCullingPlugin;
 use render_asset::{
-    extract_render_asset_bytes_per_frame, reset_render_asset_bytes_per_frame,
     RenderAssetBytesPerFrame, RenderAssetBytesPerFrameLimiter,
+    extract_render_asset_bytes_per_frame, reset_render_asset_bytes_per_frame,
 };
 use settings::RenderResources;
 use std::sync::Mutex;

@@ -35,7 +35,10 @@ mod structure_tests;
 use std::collections::{BTreeSet, HashSet};
 
 use figcraft_color::{BlendMode, ImageScaleMode, Paint};
-use figcraft_doc::{Document, Effect, MaskType, Node, NodeId, NodeKind, StrokeAlign, StrokeCap, StrokeJoin, VectorNetwork, WindingRule};
+use figcraft_doc::{
+    Document, Effect, MaskType, Node, NodeId, NodeKind, StrokeAlign, StrokeCap, StrokeJoin,
+    VectorNetwork, WindingRule,
+};
 use figcraft_geom::{Affine, BezPath, Point, Rect, Shape};
 
 use paint::Target;
@@ -58,7 +61,14 @@ pub struct Imported {
 }
 
 pub(crate) fn xf(t: usvg::Transform) -> Affine {
-    Affine::new([f64::from(t.sx), f64::from(t.ky), f64::from(t.kx), f64::from(t.sy), f64::from(t.tx), f64::from(t.ty)])
+    Affine::new([
+        f64::from(t.sx),
+        f64::from(t.ky),
+        f64::from(t.kx),
+        f64::from(t.sy),
+        f64::from(t.tx),
+        f64::from(t.ty),
+    ])
 }
 
 pub(crate) fn to_bez(p: &usvg::tiny_skia_path::Path) -> BezPath {
@@ -97,7 +107,14 @@ pub(crate) struct Ctx<'a> {
 
 impl<'a> Ctx<'a> {
     pub(crate) fn new(doc: &'a mut Document) -> Self {
-        Ctx { doc, count: 0, anonymous: HashSet::new(), notes: BTreeSet::new(), fonts: None, pattern_depth: 0 }
+        Ctx {
+            doc,
+            count: 0,
+            anonymous: HashSet::new(),
+            notes: BTreeSet::new(),
+            fonts: None,
+            pattern_depth: 0,
+        }
     }
 
     pub(crate) fn full(&self) -> bool {
@@ -139,7 +156,10 @@ pub(crate) fn layer_name(id: &str, fallback: &str) -> String {
         let (head, tail) = rest.split_at(i);
         out.push_str(head);
         let hex = tail.get(2..4).filter(|_| tail.get(4..5) == Some("_"));
-        match hex.and_then(|h| u8::from_str_radix(h, 16).ok()).map(char::from) {
+        match hex
+            .and_then(|h| u8::from_str_radix(h, 16).ok())
+            .map(char::from)
+        {
             Some(c) if !c.is_control() => {
                 out.push(c);
                 rest = tail.get(5..).unwrap_or("");
@@ -179,12 +199,16 @@ fn blend(b: usvg::BlendMode) -> Option<BlendMode> {
 /// Convert `g`'s children into `parent`; `base` maps `g`'s tree into the frame.
 pub(crate) fn children(cx: &mut Ctx, g: &usvg::Group, parent: NodeId, base: Affine, depth: usize) {
     if depth > MAX_DEPTH {
-        cx.note(format!("layers nested more than {MAX_DEPTH} deep were left out"));
+        cx.note(format!(
+            "layers nested more than {MAX_DEPTH} deep were left out"
+        ));
         return;
     }
     for child in g.children() {
         if cx.full() {
-            cx.note(format!("more than {MAX_NODES} layers: the rest was left out"));
+            cx.note(format!(
+                "more than {MAX_NODES} layers: the rest was left out"
+            ));
             return;
         }
         match child {
@@ -222,15 +246,22 @@ fn group(cx: &mut Ctx, g: &usvg::Group, parent: NodeId, base: Affine, depth: usi
     } else {
         fx::effects(g.filters(), world).unwrap_or_else(|| {
             let ids: Vec<&str> = g.filters().iter().map(|f| f.id()).collect();
-            cx.note(format!("filter {} isn't a shadow or blur: the layer is drawn without it", ids.join(", ")));
+            cx.note(format!(
+                "filter {} isn't a shadow or blur: the layer is drawn without it",
+                ids.join(", ")
+            ));
             Vec::new()
         })
     };
-    let clip = g.clip_path().filter(|c| !g.filters().is_empty() || !clip_is_noop(c, g, base));
+    let clip = g
+        .clip_path()
+        .filter(|c| !g.filters().is_empty() || !clip_is_noop(c, g, base));
     let mask = g.mask();
     let masked = clip.is_some() || mask.is_some();
     let name = layer_name(g.id(), if masked { "Mask group" } else { "Group" });
-    let Some(outer) = cx.group(parent, &name, g.id().is_empty()) else { return };
+    let Some(outer) = cx.group(parent, &name, g.id().is_empty()) else {
+        return;
+    };
     if let Some(n) = cx.doc.node_mut(outer) {
         n.opacity = g.opacity().get();
         n.blend = if let Some(b) = blend(g.blend_mode()) {
@@ -243,7 +274,14 @@ fn group(cx: &mut Ctx, g: &usvg::Group, parent: NodeId, base: Affine, depth: usi
     }
     let mut inner = outer;
     if let Some(c) = clip {
-        mask_layer(cx, c.root(), inner, world * xf(c.transform()), MaskType::Vector, depth);
+        mask_layer(
+            cx,
+            c.root(),
+            inner,
+            world * xf(c.transform()),
+            MaskType::Vector,
+            depth,
+        );
         if c.clip_path().is_some() {
             cx.note("a clip path clipped by another clips by the first only");
         }
@@ -254,14 +292,22 @@ fn group(cx: &mut Ctx, g: &usvg::Group, parent: NodeId, base: Affine, depth: usi
         }
     }
     if let Some(m) = mask {
-        let kind = if m.kind() == usvg::MaskType::Alpha { MaskType::Alpha } else { MaskType::Luminance };
+        let kind = if m.kind() == usvg::MaskType::Alpha {
+            MaskType::Alpha
+        } else {
+            MaskType::Luminance
+        };
         mask_layer(cx, m.root(), inner, world, kind, depth);
         if m.mask().is_some() {
             cx.note("a mask masked by another masks by the first only");
         }
     }
     // Filters apply before clipping and masking: on the content.
-    let content = if masked && !effects.is_empty() { cx.group(inner, "Group", true).unwrap_or(inner) } else { inner };
+    let content = if masked && !effects.is_empty() {
+        cx.group(inner, "Group", true).unwrap_or(inner)
+    } else {
+        inner
+    };
     if let Some(n) = cx.doc.node_mut(content) {
         n.effects = effects;
     }
@@ -276,8 +322,25 @@ fn group(cx: &mut Ctx, g: &usvg::Group, parent: NodeId, base: Affine, depth: usi
 }
 
 /// A clip path or mask's content as the mask layer at the bottom of `parent`.
-fn mask_layer(cx: &mut Ctx, root: &usvg::Group, parent: NodeId, base: Affine, kind: MaskType, depth: usize) {
-    let Some(id) = cx.group(parent, if kind == MaskType::Vector { "Clip path" } else { "Mask" }, true) else { return };
+fn mask_layer(
+    cx: &mut Ctx,
+    root: &usvg::Group,
+    parent: NodeId,
+    base: Affine,
+    kind: MaskType,
+    depth: usize,
+) {
+    let Some(id) = cx.group(
+        parent,
+        if kind == MaskType::Vector {
+            "Clip path"
+        } else {
+            "Mask"
+        },
+        true,
+    ) else {
+        return;
+    };
     if let Some(n) = cx.doc.node_mut(id) {
         n.is_mask = true;
         n.mask_type = kind;
@@ -288,11 +351,15 @@ fn mask_layer(cx: &mut Ctx, root: &usvg::Group, parent: NodeId, base: Affine, ki
 
 /// Whether clip path `c` on `g` clips nothing: one rectangle, upright, around all of `g`'s content.
 fn clip_is_noop(c: &usvg::ClipPath, g: &usvg::Group, base: Affine) -> bool {
-    let [usvg::Node::Path(p)] = c.root().children() else { return false };
+    let [usvg::Node::Path(p)] = c.root().children() else {
+        return false;
+    };
     if c.clip_path().is_some() {
         return false;
     }
-    let Some(Prim::Rect { rect, radius }) = shape::recognize(&to_bez(p.data()), true) else { return false };
+    let Some(Prim::Rect { rect, radius }) = shape::recognize(&to_bez(p.data()), true) else {
+        return false;
+    };
     let cw = base * xf(g.abs_transform()) * xf(c.transform()) * xf(p.abs_transform());
     let [_, b, cc, ..] = cw.as_coeffs();
     if radius > 0.0 || b.abs() > 1e-9 || cc.abs() > 1e-9 {
@@ -300,9 +367,17 @@ fn clip_is_noop(c: &usvg::ClipPath, g: &usvg::Group, base: Affine) -> bool {
     }
     let clip = figcraft_geom::transform_rect_bbox(cw, rect).inflate(0.01, 0.01);
     let r = g.abs_stroke_bounding_box();
-    let content =
-        figcraft_geom::transform_rect_bbox(base, Rect::new(f64::from(r.left()), f64::from(r.top()), f64::from(r.right()), f64::from(r.bottom())));
-    clip.contains(Point::new(content.x0, content.y0)) && clip.contains(Point::new(content.x1, content.y1))
+    let content = figcraft_geom::transform_rect_bbox(
+        base,
+        Rect::new(
+            f64::from(r.left()),
+            f64::from(r.top()),
+            f64::from(r.right()),
+            f64::from(r.bottom()),
+        ),
+    );
+    clip.contains(Point::new(content.x0, content.y0))
+        && clip.contains(Point::new(content.x1, content.y1))
 }
 
 /// Done filling group `id`: drop it when it holds nothing, merge an anonymous one into its only
@@ -312,7 +387,11 @@ pub(crate) fn finish(cx: &mut Ctx, id: NodeId) {
     if !matches!(n.kind, NodeKind::Group) {
         return;
     }
-    if !n.children.iter().any(|c| cx.doc.node(*c).is_some_and(|k| !k.is_mask)) {
+    if !n
+        .children
+        .iter()
+        .any(|c| cx.doc.node(*c).is_some_and(|k| !k.is_mask))
+    {
         let _ = cx.doc.remove(id);
         return;
     }
@@ -328,13 +407,26 @@ pub(crate) fn finish(cx: &mut Ctx, id: NodeId) {
 /// Move anonymous group `id`'s opacity, blend, effects and mask role onto its only `child` and put
 /// the child in its place. `false` (nothing changed) when they don't combine.
 fn merge_into_child(cx: &mut Ctx, id: NodeId, child: NodeId) -> bool {
-    let (Some(g), Some(c)) = (cx.doc.node(id), cx.doc.node(child)) else { return false };
+    let (Some(g), Some(c)) = (cx.doc.node(id), cx.doc.node(child)) else {
+        return false;
+    };
     let plain = |b: BlendMode| matches!(b, BlendMode::Normal | BlendMode::PassThrough);
-    if c.is_mask || (!g.effects.is_empty() && !c.effects.is_empty()) || (!plain(g.blend) && !plain(c.blend)) {
+    if c.is_mask
+        || (!g.effects.is_empty() && !c.effects.is_empty())
+        || (!plain(g.blend) && !plain(c.blend))
+    {
         return false;
     }
-    let (opacity, blend, effects, is_mask, mask_type) = (g.opacity, g.blend, g.effects.clone(), g.is_mask, g.mask_type);
-    let (Some(parent), Some(at)) = (g.parent, cx.doc.index_in_parent(id)) else { return false };
+    let (opacity, blend, effects, is_mask, mask_type) = (
+        g.opacity,
+        g.blend,
+        g.effects.clone(),
+        g.is_mask,
+        g.mask_type,
+    );
+    let (Some(parent), Some(at)) = (g.parent, cx.doc.index_in_parent(id)) else {
+        return false;
+    };
     if cx.doc.reparent(child, parent, Some(at)).is_err() {
         return false;
     }
@@ -375,14 +467,24 @@ fn path(cx: &mut Ctx, p: &usvg::Path, parent: NodeId, base: Affine) {
             }
             path.apply_affine(Affine::translate((-bb.x0, -bb.y0)));
             let mut network = VectorNetwork::from_path(&path);
-            let rule = if fill.is_some_and(|f| f.rule() == usvg::FillRule::EvenOdd) { WindingRule::EvenOdd } else { WindingRule::NonZero };
+            let rule = if fill.is_some_and(|f| f.rule() == usvg::FillRule::EvenOdd) {
+                WindingRule::EvenOdd
+            } else {
+                WindingRule::NonZero
+            };
             for r in &mut network.regions {
                 r.winding = rule;
             }
             if fill.is_none() {
                 network.regions.clear();
             }
-            (NodeKind::Vector { network }, Affine::translate((bb.x0, bb.y0)), bb.width(), bb.height(), 0.0)
+            (
+                NodeKind::Vector { network },
+                Affine::translate((bb.x0, bb.y0)),
+                bb.width(),
+                bb.height(),
+                0.0,
+            )
         }
     };
     let fallback = match kind {
@@ -394,14 +496,25 @@ fn path(cx: &mut Ctx, p: &usvg::Path, parent: NodeId, base: Affine) {
     let mut n = Node::new(cx.doc.alloc_id(), kind, layer_name(p.id(), fallback), w, h);
     n.transform = transform;
     n.corners.radii = [radius; 4];
-    let target = Target { to_node: transform.inverse() * world, size: (w, h) };
-    n.fills = fill.and_then(|f| paint::paint(cx, f.paint(), f.opacity().get(), target)).into_iter().collect();
+    let target = Target {
+        to_node: transform.inverse() * world,
+        size: (w, h),
+    };
+    n.fills = fill
+        .and_then(|f| paint::paint(cx, f.paint(), f.opacity().get(), target))
+        .into_iter()
+        .collect();
     n.strokes.clear();
     if let Some(s) = stroke {
-        n.strokes = paint::paint(cx, s.paint(), s.opacity().get(), target).into_iter().collect();
+        n.strokes = paint::paint(cx, s.paint(), s.opacity().get(), target)
+            .into_iter()
+            .collect();
         n.stroke = stroke_props(s, length_scale(world));
         // A stroke painted under the fill shows only its outer half.
-        if p.paint_order() == usvg::PaintOrder::StrokeAndFill && !n.fills.is_empty() && figcraft_doc::geometry::is_closed(&n) {
+        if p.paint_order() == usvg::PaintOrder::StrokeAndFill
+            && !n.fills.is_empty()
+            && figcraft_doc::geometry::is_closed(&n)
+        {
             n.stroke.align = StrokeAlign::Outside;
             n.stroke.weight /= 2.0;
         }
@@ -423,13 +536,31 @@ fn primitive(prim: Prim, world: Affine) -> Option<(NodeKind, Affine, f64, f64, f
         }
         Prim::Ellipse(rect) => {
             let (t, w, h) = place(world, rect.origin(), rect.width(), rect.height())?;
-            Some((NodeKind::Ellipse { start: 0.0, sweep: std::f64::consts::TAU, inner: 0.0 }, t, w, h, 0.0))
+            Some((
+                NodeKind::Ellipse {
+                    start: 0.0,
+                    sweep: std::f64::consts::TAU,
+                    inner: 0.0,
+                },
+                t,
+                w,
+                h,
+                0.0,
+            ))
         }
         Prim::Line(a, b) => {
             let (a, b) = (world * a, world * b);
             let d = b - a;
             let len = d.hypot();
-            (len > 1e-9 && len.is_finite()).then(|| (NodeKind::Line, Affine::translate(a.to_vec2()) * Affine::rotate(d.atan2()), len, 0.0, 0.0))
+            (len > 1e-9 && len.is_finite()).then(|| {
+                (
+                    NodeKind::Line,
+                    Affine::translate(a.to_vec2()) * Affine::rotate(d.atan2()),
+                    len,
+                    0.0,
+                    0.0,
+                )
+            })
         }
     }
 }
@@ -440,9 +571,19 @@ pub(crate) fn stroke_props(s: &usvg::Stroke, k: f64) -> figcraft_doc::StrokeProp
         usvg::LineCap::Square => StrokeCap::Square,
         usvg::LineCap::Butt => StrokeCap::None,
     };
-    let mut dashes: Vec<f64> = s.dasharray().unwrap_or(&[]).iter().map(|v| f64::from(*v) * k).collect();
+    let mut dashes: Vec<f64> = s
+        .dasharray()
+        .unwrap_or(&[])
+        .iter()
+        .map(|v| f64::from(*v) * k)
+        .collect();
     if !dashes.is_empty() {
-        dashes = dash_offset(&dashes, f64::from(s.dashoffset()) * k, cap == StrokeCap::None).unwrap_or(dashes);
+        dashes = dash_offset(
+            &dashes,
+            f64::from(s.dashoffset()) * k,
+            cap == StrokeCap::None,
+        )
+        .unwrap_or(dashes);
     }
     figcraft_doc::StrokeProps {
         weight: f64::from(s.width().get()) * k,
@@ -465,7 +606,10 @@ pub(crate) fn stroke_props(s: &usvg::Stroke, k: f64) -> figcraft_doc::StrokeProp
 /// draws nothing with butt caps.
 pub(crate) fn dash_offset(dashes: &[f64], offset: f64, butt: bool) -> Option<Vec<f64>> {
     let total: f64 = dashes.iter().sum();
-    if !(total > 0.0 && offset.is_finite()) || dashes.len() % 2 == 1 || dashes.iter().any(|d| *d < 0.0) {
+    if !(total > 0.0 && offset.is_finite())
+        || dashes.len() % 2 == 1
+        || dashes.iter().any(|d| *d < 0.0)
+    {
         return None;
     }
     let mut o = offset.rem_euclid(total);
@@ -501,7 +645,10 @@ fn image(cx: &mut Ctx, img: &usvg::Image, id: &str, parent: NodeId, base: Affine
         return;
     }
     let bytes = match img.kind() {
-        usvg::ImageKind::PNG(b) | usvg::ImageKind::JPEG(b) | usvg::ImageKind::GIF(b) | usvg::ImageKind::WEBP(b) => b.clone(),
+        usvg::ImageKind::PNG(b)
+        | usvg::ImageKind::JPEG(b)
+        | usvg::ImageKind::GIF(b)
+        | usvg::ImageKind::WEBP(b) => b.clone(),
         usvg::ImageKind::SVG(tree) => {
             // A nested SVG document: imported in place.
             if let Some(g) = cx.group(parent, &layer_name(id, "Image"), id.is_empty()) {
@@ -515,16 +662,34 @@ fn image(cx: &mut Ctx, img: &usvg::Image, id: &str, parent: NodeId, base: Affine
     let (iw, ih) = (f64::from(size.width()), f64::from(size.height()));
     let (transform, w, h) = place(world, Point::ZERO, iw, ih).unwrap_or((world, iw, ih));
     let hash = add_image(cx.doc, bytes, iw, ih);
-    let mut n = Node::new(cx.doc.alloc_id(), NodeKind::Rectangle, layer_name(id, "Image"), w, h);
+    let mut n = Node::new(
+        cx.doc.alloc_id(),
+        NodeKind::Rectangle,
+        layer_name(id, "Image"),
+        w,
+        h,
+    );
     n.transform = transform;
     n.fills = vec![Paint::image(hash, ImageScaleMode::Fill)];
     cx.add(n, parent);
 }
 
 /// Store image `bytes` (`w × h` pixels) in `doc`; returns its key.
-pub(crate) fn add_image(doc: &mut Document, bytes: std::sync::Arc<Vec<u8>>, w: f64, h: f64) -> String {
+pub(crate) fn add_image(
+    doc: &mut Document,
+    bytes: std::sync::Arc<Vec<u8>>,
+    w: f64,
+    h: f64,
+) -> String {
     let hash = simple_hash(&bytes);
-    doc.images.insert(hash.clone(), figcraft_doc::ImageData { bytes, width: w.round().max(1.0) as u32, height: h.round().max(1.0) as u32 });
+    doc.images.insert(
+        hash.clone(),
+        figcraft_doc::ImageData {
+            bytes,
+            width: w.round().max(1.0) as u32,
+            height: h.round().max(1.0) as u32,
+        },
+    );
     hash
 }
 
@@ -548,10 +713,15 @@ const MAX_NESTING: usize = 512;
 /// attribute values skipped) that stops once past `limit`.
 pub(crate) fn nesting(data: &[u8], limit: usize) -> usize {
     let find = |from: usize, pat: &[u8]| -> usize {
-        data.get(from..).and_then(|r| r.windows(pat.len()).position(|w| w == pat)).map_or(data.len(), |p| from + p + pat.len())
+        data.get(from..)
+            .and_then(|r| r.windows(pat.len()).position(|w| w == pat))
+            .map_or(data.len(), |p| from + p + pat.len())
     };
     let (mut depth, mut max, mut i) = (0usize, 0usize, 0usize);
-    while let Some(off) = data.get(i..).and_then(|r| r.iter().position(|b| *b == b'<')) {
+    while let Some(off) = data
+        .get(i..)
+        .and_then(|r| r.iter().position(|b| *b == b'<'))
+    {
         i += off;
         let rest = data.get(i..).unwrap_or(&[]);
         if rest.starts_with(b"<!--") {
@@ -628,23 +798,52 @@ pub fn looks_like_svg(text: &str) -> bool {
 }
 
 /// Import SVG bytes as a new frame under `parent` at `(x, y)`. Returns the frame id.
-pub fn import_svg(doc: &mut Document, data: &[u8], parent: NodeId, x: f64, y: f64, name: &str) -> Result<NodeId, ImportError> {
+pub fn import_svg(
+    doc: &mut Document,
+    data: &[u8],
+    parent: NodeId,
+    x: f64,
+    y: f64,
+    name: &str,
+) -> Result<NodeId, ImportError> {
     import_svg_with_notes(doc, data, parent, x, y, name).map(|i| i.frame)
 }
 
 /// [`import_svg`], with notes on what couldn't be represented.
-pub fn import_svg_with_notes(doc: &mut Document, data: &[u8], parent: NodeId, x: f64, y: f64, name: &str) -> Result<Imported, ImportError> {
+pub fn import_svg_with_notes(
+    doc: &mut Document,
+    data: &[u8],
+    parent: NodeId,
+    x: f64,
+    y: f64,
+    name: &str,
+) -> Result<Imported, ImportError> {
     if nesting(data, MAX_NESTING) > MAX_NESTING {
-        return Err(ImportError(format!("elements nested more than {MAX_NESTING} deep")));
+        return Err(ImportError(format!(
+            "elements nested more than {MAX_NESTING} deep"
+        )));
     }
-    let tree = usvg::Tree::from_data(data, &options(data)).map_err(|e| ImportError(e.to_string()))?;
+    let tree =
+        usvg::Tree::from_data(data, &options(data)).map_err(|e| ImportError(e.to_string()))?;
     let size = tree.size();
-    let frame =
-        doc.create(parent, NodeKind::Frame, name, x, y, f64::from(size.width()), f64::from(size.height())).map_err(|e| ImportError(e.to_string()))?;
+    let frame = doc
+        .create(
+            parent,
+            NodeKind::Frame,
+            name,
+            x,
+            y,
+            f64::from(size.width()),
+            f64::from(size.height()),
+        )
+        .map_err(|e| ImportError(e.to_string()))?;
     if let Some(f) = doc.node_mut(frame) {
         f.fills.clear();
     }
     let mut cx = Ctx::new(doc);
     children(&mut cx, tree.root(), frame, Affine::IDENTITY, 0);
-    Ok(Imported { frame, notes: cx.notes.into_iter().collect() })
+    Ok(Imported {
+        frame,
+        notes: cx.notes.into_iter().collect(),
+    })
 }

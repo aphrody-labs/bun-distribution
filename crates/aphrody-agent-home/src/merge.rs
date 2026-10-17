@@ -192,8 +192,10 @@ fn paragraphs(text: &str) -> Vec<String> {
 #[must_use]
 pub fn union_append(target: &str, source: &str) -> Option<String> {
     let existing = paragraphs(target);
-    let missing: Vec<String> =
-        paragraphs(source).into_iter().filter(|p| !existing.contains(p)).collect();
+    let missing: Vec<String> = paragraphs(source)
+        .into_iter()
+        .filter(|p| !existing.contains(p))
+        .collect();
     if missing.is_empty() {
         return None;
     }
@@ -275,8 +277,10 @@ fn plan(
         }
         if opts.memory_union
             && is_memory(path)
-            && let (Ok(t), Ok(s)) =
-                (std::str::from_utf8(&dst.bytes), std::str::from_utf8(&src.bytes))
+            && let (Ok(t), Ok(s)) = (
+                std::str::from_utf8(&dst.bytes),
+                std::str::from_utf8(&src.bytes),
+            )
         {
             let (tp, sp) = (paragraphs(t), paragraphs(s));
             let target_covers = sp.iter().all(|p| tp.contains(p));
@@ -376,7 +380,11 @@ pub fn backup_home(
     }
     let manifest = serde_json::to_vec_pretty(&copy)?;
     write_atomic(&dir.join("manifest.json"), &manifest)?;
-    Ok(BackupRecord { path: dir.to_path_buf(), revision: copy.revision, files: copy.files.len() })
+    Ok(BackupRecord {
+        path: dir.to_path_buf(),
+        revision: copy.revision,
+        files: copy.files.len(),
+    })
 }
 
 /// Restore a backup written by [`backup_home`] into `home`: the backup is
@@ -495,9 +503,17 @@ pub fn sync_homes(
     policy: ConflictPolicy,
     apply: bool,
 ) -> Result<SyncReport, HomeError> {
-    let forward = MergeOptions { policy, apply, ..MergeOptions::new(a, b) };
+    let forward = MergeOptions {
+        policy,
+        apply,
+        ..MergeOptions::new(a, b)
+    };
     let a_to_b = merge_homes(&forward)?;
-    let back = MergeOptions { policy, apply, ..MergeOptions::new(b, a) };
+    let back = MergeOptions {
+        policy,
+        apply,
+        ..MergeOptions::new(b, a)
+    };
     let b_to_a = merge_homes(&back)?;
     Ok(SyncReport { a_to_b, b_to_a })
 }
@@ -557,15 +573,21 @@ mod tests {
     fn apply_takes_a_verified_backup_then_merges() {
         let (a, b) = fixture();
         let before = home_revision(b.path()).unwrap().revision;
-        let r = merge_homes(&MergeOptions { apply: true, ..MergeOptions::new(a.path(), b.path()) })
-            .unwrap();
+        let r = merge_homes(&MergeOptions {
+            apply: true,
+            ..MergeOptions::new(a.path(), b.path())
+        })
+        .unwrap();
         let backup = r.backup.clone().unwrap();
         assert_eq!(backup.revision, before);
         assert_eq!(read(b.path(), "SOUL.md"), "soul A new\n");
         assert_eq!(read(b.path(), "TOOLS.md"), "tools B new\n");
         assert_eq!(read(b.path(), "skills/only-a.md"), "a\n");
         assert_eq!(read(b.path(), "only-b.md"), "b\n");
-        assert_eq!(read(b.path(), "memory/2026-10-06.md"), "first\n\nfrom b\n\nfrom a\n");
+        assert_eq!(
+            read(b.path(), "memory/2026-10-06.md"),
+            "first\n\nfrom b\n\nfrom a\n"
+        );
         // LWW stays stable: the copied file carries the source mtime.
         assert_eq!(
             crate::fsutil::modified(&b.path().join("SOUL.md")).unwrap(),
@@ -592,7 +614,10 @@ mod tests {
         })
         .unwrap();
         assert_eq!(action(&keep, "SOUL.md"), MergeAction::KeepTarget);
-        assert_eq!(action(&keep, "memory/2026-10-06.md"), MergeAction::KeepTarget);
+        assert_eq!(
+            action(&keep, "memory/2026-10-06.md"),
+            MergeAction::KeepTarget
+        );
         let take = merge_homes(&MergeOptions {
             policy: ConflictPolicy::TakeSource,
             ..MergeOptions::new(a.path(), b.path())
@@ -626,7 +651,11 @@ mod tests {
         let ra = home_revision(a.path()).unwrap();
         let rb = home_revision(b.path()).unwrap();
         let strip = |r: &HomeRevision| {
-            r.files.iter().filter(|f| f.path != "USER.md").cloned().collect::<Vec<_>>()
+            r.files
+                .iter()
+                .filter(|f| f.path != "USER.md")
+                .cloned()
+                .collect::<Vec<_>>()
         };
         assert_eq!(strip(&ra), strip(&rb));
         assert_eq!(read(a.path(), "TOOLS.md"), "tools B new\n");
@@ -638,7 +667,10 @@ mod tests {
 
     #[test]
     fn union_append_keeps_order_and_skips_known_paragraphs() {
-        assert_eq!(union_append("a\n\nb\n", "b\n\nc\n").unwrap(), "a\n\nb\n\nc\n");
+        assert_eq!(
+            union_append("a\n\nb\n", "b\n\nc\n").unwrap(),
+            "a\n\nb\n\nc\n"
+        );
         assert!(union_append("a\n\nb\n", "b\n").is_none());
         assert_eq!(union_append("", "x\n").unwrap(), "x\n");
     }

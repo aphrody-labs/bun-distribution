@@ -53,14 +53,24 @@ impl RedisRagCache {
                     prefix,
                     enabled: false,
                 };
-            },
+            }
         };
 
         let host = parsed.host_str().unwrap_or("127.0.0.1").to_string();
         let port = parsed.port().unwrap_or(6379);
-        let db = parsed.path().trim_start_matches('/').parse::<u8>().unwrap_or(0);
+        let db = parsed
+            .path()
+            .trim_start_matches('/')
+            .parse::<u8>()
+            .unwrap_or(0);
 
-        Self { host, port, db, prefix, enabled: true }
+        Self {
+            host,
+            port,
+            db,
+            prefix,
+            enabled: true,
+        }
     }
 
     /// Check if the Redis cache is enabled and responding.
@@ -79,8 +89,12 @@ impl RedisRagCache {
         if !self.enabled {
             return None;
         }
-        let key =
-            format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
+        let key = format!(
+            "{}cache:{}:{}",
+            self.prefix,
+            mode,
+            blake3::hash(query.as_bytes()).to_hex()
+        );
         self.get(&key).await
     }
 
@@ -89,8 +103,12 @@ impl RedisRagCache {
         if !self.enabled {
             return false;
         }
-        let key =
-            format!("{}cache:{}:{}", self.prefix, mode, blake3::hash(query.as_bytes()).to_hex());
+        let key = format!(
+            "{}cache:{}:{}",
+            self.prefix,
+            mode,
+            blake3::hash(query.as_bytes()).to_hex()
+        );
         self.set_ex(&key, result_json, DEFAULT_TTL_SECS).await
     }
 
@@ -138,13 +156,19 @@ impl RedisRagCache {
         if self.db > 0 {
             let db_str = self.db.to_string();
             let select_req = encode_resp_cmd(&["SELECT", &db_str]);
-            stream.write_all(select_req.as_bytes()).await.map_err(|_| "redis write failed")?;
+            stream
+                .write_all(select_req.as_bytes())
+                .await
+                .map_err(|_| "redis write failed")?;
             let mut sel_buf = [0u8; 64];
             let _ = stream.read(&mut sel_buf).await;
         }
 
         let request = encode_resp_cmd(args);
-        stream.write_all(request.as_bytes()).await.map_err(|_| "redis write failed")?;
+        stream
+            .write_all(request.as_bytes())
+            .await
+            .map_err(|_| "redis write failed")?;
 
         let mut buf = Vec::with_capacity(4096);
         let mut temp = [0u8; 2048];
@@ -210,7 +234,7 @@ fn is_resp_complete(buf: &[u8]) -> bool {
                 }
             }
             crlf_count >= 2
-        },
+        }
         b'*' => buf.ends_with(b"\r\n"),
         _ => buf.ends_with(b"\r\n"),
     }

@@ -43,7 +43,12 @@ fn find_infra_manifest() -> Option<PathBuf> {
     let cwd = std::env::current_dir().ok();
     let executable = std::env::current_exe().ok();
     let home = crate::paths::home_dir();
-    resolve_infra_manifest(&process_env, cwd.as_deref(), executable.as_deref(), home.as_deref())
+    resolve_infra_manifest(
+        &process_env,
+        cwd.as_deref(),
+        executable.as_deref(),
+        home.as_deref(),
+    )
 }
 
 /// The workspace manifest that builds `aphrody-ssh` from source (development only, behind
@@ -106,12 +111,18 @@ fn find_workspace_manifest(
 
 fn resolve_infra_invoker() -> Result<(String, Vec<String>), SubsystemError> {
     let executable = std::env::current_exe().ok();
-    plan_infra_invoker(&process_env, ssh_on_path, executable.as_deref(), find_infra_manifest)
+    plan_infra_invoker(
+        &process_env,
+        ssh_on_path,
+        executable.as_deref(),
+        find_infra_manifest,
+    )
 }
 
 /// Whether an `aphrody-ssh` found by the operating system's `PATH` lookup runs.
 fn ssh_on_path() -> bool {
-    std::process::Command::new("aphrody-ssh").no_window()
+    std::process::Command::new("aphrody-ssh")
+        .no_window()
         .arg("--version")
         .output()
         .is_ok_and(|output| output.status.success())
@@ -194,14 +205,24 @@ fn workspace_infra_invoker(manifest: &Path, allow_source: bool) -> Option<(Strin
     }
     if let Some(manifest_dir) = manifest.parent() {
         // `aphrody-ssh` is the `ssh` subcommand of the single `aphrody` multi-call binary.
-        let bin_name = if cfg!(windows) { "aphrody.exe" } else { "aphrody" };
+        let bin_name = if cfg!(windows) {
+            "aphrody.exe"
+        } else {
+            "aphrody"
+        };
         let debug_bin = manifest_dir.join("target").join("debug").join(bin_name);
         let release_bin = manifest_dir.join("target").join("release").join(bin_name);
         if release_bin.is_file() {
-            return Some((release_bin.to_string_lossy().into_owned(), vec!["ssh".to_string()]));
+            return Some((
+                release_bin.to_string_lossy().into_owned(),
+                vec!["ssh".to_string()],
+            ));
         }
         if debug_bin.is_file() {
-            return Some((debug_bin.to_string_lossy().into_owned(), vec!["ssh".to_string()]));
+            return Some((
+                debug_bin.to_string_lossy().into_owned(),
+                vec!["ssh".to_string()],
+            ));
         }
     }
 
@@ -360,19 +381,22 @@ impl SystemSubsystem for InfraSubsystem {
                 let output =
                     run_infra_cli(&["--json", "exec", "--host", host, "--cmd", command]).await?;
                 Ok(output)
-            },
+            }
             "infra_sftp_list" => {
                 let host = arguments
                     .get("host")
                     .and_then(Value::as_str)
                     .ok_or_else(|| SubsystemError::InvalidArguments("missing host".into()))?;
-                let path = arguments.get("path").and_then(Value::as_str).unwrap_or("/var/www");
+                let path = arguments
+                    .get("path")
+                    .and_then(Value::as_str)
+                    .unwrap_or("/var/www");
 
                 validate_host(host)?;
                 let output =
                     run_infra_cli(&["--json", "sftp", "--host", host, "--path", path]).await?;
                 Ok(output)
-            },
+            }
             "infra_sftp_read" => {
                 let host = arguments
                     .get("host")
@@ -387,7 +411,7 @@ impl SystemSubsystem for InfraSubsystem {
                 let output =
                     run_infra_cli(&["--json", "sftp", "--host", host, "--cat", path]).await?;
                 Ok(output)
-            },
+            }
             "infra_sync" => {
                 let host = arguments
                     .get("host")
@@ -397,11 +421,16 @@ impl SystemSubsystem for InfraSubsystem {
                     .get("source")
                     .and_then(Value::as_str)
                     .ok_or_else(|| SubsystemError::InvalidArguments("missing source".into()))?;
-                let destination =
-                    arguments.get("destination").and_then(Value::as_str).ok_or_else(|| {
+                let destination = arguments
+                    .get("destination")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
                         SubsystemError::InvalidArguments("missing destination".into())
                     })?;
-                let apply = arguments.get("apply").and_then(Value::as_bool).unwrap_or(false);
+                let apply = arguments
+                    .get("apply")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
 
                 validate_host(host)?;
                 let mut args = vec![
@@ -419,7 +448,7 @@ impl SystemSubsystem for InfraSubsystem {
                 }
                 let output = run_infra_cli(&args).await?;
                 Ok(output)
-            },
+            }
             "infra_git_status" => {
                 let host = arguments
                     .get("host")
@@ -435,7 +464,7 @@ impl SystemSubsystem for InfraSubsystem {
                 let output =
                     run_infra_cli(&["--json", "exec", "--host", host, "--cmd", &cmd]).await?;
                 Ok(output)
-            },
+            }
             _ => Err(SubsystemError::UnknownTool(tool.to_owned())),
         }
     }
@@ -457,12 +486,22 @@ fn git_status_command(repo_path: &str) -> Result<String, SubsystemError> {
     } else {
         quote(repo_path)
     };
-    Ok(format!("git -C {path} status --short --branch && git -C {path} log -n 5 --oneline"))
+    Ok(format!(
+        "git -C {path} status --short --branch && git -C {path} log -n 5 --oneline"
+    ))
 }
 
 /// SSH hosts of `aphrody infra ssh --host` (`aphrody_ssh::Host` values and aliases).
-const SSH_HOSTS: [&str; 8] =
-    ["vps", "dbfr", "omar", "omar-pc", "omar-rt", "omar-wsl", "omar-wsl-rt", "aphro-pc"];
+const SSH_HOSTS: [&str; 8] = [
+    "vps",
+    "dbfr",
+    "omar",
+    "omar-pc",
+    "omar-rt",
+    "omar-wsl",
+    "omar-wsl-rt",
+    "aphro-pc",
+];
 
 fn validate_host(host: &str) -> Result<(), SubsystemError> {
     if !SSH_HOSTS.contains(&host) {
@@ -480,7 +519,8 @@ async fn run_infra_cli(args: &[&str]) -> Result<Value, SubsystemError> {
         cmd_args.push((*arg).to_string());
     }
 
-    let output = Command::new(&program).no_window()
+    let output = Command::new(&program)
+        .no_window()
         .args(&cmd_args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -539,7 +579,11 @@ mod tests {
             expected
         );
         assert_eq!(
-            find_workspace_manifest(None, Some(&root.join("target/release/aphrody-kernel")), None),
+            find_workspace_manifest(
+                None,
+                Some(&root.join("target/release/aphrody-kernel")),
+                None
+            ),
             expected
         );
         assert_eq!(find_workspace_manifest(Some(dir.path()), None, None), None);
@@ -599,7 +643,10 @@ mod tests {
                     .success()
             );
             // A missing HEAD makes log fail; status must still run for the correct path.
-            for path in [repository.to_string_lossy().into_owned(), format!("~/{relative}")] {
+            for path in [
+                repository.to_string_lossy().into_owned(),
+                format!("~/{relative}"),
+            ] {
                 let output = std::process::Command::new("sh")
                     .arg("-c")
                     .arg(git_status_command(&path).unwrap())
@@ -632,8 +679,12 @@ mod tests {
     #[tokio::test]
     async fn infra_subsystem_rejects_unknown_host() {
         let infra = InfraSubsystem::new();
-        let res =
-            infra.call("infra_exec", json!({ "host": "unknown_vps", "command": "uptime" })).await;
+        let res = infra
+            .call(
+                "infra_exec",
+                json!({ "host": "unknown_vps", "command": "uptime" }),
+            )
+            .await;
         assert!(matches!(res, Err(SubsystemError::InvalidArguments(_))));
     }
 
@@ -647,23 +698,44 @@ mod tests {
 
         // Missing command in infra_exec
         let res_no_cmd = infra.call("infra_exec", json!({ "host": "vps" })).await;
-        assert!(matches!(res_no_cmd, Err(SubsystemError::InvalidArguments(_))));
+        assert!(matches!(
+            res_no_cmd,
+            Err(SubsystemError::InvalidArguments(_))
+        ));
 
         // Missing path in infra_sftp_read
-        let res_no_path = infra.call("infra_sftp_read", json!({ "host": "vps" })).await;
-        assert!(matches!(res_no_path, Err(SubsystemError::InvalidArguments(_))));
+        let res_no_path = infra
+            .call("infra_sftp_read", json!({ "host": "vps" }))
+            .await;
+        assert!(matches!(
+            res_no_path,
+            Err(SubsystemError::InvalidArguments(_))
+        ));
 
         // Missing host in infra_sftp_list
         let res_no_host = infra.call("infra_sftp_list", json!({})).await;
-        assert!(matches!(res_no_host, Err(SubsystemError::InvalidArguments(_))));
+        assert!(matches!(
+            res_no_host,
+            Err(SubsystemError::InvalidArguments(_))
+        ));
 
         // Missing destination in infra_sync
-        let res_no_dest = infra.call("infra_sync", json!({ "host": "vps", "source": "." })).await;
-        assert!(matches!(res_no_dest, Err(SubsystemError::InvalidArguments(_))));
+        let res_no_dest = infra
+            .call("infra_sync", json!({ "host": "vps", "source": "." }))
+            .await;
+        assert!(matches!(
+            res_no_dest,
+            Err(SubsystemError::InvalidArguments(_))
+        ));
 
         // Missing repo_path in infra_git_status
-        let res_no_repo = infra.call("infra_git_status", json!({ "host": "vps" })).await;
-        assert!(matches!(res_no_repo, Err(SubsystemError::InvalidArguments(_))));
+        let res_no_repo = infra
+            .call("infra_git_status", json!({ "host": "vps" }))
+            .await;
+        assert!(matches!(
+            res_no_repo,
+            Err(SubsystemError::InvalidArguments(_))
+        ));
     }
 
     #[test]
@@ -692,7 +764,10 @@ mod tests {
             ("APHRODY_INFRA_DIR", by_dir.as_os_str()),
             ("APHRODY_INFRA_ROOT", by_root.as_os_str()),
         ]);
-        assert_eq!(resolve_infra_manifest(&env, Some(&walked), None, Some(&home)), Some(explicit));
+        assert_eq!(
+            resolve_infra_manifest(&env, Some(&walked), None, Some(&home)),
+            Some(explicit)
+        );
     }
 
     #[test]
@@ -726,7 +801,10 @@ mod tests {
         // Nothing configured: the working directory walk, then the home default, as before.
         let none = table::<&str, &str>([]);
         assert_eq!(resolve(&none), manifest(&walked));
-        assert_eq!(resolve_infra_manifest(&none, None, None, Some(&home)), manifest(&default));
+        assert_eq!(
+            resolve_infra_manifest(&none, None, None, Some(&home)),
+            manifest(&default)
+        );
         assert_eq!(resolve_infra_manifest(&none, None, None, None), None);
     }
 
@@ -756,7 +834,9 @@ mod tests {
     #[test]
     fn explicit_ssh_binary_is_authoritative_when_set() {
         let dir = tempfile::tempdir().expect("tempdir");
-        let binary = dir.path().join(format!("custom-ssh{}", std::env::consts::EXE_SUFFIX));
+        let binary = dir
+            .path()
+            .join(format!("custom-ssh{}", std::env::consts::EXE_SUFFIX));
         std::fs::write(&binary, "").unwrap();
 
         // Unset, empty and blank values leave the choice to the rest of the order.
@@ -765,10 +845,16 @@ mod tests {
             assert_eq!(explicit_ssh_binary(&env).unwrap(), None, "{value:?}");
         }
         let env = table([("APHRODY_SSH_BIN", binary.as_os_str())]);
-        assert_eq!(explicit_ssh_binary(&env).unwrap(), Some(binary.to_string_lossy().into_owned()));
+        assert_eq!(
+            explicit_ssh_binary(&env).unwrap(),
+            Some(binary.to_string_lossy().into_owned())
+        );
         // A bare command name is resolved by the operating system's PATH lookup at spawn time.
         let env = table([("APHRODY_SSH_BIN", "my-ssh")]);
-        assert_eq!(explicit_ssh_binary(&env).unwrap(), Some("my-ssh".to_owned()));
+        assert_eq!(
+            explicit_ssh_binary(&env).unwrap(),
+            Some("my-ssh".to_owned())
+        );
         // A path that does not exist is an error, never a silent switch to another binary.
         let missing = dir.path().join("missing-ssh");
         let env = table([("APHRODY_SSH_BIN", missing.as_os_str())]);
@@ -809,7 +895,10 @@ mod tests {
             || -> Option<PathBuf> { panic!("no opt-in: the workspace must not be searched") };
         for value in [None, Some("0"), Some("true"), Some("")] {
             let env = table(value.map(|value| ("APHRODY_INFRA_BUILD_FROM_SOURCE", value)));
-            assert!(plan_infra_invoker(&env, || false, None, searched).is_err(), "{value:?}");
+            assert!(
+                plan_infra_invoker(&env, || false, None, searched).is_err(),
+                "{value:?}"
+            );
         }
         let opted_in = table([("APHRODY_INFRA_BUILD_FROM_SOURCE", "1")]);
         let (program, arguments) =
@@ -826,8 +915,12 @@ mod tests {
         let SubsystemError::Unavailable(message) = &error else {
             panic!("expected Unavailable, got {error:?}");
         };
-        for remedy in ["aphrody-ssh", "PATH", "APHRODY_SSH_BIN", "APHRODY_INFRA_BUILD_FROM_SOURCE"]
-        {
+        for remedy in [
+            "aphrody-ssh",
+            "PATH",
+            "APHRODY_SSH_BIN",
+            "APHRODY_INFRA_BUILD_FROM_SOURCE",
+        ] {
             assert!(message.contains(remedy), "missing `{remedy}` in: {message}");
         }
         // The opt-in alone does not help when no workspace can be located either.

@@ -22,7 +22,14 @@ use pdfcraft_cos::{Dict, Document, ObjRef, Object, Stream};
 use crate::{OptimizeError, Stage};
 
 /// Image codecs: a stream encoded with one holds picture data.
-const IMAGE_CODECS: [&[u8]; 6] = [b"DCTDecode", b"DCT", b"JPXDecode", b"JBIG2Decode", b"CCITTFaxDecode", b"CCF"];
+const IMAGE_CODECS: [&[u8]; 6] = [
+    b"DCTDecode",
+    b"DCT",
+    b"JPXDecode",
+    b"JBIG2Decode",
+    b"CCITTFaxDecode",
+    b"CCF",
+];
 
 /// Most data decoded while looking for names, in all; past it nothing is removed.
 const DECODE_BUDGET: usize = 1 << 31;
@@ -65,10 +72,19 @@ fn graph(doc: &Document) -> Graph {
         (_, b"SMask" | b"Mask" | b"Thumb" | b"Image") => Use::Picture,
         _ => Use::Other,
     };
-    let mut g = Graph { refs: HashMap::new(), not_picture: HashSet::new() };
-    let mut stack: Vec<(Object, Use)> = doc.trailer().iter().map(|(_, v)| (v.clone(), Use::Other)).collect();
+    let mut g = Graph {
+        refs: HashMap::new(),
+        not_picture: HashSet::new(),
+    };
+    let mut stack: Vec<(Object, Use)> = doc
+        .trailer()
+        .iter()
+        .map(|(_, v)| (v.clone(), Use::Other))
+        .collect();
     while let Some((obj, how)) = stack.pop() {
-        let expand = |d: &Dict, stack: &mut Vec<(Object, Use)>| stack.extend(d.iter().map(|(k, v)| (v.clone(), child(k, how))));
+        let expand = |d: &Dict, stack: &mut Vec<(Object, Use)>| {
+            stack.extend(d.iter().map(|(k, v)| (v.clone(), child(k, how))))
+        };
         match obj {
             Object::Ref(r) => {
                 if how != Use::Picture {
@@ -121,11 +137,38 @@ fn hex(b: &u8) -> Option<u8> {
 
 /// Record which of `wanted` (none longer than `longest`) are written in `data` (`/Name`, `#xx`
 /// escapes decoded), wherever they appear: operands, strings, comments or inline image data.
-fn find_names(data: &[u8], wanted: &HashSet<Vec<u8>>, longest: usize, found: &mut HashSet<Vec<u8>>) {
-    let regular =
-        |b: u8| !matches!(b, b'\0' | b'\t' | b'\n' | b'\x0C' | b'\r' | b' ' | b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%');
+fn find_names(
+    data: &[u8],
+    wanted: &HashSet<Vec<u8>>,
+    longest: usize,
+    found: &mut HashSet<Vec<u8>>,
+) {
+    let regular = |b: u8| {
+        !matches!(
+            b,
+            b'\0'
+                | b'\t'
+                | b'\n'
+                | b'\x0C'
+                | b'\r'
+                | b' '
+                | b'('
+                | b')'
+                | b'<'
+                | b'>'
+                | b'['
+                | b']'
+                | b'{'
+                | b'}'
+                | b'/'
+                | b'%'
+        )
+    };
     let mut i = 0;
-    while let Some(slash) = data.get(i..).and_then(|rest| rest.iter().position(|&b| b == b'/')) {
+    while let Some(slash) = data
+        .get(i..)
+        .and_then(|rest| rest.iter().position(|&b| b == b'/'))
+    {
         let mut j = i + slash + 1;
         let mut name = Vec::new();
         let mut too_long = false;
@@ -133,7 +176,11 @@ fn find_names(data: &[u8], wanted: &HashSet<Vec<u8>>, longest: usize, found: &mu
             if !regular(b) {
                 break;
             }
-            let (byte, step) = match (b, data.get(j + 1).and_then(hex), data.get(j + 2).and_then(hex)) {
+            let (byte, step) = match (
+                b,
+                data.get(j + 1).and_then(hex),
+                data.get(j + 2).and_then(hex),
+            ) {
                 (b'#', Some(h), Some(l)) => (h << 4 | l, 3),
                 _ => (b, 1),
             };
@@ -165,7 +212,12 @@ fn plain_metadata(doc: &Document) -> bool {
     doc.trailer()
         .get(b"Encrypt")
         .map(|e| doc.resolve(e))
-        .is_some_and(|e| matches!(e.as_dict().and_then(|e| e.get(b"EncryptMetadata")), Some(Object::Bool(false))))
+        .is_some_and(|e| {
+            matches!(
+                e.as_dict().and_then(|e| e.get(b"EncryptMetadata")),
+                Some(Object::Bool(false))
+            )
+        })
 }
 
 fn data(s: &Stream, num: u32, g: &Graph, encrypted: bool, plain_metadata: bool) -> Data {
@@ -202,7 +254,11 @@ fn data(s: &Stream, num: u32, g: &Graph, encrypted: bool, plain_metadata: bool) 
     if filters.iter().any(|f| IMAGE_CODECS.contains(f)) {
         // Viewers decode any stream's codec, so picture data skipped here must be a picture.
         let picture = d.name(b"Subtype") == Some(b"Image") && !g.not_picture.contains(&num);
-        return if picture { Data::Picture } else { Data::Unknown };
+        return if picture {
+            Data::Picture
+        } else {
+            Data::Unknown
+        };
     }
     // Parameters only as direct integers, which this check and viewers read alike.
     let direct = |p: &Object| match p {
@@ -225,12 +281,18 @@ fn data(s: &Stream, num: u32, g: &Graph, encrypted: bool, plain_metadata: bool) 
 /// Drop the image and form XObjects that `pages` list in their own resources but no stream
 /// names. Returns how many went. `progress` is asked again every [`CANCEL_CHECK`] bytes
 /// decoded; `false` cancels.
-pub(crate) fn remove_unused(doc: &mut Document, pages: &[ObjRef], progress: &mut dyn FnMut(Stage) -> bool) -> Result<usize, OptimizeError> {
+pub(crate) fn remove_unused(
+    doc: &mut Document,
+    pages: &[ObjRef],
+    progress: &mut dyn FnMut(Stage) -> bool,
+) -> Result<usize, OptimizeError> {
     let g = graph(doc);
     let mut seen = HashSet::new();
     let mut candidates = Vec::new();
     for page in pages {
-        let Some((place, xobjects)) = own_xobjects(doc, *page, &g.refs) else { continue };
+        let Some((place, xobjects)) = own_xobjects(doc, *page, &g.refs) else {
+            continue;
+        };
         if !seen.insert(place) {
             continue;
         }
@@ -243,7 +305,10 @@ pub(crate) fn remove_unused(doc: &mut Document, pages: &[ObjRef], progress: &mut
             candidates.push((place, names));
         }
     }
-    let wanted: HashSet<Vec<u8>> = candidates.iter().flat_map(|(_, names)| names.iter().cloned()).collect();
+    let wanted: HashSet<Vec<u8>> = candidates
+        .iter()
+        .flat_map(|(_, names)| names.iter().cloned())
+        .collect();
     let longest = wanted.iter().map(Vec::len).max().unwrap_or(0);
     let (encrypted, plain_metadata) = (doc.trailer().contains(b"Encrypt"), plain_metadata(doc));
     let mut written = HashSet::new();

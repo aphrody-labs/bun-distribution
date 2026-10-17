@@ -22,7 +22,12 @@ pub struct Margins {
 
 impl Margins {
     pub fn uniform(v: f64) -> Self {
-        Margins { top: v, bottom: v, inside: v, outside: v }
+        Margins {
+            top: v,
+            bottom: v,
+            inside: v,
+            outside: v,
+        }
     }
 }
 
@@ -38,7 +43,11 @@ pub struct Columns {
 
 impl Default for Columns {
     fn default() -> Self {
-        Columns { count: 1, gutter: 12.0, positions: None }
+        Columns {
+            count: 1,
+            gutter: 12.0,
+            positions: None,
+        }
     }
 }
 
@@ -71,11 +80,16 @@ pub struct Guide {
 impl Guide {
     /// Shown when its layer is visible with Show Guides on.
     pub fn visible_in(&self, d: &crate::Document) -> bool {
-        self.layer.is_none_or(|l| d.layer(l).is_none_or(|l| l.visible && l.show_guides))
+        self.layer
+            .is_none_or(|l| d.layer(l).is_none_or(|l| l.visible && l.show_guides))
     }
     /// Can be dragged: neither it nor its layer is locked.
     pub fn editable_in(&self, d: &crate::Document) -> bool {
-        !self.locked && self.layer.is_none_or(|l| d.layer(l).is_none_or(|l| !l.locked && l.visible && l.show_guides))
+        !self.locked
+            && self.layer.is_none_or(|l| {
+                d.layer(l)
+                    .is_none_or(|l| !l.locked && l.visible && l.show_guides)
+            })
     }
 }
 
@@ -235,7 +249,12 @@ impl Page {
     pub fn margin_rect(&self) -> Rect {
         let (l, r) = self.left_right_margins();
         let b = self.bounds();
-        Rect::new(b.x0 + l, b.y0 + self.margins.top, (b.x1 - r).max(b.x0 + l), (b.y1 - self.margins.bottom).max(b.y0 + self.margins.top))
+        Rect::new(
+            b.x0 + l,
+            b.y0 + self.margins.top,
+            (b.x1 - r).max(b.x0 + l),
+            (b.y1 - self.margins.bottom).max(b.y0 + self.margins.top),
+        )
     }
     /// Column rects within the margins.
     pub fn column_rects(&self) -> Vec<Rect> {
@@ -248,7 +267,16 @@ impl Page {
 pub fn column_rects(area: Rect, n: u32, gutter: f64) -> Vec<Rect> {
     let n = n.max(1) as usize;
     let w = ((area.width() - gutter * (n as f64 - 1.0)) / n as f64).max(0.0);
-    (0..n).map(|i| Rect::new(area.x0 + i as f64 * (w + gutter), area.y0, area.x0 + i as f64 * (w + gutter) + w, area.y1)).collect()
+    (0..n)
+        .map(|i| {
+            Rect::new(
+                area.x0 + i as f64 * (w + gutter),
+                area.y0,
+                area.x0 + i as f64 * (w + gutter) + w,
+                area.y1,
+            )
+        })
+        .collect()
 }
 
 /// Parent spread metadata.
@@ -285,14 +313,22 @@ pub struct Spread {
 impl Spread {
     /// Union of the page rects.
     pub fn bounds(&self) -> Rect {
-        self.pages.iter().map(Page::bounds).reduce(|a, b| a.union(b)).unwrap_or(Rect::ZERO)
+        self.pages
+            .iter()
+            .map(Page::bounds)
+            .reduce(|a, b| a.union(b))
+            .unwrap_or(Rect::ZERO)
     }
     /// x of the spine (between left and right pages) or the page centre for single pages.
     pub fn spine_x(&self) -> f64 {
         match self.pages.iter().position(|p| p.side == PageSide::Right) {
             Some(i) => self.pages[i].x,
             // Left pages only (a right-to-left document's first page): the spine is on their right.
-            None if !self.pages.is_empty() && self.pages.iter().all(|p| p.side == PageSide::Left) => self.bounds().x1,
+            None if !self.pages.is_empty()
+                && self.pages.iter().all(|p| p.side == PageSide::Left) =>
+            {
+                self.bounds().x1
+            }
             None => self.bounds().center().x,
         }
     }
@@ -301,18 +337,34 @@ impl Spread {
         if self.pages.is_empty() {
             return None;
         }
-        self.pages.iter().position(|p| x >= p.x && x < p.x + p.width).or_else(|| {
-            // The pasteboard: the page nearest that side.
-            let (l, r) = (0..self.pages.len()).fold((0, 0), |(l, r), i| {
-                (if self.pages[i].x < self.pages[l].x { i } else { l }, if self.pages[i].x > self.pages[r].x { i } else { r })
-            });
-            Some(if x < self.pages[l].x { l } else { r })
-        })
+        self.pages
+            .iter()
+            .position(|p| x >= p.x && x < p.x + p.width)
+            .or_else(|| {
+                // The pasteboard: the page nearest that side.
+                let (l, r) = (0..self.pages.len()).fold((0, 0), |(l, r), i| {
+                    (
+                        if self.pages[i].x < self.pages[l].x {
+                            i
+                        } else {
+                            l
+                        },
+                        if self.pages[i].x > self.pages[r].x {
+                            i
+                        } else {
+                            r
+                        },
+                    )
+                });
+                Some(if x < self.pages[l].x { l } else { r })
+            })
     }
     /// Lay the pages out with no gaps from x = 0: left to right, or right to left for a
     /// right-to-left bound pair (its first page is the right one).
     pub fn relayout(&mut self) {
-        let rtl = self.pages.len() == 2 && self.pages[0].side == PageSide::Right && self.pages[1].side == PageSide::Left;
+        let rtl = self.pages.len() == 2
+            && self.pages[0].side == PageSide::Right
+            && self.pages[1].side == PageSide::Left;
         let mut x = 0.0;
         if rtl {
             for p in self.pages.iter_mut().rev() {
@@ -357,8 +409,17 @@ mod tests {
             width: 612.0,
             height: 792.0,
             x,
-            margins: Margins { top: 36.0, bottom: 36.0, inside: 54.0, outside: 36.0 },
-            columns: Columns { count: 2, gutter: 12.0, positions: None },
+            margins: Margins {
+                top: 36.0,
+                bottom: 36.0,
+                inside: 54.0,
+                outside: 36.0,
+            },
+            columns: Columns {
+                count: 2,
+                gutter: 12.0,
+                positions: None,
+            },
             parent: None,
             side,
             overridden: vec![],

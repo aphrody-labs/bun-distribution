@@ -131,7 +131,10 @@ fn package_names() -> impl Iterator<Item = &'static str> {
     let source = embedded::NAMES;
     #[cfg(not(aphrody_symbols))]
     let source = "";
-    source
-        .lines()
-        .filter_map(|line| line.trim().trim_end_matches(',').strip_prefix('"')?.strip_suffix('"'))
+    source.lines().filter_map(|line| {
+        line.trim()
+            .trim_end_matches(',')
+            .strip_prefix('"')?
+            .strip_suffix('"')
+    })
 }

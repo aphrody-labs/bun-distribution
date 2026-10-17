@@ -89,8 +89,18 @@ pub fn bindables(ui: &[UiCommand]) -> Vec<Bindable> {
     for (path, e) in &entries {
         let key = binding_key(&e.command, &e.params);
         // A plain entry also gets its command's further default keys.
-        let alt = if e.params.is_null() { crate::commands::find(&e.command).map_or(&[][..], |c| c.alt_shortcuts) } else { &[] };
-        let defaults = e.shortcut.as_deref().into_iter().chain(alt.iter().copied()).filter_map(normalize).collect();
+        let alt = if e.params.is_null() {
+            crate::commands::find(&e.command).map_or(&[][..], |c| c.alt_shortcuts)
+        } else {
+            &[]
+        };
+        let defaults = e
+            .shortcut
+            .as_deref()
+            .into_iter()
+            .chain(alt.iter().copied())
+            .filter_map(normalize)
+            .collect();
         push(
             Bindable {
                 key,
@@ -108,7 +118,12 @@ pub fn bindables(ui: &[UiCommand]) -> Vec<Bindable> {
         if !c.journal || entries.iter().any(|(_, e)| e.command == c.id) {
             continue;
         }
-        let defaults = c.shortcut.into_iter().chain(c.alt_shortcuts.iter().copied()).filter_map(normalize).collect();
+        let defaults = c
+            .shortcut
+            .into_iter()
+            .chain(c.alt_shortcuts.iter().copied())
+            .filter_map(normalize)
+            .collect();
         push(
             Bindable {
                 key: c.id.to_string(),
@@ -124,7 +139,11 @@ pub fn bindables(ui: &[UiCommand]) -> Vec<Bindable> {
     }
     for c in ui {
         let scope = ui_scope(&c.id);
-        let cat = if scope == APP_SCOPE { "Tools & Panels" } else { scope };
+        let cat = if scope == APP_SCOPE {
+            "Tools & Panels"
+        } else {
+            scope
+        };
         push(
             Bindable {
                 key: c.id.clone(),
@@ -133,7 +152,12 @@ pub fn bindables(ui: &[UiCommand]) -> Vec<Bindable> {
                 label: c.label.clone(),
                 path: vec![cat.into()],
                 scope: scope.into(),
-                defaults: c.shortcut.as_deref().and_then(normalize).into_iter().collect(),
+                defaults: c
+                    .shortcut
+                    .as_deref()
+                    .and_then(normalize)
+                    .into_iter()
+                    .collect(),
             },
             &mut out,
         );
@@ -156,7 +180,11 @@ pub fn normalize(s: &str) -> Option<String> {
         None if s == "+" => ("", true),
         None => (s, false),
     };
-    let mut parts: Vec<String> = head.split('+').filter(|p| !p.is_empty()).map(str::to_string).collect();
+    let mut parts: Vec<String> = head
+        .split('+')
+        .filter(|p| !p.is_empty())
+        .map(str::to_string)
+        .collect();
     // macOS glyph notation.
     if parts.len() == 1 && parts[0].chars().any(|c| "⌃⌥⇧⌘".contains(c)) {
         let p = parts.remove(0);
@@ -188,7 +216,12 @@ pub fn normalize(s: &str) -> Option<String> {
     }
     let key = key?;
     let mut out = String::new();
-    for (on, m) in [(ctrl, "Ctrl+"), (cmd, "Cmd+"), (alt, "Alt+"), (shift, "Shift+")] {
+    for (on, m) in [
+        (ctrl, "Ctrl+"),
+        (cmd, "Cmd+"),
+        (alt, "Alt+"),
+        (shift, "Shift+"),
+    ] {
         if on {
             out.push_str(m);
         }
@@ -215,7 +248,9 @@ fn key_name(k: &str) -> String {
         "left" | "arrowleft" => "ArrowLeft".into(),
         "right" | "arrowright" => "ArrowRight".into(),
         _ if l.starts_with("num") => format!("Num{}", &k[3..]),
-        _ if l.len() > 1 && l.starts_with('f') && l[1..].chars().all(|c| c.is_ascii_digit()) => l.to_ascii_uppercase(),
+        _ if l.len() > 1 && l.starts_with('f') && l[1..].chars().all(|c| c.is_ascii_digit()) => {
+            l.to_ascii_uppercase()
+        }
         _ if k.chars().count() == 1 => k.to_uppercase(),
         _ => k.to_string(),
     }
@@ -239,7 +274,10 @@ pub struct Keymaps {
 
 impl Default for Keymaps {
     fn default() -> Self {
-        Keymaps { active: DEFAULT_PRESET.into(), presets: vec![] }
+        Keymaps {
+            active: DEFAULT_PRESET.into(),
+            presets: vec![],
+        }
     }
 }
 
@@ -270,7 +308,9 @@ impl Keymaps {
 
     /// Preset names, the default first.
     pub fn names(&self) -> Vec<String> {
-        std::iter::once(DEFAULT_PRESET.to_string()).chain(self.presets.iter().map(|p| p.name.clone())).collect()
+        std::iter::once(DEFAULT_PRESET.to_string())
+            .chain(self.presets.iter().map(|p| p.name.clone()))
+            .collect()
     }
 
     pub fn active_preset(&self) -> Option<&Preset> {
@@ -289,7 +329,10 @@ impl Keymaps {
         if !self.names().iter().any(|n| n == base) {
             return base.to_string();
         }
-        (2..).map(|i| format!("{base} {i}")).find(|n| !self.names().contains(n)).unwrap_or_else(|| base.to_string())
+        (2..)
+            .map(|i| format!("{base} {i}"))
+            .find(|n| !self.names().contains(n))
+            .unwrap_or_else(|| base.to_string())
     }
 
     /// Make sure a custom preset is active (editing the default duplicates it as "Custom").
@@ -299,7 +342,10 @@ impl Keymaps {
             return None;
         }
         let name = self.unique_name("Custom");
-        self.presets.push(Preset { name: name.clone(), overrides: BTreeMap::new() });
+        self.presets.push(Preset {
+            name: name.clone(),
+            overrides: BTreeMap::new(),
+        });
         self.active = name.clone();
         Some(name)
     }
@@ -315,7 +361,11 @@ impl Keymaps {
             }
         }
         let created = self.ensure_custom();
-        let p = self.presets.iter_mut().find(|p| p.name == self.active).ok_or("no active preset")?;
+        let p = self
+            .presets
+            .iter_mut()
+            .find(|p| p.name == self.active)
+            .ok_or("no active preset")?;
         if norm == b.defaults {
             p.overrides.remove(&b.key);
         } else {
@@ -345,10 +395,18 @@ impl Keymaps {
         let overrides = if from == DEFAULT_PRESET {
             BTreeMap::new()
         } else {
-            self.presets.iter().find(|p| p.name == from).ok_or_else(|| format!("no shortcut preset `{from}`"))?.overrides.clone()
+            self.presets
+                .iter()
+                .find(|p| p.name == from)
+                .ok_or_else(|| format!("no shortcut preset `{from}`"))?
+                .overrides
+                .clone()
         };
         let name = self.unique_name(name.unwrap_or(&format!("{from} copy")));
-        self.presets.push(Preset { name: name.clone(), overrides });
+        self.presets.push(Preset {
+            name: name.clone(),
+            overrides,
+        });
         self.active = name.clone();
         Ok(name)
     }
@@ -375,7 +433,11 @@ impl Keymaps {
         if self.names().iter().any(|n| n == to) {
             return Err(format!("a preset named `{to}` exists"));
         }
-        let p = self.presets.iter_mut().find(|p| p.name == from).ok_or_else(|| format!("no shortcut preset `{from}`"))?;
+        let p = self
+            .presets
+            .iter_mut()
+            .find(|p| p.name == from)
+            .ok_or_else(|| format!("no shortcut preset `{from}`"))?;
         p.name = to.to_string();
         if self.active == from {
             self.active = to.to_string();
@@ -389,20 +451,40 @@ impl Keymaps {
         let overrides = if name == DEFAULT_PRESET {
             BTreeMap::new()
         } else {
-            self.presets.iter().find(|p| p.name == name).ok_or_else(|| format!("no shortcut preset `{name}`"))?.overrides.clone()
+            self.presets
+                .iter()
+                .find(|p| p.name == name)
+                .ok_or_else(|| format!("no shortcut preset `{name}`"))?
+                .overrides
+                .clone()
         };
-        Ok(json!({"format": "effectcraft-shortcuts", "version": 1, "name": name, "base": DEFAULT_PRESET, "overrides": overrides}))
+        Ok(
+            json!({"format": "effectcraft-shortcuts", "version": 1, "name": name, "base": DEFAULT_PRESET, "overrides": overrides}),
+        )
     }
 
     /// Import an exported preset (renamed if the name is taken) and activate it.
     pub fn import(&mut self, doc: &Value, name: Option<&str>) -> Result<String, String> {
         let overrides: BTreeMap<String, Vec<String>> =
-            serde_json::from_value(doc.get("overrides").cloned().unwrap_or_else(|| json!({}))).map_err(|e| format!("bad shortcut preset: {e}"))?;
-        let overrides = overrides.into_iter().map(|(k, v)| (k, v.iter().filter_map(|s| normalize(s)).collect())).collect();
-        let base = name.or_else(|| doc.get("name").and_then(Value::as_str)).unwrap_or("Imported");
-        let base = if base == DEFAULT_PRESET { "Imported" } else { base };
+            serde_json::from_value(doc.get("overrides").cloned().unwrap_or_else(|| json!({})))
+                .map_err(|e| format!("bad shortcut preset: {e}"))?;
+        let overrides = overrides
+            .into_iter()
+            .map(|(k, v)| (k, v.iter().filter_map(|s| normalize(s)).collect()))
+            .collect();
+        let base = name
+            .or_else(|| doc.get("name").and_then(Value::as_str))
+            .unwrap_or("Imported");
+        let base = if base == DEFAULT_PRESET {
+            "Imported"
+        } else {
+            base
+        };
         let name = self.unique_name(base);
-        self.presets.push(Preset { name: name.clone(), overrides });
+        self.presets.push(Preset {
+            name: name.clone(),
+            overrides,
+        });
         self.active = name.clone();
         Ok(name)
     }
@@ -419,7 +501,10 @@ pub struct ShortcutTable {
 impl ShortcutTable {
     pub fn build(maps: &Keymaps, ui: &[UiCommand]) -> ShortcutTable {
         let bindables = bindables(ui);
-        let keys = bindables.iter().map(|b| (b.key.clone(), maps.keys_of(b))).collect();
+        let keys = bindables
+            .iter()
+            .map(|b| (b.key.clone(), maps.keys_of(b)))
+            .collect();
         ShortcutTable { bindables, keys }
     }
 
@@ -429,21 +514,40 @@ impl ShortcutTable {
 
     /// First shortcut of a command / menu entry (for menus).
     pub fn shortcut_of(&self, command: &str, params: &Value) -> Option<&str> {
-        self.keys.get(&binding_key(command, params)).and_then(|k| k.first()).map(String::as_str)
+        self.keys
+            .get(&binding_key(command, params))
+            .and_then(|k| k.first())
+            .map(String::as_str)
     }
 
     /// Every active binding: (keys, bindable).
     pub fn bindings(&self) -> Vec<(&str, &Bindable)> {
-        self.bindables.iter().flat_map(|b| self.keys.get(&b.key).into_iter().flatten().map(move |k| (k.as_str(), b))).collect()
+        self.bindables
+            .iter()
+            .flat_map(|b| {
+                self.keys
+                    .get(&b.key)
+                    .into_iter()
+                    .flatten()
+                    .map(move |k| (k.as_str(), b))
+            })
+            .collect()
     }
 
     /// Other bindables using `keys` in an overlapping scope.
     pub fn conflicts(&self, b: &Bindable, keys: &str) -> Vec<Conflict> {
-        let Some(keys) = normalize(keys) else { return vec![] };
+        let Some(keys) = normalize(keys) else {
+            return vec![];
+        };
         self.bindings()
             .into_iter()
             .filter(|(k, o)| *k == keys && o.key != b.key && scopes_overlap(&o.scope, &b.scope))
-            .map(|(k, o)| Conflict { keys: k.to_string(), key: o.key.clone(), label: o.label.clone(), scope: o.scope.clone() })
+            .map(|(k, o)| Conflict {
+                keys: k.to_string(),
+                key: o.key.clone(),
+                label: o.label.clone(),
+                scope: o.scope.clone(),
+            })
             .collect()
     }
 
@@ -460,7 +564,15 @@ impl ShortcutTable {
             for (i, a) in bs.iter().enumerate() {
                 for b in &bs[i + 1..] {
                     if scopes_overlap(&a.scope, &b.scope) {
-                        out.push((a.key.clone(), Conflict { keys: k.to_string(), key: b.key.clone(), label: b.label.clone(), scope: b.scope.clone() }));
+                        out.push((
+                            a.key.clone(),
+                            Conflict {
+                                keys: k.to_string(),
+                                key: b.key.clone(),
+                                label: b.label.clone(),
+                                scope: b.scope.clone(),
+                            },
+                        ));
                     }
                 }
             }

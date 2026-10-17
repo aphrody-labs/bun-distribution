@@ -414,11 +414,20 @@ mod tests {
             "Iface Destination Gateway Flags\nother 00000000 {word:08X} 0003\neth-test 00000001 {word:08X} 0003\neth-test 00000000 {word:08X} 0001\neth-test 00000000 {word:08X} 10003\n"
         );
         assert_eq!(parse_gateway_linux(routes.as_bytes(), "eth-test"), gateway);
-        assert_eq!(parse_gateway_linux(routes.as_bytes(), "missing"), Ipv4Addr::UNSPECIFIED);
-        assert_eq!(parse_gateway_linux(b"Iface Destination Gateway Flags\n".as_slice(), "eth-test"), Ipv4Addr::UNSPECIFIED);
+        assert_eq!(
+            parse_gateway_linux(routes.as_bytes(), "missing"),
+            Ipv4Addr::UNSPECIFIED
+        );
+        assert_eq!(
+            parse_gateway_linux(b"Iface Destination Gateway Flags\n".as_slice(), "eth-test"),
+            Ipv4Addr::UNSPECIFIED
+        );
         // Route flags are u32 upstream; a high flag must not hide RTF_GATEWAY.
         let ordinary = format!("header\neth-test 00000000 {word:08X} 0003\n");
-        assert_eq!(parse_gateway_linux(ordinary.as_bytes(), "eth-test"), gateway);
+        assert_eq!(
+            parse_gateway_linux(ordinary.as_bytes(), "eth-test"),
+            gateway
+        );
     }
 
     fn interface(name: &str) -> NetworkInterface {

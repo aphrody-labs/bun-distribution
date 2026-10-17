@@ -85,11 +85,17 @@ pub(super) struct WindowsFileOpener;
 impl FileOpener for WindowsFileOpener {
     fn get_apps_for_file(&self, path: &Path) -> Result<Vec<OpenWithApp>, String> {
         ensure_com_initialized();
-        let Some(extension) = dotted_extension(path) else { return Ok(Vec::new()) };
+        let Some(extension) = dotted_extension(path) else {
+            return Ok(Vec::new());
+        };
         let mut apps = Vec::new();
         for handler in handlers_for_extension(&extension)? {
             let name = handler_name(&handler)?;
-            apps.push(OpenWithApp { id: name.clone(), name, icon: None });
+            apps.push(OpenWithApp {
+                id: name.clone(),
+                name,
+                icon: None,
+            });
         }
         apps.sort_by(|a, b| a.name.cmp(&b.name));
         Ok(apps)
@@ -103,7 +109,14 @@ impl FileOpener for WindowsFileOpener {
         let file = HSTRING::from(path.as_os_str());
         // SAFETY: every string argument is a valid NUL-terminated wide string for the call.
         let instance = unsafe {
-            ShellExecuteW(None, w!("open"), &file, PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL)
+            ShellExecuteW(
+                None,
+                w!("open"),
+                &file,
+                PCWSTR::null(),
+                PCWSTR::null(),
+                SW_SHOWNORMAL,
+            )
         };
         // ShellExecute returns a value greater than 32 on success.
         let code = instance.0 as isize;
@@ -122,7 +135,9 @@ impl FileOpener for WindowsFileOpener {
             return Ok(OpenResult::not_found(path));
         }
         let Some(extension) = dotted_extension(path) else {
-            return Ok(OpenResult::PlatformError { message: "File has no extension".to_string() });
+            return Ok(OpenResult::PlatformError {
+                message: "File has no extension".to_string(),
+            });
         };
         for handler in handlers_for_extension(&extension)? {
             if handler_name(&handler)? != app_id {
@@ -142,7 +157,9 @@ impl FileOpener for WindowsFileOpener {
             }
             return Ok(OpenResult::Success);
         }
-        Ok(OpenResult::AppNotFound { app_id: app_id.to_string() })
+        Ok(OpenResult::AppNotFound {
+            app_id: app_id.to_string(),
+        })
     }
 }
 
@@ -152,7 +169,10 @@ mod tests {
 
     #[test]
     fn extensions_are_dotted() {
-        assert_eq!(dotted_extension(Path::new(r"C:\a\b.txt")), Some(".txt".into()));
+        assert_eq!(
+            dotted_extension(Path::new(r"C:\a\b.txt")),
+            Some(".txt".into())
+        );
         assert_eq!(dotted_extension(Path::new(r"C:\a\Makefile")), None);
     }
 
@@ -161,9 +181,17 @@ mod tests {
         let opener = WindowsFileOpener;
         // Every Windows install associates .txt (Notepad); the list must at least be readable.
         assert!(opener.get_apps_for_file(Path::new("x.txt")).is_ok());
-        assert!(opener.get_apps_for_file(Path::new("noextension")).unwrap().is_empty());
+        assert!(
+            opener
+                .get_apps_for_file(Path::new("noextension"))
+                .unwrap()
+                .is_empty()
+        );
         let missing = Path::new(r"C:\definitely\missing\file.txt");
-        assert_eq!(opener.open_with_default(missing).unwrap(), OpenResult::not_found(missing));
+        assert_eq!(
+            opener.open_with_default(missing).unwrap(),
+            OpenResult::not_found(missing)
+        );
         assert_eq!(
             opener.open_with_app(missing, "Notepad").unwrap(),
             OpenResult::not_found(missing)

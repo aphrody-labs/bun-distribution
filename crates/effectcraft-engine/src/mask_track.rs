@@ -80,10 +80,20 @@ impl MaskMethod {
         }
     }
     pub fn from_name(s: &str) -> Option<MaskMethod> {
-        let n: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
-        MaskMethod::ALL
-            .into_iter()
-            .find(|m| m.id().to_ascii_lowercase() == n || m.label().chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase() == n)
+        let n: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        MaskMethod::ALL.into_iter().find(|m| {
+            m.id().to_ascii_lowercase() == n
+                || m.label()
+                    .chars()
+                    .filter(|c| c.is_ascii_alphanumeric())
+                    .collect::<String>()
+                    .to_ascii_lowercase()
+                    == n
+        })
     }
     pub fn model(self) -> Model {
         match self {
@@ -110,12 +120,19 @@ pub fn flatten(p: &ShapePath, steps: usize) -> Vec<[f64; 2]> {
         let (a, b) = (p.vertices[i], p.vertices[j]);
         let o = p.out_tangents.get(i).copied().unwrap_or([0.0; 2]);
         let it = p.in_tangents.get(j).copied().unwrap_or([0.0; 2]);
-        let c = [a, [a[0] + o[0], a[1] + o[1]], [b[0] + it[0], b[1] + it[1]], b];
+        let c = [
+            a,
+            [a[0] + o[0], a[1] + o[1]],
+            [b[0] + it[0], b[1] + it[1]],
+            b,
+        ];
         for k in 0..steps {
             let t = k as f64 / steps as f64;
             let u = 1.0 - t;
             let w = [u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t];
-            out.push([0, 1].map(|d| w[0] * c[0][d] + w[1] * c[1][d] + w[2] * c[2][d] + w[3] * c[3][d]));
+            out.push(
+                [0, 1].map(|d| w[0] * c[0][d] + w[1] * c[1][d] + w[2] * c[2][d] + w[3] * c[3][d]),
+            );
         }
     }
     if !p.closed {
@@ -128,8 +145,18 @@ pub fn flatten(p: &ShapePath, steps: usize) -> Vec<[f64; 2]> {
 pub fn transform_path(p: &ShapePath, h: &trk::Homography) -> ShapePath {
     ShapePath {
         vertices: p.vertices.iter().map(|v| h.apply(*v)).collect(),
-        in_tangents: p.vertices.iter().zip(&p.in_tangents).map(|(v, t)| h.apply_tangent(*v, *t)).collect(),
-        out_tangents: p.vertices.iter().zip(&p.out_tangents).map(|(v, t)| h.apply_tangent(*v, *t)).collect(),
+        in_tangents: p
+            .vertices
+            .iter()
+            .zip(&p.in_tangents)
+            .map(|(v, t)| h.apply_tangent(*v, *t))
+            .collect(),
+        out_tangents: p
+            .vertices
+            .iter()
+            .zip(&p.out_tangents)
+            .map(|(v, t)| h.apply_tangent(*v, *t))
+            .collect(),
         closed: p.closed,
         feather: p.feather.clone(),
     }
@@ -152,7 +179,11 @@ pub fn outline_path(poly: &[[f64; 2]], n: usize, like: &ShapePath) -> ShapePath 
         in_tangents: tan.iter().map(|t| [-t[0], -t[1]]).collect(),
         out_tangents: tan,
         closed: true,
-        feather: if like.len() == n { like.feather.clone() } else { vec![] },
+        feather: if like.len() == n {
+            like.feather.clone()
+        } else {
+            vec![]
+        },
     }
 }
 
@@ -212,24 +243,56 @@ async fn run_work(w: MaskWork, shared: &MaskTrackShared) {
         s.error = Some(msg.to_string());
         s.finished = true;
     };
-    let Some(comp) = w.project.comp(w.comp) else { return fail("composition missing") };
-    let Some(layer) = comp.layer(w.layer) else { return fail("layer missing") };
-    let mut r = Renderer::new(&w.project, w.footage.as_ref(), crate::offload::analysis_opts(accel));
+    let Some(comp) = w.project.comp(w.comp) else {
+        return fail("composition missing");
+    };
+    let Some(layer) = comp.layer(w.layer) else {
+        return fail("layer missing");
+    };
+    let mut r = Renderer::new(
+        &w.project,
+        w.footage.as_ref(),
+        crate::offload::analysis_opts(accel),
+    );
     r.expr = w.expr.as_deref();
     r.cache = Some(&w.cache);
     let r = &r;
     let wr = &w;
-    let frame_at =
-        |t: Tick| crate::offload::in_passes(accel, move |a| source_frame(&r.with_accel(a), &wr.project, wr.comp, comp, layer, t, wr.expr.as_deref()));
+    let frame_at = |t: Tick| {
+        crate::offload::in_passes(accel, move |a| {
+            source_frame(
+                &r.with_accel(a),
+                &wr.project,
+                wr.comp,
+                comp,
+                layer,
+                t,
+                wr.expr.as_deref(),
+            )
+        })
+    };
     lock(&shared.state).total = w.times.len().saturating_sub(1) as u64;
-    let Some(first) = frame_at(w.times[0]).await else { return fail("the layer has no pixels to track") };
+    let Some(first) = frame_at(w.times[0]).await else {
+        return fail("the layer has no pixels to track");
+    };
     if w.method.is_face() {
         return run_face(&w, shared, first, &frame_at, accel.is_some(), layer, t0).await;
     }
-    let mut tracker = trk::mask::MaskTracker::new(w.method.model(), flatten(&w.path, 8), &trk::Frame { img: &first.0, offset: first.1 });
+    let mut tracker = trk::mask::MaskTracker::new(
+        w.method.model(),
+        flatten(&w.path, 8),
+        &trk::Frame {
+            img: &first.0,
+            offset: first.1,
+        },
+    );
     let mut path = w.path.clone();
     lock(&shared.frames).push((layer.layer_time(w.times[0]), w.times[0], path.clone(), None));
-    let mut next = if w.times.len() > 1 { frame_at(w.times[1]).await } else { None };
+    let mut next = if w.times.len() > 1 {
+        frame_at(w.times[1]).await
+    } else {
+        None
+    };
     for k in 1..w.times.len() {
         if shared.cancel.load(Ordering::Relaxed) {
             lock(&shared.state).cancelled = true;
@@ -241,13 +304,27 @@ async fn run_work(w: MaskWork, shared: &MaskTrackShared) {
         };
         let (res, nf) = crate::offload::join_fetch(
             accel.is_some(),
-            || tracker.step(&trk::Frame { img: &cur.0, offset: cur.1 }),
-            || async { if k + 1 < w.times.len() { frame_at(w.times[k + 1]).await } else { None } },
+            || {
+                tracker.step(&trk::Frame {
+                    img: &cur.0,
+                    offset: cur.1,
+                })
+            },
+            || async {
+                if k + 1 < w.times.len() {
+                    frame_at(w.times[k + 1]).await
+                } else {
+                    None
+                }
+            },
         )
         .await;
         next = nf;
         let Some(step) = res else {
-            lock(&shared.state).error = Some(format!("lost the mask's pixels at {:.3} s (too little texture inside the mask)", w.times[k].seconds()));
+            lock(&shared.state).error = Some(format!(
+                "lost the mask's pixels at {:.3} s (too little texture inside the mask)",
+                w.times[k].seconds()
+            ));
             break;
         };
         path = transform_path(&path, &step.motion);
@@ -255,7 +332,11 @@ async fn run_work(w: MaskWork, shared: &MaskTrackShared) {
         let mut s = lock(&shared.state);
         s.done = k as u64;
         s.elapsed = t0.elapsed().as_secs_f64();
-        s.fps = if s.elapsed > 0.0 { k as f64 / s.elapsed } else { 0.0 };
+        s.fps = if s.elapsed > 0.0 {
+            k as f64 / s.elapsed
+        } else {
+            0.0
+        };
         s.time = w.times[k].seconds();
         crate::offload::report(s.done, s.total);
     }
@@ -266,7 +347,9 @@ async fn run_work(w: MaskWork, shared: &MaskTrackShared) {
 
 /// Face tracking: the face outline keys the mask; Detailed Features adds the landmarks.
 /// `deferred`: frames render in passes (awaited one after the other).
-async fn run_face<F: std::future::Future<Output = Option<(Arc<effectcraft_raster::Image>, [f64; 2])>>>(
+async fn run_face<
+    F: std::future::Future<Output = Option<(Arc<effectcraft_raster::Image>, [f64; 2])>>,
+>(
     w: &MaskWork,
     shared: &MaskTrackShared,
     first: (Arc<effectcraft_raster::Image>, [f64; 2]),
@@ -277,16 +360,32 @@ async fn run_face<F: std::future::Future<Output = Option<(Arc<effectcraft_raster
 ) {
     let detailed = w.method == MaskMethod::FaceDetailed;
     let b = trk::mask::bounds(&flatten(&w.path, 8));
-    let Some((mut tracker, fit)) = trk::face::FaceTracker::new_with(&trk::Frame { img: &first.0, offset: first.1 }, b, w.face_model.clone()) else {
+    let Some((mut tracker, fit)) = trk::face::FaceTracker::new_with(
+        &trk::Frame {
+            img: &first.0,
+            offset: first.1,
+        },
+        b,
+        w.face_model.clone(),
+    ) else {
         let mut s = lock(&shared.state);
         s.error = Some("no face found inside the mask (draw the mask around a face)".into());
         s.finished = true;
         return;
     };
-    let key = |fit: &trk::face::FaceFit| (outline_path(&fit.outline, 16, &w.path), detailed.then_some(fit.landmarks));
+    let key = |fit: &trk::face::FaceFit| {
+        (
+            outline_path(&fit.outline, 16, &w.path),
+            detailed.then_some(fit.landmarks),
+        )
+    };
     let (path, pts) = key(&fit);
     lock(&shared.frames).push((layer.layer_time(w.times[0]), w.times[0], path, pts));
-    let mut next = if w.times.len() > 1 { frame_at(w.times[1]).await } else { None };
+    let mut next = if w.times.len() > 1 {
+        frame_at(w.times[1]).await
+    } else {
+        None
+    };
     for k in 1..w.times.len() {
         if shared.cancel.load(Ordering::Relaxed) {
             lock(&shared.state).cancelled = true;
@@ -298,13 +397,25 @@ async fn run_face<F: std::future::Future<Output = Option<(Arc<effectcraft_raster
         };
         let (res, nf) = crate::offload::join_fetch(
             deferred,
-            || tracker.step(&trk::Frame { img: &cur.0, offset: cur.1 }),
-            || async { if k + 1 < w.times.len() { frame_at(w.times[k + 1]).await } else { None } },
+            || {
+                tracker.step(&trk::Frame {
+                    img: &cur.0,
+                    offset: cur.1,
+                })
+            },
+            || async {
+                if k + 1 < w.times.len() {
+                    frame_at(w.times[k + 1]).await
+                } else {
+                    None
+                }
+            },
         )
         .await;
         next = nf;
         let Some(fit) = res else {
-            lock(&shared.state).error = Some(format!("lost the face at {:.3} s", w.times[k].seconds()));
+            lock(&shared.state).error =
+                Some(format!("lost the face at {:.3} s", w.times[k].seconds()));
             break;
         };
         let (path, pts) = key(&fit);
@@ -312,7 +423,11 @@ async fn run_face<F: std::future::Future<Output = Option<(Arc<effectcraft_raster
         let mut s = lock(&shared.state);
         s.done = k as u64;
         s.elapsed = t0.elapsed().as_secs_f64();
-        s.fps = if s.elapsed > 0.0 { k as f64 / s.elapsed } else { 0.0 };
+        s.fps = if s.elapsed > 0.0 {
+            k as f64 / s.elapsed
+        } else {
+            0.0
+        };
         s.time = w.times[k].seconds();
         crate::offload::report(s.done, s.total);
     }
@@ -330,28 +445,55 @@ pub(crate) fn face_points_group(p: &mut Project, comp: ItemId, layer: LayerId) -
 pub(crate) fn face_effect(p: &mut Project, comp: ItemId, layer: LayerId, id: &str) -> Option<Uid> {
     let spec = effectcraft_effects::find(id)?;
     let l = p.comp(comp)?.layer(layer)?;
-    if let Some(g) = l.effects().and_then(|fx| fx.groups().find(|g| g.match_id == spec.id)) {
+    if let Some(g) = l
+        .effects()
+        .and_then(|fx| fx.groups().find(|g| g.match_id == spec.id))
+    {
         return Some(g.uid);
     }
     let (w, h) = effectcraft_render::source_size(p, l);
-    let size = if w == 0 { p.comp(comp).map(|c| [c.width as f64, c.height as f64]).unwrap_or([1920.0, 1080.0]) } else { [w as f64, h as f64] };
+    let size = if w == 0 {
+        p.comp(comp)
+            .map(|c| [c.width as f64, c.height as f64])
+            .unwrap_or([1920.0, 1080.0])
+    } else {
+        [w as f64, h as f64]
+    };
     let mut next = p.next_id;
-    let g = effectcraft_effects::instantiate(spec, &mut effectcraft_project::build::Ids(&mut next), spec.name, size);
+    let g = effectcraft_effects::instantiate(
+        spec,
+        &mut effectcraft_project::build::Ids(&mut next),
+        spec.name,
+        size,
+    );
     let uid = g.uid;
-    let fx = p.comp_mut(comp)?.layer_mut(layer)?.props.sub_mut("effects")?;
+    let fx = p
+        .comp_mut(comp)?
+        .layer_mut(layer)?
+        .props
+        .sub_mut("effects")?;
     fx.children.push(g.into());
     p.next_id = next;
     Some(uid)
 }
 
 fn write_frames(p: &mut Project, job: &MaskTrackJob, frames: &[MaskFrame]) {
-    let points = if frames.iter().any(|f| f.3.is_some()) { face_points_group(p, job.comp, job.layer) } else { None };
-    let Some(layer) = p.comp_mut(job.comp).and_then(|c| c.layer_mut(job.layer)) else { return };
+    let points = if frames.iter().any(|f| f.3.is_some()) {
+        face_points_group(p, job.comp, job.layer)
+    } else {
+        None
+    };
+    let Some(layer) = p.comp_mut(job.comp).and_then(|c| c.layer_mut(job.layer)) else {
+        return;
+    };
     if let Some(g) = layer.props.find_group_mut(job.mask)
         && let Some(pr) = g.get_mut("path")
     {
         for (lt, _, path, _) in frames {
-            effectcraft_keyframe::set_key(&mut pr.keys, Keyframe::new(*lt, Value::Path(path.clone())));
+            effectcraft_keyframe::set_key(
+                &mut pr.keys,
+                Keyframe::new(*lt, Value::Path(path.clone())),
+            );
         }
     }
     if let Some(g) = points.and_then(|u| layer.props.find_group_mut(u)) {
@@ -359,7 +501,10 @@ fn write_frames(p: &mut Project, job: &MaskTrackJob, frames: &[MaskFrame]) {
             let Some(pts) = pts else { continue };
             for (i, (id, _, _)) in trk::face::LANDMARKS.iter().enumerate() {
                 if let Some(pr) = g.get_mut(id) {
-                    effectcraft_keyframe::set_key(&mut pr.keys, Keyframe::new(*lt, Value::Vec2(pts[i])));
+                    effectcraft_keyframe::set_key(
+                        &mut pr.keys,
+                        Keyframe::new(*lt, Value::Vec2(pts[i])),
+                    );
                 }
             }
         }
@@ -369,12 +514,16 @@ fn write_frames(p: &mut Project, job: &MaskTrackJob, frames: &[MaskFrame]) {
 impl Session {
     /// Whether a mask track is running.
     pub fn is_mask_tracking(&self) -> bool {
-        self.mask_job.as_ref().is_some_and(|j| !j.is_finished()) || self.offloaded(crate::offload::JobKind::MaskTrack).is_some()
+        self.mask_job.as_ref().is_some_and(|j| !j.is_finished())
+            || self.offloaded(crate::offload::JobKind::MaskTrack).is_some()
     }
 
     /// Live progress of the running (or just finished) mask track.
     pub fn mask_track_progress(&self) -> Option<TrackProgress> {
-        self.mask_job.as_ref().map(|j| j.progress()).or_else(|| self.offloaded(crate::offload::JobKind::MaskTrack).map(|j| j.progress.track()))
+        self.mask_job.as_ref().map(|j| j.progress()).or_else(|| {
+            self.offloaded(crate::offload::JobKind::MaskTrack)
+                .map(|j| j.progress.track())
+        })
     }
 
     /// Cancel the running mask track (frames tracked so far are kept).
@@ -391,18 +540,40 @@ impl Session {
         }
     }
 
-    pub(crate) fn start_mask_track(&mut self, work: MaskWork, mask: Uid, direction: Direction, wait: bool) -> Result<(), String> {
+    pub(crate) fn start_mask_track(
+        &mut self,
+        work: MaskWork,
+        mask: Uid,
+        direction: Direction,
+        wait: bool,
+    ) -> Result<(), String> {
         if self.is_mask_tracking() || self.is_tracking() {
             return Err("a track analysis is already running".into());
         }
         self.poll_mask_track();
         if !wait && self.offloads() && !work.method.is_face() {
-            let MaskWork { comp, layer, path, method, times, .. } = work;
-            return self.offload_analysis(crate::offload::WorkerJob::MaskTrack { comp, layer, mask, direction, path, method, times });
+            let MaskWork {
+                comp,
+                layer,
+                path,
+                method,
+                times,
+                ..
+            } = work;
+            return self.offload_analysis(crate::offload::WorkerJob::MaskTrack {
+                comp,
+                layer,
+                mask,
+                direction,
+                path,
+                method,
+                times,
+            });
         }
         let wait = wait || cfg!(target_arch = "wasm32");
         let levels = self.prefs.general.undo_levels as usize;
-        self.history.record("Track Mask", self.project.clone(), levels);
+        self.history
+            .record("Track Mask", self.project.clone(), levels);
         let shared = Arc::new(MaskTrackShared::default());
         let (comp, layer) = (work.comp, work.layer);
         let thread = if wait {
@@ -420,7 +591,14 @@ impl Session {
                     .map_err(|e| e.to_string())?,
             )
         };
-        self.mask_job = Some(MaskTrackJob { shared, thread, comp, layer, mask, direction });
+        self.mask_job = Some(MaskTrackJob {
+            shared,
+            thread,
+            comp,
+            layer,
+            mask,
+            direction,
+        });
         self.poll_mask_track();
         Ok(())
     }
@@ -428,7 +606,9 @@ impl Session {
     /// Key newly tracked frames and move the CTI with them; drop the job once it finished.
     /// Frontends call this every frame while tracking.
     pub fn poll_mask_track(&mut self) -> bool {
-        let Some(job) = &self.mask_job else { return false };
+        let Some(job) = &self.mask_job else {
+            return false;
+        };
         let frames = std::mem::take(&mut *lock(&job.shared.frames));
         let finished = job.is_finished();
         let changed = !frames.is_empty();
@@ -449,9 +629,15 @@ impl Session {
             let msg = match (&st.error, st.cancelled) {
                 (Some(e), _) => format!("Mask tracking stopped: {e}"),
                 (None, true) => format!("Mask tracking stopped after {} frame(s)", st.done),
-                _ => format!("Tracked the mask over {} frame(s) in {:.1} s", st.done, st.elapsed),
+                _ => format!(
+                    "Tracked the mask over {} frame(s) in {:.1} s",
+                    st.done, st.elapsed
+                ),
             };
-            self.events.push(Event::Toast { message: msg, error: st.error.is_some() });
+            self.events.push(Event::Toast {
+                message: msg,
+                error: st.error.is_some(),
+            });
         }
         changed || finished
     }
@@ -463,20 +649,35 @@ mod tests {
 
     #[test]
     fn methods_parse_and_paths_transform() {
-        assert_eq!(MaskMethod::from_name("positionScaleRotationSkew"), Some(MaskMethod::PositionScaleRotationSkew));
-        assert_eq!(MaskMethod::from_name("Position & Scale"), Some(MaskMethod::PositionScale));
-        assert_eq!(MaskMethod::from_name("perspective"), Some(MaskMethod::Perspective));
+        assert_eq!(
+            MaskMethod::from_name("positionScaleRotationSkew"),
+            Some(MaskMethod::PositionScaleRotationSkew)
+        );
+        assert_eq!(
+            MaskMethod::from_name("Position & Scale"),
+            Some(MaskMethod::PositionScale)
+        );
+        assert_eq!(
+            MaskMethod::from_name("perspective"),
+            Some(MaskMethod::Perspective)
+        );
         let p = ShapePath::ellipse([50.0, 40.0], 40.0, 20.0);
         let poly = flatten(&p, 8);
         assert_eq!(poly.len(), p.len() * 8);
-        assert!(poly.iter().all(|q| ((q[0] - 50.0) / 20.0).powi(2) + ((q[1] - 40.0) / 10.0).powi(2) < 1.01));
+        assert!(
+            poly.iter()
+                .all(|q| ((q[0] - 50.0) / 20.0).powi(2) + ((q[1] - 40.0) / 10.0).powi(2) < 1.01)
+        );
         let h = trk::Homography([[0.0, -2.0, 10.0], [2.0, 0.0, 0.0], [0.0, 0.0, 1.0]]);
         let q = transform_path(&p, &h);
         for i in 0..p.len() {
             let v = h.apply(p.vertices[i]);
             assert!((q.vertices[i][0] - v[0]).abs() < 1e-9);
             let t = p.out_tangents[i];
-            assert!((q.out_tangents[i][0] + 2.0 * t[1]).abs() < 1e-9 && (q.out_tangents[i][1] - 2.0 * t[0]).abs() < 1e-9);
+            assert!(
+                (q.out_tangents[i][0] + 2.0 * t[1]).abs() < 1e-9
+                    && (q.out_tangents[i][1] - 2.0 * t[0]).abs() < 1e-9
+            );
         }
     }
 }

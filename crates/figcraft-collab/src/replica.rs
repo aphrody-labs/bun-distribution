@@ -52,7 +52,10 @@ impl Replica {
     pub fn new(mut doc: Document) -> Replica {
         let mut positions = Positions::new();
         let mut assign = |ids: &[NodeId]| {
-            for (id, k) in ids.iter().zip(frac::n_between(None, None, ids.len()).unwrap_or_default()) {
+            for (id, k) in ids
+                .iter()
+                .zip(frac::n_between(None, None, ids.len()).unwrap_or_default())
+            {
                 positions.insert(*id, k);
             }
         };
@@ -61,7 +64,12 @@ impl Replica {
             assign(&n.children);
         }
         // Pages that aren't listed (the library store) still need a key.
-        let roots: Vec<NodeId> = doc.nodes().filter(|n| n.parent.is_none()).map(|n| n.id).filter(|id| !positions.contains_key(id)).collect();
+        let roots: Vec<NodeId> = doc
+            .nodes()
+            .filter(|n| n.parent.is_none())
+            .map(|n| n.id)
+            .filter(|id| !positions.contains_key(id))
+            .collect();
         for id in roots {
             positions.insert(id, FIRST_KEY.to_string());
         }
@@ -72,7 +80,10 @@ impl Replica {
 
     /// Rebuild a replica from a [`snapshot`](Self::snapshot).
     pub fn from_snapshot(changes: &[Change]) -> Result<Replica, Error> {
-        let mut r = Replica { doc: Document::without_pages(""), positions: Positions::new() };
+        let mut r = Replica {
+            doc: Document::without_pages(""),
+            positions: Positions::new(),
+        };
         r.apply(changes, Mode::Strict)?;
         if r.doc.pages.is_empty() {
             return Err(Error::Invalid("a snapshot needs a page".into()));
@@ -85,7 +96,12 @@ impl Replica {
     pub fn snapshot(&self) -> Result<Vec<Change>, Error> {
         let mut out = Vec::with_capacity(self.doc.node_count() + 8);
         let mut roots = self.doc.pages.clone();
-        roots.extend(self.doc.nodes().filter(|n| n.parent.is_none() && !self.doc.pages.contains(&n.id)).map(|n| n.id));
+        roots.extend(
+            self.doc
+                .nodes()
+                .filter(|n| n.parent.is_none() && !self.doc.pages.contains(&n.id))
+                .map(|n| n.id),
+        );
         for r in roots {
             for id in self.doc.subtree(r) {
                 if let Some(n) = self.doc.node(id) {
@@ -122,7 +138,9 @@ impl Replica {
     pub fn value(&self, target: &Target) -> Result<Option<Json>, Error> {
         match target {
             Target::Node(id, prop) => {
-                let Some(n) = self.doc.node(*id) else { return Ok(None) };
+                let Some(n) = self.doc.node(*id) else {
+                    return Ok(None);
+                };
                 match prop {
                     Prop::Parent => Json::of(&n.parent),
                     Prop::Position => Json::of(self.key(*id)),
@@ -142,7 +160,10 @@ impl Replica {
     /// Where `id` with `key` goes among `siblings` (sorted by `(key, id)`; `id` itself skipped):
     /// how many of them sort before it.
     fn slot(&self, siblings: &[NodeId], id: NodeId, key: &str) -> usize {
-        siblings.iter().filter(|c| **c != id && (self.key(**c), **c) < (key, id)).count()
+        siblings
+            .iter()
+            .filter(|c| **c != id && (self.key(**c), **c) < (key, id))
+            .count()
     }
 
     /// Apply `changes` in order. Node changes come first in a batch made by [`diff`](crate::diff);
@@ -175,7 +196,13 @@ impl Replica {
     /// Apply one change. Returns what of the page list needs rebuilding.
     fn apply_one(&mut self, c: &Change, out: &mut Applied) -> Result<Relist, Error> {
         match c {
-            Change::Create { id, kind, parent, position, props } => {
+            Change::Create {
+                id,
+                kind,
+                parent,
+                position,
+                props,
+            } => {
                 frac::validate(position).map_err(|e| Error::Invalid(e.to_string()))?;
                 if self.doc.contains(*id) {
                     return Err(Error::Invalid(format!("node {id} already exists")));
@@ -184,7 +211,9 @@ impl Replica {
                 let mut node = Node::new(*id, kind, "", 0.0, 0.0);
                 for (p, v) in props {
                     if *p == Prop::Kind {
-                        return Err(Error::Invalid("a created node's kind is its own field".into()));
+                        return Err(Error::Invalid(
+                            "a created node's kind is its own field".into(),
+                        ));
                     }
                     p.set(&mut node, v)?;
                 }
@@ -194,28 +223,51 @@ impl Replica {
                         self.doc.insert_page(node).map_err(doc_err)?;
                     }
                     (false, Some(p)) => {
-                        let at = self.slot(&self.doc.get(*p).map_err(doc_err)?.children, *id, position);
+                        let at =
+                            self.slot(&self.doc.get(*p).map_err(doc_err)?.children, *id, position);
                         self.doc.insert(node, *p, Some(at)).map_err(doc_err)?;
                     }
-                    _ => return Err(Error::Invalid("pages, and only pages, have no parent".into())),
+                    _ => {
+                        return Err(Error::Invalid(
+                            "pages, and only pages, have no parent".into(),
+                        ));
+                    }
                 }
                 self.positions.insert(*id, position.clone());
-                Ok(if is_page { Relist::Page(*id) } else { Relist::No })
+                Ok(if is_page {
+                    Relist::Page(*id)
+                } else {
+                    Relist::No
+                })
             }
-            Change::Set { id, prop: Prop::Parent, value } => {
+            Change::Set {
+                id,
+                prop: Prop::Parent,
+                value,
+            } => {
                 let parent: Option<NodeId> = value.read("parent")?;
                 let node = self.doc.get(*id).map_err(doc_err)?;
                 match (node.is_page(), parent) {
                     (true, None) => Ok(Relist::No),
                     (false, Some(p)) => {
-                        let at = self.slot(&self.doc.get(p).map_err(doc_err)?.children, *id, self.key(*id));
+                        let at = self.slot(
+                            &self.doc.get(p).map_err(doc_err)?.children,
+                            *id,
+                            self.key(*id),
+                        );
                         self.doc.place(*id, p, at).map_err(doc_err)?;
                         Ok(Relist::No)
                     }
-                    _ => Err(Error::Invalid("pages, and only pages, have no parent".into())),
+                    _ => Err(Error::Invalid(
+                        "pages, and only pages, have no parent".into(),
+                    )),
                 }
             }
-            Change::Set { id, prop: Prop::Position, value } => {
+            Change::Set {
+                id,
+                prop: Prop::Position,
+                value,
+            } => {
                 let key: String = value.read("position")?;
                 frac::validate(&key).map_err(|e| Error::Invalid(e.to_string()))?;
                 let node = self.doc.get(*id).map_err(doc_err)?;
@@ -230,11 +282,17 @@ impl Replica {
                     }
                 }
             }
-            Change::Set { id, prop: Prop::Kind, value } => {
+            Change::Set {
+                id,
+                prop: Prop::Kind,
+                value,
+            } => {
                 let kind: NodeKind = value.read("kind")?;
                 let node = self.doc.get_mut(*id).map_err(doc_err)?;
                 if node.is_page() != matches!(kind, NodeKind::Page { .. }) {
-                    return Err(Error::Invalid("a node can't become or stop being a page".into()));
+                    return Err(Error::Invalid(
+                        "a node can't become or stop being a page".into(),
+                    ));
                 }
                 node.kind = kind;
                 Ok(Relist::No)
@@ -245,7 +303,9 @@ impl Replica {
                 Ok(Relist::No)
             }
             Change::Delete { id } => {
-                let Some(n) = self.doc.node(*id) else { return Ok(Relist::No) };
+                let Some(n) = self.doc.node(*id) else {
+                    return Ok(Relist::No);
+                };
                 let page = n.is_page();
                 let gone = self.doc.subtree(*id);
                 self.doc.remove(*id).map_err(doc_err)?;
@@ -256,7 +316,11 @@ impl Replica {
                 Ok(if page { Relist::Page(*id) } else { Relist::No })
             }
             Change::SetDoc { .. } | Change::Put { .. } | Change::Remove { .. } => {
-                Ok(if docprops::apply(&mut self.doc, c)? { Relist::All } else { Relist::No })
+                Ok(if docprops::apply(&mut self.doc, c)? {
+                    Relist::All
+                } else {
+                    Relist::No
+                })
             }
         }
     }
@@ -268,10 +332,23 @@ impl Replica {
         let mut ids: BTreeSet<NodeId> = extra;
         ids.extend(self.doc.pages.iter().copied());
         if all {
-            ids.extend(self.doc.nodes().filter(|n| n.parent.is_none()).map(|n| n.id));
+            ids.extend(
+                self.doc
+                    .nodes()
+                    .filter(|n| n.parent.is_none())
+                    .map(|n| n.id),
+            );
         }
-        let mut pages: Vec<NodeId> =
-            ids.into_iter().filter(|p| Some(*p) != store && self.doc.node(*p).is_some_and(|n| n.is_page() && n.parent.is_none())).collect();
+        let mut pages: Vec<NodeId> = ids
+            .into_iter()
+            .filter(|p| {
+                Some(*p) != store
+                    && self
+                        .doc
+                        .node(*p)
+                        .is_some_and(|n| n.is_page() && n.parent.is_none())
+            })
+            .collect();
         pages.sort_by(|a, b| (self.key(*a), *a).cmp(&(self.key(*b), *b)));
         self.doc.pages = pages;
     }
@@ -283,7 +360,9 @@ impl Replica {
         }
         let finite = |v: f64| v.is_finite() && v.abs() <= MAX_COORD;
         for id in touched {
-            let Some(n) = self.doc.node(*id) else { continue };
+            let Some(n) = self.doc.node(*id) else {
+                continue;
+            };
             if !n.children.is_empty() && !n.kind.is_container() {
                 return Err(Error::Invalid(format!("{id} can't contain layers")));
             }
@@ -311,7 +390,13 @@ pub(crate) fn create_change(n: &Node, key: &str) -> Result<Change, Error> {
             props.push((*p, p.get(n)?));
         }
     }
-    Ok(Change::Create { id: n.id, kind: Json::of(&n.kind)?, parent: n.parent, position: key.to_string(), props })
+    Ok(Change::Create {
+        id: n.id,
+        kind: Json::of(&n.kind)?,
+        parent: n.parent,
+        position: key.to_string(),
+        props,
+    })
 }
 
 /// What a change needs of the page list.

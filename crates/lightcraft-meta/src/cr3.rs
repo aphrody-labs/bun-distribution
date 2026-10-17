@@ -133,7 +133,14 @@ pub struct Cr3ImageArea {
 
 impl Cr3ImageArea {
     pub fn parse(payload: &[u8]) -> Option<Self> {
-        let bounds = |at: usize| Some([be16(payload, at)?, be16(payload, at + 2)?, be16(payload, at + 4)?, be16(payload, at + 6)?]);
+        let bounds = |at: usize| {
+            Some([
+                be16(payload, at)?,
+                be16(payload, at + 2)?,
+                be16(payload, at + 4)?,
+                be16(payload, at + 6)?,
+            ])
+        };
         let width = be16(payload, 4)?;
         let height = be16(payload, 6)?;
         if width == 0 || height == 0 {
@@ -154,12 +161,24 @@ impl Cr3ImageArea {
 impl Cr3Track {
     /// Decode this track's image coding descriptor without reading its pixel data.
     pub fn compression(&self, bytes: &[u8]) -> Option<Cr3Compression> {
-        let Cr3TrackKind::Raw { cmp1: Some((at, len)), .. } = self.kind else { return None };
+        let Cr3TrackKind::Raw {
+            cmp1: Some((at, len)),
+            ..
+        } = self.kind
+        else {
+            return None;
+        };
         Cr3Compression::parse(bytes.get(at..at.checked_add(len)?)?)
     }
 
     pub fn image_area(&self, bytes: &[u8]) -> Option<Cr3ImageArea> {
-        let Cr3TrackKind::Raw { iad1: Some((at, len)), .. } = self.kind else { return None };
+        let Cr3TrackKind::Raw {
+            iad1: Some((at, len)),
+            ..
+        } = self.kind
+        else {
+            return None;
+        };
         Cr3ImageArea::parse(bytes.get(at..at.checked_add(len)?)?)
     }
 }
@@ -195,25 +214,54 @@ impl Cr3<'_> {
             if track.kind != Cr3TrackKind::Other(*b"CTMD") {
                 continue;
             }
-            let Some(sample) = track.data.and_then(|(at, len)| at.checked_add(len).and_then(|end| bytes.get(at..end))) else { continue };
+            let Some(sample) = track
+                .data
+                .and_then(|(at, len)| at.checked_add(len).and_then(|end| bytes.get(at..end)))
+            else {
+                continue;
+            };
             let mut at = 0usize;
             while budget > 0 {
                 budget -= 1;
-                let Some(len) = le32(sample, at).and_then(|v| usize::try_from(v).ok()) else { break };
-                let Some(end) = at.checked_add(len).filter(|&end| len >= 12 && end <= sample.len()) else { break };
-                let Some(record) = sample.get(at..end) else { break };
+                let Some(len) = le32(sample, at).and_then(|v| usize::try_from(v).ok()) else {
+                    break;
+                };
+                let Some(end) = at
+                    .checked_add(len)
+                    .filter(|&end| len >= 12 && end <= sample.len())
+                else {
+                    break;
+                };
+                let Some(record) = sample.get(at..end) else {
+                    break;
+                };
                 let Some(kind) = le16(record, 4) else { break };
                 if matches!(kind, 7..=9) {
                     let mut item_at = 12usize;
                     while budget > 0 {
                         budget -= 1;
-                        let Some(item_len) = le32(record, item_at).and_then(|v| usize::try_from(v).ok()) else { break };
-                        let Some(item_end) = item_at.checked_add(item_len).filter(|&end| item_len >= 8 && end <= record.len()) else { break };
-                        let Some(item) = record.get(item_at..item_end) else { break };
+                        let Some(item_len) =
+                            le32(record, item_at).and_then(|v| usize::try_from(v).ok())
+                        else {
+                            break;
+                        };
+                        let Some(item_end) = item_at
+                            .checked_add(item_len)
+                            .filter(|&end| item_len >= 8 && end <= record.len())
+                        else {
+                            break;
+                        };
+                        let Some(item) = record.get(item_at..item_end) else {
+                            break;
+                        };
                         if let Some(tag @ (0x8769 | 0x927c)) = le32(item, 4)
                             && let Some(data) = item.get(8..)
                         {
-                            out.push(Cr3TimedExif { record_type: kind, tag, data });
+                            out.push(Cr3TimedExif {
+                                record_type: kind,
+                                tag,
+                                data,
+                            });
                         }
                         item_at = item_end;
                     }
@@ -225,9 +273,13 @@ impl Cr3<'_> {
     }
 }
 
-const CANON_UUID: [u8; 16] = [0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b, 0x6a, 0x48];
+const CANON_UUID: [u8; 16] = [
+    0x85, 0xc0, 0xb6, 0x87, 0x82, 0x0f, 0x11, 0xe0, 0x81, 0x11, 0xf4, 0xce, 0x46, 0x2b, 0x6a, 0x48,
+];
 /// The `uuid` of the top-level box holding the XMP packet.
-pub const XMP_UUID: [u8; 16] = [0xbe, 0x7a, 0xcf, 0xcb, 0x97, 0xa9, 0x42, 0xe8, 0x9c, 0x71, 0x99, 0x94, 0x91, 0xe3, 0xaf, 0xac];
+pub const XMP_UUID: [u8; 16] = [
+    0xbe, 0x7a, 0xcf, 0xcb, 0x97, 0xa9, 0x42, 0xe8, 0x9c, 0x71, 0x99, 0x94, 0x91, 0xe3, 0xaf, 0xac,
+];
 const MAX_DEPTH: usize = 12;
 const MAX_BOXES: usize = 4096;
 /// A `VisualSampleEntry` (78 bytes after the box header) plus 4 bytes Canon adds before the child boxes.
@@ -271,7 +323,9 @@ fn boxes(bytes: &[u8], from: usize, to: usize, budget: &mut usize) -> Vec<BoxRef
     let to = to.min(bytes.len());
     while at.saturating_add(8) <= to && *budget > 0 {
         *budget -= 1;
-        let (Some(size), Some(kind)) = (be32(bytes, at), bytes.get(at + 4..at + 8)) else { break };
+        let (Some(size), Some(kind)) = (be32(bytes, at), bytes.get(at + 4..at + 8)) else {
+            break;
+        };
         let mut kind4 = [0u8; 4];
         kind4.copy_from_slice(kind);
         let (len, mut hdr) = match size {
@@ -282,16 +336,28 @@ fn boxes(bytes: &[u8], from: usize, to: usize, budget: &mut usize) -> Vec<BoxRef
             },
             n => (n as usize, 8),
         };
-        let Some(end) = at.checked_add(len).filter(|&e| e <= to && len >= hdr) else { break };
+        let Some(end) = at.checked_add(len).filter(|&e| e <= to && len >= hdr) else {
+            break;
+        };
         let mut uuid = None;
         if &kind4 == b"uuid" {
-            let Some(u) = bytes.get(at + hdr..at + hdr + 16).filter(|_| at + hdr + 16 <= end) else { break };
+            let Some(u) = bytes
+                .get(at + hdr..at + hdr + 16)
+                .filter(|_| at + hdr + 16 <= end)
+            else {
+                break;
+            };
             let mut a = [0u8; 16];
             a.copy_from_slice(u);
             uuid = Some(a);
             hdr += 16;
         }
-        out.push(BoxRef { kind: kind4, body: at + hdr, end, uuid });
+        out.push(BoxRef {
+            kind: kind4,
+            body: at + hdr,
+            end,
+            uuid,
+        });
         at = end;
     }
     out
@@ -348,7 +414,11 @@ fn trak(bytes: &[u8], t: &BoxRef, budget: &mut usize) -> Option<Cr3Track> {
         let body = bytes.get(b.body..b.end)?;
         match &b.kind {
             // full box: version/flags, entry count, entries
-            b"stsd" if be32(body, 4)? > 0 => kind = boxes(bytes, b.body + 8, b.end, budget).first().map(|e| sample_entry(bytes, e, budget)),
+            b"stsd" if be32(body, 4)? > 0 => {
+                kind = boxes(bytes, b.body + 8, b.end, budget)
+                    .first()
+                    .map(|e| sample_entry(bytes, e, budget))
+            }
             // version/flags, sample_size (0 = per-sample table), count, sizes
             b"stsz" => {
                 size = match be32(body, 4)? {
@@ -358,13 +428,17 @@ fn trak(bytes: &[u8], t: &BoxRef, budget: &mut usize) -> Option<Cr3Track> {
                     _ => None,
                 }
             }
-            b"co64" if be32(body, 4)? > 0 => offset = be64(body, 8).and_then(|v| usize::try_from(v).ok()),
+            b"co64" if be32(body, 4)? > 0 => {
+                offset = be64(body, 8).and_then(|v| usize::try_from(v).ok())
+            }
             b"stco" if be32(body, 4)? > 0 => offset = be32(body, 8).map(|v| v as usize),
             _ => {}
         }
     }
     let data = match (offset, size) {
-        (Some(o), Some(s)) if o.checked_add(s as usize).is_some_and(|e| e <= bytes.len()) => Some((o, s as usize)),
+        (Some(o), Some(s)) if o.checked_add(s as usize).is_some_and(|e| e <= bytes.len()) => {
+            Some((o, s as usize))
+        }
         _ => None,
     };
     Some(Cr3Track { kind: kind?, data })
@@ -374,12 +448,19 @@ fn sample_entry(bytes: &[u8], e: &BoxRef, budget: &mut usize) -> Cr3TrackKind {
     if &e.kind != b"CRAW" {
         return Cr3TrackKind::Other(e.kind);
     }
-    let Some(body) = bytes.get(e.body..e.end) else { return Cr3TrackKind::Other(e.kind) };
+    let Some(body) = bytes.get(e.body..e.end) else {
+        return Cr3TrackKind::Other(e.kind);
+    };
     let (Some(width), Some(height)) = (be16(body, 24), be16(body, 26)) else {
         return Cr3TrackKind::Other(e.kind);
     };
     let (mut cmp1, mut iad1, mut rendered) = (None, None, None);
-    for c in boxes(bytes, e.body.saturating_add(CRAW_CHILDREN_AT), e.end, budget) {
+    for c in boxes(
+        bytes,
+        e.body.saturating_add(CRAW_CHILDREN_AT),
+        e.end,
+        budget,
+    ) {
         match &c.kind {
             b"JPEG" => rendered = Some(Cr3TrackKind::Jpeg),
             // HDR-capable cameras also put an HEVC preview in a CRAW entry,
@@ -404,14 +485,21 @@ fn sample_entry(bytes: &[u8], e: &BoxRef, budget: &mut usize) -> Cr3TrackKind {
     {
         return kind;
     }
-    Cr3TrackKind::Raw { width, height, cmp1, iad1 }
+    Cr3TrackKind::Raw {
+        width,
+        height,
+        cmp1,
+        iad1,
+    }
 }
 
 fn be16(b: &[u8], at: usize) -> Option<u16> {
-    b.get(at..at.checked_add(2)?).map(|s| u16::from_be_bytes([s[0], s[1]]))
+    b.get(at..at.checked_add(2)?)
+        .map(|s| u16::from_be_bytes([s[0], s[1]]))
 }
 fn be32(b: &[u8], at: usize) -> Option<u32> {
-    b.get(at..at.checked_add(4)?).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
+    b.get(at..at.checked_add(4)?)
+        .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]))
 }
 fn be64(b: &[u8], at: usize) -> Option<u64> {
     let s = b.get(at..at.checked_add(8)?)?;
@@ -436,9 +524,23 @@ pub fn merged_exif(c: &Cr3<'_>) -> Option<Vec<u8>> {
     use lightcraft_tiff::{IfdBuilder, Tiff, TiffWriter, tags as t};
     let ifd0 = Tiff::parse(c.cmt[0]?).ok()?;
     let order = ifd0.order;
-    let first = |i: usize| c.cmt[i].and_then(|b| Tiff::parse(b).ok()).and_then(|t| t.ifds.into_iter().next());
+    let first = |i: usize| {
+        c.cmt[i]
+            .and_then(|b| Tiff::parse(b).ok())
+            .and_then(|t| t.ifds.into_iter().next())
+    };
     // pointers and offsets that would dangle once the IFDs move
-    const SKIP: [u16; 9] = [t::EXIF_IFD, t::GPS_IFD, t::INTEROP_IFD, t::SUB_IFDS, t::MAKER_NOTE, 273, 279, 513, 514];
+    const SKIP: [u16; 9] = [
+        t::EXIF_IFD,
+        t::GPS_IFD,
+        t::INTEROP_IFD,
+        t::SUB_IFDS,
+        t::MAKER_NOTE,
+        273,
+        279,
+        513,
+        514,
+    ];
     let build = |ifd: &lightcraft_tiff::Ifd| {
         let mut b = IfdBuilder::new();
         for e in ifd.entries.iter().filter(|e| !SKIP.contains(&e.tag)) {
@@ -491,12 +593,19 @@ mod tests {
         stsz.extend(size.to_be_bytes());
         let mut co64 = 1u32.to_be_bytes().to_vec();
         co64.extend(offset.to_be_bytes());
-        let stbl = [full(b"stsd", &stsd), full(b"stsz", &stsz), full(b"co64", &co64)].concat();
+        let stbl = [
+            full(b"stsd", &stsd),
+            full(b"stsz", &stsz),
+            full(b"co64", &co64),
+        ]
+        .concat();
         bx(b"trak", &bx(b"mdia", &bx(b"minf", &bx(b"stbl", &stbl))))
     }
     fn tiff_with(tag: u16, v: lightcraft_tiff::Value) -> Vec<u8> {
         let b = lightcraft_tiff::IfdBuilder::new().with(tag, v);
-        lightcraft_tiff::TiffWriter::new(lightcraft_tiff::ByteOrder::Little, false).write(&[b]).unwrap()
+        lightcraft_tiff::TiffWriter::new(lightcraft_tiff::ByteOrder::Little, false)
+            .write(&[b])
+            .unwrap()
     }
 
     /// A small synthetic CR3: Canon uuid with CMT1/CMT2/CMT4, a JPEG track, a raw track, XMP.
@@ -505,11 +614,24 @@ mod tests {
         let cmt1 = tiff_with(t::MODEL, Value::Ascii("Canon EOS Test".into()));
         let cmt2 = tiff_with(t::ISO_SPEED, Value::Short(vec![400]));
         let cmt4 = tiff_with(1, Value::Ascii("N".into()));
-        let canon = uuid(&CANON_UUID, &[bx(b"CMT1", &cmt1), bx(b"CMT2", &cmt2), bx(b"CMT4", &cmt4), bx(b"THMB", b"thumb")].concat());
+        let canon = uuid(
+            &CANON_UUID,
+            &[
+                bx(b"CMT1", &cmt1),
+                bx(b"CMT2", &cmt2),
+                bx(b"CMT4", &cmt4),
+                bx(b"THMB", b"thumb"),
+            ]
+            .concat(),
+        );
         let mut file = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
         let payload_at = 4096u64;
         let jpeg_t = trak(craw(64, 48, &bx(b"JPEG", &[0; 4])), payload_at, 16);
-        let raw_t = trak(craw(60, 40, &bx(b"CMP1", &[0xff, 0x10, 0, 0x30])), payload_at + 16, 32);
+        let raw_t = trak(
+            craw(60, 40, &bx(b"CMP1", &[0xff, 0x10, 0, 0x30])),
+            payload_at + 16,
+            32,
+        );
         file.extend(bx(b"moov", &[canon, jpeg_t, raw_t].concat()));
         file.extend(uuid(&XMP_UUID, b"<x:xmpmeta/>"));
         file.resize(payload_at as usize + 64, 0);
@@ -521,12 +643,28 @@ mod tests {
         let f = sample();
         assert!(is_cr3(&f));
         let c = parse_cr3(&f).unwrap();
-        assert!(c.cmt[0].is_some() && c.cmt[1].is_some() && c.cmt[2].is_none() && c.cmt[3].is_some());
+        assert!(
+            c.cmt[0].is_some() && c.cmt[1].is_some() && c.cmt[2].is_none() && c.cmt[3].is_some()
+        );
         assert_eq!(c.thumbnail, Some(b"thumb".as_slice()));
         assert_eq!(c.xmp, Some(b"<x:xmpmeta/>".as_slice()));
         assert_eq!(c.tracks.len(), 2);
-        assert_eq!(c.tracks[0], Cr3Track { kind: Cr3TrackKind::Jpeg, data: Some((4096, 16)) });
-        let Cr3TrackKind::Raw { width, height, cmp1: Some((at, len)), .. } = c.tracks[1].kind else { panic!("{:?}", c.tracks[1]) };
+        assert_eq!(
+            c.tracks[0],
+            Cr3Track {
+                kind: Cr3TrackKind::Jpeg,
+                data: Some((4096, 16))
+            }
+        );
+        let Cr3TrackKind::Raw {
+            width,
+            height,
+            cmp1: Some((at, len)),
+            ..
+        } = c.tracks[1].kind
+        else {
+            panic!("{:?}", c.tracks[1])
+        };
         assert_eq!((width, height, len), (60, 40, 4));
         assert_eq!(&f[at..at + 2], &[0xff, 0x10]);
         assert_eq!(c.tracks[1].data, Some((4112, 32)));
@@ -535,15 +673,31 @@ mod tests {
     #[test]
     fn hevc_preview_is_distinct_from_an_equal_size_raw_track() {
         let preview = trak(craw(6000, 4000, &bx(b"HEVC", &[0; 4])), 4096, 16);
-        let reduced = trak(craw(1624, 1080, &bx(b"CMP1", &compression_payload(0))), 4112, 16);
-        let sensor = trak(craw(6000, 4000, &bx(b"CMP1", &compression_payload(0))), 4128, 16);
+        let reduced = trak(
+            craw(1624, 1080, &bx(b"CMP1", &compression_payload(0))),
+            4112,
+            16,
+        );
+        let sensor = trak(
+            craw(6000, 4000, &bx(b"CMP1", &compression_payload(0))),
+            4128,
+            16,
+        );
         let mut file = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
         file.extend(bx(b"moov", &[preview, reduced, sensor].concat()));
         file.resize(4144, 0);
         let container = parse_cr3(&file).unwrap();
         assert_eq!(container.tracks[0].kind, Cr3TrackKind::Other(*b"HEVC"));
         assert!(container.tracks[0].compression(&file).is_none());
-        assert!(matches!(container.tracks[2].kind, Cr3TrackKind::Raw { width: 6000, height: 4000, cmp1: Some(_), .. }));
+        assert!(matches!(
+            container.tracks[2].kind,
+            Cr3TrackKind::Raw {
+                width: 6000,
+                height: 4000,
+                cmp1: Some(_),
+                ..
+            }
+        ));
         assert_eq!(container.tracks[2].compression(&file).unwrap().width, 6888);
     }
 
@@ -553,21 +707,35 @@ mod tests {
             for first in [true, false] {
                 let rendered = bx(codec, &[0; 4]);
                 let corrupt = bx(b"CMP1", &[0xff, 0]);
-                let children = if first { [rendered, corrupt] } else { [corrupt, rendered] }.concat();
+                let children = if first {
+                    [rendered, corrupt]
+                } else {
+                    [corrupt, rendered]
+                }
+                .concat();
                 let mut file = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
                 file.extend(bx(b"moov", &trak(craw(6000, 4000, &children), 4096, 16)));
                 file.resize(4112, 0);
                 let container = parse_cr3(&file).unwrap();
-                assert!(matches!(container.tracks[0].kind, Cr3TrackKind::Raw { cmp1: Some(_), .. }));
+                assert!(matches!(
+                    container.tracks[0].kind,
+                    Cr3TrackKind::Raw { cmp1: Some(_), .. }
+                ));
                 assert!(container.tracks[0].compression(&file).is_none());
             }
         }
         // Absence alone is not evidence of a preview: retain a broken raw so
         // main-track selection cannot quietly fall back to a reduced image.
         let mut file = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
-        file.extend(bx(b"moov", &trak(craw(6000, 4000, &bx(b"free", &[])), 4096, 16)));
+        file.extend(bx(
+            b"moov",
+            &trak(craw(6000, 4000, &bx(b"free", &[])), 4096, 16),
+        ));
         file.resize(4112, 0);
-        assert!(matches!(parse_cr3(&file).unwrap().tracks[0].kind, Cr3TrackKind::Raw { cmp1: None, .. }));
+        assert!(matches!(
+            parse_cr3(&file).unwrap().tracks[0].kind,
+            Cr3TrackKind::Raw { cmp1: None, .. }
+        ));
     }
 
     #[test]
@@ -596,8 +764,22 @@ mod tests {
     fn compression_descriptor_retains_sensor_geometry_and_cfa() {
         let b = compression_payload(0);
         let h = Cr3Compression::parse(&b).unwrap();
-        assert_eq!((h.width, h.height, h.tile_width, h.tile_height), (6888, 4546, 3444, 4546));
-        assert_eq!((h.version, h.bit_depth, h.planes, h.cfa_pattern, h.encoding, h.levels, h.header_size), (0x100, 14, 4, 0, 0, 0, 216));
+        assert_eq!(
+            (h.width, h.height, h.tile_width, h.tile_height),
+            (6888, 4546, 3444, 4546)
+        );
+        assert_eq!(
+            (
+                h.version,
+                h.bit_depth,
+                h.planes,
+                h.cfa_pattern,
+                h.encoding,
+                h.levels,
+                h.header_size
+            ),
+            (0x100, 14, 4, 0, 0, 0, 216)
+        );
         let mut craw = compression_payload(3);
         craw[25] = 0x41;
         craw[27] = 0x80;
@@ -621,7 +803,10 @@ mod tests {
         b.resize(85, 0);
         b[56] = 0xc0;
         b[84] = 14;
-        assert_eq!(Cr3Compression::parse(&b).unwrap().median_bit_depth, Some(14));
+        assert_eq!(
+            Cr3Compression::parse(&b).unwrap().median_bit_depth,
+            Some(14)
+        );
         assert!(Cr3Compression::parse(&b[..84]).is_none());
         b[84] = 0;
         assert!(Cr3Compression::parse(&b).is_none());
@@ -673,13 +858,26 @@ mod tests {
     #[test]
     fn truncated_sample_table_does_not_read_the_next_box() {
         let stbl = [
-            full(b"stsd", &[1u32.to_be_bytes().to_vec(), craw(16, 16, &bx(b"CMP1", &compression_payload(0)))].concat()),
+            full(
+                b"stsd",
+                &[
+                    1u32.to_be_bytes().to_vec(),
+                    craw(16, 16, &bx(b"CMP1", &compression_payload(0))),
+                ]
+                .concat(),
+            ),
             bx(b"stsz", &[]),
-            full(b"co64", &[1u32.to_be_bytes().to_vec(), 256u64.to_be_bytes().to_vec()].concat()),
+            full(
+                b"co64",
+                &[1u32.to_be_bytes().to_vec(), 256u64.to_be_bytes().to_vec()].concat(),
+            ),
         ]
         .concat();
         let mut file = bx(b"ftyp", b"crx \0\0\0\x01crx isom");
-        file.extend(bx(b"moov", &bx(b"trak", &bx(b"mdia", &bx(b"minf", &bx(b"stbl", &stbl))))));
+        file.extend(bx(
+            b"moov",
+            &bx(b"trak", &bx(b"mdia", &bx(b"minf", &bx(b"stbl", &stbl)))),
+        ));
         file.resize(512, 0);
         assert!(parse_cr3(&file).unwrap().tracks.is_empty());
     }
@@ -700,11 +898,23 @@ mod tests {
         sample[0..4].copy_from_slice(&((12 + items.len()) as u32).to_le_bytes());
         sample[4..6].copy_from_slice(&8u16.to_le_bytes());
         sample.extend(items);
-        let container = Cr3 { tracks: vec![Cr3Track { kind: Cr3TrackKind::Other(*b"CTMD"), data: Some((0, sample.len())) }], ..Default::default() };
+        let container = Cr3 {
+            tracks: vec![Cr3Track {
+                kind: Cr3TrackKind::Other(*b"CTMD"),
+                data: Some((0, sample.len())),
+            }],
+            ..Default::default()
+        };
         let parts = container.timed_exif(&sample);
         assert_eq!(parts.len(), 2);
-        assert_eq!((parts[0].record_type, parts[0].tag, parts[0].data), (8, 0x8769, exif.as_slice()));
-        assert_eq!((parts[1].record_type, parts[1].tag, parts[1].data), (8, 0x927c, maker.as_slice()));
+        assert_eq!(
+            (parts[0].record_type, parts[0].tag, parts[0].data),
+            (8, 0x8769, exif.as_slice())
+        );
+        assert_eq!(
+            (parts[1].record_type, parts[1].tag, parts[1].data),
+            (8, 0x927c, maker.as_slice())
+        );
         for len in 0..sample.len() {
             assert!(container.timed_exif(&sample[..len]).is_empty());
         }
@@ -734,6 +944,12 @@ mod tests {
         // a sample offset past the end is not reported
         let mut g = f.clone();
         g.truncate(4100);
-        assert!(parse_cr3(&g).unwrap().tracks.iter().all(|t| t.data.is_none()));
+        assert!(
+            parse_cr3(&g)
+                .unwrap()
+                .tracks
+                .iter()
+                .all(|t| t.data.is_none())
+        );
     }
 }

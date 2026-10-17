@@ -50,19 +50,36 @@ pub struct Brackets {
 impl Brackets {
     /// The brackets of the selected type on a path the tools can edit (outside perspective).
     pub fn of(cx: &ToolContext) -> Vec<Self> {
-        cx.selection.objects.iter().filter_map(|id| Self::of_node(cx, *id)).collect()
+        cx.selection
+            .objects
+            .iter()
+            .filter_map(|id| Self::of_node(cx, *id))
+            .collect()
     }
 
     fn of_node(cx: &ToolContext, id: NodeId) -> Option<Self> {
-        let n = cx.doc.node(id).filter(|n| n.extras().perspective.is_none() && cx.doc.is_editable(id))?;
-        let NodeKind::Text(t) = &n.kind else { return None };
-        let TextKind::OnPath { path, end, .. } = &t.kind else { return None };
+        let n = cx
+            .doc
+            .node(id)
+            .filter(|n| n.extras().perspective.is_none() && cx.doc.is_editable(id))?;
+        let NodeKind::Text(t) = &n.kind else {
+            return None;
+        };
+        let TextKind::OnPath { path, end, .. } = &t.kind else {
+            return None;
+        };
         let det = t.xf.determinant();
         let arc = ArcPath::new(path);
         if !det.is_finite() || det.abs() < 1e-12 || arc.is_empty() {
             return None;
         }
-        Some(Self { id, xf: t.xf, arc, span: t.kind.path_span()?, end_set: end.is_some() })
+        Some(Self {
+            id,
+            xf: t.xf,
+            arc,
+            span: t.kind.path_span()?,
+            end_set: end.is_some(),
+        })
     }
 
     /// Where bracket `b` stands, as a fraction of the path's length (past 1 round a closed path).
@@ -101,7 +118,11 @@ impl Brackets {
 
     /// The bracket within `tol` (document units) of `p`.
     fn hit(&self, p: Point, zoom: f64, tol: f64) -> Option<Bracket> {
-        Bracket::ALL.into_iter().find(|b| self.lines(*b, zoom).iter().any(|(a, c)| Line::new(*a, *c).nearest(p, 1e-9).distance_sq <= tol * tol))
+        Bracket::ALL.into_iter().find(|b| {
+            self.lines(*b, zoom)
+                .iter()
+                .any(|(a, c)| Line::new(*a, *c).nearest(p, 1e-9).distance_sq <= tol * tol)
+        })
     }
 
     /// The fraction of the path's length nearest document point `p`.
@@ -129,7 +150,16 @@ pub fn overlays(cx: &ToolContext) -> Vec<Overlay> {
     for b in Brackets::of(cx) {
         let color = cx.doc.layer_color(b.id);
         for which in Bracket::ALL {
-            out.extend(b.lines(which, cx.zoom).into_iter().map(|(a, b)| Overlay::Line { a, b, color, dashed: false }));
+            out.extend(
+                b.lines(which, cx.zoom)
+                    .into_iter()
+                    .map(|(a, b)| Overlay::Line {
+                        a,
+                        b,
+                        color,
+                        dashed: false,
+                    }),
+            );
         }
     }
     out
@@ -151,7 +181,13 @@ impl BracketDrag {
     pub fn hit(cx: &ToolContext, ev: &PointerEvent) -> Option<Self> {
         let (brackets, which) = bracket_at(cx, ev.pos)?;
         let grab = brackets.fraction_at(ev.pos)?;
-        Some(Self { brackets, which, start: ev.pos, grab, began: false })
+        Some(Self {
+            brackets,
+            which,
+            start: ev.pos,
+            grab,
+            began: false,
+        })
     }
 
     pub fn drag(&mut self, cx: &ToolContext, p: Point, cmd: bool) -> Vec<Action> {
@@ -163,8 +199,13 @@ impl BracketDrag {
             self.began = true;
             out.push(Action::Begin("Move Type on a Path".into()));
         }
-        let Some(u) = self.brackets.fraction_at(p) else { return out };
-        out.push(Action::Preview("type.pathOptions".into(), self.params(cx, p, u, cmd)));
+        let Some(u) = self.brackets.fraction_at(p) else {
+            return out;
+        };
+        out.push(Action::Preview(
+            "type.pathOptions".into(),
+            self.params(cx, p, u, cmd),
+        ));
         out
     }
 
@@ -189,11 +230,24 @@ impl BracketDrag {
                     // The short way round.
                     d -= d.round();
                 }
-                let place = |x: f64| if closed { x.rem_euclid(1.0) } else { x.clamp(0.0, 1.0) };
+                let place = |x: f64| {
+                    if closed {
+                        x.rem_euclid(1.0)
+                    } else {
+                        x.clamp(0.0, 1.0)
+                    }
+                };
                 let start = place(s + d);
                 m.insert("start".into(), json!(start));
                 if b.end_set {
-                    m.insert("end".into(), json!(if closed { place(e + d) } else { place(e + d).max(start) }));
+                    m.insert(
+                        "end".into(),
+                        json!(if closed {
+                            place(e + d)
+                        } else {
+                            place(e + d).max(start)
+                        }),
+                    );
                 }
                 // Across the path: the type flips to the other side.
                 let (q, _, up) = b.frame(u);
@@ -206,7 +260,11 @@ impl BracketDrag {
     }
 
     pub fn finish(self) -> Vec<Action> {
-        if self.began { vec![Action::Commit] } else { vec![] }
+        if self.began {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -224,15 +282,24 @@ mod tests {
     }
 
     fn preview(a: &[Action]) -> &Value {
-        let Some(Action::Preview(c, v)) = a.last() else { panic!("no preview: {a:?}") };
+        let Some(Action::Preview(c, v)) = a.last() else {
+            panic!("no preview: {a:?}")
+        };
         assert_eq!(c, "type.pathOptions");
         v
     }
 
     fn drag(cx: &ToolContext, from: Point, to: Point, mods: Mods) -> Vec<Action> {
-        let mut d = BracketDrag::hit(cx, &PointerEvent::new(PointerKind::Down, from.x, from.y).with_mods(mods)).expect("a bracket");
+        let mut d = BracketDrag::hit(
+            cx,
+            &PointerEvent::new(PointerKind::Down, from.x, from.y).with_mods(mods),
+        )
+        .expect("a bracket");
         let a = d.drag(cx, to, mods.cmd);
-        assert_eq!(a.first(), Some(&Action::Begin("Move Type on a Path".into())));
+        assert_eq!(
+            a.first(),
+            Some(&Action::Begin("Move Type on a Path".into()))
+        );
         assert_eq!(d.finish(), vec![Action::Commit]);
         a
     }
@@ -245,14 +312,28 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let b = Brackets::of(&cx).pop().unwrap();
-        assert_eq!(b.hit(Point::new(160.0, 290.0), 1.0, 2.0), Some(Bracket::Start));
-        assert_eq!(b.hit(Point::new(280.0, 290.0), 1.0, 2.0), Some(Bracket::Centre));
-        assert_eq!(b.hit(Point::new(400.0, 290.0), 1.0, 2.0), Some(Bracket::End));
+        assert_eq!(
+            b.hit(Point::new(160.0, 290.0), 1.0, 2.0),
+            Some(Bracket::Start)
+        );
+        assert_eq!(
+            b.hit(Point::new(280.0, 290.0), 1.0, 2.0),
+            Some(Bracket::Centre)
+        );
+        assert_eq!(
+            b.hit(Point::new(400.0, 290.0), 1.0, 2.0),
+            Some(Bracket::End)
+        );
         assert_eq!(b.hit(Point::new(220.0, 290.0), 1.0, 2.0), None);
         // Drawn over the type's side of the path, with feet pointing into the span.
         let o = overlays(&cx);
         assert_eq!(o.len(), 5);
-        assert!(o.contains(&Overlay::Line { a: Point::new(160.0, 286.0), b: Point::new(164.0, 286.0), color: d.layer_color(id), dashed: false }));
+        assert!(o.contains(&Overlay::Line {
+            a: Point::new(160.0, 286.0),
+            b: Point::new(164.0, 286.0),
+            color: d.layer_color(id),
+            dashed: false
+        }));
         // Nothing for unselected or other type.
         assert!(Brackets::of(&crate::testutil::cx(&d, &Selection::default(), &p)).is_empty());
         let (d2, area) = doc_with_area_type();
@@ -274,9 +355,21 @@ mod tests {
         assert_eq!(v["ids"], json!([id.0]));
         // Below the path: flipped as well.
         let v = preview(&drag(&cx, grab, Point::new(250.0, 320.0), Mods::default())).clone();
-        assert!((v["start"].as_f64().unwrap() - 0.1).abs() < 1e-6 && v["flip"] == true, "{v}");
+        assert!(
+            (v["start"].as_f64().unwrap() - 0.1).abs() < 1e-6 && v["flip"] == true,
+            "{v}"
+        );
         // Cmd/Ctrl held: it only slides.
-        let v = preview(&drag(&cx, grab, Point::new(250.0, 320.0), Mods { cmd: true, ..Mods::default() })).clone();
+        let v = preview(&drag(
+            &cx,
+            grab,
+            Point::new(250.0, 320.0),
+            Mods {
+                cmd: true,
+                ..Mods::default()
+            },
+        ))
+        .clone();
         assert!(v.get("flip").is_none(), "{v}");
     }
 
@@ -286,12 +379,36 @@ mod tests {
         let s = selected(id);
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let v = preview(&drag(&cx, Point::new(160.0, 295.0), Point::new(130.0, 280.0), Mods::default())).clone();
-        assert!((v["start"].as_f64().unwrap() - 0.1).abs() < 1e-6 && v.get("end").is_none(), "{v}");
-        let v = preview(&drag(&cx, Point::new(400.0, 295.0), Point::new(340.0, 310.0), Mods::default())).clone();
-        assert!((v["end"].as_f64().unwrap() - 0.8).abs() < 1e-6 && v.get("start").is_none(), "{v}");
+        let v = preview(&drag(
+            &cx,
+            Point::new(160.0, 295.0),
+            Point::new(130.0, 280.0),
+            Mods::default(),
+        ))
+        .clone();
+        assert!(
+            (v["start"].as_f64().unwrap() - 0.1).abs() < 1e-6 && v.get("end").is_none(),
+            "{v}"
+        );
+        let v = preview(&drag(
+            &cx,
+            Point::new(400.0, 295.0),
+            Point::new(340.0, 310.0),
+            Mods::default(),
+        ))
+        .clone();
+        assert!(
+            (v["end"].as_f64().unwrap() - 0.8).abs() < 1e-6 && v.get("start").is_none(),
+            "{v}"
+        );
         // The end stops at the start.
-        let v = preview(&drag(&cx, Point::new(400.0, 295.0), Point::new(110.0, 300.0), Mods::default())).clone();
+        let v = preview(&drag(
+            &cx,
+            Point::new(400.0, 295.0),
+            Point::new(110.0, 300.0),
+            Mods::default(),
+        ))
+        .clone();
         assert!((v["end"].as_f64().unwrap() - 0.2).abs() < 1e-6, "{v}");
     }
 }

@@ -14,7 +14,10 @@ struct T {
 
 impl T {
     fn new() -> T {
-        T { wb: Workbook::new(), calc: Calc::new() }
+        T {
+            wb: Workbook::new(),
+            calc: Calc::new(),
+        }
     }
     fn set(&mut self, at: &str, input: &str) {
         let cell = if input.starts_with('=') {
@@ -29,7 +32,9 @@ impl T {
         self.wb.sheet(0).unwrap().value(c(at))
     }
     fn num(&self, at: &str) -> f64 {
-        self.get(at).as_f64().unwrap_or_else(|| panic!("{at} = {:?}", self.get(at)))
+        self.get(at)
+            .as_f64()
+            .unwrap_or_else(|| panic!("{at} = {:?}", self.get(at)))
     }
 }
 
@@ -101,7 +106,10 @@ fn xlookup_returns_a_reference() {
         t.set(&format!("A{}", i + 1), k);
         t.set(&format!("B{}", i + 1), &v.to_string());
     }
-    t.set("D1", "=SUM(XLOOKUP(\"b\",A1:A4,B1:B4):XLOOKUP(\"d\",A1:A4,B1:B4))");
+    t.set(
+        "D1",
+        "=SUM(XLOOKUP(\"b\",A1:A4,B1:B4):XLOOKUP(\"d\",A1:A4,B1:B4))",
+    );
     assert_eq!(t.num("D1"), 9.0);
     t.set("D2", "=SUM(B1:XLOOKUP(\"c\",A1:A4,B1:B4))");
     assert_eq!(t.num("D2"), 6.0);
@@ -148,7 +156,10 @@ fn index_with_arrays_of_positions() {
         }
     }
     t.set("E1", "=INDEX(A1:C3,{1;3},{1,3})");
-    assert_eq!([t.num("E1"), t.num("F1"), t.num("E2"), t.num("F2")], [1.0, 3.0, 7.0, 9.0]);
+    assert_eq!(
+        [t.num("E1"), t.num("F1"), t.num("E2"), t.num("F2")],
+        [1.0, 3.0, 7.0, 9.0]
+    );
     t.set("E4", "=SUM(INDEX(A1:C3,{1,2,3},2))");
     assert_eq!(t.num("E4"), 15.0);
     t.set("E5", "=INDEX({10,20,30},{3,1})");
@@ -183,7 +194,11 @@ fn errors_and_cycles() {
     t.set("C1", "=NOSUCHFN(1)");
     assert_eq!(t.get("C1"), Value::Error(CellError::Name));
     // `_xludf.` marks a user-defined function, never the built-in of the same name (#726).
-    for f in ["=_xludf.CONCAT(\"a\",\"b\")", "=_xludf.SUM(1,2)", "=_xludf.EOMONTH()"] {
+    for f in [
+        "=_xludf.CONCAT(\"a\",\"b\")",
+        "=_xludf.SUM(1,2)",
+        "=_xludf.EOMONTH()",
+    ] {
         t.set("C3", f);
         assert_eq!(t.get("C3"), Value::Error(CellError::Name), "{f}");
     }
@@ -292,7 +307,10 @@ fn circular_references_without_iterative_calculation() {
 
 #[test]
 fn date_text_coerces_in_the_workbook_date_system() {
-    for (sys, serial) in [(gridcraft_core::DateSystem::D1900, 1462.0), (gridcraft_core::DateSystem::D1904, 0.0)] {
+    for (sys, serial) in [
+        (gridcraft_core::DateSystem::D1900, 1462.0),
+        (gridcraft_core::DateSystem::D1904, 0.0),
+    ] {
         let mut t = T::new();
         t.wb.date_system = sys;
         t.set("A1", "'1/1/1904");
@@ -338,8 +356,10 @@ fn blocked_spill_reads_as_spill_error() {
     for a in ["A1", "B1", "C1", "A2", "C2", "A3", "B3", "C3"] {
         s.cells.set(c(a), Cell::value(Value::Number(1.0)));
     }
-    s.cells.set(c("B2"), Cell::formula(Formula::new("=SEQUENCE(2,2,9)")));
-    s.cells.set(c("E1"), Cell::formula(Formula::new("=SUM(A1:C3)")));
+    s.cells
+        .set(c("B2"), Cell::formula(Formula::new("=SEQUENCE(2,2,9)")));
+    s.cells
+        .set(c("E1"), Cell::formula(Formula::new("=SUM(A1:C3)")));
     t.calc.recalc_all(&mut t.wb);
     assert_eq!(t.get("B2"), Value::Error(CellError::Spill));
     assert_eq!(t.get("E1"), Value::Error(CellError::Spill));
@@ -365,30 +385,36 @@ fn spill_into_the_old_area_of_a_blocked_neighbour() {
     t.set("C7", "=SEQUENCE(2,2)");
     t.set("C8", "=SEQUENCE(2,2)");
     assert_eq!(t.get("C7"), Value::Error(CellError::Spill));
-    assert_eq!([t.num("C8"), t.num("D8"), t.num("C9"), t.num("D9")], [1.0, 2.0, 3.0, 4.0]);
+    assert_eq!(
+        [t.num("C8"), t.num("D8"), t.num("C9"), t.num("D9")],
+        [1.0, 2.0, 3.0, 4.0]
+    );
 }
 
 #[test]
 fn arrays_do_not_spill_in_tables() {
     // Excel: spilled array formulas aren't supported in tables.
     let mut t = T::new();
-    t.wb.sheet_mut(0).unwrap().tables.push(gridcraft_model::Table {
-        id: 1,
-        name: "Table1".into(),
-        range: gridcraft_core::RangeRef::parse("B3:C6").unwrap(),
-        header_row: true,
-        totals_row: false,
-        columns: vec![],
-        style: String::new(),
-        banded_rows: false,
-        banded_cols: false,
-        first_col: false,
-        last_col: false,
-        filter_button: false,
-        filter: vec![],
-        table_type: None,
-        connection_id: None,
-    });
+    t.wb.sheet_mut(0)
+        .unwrap()
+        .tables
+        .push(gridcraft_model::Table {
+            id: 1,
+            name: "Table1".into(),
+            range: gridcraft_core::RangeRef::parse("B3:C6").unwrap(),
+            header_row: true,
+            totals_row: false,
+            columns: vec![],
+            style: String::new(),
+            banded_rows: false,
+            banded_cols: false,
+            first_col: false,
+            last_col: false,
+            filter_button: false,
+            filter: vec![],
+            table_type: None,
+            connection_id: None,
+        });
     t.set("C4", "=SEQUENCE(2)");
     t.set("E1", "=SEQUENCE(4)");
     t.set("H1", "=SUM(C4:C5)");
@@ -472,7 +498,14 @@ fn references_functions() {
 
 #[test]
 fn indirect_r1c1_out_of_bounds() {
-    for reference in ["R[9223372036854775807]C", "RC[9223372036854775807]", "R[4294967296]C", "R[4294967291]C", "R[2000000]C", "RC[20000]"] {
+    for reference in [
+        "R[9223372036854775807]C",
+        "RC[9223372036854775807]",
+        "R[4294967296]C",
+        "R[4294967291]C",
+        "R[2000000]C",
+        "RC[20000]",
+    ] {
         let mut t = T::new();
         t.set("D5", &format!("=ROW(INDIRECT(\"{reference}\",FALSE))"));
         assert_eq!(t.get("D5"), Value::Error(CellError::Ref), "{reference}");
@@ -506,7 +539,11 @@ fn relative_names() {
     let mut t = T::new();
     // As files store them: relative to A1. `Left` is the cell to the left, `Above3` the three
     // cells above, `Mixed` column A of the same row.
-    for (name, formula) in [("Left", "Sheet1!XFD1"), ("Above3", "Sheet1!A1048574:A1048576"), ("Mixed", "Sheet1!$A1")] {
+    for (name, formula) in [
+        ("Left", "Sheet1!XFD1"),
+        ("Above3", "Sheet1!A1048574:A1048576"),
+        ("Mixed", "Sheet1!$A1"),
+    ] {
         t.wb.names.push(gridcraft_model::DefinedName {
             name: name.into(),
             scope: None,
@@ -553,7 +590,13 @@ fn references_keep_their_size_past_the_used_range() {
     t.set("C3", "=COUNTBLANK(A1:A10)");
     t.set("C4", "=COUNTIF(A1:A10,\"\")");
     t.set("C5", "=COLUMNS(TRANSPOSE(A1:A10))");
-    for (at, want) in [("C1", 10.0), ("C2", 8.0), ("C3", 8.0), ("C4", 8.0), ("C5", 10.0)] {
+    for (at, want) in [
+        ("C1", 10.0),
+        ("C2", 8.0),
+        ("C3", 8.0),
+        ("C4", 8.0),
+        ("C5", 10.0),
+    ] {
         assert_eq!(t.num(at), want, "{at}");
     }
     // Whole columns are still read up to the used range.
@@ -646,13 +689,24 @@ fn lambda_argument_count() {
 #[test]
 fn names_and_sheets() {
     let mut t = T::new();
-    t.wb.names.push(gridcraft_model::DefinedName { name: "Rate".into(), scope: None, formula: "0.5".into(), comment: String::new(), hidden: false });
-    t.wb.sheets.push(std::sync::Arc::new(gridcraft_model::Sheet::new("Data")));
-    t.wb.sheet_mut(1).unwrap().set_value(c("A1"), Value::Number(8.0));
+    t.wb.names.push(gridcraft_model::DefinedName {
+        name: "Rate".into(),
+        scope: None,
+        formula: "0.5".into(),
+        comment: String::new(),
+        hidden: false,
+    });
+    t.wb.sheets
+        .push(std::sync::Arc::new(gridcraft_model::Sheet::new("Data")));
+    t.wb.sheet_mut(1)
+        .unwrap()
+        .set_value(c("A1"), Value::Number(8.0));
     t.calc.rebuild(&t.wb);
     t.set("A1", "=Rate*Data!A1");
     assert_eq!(t.num("A1"), 4.0);
-    t.wb.sheet_mut(1).unwrap().set_value(c("A1"), Value::Number(10.0));
+    t.wb.sheet_mut(1)
+        .unwrap()
+        .set_value(c("A1"), Value::Number(10.0));
     t.calc.cells_changed(&mut t.wb, &[(1, c("A1"))]);
     assert_eq!(t.num("A1"), 5.0);
 }
@@ -665,7 +719,10 @@ fn legacy_array_formulas_fill_their_range() {
     let cse = |t: &mut T, at: &str, formula: &str, range: &str| {
         let mut f = Formula::new(formula);
         f.array = gridcraft_core::RangeRef::parse(range);
-        t.wb.sheet_mut(0).unwrap().cells.set(c(at), Cell::formula(f));
+        t.wb.sheet_mut(0)
+            .unwrap()
+            .cells
+            .set(c(at), Cell::formula(f));
         t.calc.cells_changed(&mut t.wb, &[(0, c(at))]);
     };
     // Past the result: #N/A. A single column repeats across the range.
@@ -708,7 +765,13 @@ fn subtotal_skips_hidden() {
     t.set("A1", "1");
     t.set("A2", "2");
     t.set("A3", "3");
-    t.wb.sheet_mut(0).unwrap().rows.insert(1, gridcraft_model::LineInfo { hidden: true, ..Default::default() });
+    t.wb.sheet_mut(0).unwrap().rows.insert(
+        1,
+        gridcraft_model::LineInfo {
+            hidden: true,
+            ..Default::default()
+        },
+    );
     t.set("B1", "=SUBTOTAL(109,A1:A3)");
     t.set("B2", "=SUBTOTAL(9,A1:A3)");
     assert_eq!(t.num("B1"), 4.0);
@@ -731,7 +794,13 @@ fn subtotal_109_skips_nested_subtotal() {
     t.set("A1", "1");
     t.set("A2", "2");
     t.set("A3", "=SUBTOTAL(9,A1:A2)");
-    t.wb.sheet_mut(0).unwrap().rows.insert(1, gridcraft_model::LineInfo { hidden: true, ..Default::default() });
+    t.wb.sheet_mut(0).unwrap().rows.insert(
+        1,
+        gridcraft_model::LineInfo {
+            hidden: true,
+            ..Default::default()
+        },
+    );
     t.set("B1", "=SUBTOTAL(109,A1:A3)");
     t.set("B2", "=SUBTOTAL(9,A1:A3)");
     assert_eq!(t.num("B1"), 1.0);
@@ -749,7 +818,16 @@ fn subtotal_skips_filtered_rows() {
         t.set(&format!("A{}", i + 2), &v.to_string());
         t.set(&format!("C{}", i + 2), &v.to_string());
     }
-    let crit = || vec![(0, FilterCriterion::Custom { a: (">".into(), "1".into()), b: None, and: false })];
+    let crit = || {
+        vec![(
+            0,
+            FilterCriterion::Custom {
+                a: (">".into(), "1".into()),
+                b: None,
+                and: false,
+            },
+        )]
+    };
     let sh = t.wb.sheet_mut(0).unwrap();
     sh.tables.push(gridcraft_model::Table {
         id: 1,
@@ -775,10 +853,19 @@ fn subtotal_skips_filtered_rows() {
         table_type: None,
         connection_id: None,
     });
-    sh.autofilter = Some(AutoFilter { range: gridcraft_core::RangeRef::parse("C1:C7").unwrap(), criteria: crit() });
+    sh.autofilter = Some(AutoFilter {
+        range: gridcraft_core::RangeRef::parse("C1:C7").unwrap(),
+        criteria: crit(),
+    });
     // Rows 3 and 5 are filtered out; row 9 (outside both filters) is hidden by hand.
     for row in [2, 4, 8] {
-        sh.rows.insert(row, LineInfo { hidden: true, ..Default::default() });
+        sh.rows.insert(
+            row,
+            LineInfo {
+                hidden: true,
+                ..Default::default()
+            },
+        );
     }
     t.set("A9", "64");
     t.set("E1", "=SUBTOTAL(9,Sales[Amount])");
@@ -788,7 +875,15 @@ fn subtotal_skips_filtered_rows() {
     t.set("E5", "=SUBTOTAL(109,A2:A9)");
     t.set("E6", "=SUBTOTAL(2,A2:A7)");
     t.set("E7", "=AGGREGATE(9,4,A2:A7)");
-    for (at, want) in [("E1", 53.0), ("E2", 53.0), ("E3", 53.0), ("E4", 117.0), ("E5", 53.0), ("E6", 4.0), ("E7", 63.0)] {
+    for (at, want) in [
+        ("E1", 53.0),
+        ("E2", 53.0),
+        ("E3", 53.0),
+        ("E4", 117.0),
+        ("E5", 53.0),
+        ("E6", 4.0),
+        ("E7", 63.0),
+    ] {
         assert_eq!(t.num(at), want, "{at}");
     }
 }
@@ -889,7 +984,8 @@ fn sumif_resized_sum_range_stops_at_the_sheet_edge() {
 #[test]
 fn sumif_resized_sum_range_on_another_sheet_and_through_a_name() {
     let mut t = T::new();
-    t.wb.sheets.push(std::sync::Arc::new(gridcraft_model::Sheet::new("Data")));
+    t.wb.sheets
+        .push(std::sync::Arc::new(gridcraft_model::Sheet::new("Data")));
     t.wb.names.push(gridcraft_model::DefinedName {
         name: "Amounts".into(),
         scope: None,
@@ -899,14 +995,18 @@ fn sumif_resized_sum_range_on_another_sheet_and_through_a_name() {
     });
     for (r, k) in ["a", "b", "a"].iter().enumerate() {
         t.set(&format!("A{}", r + 1), k);
-        t.wb.sheet_mut(1).unwrap().set_value(CellRef::new(r as u32, 1), Value::Number((r + 1) as f64));
+        t.wb.sheet_mut(1)
+            .unwrap()
+            .set_value(CellRef::new(r as u32, 1), Value::Number((r + 1) as f64));
     }
     t.calc.rebuild(&t.wb);
     t.set("C1", "=SUMIF(A1:A3,\"a\",Data!B1)");
     assert_eq!(t.num("C1"), 4.0);
     t.set("C2", "=AVERAGEIF(A1:A3,\"a\",Amounts)");
     assert_eq!(t.num("C2"), 2.0);
-    t.wb.sheet_mut(1).unwrap().set_value(c("B3"), Value::Number(9.0));
+    t.wb.sheet_mut(1)
+        .unwrap()
+        .set_value(c("B3"), Value::Number(9.0));
     t.calc.cells_changed(&mut t.wb, &[(1, c("B3"))]);
     assert_eq!(t.num("C1"), 10.0);
     assert_eq!(t.num("C2"), 5.0);
@@ -961,7 +1061,16 @@ fn trimrange() {
 /// ```
 fn aggregate_of(error: bool, formula: &str) -> Value {
     let mut t = T::new();
-    for (at, v) in [("A1", "1.5"), ("A2", "2"), ("A3", "skipped"), ("A4", "-0.25"), ("B1", "10"), ("B2", "TRUE"), ("B3", "3"), ("C1", "=A1*4")] {
+    for (at, v) in [
+        ("A1", "1.5"),
+        ("A2", "2"),
+        ("A3", "skipped"),
+        ("A4", "-0.25"),
+        ("B1", "10"),
+        ("B2", "TRUE"),
+        ("B3", "3"),
+        ("C1", "=A1*4"),
+    ] {
         t.set(at, v);
     }
     if error {
@@ -1018,7 +1127,11 @@ fn sum_count_average_over_ranges() {
             // The same formula for each function: `SUM(` becomes `COUNT(` or `AVERAGE(`.
             let f = formula.replace("SUM", func);
 
-            assert_eq!(&aggregate_of(*error, &f), want, "{f} (error in E2: {error})");
+            assert_eq!(
+                &aggregate_of(*error, &f),
+                want,
+                "{f} (error in E2: {error})"
+            );
         }
     }
 }
@@ -1028,7 +1141,11 @@ fn sum_count_average_have_no_size_limit() {
     // One stored cell far down stretches the used range to 27 million cells (27 columns by a
     // million rows), past the 16M-cell limit of ranges copied into an array. Only two cells are
     // stored, so the sheet itself is tiny.
-    for (func, want) in [("SUM", Value::Number(2.5)), ("COUNT", Value::Number(2.0)), ("AVERAGE", Value::Number(1.25))] {
+    for (func, want) in [
+        ("SUM", Value::Number(2.5)),
+        ("COUNT", Value::Number(2.0)),
+        ("AVERAGE", Value::Number(1.25)),
+    ] {
         for range in ["A1:AA1000000", "A:AA"] {
             let mut t = T::new();
             t.set("A1", "1.5");
@@ -1070,7 +1187,10 @@ fn aggregate_arguments_are_read_in_order() {
 
     t.set("A1", "=SUM(B1:B2,RAND())");
 
-    assert_eq!((t.num("A1"), t.num("B2")), (4.968520165759784, 3.3112028100185356));
+    assert_eq!(
+        (t.num("A1"), t.num("B2")),
+        (4.968520165759784, 3.3112028100185356)
+    );
 }
 
 #[test]
@@ -1108,7 +1228,11 @@ fn sum_count_average_follow_edits_inside_the_range() {
 
         // A7 is inside the whole column A:A but outside A1:A5.
         t.set("A7", "100");
-        let outside = if range == "A:A" { (103.0, 3.0, 103.0 / 3.0) } else { (3.0, 2.0, 1.5) };
+        let outside = if range == "A:A" {
+            (103.0, 3.0, 103.0 / 3.0)
+        } else {
+            (3.0, 2.0, 1.5)
+        };
         assert_eq!(all(&t), outside, "{range}: a cell outside the range");
     }
 }
@@ -1119,7 +1243,8 @@ fn visit_range_declines_when_a_formula_in_the_block_spills_into_it() {
     // block D1:D5 is read.
     let mut wb = Workbook::new();
     let sh = wb.sheet_mut(0).unwrap();
-    sh.cells.set(c("D1"), Cell::formula(Formula::new("=SEQUENCE(3)")));
+    sh.cells
+        .set(c("D1"), Cell::formula(Formula::new("=SEQUENCE(3)")));
     sh.cells.set(c("D4"), Cell::value(Value::Number(10.0)));
     let block = gridcraft_core::RangeRef::parse("D1:D5").unwrap();
 
@@ -1142,11 +1267,26 @@ fn trim_references() {
     t.set("A21", "6");
     let cases = [
         ("J1", "=ROWS(A1.:.F10)", "=ROWS(TRIMRANGE(A1:F10,3,3))", 3.0),
-        ("J2", "=COLUMNS(A1.:.F10)", "=COLUMNS(TRIMRANGE(A1:F10,3,3))", 2.0),
+        (
+            "J2",
+            "=COLUMNS(A1.:.F10)",
+            "=COLUMNS(TRIMRANGE(A1:F10,3,3))",
+            2.0,
+        ),
         ("J3", "=ROWS(A1:.F10)", "=ROWS(TRIMRANGE(A1:F10,2,2))", 5.0),
-        ("J4", "=COLUMNS(A1:.F10)", "=COLUMNS(TRIMRANGE(A1:F10,2,2))", 4.0),
+        (
+            "J4",
+            "=COLUMNS(A1:.F10)",
+            "=COLUMNS(TRIMRANGE(A1:F10,2,2))",
+            4.0,
+        ),
         ("J5", "=ROWS(A1.:F10)", "=ROWS(TRIMRANGE(A1:F10,1,1))", 8.0),
-        ("J6", "=MIN(ROW(A1.:F10))", "=MIN(ROW(TRIMRANGE(A1:F10,1,1)))", 3.0),
+        (
+            "J6",
+            "=MIN(ROW(A1.:F10))",
+            "=MIN(ROW(TRIMRANGE(A1:F10,1,1)))",
+            3.0,
+        ),
         ("J7", "=SUM(A:.A)", "=SUM(TRIMRANGE(A:A,2,2))", 11.0),
         ("J8", "=ROWS(A:.A)", "=ROWS(TRIMRANGE(A:A,2,2))", 21.0),
         ("J9", "=ROWS(A.:.A)", "=ROWS(TRIMRANGE(A:A,3,3))", 2.0),
@@ -1178,12 +1318,33 @@ fn cell_width_is_the_column_width_dialog_value_rounded() {
     let mut t = T::new();
     let sh = t.wb.sheet_mut(0).unwrap();
     for (col, px) in [(2, 80.0), (3, 89.0), (4, 79.0), (5, 25.0)] {
-        sh.cols.insert(col, gridcraft_model::LineInfo { size: Some(px), ..Default::default() });
+        sh.cols.insert(
+            col,
+            gridcraft_model::LineInfo {
+                size: Some(px),
+                ..Default::default()
+            },
+        );
     }
-    for (at, col) in [("H1", "B"), ("H2", "C"), ("H3", "D"), ("H4", "E"), ("H5", "F")] {
+    for (at, col) in [
+        ("H1", "B"),
+        ("H2", "C"),
+        ("H3", "D"),
+        ("H4", "E"),
+        ("H5", "F"),
+    ] {
         t.set(at, &format!("=CELL(\"width\",{col}1)"));
     }
-    assert_eq!([t.num("H1"), t.num("H2"), t.num("H3"), t.num("H4"), t.num("H5")], [8.0, 11.0, 12.0, 11.0, 3.0]);
+    assert_eq!(
+        [
+            t.num("H1"),
+            t.num("H2"),
+            t.num("H3"),
+            t.num("H4"),
+            t.num("H5")
+        ],
+        [8.0, 11.0, 12.0, 11.0, 3.0]
+    );
 }
 
 /// Expected results are Excel's, from Apache POI's `DGet.xls` (rows 46-49): a criteria cell holding
@@ -1220,10 +1381,17 @@ fn database_functions_with_computed_criteria() {
     for (i, (col, formula, _)) in cases.iter().enumerate() {
         t.set(&format!("{col}46"), "Formula");
         t.set(&format!("{col}47"), formula);
-        t.set(&format!("B{}", 46 + i), &format!("=DGET($F$2:$J$7,\"name\",{col}46:{col}47)"));
+        t.set(
+            &format!("B{}", 46 + i),
+            &format!("=DGET($F$2:$J$7,\"name\",{col}46:{col}47)"),
+        );
     }
     for (i, (_, formula, want)) in cases.iter().enumerate() {
-        assert_eq!(t.get(&format!("B{}", 46 + i)), Value::text(*want), "{formula}");
+        assert_eq!(
+            t.get(&format!("B{}", 46 + i)),
+            Value::text(*want),
+            "{formula}"
+        );
     }
     // Every database function takes them, ANDed with the other criteria of their row.
     // Text sorts after numbers, so Dewey's "fourty-six" is > 40.
@@ -1254,7 +1422,11 @@ fn offset_extreme_arguments_return_ref() {
         "=OFFSET(B2,0,1E300,1,-1E300)",
         "=OFFSET(B2,-1E300,0,-1E300,1)",
     ] {
-        assert_eq!(crate::evaluate(&wb, 0, c("D1"), formula), Value::Error(CellError::Ref), "{formula}");
+        assert_eq!(
+            crate::evaluate(&wb, 0, c("D1"), formula),
+            Value::Error(CellError::Ref),
+            "{formula}"
+        );
     }
     for (formula, expected) in [
         ("=ROW(OFFSET(B2,1.9,0))", 3.0),
@@ -1263,6 +1435,10 @@ fn offset_extreme_arguments_return_ref() {
         ("=COLUMNS(OFFSET(B2,0,0,1,-2))", 2.0),
         ("=ROWS(OFFSET(A1,0,0,1048576,1))", 1048576.0),
     ] {
-        assert_eq!(crate::evaluate(&wb, 0, c("D1"), formula), Value::Number(expected), "{formula}");
+        assert_eq!(
+            crate::evaluate(&wb, 0, c("D1"), formula),
+            Value::Number(expected),
+            "{formula}"
+        );
     }
 }

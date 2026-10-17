@@ -34,7 +34,13 @@ fn has_curves(p: &PathData) -> bool {
 
 #[test]
 fn union_of_rects() {
-    let u = boolean(&rect(0.0, 0.0, 10.0, 10.0), NZ, &rect(5.0, 5.0, 10.0, 10.0), NZ, BoolOp::Union);
+    let u = boolean(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        NZ,
+        &rect(5.0, 5.0, 10.0, 10.0),
+        NZ,
+        BoolOp::Union,
+    );
     assert!(close(ar(&u), 175.0, 1e-9));
     assert_eq!(u.subpaths.len(), 1);
     assert_eq!(u.anchor_count(), 8);
@@ -42,27 +48,51 @@ fn union_of_rects() {
 
 #[test]
 fn intersect_of_rects() {
-    let i = boolean(&rect(0.0, 0.0, 10.0, 10.0), NZ, &rect(5.0, 5.0, 10.0, 10.0), NZ, BoolOp::Intersect);
+    let i = boolean(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        NZ,
+        &rect(5.0, 5.0, 10.0, 10.0),
+        NZ,
+        BoolOp::Intersect,
+    );
     assert!(close(ar(&i), 25.0, 1e-9));
     assert_eq!(i.anchor_count(), 4);
 }
 
 #[test]
 fn difference_of_rects() {
-    let d = boolean(&rect(0.0, 0.0, 10.0, 10.0), NZ, &rect(5.0, 5.0, 10.0, 10.0), NZ, BoolOp::Difference);
+    let d = boolean(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        NZ,
+        &rect(5.0, 5.0, 10.0, 10.0),
+        NZ,
+        BoolOp::Difference,
+    );
     assert!(close(ar(&d), 75.0, 1e-9));
     assert_eq!(d.anchor_count(), 6);
 }
 
 #[test]
 fn xor_of_rects() {
-    let x = boolean(&rect(0.0, 0.0, 10.0, 10.0), NZ, &rect(5.0, 5.0, 10.0, 10.0), NZ, BoolOp::Xor);
+    let x = boolean(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        NZ,
+        &rect(5.0, 5.0, 10.0, 10.0),
+        NZ,
+        BoolOp::Xor,
+    );
     assert!(close(ar(&x), 150.0, 1e-9));
 }
 
 #[test]
 fn disjoint_union_keeps_both() {
-    let u = boolean(&rect(0.0, 0.0, 1.0, 1.0), NZ, &rect(5.0, 5.0, 1.0, 1.0), NZ, BoolOp::Union);
+    let u = boolean(
+        &rect(0.0, 0.0, 1.0, 1.0),
+        NZ,
+        &rect(5.0, 5.0, 1.0, 1.0),
+        NZ,
+        BoolOp::Union,
+    );
     assert_eq!(u.subpaths.len(), 2);
     assert!(close(ar(&u), 2.0, 1e-9));
 }
@@ -83,7 +113,13 @@ fn union_idempotent_rect() {
 
 #[test]
 fn circle_union_is_curve_preserving_and_compact() {
-    let u = boolean(&circle(0.0, 0.0, 10.0), NZ, &circle(10.0, 0.0, 10.0), NZ, BoolOp::Union);
+    let u = boolean(
+        &circle(0.0, 0.0, 10.0),
+        NZ,
+        &circle(10.0, 0.0, 10.0),
+        NZ,
+        BoolOp::Union,
+    );
     assert!(has_curves(&u));
     assert!(u.anchor_count() <= 12, "anchors: {}", u.anchor_count());
     // Lens area: 2 r² acos(d/2r) − (d/2)√(4r² − d²)
@@ -94,7 +130,13 @@ fn circle_union_is_curve_preserving_and_compact() {
 
 #[test]
 fn circle_intersect_rect_keeps_curve() {
-    let i = boolean(&circle(0.0, 0.0, 10.0), NZ, &rect(0.0, -20.0, 20.0, 40.0), NZ, BoolOp::Intersect);
+    let i = boolean(
+        &circle(0.0, 0.0, 10.0),
+        NZ,
+        &rect(0.0, -20.0, 20.0, 40.0),
+        NZ,
+        BoolOp::Intersect,
+    );
     assert!(has_curves(&i));
     assert!(close(ar(&i), PI * 50.0, 1e-3));
     assert!(i.anchor_count() <= 5, "anchors: {}", i.anchor_count());
@@ -102,7 +144,13 @@ fn circle_intersect_rect_keeps_curve() {
 
 #[test]
 fn hole_from_difference() {
-    let d = boolean(&rect(0.0, 0.0, 10.0, 10.0), NZ, &rect(3.0, 3.0, 4.0, 4.0), NZ, BoolOp::Difference);
+    let d = boolean(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        NZ,
+        &rect(3.0, 3.0, 4.0, 4.0),
+        NZ,
+        BoolOp::Difference,
+    );
     assert_eq!(d.subpaths.len(), 2);
     assert!(close(ar(&d), 84.0, 1e-9));
     // Consistently oriented: works with both fill rules.
@@ -115,33 +163,71 @@ fn fill_rules_differ_for_nested_same_direction() {
     p.subpaths.extend(rect(3.0, 3.0, 4.0, 4.0).subpaths);
     assert!(close(area(&p, FillRule::NonZero), 100.0, 1e-9));
     assert!(close(area(&p, FillRule::EvenOdd), 84.0, 1e-9));
-    let u = boolean(&p, FillRule::EvenOdd, &rect(20.0, 0.0, 1.0, 1.0), NZ, BoolOp::Union);
+    let u = boolean(
+        &p,
+        FillRule::EvenOdd,
+        &rect(20.0, 0.0, 1.0, 1.0),
+        NZ,
+        BoolOp::Union,
+    );
     assert!(close(ar(&u), 85.0, 1e-9));
 }
 
 #[test]
 fn open_paths_are_closed_for_fill() {
-    let tri = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(0.0, 10.0)], false));
+    let tri = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(0.0, 10.0),
+        ],
+        false,
+    ));
     assert!(close(ar(&tri), 50.0, 1e-9));
 }
 
 #[test]
 fn non_finite_input_errors() {
-    let bad = PathData::single(SubPath::polyline(&[Point::new(f64::NAN, 0.0), Point::new(1.0, 0.0), Point::new(0.0, 1.0)], true));
-    let r = try_boolean(&bad, NZ, &rect(0.0, 0.0, 1.0, 1.0), NZ, BoolOp::Union, DEFAULT_PRECISION);
+    let bad = PathData::single(SubPath::polyline(
+        &[
+            Point::new(f64::NAN, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(0.0, 1.0),
+        ],
+        true,
+    ));
+    let r = try_boolean(
+        &bad,
+        NZ,
+        &rect(0.0, 0.0, 1.0, 1.0),
+        NZ,
+        BoolOp::Union,
+        DEFAULT_PRECISION,
+    );
     assert_eq!(r, Err(PathOpsError::NonFinite));
 }
 
 #[test]
 fn normalize_figure_eight() {
-    let p = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 10.0), Point::new(10.0, 0.0), Point::new(0.0, 10.0)], true));
+    let p = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 10.0),
+            Point::new(10.0, 0.0),
+            Point::new(0.0, 10.0),
+        ],
+        true,
+    ));
     let n = normalize(&p, NZ);
     assert_eq!(n.subpaths.len(), 2);
     assert!(close(ar(&n), 50.0, 1e-9));
 }
 
 fn stack() -> Vec<Shape> {
-    vec![shape(rect(0.0, 0.0, 10.0, 10.0), 1), shape(rect(5.0, 5.0, 10.0, 10.0), 2)]
+    vec![
+        shape(rect(0.0, 0.0, 10.0, 10.0), 1),
+        shape(rect(5.0, 5.0, 10.0, 10.0), 2),
+    ]
 }
 
 #[test]
@@ -164,7 +250,11 @@ fn pf_minus_front_and_back() {
 
 #[test]
 fn pf_intersect_and_exclude_three() {
-    let s = vec![shape(rect(0.0, 0.0, 10.0, 10.0), 1), shape(rect(5.0, 0.0, 10.0, 10.0), 2), shape(rect(8.0, 0.0, 10.0, 10.0), 3)];
+    let s = vec![
+        shape(rect(0.0, 0.0, 10.0, 10.0), 1),
+        shape(rect(5.0, 0.0, 10.0, 10.0), 2),
+        shape(rect(8.0, 0.0, 10.0, 10.0), 3),
+    ];
     let i = pathfinder(PathfinderOp::Intersect, &s);
     assert!(close(ar(&i[0].path), 20.0, 1e-9));
     // Odd coverage: [0,5)=1, [5,8)=2, [8,10)=3, [10,15)=2, [15,18)=1 → 5+2+3 = 10 wide.
@@ -203,7 +293,11 @@ fn pf_merge_same_key() {
 
 #[test]
 fn pf_crop() {
-    let s = vec![shape(rect(0.0, 0.0, 10.0, 10.0), 1), shape(rect(10.0, 0.0, 10.0, 10.0), 2), shape(rect(5.0, 0.0, 10.0, 5.0), 3)];
+    let s = vec![
+        shape(rect(0.0, 0.0, 10.0, 10.0), 1),
+        shape(rect(10.0, 0.0, 10.0, 10.0), 2),
+        shape(rect(5.0, 0.0, 10.0, 5.0), 3),
+    ];
     let r = pathfinder(PathfinderOp::Crop, &s);
     assert_eq!(r.len(), 2);
     assert!(r.iter().all(|x| close(ar(&x.path), 25.0, 1e-9)));
@@ -214,7 +308,10 @@ fn pf_crop() {
 fn pf_outline_edges() {
     let r = pathfinder(PathfinderOp::Outline, &stack());
     assert_eq!(r.len(), 4, "{r:?}");
-    assert!(r.iter().all(|s| s.path.subpaths.iter().all(|sp| !sp.closed)));
+    assert!(
+        r.iter()
+            .all(|s| s.path.subpaths.iter().all(|sp| !sp.closed))
+    );
     let len: f64 = r.iter().map(|s| s.path.length()).sum();
     assert!(close(len, 80.0, 1e-9));
 }
@@ -222,7 +319,10 @@ fn pf_outline_edges() {
 #[test]
 fn pf_outline_dedups_shared_edges() {
     // Two squares sharing an edge exactly.
-    let s = vec![shape(rect(0.0, 0.0, 10.0, 10.0), 1), shape(rect(10.0, 0.0, 10.0, 10.0), 2)];
+    let s = vec![
+        shape(rect(0.0, 0.0, 10.0, 10.0), 1),
+        shape(rect(10.0, 0.0, 10.0, 10.0), 2),
+    ];
     let r = pathfinder(PathfinderOp::Outline, &s);
     let len: f64 = r.iter().map(|s| s.path.length()).sum();
     assert!(close(len, 70.0, 1e-9), "len {len}");
@@ -257,17 +357,36 @@ fn offset_circle_insets() {
 #[test]
 fn offset_rect_joins() {
     let r = rect(0.0, 0.0, 20.0, 10.0);
-    assert!(close(ar(&offset_path(&r, 2.0, Join::Miter, 4.0)), 24.0 * 14.0, 1e-6));
+    assert!(close(
+        ar(&offset_path(&r, 2.0, Join::Miter, 4.0)),
+        24.0 * 14.0,
+        1e-6
+    ));
     assert_eq!(offset_path(&r, 2.0, Join::Miter, 4.0).anchor_count(), 4);
-    assert!(close(ar(&offset_path(&r, 2.0, Join::Bevel, 4.0)), 24.0 * 14.0 - 4.0 * 2.0, 1e-6));
-    assert!(close(ar(&offset_path(&r, 2.0, Join::Round, 4.0)), 200.0 + 2.0 * 2.0 * 30.0 + PI * 4.0, 1e-3));
-    assert!(close(ar(&offset_path(&r, -2.0, Join::Miter, 4.0)), 16.0 * 6.0, 1e-6));
+    assert!(close(
+        ar(&offset_path(&r, 2.0, Join::Bevel, 4.0)),
+        24.0 * 14.0 - 4.0 * 2.0,
+        1e-6
+    ));
+    assert!(close(
+        ar(&offset_path(&r, 2.0, Join::Round, 4.0)),
+        200.0 + 2.0 * 2.0 * 30.0 + PI * 4.0,
+        1e-3
+    ));
+    assert!(close(
+        ar(&offset_path(&r, -2.0, Join::Miter, 4.0)),
+        16.0 * 6.0,
+        1e-6
+    ));
     assert!(offset_path(&r, -6.0, Join::Miter, 4.0).is_empty());
 }
 
 #[test]
 fn outline_stroke_of_line() {
-    let l = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(30.0, 40.0)], false));
+    let l = PathData::single(SubPath::polyline(
+        &[Point::new(0.0, 0.0), Point::new(30.0, 40.0)],
+        false,
+    ));
     let o = outline_stroke(&l, 4.0, Cap::Butt, Join::Miter, 4.0);
     assert!(close(ar(&o), 200.0, 1e-6));
     let o = outline_stroke(&l, 4.0, Cap::Square, Join::Miter, 4.0);
@@ -276,7 +395,13 @@ fn outline_stroke_of_line() {
 
 #[test]
 fn outline_stroke_of_square_is_ring() {
-    let o = outline_stroke(&rect(0.0, 0.0, 10.0, 10.0), 2.0, Cap::Butt, Join::Miter, 10.0);
+    let o = outline_stroke(
+        &rect(0.0, 0.0, 10.0, 10.0),
+        2.0,
+        Cap::Butt,
+        Join::Miter,
+        10.0,
+    );
     assert_eq!(o.subpaths.len(), 2);
     assert!(close(ar(&o), 144.0 - 64.0, 1e-6));
 }
@@ -284,7 +409,15 @@ fn outline_stroke_of_square_is_ring() {
 #[test]
 fn outline_stroke_self_overlap_is_cleaned() {
     // A zig-zag whose stroke overlaps itself at the joins.
-    let z = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(0.0, 1.0), Point::new(10.0, 2.0)], false));
+    let z = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(0.0, 1.0),
+            Point::new(10.0, 2.0),
+        ],
+        false,
+    ));
     let o = outline_stroke(&z, 3.0, Cap::Round, Join::Round, 4.0);
     assert!(!o.is_empty());
     // Normalised output: its signed area equals its fill area.
@@ -293,8 +426,14 @@ fn outline_stroke_self_overlap_is_cleaned() {
 }
 
 fn dense_circle(r: f64, n: usize) -> PathData {
-    let pts: Vec<Point> =
-        (0..n).map(|i| Point::new(r * (i as f64 / n as f64 * 2.0 * PI).cos(), r * (i as f64 / n as f64 * 2.0 * PI).sin())).collect();
+    let pts: Vec<Point> = (0..n)
+        .map(|i| {
+            Point::new(
+                r * (i as f64 / n as f64 * 2.0 * PI).cos(),
+                r * (i as f64 / n as f64 * 2.0 * PI).sin(),
+            )
+        })
+        .collect();
     PathData::single(SubPath::polyline(&pts, true))
 }
 
@@ -322,7 +461,12 @@ fn simplify_dense_circle() {
 #[test]
 fn simplify_keeps_square_corners() {
     let mut pts = Vec::new();
-    for (a, b) in [((0.0, 0.0), (10.0, 0.0)), ((10.0, 0.0), (10.0, 10.0)), ((10.0, 10.0), (0.0, 10.0)), ((0.0, 10.0), (0.0, 0.0))] {
+    for (a, b) in [
+        ((0.0, 0.0), (10.0, 0.0)),
+        ((10.0, 0.0), (10.0, 10.0)),
+        ((10.0, 10.0), (0.0, 10.0)),
+        ((0.0, 10.0), (0.0, 0.0)),
+    ] {
         for i in 0..5 {
             let t = i as f64 / 5.0;
             pts.push(Point::new(a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t));
@@ -337,7 +481,14 @@ fn simplify_keeps_square_corners() {
 #[test]
 fn simplify_straight_lines_option() {
     let c = dense_circle(50.0, 200);
-    let s = simplify_with(&c, &SimplifyOptions { tolerance: 1.0, straight_lines: true, ..Default::default() });
+    let s = simplify_with(
+        &c,
+        &SimplifyOptions {
+            tolerance: 1.0,
+            straight_lines: true,
+            ..Default::default()
+        },
+    );
     assert!(!has_curves(&s));
     assert!(s.anchor_count() < 40);
     assert!(max_deviation(&c, &s) <= 1.0 + 1e-6);
@@ -354,7 +505,13 @@ fn smooth_rounds_corners() {
 #[test]
 fn remove_redundant_collinear_and_curve() {
     let p = PathData::single(SubPath::polyline(
-        &[Point::new(0.0, 0.0), Point::new(5.0, 0.0), Point::new(10.0, 0.0), Point::new(10.0, 10.0), Point::new(0.0, 10.0)],
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(5.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(10.0, 10.0),
+            Point::new(0.0, 10.0),
+        ],
         true,
     ));
     assert_eq!(remove_redundant_points(&p, 1e-6).anchor_count(), 4);
@@ -377,36 +534,72 @@ fn add_anchor_points_doubles() {
 
 #[test]
 fn average_axes() {
-    let p = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 4.0), Point::new(5.0, 8.0)], false));
+    let p = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 4.0),
+            Point::new(5.0, 8.0),
+        ],
+        false,
+    ));
     let h = average(&p, &[(0, 0), (0, 1)], AverageAxis::Horizontal);
     assert_eq!(h.subpaths[0].anchors[0].p, Point::new(0.0, 2.0));
     assert_eq!(h.subpaths[0].anchors[1].p, Point::new(10.0, 2.0));
     let b = average(&p, &[(0, 0), (0, 1), (0, 2)], AverageAxis::Both);
-    assert!(b.subpaths[0].anchors.iter().all(|a| a.p.distance(Point::new(5.0, 4.0)) < 1e-12));
+    assert!(
+        b.subpaths[0]
+            .anchors
+            .iter()
+            .all(|a| a.p.distance(Point::new(5.0, 4.0)) < 1e-12)
+    );
     let v = average(&p, &[(0, 0), (0, 1)], AverageAxis::Vertical);
     assert_eq!(v.subpaths[0].anchors[0].p.x, 5.0);
 }
 
 #[test]
 fn join_two_open_paths() {
-    let a = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0)], false));
-    let b = PathData::single(SubPath::polyline(&[Point::new(20.0, 5.0), Point::new(10.0, 0.0)], false));
+    let a = PathData::single(SubPath::polyline(
+        &[Point::new(0.0, 0.0), Point::new(10.0, 0.0)],
+        false,
+    ));
+    let b = PathData::single(SubPath::polyline(
+        &[Point::new(20.0, 5.0), Point::new(10.0, 0.0)],
+        false,
+    ));
     let j = join(&[a.clone(), b], 1e-6);
     assert_eq!(j.subpaths.len(), 1);
     assert_eq!(j.anchor_count(), 3);
     assert!(!j.subpaths[0].closed);
-    let c = PathData::single(SubPath::polyline(&[Point::new(12.0, 0.0), Point::new(20.0, 0.0)], false));
+    let c = PathData::single(SubPath::polyline(
+        &[Point::new(12.0, 0.0), Point::new(20.0, 0.0)],
+        false,
+    ));
     let j = join(&[a, c], 1e-6);
     assert_eq!(j.anchor_count(), 4);
 }
 
 #[test]
 fn join_single_path_closes() {
-    let a = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(5.0, 5.0)], false));
+    let a = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(5.0, 5.0),
+        ],
+        false,
+    ));
     let j = join(&[a], 1e-6);
     assert!(j.subpaths[0].closed);
     assert_eq!(j.anchor_count(), 3);
-    let b = PathData::single(SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(5.0, 5.0), Point::new(0.0, 0.0)], false));
+    let b = PathData::single(SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(5.0, 5.0),
+            Point::new(0.0, 0.0),
+        ],
+        false,
+    ));
     assert_eq!(join(&[b], 1e-6).anchor_count(), 3);
 }
 
@@ -432,10 +625,21 @@ fn timing_unite_1000_circles() {
         seed ^= seed << 17;
         (seed % 1_000_000) as f64 / 1_000_000.0
     };
-    let circles: Vec<Shape> = (0..1000).map(|i| shape(circle(rnd() * 1000.0, rnd() * 1000.0, 5.0 + rnd() * 30.0), i)).collect();
+    let circles: Vec<Shape> = (0..1000)
+        .map(|i| {
+            shape(
+                circle(rnd() * 1000.0, rnd() * 1000.0, 5.0 + rnd() * 30.0),
+                i,
+            )
+        })
+        .collect();
     let t = std::time::Instant::now();
     let r = pathfinder(PathfinderOp::Unite, &circles);
-    println!("unite 1000 circles: {} ms, {} anchors", t.elapsed().as_millis(), r[0].path.anchor_count());
+    println!(
+        "unite 1000 circles: {} ms, {} anchors",
+        t.elapsed().as_millis(),
+        r[0].path.anchor_count()
+    );
     assert!(!r.is_empty());
 }
 
@@ -443,14 +647,27 @@ fn timing_unite_1000_circles() {
 fn remove_anchor_refits_the_curve_round_it() {
     use vectorcraft_geom::Anchor;
     let (p0, p3) = (Point::new(0.0, 0.0), Point::new(100.0, 0.0));
-    let original =
-        SubPath::new(vec![Anchor::with_handles(p0, p0, Point::new(30.0, 80.0)), Anchor::with_handles(p3, Point::new(70.0, 80.0), p3)], false);
+    let original = SubPath::new(
+        vec![
+            Anchor::with_handles(p0, p0, Point::new(30.0, 80.0)),
+            Anchor::with_handles(p3, Point::new(70.0, 80.0), p3),
+        ],
+        false,
+    );
     let mut sp = original.clone();
     let i = sp.insert_anchor(0, 0.4);
     assert!(remove_anchor(&mut sp, i));
     assert_eq!(sp.anchors.len(), 2);
-    assert!(sp.anchors[0].h_out.distance(original.anchors[0].h_out) < 0.5, "{:?}", sp.anchors[0].h_out);
-    assert!(sp.anchors[1].h_in.distance(original.anchors[1].h_in) < 0.5, "{:?}", sp.anchors[1].h_in);
+    assert!(
+        sp.anchors[0].h_out.distance(original.anchors[0].h_out) < 0.5,
+        "{:?}",
+        sp.anchors[0].h_out
+    );
+    assert!(
+        sp.anchors[1].h_in.distance(original.anchors[1].h_in) < 0.5,
+        "{:?}",
+        sp.anchors[1].h_in
+    );
     // A circle stays closed and round with one anchor fewer.
     let mut c = circle(0.0, 0.0, 50.0).subpaths.remove(0);
     let n = c.anchors.len();
@@ -466,20 +683,44 @@ fn remove_anchor_between_straight_sides_draws_a_straight_one() {
     let n = sp.anchors.len();
     assert!(remove_anchor(&mut sp, 0));
     assert!(sp.closed && sp.anchors.len() == n - 1);
-    assert!(!sp.anchors.iter().any(|a| a.has_in() || a.has_out()), "{sp:?}");
-    let mut line = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(40.0, 30.0), Point::new(100.0, 0.0)], false);
+    assert!(
+        !sp.anchors.iter().any(|a| a.has_in() || a.has_out()),
+        "{sp:?}"
+    );
+    let mut line = SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(40.0, 30.0),
+            Point::new(100.0, 0.0),
+        ],
+        false,
+    );
     assert!(remove_anchor(&mut line, 1));
     assert!(line.anchors.len() == 2 && line.segment_is_line(0));
 }
 
 #[test]
 fn remove_anchor_at_an_end_drops_its_segment_and_rejects_bad_input() {
-    let mut sp = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(10.0, 0.0), Point::new(20.0, 5.0)], false);
+    let mut sp = SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 0.0),
+            Point::new(20.0, 5.0),
+        ],
+        false,
+    );
     assert!(!remove_anchor(&mut sp, 3));
     assert!(remove_anchor(&mut sp, 0));
     assert_eq!(sp.anchors[0].p, Point::new(10.0, 0.0));
     // Non-finite points never panic.
-    let mut bad = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(f64::NAN, 1.0), Point::new(f64::INFINITY, 0.0)], false);
+    let mut bad = SubPath::polyline(
+        &[
+            Point::new(0.0, 0.0),
+            Point::new(f64::NAN, 1.0),
+            Point::new(f64::INFINITY, 0.0),
+        ],
+        false,
+    );
     bad.anchors[0].h_out = Point::new(5.0, f64::NAN);
     assert!(remove_anchor(&mut bad, 1));
     assert_eq!(bad.anchors.len(), 2);

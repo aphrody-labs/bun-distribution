@@ -20,19 +20,29 @@ pub fn default_dir() -> Option<PathBuf> {
         return home.map(|h| h.join("Library/Application Support/DeckCraft/Recovery"));
     }
     if cfg!(target_os = "windows") {
-        return std::env::var_os("APPDATA").map(|a| PathBuf::from(a).join("DeckCraft").join("Recovery"));
+        return std::env::var_os("APPDATA")
+            .map(|a| PathBuf::from(a).join("DeckCraft").join("Recovery"));
     }
-    std::env::var_os("XDG_DATA_HOME").map(PathBuf::from).or_else(|| home.map(|h| h.join(".local/share"))).map(|d| d.join("deckcraft/recovery"))
+    std::env::var_os("XDG_DATA_HOME")
+        .map(PathBuf::from)
+        .or_else(|| home.map(|h| h.join(".local/share")))
+        .map(|d| d.join("deckcraft/recovery"))
 }
 
 fn files(dir: &Path, uid: u64) -> (PathBuf, PathBuf) {
-    (dir.join(format!("{uid}.deckcraft")), dir.join(format!("{uid}.json")))
+    (
+        dir.join(format!("{uid}.deckcraft")),
+        dir.join(format!("{uid}.json")),
+    )
 }
 
 fn now_secs() -> u64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -50,7 +60,8 @@ pub fn discard(dir: &Path, uid: u64) {
 /// Write entries for the unsaved presentations (and drop those of saved ones). Returns how many
 /// were written.
 pub fn save(s: &Session, dir: &Path) -> Result<usize> {
-    std::fs::create_dir_all(dir).map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
+    std::fs::create_dir_all(dir)
+        .map_err(|e| EngineError::Other(format!("{}: {e}", dir.display())))?;
     let mut n = 0;
     for d in s.documents() {
         if !d.is_dirty() {
@@ -58,12 +69,16 @@ pub fn save(s: &Session, dir: &Path) -> Result<usize> {
             continue;
         }
         let (doc, meta) = files(dir, d.uid);
-        let bytes = deckcraft_format::save(&d.doc).map_err(|e| EngineError::Other(e.to_string()))?;
+        let bytes =
+            deckcraft_format::save(&d.doc).map_err(|e| EngineError::Other(e.to_string()))?;
         // Write then rename, so a crash mid-write never leaves a torn file.
         let tmp = doc.with_extension("tmp");
-        std::fs::write(&tmp, &bytes).and_then(|_| std::fs::rename(&tmp, &doc)).map_err(|e| EngineError::Other(format!("{}: {e}", doc.display())))?;
+        std::fs::write(&tmp, &bytes)
+            .and_then(|_| std::fs::rename(&tmp, &doc))
+            .map_err(|e| EngineError::Other(format!("{}: {e}", doc.display())))?;
         let m = json!({"path": d.path, "title": d.title(), "saved": now_secs()});
-        std::fs::write(&meta, m.to_string()).map_err(|e| EngineError::Other(format!("{}: {e}", meta.display())))?;
+        std::fs::write(&meta, m.to_string())
+            .map_err(|e| EngineError::Other(format!("{}: {e}", meta.display())))?;
         n += 1;
     }
     Ok(n)
@@ -72,13 +87,21 @@ pub fn save(s: &Session, dir: &Path) -> Result<usize> {
 /// Entries in `dir`: (uid, metadata).
 pub fn list(dir: &Path) -> Vec<(u64, Value)> {
     let mut out = Vec::new();
-    let Ok(rd) = std::fs::read_dir(dir) else { return out };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return out;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.extension().and_then(|x| x.to_str()) != Some("deckcraft") {
             continue;
         }
-        let Some(uid) = p.file_stem().and_then(|s| s.to_str()).and_then(|s| s.parse::<u64>().ok()) else { continue };
+        let Some(uid) = p
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .and_then(|s| s.parse::<u64>().ok())
+        else {
+            continue;
+        };
         // Metadata is a file on disk: anything but an object (corrupt, hand-edited) counts as none.
         let meta = std::fs::read_to_string(p.with_extension("json"))
             .ok()
@@ -97,11 +120,19 @@ pub fn open(s: &mut Session, dir: &Path) -> Result<Vec<usize>> {
     let mut opened = Vec::new();
     for (uid, meta) in list(dir) {
         let (doc, _) = files(dir, uid);
-        let Ok(bytes) = std::fs::read(&doc) else { continue };
-        let Ok(mut d) = deckcraft_format::load(&bytes) else { continue };
+        let Ok(bytes) = std::fs::read(&doc) else {
+            continue;
+        };
+        let Ok(mut d) = deckcraft_format::load(&bytes) else {
+            continue;
+        };
         deckcraft_format::repair(&mut d);
         let path = meta.get("path").and_then(Value::as_str).map(str::to_string);
-        let title = meta.get("title").and_then(Value::as_str).filter(|t| !t.is_empty()).unwrap_or("Presentation");
+        let title = meta
+            .get("title")
+            .and_then(Value::as_str)
+            .filter(|t| !t.is_empty())
+            .unwrap_or("Presentation");
         let mut st = DocState::new(d, path, format!("{title} (Recovered)"));
         // Unsaved: the copy on disk (if any) is older than what was recovered.
         st.saved_doc = std::sync::Arc::new((*st.doc).clone());
@@ -144,7 +175,8 @@ mod tests {
         s.recovery_dir = Some(dir.clone());
         assert_eq!(save(&s, &dir).unwrap(), 1);
         let path = dir.join("saved.deckcraft");
-        s.execute("file.saveAs", &json!({"path": path.to_string_lossy()})).unwrap();
+        s.execute("file.saveAs", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert!(list(&dir).is_empty());
         let _ = std::fs::remove_dir_all(&dir);
     }

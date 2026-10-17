@@ -53,7 +53,11 @@ impl std::fmt::Debug for VllmConfig {
 impl VllmConfig {
     #[must_use]
     pub fn new(model: impl Into<String>) -> Self {
-        Self { base_url: DEFAULT_VLLM_URL.into(), model: model.into(), api_key: None }
+        Self {
+            base_url: DEFAULT_VLLM_URL.into(),
+            model: model.into(),
+            api_key: None,
+        }
     }
 
     #[must_use]
@@ -102,7 +106,11 @@ impl VllmClient {
         let api = VllmApi::from_provider(runtime.clone());
         let compat_client = OpenAiCompatClient::from_provider(runtime, OpenAiWire::Chat, model)
             .with_http_client(api.http.clone());
-        Self { config, compat_client, api }
+        Self {
+            config,
+            compat_client,
+            api,
+        }
     }
 
     /// Use one caller-configured connection pool for chat and native routes.
@@ -192,7 +200,9 @@ impl RerankClient for VllmClient {
         let resp: VllmRerankResponse = self.api.post("rerank", &body).await?;
         let expected = top_n.unwrap_or(documents.len()).min(documents.len());
         if resp.results.len() != expected {
-            return Err(ModelError::Stream("vLLM returned an incomplete rerank result".into()));
+            return Err(ModelError::Stream(
+                "vLLM returned an incomplete rerank result".into(),
+            ));
         }
         let mut seen = vec![false; documents.len()];
         let mut hits = Vec::with_capacity(resp.results.len());
@@ -206,7 +216,10 @@ impl RerankClient for VllmClient {
                 ));
             }
             seen[result.index] = true;
-            hits.push(RerankHit { index: result.index, score: result.relevance_score });
+            hits.push(RerankHit {
+                index: result.index,
+                score: result.relevance_score,
+            });
         }
         hits.sort_by(|a, b| b.score.total_cmp(&a.score));
         Ok(hits)
@@ -238,7 +251,11 @@ impl EmbedClient for VllmClient {
         let mut resp: VllmEmbeddingResponse = self.api.post("v1/embeddings", &body).await?;
         resp.data.sort_by_key(|item| item.index);
         if resp.data.len() != texts.len()
-            || resp.data.iter().enumerate().any(|(i, item)| item.index != i)
+            || resp
+                .data
+                .iter()
+                .enumerate()
+                .any(|(i, item)| item.index != i)
         {
             return Err(ModelError::Stream(
                 "vLLM returned incomplete or invalid embedding indices".into(),
@@ -251,7 +268,9 @@ impl EmbedClient for VllmClient {
                     || item.embedding.iter().any(|value| !value.is_finite())
             })
         {
-            return Err(ModelError::Stream("vLLM returned invalid embedding vectors".into()));
+            return Err(ModelError::Stream(
+                "vLLM returned invalid embedding vectors".into(),
+            ));
         }
         Ok(resp.data.into_iter().map(|item| item.embedding).collect())
     }

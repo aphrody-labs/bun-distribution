@@ -217,7 +217,9 @@ pub fn survey_slots(sources: &EditorSources) -> SlotSurvey {
                 .iter()
                 .chain(part.mirror.iter().flat_map(|mirror| mirror.colors.iter()));
             for color in colors {
-                let entry = rows.entry(color.slot).or_insert_with(|| (0, Vec::new(), Vec::new()));
+                let entry = rows
+                    .entry(color.slot)
+                    .or_insert_with(|| (0, Vec::new(), Vec::new()));
                 entry.0 += 1;
                 entry.1.push(format!(
                     "#{:02x}{:02x}{:02x}",
@@ -237,11 +239,19 @@ pub fn survey_slots(sources: &EditorSources) -> SlotSurvey {
             colors.sort();
             colors.dedup();
             colors.truncate(8);
-            SlotObservation { slot, documents: docs.len(), rows: count, colors }
+            SlotObservation {
+                slot,
+                documents: docs.len(),
+                rows: count,
+                colors,
+            }
         })
         .collect();
     slots.sort_by_key(|row| (std::cmp::Reverse(row.rows), row.slot));
-    SlotSurvey { documents: documents.len(), slots }
+    SlotSurvey {
+        documents: documents.len(),
+        slots,
+    }
 }
 
 /// Formats a swatch RGB as `#rrggbb`.
@@ -289,7 +299,12 @@ pub fn generate(
         .catalog
         .parts
         .iter()
-        .flat_map(|part| [part.resource_name_str1.as_str(), part.resource_name_str2.as_str()])
+        .flat_map(|part| {
+            [
+                part.resource_name_str1.as_str(),
+                part.resource_name_str2.as_str(),
+            ]
+        })
         .filter(|name| !name.is_empty())
         .collect();
 
@@ -350,8 +365,11 @@ pub fn generate(
             swatch.share * 100.0,
             swatch.kept
         );
-        let channels =
-            [i64::from(swatch.rgb[0]), i64::from(swatch.rgb[1]), i64::from(swatch.rgb[2])];
+        let channels = [
+            i64::from(swatch.rgb[0]),
+            i64::from(swatch.rgb[1]),
+            i64::from(swatch.rgb[2]),
+        ];
         let mut hit = 0_usize;
         match &binding.target {
             ColorTarget::TexSlot { slot } => {
@@ -378,8 +396,11 @@ pub fn generate(
                         });
                     }
                 }
-            },
-            ColorTarget::TexPartSlot { part: part_slot, slot } => {
+            }
+            ColorTarget::TexPartSlot {
+                part: part_slot,
+                slot,
+            } => {
                 for part in &mut document.tex_parts {
                     if part.slot != *part_slot {
                         continue;
@@ -406,7 +427,7 @@ pub fn generate(
                         });
                     }
                 }
-            },
+            }
             ColorTarget::MdlSlot { slot } => {
                 for part in &mut document.mdl_parts {
                     if part.slot != *slot {
@@ -425,7 +446,7 @@ pub fn generate(
                         evidence: evidence.clone(),
                     });
                 }
-            },
+            }
         }
         if hit == 0 {
             warnings.push(Warning {
@@ -437,7 +458,11 @@ pub fn generate(
     }
 
     for over in &recipe.bones {
-        match document.bones.iter_mut().find(|bone| bone.bone == over.bone) {
+        match document
+            .bones
+            .iter_mut()
+            .find(|bone| bone.bone == over.bone)
+        {
             Some(bone) => {
                 let before = format!("{:?}", bone.scale);
                 bone.scale = over.scale;
@@ -448,7 +473,7 @@ pub fn generate(
                     after: format!("{:?}", over.scale),
                     evidence: "recette".to_string(),
                 });
-            },
+            }
             None => warnings.push(Warning {
                 stage: "bone".to_string(),
                 subject: over.bone.to_string(),
@@ -457,8 +482,11 @@ pub fn generate(
         }
     }
 
-    let bound: std::collections::BTreeSet<&str> =
-        recipe.colors.iter().map(|binding| binding.role.as_str()).collect();
+    let bound: std::collections::BTreeSet<&str> = recipe
+        .colors
+        .iter()
+        .map(|binding| binding.role.as_str())
+        .collect();
     let mut unbound_roles: Vec<String> = swatches
         .iter()
         .map(|swatch| swatch.role.clone())

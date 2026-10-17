@@ -36,11 +36,11 @@ impl IosDevice for SdCard {
                     .with_sd_card_is_sdhc(false);
                 ctx.mmio.phys_write_u32(out_ptr, status.raw());
                 0
-            },
+            }
             IOCTL_SEND_CMD => {
                 ctx.mmio.phys_slice_mut(out_ptr, out_len as usize).fill(0);
                 0
-            },
+            }
             _ => {
                 tracing::error!(
                     device = &ctx.device_path,
@@ -48,7 +48,7 @@ impl IosDevice for SdCard {
                     "SDIO: unimplemented ioctl"
                 );
                 IPC_EINVAL
-            },
+            }
         }
     }
 }

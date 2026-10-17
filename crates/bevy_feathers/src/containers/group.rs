@@ -1,7 +1,7 @@
 use bevy_app::Propagate;
-use bevy_scene::{bsn, Scene};
+use bevy_scene::{Scene, bsn};
 use bevy_text::FontWeight;
-use bevy_ui::{px, AlignItems, Display, FlexDirection, JustifyContent, Node, UiRect};
+use bevy_ui::{AlignItems, Display, FlexDirection, JustifyContent, Node, UiRect, px};
 
 use crate::{
     constants::{fonts, size},

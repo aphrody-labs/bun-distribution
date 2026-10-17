@@ -18,4 +18,9 @@ pub struct McpSessionToken(pub String);
 
 impl_string_token!(McpSessionToken);
 impl_mysql_token_from_row!(McpSessionToken);
-impl_crockford_generator!(McpSessionToken, 32usize, TokenPrefix::McpSession, CrockfordLower);
+impl_crockford_generator!(
+    McpSessionToken,
+    32usize,
+    TokenPrefix::McpSession,
+    CrockfordLower
+);

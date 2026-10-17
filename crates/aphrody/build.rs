@@ -18,9 +18,9 @@ fn main() {
                 // V8 (via aphrody-kernel -> Obscura): identical COMDAT folding merges distinct
                 // external references and V8 aborts at startup; keep /OPT:REF, disable ICF.
                 println!("cargo:rustc-link-arg-bins=/OPT:NOICF");
-            },
+            }
             "gnu" => println!("cargo:rustc-link-arg-bins=-Wl,--stack,{MAIN_STACK_BYTES}"),
-            _ => {},
+            _ => {}
         }
     }
 }

@@ -10,7 +10,10 @@ use super::sel_result;
 use crate::{CmdError, CmdResult, CommandSpec, Session, p};
 
 /// Word's font size list.
-pub const SIZES: [f32; 17] = [8.0, 9.0, 10.0, 10.5, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 36.0, 48.0, 72.0];
+pub const SIZES: [f32; 17] = [
+    8.0, 9.0, 10.0, 10.5, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 22.0, 24.0, 26.0, 28.0, 36.0, 48.0,
+    72.0,
+];
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
@@ -161,8 +164,18 @@ fn target(s: &Session) -> Option<(Pos, Pos)> {
     if before.is_some_and(is_w) && after.is_some_and(is_w) {
         let (x, y) = p.word_at(a.off);
         // word_at includes trailing spaces; Word formats just the word.
-        let word_end = p.text.get(x..y).map(|w| x + w.trim_end().len()).unwrap_or(y);
-        return Some((Pos { off: x, ..a.clone() }, Pos { off: word_end, ..a }));
+        let word_end = p
+            .text
+            .get(x..y)
+            .map(|w| x + w.trim_end().len())
+            .unwrap_or(y);
+        return Some((
+            Pos {
+                off: x,
+                ..a.clone()
+            },
+            Pos { off: word_end, ..a },
+        ));
     }
     None
 }
@@ -242,11 +255,17 @@ fn resolved(s: &Session) -> Vec<ResolvedChar> {
     let Some((a, b)) = target(s) else {
         let f = &s.sel.focus;
         let style = s.doc.para_at(f).and_then(|p| p.props.style.clone());
-        out.push(s.doc.styles.resolve_char(style.as_deref(), &s.typing_props()));
+        out.push(
+            s.doc
+                .styles
+                .resolve_char(style.as_deref(), &s.typing_props()),
+        );
         return out;
     };
     for path in s.doc.paths_between(&a, &b) {
-        let Some(p) = s.doc.para(a.story, &path) else { continue };
+        let Some(p) = s.doc.para(a.story, &path) else {
+            continue;
+        };
         let from = if path == a.path { a.off } else { 0 };
         let to = if path == b.path { b.off } else { p.len() };
         for (r, c) in p.run_ranges() {
@@ -260,12 +279,21 @@ fn resolved(s: &Session) -> Vec<ResolvedChar> {
     }
     if out.is_empty() {
         let style = s.doc.para_at(&a).and_then(|p| p.props.style.clone());
-        out.push(s.doc.styles.resolve_char(style.as_deref(), &s.typing_props()));
+        out.push(
+            s.doc
+                .styles
+                .resolve_char(style.as_deref(), &s.typing_props()),
+        );
     }
     out
 }
 
-fn toggle(s: &mut Session, v: &Value, get: fn(&ResolvedChar) -> bool, set: fn(&mut CharProps, bool)) -> CmdResult {
+fn toggle(
+    s: &mut Session,
+    v: &Value,
+    get: fn(&ResolvedChar) -> bool,
+    set: fn(&mut CharProps, bool),
+) -> CmdResult {
     let on = match p::bool(v, "value") {
         Some(b) => b,
         None => !resolved(s).iter().all(get),
@@ -280,7 +308,11 @@ fn underline(s: &mut Session, v: &Value) -> CmdResult {
         (None, Some(_)) => true,
         (None, None) => !resolved(s).iter().all(|r| r.underline != Underline::None),
     };
-    let u = if on { style.unwrap_or(Underline::Single) } else { Underline::None };
+    let u = if on {
+        style.unwrap_or(Underline::Single)
+    } else {
+        Underline::None
+    };
     apply(s, &|c| c.underline = Some(u))
 }
 
@@ -297,7 +329,9 @@ fn font(s: &mut Session, v: &Value) -> CmdResult {
     };
     let (name, east_asia) = (arg("name")?, arg("eastAsia")?);
     if name.is_none() && east_asia.is_none() {
-        return Err(CmdError::Params("`name` or `eastAsia` (string) is required".into()));
+        return Err(CmdError::Params(
+            "`name` or `eastAsia` (string) is required".into(),
+        ));
     }
     // The font applies to Persian/Arabic text in the selection too (its complex-script font). A
     // Chinese, Japanese or Korean font is the East Asian text's font as well (`w:eastAsia`), as in
@@ -339,9 +373,18 @@ fn current_size(s: &Session) -> f32 {
 fn step_size(s: &mut Session, dir: i32) -> CmdResult {
     let cur = current_size(s);
     let next = if dir > 0 {
-        SIZES.iter().copied().find(|x| *x > cur + 0.01).unwrap_or(((cur / 10.0).floor() + 1.0) * 10.0)
+        SIZES
+            .iter()
+            .copied()
+            .find(|x| *x > cur + 0.01)
+            .unwrap_or(((cur / 10.0).floor() + 1.0) * 10.0)
     } else {
-        SIZES.iter().rev().copied().find(|x| *x < cur - 0.01).unwrap_or(1.0)
+        SIZES
+            .iter()
+            .rev()
+            .copied()
+            .find(|x| *x < cur - 0.01)
+            .unwrap_or(1.0)
     };
     let next = next.clamp(1.0, 1638.0);
     // Each run steps from its own size when the selection mixes sizes.
@@ -361,7 +404,8 @@ fn nudge_size(s: &mut Session, d: f32) -> CmdResult {
 
 fn color(s: &mut Session, v: &Value) -> CmdResult {
     let c = p::req_str(v, "color")?;
-    let tc = TextColor::parse(c).ok_or_else(|| CmdError::Params("color must be RRGGBB or auto".into()))?;
+    let tc = TextColor::parse(c)
+        .ok_or_else(|| CmdError::Params("color must be RRGGBB or auto".into()))?;
     apply(s, &|x| x.color = Some(tc))
 }
 
@@ -372,7 +416,9 @@ fn highlight(s: &mut Session, v: &Value) -> CmdResult {
         .copied()
         .find(|h| {
             h.ooxml().eq_ignore_ascii_case(c)
-                || h.name().replace(['-', ' ', '%'], "").eq_ignore_ascii_case(&c.replace(['-', ' ', '%'], ""))
+                || h.name()
+                    .replace(['-', ' ', '%'], "")
+                    .eq_ignore_ascii_case(&c.replace(['-', ' ', '%'], ""))
                 || format!("{h:?}").eq_ignore_ascii_case(c)
         })
         .ok_or_else(|| CmdError::Params(format!("unknown highlight colour `{c}`")))?;
@@ -381,14 +427,21 @@ fn highlight(s: &mut Session, v: &Value) -> CmdResult {
 
 fn change_case(s: &mut Session, v: &Value) -> CmdResult {
     let (a, b) = s.sel.ordered();
-    let (a, b) = if a == b { target(s).unwrap_or((a, b)) } else { (a, b) };
+    let (a, b) = if a == b {
+        target(s).unwrap_or((a, b))
+    } else {
+        (a, b)
+    };
     if a == b {
         return sel_result(s);
     }
     let text = s.doc.copy_range(&a, &b).plain_text();
     let mode = p::str(v, "mode").map(str::to_string).unwrap_or_else(|| {
         // Shift+F3 cycles: lower → UPPER → Title → lower.
-        if text.chars().any(char::is_lowercase) && text.chars().any(char::is_uppercase) && !is_title(&text) {
+        if text.chars().any(char::is_lowercase)
+            && text.chars().any(char::is_uppercase)
+            && !is_title(&text)
+        {
             "lower".into()
         } else if !text.chars().any(char::is_uppercase) {
             "upper".into()
@@ -401,10 +454,14 @@ fn change_case(s: &mut Session, v: &Value) -> CmdResult {
     for path in s.doc.paths_between(&a, &b) {
         // Changed stretches of one run each: (start, end, replacement), in text order.
         let groups = {
-            let Some(p) = s.doc.para(a.story, &path) else { continue };
+            let Some(p) = s.doc.para(a.story, &path) else {
+                continue;
+            };
             let from = if path == a.path { a.off } else { 0 };
             let to = if path == b.path { b.off } else { p.len() };
-            let Some(src) = p.text.get(from..to) else { continue };
+            let Some(src) = p.text.get(from..to) else {
+                continue;
+            };
             case_groups(p, from, src, &convert_chars(src, &mode, from == 0))
         };
         if groups.is_empty() {
@@ -425,7 +482,8 @@ fn change_case(s: &mut Session, v: &Value) -> CmdResult {
         }
         para.touch();
         // The selection keeps covering the converted text when its length changed (#420).
-        let spans: Vec<(usize, usize, usize)> = groups.iter().map(|(x, y, n)| (*x, *y, n.len())).collect();
+        let spans: Vec<(usize, usize, usize)> =
+            groups.iter().map(|(x, y, n)| (*x, *y, n.len())).collect();
         for end in [&mut s.sel.anchor, &mut s.sel.focus] {
             if end.story == a.story && end.path == path {
                 end.off = map_offset(&spans, end.off);
@@ -437,7 +495,12 @@ fn change_case(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Group the characters of `src` (at `from` in `p`) whose converted form `conv` differs into
 /// stretches that stay inside one run: `(start, end, replacement)`, in text order.
-fn case_groups(p: &wordcraft_doc::Paragraph, from: usize, src: &str, conv: &[String]) -> Vec<(usize, usize, String)> {
+fn case_groups(
+    p: &wordcraft_doc::Paragraph,
+    from: usize,
+    src: &str,
+    conv: &[String],
+) -> Vec<(usize, usize, String)> {
     let runs: Vec<std::ops::Range<usize>> = p.run_ranges().map(|(r, _)| r).collect();
     let run_of = |off: usize| runs.iter().position(|r| r.contains(&off));
     let mut out: Vec<(usize, usize, String, Option<usize>)> = Vec::new();
@@ -465,7 +528,9 @@ fn map_offset(spans: &[(usize, usize, usize)], off: usize) -> usize {
     let mut out = off;
     for &(start, end, new_len) in spans {
         if end <= off {
-            out = out.saturating_sub(end.saturating_sub(start)).saturating_add(new_len);
+            out = out
+                .saturating_sub(end.saturating_sub(start))
+                .saturating_add(new_len);
         } else if start < off {
             out = out.saturating_sub(off - start).saturating_add(new_len);
         }
@@ -474,7 +539,8 @@ fn map_offset(spans: &[(usize, usize, usize)], off: usize) -> usize {
 }
 
 fn is_title(t: &str) -> bool {
-    t.split_whitespace().all(|w| w.chars().next().is_some_and(char::is_uppercase))
+    t.split_whitespace()
+        .all(|w| w.chars().next().is_some_and(char::is_uppercase))
 }
 
 #[cfg(test)]
@@ -488,9 +554,16 @@ fn convert_chars(src: &str, mode: &str, para_start: bool) -> Vec<String> {
     let chars: Vec<char> = src.chars().collect();
     // Greek capital sigma lowers to the final form at the end of a word (as `str::to_lowercase`).
     let lower = |i: usize, c: char| -> String {
-        let prev = i.checked_sub(1).and_then(|j| chars.get(j)).is_some_and(|p| p.is_alphabetic());
+        let prev = i
+            .checked_sub(1)
+            .and_then(|j| chars.get(j))
+            .is_some_and(|p| p.is_alphabetic());
         let next = chars.get(i + 1).is_some_and(|n| n.is_alphabetic());
-        if c == 'Σ' && prev && !next { "ς".to_string() } else { c.to_lowercase().collect() }
+        if c == 'Σ' && prev && !next {
+            "ς".to_string()
+        } else {
+            c.to_lowercase().collect()
+        }
     };
     // Title case capitalises the first word of any selection; sentence case only at a paragraph start.
     let mut up = mode == "title" || para_start;
@@ -551,7 +624,8 @@ fn clear(s: &mut Session, _: &Value) -> CmdResult {
         None => {
             s.pending = Some(CharProps::default());
             let f = s.sel.focus.clone();
-            s.doc.format_paragraphs(&f, &f, &|p| *p = Default::default())?;
+            s.doc
+                .format_paragraphs(&f, &f, &|p| *p = Default::default())?;
         }
     }
     sel_result(s)
@@ -560,7 +634,12 @@ fn clear(s: &mut Session, _: &Value) -> CmdResult {
 /// Remove direct character formatting, keeping the paragraph and any character style.
 fn reset_char(s: &mut Session, _: &Value) -> CmdResult {
     match target(s) {
-        Some((a, b)) => s.doc.format_range(&a, &b, &|c| *c = CharProps { style: c.style.clone(), ..c.cleared() })?,
+        Some((a, b)) => s.doc.format_range(&a, &b, &|c| {
+            *c = CharProps {
+                style: c.style.clone(),
+                ..c.cleared()
+            }
+        })?,
         None => s.pending = Some(CharProps::default()),
     }
     sel_result(s)
@@ -568,12 +647,19 @@ fn reset_char(s: &mut Session, _: &Value) -> CmdResult {
 
 fn char_style(s: &mut Session, v: &Value) -> CmdResult {
     let st = p::req_str(v, "style")?;
-    let id = s.doc.styles.find(st).map(|x| x.id.clone()).ok_or_else(|| CmdError::Params(format!("no style `{st}`")))?;
+    let id = s
+        .doc
+        .styles
+        .find(st)
+        .map(|x| x.id.clone())
+        .ok_or_else(|| CmdError::Params(format!("no style `{st}`")))?;
     apply(s, &|c| c.style = Some(id.clone()))
 }
 
 fn set(s: &mut Session, v: &Value) -> CmdResult {
-    let mut props: CharProps = serde_json::from_value(v.get("props").cloned().unwrap_or(Value::Null)).map_err(|e| CmdError::Params(e.to_string()))?;
+    let mut props: CharProps =
+        serde_json::from_value(v.get("props").cloned().unwrap_or(Value::Null))
+            .map_err(|e| CmdError::Params(e.to_string()))?;
     // The font dialog and callers supplying one value format both scripts. Explicit
     // complex-script values still take precedence; importing a DOCX never uses this command.
     props.size_cs = props.size_cs.or(props.size);
@@ -589,10 +675,23 @@ pub fn state(s: &Session) -> Value {
     let same = |f: &dyn Fn(&ResolvedChar) -> Value| -> Value {
         let Some(r) = &first else { return Value::Null };
         let v0 = f(r);
-        if all.iter().all(|r| f(r) == v0) { v0 } else { Value::Null }
+        if all.iter().all(|r| f(r) == v0) {
+            v0
+        } else {
+            Value::Null
+        }
     };
-    let style = s.doc.para_at(&s.sel.focus).and_then(|p| p.props.style.clone()).unwrap_or_else(|| "Normal".into());
-    let style_name = s.doc.styles.get(&style).map(|st| st.name.clone()).unwrap_or(style.clone());
+    let style = s
+        .doc
+        .para_at(&s.sel.focus)
+        .and_then(|p| p.props.style.clone())
+        .unwrap_or_else(|| "Normal".into());
+    let style_name = s
+        .doc
+        .styles
+        .get(&style)
+        .map(|st| st.name.clone())
+        .unwrap_or(style.clone());
     json!({
         "font": same(&|r| json!(r.font)),
         "fontEastAsia": same(&|r| json!(r.font_ea)),
@@ -624,7 +723,10 @@ mod tests {
 
     #[test]
     fn case_conversions() {
-        assert_eq!(convert("hello world. again", "sentence", true), "Hello world. Again");
+        assert_eq!(
+            convert("hello world. again", "sentence", true),
+            "Hello world. Again"
+        );
         assert_eq!(convert("hello WORLD", "title", true), "Hello World");
         assert_eq!(convert("Hello", "toggle", true), "hELLO");
         assert_eq!(convert("straße", "upper", true), "STRASSE");
@@ -651,16 +753,26 @@ pub fn enclose_target(s: &Session) -> Result<EncloseTarget, CmdError> {
     use wordcraft_doc::para::OBJ;
     let (a, b) = s.sel.ordered();
     if a.story != b.story || a.path != b.path {
-        return Err(CmdError::Failed("select characters within one paragraph".into()));
+        return Err(CmdError::Failed(
+            "select characters within one paragraph".into(),
+        ));
     }
-    let para = s.doc.para_at(&a).ok_or_else(|| CmdError::Failed("no paragraph at the selection".into()))?;
+    let para = s
+        .doc
+        .para_at(&a)
+        .ok_or_else(|| CmdError::Failed("no paragraph at the selection".into()))?;
     let enclosed = |off: usize| -> Option<EncloseTarget> {
-        let Some(wordcraft_doc::InlineObject::Field { instr, .. }) = para.object_at(off) else { return None };
+        let Some(wordcraft_doc::InlineObject::Field { instr, .. }) = para.object_at(off) else {
+            return None;
+        };
         let e = Enclosure::parse(instr)?;
         let end = off + OBJ.len_utf8();
         Some(EncloseTarget {
             from: Pos { off, ..a.clone() },
-            to: Pos { off: end, ..a.clone() },
+            to: Pos {
+                off: end,
+                ..a.clone()
+            },
             text: e.text.clone(),
             props: para.props_at(end).clone(),
             current: Some(e),
@@ -668,40 +780,68 @@ pub fn enclose_target(s: &Session) -> Result<EncloseTarget, CmdError> {
     };
     if a.off == b.off {
         // A caret just after (or before) enclosed characters.
-        let before = para.text.get(..a.off).and_then(|t| t.chars().next_back()).filter(|c| *c == OBJ).map(|c| a.off - c.len_utf8());
-        return before.and_then(enclosed).or_else(|| enclosed(a.off)).ok_or_else(|| CmdError::Failed("select the characters to enclose".into()));
+        let before = para
+            .text
+            .get(..a.off)
+            .and_then(|t| t.chars().next_back())
+            .filter(|c| *c == OBJ)
+            .map(|c| a.off - c.len_utf8());
+        return before
+            .and_then(enclosed)
+            .or_else(|| enclosed(a.off))
+            .ok_or_else(|| CmdError::Failed("select the characters to enclose".into()));
     }
-    let text = para.text.get(a.off..b.off).ok_or_else(|| CmdError::Failed("bad selection".into()))?;
+    let text = para
+        .text
+        .get(a.off..b.off)
+        .ok_or_else(|| CmdError::Failed("bad selection".into()))?;
     if text == OBJ.to_string()
         && let Some(t) = enclosed(a.off)
     {
         return Ok(t);
     }
     if !wordcraft_doc::eq::fits_enclosure(text) {
-        return Err(CmdError::Failed("select one full-width character or up to two half-width characters".into()));
+        return Err(CmdError::Failed(
+            "select one full-width character or up to two half-width characters".into(),
+        ));
     }
     let first = text.chars().next().map(char::len_utf8).unwrap_or(0);
-    Ok(EncloseTarget { from: a.clone(), to: b, text: text.to_string(), props: para.props_at(a.off + first).clone(), current: None })
+    Ok(EncloseTarget {
+        from: a.clone(),
+        to: b,
+        text: text.to_string(),
+        props: para.props_at(a.off + first).clone(),
+        current: None,
+    })
 }
 
 /// Home › Font › Enclose Characters: put the selected character(s) in a circle, square, triangle
 /// or diamond (an `EQ \o` field, see [`wordcraft_doc::eq`]), or (`shape: null`) take them out.
 fn enclose(s: &mut Session, v: &Value) -> CmdResult {
     let shape = match v.get("shape") {
-        None => return Err(CmdError::Params("`shape` is required: circle, square, triangle, diamond, or null to remove".into())),
-        Some(Value::Null) => None,
-        Some(x) => {
-            Some(x.as_str().and_then(EncloseShape::parse).ok_or_else(|| CmdError::Params("shape: circle|square|triangle|diamond|null".into()))?)
+        None => {
+            return Err(CmdError::Params(
+                "`shape` is required: circle, square, triangle, diamond, or null to remove".into(),
+            ));
         }
+        Some(Value::Null) => None,
+        Some(x) => Some(x.as_str().and_then(EncloseShape::parse).ok_or_else(|| {
+            CmdError::Params("shape: circle|square|triangle|diamond|null".into())
+        })?),
     };
     let style = match p::str(v, "style") {
-        Some(x) => Some(EncloseStyle::parse(x).ok_or_else(|| CmdError::Params("style: shrink|enlarge".into()))?),
+        Some(x) => Some(
+            EncloseStyle::parse(x)
+                .ok_or_else(|| CmdError::Params("style: shrink|enlarge".into()))?,
+        ),
         None => None,
     };
     // Text typed in the dialog replaces the selection's (or goes in at the caret).
     let given = match p::str(v, "text") {
         Some(t) if shape.is_some() && !wordcraft_doc::eq::fits_enclosure(t) => {
-            return Err(CmdError::Params("text: one full-width character or up to two half-width characters".into()));
+            return Err(CmdError::Params(
+                "text: one full-width character or up to two half-width characters".into(),
+            ));
         }
         Some(t) if shape.is_some() => Some(t.to_string()),
         _ => None,
@@ -711,24 +851,49 @@ fn enclose(s: &mut Session, v: &Value) -> CmdResult {
         (Ok(t), Some(text)) => EncloseTarget { text, ..t },
         (Err(_), Some(text)) if s.sel.anchor == s.sel.focus => {
             let at = s.sel.focus.clone();
-            EncloseTarget { from: at.clone(), to: at, text, props: s.typing_props(), current: None }
+            EncloseTarget {
+                from: at.clone(),
+                to: at,
+                text,
+                props: s.typing_props(),
+                current: None,
+            }
         }
         (Err(e), _) => return Err(e),
     };
     if shape.is_none() && t.current.is_none() {
-        return Err(CmdError::Failed("no enclosed characters at the selection".into()));
+        return Err(CmdError::Failed(
+            "no enclosed characters at the selection".into(),
+        ));
     }
-    s.sel = crate::Selection { anchor: t.from.clone(), focus: t.to.clone() };
+    s.sel = crate::Selection {
+        anchor: t.from.clone(),
+        focus: t.to.clone(),
+    };
     let at = super::delete_selection(s)?;
     let end = match shape {
         Some(shape) => {
-            let style = style.or(t.current.as_ref().map(|e| e.style)).unwrap_or_default();
-            let e = Enclosure { shape, style, text: t.text.clone() };
-            let obj = wordcraft_doc::InlineObject::Field { instr: e.instr(), result: t.text, locked: false, code: false };
+            let style = style
+                .or(t.current.as_ref().map(|e| e.style))
+                .unwrap_or_default();
+            let e = Enclosure {
+                shape,
+                style,
+                text: t.text.clone(),
+            };
+            let obj = wordcraft_doc::InlineObject::Field {
+                instr: e.instr(),
+                result: t.text,
+                locked: false,
+                code: false,
+            };
             s.doc.insert_object(&at, obj, &t.props)?
         }
         None => s.doc.insert_text(&at, &t.text, &t.props)?,
     };
-    s.sel = crate::Selection { anchor: at, focus: end };
+    s.sel = crate::Selection {
+        anchor: at,
+        focus: end,
+    };
     sel_result(s)
 }

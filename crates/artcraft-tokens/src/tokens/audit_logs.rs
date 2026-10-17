@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct AuditLogToken(pub String);
 
 impl_string_token!(AuditLogToken);
-impl_crockford_generator!(AuditLogToken, 32usize, TokenPrefix::AuditLog, CrockfordLower);
+impl_crockford_generator!(
+    AuditLogToken,
+    32usize,
+    TokenPrefix::AuditLog,
+    CrockfordLower
+);

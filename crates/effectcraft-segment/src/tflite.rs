@@ -30,7 +30,10 @@ struct Table(usize);
 
 impl<'a> Fb<'a> {
     fn bytes<const N: usize>(&self, at: usize) -> Result<[u8; N]> {
-        self.0.get(at..at.checked_add(N).ok_or("bad offset")?).and_then(|s| s.try_into().ok()).ok_or_else(|| "truncated model".to_string())
+        self.0
+            .get(at..at.checked_add(N).ok_or("bad offset")?)
+            .and_then(|s| s.try_into().ok())
+            .ok_or_else(|| "truncated model".to_string())
     }
     fn u8(&self, at: usize) -> Result<u8> {
         Ok(self.bytes::<1>(at)?[0])
@@ -49,14 +52,17 @@ impl<'a> Fb<'a> {
     }
     /// Follow the offset stored at `at`.
     fn deref(&self, at: usize) -> Result<usize> {
-        at.checked_add(self.u32(at)? as usize).ok_or_else(|| "bad offset".to_string())
+        at.checked_add(self.u32(at)? as usize)
+            .ok_or_else(|| "bad offset".to_string())
     }
     fn root(&self) -> Result<Table> {
         Ok(Table(self.deref(0)?))
     }
     /// Where field `id` of `t` is stored (absent fields have their default).
     fn field(&self, t: Table, id: usize) -> Result<Option<usize>> {
-        let vt = (t.0 as i64 - self.i32(t.0)? as i64).try_into().map_err(|_| "bad vtable")?;
+        let vt = (t.0 as i64 - self.i32(t.0)? as i64)
+            .try_into()
+            .map_err(|_| "bad vtable")?;
         let vt_len = self.u16(vt)? as usize;
         let slot = 4 + 2 * id;
         if slot + 2 > vt_len {
@@ -72,11 +78,15 @@ impl<'a> Fb<'a> {
         self.field(t, id)?.map_or(Ok(default), |p| self.u8(p))
     }
     fn table(&self, t: Table, id: usize) -> Result<Option<Table>> {
-        self.field(t, id)?.map(|p| self.deref(p).map(Table)).transpose()
+        self.field(t, id)?
+            .map(|p| self.deref(p).map(Table))
+            .transpose()
     }
     /// A vector field: (start of its elements, length).
     fn vector(&self, t: Table, id: usize) -> Result<(usize, usize)> {
-        let Some(p) = self.field(t, id)? else { return Ok((0, 0)) };
+        let Some(p) = self.field(t, id)? else {
+            return Ok((0, 0));
+        };
         let v = self.deref(p)?;
         let n = self.u32(v)? as usize;
         if v.saturating_add(4).saturating_add(n) > self.0.len() {
@@ -223,7 +233,10 @@ pub struct Model {
 }
 
 fn index(i: i32, n: usize) -> Result<usize> {
-    usize::try_from(i).ok().filter(|&i| i < n).ok_or_else(|| format!("bad tensor index {i}"))
+    usize::try_from(i)
+        .ok()
+        .filter(|&i| i < n)
+        .ok_or_else(|| format!("bad tensor index {i}"))
 }
 
 /// "Same" padding: output size and padding before.
@@ -247,7 +260,11 @@ impl Model {
     pub fn read(bytes: &[u8]) -> Result<Model> {
         let fb = Fb(bytes);
         let root = fb.root()?;
-        let codes: Vec<i32> = fb.tables(root, 1)?.into_iter().map(|c| Ok(fb.int(c, 3, 0)?.max(fb.byte(c, 0, 0)? as i8 as i32))).collect::<Result<_>>()?;
+        let codes: Vec<i32> = fb
+            .tables(root, 1)?
+            .into_iter()
+            .map(|c| Ok(fb.int(c, 3, 0)?.max(fb.byte(c, 0, 0)? as i8 as i32)))
+            .collect::<Result<_>>()?;
         let buffers = fb.tables(root, 4)?;
         let graphs = fb.tables(root, 2)?;
         let g = *graphs.first().ok_or("the model has no graph")?;
@@ -272,11 +289,22 @@ impl Model {
             names.push(fb.string(*t, 3)?);
             // Every size computed from shapes later stays in range, even a product of some of the
             // dimensions (a zero dimension does not let the others grow without bound).
-            let count = shape.iter().try_fold(1usize, |a, &d| a.checked_mul(d)).ok_or("a tensor is too large")?;
-            if shape.iter().try_fold(1usize, |a, &d| a.checked_mul(d.max(1))).is_none_or(|c| c > MAX_TENSOR) {
+            let count = shape
+                .iter()
+                .try_fold(1usize, |a, &d| a.checked_mul(d))
+                .ok_or("a tensor is too large")?;
+            if shape
+                .iter()
+                .try_fold(1usize, |a, &d| a.checked_mul(d.max(1)))
+                .is_none_or(|c| c > MAX_TENSOR)
+            {
                 return Err("a tensor is too large".into());
             }
-            if fb.field(*t, 4)?.is_some() && fb.table(*t, 4)?.is_some_and(|q| fb.vector(q, 2).is_ok_and(|v| v.1 > 0)) {
+            if fb.field(*t, 4)?.is_some()
+                && fb
+                    .table(*t, 4)?
+                    .is_some_and(|q| fb.vector(q, 2).is_ok_and(|v| v.1 > 0))
+            {
                 return Err(format!("{}: quantised tensors are not supported", names[i]));
             }
             if buf > 0 {
@@ -284,13 +312,26 @@ impl Model {
                 let (mut at, mut len) = fb.vector(b, 0)?;
                 if len == 0 {
                     // Large models keep data after the FlatBuffer: offset and size from its start.
-                    let (o, s) = (fb.field(b, 1)?.map(|p| fb.u64(p)).transpose()?.unwrap_or(0), fb.field(b, 2)?.map(|p| fb.u64(p)).transpose()?.unwrap_or(0));
+                    let (o, s) = (
+                        fb.field(b, 1)?.map(|p| fb.u64(p)).transpose()?.unwrap_or(0),
+                        fb.field(b, 2)?.map(|p| fb.u64(p)).transpose()?.unwrap_or(0),
+                    );
                     (at, len) = (o as usize, s as usize);
                 }
                 if len > 0 {
-                    data.push((i, ty, count, bytes.get(at..at.checked_add(len).ok_or("bad buffer")?).ok_or("truncated model")?));
+                    data.push((
+                        i,
+                        ty,
+                        count,
+                        bytes
+                            .get(at..at.checked_add(len).ok_or("bad buffer")?)
+                            .ok_or("truncated model")?,
+                    ));
                     // Several tensors may share one buffer: each is decoded on its own.
-                    consts = consts.checked_add(count).filter(|&c| c <= MAX_CONSTS).ok_or("the model's weights are too large")?;
+                    consts = consts
+                        .checked_add(count)
+                        .filter(|&c| c <= MAX_CONSTS)
+                        .ok_or("the model's weights are too large")?;
                 }
             }
             shapes.push(shape);
@@ -298,13 +339,31 @@ impl Model {
         for (i, ty, count, data) in data {
             match ty {
                 FLOAT32 if data.len() == 4 * count => {
-                    floats[i] = Some(data.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+                    floats[i] = Some(
+                        data.as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                            .collect(),
+                    )
                 }
                 FLOAT16 if data.len() == 2 * count => {
-                    floats[i] = Some(data.as_chunks::<2>().0.iter().map(|c| half_to_f32(u16::from_le_bytes([c[0], c[1]]))).collect())
+                    floats[i] = Some(
+                        data.as_chunks::<2>()
+                            .0
+                            .iter()
+                            .map(|c| half_to_f32(u16::from_le_bytes([c[0], c[1]])))
+                            .collect(),
+                    )
                 }
                 INT32 if data.len() == 4 * count => {
-                    ints[i] = Some(data.as_chunks::<4>().0.iter().map(|c| i32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect())
+                    ints[i] = Some(
+                        data.as_chunks::<4>()
+                            .0
+                            .iter()
+                            .map(|c| i32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                            .collect(),
+                    )
                 }
                 _ => return Err(format!("{}: unsupported tensor data", names[i])),
             }
@@ -312,16 +371,42 @@ impl Model {
         // Copies of constants made below (folded DEQUANTIZEs, weights laid out for the kernels).
         let consts = std::cell::Cell::new(consts);
         let spend = |values: usize| -> Result<()> {
-            consts.set(consts.get().checked_add(values).filter(|&c| c <= MAX_CONSTS).ok_or("the model's weights are too large")?);
+            consts.set(
+                consts
+                    .get()
+                    .checked_add(values)
+                    .filter(|&c| c <= MAX_CONSTS)
+                    .ok_or("the model's weights are too large")?,
+            );
             Ok(())
         };
-        let inputs = fb.ints(g, 1)?.into_iter().map(|i| index(i, n)).collect::<Result<Vec<_>>>()?;
-        let outputs = fb.ints(g, 2)?.into_iter().map(|i| index(i, n)).collect::<Result<Vec<_>>>()?;
+        let inputs = fb
+            .ints(g, 1)?
+            .into_iter()
+            .map(|i| index(i, n))
+            .collect::<Result<Vec<_>>>()?;
+        let outputs = fb
+            .ints(g, 2)?
+            .into_iter()
+            .map(|i| index(i, n))
+            .collect::<Result<Vec<_>>>()?;
         let mut steps = vec![];
         for o in fb.tables(g, 3)? {
-            let code = *codes.get(fb.int(o, 0, 0)? as u32 as usize).ok_or("bad operator code")?;
+            let code = *codes
+                .get(fb.int(o, 0, 0)? as u32 as usize)
+                .ok_or("bad operator code")?;
             // Optional inputs are -1.
-            let ins: Vec<Option<usize>> = fb.ints(o, 1)?.into_iter().map(|i| if i < 0 { Ok(None) } else { index(i, n).map(Some) }).collect::<Result<_>>()?;
+            let ins: Vec<Option<usize>> = fb
+                .ints(o, 1)?
+                .into_iter()
+                .map(|i| {
+                    if i < 0 {
+                        Ok(None)
+                    } else {
+                        index(i, n).map(Some)
+                    }
+                })
+                .collect::<Result<_>>()?;
             let outs = fb.ints(o, 2)?;
             let output = index(*outs.first().ok_or("an operator has no output")?, n)?;
             // Float16 weights: fold their DEQUANTIZE.
@@ -334,19 +419,31 @@ impl Model {
                 continue;
             }
             let opts = fb.table(o, 4)?;
-            let opt_int = |id: usize, default: i32| opts.map_or(Ok(default), |t| fb.int(t, id, default));
-            let opt_byte = |id: usize, default: u8| opts.map_or(Ok(default), |t| fb.byte(t, id, default));
-            let input = |k: usize| ins.get(k).copied().flatten().ok_or_else(|| format!("{}: missing input {k}", names[output]));
+            let opt_int =
+                |id: usize, default: i32| opts.map_or(Ok(default), |t| fb.int(t, id, default));
+            let opt_byte =
+                |id: usize, default: u8| opts.map_or(Ok(default), |t| fb.byte(t, id, default));
+            let input = |k: usize| {
+                ins.get(k)
+                    .copied()
+                    .flatten()
+                    .ok_or_else(|| format!("{}: missing input {k}", names[output]))
+            };
             let weights = |k: usize| -> Result<Vec<f32>> {
                 let id = input(k)?;
-                let w = floats[id].as_ref().ok_or_else(|| format!("{}: input {k} is not constant", names[output]))?;
+                let w = floats[id]
+                    .as_ref()
+                    .ok_or_else(|| format!("{}: input {k} is not constant", names[output]))?;
                 spend(w.len())?;
                 Ok(w.clone())
             };
             let bias = |count: usize| -> Result<Vec<f32>> {
                 spend(count)?;
                 match ins.get(2).copied().flatten() {
-                    Some(id) => floats[id].clone().filter(|b| b.len() == count).ok_or_else(|| format!("{}: bad bias", names[output])),
+                    Some(id) => floats[id]
+                        .clone()
+                        .filter(|b| b.len() == count)
+                        .ok_or_else(|| format!("{}: bad bias", names[output])),
                     None => Ok(vec![0.0; count]),
                 }
             };
@@ -366,33 +463,64 @@ impl Model {
                     let depthwise = code == op::DEPTHWISE_CONV_2D;
                     let (padding, s) = (opt_byte(0, 0)?, stride(1, 2)?);
                     let act_id = if depthwise { 4 } else { 3 };
-                    let dil = if depthwise { [opt_int(6, 1)?, opt_int(5, 1)?] } else { [opt_int(5, 1)?, opt_int(4, 1)?] };
+                    let dil = if depthwise {
+                        [opt_int(6, 1)?, opt_int(5, 1)?]
+                    } else {
+                        [opt_int(5, 1)?, opt_int(4, 1)?]
+                    };
                     if dil != [1, 1] {
-                        return Err(format!("{}: dilated convolutions are not supported", names[output]));
+                        return Err(format!(
+                            "{}: dilated convolutions are not supported",
+                            names[output]
+                        ));
                     }
                     let act = Act::from(opt_byte(act_id, 0)?)?;
                     let (x, f) = (in_shape(0)?, shapes[input(1)?].clone());
-                    let (&[1, h, w, cin], &[fo, kh, kw, fi], &[1, oh, ow, cout]) = (&x[..], &f[..], &out_shape[..]) else {
+                    let (&[1, h, w, cin], &[fo, kh, kw, fi], &[1, oh, ow, cout]) =
+                        (&x[..], &f[..], &out_shape[..])
+                    else {
                         return Err(format!("{}: unexpected convolution shapes", names[output]));
                     };
                     if kh != kw || s[0] != s[1] {
-                        return Err(format!("{}: only square kernels and strides are supported", names[output]));
+                        return Err(format!(
+                            "{}: only square kernels and strides are supported",
+                            names[output]
+                        ));
                     }
                     if kh > MAX_KERNEL {
-                        return Err(format!("{}: the convolution kernel is too large", names[output]));
+                        return Err(format!(
+                            "{}: the convolution kernel is too large",
+                            names[output]
+                        ));
                     }
                     let (ey, py) = window(padding, h, kh, s[0])?;
                     let (ex, px) = window(padding, w, kw, s[1])?;
                     if (ey, ex) != (oh, ow) {
-                        return Err(format!("{}: output size disagrees with the padding", names[output]));
+                        return Err(format!(
+                            "{}: output size disagrees with the padding",
+                            names[output]
+                        ));
                     }
                     let wt = weights(1)?;
                     let b = bias(cout)?;
                     if depthwise {
                         if fo != 1 || fi != cout || cin != cout {
-                            return Err(format!("{}: depth multipliers are not supported", names[output]));
+                            return Err(format!(
+                                "{}: depth multipliers are not supported",
+                                names[output]
+                            ));
                         }
-                        Op::Depthwise(Depthwise { w: wt, b, c: cout, ks: kh, stride: s[0] }, [py, px], act)
+                        Op::Depthwise(
+                            Depthwise {
+                                w: wt,
+                                b,
+                                c: cout,
+                                ks: kh,
+                                stride: s[0],
+                            },
+                            [py, px],
+                            act,
+                        )
                     } else {
                         if fo != cout || fi != cin {
                             return Err(format!("{}: unexpected filter shape", names[output]));
@@ -407,9 +535,29 @@ impl Model {
                             }
                         }
                         if kh == 1 && s[0] == 1 {
-                            Op::Pointwise(Linear { wt: t, b, inp: cin, out: cout }, act)
+                            Op::Pointwise(
+                                Linear {
+                                    wt: t,
+                                    b,
+                                    inp: cin,
+                                    out: cout,
+                                },
+                                act,
+                            )
                         } else {
-                            Op::Conv(Conv { wt: t, b, inp: cin, out: cout, ks: kh, stride: s[0], pad: 0 }, [py, px], act)
+                            Op::Conv(
+                                Conv {
+                                    wt: t,
+                                    b,
+                                    inp: cin,
+                                    out: cout,
+                                    ks: kh,
+                                    stride: s[0],
+                                    pad: 0,
+                                },
+                                [py, px],
+                                act,
+                            )
                         }
                     }
                 }
@@ -421,37 +569,64 @@ impl Model {
                     }
                     let k = k.map(|v| v as usize);
                     if k.iter().any(|&v| v > MAX_KERNEL) {
-                        return Err(format!("{}: the pooling window is too large", names[output]));
+                        return Err(format!(
+                            "{}: the pooling window is too large",
+                            names[output]
+                        ));
                     }
                     let x = in_shape(0)?;
-                    let (&[1, h, w, c], &[1, oh, ow, oc]) = (&x[..], &out_shape[..]) else { return Err("unexpected pool shapes".into()) };
+                    let (&[1, h, w, c], &[1, oh, ow, oc]) = (&x[..], &out_shape[..]) else {
+                        return Err("unexpected pool shapes".into());
+                    };
                     if c != oc {
                         return Err(format!("{}: pooling changes the channels", names[output]));
                     }
                     let (ey, py) = window(padding, h, k[0], s[0])?;
                     let (ex, px) = window(padding, w, k[1], s[1])?;
                     if (ey, ex) != (oh, ow) {
-                        return Err(format!("{}: output size disagrees with the padding", names[output]));
+                        return Err(format!(
+                            "{}: output size disagrees with the padding",
+                            names[output]
+                        ));
                     }
-                    Op::MaxPool { k, stride: s, pad: [py, px], act: Act::from(opt_byte(5, 0)?)? }
+                    Op::MaxPool {
+                        k,
+                        stride: s,
+                        pad: [py, px],
+                        act: Act::from(opt_byte(5, 0)?)?,
+                    }
                 }
                 op::ADD => {
                     runtime.push(input(1)?);
                     Op::Add(Act::from(opt_byte(0, 0)?)?)
                 }
                 op::PAD => {
-                    let p = ints[input(1)?].clone().ok_or("PAD: paddings must be constant")?;
+                    let p = ints[input(1)?]
+                        .clone()
+                        .ok_or("PAD: paddings must be constant")?;
                     let pads = p
                         .as_chunks::<2>()
                         .0
                         .iter()
-                        .map(|c| Ok([usize::try_from(c[0]).map_err(|_| "bad pad")?, usize::try_from(c[1]).map_err(|_| "bad pad")?]))
+                        .map(|c| {
+                            Ok([
+                                usize::try_from(c[0]).map_err(|_| "bad pad")?,
+                                usize::try_from(c[1]).map_err(|_| "bad pad")?,
+                            ])
+                        })
                         .collect::<Result<Vec<_>>>()?;
                     // The padded shape is the declared one (so it is as bounded as any tensor).
                     let x = in_shape(0)?;
-                    let padded = x.iter().zip(&pads).map(|(d, p)| d.checked_add(p[0])?.checked_add(p[1])).collect::<Option<Vec<_>>>();
+                    let padded = x
+                        .iter()
+                        .zip(&pads)
+                        .map(|(d, p)| d.checked_add(p[0])?.checked_add(p[1]))
+                        .collect::<Option<Vec<_>>>();
                     if pads.len() != x.len() || padded.as_ref() != Some(&out_shape) {
-                        return Err(format!("{}: the padding disagrees with the output shape", names[output]));
+                        return Err(format!(
+                            "{}: the padding disagrees with the output shape",
+                            names[output]
+                        ));
                     }
                     Op::Pad(pads)
                 }
@@ -459,22 +634,40 @@ impl Model {
                     runtime = (0..ins.len()).map(input).collect::<Result<_>>()?;
                     let rank = out_shape.len() as i32;
                     let a = opt_int(0, 0)?;
-                    let axis = index(if a < 0 { a.saturating_add(rank) } else { a }, out_shape.len())?;
+                    let axis = index(
+                        if a < 0 { a.saturating_add(rank) } else { a },
+                        out_shape.len(),
+                    )?;
                     // The parts fit the output: same rank, same sizes but along `axis`, where they add up.
                     let mut along = 0usize;
                     for &id in &runtime {
                         let p = &shapes[id];
-                        let fits = p.len() == out_shape.len() && p.iter().zip(&out_shape).enumerate().all(|(d, (a, b))| d == axis || a == b);
+                        let fits = p.len() == out_shape.len()
+                            && p.iter()
+                                .zip(&out_shape)
+                                .enumerate()
+                                .all(|(d, (a, b))| d == axis || a == b);
                         along = p
                             .get(axis)
                             .filter(|_| fits)
                             .and_then(|&d| along.checked_add(d))
-                            .ok_or_else(|| format!("{}: the parts disagree with the output shape", names[output]))?;
+                            .ok_or_else(|| {
+                                format!(
+                                    "{}: the parts disagree with the output shape",
+                                    names[output]
+                                )
+                            })?;
                     }
                     if out_shape.get(axis) != Some(&along) {
-                        return Err(format!("{}: the parts disagree with the output shape", names[output]));
+                        return Err(format!(
+                            "{}: the parts disagree with the output shape",
+                            names[output]
+                        ));
                     }
-                    Op::Concat { axis, act: Act::from(opt_byte(1, 0)?)? }
+                    Op::Concat {
+                        axis,
+                        act: Act::from(opt_byte(1, 0)?)?,
+                    }
                 }
                 op::RESHAPE => Op::Reshape,
                 op::RELU => Op::Act(Act::Relu),
@@ -484,13 +677,20 @@ impl Model {
                     let alpha = weights(1)?;
                     let c = *out_shape.last().ok_or("PRELU: bad shape")?;
                     if alpha.len() != c {
-                        return Err(format!("{}: only per-channel PReLU is supported", names[output]));
+                        return Err(format!(
+                            "{}: only per-channel PReLU is supported",
+                            names[output]
+                        ));
                     }
                     Op::Prelu(alpha)
                 }
                 c => return Err(format!("operator {c} is not supported")),
             };
-            steps.push(Step { op, inputs: runtime, output });
+            steps.push(Step {
+                op,
+                inputs: runtime,
+                output,
+            });
         }
         let mut last_use = vec![usize::MAX; n];
         for (k, s) in steps.iter().enumerate() {
@@ -501,11 +701,22 @@ impl Model {
         for &o in &outputs {
             last_use[o] = usize::MAX;
         }
-        let model = Model { shapes, names, consts: floats, steps, inputs, outputs, last_use };
+        let model = Model {
+            shapes,
+            names,
+            consts: floats,
+            steps,
+            inputs,
+            outputs,
+            last_use,
+        };
         let c = model.cost().ok_or("the model is too expensive to run")?;
         let over = [
             (c.kernel > MAX_KERNEL as u64, "a kernel is too large"),
-            (c.scratch > MAX_SCRATCH, "an operator's working space is too large"),
+            (
+                c.scratch > MAX_SCRATCH,
+                "an operator's working space is too large",
+            ),
             (c.macs > MAX_MACS, "the model needs too many multiply-adds"),
             (c.values > MAX_VALUES, "the model does too much work"),
             (c.live > MAX_LIVE, "the model needs too much memory"),
@@ -518,7 +729,12 @@ impl Model {
 
     /// What one run takes, from the static shapes (`None` if a count overflows).
     fn cost(&self) -> Option<Cost> {
-        let size = |i: usize| -> Option<u64> { self.shapes.get(i)?.iter().try_fold(1u64, |a, &d| a.checked_mul(d as u64)) };
+        let size = |i: usize| -> Option<u64> {
+            self.shapes
+                .get(i)?
+                .iter()
+                .try_fold(1u64, |a, &d| a.checked_mul(d as u64))
+        };
         let mut c = Cost::default();
         // Floats alive per tensor, as `run` keeps them: inputs are copied in, and every step's
         // output stays until its last use (for good when nothing uses it).
@@ -537,18 +753,26 @@ impl Model {
             let out = size(s.output)?;
             let mut scratch = 0u64;
             let macs = match &s.op {
-                Op::Pointwise(l, _) => h.checked_mul(w)?.checked_mul(l.inp as u64)?.checked_mul(l.out as u64)?,
+                Op::Pointwise(l, _) => h
+                    .checked_mul(w)?
+                    .checked_mul(l.inp as u64)?
+                    .checked_mul(l.out as u64)?,
                 Op::Conv(cv, ..) => {
                     let ks = cv.ks as u64;
                     c.kernel = c.kernel.max(ks);
                     let kk = ks.checked_mul(ks)?.checked_mul(cv.inp as u64)?;
                     scratch = ow.checked_mul(kk)?;
-                    oh.checked_mul(ow)?.checked_mul(cv.out as u64)?.checked_mul(kk)?
+                    oh.checked_mul(ow)?
+                        .checked_mul(cv.out as u64)?
+                        .checked_mul(kk)?
                 }
                 Op::Depthwise(d, ..) => {
                     let ks = d.ks as u64;
                     c.kernel = c.kernel.max(ks);
-                    oh.checked_mul(ow)?.checked_mul(d.c as u64)?.checked_mul(ks)?.checked_mul(ks)?
+                    oh.checked_mul(ow)?
+                        .checked_mul(d.c as u64)?
+                        .checked_mul(ks)?
+                        .checked_mul(ks)?
                 }
                 Op::MaxPool { k, .. } => {
                     c.kernel = c.kernel.max(k[0].max(k[1]) as u64);
@@ -583,7 +807,10 @@ impl Model {
 
     /// The shape of input `k`.
     pub fn input_shape(&self, k: usize) -> Option<&[usize]> {
-        self.inputs.get(k).and_then(|&i| self.shapes.get(i)).map(Vec::as_slice)
+        self.inputs
+            .get(k)
+            .and_then(|&i| self.shapes.get(i))
+            .map(Vec::as_slice)
     }
 
     /// The shape and name of output `k`.
@@ -613,8 +840,14 @@ impl Model {
                 let x = get(s.inputs[0])?;
                 let xs = &self.shapes[s.inputs[0]];
                 let ys = &self.shapes[s.output];
-                let (h, w) = (xs.get(1).copied().unwrap_or(1), xs.get(2).copied().unwrap_or(1));
-                let (oh, ow) = (ys.get(1).copied().unwrap_or(1), ys.get(2).copied().unwrap_or(1));
+                let (h, w) = (
+                    xs.get(1).copied().unwrap_or(1),
+                    xs.get(2).copied().unwrap_or(1),
+                );
+                let (oh, ow) = (
+                    ys.get(1).copied().unwrap_or(1),
+                    ys.get(2).copied().unwrap_or(1),
+                );
                 let y = match &s.op {
                     Op::Pointwise(l, a) => {
                         let mut y = l.forward(x, h * w);
@@ -631,15 +864,31 @@ impl Model {
                         a.apply(&mut y);
                         y
                     }
-                    Op::MaxPool { k, stride, pad, act } => {
-                        let mut y = max_pool(x, [h, w], *xs.last().unwrap_or(&1), [oh, ow], *k, *stride, *pad);
+                    Op::MaxPool {
+                        k,
+                        stride,
+                        pad,
+                        act,
+                    } => {
+                        let mut y = max_pool(
+                            x,
+                            [h, w],
+                            *xs.last().unwrap_or(&1),
+                            [oh, ow],
+                            *k,
+                            *stride,
+                            *pad,
+                        );
                         act.apply(&mut y);
                         y
                     }
                     Op::Add(a) => {
                         let b = get(s.inputs[1])?;
                         if b.len() != x.len() {
-                            return Err(format!("{}: broadcasting ADD is not supported", self.names[s.output]));
+                            return Err(format!(
+                                "{}: broadcasting ADD is not supported",
+                                self.names[s.output]
+                            ));
                         }
                         let mut y: Vec<f32> = x.iter().zip(b).map(|(p, q)| p + q).collect();
                         a.apply(&mut y);
@@ -647,7 +896,11 @@ impl Model {
                     }
                     Op::Pad(p) => pad(x, xs, p)?,
                     Op::Concat { axis, act } => {
-                        let parts = s.inputs.iter().map(|&i| Ok((get(i)?, &self.shapes[i]))).collect::<Result<Vec<_>>>()?;
+                        let parts = s
+                            .inputs
+                            .iter()
+                            .map(|&i| Ok((get(i)?, &self.shapes[i])))
+                            .collect::<Result<Vec<_>>>()?;
                         let mut y = concat(&parts, *axis)?;
                         act.apply(&mut y);
                         y
@@ -660,12 +913,19 @@ impl Model {
                     }
                     Op::Prelu(alpha) => {
                         let c = alpha.len().max(1);
-                        x.iter().enumerate().map(|(i, &v)| if v >= 0.0 { v } else { v * alpha[i % c] }).collect()
+                        x.iter()
+                            .enumerate()
+                            .map(|(i, &v)| if v >= 0.0 { v } else { v * alpha[i % c] })
+                            .collect()
                     }
                     Op::Logistic => x.iter().map(|v| 1.0 / (1.0 + (-v).exp())).collect(),
                 };
                 if y.len() != ys.iter().product::<usize>() {
-                    return Err(format!("{}: computed {} values for shape {ys:?}", self.names[s.output], y.len()));
+                    return Err(format!(
+                        "{}: computed {} values for shape {ys:?}",
+                        self.names[s.output],
+                        y.len()
+                    ));
                 }
                 y
             };
@@ -676,7 +936,15 @@ impl Model {
                 }
             }
         }
-        self.outputs.iter().map(|&o| vals[o].take().or_else(|| self.consts[o].clone()).ok_or_else(|| "an output was not computed".to_string())).collect()
+        self.outputs
+            .iter()
+            .map(|&o| {
+                vals[o]
+                    .take()
+                    .or_else(|| self.consts[o].clone())
+                    .ok_or_else(|| "an output was not computed".to_string())
+            })
+            .collect()
     }
 }
 
@@ -696,16 +964,30 @@ struct Cost {
 }
 
 /// Max pooling over `k` windows; window cells outside the input are ignored.
-fn max_pool(x: &[f32], [h, w]: [usize; 2], c: usize, [oh, ow]: [usize; 2], k: [usize; 2], s: [usize; 2], pad: [usize; 2]) -> Vec<f32> {
+fn max_pool(
+    x: &[f32],
+    [h, w]: [usize; 2],
+    c: usize,
+    [oh, ow]: [usize; 2],
+    k: [usize; 2],
+    s: [usize; 2],
+    pad: [usize; 2],
+) -> Vec<f32> {
     let mut y = vec![f32::NEG_INFINITY; oh * ow * c];
     for oy in 0..oh {
         for ox in 0..ow {
             let out = &mut y[(oy * ow + ox) * c..][..c];
             for ky in 0..k[0] {
-                let Some(iy) = (oy * s[0] + ky).checked_sub(pad[0]).filter(|&v| v < h) else { continue };
+                let Some(iy) = (oy * s[0] + ky).checked_sub(pad[0]).filter(|&v| v < h) else {
+                    continue;
+                };
                 for kx in 0..k[1] {
-                    let Some(ix) = (ox * s[1] + kx).checked_sub(pad[1]).filter(|&v| v < w) else { continue };
-                    let Some(src) = x.get((iy * w + ix) * c..(iy * w + ix + 1) * c) else { continue };
+                    let Some(ix) = (ox * s[1] + kx).checked_sub(pad[1]).filter(|&v| v < w) else {
+                        continue;
+                    };
+                    let Some(src) = x.get((iy * w + ix) * c..(iy * w + ix + 1) * c) else {
+                        continue;
+                    };
                     for (o, v) in out.iter_mut().zip(src) {
                         *o = o.max(*v);
                     }
@@ -721,7 +1003,11 @@ fn pad(x: &[f32], shape: &[usize], pads: &[[usize; 2]]) -> Result<Vec<f32>> {
     if pads.len() != shape.len() {
         return Err("PAD: rank mismatch".into());
     }
-    let out: Vec<usize> = shape.iter().zip(pads).map(|(d, p)| d + p[0] + p[1]).collect();
+    let out: Vec<usize> = shape
+        .iter()
+        .zip(pads)
+        .map(|(d, p)| d + p[0] + p[1])
+        .collect();
     let mut y = vec![0.0f32; out.iter().product()];
     let rank = shape.len();
     let inner = *shape.last().unwrap_or(&1);
@@ -731,10 +1017,16 @@ fn pad(x: &[f32], shape: &[usize], pads: &[[usize; 2]]) -> Result<Vec<f32>> {
     for r in 0..rows {
         let mut at = 0usize;
         for d in 0..rank {
-            let i = if d + 1 == rank { pads[d][0] } else { idx[d] + pads[d][0] };
+            let i = if d + 1 == rank {
+                pads[d][0]
+            } else {
+                idx[d] + pads[d][0]
+            };
             at = at * out[d] + i;
         }
-        if let (Some(dst), Some(src)) = (y.get_mut(at..at + inner), x.get(r * inner..(r + 1) * inner)) {
+        if let (Some(dst), Some(src)) =
+            (y.get_mut(at..at + inner), x.get(r * inner..(r + 1) * inner))
+        {
             dst.copy_from_slice(src);
         }
         for d in (0..idx.len()).rev() {
@@ -750,13 +1042,26 @@ fn pad(x: &[f32], shape: &[usize], pads: &[[usize; 2]]) -> Result<Vec<f32>> {
 
 /// Concatenate along `axis`.
 fn concat(parts: &[(&[f32], &Vec<usize>)], axis: usize) -> Result<Vec<f32>> {
-    let Some((_, s0)) = parts.first() else { return Ok(vec![]) };
-    let outer: usize = s0.get(..axis).ok_or("CONCATENATION: bad axis")?.iter().product();
+    let Some((_, s0)) = parts.first() else {
+        return Ok(vec![]);
+    };
+    let outer: usize = s0
+        .get(..axis)
+        .ok_or("CONCATENATION: bad axis")?
+        .iter()
+        .product();
     let mut y = Vec::with_capacity(parts.iter().map(|p| p.0.len()).sum());
     for o in 0..outer {
         for (x, s) in parts {
-            let chunk: usize = s.get(axis..).ok_or("CONCATENATION: bad axis")?.iter().product();
-            y.extend_from_slice(x.get(o * chunk..(o + 1) * chunk).ok_or("CONCATENATION: bad input")?);
+            let chunk: usize = s
+                .get(axis..)
+                .ok_or("CONCATENATION: bad axis")?
+                .iter()
+                .product();
+            y.extend_from_slice(
+                x.get(o * chunk..(o + 1) * chunk)
+                    .ok_or("CONCATENATION: bad input")?,
+            );
         }
     }
     Ok(y)
@@ -782,32 +1087,63 @@ mod tests {
         // A 3×3 stride-2 "same" conv on 4×4: pads nothing before, one after.
         let x: Vec<f32> = (0..16).map(|v| v as f32).collect();
         let ones = vec![1.0f32; 9];
-        let c = Conv { wt: ones.clone(), b: vec![0.0], inp: 1, out: 1, ks: 3, stride: 2, pad: 0 };
+        let c = Conv {
+            wt: ones.clone(),
+            b: vec![0.0],
+            inp: 1,
+            out: 1,
+            ks: 3,
+            stride: 2,
+            pad: 0,
+        };
         let y = c.forward_sized(&x, 4, 4, 2, 2, [0, 0]);
         // Top-left window rows 0–2, cols 0–2; the bottom-right one is cut by the edge.
         assert_eq!(y, vec![45.0, 39.0, 66.0, 50.0]);
-        let d = Depthwise { w: ones, b: vec![0.0], c: 1, ks: 3, stride: 2 };
+        let d = Depthwise {
+            w: ones,
+            b: vec![0.0],
+            c: 1,
+            ks: 3,
+            stride: 2,
+        };
         assert_eq!(d.forward_sized(&x, 4, 4, 2, 2, [0, 0]), y);
     }
 
     #[test]
     fn pool_pad_and_concat() {
         let x: Vec<f32> = (0..16).map(|v| v as f32).collect();
-        assert_eq!(max_pool(&x, [4, 4], 1, [2, 2], [2, 2], [2, 2], [0, 0]), vec![5.0, 7.0, 13.0, 15.0]);
+        assert_eq!(
+            max_pool(&x, [4, 4], 1, [2, 2], [2, 2], [2, 2], [0, 0]),
+            vec![5.0, 7.0, 13.0, 15.0]
+        );
         // Same padding on 3×3 → 2×2: the last window is cut by the edge.
         let x3: Vec<f32> = (0..9).map(|v| v as f32).collect();
-        assert_eq!(max_pool(&x3, [3, 3], 1, [2, 2], [2, 2], [2, 2], [0, 0]), vec![4.0, 5.0, 7.0, 8.0]);
+        assert_eq!(
+            max_pool(&x3, [3, 3], 1, [2, 2], [2, 2], [2, 2], [0, 0]),
+            vec![4.0, 5.0, 7.0, 8.0]
+        );
         // Channel padding (residual connections widen the channels with zeros).
-        let p = pad(&[1.0, 2.0, 3.0, 4.0], &[1, 1, 2, 2], &[[0, 0], [0, 0], [0, 0], [0, 1]]).unwrap();
+        let p = pad(
+            &[1.0, 2.0, 3.0, 4.0],
+            &[1, 1, 2, 2],
+            &[[0, 0], [0, 0], [0, 0], [0, 1]],
+        )
+        .unwrap();
         assert_eq!(p, vec![1.0, 2.0, 0.0, 3.0, 4.0, 0.0]);
         let p = pad(&[1.0, 2.0], &[1, 2], &[[0, 0], [1, 0]]).unwrap();
         assert_eq!(p, vec![0.0, 1.0, 2.0]);
         let a = [1.0, 2.0, 3.0, 4.0];
         let b = [5.0, 6.0];
         let (sa, sb) = (vec![1, 2, 2], vec![1, 1, 2]);
-        assert_eq!(concat(&[(&a, &sa), (&b, &sb)], 1).unwrap(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        assert_eq!(
+            concat(&[(&a, &sa), (&b, &sb)], 1).unwrap(),
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        );
         let (sa, sb) = (vec![2, 2], vec![2, 1]);
-        assert_eq!(concat(&[(&a, &sa), (&b, &sb)], 1).unwrap(), vec![1.0, 2.0, 5.0, 3.0, 4.0, 6.0]);
+        assert_eq!(
+            concat(&[(&a, &sa), (&b, &sb)], 1).unwrap(),
+            vec![1.0, 2.0, 5.0, 3.0, 4.0, 6.0]
+        );
     }
 
     #[test]
@@ -856,7 +1192,8 @@ mod tests {
                 b[t..t + 4].copy_from_slice(&((t - vt) as i32).to_le_bytes());
                 for (k, (id, f)) in fields.iter().enumerate() {
                     let at = t + 4 + 8 * k;
-                    b[vt + 4 + 2 * id..vt + 6 + 2 * id].copy_from_slice(&((at - t) as u16).to_le_bytes());
+                    b[vt + 4 + 2 * id..vt + 6 + 2 * id]
+                        .copy_from_slice(&((at - t) as u16).to_le_bytes());
                     match f {
                         V::Int(i) => b[at..at + 4].copy_from_slice(&i.to_le_bytes()),
                         V::Byte(x) => b[at] = *x,
@@ -901,12 +1238,22 @@ mod tests {
     type O = (i32, Vec<i32>, Vec<i32>, Vec<(usize, V)>);
 
     /// A `.tflite` file with one graph.
-    fn model(bufs: Vec<Vec<u8>>, tensors: Vec<T>, ops: Vec<O>, inputs: Vec<i32>, outputs: Vec<i32>) -> Vec<u8> {
+    fn model(
+        bufs: Vec<Vec<u8>>,
+        tensors: Vec<T>,
+        ops: Vec<O>,
+        inputs: Vec<i32>,
+        outputs: Vec<i32>,
+    ) -> Vec<u8> {
         let ts = tensors
             .into_iter()
             .enumerate()
             .map(|(i, (shape, ty, buf))| {
-                let mut f = vec![(0, V::Ints(shape)), (1, V::Byte(ty)), (3, V::Bytes(format!("t{i}").into_bytes()))];
+                let mut f = vec![
+                    (0, V::Ints(shape)),
+                    (1, V::Byte(ty)),
+                    (3, V::Bytes(format!("t{i}").into_bytes())),
+                ];
                 if let Some(k) = buf {
                     f.push((2, V::Int(k as i32 + 1)));
                 }
@@ -921,13 +1268,32 @@ mod tests {
                     codes.push(code);
                     codes.len() - 1
                 });
-                V::Table(vec![(0, V::Int(idx as i32)), (1, V::Ints(ins)), (2, V::Ints(outs)), (4, V::Table(opts))])
+                V::Table(vec![
+                    (0, V::Int(idx as i32)),
+                    (1, V::Ints(ins)),
+                    (2, V::Ints(outs)),
+                    (4, V::Table(opts)),
+                ])
             })
             .collect();
-        let g = V::Table(vec![(0, V::Tables(ts)), (1, V::Ints(inputs)), (2, V::Ints(outputs)), (3, V::Tables(os))]);
-        let buffers = std::iter::once(V::Table(vec![])).chain(bufs.into_iter().map(|d| V::Table(vec![(0, V::Bytes(d))]))).collect();
-        let codes = codes.into_iter().map(|c| V::Table(vec![(3, V::Int(c))])).collect();
-        let root = V::Table(vec![(1, V::Tables(codes)), (2, V::Tables(vec![g])), (4, V::Tables(buffers))]);
+        let g = V::Table(vec![
+            (0, V::Tables(ts)),
+            (1, V::Ints(inputs)),
+            (2, V::Ints(outputs)),
+            (3, V::Tables(os)),
+        ]);
+        let buffers = std::iter::once(V::Table(vec![]))
+            .chain(bufs.into_iter().map(|d| V::Table(vec![(0, V::Bytes(d))])))
+            .collect();
+        let codes = codes
+            .into_iter()
+            .map(|c| V::Table(vec![(3, V::Int(c))]))
+            .collect();
+        let root = V::Table(vec![
+            (1, V::Tables(codes)),
+            (2, V::Tables(vec![g])),
+            (4, V::Tables(buffers)),
+        ]);
         let mut b = vec![0u8; 4];
         let r = put(&mut b, &root);
         put_u32(&mut b, 0, r);
@@ -940,7 +1306,11 @@ mod tests {
 
     /// Conv2DOptions / Pool2DOptions: padding (0 same, 1 valid) and stride.
     fn window_opts(padding: u8, stride: i32) -> Vec<(usize, V)> {
-        vec![(0, V::Byte(padding)), (1, V::Int(stride)), (2, V::Int(stride))]
+        vec![
+            (0, V::Byte(padding)),
+            (1, V::Int(stride)),
+            (2, V::Int(stride)),
+        ]
     }
 
     fn refused(bytes: &[u8], why: &str) {
@@ -953,14 +1323,25 @@ mod tests {
         // A 3×3 stride-2 "same" conv on 4×4, then a RELU: as `asymmetric_conv_padding`.
         let m = model(
             vec![f32s(&[1.0; 9])],
-            vec![(vec![1, 4, 4, 1], FLOAT32, None), (vec![1, 3, 3, 1], FLOAT32, Some(0)), (vec![1, 2, 2, 1], FLOAT32, None), (vec![1, 2, 2, 1], FLOAT32, None)],
-            vec![(op::CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 2)), (op::RELU, vec![2], vec![3], vec![])],
+            vec![
+                (vec![1, 4, 4, 1], FLOAT32, None),
+                (vec![1, 3, 3, 1], FLOAT32, Some(0)),
+                (vec![1, 2, 2, 1], FLOAT32, None),
+                (vec![1, 2, 2, 1], FLOAT32, None),
+            ],
+            vec![
+                (op::CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 2)),
+                (op::RELU, vec![2], vec![3], vec![]),
+            ],
             vec![0],
             vec![3],
         );
         let m = Model::read(&m).unwrap();
         let c = m.cost().unwrap();
-        assert_eq!((c.macs, c.values, c.scratch, c.kernel), (2 * 2 * 9, 8, 2 * 9, 3));
+        assert_eq!(
+            (c.macs, c.values, c.scratch, c.kernel),
+            (2 * 2 * 9, 8, 2 * 9, 3)
+        );
         // The input, the conv's output and its patch row, alive together.
         assert_eq!(c.live, 16 + 4 + 2 * 9);
         let x: Vec<f32> = (0..16).map(|v| v as f32).collect();
@@ -973,7 +1354,11 @@ mod tests {
         let w = 1 << 25;
         let bomb = model(
             vec![vec![0; 2 * 64 * 64]],
-            vec![(vec![1, 1, w, 1], FLOAT32, None), (vec![1, 64, 64, 1], FLOAT16, Some(0)), (vec![1, 1, w, 1], FLOAT32, None)],
+            vec![
+                (vec![1, 1, w, 1], FLOAT32, None),
+                (vec![1, 64, 64, 1], FLOAT16, Some(0)),
+                (vec![1, 1, w, 1], FLOAT32, None),
+            ],
             vec![(op::CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 1))],
             vec![0],
             vec![2],
@@ -983,7 +1368,11 @@ mod tests {
         let (w, cin) = (1 << 20, 256);
         let wide = model(
             vec![vec![0; 2 * 9 * 256]],
-            vec![(vec![1, 1, w, cin], FLOAT32, None), (vec![1, 3, 3, cin], FLOAT16, Some(0)), (vec![1, 1, w, 1], FLOAT32, None)],
+            vec![
+                (vec![1, 1, w, cin], FLOAT32, None),
+                (vec![1, 3, 3, cin], FLOAT16, Some(0)),
+                (vec![1, 1, w, 1], FLOAT32, None),
+            ],
             vec![(op::CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 1))],
             vec![0],
             vec![2],
@@ -996,7 +1385,11 @@ mod tests {
         let k = MAX_KERNEL as i32 + 1;
         let conv = model(
             vec![vec![0; 2 * (k * k) as usize]],
-            vec![(vec![1, 40, 40, 1], FLOAT32, None), (vec![1, k, k, 1], FLOAT16, Some(0)), (vec![1, 40, 40, 1], FLOAT32, None)],
+            vec![
+                (vec![1, 40, 40, 1], FLOAT32, None),
+                (vec![1, k, k, 1], FLOAT16, Some(0)),
+                (vec![1, 40, 40, 1], FLOAT32, None),
+            ],
             vec![(op::CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 1))],
             vec![0],
             vec![2],
@@ -1004,8 +1397,17 @@ mod tests {
         refused(&conv, "kernel is too large");
         let depthwise = model(
             vec![vec![0; 2 * (k * k) as usize]],
-            vec![(vec![1, 40, 40, 1], FLOAT32, None), (vec![1, k, k, 1], FLOAT16, Some(0)), (vec![1, 40, 40, 1], FLOAT32, None)],
-            vec![(op::DEPTHWISE_CONV_2D, vec![0, 1, -1], vec![2], window_opts(0, 1))],
+            vec![
+                (vec![1, 40, 40, 1], FLOAT32, None),
+                (vec![1, k, k, 1], FLOAT16, Some(0)),
+                (vec![1, 40, 40, 1], FLOAT32, None),
+            ],
+            vec![(
+                op::DEPTHWISE_CONV_2D,
+                vec![0, 1, -1],
+                vec![2],
+                window_opts(0, 1),
+            )],
             vec![0],
             vec![2],
         );
@@ -1015,7 +1417,10 @@ mod tests {
         opts.extend([(3, V::Int(i32::MAX)), (4, V::Int(i32::MAX))]);
         let pool = model(
             vec![],
-            vec![(vec![1, 8, 8, 1], FLOAT32, None), (vec![1, 8, 8, 1], FLOAT32, None)],
+            vec![
+                (vec![1, 8, 8, 1], FLOAT32, None),
+                (vec![1, 8, 8, 1], FLOAT32, None),
+            ],
             vec![(op::MAX_POOL_2D, vec![0], vec![1], opts)],
             vec![0],
             vec![1],
@@ -1030,8 +1435,23 @@ mod tests {
         let t = |buf| (s.clone(), FLOAT32, buf);
         let m = model(
             vec![vec![0; 2 * 16 * 16]],
-            vec![t(None), (vec![16, 1, 1, 16], FLOAT16, Some(0)), t(None), t(None), t(None)],
-            (0..3).map(|i| (op::CONV_2D, vec![if i == 0 { 0 } else { i + 1 }, 1, -1], vec![i + 2], window_opts(0, 1))).collect(),
+            vec![
+                t(None),
+                (vec![16, 1, 1, 16], FLOAT16, Some(0)),
+                t(None),
+                t(None),
+                t(None),
+            ],
+            (0..3)
+                .map(|i| {
+                    (
+                        op::CONV_2D,
+                        vec![if i == 0 { 0 } else { i + 1 }, 1, -1],
+                        vec![i + 2],
+                        window_opts(0, 1),
+                    )
+                })
+                .collect(),
             vec![0],
             vec![4],
         );
@@ -1045,7 +1465,9 @@ mod tests {
         let m = model(
             vec![],
             (0..=n).map(|_| (vec![1, 1 << 25], FLOAT32, None)).collect(),
-            (0..n).map(|i| (op::RELU, vec![i], vec![i + 1], vec![])).collect(),
+            (0..n)
+                .map(|i| (op::RELU, vec![i], vec![i + 1], vec![]))
+                .collect(),
             vec![0],
             vec![n],
         );
@@ -1058,7 +1480,9 @@ mod tests {
         let m = model(
             vec![],
             (0..6).map(|_| (vec![1, 1 << 27], FLOAT32, None)).collect(),
-            (1..6).map(|i| (op::RELU, vec![0], vec![i], vec![])).collect(),
+            (1..6)
+                .map(|i| (op::RELU, vec![0], vec![i], vec![]))
+                .collect(),
             vec![0],
             (1..6).collect(),
         );
@@ -1068,10 +1492,17 @@ mod tests {
     #[test]
     fn shapes_computed_at_run_time_must_match_the_declared_ones() {
         // PAD to 2³⁰ × 2³⁰ while declaring a 1×1 output.
-        let pads = vec![0, 1 << 30, 0, 1 << 30].into_iter().flat_map(i32::to_le_bytes).collect();
+        let pads = vec![0, 1 << 30, 0, 1 << 30]
+            .into_iter()
+            .flat_map(i32::to_le_bytes)
+            .collect();
         let pad = model(
             vec![pads],
-            vec![(vec![1, 1], FLOAT32, None), (vec![2, 2], INT32, Some(0)), (vec![1, 1], FLOAT32, None)],
+            vec![
+                (vec![1, 1], FLOAT32, None),
+                (vec![2, 2], INT32, Some(0)),
+                (vec![1, 1], FLOAT32, None),
+            ],
             vec![(op::PAD, vec![0, 1], vec![2], vec![])],
             vec![0],
             vec![2],
@@ -1080,8 +1511,16 @@ mod tests {
         // Many large parts concatenated into a small declared output.
         let concat = model(
             vec![],
-            vec![(vec![1, 1 << 27], FLOAT32, None), (vec![1, 2], FLOAT32, None)],
-            vec![(op::CONCATENATION, vec![0; 64], vec![1], vec![(0, V::Int(1))])],
+            vec![
+                (vec![1, 1 << 27], FLOAT32, None),
+                (vec![1, 2], FLOAT32, None),
+            ],
+            vec![(
+                op::CONCATENATION,
+                vec![0; 64],
+                vec![1],
+                vec![(0, V::Int(1))],
+            )],
             vec![0],
             vec![1],
         );
@@ -1089,21 +1528,46 @@ mod tests {
         // A pool whose output claims more channels than its input has.
         let pool = model(
             vec![],
-            vec![(vec![1, 2, 2, 1], FLOAT32, None), (vec![1, 1, 1, 1 << 20], FLOAT32, None)],
-            vec![(op::MAX_POOL_2D, vec![0], vec![1], window_opts(1, 2).into_iter().chain([(3, V::Int(2)), (4, V::Int(2))]).collect())],
+            vec![
+                (vec![1, 2, 2, 1], FLOAT32, None),
+                (vec![1, 1, 1, 1 << 20], FLOAT32, None),
+            ],
+            vec![(
+                op::MAX_POOL_2D,
+                vec![0],
+                vec![1],
+                window_opts(1, 2)
+                    .into_iter()
+                    .chain([(3, V::Int(2)), (4, V::Int(2))])
+                    .collect(),
+            )],
             vec![0],
             vec![1],
         );
         refused(&pool, "changes the channels");
         // Dimensions may not hide behind a zero.
-        let zero = model(vec![], vec![(vec![0, 1 << 30, 1 << 30], FLOAT32, None)], vec![], vec![0], vec![0]);
+        let zero = model(
+            vec![],
+            vec![(vec![0, 1 << 30, 1 << 30], FLOAT32, None)],
+            vec![],
+            vec![0],
+            vec![0],
+        );
         refused(&zero, "tensor is too large");
     }
 
     #[test]
     fn shared_weights_count_once_per_use() {
         // One 128 KB buffer decoded for 2100 tensors would be 2100 copies of 2¹⁶ floats.
-        let m = model(vec![vec![0; 2 << 16]], (0..2100).map(|_| (vec![1, 1 << 16], FLOAT16, Some(0))).collect(), vec![], vec![], vec![]);
+        let m = model(
+            vec![vec![0; 2 << 16]],
+            (0..2100)
+                .map(|_| (vec![1, 1 << 16], FLOAT16, Some(0)))
+                .collect(),
+            vec![],
+            vec![],
+            vec![],
+        );
         refused(&m, "weights are too large");
     }
 
@@ -1111,12 +1575,23 @@ mod tests {
     /// fit every budget with wide headroom.
     #[test]
     fn official_face_models_fit_the_budgets() {
-        let Some(path) = std::env::var_os("EFFECTCRAFT_FACE_LANDMARKER") else { return };
+        let Some(path) = std::env::var_os("EFFECTCRAFT_FACE_LANDMARKER") else {
+            return;
+        };
         let bytes = std::fs::read(path).unwrap();
         for name in [crate::mediapipe::DETECTOR, crate::mediapipe::MESH] {
-            let c = Model::read(&crate::pt::zip_file(&bytes, name).unwrap()).unwrap().cost().unwrap();
+            let c = Model::read(&crate::pt::zip_file(&bytes, name).unwrap())
+                .unwrap()
+                .cost()
+                .unwrap();
             println!("{name}: {c:?}");
-            assert!(c.macs <= MAX_MACS / 8 && c.values <= MAX_VALUES / 8 && c.live <= MAX_LIVE / 8 && c.scratch <= MAX_SCRATCH / 8, "{name}: {c:?}");
+            assert!(
+                c.macs <= MAX_MACS / 8
+                    && c.values <= MAX_VALUES / 8
+                    && c.live <= MAX_LIVE / 8
+                    && c.scratch <= MAX_SCRATCH / 8,
+                "{name}: {c:?}"
+            );
             assert!(c.kernel <= MAX_KERNEL as u64 / 4, "{name}: {c:?}");
         }
     }

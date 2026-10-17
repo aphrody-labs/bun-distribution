@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct W2lTemplateToken(pub String);
 
 impl_string_token!(W2lTemplateToken);
-impl_crockford_generator!(W2lTemplateToken, 32usize, LegacyTokenPrefix::W2lTemplate, CrockfordLower);
+impl_crockford_generator!(
+    W2lTemplateToken,
+    32usize,
+    LegacyTokenPrefix::W2lTemplate,
+    CrockfordLower
+);

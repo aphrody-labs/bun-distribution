@@ -31,11 +31,35 @@ fn layer(s: &Session, id: u64) -> Layer {
 /// carrying controls, Curves and Levels (Individual Controls).
 fn app() -> (EffectcraftApp, Ids) {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Main", "width": 640, "height": 360, "frameRate": 30, "duration": 10})).unwrap();
-    s.execute("layer.newSolid", json!({"name": "Back", "color": "#20c040"})).unwrap();
-    let small = s.execute("layer.newSolid", json!({"name": "Small", "color": "#ff0000", "width": 200, "height": 100})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("prop.set", json!({"layer": small, "path": "transform/scale", "value": [200.0, 200.0]})).unwrap();
-    let mut fx = |name: &str| s.execute("effect.apply", json!({"layers": [small], "effect": name})).unwrap()["effects"][0].as_u64().unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Main", "width": 640, "height": 360, "frameRate": 30, "duration": 10}),
+    )
+    .unwrap();
+    s.execute(
+        "layer.newSolid",
+        json!({"name": "Back", "color": "#20c040"}),
+    )
+    .unwrap();
+    let small = s
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Small", "color": "#ff0000", "width": 200, "height": 100}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": small, "path": "transform/scale", "value": [200.0, 200.0]}),
+    )
+    .unwrap();
+    let mut fx = |name: &str| {
+        s.execute("effect.apply", json!({"layers": [small], "effect": name}))
+            .unwrap()["effects"][0]
+            .as_u64()
+            .unwrap()
+    };
     let point_fx = fx("Point Control");
     fx("Color Control");
     fx("Angle Control");
@@ -44,8 +68,20 @@ fn app() -> (EffectcraftApp, Ids) {
     let levels = fx("Levels (Individual Controls)");
     let l = layer(&s, small);
     let fxg = l.effects().unwrap();
-    let param = |effect: u64, id: &str| fxg.groups().find(|g| g.uid == effect).and_then(|g| g.get(id)).map(|p| p.uid).unwrap();
-    let find = |m: &str, id: &str| fxg.groups().find(|g| g.match_id == m).and_then(|g| g.get(id)).map(|p| p.uid).unwrap();
+    let param = |effect: u64, id: &str| {
+        fxg.groups()
+            .find(|g| g.uid == effect)
+            .and_then(|g| g.get(id))
+            .map(|p| p.uid)
+            .unwrap()
+    };
+    let find = |m: &str, id: &str| {
+        fxg.groups()
+            .find(|g| g.match_id == m)
+            .and_then(|g| g.get(id))
+            .map(|p| p.uid)
+            .unwrap()
+    };
     let ids = Ids {
         small,
         point: param(point_fx, "point"),
@@ -66,7 +102,14 @@ fn app() -> (EffectcraftApp, Ids) {
 fn settle(h: &mut Harness<'_, EffectcraftApp>) {
     for _ in 0..600 {
         h.step();
-        if h.state().frames.inflight() == 0 && h.state().frames.last_ms.lock().map(|v| *v > 0.0).unwrap_or(false) {
+        if h.state().frames.inflight() == 0
+            && h.state()
+                .frames
+                .last_ms
+                .lock()
+                .map(|v| *v > 0.0)
+                .unwrap_or(false)
+        {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(20));
@@ -77,15 +120,31 @@ fn settle(h: &mut Harness<'_, EffectcraftApp>) {
 }
 
 fn ids(h: &Harness<'_, EffectcraftApp>) -> Vec<String> {
-    h.state().auto.previous.iter().chain(h.state().auto.elements.iter()).map(|e| e.id.clone()).collect()
+    h.state()
+        .auto
+        .previous
+        .iter()
+        .chain(h.state().auto.elements.iter())
+        .map(|e| e.id.clone())
+        .collect()
 }
 
 fn click(h: &mut Harness<'_, EffectcraftApp>, pos: egui::Pos2) {
     h.event(egui::Event::PointerMoved(pos));
     h.step();
-    h.event(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
-    h.event(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.step();
     h.step();
 }
@@ -93,7 +152,9 @@ fn click(h: &mut Harness<'_, EffectcraftApp>, pos: egui::Pos2) {
 #[test]
 fn effect_controls_widgets_register_automation_ids() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
     let have = ids(&h);
     let want = [
@@ -113,13 +174,27 @@ fn effect_controls_widgets_register_automation_ids() {
     h.step();
     h.step();
     let have = ids(&h);
-    let want =
-        ["histogram", "channel", "inBlack", "gamma", "inWhite", "outBlack", "outWhite"].map(|k| format!("effectControls.effect.{}.levels.{k}", x.levels));
+    let want = [
+        "histogram",
+        "channel",
+        "inBlack",
+        "gamma",
+        "inWhite",
+        "outBlack",
+        "outWhite",
+    ]
+    .map(|k| format!("effectControls.effect.{}.levels.{k}", x.levels));
     let missing: Vec<&String> = want.iter().filter(|w| !have.contains(w)).collect();
     assert!(missing.is_empty(), "missing {missing:?}");
     // The angle reads AE-style.
-    let angle =
-        h.state().auto.previous.iter().chain(h.state().auto.elements.iter()).find(|e| e.id == format!("effectControls.prop.{}.value", x.angle)).cloned();
+    let angle = h
+        .state()
+        .auto
+        .previous
+        .iter()
+        .chain(h.state().auto.elements.iter())
+        .find(|e| e.id == format!("effectControls.prop.{}.value", x.angle))
+        .cloned();
     assert_eq!(angle.map(|e| e.label), Some("0x+0.0°".to_string()));
     // Twirling the angle open shows its dial.
     h.state_mut().ui.fx_slider_open.insert(x.angle);
@@ -132,35 +207,69 @@ fn effect_controls_widgets_register_automation_ids() {
     h.state_mut().session.state.selected_props = vec![(LayerId(x.small), x.point_fx)];
     h.step();
     h.step();
-    assert!(ids(&h).contains(&pt_id), "effect point control shown for the selected effect");
+    assert!(
+        ids(&h).contains(&pt_id),
+        "effect point control shown for the selected effect"
+    );
 }
 
 #[test]
 fn crosshair_and_eyedropper_pick_from_the_viewer() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
     // Crosshair: a click at comp (330, 190) is layer (105, 55) on the 200%-scaled layer
     // (anchor (100, 50) at position (320, 180)).
-    h.state_mut().ui.fx_pick = Some(FxPick { kind: "point".into(), layer: x.small, prop: x.point, name: "Point".into() });
+    h.state_mut().ui.fx_pick = Some(FxPick {
+        kind: "point".into(),
+        layer: x.small,
+        prop: x.point,
+        name: "Point".into(),
+    });
     h.step();
     assert!(ids(&h).contains(&"viewer.fxPick".to_string()));
     let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [330.0, 190.0]).unwrap();
     click(&mut h, pos);
     assert!(h.state().ui.fx_pick.is_none(), "the pick is used up");
-    let v = layer(&h.state().session, x.small).effects().unwrap().find(x.point).unwrap().value.clone();
+    let v = layer(&h.state().session, x.small)
+        .effects()
+        .unwrap()
+        .find(x.point)
+        .unwrap()
+        .value
+        .clone();
     let KV::Vec2(p) = v else { panic!("{v:?}") };
     // One viewer point is up to 1/zoom comp pixels.
     let tol = 1.0 / effectcraft_ui_egui::panels::viewer::last_fit(&h.ctx) as f64;
-    assert!((p[0] - 105.0).abs() <= tol && (p[1] - 55.0).abs() <= tol, "{p:?}");
+    assert!(
+        (p[0] - 105.0).abs() <= tol && (p[1] - 55.0).abs() <= tol,
+        "{p:?}"
+    );
     // Eyedropper over the green background.
-    h.state_mut().ui.fx_pick = Some(FxPick { kind: "color".into(), layer: x.small, prop: x.color, name: "Color".into() });
+    h.state_mut().ui.fx_pick = Some(FxPick {
+        kind: "color".into(),
+        layer: x.small,
+        prop: x.color,
+        name: "Color".into(),
+    });
     h.step();
     let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [24.0, 24.0]).unwrap();
     click(&mut h, pos);
-    let v = layer(&h.state().session, x.small).effects().unwrap().find(x.color).unwrap().value.clone();
+    let v = layer(&h.state().session, x.small)
+        .effects()
+        .unwrap()
+        .find(x.color)
+        .unwrap()
+        .value
+        .clone();
     let KV::Color(c) = v else { panic!("{v:?}") };
-    let want = [0x20 as f64 / 255.0, 0xc0 as f64 / 255.0, 0x40 as f64 / 255.0];
+    let want = [
+        0x20 as f64 / 255.0,
+        0xc0 as f64 / 255.0,
+        0x40 as f64 / 255.0,
+    ];
     for k in 0..3 {
         assert!((c[k] - want[k]).abs() < 0.02, "{c:?} vs {want:?}");
     }
@@ -173,18 +282,41 @@ fn crosshair_and_eyedropper_pick_from_the_viewer() {
 #[test]
 fn the_eyedropper_samples_under_the_pointer_in_a_region_of_interest() {
     let (mut app, x) = app();
-    app.session.execute("view.setRegionOfInterest", json!({"rect": [0.0, 0.0, 320.0, 180.0]})).unwrap();
+    app.session
+        .execute(
+            "view.setRegionOfInterest",
+            json!({"rect": [0.0, 0.0, 320.0, 180.0]}),
+        )
+        .unwrap();
     // (Not the red it will pick.)
-    app.session.execute("prop.set", json!({"layer": x.small, "prop": x.color, "value": [0.0, 0.0, 1.0, 1.0]})).unwrap();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    app.session
+        .execute(
+            "prop.set",
+            json!({"layer": x.small, "prop": x.color, "value": [0.0, 0.0, 1.0, 1.0]}),
+        )
+        .unwrap();
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
-    h.state_mut().ui.fx_pick = Some(FxPick { kind: "color".into(), layer: x.small, prop: x.color, name: "Color".into() });
+    h.state_mut().ui.fx_pick = Some(FxPick {
+        kind: "color".into(),
+        layer: x.small,
+        prop: x.color,
+        name: "Color".into(),
+    });
     h.step();
     // (200, 150) is on the red layer (it covers 120..520 × 80..280); read as a frame of the
     // whole comp, the green background at (100, 75).
     let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [200.0, 150.0]).unwrap();
     click(&mut h, pos);
-    let v = layer(&h.state().session, x.small).effects().unwrap().find(x.color).unwrap().value.clone();
+    let v = layer(&h.state().session, x.small)
+        .effects()
+        .unwrap()
+        .find(x.color)
+        .unwrap()
+        .value
+        .clone();
     let KV::Color(c) = v else { panic!("{v:?}") };
     assert!(c[0] > 0.98 && c[1] < 0.02 && c[2] < 0.02, "{c:?}");
 }
@@ -194,23 +326,65 @@ fn the_eyedropper_samples_under_the_pointer_in_a_region_of_interest() {
 #[test]
 fn keyer_eyedropper_picks_the_screen_from_the_effect_input() {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Key", "width": 320, "height": 180, "frameRate": 30, "duration": 1})).unwrap();
-    let screen = s.execute("layer.newSolid", json!({"name": "Screen", "color": "#30b050"})).unwrap()["layer"].as_u64().unwrap();
-    let fx = s.execute("effect.apply", json!({"layers": [screen], "effect": "Key Light"})).unwrap()["effects"][0].as_u64().unwrap();
-    let prop = layer(&s, screen).effects().unwrap().groups().find(|g| g.uid == fx).and_then(|g| g.get("screenColour")).map(|p| p.uid).unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Key", "width": 320, "height": 180, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
+    let screen = s
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Screen", "color": "#30b050"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let fx = s
+        .execute(
+            "effect.apply",
+            json!({"layers": [screen], "effect": "Key Light"}),
+        )
+        .unwrap()["effects"][0]
+        .as_u64()
+        .unwrap();
+    let prop = layer(&s, screen)
+        .effects()
+        .unwrap()
+        .groups()
+        .find(|g| g.uid == fx)
+        .and_then(|g| g.get("screenColour"))
+        .map(|p| p.uid)
+        .unwrap();
     s.state.selected_layers = vec![LayerId(screen)];
     let mut app = EffectcraftApp::new(s);
     app.show_panel(PanelKind::EffectControls);
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
-    h.state_mut().ui.fx_pick = Some(FxPick { kind: "color".into(), layer: screen, prop, name: "Screen Colour".into() });
+    h.state_mut().ui.fx_pick = Some(FxPick {
+        kind: "color".into(),
+        layer: screen,
+        prop,
+        name: "Screen Colour".into(),
+    });
     h.step();
     let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [160.0, 90.0]).unwrap();
     click(&mut h, pos);
     assert!(h.state().ui.fx_pick.is_none(), "the pick is used up");
-    let v = layer(&h.state().session, screen).effects().unwrap().find(prop).unwrap().value.clone();
+    let v = layer(&h.state().session, screen)
+        .effects()
+        .unwrap()
+        .find(prop)
+        .unwrap()
+        .value
+        .clone();
     let KV::Color(c) = v else { panic!("{v:?}") };
-    let want = [0x30 as f64 / 255.0, 0xb0 as f64 / 255.0, 0x50 as f64 / 255.0];
+    let want = [
+        0x30 as f64 / 255.0,
+        0xb0 as f64 / 255.0,
+        0x50 as f64 / 255.0,
+    ];
     for k in 0..3 {
         assert!((c[k] - want[k]).abs() < 0.01, "{c:?} vs {want:?}");
     }
@@ -221,22 +395,43 @@ fn keyer_eyedropper_picks_the_screen_from_the_effect_input() {
 }
 
 fn rect_of(h: &Harness<'_, EffectcraftApp>, id: &str) -> egui::Rect {
-    let e = h.state().auto.previous.iter().chain(h.state().auto.elements.iter()).find(|e| e.id == id).unwrap_or_else(|| panic!("no {id}")).clone();
-    egui::Rect::from_min_size(egui::pos2(e.rect[0], e.rect[1]), egui::vec2(e.rect[2], e.rect[3]))
+    let e = h
+        .state()
+        .auto
+        .previous
+        .iter()
+        .chain(h.state().auto.elements.iter())
+        .find(|e| e.id == id)
+        .unwrap_or_else(|| panic!("no {id}"))
+        .clone();
+    egui::Rect::from_min_size(
+        egui::pos2(e.rect[0], e.rect[1]),
+        egui::vec2(e.rect[2], e.rect[3]),
+    )
 }
 
 /// Drag one pixel per frame, as a slow hand does.
 fn slow_drag(h: &mut Harness<'_, EffectcraftApp>, from: egui::Pos2, dx: f32) {
     h.event(egui::Event::PointerMoved(from));
     h.step();
-    h.event(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
     for k in 1..=dx as i32 {
         h.event(egui::Event::PointerMoved(from + egui::vec2(k as f32, 0.0)));
         h.step();
     }
     let to = from + egui::vec2(dx, 0.0);
-    h.event(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(3);
 }
 
@@ -256,35 +451,75 @@ fn type_into(h: &mut Harness<'_, EffectcraftApp>, id: &str, text: &str) {
 #[test]
 fn angle_revolutions_scrub_and_take_typing() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
-    let angle = |h: &Harness<'_, EffectcraftApp>| layer(&h.state().session, x.small).effects().unwrap().find(x.angle).unwrap().value.as_f64();
-    h.state_mut().session.execute("prop.set", json!({"layer": x.small, "prop": x.angle, "value": 45.0})).unwrap();
+    let angle = |h: &Harness<'_, EffectcraftApp>| {
+        layer(&h.state().session, x.small)
+            .effects()
+            .unwrap()
+            .find(x.angle)
+            .unwrap()
+            .value
+            .as_f64()
+    };
+    h.state_mut()
+        .session
+        .execute(
+            "prop.set",
+            json!({"layer": x.small, "prop": x.angle, "value": 45.0}),
+        )
+        .unwrap();
     h.run_steps(3);
     let revs = format!("effectControls.prop.{}.revolutions", x.angle);
     // Ten pixels a turn, however slowly the pointer moves; the degrees stay.
     let from = rect_of(&h, &revs).center();
     slow_drag(&mut h, from, 40.0);
     let v = angle(&h);
-    assert!((v - 45.0).rem_euclid(360.0).abs() < 1e-9 && (2.0..=4.0).contains(&((v - 45.0) / 360.0)), "{v}");
+    assert!(
+        (v - 45.0).rem_euclid(360.0).abs() < 1e-9 && (2.0..=4.0).contains(&((v - 45.0) / 360.0)),
+        "{v}"
+    );
     type_into(&mut h, &revs, "3");
     assert_eq!(angle(&h), 3.0 * 360.0 + 45.0);
     let deg = format!("effectControls.prop.{}.value", x.angle);
-    assert_eq!(h.state().auto.find(&deg).map(|e| e.label.clone()), Some("3x+45.0°".into()));
+    assert_eq!(
+        h.state().auto.find(&deg).map(|e| e.label.clone()),
+        Some("3x+45.0°".into())
+    );
     // Negative angles keep their sign: -1x-30° → 2x-30°.
-    h.state_mut().session.execute("prop.set", json!({"layer": x.small, "prop": x.angle, "value": -390.0})).unwrap();
+    h.state_mut()
+        .session
+        .execute(
+            "prop.set",
+            json!({"layer": x.small, "prop": x.angle, "value": -390.0}),
+        )
+        .unwrap();
     h.run_steps(3);
     type_into(&mut h, &revs, "2");
     assert_eq!(angle(&h), 2.0 * 360.0 - 30.0);
 
     // The Timeline's Rotation.
-    let rot = layer(&h.state().session, x.small).props.prop("transform/rotation").unwrap().uid;
+    let rot = layer(&h.state().session, x.small)
+        .props
+        .prop("transform/rotation")
+        .unwrap()
+        .uid;
     h.state_mut().show_panel(PanelKind::Timeline);
     let ctx = h.ctx.clone();
-    effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, "timeline.reveal.rotation", json!({})).unwrap();
+    effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, "timeline.reveal.rotation", json!({}))
+        .unwrap();
     h.run_steps(4);
     type_into(&mut h, &format!("timeline.prop.{rot}.revolutions"), "-2");
-    let rotation = |h: &Harness<'_, EffectcraftApp>| layer(&h.state().session, x.small).props.prop("transform/rotation").unwrap().value.as_f64();
+    let rotation = |h: &Harness<'_, EffectcraftApp>| {
+        layer(&h.state().session, x.small)
+            .props
+            .prop("transform/rotation")
+            .unwrap()
+            .value
+            .as_f64()
+    };
     assert_eq!(rotation(&h), -720.0);
     // The Properties panel's Rotation.
     h.state_mut().show_panel(PanelKind::Properties);
@@ -296,9 +531,19 @@ fn angle_revolutions_scrub_and_take_typing() {
 fn right_click(h: &mut Harness<'_, EffectcraftApp>, pos: egui::Pos2) {
     h.event(egui::Event::PointerMoved(pos));
     h.step();
-    h.event(egui::Event::PointerButton { pos, button: egui::PointerButton::Secondary, pressed: true, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Secondary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
-    h.event(egui::Event::PointerButton { pos, button: egui::PointerButton::Secondary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos,
+        button: egui::PointerButton::Secondary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.run_steps(2);
 }
 
@@ -313,20 +558,41 @@ fn hover(h: &mut Harness<'_, EffectcraftApp>, pos: egui::Pos2) {
 #[test]
 fn right_click_in_effect_controls_shows_the_effect_menu() {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Main", "width": 320, "height": 180, "frameRate": 30, "duration": 4})).unwrap();
-    let a = s.execute("layer.newSolid", json!({"name": "A", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-    let b = s.execute("layer.newSolid", json!({"name": "B", "color": "#804060"})).unwrap()["layer"].as_u64().unwrap();
-    let fill = s.execute("effect.apply", json!({"layers": [b], "effect": "Fill"})).unwrap()["effects"][0].as_u64().unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Main", "width": 320, "height": 180, "frameRate": 30, "duration": 4}),
+    )
+    .unwrap();
+    let a = s
+        .execute("layer.newSolid", json!({"name": "A", "color": "#406080"}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let b = s
+        .execute("layer.newSolid", json!({"name": "B", "color": "#804060"}))
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let fill = s
+        .execute("effect.apply", json!({"layers": [b], "effect": "Fill"}))
+        .unwrap()["effects"][0]
+        .as_u64()
+        .unwrap();
     s.state.selected_layers = vec![LayerId(b), LayerId(a)];
     let mut app = EffectcraftApp::new(s);
     app.show_panel(PanelKind::EffectControls);
-    let mut h = Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .build_eframe(|_| app);
     h.run_steps(3);
     let category = " Blur & Sharpen ⏵";
     // An effect's header: its own menu.
     let header = rect_of(&h, &format!("effectControls.effect.{fill}")).center();
     right_click(&mut h, header);
-    assert!(h.query_by_label("Duplicate").is_some(), "the effect's own menu");
+    assert!(
+        h.query_by_label("Duplicate").is_some(),
+        "the effect's own menu"
+    );
     assert!(h.query_by_label(category).is_none());
     h.key_press(egui::Key::Escape);
     h.run_steps(2);
@@ -334,27 +600,56 @@ fn right_click_in_effect_controls_shows_the_effect_menu() {
     let reset = rect_of(&h, &format!("effectControls.effect.{fill}.reset")).center();
     right_click(&mut h, reset);
     assert!(h.query_by_label(category).is_some());
-    assert_eq!(layer(&h.state().session, b).effects().map(|f| f.groups().count()), Some(1), "Reset didn't run");
+    assert_eq!(
+        layer(&h.state().session, b)
+            .effects()
+            .map(|f| f.groups().count()),
+        Some(1),
+        "Reset didn't run"
+    );
     h.key_press(egui::Key::Escape);
     h.run_steps(2);
     assert!(h.query_by_label(category).is_none());
     // The empty area below it: the Effect menu.
     let panel = rect_of(&h, "panel.EffectControls");
     right_click(&mut h, egui::pos2(panel.center().x, panel.max.y - 30.0));
-    let cat = h.query_by_label(category).expect("the Effect menu's categories").rect();
-    assert!(h.query_by_label_contains("Remove All").is_some(), "the whole Effect menu");
+    let cat = h
+        .query_by_label(category)
+        .expect("the Effect menu's categories")
+        .rect();
+    assert!(
+        h.query_by_label_contains("Remove All").is_some(),
+        "the whole Effect menu"
+    );
     hover(&mut h, cat.center());
-    let at = h.query_by_label(" Gaussian Blur").expect("Blur & Sharpen ▸ Gaussian Blur").rect().center();
+    let at = h
+        .query_by_label(" Gaussian Blur")
+        .expect("Blur & Sharpen ▸ Gaussian Blur")
+        .rect()
+        .center();
     hover(&mut h, egui::pos2(at.x, cat.center().y));
     for k in 1..=10 {
-        hover(&mut h, egui::pos2(at.x, cat.center().y + (at.y - cat.center().y) * k as f32 / 10.0));
+        hover(
+            &mut h,
+            egui::pos2(
+                at.x,
+                cat.center().y + (at.y - cat.center().y) * k as f32 / 10.0,
+            ),
+        );
     }
     click(&mut h, at);
     let names = |h: &Harness<'_, EffectcraftApp>, l: u64| -> Vec<String> {
-        layer(&h.state().session, l).effects().map(|f| f.groups().map(|g| g.name.clone()).collect()).unwrap_or_default()
+        layer(&h.state().session, l)
+            .effects()
+            .map(|f| f.groups().map(|g| g.name.clone()).collect())
+            .unwrap_or_default()
     };
     assert_eq!(names(&h, b), ["Fill", "Gaussian Blur"]);
-    assert_eq!(names(&h, a), ["Gaussian Blur"], "every selected layer gets it");
+    assert_eq!(
+        names(&h, a),
+        ["Gaussian Blur"],
+        "every selected layer gets it"
+    );
     assert!(h.query_by_label(category).is_none(), "the menu closed");
 }
 
@@ -367,27 +662,71 @@ fn extractor_offers_the_exr_layers_and_channels() {
     let (w, hh) = (8usize, 4usize);
     let ch = |n: &str, v: f32| AnyChannel::new(n, FlatSamples::F32(vec![v; w * hh]));
     let channels = AnyChannels::sort(
-        vec![ch("diffuse.R", 1.0), ch("diffuse.G", 0.5), ch("diffuse.B", 0.0), ch("spec.R", 0.0), ch("spec.G", 0.0), ch("spec.B", 1.0), ch("depth.Z", 0.25)]
-            .into(),
+        vec![
+            ch("diffuse.R", 1.0),
+            ch("diffuse.G", 0.5),
+            ch("diffuse.B", 0.0),
+            ch("spec.R", 0.0),
+            ch("spec.G", 0.0),
+            ch("spec.B", 1.0),
+            ch("depth.Z", 0.25),
+        ]
+        .into(),
     );
     let path = std::env::temp_dir().join(format!("ec-ui-exr-layers-{}.exr", std::process::id()));
-    Image::from_layer(exr::prelude::Layer::new((w, hh), LayerAttributes::default(), Encoding::FAST_LOSSLESS, channels)).write().to_file(&path).unwrap();
+    Image::from_layer(exr::prelude::Layer::new(
+        (w, hh),
+        LayerAttributes::default(),
+        Encoding::FAST_LOSSLESS,
+        channels,
+    ))
+    .write()
+    .to_file(&path)
+    .unwrap();
 
     let mut s = effectcraft_host::session();
-    let item = s.execute("file.import", json!({"paths": [path.to_string_lossy()]})).unwrap()["items"][0].clone();
-    s.execute("comp.new", json!({"name": "EXR", "width": 8, "height": 4, "frameRate": 24, "duration": 1})).unwrap();
-    let l = s.execute("layer.addItem", json!({"item": item})).unwrap()["layer"].as_u64().unwrap();
-    let fx = s.execute("effect.apply", json!({"layers": [l], "effect": "EXtractoR"})).unwrap()["effects"][0].as_u64().unwrap();
-    let uid = |s: &Session, id: &str| layer(s, l).effects().and_then(|f| f.groups().find(|g| g.uid == fx)).and_then(|g| g.get(id)).map(|p| p.uid).unwrap();
+    let item = s
+        .execute("file.import", json!({"paths": [path.to_string_lossy()]}))
+        .unwrap()["items"][0]
+        .clone();
+    s.execute(
+        "comp.new",
+        json!({"name": "EXR", "width": 8, "height": 4, "frameRate": 24, "duration": 1}),
+    )
+    .unwrap();
+    let l = s.execute("layer.addItem", json!({"item": item})).unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    let fx = s
+        .execute(
+            "effect.apply",
+            json!({"layers": [l], "effect": "EXtractoR"}),
+        )
+        .unwrap()["effects"][0]
+        .as_u64()
+        .unwrap();
+    let uid = |s: &Session, id: &str| {
+        layer(s, l)
+            .effects()
+            .and_then(|f| f.groups().find(|g| g.uid == fx))
+            .and_then(|g| g.get(id))
+            .map(|p| p.uid)
+            .unwrap()
+    };
     let red = uid(&s, "red");
     s.state.selected_layers = vec![LayerId(l)];
     let mut app = EffectcraftApp::new(s);
     app.show_panel(PanelKind::EffectControls);
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
     let values = |h: &Harness<'_, EffectcraftApp>| -> Vec<String> {
         let l = layer(&h.state().session, l);
-        let g = l.effects().and_then(|f| f.groups().find(|g| g.uid == fx)).unwrap();
+        let g = l
+            .effects()
+            .and_then(|f| f.groups().find(|g| g.uid == fx))
+            .unwrap();
         ["red", "green", "blue", "alpha"]
             .iter()
             .map(|id| {
@@ -411,7 +750,10 @@ fn extractor_offers_the_exr_layers_and_channels() {
     h.get_by_label("spec").click();
     h.run_steps(3);
     assert_eq!(values(&h), ["spec.R", "spec.G", "spec.B", ""]);
-    h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+    h.state_mut()
+        .session
+        .execute("edit.undo", json!({}))
+        .unwrap();
     assert_eq!(values(&h), ["R", "G", "B", "A"], "one undo step");
     h.run_steps(2);
 
@@ -427,52 +769,147 @@ fn extractor_offers_the_exr_layers_and_channels() {
 
 #[test]
 fn point_picker_handle_follows_hover_then_commits_once_across_effects() {
-    for (effect, parameter) in [("ec.control.point", "point"), ("ec.blur.ccradialfast", "center"), ("ec.generate.gradientramp", "start")] {
+    for (effect, parameter) in [
+        ("ec.control.point", "point"),
+        ("ec.blur.ccradialfast", "center"),
+        ("ec.generate.gradientramp", "start"),
+    ] {
         let mut s = Session::default();
-        s.execute("comp.new", json!({"width":640,"height":360,"duration":1})).unwrap();
-        let lid = s.execute("layer.newSolid", json!({"width":200,"height":100,"color":"#406080"})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.set", json!({"layer":lid,"path":"transform/scale","value":[200,200]})).unwrap();
-        let fx = s.execute("effect.apply", json!({"layer":lid,"effect":effect})).unwrap()["effects"][0].as_u64().unwrap();
-        let point = layer(&s, lid).effects().unwrap().find_group(fx).unwrap().get(parameter).unwrap().uid;
-        s.execute("prop.set", json!({"layer":lid,"prop":point,"value":[100,50]})).unwrap();
+        s.execute("comp.new", json!({"width":640,"height":360,"duration":1}))
+            .unwrap();
+        let lid = s
+            .execute(
+                "layer.newSolid",
+                json!({"width":200,"height":100,"color":"#406080"}),
+            )
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.set",
+            json!({"layer":lid,"path":"transform/scale","value":[200,200]}),
+        )
+        .unwrap();
+        let fx = s
+            .execute("effect.apply", json!({"layer":lid,"effect":effect}))
+            .unwrap()["effects"][0]
+            .as_u64()
+            .unwrap();
+        let point = layer(&s, lid)
+            .effects()
+            .unwrap()
+            .find_group(fx)
+            .unwrap()
+            .get(parameter)
+            .unwrap()
+            .uid;
+        s.execute(
+            "prop.set",
+            json!({"layer":lid,"prop":point,"value":[100,50]}),
+        )
+        .unwrap();
         let mut app = EffectcraftApp::new(s);
         app.show_panel(PanelKind::EffectControls);
         app.ui.viewer.zoom = Some(0.85);
         app.ui.viewer.pan = [25.0, -10.0];
-        let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1700.0, 1100.0))
+            .build_eframe(|_| app);
         settle(&mut h);
         let id = format!("viewer.effectPoint.{point}");
         let original = rect_of(&h, &id).center();
         let pick_button = rect_of(&h, &format!("effectControls.prop.{point}.crosshair")).center();
         click(&mut h, pick_button);
-        assert!(h.state().ui.fx_pick.is_some(), "{effect}: crosshair arms the picker");
-        assert_eq!(rect_of(&h, &id).center(), original, "the handle remains visible before entering the viewer");
+        assert!(
+            h.state().ui.fx_pick.is_some(),
+            "{effect}: crosshair arms the picker"
+        );
+        assert_eq!(
+            rect_of(&h, &id).center(),
+            original,
+            "the handle remains visible before entering the viewer"
+        );
         let undo = h.state().session.history.undo.len();
         for comp in [[350.0, 200.0], [370.0, 220.0]] {
             let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, comp).unwrap();
             hover(&mut h, pos);
-            assert!(rect_of(&h, &id).center().distance(pos) < 0.1, "{effect}: handle must follow the pointer before clicking");
-            assert_eq!(layer(&h.state().session, lid).props.find(point).unwrap().value.as_vec2(), [100.0, 50.0], "hover is only a preview");
-            assert_eq!(h.state().session.history.undo.len(), undo, "hover must not add undo entries");
+            assert!(
+                rect_of(&h, &id).center().distance(pos) < 0.1,
+                "{effect}: handle must follow the pointer before clicking"
+            );
+            assert_eq!(
+                layer(&h.state().session, lid)
+                    .props
+                    .find(point)
+                    .unwrap()
+                    .value
+                    .as_vec2(),
+                [100.0, 50.0],
+                "hover is only a preview"
+            );
+            assert_eq!(
+                h.state().session.history.undo.len(),
+                undo,
+                "hover must not add undo entries"
+            );
         }
-        let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [370.0, 220.0]).unwrap();
+        let pos =
+            effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [370.0, 220.0]).unwrap();
         click(&mut h, pos);
         assert!(h.state().ui.fx_pick.is_none());
-        let after = layer(&h.state().session, lid).props.find(point).unwrap().value.as_vec2();
-        assert!((after[0] - 125.0).abs() < 1.0 && (after[1] - 70.0).abs() < 1.0, "{effect}: click uses layer space: {after:?}");
-        assert_eq!(h.state().session.history.undo.len(), undo + 1, "one click is one edit");
-        h.state_mut().session.execute("edit.undo", json!({})).unwrap();
-        assert_eq!(layer(&h.state().session, lid).props.find(point).unwrap().value.as_vec2(), [100.0, 50.0]);
-        assert_eq!(layer(&h.state().session, lid).props.prop("transform/position").unwrap().value.as_vec2(), [320.0, 180.0]);
+        let after = layer(&h.state().session, lid)
+            .props
+            .find(point)
+            .unwrap()
+            .value
+            .as_vec2();
+        assert!(
+            (after[0] - 125.0).abs() < 1.0 && (after[1] - 70.0).abs() < 1.0,
+            "{effect}: click uses layer space: {after:?}"
+        );
+        assert_eq!(
+            h.state().session.history.undo.len(),
+            undo + 1,
+            "one click is one edit"
+        );
+        h.state_mut()
+            .session
+            .execute("edit.undo", json!({}))
+            .unwrap();
+        assert_eq!(
+            layer(&h.state().session, lid)
+                .props
+                .find(point)
+                .unwrap()
+                .value
+                .as_vec2(),
+            [100.0, 50.0]
+        );
+        assert_eq!(
+            layer(&h.state().session, lid)
+                .props
+                .prop("transform/position")
+                .unwrap()
+                .value
+                .as_vec2(),
+            [320.0, 180.0]
+        );
     }
 }
 
 #[test]
 fn point_picker_preview_cancels_and_works_with_layer_controls_hidden() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
-    let value = layer(&h.state().session, x.small).props.find(x.point).unwrap().value.clone();
+    let value = layer(&h.state().session, x.small)
+        .props
+        .find(x.point)
+        .unwrap()
+        .value
+        .clone();
     let undo = h.state().session.history.undo.len();
     h.state_mut().ui.viewer.show_layer_controls = false;
     let pick_button = rect_of(&h, &format!("effectControls.prop.{}.crosshair", x.point)).center();
@@ -481,27 +918,60 @@ fn point_picker_preview_cancels_and_works_with_layer_controls_hidden() {
     let original = rect_of(&h, &id).center();
     let pos = effectcraft_ui_egui::panels::viewer::comp_to_screen(&h.ctx, [370.0, 220.0]).unwrap();
     hover(&mut h, pos);
-    assert!(rect_of(&h, &id).center().distance(pos) < 0.1, "explicit picks show a handle even with layer controls hidden");
+    assert!(
+        rect_of(&h, &id).center().distance(pos) < 0.1,
+        "explicit picks show a handle even with layer controls hidden"
+    );
     hover(&mut h, pick_button);
-    assert_eq!(rect_of(&h, &id).center(), original, "leaving the viewer restores the current position");
+    assert_eq!(
+        rect_of(&h, &id).center(),
+        original,
+        "leaving the viewer restores the current position"
+    );
     hover(&mut h, pos);
     h.key_press(egui::Key::Escape);
     h.run_steps(3);
     assert!(h.state().ui.fx_pick.is_none());
-    assert!(!ids(&h).contains(&id), "cancel removes the temporary handle");
-    assert_eq!(layer(&h.state().session, x.small).props.find(x.point).unwrap().value, value);
-    assert_eq!(h.state().session.history.undo.len(), undo, "cancel leaves the project unchanged");
+    assert!(
+        !ids(&h).contains(&id),
+        "cancel removes the temporary handle"
+    );
+    assert_eq!(
+        layer(&h.state().session, x.small)
+            .props
+            .find(x.point)
+            .unwrap()
+            .value,
+        value
+    );
+    assert_eq!(
+        h.state().session.history.undo.len(),
+        undo,
+        "cancel leaves the project unchanged"
+    );
 }
 
 #[test]
 fn radial_center_stays_draggable_when_its_property_is_selected() {
     let (mut app, x) = app();
-    app.session.execute("effect.apply", json!({"layer":x.small,"effect":"ec.blur.ccradialfast"})).unwrap();
+    app.session
+        .execute(
+            "effect.apply",
+            json!({"layer":x.small,"effect":"ec.blur.ccradialfast"}),
+        )
+        .unwrap();
     let l = layer(&app.session, x.small);
-    let effect = l.effects().unwrap().groups().find(|g| g.match_id == "ec.blur.ccradialfast").unwrap();
+    let effect = l
+        .effects()
+        .unwrap()
+        .groups()
+        .find(|g| g.match_id == "ec.blur.ccradialfast")
+        .unwrap();
     let point = effect.get("center").unwrap().uid;
     app.session.state.selected_props = vec![(LayerId(x.small), point)];
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
     let id = format!("viewer.effectPoint.{point}");
     assert!(ids(&h).contains(&id), "selected point must keep its handle");
@@ -509,58 +979,133 @@ fn radial_center_stays_draggable_when_its_property_is_selected() {
     let to = from + egui::vec2(40.0, 20.0);
     h.event(egui::Event::PointerMoved(from));
     h.step();
-    h.event(egui::Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Default::default(),
+    });
     h.step();
     for i in 1..=5 {
-        h.event(egui::Event::PointerMoved(from + (to - from) * (i as f32 / 5.0)));
+        h.event(egui::Event::PointerMoved(
+            from + (to - from) * (i as f32 / 5.0),
+        ));
         h.step();
     }
-    h.event(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+    h.event(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Default::default(),
+    });
     h.step();
-    let after = layer(&h.state().session, x.small).props.find(point).unwrap().value.as_vec2();
-    assert!(after[0] > 100.0 && after[1] > 50.0, "drag updates Center: {after:?}");
-    let position = layer(&h.state().session, x.small).props.prop("transform/position").unwrap().value.as_vec3();
-    assert_eq!(position[..2], [320.0, 180.0], "dragging the effect must not move the layer");
-    h.state_mut().session.execute("edit.undo", json!({})).unwrap();
-    assert_eq!(layer(&h.state().session, x.small).props.find(point).unwrap().value.as_vec2(), [100.0, 50.0], "one Undo reverses the gesture");
+    let after = layer(&h.state().session, x.small)
+        .props
+        .find(point)
+        .unwrap()
+        .value
+        .as_vec2();
+    assert!(
+        after[0] > 100.0 && after[1] > 50.0,
+        "drag updates Center: {after:?}"
+    );
+    let position = layer(&h.state().session, x.small)
+        .props
+        .prop("transform/position")
+        .unwrap()
+        .value
+        .as_vec3();
+    assert_eq!(
+        position[..2],
+        [320.0, 180.0],
+        "dragging the effect must not move the layer"
+    );
+    h.state_mut()
+        .session
+        .execute("edit.undo", json!({}))
+        .unwrap();
+    assert_eq!(
+        layer(&h.state().session, x.small)
+            .props
+            .find(point)
+            .unwrap()
+            .value
+            .as_vec2(),
+        [100.0, 50.0],
+        "one Undo reverses the gesture"
+    );
 }
 
 #[test]
 fn clicking_an_effect_parameter_activates_its_header_and_handles() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).with_step_dt(1.0 / 60.0).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|_| app);
     settle(&mut h);
     let name = rect_of(&h, &format!("effectControls.prop.{}.name", x.point)).center();
     click(&mut h, name);
-    assert_eq!(h.state().session.state.selected_props, vec![(LayerId(x.small), x.point)]);
-    assert!(ids(&h).contains(&format!("viewer.effectPoint.{}", x.point)), "clicking the parameter activates the owner effect");
+    assert_eq!(
+        h.state().session.state.selected_props,
+        vec![(LayerId(x.small), x.point)]
+    );
+    assert!(
+        ids(&h).contains(&format!("viewer.effectPoint.{}", x.point)),
+        "clicking the parameter activates the owner effect"
+    );
 }
 
 #[test]
 fn non_point_parameters_activate_handles_across_effect_families() {
     for (effect, parameter, points) in [
         ("ec.distort.cclens", "size", vec!["center"]),
-        ("ec.generate.gradientramp", "startColor", vec!["start", "end"]),
+        (
+            "ec.generate.gradientramp",
+            "startColor",
+            vec!["start", "end"],
+        ),
         ("ec.generate.beam", "length", vec!["startPoint", "endPoint"]),
     ] {
         let mut s = Session::default();
-        s.execute("comp.new", json!({"width":320,"height":180,"duration":1})).unwrap();
-        let lid = s.execute("layer.newSolid", json!({"color":"#406080"})).unwrap()["layer"].as_u64().unwrap();
-        let uid = s.execute("effect.apply", json!({"layer":lid,"effect":effect})).unwrap()["effects"][0].as_u64().unwrap();
+        s.execute("comp.new", json!({"width":320,"height":180,"duration":1}))
+            .unwrap();
+        let lid = s
+            .execute("layer.newSolid", json!({"color":"#406080"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let uid = s
+            .execute("effect.apply", json!({"layer":lid,"effect":effect}))
+            .unwrap()["effects"][0]
+            .as_u64()
+            .unwrap();
         let l = layer(&s, lid);
         let g = l.effects().unwrap().find_group(uid).unwrap();
         let prop = g.prop(parameter).unwrap().uid;
-        let point_ids: Vec<_> = points.iter().map(|name| g.prop(name).unwrap().uid).collect();
+        let point_ids: Vec<_> = points
+            .iter()
+            .map(|name| g.prop(name).unwrap().uid)
+            .collect();
         s.state.selected_props.clear();
         let mut app = EffectcraftApp::new(s);
         app.show_panel(PanelKind::EffectControls);
-        let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(1700.0, 1100.0))
+            .build_eframe(|_| app);
         settle(&mut h);
         let name = rect_of(&h, &format!("effectControls.prop.{prop}.name")).center();
         click(&mut h, name);
-        assert_eq!(h.state().session.state.selected_props, vec![(LayerId(lid), prop)], "{effect}");
+        assert_eq!(
+            h.state().session.state.selected_props,
+            vec![(LayerId(lid), prop)],
+            "{effect}"
+        );
         for point in point_ids {
-            assert!(ids(&h).contains(&format!("viewer.effectPoint.{point}")), "{effect}: all its point handles activate");
+            assert!(
+                ids(&h).contains(&format!("viewer.effectPoint.{point}")),
+                "{effect}: all its point handles activate"
+            );
         }
     }
 }
@@ -568,11 +1113,23 @@ fn non_point_parameters_activate_handles_across_effect_families() {
 #[test]
 fn custom_effect_editors_activate_their_owner() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
-    let graph = rect_of(&h, &format!("effectControls.effect.{}.curves.graph", x.curves)).center();
+    let graph = rect_of(
+        &h,
+        &format!("effectControls.effect.{}.curves.graph", x.curves),
+    )
+    .center();
     click(&mut h, graph);
-    assert!(h.state().session.state.selected_props.contains(&(LayerId(x.small), x.curves)));
+    assert!(
+        h.state()
+            .session
+            .state
+            .selected_props
+            .contains(&(LayerId(x.small), x.curves))
+    );
 }
 
 /// #514: Apply Color LUT asks for its LUT as it is applied (as in After Effects), Effect
@@ -599,8 +1156,19 @@ fn file_and_text_parameters_have_widgets() {
     std::fs::write(&invert, cube(true)).unwrap();
     std::fs::write(&identity, cube(false)).unwrap();
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "LUT", "width": 64, "height": 32, "frameRate": 30, "duration": 1})).unwrap();
-    let l = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#ff0000", "width": 64, "height": 32})).unwrap()["layer"].as_u64().unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "LUT", "width": 64, "height": 32, "frameRate": 30, "duration": 1}),
+    )
+    .unwrap();
+    let l = s
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Plate", "color": "#ff0000", "width": 64, "height": 32}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     s.state.selected_layers = vec![LayerId(l)];
     let mut app = EffectcraftApp::new(s);
     app.show_panel(PanelKind::EffectControls);
@@ -610,13 +1178,24 @@ fn file_and_text_parameters_have_widgets() {
         assert_eq!(exts, ["cube"]);
         vec![pick.lock().unwrap().clone()]
     }));
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .build_eframe(|_| app);
     settle(&mut h);
     let ctx = h.ctx.clone();
-    let r = effectcraft_ui_egui::menus::invoke(h.state_mut(), &ctx, "effect.apply", json!({"effect": "Apply Color LUT"})).unwrap();
+    let r = effectcraft_ui_egui::menus::invoke(
+        h.state_mut(),
+        &ctx,
+        "effect.apply",
+        json!({"effect": "Apply Color LUT"}),
+    )
+    .unwrap();
     let fx = r["effects"][0].as_u64().unwrap();
     let lut = |h: &Harness<'_, EffectcraftApp>| {
-        let g = layer(&h.state().session, l).effects().and_then(|f| f.groups().find(|g| g.uid == fx).cloned()).unwrap();
+        let g = layer(&h.state().session, l)
+            .effects()
+            .and_then(|f| f.groups().find(|g| g.uid == fx).cloned())
+            .unwrap();
         let p = g.get("lut").unwrap().clone();
         (
             p.uid,
@@ -626,15 +1205,33 @@ fn file_and_text_parameters_have_widgets() {
             },
         )
     };
-    assert_eq!(lut(&h).1, invert.to_string_lossy(), "the LUT was asked for on apply");
+    assert_eq!(
+        lut(&h).1,
+        invert.to_string_lossy(),
+        "the LUT was asked for on apply"
+    );
     let px = |h: &Harness<'_, EffectcraftApp>| {
         let s = &h.state().session;
-        s.render(s.active_comp_id().unwrap(), effectcraft_engine::time::Tick::ZERO, Default::default()).get(10, 10)
+        s.render(
+            s.active_comp_id().unwrap(),
+            effectcraft_engine::time::Tick::ZERO,
+            Default::default(),
+        )
+        .get(10, 10)
     };
-    assert!(px(&h)[0] < 0.05 && px(&h)[1] > 0.95, "red inverted to cyan: {:?}", px(&h));
+    assert!(
+        px(&h)[0] < 0.05 && px(&h)[1] > 0.95,
+        "red inverted to cyan: {:?}",
+        px(&h)
+    );
     settle(&mut h);
     let uid = lut(&h).0;
-    assert!(h.state().auto.find(&format!("effectControls.prop.{uid}.value")).is_some_and(|e| e.label == "invert.cube"));
+    assert!(
+        h.state()
+            .auto
+            .find(&format!("effectControls.prop.{uid}.value"))
+            .is_some_and(|e| e.label == "invert.cube")
+    );
     *picked.lock().unwrap() = identity.to_string_lossy().to_string();
     let at = rect_of(&h, &format!("effectControls.prop.{uid}.choose")).center();
     click(&mut h, at);
@@ -642,17 +1239,38 @@ fn file_and_text_parameters_have_widgets() {
     assert!(px(&h)[0] > 0.95, "{:?}", px(&h));
 
     // A text parameter: type into its field; it is set when the field loses the focus.
-    let crypto = h.state_mut().session.execute("effect.apply", json!({"layers": [l], "effect": "ec.3d.cryptomatte"})).unwrap()["effects"][0].as_u64().unwrap();
+    let crypto = h
+        .state_mut()
+        .session
+        .execute(
+            "effect.apply",
+            json!({"layers": [l], "effect": "ec.3d.cryptomatte"}),
+        )
+        .unwrap()["effects"][0]
+        .as_u64()
+        .unwrap();
     settle(&mut h);
-    let sel =
-        layer(&h.state().session, l).effects().and_then(|f| f.groups().find(|g| g.uid == crypto).and_then(|g| g.get("selection")).map(|p| p.uid)).unwrap();
+    let sel = layer(&h.state().session, l)
+        .effects()
+        .and_then(|f| {
+            f.groups()
+                .find(|g| g.uid == crypto)
+                .and_then(|g| g.get("selection"))
+                .map(|p| p.uid)
+        })
+        .unwrap();
     let at = rect_of(&h, &format!("effectControls.prop.{sel}.value")).center();
     click(&mut h, at);
     h.event(egui::Event::Text("left*".into()));
     h.step();
     h.key_press(egui::Key::Enter);
     h.run_steps(3);
-    let v = layer(&h.state().session, l).props.find(sel).unwrap().value.clone();
+    let v = layer(&h.state().session, l)
+        .props
+        .find(sel)
+        .unwrap()
+        .value
+        .clone();
     assert_eq!(v, KV::Str("left*".into()));
     let _ = std::fs::remove_dir_all(dir);
 }
@@ -660,7 +1278,10 @@ fn file_and_text_parameters_have_widgets() {
 #[test]
 fn effect_control_name_can_be_renamed_from_its_header() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).with_step_dt(1.0 / 60.0).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|_| app);
     settle(&mut h);
     let name = format!("effectControls.effect.{}.name", x.point_fx);
     let point = rect_of(&h, &name).center();
@@ -672,17 +1293,31 @@ fn effect_control_name_can_be_renamed_from_its_header() {
     h.step();
     h.key_press(egui::Key::Enter);
     h.run_steps(3);
-    let current_name =
-        |h: &Harness<'_, EffectcraftApp>| layer(&h.state().session, x.small).effects().unwrap().groups().find(|g| g.uid == x.point_fx).unwrap().name.clone();
+    let current_name = |h: &Harness<'_, EffectcraftApp>| {
+        layer(&h.state().session, x.small)
+            .effects()
+            .unwrap()
+            .groups()
+            .find(|g| g.uid == x.point_fx)
+            .unwrap()
+            .name
+            .clone()
+    };
     assert_eq!(current_name(&h), "Speed");
-    h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+    h.state_mut()
+        .session
+        .execute("edit.undo", json!({}))
+        .unwrap();
     assert_eq!(current_name(&h), "Point Control");
 }
 
 #[test]
 fn effect_rename_escape_keeps_the_name() {
     let (app, x) = app();
-    let mut h = Harness::builder().with_size(egui::vec2(1700.0, 1100.0)).with_step_dt(1.0 / 60.0).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1700.0, 1100.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|_| app);
     settle(&mut h);
     let point = rect_of(&h, &format!("effectControls.effect.{}.name", x.point_fx)).center();
     double_click(&mut h, point);
@@ -693,7 +1328,14 @@ fn effect_rename_escape_keeps_the_name() {
     h.step();
     h.key_press(egui::Key::Escape);
     h.run_steps(3);
-    let name = layer(&h.state().session, x.small).effects().unwrap().groups().find(|g| g.uid == x.point_fx).unwrap().name.clone();
+    let name = layer(&h.state().session, x.small)
+        .effects()
+        .unwrap()
+        .groups()
+        .find(|g| g.uid == x.point_fx)
+        .unwrap()
+        .name
+        .clone();
     assert_eq!(name, "Point Control");
     assert!(!ids(&h).contains(&format!("effectControls.effect.{}.nameEdit", x.point_fx)));
 }
@@ -703,7 +1345,12 @@ fn double_click(h: &mut Harness<'_, EffectcraftApp>, pos: egui::Pos2) {
     h.event(egui::Event::PointerMoved(pos));
     h.step();
     for pressed in [true, false, true, false] {
-        h.event(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() });
+        h.event(egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        });
         h.step();
     }
     h.run_steps(2);

@@ -224,7 +224,11 @@ impl TerminalGrid {
             let end = start + self.cols;
             let row = &self.cells[start..end];
             // Find last non-blank cell to trim trailing whitespace
-            let last_non_blank = row.iter().rposition(|c| !c.is_empty()).map(|idx| idx + 1).unwrap_or(0);
+            let last_non_blank = row
+                .iter()
+                .rposition(|c| !c.is_empty())
+                .map(|idx| idx + 1)
+                .unwrap_or(0);
             for c in &row[..last_non_blank] {
                 if c.width > 0 {
                     out.push(c.character());

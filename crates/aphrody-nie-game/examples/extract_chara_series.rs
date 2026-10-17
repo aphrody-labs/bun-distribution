@@ -100,9 +100,12 @@ fn load_t2b(vfs: &Vfs, prefix: &str, must: &str) -> serde_json::Value {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let series = aphrody_nie_data::chara_series::parse_chara_series_config(&load_rdbn(
         &vfs,
@@ -133,7 +136,11 @@ fn main() {
         "Endou (c01000010, series_id={:?}) → série = {endou_series:?}",
         endou.series_id.map(|h| h.to_hex())
     );
-    assert_eq!(endou_series, Some("Inazuma Eleven"), "Endou = série 1 (IE original)");
+    assert_eq!(
+        endou_series,
+        Some("Inazuma Eleven"),
+        "Endou = série 1 (IE original)"
+    );
 
     // Distribution des séries sur le roster.
     let mut dist: BTreeMap<&str, usize> = BTreeMap::new();

@@ -45,7 +45,12 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     watch_downloads(app, ctx);
     let now = ctx.input(|i| i.time);
     let (working, moving) = ctx.input(|i| {
-        let keys = i.events.iter().any(|e| matches!(e, egui::Event::Key { .. } | egui::Event::Text(_) | egui::Event::MouseWheel { .. }));
+        let keys = i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::Key { .. } | egui::Event::Text(_) | egui::Event::MouseWheel { .. }
+            )
+        });
         (i.pointer.any_down() || keys, i.pointer.is_moving())
     });
     if working {
@@ -57,9 +62,12 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     if now < app.caches.denoise.next_pump {
         return;
     }
-    let watching = matches!(&app.ui.dialog, Some(crate::state::Dialog::Settings { tab }) if tab == "denoise");
+    let watching =
+        matches!(&app.ui.dialog, Some(crate::state::Dialog::Settings { tab }) if tab == "denoise");
     let pace = window_pace(app, ctx, now, watching);
-    let Ok(v) = app.session.execute("denoise.pump", &json!({"pace": pace})) else { return };
+    let Ok(v) = app.session.execute("denoise.pump", &json!({"pace": pace})) else {
+        return;
+    };
     let c = &mut app.caches.denoise;
     let generation = v["generation"].as_u64().unwrap_or(0);
     if generation != c.generation {
@@ -68,7 +76,12 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     }
     c.active = v["active"] == true;
     c.queued = v["queued"].as_u64().unwrap_or(0);
-    c.running = v["running"].is_object().then(|| (v["running"]["done"].as_u64().unwrap_or(0), v["running"]["total"].as_u64().unwrap_or(0)));
+    c.running = v["running"].is_object().then(|| {
+        (
+            v["running"]["done"].as_u64().unwrap_or(0),
+            v["running"]["total"].as_u64().unwrap_or(0),
+        )
+    });
     let busy = c.running.is_some() || c.queued > 0;
     c.next_pump = now
         + if busy {
@@ -94,7 +107,9 @@ fn models(app: &mut LightcraftApp, ctx: &egui::Context) -> Value {
     {
         return v.clone();
     }
-    let v = app.run("denoise.models.list", json!({})).unwrap_or(Value::Null);
+    let v = app
+        .run("denoise.models.list", json!({}))
+        .unwrap_or(Value::Null);
     app.caches.denoise.list = Some((epoch, now, v.clone()));
     v
 }
@@ -112,7 +127,11 @@ fn watch_downloads(app: &mut LightcraftApp, ctx: &egui::Context) {
     let rows: Vec<Value> = v["downloads"].as_array().cloned().unwrap_or_default();
     let (mut keep, mut installed) = (Vec::new(), Vec::new());
     for id in std::mem::take(&mut app.caches.denoise.dl_watch) {
-        match rows.iter().find(|r| r["id"] == id.as_str()).and_then(|r| r["state"].as_str()) {
+        match rows
+            .iter()
+            .find(|r| r["id"] == id.as_str())
+            .and_then(|r| r["state"].as_str())
+        {
             Some("running" | "done" | "installing") => keep.push(id),
             Some("installed") => installed.push(id),
             _ => {}
@@ -120,9 +139,13 @@ fn watch_downloads(app: &mut LightcraftApp, ctx: &egui::Context) {
     }
     app.caches.denoise.dl_watch = keep;
     for id in installed {
-        let _ = app.session.execute("denoise.models.downloadCancel", &json!({"id": id}));
+        let _ = app
+            .session
+            .execute("denoise.models.downloadCancel", &json!({"id": id}));
         app.caches.denoise.epoch += 1;
-        let text = tr("The denoise model is installed and in use: the AI Denoise Amount slider under Detail now works");
+        let text = tr(
+            "The denoise model is installed and in use: the AI Denoise Amount slider under Detail now works",
+        );
         app.ui.status = text.into();
         app.toast(ctx, text);
     }
@@ -130,30 +153,57 @@ fn watch_downloads(app: &mut LightcraftApp, ctx: &egui::Context) {
 }
 
 /// Per-photo AI Denoise switch, including a request waiting for model installation.
-pub fn detail_toggle(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, on: bool, applicable: bool) {
+pub fn detail_toggle(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    id: PhotoId,
+    on: bool,
+    applicable: bool,
+) {
     let mut enabled = on || crate::model_setup::denoise_requested(app, id);
-    egui::Frame::NONE.inner_margin(egui::Margin { left: 24, right: 22, top: 6, bottom: 2 }).show(ui, |ui| {
-        let r = ui.add_enabled(applicable, egui::Checkbox::new(&mut enabled, crate::i18n::tr("AI Denoise")));
-        register(ui.ctx(), "denoise:enabled", r.rect);
-        if r.changed() {
-            let _ = app.run("denoise.toggle", json!({"id": id.0, "enabled": enabled}));
-        }
-    });
+    egui::Frame::NONE
+        .inner_margin(egui::Margin {
+            left: 24,
+            right: 22,
+            top: 6,
+            bottom: 2,
+        })
+        .show(ui, |ui| {
+            let r = ui.add_enabled(
+                applicable,
+                egui::Checkbox::new(&mut enabled, crate::i18n::tr("AI Denoise")),
+            );
+            register(ui.ctx(), "denoise:enabled", r.rect);
+            if r.changed() {
+                let _ = app.run("denoise.toggle", json!({"id": id.0, "enabled": enabled}));
+            }
+        });
 }
 
 /// The line under the Denoise slider for the photo `id`, whose Amount is `amount`.
 pub fn detail_status(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, amount: f64) {
     let t = Tokens::get(ui.ctx());
     let state = app.session.denoise_photo_state(id);
-    let pad = egui::Margin { left: 24, right: 22, top: 0, bottom: 6 };
+    let pad = egui::Margin {
+        left: 24,
+        right: 22,
+        top: 0,
+        bottom: 6,
+    };
     let note = |ui: &mut egui::Ui, text: &str, color: egui::Color32| {
-        ui.add(egui::Label::new(RichText::new(crate::i18n::tr(text)).size(11.0).color(color)).wrap());
+        ui.add(
+            egui::Label::new(RichText::new(crate::i18n::tr(text)).size(11.0).color(color)).wrap(),
+        );
     };
     match state {
         PhotoState::NotApplicable | PhotoState::Ready => {}
         PhotoState::NoModel => {
             egui::Frame::NONE.inner_margin(pad).show(ui, |ui| {
-                note(ui, "AI Denoise needs a model. Install one in Settings.", t.text_dim);
+                note(
+                    ui,
+                    "AI Denoise needs a model. Install one in Settings.",
+                    t.text_dim,
+                );
                 ui.add_space(2.0);
                 let r = ui.small_button(crate::i18n::tr("Set up AI Denoise…"));
                 register(ui.ctx(), "denoise:setup", r.rect);
@@ -167,8 +217,11 @@ pub fn detail_status(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, am
                 // the pump has not met this photo yet: let it come round soon instead of waiting out its pause
                 let now = ui.ctx().input(|i| i.time);
                 app.caches.denoise.next_pump = app.caches.denoise.next_pump.min(now + 0.05);
-                ui.ctx().request_repaint_after(std::time::Duration::from_millis(60));
-                egui::Frame::NONE.inner_margin(pad).show(ui, |ui| note(ui, "Waiting to start…", t.text_dim));
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(60));
+                egui::Frame::NONE
+                    .inner_margin(pad)
+                    .show(ui, |ui| note(ui, "Waiting to start…", t.text_dim));
             } else if amount > 0.0 {
                 egui::Frame::NONE.inner_margin(pad).show(ui, |ui| {
                     note(ui, "Its denoised picture is not made yet, and pictures are not made on their own (Settings, AI Denoise).", t.text_dim);
@@ -193,13 +246,24 @@ pub fn detail_status(app: &mut LightcraftApp, ui: &mut egui::Ui, id: PhotoId, am
         }
         PhotoState::Running { done, total } => {
             egui::Frame::NONE.inner_margin(pad).show(ui, |ui| {
-                let frac = if total > 0 { (done as f32 / total as f32).clamp(0.0, 1.0) } else { 0.0 };
+                let frac = if total > 0 {
+                    (done as f32 / total as f32).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 let text = if total > 0 {
-                    tr_format!("Making the denoised picture… {}%", (frac * 100.0).round() as u32)
+                    tr_format!(
+                        "Making the denoised picture… {}%",
+                        (frac * 100.0).round() as u32
+                    )
                 } else {
                     tr("Starting…").to_string()
                 };
-                let bar = ui.add(egui::ProgressBar::new(frac).desired_width(ui.available_width().min(240.0)).text(RichText::new(text).size(11.0)));
+                let bar = ui.add(
+                    egui::ProgressBar::new(frac)
+                        .desired_width(ui.available_width().min(240.0))
+                        .text(RichText::new(text).size(11.0)),
+                );
                 register(ui.ctx(), "denoise:progress", bar.rect);
             });
         }
@@ -225,7 +289,11 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     heading(ui, t, "AI Denoise");
     crate::model_setup::notice(app, ui, "denoise");
     if list["dir"].is_null() {
-        hint(ui, t, "This build has nowhere to keep denoise models, so AI Denoise is not available. (The desktop app has.)");
+        hint(
+            ui,
+            t,
+            "This build has nowhere to keep denoise models, so AI Denoise is not available. (The desktop app has.)",
+        );
         return;
     }
     hint(
@@ -245,15 +313,28 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         .map(|v| v["downloads"].as_array().cloned().unwrap_or_default())
         .unwrap_or_default();
     heading(ui, t, "Models");
-    let r = ui.add_enabled(runtime && app.services.pick_denoise_model.is_some(), egui::Button::new(tr("Install from file…")));
+    let r = ui.add_enabled(
+        runtime && app.services.pick_denoise_model.is_some(),
+        egui::Button::new(tr("Install from file…")),
+    );
     register(ui.ctx(), "denoise:installFile", r.rect);
     if r.clicked()
-        && let Some(path) = app.services.pick_denoise_model.as_mut().and_then(|f| f().into_iter().next())
+        && let Some(path) = app
+            .services
+            .pick_denoise_model
+            .as_mut()
+            .and_then(|f| f().into_iter().next())
     {
-        match app.session.execute("denoise.models.inspect", &json!({"path": path})) {
+        match app
+            .session
+            .execute("denoise.models.inspect", &json!({"path": path}))
+        {
             Ok(info) => {
                 app.caches.denoise.rejected = None;
-                app.ui.dialog = Some(crate::state::Dialog::DenoiseModel { info, accepted: false });
+                app.ui.dialog = Some(crate::state::Dialog::DenoiseModel {
+                    info,
+                    accepted: false,
+                });
             }
             Err(e) => app.caches.denoise.rejected = Some(plain(&e)),
         }
@@ -262,12 +343,20 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         hint(ui, t, why);
     }
     if all.is_empty() {
-        hint(ui, t, "Install your own ONNX model with denoise-model.json beside it. This build offers no model downloads.");
+        hint(
+            ui,
+            t,
+            "Install your own ONNX model with denoise-model.json beside it. This build offers no model downloads.",
+        );
     }
     if let Some(job) = downloads.iter().find(|d| d["id"] == "local-install") {
         match job["state"].as_str() {
             Some("installing") => hint(ui, t, "Checking and installing the model…"),
-            Some("failed") => hint(ui, t, job["error"].as_str().unwrap_or("Model installation failed")),
+            Some("failed") => hint(
+                ui,
+                t,
+                job["error"].as_str().unwrap_or("Model installation failed"),
+            ),
             _ => {}
         }
     }
@@ -278,21 +367,35 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     if all.iter().all(|m| m["selected"] != true) && all.iter().any(|m| m["installed"] == true) {
         hint(ui, t, "AI Denoise is off: press Use on a model.");
     }
-    hint(ui, t, "Works on raw files from cameras with a standard (Bayer) sensor. Other files keep their normal noise reduction.");
+    hint(
+        ui,
+        t,
+        "Works on raw files from cameras with a standard (Bayer) sensor. Other files keep their normal noise reduction.",
+    );
     work_section(app, ui, t, &list);
 }
 
 /// What the cache holds, its limit, and what is being made.
 fn work_section(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, list: &Value) {
-    let status = app.session.execute("denoise.status", &json!({})).unwrap_or(Value::Null);
+    let status = app
+        .session
+        .execute("denoise.status", &json!({}))
+        .unwrap_or(Value::Null);
     if status["enabled"] != true {
         return;
     }
     heading(ui, t, "Speed");
     let current = list["runOn"].as_str().unwrap_or("auto").to_string();
     let mut run_on = current.as_str();
-    let options = [("auto", "Automatic"), ("gpu", "Graphics card"), ("cpu", "Processor")];
-    if ui.horizontal(|ui| choices(ui, "denoiseRunOn", &options, &mut run_on)).inner {
+    let options = [
+        ("auto", "Automatic"),
+        ("gpu", "Graphics card"),
+        ("cpu", "Processor"),
+    ];
+    if ui
+        .horizontal(|ui| choices(ui, "denoiseRunOn", &options, &mut run_on))
+        .inner
+    {
         let _ = app.run("denoise.settings", json!({"runOn": run_on}));
         app.caches.denoise.epoch += 1;
     }
@@ -313,33 +416,67 @@ fn work_section(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, list: &V
     }
     heading(ui, t, "Photos");
     let mut auto = list["auto"].as_bool().unwrap_or(true);
-    if check(ui, "settings.denoiseAuto", &mut auto, "Make the denoised picture of the photos I am looking at") {
+    if check(
+        ui,
+        "settings.denoiseAuto",
+        &mut auto,
+        "Make the denoised picture of the photos I am looking at",
+    ) {
         let _ = app.run("denoise.settings", json!({"auto": auto}));
         app.caches.denoise.epoch += 1;
     }
-    hint(ui, t, "Only photos whose AI Denoise amount is above 0 are made. Exports always make theirs if it is missing.");
+    hint(
+        ui,
+        t,
+        "Only photos whose AI Denoise amount is above 0 are made. Exports always make theirs if it is missing.",
+    );
     let (running, queued) = (app.caches.denoise.running, app.caches.denoise.queued);
     match running {
         Some((done, total)) => {
-            let frac = if total > 0 { (done as f32 / total as f32).clamp(0.0, 1.0) } else { 0.0 };
+            let frac = if total > 0 {
+                (done as f32 / total as f32).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             let name = status["running"]["photo"]
                 .as_u64()
-                .and_then(|p| app.session.catalog.photo(PhotoId(p)).map(|p| p.file_name.clone()))
+                .and_then(|p| {
+                    app.session
+                        .catalog
+                        .photo(PhotoId(p))
+                        .map(|p| p.file_name.clone())
+                })
                 .unwrap_or_default();
             let text = tr_format!(
                 "Denoising {name}: {done} of {total} tiles{}",
-                if queued > 0 { tr_format!(" · {queued} waiting", queued = queued) } else { String::new() },
+                if queued > 0 {
+                    tr_format!(" · {queued} waiting", queued = queued)
+                } else {
+                    String::new()
+                },
                 name = name,
                 done = done,
                 total = total
             );
-            let bar = ui.add(egui::ProgressBar::new(frac).desired_width(380.0).text(RichText::new(text).size(11.5)));
+            let bar = ui.add(
+                egui::ProgressBar::new(frac)
+                    .desired_width(380.0)
+                    .text(RichText::new(text).size(11.5)),
+            );
             register(ui.ctx(), "denoise:settingsProgress", bar.rect);
         }
         None if queued > 0 => hint(ui, t, &count(queued, "photo waiting", "photos waiting")),
         None => {
             let ready = status["ready"].as_u64().unwrap_or(0);
-            hint(ui, t, &count(ready, "photo has its denoised picture.", "photos have their denoised picture."))
+            hint(
+                ui,
+                t,
+                &count(
+                    ready,
+                    "photo has its denoised picture.",
+                    "photos have their denoised picture.",
+                ),
+            )
         }
     }
     ui.horizontal(|ui| {
@@ -357,7 +494,10 @@ fn work_section(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, list: &V
         }
     });
     heading(ui, t, "Cache");
-    let (files, bytes) = (status["cache"]["files"].as_u64().unwrap_or(0), status["cache"]["bytes"].as_u64().unwrap_or(0));
+    let (files, bytes) = (
+        status["cache"]["files"].as_u64().unwrap_or(0),
+        status["cache"]["bytes"].as_u64().unwrap_or(0),
+    );
     hint(
         ui,
         t,
@@ -371,11 +511,13 @@ fn work_section(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, list: &V
         ui.label(RichText::new(crate::i18n::tr("Limit")).color(t.text_label));
         let current = list["cacheGb"].as_u64().unwrap_or(20) as u32;
         let mut choice = current;
-        egui::ComboBox::from_id_salt("denoise-cache-limit").selected_text(tr_format!("{size} GB", size = current)).show_ui(ui, |ui| {
-            for gb in CACHE_LIMITS {
-                ui.selectable_value(&mut choice, gb, tr_format!("{size} GB", size = gb));
-            }
-        });
+        egui::ComboBox::from_id_salt("denoise-cache-limit")
+            .selected_text(tr_format!("{size} GB", size = current))
+            .show_ui(ui, |ui| {
+                for gb in CACHE_LIMITS {
+                    ui.selectable_value(&mut choice, gb, tr_format!("{size} GB", size = gb));
+                }
+            });
         if choice != current {
             let _ = app.run("denoise.settings", json!({"cacheGb": choice}));
             app.caches.denoise.epoch += 1;
@@ -393,19 +535,46 @@ fn work_section(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, list: &V
 fn device_line(d: &Value, run_on: &str) -> String {
     match d["kind"].as_str() {
         _ if run_on == "cpu" => tr("The processor does the work.").into(),
-        Some("gpu") => tr_format!("Running on {}.", d["adapter"].as_str().unwrap_or(tr("the graphics card"))),
+        Some("gpu") => tr_format!(
+            "Running on {}.",
+            d["adapter"].as_str().unwrap_or(tr("the graphics card"))
+        ),
         Some("cpu") => {
-            tr_format!("Running on the processor: {}.", tr(d["reason"].as_str().unwrap_or("the graphics card is not used")).trim_end_matches('.'))
+            tr_format!(
+                "Running on the processor: {}.",
+                tr(d["reason"]
+                    .as_str()
+                    .unwrap_or("the graphics card is not used"))
+                .trim_end_matches('.')
+            )
         }
         _ => tr("The graphics card is set up when the next photo is made.").into(),
     }
 }
 
-fn model_row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, m: &Value, dl: Option<&Value>, can_run: bool) {
+fn model_row(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    m: &Value,
+    dl: Option<&Value>,
+    can_run: bool,
+) {
     let id = m["id"].as_str().unwrap_or("").to_string();
-    let (installed, selected) = (m["installed"].as_bool() == Some(true), m["selected"].as_bool() == Some(true));
-    let dl_state = if installed { None } else { dl.and_then(|d| d["state"].as_str()) };
-    let host = if can_run { m["downloadHost"].as_str().unwrap_or("").to_string() } else { String::new() };
+    let (installed, selected) = (
+        m["installed"].as_bool() == Some(true),
+        m["selected"].as_bool() == Some(true),
+    );
+    let dl_state = if installed {
+        None
+    } else {
+        dl.and_then(|d| d["state"].as_str())
+    };
+    let host = if can_run {
+        m["downloadHost"].as_str().unwrap_or("").to_string()
+    } else {
+        String::new()
+    };
     egui::Frame::NONE.inner_margin(egui::Margin::symmetric(0, 3)).show(ui, |ui| {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -538,7 +707,10 @@ fn open_download_dialog(app: &mut LightcraftApp, m: &Value) {
         "assumptions": [],
         "reason": null,
     });
-    app.ui.dialog = Some(crate::state::Dialog::DenoiseModel { info, accepted: false });
+    app.ui.dialog = Some(crate::state::Dialog::DenoiseModel {
+        info,
+        accepted: false,
+    });
 }
 
 /// The dialog's OK for a denoise model: start the download and watch it.
@@ -548,14 +720,30 @@ pub fn install(app: &mut LightcraftApp, info: &Value, accepted: bool) -> Result<
     }
     app.caches.denoise.epoch += 1;
     let (id, r) = if let Some(id) = info["download"].as_str() {
-        (id.to_string(), app.run("denoise.models.download", json!({"id": id, "acknowledged": true})))
+        (
+            id.to_string(),
+            app.run(
+                "denoise.models.download",
+                json!({"id": id, "acknowledged": true}),
+            ),
+        )
     } else {
-        let path = info["path"].as_str().ok_or_else(|| tr("There is no model file to install").to_string())?;
-        ("local-install".into(), app.run("denoise.models.install", json!({"path": path, "acknowledged": true, "background": true})))
+        let path = info["path"]
+            .as_str()
+            .ok_or_else(|| tr("There is no model file to install").to_string())?;
+        (
+            "local-install".into(),
+            app.run(
+                "denoise.models.install",
+                json!({"path": path, "acknowledged": true, "background": true}),
+            ),
+        )
     };
     if r.is_ok() {
         app.caches.denoise.dl_watch.push(id);
-        app.ui.dialog = Some(crate::state::Dialog::Settings { tab: "denoise".into() });
+        app.ui.dialog = Some(crate::state::Dialog::Settings {
+            tab: "denoise".into(),
+        });
     }
     r
 }
@@ -570,15 +758,45 @@ fn plain(e: &lightcraft_engine::EngineError) -> String {
 
 /// "1 photo" / "3 photos": the count with the right noun.
 fn count(n: u64, one: &str, many: &str) -> String {
-    tr_format!("{n} {noun}", n = n, noun = tr(if n == 1 { one } else { many }))
+    tr_format!(
+        "{n} {noun}",
+        n = n,
+        noun = tr(if n == 1 { one } else { many })
+    )
 }
 
-pub(super) fn window_pace(app: &LightcraftApp, ctx: &egui::Context, now: f64, watching: bool) -> &'static str {
-    let (focused, minimized) = ctx.input(|i| (i.focused, i.raw.viewports.get(&i.raw.viewport_id).and_then(|v| v.minimized).unwrap_or(false)));
-    pace_for(focused, minimized, now - app.caches.last_input, now - app.caches.last_move, watching)
+pub(super) fn window_pace(
+    app: &LightcraftApp,
+    ctx: &egui::Context,
+    now: f64,
+    watching: bool,
+) -> &'static str {
+    let (focused, minimized) = ctx.input(|i| {
+        (
+            i.focused,
+            i.raw
+                .viewports
+                .get(&i.raw.viewport_id)
+                .and_then(|v| v.minimized)
+                .unwrap_or(false),
+        )
+    });
+    pace_for(
+        focused,
+        minimized,
+        now - app.caches.last_input,
+        now - app.caches.last_move,
+        watching,
+    )
 }
 
-fn pace_for(focused: bool, minimized: bool, worked: f64, moved: f64, watching: bool) -> &'static str {
+fn pace_for(
+    focused: bool,
+    minimized: bool,
+    worked: f64,
+    moved: f64,
+    watching: bool,
+) -> &'static str {
     if minimized {
         "light"
     } else if !focused {
@@ -607,7 +825,10 @@ pub(super) fn mb(bytes: Option<u64>) -> String {
 pub(super) fn sentence(s: &str) -> String {
     let s = s.trim();
     let mut c = s.chars();
-    let mut out: String = c.next().map(|f| f.to_uppercase().collect()).unwrap_or_default();
+    let mut out: String = c
+        .next()
+        .map(|f| f.to_uppercase().collect())
+        .unwrap_or_default();
     out.push_str(c.as_str());
     if !out.is_empty() && !out.ends_with(['.', '!', '?']) {
         out.push('.');
@@ -616,7 +837,10 @@ pub(super) fn sentence(s: &str) -> String {
 }
 
 pub(super) fn licence_line(m: &Value) -> String {
-    let name = m["licence"]["name"].as_str().filter(|s| !s.is_empty()).unwrap_or("Unknown licence");
+    let name = m["licence"]["name"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Unknown licence");
     let terms = match m["licence"]["commercial"].as_str() {
         Some("yes") if name.starts_with("GPL") => "commercial use subject to GPL conditions",
         Some("yes") => "commercial use allowed",
@@ -632,33 +856,65 @@ pub(super) fn open_page(app: &mut LightcraftApp, url: &str) {
     }
 }
 
-pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info: &Value, accepted: &mut bool) {
+pub fn model_dialog(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    info: &Value,
+    accepted: &mut bool,
+) {
     let kind = info["kind"].as_str().unwrap_or("unsupported");
     let file = info["fileName"].as_str().unwrap_or("");
     if kind == "unsupported" {
-        ui.label(RichText::new(tr("This file cannot be used yet")).font(t.semibold(13.5)).color(t.caution));
+        ui.label(
+            RichText::new(tr("This file cannot be used yet"))
+                .font(t.semibold(13.5))
+                .color(t.caution),
+        );
         ui.add(
             egui::Label::new(
-                RichText::new(sentence(tr(info["reason"].as_str().unwrap_or("It is not a denoise model LightCraft understands"))))
-                    .color(t.text_label),
+                RichText::new(sentence(tr(info["reason"]
+                    .as_str()
+                    .unwrap_or("It is not a denoise model LightCraft understands"))))
+                .color(t.text_label),
             )
             .wrap(),
         );
-        ui.label(RichText::new(tr_format!("{file} · {size}", file = file, size = mb(info["sizeBytes"].as_u64()))).color(t.text_dim));
+        ui.label(
+            RichText::new(tr_format!(
+                "{file} · {size}",
+                file = file,
+                size = mb(info["sizeBytes"].as_u64())
+            ))
+            .color(t.text_dim),
+        );
         return;
     }
     let m = &info["model"];
     ui.horizontal(|ui| {
-        ui.label(RichText::new(m["name"].as_str().unwrap_or(file)).font(t.semibold(14.0)).color(t.text));
+        ui.label(
+            RichText::new(m["name"].as_str().unwrap_or(file))
+                .font(t.semibold(14.0))
+                .color(t.text),
+        );
         ui.label(RichText::new(mb(info["sizeBytes"].as_u64())).color(t.text_dim));
     });
     if info["alreadyInstalled"] == true {
-        ui.label(RichText::new(tr("Already installed. Remove it before installing a replacement.")).color(t.text_dim));
+        ui.label(
+            RichText::new(tr(
+                "Already installed. Remove it before installing a replacement.",
+            ))
+            .color(t.text_dim),
+        );
     }
     let download = info["download"].is_string();
     if download {
         let host = info["host"].as_str().unwrap_or("its own repository");
-        let after = if info["domain"] == "denoise" { "starts using it for AI Denoise" } else { "makes AI Denoise available" };
+        let after = if info["domain"] == "denoise" {
+            "starts using it for AI Denoise"
+        } else {
+            "makes AI Denoise available"
+        };
         ui.add(
             egui::Label::new(
                 RichText::new(tr_format!(
@@ -672,20 +928,52 @@ pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info
         );
     }
     let commercial = m["licence"]["commercial"].as_str().unwrap_or("unknown");
-    ui.label(RichText::new(licence_line(m)).font(t.semibold(12.5)).color(if commercial == "yes" { t.text } else { t.caution }));
+    ui.label(
+        RichText::new(licence_line(m))
+            .font(t.semibold(12.5))
+            .color(if commercial == "yes" {
+                t.text
+            } else {
+                t.caution
+            }),
+    );
     let notice = m["licence"]["notice"].as_str().unwrap_or("");
     if !notice.is_empty() {
         ui.add(egui::Label::new(RichText::new(notice).color(t.text_label)).wrap());
     }
     let provenance = m["provenance"].as_str().unwrap_or("");
     if !provenance.is_empty() {
-        ui.add(egui::Label::new(RichText::new(tr_format!("Trained on: {provenance}", provenance = provenance)).color(t.text_dim)).wrap());
+        ui.add(
+            egui::Label::new(
+                RichText::new(tr_format!(
+                    "Trained on: {provenance}",
+                    provenance = provenance
+                ))
+                .color(t.text_dim),
+            )
+            .wrap(),
+        );
     }
     if kind == "draft" {
         ui.add_space(2.0);
-        ui.label(RichText::new(tr("LightCraft does not know this model, so it assumed:")).color(t.text_label));
-        for a in info["assumptions"].as_array().into_iter().flatten().filter_map(Value::as_str) {
-            ui.add(egui::Label::new(RichText::new(tr_format!("•  {assumption}", assumption = tr(a))).font(t.font(12.0)).color(t.text_dim)).wrap());
+        ui.label(
+            RichText::new(tr("LightCraft does not know this model, so it assumed:"))
+                .color(t.text_label),
+        );
+        for a in info["assumptions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+        {
+            ui.add(
+                egui::Label::new(
+                    RichText::new(tr_format!("•  {assumption}", assumption = tr(a)))
+                        .font(t.font(12.0))
+                        .color(t.text_dim),
+                )
+                .wrap(),
+            );
         }
     }
     if let Some(url) = m["source"].as_str().or(m["licence"]["url"].as_str()) {
@@ -696,11 +984,20 @@ pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info
         }
     }
     ui.add_space(4.0);
-    check(ui, "denoiseModel.accept", accepted, "I have read these terms and accept them for my own use");
+    check(
+        ui,
+        "denoiseModel.accept",
+        accepted,
+        "I have read these terms and accept them for my own use",
+    );
     let closing = if download {
         "Nothing is fetched until you accept. The model is kept on this computer only; LightCraft never uploads or shares it."
     } else {
         "The model is kept on this computer only. LightCraft never uploads or shares it."
     };
-    ui.label(RichText::new(tr(closing)).font(t.font(11.5)).color(t.text_dim));
+    ui.label(
+        RichText::new(tr(closing))
+            .font(t.font(11.5))
+            .color(t.text_dim),
+    );
 }

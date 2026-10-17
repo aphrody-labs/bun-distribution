@@ -4,7 +4,9 @@ use crate::ffi::{Bundle, Instance, RawParam};
 use crate::plugin::ClapPlugin;
 use crate::scan as paths;
 use crate::{ClapDescriptor, ClapError, parse_id};
-use clap_sys::ext::params::{CLAP_PARAM_IS_ENUM, CLAP_PARAM_IS_HIDDEN, CLAP_PARAM_IS_READONLY, CLAP_PARAM_IS_STEPPED};
+use clap_sys::ext::params::{
+    CLAP_PARAM_IS_ENUM, CLAP_PARAM_IS_HIDDEN, CLAP_PARAM_IS_READONLY, CLAP_PARAM_IS_STEPPED,
+};
 use soundcraft_dsp::{ParamInfo, Plugin, PluginInfo, Taper, Unit};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
@@ -117,8 +119,14 @@ fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
     if stepped && p.min == 0.0 && p.max == 1.0 && !is_enum {
         unit = Unit::Toggle;
     } else if stepped && p.min == 0.0 && p.max >= 1.0 && p.max <= MAX_CHOICES {
-        let labels: Vec<&'static str> =
-            (0..=p.max as u32).map(|i| leak(inst.value_text(p.id, f64::from(i)).unwrap_or_else(|| i.to_string()))).collect();
+        let labels: Vec<&'static str> = (0..=p.max as u32)
+            .map(|i| {
+                leak(
+                    inst.value_text(p.id, f64::from(i))
+                        .unwrap_or_else(|| i.to_string()),
+                )
+            })
+            .collect();
         unit = Unit::Choice;
         choices = Box::leak(labels.into_boxed_slice());
     }
@@ -141,8 +149,12 @@ fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
 
 /// Builds and leaks the `PluginInfo` for one plugin type. Called at most once per id (cached).
 fn build_info(d: &ClapDescriptor, inst: &Instance) -> &'static PluginInfo {
-    let params: Vec<ParamInfo> =
-        inst.params().iter().filter(|p| p.flags & (CLAP_PARAM_IS_HIDDEN | CLAP_PARAM_IS_READONLY) == 0).map(|p| param_info(inst, p)).collect();
+    let params: Vec<ParamInfo> = inst
+        .params()
+        .iter()
+        .filter(|p| p.flags & (CLAP_PARAM_IS_HIDDEN | CLAP_PARAM_IS_READONLY) == 0)
+        .map(|p| param_info(inst, p))
+        .collect();
     let short: String = d.name.chars().take(8).collect();
     Box::leak(Box::new(PluginInfo {
         id: leak(d.id.clone()),
@@ -161,9 +173,16 @@ fn instantiate_raw(id: &str) -> Result<(Instance, &'static PluginInfo), ClapErro
     let desc = {
         let mut r = registry().lock().unwrap_or_else(PoisonError::into_inner);
         if r.failed.contains(id) {
-            return Err(ClapError::Instantiate(plugin_id.to_string(), "failed before".into()));
+            return Err(ClapError::Instantiate(
+                plugin_id.to_string(),
+                "failed before".into(),
+            ));
         }
-        ensure_scanned(&mut r).iter().find(|d| d.id == id).cloned().ok_or_else(|| ClapError::NotFound(id.to_string()))?
+        ensure_scanned(&mut r)
+            .iter()
+            .find(|d| d.id == id)
+            .cloned()
+            .ok_or_else(|| ClapError::NotFound(id.to_string()))?
     };
     let made = Bundle::load(&desc.path).and_then(|b| b.instantiate(plugin_id));
     let mut r = registry().lock().unwrap_or_else(PoisonError::into_inner);

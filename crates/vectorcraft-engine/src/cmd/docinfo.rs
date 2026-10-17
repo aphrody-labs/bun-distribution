@@ -97,9 +97,21 @@ type ImageRow = (String, u32, u32, Option<String>);
 
 /// The Document Info categories of `d` (only `category` when given) from `info` (what
 /// `document.info` reports), its fonts `(family, style)`, image objects and used patterns.
-fn sections(d: &Document, info: &Value, fonts: &BTreeSet<super::fonts::UsedFont>, images: &[ImageRow], category: Option<&str>) -> Vec<Section> {
+fn sections(
+    d: &Document,
+    info: &Value,
+    fonts: &BTreeSet<super::fonts::UsedFont>,
+    images: &[ImageRow],
+    category: Option<&str>,
+) -> Vec<Section> {
     let names = |k: &str| -> Vec<(String, String)> {
-        info[k].as_array().into_iter().flatten().filter_map(Value::as_str).map(|n| (n.to_string(), String::new())).collect()
+        info[k]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .map(|n| (n.to_string(), String::new()))
+            .collect()
     };
     let u = d.units;
     CATEGORIES
@@ -109,15 +121,37 @@ fn sections(d: &Document, info: &Value, fonts: &BTreeSet<super::fonts::UsedFont>
             let rows = match id {
                 "document" => {
                     let mut rows = vec![
-                        ("Name".to_string(), info["document"]["name"].as_str().unwrap_or_default().to_string()),
-                        ("Color Mode".into(), info["document"]["colorMode"].as_str().unwrap_or_default().into()),
+                        (
+                            "Name".to_string(),
+                            info["document"]["name"]
+                                .as_str()
+                                .unwrap_or_default()
+                                .to_string(),
+                        ),
+                        (
+                            "Color Mode".into(),
+                            info["document"]["colorMode"]
+                                .as_str()
+                                .unwrap_or_default()
+                                .into(),
+                        ),
                         ("Units".into(), u.label().into()),
                         ("Artboards".into(), d.artboards.len().to_string()),
                     ];
-                    rows.extend(
-                        d.artboards.iter().map(|a| (a.name.clone(), format!("{} × {}", u.format(a.rect.width()), u.format(a.rect.height())))),
-                    );
-                    rows.push(("Raster Effects".into(), format!("{} ppi", d.raster_effects_ppi)));
+                    rows.extend(d.artboards.iter().map(|a| {
+                        (
+                            a.name.clone(),
+                            format!(
+                                "{} × {}",
+                                u.format(a.rect.width()),
+                                u.format(a.rect.height())
+                            ),
+                        )
+                    }));
+                    rows.push((
+                        "Raster Effects".into(),
+                        format!("{} ppi", d.raster_effects_ppi),
+                    ));
                     let counts = [
                         ("Swatches", "swatches"),
                         ("Character Styles", "characterStyles"),
@@ -127,15 +161,25 @@ fn sections(d: &Document, info: &Value, fonts: &BTreeSet<super::fonts::UsedFont>
                     rows.extend(counts.map(|(label, k)| (label.to_string(), info[k].to_string())));
                     rows
                 }
-                "objects" => {
-                    OBJECT_LABELS.iter().filter_map(|(k, label)| Some((label.to_string(), info["objects"][k].as_u64()?.to_string()))).collect()
-                }
+                "objects" => OBJECT_LABELS
+                    .iter()
+                    .filter_map(|(k, label)| {
+                        Some((label.to_string(), info["objects"][k].as_u64()?.to_string()))
+                    })
+                    .collect(),
                 "graphicStyles" => names("graphicStyleNames"),
                 "spotColors" => names("spotColors"),
                 "patterns" => names("patternNames"),
-                "gradients" => d.swatches_iter().filter(|s| matches!(s.paint, Paint::Gradient(_))).map(|s| (s.name.clone(), String::new())).collect(),
+                "gradients" => d
+                    .swatches_iter()
+                    .filter(|s| matches!(s.paint, Paint::Gradient(_)))
+                    .map(|s| (s.name.clone(), String::new()))
+                    .collect(),
                 "symbols" => names("symbols"),
-                "fonts" => fonts.iter().map(|f| (super::fonts::font_label(f), String::new())).collect(),
+                "fonts" => fonts
+                    .iter()
+                    .map(|f| (super::fonts::font_label(f), String::new()))
+                    .collect(),
                 "fontDetails" => {
                     let db = vectorcraft_text::FontDb::global();
                     fonts
@@ -144,30 +188,49 @@ fn sections(d: &Document, info: &Value, fonts: &BTreeSet<super::fonts::UsedFont>
                             let (family, style, version) = used;
                             // Found by any of its names (in the version the type names); a style the
                             // family lacks shows in another.
-                            let resolved =
-                                db.resolve(family, style).map(|(f, m)| (db.face_version(family, style, version.as_deref()).unwrap_or(f), m));
+                            let resolved = db.resolve(family, style).map(|(f, m)| {
+                                (
+                                    db.face_version(family, style, version.as_deref())
+                                        .unwrap_or(f),
+                                    m,
+                                )
+                            });
                             let detail = match resolved {
                                 Some((f, m)) if m != vectorcraft_text::FontMatch::Missing => {
-                                    let file =
-                                        f.path().and_then(|p| p.file_name()).map_or_else(|| "built in".into(), |n| n.to_string_lossy().into_owned());
+                                    let file = f.path().and_then(|p| p.file_name()).map_or_else(
+                                        || "built in".into(),
+                                        |n| n.to_string_lossy().into_owned(),
+                                    );
                                     let found = format!("{file}; {}", embedding_label(f.fs_type()));
                                     if m == vectorcraft_text::FontMatch::Style {
-                                        format!("substituted: shown in {} {} ({found})", f.family, f.style)
+                                        format!(
+                                            "substituted: shown in {} {} ({found})",
+                                            f.family, f.style
+                                        )
                                     } else {
                                         found
                                     }
                                 }
-                                Some((f, _)) => format!("missing: shown in {} {}", f.family, f.style),
+                                Some((f, _)) => {
+                                    format!("missing: shown in {} {}", f.family, f.style)
+                                }
                                 None => "missing".into(),
                             };
                             (super::fonts::font_label(used), detail)
                         })
                         .collect()
                 }
-                "linkedImages" => {
-                    images.iter().filter_map(|(name, w, h, link)| Some((name.clone(), format!("{w} × {h} px — {}", link.as_ref()?)))).collect()
-                }
-                _ => images.iter().filter(|i| i.3.is_none()).map(|(name, w, h, _)| (name.clone(), format!("{w} × {h} px"))).collect(),
+                "linkedImages" => images
+                    .iter()
+                    .filter_map(|(name, w, h, link)| {
+                        Some((name.clone(), format!("{w} × {h} px — {}", link.as_ref()?)))
+                    })
+                    .collect(),
+                _ => images
+                    .iter()
+                    .filter(|i| i.3.is_none())
+                    .map(|(name, w, h, _)| (name.clone(), format!("{w} × {h} px")))
+                    .collect(),
             };
             Section { id, title, rows }
         })
@@ -199,7 +262,10 @@ pub fn report_text(name: &str, selection_only: bool, sections: &[Section]) -> St
 
 /// The text report of the active document (`document.info {format: "text"}` as a string).
 pub fn report(s: &mut Session, selection_only: bool) -> Result<String> {
-    let v = info(s, &json!({ "selectionOnly": selection_only, "format": "text" }))?;
+    let v = info(
+        s,
+        &json!({ "selectionOnly": selection_only, "format": "text" }),
+    )?;
     Ok(v["text"].as_str().unwrap_or_default().to_string())
 }
 
@@ -226,8 +292,15 @@ fn info(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let d = &st.doc;
     let selection_only = bool_or(p, "selectionOnly", false);
-    let roots: Vec<&Node> =
-        if selection_only { st.selection.objects.iter().filter_map(|id| d.node(*id)).collect() } else { d.layers.iter().map(|l| &**l).collect() };
+    let roots: Vec<&Node> = if selection_only {
+        st.selection
+            .objects
+            .iter()
+            .filter_map(|id| d.node(*id))
+            .collect()
+    } else {
+        d.layers.iter().map(|l| &**l).collect()
+    };
     let mut counts: BTreeMap<&str, usize> = BTreeMap::new();
     let mut fonts = BTreeSet::new();
     let mut images: BTreeMap<String, Value> = BTreeMap::new();
@@ -235,7 +308,11 @@ fn info(s: &mut Session, p: &Value) -> Result<Value> {
     let mut patterns = BTreeSet::new();
     let mut symbols = BTreeSet::new();
     let mut spot = BTreeSet::new();
-    let mut styles: Vec<&str> = if selection_only { vec![] } else { d.graphic_styles.iter().map(|g| g.name.as_str()).collect() };
+    let mut styles: Vec<&str> = if selection_only {
+        vec![]
+    } else {
+        d.graphic_styles.iter().map(|g| g.name.as_str()).collect()
+    };
     for r in roots {
         r.walk(&mut |n| {
             let k = match &n.kind {
@@ -326,7 +403,10 @@ fn info(s: &mut Session, p: &Value) -> Result<Value> {
     if text {
         return Ok(json!({ "text": report_text(&st.title(), selection_only, &sections) }));
     }
-    out["sections"] = sections.iter().map(|s| json!({ "id": s.id, "title": s.title, "rows": s.rows })).collect();
+    out["sections"] = sections
+        .iter()
+        .map(|s| json!({ "id": s.id, "title": s.title, "rows": s.rows }))
+        .collect();
     Ok(out)
 }
 
@@ -347,18 +427,37 @@ fn snap_xf(b: Rect, half: bool) -> Affine {
     let snap = |v: f64| (v - off).round() + off;
     let (x0, y0) = (snap(b.x0), snap(b.y0));
     // Keep at least one pixel of size; widths snap to whole pixels.
-    let (w, h) = (b.width().round().max(if b.width() > 0.0 { 1.0 } else { 0.0 }), b.height().round().max(if b.height() > 0.0 { 1.0 } else { 0.0 }));
+    let (w, h) = (
+        b.width()
+            .round()
+            .max(if b.width() > 0.0 { 1.0 } else { 0.0 }),
+        b.height()
+            .round()
+            .max(if b.height() > 0.0 { 1.0 } else { 0.0 }),
+    );
     let sx = if b.width() > 1e-9 { w / b.width() } else { 1.0 };
-    let sy = if b.height() > 1e-9 { h / b.height() } else { 1.0 };
-    Affine::translate((x0, y0)) * Affine::scale_non_uniform(sx, sy) * Affine::translate((-b.x0, -b.y0))
+    let sy = if b.height() > 1e-9 {
+        h / b.height()
+    } else {
+        1.0
+    };
+    Affine::translate((x0, y0))
+        * Affine::scale_non_uniform(sx, sy)
+        * Affine::translate((-b.x0, -b.y0))
 }
 
 fn pixel_perfect(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids: Vec<NodeId> = if p.get("ids").is_some() { targets(s, p)? } else { super::edit::selected_roots(s)? };
+    let ids: Vec<NodeId> = if p.get("ids").is_some() {
+        targets(s, p)?
+    } else {
+        super::edit::selected_roots(s)?
+    };
     let n = ids.len();
     s.edit("Make Pixel Perfect", |d, _| {
         for id in &ids {
-            let Some(node) = d.node_mut(*id) else { continue };
+            let Some(node) = d.node_mut(*id) else {
+                continue;
+            };
             // Whole-pixel stroke weights; odd ones centre on half pixels.
             let mut odd = false;
             for item in &mut node.appearance.items {
@@ -366,7 +465,8 @@ fn pixel_perfect(s: &mut Session, p: &Value) -> Result<Value> {
                     && st.width > 0.0
                 {
                     st.width = st.width.round().max(1.0);
-                    odd |= st.width as i64 % 2 == 1 && st.align == vectorcraft_doc::StrokeAlign::Center;
+                    odd |= st.width as i64 % 2 == 1
+                        && st.align == vectorcraft_doc::StrokeAlign::Center;
                 }
             }
             if let Some(b) = node.geometric_bounds() {
@@ -385,23 +485,37 @@ mod tests {
     #[test]
     fn info_counts_objects_fonts_and_selection_only() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
-        let r = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap()["id"].clone();
+        s.execute("file.new", &json!({"width": 200, "height": 100}))
+            .unwrap();
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap()["id"]
+            .clone();
         s.execute(
             "paint.setFill",
             &json!({"gradient": {"kind": "linear", "stops": [{"offset": 0, "color": "#000"}, {"offset": 1, "color": "#fff"}]}}),
         )
         .unwrap();
-        s.execute("text.create", &json!({"x": 10, "y": 40, "text": "Hi"})).unwrap();
+        s.execute("text.create", &json!({"x": 10, "y": 40, "text": "Hi"}))
+            .unwrap();
         let i = s.execute("document.info", &json!({})).unwrap();
         assert_eq!(
-            (i["objects"]["paths"].as_u64(), i["objects"]["textObjects"].as_u64(), i["objects"]["gradients"].as_u64()),
+            (
+                i["objects"]["paths"].as_u64(),
+                i["objects"]["textObjects"].as_u64(),
+                i["objects"]["gradients"].as_u64()
+            ),
             (Some(1), Some(1), Some(1))
         );
         assert_eq!(i["fonts"][0], "Source Sans 3 Regular");
         assert_eq!(i["document"]["artboards"][0]["width"], 200.0);
         s.execute("select.set", &json!({"ids": [r]})).unwrap();
-        let i = s.execute("document.info", &json!({"selectionOnly": true})).unwrap();
+        let i = s
+            .execute("document.info", &json!({"selectionOnly": true}))
+            .unwrap();
         assert!(i["objects"]["textObjects"].is_null() && i["objects"]["paths"] == 1);
     }
 
@@ -409,7 +523,10 @@ mod tests {
     fn embedding_permissions_read_from_fs_type() {
         assert_eq!(embedding_label(0), "embedding allowed");
         assert_eq!(embedding_label(0x0002), "embedding not allowed");
-        assert_eq!(embedding_label(0x0004 | 0x0100), "embedding for preview and print");
+        assert_eq!(
+            embedding_label(0x0004 | 0x0100),
+            "embedding for preview and print"
+        );
         assert_eq!(embedding_label(0x0008), "embedding for editing");
         // As exports read it: bitmap embedding only, the restricted bit with reserved bit 0, the
         // most permissive of several usage bits.
@@ -422,18 +539,36 @@ mod tests {
     #[test]
     fn pixel_perfect_snaps_edges_and_strokes() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
-        let id = s.execute("shape.rectangle", &json!({"x": 10.3, "y": 20.6, "width": 30.4, "height": 9.7})).unwrap()["id"].as_u64().unwrap();
+        s.execute("file.new", &json!({"width": 200, "height": 100}))
+            .unwrap();
+        let id = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 10.3, "y": 20.6, "width": 30.4, "height": 9.7}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("stroke.set", &json!({"weight": 0.8})).unwrap();
         s.execute("object.makePixelPerfect", &json!({})).unwrap();
         let n = s.doc().unwrap().doc.node(NodeId(id)).unwrap().clone();
         let b = n.geometric_bounds().unwrap();
         // 1 pt (odd) stroke → edges on half pixels, whole-pixel size.
-        assert_eq!((b.x0, b.y0, b.width(), b.height()), (10.5, 20.5, 30.0, 10.0));
+        assert_eq!(
+            (b.x0, b.y0, b.width(), b.height()),
+            (10.5, 20.5, 30.0, 10.0)
+        );
         assert_eq!(n.appearance.stroke_width(), 1.0);
         s.execute("stroke.set", &json!({"weight": 2})).unwrap();
         s.execute("object.makePixelPerfect", &json!({})).unwrap();
-        let b = s.doc().unwrap().doc.node(NodeId(id)).unwrap().geometric_bounds().unwrap();
+        let b = s
+            .doc()
+            .unwrap()
+            .doc
+            .node(NodeId(id))
+            .unwrap()
+            .geometric_bounds()
+            .unwrap();
         assert_eq!((b.x0.fract(), b.y0.fract()), (0.0, 0.0));
     }
 }

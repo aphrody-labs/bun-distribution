@@ -1,9 +1,9 @@
 use bevy_app::Propagate;
 use bevy_ecs::hierarchy::Children;
-use bevy_scene::{bsn, Scene};
+use bevy_scene::{Scene, bsn};
 use bevy_text::FontWeight;
 use bevy_ui::{
-    px, AlignItems, AlignSelf, Display, FlexDirection, JustifyContent, Node, PositionType, UiRect,
+    AlignItems, AlignSelf, Display, FlexDirection, JustifyContent, Node, PositionType, UiRect, px,
 };
 
 use crate::{

@@ -595,8 +595,7 @@ impl Swapchain {
             vk::Format::R8G8B8A8_UNORM,
             vk::Format::R8G8B8A8_SRGB,
         ];
-        let mut format_list = vk::ImageFormatListCreateInfo::default()
-            .view_formats(&view_formats);
+        let mut format_list = vk::ImageFormatListCreateInfo::default().view_formats(&view_formats);
         let mut create_info = create_info;
         if self.mutable_format_enabled {
             create_info.flags |= vk::SwapchainCreateFlagsKHR::MUTABLE_FORMAT;

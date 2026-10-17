@@ -33,18 +33,29 @@ pub struct Layout {
 /// (German, Italian, Spanish...) ⇧+ types `*` and ⇧− types `_`, which egui has no keys for, so
 /// they arrive as the physical `]` / `/`. They become `+` / `-`, as ⇧= arrives as `+` on a US
 /// layout. A US ⇧] still arrives as `}` and ⇧8 (`*` too) as a digit.
-pub const COMMON: Layout = Layout { keys: &[("*", true, Key::Plus), ("_", true, Key::Minus)] };
+pub const COMMON: Layout = Layout {
+    keys: &[("*", true, Key::Plus), ("_", true, Key::Minus)],
+};
 
 /// Layouts with Photoshop-specific brush keys (#3109). German: Ö / # are `[` / `]` (smaller,
 /// bigger) and ⇧Ö / ⇧# the hardness; `ö` and `#` arrive as the physical `;` and `\`, ⇧# types `'`.
 /// French AZERTY and others have no verified Photoshop keys yet and use the fallback.
 pub const LAYOUTS: &[Layout] = &[Layout {
     // German
-    keys: &[("ö", false, Key::OpenBracket), ("Ö", true, Key::OpenBracket), ("#", false, Key::CloseBracket), ("'", true, Key::CloseBracket)],
+    keys: &[
+        ("ö", false, Key::OpenBracket),
+        ("Ö", true, Key::OpenBracket),
+        ("#", false, Key::CloseBracket),
+        ("'", true, Key::CloseBracket),
+    ],
 }];
 
 fn lookup(layout: &Layout, text: &str, shift: bool) -> Option<Key> {
-    layout.keys.iter().find(|(t, s, _)| *t == text && *s == shift).map(|r| r.2)
+    layout
+        .keys
+        .iter()
+        .find(|(t, s, _)| *t == text && *s == shift)
+        .map(|r| r.2)
 }
 
 /// What the app has learnt about the layout this session.
@@ -57,7 +68,19 @@ struct Learnt {
 }
 
 fn is_digit(key: Key) -> bool {
-    matches!(key, Key::Num0 | Key::Num1 | Key::Num2 | Key::Num3 | Key::Num4 | Key::Num5 | Key::Num6 | Key::Num7 | Key::Num8 | Key::Num9)
+    matches!(
+        key,
+        Key::Num0
+            | Key::Num1
+            | Key::Num2
+            | Key::Num3
+            | Key::Num4
+            | Key::Num5
+            | Key::Num6
+            | Key::Num7
+            | Key::Num8
+            | Key::Num9
+    )
 }
 
 /// Gives this frame's key presses the keys the layout table and the fallback assign, so every
@@ -73,12 +96,25 @@ pub fn apply(ctx: &egui::Context) {
     let before = (learnt.brackets, learnt.table_layout);
     ctx.input_mut(|i| {
         for at in 0..i.events.len() {
-            let text_at = if cfg!(target_arch = "wasm32") { at.checked_sub(1) } else { at.checked_add(1) };
+            let text_at = if cfg!(target_arch = "wasm32") {
+                at.checked_sub(1)
+            } else {
+                at.checked_add(1)
+            };
             let text = match text_at.and_then(|t| i.events.get(t)) {
                 Some(Event::Text(text)) => text.clone(),
                 _ => String::new(),
             };
-            let Some(Event::Key { key, physical_key, pressed: true, modifiers, .. }) = i.events.get_mut(at) else { continue };
+            let Some(Event::Key {
+                key,
+                physical_key,
+                pressed: true,
+                modifiers,
+                ..
+            }) = i.events.get_mut(at)
+            else {
+                continue;
+            };
             if modifiers.command || modifiers.ctrl || modifiers.alt {
                 continue;
             }
@@ -92,7 +128,10 @@ pub fn apply(ctx: &egui::Context) {
                     *key = k;
                     continue;
                 }
-                if let Some(k) = LAYOUTS.iter().find_map(|l| lookup(l, &text, modifiers.shift)) {
+                if let Some(k) = LAYOUTS
+                    .iter()
+                    .find_map(|l| lookup(l, &text, modifiers.shift))
+                {
                     learnt.table_layout = true;
                     *key = k;
                     continue;
@@ -121,7 +160,8 @@ mod tests {
 
     fn app() -> PhotocraftApp {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 32, "height": 32})).unwrap();
+        app.run("file.new", json!({"width": 32, "height": 32}))
+            .unwrap();
         app.ui.tool = Tool::Brush;
         app
     }
@@ -129,8 +169,17 @@ mod tests {
     /// One key press the way a layout reports it: logical `key`, physical position, typed text.
     fn press(app: &mut PhotocraftApp, ctx: &egui::Context, key: Key, physical: Key, text: &str) {
         let modifiers = Modifiers::NONE;
-        let press = Event::Key { key, physical_key: Some(physical), pressed: true, repeat: false, modifiers };
-        let raw = egui::RawInput { events: vec![press, Event::Text(text.into())], ..Default::default() };
+        let press = Event::Key {
+            key,
+            physical_key: Some(physical),
+            pressed: true,
+            repeat: false,
+            modifiers,
+        };
+        let raw = egui::RawInput {
+            events: vec![press, Event::Text(text.into())],
+            ..Default::default()
+        };
         ctx.begin_pass(raw);
         crate::shortcuts::handle(app, ctx);
         ctx.end_pass().textures_delta.clear();
@@ -143,10 +192,16 @@ mod tests {
         let (mut a, ctx) = (app(), egui::Context::default());
         let size = a.session.tools.brush.size;
         press(&mut a, &ctx, Key::Plus, Key::CloseBracket, "+");
-        assert!(a.session.tools.brush.size > size, "the `+` key at the `]` position is ]");
+        assert!(
+            a.session.tools.brush.size > size,
+            "the `+` key at the `]` position is ]"
+        );
         // AZERTY `^` is a dead key at the `[` position: it arrives as the physical key.
         press(&mut a, &ctx, Key::OpenBracket, Key::OpenBracket, "^");
-        assert_eq!(a.session.tools.brush.size, size, "the key at the `[` position is [");
+        assert_eq!(
+            a.session.tools.brush.size, size,
+            "the key at the `[` position is ["
+        );
     }
 
     #[test]
@@ -156,7 +211,10 @@ mod tests {
         press(&mut a, &ctx, Key::OpenBracket, Key::Minus, "[");
         let size = a.session.tools.brush.size;
         press(&mut a, &ctx, Key::Equals, Key::CloseBracket, "=");
-        assert_eq!(a.session.tools.brush.size, size, "= is not stolen once brackets exist");
+        assert_eq!(
+            a.session.tools.brush.size, size,
+            "= is not stolen once brackets exist"
+        );
     }
 
     #[test]
@@ -165,6 +223,9 @@ mod tests {
         press(&mut a, &ctx, Key::Semicolon, Key::Semicolon, "ö");
         let size = a.session.tools.brush.size;
         press(&mut a, &ctx, Key::Plus, Key::CloseBracket, "+");
-        assert_eq!(a.session.tools.brush.size, size, "German + is not a brush key");
+        assert_eq!(
+            a.session.tools.brush.size, size,
+            "German + is not a brush key"
+        );
     }
 }

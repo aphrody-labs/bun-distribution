@@ -40,15 +40,35 @@ pub struct ServedFont {
 pub fn parse_manifest(text: &str) -> (Vec<ServedFont>, Vec<String>) {
     let mut fonts = Vec::new();
     let mut skipped = Vec::new();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         match f.as_slice() {
             [family, _style, file, rest @ ..] if !family.is_empty() && is_relative_path(file) => {
-                let scripts = rest.first().map(|s| s.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::to_string).collect()).unwrap_or_default();
+                let scripts = rest
+                    .first()
+                    .map(|s| {
+                        s.split(',')
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(str::to_string)
+                            .collect()
+                    })
+                    .unwrap_or_default();
                 let integrity = rest.get(3).and_then(|sha| sri(sha));
-                fonts.push(ServedFont { family: (*family).to_string(), file: (*file).to_string(), scripts, integrity });
+                fonts.push(ServedFont {
+                    family: (*family).to_string(),
+                    file: (*file).to_string(),
+                    scripts,
+                    integrity,
+                });
             }
-            [_, _, file, ..] if !is_relative_path(file) => skipped.push(format!("{line}: the file must be a relative path inside the site")),
+            [_, _, file, ..] if !is_relative_path(file) => skipped.push(format!(
+                "{line}: the file must be a relative path inside the site"
+            )),
             _ => skipped.push(format!("{line}: expected `family | style | file | …`")),
         }
     }
@@ -58,12 +78,18 @@ pub fn parse_manifest(text: &str) -> (Vec<ServedFont>, Vec<String>) {
 /// A relative path that stays inside the site: no scheme, no leading `/`, no `..` segment, no
 /// query or fragment.
 fn is_relative_path(p: &str) -> bool {
-    !p.is_empty() && !p.starts_with('/') && !p.contains(['\\', '?', '#', ':']) && p.split('/').all(|seg| !seg.is_empty() && seg != "." && seg != "..")
+    !p.is_empty()
+        && !p.starts_with('/')
+        && !p.contains(['\\', '?', '#', ':'])
+        && p.split('/')
+            .all(|seg| !seg.is_empty() && seg != "." && seg != "..")
 }
 
 /// The scripts a served font can be the fallback for: those the bundled fonts (Inter, which covers
 /// Latin, Greek and Cyrillic) lack, as ISO 15924 codes.
-const FALLBACK_SCRIPTS: &[&str] = &["Arab", "Hebr", "Deva", "Thai", "Khmr", "Laoo", "Mymr", "Jpan", "Hans", "Hant", "Kore"];
+const FALLBACK_SCRIPTS: &[&str] = &[
+    "Arab", "Hebr", "Deva", "Thai", "Khmr", "Laoo", "Mymr", "Jpan", "Hans", "Hant", "Kore",
+];
 
 /// The script fallbacks in `fonts`: for each script in [`FALLBACK_SCRIPTS`], the first family in
 /// manifest order that lists it, as `(script, family)` in order of first appearance.
@@ -93,7 +119,12 @@ pub fn script_of(c: char, order: &[crate::cjk::CjkScript; 4]) -> Option<&'static
     }
     Some(match c as u32 {
         0x0590..=0x05FF | 0xFB1D..=0xFB4F => "Hebr",
-        0x0600..=0x06FF | 0x0750..=0x077F | 0x0870..=0x08FF | 0xFB50..=0xFDFF | 0xFE70..=0xFEFF | 0x1EE00..=0x1EEFF => "Arab",
+        0x0600..=0x06FF
+        | 0x0750..=0x077F
+        | 0x0870..=0x08FF
+        | 0xFB50..=0xFDFF
+        | 0xFE70..=0xFEFF
+        | 0x1EE00..=0x1EEFF => "Arab",
         0x0900..=0x097F | 0xA8E0..=0xA8FF => "Deva",
         0x0E00..=0x0E7F => "Thai",
         0x1780..=0x17FF | 0x19E0..=0x19FF => "Khmr",
@@ -119,7 +150,12 @@ pub fn language_script(tag: &str) -> Option<&'static str> {
         "my" => "Mymr",
         "ja" => "Jpan",
         "ko" => "Kore",
-        "zh" if rest.iter().any(|r| matches!(*r, "hant" | "tw" | "hk" | "mo")) => "Hant",
+        "zh" if rest
+            .iter()
+            .any(|r| matches!(*r, "hant" | "tw" | "hk" | "mo")) =>
+        {
+            "Hant"
+        }
         "zh" => "Hans",
         _ => return None,
     })
@@ -130,7 +166,12 @@ fn sri(hex: &str) -> Option<String> {
     if hex.len() != 64 {
         return None;
     }
-    let bytes: Option<Vec<u8>> = (0..32).map(|i| hex.get(2 * i..2 * i + 2).and_then(|h| u8::from_str_radix(h, 16).ok())).collect();
+    let bytes: Option<Vec<u8>> = (0..32)
+        .map(|i| {
+            hex.get(2 * i..2 * i + 2)
+                .and_then(|h| u8::from_str_radix(h, 16).ok())
+        })
+        .collect();
     Some(format!("sha256-{}", base64(&bytes?)))
 }
 
@@ -143,7 +184,11 @@ fn base64(data: &[u8]) -> String {
         let n = (b(0) << 16) | (b(1) << 8) | b(2);
         for k in 0..4 {
             let six = ((n >> (18 - 6 * k)) & 63) as usize;
-            s.push(if k <= chunk.len() { TABLE.get(six).map_or('=', |&c| char::from(c)) } else { '=' });
+            s.push(if k <= chunk.len() {
+                TABLE.get(six).map_or('=', |&c| char::from(c))
+            } else {
+                '='
+            });
         }
     }
     s
@@ -160,7 +205,12 @@ struct State {
     generation: u64,
 }
 
-static STATE: Mutex<State> = Mutex::new(State { families: Vec::new(), fallbacks: Vec::new(), requested: Vec::new(), generation: 0 });
+static STATE: Mutex<State> = Mutex::new(State {
+    families: Vec::new(),
+    fallbacks: Vec::new(),
+    requested: Vec::new(),
+    generation: 0,
+});
 
 fn state() -> std::sync::MutexGuard<'static, State> {
     STATE.lock().unwrap_or_else(PoisonError::into_inner)
@@ -205,7 +255,10 @@ pub fn script_fallback_families() -> Vec<String> {
 
 /// The fallback family for `script`, if the host serves one.
 fn fallback_for(fallbacks: &[(String, String)], script: &str) -> Option<String> {
-    fallbacks.iter().find(|(s, _)| s == script).map(|(_, f)| f.clone())
+    fallbacks
+        .iter()
+        .find(|(s, _)| s == script)
+        .map(|(_, f)| f.clone())
 }
 
 /// Asks for the served fallback families `text` needs: one per script in it that the bundled
@@ -237,7 +290,11 @@ pub fn falls_back_to(text: &str, family: &str) -> bool {
         return false;
     }
     let order = crate::cjk::ui_script_order();
-    text.chars().any(|c| script_of(c, &order).and_then(|s| fallback_for(&fallbacks, s)).is_some_and(|f| f == family))
+    text.chars().any(|c| {
+        script_of(c, &order)
+            .and_then(|s| fallback_for(&fallbacks, s))
+            .is_some_and(|f| f == family)
+    })
 }
 
 /// Asks up front for the fallback families of the scripts `languages` (the browser's, e.g.
@@ -295,7 +352,12 @@ mod tests {
                     scripts: vec!["Jpan".into(), "Latn".into()],
                     integrity: None, // "258d" is not a SHA-256
                 },
-                ServedFont { family: "Open Sans".into(), file: "fonts/open-sans/OpenSans[wdth,wght].ttf".into(), scripts: vec![], integrity: None },
+                ServedFont {
+                    family: "Open Sans".into(),
+                    file: "fonts/open-sans/OpenSans[wdth,wght].ttf".into(),
+                    scripts: vec![],
+                    integrity: None
+                },
             ]
         );
         assert!(skipped.is_empty(), "{skipped:?}");
@@ -314,7 +376,15 @@ mod tests {
             G | Regular | fonts/g.ttf?v=1\n\
             Lato | Bold | fonts/lato/Lato-Bold.ttf\n";
         let (fonts, skipped) = parse_manifest(text);
-        assert_eq!(fonts, [ServedFont { family: "Lato".into(), file: "fonts/lato/Lato-Bold.ttf".into(), scripts: vec![], integrity: None }]);
+        assert_eq!(
+            fonts,
+            [ServedFont {
+                family: "Lato".into(),
+                file: "fonts/lato/Lato-Bold.ttf".into(),
+                scripts: vec![],
+                integrity: None
+            }]
+        );
         assert_eq!(skipped.len(), 9, "{skipped:?}");
     }
 
@@ -335,12 +405,21 @@ mod tests {
         request(served);
         request(served);
         let taken = take_requests();
-        assert_eq!(taken.iter().filter(|f| *f == served).count(), 1, "{taken:?}");
+        assert_eq!(
+            taken.iter().filter(|f| *f == served).count(),
+            1,
+            "{taken:?}"
+        );
         assert!(!taken.iter().any(|f| f == "Not Served Test Sans"));
 
         // A layout that needs a served family the database lacks asks for it (and is drawn with
         // the fallback meanwhile).
-        let t = photocraft_doc::TextLayer { text: "Hi".into(), font_family: served.into(), size_pt: 12.0, ..Default::default() };
+        let t = photocraft_doc::TextLayer {
+            text: "Hi".into(),
+            font_family: served.into(),
+            size_pt: 12.0,
+            ..Default::default()
+        };
         let l = crate::TextEngine::new().layout(&t, 72.0);
         assert_eq!(l.glyphs.len(), 2);
         assert!(take_requests().iter().any(|f| f == served));
@@ -353,13 +432,22 @@ mod tests {
             "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         );
         add_fonts(&parse_manifest(&manifest).0);
-        assert!(families().iter().any(|f| f == hebrew), "add_fonts lists the family too");
+        assert!(
+            families().iter().any(|f| f == hebrew),
+            "add_fonts lists the family too"
+        );
         assert!(script_fallback_families().iter().any(|f| f == hebrew));
         let _ = take_requests();
         request_for_text("Latin only, 123");
-        assert!(!take_requests().iter().any(|f| f == hebrew), "Latin text needs no served fallback");
+        assert!(
+            !take_requests().iter().any(|f| f == hebrew),
+            "Latin text needs no served fallback"
+        );
         request_for_text("Shalom שלום");
-        assert!(take_requests().iter().any(|f| f == hebrew), "Hebrew text asks for the Hebrew family");
+        assert!(
+            take_requests().iter().any(|f| f == hebrew),
+            "Hebrew text asks for the Hebrew family"
+        );
         assert!(falls_back_to("שלום", hebrew));
         assert!(!falls_back_to("hello", hebrew));
         // Startup preloading: a browser language using that script asks for it up front.
@@ -368,17 +456,29 @@ mod tests {
         request_for_languages(["en-US", "fr"]);
         assert!(!take_requests().iter().any(|f| f == hebrew));
         // A layout of Hebrew text in the default family asks for it too.
-        let t = photocraft_doc::TextLayer { text: "שלום".into(), size_pt: 12.0, ..Default::default() };
+        let t = photocraft_doc::TextLayer {
+            text: "שלום".into(),
+            size_pt: 12.0,
+            ..Default::default()
+        };
         let _ = crate::TextEngine::new().layout(&t, 72.0);
-        assert!(take_requests().iter().any(|f| f == hebrew), "layout asks for the script fallback");
+        assert!(
+            take_requests().iter().any(|f| f == hebrew),
+            "layout asks for the script fallback"
+        );
     }
 
     #[test]
     fn manifest_scripts_and_sha256_become_scripts_and_integrity() {
         let sha = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-        let (fonts, _) = parse_manifest(&format!("Noto Sans Arabic | Regular | fonts/n/N.ttf | Arab | OFL-1.1 | fonts/n/OFL.txt | {sha} | src\n"));
+        let (fonts, _) = parse_manifest(&format!(
+            "Noto Sans Arabic | Regular | fonts/n/N.ttf | Arab | OFL-1.1 | fonts/n/OFL.txt | {sha} | src\n"
+        ));
         assert_eq!(fonts[0].scripts, ["Arab"]);
-        assert_eq!(fonts[0].integrity.as_deref(), Some("sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU="));
+        assert_eq!(
+            fonts[0].integrity.as_deref(),
+            Some("sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=")
+        );
     }
 
     #[test]
@@ -390,7 +490,10 @@ mod tests {
         let (fonts, _) = parse_manifest(text);
         assert_eq!(
             script_fallbacks(&fonts),
-            [("Arab".to_string(), "Noto Sans Arabic".to_string()), ("Jpan".to_string(), "BIZ UDPGothic".to_string())],
+            [
+                ("Arab".to_string(), "Noto Sans Arabic".to_string()),
+                ("Jpan".to_string(), "BIZ UDPGothic".to_string())
+            ],
             "Latin and Cyrillic are the bundled fonts' job"
         );
     }

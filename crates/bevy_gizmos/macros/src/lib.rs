@@ -2,10 +2,10 @@
 
 //! Derive implementations for `bevy_gizmos`.
 
-use bevy_macro_utils::{fq_std::FQDefault, BevyManifest};
+use bevy_macro_utils::{BevyManifest, fq_std::FQDefault};
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, parse_quote, DeriveInput, Path};
+use syn::{DeriveInput, Path, parse_macro_input, parse_quote};
 
 /// Implements the [`GizmoConfigGroup`] trait for a gizmo config group type.
 #[proc_macro_derive(GizmoConfigGroup)]

@@ -16,7 +16,10 @@ fn edge(plane: &[u8], stride: usize, x: isize, y: isize) -> u8 {
     } else if x < 0 {
         129
     } else {
-        plane.get(y as usize * stride + x as usize).copied().unwrap_or(127)
+        plane
+            .get(y as usize * stride + x as usize)
+            .copied()
+            .unwrap_or(127)
     }
 }
 
@@ -45,7 +48,9 @@ pub fn predict_block(plane: &mut [u8], stride: usize, x0: usize, y0: usize, size
     match mode {
         V_PRED => fill(plane, &|_, c| above[c]),
         H_PRED => fill(plane, &|r, _| left[r]),
-        TM_PRED => fill(plane, &|r, c| (i32::from(left[r]) + i32::from(above[c]) - p).clamp(0, 255) as u8),
+        TM_PRED => fill(plane, &|r, c| {
+            (i32::from(left[r]) + i32::from(above[c]) - p).clamp(0, 255) as u8
+        }),
         _ => {
             // DC_PRED: only the genuinely available edges count
             let sum = |v: &[u8]| v[..size].iter().map(|&x| u32::from(x)).sum::<u32>();
@@ -63,7 +68,15 @@ pub fn predict_block(plane: &mut [u8], stride: usize, x0: usize, y0: usize, size
 /// Predict the 4x4 luma subblock `b` (raster index in its macroblock) of the macroblock at
 /// `(mx, my)` (in pixels) with subblock mode `mode` (12.3). `last_column`: the macroblock is the
 /// rightmost of its row.
-pub fn predict_subblock(plane: &mut [u8], stride: usize, mx: usize, my: usize, b: usize, mode: u8, last_column: bool) {
+pub fn predict_subblock(
+    plane: &mut [u8],
+    stride: usize,
+    mx: usize,
+    my: usize,
+    b: usize,
+    mode: u8,
+    last_column: bool,
+) {
     let (bx, by) = (b & 3, b >> 2);
     let x = (mx + 4 * bx) as isize;
     let y = (my + 4 * by) as isize;
@@ -83,7 +96,12 @@ pub fn predict_subblock(plane: &mut [u8], stride: usize, mx: usize, my: usize, b
             edge(plane, stride, mx as isize + 15, my as isize - 1)
         } else {
             // right-column subblocks all use the pixels above-right of the macroblock
-            edge(plane, stride, mx as isize + 16 + i as isize, my as isize - 1)
+            edge(
+                plane,
+                stride,
+                mx as isize + 16 + i as isize,
+                my as isize - 1,
+            )
         });
     }
     let mut l = [0i32; 4];
@@ -122,7 +140,11 @@ pub fn predict_subblock(plane: &mut [u8], stride: usize, mx: usize, my: usize, b
         }
         B_HE_PRED => {
             for r in 0..4 {
-                let v = if r == 3 { avg3(l[2], l[3], l[3]) } else { l3(r as isize) };
+                let v = if r == 3 {
+                    avg3(l[2], l[3], l[3])
+                } else {
+                    l3(r as isize)
+                };
                 out[r] = [v; 4];
             }
         }
@@ -130,7 +152,11 @@ pub fn predict_subblock(plane: &mut [u8], stride: usize, mx: usize, my: usize, b
             for r in 0..4 {
                 for c in 0..4 {
                     let d = r + c;
-                    out[r][c] = if d == 6 { avg3(av(6), av(7), av(7)) } else { a3(d as isize + 1) };
+                    out[r][c] = if d == 6 {
+                        avg3(av(6), av(7), av(7))
+                    } else {
+                        a3(d as isize + 1)
+                    };
                 }
             }
         }
@@ -265,7 +291,10 @@ pub fn predict_inter(
     // source window: 2 before, 3 after in each direction
     const MAX: usize = 16 + 5;
     let mut src = [[0u8; MAX]; MAX];
-    let full_inside = x0 >= 2 && y0 >= 2 && x0 + w as isize + 3 <= reference.width as isize && y0 + h as isize + 3 <= reference.height as isize;
+    let full_inside = x0 >= 2
+        && y0 >= 2
+        && x0 + w as isize + 3 <= reference.width as isize
+        && y0 + h as isize + 3 <= reference.height as isize;
     for r in 0..h + 5 {
         let yy = y0 + r as isize - 2;
         if full_inside {
@@ -288,7 +317,9 @@ pub fn predict_inter(
         }
         return;
     }
-    let tap6 = |f: usize| -> [i32; 6] { std::array::from_fn(|k| filters.get(f * 6 + k).copied().unwrap_or(0)) };
+    let tap6 = |f: usize| -> [i32; 6] {
+        std::array::from_fn(|k| filters.get(f * 6 + k).copied().unwrap_or(0))
+    };
     let (hf, vf) = (tap6(fx), tap6(fy));
     let round = |v: i32| ((v + 64) >> 7).clamp(0, 255);
     // horizontal pass over the h + 5 rows (an identity when fx is 0), then vertical
@@ -314,15 +345,21 @@ pub fn predict_inter(
     }
     for r in 0..h {
         let start = (by + r) * dst_stride + bx;
-        let Some(row) = dst.get_mut(start..start + w) else { continue };
+        let Some(row) = dst.get_mut(start..start + w) else {
+            continue;
+        };
         if fy == 0 {
             for (c, d) in row.iter_mut().enumerate() {
                 *d = tmp[r + 2][c] as u8;
             }
         } else {
             for (c, d) in row.iter_mut().enumerate() {
-                let v =
-                    tmp[r][c] * vf[0] + tmp[r + 1][c] * vf[1] + tmp[r + 2][c] * vf[2] + tmp[r + 3][c] * vf[3] + tmp[r + 4][c] * vf[4] + tmp[r + 5][c] * vf[5];
+                let v = tmp[r][c] * vf[0]
+                    + tmp[r + 1][c] * vf[1]
+                    + tmp[r + 2][c] * vf[2]
+                    + tmp[r + 3][c] * vf[3]
+                    + tmp[r + 4][c] * vf[4]
+                    + tmp[r + 5][c] * vf[5];
                 *d = round(v) as u8;
             }
         }

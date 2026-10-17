@@ -2,7 +2,7 @@ use crate::renderer::{RenderAdapterInfo, RenderDevice, RenderQueue};
 use tracy_client::{Client, GpuContext, GpuContextType};
 use wgpu::{
     Backend, BufferDescriptor, BufferUsages, CommandEncoderDescriptor, MapMode, PollType,
-    QuerySetDescriptor, QueryType, QUERY_SIZE,
+    QUERY_SIZE, QuerySetDescriptor, QueryType,
 };
 
 pub fn new_tracy_gpu_context(

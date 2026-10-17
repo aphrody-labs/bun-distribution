@@ -3,10 +3,10 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EditUsernameRequest {
-  pub display_name: String,
+    pub display_name: String,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EditUsernameResponse {
-  pub success: bool,
+    pub success: bool,
 }

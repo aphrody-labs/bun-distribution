@@ -32,7 +32,9 @@ pub fn exif_color_space(exif: &[u8]) -> Option<u16> {
         return None;
     }
     let ptr = find(order, b, first, count, entry_bytes, TAG_EXIF_IFD)?;
-    if !matches!(order.u16(b, ptr.checked_add(2)?)?, TYPE_LONG | TYPE_IFD) || order.u32(b, ptr.checked_add(4)?)? != 1 {
+    if !matches!(order.u16(b, ptr.checked_add(2)?)?, TYPE_LONG | TYPE_IFD)
+        || order.u32(b, ptr.checked_add(4)?)? != 1
+    {
         return None;
     }
     let ifd = usize::try_from(order.u32(b, ptr.checked_add(8)?)?).ok()?;
@@ -57,8 +59,17 @@ pub fn exif_color_space(exif: &[u8]) -> Option<u16> {
 }
 
 /// Offset of the first entry tagged `tag` in the IFD whose `count` entries start at `first`.
-fn find(order: Order, b: &[u8], first: usize, count: usize, entry_bytes: usize, tag: u16) -> Option<usize> {
-    (0..count).filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?)).find(|&e| order.u16(b, e) == Some(tag))
+fn find(
+    order: Order,
+    b: &[u8],
+    first: usize,
+    count: usize,
+    entry_bytes: usize,
+    tag: u16,
+) -> Option<usize> {
+    (0..count)
+        .filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?))
+        .find(|&e| order.u16(b, e) == Some(tag))
 }
 
 #[cfg(test)]
@@ -68,9 +79,25 @@ mod tests {
     /// A little- or big-endian EXIF block: IFD0 holding only the Exif pointer, then an Exif IFD
     /// holding `entries` (tag, type, count, value).
     fn exif(big_endian: bool, entries: &[(u16, u16, u32, u32)]) -> Vec<u8> {
-        let u16b = |v: u16| if big_endian { v.to_be_bytes() } else { v.to_le_bytes() };
-        let u32b = |v: u32| if big_endian { v.to_be_bytes() } else { v.to_le_bytes() };
-        let mut b = if big_endian { b"MM\0\x2a".to_vec() } else { b"II\x2a\0".to_vec() };
+        let u16b = |v: u16| {
+            if big_endian {
+                v.to_be_bytes()
+            } else {
+                v.to_le_bytes()
+            }
+        };
+        let u32b = |v: u32| {
+            if big_endian {
+                v.to_be_bytes()
+            } else {
+                v.to_le_bytes()
+            }
+        };
+        let mut b = if big_endian {
+            b"MM\0\x2a".to_vec()
+        } else {
+            b"II\x2a\0".to_vec()
+        };
         b.extend(u32b(8));
         // IFD0: one entry, then the next-IFD pointer. The Exif IFD starts right after (8 + 2 + 12 + 4).
         b.extend(u16b(1));
@@ -99,22 +126,55 @@ mod tests {
     #[test]
     fn reads_the_color_space_in_either_byte_order() {
         for big in [false, true] {
-            let srgb = exif(big, &[(0x9000, 7, 4, 0x3032_3330), (TAG_COLOR_SPACE, TYPE_SHORT, 1, 1)]);
-            assert_eq!(exif_color_space(&srgb), Some(EXIF_COLOR_SPACE_SRGB), "big endian: {big}");
+            let srgb = exif(
+                big,
+                &[
+                    (0x9000, 7, 4, 0x3032_3330),
+                    (TAG_COLOR_SPACE, TYPE_SHORT, 1, 1),
+                ],
+            );
+            assert_eq!(
+                exif_color_space(&srgb),
+                Some(EXIF_COLOR_SPACE_SRGB),
+                "big endian: {big}"
+            );
             let mut prefixed = b"Exif\0\0".to_vec();
             prefixed.extend(&srgb);
             assert_eq!(exif_color_space(&prefixed), Some(1));
-            assert_eq!(exif_color_space(&exif(big, &[(TAG_COLOR_SPACE, TYPE_SHORT, 1, 0xFFFF)])), Some(0xFFFF));
-            assert_eq!(exif_color_space(&exif(big, &[(TAG_COLOR_SPACE, TYPE_LONG, 1, 1)])), Some(1), "LONG is accepted");
+            assert_eq!(
+                exif_color_space(&exif(big, &[(TAG_COLOR_SPACE, TYPE_SHORT, 1, 0xFFFF)])),
+                Some(0xFFFF)
+            );
+            assert_eq!(
+                exif_color_space(&exif(big, &[(TAG_COLOR_SPACE, TYPE_LONG, 1, 1)])),
+                Some(1),
+                "LONG is accepted"
+            );
         }
     }
 
     #[test]
     fn missing_or_malformed_reads_as_no_tag() {
-        assert_eq!(exif_color_space(&exif(false, &[(0x9000, 7, 4, 0)])), None, "no ColorSpace entry");
-        assert_eq!(exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, TYPE_SHORT, 2, 1)])), None, "count ≠ 1");
-        assert_eq!(exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, 2, 1, 1)])), None, "ASCII type");
-        assert_eq!(exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, TYPE_LONG, 1, 0x1_0000)])), None, "LONG over u16");
+        assert_eq!(
+            exif_color_space(&exif(false, &[(0x9000, 7, 4, 0)])),
+            None,
+            "no ColorSpace entry"
+        );
+        assert_eq!(
+            exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, TYPE_SHORT, 2, 1)])),
+            None,
+            "count ≠ 1"
+        );
+        assert_eq!(
+            exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, 2, 1, 1)])),
+            None,
+            "ASCII type"
+        );
+        assert_eq!(
+            exif_color_space(&exif(false, &[(TAG_COLOR_SPACE, TYPE_LONG, 1, 0x1_0000)])),
+            None,
+            "LONG over u16"
+        );
         let good = exif(false, &[(TAG_COLOR_SPACE, TYPE_SHORT, 1, 1)]);
         // Every truncation is rejected without panicking.
         for len in 0..good.len() - 4 {

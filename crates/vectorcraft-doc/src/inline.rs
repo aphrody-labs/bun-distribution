@@ -14,7 +14,11 @@ pub const SYMBOL_HALF: f64 = 10.0;
 
 /// Usable art bounds: finite, non-degenerate.
 fn usable(r: Option<Rect>) -> Option<Rect> {
-    r.filter(|r| [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()) && r.width() >= 0.0 && r.height() > 1e-9)
+    r.filter(|r| {
+        [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite())
+            && r.width() >= 0.0
+            && r.height() > 1e-9
+    })
 }
 
 impl Document {
@@ -22,7 +26,11 @@ impl Document {
     /// art in a 20 × 20 square around the origin and their size as drawn in the document's
     /// `symbolSizes` (an instance is placed with that scale); other symbols are as they are.
     pub fn symbol_natural_xf(&self, name: &str) -> Affine {
-        let size = self.unknown.get(SYMBOL_SIZES).and_then(|m| m.get(name)).and_then(|v| Some((v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)));
+        let size = self
+            .unknown
+            .get(SYMBOL_SIZES)
+            .and_then(|m| m.get(name))
+            .and_then(|v| Some((v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)));
         match size {
             Some((w, h)) if w.is_finite() && h.is_finite() && w > 0.0 && h > 0.0 => {
                 Affine::scale_non_uniform(w / (2.0 * SYMBOL_HALF), h / (2.0 * SYMBOL_HALF))
@@ -41,7 +49,10 @@ impl Document {
 
     /// Does `t` have inline graphics whose resolved bounds differ from the document's symbols?
     fn inline_stale(&self, t: &TextObject) -> bool {
-        t.runs.iter().filter_map(|r| r.inline.as_ref()).any(|a| a.bounds != self.symbol_art_bounds(&a.symbol))
+        t.runs
+            .iter()
+            .filter_map(|r| r.inline.as_ref())
+            .any(|a| a.bounds != self.symbol_art_bounds(&a.symbol))
     }
 
     /// `t` with its inline graphics' art bounds resolved from this document's symbols (borrowed

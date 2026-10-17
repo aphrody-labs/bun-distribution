@@ -146,7 +146,11 @@ fn coverage(b: &[u8], at: usize) -> Vec<u32> {
             let n = u16_at(b, at + 2).unwrap_or(0) as usize;
             for i in 0..n {
                 let r = at + 4 + i * 6;
-                let (Some(s), Some(e), Some(idx)) = (u16_at(b, r), u16_at(b, r + 2), u16_at(b, r + 4)) else { break };
+                let (Some(s), Some(e), Some(idx)) =
+                    (u16_at(b, r), u16_at(b, r + 2), u16_at(b, r + 4))
+                else {
+                    break;
+                };
                 if e < s {
                     continue;
                 }
@@ -185,26 +189,42 @@ fn value_map(b: &[u8], at: usize) -> HashMap<u32, f32> {
     m
 }
 
-fn constructions(b: &[u8], variants: usize, cov_at: usize, count: usize, offsets_at: usize) -> HashMap<u32, Construction> {
+fn constructions(
+    b: &[u8],
+    variants: usize,
+    cov_at: usize,
+    count: usize,
+    offsets_at: usize,
+) -> HashMap<u32, Construction> {
     let mut m = HashMap::new();
-    let Some(cov) = sub(b, variants, cov_at) else { return m };
+    let Some(cov) = sub(b, variants, cov_at) else {
+        return m;
+    };
     let glyphs = coverage(b, cov);
     for (i, g) in glyphs.iter().enumerate().take(count) {
-        let Some(c) = sub(b, variants, offsets_at + i * 2) else { continue };
+        let Some(c) = sub(b, variants, offsets_at + i * 2) else {
+            continue;
+        };
         let mut con = Construction::default();
         let nv = u16_at(b, c + 2).unwrap_or(0) as usize;
         for k in 0..nv.min(256) {
             let r = c + 4 + k * 4;
-            let (Some(vg), Some(adv)) = (u16_at(b, r), u16_at(b, r + 2)) else { break };
+            let (Some(vg), Some(adv)) = (u16_at(b, r), u16_at(b, r + 2)) else {
+                break;
+            };
             con.variants.push((vg as u32, adv as f32));
         }
         if let Some(a) = sub(b, c, c) {
             let np = u16_at(b, a + 4).unwrap_or(0) as usize;
             for k in 0..np.min(64) {
                 let r = a + 6 + k * 10;
-                let (Some(pg), Some(s), Some(e), Some(full), Some(fl)) =
-                    (u16_at(b, r), u16_at(b, r + 2), u16_at(b, r + 4), u16_at(b, r + 6), u16_at(b, r + 8))
-                else {
+                let (Some(pg), Some(s), Some(e), Some(full), Some(fl)) = (
+                    u16_at(b, r),
+                    u16_at(b, r + 2),
+                    u16_at(b, r + 4),
+                    u16_at(b, r + 6),
+                    u16_at(b, r + 8),
+                ) else {
                     break;
                 };
                 con.parts.push(GlyphPart {
@@ -260,15 +280,25 @@ pub fn parse(b: &[u8]) -> Option<MathTable> {
 pub fn table(face: &FontFace) -> Option<Arc<MathTable>> {
     static CACHE: OnceLock<Mutex<HashMap<u32, Option<Arc<MathTable>>>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    if let Some(t) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&face.id()) {
+    if let Some(t) = cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&face.id())
+    {
         return t.clone();
     }
     let t = face
         .skrifa()
-        .and_then(|f| f.table_data(skrifa::raw::types::Tag::new(b"MATH")).map(|d| d.as_bytes().to_vec()))
+        .and_then(|f| {
+            f.table_data(skrifa::raw::types::Tag::new(b"MATH"))
+                .map(|d| d.as_bytes().to_vec())
+        })
         .and_then(|bytes| parse(&bytes))
         .map(Arc::new);
-    cache.lock().unwrap_or_else(|e| e.into_inner()).insert(face.id(), t.clone());
+    cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(face.id(), t.clone());
     t
 }
 
@@ -302,7 +332,8 @@ pub const MATH_SUBSTITUTES: &[&str] = &[
 /// The face to set math in: `family` when installed and it has a `MATH` table, else the first
 /// installed substitute that has one, else `family` (or its text substitute) without one.
 pub fn resolve_math(family: &str) -> (FaceRef, Option<Arc<MathTable>>) {
-    static CACHE: OnceLock<Mutex<HashMap<String, (FaceRef, Option<Arc<MathTable>>)>>> = OnceLock::new();
+    static CACHE: OnceLock<Mutex<HashMap<String, (FaceRef, Option<Arc<MathTable>>)>>> =
+        OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
     if let Some(v) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(family) {
         return v.clone();
@@ -322,7 +353,10 @@ pub fn resolve_math(family: &str) -> (FaceRef, Option<Arc<MathTable>>) {
         }
     }
     let v = found.unwrap_or_else(|| (crate::word::resolve(family, false, false).face, None));
-    cache.lock().unwrap_or_else(|e| e.into_inner()).insert(family.to_string(), v.clone());
+    cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(family.to_string(), v.clone());
     v
 }
 
@@ -338,7 +372,9 @@ mod tests {
         b.resize(40, 0xff);
         let _ = parse(&b);
         for n in 0..64u8 {
-            let b: Vec<u8> = (0..300u32).map(|i| (i as u8).wrapping_mul(n).wrapping_add(7)).collect();
+            let b: Vec<u8> = (0..300u32)
+                .map(|i| (i as u8).wrapping_mul(n).wrapping_add(7))
+                .collect();
             let mut b = b;
             b[0] = 0;
             b[1] = 1;
@@ -356,7 +392,11 @@ mod tests {
             assert!(t.get(C::AxisHeight) > 0.0, "{}", face.family);
             assert!(t.get(C::FractionRuleThickness) > 0.0);
             let paren = face.glyph_for('(');
-            assert!(t.vert.get(&paren).is_some_and(|c| !c.variants.is_empty()), "paren variants in {}", face.family);
+            assert!(
+                t.vert.get(&paren).is_some_and(|c| !c.variants.is_empty()),
+                "paren variants in {}",
+                face.family
+            );
         }
     }
 }

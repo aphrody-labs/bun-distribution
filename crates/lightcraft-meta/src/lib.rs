@@ -210,7 +210,20 @@ impl Metadata {
     /// Replace the user-editable fields (rating, label, title, caption, artist, copyright, keywords, GPS) with
     /// `other`'s where `other` has them — the XMP-over-EXIF precedence rule.
     pub fn overlay_user_fields(&mut self, other: &Metadata) {
-        overlay!(self, other, rating, label, title, caption, artist, copyright, copyright_marked, usage_terms, copyright_url, gps);
+        overlay!(
+            self,
+            other,
+            rating,
+            label,
+            title,
+            caption,
+            artist,
+            copyright,
+            copyright_marked,
+            usage_terms,
+            copyright_url,
+            gps
+        );
         if !other.keywords.is_empty() {
             self.keywords = other.keywords.clone();
         }
@@ -308,7 +321,10 @@ mod tests {
 
     #[test]
     fn exposure_display() {
-        let mut m = Metadata { exposure_time: Some(1.0 / 250.0), ..Default::default() };
+        let mut m = Metadata {
+            exposure_time: Some(1.0 / 250.0),
+            ..Default::default()
+        };
         assert_eq!(m.exposure_display().as_deref(), Some("1/250"));
         m.exposure_time = Some(0.5);
         assert_eq!(m.exposure_display().as_deref(), Some("0.5"));
@@ -320,8 +336,18 @@ mod tests {
 
     #[test]
     fn merge_rules() {
-        let mut a = Metadata { make: Some("A".into()), rating: Some(1), ..Default::default() };
-        let b = Metadata { make: Some("B".into()), model: Some("M".into()), rating: Some(4), keywords: vec!["k".into()], ..Default::default() };
+        let mut a = Metadata {
+            make: Some("A".into()),
+            rating: Some(1),
+            ..Default::default()
+        };
+        let b = Metadata {
+            make: Some("B".into()),
+            model: Some("M".into()),
+            rating: Some(4),
+            keywords: vec!["k".into()],
+            ..Default::default()
+        };
         a.fill_missing(&b);
         assert_eq!(a.make.as_deref(), Some("A"));
         assert_eq!(a.model.as_deref(), Some("M"));
@@ -334,7 +360,11 @@ mod tests {
 
     #[test]
     fn names() {
-        let m = Metadata { metering_mode: Some(5), exposure_program: Some(3), ..Default::default() };
+        let m = Metadata {
+            metering_mode: Some(5),
+            exposure_program: Some(3),
+            ..Default::default()
+        };
         assert_eq!(m.metering_name(), Some("Pattern"));
         assert_eq!(m.exposure_program_name(), Some("Aperture-priority AE"));
     }

@@ -23,10 +23,19 @@ fn zlib_header(data: &[u8]) -> Option<(u8, u8)> {
 
 pub(crate) fn decode(data: &[u8], max: usize) -> Step {
     match zlib_header(data) {
-        Some((_, flg)) if flg & 0x20 != 0 => Err(Failure::corrupt(NAME, "zlib preset dictionary is not allowed in PDF", Vec::new())),
+        Some((_, flg)) if flg & 0x20 != 0 => Err(Failure::corrupt(
+            NAME,
+            "zlib preset dictionary is not allowed in PDF",
+            Vec::new(),
+        )),
         Some(_) => match inflate_raw(&data[2..], max) {
             // A header that only looked valid: retry the whole input as raw deflate.
-            Err(f) if f.partial.is_empty() && matches!(f.error, crate::FilterError::Corrupt { .. }) => inflate_raw(data, max).map_err(|_| f),
+            Err(f)
+                if f.partial.is_empty()
+                    && matches!(f.error, crate::FilterError::Corrupt { .. }) =>
+            {
+                inflate_raw(data, max).map_err(|_| f)
+            }
             r => r,
         },
         None => inflate_raw(data, max),
@@ -43,12 +52,20 @@ fn inflate_raw(input: &[u8], max: usize) -> Step {
             if out.len() >= cap {
                 return Err(Failure::limit(max));
             }
-            let grow = out.capacity().max(input.len().saturating_mul(2)).max(4096).min(cap - out.len());
+            let grow = out
+                .capacity()
+                .max(input.len().saturating_mul(2))
+                .max(4096)
+                .min(cap - out.len());
             out.reserve_exact(grow);
         }
         let consumed = d.total_in() as usize;
         let produced = out.len();
-        let res = d.decompress_vec(&input[consumed.min(input.len())..], &mut out, FlushDecompress::None);
+        let res = d.decompress_vec(
+            &input[consumed.min(input.len())..],
+            &mut out,
+            FlushDecompress::None,
+        );
         if out.len() > max {
             return Err(Failure::limit(max));
         }
@@ -59,7 +76,11 @@ fn inflate_raw(input: &[u8], max: usize) -> Step {
                 let progressed = d.total_in() as usize != consumed || out.len() != produced;
                 let room_left = out.len() < out.capacity();
                 if room_left && (d.total_in() as usize >= input.len() || !progressed) {
-                    return Err(Failure::corrupt(NAME, "unexpected end of deflate data", out));
+                    return Err(Failure::corrupt(
+                        NAME,
+                        "unexpected end of deflate data",
+                        out,
+                    ));
                 }
             }
         }
@@ -70,7 +91,10 @@ fn inflate_raw(input: &[u8], max: usize) -> Step {
 // The documented never-crash exception: writing into a `Vec` cannot fail.
 #[allow(clippy::expect_used)]
 pub(crate) fn encode(data: &[u8]) -> Vec<u8> {
-    let mut e = flate2::write::ZlibEncoder::new(Vec::with_capacity(data.len() / 2 + 64), Compression::new(6));
+    let mut e = flate2::write::ZlibEncoder::new(
+        Vec::with_capacity(data.len() / 2 + 64),
+        Compression::new(6),
+    );
     e.write_all(data).expect("in-memory write");
     e.finish().expect("in-memory write")
 }
@@ -87,14 +111,20 @@ mod tests {
     #[test]
     fn known_zlib_vector() {
         // zlib("a"): header 78 9C, fixed-Huffman block, Adler-32 0x00620062.
-        assert_eq!(dec(&[0x78, 0x9c, 0x4b, 0x04, 0x00, 0x00, 0x62, 0x00, 0x62]).unwrap(), b"a");
+        assert_eq!(
+            dec(&[0x78, 0x9c, 0x4b, 0x04, 0x00, 0x00, 0x62, 0x00, 0x62]).unwrap(),
+            b"a"
+        );
     }
 
     #[test]
     fn hand_built_stored_block() {
         // RFC 1951 §3.2.4 stored block: BFINAL=1 BTYPE=00, LEN=5, NLEN=!5, "hello",
         // then Adler-32("hello") = 0x062C0215.
-        let v = [0x78, 0x01, 0x01, 0x05, 0x00, 0xfa, 0xff, b'h', b'e', b'l', b'l', b'o', 0x06, 0x2c, 0x02, 0x15];
+        let v = [
+            0x78, 0x01, 0x01, 0x05, 0x00, 0xfa, 0xff, b'h', b'e', b'l', b'l', b'o', 0x06, 0x2c,
+            0x02, 0x15,
+        ];
         assert_eq!(dec(&v).unwrap(), b"hello");
         // Missing Adler-32 is tolerated.
         assert_eq!(dec(&v[..12]).unwrap(), b"hello");
@@ -146,19 +176,33 @@ mod tests {
             Ok(_) => panic!("truncated stream decoded"),
         }
         // BTYPE = 11 is reserved (RFC 1951 §3.2.3).
-        assert!(matches!(dec(&[0x78, 0x9c, 0x07, 0, 0, 0]), Err(FilterError::Corrupt { .. })));
+        assert!(matches!(
+            dec(&[0x78, 0x9c, 0x07, 0, 0, 0]),
+            Err(FilterError::Corrupt { .. })
+        ));
         // Preset dictionary.
-        assert!(matches!(dec(&[0x78, 0x20, 0, 0, 0, 0]), Err(FilterError::Corrupt { .. })));
+        assert!(matches!(
+            dec(&[0x78, 0x20, 0, 0, 0, 0]),
+            Err(FilterError::Corrupt { .. })
+        ));
     }
 
     #[test]
     fn bomb_is_bounded() {
         let z = encode(&vec![0u8; 16 << 20]);
         assert!(z.len() < 32 * 1024);
-        assert!(matches!(dec_limit(&z, 1 << 20), Err(FilterError::LimitExceeded(n)) if n == 1 << 20));
+        assert!(
+            matches!(dec_limit(&z, 1 << 20), Err(FilterError::LimitExceeded(n)) if n == 1 << 20)
+        );
         assert_eq!(dec_limit(&z, 16 << 20).unwrap().len(), 16 << 20);
-        assert!(matches!(dec_limit(&z, (16 << 20) - 1), Err(FilterError::LimitExceeded(_))));
-        assert!(matches!(dec_limit(&z, 0), Err(FilterError::LimitExceeded(0))));
+        assert!(matches!(
+            dec_limit(&z, (16 << 20) - 1),
+            Err(FilterError::LimitExceeded(_))
+        ));
+        assert!(matches!(
+            dec_limit(&z, 0),
+            Err(FilterError::LimitExceeded(0))
+        ));
     }
 
     fn dec_limit(d: &[u8], max: usize) -> Result<Vec<u8>, FilterError> {

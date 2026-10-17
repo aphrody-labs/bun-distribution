@@ -20,8 +20,14 @@ pub fn sync(doc: &mut Document) {
 fn sync_layers(layers: &mut [Layer], cur: usize) {
     for l in layers.iter_mut() {
         let frame = l.video.as_ref().and_then(|v| {
-            let visible = if v.show_altered { &v.frames } else { v.original_frames.as_ref().unwrap_or(&v.frames) };
-            visible.get(cur.min(visible.len().saturating_sub(1))).cloned()
+            let visible = if v.show_altered {
+                &v.frames
+            } else {
+                v.original_frames.as_ref().unwrap_or(&v.frames)
+            };
+            visible
+                .get(cur.min(visible.len().saturating_sub(1)))
+                .cloned()
         });
         if let Some(f) = frame
             && let LayerContent::Raster(s) = &mut l.content
@@ -84,13 +90,20 @@ fn grow_duration(t: &mut Timeline, frames: usize) {
 }
 
 /// Edit the active video layer's [`VideoData`] at the playhead, then re-sync the displayed frame.
-fn edit_video(s: &mut Session, label: &str, f: impl FnOnce(&mut VideoData, usize) -> Result<()>) -> Result<Value> {
+fn edit_video(
+    s: &mut Session,
+    label: &str,
+    f: impl FnOnce(&mut VideoData, usize) -> Result<()>,
+) -> Result<Value> {
     let count = s.edit(label, |doc, active| {
         store(doc);
         let cur = doc.timeline.as_ref().map_or(0, |t| t.current);
         let id = active.ok_or(EngineError::NoDocument)?;
         let l = doc.layer_mut(id).ok_or(EngineError::NoLayer(id))?;
-        let v = l.video.as_mut().ok_or_else(|| EngineError::BadParams { cmd: label.into(), msg: "the active layer is not a video layer".into() })?;
+        let v = l.video.as_mut().ok_or_else(|| EngineError::BadParams {
+            cmd: label.into(),
+            msg: "the active layer is not a video layer".into(),
+        })?;
         f(v, cur)?;
         let n = v.frames.len();
         if let Some(t) = &mut doc.timeline {
@@ -128,7 +141,11 @@ fn new_blank(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn insert_blank(s: &mut Session, _p: &Value) -> Result<Value> {
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
     edit_video(s, "Insert Blank Frame", move |v, cur| {
         let at = (cur + 1).min(v.frames.len());
         v.frames.insert(at, blank_of(fmt));
@@ -144,7 +161,10 @@ fn duplicate_frame(s: &mut Session, _p: &Value) -> Result<Value> {
     edit_video(s, "Duplicate Frame", |v, cur| {
         if let Some(f) = v.frames.get(cur).cloned() {
             if let Some(original) = &mut v.original_frames {
-                let orig = original.get(cur).cloned().unwrap_or_else(|| blank_of(f.format()));
+                let orig = original
+                    .get(cur)
+                    .cloned()
+                    .unwrap_or_else(|| blank_of(f.format()));
                 original.insert((cur + 1).min(original.len()), orig);
             }
             v.frames.insert(cur + 1, f);
@@ -168,9 +188,17 @@ fn delete_frame(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn restore_frame(s: &mut Session, _p: &Value) -> Result<Value> {
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
     edit_video(s, "Restore Frame", move |v, cur| {
-        let original = v.original_frames.as_ref().and_then(|frames| frames.get(cur)).cloned();
+        let original = v
+            .original_frames
+            .as_ref()
+            .and_then(|frames| frames.get(cur))
+            .cloned();
         if let Some(f) = v.frames.get_mut(cur) {
             *f = original.unwrap_or_else(|| blank_of(fmt));
         }
@@ -179,10 +207,19 @@ fn restore_frame(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn restore_all(s: &mut Session, _p: &Value) -> Result<Value> {
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
     edit_video(s, "Restore All Frames", move |v, _| {
         for (i, f) in v.frames.iter_mut().enumerate() {
-            *f = v.original_frames.as_ref().and_then(|frames| frames.get(i)).cloned().unwrap_or_else(|| blank_of(fmt));
+            *f = v
+                .original_frames
+                .as_ref()
+                .and_then(|frames| frames.get(i))
+                .cloned()
+                .unwrap_or_else(|| blank_of(fmt));
         }
         Ok(())
     })
@@ -230,10 +267,12 @@ fn fps_from_delays(delays: &[u32]) -> Option<f32> {
             None => counts.push((d, 1)),
         }
     }
-    let best = counts.iter().fold(None::<(u32, usize)>, |best, &(d, n)| match best {
-        Some((_, bn)) if bn >= n => best,
-        _ => Some((d, n)),
-    });
+    let best = counts
+        .iter()
+        .fold(None::<(u32, usize)>, |best, &(d, n)| match best {
+            Some((_, bn)) if bn >= n => best,
+            _ => Some((d, n)),
+        });
     best.map(|(d, _)| 1000.0 / d as f32)
 }
 
@@ -244,8 +283,24 @@ fn load_frames(path: &str, fmt: photocraft_color::PixelFormat) -> Result<Footage
     let p = std::path::Path::new(path);
     let is_img = |f: &std::path::Path| {
         matches!(
-            f.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref(),
-            Some("png" | "jpg" | "jpeg" | "tif" | "tiff" | "webp" | "bmp" | "gif" | "tga" | "exr" | "pcraft" | "psd")
+            f.extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.to_ascii_lowercase())
+                .as_deref(),
+            Some(
+                "png"
+                    | "jpg"
+                    | "jpeg"
+                    | "tif"
+                    | "tiff"
+                    | "webp"
+                    | "bmp"
+                    | "gif"
+                    | "tga"
+                    | "exr"
+                    | "pcraft"
+                    | "psd"
+            )
         )
     };
     let files: Vec<std::path::PathBuf> = if p.is_dir() {
@@ -265,7 +320,8 @@ fn load_frames(path: &str, fmt: photocraft_color::PixelFormat) -> Result<Footage
     let mut frames = Vec::with_capacity(files.len());
     let mut delays = Vec::new();
     for f in &files {
-        let bytes = std::fs::read(f).map_err(|e| EngineError::Other(format!("read `{}`: {e}", f.display())))?;
+        let bytes = std::fs::read(f)
+            .map_err(|e| EngineError::Other(format!("read `{}`: {e}", f.display())))?;
         let name = f.to_string_lossy();
         if photocraft_codecs::detect(&bytes) == Some(photocraft_codecs::Format::Gif) {
             photocraft_io::import_gif_frames(&name, &bytes, &mut |doc, delay_ms| {
@@ -284,7 +340,11 @@ fn load_frames(path: &str, fmt: photocraft_color::PixelFormat) -> Result<Footage
         frames.push(crate::file_cmds::flattened(&doc, fmt));
     }
     // Only a lone GIF says how fast it plays; a sequence mixing files has no single rate.
-    let fps = if files.len() == 1 { fps_from_delays(&delays) } else { None };
+    let fps = if files.len() == 1 {
+        fps_from_delays(&delays)
+    } else {
+        None
+    };
     Ok(Footage { frames, fps })
 }
 
@@ -292,12 +352,27 @@ fn new_from_file(s: &mut Session, p: &Value) -> Result<Value> {
     let path = p
         .get("path")
         .and_then(Value::as_str)
-        .ok_or_else(|| EngineError::BadParams { cmd: "layer.videoLayers.newVideoLayerFromFile".into(), msg: "need `path`".into() })?
+        .ok_or_else(|| EngineError::BadParams {
+            cmd: "layer.videoLayers.newVideoLayerFromFile".into(),
+            msg: "need `path`".into(),
+        })?
         .to_string();
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
-    let Footage { frames, fps: footage_fps } = load_frames(&path, fmt)?;
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
+    let Footage {
+        frames,
+        fps: footage_fps,
+    } = load_frames(&path, fmt)?;
     // An explicit `fps` wins, then the rate the footage implies, then 30.
-    let fps = p.get("fps").and_then(Value::as_f64).map(|f| f as f32).or(footage_fps).unwrap_or(30.0);
+    let fps = p
+        .get("fps")
+        .and_then(Value::as_f64)
+        .map(|f| f as f32)
+        .or(footage_fps)
+        .unwrap_or(30.0);
     let n = frames.len();
     let id = s.edit("New Video Layer from File", |doc, active| {
         store(doc);
@@ -306,7 +381,12 @@ fn new_from_file(s: &mut Session, p: &Value) -> Result<Value> {
         } else if let Some(t) = &mut doc.timeline {
             grow_duration(t, n);
         }
-        let name = doc.next_layer_name(std::path::Path::new(&path).file_stem().and_then(|s| s.to_str()).unwrap_or("Video"));
+        let name = doc.next_layer_name(
+            std::path::Path::new(&path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("Video"),
+        );
         let mut l = Layer::raster(name, fmt);
         let mut v = VideoData::new(frames, fps);
         v.original_frames = Some(v.frames.clone());
@@ -324,9 +404,16 @@ fn replace_footage(s: &mut Session, p: &Value) -> Result<Value> {
     let path = p
         .get("path")
         .and_then(Value::as_str)
-        .ok_or_else(|| EngineError::BadParams { cmd: "layer.videoLayers.replaceFootage".into(), msg: "need `path`".into() })?
+        .ok_or_else(|| EngineError::BadParams {
+            cmd: "layer.videoLayers.replaceFootage".into(),
+            msg: "need `path`".into(),
+        })?
         .to_string();
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
     let frames = load_frames(&path, fmt)?.frames;
     edit_video(s, "Replace Footage", move |v, _| {
         v.original_frames = Some(frames.clone());
@@ -355,11 +442,17 @@ fn reload_frame(s: &mut Session, _p: &Value) -> Result<Value> {
             .doc
             .layer(id)
             .and_then(|l| l.video.as_ref())
-            .ok_or_else(|| EngineError::BadParams { cmd: "layer.videoLayers.reloadFrame".into(), msg: "not a video layer".into() })?;
+            .ok_or_else(|| EngineError::BadParams {
+                cmd: "layer.videoLayers.reloadFrame".into(),
+                msg: "not a video layer".into(),
+            })?;
         (v.source.clone(), st.doc.pixel_format())
     };
     let photocraft_doc::VideoSource::File { path } = src else {
-        return Err(EngineError::BadParams { cmd: "layer.videoLayers.reloadFrame".into(), msg: "this layer has no file source to reload".into() });
+        return Err(EngineError::BadParams {
+            cmd: "layer.videoLayers.reloadFrame".into(),
+            msg: "this layer has no file source to reload".into(),
+        });
     };
     let frames = load_frames(&path, fmt)?.frames;
     edit_video(s, "Reload Frame", move |v, _| {
@@ -374,9 +467,16 @@ fn frames_to_layers(s: &mut Session, p: &Value) -> Result<Value> {
     let path = p
         .get("path")
         .and_then(Value::as_str)
-        .ok_or_else(|| EngineError::BadParams { cmd: "file.import.videoFramesToLayers".into(), msg: "need `path`".into() })?
+        .ok_or_else(|| EngineError::BadParams {
+            cmd: "file.import.videoFramesToLayers".into(),
+            msg: "need `path`".into(),
+        })?
         .to_string();
-    let fmt = s.active().ok_or(EngineError::NoDocument)?.doc.pixel_format();
+    let fmt = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .pixel_format();
     let frames = load_frames(&path, fmt)?.frames;
     let n = frames.len();
     s.edit("Video Frames to Layers", |doc, active| {
@@ -397,9 +497,20 @@ fn frames_to_layers(s: &mut Session, p: &Value) -> Result<Value> {
 /// Export › Render Video: composite the whole document at each timeline frame and write an image
 /// sequence (`{dir}/{stem}_NNNN.{format}`). Clean-room; no proprietary codec.
 fn render_video(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = p.get("dir").and_then(Value::as_str).ok_or_else(|| EngineError::BadParams { cmd: "file.export.renderVideo".into(), msg: "need `dir`".into() })?;
+    let dir = p
+        .get("dir")
+        .and_then(Value::as_str)
+        .ok_or_else(|| EngineError::BadParams {
+            cmd: "file.export.renderVideo".into(),
+            msg: "need `dir`".into(),
+        })?;
     std::fs::create_dir_all(dir).map_err(|e| EngineError::Other(format!("mkdir `{dir}`: {e}")))?;
-    render_video_with(s, p, |name, bytes| crate::file_cmds::write_file(&format!("{dir}/{name}"), bytes), |_, _| true)
+    render_video_with(
+        s,
+        p,
+        |name, bytes| crate::file_cmds::write_file(&format!("{dir}/{name}"), bytes),
+        |_, _| true,
+    )
 }
 
 /// Render through a caller-owned writer. The writer receives one filename, never an ambient
@@ -417,7 +528,11 @@ pub fn render_video_with(
     store(&mut base);
     let frames = base.timeline.as_ref().map_or(1, |t| t.duration).max(1);
     let fps = base.timeline.as_ref().map_or(30.0, |t| t.fps).max(1.0);
-    let stem = base.name.rsplit_once('.').map_or(base.name.as_str(), |(a, _)| a).to_string();
+    let stem = base
+        .name
+        .rsplit_once('.')
+        .map_or(base.name.as_str(), |(a, _)| a)
+        .to_string();
     let fmt = base.pixel_format();
     let bounds = base.bounds();
     let (w, h) = (bounds.width() as usize, bounds.height() as usize);
@@ -446,7 +561,8 @@ pub fn render_video_with(
                 return Err(cancelled());
             }
         }
-        let gif = photocraft_codecs::web::encode_gif_animated(w as u32, h as u32, &gframes, true).map_err(|e| EngineError::Other(e.to_string()))?;
+        let gif = photocraft_codecs::web::encode_gif_animated(w as u32, h as u32, &gframes, true)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
         let name = format!("{stem}.gif");
         write(&name, &gif)?;
         if !progress(frames, frames) {
@@ -466,7 +582,9 @@ pub fn render_video_with(
         }
         sync(&mut doc);
         let path = format!("{stem}_{f:04}.{format}");
-        let bytes = photocraft_io::export(&doc, format, &opts).map(|r| r.bytes).map_err(|e| EngineError::Other(format!("render frame {f}: {e}")))?;
+        let bytes = photocraft_io::export(&doc, format, &opts)
+            .map(|r| r.bytes)
+            .map_err(|e| EngineError::Other(format!("render frame {f}: {e}")))?;
         write(&path, &bytes)?;
         files.push(path);
         if !progress(f + 1, frames) {
@@ -479,46 +597,164 @@ pub fn render_video_with(
 /// One animated GIF frame from straight RGBA pixels, as Save for Web's GIF does (#3061): pixels
 /// under 50 % opacity get the frame's transparent index, the rest are drawn opaque, and the
 /// palette is built from the visible pixels with one entry kept for transparency.
-fn gif_frame(mut px: Vec<[f32; 4]>, w: usize, delay_cs: u16) -> Result<photocraft_codecs::web::GifFrame> {
+fn gif_frame(
+    mut px: Vec<[f32; 4]>,
+    w: usize,
+    delay_cs: u16,
+) -> Result<photocraft_codecs::web::GifFrame> {
     use photocraft_algo::quantize::{self, Dither, Forced, PaletteKind};
     let transparent = px.iter().any(|p| p[3] < 0.5);
-    let visible: Vec<[f32; 4]> = px.iter().filter(|p| p[3] >= 0.5).map(|p| [p[0], p[1], p[2], 1.0]).collect();
+    let visible: Vec<[f32; 4]> = px
+        .iter()
+        .filter(|p| p[3] >= 0.5)
+        .map(|p| [p[0], p[1], p[2], 1.0])
+        .collect();
     // A fully transparent frame still needs a palette.
     let src = if visible.is_empty() { &px } else { &visible };
-    let mut pal = quantize::build_palette(src, PaletteKind::Adaptive, if transparent { 255 } else { 256 }, Forced::None).map_err(EngineError::Other)?;
+    let mut pal = quantize::build_palette(
+        src,
+        PaletteKind::Adaptive,
+        if transparent { 255 } else { 256 },
+        Forced::None,
+    )
+    .map_err(EngineError::Other)?;
     let t = transparent.then(|| {
         pal.truncate(255);
         pal.push(pal.first().copied().unwrap_or([0, 0, 0]));
         pal.len() - 1
     });
     let indices = quantize::quantize(&mut px, w, &pal, Dither::None, 1.0, t);
-    Ok(photocraft_codecs::web::GifFrame { indices, palette: pal, transparent: t.map(|i| i as u8), delay_cs })
+    Ok(photocraft_codecs::web::GifFrame {
+        indices,
+        palette: pal,
+        transparent: t.map(|i| i as u8),
+        delay_cs,
+    })
 }
 
 macro_rules! spec {
     ($id:expr, $label:expr, $menu:expr, $en:expr, $run:expr) => {
-        CommandSpec { id: $id, label: $label, menu: $menu, shortcut: None, params: "{} → {}", enabled: $en, journal: true, run: $run }
+        CommandSpec {
+            id: $id,
+            label: $label,
+            menu: $menu,
+            shortcut: None,
+            params: "{} → {}",
+            enabled: $en,
+            journal: true,
+            run: $run,
+        }
     };
 }
 
 pub fn specs() -> Vec<CommandSpec> {
     let vl = &["Layer", "Video Layers"] as &[&str];
     vec![
-        spec!("layer.videoLayers.newBlankVideoLayer", "New Blank Video Layer", vl, has_doc, |s, p| new_blank(s, p)),
-        spec!("layer.videoLayers.insertBlankFrame", "Insert Blank Frame", vl, active_video, |s, p| insert_blank(s, p)),
-        spec!("layer.videoLayers.duplicateFrame", "Duplicate Frame", vl, active_video, |s, p| duplicate_frame(s, p)),
-        spec!("layer.videoLayers.deleteFrame", "Delete Frame", vl, active_video, |s, p| delete_frame(s, p)),
-        spec!("layer.videoLayers.restoreFrame", "Restore Frame", vl, active_video, |s, p| restore_frame(s, p)),
-        spec!("layer.videoLayers.restoreAllFrames", "Restore All Frames", vl, active_video, |s, p| restore_all(s, p)),
-        spec!("layer.videoLayers.showAlteredVideo", "Show Altered Video", vl, active_video, |s, p| show_altered(s, p)),
-        spec!("layer.videoLayers.rasterize", "Rasterize", vl, active_video, |s, p| rasterize(s, p)),
-        spec!("layer.rasterize.video", "Video", &["Layer", "Rasterize"], active_video, |s, p| rasterize(s, p)),
-        spec!("layer.videoLayers.newVideoLayerFromFile", "New Video Layer from File…", vl, has_doc, |s, p| new_from_file(s, p)),
-        spec!("layer.videoLayers.replaceFootage", "Replace Footage…", vl, active_video, |s, p| replace_footage(s, p)),
-        spec!("layer.videoLayers.interpretFootage", "Interpret Footage…", vl, active_video, |s, p| interpret_footage(s, p)),
-        spec!("layer.videoLayers.reloadFrame", "Reload Frame", vl, active_video, |s, p| reload_frame(s, p)),
-        spec!("file.import.videoFramesToLayers", "Video Frames to Layers…", &["File", "Import"], has_doc, |s, p| frames_to_layers(s, p)),
-        spec!("file.export.renderVideo", "Render Video…", &["File", "Export"], has_doc, |s, p| render_video(s, p)),
+        spec!(
+            "layer.videoLayers.newBlankVideoLayer",
+            "New Blank Video Layer",
+            vl,
+            has_doc,
+            |s, p| new_blank(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.insertBlankFrame",
+            "Insert Blank Frame",
+            vl,
+            active_video,
+            |s, p| insert_blank(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.duplicateFrame",
+            "Duplicate Frame",
+            vl,
+            active_video,
+            |s, p| duplicate_frame(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.deleteFrame",
+            "Delete Frame",
+            vl,
+            active_video,
+            |s, p| delete_frame(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.restoreFrame",
+            "Restore Frame",
+            vl,
+            active_video,
+            |s, p| restore_frame(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.restoreAllFrames",
+            "Restore All Frames",
+            vl,
+            active_video,
+            |s, p| restore_all(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.showAlteredVideo",
+            "Show Altered Video",
+            vl,
+            active_video,
+            |s, p| show_altered(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.rasterize",
+            "Rasterize",
+            vl,
+            active_video,
+            |s, p| rasterize(s, p)
+        ),
+        spec!(
+            "layer.rasterize.video",
+            "Video",
+            &["Layer", "Rasterize"],
+            active_video,
+            |s, p| rasterize(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.newVideoLayerFromFile",
+            "New Video Layer from File…",
+            vl,
+            has_doc,
+            |s, p| new_from_file(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.replaceFootage",
+            "Replace Footage…",
+            vl,
+            active_video,
+            |s, p| replace_footage(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.interpretFootage",
+            "Interpret Footage…",
+            vl,
+            active_video,
+            |s, p| interpret_footage(s, p)
+        ),
+        spec!(
+            "layer.videoLayers.reloadFrame",
+            "Reload Frame",
+            vl,
+            active_video,
+            |s, p| reload_frame(s, p)
+        ),
+        spec!(
+            "file.import.videoFramesToLayers",
+            "Video Frames to Layers…",
+            &["File", "Import"],
+            has_doc,
+            |s, p| frames_to_layers(s, p)
+        ),
+        spec!(
+            "file.export.renderVideo",
+            "Render Video…",
+            &["File", "Export"],
+            has_doc,
+            |s, p| render_video(s, p)
+        ),
     ]
 }
 

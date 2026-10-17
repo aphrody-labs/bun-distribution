@@ -56,7 +56,14 @@ pub fn build_tree_walk(root: &Path) -> MftTree {
         if name.starts_with('.') {
             attributes |= ATTR_HIDDEN;
         }
-        tree.insert(UsnEntry { frn: id, parent_frn, name, attributes, usn: 0, timestamp: 0 });
+        tree.insert(UsnEntry {
+            frn: id,
+            parent_frn,
+            name,
+            attributes,
+            usn: 0,
+            timestamp: 0,
+        });
     }
     tree
 }
@@ -78,11 +85,17 @@ mod tests {
         let tree = build_tree_walk(root);
         assert!(tree.len() >= 5, "root + sub + 3 files, got {}", tree.len());
 
-        let b = tree.iter().find(|e| e.name == "b.txt").expect("b.txt present");
+        let b = tree
+            .iter()
+            .find(|e| e.name == "b.txt")
+            .expect("b.txt present");
         let path = tree.resolve_path(b.frn, "ROOT").expect("resolvable");
         assert!(path.ends_with("sub\\b.txt"), "nested path was {path}");
 
-        let hidden = tree.iter().find(|e| e.name == ".hidden").expect(".hidden present");
+        let hidden = tree
+            .iter()
+            .find(|e| e.name == ".hidden")
+            .expect(".hidden present");
         assert!(hidden.is_hidden() && !hidden.is_dir());
 
         let sub = tree.iter().find(|e| e.name == "sub").expect("sub present");

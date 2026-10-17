@@ -24,7 +24,10 @@ struct Counter {
 
 impl Counter {
     fn new(name: &'static str) -> Arc<Self> {
-        Arc::new(Self { name, value: AtomicI64::new(0) })
+        Arc::new(Self {
+            name,
+            value: AtomicI64::new(0),
+        })
     }
 }
 
@@ -40,9 +43,17 @@ impl SystemSubsystem for Counter {
 
     fn tools(&self) -> Vec<ToolDefinition> {
         vec![
-            ToolDefinition::new(format!("{}_add", self.name), "Add.", json!({"type": "object"})),
-            ToolDefinition::new(format!("{}_get", self.name), "Read.", json!({"type": "object"}))
-                .read_only(),
+            ToolDefinition::new(
+                format!("{}_add", self.name),
+                "Add.",
+                json!({"type": "object"}),
+            ),
+            ToolDefinition::new(
+                format!("{}_get", self.name),
+                "Read.",
+                json!({"type": "object"}),
+            )
+            .read_only(),
         ]
     }
 
@@ -91,10 +102,25 @@ impl SystemSubsystem for Counter {
 #[tokio::test]
 async fn routes_calls_and_refuses_collisions() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
-    assert_eq!(kernel.call("counter_add", json!({"by": 2})).await.expect("add"), json!(2));
-    assert_eq!(kernel.call("counter_get", json!({})).await.expect("get"), json!({"value": 2}));
-    assert!(matches!(kernel.call("nope", json!({})).await, Err(SubsystemError::UnknownTool(_))));
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
+    assert_eq!(
+        kernel
+            .call("counter_add", json!({"by": 2}))
+            .await
+            .expect("add"),
+        json!(2)
+    );
+    assert_eq!(
+        kernel.call("counter_get", json!({})).await.expect("get"),
+        json!({"value": 2})
+    );
+    assert!(matches!(
+        kernel.call("nope", json!({})).await,
+        Err(SubsystemError::UnknownTool(_))
+    ));
     assert!(matches!(
         kernel.register(Counter::new("counter")).await,
         Err(KernelError::DuplicateSubsystem(_))
@@ -143,13 +169,24 @@ async fn execution_policy_blocks_kernel_dispatch() {
          prefix_rule(pattern = [\"counter_get\"], decision = \"allow\", match = [[\"counter_get\"]])"
     )
     .expect("write policy");
-    let kernel = Kernel::new().with_execution_policy_file(policy.path()).expect("load policy");
-    kernel.register(Counter::new("counter")).await.expect("register");
+    let kernel = Kernel::new()
+        .with_execution_policy_file(policy.path())
+        .expect("load policy");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     assert!(matches!(
         kernel.call("counter_add", json!({"by": 1})).await,
         Err(SubsystemError::Failed(_))
     ));
-    assert_eq!(kernel.call("counter_get", json!({})).await.expect("allowed"), json!({"value": 0}));
+    assert_eq!(
+        kernel
+            .call("counter_get", json!({}))
+            .await
+            .expect("allowed"),
+        json!({"value": 0})
+    );
 }
 
 #[tokio::test]
@@ -161,15 +198,24 @@ async fn authenticated_sessions_are_scoped_before_kernel_dispatch() {
     )
     .expect("write policy");
     let kernel = Kernel::with_authentication_file(policy.path()).expect("load policy");
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let (outbound, _incoming) = tokio::sync::mpsc::channel(1);
     let session = Arc::new(crate::rpc::Session::new(outbound));
 
     let before_initialize = kernel
-        .handle(json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}), &session)
+        .handle(
+            json!({"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}),
+            &session,
+        )
         .await
         .expect("response");
-    assert_eq!(before_initialize.pointer("/error/code"), Some(&json!(-32001)));
+    assert_eq!(
+        before_initialize.pointer("/error/code"),
+        Some(&json!(-32001))
+    );
 
     let rejected = kernel
         .handle(
@@ -187,13 +233,22 @@ async fn authenticated_sessions_are_scoped_before_kernel_dispatch() {
         )
         .await
         .expect("response");
-    assert_eq!(initialized.pointer("/result/_meta/aphrody-os/principal"), Some(&json!("reader")));
+    assert_eq!(
+        initialized.pointer("/result/_meta/aphrody-os/principal"),
+        Some(&json!("reader"))
+    );
 
     let listed = kernel
-        .handle(json!({"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}), &session)
+        .handle(
+            json!({"jsonrpc":"2.0","id":4,"method":"tools/list","params":{}}),
+            &session,
+        )
         .await
         .expect("response");
-    assert_eq!(listed.pointer("/result/tools/0/name"), Some(&json!("counter_get")));
+    assert_eq!(
+        listed.pointer("/result/tools/0/name"),
+        Some(&json!("counter_get"))
+    );
     assert!(listed.pointer("/result/tools/1").is_none());
 
     let forbidden = kernel
@@ -212,7 +267,10 @@ async fn authenticated_sessions_are_scoped_before_kernel_dispatch() {
         )
         .await
         .expect("response");
-    assert_eq!(allowed.pointer("/result/structuredContent/value"), Some(&json!(0)));
+    assert_eq!(
+        allowed.pointer("/result/structuredContent/value"),
+        Some(&json!(0))
+    );
 
     let publish = kernel
         .handle(
@@ -228,7 +286,9 @@ async fn authenticated_sessions_are_scoped_before_kernel_dispatch() {
 async fn timed_out_client_request_is_removed_from_pending() {
     let (client_stream, _server_stream) = tokio::io::duplex(1024);
     let client = Client::from_stream(Box::new(client_stream));
-    let result = client.request("never", json!({}), Duration::from_millis(1)).await;
+    let result = client
+        .request("never", json!({}), Duration::from_millis(1))
+        .await;
     assert!(matches!(result, Err(client::ClientError::Timeout { .. })));
     assert!(client.pending_is_empty());
 }
@@ -236,19 +296,31 @@ async fn timed_out_client_request_is_removed_from_pending() {
 #[tokio::test]
 async fn skills_chain_steps_and_are_tools() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     // step 1: 0 + 3 = 3; step 2: 3 + previous (3) = 6
-    let run = kernel.call("skill_counter_twice", json!({"by": 3})).await.expect("skill");
+    let run = kernel
+        .call("skill_counter_twice", json!({"by": 3}))
+        .await
+        .expect("skill");
     assert_eq!(run["result"], json!(6));
     assert_eq!(run["steps"].as_array().map(Vec::len), Some(2));
-    assert!(kernel.call("skill_counter_twice", json!({})).await.is_err(), "missing parameter");
+    assert!(
+        kernel.call("skill_counter_twice", json!({})).await.is_err(),
+        "missing parameter"
+    );
 }
 
 #[tokio::test]
 async fn sub_agent_runs_on_the_bus() {
     let kernel = Kernel::new();
     let mut events = kernel.bus().subscribe();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let mut kinds = Vec::new();
     for _ in 0..2 {
         kinds.push(
@@ -275,8 +347,13 @@ async fn persistent_audit_records_bus_events_and_reports_health() {
     });
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
-            if tokio::fs::try_exists(&path).await.expect("audit path state") {
-                let text = tokio::fs::read_to_string(&path).await.expect("audit contents");
+            if tokio::fs::try_exists(&path)
+                .await
+                .expect("audit path state")
+            {
+                let text = tokio::fs::read_to_string(&path)
+                    .await
+                    .expect("audit contents");
                 if text.contains("audit/test") {
                     break;
                 }
@@ -303,7 +380,10 @@ fn connected(kernel: &Kernel) -> Client {
 #[tokio::test]
 async fn mcp_surface_over_a_connection() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let client = connected(&kernel);
     let init = client.initialize("test").await.expect("initialize");
     assert_eq!(init["serverInfo"]["name"], "aphrody-os");
@@ -312,8 +392,10 @@ async fn mcp_surface_over_a_connection() {
         .await
         .expect("audit status");
     assert_eq!(audit["enabled"], false);
-    let tools =
-        client.request("tools/list", json!({}), Duration::from_secs(5)).await.expect("list");
+    let tools = client
+        .request("tools/list", json!({}), Duration::from_secs(5))
+        .await
+        .expect("list");
     let names: Vec<&str> = tools["tools"]
         .as_array()
         .expect("tools")
@@ -322,7 +404,11 @@ async fn mcp_surface_over_a_connection() {
         .collect();
     assert_eq!(names, ["counter_add", "counter_get", "skill_counter_twice"]);
     let owned = client
-        .request("system/subsystem_tools", json!({"name": "counter"}), Duration::from_secs(5))
+        .request(
+            "system/subsystem_tools",
+            json!({"name": "counter"}),
+            Duration::from_secs(5),
+        )
         .await
         .expect("subsystem tools");
     let owned_names: Vec<&str> = owned["tools"]
@@ -352,15 +438,26 @@ async fn mcp_surface_over_a_connection() {
         .await
         .expect("tool error is a result");
     assert_eq!(failed["isError"], true);
-    let unknown =
-        client.request("tools/call", json!({"name": "nope"}), Duration::from_secs(5)).await;
-    assert!(matches!(unknown, Err(crate::client::ClientError::Rpc { code: -32602, .. })));
+    let unknown = client
+        .request(
+            "tools/call",
+            json!({"name": "nope"}),
+            Duration::from_secs(5),
+        )
+        .await;
+    assert!(matches!(
+        unknown,
+        Err(crate::client::ClientError::Rpc { code: -32602, .. })
+    ));
 }
 
 #[tokio::test]
 async fn a2a_envelope_uses_the_same_tool_dispatcher() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let client = connected(&kernel);
     client.initialize("a2a-test").await.expect("initialize");
     let response = client
@@ -377,7 +474,10 @@ async fn a2a_envelope_uses_the_same_tool_dispatcher() {
         .await
         .expect("A2A envelope");
     assert_eq!(response["accepted"], true);
-    assert_eq!(response["result"]["structuredContent"], json!({"result": 7}));
+    assert_eq!(
+        response["result"]["structuredContent"],
+        json!({"result": 7})
+    );
 }
 
 #[tokio::test]
@@ -397,7 +497,10 @@ async fn a2a_target_selects_the_owner_and_rejects_misdirected_side_effects() {
                 Duration::from_secs(5),
             )
             .await;
-        assert!(matches!(wrong, Err(crate::client::ClientError::Rpc { code: -32602, .. })));
+        assert!(matches!(
+            wrong,
+            Err(crate::client::ClientError::Rpc { code: -32602, .. })
+        ));
     }
     assert_eq!(counter.value.load(Ordering::SeqCst), 0);
     let right = client
@@ -437,8 +540,10 @@ async fn a_peer_registers_a_subsystem_and_serves_its_calls() {
     tokio::spawn(async move {
         while let Some(message) = incoming.recv().await {
             if message["method"] == "tools/call" {
-                let url =
-                    message["params"]["arguments"]["url"].as_str().unwrap_or_default().to_owned();
+                let url = message["params"]["arguments"]["url"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_owned();
                 let _ = answering.respond(
                     message["id"].clone(),
                     json!({"content": [{"type": "text", "text": "ok"}], "structuredContent": {"url": url, "status": 200}}),
@@ -475,8 +580,15 @@ async fn a_peer_registers_a_subsystem_and_serves_its_calls() {
 #[tokio::test]
 async fn host_remote_joins_a_kernel_and_leaves_on_disconnect() {
     let kernel = Kernel::new();
-    let endpoint = format!("{}-test-{}", crate::transport::default_endpoint(), std::process::id());
-    let server = tokio::spawn(crate::transport::serve_endpoint(kernel.clone(), endpoint.clone()));
+    let endpoint = format!(
+        "{}-test-{}",
+        crate::transport::default_endpoint(),
+        std::process::id()
+    );
+    let server = tokio::spawn(crate::transport::serve_endpoint(
+        kernel.clone(),
+        endpoint.clone(),
+    ));
     // The listener is up once a client can connect.
     for _ in 0..100 {
         if crate::transport::connect(&endpoint).await.is_ok() {
@@ -497,7 +609,10 @@ async fn host_remote_joins_a_kernel_and_leaves_on_disconnect() {
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
     assert!(registered, "remote subsystem never registered");
-    assert_eq!(kernel.call("remote_get", json!({})).await.expect("get"), json!({"value": 4}));
+    assert_eq!(
+        kernel.call("remote_get", json!({})).await.expect("get"),
+        json!({"value": 4})
+    );
     host.abort();
     let _ = host.await;
     for _ in 0..200 {
@@ -506,7 +621,10 @@ async fn host_remote_joins_a_kernel_and_leaves_on_disconnect() {
         }
         tokio::time::sleep(Duration::from_millis(20)).await;
     }
-    assert!(kernel.subsystems().await.is_empty(), "disconnect must unregister");
+    assert!(
+        kernel.subsystems().await.is_empty(),
+        "disconnect must unregister"
+    );
     server.abort();
 }
 
@@ -587,7 +705,11 @@ impl SystemSubsystem for SingleSkillSubsystem {
         "Single skill test."
     }
     fn tools(&self) -> Vec<ToolDefinition> {
-        vec![ToolDefinition::new(format!("{}_tool", self.0), "tool", json!({}))]
+        vec![ToolDefinition::new(
+            format!("{}_tool", self.0),
+            "tool",
+            json!({}),
+        )]
     }
     fn skills(&self) -> Vec<SkillManifest> {
         vec![SkillManifest {
@@ -605,8 +727,13 @@ impl SystemSubsystem for SingleSkillSubsystem {
 #[tokio::test]
 async fn duplicate_skills_across_subsystems_rejected() {
     let kernel = Kernel::new();
-    kernel.register(Arc::new(SingleSkillSubsystem("first"))).await.expect("first");
-    let res = kernel.register(Arc::new(SingleSkillSubsystem("second"))).await;
+    kernel
+        .register(Arc::new(SingleSkillSubsystem("first")))
+        .await
+        .expect("first");
+    let res = kernel
+        .register(Arc::new(SingleSkillSubsystem("second")))
+        .await;
     assert!(matches!(res, Err(KernelError::DuplicateSkill { .. })));
 }
 
@@ -628,7 +755,10 @@ impl SystemSubsystem for NestedSkillSubsystem {
             name: "illegal_nesting".into(),
             description: "calls another skill".into(),
             parameters: vec![],
-            steps: vec![SkillStep { tool: "skill_other".into(), arguments: json!({}) }],
+            steps: vec![SkillStep {
+                tool: "skill_other".into(),
+                arguments: json!({}),
+            }],
         }]
     }
     async fn call(&self, _: &str, _: Value) -> Result<Value, SubsystemError> {
@@ -639,7 +769,10 @@ impl SystemSubsystem for NestedSkillSubsystem {
 #[tokio::test]
 async fn nested_skill_calls_are_rejected() {
     let kernel = Kernel::new();
-    kernel.register(Arc::new(NestedSkillSubsystem)).await.expect("register");
+    kernel
+        .register(Arc::new(NestedSkillSubsystem))
+        .await
+        .expect("register");
     let err = kernel.call("skill_illegal_nesting", json!({})).await;
     assert!(matches!(err, Err(SubsystemError::InvalidArguments(_))));
 }
@@ -662,18 +795,28 @@ impl SystemSubsystem for FailingStepSubsystem {
             name: "fail_skill".into(),
             description: "fails on explode".into(),
             parameters: vec![],
-            steps: vec![SkillStep { tool: "explode".into(), arguments: json!({}) }],
+            steps: vec![SkillStep {
+                tool: "explode".into(),
+                arguments: json!({}),
+            }],
         }]
     }
     async fn call(&self, tool: &str, _: Value) -> Result<Value, SubsystemError> {
-        if tool == "explode" { Err(SubsystemError::Failed("boom".into())) } else { Ok(Value::Null) }
+        if tool == "explode" {
+            Err(SubsystemError::Failed("boom".into()))
+        } else {
+            Ok(Value::Null)
+        }
     }
 }
 
 #[tokio::test]
 async fn skill_reports_failing_step() {
     let kernel = Kernel::new();
-    kernel.register(Arc::new(FailingStepSubsystem)).await.expect("register");
+    kernel
+        .register(Arc::new(FailingStepSubsystem))
+        .await
+        .expect("register");
     let err = kernel.call("skill_fail_skill", json!({})).await;
     assert!(matches!(err, Err(SubsystemError::Failed(msg)) if msg.contains("boom")));
 }
@@ -681,7 +824,10 @@ async fn skill_reports_failing_step() {
 #[tokio::test]
 async fn skill_invalid_argument_types_rejected() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let err = kernel.call("skill_counter_twice", json!(42)).await;
     assert!(matches!(err, Err(SubsystemError::InvalidArguments(_))));
     let err2 = kernel.call("skill_non_existent", json!({})).await;
@@ -694,17 +840,28 @@ async fn rpc_ping_and_unknown_method_handling() {
     let client = connected(&kernel);
     client.initialize("test").await.expect("initialize");
 
-    let ping = client.request("ping", json!({}), Duration::from_secs(5)).await.expect("ping");
+    let ping = client
+        .request("ping", json!({}), Duration::from_secs(5))
+        .await
+        .expect("ping");
     assert_eq!(ping, json!({}));
 
-    let unknown = client.request("nonexistent/method", json!({}), Duration::from_secs(5)).await;
-    assert!(matches!(unknown, Err(crate::client::ClientError::Rpc { code: -32601, .. })));
+    let unknown = client
+        .request("nonexistent/method", json!({}), Duration::from_secs(5))
+        .await;
+    assert!(matches!(
+        unknown,
+        Err(crate::client::ClientError::Rpc { code: -32601, .. })
+    ));
 }
 
 #[tokio::test]
 async fn rpc_skills_list_and_run() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let client = connected(&kernel);
     client.initialize("test").await.expect("initialize");
 
@@ -734,13 +891,19 @@ async fn rpc_skills_list_and_run() {
             Duration::from_secs(5),
         )
         .await;
-    assert!(matches!(run_err, Err(crate::client::ClientError::Rpc { code: -32000, .. })));
+    assert!(matches!(
+        run_err,
+        Err(crate::client::ClientError::Rpc { code: -32000, .. })
+    ));
 }
 
 #[tokio::test]
 async fn rpc_system_subsystems_and_subsystem_tools_unknown() {
     let kernel = Kernel::new();
-    kernel.register(Counter::new("counter")).await.expect("register");
+    kernel
+        .register(Counter::new("counter"))
+        .await
+        .expect("register");
     let client = connected(&kernel);
     client.initialize("test").await.expect("initialize");
 
@@ -756,9 +919,16 @@ async fn rpc_system_subsystems_and_subsystem_tools_unknown() {
     assert_eq!(subs[0]["remote"], false);
 
     let err = client
-        .request("system/subsystem_tools", json!({"name": "ghost"}), Duration::from_secs(5))
+        .request(
+            "system/subsystem_tools",
+            json!({"name": "ghost"}),
+            Duration::from_secs(5),
+        )
         .await;
-    assert!(matches!(err, Err(crate::client::ClientError::Rpc { code: -32602, .. })));
+    assert!(matches!(
+        err,
+        Err(crate::client::ClientError::Rpc { code: -32602, .. })
+    ));
 }
 
 #[tokio::test]
@@ -768,7 +938,11 @@ async fn rpc_subscribe_and_publish_with_filtering() {
     client.initialize("test").await.expect("initialize");
 
     let sub = client
-        .request("system/subscribe", json!({"kinds": ["custom/"]}), Duration::from_secs(5))
+        .request(
+            "system/subscribe",
+            json!({"kinds": ["custom/"]}),
+            Duration::from_secs(5),
+        )
         .await
         .expect("subscribe");
     assert_eq!(sub["subscribed"], true);
@@ -801,7 +975,9 @@ async fn transport_malformed_json_returns_parse_error() {
     tokio::spawn(serve_connection(kernel, reader, writer));
 
     let (mut client_reader, mut client_writer) = tokio::io::split(client_side);
-    tokio::io::AsyncWriteExt::write_all(&mut client_writer, b"{bad json\n").await.expect("write");
+    tokio::io::AsyncWriteExt::write_all(&mut client_writer, b"{bad json\n")
+        .await
+        .expect("write");
 
     let mut lines = tokio::io::BufReader::new(&mut client_reader).lines();
     let response = tokio::time::timeout(Duration::from_secs(5), lines.next_line())
@@ -816,7 +992,9 @@ async fn transport_malformed_json_returns_parse_error() {
 #[tokio::test]
 async fn transport_rejects_line_before_exceeding_limit() {
     let mut reader = tokio::io::BufReader::new(&b"123456789\n"[..]);
-    let error = crate::transport::read_line_limited(&mut reader, 8).await.unwrap_err();
+    let error = crate::transport::read_line_limited(&mut reader, 8)
+        .await
+        .unwrap_err();
     assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
 }
 

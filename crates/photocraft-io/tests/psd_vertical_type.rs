@@ -12,7 +12,14 @@ fn doc_with(shape: TextShape) -> Document {
     let text = "Vertical type\nColumns";
     let mut t = TextLayer {
         text: text.into(),
-        runs: vec![TextRun { len: text.len(), style: CharStyle { font_family: "Inter".into(), size_pt: 24.0, ..Default::default() } }],
+        runs: vec![TextRun {
+            len: text.len(),
+            style: CharStyle {
+                font_family: "Inter".into(),
+                size_pt: 24.0,
+                ..Default::default()
+            },
+        }],
         orientation: Orientation::Vertical,
         shape,
         transform: Affine::translate(250.0, 20.0),
@@ -33,7 +40,15 @@ fn text(doc: &Document) -> &TextLayer {
 
 #[test]
 fn vertical_orientation_round_trips_through_psd() {
-    for shape in [TextShape::Point, TextShape::Box { x: -200.0, y: 0.0, width: 220.0, height: 300.0 }] {
+    for shape in [
+        TextShape::Point,
+        TextShape::Box {
+            x: -200.0,
+            y: 0.0,
+            width: 220.0,
+            height: 300.0,
+        },
+    ] {
         let doc = doc_with(shape.clone());
         let ink = text(&doc).cache.as_ref().unwrap().content_bounds();
         assert!(ink.height() > ink.width(), "{shape:?}: {ink:?}");
@@ -45,15 +60,30 @@ fn vertical_orientation_round_trips_through_psd() {
         assert_eq!(t.text, text(&doc).text);
         // Re-rendering the imported model gives the same vertical layout.
         let mut again = t.clone();
-        photocraft_text::TextEngine::new().render_layer(&mut again, back.resolution_dpi, back.pixel_format());
+        photocraft_text::TextEngine::new().render_layer(
+            &mut again,
+            back.resolution_dpi,
+            back.pixel_format(),
+        );
         let r = again.cache.as_ref().unwrap().content_bounds();
         assert!(
-            (r.x0 - ink.x0).abs() <= 1 && (r.y0 - ink.y0).abs() <= 1 && (r.x1 - ink.x1).abs() <= 1 && (r.y1 - ink.y1).abs() <= 1,
+            (r.x0 - ink.x0).abs() <= 1
+                && (r.y0 - ink.y0).abs() <= 1
+                && (r.x1 - ink.x1).abs() <= 1
+                && (r.y1 - ink.y1).abs() <= 1,
             "{shape:?}: {ink:?} → {r:?}"
         );
         // A second trip keeps it, and horizontal stays horizontal.
         let out2 = photocraft_io::export(&back, "v.psd", &Default::default()).unwrap();
-        assert_eq!(text(&photocraft_io::import("v.psd", &out2.bytes).unwrap().document).orientation, Orientation::Vertical);
+        assert_eq!(
+            text(
+                &photocraft_io::import("v.psd", &out2.bytes)
+                    .unwrap()
+                    .document
+            )
+            .orientation,
+            Orientation::Vertical
+        );
     }
     let mut doc = doc_with(TextShape::Point);
     if let LayerContent::Text(t) = &mut doc.layers[0].content {
@@ -61,5 +91,8 @@ fn vertical_orientation_round_trips_through_psd() {
         t.psd_raw = None;
     }
     let out = photocraft_io::export(&doc, "h.psd", &Default::default()).unwrap();
-    assert_eq!(text(&photocraft_io::import("h.psd", &out.bytes).unwrap().document).orientation, Orientation::Horizontal);
+    assert_eq!(
+        text(&photocraft_io::import("h.psd", &out.bytes).unwrap().document).orientation,
+        Orientation::Horizontal
+    );
 }

@@ -195,7 +195,10 @@ mod tests {
 
     #[test]
     fn default_model_is_bge_small() {
-        assert_eq!(EmbeddingModelKind::default(), EmbeddingModelKind::BgeSmallEnV15);
+        assert_eq!(
+            EmbeddingModelKind::default(),
+            EmbeddingModelKind::BgeSmallEnV15
+        );
     }
 
     #[test]

@@ -191,7 +191,10 @@ impl Document {
     pub fn slice_bounds(&self, id: NodeId) -> Option<Rect> {
         match self.slice(id) {
             Some(s) => Some(s.rect),
-            None => self.node(id).filter(|n| n.extras().slice.is_some())?.visual_bounds(),
+            None => self
+                .node(id)
+                .filter(|n| n.extras().slice.is_some())?
+                .visual_bounds(),
         }
     }
     /// The visible objects with slice options and their visual bounds, in paint order.
@@ -214,20 +217,43 @@ impl Document {
     }
     /// Every slice id: the user slices, then the object slices.
     pub fn slice_ids(&self) -> Vec<NodeId> {
-        self.slices.iter().map(|s| s.id).chain(self.object_slices().into_iter().map(|(id, _)| id)).collect()
+        self.slices
+            .iter()
+            .map(|s| s.id)
+            .chain(self.object_slices().into_iter().map(|(id, _)| id))
+            .collect()
     }
     /// The box Clip to Artboard clips slices to: the artboards' bounds.
     pub fn slice_clip(&self) -> Option<Rect> {
-        self.artboards.iter().map(|a| a.rect).reduce(|a, b| a.union(b))
+        self.artboards
+            .iter()
+            .map(|a| a.rect)
+            .reduce(|a, b| a.union(b))
     }
     /// The user and object slices with their rectangles as laid out (clipped to [`Self::slice_clip`]
     /// when Clip to Artboard is on; one wholly outside stays as it is).
     fn cut_slices(&self) -> Vec<(NodeId, SliceSource, Rect)> {
-        let clip = self.slices_clip_to_artboard.then(|| self.slice_clip()).flatten();
-        let clipped = |r: Rect| clip.map(|c| c.intersect(r)).filter(|c| valid_rect(*c)).unwrap_or(r);
-        let users = self.slices.iter().map(|s| (s.id, SliceSource::User, s.rect));
-        let objects = self.object_slices().into_iter().map(|(id, r)| (id, SliceSource::Object, r));
-        users.chain(objects).map(|(id, src, r)| (id, src, clipped(r))).collect()
+        let clip = self
+            .slices_clip_to_artboard
+            .then(|| self.slice_clip())
+            .flatten();
+        let clipped = |r: Rect| {
+            clip.map(|c| c.intersect(r))
+                .filter(|c| valid_rect(*c))
+                .unwrap_or(r)
+        };
+        let users = self
+            .slices
+            .iter()
+            .map(|s| (s.id, SliceSource::User, s.rect));
+        let objects = self
+            .object_slices()
+            .into_iter()
+            .map(|(id, r)| (id, SliceSource::Object, r));
+        users
+            .chain(objects)
+            .map(|(id, src, r)| (id, src, clipped(r)))
+            .collect()
     }
     /// The slices as laid out, numbered left to right, top to bottom: the user and object slices
     /// and the auto slices filling the rest of the region (the artboards with Clip to Artboard on,
@@ -237,16 +263,39 @@ impl Document {
         if cut.is_empty() {
             return vec![];
         }
-        let region = if self.slices_clip_to_artboard { self.slice_clip() } else { None }
-            .or_else(|| cut.iter().fold(self.art_bounds(), |acc, (_, _, r)| vectorcraft_geom::union_opt(acc, Some(*r))));
+        let region = if self.slices_clip_to_artboard {
+            self.slice_clip()
+        } else {
+            None
+        }
+        .or_else(|| {
+            cut.iter().fold(self.art_bounds(), |acc, (_, _, r)| {
+                vectorcraft_geom::union_opt(acc, Some(*r))
+            })
+        });
         let rects: Vec<Rect> = cut.iter().map(|(_, _, r)| *r).collect();
         let autos = region.map(|g| auto_slices(g, &rects)).unwrap_or_default();
         let mut out: Vec<SliceArea> = cut
             .into_iter()
-            .map(|(id, source, rect)| SliceArea { id: Some(id), source, rect, number: 0 })
-            .chain(autos.into_iter().map(|rect| SliceArea { id: None, source: SliceSource::Auto, rect, number: 0 }))
+            .map(|(id, source, rect)| SliceArea {
+                id: Some(id),
+                source,
+                rect,
+                number: 0,
+            })
+            .chain(autos.into_iter().map(|rect| SliceArea {
+                id: None,
+                source: SliceSource::Auto,
+                rect,
+                number: 0,
+            }))
             .collect();
-        out.sort_by(|a, b| a.rect.y0.total_cmp(&b.rect.y0).then(a.rect.x0.total_cmp(&b.rect.x0)));
+        out.sort_by(|a, b| {
+            a.rect
+                .y0
+                .total_cmp(&b.rect.y0)
+                .then(a.rect.x0.total_cmp(&b.rect.x0))
+        });
         for (i, a) in out.iter_mut().enumerate() {
             a.number = i + 1;
         }
@@ -255,10 +304,17 @@ impl Document {
     /// The name web output gives slice `area`: its options' name, else `<document>_<number>`
     /// (two digits at least, `Untitled-1_03`).
     pub fn slice_name(&self, area: &SliceArea) -> String {
-        match area.id.and_then(|id| self.slice_options(id)).filter(|o| !o.name.is_empty()) {
+        match area
+            .id
+            .and_then(|id| self.slice_options(id))
+            .filter(|o| !o.name.is_empty())
+        {
             Some(o) => o.name.clone(),
             None => {
-                let stem = self.title.rsplit_once('.').map_or(self.title.as_str(), |(s, _)| s);
+                let stem = self
+                    .title
+                    .rsplit_once('.')
+                    .map_or(self.title.as_str(), |(s, _)| s);
                 format!("{stem}_{:02}", area.number)
             }
         }
@@ -273,15 +329,27 @@ pub fn auto_slices(region: Rect, cut: &[Rect]) -> Vec<Rect> {
     if !valid_rect(region) {
         return vec![];
     }
-    let inside: Vec<Rect> = cut.iter().map(|r| region.intersect(*r)).filter(|r| valid_rect(*r)).collect();
-    let mut ys: Vec<f64> = inside.iter().flat_map(|r| [r.y0, r.y1]).chain([region.y0, region.y1]).collect();
+    let inside: Vec<Rect> = cut
+        .iter()
+        .map(|r| region.intersect(*r))
+        .filter(|r| valid_rect(*r))
+        .collect();
+    let mut ys: Vec<f64> = inside
+        .iter()
+        .flat_map(|r| [r.y0, r.y1])
+        .chain([region.y0, region.y1])
+        .collect();
     ys.sort_by(f64::total_cmp);
     ys.dedup_by(|a, b| (*a - *b).abs() <= EPS);
     let (mut open, mut done): (Vec<Rect>, Vec<Rect>) = (vec![], vec![]);
     for band in ys.windows(2) {
         let [y0, y1] = [band[0], band[1]];
         let mid = (y0 + y1) / 2.0;
-        let mut spans: Vec<(f64, f64)> = inside.iter().filter(|r| r.y0 < mid && mid < r.y1).map(|r| (r.x0, r.x1)).collect();
+        let mut spans: Vec<(f64, f64)> = inside
+            .iter()
+            .filter(|r| r.y0 < mid && mid < r.y1)
+            .map(|r| (r.x0, r.x1))
+            .collect();
         spans.sort_by(|a, b| a.0.total_cmp(&b.0));
         // The uncovered spans of this row.
         let mut free = vec![];
@@ -298,7 +366,10 @@ pub fn auto_slices(region: Rect, cut: &[Rect]) -> Vec<Rect> {
         // Spans continuing an open slice extend it; the others close.
         let mut next = Vec::with_capacity(free.len());
         for (a, b) in free {
-            match open.iter().position(|r: &Rect| (r.x0 - a).abs() <= EPS && (r.x1 - b).abs() <= EPS) {
+            match open
+                .iter()
+                .position(|r: &Rect| (r.x0 - a).abs() <= EPS && (r.x1 - b).abs() <= EPS)
+            {
                 Some(i) => {
                     let mut r = open.swap_remove(i);
                     r.y1 = y1;

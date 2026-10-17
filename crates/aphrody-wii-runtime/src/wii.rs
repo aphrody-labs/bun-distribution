@@ -63,7 +63,10 @@ impl Wii {
         dvd: Box<dyn image::Dvd>,
         #[cfg(feature = "hooks")] host: Option<Box<dyn crate::hooks::Host<{ WII }> + Send>>,
     ) -> Self {
-        assert!(dvd.header().is_wii(), "apploader HLE only supports Wii discs");
+        assert!(
+            dvd.header().is_wii(),
+            "apploader HLE only supports Wii discs"
+        );
 
         let game_name = String::from_utf8_lossy(&dvd.header().game_name);
         let game_name = game_name.trim_end_matches('\0');
@@ -150,7 +153,8 @@ impl Wii {
     // Cross referenced with beanwii and Dolphin!!
     fn setup_low_memory_common(emu: &mut Wii, imv: &ios::MemoryValues) {
         // Ripped from the apploader.
-        emu.mmio.phys_write_u32(0x0000_0018, u32::from_be_bytes(image::WII_MAGIC));
+        emu.mmio
+            .phys_write_u32(0x0000_0018, u32::from_be_bytes(image::WII_MAGIC));
 
         // MEM1 size, board model.
         emu.mmio.phys_write_u32(0x0000_0028, imv.mem1_physical_size);
@@ -175,7 +179,8 @@ impl Wii {
 
         // MEM1 layout (kernel writes).
         emu.mmio.phys_write_u32(0x0000_3100, imv.mem1_physical_size);
-        emu.mmio.phys_write_u32(0x0000_3104, imv.mem1_simulated_size);
+        emu.mmio
+            .phys_write_u32(0x0000_3104, imv.mem1_simulated_size);
         emu.mmio.phys_write_u32(0x0000_3108, imv.mem1_end);
         emu.mmio.phys_write_u32(0x0000_310C, imv.mem1_arena_begin);
         // 0x3110 is conditionally overwritten by the apploader when the DOL
@@ -184,7 +189,8 @@ impl Wii {
 
         // MEM2 layout.
         emu.mmio.phys_write_u32(0x0000_3118, imv.mem2_physical_size);
-        emu.mmio.phys_write_u32(0x0000_311C, imv.mem2_simulated_size);
+        emu.mmio
+            .phys_write_u32(0x0000_311C, imv.mem2_simulated_size);
         emu.mmio.phys_write_u32(0x0000_3120, imv.mem2_end);
         emu.mmio.phys_write_u32(0x0000_3124, imv.mem2_arena_begin);
         emu.mmio.phys_write_u32(0x0000_3128, imv.mem2_arena_end);
@@ -230,7 +236,8 @@ impl Wii {
         emu.mmio.phys_write_u8(0x0000_0006, header.disk_id);
         emu.mmio.phys_write_u8(0x0000_0007, header.version);
         emu.mmio.phys_write_u8(0x0000_0008, header.audio_streaming);
-        emu.mmio.phys_write_u8(0x0000_0009, header.streaming_buffer_size);
+        emu.mmio
+            .phys_write_u8(0x0000_0009, header.streaming_buffer_size);
 
         let ios_title_id = dvd.tmd_ios_title_id();
         let ios_major = ios_title_id as u16;
@@ -255,7 +262,9 @@ impl Wii {
         emu.mmio.phys_write_u32(0x0000_00CC, video_mode);
 
         if !header.is_ntsc() {
-            emu.vi.dcr.set_video_format(crate::flipper::vi::regs::VideoFormat::Pal);
+            emu.vi
+                .dcr
+                .set_video_format(crate::flipper::vi::regs::VideoFormat::Pal);
             crate::scheduler::reseed_vsync(emu);
         }
 
@@ -284,7 +293,8 @@ impl Wii {
 
         // Data partition magic + offset (Sonic Colors / NSMBW read these).
         emu.mmio.phys_write_u32(0x0000_3194, 0x8000_0000);
-        emu.mmio.phys_write_u32(0x0000_3198, (dvd.data_partition_offset() >> 2) as u32);
+        emu.mmio
+            .phys_write_u32(0x0000_3198, (dvd.data_partition_offset() >> 2) as u32);
     }
 
     fn run_apploader(emu: &mut Wii, dvd: &dyn image::Dvd, apploader_entry: u32) {
@@ -378,7 +388,10 @@ impl Wii {
         // }
         call_function(emu, close_ptr);
         let entrypoint = emu.gekko.gprs[3];
-        assert!(entrypoint != 0, "Apploader_ReturnEpilogue() returned null entrypoint");
+        assert!(
+            entrypoint != 0,
+            "Apploader_ReturnEpilogue() returned null entrypoint"
+        );
         emu.gekko.pc = entrypoint;
         tracing::info!(
             entrypoint = format!("{entrypoint:08X}"),

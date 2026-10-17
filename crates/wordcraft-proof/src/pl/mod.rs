@@ -74,7 +74,10 @@ pub fn has_dictionary() -> bool {
 
 /// Endings Polish adds after an apostrophe to foreign names whose last letter isn't pronounced
 /// (`Kennedy'ego`, `Wilde'a`, `Shakespeare'owi`).
-const APOSTROPHE_ENDINGS: &[&str] = &["a", "ach", "ami", "e", "ego", "em", "emu", "i", "m", "om", "owi", "owie", "u", "y", "ów", "ą", "ę"];
+const APOSTROPHE_ENDINGS: &[&str] = &[
+    "a", "ach", "ami", "e", "ego", "em", "emu", "i", "m", "om", "owi", "owie", "u", "y", "ów", "ą",
+    "ę",
+];
 
 /// Is `c` a letter of the Latin script (the only one the Polish dictionary covers)?
 fn is_latin_letter(c: char) -> bool {
@@ -119,7 +122,9 @@ fn known(d: &AffixDict, w: &str) -> bool {
         return true;
     }
     if let Some((stem, ending)) = w.split_once('\'') {
-        return stem.chars().next().is_some_and(char::is_uppercase) && stem.chars().count() >= 2 && APOSTROPHE_ENDINGS.contains(&ending);
+        return stem.chars().next().is_some_and(char::is_uppercase)
+            && stem.chars().count() >= 2
+            && APOSTROPHE_ENDINGS.contains(&ending);
     }
     false
 }
@@ -145,7 +150,10 @@ mod tests {
             assert!(is_correct_with(&none, w), "{w}");
         }
         assert!(suggest::suggest_in(&none, "żeka", 5).is_empty());
-        assert!(install_dictionary("FLAG long\n", "1\nkot\n").is_err(), "unsupported files are refused");
+        assert!(
+            install_dictionary("FLAG long\n", "1\nkot\n").is_err(),
+            "unsupported files are refused"
+        );
     }
 
     #[test]
@@ -189,7 +197,19 @@ mod tests {
     #[test]
     fn misspellings_are_flagged() {
         test_dict::install();
-        for w in ["żeka", "kturzy", "napewno", "wogóle", "zolw", "chuśtawka", "bżoza", "warszawa", "niewiem", "pszyjaciel", "Kennedy'xyz"] {
+        for w in [
+            "żeka",
+            "kturzy",
+            "napewno",
+            "wogóle",
+            "zolw",
+            "chuśtawka",
+            "bżoza",
+            "warszawa",
+            "niewiem",
+            "pszyjaciel",
+            "Kennedy'xyz",
+        ] {
             assert!(!is_correct(w), "{w}");
         }
     }

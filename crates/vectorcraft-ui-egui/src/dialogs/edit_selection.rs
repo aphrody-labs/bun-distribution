@@ -15,12 +15,21 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of Edit Selection.
 pub const KIND: &str = "editSelection";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Edit Selection").into(), body, confirm, min_width: 420.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Edit Selection").into(),
+    body,
+    confirm,
+    min_width: 420.0,
+    ..DialogSpec::FORM
+};
 
 /// Open Edit Selection on the active document's saved selections.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
     let names = app.run("select.savedList", json!({}))?;
-    let names: Vec<&str> = names.as_array().map(|a| a.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+    let names: Vec<&str> = names
+        .as_array()
+        .map(|a| a.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
     if names.is_empty() {
         return Err("No saved selections (Select → Save Selection…)".into());
     }
@@ -34,17 +43,29 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
 }
 
 fn count(d: &Dialog) -> usize {
-    d.fields.get("count").and_then(Value::as_u64).and_then(|n| usize::try_from(n).ok()).unwrap_or(0).min(SavedSelection::MAX)
+    d.fields
+        .get("count")
+        .and_then(Value::as_u64)
+        .and_then(|n| usize::try_from(n).ok())
+        .unwrap_or(0)
+        .min(SavedSelection::MAX)
 }
 
 /// The rows still in the list (not deleted).
 fn rows(d: &Dialog) -> Vec<usize> {
-    (0..count(d)).filter(|i| !d.bool(&format!("deleted{i}"))).collect()
+    (0..count(d))
+        .filter(|i| !d.bool(&format!("deleted{i}")))
+        .collect()
 }
 
 fn selected(d: &Dialog, rows: &[usize]) -> Option<usize> {
-    let want = d.fields.get("selected").and_then(Value::as_u64).and_then(|n| usize::try_from(n).ok());
-    want.filter(|w| rows.contains(w)).or_else(|| rows.first().copied())
+    let want = d
+        .fields
+        .get("selected")
+        .and_then(Value::as_u64)
+        .and_then(|n| usize::try_from(n).ok());
+    want.filter(|w| rows.contains(w))
+        .or_else(|| rows.first().copied())
 }
 
 fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
@@ -57,15 +78,22 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             ui.set_width(200.0);
             widgets::dim_label(ui, tl!("Saved Selections"));
             widgets::list_box(ui, |ui| {
-                egui::ScrollArea::vertical().id_salt("saved-selections").min_scrolled_height(180.0).max_height(180.0).show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.set_min_height(180.0);
-                    for &i in &rows {
-                        if ui.selectable_label(Some(i) == current, d.str(&format!("name{i}"))).clicked() {
-                            pick = Some(i);
+                egui::ScrollArea::vertical()
+                    .id_salt("saved-selections")
+                    .min_scrolled_height(180.0)
+                    .max_height(180.0)
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.set_min_height(180.0);
+                        for &i in &rows {
+                            if ui
+                                .selectable_label(Some(i) == current, d.str(&format!("name{i}")))
+                                .clicked()
+                            {
+                                pick = Some(i);
+                            }
                         }
-                    }
-                });
+                    });
             });
         });
         ui.add_space(16.0);
@@ -85,7 +113,11 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     if let (true, Some(i)) = (delete, current) {
         d.fields.insert(format!("deleted{i}"), json!(true));
         // The row below takes its place (the one above, for the last).
-        let next = rows.iter().copied().find(|r| *r > i).or_else(|| rows.iter().copied().rfind(|r| *r < i));
+        let next = rows
+            .iter()
+            .copied()
+            .find(|r| *r > i)
+            .or_else(|| rows.iter().copied().rfind(|r| *r < i));
         d.fields.insert("selected".into(), json!(next.unwrap_or(0)));
     }
     false
@@ -110,7 +142,11 @@ fn edits(d: &Dialog) -> Vec<Value> {
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let edits = edits(d);
     // A name two selections would share keeps the dialog open, to be changed.
-    let r = if edits.is_empty() { Ok(Value::Null) } else { app.run("select.editSaved", json!({ "edits": edits })) };
+    let r = if edits.is_empty() {
+        Ok(Value::Null)
+    } else {
+        app.run("select.editSaved", json!({ "edits": edits }))
+    };
     if r.is_ok() {
         app.ui.dialog = None;
     }
@@ -124,9 +160,16 @@ mod tests {
     use crate::VectorcraftApp;
 
     fn app() -> VectorcraftApp {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+        let mut app = VectorcraftApp::new(
+            vectorcraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.run("file.new", json!({})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
         for n in ["Logo", "Icons", "Text"] {
             app.run("select.save", json!({ "name": n })).unwrap();
         }
@@ -176,7 +219,10 @@ mod tests {
 
     #[test]
     fn it_needs_a_saved_selection() {
-        let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), crate::Services::default());
+        let mut app = VectorcraftApp::new(
+            vectorcraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.run("file.new", json!({})).unwrap();
         assert!(super::open(&mut app).is_err());
         assert!(app.ui.dialog.is_none());

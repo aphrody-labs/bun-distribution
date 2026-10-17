@@ -3,5 +3,7 @@
 //! `cargo run -p aphrody-identity --example terminal-theme -- --check`.
 
 fn main() {
-    std::process::exit(aphrody_identity::terminal_theme_main(std::env::args_os().collect()));
+    std::process::exit(aphrody_identity::terminal_theme_main(
+        std::env::args_os().collect(),
+    ));
 }

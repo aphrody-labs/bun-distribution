@@ -98,7 +98,12 @@ impl DumpAmbigRelocs {
                     };
                 let relocation = relocation.clone();
 
-                Some(RelocInfo { module_kind, relocation, symbol, offset })
+                Some(RelocInfo {
+                    module_kind,
+                    relocation,
+                    symbol,
+                    offset,
+                })
             })
             .collect();
         Ok(infos)

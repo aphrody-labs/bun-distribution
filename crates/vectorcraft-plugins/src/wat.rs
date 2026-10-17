@@ -7,7 +7,15 @@ const OUTPUT_AT: usize = 0x1_0000;
 /// `s` as the body of a WAT string literal (every byte that isn't a letter, digit or space
 /// escaped).
 pub fn string(s: &str) -> String {
-    s.bytes().map(|b| if b.is_ascii_alphanumeric() || b == b' ' { char::from(b).to_string() } else { format!("\\{b:02x}") }).collect()
+    s.bytes()
+        .map(|b| {
+            if b.is_ascii_alphanumeric() || b == b' ' {
+                char::from(b).to_string()
+            } else {
+                format!("\\{b:02x}")
+            }
+        })
+        .collect()
 }
 
 /// A plug-in module: `manifest` (JSON), a `vc_run` whose body is `run` (parameters `$in $il $pp
@@ -36,9 +44,17 @@ pub const ECHO: &str = "(i64.or (i64.shl (i64.extend_i32_u (local.get $il)) (i64
 
 /// A plug-in that always returns `output` (whatever it is given).
 pub fn returning(manifest: &str, output: &str) -> String {
-    let run = format!("(i64.or (i64.shl (i64.const {}) (i64.const 32)) (i64.const {OUTPUT_AT}))", output.len());
+    let run = format!(
+        "(i64.or (i64.shl (i64.const {}) (i64.const 32)) (i64.const {OUTPUT_AT}))",
+        output.len()
+    );
     let extra = format!(r#"(data (i32.const {OUTPUT_AT}) "{}")"#, string(output));
-    module(manifest, &run, &extra, (OUTPUT_AT + output.len()).div_ceil(0x1_0000) as u32 + 1)
+    module(
+        manifest,
+        &run,
+        &extra,
+        (OUTPUT_AT + output.len()).div_ceil(0x1_0000) as u32 + 1,
+    )
 }
 
 /// The manifest of a test plug-in `id` of `kind` with `params` (a JSON object of specs).

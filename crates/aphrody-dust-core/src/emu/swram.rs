@@ -106,7 +106,7 @@ impl Swram {
                     self.arm9_w_ptr = self.contents.as_mut_ptr();
                 }
                 self.arm9_mask = 0x7FFF;
-            },
+            }
             1 => {
                 self.arm7_ptr = self.contents.as_mut_ptr();
                 self.arm7_mask = 0x3FFF;
@@ -119,7 +119,7 @@ impl Swram {
                     self.arm9_w_ptr = self.contents.as_mut_ptr().wrapping_add(0x4000);
                 }
                 self.arm9_mask = 0x3FFF;
-            },
+            }
             2 => {
                 self.arm7_ptr = self.contents.as_mut_ptr().wrapping_add(0x4000);
                 self.arm7_mask = 0x3FFF;
@@ -132,7 +132,7 @@ impl Swram {
                     self.arm9_w_ptr = self.contents.as_mut_ptr();
                 }
                 self.arm9_mask = 0x3FFF;
-            },
+            }
             _ => {
                 self.arm7_ptr = self.contents.as_mut_ptr();
                 self.arm7_mask = 0x7FFF;
@@ -145,7 +145,7 @@ impl Swram {
                     self.arm9_w_ptr = self.ignore_buffer.as_mut_ptr();
                 }
                 self.arm9_mask = 0;
-            },
+            }
         }
     }
 

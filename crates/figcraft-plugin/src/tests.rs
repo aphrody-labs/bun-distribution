@@ -15,7 +15,11 @@ struct Mock {
 impl Host for Mock {
     fn call(&mut self, command: &str, params: &str) -> Result<String, String> {
         self.calls.push((command.into(), params.into()));
-        if self.refuse { Err(format!("`{command}` refused")) } else { Ok(format!("{{\"ran\":\"{command}\"}}")) }
+        if self.refuse {
+            Err(format!("`{command}` refused"))
+        } else {
+            Ok(format!("{{\"ran\":\"{command}\"}}"))
+        }
     }
     fn selection(&mut self) -> String {
         "[2,3]".into()
@@ -41,12 +45,17 @@ fn module(data: &str, body: &str) -> Vec<u8> {
 }
 
 fn module_with(data: &str, body: &str, memory: &str, extra: &str) -> Vec<u8> {
-    let wat = format!("(module {IMPORTS} {memory} {data} {extra} (func (export \"figcraft_run\") (param $n i32) (result i32) {body}))");
+    let wat = format!(
+        "(module {IMPORTS} {memory} {data} {extra} (func (export \"figcraft_run\") (param $n i32) (result i32) {body}))"
+    );
     wat::parse_str(&wat).unwrap_or_else(|e| panic!("{e}\n{wat}"))
 }
 
 fn small() -> Limits {
-    Limits { fuel: 2_000_000, ..Limits::default() }
+    Limits {
+        fuel: 2_000_000,
+        ..Limits::default()
+    }
 }
 
 fn go(bytes: &[u8], input: &str) -> (Result<crate::RunOutput, PluginError>, Mock) {
@@ -74,7 +83,10 @@ fn echoes_input_calls_commands_and_reads_replies() {
     let out = r.unwrap();
     assert_eq!(out.output, r#"{"ran":"shape.rectangle"}"#);
     assert_eq!(out.logs, vec![r#"{"command":"run"}"#.to_string()]);
-    assert_eq!(host.calls, vec![("shape.rectangle".into(), r#"{"x":1}"#.into())]);
+    assert_eq!(
+        host.calls,
+        vec![("shape.rectangle".into(), r#"{"x":1}"#.into())]
+    );
     assert_eq!(host.notes, vec!["made it".to_string()]);
     assert_eq!(out.calls, 3);
     assert!(out.fuel > 0);
@@ -92,7 +104,10 @@ fn selection_and_refusals_reach_the_plugin() {
           (then (call $set_output (i32.const 1024) (call $reply_read (i32.const 1024) (call $reply_len)))))
         (i32.const 0)"#,
     );
-    let mut host = Mock { refuse: true, ..Mock::default() };
+    let mut host = Mock {
+        refuse: true,
+        ..Mock::default()
+    };
     let out = run(&m, "{}", &small(), &mut host).unwrap();
     assert_eq!(out.output, "`node.rename` refused");
     assert_eq!(host.calls[0].1, "{}");
@@ -100,8 +115,14 @@ fn selection_and_refusals_reach_the_plugin() {
 
 #[test]
 fn a_nonzero_status_fails_the_run_with_its_output() {
-    let m = module(r#"(data (i32.const 0) "nothing selected")"#, "(call $set_output (i32.const 0) (i32.const 16)) (i32.const 2)");
-    assert_eq!(go(&m, "{}").0, Err(PluginError::Failed("nothing selected".into())));
+    let m = module(
+        r#"(data (i32.const 0) "nothing selected")"#,
+        "(call $set_output (i32.const 0) (i32.const 16)) (i32.const 2)",
+    );
+    assert_eq!(
+        go(&m, "{}").0,
+        Err(PluginError::Failed("nothing selected".into()))
+    );
     let m = module("", "(i32.const 7)");
     assert!(matches!(go(&m, "{}").0, Err(PluginError::Failed(m)) if m.contains("status 7")));
 }
@@ -111,11 +132,20 @@ fn an_endless_loop_runs_out_of_fuel() {
     let m = module("", "(loop $l (br $l)) (i32.const 0)");
     assert_eq!(go(&m, "{}").0, Err(PluginError::OutOfFuel));
     // Host calls cost fuel too, and their number is capped.
-    let m = module("", "(loop $l (call $log (i32.const 0) (i32.const 0)) (br $l)) (i32.const 0)");
+    let m = module(
+        "",
+        "(loop $l (call $log (i32.const 0) (i32.const 0)) (br $l)) (i32.const 0)",
+    );
     assert_eq!(go(&m, "{}").0, Err(PluginError::OutOfFuel));
     let mut host = Mock::default();
-    let limits = Limits { max_calls: 10, ..small() };
-    assert!(matches!(run(&m, "{}", &limits, &mut host), Err(PluginError::Limit(_))));
+    let limits = Limits {
+        max_calls: 10,
+        ..small()
+    };
+    assert!(matches!(
+        run(&m, "{}", &limits, &mut host),
+        Err(PluginError::Limit(_))
+    ));
 }
 
 #[test]
@@ -140,20 +170,40 @@ fn traps_fail_cleanly() {
         module("", "unreachable"),
         module("", "(i32.div_u (i32.const 1) (i32.const 0))"),
         // Out-of-bounds strings and replies.
-        module("", "(call $log (i32.const 65530) (i32.const 100)) (i32.const 0)"),
+        module(
+            "",
+            "(call $log (i32.const 65530) (i32.const 100)) (i32.const 0)",
+        ),
         module("", "(call $log (i32.const -1) (i32.const 2)) (i32.const 0)"),
-        module("", "(drop (call $reply_read (i32.const 65535) (i32.const 100))) (i32.const 0)"),
+        module(
+            "",
+            "(drop (call $reply_read (i32.const 65535) (i32.const 100))) (i32.const 0)",
+        ),
         // Not UTF-8.
-        module(r#"(data (i32.const 0) "\ff\fe")"#, "(call $log (i32.const 0) (i32.const 2)) (i32.const 0)"),
+        module(
+            r#"(data (i32.const 0) "\ff\fe")"#,
+            "(call $log (i32.const 0) (i32.const 2)) (i32.const 0)",
+        ),
         // Endless recursion exhausts the interpreter's stack, not the app's.
-        module_with("", "(call $rec) (i32.const 0)", "(memory (export \"memory\") 1)", "(func $rec (call $rec))"),
+        module_with(
+            "",
+            "(call $rec) (i32.const 0)",
+            "(memory (export \"memory\") 1)",
+            "(func $rec (call $rec))",
+        ),
     ];
     for m in &cases {
         let r = go(m, "{}").0;
-        assert!(matches!(r, Err(PluginError::Trap(_)) | Err(PluginError::Limit(_))), "{r:?}");
+        assert!(
+            matches!(r, Err(PluginError::Trap(_)) | Err(PluginError::Limit(_))),
+            "{r:?}"
+        );
     }
     // A huge length is refused before anything is read.
-    let m = module("", "(call $log (i32.const 0) (i32.const 2147483647)) (i32.const 0)");
+    let m = module(
+        "",
+        "(call $log (i32.const 0) (i32.const 2147483647)) (i32.const 0)",
+    );
     assert!(matches!(go(&m, "{}").0, Err(PluginError::Limit(_))));
 }
 
@@ -179,12 +229,28 @@ fn modules_without_the_abi_are_refused() {
     );
     invalid(r#"(module (func (export "figcraft_run") (param i32) (result i32) (i32.const 0)))"#);
     invalid(r#"(module (memory (export "memory") 1))"#);
-    invalid(r#"(module (memory (export "memory") 1) (func (export "figcraft_run") (result i32) (i32.const 0)))"#);
-    for junk in [&b""[..], b"\0asm", b"\0asm\x01\0\0\0\x01", b"not wasm at all", &[0xff; 64]] {
-        assert!(matches!(check_module(junk, &Limits::default()), Err(PluginError::InvalidModule(_))));
+    invalid(
+        r#"(module (memory (export "memory") 1) (func (export "figcraft_run") (result i32) (i32.const 0)))"#,
+    );
+    for junk in [
+        &b""[..],
+        b"\0asm",
+        b"\0asm\x01\0\0\0\x01",
+        b"not wasm at all",
+        &[0xff; 64],
+    ] {
+        assert!(matches!(
+            check_module(junk, &Limits::default()),
+            Err(PluginError::InvalidModule(_))
+        ));
     }
-    let tiny = Limits { module_bytes: 8, ..Limits::default() };
-    assert!(matches!(check_module(&module("", "(i32.const 0)"), &tiny), Err(PluginError::InvalidModule(m)) if m.contains("larger")));
+    let tiny = Limits {
+        module_bytes: 8,
+        ..Limits::default()
+    };
+    assert!(
+        matches!(check_module(&module("", "(i32.const 0)"), &tiny), Err(PluginError::InvalidModule(m)) if m.contains("larger"))
+    );
 }
 
 #[test]
@@ -201,7 +267,10 @@ fn mangled_modules_never_panic() {
         seed ^= seed << 5;
         seed
     };
-    let limits = Limits { fuel: 100_000, ..Limits::default() };
+    let limits = Limits {
+        fuel: 100_000,
+        ..Limits::default()
+    };
     for _ in 0..600 {
         let mut m = base.clone();
         for _ in 0..1 + next() % 4 {
@@ -218,7 +287,8 @@ fn mangled_modules_never_panic() {
 }
 
 fn manifest(extra: Value) -> Result<Manifest, String> {
-    let mut v = json!({"id": "org.example.tidy", "name": "Tidy", "version": "1.0.0", "main": "tidy.wasm"});
+    let mut v =
+        json!({"id": "org.example.tidy", "name": "Tidy", "version": "1.0.0", "main": "tidy.wasm"});
     if let (Some(o), Some(e)) = (v.as_object_mut(), extra.as_object()) {
         o.extend(e.clone());
     }
@@ -229,7 +299,11 @@ fn manifest(extra: Value) -> Result<Manifest, String> {
 fn manifests_validate_and_fill_defaults() {
     let m = manifest(json!({})).unwrap();
     assert_eq!(m.permissions.access, Access::Read, "read-only unless asked");
-    assert_eq!(m.commands.len(), 1, "one `run` command when none are listed");
+    assert_eq!(
+        m.commands.len(),
+        1,
+        "one `run` command when none are listed"
+    );
     assert_eq!(m.command(None).unwrap().id, "run");
     let m = manifest(json!({
         "permissions": {"access": "write", "commands": ["node.*", "shape.rectangle"]},
@@ -243,11 +317,23 @@ fn manifests_validate_and_fill_defaults() {
     .unwrap();
     assert!(m.permissions.allows("node.rename") && m.permissions.allows("shape.rectangle"));
     assert!(!m.permissions.allows("shape.ellipse") && !m.permissions.allows("file.save"));
-    assert_eq!(m.command(Some("other")).unwrap().label, "other", "an empty label falls back to the id");
+    assert_eq!(
+        m.command(Some("other")).unwrap().label,
+        "other",
+        "an empty label falls back to the id"
+    );
     let grid = m.command(Some("grid")).unwrap();
-    let p = grid.resolve_params(&json!({"columns": 40, "extra": [1]})).unwrap();
-    assert_eq!(p, json!({"columns": 12.0, "palette": "#f00,#0f0", "rounded": false, "size": "M", "extra": [1]}));
-    assert_eq!(grid.resolve_params(&json!({"columns": "3"})).unwrap()["columns"], json!(3.0));
+    let p = grid
+        .resolve_params(&json!({"columns": 40, "extra": [1]}))
+        .unwrap();
+    assert_eq!(
+        p,
+        json!({"columns": 12.0, "palette": "#f00,#0f0", "rounded": false, "size": "M", "extra": [1]})
+    );
+    assert_eq!(
+        grid.resolve_params(&json!({"columns": "3"})).unwrap()["columns"],
+        json!(3.0)
+    );
     assert!(grid.resolve_params(&json!({"size": "XL"})).is_err());
     assert!(grid.resolve_params(&json!({"rounded": "yes"})).is_err());
     assert!(grid.resolve_params(&json!({"columns": "NaN"})).is_err());
@@ -286,6 +372,10 @@ fn bad_manifests_are_refused() {
     let deep = "[".repeat(10_000);
     let huge = format!("{{\"id\":\"{}\"}}", "a".repeat(300_000));
     for junk in ["", "null", "[]", "{", "\"id\"", "{\"id\": 5}", &deep, &huge] {
-        assert!(Manifest::parse(junk).is_err(), "accepted {}", junk.chars().take(40).collect::<String>());
+        assert!(
+            Manifest::parse(junk).is_err(),
+            "accepted {}",
+            junk.chars().take(40).collect::<String>()
+        );
     }
 }

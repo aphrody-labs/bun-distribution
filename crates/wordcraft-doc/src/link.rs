@@ -5,8 +5,12 @@
 /// so a document can't launch `file:` paths, programs or custom-scheme handlers. Exact: a leading
 /// space or a control character makes it not a link.
 pub fn is_web_or_mail_link(url: &str) -> bool {
-    let Some((scheme, _)) = url.split_once(':') else { return false };
-    ["http", "https", "mailto"].iter().any(|s| scheme.eq_ignore_ascii_case(s))
+    let Some((scheme, _)) = url.split_once(':') else {
+        return false;
+    };
+    ["http", "https", "mailto"]
+        .iter()
+        .any(|s| scheme.eq_ignore_ascii_case(s))
 }
 
 /// Whether a hyperlink may be written as an `href` (or Markdown destination) in an exported file:
@@ -23,11 +27,16 @@ pub fn is_safe_href(url: &str) -> bool {
 /// The scheme a browser would see in `url` (RFC 3986 §3.1: a letter, then letters, digits, `+`,
 /// `-` or `.`, up to the first `:`), lower-cased; `None` for a relative reference.
 fn scheme(url: &str) -> Option<String> {
-    let cleaned: String = url.chars().filter(|c| !c.is_ascii_control() && *c != ' ').collect();
+    let cleaned: String = url
+        .chars()
+        .filter(|c| !c.is_ascii_control() && *c != ' ')
+        .collect();
     let (s, _) = cleaned.split_once(':')?;
     let mut chars = s.chars();
     let first = chars.next()?;
-    (first.is_ascii_alphabetic() && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))).then(|| s.to_ascii_lowercase())
+    (first.is_ascii_alphabetic()
+        && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.')))
+    .then(|| s.to_ascii_lowercase())
 }
 
 #[cfg(test)]
@@ -36,7 +45,12 @@ mod tests {
 
     #[test]
     fn only_web_and_mail_links_are_followable() {
-        for ok in ["https://example.com/a?b#c", "http://example.com", "HTTPS://EXAMPLE.COM", "mailto:someone@example.com"] {
+        for ok in [
+            "https://example.com/a?b#c",
+            "http://example.com",
+            "HTTPS://EXAMPLE.COM",
+            "mailto:someone@example.com",
+        ] {
             assert!(is_web_or_mail_link(ok), "{ok}");
         }
         for bad in [
@@ -59,7 +73,15 @@ mod tests {
     /// or another scheme, however a browser would normalise it.
     #[test]
     fn exported_hrefs_allow_bookmarks_and_relative_paths_but_no_scripts() {
-        for ok in ["https://example.com/x", "mailto:a@b.c", "#top", "other.html", "docs/guide.html#s2", "../up.html", "?q=1"] {
+        for ok in [
+            "https://example.com/x",
+            "mailto:a@b.c",
+            "#top",
+            "other.html",
+            "docs/guide.html#s2",
+            "../up.html",
+            "?q=1",
+        ] {
             assert!(is_safe_href(ok), "{ok}");
         }
         for bad in [

@@ -14,7 +14,10 @@ pub(crate) struct Plane {
 
 impl Plane {
     pub fn new(w: usize, h: usize) -> Plane {
-        Plane { data: vec![0; w * h], stride: w }
+        Plane {
+            data: vec![0; w * h],
+            stride: w,
+        }
     }
     #[inline(always)]
     pub fn at(&self, x: usize, y: usize) -> u16 {
@@ -27,7 +30,15 @@ impl Plane {
 }
 
 /// The intra modes this encoder uses (values are the spec's y / uv mode numbers).
-pub(crate) const INTRA_MODES_USED: [usize; 7] = [DC_PRED, V_PRED, H_PRED, PAETH_PRED, SMOOTH_PRED, SMOOTH_V_PRED, SMOOTH_H_PRED];
+pub(crate) const INTRA_MODES_USED: [usize; 7] = [
+    DC_PRED,
+    V_PRED,
+    H_PRED,
+    PAETH_PRED,
+    SMOOTH_PRED,
+    SMOOTH_V_PRED,
+    SMOOTH_H_PRED,
+];
 
 /// Inputs of the intra prediction process.
 pub(crate) struct IntraEdge {
@@ -66,7 +77,15 @@ pub(crate) fn edges(pl: &Plane, e: &IntraEdge) -> Edges {
         let v = (1 << (bd - 1)) - 1;
         above[..n].iter_mut().for_each(|a| *a = v);
     } else {
-        let above_limit = e.max_x.min(x as i32 + if e.have_above_right { 2 * w as i32 } else { w as i32 } - 1);
+        let above_limit = e.max_x.min(
+            x as i32
+                + if e.have_above_right {
+                    2 * w as i32
+                } else {
+                    w as i32
+                }
+                - 1,
+        );
         let row = pl.row(y - 1);
         for (i, a) in above[..n].iter_mut().enumerate() {
             *a = row[above_limit.min(x as i32 + i as i32) as usize] as i32;
@@ -79,7 +98,15 @@ pub(crate) fn edges(pl: &Plane, e: &IntraEdge) -> Edges {
         let v = (1 << (bd - 1)) + 1;
         left[..n].iter_mut().for_each(|a| *a = v);
     } else {
-        let left_limit = e.max_y.min(y as i32 + if e.have_below_left { 2 * h as i32 } else { h as i32 } - 1);
+        let left_limit = e.max_y.min(
+            y as i32
+                + if e.have_below_left {
+                    2 * h as i32
+                } else {
+                    h as i32
+                }
+                - 1,
+        );
         for (i, l) in left[..n].iter_mut().enumerate() {
             *l = pl.at(x - 1, left_limit.min(y as i32 + i as i32) as usize) as i32;
         }
@@ -93,7 +120,11 @@ pub(crate) fn edges(pl: &Plane, e: &IntraEdge) -> Edges {
     } else {
         1 << (bd - 1)
     };
-    Edges { above, left, corner }
+    Edges {
+        above,
+        left,
+        corner,
+    }
 }
 
 fn sm_weights(log2: u32) -> &'static [u8] {
@@ -115,7 +146,9 @@ pub(crate) fn predict_intra(ed: &Edges, e: &IntraEdge, mode: usize, pred: &mut [
     match mode {
         DC_PRED => {
             let v = if e.have_left && e.have_above {
-                let sum: i32 = left[..h].iter().sum::<i32>() + above[..w].iter().sum::<i32>() + ((w + h) >> 1) as i32;
+                let sum: i32 = left[..h].iter().sum::<i32>()
+                    + above[..w].iter().sum::<i32>()
+                    + ((w + h) >> 1) as i32;
                 sum / (w + h) as i32
             } else if e.have_left {
                 (left[..h].iter().sum::<i32>() + (h >> 1) as i32) >> log2
@@ -136,7 +169,9 @@ pub(crate) fn predict_intra(ed: &Edges, e: &IntraEdge, mode: usize, pred: &mut [
         }
         H_PRED => {
             for i in 0..h {
-                pred[i * w..i * w + w].iter_mut().for_each(|p| *p = left[i] as u16);
+                pred[i * w..i * w + w]
+                    .iter_mut()
+                    .for_each(|p| *p = left[i] as u16);
             }
         }
         PAETH_PRED => {
@@ -165,12 +200,21 @@ pub(crate) fn predict_intra(ed: &Edges, e: &IntraEdge, mode: usize, pred: &mut [
             for i in 0..h {
                 for j in 0..w {
                     let v = if mode == SMOOTH_PRED {
-                        let s = wy[i] as i32 * above[j] + (256 - wy[i] as i32) * left[h - 1] + wx[j] as i32 * left[i] + (256 - wx[j] as i32) * above[w - 1];
+                        let s = wy[i] as i32 * above[j]
+                            + (256 - wy[i] as i32) * left[h - 1]
+                            + wx[j] as i32 * left[i]
+                            + (256 - wx[j] as i32) * above[w - 1];
                         round2(s, 9)
                     } else if mode == SMOOTH_V_PRED {
-                        round2(wy[i] as i32 * above[j] + (256 - wy[i] as i32) * left[h - 1], 8)
+                        round2(
+                            wy[i] as i32 * above[j] + (256 - wy[i] as i32) * left[h - 1],
+                            8,
+                        )
                     } else {
-                        round2(wx[j] as i32 * left[i] + (256 - wx[j] as i32) * above[w - 1], 8)
+                        round2(
+                            wx[j] as i32 * left[i] + (256 - wx[j] as i32) * above[w - 1],
+                            8,
+                        )
                     };
                     pred[i * w + j] = v as u16;
                 }
@@ -242,7 +286,8 @@ pub(crate) fn predict_inter(
             for (c, o) in out.iter_mut().enumerate() {
                 let mut s = 0i32;
                 for t in 0..8 {
-                    s += kh[t] as i32 * row[(bx + c as i32 + t as i32).clamp(0, last_x) as usize] as i32;
+                    s += kh[t] as i32
+                        * row[(bx + c as i32 + t as i32).clamp(0, last_x) as usize] as i32;
                 }
                 *o = round2(s, 3);
             }
@@ -263,9 +308,15 @@ pub(crate) fn predict_inter(
     if fx == 0 {
         // the horizontal pass is exactly 16 * sample: Round2( 16 * sum, 11 ) = Round2( sum, 7 )
         for r in 0..h {
-            let rows: [&[u16]; 8] = std::array::from_fn(|t| refp.row((iy + r as i32 + t as i32 - 3).clamp(0, last_y) as usize));
+            let rows: [&[u16]; 8] = std::array::from_fn(|t| {
+                refp.row((iy + r as i32 + t as i32 - 3).clamp(0, last_y) as usize)
+            });
             for c in 0..w {
-                let xx = if x_inside { (ix + c as i32) as usize } else { (ix + c as i32).clamp(0, last_x) as usize };
+                let xx = if x_inside {
+                    (ix + c as i32) as usize
+                } else {
+                    (ix + c as i32).clamp(0, last_x) as usize
+                };
                 let mut s = 0i32;
                 for t in 0..8 {
                     s += kv[t] as i32 * rows[t][xx] as i32;
@@ -294,7 +345,14 @@ pub(crate) fn predict_inter(
 /// The visible `w x h` area of a reference plane interpolated at the sub-sample phase
 /// (`fx`, `fy`) (1/16 units) with the EIGHTTAP filter, as `predict_inter` computes it for
 /// blocks wider and taller than 4. Used for motion search.
-pub(crate) fn subpel_plane(refp: &Plane, w: usize, h: usize, fx: usize, fy: usize, bit_depth: u32) -> Vec<u16> {
+pub(crate) fn subpel_plane(
+    refp: &Plane,
+    w: usize,
+    h: usize,
+    fx: usize,
+    fy: usize,
+    bit_depth: u32,
+) -> Vec<u16> {
     let kh = &SUBPEL_FILTERS[EIGHTTAP][fx];
     let kv = &SUBPEL_FILTERS[EIGHTTAP][fy];
     let max = (1i32 << bit_depth) - 1;
@@ -340,12 +398,33 @@ mod tests {
             for (bx, by) in [(0i32, 0i32), (8, 8), (24, 16), (-5, 20), (30, -3)] {
                 let mut pred = vec![0u16; 64];
                 let mv = [by * 8 + fy as i32 / 2, bx * 8 + fx as i32 / 2];
-                predict_inter(&p, w as i32 - 1, h as i32 - 1, 0, 0, 8, 8, mv, 0, 8, &mut pred);
+                predict_inter(
+                    &p,
+                    w as i32 - 1,
+                    h as i32 - 1,
+                    0,
+                    0,
+                    8,
+                    8,
+                    mv,
+                    0,
+                    8,
+                    &mut pred,
+                );
                 for r in 0..8 {
                     for c in 0..8 {
-                        let (x, y) = ((bx + c).clamp(0, w as i32 - 1), (by + r).clamp(0, h as i32 - 1));
+                        let (x, y) = (
+                            (bx + c).clamp(0, w as i32 - 1),
+                            (by + r).clamp(0, h as i32 - 1),
+                        );
                         if bx + c == x && by + r == y {
-                            assert_eq!(pred[(r * 8 + c) as usize], plane[y as usize * w + x as usize], "phase ({fx}, {fy}) at ({}, {})", bx + c, by + r);
+                            assert_eq!(
+                                pred[(r * 8 + c) as usize],
+                                plane[y as usize * w + x as usize],
+                                "phase ({fx}, {fy}) at ({}, {})",
+                                bx + c,
+                                by + r
+                            );
                         }
                     }
                 }

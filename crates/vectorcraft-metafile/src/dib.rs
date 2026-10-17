@@ -42,7 +42,11 @@ impl Rgba {
             img
         };
         let (width, height) = img.dimensions();
-        Self { width, height, pixels: img.into_raw() }
+        Self {
+            width,
+            height,
+            pixels: img.into_raw(),
+        }
     }
 
     /// Every pixel fully opaque?
@@ -52,9 +56,11 @@ impl Rgba {
 
     /// As PNG bytes.
     pub fn to_png(&self) -> Result<Vec<u8>, String> {
-        let img = image::RgbaImage::from_raw(self.width, self.height, self.pixels.clone()).ok_or("the image's pixels don't match its size")?;
+        let img = image::RgbaImage::from_raw(self.width, self.height, self.pixels.clone())
+            .ok_or("the image's pixels don't match its size")?;
         let mut png = vec![];
-        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).map_err(|e| e.to_string())?;
+        img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+            .map_err(|e| e.to_string())?;
         Ok(png)
     }
 }
@@ -88,11 +94,24 @@ pub(crate) fn rgb24(img: &Rgba, opacity: f32) -> (Vec<u8>, Vec<u8>) {
     let row = stride(img.width, 24).unwrap_or(0);
     let mut bits = vec![0u8; row * img.height as usize];
     let over = |c: u8, a: u32| ((u32::from(c) * a + 255 * (255 - a) + 127) / 255) as u8;
-    for (y, src) in img.pixels.chunks_exact((img.width as usize * 4).max(1)).enumerate() {
+    for (y, src) in img
+        .pixels
+        .chunks_exact((img.width as usize * 4).max(1))
+        .enumerate()
+    {
         // Bottom-up: the first stored row is the image's last.
-        let Some(at) = (img.height as usize).checked_sub(y + 1).map(|r| r * row) else { continue };
-        let Some(dst) = bits.get_mut(at..at + img.width as usize * 3) else { continue };
-        for (d, p) in dst.as_chunks_mut::<3>().0.iter_mut().zip(src.as_chunks::<4>().0) {
+        let Some(at) = (img.height as usize).checked_sub(y + 1).map(|r| r * row) else {
+            continue;
+        };
+        let Some(dst) = bits.get_mut(at..at + img.width as usize * 3) else {
+            continue;
+        };
+        for (d, p) in dst
+            .as_chunks_mut::<3>()
+            .0
+            .iter_mut()
+            .zip(src.as_chunks::<4>().0)
+        {
             let a = (f32::from(p[3]) * opacity.clamp(0.0, 1.0)).round() as u32;
             d.copy_from_slice(&[over(p[2], a), over(p[1], a), over(p[0], a)]);
         }
@@ -105,9 +124,18 @@ pub(crate) fn bgra32(img: &Rgba, opacity: f32) -> (Vec<u8>, Vec<u8>) {
     let row = img.width as usize * 4;
     let mut bits = vec![0u8; row * img.height as usize];
     for (y, src) in img.pixels.chunks_exact(row.max(1)).enumerate() {
-        let Some(at) = (img.height as usize).checked_sub(y + 1).map(|r| r * row) else { continue };
-        let Some(dst) = bits.get_mut(at..at + row) else { continue };
-        for (d, p) in dst.as_chunks_mut::<4>().0.iter_mut().zip(src.as_chunks::<4>().0) {
+        let Some(at) = (img.height as usize).checked_sub(y + 1).map(|r| r * row) else {
+            continue;
+        };
+        let Some(dst) = bits.get_mut(at..at + row) else {
+            continue;
+        };
+        for (d, p) in dst
+            .as_chunks_mut::<4>()
+            .0
+            .iter_mut()
+            .zip(src.as_chunks::<4>().0)
+        {
             let a = (f32::from(p[3]) * opacity.clamp(0.0, 1.0)).round() as u32;
             let pre = |c: u8| ((u32::from(c) * a + 127) / 255) as u8;
             d.copy_from_slice(&[pre(p[2]), pre(p[1]), pre(p[0]), a as u8]);
@@ -166,7 +194,11 @@ pub(crate) fn decode(bmi: &[u8], bits: &[u8], alpha: Alpha) -> Result<Rgba, Stri
         if w > MAX_READ_SIDE || h > MAX_READ_SIDE || u64::from(w) * u64::from(h) > MAX_READ_PIXELS {
             return Err("a bitmap is too large to read".into());
         }
-        return Ok(Rgba { width: w, height: h, pixels: img.into_raw() });
+        return Ok(Rgba {
+            width: w,
+            height: h,
+            pixels: img.into_raw(),
+        });
     }
     if compression != BI_RGB && compression != BI_BITFIELDS {
         return Err("compressed (RLE) bitmaps can't be read yet".into());
@@ -184,20 +216,38 @@ pub(crate) fn decode(bmi: &[u8], bits: &[u8], alpha: Alpha) -> Result<Rgba, Stri
     let fields = compression == BI_BITFIELDS;
     let masks: Option<[u32; 4]> = fields.then(|| {
         let mut m = Reader::new(bmi.get(masks_at..).unwrap_or_default());
-        let rgb = [m.u32().unwrap_or(0), m.u32().unwrap_or(0), m.u32().unwrap_or(0)];
+        let rgb = [
+            m.u32().unwrap_or(0),
+            m.u32().unwrap_or(0),
+            m.u32().unwrap_or(0),
+        ];
         // An alpha mask comes with BITMAPV3INFOHEADER and later.
-        let a = if header_len >= 56 { m.u32().unwrap_or(0) } else { 0 };
+        let a = if header_len >= 56 {
+            m.u32().unwrap_or(0)
+        } else {
+            0
+        };
         [rgb[0], rgb[1], rgb[2], a]
     });
     let palette_at = header_len + if fields && header_len == 40 { 12 } else { 0 };
     let bpp_u = u32::from(bpp);
     let palette: Vec<[u8; 3]> = if bpp_u <= 8 {
-        let n = if colors == 0 { 1usize << bpp_u } else { (colors as usize).min(256) };
+        let n = if colors == 0 {
+            1usize << bpp_u
+        } else {
+            (colors as usize).min(256)
+        };
         bmi.get(palette_at..)
             .unwrap_or_default()
             .chunks_exact(palette_entry)
             .take(n)
-            .map(|e| [e.get(2).copied().unwrap_or(0), e.get(1).copied().unwrap_or(0), e.first().copied().unwrap_or(0)])
+            .map(|e| {
+                [
+                    e.get(2).copied().unwrap_or(0),
+                    e.get(1).copied().unwrap_or(0),
+                    e.first().copied().unwrap_or(0),
+                ]
+            })
             .collect()
     } else {
         vec![]
@@ -217,18 +267,24 @@ pub(crate) fn decode(bmi: &[u8], bits: &[u8], alpha: Alpha) -> Result<Rgba, Stri
     let mut pixels = Vec::with_capacity(w as usize * h as usize * 4);
     for y in 0..h as usize {
         let src_row = if top_down { y } else { h as usize - 1 - y };
-        let line = bits.get(src_row * row..src_row * row + row).ok_or_else(bad)?;
+        let line = bits
+            .get(src_row * row..src_row * row + row)
+            .ok_or_else(bad)?;
         for x in 0..w as usize {
             let px: [u8; 4] = match bpp {
                 1 | 4 | 8 => {
                     let bit = x * bpp_u as usize;
                     let byte = line.get(bit / 8).copied().unwrap_or(0);
-                    let idx = (byte >> (8 - bpp_u as usize - bit % 8)) & ((1u16 << bpp_u) - 1) as u8;
+                    let idx =
+                        (byte >> (8 - bpp_u as usize - bit % 8)) & ((1u16 << bpp_u) - 1) as u8;
                     let [r, g, b] = palette.get(idx as usize).copied().unwrap_or([0, 0, 0]);
                     [r, g, b, 255]
                 }
                 16 => {
-                    let v = u32::from(u16::from_le_bytes([line.get(x * 2).copied().unwrap_or(0), line.get(x * 2 + 1).copied().unwrap_or(0)]));
+                    let v = u32::from(u16::from_le_bytes([
+                        line.get(x * 2).copied().unwrap_or(0),
+                        line.get(x * 2 + 1).copied().unwrap_or(0),
+                    ]));
                     [channel(v, mr), channel(v, mg), channel(v, mb), 255]
                 }
                 24 => {
@@ -238,16 +294,38 @@ pub(crate) fn decode(bmi: &[u8], bits: &[u8], alpha: Alpha) -> Result<Rgba, Stri
                 _ => {
                     let p = line.get(x * 4..x * 4 + 4).unwrap_or(&[0, 0, 0, 0]);
                     let v = u32::from_le_bytes([p[0], p[1], p[2], p[3]]);
-                    let a = if alpha == Alpha::Premultiplied && ma != 0 { channel(v, ma) } else { 255 };
-                    let un =
-                        |c: u8| if alpha == Alpha::Premultiplied && a < 255 { (u32::from(c) * 255 / u32::from(a.max(1))).min(255) as u8 } else { c };
-                    [un(channel(v, mr)), un(channel(v, mg)), un(channel(v, mb)), if alpha == Alpha::Premultiplied { a } else { 255 }]
+                    let a = if alpha == Alpha::Premultiplied && ma != 0 {
+                        channel(v, ma)
+                    } else {
+                        255
+                    };
+                    let un = |c: u8| {
+                        if alpha == Alpha::Premultiplied && a < 255 {
+                            (u32::from(c) * 255 / u32::from(a.max(1))).min(255) as u8
+                        } else {
+                            c
+                        }
+                    };
+                    [
+                        un(channel(v, mr)),
+                        un(channel(v, mg)),
+                        un(channel(v, mb)),
+                        if alpha == Alpha::Premultiplied {
+                            a
+                        } else {
+                            255
+                        },
+                    ]
                 }
             };
             pixels.extend_from_slice(&px);
         }
     }
-    Ok(Rgba { width: w, height: h, pixels })
+    Ok(Rgba {
+        width: w,
+        height: h,
+        pixels,
+    })
 }
 
 /// A packed DIB (a BITMAPINFO and its bits, one after the other, as WMF records hold them) split
@@ -265,7 +343,11 @@ pub(crate) fn split(packed: &[u8]) -> Option<(&[u8], &[u8])> {
         r.skip(12)?;
         (bpp, c, r.u32()? as usize, 4)
     };
-    let masks = if compression == BI_BITFIELDS && size == 40 { 12 } else { 0 };
+    let masks = if compression == BI_BITFIELDS && size == 40 {
+        12
+    } else {
+        0
+    };
     let colors = if used > 0 {
         used.min(256)
     } else if bpp <= 8 {
@@ -283,8 +365,15 @@ mod tests {
 
     fn sample() -> Rgba {
         // 3 × 2: red, green, blue / half-transparent black, transparent, white.
-        let pixels = vec![255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 0, 0, 0, 128, 0, 0, 0, 0, 255, 255, 255, 255];
-        Rgba { width: 3, height: 2, pixels }
+        let pixels = vec![
+            255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 0, 0, 0, 128, 0, 0, 0, 0, 255, 255,
+            255, 255,
+        ];
+        Rgba {
+            width: 3,
+            height: 2,
+            pixels,
+        }
     }
 
     #[test]
@@ -294,7 +383,13 @@ mod tests {
         assert_eq!(&bmi[14..16], &[24, 0], "24 bits a pixel");
         // Rows of 9 bytes padded to 12, the last row first: half-transparent black over white is
         // mid grey, transparent is white.
-        assert_eq!(bits, vec![127, 127, 127, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 255, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            bits,
+            vec![
+                127, 127, 127, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 0, 255, 0, 255, 0, 255, 0,
+                0, 0, 0, 0
+            ]
+        );
     }
 
     #[test]
@@ -316,7 +411,10 @@ mod tests {
         assert_eq!(bits.len(), 24);
         let back = decode(&bmi, &bits, Alpha::Ignore).unwrap();
         assert_eq!((back.width, back.height), (3, 2));
-        assert_eq!(&back.pixels[..12], &[255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255]);
+        assert_eq!(
+            &back.pixels[..12],
+            &[255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255]
+        );
         // Half-transparent black over white is mid grey; transparent is white.
         assert_eq!(&back.pixels[12..16], &[127, 127, 127, 255]);
         assert_eq!(&back.pixels[16..20], &[255, 255, 255, 255]);

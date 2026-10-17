@@ -11,7 +11,16 @@ use std::process::Command;
 
 use anyhow::{Context, anyhow, bail};
 
-const INFO_KEYS: [&str; 8] = ["Title", "Author", "Subject", "Keywords", "Creator", "Producer", "CreationDate", "ModDate"];
+const INFO_KEYS: [&str; 8] = [
+    "Title",
+    "Author",
+    "Subject",
+    "Keywords",
+    "Creator",
+    "Producer",
+    "CreationDate",
+    "ModDate",
+];
 const MAX_PDF_BYTES: u64 = 64 * 1024 * 1024;
 const MAX_PDF_TEXT_BYTES: usize = 8 * 1024 * 1024;
 const MAX_PDF_PAGES: usize = 32;
@@ -42,12 +51,20 @@ pub fn run(args: &[String]) -> anyhow::Result<()> {
     }
     let mut report = String::new();
     writeln!(report, "PdfCraft macOS integration diagnostics")?;
-    writeln!(report, "target: {} / {}", std::env::consts::OS, std::env::consts::ARCH)?;
+    writeln!(
+        report,
+        "target: {} / {}",
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    )?;
     writeln!(report, "os version: {}", os_version())?;
 
     match options.bundle.as_deref() {
         Some(bundle) => write_bundle_report(&mut report, bundle)?,
-        None => writeln!(report, "bundle: not supplied (use --bundle /path/to/PdfCraft.app)")?,
+        None => writeln!(
+            report,
+            "bundle: not supplied (use --bundle /path/to/PdfCraft.app)"
+        )?,
     }
 
     write_tool_report(&mut report, "quick look", "qlmanage", &["-m", "plugins"])?;
@@ -57,8 +74,14 @@ pub fn run(args: &[String]) -> anyhow::Result<()> {
             write_spotlight_report(&mut report, pdf)?;
         }
         None => {
-            writeln!(report, "pdf: not supplied (use --pdf /path/to/synthetic.pdf)")?;
-            writeln!(report, "spotlight: skipped (a PDF path is required for test-import)")?;
+            writeln!(
+                report,
+                "pdf: not supplied (use --pdf /path/to/synthetic.pdf)"
+            )?;
+            writeln!(
+                report,
+                "spotlight: skipped (a PDF path is required for test-import)"
+            )?;
         }
     }
 
@@ -81,7 +104,9 @@ fn parse_args(args: &[String]) -> anyhow::Result<Options> {
 }
 
 fn next_path<'a>(it: &mut impl Iterator<Item = &'a String>, flag: &str) -> anyhow::Result<PathBuf> {
-    it.next().map(PathBuf::from).ok_or_else(|| anyhow!("{flag} needs a path"))
+    it.next()
+        .map(PathBuf::from)
+        .ok_or_else(|| anyhow!("{flag} needs a path"))
 }
 
 fn os_version() -> String {
@@ -105,15 +130,21 @@ fn write_bundle_report(report: &mut String, bundle: &Path) -> anyhow::Result<()>
     let plist = contents.join("Info.plist");
     let plist_text = fs::read_to_string(&plist).ok();
     if let Some(text) = plist_text.as_deref() {
-        let bundle_id = plist_value(text, "CFBundleIdentifier").unwrap_or_else(|| "unavailable".into());
-        let minimum = plist_value(text, "LSMinimumSystemVersion").unwrap_or_else(|| "unavailable".into());
+        let bundle_id =
+            plist_value(text, "CFBundleIdentifier").unwrap_or_else(|| "unavailable".into());
+        let minimum =
+            plist_value(text, "LSMinimumSystemVersion").unwrap_or_else(|| "unavailable".into());
         writeln!(report, "  bundle identifier: {bundle_id}")?;
         writeln!(report, "  minimum macOS: {minimum}")?;
         writeln!(report, "  PDF registration: {}", pdf_registration(text))?;
-        let executable = plist_value(text, "CFBundleExecutable").unwrap_or_else(|| "PdfCraft".into());
+        let executable =
+            plist_value(text, "CFBundleExecutable").unwrap_or_else(|| "PdfCraft".into());
         write_architecture_report(report, &contents.join("MacOS").join(executable))?;
     } else if plist.exists() {
-        writeln!(report, "  Info.plist: present but not UTF-8 XML (binary plist inspection unavailable)")?;
+        writeln!(
+            report,
+            "  Info.plist: present but not UTF-8 XML (binary plist inspection unavailable)"
+        )?;
     } else {
         writeln!(report, "  Info.plist: missing")?;
     }
@@ -130,22 +161,43 @@ fn write_bundle_report(report: &mut String, bundle: &Path) -> anyhow::Result<()>
         writeln!(report, "  nested code: none under Contents/PlugIns")?;
     }
 
-    let signature = probe("codesign", &["--verify", "--deep", "--strict", bundle.to_string_lossy().as_ref()]);
+    let signature = probe(
+        "codesign",
+        &[
+            "--verify",
+            "--deep",
+            "--strict",
+            bundle.to_string_lossy().as_ref(),
+        ],
+    );
     writeln!(report, "  signature: {}", probe_status(&signature, "valid"))?;
     Ok(())
 }
 
 fn write_architecture_report(report: &mut String, executable: &Path) -> anyhow::Result<()> {
     if !executable.is_file() {
-        writeln!(report, "  architectures: executable missing ({})", executable.display())?;
+        writeln!(
+            report,
+            "  architectures: executable missing ({})",
+            executable.display()
+        )?;
         return Ok(());
     }
     let probe = probe("lipo", &["-info", executable.to_string_lossy().as_ref()]);
-    writeln!(report, "  architectures: {}", probe_status(&probe, "reported"))?;
+    writeln!(
+        report,
+        "  architectures: {}",
+        probe_status(&probe, "reported")
+    )?;
     Ok(())
 }
 
-fn write_tool_report(report: &mut String, label: &str, program: &str, args: &[&str]) -> anyhow::Result<()> {
+fn write_tool_report(
+    report: &mut String,
+    label: &str,
+    program: &str,
+    args: &[&str],
+) -> anyhow::Result<()> {
     let probe = probe(program, args);
     let status = if probe.status == Some(0) && useful_output(&probe).is_none() {
         "available (no output returned)".into()
@@ -161,7 +213,9 @@ fn write_tool_report(report: &mut String, label: &str, program: &str, args: &[&s
 
 fn write_spotlight_report(report: &mut String, pdf: &Path) -> anyhow::Result<()> {
     let probe = probe("mdimport", &["-t", "-d2", pdf.to_string_lossy().as_ref()]);
-    let status = if probe.status == Some(0) && useful_output(&probe).is_none_or(|o| o.contains("Nothing returned by server")) {
+    let status = if probe.status == Some(0)
+        && useful_output(&probe).is_none_or(|o| o.contains("Nothing returned by server"))
+    {
         "no metadata returned".to_owned()
     } else {
         probe_status(&probe, "test-import succeeded")
@@ -176,10 +230,14 @@ fn write_spotlight_report(report: &mut String, pdf: &Path) -> anyhow::Result<()>
 fn write_pdf_report(report: &mut String, pdf: &Path) -> anyhow::Result<()> {
     let metadata = fs::metadata(pdf).with_context(|| format!("stat PDF {}", pdf.display()))?;
     if metadata.len() > MAX_PDF_BYTES {
-        bail!("PDF {} exceeds the {MAX_PDF_BYTES}-byte diagnostic limit", pdf.display());
+        bail!(
+            "PDF {} exceeds the {MAX_PDF_BYTES}-byte diagnostic limit",
+            pdf.display()
+        );
     }
     let bytes = fs::read(pdf).with_context(|| format!("read PDF {}", pdf.display()))?;
-    let doc = lopdf::Document::load_mem(&bytes).with_context(|| format!("parse PDF {}", pdf.display()))?;
+    let doc = lopdf::Document::load_mem(&bytes)
+        .with_context(|| format!("parse PDF {}", pdf.display()))?;
     let pages = doc.get_pages();
     writeln!(report, "pdf: {} ({} bytes)", pdf.display(), bytes.len())?;
     writeln!(report, "  pages: {}", pages.len())?;
@@ -195,12 +253,21 @@ fn write_pdf_report(report: &mut String, pdf: &Path) -> anyhow::Result<()> {
         match doc.extract_text_with_limit(&page_numbers, MAX_PDF_TEXT_BYTES) {
             Ok(text) => {
                 let sample: String = text.chars().take(240).collect();
-                writeln!(report, "  text: {} bytes from first {} page(s); sample: {:?}", text.len(), page_numbers.len(), sample)?;
+                writeln!(
+                    report,
+                    "  text: {} bytes from first {} page(s); sample: {:?}",
+                    text.len(),
+                    page_numbers.len(),
+                    sample
+                )?;
             }
             Err(err) => writeln!(report, "  text: unavailable ({err})")?,
         }
         if pages.len() > MAX_PDF_PAGES {
-            writeln!(report, "  text limit: first {MAX_PDF_PAGES} pages inspected")?;
+            writeln!(
+                report,
+                "  text limit: first {MAX_PDF_PAGES} pages inspected"
+            )?;
         }
     }
     Ok(())
@@ -218,7 +285,12 @@ fn info_value(doc: &lopdf::Document, key: &str) -> Option<String> {
 
 fn pdf_string(bytes: &[u8]) -> String {
     if let Some(utf16) = bytes.strip_prefix(&[0xfe, 0xff]) {
-        let units: Vec<u16> = utf16.as_chunks::<2>().0.iter().map(|pair| u16::from_be_bytes(*pair)).collect();
+        let units: Vec<u16> = utf16
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u16::from_be_bytes(*pair))
+            .collect();
         return String::from_utf16_lossy(&units);
     }
     String::from_utf8_lossy(bytes).into_owned()
@@ -233,15 +305,26 @@ fn plist_value(plist: &str, key: &str) -> Option<String> {
 }
 
 fn pdf_registration(plist: &str) -> String {
-    let docs = plist.split_once("<key>CFBundleDocumentTypes</key>").map(|(_, rest)| rest).unwrap_or_default();
+    let docs = plist
+        .split_once("<key>CFBundleDocumentTypes</key>")
+        .map(|(_, rest)| rest)
+        .unwrap_or_default();
     let pdf = docs
         .split("<dict>")
         .map(|chunk| chunk.split("</dict>").next().unwrap_or_default())
         .find(|chunk| chunk.contains("<string>com.adobe.pdf</string>"));
     match pdf {
         Some(entry) => {
-            let role = if entry.contains("<string>Editor</string>") { "Editor" } else { "unknown role" };
-            let rank = if entry.contains("<string>Alternate</string>") { "Alternate" } else { "unknown rank" };
+            let role = if entry.contains("<string>Editor</string>") {
+                "Editor"
+            } else {
+                "unknown role"
+            };
+            let rank = if entry.contains("<string>Alternate</string>") {
+                "Alternate"
+            } else {
+                "unknown rank"
+            };
             format!("com.adobe.pdf (role={role}, rank={rank})")
         }
         None => "com.adobe.pdf not declared".into(),
@@ -267,7 +350,12 @@ fn probe(program: &str, args: &[&str]) -> Probe {
             stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
             error: None,
         },
-        Err(error) => Probe { status: None, stdout: String::new(), stderr: String::new(), error: Some(error.to_string()) },
+        Err(error) => Probe {
+            status: None,
+            stdout: String::new(),
+            stderr: String::new(),
+            error: Some(error.to_string()),
+        },
     }
 }
 
@@ -316,8 +404,13 @@ mod tests {
     #[test]
     fn parses_optional_paths() {
         assert_eq!(
-            parse_args(&args(&["--bundle", "PdfCraft.app", "--pdf", "fixture.pdf"])).expect("arguments"),
-            Options { help: false, bundle: Some("PdfCraft.app".into()), pdf: Some("fixture.pdf".into()) }
+            parse_args(&args(&["--bundle", "PdfCraft.app", "--pdf", "fixture.pdf"]))
+                .expect("arguments"),
+            Options {
+                help: false,
+                bundle: Some("PdfCraft.app".into()),
+                pdf: Some("fixture.pdf".into())
+            }
         );
     }
 
@@ -337,8 +430,17 @@ mod tests {
               <key>LSItemContentTypes</key><array><string>com.adobe.pdf</string></array>
             </dict></array>
         "#;
-        assert_eq!(plist_value(plist, "CFBundleIdentifier").as_deref(), Some("ai.storyteller.pdfcraft"));
-        assert_eq!(plist_value(plist, "LSMinimumSystemVersion").as_deref(), Some("11.0"));
-        assert_eq!(pdf_registration(plist), "com.adobe.pdf (role=Editor, rank=Alternate)");
+        assert_eq!(
+            plist_value(plist, "CFBundleIdentifier").as_deref(),
+            Some("ai.storyteller.pdfcraft")
+        );
+        assert_eq!(
+            plist_value(plist, "LSMinimumSystemVersion").as_deref(),
+            Some("11.0")
+        );
+        assert_eq!(
+            pdf_registration(plist),
+            "com.adobe.pdf (role=Editor, rank=Alternate)"
+        );
     }
 }

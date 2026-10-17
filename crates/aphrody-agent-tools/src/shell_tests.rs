@@ -52,7 +52,11 @@ fn guard_on_refuses_destructive_without_spawning() {
         "refusal explains why: {}",
         refusal.content
     );
-    assert!(refusal.content.contains("rm"), "refusal names the program: {}", refusal.content);
+    assert!(
+        refusal.content.contains("rm"),
+        "refusal names the program: {}",
+        refusal.content
+    );
 }
 
 #[test]
@@ -71,9 +75,15 @@ fn classify_safety_maps_guard_decisions() {
     // Guard off (default) ⇒ everything is Safe, so autonomy is unimpeded — even
     // a destructive command (it is the engine's/operator's choice to enable the
     // guard).
-    assert_eq!(classify_safety(&["rm".into(), "-rf".into(), "/".into()], false), ToolSafety::Safe);
+    assert_eq!(
+        classify_safety(&["rm".into(), "-rf".into(), "/".into()], false),
+        ToolSafety::Safe
+    );
     // Guard on ⇒ known-destructive maps to Refuse...
-    assert_eq!(classify_safety(&["rm".into(), "-rf".into(), "/".into()], true), ToolSafety::Refuse);
+    assert_eq!(
+        classify_safety(&["rm".into(), "-rf".into(), "/".into()], true),
+        ToolSafety::Refuse
+    );
     // ...and an unknown command maps to Escalate (conservative: not provably safe).
     assert_eq!(
         classify_safety(&["definitely-not-a-real-command-xyz".into()], true),
@@ -100,17 +110,32 @@ async fn echo_captures_exit_zero_and_output() {
         .await
         .expect("handle echo");
     assert!(!out.is_error, "output: {}", out.content);
-    assert!(out.content.contains("exit_code: 0"), "output: {}", out.content);
-    assert!(out.content.contains("aphrody-marker"), "output: {}", out.content);
+    assert!(
+        out.content.contains("exit_code: 0"),
+        "output: {}",
+        out.content
+    );
+    assert!(
+        out.content.contains("aphrody-marker"),
+        "output: {}",
+        out.content
+    );
 }
 
 #[tokio::test]
 async fn non_zero_exit_is_reported_not_errored() {
     let tool = ShellExecTool::new();
-    let out = tool.handle(json!({ "command": shell_argv("exit 3") })).await.expect("handle exit 3");
+    let out = tool
+        .handle(json!({ "command": shell_argv("exit 3") }))
+        .await
+        .expect("handle exit 3");
     // A non-zero exit is a real result, not a tool error.
     assert!(!out.is_error, "output: {}", out.content);
-    assert!(out.content.contains("exit_code: 3"), "output: {}", out.content);
+    assert!(
+        out.content.contains("exit_code: 3"),
+        "output: {}",
+        out.content
+    );
 }
 
 #[tokio::test]
@@ -141,7 +166,10 @@ async fn spawn_failure_is_tool_error() {
 #[tokio::test]
 async fn empty_command_is_error_output() {
     let tool = ShellExecTool::new();
-    let out = tool.handle(json!({ "command": [] })).await.expect("handle empty");
+    let out = tool
+        .handle(json!({ "command": [] }))
+        .await
+        .expect("handle empty");
     assert!(out.is_error);
     assert!(out.content.contains("non-empty"), "output: {}", out.content);
 }
@@ -149,7 +177,10 @@ async fn empty_command_is_error_output() {
 #[tokio::test]
 async fn output_cap_truncates() {
     // Emit ~4 KiB with a 256-byte cap.
-    let config = ShellExecConfig { default_timeout: DEFAULT_TIMEOUT, max_output_bytes: 256 };
+    let config = ShellExecConfig {
+        default_timeout: DEFAULT_TIMEOUT,
+        max_output_bytes: 256,
+    };
     let tool = ShellExecTool::with_config(config);
     // `for` loops differ across cmd/sh; emit a long single line instead.
     #[cfg(windows)]
@@ -160,7 +191,10 @@ async fn output_cap_truncates() {
                   AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
     #[cfg(not(windows))]
     let script = "yes A | head -c 4096";
-    let out = tool.handle(json!({ "command": shell_argv(script) })).await.expect("handle cap");
+    let out = tool
+        .handle(json!({ "command": shell_argv(script) }))
+        .await
+        .expect("handle cap");
     assert!(!out.is_error, "output: {}", out.content);
     assert!(out.content.contains("truncated"), "output: {}", out.content);
 }
@@ -206,7 +240,10 @@ async fn timeout_kills_the_whole_process_group() {
     assert!(out.content.contains("timed out"), "output: {}", out.content);
 
     let printed = lines.lock().unwrap().clone();
-    let pid: i32 = printed.trim().parse().unwrap_or_else(|_| panic!("pid line, got {printed:?}"));
+    let pid: i32 = printed
+        .trim()
+        .parse()
+        .unwrap_or_else(|_| panic!("pid line, got {printed:?}"));
 
     // The background sleep was reparented to init and must already be gone;
     // allow the kernel a moment to finish tearing the group down.

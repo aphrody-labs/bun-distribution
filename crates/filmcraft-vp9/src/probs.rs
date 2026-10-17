@@ -64,7 +64,9 @@ impl Default for FrameContext {
             coef,
             skip: DEFAULT_SKIP_PROB,
             inter_mode: std::array::from_fn(|i| arr(&DEFAULT_INTER_MODE_PROBS[i * 3..i * 3 + 3])),
-            interp_filter: std::array::from_fn(|i| arr(&DEFAULT_INTERP_FILTER_PROBS[i * 2..i * 2 + 2])),
+            interp_filter: std::array::from_fn(|i| {
+                arr(&DEFAULT_INTERP_FILTER_PROBS[i * 2..i * 2 + 2])
+            }),
             is_inter: DEFAULT_IS_INTER_PROB,
             comp_mode: DEFAULT_COMP_MODE_PROB,
             single_ref: std::array::from_fn(|i| arr(&DEFAULT_SINGLE_REF_PROB[i * 2..i * 2 + 2])),
@@ -77,7 +79,11 @@ impl Default for FrameContext {
             mv_class: std::array::from_fn(|i| arr(&DEFAULT_MV_CLASS_PROBS[i * 10..i * 10 + 10])),
             mv_class0_bit: DEFAULT_MV_CLASS0_BIT_PROB,
             mv_bits: std::array::from_fn(|i| arr(&DEFAULT_MV_BITS_PROB[i * 10..i * 10 + 10])),
-            mv_class0_fr: std::array::from_fn(|i| std::array::from_fn(|j| arr(&DEFAULT_MV_CLASS0_FR_PROBS[(i * 2 + j) * 3..(i * 2 + j) * 3 + 3]))),
+            mv_class0_fr: std::array::from_fn(|i| {
+                std::array::from_fn(|j| {
+                    arr(&DEFAULT_MV_CLASS0_FR_PROBS[(i * 2 + j) * 3..(i * 2 + j) * 3 + 3])
+                })
+            }),
             mv_fr: std::array::from_fn(|i| arr(&DEFAULT_MV_FR_PROBS[i * 3..i * 3 + 3])),
             mv_class0_hp: DEFAULT_MV_CLASS0_HP_PROB,
             mv_hp: DEFAULT_MV_HP_PROB,
@@ -184,18 +190,51 @@ impl Counts {
 /// merge_prob (8.4.1).
 fn merge_prob(pre: u8, ct0: u32, ct1: u32, count_sat: u32, max_update_factor: u32) -> u8 {
     let den = ct0 + ct1;
-    let prob = if den == 0 { 128 } else { ((ct0 as u64 * 256 + (den as u64 >> 1)) / den as u64).clamp(1, 255) as u32 };
+    let prob = if den == 0 {
+        128
+    } else {
+        ((ct0 as u64 * 256 + (den as u64 >> 1)) / den as u64).clamp(1, 255) as u32
+    };
     let count = den.min(count_sat);
     let factor = max_update_factor * count / count_sat;
     ((pre as u32 * (256 - factor) + prob * factor + 128) >> 8) as u8
 }
 
 /// merge_probs (8.4.2).
-fn merge_probs(tree: &[i8], i: usize, probs: &mut [u8], counts: &[u32], count_sat: u32, max_update_factor: u32) -> u32 {
+fn merge_probs(
+    tree: &[i8],
+    i: usize,
+    probs: &mut [u8],
+    counts: &[u32],
+    count_sat: u32,
+    max_update_factor: u32,
+) -> u32 {
     let s = tree[i];
-    let left = if s <= 0 { counts[(-s) as usize] } else { merge_probs(tree, s as usize, probs, counts, count_sat, max_update_factor) };
+    let left = if s <= 0 {
+        counts[(-s) as usize]
+    } else {
+        merge_probs(
+            tree,
+            s as usize,
+            probs,
+            counts,
+            count_sat,
+            max_update_factor,
+        )
+    };
     let r = tree[i + 1];
-    let right = if r <= 0 { counts[(-r) as usize] } else { merge_probs(tree, r as usize, probs, counts, count_sat, max_update_factor) };
+    let right = if r <= 0 {
+        counts[(-r) as usize]
+    } else {
+        merge_probs(
+            tree,
+            r as usize,
+            probs,
+            counts,
+            count_sat,
+            max_update_factor,
+        )
+    };
     probs[i >> 1] = merge_prob(probs[i >> 1], left, right, count_sat, max_update_factor);
     left + right
 }
@@ -210,7 +249,12 @@ fn adapt_prob(prob: &mut u8, counts: &[u32; 2]) {
 
 /// Coefficient probability adaptation (8.4.3). `fc` holds the probabilities loaded from the
 /// saved frame context.
-pub fn adapt_coef_probs(fc: &mut FrameContext, counts: &Counts, frame_is_intra: bool, last_frame_was_key: bool) {
+pub fn adapt_coef_probs(
+    fc: &mut FrameContext,
+    counts: &Counts,
+    frame_is_intra: bool,
+    last_frame_was_key: bool,
+) {
     let update_factor = if frame_is_intra {
         112
     } else if last_frame_was_key {
@@ -225,8 +269,22 @@ pub fn adapt_coef_probs(fc: &mut FrameContext, counts: &Counts, frame_is_intra: 
                     let max_l = if k == 0 { 3 } else { 6 };
                     for l in 0..max_l {
                         let p = &mut fc.coef[t][i][j][k][l];
-                        merge_probs(&SMALL_TOKEN_TREE, 2, p, &counts.token[t][i][j][k][l], 24, update_factor);
-                        merge_probs(&BINARY_TREE, 0, p, &counts.more_coefs[t][i][j][k][l], 24, update_factor);
+                        merge_probs(
+                            &SMALL_TOKEN_TREE,
+                            2,
+                            p,
+                            &counts.token[t][i][j][k][l],
+                            24,
+                            update_factor,
+                        );
+                        merge_probs(
+                            &BINARY_TREE,
+                            0,
+                            p,
+                            &counts.more_coefs[t][i][j][k][l],
+                            24,
+                            update_factor,
+                        );
                     }
                 }
             }
@@ -235,7 +293,13 @@ pub fn adapt_coef_probs(fc: &mut FrameContext, counts: &Counts, frame_is_intra: 
 }
 
 /// Non-coefficient probability adaptation (8.4.4).
-pub fn adapt_noncoef_probs(fc: &mut FrameContext, c: &Counts, interp_switchable: bool, tx_select: bool, allow_hp: bool) {
+pub fn adapt_noncoef_probs(
+    fc: &mut FrameContext,
+    c: &Counts,
+    interp_switchable: bool,
+    tx_select: bool,
+    allow_hp: bool,
+) {
     for i in 0..4 {
         adapt_prob(&mut fc.is_inter[i], &c.is_inter[i]);
     }
@@ -263,7 +327,11 @@ pub fn adapt_noncoef_probs(fc: &mut FrameContext, c: &Counts, interp_switchable:
     }
     if interp_switchable {
         for i in 0..4 {
-            adapt_probs(&INTERP_FILTER_TREE, &mut fc.interp_filter[i], &c.interp_filter[i]);
+            adapt_probs(
+                &INTERP_FILTER_TREE,
+                &mut fc.interp_filter[i],
+                &c.interp_filter[i],
+            );
         }
     }
     if tx_select {
@@ -282,7 +350,11 @@ pub fn adapt_noncoef_probs(fc: &mut FrameContext, c: &Counts, interp_switchable:
             adapt_prob(&mut fc.mv_bits[i][j], &c.mv_bits[i][j]);
         }
         for j in 0..2 {
-            adapt_probs(&MV_FR_TREE, &mut fc.mv_class0_fr[i][j], &c.mv_class0_fr[i][j]);
+            adapt_probs(
+                &MV_FR_TREE,
+                &mut fc.mv_class0_fr[i][j],
+                &c.mv_class0_fr[i][j],
+            );
         }
         adapt_probs(&MV_FR_TREE, &mut fc.mv_fr[i], &c.mv_fr[i]);
         if allow_hp {

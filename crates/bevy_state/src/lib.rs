@@ -88,9 +88,9 @@ pub mod prelude {
         commands::CommandsStatesExt,
         condition::*,
         state::{
-            last_transition, ComputedStates, EnterSchedules, ExitSchedules, NextState, OnEnter,
-            OnExit, OnTransition, PreviousState, State, StateSet, StateTransition,
-            StateTransitionEvent, States, SubStates, TransitionSchedules,
+            ComputedStates, EnterSchedules, ExitSchedules, NextState, OnEnter, OnExit,
+            OnTransition, PreviousState, State, StateSet, StateTransition, StateTransitionEvent,
+            States, SubStates, TransitionSchedules, last_transition,
         },
         state_scoped::{
             DespawnOnEnter, DespawnOnExit, DespawnWhen, DisableOnEnter, DisableOnExit, DisableWhen,

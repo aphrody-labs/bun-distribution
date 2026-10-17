@@ -2,7 +2,7 @@ use crate::half_space::HalfSpace;
 use bevy_math::{Mat4, Vec3, Vec4};
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 

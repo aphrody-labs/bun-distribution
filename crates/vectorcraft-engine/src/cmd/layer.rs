@@ -10,7 +10,9 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{Artboard, Document, LAYER_COLORS, LayerColor, Node, NodeId, NodeKind, Scaling};
+use vectorcraft_doc::{
+    Artboard, Document, LAYER_COLORS, LayerColor, Node, NodeId, NodeKind, Scaling,
+};
 use vectorcraft_geom::{Affine, Rect};
 
 use super::*;
@@ -156,7 +158,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             artboard_fit_art
         ),
-        cmd!("artboard.fitToSelection", "Fit to Selected Art", ["Object", "Artboards"], None, "{index?}", has_selection, artboard_fit_sel),
+        cmd!(
+            "artboard.fitToSelection",
+            "Fit to Selected Art",
+            ["Object", "Artboards"],
+            None,
+            "{index?}",
+            has_selection,
+            artboard_fit_sel
+        ),
         cmd!(
             "layer.clippingMask.toggle",
             "Make/Release Clipping Mask",
@@ -198,7 +208,11 @@ pub(crate) fn rows_param(s: &Session, p: &Value, command: &str) -> Result<Vec<No
     } else {
         let st = s.doc()?;
         let rows = st.highlighted_rows();
-        if rows.is_empty() { st.current_layer().into_iter().collect() } else { rows }
+        if rows.is_empty() {
+            st.current_layer().into_iter().collect()
+        } else {
+            rows
+        }
     };
     ids.truncate(MAX_ROWS);
     Ok(ids)
@@ -207,11 +221,20 @@ pub(crate) fn rows_param(s: &Session, p: &Value, command: &str) -> Result<Vec<No
 /// `ids` that exist, without repeats or rows inside another listed row, in paint order (bottom
 /// first).
 pub(crate) fn row_roots(d: &Document, ids: &[NodeId]) -> Vec<NodeId> {
-    let set: HashSet<NodeId> = ids.iter().copied().filter(|i| d.node(*i).is_some()).collect();
+    let set: HashSet<NodeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| d.node(*i).is_some())
+        .collect();
     let keep: Vec<NodeId> = set
         .iter()
         .copied()
-        .filter(|id| d.ancestry(*id).is_some_and(|a| a.split_last().is_none_or(|(_, above)| !above.iter().any(|x| set.contains(x)))))
+        .filter(|id| {
+            d.ancestry(*id).is_some_and(|a| {
+                a.split_last()
+                    .is_none_or(|(_, above)| !above.iter().any(|x| set.contains(x)))
+            })
+        })
         .collect();
     d.paint_order(keep)
 }
@@ -231,7 +254,10 @@ pub(crate) fn accepts(d: &Document, parent: Option<NodeId>, n: &Node) -> bool {
 
 /// Whether `id` or a container around it is locked.
 pub(crate) fn locked_within(d: &Document, id: NodeId) -> bool {
-    d.ancestry(id).unwrap_or_default().iter().any(|a| d.node(*a).is_some_and(|n| n.locked))
+    d.ancestry(id)
+        .unwrap_or_default()
+        .iter()
+        .any(|a| d.node(*a).is_some_and(|n| n.locked))
 }
 
 /// The number and the names of a document's layers and sublayers, from which [`NewLayers::make`]
@@ -244,7 +270,10 @@ pub(crate) struct NewLayers {
 
 impl NewLayers {
     pub(crate) fn of(d: &Document) -> Self {
-        let mut layers = Self { count: 0, taken: HashSet::new() };
+        let mut layers = Self {
+            count: 0,
+            taken: HashSet::new(),
+        };
         d.walk(|n| layers.note(n));
         layers
     }
@@ -252,11 +281,18 @@ impl NewLayers {
     /// A new layer named `name` (default: the next `Layer N`, as [`Document::next_layer_name`]
     /// gives it) in the next layer color.
     pub(crate) fn make(&self, d: &mut Document, name: Option<&str>) -> Node {
-        let name = name
-            .map(str::to_string)
-            .unwrap_or_else(|| (self.count + 1..).map(|i| format!("Layer {i}")).find(|name| !self.taken.contains(name)).unwrap_or_default());
+        let name = name.map(str::to_string).unwrap_or_else(|| {
+            (self.count + 1..)
+                .map(|i| format!("Layer {i}"))
+                .find(|name| !self.taken.contains(name))
+                .unwrap_or_default()
+        });
         let id = d.alloc_id();
-        Node::layer(id, &name, LayerColor::Preset((self.count % LAYER_COLORS.len()) as u8))
+        Node::layer(
+            id,
+            &name,
+            LayerColor::Preset((self.count % LAYER_COLORS.len()) as u8),
+        )
     }
 
     /// Count `n`, a layer going into the document, and the layers inside it.
@@ -282,17 +318,26 @@ fn layer_color_param(v: &Value) -> std::result::Result<LayerColor, String> {
     match v {
         Value::Number(n) => match n.as_u64() {
             Some(i) if (i as usize) < LAYER_COLORS.len() => Ok(LayerColor::Preset(i as u8)),
-            _ => Err(format!("a colour index is 0 to {}, not {n}", LAYER_COLORS.len() - 1)),
+            _ => Err(format!(
+                "a colour index is 0 to {}, not {n}",
+                LAYER_COLORS.len() - 1
+            )),
         },
         Value::String(s) => {
-            if let Some(i) = LAYER_COLORS.iter().position(|(name, _)| name.eq_ignore_ascii_case(s.trim())) {
+            if let Some(i) = LAYER_COLORS
+                .iter()
+                .position(|(name, _)| name.eq_ignore_ascii_case(s.trim()))
+            {
                 return Ok(LayerColor::Preset(i as u8));
             }
-            let c = vectorcraft_color::Color::from_hex(s).ok_or_else(|| format!("`{s}` is not a colour (#rrggbb or a preset name)"))?;
+            let c = vectorcraft_color::Color::from_hex(s)
+                .ok_or_else(|| format!("`{s}` is not a colour (#rrggbb or a preset name)"))?;
             let [r, g, b, _] = c.to_rgba8(1.0);
             Ok(LayerColor::Custom([r, g, b]))
         }
-        _ => Err(format!("a colour is an index, #rrggbb or a preset name, not {v}")),
+        _ => Err(format!(
+            "a colour is an index, #rrggbb or a preset name, not {v}"
+        )),
     }
 }
 
@@ -316,7 +361,15 @@ fn apply_options(n: &mut Node, p: &Value) {
         n.locked = v;
     }
     let mut lock = None;
-    if let NodeKind::Layer { template, printable, color, preview, dim_images, .. } = &mut n.kind {
+    if let NodeKind::Layer {
+        template,
+        printable,
+        color,
+        preview,
+        dim_images,
+        ..
+    } = &mut n.kind
+    {
         let dim_given = p.get("dimImages").is_some();
         if let Some(v) = p.get("template").and_then(Value::as_bool)
             && v != *template
@@ -406,23 +459,39 @@ fn target(s: &mut Session, p: &Value) -> Result<Value> {
     if layer {
         st.active_layer = Some(id);
     }
-    Ok(json!({ "id": id.0, "selected": st.selection.objects.iter().map(|i| i.0).collect::<Vec<_>>() }))
+    Ok(
+        json!({ "id": id.0, "selected": st.selection.objects.iter().map(|i| i.0).collect::<Vec<_>>() }),
+    )
 }
 
 /// The Layers panel's clipping mask button: the top object of a layer (or group) clips the rest,
 /// or the clipping mask is released.
 fn clip_toggle(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let container = |id: &NodeId| st.doc.node(*id).is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }));
+    let container = |id: &NodeId| {
+        st.doc
+            .node(*id)
+            .is_some_and(|n| matches!(n.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }))
+    };
     let row = match st.highlighted_rows().as_slice() {
         [id] if container(id) => Some(*id),
         _ => None,
     };
     let group = match st.selection.objects.as_slice() {
-        [id] if matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Group { .. })) => Some(*id),
+        [id] if matches!(
+            st.doc.node(*id).map(|n| &n.kind),
+            Some(NodeKind::Group { .. })
+        ) =>
+        {
+            Some(*id)
+        }
         _ => None,
     };
-    let id = id_param(p, "id").or(row).or(group).or(st.current_layer()).ok_or_else(|| bad("layer.clippingMask.toggle", "no layer"))?;
+    let id = id_param(p, "id")
+        .or(row)
+        .or(group)
+        .or(st.current_layer())
+        .ok_or_else(|| bad("layer.clippingMask.toggle", "no layer"))?;
     let clip = s.edit("Make/Release Clipping Mask", |d, _| {
         let n = d.node(id).ok_or(EngineError::NoNode(id))?;
         if !matches!(n.kind, NodeKind::Layer { .. } | NodeKind::Group { .. }) {
@@ -432,8 +501,11 @@ fn clip_toggle(s: &mut Session, p: &Value) -> Result<Value> {
             super::object::release_clip(d, id);
             return Ok(false);
         }
-        let top =
-            n.children().and_then(|c| c.last()).map(|c| c.id).ok_or_else(|| EngineError::Other("the layer has no objects to clip by".into()))?;
+        let top = n
+            .children()
+            .and_then(|c| c.last())
+            .map(|c| c.id)
+            .ok_or_else(|| EngineError::Other("the layer has no objects to clip by".into()))?;
         super::object::make_clipping_path(d, top)?;
         d.move_node(top, Some(id), 0)?;
         if let Some(n) = d.node_mut(id) {
@@ -445,9 +517,17 @@ fn clip_toggle(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// A new layer with the options in `p`, at `parent`/`index`; it becomes current and highlighted.
-fn add_layer(s: &mut Session, p: &Value, cmd: &str, label: &str, place: impl FnOnce(&Document) -> Result<(Option<NodeId>, usize)>) -> Result<Value> {
+fn add_layer(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    label: &str,
+    place: impl FnOnce(&Document) -> Result<(Option<NodeId>, usize)>,
+) -> Result<Value> {
     check_options(cmd, p)?;
-    let name = str_param(p, "name").filter(|n| !n.trim().is_empty()).map(str::to_string);
+    let name = str_param(p, "name")
+        .filter(|n| !n.trim().is_empty())
+        .map(str::to_string);
     let id = s.edit(label, |d, _| {
         let (parent, index) = place(d)?;
         let mut n = make_layer(d, name.as_deref());
@@ -464,17 +544,25 @@ fn new_layer(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     // Above the current layer, at its level; on top of everything with `top`.
     let cur = st.current_layer().filter(|_| !bool_or(p, "top", false));
-    add_layer(s, p, "layer.new", "New Layer", |d| match cur.and_then(|c| d.position(c)) {
-        Some((parent, i, _)) => Ok((parent, i + 1)),
-        None => Ok((None, usize::MAX)),
+    add_layer(s, p, "layer.new", "New Layer", |d| {
+        match cur.and_then(|c| d.position(c)) {
+            Some((parent, i, _)) => Ok((parent, i + 1)),
+            None => Ok((None, usize::MAX)),
+        }
     })
 }
 
 fn new_sublayer(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "layer.newSublayer";
     let st = s.doc()?;
-    let row = st.highlighted_rows().last().and_then(|r| st.doc.layer_containing(*r));
-    let parent = id_param(p, "parent").or(row).or(st.current_layer()).ok_or_else(|| bad(C, "no parent layer"))?;
+    let row = st
+        .highlighted_rows()
+        .last()
+        .and_then(|r| st.doc.layer_containing(*r));
+    let parent = id_param(p, "parent")
+        .or(row)
+        .or(st.current_layer())
+        .ok_or_else(|| bad(C, "no parent layer"))?;
     if !st.doc.node(parent).is_some_and(Node::is_layer) {
         return Err(bad(C, "the parent must be a layer or sublayer"));
     }
@@ -490,7 +578,9 @@ fn delete_rows(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let listed: HashSet<NodeId> = ids.iter().copied().collect();
     if st.doc.layers.iter().all(|l| listed.contains(&l.id)) {
-        return Err(EngineError::Other("a document needs at least one layer".into()));
+        return Err(EngineError::Other(
+            "a document needs at least one layer".into(),
+        ));
     }
     s.edit("Delete Selection", |d, sel| {
         d.remove_many(&ids)?;
@@ -558,7 +648,10 @@ fn highlight(s: &mut Session, p: &Value) -> Result<Value> {
             last = Some(id);
         }
     }
-    if let Some(layer) = last.or(rows.last().copied()).and_then(|id| st.doc.layer_containing(id)) {
+    if let Some(layer) = last
+        .or(rows.last().copied())
+        .and_then(|id| st.doc.layer_containing(id))
+    {
         st.active_layer = Some(layer);
     }
     st.layer_rows = rows;
@@ -589,14 +682,22 @@ fn collect(s: &mut Session, p: &Value) -> Result<Value> {
         checked_ids_param(s, p, "ids", C)?
     } else {
         let rows = s.doc()?.highlighted_rows();
-        if rows.is_empty() { super::edit::selected_roots(s)? } else { rows }
+        if rows.is_empty() {
+            super::edit::selected_roots(s)?
+        } else {
+            rows
+        }
     };
     let ids = row_roots(&s.doc()?.doc, &ids);
-    let Some(top) = ids.last().copied() else { return Err(bad(C, "select rows or objects to collect")) };
+    let Some(top) = ids.last().copied() else {
+        return Err(bad(C, "select rows or objects to collect"));
+    };
     let lid = s.edit("Collect in New Layer", |d, sel| {
         // Where the topmost of them is: beside it in its layer, or on top of the layer holding
         // its group.
-        let beside = d.position(top).is_some_and(|(par, _, _)| par.is_none_or(|p| d.node(p).is_some_and(Node::is_layer)));
+        let beside = d
+            .position(top)
+            .is_some_and(|(par, _, _)| par.is_none_or(|p| d.node(p).is_some_and(Node::is_layer)));
         let holder = d.layer_containing(top);
         let mut layer = make_layer(d, None);
         let lid = layer.id;
@@ -669,14 +770,21 @@ enum Place {
 /// Drag rows in the Layers panel.
 fn move_rows(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "layer.move";
-    let mut ids = ids_param(p, "ids").or_else(|| id_param(p, "id").map(|i| vec![i])).ok_or_else(|| bad(C, "missing ids"))?;
+    let mut ids = ids_param(p, "ids")
+        .or_else(|| id_param(p, "id").map(|i| vec![i]))
+        .ok_or_else(|| bad(C, "missing ids"))?;
     ids.truncate(MAX_ROWS);
     let target = id_param(p, "target").ok_or_else(|| bad(C, "missing target"))?;
     let place = match str_param(p, "place").unwrap_or("inside") {
         "above" => Place::Above,
         "below" => Place::Below,
         "inside" | "into" => Place::Inside,
-        other => return Err(bad(C, format!("place is above, below or inside, not `{other}`"))),
+        other => {
+            return Err(bad(
+                C,
+                format!("place is above, below or inside, not `{other}`"),
+            ));
+        }
     };
     let copy = bool_or(p, "copy", false);
     let st = s.doc()?;
@@ -701,7 +809,13 @@ fn move_rows(s: &mut Session, p: &Value) -> Result<Value> {
         },
     };
     if let Some(n) = nodes.iter().find(|n| !accepts(d, parent, n)) {
-        let into = parent.and_then(|p| d.node(p)).map_or("the top level", |p| if p.is_layer() { "a layer" } else { p.kind_label() });
+        let into = parent.and_then(|p| d.node(p)).map_or("the top level", |p| {
+            if p.is_layer() {
+                "a layer"
+            } else {
+                p.kind_label()
+            }
+        });
         return Err(bad(C, format!("{} can't go into {into}", n.display_name())));
     }
     if parent.is_some_and(|p| locked_within(d, p)) {
@@ -752,11 +866,18 @@ fn move_node(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "node.move";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing id"))?;
     let parent = id_param(p, "parent");
-    let index = p.get("index").and_then(Value::as_u64).unwrap_or(u64::MAX).min(usize::MAX as u64) as usize;
+    let index = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .unwrap_or(u64::MAX)
+        .min(usize::MAX as u64) as usize;
     let d = &s.doc()?.doc;
     let n = d.node(id).ok_or(EngineError::NoNode(id))?;
     if !accepts(d, parent, n) {
-        return Err(bad(C, "layers go only at the top level or in layers, objects in layers and groups"));
+        return Err(bad(
+            C,
+            "layers go only at the top level or in layers, objects in layers and groups",
+        ));
     }
     s.edit("Reorder", |d, sel| {
         d.move_node(id, parent, index)?;
@@ -776,13 +897,30 @@ fn rect_from(p: &Value, default: Rect) -> Rect {
 
 fn artboard_new(s: &mut Session, p: &Value) -> Result<Value> {
     let d0 = &s.doc()?.doc;
-    let last = d0.artboards.last().map(|a| a.rect).unwrap_or(Rect::new(0.0, 0.0, 612.0, 792.0));
-    let def = Rect::new(last.x1 + 20.0, last.y0, last.x1 + 20.0 + last.width(), last.y1);
+    let last = d0
+        .artboards
+        .last()
+        .map(|a| a.rect)
+        .unwrap_or(Rect::new(0.0, 0.0, 612.0, 792.0));
+    let def = Rect::new(
+        last.x1 + 20.0,
+        last.y0,
+        last.x1 + 20.0 + last.width(),
+        last.y1,
+    );
     let r = rect_from(p, def);
     let idx = s.edit("New Artboard", |d, _| {
         let id = d.next_artboard_id();
-        let name = str_param(p, "name").map(str::to_string).unwrap_or_else(|| format!("Artboard {}", d.artboards.len() + 1));
-        d.artboards.push(Artboard { id, name, rect: r, show_center_mark: false, show_cross_hairs: false });
+        let name = str_param(p, "name")
+            .map(str::to_string)
+            .unwrap_or_else(|| format!("Artboard {}", d.artboards.len() + 1));
+        d.artboards.push(Artboard {
+            id,
+            name,
+            rect: r,
+            show_center_mark: false,
+            show_cross_hairs: false,
+        });
         Ok(d.artboards.len() - 1)
     })?;
     Ok(json!({ "index": idx }))
@@ -792,7 +930,9 @@ fn artboard_delete(s: &mut Session, p: &Value) -> Result<Value> {
     let indices = super::panelcmds::artboard_indices(&s.doc()?.doc, p, "artboard.delete")?;
     s.edit("Delete Artboard", |d, sel| {
         if indices.len() >= d.artboards.len() {
-            return Err(EngineError::Other("a document needs at least one artboard".into()));
+            return Err(EngineError::Other(
+                "a document needs at least one artboard".into(),
+            ));
         }
         // The last first, so the others keep their places; their guides go with them.
         for &i in indices.iter().rev() {
@@ -806,13 +946,24 @@ fn artboard_delete(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
     let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let was = s.doc()?.doc.artboards.get(i).map(|a| a.rect).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+    let was = s
+        .doc()?
+        .doc
+        .artboards
+        .get(i)
+        .map(|a| a.rect)
+        .ok_or_else(|| EngineError::Other("no such artboard".into()))?;
     let now = rect_from(p, was);
-    let resized = (now.width() - was.width()).abs() > 1e-6 || (now.height() - was.height()).abs() > 1e-6;
+    let resized =
+        (now.width() - was.width()).abs() > 1e-6 || (now.height() - was.height()).abs() > 1e-6;
     // Scale Artwork with Artboard: resized, it takes the art fully inside it (as Move Artwork with
     // Artboard gathers it) and its guides from the old rectangle onto the new one.
     let scale_art = bool_or(p, "scaleArt", false);
-    let fit = if scale_art && resized { rect_map(was, now) } else { None };
+    let fit = if scale_art && resized {
+        rect_map(was, now)
+    } else {
+        None
+    };
     // Position fields honor Move Artwork independently of Scale Artwork. A resize still
     // leaves the art alone unless scaling was requested. Fit-to-art callers keep the default.
     let delta = now.origin() - was.origin();
@@ -833,7 +984,10 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
     };
     sc.patterns = super::object::transform_patterns(s, p, &art)?;
     s.edit("Artboard Options", |d, _| {
-        let a = d.artboards.get_mut(i).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+        let a = d
+            .artboards
+            .get_mut(i)
+            .ok_or_else(|| EngineError::Other("no such artboard".into()))?;
         a.rect = now;
         if let Some(n) = str_param(p, "name") {
             a.name = n.to_string();
@@ -855,7 +1009,9 @@ fn artboard_set(s: &mut Session, p: &Value) -> Result<Value> {
     if !scale_art {
         return ok();
     }
-    Ok(json!({ "scaled": if fit.is_some() { art.iter().map(|i| i.0).collect::<Vec<_>>() } else { vec![] } }))
+    Ok(
+        json!({ "scaled": if fit.is_some() { art.iter().map(|i| i.0).collect::<Vec<_>>() } else { vec![] } }),
+    )
 }
 
 /// The map taking artboard rectangle `from` onto `to`, each side scaled by its own ratio. None
@@ -865,7 +1021,9 @@ fn rect_map(from: Rect, to: Rect) -> Option<Affine> {
         return None;
     }
     let (sx, sy) = (to.width() / from.width(), to.height() / from.height());
-    let xf = Affine::translate(to.origin().to_vec2()) * Affine::scale_non_uniform(sx, sy) * Affine::translate(-from.origin().to_vec2());
+    let xf = Affine::translate(to.origin().to_vec2())
+        * Affine::scale_non_uniform(sx, sy)
+        * Affine::translate(-from.origin().to_vec2());
     xf.is_finite().then_some(xf)
 }
 
@@ -873,13 +1031,23 @@ fn rect_map(from: Rect, to: Rect) -> Option<Affine> {
 /// layers don't count.
 fn artboard_fit_art(s: &mut Session, p: &Value) -> Result<Value> {
     let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let b = vectorcraft_render::encode::art_bounds(&s.doc()?.doc).ok_or_else(|| EngineError::Other("no artwork".into()))?;
-    s.execute("artboard.setProps", &json!({"index": i, "x": b.x0, "y": b.y0, "width": b.width(), "height": b.height()}))
+    let b = vectorcraft_render::encode::art_bounds(&s.doc()?.doc)
+        .ok_or_else(|| EngineError::Other("no artwork".into()))?;
+    s.execute(
+        "artboard.setProps",
+        &json!({"index": i, "x": b.x0, "y": b.y0, "width": b.width(), "height": b.height()}),
+    )
 }
 
 fn artboard_fit_sel(s: &mut Session, p: &Value) -> Result<Value> {
     let i = p.get("index").and_then(Value::as_u64).unwrap_or(0) as usize;
     let st = s.doc()?;
-    let b = st.doc.bounds_of(&st.selection.objects, true).ok_or_else(|| EngineError::Other("no selection bounds".into()))?;
-    s.execute("artboard.setProps", &json!({"index": i, "x": b.x0, "y": b.y0, "width": b.width(), "height": b.height()}))
+    let b = st
+        .doc
+        .bounds_of(&st.selection.objects, true)
+        .ok_or_else(|| EngineError::Other("no selection bounds".into()))?;
+    s.execute(
+        "artboard.setProps",
+        &json!({"index": i, "x": b.x0, "y": b.y0, "width": b.width(), "height": b.height()}),
+    )
 }

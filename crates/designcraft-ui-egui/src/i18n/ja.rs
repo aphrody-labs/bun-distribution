@@ -183,13 +183,19 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Embed", "埋め込み"),
     ("Export XML…", "XML を書き出し…"),
     ("Fast", "高速"),
-    ("Fill Frame Proportionally", "縦横比を保持してフレームを塗りつぶす"),
+    (
+        "Fill Frame Proportionally",
+        "縦横比を保持してフレームを塗りつぶす",
+    ),
     ("Find All", "すべてを検索"),
     ("Find Next", "次を検索"),
     ("Find what:", "検索する文字列:"),
     ("Find/Change", "検索と置換"),
     ("Find/Replace Font", "フォントの検索と置換"),
-    ("Fit Content Proportionally", "縦横比を保持して内容を合わせる"),
+    (
+        "Fit Content Proportionally",
+        "縦横比を保持して内容を合わせる",
+    ),
     ("Fit Content to Frame", "内容をフレームに合わせる"),
     ("Fitting:", "オブジェクトサイズの調整:"),
     ("Font Family:", "フォントファミリー:"),
@@ -200,7 +206,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Form Field", "フォームフィールド"),
     ("Format:", "書式:"),
     ("Frame Fitting", "フレーム内のオブジェクトサイズの調整"),
-    ("Frame Fitting Options", "フレームのオブジェクトサイズの調整オプション"),
+    (
+        "Frame Fitting Options",
+        "フレームのオブジェクトサイズの調整オプション",
+    ),
     ("Generate QR Code", "QR コードを生成"),
     ("Go To", "移動"),
     ("Go to Page", "ページへ移動"),
@@ -238,8 +247,14 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Merge into Active Layer", "アクティブなレイヤーに結合"),
     ("Min:", "最小:"),
     ("Minimum", "最小"),
-    ("Minimum Space Before First Footnote:", "最初の脚注の前の最小間隔:"),
-    ("Misspelled word → Correction (one per line):", "綴りの誤った単語 → 修正後の単語 (1行に1件):"),
+    (
+        "Minimum Space Before First Footnote:",
+        "最初の脚注の前の最小間隔:",
+    ),
+    (
+        "Misspelled word → Correction (one per line):",
+        "綴りの誤った単語 → 修正後の単語 (1行に1件):",
+    ),
     ("Mobile", "モバイル"),
     ("Move Selection Here", "選択範囲をここへ移動"),
     ("Move to Color Group", "カラーグループへ移動"),
@@ -250,7 +265,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("New Bookmark for This Page", "このページの新規ブックマーク"),
     ("New Book…", "新規ブック…"),
     ("New Color Group", "新規カラーグループ"),
-    ("New Color Group with Swatch", "スウォッチを含む新規カラーグループ"),
+    (
+        "New Color Group with Swatch",
+        "スウォッチを含む新規カラーグループ",
+    ),
     ("New Cross-Reference", "新規相互参照"),
     ("New Document", "新規ドキュメント"),
     ("New GREP Style", "新規 GREP スタイル"),
@@ -304,7 +322,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Save recovery data every:", "復旧データの保存間隔:"),
     ("Search:", "検索範囲:"),
     ("Select an object.", "オブジェクトを選択してください。"),
-    ("Select text or a text frame.", "テキストまたはテキストフレームを選択してください。"),
+    (
+        "Select text or a text frame.",
+        "テキストまたはテキストフレームを選択してください。",
+    ),
     ("Separator:", "区切り文字:"),
     ("Show Prefix/Suffix in:", "前置文字・後置文字の表示箇所:"),
     ("Show Tag Markers", "タグマーカーを表示"),
@@ -329,10 +350,16 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Text Message", "テキストメッセージ"),
     ("Text Style", "テキストスタイル"),
     ("Text Wrap", "テキストの回り込み"),
-    ("This PDF has no layers.", "この PDF にはレイヤーがありません。"),
+    (
+        "This PDF has no layers.",
+        "この PDF にはレイヤーがありません。",
+    ),
     ("To Text:", "適用対象のテキスト:"),
     ("Top", "上"),
-    ("Track Changes in All Stories", "すべてのストーリーの変更を記録"),
+    (
+        "Track Changes in All Stories",
+        "すべてのストーリーの変更を記録",
+    ),
     ("Trim", "仕上がり"),
     ("Type:", "種類:"),
     ("Typical", "標準"),
@@ -370,13 +397,22 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("New Workspace…", "新規ワークスペース…"),
     ("Float panel", "パネルをフローティング表示"),
     ("Dock panel", "パネルをドックに戻す"),
-    ("Fit frame height to text", "フレームの高さをテキストに合わせる"),
+    (
+        "Fit frame height to text",
+        "フレームの高さをテキストに合わせる",
+    ),
     ("More Options", "その他のオプション"),
     ("Flip Horizontal", "左右反転"),
     ("Rotate 90° Clockwise", "時計回りに90°回転"),
     ("Flip Vertical", "上下反転"),
-    ("Default Fill and Stroke (D)", "塗りと線をデフォルトに戻す (D)"),
-    ("Swap Fill and Stroke (Shift+X)", "塗りと線を入れ替え (Shift+X)"),
+    (
+        "Default Fill and Stroke (D)",
+        "塗りと線をデフォルトに戻す (D)",
+    ),
+    (
+        "Swap Fill and Stroke (Shift+X)",
+        "塗りと線を入れ替え (Shift+X)",
+    ),
     ("Fill (X)", "塗り (X)"),
     ("Stroke (X)", "線 (X)"),
     ("Apply None (/)", "カラーなしを適用 (/)"),
@@ -390,16 +426,25 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Underline", "下線"),
     ("Strikethrough", "取り消し線"),
     ("Superscript", "上付き文字"),
-    ("Pick a file in the folder holding the moved graphics", "移動した画像のあるフォルダー内のファイルを選んでください"),
+    (
+        "Pick a file in the folder holding the moved graphics",
+        "移動した画像のあるフォルダー内のファイルを選んでください",
+    ),
     ("Show Favorites Only", "お気に入りのみ表示"),
     ("Select", "選択"),
-    ("Hyperlink from the selected text or frames", "選択したテキストやフレームからハイパーリンクを作成"),
+    (
+        "Hyperlink from the selected text or frames",
+        "選択したテキストやフレームからハイパーリンクを作成",
+    ),
     ("Include when exporting", "書き出しに含める"),
     ("Add the selection", "選択範囲を追加"),
     ("Tag the selection", "選択範囲にタグを付ける"),
     ("Separated by commas", "コンマで区切る"),
     ("Show in the text", "テキスト内で表示"),
-    ("Show / hide text with this condition", "この条件のテキストの表示・非表示を切り替え"),
+    (
+        "Show / hide text with this condition",
+        "この条件のテキストの表示・非表示を切り替え",
+    ),
     ("Spreads of up to 10 pages", "最大10ページのスプレッド"),
     ("for", "に対して"),
     ("About DesignCraft", "DesignCraft について"),
@@ -412,8 +457,14 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Add Item", "項目を追加"),
     ("Add Page to Spread", "スプレッドにページを追加"),
     ("Add to Swatches", "スウォッチに追加"),
-    ("Allow Selected Spread to Shuffle", "選択したスプレッドのページの再配置を許可"),
-    ("Anchored Object Options…", "アンカー付きオブジェクトのオプション…"),
+    (
+        "Allow Selected Spread to Shuffle",
+        "選択したスプレッドのページの再配置を許可",
+    ),
+    (
+        "Anchored Object Options…",
+        "アンカー付きオブジェクトのオプション…",
+    ),
     ("Anchored Objects", "アンカー付きオブジェクト"),
     ("Appearance of Black", "黒の表現"),
     ("Apply Attributes (Eyedropper)", "属性を適用 (スポイト)"),
@@ -449,19 +500,31 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Close Library", "ライブラリを閉じる"),
     ("Collect", "収集"),
     ("Color Settings…", "カラー設定…"),
-    ("Community & Project Links", "コミュニティとプロジェクトのリンク"),
+    (
+        "Community & Project Links",
+        "コミュニティとプロジェクトのリンク",
+    ),
     ("Conditions", "条件"),
     ("Container", "コンテナー"),
     ("Content", "内容"),
     ("Contextual Task Bar", "状況に応じたタスクバー"),
     ("Control", "コントロール"),
-    ("Convert Cell to Graphic Cell", "セルをグラフィックセルに変換"),
-    ("Convert Cell to Graphic Cell…", "セルをグラフィックセルに変換…"),
+    (
+        "Convert Cell to Graphic Cell",
+        "セルをグラフィックセルに変換",
+    ),
+    (
+        "Convert Cell to Graphic Cell…",
+        "セルをグラフィックセルに変換…",
+    ),
     ("Convert Cell to Text Cell", "セルをテキストセルに変換"),
     ("Convert Color", "カラーを変換"),
     ("Convert Direction Point", "方向点を変換"),
     ("Convert Note to Text", "注釈をテキストに変換"),
-    ("Convert Selection to Multi-State Object", "選択範囲を複数ステートのオブジェクトに変換"),
+    (
+        "Convert Selection to Multi-State Object",
+        "選択範囲を複数ステートのオブジェクトに変換",
+    ),
     ("Convert Shape", "図形を変換"),
     ("Convert Table to Text", "表をテキストに変換"),
     ("Convert Text to Table", "テキストを表に変換"),
@@ -479,19 +542,31 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Define Cross-Reference Format…", "相互参照の書式を定義…"),
     ("Define Lists…", "リストを定義…"),
     ("Define Text Variable…", "テキスト変数を定義…"),
-    ("Delete All Guides on Spread", "スプレッド上のガイドをすべて削除"),
+    (
+        "Delete All Guides on Spread",
+        "スプレッド上のガイドをすべて削除",
+    ),
     ("Delete Anchor Point", "アンカーポイントを削除"),
     ("Delete Item", "項目を削除"),
     ("Delete Text Variable", "テキスト変数を削除"),
     ("Delete Workspace…", "ワークスペースを削除…"),
     ("DesignCraft Website…", "DesignCraft ウェブサイト…"),
     ("DesignCraft on GitHub…", "GitHub の DesignCraft…"),
-    ("Detach All Objects from Parent", "すべてのオブジェクトを親ページから分離"),
+    (
+        "Detach All Objects from Parent",
+        "すべてのオブジェクトを親ページから分離",
+    ),
     ("Directional Feather", "方向別ぼかし"),
     ("Distribute", "均等に配置"),
     ("Dock Panel", "パネルをドックに戻す"),
-    ("Document Endnote Options…", "ドキュメントの文末脚注オプション…"),
-    ("Document Footnote Options…", "ドキュメントの脚注オプション…"),
+    (
+        "Document Endnote Options…",
+        "ドキュメントの文末脚注オプション…",
+    ),
+    (
+        "Document Footnote Options…",
+        "ドキュメントの脚注オプション…",
+    ),
     ("Document Preferences", "ドキュメントの環境設定"),
     ("Document Presets", "ドキュメントプリセット"),
     ("Document…", "ドキュメント…"),
@@ -503,14 +578,23 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Entire Pasteboard", "ペーストボード全体"),
     ("Erase", "消去"),
     ("Export Book to PDF…", "ブックを PDF に書き出し…"),
-    ("Export EPUB (Fixed Layout)…", "EPUB を書き出し (固定レイアウト)…"),
+    (
+        "Export EPUB (Fixed Layout)…",
+        "EPUB を書き出し (固定レイアウト)…",
+    ),
     ("Export EPUB (Reflowable)…", "EPUB を書き出し (リフロー)…"),
     ("Export EPUB…", "EPUB を書き出し…"),
     ("Export HTML…", "HTML を書き出し…"),
     ("Export IDML…", "IDML を書き出し…"),
-    ("Export PDF (Interactive)…", "インタラクティブ PDF を書き出し…"),
+    (
+        "Export PDF (Interactive)…",
+        "インタラクティブ PDF を書き出し…",
+    ),
     ("Export Page as PNG…", "ページを PNG で書き出し…"),
-    ("Export Selection as Snippet", "選択範囲をスニペットとして書き出し"),
+    (
+        "Export Selection as Snippet",
+        "選択範囲をスニペットとして書き出し",
+    ),
     ("Export Tagging", "書き出し用タグ設定"),
     ("Export Text…", "テキストを書き出し…"),
     ("Extend Text Selection", "テキストの選択範囲を拡張"),
@@ -526,7 +610,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Fonts in Document", "ドキュメント内のフォント"),
     ("Footnotes", "脚注"),
     ("Form Fields", "フォームフィールド"),
-    ("Frame Fitting Options…", "フレームのオブジェクトサイズの調整オプション…"),
+    (
+        "Frame Fitting Options…",
+        "フレームのオブジェクトサイズの調整オプション…",
+    ),
     ("Generate Index…", "索引を生成…"),
     ("Generate QR Code…", "QR コードを生成…"),
     ("Generate Static Caption", "静的キャプションを生成"),
@@ -597,7 +684,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Next Object in Group", "グループ内の次のオブジェクト"),
     ("Notes", "注釈"),
     ("Object Export Options", "オブジェクトの書き出しオプション"),
-    ("Object Export Options…", "オブジェクトの書き出しオプション…"),
+    (
+        "Object Export Options…",
+        "オブジェクトの書き出しオプション…",
+    ),
     ("Object Layer Options…", "オブジェクトのレイヤーオプション…"),
     ("Object Layers", "オブジェクトのレイヤー"),
     ("Object Liquid Settings", "オブジェクトのリキッド設定"),
@@ -607,7 +697,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Open Library", "ライブラリを開く"),
     ("Outer Glow", "外側の光彩"),
     ("Overprint Preview", "オーバープリントプレビュー"),
-    ("Override All Parent Page Items", "親ページの全項目をオーバーライド"),
+    (
+        "Override All Parent Page Items",
+        "親ページの全項目をオーバーライド",
+    ),
     ("Page Size", "ページサイズ"),
     ("Page Transition", "ページ切り替え効果"),
     ("Page Transitions", "ページ切り替え効果"),
@@ -620,7 +713,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Place Item", "項目を配置"),
     ("Place Snippet", "スニペットを配置"),
     ("Place and Link", "配置してリンク"),
-    ("Place with Import Options…", "読み込みオプションを指定して配置…"),
+    (
+        "Place with Import Options…",
+        "読み込みオプションを指定して配置…",
+    ),
     ("Polygon Settings…", "多角形の設定…"),
     ("Preflight Document", "ドキュメントのプリフライト"),
     ("Previous Cell", "前のセル"),
@@ -636,7 +732,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Recovery Data", "復旧データ"),
     ("Reject All Changes", "すべての変更を却下"),
     ("Release Compound Path", "複合パスを解除"),
-    ("Remove All Local Overrides", "ローカルのオーバーライドをすべて解除"),
+    (
+        "Remove All Local Overrides",
+        "ローカルのオーバーライドをすべて解除",
+    ),
     ("Remove Document", "ドキュメントを除外"),
     ("Report an Issue…", "問題を報告…"),
     ("Reset Shortcuts", "ショートカットをリセット"),
@@ -664,15 +763,24 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Set Shortcut", "ショートカットを設定"),
     ("Set Visibility / Lock", "表示・ロックを設定"),
     ("Show Panel", "パネルを表示"),
-    ("Show/Hide Baseline Grid", "ベースライングリッドを表示・非表示"),
+    (
+        "Show/Hide Baseline Grid",
+        "ベースライングリッドを表示・非表示",
+    ),
     ("Show/Hide Frame Edges", "フレームの枠を表示・非表示"),
     ("Show/Hide Guides", "ガイドを表示・非表示"),
     ("Show/Hide Hidden Characters", "制御文字を表示・非表示"),
     ("Show/Hide Panels", "パネルを表示・非表示"),
-    ("Show/Hide Panels Except Tools", "ツール以外のパネルを表示・非表示"),
+    (
+        "Show/Hide Panels Except Tools",
+        "ツール以外のパネルを表示・非表示",
+    ),
     ("Show/Hide Rulers", "定規を表示・非表示"),
     ("Show/Hide Tagged Frames", "タグ付きフレームを表示・非表示"),
-    ("Show/Hide Text Threads", "テキストフレームの連結を表示・非表示"),
+    (
+        "Show/Hide Text Threads",
+        "テキストフレームの連結を表示・非表示",
+    ),
     ("Smooth", "平滑化"),
     ("Sort", "並べ替え"),
     ("Split Cell Horizontally", "セルを横方向に分割"),
@@ -787,8 +895,14 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Paste in Place", "同じ位置にペースト"),
     ("Place Loaded Graphic", "読み込み済みのグラフィックを配置"),
     ("Reject Change", "変更を却下"),
-    ("Release State to Objects", "ステートを解除してオブジェクトに戻す"),
-    ("Remove Hyphenation Exception", "ハイフネーションの例外を削除"),
+    (
+        "Release State to Objects",
+        "ステートを解除してオブジェクトに戻す",
+    ),
+    (
+        "Remove Hyphenation Exception",
+        "ハイフネーションの例外を削除",
+    ),
     ("Remove from Article", "アーティクルから削除"),
     ("Rename", "名前を変更"),
     ("Rename Bookmark", "ブックマークの名前を変更"),
@@ -816,7 +930,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Insert White Space", "空白文字を挿入"),
     ("Insert Break Character", "改行・改ページ文字を挿入"),
     ("Hyperlinks Cross-References", "ハイパーリンク・相互参照"),
-    ("Document Footnote Options...", "ドキュメントの脚注オプション…"),
+    (
+        "Document Footnote Options...",
+        "ドキュメントの脚注オプション…",
+    ),
     ("  Close  ", "  閉じる  "),
     ("  New file  ", "  新規ファイル  "),
     ("  OK  ", "  OK  "),
@@ -828,7 +945,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Apply Attributes (Eyedropper", "属性を適用 (スポイト"),
     ("Baseline Grid", "ベースライングリッド"),
     ("Bleed and Slug", "裁ち落としとスラッグ"),
-    ("Buttons act in interactive PDF export.", "ボタンは書き出したインタラクティブ PDF 内で機能します。"),
+    (
+        "Buttons act in interactive PDF export.",
+        "ボタンは書き出したインタラクティブ PDF 内で機能します。",
+    ),
     ("Captions", "キャプション"),
     ("Change All (Object", "すべてを置換 (オブジェクト"),
     ("Character Settings", "文字設定"),
@@ -851,11 +971,17 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Document Recovery Data", "ドキュメント復旧データ"),
     ("EPUB and HTML", "EPUB と HTML"),
     ("Export", "書き出し"),
-    ("Export EPUB (Fixed Layout", "EPUB を書き出し (固定レイアウト"),
+    (
+        "Export EPUB (Fixed Layout",
+        "EPUB を書き出し (固定レイアウト",
+    ),
     ("Export EPUB (Reflowable", "EPUB を書き出し (リフロー"),
     ("Facing Pages", "見開きページ"),
     ("GREP Styles", "GREP スタイル"),
-    ("Get help, share your layouts and shape what we build next.", "サポートを受け、レイアウトを共有し、今後の開発に参加できます。"),
+    (
+        "Get help, share your layouts and shape what we build next.",
+        "サポートを受け、レイアウトを共有し、今後の開発に参加できます。",
+    ),
     ("Highlight", "強調表示"),
     ("Hyperlinks & Cross-References", "ハイパーリンクと相互参照"),
     ("Hyphens and Dashes", "ハイフンとダッシュ"),
@@ -868,9 +994,15 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("More ArtCraft apps", "他の ArtCraft アプリ"),
     ("Nested Line Styles", "入れ子行スタイル"),
     ("Nested Styles", "入れ子スタイル"),
-    ("No articles: exports follow page order.", "アーティクルがありません。ページ順に書き出します。"),
+    (
+        "No articles: exports follow page order.",
+        "アーティクルがありません。ページ順に書き出します。",
+    ),
     ("No book open.", "開いているブックがありません。"),
-    ("No bookmarks. They become the PDF outline.", "ブックマークがありません。ブックマークは PDF のしおりになります。"),
+    (
+        "No bookmarks. They become the PDF outline.",
+        "ブックマークがありません。ブックマークは PDF のしおりになります。",
+    ),
     ("No changes.", "変更がありません。"),
     (
         "No conditions. Create one, then select text and click it to apply.",
@@ -883,15 +1015,33 @@ pub(super) const TABLE: &[(&str, &str)] = &[
         "ハイパーリンクがありません。テキストまたはフレームを選択し、URL を入力して「新規」をクリックします。",
     ),
     ("No library open.", "開いているライブラリがありません。"),
-    ("No notes in this document.", "このドキュメントには注釈がありません。"),
+    (
+        "No notes in this document.",
+        "このドキュメントには注釈がありません。",
+    ),
     ("No placed graphics.", "配置された画像がありません。"),
-    ("No scripts. Add one below.", "スクリプトがありません。下で追加してください。"),
-    ("No text anchors in this document.", "このドキュメントにはテキストアンカーがありません。"),
-    ("OK changes all: text and paragraph/character styles.", "OK でテキストと段落スタイル・文字スタイルをすべて変更します。"),
+    (
+        "No scripts. Add one below.",
+        "スクリプトがありません。下で追加してください。",
+    ),
+    (
+        "No text anchors in this document.",
+        "このドキュメントにはテキストアンカーがありません。",
+    ),
+    (
+        "OK changes all: text and paragraph/character styles.",
+        "OK でテキストと段落スタイル・文字スタイルをすべて変更します。",
+    ),
     ("OVERSET", "オーバーセット"),
-    ("Open source. No telemetry.", "オープンソースです。利用情報は収集しません。"),
+    (
+        "Open source. No telemetry.",
+        "オープンソースです。利用情報は収集しません。",
+    ),
     ("Options", "オプション"),
-    ("Options for Black on RGB and Grayscale Devices", "RGB とグレースケール機器での黒のオプション"),
+    (
+        "Options for Black on RGB and Grayscale Devices",
+        "RGB とグレースケール機器での黒のオプション",
+    ),
     ("Other", "その他"),
     ("Output", "出力"),
     ("Page Numbering", "ノンブル"),
@@ -900,24 +1050,45 @@ pub(super) const TABLE: &[(&str, &str)] = &[
         "印刷・画面向けの高速なページレイアウトツールです。オープンで、スクリプトにも対応します。",
     ),
     ("Page · PPI", "ページ・PPI"),
-    ("Part of the ArtCraft suite of open creative tools.", "オープンな制作ツール群 ArtCraft の一部です。"),
+    (
+        "Part of the ArtCraft suite of open creative tools.",
+        "オープンな制作ツール群 ArtCraft の一部です。",
+    ),
     ("Pasteboard Options", "ペーストボードのオプション"),
     ("Paths", "パス"),
-    ("Place the insertion point in a table, or create one.", "表内に挿入位置を置くか、表を作成してください。"),
-    ("Plays in EPUB export; print and PDF show the poster.", "書き出した EPUB では再生され、プリントと PDF ではポスター画像が表示されます。"),
+    (
+        "Place the insertion point in a table, or create one.",
+        "表内に挿入位置を置くか、表を作成してください。",
+    ),
+    (
+        "Plays in EPUB export; print and PDF show the poster.",
+        "書き出した EPUB では再生され、プリントと PDF ではポスター画像が表示されます。",
+    ),
     ("Quotation Marks", "引用符"),
     ("Recently Used", "最近使用した項目"),
     ("Replace With", "置換後"),
     ("Right-click: stroke, groups", "右クリック: 線・グループ"),
     ("Ruler Units", "定規の単位"),
-    ("Saves which bars show and where the panels are.", "バーの表示状態とパネルの位置を保存します。"),
+    (
+        "Saves which bars show and where the panels are.",
+        "バーの表示状態とパネルの位置を保存します。",
+    ),
     (
         "Select a placed video or sound (File › Place a .mp4, .mov, .mp3, .wav …).",
         "配置した動画または音声を選択します (ファイル › 配置で .mp4、.mov、.mp3、.wav などを配置)。",
     ),
-    ("Select an object to color its fill or stroke.", "塗りや線にカラーを設定するオブジェクトを選択してください。"),
-    ("Select an object to give its fill a gradient.", "塗りにグラデーションを適用するオブジェクトを選択してください。"),
-    ("Select an object to make it a button.", "ボタンにするオブジェクトを選択します。"),
+    (
+        "Select an object to color its fill or stroke.",
+        "塗りや線にカラーを設定するオブジェクトを選択してください。",
+    ),
+    (
+        "Select an object to give its fill a gradient.",
+        "塗りにグラデーションを適用するオブジェクトを選択してください。",
+    ),
+    (
+        "Select an object to make it a button.",
+        "ボタンにするオブジェクトを選択します。",
+    ),
     (
         "Select two or more objects (or a group) to make a multi-state object.",
         "複数のステートを持つオブジェクトにするには、2つ以上のオブジェクト (またはグループ) を選択します。",
@@ -933,16 +1104,28 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("System default", "システムのデフォルト"),
     ("Table Dimensions", "表の行数・列数"),
     ("Text Display Options", "テキスト表示オプション"),
-    ("The fill isn't a gradient.", "塗りはグラデーションではありません。"),
-    ("The library is empty. Select objects and Add Selection.", "ライブラリは空です。オブジェクトを選択して「選択範囲を追加」を押してください。"),
-    ("Transitions play in interactive PDF (full-screen mode).", "ページ切り替え効果はインタラクティブ PDF (全画面モード) で再生されます。"),
+    (
+        "The fill isn't a gradient.",
+        "塗りはグラデーションではありません。",
+    ),
+    (
+        "The library is empty. Select objects and Add Selection.",
+        "ライブラリは空です。オブジェクトを選択して「選択範囲を追加」を押してください。",
+    ),
+    (
+        "Transitions play in interactive PDF (full-screen mode).",
+        "ページ切り替え効果はインタラクティブ PDF (全画面モード) で再生されます。",
+    ),
     ("Type & Tables", "書式と表"),
     ("Type Options", "書式オプション"),
     (
         "Type a word with ~ at each allowed break (ex~am~ple); without ~ the word is never hyphenated.",
         "ハイフネーション可能な位置に ~ を入れて単語を入力します (例: ex~am~ple)。~ がなければ、その単語はハイフネーションされません。",
     ),
-    ("User Dictionary (this document)", "ユーザー辞書 (このドキュメント)"),
+    (
+        "User Dictionary (this document)",
+        "ユーザー辞書 (このドキュメント)",
+    ),
     ("Utilities", "ユーティリティ"),
     ("Variable Font", "バリアブルフォント"),
     ("Welcome to DesignCraft", "DesignCraft へようこそ"),
@@ -951,9 +1134,18 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("[Black] Overprint", "「黒」のオーバープリント"),
     ("[No Group]", "[グループなし]"),
     ("[None]", "[なし]"),
-    ("[None] — choose a colour on the ramp.", "[なし] — カラーバーでカラーを選択してください。"),
-    ("discord.gg/artcraft — help, feedback and show-and-tell", "discord.gg/artcraft — サポート・ご意見・作品紹介"),
-    ("⌥-click clears overrides", "⌥ を押しながらクリックするとオーバーライドを消去します"),
+    (
+        "[None] — choose a colour on the ramp.",
+        "[なし] — カラーバーでカラーを選択してください。",
+    ),
+    (
+        "discord.gg/artcraft — help, feedback and show-and-tell",
+        "discord.gg/artcraft — サポート・ご意見・作品紹介",
+    ),
+    (
+        "⌥-click clears overrides",
+        "⌥ を押しながらクリックするとオーバーライドを消去します",
+    ),
     ("⚠ out of date", "⚠ 要更新"),
     ("General", "一般"),
     ("Basic Character Formats", "文字の基本書式"),
@@ -1016,24 +1208,45 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Letter Spacing:", "字間:"),
     ("Glyph Scaling:", "グリフの拡大・縮小:"),
     ("Insert Kashidas:", "カシーダの挿入:"),
-    ("In justified Arabic text", "両端揃えのアラビア語テキストで使用"),
+    (
+        "In justified Arabic text",
+        "両端揃えのアラビア語テキストで使用",
+    ),
     ("Korean Line Breaks:", "韓国語の改行:"),
-    ("Between syllables (not only at spaces)", "音節間で改行 (スペース以外も可)"),
+    (
+        "Between syllables (not only at spaces)",
+        "音節間で改行 (スペース以外も可)",
+    ),
     ("Binding:", "綴じ方向:"),
     ("Ruby:", "ルビ:"),
-    ("Set over the selected text; empty removes it.", "選択したテキストの上にルビを付けます。空欄にすると削除します。"),
+    (
+        "Set over the selected text; empty removes it.",
+        "選択したテキストの上にルビを付けます。空欄にすると削除します。",
+    ),
     ("[Basic Paragraph]", "[基本段落]"),
     ("[No Paragraph Style]", "[段落スタイルなし]"),
     ("Align left", "左揃え"),
     ("Align center", "中央揃え"),
     ("Align right", "右揃え"),
-    ("Justify with last line aligned left", "両端揃え (最終行は左揃え)"),
-    ("Justify with last line aligned center", "両端揃え (最終行は中央揃え)"),
-    ("Justify with last line aligned right", "両端揃え (最終行は右揃え)"),
+    (
+        "Justify with last line aligned left",
+        "両端揃え (最終行は左揃え)",
+    ),
+    (
+        "Justify with last line aligned center",
+        "両端揃え (最終行は中央揃え)",
+    ),
+    (
+        "Justify with last line aligned right",
+        "両端揃え (最終行は右揃え)",
+    ),
     ("Justify all lines", "全行を両端揃え"),
     ("Align towards spine", "ノド側揃え"),
     ("Align away from spine", "小口側揃え"),
-    ("Create New Style from Selection", "選択範囲から新規スタイルを作成"),
+    (
+        "Create New Style from Selection",
+        "選択範囲から新規スタイルを作成",
+    ),
     ("No text selected", "テキストが選択されていません"),
     ("Search", "検索"),
     ("Essentials", "基本"),
@@ -1051,9 +1264,15 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Left to Right", "左から右"),
     ("Portrait", "縦"),
     ("Landscape", "横"),
-    ("Display All Blacks as Rich Black", "すべての黒をリッチブラックで表示"),
+    (
+        "Display All Blacks as Rich Black",
+        "すべての黒をリッチブラックで表示",
+    ),
     ("Display All Blacks Accurately", "すべての黒を正確に表示"),
-    ("Output All Blacks as Rich Black", "すべての黒をリッチブラックで出力"),
+    (
+        "Output All Blacks as Rich Black",
+        "すべての黒をリッチブラックで出力",
+    ),
     ("Output All Blacks Accurately", "すべての黒を正確に出力"),
     ("Top Margin", "上マージン"),
     ("Top of Page", "ページ上端"),
@@ -1094,7 +1313,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Location:", "位置:"),
     ("Lock Guides", "ガイドをロック"),
     ("Miter Limit:", "マイターの上限:"),
-    ("New Article from Selection", "選択範囲から新規アーティクルを作成"),
+    (
+        "New Article from Selection",
+        "選択範囲から新規アーティクルを作成",
+    ),
     ("New Note at Cursor", "カーソル位置に新規注釈"),
     ("New Swatch", "新規スウォッチ"),
     ("New condition name", "新規条件名"),
@@ -1150,7 +1372,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Align to Spread", "スプレッドに揃える"),
     ("No Text Wrap", "テキストの回り込みなし"),
     ("Wrap Around Bounding Box", "外接矩形に沿って回り込み"),
-    ("Wrap Around Object Shape", "オブジェクトの形状に沿って回り込み"),
+    (
+        "Wrap Around Object Shape",
+        "オブジェクトの形状に沿って回り込み",
+    ),
     ("Jump Object", "オブジェクトを飛び越す"),
     ("Jump to Next Column", "次の段へ移動"),
     ("Bulleted List", "箇条書き"),
@@ -1225,7 +1450,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Arabic", "アラビア語"),
     ("Beveled Rectangle", "角を面取りした長方形"),
     ("Chinese", "中国語"),
-    ("Constrain proportions for width and height", "幅と高さの比率を固定"),
+    (
+        "Constrain proportions for width and height",
+        "幅と高さの比率を固定",
+    ),
     ("Corner", "角"),
     ("Custom", "カスタム"),
     ("Czech", "チェコ語"),
@@ -1243,7 +1471,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("French", "フランス語"),
     ("French: Canadian", "フランス語: カナダ"),
     ("German: 2006 Reform", "ドイツ語: 2006年正書法改訂"),
-    ("German: Swiss 2006 Reform", "ドイツ語: スイス 2006年正書法改訂"),
+    (
+        "German: Swiss 2006 Reform",
+        "ドイツ語: スイス 2006年正書法改訂",
+    ),
     ("Greek", "ギリシャ語"),
     ("Hebrew", "ヘブライ語"),
     ("Hindi", "ヒンディー数字"),
@@ -1298,7 +1529,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Re-center", "中央に再配置"),
     ("Show Controls", "再生コントロールを表示"),
     ("Signature Field", "署名フィールド"),
-    ("Select text to apply a condition", "条件を適用するテキストを選択してください"),
+    (
+        "Select text to apply a condition",
+        "条件を適用するテキストを選択してください",
+    ),
     ("Blinds", "ブラインド"),
     ("Box", "ボックス"),
     ("Comb", "くし状"),
@@ -1333,30 +1567,60 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("⚠ Missing", "⚠ リンク切れ"),
     ("▲ Modified", "▲ 変更済み"),
     ("(Text Color)", "(テキストカラー)"),
-    ("{count} glyphs — click to insert at the text cursor", "{count}グリフ — クリックでテキストカーソル位置に挿入"),
-    ("{pages} Pages in {spreads} Spreads", "{pages}ページ ({spreads}スプレッド)"),
+    (
+        "{count} glyphs — click to insert at the text cursor",
+        "{count}グリフ — クリックでテキストカーソル位置に挿入",
+    ),
+    (
+        "{pages} Pages in {spreads} Spreads",
+        "{pages}ページ ({spreads}スプレッド)",
+    ),
     (" (auto)", " (自動)"),
-    ("Absolute Numbering (instead of Section Numbering)", "通しノンブル (セクションノンブルの代わり)"),
-    ("Add and remove pages as the primary text frame's story grows and shrinks", "主テキストフレームのストーリーの長さに応じてページを追加・削除"),
+    (
+        "Absolute Numbering (instead of Section Numbering)",
+        "通しノンブル (セクションノンブルの代わり)",
+    ),
+    (
+        "Add and remove pages as the primary text frame's story grows and shrinks",
+        "主テキストフレームのストーリーの長さに応じてページを追加・削除",
+    ),
     ("Added Text (highlighted)", "追加されたテキスト (強調表示)"),
-    ("Adjust Layout (objects follow the new page size)", "レイアウトを調整 (新しいページサイズに合わせてオブジェクトを調整)"),
+    (
+        "Adjust Layout (objects follow the new page size)",
+        "レイアウトを調整 (新しいページサイズに合わせてオブジェクトを調整)",
+    ),
     ("Auto-Fit", "自動サイズ調整"),
     ("Case sensitive", "大文字と小文字を区別"),
-    ("Custom Tracking/Kerning", "カスタムのトラッキング・カーニング"),
+    (
+        "Custom Tracking/Kerning",
+        "カスタムのトラッキング・カーニング",
+    ),
     ("Dimensions Include Stroke Weight", "寸法に線の太さを含める"),
     ("Enable Autocorrect", "自動修正を有効化"),
-    ("Enable Dynamic Spelling (underline misspelled words)", "自動スペルチェックを有効化 (スペルミスのある単語に下線)"),
+    (
+        "Enable Dynamic Spelling (underline misspelled words)",
+        "自動スペルチェックを有効化 (スペルミスのある単語に下線)",
+    ),
     ("Grids in Back", "グリッドを背面に表示"),
     ("H&J Violations", "H&J の制約違反"),
     ("Include Bleed", "裁ち落としを含める"),
     ("Include Stroke Weight", "線の太さを含める"),
     ("Join our Discord", "Discord に参加"),
     ("Keep Violations", "段落保持の制約違反"),
-    ("Overprint [Black] Swatch at 100%", "100% の「黒」スウォッチをオーバープリント"),
+    (
+        "Overprint [Black] Swatch at 100%",
+        "100% の「黒」スウォッチをオーバープリント",
+    ),
     ("Printer's Marks", "プリント用マーク"),
-    ("Remove Styles and Formatting from Text and Tables", "テキストと表からスタイルと書式を削除"),
+    (
+        "Remove Styles and Formatting from Text and Tables",
+        "テキストと表からスタイルと書式を削除",
+    ),
     ("Ruby", "ルビ"),
-    ("Show Note Anchors in Layout View", "レイアウト表示で注釈アンカーを表示"),
+    (
+        "Show Note Anchors in Layout View",
+        "レイアウト表示で注釈アンカーを表示",
+    ),
     ("Spreads", "スプレッド"),
     ("Substituted Fonts", "代替フォント"),
     ("Transformations are Totals", "変形の累積値を表示"),
@@ -1368,7 +1632,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Composition", "組版"),
     ("Show Font Names in English", "フォント名を英語で表示"),
     ("Missing Glyphs", "欠落グリフ"),
-    ("Draw Missing Glyphs from Fallback Fonts", "欠落グリフを代替フォントで表示"),
+    (
+        "Draw Missing Glyphs from Fallback Fonts",
+        "欠落グリフを代替フォントで表示",
+    ),
     ("Units & Increments", "単位と増分"),
     ("Grids", "グリッド"),
     ("Guides & Pasteboard", "ガイドとペーストボード"),
@@ -1376,7 +1643,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Autocorrect", "自動修正"),
     ("Story Editor Display", "ストーリーエディターの表示"),
     ("File Handling", "ファイルの取り扱い"),
-    ("Formatting affects container (J)", "書式をフレームに適用 (J)"),
+    (
+        "Formatting affects container (J)",
+        "書式をフレームに適用 (J)",
+    ),
     ("Formatting affects text (J)", "書式をテキストに適用 (J)"),
     ("Apply None", "カラーなしを適用"),
     ("Height Only", "高さのみ"),
@@ -1403,7 +1673,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Absolute Colorimetric", "絶対比色"),
     ("No conflicts", "競合なし"),
     ("Page (1–{count}):", "ページ (1–{count}):"),
-    ("Fonts in Document: {count}    Missing: {missing}", "ドキュメント内のフォント: {count}    欠落: {missing}"),
+    (
+        "Fonts in Document: {count}    Missing: {missing}",
+        "ドキュメント内のフォント: {count}    欠落: {missing}",
+    ),
     ("No data source", "データソースがありません"),
     ("Select Data Source…", "データソースを選択…"),
     ("Data Merge", "データ結合"),
@@ -1430,7 +1703,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Limit", "上限"),
     ("Bind to frame", "フレームにバインド"),
     ("Insert field", "フィールドを挿入"),
-    ("Pass csv, rows, or bytes from the control channel.", "制御チャネルから csv、rows または bytes を渡します。"),
+    (
+        "Pass csv, rows, or bytes from the control channel.",
+        "制御チャネルから csv、rows または bytes を渡します。",
+    ),
     ("Panels", "パネル"),
     ("Next Page", "次のページ"),
     ("Previous Page", "前のページ"),
@@ -1473,7 +1749,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     // Labels the code passes to `tr` that the other tables have no row for: command labels without their
     // trailing `…` (the shortcut list), menu paths (the menu list), special characters, profile names and a
     // few field labels.
-    ("Anchored Object Options", "アンカー付きオブジェクトのオプション"),
+    (
+        "Anchored Object Options",
+        "アンカー付きオブジェクトのオプション",
+    ),
     ("Apply Parent to Pages", "ページに親ページを適用"),
     ("ArtCraft App Page", "ArtCraft アプリページ"),
     ("ArtCraft Website", "ArtCraft ウェブサイト"),
@@ -1485,16 +1764,25 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Define Text Variable", "テキスト変数を定義"),
     ("DesignCraft on GitHub", "GitHub の DesignCraft"),
     ("DesignCraft Website", "DesignCraft ウェブサイト"),
-    ("Document Endnote Options", "ドキュメントの文末脚注オプション"),
+    (
+        "Document Endnote Options",
+        "ドキュメントの文末脚注オプション",
+    ),
     ("Document Footnote Options", "ドキュメントの脚注オプション"),
     ("Export EPUB", "EPUB を書き出し"),
-    ("Export EPUB (Fixed Layout)", "EPUB を書き出し (固定レイアウト)"),
+    (
+        "Export EPUB (Fixed Layout)",
+        "EPUB を書き出し (固定レイアウト)",
+    ),
     ("Export EPUB (Reflowable)", "EPUB を書き出し (リフロー)"),
     ("Export HTML", "HTML を書き出し"),
     ("Export IDML", "IDML を書き出し"),
     ("Export Page as PNG", "ページを PNG で書き出し"),
     ("Export PDF", "PDF を書き出し"),
-    ("Export PDF (Interactive)", "インタラクティブ PDF を書き出し"),
+    (
+        "Export PDF (Interactive)",
+        "インタラクティブ PDF を書き出し",
+    ),
     ("Export Text", "テキストを書き出し"),
     ("Export XML", "XML を書き出し"),
     ("Generate Index", "索引を生成"),
@@ -1519,7 +1807,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("New Stroke Style", "新規線スタイル"),
     ("Numbering & Section Options", "ノンブルとセクション設定"),
     ("Package", "パッケージ"),
-    ("Place with Import Options", "読み込みオプションを指定して配置"),
+    (
+        "Place with Import Options",
+        "読み込みオプションを指定して配置",
+    ),
     ("Print Booklet", "小冊子をプリント"),
     ("Quick Apply", "クイック適用"),
     ("Relink", "再リンク"),
@@ -1533,12 +1824,21 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Type on a Path Options", "パス上のテキストのオプション"),
     ("Edit/Interface Language", "編集/インターフェイスの言語"),
     ("Edit/Spelling", "編集/スペルチェック"),
-    ("Edit/Transparency Blend Space", "編集/透明合成のカラースペース"),
-    ("Edit/Transparency Flattener Presets", "編集/透明の統合プリセット"),
+    (
+        "Edit/Transparency Blend Space",
+        "編集/透明合成のカラースペース",
+    ),
+    (
+        "Edit/Transparency Flattener Presets",
+        "編集/透明の統合プリセット",
+    ),
     ("File/Export", "ファイル/書き出し"),
     ("Layout/Index", "レイアウト/索引"),
     ("Layout/Pages", "レイアウト/ページ"),
-    ("Object/Anchored Object", "オブジェクト/アンカー付きオブジェクト"),
+    (
+        "Object/Anchored Object",
+        "オブジェクト/アンカー付きオブジェクト",
+    ),
     ("Object/Arrange", "オブジェクト/重ね順"),
     ("Object/Captions", "オブジェクト/キャプション"),
     ("Object/Clipping Path", "オブジェクト/クリッピングパス"),
@@ -1555,15 +1855,39 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Table/Delete", "表/削除"),
     ("Table/Insert", "表/挿入"),
     ("Table/Select", "表/選択"),
-    ("Type/Bulleted and Numbered Lists", "書式/箇条書きと番号付きリスト"),
+    (
+        "Type/Bulleted and Numbered Lists",
+        "書式/箇条書きと番号付きリスト",
+    ),
     ("Type/Change Case", "書式/大文字・小文字を変更"),
-    ("Type/Hyperlinks & Cross-References", "書式/ハイパーリンクと相互参照"),
-    ("Type/Insert Break Character", "書式/改行・改ページ文字を挿入"),
-    ("Type/Insert Special Character/Hyphens and Dashes", "書式/特殊文字を挿入/ハイフンとダッシュ"),
-    ("Type/Insert Special Character/Markers", "書式/特殊文字を挿入/マーカー"),
-    ("Type/Insert Special Character/Other", "書式/特殊文字を挿入/その他"),
-    ("Type/Insert Special Character/Quotation Marks", "書式/特殊文字を挿入/引用符"),
-    ("Type/Insert Special Character/Symbols", "書式/特殊文字を挿入/記号"),
+    (
+        "Type/Hyperlinks & Cross-References",
+        "書式/ハイパーリンクと相互参照",
+    ),
+    (
+        "Type/Insert Break Character",
+        "書式/改行・改ページ文字を挿入",
+    ),
+    (
+        "Type/Insert Special Character/Hyphens and Dashes",
+        "書式/特殊文字を挿入/ハイフンとダッシュ",
+    ),
+    (
+        "Type/Insert Special Character/Markers",
+        "書式/特殊文字を挿入/マーカー",
+    ),
+    (
+        "Type/Insert Special Character/Other",
+        "書式/特殊文字を挿入/その他",
+    ),
+    (
+        "Type/Insert Special Character/Quotation Marks",
+        "書式/特殊文字を挿入/引用符",
+    ),
+    (
+        "Type/Insert Special Character/Symbols",
+        "書式/特殊文字を挿入/記号",
+    ),
     ("Type/Insert White Space", "書式/空白文字を挿入"),
     ("Type/Story Direction", "書式/組み方向"),
     ("Type/Text Variables", "書式/テキスト変数"),
@@ -1579,7 +1903,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("View/Structure", "表示/構造"),
     ("Window/Arrange", "ウィンドウ/配置"),
     ("Window/Interactive", "ウィンドウ/インタラクティブ"),
-    ("Window/Interface Color Theme", "ウィンドウ/インターフェイスのカラーテーマ"),
+    (
+        "Window/Interface Color Theme",
+        "ウィンドウ/インターフェイスのカラーテーマ",
+    ),
     ("Window/Output", "ウィンドウ/出力"),
     ("Window/Panels", "ウィンドウ/パネル"),
     ("Window/Type & Tables", "ウィンドウ/書式と表"),
@@ -1596,8 +1923,14 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Clear Rotation", "回転を解除"),
     ("Closed Path", "閉じたパス"),
     ("CMYK:", "CMYK:"),
-    ("Color Blindness – Deuteranopia", "色覚シミュレーション (2型2色覚)"),
-    ("Color Blindness – Protanopia", "色覚シミュレーション (1型2色覚)"),
+    (
+        "Color Blindness – Deuteranopia",
+        "色覚シミュレーション (2型2色覚)",
+    ),
+    (
+        "Color Blindness – Protanopia",
+        "色覚シミュレーション (1型2色覚)",
+    ),
     ("Column Break", "改段"),
     ("Columns:", "段:"),
     ("Conditional Text", "条件付きテキスト"),
@@ -1631,7 +1964,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("I, II, III, IV...", "I, II, III, IV..."),
     ("Indent to Here", "ここまでインデント"),
     ("Ink Limit 300%", "インキ量の上限 300%"),
-    ("Internet Standard RGB (sRGB)", "インターネット標準 RGB (sRGB)"),
+    (
+        "Internet Standard RGB (sRGB)",
+        "インターネット標準 RGB (sRGB)",
+    ),
     ("Left:", "左:"),
     ("Legacy Macintosh RGB", "旧 Macintosh RGB"),
     ("Light", "明るい"),
@@ -1672,7 +2008,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Smart Guide Options", "スマートガイドのオプション"),
     ("Story Column Direction", "ストーリーの段の方向"),
     ("Straight Double Quotation Marks", "直線型二重引用符"),
-    ("Straight Single Quotation Mark (Apostrophe)", "直線型一重引用符 (アポストロフィー)"),
+    (
+        "Straight Single Quotation Mark (Apostrophe)",
+        "直線型一重引用符 (アポストロフィー)",
+    ),
     ("Subscript:", "下付き:"),
     ("Superscript:", "上付き:"),
     ("Tab", "タブ"),
@@ -1683,7 +2022,10 @@ pub(super) const TABLE: &[(&str, &str)] = &[
     ("Trademark Symbol", "商標記号"),
     ("Transform Again Individually", "個別に再変形"),
     ("Transform Sequence Again", "一連の変形を再実行"),
-    ("Transform Sequence Again Individually", "一連の変形を個別に再実行"),
+    (
+        "Transform Sequence Again Individually",
+        "一連の変形を個別に再実行",
+    ),
     ("Unassigned", "未指定"),
     ("URL:", "URL:"),
     ("Vertical:", "垂直方向:"),
@@ -1702,7 +2044,9 @@ mod tests {
         let mut found = Vec::new();
         let mut rest = text;
         while let Some(start) = rest.find('{') {
-            let Some(len) = rest[start..].find('}') else { break };
+            let Some(len) = rest[start..].find('}') else {
+                break;
+            };
             found.push(&rest[start..start + len + 1]);
             rest = &rest[start + len + 1..];
         }
@@ -1721,15 +2065,28 @@ mod tests {
 
     #[test]
     fn rows_keep_placeholders_padding_and_endings() {
-        let ellipsis = |text: &str| text.trim_end().ends_with('…') || text.trim_end().ends_with("...");
+        let ellipsis =
+            |text: &str| text.trim_end().ends_with('…') || text.trim_end().ends_with("...");
         for (en, ja) in TABLE {
             assert_eq!(placeholders(en), placeholders(ja), "placeholders of {en}");
-            assert_eq!(en.len() - en.trim_start().len(), ja.len() - ja.trim_start().len(), "leading space of {en}");
-            assert_eq!(en.len() - en.trim_end().len(), ja.len() - ja.trim_end().len(), "trailing space of {en}");
+            assert_eq!(
+                en.len() - en.trim_start().len(),
+                ja.len() - ja.trim_start().len(),
+                "leading space of {en}"
+            );
+            assert_eq!(
+                en.len() - en.trim_end().len(),
+                ja.len() - ja.trim_end().len(),
+                "trailing space of {en}"
+            );
             assert_eq!(ellipsis(en), ellipsis(ja), "ellipsis of {en}");
             // The numbering samples (`a, b, c, d...`) stay as they are; everything else uses `…`.
             assert!(!ja.contains("...") || ja == en, "ASCII ellipsis in {en}");
-            assert_eq!(en.trim_end().ends_with(':'), ja.trim_end().ends_with(':'), "colon of {en}");
+            assert_eq!(
+                en.trim_end().ends_with(':'),
+                ja.trim_end().ends_with(':'),
+                "colon of {en}"
+            );
         }
     }
 
@@ -1737,7 +2094,12 @@ mod tests {
     fn lookup_uses_this_table_and_leaves_unknown_text_alone() {
         assert_eq!(tr("ja", "File"), "ファイル");
         assert_eq!(tr("ja", "Cancel"), "キャンセル");
-        assert_eq!(tr("ja", "{count} glyphs — click to insert at the text cursor").matches("{count}").count(), 1);
+        assert_eq!(
+            tr("ja", "{count} glyphs — click to insert at the text cursor")
+                .matches("{count}")
+                .count(),
+            1
+        );
         let unknown = String::from("A user-defined untranslated label");
         assert!(std::ptr::eq(tr("ja", &unknown), unknown.as_str()));
     }

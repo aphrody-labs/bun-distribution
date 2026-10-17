@@ -22,20 +22,20 @@ use bevy_ecs::{
 };
 use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::{
-    tab_navigation::TabIndex, AutoFocus, FocusCause, FocusLost, FocusedInput, InputFocus,
+    AutoFocus, FocusCause, FocusLost, FocusedInput, InputFocus, tab_navigation::TabIndex,
 };
 use bevy_log::warn;
 use bevy_math::{UVec2, Vec2, Vec3};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
-use bevy_scene::{prelude::*, Ready};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
+use bevy_scene::{Ready, prelude::*};
 use bevy_text::{EditableText, FontSize, Justify, LineHeight, TextEdit, TextLayout};
 use bevy_ui::{
-    prelude::AccessibleLabel, px, AlignItems, AlignSelf, Display, FlexDirection, GridPlacement,
-    GridTrack, JustifySelf, Node, RepeatedGridTrack,
+    AlignItems, AlignSelf, Display, FlexDirection, GridPlacement, GridTrack, JustifySelf, Node,
+    RepeatedGridTrack, prelude::AccessibleLabel, px,
 };
 use bevy_ui_widgets::{
-    popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
     Activate, ActivateOnPress, SliderValue, ValueChange,
+    popover::{Popover, PopoverAlign, PopoverPlacement, PopoverSide},
 };
 
 use crate::{

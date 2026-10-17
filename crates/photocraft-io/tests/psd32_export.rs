@@ -35,7 +35,10 @@ fn raw_layer_section(bytes: &[u8]) -> Option<(u32, Vec<[u8; 4]>)> {
     p += 4 + be32(bytes, p) as usize; // global layer mask
     let mut keys = Vec::new();
     while p + 12 <= end {
-        assert!(matches!(&bytes[p..p + 4], b"8BIM" | b"8B64"), "global block signature at {p}");
+        assert!(
+            matches!(&bytes[p..p + 4], b"8BIM" | b"8B64"),
+            "global block signature at {p}"
+        );
         keys.push(bytes[p + 4..p + 8].try_into().unwrap());
         let n = be32(bytes, p + 8) as usize;
         // Global blocks are padded to 4 bytes.
@@ -48,16 +51,36 @@ fn raw_layer_section(bytes: &[u8]) -> Option<(u32, Vec<[u8; 4]>)> {
 fn assert_32bit_layout(name: &str, bytes: &[u8]) {
     let f = PsdFile::from_bytes(bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
     assert_eq!(f.header.depth, 32, "{name}: depth");
-    assert_eq!(f.color_mode_data, hdr::default_toning_data(), "{name}: HDR toning color mode data");
+    assert_eq!(
+        f.color_mode_data,
+        hdr::default_toning_data(),
+        "{name}: HDR toning color mode data"
+    );
     for id in [1005u16, 1057] {
         assert!(f.resource(id).is_some(), "{name}: resource {id} missing");
     }
-    assert_eq!(f.has_real_merged_data(), Some(true), "{name}: 1057 real merged data");
+    assert_eq!(
+        f.has_real_merged_data(),
+        Some(true),
+        "{name}: 1057 real merged data"
+    );
     // Merged image: raw big-endian IEEE floats, finite.
-    assert_eq!(f.image_data.compression, Compression::Raw, "{name}: merged compression");
+    assert_eq!(
+        f.image_data.compression,
+        Compression::Raw,
+        "{name}: merged compression"
+    );
     let n = f.header.width as usize * f.header.height as usize * usize::from(f.header.channels);
     assert_eq!(f.image_data.data.len(), n * 4, "{name}: merged size");
-    assert!(f.image_data.data.as_chunks::<4>().0.iter().all(|c| f32::from_be_bytes(*c).is_finite()), "{name}: non-finite merged sample");
+    assert!(
+        f.image_data
+            .data
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .all(|c| f32::from_be_bytes(*c).is_finite()),
+        "{name}: non-finite merged sample"
+    );
     if f.layers().is_empty() {
         return;
     }
@@ -67,15 +90,28 @@ fn assert_32bit_layout(name: &str, bytes: &[u8]) {
         "{name}: placement {:?}",
         f.layer_info_placement
     );
-    let (li_len, keys) = raw_layer_section(bytes).unwrap_or_else(|| panic!("{name}: no layer section"));
+    let (li_len, keys) =
+        raw_layer_section(bytes).unwrap_or_else(|| panic!("{name}: no layer section"));
     assert_eq!(li_len, 0, "{name}: classic layer info length");
-    assert_eq!(keys.first(), Some(b"Lr32"), "{name}: global blocks {keys:?}");
+    assert_eq!(
+        keys.first(),
+        Some(b"Lr32"),
+        "{name}: global blocks {keys:?}"
+    );
     // Channel data: raw or ZIP (RLE is not valid for 32-bit samples), decodable.
     for (i, rec) in f.layers().iter().enumerate() {
         for ch in &rec.channels {
             let c = ch.compression.unwrap_or(Compression::Raw);
-            assert!(matches!(c, Compression::Raw | Compression::Zip | Compression::ZipPrediction), "{name}: layer {i} channel {} uses {c:?}", ch.id);
-            rec.decode_channel(ch.id, 32, f.header.version).unwrap_or_else(|e| panic!("{name}: layer {i} channel {}: {e}", ch.id));
+            assert!(
+                matches!(
+                    c,
+                    Compression::Raw | Compression::Zip | Compression::ZipPrediction
+                ),
+                "{name}: layer {i} channel {} uses {c:?}",
+                ch.id
+            );
+            rec.decode_channel(ch.id, 32, f.header.version)
+                .unwrap_or_else(|e| panic!("{name}: layer {i} channel {}: {e}", ch.id));
         }
     }
     let errs = common::strict_block_errors(bytes);
@@ -83,7 +119,9 @@ fn assert_32bit_layout(name: &str, bytes: &[u8]) {
 }
 
 fn export_psd(doc: &Document) -> Vec<u8> {
-    export(doc, "t.psd", &ExportOptions::default()).unwrap().bytes
+    export(doc, "t.psd", &ExportOptions::default())
+        .unwrap()
+        .bytes
 }
 
 #[test]
@@ -118,7 +156,10 @@ fn layered_32bit_export_reimports_render_equal() {
     for mode in [ColorMode::Rgb, ColorMode::Grayscale] {
         let doc = common::gen_doc(mode, SampleType::F32, Features::ALL);
         let back = import("t.psd", &export_psd(&doc)).unwrap().document;
-        let (a, b) = (photocraft_compose::flatten(&doc).px, photocraft_compose::flatten(&back).px);
+        let (a, b) = (
+            photocraft_compose::flatten(&doc).px,
+            photocraft_compose::flatten(&back).px,
+        );
         assert_eq!(a.len(), b.len());
         let d = common::max_diff(&a, &b);
         assert!(d <= 1e-4, "{mode:?}: render differs by {d}");
@@ -130,8 +171,13 @@ fn layered_32bit_export_reimports_render_equal() {
 #[cfg(feature = "corpus")]
 #[test]
 fn photoshop_32bit_corpus_round_trip() {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/photoshop/adjustments");
-    assert!(root.is_dir(), "{} is missing: run `cargo xtask corpus --all`", root.display());
+    let root =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/photoshop/adjustments");
+    assert!(
+        root.is_dir(),
+        "{} is missing: run `cargo xtask corpus --all`",
+        root.display()
+    );
     let mut files = Vec::new();
     for dir in ["rgb32", "gray32"] {
         for e in std::fs::read_dir(root.join(dir)).unwrap() {
@@ -148,13 +194,20 @@ fn photoshop_32bit_corpus_round_trip() {
         let bytes = std::fs::read(p).unwrap();
         let ps = PsdFile::from_bytes(&bytes).unwrap();
         assert_eq!(ps.header.depth, 32, "{name}");
-        assert_eq!(ps.color_mode_data, hdr::default_toning_data(), "{name}: Photoshop's toning record differs from ours");
+        assert_eq!(
+            ps.color_mode_data,
+            hdr::default_toning_data(),
+            "{name}: Photoshop's toning record differs from ours"
+        );
         let doc = import(&name, &bytes).unwrap().document;
         let out = export_psd(&doc);
         assert_32bit_layout(&name, &out);
         let back = import(&name, &out).unwrap().document;
         assert_eq!(doc.layer_count(), back.layer_count(), "{name}: layer count");
-        let (a, b) = (photocraft_compose::flatten(&doc).px, photocraft_compose::flatten(&back).px);
+        let (a, b) = (
+            photocraft_compose::flatten(&doc).px,
+            photocraft_compose::flatten(&back).px,
+        );
         assert_eq!(a.len(), b.len(), "{name}");
         let d = common::max_diff(&a, &b);
         assert!(d <= 1e-4, "{name}: render differs by {d}");
@@ -174,10 +227,17 @@ fn merged_oracle_preserves_signed_hdr_samples() {
             file.header.channels = color_channels + u16::from(alpha != 1.0);
             file.image_data.compression = Compression::Raw;
             // Photoshop's merged pixels are matted against white when alpha is present.
-            file.image_data.data =
-                (0..color_channels).flat_map(|_| [-0.125_f32, 0.123456, 4.0].into_iter().flat_map(|v| (v * alpha + 1.0 - alpha).to_be_bytes())).collect();
+            file.image_data.data = (0..color_channels)
+                .flat_map(|_| {
+                    [-0.125_f32, 0.123456, 4.0]
+                        .into_iter()
+                        .flat_map(|v| (v * alpha + 1.0 - alpha).to_be_bytes())
+                })
+                .collect();
             if alpha != 1.0 {
-                file.image_data.data.extend((0..3).flat_map(|_| alpha.to_be_bytes()));
+                file.image_data
+                    .data
+                    .extend((0..3).flat_map(|_| alpha.to_be_bytes()));
             }
             let pixels = merged_composite(&file).unwrap();
             for (p, value) in pixels.iter().zip([-0.125, 0.123456, 4.0]) {
@@ -196,10 +256,21 @@ fn merged_oracle_does_not_treat_extra_channels_as_transparency() {
         let mut file = PsdFile::from_bytes(&export_psd(&doc)).unwrap();
         let color_channels = if mode == ColorMode::Rgb { 3 } else { 1 };
         file.header.channels = color_channels + 1;
-        file.layer_info = Some(photocraft_psd::LayerInfo { merged_alpha: false, layers: Vec::new(), padding: None });
+        file.layer_info = Some(photocraft_psd::LayerInfo {
+            merged_alpha: false,
+            layers: Vec::new(),
+            padding: None,
+        });
         file.image_data.compression = Compression::Raw;
-        file.image_data.data = (0..color_channels).flat_map(|_| 2.0_f32.to_be_bytes()).chain(0.0_f32.to_be_bytes()).collect();
+        file.image_data.data = (0..color_channels)
+            .flat_map(|_| 2.0_f32.to_be_bytes())
+            .chain(0.0_f32.to_be_bytes())
+            .collect();
         assert!(!file.merged_has_alpha());
-        assert_eq!(merged_composite(&file).unwrap(), vec![[2.0, 2.0, 2.0, 1.0]], "{mode:?}");
+        assert_eq!(
+            merged_composite(&file).unwrap(),
+            vec![[2.0, 2.0, 2.0, 1.0]],
+            "{mode:?}"
+        );
     }
 }

@@ -42,7 +42,12 @@ impl LibrarySource {
             LibrarySource::All => {}
             // everything imported in the 30 days up to the latest import (by import, newest first)
             LibrarySource::RecentlyAdded => {
-                let latest = cat.photos().filter(|p| p.in_library()).map(|p| p.imported.clone()).max().unwrap_or_default();
+                let latest = cat
+                    .photos()
+                    .filter(|p| p.in_library())
+                    .map(|p| p.imported.clone())
+                    .max()
+                    .unwrap_or_default();
                 let from = lightcraft_catalog::stacks::iso_seconds(&latest)
                     .map(|s| lightcraft_catalog::dates::civil(s - RECENT_DAYS * 86_400))
                     .unwrap_or_else(|| latest.get(..10).unwrap_or("").to_string());
@@ -61,7 +66,10 @@ impl LibrarySource {
         match self {
             LibrarySource::All => "All Photos".into(),
             LibrarySource::RecentlyAdded => "Recently Added".into(),
-            LibrarySource::Album(a) => cat.album(*a).map(|a| a.name.clone()).unwrap_or_else(|| "Album".into()),
+            LibrarySource::Album(a) => cat
+                .album(*a)
+                .map(|a| a.name.clone())
+                .unwrap_or_else(|| "Album".into()),
             LibrarySource::RecentlyDeleted => "Recently Deleted".into(),
             LibrarySource::Picks => "Picks".into(),
             LibrarySource::Folder => "Folder".into(),
@@ -100,7 +108,10 @@ impl Selection {
         }
     }
     pub fn single(id: PhotoId) -> Selection {
-        Selection { ids: vec![id], active: Some(id) }
+        Selection {
+            ids: vec![id],
+            active: Some(id),
+        }
     }
     pub fn contains(&self, id: PhotoId) -> bool {
         self.ids.contains(&id)
@@ -119,7 +130,10 @@ impl Selection {
     /// Shift-click: select the range between the active photo and `id` in `order`.
     pub fn extend_to(&mut self, id: PhotoId, order: &[PhotoId]) {
         let anchor = self.active.unwrap_or(id);
-        let (Some(a), Some(b)) = (order.iter().position(|x| *x == anchor), order.iter().position(|x| *x == id)) else {
+        let (Some(a), Some(b)) = (
+            order.iter().position(|x| *x == anchor),
+            order.iter().position(|x| *x == id),
+        ) else {
             *self = Selection::single(id);
             return;
         };
@@ -159,13 +173,19 @@ pub fn filter_chips(f: &Filter, cat: &Catalog) -> Vec<FilterChip> {
         add(format!("Rating {op} {}★", f.rating), json!({"rating": 0}));
     }
     if let Some(fl) = f.flag {
-        add(format!("Flag: {}", format!("{fl:?}").to_lowercase()), json!({"flag": Null}));
+        add(
+            format!("Flag: {}", format!("{fl:?}").to_lowercase()),
+            json!({"flag": Null}),
+        );
     }
     let mut labels = f.labels.clone();
     labels.extend(f.label.filter(|l| !labels.contains(l)));
     if !labels.is_empty() {
         let names: Vec<String> = labels.iter().map(|l| cat.label_name(*l)).collect();
-        add(format!("Label: {}", names.join(" or ")), json!({"label": Null, "labels": []}));
+        add(
+            format!("Label: {}", names.join(" or ")),
+            json!({"label": Null, "labels": []}),
+        );
     }
     if let Some(k) = f.kind {
         let n = match k {
@@ -185,11 +205,21 @@ pub fn filter_chips(f: &Filter, cat: &Catalog) -> Vec<FilterChip> {
         add(format!("Type: {n}"), json!({"merged": Null}));
     }
     if let Some(e) = f.edited {
-        add(if e { "Edited".into() } else { "Unedited".into() }, json!({"edited": Null}));
+        add(
+            if e {
+                "Edited".into()
+            } else {
+                "Unedited".into()
+            },
+            json!({"edited": Null}),
+        );
     }
-    for (name, key, val) in
-        [("Camera", "camera", &f.camera), ("Lens", "lens", &f.lens), ("Keyword", "keyword", &f.keyword), ("Person", "person", &f.person)]
-    {
+    for (name, key, val) in [
+        ("Camera", "camera", &f.camera),
+        ("Lens", "lens", &f.lens),
+        ("Keyword", "keyword", &f.keyword),
+        ("Person", "person", &f.person),
+    ] {
         if let Some(x) = val {
             add(format!("{name}: {x}"), json!({key: Null}));
         }
@@ -203,16 +233,25 @@ pub fn filter_chips(f: &Filter, cat: &Catalog) -> Vec<FilterChip> {
         add(format!("Folder: {name}"), json!({"libraryFolder": Null}));
     }
     if let Some(d) = &f.imported {
-        add(format!("Imported: {}", date_label(d)), json!({"imported": Null}));
+        add(
+            format!("Imported: {}", date_label(d)),
+            json!({"imported": Null}),
+        );
     }
     match (&f.date_from, &f.date_to) {
-        (Some(a), Some(b)) => add(format!("Captured {a} – {b}"), json!({"dateFrom": Null, "dateTo": Null})),
+        (Some(a), Some(b)) => add(
+            format!("Captured {a} – {b}"),
+            json!({"dateFrom": Null, "dateTo": Null}),
+        ),
         (Some(a), None) => add(format!("Captured from {a}"), json!({"dateFrom": Null})),
         (None, Some(b)) => add(format!("Captured until {b}"), json!({"dateTo": Null})),
         _ => {}
     }
     if let Some(rs) = f.rule_set.as_ref().filter(|r| !r.rules.is_empty()) {
-        add(format!("Rules: {}", rs.describe_with(cat)), json!({"ruleSet": Null}));
+        add(
+            format!("Rules: {}", rs.describe_with(cat)),
+            json!({"ruleSet": Null}),
+        );
     }
     if !f.only.is_empty() {
         add(format!("Only {} photos", f.only.len()), json!({"only": []}));
@@ -222,10 +261,26 @@ pub fn filter_chips(f: &Filter, cat: &Catalog) -> Vec<FilterChip> {
 
 /// `2026-01-16` → "January 16, 2026"; `2026-01` → "January 2026"; anything else as is.
 fn date_label(d: &str) -> String {
-    const MONTHS: [&str; 12] =
-        ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const MONTHS: [&str; 12] = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ];
     let parts: Vec<&str> = d.split('-').collect();
-    let month = parts.get(1).and_then(|m| m.parse::<usize>().ok()).filter(|m| (1..=12).contains(m)).map(|m| MONTHS[m - 1]);
+    let month = parts
+        .get(1)
+        .and_then(|m| m.parse::<usize>().ok())
+        .filter(|m| (1..=12).contains(m))
+        .map(|m| MONTHS[m - 1]);
     match (parts.as_slice(), month) {
         ([y, _, day], Some(m)) => format!("{m} {}, {y}", day.trim_start_matches('0')),
         ([y, _], Some(m)) => format!("{m} {y}"),
@@ -241,7 +296,10 @@ mod selection_state_tests {
     #[test]
     fn select_all_marks_the_others_selected_and_one_active() {
         let ids: Vec<PhotoId> = (1..=3).map(PhotoId).collect();
-        let s = Selection { ids: ids.clone(), active: Some(ids[0]) };
+        let s = Selection {
+            ids: ids.clone(),
+            active: Some(ids[0]),
+        };
         assert_eq!(s.state_of(ids[0]), SelectionState::Active);
         assert_eq!(s.state_of(ids[1]), SelectionState::Selected);
         assert_eq!(s.state_of(PhotoId(9)), SelectionState::NotSelected);

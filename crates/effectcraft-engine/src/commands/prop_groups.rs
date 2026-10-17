@@ -10,17 +10,44 @@ use crate::{EngineError, Result, Session, cmd};
 
 /// Groups that can be renamed, removed, duplicated and reordered: instances in indexed lists.
 fn is_instance(g: &PropGroup) -> bool {
-    matches!(g.kind, GroupKind::Indexed | GroupKind::Effect { .. } | GroupKind::Mask { .. } | GroupKind::Tracker { .. })
+    matches!(
+        g.kind,
+        GroupKind::Indexed
+            | GroupKind::Effect { .. }
+            | GroupKind::Mask { .. }
+            | GroupKind::Tracker { .. }
+    )
 }
 
 /// `{layer, prop: uid}` → (comp, layer, group uid), checking that the group is an instance.
-fn group_ref(s: &Session, p: &Value, cmd: &str, need_instance: bool) -> Result<(ItemId, LayerId, Uid)> {
+fn group_ref(
+    s: &Session,
+    p: &Value,
+    cmd: &str,
+    need_instance: bool,
+) -> Result<(ItemId, LayerId, Uid)> {
     let (cid, lid) = layer_p(s, p, cmd)?;
-    let uid = p.get("prop").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "missing `prop` (group uid)"))?;
-    let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
-    let g = l.props.find_group(uid).ok_or_else(|| bad(cmd, format!("no property group @{uid}")))?;
+    let uid = p
+        .get("prop")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(cmd, "missing `prop` (group uid)"))?;
+    let l = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .ok_or(EngineError::NoComp)?;
+    let g = l
+        .props
+        .find_group(uid)
+        .ok_or_else(|| bad(cmd, format!("no property group @{uid}")))?;
     if need_instance && !is_instance(g) {
-        return Err(bad(cmd, format!("`{}` is a fixed group (only effects, masks, shape items and animators)", g.name)));
+        return Err(bad(
+            cmd,
+            format!(
+                "`{}` is a fixed group (only effects, masks, shape items and animators)",
+                g.name
+            ),
+        ));
     }
     Ok((cid, lid, uid))
 }
@@ -28,12 +55,17 @@ fn group_ref(s: &Session, p: &Value, cmd: &str, need_instance: bool) -> Result<(
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "prop.renameGroup";
     let (cid, lid, uid) = group_ref(s, p, c, true)?;
-    let name = str_p(p, "name").ok_or_else(|| bad(c, "missing `name`"))?.to_string();
+    let name = str_p(p, "name")
+        .ok_or_else(|| bad(c, "missing `name`"))?
+        .to_string();
     if name.trim().is_empty() {
         return Err(bad(c, "the name can't be empty"));
     }
     s.edit("Rename", None, |proj, _| {
-        let g = layer_mut(proj, cid, lid)?.props.find_group_mut(uid).ok_or_else(|| bad(c, "group vanished"))?;
+        let g = layer_mut(proj, cid, lid)?
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
         g.name = name.clone();
         Ok(json!(name))
     })
@@ -44,7 +76,10 @@ fn set_enabled(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid, uid) = group_ref(s, p, c, true)?;
     let v = b_p(p, "value");
     s.edit("Toggle", None, |proj, _| {
-        let g = layer_mut(proj, cid, lid)?.props.find_group_mut(uid).ok_or_else(|| bad(c, "group vanished"))?;
+        let g = layer_mut(proj, cid, lid)?
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
         g.enabled = v.unwrap_or(!g.enabled);
         Ok(json!(g.enabled))
     })
@@ -57,7 +92,12 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Remove groups of comp `cid` in one undo step.
-fn remove_groups(s: &mut Session, cid: ItemId, groups: &[(LayerId, Uid)], label: &str) -> Result<()> {
+fn remove_groups(
+    s: &mut Session,
+    cid: ItemId,
+    groups: &[(LayerId, Uid)],
+    label: &str,
+) -> Result<()> {
     s.edit(label, None, |proj, st| {
         for (lid, uid) in groups {
             // A group inside one removed before it went with it.
@@ -65,7 +105,8 @@ fn remove_groups(s: &mut Session, cid: ItemId, groups: &[(LayerId, Uid)], label:
                 parent.children.retain(|n| n.uid() != *uid);
             }
         }
-        st.selected_props.retain(|(_, u)| !groups.iter().any(|(_, g)| g == u));
+        st.selected_props
+            .retain(|(_, u)| !groups.iter().any(|(_, g)| g == u));
         Ok(())
     })
 }
@@ -73,9 +114,20 @@ fn remove_groups(s: &mut Session, cid: ItemId, groups: &[(LayerId, Uid)], label:
 /// Edit ▸ Clear with masks, shape items, text animators or trackers selected in the active comp:
 /// removes those groups (not their layers) in one undo step. None when none are selected.
 pub(crate) fn remove_selected(s: &mut Session) -> Result<Option<Value>> {
-    let (Some(cid), Some(c)) = (s.active_comp_id(), s.active_comp()) else { return Ok(None) };
-    let groups: Vec<(LayerId, Uid)> =
-        s.state.selected_props.iter().filter(|(lid, uid)| c.layer(*lid).and_then(|l| l.props.find_group(*uid)).is_some_and(is_instance)).copied().collect();
+    let (Some(cid), Some(c)) = (s.active_comp_id(), s.active_comp()) else {
+        return Ok(None);
+    };
+    let groups: Vec<(LayerId, Uid)> = s
+        .state
+        .selected_props
+        .iter()
+        .filter(|(lid, uid)| {
+            c.layer(*lid)
+                .and_then(|l| l.props.find_group(*uid))
+                .is_some_and(is_instance)
+        })
+        .copied()
+        .collect();
     if groups.is_empty() {
         return Ok(None);
     }
@@ -88,8 +140,17 @@ pub(crate) fn remove_selected(s: &mut Session) -> Result<Option<Value>> {
 /// so it isn't listed.
 pub(crate) fn selected_contents(s: &Session) -> Vec<(LayerId, Uid)> {
     let mut out = vec![];
-    let Some(c) = s.active_comp().filter(|_| !s.state.selected_props.is_empty()) else { return out };
-    for l in c.layers.iter().filter(|l| matches!(l.source, LayerSource::Shape)) {
+    let Some(c) = s
+        .active_comp()
+        .filter(|_| !s.state.selected_props.is_empty())
+    else {
+        return out;
+    };
+    for l in c
+        .layers
+        .iter()
+        .filter(|l| matches!(l.source, LayerSource::Shape))
+    {
         if let Some(contents) = l.props.sub("contents") {
             let selected = |u: Uid| s.state.selected_props.contains(&(l.id, u));
             let mut uids = vec![];
@@ -100,7 +161,12 @@ pub(crate) fn selected_contents(s: &Session) -> Vec<(LayerId, Uid)> {
     out
 }
 
-fn collect_selected(g: &PropGroup, selected: &dyn Fn(Uid) -> bool, out: &mut Vec<Uid>, depth: usize) {
+fn collect_selected(
+    g: &PropGroup,
+    selected: &dyn Fn(Uid) -> bool,
+    out: &mut Vec<Uid>,
+    depth: usize,
+) {
     if depth > super::shape_stroke::MAX_DEPTH {
         return;
     }
@@ -115,8 +181,13 @@ fn collect_selected(g: &PropGroup, selected: &dyn Fn(Uid) -> bool, out: &mut Vec
 
 /// Copies of the selected shape items (Edit ▸ Copy), top to bottom.
 pub(crate) fn copy_contents(s: &Session) -> Vec<PropGroup> {
-    let Some(c) = s.active_comp() else { return vec![] };
-    selected_contents(s).into_iter().filter_map(|(lid, uid)| c.layer(lid)?.props.find_group(uid).cloned()).collect()
+    let Some(c) = s.active_comp() else {
+        return vec![];
+    };
+    selected_contents(s)
+        .into_iter()
+        .filter_map(|(lid, uid)| c.layer(lid)?.props.find_group(uid).cloned())
+        .collect()
 }
 
 /// Edit ▸ Cut's removal of the selected shape items (once copied).
@@ -134,8 +205,13 @@ pub(crate) fn paste_contents(s: &mut Session, p: &Value) -> Result<Value> {
     let clip = s.state.contents_clipboard.clone();
     let (cid, ids) = layers_p(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let targets: Vec<LayerId> =
-        ids.into_iter().filter(|l| comp.layer(*l).is_some_and(|l| matches!(l.source, LayerSource::Shape) && !l.switches.locked)).collect();
+    let targets: Vec<LayerId> = ids
+        .into_iter()
+        .filter(|l| {
+            comp.layer(*l)
+                .is_some_and(|l| matches!(l.source, LayerSource::Shape) && !l.switches.locked)
+        })
+        .collect();
     if targets.is_empty() {
         return Err(bad(c, "select a shape layer to paste shape items into"));
     }
@@ -152,7 +228,10 @@ pub(crate) fn paste_contents(s: &mut Session, p: &Value) -> Result<Value> {
             // Above the layer's topmost selected item, in its group.
             let spot = sel.iter().find(|(sl, _)| sl == lid).and_then(|(_, u)| {
                 let parent = l.props.parent_of(*u)?;
-                Some((parent.uid, parent.children.iter().position(|n| n.uid() == *u)?))
+                Some((
+                    parent.uid,
+                    parent.children.iter().position(|n| n.uid() == *u)?,
+                ))
             });
             let (parent, at) = match spot {
                 Some((pu, i)) => (l.props.find_group_mut(pu), i),
@@ -164,7 +243,9 @@ pub(crate) fn paste_contents(s: &mut Session, p: &Value) -> Result<Value> {
                 g.reassign_uids(&mut next);
                 g.name = super::effect::unique_name(parent, &g.name);
                 out.push((*lid, g.uid));
-                parent.children.insert((at + k).min(parent.children.len()), g.into());
+                parent
+                    .children
+                    .insert((at + k).min(parent.children.len()), g.into());
             }
         }
         proj.next_id = next + 1;
@@ -183,8 +264,18 @@ pub(crate) fn duplicate_contents(s: &mut Session, items: &[(LayerId, Uid)]) -> R
         let mut next = proj.next_id;
         let mut out = vec![];
         for (lid, uid) in items {
-            let parent = layer_mut(proj, cid, *lid)?.props.parent_of_mut(*uid).ok_or_else(|| bad(c, "the shape item is gone"))?;
-            let Some((i, Node::Group(g))) = parent.children.iter().enumerate().find(|(_, n)| n.uid() == *uid) else { continue };
+            let parent = layer_mut(proj, cid, *lid)?
+                .props
+                .parent_of_mut(*uid)
+                .ok_or_else(|| bad(c, "the shape item is gone"))?;
+            let Some((i, Node::Group(g))) = parent
+                .children
+                .iter()
+                .enumerate()
+                .find(|(_, n)| n.uid() == *uid)
+            else {
+                continue;
+            };
             let mut g = g.clone();
             g.reassign_uids(&mut next);
             g.name = super::effect::unique_name(parent, &g.name);
@@ -204,9 +295,18 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit("Duplicate", None, |proj, _| {
         let mut next = proj.next_id;
         let l = layer_mut(proj, cid, lid)?;
-        let parent = l.props.parent_of_mut(uid).ok_or_else(|| bad(c, "group vanished"))?;
-        let i = parent.children.iter().position(|n| n.uid() == uid).ok_or_else(|| bad(c, "group vanished"))?;
-        let Node::Group(mut g) = parent.children[i].clone() else { return Err(bad(c, "not a group")) };
+        let parent = l
+            .props
+            .parent_of_mut(uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
+        let i = parent
+            .children
+            .iter()
+            .position(|n| n.uid() == uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
+        let Node::Group(mut g) = parent.children[i].clone() else {
+            return Err(bad(c, "not a group"));
+        };
         g.reassign_uids(&mut next);
         let new = g.uid;
         parent.children.insert(i + 1, Node::Group(g));
@@ -218,13 +318,26 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
 fn move_to(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "prop.moveGroup";
     let (cid, lid, uid) = group_ref(s, p, c, true)?;
-    let to = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad(c, "missing `index` (1-based)"))? as usize;
+    let to = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(c, "missing `index` (1-based)"))? as usize;
     s.edit("Reorder", None, |proj, _| {
         let l = layer_mut(proj, cid, lid)?;
-        let parent = l.props.parent_of_mut(uid).ok_or_else(|| bad(c, "group vanished"))?;
-        let i = parent.children.iter().position(|n| n.uid() == uid).ok_or_else(|| bad(c, "group vanished"))?;
+        let parent = l
+            .props
+            .parent_of_mut(uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
+        let i = parent
+            .children
+            .iter()
+            .position(|n| n.uid() == uid)
+            .ok_or_else(|| bad(c, "group vanished"))?;
         if to < 1 || to > parent.children.len() {
-            return Err(bad(c, format!("index {to} is out of range 1..{}", parent.children.len())));
+            return Err(bad(
+                c,
+                format!("index {to} is out of range 1..{}", parent.children.len()),
+            ));
         }
         let n = parent.children.remove(i);
         parent.children.insert(to - 1, n);
@@ -234,10 +347,50 @@ fn move_to(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("prop.renameGroup", "Rename Property Group", [], None, "{layer?, prop: uid, name}", has_layers, rename),
-        cmd!("prop.setGroupEnabled", "Enable Property Group", [], None, "{layer?, prop: uid, value?}", has_layers, set_enabled),
-        cmd!("prop.removeGroup", "Delete Property Group", [], None, "{layer?, prop: uid}", has_layers, remove),
-        cmd!("prop.duplicateGroup", "Duplicate Property Group", [], None, "{layer?, prop: uid} → {prop: new uid}", has_layers, duplicate),
-        cmd!("prop.moveGroup", "Reorder Property Group", [], None, "{layer?, prop: uid, index (1-based among its siblings)}", has_layers, move_to),
+        cmd!(
+            "prop.renameGroup",
+            "Rename Property Group",
+            [],
+            None,
+            "{layer?, prop: uid, name}",
+            has_layers,
+            rename
+        ),
+        cmd!(
+            "prop.setGroupEnabled",
+            "Enable Property Group",
+            [],
+            None,
+            "{layer?, prop: uid, value?}",
+            has_layers,
+            set_enabled
+        ),
+        cmd!(
+            "prop.removeGroup",
+            "Delete Property Group",
+            [],
+            None,
+            "{layer?, prop: uid}",
+            has_layers,
+            remove
+        ),
+        cmd!(
+            "prop.duplicateGroup",
+            "Duplicate Property Group",
+            [],
+            None,
+            "{layer?, prop: uid} → {prop: new uid}",
+            has_layers,
+            duplicate
+        ),
+        cmd!(
+            "prop.moveGroup",
+            "Reorder Property Group",
+            [],
+            None,
+            "{layer?, prop: uid, index (1-based among its siblings)}",
+            has_layers,
+            move_to
+        ),
     ]
 }

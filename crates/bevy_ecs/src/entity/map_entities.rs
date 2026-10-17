@@ -2,7 +2,7 @@ pub use bevy_ecs_macros::MapEntities;
 use indexmap::{IndexMap, IndexSet};
 
 use crate::{
-    entity::{hash_map::EntityHashMap, Entity},
+    entity::{Entity, hash_map::EntityHashMap},
     world::World,
 };
 
@@ -250,11 +250,7 @@ impl EntityMapper for () {
 impl EntityMapper for (Entity, Entity) {
     #[inline]
     fn get_mapped(&mut self, source: Entity) -> Entity {
-        if source == self.0 {
-            self.1
-        } else {
-            source
-        }
+        if source == self.0 { self.1 } else { source }
     }
 
     fn set_mapped(&mut self, _source: Entity, _target: Entity) {}
@@ -407,10 +403,12 @@ mod tests {
 
         mapper.finish(&mut world);
         let freed_dead_ref = world.entities().resolve_from_index(dead_ref.index());
-        assert!(freed_dead_ref
-            .generation()
-            .cmp_approx(&dead_ref.generation())
-            .is_gt());
+        assert!(
+            freed_dead_ref
+                .generation()
+                .cmp_approx(&dead_ref.generation())
+                .is_gt()
+        );
         assert!(world.entities().check_can_spawn_at(freed_dead_ref).is_ok());
     }
 
@@ -424,10 +422,12 @@ mod tests {
         });
 
         let freed_dead_ref = world.entities().resolve_from_index(dead_ref.index());
-        assert!(freed_dead_ref
-            .generation()
-            .cmp_approx(&dead_ref.generation())
-            .is_gt());
+        assert!(
+            freed_dead_ref
+                .generation()
+                .cmp_approx(&dead_ref.generation())
+                .is_gt()
+        );
         assert!(world.entities().check_can_spawn_at(freed_dead_ref).is_ok());
     }
 }

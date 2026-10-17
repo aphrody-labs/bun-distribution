@@ -12,14 +12,28 @@ use super::{pstate, set_pstate};
 use crate::VectorcraftApp;
 use crate::widgets::{self, menu_item};
 
-const TILE_LABELS: [&str; 5] = ["Grid", "Brick by Row", "Brick by Column", "Hex by Column", "Hex by Row"];
-const BRICK: [(&str, f64); 4] = [("1/2", 0.5), ("1/3", 1.0 / 3.0), ("1/4", 0.25), ("1/5", 0.2)];
+const TILE_LABELS: [&str; 5] = [
+    "Grid",
+    "Brick by Row",
+    "Brick by Column",
+    "Hex by Column",
+    "Hex by Row",
+];
+const BRICK: [(&str, f64); 4] = [
+    ("1/2", 0.5),
+    ("1/3", 1.0 / 3.0),
+    ("1/4", 0.25),
+    ("1/5", 0.2),
+];
 const COPIES: [(&str, u32); 4] = [("3 x 3", 3), ("5 x 5", 5), ("7 x 7", 7), ("9 x 9", 9)];
 
 fn editing(app: &VectorcraftApp) -> Option<(PatternDef, Unit)> {
     let st = app.session.active()?;
     let pe = st.doc.pattern_edit.as_ref()?;
-    Some((st.doc.pattern(&pe.pattern)?.clone(), app.session.general_unit()))
+    Some((
+        st.doc.pattern(&pe.pattern)?.clone(),
+        app.session.general_unit(),
+    ))
 }
 
 fn row(ui: &mut Ui, label: &str, add: impl FnOnce(&mut Ui)) {
@@ -35,7 +49,12 @@ fn set(app: &mut VectorcraftApp, name: &str, mut p: Value) {
 
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     if app.session.active().is_none() {
-        super::empty_state(ui, "swatch-book", tl!("No document"), tl!("Open a document to edit its patterns."));
+        super::empty_state(
+            ui,
+            "swatch-book",
+            tl!("No document"),
+            tl!("Open a document to edit its patterns."),
+        );
         return;
     }
     let Some((def, unit)) = editing(app) else {
@@ -46,19 +65,30 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     // Name (commit on Enter / focus loss).
     row(ui, tl!("Name:"), |ui| {
         let id = ui.id().with("po-name");
-        let mut buf: String = ui.data_mut(|d| d.get_temp::<String>(id)).unwrap_or_else(|| name.clone());
+        let mut buf: String = ui
+            .data_mut(|d| d.get_temp::<String>(id))
+            .unwrap_or_else(|| name.clone());
         if !ui.memory(|m| m.has_focus(id)) {
             buf = name.clone();
         }
-        let r = ui.add(egui::TextEdit::singleline(&mut buf).id(id).desired_width(150.0));
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut buf)
+                .id(id)
+                .desired_width(150.0),
+        );
         ui.data_mut(|d| d.insert_temp(id, buf.clone()));
         if r.lost_focus() && !buf.trim().is_empty() && buf != name {
             set(app, &name, json!({"newName": buf.trim()}));
         }
     });
-    let tt_index = TileType::IDS.iter().position(|i| *i == def.tile_type.id()).unwrap_or(0);
+    let tt_index = TileType::IDS
+        .iter()
+        .position(|i| *i == def.tile_type.id())
+        .unwrap_or(0);
     row(ui, tl!("Tile Type:"), |ui| {
-        if let Some(i) = widgets::dropdown(ui, "po-tile", TILE_LABELS[tt_index], &TILE_LABELS, 150.0) {
+        if let Some(i) =
+            widgets::dropdown(ui, "po-tile", TILE_LABELS[tt_index], &TILE_LABELS, 150.0)
+        {
             set(app, &name, json!({"tileType": TileType::IDS[i]}));
         }
     });
@@ -68,7 +98,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     };
     row(ui, tl!("Brick Offset:"), |ui| {
         ui.add_enabled_ui(offset.is_some(), |ui| {
-            let cur = BRICK.iter().find(|(_, v)| offset.is_some_and(|o| (o - v).abs() < 1e-6)).map(|(l, _)| *l).unwrap_or("1/2");
+            let cur = BRICK
+                .iter()
+                .find(|(_, v)| offset.is_some_and(|o| (o - v).abs() < 1e-6))
+                .map(|(l, _)| *l)
+                .unwrap_or("1/2");
             let labels: Vec<&str> = BRICK.iter().map(|(l, _)| *l).collect();
             if let Some(i) = widgets::dropdown(ui, "po-brick", cur, &labels, 70.0) {
                 set(app, &name, json!({"brickOffset": BRICK[i].1}));
@@ -108,20 +142,44 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         });
     });
     row(ui, tl!("Overlap:"), |ui| {
-        let h = if def.overlap.right_in_front { "Right in Front" } else { "Left in Front" };
-        if let Some(i) = widgets::dropdown(ui, "po-oh", h, &["Left in Front", "Right in Front"], 110.0) {
-            set(app, &name, json!({"overlap": {"h": if i == 1 { "right" } else { "left" }}}));
+        let h = if def.overlap.right_in_front {
+            "Right in Front"
+        } else {
+            "Left in Front"
+        };
+        if let Some(i) =
+            widgets::dropdown(ui, "po-oh", h, &["Left in Front", "Right in Front"], 110.0)
+        {
+            set(
+                app,
+                &name,
+                json!({"overlap": {"h": if i == 1 { "right" } else { "left" }}}),
+            );
         }
     });
     row(ui, "", |ui| {
-        let v = if def.overlap.bottom_in_front { "Bottom in Front" } else { "Top in Front" };
-        if let Some(i) = widgets::dropdown(ui, "po-ov", v, &["Top in Front", "Bottom in Front"], 110.0) {
-            set(app, &name, json!({"overlap": {"v": if i == 1 { "bottom" } else { "top" }}}));
+        let v = if def.overlap.bottom_in_front {
+            "Bottom in Front"
+        } else {
+            "Top in Front"
+        };
+        if let Some(i) =
+            widgets::dropdown(ui, "po-ov", v, &["Top in Front", "Bottom in Front"], 110.0)
+        {
+            set(
+                app,
+                &name,
+                json!({"overlap": {"v": if i == 1 { "bottom" } else { "top" }}}),
+            );
         }
     });
     widgets::divider(ui);
     row(ui, tl!("Copies:"), |ui| {
-        let cur = COPIES.iter().find(|(_, n)| *n == def.copies).map(|(l, _)| *l).unwrap_or("5 x 5");
+        let cur = COPIES
+            .iter()
+            .find(|(_, n)| *n == def.copies)
+            .map(|(l, _)| *l)
+            .unwrap_or("5 x 5");
         let labels: Vec<&str> = COPIES.iter().map(|(l, _)| *l).collect();
         if let Some(i) = widgets::dropdown(ui, "po-copies", cur, &labels, 80.0) {
             set(app, &name, json!({"copies": COPIES[i].1}));
@@ -136,7 +194,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         set(app, &name, json!({"showTileEdge": !def.show_tile_edge}));
     }
     if widgets::check(ui, tl!("Show Swatch Bounds"), def.show_swatch_bounds, true) {
-        set(app, &name, json!({"showSwatchBounds": !def.show_swatch_bounds}));
+        set(
+            app,
+            &name,
+            json!({"showSwatchBounds": !def.show_swatch_bounds}),
+        );
     }
     widgets::divider(ui);
     ui.horizontal(|ui| {
@@ -156,8 +218,15 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// Not editing: the document's patterns, one to pick and edit.
 fn idle(app: &mut VectorcraftApp, ui: &mut Ui) {
-    let names: Vec<String> = app.session.active().map(|st| st.doc.patterns.iter().map(|p| p.name.clone()).collect()).unwrap_or_default();
-    widgets::dim_label(ui, tl!("Pattern options are available in pattern editing mode."));
+    let names: Vec<String> = app
+        .session
+        .active()
+        .map(|st| st.doc.patterns.iter().map(|p| p.name.clone()).collect())
+        .unwrap_or_default();
+    widgets::dim_label(
+        ui,
+        tl!("Pattern options are available in pattern editing mode."),
+    );
     ui.add_space(4.0);
     if names.is_empty() {
         widgets::dim_label(ui, tl!("Select art and choose Object › Pattern › Make."));
@@ -197,16 +266,35 @@ pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
 pub fn repeat_fields(app: &VectorcraftApp) -> Option<Value> {
     let st = app.session.active()?;
     let spec = st.selection.objects.iter().find_map(|id| {
-        st.doc.ancestry(*id)?.into_iter().rev().find_map(|a| match &st.doc.node(a)?.kind {
-            NodeKind::Repeat(r) => Some(r.clone()),
-            _ => None,
-        })
+        st.doc
+            .ancestry(*id)?
+            .into_iter()
+            .rev()
+            .find_map(|a| match &st.doc.node(a)?.kind {
+                NodeKind::Repeat(r) => Some(r.clone()),
+                _ => None,
+            })
     })?;
     Some(match spec.kind {
-        RepeatKind::Radial { instances, radius, reverse_overlap, start_angle, end_angle, .. } => {
+        RepeatKind::Radial {
+            instances,
+            radius,
+            reverse_overlap,
+            start_angle,
+            end_angle,
+            ..
+        } => {
             json!({"instances": instances, "radius": radius, "startAngle": start_angle, "endAngle": end_angle, "reverseOverlap": reverse_overlap})
         }
-        RepeatKind::Grid { h_spacing, v_spacing, rows, cols, grid_type, flip_rows, flip_cols } => {
+        RepeatKind::Grid {
+            h_spacing,
+            v_spacing,
+            rows,
+            cols,
+            grid_type,
+            flip_rows,
+            flip_cols,
+        } => {
             json!({"hSpacing": h_spacing, "vSpacing": v_spacing, "rows": rows, "cols": cols, "gridType": grid_type.id(), "flipRows": flip_rows, "flipCols": flip_cols})
         }
         RepeatKind::Mirror { angle, .. } => json!({"angle": angle}),
@@ -219,8 +307,18 @@ mod tests {
     use vectorcraft_engine::Session;
 
     /// One headless frame of the panel with `events`: where each text was drawn.
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, events: Vec<egui::Event>) -> Vec<(String, egui::Rect)> {
-        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| show(app, ui));
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        events: Vec<egui::Event>,
+    ) -> Vec<(String, egui::Rect)> {
+        let mut out = ctx.run_ui(
+            egui::RawInput {
+                events,
+                ..Default::default()
+            },
+            |ui| show(app, ui),
+        );
         out.textures_delta.clear();
         let mut v = vec![];
         for c in &out.shapes {
@@ -234,16 +332,44 @@ mod tests {
     #[test]
     fn show_swatch_bounds_toggles_the_pattern_option() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
-        app.run("shape.rectangle", json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
-        app.run("object.pattern.make", json!({"name": "Dots"})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        app.run("object.pattern.make", json!({"name": "Dots"}))
+            .unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         let texts = frame(&mut app, &ctx, vec![]);
-        let at = texts.iter().find(|(t, _)| t == "Show Swatch Bounds").expect("the checkbox").1.center();
-        let click = |pressed| egui::Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
-        frame(&mut app, &ctx, vec![egui::Event::PointerMoved(at), click(true)]);
+        let at = texts
+            .iter()
+            .find(|(t, _)| t == "Show Swatch Bounds")
+            .expect("the checkbox")
+            .1
+            .center();
+        let click = |pressed| egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
+        frame(
+            &mut app,
+            &ctx,
+            vec![egui::Event::PointerMoved(at), click(true)],
+        );
         frame(&mut app, &ctx, vec![click(false)]);
-        assert!(app.session.active().unwrap().doc.pattern("Dots").unwrap().show_swatch_bounds);
+        assert!(
+            app.session
+                .active()
+                .unwrap()
+                .doc
+                .pattern("Dots")
+                .unwrap()
+                .show_swatch_bounds
+        );
     }
 }

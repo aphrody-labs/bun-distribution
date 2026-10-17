@@ -1,11 +1,11 @@
 // TODO: Possibly migrate to core::simd when masked loads/stores are supported
 
-use super::common::{TextTiles, read_bg_text_tiles};
-use crate::{BgObjPixel, Buffers, RenderingData, Vram, rgb5_to_rgb6_64};
+use super::common::{read_bg_text_tiles, TextTiles};
+use crate::{rgb5_to_rgb6_64, BgObjPixel, Buffers, RenderingData, Vram};
 use aphrody_dust_core::{
     gpu::{
-        SCREEN_WIDTH, Scanline,
         engine_2d::{AffineBgIndex, BgIndex, Role},
+        Scanline, SCREEN_WIDTH,
     },
     utils::mem_prelude::*,
 };
@@ -35,7 +35,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
 
     macro_rules! affine_display_area_overflow {
         ($i: literal) => {
-            data.bg_control(BgIndex::new($i)).affine_display_area_overflow()
+            data.bg_control(BgIndex::new($i))
+                .affine_display_area_overflow()
         };
     }
 
@@ -54,7 +55,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
             match BG_MODE {
                 0 => {
                     render_scanline_bg_text(buffers, BgIndex::new(3), vount, data, vram);
-                },
+                }
                 1..=2 => {
                     render_scanline_bg_affine[affine_display_area_overflow!(3) as usize](
                         buffers,
@@ -63,7 +64,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(1);
-                },
+                }
                 3..=5 => {
                     render_scanline_bg_extended[affine_display_area_overflow!(3) as usize](
                         buffers,
@@ -72,8 +73,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(1);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -81,7 +82,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
             match BG_MODE {
                 0..=1 | 3 => {
                     render_scanline_bg_text(buffers, BgIndex::new(2), vount, data, vram);
-                },
+                }
                 2 | 4 => {
                     render_scanline_bg_affine[affine_display_area_overflow!(2) as usize](
                         buffers,
@@ -90,7 +91,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(0);
-                },
+                }
                 5 => {
                     render_scanline_bg_extended[affine_display_area_overflow!(2) as usize](
                         buffers,
@@ -99,7 +100,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(0);
-                },
+                }
                 6 => {
                     [
                         render_scanline_bg_large::<_, _, _, _, BG_VRAM_LEN, OBJ_VRAM_LEN, false>,
@@ -108,8 +109,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
                         buffers, data, vram
                     );
                     incr_affine!(0);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -318,8 +319,15 @@ pub unsafe fn render_scanline_bg_text<
     if bg_control.use_256_colors() {
         let (palette, pal_base_mask) = if control.bg_ext_pal_enabled() {
             let slot = bg_index.get()
-                | if bg_index.get() < 2 { bg_control.bg01_ext_pal_slot() << 1 } else { 0 };
-            (vram.bg_ext_palette().as_ptr().add((slot as usize) << 13) as *const u16, 0xF)
+                | if bg_index.get() < 2 {
+                    bg_control.bg01_ext_pal_slot() << 1
+                } else {
+                    0
+                };
+            (
+                vram.bg_ext_palette().as_ptr().add((slot as usize) << 13) as *const u16,
+                0xF,
+            )
         } else {
             (vram.bg_palette().as_ptr() as *const u16, 0)
         };
@@ -328,8 +336,11 @@ pub unsafe fn render_scanline_bg_text<
             1,
             |tile| palette.add(((tile >> 12 & pal_base_mask) << 8) as usize),
             |tile_base, remaining| {
-                let color_indices_mask =
-                    if remaining >= 8 { u64::MAX } else { (1_u64 << (remaining << 3)) - 1 };
+                let color_indices_mask = if remaining >= 8 {
+                    u64::MAX
+                } else {
+                    (1_u64 << (remaining << 3)) - 1
+                };
                 let mut raw = unsafe {
                     bg_vram.read_le_aligned_unchecked::<u64>(
                         (tile_base & (R::BG_VRAM_MASK & !7)) as usize,
@@ -353,8 +364,11 @@ pub unsafe fn render_scanline_bg_text<
             0,
             |tile| palette.add((tile >> 12 << 4) as usize),
             |tile_base, remaining| {
-                let color_indices_mask =
-                    if remaining >= 8 { u32::MAX } else { (1_u32 << (remaining << 2)) - 1 };
+                let color_indices_mask = if remaining >= 8 {
+                    u32::MAX
+                } else {
+                    (1_u32 << (remaining << 2)) - 1
+                };
                 let mut raw = unsafe {
                     bg_vram.read_le_aligned_unchecked::<u32>(
                         (tile_base & (R::BG_VRAM_MASK & !3)) as usize,
@@ -509,7 +523,10 @@ pub unsafe fn render_scanline_bg_affine<
                 )),
                 pixel_attrs,
             ),
-            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(scanline_ptr as *const i64, modify_mask)),
+            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(
+                scanline_ptr as *const i64,
+                modify_mask,
+            )),
         );
         _mm256_maskstore_epi64(scanline_ptr as *mut i64, modify_mask, new_pixels);
 
@@ -626,7 +643,10 @@ pub unsafe fn render_scanline_bg_large<
                 )),
                 pixel_attrs,
             ),
-            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(scanline_ptr as *const i64, modify_mask)),
+            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(
+                scanline_ptr as *const i64,
+                modify_mask,
+            )),
         );
         _mm256_maskstore_epi64(scanline_ptr as *mut i64, modify_mask, new_pixels);
 
@@ -848,7 +868,12 @@ pub unsafe fn render_scanline_bg_extended<
         let tile_number_mask = _mm256_set1_epi64x(0x3FF);
 
         let (palette, pal_base_mask) = if control.bg_ext_pal_enabled() {
-            (vram.bg_ext_palette().as_ptr().add((bg_index.get() as usize | 2) << 13), 0xF00)
+            (
+                vram.bg_ext_palette()
+                    .as_ptr()
+                    .add((bg_index.get() as usize | 2) << 13),
+                0xF00,
+            )
         } else {
             (vram.bg_palette().as_ptr(), 0)
         };
@@ -977,8 +1002,9 @@ pub unsafe fn render_scanline_bg_3d<B: Buffers>(buffers: &B, scanline_3d: &Scanl
             window_ptr.read() as i64,
         )));
 
-        let pixels =
-            _mm256_cvtepu32_epi64(_mm_load_si128(scanline_3d.0.as_ptr().add(i) as *const __m128i));
+        let pixels = _mm256_cvtepu32_epi64(_mm_load_si128(
+            scanline_3d.0.as_ptr().add(i) as *const __m128i
+        ));
 
         modify_mask = _mm256_andnot_si256(
             _mm256_cmpeq_epi64(_mm256_srli_epi64::<18>(pixels), zero),
@@ -987,7 +1013,10 @@ pub unsafe fn render_scanline_bg_3d<B: Buffers>(buffers: &B, scanline_3d: &Scanl
 
         let new_pixels = _mm256_or_si256(
             _mm256_or_si256(pixels, pixel_attrs),
-            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(scanline_ptr as *const i64, modify_mask)),
+            _mm256_slli_epi64::<32>(_mm256_maskload_epi64(
+                scanline_ptr as *const i64,
+                modify_mask,
+            )),
         );
         _mm256_maskstore_epi64(scanline_ptr as *mut i64, modify_mask, new_pixels);
     }

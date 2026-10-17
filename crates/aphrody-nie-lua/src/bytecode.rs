@@ -102,7 +102,7 @@ impl Constant {
                 } else {
                     format!("{n}")
                 }
-            },
+            }
             Self::String(bytes) => format!("{:?}", String::from_utf8_lossy(bytes)),
         }
     }
@@ -164,7 +164,12 @@ impl Prototype {
     /// Nombre total d'instructions, prototypes imbriqués compris.
     #[must_use]
     pub fn total_instructions(&self) -> usize {
-        self.code.len() + self.protos.iter().map(Self::total_instructions).sum::<usize>()
+        self.code.len()
+            + self
+                .protos
+                .iter()
+                .map(Self::total_instructions)
+                .sum::<usize>()
     }
 
     /// Nombre total de prototypes imbriqués (récursif).
@@ -284,7 +289,16 @@ pub fn decode_instruction(raw: u32) -> Instruction {
     // `sBx` est un `Bx` biaisé de `MAXARG_sBx` = (2^18-1)/2.
     let sbx = bx as i32 - 131_071;
     let ax = (raw >> 6) & 0x3FF_FFFF;
-    Instruction { raw, opcode, a, b, c, bx, sbx, ax }
+    Instruction {
+        raw,
+        opcode,
+        a,
+        b,
+        c,
+        bx,
+        sbx,
+        ax,
+    }
 }
 
 impl Instruction {
@@ -299,7 +313,10 @@ impl Instruction {
     /// Mode d'encodage, `ABC` par défaut pour un opcode inconnu.
     #[must_use]
     pub fn mode(&self) -> OpMode {
-        OP_MODES.get(self.opcode as usize).copied().unwrap_or(OpMode::ABC)
+        OP_MODES
+            .get(self.opcode as usize)
+            .copied()
+            .unwrap_or(OpMode::ABC)
     }
 }
 
@@ -309,9 +326,10 @@ fn rk(operand: u32, constants: &[Constant]) -> String {
     const BITRK: u32 = 1 << 8;
     if operand & BITRK != 0 {
         let idx = (operand & !BITRK) as usize;
-        constants
-            .get(idx)
-            .map_or_else(|| format!("K{idx}?"), |k| format!("K{idx}({})", k.display()))
+        constants.get(idx).map_or_else(
+            || format!("K{idx}?"),
+            |k| format!("K{idx}({})", k.display()),
+        )
     } else {
         format!("R{operand}")
     }
@@ -347,7 +365,11 @@ impl<'a> Reader<'a> {
     fn u32(&mut self) -> Result<u32, BytecodeError> {
         let b = self.take(4)?;
         let arr = [b[0], b[1], b[2], b[3]];
-        Ok(if self.little_endian { u32::from_le_bytes(arr) } else { u32::from_be_bytes(arr) })
+        Ok(if self.little_endian {
+            u32::from_le_bytes(arr)
+        } else {
+            u32::from_be_bytes(arr)
+        })
     }
 
     /// Lit un `int` C dont la taille vient de l'en-tête.
@@ -357,8 +379,10 @@ impl<'a> Reader<'a> {
             8 => {
                 let v = self.size_t()?;
                 Ok(v as u32)
-            },
-            n => Err(BytecodeError::UnsupportedHeader(format!("sizeof(int) = {n}"))),
+            }
+            n => Err(BytecodeError::UnsupportedHeader(format!(
+                "sizeof(int) = {n}"
+            ))),
         }
     }
 
@@ -381,7 +405,11 @@ impl<'a> Reader<'a> {
     fn number(&mut self) -> Result<f64, BytecodeError> {
         let b = self.take(8)?;
         let arr = [b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]];
-        Ok(if self.little_endian { f64::from_le_bytes(arr) } else { f64::from_be_bytes(arr) })
+        Ok(if self.little_endian {
+            f64::from_le_bytes(arr)
+        } else {
+            f64::from_be_bytes(arr)
+        })
     }
 
     /// Chaîne Lua : `size_t` de longueur (0 = NULL), octets **terminaison `\0` comprise**.
@@ -438,7 +466,10 @@ pub fn parse(data: &[u8]) -> Result<Chunk, BytecodeError> {
         )));
     }
     if !matches!(header.size_int, 4 | 8) {
-        return Err(BytecodeError::UnsupportedHeader(format!("sizeof(int) = {}", header.size_int)));
+        return Err(BytecodeError::UnsupportedHeader(format!(
+            "sizeof(int) = {}",
+            header.size_int
+        )));
     }
     if !matches!(header.size_size_t, 4 | 8) {
         return Err(BytecodeError::UnsupportedHeader(format!(
@@ -506,7 +537,7 @@ fn read_prototype(r: &mut Reader<'_>) -> Result<Prototype, BytecodeError> {
                     offset: r.pos,
                     reason: format!("type de constante inconnu {other}"),
                 });
-            },
+            }
         });
     }
 
@@ -538,7 +569,11 @@ fn read_prototype(r: &mut Reader<'_>) -> Result<Prototype, BytecodeError> {
         let name = r.string()?;
         let start_pc = r.int()?;
         let end_pc = r.int()?;
-        loc_vars.push(LocVar { name, start_pc, end_pc });
+        loc_vars.push(LocVar {
+            name,
+            start_pc,
+            end_pc,
+        });
     }
 
     let upname_count = r.int()? as usize;
@@ -580,13 +615,21 @@ impl Writer {
     }
 
     fn u32(&mut self, value: u32) {
-        let bytes = if self.little_endian { value.to_le_bytes() } else { value.to_be_bytes() };
+        let bytes = if self.little_endian {
+            value.to_le_bytes()
+        } else {
+            value.to_be_bytes()
+        };
         self.out.extend_from_slice(&bytes);
     }
 
     /// Un entier de `width` octets, dans l'ordre de l'en-tête. Sert pour `int` comme pour `size_t`.
     fn sized(&mut self, value: u64, width: usize) {
-        let full = if self.little_endian { value.to_le_bytes() } else { value.to_be_bytes() };
+        let full = if self.little_endian {
+            value.to_le_bytes()
+        } else {
+            value.to_be_bytes()
+        };
         if self.little_endian {
             self.out.extend_from_slice(&full[..width]);
         } else {
@@ -604,7 +647,11 @@ impl Writer {
 
     fn number(&mut self, value: f64) {
         let bits = value.to_bits();
-        let bytes = if self.little_endian { bits.to_le_bytes() } else { bits.to_be_bytes() };
+        let bytes = if self.little_endian {
+            bits.to_le_bytes()
+        } else {
+            bits.to_be_bytes()
+        };
         self.out.extend_from_slice(&bytes);
     }
 
@@ -641,15 +688,15 @@ fn write_prototype(w: &mut Writer, proto: &Prototype) {
             Constant::Boolean(value) => {
                 w.u8(1);
                 w.u8(u8::from(*value));
-            },
+            }
             Constant::Number(value) => {
                 w.u8(3);
                 w.number(*value);
-            },
+            }
             Constant::String(bytes) => {
                 w.u8(4);
                 w.string_bytes(bytes);
-            },
+            }
         }
     }
 
@@ -704,7 +751,8 @@ pub fn encode(chunk: &Chunk) -> Vec<u8> {
     w.out.push(chunk.header.size_instruction);
     w.out.push(chunk.header.size_number);
     w.out.push(u8::from(chunk.header.number_is_integral));
-    w.out.extend_from_slice(&[0x19, 0x93, b'\r', b'\n', 0x1A, b'\n']);
+    w.out
+        .extend_from_slice(&[0x19, 0x93, b'\r', b'\n', 0x1A, b'\n']);
     write_prototype(&mut w, &chunk.main);
     w.out
 }
@@ -796,7 +844,11 @@ pub fn global_reads(chunk: &Chunk) -> Vec<GlobalRead> {
     let mut out = Vec::new();
     // Le chunk principal porte `_ENV` en upvalue 0 : c'est la définition du format, pas une
     // heuristique. Un chunk sans upvalue n'accède à aucun global.
-    let env = if chunk.main.upvalues.is_empty() { None } else { Some(0) };
+    let env = if chunk.main.upvalues.is_empty() {
+        None
+    } else {
+        Some(0)
+    };
     collect_global_reads(&chunk.main, "main", env, &mut out);
     out
 }
@@ -862,7 +914,10 @@ fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<G
         }
 
         match name.as_str() {
-            "NEWTABLE" => open.push(OpenConstructor { base: ins.a, slots: BTreeMap::new() }),
+            "NEWTABLE" => open.push(OpenConstructor {
+                base: ins.a,
+                slots: BTreeMap::new(),
+            }),
             "GETTABUP" if ins.b == env => {
                 const BITRK: u32 = 1 << 8;
                 if ins.c & BITRK == 0 {
@@ -883,7 +938,7 @@ fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<G
                 {
                     top.slots.insert(ins.a - top.base, Some(index));
                 }
-            },
+            }
             "SETLIST" => {
                 let Some(position) = open.iter().rposition(|c| c.base == ins.a) else {
                     continue;
@@ -896,7 +951,10 @@ fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<G
                 // suivants.
                 let constructor = std::mem::replace(
                     &mut open[position],
-                    OpenConstructor { base: ins.a, slots: BTreeMap::new() },
+                    OpenConstructor {
+                        base: ins.a,
+                        slots: BTreeMap::new(),
+                    },
                 );
                 // `B == 0` écoule jusqu'au sommet de pile : le dernier élément est un appel à
                 // retours multiples, et le nombre d'éléments n'est pas lisible statiquement.
@@ -905,7 +963,9 @@ fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<G
                     continue;
                 }
                 let batch = if ins.c == 0 {
-                    p.code.get(pc + 1).map_or(1, |next| decode_instruction(*next).ax)
+                    p.code
+                        .get(pc + 1)
+                        .map_or(1, |next| decode_instruction(*next).ax)
                 } else {
                     ins.c
                 };
@@ -917,11 +977,13 @@ fn scan_proto_global_reads(p: &Prototype, label: &str, env: u32, out: &mut Vec<G
                         continue;
                     }
                     if let Some(index) = writer {
-                        out[*index].sink = GlobalReadSink::TableArrayItem { index: first + offset };
+                        out[*index].sink = GlobalReadSink::TableArrayItem {
+                            index: first + offset,
+                        };
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }
@@ -968,7 +1030,11 @@ pub fn disassemble(chunk: &Chunk) -> String {
         out,
         "; Lua {:#04x} — {}-boutiste, int {} o, size_t {} o, number {} o",
         chunk.header.version,
-        if chunk.header.little_endian { "petit" } else { "gros" },
+        if chunk.header.little_endian {
+            "petit"
+        } else {
+            "gros"
+        },
         chunk.header.size_int,
         chunk.header.size_size_t,
         chunk.header.size_number
@@ -994,19 +1060,30 @@ fn disassemble_proto(p: &Prototype, label: &str, depth: usize, out: &mut String)
 
     for (pc, raw) in p.code.iter().enumerate() {
         let ins = decode_instruction(*raw);
-        let line = p.line_info.get(pc).map_or_else(String::new, |l| format!("[{l}]"));
+        let line = p
+            .line_info
+            .get(pc)
+            .map_or_else(String::new, |l| format!("[{l}]"));
         let extra_arg = (ins.name() == "LOADKX")
             .then(|| p.code.get(pc + 1).map(|raw| decode_instruction(*raw).ax))
             .flatten();
         let operands = format_operands(&ins, p, pc, extra_arg);
-        let _ = writeln!(out, "{pad}  {pc:>4} {line:>7} {:<10} {operands}", ins.name());
+        let _ = writeln!(
+            out,
+            "{pad}  {pc:>4} {line:>7} {:<10} {operands}",
+            ins.name()
+        );
     }
 
     if !p.loc_vars.is_empty() {
         let _ = writeln!(
             out,
             "{pad}  ; locales : {}",
-            p.loc_vars.iter().map(|v| v.name.as_str()).collect::<Vec<_>>().join(", ")
+            p.loc_vars
+                .iter()
+                .map(|v| v.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         );
     }
     if !p.upvalue_names.is_empty() {
@@ -1035,21 +1112,23 @@ fn format_operands(
                 format!("R{} := closure #{}", ins.a, ins.bx)
             } else if name == "LOADKX" {
                 let index = loadkx_extra_arg.unwrap_or(ins.bx);
-                let value =
-                    k.get(index as usize).map_or_else(|| "?".to_string(), Constant::display);
+                let value = k
+                    .get(index as usize)
+                    .map_or_else(|| "?".to_string(), Constant::display);
                 format!("R{} := K{}({value}) via EXTRAARG", ins.a, index)
             } else {
-                let value =
-                    k.get(ins.bx as usize).map_or_else(|| "?".to_string(), Constant::display);
+                let value = k
+                    .get(ins.bx as usize)
+                    .map_or_else(|| "?".to_string(), Constant::display);
                 format!("R{} := K{}({value})", ins.a, ins.bx)
             }
-        },
+        }
         OpMode::AsBx => {
             // Les sauts Lua sont relatifs à l'instruction suivante, pas au début du prototype.
             // Garder le PC dans le listing évite de fabriquer un graphe de contrôle faux.
             let target = (pc as i64) + 1 + i64::from(ins.sbx);
             format!("A={} sBx={} (→ pc {})", ins.a, ins.sbx, target)
-        },
+        }
         OpMode::Ax => format!("Ax={}", ins.ax),
         OpMode::ABC => {
             let name = ins.name();
@@ -1061,12 +1140,18 @@ fn format_operands(
                 "GETTABLE" => format!("R{} := R{}[{}]", ins.a, ins.b, rk(ins.c, k)),
                 "SETTABLE" => format!("R{}[{}] := {}", ins.a, rk(ins.b, k), rk(ins.c, k)),
                 "CALL" | "TAILCALL" => {
-                    let args =
-                        if ins.b == 0 { "vararg".to_string() } else { (ins.b - 1).to_string() };
-                    let returns =
-                        if ins.c == 0 { "multret".to_string() } else { (ins.c - 1).to_string() };
+                    let args = if ins.b == 0 {
+                        "vararg".to_string()
+                    } else {
+                        (ins.b - 1).to_string()
+                    };
+                    let returns = if ins.c == 0 {
+                        "multret".to_string()
+                    } else {
+                        (ins.c - 1).to_string()
+                    };
                     format!("R{}(...) — {} args, {} retours", ins.a, args, returns)
-                },
+                }
                 "RETURN" => {
                     let returns = if ins.b == 0 {
                         "multret".to_string()
@@ -1074,11 +1159,11 @@ fn format_operands(
                         format!("{} valeur(s)", ins.b - 1)
                     };
                     format!("retourne R{}..{} ({returns})", ins.a, ins.b)
-                },
+                }
                 "MOVE" => format!("R{} := R{}", ins.a, ins.b),
                 _ => format!("A={} B={} C={}", ins.a, ins.b, ins.c),
             }
-        },
+        }
     }
 }
 
@@ -1168,9 +1253,16 @@ mod tests {
         assert_eq!(f.num_params, 2, "f prend deux paramètres");
 
         // Le corps de `f` doit contenir une addition puis un retour.
-        let ops: Vec<String> = f.code.iter().map(|c| decode_instruction(*c).name()).collect();
+        let ops: Vec<String> = f
+            .code
+            .iter()
+            .map(|c| decode_instruction(*c).name())
+            .collect();
         assert!(ops.contains(&"ADD".to_string()), "opcodes de f : {ops:?}");
-        assert!(ops.contains(&"RETURN".to_string()), "opcodes de f : {ops:?}");
+        assert!(
+            ops.contains(&"RETURN".to_string()),
+            "opcodes de f : {ops:?}"
+        );
 
         // Le listing doit être non vide et nommer les opcodes.
         let listing = disassemble(&chunk);
@@ -1189,7 +1281,10 @@ mod tests {
             .expect("compilation")
             .dump(false);
         let listing = disassemble(&parse(&dumped).expect("décodage"));
-        assert!(listing.contains("→ pc "), "cible de saut absente :\n{listing}");
+        assert!(
+            listing.contains("→ pc "),
+            "cible de saut absente :\n{listing}"
+        );
         assert!(
             listing.contains("retourne") && listing.contains("valeur(s)"),
             "arité Lua absente :\n{listing}"
@@ -1227,7 +1322,10 @@ mod tests {
             },
         };
         let listing = disassemble(&chunk);
-        assert!(listing.contains("K1(42) via EXTRAARG"), "LOADKX mal résolu :\n{listing}");
+        assert!(
+            listing.contains("K1(42) via EXTRAARG"),
+            "LOADKX mal résolu :\n{listing}"
+        );
     }
 
     #[test]
@@ -1242,7 +1340,11 @@ mod tests {
     #[test]
     fn rejette_un_en_tete_lua_incoherent_sans_paniquer() {
         let lua = crate::new_vm();
-        let dumped = lua.load("return 1").into_function().expect("compilation").dump(false);
+        let dumped = lua
+            .load("return 1")
+            .into_function()
+            .expect("compilation")
+            .dump(false);
 
         let mut bad_format = dumped.clone();
         bad_format[5] = 1;
@@ -1268,7 +1370,10 @@ mod tests {
             size_size_t: 8,
             size_int: 4,
         };
-        assert!(matches!(reader.take(1), Err(BytecodeError::UnexpectedEof(usize::MAX))));
+        assert!(matches!(
+            reader.take(1),
+            Err(BytecodeError::UnexpectedEof(usize::MAX))
+        ));
     }
 
     /// Décode les VRAIS `.lua.bin` du jeu présents localement (`data/lua_scripts/`).
@@ -1280,7 +1385,10 @@ mod tests {
     fn decode_les_vrais_scripts_du_jeu() {
         let dir = aphrody_nie_formats::vfs::resolve_game_dir().join("data/lua_scripts");
         if !dir.is_dir() {
-            eprintln!("skip : {} introuvable (définir NIE_GAME_DIR)", dir.display());
+            eprintln!(
+                "skip : {} introuvable (définir NIE_GAME_DIR)",
+                dir.display()
+            );
             return;
         }
         let entries: Vec<_> = std::fs::read_dir(&dir)
@@ -1303,7 +1411,7 @@ mod tests {
                     let listing = disassemble(&chunk);
                     assert!(!listing.is_empty());
                     ok += 1;
-                },
+                }
                 Err(e) => failures.push(format!("{} : {e}", entry.path().display())),
             }
         }
@@ -1338,15 +1446,26 @@ mod tests {
 
         let chunk = parse(&dumped).expect("décodage");
         let reads = global_reads(&chunk);
-        let classement: Vec<(String, GlobalReadSink)> =
-            reads.iter().map(|read| (read.name_utf8().into_owned(), read.sink)).collect();
+        let classement: Vec<(String, GlobalReadSink)> = reads
+            .iter()
+            .map(|read| (read.name_utf8().into_owned(), read.sink))
+            .collect();
 
         assert_eq!(
             classement,
             vec![
-                ("pieceIdx".to_string(), GlobalReadSink::TableArrayItem { index: 1 }),
-                ("layerIdx".to_string(), GlobalReadSink::TableArrayItem { index: 2 }),
-                ("pieceType".to_string(), GlobalReadSink::TableArrayItem { index: 3 }),
+                (
+                    "pieceIdx".to_string(),
+                    GlobalReadSink::TableArrayItem { index: 1 }
+                ),
+                (
+                    "layerIdx".to_string(),
+                    GlobalReadSink::TableArrayItem { index: 2 }
+                ),
+                (
+                    "pieceType".to_string(),
+                    GlobalReadSink::TableArrayItem { index: 3 }
+                ),
             ]
         );
     }

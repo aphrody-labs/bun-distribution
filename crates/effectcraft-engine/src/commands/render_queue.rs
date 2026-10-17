@@ -6,9 +6,11 @@
 //! `index` (1-based, the # column).
 
 use effectcraft_project::render_queue::{
-    AlphaMode, AudioFormat, AudioOutput, Channels, ColorDepth, CurrentOrOff, DEFAULT_SEQUENCE_TEMPLATE, DEFAULT_TEMPLATE, EffectsMode, FieldRender,
-    OutputFormat, OutputModule, PostRenderAction, ProResProfile, Pulldown, RESIZE_PRESETS, RenderLog, RenderQuality, RenderQueueItem, RenderSettings,
-    RenderStatus, ResizeQuality, SwitchOverride, TimeSpan, post_render_parse, without_project_extension,
+    AlphaMode, AudioFormat, AudioOutput, Channels, ColorDepth, CurrentOrOff,
+    DEFAULT_SEQUENCE_TEMPLATE, DEFAULT_TEMPLATE, EffectsMode, FieldRender, OutputFormat,
+    OutputModule, PostRenderAction, ProResProfile, Pulldown, RESIZE_PRESETS, RenderLog,
+    RenderQuality, RenderQueueItem, RenderSettings, RenderStatus, ResizeQuality, SwitchOverride,
+    TimeSpan, post_render_parse, without_project_extension,
 };
 use effectcraft_project::render_templates::{RenderTemplates, TemplateKind, TemplateSlot};
 use effectcraft_time::{FrameRate, Tick};
@@ -19,34 +21,64 @@ use crate::{EngineError, Result, Session, cmd, query};
 
 fn can_add(s: &Session) -> std::result::Result<(), String> {
     not_rendering(s)?;
-    if s.comp_for_queue(&Value::Null).is_ok() { Ok(()) } else { Err("select or open a composition".into()) }
+    if s.comp_for_queue(&Value::Null).is_ok() {
+        Ok(())
+    } else {
+        Err("select or open a composition".into())
+    }
 }
 fn not_rendering(s: &Session) -> std::result::Result<(), String> {
-    if s.is_rendering() { Err("the render queue is rendering".into()) } else { Ok(()) }
+    if s.is_rendering() {
+        Err("the render queue is rendering".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_items(s: &Session) -> std::result::Result<(), String> {
     not_rendering(s)?;
-    if s.project.render_queue.is_empty() { Err("the render queue is empty".into()) } else { Ok(()) }
+    if s.project.render_queue.is_empty() {
+        Err("the render queue is empty".into())
+    } else {
+        Ok(())
+    }
 }
 fn has_queued(s: &Session) -> std::result::Result<(), String> {
     not_rendering(s)?;
     if s.exporter.is_none() {
         return Err("export is not available in this build".into());
     }
-    if s.project.render_queue.iter().any(RenderQueueItem::is_queued) { Ok(()) } else { Err("nothing is queued".into()) }
+    if s.project
+        .render_queue
+        .iter()
+        .any(RenderQueueItem::is_queued)
+    {
+        Ok(())
+    } else {
+        Err("nothing is queued".into())
+    }
 }
 fn rendering(s: &Session) -> std::result::Result<(), String> {
-    if s.is_rendering() { Ok(()) } else { Err("not rendering".into()) }
+    if s.is_rendering() {
+        Ok(())
+    } else {
+        Err("not rendering".into())
+    }
 }
 
 /// Index of the item named by `item` (id) or `index` (1-based).
 fn item_index(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
     let q = &s.project.render_queue;
     if let Some(id) = p.get("item").and_then(Value::as_u64) {
-        return q.iter().position(|i| i.id == id).ok_or_else(|| bad(cmd, format!("no render queue item {id}")));
+        return q
+            .iter()
+            .position(|i| i.id == id)
+            .ok_or_else(|| bad(cmd, format!("no render queue item {id}")));
     }
     if let Some(n) = p.get("index").and_then(Value::as_u64) {
-        return (n as usize).checked_sub(1).filter(|i| *i < q.len()).ok_or_else(|| bad(cmd, format!("no render queue item #{n}")));
+        return (n as usize)
+            .checked_sub(1)
+            .filter(|i| *i < q.len())
+            .ok_or_else(|| bad(cmd, format!("no render queue item #{n}")));
     }
     if q.len() == 1 {
         return Ok(0);
@@ -59,22 +91,41 @@ fn time_p(p: &Value, k: &str) -> Option<Tick> {
 }
 
 /// Parse an enum parameter.
-fn enum_p<T>(p: &Value, k: &str, cmd: &str, parse: fn(&str) -> Option<T>, help: &str) -> Result<Option<T>> {
+fn enum_p<T>(
+    p: &Value,
+    k: &str,
+    cmd: &str,
+    parse: fn(&str) -> Option<T>,
+    help: &str,
+) -> Result<Option<T>> {
     match p.get(k) {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::String(v)) => parse(v).map(Some).ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
-        Some(Value::Bool(b)) => parse(if *b { "on" } else { "off" }).map(Some).ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
-        Some(Value::Number(n)) => parse(&n.to_string()).map(Some).ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
+        Some(Value::String(v)) => parse(v)
+            .map(Some)
+            .ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
+        Some(Value::Bool(b)) => parse(if *b { "on" } else { "off" })
+            .map(Some)
+            .ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
+        Some(Value::Number(n)) => parse(&n.to_string())
+            .map(Some)
+            .ok_or_else(|| bad(cmd, format!("{k}: {help}"))),
         Some(_) => Err(bad(cmd, format!("{k}: {help}"))),
     }
 }
 
 /// Apply Render Settings parameters (`template` first, then the individual settings). Any
 /// individual change makes the settings "Custom".
-fn apply_settings(rs: &mut RenderSettings, templates: &RenderTemplates, p: &Value, cmd: &str) -> Result<bool> {
+fn apply_settings(
+    rs: &mut RenderSettings,
+    templates: &RenderTemplates,
+    p: &Value,
+    cmd: &str,
+) -> Result<bool> {
     let mut any = false;
     if let Some(t) = str_p(p, "template") {
-        *rs = templates.render_settings(t).ok_or_else(|| bad(cmd, format!("no Render Settings template “{t}”")))?;
+        *rs = templates
+            .render_settings(t)
+            .ok_or_else(|| bad(cmd, format!("no Render Settings template “{t}”")))?;
         any = true;
     }
     let before = rs.clone();
@@ -110,10 +161,17 @@ fn apply_settings(rs: &mut RenderSettings, templates: &RenderTemplates, p: &Valu
         end = Some(a + d);
     }
     if let Some(ts) = str_p(p, "timeSpan") {
-        rs.time_span = match ts.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
+        rs.time_span = match ts
+            .to_ascii_lowercase()
+            .replace([' ', '_', '-'], "")
+            .as_str()
+        {
             "workarea" | "workareaonly" => TimeSpan::WorkArea,
             "comp" | "lengthofcomp" | "full" => TimeSpan::LengthOfComp,
-            "custom" => TimeSpan::Custom { start: start.unwrap_or(Tick::ZERO), end: end.unwrap_or(Tick::from_seconds_f64(1.0)) },
+            "custom" => TimeSpan::Custom {
+                start: start.unwrap_or(Tick::ZERO),
+                end: end.unwrap_or(Tick::from_seconds_f64(1.0)),
+            },
             _ => return Err(bad(cmd, "timeSpan: workArea|comp|custom")),
         };
     } else if start.is_some() || end.is_some() {
@@ -121,7 +179,10 @@ fn apply_settings(rs: &mut RenderSettings, templates: &RenderTemplates, p: &Valu
             TimeSpan::Custom { start, end } => (start, end),
             _ => (Tick::ZERO, Tick(i64::MAX / 4)),
         };
-        rs.time_span = TimeSpan::Custom { start: start.unwrap_or(a), end: end.unwrap_or(b) };
+        rs.time_span = TimeSpan::Custom {
+            start: start.unwrap_or(a),
+            end: end.unwrap_or(b),
+        };
     }
     if let TimeSpan::Custom { start, end } = rs.time_span
         && end <= start
@@ -129,14 +190,18 @@ fn apply_settings(rs: &mut RenderSettings, templates: &RenderTemplates, p: &Valu
         return Err(bad(cmd, "end must be after start"));
     }
     if let Some(u) = str_p(p, "proxyUse") {
-        rs.proxy_use = effectcraft_project::render_queue::ProxyUse::parse(u).ok_or_else(|| bad(cmd, "proxyUse: current|all|comp|none"))?;
+        rs.proxy_use = effectcraft_project::render_queue::ProxyUse::parse(u)
+            .ok_or_else(|| bad(cmd, "proxyUse: current|all|comp|none"))?;
     }
     match p.get("frameRate") {
         Some(Value::Null) => {
             rs.frame_rate = None;
         }
         Some(v) => {
-            let f = v.as_f64().filter(|f| *f > 0.0 && *f <= 1000.0).ok_or_else(|| bad(cmd, "frameRate: fps > 0 or null (comp rate)"))?;
+            let f = v
+                .as_f64()
+                .filter(|f| *f > 0.0 && *f <= 1000.0)
+                .ok_or_else(|| bad(cmd, "frameRate: fps > 0 or null (comp rate)"))?;
             rs.frame_rate = Some(FrameRate::from_f64(f));
         }
         None => {}
@@ -149,22 +214,47 @@ fn apply_settings(rs: &mut RenderSettings, templates: &RenderTemplates, p: &Valu
             }
         }
         Some(_) => {
-            let m = enum_p(p, "motionBlur", cmd, SwitchOverride::parse, "current|onForChecked|offForAll")?.unwrap_or_default();
+            let m = enum_p(
+                p,
+                "motionBlur",
+                cmd,
+                SwitchOverride::parse,
+                "current|onForChecked|offForAll",
+            )?
+            .unwrap_or_default();
             rs.motion_blur = m != SwitchOverride::OffForAll;
             rs.motion_blur_mode = m;
         }
         None => {}
     }
-    if let Some(m) = enum_p(p, "frameBlending", cmd, SwitchOverride::parse, "current|onForChecked|offForAll")? {
+    if let Some(m) = enum_p(
+        p,
+        "frameBlending",
+        cmd,
+        SwitchOverride::parse,
+        "current|onForChecked|offForAll",
+    )? {
         rs.frame_blending = m;
     }
     if let Some(f) = enum_p(p, "fieldRender", cmd, FieldRender::parse, "off|upper|lower")? {
         rs.field_render = f;
     }
-    if let Some(f) = enum_p(p, "pulldown", cmd, Pulldown::parse, "off|WSSWW|SSWWW|SWWWS|WWWSS|WWSSW")? {
+    if let Some(f) = enum_p(
+        p,
+        "pulldown",
+        cmd,
+        Pulldown::parse,
+        "off|WSSWW|SSWWW|SWWWS|WWWSS|WWSSW",
+    )? {
         rs.pulldown = f;
     }
-    if let Some(e) = enum_p(p, "effects", cmd, EffectsMode::parse, "current|allOn|allOff")? {
+    if let Some(e) = enum_p(
+        p,
+        "effects",
+        cmd,
+        EffectsMode::parse,
+        "current|allOn|allOff",
+    )? {
         rs.effects = e;
     }
     if let Some(e) = enum_p(p, "solo", cmd, CurrentOrOff::parse, "current|allOff")? {
@@ -203,14 +293,23 @@ fn apply_om_template(om: &mut OutputModule, t: &OutputModule) {
 }
 
 /// The `format` parameter's values.
-const FORMATS: &str = "format: h264|hevc|av1|prores|uncompressed|webm|png|jpeg|tiff|exr|gif|wav|aiff";
+const FORMATS: &str =
+    "format: h264|hevc|av1|prores|uncompressed|webm|png|jpeg|tiff|exr|gif|wav|aiff";
 
 /// Apply Output Module parameters (`template` first). `roi`: the viewer's region of interest
 /// (captured by `crop.useRoi`).
-fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<[f64; 4]>, p: &Value, cmd: &str) -> Result<bool> {
+fn apply_output(
+    om: &mut OutputModule,
+    templates: &RenderTemplates,
+    roi: Option<[f64; 4]>,
+    p: &Value,
+    cmd: &str,
+) -> Result<bool> {
     let mut any = false;
     if let Some(t) = str_p(p, "template") {
-        let t = templates.output_module(t).ok_or_else(|| bad(cmd, format!("no Output Module template “{t}”")))?;
+        let t = templates
+            .output_module(t)
+            .ok_or_else(|| bad(cmd, format!("no Output Module template “{t}”")))?;
         apply_om_template(om, &t);
         any = true;
     }
@@ -231,7 +330,10 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
         };
         if om.channels == Channels::Rgba && !om.supports_alpha() {
             let what = match om.format {
-                OutputFormat::WebM => format!("{} WebM has no alpha channel (VP9 WebM has)", om.webm_codec.label()),
+                OutputFormat::WebM => format!(
+                    "{} WebM has no alpha channel (VP9 WebM has)",
+                    om.webm_codec.label()
+                ),
                 f => format!("{} has no alpha channel", f.label()),
             };
             return Err(bad(cmd, what));
@@ -257,13 +359,19 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
         om.keyframe_interval = k.min(100_000) as u32;
     }
     if let Some(pp) = str_p(p, "proresProfile") {
-        om.prores_profile = ProResProfile::from_name(pp).ok_or_else(|| bad(cmd, "proresProfile: proxy|lt|standard|hq|4444|4444xq"))?;
+        om.prores_profile = ProResProfile::from_name(pp)
+            .ok_or_else(|| bad(cmd, "proresProfile: proxy|lt|standard|hq|4444|4444xq"))?;
     }
     match p.get("crop") {
         Some(Value::Bool(b)) => om.crop.enabled = *b,
         Some(Value::Object(c)) => {
             om.crop.enabled = c.get("enabled").and_then(Value::as_bool).unwrap_or(true);
-            for (k, v) in [("top", &mut om.crop.top), ("left", &mut om.crop.left), ("bottom", &mut om.crop.bottom), ("right", &mut om.crop.right)] {
+            for (k, v) in [
+                ("top", &mut om.crop.top),
+                ("left", &mut om.crop.left),
+                ("bottom", &mut om.crop.bottom),
+                ("right", &mut om.crop.right),
+            ] {
                 if let Some(n) = c.get(k).and_then(Value::as_i64) {
                     *v = n.clamp(-20_000, 20_000) as i32;
                 }
@@ -271,7 +379,10 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
             if let Some(u) = c.get("useRoi").and_then(Value::as_bool) {
                 om.crop.use_roi = u;
                 if u {
-                    om.crop.roi = c.get("roi").and_then(|r| serde_json::from_value::<[f64; 4]>(r.clone()).ok()).or(roi);
+                    om.crop.roi = c
+                        .get("roi")
+                        .and_then(|r| serde_json::from_value::<[f64; 4]>(r.clone()).ok())
+                        .or(roi);
                     if om.crop.roi.is_none() {
                         return Err(bad(
                             cmd,
@@ -282,17 +393,30 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
             }
         }
         Some(Value::Null) | None => {}
-        Some(_) => return Err(bad(cmd, "crop: bool or {enabled?, useRoi?, roi?: [x,y,w,h], top?, left?, bottom?, right?}")),
+        Some(_) => {
+            return Err(bad(
+                cmd,
+                "crop: bool or {enabled?, useRoi?, roi?: [x,y,w,h], top?, left?, bottom?, right?}",
+            ));
+        }
     }
     // Flat keys (dialog forms): cropTop/cropLeft/cropBottom/cropRight, resizeWidth/resizeHeight.
-    for (k, v) in [("cropTop", &mut om.crop.top), ("cropLeft", &mut om.crop.left), ("cropBottom", &mut om.crop.bottom), ("cropRight", &mut om.crop.right)] {
+    for (k, v) in [
+        ("cropTop", &mut om.crop.top),
+        ("cropLeft", &mut om.crop.left),
+        ("cropBottom", &mut om.crop.bottom),
+        ("cropRight", &mut om.crop.right),
+    ] {
         if let Some(n) = p.get(k).and_then(Value::as_f64) {
             *v = (n.round() as i64).clamp(-20_000, 20_000) as i32;
             om.crop.enabled = true;
             om.crop.use_roi = false;
         }
     }
-    for (k, v) in [("resizeWidth", &mut om.resize.width), ("resizeHeight", &mut om.resize.height)] {
+    for (k, v) in [
+        ("resizeWidth", &mut om.resize.width),
+        ("resizeHeight", &mut om.resize.height),
+    ] {
         if let Some(n) = p.get(k).and_then(Value::as_f64) {
             *v = (n.round() as u32).clamp(1, 30_000);
             om.resize.enabled = true;
@@ -303,8 +427,10 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
         Some(Value::Object(r)) => {
             om.resize.enabled = r.get("enabled").and_then(Value::as_bool).unwrap_or(true);
             if let Some(name) = r.get("preset").and_then(Value::as_str) {
-                let (_, w, h) =
-                    RESIZE_PRESETS.iter().find(|(n, _, _)| n.eq_ignore_ascii_case(name)).ok_or_else(|| bad(cmd, format!("no resize preset “{name}”")))?;
+                let (_, w, h) = RESIZE_PRESETS
+                    .iter()
+                    .find(|(n, _, _)| n.eq_ignore_ascii_case(name))
+                    .ok_or_else(|| bad(cmd, format!("no resize preset “{name}”")))?;
                 (om.resize.width, om.resize.height) = (*w, *h);
                 om.resize.lock_aspect = false;
             }
@@ -326,7 +452,12 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
             }
         }
         Some(Value::Null) | None => {}
-        Some(_) => return Err(bad(cmd, "resize: bool or {enabled?, preset?, width?, height?, lockAspect?, quality?: low|high}")),
+        Some(_) => {
+            return Err(bad(
+                cmd,
+                "resize: bool or {enabled?, preset?, width?, height?, lockAspect?, quality?: low|high}",
+            ));
+        }
     }
     if let Some(a) = p.get("audio") {
         om.audio = match a {
@@ -355,7 +486,13 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
         }
         _ => {}
     }
-    if let Some(f) = enum_p(p, "audioFormat", cmd, AudioFormat::parse, "16|24|32 (float)")? {
+    if let Some(f) = enum_p(
+        p,
+        "audioFormat",
+        cmd,
+        AudioFormat::parse,
+        "16|24|32 (float)",
+    )? {
         om.audio_format = f;
     }
     if let Some(l) = b_p(p, "loop") {
@@ -365,10 +502,15 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
         om.include_project_link = l;
     }
     // (Without the `.ecproj` a save dialog filtered to projects appended, #293.)
-    if let Some(o) = str_p(p, "output").or(str_p(p, "path")).map(without_project_extension) {
+    if let Some(o) = str_p(p, "output")
+        .or(str_p(p, "path"))
+        .map(without_project_extension)
+    {
         om.output = o.to_string();
         // Only an extension the format doesn't write changes it: `.mp4` is H.264's, HEVC's and AV1's.
-        if let Some(f) = OutputFormat::from_path(o).filter(|f| f.extension() != om.format.extension() && !o.contains("[fileExtension]")) {
+        if let Some(f) = OutputFormat::from_path(o)
+            .filter(|f| f.extension() != om.format.extension() && !o.contains("[fileExtension]"))
+        {
             if p.get("format").is_some() {
                 // An explicit format wins and the extension follows it, as choosing a format in
                 // the Output Module renames Output To (#154: `--format hevc --out x.mp4`).
@@ -397,7 +539,9 @@ fn apply_output(om: &mut OutputModule, templates: &RenderTemplates, roi: Option<
 
 /// HEVC / AV1 codec options, the WebM video codec and the Opus audio options.
 fn apply_codec_options(om: &mut OutputModule, p: &Value, cmd: &str) -> Result<bool> {
-    use effectcraft_project::render_queue::{CodecProfile, OpusApplication, RateControlMode, VideoCodecOptions, WebmVideoCodec};
+    use effectcraft_project::render_queue::{
+        CodecProfile, OpusApplication, RateControlMode, VideoCodecOptions, WebmVideoCodec,
+    };
     let mut any = false;
     if let Some(c) = str_p(p, "webmCodec") {
         om.webm_codec = match c.to_ascii_lowercase().as_str() {
@@ -411,7 +555,8 @@ fn apply_codec_options(om: &mut OutputModule, p: &Value, cmd: &str) -> Result<bo
         any = true;
     }
     if let Some(v) = str_p(p, "profile") {
-        om.codec.profile = CodecProfile::from_name(v).ok_or_else(|| bad(cmd, "profile: main|main10"))?;
+        om.codec.profile =
+            CodecProfile::from_name(v).ok_or_else(|| bad(cmd, "profile: main|main10"))?;
         any = true;
     }
     match p.get("level") {
@@ -424,13 +569,15 @@ fn apply_codec_options(om: &mut OutputModule, p: &Value, cmd: &str) -> Result<bo
                 Value::String(s) => s.clone(),
                 other => other.to_string(),
             };
-            om.codec.level = VideoCodecOptions::parse_level(&s).ok_or_else(|| bad(cmd, "level: auto|null or a level like 4.1"))?;
+            om.codec.level = VideoCodecOptions::parse_level(&s)
+                .ok_or_else(|| bad(cmd, "level: auto|null or a level like 4.1"))?;
             any = true;
         }
         None => {}
     }
     if let Some(v) = str_p(p, "rateControl") {
-        om.codec.rate_control = RateControlMode::from_name(v).ok_or_else(|| bad(cmd, "rateControl: bitrate|quality"))?;
+        om.codec.rate_control = RateControlMode::from_name(v)
+            .ok_or_else(|| bad(cmd, "rateControl: bitrate|quality"))?;
         any = true;
     }
     if let Some(q) = f_p(p, "quality") {
@@ -462,11 +609,19 @@ fn module_p(s: &Session, i: usize, p: &Value, cmd: &str) -> Result<usize> {
 }
 
 fn module_ref(it: &RenderQueueItem, m: usize) -> &OutputModule {
-    if m == 0 { &it.output } else { &it.extra_outputs[m - 1] }
+    if m == 0 {
+        &it.output
+    } else {
+        &it.extra_outputs[m - 1]
+    }
 }
 
 fn module_mut(it: &mut RenderQueueItem, m: usize) -> &mut OutputModule {
-    if m == 0 { &mut it.output } else { &mut it.extra_outputs[m - 1] }
+    if m == 0 {
+        &mut it.output
+    } else {
+        &mut it.extra_outputs[m - 1]
+    }
 }
 
 /// A finished item that is edited goes back to Queued (AE re-queues on change).
@@ -479,7 +634,9 @@ fn requeue(it: &mut RenderQueueItem) {
 fn item_json(s: &Session, it: &RenderQueueItem, index: usize) -> Value {
     let comp = s.project.comp(it.comp);
     let name = s.project.item(it.comp).map(|i| i.name.clone());
-    let (w, h) = comp.map(|c| it.output.output_size(c, &it.settings)).unwrap_or((0, 0));
+    let (w, h) = comp
+        .map(|c| it.output.output_size(c, &it.settings))
+        .unwrap_or((0, 0));
     let frames = comp.map(|c| it.settings.frame_count(c)).unwrap_or(0);
     let mut v = serde_json::to_value(it).unwrap_or(Value::Null);
     if let Some(o) = v.as_object_mut() {
@@ -503,7 +660,10 @@ fn item_json(s: &Session, it: &RenderQueueItem, index: usize) -> Value {
         o.insert("postRenderAction".into(), json!(it.post_render.label()));
         o.insert("logLabel".into(), json!(it.log.label()));
         if let Some(p) = s.resolve_output(it) {
-            o.insert("logPath".into(), json!(effectcraft_project::render_queue::log_path(&p)));
+            o.insert(
+                "logPath".into(),
+                json!(effectcraft_project::render_queue::log_path(&p)),
+            );
         }
         o.insert("width".into(), json!(w));
         o.insert("height".into(), json!(h));
@@ -531,8 +691,20 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(object) = output_params.as_object_mut() {
         object.remove("template");
     }
-    apply_output(&mut it.output, &templates, s.state.region_of_interest, &output_params, "renderQueue.add")?;
-    if let Some(l) = enum_p(p, "log", "renderQueue.add", RenderLog::parse, "errorsOnly|plusSettings|plusPerFrameInfo")? {
+    apply_output(
+        &mut it.output,
+        &templates,
+        s.state.region_of_interest,
+        &output_params,
+        "renderQueue.add",
+    )?;
+    if let Some(l) = enum_p(
+        p,
+        "log",
+        "renderQueue.add",
+        RenderLog::parse,
+        "errorsOnly|plusSettings|plusPerFrameInfo",
+    )? {
         it.log = l;
     }
     let id = s.edit("Add to Render Queue", None, |proj, _| {
@@ -562,7 +734,11 @@ fn set_render(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit("Render Queue: Render", None, |proj, _| {
         let it = &mut proj.render_queue[i];
         it.render = on;
-        it.status = if on { RenderStatus::Queued } else { RenderStatus::Unqueued };
+        it.status = if on {
+            RenderStatus::Queued
+        } else {
+            RenderStatus::Unqueued
+        };
         Ok(())
     })?;
     Ok(json!({"render": on}))
@@ -571,7 +747,12 @@ fn set_render(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_render_settings(s: &mut Session, p: &Value) -> Result<Value> {
     let i = item_index(s, p, "renderQueue.setRenderSettings")?;
     let mut rs = s.project.render_queue[i].settings.clone();
-    if !apply_settings(&mut rs, &s.project.render_templates, p, "renderQueue.setRenderSettings")? {
+    if !apply_settings(
+        &mut rs,
+        &s.project.render_templates,
+        p,
+        "renderQueue.setRenderSettings",
+    )? {
         return Err(bad("renderQueue.setRenderSettings", "nothing to change"));
     }
     s.edit("Render Settings", None, |proj, _| {
@@ -587,14 +768,25 @@ fn set_output_module(s: &mut Session, p: &Value) -> Result<Value> {
     let i = item_index(s, p, "renderQueue.setOutputModule")?;
     let m = module_p(s, i, p, "renderQueue.setOutputModule")?;
     let mut om = module_ref(&s.project.render_queue[i], m).clone();
-    let changed = apply_output(&mut om, &s.project.render_templates, s.state.region_of_interest, p, "renderQueue.setOutputModule")?;
+    let changed = apply_output(
+        &mut om,
+        &s.project.render_templates,
+        s.state.region_of_interest,
+        p,
+        "renderQueue.setOutputModule",
+    )?;
 
     // When aspect is locked, an explicit height-only edit must drive the size.
     // frame_size() derives height from width; calculate the matching width from the
     // cropped render bounds before storing the updated module.
-    let width_given =
-        p.get("resizeWidth").is_some() || p.get("resize").and_then(Value::as_object).is_some_and(|r| r.contains_key("width") || r.contains_key("preset"));
-    let height_given = p.get("resizeHeight").is_some() || p.get("resize").and_then(Value::as_object).is_some_and(|r| r.contains_key("height"));
+    let width_given = p.get("resizeWidth").is_some()
+        || p.get("resize")
+            .and_then(Value::as_object)
+            .is_some_and(|r| r.contains_key("width") || r.contains_key("preset"));
+    let height_given = p.get("resizeHeight").is_some()
+        || p.get("resize")
+            .and_then(Value::as_object)
+            .is_some_and(|r| r.contains_key("height"));
     if om.resize.enabled && om.resize.lock_aspect && height_given && !width_given {
         let item = &s.project.render_queue[i];
         let comp = s.project.comp(item.comp).ok_or(EngineError::NoComp)?;
@@ -602,10 +794,16 @@ fn set_output_module(s: &mut Session, p: &Value) -> Result<Value> {
         let mut crop_only = om.clone();
         crop_only.resize.enabled = false;
         let (cw, ch) = crop_only.frame_size(w, h, item.settings.resolution.clamp(0.01, 4.0));
-        om.resize.width = ((om.resize.height as f64 * cw as f64 / ch as f64).round() as u32).clamp(1, 30_000);
+        om.resize.width =
+            ((om.resize.height as f64 * cw as f64 / ch as f64).round() as u32).clamp(1, 30_000);
     }
     let post = match str_p(p, "postRenderAction") {
-        Some(a) => Some(post_render_parse(a).ok_or_else(|| bad("renderQueue.setOutputModule", "postRenderAction: none|import|importAndReplace|setProxy"))?),
+        Some(a) => Some(post_render_parse(a).ok_or_else(|| {
+            bad(
+                "renderQueue.setOutputModule",
+                "postRenderAction: none|import|importAndReplace|setProxy",
+            )
+        })?),
         None => None,
     };
     if !changed && post.is_none() {
@@ -625,10 +823,21 @@ fn set_output_module(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_output(s: &mut Session, p: &Value) -> Result<Value> {
     let i = item_index(s, p, "renderQueue.setOutput")?;
-    let path = str_p(p, "path").or(str_p(p, "output")).ok_or_else(|| bad("renderQueue.setOutput", "pass `path` (file path or template)"))?;
+    let path = str_p(p, "path").or(str_p(p, "output")).ok_or_else(|| {
+        bad(
+            "renderQueue.setOutput",
+            "pass `path` (file path or template)",
+        )
+    })?;
     let m = module_p(s, i, p, "renderQueue.setOutput")?;
     let mut om = module_ref(&s.project.render_queue[i], m).clone();
-    apply_output(&mut om, &s.project.render_templates, None, &json!({"output": path}), "renderQueue.setOutput")?;
+    apply_output(
+        &mut om,
+        &s.project.render_templates,
+        None,
+        &json!({"output": path}),
+        "renderQueue.setOutput",
+    )?;
     s.edit("Output To", None, |proj, _| {
         let it = &mut proj.render_queue[i];
         *module_mut(it, m) = om;
@@ -641,7 +850,11 @@ fn set_output(s: &mut Session, p: &Value) -> Result<Value> {
 fn move_item(s: &mut Session, p: &Value) -> Result<Value> {
     let i = item_index(s, p, "renderQueue.move")?;
     let n = s.project.render_queue.len();
-    let to = p.get("to").and_then(Value::as_u64).ok_or_else(|| bad("renderQueue.move", "pass `to` (1-based position)"))? as usize;
+    let to = p
+        .get("to")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad("renderQueue.move", "pass `to` (1-based position)"))?
+        as usize;
     let to = to.clamp(1, n) - 1;
     s.edit("Reorder Render Queue", None, |proj, _| {
         let it = proj.render_queue.remove(i);
@@ -679,7 +892,14 @@ fn render(s: &mut Session, p: &Value) -> Result<Value> {
         log::warn!("{e}");
     }
     let ids = s.start_render(wait).map_err(EngineError::Other)?;
-    let items: Vec<Value> = s.project.render_queue.iter().enumerate().filter(|(_, i)| ids.contains(&i.id)).map(|(k, i)| item_json(s, i, k)).collect();
+    let items: Vec<Value> = s
+        .project
+        .render_queue
+        .iter()
+        .enumerate()
+        .filter(|(_, i)| ids.contains(&i.id))
+        .map(|(k, i)| item_json(s, i, k))
+        .collect();
     Ok(json!({"rendering": s.is_rendering(), "items": items}))
 }
 
@@ -689,7 +909,13 @@ fn stop(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
     s.poll_render();
-    let items: Vec<Value> = s.project.render_queue.iter().enumerate().map(|(k, i)| item_json(s, i, k)).collect();
+    let items: Vec<Value> = s
+        .project
+        .render_queue
+        .iter()
+        .enumerate()
+        .map(|(k, i)| item_json(s, i, k))
+        .collect();
     Ok(json!({"items": items, "rendering": s.is_rendering(), "progress": s.render_progress()}))
 }
 
@@ -727,7 +953,11 @@ fn item_or_last(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
     if p.get("item").is_some() || p.get("index").is_some() {
         return item_index(s, p, cmd);
     }
-    s.project.render_queue.len().checked_sub(1).ok_or_else(|| bad(cmd, "the render queue is empty"))
+    s.project
+        .render_queue
+        .len()
+        .checked_sub(1)
+        .ok_or_else(|| bad(cmd, "the render queue is empty"))
 }
 
 /// Composition ▸ Add Output Module: another output module on a render item (the same frames are
@@ -748,7 +978,13 @@ fn add_output_module(s: &mut Session, p: &Value) -> Result<Value> {
             None => format!("{}_{n}", om.output),
         };
     }
-    apply_output(&mut om, &s.project.render_templates, s.state.region_of_interest, p, "render.addOutputModule")?;
+    apply_output(
+        &mut om,
+        &s.project.render_templates,
+        s.state.region_of_interest,
+        p,
+        "render.addOutputModule",
+    )?;
     s.edit("Add Output Module", None, |proj, _| {
         let it = &mut proj.render_queue[i];
         it.extra_outputs.push(om);
@@ -769,7 +1005,13 @@ fn pre_render(s: &mut Session, p: &Value) -> Result<Value> {
     it.settings = templates.default_render_settings(TemplateSlot::PreRender);
     it.output = templates.default_output_module(TemplateSlot::PreRender);
     it.output.output = "[compName]_prerender.[fileExtension]".into();
-    apply_output(&mut it.output, &templates, s.state.region_of_interest, p, "render.preRender")?;
+    apply_output(
+        &mut it.output,
+        &templates,
+        s.state.region_of_interest,
+        p,
+        "render.preRender",
+    )?;
     it.post_render = PostRenderAction::ImportAndReplace;
     let id = s.edit("Pre-render", None, |proj, _| {
         it.id = proj.render_queue.iter().map(|i| i.id).max().unwrap_or(0) + 1;
@@ -785,12 +1027,20 @@ fn pre_render(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Composition ▸ Save Current Preview…: render the work area of the comp straight to a movie file.
 fn save_current_preview(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("render.saveCurrentPreview", "missing `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("render.saveCurrentPreview", "missing `path`"))?
+        .to_string();
     let cid = comp_id(s, p)?;
     let format = OutputFormat::from_path(&path).unwrap_or(OutputFormat::H264);
-    let exporter = s.exporter.clone().ok_or_else(|| EngineError::Other("export is not available in this build".into()))?;
+    let exporter = s
+        .exporter
+        .clone()
+        .ok_or_else(|| EngineError::Other("export is not available in this build".into()))?;
     if !exporter.formats().contains(&format) {
-        return Err(EngineError::Other(format!("{} export is not available", format.label())));
+        return Err(EngineError::Other(format!(
+            "{} export is not available",
+            format.label()
+        )));
     }
     let mut item = RenderQueueItem::new(0, cid);
     item.output = OutputModule::for_format(format);
@@ -806,7 +1056,9 @@ fn save_current_preview(s: &mut Session, p: &Value) -> Result<Value> {
         label: "Save Current Preview".into(),
         nested_switches: s.prefs.general.switches_affect_nested_comps,
     };
-    let r = exporter.export(&job, &mut |_, _| true).map_err(EngineError::Other)?;
+    let r = exporter
+        .export(&job, &mut |_, _| true)
+        .map_err(EngineError::Other)?;
     s.toast(format!("Saved preview to {}", r.path));
     Ok(serde_json::to_value(&r).unwrap_or_default())
 }
@@ -814,11 +1066,16 @@ fn save_current_preview(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------------------------------------------------------------- templates (Edit ▸ Templates)
 
 fn kind_p(p: &Value, cmd: &str) -> Result<TemplateKind> {
-    str_p(p, "kind").and_then(TemplateKind::parse).ok_or_else(|| bad(cmd, "kind: renderSettings|outputModule"))
+    str_p(p, "kind")
+        .and_then(TemplateKind::parse)
+        .ok_or_else(|| bad(cmd, "kind: renderSettings|outputModule"))
 }
 
 fn name_p<'a>(p: &'a Value, cmd: &str) -> Result<&'a str> {
-    str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "pass `name`"))
+    str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(cmd, "pass `name`"))
 }
 
 /// Templates as JSON (lists, built-in flags, defaults per slot).
@@ -834,7 +1091,11 @@ fn templates_json(t: &RenderTemplates) -> Value {
         .map(|m| json!({"name": m.name, "builtin": RenderTemplates::is_builtin(TemplateKind::OutputModule, &m.name), "summary": format!("{} · {}", m.format.label(), m.channels.label()), "module": m}))
         .collect();
     let slots = |k: TemplateKind| -> Value {
-        TemplateSlot::ALL.iter().map(|sl| (format!("{sl:?}"), json!(t.default_name(k, *sl)))).collect::<serde_json::Map<String, Value>>().into()
+        TemplateSlot::ALL
+            .iter()
+            .map(|sl| (format!("{sl:?}"), json!(t.default_name(k, *sl))))
+            .collect::<serde_json::Map<String, Value>>()
+            .into()
     };
     json!({
         "renderSettings": rs,
@@ -858,7 +1119,11 @@ fn save_template(s: &mut Session, p: &Value) -> Result<Value> {
     if name.eq_ignore_ascii_case("custom") {
         return Err(bad(C, "“Custom” is reserved"));
     }
-    let item = if p.get("item").is_some() || p.get("index").is_some() { Some(item_index(s, p, C)?) } else { None };
+    let item = if p.get("item").is_some() || p.get("index").is_some() {
+        Some(item_index(s, p, C)?)
+    } else {
+        None
+    };
     let params = p.get("params").cloned().unwrap_or(Value::Null);
     let from = str_p(p, "from");
     let mut t = s.project.render_templates.clone();
@@ -866,7 +1131,9 @@ fn save_template(s: &mut Session, p: &Value) -> Result<Value> {
         TemplateKind::RenderSettings => {
             let mut rs = match (item, from) {
                 (Some(i), _) => s.project.render_queue[i].settings.clone(),
-                (None, Some(f)) => t.render_settings(f).ok_or_else(|| bad(C, format!("no Render Settings template “{f}”")))?,
+                (None, Some(f)) => t
+                    .render_settings(f)
+                    .ok_or_else(|| bad(C, format!("no Render Settings template “{f}”")))?,
                 (None, None) => t.default_render_settings(TemplateSlot::Movie),
             };
             if params.is_object() {
@@ -876,15 +1143,24 @@ fn save_template(s: &mut Session, p: &Value) -> Result<Value> {
         }
         TemplateKind::OutputModule => {
             let mut om = match (item, from) {
-                (Some(i), _) => module_ref(&s.project.render_queue[i], module_p(s, i, p, C)?).clone(),
-                (None, Some(f)) => t.output_module(f).ok_or_else(|| bad(C, format!("no Output Module template “{f}”")))?,
+                (Some(i), _) => {
+                    module_ref(&s.project.render_queue[i], module_p(s, i, p, C)?).clone()
+                }
+                (None, Some(f)) => t
+                    .output_module(f)
+                    .ok_or_else(|| bad(C, format!("no Output Module template “{f}”")))?,
                 (None, None) => t.default_output_module(TemplateSlot::Movie),
             };
             if params.is_object() {
                 apply_output(&mut om, &t, s.state.region_of_interest, &params, C)?;
             }
             // Templates name files after the composition, not a particular path.
-            om.output = if om.format.is_sequence() { DEFAULT_SEQUENCE_TEMPLATE } else { DEFAULT_TEMPLATE }.into();
+            om.output = if om.format.is_sequence() {
+                DEFAULT_SEQUENCE_TEMPLATE
+            } else {
+                DEFAULT_TEMPLATE
+            }
+            .into();
             t.save_output_module(&name, om);
         }
     }
@@ -911,7 +1187,9 @@ fn delete_template(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_template_default(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "renderQueue.setTemplateDefault";
     let kind = kind_p(p, C)?;
-    let slot = str_p(p, "slot").and_then(TemplateSlot::parse).ok_or_else(|| bad(C, "slot: movie|still|preRender|movieProxy|stillProxy"))?;
+    let slot = str_p(p, "slot")
+        .and_then(TemplateSlot::parse)
+        .ok_or_else(|| bad(C, "slot: movie|still|preRender|movieProxy|stillProxy"))?;
     let name = name_p(p, C)?.to_string();
     let mut t = s.project.render_templates.clone();
     t.set_default(kind, slot, &name).map_err(|e| bad(C, e))?;
@@ -929,12 +1207,17 @@ fn apply_template(s: &mut Session, p: &Value) -> Result<Value> {
     let m = module_p(s, i, p, C)?;
     let t = s.project.render_templates.clone();
     let rs = match str_p(p, "renderSettings") {
-        Some(n) => Some(t.render_settings(n).ok_or_else(|| bad(C, format!("no Render Settings template “{n}”")))?),
+        Some(n) => Some(
+            t.render_settings(n)
+                .ok_or_else(|| bad(C, format!("no Render Settings template “{n}”")))?,
+        ),
         None => None,
     };
     let om = match str_p(p, "outputModule") {
         Some(n) => {
-            let tpl = t.output_module(n).ok_or_else(|| bad(C, format!("no Output Module template “{n}”")))?;
+            let tpl = t
+                .output_module(n)
+                .ok_or_else(|| bad(C, format!("no Output Module template “{n}”")))?;
             let mut om = module_ref(&s.project.render_queue[i], m).clone();
             apply_om_template(&mut om, &tpl);
             Some(om)
@@ -942,7 +1225,10 @@ fn apply_template(s: &mut Session, p: &Value) -> Result<Value> {
         None => None,
     };
     if rs.is_none() && om.is_none() {
-        return Err(bad(C, "pass `renderSettings` and/or `outputModule` (template names)"));
+        return Err(bad(
+            C,
+            "pass `renderSettings` and/or `outputModule` (template names)",
+        ));
     }
     s.edit("Apply Template", None, |proj, _| {
         let it = &mut proj.render_queue[i];
@@ -961,7 +1247,14 @@ fn apply_template(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_log(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "renderQueue.setLog";
     let i = item_index(s, p, C)?;
-    let log = enum_p(p, "log", C, RenderLog::parse, "errorsOnly|plusSettings|plusPerFrameInfo")?.ok_or_else(|| bad(C, "pass `log`"))?;
+    let log = enum_p(
+        p,
+        "log",
+        C,
+        RenderLog::parse,
+        "errorsOnly|plusSettings|plusPerFrameInfo",
+    )?
+    .ok_or_else(|| bad(C, "pass `log`"))?;
     s.edit("Render Queue: Log", None, |proj, _| {
         proj.render_queue[i].log = log;
         Ok(())
@@ -970,7 +1263,9 @@ fn set_log(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set_notify(s: &mut Session, p: &Value) -> Result<Value> {
-    let on = b_p(p, "notify").or(b_p(p, "value")).unwrap_or(!s.project.render_prefs.notify);
+    let on = b_p(p, "notify")
+        .or(b_p(p, "value"))
+        .unwrap_or(!s.project.render_prefs.notify);
     s.edit("Render Queue: Notify", None, |proj, _| {
         proj.render_prefs.notify = on;
         Ok(())
@@ -981,7 +1276,13 @@ fn set_notify(s: &mut Session, p: &Value) -> Result<Value> {
 fn set_overflow(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "renderQueue.setOverflowFolders";
     let folders: Vec<String> = match p.get("folders") {
-        Some(Value::Array(a)) => a.iter().filter_map(Value::as_str).map(str::trim).filter(|f| !f.is_empty()).map(String::from).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::trim)
+            .filter(|f| !f.is_empty())
+            .map(String::from)
+            .collect(),
         Some(Value::Null) | None => vec![],
         _ => return Err(bad(C, "folders: [path, …]")),
     };
@@ -1003,8 +1304,24 @@ pub fn specs() -> Vec<CommandSpec> {
             can_add,
             add
         ),
-        cmd!("renderQueue.remove", "Remove from Render Queue", [], None, "{item?: id, index?: n}", has_items, remove),
-        cmd!("renderQueue.setRender", "Render Queue: Render Checkbox", [], None, "{item?|index?, render?: bool (toggles)}", has_items, set_render),
+        cmd!(
+            "renderQueue.remove",
+            "Remove from Render Queue",
+            [],
+            None,
+            "{item?: id, index?: n}",
+            has_items,
+            remove
+        ),
+        cmd!(
+            "renderQueue.setRender",
+            "Render Queue: Render Checkbox",
+            [],
+            None,
+            "{item?|index?, render?: bool (toggles)}",
+            has_items,
+            set_render
+        ),
         cmd!(
             "renderQueue.setRenderSettings",
             "Render Settings...",
@@ -1041,12 +1358,60 @@ pub fn specs() -> Vec<CommandSpec> {
             has_items,
             add_output_module
         ),
-        cmd!("render.preRender", "Pre-render...", ["Composition"], None, "{comp?, output?: path|template, format?}", can_add, pre_render),
-        cmd!("render.saveCurrentPreview", "Save Current Preview...", ["Composition"], None, "{comp?, path}", has_comp, save_current_preview),
-        cmd!("renderQueue.move", "Move in Render Queue", [], None, "{item?|index?, to: n (1-based)}", has_items, move_item),
-        cmd!("renderQueue.duplicate", "Duplicate Render Item", [], None, "{item?|index?}", has_items, duplicate),
-        cmd!("renderQueue.render", "Render", [], None, "{wait?: bool (default true; the UI renders in the background)}", has_queued, render),
-        cmd!("renderQueue.stop", "Stop Rendering", [], None, "{}", rendering, stop),
+        cmd!(
+            "render.preRender",
+            "Pre-render...",
+            ["Composition"],
+            None,
+            "{comp?, output?: path|template, format?}",
+            can_add,
+            pre_render
+        ),
+        cmd!(
+            "render.saveCurrentPreview",
+            "Save Current Preview...",
+            ["Composition"],
+            None,
+            "{comp?, path}",
+            has_comp,
+            save_current_preview
+        ),
+        cmd!(
+            "renderQueue.move",
+            "Move in Render Queue",
+            [],
+            None,
+            "{item?|index?, to: n (1-based)}",
+            has_items,
+            move_item
+        ),
+        cmd!(
+            "renderQueue.duplicate",
+            "Duplicate Render Item",
+            [],
+            None,
+            "{item?|index?}",
+            has_items,
+            duplicate
+        ),
+        cmd!(
+            "renderQueue.render",
+            "Render",
+            [],
+            None,
+            "{wait?: bool (default true; the UI renders in the background)}",
+            has_queued,
+            render
+        ),
+        cmd!(
+            "renderQueue.stop",
+            "Stop Rendering",
+            [],
+            None,
+            "{}",
+            rendering,
+            stop
+        ),
         query!("renderQueue.list", "Render Queue Items", "{}", list),
         query!("renderQueue.templates", "Render Templates", "{}", templates),
         cmd!(
@@ -1058,7 +1423,15 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             save_template
         ),
-        cmd!("renderQueue.deleteTemplate", "Delete Template", [], None, "{kind: renderSettings|outputModule, name}", always, delete_template),
+        cmd!(
+            "renderQueue.deleteTemplate",
+            "Delete Template",
+            [],
+            None,
+            "{kind: renderSettings|outputModule, name}",
+            always,
+            delete_template
+        ),
         cmd!(
             "renderQueue.setTemplateDefault",
             "Set Template Default",
@@ -1077,8 +1450,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_items,
             apply_template
         ),
-        cmd!("renderQueue.setLog", "Render Queue: Log", [], None, "{item?|index?, log: errorsOnly|plusSettings|plusPerFrameInfo}", has_items, set_log),
-        cmd!("renderQueue.setNotify", "Notify When Done", [], None, "{notify?: bool (toggles)}", always, set_notify),
+        cmd!(
+            "renderQueue.setLog",
+            "Render Queue: Log",
+            [],
+            None,
+            "{item?|index?, log: errorsOnly|plusSettings|plusPerFrameInfo}",
+            has_items,
+            set_log
+        ),
+        cmd!(
+            "renderQueue.setNotify",
+            "Notify When Done",
+            [],
+            None,
+            "{notify?: bool (toggles)}",
+            always,
+            set_notify
+        ),
         cmd!(
             "renderQueue.setOverflowFolders",
             "Storage Overflow Folders",

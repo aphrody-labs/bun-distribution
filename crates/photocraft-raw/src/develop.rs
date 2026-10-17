@@ -96,7 +96,10 @@ pub(crate) struct Scale<'a> {
 impl<'a> Scale<'a> {
     /// The scale for `s` (lazily: `lin` is the sensor's linearization table).
     pub(crate) fn new(s: &'a Sensor) -> Self {
-        Scale { s, lin: s.linearization.as_deref() }
+        Scale {
+            s,
+            lin: s.linearization.as_deref(),
+        }
     }
 
     #[inline]
@@ -104,10 +107,20 @@ impl<'a> Scale<'a> {
         let s = self.s;
         let raw = s.data[(y * s.width + x) * s.samples + sample];
         let v = match self.lin {
-            Some(l) => f32::from(l.get(usize::from(raw)).or_else(|| l.last()).copied().unwrap_or(raw)),
+            Some(l) => f32::from(
+                l.get(usize::from(raw))
+                    .or_else(|| l.last())
+                    .copied()
+                    .unwrap_or(raw),
+            ),
             None => f32::from(raw),
         };
-        let black = s.black.at(x.saturating_sub(s.active.x), y.saturating_sub(s.active.y), sample, s.samples);
+        let black = s.black.at(
+            x.saturating_sub(s.active.x),
+            y.saturating_sub(s.active.y),
+            sample,
+            s.samples,
+        );
         let white = s.white[sample.min(2)];
         let range = white - black;
         if range.is_nan() || range < 1.0 {
@@ -165,7 +178,12 @@ fn normalize(n: [f64; 3]) -> Option<[f64; 3]> {
 
 /// The camera-space neutral (max component 1) for `opts.white_balance`, as
 /// [`develop_sensor`] uses it (the same white balance [`crate::fit_look`] balances with).
-pub(crate) fn resolve_neutral(s: &Sensor, opts: &DevelopOptions, sc: &Scale, warnings: &mut Vec<String>) -> Result<[f64; 3]> {
+pub(crate) fn resolve_neutral(
+    s: &Sensor,
+    opts: &DevelopOptions,
+    sc: &Scale,
+    warnings: &mut Vec<String>,
+) -> Result<[f64; 3]> {
     // Monochrome data has no colour to balance.
     if s.is_monochrome() {
         return Ok([1.0; 3]);
@@ -174,28 +192,37 @@ pub(crate) fn resolve_neutral(s: &Sensor, opts: &DevelopOptions, sc: &Scale, war
     let as_shot = s
         .color
         .as_shot_neutral
-        .or_else(|| s.color.as_shot_white_xy.and_then(|xy| s.color.xy_to_neutral(xy)))
+        .or_else(|| {
+            s.color
+                .as_shot_white_xy
+                .and_then(|xy| s.color.xy_to_neutral(xy))
+        })
         .or_else(|| s.camera_wb.map(|m| m.map(|v| 1.0 / v)))
         .and_then(normalize);
     Ok(match opts.white_balance {
-        WhiteBalance::AsShot => match as_shot {
-            Some(n) => n,
-            None => {
-                warnings.push("no as-shot white balance in the file; estimated automatically (grey world)".into());
-                grey_world(s, sc)
+        WhiteBalance::AsShot => {
+            match as_shot {
+                Some(n) => n,
+                None => {
+                    warnings.push("no as-shot white balance in the file; estimated automatically (grey world)".into());
+                    grey_world(s, sc)
+                }
             }
-        },
-        WhiteBalance::Auto => grey_world(s, sc),
-        WhiteBalance::Multipliers(m) => {
-            normalize(m.map(|v| 1.0 / v)).ok_or_else(|| RawError::Malformed("white-balance multipliers must be positive".into()))?
         }
+        WhiteBalance::Auto => grey_world(s, sc),
+        WhiteBalance::Multipliers(m) => normalize(m.map(|v| 1.0 / v)).ok_or_else(|| {
+            RawError::Malformed("white-balance multipliers must be positive".into())
+        })?,
     })
 }
 
 /// Develops sensor data.
 pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     let c = s.crop;
-    let samples = s.width.checked_mul(s.height).and_then(|n| n.checked_mul(s.samples));
+    let samples = s
+        .width
+        .checked_mul(s.height)
+        .and_then(|n| n.checked_mul(s.samples));
     if c.is_empty()
         || c.x.checked_add(c.width).is_none_or(|x| x > s.width)
         || c.y.checked_add(c.height).is_none_or(|y| y > s.height)
@@ -205,7 +232,10 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     }
     // LinearRaw can be monochrome (one sample) or RGB (three); CFA data needs one.
     if s.samples != 1 && s.samples != 3 {
-        return Err(RawError::unsupported(format!("{} samples per pixel", s.samples)));
+        return Err(RawError::unsupported(format!(
+            "{} samples per pixel",
+            s.samples
+        )));
     }
     if let Some(cfa) = &s.cfa
         && (s.samples != 1
@@ -219,7 +249,14 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
         return Err(RawError::malformed("invalid sensor CFA pattern"));
     }
     let bayer = s.cfa.as_ref().is_none_or(|cfa| cfa.is_bayer());
-    let ahd_jobs = working_memory(c.width, c.height, s.cfa.is_some(), bayer, opts, par::workers())?;
+    let ahd_jobs = working_memory(
+        c.width,
+        c.height,
+        s.cfa.is_some(),
+        bayer,
+        opts,
+        par::workers(),
+    )?;
     let mut warnings = s.warnings.clone();
     let sc = Scale::new(s);
 
@@ -232,7 +269,9 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     let mono = s.is_monochrome();
     let look = opts.camera_look.as_ref().filter(|l| l.is_usable() && !mono);
     if opts.camera_look.is_some() && look.is_none() && !mono {
-        warnings.push("the supplied camera look is not usable (non-finite or singular); ignored".into());
+        warnings.push(
+            "the supplied camera look is not usable (non-finite or singular); ignored".into(),
+        );
     }
     let to_xyz: Mat3 = match (look, s.color.balanced_to_xyz_d50(neutral)) {
         (Some(l), _) => {
@@ -266,8 +305,16 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
             // Fast path: black varies at most per 2×2 position, so black and gain
             // repeat every `period` columns (the CFA width, made even).
             let bl = &s.black;
-            let periodic = bl.delta_h.is_empty() && bl.delta_v.is_empty() && matches!(bl.rows, 1 | 2) && matches!(bl.cols, 1 | 2) && cfa.width <= 16;
-            let period = if cfa.width % 2 == 0 { cfa.width.max(2) } else { cfa.width * 2 };
+            let periodic = bl.delta_h.is_empty()
+                && bl.delta_v.is_empty()
+                && matches!(bl.rows, 1 | 2)
+                && matches!(bl.cols, 1 | 2)
+                && cfa.width <= 16;
+            let period = if cfa.width % 2 == 0 {
+                cfa.width.max(2)
+            } else {
+                cfa.width * 2
+            };
             plane.fill_rows(band, |y0, chunk| {
                 for (r, prow) in chunk.chunks_exact_mut(stride).enumerate() {
                     let row = &mut prow[PAD..PAD + w];
@@ -277,9 +324,18 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
                         let k: Vec<(f32, f32)> = (0..period)
                             .map(|p| {
                                 let x = c.x + p;
-                                let black = bl.at(x.saturating_sub(s.active.x), y.saturating_sub(s.active.y), 0, 1);
+                                let black = bl.at(
+                                    x.saturating_sub(s.active.x),
+                                    y.saturating_sub(s.active.y),
+                                    0,
+                                    1,
+                                );
                                 let range = s.white[0] - black;
-                                let gain = if range >= 1.0 { mult[usize::from(cfa.color(x, y)).min(2)] / range } else { 0.0 };
+                                let gain = if range >= 1.0 {
+                                    mult[usize::from(cfa.color(x, y)).min(2)] / range
+                                } else {
+                                    0.0
+                                };
                                 (black, gain)
                             })
                             .collect();
@@ -293,7 +349,12 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
                             }
                             Some(l) => {
                                 for ((v, &raw), &(black, gain)) in row.iter_mut().zip(src).zip(ks) {
-                                    let lin = f32::from(l.get(usize::from(raw)).or_else(|| l.last()).copied().unwrap_or(raw));
+                                    let lin = f32::from(
+                                        l.get(usize::from(raw))
+                                            .or_else(|| l.last())
+                                            .copied()
+                                            .unwrap_or(raw),
+                                    );
                                     *v = ((lin - black) * gain).clamp(0.0, 1.0);
                                 }
                             }
@@ -315,14 +376,24 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
                 }
             });
             plane.fill_borders();
-            let names = |p: &[u8]| p.iter().map(|c| ['R', 'G', 'B'][usize::from(*c).min(2)]).collect::<String>();
+            let names = |p: &[u8]| {
+                p.iter()
+                    .map(|c| ['R', 'G', 'B'][usize::from(*c).min(2)])
+                    .collect::<String>()
+            };
             if bayer {
                 let p = cfa.phase(c.x, c.y);
                 pattern = Some(names(&p));
                 rgb = demosaic(&plane, p, opts.demosaic, &to_xyz, ahd_jobs);
             } else {
                 let pat = Pattern::of(cfa, c.x, c.y);
-                pattern = Some(pat.colors.chunks(pat.w.max(1)).map(names).collect::<Vec<_>>().join("/"));
+                pattern = Some(
+                    pat.colors
+                        .chunks(pat.w.max(1))
+                        .map(names)
+                        .collect::<Vec<_>>()
+                        .join("/"),
+                );
                 rgb = demosaic_cfa(&plane, &pat);
             }
             drop(plane);
@@ -337,7 +408,8 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
                         for k in 0..3 {
                             // Monochrome: the one sample in all three channels.
                             let sample = k.min(s.samples.saturating_sub(1));
-                            row[i * 3 + k] = (sc.value(c.x + i, y, sample) * mult[k]).clamp(0.0, 1.0);
+                            row[i * 3 + k] =
+                                (sc.value(c.x + i, y, sample) * mult[k]).clamp(0.0, 1.0);
                         }
                     }
                     for k in 0..s.samples.min(3) {
@@ -357,14 +429,26 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     let y_row = color::rgb_to_xyz(color::ROMM, color::D50_XY)[1].map(|v| v as f32);
     let lum = |v: &[f32; 3]| y_row[0] * v[0] + y_row[1] * v[1] + y_row[2] * v[2];
     // Monochrome: the one sample, grey; no colour matrix.
-    let pro = |p: &[f32]| if mono { [grey_gain * p[0]; 3] } else { [0, 1, 2].map(|k| out_m[k][0] * p[0] + out_m[k][1] * p[1] + out_m[k][2] * p[2]) };
+    let pro = |p: &[f32]| {
+        if mono {
+            [grey_gain * p[0]; 3]
+        } else {
+            [0, 1, 2].map(|k| out_m[k][0] * p[0] + out_m[k][1] * p[1] + out_m[k][2] * p[2])
+        }
+    };
     let haze = Haze::new(w, h, |i| pro(&rgb[i * 3..i * 3 + 3]), opts.tone.dehaze);
     // Linear ProPhoto of pixel `i` after Dehaze.
     let linear = |i: usize, p: &[f32]| {
         let v = pro(p);
         haze.as_ref().map_or(v, |z| z.apply(i % w, i / w, v))
     };
-    let mut map = ToneMap::new(w, h, |i| lum(&linear(i, &rgb[i * 3..i * 3 + 3])), opts.tone, s.black_point);
+    let mut map = ToneMap::new(
+        w,
+        h,
+        |i| lum(&linear(i, &rgb[i * 3..i * 3 + 3])),
+        opts.tone,
+        s.black_point,
+    );
     if let (Some(m), Some(_)) = (&mut map, &haze) {
         // The black point belongs to the default rendering: Dehaze does not move it (taken after
         // Dehaze it fell to almost 0, and Dehaze darkened less than Photoshop's).
@@ -378,7 +462,13 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     par::chunks_mut(&mut out, band * w * 3, |b, chunk| {
         let start = b * band * w * 3;
         let src = &rgb[start..start + chunk.len()];
-        for (i, (o, p)) in chunk.as_chunks_mut::<3>().0.iter_mut().zip(src.as_chunks::<3>().0).enumerate() {
+        for (i, (o, p)) in chunk
+            .as_chunks_mut::<3>()
+            .0
+            .iter_mut()
+            .zip(src.as_chunks::<3>().0)
+            .enumerate()
+        {
             let mut v = linear(b * band * w + i, p);
             if let Some(m) = &map {
                 let g = m.gain(i % w, b * band + i / w, lum(&v));
@@ -394,7 +484,11 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
     rgb.clear();
     rgb.shrink_to_fit();
 
-    let (out, ow, oh) = if opts.orient { orient(out, w, h, s.orientation) } else { (out, w, h) };
+    let (out, ow, oh) = if opts.orient {
+        orient(out, w, h, s.orientation)
+    } else {
+        (out, w, h)
+    };
     let nmax = mult.iter().cloned().fold(f32::MAX, f32::min).max(1e-6);
     Ok(Developed {
         width: ow as u32,
@@ -419,28 +513,47 @@ pub fn develop_sensor(s: &Sensor, opts: &DevelopOptions) -> Result<Developed> {
 /// planes are freed before the u16 output is allocated; AHD scratch is bounded
 /// by reducing simultaneous bands when needed. Sensor storage belongs to the
 /// caller and is checked separately by the decoder.
-fn working_memory(w: usize, h: usize, cfa: bool, bayer: bool, opts: &DevelopOptions, workers: usize) -> Result<usize> {
+fn working_memory(
+    w: usize,
+    h: usize,
+    cfa: bool,
+    bayer: bool,
+    opts: &DevelopOptions,
+    workers: usize,
+) -> Result<usize> {
     let limits = &opts.limits;
     limits.check(w as u64, h as u64, 18)?;
     let pixels = (w as u64).saturating_mul(h as u64);
-    let output = pixels.saturating_mul(18).saturating_add((GAMMA_STEPS as u64 + 2) * 4);
+    let output = pixels
+        .saturating_mul(18)
+        .saturating_add((GAMMA_STEPS as u64 + 2) * 4);
     let mut peak = output;
     let mut jobs = workers.max(1);
     if cfa {
-        let plane = (w as u64).saturating_add(2 * PAD as u64).saturating_mul((h as u64).saturating_add(2 * PAD as u64)).saturating_mul(4);
-        let mut mosaic = pixels.saturating_mul(if bayer { 12 } else { 16 }).saturating_add(plane);
+        let plane = (w as u64)
+            .saturating_add(2 * PAD as u64)
+            .saturating_mul((h as u64).saturating_add(2 * PAD as u64))
+            .saturating_mul(4);
+        let mut mosaic = pixels
+            .saturating_mul(if bayer { 12 } else { 16 })
+            .saturating_add(plane);
         if bayer && opts.demosaic == Demosaic::Ahd {
             mosaic = mosaic.saturating_add(crate::demosaic::AHD_TABLE_BYTES);
             let scratch = crate::demosaic::ahd_scratch(w as u64, h as u64);
             let available = limits.max_alloc.saturating_sub(mosaic) / scratch.max(1);
-            jobs = jobs.min(crate::demosaic::ahd_bands(h)).min(usize::try_from(available).unwrap_or(usize::MAX));
+            jobs = jobs
+                .min(crate::demosaic::ahd_bands(h))
+                .min(usize::try_from(available).unwrap_or(usize::MAX));
             // At least one band must fit, even when no parallelism is available.
             mosaic = mosaic.saturating_add(scratch.saturating_mul(jobs.max(1) as u64));
         }
         peak = peak.max(mosaic);
     }
     if peak > limits.max_alloc || usize::try_from(peak).is_err() {
-        return Err(RawError::LimitExceeded(format!("{peak} bytes of RAW working memory exceed {}", limits.max_alloc)));
+        return Err(RawError::LimitExceeded(format!(
+            "{peak} bytes of RAW working memory exceed {}",
+            limits.max_alloc
+        )));
     }
     Ok(jobs.max(1))
 }
@@ -457,7 +570,12 @@ fn gain_row(s: &Sensor, y: usize, x0: usize, w: usize, k: usize) -> Option<Vec<f
     let rv = (ay as f64 + 0.5) / a.height as f64;
     let mut out: Option<Vec<f32>> = None;
     for m in &s.gain_maps {
-        if k < m.plane || k >= m.plane.saturating_add(m.planes) || ay < m.top || ay >= m.bottom || !(ay - m.top).is_multiple_of(m.row_pitch) {
+        if k < m.plane
+            || k >= m.plane.saturating_add(m.planes)
+            || ay < m.top
+            || ay >= m.bottom
+            || !(ay - m.top).is_multiple_of(m.row_pitch)
+        {
             continue;
         }
         let row = m.row(rv, k - m.plane);
@@ -526,14 +644,22 @@ impl GammaLut {
 /// `curve` at linear `v`: linear interpolation between the points in log₂ of the input, a line
 /// through 0 below the first point, the last output beyond the last.
 pub(crate) fn tone(curve: &[[f32; 2]], v: f32) -> f32 {
-    let (Some(first), Some(last)) = (curve.first(), curve.last()) else { return v };
+    let (Some(first), Some(last)) = (curve.first(), curve.last()) else {
+        return v;
+    };
     if v <= first[0] {
-        return if first[0] > 0.0 { v * first[1] / first[0] } else { first[1] };
+        return if first[0] > 0.0 {
+            v * first[1] / first[0]
+        } else {
+            first[1]
+        };
     }
     if v >= last[0] {
         return last[1];
     }
-    let i = curve.partition_point(|p| p[0] <= v).clamp(1, curve.len() - 1);
+    let i = curve
+        .partition_point(|p| p[0] <= v)
+        .clamp(1, curve.len() - 1);
     let ([x0, y0], [x1, y1]) = (curve[i - 1], curve[i]);
     let f = (v.log2() - x0.log2()) / (x1.log2() - x0.log2());
     y0 + (y1 - y0) * f
@@ -608,7 +734,10 @@ mod tests {
 
     #[test]
     fn working_memory_accounts_for_padding_and_at_least_one_ahd_band() {
-        let mut opts = DevelopOptions { demosaic: Demosaic::Ahd, ..Default::default() };
+        let mut opts = DevelopOptions {
+            demosaic: Demosaic::Ahd,
+            ..Default::default()
+        };
         opts.limits.max_alloc = 100 * 100 * 22;
         assert!(working_memory(100, 100, true, true, &opts, 1).is_err());
         opts.demosaic = Demosaic::Mhc;
@@ -623,7 +752,11 @@ mod tests {
         for i in 0..=100_000 {
             let v = i as f32 / 100_000.0;
             let exact = v.powf(1.0 / 1.8) * 65535.0;
-            assert!((f32::from(lut.encode(v)) - exact).abs() <= 1.0, "{v}: {} vs {exact}", lut.encode(v));
+            assert!(
+                (f32::from(lut.encode(v)) - exact).abs() <= 1.0,
+                "{v}: {} vs {exact}",
+                lut.encode(v)
+            );
         }
         assert_eq!(lut.encode(-1.0), 0);
         assert_eq!(lut.encode(2.0), 65535);
@@ -637,11 +770,22 @@ mod tests {
         let near = |got: u16, want: f32| (f32::from(got) - want).abs() <= 2.0;
         // On a point, between points (linear in log2 of the input), on the line through 0 below the first.
         assert!(near(lut.encode(0.25), code(0.5)));
-        assert!(near(lut.encode(0.5), code(0.75)), "{} vs {}", lut.encode(0.5), code(0.75));
+        assert!(
+            near(lut.encode(0.5), code(0.75)),
+            "{} vs {}",
+            lut.encode(0.5),
+            code(0.75)
+        );
         assert!(near(lut.encode(0.125), code(0.25)));
         assert_eq!(lut.encode(0.0), 0);
         assert_eq!(lut.encode(1.0), 65535);
-        assert!((0..1000).map(|i| lut.encode(i as f32 / 999.0)).collect::<Vec<_>>().windows(2).all(|w| w[1] >= w[0]));
+        assert!(
+            (0..1000)
+                .map(|i| lut.encode(i as f32 / 999.0))
+                .collect::<Vec<_>>()
+                .windows(2)
+                .all(|w| w[1] >= w[0])
+        );
         // No curve: the plain gamma 1.8.
         assert!(near(GammaLut::with_curve(&[]).encode(0.25), code(0.25)));
     }
@@ -650,7 +794,13 @@ mod tests {
     fn orientations() {
         // 3×2 image, pixel value = index.
         let src: Vec<u16> = (0..6).flat_map(|i| [i, i, i]).collect();
-        let px = |v: &[u16]| v.as_chunks::<3>().0.iter().map(|p| p[0]).collect::<Vec<_>>();
+        let px = |v: &[u16]| {
+            v.as_chunks::<3>()
+                .0
+                .iter()
+                .map(|p| p[0])
+                .collect::<Vec<_>>()
+        };
         assert_eq!(px(&orient(src.clone(), 3, 2, 1).0), vec![0, 1, 2, 3, 4, 5]);
         assert_eq!(px(&orient(src.clone(), 3, 2, 2).0), vec![2, 1, 0, 5, 4, 3]);
         assert_eq!(px(&orient(src.clone(), 3, 2, 3).0), vec![5, 4, 3, 2, 1, 0]);

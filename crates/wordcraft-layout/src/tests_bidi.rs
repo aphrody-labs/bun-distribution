@@ -18,7 +18,8 @@ fn doc_of(paras: &[(&str, bool)]) -> Document {
     for (i, (_, rtl)) in paras.iter().enumerate() {
         if *rtl {
             let at = Pos::body(i, 0);
-            d.format_paragraphs(&at, &at, &|p: &mut ParaProps| p.bidi = Some(true)).unwrap();
+            d.format_paragraphs(&at, &at, &|p: &mut ParaProps| p.bidi = Some(true))
+                .unwrap();
         }
     }
     d
@@ -28,7 +29,13 @@ fn doc_of(paras: &[(&str, bool)]) -> Document {
 fn first_line(l: &DocLayout, i: u32) -> (&ParaLayout, f32) {
     for p in &l.pages {
         for it in &p.items {
-            if let Placed::Lines { story: StoryRef::Body, path, para, x, .. } = it
+            if let Placed::Lines {
+                story: StoryRef::Body,
+                path,
+                para,
+                x,
+                ..
+            } = it
                 && path.0 == vec![i]
             {
                 return (para, *x);
@@ -47,7 +54,9 @@ fn caret_x(l: &DocLayout, i: usize, off: usize) -> f32 {
 fn cluster_x(l: &DocLayout, i: u32, off: usize) -> f32 {
     let (pl, x) = first_line(l, i);
     let line = &pl.lines[0];
-    let k = (line.c0..line.c1).find(|&k| pl.clusters[k].start == off).unwrap_or_else(|| panic!("no cluster at {off}"));
+    let k = (line.c0..line.c1)
+        .find(|&k| pl.clusters[k].start == off)
+        .unwrap_or_else(|| panic!("no cluster at {off}"));
     x + line.cl_left(k).unwrap()
 }
 
@@ -59,7 +68,10 @@ fn at(s: &str, n: usize) -> usize {
 #[test]
 fn visual_order_follows_uax9_rule_l2() {
     // The example from UAX #9 / unicode-bidi: levels 0 0 0 1 1 1 2 2.
-    assert_eq!(visual_order(&[0, 0, 0, 1, 1, 1, 2, 2]), vec![0, 1, 2, 6, 7, 5, 4, 3]);
+    assert_eq!(
+        visual_order(&[0, 0, 0, 1, 1, 1, 2, 2]),
+        vec![0, 1, 2, 6, 7, 5, 4, 3]
+    );
     assert_eq!(visual_order(&[1, 1, 1]), vec![2, 1, 0]);
     assert_eq!(visual_order(&[0, 0]), vec![0, 1]);
     assert_eq!(visual_order(&[]), Vec::<usize>::new());
@@ -69,13 +81,24 @@ fn visual_order_follows_uax9_rule_l2() {
 
 #[test]
 fn levels_for_persian_with_latin_and_numbers() {
-    assert!(bidi_levels("plain English", false).is_empty(), "pure LTR paragraphs skip the algorithm");
+    assert!(
+        bidi_levels("plain English", false).is_empty(),
+        "pure LTR paragraphs skip the algorithm"
+    );
     let s = "سلام Word ۱۴۰۳";
     let lv = bidi_levels(s, true);
     assert_eq!(lv.len(), s.len());
     assert_eq!(lv[0] % 2, 1, "Persian letters are right to left");
-    assert_eq!(lv[at(s, 5)], 2, "Latin inside a right-to-left paragraph is embedded at level 2");
-    assert_eq!(lv[at(s, 10)], 2, "Persian digits are numbers: left to right inside right-to-left text");
+    assert_eq!(
+        lv[at(s, 5)],
+        2,
+        "Latin inside a right-to-left paragraph is embedded at level 2"
+    );
+    assert_eq!(
+        lv[at(s, 10)],
+        2,
+        "Persian digits are numbers: left to right inside right-to-left text"
+    );
     // In a left-to-right paragraph Persian is embedded at level 1.
     let lv = bidi_levels("Hello سلام", false);
     assert_eq!(lv[0], 0);
@@ -89,10 +112,19 @@ fn rtl_paragraph_is_right_aligned_and_reads_right_to_left() {
     let l = lay(&d);
     let right = 612.0 - 72.0;
     // The caret at the start of a right-to-left paragraph is at the right margin.
-    assert!((caret_x(&l, 0, 0) - right).abs() < 0.5, "start caret at {}", caret_x(&l, 0, 0));
+    assert!(
+        (caret_x(&l, 0, 0) - right).abs() < 0.5,
+        "start caret at {}",
+        caret_x(&l, 0, 0)
+    );
     // Each next character sits further left.
-    let xs: Vec<f32> = (0..s.chars().count()).map(|n| caret_x(&l, 0, at(s, n))).collect();
-    assert!(xs.windows(2).all(|w| w[1] < w[0] + 0.01), "caret moves leftwards: {xs:?}");
+    let xs: Vec<f32> = (0..s.chars().count())
+        .map(|n| caret_x(&l, 0, at(s, n)))
+        .collect();
+    assert!(
+        xs.windows(2).all(|w| w[1] < w[0] + 0.01),
+        "caret moves leftwards: {xs:?}"
+    );
     assert!(caret_x(&l, 0, s.len()) < xs[xs.len() - 1]);
     // Glyph boxes: the first letter is the rightmost.
     assert!(cluster_x(&l, 0, 0) > cluster_x(&l, 0, at(s, 5)));
@@ -103,9 +135,20 @@ fn ltr_paragraph_with_embedded_persian_word() {
     let s = "Hello سلام world";
     let d = doc_of(&[(s, false)]);
     let l = lay(&d);
-    let (h, sin, mim, w) = (cluster_x(&l, 0, 0), cluster_x(&l, 0, at(s, 6)), cluster_x(&l, 0, at(s, 9)), cluster_x(&l, 0, at(s, 11)));
-    assert!((h - 72.0).abs() < 0.5, "left-to-right paragraphs still start at the left margin");
-    assert!(h < mim && mim < sin && sin < w, "the Persian word reads right to left between the English ones: {h} {mim} {sin} {w}");
+    let (h, sin, mim, w) = (
+        cluster_x(&l, 0, 0),
+        cluster_x(&l, 0, at(s, 6)),
+        cluster_x(&l, 0, at(s, 9)),
+        cluster_x(&l, 0, at(s, 11)),
+    );
+    assert!(
+        (h - 72.0).abs() < 0.5,
+        "left-to-right paragraphs still start at the left margin"
+    );
+    assert!(
+        h < mim && mim < sin && sin < w,
+        "the Persian word reads right to left between the English ones: {h} {mim} {sin} {w}"
+    );
 }
 
 #[test]
@@ -116,11 +159,26 @@ fn numbers_and_latin_inside_persian_keep_their_order() {
     let l = lay(&d);
     let x = |n: usize| cluster_x(&l, 0, at(s, n));
     // Digits run left to right.
-    assert!(x(5) < x(6) && x(6) < x(7), "250 reads left to right: {} {} {}", x(5), x(6), x(7));
-    assert!(x(32) < x(33) && x(33) < x(34) && x(34) < x(35), "۱۴۰۳ reads left to right");
+    assert!(
+        x(5) < x(6) && x(6) < x(7),
+        "250 reads left to right: {} {} {}",
+        x(5),
+        x(6),
+        x(7)
+    );
+    assert!(
+        x(32) < x(33) && x(33) < x(34) && x(34) < x(35),
+        "۱۴۰۳ reads left to right"
+    );
     // "Word" reads left to right, and the words around it right to left.
-    assert!(x(20) < x(21) && x(21) < x(22) && x(22) < x(23), "Word reads left to right");
-    assert!(x(0) > x(9), "قیمت comes before تومان, so it is further right");
+    assert!(
+        x(20) < x(21) && x(21) < x(22) && x(22) < x(23),
+        "Word reads left to right"
+    );
+    assert!(
+        x(0) > x(9),
+        "قیمت comes before تومان, so it is further right"
+    );
     assert!(x(9) > x(20), "تومان is right of Word");
     // The final full stop is at the paragraph's end: the far left.
     let dot = x(s.chars().count() - 1);
@@ -131,7 +189,11 @@ fn numbers_and_latin_inside_persian_keep_their_order() {
 
 #[test]
 fn caret_and_hit_agree_in_bidi_text() {
-    for (s, rtl) in [("سلام world ۱۲۳", true), ("Hello سلام دنیا end", false), ("کتاب «WordCraft» (نسخه ۲)", true)] {
+    for (s, rtl) in [
+        ("سلام world ۱۲۳", true),
+        ("Hello سلام دنیا end", false),
+        ("کتاب «WordCraft» (نسخه ۲)", true),
+    ] {
         let d = doc_of(&[(s, rtl)]);
         let l = lay(&d);
         let (pl, _) = first_line(&l, 0);
@@ -139,10 +201,17 @@ fn caret_and_hit_agree_in_bidi_text() {
         let mut seen: Vec<(usize, f32)> = Vec::new();
         for off in offs {
             let c = l.caret(&Pos::body(0, off)).unwrap();
-            let back = l.hit(c.page, c.x, c.top + c.height / 2.0, StoryRef::Body).unwrap();
+            let back = l
+                .hit(c.page, c.x, c.top + c.height / 2.0, StoryRef::Body)
+                .unwrap();
             // A click on a caret position finds an offset drawn at the same place.
             let bx = l.caret(&back).unwrap().x;
-            assert!((bx - c.x).abs() < 0.01, "{s:?}: offset {off} at {} came back as {} at {bx}", c.x, back.off);
+            assert!(
+                (bx - c.x).abs() < 0.01,
+                "{s:?}: offset {off} at {} came back as {} at {bx}",
+                c.x,
+                back.off
+            );
             seen.push((off, c.x));
         }
         assert!(seen.len() > 5);
@@ -169,14 +238,25 @@ fn visual_steps_cover_the_line_in_order() {
             }
         }
     }
-    assert!(xs.windows(2).all(|w| w[1] < w[0]), "each step moves left: {xs:?}");
+    assert!(
+        xs.windows(2).all(|w| w[1] < w[0]),
+        "each step moves left: {xs:?}"
+    );
     // Every distinct caret position is visited (a lam-alef ligature, لا in سلام, puts two
     // offsets at one spot).
     let (pl, _) = first_line(&l, 0);
-    let mut distinct: Vec<f32> = pl.line_offsets(0).iter().filter_map(|o| pl.x_of(0, *o)).collect();
+    let mut distinct: Vec<f32> = pl
+        .line_offsets(0)
+        .iter()
+        .filter_map(|o| pl.x_of(0, *o))
+        .collect();
     distinct.sort_by(f32::total_cmp);
     distinct.dedup_by(|a, b| (*a - *b).abs() < 0.01);
-    assert_eq!(xs.len(), distinct.len(), "every caret position on the line is visited");
+    assert_eq!(
+        xs.len(),
+        distinct.len(),
+        "every caret position on the line is visited"
+    );
 }
 
 #[test]
@@ -198,15 +278,26 @@ fn rtl_indents_and_alignment_are_measured_from_the_right() {
     let s = "متن فارسی";
     let mut d = doc_of(&[(s, true), (s, true), (s, true)]);
     let p0 = Pos::body(0, 0);
-    d.format_paragraphs(&p0, &p0, &|p: &mut ParaProps| p.indent_left = Some(36.0)).unwrap();
+    d.format_paragraphs(&p0, &p0, &|p: &mut ParaProps| p.indent_left = Some(36.0))
+        .unwrap();
     let p1 = Pos::body(1, 0);
     // `Align::Right` is the end edge: the left in a right-to-left paragraph.
-    d.format_paragraphs(&p1, &p1, &|p: &mut ParaProps| p.align = Some(Align::Right)).unwrap();
+    d.format_paragraphs(&p1, &p1, &|p: &mut ParaProps| p.align = Some(Align::Right))
+        .unwrap();
     let p2 = Pos::body(2, 0);
-    d.format_paragraphs(&p2, &p2, &|p: &mut ParaProps| p.align = Some(Align::Center)).unwrap();
+    d.format_paragraphs(&p2, &p2, &|p: &mut ParaProps| p.align = Some(Align::Center))
+        .unwrap();
     let l = lay(&d);
-    assert!((caret_x(&l, 0, 0) - (540.0 - 36.0)).abs() < 0.5, "start indent on the right: {}", caret_x(&l, 0, 0));
-    assert!((caret_x(&l, 1, s.len()) - 72.0).abs() < 0.5, "end-aligned text ends at the left margin: {}", caret_x(&l, 1, s.len()));
+    assert!(
+        (caret_x(&l, 0, 0) - (540.0 - 36.0)).abs() < 0.5,
+        "start indent on the right: {}",
+        caret_x(&l, 0, 0)
+    );
+    assert!(
+        (caret_x(&l, 1, s.len()) - 72.0).abs() < 0.5,
+        "end-aligned text ends at the left margin: {}",
+        caret_x(&l, 1, s.len())
+    );
     let mid = (caret_x(&l, 2, 0) + caret_x(&l, 2, s.len())) / 2.0;
     assert!((mid - 306.0).abs() < 1.0, "centred: {mid}");
 }
@@ -223,12 +314,22 @@ fn rtl_list_label_sits_on_the_right() {
     let (pl, x) = first_line(&l, 0);
     let lab = pl.label.as_ref().expect("numbered");
     let text_right = caret_x(&l, 0, 0);
-    assert!(x + lab.x >= text_right - 0.5, "label {} is right of the text start {text_right}", x + lab.x);
+    assert!(
+        x + lab.x >= text_right - 0.5,
+        "label {} is right of the text start {text_right}",
+        x + lab.x
+    );
     assert!(x + lab.x + lab.width <= 540.5);
     // "1." reads right to left: the full stop is drawn left of the number.
     let st = &pl.styles[lab.style as usize];
     let (one, dot) = (st.face.glyph_for('1'), st.face.glyph_for('.'));
-    let gx = |gid: u32| lab.glyphs.iter().find(|g| g.gid == gid).map(|g| g.dx).unwrap();
+    let gx = |gid: u32| {
+        lab.glyphs
+            .iter()
+            .find(|g| g.gid == gid)
+            .map(|g| g.dx)
+            .unwrap()
+    };
     assert!(gx(dot) < gx(one), "label shows .1");
 }
 
@@ -236,13 +337,23 @@ fn rtl_list_label_sits_on_the_right() {
 fn rtl_empty_and_trailing_lines_mirror() {
     let d = doc_of(&[("", true)]);
     let l = lay(&d);
-    assert!((caret_x(&l, 0, 0) - 540.0).abs() < 0.5, "empty right-to-left paragraph: caret at the right margin");
+    assert!(
+        (caret_x(&l, 0, 0) - 540.0).abs() < 0.5,
+        "empty right-to-left paragraph: caret at the right margin"
+    );
     // A paragraph ending in a line break gets an empty last line, also on the right.
     let mut d = doc_of(&[("سطر", true)]);
     let end = "سطر".len();
-    d.para_mut(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().insert_text(end, "\n", &Default::default()).unwrap();
+    d.para_mut(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap()
+        .insert_text(end, "\n", &Default::default())
+        .unwrap();
     let l = lay(&d);
-    assert!((caret_x(&l, 0, end + 1) - 540.0).abs() < 0.5, "{}", caret_x(&l, 0, end + 1));
+    assert!(
+        (caret_x(&l, 0, end + 1) - 540.0).abs() < 0.5,
+        "{}",
+        caret_x(&l, 0, end + 1)
+    );
 }
 
 #[test]
@@ -253,13 +364,26 @@ fn bidi_display_draws_every_glyph_inside_the_line() {
     let items = display::page_display(&d, &l.pages[0], &Default::default());
     let mut n = 0;
     for it in &items {
-        if let display::Draw::Glyphs { glyphs, text, ranges, .. } = it {
+        if let display::Draw::Glyphs {
+            glyphs,
+            text,
+            ranges,
+            ..
+        } = it
+        {
             for (k, (_, x, _)) in glyphs.iter().enumerate() {
                 // A wrapped line's trailing spaces hang past its end edge: the left margin here.
-                if ranges.get(k).and_then(|r| text.get(r.clone())).is_some_and(|t| t.trim().is_empty()) {
+                if ranges
+                    .get(k)
+                    .and_then(|r| text.get(r.clone()))
+                    .is_some_and(|t| t.trim().is_empty())
+                {
                     continue;
                 }
-                assert!(*x >= 72.0 - 1.0 && *x <= 540.0 + 1.0, "glyph at {x} outside the text column");
+                assert!(
+                    *x >= 72.0 - 1.0 && *x <= 540.0 + 1.0,
+                    "glyph at {x} outside the text column"
+                );
                 n += 1;
             }
         }
@@ -268,7 +392,16 @@ fn bidi_display_draws_every_glyph_inside_the_line() {
     // Lines wrap and every line but the last is filled to the right margin.
     let (pl, x) = first_line(&l, 0);
     assert!(pl.lines.len() > 3);
-    assert!((x + pl.lines[0].vis.iter().map(|v| v.x + v.w).fold(0.0f32, f32::max) - 540.0).abs() < 1.0);
+    assert!(
+        (x + pl.lines[0]
+            .vis
+            .iter()
+            .map(|v| v.x + v.w)
+            .fold(0.0f32, f32::max)
+            - 540.0)
+            .abs()
+            < 1.0
+    );
 }
 
 #[test]
@@ -300,7 +433,10 @@ fn hostile_bidi_text_never_panics() {
 
 /// A face that has Arabic letters (installed system fonts), or `None` to skip.
 fn arabic_face() -> Option<wordcraft_fonts::FaceRef> {
-    wordcraft_fonts::FontDb::global().fallback_for('ب', 0).map(|f| wordcraft_fonts::FaceRef::of(&f)).filter(|f| f.covers('پ'))
+    wordcraft_fonts::FontDb::global()
+        .fallback_for('ب', 0)
+        .map(|f| wordcraft_fonts::FaceRef::of(&f))
+        .filter(|f| f.covers('پ'))
 }
 
 /// The glyph ids of each cluster, in order. A font may draw a letter as several glyphs (Noto
@@ -327,14 +463,30 @@ fn persian_letters_join_and_brackets_mirror() {
     let shaped = wordcraft_fonts::shape_run(&face, "ببب", &[], |c| c, true);
     let joined = cluster_glyphs(&shaped);
     assert_eq!(joined.len(), 3, "one cluster per letter: {joined:?}");
-    assert!(shaped.iter().all(|g| g.gid != 0), "the font has the letters");
+    assert!(
+        shaped.iter().all(|g| g.gid != 0),
+        "the font has the letters"
+    );
     // Initial, medial and final forms differ from the isolated letter.
-    assert!(joined.iter().any(|g| *g != isolated[0]), "cursive joining picks contextual forms: {joined:?} {isolated:?}");
+    assert!(
+        joined.iter().any(|g| *g != isolated[0]),
+        "cursive joining picks contextual forms: {joined:?} {isolated:?}"
+    );
     // Clusters come back in logical order.
     assert!(shaped.windows(2).all(|w| w[0].cluster <= w[1].cluster));
     // ZWNJ (نیم‌فاصله) breaks the join: "می‌خواهم" keeps می separate.
-    let with_zwnj = cluster_glyphs(&wordcraft_fonts::shape_run(&face, "ب\u{200C}ب", &[], |c| c, true));
-    assert_eq!(with_zwnj.first(), isolated.first(), "a letter before ZWNJ takes its isolated form");
+    let with_zwnj = cluster_glyphs(&wordcraft_fonts::shape_run(
+        &face,
+        "ب\u{200C}ب",
+        &[],
+        |c| c,
+        true,
+    ));
+    assert_eq!(
+        with_zwnj.first(),
+        isolated.first(),
+        "a letter before ZWNJ takes its isolated form"
+    );
     // In right-to-left text, "(" is drawn with the mirrored glyph.
     let open = wordcraft_fonts::shape_run(&face, "(", &[], |c| c, true);
     let close = wordcraft_fonts::shape_run(&face, ")", &[], |c| c, false);
@@ -357,8 +509,16 @@ fn persian_text_in_a_latin_font_stays_in_one_fallback_face() {
     let d = doc_of(&[(s, true)]);
     let l = lay(&d);
     let (pl, _) = first_line(&l, 0);
-    let word: Vec<u32> = pl.clusters.iter().filter(|c| c.end <= at(s, 8)).map(|c| pl.styles[c.style as usize].face.id()).collect();
-    assert!(word.windows(2).all(|w| w[0] == w[1]), "one face for the word: {word:?}");
+    let word: Vec<u32> = pl
+        .clusters
+        .iter()
+        .filter(|c| c.end <= at(s, 8))
+        .map(|c| pl.styles[c.style as usize].face.id())
+        .collect();
+    assert!(
+        word.windows(2).all(|w| w[0] == w[1]),
+        "one face for the word: {word:?}"
+    );
     // No .notdef glyphs.
     assert!(pl.glyphs.iter().all(|g| g.gid != 0));
 }
@@ -374,10 +534,19 @@ fn glyph_runs_carry_their_text_for_pdf_export() {
     });
     let mut all = String::new();
     for it in display::page_display(&d, &l.pages[0], &Default::default()) {
-        if let display::Draw::Glyphs { glyphs, text, ranges, .. } = it {
+        if let display::Draw::Glyphs {
+            glyphs,
+            text,
+            ranges,
+            ..
+        } = it
+        {
             assert_eq!(ranges.len(), glyphs.len(), "one text range per glyph");
             for r in &ranges {
-                assert!(text.get(r.clone()).is_some_and(|t| !t.is_empty()), "{r:?} in {text:?}");
+                assert!(
+                    text.get(r.clone()).is_some_and(|t| !t.is_empty()),
+                    "{r:?} in {text:?}"
+                );
             }
             // A ligature glyph (لا) shows both its letters (when the Persian font draws one: some,
             // such as Noto Naskh Arabic, draw the lam and the alef as glyphs of their own).
@@ -389,31 +558,58 @@ fn glyph_runs_carry_their_text_for_pdf_export() {
             all.push_str(&text);
         }
     }
-    assert_eq!(all.replace(' ', ""), s.replace(' ', ""), "every character is accounted for, in logical order");
+    assert_eq!(
+        all.replace(' ', ""),
+        s.replace(' ', ""),
+        "every character is accounted for, in logical order"
+    );
 }
 
 #[test]
 fn character_border_boxes_a_whole_rtl_word() {
     let s = "کتاب خوب";
     let mut d = doc_of(&[(s, true)]);
-    let b = wordcraft_doc::props::Border { space: 0.0, ..wordcraft_doc::props::Border::single(0.5) };
-    d.format_range(&Pos::body(0, 0), &Pos::body(0, at(s, 4)), &|c| c.border = Some(b)).unwrap();
+    let b = wordcraft_doc::props::Border {
+        space: 0.0,
+        ..wordcraft_doc::props::Border::single(0.5)
+    };
+    d.format_range(&Pos::body(0, 0), &Pos::body(0, at(s, 4)), &|c| {
+        c.border = Some(b)
+    })
+    .unwrap();
     let l = lay(&d);
     let (pl, x) = first_line(&l, 0);
     let line = &pl.lines[0];
-    let word: Vec<usize> = (line.c0..line.c1).filter(|&k| pl.clusters[k].end <= at(s, 4)).collect();
-    let lo = word.iter().filter_map(|&k| line.cl_left(k)).fold(f32::MAX, f32::min) + x;
-    let hi = word.iter().filter_map(|&k| line.cl_right(k)).fold(f32::MIN, f32::max) + x;
+    let word: Vec<usize> = (line.c0..line.c1)
+        .filter(|&k| pl.clusters[k].end <= at(s, 4))
+        .collect();
+    let lo = word
+        .iter()
+        .filter_map(|&k| line.cl_left(k))
+        .fold(f32::MAX, f32::min)
+        + x;
+    let hi = word
+        .iter()
+        .filter_map(|&k| line.cl_right(k))
+        .fold(f32::MIN, f32::max)
+        + x;
     // The box's top edge spans the whole word, which reads right to left.
     let top = display::page_display(&d, &l.pages[0], &Default::default())
         .into_iter()
         .filter_map(|it| match it {
-            display::Draw::Line { x0, y0, x1, y1, .. } if (y0 - y1).abs() < 0.01 && (x1 - x0).abs() > 1.0 => Some((x0.min(x1), x0.max(x1))),
+            display::Draw::Line { x0, y0, x1, y1, .. }
+                if (y0 - y1).abs() < 0.01 && (x1 - x0).abs() > 1.0 =>
+            {
+                Some((x0.min(x1), x0.max(x1)))
+            }
             _ => None,
         })
         .next()
         .expect("a border");
-    assert!((top.0 - lo).abs() < 0.5 && (top.1 - hi).abs() < 0.5, "box {top:?} vs word {lo}..{hi}");
+    assert!(
+        (top.0 - lo).abs() < 0.5 && (top.1 - hi).abs() < 0.5,
+        "box {top:?} vs word {lo}..{hi}"
+    );
 }
 
 #[test]
@@ -432,22 +628,53 @@ fn inline_picture_in_rtl_text_sits_in_its_place() {
         crop: [0.0; 4],
         ole: None,
     };
-    d.para_mut(StoryRef::Body, &wordcraft_doc::Path::top(0)).unwrap().insert_object(off, pic, &Default::default()).unwrap();
+    d.para_mut(StoryRef::Body, &wordcraft_doc::Path::top(0))
+        .unwrap()
+        .insert_object(off, pic, &Default::default())
+        .unwrap();
     let l = lay(&d);
     let (pl, x) = first_line(&l, 0);
     let line = &pl.lines[0];
-    let k = (line.c0..line.c1).find(|&k| matches!(pl.clusters[k].kind, para::ClKind::Object(_))).unwrap();
+    let k = (line.c0..line.c1)
+        .find(|&k| matches!(pl.clusters[k].kind, para::ClKind::Object(_)))
+        .unwrap();
     let (a, b) = (x + line.cl_left(k).unwrap(), x + line.cl_right(k).unwrap());
     let drawn: Vec<Rect> = display::page_display(&d, &l.pages[0], &Default::default())
         .into_iter()
-        .filter_map(|it| if let display::Draw::Image { rect, .. } = it { Some(rect) } else { None })
+        .filter_map(|it| {
+            if let display::Draw::Image { rect, .. } = it {
+                Some(rect)
+            } else {
+                None
+            }
+        })
         .collect();
     assert_eq!(drawn.len(), 1);
-    assert!((drawn[0].x - a).abs() < 0.5 && (drawn[0].x + drawn[0].w - b).abs() < 0.5, "picture {:?} vs its slot {a}..{b}", drawn[0]);
+    assert!(
+        (drawn[0].x - a).abs() < 0.5 && (drawn[0].x + drawn[0].w - b).abs() < 0.5,
+        "picture {:?} vs its slot {a}..{b}",
+        drawn[0]
+    );
     // The object placed for selection and dragging is at the same spot.
-    let placed: Vec<Rect> = l.pages[0].items.iter().filter_map(|it| if let Placed::Object { rect, .. } = it { Some(*rect) } else { None }).collect();
-    assert!(placed.iter().any(|r| (r.x - a).abs() < 0.5), "placed {placed:?} vs {a}");
-    assert!(a < 540.0 - 20.0, "after the first word, so left of the right margin");
+    let placed: Vec<Rect> = l.pages[0]
+        .items
+        .iter()
+        .filter_map(|it| {
+            if let Placed::Object { rect, .. } = it {
+                Some(*rect)
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert!(
+        placed.iter().any(|r| (r.x - a).abs() < 0.5),
+        "placed {placed:?} vs {a}"
+    );
+    assert!(
+        a < 540.0 - 20.0,
+        "after the first word, so left of the right margin"
+    );
 }
 
 /// A right-to-left table (`w:bidiVisual`, #362): the first logical column stands at the right
@@ -463,15 +690,31 @@ fn rtl_table_lays_its_columns_out_right_to_left() {
     // Start margin 10pt, end margin 2pt.
     t.props.cell_margins = Some([0.0, 10.0, 0.0, 2.0]);
     for (i, c) in t.rows[0].cells.iter_mut().enumerate() {
-        c.blocks = vec![wordcraft_doc::para_block(wordcraft_doc::Paragraph::with_text(&format!("c{i}"), Default::default()))];
+        c.blocks = vec![wordcraft_doc::para_block(
+            wordcraft_doc::Paragraph::with_text(&format!("c{i}"), Default::default()),
+        )];
     }
     // A thick start border on the first cell.
-    t.rows[0].cells[0].props.borders = Some(Borders { left: Some(Border::single(3.0)), ..Default::default() });
-    d.insert_block(StoryRef::Body, &Path::top(1), Block::Table(t)).unwrap();
+    t.rows[0].cells[0].props.borders = Some(Borders {
+        left: Some(Border::single(3.0)),
+        ..Default::default()
+    });
+    d.insert_block(StoryRef::Body, &Path::top(1), Block::Table(t))
+        .unwrap();
     let l = lay(&d);
     let items = &l.pages[0].items;
-    let cell =
-        |k: usize| items.iter().find_map(|i| if let Placed::Cell { rect, cell, .. } = i { (*cell == k).then_some(*rect) } else { None }).unwrap();
+    let cell = |k: usize| {
+        items
+            .iter()
+            .find_map(|i| {
+                if let Placed::Cell { rect, cell, .. } = i {
+                    (*cell == k).then_some(*rect)
+                } else {
+                    None
+                }
+            })
+            .unwrap()
+    };
     let (c0, c1, c2) = (cell(0), cell(1), cell(2));
     // Start-aligned against the right margin (72 + 468), first column rightmost.
     let right = 72.0 + 468.0;
@@ -480,14 +723,29 @@ fn rtl_table_lays_its_columns_out_right_to_left() {
     assert!((c1.right() - c0.x).abs() < 0.01 && (c2.right() - c1.x).abs() < 0.01);
     assert!((c2.x - (right - 300.0)).abs() < 2.0, "{c2:?}");
     // The first cell's text sits its end margin (2pt) in from the cell's left edge.
-    let text_x =
-        items.iter().find_map(|i| if let Placed::Lines { path, x, .. } = i { (path.0 == [1, 0, 0, 0]).then_some(*x) } else { None }).unwrap();
-    assert!((text_x - (c0.x + 2.0)).abs() < 0.5, "text at {text_x}, cell {c0:?}");
+    let text_x = items
+        .iter()
+        .find_map(|i| {
+            if let Placed::Lines { path, x, .. } = i {
+                (path.0 == [1, 0, 0, 0]).then_some(*x)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    assert!(
+        (text_x - (c0.x + 2.0)).abs() < 0.5,
+        "text at {text_x}, cell {c0:?}"
+    );
     // The thick start border is drawn on the cell's right edge.
     let thick: Vec<f32> = items
         .iter()
         .filter_map(|i| match i {
-            Placed::Rule { x0, x1, border, .. } if (x0 - x1).abs() < 0.01 && (border.width - 3.0).abs() < 0.01 => Some(*x0),
+            Placed::Rule { x0, x1, border, .. }
+                if (x0 - x1).abs() < 0.01 && (border.width - 3.0).abs() < 0.01 =>
+            {
+                Some(*x0)
+            }
             _ => None,
         })
         .collect();
@@ -506,16 +764,46 @@ fn rtl_section_puts_its_first_column_on_the_right() {
     let text = "Columns flow from the right edge in a right-to-left section. ".repeat(150);
     let mut d = Document::from_text(&text);
     d.last_section.rtl = true;
-    d.last_section.columns = Columns { count: 2, space: 36.0, separator: true, widths: Vec::new() };
+    d.last_section.columns = Columns {
+        count: 2,
+        space: 36.0,
+        separator: true,
+        widths: Vec::new(),
+    };
     let l = lay(&d);
     let page = &l.pages[0];
-    let xs: Vec<f32> = page.items.iter().filter_map(|i| if let Placed::Lines { x, .. } = i { Some(*x) } else { None }).collect();
+    let xs: Vec<f32> = page
+        .items
+        .iter()
+        .filter_map(|i| {
+            if let Placed::Lines { x, .. } = i {
+                Some(*x)
+            } else {
+                None
+            }
+        })
+        .collect();
     // Columns are 216pt wide: the first at 72 + 252, the second at the left margin.
-    assert!((xs[0] - (72.0 + 252.0)).abs() < 1.0, "first column on the right: {xs:?}");
-    assert!(xs.iter().any(|x| (x - 72.0).abs() < 1.0), "second column on the left: {xs:?}");
+    assert!(
+        (xs[0] - (72.0 + 252.0)).abs() < 1.0,
+        "first column on the right: {xs:?}"
+    );
+    assert!(
+        xs.iter().any(|x| (x - 72.0).abs() < 1.0),
+        "second column on the left: {xs:?}"
+    );
     let caret = l.caret(&Pos::body(0, 0)).unwrap();
     assert!(caret.x > 72.0 + 252.0 - 1.0, "{caret:?}");
-    let sep: Vec<f32> =
-        page.items.iter().filter_map(|i| if let Placed::Rule { x0, x1, .. } = i { ((x0 - x1).abs() < 0.01).then_some(*x0) } else { None }).collect();
+    let sep: Vec<f32> = page
+        .items
+        .iter()
+        .filter_map(|i| {
+            if let Placed::Rule { x0, x1, .. } = i {
+                ((x0 - x1).abs() < 0.01).then_some(*x0)
+            } else {
+                None
+            }
+        })
+        .collect();
     assert_eq!(sep, vec![72.0 + 234.0], "line between the columns");
 }

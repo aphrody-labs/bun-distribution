@@ -25,11 +25,22 @@ pub(crate) fn number(pdf: &[u8], mut at: usize) -> Option<(usize, usize)> {
     while pdf.get(at).is_some_and(u8::is_ascii_whitespace) {
         at += 1;
     }
-    let digits = pdf.get(at..)?.iter().take(MAX_DIGITS + 1).take_while(|b| b.is_ascii_digit()).count();
+    let digits = pdf
+        .get(at..)?
+        .iter()
+        .take(MAX_DIGITS + 1)
+        .take_while(|b| b.is_ascii_digit())
+        .count();
     if digits == 0 || digits > MAX_DIGITS {
         return None;
     }
-    Some((std::str::from_utf8(pdf.get(at..at + digits)?).ok()?.parse().ok()?, at + digits))
+    Some((
+        std::str::from_utf8(pdf.get(at..at + digits)?)
+            .ok()?
+            .parse()
+            .ok()?,
+        at + digits,
+    ))
 }
 
 impl Xref {
@@ -45,7 +56,12 @@ impl Xref {
         }
         let start = find(pdf, b"<<", find(pdf, b"trailer", table_end)?)?;
         let end = rfind(pdf.get(start..rfind(pdf, b"startxref")?)?, b">>")? + start + 2;
-        Some(Self { at, entries, count, trailer: (start, end) })
+        Some(Self {
+            at,
+            entries,
+            count,
+            trailer: (start, end),
+        })
     }
 
     /// Number of entries (objects `0..count`).
@@ -63,7 +79,9 @@ impl Xref {
 
     /// The in-use objects: number and offset, in number order.
     pub fn objects(&self, pdf: &[u8]) -> Vec<(u32, usize)> {
-        (1..u32::try_from(self.count).unwrap_or(u32::MAX)).filter_map(|n| Some((n, self.offset(pdf, n)?))).collect()
+        (1..u32::try_from(self.count).unwrap_or(u32::MAX))
+            .filter_map(|n| Some((n, self.offset(pdf, n)?)))
+            .collect()
     }
 
     /// Where the table (`xref`) starts.
@@ -119,7 +137,12 @@ pub(crate) struct Patch {
 
 impl Patch {
     pub fn new(xref: &Xref) -> Self {
-        Self { edits: vec![], objects: vec![], trailer: vec![], size: xref.count }
+        Self {
+            edits: vec![],
+            objects: vec![],
+            trailer: vec![],
+            size: xref.count,
+        }
     }
 
     /// Replace bytes `start..end` (inside the objects) with `with`; `start == end` inserts.
@@ -143,15 +166,23 @@ impl Patch {
     pub fn apply(mut self, pdf: &[u8], xref: &Xref) -> Result<Vec<u8>, PdfError> {
         let bad = |why: &str| PdfError::Write(format!("can't edit the written PDF: {why}"));
         self.edits.sort_by_key(|e| (e.0, e.1));
-        if self.edits.windows(2).any(|w| w[0].1 > w[1].0) || self.edits.iter().any(|e| e.0 > e.1 || e.1 > xref.at) {
+        if self.edits.windows(2).any(|w| w[0].1 > w[1].0)
+            || self.edits.iter().any(|e| e.0 > e.1 || e.1 > xref.at)
+        {
             return Err(bad("edits overlap"));
         }
         // Where a byte offset of the old file lands in the new one.
         let edits = &self.edits;
         let moved = |off: usize| -> usize {
-            edits.iter().filter(|e| e.1 <= off).fold(off as isize, |o, e| o + e.2.len() as isize - (e.1 - e.0) as isize) as usize
+            edits
+                .iter()
+                .filter(|e| e.1 <= off)
+                .fold(off as isize, |o, e| {
+                    o + e.2.len() as isize - (e.1 - e.0) as isize
+                }) as usize
         };
-        let added: usize = self.edits.iter().map(|e| e.2.len()).sum::<usize>() + self.objects.iter().map(|o| o.len() + 32).sum::<usize>();
+        let added: usize = self.edits.iter().map(|e| e.2.len()).sum::<usize>()
+            + self.objects.iter().map(|o| o.len() + 32).sum::<usize>();
         let mut out = Vec::with_capacity(pdf.len() + added + 64);
         let mut at = 0;
         for (start, end, new) in edits.iter() {
@@ -171,7 +202,9 @@ impl Patch {
         let table = out.len();
         let size = self.size + self.objects.len();
         out.extend_from_slice(format!("xref\n0 {size}\n").as_bytes());
-        let old = pdf.get(xref.entries..xref.entries + 20 * xref.count).ok_or_else(|| bad("bad cross-reference table"))?;
+        let old = pdf
+            .get(xref.entries..xref.entries + 20 * xref.count)
+            .ok_or_else(|| bad("bad cross-reference table"))?;
         for e in old.chunks(20) {
             match number(e, 0) {
                 Some((off, _)) if e.get(17) == Some(&b'n') => {
@@ -188,10 +221,14 @@ impl Patch {
         }
         // The trailer, with its size and the new entries.
         let (ts, te) = xref.trailer;
-        let dict = pdf.get(ts..te.saturating_sub(2)).ok_or_else(|| bad("bad trailer"))?;
+        let dict = pdf
+            .get(ts..te.saturating_sub(2))
+            .ok_or_else(|| bad("bad trailer"))?;
         let size_at = find(dict, b"/Size", 0).ok_or_else(|| bad("the trailer has no size"))? + 5;
         let (_, size_end) = number(dict, size_at).ok_or_else(|| bad("the trailer has no size"))?;
-        let (Some(head), Some(tail)) = (dict.get(..size_at), dict.get(size_end..)) else { return Err(bad("bad trailer")) };
+        let (Some(head), Some(tail)) = (dict.get(..size_at), dict.get(size_end..)) else {
+            return Err(bad("bad trailer"));
+        };
         out.extend_from_slice(b"trailer\n");
         out.extend_from_slice(head);
         out.extend_from_slice(format!(" {size}").as_bytes());

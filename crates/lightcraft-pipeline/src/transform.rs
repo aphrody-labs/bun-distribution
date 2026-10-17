@@ -27,7 +27,9 @@ pub fn mat_mul(a: &Mat3, b: &Mat3) -> Mat3 {
 }
 
 pub fn to_h(m: &Mat3) -> Homography {
-    Homography([m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2]])
+    Homography([
+        m[0][0], m[0][1], m[0][2], m[1][0], m[1][1], m[1][2], m[2][0], m[2][1], m[2][2],
+    ])
 }
 
 /// `K·R·K⁻¹` for a rotation `r` (rows) and focal length `f`.
@@ -67,7 +69,10 @@ pub fn recentre(h: &Homography) -> Homography {
 pub fn manual(g: &Geometry) -> Homography {
     let mut h = Homography::IDENTITY;
     if g.vertical != 0.0 || g.horizontal != 0.0 {
-        let r = mat_mul(&rot_y(g.horizontal / 100.0 * KEYSTONE_MAX), &rot_x(-g.vertical / 100.0 * KEYSTONE_MAX));
+        let r = mat_mul(
+            &rot_y(g.horizontal / 100.0 * KEYSTONE_MAX),
+            &rot_x(-g.vertical / 100.0 * KEYSTONE_MAX),
+        );
         h = recentre(&rotation_homography(&r, DEFAULT_FOCAL));
     }
     if g.rotate != 0.0 {
@@ -83,7 +88,18 @@ pub fn manual(g: &Geometry) -> Homography {
         h = Homography([s, 0.0, 0.0, 0.0, s, 0.0, 0.0, 0.0, 1.0]).mul(&h);
     }
     if g.offset_x != 0.0 || g.offset_y != 0.0 {
-        h = Homography([1.0, 0.0, g.offset_x / 100.0 * 0.5, 0.0, 1.0, -g.offset_y / 100.0 * 0.5, 0.0, 0.0, 1.0]).mul(&h);
+        h = Homography([
+            1.0,
+            0.0,
+            g.offset_x / 100.0 * 0.5,
+            0.0,
+            1.0,
+            -g.offset_y / 100.0 * 0.5,
+            0.0,
+            0.0,
+            1.0,
+        ])
+        .mul(&h);
     }
     h
 }

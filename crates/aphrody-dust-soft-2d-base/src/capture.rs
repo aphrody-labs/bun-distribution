@@ -1,8 +1,8 @@
 use super::BgObjPixel;
 use aphrody_dust_core::gpu::{
-    Scanline,
     engine_2d::{CaptureControl, Control},
     vram::Vram,
+    Scanline,
 };
 
 pub fn run(

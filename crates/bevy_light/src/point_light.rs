@@ -1,6 +1,6 @@
 use bevy_asset::Handle;
 use bevy_camera::{
-    primitives::{CubeMapFace, CubemapFrusta, CubemapLayout, Frustum, Sphere, CUBE_MAP_FACES},
+    primitives::{CUBE_MAP_FACES, CubeMapFace, CubemapFrusta, CubemapLayout, Frustum, Sphere},
     visibility::{self, CubemapVisibleEntities, ViewVisibility, Visibility, VisibilityClass},
 };
 use bevy_color::Color;

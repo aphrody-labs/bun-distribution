@@ -19,7 +19,12 @@ fn be16(b: &[u8], o: usize) -> Option<u16> {
     Some(u16::from_be_bytes([*b.get(o)?, *b.get(o + 1)?]))
 }
 fn be32(b: &[u8], o: usize) -> Option<u32> {
-    Some(u32::from_be_bytes([*b.get(o)?, *b.get(o + 1)?, *b.get(o + 2)?, *b.get(o + 3)?]))
+    Some(u32::from_be_bytes([
+        *b.get(o)?,
+        *b.get(o + 1)?,
+        *b.get(o + 2)?,
+        *b.get(o + 3)?,
+    ]))
 }
 
 fn read_at<R: Read + Seek>(r: &mut R, off: u64, len: usize) -> Option<Vec<u8>> {
@@ -34,15 +39,23 @@ fn read_at<R: Read + Seek>(r: &mut R, off: u64, len: usize) -> Option<Vec<u8>> {
 
 /// Read the names of every face in a font file (a single font or a collection).
 pub fn read_faces<R: Read + Seek>(r: &mut R) -> Vec<FaceNames> {
-    let Some(head) = read_at(r, 0, 12) else { return Vec::new() };
+    let Some(head) = read_at(r, 0, 12) else {
+        return Vec::new();
+    };
     let offsets: Vec<u32> = if &head[0..4] == b"ttcf" {
         let n = be32(&head, 8).unwrap_or(0).min(256) as usize;
-        let Some(t) = read_at(r, 12, n * 4) else { return Vec::new() };
+        let Some(t) = read_at(r, 12, n * 4) else {
+            return Vec::new();
+        };
         (0..n).filter_map(|i| be32(&t, i * 4)).collect()
     } else {
         vec![0]
     };
-    offsets.iter().enumerate().filter_map(|(i, &o)| read_face(r, o as u64, i as u32)).collect()
+    offsets
+        .iter()
+        .enumerate()
+        .filter_map(|(i, &o)| read_face(r, o as u64, i as u32))
+        .collect()
 }
 
 /// Names from in-memory font data.
@@ -73,7 +86,9 @@ fn read_face<R: Read + Seek>(r: &mut R, off: u64, index: u32) -> Option<FaceName
     let nb = read_at(r, no, nl)?;
     let get = |id: u16| name_string(&nb, id);
     let family = get(16).or_else(|| get(1))?;
-    let style = get(17).or_else(|| get(2)).unwrap_or_else(|| "Regular".into());
+    let style = get(17)
+        .or_else(|| get(2))
+        .unwrap_or_else(|| "Regular".into());
     let full_name = get(4).unwrap_or_else(|| format!("{family} {style}"));
     let (mut weight, mut italic) = (400u16, false);
     if let Some((oo, ol)) = os2
@@ -84,7 +99,14 @@ fn read_face<R: Read + Seek>(r: &mut R, off: u64, index: u32) -> Option<FaceName
     }
     let sl = style.to_ascii_lowercase();
     italic |= sl.contains("italic") || sl.contains("oblique");
-    Some(FaceNames { index, family, style, full_name, weight, italic })
+    Some(FaceNames {
+        index,
+        family,
+        style,
+        full_name,
+        weight,
+        italic,
+    })
 }
 
 /// A name-table string by id, preferring Windows Unicode English, then any Unicode, then Mac Roman.
@@ -94,22 +116,46 @@ fn name_string(b: &[u8], id: u16) -> Option<String> {
     let mut best: Option<(u8, String)> = None;
     for i in 0..count {
         let r = 6 + i * 12;
-        let (plat, enc, lang, nid, len, off) =
-            (be16(b, r)?, be16(b, r + 2)?, be16(b, r + 4)?, be16(b, r + 6)?, be16(b, r + 8)? as usize, be16(b, r + 10)? as usize);
+        let (plat, enc, lang, nid, len, off) = (
+            be16(b, r)?,
+            be16(b, r + 2)?,
+            be16(b, r + 4)?,
+            be16(b, r + 6)?,
+            be16(b, r + 8)? as usize,
+            be16(b, r + 10)? as usize,
+        );
         if nid != id {
             continue;
         }
         let raw = b.get(storage + off..storage + off + len)?;
         let (rank, s) = match plat {
             3 if enc == 1 || enc == 10 => {
-                let u: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
-                (if lang == 0x409 { 0 } else { 1 }, String::from_utf16_lossy(&u))
+                let u: Vec<u16> = raw
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                    .collect();
+                (
+                    if lang == 0x409 { 0 } else { 1 },
+                    String::from_utf16_lossy(&u),
+                )
             }
             0 => {
-                let u: Vec<u16> = raw.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+                let u: Vec<u16> = raw
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                    .collect();
                 (2, String::from_utf16_lossy(&u))
             }
-            1 if enc == 0 => (3, raw.iter().map(|&c| if c < 128 { c as char } else { '?' }).collect()),
+            1 if enc == 0 => (
+                3,
+                raw.iter()
+                    .map(|&c| if c < 128 { c as char } else { '?' })
+                    .collect(),
+            ),
             _ => continue,
         };
         if best.as_ref().is_none_or(|(r0, _)| rank < *r0) {

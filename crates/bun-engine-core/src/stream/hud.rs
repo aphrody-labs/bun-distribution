@@ -5,11 +5,11 @@ use windows::{
     Win32::{
         Foundation::COLORREF,
         Graphics::Gdi::{
-            ANTIALIASED_QUALITY, BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BLACKNESS, CLIP_DEFAULT_PRECIS,
-            CreateCompatibleDC, CreateDIBSection, CreateFontW, DEFAULT_CHARSET, DIB_RGB_COLORS, DeleteDC,
-            DeleteObject, FF_MODERN, FIXED_PITCH, FW_BOLD, GdiFlush, HBITMAP, HDC, HFONT, HGDIOBJ,
-            OPAQUE, OUT_DEFAULT_PRECIS, PatBlt, SelectObject, SetBkColor, SetBkMode, SetTextColor,
-            TextOutW,
+            ANTIALIASED_QUALITY, BI_RGB, BITMAPINFO, BITMAPINFOHEADER, BLACKNESS,
+            CLIP_DEFAULT_PRECIS, CreateCompatibleDC, CreateDIBSection, CreateFontW,
+            DEFAULT_CHARSET, DIB_RGB_COLORS, DeleteDC, DeleteObject, FF_MODERN, FIXED_PITCH,
+            FW_BOLD, GdiFlush, HBITMAP, HDC, HFONT, HGDIOBJ, OPAQUE, OUT_DEFAULT_PRECIS, PatBlt,
+            SelectObject, SetBkColor, SetBkMode, SetTextColor, TextOutW,
         },
     },
     core::w,
@@ -53,7 +53,8 @@ impl HudRaster {
                 ..Default::default()
             };
             let mut bits = std::ptr::null_mut();
-            let bitmap = CreateDIBSection(Some(dc), &info, DIB_RGB_COLORS, &mut bits, None, 0).ok()?;
+            let bitmap =
+                CreateDIBSection(Some(dc), &info, DIB_RGB_COLORS, &mut bits, None, 0).ok()?;
             let font = CreateFontW(
                 -(LINE_HEIGHT as i32 - 3),
                 0,
@@ -75,7 +76,14 @@ impl HudRaster {
             SetTextColor(dc, COLORREF(0x00FF_FFFF));
             SetBkColor(dc, COLORREF(0));
             SetBkMode(dc, OPAQUE);
-            Some(Self { dc, bitmap, font, old_bitmap, old_font, bits: bits.cast() })
+            Some(Self {
+                dc,
+                bitmap,
+                font,
+                old_bitmap,
+                old_font,
+                bits: bits.cast(),
+            })
         }
     }
 
@@ -84,7 +92,14 @@ impl HudRaster {
         // SAFETY: drawing into our DIB section; GdiFlush makes the bits current before reading
         // exactly HUD_WIDTH * HUD_HEIGHT * 4 bytes from the section.
         unsafe {
-            let _ = PatBlt(self.dc, 0, 0, HUD_WIDTH as i32, HUD_HEIGHT as i32, BLACKNESS);
+            let _ = PatBlt(
+                self.dc,
+                0,
+                0,
+                HUD_WIDTH as i32,
+                HUD_HEIGHT as i32,
+                BLACKNESS,
+            );
             for (i, line) in lines.iter().take(HUD_LINES as usize).enumerate() {
                 let wide: Vec<u16> = line.encode_utf16().collect();
                 let _ = TextOutW(self.dc, 6, 4 + (i as u32 * LINE_HEIGHT) as i32, &wide);
@@ -101,7 +116,8 @@ impl HudRaster {
                     let text = bgra[i + 1];
                     // Text over a translucent dark panel, premultiplied.
                     let panel = if y < used_height { 150u16 } else { 0 };
-                    let a = (u16::from(text) + panel * (255 - u16::from(text)) / 255).min(255) as u8;
+                    let a =
+                        (u16::from(text) + panel * (255 - u16::from(text)) / 255).min(255) as u8;
                     let lum = text;
                     rgba[i] = (u16::from(lum) * 230 / 255) as u8;
                     rgba[i + 1] = lum;

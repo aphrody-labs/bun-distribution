@@ -108,7 +108,10 @@ fn read_header<R: Read>(reader: &mut R) -> std::io::Result<(CachedKind, CachedSy
     reader.read_exact(&mut magic)?;
 
     if magic != MAGIC {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "bad jit cache magic"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "bad jit cache magic",
+        ));
     }
 
     let mut version_bytes = [0u8; 4];
@@ -128,13 +131,23 @@ fn read_header<R: Read>(reader: &mut R) -> std::io::Result<(CachedKind, CachedSy
         0 => CachedKind::Ppc,
         1 => CachedKind::Dsp,
         2 => CachedKind::Vtx,
-        _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "bad kind tag")),
+        _ => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "bad kind tag",
+            ));
+        }
     };
 
     let system = match tag[1] {
         0 => CachedSystem::Gc,
         1 => CachedSystem::Wii,
-        _ => return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "bad system tag")),
+        _ => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "bad system tag",
+            ));
+        }
     };
 
     let mut count_bytes = [0u8; 4];
@@ -173,7 +186,10 @@ pub fn load_ppc_blocks(path: &Path) -> std::io::Result<Vec<CachedBlockPpc>> {
     let mut file = std::fs::File::open(path)?;
     let (kind, _system, count) = self::read_header(&mut file)?;
     if !matches!(kind, CachedKind::Ppc) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "kind mismatch"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "kind mismatch",
+        ));
     }
 
     let mut blocks = Vec::with_capacity(count as usize);
@@ -228,7 +244,10 @@ pub fn load_dsp_blocks(path: &Path) -> std::io::Result<Vec<CachedBlockDsp>> {
     let mut file = std::fs::File::open(path)?;
     let (kind, _system, count) = self::read_header(&mut file)?;
     if !matches!(kind, CachedKind::Dsp) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "kind mismatch"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "kind mismatch",
+        ));
     }
 
     let mut blocks = Vec::with_capacity(count as usize);
@@ -285,7 +304,10 @@ pub fn load_vtx_keys(path: &Path) -> std::io::Result<Vec<CachedVtxKey>> {
 
     let (kind, _system, count) = self::read_header(&mut file)?;
     if !matches!(kind, CachedKind::Vtx) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "kind mismatch"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "kind mismatch",
+        ));
     }
 
     let mut keys = Vec::with_capacity(count as usize);
@@ -302,7 +324,13 @@ pub fn load_vtx_keys(path: &Path) -> std::io::Result<Vec<CachedVtxKey>> {
         let vat_b = read_word(&mut file, &mut buf)?;
         let vat_c = read_word(&mut file, &mut buf)?;
 
-        keys.push(CachedVtxKey { vcd_lo, vcd_hi, vat_a, vat_b, vat_c });
+        keys.push(CachedVtxKey {
+            vcd_lo,
+            vcd_hi,
+            vat_a,
+            vat_b,
+            vat_c,
+        });
     }
 
     Ok(keys)

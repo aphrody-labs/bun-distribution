@@ -36,13 +36,24 @@ pub(crate) struct Checkpoints {
 fn pipes(g: &GpuContext) -> &Pipes {
     g.particles.get_or_init(|| {
         let d = &g.device;
-        let src = [include_str!("shaders/common.wgsl"), include_str!("shaders/kernels.wgsl"), include_str!("shaders/particles.wgsl")].concat();
-        let module =
-            d.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("effectcraft particles"), source: wgpu::ShaderSource::Wgsl(src.into()) });
+        let src = [
+            include_str!("shaders/common.wgsl"),
+            include_str!("shaders/kernels.wgsl"),
+            include_str!("shaders/particles.wgsl"),
+        ]
+        .concat();
+        let module = d.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("effectcraft particles"),
+            source: wgpu::ShaderSource::Wgsl(src.into()),
+        });
         let buffer = |binding: u32, ty: wgpu::BufferBindingType| wgpu::BindGroupLayoutEntry {
             binding,
             visibility: wgpu::ShaderStages::COMPUTE,
-            ty: wgpu::BindingType::Buffer { ty, has_dynamic_offset: false, min_binding_size: None },
+            ty: wgpu::BindingType::Buffer {
+                ty,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
             count: None,
         };
         let bgl = d.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -141,7 +152,12 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
         let mut c = g.particle_states.lock().ok()?;
         c.clock += 1;
         let now = c.clock;
-        match c.list.iter_mut().filter(|k| k.key == req.key && k.steps <= req.steps).max_by_key(|k| k.steps) {
+        match c
+            .list
+            .iter_mut()
+            .filter(|k| k.key == req.key && k.steps <= req.steps)
+            .max_by_key(|k| k.steps)
+        {
             Some(k) => {
                 k.used = now;
                 (k.steps, Some(k.buf.clone()), k.n)
@@ -153,7 +169,12 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
     let births: Vec<u8> = req.births.iter().flat_map(|b| b.to_le_bytes()).collect();
     let births = g.buffer_init(Some("births"), &births, wgpu::BufferUsages::STORAGE);
     let prev = prev.unwrap_or_else(|| {
-        d.create_buffer(&wgpu::BufferDescriptor { label: Some("particles"), size: STATE_BYTES, usage: wgpu::BufferUsages::STORAGE, mapped_at_creation: false })
+        d.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("particles"),
+            size: STATE_BYTES,
+            usage: wgpu::BufferUsages::STORAGE,
+            mapped_at_creation: false,
+        })
     });
     let next = d.create_buffer(&wgpu::BufferDescriptor {
         label: Some("particles"),
@@ -161,15 +182,31 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
         mapped_at_creation: false,
     });
-    let ub = g.buffer_init(Some("particles"), &uniforms(req, n, s0, prev_n), wgpu::BufferUsages::UNIFORM);
+    let ub = g.buffer_init(
+        Some("particles"),
+        &uniforms(req, n, s0, prev_n),
+        wgpu::BufferUsages::UNIFORM,
+    );
     let bg = d.create_bind_group(&wgpu::BindGroupDescriptor {
         label: None,
         layout: &p.bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: ub.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: births.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: prev.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 3, resource: next.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: ub.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: births.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: prev.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: next.as_entire_binding(),
+            },
         ],
     });
     let read = d.create_buffer(&wgpu::BufferDescriptor {
@@ -178,9 +215,14 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
         usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
-    let mut enc = d.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("particles") });
+    let mut enc = d.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+        label: Some("particles"),
+    });
     {
-        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some("particles"), timestamp_writes: None });
+        let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: Some("particles"),
+            timestamp_writes: None,
+        });
         pass.set_pipeline(&p.pipe);
         pass.set_bind_group(1, &bg, &[]);
         pass.dispatch_workgroups(n.div_ceil(64), 1, 1);
@@ -190,7 +232,12 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
     if let (Some(d), Some(k)) = (&deferred, key) {
         let row = usize::try_from(size).ok()?;
         let done = d.start(k, n, 1, [0.0; 2], 1.0);
-        g.map_readback(&read, row, row, 1, move |r| done(r.map_err(|e| log::error!("gpu particle readback: {e}")).ok()));
+        g.map_readback(&read, row, row, 1, move |r| {
+            done(
+                r.map_err(|e| log::error!("gpu particle readback: {e}"))
+                    .ok(),
+            )
+        });
         #[cfg(not(target_arch = "wasm32"))]
         let _ = g.poll_readbacks(wgpu::PollType::Poll);
         keep_checkpoint(g, req, n, next);
@@ -198,7 +245,10 @@ pub(crate) fn simulate(g: &GpuContext, req: &SimRequest) -> Option<Vec<SimPartic
         return Some(vec![]);
     }
     let row = usize::try_from(size).ok()?;
-    let bytes = g.read_buffer(&read, row, row, 1).map_err(|e| log::error!("gpu particle readback: {e}")).ok()?;
+    let bytes = g
+        .read_buffer(&read, row, row, 1)
+        .map_err(|e| log::error!("gpu particle readback: {e}"))
+        .ok()?;
     let parts = parse(&bytes);
     keep_checkpoint(g, req, n, next);
     Some(parts)
@@ -210,20 +260,37 @@ fn sim_key(req: &SimRequest) -> u128 {
     k.u64(req.key);
     k.u64(req.steps);
     k.u64(req.births.len() as u64);
-    k.bytes(&req.births.iter().flat_map(|b| b.to_le_bytes()).collect::<Vec<u8>>());
+    k.bytes(
+        &req.births
+            .iter()
+            .flat_map(|b| b.to_le_bytes())
+            .collect::<Vec<u8>>(),
+    );
     k.debug(&req.system);
     k.finish()
 }
 
 /// Live particles of a state buffer's bytes.
 fn parse(bytes: &[u8]) -> Vec<SimParticle> {
-    let f: Vec<f32> = bytes.as_chunks::<4>().0.iter().map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect();
+    let f: Vec<f32> = bytes
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+        .collect();
     f.as_chunks::<12>()
         .0
         .iter()
         .enumerate()
         .filter(|(_, s)| s[9] != 0.0)
-        .map(|(id, s)| SimParticle { p: [s[0], s[1], s[2]], v: [s[4], s[5], s[6]], age: s[3], life: s[7], rnd: s[8], id: id as u32 })
+        .map(|(id, s)| SimParticle {
+            p: [s[0], s[1], s[2]],
+            v: [s[4], s[5], s[6]],
+            age: s[3],
+            life: s[7],
+            rnd: s[8],
+            id: id as u32,
+        })
         .collect()
 }
 
@@ -231,10 +298,25 @@ fn parse(bytes: &[u8]) -> Vec<SimParticle> {
 fn keep_checkpoint(g: &GpuContext, req: &SimRequest, n: u32, next: wgpu::Buffer) {
     if let Ok(mut c) = g.particle_states.lock() {
         let now = c.clock;
-        c.list.retain(|k| !(k.key == req.key && k.steps == req.steps));
-        c.list.push(Checkpoint { key: req.key, steps: req.steps, n, buf: next, used: now });
+        c.list
+            .retain(|k| !(k.key == req.key && k.steps == req.steps));
+        c.list.push(Checkpoint {
+            key: req.key,
+            steps: req.steps,
+            n,
+            buf: next,
+            used: now,
+        });
         while c.list.len() > CHECKPOINTS {
-            let Some(i) = c.list.iter().enumerate().min_by_key(|(_, k)| k.used).map(|(i, _)| i) else { break };
+            let Some(i) = c
+                .list
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, k)| k.used)
+                .map(|(i, _)| i)
+            else {
+                break;
+            };
             c.list.remove(i);
         }
     }

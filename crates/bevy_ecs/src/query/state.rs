@@ -12,7 +12,7 @@ use crate::{
     },
     storage::TableId,
     system::Query,
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World, WorldId},
+    world::{DeferredWorld, World, WorldId, unsafe_world_cell::UnsafeWorldCell},
 };
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "multi_threaded"))]
@@ -213,7 +213,9 @@ impl<D: QueryData, F: QueryFilter> QueryState<D, F> {
             let system = system_name
                 .map(|name| format!(" in system {name}"))
                 .unwrap_or_default();
-            panic!("error[B0001]: {type_name}{system} accesses component(s) {accesses}in a way that conflicts with a previous system parameter. Consider using `Without<T>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0001",);
+            panic!(
+                "error[B0001]: {type_name}{system} accesses component(s) {accesses}in a way that conflicts with a previous system parameter. Consider using `Without<T>` to create disjoint Queries or merging conflicting Queries into a `ParamSet`. See: https://bevy.org/learn/errors/b0001",
+            );
         }
 
         component_access_set.add(self.component_access.clone());
@@ -630,7 +632,9 @@ impl<D: QueryData, F: QueryFilter> QueryState<D, F> {
         #[track_caller]
         #[cold]
         fn panic_mismatched(this: WorldId, other: WorldId) -> ! {
-            panic!("Encountered a mismatched World. This QueryState was created from {this:?}, but a method was called using {other:?}.");
+            panic!(
+                "Encountered a mismatched World. This QueryState was created from {this:?}, but a method was called using {other:?}."
+            );
         }
 
         if self.world_id != world_id {
@@ -729,7 +733,8 @@ impl<D: QueryData, F: QueryFilter> QueryState<D, F> {
         assert!(
             component_access.is_subset(&self_access),
             "Transmuted state for {} attempts to access terms that are not allowed by original state {}.",
-            DebugName::type_name::<(NewD, NewF)>(), DebugName::type_name::<(D, F)>()
+            DebugName::type_name::<(NewD, NewF)>(),
+            DebugName::type_name::<(D, F)>()
         );
 
         // For transmuted queries, the dense-ness of the query is equal to the dense-ness of the original query.
@@ -868,11 +873,15 @@ impl<D: QueryData, F: QueryFilter> QueryState<D, F> {
         assert!(
             component_access.is_subset(&joined_component_access),
             "Joined state for {} attempts to access terms that are not allowed by state {} joined with {}.",
-            DebugName::type_name::<(NewD, NewF)>(), DebugName::type_name::<(D, F)>(), DebugName::type_name::<(OtherD, OtherF)>()
+            DebugName::type_name::<(NewD, NewF)>(),
+            DebugName::type_name::<(D, F)>(),
+            DebugName::type_name::<(OtherD, OtherF)>()
         );
 
         if self.archetype_generation != other.archetype_generation {
-            warn!("You have tried to join queries with different archetype_generations. This could lead to unpredictable results.");
+            warn!(
+                "You have tried to join queries with different archetype_generations. This could lead to unpredictable results."
+            );
         }
 
         // the join is dense of both the queries were dense.

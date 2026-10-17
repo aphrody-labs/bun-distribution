@@ -72,7 +72,9 @@ pub struct AppDeployPlan {
 fn plain(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
-        && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b"._-".contains(&byte))
 }
 
 fn text(path: &Path) -> Result<String> {
@@ -81,7 +83,10 @@ fn text(path: &Path) -> Result<String> {
         metadata.is_file() && !metadata.file_type().is_symlink(),
         "Expected a regular deployment metadata file"
     );
-    ensure!(metadata.len() <= MAX_METADATA, "Deployment metadata exceeds its size limit");
+    ensure!(
+        metadata.len() <= MAX_METADATA,
+        "Deployment metadata exceeds its size limit"
+    );
     fs::read_to_string(path).context("Cannot read deployment metadata")
 }
 
@@ -99,8 +104,13 @@ fn execute(program: &str, args: &[String], cwd: &Path, seconds: u32) -> Result<S
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
-    let mut child =
-        spawn_group(&mut command, SpawnOptions { hide_window: true, ..SpawnOptions::default() })?;
+    let mut child = spawn_group(
+        &mut command,
+        SpawnOptions {
+            hide_window: true,
+            ..SpawnOptions::default()
+        },
+    )?;
     let mut output = Vec::new();
     if let Some(stdout) = child.take_stdout() {
         stdout.take(MAX_METADATA + 1).read_to_end(&mut output)?;
@@ -109,7 +119,10 @@ fn execute(program: &str, args: &[String], cwd: &Path, seconds: u32) -> Result<S
         child.kill_tree()?;
         bail!("Deployment command exceeded its output limit");
     }
-    ensure!(child.wait()?.success(), "Deployment command failed: {program}");
+    ensure!(
+        child.wait()?.success(),
+        "Deployment command failed: {program}"
+    );
     String::from_utf8(output).context("Deployment command returned invalid UTF-8")
 }
 
@@ -120,7 +133,11 @@ fn verify(
 ) -> Result<VerifiedApp> {
     let mut args = vec![
         "--no-env-file".into(),
-        options.source.join("packages/bun-artifacts/src/cli.ts").to_string_lossy().into_owned(),
+        options
+            .source
+            .join("packages/bun-artifacts/src/cli.ts")
+            .to_string_lossy()
+            .into_owned(),
         "verify".into(),
         "--build-report".into(),
         options.build_report.to_string_lossy().into_owned(),
@@ -153,8 +170,10 @@ fn service<'a>(
     services: &'a [CatalogService],
     options: &AppDeployOptions<'_>,
 ) -> Result<&'a CatalogService> {
-    let service =
-        services.iter().find(|entry| entry.id == options.id).context("Unknown catalog service")?;
+    let service = services
+        .iter()
+        .find(|entry| entry.id == options.id)
+        .context("Unknown catalog service")?;
     ensure!(
         service.kind == "native-application" && service.runtime == "rust-bun",
         "The catalog service is not a native Bun application"
@@ -163,13 +182,19 @@ fn service<'a>(
         !service.is_retired() && service.host.as_deref() == Some(options.target),
         "The service is not declared for this target"
     );
-    ensure!(service.container.is_none(), "The application has a different lifecycle owner");
+    ensure!(
+        service.container.is_none(),
+        "The application has a different lifecycle owner"
+    );
     Ok(service)
 }
 
 fn atomic_file(path: &Path, bytes: &[u8]) -> Result<()> {
     let temporary = path.with_extension(format!("{}.stage", std::process::id()));
-    let mut file = OpenOptions::new().write(true).create_new(true).open(&temporary)?;
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)?;
     let result = (|| {
         file.write_all(bytes)?;
         file.sync_all()?;
@@ -215,7 +240,9 @@ fn environment(path: &Path) -> Result<()> {
         }
         let values = systemd::parse_env_file(path)?;
         ensure!(
-            values.get("APHRODY_APP_TOKEN").is_some_and(|value| value.len() >= 32),
+            values
+                .get("APHRODY_APP_TOKEN")
+                .is_some_and(|value| value.len() >= 32),
             "The application token is unavailable"
         );
         return Ok(());
@@ -240,7 +267,10 @@ fn render_unit(
     user: &str,
     port: u16,
 ) -> Result<String> {
-    ensure!(plain(app) && plain(user), "Invalid application service identity");
+    ensure!(
+        plain(app) && plain(user),
+        "Invalid application service identity"
+    );
     let replacements = [
         ("{user}", user.to_owned()),
         ("{app_root}", layout.app(app)),
@@ -249,7 +279,10 @@ fn render_unit(
     ];
     let mut unit = text(&root.join(UNIT_TEMPLATE))?;
     for (key, value) in replacements {
-        ensure!(!value.contains(['\n', '\r', '%', '"']), "Invalid application service path");
+        ensure!(
+            !value.contains(['\n', '\r', '%', '"']),
+            "Invalid application service path"
+        );
         unit = unit.replace(key, &value);
     }
     Ok(unit)
@@ -270,7 +303,10 @@ fn nginx_candidate(rendered: &str) -> Result<String> {
         }
         let path = entry.path();
         let path = path.to_str().context("Invalid native Nginx include path")?;
-        ensure!(!path.contains(['\n', '\r', '"']), "Invalid native Nginx include path");
+        ensure!(
+            !path.contains(['\n', '\r', '"']),
+            "Invalid native Nginx include path"
+        );
         includes.push_str(&format!("include \"{path}\";\n"));
     }
     includes.push_str(rendered);
@@ -286,7 +322,9 @@ fn sudo(root: &Path, program: &str, args: &[String]) -> Result<String> {
 fn route(root: &Path, hostname: &str, port: u16) -> Result<(NginxConfig, String)> {
     let routes: Value =
         serde_json::from_str(&text(&root.join("infra/config/host/nginx/routes.json"))?)?;
-    let views = routes["routes"].as_array().context("Invalid canonical ingress views")?;
+    let views = routes["routes"]
+        .as_array()
+        .context("Invalid canonical ingress views")?;
     let service = views
         .iter()
         .find(|view| view["host"] == hostname)
@@ -307,7 +345,10 @@ fn route(root: &Path, hostname: &str, port: u16) -> Result<(NginxConfig, String)
         .iter()
         .position(|server| {
             server.ssl_certificate.is_some()
-                && server.server_names.iter().any(|name| hostnames.contains(name))
+                && server
+                    .server_names
+                    .iter()
+                    .any(|name| hostnames.contains(name))
         })
         .context("Application ingress is not declared")?;
     let mut app = model.servers[index].clone();
@@ -316,7 +357,9 @@ fn route(root: &Path, hostname: &str, port: u16) -> Result<(NginxConfig, String)
         app.server_names.len() == hostnames.len(),
         "Application TLS ingress does not contain every declared hostname"
     );
-    model.servers[index].server_names.retain(|name| !hostnames.contains(name));
+    model.servers[index]
+        .server_names
+        .retain(|name| !hostnames.contains(name));
     if model.servers[index].server_names.is_empty() {
         model.servers.remove(index);
     }
@@ -359,7 +402,9 @@ fn activate_catalog(
     ));
     let routes_path = root.join("infra/config/host/nginx/routes.json");
     let mut routes: Value = serde_json::from_str(&text(&routes_path)?)?;
-    let views = routes["routes"].as_array_mut().context("Invalid canonical ingress views")?;
+    let views = routes["routes"]
+        .as_array_mut()
+        .context("Invalid canonical ingress views")?;
     let mut matched = false;
     for view in views.iter_mut().filter(|view| view["service"] == plan.id) {
         view["upstream"] = json!(format!("127.0.0.1:{}", plan.port));
@@ -379,8 +424,14 @@ fn activate_catalog(
 
 /// Artifact validation stays with its existing Bun owner; Infra owns catalog and host activation.
 pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDeployPlan> {
-    ensure!(options.local, "Execute application activation on its explicit target with --local");
-    ensure!(plain(options.id) && plain(options.target), "Invalid catalog or target identity");
+    ensure!(
+        options.local,
+        "Execute application activation on its explicit target with --local"
+    );
+    ensure!(
+        plain(options.id) && plain(options.target),
+        "Invalid catalog or target identity"
+    );
     ensure!(
         options.source.is_absolute() && options.build_report.is_absolute(),
         "Select absolute artifact source and build report paths"
@@ -397,7 +448,9 @@ pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDepl
         declared.provides(&artifact.app_id),
         "The artifact does not provide the catalog capability"
     );
-    let port = declared.effective_port().context("The application listener is not declared")?;
+    let port = declared
+        .effective_port()
+        .context("The application listener is not declared")?;
     let policy = text(&root.join("infra/config/host/host-policy.toml"))?;
     let layout = HostLayout::parse(&policy, None)?;
     let home = std::env::var("HOME").context("The target home is unavailable")?;
@@ -409,8 +462,9 @@ pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDepl
     ensure!(plain(&user), "Invalid target service user");
     let app_root = PathBuf::from(layout.app(app));
     let unit = format!("aphrody-app@{app}.service");
-    let environment_file =
-        PathBuf::from(&layout.state).join("secrets/apps").join(format!("{app}.env"));
+    let environment_file = PathBuf::from(&layout.state)
+        .join("secrets/apps")
+        .join(format!("{app}.env"));
     let mut plan = AppDeployPlan {
         id: options.id.into(),
         target: options.target.into(),
@@ -432,7 +486,12 @@ pub fn deploy_app(root: &Path, options: &AppDeployOptions<'_>) -> Result<AppDepl
     let _lock = FileLock::try_acquire(&lock_path, LockKind::Exclusive)?
         .context("Another Infra app activation owns this host")?;
     private_directory(&app_root)?;
-    private_directory(&PathBuf::from(&layout.state).join("apps").join(app).join("data"))?;
+    private_directory(
+        &PathBuf::from(&layout.state)
+            .join("apps")
+            .join(app)
+            .join("data"),
+    )?;
     private_directory(&PathBuf::from(&layout.state).join("cache/apps").join(app))?;
     environment(&plan.environment_file)?;
     let stage = app_root.join(format!("app.{}.stage", std::process::id()));

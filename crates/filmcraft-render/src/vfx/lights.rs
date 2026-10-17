@@ -14,18 +14,21 @@ fn blurred(src: &Image, sigma: f32) -> Image {
 
 /// Add `light` (premultiplied linear) to `img`: Add or Screen.
 fn add_image(img: &mut Image, light: &Image, gain: [f32; 3], screen: bool) {
-    img.px.par_chunks_mut(4).zip(light.px.par_chunks(4)).for_each(|(p, l)| {
-        let add = [l[0] * gain[0], l[1] * gain[1], l[2] * gain[2]];
-        if screen {
-            let a = [add[0].min(1.0), add[1].min(1.0), add[2].min(1.0)];
-            for k in 0..3 {
-                p[k] = p[k] + a[k] - p[k].min(1.0) * a[k];
+    img.px
+        .par_chunks_mut(4)
+        .zip(light.px.par_chunks(4))
+        .for_each(|(p, l)| {
+            let add = [l[0] * gain[0], l[1] * gain[1], l[2] * gain[2]];
+            if screen {
+                let a = [add[0].min(1.0), add[1].min(1.0), add[2].min(1.0)];
+                for k in 0..3 {
+                    p[k] = p[k] + a[k] - p[k].min(1.0) * a[k];
+                }
+                p[3] = p[3] + (1.0 - p[3]) * a[0].max(a[1]).max(a[2]);
+            } else {
+                add_light(p, add);
             }
-            p[3] = p[3] + (1.0 - p[3]) * a[0].max(a[1]).max(a[2]);
-        } else {
-            add_light(p, add);
-        }
-    });
+        });
 }
 
 fn saturate_image(img: &mut Image, sat: f32) {
@@ -62,10 +65,21 @@ pub fn echo_glow(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let inten = fv(e, "intensity", cx) / 100.0;
     let decay = 1.0 - fv(e, "decay", cx) / 100.0;
     let col = lin(cv(e, "color", cx));
-    let layers: Vec<(Image, f32)> = (0..n).into_par_iter().map(|i| (blurred(&hi, r * spread.powi(i as i32)), decay.powi(i as i32))).collect();
+    let layers: Vec<(Image, f32)> = (0..n)
+        .into_par_iter()
+        .map(|i| {
+            (
+                blurred(&hi, r * spread.powi(i as i32)),
+                decay.powi(i as i32),
+            )
+        })
+        .collect();
     let mut acc = Image::new(img.w, img.h);
     for (l, wgt) in &layers {
-        acc.px.par_iter_mut().zip(l.px.par_iter()).for_each(|(a, b)| *a += b * wgt);
+        acc.px
+            .par_iter_mut()
+            .zip(l.px.par_iter())
+            .for_each(|(a, b)| *a += b * wgt);
     }
     let norm = inten / layers.iter().map(|l| l.1).sum::<f32>().max(1e-6) * 2.0;
     tint(&mut acc, col, 1.0);
@@ -80,7 +94,9 @@ fn edges(img: &Image) -> Vec<f32> {
         for (x, o) in row.iter_mut().enumerate() {
             let l = |dx: isize, dy: isize| {
                 let p = img.get_clamped(x as isize + dx, y as isize + dy);
-                filmcraft_color::linear_to_srgb(luma([p[0], p[1], p[2]]).clamp(0.0, 1.0)) * p[3].min(1.0) + 0.0
+                filmcraft_color::linear_to_srgb(luma([p[0], p[1], p[2]]).clamp(0.0, 1.0))
+                    * p[3].min(1.0)
+                    + 0.0
             };
             let gx = l(1, -1) + 2.0 * l(1, 0) + l(1, 1) - l(-1, -1) - 2.0 * l(-1, 0) - l(-1, 1);
             let gy = l(-1, 1) + 2.0 * l(0, 1) + l(1, 1) - l(-1, -1) - 2.0 * l(0, -1) - l(1, -1);
@@ -97,9 +113,15 @@ pub fn edge_glow(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let r = fv(e, "radius", cx) * cx.px_scale * 0.5;
     let inten = fv(e, "intensity", cx) / 100.0;
     let col = lin(cv(e, "color", cx));
-    let mut m: Vec<f32> = edges(img).into_iter().map(|v| smoothstep(th, th + 0.1, v)).collect();
+    let mut m: Vec<f32> = edges(img)
+        .into_iter()
+        .map(|v| smoothstep(th, th + 0.1, v))
+        .collect();
     if width > 1.0 {
-        m = blur_plane(&m, img.w, img.h, width * 0.5).into_iter().map(|v| (v * 3.0).min(1.0)).collect();
+        m = blur_plane(&m, img.w, img.h, width * 0.5)
+            .into_iter()
+            .map(|v| (v * 3.0).min(1.0))
+            .collect();
     }
     let core = m.clone();
     let halo = blur_plane(&m, img.w, img.h, r);
@@ -157,10 +179,22 @@ pub fn glint(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         .collect();
     let mut acc = Image::new(img.w, img.h);
     for p in &parts {
-        acc.px.par_iter_mut().zip(p.px.par_iter()).for_each(|(a, b)| *a += b);
+        acc.px
+            .par_iter_mut()
+            .zip(p.px.par_iter())
+            .for_each(|(a, b)| *a += b);
     }
     tint(&mut acc, col, colorize);
-    add_image(img, &acc, [inten * col[0].max(0.2), inten * col[1].max(0.2), inten * col[2].max(0.2)], false);
+    add_image(
+        img,
+        &acc,
+        [
+            inten * col[0].max(0.2),
+            inten * col[1].max(0.2),
+            inten * col[2].max(0.2),
+        ],
+        false,
+    );
 }
 
 /// Light Leaks: drifting warm coloured light washes (procedural, seeded, animated by Speed).
@@ -208,24 +242,27 @@ pub fn rgb_split(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let maxd = ((img.w as f64).hypot(img.h as f64) / 2.0) as f32;
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
-            let (ox, oy) = if radial {
-                let (dx, dy) = (px - c.x as f32, py - c.y as f32);
-                (dx / maxd * amt, dy / maxd * amt)
-            } else {
-                (ang.cos() * amt, ang.sin() * amt)
-            };
-            let r = src.sample_bilinear(px - ox, py - oy);
-            let g = src.get(x, y);
-            let b = src.sample_bilinear(px + ox, py + oy);
-            let o = [r[0], g[1], b[2], r[3].max(g[3]).max(b[3])];
-            for k in 0..4 {
-                row[x * 4 + k] = o[k] + (g[k] - o[k]) * blend;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                let (ox, oy) = if radial {
+                    let (dx, dy) = (px - c.x as f32, py - c.y as f32);
+                    (dx / maxd * amt, dy / maxd * amt)
+                } else {
+                    (ang.cos() * amt, ang.sin() * amt)
+                };
+                let r = src.sample_bilinear(px - ox, py - oy);
+                let g = src.get(x, y);
+                let b = src.sample_bilinear(px + ox, py + oy);
+                let o = [r[0], g[1], b[2], r[3].max(g[3]).max(b[3])];
+                for k in 0..4 {
+                    row[x * 4 + k] = o[k] + (g[k] - o[k]) * blend;
+                }
             }
-        }
-    });
+        });
 }
 
 /// Volumetric Rays: light shafts radiating from a source point (radial blur of the highlights).
@@ -246,26 +283,37 @@ pub fn volumetric_rays(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     const N: usize = 48;
     let src = hi.clone();
     let w = hi.w;
-    hi.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
-            let mut acc = [0.0f32; 4];
-            let mut wsum = 0.0;
-            for i in 0..N {
-                let t = i as f32 / N as f32 * len;
-                let s = src.sample_bilinear(px + (ccx - px) * t, py + (ccy - py) * t);
-                let wgt = 1.0 - i as f32 / N as f32 * 0.6;
-                for k in 0..4 {
-                    acc[k] += s[k] * wgt;
+    hi.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                let mut acc = [0.0f32; 4];
+                let mut wsum = 0.0;
+                for i in 0..N {
+                    let t = i as f32 / N as f32 * len;
+                    let s = src.sample_bilinear(px + (ccx - px) * t, py + (ccy - py) * t);
+                    let wgt = 1.0 - i as f32 / N as f32 * 0.6;
+                    for k in 0..4 {
+                        acc[k] += s[k] * wgt;
+                    }
+                    wsum += wgt;
                 }
-                wsum += wgt;
+                for k in 0..4 {
+                    row[x * 4 + k] = acc[k] / wsum;
+                }
             }
-            for k in 0..4 {
-                row[x * 4 + k] = acc[k] / wsum;
-            }
-        }
-    });
-    let rays = if down > 1.0 { hi.transformed(fw, fh, &Affine::scale(fw as f64 / hi.w as f64, fh as f64 / hi.h as f64)) } else { hi };
+        });
+    let rays = if down > 1.0 {
+        hi.transformed(
+            fw,
+            fh,
+            &Affine::scale(fw as f64 / hi.w as f64, fh as f64 / hi.h as f64),
+        )
+    } else {
+        hi
+    };
     if only {
         *img = Image::new(fw, fh);
     }
@@ -281,10 +329,16 @@ pub fn wonder_glow(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     }
     let r = fv(e, "radius", cx) * cx.px_scale * 0.5;
     let inten = fv(e, "intensity", cx) / 100.0;
-    let parts: Vec<(Image, f32)> = [(0.25f32, 0.45f32), (1.0, 0.35), (3.0, 0.2)].par_iter().map(|&(k, wgt)| (blurred(&hi, r * k), wgt)).collect();
+    let parts: Vec<(Image, f32)> = [(0.25f32, 0.45f32), (1.0, 0.35), (3.0, 0.2)]
+        .par_iter()
+        .map(|&(k, wgt)| (blurred(&hi, r * k), wgt))
+        .collect();
     let mut acc = Image::new(img.w, img.h);
     for (p, wgt) in &parts {
-        acc.px.par_iter_mut().zip(p.px.par_iter()).for_each(|(a, b)| *a += b * wgt);
+        acc.px
+            .par_iter_mut()
+            .zip(p.px.par_iter())
+            .for_each(|(a, b)| *a += b * wgt);
     }
     add_image(img, &acc, [inten * 1.5; 3], chv(e, "mode") == 1);
 }
@@ -307,44 +361,62 @@ pub fn lens_flare(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         .map(|i| {
             let t = 0.35 + i as f64 * 0.42 + hash01(i as i64, lens as i64, 0, 7) as f64 * 0.2;
             let r = 0.02 + hash01(i as i64, lens as i64, 1, 7) as f64 * 0.07;
-            let hue = [[0.4, 0.6, 1.0], [1.0, 0.5, 0.3], [0.4, 1.0, 0.5], [0.9, 0.4, 1.0]][i % 4];
+            let hue = [
+                [0.4, 0.6, 1.0],
+                [1.0, 0.5, 0.3],
+                [0.4, 1.0, 0.5],
+                [0.9, 0.4, 1.0],
+            ][i % 4];
             (t, r, hue)
         })
         .collect();
     let wi = img.w;
-    img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..wi {
-            let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
-            let d = (px - c.x).hypot(py - c.y) / scale;
-            let core = 0.35 * (-d * core_k).exp() + 0.08 * (-d * 3.0).exp();
-            let mut add = [core as f32; 3];
-            if lens == 1 || lens == 2 {
-                let ring = (1.0 - ((d - 0.12) / 0.012).abs()).max(0.0) * 0.08;
-                for (k, v) in add.iter_mut().enumerate() {
-                    *v += (ring * [0.6, 0.8, 1.0][k]) as f32;
+    img.px
+        .par_chunks_mut(wi * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..wi {
+                let (px, py) = (x as f64 + 0.5, y as f64 + 0.5);
+                let d = (px - c.x).hypot(py - c.y) / scale;
+                let core = 0.35 * (-d * core_k).exp() + 0.08 * (-d * 3.0).exp();
+                let mut add = [core as f32; 3];
+                if lens == 1 || lens == 2 {
+                    let ring = (1.0 - ((d - 0.12) / 0.012).abs()).max(0.0) * 0.08;
+                    for (k, v) in add.iter_mut().enumerate() {
+                        *v += (ring * [0.6, 0.8, 1.0][k]) as f32;
+                    }
                 }
-            }
-            if lens == 3 {
-                // anamorphic: long horizontal streak
-                let s = (-((py - c.y).abs() / scale) * 160.0).exp() * (-((px - c.x).abs() / scale) * 2.0).exp() * 0.5;
-                add[0] += s as f32 * 0.5;
-                add[1] += s as f32 * 0.7;
-                add[2] += s as f32;
-            }
-            for (t, rad, hue) in &ghost_list {
-                let gx = c.x + (mx - c.x) * 2.0 * t;
-                let gy = c.y + (my - c.y) * 2.0 * t;
-                let dd = (px - gx).hypot(py - gy) / scale;
-                let g = ((1.0 - ((dd - rad) / 0.01).abs()).max(0.0) * 0.12 + if dd < *rad { 0.05 } else { 0.0 }) as f32;
-                for k in 0..3 {
-                    add[k] += hue[k] * g;
+                if lens == 3 {
+                    // anamorphic: long horizontal streak
+                    let s = (-((py - c.y).abs() / scale) * 160.0).exp()
+                        * (-((px - c.x).abs() / scale) * 2.0).exp()
+                        * 0.5;
+                    add[0] += s as f32 * 0.5;
+                    add[1] += s as f32 * 0.7;
+                    add[2] += s as f32;
                 }
+                for (t, rad, hue) in &ghost_list {
+                    let gx = c.x + (mx - c.x) * 2.0 * t;
+                    let gy = c.y + (my - c.y) * 2.0 * t;
+                    let dd = (px - gx).hypot(py - gy) / scale;
+                    let g = ((1.0 - ((dd - rad) / 0.01).abs()).max(0.0) * 0.12
+                        + if dd < *rad { 0.05 } else { 0.0 }) as f32;
+                    for k in 0..3 {
+                        add[k] += hue[k] * g;
+                    }
+                }
+                let p = &mut row[x * 4..x * 4 + 4];
+                let k = br * (1.0 - blend);
+                add_light(
+                    p,
+                    [
+                        add[0] * tintc[0] * k,
+                        add[1] * tintc[1] * k,
+                        add[2] * tintc[2] * k,
+                    ],
+                );
             }
-            let p = &mut row[x * 4..x * 4 + 4];
-            let k = br * (1.0 - blend);
-            add_light(p, [add[0] * tintc[0] * k, add[1] * tintc[1] * k, add[2] * tintc[2] * k]);
-        }
-    });
+        });
 }
 
 /// Alpha Glow (Legacy): glow outward from the alpha edges, Start Color fading to End Color.

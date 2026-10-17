@@ -60,7 +60,11 @@ pub struct Alphabet {
 
 impl Default for Alphabet {
     fn default() -> Self {
-        let mut a = Alphabet { ascii: [0; 128], other: Vec::new(), next: 2 };
+        let mut a = Alphabet {
+            ascii: [0; 128],
+            other: Vec::new(),
+            next: 2,
+        };
         a.ascii[DOT as usize] = 1;
         a
     }
@@ -68,7 +72,11 @@ impl Default for Alphabet {
 
 impl Alphabet {
     pub fn code(&self, c: char) -> u8 {
-        if (c as u32) < 128 { self.ascii[c as usize] } else { self.other.iter().find(|x| x.0 == c).map_or(0, |x| x.1) }
+        if (c as u32) < 128 {
+            self.ascii[c as usize]
+        } else {
+            self.other.iter().find(|x| x.0 == c).map_or(0, |x| x.1)
+        }
     }
     /// Code for `c`, adding it if new (None when the 6-bit alphabet is full).
     pub fn intern(&mut self, c: char) -> Option<u8> {
@@ -136,7 +144,11 @@ impl Patterns {
                 let mut tok = tok;
                 if let Some(cmd) = tok.strip_prefix('\\') {
                     let (name, rest) = cmd.split_once('{').unwrap_or((cmd, ""));
-                    block = if name == "hyphenation" { Block::Exceptions } else { Block::Patterns };
+                    block = if name == "hyphenation" {
+                        Block::Exceptions
+                    } else {
+                        Block::Patterns
+                    };
                     tok = rest;
                 }
                 let closes = tok.ends_with('}');
@@ -164,7 +176,9 @@ impl Patterns {
             if let Some(d) = c.to_digit(10) {
                 *vals.last_mut().unwrap_or(&mut 0) = d as u8;
             } else {
-                let Some(k) = self.alpha.intern(c) else { return false };
+                let Some(k) = self.alpha.intern(c) else {
+                    return false;
+                };
                 codes.push(k);
                 vals.push(0);
             }
@@ -209,8 +223,17 @@ impl Patterns {
     }
 
     #[allow(dead_code)]
-    pub(crate) fn from_parts(alpha: Alphabet, map: FxMap<u128, Box<[u8]>>, max_len: usize) -> Patterns {
-        Patterns { alpha, map, max_len, exceptions: HashMap::new() }
+    pub(crate) fn from_parts(
+        alpha: Alphabet,
+        map: FxMap<u128, Box<[u8]>>,
+        max_len: usize,
+    ) -> Patterns {
+        Patterns {
+            alpha,
+            map,
+            max_len,
+            exceptions: HashMap::new(),
+        }
     }
 
     /// Make `letters` part of the alphabet even if no pattern mentions them.
@@ -250,13 +273,19 @@ impl Patterns {
     /// Break points (char indices, a hyphen goes before that char) of a lowercase word.
     pub fn points(&self, word: &[char]) -> Option<Vec<usize>> {
         let v = self.values(word)?;
-        Some((1..word.len()).filter(|&i| v.get(i).is_some_and(|x| x % 2 == 1)).collect())
+        Some(
+            (1..word.len())
+                .filter(|&i| v.get(i).is_some_and(|x| x % 2 == 1))
+                .collect(),
+        )
     }
 
     /// The patterns in TeX notation (sorted by letters), e.g. for writing a pattern file.
     pub fn to_tex(&self) -> Vec<String> {
-        let mut rev: Vec<(u8, char)> =
-            (0u8..128).filter(|&c| self.alpha.ascii[c as usize] != 0).map(|c| (self.alpha.ascii[c as usize], c as char)).collect();
+        let mut rev: Vec<(u8, char)> = (0u8..128)
+            .filter(|&c| self.alpha.ascii[c as usize] != 0)
+            .map(|c| (self.alpha.ascii[c as usize], c as char))
+            .collect();
         rev.extend(self.alpha.other.iter().map(|&(c, k)| (k, c)));
         let ch = |k: u8| rev.iter().find(|x| x.0 == k).map_or('?', |x| x.1);
         let mut out: Vec<(String, String)> = self
@@ -264,7 +293,9 @@ impl Patterns {
             .iter()
             .map(|(&key, vals)| {
                 let n = ((key >> 120) as usize).min(MAX_PATTERN_LEN);
-                let letters: Vec<char> = (0..n).map(|i| ch(((key >> (6 * (n - 1 - i))) & 63) as u8)).collect();
+                let letters: Vec<char> = (0..n)
+                    .map(|i| ch(((key >> (6 * (n - 1 - i))) & 63) as u8))
+                    .collect();
                 let mut s = String::new();
                 for (i, l) in letters.iter().enumerate() {
                     if let Some(&v) = vals.get(i).filter(|v| **v > 0) {
@@ -289,7 +320,12 @@ pub fn apply(map: &FxMap<u128, Box<[u8]>>, max_len: usize, codes: &[u8], vals: &
     let n = codes.len();
     for s in 0..n {
         let mut k = 0u128;
-        for (len, &c) in codes.iter().skip(s).take(max_len.min(MAX_PATTERN_LEN)).enumerate() {
+        for (len, &c) in codes
+            .iter()
+            .skip(s)
+            .take(max_len.min(MAX_PATTERN_LEN))
+            .enumerate()
+        {
             k = (k << 6) | c as u128;
             if let Some(v) = map.get(&(k | (((len + 1) as u128) << 120))) {
                 for (j, &x) in v.iter().enumerate() {

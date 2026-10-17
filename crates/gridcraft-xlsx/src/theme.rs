@@ -29,7 +29,10 @@ fn scheme_rgb(e: &El) -> Option<u32> {
         return u32::from_str_radix(c.trim(), 16).ok().map(|v| v & 0xFFFFFF);
     }
     if let Some(c) = e.child("sysClr") {
-        if let Some(v) = c.attr("lastClr").and_then(|v| u32::from_str_radix(v.trim(), 16).ok()) {
+        if let Some(v) = c
+            .attr("lastClr")
+            .and_then(|v| u32::from_str_radix(v.trim(), 16).ok())
+        {
             return Some(v & 0xFFFFFF);
         }
         return match c.attr("val") {
@@ -46,7 +49,9 @@ pub fn read_theme(root: &El) -> Theme {
     if let Some(n) = root.attr("name") {
         t.name = n.to_string();
     }
-    let Some(el) = root.child("themeElements") else { return t };
+    let Some(el) = root.child("themeElements") else {
+        return t;
+    };
     if let Some(cs) = el.child("clrScheme") {
         for (name, idx) in SLOTS {
             if let Some(v) = cs.child(name).and_then(scheme_rgb)
@@ -57,10 +62,18 @@ pub fn read_theme(root: &El) -> Theme {
         }
     }
     if let Some(fs) = el.child("fontScheme") {
-        if let Some(f) = fs.path(&["majorFont", "latin"]).and_then(|l| l.attr("typeface")).filter(|f| !f.is_empty()) {
+        if let Some(f) = fs
+            .path(&["majorFont", "latin"])
+            .and_then(|l| l.attr("typeface"))
+            .filter(|f| !f.is_empty())
+        {
             t.major_font = f.to_string();
         }
-        if let Some(f) = fs.path(&["minorFont", "latin"]).and_then(|l| l.attr("typeface")).filter(|f| !f.is_empty()) {
+        if let Some(f) = fs
+            .path(&["minorFont", "latin"])
+            .and_then(|l| l.attr("typeface"))
+            .filter(|f| !f.is_empty())
+        {
             t.minor_font = f.to_string();
         }
     }
@@ -71,7 +84,11 @@ pub fn read_theme(root: &El) -> Theme {
 pub fn write_theme(t: &Theme) -> String {
     let mut s = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n");
     let name = if t.name.is_empty() { "Craft" } else { &t.name };
-    let _ = write!(s, "<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"{}\"><a:themeElements>", esc_attr(name));
+    let _ = write!(
+        s,
+        "<a:theme xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" name=\"{}\"><a:themeElements>",
+        esc_attr(name)
+    );
     let _ = write!(s, "<a:clrScheme name=\"{}\">", esc_attr(name));
     for (slot, idx) in SLOTS {
         let rgb = t.colors.get(idx).copied().unwrap_or(0) & 0xFFFFFF;

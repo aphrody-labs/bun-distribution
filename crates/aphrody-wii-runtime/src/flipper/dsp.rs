@@ -141,12 +141,18 @@ impl Dsp {
 
     #[inline(always)]
     pub fn is_waiting_for_cpu_mail(&self) -> bool {
-        matches!(self.wait_table[self.registers.pc as usize], WaitCondition::CpuMailbox)
+        matches!(
+            self.wait_table[self.registers.pc as usize],
+            WaitCondition::CpuMailbox
+        )
     }
 
     #[inline(always)]
     pub fn is_waiting_for_dsp_mail(&self) -> bool {
-        matches!(self.wait_table[self.registers.pc as usize], WaitCondition::DspMailbox)
+        matches!(
+            self.wait_table[self.registers.pc as usize],
+            WaitCondition::DspMailbox
+        )
     }
 
     #[inline(always)]
@@ -162,10 +168,15 @@ impl Dsp {
             _ if !self.registers.status.external_interrupt_enable() => false,
             WaitCondition::InterruptZero { addr } => {
                 self.registers.loop_addr.is_empty() && read_word(&self.dram[..], addr) == 0
-            },
+            }
             WaitCondition::InterruptComparison { lhs, rhs } => {
                 if !self.registers.loop_addr.is_empty()
-                    && self.registers.loop_addr.top().wrapping_sub(self.registers.pc) <= 9
+                    && self
+                        .registers
+                        .loop_addr
+                        .top()
+                        .wrapping_sub(self.registers.pc)
+                        <= 9
                 {
                     return false;
                 }
@@ -178,7 +189,7 @@ impl Dsp {
                 } else {
                     lhs <= rhs
                 }
-            },
+            }
         }
     }
 
@@ -189,11 +200,15 @@ impl Dsp {
         for pc in 0u32..0x10000 {
             let pc = pc as u16;
 
-            let cpu =
-                MAILBOX_OFFSETS.iter().any(|&o| self.matches_mail_wait_at(pc, o, 0xFFFE, false))
-                    || IPL_OFFSETS.iter().any(|&o| self.matches_ipl_cpu_mail_wait_at(pc, o));
-            let dsp =
-                MAILBOX_OFFSETS.iter().any(|&o| self.matches_mail_wait_at(pc, o, 0xFFFC, true));
+            let cpu = MAILBOX_OFFSETS
+                .iter()
+                .any(|&o| self.matches_mail_wait_at(pc, o, 0xFFFE, false))
+                || IPL_OFFSETS
+                    .iter()
+                    .any(|&o| self.matches_ipl_cpu_mail_wait_at(pc, o));
+            let dsp = MAILBOX_OFFSETS
+                .iter()
+                .any(|&o| self.matches_mail_wait_at(pc, o, 0xFFFC, true));
 
             self.wait_table[pc as usize] = if cpu {
                 WaitCondition::CpuMailbox
@@ -235,7 +250,17 @@ impl Dsp {
     fn interrupt_wait_at(&self, pc: u16) -> WaitCondition {
         let words = self.read_imem_window::<9>(pc);
 
-        if let [0x8100, 0x8900, 0x00DF, rhs, 0x00DE, lhs, 0x8200, 0x0293, target] = words
+        if let [
+            0x8100,
+            0x8900,
+            0x00DF,
+            rhs,
+            0x00DE,
+            lhs,
+            0x8200,
+            0x0293,
+            target,
+        ] = words
             && lhs < 0x1000
             && rhs < 0x1000
             && target == pc
@@ -244,8 +269,17 @@ impl Dsp {
         }
 
         let start = if words[0] == 0x029F { words[1] } else { pc };
-        let [0x00C0, pointer_addr, 0x0088, 0x002F, 0x00DA, addr, 0x8600, 0x0295, target] =
-            self.read_imem_window::<9>(start)
+        let [
+            0x00C0,
+            pointer_addr,
+            0x0088,
+            0x002F,
+            0x00DA,
+            addr,
+            0x8600,
+            0x0295,
+            target,
+        ] = self.read_imem_window::<9>(start)
         else {
             return WaitCondition::None;
         };
@@ -294,11 +328,11 @@ impl Dsp {
                 dst.copy_from_slice(src);
                 #[cfg(feature = "jit")]
                 mmio.queue_icbi_for_range(crate::mmio::virt_to_phys(ram_addr as u32), count as u32);
-            },
+            }
             regs::DmaDirection::RamToAram if within_bounds => {
                 let src = mmio.virt_slice(ram_addr as u32, count);
                 self.aram[aram_addr..aram_addr + count].copy_from_slice(src);
-            },
+            }
             _ => tracing::warn!("Ignoring out-of-bounds ARAM DMA transfer"),
         }
 
@@ -355,19 +389,22 @@ impl Dsp {
             core::regs::DspDmaDirection::MainToDsp => {
                 let src = mmio.virt_slice(ram_addr, len);
                 memory[dsp_addr..dsp_addr + len].copy_from_slice(src);
-            },
+            }
             core::regs::DspDmaDirection::DspToMain => {
                 let src = &memory[dsp_addr..dsp_addr + len];
                 let dst = mmio.virt_slice_mut(ram_addr, len);
                 dst.copy_from_slice(src);
                 #[cfg(feature = "jit")]
                 mmio.queue_icbi_for_range(crate::mmio::virt_to_phys(ram_addr), len as u32);
-            },
+            }
         }
 
         if matches!(
             (mem_type, direction),
-            (core::regs::DspMemoryType::Instruction, core::regs::DspDmaDirection::MainToDsp)
+            (
+                core::regs::DspMemoryType::Instruction,
+                core::regs::DspDmaDirection::MainToDsp
+            )
         ) {
             self.rebuild_wait_table();
             #[cfg(feature = "jit")]
@@ -390,9 +427,15 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         if self.dsp.csr.pi_interrupt() && self.dsp.registers.status.external_interrupt_enable() {
             self.dsp.csr = self.dsp.csr.with_pi_interrupt(false);
             self.dsp.registers.call_stack.push(self.dsp.registers.pc);
-            self.dsp.registers.data_stack.push(self.dsp.registers.status.raw());
-            self.dsp.registers.status =
-                self.dsp.registers.status.with_external_interrupt_enable(false);
+            self.dsp
+                .registers
+                .data_stack
+                .push(self.dsp.registers.status.raw());
+            self.dsp.registers.status = self
+                .dsp
+                .registers
+                .status
+                .with_external_interrupt_enable(false);
             self.dsp.registers.pc = 0x000E;
         }
 
@@ -402,7 +445,11 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         let buf = [(w0 >> 8) as u8, w0 as u8, (w1 >> 8) as u8, w1 as u8];
         let instr = Instruction::from_be_bytes(&buf);
         self.dsp.registers.cia = self.dsp.registers.pc;
-        let natural_nia = self.dsp.registers.cia.wrapping_add(lut::instr_size(instr) as u16);
+        let natural_nia = self
+            .dsp
+            .registers
+            .cia
+            .wrapping_add(lut::instr_size(instr) as u16);
         self.dsp.registers.nia = natural_nia;
 
         let ext_op = instr.ext_opcode();
@@ -459,9 +506,15 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         if self.dsp.csr.pi_interrupt() && self.dsp.registers.status.external_interrupt_enable() {
             self.dsp.csr = self.dsp.csr.with_pi_interrupt(false);
             self.dsp.registers.call_stack.push(self.dsp.registers.pc);
-            self.dsp.registers.data_stack.push(self.dsp.registers.status.raw());
-            self.dsp.registers.status =
-                self.dsp.registers.status.with_external_interrupt_enable(false);
+            self.dsp
+                .registers
+                .data_stack
+                .push(self.dsp.registers.status.raw());
+            self.dsp.registers.status = self
+                .dsp
+                .registers
+                .status
+                .with_external_interrupt_enable(false);
             self.dsp.registers.pc = 0x000E;
         }
 
@@ -469,13 +522,22 @@ impl<const SYSTEM: SystemId> System<SYSTEM> {
         self.dsp.chain_budget = DSP_JIT_CHAIN_BUDGET;
         self.dsp.instr_count = 0;
 
-        let next_pc = self.dsp.jit.as_mut().unwrap().run_block(ctx_ptr, iram, irom, start_pc);
+        let next_pc = self
+            .dsp
+            .jit
+            .as_mut()
+            .unwrap()
+            .run_block(ctx_ptr, iram, irom, start_pc);
         self.dsp.registers.pc = next_pc;
 
         #[cfg(feature = "jit-stats")]
         {
             let chain_depth = DSP_JIT_CHAIN_BUDGET - self.dsp.chain_budget;
-            self.dsp.jit.as_mut().unwrap().record_chain_depth(chain_depth);
+            self.dsp
+                .jit
+                .as_mut()
+                .unwrap()
+                .record_chain_depth(chain_depth);
         }
 
         (self.dsp.instr_count as u64).max(1)
@@ -772,7 +834,7 @@ pub fn write_dmem<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16, v
     match addr {
         0x0000..0x1000 => write_word(&mut *sys.dsp.dram, addr, value),
         0xFF00..=0xFFFF => write_ifx(sys, addr, value),
-        _ => {},
+        _ => {}
     }
 }
 
@@ -786,7 +848,7 @@ fn read_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16) -> u16 
         addr::IFX_CMBL => {
             sys.dsp.mailbox_to_dsp_hi.set_busy(false);
             sys.dsp.mailbox_to_dsp_lo.raw()
-        },
+        }
         // DMBH (DSP Mailbox High): DSP reads back what it wrote
         addr::IFX_DMBH => sys.dsp.mailbox_to_cpu_hi.raw(),
         // DMBL (DSP Mailbox Low): DSP reads back what it wrote (no side effects)
@@ -812,12 +874,15 @@ fn read_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16) -> u16 
         addr::IFX_ACIN => sys.dsp.accelerator.input,
         addr::IFX_ACDSAMP => {
             accelerator::read_decoded_sample::<SYSTEM>(&mut sys.dsp, sys.mmio.ram_view())
-        },
+        }
         addr::IFX_ACDRAW => accelerator::read_raw::<SYSTEM>(&mut sys.dsp, sys.mmio.ram_view()),
         _ => {
-            tracing::debug!(addr = format!("{:04X}", addr), "Read from unknown DSP IFX register");
+            tracing::debug!(
+                addr = format!("{:04X}", addr),
+                "Read from unknown DSP IFX register"
+            );
             read_word(&*sys.dsp.ifx, addr - 0xFF00)
-        },
+        }
     }
 }
 
@@ -829,26 +894,26 @@ fn write_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16, value:
             let busy = sys.dsp.mailbox_to_cpu_hi.busy();
             sys.dsp.mailbox_to_cpu_hi =
                 regs::MailboxToCpuHi::from_raw(value & 0x7FFF).with_busy(busy);
-        },
+        }
         // DMBL (DSP Mailbox Low): writing sets DMBH.M
         addr::IFX_DMBL => {
             sys.dsp.mailbox_to_cpu_lo = regs::MailboxToCpuLo::from_raw(value);
             sys.dsp.mailbox_to_cpu_hi.set_busy(true);
-        },
+        }
         // DIRQ: DSP explicitly raises interrupt to CPU
         addr::IFX_DIRQ => {
             if value & 1 != 0 {
                 tracing::debug!("DSP DIRQ: requesting CPU interrupt");
                 sys.dsp.csr.set_dsp_interrupt(true);
             }
-        },
+        }
         // CMBH/CMBL are read-only from DSP side
-        addr::IFX_CMBH | addr::IFX_CMBL => {},
+        addr::IFX_CMBH | addr::IFX_CMBL => {}
 
         addr::IFX_DSBL => {
             sys.dsp.dma_length = value;
             sys.dsp.process_dsp_dma(&mut sys.mmio);
-        },
+        }
         addr::IFX_DSCR => sys.dsp.dma_control = core::regs::DspDmaControl::from_raw(value),
         addr::IFX_DSPA => sys.dsp.dma_dsp_addr = value,
         addr::IFX_DSMAH => sys.dsp.dma_ram_addr_hi = value,
@@ -858,27 +923,27 @@ fn write_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16, value:
         addr::IFX_ACSAH => {
             let new = ((value as u32) << 16) | (sys.dsp.accelerator.start_addr & 0x0000_FFFF);
             sys.dsp.accelerator.set_start_addr(new);
-        },
+        }
         addr::IFX_ACSAL => {
             let new = (sys.dsp.accelerator.start_addr & 0xFFFF_0000) | value as u32;
             sys.dsp.accelerator.set_start_addr(new);
-        },
+        }
         addr::IFX_ACEAH => {
             let new = ((value as u32) << 16) | (sys.dsp.accelerator.end_addr & 0x0000_FFFF);
             sys.dsp.accelerator.set_end_addr(new);
-        },
+        }
         addr::IFX_ACEAL => {
             let new = (sys.dsp.accelerator.end_addr & 0xFFFF_0000) | value as u32;
             sys.dsp.accelerator.set_end_addr(new);
-        },
+        }
         addr::IFX_ACCAH => {
             let new = ((value as u32) << 16) | (sys.dsp.accelerator.current_addr & 0x0000_FFFF);
             sys.dsp.accelerator.set_current_addr(new);
-        },
+        }
         addr::IFX_ACCAL => {
             let new = (sys.dsp.accelerator.current_addr & 0xFFFF_0000) | value as u32;
             sys.dsp.accelerator.set_current_addr(new);
-        },
+        }
         addr::IFX_PRED_SCALE => sys.dsp.accelerator.set_pred_scale(value),
         addr::IFX_YN1 => sys.dsp.accelerator.yn1 = value as i16,
         addr::IFX_YN2 => sys.dsp.accelerator.set_yn2(value as i16),
@@ -886,9 +951,9 @@ fn write_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16, value:
         addr::IFX_ACIN => sys.dsp.accelerator.input = value,
         addr::IFX_ACDRAW => {
             accelerator::write_raw::<SYSTEM>(&mut sys.dsp, sys.mmio.ram_view_mut(), value)
-        },
+        }
         // ACDSAMP is read-only
-        addr::IFX_ACDSAMP => {},
+        addr::IFX_ACDSAMP => {}
         _ => {
             tracing::debug!(
                 addr = format!("{:04X}", addr),
@@ -896,7 +961,7 @@ fn write_ifx<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>, addr: u16, value:
                 "Write to unknown DSP IFX register"
             );
             write_word(&mut *sys.dsp.ifx, addr - 0xFF00, value);
-        },
+        }
     }
 }
 

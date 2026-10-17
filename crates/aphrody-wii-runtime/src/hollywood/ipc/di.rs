@@ -35,7 +35,9 @@ impl Default for DiskInterface {
 
 impl DiskInterface {
     pub fn new() -> Self {
-        Self { last_error: DI_ERROR_OK }
+        Self {
+            last_error: DI_ERROR_OK,
+        }
     }
 }
 
@@ -64,24 +66,24 @@ impl IosDevice for DiskInterface {
         match cmd {
             IOCTL_DVD_LOW_UNENCRYPTED_READ => {
                 self.dvd_low_unencrypted_read(ctx, in_ptr, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_REQUEST_ERROR => {
                 self.dvd_low_request_error(ctx, in_ptr, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_REPORT_KEY => self.dvd_low_report_key(ctx, in_ptr, out_ptr, out_len),
             IOCTL_DVD_LOW_CLEAR_COVER_INTERRUPT => {
                 self.dvd_low_clear_cover_interrupt(ctx, in_ptr, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_READ => self.dvd_low_read(ctx, in_ptr, out_ptr, out_len),
             IOCTL_DVD_LOW_GET_STATUS_REGISTER => {
                 self.dvd_low_get_status_register(ctx, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_GET_COVER_REGISTER => {
                 self.dvd_low_get_cover_register(ctx, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_GET_CONTROL_REGISTER => {
                 self.dvd_low_get_control_register(ctx, out_ptr, out_len)
-            },
+            }
             IOCTL_DVD_LOW_STOP_MOTOR => self.dvd_low_stop_motor(ctx, in_ptr, out_ptr, out_len),
             IOCTL_DVD_LOW_READ_DISK_BCA => self.dvd_low_read_disk_bca(ctx, out_ptr, out_len),
             _ => {
@@ -94,7 +96,7 @@ impl IosDevice for DiskInterface {
                     "Unknown IOCTL"
                 );
                 IPC_EINVAL
-            },
+            }
         }
     }
 }
@@ -121,8 +123,9 @@ impl DiskInterface {
             return DI_RET_BAD_ALIGNMENT;
         }
 
-        let range_idx =
-            UNENCRYPTED_RANGES.iter().position(|r| pos_bytes >= r.start && end_bytes <= r.end);
+        let range_idx = UNENCRYPTED_RANGES
+            .iter()
+            .position(|r| pos_bytes >= r.start && end_bytes <= r.end);
         let Some(range_idx) = range_idx else {
             return DI_RET_SECURITY_ERROR;
         };
@@ -395,7 +398,16 @@ struct UnencryptedRange {
 }
 
 const UNENCRYPTED_RANGES: [UnencryptedRange; 3] = [
-    UnencryptedRange { start: 0x0_0000_0000, end: 0x0_0005_0000 },
-    UnencryptedRange { start: 0x1_1828_0000, end: 0x1_1828_0020 },
-    UnencryptedRange { start: 0x1_FB50_0000, end: 0x1_FB50_0020 },
+    UnencryptedRange {
+        start: 0x0_0000_0000,
+        end: 0x0_0005_0000,
+    },
+    UnencryptedRange {
+        start: 0x1_1828_0000,
+        end: 0x1_1828_0020,
+    },
+    UnencryptedRange {
+        start: 0x1_FB50_0000,
+        end: 0x1_FB50_0020,
+    },
 ];

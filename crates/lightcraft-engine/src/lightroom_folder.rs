@@ -48,7 +48,9 @@ fn lower_name(path: &Path) -> Option<String> {
 fn strip_suffix_nocase<'a>(name: &'a str, suffix: &str) -> Option<&'a str> {
     let cut = name.len().checked_sub(suffix.len())?;
     let tail = name.get(cut..)?;
-    tail.eq_ignore_ascii_case(suffix).then(|| name.get(..cut)).flatten()
+    tail.eq_ignore_ascii_case(suffix)
+        .then(|| name.get(..cut))
+        .flatten()
 }
 
 /// `name` is `*.lrcat` (any case).
@@ -81,7 +83,9 @@ pub fn find_lrcat(dir: &Path) -> Option<PathBuf> {
 
 /// `candidate` if it is a file, else the first catalog in `dir`.
 fn catalog_or_scan(candidate: Option<PathBuf>, dir: Option<&Path>) -> Option<PathBuf> {
-    candidate.filter(|c| c.is_file()).or_else(|| dir.and_then(find_lrcat))
+    candidate
+        .filter(|c| c.is_file())
+        .or_else(|| dir.and_then(find_lrcat))
 }
 
 /// Whether `path`, given as a library folder, is a Lightroom Classic catalog or part of one (see
@@ -96,13 +100,19 @@ pub fn lightroom_catalog_at(path: &Path) -> Option<LightroomPlace> {
     let lower = lower_name(path).unwrap_or_default();
     // the catalog file itself (a folder named `*.lrcat` is looked into below)
     if lower.ends_with(".lrcat") && !is_dir {
-        return Some(LightroomPlace { catalog: path.is_file().then(|| path.to_path_buf()) });
+        return Some(LightroomPlace {
+            catalog: path.is_file().then(|| path.to_path_buf()),
+        });
     }
     // an open catalog's companion files: `Name.lrcat-wal` → `Name.lrcat`
     for c in COMPANIONS {
         if lower.ends_with(&format!(".lrcat{c}")) && !is_dir {
-            let candidate = name.and_then(|n| strip_suffix_nocase(n, c)).and_then(|n| parent.map(|p| p.join(n)));
-            return Some(LightroomPlace { catalog: catalog_or_scan(candidate, parent) });
+            let candidate = name
+                .and_then(|n| strip_suffix_nocase(n, c))
+                .and_then(|n| parent.map(|p| p.join(n)));
+            return Some(LightroomPlace {
+                catalog: catalog_or_scan(candidate, parent),
+            });
         }
     }
     // `Name.lrcat-data` → `Name.lrcat`
@@ -110,28 +120,41 @@ pub fn lightroom_catalog_at(path: &Path) -> Option<LightroomPlace> {
         && is_lrcat_name(stem)
     {
         let candidate = parent.map(|p| p.join(stem));
-        return Some(LightroomPlace { catalog: catalog_or_scan(candidate, parent) });
+        return Some(LightroomPlace {
+            catalog: catalog_or_scan(candidate, parent),
+        });
     }
     // `Name Previews.lrdata` (and Smart Previews, Helper, Sync) → `Name.lrcat`
     if let Some(stem) = name.and_then(|n| strip_suffix_nocase(n, ".lrdata")) {
-        let base = LRDATA_SUFFIXES.iter().find_map(|s| strip_suffix_nocase(stem, s)).unwrap_or(stem);
+        let base = LRDATA_SUFFIXES
+            .iter()
+            .find_map(|s| strip_suffix_nocase(stem, s))
+            .unwrap_or(stem);
         let candidate = parent.map(|p| p.join(format!("{base}.lrcat")));
-        return Some(LightroomPlace { catalog: catalog_or_scan(candidate, parent) });
+        return Some(LightroomPlace {
+            catalog: catalog_or_scan(candidate, parent),
+        });
     }
     if lower.ends_with(".lrdata") || lower.ends_with(".lrcat-data") {
         // (a non-UTF-8 name)
-        return Some(LightroomPlace { catalog: parent.and_then(find_lrcat) });
+        return Some(LightroomPlace {
+            catalog: parent.and_then(find_lrcat),
+        });
     }
     if is_dir {
         // the catalog folder
         if let Some(catalog) = find_lrcat(path) {
-            return Some(LightroomPlace { catalog: Some(catalog) });
+            return Some(LightroomPlace {
+                catalog: Some(catalog),
+            });
         }
         // `Backups/` next to a catalog
         if lower == "backups"
             && let Some(catalog) = parent.and_then(find_lrcat)
         {
-            return Some(LightroomPlace { catalog: Some(catalog) });
+            return Some(LightroomPlace {
+                catalog: Some(catalog),
+            });
         }
     }
     None

@@ -1,8 +1,9 @@
 //! Property writers, in ECMA-376 schema element order.
 
 use wordcraft_doc::props::{
-    Align, Border, BorderStyle, Borders, CellProps, CharProps, HeightRule, Highlight, LineSpacing, ParaProps, RowProps, TabAlign, TabLeader,
-    TableFloat, TableLook, TableProps, TextColor, VAlign, VMerge, VertAlign,
+    Align, Border, BorderStyle, Borders, CellProps, CharProps, HeightRule, Highlight, LineSpacing,
+    ParaProps, RowProps, TabAlign, TabLeader, TableFloat, TableLook, TableProps, TextColor, VAlign,
+    VMerge, VertAlign,
 };
 
 use crate::units::{n, twips};
@@ -66,10 +67,16 @@ pub fn rpr_inner(w: &mut W, c: &CharProps) {
         w.val("w:w", &n(round(s.clamp(1.0, 600.0))));
     }
     if let Some(k) = c.kern {
-        w.val("w:kern", &n(wordcraft_geom::to_half_points(k.clamp(0.0, 1638.0))));
+        w.val(
+            "w:kern",
+            &n(wordcraft_geom::to_half_points(k.clamp(0.0, 1638.0))),
+        );
     }
     if let Some(p) = c.position {
-        w.val("w:position", &n(wordcraft_geom::to_half_points(p.clamp(-1584.0, 1584.0))));
+        w.val(
+            "w:position",
+            &n(wordcraft_geom::to_half_points(p.clamp(-1584.0, 1584.0))),
+        );
     }
     let half = |s: f32| n(wordcraft_geom::to_half_points(s.clamp(1.0, 1638.0)).max(2));
     if let Some(s) = c.size {
@@ -79,7 +86,14 @@ pub fn rpr_inner(w: &mut W, c: &CharProps) {
         w.val("w:szCs", &half(s));
     }
     if let Some(h) = c.highlight {
-        w.val("w:highlight", if h == Highlight::None { "none" } else { h.ooxml() });
+        w.val(
+            "w:highlight",
+            if h == Highlight::None {
+                "none"
+            } else {
+                h.ooxml()
+            },
+        );
     }
     if let Some(u) = c.underline {
         match c.underline_color {
@@ -91,7 +105,14 @@ pub fn rpr_inner(w: &mut W, c: &CharProps) {
         border_el(w, "w:bdr", b);
     }
     if let Some(s) = c.shading {
-        w.empty("w:shd", &[("w:val", "clear"), ("w:color", "auto"), ("w:fill", &s.hex())]);
+        w.empty(
+            "w:shd",
+            &[
+                ("w:val", "clear"),
+                ("w:color", "auto"),
+                ("w:fill", &s.hex()),
+            ],
+        );
     }
     if let Some(v) = c.vert_align {
         w.val(
@@ -161,8 +182,20 @@ fn border_el(w: &mut W, name: &str, b: &Border) {
     let sz = n(round(b.width.clamp(0.0, 12.0) * 8.0));
     let space = n(round(b.space.clamp(0.0, 31.0)));
     let color = b.color.map(|c| c.hex()).unwrap_or_else(|| "auto".into());
-    let style = if b.style == BorderStyle::None { "nil" } else { b.style.ooxml() };
-    w.empty(name, &[("w:val", style), ("w:sz", &sz), ("w:space", &space), ("w:color", &color)]);
+    let style = if b.style == BorderStyle::None {
+        "nil"
+    } else {
+        b.style.ooxml()
+    };
+    w.empty(
+        name,
+        &[
+            ("w:val", style),
+            ("w:sz", &sz),
+            ("w:space", &space),
+            ("w:color", &color),
+        ],
+    );
 }
 
 /// Borders element. `inner` names the between/insideH element (`w:between` for paragraphs,
@@ -207,7 +240,13 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
     if framed && let Some(lines) = p.drop_cap.filter(|l| *l > 0) {
         w.empty(
             "w:framePr",
-            &[("w:dropCap", "drop"), ("w:lines", &n(lines.min(10) as i64)), ("w:wrap", "around"), ("w:vAnchor", "text"), ("w:hAnchor", "text")],
+            &[
+                ("w:dropCap", "drop"),
+                ("w:lines", &n(lines.min(10) as i64)),
+                ("w:wrap", "around"),
+                ("w:vAnchor", "text"),
+                ("w:hAnchor", "text"),
+            ],
         );
     } else if let Some(f) = &p.frame {
         let (fw, fh, fx, fy) = (f.w.map(twips), f.h.map(twips), twips(f.x), twips(f.y));
@@ -255,7 +294,14 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
         borders(w, "w:pBdr", b, Some("w:between"), &[]);
     }
     if let Some(s) = p.shading {
-        w.empty("w:shd", &[("w:val", "clear"), ("w:color", "auto"), ("w:fill", &s.hex())]);
+        w.empty(
+            "w:shd",
+            &[
+                ("w:val", "clear"),
+                ("w:color", "auto"),
+                ("w:fill", &s.hex()),
+            ],
+        );
     }
     if let Some(tabs) = &p.tabs
         && !tabs.is_empty()
@@ -280,7 +326,10 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
                         TabLeader::Underscore => "underscore",
                         _ => "middleDot",
                     };
-                    w.empty("w:tab", &[("w:val", val), ("w:leader", lv), ("w:pos", &pos)]);
+                    w.empty(
+                        "w:tab",
+                        &[("w:val", val), ("w:leader", lv), ("w:pos", &pos)],
+                    );
                 }
             }
         }
@@ -327,8 +376,16 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
         }
         w.empty("w:spacing", &a);
     }
-    let chars = [p.indent_left_chars, p.indent_right_chars, p.indent_first_chars];
-    if p.indent_left.is_some() || p.indent_right.is_some() || p.indent_first.is_some() || chars.iter().any(Option::is_some) {
+    let chars = [
+        p.indent_left_chars,
+        p.indent_right_chars,
+        p.indent_first_chars,
+    ];
+    if p.indent_left.is_some()
+        || p.indent_right.is_some()
+        || p.indent_first.is_some()
+        || chars.iter().any(Option::is_some)
+    {
         let l = p.indent_left.map(twips);
         let r = p.indent_right.map(twips);
         let f = p.indent_first.map(|v| (v < 0.0, twips(v.abs())));
@@ -349,7 +406,14 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
             a.push(("w:right", r));
         }
         if let Some((hang, v, _)) = &fc {
-            a.push((if *hang { "w:hangingChars" } else { "w:firstLineChars" }, v));
+            a.push((
+                if *hang {
+                    "w:hangingChars"
+                } else {
+                    "w:firstLineChars"
+                },
+                v,
+            ));
         }
         if let Some((hang, v)) = &f {
             a.push((if *hang { "w:hanging" } else { "w:firstLine" }, v));
@@ -368,8 +432,14 @@ pub fn ppr_inner(w: &mut W, p: &ParaProps, framed: bool, num_change: Option<&Cha
 
 pub fn margins(w: &mut W, tag: &str, m: &[f32; 4]) {
     w.open(tag, &[]);
-    for (name, v) in ["w:top", "w:left", "w:bottom", "w:right"].iter().zip(m.iter()) {
-        w.empty(name, &[("w:w", &twips(v.clamp(0.0, 1584.0))), ("w:type", "dxa")]);
+    for (name, v) in ["w:top", "w:left", "w:bottom", "w:right"]
+        .iter()
+        .zip(m.iter())
+    {
+        w.empty(
+            name,
+            &[("w:w", &twips(v.clamp(0.0, 1584.0))), ("w:type", "dxa")],
+        );
     }
     w.close(tag);
 }
@@ -411,7 +481,9 @@ pub fn tblpr(w: &mut W, t: &TableProps, change: Option<&ChangeAttrs>) {
     w.open("w:tblPr", &[]);
     tblpr_inner(w, t);
     if let (Some(a), Some(ch)) = (change, &t.fmt_change) {
-        change_el(w, "w:tblPrChange", "w:tblPr", a, |w| tblpr_inner(w, &ch.old));
+        change_el(w, "w:tblPrChange", "w:tblPr", a, |w| {
+            tblpr_inner(w, &ch.old)
+        });
     }
     w.close("w:tblPr");
 }
@@ -427,14 +499,27 @@ fn tblpr_inner(w: &mut W, t: &TableProps) {
         w.empty("w:bidiVisual", &[]);
     }
     if let Some(p) = t.width_pct {
-        w.empty("w:tblW", &[("w:w", &n(round(p.clamp(0.0, 1000.0) * 50.0))), ("w:type", "pct")]);
+        w.empty(
+            "w:tblW",
+            &[
+                ("w:w", &n(round(p.clamp(0.0, 1000.0) * 50.0))),
+                ("w:type", "pct"),
+            ],
+        );
     } else if let Some(v) = t.width {
         w.empty("w:tblW", &[("w:w", &twips(v.max(0.0))), ("w:type", "dxa")]);
     } else {
         w.empty("w:tblW", &[("w:w", "0"), ("w:type", "auto")]);
     }
     if let Some(a) = t.align {
-        w.val("w:jc", align_val(if a == Align::Justify || a == Align::Distribute { Align::Left } else { a }));
+        w.val(
+            "w:jc",
+            align_val(if a == Align::Justify || a == Align::Distribute {
+                Align::Left
+            } else {
+                a
+            }),
+        );
     }
     if let Some(i) = t.indent {
         w.empty("w:tblInd", &[("w:w", &twips(i)), ("w:type", "dxa")]);
@@ -443,7 +528,14 @@ fn tblpr_inner(w: &mut W, t: &TableProps) {
         borders(w, "w:tblBorders", b, Some("w:insideH"), &[]);
     }
     if let Some(s) = t.shading {
-        w.empty("w:shd", &[("w:val", "clear"), ("w:color", "auto"), ("w:fill", &s.hex())]);
+        w.empty(
+            "w:shd",
+            &[
+                ("w:val", "clear"),
+                ("w:color", "auto"),
+                ("w:fill", &s.hex()),
+            ],
+        );
     }
     if t.fixed {
         w.empty("w:tblLayout", &[("w:type", "fixed")]);
@@ -486,7 +578,10 @@ fn trpr_inner(w: &mut W, r: &RowProps) {
             HeightRule::AtLeast => "atLeast",
             HeightRule::Exact => "exact",
         };
-        w.empty("w:trHeight", &[("w:val", &twips(h.abs())), ("w:hRule", rule)]);
+        w.empty(
+            "w:trHeight",
+            &[("w:val", &twips(h.abs())), ("w:hRule", rule)],
+        );
     }
     if r.header {
         w.empty("w:tblHeader", &[]);
@@ -506,7 +601,13 @@ pub fn tcpr(w: &mut W, c: &CellProps, change: Option<&ChangeAttrs>) {
 fn tcpr_inner(w: &mut W, c: &CellProps) {
     match (c.width, c.width_pct) {
         (Some(v), _) => w.empty("w:tcW", &[("w:w", &twips(v.max(0.0))), ("w:type", "dxa")]),
-        (None, Some(p)) => w.empty("w:tcW", &[("w:w", &n((p.clamp(0.0, 100.0) * 50.0).round() as i64)), ("w:type", "pct")]),
+        (None, Some(p)) => w.empty(
+            "w:tcW",
+            &[
+                ("w:w", &n((p.clamp(0.0, 100.0) * 50.0).round() as i64)),
+                ("w:type", "pct"),
+            ],
+        ),
         (None, None) => w.empty("w:tcW", &[("w:w", "0"), ("w:type", "auto")]),
     }
     if c.span > 1 {
@@ -521,7 +622,14 @@ fn tcpr_inner(w: &mut W, c: &CellProps) {
         borders(w, "w:tcBorders", b, Some("w:insideH"), &[]);
     }
     if let Some(s) = c.shading {
-        w.empty("w:shd", &[("w:val", "clear"), ("w:color", "auto"), ("w:fill", &s.hex())]);
+        w.empty(
+            "w:shd",
+            &[
+                ("w:val", "clear"),
+                ("w:color", "auto"),
+                ("w:fill", &s.hex()),
+            ],
+        );
     }
     if c.no_wrap {
         w.empty("w:noWrap", &[]);
@@ -551,7 +659,13 @@ fn table_float(w: &mut W, f: &TableFloat) {
         _ => text,
     };
     let [left, top, right, bottom] = f.dist_from_text().map(twips);
-    let fin = |v: f32| twips(if v.is_finite() { v.clamp(-31_680.0, 31_680.0) } else { 0.0 });
+    let fin = |v: f32| {
+        twips(if v.is_finite() {
+            v.clamp(-31_680.0, 31_680.0)
+        } else {
+            0.0
+        })
+    };
     let (x, y) = (fin(f.x), fin(f.y));
     let mut a: Vec<(&str, &str)> = vec![
         ("w:leftFromText", &left),

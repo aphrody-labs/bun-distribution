@@ -8,7 +8,6 @@
 
 use serde::{Deserialize, Serialize};
 
-
 /// Forensic assessment report for Steam DRM and SteamStub protection.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct SteamDrmReport {
@@ -55,8 +54,12 @@ const STEAMWORKS_API_SYMBOLS: &[&str] = &[
 ];
 
 /// Known Steamworks DLL and SO library file names.
-const STEAM_API_LIBRARIES: &[&str] =
-    &["steam_api.dll", "steam_api64.dll", "libsteam_api.so", "libsteam_api.dylib"];
+const STEAM_API_LIBRARIES: &[&str] = &[
+    "steam_api.dll",
+    "steam_api64.dll",
+    "libsteam_api.so",
+    "libsteam_api.dylib",
+];
 
 /// Inspect executable binary bytes for Steam DRM, SteamStub wrapper sections, and Steamworks API hooks.
 pub fn inspect_steam_drm(bytes: &[u8]) -> SteamDrmReport {
@@ -73,7 +76,11 @@ pub fn inspect_steam_drm(bytes: &[u8]) -> SteamDrmReport {
 
     // Parse with goblin PE / ELF
     if let Ok(pe) = goblin::pe::PE::parse(bytes) {
-        format = if pe.is_64 { "PE32+".to_string() } else { "PE32".to_string() };
+        format = if pe.is_64 {
+            "PE32+".to_string()
+        } else {
+            "PE32".to_string()
+        };
 
         let entry_point = pe.entry as u64;
 
@@ -125,7 +132,11 @@ pub fn inspect_steam_drm(bytes: &[u8]) -> SteamDrmReport {
             }
         }
     } else if let Ok(elf) = goblin::elf::Elf::parse(bytes) {
-        format = if elf.is_64 { "ELF64".to_string() } else { "ELF32".to_string() };
+        format = if elf.is_64 {
+            "ELF64".to_string()
+        } else {
+            "ELF32".to_string()
+        };
 
         // Inspect section headers for .bind / .steam
         for sh in &elf.section_headers {
@@ -229,7 +240,6 @@ fn contains_subslice(haystack: &[u8], needle: &[u8]) -> bool {
     haystack.windows(needle.len()).any(|w| w == needle)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -246,9 +256,20 @@ mod tests {
 
         let report = inspect_steam_drm(&bin);
         assert!(report.steam_api_dependency);
-        assert_eq!(report.steam_api_library, Some("steam_api64.dll".to_string()));
-        assert!(report.steamworks_symbols.contains(&"SteamAPI_Init".to_string()));
-        assert!(report.steamworks_symbols.contains(&"SteamAPI_RestartAppIfNecessary".to_string()));
+        assert_eq!(
+            report.steam_api_library,
+            Some("steam_api64.dll".to_string())
+        );
+        assert!(
+            report
+                .steamworks_symbols
+                .contains(&"SteamAPI_Init".to_string())
+        );
+        assert!(
+            report
+                .steamworks_symbols
+                .contains(&"SteamAPI_RestartAppIfNecessary".to_string())
+        );
         assert!(!report.is_steamstub_detected);
     }
 

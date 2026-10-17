@@ -1,7 +1,8 @@
 use super::*;
 
 fn file(res: &str, body: &[u8]) -> Vec<u8> {
-    let mut v = format!("#?RADIANCE\n# test\nFORMAT=32-bit_rle_rgbe\nEXPOSURE=1.0\n\n{res}\n").into_bytes();
+    let mut v =
+        format!("#?RADIANCE\n# test\nFORMAT=32-bit_rle_rgbe\nEXPOSURE=1.0\n\n{res}\n").into_bytes();
     v.extend_from_slice(body);
     v
 }
@@ -21,13 +22,20 @@ fn rle_line(line: &[[u8; 4]]) -> Vec<u8> {
         let ch: Vec<u8> = line.iter().map(|p| p[c]).collect();
         let mut i = 0;
         while i < n {
-            let run = ch[i..].iter().take(127).take_while(|&&b| b == ch[i]).count();
+            let run = ch[i..]
+                .iter()
+                .take(127)
+                .take_while(|&&b| b == ch[i])
+                .count();
             if run >= 3 {
                 out.extend([128 + run as u8, ch[i]]);
                 i += run;
             } else {
                 let mut j = i + 1;
-                while j < n && j - i < 128 && !(j + 2 < n && ch[j] == ch[j + 1] && ch[j] == ch[j + 2]) {
+                while j < n
+                    && j - i < 128
+                    && !(j + 2 < n && ch[j] == ch[j + 1] && ch[j] == ch[j + 2])
+                {
                     j += 1;
                 }
                 out.push((j - i) as u8);
@@ -50,7 +58,13 @@ fn rgbe_values() {
 
 #[test]
 fn flat_top_to_bottom() {
-    let body = [[10u8, 20, 30, 136], [1, 2, 3, 136], [4, 5, 6, 137], [7, 8, 9, 135]].concat();
+    let body = [
+        [10u8, 20, 30, 136],
+        [1, 2, 3, 136],
+        [4, 5, 6, 137],
+        [7, 8, 9, 135],
+    ]
+    .concat();
     let f = decode("a.hdr", &file("-Y 2 +X 2", &body)).unwrap();
     assert_eq!((f.width, f.height), (2, 2));
     let p = px(&f);
@@ -79,14 +93,30 @@ fn orientations() {
 #[test]
 fn run_length_lines() {
     let w = 40usize;
-    let rows: Vec<Vec<[u8; 4]>> = (0..3).map(|y| (0..w).map(|x| if x < 20 { [100, 50, 25, 130] } else { [(x * 5 + y) as u8, 7, 9, 131] }).collect()).collect();
+    let rows: Vec<Vec<[u8; 4]>> = (0..3)
+        .map(|y| {
+            (0..w)
+                .map(|x| {
+                    if x < 20 {
+                        [100, 50, 25, 130]
+                    } else {
+                        [(x * 5 + y) as u8, 7, 9, 131]
+                    }
+                })
+                .collect()
+        })
+        .collect();
     let body: Vec<u8> = rows.iter().flat_map(|r| rle_line(r)).collect();
     let f = decode("a.hdr", &file(&format!("-Y 3 +X {w}"), &body)).unwrap();
     let p = px(&f);
     for (y, r) in rows.iter().enumerate() {
         for (x, q) in r.iter().enumerate() {
             let want = rgbe(*q);
-            assert_eq!(&p[(y * w + x) * 4..(y * w + x) * 4 + 3], &want, "pixel {x},{y}");
+            assert_eq!(
+                &p[(y * w + x) * 4..(y * w + x) * 4 + 3],
+                &want,
+                "pixel {x},{y}"
+            );
         }
     }
 }
@@ -115,7 +145,13 @@ fn hostile_input_is_an_error_not_a_panic() {
     assert!(decode("a.hdr", &file("-Y 0 +X 4", &[])).is_err());
     assert!(decode("a.hdr", &file("-Y 2 -Y 2", &[0; 16])).is_err());
     assert!(decode("a.hdr", &file("junk", &[0; 16])).is_err());
-    assert!(decode("a.hdr", b"#?RADIANCE\nFORMAT=32-bit_rle_xyze\n\n-Y 1 +X 1\n\0\0\0\0").is_err());
+    assert!(
+        decode(
+            "a.hdr",
+            b"#?RADIANCE\nFORMAT=32-bit_rle_xyze\n\n-Y 1 +X 1\n\0\0\0\0"
+        )
+        .is_err()
+    );
     // an RLE line announcing the wrong width, a run past the end, a run at the start of a flat line
     assert!(decode("a.hdr", &file("-Y 1 +X 10", &[2, 2, 0, 11, 0])).is_err());
     assert!(decode("a.hdr", &file("-Y 1 +X 10", &[2, 2, 0, 10, 200, 1])).is_err());
@@ -128,7 +164,12 @@ fn opens_as_a_float_still() {
     let body = [[128u8, 128, 128, 136]; 4].concat();
     let s = still("a.hdr", &file("-Y 2 +X 2", &body)).unwrap();
     let info = crate::MediaSource::info(&s);
-    assert_eq!(info.video.as_ref().map(|v| (v.width, v.height, v.codec.as_str())), Some((2, 2, "HDR")));
+    assert_eq!(
+        info.video
+            .as_ref()
+            .map(|v| (v.width, v.height, v.codec.as_str())),
+        Some((2, 2, "HDR"))
+    );
     let src = crate::open_bytes("a.hdr", file("-Y 2 +X 2", &body).into(), &[]).unwrap();
     assert_eq!(src.info().kind, MediaKind::Still);
 }

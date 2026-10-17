@@ -113,14 +113,23 @@ impl Translator {
                 }
             }
 
-            Ok(Self { backend: Backend::Auto, client, cache, cache_path, contact_email })
+            Ok(Self {
+                backend: Backend::Auto,
+                client,
+                cache,
+                cache_path,
+                contact_email,
+            })
         }
 
         #[cfg(target_arch = "wasm32")]
         {
             let _ = cache_path;
             let _ = contact_email;
-            Ok(Self { backend: Backend::Auto, cache })
+            Ok(Self {
+                backend: Backend::Auto,
+                cache,
+            })
         }
     }
 
@@ -171,7 +180,7 @@ impl Translator {
             Err(error) => {
                 warn!(%error, "échec cascade traduction, conservation texte original");
                 Ok(text.trim().to_owned())
-            },
+            }
         }
     }
 
@@ -207,7 +216,7 @@ impl Translator {
                         Ok(tr) => Ok(tr),
                         Err(_) => self.translate_google_rpc(stripped, source, target).await,
                     }
-                },
+                }
                 Backend::GoogleRpc => self.translate_google_rpc(stripped, source, target).await,
                 Backend::MyMemory => self.translate_mymemory(stripped, source, target).await,
                 Backend::Auto => {
@@ -221,11 +230,11 @@ impl Translator {
                                 _ => {
                                     // 3. Repli ultime MyMemory
                                     self.translate_mymemory(stripped, source, target).await
-                                },
+                                }
                             }
-                        },
+                        }
                     }
-                },
+                }
             };
 
             match res {
@@ -238,7 +247,7 @@ impl Translator {
                         anyhow::bail!("translation backend returned an empty response");
                     }
                     Ok(final_res)
-                },
+                }
                 Err(error) => Err(error),
             }
         }
@@ -254,7 +263,12 @@ impl Translator {
             urlencoding::encode(text)
         );
 
-        let resp = self.client.get(&url).send().await.context("google rpc request")?;
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("google rpc request")?;
         if !resp.status().is_success() {
             anyhow::bail!("google rpc HTTP {}", resp.status());
         }
@@ -282,20 +296,32 @@ impl Translator {
             std::env::var("APHRODY_WEB_GOOGLE_BIN").context("APHRODY_WEB_GOOGLE_BIN absent")?;
 
         let mut cmd = tokio::process::Command::new(&web_cmd).no_window();
-        cmd.args(["google", "translate", text, "--target", target, "--source", source]);
+        cmd.args([
+            "google",
+            "translate",
+            text,
+            "--target",
+            target,
+            "--source",
+            source,
+        ]);
         cmd.stdout(std::process::Stdio::piped());
         cmd.stderr(std::process::Stdio::piped());
 
         // Do not revive a second Bun runtime through machine-specific
         // paths; callers already fall back to the native Google RPC backend.
-        let output =
-            cmd.output().await.with_context(|| format!("spawn Web Google adapter {web_cmd}"))?;
+        let output = cmd
+            .output()
+            .await
+            .with_context(|| format!("spawn Web Google adapter {web_cmd}"))?;
 
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
             // Nettoyage des lignes de progression [google] ou [recon]
-            let cleaned: Vec<&str> =
-                stdout.lines().filter(|l| !l.starts_with('[') && !l.trim().is_empty()).collect();
+            let cleaned: Vec<&str> = stdout
+                .lines()
+                .filter(|l| !l.starts_with('[') && !l.trim().is_empty())
+                .collect();
             let res = cleaned.join("\n").trim().to_string();
             if !res.is_empty() {
                 return Ok(res);
@@ -318,7 +344,12 @@ impl Translator {
             url.push_str(&format!("&de={}", urlencoding::encode(mail)));
         }
 
-        let resp = self.client.get(&url).send().await.context("mymemory request")?;
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .context("mymemory request")?;
         let parsed: MyMemoryResponse = resp.json().await.context("mymemory parse")?;
         if parsed.response_status == 200 {
             Ok(parsed.response_data.translated_text)
@@ -371,10 +402,18 @@ mod tests {
             .timeout(std::time::Duration::from_millis(100))
             .build()
             .expect("client");
-        assert!(translator.translate_with_lang_strict("Hello", "en", "fr").await.is_err());
+        assert!(
+            translator
+                .translate_with_lang_strict("Hello", "en", "fr")
+                .await
+                .is_err()
+        );
         assert!(translator.cache.is_empty());
         assert_eq!(
-            translator.translate_with_lang("Hello", "en", "fr").await.expect("fallback"),
+            translator
+                .translate_with_lang("Hello", "en", "fr")
+                .await
+                .expect("fallback"),
             "Hello"
         );
         assert!(translator.cache.is_empty());

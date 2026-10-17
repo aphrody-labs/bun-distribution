@@ -56,7 +56,12 @@ pub trait IosDevice: Send {
     }
 
     fn seek(&mut self, ctx: &mut DeviceContext<'_>, offset: i32, whence: i32) -> i32 {
-        tracing::warn!(device = &ctx.device_path, offset, whence, "IOS_Seek: unimplemented");
+        tracing::warn!(
+            device = &ctx.device_path,
+            offset,
+            whence,
+            "IOS_Seek: unimplemented"
+        );
         0
     }
 
@@ -181,8 +186,12 @@ pub fn deliver_response<const SYSTEM: SystemId>(
     sys.mmio.phys_write_u32(cmd_paddr + 0x04, result as u32);
     sys.mmio.phys_write_u32(cmd_paddr + 0x08, cmd_type);
     sys.hollywood.ipc.armmsg = ArmMsg::from_raw(cmd_paddr);
-    sys.hollywood.ipc.ppcctrl =
-        sys.hollywood.ipc.ppcctrl.with_arm_response(true).with_arm_post_ack(true);
+    sys.hollywood.ipc.ppcctrl = sys
+        .hollywood
+        .ipc
+        .ppcctrl
+        .with_arm_response(true)
+        .with_arm_post_ack(true);
     tracing::debug!(
         cmd_paddr = format!("{cmd_paddr:#010X}"),
         cmd_type,

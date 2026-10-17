@@ -149,7 +149,14 @@ impl TaskPlan {
         let label = label.into();
         validate_required_text(&id, MAX_TASK_PLAN_ID_BYTES, true)?;
         validate_required_text(&label, MAX_TASK_PLAN_LABEL_BYTES, false)?;
-        Ok(Self { id, label, phase: TaskPhase::Queued, done: 0, total, message: None })
+        Ok(Self {
+            id,
+            label,
+            phase: TaskPhase::Queued,
+            done: 0,
+            total,
+            message: None,
+        })
     }
 
     /// Marks a queued task as running.
@@ -177,7 +184,10 @@ impl TaskPlan {
 
     /// Marks a running task as successfully completed.
     pub fn complete(&mut self) -> Result<(), TaskPlanError> {
-        self.transition(TaskPhase::Completed, &[TaskPhase::Running, TaskPhase::CancelRequested])
+        self.transition(
+            TaskPhase::Completed,
+            &[TaskPhase::Running, TaskPhase::CancelRequested],
+        )
     }
 
     /// Confirms that a cancellation request stopped the task at a cooperative checkpoint.
@@ -189,7 +199,12 @@ impl TaskPlan {
     pub fn fail(&mut self) -> Result<(), TaskPlanError> {
         self.transition(
             TaskPhase::Failed,
-            &[TaskPhase::Queued, TaskPhase::Running, TaskPhase::Paused, TaskPhase::CancelRequested],
+            &[
+                TaskPhase::Queued,
+                TaskPhase::Running,
+                TaskPhase::Paused,
+                TaskPhase::CancelRequested,
+            ],
         )
     }
 
@@ -204,7 +219,10 @@ impl TaskPlan {
             self.phase,
             TaskPhase::Running | TaskPhase::Paused | TaskPhase::CancelRequested
         ) {
-            return Err(TaskPlanError::InvalidTransition { from: self.phase, to: self.phase });
+            return Err(TaskPlanError::InvalidTransition {
+                from: self.phase,
+                to: self.phase,
+            });
         }
         if total != 0 && done > total {
             return Err(TaskPlanError::ProgressExceedsTotal { done, total });
@@ -212,7 +230,9 @@ impl TaskPlan {
         if let Some(value) = message.as_deref()
             && value.len() > MAX_TASK_PROGRESS_MESSAGE_BYTES
         {
-            return Err(TaskPlanError::MessageTooLong { max: MAX_TASK_PROGRESS_MESSAGE_BYTES });
+            return Err(TaskPlanError::MessageTooLong {
+                max: MAX_TASK_PROGRESS_MESSAGE_BYTES,
+            });
         }
         self.done = done;
         self.total = total;
@@ -254,7 +274,10 @@ impl TaskPlan {
         allowed_from: &[TaskPhase],
     ) -> Result<(), TaskPlanError> {
         if !allowed_from.contains(&self.phase) {
-            return Err(TaskPlanError::InvalidTransition { from: self.phase, to });
+            return Err(TaskPlanError::InvalidTransition {
+                from: self.phase,
+                to,
+            });
         }
         self.phase = to;
         Ok(())
@@ -263,7 +286,11 @@ impl TaskPlan {
 
 fn validate_required_text(value: &str, max: usize, is_id: bool) -> Result<(), TaskPlanError> {
     if value.trim().is_empty() {
-        return Err(if is_id { TaskPlanError::EmptyId } else { TaskPlanError::EmptyLabel });
+        return Err(if is_id {
+            TaskPlanError::EmptyId
+        } else {
+            TaskPlanError::EmptyLabel
+        });
     }
     if value.len() > max {
         return Err(if is_id {
@@ -344,7 +371,7 @@ mod host {
                 match *rx.borrow() {
                     Signal::Run => return Ok(()),
                     Signal::Cancel => return Err(Canceled),
-                    Signal::Pause => {},
+                    Signal::Pause => {}
                 }
                 // `changed()` échoue seulement si l'émetteur (TaskSystem) a été abandonné —
                 // dans ce cas le job n'a plus de superviseur, on le laisse continuer (Run implicite).
@@ -388,8 +415,12 @@ mod host {
         /// Rapporte un avancement. Silencieux (pas de panique) si plus personne n'écoute — un job ne
         /// doit jamais planter parce que l'UI qui l'avait lancé a fermé son canal de progression.
         pub fn report(&self, done: u64, total: u64, message: impl Into<Option<String>>) {
-            let _ =
-                self.tx.send(TaskProgress { id: self.id, done, total, message: message.into() });
+            let _ = self.tx.send(TaskProgress {
+                id: self.id,
+                done,
+                total,
+                message: message.into(),
+            });
         }
     }
 
@@ -514,7 +545,10 @@ mod host {
 
             let ctx = TaskContext {
                 interrupter: Interrupter { rx: cancel_rx },
-                progress: ProgressReporter { id, tx: self.progress_tx.clone() },
+                progress: ProgressReporter {
+                    id,
+                    tx: self.progress_tx.clone(),
+                },
             };
             let cancel_senders = Arc::clone(&self.cancel_senders);
 
@@ -523,17 +557,24 @@ mod host {
                     Ok(ExecStatus::Done(output)) if ctx.interrupter.is_canceled() => {
                         tracing::debug!(%id, "job terminé après demande d'annulation — statut Done conservé");
                         TaskStatus::Done(output)
-                    },
+                    }
                     Ok(ExecStatus::Done(output)) => TaskStatus::Done(output),
                     Err(e) => TaskStatus::Error(e),
                 };
                 // Nettoyage du registre à la fin du job, réussite ou non — sans quoi `cancel_senders`
                 // croîtrait indéfiniment sur une longue session (nie-explorer reste ouvert des heures).
-                cancel_senders.lock().expect("cancel_senders mutex empoisonné").remove(&id);
+                cancel_senders
+                    .lock()
+                    .expect("cancel_senders mutex empoisonné")
+                    .remove(&id);
                 status
             });
 
-            TaskHandle { id, join, cancel_tx }
+            TaskHandle {
+                id,
+                join,
+                cancel_tx,
+            }
         }
 
         /// Annule un job par son identifiant — no-op silencieux s'il est déjà terminé ou inconnu.
@@ -552,8 +593,11 @@ mod host {
         }
 
         fn signal(&self, id: TaskId, signal: Signal) {
-            if let Some(tx) =
-                self.cancel_senders.lock().expect("cancel_senders mutex empoisonné").get(&id)
+            if let Some(tx) = self
+                .cancel_senders
+                .lock()
+                .expect("cancel_senders mutex empoisonné")
+                .get(&id)
             {
                 let _ = tx.send(signal);
             }
@@ -583,7 +627,10 @@ mod host {
 
             async fn run(&mut self, ctx: &TaskContext) -> Result<ExecStatus, String> {
                 for i in 0..self.n {
-                    ctx.interrupter.check().await.map_err(|_| "annulé".to_string())?;
+                    ctx.interrupter
+                        .check()
+                        .await
+                        .map_err(|_| "annulé".to_string())?;
                     ctx.progress.report(i + 1, self.n, None);
                 }
                 Ok(ExecStatus::Done(serde_json::json!({ "counted": self.n })))
@@ -593,7 +640,10 @@ mod host {
         #[tokio::test]
         async fn job_va_au_bout_et_rapporte_sa_progression() {
             let (system, mut progress) = TaskSystem::<String>::new();
-            let handle = system.dispatch(CountTo { id: TaskId::new(), n: 5 });
+            let handle = system.dispatch(CountTo {
+                id: TaskId::new(),
+                n: 5,
+            });
             let status = handle.wait().await;
             match status {
                 TaskStatus::Done(v) => assert_eq!(v["counted"], 5),
@@ -619,7 +669,10 @@ mod host {
             async fn run(&mut self, ctx: &TaskContext) -> Result<ExecStatus, String> {
                 let mut i: u64 = 0;
                 loop {
-                    ctx.interrupter.check().await.map_err(|_| "annulé".to_string())?;
+                    ctx.interrupter
+                        .check()
+                        .await
+                        .map_err(|_| "annulé".to_string())?;
                     i += 1;
                     if i > 10_000_000 {
                         return Ok(ExecStatus::Done(serde_json::Value::Null));
@@ -663,14 +716,21 @@ mod portable_tests {
         assert_eq!(plan.snapshot().available_controls, [TaskControl::Cancel]);
 
         plan.start().unwrap();
-        plan.report(4_096, 255_800, Some("data/cpk/base.cpk".to_owned())).unwrap();
+        plan.report(4_096, 255_800, Some("data/cpk/base.cpk".to_owned()))
+            .unwrap();
         let running = plan.snapshot();
         assert_eq!(running.phase, TaskPhase::Running);
         assert_eq!(running.done, 4_096);
-        assert_eq!(running.available_controls, [TaskControl::Pause, TaskControl::Cancel]);
+        assert_eq!(
+            running.available_controls,
+            [TaskControl::Pause, TaskControl::Cancel]
+        );
 
         plan.pause().unwrap();
-        assert_eq!(plan.snapshot().available_controls, [TaskControl::Resume, TaskControl::Cancel]);
+        assert_eq!(
+            plan.snapshot().available_controls,
+            [TaskControl::Resume, TaskControl::Cancel]
+        );
         plan.request_cancel().unwrap();
         assert!(plan.snapshot().available_controls.is_empty());
         plan.confirm_canceled().unwrap();
@@ -697,18 +757,26 @@ mod portable_tests {
     fn plan_rejects_unbounded_and_invalid_updates_without_mutation() {
         assert_eq!(TaskPlan::new("", "Scan", 1), Err(TaskPlanError::EmptyId));
         let mut plan = TaskPlan::new("scan", "Scan", 10).unwrap();
-        assert!(matches!(plan.report(1, 10, None), Err(TaskPlanError::InvalidTransition { .. })));
+        assert!(matches!(
+            plan.report(1, 10, None),
+            Err(TaskPlanError::InvalidTransition { .. })
+        ));
         plan.start().unwrap();
         assert_eq!(
             plan.report(11, 10, None),
-            Err(TaskPlanError::ProgressExceedsTotal { done: 11, total: 10 })
+            Err(TaskPlanError::ProgressExceedsTotal {
+                done: 11,
+                total: 10
+            })
         );
         assert_eq!(plan.snapshot().done, 0);
 
         let oversized = "x".repeat(MAX_TASK_PROGRESS_MESSAGE_BYTES + 1);
         assert_eq!(
             plan.report(1, 10, Some(oversized)),
-            Err(TaskPlanError::MessageTooLong { max: MAX_TASK_PROGRESS_MESSAGE_BYTES })
+            Err(TaskPlanError::MessageTooLong {
+                max: MAX_TASK_PROGRESS_MESSAGE_BYTES
+            })
         );
         assert_eq!(plan.snapshot().done, 0);
     }

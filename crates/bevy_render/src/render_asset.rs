@@ -1,6 +1,6 @@
 use crate::{
-    render_resource::AsBindGroupError, Extract, ExtractSchedule, MainWorld, Render, RenderApp,
-    RenderStartup, RenderSystems, Res,
+    Extract, ExtractSchedule, MainWorld, Render, RenderApp, RenderStartup, RenderSystems, Res,
+    render_resource::AsBindGroupError,
 };
 use bevy_app::{App, Plugin, SubApp};
 use bevy_asset::{Asset, AssetEvent, AssetId, Assets, RenderAssetUsages};
@@ -33,7 +33,9 @@ pub struct AssetExtractionSystems;
 pub enum AssetExtractionError {
     #[error("The asset has already been extracted")]
     AlreadyExtracted,
-    #[error("The asset type does not support extraction. To clone the asset to the renderworld, use `RenderAssetUsages::default()`")]
+    #[error(
+        "The asset type does not support extraction. To clone the asset to the renderworld, use `RenderAssetUsages::default()`"
+    )]
     NoExtractionImplementation,
 }
 

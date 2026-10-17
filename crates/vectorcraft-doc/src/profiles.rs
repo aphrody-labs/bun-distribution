@@ -29,8 +29,15 @@ impl ColorProfiles {
 
     /// Read the legacy JSON form (anything that isn't a name counts as none).
     pub fn from_legacy(v: &serde_json::Value) -> Self {
-        let name = |k: &str| v.get(k).and_then(serde_json::Value::as_str).map(str::to_string);
-        Self { rgb: name("rgb"), cmyk: name("cmyk") }
+        let name = |k: &str| {
+            v.get(k)
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_string)
+        };
+        Self {
+            rgb: name("rgb"),
+            cmyk: name("cmyk"),
+        }
     }
 }
 
@@ -38,7 +45,9 @@ impl Document {
     /// Files before format v3 kept the assigned profiles under [`LEGACY_PROFILES_KEY`] in
     /// `unknown`: move them to [`Document::color_profiles`].
     pub fn migrate_color_profiles(&mut self) {
-        let Some(v) = self.unknown.remove(LEGACY_PROFILES_KEY) else { return };
+        let Some(v) = self.unknown.remove(LEGACY_PROFILES_KEY) else {
+            return;
+        };
         if self.color_profiles.is_empty() {
             self.color_profiles = ColorProfiles::from_legacy(&v);
         }
@@ -48,7 +57,8 @@ impl Document {
     pub fn store_legacy_color_profiles(&mut self) {
         let profiles = std::mem::take(&mut self.color_profiles);
         if !profiles.is_empty() {
-            self.unknown.insert(LEGACY_PROFILES_KEY.into(), profiles.to_legacy());
+            self.unknown
+                .insert(LEGACY_PROFILES_KEY.into(), profiles.to_legacy());
         }
     }
 }
@@ -60,13 +70,25 @@ mod tests {
     #[test]
     fn legacy_profiles_migrate_both_ways() {
         let mut d = Document::new(10.0, 10.0);
-        d.unknown.insert(LEGACY_PROFILES_KEY.into(), serde_json::json!({"rgb": "Wide RGB", "cmyk": null}));
+        d.unknown.insert(
+            LEGACY_PROFILES_KEY.into(),
+            serde_json::json!({"rgb": "Wide RGB", "cmyk": null}),
+        );
         d.migrate_color_profiles();
-        assert_eq!(d.color_profiles, ColorProfiles { rgb: Some("Wide RGB".into()), cmyk: None });
+        assert_eq!(
+            d.color_profiles,
+            ColorProfiles {
+                rgb: Some("Wide RGB".into()),
+                cmyk: None
+            }
+        );
         assert!(!d.unknown.contains_key(LEGACY_PROFILES_KEY));
         d.store_legacy_color_profiles();
         assert!(d.color_profiles.is_empty());
-        assert_eq!(d.unknown[LEGACY_PROFILES_KEY], serde_json::json!({"rgb": "Wide RGB", "cmyk": null}));
+        assert_eq!(
+            d.unknown[LEGACY_PROFILES_KEY],
+            serde_json::json!({"rgb": "Wide RGB", "cmyk": null})
+        );
         // Nothing assigned: nothing stored.
         let mut e = Document::new(10.0, 10.0);
         e.store_legacy_color_profiles();

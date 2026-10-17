@@ -6,15 +6,15 @@ use crate::pricing::kinovi_pricing_tier::KinoviPricingTier;
 /// expose single-rate inherent `calculate_costs()` methods and will migrate
 /// here.
 pub trait KinoviCostCalculatorTrait {
-  type Cost;
+    type Cost;
 
-  fn calculate_costs(&self, tier: KinoviPricingTier) -> Self::Cost;
+    fn calculate_costs(&self, tier: KinoviPricingTier) -> Self::Cost;
 
-  fn calculate_consumer_costs(&self) -> Self::Cost {
-    self.calculate_costs(KinoviPricingTier::Consumer)
-  }
+    fn calculate_consumer_costs(&self) -> Self::Cost {
+        self.calculate_costs(KinoviPricingTier::Consumer)
+    }
 
-  fn calculate_enterprise_costs(&self) -> Self::Cost {
-    self.calculate_costs(KinoviPricingTier::Enterprise)
-  }
+    fn calculate_enterprise_costs(&self) -> Self::Cost {
+        self.calculate_costs(KinoviPricingTier::Enterprise)
+    }
 }

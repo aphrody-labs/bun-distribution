@@ -95,7 +95,11 @@ impl Power {
             reg_mask: if is_ds_lite { 7 } else { 3 },
             cur_reg_index: RegIndex(0),
             control: Control(0),
-            sound_level: if is_ds_lite { SoundLevel::Muted } else { SoundLevel::Low },
+            sound_level: if is_ds_lite {
+                SoundLevel::Muted
+            } else {
+                SoundLevel::Low
+            },
             power_led_state: PowerLedState::Normal,
             battery_low: false,
             mic_amplifier_enabled: false,
@@ -181,11 +185,11 @@ impl Power {
             match value {
                 SoundLevel::Normal => {
                     self.control.set_sound_amplifier_enabled(true);
-                },
+                }
                 SoundLevel::Low => return false,
                 SoundLevel::Muted => {
                     self.control.set_sound_amplifier_enabled(false);
-                },
+                }
             }
         } else {
             match value {
@@ -194,19 +198,19 @@ impl Power {
                         .control
                         .with_sound_amplifier_enabled(true)
                         .with_sound_amplifier_muted(false);
-                },
+                }
                 SoundLevel::Low => {
                     self.control = self
                         .control
                         .with_sound_amplifier_enabled(false)
                         .with_sound_amplifier_muted(false);
-                },
+                }
                 SoundLevel::Muted => {
                     self.control = self
                         .control
                         .with_sound_amplifier_enabled(true)
                         .with_sound_amplifier_muted(true);
-                },
+                }
             }
         }
         true
@@ -221,17 +225,23 @@ impl Power {
     pub fn set_power_led_state(&mut self, value: PowerLedState) {
         match value {
             PowerLedState::Normal => {
-                self.control =
-                    self.control.with_power_led_blinking(false).with_power_led_blink_speed(false);
-            },
+                self.control = self
+                    .control
+                    .with_power_led_blinking(false)
+                    .with_power_led_blink_speed(false);
+            }
             PowerLedState::Blinking => {
-                self.control =
-                    self.control.with_power_led_blinking(true).with_power_led_blink_speed(false);
-            },
+                self.control = self
+                    .control
+                    .with_power_led_blinking(true)
+                    .with_power_led_blink_speed(false);
+            }
             PowerLedState::BlinkingFast => {
-                self.control =
-                    self.control.with_power_led_blinking(true).with_power_led_blink_speed(true);
-            },
+                self.control = self
+                    .control
+                    .with_power_led_blinking(true)
+                    .with_power_led_blink_speed(true);
+            }
         }
     }
 
@@ -243,8 +253,11 @@ impl Power {
     #[inline]
     pub fn set_mic_amplifier_enabled(&mut self, value: bool) {
         self.mic_amplifier_enabled = value;
-        self.mic_amplifier_gain =
-            if value { 20 << self.mic_amplifier_gain_control.gain_shift() } else { 0 };
+        self.mic_amplifier_gain = if value {
+            20 << self.mic_amplifier_gain_control.gain_shift()
+        } else {
+            0
+        };
     }
 
     #[inline]
@@ -359,12 +372,12 @@ impl Power {
                 3 => self.mic_amplifier_gain_control.0,
                 _ => {
                     (self.ds_lite_backlight_control.0 & 0xFC) | (self.ds_lite_backlight_level as u8)
-                },
+                }
             }
         } else {
             match self.cur_reg_index.0 & self.reg_mask {
                 0 => self.write_control(Control(value), arm7_schedule, emu_schedule),
-                1 => {},
+                1 => {}
                 2 => self.set_mic_amplifier_enabled(value & 1 != 0),
                 3 => self.set_mic_amplifier_gain_control(MicAmplifierGainControl(value)),
                 _ => self.set_ds_lite_backlight_control(DsLiteBacklightControl(value)),

@@ -91,7 +91,9 @@ impl ExternalInterface {
     }
 
     pub fn device_connected(&self, channel: usize) -> bool {
-        self.devices[channel][0].as_ref().is_some_and(|d| d.connected())
+        self.devices[channel][0]
+            .as_ref()
+            .is_some_and(|d| d.connected())
     }
 
     pub fn macronix_mut(&mut self) -> Option<&mut macronix::ExiMacronix> {
@@ -149,7 +151,7 @@ impl ExternalInterface {
                 );
                 self.finish_transfer::<CHANNEL>();
                 return;
-            },
+            }
         };
 
         let size = (transfer_length as usize) + 1;
@@ -215,15 +217,15 @@ impl ExternalInterface {
             0 => {
                 self.ch0_cr.set_transfer_start(false);
                 self.ch0_csr.set_tc_interrupt(true);
-            },
+            }
             1 => {
                 self.ch1_cr.set_transfer_start(false);
                 self.ch1_csr.set_tc_interrupt(true);
-            },
+            }
             2 => {
                 self.ch2_cr.set_transfer_start(false);
                 self.ch2_csr.set_tc_interrupt(true);
-            },
+            }
             _ => unreachable!(),
         }
     }
@@ -277,10 +279,12 @@ pub fn on_chip_select_written<const CHANNEL: usize, const SYSTEM: SystemId>(
                 device.on_select();
             }
         } else if let Some(slot) = ExternalInterface::cs_to_slot(prev)
-            && let Some(delay) =
-                sys.exi.devices[CHANNEL][slot].as_mut().and_then(|d| d.on_deselect())
+            && let Some(delay) = sys.exi.devices[CHANNEL][slot]
+                .as_mut()
+                .and_then(|d| d.on_deselect())
         {
-            sys.scheduler.schedule_in(delay, crate::scheduler::Handler::memcard_cmd_done(CHANNEL));
+            sys.scheduler
+                .schedule_in(delay, crate::scheduler::Handler::memcard_cmd_done(CHANNEL));
         }
     }
 
@@ -290,7 +294,9 @@ pub fn on_chip_select_written<const CHANNEL: usize, const SYSTEM: SystemId>(
 pub(crate) fn memcard_cmd_done<const CHANNEL: usize, const SYSTEM: SystemId>(
     sys: &mut System<SYSTEM>,
 ) {
-    let raise = sys.exi.devices[CHANNEL][0].as_mut().is_some_and(|d| d.complete_command());
+    let raise = sys.exi.devices[CHANNEL][0]
+        .as_mut()
+        .is_some_and(|d| d.complete_command());
 
     if raise {
         sys.exi.set_exi_interrupt::<CHANNEL>(true);
@@ -337,10 +343,14 @@ pub fn run_dma<const CHANNEL: usize, const SYSTEM: SystemId>(sys: &mut System<SY
     let slot = match ExternalInterface::cs_to_slot(cs) {
         Some(s) => s,
         None => {
-            tracing::warn!(channel = CHANNEL, cs, "EXI DMA transfer with no/invalid chip select");
+            tracing::warn!(
+                channel = CHANNEL,
+                cs,
+                "EXI DMA transfer with no/invalid chip select"
+            );
             sys.exi.finish_transfer::<CHANNEL>();
             return;
-        },
+        }
     };
 
     if let Some(device) = &mut sys.exi.devices[CHANNEL][slot] {
@@ -360,7 +370,7 @@ pub fn run_dma<const CHANNEL: usize, const SYSTEM: SystemId>(sys: &mut System<SY
                 device.dma_read(sys.mmio.phys_slice_mut(address, length as usize));
                 #[cfg(feature = "jit")]
                 sys.mmio.queue_icbi_for_range(address, length);
-            },
+            }
             TransferType::Write => {
                 if stub && SYSTEM == crate::system::GC {
                     tracing::error!(
@@ -372,17 +382,23 @@ pub fn run_dma<const CHANNEL: usize, const SYSTEM: SystemId>(sys: &mut System<SY
                 }
 
                 device.dma_write(sys.mmio.phys_slice(address, length as usize));
-            },
+            }
             TransferType::ReadAndWrite | TransferType::Reserved => {
                 tracing::error!(
                     channel = CHANNEL,
                     cs,
                     "EXI DMA transfer with invalid/unimplemented transfer type"
                 );
-            },
+            }
         }
     } else if SYSTEM == crate::system::GC {
-        tracing::warn!(channel = CHANNEL, slot, ?transfer_type, length, "EXI DMA to empty slot");
+        tracing::warn!(
+            channel = CHANNEL,
+            slot,
+            ?transfer_type,
+            length,
+            "EXI DMA to empty slot"
+        );
     }
 
     sys.exi.finish_transfer::<CHANNEL>();
@@ -416,7 +432,7 @@ impl ExternalInterface {
                         crate::savestate::StateWriter::with_capacity(DEVICE_STATE_CAPACITY);
                     device.save_state(&mut inner);
                     w.bytes(&inner.into_inner());
-                },
+                }
                 None => w.bool(false),
             }
         }

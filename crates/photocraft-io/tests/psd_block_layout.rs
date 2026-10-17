@@ -39,8 +39,15 @@ fn sold(uuid: &str) -> Vec<u8> {
     d.extend(4u32.to_be_bytes());
     use photocraft_psd::descriptor::Value;
     // The strict check wants what Photoshop needs to place the layer: its file id and transform.
-    let quad = [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0].map(Value::Double).to_vec();
-    let desc = Descriptor::new("null").with("Idnt", Value::Text(photocraft_psd::descriptor::UnicodeString::new_nul(uuid))).with("Trnf", Value::List(quad));
+    let quad = [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0]
+        .map(Value::Double)
+        .to_vec();
+    let desc = Descriptor::new("null")
+        .with(
+            "Idnt",
+            Value::Text(photocraft_psd::descriptor::UnicodeString::new_nul(uuid)),
+        )
+        .with("Trnf", Value::List(quad));
     d.extend(VersionedDescriptor::new(desc).to_bytes());
     while !d.len().is_multiple_of(4) {
         d.push(0);
@@ -51,7 +58,9 @@ fn sold(uuid: &str) -> Vec<u8> {
 fn reexport(f: &PsdFile) -> Vec<u8> {
     let bytes = f.to_bytes().unwrap();
     let imp = import("in.psd", &bytes).unwrap();
-    export(&imp.document, "out.psd", &ExportOptions::default()).unwrap().bytes
+    export(&imp.document, "out.psd", &ExportOptions::default())
+        .unwrap()
+        .bytes
 }
 
 #[test]
@@ -61,7 +70,11 @@ fn placed_layer_blocks_keep_their_keys() {
     // Photoshop's order: PlLd before SoLd. The importer keeps SoLd as the principal block.
     f.layers_mut().push(LayerRecord {
         name: b"smart".to_vec(),
-        blocks: vec![TaggedBlock::unicode_name("smart"), TaggedBlock::new(*b"PlLd", plld(uuid)), TaggedBlock::new(*b"SoLd", sold(uuid))],
+        blocks: vec![
+            TaggedBlock::unicode_name("smart"),
+            TaggedBlock::new(*b"PlLd", plld(uuid)),
+            TaggedBlock::new(*b"SoLd", sold(uuid)),
+        ],
         ..Default::default()
     });
     for b in f.layers().last().unwrap().blocks.iter() {
@@ -70,7 +83,11 @@ fn placed_layer_blocks_keep_their_keys() {
     let out = reexport(&f);
     assert_eq!(common::strict_block_errors(&out), Vec::<String>::new());
     let back = PsdFile::from_bytes(&out).unwrap();
-    let rec = back.layers().iter().find(|l| l.block(b"SoLd").is_some()).unwrap();
+    let rec = back
+        .layers()
+        .iter()
+        .find(|l| l.block(b"SoLd").is_some())
+        .unwrap();
     // Before the fix the SoLd data overwrote the PlLd block.
     assert_eq!(rec.block(b"PlLd").unwrap().data, plld(uuid));
     assert_eq!(rec.block(b"SoLd").unwrap().data, sold(uuid));
@@ -79,8 +96,16 @@ fn placed_layer_blocks_keep_their_keys() {
 #[test]
 fn check_structure_rejects_swapped_placed_data() {
     let uuid = "u";
-    assert!(TaggedBlock::new(*b"PlLd", sold(uuid)).check_structure().is_err());
-    assert!(TaggedBlock::new(*b"SoLd", plld(uuid)).check_structure().is_err());
+    assert!(
+        TaggedBlock::new(*b"PlLd", sold(uuid))
+            .check_structure()
+            .is_err()
+    );
+    assert!(
+        TaggedBlock::new(*b"SoLd", plld(uuid))
+            .check_structure()
+            .is_err()
+    );
     let mut short = plld(uuid);
     short.truncate(short.len() - 3);
     assert!(TaggedBlock::new(*b"PlLd", short).check_structure().is_err());
@@ -105,7 +130,8 @@ fn global_blocks_are_padded_to_four() {
     let mut cai = TaggedBlock::new(*b"CAI ", vec![7; 77]);
     cai.padding = Some(vec![0; 3]);
     f.global_blocks.push(cai);
-    f.global_blocks.push(TaggedBlock::new(*b"zEnd", vec![1, 2, 3, 4]));
+    f.global_blocks
+        .push(TaggedBlock::new(*b"zEnd", vec![1, 2, 3, 4]));
     let out = reexport(&f);
     assert_eq!(common::strict_block_errors(&out), Vec::<String>::new());
     let back = PsdFile::from_bytes(&out).unwrap();
@@ -115,14 +141,40 @@ fn global_blocks_are_padded_to_four() {
 
 #[test]
 fn deep_documents_pad_the_layer_info_block() {
-    for depth in [photocraft_color::SampleType::U16, photocraft_color::SampleType::F32] {
-        let mut d = photocraft_doc::Document::new("d", photocraft_geom::Size::new(5, 3), photocraft_color::ColorMode::Rgb, depth);
+    for depth in [
+        photocraft_color::SampleType::U16,
+        photocraft_color::SampleType::F32,
+    ] {
+        let mut d = photocraft_doc::Document::new(
+            "d",
+            photocraft_geom::Size::new(5, 3),
+            photocraft_color::ColorMode::Rgb,
+            depth,
+        );
         let fmt = d.pixel_format();
         // Odd sizes so the unpadded layer info length is not a multiple of 4.
-        d.layers.push(common::raster("a", fmt, photocraft_geom::Rect::new(0, 0, 5, 3), 1, true));
-        d.layers.push(common::raster("b", fmt, photocraft_geom::Rect::new(1, 1, 3, 1), 2, true));
-        let out = export(&d, "out.psd", &ExportOptions::default()).unwrap().bytes;
-        assert_eq!(common::strict_block_errors(&out), Vec::<String>::new(), "{depth:?}");
+        d.layers.push(common::raster(
+            "a",
+            fmt,
+            photocraft_geom::Rect::new(0, 0, 5, 3),
+            1,
+            true,
+        ));
+        d.layers.push(common::raster(
+            "b",
+            fmt,
+            photocraft_geom::Rect::new(1, 1, 3, 1),
+            2,
+            true,
+        ));
+        let out = export(&d, "out.psd", &ExportOptions::default())
+            .unwrap()
+            .bytes;
+        assert_eq!(
+            common::strict_block_errors(&out),
+            Vec::<String>::new(),
+            "{depth:?}"
+        );
     }
 }
 
@@ -149,7 +201,10 @@ fn psb_long_length_keys_are_read_and_written_with_eight_bytes() {
     let bytes = f.to_bytes().unwrap();
     // The length field is 8 bytes: the 4 bytes after the key are the high half (0).
     let at = bytes.windows(8).position(|w| w == b"8B64cinf").unwrap();
-    assert_eq!(&bytes[at + 8..at + 16], &(cinf.data.len() as u64).to_be_bytes());
+    assert_eq!(
+        &bytes[at + 8..at + 16],
+        &(cinf.data.len() as u64).to_be_bytes()
+    );
     let back = PsdFile::from_bytes(&bytes).unwrap();
     assert!(back.layer_mask_trailing.is_empty());
     assert_eq!(back.global_block(b"cinf").unwrap().data, cinf.data);

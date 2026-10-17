@@ -173,7 +173,11 @@ fn vrai_fichier_si_present() {
     let content = std::fs::read_to_string(path).unwrap();
     let root: Value = serde_json::from_str(&content).unwrap();
     let teams = parse_belong_team_config(&root);
-    assert_eq!(teams.len(), 208, "208 équipes d'appartenance dans le vrai dump");
+    assert_eq!(
+        teams.len(),
+        208,
+        "208 équipes d'appartenance dans le vrai dump"
+    );
     assert_eq!(teams[0].belong_team_id, HashId(0xF01B_B293));
     assert_eq!(teams[0].team_number_ie2, 18);
 }

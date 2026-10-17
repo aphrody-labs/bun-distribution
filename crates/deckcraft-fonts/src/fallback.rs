@@ -32,10 +32,12 @@ pub fn is_emoji_cluster(cluster: &[char]) -> bool {
         return false;
     }
     let pictographic = |c: char| matches!(c as u32, 0x1F000..=0x1FAFF | 0x2600..=0x27BF | 0x2B00..=0x2BFF | 0x2190..=0x21FF | 0x2300..=0x23FF);
-    let default_emoji =
-        |c: char| matches!(c as u32, 0x1F300..=0x1F64F | 0x1F680..=0x1F6FF | 0x1F900..=0x1F9FF | 0x1FA70..=0x1FAFF | 0x1F1E6..=0x1F1FF);
+    let default_emoji = |c: char| matches!(c as u32, 0x1F300..=0x1F64F | 0x1F680..=0x1F6FF | 0x1F900..=0x1F9FF | 0x1FA70..=0x1FAFF | 0x1F1E6..=0x1F1FF);
     cluster.iter().any(|&c| default_emoji(c))
-        || (cluster.contains(&'\u{FE0F}') && cluster.iter().any(|&c| pictographic(c) || c.is_ascii_digit() || c == '#' || c == '*'))
+        || (cluster.contains(&'\u{FE0F}')
+            && cluster
+                .iter()
+                .any(|&c| pictographic(c) || c.is_ascii_digit() || c == '#' || c == '*'))
         || (cluster.contains(&'\u{200D}') && cluster.iter().any(|&c| pictographic(c)))
         || cluster.contains(&'\u{20E3}')
 }
@@ -50,10 +52,25 @@ pub fn covers_cluster(face: &FontFace, cluster: &[char]) -> bool {
 /// still used by the scan when nothing earlier covers the cluster.
 fn os_families(script: ScriptTag) -> &'static [&'static str] {
     match &script {
-        b"Arab" => &["Noto Naskh Arabic", "Noto Sans Arabic", "Geeza Pro", "SF Arabic", "DejaVu Sans"],
-        b"Hebr" => &["Noto Sans Hebrew", "Arial Hebrew", "SF Hebrew", "DejaVu Sans"],
+        b"Arab" => &[
+            "Noto Naskh Arabic",
+            "Noto Sans Arabic",
+            "Geeza Pro",
+            "SF Arabic",
+            "DejaVu Sans",
+        ],
+        b"Hebr" => &[
+            "Noto Sans Hebrew",
+            "Arial Hebrew",
+            "SF Hebrew",
+            "DejaVu Sans",
+        ],
         b"Thai" => &["Noto Sans Thai", "Thonburi"],
-        b"Deva" => &["Noto Sans Devanagari", "Kohinoor Devanagari", "Devanagari Sangam MN"],
+        b"Deva" => &[
+            "Noto Sans Devanagari",
+            "Kohinoor Devanagari",
+            "Devanagari Sangam MN",
+        ],
         _ => &[],
     }
 }
@@ -61,7 +78,11 @@ fn os_families(script: ScriptTag) -> &'static [&'static str] {
 /// The craft-fonts families for a script (manifest order), e.g. Noto Naskh Arabic for `Arab`.
 pub fn bundled_families(script: ScriptTag) -> Vec<&'static str> {
     let tag = std::str::from_utf8(&script).unwrap_or("");
-    let mut v: Vec<&'static str> = CRAFT_FONTS.iter().filter(|f| f.scripts.contains(&tag)).map(|f| f.family).collect();
+    let mut v: Vec<&'static str> = CRAFT_FONTS
+        .iter()
+        .filter(|f| f.scripts.contains(&tag))
+        .map(|f| f.family)
+        .collect();
     v.dedup();
     v
 }
@@ -74,7 +95,10 @@ impl FontDb {
         // Emoji take a colour face (with its ZWJ sequences, skin tones and flags) before the
         // document's fonts, as PowerPoint draws them, even when a text font has a plain glyph.
         if is_emoji_cluster(cluster) {
-            if let Some(f) = chain.iter().find(|f| f.is_color() && covers_cluster(f, cluster)) {
+            if let Some(f) = chain
+                .iter()
+                .find(|f| f.is_color() && covers_cluster(f, cluster))
+            {
                 return f.clone();
             }
             if let Some(key) = cluster.iter().copied().find(|c| !ignorable(*c))
@@ -89,12 +113,22 @@ impl FontDb {
         // Text presentation (U+FE0E): a plain face, not a colour emoji one.
         if cluster.contains(&'\u{FE0E}') {
             let faces = self.read_faces();
-            if let Some(f) = faces.iter().find(|f| !f.is_color() && covers_cluster(f, cluster)) {
+            if let Some(f) = faces
+                .iter()
+                .find(|f| !f.is_color() && covers_cluster(f, cluster))
+            {
                 return f.clone();
             }
         }
-        let first = || chain.first().cloned().unwrap_or_else(|| self.face(crate::DEFAULT_FAMILY, style));
-        let Some(key) = cluster.iter().copied().find(|c| !ignorable(*c)) else { return first() };
+        let first = || {
+            chain
+                .first()
+                .cloned()
+                .unwrap_or_else(|| self.face(crate::DEFAULT_FAMILY, style))
+        };
+        let Some(key) = cluster.iter().copied().find(|c| !ignorable(*c)) else {
+            return first();
+        };
         let script = cluster.iter().find_map(|c| script_of(*c));
         // Scripts with a platform cascade (Arabic, Hebrew, Thai, Devanagari): the bundled face,
         // then installed ones; the others keep the loaded-faces-first order (Japanese documents
@@ -134,12 +168,20 @@ impl FontDb {
     /// An installed (non-bundled) face covering the cluster, loading one from the system catalog
     /// if no loaded face does.
     #[cfg(not(target_arch = "wasm32"))]
-    fn system_face_for(&self, key: char, cluster: &[char], bundled: &[&str]) -> Option<Arc<FontFace>> {
+    fn system_face_for(
+        &self,
+        key: char,
+        cluster: &[char],
+        bundled: &[&str],
+    ) -> Option<Arc<FontFace>> {
         let pick = |db: &FontDb| {
             let faces = db.read_faces();
             let mut v: Vec<&Arc<FontFace>> = faces
                 .iter()
-                .filter(|f| !bundled.iter().any(|b| f.family.eq_ignore_ascii_case(b)) && !CRAFT_FONTS.iter().any(|c| c.family == f.family))
+                .filter(|f| {
+                    !bundled.iter().any(|b| f.family.eq_ignore_ascii_case(b))
+                        && !CRAFT_FONTS.iter().any(|c| c.family == f.family)
+                })
                 .filter(|f| covers_cluster(f, cluster))
                 .collect();
             v.sort_by_key(|f| (f.italic, (f.weight - 400.0).abs() as i32));
@@ -148,19 +190,35 @@ impl FontDb {
         if let Some(f) = pick(self) {
             return Some(f);
         }
-        if self.system_fallback(key) { pick(self) } else { None }
+        if self.system_fallback(key) {
+            pick(self)
+        } else {
+            None
+        }
     }
 }
 
 /// Caret positions inside a ligature glyph from GDEF `LigCaretList`, in font units from the
 /// glyph's origin (sorted ascending). Empty when the font has none for `gid`.
 pub fn ligature_carets(face: &FontFace, gid: u32) -> Vec<i32> {
-    let Some(font) = face.skrifa() else { return Vec::new() };
-    let Ok(gdef) = font.gdef() else { return Vec::new() };
-    let Some(Ok(list)) = gdef.lig_caret_list() else { return Vec::new() };
-    let Ok(cov) = list.coverage() else { return Vec::new() };
-    let Some(idx) = cov.get(skrifa::GlyphId::new(gid)) else { return Vec::new() };
-    let Ok(lig) = list.lig_glyphs().get(idx as usize) else { return Vec::new() };
+    let Some(font) = face.skrifa() else {
+        return Vec::new();
+    };
+    let Ok(gdef) = font.gdef() else {
+        return Vec::new();
+    };
+    let Some(Ok(list)) = gdef.lig_caret_list() else {
+        return Vec::new();
+    };
+    let Ok(cov) = list.coverage() else {
+        return Vec::new();
+    };
+    let Some(idx) = cov.get(skrifa::GlyphId::new(gid)) else {
+        return Vec::new();
+    };
+    let Ok(lig) = list.lig_glyphs().get(idx as usize) else {
+        return Vec::new();
+    };
     let mut out: Vec<i32> = lig
         .caret_values()
         .iter()

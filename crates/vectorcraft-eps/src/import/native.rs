@@ -37,9 +37,11 @@ use super::ai::{self, Structure, slot_of};
 use super::ate::{Story, Texts};
 
 /// The notes that say the import left out something the file has (see [`is_loss`]).
-const TEXT_LEFT_OUT: &str = "text objects on hidden layers or hidden objects couldn't be read, so they are left out";
+const TEXT_LEFT_OUT: &str =
+    "text objects on hidden layers or hidden objects couldn't be read, so they are left out";
 /// The same for a file without a page to take shown type from.
-const TYPE_LEFT_OUT: &str = "text objects of kinds VectorCraft doesn't read from the file's text document yet are left out";
+const TYPE_LEFT_OUT: &str =
+    "text objects of kinds VectorCraft doesn't read from the file's text document yet are left out";
 const ART_LEFT_OUT: &str = "hidden layers have art this can't read";
 const LAYERS_UNREAD: &str = "the file's layers weren't read";
 
@@ -48,7 +50,14 @@ const LAYERS_UNREAD: &str = "the file's layers weren't read";
 pub fn is_loss(note: &str) -> bool {
     note.ends_with(TEXT_LEFT_OUT)
         || note.ends_with(TYPE_LEFT_OUT)
-        || [ART_LEFT_OUT, LAYERS_UNREAD, super::graphics::TOO_MUCH, super::graphics::FAR_AWAY].iter().any(|n| note.starts_with(n))
+        || [
+            ART_LEFT_OUT,
+            LAYERS_UNREAD,
+            super::graphics::TOO_MUCH,
+            super::graphics::FAR_AWAY,
+        ]
+        .iter()
+        .any(|n| note.starts_with(n))
 }
 
 /// Most text objects in the layers, and most pieces of type in one place on the page, that are matched
@@ -87,8 +96,16 @@ fn collect_slots(nodes: &[Arc<Node>], shown: bool, out: &mut Vec<SlotInfo>) {
     for n in nodes {
         let shown = shown && n.visible;
         if let Some(story) = slot_of(n.name.as_deref()) {
-            out.push(SlotInfo { story, frame: ai::slot_frame(n.name.as_deref()), shown, art_path: None });
-        } else if let Some(c) = n.children().filter(|_| !matches!(n.kind, NodeKind::Compound { .. })) {
+            out.push(SlotInfo {
+                story,
+                frame: ai::slot_frame(n.name.as_deref()),
+                shown,
+                art_path: None,
+            });
+        } else if let Some(c) = n
+            .children()
+            .filter(|_| !matches!(n.kind, NodeKind::Compound { .. }))
+        {
             collect_slots(c, shown, out);
         }
     }
@@ -100,7 +117,10 @@ const OUTLINE_REACH: f64 = 6.0;
 /// Does `n` look like part of a text object's outline: a path with a stroke, inside `around`?
 fn outlines(n: &Node, around: Rect) -> bool {
     matches!(n.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })
-        && n.appearance.items.iter().any(|i| matches!(i, AppearanceItem::Stroke(s) if s.visible && s.width > 0.0))
+        && n.appearance
+            .items
+            .iter()
+            .any(|i| matches!(i, AppearanceItem::Stroke(s) if s.visible && s.width > 0.0))
         && n.visual_bounds().is_some_and(|b| {
             let a = around.inflate(OUTLINE_REACH, OUTLINE_REACH);
             b.x0 >= a.x0 && b.y0 >= a.y0 && b.x1 <= a.x1 && b.y1 <= a.y1
@@ -112,7 +132,9 @@ const SAME_LINE: f64 = 0.5;
 
 /// Where `n`'s baseline lies across the direction it runs in (points), if it is text.
 fn baseline(n: &Node) -> Option<f64> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     let [a, b, _, _, e, f] = t.xf.as_coeffs();
     let len = a.hypot(b);
     (len > 1e-9).then(|| (a * f - b * e) / len)
@@ -121,12 +143,20 @@ fn baseline(n: &Node) -> Option<f64> {
 /// The text objects the page paints, each as the run of nodes that make it up (its text, once for
 /// each fill and stroke it has, with the paths of its strokes), in painting order: those that
 /// show in `shown`, those of hidden layers and objects (a PDF has them) in `hidden`.
-fn text_objects(nodes: &[Arc<Node>], on: bool, shown: &mut Vec<Vec<Arc<Node>>>, hidden: &mut Vec<Vec<Arc<Node>>>) {
+fn text_objects(
+    nodes: &[Arc<Node>],
+    on: bool,
+    shown: &mut Vec<Vec<Arc<Node>>>,
+    hidden: &mut Vec<Vec<Arc<Node>>>,
+) {
     let is_text = |n: &Node| matches!(n.kind, NodeKind::Text(_));
     let (mut i, mut free) = (0, 0);
     while let Some(n) = nodes.get(i) {
         if !is_text(n) {
-            if let Some(c) = n.children().filter(|_| !matches!(n.kind, NodeKind::Compound { .. })) {
+            if let Some(c) = n
+                .children()
+                .filter(|_| !matches!(n.kind, NodeKind::Compound { .. }))
+            {
                 text_objects(c, on && n.visible, shown, hidden);
                 free = i + 1;
             }
@@ -145,9 +175,17 @@ fn text_objects(nodes: &[Arc<Node>], on: bool, shown: &mut Vec<Vec<Arc<Node>>>, 
         while let Some(next) = nodes.get(end + 1)
             && let Some(b) = next.visual_bounds()
             && (is_text(next)
-                && !b.intersect(bounds.inflate(OUTLINE_REACH, OUTLINE_REACH)).is_zero_area()
+                && !b
+                    .intersect(bounds.inflate(OUTLINE_REACH, OUTLINE_REACH))
+                    .is_zero_area()
                 && baseline(next)
-                    .zip(nodes.get(start..=end).unwrap_or_default().iter().find_map(|m| baseline(m)))
+                    .zip(
+                        nodes
+                            .get(start..=end)
+                            .unwrap_or_default()
+                            .iter()
+                            .find_map(|m| baseline(m)),
+                    )
                     .is_some_and(|(x, y)| (x - y).abs() <= SAME_LINE)
                 || outlines(next, bounds))
         {
@@ -155,7 +193,11 @@ fn text_objects(nodes: &[Arc<Node>], on: bool, shown: &mut Vec<Vec<Arc<Node>>>, 
             bounds = bounds.union(b);
         }
         let object = nodes.get(start..=end).unwrap_or_default().to_vec();
-        let into = if on && n.visible { &mut *shown } else { &mut *hidden };
+        let into = if on && n.visible {
+            &mut *shown
+        } else {
+            &mut *hidden
+        };
         into.push(object);
         i = end + 1;
         free = i;
@@ -180,7 +222,9 @@ fn reid(doc: &mut Document, n: &Arc<Node>) -> Arc<Node> {
 fn assign(objects: &[Vec<Arc<Node>>], slots: usize) -> Vec<Vec<&[Arc<Node>]>> {
     let mut given: Vec<Vec<&[Arc<Node>]>> = vec![vec![]; slots];
     for (j, o) in objects.iter().enumerate() {
-        if let Some(at) = given.get_mut(((2 * j + 1) * slots / (2 * objects.len())).min(slots.saturating_sub(1))) {
+        if let Some(at) =
+            given.get_mut(((2 * j + 1) * slots / (2 * objects.len())).min(slots.saturating_sub(1)))
+        {
             at.push(o);
         }
     }
@@ -229,7 +273,8 @@ fn fill_slots(
                             if !visible {
                                 Arc::make_mut(&mut p).visible = false;
                             }
-                            if let Some(name) = name.filter(|_| matches!(p.kind, NodeKind::Text(_))) {
+                            if let Some(name) = name.filter(|_| matches!(p.kind, NodeKind::Text(_)))
+                            {
                                 Arc::make_mut(&mut p).name = Some(name.clone());
                             }
                             p
@@ -247,7 +292,11 @@ fn fill_slots(
                     }
                     text.visible = visible;
                     // Type the page shows is kept; other made type is weighed against the page.
-                    text.name = if seen { name.cloned() } else { Some(format!("{MADE}{}", name.map_or("", String::as_str))) };
+                    text.name = if seen {
+                        name.cloned()
+                    } else {
+                        Some(format!("{MADE}{}", name.map_or("", String::as_str)))
+                    };
                     let mut parts = vec![Arc::new(*text)];
                     parts.extend(extra.iter().map(|p| reid(doc, p)));
                     let n = parts.len();
@@ -276,7 +325,10 @@ fn fill_slots(
         } else {
             if n.children().is_some()
                 && !matches!(n.kind, NodeKind::Compound { .. })
-                && let Some(c) = nodes.get_mut(i).map(Arc::make_mut).and_then(Node::children_mut)
+                && let Some(c) = nodes
+                    .get_mut(i)
+                    .map(Arc::make_mut)
+                    .and_then(Node::children_mut)
             {
                 fill_slots(doc, c, content, names, empty, made);
             }
@@ -298,7 +350,9 @@ fn letters(s: &str) -> String {
 /// (the page splits a line where its kerning or its styles change), on that line's baseline and
 /// after its start? How far from where the line starts it is, if so.
 fn same_type(n: &Node, lines: &[(String, Point)]) -> Option<f64> {
-    let NodeKind::Text(t) = &n.kind else { return None };
+    let NodeKind::Text(t) = &n.kind else {
+        return None;
+    };
     let have = letters(&t.plain_text());
     let [a, b, _, _, e, f] = t.xf.as_coeffs();
     let len = a.hypot(b);
@@ -314,7 +368,8 @@ fn same_type(n: &Node, lines: &[(String, Point)]) -> Option<f64> {
             let line = letters(text);
             let skipped = line.find(&have)?;
             if skipped == 0 {
-                return Some(((at.x - e).powi(2) + (at.y - f).powi(2)).sqrt()).filter(|d| *d <= SAME_PLACE);
+                return Some(((at.x - e).powi(2) + (at.y - f).powi(2)).sqrt())
+                    .filter(|d| *d <= SAME_PLACE);
             }
             let (dx, dy) = (e - at.x, f - at.y);
             let (along, across) = (dx * ux + dy * uy, (dx * uy - dy * ux).abs());
@@ -331,8 +386,19 @@ fn same_type(n: &Node, lines: &[(String, Point)]) -> Option<f64> {
 /// has it as one line of one text object: the pieces that on one baseline add up to a line of
 /// `lines` become one text (each keeping its own style, the line's spaces between them).
 fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
-    let text_of = |n: &Arc<Node>| if let NodeKind::Text(t) = &n.kind { Some(t.plain_text()) } else { None };
-    let texts: Vec<usize> = parts.iter().enumerate().filter(|(_, n)| matches!(n.kind, NodeKind::Text(_))).map(|(i, _)| i).collect();
+    let text_of = |n: &Arc<Node>| {
+        if let NodeKind::Text(t) = &n.kind {
+            Some(t.plain_text())
+        } else {
+            None
+        }
+    };
+    let texts: Vec<usize> = parts
+        .iter()
+        .enumerate()
+        .filter(|(_, n)| matches!(n.kind, NodeKind::Text(_)))
+        .map(|(i, _)| i)
+        .collect();
     // A page with this many pieces of type in one place isn't one of lines of a story.
     if texts.len() > MAX_PIECES {
         return;
@@ -344,12 +410,18 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
         if taken.get(i).copied().unwrap_or(true) {
             continue;
         }
-        let Some(line) = parts.get(i).and_then(|n| baseline(n)) else { continue };
+        let Some(line) = parts.get(i).and_then(|n| baseline(n)) else {
+            continue;
+        };
         let group: Vec<usize> = texts
             .iter()
             .copied()
             .filter(|j| {
-                !taken.get(*j).copied().unwrap_or(true) && parts.get(*j).and_then(|n| baseline(n)).is_some_and(|b| (b - line).abs() <= SAME_LINE)
+                !taken.get(*j).copied().unwrap_or(true)
+                    && parts
+                        .get(*j)
+                        .and_then(|n| baseline(n))
+                        .is_some_and(|b| (b - line).abs() <= SAME_LINE)
             })
             .collect();
         for j in &group {
@@ -357,18 +429,34 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
                 *t = true;
             }
         }
-        let pieces: Vec<String> = group.iter().filter_map(|j| parts.get(*j).and_then(text_of)).collect();
+        let pieces: Vec<String> = group
+            .iter()
+            .filter_map(|j| parts.get(*j).and_then(text_of))
+            .collect();
         let places: Vec<(f64, f64)> = group
             .iter()
             .filter_map(|j| parts.get(*j))
-            .filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some((t.xf.as_coeffs()[4], t.xf.as_coeffs()[5])) } else { None })
+            .filter_map(|n| {
+                if let NodeKind::Text(t) = &n.kind {
+                    Some((t.xf.as_coeffs()[4], t.xf.as_coeffs()[5]))
+                } else {
+                    None
+                }
+            })
             .collect();
-        let distinct = places.iter().enumerate().all(|(a, p)| places.iter().skip(a + 1).all(|q| (p.0 - q.0).hypot(p.1 - q.1) > 0.01));
+        let distinct = places.iter().enumerate().all(|(a, p)| {
+            places
+                .iter()
+                .skip(a + 1)
+                .all(|q| (p.0 - q.0).hypot(p.1 - q.1) > 0.01)
+        });
         let joined: String = pieces.iter().map(|p| letters(p)).collect();
         if group.len() < 2 || !distinct || joined.is_empty() {
             continue;
         }
-        let Some((whole, _)) = lines.iter().find(|(text, _)| letters(text) == joined) else { continue };
+        let Some((whole, _)) = lines.iter().find(|(text, _)| letters(text) == joined) else {
+            continue;
+        };
         // Where the line has spaces after a piece's last character that the page doesn't draw.
         let line_chars: Vec<char> = whole.chars().collect();
         let mut at = 0;
@@ -380,9 +468,14 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
                 }
                 at += 1;
             }
-            let space: String = line_chars.iter().skip(at).take_while(|c| c.is_whitespace()).collect();
+            let space: String = line_chars
+                .iter()
+                .skip(at)
+                .take_while(|c| c.is_whitespace())
+                .collect();
             let next = pieces.get(k + 1);
-            let drawn = piece.ends_with(char::is_whitespace) || next.is_none_or(|n| n.starts_with(char::is_whitespace));
+            let drawn = piece.ends_with(char::is_whitespace)
+                || next.is_none_or(|n| n.starts_with(char::is_whitespace));
             gaps.push(if drawn { String::new() } else { space });
         }
         if at <= line_chars.len() {
@@ -395,7 +488,13 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
             .into_iter()
             .chain(rest)
             .filter_map(|j| parts.get(*j))
-            .filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(t.runs.clone()) } else { None })
+            .filter_map(|n| {
+                if let NodeKind::Text(t) = &n.kind {
+                    Some(t.runs.clone())
+                } else {
+                    None
+                }
+            })
             .collect();
         for (r, gap) in runs.iter_mut().zip(gaps) {
             if let Some(last) = r.last_mut() {
@@ -423,15 +522,28 @@ fn join_pieces(parts: &mut Vec<Arc<Node>>, lines: &[(String, Point)]) {
 
 /// Do the regions of made type cover most of `object`?
 fn covered(object: &[Arc<Node>], content: &[Content]) -> bool {
-    let Some(r) = extent(object) else { return false };
-    let inside: f64 =
-        content.iter().filter_map(|c| if let Content::Made(_, Some(region), ..) = c { Some(region.intersect(r).area()) } else { None }).sum();
+    let Some(r) = extent(object) else {
+        return false;
+    };
+    let inside: f64 = content
+        .iter()
+        .filter_map(|c| {
+            if let Content::Made(_, Some(region), ..) = c {
+                Some(region.intersect(r).area())
+            } else {
+                None
+            }
+        })
+        .sum();
     inside >= 0.5 * r.area().max(1e-9)
 }
 
 /// The box round `parts`.
 fn extent(parts: &[Arc<Node>]) -> Option<Rect> {
-    parts.iter().filter_map(|n| n.visual_bounds()).reduce(|a, b| a.union(b))
+    parts
+        .iter()
+        .filter_map(|n| n.visual_bounds())
+        .reduce(|a, b| a.union(b))
 }
 
 /// What goes into each of `infos`' slots: the page's type that the file's text document puts where the
@@ -450,16 +562,27 @@ fn plan(
         .iter()
         .map(|s| {
             let (s, t) = (s.as_ref()?, template?);
-            Some(s.line_starts(t).into_iter().map(|(text, (x, y))| (text, to_doc * Point::new(x, y))).collect())
+            Some(
+                s.line_starts(t)
+                    .into_iter()
+                    .map(|(text, (x, y))| (text, to_doc * Point::new(x, y)))
+                    .collect(),
+            )
         })
         .collect();
     // The page's objects that are where a slot's lines are, nearest first. A slot that doesn't show
     // has them too: a file's page may draw what its layers have hidden since.
     let mut pairs: Vec<(f64, usize, usize)> = vec![];
     for (k, _) in infos.iter().enumerate() {
-        let Some(l) = lines.get(k).and_then(Option::as_ref) else { continue };
+        let Some(l) = lines.get(k).and_then(Option::as_ref) else {
+            continue;
+        };
         for (j, object) in shown.iter().enumerate() {
-            if let Some(d) = object.iter().filter_map(|n| same_type(n, l)).min_by(f64::total_cmp) {
+            if let Some(d) = object
+                .iter()
+                .filter_map(|n| same_type(n, l))
+                .min_by(f64::total_cmp)
+            {
                 pairs.push((d, k, j));
             }
         }
@@ -478,8 +601,12 @@ fn plan(
     let mut taller = 0;
     if let Some(t) = template {
         for (k, info) in infos.iter().enumerate() {
-            let Some(Some(story)) = stories.get(k) else { continue };
-            let Some(mut node) = story.node(NodeId(0), info.frame, t, to_doc) else { continue };
+            let Some(Some(story)) = stories.get(k) else {
+                continue;
+            };
+            let Some(mut node) = story.node(NodeId(0), info.frame, t, to_doc) else {
+                continue;
+            };
             let mut region = story.region(t, to_doc);
             // Area type and type on a path in the object's own frame: the text document's frame
             // of a copied object keeps its original's path.
@@ -519,22 +646,35 @@ fn plan(
     // start where the page's type does, or the page has type where it lays type out), or where the
     // page has no type to disagree with.
     let in_region = |object: &[Arc<Node>]| covered(object, &content);
-    let trusted = owner.iter().any(Option::is_some) || shown.is_empty() || shown.iter().any(|o| in_region(o));
+    let trusted =
+        owner.iter().any(Option::is_some) || shown.is_empty() || shown.iter().any(|o| in_region(o));
     if !trusted {
         content.iter_mut().for_each(|c| *c = Content::Empty);
     }
     // Is `object` the type of a text object that doesn't show, as the page draws it: in its frame,
     // with its words? (A copied object's lines are where its original's are, so they don't say.)
     let hidden_type = |object: &[Arc<Node>]| {
-        let Some(r) = extent(object) else { return false };
-        let words: Vec<String> =
-            object.iter().filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(letters(&t.plain_text())) } else { None }).collect();
+        let Some(r) = extent(object) else {
+            return false;
+        };
+        let words: Vec<String> = object
+            .iter()
+            .filter_map(|n| {
+                if let NodeKind::Text(t) = &n.kind {
+                    Some(letters(&t.plain_text()))
+                } else {
+                    None
+                }
+            })
+            .collect();
         hidden_at.iter().any(|(k, place)| {
             place.intersect(r).area() >= 0.5 * r.area().max(1e-9)
-                && lines
-                    .get(*k)
-                    .and_then(Option::as_ref)
-                    .is_some_and(|l| !words.is_empty() && words.iter().all(|w| l.iter().any(|(text, _)| letters(text).contains(w.as_str()))))
+                && lines.get(*k).and_then(Option::as_ref).is_some_and(|l| {
+                    !words.is_empty()
+                        && words
+                            .iter()
+                            .all(|w| l.iter().any(|(text, _)| letters(text).contains(w.as_str())))
+                })
         })
     };
     let mut spare: Vec<Vec<Arc<Node>>> = vec![];
@@ -542,7 +682,9 @@ fn plan(
         match owner.get(j).copied().flatten().filter(|_| trusted) {
             // The type of a text object the layers hide: the layers have it, hidden, so the page's
             // isn't another text object's.
-            Some(k) if infos.get(k).is_some_and(|i| !i.shown) && matches!(content.get(k), Some(Content::Made(..))) => {}
+            Some(k)
+                if infos.get(k).is_some_and(|i| !i.shown)
+                    && matches!(content.get(k), Some(Content::Made(..))) => {}
             Some(k) => match content.get_mut(k) {
                 Some(Content::Made(_, _, seen, _)) => *seen = true,
                 Some(Content::Page(p)) => p.extend(object.iter().cloned()),
@@ -570,8 +712,12 @@ fn plan(
         }
     }
     // What is left of the page goes by painting order into the shown slots the file can't say.
-    let loose: Vec<usize> =
-        infos.iter().enumerate().filter(|(k, i)| i.shown && matches!(content.get(*k), Some(Content::Empty))).map(|(k, _)| k).collect();
+    let loose: Vec<usize> = infos
+        .iter()
+        .enumerate()
+        .filter(|(k, i)| i.shown && matches!(content.get(*k), Some(Content::Empty)))
+        .map(|(k, _)| k)
+        .collect();
     if loose.is_empty() {
         // Type of the page that no text object says it owns goes with the nearest text object that has
         // type of the page; with none, it is left out.
@@ -584,10 +730,16 @@ fn plan(
             });
             let nearest = content
                 .iter_mut()
-                .filter_map(|c| near(c).zip(centre).map(|(p, q)| ((p.x - q.x).hypot(p.y - q.y), c)))
+                .filter_map(|c| {
+                    near(c)
+                        .zip(centre)
+                        .map(|(p, q)| ((p.x - q.x).hypot(p.y - q.y), c))
+                })
                 .min_by(|a, b| a.0.total_cmp(&b.0));
             match nearest {
-                Some((_, Content::Page(parts) | Content::Made(_, _, _, parts))) => parts.extend(object.iter().cloned()),
+                Some((_, Content::Page(parts) | Content::Made(_, _, _, parts))) => {
+                    parts.extend(object.iter().cloned())
+                }
                 _ => left_out = true,
             }
         }
@@ -617,8 +769,12 @@ fn plan(
         }
     }
     // The same for the slots that don't show.
-    let unread: Vec<usize> =
-        infos.iter().enumerate().filter(|(k, i)| !i.shown && matches!(content.get(*k), Some(Content::Empty))).map(|(k, _)| k).collect();
+    let unread: Vec<usize> = infos
+        .iter()
+        .enumerate()
+        .filter(|(k, i)| !i.shown && matches!(content.get(*k), Some(Content::Empty)))
+        .map(|(k, _)| k)
+        .collect();
     for (slot, parts) in unread.iter().zip(assign(hidden, unread.len())) {
         if let Some(c) = content.get_mut(*slot) {
             *c = Content::Page(parts.into_iter().flat_map(|p| p.iter().cloned()).collect());
@@ -632,7 +788,14 @@ fn as_printed(doc: &Document) -> Option<Document> {
     fn hide(nodes: &mut [Arc<Node>]) -> bool {
         let mut any = false;
         for n in nodes {
-            if matches!(n.kind, NodeKind::Layer { printable: false, .. }) && n.visible {
+            if matches!(
+                n.kind,
+                NodeKind::Layer {
+                    printable: false,
+                    ..
+                }
+            ) && n.visible
+            {
                 Arc::make_mut(n).visible = false;
                 any = true;
             } else if matches!(n.kind, NodeKind::Layer { .. })
@@ -674,7 +837,8 @@ const WHITE: u32 = 8;
 fn differ(p: &[u8; 4], q: &[u8; 4]) -> bool {
     let (p, q) = (on_white(p), on_white(q));
     let (a, b) = (ink(p), ink(q));
-    lightness(p).abs_diff(lightness(q)) > SAME_PIXEL || (a.min(b) <= WHITE && a.abs_diff(b) > SAME_PIXEL)
+    lightness(p).abs_diff(lightness(q)) > SAME_PIXEL
+        || (a.min(b) <= WHITE && a.abs_diff(b) > SAME_PIXEL)
 }
 
 /// How far apart two pixels' red, green or blue may be for them to be the same colour (a colour
@@ -723,7 +887,12 @@ impl PageView {
         let page = vectorcraft_render::Renderer::new().render_region(frame.page, ra, scale, false);
         let mut page_type = vec![];
         type_areas(&frame.page.layers, ra, scale, &mut page_type);
-        Self { page, page_type, layers: vectorcraft_render::Renderer::new(), scale }
+        Self {
+            page,
+            page_type,
+            layers: vectorcraft_render::Renderer::new(),
+            scale,
+        }
     }
 
     /// How `b` on `rb` (a rectangle the page's size) draws differently from the page ([`compared`]).
@@ -747,7 +916,15 @@ impl PageView {
         if (y.width, y.height) != (self.page.width, self.page.height) {
             return 1.0;
         }
-        let differing = self.page.pixels.as_chunks::<4>().0.iter().zip(y.pixels.as_chunks::<4>().0).filter(|(p, q)| differ_in_colour(p, q)).count();
+        let differing = self
+            .page
+            .pixels
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .zip(y.pixels.as_chunks::<4>().0)
+            .filter(|(p, q)| differ_in_colour(p, q))
+            .count();
         differing as f64 / (f64::from(y.width) * f64::from(y.height)).max(1.0)
     }
 }
@@ -771,21 +948,47 @@ fn difference(a: &Document, ra: Rect, b: &Document, rb: Rect) -> Difference {
 /// the type in `areas` (pixels). Pixels are compared by lightness, and by whether they are inked
 /// at all ([`differ`]): the page of an RGB document is written in the colours' CMYK equivalents,
 /// and what the comparison looks for is art that is missing or out of place.
-fn compared(x: &vectorcraft_render::Rendered, y: &vectorcraft_render::Rendered, areas: &[Rect]) -> Difference {
+fn compared(
+    x: &vectorcraft_render::Rendered,
+    y: &vectorcraft_render::Rendered,
+    areas: &[Rect],
+) -> Difference {
     if x.width != y.width || x.height != y.height {
-        return Difference { any: 1.0, solid: 1.0 };
+        return Difference {
+            any: 1.0,
+            solid: 1.0,
+        };
     }
-    let differs: Vec<bool> = x.pixels.as_chunks::<4>().0.iter().zip(y.pixels.as_chunks::<4>().0).map(|(p, q)| differ(p, q)).collect();
+    let differs: Vec<bool> = x
+        .pixels
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(y.pixels.as_chunks::<4>().0)
+        .map(|(p, q)| differ(p, q))
+        .collect();
     let (w, h) = (x.width as usize, x.height as usize);
-    let at = |i: usize, j: usize| j.checked_mul(w).and_then(|row| row.checked_add(i)).and_then(|k| differs.get(k)).copied().unwrap_or(false);
+    let at = |i: usize, j: usize| {
+        j.checked_mul(w)
+            .and_then(|row| row.checked_add(i))
+            .and_then(|k| differs.get(k))
+            .copied()
+            .unwrap_or(false)
+    };
     let typed = in_areas(areas, w, h);
     // A pixel on the region's edge has neighbours outside it, which don't count as differing.
     let solid = (1..h.saturating_sub(1))
         .flat_map(|j| (1..w.saturating_sub(1)).map(move |i| (i, j)))
-        .filter(|&(i, j)| !typed.get(j * w + i).copied().unwrap_or(true) && (j - 1..=j + 1).all(|n| (i - 1..=i + 1).all(|m| at(m, n))))
+        .filter(|&(i, j)| {
+            !typed.get(j * w + i).copied().unwrap_or(true)
+                && (j - 1..=j + 1).all(|n| (i - 1..=i + 1).all(|m| at(m, n)))
+        })
         .count();
     let area = (w as f64 * h as f64).max(1.0);
-    Difference { any: differs.iter().filter(|d| **d).count() as f64 / area, solid: solid as f64 / area }
+    Difference {
+        any: differs.iter().filter(|d| **d).count() as f64 / area,
+        solid: solid as f64 / area,
+    }
 }
 
 /// Where the type that shows in `nodes` is, in pixels of `region` drawn at `scale` (with a margin
@@ -795,8 +998,14 @@ fn type_areas(nodes: &[Arc<Node>], region: Rect, scale: f64, out: &mut Vec<Rect>
         if let NodeKind::Text(_) = n.kind
             && let Some(b) = n.visual_bounds()
         {
-            let px =
-                |r: Rect| Rect::new((r.x0 - region.x0) * scale, (r.y0 - region.y0) * scale, (r.x1 - region.x0) * scale, (r.y1 - region.y0) * scale);
+            let px = |r: Rect| {
+                Rect::new(
+                    (r.x0 - region.x0) * scale,
+                    (r.y0 - region.y0) * scale,
+                    (r.x1 - region.x0) * scale,
+                    (r.y1 - region.y0) * scale,
+                )
+            };
             out.push(px(b.inflate(OUTLINE_REACH, OUTLINE_REACH)));
         } else if let Some(c) = n.children() {
             type_areas(c, region, scale, out);
@@ -809,9 +1018,20 @@ fn in_areas(areas: &[Rect], w: usize, h: usize) -> Vec<bool> {
     // Each area adds one inside it: corners marked, then summed along the rows and down the columns.
     let stride = w + 1;
     let mut count = vec![0i64; stride * (h + 1)];
-    let clamp = |v: f64, max: usize| if v.is_finite() { v.clamp(0.0, max as f64) as usize } else { 0 };
+    let clamp = |v: f64, max: usize| {
+        if v.is_finite() {
+            v.clamp(0.0, max as f64) as usize
+        } else {
+            0
+        }
+    };
     for r in areas {
-        let (x0, y0, x1, y1) = (clamp(r.x0.floor(), w), clamp(r.y0.floor(), h), clamp(r.x1.ceil(), w), clamp(r.y1.ceil(), h));
+        let (x0, y0, x1, y1) = (
+            clamp(r.x0.floor(), w),
+            clamp(r.y0.floor(), h),
+            clamp(r.x1.ceil(), w),
+            clamp(r.y1.ceil(), h),
+        );
         for (x, y, d) in [(x0, y0, 1), (x1, y0, -1), (x0, y1, -1), (x1, y1, 1)] {
             if let Some(c) = count.get_mut(y * stride + x) {
                 *c += d;
@@ -832,7 +1052,10 @@ fn in_areas(areas: &[Rect], w: usize, h: usize) -> Vec<bool> {
             *c = *sum;
         }
     }
-    (0..h).flat_map(|j| (0..w).map(move |i| (i, j))).map(|(i, j)| count.get(j * stride + i).is_some_and(|c| *c > 0)).collect()
+    (0..h)
+        .flat_map(|j| (0..w).map(move |i| (i, j)))
+        .map(|(i, j)| count.get(j * stride + i).is_some_and(|c| *c > 0))
+        .collect()
 }
 
 /// More of the page than this differing between the layers' art and the page's own, and the
@@ -871,17 +1094,42 @@ struct Frame<'a> {
 /// (a `.ai` saved without its PDF part), its type is made from the file's text document alone and
 /// nothing is compared. `outlined`: the page's type was read as outlines, so it has none to put in
 /// the text objects.
-fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, trust: bool) -> Result<(Document, Vec<String>), String> {
-    let Structure { mut doc, to_doc, bbox, artboard, template, hidden_unread, slot_names, warnings } = ai::read(data)?;
+fn build(
+    data: &[u8],
+    visible: Option<&Document>,
+    page: Page,
+    outlined: bool,
+    trust: bool,
+) -> Result<(Document, Vec<String>), String> {
+    let Structure {
+        mut doc,
+        to_doc,
+        bbox,
+        artboard,
+        template,
+        hidden_unread,
+        slot_names,
+        warnings,
+    } = ai::read(data)?;
     let (mut shown, mut hidden) = (vec![], vec![]);
     let mut frame = None;
     if let Some(visible) = visible {
         let art_box = match page {
-            Page::Art => bbox.map(|[a, b, c, d]| Rect::new(a, b, c, d)).ok_or("its editing data doesn't say where its art is")?,
-            Page::Artboard => artboard.ok_or("its editing data doesn't say where its artboard is")?,
+            Page::Art => bbox
+                .map(|[a, b, c, d]| Rect::new(a, b, c, d))
+                .ok_or("its editing data doesn't say where its art is")?,
+            Page::Artboard => {
+                artboard.ok_or("its editing data doesn't say where its artboard is")?
+            }
         };
-        let page_rect = visible.artboards.first().map(|a| a.rect).ok_or("it has no page")?;
-        if (art_box.width() - page_rect.width()).abs() > 0.5 || (art_box.height() - page_rect.height()).abs() > 0.5 {
+        let page_rect = visible
+            .artboards
+            .first()
+            .map(|a| a.rect)
+            .ok_or("it has no page")?;
+        if (art_box.width() - page_rect.width()).abs() > 0.5
+            || (art_box.height() - page_rect.height()).abs() > 0.5
+        {
             return Err("its editing data is for a different page".into());
         }
         // The page's area in the layers' document, and the page's type moved there.
@@ -895,14 +1143,22 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
         // A `.ai` read as its PDF part has a page for each artboard, in a row: the type on each
         // goes where the layers have that artboard.
         let pages: Vec<Rect> = visible.artboards.iter().map(|a| a.rect).collect();
-        let same =
-            |(a, p): (&vectorcraft_doc::Artboard, &Rect)| (a.rect.width() - p.width()).abs() <= 0.5 && (a.rect.height() - p.height()).abs() <= 0.5;
-        let boards = (pages.len() == doc.artboards.len() && doc.artboards.iter().zip(&pages).all(same)).then_some(&doc.artboards);
+        let same = |(a, p): (&vectorcraft_doc::Artboard, &Rect)| {
+            (a.rect.width() - p.width()).abs() <= 0.5 && (a.rect.height() - p.height()).abs() <= 0.5
+        };
+        let boards = (pages.len() == doc.artboards.len()
+            && doc.artboards.iter().zip(&pages).all(same))
+        .then_some(&doc.artboards);
         for object in shown.iter_mut().chain(hidden.iter_mut()) {
             // The page with most of it, the first for what is on none.
             let on = extent(object).and_then(|r| {
                 let inside = |p: &Rect| p.intersect(r).area().max(0.0);
-                pages.iter().enumerate().skip(1).filter(|(_, p)| inside(p) > inside(&page_rect)).max_by(|a, b| inside(a.1).total_cmp(&inside(b.1)))
+                pages
+                    .iter()
+                    .enumerate()
+                    .skip(1)
+                    .filter(|(_, p)| inside(p) > inside(&page_rect))
+                    .max_by(|a, b| inside(a.1).total_cmp(&inside(b.1)))
             });
             let shift = match on.and_then(|(i, page)| Some((boards?.get(i)?, page))) {
                 Some((board, page)) => Affine::translate(board.rect.origin() - page.origin()),
@@ -913,8 +1169,16 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
             }
         }
         // An EPS saved as its artboard has the art outside it left out of its page.
-        let artboard_page =
-            artboard.is_some_and(|a| [a.x0 - art_box.x0, a.y0 - art_box.y0, a.x1 - art_box.x1, a.y1 - art_box.y1].iter().all(|d| d.abs() <= 1.0));
+        let artboard_page = artboard.is_some_and(|a| {
+            [
+                a.x0 - art_box.x0,
+                a.y0 - art_box.y0,
+                a.x1 - art_box.x1,
+                a.y1 - art_box.y1,
+            ]
+            .iter()
+            .all(|d| d.abs() <= 1.0)
+        });
         let whole = matches!(page, Page::Art) && !artboard_page;
         if whole {
             // Its page is the file's own (its bounding box), as when it comes in as its page: art
@@ -924,14 +1188,22 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
                 a.rect = rect;
             }
         }
-        frame = Some(Frame { page: visible, page_rect, rect, whole });
+        frame = Some(Frame {
+            page: visible,
+            page_rect,
+            rect,
+            whole,
+        });
     }
     let mut infos = vec![];
     collect_slots(&doc.layers, true, &mut infos);
     // Each text object's own frame or path, by its story and frame.
     let frames = ai::text_frames(data);
     for info in &mut infos {
-        info.art_path = info.story.and_then(|s| frames.get(&(s, info.frame))).map(|p| PathData::from_bezpath(&(to_doc * p.clone())));
+        info.art_path = info
+            .story
+            .and_then(|s| frames.get(&(s, info.frame)))
+            .map(|p| PathData::from_bezpath(&(to_doc * p.clone())));
     }
     // Type asked for as outlines is the page's: the text objects that show can't be filled.
     if outlined && infos.iter().any(|i| i.shown) {
@@ -951,7 +1223,14 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
         .iter()
         .map(|i| {
             let n = i.story?;
-            read.entry(n).or_insert_with(|| texts.as_ref().and_then(|t| t.story(n as usize)).map(Arc::new)).clone()
+            read.entry(n)
+                .or_insert_with(|| {
+                    texts
+                        .as_ref()
+                        .and_then(|t| t.story(n as usize))
+                        .map(Arc::new)
+                })
+                .clone()
         })
         .collect();
     if stories.iter().flatten().map(|s| s.len()).sum::<usize>() > MAX_TEXT {
@@ -959,24 +1238,49 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
     }
     let template = template.map(|t| ((t[0] + t[2]) / 2.0, (t[1] + t[3]) / 2.0));
     let mut notes = warnings;
-    let content = plan(&infos, &stories, template, to_doc, [&shown, &hidden], &mut notes);
+    let content = plan(
+        &infos,
+        &stories,
+        template,
+        to_doc,
+        [&shown, &hidden],
+        &mut notes,
+    );
     let mut empty = 0;
     let mut layers = std::mem::take(&mut doc.layers);
     let mut made = vec![];
-    fill_slots(&mut doc, &mut layers, &mut content.into_iter(), &slot_names, &mut empty, &mut made);
+    fill_slots(
+        &mut doc,
+        &mut layers,
+        &mut content.into_iter(),
+        &slot_names,
+        &mut empty,
+        &mut made,
+    );
     doc.layers = layers;
     // A story in several frames is threaded type: its frames in order (the first holds the story).
     made.sort();
     for thread in made.chunk_by(|a, b| a.0 == b.0) {
         if thread.len() > 1 {
-            doc.text_threads.push(thread.iter().map(|(_, _, id)| *id).collect());
+            doc.text_threads
+                .push(thread.iter().map(|(_, _, id)| *id).collect());
         }
     }
     if empty > 0 {
-        notes.push(format!("{empty} {}", if frame.is_some() { TEXT_LEFT_OUT } else { TYPE_LEFT_OUT }));
+        notes.push(format!(
+            "{empty} {}",
+            if frame.is_some() {
+                TEXT_LEFT_OUT
+            } else {
+                TYPE_LEFT_OUT
+            }
+        ));
     }
     if !hidden_unread.is_empty() {
-        notes.push(format!("{ART_LEFT_OUT} ({}), left out of them", few(hidden_unread)));
+        notes.push(format!(
+            "{ART_LEFT_OUT} ({}), left out of them",
+            few(hidden_unread)
+        ));
     }
     match frame {
         Some(frame) => {
@@ -987,7 +1291,9 @@ fn build(data: &[u8], visible: Option<&Document>, page: Page, outlined: bool, tr
             }
             match compare(&frame, &mut view, &doc) {
                 Ok(note) => notes.extend(note),
-                Err(why) if trust => notes.push(format!("{why}: they come from its editing data all the same")),
+                Err(why) if trust => notes.push(format!(
+                    "{why}: they come from its editing data all the same"
+                )),
                 Err(why) => return Err(why),
             }
         }
@@ -1036,7 +1342,12 @@ fn take_out(nodes: &mut Vec<Arc<Node>>, id: NodeId, hide: bool) -> bool {
         }
         return true;
     }
-    nodes.iter_mut().any(|n| !matches!(n.kind, NodeKind::Compound { .. }) && Arc::make_mut(n).children_mut().is_some_and(|c| take_out(c, id, hide)))
+    nodes.iter_mut().any(|n| {
+        !matches!(n.kind, NodeKind::Compound { .. })
+            && Arc::make_mut(n)
+                .children_mut()
+                .is_some_and(|c| take_out(c, id, hide))
+    })
 }
 
 /// The text objects made from the file's text document that show on the page's area, where the page
@@ -1055,7 +1366,11 @@ fn prune_unseen(frame: &Frame<'_>, view: &mut PageView, doc: &mut Document) -> u
     // differ from the page by more than `compare` allows with every candidate gone, the layers
     // aren't used whatever is pruned: don't draw them again for each one (#758).
     let margin = OUTLINE_REACH + 1.0;
-    let boxes: f64 = found.iter().filter_map(|(_, b)| *b).map(|b| b.inflate(margin, margin).intersect(rect).area().max(0.0)).sum();
+    let boxes: f64 = found
+        .iter()
+        .filter_map(|(_, b)| *b)
+        .map(|b| b.inflate(margin, margin).intersect(rect).area().max(0.0))
+        .sum();
     if with - boxes / rect.area().max(1e-9) > MAX_DIFFERENCE {
         return 0;
     }
@@ -1086,20 +1401,44 @@ const PAST_THE_PAGE: f64 = 1.0;
 
 /// Do the layers' art and the page's own look alike (where the page holds all the art that prints,
 /// also round it)? An error says they don't; `Ok` has the note to give when they differ a little.
-fn compare(frame: &Frame<'_>, view: &mut PageView, layered: &Document) -> Result<Option<String>, String> {
+fn compare(
+    frame: &Frame<'_>,
+    view: &mut PageView,
+    layered: &Document,
+) -> Result<Option<String>, String> {
     let mut diff = view.difference(layered, frame.rect);
     if frame.whole
-        && let Some(art) = vectorcraft_render::encode::art_bounds(as_printed(layered).as_ref().unwrap_or(layered))
-            .filter(|a| !frame.rect.inflate(PAST_THE_PAGE, PAST_THE_PAGE).contains_rect(*a))
+        && let Some(art) =
+            vectorcraft_render::encode::art_bounds(as_printed(layered).as_ref().unwrap_or(layered))
+                .filter(|a| {
+                    !frame
+                        .rect
+                        .inflate(PAST_THE_PAGE, PAST_THE_PAGE)
+                        .contains_rect(*a)
+                })
     {
         // The page and the art the layers print beyond it, each in its own document's place.
         let all = frame.rect.union(art);
-        let (dx, dy) = (frame.page_rect.x0 - frame.rect.x0, frame.page_rect.y0 - frame.rect.y0);
-        let round = difference(frame.page, Rect::new(all.x0 + dx, all.y0 + dy, all.x1 + dx, all.y1 + dy), layered, all);
-        diff = Difference { any: diff.any.max(round.any), solid: diff.solid.max(round.solid) };
+        let (dx, dy) = (
+            frame.page_rect.x0 - frame.rect.x0,
+            frame.page_rect.y0 - frame.rect.y0,
+        );
+        let round = difference(
+            frame.page,
+            Rect::new(all.x0 + dx, all.y0 + dy, all.x1 + dx, all.y1 + dy),
+            layered,
+            all,
+        );
+        diff = Difference {
+            any: diff.any.max(round.any),
+            solid: diff.solid.max(round.solid),
+        };
     }
     if diff.any > MAX_DIFFERENCE || diff.solid > MAX_SOLID_DIFFERENCE {
-        return Err(format!("the art on them differs from the page's in {:.1}% of it", diff.any * 100.0));
+        return Err(format!(
+            "the art on them differs from the page's in {:.1}% of it",
+            diff.any * 100.0
+        ));
     }
     Ok((diff.any > NOTABLE_DIFFERENCE).then(|| {
         format!(
@@ -1115,8 +1454,11 @@ fn compare(frame: &Frame<'_>, view: &mut PageView, layered: &Document) -> Result
 /// strokes around it of the page. When the file has no editing copy, `visible` as it was; when it
 /// has one that can't be used, `visible` with a warning that says why.
 pub(super) fn layered(ps: &[u8], visible: Imported) -> Imported {
-    let Some(data) = editing_copy(ps) else { return visible };
-    let result = data.and_then(|data| build(&data, Some(&visible.document), Page::Art, false, false));
+    let Some(data) = editing_copy(ps) else {
+        return visible;
+    };
+    let result =
+        data.and_then(|data| build(&data, Some(&visible.document), Page::Art, false, false));
     match result {
         Ok((document, mut warnings)) => {
             for w in &visible.warnings {
@@ -1124,11 +1466,17 @@ pub(super) fn layered(ps: &[u8], visible: Imported) -> Imported {
                     warnings.push(w.clone());
                 }
             }
-            Imported { document, warnings, preview: false }
+            Imported {
+                document,
+                warnings,
+                preview: false,
+            }
         }
         Err(why) => {
             let mut v = visible;
-            v.warnings.push(format!("{LAYERS_UNREAD} ({why}): it comes in as its page, in one layer"));
+            v.warnings.push(format!(
+                "{LAYERS_UNREAD} ({why}): it comes in as its page, in one layer"
+            ));
             v
         }
     }
@@ -1143,8 +1491,16 @@ pub(super) fn layered(ps: &[u8], visible: Imported) -> Imported {
 /// is `visible`, its pages moved by `place_pages` when the layers can't be read. `outlined`: the
 /// PDF part's type was read as outlines (a file whose type shows then comes in as its PDF part).
 /// `trust`: layers that draw differently from the PDF part are used all the same, with a warning.
-pub fn layered_ai(private: &[u8], visible: Document, warnings: Vec<String>, outlined: bool, trust: bool) -> (Document, Vec<String>, bool) {
-    let Ok(data) = ai::decode_private(private) else { return (visible, warnings, false) };
+pub fn layered_ai(
+    private: &[u8],
+    visible: Document,
+    warnings: Vec<String>,
+    outlined: bool,
+    trust: bool,
+) -> (Document, Vec<String>, bool) {
+    let Ok(data) = ai::decode_private(private) else {
+        return (visible, warnings, false);
+    };
     if !has_layers(&data) {
         return (visible, warnings, false);
     }
@@ -1152,12 +1508,19 @@ pub fn layered_ai(private: &[u8], visible: Document, warnings: Vec<String>, outl
         Ok((mut done, notes)) => {
             done.setup.bleed = visible.setup.bleed;
             let mut all = warnings;
-            all.extend(notes.into_iter().filter(|n| !all.contains(n)).collect::<Vec<_>>());
+            all.extend(
+                notes
+                    .into_iter()
+                    .filter(|n| !all.contains(n))
+                    .collect::<Vec<_>>(),
+            );
             (done, all, true)
         }
         Err(why) => {
             let mut all = warnings;
-            all.push(format!("{LAYERS_UNREAD} from its editing data ({why}): they come from its PDF part"));
+            all.push(format!(
+                "{LAYERS_UNREAD} from its editing data ({why}): they come from its PDF part"
+            ));
             let mut visible = visible;
             place_pages(&ai::artboards(&data), &mut visible);
             (visible, all, false)
@@ -1173,7 +1536,9 @@ fn place_pages(boards: &[(String, Rect)], doc: &mut Document) {
     if boards.is_empty() || boards.len() != doc.artboards.len() {
         return;
     }
-    if boards.iter().zip(&doc.artboards).any(|((_, b), a)| (b.width() - a.rect.width()).abs() > 0.5 || (b.height() - a.rect.height()).abs() > 0.5) {
+    if boards.iter().zip(&doc.artboards).any(|((_, b), a)| {
+        (b.width() - a.rect.width()).abs() > 0.5 || (b.height() - a.rect.height()).abs() > 0.5
+    }) {
         return;
     }
     for ((name, _), a) in boards.iter().zip(&mut doc.artboards) {
@@ -1183,7 +1548,11 @@ fn place_pages(boards: &[(String, Rect)], doc: &mut Document) {
     // Art space (y up) → the document, the first artboard's top left at the origin, as `read` has it.
     let to_doc = Affine::new([1.0, 0.0, 0.0, -1.0, -first.x0, first.y1]);
     let pages: Vec<Rect> = doc.artboards.iter().map(|a| a.rect).collect();
-    let moves: Vec<Vec2> = boards.iter().zip(&pages).map(|((_, b), page)| to_doc.transform_rect_bbox(*b).origin() - page.origin()).collect();
+    let moves: Vec<Vec2> = boards
+        .iter()
+        .zip(&pages)
+        .map(|((_, b), page)| to_doc.transform_rect_bbox(*b).origin() - page.origin())
+        .collect();
     for layer in &mut doc.layers {
         place_art(Arc::make_mut(layer), &pages, &moves);
     }
@@ -1194,17 +1563,33 @@ fn place_pages(boards: &[(String, Rect)], doc: &mut Document) {
 
 /// The objects in `layer` (and its sublayers) moved by the move of the page they are on.
 fn place_art(layer: &mut Node, pages: &[Rect], moves: &[Vec2]) {
-    let Some(children) = layer.children_mut() else { return };
+    let Some(children) = layer.children_mut() else {
+        return;
+    };
     for child in children {
         if matches!(child.kind, NodeKind::Layer { .. }) {
             place_art(Arc::make_mut(child), pages, moves);
             continue;
         }
-        let Some(r) = child.visual_bounds() else { continue };
+        let Some(r) = child.visual_bounds() else {
+            continue;
+        };
         // The page it is on: the one with most of it (pages keep only the art that reaches into
         // them), else the nearest.
-        let fit = |p: &Rect| (p.intersect(r).area().max(0.0), -(p.center() - r.center()).hypot());
-        let Some((i, _)) = pages.iter().map(fit).enumerate().max_by(|(_, a), (_, b)| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1))) else { continue };
+        let fit = |p: &Rect| {
+            (
+                p.intersect(r).area().max(0.0),
+                -(p.center() - r.center()).hypot(),
+            )
+        };
+        let Some((i, _)) = pages
+            .iter()
+            .map(fit)
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)))
+        else {
+            continue;
+        };
         if let Some(v) = moves.get(i).filter(|v| **v != Vec2::ZERO) {
             Arc::make_mut(child).transform(Affine::translate(*v), false);
         }
@@ -1246,7 +1631,13 @@ mod tests {
 
     /// `doc` with a square ring round (20, 20)–(80, 80) (or at `at`), stroked `color` `width` wide,
     /// named `name`.
-    fn ring(doc: &mut Document, name: Option<&str>, color: vectorcraft_color::Color, width: f64, at: Rect) {
+    fn ring(
+        doc: &mut Document,
+        name: Option<&str>,
+        color: vectorcraft_color::Color,
+        width: f64,
+        at: Rect,
+    ) {
         let stroke = vectorcraft_color::Paint::solid(color);
         let mut n = Node::path(
             doc.alloc_id(),
@@ -1262,7 +1653,10 @@ mod tests {
     /// by the page: it isn't taken out as unseen (#1102). An object the page doesn't draw still is.
     #[test]
     fn a_stroke_over_one_as_light_is_not_taken_for_unseen() {
-        let (dark, red) = (vectorcraft_color::Color::rgb(0.55, 0.0, 0.0), vectorcraft_color::Color::rgb(1.0, 0.0, 0.0));
+        let (dark, red) = (
+            vectorcraft_color::Color::rgb(0.55, 0.0, 0.0),
+            vectorcraft_color::Color::rgb(1.0, 0.0, 0.0),
+        );
         let square = Rect::new(20.0, 20.0, 80.0, 80.0);
         let mut page = Document::new(100.0, 100.0);
         ring(&mut page, None, dark, 12.0, square);
@@ -1270,12 +1664,32 @@ mod tests {
         let mut layers = Document::new(100.0, 100.0);
         ring(&mut layers, Some(MADE), dark, 12.0, square);
         ring(&mut layers, Some(MADE), red, 6.0, square);
-        ring(&mut layers, Some(MADE), red, 2.0, Rect::new(40.0, 40.0, 60.0, 60.0));
+        ring(
+            &mut layers,
+            Some(MADE),
+            red,
+            2.0,
+            Rect::new(40.0, 40.0, 60.0, 60.0),
+        );
         let rect = page.artboards[0].rect;
-        let frame = Frame { page: &page, page_rect: rect, rect, whole: false };
+        let frame = Frame {
+            page: &page,
+            page_rect: rect,
+            rect,
+            whole: false,
+        };
         let mut view = PageView::new(&frame);
-        assert_eq!(prune_unseen(&frame, &mut view, &mut layers), 1, "only the ring the page doesn't draw");
-        let widths: Vec<f64> = layers.layers[0].children().unwrap().iter().filter_map(|n| n.appearance.stroke().map(|s| s.width)).collect();
+        assert_eq!(
+            prune_unseen(&frame, &mut view, &mut layers),
+            1,
+            "only the ring the page doesn't draw"
+        );
+        let widths: Vec<f64> = layers.layers[0]
+            .children()
+            .unwrap()
+            .iter()
+            .filter_map(|n| n.appearance.stroke().map(|s| s.width))
+            .collect();
         assert_eq!(widths, [12.0, 6.0]);
         // Taken by lightness alone, the red and the dark red are alike.
         let px = |c: vectorcraft_color::Color| {
@@ -1286,17 +1700,41 @@ mod tests {
     }
 
     fn piece(text: &str, x: f64, y: f64) -> Arc<Node> {
-        Arc::new(Node::new(NodeId(0), NodeKind::Text(Box::new(TextObject::point(Point::new(x, y), text, CharStyle::default())))))
+        Arc::new(Node::new(
+            NodeId(0),
+            NodeKind::Text(Box::new(TextObject::point(
+                Point::new(x, y),
+                text,
+                CharStyle::default(),
+            ))),
+        ))
     }
 
     /// Lines that the page draws in pieces, the pieces of one between those of the other, are each
     /// joined, and only their own pieces go.
     #[test]
     fn interleaved_lines_are_joined_without_taking_each_others_pieces() {
-        let mut parts = vec![piece("He", 0.0, 0.0), piece("ab", 0.0, -20.0), piece("cd", 16.0, -20.0), piece("llo", 20.0, 0.0)];
-        let lines = [("Hello".to_string(), Point::new(0.0, 0.0)), ("abcd".to_string(), Point::new(0.0, -20.0))];
+        let mut parts = vec![
+            piece("He", 0.0, 0.0),
+            piece("ab", 0.0, -20.0),
+            piece("cd", 16.0, -20.0),
+            piece("llo", 20.0, 0.0),
+        ];
+        let lines = [
+            ("Hello".to_string(), Point::new(0.0, 0.0)),
+            ("abcd".to_string(), Point::new(0.0, -20.0)),
+        ];
         join_pieces(&mut parts, &lines);
-        let texts: Vec<String> = parts.iter().filter_map(|n| if let NodeKind::Text(t) = &n.kind { Some(t.plain_text()) } else { None }).collect();
+        let texts: Vec<String> = parts
+            .iter()
+            .filter_map(|n| {
+                if let NodeKind::Text(t) = &n.kind {
+                    Some(t.plain_text())
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(texts, ["Hello", "abcd"]);
     }
 }

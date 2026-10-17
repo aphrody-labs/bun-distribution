@@ -6,52 +6,52 @@ use serde::{Deserialize, Serialize};
 /// billed by Fal at their published rates.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct GptImage1EditImageInput {
-  pub prompt: String,
+    pub prompt: String,
 
-  pub image_urls: Vec<String>,
+    pub image_urls: Vec<String>,
 
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub mask_image_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mask_image_url: Option<String>,
 
-  /// "auto", "1024x1024", "1536x1024", "1024x1536"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub image_size: Option<String>,
+    /// "auto", "1024x1024", "1536x1024", "1024x1536"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub image_size: Option<String>,
 
-  /// "low", "medium", "high"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub quality: Option<String>,
+    /// "low", "medium", "high"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quality: Option<String>,
 
-  /// "low", "high"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub input_fidelity: Option<String>,
+    /// "low", "high"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub input_fidelity: Option<String>,
 
-  /// 1 - 4
-  /// Default: 1
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub num_images: Option<u8>,
+    /// 1 - 4
+    /// Default: 1
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub num_images: Option<u8>,
 
-  /// "auto", "transparent", "opaque"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub background: Option<String>,
+    /// "auto", "transparent", "opaque"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background: Option<String>,
 
-  /// "jpeg", "png", "webp"
-  /// Default: "png"
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub output_format: Option<String>,
+    /// "jpeg", "png", "webp"
+    /// Default: "png"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub output_format: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GptImage1EditImageFile {
-  pub url: String,
+    pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GptImage1EditImageOutput {
-  pub images: Vec<GptImage1EditImageFile>,
+    pub images: Vec<GptImage1EditImageFile>,
 }
 
 pub fn gpt_image_1_edit_image(
-  params: GptImage1EditImageInput,
+    params: GptImage1EditImageInput,
 ) -> FalRequest<GptImage1EditImageInput, GptImage1EditImageOutput> {
-  FalRequest::new("fal-ai/gpt-image-1/edit-image", params)
+    FalRequest::new("fal-ai/gpt-image-1/edit-image", params)
 }

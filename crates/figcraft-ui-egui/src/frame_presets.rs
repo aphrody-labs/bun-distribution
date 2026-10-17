@@ -27,27 +27,48 @@ pub fn panel(app: &mut FigApp, ui: &mut Ui) {
         let open: bool = ui.data(|d| d.get_temp(open_id)).unwrap_or(cat == "Phone");
         let (r, resp) = ui.allocate_exact_size(vec2(w, 32.0), Sense::click());
         if resp.hovered() {
-            ui.painter().rect_filled(r.shrink2(vec2(8.0, 2.0)), CornerRadius::same(5), t.hover);
+            ui.painter()
+                .rect_filled(r.shrink2(vec2(8.0, 2.0)), CornerRadius::same(5), t.hover);
         }
         icons::paint(
             ui.painter(),
             egui::Rect::from_center_size(pos2(r.min.x + PAD + 4.0, r.center().y), vec2(10.0, 10.0)),
-            if open { Icon::Chevron } else { Icon::ChevronRight },
+            if open {
+                Icon::Chevron
+            } else {
+                Icon::ChevronRight
+            },
             t.icon_secondary,
         );
-        ui.painter().text(pos2(r.min.x + PAD + 16.0, r.center().y), Align2::LEFT_CENTER, tr(cat), semibold(11.0), t.text);
+        ui.painter().text(
+            pos2(r.min.x + PAD + 16.0, r.center().y),
+            Align2::LEFT_CENTER,
+            tr(cat),
+            semibold(11.0),
+            t.text,
+        );
         if resp.clicked() {
             ui.data_mut(|d| d.insert_temp(open_id, !open));
         }
         if !open {
             continue;
         }
-        for (_, name, pw, ph) in figcraft_engine::cmd::create::FRAME_PRESETS.iter().filter(|(c, ..)| *c == cat) {
+        for (_, name, pw, ph) in figcraft_engine::cmd::create::FRAME_PRESETS
+            .iter()
+            .filter(|(c, ..)| *c == cat)
+        {
             let (r, resp) = ui.allocate_exact_size(vec2(w, 28.0), Sense::click());
             if resp.hovered() {
-                ui.painter().rect_filled(r.shrink2(vec2(8.0, 1.0)), CornerRadius::same(5), t.hover);
+                ui.painter()
+                    .rect_filled(r.shrink2(vec2(8.0, 1.0)), CornerRadius::same(5), t.hover);
             }
-            ui.painter().text(pos2(r.min.x + PAD + 16.0, r.center().y), Align2::LEFT_CENTER, *name, regular(11.0), t.text);
+            ui.painter().text(
+                pos2(r.min.x + PAD + 16.0, r.center().y),
+                Align2::LEFT_CENTER,
+                *name,
+                regular(11.0),
+                t.text,
+            );
             ui.painter().text(
                 pos2(r.max.x - PAD, r.center().y),
                 Align2::RIGHT_CENTER,

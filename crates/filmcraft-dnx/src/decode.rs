@@ -18,7 +18,10 @@ pub struct DecodeOptions {
 
 impl Default for DecodeOptions {
     fn default() -> Self {
-        DecodeOptions { threads: true, spec_dequant: false }
+        DecodeOptions {
+            threads: true,
+            spec_dequant: false,
+        }
     }
 }
 
@@ -39,24 +42,43 @@ pub fn decode_frame_with(data: &[u8], opts: &DecodeOptions) -> Result<Frame> {
     if !field_coded {
         let planes = decode_unit(&h1, data, opts)?;
         let mut f = Frame::new_like(&h1, h1.width, h1.lines);
-        f.interlace = if h1.interlaced { Interlace::TopFieldFirst } else { Interlace::Progressive };
+        f.interlace = if h1.interlaced {
+            Interlace::TopFieldFirst
+        } else {
+            Interlace::Progressive
+        };
         planes.copy_into(&mut f, 0, 1);
         return Ok(f);
     }
     // field encoding: two coding units, field 1 (top) then field 2
     let off = second_unit_offset(&h1, data)?;
     let h2 = header::parse(&data[off..])?;
-    if h2.cid != h1.cid || h2.width != h1.width || h2.lines != h1.lines || h2.chroma != h1.chroma || h2.alpha != h1.alpha {
+    if h2.cid != h1.cid
+        || h2.width != h1.width
+        || h2.lines != h1.lines
+        || h2.chroma != h1.chroma
+        || h2.alpha != h1.alpha
+    {
         return Err(Error::Invalid("field coding units differ"));
     }
     let (p1, p2) = if opts.threads {
-        join(|| decode_unit(&h1, &data[..off], opts), || decode_unit(&h2, &data[off..], opts))
+        join(
+            || decode_unit(&h1, &data[..off], opts),
+            || decode_unit(&h2, &data[off..], opts),
+        )
     } else {
-        (decode_unit(&h1, &data[..off], opts), decode_unit(&h2, &data[off..], opts))
+        (
+            decode_unit(&h1, &data[..off], opts),
+            decode_unit(&h2, &data[off..], opts),
+        )
     };
     let mut f = Frame::new_like(&h1, h1.width, h1.lines * 2);
     f.interlace = Interlace::TopFieldFirst;
-    let (top, bottom) = if h1.field == FieldCode::Field2 { (p2?, p1?) } else { (p1?, p2?) };
+    let (top, bottom) = if h1.field == FieldCode::Field2 {
+        (p2?, p1?)
+    } else {
+        (p1?, p2?)
+    };
     top.copy_into(&mut f, 0, 2);
     bottom.copy_into(&mut f, 1, 2);
     Ok(f)
@@ -111,8 +133,11 @@ impl CodedPlanes {
         let ch = f.chroma_height() as usize;
         let h = f.height as usize;
         let cfirst = first;
-        let mut targets: Vec<(&mut Vec<u16>, usize, usize, usize, usize)> =
-            vec![(&mut f.y, w, h, first, 0), (&mut f.cb, cw, ch, cfirst, 1), (&mut f.cr, cw, ch, cfirst, 2)];
+        let mut targets: Vec<(&mut Vec<u16>, usize, usize, usize, usize)> = vec![
+            (&mut f.y, w, h, first, 0),
+            (&mut f.cb, cw, ch, cfirst, 1),
+            (&mut f.cr, cw, ch, cfirst, 2),
+        ];
         if let Some(a) = f.alpha.as_mut() {
             targets.push((a, w, h, first, 3));
         }
@@ -134,10 +159,38 @@ impl CodedPlanes {
 /// Block layout entry: plane, x offset and y offset (0 or 8) inside the macroblock.
 type BlockPos = (u8, u8, u8);
 
-const LAYOUT_422: [BlockPos; 8] = [(0, 0, 0), (0, 8, 0), (1, 0, 0), (2, 0, 0), (0, 0, 8), (0, 8, 8), (1, 0, 8), (2, 0, 8)];
-const LAYOUT_420: [BlockPos; 6] = [(0, 0, 0), (0, 8, 0), (1, 0, 0), (2, 0, 0), (0, 0, 8), (0, 8, 8)];
-const LAYOUT_444: [BlockPos; 12] =
-    [(0, 0, 0), (0, 8, 0), (1, 0, 0), (1, 8, 0), (2, 0, 0), (2, 8, 0), (0, 0, 8), (0, 8, 8), (1, 0, 8), (1, 8, 8), (2, 0, 8), (2, 8, 8)];
+const LAYOUT_422: [BlockPos; 8] = [
+    (0, 0, 0),
+    (0, 8, 0),
+    (1, 0, 0),
+    (2, 0, 0),
+    (0, 0, 8),
+    (0, 8, 8),
+    (1, 0, 8),
+    (2, 0, 8),
+];
+const LAYOUT_420: [BlockPos; 6] = [
+    (0, 0, 0),
+    (0, 8, 0),
+    (1, 0, 0),
+    (2, 0, 0),
+    (0, 0, 8),
+    (0, 8, 8),
+];
+const LAYOUT_444: [BlockPos; 12] = [
+    (0, 0, 0),
+    (0, 8, 0),
+    (1, 0, 0),
+    (1, 8, 0),
+    (2, 0, 0),
+    (2, 8, 0),
+    (0, 0, 8),
+    (0, 8, 8),
+    (1, 0, 8),
+    (1, 8, 8),
+    (2, 0, 8),
+    (2, 8, 8),
+];
 const LAYOUT_ALPHA: [BlockPos; 4] = [(3, 0, 0), (3, 8, 0), (3, 0, 8), (3, 8, 8)];
 
 /// Per-coding-unit decoding context.
@@ -196,13 +249,20 @@ fn decode_unit(h: &FrameHeader, data: &[u8], opts: &DecodeOptions) -> Result<Cod
     for s in 0..ns {
         let o = SCAN_INDEX_OFFSET + 4 * s;
         let idx = u32::from_be_bytes([data[o], data[o + 1], data[o + 2], data[o + 3]]) as usize;
-        let st = hs.checked_add(idx).filter(|&v| v < data.len()).ok_or(Error::Truncated)?;
+        let st = hs
+            .checked_add(idx)
+            .filter(|&v| v < data.len())
+            .ok_or(Error::Truncated)?;
         starts.push(st);
     }
     let ranges: Vec<(usize, usize)> = (0..ns)
         .map(|s| {
             let st = starts[s];
-            let end = starts.get(s + 1).copied().filter(|&e| e > st).unwrap_or(data.len());
+            let end = starts
+                .get(s + 1)
+                .copied()
+                .filter(|&e| e > st)
+                .unwrap_or(data.len());
             (st, end)
         })
         .collect();
@@ -212,11 +272,24 @@ fn decode_unit(h: &FrameHeader, data: &[u8], opts: &DecodeOptions) -> Result<Cod
         vec![0; strides[0] * 16 * ns],
         vec![0; strides[1] * cmb.1 * ns],
         vec![0; strides[2] * cmb.1 * ns],
-        if alpha { vec![0; strides[3] * 16 * ns] } else { Vec::new() },
+        if alpha {
+            vec![0; strides[3] * 16 * ns]
+        } else {
+            Vec::new()
+        },
     ];
     let [py, pcb, pcr, pa] = &mut planes;
-    let band = [strides[0] * 16, strides[1] * cmb.1, strides[2] * cmb.1, strides[3] * 16];
-    let mut alpha_bands: Vec<&mut [u16]> = if alpha { pa.chunks_mut(band[3]).collect() } else { (0..ns).map(|_| &mut [][..]).collect() };
+    let band = [
+        strides[0] * 16,
+        strides[1] * cmb.1,
+        strides[2] * cmb.1,
+        strides[3] * 16,
+    ];
+    let mut alpha_bands: Vec<&mut [u16]> = if alpha {
+        pa.chunks_mut(band[3]).collect()
+    } else {
+        (0..ns).map(|_| &mut [][..]).collect()
+    };
     let rows: Vec<(usize, &mut [u16], &mut [u16], &mut [u16], &mut [u16])> = py
         .chunks_mut(band[0])
         .zip(pcb.chunks_mut(band[1]))
@@ -255,12 +328,24 @@ fn decode_unit(h: &FrameHeader, data: &[u8], opts: &DecodeOptions) -> Result<Cod
             for (mb, &a) in row.iter().enumerate() {
                 if a {
                     let o = s * band[0];
-                    convert_mb_to_rgb(&ctx, [&mut py[o..o + band[0]], &mut pcb[o..o + band[0]], &mut pcr[o..o + band[0]]], mb);
+                    convert_mb_to_rgb(
+                        &ctx,
+                        [
+                            &mut py[o..o + band[0]],
+                            &mut pcb[o..o + band[0]],
+                            &mut pcr[o..o + band[0]],
+                        ],
+                        mb,
+                    );
                 }
             }
         }
     }
-    Ok(CodedPlanes { planes, strides, ycbcr })
+    Ok(CodedPlanes {
+        planes,
+        strides,
+        ycbcr,
+    })
 }
 
 /// Decode one macroblock scan line into the 16-line bands of each plane.
@@ -287,7 +372,16 @@ fn decode_row(ctx: &Ctx, data: &[u8], bands: [&mut [u16]; 4]) -> Result<Vec<bool
             let slot = if rgb && !acf { 3 + comp } else { comp };
             let w = &wq[(comp != 0) as usize];
             decode_block(ctx, &mut r, &mut pred[slot], w, &mut block)?;
-            store(ctx, bands[comp], comp, mb, xo as usize, yo as usize, mff, &mut block);
+            store(
+                ctx,
+                bands[comp],
+                comp,
+                mb,
+                xo as usize,
+                yo as usize,
+                mff,
+                &mut block,
+            );
         }
         if rgb {
             acfs.push(acf);
@@ -316,7 +410,16 @@ fn decode_row(ctx: &Ctx, data: &[u8], bands: [&mut [u16]; 4]) -> Result<Vec<bool
                 let wq = scaled_weights(ctx.info.weights, qsf);
                 for &(plane, xo, yo) in &LAYOUT_ALPHA {
                     decode_block(ctx, &mut r, &mut pred[6], &wq[0], &mut block)?;
-                    store(ctx, bands[3], plane as usize, mb, xo as usize, yo as usize, false, &mut block);
+                    store(
+                        ctx,
+                        bands[3],
+                        plane as usize,
+                        mb,
+                        xo as usize,
+                        yo as usize,
+                        false,
+                        &mut block,
+                    );
                 }
             }
         }
@@ -342,7 +445,13 @@ fn scaled_weights(w: &[[u8; 63]; 2], qsf: u32) -> [[(u32, u32); 64]; 2] {
 
 /// Decode one DCT block into dequantised coefficients (raster order).
 #[inline]
-fn decode_block(ctx: &Ctx, r: &mut Reader, pred: &mut i32, wq: &[(u32, u32); 64], block: &mut [f32; 64]) -> Result<()> {
+fn decode_block(
+    ctx: &Ctx,
+    r: &mut Reader,
+    pred: &mut i32,
+    wq: &[(u32, u32); 64],
+    block: &mut [f32; 64],
+) -> Result<()> {
     let v = ctx.vlc;
     *block = [0.0; 64];
     // DC (8.2.4)
@@ -351,7 +460,11 @@ fn decode_block(ctx: &Ctx, r: &mut Reader, pred: &mut i32, wq: &[(u32, u32); 64]
         0
     } else {
         let rho = r.read(eta) as i32;
-        if rho >= 1 << (eta - 1) { rho } else { rho + 1 - (1 << eta) }
+        if rho >= 1 << (eta - 1) {
+            rho
+        } else {
+            rho + 1 - (1 << eta)
+        }
     };
     let dc = pred.wrapping_add(eps);
     *pred = dc;
@@ -393,7 +506,16 @@ fn decode_block(ctx: &Ctx, r: &mut Reader, pred: &mut i32, wq: &[(u32, u32); 64]
 
 /// IDCT a block and store it (with level adjustment and clipping) into a plane band.
 #[inline]
-fn store(ctx: &Ctx, band: &mut [u16], plane: usize, mb: usize, xo: usize, yo: usize, field: bool, block: &mut [f32; 64]) {
+fn store(
+    ctx: &Ctx,
+    band: &mut [u16],
+    plane: usize,
+    mb: usize,
+    xo: usize,
+    yo: usize,
+    field: bool,
+    block: &mut [f32; 64],
+) {
     idct8x8(block);
     let stride = ctx.strides[plane];
     let x0 = mb * ctx.mb_size[plane].0 + xo;
@@ -443,7 +565,11 @@ fn decode_rle_alpha(ctx: &Ctx, r: &mut Reader, band: &mut [u16], mb: usize) -> R
     let stride = ctx.strides[3];
     let pos = |count: usize| {
         let y = count / 16;
-        let x = if y.is_multiple_of(2) { count % 16 } else { 15 - count % 16 };
+        let x = if y.is_multiple_of(2) {
+            count % 16
+        } else {
+            15 - count % 16
+        };
         y * stride + mb * 16 + x
     };
     // RL = 1: RLE coded; RL = 0: 256 raw samples (§7.3.1.2 prose; see README)
@@ -480,12 +606,20 @@ fn decode_rle_alpha(ctx: &Ctx, r: &mut Reader, band: &mut [u16], mb: usize) -> R
         } else {
             r.read(d)
         };
-        let diff = if dcw & 1 == 1 { mask.wrapping_sub(dcw >> 1) } else { dcw >> 1 };
+        let diff = if dcw & 1 == 1 {
+            mask.wrapping_sub(dcw >> 1)
+        } else {
+            dcw >> 1
+        };
         if count + nrl > 256 {
             return Err(Error::Row(0));
         }
         for _ in 0..nrl {
-            let v = if p == 1 { (2 * d1).wrapping_sub(d2).wrapping_add(diff) & mask } else { d1.wrapping_add(diff) & mask };
+            let v = if p == 1 {
+                (2 * d1).wrapping_sub(d2).wrapping_add(diff) & mask
+            } else {
+                d1.wrapping_add(diff) & mask
+            };
             band[pos(count)] = v as u16;
             d2 = d1;
             d1 = v;

@@ -30,8 +30,16 @@ use crate::cfgbin::{
 use crate::hash::HashId;
 
 /// Les 8 morphologies du jeu, dans l'ordre des suffixes de champs (`resource_<bt>`, `facePatternID_<bt>`).
-pub const BODY_TYPES: [&str; 8] =
-    ["male", "female", "small", "smallfat", "tall", "tallmuscle", "muscle", "big"];
+pub const BODY_TYPES: [&str; 8] = [
+    "male",
+    "female",
+    "small",
+    "smallfat",
+    "tall",
+    "tallmuscle",
+    "muscle",
+    "big",
+];
 
 /// Lit un champ `String` (vide si absent), en chaîne possédée.
 fn s(v: &Value, key: &str) -> String {
@@ -82,7 +90,11 @@ pub struct CharaEditFaceTypeInfo {
 impl CharaEditFaceTypeInfo {
     fn from_value(v: &Value) -> Self {
         let arr = v.get("faceTypeData").and_then(Value::as_array);
-        let at = |i: usize| arr.and_then(|a| a.get(i)).and_then(Value::as_i64).unwrap_or(0);
+        let at = |i: usize| {
+            arr.and_then(|a| a.get(i))
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+        };
         Self {
             face_type: s(v, "faceType"),
             face_type_crc: field_hash(v, "faceTypeCrc"),
@@ -126,7 +138,11 @@ pub struct CharaEditPartsBodyInfo {
 impl CharaEditPartsBodyInfo {
     fn from_value(v: &Value) -> Self {
         let arr = v.get("partsTypeData").and_then(Value::as_array);
-        let at = |i: usize| arr.and_then(|a| a.get(i)).and_then(Value::as_i64).unwrap_or(0);
+        let at = |i: usize| {
+            arr.and_then(|a| a.get(i))
+                .and_then(Value::as_i64)
+                .unwrap_or(0)
+        };
         Self {
             parts_type: field_i64(v, "partsType").unwrap_or(0),
             data_offset: at(0),
@@ -498,7 +514,11 @@ pub struct CharaEditPartsParamInfo {
 impl CharaEditPartsParamInfo {
     fn from_value(v: &Value) -> Self {
         let (data_offset, data_count) = pair(v, "partsParamData");
-        Self { parts_type: field_i64(v, "partsType").unwrap_or(0), data_offset, data_count }
+        Self {
+            parts_type: field_i64(v, "partsType").unwrap_or(0),
+            data_offset,
+            data_count,
+        }
     }
 }
 
@@ -551,7 +571,12 @@ pub struct CharaEditPresetInfo {
 impl CharaEditPresetInfo {
     fn from_value(v: &Value) -> Self {
         let (data_offset, data_count) = pair(v, "presetData");
-        Self { preset_id: field_hash(v, "presetID"), data_offset, data_count, apply: apply_mask(v) }
+        Self {
+            preset_id: field_hash(v, "presetID"),
+            data_offset,
+            data_count,
+            apply: apply_mask(v),
+        }
     }
 }
 
@@ -593,7 +618,11 @@ pub struct CharaEditFashionBodyInfo {
 impl CharaEditFashionBodyInfo {
     fn from_value(v: &Value) -> Self {
         let (data_offset, data_count) = pair(v, "enableBodyType");
-        Self { id: field_hash(v, "id"), data_offset, data_count }
+        Self {
+            id: field_hash(v, "id"),
+            data_offset,
+            data_count,
+        }
     }
 }
 
@@ -637,8 +666,12 @@ pub struct CharaEditConfig {
 
 /// Découpe `[offset, count]` dans un `Vec`, en tolérant une plage hors bornes.
 fn slice_range<T>(all: &[T], offset: i64, count: i64) -> &[T] {
-    let start = usize::try_from(offset.max(0)).unwrap_or(usize::MAX).min(all.len());
-    let end = usize::try_from(offset.max(0) + count.max(0)).unwrap_or(usize::MAX).min(all.len());
+    let start = usize::try_from(offset.max(0))
+        .unwrap_or(usize::MAX)
+        .min(all.len());
+    let end = usize::try_from(offset.max(0) + count.max(0))
+        .unwrap_or(usize::MAX)
+        .min(all.len());
     &all[start..end]
 }
 
@@ -649,7 +682,9 @@ impl CharaEditConfig {
         self.parts_info
             .iter()
             .find(|i| i.face_setting_type == face_setting_type)
-            .map_or(&[][..], |i| slice_range(&self.parts, i.data_offset, i.data_count))
+            .map_or(&[][..], |i| {
+                slice_range(&self.parts, i.data_offset, i.data_count)
+            })
     }
 
     /// Les curseurs de morphing d'un `partsType`.
@@ -658,7 +693,9 @@ impl CharaEditConfig {
         self.params_info
             .iter()
             .find(|i| i.parts_type == parts_type)
-            .map_or(&[][..], |i| slice_range(&self.params, i.data_offset, i.data_count))
+            .map_or(&[][..], |i| {
+                slice_range(&self.params, i.data_offset, i.data_count)
+            })
     }
 
     /// La palette de couleurs d'une catégorie (`faceSettingType`).
@@ -667,7 +704,9 @@ impl CharaEditConfig {
         self.colors_info
             .iter()
             .find(|i| i.face_setting_type == face_setting_type)
-            .map_or(&[][..], |i| slice_range(&self.colors, i.data_offset, i.data_count))
+            .map_or(&[][..], |i| {
+                slice_range(&self.colors, i.data_offset, i.data_count)
+            })
     }
 
     /// La recette d'un visage prédéfini, par son `presetID`.
@@ -676,7 +715,9 @@ impl CharaEditConfig {
         self.preset_info
             .iter()
             .find(|i| i.preset_id == preset_id)
-            .map_or(&[][..], |i| slice_range(&self.preset_data, i.data_offset, i.data_count))
+            .map_or(&[][..], |i| {
+                slice_range(&self.preset_data, i.data_offset, i.data_count)
+            })
     }
 
     /// Les morphologies autorisées pour une tenue, par son hash de nom.
@@ -685,7 +726,9 @@ impl CharaEditConfig {
         self.fashion_body_info
             .iter()
             .find(|i| i.id == fashion_id)
-            .map_or(&[][..], |i| slice_range(&self.fashion_body, i.data_offset, i.data_count))
+            .map_or(&[][..], |i| {
+                slice_range(&self.fashion_body, i.data_offset, i.data_count)
+            })
     }
 
     /// Retrouve une part par son hash d'identifiant.
@@ -705,9 +748,21 @@ impl CharaEditConfig {
 #[must_use]
 pub fn parse_chara_edit(root: &Value) -> CharaEditConfig {
     CharaEditConfig {
-        recipes: collect_list(root, "m_CharaEditRecipeInfoList", CharaEditRecipeInfo::from_value),
-        codes: collect_list(root, "m_CharaEditCodeInfoList", CharaEditCodeInfo::from_value),
-        voices: collect_list(root, "m_CharaEditVoiceInfoList", CharaEditVoiceInfo::from_value),
+        recipes: collect_list(
+            root,
+            "m_CharaEditRecipeInfoList",
+            CharaEditRecipeInfo::from_value,
+        ),
+        codes: collect_list(
+            root,
+            "m_CharaEditCodeInfoList",
+            CharaEditCodeInfo::from_value,
+        ),
+        voices: collect_list(
+            root,
+            "m_CharaEditVoiceInfoList",
+            CharaEditVoiceInfo::from_value,
+        ),
         fashions: collect_list(
             root,
             "m_CharaEditFashionInfoList",
@@ -723,8 +778,16 @@ pub fn parse_chara_edit(root: &Value) -> CharaEditConfig {
             "m_CharaEditPresetFileInfoList",
             CharaEditPresetFileInfo::from_value,
         ),
-        parts: collect_list(root, "m_CharaEditPartsDataList", CharaEditPartsData::from_value),
-        parts_info: collect_list(root, "m_CharaEditPartsInfoList", CharaEditPartsInfo::from_value),
+        parts: collect_list(
+            root,
+            "m_CharaEditPartsDataList",
+            CharaEditPartsData::from_value,
+        ),
+        parts_info: collect_list(
+            root,
+            "m_CharaEditPartsInfoList",
+            CharaEditPartsInfo::from_value,
+        ),
         params: collect_list(
             root,
             "m_CharaEditPartsParamDataList",
@@ -745,8 +808,14 @@ pub fn parse_chara_edit(root: &Value) -> CharaEditConfig {
             "m_CharaEditPresetInfoList",
             CharaEditPresetInfo::from_value,
         ),
-        colors: collect_list(root, "m_CharaEditColorDataList", |v| field_hash(v, "colorPresetID")),
-        colors_info: collect_list(root, "m_CharaEditColorInfoList", CharaEditColorInfo::from_value),
+        colors: collect_list(root, "m_CharaEditColorDataList", |v| {
+            field_hash(v, "colorPresetID")
+        }),
+        colors_info: collect_list(
+            root,
+            "m_CharaEditColorInfoList",
+            CharaEditColorInfo::from_value,
+        ),
         fashion_body: collect_list(root, "m_CharaEditFashionBodyDataList", |v| {
             field_i64(v, "bodyType").unwrap_or(0)
         }),

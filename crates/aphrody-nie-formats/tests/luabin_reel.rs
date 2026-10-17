@@ -17,15 +17,18 @@ fn corpus() -> Option<Vfs> {
         Err(e) => {
             eprintln!("skip : ni installation ni dump ({e:?})");
             None
-        },
+        }
     }
 }
 
 #[test]
 fn les_lua_bin_se_decodent_par_le_dispatch() {
     let Some(vfs) = corpus() else { return };
-    let mut chemins: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(".lua.bin")).collect();
+    let mut chemins: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(".lua.bin"))
+        .collect();
     chemins.sort_unstable();
     if chemins.is_empty() {
         eprintln!("skip : aucun .lua.bin dans le corpus monté");
@@ -80,12 +83,21 @@ fn les_lua_bin_se_decodent_par_le_dispatch() {
         eprintln!("  ÉCHEC {e}");
     }
     assert!(echecs.is_empty(), "{} fichier(s) en échec", echecs.len());
-    assert!(instructions > 0, "aucune instruction décodée : rien n'est prouvé");
+    assert!(
+        instructions > 0,
+        "aucune instruction décodée : rien n'est prouvé"
+    );
 }
 
 /// `format_name` doit nommer le bytecode Lua **avant** de retomber sur « inconnu ».
 #[test]
 fn format_name_nomme_le_bytecode_lua() {
-    assert_eq!(aphrody_nie_formats::decode::format_name(b"\x1bLua\x52\0suite"), "lua-bytecode");
-    assert_eq!(aphrody_nie_formats::decode::format_name(b"lip\0suite"), "lip");
+    assert_eq!(
+        aphrody_nie_formats::decode::format_name(b"\x1bLua\x52\0suite"),
+        "lua-bytecode"
+    );
+    assert_eq!(
+        aphrody_nie_formats::decode::format_name(b"lip\0suite"),
+        "lip"
+    );
 }

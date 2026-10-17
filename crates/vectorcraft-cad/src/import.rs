@@ -58,7 +58,16 @@ pub struct ImportOptions {
 
 impl Default for ImportOptions {
     fn default() -> Self {
-        Self { layout: None, fit: false, fit_to: FIT_TO, unit: None, scale: None, scale_lineweights: false, center: true, merge_layers: false }
+        Self {
+            layout: None,
+            fit: false,
+            fit_to: FIT_TO,
+            unit: None,
+            scale: None,
+            scale_lineweights: false,
+            center: true,
+            merge_layers: false,
+        }
     }
 }
 
@@ -92,7 +101,11 @@ pub fn is_dxf(bytes: &[u8]) -> bool {
         return true;
     }
     let head = String::from_utf8_lossy(bytes.get(..bytes.len().min(1024)).unwrap_or(bytes));
-    let mut lines = head.trim_start_matches('\u{feff}').lines().map(str::trim).skip_while(|l| l.is_empty());
+    let mut lines = head
+        .trim_start_matches('\u{feff}')
+        .lines()
+        .map(str::trim)
+        .skip_while(|l| l.is_empty());
     // Comments (999) may come first; then the first section.
     while let (Some(code), Some(value)) = (lines.next(), lines.next()) {
         match code {
@@ -156,7 +169,11 @@ fn units_name(code: i64) -> &'static str {
         "US survey yards",
         "US survey miles",
     ];
-    usize::try_from(code).ok().and_then(|i| NAMES.get(i)).copied().unwrap_or("Unitless")
+    usize::try_from(code)
+        .ok()
+        .and_then(|i| NAMES.get(i))
+        .copied()
+        .unwrap_or("Unitless")
 }
 
 /// Read what `bytes` holds: its version, units, layouts and layers.
@@ -169,7 +186,10 @@ pub fn info(bytes: &[u8]) -> Result<DxfInfo, String> {
     }
     let h = &d.header;
     let (unit, scale) = default_ratio(h);
-    let version = DxfVersion::ALL.into_iter().find(|v| v.acadver() == h.acadver).map_or_else(|| h.acadver.clone(), |v| v.id().to_string());
+    let version = DxfVersion::ALL
+        .into_iter()
+        .find(|v| v.acadver() == h.acadver)
+        .map_or_else(|| h.acadver.clone(), |v| v.id().to_string());
     Ok(DxfInfo {
         version,
         units: units_name(h.insunits).into(),
@@ -184,12 +204,19 @@ pub fn info(bytes: &[u8]) -> Result<DxfInfo, String> {
 pub fn import(bytes: &[u8], o: &ImportOptions) -> Result<Imported, String> {
     let (w, h) = o.fit_to;
     if !(w > 0.0 && h > 0.0 && w.max(h) <= build::MAX_EXTENT) {
-        return Err(format!("the artboard to fit must be a positive size up to {} pt", build::MAX_EXTENT));
+        return Err(format!(
+            "the artboard to fit must be a positive size up to {} pt",
+            build::MAX_EXTENT
+        ));
     }
     if let Some(s) = o.scale
         && !(s.is_finite() && SCALE_RANGE.contains(&s))
     {
-        return Err(format!("scale must be a number from {} to {}, not {s}", SCALE_RANGE.start(), SCALE_RANGE.end()));
+        return Err(format!(
+            "scale must be a number from {} to {}, not {s}",
+            SCALE_RANGE.start(),
+            SCALE_RANGE.end()
+        ));
     }
     let text = text(bytes)?;
     let (pairs, damaged) = reader::pairs(&text)?;
@@ -203,7 +230,11 @@ pub fn import(bytes: &[u8], o: &ImportOptions) -> Result<Imported, String> {
     };
     let Some(layout) = layout else {
         let names: Vec<&str> = d.layouts.iter().map(|l| l.name.as_str()).collect();
-        return Err(format!("the drawing has no layout `{}` (it has {})", o.layout.as_deref().unwrap_or_default(), names.join(", ")));
+        return Err(format!(
+            "the drawing has no layout `{}` (it has {})",
+            o.layout.as_deref().unwrap_or_default(),
+            names.join(", ")
+        ));
     };
     let (unit, scale) = default_ratio(&d.header);
     let natural = unit.points() / scale;

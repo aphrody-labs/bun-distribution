@@ -37,7 +37,12 @@ struct Overlay {
 }
 
 fn c32(c: [f64; 3], a: u8) -> Color32 {
-    Color32::from_rgba_unmultiplied((c[0] * 255.0) as u8, (c[1] * 255.0) as u8, (c[2] * 255.0) as u8, a)
+    Color32::from_rgba_unmultiplied(
+        (c[0] * 255.0) as u8,
+        (c[1] * 255.0) as u8,
+        (c[2] * 255.0) as u8,
+        a,
+    )
 }
 
 /// Draw the matte overlay of the Roto Brush on `layer` (the panel shows the effect's input).
@@ -55,25 +60,49 @@ pub fn draw_overlay(
     if o.view == "none" {
         return;
     }
-    let Some(cid) = app.session.active_comp_id() else { return };
+    let Some(cid) = app.session.active_comp_id() else {
+        return;
+    };
     let time = app.session.time();
     let key = (
         app.session.revision,
         layer.id.0,
         time.0,
         (scale * 1000.0) as u32,
-        format!("{}{:?}{:?}{}", o.view, o.overlay_color, o.boundary_color, o.overlay_opacity),
+        format!(
+            "{}{:?}{:?}{}",
+            o.view, o.overlay_color, o.boundary_color, o.overlay_opacity
+        ),
     );
     let id = egui::Id::new("roto-overlay");
     let cached: Option<Overlay> = ctx.data(|d| d.get_temp(id));
     let ov = match cached {
         Some(c) if c.key == key => Some(c),
         _ => {
-            let ectx = EvalCtx { project: &app.session.project, comp_id: cid, comp, time, expr: app.session.expr.as_deref(), footage: None };
-            let mut r = Renderer::new(&app.session.project, &*app.session.footage, RenderOpts { scale, ..Default::default() });
+            let ectx = EvalCtx {
+                project: &app.session.project,
+                comp_id: cid,
+                comp,
+                time,
+                expr: app.session.expr.as_deref(),
+                footage: None,
+            };
+            let mut r = Renderer::new(
+                &app.session.project,
+                &*app.session.footage,
+                RenderOpts {
+                    scale,
+                    ..Default::default()
+                },
+            );
             r.expr = app.session.expr.as_deref();
             r.cache = Some(&app.session.layer_cache);
-            let (Some(inp), Some(out)) = (r.layer_input(&ectx, layer, idx), r.layer_input(&ectx, layer, idx + 1)) else { return };
+            let (Some(inp), Some(out)) = (
+                r.layer_input(&ectx, layer, idx),
+                r.layer_input(&ectx, layer, idx + 1),
+            ) else {
+                return;
+            };
             let (w, h) = (inp.img.width as usize, inp.img.height as usize);
             let a_at = |x: i64, y: i64| -> f32 {
                 // Output pixel at the same layer point.
@@ -82,18 +111,38 @@ pub fn draw_overlay(
                 let (ox, oy) = out.to_px([lx, ly]);
                 out.img.get(ox.floor() as i64, oy.floor() as i64)[3]
             };
-            let alpha: Vec<f32> = (0..w * h).map(|i| a_at((i % w) as i64, (i / w) as i64)).collect();
-            let inside = |x: i64, y: i64| x >= 0 && y >= 0 && x < w as i64 && y < h as i64 && alpha[y as usize * w + x as usize] >= 0.5;
+            let alpha: Vec<f32> = (0..w * h)
+                .map(|i| a_at((i % w) as i64, (i / w) as i64))
+                .collect();
+            let inside = |x: i64, y: i64| {
+                x >= 0
+                    && y >= 0
+                    && x < w as i64
+                    && y < h as i64
+                    && alpha[y as usize * w + x as usize] >= 0.5
+            };
             let mut px = vec![Color32::TRANSPARENT; w * h];
             let bc = c32(o.boundary_color, 255);
-            let oc = c32(o.overlay_color, (o.overlay_opacity / 100.0 * 255.0).clamp(0.0, 255.0) as u8);
+            let oc = c32(
+                o.overlay_color,
+                (o.overlay_opacity / 100.0 * 255.0).clamp(0.0, 255.0) as u8,
+            );
             // View Search Region: the band around the boundary (yellow).
-            let search = roto_group(layer).filter(|g| g.prop("rotoBrushPropagation/viewSearchRegion").is_some_and(|p| p.value.as_bool())).map(|g| {
-                let r = g.prop("rotoBrushPropagation/searchRadius").map(|p| p.value.as_f64()).unwrap_or(15.0) * scale;
-                let bin: Vec<u8> = alpha.iter().map(|a| (*a >= 0.5) as u8).collect();
-                let sd = effectcraft_engine::track::roto::matting::signed_distance(&bin, w, h);
-                (sd, r as f32)
-            });
+            let search = roto_group(layer)
+                .filter(|g| {
+                    g.prop("rotoBrushPropagation/viewSearchRegion")
+                        .is_some_and(|p| p.value.as_bool())
+                })
+                .map(|g| {
+                    let r = g
+                        .prop("rotoBrushPropagation/searchRadius")
+                        .map(|p| p.value.as_f64())
+                        .unwrap_or(15.0)
+                        * scale;
+                    let bin: Vec<u8> = alpha.iter().map(|a| (*a >= 0.5) as u8).collect();
+                    let sd = effectcraft_engine::track::roto::matting::signed_distance(&bin, w, h);
+                    (sd, r as f32)
+                });
             for y in 0..h as i64 {
                 for x in 0..w as i64 {
                     let i = y as usize * w + x as usize;
@@ -107,7 +156,10 @@ pub fn draw_overlay(
                         "alphaOverlay" => Color32::TRANSPARENT,
                         _ => {
                             let me = a >= 0.5;
-                            let edge = me && [(-1, 0), (1, 0), (0, -1), (0, 1)].iter().any(|(dx, dy)| !inside(x + dx, y + dy));
+                            let edge = me
+                                && [(-1, 0), (1, 0), (0, -1), (0, 1)]
+                                    .iter()
+                                    .any(|(dx, dy)| !inside(x + dx, y + dy));
                             if edge { bc } else { Color32::TRANSPARENT }
                         }
                     };
@@ -119,19 +171,32 @@ pub fn draw_overlay(
                     }
                 }
             }
-            let img = egui::ColorImage { size: [w, h], pixels: px, source_size: egui::Vec2::new(w as f32, h as f32) };
+            let img = egui::ColorImage {
+                size: [w, h],
+                pixels: px,
+                source_size: egui::Vec2::new(w as f32, h as f32),
+            };
             let x0 = -inp.offset[0] / inp.scale;
             let y0 = -inp.offset[1] / inp.scale;
             let rect = [x0, y0, x0 + w as f64 / inp.scale, y0 + h as f64 / inp.scale];
-            let tex = crate::frames::load_fitted(ctx, "roto-overlay", img, egui::TextureOptions::NEAREST);
+            let tex =
+                crate::frames::load_fitted(ctx, "roto-overlay", img, egui::TextureOptions::NEAREST);
             let c = Overlay { key, tex, rect };
             ctx.data_mut(|d| d.insert_temp(id, c.clone()));
             Some(c)
         }
     };
     if let Some(ov) = ov {
-        let r = Rect::from_min_max(to_screen([ov.rect[0], ov.rect[1]]), to_screen([ov.rect[2], ov.rect[3]]));
-        painter.image(ov.tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        let r = Rect::from_min_max(
+            to_screen([ov.rect[0], ov.rect[1]]),
+            to_screen([ov.rect[2], ov.rect[3]]),
+        );
+        painter.image(
+            ov.tex.id(),
+            r,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
 }
 
@@ -148,11 +213,21 @@ pub fn interact(
 ) -> bool {
     let ctx = ui.ctx().clone();
     let mods = ui.input(|i| i.modifiers);
-    let Some(kind) = app.ui.tool.roto_kind(mods.alt) else { return false };
-    let resp = ui.interact(area, egui::Id::new("layer-panel-roto"), Sense::click_and_drag());
+    let Some(kind) = app.ui.tool.roto_kind(mods.alt) else {
+        return false;
+    };
+    let resp = ui.interact(
+        area,
+        egui::Id::new("layer-panel-roto"),
+        Sense::click_and_drag(),
+    );
     let o = app.session.state.roto.clone();
     let refine = kind.starts_with("refine");
-    let dia = if refine { o.refine_diameter } else { o.diameter };
+    let dia = if refine {
+        o.refine_diameter
+    } else {
+        o.diameter
+    };
     let col = match kind {
         "fg" => Color32::from_rgb(40, 220, 60),
         "bg" => Color32::from_rgb(235, 50, 40),
@@ -165,7 +240,11 @@ pub fn interact(
         ctx.set_cursor_icon(egui::CursorIcon::Crosshair);
         let r = (dia * 0.5 * zoom) as f32;
         painter.circle_stroke(hp, r, Stroke::new(1.5, col));
-        let sign = if kind == "bg" || kind == "refineErase" { "−" } else { "+" };
+        let sign = if kind == "bg" || kind == "refineErase" {
+            "−"
+        } else {
+            "+"
+        };
         painter.text(hp, Align2::CENTER_CENTER, sign, Tokens::semibold(12.0), col);
     }
     // ⌘/Ctrl-drag resizes the brush (After Effects): the circle stays at the press point and its
@@ -173,7 +252,9 @@ pub fn interact(
     let rid = egui::Id::new("layer-panel-roto-resize");
     if resp.drag_started()
         && mods.command
-        && let Some(pos) = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos())
+        && let Some(pos) = ui
+            .input(|i| i.pointer.press_origin())
+            .or(resp.interact_pointer_pos())
     {
         ctx.data_mut(|d| d.insert_temp(rid, pos));
     }
@@ -181,13 +262,21 @@ pub fn interact(
         if let Some(pos) = resp.interact_pointer_pos()
             && zoom > 0.0
         {
-            let dia = (2.0 * f64::from(origin.distance(pos)) / zoom).clamp(1.0, 5000.0).round();
+            let dia = (2.0 * f64::from(origin.distance(pos)) / zoom)
+                .clamp(1.0, 5000.0)
+                .round();
             let key = if refine { "refineDiameter" } else { "diameter" };
             if let Err(e) = app.session.execute("roto.options", json!({key: dia})) {
                 app.ui.status = e.to_string();
             }
             painter.circle_stroke(origin, (dia * 0.5 * zoom) as f32, Stroke::new(1.5, col));
-            painter.text(origin + vec2(0.0, -14.0), Align2::CENTER_BOTTOM, format!("{dia:.0} px"), Tokens::ui(11.0), col);
+            painter.text(
+                origin + vec2(0.0, -14.0),
+                Align2::CENTER_BOTTOM,
+                format!("{dia:.0} px"),
+                Tokens::ui(11.0),
+                col,
+            );
         }
         if resp.drag_stopped() || !resp.dragged() {
             ctx.data_mut(|d| d.remove::<Pos2>(rid));
@@ -196,9 +285,20 @@ pub fn interact(
     }
     let did = egui::Id::new("layer-panel-roto-drag");
     if resp.drag_started()
-        && let Some(pos) = ui.input(|i| i.pointer.press_origin()).or(resp.interact_pointer_pos())
+        && let Some(pos) = ui
+            .input(|i| i.pointer.press_origin())
+            .or(resp.interact_pointer_pos())
     {
-        ctx.data_mut(|d| d.insert_temp(did, Drag { layer: layer.id.0, kind, points: vec![to_layer(pos)] }));
+        ctx.data_mut(|d| {
+            d.insert_temp(
+                did,
+                Drag {
+                    layer: layer.id.0,
+                    kind,
+                    points: vec![to_layer(pos)],
+                },
+            )
+        });
     }
     if let Some(mut d) = ctx.data(|d| d.get_temp::<Drag>(did)) {
         if let Some(pos) = resp.interact_pointer_pos() {
@@ -230,7 +330,10 @@ pub fn interact(
 }
 
 fn run_stroke(app: &mut EffectcraftApp, layer: u64, kind: &str, points: &[[f64; 2]], radius: f64) {
-    let r = app.session.execute("roto.stroke", json!({"layer": layer, "kind": kind, "points": points, "radius": radius}));
+    let r = app.session.execute(
+        "roto.stroke",
+        json!({"layer": layer, "kind": kind, "points": points, "radius": radius}),
+    );
     if let Err(e) = r {
         app.ui.status = e.to_string();
     }
@@ -239,45 +342,94 @@ fn run_stroke(app: &mut EffectcraftApp, layer: u64, kind: &str, points: &[[f64; 
 /// The segmentation span bar (above the panel's bottom bar): the layer's frames, the span, the
 /// base frame (yellow), computed frames (green) and stroke frames. Click to go to a frame; drag
 /// the span's ends to change it.
-pub fn span_bar(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, r: Rect, comp: &Comp, layer: &Layer) {
+pub fn span_bar(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    p: &egui::Painter,
+    r: Rect,
+    comp: &Comp,
+    layer: &Layer,
+) {
     let t = app.tokens;
     let Some(g) = roto_group(layer) else { return };
-    let Some(cid) = app.session.active_comp_id() else { return };
+    let Some(cid) = app.session.active_comp_id() else {
+        return;
+    };
     let uid = g.uid;
     let params = effectcraft_engine::effects::flatten_params(g, &mut |p| p.value.clone());
     let d = fx::data(&params);
     p.rect_filled(r, 0.0, t.panel_bg);
     let lim = effectcraft_engine::roto::frame_limits(comp, layer);
     let n = (lim[1] - lim[0] + 1).max(1) as f32;
-    let track = Rect::from_min_max(pos2(r.min.x + 10.0, r.min.y + 4.0), pos2(r.max.x - 10.0, r.max.y - 4.0));
+    let track = Rect::from_min_max(
+        pos2(r.min.x + 10.0, r.min.y + 4.0),
+        pos2(r.max.x - 10.0, r.max.y - 4.0),
+    );
     let x_of = |f: f64| track.min.x + ((f - lim[0] as f64) / n as f64) as f32 * track.width();
-    let f_of = |x: f32| (lim[0] as f64 + ((x - track.min.x) / track.width()).clamp(0.0, 0.9999) as f64 * n as f64).floor() as i64;
+    let f_of = |x: f32| {
+        (lim[0] as f64 + ((x - track.min.x) / track.width()).clamp(0.0, 0.9999) as f64 * n as f64)
+            .floor() as i64
+    };
     p.rect_filled(track, 2.0, t.pasteboard);
     if let Some(base) = d.base {
-        let sp = Rect::from_min_max(pos2(x_of(d.span[0] as f64), track.min.y), pos2(x_of(d.span[1] as f64 + 1.0), track.max.y));
+        let sp = Rect::from_min_max(
+            pos2(x_of(d.span[0] as f64), track.min.y),
+            pos2(x_of(d.span[1] as f64 + 1.0), track.max.y),
+        );
         let frozen = fx::is_frozen(&params);
-        p.rect_filled(sp, 2.0, if frozen { Color32::from_rgb(60, 110, 190) } else { Color32::from_rgb(90, 90, 96) });
+        p.rect_filled(
+            sp,
+            2.0,
+            if frozen {
+                Color32::from_rgb(60, 110, 190)
+            } else {
+                Color32::from_rgb(90, 90, 96)
+            },
+        );
         for (f, done) in app.session.roto_computed(cid, layer.id, uid) {
             if done {
-                let cr = Rect::from_min_max(pos2(x_of(f as f64), track.max.y - 4.0), pos2(x_of(f as f64 + 1.0), track.max.y));
+                let cr = Rect::from_min_max(
+                    pos2(x_of(f as f64), track.max.y - 4.0),
+                    pos2(x_of(f as f64 + 1.0), track.max.y),
+                );
                 p.rect_filled(cr, 0.0, Color32::from_rgb(70, 200, 90));
             }
         }
         for f in d.stroke_frames() {
             let x = x_of(f as f64 + 0.5);
-            p.line_segment([pos2(x, track.min.y), pos2(x, track.min.y + 5.0)], Stroke::new(2.0, Color32::WHITE));
+            p.line_segment(
+                [pos2(x, track.min.y), pos2(x, track.min.y + 5.0)],
+                Stroke::new(2.0, Color32::WHITE),
+            );
         }
         let bx = x_of(base as f64 + 0.5);
-        p.rect_filled(Rect::from_center_size(pos2(bx, track.center().y), vec2(6.0, track.height())), 1.0, Color32::from_rgb(240, 200, 40));
+        p.rect_filled(
+            Rect::from_center_size(pos2(bx, track.center().y), vec2(6.0, track.height())),
+            1.0,
+            Color32::from_rgb(240, 200, 40),
+        );
     }
     // Current time.
     let fps = comp.frame_rate.as_f64();
     let cur = fx::frame_of(layer.layer_time(app.session.time()).seconds(), fps);
     let cx = x_of(cur as f64 + 0.5);
-    p.line_segment([pos2(cx, r.min.y), pos2(cx, r.max.y)], Stroke::new(1.0, t.timecode));
-    p.rect_stroke(track, 2.0, Stroke::new(1.0, Color32::from_black_alpha(140)), StrokeKind::Outside);
-    app.auto.add("layerPanel.rotoSpan", track, "Segmentation span");
-    let resp = ui.interact(track, egui::Id::new("roto-span-bar"), Sense::click_and_drag());
+    p.line_segment(
+        [pos2(cx, r.min.y), pos2(cx, r.max.y)],
+        Stroke::new(1.0, t.timecode),
+    );
+    p.rect_stroke(
+        track,
+        2.0,
+        Stroke::new(1.0, Color32::from_black_alpha(140)),
+        StrokeKind::Outside,
+    );
+    app.auto
+        .add("layerPanel.rotoSpan", track, "Segmentation span");
+    let resp = ui.interact(
+        track,
+        egui::Id::new("roto-span-bar"),
+        Sense::click_and_drag(),
+    );
     let hid = egui::Id::new("roto-span-handle");
     if resp.drag_started()
         && let (Some(pos), Some(_)) = (resp.interact_pointer_pos(), d.base)
@@ -297,14 +449,22 @@ pub fn span_bar(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, 
         let f = f_of(pos.x);
         if handle == 0 && (resp.clicked() || resp.dragged()) {
             let t = layer.comp_time(comp.frame_rate.tick_of(f));
-            let _ = app.session.execute("time.set", json!({"time": t.seconds()}));
+            let _ = app
+                .session
+                .execute("time.set", json!({"time": t.seconds()}));
         }
         if handle != 0 && resp.dragged() {
-            p.line_segment([pos2(pos.x, track.min.y), pos2(pos.x, track.max.y)], Stroke::new(2.0, Color32::from_rgb(240, 200, 40)));
+            p.line_segment(
+                [pos2(pos.x, track.min.y), pos2(pos.x, track.max.y)],
+                Stroke::new(2.0, Color32::from_rgb(240, 200, 40)),
+            );
         }
         if handle != 0 && resp.drag_stopped() {
             let k = if handle == 1 { "start" } else { "end" };
-            if let Err(e) = app.session.execute("roto.span", json!({"layer": layer.id.0, "effect": uid, k: f})) {
+            if let Err(e) = app.session.execute(
+                "roto.span",
+                json!({"layer": layer.id.0, "effect": uid, k: f}),
+            ) {
                 app.ui.status = e.to_string();
             }
         }
@@ -315,18 +475,30 @@ pub fn span_bar(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, 
 }
 
 /// View-mode toggles and Freeze / Propagate buttons in the Layer panel's bottom bar, from `x`.
-pub fn bar_buttons(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, bar: Rect, x: f32, layer: &Layer) {
+pub fn bar_buttons(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    p: &egui::Painter,
+    bar: Rect,
+    x: f32,
+    layer: &Layer,
+) {
     let t = app.tokens;
     let mut x = x;
     let view = app.session.state.roto.view.clone();
-    for (id, label) in [("alpha", tr("Alpha")), ("alphaBoundary", tr("Boundary")), ("alphaOverlay", tr("Overlay"))] {
+    for (id, label) in [
+        ("alpha", tr("Alpha")),
+        ("alphaBoundary", tr("Boundary")),
+        ("alphaOverlay", tr("Overlay")),
+    ] {
         let r = Rect::from_min_size(pos2(x, bar.center().y - 10.0), vec2(66.0, 20.0));
         let on = view == id;
         if widgets::text_button(ui, r, label, on, &t, egui::Id::new(("roto-view", id))).clicked() {
             let v = if on { "none" } else { id };
             let _ = app.session.execute("roto.options", json!({"view": v}));
         }
-        app.auto.add(&format!("layerPanel.roto.view.{id}"), r, label);
+        app.auto
+            .add(&format!("layerPanel.roto.view.{id}"), r, label);
         x += 70.0;
     }
     let Some(g) = roto_group(layer) else { return };
@@ -337,9 +509,25 @@ pub fn bar_buttons(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
     x += 8.0;
     let r = Rect::from_min_size(pos2(x, bar.center().y - 10.0), vec2(74.0, 20.0));
     let label = if frozen { tr("Unfreeze") } else { tr("Freeze") };
-    if widgets::text_button(ui, r, label, frozen, &t, egui::Id::new(("roto-freeze", uid))).clicked() {
-        let id = if frozen { "roto.unfreeze" } else { "roto.freeze" };
-        if let Err(e) = app.session.execute(id, json!({"layer": layer.id.0, "effect": uid})) {
+    if widgets::text_button(
+        ui,
+        r,
+        label,
+        frozen,
+        &t,
+        egui::Id::new(("roto-freeze", uid)),
+    )
+    .clicked()
+    {
+        let id = if frozen {
+            "roto.unfreeze"
+        } else {
+            "roto.freeze"
+        };
+        if let Err(e) = app
+            .session
+            .execute(id, json!({"layer": layer.id.0, "effect": uid}))
+        {
             app.ui.status = e.to_string();
         }
     }
@@ -347,12 +535,19 @@ pub fn bar_buttons(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
     x += 80.0;
     if running {
         let r = Rect::from_min_size(pos2(x, bar.center().y - 10.0), vec2(60.0, 20.0));
-        if widgets::text_button(ui, r, tr("Stop"), false, &t, egui::Id::new("roto-stop")).clicked() {
+        if widgets::text_button(ui, r, tr("Stop"), false, &t, egui::Id::new("roto-stop")).clicked()
+        {
             let _ = app.session.execute("roto.cancel", json!({}));
         }
         app.auto.add("layerPanel.roto.stop", r, "Stop");
         if let Some(pr) = app.session.roto_progress() {
-            p.text(pos2(r.max.x + 8.0, bar.center().y), Align2::LEFT_CENTER, pr.banner(), Tokens::ui(11.5), t.text_dim);
+            p.text(
+                pos2(r.max.x + 8.0, bar.center().y),
+                Align2::LEFT_CENTER,
+                pr.banner(),
+                Tokens::ui(11.5),
+                t.text_dim,
+            );
         }
     }
 }

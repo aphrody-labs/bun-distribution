@@ -39,21 +39,38 @@ pub(super) struct TextOptions {
 impl TextOptions {
     /// The options in `p.text` for command `cmd`.
     pub(super) fn parse(p: &Value, cmd: &str) -> Result<Self> {
-        let Some(t) = p.get("text") else { return Ok(Self::default()) };
+        let Some(t) = p.get("text") else {
+            return Ok(Self::default());
+        };
         if !t.is_object() {
-            return Err(bad(cmd, "text must be {characterSet?, platform?, removeLineReturns?, removeParagraphReturns?, replaceSpaces?}"));
+            return Err(bad(
+                cmd,
+                "text must be {characterSet?, platform?, removeLineReturns?, removeParagraphReturns?, replaceSpaces?}",
+            ));
         }
         let choice = |key: &str, values: [&str; 2]| match str_param(t, key) {
             None => Ok(false),
             Some(v) if v == values[0] => Ok(false),
             Some(v) if v == values[1] => Ok(true),
-            Some(v) => Err(bad(cmd, format!("text.{key} `{v}`: use \"{}\" or \"{}\"", values[0], values[1]))),
+            Some(v) => Err(bad(
+                cmd,
+                format!(
+                    "text.{key} `{v}`: use \"{}\" or \"{}\"",
+                    values[0], values[1]
+                ),
+            )),
         };
         let spaces_to_tab = match t.get("replaceSpaces") {
             None | Some(Value::Null) => None,
             Some(v) => Some(
-                v.as_u64().filter(|n| (2..=100).contains(n)).ok_or_else(|| bad(cmd, "text.replaceSpaces must be a whole number from 2 to 100"))?
-                    as usize,
+                v.as_u64()
+                    .filter(|n| (2..=100).contains(n))
+                    .ok_or_else(|| {
+                        bad(
+                            cmd,
+                            "text.replaceSpaces must be a whole number from 2 to 100",
+                        )
+                    })? as usize,
             ),
         };
         Ok(Self {
@@ -70,7 +87,13 @@ impl TextOptions {
 /// `\n`.
 pub(super) fn import(bytes: &[u8], o: TextOptions, cmd: &str) -> Result<String> {
     if bytes.len() > MAX_TEXT {
-        return Err(bad(cmd, format!("the text file is too large to place as type (at most {} MB)", MAX_TEXT >> 20)));
+        return Err(bad(
+            cmd,
+            format!(
+                "the text file is too large to place as type (at most {} MB)",
+                MAX_TEXT >> 20
+            ),
+        ));
     }
     Ok(clean(&decode(bytes, o), o))
 }
@@ -78,13 +101,25 @@ pub(super) fn import(bytes: &[u8], o: TextOptions, cmd: &str) -> Result<String> 
 /// `bytes` as text: Unicode (UTF-8, or UTF-16 with a byte-order mark; bytes that aren't UTF-8 are
 /// read as the platform's 8-bit set), or the platform's 8-bit character set.
 fn decode(bytes: &[u8], o: TextOptions) -> String {
-    let eight_bit = |b: &[u8]| -> String { b.iter().map(|&c| if o.mac { mac_roman(c) } else { windows_1252(c) }).collect() };
+    let eight_bit = |b: &[u8]| -> String {
+        b.iter()
+            .map(|&c| if o.mac { mac_roman(c) } else { windows_1252(c) })
+            .collect()
+    };
     if o.ansi {
         return eight_bit(bytes);
     }
     let utf16 = |rest: &[u8], le: bool| {
-        let units = rest.as_chunks::<2>().0.iter().map(|&c| if le { u16::from_le_bytes(c) } else { u16::from_be_bytes(c) });
-        char::decode_utf16(units).map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER)).collect()
+        let units = rest.as_chunks::<2>().0.iter().map(|&c| {
+            if le {
+                u16::from_le_bytes(c)
+            } else {
+                u16::from_be_bytes(c)
+            }
+        });
+        char::decode_utf16(units)
+            .map(|c| c.unwrap_or(char::REPLACEMENT_CHARACTER))
+            .collect()
     };
     match bytes {
         [0xEF, 0xBB, 0xBF, rest @ ..] => String::from_utf8_lossy(rest).into_owned(),
@@ -97,11 +132,15 @@ fn decode(bytes: &[u8], o: TextOptions) -> String {
 /// Byte `b` of Windows-1252.
 fn windows_1252(b: u8) -> char {
     const HIGH: [char; 32] = [
-        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8D}', 'Ž', '\u{8F}', //
+        '€', '\u{81}', '‚', 'ƒ', '„', '…', '†', '‡', 'ˆ', '‰', 'Š', '‹', 'Œ', '\u{8D}', 'Ž',
+        '\u{8F}', //
         '\u{90}', '‘', '’', '“', '”', '•', '–', '—', '˜', '™', 'š', '›', 'œ', '\u{9D}', 'ž', 'Ÿ',
     ];
     match b {
-        0x80..=0x9F => HIGH.get(usize::from(b - 0x80)).copied().unwrap_or(char::REPLACEMENT_CHARACTER),
+        0x80..=0x9F => HIGH
+            .get(usize::from(b - 0x80))
+            .copied()
+            .unwrap_or(char::REPLACEMENT_CHARACTER),
         _ => char::from(b),
     }
 }
@@ -113,13 +152,17 @@ fn mac_roman(b: u8) -> char {
         'ê', 'ë', 'í', 'ì', 'î', 'ï', 'ñ', 'ó', 'ò', 'ô', 'ö', 'õ', 'ú', 'ù', 'û', 'ü', //
         '†', '°', '¢', '£', '§', '•', '¶', 'ß', '®', '©', '™', '´', '¨', '≠', 'Æ', 'Ø', //
         '∞', '±', '≤', '≥', '¥', 'µ', '∂', '∑', '∏', 'π', '∫', 'ª', 'º', 'Ω', 'æ', 'ø', //
-        '¿', '¡', '¬', '√', 'ƒ', '≈', '∆', '«', '»', '…', '\u{A0}', 'À', 'Ã', 'Õ', 'Œ', 'œ', //
+        '¿', '¡', '¬', '√', 'ƒ', '≈', '∆', '«', '»', '…', '\u{A0}', 'À', 'Ã', 'Õ', 'Œ',
+        'œ', //
         '–', '—', '“', '”', '‘', '’', '÷', '◊', 'ÿ', 'Ÿ', '⁄', '€', '‹', '›', 'ﬁ', 'ﬂ', //
         '‡', '·', '‚', '„', '‰', 'Â', 'Ê', 'Á', 'Ë', 'È', 'Í', 'Î', 'Ï', 'Ì', 'Ó', 'Ô', //
         '\u{F8FF}', 'Ò', 'Ú', 'Û', 'Ù', 'ı', 'ˆ', '˜', '¯', '˘', '˙', '˚', '¸', '˝', '˛', 'ˇ',
     ];
     match b {
-        0x80.. => HIGH.get(usize::from(b - 0x80)).copied().unwrap_or(char::REPLACEMENT_CHARACTER),
+        0x80.. => HIGH
+            .get(usize::from(b - 0x80))
+            .copied()
+            .unwrap_or(char::REPLACEMENT_CHARACTER),
         _ => char::from(b),
     }
 }
@@ -131,7 +174,10 @@ fn mac_roman(b: u8) -> char {
 /// and so are blank lines at the end.
 fn clean(text: &str, o: TextOptions) -> String {
     let text = text.replace("\r\n", "\n").replace('\r', "\n");
-    let text: String = text.chars().filter(|c| !c.is_control() || matches!(c, '\n' | '\t')).collect();
+    let text: String = text
+        .chars()
+        .filter(|c| !c.is_control() || matches!(c, '\n' | '\t'))
+        .collect();
     let blank = |l: &str| l.trim().is_empty();
     let mut paras: Vec<String> = vec![];
     if o.remove_line_returns {
@@ -154,7 +200,11 @@ fn clean(text: &str, o: TextOptions) -> String {
         }
         paras.extend(block);
     } else {
-        paras = text.split('\n').filter(|l| !(o.remove_paragraph_returns && blank(l))).map(str::to_string).collect();
+        paras = text
+            .split('\n')
+            .filter(|l| !(o.remove_paragraph_returns && blank(l)))
+            .map(str::to_string)
+            .collect();
     }
     while paras.last().is_some_and(|p| blank(p)) {
         paras.pop();
@@ -192,11 +242,17 @@ fn tabs_for_spaces(s: &str, n: usize) -> String {
 
 /// The area type of `text` filling `frame` (at the origin; placing moves it).
 pub(super) fn area_text(text: String, frame: Rect) -> vectorcraft_doc::TextObject {
-    let mut t = vectorcraft_doc::TextObject::point(Point::ORIGIN, "", vectorcraft_doc::CharStyle::default());
+    let mut t = vectorcraft_doc::TextObject::point(
+        Point::ORIGIN,
+        "",
+        vectorcraft_doc::CharStyle::default(),
+    );
     if let Some(run) = t.runs.first_mut() {
         run.text = text;
     }
-    t.kind = vectorcraft_doc::TextKind::Area { frame: shapes::rectangle(Rect::from_origin_size(Point::ORIGIN, frame.size())) };
+    t.kind = vectorcraft_doc::TextKind::Area {
+        frame: shapes::rectangle(Rect::from_origin_size(Point::ORIGIN, frame.size())),
+    };
     crate::cmd::typecmd::refresh_bounds(&mut t);
     t
 }
@@ -206,22 +262,46 @@ mod tests {
     use super::*;
 
     fn opts(lines: bool, paras: bool) -> TextOptions {
-        TextOptions { remove_line_returns: lines, remove_paragraph_returns: paras, ..TextOptions::default() }
+        TextOptions {
+            remove_line_returns: lines,
+            remove_paragraph_returns: paras,
+            ..TextOptions::default()
+        }
     }
 
     #[test]
     fn crlf_with_returns_removed_gives_one_paragraph_per_block() {
-        let text = "First line\r\nof one block\r\n\r\nSecond block\r\nends here\r\n\r\n\r\nThird\r\n";
-        assert_eq!(clean(text, opts(true, true)), "First line of one block\nSecond block ends here\nThird");
-        assert_eq!(clean(text, opts(true, false)), "First line of one block\n\nSecond block ends here\n\n\nThird");
-        assert_eq!(clean(text, opts(false, true)), "First line\nof one block\nSecond block\nends here\nThird");
-        assert_eq!(clean(text, opts(false, false)), "First line\nof one block\n\nSecond block\nends here\n\n\nThird");
-        assert_eq!(clean("Old\rMac\r\rText", opts(true, true)), "Old Mac\nText", "CR alone breaks lines too");
+        let text =
+            "First line\r\nof one block\r\n\r\nSecond block\r\nends here\r\n\r\n\r\nThird\r\n";
+        assert_eq!(
+            clean(text, opts(true, true)),
+            "First line of one block\nSecond block ends here\nThird"
+        );
+        assert_eq!(
+            clean(text, opts(true, false)),
+            "First line of one block\n\nSecond block ends here\n\n\nThird"
+        );
+        assert_eq!(
+            clean(text, opts(false, true)),
+            "First line\nof one block\nSecond block\nends here\nThird"
+        );
+        assert_eq!(
+            clean(text, opts(false, false)),
+            "First line\nof one block\n\nSecond block\nends here\n\n\nThird"
+        );
+        assert_eq!(
+            clean("Old\rMac\r\rText", opts(true, true)),
+            "Old Mac\nText",
+            "CR alone breaks lines too"
+        );
     }
 
     #[test]
     fn runs_of_spaces_become_tabs_and_controls_go() {
-        let o = TextOptions { spaces_to_tab: Some(3), ..TextOptions::default() };
+        let o = TextOptions {
+            spaces_to_tab: Some(3),
+            ..TextOptions::default()
+        };
         assert_eq!(clean("a  b   c     d\u{0}e\tf", o), "a  b\tc\tde\tf");
     }
 
@@ -229,13 +309,36 @@ mod tests {
     fn decodes_by_character_set_and_platform() {
         let unicode = TextOptions::default();
         assert_eq!(decode("café".as_bytes(), unicode), "café");
-        assert_eq!(decode(&[0xEF, 0xBB, 0xBF, b'h', b'i'], unicode), "hi", "UTF-8 byte-order mark");
-        assert_eq!(decode(&[0xFF, 0xFE, b'h', 0, 0xE9, 0], unicode), "hé", "UTF-16 LE");
-        assert_eq!(decode(&[0xFE, 0xFF, 0, b'h', 0x20, 0xAC], unicode), "h€", "UTF-16 BE");
-        assert_eq!(decode(&[b'c', b'a', b'f', 0xE9, 0x80], unicode), "café€", "not UTF-8: Windows-1252");
-        let ansi = TextOptions { ansi: true, ..TextOptions::default() };
+        assert_eq!(
+            decode(&[0xEF, 0xBB, 0xBF, b'h', b'i'], unicode),
+            "hi",
+            "UTF-8 byte-order mark"
+        );
+        assert_eq!(
+            decode(&[0xFF, 0xFE, b'h', 0, 0xE9, 0], unicode),
+            "hé",
+            "UTF-16 LE"
+        );
+        assert_eq!(
+            decode(&[0xFE, 0xFF, 0, b'h', 0x20, 0xAC], unicode),
+            "h€",
+            "UTF-16 BE"
+        );
+        assert_eq!(
+            decode(&[b'c', b'a', b'f', 0xE9, 0x80], unicode),
+            "café€",
+            "not UTF-8: Windows-1252"
+        );
+        let ansi = TextOptions {
+            ansi: true,
+            ..TextOptions::default()
+        };
         assert_eq!(decode(&[0x93, b'q', 0x94, 0xE9], ansi), "“q”é");
-        let mac = TextOptions { ansi: true, mac: true, ..TextOptions::default() };
+        let mac = TextOptions {
+            ansi: true,
+            mac: true,
+            ..TextOptions::default()
+        };
         assert_eq!(decode(&[0xD2, b'q', 0xD3, 0x8E, 0xA5, 0xDB], mac), "“q”é•€");
     }
 
@@ -243,11 +346,25 @@ mod tests {
     fn options_parse_and_reject_bad_values() {
         let p = serde_json::json!({"text": {"characterSet": "ansi", "platform": "mac", "removeLineReturns": true, "replaceSpaces": 4}});
         let o = TextOptions::parse(&p, "file.place").unwrap();
-        assert_eq!(o, TextOptions { ansi: true, mac: true, remove_line_returns: true, remove_paragraph_returns: false, spaces_to_tab: Some(4) });
-        assert_eq!(TextOptions::parse(&serde_json::json!({}), "file.place").unwrap(), TextOptions::default());
-        for bad in
-            [serde_json::json!({"text": 3}), serde_json::json!({"text": {"platform": "amiga"}}), serde_json::json!({"text": {"replaceSpaces": 1}})]
-        {
+        assert_eq!(
+            o,
+            TextOptions {
+                ansi: true,
+                mac: true,
+                remove_line_returns: true,
+                remove_paragraph_returns: false,
+                spaces_to_tab: Some(4)
+            }
+        );
+        assert_eq!(
+            TextOptions::parse(&serde_json::json!({}), "file.place").unwrap(),
+            TextOptions::default()
+        );
+        for bad in [
+            serde_json::json!({"text": 3}),
+            serde_json::json!({"text": {"platform": "amiga"}}),
+            serde_json::json!({"text": {"replaceSpaces": 1}}),
+        ] {
             assert!(TextOptions::parse(&bad, "file.place").is_err(), "{bad}");
         }
     }

@@ -7,8 +7,8 @@ use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::{format_ident, quote};
 use syn::{
-    parse_macro_input, parse_quote, punctuated::Punctuated, token::Comma, Attribute, DeriveInput,
-    Fields, ImplGenerics, Member, Meta, Type, TypeGenerics, Visibility, WhereClause,
+    Attribute, DeriveInput, Fields, ImplGenerics, Member, Meta, Type, TypeGenerics, Visibility,
+    WhereClause, parse_macro_input, parse_quote, punctuated::Punctuated, token::Comma,
 };
 
 use crate::{

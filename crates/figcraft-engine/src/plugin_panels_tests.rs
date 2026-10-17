@@ -31,12 +31,17 @@ impl Wat {
 
     /// Output the reply (a refusal) and stop.
     fn refused() -> String {
-        format!("(call $set_output (i32.const {REFUSAL}) (call $reply_read (i32.const {REFUSAL}) (i32.const 20000))) (return (i32.const 0))")
+        format!(
+            "(call $set_output (i32.const {REFUSAL}) (call $reply_read (i32.const {REFUSAL}) (i32.const 20000))) (return (i32.const 0))"
+        )
     }
 
     fn show(&mut self, spec: &Value) -> String {
         let (a, l) = self.s(&spec.to_string());
-        format!("(if (call $ui_show (i32.const {a}) (i32.const {l})) (then {}))", Self::refused())
+        format!(
+            "(if (call $ui_show (i32.const {a}) (i32.const {l})) (then {}))",
+            Self::refused()
+        )
     }
 
     fn call(&mut self, cmd: &str, params: &Value) -> String {
@@ -50,18 +55,32 @@ impl Wat {
     /// Set `key` to `json`; a refusal is the output.
     fn set(&mut self, key: &str, json: &str) -> String {
         let ((a, l), (b, m)) = (self.s(key), self.s(json));
-        format!("(if (call $setting_set (i32.const {a}) (i32.const {l}) (i32.const {b}) (i32.const {m})) (then {}))", Self::refused())
+        format!(
+            "(if (call $setting_set (i32.const {a}) (i32.const {l}) (i32.const {b}) (i32.const {m})) (then {}))",
+            Self::refused()
+        )
     }
 
     /// When `key` is set, output its value and stop.
     fn get(&mut self, key: &str) -> String {
         let (a, l) = self.s(key);
-        format!("(if (i32.eqz (call $setting_get (i32.const {a}) (i32.const {l}))) (then {}))", Self::refused())
+        format!(
+            "(if (i32.eqz (call $setting_get (i32.const {a}) (i32.const {l}))) (then {}))",
+            Self::refused()
+        )
     }
 
     fn build(self, steps: &[String]) -> Vec<u8> {
-        let body: String =
-            steps.iter().enumerate().map(|(i, s)| format!("(if (i32.eq (local.get $k) (i32.const {})) (then {s}))\n", i + 1)).collect();
+        let body: String = steps
+            .iter()
+            .enumerate()
+            .map(|(i, s)| {
+                format!(
+                    "(if (i32.eq (local.get $k) (i32.const {})) (then {s}))\n",
+                    i + 1
+                )
+            })
+            .collect();
         let wat = format!(
             r#"(module
               (import "figcraft" "call" (func $call (param i32 i32 i32 i32) (result i32)))
@@ -125,7 +144,10 @@ fn a_panel_round_trip_keeps_state_and_edits_are_one_undo_step_per_callback() {
         String::new(),
         format!(
             "{} {}",
-            w.call("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})),
+            w.call(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 10, "height": 10})
+            ),
             w.show(&json!({"title": "Done", "controls": [{"type": "number", "name": "n"}]}))
         ),
         "(call $ui_close)".into(),
@@ -134,31 +156,63 @@ fn a_panel_round_trip_keeps_state_and_edits_are_one_undo_step_per_callback() {
     let out = ex(&mut s, "plugin.run", json!({"id": "org.test.panel"}));
     assert_eq!(out["output"]["api"], 2);
     assert_eq!(out["panel"]["title"], "Sizes");
-    assert_eq!(out["panel"]["values"], json!({"n": 10.0, "palette": "Warm", "accent": "#FF5A5F"}));
+    assert_eq!(
+        out["panel"]["values"],
+        json!({"n": 10.0, "palette": "Warm", "accent": "#FF5A5F"})
+    );
     assert_eq!(ui(&mut s), out["panel"]);
     assert_eq!(undo_len(&s), 0);
     // A changed value calls back with the event and every value; nothing edited, no undo step.
-    let out = ex(&mut s, "plugin.event", json!({"id": "org.test.panel", "control": "n", "value": "250"}));
-    assert_eq!(out["output"]["event"], json!({"control": "n", "value": 100.0}), "coerced like a parameter");
+    let out = ex(
+        &mut s,
+        "plugin.event",
+        json!({"id": "org.test.panel", "control": "n", "value": "250"}),
+    );
+    assert_eq!(
+        out["output"]["event"],
+        json!({"control": "n", "value": 100.0}),
+        "coerced like a parameter"
+    );
     assert_eq!(out["output"]["values"]["n"], 100.0);
     assert_eq!(out["output"]["command"], "run");
     assert_eq!(undo_len(&s), 0);
     // The third call (the module remembers it is the third) edits and updates the panel.
     let layers = layer_count(&s);
-    let out = ex(&mut s, "plugin.event", json!({"id": "org.test.panel", "control": "go"}));
-    assert_eq!(out["output"]["event"], json!({"control": "go", "value": null}));
+    let out = ex(
+        &mut s,
+        "plugin.event",
+        json!({"id": "org.test.panel", "control": "go"}),
+    );
+    assert_eq!(
+        out["output"]["event"],
+        json!({"control": "go", "value": null})
+    );
     assert_eq!(layer_count(&s), layers + 1);
     assert_eq!(undo_len(&s), 1, "one undo step for the callback");
-    assert_eq!(s.ds().unwrap().history.undo.last().unwrap().label, "Plugin org.test.panel");
+    assert_eq!(
+        s.ds().unwrap().history.undo.last().unwrap().label,
+        "Plugin org.test.panel"
+    );
     assert_eq!(out["panel"]["title"], "Done");
-    assert_eq!(out["panel"]["values"], json!({"n": 100.0}), "a value entered before the update is kept");
+    assert_eq!(
+        out["panel"]["values"],
+        json!({"n": 100.0}),
+        "a value entered before the update is kept"
+    );
     ex(&mut s, "edit.undo", json!({}));
     assert_eq!(layer_count(&s), layers);
     // The fourth closes it.
-    let out = ex(&mut s, "plugin.event", json!({"id": "org.test.panel", "control": "n", "value": 5}));
+    let out = ex(
+        &mut s,
+        "plugin.event",
+        json!({"id": "org.test.panel", "control": "n", "value": 5}),
+    );
     assert_eq!(out["panel"], Value::Null);
     assert_eq!(ui(&mut s), Value::Null);
-    assert!(event_err(&mut s, json!({"id": "org.test.panel", "control": "go"})).contains("no panel open"));
+    assert!(
+        event_err(&mut s, json!({"id": "org.test.panel", "control": "go"}))
+            .contains("no panel open")
+    );
 }
 
 #[test]
@@ -168,7 +222,10 @@ fn v1_plugins_get_the_input_they_always_got() {
     let wasm = w.build(&[]);
     install(&mut s, manifest("org.test.v1", "read", &[]), &wasm);
     let out = ex(&mut s, "plugin.run", json!({"id": "org.test.v1"}));
-    assert_eq!(out["output"], json!({"api": 1, "command": "run", "params": {}, "selection": []}));
+    assert_eq!(
+        out["output"],
+        json!({"api": 1, "command": "run", "params": {}, "selection": []})
+    );
     assert_eq!(out["panel"], Value::Null);
 }
 
@@ -176,19 +233,47 @@ fn v1_plugins_get_the_input_they_always_got() {
 fn settings_persist_across_runs_per_plugin_and_are_capped() {
     let mut s = Session::new();
     let mut w = Wat::default();
-    let steps = [format!("{} {}", w.get("palette"), w.set("palette", r#"{"name": "Ocean"}"#))];
+    let steps = [format!(
+        "{} {}",
+        w.get("palette"),
+        w.set("palette", r#"{"name": "Ocean"}"#)
+    )];
     let wasm = w.build(&steps);
     install(&mut s, v2("org.test.a"), &wasm);
     install(&mut s, v2("org.test.b"), &wasm);
-    assert!(std::mem::take(&mut s.plugins.unsaved), "installing asks the app to save the preferences at once");
-    assert_eq!(ex(&mut s, "plugin.run", json!({"id": "org.test.a"}))["output"]["command"], "run", "nothing stored yet: it stores");
-    assert!(std::mem::take(&mut s.plugins.unsaved), "a changed setting is saved at once too");
-    assert_eq!(ex(&mut s, "plugin.run", json!({"id": "org.test.a"}))["output"], json!({"name": "Ocean"}), "the next run reads it back");
-    assert!(!s.plugins.unsaved, "storing the same value again changes nothing");
-    assert_eq!(ex(&mut s, "plugin.run", json!({"id": "org.test.b"}))["output"]["command"], "run", "plugins don't see each other's settings");
+    assert!(
+        std::mem::take(&mut s.plugins.unsaved),
+        "installing asks the app to save the preferences at once"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.run", json!({"id": "org.test.a"}))["output"]["command"],
+        "run",
+        "nothing stored yet: it stores"
+    );
+    assert!(
+        std::mem::take(&mut s.plugins.unsaved),
+        "a changed setting is saved at once too"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.run", json!({"id": "org.test.a"}))["output"],
+        json!({"name": "Ocean"}),
+        "the next run reads it back"
+    );
+    assert!(
+        !s.plugins.unsaved,
+        "storing the same value again changes nothing"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.run", json!({"id": "org.test.b"}))["output"]["command"],
+        "run",
+        "plugins don't see each other's settings"
+    );
     // Saved with the preferences and read back.
     let saved = serde_json::to_value(&s.prefs).unwrap();
-    assert_eq!(saved["plugin_settings"]["org.test.a"]["palette"], json!({"name": "Ocean"}));
+    assert_eq!(
+        saved["plugin_settings"]["org.test.a"]["palette"],
+        json!({"name": "Ocean"})
+    );
     let back: crate::Prefs = serde_json::from_value(saved).unwrap();
     assert_eq!(back.plugin_settings, s.prefs.plugin_settings);
     // Removing a plugin forgets its settings.
@@ -199,18 +284,37 @@ fn settings_persist_across_runs_per_plugin_and_are_capped() {
     // 64 KB per plugin; keys and values are checked.
     let big = format!("\"{}\"", "x".repeat(30_000));
     let mut w = Wat::default();
-    let steps = [format!("{} {} {}", w.set("one", &big), w.set("two", &big), w.set("three", &big))];
+    let steps = [format!(
+        "{} {} {}",
+        w.set("one", &big),
+        w.set("two", &big),
+        w.set("three", &big)
+    )];
     install(&mut s, v2("org.test.hoard"), &w.build(&steps));
     let out = ex(&mut s, "plugin.run", json!({"id": "org.test.hoard"}));
-    assert!(out["output"].as_str().unwrap_or_default().contains("limited to 64 KB"), "{out}");
+    assert!(
+        out["output"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("limited to 64 KB"),
+        "{out}"
+    );
     assert_eq!(s.prefs.plugin_settings["org.test.hoard"].len(), 2);
-    for (key, value) in [("bad\nkey", "1"), ("", "1"), ("k", "not json"), ("k", &"[".repeat(1000))] {
+    for (key, value) in [
+        ("bad\nkey", "1"),
+        ("", "1"),
+        ("k", "not json"),
+        ("k", &"[".repeat(1000)),
+    ] {
         let mut w = Wat::default();
         let steps = [w.set(key, value)];
         install(&mut s, v2("org.test.junk"), &w.build(&steps));
         let out = ex(&mut s, "plugin.run", json!({"id": "org.test.junk"}));
         assert!(out["output"].is_string(), "{key:?} = {value}: {out}");
-        assert!(!s.prefs.plugin_settings.contains_key("org.test.junk"), "{key:?}");
+        assert!(
+            !s.prefs.plugin_settings.contains_key("org.test.junk"),
+            "{key:?}"
+        );
     }
 }
 
@@ -219,7 +323,8 @@ fn junk_panels_and_values_are_refused() {
     let mut s = Session::new();
     // A spec over the size cap, deep junk and unknown kinds are refused to the plugin; no panel.
     let huge = json!({"controls": [{"type": "note", "label": "x".repeat(70_000)}]});
-    let deep: Value = serde_json::from_str(&format!("{}1{}", "[".repeat(100), "]".repeat(100))).unwrap();
+    let deep: Value =
+        serde_json::from_str(&format!("{}1{}", "[".repeat(100), "]".repeat(100))).unwrap();
     for spec in [
         huge,
         json!({"controls": [{"type": "number", "name": "n", "value": deep}], "title": 5}),
@@ -229,7 +334,10 @@ fn junk_panels_and_values_are_refused() {
         let steps = [w.show(&spec)];
         install(&mut s, v2("org.test.junk"), &w.build(&steps));
         let out = ex(&mut s, "plugin.run", json!({"id": "org.test.junk"}));
-        assert!(out["output"].as_str().unwrap_or_default().contains("panel"), "{out}");
+        assert!(
+            out["output"].as_str().unwrap_or_default().contains("panel"),
+            "{out}"
+        );
         assert_eq!(ui(&mut s), Value::Null);
     }
     // Junk events never reach the plugin.
@@ -268,11 +376,22 @@ fn junk_panels_and_values_are_refused() {
 fn a_callback_out_of_fuel_rolls_back_and_closes_the_panel() {
     let mut s = Session::new();
     let mut w = Wat::default();
-    let edit = w.call("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10}));
-    let steps = [w.show(&panel("P")), format!("{edit} (return (i32.const 1))"), format!("{edit} (loop $l (br $l))")];
+    let edit = w.call(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+    );
+    let steps = [
+        w.show(&panel("P")),
+        format!("{edit} (return (i32.const 1))"),
+        format!("{edit} (loop $l (br $l))"),
+    ];
     install(&mut s, v2("org.test.loop"), &w.build(&steps));
     // The run's lower budget holds for its callbacks too.
-    ex(&mut s, "plugin.run", json!({"id": "org.test.loop", "fuel": 2_000_000}));
+    ex(
+        &mut s,
+        "plugin.run",
+        json!({"id": "org.test.loop", "fuel": 2_000_000}),
+    );
     let (layers, undo) = (layer_count(&s), undo_len(&s));
     // A plugin that returns an error is rolled back and keeps its panel.
     event_err(&mut s, json!({"id": "org.test.loop", "control": "go"}));
@@ -295,23 +414,54 @@ fn closing_or_removing_ends_the_session_and_panels_open_side_by_side() {
     install(&mut s, v2("org.test.a"), &wasm);
     install(&mut s, v2("org.test.b"), &wasm);
     ex(&mut s, "plugin.run", json!({"id": "org.test.a"}));
-    assert_eq!(ex(&mut s, "plugin.close", json!({"id": "org.test.b"}))["closed"], false, "only its own");
-    assert_eq!(ex(&mut s, "plugin.close", json!({"id": "org.test.a"}))["closed"], true);
+    assert_eq!(
+        ex(&mut s, "plugin.close", json!({"id": "org.test.b"}))["closed"],
+        false,
+        "only its own"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.close", json!({"id": "org.test.a"}))["closed"],
+        true
+    );
     assert_eq!(ui(&mut s), Value::Null);
-    assert!(event_err(&mut s, json!({"id": "org.test.a", "control": "go"})).contains("no panel open"));
+    assert!(
+        event_err(&mut s, json!({"id": "org.test.a", "control": "go"})).contains("no panel open")
+    );
     // Two plugins' panels are open side by side (a plugin's own run replaces its panel);
     // removing a plugin closes its panel only.
     ex(&mut s, "plugin.run", json!({"id": "org.test.a"}));
     ex(&mut s, "plugin.run", json!({"id": "org.test.b"}));
     ex(&mut s, "plugin.run", json!({"id": "org.test.a"}));
     assert_eq!(s.plugins.panels.len(), 2);
-    assert_eq!(ui(&mut s)["plugin"], "org.test.a", "without an id: the one opened last");
-    assert_eq!(ex(&mut s, "plugin.ui", json!({"id": "org.test.b"}))["plugin"], "org.test.b");
-    ex(&mut s, "plugin.event", json!({"id": "org.test.b", "control": "n", "value": 7}));
-    assert_eq!(ex(&mut s, "plugin.ui", json!({"id": "org.test.b"}))["values"]["n"], 7.0, "the event reached b's panel");
-    assert_eq!(ui(&mut s)["plugin"], "org.test.a", "and b's panel kept its place");
+    assert_eq!(
+        ui(&mut s)["plugin"],
+        "org.test.a",
+        "without an id: the one opened last"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.ui", json!({"id": "org.test.b"}))["plugin"],
+        "org.test.b"
+    );
+    ex(
+        &mut s,
+        "plugin.event",
+        json!({"id": "org.test.b", "control": "n", "value": 7}),
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.ui", json!({"id": "org.test.b"}))["values"]["n"],
+        7.0,
+        "the event reached b's panel"
+    );
+    assert_eq!(
+        ui(&mut s)["plugin"],
+        "org.test.a",
+        "and b's panel kept its place"
+    );
     ex(&mut s, "plugin.remove", json!({"id": "org.test.b"}));
-    assert_eq!(ex(&mut s, "plugin.ui", json!({"id": "org.test.b"})), Value::Null);
+    assert_eq!(
+        ex(&mut s, "plugin.ui", json!({"id": "org.test.b"})),
+        Value::Null
+    );
     assert_eq!(ui(&mut s)["plugin"], "org.test.a");
     ex(&mut s, "plugin.close", json!({"id": "org.test.a"}));
     assert_eq!(ui(&mut s), Value::Null);

@@ -22,8 +22,12 @@ fn test_dsprot_decrypt_encrypt() -> Result<()> {
         let raw_rom = raw::Rom::from_file(&path)?;
         let rom = Rom::extract(&raw_rom)?;
 
-        let decrypt_options = DsProtDecryptOptions { decode_relocations: true };
-        let encrypt_options = DsProtEncryptOptions { encode_relocations: true };
+        let decrypt_options = DsProtDecryptOptions {
+            decode_relocations: true,
+        };
+        let encrypt_options = DsProtEncryptOptions {
+            encode_relocations: true,
+        };
 
         // Decrypt and re-encrypt
         let arm9 = rom.arm9();

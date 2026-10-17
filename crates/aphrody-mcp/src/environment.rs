@@ -16,7 +16,9 @@ pub(crate) fn read_private_environment(path: &Path) -> Result<Vec<(String, Strin
         return Err("MCP environment file must be a regular file");
     }
     let mut file = File::open(path).map_err(|_| "MCP environment file unavailable")?;
-    let metadata = file.metadata().map_err(|_| "MCP environment metadata unavailable")?;
+    let metadata = file
+        .metadata()
+        .map_err(|_| "MCP environment metadata unavailable")?;
     if !metadata.is_file() || metadata.len() > MAX_BYTES {
         return Err("MCP environment file exceeds its size bound");
     }
@@ -38,7 +40,10 @@ pub(crate) fn read_private_environment(path: &Path) -> Result<Vec<(String, Strin
     if contents.len() as u64 > MAX_BYTES || contents.contains('\0') {
         return Err("MCP environment file exceeds its content bound");
     }
-    let values = if path.extension().is_some_and(|extension| extension == "json") {
+    let values = if path
+        .extension()
+        .is_some_and(|extension| extension == "json")
+    {
         serde_json::from_str::<std::collections::BTreeMap<String, String>>(&contents)
             .map_err(|_| "MCP environment JSON must map names to strings")?
             .into_iter()
@@ -60,7 +65,9 @@ pub(crate) fn read_private_environment(path: &Path) -> Result<Vec<(String, Strin
     let mut keys = BTreeSet::new();
     for (key, value) in &values {
         let mut bytes = key.bytes();
-        if !bytes.next().is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
+        if !bytes
+            .next()
+            .is_some_and(|byte| byte == b'_' || byte.is_ascii_alphabetic())
             || !bytes.all(|byte| byte == b'_' || byte.is_ascii_alphanumeric())
             || !keys.insert(key)
             || value.contains('\0')
@@ -79,14 +86,19 @@ mod tests {
     #[test]
     fn protected_environment_uses_owner_parser_and_never_reports_values() {
         let mut file = tempfile::NamedTempFile::new().unwrap();
-        writeln!(file, "# fixture\nTOKEN='fixture-only'\nENDPOINT=https://example.test\nEMPTY=")
-            .unwrap();
+        writeln!(
+            file,
+            "# fixture\nTOKEN='fixture-only'\nENDPOINT=https://example.test\nEMPTY="
+        )
+        .unwrap();
         let values = read_private_environment(file.path()).unwrap();
         assert_eq!(values.len(), 3);
         assert_eq!(values[0], ("TOKEN".into(), "fixture-only".into()));
-        for content in
-            ["TOKEN=fixture-only\nTOKEN=second\n", "not an assignment\n", "1KEY=fixture-only\n"]
-        {
+        for content in [
+            "TOKEN=fixture-only\nTOKEN=second\n",
+            "not an assignment\n",
+            "1KEY=fixture-only\n",
+        ] {
             file.as_file_mut().set_len(0).unwrap();
             file.as_file_mut().seek(SeekFrom::Start(0)).unwrap();
             write!(file, "{content}").unwrap();
@@ -116,7 +128,9 @@ mod tests {
         use std::os::unix::fs::{MetadataExt, PermissionsExt, symlink};
         let mut file = tempfile::NamedTempFile::new().unwrap();
         writeln!(file, "TOKEN=fixture-only").unwrap();
-        file.as_file().set_permissions(std::fs::Permissions::from_mode(0o644)).unwrap();
+        file.as_file()
+            .set_permissions(std::fs::Permissions::from_mode(0o644))
+            .unwrap();
         assert!(read_private_environment(file.path()).is_err());
         assert_eq!(file.as_file().metadata().unwrap().mode() & 0o777, 0o644);
         let root = tempfile::tempdir().unwrap();

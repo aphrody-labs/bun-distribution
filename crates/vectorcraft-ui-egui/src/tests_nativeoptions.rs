@@ -18,8 +18,16 @@ fn frame(app: &mut crate::VectorcraftApp) {
 /// Add artboards B and C, a rectangle on each.
 fn three_boards(app: &mut crate::VectorcraftApp) {
     for (x, name) in [(200, "B"), (400, "C")] {
-        app.run("artboard.new", json!({"x": x, "y": 0, "width": 100, "height": 80, "name": name})).unwrap();
-        app.run("shape.rectangle", json!({"x": x + 10, "y": 10, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "artboard.new",
+            json!({"x": x, "y": 0, "width": 100, "height": 80, "name": name}),
+        )
+        .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": x + 10, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
     }
 }
 
@@ -31,7 +39,12 @@ fn save_as_native_asks_for_its_options_and_writes_every_artboard() {
     assert_eq!(r["pending"], "saveOptions");
     let d = app.ui.dialog.as_ref().unwrap();
     assert_eq!(
-        (d.str("format").as_str(), d.bool("separateArtboards"), d.bool("embedProfiles"), d.bool("pdfCompatible")),
+        (
+            d.str("format").as_str(),
+            d.bool("separateArtboards"),
+            d.bool("embedProfiles"),
+            d.bool("pdfCompatible")
+        ),
         ("vectorcraft", false, true, false)
     );
     assert!(written.borrow().is_empty(), "nothing is written before OK");
@@ -42,16 +55,39 @@ fn save_as_native_asks_for_its_options_and_writes_every_artboard() {
     d.fields.insert("all".into(), json!(false));
     d.fields.insert("range".into(), json!("9"));
     frame(&mut app);
-    assert!(dialogs::confirm(&mut app).is_err(), "a bad range keeps the dialog open");
+    assert!(
+        dialogs::confirm(&mut app).is_err(),
+        "a bad range keeps the dialog open"
+    );
     assert!(app.ui.dialog.is_some());
-    app.ui.dialog.as_mut().unwrap().fields.insert("range".into(), json!("2-3"));
+    app.ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert("range".into(), json!("2-3"));
     let r = dialogs::confirm(&mut app).unwrap();
     let names: Vec<String> = written.borrow().iter().map(|(p, _)| p.clone()).collect();
-    assert_eq!(names, ["/tmp/doc.vectorcraft", "/tmp/doc-B.vectorcraft", "/tmp/doc-C.vectorcraft"], "{r}");
+    assert_eq!(
+        names,
+        [
+            "/tmp/doc.vectorcraft",
+            "/tmp/doc-B.vectorcraft",
+            "/tmp/doc-C.vectorcraft"
+        ],
+        "{r}"
+    );
     let st = app.session.active().unwrap();
-    assert_eq!((st.path.as_deref(), st.is_dirty()), (Some("/tmp/doc.vectorcraft"), false));
+    assert_eq!(
+        (st.path.as_deref(), st.is_dirty()),
+        (Some("/tmp/doc.vectorcraft"), false)
+    );
     // Save writes them again with the same options, without asking.
-    app.run("shape.ellipse", json!({"x": 50, "y": 40, "width": 10, "height": 10})).unwrap();
+    app.run(
+        "shape.ellipse",
+        json!({"x": 50, "y": 40, "width": 10, "height": 10}),
+    )
+    .unwrap();
     app.run("file.save", Value::Null).unwrap();
     assert!(app.ui.dialog.is_none());
     assert_eq!(written.borrow().len(), 6);
@@ -86,11 +122,14 @@ fn the_web_save_as_dialog_shows_the_native_options() {
     let written = crate::tests_svg::Written::default();
     let w = written.clone();
     let services = crate::Services {
-        download: Some(Box::new(move |name: &str, b: &[u8]| w.borrow_mut().push((name.to_string(), b.to_vec())))),
+        download: Some(Box::new(move |name: &str, b: &[u8]| {
+            w.borrow_mut().push((name.to_string(), b.to_vec()))
+        })),
         ..Default::default()
     };
     let mut app = crate::VectorcraftApp::new(vectorcraft_engine::Session::new(), services);
-    app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 80}))
+        .unwrap();
     three_boards(&mut app);
     app.run("file.saveAs", Value::Null).unwrap();
     frame(&mut app);
@@ -99,5 +138,13 @@ fn the_web_save_as_dialog_shows_the_native_options() {
     d.fields.insert("separateArtboards".into(), json!(true));
     dialogs::confirm(&mut app).unwrap();
     let names: Vec<String> = written.borrow().iter().map(|(p, _)| p.clone()).collect();
-    assert_eq!(names, ["Untitled-1.vectorcraft", "Untitled-1-Artboard-1.vectorcraft", "Untitled-1-B.vectorcraft", "Untitled-1-C.vectorcraft"]);
+    assert_eq!(
+        names,
+        [
+            "Untitled-1.vectorcraft",
+            "Untitled-1-Artboard-1.vectorcraft",
+            "Untitled-1-B.vectorcraft",
+            "Untitled-1-C.vectorcraft"
+        ]
+    );
 }

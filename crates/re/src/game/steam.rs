@@ -114,7 +114,9 @@ pub fn scan_dragon_ball_installs(libraries: &[PathBuf]) -> std::io::Result<Vec<S
             }
             let manifest = entry.path();
             let content = std::fs::read_to_string(&manifest)?;
-            let Ok(app) = AppManifest::parse(&content) else { continue };
+            let Ok(app) = AppManifest::parse(&content) else {
+                continue;
+            };
             if !is_single_component(&app.install_dir) {
                 continue;
             }
@@ -143,7 +145,9 @@ pub fn scan_dragon_ball_installs(libraries: &[PathBuf]) -> std::io::Result<Vec<S
 fn is_single_component(install_dir: &str) -> bool {
     let path = Path::new(install_dir);
     path.components().count() == 1
-        && path.components().all(|part| matches!(part, std::path::Component::Normal(_)))
+        && path
+            .components()
+            .all(|part| matches!(part, std::path::Component::Normal(_)))
 }
 
 #[cfg(test)]

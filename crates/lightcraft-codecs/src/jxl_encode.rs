@@ -61,7 +61,13 @@ pub struct JxlOptions {
 
 impl Default for JxlOptions {
     fn default() -> Self {
-        Self { quality: 90, lossless: false, effort: JxlEffort::Normal, progressive: false, colour: JxlColour::Srgb }
+        Self {
+            quality: 90,
+            lossless: false,
+            effort: JxlEffort::Normal,
+            progressive: false,
+            colour: JxlColour::Srgb,
+        }
     }
 }
 
@@ -75,13 +81,17 @@ pub fn encode_jxl(img: &EncodeImage, o: &JxlOptions, meta: &EncodeMeta) -> Resul
     {
         let pixels = Pixels::from(img, o.colour)?;
         // jixel asserts internally; a panic there is an export error, not a crash
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(&pixels, img.width as usize, img.height as usize, o, meta)))
-            .unwrap_or_else(|_| Err(Error::Encode("JPEG XL encoder panicked".into())))
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            run(&pixels, img.width as usize, img.height as usize, o, meta)
+        }))
+        .unwrap_or_else(|_| Err(Error::Encode("JPEG XL encoder panicked".into())))
     }
     #[cfg(not(all(feature = "jxl", not(target_arch = "wasm32"))))]
     {
         let _ = (o, meta);
-        Err(Error::Encode("JPEG XL encoding is not available in this build".into()))
+        Err(Error::Encode(
+            "JPEG XL encoding is not available in this build".into(),
+        ))
     }
 }
 
@@ -95,12 +105,22 @@ enum Pixels {
 #[cfg(all(feature = "jxl", not(target_arch = "wasm32")))]
 impl Pixels {
     fn from(img: &EncodeImage, colour: JxlColour) -> Result<Self> {
-        let n = (img.width as usize).checked_mul(img.height as usize).ok_or_else(|| Error::Encode("image too large".into()))?;
+        let n = (img.width as usize)
+            .checked_mul(img.height as usize)
+            .ok_or_else(|| Error::Encode("image too large".into()))?;
         let ch = img.channels as usize;
         // keep alpha only when it says something
-        fn rgba<T: Copy>(s: &[T], ch: usize, n: usize, opaque: impl Fn(T) -> bool) -> (Vec<T>, bool) {
+        fn rgba<T: Copy>(
+            s: &[T],
+            ch: usize,
+            n: usize,
+            opaque: impl Fn(T) -> bool,
+        ) -> (Vec<T>, bool) {
             let px = s.chunks_exact(ch).take(n);
-            let alpha = (ch == 2 || ch == 4) && s.chunks_exact(ch).take(n).any(|c| c.last().is_some_and(|a| !opaque(*a)));
+            let alpha = (ch == 2 || ch == 4)
+                && s.chunks_exact(ch)
+                    .take(n)
+                    .any(|c| c.last().is_some_and(|a| !opaque(*a)));
             let out_ch = if alpha { 4 } else { 3 };
             let mut v = Vec::with_capacity(n * out_ch);
             for c in px {
@@ -124,8 +144,20 @@ impl Pixels {
                 Pixels::U16 { data, alpha }
             }
             Samples::F32(s) if colour == JxlColour::Rec2020Pq => {
-                let pq = |v: f32| (pq_encode(if v.is_finite() { v.max(0.0) } else { 0.0 } * HDR_REFERENCE_WHITE_NITS) * 65535.0).round() as u16;
-                let alpha = |a: f32| (if a.is_finite() { a.clamp(0.0, 1.0) } else { 1.0 } * 65535.0).round() as u16;
+                let pq = |v: f32| {
+                    (pq_encode(
+                        if v.is_finite() { v.max(0.0) } else { 0.0 } * HDR_REFERENCE_WHITE_NITS,
+                    ) * 65535.0)
+                        .round() as u16
+                };
+                let alpha = |a: f32| {
+                    (if a.is_finite() {
+                        a.clamp(0.0, 1.0)
+                    } else {
+                        1.0
+                    } * 65535.0)
+                        .round() as u16
+                };
                 let s: Vec<u16> = s
                     .chunks_exact(ch)
                     .take(n)
@@ -140,7 +172,11 @@ impl Pixels {
                 let (data, alpha) = rgba(&s, 4, n, |a| a == u16::MAX);
                 Pixels::U16 { data, alpha }
             }
-            Samples::F32(_) => return Err(Error::Encode("JPEG XL float samples are written as HDR (Rec. 2020 PQ) only".into())),
+            Samples::F32(_) => {
+                return Err(Error::Encode(
+                    "JPEG XL float samples are written as HDR (Rec. 2020 PQ) only".into(),
+                ));
+            }
         })
     }
 }
@@ -151,7 +187,11 @@ fn run(px: &Pixels, w: usize, h: usize, o: &JxlOptions, meta: &EncodeMeta) -> Re
     let colour = match o.colour {
         JxlColour::Srgb => ColorEncoding::srgb(),
         JxlColour::DisplayP3 => ColorEncoding::display_p3(),
-        JxlColour::Rec2020 => ColorEncoding { primaries: Primaries::Bt2020, transfer: TransferFunction::Bt709, ..ColorEncoding::srgb() },
+        JxlColour::Rec2020 => ColorEncoding {
+            primaries: Primaries::Bt2020,
+            transfer: TransferFunction::Bt709,
+            ..ColorEncoding::srgb()
+        },
         JxlColour::Rec2020Pq => ColorEncoding::bt2020_pq(),
     };
     let mut c = EncodeConfig::default()

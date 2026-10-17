@@ -8,7 +8,7 @@ pub const LIST_SESSION_SPLAT_MEDIA_FILES_URL_PATH: &str = "/v1/media_files/splat
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct ListSessionSplatMediaFilesSuccessResponse {
-  pub success: bool,
-  pub results: Vec<SessionMediaFileInfo>,
-  pub pagination: PaginationCursors,
+    pub success: bool,
+    pub results: Vec<SessionMediaFileInfo>,
+    pub pagination: PaginationCursors,
 }

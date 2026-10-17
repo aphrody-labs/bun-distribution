@@ -19,6 +19,10 @@ impl<'data, 'file> ObjectCache<'data, 'file> {
             .filter_map(|section| section.name().ok().map(|name| (name.to_string(), section)))
             .collect::<HashMap<_, _>>();
         let entry = object.entry() as u32;
-        Self { symbols_by_name, sections_by_name, entry }
+        Self {
+            symbols_by_name,
+            sections_by_name,
+            entry,
+        }
     }
 }

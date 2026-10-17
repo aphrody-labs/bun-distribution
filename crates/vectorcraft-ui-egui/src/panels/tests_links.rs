@@ -15,7 +15,10 @@ struct Folder(std::path::PathBuf);
 
 impl Folder {
     fn new(name: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("vectorcraft-ui-links-{name}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!(
+            "vectorcraft-ui-links-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         Self(dir)
@@ -44,11 +47,23 @@ fn png(w: u32, h: u32) -> Vec<u8> {
 /// A document with a linked `linked.png` and an embedded `embedded.png` (the selection).
 fn app(dir: &Folder) -> (VectorcraftApp, u64, u64) {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
-    app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+    app.run("file.new", json!({"width": 400, "height": 300}))
+        .unwrap();
     let a = dir.file("linked.png", &png(300, 200));
     let b = dir.file("embedded.png", &png(40, 20));
-    let linked = app.run("file.place", json!({"path": a, "at": [100, 100]})).unwrap()["ids"][0].as_u64().unwrap();
-    let embedded = app.run("file.place", json!({"path": b, "at": [300, 200], "link": false})).unwrap()["ids"][0].as_u64().unwrap();
+    let linked = app
+        .run("file.place", json!({"path": a, "at": [100, 100]}))
+        .unwrap()["ids"][0]
+        .as_u64()
+        .unwrap();
+    let embedded = app
+        .run(
+            "file.place",
+            json!({"path": b, "at": [300, 200], "link": false}),
+        )
+        .unwrap()["ids"][0]
+        .as_u64()
+        .unwrap();
     (app, linked, embedded)
 }
 
@@ -61,16 +76,32 @@ fn the_panel_lists_the_images_with_link_info_for_the_selected_one() {
     let dir = Folder::new("panel");
     let (mut app, linked, _) = app(&dir);
     let text = panel(&mut app);
-    assert!(text.contains("linked.png") && text.contains("embedded.png"), "{text}");
+    assert!(
+        text.contains("linked.png") && text.contains("embedded.png"),
+        "{text}"
+    );
     // The selection is the embedded image.
-    assert!(text.contains("Embedded") && text.contains("Effective PPI"), "{text}");
+    assert!(
+        text.contains("Embedded") && text.contains("Effective PPI"),
+        "{text}"
+    );
     app.run("select.set", json!({"ids": [linked]})).unwrap();
     let text = panel(&mut app);
-    assert!(text.contains("Linked") && text.contains("300 × 200 px") && text.contains("Location"), "{text}");
+    assert!(
+        text.contains("Linked") && text.contains("300 × 200 px") && text.contains("Location"),
+        "{text}"
+    );
     // The flyout draws with every item.
     let menu = painted_text(&mut app, super::links::menu);
-    for item in ["Relink to Folder…", "Embed Image(s)", "Placement Options…", "Show Missing", "Sort by Status", "Large Thumbnails", "Show in Folder"]
-    {
+    for item in [
+        "Relink to Folder…",
+        "Embed Image(s)",
+        "Placement Options…",
+        "Show Missing",
+        "Sort by Status",
+        "Large Thumbnails",
+        "Show in Folder",
+    ] {
         assert!(menu.contains(item), "{item}: {menu}");
     }
 }
@@ -78,7 +109,8 @@ fn the_panel_lists_the_images_with_link_info_for_the_selected_one() {
 #[test]
 fn an_empty_document_shows_how_to_add_images() {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
-    app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 100}))
+        .unwrap();
     assert!(panel(&mut app).contains("No images"));
 }
 
@@ -96,9 +128,13 @@ fn edit_original_and_show_in_folder_hand_the_file_to_the_system() {
         r.borrow_mut().push((p.to_string(), true));
         Ok(())
     }));
-    assert!(!crate::menus::enabled(&app, "links.editOriginal"), "the embedded image is selected");
+    assert!(
+        !crate::menus::enabled(&app, "links.editOriginal"),
+        "the embedded image is selected"
+    );
     assert!(app.run("links.editOriginal", json!({})).is_err());
-    app.run("select.set", json!({"ids": [linked, embedded]})).unwrap();
+    app.run("select.set", json!({"ids": [linked, embedded]}))
+        .unwrap();
     assert!(crate::menus::enabled(&app, "links.editOriginal"));
     let r = app.run("links.editOriginal", json!({})).unwrap();
     let path = r["path"].as_str().unwrap().to_string();
@@ -108,7 +144,10 @@ fn edit_original_and_show_in_folder_hand_the_file_to_the_system() {
     // Without the services (the web): an error, nothing opened.
     (app.services.open_file, app.services.reveal) = (None, None);
     assert!(app.run("links.reveal", json!({"id": linked})).is_err());
-    assert!(app.run("links.editOriginal", json!({"id": linked})).is_err());
+    assert!(
+        app.run("links.editOriginal", json!({"id": linked}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -119,16 +158,27 @@ fn placement_options_dialog_sets_the_options() {
     assert!(crate::menus::enabled(&app, "ui.placementOptionsDialog"));
     app.run("ui.placementOptionsDialog", json!({})).unwrap();
     let d = app.ui.dialog.as_ref().unwrap();
-    assert_eq!((d.kind.as_str(), d.str("preserve"), d.str("align")), ("placementOptions", "bounds".into(), "center".into()));
+    assert_eq!(
+        (d.kind.as_str(), d.str("preserve"), d.str("align")),
+        ("placementOptions", "bounds".into(), "center".into())
+    );
     let text = painted_text(&mut app, |app, ui| crate::dialogs::show(app, ui.ctx()));
-    assert!(text.contains("Clip to Bounding Box") && text.contains("Preserve"), "{text}");
+    assert!(
+        text.contains("Clip to Bounding Box") && text.contains("Preserve"),
+        "{text}"
+    );
     let fields = &mut app.ui.dialog.as_mut().unwrap().fields;
     fields.insert("preserve".into(), json!("fit"));
     fields.insert("align".into(), json!("bottomRight"));
     crate::dialogs::confirm(&mut app).unwrap();
     assert!(app.ui.dialog.is_none());
-    let r = app.run("links.placementOptions", json!({"ids": [linked]})).unwrap();
-    assert_eq!(r["placement"], json!({"preserve": "fit", "align": "bottomRight", "clip": false}));
+    let r = app
+        .run("links.placementOptions", json!({"ids": [linked]}))
+        .unwrap();
+    assert_eq!(
+        r["placement"],
+        json!({"preserve": "fit", "align": "bottomRight", "clip": false})
+    );
 }
 
 #[test]
@@ -136,10 +186,18 @@ fn properties_shows_the_selected_image_and_its_link_actions() {
     let dir = Folder::new("props");
     let (mut app, linked, _) = app(&dir);
     let text = painted_text(&mut app, super::properties::show);
-    assert!(text.contains("Embedded Image") && text.contains("embedded.png") && text.contains("Unembed…"), "{text}");
+    assert!(
+        text.contains("Embedded Image")
+            && text.contains("embedded.png")
+            && text.contains("Unembed…"),
+        "{text}"
+    );
     app.run("select.set", json!({"ids": [linked]})).unwrap();
     let text = painted_text(&mut app, super::properties::show);
-    assert!(text.contains("Linked File") && text.contains("Edit Original") && text.contains("Embed"), "{text}");
+    assert!(
+        text.contains("Linked File") && text.contains("Edit Original") && text.contains("Embed"),
+        "{text}"
+    );
 }
 
 #[test]

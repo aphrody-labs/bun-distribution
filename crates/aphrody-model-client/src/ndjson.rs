@@ -50,12 +50,20 @@ where
         ended: bool,
     }
 
-    let state = State { stream: Box::pin(bytes), buffer: Vec::new(), scanned: 0, ended: false };
+    let state = State {
+        stream: Box::pin(bytes),
+        buffer: Vec::new(),
+        scanned: 0,
+        ended: false,
+    };
 
     futures::stream::unfold(state, |mut state| async move {
         loop {
             // A complete line is waiting in the buffer.
-            if let Some(offset) = state.buffer[state.scanned..].iter().position(|b| *b == b'\n') {
+            if let Some(offset) = state.buffer[state.scanned..]
+                .iter()
+                .position(|b| *b == b'\n')
+            {
                 let end = state.scanned + offset;
                 let line: Vec<u8> = state.buffer.drain(..=end).collect();
                 state.scanned = 0;
@@ -66,7 +74,7 @@ where
                         state.buffer.clear();
                         state.ended = true;
                         return Some((Err(error), state));
-                    },
+                    }
                     None => continue,
                 }
             }
@@ -95,13 +103,13 @@ where
                             state,
                         ));
                     }
-                },
+                }
                 Some(Err(error)) => {
                     state.buffer.clear();
                     state.scanned = 0;
                     state.ended = true;
                     return Some((Err(error), state));
-                },
+                }
                 None => state.ended = true,
             }
         }
@@ -114,7 +122,10 @@ where
 /// `{"error": "..."}` line (`docs/api/errors.mdx`: "Errors that occur while
 /// streaming"); the HTTP status stays 200, so the line is the only signal.
 pub(crate) fn error_line(value: &Value) -> Option<&str> {
-    value.get("error").and_then(Value::as_str).filter(|message| !message.is_empty())
+    value
+        .get("error")
+        .and_then(Value::as_str)
+        .filter(|message| !message.is_empty())
 }
 
 #[cfg(test)]
@@ -125,8 +136,10 @@ mod tests {
     use super::*;
 
     fn chunks(parts: &[&[u8]]) -> impl Stream<Item = Result<Bytes, ModelError>> + Send + 'static {
-        let owned: Vec<Result<Bytes, ModelError>> =
-            parts.iter().map(|part| Ok(Bytes::copy_from_slice(part))).collect();
+        let owned: Vec<Result<Bytes, ModelError>> = parts
+            .iter()
+            .map(|part| Ok(Bytes::copy_from_slice(part)))
+            .collect();
         futures::stream::iter(owned)
     }
 
@@ -138,37 +151,55 @@ mod tests {
 
     #[tokio::test]
     async fn lines_split_across_chunks_are_reassembled() {
-        let values = collect(ndjson_values(chunks(&[b"{\"a\":1}\n{\"b\"", b":2}\n\n{\"c\":3}"])))
-            .await
-            .into_iter()
-            .map(|item| item.expect("line"))
-            .collect::<Vec<_>>();
+        let values = collect(ndjson_values(chunks(&[
+            b"{\"a\":1}\n{\"b\"",
+            b":2}\n\n{\"c\":3}",
+        ])))
+        .await
+        .into_iter()
+        .map(|item| item.expect("line"))
+        .collect::<Vec<_>>();
         // The last line has no terminator and is decoded when the body ends.
-        assert_eq!(values, vec![json!({"a": 1}), json!({"b": 2}), json!({"c": 3})]);
+        assert_eq!(
+            values,
+            vec![json!({"a": 1}), json!({"b": 2}), json!({"c": 3})]
+        );
     }
 
     #[tokio::test]
     async fn a_multibyte_character_split_between_chunks_survives() {
         let line = "{\"text\":\"h\u{e9}llo \u{4e16}\"}\n".as_bytes();
         // Cut inside the two-byte "e acute" (U+00E9).
-        let cut = line.iter().position(|b| *b == 0xC3).expect("multibyte lead byte") + 1;
+        let cut = line
+            .iter()
+            .position(|b| *b == 0xC3)
+            .expect("multibyte lead byte")
+            + 1;
         let (head, tail) = line.split_at(cut);
         let values = collect(ndjson_values(chunks(&[head, tail]))).await;
         assert_eq!(values.len(), 1);
-        assert_eq!(values[0].as_ref().expect("value")["text"], "h\u{e9}llo \u{4e16}");
+        assert_eq!(
+            values[0].as_ref().expect("value")["text"],
+            "h\u{e9}llo \u{4e16}"
+        );
     }
 
     #[tokio::test]
     async fn crlf_terminators_and_blank_lines_are_tolerated() {
-        let values =
-            collect(ndjson_values(chunks(&[b"\r\n{\"a\":1}\r\n  \r\n{\"a\":2}\r\n"]))).await;
+        let values = collect(ndjson_values(chunks(&[
+            b"\r\n{\"a\":1}\r\n  \r\n{\"a\":2}\r\n",
+        ])))
+        .await;
         assert_eq!(values.len(), 2);
         assert_eq!(values[1].as_ref().expect("value")["a"], 2);
     }
 
     #[tokio::test]
     async fn a_corrupt_line_is_reported_once_and_ends_the_stream() {
-        let values = collect(ndjson_values(chunks(&[b"{\"a\":1}\nnot json\n{\"a\":2}\n"]))).await;
+        let values = collect(ndjson_values(chunks(&[
+            b"{\"a\":1}\nnot json\n{\"a\":2}\n",
+        ])))
+        .await;
         assert_eq!(values.len(), 2);
         assert!(values[0].is_ok());
         assert!(matches!(values[1], Err(ModelError::Decode(_))));
@@ -195,7 +226,10 @@ mod tests {
 
     #[test]
     fn error_lines_are_recognised() {
-        assert_eq!(error_line(&json!({"error": "model not found"})), Some("model not found"));
+        assert_eq!(
+            error_line(&json!({"error": "model not found"})),
+            Some("model not found")
+        );
         assert_eq!(error_line(&json!({"error": ""})), None);
         assert_eq!(error_line(&json!({"status": "success"})), None);
     }

@@ -57,11 +57,15 @@ fn crc32(data: &[u8]) -> u32 {
 }
 
 fn main() {
-    let targets: HashSet<u32> =
-        std::env::args().skip(1).filter_map(|a| a.parse::<u32>().ok()).collect();
+    let targets: HashSet<u32> = std::env::args()
+        .skip(1)
+        .filter_map(|a| a.parse::<u32>().ok())
+        .collect();
     let targets: HashSet<u32> = if targets.is_empty() {
         // Hashes observés sur `main_menu` (cf. probe_menu_script).
-        [2_320_109_963, 2_734_777_837, 1_342_860_085, 849_696_660].into_iter().collect()
+        [2_320_109_963, 2_734_777_837, 1_342_860_085, 849_696_660]
+            .into_iter()
+            .collect()
     } else {
         targets
     };
@@ -69,7 +73,8 @@ fn main() {
 
     let dir = aphrody_nie_formats::vfs::resolve_game_dir();
     let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     // Les scripts de menu et leurs includes : c'est là que vivent les constantes d'écran.
     let scripts: Vec<String> = vfs
@@ -104,7 +109,11 @@ fn main() {
     }
 
     println!("{parsed} scripts parsés, {failed} illisibles\n");
-    println!("=== {} / {} hash(es) retrouvé(s) ===", found.len(), targets.len());
+    println!(
+        "=== {} / {} hash(es) retrouvé(s) ===",
+        found.len(),
+        targets.len()
+    );
     for (h, paths) in &found {
         println!("  0x{h:08X} ({h}) — {} script(s)", paths.len());
         for p in paths.iter().take(4) {
@@ -136,7 +145,9 @@ fn main() {
             for cand in [&s[..], trimmed] {
                 let h = crc32(cand);
                 if targets.contains(&h) {
-                    resolved.entry(h).or_insert_with(|| String::from_utf8_lossy(cand).into_owned());
+                    resolved
+                        .entry(h)
+                        .or_insert_with(|| String::from_utf8_lossy(cand).into_owned());
                 }
             }
         }

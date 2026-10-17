@@ -6,8 +6,12 @@
 //! its name; clicks select fields instead of filling them in, as in Acrobat.
 
 use egui::{Color32, CornerRadius, Pos2, Rect, Stroke, vec2};
-use pdfcraft_engine::form_scripts::{CalcOp, Calculate, DATE_PRESETS, Format, TIME_PRESETS, Validate, format_value};
-use pdfcraft_engine::{BorderStyle, Edit, FieldFont, FieldLook, FieldProps, FormField, FormFieldKind, NewField};
+use pdfcraft_engine::form_scripts::{
+    CalcOp, Calculate, DATE_PRESETS, Format, TIME_PRESETS, Validate, format_value,
+};
+use pdfcraft_engine::{
+    BorderStyle, Edit, FieldFont, FieldLook, FieldProps, FormField, FormFieldKind, NewField,
+};
 use pdfcraft_render::DocInfo;
 
 use crate::canvas::{DocView, PageXform};
@@ -85,16 +89,36 @@ impl FieldTool {
             FieldTool::CheckBox => NewField::CheckBox,
             FieldTool::Radio => match join.filter(|f| f.kind == FormFieldKind::Radio) {
                 Some(g) => {
-                    let taken: Vec<&str> = g.widgets.iter().filter_map(|w| w.on_state.as_deref()).collect();
-                    let export =
-                        (1..=u64::MAX).map(|i| format!("Choice{i}")).find(|c| !taken.contains(&c.as_str())).unwrap_or_else(|| "Choice".into());
-                    NewField::Radio { group: Some(g.name.clone()), export }
+                    let taken: Vec<&str> = g
+                        .widgets
+                        .iter()
+                        .filter_map(|w| w.on_state.as_deref())
+                        .collect();
+                    let export = (1..=u64::MAX)
+                        .map(|i| format!("Choice{i}"))
+                        .find(|c| !taken.contains(&c.as_str()))
+                        .unwrap_or_else(|| "Choice".into());
+                    NewField::Radio {
+                        group: Some(g.name.clone()),
+                        export,
+                    }
                 }
-                None => NewField::Radio { group: None, export: "Choice1".into() },
+                None => NewField::Radio {
+                    group: None,
+                    export: "Choice1".into(),
+                },
             },
-            FieldTool::Combo => NewField::Combo { options: Vec::new(), editable: false },
-            FieldTool::List => NewField::List { options: Vec::new(), multi: false },
-            FieldTool::Button => NewField::Button { caption: String::new() },
+            FieldTool::Combo => NewField::Combo {
+                options: Vec::new(),
+                editable: false,
+            },
+            FieldTool::List => NewField::List {
+                options: Vec::new(),
+                multi: false,
+            },
+            FieldTool::Button => NewField::Button {
+                caption: String::new(),
+            },
             FieldTool::Image => NewField::Image,
             FieldTool::Date => NewField::Date,
             FieldTool::Signature => NewField::Signature,
@@ -158,7 +182,11 @@ impl PrepareView {
             self.selected = Some(key);
             self.also.clear();
         } else if self.selected.as_ref() == Some(&key) {
-            self.selected = if self.also.is_empty() { None } else { Some(self.also.remove(0)) };
+            self.selected = if self.also.is_empty() {
+                None
+            } else {
+                Some(self.also.remove(0))
+            };
         } else if let Some(index) = self.also.iter().position(|k| *k == key) {
             self.also.remove(index);
         } else {
@@ -168,7 +196,11 @@ impl PrepareView {
 }
 
 fn screen_rect(xf: &PageXform, info: &DocInfo, page: usize, r: [f64; 4]) -> Rect {
-    xf.user_rect(info, page, [r[0] as f32, r[1] as f32, r[2] as f32, r[3] as f32])
+    xf.user_rect(
+        info,
+        page,
+        [r[0] as f32, r[1] as f32, r[2] as f32, r[3] as f32],
+    )
 }
 
 fn to_user(xf: &PageXform, info: &DocInfo, page: usize, p: Pos2) -> [f64; 2] {
@@ -179,12 +211,25 @@ fn to_user(xf: &PageXform, info: &DocInfo, page: usize, p: Pos2) -> [f64; 2] {
 
 /// A screen rect → a normalised user-space rect.
 fn user_rect(xf: &PageXform, info: &DocInfo, page: usize, r: Rect) -> [f64; 4] {
-    let (a, b) = (to_user(xf, info, page, r.min), to_user(xf, info, page, r.max));
-    [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])]
+    let (a, b) = (
+        to_user(xf, info, page, r.min),
+        to_user(xf, info, page, r.max),
+    );
+    [
+        a[0].min(b[0]),
+        a[1].min(b[1]),
+        a[0].max(b[0]),
+        a[1].max(b[1]),
+    ]
 }
 
 fn handles(r: Rect) -> [(Pos2, bool, bool); 4] {
-    [(r.left_top(), true, true), (r.right_top(), false, true), (r.left_bottom(), true, false), (r.right_bottom(), false, false)]
+    [
+        (r.left_top(), true, true),
+        (r.right_top(), false, true),
+        (r.left_bottom(), true, false),
+        (r.right_bottom(), false, false),
+    ]
 }
 
 /// The rect while a move or resize is in progress.
@@ -231,11 +276,17 @@ pub(crate) fn page_input(
     allowed: bool,
     view: &mut DocView,
 ) -> Outcome {
-    let mut out = Outcome { consumed: false, properties: false, placed: false };
+    let mut out = Outcome {
+        consumed: false,
+        properties: false,
+        placed: false,
+    };
     let pointer = ui.input(|i| i.pointer.hover_pos().or(i.pointer.interact_pos()));
     let prep = &mut view.prepare;
 
-    if prep.marquee_before.is_some() && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+    if prep.marquee_before.is_some()
+        && ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+    {
         cancel_marquee(prep);
         out.consumed = true;
         return out;
@@ -261,12 +312,19 @@ pub(crate) fn page_input(
                     prep.marquee_before = None;
                     let rect = Rect::from_two_pos(from, end).intersect(xf.rect);
                     for f in form {
-                        for (wi, w) in f.widgets.iter().enumerate().filter(|(_, w)| w.page == Some(page)) {
+                        for (wi, w) in f
+                            .widgets
+                            .iter()
+                            .enumerate()
+                            .filter(|(_, w)| w.page == Some(page))
+                        {
                             if screen_rect(xf, info, page, w.rect).intersects(rect) {
                                 let key = (f.name.clone(), wi);
                                 if prep.selected.is_none() {
                                     prep.selected = Some(key);
-                                } else if prep.selected.as_ref() != Some(&key) && !prep.also.contains(&key) {
+                                } else if prep.selected.as_ref() != Some(&key)
+                                    && !prep.also.contains(&key)
+                                {
                                     prep.also.push(key);
                                 }
                             }
@@ -285,20 +343,41 @@ pub(crate) fn page_input(
                     } else {
                         rect
                     };
-                    let join = prep.selected.as_ref().and_then(|(n, _)| form.iter().find(|f| &f.name == n));
+                    let join = prep
+                        .selected
+                        .as_ref()
+                        .and_then(|(n, _)| form.iter().find(|f| &f.name == n));
                     prep.select_added = Some(form.len());
-                    view.pending_edit = Some(Edit::AddField { page, rect, kind: tool.new_field(join), name: None });
+                    view.pending_edit = Some(Edit::AddField {
+                        page,
+                        rect,
+                        kind: tool.new_field(join),
+                        name: None,
+                    });
                     out.placed = true;
                 }
                 Grab::Move | Grab::Corner(..) => {
-                    let Some((name, wi)) = prep.selected.clone() else { return out };
-                    let Some(w) = form.iter().find(|f| f.name == name).and_then(|f| f.widgets.get(wi)) else { return out };
+                    let Some((name, wi)) = prep.selected.clone() else {
+                        return out;
+                    };
+                    let Some(w) = form
+                        .iter()
+                        .find(|f| f.name == name)
+                        .and_then(|f| f.widgets.get(wi))
+                    else {
+                        return out;
+                    };
                     let delta = end - start;
                     if delta.length() >= 1.0 {
                         let r = dragged(screen_rect(xf, info, page, w.rect), grab, delta);
                         let rect = user_rect(xf, info, page, r);
-                        view.pending_edit =
-                            Some(Edit::SetFieldProps { name, props: Box::new(FieldProps { rect: Some((wi, rect)), ..Default::default() }) });
+                        view.pending_edit = Some(Edit::SetFieldProps {
+                            name,
+                            props: Box::new(FieldProps {
+                                rect: Some((wi, rect)),
+                                ..Default::default()
+                            }),
+                        });
                     }
                 }
             }
@@ -306,14 +385,19 @@ pub(crate) fn page_input(
         return out;
     }
 
-    let Some(p) = pointer.filter(|p| xf.rect.contains(*p)) else { return out };
+    let Some(p) = pointer.filter(|p| xf.rect.contains(*p)) else {
+        return out;
+    };
     if !allowed {
         return out;
     }
     if let Some(tool) = tool {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Crosshair);
         if resp.drag_started() || resp.clicked() {
-            let origin = ui.input(|i| i.pointer.press_origin()).filter(|o| xf.rect.contains(*o)).unwrap_or(p);
+            let origin = ui
+                .input(|i| i.pointer.press_origin())
+                .filter(|o| xf.rect.contains(*o))
+                .unwrap_or(p);
             prep.grab = Some((page, Grab::Draw(origin), origin));
             out.consumed = true;
             if resp.clicked() {
@@ -321,9 +405,17 @@ pub(crate) fn page_input(
                 prep.grab = None;
                 let at = to_user(xf, info, page, p);
                 let (w, h) = tool.default_size();
-                let join = prep.selected.as_ref().and_then(|(n, _)| form.iter().find(|f| &f.name == n));
+                let join = prep
+                    .selected
+                    .as_ref()
+                    .and_then(|(n, _)| form.iter().find(|f| &f.name == n));
                 prep.select_added = Some(form.len());
-                view.pending_edit = Some(Edit::AddField { page, rect: [at[0], at[1] - h, at[0] + w, at[1]], kind: tool.new_field(join), name: None });
+                view.pending_edit = Some(Edit::AddField {
+                    page,
+                    rect: [at[0], at[1] - h, at[0] + w, at[1]],
+                    kind: tool.new_field(join),
+                    name: None,
+                });
                 out.placed = true;
             }
         }
@@ -333,7 +425,13 @@ pub(crate) fn page_input(
     // Right-click a field: select it (the context menu acts on it).
     if resp.secondary_clicked()
         && let Some((f, wi)) = form.iter().find_map(|f| {
-            f.widgets.iter().enumerate().find(|(_, w)| w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(p)).map(|(i, _)| (f, i))
+            f.widgets
+                .iter()
+                .enumerate()
+                .find(|(_, w)| {
+                    w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(p)
+                })
+                .map(|(i, _)| (f, i))
         })
     {
         let key = (f.name.clone(), wi);
@@ -352,34 +450,61 @@ pub(crate) fn page_input(
     let selected_rect = prep
         .selected
         .as_ref()
-        .and_then(|(n, wi)| form.iter().find(|f| &f.name == n)?.widgets.get(*wi).filter(|w| w.page == Some(page)))
+        .and_then(|(n, wi)| {
+            form.iter()
+                .find(|f| &f.name == n)?
+                .widgets
+                .get(*wi)
+                .filter(|w| w.page == Some(page))
+        })
         .map(|w| screen_rect(xf, info, page, w.rect));
-    let corner = selected_rect.and_then(|r| handles(r).into_iter().find(|(c, ..)| c.distance(p) <= 6.0));
+    let corner =
+        selected_rect.and_then(|r| handles(r).into_iter().find(|(c, ..)| c.distance(p) <= 6.0));
     let hit = form.iter().find_map(|f| {
-        f.widgets.iter().enumerate().find(|(_, w)| w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(p)).map(|(i, _)| (f, i))
+        f.widgets
+            .iter()
+            .enumerate()
+            .find(|(_, w)| w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(p))
+            .map(|(i, _)| (f, i))
     });
     if let Some((_, left, top)) = corner {
-        ui.ctx().set_cursor_icon(if left == top { egui::CursorIcon::ResizeNwSe } else { egui::CursorIcon::ResizeNeSw });
+        ui.ctx().set_cursor_icon(if left == top {
+            egui::CursorIcon::ResizeNwSe
+        } else {
+            egui::CursorIcon::ResizeNeSw
+        });
     } else if hit.is_some() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Move);
     }
     if resp.drag_started() {
         let origin = ui.input(|i| i.pointer.press_origin()).unwrap_or(p);
-        if let Some((_, left, top)) = selected_rect.and_then(|r| handles(r).into_iter().find(|(c, ..)| c.distance(origin) <= 6.0)) {
+        if let Some((_, left, top)) = selected_rect.and_then(|r| {
+            handles(r)
+                .into_iter()
+                .find(|(c, ..)| c.distance(origin) <= 6.0)
+        }) {
             prep.grab = Some((page, Grab::Corner(left, top), origin));
             out.consumed = true;
         } else if let Some((f, wi)) = form.iter().find_map(|f| {
             f.widgets
                 .iter()
                 .enumerate()
-                .find(|(_, w)| w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(origin))
+                .find(|(_, w)| {
+                    w.page == Some(page) && screen_rect(xf, info, page, w.rect).contains(origin)
+                })
                 .map(|(i, _)| (f, i))
         }) {
             prep.selected = Some((f.name.clone(), wi));
             prep.grab = Some((page, Grab::Move, origin));
             out.consumed = true;
         } else {
-            prep.marquee_before = Some(prep.selected.iter().chain(prep.also.iter()).cloned().collect());
+            prep.marquee_before = Some(
+                prep.selected
+                    .iter()
+                    .chain(prep.also.iter())
+                    .cloned()
+                    .collect(),
+            );
             if !ui.input(|i| i.modifiers.shift || i.modifiers.command) {
                 prep.selected = None;
                 prep.also.clear();
@@ -389,7 +514,10 @@ pub(crate) fn page_input(
         }
         return out;
     }
-    if resp.double_clicked() && hit.is_some() && !ui.input(|i| i.modifiers.shift || i.modifiers.command) {
+    if resp.double_clicked()
+        && hit.is_some()
+        && !ui.input(|i| i.modifiers.shift || i.modifiers.command)
+    {
         out.consumed = true;
         out.properties = true;
         return out;
@@ -435,9 +563,12 @@ pub enum Arrange {
 impl Arrange {
     pub fn label(self) -> &'static str {
         match self {
-            Arrange::AlignLeft | Arrange::AlignRight | Arrange::AlignTop | Arrange::AlignBottom | Arrange::AlignCenterH | Arrange::AlignCenterV => {
-                "Align fields"
-            }
+            Arrange::AlignLeft
+            | Arrange::AlignRight
+            | Arrange::AlignTop
+            | Arrange::AlignBottom
+            | Arrange::AlignCenterH
+            | Arrange::AlignCenterV => "Align fields",
             Arrange::DistributeH | Arrange::DistributeV => "Distribute fields",
             Arrange::SameWidth | Arrange::SameHeight | Arrange::SameSize => "Match field sizes",
         }
@@ -445,10 +576,23 @@ impl Arrange {
 }
 
 /// The edits that arrange the selected widgets (user space; the anchor stays put).
-pub fn arrange(form: &[FormField], anchor: &(String, usize), others: &[(String, usize)], op: Arrange) -> Option<Edit> {
-    let rect_of = |k: &(String, usize)| form.iter().find(|f| f.name == k.0).and_then(|f| f.widgets.get(k.1)).map(|w| w.rect);
+pub fn arrange(
+    form: &[FormField],
+    anchor: &(String, usize),
+    others: &[(String, usize)],
+    op: Arrange,
+) -> Option<Edit> {
+    let rect_of = |k: &(String, usize)| {
+        form.iter()
+            .find(|f| f.name == k.0)
+            .and_then(|f| f.widgets.get(k.1))
+            .map(|w| w.rect)
+    };
     let a = rect_of(anchor)?;
-    let mut items: Vec<((String, usize), [f64; 4])> = others.iter().filter_map(|k| rect_of(k).map(|r| (k.clone(), r))).collect();
+    let mut items: Vec<((String, usize), [f64; 4])> = others
+        .iter()
+        .filter_map(|k| rect_of(k).map(|r| (k.clone(), r)))
+        .collect();
     if items.is_empty() {
         return None;
     }
@@ -462,16 +606,30 @@ pub fn arrange(form: &[FormField], anchor: &(String, usize), others: &[(String, 
                 return None;
             }
             let horiz = op == Arrange::DistributeH;
-            items.sort_by(|x, y| if horiz { x.1[0].total_cmp(&y.1[0]) } else { y.1[3].total_cmp(&x.1[3]) });
+            items.sort_by(|x, y| {
+                if horiz {
+                    x.1[0].total_cmp(&y.1[0])
+                } else {
+                    y.1[3].total_cmp(&x.1[3])
+                }
+            });
             let size = |r: &[f64; 4]| if horiz { r[2] - r[0] } else { r[3] - r[1] };
             let (first, last) = (items[0].1, items[items.len() - 1].1);
-            let span = if horiz { last[2] - first[0] } else { first[3] - last[1] };
+            let span = if horiz {
+                last[2] - first[0]
+            } else {
+                first[3] - last[1]
+            };
             let total: f64 = items.iter().map(|(_, r)| size(r)).sum();
             let gap = (span - total) / (items.len() - 1) as f64;
             let mut at = if horiz { first[0] } else { first[3] };
             for (k, r) in &items {
                 let s = size(r);
-                let nr = if horiz { [at, r[1], at + s, r[3]] } else { [r[0], at - s, r[2], at] };
+                let nr = if horiz {
+                    [at, r[1], at + s, r[3]]
+                } else {
+                    [r[0], at - s, r[2], at]
+                };
                 at = if horiz { at + s + gap } else { at - s - gap };
                 moved.push((k.clone(), nr));
             }
@@ -502,23 +660,50 @@ pub fn arrange(form: &[FormField], anchor: &(String, usize), others: &[(String, 
     }
     let edits: Vec<Edit> = moved
         .into_iter()
-        .filter(|(k, nr)| rect_of(k).is_some_and(|r| r.iter().zip(nr).any(|(x, y)| (x - y).abs() > 1e-6)))
-        .map(|((name, wi), rect)| Edit::SetFieldProps { name, props: Box::new(FieldProps { rect: Some((wi, rect)), ..Default::default() }) })
+        .filter(|(k, nr)| {
+            rect_of(k).is_some_and(|r| r.iter().zip(nr).any(|(x, y)| (x - y).abs() > 1e-6))
+        })
+        .map(|((name, wi), rect)| Edit::SetFieldProps {
+            name,
+            props: Box::new(FieldProps {
+                rect: Some((wi, rect)),
+                ..Default::default()
+            }),
+        })
         .collect();
-    (!edits.is_empty()).then(|| Edit::Batch { label: op.label().into(), edits })
+    (!edits.is_empty()).then(|| Edit::Batch {
+        label: op.label().into(),
+        edits,
+    })
 }
 
 /// Fields with their light-blue fill and name tags, the selection with its handles, and the
 /// rectangle being drawn or dragged.
-pub(crate) fn paint_page(ui: &egui::Ui, painter: &egui::Painter, xf: &PageXform, page: usize, info: &DocInfo, form: &[FormField], view: &DocView) {
+pub(crate) fn paint_page(
+    ui: &egui::Ui,
+    painter: &egui::Painter,
+    xf: &PageXform,
+    page: usize,
+    info: &DocInfo,
+    form: &[FormField],
+    view: &DocView,
+) {
     let prep = &view.prepare;
     let pointer = ui.input(|i| i.pointer.hover_pos());
     let grab = prep.grab.filter(|(gp, ..)| *gp == page);
     let zoom = (xf.rect.width() / xf.pw.max(1.0)).clamp(0.5, 3.0);
     for f in form {
-        for (wi, w) in f.widgets.iter().enumerate().filter(|(_, w)| w.page == Some(page)) {
+        for (wi, w) in f
+            .widgets
+            .iter()
+            .enumerate()
+            .filter(|(_, w)| w.page == Some(page))
+        {
             let mut r = screen_rect(xf, info, page, w.rect);
-            let selected = prep.selected.as_ref().is_some_and(|(n, i)| n == &f.name && *i == wi);
+            let selected = prep
+                .selected
+                .as_ref()
+                .is_some_and(|(n, i)| n == &f.name && *i == wi);
             let also = prep.also.iter().any(|(n, i)| n == &f.name && *i == wi);
             if selected && let (Some((_, g, start)), Some(p)) = (grab, pointer) {
                 r = dragged(r, g, p - start);
@@ -527,7 +712,14 @@ pub(crate) fn paint_page(ui: &egui::Ui, painter: &egui::Painter, xf: &PageXform,
             painter.rect_stroke(
                 r,
                 CornerRadius::ZERO,
-                Stroke::new(if also { 2.0 } else { 1.0 }, if selected || also { SELECT_BLUE } else { Color32::from_gray(90) }),
+                Stroke::new(
+                    if also { 2.0 } else { 1.0 },
+                    if selected || also {
+                        SELECT_BLUE
+                    } else {
+                        Color32::from_gray(90)
+                    },
+                ),
                 egui::StrokeKind::Inside,
             );
             // The name tag: white text on black, clipped to the field.
@@ -538,10 +730,23 @@ pub(crate) fn paint_page(ui: &egui::Ui, painter: &egui::Painter, xf: &PageXform,
             let tag = Rect::from_center_size(r.center(), size);
             let clip = painter.clip_rect().intersect(r);
             let p2 = painter.with_clip_rect(clip);
-            p2.rect_filled(tag, CornerRadius::same(1), if selected { SELECT_BLUE } else { Color32::BLACK });
+            p2.rect_filled(
+                tag,
+                CornerRadius::same(1),
+                if selected {
+                    SELECT_BLUE
+                } else {
+                    Color32::BLACK
+                },
+            );
             p2.galley(tag.min + vec2(3.0, 1.0), galley, Color32::WHITE);
             if selected {
-                painter.rect_stroke(r.expand(1.0), CornerRadius::ZERO, Stroke::new(2.0, SELECT_BLUE), egui::StrokeKind::Outside);
+                painter.rect_stroke(
+                    r.expand(1.0),
+                    CornerRadius::ZERO,
+                    Stroke::new(2.0, SELECT_BLUE),
+                    egui::StrokeKind::Outside,
+                );
                 for (c, ..) in handles(r) {
                     painter.circle(c, 3.5, Color32::WHITE, Stroke::new(1.5, SELECT_BLUE));
                 }
@@ -551,7 +756,12 @@ pub(crate) fn paint_page(ui: &egui::Ui, painter: &egui::Painter, xf: &PageXform,
     if let (Some((_, Grab::Draw(from) | Grab::Select(from), _)), Some(p)) = (grab, pointer) {
         let r = Rect::from_two_pos(from, p).intersect(xf.rect);
         painter.rect_filled(r, CornerRadius::ZERO, FIELD_FILL);
-        painter.rect_stroke(r, CornerRadius::ZERO, Stroke::new(1.0, SELECT_BLUE), egui::StrokeKind::Inside);
+        painter.rect_stroke(
+            r,
+            CornerRadius::ZERO,
+            Stroke::new(1.0, SELECT_BLUE),
+            egui::StrokeKind::Inside,
+        );
     }
 }
 
@@ -569,13 +779,24 @@ pub(crate) fn delete_selected(view: &mut DocView) -> Option<Edit> {
         return names.pop().map(|name| Edit::DeleteField { name });
     }
     let label = format!("Delete {} fields", names.len());
-    Some(Edit::Batch { label, edits: names.into_iter().map(|name| Edit::DeleteField { name }).collect() })
+    Some(Edit::Batch {
+        label,
+        edits: names
+            .into_iter()
+            .map(|name| Edit::DeleteField { name })
+            .collect(),
+    })
 }
 
 /// Delete removes the selected fields; Escape clears the selection.
 pub(crate) fn select_all(view: &mut DocView, form: &[FormField]) {
-    let mut selected =
-        form.iter().flat_map(|f| f.widgets.iter().enumerate().filter(|(_, w)| w.page == Some(view.current)).map(|(wi, _)| (f.name.clone(), wi)));
+    let mut selected = form.iter().flat_map(|f| {
+        f.widgets
+            .iter()
+            .enumerate()
+            .filter(|(_, w)| w.page == Some(view.current))
+            .map(|(wi, _)| (f.name.clone(), wi))
+    });
     view.prepare.selected = selected.next();
     view.prepare.also = selected.collect();
 }
@@ -594,14 +815,21 @@ pub(crate) fn keys(ctx: &egui::Context, view: &mut DocView) {
     if ctx.egui_wants_keyboard_input() {
         return;
     }
-    if view.prepare.marquee_before.is_some() && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+    if view.prepare.marquee_before.is_some()
+        && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+    {
         cancel_marquee(&mut view.prepare);
         return;
     }
     if view.prepare.selected.is_none() {
         return;
     }
-    let (del, esc) = ctx.input(|i| (i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace), i.key_pressed(egui::Key::Escape)));
+    let (del, esc) = ctx.input(|i| {
+        (
+            i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace),
+            i.key_pressed(egui::Key::Escape),
+        )
+    });
     if del {
         view.pending_edit = delete_selected(view);
     } else if esc {
@@ -612,7 +840,10 @@ pub(crate) fn keys(ctx: &egui::Context, view: &mut DocView) {
 
 /// After an Add field edit: select the new field (the form's last).
 pub(crate) fn after_refresh(view: &mut DocView, form: &[FormField]) {
-    view.prepare.also.retain(|(name, wi)| form.iter().any(|f| &f.name == name && *wi < f.widgets.len()));
+    view.prepare.also.retain(|(name, wi)| {
+        form.iter()
+            .any(|f| &f.name == name && *wi < f.widgets.len())
+    });
     if let Some(n) = view.prepare.select_added.take() {
         if form.len() > n
             && let Some(f) = form.last()
@@ -626,7 +857,9 @@ pub(crate) fn after_refresh(view: &mut DocView, form: &[FormField]) {
         }
     }
     if let Some((name, wi)) = &view.prepare.selected
-        && !form.iter().any(|f| &f.name == name && *wi < f.widgets.len())
+        && !form
+            .iter()
+            .any(|f| &f.name == name && *wi < f.widgets.len())
     {
         view.prepare.selected = None;
     }
@@ -637,10 +870,17 @@ pub(crate) fn after_refresh(view: &mut DocView, form: &[FormField]) {
 impl crate::PdfCraftApp {
     /// Open Field Properties for a field of the active document.
     pub fn open_field_props(&mut self, name: &str, widget: usize) {
-        let Some((index, id)) = self.active_ids() else { return };
+        let Some((index, id)) = self.active_ids() else {
+            return;
+        };
         let names = self.views[index].prepare.names();
         if names.len() > 1 && names.iter().any(|n| n == name) {
-            let draft = self.session.get(id).map_or(Err("The document is no longer open."), |doc| crate::bulk_fields::Draft::new(doc, names));
+            let draft = self
+                .session
+                .get(id)
+                .map_or(Err("The document is no longer open."), |doc| {
+                    crate::bulk_fields::Draft::new(doc, names)
+                });
             match draft {
                 Ok(draft) => {
                     self.field_props = None;
@@ -652,18 +892,40 @@ impl crate::PdfCraftApp {
             return;
         }
         self.bulk_field_props = None;
-        let Some(f) = self.session.get(id).and_then(|d| d.form.iter().find(|f| f.name == name).cloned()) else { return };
+        let Some(f) = self
+            .session
+            .get(id)
+            .and_then(|d| d.form.iter().find(|f| f.name == name).cloned())
+        else {
+            return;
+        };
         let mut d = FieldDraft::new(&f, widget);
         d.look = self.session.get(id).and_then(|doc| doc.field_look(name));
-        d.check_style = self.session.get(id).and_then(|doc| doc.field_check_style(name));
+        d.check_style = self
+            .session
+            .get(id)
+            .and_then(|doc| doc.field_check_style(name));
         if let Some(o) = d.original.as_mut() {
             o.look = d.look;
             o.check_style = d.check_style;
         }
-        let others: Vec<String> =
-            self.session.get(id).map(|doc| doc.form.iter().filter(|x| x.name != name).map(|x| x.name.clone()).collect()).unwrap_or_default();
+        let others: Vec<String> = self
+            .session
+            .get(id)
+            .map(|doc| {
+                doc.form
+                    .iter()
+                    .filter(|x| x.name != name)
+                    .map(|x| x.name.clone())
+                    .collect()
+            })
+            .unwrap_or_default();
         d.others = others.clone();
-        d.actions = self.session.get(id).map(|doc| doc.field_actions(name)).unwrap_or_default();
+        d.actions = self
+            .session
+            .get(id)
+            .map(|doc| doc.field_actions(name))
+            .unwrap_or_default();
         if let Some(o) = d.original.as_mut() {
             o.others = others;
             o.actions = d.actions.clone();
@@ -708,7 +970,11 @@ pub struct ActionDraft {
 
 impl Default for ActionDraft {
     fn default() -> Self {
-        ActionDraft { trigger: pdfcraft_engine::FieldTrigger::MouseUp, kind: 0, text: String::new() }
+        ActionDraft {
+            trigger: pdfcraft_engine::FieldTrigger::MouseUp,
+            kind: 0,
+            text: String::new(),
+        }
     }
 }
 
@@ -716,15 +982,37 @@ impl ActionDraft {
     pub fn action(&self) -> Result<pdfcraft_engine::FieldAction, String> {
         use pdfcraft_engine::FieldAction as A;
         let t = self.text.trim();
-        let names = || t.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::to_string).collect::<Vec<_>>();
+        let names = || {
+            t.split(',')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .collect::<Vec<_>>()
+        };
         Ok(match self.kind {
             0 => A::JavaScript(self.text.clone()),
             1 if !t.is_empty() => A::Uri(t.to_string()),
             2 => A::Reset(names()),
-            3 => A::Named(if t.is_empty() { "Print".into() } else { t.to_string() }),
-            4 => A::GoTo(t.parse::<usize>().ok().filter(|p| *p >= 1).ok_or("Enter a page number")? - 1),
-            5 if !t.is_empty() => A::ShowHide { fields: names(), hide: false },
-            6 if !t.is_empty() => A::ShowHide { fields: names(), hide: true },
+            3 => A::Named(if t.is_empty() {
+                "Print".into()
+            } else {
+                t.to_string()
+            }),
+            4 => A::GoTo(
+                t.parse::<usize>()
+                    .ok()
+                    .filter(|p| *p >= 1)
+                    .ok_or("Enter a page number")?
+                    - 1,
+            ),
+            5 if !t.is_empty() => A::ShowHide {
+                fields: names(),
+                hide: false,
+            },
+            6 if !t.is_empty() => A::ShowHide {
+                fields: names(),
+                hide: true,
+            },
             7 if !t.is_empty() => A::Submit(t.to_string()),
             1 | 7 => return Err("Enter a URL".into()),
             _ => return Err("Enter the field names".into()),
@@ -783,7 +1071,11 @@ pub(crate) fn da_size(da: &str) -> f64 {
     let mut size = 0.0;
     for token in da.split_whitespace() {
         if token == "Tf" {
-            size = previous.parse::<f64>().ok().filter(|v| v.is_finite() && *v >= 0.0).unwrap_or(0.0);
+            size = previous
+                .parse::<f64>()
+                .ok()
+                .filter(|v| v.is_finite() && *v >= 0.0)
+                .unwrap_or(0.0);
         }
         previous = token;
     }
@@ -823,7 +1115,11 @@ impl FieldDraft {
             locked: f.locked(),
             quadding: f.quadding,
             default: f.default.first().cloned().unwrap_or_default(),
-            on_state: f.widgets.get(widget).and_then(|w| w.on_state.clone()).unwrap_or_default(),
+            on_state: f
+                .widgets
+                .get(widget)
+                .and_then(|w| w.on_state.clone())
+                .unwrap_or_default(),
             font_size: da_size(&f.da),
             position: [r[0], r[1], r[2] - r[0], r[3] - r[1]],
             rotation: f.widgets.get(widget).map(|w| w.rotation).unwrap_or(0),
@@ -854,12 +1150,23 @@ impl FieldDraft {
     }
 
     fn tabs(&self) -> Vec<(FieldTab, &'static str)> {
-        let mut t = vec![(FieldTab::General, "General"), (FieldTab::Appearance, "Appearance"), (FieldTab::Position, "Position")];
-        if !matches!(self.kind, FormFieldKind::PushButton | FormFieldKind::Signature) {
+        let mut t = vec![
+            (FieldTab::General, "General"),
+            (FieldTab::Appearance, "Appearance"),
+            (FieldTab::Position, "Position"),
+        ];
+        if !matches!(
+            self.kind,
+            FormFieldKind::PushButton | FormFieldKind::Signature
+        ) {
             t.push((FieldTab::Options, "Options"));
         }
         if matches!(self.kind, FormFieldKind::Text | FormFieldKind::Combo) {
-            t.extend([(FieldTab::Format, "Format"), (FieldTab::Validate, "Validate"), (FieldTab::Calculate, "Calculate")]);
+            t.extend([
+                (FieldTab::Format, "Format"),
+                (FieldTab::Validate, "Validate"),
+                (FieldTab::Calculate, "Calculate"),
+            ]);
         }
         t.push((FieldTab::Actions, "Actions"));
         t
@@ -875,7 +1182,8 @@ impl FieldDraft {
             read_only: ch(self.read_only, o.read_only),
             required: ch(self.required, o.required),
             multiline: ch(self.multiline, o.multiline),
-            max_len: ((self.limit, self.max_len) != (o.limit, o.max_len)).then_some((self.limit && self.max_len > 0).then_some(self.max_len)),
+            max_len: ((self.limit, self.max_len) != (o.limit, o.max_len))
+                .then_some((self.limit && self.max_len > 0).then_some(self.max_len)),
             options: (self.options != o.options).then(|| self.options.clone()),
             font_size: ((self.font_size - o.font_size).abs() > 1e-6).then_some(self.font_size),
             rect: (self.position != o.position).then(|| {
@@ -885,15 +1193,22 @@ impl FieldDraft {
             rotation: (self.rotation != o.rotation).then_some((self.widget, self.rotation)),
             look: (self.look != o.look).then_some(self.look).flatten(),
             appearance: None,
-            check_style: (self.check_style != o.check_style).then_some(self.check_style).flatten(),
+            check_style: (self.check_style != o.check_style)
+                .then_some(self.check_style)
+                .flatten(),
             format: (self.format != o.format).then(|| self.format.clone()),
             validate: (self.validate != o.validate).then(|| self.validate.clone()),
             calculate: (self.calculate != o.calculate).then(|| self.calculate.clone()),
-            flags: OPTION_FLAGS.iter().filter(|b| (self.flags ^ o.flags) & **b != 0).map(|b| (*b, self.flags & b != 0)).collect(),
+            flags: OPTION_FLAGS
+                .iter()
+                .filter(|b| (self.flags ^ o.flags) & **b != 0)
+                .map(|b| (*b, self.flags & b != 0))
+                .collect(),
             quadding: (self.quadding != o.quadding).then_some(self.quadding),
             locked: ch(self.locked, o.locked),
             actions: (self.actions != o.actions).then(|| self.actions.clone()),
-            default_value: (self.default != o.default).then(|| (!self.default.is_empty()).then(|| self.default.clone())),
+            default_value: (self.default != o.default)
+                .then(|| (!self.default.is_empty()).then(|| self.default.clone())),
         };
         (p != FieldProps::default()).then_some(p)
     }
@@ -929,7 +1244,11 @@ fn flag_box(ui: &mut egui::Ui, flags: &mut u32, bit: u32, inverted: bool, label:
 }
 
 /// Draw Field Properties; returns (apply, cancel).
-pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) -> (bool, bool) {
+pub(crate) fn body(
+    ui: &mut egui::Ui,
+    d: &mut FieldDraft,
+    t: &crate::theme::Tokens,
+) -> (bool, bool) {
     use crate::widgets;
     ui.set_width(600.0);
     ui.label(egui::RichText::new(tl!(d.title())).font(theme::semibold(18.0)));
@@ -947,7 +1266,13 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
     // A locked field keeps its properties until it is unlocked (Acrobat greys them out).
     let was_locked = d.original.as_ref().as_ref().is_some_and(|o| o.locked) && d.locked;
     if was_locked {
-        ui.label(egui::RichText::new(tl!("This field is locked. Unlock it to change its properties.")).small().color(t.text_muted));
+        ui.label(
+            egui::RichText::new(tl!(
+                "This field is locked. Unlock it to change its properties."
+            ))
+            .small()
+            .color(t.text_muted),
+        );
     }
     ui.scope(|ui| {
         if was_locked {
@@ -955,104 +1280,159 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
         }
         match d.tab {
             FieldTab::General => {
-                egui::Grid::new("field-general").num_columns(2).spacing([12.0, 10.0]).show(ui, |ui| {
-                    let l = ui.label(tl!("Name:"));
-                    let r = ui.add(crate::widgets::line(&mut d.name).desired_width(340.0)).labelled_by(l.id);
-                    enter |= r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-                    ui.end_row();
-                    let l = ui.label(tl!("Tooltip:"));
-                    ui.add(crate::widgets::line(&mut d.tooltip).desired_width(340.0)).labelled_by(l.id);
-                    ui.end_row();
-                });
+                egui::Grid::new("field-general")
+                    .num_columns(2)
+                    .spacing([12.0, 10.0])
+                    .show(ui, |ui| {
+                        let l = ui.label(tl!("Name:"));
+                        let r = ui
+                            .add(crate::widgets::line(&mut d.name).desired_width(340.0))
+                            .labelled_by(l.id);
+                        enter |= r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+                        ui.end_row();
+                        let l = ui.label(tl!("Tooltip:"));
+                        ui.add(crate::widgets::line(&mut d.tooltip).desired_width(340.0))
+                            .labelled_by(l.id);
+                        ui.end_row();
+                    });
                 ui.add_space(12.0);
                 widgets::section_title(ui, tl!("Common Properties"));
                 ui.add(widgets::checkbox(&mut d.read_only, tl!("Read Only")));
                 ui.add(widgets::checkbox(&mut d.required, tl!("Required")));
             }
             FieldTab::Appearance => {
-                egui::Grid::new("field-appearance").num_columns(2).spacing([12.0, 10.0]).show(ui, |ui| {
-                    ui.label(tl!("Font Size:"));
-                    let mut auto = d.font_size == 0.0;
-                    ui.horizontal(|ui| {
-                        if ui.add(widgets::checkbox(&mut auto, tl!("Auto"))).changed() {
-                            d.font_size = if auto { 0.0 } else { 12.0 };
-                        }
-                        ui.add_enabled(!auto, egui::DragValue::new(&mut d.font_size).range(2.0..=100.0).speed(0.25).suffix(" pt"));
-                    });
-                    ui.end_row();
-                    if let Some(l) = d.look.as_mut() {
-                        ui.label(tl!("Font:"));
-                        egui::ComboBox::from_id_salt("field-font").selected_text(l.font.label()).show_ui(ui, |ui| {
-                            for f in FieldFont::ALL {
-                                ui.selectable_value(&mut l.font, f, f.label());
+                egui::Grid::new("field-appearance")
+                    .num_columns(2)
+                    .spacing([12.0, 10.0])
+                    .show(ui, |ui| {
+                        ui.label(tl!("Font Size:"));
+                        let mut auto = d.font_size == 0.0;
+                        ui.horizontal(|ui| {
+                            if ui.add(widgets::checkbox(&mut auto, tl!("Auto"))).changed() {
+                                d.font_size = if auto { 0.0 } else { 12.0 };
                             }
+                            ui.add_enabled(
+                                !auto,
+                                egui::DragValue::new(&mut d.font_size)
+                                    .range(2.0..=100.0)
+                                    .speed(0.25)
+                                    .suffix(" pt"),
+                            );
                         });
                         ui.end_row();
-                        ui.label(tl!("Text Color:"));
-                        if let Some(c) = crate::comments::swatch_grid(ui, Some(l.text)) {
-                            l.text = c;
-                        }
-                        ui.end_row();
-                    }
-                });
-                if let Some(l) = d.look.as_mut() {
-                    widgets::section_title(ui, tl!("Borders and Colors"));
-                    egui::Grid::new("field-borders").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-                        for (index, (label, slot)) in
-                            [(tl!("Border Color:"), &mut l.border), (tl!("Fill Color:"), &mut l.fill)].into_iter().enumerate()
-                        {
-                            ui.label(label);
-                            ui.push_id(("field-color", index), |ui| {
-                                ui.horizontal(|ui| {
-                                    let mut none = slot.is_none();
-                                    if ui.add(widgets::checkbox(&mut none, tl!("No color"))).changed() {
-                                        *slot = if none { None } else { Some([0.0; 3]) };
-                                    }
-                                    if let Some(c) = crate::comments::swatch_grid(ui, *slot) {
-                                        *slot = Some(c);
+                        if let Some(l) = d.look.as_mut() {
+                            ui.label(tl!("Font:"));
+                            egui::ComboBox::from_id_salt("field-font")
+                                .selected_text(l.font.label())
+                                .show_ui(ui, |ui| {
+                                    for f in FieldFont::ALL {
+                                        ui.selectable_value(&mut l.font, f, f.label());
                                     }
                                 });
-                            });
+                            ui.end_row();
+                            ui.label(tl!("Text Color:"));
+                            if let Some(c) = crate::comments::swatch_grid(ui, Some(l.text)) {
+                                l.text = c;
+                            }
                             ui.end_row();
                         }
-                        ui.label(tl!("Line Thickness:"));
-                        let thick = |w: f64| {
-                            if w <= 1.0 {
-                                tl!("Thin")
-                            } else if w <= 2.0 {
-                                tl!("Medium")
-                            } else {
-                                tl!("Thick")
-                            }
-                        };
-                        egui::ComboBox::from_id_salt("field-width").selected_text(thick(l.width)).show_ui(ui, |ui| {
-                            for (w, label) in [(1.0, tl!("Thin")), (2.0, tl!("Medium")), (3.0, tl!("Thick"))] {
-                                ui.selectable_value(&mut l.width, w, label);
-                            }
-                        });
-                        ui.end_row();
-                        ui.label(tl!("Line Style:"));
-                        egui::ComboBox::from_id_salt("field-style").selected_text(tl!(l.style.label())).show_ui(ui, |ui| {
-                            for s in BorderStyle::ALL {
-                                ui.selectable_value(&mut l.style, s, tl!(s.label()));
-                            }
-                        });
-                        ui.end_row();
                     });
+                if let Some(l) = d.look.as_mut() {
+                    widgets::section_title(ui, tl!("Borders and Colors"));
+                    egui::Grid::new("field-borders")
+                        .num_columns(2)
+                        .spacing([12.0, 8.0])
+                        .show(ui, |ui| {
+                            for (index, (label, slot)) in [
+                                (tl!("Border Color:"), &mut l.border),
+                                (tl!("Fill Color:"), &mut l.fill),
+                            ]
+                            .into_iter()
+                            .enumerate()
+                            {
+                                ui.label(label);
+                                ui.push_id(("field-color", index), |ui| {
+                                    ui.horizontal(|ui| {
+                                        let mut none = slot.is_none();
+                                        if ui
+                                            .add(widgets::checkbox(&mut none, tl!("No color")))
+                                            .changed()
+                                        {
+                                            *slot = if none { None } else { Some([0.0; 3]) };
+                                        }
+                                        if let Some(c) = crate::comments::swatch_grid(ui, *slot) {
+                                            *slot = Some(c);
+                                        }
+                                    });
+                                });
+                                ui.end_row();
+                            }
+                            ui.label(tl!("Line Thickness:"));
+                            let thick = |w: f64| {
+                                if w <= 1.0 {
+                                    tl!("Thin")
+                                } else if w <= 2.0 {
+                                    tl!("Medium")
+                                } else {
+                                    tl!("Thick")
+                                }
+                            };
+                            egui::ComboBox::from_id_salt("field-width")
+                                .selected_text(thick(l.width))
+                                .show_ui(ui, |ui| {
+                                    for (w, label) in [
+                                        (1.0, tl!("Thin")),
+                                        (2.0, tl!("Medium")),
+                                        (3.0, tl!("Thick")),
+                                    ] {
+                                        ui.selectable_value(&mut l.width, w, label);
+                                    }
+                                });
+                            ui.end_row();
+                            ui.label(tl!("Line Style:"));
+                            egui::ComboBox::from_id_salt("field-style")
+                                .selected_text(tl!(l.style.label()))
+                                .show_ui(ui, |ui| {
+                                    for s in BorderStyle::ALL {
+                                        ui.selectable_value(&mut l.style, s, tl!(s.label()));
+                                    }
+                                });
+                            ui.end_row();
+                        });
                 }
             }
             FieldTab::Position => {
-                egui::Grid::new("field-position").num_columns(4).spacing([12.0, 10.0]).show(ui, |ui| {
-                    for (i, label) in [tl!("Left:"), tl!("Bottom:"), tl!("Width:"), tl!("Height:")].into_iter().enumerate() {
-                        ui.label(label);
-                        let range = if i < 2 { -14_400.0..=14_400.0 } else { 4.0..=14_400.0 };
-                        ui.add(egui::DragValue::new(&mut d.position[i]).range(range).speed(0.5).suffix(" pt"));
-                        if i % 2 == 1 {
-                            ui.end_row();
+                egui::Grid::new("field-position")
+                    .num_columns(4)
+                    .spacing([12.0, 10.0])
+                    .show(ui, |ui| {
+                        for (i, label) in
+                            [tl!("Left:"), tl!("Bottom:"), tl!("Width:"), tl!("Height:")]
+                                .into_iter()
+                                .enumerate()
+                        {
+                            ui.label(label);
+                            let range = if i < 2 {
+                                -14_400.0..=14_400.0
+                            } else {
+                                4.0..=14_400.0
+                            };
+                            ui.add(
+                                egui::DragValue::new(&mut d.position[i])
+                                    .range(range)
+                                    .speed(0.5)
+                                    .suffix(" pt"),
+                            );
+                            if i % 2 == 1 {
+                                ui.end_row();
+                            }
                         }
-                    }
-                });
-                ui.label(egui::RichText::new(tl!("Points from the page's bottom-left corner.")).small().color(t.text_faint));
+                    });
+                ui.label(
+                    egui::RichText::new(tl!("Points from the page's bottom-left corner."))
+                        .small()
+                        .color(t.text_faint),
+                );
                 ui.add_space(8.0);
                 ui.horizontal(|ui| {
                     let l = ui.label(tl!("Rotation:"));
@@ -1061,7 +1441,11 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                         .selected_text(format!("{}°", d.rotation))
                         .show_ui(ui, |ui| {
                             for r in [0, 90, 180, 270] {
-                                if ui.selectable_value(&mut d.rotation, r, format!("{r}°")).changed() && (before % 180 == 0) != (r % 180 == 0) {
+                                if ui
+                                    .selectable_value(&mut d.rotation, r, format!("{r}°"))
+                                    .changed()
+                                    && (before % 180 == 0) != (r % 180 == 0)
+                                {
                                     // Keep the same center. set_props skips its own swap when the rect changed too.
                                     let [x, y, w, h] = d.position;
                                     let (cx, cy) = (x + w / 2.0, y + h / 2.0);
@@ -1080,32 +1464,67 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
             FieldTab::Options => match d.kind {
                 FormFieldKind::Text => {
                     use pdfcraft_engine::field_flags as ff;
-                    egui::Grid::new("text-options").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-                        ui.label(tl!("Alignment:"));
-                        egui::ComboBox::from_id_salt("quadding")
-                            .selected_text(tl!(["Left", "Center", "Right"][d.quadding.clamp(0, 2) as usize]))
-                            .show_ui(ui, |ui| {
-                                for (q, l) in [(0, tl!("Left")), (1, tl!("Center")), (2, tl!("Right"))] {
-                                    ui.selectable_value(&mut d.quadding, q, l);
-                                }
-                            });
-                        ui.end_row();
-                        let l = ui.label(tl!("Default Value:"));
-                        ui.add(crate::widgets::line(&mut d.default).desired_width(260.0)).labelled_by(l.id);
-                        ui.end_row();
-                    });
+                    egui::Grid::new("text-options")
+                        .num_columns(2)
+                        .spacing([12.0, 8.0])
+                        .show(ui, |ui| {
+                            ui.label(tl!("Alignment:"));
+                            egui::ComboBox::from_id_salt("quadding")
+                                .selected_text(tl!(
+                                    ["Left", "Center", "Right"][d.quadding.clamp(0, 2) as usize]
+                                ))
+                                .show_ui(ui, |ui| {
+                                    for (q, l) in
+                                        [(0, tl!("Left")), (1, tl!("Center")), (2, tl!("Right"))]
+                                    {
+                                        ui.selectable_value(&mut d.quadding, q, l);
+                                    }
+                                });
+                            ui.end_row();
+                            let l = ui.label(tl!("Default Value:"));
+                            ui.add(crate::widgets::line(&mut d.default).desired_width(260.0))
+                                .labelled_by(l.id);
+                            ui.end_row();
+                        });
                     ui.add_space(6.0);
                     ui.add(widgets::checkbox(&mut d.multiline, tl!("Multi-line")));
-                    flag_box(ui, &mut d.flags, ff::DO_NOT_SCROLL, true, tl!("Scroll long text"));
-                    flag_box(ui, &mut d.flags, ff::RICH_TEXT, false, tl!("Allow Rich Text Formatting"));
+                    flag_box(
+                        ui,
+                        &mut d.flags,
+                        ff::DO_NOT_SCROLL,
+                        true,
+                        tl!("Scroll long text"),
+                    );
+                    flag_box(
+                        ui,
+                        &mut d.flags,
+                        ff::RICH_TEXT,
+                        false,
+                        tl!("Allow Rich Text Formatting"),
+                    );
                     ui.horizontal(|ui| {
                         ui.add(widgets::checkbox(&mut d.limit, tl!("Limit of")));
-                        ui.add_enabled(d.limit, egui::DragValue::new(&mut d.max_len).range(0..=10_000));
+                        ui.add_enabled(
+                            d.limit,
+                            egui::DragValue::new(&mut d.max_len).range(0..=10_000),
+                        );
                         ui.label(tl!("characters"));
                     });
                     flag_box(ui, &mut d.flags, ff::PASSWORD, false, tl!("Password"));
-                    flag_box(ui, &mut d.flags, ff::FILE_SELECT, false, tl!("Field is used for file selection"));
-                    flag_box(ui, &mut d.flags, ff::DO_NOT_SPELL_CHECK, true, tl!("Check spelling"));
+                    flag_box(
+                        ui,
+                        &mut d.flags,
+                        ff::FILE_SELECT,
+                        false,
+                        tl!("Field is used for file selection"),
+                    );
+                    flag_box(
+                        ui,
+                        &mut d.flags,
+                        ff::DO_NOT_SPELL_CHECK,
+                        true,
+                        tl!("Check spelling"),
+                    );
                     ui.horizontal(|ui| {
                         flag_box(ui, &mut d.flags, ff::COMB, false, tl!("Comb of"));
                         if d.flags & ff::COMB != 0 {
@@ -1116,7 +1535,10 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                                 d.max_len = 10;
                             }
                         }
-                        ui.add_enabled(d.flags & ff::COMB != 0, egui::DragValue::new(&mut d.max_len).range(1..=500));
+                        ui.add_enabled(
+                            d.flags & ff::COMB != 0,
+                            egui::DragValue::new(&mut d.max_len).range(1..=500),
+                        );
                         ui.label(tl!("characters"));
                     });
                 }
@@ -1125,14 +1547,21 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                     let on = d.on_state.clone();
                     ui.label(crate::i18n::fmt(tl!("Export Value: {on}"), &[("on", &on)]));
                     let mut checked = !d.default.is_empty() && d.default == on;
-                    let label =
-                        if d.kind == FormFieldKind::CheckBox { tl!("Check box is checked by default") } else { tl!("Button is checked by default") };
+                    let label = if d.kind == FormFieldKind::CheckBox {
+                        tl!("Check box is checked by default")
+                    } else {
+                        tl!("Button is checked by default")
+                    };
                     if ui.add(widgets::checkbox(&mut checked, label)).changed() {
                         d.default = if checked { on } else { String::new() };
                     }
                     if let Some(style) = d.check_style.as_mut() {
                         ui.horizontal(|ui| {
-                            let l = ui.label(tl!(if d.kind == FormFieldKind::CheckBox { "Check Box Style:" } else { "Button Style:" }));
+                            let l = ui.label(tl!(if d.kind == FormFieldKind::CheckBox {
+                                "Check Box Style:"
+                            } else {
+                                "Button Style:"
+                            }));
                             egui::ComboBox::from_id_salt("check-style")
                                 .selected_text(tl!(style.label()))
                                 .show_ui(ui, |ui| {
@@ -1145,15 +1574,25 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                         });
                     }
                     if d.kind == FormFieldKind::Radio {
-                        flag_box(ui, &mut d.flags, ff::RADIOS_IN_UNISON, false, tl!("Buttons with the same name and value are selected in unison"));
+                        flag_box(
+                            ui,
+                            &mut d.flags,
+                            ff::RADIOS_IN_UNISON,
+                            false,
+                            tl!("Buttons with the same name and value are selected in unison"),
+                        );
                     }
                 }
                 _ => {
                     ui.horizontal(|ui| {
                         let l = ui.label(tl!("Item:"));
-                        let r = ui.add(crate::widgets::line(&mut d.new_option).desired_width(240.0)).labelled_by(l.id);
+                        let r = ui
+                            .add(crate::widgets::line(&mut d.new_option).desired_width(240.0))
+                            .labelled_by(l.id);
                         let typed = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
-                        if (widgets::pill_button(ui, tl!("Add"), false).clicked() || typed) && !d.new_option.trim().is_empty() {
+                        if (widgets::pill_button(ui, tl!("Add"), false).clicked() || typed)
+                            && !d.new_option.trim().is_empty()
+                        {
                             d.options.push(d.new_option.trim().to_string());
                             d.new_option.clear();
                         }
@@ -1162,21 +1601,33 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                     widgets::section_title(ui, tl!("Item List"));
                     let mut remove = None;
                     let mut up = None;
-                    egui::ScrollArea::vertical().max_height(140.0).show(ui, |ui| {
-                        for (i, o) in d.options.iter().enumerate() {
-                            ui.horizontal(|ui| {
-                                ui.label(o);
-                                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                                    if ui.small_button(tl!("Delete")).on_hover_text(crate::i18n::fmt(tl!("Delete {o}"), &[("o", o)])).clicked() {
-                                        remove = Some(i);
-                                    }
-                                    if i > 0 && ui.small_button(tl!("Up")).clicked() {
-                                        up = Some(i);
-                                    }
+                    egui::ScrollArea::vertical()
+                        .max_height(140.0)
+                        .show(ui, |ui| {
+                            for (i, o) in d.options.iter().enumerate() {
+                                ui.horizontal(|ui| {
+                                    ui.label(o);
+                                    ui.with_layout(
+                                        egui::Layout::right_to_left(egui::Align::Center),
+                                        |ui| {
+                                            if ui
+                                                .small_button(tl!("Delete"))
+                                                .on_hover_text(crate::i18n::fmt(
+                                                    tl!("Delete {o}"),
+                                                    &[("o", o)],
+                                                ))
+                                                .clicked()
+                                            {
+                                                remove = Some(i);
+                                            }
+                                            if i > 0 && ui.small_button(tl!("Up")).clicked() {
+                                                up = Some(i);
+                                            }
+                                        },
+                                    );
                                 });
-                            });
-                        }
-                    });
+                            }
+                        });
                     if let Some(i) = remove {
                         d.options.remove(i);
                     }
@@ -1184,28 +1635,61 @@ pub(crate) fn body(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Toke
                         d.options.swap(i - 1, i);
                     }
                     if d.options.is_empty() {
-                        ui.label(egui::RichText::new(tl!("Add the choices people pick from.")).color(t.text_muted));
+                        ui.label(
+                            egui::RichText::new(tl!("Add the choices people pick from."))
+                                .color(t.text_muted),
+                        );
                     }
                     use pdfcraft_engine::field_flags as ff;
                     ui.add_space(6.0);
                     ui.horizontal(|ui| {
                         ui.label(tl!("Default:"));
-                        let shown = if d.default.is_empty() { tl!("(none)").to_string() } else { d.default.clone() };
-                        egui::ComboBox::from_id_salt("choice-default").selected_text(shown).show_ui(ui, |ui| {
-                            ui.selectable_value(&mut d.default, String::new(), tl!("(none)"));
-                            for o in d.options.clone() {
-                                ui.selectable_value(&mut d.default, o.clone(), o);
-                            }
-                        });
+                        let shown = if d.default.is_empty() {
+                            tl!("(none)").to_string()
+                        } else {
+                            d.default.clone()
+                        };
+                        egui::ComboBox::from_id_salt("choice-default")
+                            .selected_text(shown)
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(&mut d.default, String::new(), tl!("(none)"));
+                                for o in d.options.clone() {
+                                    ui.selectable_value(&mut d.default, o.clone(), o);
+                                }
+                            });
                     });
                     flag_box(ui, &mut d.flags, ff::SORT, false, tl!("Sort items"));
                     if d.kind == FormFieldKind::Combo {
-                        flag_box(ui, &mut d.flags, ff::EDIT, false, tl!("Allow user to enter custom text"));
-                        flag_box(ui, &mut d.flags, ff::DO_NOT_SPELL_CHECK, true, tl!("Check spelling"));
+                        flag_box(
+                            ui,
+                            &mut d.flags,
+                            ff::EDIT,
+                            false,
+                            tl!("Allow user to enter custom text"),
+                        );
+                        flag_box(
+                            ui,
+                            &mut d.flags,
+                            ff::DO_NOT_SPELL_CHECK,
+                            true,
+                            tl!("Check spelling"),
+                        );
                     } else {
-                        flag_box(ui, &mut d.flags, ff::MULTI_SELECT, false, tl!("Multiple selection"));
+                        flag_box(
+                            ui,
+                            &mut d.flags,
+                            ff::MULTI_SELECT,
+                            false,
+                            tl!("Multiple selection"),
+                        );
                     }
-                    flag_box(ui, &mut d.flags, ff::COMMIT_ON_SEL_CHANGE, false, tl!("Commit selected value immediately"));
+                    flag_box(
+                        ui,
+                        &mut d.flags,
+                        ff::COMMIT_ON_SEL_CHANGE,
+                        false,
+                        tl!("Commit selected value immediately"),
+                    );
                 }
             },
         }
@@ -1248,8 +1732,19 @@ fn category(f: &Format) -> Category {
 }
 
 const SEPARATORS: [&str; 5] = ["1,234.56", "1234.56", "1.234,56", "1234,56", "1'234.56"];
-const NEGATIVES: [&str; 4] = ["-1,234.01", "1,234.01 (red)", "(1,234.01)", "(1,234.01) (red)"];
-const SPECIALS: [&str; 5] = ["Zip Code", "Zip Code + 4", "Phone Number", "Social Security Number", "Arbitrary Mask"];
+const NEGATIVES: [&str; 4] = [
+    "-1,234.01",
+    "1,234.01 (red)",
+    "(1,234.01)",
+    "(1,234.01) (red)",
+];
+const SPECIALS: [&str; 5] = [
+    "Zip Code",
+    "Zip Code + 4",
+    "Phone Number",
+    "Social Security Number",
+    "Arbitrary Mask",
+];
 
 fn format_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
     let cat = category(&d.format);
@@ -1281,8 +1776,17 @@ fn format_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
     if picked != cat {
         d.format = match picked {
             Category::None => Format::None,
-            Category::Number => Format::Number { decimals: 2, sep: 0, neg: 0, currency: String::new(), prepend: true },
-            Category::Percent => Format::Percent { decimals: 2, sep: 0 },
+            Category::Number => Format::Number {
+                decimals: 2,
+                sep: 0,
+                neg: 0,
+                currency: String::new(),
+                prepend: true,
+            },
+            Category::Percent => Format::Percent {
+                decimals: 2,
+                sep: 0,
+            },
             Category::Date => Format::Date("mm/dd/yyyy".into()),
             Category::Time => Format::Time("HH:MM".into()),
             Category::Special => Format::Special(0),
@@ -1302,78 +1806,113 @@ fn format_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
         Format::None => {
             ui.label(egui::RichText::new(tl!("The value is shown as typed.")).color(t.text_muted));
         }
-        Format::Number { decimals, sep, neg, currency, prepend } => {
-            egui::Grid::new("fmt-number").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-                ui.label(tl!("Decimal places:"));
-                ui.add(egui::DragValue::new(decimals).range(0..=10));
-                ui.end_row();
-                ui.label(tl!("Separator style:"));
-                egui::ComboBox::from_id_salt("fmt-sep").selected_text(SEPARATORS[(*sep).min(4) as usize]).show_ui(ui, |ui| {
-                    for (i, s) in SEPARATORS.iter().enumerate() {
-                        ui.selectable_value(sep, i as u8, *s);
-                    }
-                });
-                ui.end_row();
-                ui.label(tl!("Currency symbol:"));
-                ui.horizontal(|ui| {
-                    egui::ComboBox::from_id_salt("fmt-cur")
-                        .selected_text(if currency.is_empty() { tl!("None") } else { currency.as_str() })
-                        .width(70.0)
+        Format::Number {
+            decimals,
+            sep,
+            neg,
+            currency,
+            prepend,
+        } => {
+            egui::Grid::new("fmt-number")
+                .num_columns(2)
+                .spacing([12.0, 8.0])
+                .show(ui, |ui| {
+                    ui.label(tl!("Decimal places:"));
+                    ui.add(egui::DragValue::new(decimals).range(0..=10));
+                    ui.end_row();
+                    ui.label(tl!("Separator style:"));
+                    egui::ComboBox::from_id_salt("fmt-sep")
+                        .selected_text(SEPARATORS[(*sep).min(4) as usize])
                         .show_ui(ui, |ui| {
-                            for c in ["", "$", "€", "£", "¥", "CHF "] {
-                                ui.selectable_value(currency, c.to_string(), if c.is_empty() { tl!("None") } else { c });
+                            for (i, s) in SEPARATORS.iter().enumerate() {
+                                ui.selectable_value(sep, i as u8, *s);
                             }
                         });
-                    ui.add(widgets::checkbox(prepend, tl!("Before the number")));
+                    ui.end_row();
+                    ui.label(tl!("Currency symbol:"));
+                    ui.horizontal(|ui| {
+                        egui::ComboBox::from_id_salt("fmt-cur")
+                            .selected_text(if currency.is_empty() {
+                                tl!("None")
+                            } else {
+                                currency.as_str()
+                            })
+                            .width(70.0)
+                            .show_ui(ui, |ui| {
+                                for c in ["", "$", "€", "£", "¥", "CHF "] {
+                                    ui.selectable_value(
+                                        currency,
+                                        c.to_string(),
+                                        if c.is_empty() { tl!("None") } else { c },
+                                    );
+                                }
+                            });
+                        ui.add(widgets::checkbox(prepend, tl!("Before the number")));
+                    });
+                    ui.end_row();
+                    ui.label(tl!("Negative number style:"));
+                    egui::ComboBox::from_id_salt("fmt-neg")
+                        .selected_text(NEGATIVES[(*neg).min(3) as usize])
+                        .show_ui(ui, |ui| {
+                            for (i, s) in NEGATIVES.iter().enumerate() {
+                                ui.selectable_value(neg, i as u8, *s);
+                            }
+                        });
+                    ui.end_row();
                 });
-                ui.end_row();
-                ui.label(tl!("Negative number style:"));
-                egui::ComboBox::from_id_salt("fmt-neg").selected_text(NEGATIVES[(*neg).min(3) as usize]).show_ui(ui, |ui| {
-                    for (i, s) in NEGATIVES.iter().enumerate() {
-                        ui.selectable_value(neg, i as u8, *s);
-                    }
-                });
-                ui.end_row();
-            });
         }
         Format::Percent { decimals, sep } => {
-            egui::Grid::new("fmt-pct").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-                ui.label(tl!("Decimal places:"));
-                ui.add(egui::DragValue::new(decimals).range(0..=10));
-                ui.end_row();
-                ui.label(tl!("Separator style:"));
-                egui::ComboBox::from_id_salt("fmt-psep").selected_text(SEPARATORS[(*sep).min(4) as usize]).show_ui(ui, |ui| {
-                    for (i, s) in SEPARATORS.iter().enumerate() {
-                        ui.selectable_value(sep, i as u8, *s);
-                    }
+            egui::Grid::new("fmt-pct")
+                .num_columns(2)
+                .spacing([12.0, 8.0])
+                .show(ui, |ui| {
+                    ui.label(tl!("Decimal places:"));
+                    ui.add(egui::DragValue::new(decimals).range(0..=10));
+                    ui.end_row();
+                    ui.label(tl!("Separator style:"));
+                    egui::ComboBox::from_id_salt("fmt-psep")
+                        .selected_text(SEPARATORS[(*sep).min(4) as usize])
+                        .show_ui(ui, |ui| {
+                            for (i, s) in SEPARATORS.iter().enumerate() {
+                                ui.selectable_value(sep, i as u8, *s);
+                            }
+                        });
+                    ui.end_row();
                 });
-                ui.end_row();
-            });
         }
         Format::Date(p) | Format::Time(p) => {
             let presets: Vec<&str> = if matches!(cat, Category::Time) || picked == Category::Time {
                 TIME_PRESETS.to_vec()
             } else {
-                DATE_PRESETS.iter().copied().chain(["m/d/yyyy", "mm/dd/yyyy", "yyyy-mm-dd", "dd/mm/yyyy"]).collect()
+                DATE_PRESETS
+                    .iter()
+                    .copied()
+                    .chain(["m/d/yyyy", "mm/dd/yyyy", "yyyy-mm-dd", "dd/mm/yyyy"])
+                    .collect()
             };
             ui.horizontal(|ui| {
                 ui.label(tl!("Format:"));
-                egui::ComboBox::from_id_salt("fmt-date").selected_text(p.as_str()).width(170.0).show_ui(ui, |ui| {
-                    for pr in presets {
-                        ui.selectable_value(p, pr.to_string(), pr);
-                    }
-                });
+                egui::ComboBox::from_id_salt("fmt-date")
+                    .selected_text(p.as_str())
+                    .width(170.0)
+                    .show_ui(ui, |ui| {
+                        for pr in presets {
+                            ui.selectable_value(p, pr.to_string(), pr);
+                        }
+                    });
                 ui.label(tl!("Custom:"));
                 ui.add(crate::widgets::line(p).desired_width(120.0));
             });
         }
         Format::Special(n) => {
             let mut idx = *n as usize;
-            egui::ComboBox::from_id_salt("fmt-special").selected_text(tl!(SPECIALS[idx.min(4)])).show_ui(ui, |ui| {
-                for (i, s) in SPECIALS.iter().enumerate() {
-                    ui.selectable_value(&mut idx, i, tl!(s));
-                }
-            });
+            egui::ComboBox::from_id_salt("fmt-special")
+                .selected_text(tl!(SPECIALS[idx.min(4)]))
+                .show_ui(ui, |ui| {
+                    for (i, s) in SPECIALS.iter().enumerate() {
+                        ui.selectable_value(&mut idx, i, tl!(s));
+                    }
+                });
             if idx == 4 {
                 d.format = Format::Mask("999-999".into());
             } else {
@@ -1382,16 +1921,22 @@ fn format_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
         }
         Format::Mask(m) => {
             let mut idx = 4usize;
-            egui::ComboBox::from_id_salt("fmt-special").selected_text(tl!(SPECIALS[4])).show_ui(ui, |ui| {
-                for (i, s) in SPECIALS.iter().enumerate() {
-                    ui.selectable_value(&mut idx, i, tl!(s));
-                }
-            });
+            egui::ComboBox::from_id_salt("fmt-special")
+                .selected_text(tl!(SPECIALS[4]))
+                .show_ui(ui, |ui| {
+                    for (i, s) in SPECIALS.iter().enumerate() {
+                        ui.selectable_value(&mut idx, i, tl!(s));
+                    }
+                });
             ui.horizontal(|ui| {
                 ui.label(tl!("Mask:"));
                 ui.add(crate::widgets::line(m).desired_width(160.0));
             });
-            ui.label(egui::RichText::new(tl!("9 digit, A letter, O letter or digit, X any character")).small().color(t.text_faint));
+            ui.label(
+                egui::RichText::new(tl!("9 digit, A letter, O letter or digit, X any character"))
+                    .small()
+                    .color(t.text_faint),
+            );
             if idx < 4 {
                 d.format = Format::Special(idx as u8);
             }
@@ -1400,7 +1945,11 @@ fn format_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
     if !sample.is_empty() && d.format != Format::None {
         ui.add_space(6.0);
         ui.label(
-            egui::RichText::new(crate::i18n::fmt(tl!("Example: {sample}"), &[("sample", &format_value(&d.format, sample))])).color(t.text_muted),
+            egui::RichText::new(crate::i18n::fmt(
+                tl!("Example: {sample}"),
+                &[("sample", &format_value(&d.format, sample))],
+            ))
+            .color(t.text_muted),
         );
     }
 }
@@ -1414,7 +1963,10 @@ fn validate_tab(ui: &mut egui::Ui, d: &mut FieldDraft) {
         return;
     }
     if d.validate == Validate::None {
-        d.validate = Validate::Range { min: Some(0.0), max: Some(100.0) };
+        d.validate = Validate::Range {
+            min: Some(0.0),
+            max: Some(100.0),
+        };
     }
     if let Validate::Range { min, max } = &mut d.validate {
         ui.horizontal(|ui| {
@@ -1436,38 +1988,63 @@ fn actions_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) 
     use pdfcraft_engine::FieldTrigger as T;
     ui.label(egui::RichText::new(tl!("Add an Action")).font(theme::semibold(13.0)));
     let a = &mut d.new_action;
-    egui::Grid::new("field-actions-add").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-        ui.label(tl!("Select Trigger:"));
-        egui::ComboBox::from_id_salt("action-trigger").selected_text(tl!(a.trigger.label())).width(220.0).show_ui(ui, |ui| {
-            for tr in T::ALL {
-                ui.selectable_value(&mut a.trigger, tr, tl!(tr.label()));
+    egui::Grid::new("field-actions-add")
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(ui, |ui| {
+            ui.label(tl!("Select Trigger:"));
+            egui::ComboBox::from_id_salt("action-trigger")
+                .selected_text(tl!(a.trigger.label()))
+                .width(220.0)
+                .show_ui(ui, |ui| {
+                    for tr in T::ALL {
+                        ui.selectable_value(&mut a.trigger, tr, tl!(tr.label()));
+                    }
+                });
+            ui.end_row();
+            ui.label(tl!("Select Action:"));
+            egui::ComboBox::from_id_salt("action-kind")
+                .selected_text(tl!(ACTION_KINDS[a.kind]))
+                .width(220.0)
+                .show_ui(ui, |ui| {
+                    for (i, k) in ACTION_KINDS.iter().enumerate() {
+                        ui.selectable_value(&mut a.kind, i, tl!(k));
+                    }
+                });
+            ui.end_row();
+            let hint = match a.kind {
+                0 => "JavaScript",
+                1 => "https://…",
+                2 => tl!("Fields to reset (comma-separated; empty: all)"),
+                3 => tl!("Print, NextPage, PrevPage, FirstPage or LastPage"),
+                4 => tl!("Page number"),
+                5 | 6 => tl!("Field names (comma-separated)"),
+                _ => tl!("URL to submit to"),
+            };
+            ui.label(if a.kind == 0 {
+                tl!("Script:")
+            } else {
+                tl!("Value:")
+            });
+            if a.kind == 0 {
+                ui.add(
+                    crate::widgets::block(&mut a.text)
+                        .code_editor()
+                        .desired_rows(3)
+                        .desired_width(340.0)
+                        .hint_text(hint)
+                        .id_salt("action-text"),
+                );
+            } else {
+                ui.add(
+                    crate::widgets::line(&mut a.text)
+                        .desired_width(340.0)
+                        .hint_text(hint)
+                        .id_salt("action-text"),
+                );
             }
+            ui.end_row();
         });
-        ui.end_row();
-        ui.label(tl!("Select Action:"));
-        egui::ComboBox::from_id_salt("action-kind").selected_text(tl!(ACTION_KINDS[a.kind])).width(220.0).show_ui(ui, |ui| {
-            for (i, k) in ACTION_KINDS.iter().enumerate() {
-                ui.selectable_value(&mut a.kind, i, tl!(k));
-            }
-        });
-        ui.end_row();
-        let hint = match a.kind {
-            0 => "JavaScript",
-            1 => "https://…",
-            2 => tl!("Fields to reset (comma-separated; empty: all)"),
-            3 => tl!("Print, NextPage, PrevPage, FirstPage or LastPage"),
-            4 => tl!("Page number"),
-            5 | 6 => tl!("Field names (comma-separated)"),
-            _ => tl!("URL to submit to"),
-        };
-        ui.label(if a.kind == 0 { tl!("Script:") } else { tl!("Value:") });
-        if a.kind == 0 {
-            ui.add(crate::widgets::block(&mut a.text).code_editor().desired_rows(3).desired_width(340.0).hint_text(hint).id_salt("action-text"));
-        } else {
-            ui.add(crate::widgets::line(&mut a.text).desired_width(340.0).hint_text(hint).id_salt("action-text"));
-        }
-        ui.end_row();
-    });
     let mut error = None;
     if ui.button(tl!("Add")).clicked() {
         match d.new_action.action() {
@@ -1475,7 +2052,8 @@ fn actions_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) 
                 let tr = d.new_action.trigger;
                 d.actions.retain(|(x, _)| *x != tr);
                 d.actions.push((tr, act));
-                d.actions.sort_by_key(|(x, _)| T::ALL.iter().position(|y| y == x));
+                d.actions
+                    .sort_by_key(|(x, _)| T::ALL.iter().position(|y| y == x));
                 d.new_action.text.clear();
             }
             Err(e) => error = Some(e),
@@ -1486,27 +2064,31 @@ fn actions_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) 
     }
     ui.add_space(8.0);
     ui.label(egui::RichText::new(tl!("Actions")).font(theme::semibold(13.0)));
-    egui::Frame::new().fill(t.hover).corner_radius(egui::CornerRadius::same(6)).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
-        ui.set_width(ui.available_width());
-        if d.actions.is_empty() {
-            ui.label(egui::RichText::new(tl!("No actions")).color(t.text_muted));
-        }
-        let mut remove = None;
-        for (i, (tr, act)) in d.actions.iter().enumerate() {
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(tl!(tr.label())).strong());
-                ui.label(act.describe());
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    if ui.push_id(i, |ui| ui.button(tl!("Delete"))).inner.clicked() {
-                        remove = Some(i);
-                    }
+    egui::Frame::new()
+        .fill(t.hover)
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(egui::Margin::same(8))
+        .show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            if d.actions.is_empty() {
+                ui.label(egui::RichText::new(tl!("No actions")).color(t.text_muted));
+            }
+            let mut remove = None;
+            for (i, (tr, act)) in d.actions.iter().enumerate() {
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new(tl!(tr.label())).strong());
+                    ui.label(act.describe());
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.push_id(i, |ui| ui.button(tl!("Delete"))).inner.clicked() {
+                            remove = Some(i);
+                        }
+                    });
                 });
-            });
-        }
-        if let Some(i) = remove {
-            d.actions.remove(i);
-        }
-    });
+            }
+            if let Some(i) = remove {
+                d.actions.remove(i);
+            }
+        });
 }
 
 fn calculate_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens) {
@@ -1527,44 +2109,68 @@ fn calculate_tab(ui: &mut egui::Ui, d: &mut FieldDraft, t: &crate::theme::Tokens
     if m != mode {
         d.calculate = match m {
             Mode::None => Calculate::None,
-            Mode::Simple => Calculate::Simple { op: CalcOp::Sum, fields: Vec::new() },
+            Mode::Simple => Calculate::Simple {
+                op: CalcOp::Sum,
+                fields: Vec::new(),
+            },
             Mode::Notation => Calculate::Notation(String::new()),
         };
     }
     if let Calculate::Simple { op, fields } = &mut d.calculate {
         ui.horizontal(|ui| {
             ui.add_space(24.0);
-            egui::ComboBox::from_id_salt("calc-op").selected_text(tl!(op.label())).show_ui(ui, |ui| {
-                for o in CalcOp::ALL {
-                    ui.selectable_value(op, o, tl!(o.label()));
-                }
-            });
+            egui::ComboBox::from_id_salt("calc-op")
+                .selected_text(tl!(op.label()))
+                .show_ui(ui, |ui| {
+                    for o in CalcOp::ALL {
+                        ui.selectable_value(op, o, tl!(o.label()));
+                    }
+                });
             ui.label(tl!("of the following fields:"));
         });
-        egui::ScrollArea::vertical().max_height(110.0).show(ui, |ui| {
-            for name in &d.others {
-                let mut on = fields.contains(name);
-                if ui.add(widgets::checkbox(&mut on, name)).changed() {
-                    if on {
-                        fields.push(name.clone());
-                    } else {
-                        fields.retain(|f| f != name);
+        egui::ScrollArea::vertical()
+            .max_height(110.0)
+            .show(ui, |ui| {
+                for name in &d.others {
+                    let mut on = fields.contains(name);
+                    if ui.add(widgets::checkbox(&mut on, name)).changed() {
+                        if on {
+                            fields.push(name.clone());
+                        } else {
+                            fields.retain(|f| f != name);
+                        }
                     }
                 }
-            }
-        });
+            });
     }
     let mut m2 = match d.calculate {
         Calculate::Notation(_) => Mode::Notation,
         _ => m,
     };
-    if widgets::radio_value(ui, &mut m2, Mode::Notation, tl!("Simplified field notation:")).clicked()
+    if widgets::radio_value(
+        ui,
+        &mut m2,
+        Mode::Notation,
+        tl!("Simplified field notation:"),
+    )
+    .clicked()
         && !matches!(d.calculate, Calculate::Notation(_))
     {
         d.calculate = Calculate::Notation(String::new());
     }
     if let Calculate::Notation(expr) = &mut d.calculate {
-        ui.add(crate::widgets::block(expr).hint_text("Price * Quantity").desired_rows(2).desired_width(420.0));
-        ui.label(egui::RichText::new(tl!("Field names with + - * / and parentheses; put \\ before spaces in names.")).small().color(t.text_faint));
+        ui.add(
+            crate::widgets::block(expr)
+                .hint_text("Price * Quantity")
+                .desired_rows(2)
+                .desired_width(420.0),
+        );
+        ui.label(
+            egui::RichText::new(tl!(
+                "Field names with + - * / and parentheses; put \\ before spaces in names."
+            ))
+            .small()
+            .color(t.text_faint),
+        );
     }
 }

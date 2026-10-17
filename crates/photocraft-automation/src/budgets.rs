@@ -25,14 +25,24 @@ fn bad(message: impl Into<String>) -> AutomationError {
 /// Check before the compositor runs. Oversized requests fail rather than silently downscale.
 pub fn check_preview(width: u32, height: u32, max_side: u32) -> Result<(), AutomationError> {
     if width == 0 || height == 0 {
-        return Err(bad("automation preview requires nonzero document dimensions"));
+        return Err(bad(
+            "automation preview requires nonzero document dimensions",
+        ));
     }
     if u64::from(width) * u64::from(height) > MAX_RENDER_SOURCE_PIXELS {
-        return Err(bad(format!("automation preview source exceeds {MAX_RENDER_SOURCE_PIXELS} pixels")));
+        return Err(bad(format!(
+            "automation preview source exceeds {MAX_RENDER_SOURCE_PIXELS} pixels"
+        )));
     }
-    let side = if max_side == 0 { width.max(height) } else { max_side };
+    let side = if max_side == 0 {
+        width.max(height)
+    } else {
+        max_side
+    };
     if side > MAX_PREVIEW_SIDE {
-        return Err(bad(format!("automation preview side exceeds {MAX_PREVIEW_SIDE} pixels")));
+        return Err(bad(format!(
+            "automation preview side exceeds {MAX_PREVIEW_SIDE} pixels"
+        )));
     }
     Ok(())
 }
@@ -53,9 +63,14 @@ struct LimitedWriter {
 impl Write for LimitedWriter {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         if buf.len() > self.maximum.saturating_sub(self.bytes.len()) {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, format!("response exceeds {} bytes", self.maximum)));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("response exceeds {} bytes", self.maximum),
+            ));
         }
-        self.bytes.try_reserve(buf.len()).map_err(|error| io::Error::other(format!("response allocation failed: {error}")))?;
+        self.bytes
+            .try_reserve(buf.len())
+            .map_err(|error| io::Error::other(format!("response allocation failed: {error}")))?;
         self.bytes.extend_from_slice(buf);
         Ok(buf.len())
     }
@@ -71,8 +86,12 @@ pub fn json_bytes(value: &impl Serialize) -> Result<Vec<u8>, AutomationError> {
 }
 
 fn encode_with_limit(value: &impl Serialize, maximum: usize) -> Result<Vec<u8>, AutomationError> {
-    let mut writer = LimitedWriter { bytes: Vec::new(), maximum };
-    serde_json::to_writer(&mut writer, value).map_err(|error| bad(format!("response encoding failed: {error}")))?;
+    let mut writer = LimitedWriter {
+        bytes: Vec::new(),
+        maximum,
+    };
+    serde_json::to_writer(&mut writer, value)
+        .map_err(|error| bad(format!("response encoding failed: {error}")))?;
     Ok(writer.bytes)
 }
 
@@ -91,7 +110,9 @@ pub fn write_reply(out: &mut impl Write, reply: &Value) -> io::Result<()> {
             // callers that construct a reply directly instead of using a transport.
             match json_bytes(&error) {
                 Ok(bytes) => bytes,
-                Err(_) => b"{\"id\":null,\"ok\":false,\"error\":\"response budget exceeded\"}".to_vec(),
+                Err(_) => {
+                    b"{\"id\":null,\"ok\":false,\"error\":\"response budget exceeded\"}".to_vec()
+                }
             }
         }
     };
@@ -109,7 +130,10 @@ pub struct BatchReplyBudget {
 
 impl Default for BatchReplyBudget {
     fn default() -> Self {
-        Self { remaining: MAX_RESPONSE_BYTES - MAX_REQUEST_BYTES - 4096, escaped: false }
+        Self {
+            remaining: MAX_RESPONSE_BYTES - MAX_REQUEST_BYTES - 4096,
+            escaped: false,
+        }
     }
 }
 
@@ -118,7 +142,10 @@ impl BatchReplyBudget {
     /// string, which escapes every quote and backslash again, so a batch the plain budget accepts
     /// could exceed the tool-result ceiling and lose every step result.
     pub fn escaped() -> Self {
-        Self { escaped: true, ..Self::default() }
+        Self {
+            escaped: true,
+            ..Self::default()
+        }
     }
 
     /// Must be called before retaining the result or dispatching the next step.
@@ -126,7 +153,11 @@ impl BatchReplyBudget {
         let limit = self.remaining.saturating_sub(1);
         let bytes = encode_with_limit(result, limit)?;
         // Compact JSON has no raw control characters, so only `"` and `\` grow when escaped.
-        let size = if self.escaped { bytes.len() + bytes.iter().filter(|&&b| b == b'"' || b == b'\\').count() } else { bytes.len() };
+        let size = if self.escaped {
+            bytes.len() + bytes.iter().filter(|&&b| b == b'"' || b == b'\\').count()
+        } else {
+            bytes.len()
+        };
         if size > limit {
             return Err(bad(format!("response exceeds {limit} bytes once escaped")));
         }
@@ -171,12 +202,20 @@ mod tests {
         let error: Value = serde_json::from_slice(&out).unwrap();
         assert_eq!(error["id"], 7);
         assert_eq!(error["ok"], false);
-        assert!(error["error"].as_str().unwrap().contains("operation may have completed"));
+        assert!(
+            error["error"]
+                .as_str()
+                .unwrap()
+                .contains("operation may have completed")
+        );
     }
 
     #[test]
     fn batch_cannot_retain_more_than_the_aggregate_reply_budget() {
-        let mut budget = BatchReplyBudget { remaining: 10, escaped: false };
+        let mut budget = BatchReplyBudget {
+            remaining: 10,
+            escaped: false,
+        };
         budget.charge(&json!("abc")).unwrap();
         assert!(budget.charge(&json!("abc")).is_err());
         assert_eq!(budget.remaining, 4);
@@ -186,13 +225,29 @@ mod tests {
     fn escaped_budget_charges_the_size_inside_a_json_string() {
         // `"a\"b"` is 6 bytes plain and 10 once embedded in a string (`\"a\\\"b\"`).
         let value = json!("a\"b");
-        let escaped_len = serde_json::to_string(&Value::String(value.to_string())).unwrap().len() - 2;
+        let escaped_len = serde_json::to_string(&Value::String(value.to_string()))
+            .unwrap()
+            .len()
+            - 2;
         assert_eq!(escaped_len, 10);
-        let mut budget = BatchReplyBudget { remaining: 11, escaped: true };
+        let mut budget = BatchReplyBudget {
+            remaining: 11,
+            escaped: true,
+        };
         budget.charge(&value).unwrap();
         assert_eq!(budget.remaining, 0);
-        let mut budget = BatchReplyBudget { remaining: 10, escaped: true };
+        let mut budget = BatchReplyBudget {
+            remaining: 10,
+            escaped: true,
+        };
         assert!(budget.charge(&value).is_err());
-        assert!(BatchReplyBudget { remaining: 10, escaped: false }.charge(&value).is_ok());
+        assert!(
+            BatchReplyBudget {
+                remaining: 10,
+                escaped: false
+            }
+            .charge(&value)
+            .is_ok()
+        );
     }
 }

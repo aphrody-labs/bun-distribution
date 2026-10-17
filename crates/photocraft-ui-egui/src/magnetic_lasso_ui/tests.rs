@@ -13,8 +13,12 @@ const SQUARE: Rect = Rect::new(50, 40, 130, 110);
 
 /// A black 80×70 square on a white 200×150 document, the Magnetic Lasso, 100 % zoom.
 fn app() -> PhotocraftApp {
-    let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-    app.run("file.new", json!({"width": 200, "height": 150})).unwrap();
+    let mut app = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
+    app.run("file.new", json!({"width": 200, "height": 150}))
+        .unwrap();
     app.sync_views();
     app.session
         .edit("paint", |doc, _| {
@@ -29,7 +33,15 @@ fn app() -> PhotocraftApp {
 }
 
 fn click(app: &mut PhotocraftApp, x: f64, y: f64, m: Modifiers) {
-    tool_event(app, ToolEvent::Down { x, y, pressure: 1.0 }, m);
+    tool_event(
+        app,
+        ToolEvent::Down {
+            x,
+            y,
+            pressure: 1.0,
+        },
+        m,
+    );
     tool_event(app, ToolEvent::Up { x, y }, m);
 }
 
@@ -39,32 +51,73 @@ fn hover_along(app: &mut PhotocraftApp, pts: &[[f64; 2]]) {
         let n = (dist(w[0], w[1]) / 2.0).ceil().max(1.0) as usize;
         for k in 1..=n {
             let t = k as f64 / n as f64;
-            let (x, y) = (w[0][0] + (w[1][0] - w[0][0]) * t, w[0][1] + (w[1][1] - w[0][1]) * t);
-            tool_event(app, ToolEvent::Move { x, y, pressure: 1.0 }, Modifiers::NONE);
+            let (x, y) = (
+                w[0][0] + (w[1][0] - w[0][0]) * t,
+                w[0][1] + (w[1][1] - w[0][1]) * t,
+            );
+            tool_event(
+                app,
+                ToolEvent::Move {
+                    x,
+                    y,
+                    pressure: 1.0,
+                },
+                Modifiers::NONE,
+            );
         }
     }
 }
 
 /// Around the square, 3 px outside its edges, back to just past the start.
-const AROUND: [[f64; 2]; 6] = [[52.0, 37.0], [133.0, 37.0], [133.0, 113.0], [47.0, 113.0], [47.0, 37.0], [52.0, 37.0]];
+const AROUND: [[f64; 2]; 6] = [
+    [52.0, 37.0],
+    [133.0, 37.0],
+    [133.0, 113.0],
+    [47.0, 113.0],
+    [47.0, 37.0],
+    [52.0, 37.0],
+];
 
 fn coverage(app: &PhotocraftApp, x: i32, y: i32) -> f32 {
-    app.session.active().unwrap().doc.selection.as_ref().map_or(0.0, |m| m.sample_channel(x, y, 0))
+    app.session
+        .active()
+        .unwrap()
+        .doc
+        .selection
+        .as_ref()
+        .map_or(0.0, |m| m.sample_channel(x, y, 0))
 }
 
 fn selected_area(app: &PhotocraftApp) -> f32 {
-    (0..150).flat_map(|y| (0..200).map(move |x| (x, y))).map(|(x, y)| coverage(app, x, y)).sum()
+    (0..150)
+        .flat_map(|y| (0..200).map(move |x| (x, y)))
+        .map(|(x, y)| coverage(app, x, y))
+        .sum()
 }
 
 fn last_step(app: &PhotocraftApp) -> Option<String> {
-    app.session.active().unwrap().history.entries().last().cloned()
+    app.session
+        .active()
+        .unwrap()
+        .history
+        .entries()
+        .last()
+        .cloned()
 }
 
 /// Whether `p` lies on the square's outline (within `tol`).
 fn on_square(p: [f64; 2], tol: f64) -> bool {
-    let (x0, y0, x1, y1) = (f64::from(SQUARE.x0), f64::from(SQUARE.y0), f64::from(SQUARE.x1), f64::from(SQUARE.y1));
+    let (x0, y0, x1, y1) = (
+        f64::from(SQUARE.x0),
+        f64::from(SQUARE.y0),
+        f64::from(SQUARE.x1),
+        f64::from(SQUARE.y1),
+    );
     let inside = (x0 - tol..=x1 + tol).contains(&p[0]) && (y0 - tol..=y1 + tol).contains(&p[1]);
-    let near = (p[0] - x0).abs() <= tol || (p[0] - x1).abs() <= tol || (p[1] - y0).abs() <= tol || (p[1] - y1).abs() <= tol;
+    let near = (p[0] - x0).abs() <= tol
+        || (p[0] - x1).abs() <= tol
+        || (p[1] - y0).abs() <= tol
+        || (p[1] - y1).abs() <= tol;
     inside && near
 }
 
@@ -73,8 +126,15 @@ fn tracing_around_a_shape_selects_it() {
     let mut app = app();
     click(&mut app, AROUND[0][0], AROUND[0][1], Modifiers::NONE);
     let m = &app.ui.magnetic;
-    assert!(m.active() && m.anchors == vec![0] && m.mode == "replace", "{m:?}");
-    assert!(on_square(m.path[0], 0.01), "the first point snaps onto the edge: {:?}", m.path[0]);
+    assert!(
+        m.active() && m.anchors == vec![0] && m.mode == "replace",
+        "{m:?}"
+    );
+    assert!(
+        on_square(m.path[0], 0.01),
+        "the first point snaps onto the edge: {:?}",
+        m.path[0]
+    );
     hover_along(&mut app, &AROUND[..5]);
     let m = &app.ui.magnetic;
     // Points fastened by themselves on the way (about every 47 px at Frequency 57).
@@ -89,8 +149,18 @@ fn tracing_around_a_shape_selects_it() {
     click(&mut app, AROUND[5][0], AROUND[5][1], Modifiers::NONE);
     assert!(!app.ui.magnetic.active());
     let area = selected_area(&app);
-    assert!((area - 5600.0).abs() < 120.0, "the square's 80 × 70: {area}");
-    assert_eq!((coverage(&app, 90, 75), coverage(&app, 47, 75), coverage(&app, 90, 113)), (1.0, 0.0, 0.0));
+    assert!(
+        (area - 5600.0).abs() < 120.0,
+        "the square's 80 × 70: {area}"
+    );
+    assert_eq!(
+        (
+            coverage(&app, 90, 75),
+            coverage(&app, 47, 75),
+            coverage(&app, 90, 113)
+        ),
+        (1.0, 0.0, 0.0)
+    );
     assert_eq!(last_step(&app).as_deref(), Some("Magnetic Lasso"));
 }
 
@@ -108,7 +178,10 @@ fn enter_closes_along_the_edges_and_alt_closes_straight() {
     hover_along(&mut app, &[[52.0, 37.0], [133.0, 37.0], [133.0, 108.0]]);
     close(&mut app, true);
     let straight = selected_area(&app);
-    assert!((straight - 2700.0).abs() < 300.0, "half the square: {straight}");
+    assert!(
+        (straight - 2700.0).abs() < 300.0,
+        "half the square: {straight}"
+    );
 }
 
 #[test]
@@ -121,8 +194,15 @@ fn backspace_removes_fastening_points_back_to_the_first() {
     remove_last_point(&mut app);
     let m = &app.ui.magnetic;
     assert_eq!(m.anchors.len(), n - 1);
-    assert_eq!(m.path.len(), m.anchors[n - 2] + 1, "the border ends at the point before");
-    assert!(!m.live.is_empty(), "the live segment runs on to the pointer");
+    assert_eq!(
+        m.path.len(),
+        m.anchors[n - 2] + 1,
+        "the border ends at the point before"
+    );
+    assert!(
+        !m.live.is_empty(),
+        "the live segment runs on to the pointer"
+    );
     // Without moving, ⌫ keeps removing (nothing re-fastens) down to the first point, then cancels.
     for _ in 0..n - 2 {
         remove_last_point(&mut app);
@@ -145,17 +225,43 @@ fn clicks_fasten_and_alt_draws_straight_and_freehand_segments() {
     // ⌥-click: straight to the point, wherever the edges are.
     click(&mut app, 180.0, 140.0, Modifiers::ALT);
     let m = &app.ui.magnetic;
-    assert_eq!((m.path.last(), m.anchors.len(), m.freehand), (Some(&[180.0, 140.0]), anchors + 1, false));
+    assert_eq!(
+        (m.path.last(), m.anchors.len(), m.freehand),
+        (Some(&[180.0, 140.0]), anchors + 1, false)
+    );
     let before = m.path.len();
     assert_eq!(m.path[before - 2], [30.0, 20.0], "one straight segment");
     // ⌥-drag: the pointer's path is the border.
-    tool_event(&mut app, ToolEvent::Down { x: 180.0, y: 140.0, pressure: 1.0 }, Modifiers::ALT);
+    tool_event(
+        &mut app,
+        ToolEvent::Down {
+            x: 180.0,
+            y: 140.0,
+            pressure: 1.0,
+        },
+        Modifiers::ALT,
+    );
     for (x, y) in [(170.0, 142.0), (160.0, 138.0), (150.0, 141.0)] {
-        tool_event(&mut app, ToolEvent::Move { x, y, pressure: 1.0 }, Modifiers::ALT);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x,
+                y,
+                pressure: 1.0,
+            },
+            Modifiers::ALT,
+        );
     }
-    tool_event(&mut app, ToolEvent::Up { x: 150.0, y: 141.0 }, Modifiers::ALT);
+    tool_event(
+        &mut app,
+        ToolEvent::Up { x: 150.0, y: 141.0 },
+        Modifiers::ALT,
+    );
     let m = &app.ui.magnetic;
-    assert_eq!(&m.path[before..], &[[170.0, 142.0], [160.0, 138.0], [150.0, 141.0]]);
+    assert_eq!(
+        &m.path[before..],
+        &[[170.0, 142.0], [160.0, 138.0], [150.0, 141.0]]
+    );
     assert_eq!(m.anchors.last(), Some(&(m.path.len() - 1)));
     assert!(!m.freehand);
     // ⌫ takes the freehand segment back in one step.
@@ -166,7 +272,11 @@ fn clicks_fasten_and_alt_draws_straight_and_freehand_segments() {
 #[test]
 fn the_first_click_sets_the_mode_and_hides_a_replaced_selection() {
     let mut app = app();
-    app.run("select.rect", json!({"x": 150, "y": 10, "width": 30, "height": 30})).unwrap();
+    app.run(
+        "select.rect",
+        json!({"x": 150, "y": 10, "width": 30, "height": 30}),
+    )
+    .unwrap();
     click(&mut app, 52.0, 37.0, Modifiers::NONE);
     assert!(crate::canvas::polygon_replaces_selection(&app));
     cancel(&mut app);
@@ -177,7 +287,11 @@ fn the_first_click_sets_the_mode_and_hides_a_replaced_selection() {
     assert!(!crate::canvas::polygon_replaces_selection(&app));
     hover_along(&mut app, &AROUND);
     click(&mut app, AROUND[5][0], AROUND[5][1], Modifiers::NONE);
-    assert_eq!((coverage(&app, 160, 20), coverage(&app, 90, 75)), (1.0, 1.0), "added to the selection");
+    assert_eq!(
+        (coverage(&app, 160, 20), coverage(&app, 90, 75)),
+        (1.0, 1.0),
+        "added to the selection"
+    );
 }
 
 #[test]
@@ -189,7 +303,10 @@ fn agents_see_the_border_in_progress() {
     let v = crate::control::inspect(&app, &ctx);
     let m = &v["magnetic"];
     assert_eq!(m["mode"], json!("replace"));
-    assert_eq!(m["anchors"].as_array().map(Vec::len), Some(app.ui.magnetic.anchors.len()));
+    assert_eq!(
+        m["anchors"].as_array().map(Vec::len),
+        Some(app.ui.magnetic.anchors.len())
+    );
     assert!(m["path"].as_array().is_some_and(|p| p.len() >= 2), "{m}");
     assert!(m["live"].as_array().is_some_and(|p| !p.is_empty()), "{m}");
     assert_eq!(v["tool"], json!("MagneticLasso"));
@@ -206,7 +323,8 @@ fn switching_tools_or_documents_drops_the_border() {
     assert!(!app.ui.magnetic.active());
     app.ui.tool = Tool::MagneticLasso;
     click(&mut app, 52.0, 37.0, Modifiers::NONE);
-    app.run("file.new", json!({"width": 50, "height": 50})).unwrap();
+    app.run("file.new", json!({"width": 50, "height": 50}))
+        .unwrap();
     app.sync_views();
     frame(&mut app);
     assert!(!app.ui.magnetic.active());
@@ -220,13 +338,19 @@ fn a_document_edit_while_drawing_is_traced_on() {
     // The square grows 10 px taller upwards mid-border: the border follows the new edge.
     app.session
         .edit("grow", |doc, _| {
-            doc.layers[0].surface_mut().unwrap().fill_rect(Rect::new(50, 30, 130, 40), &[0.0, 0.0, 0.0, 1.0]);
+            doc.layers[0]
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(50, 30, 130, 40), &[0.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
     hover_along(&mut app, &[[90.0, 37.0], [100.0, 27.0], [125.0, 27.0]]);
     let live_end = app.ui.magnetic.live.last().copied().unwrap();
-    assert!((live_end[1] - 30.0).abs() < 0.01, "on the new edge: {live_end:?}");
+    assert!(
+        (live_end[1] - 30.0).abs() < 0.01,
+        "on the new edge: {live_end:?}"
+    );
 }
 
 #[test]
@@ -238,7 +362,10 @@ fn width_follows_pen_pressure_only_when_asked_and_only_with_a_pen() {
     // A mouse has no pressure: the width stays.
     assert_eq!(settings(&app, 1.0).width, 21.0);
     app.stylus.use_pressure = true;
-    app.stylus.feed.set(Some(crate::stylus::PenSample { pressure: 0.5, ..Default::default() }));
+    app.stylus.feed.set(Some(crate::stylus::PenSample {
+        pressure: 0.5,
+        ..Default::default()
+    }));
     assert_eq!(settings(&app, 0.5).width, 11.0);
     assert_eq!(settings(&app, 1.0).width, 1.0);
     assert_eq!(settings(&app, f32::NAN).width, 21.0);
@@ -253,13 +380,39 @@ fn hostile_input_never_panics() {
     }
     // Far off the canvas: kept on it.
     click(&mut app, -1e12, 1e300, Modifiers::NONE);
-    tool_event(&mut app, ToolEvent::Move { x: 1e12, y: -1e12, pressure: 1.0 }, Modifiers::NONE);
-    tool_event(&mut app, ToolEvent::Move { x: 10.0, y: 1e15, pressure: f32::NAN }, Modifiers::NONE);
+    tool_event(
+        &mut app,
+        ToolEvent::Move {
+            x: 1e12,
+            y: -1e12,
+            pressure: 1.0,
+        },
+        Modifiers::NONE,
+    );
+    tool_event(
+        &mut app,
+        ToolEvent::Move {
+            x: 10.0,
+            y: 1e15,
+            pressure: f32::NAN,
+        },
+        Modifiers::NONE,
+    );
     let m = &app.ui.magnetic;
-    assert!(m.path.iter().chain(&m.live).all(|p| (0.0..=200.0).contains(&p[0]) && (0.0..=150.0).contains(&p[1])), "{m:?}");
+    assert!(
+        m.path
+            .iter()
+            .chain(&m.live)
+            .all(|p| (0.0..=200.0).contains(&p[0]) && (0.0..=150.0).contains(&p[1])),
+        "{m:?}"
+    );
     close(&mut app, false);
     // Out-of-range options are clamped.
-    for (w, c, f) in [(0.0, 0.0, -5.0), (1e9, 1e9, 1e9), (f32::NAN, f32::NAN, f32::NAN)] {
+    for (w, c, f) in [
+        (0.0, 0.0, -5.0),
+        (1e9, 1e9, 1e9),
+        (f32::NAN, f32::NAN, f32::NAN),
+    ] {
         let o = &mut app.ui.tool_options;
         (o.magnetic_width, o.magnetic_contrast, o.magnetic_frequency) = (w, c, f);
         click(&mut app, 52.0, 37.0, Modifiers::NONE);
@@ -273,7 +426,10 @@ fn hostile_input_never_panics() {
     remove_last_point(&mut app);
     cancel(&mut app);
     // No document at all.
-    let mut empty = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+    let mut empty = PhotocraftApp::new(
+        photocraft_engine::Session::new(),
+        crate::Services::default(),
+    );
     empty.ui.tool = Tool::MagneticLasso;
     click(&mut empty, 5.0, 5.0, Modifiers::NONE);
     hover_along(&mut empty, &[[5.0, 5.0], [60.0, 5.0], [60.0, 60.0]]);
@@ -286,17 +442,23 @@ fn hostile_input_never_panics() {
 fn harness() -> Harness<'static, PhotocraftApp> {
     let mut app = app();
     app.ui.extras.rulers = false;
-    let mut h = Harness::builder().with_size(vec2(1000.0, 700.0)).with_step_dt(1.0 / 60.0).build_ui_state(
-        |ui, app: &mut PhotocraftApp| {
-            let ctx = ui.ctx().clone();
-            if !ctx.fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                return;
-            }
-            crate::shortcuts::handle(app, &ctx);
-            egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
-        },
-        app,
-    );
+    let mut h = Harness::builder()
+        .with_size(vec2(1000.0, 700.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_ui_state(
+            |ui, app: &mut PhotocraftApp| {
+                let ctx = ui.ctx().clone();
+                if !ctx.fonts(|f| {
+                    f.families()
+                        .contains(&egui::FontFamily::Name("medium".into()))
+                }) {
+                    return;
+                }
+                crate::shortcuts::handle(app, &ctx);
+                egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
+            },
+            app,
+        );
     PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
     h.run_steps(4);
     let v = &mut h.state_mut().ui.views[0];
@@ -326,7 +488,12 @@ fn ui_click(h: &mut Harness<'static, PhotocraftApp>, x: f64, y: f64) {
     h.event(egui::Event::PointerMoved(p));
     h.run_steps(1);
     for down in [true, false] {
-        h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: down, modifiers: Modifiers::NONE });
+        h.event(egui::Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed: down,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(1);
     }
 }
@@ -336,7 +503,11 @@ fn ui_hover(h: &mut Harness<'static, PhotocraftApp>, pts: &[[f64; 2]]) {
         let n = (dist(w[0], w[1]) / 3.0).ceil().max(1.0) as usize;
         for k in 1..=n {
             let t = k as f64 / n as f64;
-            let p = screen(h, w[0][0] + (w[1][0] - w[0][0]) * t, w[0][1] + (w[1][1] - w[0][1]) * t);
+            let p = screen(
+                h,
+                w[0][0] + (w[1][0] - w[0][0]) * t,
+                w[0][1] + (w[1][1] - w[0][1]) * t,
+            );
             h.event(egui::Event::PointerMoved(p));
             h.run_steps(1);
         }
@@ -352,7 +523,10 @@ fn on_the_canvas_the_border_follows_the_hovering_pointer_and_keys_work() {
     ui_hover(&mut h, &[[52.0, 37.0], [100.0, 36.0]]);
     let m = &h.state().ui.magnetic;
     let end = m.live.last().or(m.path.last()).copied().unwrap();
-    assert!((end[0] - 100.0).abs() < 1.5 && (end[1] - 40.0).abs() < 0.01, "{end:?}");
+    assert!(
+        (end[0] - 100.0).abs() < 1.5 && (end[1] - 40.0).abs() < 0.01,
+        "{end:?}"
+    );
     // [ and ] change the width; ⌫ removes a point and never clears pixels (Edit › Clear).
     h.key_press(egui::Key::CloseBracket);
     h.run_steps(1);
@@ -390,7 +564,11 @@ fn on_the_canvas_a_double_click_closes_the_border() {
     ui_click(&mut h, 47.0, 113.0);
     ui_click(&mut h, 47.0, 113.0);
     h.run_steps(2);
-    assert!(!h.state().ui.magnetic.active(), "{:?}", h.state().ui.magnetic);
+    assert!(
+        !h.state().ui.magnetic.active(),
+        "{:?}",
+        h.state().ui.magnetic
+    );
     let area = selected_area(h.state());
     assert!((area - 5600.0).abs() < 120.0, "{area}");
     assert_eq!(last_step(h.state()).as_deref(), Some("Magnetic Lasso"));

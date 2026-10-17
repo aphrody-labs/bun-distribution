@@ -25,7 +25,13 @@ pub(crate) struct SymbolWriter {
 
 impl SymbolWriter {
     pub fn new(disable_update: bool) -> Self {
-        SymbolWriter { low: 0, rng: 1 << 15, cnt: 0, out: Vec::with_capacity(1 << 16), disable_update }
+        SymbolWriter {
+            low: 0,
+            rng: 1 << 15,
+            cnt: 0,
+            out: Vec::with_capacity(1 << 16),
+            disable_update,
+        }
     }
 
     /// Adds `k` to the bytes already output (carry propagation).
@@ -42,7 +48,9 @@ impl SymbolWriter {
     #[inline(always)]
     fn encode(&mut self, cdf: &[u16], n: usize, s: usize) {
         let r8 = self.rng >> 8;
-        let cur = |k: usize| -> u32 { ((r8 * ((32768 - cdf[k] as u32) >> 6)) >> 1) + 4 * (n - k - 1) as u32 };
+        let cur = |k: usize| -> u32 {
+            ((r8 * ((32768 - cdf[k] as u32) >> 6)) >> 1) + 4 * (n - k - 1) as u32
+        };
         let hi = if s == 0 { self.rng } else { cur(s - 1) };
         let lo = cur(s);
         debug_assert!(hi > lo, "symbol {s} has an empty interval");
@@ -113,7 +121,8 @@ impl SymbolWriter {
 #[inline(always)]
 pub(crate) fn update_cdf(cdf: &mut [u16], n: usize, symbol: usize) {
     let count = cdf[n];
-    let rate = 3 + (count > 15) as u32 + (count > 31) as u32 + (31 - (n as u32).leading_zeros()).min(2);
+    let rate =
+        3 + (count > 15) as u32 + (count > 31) as u32 + (31 - (n as u32).leading_zeros()).min(2);
     let mut tmp = 0u32;
     for i in 0..n - 1 {
         if i == symbol {
@@ -144,7 +153,13 @@ mod tests {
 
     impl<'a> Dec<'a> {
         fn new(data: &'a [u8]) -> Self {
-            let mut d = Dec { data, pos: 0, value: 0, range: 1 << 15, max_bits: 8 * data.len() as i64 - 15 };
+            let mut d = Dec {
+                data,
+                pos: 0,
+                value: 0,
+                range: 1 << 15,
+                max_bits: 8 * data.len() as i64 - 15,
+            };
             let nb = (data.len() * 8).min(15) as u32;
             let buf = d.bits(nb);
             d.value = ((1 << 15) - 1) ^ (buf << (15 - nb));
@@ -153,7 +168,11 @@ mod tests {
         fn bits(&mut self, n: u32) -> u32 {
             let mut x = 0;
             for _ in 0..n {
-                let b = if self.pos < self.data.len() * 8 { (self.data[self.pos >> 3] >> (7 - (self.pos & 7))) & 1 } else { 0 };
+                let b = if self.pos < self.data.len() * 8 {
+                    (self.data[self.pos >> 3] >> (7 - (self.pos & 7))) & 1
+                } else {
+                    0
+                };
                 self.pos += 1;
                 x = (x << 1) | b as u32;
             }
@@ -206,7 +225,11 @@ mod tests {
             let data = w.finish();
             let mut d = Dec::new(&data);
             for (i, &b) in bits.iter().enumerate() {
-                assert_eq!(d.symbol(&mut [1 << 14, 1 << 15, 0], false) == 1, b, "len {len} bit {i} data {data:?}");
+                assert_eq!(
+                    d.symbol(&mut [1 << 14, 1 << 15, 0], false) == 1,
+                    b,
+                    "len {len} bit {i} data {data:?}"
+                );
             }
         }
     }
@@ -230,7 +253,11 @@ mod tests {
                 let kind = rnd() % 3;
                 let ctx = (rnd() % 4) as usize;
                 // skewed symbols so that the range also gets small
-                let s = if rnd() % 4 == 0 { (rnd() % 4) as usize } else { 0 };
+                let s = if rnd() % 4 == 0 {
+                    (rnd() % 4) as usize
+                } else {
+                    0
+                };
                 match kind {
                     0 => w.symbol(s, &mut cdfs_e[ctx]),
                     1 => w.bool(s & 1 == 1),
@@ -253,14 +280,30 @@ mod tests {
                     }
                 };
                 let want = if kind == 1 { s & 1 } else { s };
-                assert_eq!(got, want, "trial {trial} idx {idx} kind {kind} of {}", syms.len());
+                assert_eq!(
+                    got,
+                    want,
+                    "trial {trial} idx {idx} kind {kind} of {}",
+                    syms.len()
+                );
             }
             let tp = d.trailing_position();
-            assert!(tp >= 0 && (tp as usize) < data.len() * 8, "trial {trial}: trailing bit position {tp}");
+            assert!(
+                tp >= 0 && (tp as usize) < data.len() * 8,
+                "trial {trial}: trailing bit position {tp}"
+            );
             let tp = tp as usize;
-            assert_eq!((data[tp >> 3] >> (7 - (tp & 7))) & 1, 1, "trial {trial}: trailing one bit");
+            assert_eq!(
+                (data[tp >> 3] >> (7 - (tp & 7))) & 1,
+                1,
+                "trial {trial}: trailing one bit"
+            );
             for p in tp + 1..data.len() * 8 {
-                assert_eq!((data[p >> 3] >> (7 - (p & 7))) & 1, 0, "trial {trial}: padding");
+                assert_eq!(
+                    (data[p >> 3] >> (7 - (p & 7))) & 1,
+                    0,
+                    "trial {trial}: padding"
+                );
             }
         }
     }

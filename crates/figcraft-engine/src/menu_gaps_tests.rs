@@ -28,7 +28,8 @@ fn open_recent_lists_opens_prunes_and_clears() {
     std::fs::remove_file(&b).unwrap();
     assert!(s.execute("file.openRecent", &json!({"path": b})).is_err());
     assert_eq!(s.prefs.recent_files, vec![a.clone()]);
-    s.execute("file.openRecent", &json!({"clear": true})).unwrap();
+    s.execute("file.openRecent", &json!({"clear": true}))
+        .unwrap();
     assert!(s.prefs.recent_files.is_empty());
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -39,7 +40,10 @@ fn recent_files_are_capped() {
     std::fs::create_dir_all(&dir).unwrap();
     let mut s = Session::new();
     for i in 0..MAX_RECENT + 3 {
-        let p = dir.join(format!("{i}.figcraft")).to_string_lossy().to_string();
+        let p = dir
+            .join(format!("{i}.figcraft"))
+            .to_string_lossy()
+            .to_string();
         s.execute("file.saveAs", &json!({"path": p})).unwrap();
     }
     assert_eq!(s.prefs.recent_files.len(), MAX_RECENT);
@@ -50,24 +54,64 @@ fn recent_files_are_capped() {
 #[test]
 fn view_toggles_flip_their_flags() {
     let mut s = Session::new();
-    assert_eq!(s.execute("view.outlinesSelection", &json!({})).unwrap()["on"], true);
+    assert_eq!(
+        s.execute("view.outlinesSelection", &json!({})).unwrap()["on"],
+        true
+    );
     assert!(s.ds().unwrap().view.outlines_selection);
-    assert_eq!(s.execute("view.maskOutlines", &json!({"on": true})).unwrap()["on"], true);
-    assert_eq!(s.execute("view.maskOutlines", &json!({})).unwrap()["on"], false);
+    assert_eq!(
+        s.execute("view.maskOutlines", &json!({"on": true}))
+            .unwrap()["on"],
+        true
+    );
+    assert_eq!(
+        s.execute("view.maskOutlines", &json!({})).unwrap()["on"],
+        false
+    );
 }
 
 #[test]
 fn outlined_layers_draw_as_outlines_and_the_rest_normally() {
     let mut s = Session::new();
-    let a = id_of(&s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 40, "height": 40})).unwrap()["id"]).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 60, "y": 0, "width": 40, "height": 40})).unwrap();
+    let a = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 40, "height": 40}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 60, "y": 0, "width": 40, "height": 40}),
+    )
+    .unwrap();
     let ds = s.ds().unwrap();
-    let view = figcraft_render::View { origin: (0.0, 0.0), scale: 1.0, width: 120, height: 60 };
-    let render =
-        |outlined| figcraft_render::render_view(&ds.doc, ds.page, &view, &figcraft_render::Options { outlined, ..Default::default() }).unwrap();
+    let view = figcraft_render::View {
+        origin: (0.0, 0.0),
+        scale: 1.0,
+        width: 120,
+        height: 60,
+    };
+    let render = |outlined| {
+        figcraft_render::render_view(
+            &ds.doc,
+            ds.page,
+            &view,
+            &figcraft_render::Options {
+                outlined,
+                ..Default::default()
+            },
+        )
+        .unwrap()
+    };
     let (plain, outlined) = (render(vec![]), render(vec![a]));
     let empty = plain.pixel(110, 50).unwrap();
     assert_ne!(plain.pixel(20, 20).unwrap(), empty, "a filled rectangle");
     assert_eq!(outlined.pixel(20, 20).unwrap(), empty, "only its outline");
-    assert_eq!(outlined.pixel(80, 20).unwrap(), plain.pixel(80, 20).unwrap(), "the other layer draws normally");
+    assert_eq!(
+        outlined.pixel(80, 20).unwrap(),
+        plain.pixel(80, 20).unwrap(),
+        "the other layer draws normally"
+    );
 }

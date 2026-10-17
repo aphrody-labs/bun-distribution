@@ -20,14 +20,14 @@ use bevy_picking::events::{PointerDrag, PointerPress, PointerRelease, PointerSta
 use bevy_picking::pointer::PointerButton;
 use bevy_reflect::Reflect;
 use bevy_text::{
-    scrollable_text_layout_width, EditableText, EditableTextSystems, PreeditCursor, TextEdit,
-    TextLayout, TextLayoutInfo, TextReadWriteMode,
+    EditableText, EditableTextSystems, PreeditCursor, TextEdit, TextLayout, TextLayoutInfo,
+    TextReadWriteMode, scrollable_text_layout_width,
 };
 use bevy_time::{Real, Time};
 use bevy_ui::widget::{sync_editable_text_viewports, update_editable_text_layout};
 use bevy_ui::{
-    widget::TextNodeFlags, ComputedNode, ComputedUiRenderTargetInfo, ContentSize, Node,
-    UiGlobalTransform, UiScale,
+    ComputedNode, ComputedUiRenderTargetInfo, ContentSize, Node, UiGlobalTransform, UiScale,
+    widget::TextNodeFlags,
 };
 use bevy_ui::{InteractionDisabled, UiSystems};
 use bevy_window::{Ime, PrimaryWindow, Window};
@@ -827,8 +827,8 @@ mod tests {
     use super::*;
     use bevy_app::Update;
     use bevy_input::{
-        keyboard::{KeyCode, NativeKey, NativeKeyCode},
         ButtonState, InputPlugin,
+        keyboard::{KeyCode, NativeKey, NativeKeyCode},
     };
     use bevy_input_focus::InputDispatchPlugin;
     use bevy_math::Rect;
@@ -990,13 +990,14 @@ mod tests {
             .latest_pos = Vec2::ZERO;
         app.update();
 
-        assert!(app
-            .world()
-            .entity(entity)
-            .get::<EditableText>()
-            .unwrap()
-            .pending_edits
-            .is_empty());
+        assert!(
+            app.world()
+                .entity(entity)
+                .get::<EditableText>()
+                .unwrap()
+                .pending_edits
+                .is_empty()
+        );
     }
 
     #[test]

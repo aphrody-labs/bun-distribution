@@ -31,7 +31,10 @@ impl ListRequest {
     pub fn validate(&self) -> anyhow::Result<()> {
         anyhow::ensure!(self.page.unwrap_or(1) > 0, "page must be positive");
         anyhow::ensure!(self.limit.unwrap_or(24) > 0, "limit must be positive");
-        for value in [&self.q, &self.category, &self.element, &self.sort].into_iter().flatten() {
+        for value in [&self.q, &self.category, &self.element, &self.sort]
+            .into_iter()
+            .flatten()
+        {
             anyhow::ensure!(
                 value.len() <= 256 && !value.chars().any(char::is_control),
                 "invalid filter"
@@ -63,7 +66,11 @@ const SKILL_COLUMNS: &str = "id,internal_code,name_fr,name_en,name_ja,descriptio
 
 fn rows(connection: &Connection, sql: &str, values: &[SqlValue]) -> anyhow::Result<Vec<Value>> {
     let mut statement = connection.prepare(sql)?;
-    let columns = statement.column_names().into_iter().map(str::to_owned).collect::<Vec<_>>();
+    let columns = statement
+        .column_names()
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
     Ok(statement
         .query_map(rusqlite::params_from_iter(values), |row| {
             let mut result = crate::entities::ligne_en_json(row, &columns)?;
@@ -94,7 +101,10 @@ fn truthy(value: &Value) -> bool {
 }
 
 fn first(values: &[&Value]) -> Value {
-    values.iter().find(|value| truthy(value)).map_or(Value::Null, |value| (*value).clone())
+    values
+        .iter()
+        .find(|value| truthy(value))
+        .map_or(Value::Null, |value| (*value).clone())
 }
 
 fn enrichment() -> &'static Value {
@@ -116,7 +126,9 @@ pub(crate) fn menu_manifest() -> &'static Value {
 const CDN: &str = "https://cdn.rosegriffon.fr/dx11/menu";
 
 fn member(value: &Value, needle: &str) -> bool {
-    value.as_array().is_some_and(|values| values.iter().any(|value| value.as_str() == Some(needle)))
+    value
+        .as_array()
+        .is_some_and(|values| values.iter().any(|value| value.as_str() == Some(needle)))
 }
 
 fn telop(code: &str) -> Option<String> {
@@ -132,8 +144,9 @@ fn resolve_image(value: &Value) -> Value {
     let Some(path) = value.as_str().filter(|path| !path.is_empty()) else {
         return Value::Null;
     };
-    let path = if let Some(path) =
-        path.strip_prefix("/storage/v1/object/public/menu/").or_else(|| path.strip_prefix("/menu/"))
+    let path = if let Some(path) = path
+        .strip_prefix("/storage/v1/object/public/menu/")
+        .or_else(|| path.strip_prefix("/menu/"))
     {
         path
     } else if path.starts_with("http") || path.starts_with('/') {
@@ -142,7 +155,10 @@ fn resolve_image(value: &Value) -> Value {
         path
     };
     for prefix in ["200_icon/02_icon_item/", "200_icon/25_icon_nameplate/"] {
-        if let Some(code) = path.strip_prefix(prefix).and_then(|path| path.strip_suffix(".webp")) {
+        if let Some(code) = path
+            .strip_prefix(prefix)
+            .and_then(|path| path.strip_suffix(".webp"))
+        {
             let entry = &item_manifest()["items"][code];
             let index = entry.as_u64().or_else(|| entry[0].as_u64());
             if let Some(container) =
@@ -156,8 +172,9 @@ fn resolve_image(value: &Value) -> Value {
             }
         }
     }
-    if let Some(code) =
-        path.strip_prefix("200_icon/01_icon_emblem/").and_then(|path| path.strip_suffix(".webp"))
+    if let Some(code) = path
+        .strip_prefix("200_icon/01_icon_emblem/")
+        .and_then(|path| path.strip_suffix(".webp"))
         && member(&menu_manifest()["emblems"], code)
     {
         return Value::String(format!("{CDN}/200_icon/01_icon_emblem/{code}.png"));
@@ -188,7 +205,11 @@ fn resolve_image(value: &Value) -> Value {
 
 fn image_or_original(value: &Value) -> Value {
     let resolved = resolve_image(value);
-    if truthy(&resolved) { resolved } else { value.clone() }
+    if truthy(&resolved) {
+        resolved
+    } else {
+        value.clone()
+    }
 }
 
 fn bonuses(sd: &Value, parsed: &Value, enrich: &Value) -> Value {
@@ -233,8 +254,14 @@ fn item_value(row: &Value, detail: bool) -> Value {
         object.insert("description_JA".into(), descriptions["ja"].clone());
         object.insert("descriptions".into(), Value::Object(descriptions));
         object.insert("imageUrl".into(), image);
-        object.insert("shops".into(), first(&[&row["shops"], &sd["shops"], &parsed["shops"]]));
-        object.insert("attributes".into(), first(&[&sd["attributes"], &parsed["attributes"]]));
+        object.insert(
+            "shops".into(),
+            first(&[&row["shops"], &sd["shops"], &parsed["shops"]]),
+        );
+        object.insert(
+            "attributes".into(),
+            first(&[&sd["attributes"], &parsed["attributes"]]),
+        );
         object.insert("exchangeRecipes".into(), first(&[&sd["exchangeRecipes"]]));
         object.insert(
             "maxStack".into(),
@@ -246,7 +273,11 @@ fn item_value(row: &Value, detail: bool) -> Value {
                 .unwrap_or(Value::Null),
         );
         object.insert("sheetData".into(), community);
-        let code = first(&[&row["internal_code"], &sd["internalCode"], &parsed["internalCode"]]);
+        let code = first(&[
+            &row["internal_code"],
+            &sd["internalCode"],
+            &parsed["internalCode"],
+        ]);
         if code.is_null() && parsed.get("internalCode").is_none() {
             object.remove("internalCode");
         } else {
@@ -256,7 +287,11 @@ fn item_value(row: &Value, detail: bool) -> Value {
             if let Some(ja) = sd["names"].get("ja") {
                 object["names"]["ja"] = ja.clone();
             } else {
-                object.get_mut("names").and_then(Value::as_object_mut).expect("names").remove("ja");
+                object
+                    .get_mut("names")
+                    .and_then(Value::as_object_mut)
+                    .expect("names")
+                    .remove("ja");
             }
         }
     }
@@ -414,17 +449,28 @@ fn skill_value(row: &Value, detail: bool) -> Value {
             merged["sheetData"].clone()
         } else {
             Value::Object(
-                ["matchedName", "shop", "type", "subType", "power", "tension", "duration"]
-                    .into_iter()
-                    .filter_map(|key| merged.get(key).map(|value| (key.to_owned(), value.clone())))
-                    .collect(),
+                [
+                    "matchedName",
+                    "shop",
+                    "type",
+                    "subType",
+                    "power",
+                    "tension",
+                    "duration",
+                ]
+                .into_iter()
+                .filter_map(|key| merged.get(key).map(|value| (key.to_owned(), value.clone())))
+                .collect(),
             )
         };
         output.insert("sheetData".into(), sheet);
         Value::Object(output)
     } else {
         object.insert("skillID".into(), row["id"].clone());
-        object.insert("skillIDStr".into(), first(&[&row["internal_code"], &row["id"]]));
+        object.insert(
+            "skillIDStr".into(),
+            first(&[&row["internal_code"], &row["id"]]),
+        );
         object.insert("category".into(), row["category_id"].clone());
         object.insert("shop".into(), shop(&row["sheet_data"]["shop"]));
         object.insert("sheetData".into(), row["sheet_data"].clone());
@@ -476,13 +522,13 @@ pub fn skills(connection: &Connection, input: &ListRequest) -> anyhow::Result<Va
     let order = match input.sort.as_deref() {
         Some("power") => {
             "CASE WHEN power_max IS NULL OR power_max = '\\\\N' THEN 1 ELSE 0 END, power_max DESC"
-        },
+        }
         Some("tension_asc") => {
             "CASE WHEN tension_cost IS NULL OR tension_cost = '\\\\N' THEN 1 ELSE 0 END, tension_cost ASC"
-        },
+        }
         _ => {
             "CASE WHEN video_url IS NULL OR video_url = '\\\\N' THEN 1 ELSE 0 END, video_url ASC, CASE WHEN tension_cost IS NULL OR tension_cost = '\\\\N' THEN 1 ELSE 0 END, tension_cost DESC"
-        },
+        }
     };
     let (selected, total) = list_rows(
         connection,
@@ -518,9 +564,16 @@ pub fn skill(connection: &Connection, id: &str) -> anyhow::Result<Option<Value>>
 fn tactics(connection: &Connection, input: &ListRequest) -> anyhow::Result<Value> {
     let page = crate::tactics::list_tactics(
         connection,
-        &crate::tactics::TacticListRequest { query: None, page: Some(1), limit: Some(200) },
+        &crate::tactics::TacticListRequest {
+            query: None,
+            page: Some(1),
+            limit: Some(200),
+        },
     )?;
-    anyhow::ensure!(page.total <= 200, "tactic compatibility inventory exceeds bounded owner page");
+    anyhow::ensure!(
+        page.total <= 200,
+        "tactic compatibility inventory exceeds bounded owner page"
+    );
     let mut output = Vec::new();
     for tactic in page.data {
         let primary = tactic.source == "inagle_tactics";
@@ -530,7 +583,9 @@ fn tactics(connection: &Connection, input: &ListRequest) -> anyhow::Result<Value
         } else {
             "SELECT name_en,name_fr,name_ja,description_fr,description_ja,recast_time FROM inagle_special_tactics WHERE internal_code = ? LIMIT 1"
         };
-        let raw = rows(connection, sql, &[code.to_owned().into()])?.pop().unwrap_or(Value::Null);
+        let raw = rows(connection, sql, &[code.to_owned().into()])?
+            .pop()
+            .unwrap_or(Value::Null);
         let name = if primary {
             raw["name"].clone()
         } else {
@@ -540,8 +595,15 @@ fn tactics(connection: &Connection, input: &ListRequest) -> anyhow::Result<Value
         let ja = first(&[&raw["name_ja"], &name]);
         let value = json!({"itemId":code,"internalCode":code,"names":{"en":name,"fr":fr,"ja":ja},"name_FR":fr,"description":raw["description_fr"],"description_JA":raw["description_ja"],"category":"special_tactics","rarity":3,"image":if primary { resolve_image(&raw["image_url"]) } else { Value::Null },"price":null,"location":if primary { raw["shop"].clone() } else { Value::Null },"stats":{"effect1":raw["effect1"],"effect2":raw["effect2"],"effect3":raw["effect3"],"duration":raw["duration"],"cooldown":if primary { raw["cooldown"].clone() } else { raw["recast_time"].clone() }},"shops":if primary && truthy(&raw["shop"]) { vec![raw["shop"].clone()] } else { Vec::new() }});
         if input.q.as_ref().is_none_or(|q| {
-            name.as_str().unwrap_or_default().to_lowercase().contains(&q.to_lowercase())
-                || fr.as_str().unwrap_or_default().to_lowercase().contains(&q.to_lowercase())
+            name.as_str()
+                .unwrap_or_default()
+                .to_lowercase()
+                .contains(&q.to_lowercase())
+                || fr
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_lowercase()
+                    .contains(&q.to_lowercase())
         }) {
             output.push(value);
         }
@@ -586,12 +648,21 @@ mod tests {
         assert_eq!(result["page"], 2);
         assert_eq!(result["limit"], 1);
         assert_eq!(
-            skills(&connection, &ListRequest { show_aura: Some("1".into()), ..Default::default() })
-                .unwrap()["total"],
+            skills(
+                &connection,
+                &ListRequest {
+                    show_aura: Some("1".into()),
+                    ..Default::default()
+                }
+            )
+            .unwrap()["total"],
             3
         );
         assert!(skill(&connection, "missing").unwrap().is_none());
-        assert_eq!(skill(&connection, "One").unwrap().unwrap()["skillId"], "one");
+        assert_eq!(
+            skill(&connection, "One").unwrap().unwrap()["skillId"],
+            "one"
+        );
         let columns = ITEM_COLUMNS
             .split(',')
             .map(|column| format!("{column} TEXT"))
@@ -610,7 +681,10 @@ mod tests {
         assert_eq!(page["total"], 1);
         assert_eq!(page["data"][0]["itemId"], "a");
         assert!(item(&connection, "boots").unwrap().is_none());
-        assert_eq!(item(&connection, "a").unwrap().unwrap()["internalCode"], "boots");
+        assert_eq!(
+            item(&connection, "a").unwrap().unwrap()["internalCode"],
+            "boots"
+        );
     }
 
     #[test]
@@ -623,11 +697,19 @@ mod tests {
         assert_eq!(detail["maxStack"], 0);
         assert_eq!(detail["description_EN"], "description");
         assert!(detail["names"].get("ja").is_none());
-        let capped = ListRequest { limit: Some(201), ..Default::default() };
+        let capped = ListRequest {
+            limit: Some(201),
+            ..Default::default()
+        };
         assert!(capped.validate().is_ok());
         assert_eq!(capped.bounds().1, 200);
         assert!(
-            ListRequest { power_min: Some("bad".into()), ..Default::default() }.validate().is_err()
+            ListRequest {
+                power_min: Some("bad".into()),
+                ..Default::default()
+            }
+            .validate()
+            .is_err()
         );
     }
 
@@ -655,20 +737,22 @@ mod tests {
                 .unwrap();
         for (index, case) in cases.iter().enumerate() {
             let actual = match case["family"].as_str().unwrap() {
-                "items" => {
-                    items(&connection, &serde_json::from_value(case["input"].clone()).unwrap())
-                        .unwrap()
-                },
-                "skills" => {
-                    skills(&connection, &serde_json::from_value(case["input"].clone()).unwrap())
-                        .unwrap()
-                },
-                "items_detail" => {
-                    item(&connection, case["id"].as_str().unwrap()).unwrap().unwrap_or(Value::Null)
-                },
-                "skills_detail" => {
-                    skill(&connection, case["id"].as_str().unwrap()).unwrap().unwrap_or(Value::Null)
-                },
+                "items" => items(
+                    &connection,
+                    &serde_json::from_value(case["input"].clone()).unwrap(),
+                )
+                .unwrap(),
+                "skills" => skills(
+                    &connection,
+                    &serde_json::from_value(case["input"].clone()).unwrap(),
+                )
+                .unwrap(),
+                "items_detail" => item(&connection, case["id"].as_str().unwrap())
+                    .unwrap()
+                    .unwrap_or(Value::Null),
+                "skills_detail" => skill(&connection, case["id"].as_str().unwrap())
+                    .unwrap()
+                    .unwrap_or(Value::Null),
                 _ => panic!("unknown fixture family"),
             };
             if actual != case["expected"] {

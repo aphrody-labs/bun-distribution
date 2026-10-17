@@ -12,7 +12,11 @@ fn clamp(body: &TextBody, p: Pos) -> Pos {
         return (0, 0);
     }
     let pi = p.0.min(body.paragraphs.len() - 1);
-    let n = body.paragraphs.get(pi).map(Paragraph::char_len).unwrap_or(0);
+    let n = body
+        .paragraphs
+        .get(pi)
+        .map(Paragraph::char_len)
+        .unwrap_or(0);
     (pi, p.1.min(n))
 }
 
@@ -36,9 +40,18 @@ fn split_at(p: &mut Paragraph, at: usize) -> usize {
                 return i + 1;
             }
             let k = at - pos;
-            let byte = r.text.char_indices().nth(k).map(|(b, _)| b).unwrap_or(r.text.len());
+            let byte = r
+                .text
+                .char_indices()
+                .nth(k)
+                .map(|(b, _)| b)
+                .unwrap_or(r.text.len());
             let (a, b) = r.text.split_at(byte);
-            let second = Run { text: b.to_string(), props: r.props.clone(), kind: RunKind::Text };
+            let second = Run {
+                text: b.to_string(),
+                props: r.props.clone(),
+                kind: RunKind::Text,
+            };
             let first = a.to_string();
             if let Some(r) = p.runs.get_mut(i) {
                 r.text = first;
@@ -55,7 +68,9 @@ fn split_at(p: &mut Paragraph, at: usize) -> usize {
 /// The explicit run properties in effect at `pos` (the run before the caret, or the end mark).
 pub fn props_at(body: &TextBody, pos: Pos) -> RunProps {
     let (pi, ch) = clamp(body, pos);
-    let Some(p) = body.paragraphs.get(pi) else { return RunProps::default() };
+    let Some(p) = body.paragraphs.get(pi) else {
+        return RunProps::default();
+    };
     let mut acc = 0;
     let mut last = None;
     for r in &p.runs {
@@ -85,10 +100,17 @@ pub fn insert(body: &mut TextBody, pos: Pos, text: &str, props: Option<RunProps>
     for part in text.split('\n') {
         if !first {
             // Split paragraph pi at ch.
-            let Some(p) = body.paragraphs.get_mut(pi) else { break };
+            let Some(p) = body.paragraphs.get_mut(pi) else {
+                break;
+            };
             let idx = split_at(p, ch);
             let tail: Vec<Run> = p.runs.drain(idx..).collect();
-            let newp = Paragraph { level: p.level, props: p.props.clone(), runs: tail, end_props: p.end_props.clone() };
+            let newp = Paragraph {
+                level: p.level,
+                props: p.props.clone(),
+                runs: tail,
+                end_props: p.end_props.clone(),
+            };
             p.end_props = props.clone();
             body.paragraphs.insert(pi + 1, newp);
             pi += 1;
@@ -96,10 +118,19 @@ pub fn insert(body: &mut TextBody, pos: Pos, text: &str, props: Option<RunProps>
         }
         first = false;
         for (k, seg) in part.split('\u{b}').enumerate() {
-            let Some(p) = body.paragraphs.get_mut(pi) else { break };
+            let Some(p) = body.paragraphs.get_mut(pi) else {
+                break;
+            };
             if k > 0 {
                 let idx = split_at(p, ch);
-                p.runs.insert(idx, Run { text: String::new(), props: props.clone(), kind: RunKind::Break });
+                p.runs.insert(
+                    idx,
+                    Run {
+                        text: String::new(),
+                        props: props.clone(),
+                        kind: RunKind::Break,
+                    },
+                );
                 ch += 1;
             }
             if seg.is_empty() {
@@ -172,7 +203,10 @@ fn props_of_range(p: &Paragraph, at: usize) -> RunProps {
         }
         acc += len;
     }
-    p.runs.last().map(|r| r.props.clone()).unwrap_or_else(|| p.end_props.clone())
+    p.runs
+        .last()
+        .map(|r| r.props.clone())
+        .unwrap_or_else(|| p.end_props.clone())
 }
 
 /// Apply `f` to the run properties of every run in [a, b). An empty range changes the empty
@@ -183,7 +217,9 @@ pub fn format(body: &mut TextBody, a: Pos, b: Pos, f: &dyn Fn(&mut RunProps)) {
     }
     let (s, e) = order(clamp(body, a), clamp(body, b));
     for pi in s.0..=e.0 {
-        let Some(p) = body.paragraphs.get_mut(pi) else { continue };
+        let Some(p) = body.paragraphs.get_mut(pi) else {
+            continue;
+        };
         let from = if pi == s.0 { s.1 } else { 0 };
         let to = if pi == e.0 { e.1 } else { p.char_len() };
         if p.runs.is_empty() || (from == to && s == e) {
@@ -218,7 +254,9 @@ pub fn text_range(body: &TextBody, a: Pos, b: Pos) -> String {
     let (s, e) = order(clamp(body, a), clamp(body, b));
     let mut out = String::new();
     for pi in s.0..=e.0 {
-        let Some(p) = body.paragraphs.get(pi) else { continue };
+        let Some(p) = body.paragraphs.get(pi) else {
+            continue;
+        };
         let t: Vec<char> = p.text().chars().collect();
         let from = if pi == s.0 { s.1 } else { 0 };
         let to = if pi == e.0 { e.1 } else { t.len() };
@@ -233,9 +271,15 @@ pub fn text_range(body: &TextBody, a: Pos, b: Pos) -> String {
 /// A formatted copy of the range.
 pub fn slice(body: &TextBody, a: Pos, b: Pos) -> TextBody {
     let (s, e) = order(clamp(body, a), clamp(body, b));
-    let mut out = TextBody { body: body.body.clone(), list_style: body.list_style.clone(), paragraphs: vec![] };
+    let mut out = TextBody {
+        body: body.body.clone(),
+        list_style: body.list_style.clone(),
+        paragraphs: vec![],
+    };
     for pi in s.0..=e.0 {
-        let Some(p) = body.paragraphs.get(pi) else { continue };
+        let Some(p) = body.paragraphs.get(pi) else {
+            continue;
+        };
         let mut p = p.clone();
         let to = if pi == e.0 { e.1 } else { p.char_len() };
         let i1 = split_at(&mut p, to);
@@ -277,7 +321,10 @@ pub fn insert_body(body: &mut TextBody, pos: Pos, src: &TextBody) -> Pos {
 }
 
 fn para_text(body: &TextBody, pi: usize) -> String {
-    body.paragraphs.get(pi).map(Paragraph::text).unwrap_or_default()
+    body.paragraphs
+        .get(pi)
+        .map(Paragraph::text)
+        .unwrap_or_default()
 }
 
 /// The word a double-click selects around `pos` (see [`words::word_at`]): the word without its
@@ -303,7 +350,13 @@ pub fn word_move(body: &TextBody, pos: Pos, forward: bool) -> Pos {
     } else {
         match words::prev_stop(&t, ch) {
             Some(s) => (pi, s),
-            None if pi > 0 => (pi - 1, body.paragraphs.get(pi - 1).map(Paragraph::char_len).unwrap_or(0)),
+            None if pi > 0 => (
+                pi - 1,
+                body.paragraphs
+                    .get(pi - 1)
+                    .map(Paragraph::char_len)
+                    .unwrap_or(0),
+            ),
             None => (pi, 0),
         }
     }
@@ -312,13 +365,27 @@ pub fn word_move(body: &TextBody, pos: Pos, forward: bool) -> Pos {
 /// Ctrl+Up: the start of the paragraph, or of the previous one when already there.
 pub fn para_up(body: &TextBody, pos: Pos) -> Pos {
     let (pi, ch) = clamp(body, pos);
-    if ch > 0 { (pi, 0) } else { (pi.saturating_sub(1), 0) }
+    if ch > 0 {
+        (pi, 0)
+    } else {
+        (pi.saturating_sub(1), 0)
+    }
 }
 
 /// Ctrl+Down: the start of the next paragraph, or the end of the last one.
 pub fn para_down(body: &TextBody, pos: Pos) -> Pos {
     let (pi, _) = clamp(body, pos);
-    if pi + 1 < body.paragraphs.len() { (pi + 1, 0) } else { (pi, body.paragraphs.get(pi).map(Paragraph::char_len).unwrap_or(0)) }
+    if pi + 1 < body.paragraphs.len() {
+        (pi + 1, 0)
+    } else {
+        (
+            pi,
+            body.paragraphs
+                .get(pi)
+                .map(Paragraph::char_len)
+                .unwrap_or(0),
+        )
+    }
 }
 
 /// Delete a word from `pos` as Ctrl+Backspace (`forward == false`) or Ctrl+Delete does in
@@ -382,7 +449,11 @@ fn smart_space(body: &mut TextBody, at: Pos) -> Pos {
 /// One character left/right across paragraph boundaries.
 pub fn char_move(body: &TextBody, pos: Pos, forward: bool) -> Pos {
     let (pi, ch) = clamp(body, pos);
-    let n = body.paragraphs.get(pi).map(Paragraph::char_len).unwrap_or(0);
+    let n = body
+        .paragraphs
+        .get(pi)
+        .map(Paragraph::char_len)
+        .unwrap_or(0);
     if forward {
         if ch < n {
             (pi, ch + 1)
@@ -394,7 +465,13 @@ pub fn char_move(body: &TextBody, pos: Pos, forward: bool) -> Pos {
     } else if ch > 0 {
         (pi, ch - 1)
     } else if pi > 0 {
-        (pi - 1, body.paragraphs.get(pi - 1).map(Paragraph::char_len).unwrap_or(0))
+        (
+            pi - 1,
+            body.paragraphs
+                .get(pi - 1)
+                .map(Paragraph::char_len)
+                .unwrap_or(0),
+        )
     } else {
         (0, 0)
     }
@@ -403,7 +480,13 @@ pub fn char_move(body: &TextBody, pos: Pos, forward: bool) -> Pos {
 /// End of the body.
 pub fn end(body: &TextBody) -> Pos {
     let pi = body.paragraphs.len().saturating_sub(1);
-    (pi, body.paragraphs.get(pi).map(Paragraph::char_len).unwrap_or(0))
+    (
+        pi,
+        body.paragraphs
+            .get(pi)
+            .map(Paragraph::char_len)
+            .unwrap_or(0),
+    )
 }
 
 /// The case Shift+F3 changes `s` to next, as PowerPoint cycles it: lowercase → Capitalize Each
@@ -423,7 +506,16 @@ pub fn change_case(s: &str, mode: &str) -> String {
     match mode {
         "upper" => s.to_uppercase(),
         "lower" => s.to_lowercase(),
-        "toggle" => s.chars().map(|c| if c.is_uppercase() { c.to_lowercase().collect::<String>() } else { c.to_uppercase().collect() }).collect(),
+        "toggle" => s
+            .chars()
+            .map(|c| {
+                if c.is_uppercase() {
+                    c.to_lowercase().collect::<String>()
+                } else {
+                    c.to_uppercase().collect()
+                }
+            })
+            .collect(),
         "title" => {
             let mut out = String::new();
             let mut start = true;
@@ -517,7 +609,10 @@ mod tests {
         assert_eq!(word_move(&b, (0, 0), true), (0, 6));
         assert_eq!(word_move(&b, (0, 8), false), (0, 6));
         assert_eq!(char_move(&b, (0, 17), true), (0, 17));
-        assert_eq!(change_case("hello world. again", "sentence"), "Hello world. Again");
+        assert_eq!(
+            change_case("hello world. again", "sentence"),
+            "Hello world. Again"
+        );
         assert_eq!(change_case("hello world", "title"), "Hello World");
     }
 
@@ -559,14 +654,30 @@ mod tests {
             ("ab   cd...ef ", 13),
         ];
         for (c, (txt, caret)) in want.iter().enumerate() {
-            assert_eq!(del_word(t, (0, c), false), (txt.to_string(), (0, *caret)), "caret {c}");
+            assert_eq!(
+                del_word(t, (0, c), false),
+                (txt.to_string(), (0, *caret)),
+                "caret {c}"
+            );
         }
         let w = "Hello world  foo, bar\nnext para";
-        assert_eq!(del_word(w, (0, 12), false), ("Hello  foo, bar\nnext para".into(), (0, 6)));
-        assert_eq!(del_word(w, (0, 17), false), ("Hello world  foo bar\nnext para".into(), (0, 16)));
+        assert_eq!(
+            del_word(w, (0, 12), false),
+            ("Hello  foo, bar\nnext para".into(), (0, 6))
+        );
+        assert_eq!(
+            del_word(w, (0, 17), false),
+            ("Hello world  foo bar\nnext para".into(), (0, 16))
+        );
         // At a paragraph's start it joins the paragraph before.
-        assert_eq!(del_word(w, (1, 0), false), ("Hello world  foo, barnext para".into(), (0, 21)));
-        assert_eq!(del_word("ab\n  cd", (1, 2), false), ("ab\ncd".into(), (1, 0)));
+        assert_eq!(
+            del_word(w, (1, 0), false),
+            ("Hello world  foo, barnext para".into(), (0, 21))
+        );
+        assert_eq!(
+            del_word("ab\n  cd", (1, 2), false),
+            ("ab\ncd".into(), (1, 0))
+        );
         // A line break is a word of its own.
         let mut b = body("ab");
         insert(&mut b, (0, 2), "\u{b}cd", None);
@@ -578,9 +689,18 @@ mod tests {
         assert_eq!(b.text(), "abcd");
         assert_eq!(del_word("x", (0, 0), false), ("x".into(), (0, 0)));
         // Emoji sequences and combining marks are never split.
-        assert_eq!(del_word("a 👨\u{200d}👩\u{200d}👧", (0, 7), false), ("a ".into(), (0, 2)));
-        assert_eq!(del_word("ce\u{301}te x", (0, 5), false), (" x".into(), (0, 0)));
-        assert_eq!(del_word("ce\u{301}te x", (0, 6), false), ("x".into(), (0, 0)));
+        assert_eq!(
+            del_word("a 👨\u{200d}👩\u{200d}👧", (0, 7), false),
+            ("a ".into(), (0, 2))
+        );
+        assert_eq!(
+            del_word("ce\u{301}te x", (0, 5), false),
+            (" x".into(), (0, 0))
+        );
+        assert_eq!(
+            del_word("ce\u{301}te x", (0, 6), false),
+            ("x".into(), (0, 0))
+        );
         // Each CJK character is a word.
         assert_eq!(del_word("日本語", (0, 3), false), ("日本".into(), (0, 2)));
     }
@@ -607,7 +727,11 @@ mod tests {
             ("ab   cd...ef gh", 15),
         ];
         for (c, (txt, caret)) in want.iter().enumerate() {
-            assert_eq!(del_word(t, (0, c), true), (txt.to_string(), (0, *caret)), "caret {c}");
+            assert_eq!(
+                del_word(t, (0, c), true),
+                (txt.to_string(), (0, *caret)),
+                "caret {c}"
+            );
         }
         let w = "Hello world  foo, bar\nnext para";
         let want = [
@@ -624,21 +748,55 @@ mod tests {
             (21, "Hello world  foo, barnext para", 21),
         ];
         for (c, txt, caret) in want {
-            assert_eq!(del_word(w, (0, c), true), (txt.to_string(), (0, caret)), "caret {c}");
+            assert_eq!(
+                del_word(w, (0, c), true),
+                (txt.to_string(), (0, caret)),
+                "caret {c}"
+            );
         }
-        assert_eq!(del_word(w, (1, 0), true), ("Hello world  foo, bar\npara".into(), (1, 0)));
-        assert_eq!(del_word(w, (1, 2), true), ("Hello world  foo, bar\nne para".into(), (1, 2)));
-        assert_eq!(del_word("ab  \ncd", (0, 2), true), ("ab\ncd".into(), (0, 2)));
-        assert_eq!(del_word("ab  \ncd", (0, 3), true), ("ab\ncd".into(), (0, 2)));
+        assert_eq!(
+            del_word(w, (1, 0), true),
+            ("Hello world  foo, bar\npara".into(), (1, 0))
+        );
+        assert_eq!(
+            del_word(w, (1, 2), true),
+            ("Hello world  foo, bar\nne para".into(), (1, 2))
+        );
+        assert_eq!(
+            del_word("ab  \ncd", (0, 2), true),
+            ("ab\ncd".into(), (0, 2))
+        );
+        assert_eq!(
+            del_word("ab  \ncd", (0, 3), true),
+            ("ab\ncd".into(), (0, 2))
+        );
         assert_eq!(del_word("ab\t cd", (0, 2), true), ("ab cd".into(), (0, 2)));
-        assert_eq!(del_word("ab cd(x) ef", (0, 3), true), ("ab (x) ef".into(), (0, 3)));
-        assert_eq!(del_word("ab cd, ef", (0, 3), true), ("ab, ef".into(), (0, 2)));
-        assert_eq!(del_word("ab. (cd) ef", (0, 5), true), ("ab. () ef".into(), (0, 5)));
-        assert_eq!(del_word("ab \"cd\" ef", (0, 4), true), ("ab \"\" ef".into(), (0, 4)));
+        assert_eq!(
+            del_word("ab cd(x) ef", (0, 3), true),
+            ("ab (x) ef".into(), (0, 3))
+        );
+        assert_eq!(
+            del_word("ab cd, ef", (0, 3), true),
+            ("ab, ef".into(), (0, 2))
+        );
+        assert_eq!(
+            del_word("ab. (cd) ef", (0, 5), true),
+            ("ab. () ef".into(), (0, 5))
+        );
+        assert_eq!(
+            del_word("ab \"cd\" ef", (0, 4), true),
+            ("ab \"\" ef".into(), (0, 4))
+        );
         assert_eq!(del_word("ab, cd", (0, 4), true), ("ab, ".into(), (0, 4)));
         // Right-to-left text deletes in logical order like any other.
-        assert_eq!(del_word("مرحبا بالعالم hello", (0, 6), true), ("مرحبا hello".into(), (0, 6)));
-        assert_eq!(del_word("مرحبا بالعالم hello", (0, 8), false), ("مرحبا لعالم hello".into(), (0, 6)));
+        assert_eq!(
+            del_word("مرحبا بالعالم hello", (0, 6), true),
+            ("مرحبا hello".into(), (0, 6))
+        );
+        assert_eq!(
+            del_word("مرحبا بالعالم hello", (0, 8), false),
+            ("مرحبا لعالم hello".into(), (0, 6))
+        );
         // Numbers keep their separators: no space is pushed into "3.14".
         assert_eq!(del_word("3.x 14", (0, 2), true), ("3.14".into(), (0, 2)));
         // Hostile positions clamp.

@@ -11,7 +11,14 @@ use pdfcraft_sign::x509::{Certificate, Name, build_chain, build_chain_noted};
 use pdfcraft_sign::{PrivateKey, SignOptions, Status, TrustStore, signatures};
 
 fn time(year: u32) -> Time {
-    Time { year, month: 6, day: 1, hour: 12, minute: 0, second: 0 }
+    Time {
+        year,
+        month: 6,
+        day: 1,
+        hour: 12,
+        minute: 0,
+        second: 0,
+    }
 }
 
 fn ext(oid: &str, value: &[u8]) -> Vec<u8> {
@@ -72,26 +79,45 @@ fn issue(cn: &str, issuer: Option<&Party>, valid: (u32, u32), extensions: &[Vec<
     let refs: Vec<&[u8]> = fields.iter().map(Vec::as_slice).collect();
     let tbs = der::seq(&refs);
     let signature = signer.sign(alg, &tbs).unwrap();
-    let cert = Certificate::parse(&der::seq(&[&tbs, &sig_alg, &der::bit_string(&signature)])).unwrap();
+    let cert =
+        Certificate::parse(&der::seq(&[&tbs, &sig_alg, &der::bit_string(&signature)])).unwrap();
     Party { name, key, cert }
 }
 
 const FOREVER: (u32, u32) = (2020, 2040);
 
 fn root() -> Party {
-    issue("Test Root", None, FOREVER, &[basic_constraints(true, None), key_usage(KEY_CERT_SIGN)])
+    issue(
+        "Test Root",
+        None,
+        FOREVER,
+        &[basic_constraints(true, None), key_usage(KEY_CERT_SIGN)],
+    )
 }
 
 fn ca(cn: &str, under: &Party, path_len: Option<u64>) -> Party {
-    issue(cn, Some(under), FOREVER, &[basic_constraints(true, path_len), key_usage(KEY_CERT_SIGN)])
+    issue(
+        cn,
+        Some(under),
+        FOREVER,
+        &[basic_constraints(true, path_len), key_usage(KEY_CERT_SIGN)],
+    )
 }
 
 fn end_entity(cn: &str, under: &Party) -> Party {
-    issue(cn, Some(under), FOREVER, &[basic_constraints(false, None), key_usage(DIGITAL_SIGNATURE)])
+    issue(
+        cn,
+        Some(under),
+        FOREVER,
+        &[basic_constraints(false, None), key_usage(DIGITAL_SIGNATURE)],
+    )
 }
 
 fn names(chain: &[&Certificate]) -> Vec<String> {
-    chain.iter().map(|c| c.subject.common_name().unwrap_or_default().to_string()).collect()
+    chain
+        .iter()
+        .map(|c| c.subject.common_name().unwrap_or_default().to_string())
+        .collect()
 }
 
 #[test]
@@ -100,8 +126,14 @@ fn a_proper_chain_is_built() {
     let i = ca("Intermediate", &r, None);
     let l = end_entity("Leaf", &i);
     let pool = [i.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&l.cert, &pool, None)), ["Leaf", "Intermediate", "Test Root"]);
-    assert_eq!(names(&build_chain(&l.cert, &pool, Some(time(2026)))), ["Leaf", "Intermediate", "Test Root"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, None)),
+        ["Leaf", "Intermediate", "Test Root"]
+    );
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, Some(time(2026)))),
+        ["Leaf", "Intermediate", "Test Root"]
+    );
 }
 
 #[test]
@@ -112,23 +144,49 @@ fn an_end_entity_certificate_cannot_issue() {
     let forged = end_entity("Bank AG", &e);
     let pool = [e.cert.clone(), r.cert.clone()];
     let (chain, why) = build_chain_noted(&forged.cert, &pool, None);
-    assert_eq!(names(&chain), ["Bank AG"], "the subscriber certificate does not vouch for what it signed");
-    assert!(why.is_some_and(|w| w.message.contains("not a CA")), "the reason is reported");
+    assert_eq!(
+        names(&chain),
+        ["Bank AG"],
+        "the subscriber certificate does not vouch for what it signed"
+    );
+    assert!(
+        why.is_some_and(|w| w.message.contains("not a CA")),
+        "the reason is reported"
+    );
     // Neither does one without basicConstraints (not a v1 root: it has an issuer).
     let plain = issue("No Constraints", Some(&r), FOREVER, &[]);
     let under_plain = end_entity("Under Plain", &plain);
     let pool = [plain.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&under_plain.cert, &pool, None)), ["Under Plain"]);
+    assert_eq!(
+        names(&build_chain(&under_plain.cert, &pool, None)),
+        ["Under Plain"]
+    );
     // CA:TRUE does not help when keyUsage leaves out keyCertSign…
-    let signing_only = issue("Signing Only CA", Some(&r), FOREVER, &[basic_constraints(true, None), key_usage(DIGITAL_SIGNATURE)]);
+    let signing_only = issue(
+        "Signing Only CA",
+        Some(&r),
+        FOREVER,
+        &[basic_constraints(true, None), key_usage(DIGITAL_SIGNATURE)],
+    );
     let below = end_entity("Below Signing Only", &signing_only);
     let pool = [signing_only.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&below.cert, &pool, None)), ["Below Signing Only"]);
+    assert_eq!(
+        names(&build_chain(&below.cert, &pool, None)),
+        ["Below Signing Only"]
+    );
     // …and a CA with no keyUsage at all is fine.
-    let any_usage = issue("Any Usage CA", Some(&r), FOREVER, &[basic_constraints(true, None)]);
+    let any_usage = issue(
+        "Any Usage CA",
+        Some(&r),
+        FOREVER,
+        &[basic_constraints(true, None)],
+    );
     let below = end_entity("Below Any Usage", &any_usage);
     let pool = [any_usage.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&below.cert, &pool, None)), ["Below Any Usage", "Any Usage CA", "Test Root"]);
+    assert_eq!(
+        names(&build_chain(&below.cert, &pool, None)),
+        ["Below Any Usage", "Any Usage CA", "Test Root"]
+    );
 }
 
 #[test]
@@ -139,28 +197,49 @@ fn a_path_length_constraint_limits_the_cas_below() {
     let l = end_entity("Leaf", &i2);
     let pool = [i1.cert.clone(), i2.cert.clone(), r.cert.clone()];
     // pathLen 0: no CA may follow it, so Sub CA's issuer is refused and the chain stops there.
-    assert_eq!(names(&build_chain(&l.cert, &pool, None)), ["Leaf", "Sub CA"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, None)),
+        ["Leaf", "Sub CA"]
+    );
     // pathLen 0 directly above the leaf is fine, and pathLen 1 allows one CA below.
     let direct = end_entity("Direct Leaf", &i1);
-    assert_eq!(names(&build_chain(&direct.cert, &pool, None)), ["Direct Leaf", "Constrained", "Test Root"]);
+    assert_eq!(
+        names(&build_chain(&direct.cert, &pool, None)),
+        ["Direct Leaf", "Constrained", "Test Root"]
+    );
     let i1 = ca("Constrained 1", &r, Some(1));
     let i2 = ca("Sub CA 1", &i1, None);
     let l = end_entity("Leaf 1", &i2);
     let pool = [i1.cert.clone(), i2.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&l.cert, &pool, None)), ["Leaf 1", "Sub CA 1", "Constrained 1", "Test Root"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, None)),
+        ["Leaf 1", "Sub CA 1", "Constrained 1", "Test Root"]
+    );
 }
 
 #[test]
 fn issuers_must_have_been_valid_when_it_matters() {
     let r = root();
-    let old = issue("Short Lived CA", Some(&r), (2020, 2022), &[basic_constraints(true, None), key_usage(KEY_CERT_SIGN)]);
+    let old = issue(
+        "Short Lived CA",
+        Some(&r),
+        (2020, 2022),
+        &[basic_constraints(true, None), key_usage(KEY_CERT_SIGN)],
+    );
     let l = end_entity("Leaf", &old);
     let pool = [old.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&l.cert, &pool, Some(time(2021)))), ["Leaf", "Short Lived CA", "Test Root"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, Some(time(2021)))),
+        ["Leaf", "Short Lived CA", "Test Root"]
+    );
     let (chain, why) = build_chain_noted(&l.cert, &pool, Some(time(2023)));
     assert_eq!(names(&chain), ["Leaf"], "expired by then");
     assert!(why.is_some_and(|w| w.message.contains("not valid")));
-    assert_eq!(names(&build_chain(&l.cert, &pool, Some(time(2019)))), ["Leaf"], "not yet valid");
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, Some(time(2019)))),
+        ["Leaf"],
+        "not yet valid"
+    );
     // With no time to judge by, nothing is refused on validity.
     assert_eq!(names(&build_chain(&l.cert, &pool, None)).len(), 3);
 }
@@ -173,27 +252,61 @@ fn an_old_v1_self_signed_root_without_constraints_still_anchors() {
     let i = ca("Under V1", &r, None);
     let l = end_entity("Leaf", &i);
     let pool = [i.cert.clone(), r.cert.clone()];
-    assert_eq!(names(&build_chain(&l.cert, &pool, None)), ["Leaf", "Under V1", "Old V1 Root"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, &pool, None)),
+        ["Leaf", "Under V1", "Old V1 Root"]
+    );
     // A self-signed certificate that says CA:FALSE is not a root that can issue.
-    let not_a_ca = issue("Self Signed Leaf", None, FOREVER, &[basic_constraints(false, None)]);
+    let not_a_ca = issue(
+        "Self Signed Leaf",
+        None,
+        FOREVER,
+        &[basic_constraints(false, None)],
+    );
     assert!(!not_a_ca.cert.may_issue());
 }
 
 fn fixture() -> Vec<u8> {
-    std::fs::read(format!("{}/tests/data/openssl-signed.pdf", env!("CARGO_MANIFEST_DIR"))).unwrap()
+    std::fs::read(format!(
+        "{}/tests/data/openssl-signed.pdf",
+        env!("CARGO_MANIFEST_DIR")
+    ))
+    .unwrap()
 }
 
 /// Sign a small PDF with `leaf`, embedding `embedded`, and validate it trusting only `anchor`.
 fn verdict(leaf: Party, embedded: Vec<Certificate>, anchor: &Certificate) -> (Status, Vec<String>) {
-    let id = DigitalId { key: leaf.key, certificate: leaf.cert, chain: embedded, friendly_name: None };
+    let id = DigitalId {
+        key: leaf.key,
+        certificate: leaf.cert,
+        chain: embedded,
+        friendly_name: None,
+    };
     let doc = Document::open(Arc::new(fixture())).unwrap();
-    let opts = SignOptions { page: 0, rect: None, date: "D:20260601120000Z".into(), ..SignOptions::default() };
+    let opts = SignOptions {
+        page: 0,
+        rect: None,
+        date: "D:20260601120000Z".into(),
+        ..SignOptions::default()
+    };
     let signed = pdfcraft_sign::sign(&doc, &id, &opts).unwrap();
-    let trust = TrustStore { certs: vec![anchor.clone()] };
-    let s = signatures(&Document::open(Arc::new(signed.clone())).unwrap(), &signed, &trust).into_iter().rfind(|s| s.signed).unwrap();
+    let trust = TrustStore {
+        certs: vec![anchor.clone()],
+    };
+    let s = signatures(
+        &Document::open(Arc::new(signed.clone())).unwrap(),
+        &signed,
+        &trust,
+    )
+    .into_iter()
+    .rfind(|s| s.signed)
+    .unwrap();
     // The details as they read in English; what an interface says in another language is checked in
     // `tests/pdf.rs`.
-    (s.status, s.details.iter().map(|d| d.message.clone()).collect())
+    (
+        s.status,
+        s.details.iter().map(|d| d.message.clone()).collect(),
+    )
 }
 
 #[test]
@@ -210,18 +323,29 @@ fn a_signature_chaining_through_an_ordinary_certificate_is_not_trusted() {
     let forged = end_entity("Forged Identity", &subscriber);
     let (status, details) = verdict(forged, vec![subscriber.cert.clone()], &r.cert);
     assert_eq!(status, Status::Unknown, "{details:?}");
-    assert!(details.iter().any(|d| d.contains("not a CA")), "{details:?}");
+    assert!(
+        details.iter().any(|d| d.contains("not a CA")),
+        "{details:?}"
+    );
 }
 
 #[test]
 fn a_v3_self_signed_certificate_without_constraints_is_not_a_root_that_issues() {
     // A self-signed v3 ID with no basicConstraints and no key usage (only a key identifier): it
     // may sign documents, but it may not vouch for anyone else.
-    let id = issue("Self Signed V3 ID", None, FOREVER, &[ext("2.5.29.14", &der::octets(&[1, 2, 3, 4]))]);
+    let id = issue(
+        "Self Signed V3 ID",
+        None,
+        FOREVER,
+        &[ext("2.5.29.14", &der::octets(&[1, 2, 3, 4]))],
+    );
     assert!(id.cert.is_self_signed() && !id.cert.has_basic_constraints && id.cert.version == 2);
     assert!(!id.cert.may_issue());
     let l = end_entity("Leaf", &id);
-    assert_eq!(names(&build_chain(&l.cert, std::slice::from_ref(&id.cert), None)), ["Leaf"]);
+    assert_eq!(
+        names(&build_chain(&l.cert, std::slice::from_ref(&id.cert), None)),
+        ["Leaf"]
+    );
 }
 
 const KEY_ENCIPHERMENT: u8 = 0x20;
@@ -250,34 +374,92 @@ fn the_signer_certificate_must_allow_document_signing() {
     // nonRepudiation alone is enough.
     assert!(problem(&[key_usage(0x40)]).is_none());
     // Extended key usage without a document-signing purpose.
-    assert!(problem(&[extended_key_usage(&[SERVER_AUTH])]).is_some_and(|w| w.message.contains("extended key usage")));
-    for ok in ["2.5.29.37.0", "1.3.6.1.5.5.7.3.4", "1.3.6.1.5.5.7.3.36", "1.2.840.113583.1.1.5", "1.3.6.1.4.1.311.10.3.12"] {
-        assert!(problem(&[extended_key_usage(&[SERVER_AUTH, ok])]).is_none(), "{ok}");
+    assert!(
+        problem(&[extended_key_usage(&[SERVER_AUTH])])
+            .is_some_and(|w| w.message.contains("extended key usage"))
+    );
+    for ok in [
+        "2.5.29.37.0",
+        "1.3.6.1.5.5.7.3.4",
+        "1.3.6.1.5.5.7.3.36",
+        "1.2.840.113583.1.1.5",
+        "1.3.6.1.4.1.311.10.3.12",
+    ] {
+        assert!(
+            problem(&[extended_key_usage(&[SERVER_AUTH, ok])]).is_none(),
+            "{ok}"
+        );
     }
     // An unknown critical extension refuses; the same extension non-critical does not.
     let unknown = "1.2.3.4.5.6";
-    assert!(problem(&[ext(unknown, &der::octets(&[0]))]).is_some_and(|w| w.message.contains(unknown)));
-    assert!(problem(&[der::seq(&[&der::oid(unknown), &der::octets(&der::octets(&[0]))])]).is_none());
+    assert!(
+        problem(&[ext(unknown, &der::octets(&[0]))]).is_some_and(|w| w.message.contains(unknown))
+    );
+    assert!(
+        problem(&[der::seq(&[
+            &der::oid(unknown),
+            &der::octets(&der::octets(&[0]))
+        ])])
+        .is_none()
+    );
     // Critical extensions PdfCraft knows, or may accept as they are, don't refuse.
     assert!(problem(&[ext("2.5.29.32", &der::seq(&[]))]).is_none());
     // No extensions at all, and the digital IDs PdfCraft creates, may sign.
-    assert!(issue("Plain", Some(&r), FOREVER, &[]).cert.signing_problem().is_none());
+    assert!(
+        issue("Plain", Some(&r), FOREVER, &[])
+            .cert
+            .signing_problem()
+            .is_none()
+    );
     let key = PrivateKey::generate_p256().unwrap();
     let name = Name::build("Own ID", "", "", "", "US");
-    assert!(Certificate::self_signed(&name, &key, time(2026), 5, &[1]).unwrap().signing_problem().is_none());
+    assert!(
+        Certificate::self_signed(&name, &key, time(2026), 5, &[1])
+            .unwrap()
+            .signing_problem()
+            .is_none()
+    );
 }
 
 #[test]
 fn a_trusted_signer_whose_certificate_may_not_sign_is_not_valid() {
     let r = root();
-    let (status, details) =
-        verdict(signer_with("TLS Server", &r, &[key_usage(DIGITAL_SIGNATURE), extended_key_usage(&[SERVER_AUTH])]), vec![], &r.cert);
+    let (status, details) = verdict(
+        signer_with(
+            "TLS Server",
+            &r,
+            &[
+                key_usage(DIGITAL_SIGNATURE),
+                extended_key_usage(&[SERVER_AUTH]),
+            ],
+        ),
+        vec![],
+        &r.cert,
+    );
     assert_eq!(status, Status::Unknown, "{details:?}");
-    assert!(details.iter().any(|d| d.contains("not issued for signing documents")), "{details:?}");
-    let (status, details) = verdict(signer_with("Encryption Only", &r, &[key_usage(KEY_ENCIPHERMENT)]), vec![], &r.cert);
+    assert!(
+        details
+            .iter()
+            .any(|d| d.contains("not issued for signing documents")),
+        "{details:?}"
+    );
+    let (status, details) = verdict(
+        signer_with("Encryption Only", &r, &[key_usage(KEY_ENCIPHERMENT)]),
+        vec![],
+        &r.cert,
+    );
     assert_eq!(status, Status::Unknown, "{details:?}");
-    assert!(details.iter().any(|d| d.contains("does not allow digital signatures")), "{details:?}");
-    let (status, details) = verdict(signer_with("Document Signer", &r, &[key_usage(DIGITAL_SIGNATURE)]), vec![], &r.cert);
+    assert!(
+        details
+            .iter()
+            .any(|d| d.contains("does not allow digital signatures")),
+        "{details:?}"
+    );
+    let (status, details) = verdict(
+        signer_with("Document Signer", &r, &[key_usage(DIGITAL_SIGNATURE)]),
+        vec![],
+        &r.cert,
+    );
     assert_eq!(status, Status::Valid, "{details:?}");
 }
 
@@ -285,11 +467,19 @@ fn a_trusted_signer_whose_certificate_may_not_sign_is_not_valid() {
 fn unreadable_constraint_extensions_fail_closed() {
     // keyUsage present but not a BIT STRING: no usage at all, so no keyCertSign.
     let bad_usage = ext("2.5.29.15", &[0xff, 0x00]);
-    let c = issue("Bad Usage CA", Some(&root()), FOREVER, &[basic_constraints(true, None), bad_usage]);
+    let c = issue(
+        "Bad Usage CA",
+        Some(&root()),
+        FOREVER,
+        &[basic_constraints(true, None), bad_usage],
+    );
     assert_eq!(c.cert.key_usage, Some(0));
     assert!(!c.cert.may_issue());
     // pathLenConstraint present but negative: no CA may follow, not any number.
-    let negative = ext("2.5.29.19", &der::seq(&[&der::boolean(true), &der::tlv(tag::INTEGER, &[0xff])]));
+    let negative = ext(
+        "2.5.29.19",
+        &der::seq(&[&der::boolean(true), &der::tlv(tag::INTEGER, &[0xff])]),
+    );
     let c = issue("Negative PathLen CA", Some(&root()), FOREVER, &[negative]);
     assert!(c.cert.is_ca);
     assert_eq!(c.cert.path_len, Some(0));

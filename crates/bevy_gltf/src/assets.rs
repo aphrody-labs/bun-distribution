@@ -6,9 +6,9 @@ use core::ops::Deref;
 use bevy_animation::AnimationClip;
 use bevy_asset::{Asset, Handle};
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
-use bevy_mesh::{skinning::SkinnedMeshInverseBindposes, Mesh};
+use bevy_mesh::{Mesh, skinning::SkinnedMeshInverseBindposes};
 use bevy_platform::collections::HashMap;
-use bevy_reflect::{prelude::ReflectDefault, Reflect, TypePath};
+use bevy_reflect::{Reflect, TypePath, prelude::ReflectDefault};
 use bevy_world_serialization::WorldAsset;
 
 use crate::{GltfAssetLabel, GltfMaterial};

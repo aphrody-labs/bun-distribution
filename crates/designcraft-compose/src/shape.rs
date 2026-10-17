@@ -3,7 +3,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use designcraft_doc::{Capitalization, CharProps, Kerning, Leading, Position, Story, Styles, story};
+use designcraft_doc::{
+    Capitalization, CharProps, Kerning, Leading, Position, Story, Styles, story,
+};
 use designcraft_fonts::{FaceRef, Feature, FontFace, ScopedFonts, ShapedGlyph, feature};
 
 use crate::RunStyle;
@@ -68,7 +70,8 @@ pub struct Glyph {
 
 impl Glyph {
     pub fn is_space(&self) -> bool {
-        matches!(self.ch, ' ' | '\u{2002}'..='\u{200A}') || (self.ch == '\u{3000}' && self.ideographic_space_elastic)
+        matches!(self.ch, ' ' | '\u{2002}'..='\u{200A}')
+            || (self.ch == '\u{3000}' && self.ideographic_space_elastic)
     }
     pub fn is_letter(&self) -> bool {
         self.ch.is_alphabetic() || matches!(self.ch, '\'' | '’')
@@ -143,19 +146,39 @@ impl StyleTable<'_> {
             underline_rule: crate::Rule {
                 offset: p.underline_offset.unwrap_or(p.size * 0.12),
                 weight: p.underline_weight.unwrap_or(p.size / 14.0),
-                color: if p.underline_color.is_empty() { p.fill.clone() } else { p.underline_color.clone() },
-                tint: if p.underline_color.is_empty() { p.fill_tint } else { p.underline_tint },
+                color: if p.underline_color.is_empty() {
+                    p.fill.clone()
+                } else {
+                    p.underline_color.clone()
+                },
+                tint: if p.underline_color.is_empty() {
+                    p.fill_tint
+                } else {
+                    p.underline_tint
+                },
             },
             strike_rule: crate::Rule {
                 offset: -p.strikethrough_offset.unwrap_or(p.size * 0.3),
                 weight: p.strikethrough_weight.unwrap_or(p.size / 14.0),
-                color: if p.strikethrough_color.is_empty() { p.fill.clone() } else { p.strikethrough_color.clone() },
-                tint: if p.strikethrough_color.is_empty() { p.fill_tint } else { p.strikethrough_tint },
+                color: if p.strikethrough_color.is_empty() {
+                    p.fill.clone()
+                } else {
+                    p.strikethrough_color.clone()
+                },
+                tint: if p.strikethrough_color.is_empty() {
+                    p.fill_tint
+                } else {
+                    p.strikethrough_tint
+                },
             },
             skew: p.skew,
             size: p.size,
-            missing_font: *self.missing.entry(p.font_family.clone()).or_insert_with(|| !p.font_family.is_empty() && !db.has_family(&p.font_family)),
-            custom_tracking: p.tracking.abs() > 1e-9 || matches!(p.kerning, designcraft_doc::Kerning::Manual(_)),
+            missing_font: *self
+                .missing
+                .entry(p.font_family.clone())
+                .or_insert_with(|| !p.font_family.is_empty() && !db.has_family(&p.font_family)),
+            custom_tracking: p.tracking.abs() > 1e-9
+                || matches!(p.kerning, designcraft_doc::Kerning::Manual(_)),
             condition: p.conditions.first().cloned(),
             inserted: p.change == designcraft_doc::ChangeMark::Inserted,
             xml_tag: (!p.xml_tag.is_empty()).then(|| p.xml_tag.clone()),
@@ -180,8 +203,14 @@ impl StyleTable<'_> {
     /// `env` for text in run style `style`: a missing font's substitute draws the characters it
     /// lacks from fallback fonts whatever the document's setting.
     fn env_for(&self, env: TypeEnv, style: u32) -> TypeEnv {
-        let missing = self.styles.get(style as usize).is_some_and(|s| s.missing_font);
-        TypeEnv { glyph_fallback: env.glyph_fallback || missing, ..env }
+        let missing = self
+            .styles
+            .get(style as usize)
+            .is_some_and(|s| s.missing_font);
+        TypeEnv {
+            glyph_fallback: env.glyph_fallback || missing,
+            ..env
+        }
     }
 }
 
@@ -205,7 +234,12 @@ pub(crate) fn shape_para(
     // Nested line styles lie under nested and GREP styles (later overlays win).
     let mut overlays: Vec<(std::ops::Range<usize>, String)> = lines.to_vec();
     if !nested.is_empty() || !grep.is_empty() {
-        overlays.extend(crate::overlay::overlays(&story.text, range.clone(), nested, grep));
+        overlays.extend(crate::overlay::overlays(
+            &story.text,
+            range.clone(),
+            nested,
+            grep,
+        ));
     }
     // Each run, cut where nested / GREP styles start and end.
     let mut segments: Vec<(usize, usize, Option<&str>, &designcraft_doc::CharFormat)> = Vec::new();
@@ -219,13 +253,21 @@ pub(crate) fn shape_para(
             segments.push((a, b, None, fmt));
             continue;
         }
-        let mut cuts: Vec<usize> = overlays.iter().flat_map(|(r, _)| [r.start, r.end]).filter(|x| *x > a && *x < b).collect();
+        let mut cuts: Vec<usize> = overlays
+            .iter()
+            .flat_map(|(r, _)| [r.start, r.end])
+            .filter(|x| *x > a && *x < b)
+            .collect();
         cuts.push(a);
         cuts.push(b);
         cuts.sort_unstable();
         cuts.dedup();
         for w in cuts.windows(2) {
-            let top = overlays.iter().rev().find(|(r, _)| r.start <= w[0] && w[0] < r.end).map(|(_, s)| s.as_str());
+            let top = overlays
+                .iter()
+                .rev()
+                .find(|(r, _)| r.start <= w[0] && w[0] < r.end)
+                .map(|(_, s)| s.as_str());
             segments.push((w[0], w[1], top, fmt));
         }
     }
@@ -235,7 +277,13 @@ pub(crate) fn shape_para(
         let base;
         let para_chars = match overlay {
             Some(st) => {
-                base = styles.resolve_char(para_chars, &designcraft_doc::CharFormat { style: st.to_string(), over: Default::default() });
+                base = styles.resolve_char(
+                    para_chars,
+                    &designcraft_doc::CharFormat {
+                        style: st.to_string(),
+                        over: Default::default(),
+                    },
+                );
                 &base
             }
             None => para_chars,
@@ -248,12 +296,24 @@ pub(crate) fn shape_para(
             for (offset, c) in story.text.get(a..b).unwrap_or("").char_indices() {
                 let entry = font.entry(c);
                 if entry != selected && a + offset > start {
-                    resolved.push((start, a + offset, composite_props(db, &props, selected), fmt, para_chars.clone()));
+                    resolved.push((
+                        start,
+                        a + offset,
+                        composite_props(db, &props, selected),
+                        fmt,
+                        para_chars.clone(),
+                    ));
                     start = a + offset;
                 }
                 selected = entry;
             }
-            resolved.push((start, b, composite_props(db, &props, selected), fmt, para_chars.clone()));
+            resolved.push((
+                start,
+                b,
+                composite_props(db, &props, selected),
+                fmt,
+                para_chars.clone(),
+            ));
         } else {
             resolved.push((a, b, props, fmt, para_chars.clone()));
         }
@@ -263,7 +323,13 @@ pub(crate) fn shape_para(
         // A missing font's substitute stands in for the whole font: fallback fonts help it.
         let auto_leading = table.env_for(auto_leading, style);
         let deleted = props.change == designcraft_doc::ChangeMark::Deleted;
-        if deleted || (!props.conditions.is_empty() && props.conditions.iter().all(|c| sub.hidden_conditions.contains(c))) {
+        if deleted
+            || (!props.conditions.is_empty()
+                && props
+                    .conditions
+                    .iter()
+                    .all(|c| sub.hidden_conditions.contains(c)))
+        {
             // Hidden conditional text: zero-width, unbreakable, undrawn place-holders keep every
             // byte addressable (caret, selection) without taking space.
             let face = db.face(&props.font_family, &props.font_style);
@@ -278,9 +344,19 @@ pub(crate) fn shape_para(
             }
             continue;
         }
-        let is_ref = |c: char| c == designcraft_doc::FOOTNOTE_REF || c == designcraft_doc::ENDNOTE_REF;
+        let is_ref =
+            |c: char| c == designcraft_doc::FOOTNOTE_REF || c == designcraft_doc::ENDNOTE_REF;
         if !story.text[a..b].contains(is_ref) {
-            shape_run(db, &story.text, a..b, &props, auto_leading, style, sub, &mut glyphs);
+            shape_run(
+                db,
+                &story.text,
+                a..b,
+                &props,
+                auto_leading,
+                style,
+                sub,
+                &mut glyphs,
+            );
             continue;
         }
         // Footnote references take the reference position / character style; endnote references
@@ -302,18 +378,54 @@ pub(crate) fn shape_para(
         for (i, m) in story.text[a..b].match_indices(is_ref) {
             let i = a + i;
             if k < i {
-                shape_run(db, &story.text, k..i, &props, auto_leading, style, sub, &mut glyphs);
+                shape_run(
+                    db,
+                    &story.text,
+                    k..i,
+                    &props,
+                    auto_leading,
+                    style,
+                    sub,
+                    &mut glyphs,
+                );
             }
             let e = i + m.len();
             if m.starts_with(designcraft_doc::ENDNOTE_REF) {
-                shape_run(db, &story.text, i..e, &eprops, eenv, estyle, sub, &mut glyphs);
+                shape_run(
+                    db,
+                    &story.text,
+                    i..e,
+                    &eprops,
+                    eenv,
+                    estyle,
+                    sub,
+                    &mut glyphs,
+                );
             } else {
-                shape_run(db, &story.text, i..e, &rprops, renv, rstyle, sub, &mut glyphs);
+                shape_run(
+                    db,
+                    &story.text,
+                    i..e,
+                    &rprops,
+                    renv,
+                    rstyle,
+                    sub,
+                    &mut glyphs,
+                );
             }
             k = e;
         }
         if k < b {
-            shape_run(db, &story.text, k..b, &props, auto_leading, style, sub, &mut glyphs);
+            shape_run(
+                db,
+                &story.text,
+                k..b,
+                &props,
+                auto_leading,
+                style,
+                sub,
+                &mut glyphs,
+            );
         }
     }
     collapse_tcy(&mut glyphs, sub.vertical);
@@ -329,7 +441,10 @@ pub(crate) fn collapse_tcy(glyphs: &mut [Glyph], vertical: bool) {
             i += 1;
             continue;
         }
-        let j = i + glyphs[i..].iter().position(|g| g.tcy.is_none()).unwrap_or(glyphs.len() - i);
+        let j = i + glyphs[i..]
+            .iter()
+            .position(|g| g.tcy.is_none())
+            .unwrap_or(glyphs.len() - i);
         if !vertical {
             glyphs[i..j].iter_mut().for_each(|g| g.tcy = None);
             i = j;
@@ -341,7 +456,11 @@ pub(crate) fn collapse_tcy(glyphs: &mut [Glyph], vertical: bool) {
         let step = em / run.len() as f64;
         let mut across = -width / 2.0;
         for (k, g) in run.iter_mut().enumerate() {
-            g.tcy = Some([em / 2.0 - k as f64 * step + g.tcy_offset[1], across + g.dx + g.tcy_offset[0], em]);
+            g.tcy = Some([
+                em / 2.0 - k as f64 * step + g.tcy_offset[1],
+                across + g.dx + g.tcy_offset[0],
+                em,
+            ]);
             across += g.adv;
             g.adv = step;
             g.dx = 0.0;
@@ -362,7 +481,10 @@ fn features_for(p: &CharProps) -> Vec<Feature> {
     if p.capitalization == Capitalization::AllCaps {
         v.extend(feature("case"));
     }
-    if matches!(p.capitalization, Capitalization::SmallCaps | Capitalization::OpenTypeAllSmallCaps) {
+    if matches!(
+        p.capitalization,
+        Capitalization::SmallCaps | Capitalization::OpenTypeAllSmallCaps
+    ) {
         v.extend(feature("smcp"));
     }
     if p.capitalization == Capitalization::OpenTypeAllSmallCaps {
@@ -400,17 +522,26 @@ fn features_for(p: &CharProps) -> Vec<Feature> {
     };
     if let Some(tag) = positional {
         for form in ["isol", "init", "medi", "fina"] {
-            v.extend(feature(&format!("{}{}", if form == tag { "" } else { "-" }, form)));
+            v.extend(feature(&format!(
+                "{}{}",
+                if form == tag { "" } else { "-" },
+                form
+            )));
         }
     }
     v
 }
 
 fn is_mark(c: char) -> bool {
-    unicode_bidi::bidi_class(c) == unicode_bidi::BidiClass::NSM || matches!(c, '\u{200C}' | '\u{200D}')
+    unicode_bidi::bidi_class(c) == unicode_bidi::BidiClass::NSM
+        || matches!(c, '\u{200C}' | '\u{200D}')
 }
 
-fn composite_props(db: &ScopedFonts<'_>, base: &CharProps, entry: Option<&designcraft_doc::cjk::CompositeFontEntry>) -> CharProps {
+fn composite_props(
+    db: &ScopedFonts<'_>,
+    base: &CharProps,
+    entry: Option<&designcraft_doc::cjk::CompositeFontEntry>,
+) -> CharProps {
     let mut p = base.clone();
     if let Some(e) = entry {
         p.font_family.clone_from(&e.family);
@@ -461,7 +592,12 @@ fn shape_run(
         g.adv += before + after - (left + right) * tsume;
     }
     if p.jidori > 0 && !run.is_empty() && !run.iter().any(|g| g.ch.is_control()) {
-        let clusters: Vec<usize> = run.iter().enumerate().filter(|(_, g)| g.len > 0).map(|(i, _)| i).collect();
+        let clusters: Vec<usize> = run
+            .iter()
+            .enumerate()
+            .filter(|(_, g)| g.len > 0)
+            .map(|(i, _)| i)
+            .collect();
         let natural: f64 = run.iter().map(|g| g.adv).sum();
         let target = f64::from(p.jidori.min(10000)) * em;
         if clusters.len() == 1 {
@@ -500,20 +636,42 @@ fn shape_run_raw(
     // fallback, the primary font sets them: the shaper gives its .notdef (glyph 0).
     let lang = designcraft_doc::language_tag(&p.language);
     let fallback = |c: char| {
-        if auto_leading.glyph_fallback { db.fallback_for(c, primary.id(), lang).unwrap_or_else(|| primary.clone()) } else { primary.clone() }
+        if auto_leading.glyph_fallback {
+            db.fallback_for(c, primary.id(), lang)
+                .unwrap_or_else(|| primary.clone())
+        } else {
+            primary.clone()
+        }
     };
     let strong = |c| match unicode_bidi::bidi_class(c) {
         unicode_bidi::BidiClass::AL => Some(true),
         unicode_bidi::BidiClass::L | unicode_bidi::BidiClass::R => Some(false),
         _ => None,
     };
-    let mut arabic_context = text.get(..range.start).unwrap_or("").chars().rev().take_while(|c| !matches!(c, '\n' | '\r')).find_map(strong);
+    let mut arabic_context = text
+        .get(..range.start)
+        .unwrap_or("")
+        .chars()
+        .rev()
+        .take_while(|c| !matches!(c, '\n' | '\r'))
+        .find_map(strong);
     // Split into segments: font coverage changes and special characters (markers, tabs, breaks).
     let mut seg_start = range.start;
     let mut seg_face = primary.clone();
     let flush = |a: usize, b: usize, face: &Arc<FontFace>, out: &mut Vec<Glyph>| {
         if a < b {
-            shape_segment(db, text, a..b, None, p, face, auto_leading, style, out, sub.vertical);
+            shape_segment(
+                db,
+                text,
+                a..b,
+                None,
+                p,
+                face,
+                auto_leading,
+                style,
+                out,
+                sub.vertical,
+            );
         }
     };
     for (i, c) in text[range.clone()].char_indices() {
@@ -537,8 +695,23 @@ fn shape_run_raw(
             if d != c {
                 flush(seg_start, i, &seg_face, out);
                 seg_start = i + c.len_utf8();
-                let face = if primary.covers(d) { primary.clone() } else { fallback(d) };
-                shape_segment(db, text, i..i + c.len_utf8(), Some(d.encode_utf8(&mut [0; 4])), p, &face, auto_leading, style, out, sub.vertical);
+                let face = if primary.covers(d) {
+                    primary.clone()
+                } else {
+                    fallback(d)
+                };
+                shape_segment(
+                    db,
+                    text,
+                    i..i + c.len_utf8(),
+                    Some(d.encode_utf8(&mut [0; 4])),
+                    p,
+                    &face,
+                    auto_leading,
+                    style,
+                    out,
+                    sub.vertical,
+                );
                 continue;
             }
         }
@@ -570,7 +743,18 @@ fn shape_run_raw(
             seg_start = i + c.len_utf8();
             if let Some(vi) = designcraft_doc::vars::var_index(c) {
                 match sub.vars.get(vi).filter(|v| !v.is_empty()) {
-                    Some(v) => shape_segment(db, text, i..i + c.len_utf8(), Some(v), p, &primary, auto_leading, style, out, sub.vertical),
+                    Some(v) => shape_segment(
+                        db,
+                        text,
+                        i..i + c.len_utf8(),
+                        Some(v),
+                        p,
+                        &primary,
+                        auto_leading,
+                        style,
+                        out,
+                        sub.vertical,
+                    ),
                     None => {
                         let mut g = control_glyph(&primary, p, auto_leading, style, i, c);
                         g.adv = 0.0;
@@ -580,13 +764,29 @@ fn shape_run_raw(
                 continue;
             }
             match c {
-                story::PAGE_NUMBER | story::NEXT_PAGE_NUMBER | story::PREV_PAGE_NUMBER | story::SECTION_MARKER => {
+                story::PAGE_NUMBER
+                | story::NEXT_PAGE_NUMBER
+                | story::PREV_PAGE_NUMBER
+                | story::SECTION_MARKER => {
                     let s = if c == story::SECTION_MARKER {
-                        sub.section_marker.clone().unwrap_or_else(|| "Section".into())
+                        sub.section_marker
+                            .clone()
+                            .unwrap_or_else(|| "Section".into())
                     } else {
                         sub.page_name.clone().unwrap_or_else(|| "#".into())
                     };
-                    shape_segment(db, text, i..i + c.len_utf8(), Some(&s), p, &primary, auto_leading, style, out, sub.vertical);
+                    shape_segment(
+                        db,
+                        text,
+                        i..i + c.len_utf8(),
+                        Some(&s),
+                        p,
+                        &primary,
+                        auto_leading,
+                        style,
+                        out,
+                        sub.vertical,
+                    );
                 }
                 designcraft_doc::OBJECT_MARK => {
                     let mut g = control_glyph(&primary, p, auto_leading, style, i, c);
@@ -609,7 +809,18 @@ fn shape_run_raw(
                     out.push(g);
                 }
                 designcraft_doc::XREF_MARK => match sub.xrefs.get(&i).filter(|t| !t.is_empty()) {
-                    Some(t) => shape_segment(db, text, i..i + c.len_utf8(), Some(t), p, &primary, auto_leading, style, out, sub.vertical),
+                    Some(t) => shape_segment(
+                        db,
+                        text,
+                        i..i + c.len_utf8(),
+                        Some(t),
+                        p,
+                        &primary,
+                        auto_leading,
+                        style,
+                        out,
+                        sub.vertical,
+                    ),
                     None => {
                         let mut g = control_glyph(&primary, p, auto_leading, style, i, c);
                         g.adv = 0.0;
@@ -618,7 +829,18 @@ fn shape_run_raw(
                 },
                 designcraft_doc::FOOTNOTE_REF | designcraft_doc::ENDNOTE_REF => {
                     let s = sub.notes.get(&i).map_or("#", String::as_str);
-                    shape_segment(db, text, i..i + c.len_utf8(), Some(s), p, &primary, auto_leading, style, out, sub.vertical);
+                    shape_segment(
+                        db,
+                        text,
+                        i..i + c.len_utf8(),
+                        Some(s),
+                        p,
+                        &primary,
+                        auto_leading,
+                        style,
+                        out,
+                        sub.vertical,
+                    );
                 }
                 _ => {
                     // Zero-width control glyph carrying metrics (tabs get their width at line layout).
@@ -637,7 +859,15 @@ fn shape_run_raw(
             continue;
         }
         let covered = c.is_whitespace() || c.is_control() || c == SOFT_HYPHEN || primary.covers(c);
-        let face = if covered || is_mark(c) { if is_mark(c) { seg_face.clone() } else { primary.clone() } } else { fallback(c) };
+        let face = if covered || is_mark(c) {
+            if is_mark(c) {
+                seg_face.clone()
+            } else {
+                primary.clone()
+            }
+        } else {
+            fallback(c)
+        };
         if face.id() != seg_face.id() {
             flush(seg_start, i, &seg_face, out);
             seg_start = i;
@@ -657,7 +887,12 @@ static WORD_CACHE: RwLock<Vec<(WordKey, Arc<RwLock<WordMap>>)>> = RwLock::new(Ve
 const WORD_CACHE_MAX: usize = 50_000;
 
 fn word_map(key: WordKey) -> Arc<RwLock<WordMap>> {
-    if let Some((_, m)) = WORD_CACHE.read().unwrap_or_else(|e| e.into_inner()).iter().find(|e| e.0 == key) {
+    if let Some((_, m)) = WORD_CACHE
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .find(|e| e.0 == key)
+    {
         return m.clone();
     }
     let mut w = WORD_CACHE.write().unwrap_or_else(|e| e.into_inner());
@@ -685,7 +920,13 @@ fn shape_cached(
     (before, after): (&str, &str),
 ) -> Vec<ShapedGlyph> {
     use designcraft_fonts::ShapeContext;
-    let map = |c: char| if caps { c.to_uppercase().next().unwrap_or(c) } else { c };
+    let map = |c: char| {
+        if caps {
+            c.to_uppercase().next().unwrap_or(c)
+        } else {
+            c
+        }
+    };
     let shape = |s: &str, context: ShapeContext<'_>| {
         if vertical {
             designcraft_fonts::shape_vertical(face, s, feats, map, context)
@@ -694,7 +935,14 @@ fn shape_cached(
         }
     };
     if src.len() < 2 || !src.contains(' ') || src.chars().any(designcraft_fonts::is_rtl) {
-        return shape(src, ShapeContext { before, after, language: lang });
+        return shape(
+            src,
+            ShapeContext {
+                before,
+                after,
+                language: lang,
+            },
+        );
     }
     let words = word_map((face.id(), vertical, caps, format!("{feats:?}"), lang));
     let pieces: Vec<&str> = src.split_inclusive(' ').collect();
@@ -705,7 +953,14 @@ fn shape_cached(
     let mut fresh: Vec<(Box<str>, Arc<[ShapedGlyph]>)> = Vec::new();
     for (k, f) in found.iter_mut().enumerate() {
         if f.is_none() {
-            let g: Arc<[ShapedGlyph]> = shape(pieces[k], ShapeContext { language: lang, ..Default::default() }).into();
+            let g: Arc<[ShapedGlyph]> = shape(
+                pieces[k],
+                ShapeContext {
+                    language: lang,
+                    ..Default::default()
+                },
+            )
+            .into();
             fresh.push((pieces[k].into(), g.clone()));
             *f = Some(g);
         }
@@ -721,13 +976,20 @@ fn shape_cached(
     let mut start = 0;
     for (piece, glyphs) in pieces.iter().zip(found) {
         let glyphs = glyphs.unwrap_or_else(|| Arc::from(Vec::new()));
-        out.extend(glyphs.iter().map(|g| ShapedGlyph { cluster: g.cluster + start, ..*g }));
+        out.extend(glyphs.iter().map(|g| ShapedGlyph {
+            cluster: g.cluster + start,
+            ..*g
+        }));
         start += piece.len();
     }
     out
 }
 
-fn metrics(face: &FontFace, p: &CharProps, auto_leading: TypeEnv) -> (f64, f64, f64, f64, f64, f64, f64, f64) {
+fn metrics(
+    face: &FontFace,
+    p: &CharProps,
+    auto_leading: TypeEnv,
+) -> (f64, f64, f64, f64, f64, f64, f64, f64) {
     let (size, shift) = effective_size(p, &auto_leading.adv);
     let k = size / face.upem;
     let vs = p.v_scale;
@@ -735,7 +997,16 @@ fn metrics(face: &FontFace, p: &CharProps, auto_leading: TypeEnv) -> (f64, f64, 
         Leading::Auto => p.size * auto_leading.auto_leading,
         Leading::Points(v) => v,
     };
-    (size, k, face.ascent * k * vs, face.descent * k * vs, leading, face.cap_height * k * vs, face.x_height * k * vs, shift)
+    (
+        size,
+        k,
+        face.ascent * k * vs,
+        face.descent * k * vs,
+        leading,
+        face.cap_height * k * vs,
+        face.x_height * k * vs,
+        shift,
+    )
 }
 
 /// Auto leading and the document's Advanced Type settings, for shaping.
@@ -750,13 +1021,26 @@ pub struct TypeEnv {
 /// Synthesised super/subscript: size and shift from Advanced Type (percent of the font size).
 fn effective_size(p: &CharProps, adv: &designcraft_doc::AdvancedType) -> (f64, f64) {
     match p.position {
-        Position::Superscript => (p.size * adv.superscript_size / 100.0, p.baseline_shift + p.size * adv.superscript_position / 100.0),
-        Position::Subscript => (p.size * adv.subscript_size / 100.0, p.baseline_shift - p.size * adv.subscript_position / 100.0),
+        Position::Superscript => (
+            p.size * adv.superscript_size / 100.0,
+            p.baseline_shift + p.size * adv.superscript_position / 100.0,
+        ),
+        Position::Subscript => (
+            p.size * adv.subscript_size / 100.0,
+            p.baseline_shift - p.size * adv.subscript_position / 100.0,
+        ),
         _ => (p.size, p.baseline_shift),
     }
 }
 
-fn control_glyph(face: &Arc<FontFace>, p: &CharProps, auto_leading: TypeEnv, style: u32, byte: usize, ch: char) -> Glyph {
+fn control_glyph(
+    face: &Arc<FontFace>,
+    p: &CharProps,
+    auto_leading: TypeEnv,
+    style: u32,
+    byte: usize,
+    ch: char,
+) -> Glyph {
     let (size, k, ascent, descent, leading, cap, xh, shift) = metrics(face, p, auto_leading);
     Glyph {
         face: FaceRef::of(face),
@@ -816,7 +1100,11 @@ fn shape_segment(
     let (size, k, ascent, descent, leading, cap, xh, shift) = metrics(face, p, auto_leading);
     let hs = p.h_scale;
     let tracking = p.tracking / 1000.0 * p.size;
-    let manual = if let Kerning::Manual(v) = p.kerning { v / 1000.0 * p.size } else { 0.0 };
+    let manual = if let Kerning::Manual(v) = p.kerning {
+        v / 1000.0 * p.size
+    } else {
+        0.0
+    };
     let src = replacement.unwrap_or(&text[range.clone()]);
     let caps = p.capitalization == Capitalization::AllCaps;
     let feats = features_for(p);
@@ -836,12 +1124,26 @@ fn shape_segment(
     let mut upright: Vec<bool> = Vec::new();
     for (r, up) in upright_runs(src, vertical && !p.tate_chu_yoko) {
         let around = match replacement {
-            None => (text.get(..range.start + r.start).unwrap_or(""), text.get(range.start + r.end..).unwrap_or("")),
+            None => (
+                text.get(..range.start + r.start).unwrap_or(""),
+                text.get(range.start + r.end..).unwrap_or(""),
+            ),
             Some(_) => ("", ""),
         };
-        let g = shape_cached(face, &src[r.clone()], if up { &upright_feats } else { &feats }, lang, caps, up, around);
+        let g = shape_cached(
+            face,
+            &src[r.clone()],
+            if up { &upright_feats } else { &feats },
+            lang,
+            caps,
+            up,
+            around,
+        );
         upright.extend(std::iter::repeat_n(up, g.len()));
-        shaped.extend(g.into_iter().map(|g| ShapedGlyph { cluster: g.cluster + r.start, ..g }));
+        shaped.extend(g.into_iter().map(|g| ShapedGlyph {
+            cluster: g.cluster + r.start,
+            ..g
+        }));
     }
     // Upright glyphs fill the ideographic em box across the line.
     let (em_top, em_bottom) = face.em_box();
@@ -851,21 +1153,44 @@ fn shape_segment(
     for (gi, sg) in shaped.iter().enumerate() {
         let up = upright.get(gi).copied().unwrap_or(false);
         let (byte, len, ch) = if replacement.is_some() {
-            (range.start, if gi == 0 { range.len() } else { 0 }, text[range.start..].chars().next().unwrap_or(' '))
+            (
+                range.start,
+                if gi == 0 { range.len() } else { 0 },
+                text[range.start..].chars().next().unwrap_or(' '),
+            )
         } else {
             let cl = range.start + sg.cluster;
-            let end = shaped[gi + 1..].iter().map(|r| range.start + r.cluster).find(|&c| c > cl).unwrap_or(range.end);
-            (cl, end.saturating_sub(cl), text[cl..].chars().next().unwrap_or(' '))
+            let end = shaped[gi + 1..]
+                .iter()
+                .map(|r| range.start + r.cluster)
+                .find(|&c| c > cl)
+                .unwrap_or(range.end);
+            (
+                cl,
+                end.saturating_sub(cl),
+                text[cl..].chars().next().unwrap_or(' '),
+            )
         };
         let last_in_cluster = gi + 1 == n || shaped[gi + 1].cluster != sg.cluster;
         // Upright: down the line is the shaper's -y, across it (text space -y) its x.
-        let mut adv = if up { -(sg.y_advance as f64) * k_v } else { sg.x_advance as f64 * k * hs };
+        let mut adv = if up {
+            -(sg.y_advance as f64) * k_v
+        } else {
+            sg.x_advance as f64 * k * hs
+        };
         let (dx, dy) = if up {
             (-(sg.y_offset as f64) * k_v, -(sg.x_offset as f64) * k * hs)
         } else {
-            (sg.x_offset as f64 * k * hs, -(sg.y_offset as f64) * k * p.v_scale)
+            (
+                sg.x_offset as f64 * k * hs,
+                -(sg.y_offset as f64) * k * p.v_scale,
+            )
         };
-        let (ascent, descent) = if up { (em_top * k_v, -em_bottom * k_v) } else { (ascent, descent) };
+        let (ascent, descent) = if up {
+            (em_top * k_v, -em_bottom * k_v)
+        } else {
+            (ascent, descent)
+        };
         if ch == SOFT_HYPHEN {
             adv = 0.0;
         } else if last_in_cluster {
@@ -874,13 +1199,25 @@ fn shape_segment(
         // Only the first glyph of a cluster owns the bytes (so ranges partition the text).
         let first_in_cluster = gi == 0 || shaped[gi - 1].cluster != sg.cluster;
         let mark = face.glyph_is_mark(sg.gid);
-        let mark_x = if mark { p.diacritic_x_offset.clamp(-1000.0, 1000.0) / 1000.0 * p.size * hs } else { 0.0 };
-        let mark_y = if mark { p.diacritic_y_offset.clamp(-1000.0, 1000.0) / 1000.0 * p.size * p.v_scale } else { 0.0 };
+        let mark_x = if mark {
+            p.diacritic_x_offset.clamp(-1000.0, 1000.0) / 1000.0 * p.size * hs
+        } else {
+            0.0
+        };
+        let mark_y = if mark {
+            p.diacritic_y_offset.clamp(-1000.0, 1000.0) / 1000.0 * p.size * p.v_scale
+        } else {
+            0.0
+        };
         out.push(Glyph {
             face: fref,
             gid: sg.gid,
             byte,
-            len: if first_in_cluster || replacement.is_some() { len } else { 0 },
+            len: if first_in_cluster || replacement.is_some() {
+                len
+            } else {
+                0
+            },
             ch,
             adv,
             dx: dx + mark_x,
@@ -906,7 +1243,9 @@ fn shape_segment(
             character_alignment: p.character_alignment,
             leading_model: p.leading_model,
             character_direction: p.character_direction,
-            display_char: if replacement.is_some() && matches!(ch, '0'..='9' | '\u{0660}'..='\u{0669}' | '\u{06F0}'..='\u{06F9}') {
+            display_char: if replacement.is_some()
+                && matches!(ch, '0'..='9' | '\u{0660}'..='\u{0669}' | '\u{06F0}'..='\u{06F9}')
+            {
                 src.chars().next().unwrap_or(ch)
             } else {
                 ch

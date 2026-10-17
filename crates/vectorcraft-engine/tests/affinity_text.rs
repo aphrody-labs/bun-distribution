@@ -33,7 +33,8 @@ fn texts(d: &Document) -> Vec<&TextObject> {
     out
 }
 fn import(blocks: Vec<F>, frame: bool, dpi: f64, transform: [f64; 6]) -> fileio::Loaded {
-    let loaded = fileio::load("original-text.af", &document(blocks, frame, dpi, transform)).unwrap();
+    let loaded =
+        fileio::load("original-text.af", &document(blocks, frame, dpi, transform)).unwrap();
     assert!(!loaded.preview_only);
     loaded
 }
@@ -43,7 +44,10 @@ fn unicode_mixed_fonts_line_breaks_and_styles_remain_editable_after_save() {
     let loaded = import(
         vec![block(
             utf8("é😀\u{2028}ab\u{2029}尾\0"),
-            vec![run(2, Some(attrs("First", "FirstPS", 700, true, 24.0))), run(8, Some(attrs("Second", "SecondPS", 300, false, 20.0)))],
+            vec![
+                run(2, Some(attrs("First", "FirstPS", 700, true, 24.0))),
+                run(8, Some(attrs("Second", "SecondPS", 300, false, 20.0))),
+            ],
             &[1],
         )],
         false,
@@ -51,11 +55,21 @@ fn unicode_mixed_fonts_line_breaks_and_styles_remain_editable_after_save() {
         [2.0, 0.0, 30.0, 0.0, 2.0, 40.0],
     );
     let t = texts(&loaded.doc)[0];
-    assert_eq!(t.runs.iter().map(|r| r.text.as_str()).collect::<Vec<_>>(), ["é😀", "\nab\n尾"]);
+    assert_eq!(
+        t.runs.iter().map(|r| r.text.as_str()).collect::<Vec<_>>(),
+        ["é😀", "\nab\n尾"]
+    );
     assert_eq!(t.runs[0].style.font_family, "First");
     assert_eq!(t.runs[0].style.font_style, "Bold Italic");
     assert_eq!(t.runs[1].style.font_style, "Light");
-    assert_eq!((t.runs[0].style.size, t.runs[0].style.leading, t.runs[0].style.tracking), (36.0, Some(45.0), 25.0));
+    assert_eq!(
+        (
+            t.runs[0].style.size,
+            t.runs[0].style.leading,
+            t.runs[0].style.tracking
+        ),
+        (36.0, Some(45.0), 25.0)
+    );
     assert_eq!(t.para.justify, Justify::Center);
     assert!(matches!(t.kind, TextKind::Point));
     assert_eq!(t.xf.as_coeffs(), [1.0, 0.0, 0.0, 1.0, 187.5, 87.0]);
@@ -66,24 +80,62 @@ fn unicode_mixed_fonts_line_breaks_and_styles_remain_editable_after_save() {
 
 #[test]
 fn absent_font_name_uses_named_default_and_postscript_name_is_preserved() {
-    let loaded =
-        import(vec![block(utf8("ab"), vec![run(1, Some(attrs("", "OnlyPostScript", 400, false, 12.0))), run(2, None)], &[])], false, 72.0, IDENTITY);
+    let loaded = import(
+        vec![block(
+            utf8("ab"),
+            vec![
+                run(1, Some(attrs("", "OnlyPostScript", 400, false, 12.0))),
+                run(2, None),
+            ],
+            &[],
+        )],
+        false,
+        72.0,
+        IDENTITY,
+    );
     let t = texts(&loaded.doc)[0];
     assert_eq!(t.runs[0].style.font_family, "OnlyPostScript");
-    assert_eq!(t.runs[1].style.font_family, CharStyle::default().font_family);
-    assert_eq!(t.runs[1].style.fill.color().unwrap().to_rgb(), [0.0, 0.0, 0.0]);
-    assert!(loaded.warnings.iter().any(|w| w.contains("without a font name")));
-    assert!(loaded.warnings.iter().any(|w| w.contains("without character attributes")));
+    assert_eq!(
+        t.runs[1].style.font_family,
+        CharStyle::default().font_family
+    );
+    assert_eq!(
+        t.runs[1].style.fill.color().unwrap().to_rgb(),
+        [0.0, 0.0, 0.0]
+    );
+    assert!(
+        loaded
+            .warnings
+            .iter()
+            .any(|w| w.contains("without a font name"))
+    );
+    assert!(
+        loaded
+            .warnings
+            .iter()
+            .any(|w| w.contains("without character attributes"))
+    );
 }
 
 #[test]
 fn frame_type_keeps_dimensions_alignment_and_unit_conversion() {
-    let loaded = import(vec![block(utf8("text"), vec![run(4, Some(attrs("Frame", "", 500, false, 20.0)))], &[3])], true, 144.0, IDENTITY);
+    let loaded = import(
+        vec![block(
+            utf8("text"),
+            vec![run(4, Some(attrs("Frame", "", 500, false, 20.0)))],
+            &[3],
+        )],
+        true,
+        144.0,
+        IDENTITY,
+    );
     let t = texts(&loaded.doc)[0];
     assert_eq!(t.runs[0].style.size, 10.0);
     assert_eq!(t.runs[0].style.font_style, "Medium");
     assert_eq!(t.para.justify, Justify::JustifyLeft);
-    let TextKind::Area { frame } = &t.kind else { panic!("expected area type") };
+    let TextKind::Area { frame } = &t.kind else {
+        panic!("expected area type")
+    };
     assert_eq!(frame.bounds().unwrap().width(), 100.0);
     assert_eq!(frame.bounds().unwrap().height(), 50.0);
 }
@@ -91,21 +143,54 @@ fn frame_type_keeps_dimensions_alignment_and_unit_conversion() {
 #[test]
 fn a_frame_too_short_for_its_first_line_is_made_taller_with_a_warning() {
     // #1423: a title taller than its frame (60 pt type in a 50 pt frame) drew nothing.
-    let lines = |t: &TextObject| vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).lines.len();
-    let title = |size: f64| import(vec![block(utf8("T"), vec![run(1, Some(attrs("Frame", "", 400, false, size)))], &[3])], true, 144.0, IDENTITY);
+    let lines = |t: &TextObject| {
+        vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t)
+            .lines
+            .len()
+    };
+    let title = |size: f64| {
+        import(
+            vec![block(
+                utf8("T"),
+                vec![run(1, Some(attrs("Frame", "", 400, false, size)))],
+                &[3],
+            )],
+            true,
+            144.0,
+            IDENTITY,
+        )
+    };
     let short = title(120.0);
     let t = texts(&short.doc)[0];
-    let TextKind::Area { frame } = &t.kind else { panic!("expected area type") };
+    let TextKind::Area { frame } = &t.kind else {
+        panic!("expected area type")
+    };
     let b = frame.bounds().unwrap();
-    assert!((b.x0, b.y0, b.width()) == (0.0, 0.0, 100.0) && b.height() > 50.0 && b.height() < 100.0, "taller from its top: {b:?}");
+    assert!(
+        (b.x0, b.y0, b.width()) == (0.0, 0.0, 100.0) && b.height() > 50.0 && b.height() < 100.0,
+        "taller from its top: {b:?}"
+    );
     assert_eq!(lines(t), 1, "the line shows");
-    assert!(short.warnings.iter().any(|w| w.contains("too short for their first line")), "{:?}", short.warnings);
+    assert!(
+        short
+            .warnings
+            .iter()
+            .any(|w| w.contains("too short for their first line")),
+        "{:?}",
+        short.warnings
+    );
     // A frame that holds its line keeps its height, and nothing is said.
     let fits = title(20.0);
     let t = texts(&fits.doc)[0];
-    let TextKind::Area { frame } = &t.kind else { panic!("expected area type") };
+    let TextKind::Area { frame } = &t.kind else {
+        panic!("expected area type")
+    };
     assert_eq!((frame.bounds().unwrap().height(), lines(t)), (50.0, 1));
-    assert!(!fits.warnings.iter().any(|w| w.contains("too short")), "{:?}", fits.warnings);
+    assert!(
+        !fits.warnings.iter().any(|w| w.contains("too short")),
+        "{:?}",
+        fits.warnings
+    );
 }
 
 #[test]
@@ -123,7 +208,16 @@ fn each_font_weight_and_italic_maps_to_the_expected_style() {
     ];
     for (weight, expected) in cases {
         for italic in [false, true] {
-            let loaded = import(vec![block(utf8("x"), vec![run(1, Some(attrs("Family", "", weight, italic, 12.0)))], &[])], false, 72.0, IDENTITY);
+            let loaded = import(
+                vec![block(
+                    utf8("x"),
+                    vec![run(1, Some(attrs("Family", "", weight, italic, 12.0)))],
+                    &[],
+                )],
+                false,
+                72.0,
+                IDENTITY,
+            );
             let style = &texts(&loaded.doc)[0].runs[0].style.font_style;
             let expected = if !italic {
                 expected.into()
@@ -141,7 +235,11 @@ fn each_font_weight_and_italic_maps_to_the_expected_style() {
 fn caps_and_feature_overrides_pass_through_to_editable_type() {
     let mut a = attrs("Family", "", 400, false, 12.0);
     if let F::Obj(_, fields) = &mut a {
-        fields.iter_mut().find(|(t, _)| *t == tag(b"Objs")).unwrap().1 = F::Shared(vec![
+        fields
+            .iter_mut()
+            .find(|(t, _)| *t == tag(b"Objs"))
+            .unwrap()
+            .1 = F::Shared(vec![
             solid(1.0),
             F::Null,
             F::Null,
@@ -156,30 +254,54 @@ fn caps_and_feature_overrides_pass_through_to_editable_type() {
                     F::Objs(
                         tag(b"OTFS"),
                         vec![
-                            vec![(tag(b"Feat"), F::U32(u32::from_be_bytes(*b"CAP\x01"))), (tag(b"Valu"), F::I32(1))],
-                            vec![(tag(b"Feat"), F::U32(u32::from_be_bytes(*b"liga"))), (tag(b"Valu"), F::I32(0))],
-                            vec![(tag(b"Feat"), F::U32(u32::from_be_bytes(*b"ss01"))), (tag(b"Valu"), F::I32(1))],
+                            vec![
+                                (tag(b"Feat"), F::U32(u32::from_be_bytes(*b"CAP\x01"))),
+                                (tag(b"Valu"), F::I32(1)),
+                            ],
+                            vec![
+                                (tag(b"Feat"), F::U32(u32::from_be_bytes(*b"liga"))),
+                                (tag(b"Valu"), F::I32(0)),
+                            ],
+                            vec![
+                                (tag(b"Feat"), F::U32(u32::from_be_bytes(*b"ss01"))),
+                                (tag(b"Valu"), F::I32(1)),
+                            ],
                             // Character variants aren't rendered yet (stylistic sets are, #1607).
-                            vec![(tag(b"Feat"), F::U32(u32::from_be_bytes(*b"cv01"))), (tag(b"Valu"), F::I32(1))],
+                            vec![
+                                (tag(b"Feat"), F::U32(u32::from_be_bytes(*b"cv01"))),
+                                (tag(b"Valu"), F::I32(1)),
+                            ],
                         ],
                     ),
                 )],
             ),
         ]);
     }
-    let loaded = import(vec![block(utf8("Mixed"), vec![run(5, Some(a))], &[])], false, 72.0, IDENTITY);
+    let loaded = import(
+        vec![block(utf8("Mixed"), vec![run(5, Some(a))], &[])],
+        false,
+        72.0,
+        IDENTITY,
+    );
     let t = texts(&loaded.doc)[0];
     assert_eq!(t.runs[0].text, "Mixed");
     assert!(t.runs[0].style.all_caps);
     assert_eq!(t.runs[0].style.features, ["-liga", "ss01", "cv01"]);
-    assert!(loaded.warnings.iter().any(|w| w.contains("retained but not rendered")));
+    assert!(
+        loaded
+            .warnings
+            .iter()
+            .any(|w| w.contains("retained but not rendered"))
+    );
     let restored = vectorcraft_format::load(&vectorcraft_format::save_file(&loaded.doc)).unwrap();
     assert_eq!(texts(&restored)[0], t);
 }
 
 #[test]
 fn pinned_affinity3_text_opens_as_editable_unicode_with_resolved_emoji_font() {
-    let Some(corpus) = corpus::pinned() else { return };
+    let Some(corpus) = corpus::pinned() else {
+        return;
+    };
     let load = |name: &str| {
         let loaded = fileio::load(name, &std::fs::read(corpus.join(name)).unwrap()).unwrap();
         assert!(!loaded.preview_only);
@@ -187,18 +309,27 @@ fn pinned_affinity3_text_opens_as_editable_unicode_with_resolved_emoji_font() {
     };
     let loaded = load("patchy-text-runs.af");
     let t = texts(&loaded.doc)[0];
-    assert_eq!(t.runs.iter().map(|r| r.text.as_str()).collect::<String>(), "ABcdÉ😀X");
+    assert_eq!(
+        t.runs.iter().map(|r| r.text.as_str()).collect::<String>(),
+        "ABcdÉ😀X"
+    );
     assert_eq!(t.runs[3].style.font_family, "Segoe UI Emoji");
     assert_eq!(t.runs[4].style.font_family, "Courier New");
     let loaded = load("patchy-text-caps.af");
     let ts = texts(&loaded.doc);
     assert!(ts[0].runs[0].style.all_caps);
     assert_eq!(ts[1].runs[0].style.features, ["smcp"]);
-    for name in ["patchy-text-artistic.af", "patchy-text-frame.af", "patchy-text-rotated.af", "patchy-text-indent.af", "patchy-text-para-spacing.af"]
-    {
+    for name in [
+        "patchy-text-artistic.af",
+        "patchy-text-frame.af",
+        "patchy-text-rotated.af",
+        "patchy-text-indent.af",
+        "patchy-text-para-spacing.af",
+    ] {
         let loaded = load(name);
         assert!(!texts(&loaded.doc).is_empty(), "{name}");
-        let restored = vectorcraft_format::load(&vectorcraft_format::save_file(&loaded.doc)).unwrap();
+        let restored =
+            vectorcraft_format::load(&vectorcraft_format::save_file(&loaded.doc)).unwrap();
         assert_eq!(texts(&restored), texts(&loaded.doc), "{name}");
     }
 }
@@ -212,8 +343,19 @@ fn installed_postscript_identity_overrides_ambiguous_family_and_weight() {
         eprintln!("DejaVuSans is not installed; exact PostScript face test skipped");
         return;
     };
-    let loaded =
-        import(vec![block(utf8("x"), vec![run(1, Some(attrs("Ambiguous Family", "DejaVuSans", 900, true, 12.0)))], &[])], false, 72.0, IDENTITY);
+    let loaded = import(
+        vec![block(
+            utf8("x"),
+            vec![run(
+                1,
+                Some(attrs("Ambiguous Family", "DejaVuSans", 900, true, 12.0)),
+            )],
+            &[],
+        )],
+        false,
+        72.0,
+        IDENTITY,
+    );
     let style = &texts(&loaded.doc)[0].runs[0].style;
     assert_eq!(style.font_family, family);
     assert_eq!(style.font_style, face_style);

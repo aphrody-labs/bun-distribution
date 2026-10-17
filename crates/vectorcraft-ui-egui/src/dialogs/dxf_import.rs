@@ -15,14 +15,23 @@ use vectorcraft_engine::cmd::fileio;
 
 use super::DialogSpec;
 use super::document_setup::{LABEL, check, choice};
-use super::import_pdf::{DialogFile, other_place_params, place_source, preview_texture, show_preview, with_file};
+use super::import_pdf::{
+    DialogFile, other_place_params, place_source, preview_texture, show_preview, with_file,
+};
 use crate::state::Dialog;
 use crate::{VectorcraftApp, io, widgets};
 
 pub const KIND: &str = "dxfImport";
 
 pub(super) const SPEC: DialogSpec = DialogSpec {
-    heading: |d| if d.str("mode") == "place" { tl!("Place DXF") } else { tl!("DXF Import Options") }.into(),
+    heading: |d| {
+        if d.str("mode") == "place" {
+            tl!("Place DXF")
+        } else {
+            tl!("DXF Import Options")
+        }
+        .into()
+    },
     body,
     confirm,
     min_width: 560.0,
@@ -36,11 +45,19 @@ const REMEMBERED: [&str; 4] = ["fit", "scaleLineweights", "center", "mergeLayers
 
 /// Open `bytes` (or place them with the `file.place` params `place`) through the dialog when they
 /// are a DXF drawing; false when they aren't (or can't be read: the loader then says why).
-pub fn offer(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Option<String>, place: Option<&Value>) -> bool {
+pub fn offer(
+    app: &mut VectorcraftApp,
+    name: &str,
+    bytes: &[u8],
+    path: Option<String>,
+    place: Option<&Value>,
+) -> bool {
     if fileio::detect(name, bytes).is_none_or(|f| f.id != "dxf") {
         return false;
     }
-    let Ok(info) = vectorcraft_cad::info(bytes) else { return false };
+    let Ok(info) = vectorcraft_cad::info(bytes) else {
+        return false;
+    };
     app.ui.dialog_file = Some(DialogFile::new(bytes.to_vec()));
     let mut fields = json!({
         "mode": if place.is_some() { "place" } else { "open" },
@@ -76,11 +93,17 @@ pub fn offer(app: &mut VectorcraftApp, name: &str, bytes: &[u8], path: Option<St
 /// `file.place` with params `p` asks first (true) when they name a `.dxf` drawing and no `dxf`
 /// options.
 pub fn offer_place(app: &mut VectorcraftApp, p: &Value) -> bool {
-    let named = p.get("path").or_else(|| p.get("name")).and_then(Value::as_str).map(fileio::extension);
+    let named = p
+        .get("path")
+        .or_else(|| p.get("name"))
+        .and_then(Value::as_str)
+        .map(fileio::extension);
     if p.get("dxf").is_some() || named.as_deref() != Some("dxf") {
         return false;
     }
-    let Some((name, bytes, path)) = place_source(app, p, |ext| ext == "dxf") else { return false };
+    let Some((name, bytes, path)) = place_source(app, p, |ext| ext == "dxf") else {
+        return false;
+    };
     offer(app, &name, &bytes, path, Some(p))
 }
 
@@ -103,16 +126,36 @@ fn options(d: &Dialog) -> Value {
 
 /// OK: open or place the drawing with the options.
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    let file = app.ui.dialog_file.clone().ok_or("the drawing is no longer loaded")?;
+    let file = app
+        .ui
+        .dialog_file
+        .clone()
+        .ok_or("the drawing is no longer loaded")?;
     let dxf = options(d);
-    app.ui.dxf_import = Value::Object(REMEMBERED.iter().map(|k| (k.to_string(), dxf[*k].clone())).collect());
+    app.ui.dxf_import = Value::Object(
+        REMEMBERED
+            .iter()
+            .map(|k| (k.to_string(), dxf[*k].clone()))
+            .collect(),
+    );
     let r = if d.str("mode") == "place" {
         let mut p = with_file(d.fields.get("__place"), d, &file);
         p["dxf"] = dxf;
         crate::place::run(app, &p).map(|_| ())
     } else {
-        let path = d.fields.get("path").and_then(Value::as_str).map(str::to_string);
-        io::open_document(app, &d.str("name"), &file.bytes, path, &json!({ "dxf": dxf })).map(|_| ())
+        let path = d
+            .fields
+            .get("path")
+            .and_then(Value::as_str)
+            .map(str::to_string);
+        io::open_document(
+            app,
+            &d.str("name"),
+            &file.bytes,
+            path,
+            &json!({ "dxf": dxf }),
+        )
+        .map(|_| ())
     };
     match r {
         Ok(()) => {
@@ -134,13 +177,24 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         ui.vertical(|ui| {
             show_preview(ui, preview(app, ui.ctx(), d).as_ref(), PREVIEW);
             ui.add_space(6.0);
-            widgets::dim_label(ui, &format!("DXF {} · {}", d.str("version"), d.str("units")));
+            widgets::dim_label(
+                ui,
+                &format!("DXF {} · {}", d.str("version"), d.str("units")),
+            );
         });
         ui.add_space(14.0);
         ui.vertical(|ui| {
-            let layouts: Vec<String> =
-                d.fields.get("layouts").and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_str).map(str::to_string).collect();
-            let rows: Vec<(&str, &str)> = layouts.iter().map(|l| (l.as_str(), l.as_str())).collect();
+            let layouts: Vec<String> = d
+                .fields
+                .get("layouts")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect();
+            let rows: Vec<(&str, &str)> =
+                layouts.iter().map(|l| (l.as_str(), l.as_str())).collect();
             choice(ui, d, "layout", tl!("Layout:"), &rows);
             ui.add_space(10.0);
             widgets::subheader(ui, tl!("Scaling"));
@@ -160,13 +214,25 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 }
 
 /// The chosen layout fitted to the preview, rendered once per drawing and layout.
-fn preview(app: &mut VectorcraftApp, ctx: &egui::Context, d: &Dialog) -> Option<egui::TextureHandle> {
+fn preview(
+    app: &mut VectorcraftApp,
+    ctx: &egui::Context,
+    d: &Dialog,
+) -> Option<egui::TextureHandle> {
     let file = app.ui.dialog_file.clone()?;
     let layout = d.str("layout");
     let key = egui::Id::new(("dxf-preview", file.token, layout.as_str()));
-    let o = vectorcraft_cad::ImportOptions { layout: Some(layout.clone()), fit: true, ..Default::default() };
+    let o = vectorcraft_cad::ImportOptions {
+        layout: Some(layout.clone()),
+        fit: true,
+        ..Default::default()
+    };
     // A layout that can't be read shows an empty preview (and isn't read again).
-    preview_texture(app, ctx, key, "dxf-preview", PREVIEW, || vectorcraft_cad::import(&file.bytes, &o).ok().map(|r| r.document))
+    preview_texture(app, ctx, key, "dxf-preview", PREVIEW, || {
+        vectorcraft_cad::import(&file.bytes, &o)
+            .ok()
+            .map(|r| r.document)
+    })
 }
 
 #[cfg(test)]
@@ -200,7 +266,11 @@ mod tests {
             (0, "ENDSEC"),
             (0, "EOF"),
         ];
-        pairs.iter().map(|(c, v)| format!("{c:>3}\n{v}\n")).collect::<String>().into_bytes()
+        pairs
+            .iter()
+            .map(|(c, v)| format!("{c:>3}\n{v}\n"))
+            .collect::<String>()
+            .into_bytes()
     }
 
     fn frame(app: &mut VectorcraftApp) -> String {
@@ -216,7 +286,15 @@ mod tests {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         io::open_bytes(&mut app, "plan.dxf", &drawing(), None).unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
-        assert_eq!((d.kind.as_str(), d.str("mode"), d.str("layout"), d.str("unit")), (KIND, "open".into(), "Model".into(), "Millimeters".into()));
+        assert_eq!(
+            (
+                d.kind.as_str(),
+                d.str("mode"),
+                d.str("layout"),
+                d.str("unit")
+            ),
+            (KIND, "open".into(), "Model".into(), "Millimeters".into())
+        );
         assert_eq!(d.fields["layouts"], json!(["Model", "Layout1"]));
         let text = frame(&mut app);
         for label in [
@@ -242,7 +320,8 @@ mod tests {
         assert!(app.ui.dialog.is_none());
         let st = app.session.doc().unwrap();
         let mut circles = 0;
-        st.doc.walk(|n| circles += usize::from(matches!(n.kind, NodeKind::Path { .. })));
+        st.doc
+            .walk(|n| circles += usize::from(matches!(n.kind, NodeKind::Path { .. })));
         assert_eq!(circles, 1, "the paper layout's circle");
         assert_eq!(st.doc.layers.len(), 1);
         // The next drawing starts from these choices, its own scale.
@@ -270,7 +349,8 @@ mod tests {
     #[test]
     fn placing_a_drawing_asks_then_places_one_group() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
+        app.run("file.new", json!({"width": 600, "height": 400}))
+            .unwrap();
         let p = json!({"name": "plan.dxf", "dataBase64": vectorcraft_format::base64_encode(&drawing()), "template": false});
         crate::place::run(&mut app, &p).unwrap();
         let d = app.ui.dialog.as_ref().unwrap();
@@ -285,7 +365,10 @@ mod tests {
         assert_eq!(st.history.undo.len(), undo + 1);
         let id = st.selection.objects[0];
         let b = st.doc.node(id).unwrap().geometric_bounds().unwrap();
-        assert!((b.width() - 600.0).abs() < 1.0, "fitted to the artboard: {b:?}");
+        assert!(
+            (b.width() - 600.0).abs() < 1.0,
+            "fitted to the artboard: {b:?}"
+        );
         // Params with dxf options place without asking.
         let mut p = p.clone();
         p["dxf"] = json!({});

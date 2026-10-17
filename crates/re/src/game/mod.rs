@@ -18,8 +18,8 @@ pub mod gameplay;
 #[cfg(feature = "dbxv2")]
 pub mod index;
 pub mod inventory;
-pub mod reverse;
 pub mod live;
+pub mod reverse;
 pub mod steam;
 pub mod text;
 pub mod unified;
@@ -52,9 +52,8 @@ pub use formats::{
 };
 pub use live::aob::AobPattern;
 pub use steam::{
-    Dbxv2Install, STEAM_APP_ID_DB_FIGHTERZ, STEAM_APP_ID_DB_KAKAROT,
-    STEAM_APP_ID_DB_SPARKING_ZERO, STEAM_APP_ID_DBXV1, STEAM_APP_ID_DBXV2,
-    SteamGameInstall, inspect_dbxv2_install,
+    Dbxv2Install, STEAM_APP_ID_DB_FIGHTERZ, STEAM_APP_ID_DB_KAKAROT, STEAM_APP_ID_DB_SPARKING_ZERO,
+    STEAM_APP_ID_DBXV1, STEAM_APP_ID_DBXV2, SteamGameInstall, inspect_dbxv2_install,
     scan_dragon_ball_installs,
 };
 pub use unified::{

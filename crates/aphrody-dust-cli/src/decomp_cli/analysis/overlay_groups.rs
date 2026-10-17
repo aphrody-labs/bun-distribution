@@ -37,13 +37,13 @@ impl OverlayGroups {
             match precedents.entry(overlay.end_address()) {
                 btree_map::Entry::Vacant(entry) => {
                     entry.insert(OverlayGroupLocation::After(vec![overlay.id()]));
-                },
+                }
                 btree_map::Entry::Occupied(mut entry) => {
                     let OverlayGroupLocation::After(overlays) = entry.get_mut() else {
                         unreachable!();
                     };
                     overlays.push(overlay.id());
-                },
+                }
             };
         }
         let precedents = precedents;
@@ -58,11 +58,14 @@ impl OverlayGroups {
                     } else {
                         OverlayGroupLocation::Static
                     };
-                    entry.insert(OverlaySuccessors { overlays: vec![overlay.id()], precedes });
-                },
+                    entry.insert(OverlaySuccessors {
+                        overlays: vec![overlay.id()],
+                        precedes,
+                    });
+                }
                 btree_map::Entry::Occupied(mut entry) => {
                     entry.get_mut().overlays.push(overlay.id());
-                },
+                }
             };
         }
         let successors_map = successors_map;
@@ -100,7 +103,7 @@ impl OverlayGroups {
                         })
                         .collect();
                     OverlayGroupLocation::After(preceding_overlays)
-                },
+                }
             };
 
             for &overlay in &successors.overlays {

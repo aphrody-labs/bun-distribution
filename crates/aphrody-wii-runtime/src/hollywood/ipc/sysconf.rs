@@ -73,7 +73,9 @@ impl IosDevice for SysConf {
             return 0;
         }
 
-        ctx.mmio.phys_slice_mut(out_ptr, n).copy_from_slice(&self.blob[start..start + n]);
+        ctx.mmio
+            .phys_slice_mut(out_ptr, n)
+            .copy_from_slice(&self.blob[start..start + n]);
         self.pos += n as u64;
 
         n as i32
@@ -147,21 +149,21 @@ impl EntryData {
             EntryData::Byte(b) => {
                 dst[0] = *b;
                 1
-            },
+            }
             EntryData::Bool(b) => {
                 dst[0] = u8::from(*b);
                 1
-            },
+            }
             EntryData::Long(v) => {
                 dst[0..4].copy_from_slice(&v.to_be_bytes());
                 4
-            },
+            }
             EntryData::BigArray(data) => {
                 let prefix = ((data.len() - 1) as u16).to_be_bytes();
                 dst[0..2].copy_from_slice(&prefix);
                 dst[2..2 + data.len()].copy_from_slice(data);
                 2 + data.len()
-            },
+            }
         }
     }
 }

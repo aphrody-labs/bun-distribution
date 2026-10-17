@@ -1,8 +1,8 @@
 use crate::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderSystems,
     extract_resource::ExtractResource,
     render_resource::{ShaderType, UniformBuffer},
     renderer::{RenderDevice, RenderQueue},
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderSystems,
 };
 use bevy_app::{App, Plugin};
 use bevy_diagnostic::FrameCount;

@@ -39,13 +39,27 @@ pub enum SectionError {
     #[snafu(display(
         "Section {name} must not end ({end_address:#010x}) before it starts ({start_address:#010x}):\n{backtrace}"
     ))]
-    EndBeforeStart { name: String, start_address: u32, end_address: u32, backtrace: Backtrace },
+    EndBeforeStart {
+        name: String,
+        start_address: u32,
+        end_address: u32,
+        backtrace: Backtrace,
+    },
     #[snafu(display("Section {name} aligment ({alignment}) must be a power of two:\n{backtrace}"))]
-    AlignmentPowerOfTwo { name: String, alignment: u32, backtrace: Backtrace },
+    AlignmentPowerOfTwo {
+        name: String,
+        alignment: u32,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "Section {name} starts at a misaligned address {start_address:#010x}; the provided alignment was {alignment}:\n{backtrace}"
     ))]
-    MisalignedStart { name: String, start_address: u32, alignment: u32, backtrace: Backtrace },
+    MisalignedStart {
+        name: String,
+        start_address: u32,
+        alignment: u32,
+        backtrace: Backtrace,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -78,11 +92,22 @@ pub enum SectionParseError {
     #[snafu(display(
         "{context}: expected section attribute 'kind', 'start', 'end' or 'align' but got '{key}':\n{backtrace}"
     ))]
-    UnknownAttribute { context: ParseContext, key: String, backtrace: Backtrace },
+    UnknownAttribute {
+        context: ParseContext,
+        key: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: missing '{attribute}' attribute:\n{backtrace}"))]
-    MissingAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    MissingAttribute {
+        context: ParseContext,
+        attribute: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display("{context}: {error}"))]
-    Section { context: ParseContext, error: Box<SectionError> },
+    Section {
+        context: ParseContext,
+        error: Box<SectionError>,
+    },
 }
 
 #[derive(Debug, Snafu)]
@@ -90,11 +115,19 @@ pub enum SectionInheritParseError {
     #[snafu(display(
         "{context}: section {name} does not exist in this file's header:\n{backtrace}"
     ))]
-    NotInHeader { context: ParseContext, name: String, backtrace: Backtrace },
+    NotInHeader {
+        context: ParseContext,
+        name: String,
+        backtrace: Backtrace,
+    },
     #[snafu(display(
         "{context}: attribute '{attribute}' should be omitted as it is inherited from this file's header"
     ))]
-    InheritedAttribute { context: ParseContext, attribute: String, backtrace: Backtrace },
+    InheritedAttribute {
+        context: ParseContext,
+        attribute: String,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     SectionParse { source: SectionParseError },
     #[snafu(transparent)]
@@ -108,7 +141,12 @@ pub enum SectionCodeError {
     #[snafu(display(
         "section {name} starts at {actual:#010x} before base address {expected:#010x}:\n{backtrace}"
     ))]
-    StartsBeforeBaseAddress { name: String, actual: u32, expected: u32, backtrace: Backtrace },
+    StartsBeforeBaseAddress {
+        name: String,
+        actual: u32,
+        expected: u32,
+        backtrace: Backtrace,
+    },
     #[snafu(display("section ends after code ends:\n{backtrace}"))]
     EndsOutsideModule { backtrace: Backtrace },
 }
@@ -143,14 +181,24 @@ impl Section {
         } = options;
 
         if end_address < start_address {
-            return EndBeforeStartSnafu { name, start_address, end_address }.fail();
+            return EndBeforeStartSnafu {
+                name,
+                start_address,
+                end_address,
+            }
+            .fail();
         }
         if !alignment.is_power_of_two() {
             return AlignmentPowerOfTwoSnafu { name, alignment }.fail();
         }
         let misalign_mask = alignment - 1;
         if (start_address & misalign_mask) != 0 {
-            return MisalignedStartSnafu { name, start_address, alignment }.fail();
+            return MisalignedStartSnafu {
+                name,
+                start_address,
+                alignment,
+            }
+            .fail();
         }
 
         let functions = functions.unwrap_or_else(BTreeMap::new);
@@ -168,11 +216,20 @@ impl Section {
     }
 
     pub fn inherit(other: &Section, options: SectionInheritOptions) -> Result<Self, SectionError> {
-        let SectionInheritOptions { start_address, end_address, comments, migration } = options;
+        let SectionInheritOptions {
+            start_address,
+            end_address,
+            comments,
+            migration,
+        } = options;
 
         if end_address < start_address {
-            return EndBeforeStartSnafu { name: other.name.clone(), start_address, end_address }
-                .fail();
+            return EndBeforeStartSnafu {
+                name: other.name.clone(),
+                start_address,
+                end_address,
+            }
+            .fail();
         }
         Ok(Self {
             name: other.name.clone(),
@@ -192,7 +249,10 @@ impl Section {
     ) -> Result<Self, SectionParseError> {
         let mut words = iter_words(&line.text);
         let Some(name) = words.next() else {
-            return EmptyLineSnafu { context: context.clone() }.fail();
+            return EmptyLineSnafu {
+                context: context.clone(),
+            }
+            .fail();
         };
 
         let mut kind = None;
@@ -204,33 +264,72 @@ impl Section {
                 "kind" => kind = Some(SectionKind::parse(value, context)?),
                 "start" => {
                     start = Some(parse_u32(value).map_err(|error| {
-                        ParseStartAddressSnafu { context, value, error }.build()
+                        ParseStartAddressSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
                     })?);
-                },
+                }
                 "end" => {
-                    end =
-                        Some(parse_u32(value).map_err(|error| {
-                            ParseEndAddressSnafu { context, value, error }.build()
-                        })?);
-                },
+                    end = Some(parse_u32(value).map_err(|error| {
+                        ParseEndAddressSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
+                    })?);
+                }
                 "align" => {
-                    align =
-                        Some(parse_u32(value).map_err(|error| {
-                            ParseAlignmentSnafu { context, value, error }.build()
-                        })?);
-                },
-                _ => return UnknownAttributeSnafu { context: context.clone(), key }.fail(),
+                    align = Some(parse_u32(value).map_err(|error| {
+                        ParseAlignmentSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
+                    })?);
+                }
+                _ => {
+                    return UnknownAttributeSnafu {
+                        context: context.clone(),
+                        key,
+                    }
+                    .fail();
+                }
             }
         }
 
-        let kind =
-            kind.ok_or_else(|| MissingAttributeSnafu { context, attribute: "kind" }.build())?;
-        let start_address =
-            start.ok_or_else(|| MissingAttributeSnafu { context, attribute: "start" }.build())?;
-        let end_address =
-            end.ok_or_else(|| MissingAttributeSnafu { context, attribute: "end" }.build())?;
-        let alignment =
-            align.ok_or_else(|| MissingAttributeSnafu { context, attribute: "align" }.build())?;
+        let kind = kind.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "kind",
+            }
+            .build()
+        })?;
+        let start_address = start.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "start",
+            }
+            .build()
+        })?;
+        let end_address = end.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "end",
+            }
+            .build()
+        })?;
+        let alignment = align.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "align",
+            }
+            .build()
+        })?;
 
         Section::new(SectionOptions {
             name: name.to_string(),
@@ -252,7 +351,10 @@ impl Section {
     ) -> Result<Self, SectionInheritParseError> {
         let mut words = iter_words(&line.text);
         let Some(name) = words.next() else {
-            return EmptyLineSnafu { context: context.clone() }.fail()?;
+            return EmptyLineSnafu {
+                context: context.clone(),
+            }
+            .fail()?;
         };
 
         let migrate_section = MigrateSection::parse(name, module_kind)?;
@@ -271,26 +373,58 @@ impl Section {
         let mut end = None;
         for (key, value) in split_attributes(words, ':') {
             match key {
-                "kind" => return InheritedAttributeSnafu { context, attribute: "kind" }.fail(),
+                "kind" => {
+                    return InheritedAttributeSnafu {
+                        context,
+                        attribute: "kind",
+                    }
+                    .fail();
+                }
                 "start" => {
                     start = Some(parse_u32(value).map_err(|error| {
-                        ParseStartAddressSnafu { context, value, error }.build()
+                        ParseStartAddressSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
                     })?);
-                },
+                }
                 "end" => {
-                    end =
-                        Some(parse_u32(value).map_err(|error| {
-                            ParseEndAddressSnafu { context, value, error }.build()
-                        })?);
-                },
-                "align" => return InheritedAttributeSnafu { context, attribute: "align" }.fail(),
+                    end = Some(parse_u32(value).map_err(|error| {
+                        ParseEndAddressSnafu {
+                            context,
+                            value,
+                            error,
+                        }
+                        .build()
+                    })?);
+                }
+                "align" => {
+                    return InheritedAttributeSnafu {
+                        context,
+                        attribute: "align",
+                    }
+                    .fail();
+                }
                 _ => return UnknownAttributeSnafu { context, key }.fail()?,
             }
         }
 
-        let start =
-            start.ok_or_else(|| MissingAttributeSnafu { context, attribute: "start" }.build())?;
-        let end = end.ok_or_else(|| MissingAttributeSnafu { context, attribute: "end" }.build())?;
+        let start = start.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "start",
+            }
+            .build()
+        })?;
+        let end = end.ok_or_else(|| {
+            MissingAttributeSnafu {
+                context,
+                attribute: "end",
+            }
+            .build()
+        })?;
 
         match migrate_section {
             None => {
@@ -305,7 +439,7 @@ impl Section {
                     },
                 )
                 .map_err(|error| SectionSnafu { context, error }.build())?)
-            },
+            }
             Some(migrate_section) => Ok(Section::new(SectionOptions {
                 name: name.to_string(),
                 kind: migrate_section.section_kind(),
@@ -367,7 +501,10 @@ impl Section {
         (start..end).step_by(4).map(move |address| {
             let offset = address - self.start_address();
             let bytes = &code[offset as usize..];
-            Word { address, value: u32::from_le_slice(bytes) }
+            Word {
+                address,
+                value: u32::from_le_slice(bytes),
+            }
         })
     }
 
@@ -493,7 +630,11 @@ const EXCEPTIX_SECTION: &str = ".exceptix";
 #[derive(Debug, Snafu)]
 pub enum MigrateSectionError {
     #[snafu(display("Failed to parse autoload index from section '{name}': {error}\n{backtrace}"))]
-    InvalidAutoloadIndex { name: String, error: ParseIntError, backtrace: Backtrace },
+    InvalidAutoloadIndex {
+        name: String,
+        error: ParseIntError,
+        backtrace: Backtrace,
+    },
 }
 
 impl MigrateSection {
@@ -506,18 +647,26 @@ impl MigrateSection {
             _ => {
                 if let Some(index) = name.strip_prefix(AUTOLOAD_DATA_SECTION_PREFIX) {
                     let index: u32 = index.parse().map_err(|error| {
-                        InvalidAutoloadIndexSnafu { name: name.to_string(), error }.build()
+                        InvalidAutoloadIndexSnafu {
+                            name: name.to_string(),
+                            error,
+                        }
+                        .build()
                     })?;
                     Ok(Some(Self::AutoloadData(index)))
                 } else if let Some(index) = name.strip_prefix(AUTOLOAD_BSS_SECTION_PREFIX) {
                     let index: u32 = index.parse().map_err(|error| {
-                        InvalidAutoloadIndexSnafu { name: name.to_string(), error }.build()
+                        InvalidAutoloadIndexSnafu {
+                            name: name.to_string(),
+                            error,
+                        }
+                        .build()
                     })?;
                     Ok(Some(Self::AutoloadBss(index)))
                 } else {
                     Ok(None)
                 }
-            },
+            }
         }
     }
 
@@ -527,10 +676,10 @@ impl MigrateSection {
             MigrateSection::Itcm => ITCM_SECTION.into(),
             MigrateSection::AutoloadData(index) => {
                 format!("{AUTOLOAD_DATA_SECTION_PREFIX}{index}").into()
-            },
+            }
             MigrateSection::AutoloadBss(index) => {
                 format!("{AUTOLOAD_BSS_SECTION_PREFIX}{index}").into()
-            },
+            }
             MigrateSection::Exception => EXCEPTION_SECTION.into(),
             MigrateSection::Exceptix => EXCEPTIX_SECTION.into(),
         }
@@ -554,8 +703,11 @@ impl MigrateSection {
             ModuleKind::Autoload(AutoloadKind::Dtcm) => vec![MigrateSection::Dtcm],
             ModuleKind::Autoload(AutoloadKind::Itcm) => vec![MigrateSection::Itcm],
             ModuleKind::Autoload(AutoloadKind::Unknown(index)) => {
-                vec![MigrateSection::AutoloadData(index), MigrateSection::AutoloadBss(index)]
-            },
+                vec![
+                    MigrateSection::AutoloadData(index),
+                    MigrateSection::AutoloadBss(index),
+                ]
+            }
         }
     }
 
@@ -576,7 +728,7 @@ impl MigrateSection {
             MigrateSection::Itcm => ModuleKind::Autoload(AutoloadKind::Itcm),
             MigrateSection::AutoloadData(index) | MigrateSection::AutoloadBss(index) => {
                 ModuleKind::Autoload(AutoloadKind::Unknown(*index))
-            },
+            }
             MigrateSection::Exception => ModuleKind::Arm9,
             MigrateSection::Exceptix => ModuleKind::Arm9,
         }
@@ -594,7 +746,11 @@ pub enum SectionKind {
 #[derive(Debug, Snafu)]
 pub enum SectionKindError {
     #[snafu(display("{context}: unknown section kind '{value}', must be one of: code, data, bss"))]
-    UnknownKind { context: ParseContext, value: String, backtrace: Backtrace },
+    UnknownKind {
+        context: ParseContext,
+        value: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl SectionKind {
@@ -658,12 +814,19 @@ pub enum SectionsError {
     #[snafu(display("Section '{name}' already exists:\n{backtrace}"))]
     DuplicateName { name: String, backtrace: Backtrace },
     #[snafu(display("Section '{name}' overlaps with '{other_name}':\n{backtrace}"))]
-    Overlapping { name: String, other_name: String, backtrace: Backtrace },
+    Overlapping {
+        name: String,
+        other_name: String,
+        backtrace: Backtrace,
+    },
 }
 
 impl Sections {
     pub fn new() -> Self {
-        Self { sections: vec![], sections_by_name: HashMap::new() }
+        Self {
+            sections: vec![],
+            sections_by_name: HashMap::new(),
+        }
     }
 
     pub fn from_sections(section_vec: Vec<Section>) -> Result<Self, SectionsError> {
@@ -680,8 +843,11 @@ impl Sections {
         }
         for other in &self.sections {
             if section.overlaps_with(other) {
-                return OverlappingSnafu { name: section.name, other_name: other.name.clone() }
-                    .fail();
+                return OverlappingSnafu {
+                    name: section.name,
+                    other_name: other.name.clone(),
+                }
+                .fail();
             }
         }
 
@@ -696,7 +862,8 @@ impl Sections {
         let section = self.sections.remove(index.0);
         // Update indices in sections_by_name
         for (i, section) in self.sections.iter().enumerate() {
-            self.sections_by_name.insert(section.name.clone(), SectionIndex(i));
+            self.sections_by_name
+                .insert(section.name.clone(), SectionIndex(i));
         }
         Some(section)
     }
@@ -763,7 +930,9 @@ impl Sections {
     pub fn sorted_by_address(&self) -> Vec<&Section> {
         let mut sections = self.sections.iter().collect::<Vec<_>>();
         sections.sort_unstable_by(|a, b| {
-            a.start_address.cmp(&b.start_address).then(a.end_address.cmp(&b.end_address))
+            a.start_address
+                .cmp(&b.start_address)
+                .then(a.end_address.cmp(&b.end_address))
         });
         sections
     }
@@ -773,7 +942,9 @@ impl Sections {
     }
 
     pub fn functions_mut(&mut self) -> impl Iterator<Item = &mut Function> {
-        self.sections.iter_mut().flat_map(|s| s.functions.values_mut())
+        self.sections
+            .iter_mut()
+            .flat_map(|s| s.functions.values_mut())
     }
 
     pub fn base_address(&self) -> Option<u32> {
@@ -785,11 +956,19 @@ impl Sections {
     }
 
     pub fn text_size(&self) -> u32 {
-        self.sections.iter().filter(|s| s.kind != SectionKind::Bss).map(Section::size).sum()
+        self.sections
+            .iter()
+            .filter(|s| s.kind != SectionKind::Bss)
+            .map(Section::size)
+            .sum()
     }
 
     pub fn bss_size(&self) -> u32 {
-        self.sections.iter().filter(|s| s.kind == SectionKind::Bss).map(Section::size).sum()
+        self.sections
+            .iter()
+            .filter(|s| s.kind == SectionKind::Bss)
+            .map(Section::size)
+            .sum()
     }
 
     pub fn bss_range(&self) -> Option<Range<u32>> {
@@ -801,7 +980,10 @@ impl Sections {
     }
 
     pub fn get_section_after(&self, text_end: u32) -> Option<&Section> {
-        self.sorted_by_address().iter().copied().find(|s| s.start_address >= text_end)
+        self.sorted_by_address()
+            .iter()
+            .copied()
+            .find(|s| s.start_address >= text_end)
     }
 }
 

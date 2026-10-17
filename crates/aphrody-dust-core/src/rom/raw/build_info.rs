@@ -81,7 +81,11 @@ impl BuildInfo {
     fn check_size(data: &'_ [u8]) -> Result<(), RawBuildInfoError> {
         let size = size_of::<Self>();
         if data.len() < size {
-            DataTooSmallSnafu { expected: size, actual: data.len() }.fail()
+            DataTooSmallSnafu {
+                expected: size,
+                actual: data.len(),
+            }
+            .fail()
         } else {
             Ok(())
         }
@@ -106,9 +110,17 @@ impl BuildInfo {
 
     fn check_nitrocode(&self) -> Result<(), RawBuildInfoError> {
         if self.nitrocode != NITROCODE {
-            NoNitrocodeSnafu { expected: NITROCODE, actual: self.nitrocode }.fail()
+            NoNitrocodeSnafu {
+                expected: NITROCODE,
+                actual: self.nitrocode,
+            }
+            .fail()
         } else if self.nitrocode_rev != NITROCODE.swap_bytes() {
-            NoNitrocodeSnafu { expected: NITROCODE.swap_bytes(), actual: self.nitrocode_rev }.fail()
+            NoNitrocodeSnafu {
+                expected: NITROCODE.swap_bytes(),
+                actual: self.nitrocode_rev,
+            }
+            .fail()
         } else {
             Ok(())
         }
@@ -151,7 +163,10 @@ impl BuildInfo {
 
     /// Creates a [`DisplayBuildInfo`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayBuildInfo<'_> {
-        DisplayBuildInfo { build_info: self, indent }
+        DisplayBuildInfo {
+            build_info: self,
+            indent,
+        }
     }
 }
 
@@ -165,13 +180,37 @@ impl Display for DisplayBuildInfo<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let i = " ".repeat(self.indent);
         let build_info = &self.build_info;
-        writeln!(f, "{i}Autoload infos start .. : {:#x}", build_info.autoload_infos_start)?;
-        writeln!(f, "{i}Autoload infos end .... : {:#x}", build_info.autoload_infos_end)?;
-        writeln!(f, "{i}Autoload blocks ....... : {:#x}", build_info.autoload_blocks)?;
-        writeln!(f, "{i}.bss start ............ : {:#x}", build_info.bss_start)?;
+        writeln!(
+            f,
+            "{i}Autoload infos start .. : {:#x}",
+            build_info.autoload_infos_start
+        )?;
+        writeln!(
+            f,
+            "{i}Autoload infos end .... : {:#x}",
+            build_info.autoload_infos_end
+        )?;
+        writeln!(
+            f,
+            "{i}Autoload blocks ....... : {:#x}",
+            build_info.autoload_blocks
+        )?;
+        writeln!(
+            f,
+            "{i}.bss start ............ : {:#x}",
+            build_info.bss_start
+        )?;
         writeln!(f, "{i}.bss end .............. : {:#x}", build_info.bss_end)?;
-        writeln!(f, "{i}Compressed code end ... : {:#x}", build_info.compressed_code_end)?;
-        writeln!(f, "{i}SDK version ........... : {:#x}", build_info.sdk_version)?;
+        writeln!(
+            f,
+            "{i}Compressed code end ... : {:#x}",
+            build_info.compressed_code_end
+        )?;
+        writeln!(
+            f,
+            "{i}SDK version ........... : {:#x}",
+            build_info.sdk_version
+        )?;
         Ok(())
     }
 }

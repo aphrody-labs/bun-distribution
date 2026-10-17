@@ -8,7 +8,15 @@ use egui::{Color32, ImageSource, Rect, Ui, Vec2};
 fn table() -> &'static SvgIconSet {
     static T: OnceLock<SvgIconSet> = OnceLock::new();
     T.get_or_init(|| {
-        SvgIconSet::new(crate::icon_data::ICONS, SvgStyle { current_color: "white", stroke_width: Some("1.6") }, "bytes://icon/", "square-dashed")
+        SvgIconSet::new(
+            crate::icon_data::ICONS,
+            SvgStyle {
+                current_color: "white",
+                stroke_width: Some("1.6"),
+            },
+            "bytes://icon/",
+            "square-dashed",
+        )
     })
 }
 
@@ -116,9 +124,15 @@ pub fn paint(ui: &Ui, name: &str, rect: Rect, tint: Color32) {
         _ => None,
     };
     if let Some(fill) = fill {
-        egui::Image::new(source("dc-arrow-fill")).tint(fill).fit_to_exact_size(rect.size()).paint_at(ui, rect);
+        egui::Image::new(source("dc-arrow-fill"))
+            .tint(fill)
+            .fit_to_exact_size(rect.size())
+            .paint_at(ui, rect);
     }
-    egui::Image::new(source(name)).tint(tint).fit_to_exact_size(rect.size()).paint_at(ui, rect);
+    egui::Image::new(source(name))
+        .tint(tint)
+        .fit_to_exact_size(rect.size())
+        .paint_at(ui, rect);
 }
 
 /// An icon widget of `size` points.
@@ -136,9 +150,18 @@ mod tests {
     fn tints(name: &str, tint: Color32) -> Vec<Color32> {
         let ctx = egui::Context::default();
         egui_extras::install_image_loaders(&ctx);
-        let draw = |ui: &mut Ui| paint(ui, name, Rect::from_min_size(egui::Pos2::ZERO, Vec2::splat(24.0)), tint);
+        let draw = |ui: &mut Ui| {
+            paint(
+                ui,
+                name,
+                Rect::from_min_size(egui::Pos2::ZERO, Vec2::splat(24.0)),
+                tint,
+            )
+        };
         // The first frame loads the images; the second draws them.
-        ctx.run_ui(egui::RawInput::default(), draw).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), draw)
+            .textures_delta
+            .clear();
         let mut out = ctx.run_ui(egui::RawInput::default(), draw);
         out.textures_delta.clear();
         out.shapes
@@ -166,8 +189,12 @@ mod tests {
     #[test]
     fn shared_catalog_preserves_existing_icons() {
         for (name, original) in crate::icon_data::ICONS {
-            let expected = String::from_utf8_lossy(original).replace("currentColor", "white").replace("stroke-width=\"2\"", "stroke-width=\"1.6\"");
-            let ImageSource::Bytes { uri, bytes } = source(name) else { panic!("expected SVG bytes") };
+            let expected = String::from_utf8_lossy(original)
+                .replace("currentColor", "white")
+                .replace("stroke-width=\"2\"", "stroke-width=\"1.6\"");
+            let ImageSource::Bytes { uri, bytes } = source(name) else {
+                panic!("expected SVG bytes")
+            };
             assert_eq!(uri.as_ref(), format!("bytes://icon/{name}.svg"));
             assert_eq!(bytes.as_ref(), expected.as_bytes(), "{name}");
             assert!(exists(name));
@@ -177,8 +204,15 @@ mod tests {
 
     #[test]
     fn shared_catalog_preserves_fallback_and_tool_aliases() {
-        let ImageSource::Bytes { uri, bytes } = source("missing-icon") else { panic!("expected SVG bytes") };
-        let ImageSource::Bytes { bytes: fallback, .. } = source("square-dashed") else { panic!("expected SVG bytes") };
+        let ImageSource::Bytes { uri, bytes } = source("missing-icon") else {
+            panic!("expected SVG bytes")
+        };
+        let ImageSource::Bytes {
+            bytes: fallback, ..
+        } = source("square-dashed")
+        else {
+            panic!("expected SVG bytes")
+        };
         assert_eq!(uri.as_ref(), "bytes://icon/missing-icon.svg");
         assert_eq!(bytes.as_ref(), fallback.as_ref());
         assert!(!exists("missing-icon"));

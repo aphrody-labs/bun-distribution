@@ -10,7 +10,7 @@ use crate::{
     event::EventPattern,
     schedule::{BoxedCondition, SystemCondition},
     system::{IntoObserverSystem, IntoSystem},
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 /// Stores a boxed condition system for an observer.

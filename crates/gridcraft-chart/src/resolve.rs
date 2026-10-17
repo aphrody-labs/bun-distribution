@@ -41,7 +41,11 @@ fn parse_ref(wb: &Workbook, sheet: usize, formula: &str) -> Option<(usize, Range
     let (sh, addr) = match f.rfind('!') {
         Some(i) => {
             let name = f.get(..i)?.trim();
-            let name = name.strip_prefix('\'').and_then(|n| n.strip_suffix('\'')).map(|n| n.replace("''", "'")).unwrap_or_else(|| name.to_string());
+            let name = name
+                .strip_prefix('\'')
+                .and_then(|n| n.strip_suffix('\''))
+                .map(|n| n.replace("''", "'"))
+                .unwrap_or_else(|| name.to_string());
             (wb.sheet_index(&name)?, f.get(i + 1..)?)
         }
         None => (sheet, f),
@@ -118,7 +122,10 @@ fn nums(wb: &Workbook, sheet: usize, formula: &str) -> Vec<Option<f64>> {
 /// Number format code of the first cell of a reference ("General" when not a reference).
 fn ref_format(wb: &Workbook, sheet: usize, formula: &str) -> String {
     parse_ref(wb, sheet, formula)
-        .and_then(|(sh, r)| wb.sheet(sh).map(|s| wb.styles.get(s.style_id(r.start)).num_fmt.0.to_string()))
+        .and_then(|(sh, r)| {
+            wb.sheet(sh)
+                .map(|s| wb.styles.get(s.style_id(r.start)).num_fmt.0.to_string())
+        })
         .unwrap_or_else(|| "General".into())
 }
 
@@ -147,7 +154,8 @@ fn category_texts(wb: &Workbook, sheet: usize, formula: &str) -> Vec<String> {
                 if let Some(c) = at {
                     let code = &wb.styles.get(s.style_id(c)).num_fmt.0;
                     if !code.eq_ignore_ascii_case("general") {
-                        return format_value(v, &NumberFormat::parse_cached(code), wb.date_system).text;
+                        return format_value(v, &NumberFormat::parse_cached(code), wb.date_system)
+                            .text;
                     }
                 }
             }
@@ -164,7 +172,12 @@ fn series_name(wb: &Workbook, sheet: usize, name: &str) -> String {
     }
     if t.starts_with('=') || parse_ref(wb, sheet, t).is_some() && t.contains('!') {
         let vals = eval_list(wb, sheet, t);
-        let parts: Vec<String> = vals.iter().map(value_text).filter(|s| !s.is_empty()).take(8).collect();
+        let parts: Vec<String> = vals
+            .iter()
+            .map(value_text)
+            .filter(|s| !s.is_empty())
+            .take(8)
+            .collect();
         return parts.join(" ");
     }
     t.to_string()
@@ -187,25 +200,50 @@ fn effective_kind(chart_kind: ChartKind, series_kind: Option<ChartKind>, i: usiz
 
 /// The kind series `i` of `chart` is drawn as: its own kind in a combo chart, else the chart's.
 pub fn series_plot_kind(chart: &Chart, i: usize) -> ChartKind {
-    if chart.kind == ChartKind::Combo { effective_kind(chart.kind, chart.series.get(i).and_then(|s| s.kind), i) } else { chart.kind }
+    if chart.kind == ChartKind::Combo {
+        effective_kind(chart.kind, chart.series.get(i).and_then(|s| s.kind), i)
+    } else {
+        chart.kind
+    }
 }
 
 /// Evaluates a chart's series formulas: names, values, categories (default "1", "2", …), X
 /// values (scatter/bubble), bubble sizes, number formats and colours (explicit, else the
 /// default palette derived from the workbook theme accents).
 pub fn resolve(wb: &Workbook, sheet: usize, chart: &Chart) -> ChartData {
-    let numeric_x = matches!(chart.kind, ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble);
+    let numeric_x = matches!(
+        chart.kind,
+        ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble
+    );
     let mut series = Vec::new();
     let mut categories: Option<Vec<String>> = None;
     for (i, s) in chart.series.iter().take(MAX_SERIES).enumerate() {
         let values = nums(wb, sheet, &s.values);
-        let name = s.name.as_deref().map(|n| series_name(wb, sheet, n)).filter(|n| !n.is_empty()).unwrap_or_else(|| format!("Series{}", i + 1));
-        let color =
-            s.color.as_ref().and_then(|c| c.resolve(&wb.theme)).map(|[r, g, b]| [r, g, b, 0xFF]).unwrap_or_else(|| series_color(&wb.theme, i));
+        let name = s
+            .name
+            .as_deref()
+            .map(|n| series_name(wb, sheet, n))
+            .filter(|n| !n.is_empty())
+            .unwrap_or_else(|| format!("Series{}", i + 1));
+        let color = s
+            .color
+            .as_ref()
+            .and_then(|c| c.resolve(&wb.theme))
+            .map(|[r, g, b]| [r, g, b, 0xFF])
+            .unwrap_or_else(|| series_color(&wb.theme, i));
         let kind = effective_kind(chart.kind, s.kind, i);
-        let x = match (&s.categories, numeric_x || matches!(kind, ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble)) {
+        let x = match (
+            &s.categories,
+            numeric_x
+                || matches!(
+                    kind,
+                    ChartKind::Scatter | ChartKind::ScatterLines | ChartKind::Bubble
+                ),
+        ) {
             // X values with text in them (labels) are ignored: the points are numbered 1..n.
-            (Some(f), true) => Some(eval_list(wb, sheet, f)).filter(|xs| !xs.iter().any(Value::is_text)).map(|xs| xs.iter().map(to_num).collect()),
+            (Some(f), true) => Some(eval_list(wb, sheet, f))
+                .filter(|xs| !xs.iter().any(Value::is_text))
+                .map(|xs| xs.iter().map(to_num).collect()),
             _ => None,
         };
         if categories.is_none()
@@ -223,7 +261,12 @@ pub fn resolve(wb: &Workbook, sheet: usize, chart: &Chart) -> ChartData {
             .take(MAX_TRENDLINES)
             .map(|t| TrendlineData {
                 spec: t.clone(),
-                color: t.color.as_ref().and_then(|c| c.resolve(&wb.theme)).map(|[r, g, b]| [r, g, b, 0xFF]).unwrap_or(color),
+                color: t
+                    .color
+                    .as_ref()
+                    .and_then(|c| c.resolve(&wb.theme))
+                    .map(|[r, g, b]| [r, g, b, 0xFF])
+                    .unwrap_or(color),
             })
             .collect();
         series.push(SeriesData {
@@ -242,5 +285,9 @@ pub fn resolve(wb: &Workbook, sheet: usize, chart: &Chart) -> ChartData {
     let n = series.iter().map(|s| s.values.len()).max().unwrap_or(0);
     let categories = categories.unwrap_or_else(|| (1..=n).map(|i| i.to_string()).collect());
     let palette = default_palette(&wb.theme, n.min(PALETTE_CYCLE));
-    ChartData { categories, series, palette }
+    ChartData {
+        categories,
+        series,
+        palette,
+    }
 }

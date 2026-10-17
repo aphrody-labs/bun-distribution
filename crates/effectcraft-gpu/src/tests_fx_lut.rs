@@ -23,8 +23,23 @@ fn case_allow(id: &str, vals: &[(&str, Value)], allow: f64) {
         s.effect(&mut l, id, vals);
         set(&mut l, "transform/rotation", Value::Scalar(8.0));
         s.push(l);
-        check(&format!("{id} {depth:?}"), compare_at(&s, opts(), Tick::ZERO), allow);
-        check(&format!("{id} {depth:?} half"), compare_at(&s, RenderOpts { scale: 0.5, ..opts() }, Tick::ZERO), allow);
+        check(
+            &format!("{id} {depth:?}"),
+            compare_at(&s, opts(), Tick::ZERO),
+            allow,
+        );
+        check(
+            &format!("{id} {depth:?} half"),
+            compare_at(
+                &s,
+                RenderOpts {
+                    scale: 0.5,
+                    ..opts()
+                },
+                Tick::ZERO,
+            ),
+            allow,
+        );
     }
 }
 
@@ -51,7 +66,11 @@ fn lattice(n: usize, f: impl Fn([f32; 3]) -> [f32; 3]) -> String {
 }
 
 fn grade(c: [f32; 3]) -> [f32; 3] {
-    [c[0].powf(0.8) * 1.05, c[1] * 0.9 + 0.08 * (c[0] * 5.0).sin(), c[2] * 0.7 + c[0] * 0.2 + 0.03]
+    [
+        c[0].powf(0.8) * 1.05,
+        c[1] * 0.9 + 0.08 * (c[0] * 5.0).sin(),
+        c[2] * 0.7 + c[0] * 0.2 + 0.03,
+    ]
 }
 
 fn cube_3d() -> String {
@@ -59,7 +78,8 @@ fn cube_3d() -> String {
 }
 
 fn cube_1d_3d() -> String {
-    let mut s = String::from("LUT_1D_SIZE 16\nLUT_3D_SIZE 7\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 1.2 1.2 1.2\n");
+    let mut s =
+        String::from("LUT_1D_SIZE 16\nLUT_3D_SIZE 7\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 1.2 1.2 1.2\n");
     for i in 0..16 {
         let v = (i as f32 / 15.0).powf(0.6);
         s += &format!("{} {} {}\n", v, v * 0.95, v.powf(1.2));
@@ -77,7 +97,9 @@ fn cube_1d() -> String {
 }
 
 fn csp() -> String {
-    let mut s = String::from("CSPLUTV100\n3D\n\n3\n0 0.5 1\n0 0.3 1\n2\n0 1\n0 1\n4\n0 0.2 0.6 1\n0 0.4 0.7 1\n\n5 5 5\n");
+    let mut s = String::from(
+        "CSPLUTV100\n3D\n\n3\n0 0.5 1\n0 0.3 1\n2\n0 1\n0 1\n4\n0 0.2 0.6 1\n0 0.4 0.7 1\n\n5 5 5\n",
+    );
     for b in 0..5 {
         for g in 0..5 {
             for r in 0..5 {
@@ -94,66 +116,158 @@ fn apply_color_lut() {
     effect_case("ec.utility.applylut", &[("lut", s(&cube_3d()))]);
     effect_case("ec.utility.applylut", &[("lut", s(&cube_1d_3d()))]);
     effect_case("ec.utility.applylut", &[("lut", s(&cube_1d()))]);
-    effect_case("ec.utility.applylut", &[("lut", s("/nonexistent/grade.cube"))]);
+    effect_case(
+        "ec.utility.applylut",
+        &[("lut", s("/nonexistent/grade.cube"))],
+    );
 }
 
 #[test]
 fn ocio_file_transform() {
     for interp in 1..4 {
-        effect_case("ec.color.ociofile", &[("file", s(&cube_3d())), ("interpolation", e(interp))]);
+        effect_case(
+            "ec.color.ociofile",
+            &[("file", s(&cube_3d())), ("interpolation", e(interp))],
+        );
     }
-    case_allow("ec.color.ociofile", &[("file", s(&cube_3d())), ("interpolation", e(0))], 0.01);
-    case_allow("ec.color.ociofile", &[("file", s(&cube_1d_3d())), ("interpolation", e(0))], 0.01);
-    effect_case("ec.color.ociofile", &[("file", s(&cube_1d())), ("direction", e(1))]);
-    effect_case("ec.color.ociofile", &[("file", s(&cube_3d())), ("direction", e(1))]);
-    effect_case("ec.color.ociofile", &[("file", s(&csp())), ("interpolation", e(1))]);
-    effect_case("ec.color.ociofile", &[("file", s(&csp())), ("direction", e(1))]);
+    case_allow(
+        "ec.color.ociofile",
+        &[("file", s(&cube_3d())), ("interpolation", e(0))],
+        0.01,
+    );
+    case_allow(
+        "ec.color.ociofile",
+        &[("file", s(&cube_1d_3d())), ("interpolation", e(0))],
+        0.01,
+    );
+    effect_case(
+        "ec.color.ociofile",
+        &[("file", s(&cube_1d())), ("direction", e(1))],
+    );
+    effect_case(
+        "ec.color.ociofile",
+        &[("file", s(&cube_3d())), ("direction", e(1))],
+    );
+    effect_case(
+        "ec.color.ociofile",
+        &[("file", s(&csp())), ("interpolation", e(1))],
+    );
+    effect_case(
+        "ec.color.ociofile",
+        &[("file", s(&csp())), ("direction", e(1))],
+    );
     let ccc = r#"<ColorCorrectionCollection><ColorCorrection id="a"><SOPNode><Slope>1.2 1 0.9</Slope><Offset>0.02 0 -0.01</Offset><Power>1.1 0.9 1</Power></SOPNode></ColorCorrection>
         <ColorCorrection id='b'><SOPNode><Slope>0.8 0.8 0.8</Slope></SOPNode><SatNode><Saturation>1.4</Saturation></SatNode></ColorCorrection></ColorCorrectionCollection>"#;
     effect_case("ec.color.ociofile", &[("file", s(ccc))]);
-    effect_case("ec.color.ociofile", &[("file", s(ccc)), ("cccId", s("b")), ("direction", e(1))]);
+    effect_case(
+        "ec.color.ociofile",
+        &[("file", s(ccc)), ("cccId", s("b")), ("direction", e(1))],
+    );
 }
 
 #[test]
 fn ocio_cdl_space_display_look() {
-    let cdl = [("slopeRed", n(1.3)), ("offsetGreen", n(0.05)), ("powerBlue", n(1.4)), ("saturation", n(1.3))];
+    let cdl = [
+        ("slopeRed", n(1.3)),
+        ("offsetGreen", n(0.05)),
+        ("powerBlue", n(1.4)),
+        ("saturation", n(1.3)),
+    ];
     effect_case("ec.color.ociocdl", &cdl);
-    effect_case("ec.color.ociocdl", &[cdl.as_slice(), &[("style", e(1)), ("offsetRed", n(-0.1))]].concat());
-    effect_case("ec.color.ociocdl", &[cdl.as_slice(), &[("direction", e(1))]].concat());
-    effect_case("ec.color.ociocdl", &[cdl.as_slice(), &[("direction", e(1)), ("style", e(1))]].concat());
+    effect_case(
+        "ec.color.ociocdl",
+        &[cdl.as_slice(), &[("style", e(1)), ("offsetRed", n(-0.1))]].concat(),
+    );
+    effect_case(
+        "ec.color.ociocdl",
+        &[cdl.as_slice(), &[("direction", e(1))]].concat(),
+    );
+    effect_case(
+        "ec.color.ociocdl",
+        &[cdl.as_slice(), &[("direction", e(1)), ("style", e(1))]].concat(),
+    );
     let spaces = effectcraft_effects::find("ec.color.ociocolorspace").unwrap();
     let names = match &spaces.params.iter().find(|p| p.id == "source").unwrap().ui {
         effectcraft_project::ParamUi::Popup { options } => options.clone(),
         _ => vec![],
     };
-    for (a, z) in [("sRGB", "ACEScg"), ("ACEScct", "Display P3"), ("Gamma 2.4 Rec.2020", "ACES2065-1"), ("CIE-XYZ-D65", "sRGB"), ("Raw", "sRGB")] {
+    for (a, z) in [
+        ("sRGB", "ACEScg"),
+        ("ACEScct", "Display P3"),
+        ("Gamma 2.4 Rec.2020", "ACES2065-1"),
+        ("CIE-XYZ-D65", "sRGB"),
+        ("Raw", "sRGB"),
+    ] {
         let i = |n: &str| e(names.iter().position(|x| x == n).unwrap() as u32);
-        effect_case("ec.color.ociocolorspace", &[("source", i(a)), ("destination", i(z))]);
-        effect_case("ec.color.ociocolorspace", &[("source", i(a)), ("destination", i(z)), ("direction", e(1))]);
+        effect_case(
+            "ec.color.ociocolorspace",
+            &[("source", i(a)), ("destination", i(z))],
+        );
+        effect_case(
+            "ec.color.ociocolorspace",
+            &[("source", i(a)), ("destination", i(z)), ("direction", e(1))],
+        );
     }
     for display in 0..4 {
         for view in 0..2 {
-            effect_case("ec.color.ociodisplay", &[("display", e(display)), ("view", e(view))]);
+            effect_case(
+                "ec.color.ociodisplay",
+                &[("display", e(display)), ("view", e(view))],
+            );
         }
     }
     // (Inverting PQ and the roll-off together reaches values near 1000 whose matrix mix cancels
     // in the small channels: f32 agrees to ~1e-5 of the pixel's largest channel there.)
-    effect_case("ec.color.ociodisplay", &[("display", e(3)), ("direction", e(1))]);
-    effect_case("ec.color.ociodisplay", &[("display", e(2)), ("view", e(1)), ("direction", e(1))]);
-    effect_case("ec.color.ociodisplay", &[("display", e(1)), ("direction", e(1))]);
+    effect_case(
+        "ec.color.ociodisplay",
+        &[("display", e(3)), ("direction", e(1))],
+    );
+    effect_case(
+        "ec.color.ociodisplay",
+        &[("display", e(2)), ("view", e(1)), ("direction", e(1))],
+    );
+    effect_case(
+        "ec.color.ociodisplay",
+        &[("display", e(1)), ("direction", e(1))],
+    );
     effect_case("ec.color.ociolook", &[("look", e(3))]);
-    effect_case("ec.color.ociolook", &[("look", e(1)), ("looks", s("Vivid, -Cool"))]);
-    effect_case("ec.color.ociolook", &[("looks", s("High Contrast")), ("direction", e(1))]);
+    effect_case(
+        "ec.color.ociolook",
+        &[("look", e(1)), ("looks", s("Vivid, -Cool"))],
+    );
+    effect_case(
+        "ec.color.ociolook",
+        &[("looks", s("High Contrast")), ("direction", e(1))],
+    );
 }
 
 #[test]
 fn color_profile_converter() {
-    for (inp, out, intent) in [(0, 1, 1), (1, 3, 0), (4, 5, 2), (6, 2, 3), (5, 1, 0), (3, 4, 1)] {
-        effect_case("ec.utility.colorprofileconverter", &[("inputProfile", e(inp)), ("outputProfile", e(out)), ("intent", e(intent))]);
+    for (inp, out, intent) in [
+        (0, 1, 1),
+        (1, 3, 0),
+        (4, 5, 2),
+        (6, 2, 3),
+        (5, 1, 0),
+        (3, 4, 1),
+    ] {
+        effect_case(
+            "ec.utility.colorprofileconverter",
+            &[
+                ("inputProfile", e(inp)),
+                ("outputProfile", e(out)),
+                ("intent", e(intent)),
+            ],
+        );
     }
     effect_case(
         "ec.utility.colorprofileconverter",
-        &[("inputProfile", e(1)), ("outputProfile", e(3)), ("linearizeInputProfile", Value::Bool(true)), ("linearizeOutputProfile", Value::Bool(true))],
+        &[
+            ("inputProfile", e(1)),
+            ("outputProfile", e(3)),
+            ("linearizeInputProfile", Value::Bool(true)),
+            ("linearizeOutputProfile", Value::Bool(true)),
+        ],
     );
 }
 
@@ -162,15 +276,37 @@ fn lumetri_luts_and_looks() {
     for look in 2..8 {
         effect_case("ec.color.lumetri", &[("creative/look", e(look))]);
     }
-    effect_case("ec.color.lumetri", &[("creative/look", e(4)), ("creative/lookIntensity", n(60.0)), ("basicCorrection/tone/exposure", n(0.3))]);
-    effect_case("ec.color.lumetri", &[("creative/look", e(1)), ("creative/lookFile", s(&cube_3d()))]);
     effect_case(
         "ec.color.lumetri",
-        &[("basicCorrection/inputLut", e(1)), ("basicCorrection/inputLutFile", s(&cube_1d_3d())), ("basicCorrection/saturation", n(120.0))],
+        &[
+            ("creative/look", e(4)),
+            ("creative/lookIntensity", n(60.0)),
+            ("basicCorrection/tone/exposure", n(0.3)),
+        ],
     );
     effect_case(
         "ec.color.lumetri",
-        &[("basicCorrection/inputLut", e(1)), ("basicCorrection/inputLutFile", s(&cube_1d())), ("creative/look", e(1)), ("creative/lookFile", s(&cube_3d()))],
+        &[
+            ("creative/look", e(1)),
+            ("creative/lookFile", s(&cube_3d())),
+        ],
+    );
+    effect_case(
+        "ec.color.lumetri",
+        &[
+            ("basicCorrection/inputLut", e(1)),
+            ("basicCorrection/inputLutFile", s(&cube_1d_3d())),
+            ("basicCorrection/saturation", n(120.0)),
+        ],
+    );
+    effect_case(
+        "ec.color.lumetri",
+        &[
+            ("basicCorrection/inputLut", e(1)),
+            ("basicCorrection/inputLutFile", s(&cube_1d())),
+            ("creative/look", e(1)),
+            ("creative/lookFile", s(&cube_3d())),
+        ],
     );
 }
 
@@ -231,15 +367,35 @@ fn ocio_custom_config() {
         ("lin", "missing"),
     ] {
         for dir in 0..2 {
-            let vals = [cfg.as_slice(), &[("sourceName", s(a)), ("destinationName", s(z)), ("direction", e(dir))]].concat();
+            let vals = [
+                cfg.as_slice(),
+                &[
+                    ("sourceName", s(a)),
+                    ("destinationName", s(z)),
+                    ("direction", e(dir)),
+                ],
+            ]
+            .concat();
             effect_case("ec.color.ociocolorspace", &vals);
         }
     }
     for (view, dir) in [("Video", 0), ("Log", 0), ("Log", 1)] {
-        let vals = [cfg.as_slice(), &[("sourceName", s("half")), ("displayName", s("Monitor")), ("viewName", s(view)), ("direction", e(dir))]].concat();
+        let vals = [
+            cfg.as_slice(),
+            &[
+                ("sourceName", s("half")),
+                ("displayName", s("Monitor")),
+                ("viewName", s(view)),
+                ("direction", e(dir)),
+            ],
+        ]
+        .concat();
         effect_case("ec.color.ociodisplay", &vals);
     }
-    effect_case("ec.color.ociocolorspace", &[("config", e(1)), ("configFile", s("/missing.ocio"))]);
+    effect_case(
+        "ec.color.ociocolorspace",
+        &[("config", e(1)), ("configFile", s("/missing.ocio"))],
+    );
 }
 
 /// A config with the OCIO v2 transforms of Blender's (#410): an E-white XYZ reference,
@@ -334,12 +490,35 @@ fn ocio_custom_config_v2() {
         ("Linear Rec.709", "Uniform"),
     ] {
         for dir in 0..2 {
-            let vals = [cfg.as_slice(), &[("sourceName", s(a)), ("destinationName", s(z)), ("direction", e(dir))]].concat();
+            let vals = [
+                cfg.as_slice(),
+                &[
+                    ("sourceName", s(a)),
+                    ("destinationName", s(z)),
+                    ("direction", e(dir)),
+                ],
+            ]
+            .concat();
             effect_case("ec.color.ociocolorspace", &vals);
         }
     }
-    for (view, dir) in [("Standard", 0), ("Standard", 1), ("Log", 0), ("Log", 1), ("PQ", 0)] {
-        let vals = [cfg.as_slice(), &[("sourceName", s("Linear Rec.709")), ("displayName", s("sRGB")), ("viewName", s(view)), ("direction", e(dir))]].concat();
+    for (view, dir) in [
+        ("Standard", 0),
+        ("Standard", 1),
+        ("Log", 0),
+        ("Log", 1),
+        ("PQ", 0),
+    ] {
+        let vals = [
+            cfg.as_slice(),
+            &[
+                ("sourceName", s("Linear Rec.709")),
+                ("displayName", s("sRGB")),
+                ("viewName", s(view)),
+                ("direction", e(dir)),
+            ],
+        ]
+        .concat();
         effect_case("ec.color.ociodisplay", &vals);
     }
 }

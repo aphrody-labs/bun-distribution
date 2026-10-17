@@ -42,7 +42,10 @@ async fn relative_tool_cwd_is_resolved_from_the_session_workspace() {
         (json!(other.path()), "absolute"),
         (serde_json::Value::Null, "workspace"),
     ] {
-        let output = read.handle(json!({"file_path": "marker.txt", "cwd": cwd})).await.unwrap();
+        let output = read
+            .handle(json!({"file_path": "marker.txt", "cwd": cwd}))
+            .await
+            .unwrap();
         assert_eq!(output.content, expected);
     }
 }
@@ -68,7 +71,10 @@ fn default_config_is_full_auto() {
     let config = RuntimeConfig::default();
     assert_eq!(config.autonomy, AutonomyMode::FullAuto);
     // And via the model-targeting constructor.
-    assert_eq!(RuntimeConfig::new("gemini-2.5-flash").autonomy, AutonomyMode::FullAuto);
+    assert_eq!(
+        RuntimeConfig::new("gemini-2.5-flash").autonomy,
+        AutonomyMode::FullAuto
+    );
 }
 
 #[test]
@@ -84,8 +90,12 @@ fn builder_requires_a_model() {
 async fn resume_appends_without_duplicating_history_and_fork_is_self_contained() {
     let root = tempfile::tempdir().expect("tempdir");
     let config = RuntimeConfig::new("stub").with_rollout_path(root.path());
-    let model =
-        || ModelChoice::stub(StubModelClient::new("stub", vec![ScriptedTurn::text("answer")]));
+    let model = || {
+        ModelChoice::stub(StubModelClient::new(
+            "stub",
+            vec![ScriptedTurn::text("answer")],
+        ))
+    };
     AgentRuntime::builder()
         .config(config.clone())
         .model(model())
@@ -95,7 +105,10 @@ async fn resume_appends_without_duplicating_history_and_fork_is_self_contained()
         .run_once("first")
         .await
         .unwrap();
-    let original = aphrody_rollout::find_session(root.path(), "original").await.unwrap().unwrap();
+    let original = aphrody_rollout::find_session(root.path(), "original")
+        .await
+        .unwrap()
+        .unwrap();
     let history =
         aphrody_engine::restore_history(&aphrody_rollout::resume(&original.path).await.unwrap());
     assert_eq!(history.messages.len(), 2);
@@ -113,7 +126,13 @@ async fn resume_appends_without_duplicating_history_and_fork_is_self_contained()
         .unwrap();
     let lines = aphrody_rollout::resume(&original.path).await.unwrap();
     assert_eq!(aphrody_engine::restore_history(&lines).messages.len(), 4);
-    assert_eq!(lines.iter().filter(|line| line.item["type"] == "session_meta").count(), 1);
+    assert_eq!(
+        lines
+            .iter()
+            .filter(|line| line.item["type"] == "session_meta")
+            .count(),
+        1
+    );
 
     AgentRuntime::builder()
         .config(config)
@@ -126,20 +145,36 @@ async fn resume_appends_without_duplicating_history_and_fork_is_self_contained()
         .run_once("fork turn")
         .await
         .unwrap();
-    let fork = aphrody_rollout::find_session(root.path(), "fork").await.unwrap().unwrap();
+    let fork = aphrody_rollout::find_session(root.path(), "fork")
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(fork.meta.forked_from.as_deref(), Some("original"));
     assert_ne!(original.path, fork.path);
     let fork_history =
         aphrody_engine::restore_history(&aphrody_rollout::resume(&fork.path).await.unwrap());
     assert_eq!(fork_history.messages.len(), 4);
-    assert_eq!(aphrody_rollout::list_sessions(root.path()).await.unwrap().sessions.len(), 2);
+    assert_eq!(
+        aphrody_rollout::list_sessions(root.path())
+            .await
+            .unwrap()
+            .sessions
+            .len(),
+        2
+    );
 }
 
 #[test]
 fn build_tool_registry_loads_shell_and_apply_patch() {
     let config = RuntimeConfig::new("m");
     let tools = crate::build_tool_registry(&config).expect("registry");
-    for name in ["shell", "apply_patch", "read_file", "search_text", "computer_use"] {
+    for name in [
+        "shell",
+        "apply_patch",
+        "read_file",
+        "search_text",
+        "computer_use",
+    ] {
         assert!(tools.get(name).is_some(), "missing tool: {name}");
     }
     // BXC native web surface, registered beside the local built-ins.
@@ -177,7 +212,12 @@ fn build_tool_registry_loads_shell_and_apply_patch() {
                 .description
                 .contains("repository inspection")
         );
-        for name in ["winclean", "computer_observe", "computer_click", "kill_process"] {
+        for name in [
+            "winclean",
+            "computer_observe",
+            "computer_click",
+            "kill_process",
+        ] {
             assert!(tools.get(name).is_some(), "missing winclean tool: {name}");
         }
     }
@@ -210,11 +250,23 @@ async fn profiled_registry_is_an_exact_builtin_and_skill_allowlist() {
     assert!(tools.get("apply_patch").is_none());
     assert_eq!(tools.len(), 3);
     assert_eq!(
-        tools.get("skill__review").unwrap().handle(json!({})).await.unwrap().content,
+        tools
+            .get("skill__review")
+            .unwrap()
+            .handle(json!({}))
+            .await
+            .unwrap()
+            .content,
         "direct profile skill"
     );
     assert_eq!(
-        tools.get("skill__quality__lint").unwrap().handle(json!({})).await.unwrap().content,
+        tools
+            .get("skill__quality__lint")
+            .unwrap()
+            .handle(json!({}))
+            .await
+            .unwrap()
+            .content,
         "plugin profile skill"
     );
 }
@@ -225,11 +277,13 @@ fn separate_profiles_do_not_share_skills() {
     let path = root.path().join("skill.md");
     std::fs::write(&path, "body").unwrap();
     let registry = |name: &str| {
-        crate::build_tool_registry(&RuntimeConfig::new("stub").with_tool_profile(ToolProfileSpec {
-            builtin_tools: Some(BTreeSet::new()),
-            skills: vec![SkillSpec::new(name, &path)],
-            ..ToolProfileSpec::default()
-        }))
+        crate::build_tool_registry(
+            &RuntimeConfig::new("stub").with_tool_profile(ToolProfileSpec {
+                builtin_tools: Some(BTreeSet::new()),
+                skills: vec![SkillSpec::new(name, &path)],
+                ..ToolProfileSpec::default()
+            }),
+        )
         .unwrap()
     };
 
@@ -261,8 +315,12 @@ async fn mcp_profiles_require_async_build_and_skip_disabled_servers() {
         mcp_servers: BTreeMap::from([("disabled".to_owned(), disabled)]),
         ..ToolProfileSpec::default()
     });
-    let model =
-        || ModelChoice::stub(StubModelClient::new("stub", vec![ScriptedTurn::text("unused")]));
+    let model = || {
+        ModelChoice::stub(StubModelClient::new(
+            "stub",
+            vec![ScriptedTurn::text("unused")],
+        ))
+    };
 
     let sync_error = AgentRuntime::builder()
         .config(config.clone())
@@ -289,7 +347,11 @@ async fn run_once_drives_a_tool_then_a_final_message() {
     let stub = StubModelClient::new(
         "stub-model",
         vec![
-            ScriptedTurn::tool_call("call-1", "shell", json!({ "command": echo_command(marker) })),
+            ScriptedTurn::tool_call(
+                "call-1",
+                "shell",
+                json!({ "command": echo_command(marker) }),
+            ),
             ScriptedTurn::text("all done"),
         ],
     );
@@ -319,24 +381,32 @@ async fn run_once_drives_a_tool_then_a_final_message() {
                 if call_id == "call-1" && name == "shell" {
                     begin_ok = true;
                 }
-            },
+            }
             EventMsg::ToolCallEnd { call_id, ok } => {
                 if call_id == "call-1" && *ok {
                     end_ok = true;
                 }
-            },
+            }
             EventMsg::AgentMessage { text } if text == "all done" => {
                 final_message_ok = true;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     assert!(begin_ok, "expected a ToolCallBegin for the shell call");
-    assert!(end_ok, "expected a successful ToolCallEnd for the shell call");
+    assert!(
+        end_ok,
+        "expected a successful ToolCallEnd for the shell call"
+    );
     assert!(final_message_ok, "expected the final AgentMessage");
 
     // A TurnComplete must close the turn.
-    assert!(result.events.iter().any(|e| matches!(&e.msg, EventMsg::TurnComplete { .. })));
+    assert!(
+        result
+            .events
+            .iter()
+            .any(|e| matches!(&e.msg, EventMsg::TurnComplete { .. }))
+    );
 }
 
 #[tokio::test]
@@ -406,7 +476,10 @@ async fn run_once_apply_patch_creates_a_file_on_disk() {
     );
 
     let contents = std::fs::read_to_string(&target).expect("created file must exist");
-    assert!(contents.contains("hello patched world"), "unexpected file contents: {contents:?}");
+    assert!(
+        contents.contains("hello patched world"),
+        "unexpected file contents: {contents:?}"
+    );
 }
 
 #[tokio::test]
@@ -444,7 +517,9 @@ async fn run_once_writes_dated_rollout_with_session_meta_first_line() {
     let stub = StubModelClient::new(
         "stub-model",
         vec![ScriptedTurn {
-            events: vec![ModelStreamEvent::TextDelta("rollout test complete".to_string())],
+            events: vec![ModelStreamEvent::TextDelta(
+                "rollout test complete".to_string(),
+            )],
         }],
     );
 
@@ -459,15 +534,23 @@ async fn run_once_writes_dated_rollout_with_session_meta_first_line() {
         .expect("build");
 
     let result = runtime.run_once("hello rollout").await.expect("run_once");
-    assert_eq!(result.last_agent_message.as_deref(), Some("rollout test complete"));
+    assert_eq!(
+        result.last_agent_message.as_deref(),
+        Some("rollout test complete")
+    );
 
     // Verify session listing found the session under dated directory YYYY/MM/DD
-    let listing = aphrody_rollout::list_sessions(&sessions_root).await.expect("list_sessions");
+    let listing = aphrody_rollout::list_sessions(&sessions_root)
+        .await
+        .expect("list_sessions");
     assert_eq!(listing.sessions.len(), 1);
 
     let session = &listing.sessions[0];
     assert_eq!(session.meta.model.as_deref(), Some("stub-model"));
-    assert_eq!(session.meta.instructions.as_deref(), Some("test system prompt"));
+    assert_eq!(
+        session.meta.instructions.as_deref(),
+        Some("test system prompt")
+    );
     assert_eq!(session.meta.originator, "aphrody");
 
     // Read first line explicitly and verify it parses as session_meta

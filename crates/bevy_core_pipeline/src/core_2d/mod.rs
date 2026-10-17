@@ -18,20 +18,21 @@ use indexmap::IndexMap;
 pub use main_opaque_pass_2d_node::*;
 pub use main_transparent_pass_2d_node::*;
 
-use crate::schedule::Core2d;
-use crate::tonemapping::{tonemapping, DebandDither, Tonemapping};
-use crate::upscaling::upscaling;
 use crate::Core2dSystems;
+use crate::schedule::Core2d;
+use crate::tonemapping::{DebandDither, Tonemapping, tonemapping};
+use crate::upscaling::upscaling;
 use bevy_app::{App, Plugin};
 use bevy_ecs::prelude::*;
 use bevy_math::FloatOrd;
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
     camera::ExtractedCamera,
     extract_component::ExtractComponentPlugin,
     render_phase::{
-        sort_phase_system, BinnedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId,
-        DrawFunctions, PhaseItem, PhaseItemExtraIndex, SortedPhaseItem, ViewBinnedRenderPhases,
-        ViewSortedRenderPhases,
+        BinnedPhaseItem, CachedRenderPipelinePhaseItem, DrawFunctionId, DrawFunctions, PhaseItem,
+        PhaseItemExtraIndex, SortedPhaseItem, ViewBinnedRenderPhases, ViewSortedRenderPhases,
+        sort_phase_system,
     },
     render_resource::{
         CachedRenderPipelineId, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
@@ -40,7 +41,6 @@ use bevy_render::{
     sync_world::MainEntity,
     texture::TextureCache,
     view::{Msaa, ViewDepthStencilTexture},
-    Extract, ExtractSchedule, Render, RenderApp, RenderSystems,
 };
 
 pub const CORE_2D_DEPTH_FORMAT: TextureFormat = TextureFormat::Depth32Float;

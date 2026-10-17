@@ -15,7 +15,7 @@ use bevy_platform::{
     collections::{HashMap, HashSet},
     hash::FixedHasher,
 };
-use bevy_utils::{default, TypeIdHashMap};
+use bevy_utils::{TypeIdHashMap, default};
 use core::{
     any::{Any, TypeId},
     fmt::{Debug, Write},
@@ -25,7 +25,7 @@ use indexmap::{IndexMap, IndexSet};
 use log::{info, warn};
 use pass::ScheduleBuildPassObj;
 #[cfg(feature = "debug")]
-use rand::{seq::SliceRandom, SeedableRng};
+use rand::{SeedableRng, seq::SliceRandom};
 use thiserror::Error;
 #[cfg(feature = "trace")]
 use tracing::info_span;
@@ -43,8 +43,8 @@ use crate::{
     world::World,
 };
 
-pub use stepping::Stepping;
 use Direction::{Incoming, Outgoing};
+pub use stepping::Stepping;
 
 /// Resource that stores [`Schedule`]s mapped to [`ScheduleLabel`]s excluding the current running [`Schedule`].
 #[derive(Default, Resource)]
@@ -1948,12 +1948,12 @@ mod tests {
     use bevy_ecs_macros::ScheduleLabel;
 
     use crate::{
-        error::{ignore, panic, FallbackErrorHandler, Result},
+        error::{FallbackErrorHandler, Result, ignore, panic},
         prelude::{ApplyDeferred, IntoSystemSet, Res, Resource},
         schedule::{
-            passes::AutoInsertApplyDeferredPass, tests::ResMut, FlattenedDependencies,
-            IntoScheduleConfigs, MultiThreadedExecutor, Schedule, ScheduleBuildPass,
-            ScheduleBuildSettings, ScheduleCleanupPolicy, SystemSet,
+            FlattenedDependencies, IntoScheduleConfigs, MultiThreadedExecutor, Schedule,
+            ScheduleBuildPass, ScheduleBuildSettings, ScheduleCleanupPolicy, SystemSet,
+            passes::AutoInsertApplyDeferredPass, tests::ResMut,
         },
         system::Commands,
         world::World,

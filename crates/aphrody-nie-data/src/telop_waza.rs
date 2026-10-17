@@ -38,7 +38,9 @@ use crate::cfgbin::{field_hash, field_i64, list_values};
 use crate::hash::HashId;
 
 /// Les 9 langues du jeu, dans l'ordre exact d'inagle (`TELOP_LANGS`).
-pub const TELOP_LANGS: [&str; 9] = ["ja", "en", "pt", "fr", "it", "de", "es", "zh_hant", "zh_hans"];
+pub const TELOP_LANGS: [&str; 9] = [
+    "ja", "en", "pt", "fr", "it", "de", "es", "zh_hant", "zh_hans",
+];
 
 /// Marges (en pixels) d'**un côté** du télop, résolues pour les 9 langues.
 ///
@@ -217,8 +219,14 @@ const ZERO_HASH: HashId = HashId::ZERO;
 /// `blankSizeInfo` est un `ShortTuple` RDBN, sérialisé en tableau JSON `[i16, i16]`.
 fn pair(v: &Value, key: &str) -> (i64, i64) {
     let arr = v.get(key).and_then(Value::as_array);
-    let left = arr.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0);
-    let right = arr.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0);
+    let left = arr
+        .and_then(|a| a.first())
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
+    let right = arr
+        .and_then(|a| a.get(1))
+        .and_then(Value::as_i64)
+        .unwrap_or(0);
     (left, right)
 }
 

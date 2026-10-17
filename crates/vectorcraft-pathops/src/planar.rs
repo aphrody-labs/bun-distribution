@@ -23,7 +23,10 @@ use kurbo::{Affine, BezPath, CubicBez, ParamCurve, PathSeg, Point, Shape as _};
 use linesweeper::topology::{Topology, WindingNumber};
 use vectorcraft_geom::{FillRule, PathData, SubPath};
 
-use crate::boolean::{DEFAULT_PRECISION, Seg, Tidy, eps_for, is_sliver, segs_to_subpath, snap_horizontals, tidy_segments, to_seg};
+use crate::boolean::{
+    DEFAULT_PRECISION, Seg, Tidy, eps_for, is_sliver, segs_to_subpath, snap_horizontals,
+    tidy_segments, to_seg,
+};
 use crate::pathfinder::{Region, Shape};
 
 /// The sweep's frame: y + x / 32. Only edges sloping -1/32 in the document are horizontal in it.
@@ -109,14 +112,23 @@ impl Outlines {
             .filter(|(r, ..)| r.width() > 0.0 || r.height() > 0.0)
             .collect();
         // The sweep moves points by a few `eps` at most.
-        Self { segs, tol: 16.0 * eps }
+        Self {
+            segs,
+            tol: 16.0 * eps,
+        }
     }
 
     /// The front-most input whose outline passes through `p`.
     fn source_at(&self, p: Point) -> Option<usize> {
         use kurbo::ParamCurveNearest;
         let tol = self.tol;
-        self.segs.iter().filter(|(r, s, _)| r.inflate(tol, tol).contains(p) && s.nearest(p, 1e-9).distance_sq <= tol * tol).map(|(_, _, i)| *i).max()
+        self.segs
+            .iter()
+            .filter(|(r, s, _)| {
+                r.inflate(tol, tol).contains(p) && s.nearest(p, 1e-9).distance_sq <= tol * tol
+            })
+            .map(|(_, _, i)| *i)
+            .max()
     }
 }
 
@@ -130,14 +142,25 @@ struct Fill {
 impl Fill {
     fn new(s: &Shape) -> Self {
         let mut path = BezPath::new();
-        for sp in s.path.subpaths.iter().filter(|sp| sp.closed && sp.anchors.len() >= 2) {
+        for sp in s
+            .path
+            .subpaths
+            .iter()
+            .filter(|sp| sp.closed && sp.anchors.len() >= 2)
+        {
             sp.to_bezpath_into(&mut path);
         }
-        Self { bounds: path.bounding_box(), path, rule: s.rule }
+        Self {
+            bounds: path.bounding_box(),
+            path,
+            rule: s.rule,
+        }
     }
 
     fn contains(&self, p: Point) -> bool {
-        !self.path.elements().is_empty() && self.bounds.contains(p) && crate::boolean::inside(self.rule, self.path.winding(p))
+        !self.path.elements().is_empty()
+            && self.bounds.contains(p)
+            && crate::boolean::inside(self.rule, self.path.winding(p))
     }
 }
 
@@ -170,11 +193,20 @@ fn twin(h: usize) -> usize {
 
 /// The segments of half-edge `h`, in its direction.
 fn half_segs(edges: &[Edge], h: usize) -> Vec<Seg> {
-    let Some(e) = edges.get(h / 2) else { return Vec::new() };
+    let Some(e) = edges.get(h / 2) else {
+        return Vec::new();
+    };
     if h.is_multiple_of(2) {
         e.segs.clone()
     } else {
-        e.segs.iter().rev().map(|s| Seg { c: CubicBez::new(s.c.p3, s.c.p2, s.c.p1, s.c.p0), line: s.line }).collect()
+        e.segs
+            .iter()
+            .rev()
+            .map(|s| Seg {
+                c: CubicBez::new(s.c.p3, s.c.p2, s.c.p1, s.c.p0),
+                line: s.line,
+            })
+            .collect()
     }
 }
 
@@ -204,7 +236,11 @@ fn leaving_angle(edges: &[Edge], h: usize, v: Point, r: f64) -> f64 {
                 // The point on prev → p at distance r (prev is closer).
                 let (d, f) = (p - prev, prev - v);
                 let (a, b, c) = (d.hypot2(), 2.0 * f.dot(d), f.hypot2() - r * r);
-                let t = if a > 0.0 { ((-b + (b * b - 4.0 * a * c).max(0.0).sqrt()) / (2.0 * a)).clamp(0.0, 1.0) } else { 1.0 };
+                let t = if a > 0.0 {
+                    ((-b + (b * b - 4.0 * a * c).max(0.0).sqrt()) / (2.0 * a)).clamp(0.0, 1.0)
+                } else {
+                    1.0
+                };
                 hit = Some(prev + d * t);
             }
             prev = p;
@@ -212,8 +248,14 @@ fn leaving_angle(edges: &[Edge], h: usize, v: Point, r: f64) -> f64 {
     });
     // An edge too short to reach r (it can't, r is at most half of every chord) leaves along its
     // tangent.
-    let far =
-        hit.unwrap_or_else(|| segs.first().map_or(v, |s| [s.c.p1, s.c.p2, s.c.p3].into_iter().find(|p| p.distance(s.c.p0) > 0.0).unwrap_or(s.c.p3)));
+    let far = hit.unwrap_or_else(|| {
+        segs.first().map_or(v, |s| {
+            [s.c.p1, s.c.p2, s.c.p3]
+                .into_iter()
+                .find(|p| p.distance(s.c.p0) > 0.0)
+                .unwrap_or(s.c.p3)
+        })
+    });
     (far - v).atan2()
 }
 
@@ -271,9 +313,19 @@ fn there_and_back(open: &BezPath, out: &mut BezPath) {
 /// put exactly on it, handles moving with them.
 fn unshear(mut path: PathData, sorted: &[Point], tol: f64) -> PathData {
     path.transform(UNSHEAR);
-    for a in path.subpaths.iter_mut().flat_map(|sp| sp.anchors.iter_mut()) {
+    for a in path
+        .subpaths
+        .iter_mut()
+        .flat_map(|sp| sp.anchors.iter_mut())
+    {
         let lo = sorted.partition_point(|q| q.x < a.p.x - tol);
-        if let Some(q) = sorted.get(lo..).unwrap_or_default().iter().take_while(|q| q.x <= a.p.x + tol).find(|q| (q.y - a.p.y).abs() <= tol) {
+        if let Some(q) = sorted
+            .get(lo..)
+            .unwrap_or_default()
+            .iter()
+            .take_while(|q| q.x <= a.p.x + tol)
+            .find(|q| (q.y - a.p.y).abs() <= tol)
+        {
             let d = *q - a.p;
             a.p = *q;
             a.h_in += d;
@@ -333,21 +385,44 @@ pub struct BuilderArrangement {
 /// [`SHAPE_BUILDER_MAX_SEGMENTS`] segments or a map that can't be built, only the filled areas
 /// count and there are no pieces.
 pub fn shape_builder(shapes: &[Shape], edges: bool) -> BuilderArrangement {
-    let has_open = shapes.iter().flat_map(|s| &s.path.subpaths).any(|sp| !sp.closed && sp.anchors.len() >= 2);
-    let segments: usize = shapes.iter().flat_map(|s| &s.path.subpaths).map(|sp| sp.segment_count()).sum();
+    let has_open = shapes
+        .iter()
+        .flat_map(|s| &s.path.subpaths)
+        .any(|sp| !sp.closed && sp.anchors.len() >= 2);
+    let segments: usize = shapes
+        .iter()
+        .flat_map(|s| &s.path.subpaths)
+        .map(|sp| sp.segment_count())
+        .sum();
     let planar = ((has_open || edges) && segments <= SHAPE_BUILDER_MAX_SEGMENTS)
         .then(|| {
-            let keyed: Vec<Shape> = shapes.iter().enumerate().map(|(i, s)| Shape::new(s.path.clone(), s.rule, i as u64)).collect();
+            let keyed: Vec<Shape> = shapes
+                .iter()
+                .enumerate()
+                .map(|(i, s)| Shape::new(s.path.clone(), s.rule, i as u64))
+                .collect();
             live_paint(&keyed)
         })
         .filter(|(faces, pieces)| !faces.is_empty() || !pieces.is_empty());
     let Some((faces, pieces)) = planar else {
-        return BuilderArrangement { regions: crate::regions(shapes), ..Default::default() };
+        return BuilderArrangement {
+            regions: crate::regions(shapes),
+            ..Default::default()
+        };
     };
-    let is_line = |i: u64| shapes.get(i as usize).is_some_and(|s| !s.path.subpaths.iter().any(|sp| sp.closed));
-    let (lines, outline): (Vec<Shape>, Vec<Shape>) = pieces.into_iter().partition(|e| is_line(e.key));
+    let is_line = |i: u64| {
+        shapes
+            .get(i as usize)
+            .is_some_and(|s| !s.path.subpaths.iter().any(|sp| sp.closed))
+    };
+    let (lines, outline): (Vec<Shape>, Vec<Shape>) =
+        pieces.into_iter().partition(|e| is_line(e.key));
     BuilderArrangement {
-        regions: if has_open { faces } else { crate::regions(shapes) },
+        regions: if has_open {
+            faces
+        } else {
+            crate::regions(shapes)
+        },
         lines: if has_open { lines } else { Vec::new() },
         edges: if edges { outline } else { Vec::new() },
     }
@@ -377,7 +452,10 @@ pub fn cut_out(path: &PathData, piece: &SubPath, fill_closes: bool, tol: f64) ->
     }
     // A point well inside the piece: the middle of its longest segment.
     let arclen = |k: usize| kurbo::ParamCurveArclen::arclen(&piece.segment(k), 1e-3);
-    let mid = (0..n).map(|k| (arclen(k), k)).max_by(|x, y| x.0.total_cmp(&y.0)).map(|(_, k)| piece.segment(k).eval(0.5))?;
+    let mid = (0..n)
+        .map(|k| (arclen(k), k))
+        .max_by(|x, y| x.0.total_cmp(&y.0))
+        .map(|(_, k)| piece.segment(k).eval(0.5))?;
     let (a, b) = (piece.anchors.first()?.p, piece.anchors.last()?.p);
     let mut bp = BezPath::new();
     piece.to_bezpath_into(&mut bp);
@@ -388,7 +466,10 @@ pub fn cut_out(path: &PathData, piece: &SubPath, fill_closes: bool, tol: f64) ->
     // A piece that ends where it starts runs all the way round.
     let whole = piece.closed || a.distance(b) <= tol;
     // Each subpath as the piece may run along it: round its closing edge when it has one.
-    let ring = |sp: &SubPath| SubPath { anchors: sp.anchors.clone(), closed: sp.closed || (fill_closes && encloses_area(sp)) };
+    let ring = |sp: &SubPath| SubPath {
+        anchors: sp.anchors.clone(),
+        closed: sp.closed || (fill_closes && encloses_area(sp)),
+    };
     let (si, geom, um) = path
         .subpaths
         .iter()
@@ -402,7 +483,11 @@ pub fn cut_out(path: &PathData, piece: &SubPath, fill_closes: bool, tol: f64) ->
         .map(|(i, g, u, _)| (i, g, u))?;
     let len = geom.segment_count() as f64;
     let real = path.subpaths.get(si)?.segment_count() as f64;
-    let at = |p: Point| nearest_u(&geom, p).filter(|(_, d)| *d <= tol).map(|(u, _)| u);
+    let at = |p: Point| {
+        nearest_u(&geom, p)
+            .filter(|(_, d)| *d <= tol)
+            .map(|(u, _)| u)
+    };
     // The parameter spans of `geom` that stay (unrolled past the end of a ring).
     let keep: Vec<(f64, f64)> = if whole {
         Vec::new()
@@ -410,14 +495,26 @@ pub fn cut_out(path: &PathData, piece: &SubPath, fill_closes: bool, tol: f64) ->
         let (ua, ub) = (at(a)?, at(b)?);
         let fwd = |from: f64, to: f64| (to - from).rem_euclid(len);
         // The piece runs from one end through `mid` to the other; what stays runs on round.
-        let (start, end) = if fwd(ua, um) <= fwd(ua, ub) { (ub, ua) } else { (ua, ub) };
+        let (start, end) = if fwd(ua, um) <= fwd(ua, ub) {
+            (ub, ua)
+        } else {
+            (ua, ub)
+        };
         let rest = fwd(start, end);
         if rest <= 1e-9 || len - rest <= 1e-9 {
             Vec::new()
         } else {
             // Where the ring closes with an invisible edge (`real..len`), what stays stops at it.
-            let parts: &[(f64, f64)] = if real >= len { &[(0.0, 2.0 * len)] } else { &[(0.0, real), (len, len + real)] };
-            parts.iter().map(|&(lo, hi)| (start.max(lo), (start + rest).min(hi))).filter(|(x, y)| y - x > 1e-9).collect()
+            let parts: &[(f64, f64)] = if real >= len {
+                &[(0.0, 2.0 * len)]
+            } else {
+                &[(0.0, real), (len, len + real)]
+            };
+            parts
+                .iter()
+                .map(|&(lo, hi)| (start.max(lo), (start + rest).min(hi)))
+                .filter(|(x, y)| y - x > 1e-9)
+                .collect()
         }
     } else {
         let (ua, ub) = (at(a)?, at(b)?);
@@ -425,10 +522,17 @@ pub fn cut_out(path: &PathData, piece: &SubPath, fill_closes: bool, tol: f64) ->
         if !(lo - 1e-9..=hi + 1e-9).contains(&um) {
             return None;
         }
-        [(0.0, lo), (hi, len)].into_iter().filter(|(x, y)| y - x > 1e-9).collect()
+        [(0.0, lo), (hi, len)]
+            .into_iter()
+            .filter(|(x, y)| y - x > 1e-9)
+            .collect()
     };
     let mut subpaths: Vec<SubPath> = path.subpaths.iter().take(si).cloned().collect();
-    subpaths.extend(keep.into_iter().filter_map(|(u0, u1)| span(&geom, u0, u1)).map(|sp| snap_ends(sp, [a, b], tol)));
+    subpaths.extend(
+        keep.into_iter()
+            .filter_map(|(u0, u1)| span(&geom, u0, u1))
+            .map(|sp| snap_ends(sp, [a, b], tol)),
+    );
     subpaths.extend(path.subpaths.iter().skip(si + 1).cloned());
     Some(PathData::new(subpaths))
 }
@@ -472,8 +576,14 @@ fn span(sp: &SubPath, u0: f64, u1: f64) -> Option<SubPath> {
     let last = (u1.ceil().max(0.0) as usize).min(first + 2 * n);
     let segs: Vec<Seg> = (first..last)
         .filter_map(|k| {
-            let (t0, t1) = ((u0 - k as f64).clamp(0.0, 1.0), (u1 - k as f64).clamp(0.0, 1.0));
-            (t1 - t0 > 1e-12).then(|| Seg { c: sp.segment(k % n).subsegment(t0..t1), line: sp.segment_is_line(k % n) })
+            let (t0, t1) = (
+                (u0 - k as f64).clamp(0.0, 1.0),
+                (u1 - k as f64).clamp(0.0, 1.0),
+            );
+            (t1 - t0 > 1e-12).then(|| Seg {
+                c: sp.segment(k % n).subsegment(t0..t1),
+                line: sp.segment_is_line(k % n),
+            })
         })
         .collect();
     segs_to_subpath(&segs, false)
@@ -518,10 +628,14 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
         return None;
     }
     let eps = eps_for(inputs.iter().map(|p| &p.0)).ok()?;
-    snap_horizontals(&mut inputs.iter_mut().map(|p| &mut p.0).collect::<Vec<_>>(), eps);
+    snap_horizontals(
+        &mut inputs.iter_mut().map(|p| &mut p.0).collect::<Vec<_>>(),
+        eps,
+    );
     // The sweep can panic on rare near-degenerate input; that must never take the app down.
-    let sweep =
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| Topology::<Crossings>::from_paths(inputs.iter().map(|(p, i)| (p, *i)), eps)));
+    let sweep = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        Topology::<Crossings>::from_paths(inputs.iter().map(|(p, i)| (p, *i)), eps)
+    }));
     let top = sweep.ok()?.ok()?;
     let tidy = Tidy::keeping(DEFAULT_PRECISION, inputs.iter().map(|p| &p.0));
 
@@ -549,7 +663,10 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
     let mut pieces: Vec<(Vec<Seg>, [usize; 2])> = Vec::new();
     for idx in top.segment_indices() {
         let segs: Vec<Seg> = positions[idx].path.segments().map(to_seg).collect();
-        let ends = [vertex_id(top.point(idx.first_half()).to_kurbo()), vertex_id(top.point(idx.second_half()).to_kurbo())];
+        let ends = [
+            vertex_id(top.point(idx.first_half()).to_kurbo()),
+            vertex_id(top.point(idx.second_half()).to_kurbo()),
+        ];
         if !segs.is_empty() && ends[0] != ends[1] {
             pieces.push((segs, ends));
         }
@@ -569,11 +686,18 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
     let close = |a: usize, b: usize| matches!((points.get(a), points.get(b)), (Some(p), Some(q)) if p.distance(*q) <= tol);
     let mut joined: Vec<usize> = (0..points.len()).collect();
     for (k, (_, [a, b])) in pieces.iter().enumerate() {
-        let Some(&Some(m)) = mids.get(k) else { continue };
+        let Some(&Some(m)) = mids.get(k) else {
+            continue;
+        };
         let (cx, cy) = cell_of(m);
-        let others = (cx - 1..=cx + 1).flat_map(|x| (cy - 1..=cy + 1).map(move |y| (x, y))).filter_map(|c| by_mid.get(&c)).flatten();
+        let others = (cx - 1..=cx + 1)
+            .flat_map(|x| (cy - 1..=cy + 1).map(move |y| (x, y)))
+            .filter_map(|c| by_mid.get(&c))
+            .flatten();
         for &j in others.filter(|&&j| j > k) {
-            let (Some((_, [c, d])), Some(&Some(n))) = (pieces.get(j), mids.get(j)) else { continue };
+            let (Some((_, [c, d])), Some(&Some(n))) = (pieces.get(j), mids.get(j)) else {
+                continue;
+            };
             if m.distance(n) > tol {
                 continue;
             }
@@ -597,7 +721,9 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
     let outlines = Outlines::new(&inputs, eps);
     for (mut segs, ends) in pieces {
         let ends = ends.map(|v| find(&mut joined, v));
-        let (Some(&p0), Some(&p1)) = (points.get(ends[0]), points.get(ends[1])) else { continue };
+        let (Some(&p0), Some(&p1)) = (points.get(ends[0]), points.get(ends[1])) else {
+            continue;
+        };
         if ends[0] == ends[1] {
             continue;
         }
@@ -605,7 +731,9 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
         // coordinates: merging them (a union) then cancels their common edge, which it can't when
         // each face carries its own rounding of the corner (#893).
         pin_ends(&mut segs, p0, p1);
-        let Some(source) = mid(&segs).and_then(|m| outlines.source_at(m)) else { continue };
+        let Some(source) = mid(&segs).and_then(|m| outlines.source_at(m)) else {
+            continue;
+        };
         // Coincident pieces the sweep left apart are one edge (the front-most input's).
         let key = (ends[0].min(ends[1]), ends[0].max(ends[1]));
         let here = mid(&segs);
@@ -641,8 +769,15 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
     for (v, list) in around.iter_mut().enumerate() {
         let Some(&at) = points.get(v) else { continue };
         // Half the shortest chord of the edges here: every one of them gets that far from it.
-        let r = 0.5 * list.iter().filter_map(|&h| half_segs(&edges, h).last().map(|s| s.c.p3.distance(at))).fold(f64::INFINITY, f64::min);
-        let mut keyed: Vec<(f64, usize)> = list.iter().map(|&h| (leaving_angle(&edges, h, at, r), h)).collect();
+        let r = 0.5
+            * list
+                .iter()
+                .filter_map(|&h| half_segs(&edges, h).last().map(|s| s.c.p3.distance(at)))
+                .fold(f64::INFINITY, f64::min);
+        let mut keyed: Vec<(f64, usize)> = list
+            .iter()
+            .map(|&h| (leaving_angle(&edges, h, at, r), h))
+            .collect();
         keyed.sort_by(|a, b| a.0.total_cmp(&b.0));
         *list = keyed.into_iter().map(|(_, h)| h).collect();
         for (k, &h) in list.iter().enumerate() {
@@ -667,7 +802,13 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
         }
     }
     let piece: Vec<usize> = (0..nv).map(|v| find(&mut parent, v)).collect();
-    let piece_of = |cycle: &[usize]| cycle.first().and_then(|&h| origin(&edges, h)).and_then(|v| piece.get(v)).copied();
+    let piece_of = |cycle: &[usize]| {
+        cycle
+            .first()
+            .and_then(|&h| origin(&edges, h))
+            .and_then(|v| piece.get(v))
+            .copied()
+    };
 
     // Walk every cycle: positive ones are faces, negative ones outer boundaries (holes in the
     // face around them, if any).
@@ -704,12 +845,21 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
     // Each hole goes in the smallest face of another piece around it.
     let mut face_holes: Vec<Vec<usize>> = vec![Vec::new(); faces.len()];
     for (k, (cycle, _)) in holes.iter().enumerate() {
-        let Some(p) = cycle.first().and_then(|&h| origin(&edges, h)).and_then(|v| points.get(v)).copied() else { continue };
+        let Some(p) = cycle
+            .first()
+            .and_then(|&h| origin(&edges, h))
+            .and_then(|v| points.get(v))
+            .copied()
+        else {
+            continue;
+        };
         let own = piece_of(cycle);
         let around_it = faces
             .iter()
             .enumerate()
-            .filter(|(_, (fc, bp, _))| piece_of(fc) != own && bp.bounding_box().contains(p) && bp.winding(p) != 0)
+            .filter(|(_, (fc, bp, _))| {
+                piece_of(fc) != own && bp.bounding_box().contains(p) && bp.winding(p) != 0
+            })
             .min_by(|a, b| a.1.2.total_cmp(&b.1.2))
             .map(|(i, _)| i);
         if let Some(list) = around_it.and_then(|i| face_holes.get_mut(i)) {
@@ -719,9 +869,27 @@ pub(crate) fn map(shapes: &[Shape]) -> Option<Map> {
 
     // The inputs' anchors, which results land on again up to the sweep's tolerance.
     let snap = 2.0 * eps;
-    let mut anchors: Vec<Point> = shapes.iter().flat_map(|s| s.path.subpaths.iter().flat_map(|sp| sp.anchors.iter().map(|a| a.p))).collect();
+    let mut anchors: Vec<Point> = shapes
+        .iter()
+        .flat_map(|s| {
+            s.path
+                .subpaths
+                .iter()
+                .flat_map(|sp| sp.anchors.iter().map(|a| a.p))
+        })
+        .collect();
     anchors.sort_by(|a, b| a.x.total_cmp(&b.x).then(a.y.total_cmp(&b.y)));
-    Some(Map { edges, around, slot_of, faces, holes, face_holes, tidy, anchors, snap })
+    Some(Map {
+        edges,
+        around,
+        slot_of,
+        faces,
+        holes,
+        face_holes,
+        tidy,
+        anchors,
+        snap,
+    })
 }
 
 impl Map {
@@ -734,7 +902,12 @@ impl Map {
         // The face on each half-edge's side; holes bound the face around them.
         let mut face_of: Vec<Option<usize>> = vec![None; halves];
         for (i, (cycle, ..)) in self.faces.iter().enumerate() {
-            let hole_cycles = self.face_holes.get(i)?.iter().filter_map(|&k| self.holes.get(k)).map(|(c, _)| c);
+            let hole_cycles = self
+                .face_holes
+                .get(i)?
+                .iter()
+                .filter_map(|&k| self.holes.get(k))
+                .map(|(c, _)| c);
             for &h in std::iter::once(cycle).chain(hole_cycles).flatten() {
                 *face_of.get_mut(h)? = Some(i);
             }
@@ -751,7 +924,13 @@ impl Map {
                 .min_by(|a, b| a.1.2.total_cmp(&b.1.2))?;
             *picked.get_mut(i)? = true;
         }
-        let merged = |h: usize| face_of.get(h).copied().flatten().is_some_and(|f| picked.get(f) == Some(&true));
+        let merged = |h: usize| {
+            face_of
+                .get(h)
+                .copied()
+                .flatten()
+                .is_some_and(|f| picked.get(f) == Some(&true))
+        };
         let boundary = |h: usize| merged(h) && !merged(twin(h));
         let mut used = vec![false; halves];
         let mut subpaths = Vec::new();
@@ -772,13 +951,21 @@ impl Map {
                 let list = self.around.get(origin(&self.edges, back)?)?;
                 let k = *self.slot_of.get(back)?;
                 let n = list.len();
-                h = (1..=n).filter_map(|j| list.get((k + n * 2 - j) % n).copied()).find(|&g| boundary(g))?;
+                h = (1..=n)
+                    .filter_map(|j| list.get((k + n * 2 - j) % n).copied())
+                    .find(|&g| boundary(g))?;
             }
             if h != start {
                 return None;
             }
-            let segs: Vec<Seg> = cycle.iter().flat_map(|&h| half_segs(&self.edges, h)).collect();
-            subpaths.push(segs_to_subpath(&tidy_segments(segs, true, &self.tidy), true)?);
+            let segs: Vec<Seg> = cycle
+                .iter()
+                .flat_map(|&h| half_segs(&self.edges, h))
+                .collect();
+            subpaths.push(segs_to_subpath(
+                &tidy_segments(segs, true, &self.tidy),
+                true,
+            )?);
         }
         (!subpaths.is_empty()).then(|| unshear(PathData::new(subpaths), &self.anchors, self.snap))
     }
@@ -786,7 +973,17 @@ impl Map {
 
 fn build(shapes: &[Shape]) -> Option<(Vec<Region>, Vec<Shape>)> {
     let m = map(shapes)?;
-    let Map { edges, around, faces, holes, face_holes, tidy, anchors, snap, .. } = &m;
+    let Map {
+        edges,
+        around,
+        faces,
+        holes,
+        face_holes,
+        tidy,
+        anchors,
+        snap,
+        ..
+    } = &m;
     let snap = *snap;
     let fills: Vec<Fill> = shapes.iter().map(Fill::new).collect();
     let subpath = |cycle: &[usize]| {
@@ -798,10 +995,22 @@ fn build(shapes: &[Shape]) -> Option<(Vec<Region>, Vec<Shape>)> {
         .zip(face_holes)
         .filter_map(|((cycle, _, _), hs)| {
             let mut subpaths = vec![subpath(cycle)?];
-            subpaths.extend(hs.iter().filter_map(|&k| holes.get(k)).filter_map(|(c, _)| subpath(c)));
+            subpaths.extend(
+                hs.iter()
+                    .filter_map(|&k| holes.get(k))
+                    .filter_map(|(c, _)| subpath(c)),
+            );
             let path = unshear(PathData::new(subpaths), anchors, snap);
-            let sources =
-                interior_point(&path).map(|p| fills.iter().enumerate().filter(|(_, f)| f.contains(p)).map(|(i, _)| i).collect()).unwrap_or_default();
+            let sources = interior_point(&path)
+                .map(|p| {
+                    fills
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, f)| f.contains(p))
+                        .map(|(i, _)| i)
+                        .collect()
+                })
+                .unwrap_or_default();
             Some(Region { path, sources })
         })
         .collect();
@@ -811,7 +1020,8 @@ fn build(shapes: &[Shape]) -> Option<(Vec<Region>, Vec<Shape>)> {
     let passes = |v: usize| -> Option<(usize, usize)> {
         let list = around.get(v)?;
         let (&a, &b) = (list.first()?, list.get(1)?);
-        (degree.get(v) == Some(&2) && edges.get(a / 2)?.source == edges.get(b / 2)?.source).then_some((a, b))
+        (degree.get(v) == Some(&2) && edges.get(a / 2)?.source == edges.get(b / 2)?.source)
+            .then_some((a, b))
     };
     let mut used = vec![false; edges.len()];
     let mut chains: Vec<(Vec<Seg>, bool, usize)> = Vec::new();
@@ -829,7 +1039,9 @@ fn build(shapes: &[Shape]) -> Option<(Vec<Region>, Vec<Shape>)> {
             *u = true;
             segs.extend(half_segs(edges, h));
             let v = origin(edges, twin(h))?;
-            let Some((a, b)) = passes(v) else { return Some((segs, origin(edges, h0) == Some(v), source)) };
+            let Some((a, b)) = passes(v) else {
+                return Some((segs, origin(edges, h0) == Some(v), source));
+            };
             h = if a == twin(h) { b } else { a };
         }
     };
@@ -857,7 +1069,11 @@ fn build(shapes: &[Shape]) -> Option<(Vec<Region>, Vec<Shape>)> {
         .into_iter()
         .filter_map(|(segs, closed, source)| {
             let sp = segs_to_subpath(&tidy_segments(segs, closed, tidy), closed)?;
-            Some(Shape::new(unshear(PathData::new(vec![sp]), anchors, snap), FillRule::NonZero, shapes.get(source)?.key))
+            Some(Shape::new(
+                unshear(PathData::new(vec![sp]), anchors, snap),
+                FillRule::NonZero,
+                shapes.get(source)?.key,
+            ))
         })
         .collect();
     Some((regions, edge_shapes))
@@ -870,26 +1086,30 @@ pub fn interior_point(path: &PathData) -> Option<Point> {
     let bp = path.to_bezpath();
     let mut edges: Vec<(Point, Point)> = vec![];
     let (mut first, mut last) = (Point::ZERO, Point::ZERO);
-    kurbo::flatten(bp.iter(), (bb.width().max(bb.height()) * 1e-3).max(1e-4), |el| match el {
-        kurbo::PathEl::MoveTo(p) => {
-            if last != first {
-                edges.push((last, first));
+    kurbo::flatten(
+        bp.iter(),
+        (bb.width().max(bb.height()) * 1e-3).max(1e-4),
+        |el| match el {
+            kurbo::PathEl::MoveTo(p) => {
+                if last != first {
+                    edges.push((last, first));
+                }
+                first = p;
+                last = p;
             }
-            first = p;
-            last = p;
-        }
-        kurbo::PathEl::LineTo(p) => {
-            edges.push((last, p));
-            last = p;
-        }
-        kurbo::PathEl::ClosePath => {
-            if last != first {
-                edges.push((last, first));
+            kurbo::PathEl::LineTo(p) => {
+                edges.push((last, p));
+                last = p;
             }
-            last = first;
-        }
-        _ => {}
-    });
+            kurbo::PathEl::ClosePath => {
+                if last != first {
+                    edges.push((last, first));
+                }
+                last = first;
+            }
+            _ => {}
+        },
+    );
     if last != first {
         edges.push((last, first));
     }
@@ -898,8 +1118,11 @@ pub fn interior_point(path: &PathData) -> Option<Point> {
         // A little off the round fractions, which on art drawn to a grid fall on the height of
         // some corner, where testing the point against other paths is unreliable.
         let y = bb.y0 + bb.height() * (f + 0.0061803);
-        let mut xs: Vec<f64> =
-            edges.iter().filter(|(a, c)| (a.y <= y) != (c.y <= y)).map(|(a, c)| a.x + (y - a.y) / (c.y - a.y) * (c.x - a.x)).collect();
+        let mut xs: Vec<f64> = edges
+            .iter()
+            .filter(|(a, c)| (a.y <= y) != (c.y <= y))
+            .map(|(a, c)| a.x + (y - a.y) / (c.y - a.y) * (c.x - a.x))
+            .collect();
         xs.sort_by(f64::total_cmp);
         for w in xs.windows(2) {
             let m = Point::new((w[0] + w[1]) / 2.0, y);
@@ -919,11 +1142,22 @@ mod tests {
     use vectorcraft_geom::{Rect, shapes};
 
     fn line(a: (f64, f64), b: (f64, f64), key: u64) -> Shape {
-        Shape::new(PathData::single(SubPath::polyline(&[Point::new(a.0, a.1), Point::new(b.0, b.1)], false)), FillRule::NonZero, key)
+        Shape::new(
+            PathData::single(SubPath::polyline(
+                &[Point::new(a.0, a.1), Point::new(b.0, b.1)],
+                false,
+            )),
+            FillRule::NonZero,
+            key,
+        )
     }
 
     fn rect(x0: f64, y0: f64, x1: f64, y1: f64, key: u64) -> Shape {
-        Shape::new(shapes::rectangle(Rect::new(x0, y0, x1, y1)), FillRule::NonZero, key)
+        Shape::new(
+            shapes::rectangle(Rect::new(x0, y0, x1, y1)),
+            FillRule::NonZero,
+            key,
+        )
     }
 
     fn area(r: &Region) -> f64 {
@@ -931,20 +1165,35 @@ mod tests {
     }
 
     fn at(faces: &[Region], x: f64, y: f64) -> Vec<&Region> {
-        faces.iter().filter(|f| f.contains(Point::new(x, y))).collect()
+        faces
+            .iter()
+            .filter(|f| f.contains(Point::new(x, y)))
+            .collect()
     }
 
     #[test]
     fn crossing_lines_enclose_a_face() {
         // Three lines crossing pairwise, their ends sticking out: one triangle.
-        let s = [line((0.0, 0.0), (100.0, 100.0), 0), line((100.0, 0.0), (0.0, 100.0), 1), line((-10.0, 80.0), (110.0, 80.0), 2)];
+        let s = [
+            line((0.0, 0.0), (100.0, 100.0), 0),
+            line((100.0, 0.0), (0.0, 100.0), 1),
+            line((-10.0, 80.0), (110.0, 80.0), 2),
+        ];
         let (faces, edges) = live_paint(&s);
         assert_eq!(faces.len(), 1, "{faces:?}");
         let f = &faces[0];
-        assert!((area(f) - 900.0).abs() < 1e-6, "triangle (20,80) (50,50) (80,80): {}", area(f));
+        assert!(
+            (area(f) - 900.0).abs() < 1e-6,
+            "triangle (20,80) (50,50) (80,80): {}",
+            area(f)
+        );
         assert!(f.sources.is_empty(), "nothing fills it yet");
         assert_eq!(f.path.subpaths.len(), 1);
-        assert_eq!(f.path.subpaths[0].anchors.len(), 3, "the loose ends are not part of it");
+        assert_eq!(
+            f.path.subpaths[0].anchors.len(),
+            3,
+            "the loose ends are not part of it"
+        );
         // Each line is cut where the others cross it: 3 + 3 + 3 pieces.
         assert_eq!(edges.len(), 9);
         assert_eq!(edges.iter().filter(|e| e.key == 2).count(), 3);
@@ -966,10 +1215,16 @@ mod tests {
 
     #[test]
     fn a_line_across_a_shape_splits_it() {
-        let s = [rect(0.0, 0.0, 100.0, 50.0, 7), line((40.0, -20.0), (60.0, 70.0), 8)];
+        let s = [
+            rect(0.0, 0.0, 100.0, 50.0, 7),
+            line((40.0, -20.0), (60.0, 70.0), 8),
+        ];
         let (faces, edges) = live_paint(&s);
         assert_eq!(faces.len(), 2);
-        assert!(faces.iter().all(|f| f.sources == [0]), "both halves keep the rectangle's fill");
+        assert!(
+            faces.iter().all(|f| f.sources == [0]),
+            "both halves keep the rectangle's fill"
+        );
         assert!((faces.iter().map(area).sum::<f64>() - 5000.0).abs() < 1e-6);
         assert_eq!(at(&faces, 10.0, 25.0).len(), 1);
         assert_eq!(at(&faces, 90.0, 25.0).len(), 1);
@@ -980,7 +1235,10 @@ mod tests {
 
     #[test]
     fn overlapping_shapes_keep_their_coverage() {
-        let s = [rect(0.0, 0.0, 100.0, 100.0, 0), rect(50.0, 0.0, 150.0, 100.0, 1)];
+        let s = [
+            rect(0.0, 0.0, 100.0, 100.0, 0),
+            rect(50.0, 0.0, 150.0, 100.0, 1),
+        ];
         let (faces, _) = live_paint(&s);
         assert_eq!(faces.len(), 3);
         assert_eq!(at(&faces, 25.0, 50.0)[0].sources, [0]);
@@ -990,14 +1248,24 @@ mod tests {
         let regions = crate::regions(&s);
         assert_eq!(regions.len(), 3);
         for f in &faces {
-            assert!(regions.iter().any(|r| r.sources == f.sources && (area(r).abs() - area(f)).abs() < 1e-6));
+            assert!(
+                regions
+                    .iter()
+                    .any(|r| r.sources == f.sources && (area(r).abs() - area(f)).abs() < 1e-6)
+            );
         }
     }
 
     #[test]
     fn a_closed_loop_of_lines_inside_a_shape_is_a_hole_and_a_face() {
         let mut s = vec![rect(0.0, 0.0, 100.0, 100.0, 0)];
-        let sq = [(40.0, 40.0), (60.0, 40.0), (60.0, 60.0), (40.0, 60.0), (40.0, 40.0)];
+        let sq = [
+            (40.0, 40.0),
+            (60.0, 40.0),
+            (60.0, 60.0),
+            (40.0, 60.0),
+            (40.0, 40.0),
+        ];
         for w in sq.windows(2) {
             s.push(line(w[0], w[1], 1));
         }
@@ -1007,7 +1275,11 @@ mod tests {
         assert_eq!(faces.len(), 2, "{faces:?}");
         let outer = at(&faces, 5.0, 5.0);
         assert_eq!(outer.len(), 1);
-        assert_eq!(outer[0].path.subpaths.len(), 2, "the inner square is a hole in it");
+        assert_eq!(
+            outer[0].path.subpaths.len(),
+            2,
+            "the inner square is a hole in it"
+        );
         assert!((area(outer[0]) - 9600.0).abs() < 1e-6);
         let inner = at(&faces, 50.0, 50.0);
         assert_eq!(inner.len(), 1, "the hole doesn't count as the outer face");
@@ -1018,7 +1290,12 @@ mod tests {
     #[test]
     fn an_area_enclosed_by_shapes_is_an_unfilled_face() {
         // A frame of four bars around a 50 × 50 gap.
-        let s = [rect(0.0, 0.0, 70.0, 10.0, 0), rect(0.0, 60.0, 70.0, 70.0, 0), rect(0.0, 0.0, 10.0, 70.0, 0), rect(60.0, 0.0, 70.0, 70.0, 0)];
+        let s = [
+            rect(0.0, 0.0, 70.0, 10.0, 0),
+            rect(0.0, 60.0, 70.0, 70.0, 0),
+            rect(0.0, 0.0, 10.0, 70.0, 0),
+            rect(60.0, 0.0, 70.0, 70.0, 0),
+        ];
         let (faces, _) = live_paint(&s);
         let gap = at(&faces, 35.0, 35.0);
         assert_eq!(gap.len(), 1);
@@ -1028,19 +1305,33 @@ mod tests {
 
     #[test]
     fn curves_and_a_circle_crossed_by_a_line() {
-        let circle = Shape::new(shapes::ellipse(Rect::new(0.0, 0.0, 100.0, 100.0)), FillRule::NonZero, 0);
+        let circle = Shape::new(
+            shapes::ellipse(Rect::new(0.0, 0.0, 100.0, 100.0)),
+            FillRule::NonZero,
+            0,
+        );
         let (faces, edges) = live_paint(&[circle, line((-10.0, 50.0), (110.0, 50.0), 1)]);
         assert_eq!(faces.len(), 2);
         for f in &faces {
-            assert!((area(f) - std::f64::consts::PI * 2500.0 / 2.0).abs() < 2.0, "{}", area(f));
-            assert!(f.path.subpaths[0].anchors.len() <= 4, "no extra anchors from the sweep's splits");
+            assert!(
+                (area(f) - std::f64::consts::PI * 2500.0 / 2.0).abs() < 2.0,
+                "{}",
+                area(f)
+            );
+            assert!(
+                f.path.subpaths[0].anchors.len() <= 4,
+                "no extra anchors from the sweep's splits"
+            );
         }
         assert_eq!(edges.iter().filter(|e| e.key == 0).count(), 2, "two arcs");
     }
 
     #[test]
     fn a_line_ending_on_an_edge_splits_the_shape() {
-        let s = [line((90.0, 20.0), (70.0, 10.0), 0), rect(80.0, 10.0, 90.0, 50.0, 1)];
+        let s = [
+            line((90.0, 20.0), (70.0, 10.0), 0),
+            rect(80.0, 10.0, 90.0, 50.0, 1),
+        ];
         let (faces, _) = live_paint(&s);
         assert_eq!(faces.len(), 2);
         assert!((area(&faces[0]) + area(&faces[1]) - 400.0).abs() < 1e-6);
@@ -1054,7 +1345,11 @@ mod tests {
     #[test]
     fn nothing_or_garbage_gives_an_empty_map() {
         assert_eq!(live_paint(&[]), (vec![], vec![]));
-        assert!(live_paint(&[line((0.0, 0.0), (f64::NAN, 1.0), 0)]).0.is_empty());
+        assert!(
+            live_paint(&[line((0.0, 0.0), (f64::NAN, 1.0), 0)])
+                .0
+                .is_empty()
+        );
         let (faces, edges) = live_paint(&[line((0.0, 0.0), (10.0, 10.0), 0)]);
         assert!(faces.is_empty());
         assert_eq!(edges.len(), 1);
@@ -1065,40 +1360,162 @@ mod tests {
     #[test]
     fn faces_share_their_corners_exactly_so_merging_them_leaves_no_seam() {
         const LINES: &[[f64; 4]] = &[
-            [416.57797027866155, 268.45362144397683, 416.5779702786616, 811.5463785560231],
-            [243.12292300414873, 511.1134238473054, 713.4550472745127, 782.6598024033286],
-            [836.8770769958512, 511.1134238473054, 366.5449527254871, 782.6598024033286],
-            [457.718646852441, 268.45362144397683, 457.718646852441, 811.5463785560231],
-            [263.6932612910385, 475.4845528055331, 734.0253855614023, 747.0309313615563],
-            [816.3067387089613, 475.4845528055331, 345.9746144385975, 747.0309313615563],
-            [498.85932342622044, 268.45362144397683, 498.85932342622044, 811.5463785560231],
-            [284.26359957792823, 439.8556817637607, 754.5957238482922, 711.4020603197839],
-            [795.7364004220717, 439.8556817637607, 325.40427615170773, 711.4020603197839],
-            [539.9999999999998, 268.45362144397683, 539.9999999999998, 811.5463785560231],
-            [304.83393786481787, 404.22681072198844, 775.1660621351818, 675.7731892780117],
-            [775.1660621351821, 404.22681072198844, 304.833937864818, 675.7731892780117],
-            [581.1406765737793, 268.45362144397683, 581.1406765737793, 811.5463785560231],
-            [325.4042761517076, 368.59793968021614, 795.7364004220715, 640.1443182362394],
-            [754.5957238482922, 368.59793968021614, 284.26359957792835, 640.1443182362394],
-            [622.2813531475588, 268.45362144397683, 622.2813531475588, 811.5463785560231],
-            [345.97461443859737, 332.9690686384438, 816.3067387089613, 604.515447194467],
-            [734.0253855614026, 332.9690686384438, 263.6932612910385, 604.515447194467],
-            [663.422029721338, 268.45362144397683, 663.422029721338, 811.5463785560231],
-            [366.54495272548706, 297.3401975966715, 836.877076995851, 568.8865761526947],
-            [713.4550472745128, 297.3401975966715, 243.12292300414884, 568.8865761526947],
+            [
+                416.57797027866155,
+                268.45362144397683,
+                416.5779702786616,
+                811.5463785560231,
+            ],
+            [
+                243.12292300414873,
+                511.1134238473054,
+                713.4550472745127,
+                782.6598024033286,
+            ],
+            [
+                836.8770769958512,
+                511.1134238473054,
+                366.5449527254871,
+                782.6598024033286,
+            ],
+            [
+                457.718646852441,
+                268.45362144397683,
+                457.718646852441,
+                811.5463785560231,
+            ],
+            [
+                263.6932612910385,
+                475.4845528055331,
+                734.0253855614023,
+                747.0309313615563,
+            ],
+            [
+                816.3067387089613,
+                475.4845528055331,
+                345.9746144385975,
+                747.0309313615563,
+            ],
+            [
+                498.85932342622044,
+                268.45362144397683,
+                498.85932342622044,
+                811.5463785560231,
+            ],
+            [
+                284.26359957792823,
+                439.8556817637607,
+                754.5957238482922,
+                711.4020603197839,
+            ],
+            [
+                795.7364004220717,
+                439.8556817637607,
+                325.40427615170773,
+                711.4020603197839,
+            ],
+            [
+                539.9999999999998,
+                268.45362144397683,
+                539.9999999999998,
+                811.5463785560231,
+            ],
+            [
+                304.83393786481787,
+                404.22681072198844,
+                775.1660621351818,
+                675.7731892780117,
+            ],
+            [
+                775.1660621351821,
+                404.22681072198844,
+                304.833937864818,
+                675.7731892780117,
+            ],
+            [
+                581.1406765737793,
+                268.45362144397683,
+                581.1406765737793,
+                811.5463785560231,
+            ],
+            [
+                325.4042761517076,
+                368.59793968021614,
+                795.7364004220715,
+                640.1443182362394,
+            ],
+            [
+                754.5957238482922,
+                368.59793968021614,
+                284.26359957792835,
+                640.1443182362394,
+            ],
+            [
+                622.2813531475588,
+                268.45362144397683,
+                622.2813531475588,
+                811.5463785560231,
+            ],
+            [
+                345.97461443859737,
+                332.9690686384438,
+                816.3067387089613,
+                604.515447194467,
+            ],
+            [
+                734.0253855614026,
+                332.9690686384438,
+                263.6932612910385,
+                604.515447194467,
+            ],
+            [
+                663.422029721338,
+                268.45362144397683,
+                663.422029721338,
+                811.5463785560231,
+            ],
+            [
+                366.54495272548706,
+                297.3401975966715,
+                836.877076995851,
+                568.8865761526947,
+            ],
+            [
+                713.4550472745128,
+                297.3401975966715,
+                243.12292300414884,
+                568.8865761526947,
+            ],
         ];
-        let s: Vec<Shape> = LINES.iter().enumerate().map(|(i, &[x0, y0, x1, y1])| line((x0, y0), (x1, y1), i as u64)).collect();
+        let s: Vec<Shape> = LINES
+            .iter()
+            .enumerate()
+            .map(|(i, &[x0, y0, x1, y1])| line((x0, y0), (x1, y1), i as u64))
+            .collect();
         let (faces, _) = live_paint(&s);
-        let corners: Vec<Point> = faces.iter().flat_map(|f| f.path.subpaths.iter().flat_map(|sp| sp.anchors.iter().map(|a| a.p))).collect();
+        let corners: Vec<Point> = faces
+            .iter()
+            .flat_map(|f| {
+                f.path
+                    .subpaths
+                    .iter()
+                    .flat_map(|sp| sp.anchors.iter().map(|a| a.p))
+            })
+            .collect();
         for p in &corners {
             for q in &corners {
-                assert!(p == q || p.distance(*q) > 1e-6, "one corner, two positions: {p:?} {q:?}");
+                assert!(
+                    p == q || p.distance(*q) > 1e-6,
+                    "one corner, two positions: {p:?} {q:?}"
+                );
             }
         }
         // Down the strip between the lines x ≈ 498.9 and x = 540: 11 triangles, one outline.
         let mut strip: Vec<&Region> = vec![];
         for k in 0..=240 {
-            if let Some(f) = faces.iter().find(|f| f.contains(Point::new(519.43, 420.0 + f64::from(k))))
+            if let Some(f) = faces
+                .iter()
+                .find(|f| f.contains(Point::new(519.43, 420.0 + f64::from(k))))
                 && !strip.iter().any(|g| std::ptr::eq(*g, f))
             {
                 strip.push(f);
@@ -1130,18 +1547,40 @@ mod tests {
         let m = map(&s).unwrap();
         let check = |picked: &[&Region], subpaths: usize, area_want: f64| {
             // Merged in the map itself, not by the fallback union.
-            let inside: Vec<Point> = picked.iter().map(|f| interior_point(&f.path).unwrap()).collect();
+            let inside: Vec<Point> = picked
+                .iter()
+                .map(|f| interior_point(&f.path).unwrap())
+                .collect();
             assert_eq!(m.merge(&inside).as_ref(), Some(&merger.merge(picked)));
             let m = merger.merge(picked);
             assert_eq!(m.subpaths.len(), subpaths, "{m:?}");
-            assert!((crate::area(&m, FillRule::NonZero) - area_want).abs() < 1e-6, "{}", crate::area(&m, FillRule::NonZero));
+            assert!(
+                (crate::area(&m, FillRule::NonZero) - area_want).abs() < 1e-6,
+                "{}",
+                crate::area(&m, FillRule::NonZero)
+            );
             m
         };
         let all: Vec<&Region> = faces.iter().collect();
         let whole = check(&all, 1, 900.0);
-        assert_eq!(whole.subpaths[0].anchors.len(), 4, "one square, no anchors left from the inner lines or the loose end");
-        let ring: Vec<&Region> =
-            [(5., 5.), (15., 5.), (25., 5.), (5., 15.), (25., 15.), (5., 25.), (15., 25.), (25., 25.)].iter().map(|&(x, y)| cell(x, y)).collect();
+        assert_eq!(
+            whole.subpaths[0].anchors.len(),
+            4,
+            "one square, no anchors left from the inner lines or the loose end"
+        );
+        let ring: Vec<&Region> = [
+            (5., 5.),
+            (15., 5.),
+            (25., 5.),
+            (5., 15.),
+            (25., 15.),
+            (5., 25.),
+            (15., 25.),
+            (25., 25.),
+        ]
+        .iter()
+        .map(|&(x, y)| cell(x, y))
+        .collect();
         check(&ring, 2, 800.0);
         check(&[cell(5.0, 5.0), cell(15.0, 15.0)], 2, 200.0);
     }
@@ -1149,14 +1588,21 @@ mod tests {
     #[test]
     fn shape_builder_lines_cut_regions() {
         // A line across a rectangle: two regions, the line in three pieces keyed by its index.
-        let s = [rect(0.0, 0.0, 100.0, 50.0, 7), line((40.0, -20.0), (60.0, 70.0), 8)];
+        let s = [
+            rect(0.0, 0.0, 100.0, 50.0, 7),
+            line((40.0, -20.0), (60.0, 70.0), 8),
+        ];
         let BuilderArrangement { regions, lines, .. } = shape_builder(&s, false);
         assert_eq!(regions.len(), 2);
         assert!(regions.iter().all(|r| r.sources == [0]));
         assert_eq!(lines.len(), 3);
         assert!(lines.iter().all(|l| l.key == 1 && !l.path.is_closed()));
         // Lines alone enclose a region nothing fills.
-        let s = [line((0.0, 0.0), (100.0, 100.0), 0), line((100.0, 0.0), (0.0, 100.0), 0), line((-10.0, 80.0), (110.0, 80.0), 0)];
+        let s = [
+            line((0.0, 0.0), (100.0, 100.0), 0),
+            line((100.0, 0.0), (0.0, 100.0), 0),
+            line((-10.0, 80.0), (110.0, 80.0), 0),
+        ];
         let BuilderArrangement { regions, lines, .. } = shape_builder(&s, false);
         assert_eq!(regions.len(), 1);
         assert!(regions[0].sources.is_empty() && regions[0].top().is_none());
@@ -1165,11 +1611,29 @@ mod tests {
 
     #[test]
     fn shape_builder_closed_only_or_degenerate_is_the_filled_arrangement() {
-        let s = [rect(0.0, 0.0, 100.0, 100.0, 0), rect(50.0, 0.0, 150.0, 100.0, 1)];
-        assert_eq!(shape_builder(&s, false), BuilderArrangement { regions: crate::regions(&s), ..Default::default() });
+        let s = [
+            rect(0.0, 0.0, 100.0, 100.0, 0),
+            rect(50.0, 0.0, 150.0, 100.0, 1),
+        ];
+        assert_eq!(
+            shape_builder(&s, false),
+            BuilderArrangement {
+                regions: crate::regions(&s),
+                ..Default::default()
+            }
+        );
         // A broken line can't be swept: what the filled areas give (nothing here, without a panic).
-        let s = [rect(0.0, 0.0, 100.0, 100.0, 0), line((0.0, 0.0), (f64::NAN, 1.0), 1)];
-        assert_eq!(shape_builder(&s, false), BuilderArrangement { regions: crate::regions(&s), ..Default::default() });
+        let s = [
+            rect(0.0, 0.0, 100.0, 100.0, 0),
+            line((0.0, 0.0), (f64::NAN, 1.0), 1),
+        ];
+        assert_eq!(
+            shape_builder(&s, false),
+            BuilderArrangement {
+                regions: crate::regions(&s),
+                ..Default::default()
+            }
+        );
         // Zero-length and doubled-back lines don't break it either.
         let s = [
             rect(0.0, 0.0, 100.0, 100.0, 0),
@@ -1193,24 +1657,42 @@ mod tests {
                 Point::new(r * t.cos(), r * t.sin())
             })
             .collect();
-        let mut s = vec![Shape::new(PathData::single(SubPath::polyline(&ring, true)), FillRule::NonZero, 0)];
+        let mut s = vec![Shape::new(
+            PathData::single(SubPath::polyline(&ring, true)),
+            FillRule::NonZero,
+            0,
+        )];
         for k in 0..4 {
             let y = -60.0 + 40.0 * f64::from(k);
             s.push(line((-150.0, y), (150.0, y + 7.0), 1));
         }
         let started = std::time::Instant::now();
         let BuilderArrangement { regions, lines, .. } = shape_builder(&s, false);
-        assert!(regions.len() >= 5, "the ring cut in five bands at least (the waves make pockets)");
+        assert!(
+            regions.len() >= 5,
+            "the ring cut in five bands at least (the waves make pockets)"
+        );
         assert!(lines.len() >= 12, "{}", lines.len());
-        assert!(started.elapsed().as_secs_f64() < 5.0, "{:?}", started.elapsed());
+        assert!(
+            started.elapsed().as_secs_f64() < 5.0,
+            "{:?}",
+            started.elapsed()
+        );
         // Past the cap, only the filled areas count.
         s.push(line((0.0, 0.0), (1.0, 1.0), 2));
-        s[0].path.subpaths[0].anchors.extend((0..16).map(|k| vectorcraft_geom::Anchor::corner(Point::new(100.0, f64::from(k)))));
+        s[0].path.subpaths[0].anchors.extend(
+            (0..16).map(|k| vectorcraft_geom::Anchor::corner(Point::new(100.0, f64::from(k)))),
+        );
         assert!(shape_builder(&s, false).lines.is_empty());
     }
 
     fn poly(pts: &[(f64, f64)], closed: bool) -> SubPath {
-        SubPath::polyline(&pts.iter().map(|&(x, y)| Point::new(x, y)).collect::<Vec<_>>(), closed)
+        SubPath::polyline(
+            &pts.iter()
+                .map(|&(x, y)| Point::new(x, y))
+                .collect::<Vec<_>>(),
+            closed,
+        )
     }
 
     fn ends(sp: &SubPath) -> (Point, Point) {
@@ -1220,51 +1702,116 @@ mod tests {
     #[test]
     fn shape_builder_edges_are_the_outlines_cut_where_paths_meet() {
         // Two overlapping squares: each outline in two pieces, cut where the other crosses it.
-        let s = [rect(0.0, 0.0, 100.0, 100.0, 0), rect(50.0, 50.0, 150.0, 150.0, 1)];
+        let s = [
+            rect(0.0, 0.0, 100.0, 100.0, 0),
+            rect(50.0, 50.0, 150.0, 150.0, 1),
+        ];
         let with = shape_builder(&s, true);
-        assert_eq!(with.regions, shape_builder(&s, false).regions, "the regions don't change");
+        assert_eq!(
+            with.regions,
+            shape_builder(&s, false).regions,
+            "the regions don't change"
+        );
         assert!(with.lines.is_empty() && shape_builder(&s, false).edges.is_empty());
         assert_eq!(with.edges.len(), 4);
         for key in [0, 1] {
-            assert_eq!(with.edges.iter().filter(|e| e.key == key && !e.path.is_closed()).count(), 2);
+            assert_eq!(
+                with.edges
+                    .iter()
+                    .filter(|e| e.key == key && !e.path.is_closed())
+                    .count(),
+                2
+            );
         }
-        let inner = with.edges.iter().find(|e| e.key == 0 && e.path.bounds() == Some(Rect::new(50.0, 50.0, 100.0, 100.0))).expect("A inside B");
+        let inner = with
+            .edges
+            .iter()
+            .find(|e| e.key == 0 && e.path.bounds() == Some(Rect::new(50.0, 50.0, 100.0, 100.0)))
+            .expect("A inside B");
         // Erasing it opens A there.
         let cut = cut_out(&s[0].path, &inner.path.subpaths[0], false, 1e-3).expect("on A");
         assert_eq!(cut.subpaths.len(), 1);
         let sp = &cut.subpaths[0];
         assert!(!sp.closed && sp.anchors.len() == 5, "{sp:?}");
         let (a, b) = ends(sp);
-        assert!([a, b].contains(&Point::new(100.0, 50.0)) && [a, b].contains(&Point::new(50.0, 100.0)), "{a:?} {b:?}");
+        assert!(
+            [a, b].contains(&Point::new(100.0, 50.0)) && [a, b].contains(&Point::new(50.0, 100.0)),
+            "{a:?} {b:?}"
+        );
         assert!((cut.length() - 300.0).abs() < 1e-6, "{}", cut.length());
         // Not on B.
-        assert_eq!(cut_out(&s[1].path, &inner.path.subpaths[0], false, 1e-3), None);
+        assert_eq!(
+            cut_out(&s[1].path, &inner.path.subpaths[0], false, 1e-3),
+            None
+        );
         // A lone square's edge is its whole outline: erasing it leaves nothing.
         let lone = shape_builder(&s[..1], true);
         assert_eq!(lone.edges.len(), 1);
-        assert!(cut_out(&s[0].path, &lone.edges[0].path.subpaths[0], false, 1e-3).unwrap().is_empty());
+        assert!(
+            cut_out(&s[0].path, &lone.edges[0].path.subpaths[0], false, 1e-3)
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
     fn cut_out_splits_open_paths_and_keeps_closing_edges_invisible() {
         let open = PathData::single(poly(&[(0.0, 0.0), (100.0, 0.0)], false));
-        let cut = cut_out(&open, &poly(&[(60.0, 0.0), (30.0, 0.0)], false), false, 1e-3).unwrap();
+        let cut = cut_out(
+            &open,
+            &poly(&[(60.0, 0.0), (30.0, 0.0)], false),
+            false,
+            1e-3,
+        )
+        .unwrap();
         let mut parts: Vec<(Point, Point)> = cut.subpaths.iter().map(ends).collect();
         parts.sort_by(|a, b| a.0.x.total_cmp(&b.0.x));
-        assert_eq!(parts, vec![(Point::new(0.0, 0.0), Point::new(30.0, 0.0)), (Point::new(60.0, 0.0), Point::new(100.0, 0.0))]);
+        assert_eq!(
+            parts,
+            vec![
+                (Point::new(0.0, 0.0), Point::new(30.0, 0.0)),
+                (Point::new(60.0, 0.0), Point::new(100.0, 0.0))
+            ]
+        );
         // An end piece only shortens it.
-        let cut = cut_out(&open, &poly(&[(70.0, 0.0), (100.0, 0.0)], false), false, 1e-3).unwrap();
-        assert_eq!(cut.subpaths.iter().map(ends).collect::<Vec<_>>(), vec![(Point::new(0.0, 0.0), Point::new(70.0, 0.0))]);
+        let cut = cut_out(
+            &open,
+            &poly(&[(70.0, 0.0), (100.0, 0.0)], false),
+            false,
+            1e-3,
+        )
+        .unwrap();
+        assert_eq!(
+            cut.subpaths.iter().map(ends).collect::<Vec<_>>(),
+            vec![(Point::new(0.0, 0.0), Point::new(70.0, 0.0))]
+        );
 
         // A filled open path runs on round its invisible closing edge (100,100) → (0,0).
         let corner = PathData::single(poly(&[(0.0, 0.0), (100.0, 0.0), (100.0, 100.0)], false));
         let piece = poly(&[(100.0, 50.0), (100.0, 100.0), (50.0, 50.0)], false);
-        assert_eq!(cut_out(&corner, &piece, false, 1e-3), None, "without the fill it isn't on the path");
+        assert_eq!(
+            cut_out(&corner, &piece, false, 1e-3),
+            None,
+            "without the fill it isn't on the path"
+        );
         let cut = cut_out(&corner, &piece, true, 1e-3).unwrap();
         assert_eq!(cut.subpaths.len(), 1);
-        assert_eq!(cut.subpaths[0].anchors.iter().map(|a| a.p).collect::<Vec<_>>(), [(0.0, 0.0), (100.0, 0.0), (100.0, 50.0)].map(Point::from));
+        assert_eq!(
+            cut.subpaths[0]
+                .anchors
+                .iter()
+                .map(|a| a.p)
+                .collect::<Vec<_>>(),
+            [(0.0, 0.0), (100.0, 0.0), (100.0, 50.0)].map(Point::from)
+        );
         // Cut elsewhere, the closing edge stays invisible: two open runs, not one through it.
-        let cut = cut_out(&corner, &poly(&[(20.0, 0.0), (60.0, 0.0)], false), true, 1e-3).unwrap();
+        let cut = cut_out(
+            &corner,
+            &poly(&[(20.0, 0.0), (60.0, 0.0)], false),
+            true,
+            1e-3,
+        )
+        .unwrap();
         assert_eq!(cut.subpaths.len(), 2);
         assert!(cut.subpaths.iter().all(|sp| !sp.closed));
         assert!((cut.length() - 160.0).abs() < 1e-6, "{}", cut.length());
@@ -1277,24 +1824,58 @@ mod tests {
     /// merged outline runs out along it and back.
     #[test]
     fn a_loose_end_is_one_piece_when_the_sweep_cuts_its_passes_apart() {
-        let s = [line((30.0, 20.0), (70.0, 0.0), 0), line((40.0, 0.0), (0.0, 90.0), 1), rect(10.0, 0.0, 40.0, 30.0, 2)];
+        let s = [
+            line((30.0, 20.0), (70.0, 0.0), 0),
+            line((40.0, 0.0), (0.0, 90.0), 1),
+            rect(10.0, 0.0, 40.0, 30.0, 2),
+        ];
         let arr = shape_builder(&s, true);
         for key in 0..3 {
-            assert_eq!(arr.edges.iter().chain(&arr.lines).filter(|e| e.key == key).count(), 3, "pieces of {key}");
+            assert_eq!(
+                arr.edges
+                    .iter()
+                    .chain(&arr.lines)
+                    .filter(|e| e.key == key)
+                    .count(),
+                3,
+                "pieces of {key}"
+            );
         }
         for e in arr.edges.iter().chain(&arr.lines) {
             let input = &s[e.key as usize].path;
             let cut = cut_out(input, &e.path.subpaths[0], false, 0.05).expect("on its input");
-            assert!((input.length() - cut.length() - e.path.length()).abs() < 1e-6, "{:?}", e.path);
+            assert!(
+                (input.length() - cut.length() - e.path.length()).abs() < 1e-6,
+                "{:?}",
+                e.path
+            );
         }
         // From (30,20) to the crossing at (220/7, 135/7).
-        let loose = arr.lines.iter().find(|l| l.path.subpaths[0].anchors.iter().any(|a| a.p == Point::new(30.0, 20.0))).expect("the loose end");
+        let loose = arr
+            .lines
+            .iter()
+            .find(|l| {
+                l.path.subpaths[0]
+                    .anchors
+                    .iter()
+                    .any(|a| a.p == Point::new(30.0, 20.0))
+            })
+            .expect("the loose end");
         assert_eq!(loose.path.subpaths[0].anchors.len(), 2, "{:?}", loose.path);
-        assert!((loose.path.length() - 2000f64.sqrt() / 28.0).abs() < 1e-6, "{}", loose.path.length());
+        assert!(
+            (loose.path.length() - 2000f64.sqrt() / 28.0).abs() < 1e-6,
+            "{}",
+            loose.path.length()
+        );
         let (faces, _) = live_paint(&s);
         let left = at(&faces, 15.0, 15.0);
         assert_eq!(left.len(), 1);
-        assert_eq!(left[0].path.subpaths[0].anchors.len(), 4, "(10,0) (40,0) (26.67,30) (10,30): {:?}", left[0].path);
+        assert_eq!(
+            left[0].path.subpaths[0].anchors.len(),
+            4,
+            "(10,0) (40,0) (26.67,30) (10,30): {:?}",
+            left[0].path
+        );
         let merged = crate::FaceMerger::new(&s).merge(&faces.iter().collect::<Vec<_>>());
         assert_eq!(merged.subpaths.len(), 1, "the square: {merged:?}");
         assert_eq!(merged.subpaths[0].anchors.len(), 4, "{merged:?}");
@@ -1304,10 +1885,20 @@ mod tests {
         let c = || (0..10i32).prop_map(|v| f64::from(v) * 10.0);
         prop_oneof![
             (c(), c(), c(), c()).prop_map(|(a, b, x, y)| line((a, b), (x, y), 0)),
-            (c(), c(), 1..5i32, 1..5i32).prop_map(|(x, y, w, h)| rect(x, y, x + f64::from(w) * 10.0, y + f64::from(h) * 10.0, 0)),
+            (c(), c(), 1..5i32, 1..5i32).prop_map(|(x, y, w, h)| rect(
+                x,
+                y,
+                x + f64::from(w) * 10.0,
+                y + f64::from(h) * 10.0,
+                0
+            )),
             (c(), c(), 1..5i32).prop_map(|(x, y, r)| {
                 let r = f64::from(r) * 10.0;
-                Shape::new(shapes::ellipse(Rect::new(x, y, x + r, y + r)), FillRule::EvenOdd, 0)
+                Shape::new(
+                    shapes::ellipse(Rect::new(x, y, x + r, y + r)),
+                    FillRule::EvenOdd,
+                    0,
+                )
             }),
         ]
     }
@@ -1388,12 +1979,20 @@ mod tests {
         let lines: Vec<Shape> = (0..60)
             .map(|k| {
                 let t = f64::from(k) * 0.37;
-                line((50.0 + 80.0 * t.cos(), 50.0 + 80.0 * t.sin()), (50.0 - 80.0 * (t + 1.1).cos(), 50.0 - 80.0 * (t + 1.1).sin()), 0)
+                line(
+                    (50.0 + 80.0 * t.cos(), 50.0 + 80.0 * t.sin()),
+                    (50.0 - 80.0 * (t + 1.1).cos(), 50.0 - 80.0 * (t + 1.1).sin()),
+                    0,
+                )
             })
             .collect();
         let started = std::time::Instant::now();
         let (faces, _) = live_paint(&lines);
         assert!(faces.len() > 500, "{}", faces.len());
-        assert!(started.elapsed().as_secs_f64() < 5.0, "{:?}", started.elapsed());
+        assert!(
+            started.elapsed().as_secs_f64() < 5.0,
+            "{:?}",
+            started.elapsed()
+        );
     }
 }

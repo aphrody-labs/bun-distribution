@@ -14,12 +14,19 @@ fn db() -> &'static FontDb {
 }
 
 fn style(size: f64) -> CharStyle {
-    CharStyle { size, ..CharStyle::default() }
+    CharStyle {
+        size,
+        ..CharStyle::default()
+    }
 }
 
 /// Art 20 × 10 (2:1), as a symbol's resolved bounds.
 fn art(scale: f64) -> InlineArt {
-    InlineArt { scale, bounds: Some(Rect::new(-10.0, -5.0, 10.0, 5.0)), ..InlineArt::new("mana") }
+    InlineArt {
+        scale,
+        bounds: Some(Rect::new(-10.0, -5.0, 10.0, 5.0)),
+        ..InlineArt::new("mana")
+    }
 }
 
 /// Point type: `before`, the inline graphic, `after`.
@@ -45,12 +52,20 @@ fn inline_art_advances_by_its_scaled_width_and_centres_on_the_cap_height() {
     assert_eq!(g.len, INLINE_CHAR.len_utf8());
     assert_eq!(l.inlines.len(), 1);
     let ig = &l.inlines[0];
-    assert_eq!((ig.run, ig.byte, ig.glyph), (1, 1, l.glyphs.iter().position(|g| g.run == 1).unwrap()));
+    assert_eq!(
+        (ig.run, ig.byte, ig.glyph),
+        (1, 1, l.glyphs.iter().position(|g| g.run == 1).unwrap())
+    );
     // Left edge on the pen; vertical centre half the cap height above the baseline.
     let face = db().face("Source Sans 3", "Regular").unwrap();
     let cap = face.cap_height * 20.0 / face.upem;
     let b = ig.bounds;
-    assert!((b.x0 - g.origin.x).abs() < 1e-6 && (b.width() - 40.0).abs() < 1e-6 && (b.height() - 20.0).abs() < 1e-6, "{b:?}");
+    assert!(
+        (b.x0 - g.origin.x).abs() < 1e-6
+            && (b.width() - 40.0).abs() < 1e-6
+            && (b.height() - 20.0).abs() < 1e-6,
+        "{b:?}"
+    );
     assert!((b.center().y + cap * 0.5).abs() < 1e-6, "{b:?} cap {cap}");
     // The art's transform maps its bounds there.
     let mapped = ig.xf.transform_rect_bbox(Rect::new(-10.0, -5.0, 10.0, 5.0));
@@ -63,7 +78,10 @@ fn inline_art_advances_by_its_scaled_width_and_centres_on_the_cap_height() {
 
 #[test]
 fn shift_tracking_and_missing_symbols() {
-    let up = InlineArt { baseline_shift: 4.0, ..art(1.0) };
+    let up = InlineArt {
+        baseline_shift: 4.0,
+        ..art(1.0)
+    };
     let a = layout(db(), &text("A", art(1.0), "B", 20.0)).inlines[0].bounds;
     let b = layout(db(), &text("A", up, "B", 20.0)).inlines[0].bounds;
     assert!((a.y0 - b.y0 - 4.0).abs() < 1e-6, "{a:?} {b:?}");
@@ -77,7 +95,16 @@ fn shift_tracking_and_missing_symbols() {
     assert!((inline_glyph(&l).advance - 20.0).abs() < 1e-6);
     assert!(l.inlines.is_empty());
     // Junk numbers stay finite.
-    let t = text("A", InlineArt { scale: f64::NAN, baseline_shift: f64::INFINITY, ..art(1.0) }, "B", 20.0);
+    let t = text(
+        "A",
+        InlineArt {
+            scale: f64::NAN,
+            baseline_shift: f64::INFINITY,
+            ..art(1.0)
+        },
+        "B",
+        20.0,
+    );
     let l = layout(db(), &t);
     assert!(l.bounds.is_finite() && l.glyphs.iter().all(|g| g.advance.is_finite()));
 }
@@ -93,7 +120,11 @@ fn tall_inline_art_opens_up_its_line() {
     assert!((plain.lines[0].ascent - font_only.lines[0].ascent).abs() < 1e-6);
     assert!((plain.lines[0].descent - font_only.lines[0].descent).abs() < 1e-6);
     // 60 pt tall: half above the cap-height middle, half below.
-    assert!((tall.lines[0].ascent - (cap * 0.5 + 30.0)).abs() < 1e-6, "{:?}", tall.lines[0]);
+    assert!(
+        (tall.lines[0].ascent - (cap * 0.5 + 30.0)).abs() < 1e-6,
+        "{:?}",
+        tall.lines[0]
+    );
     assert!((tall.lines[0].descent - (30.0 - cap * 0.5)).abs() < 1e-6);
     // A second line moves down by the taller leading (Auto: 120% of the size) only where the
     // art is; the line's band (caret, selection, hit testing) covers the art.
@@ -110,10 +141,19 @@ fn tall_inline_art_opens_up_its_line() {
 #[test]
 fn line_breaking_moves_an_inline_graphic_like_a_word() {
     // The frame is just wider than "tap tap ": the 40 pt graphic doesn't fit after it.
-    let w: f64 = layout(db(), &TextObject::point(Point::ZERO, "tap tap ", style(20.0))).glyphs.iter().map(|g| g.advance).sum();
+    let w: f64 = layout(
+        db(),
+        &TextObject::point(Point::ZERO, "tap tap ", style(20.0)),
+    )
+    .glyphs
+    .iter()
+    .map(|g| g.advance)
+    .sum();
     let frame = Rect::new(0.0, 0.0, w + 10.0, 200.0);
     let area = |t: &mut TextObject| {
-        t.kind = TextKind::Area { frame: PathData::from_bezpath(&frame.to_path(0.1)) };
+        t.kind = TextKind::Area {
+            frame: PathData::from_bezpath(&frame.to_path(0.1)),
+        };
         t.xf = Affine::IDENTITY;
         t.para.justify = Justify::Left;
     };
@@ -130,14 +170,21 @@ fn line_breaking_moves_an_inline_graphic_like_a_word() {
     let mut t2 = text("tap tap ", art(1.0), ".", 20.0);
     area(&mut t2);
     let l2 = layout(db(), &t2);
-    assert_eq!(l2.glyphs.iter().find(|g| g.run == 2).unwrap().line, inline_glyph(&l2).line);
+    assert_eq!(
+        l2.glyphs.iter().find(|g| g.run == 2).unwrap().line,
+        inline_glyph(&l2).line
+    );
 }
 
 #[test]
 fn inline_art_on_a_path_and_in_vertical_type_moves_with_the_text() {
     let mut t = text("ab", art(1.0), "cd", 20.0);
     let path = kurbo::Line::new((0.0, 0.0), (400.0, 0.0)).to_path(0.1);
-    t.kind = TextKind::OnPath { path: PathData::from_bezpath(&path), start: 0.0, end: None };
+    t.kind = TextKind::OnPath {
+        path: PathData::from_bezpath(&path),
+        start: 0.0,
+        end: None,
+    };
     let l = layout(db(), &t);
     assert_eq!(l.inlines.len(), 1);
     let g = inline_glyph(&l);
@@ -156,7 +203,10 @@ fn snapping_moves_inline_art_with_its_glyph() {
     l.snap_to_pixels(Affine::translate((0.3, 0.3)));
     let after = (l.inlines[0].bounds, inline_glyph(&l).origin);
     let d = after.1 - before.1;
-    assert!(((after.0.x0 - before.0.x0) - d.x).abs() < 1e-9 && ((after.0.y0 - before.0.y0) - d.y).abs() < 1e-9);
+    assert!(
+        ((after.0.x0 - before.0.x0) - d.x).abs() < 1e-9
+            && ((after.0.y0 - before.0.y0) - d.y).abs() < 1e-9
+    );
 }
 
 #[test]
@@ -178,7 +228,10 @@ fn editing_keeps_inline_runs_whole() {
     let plain: String = runs.iter().map(|r| r.text.as_str()).collect();
     let at = plain.find(INLINE_CHAR).unwrap();
     edit::replace_range(&mut runs, at + 1, at + 1, "Z");
-    assert!(runs.iter().any(|r| r.inline.is_some() && r.text == INLINE_CHAR.to_string()));
+    assert!(
+        runs.iter()
+            .any(|r| r.inline.is_some() && r.text == INLINE_CHAR.to_string())
+    );
     // Backspace over it (its one character) removes the whole graphic.
     let plain: String = runs.iter().map(|r| r.text.as_str()).collect();
     let at = plain.find(INLINE_CHAR).unwrap();
@@ -207,11 +260,19 @@ fn copying_keeps_the_graphic_and_plain_text_shows_the_replacement_character() {
 
 #[test]
 fn malformed_inline_runs_are_plain_text() {
-    let mut runs = vec![TextRun { text: "abc".into(), style: style(12.0), inline: Some(art(1.0)) }];
+    let mut runs = vec![TextRun {
+        text: "abc".into(),
+        style: style(12.0),
+        inline: Some(art(1.0)),
+    }];
     edit::normalize(&mut runs);
     assert!(runs[0].inline.is_none());
     let mut t = TextObject::point(Point::ZERO, "", style(12.0));
-    t.runs = vec![TextRun { text: format!("{INLINE_CHAR}{INLINE_CHAR}"), style: style(12.0), inline: Some(art(1.0)) }];
+    t.runs = vec![TextRun {
+        text: format!("{INLINE_CHAR}{INLINE_CHAR}"),
+        style: style(12.0),
+        inline: Some(art(1.0)),
+    }];
     let l = layout(db(), &t);
     assert!(l.inlines.is_empty());
 }
@@ -228,21 +289,38 @@ fn inline_art_in_a_right_to_left_paragraph_is_placed_by_the_bidi_reordering() {
         let mut t = text(before, art(1.0), after, 20.0);
         (t.para.justify, t.para.direction) = (Justify::Auto, direction);
         let l = layout(db, &t);
-        let x = |run: usize| l.glyphs.iter().filter(|g| g.run == run).map(|g| g.origin.x).fold(f64::NAN, f64::min);
+        let x = |run: usize| {
+            l.glyphs
+                .iter()
+                .filter(|g| g.run == run)
+                .map(|g| g.origin.x)
+                .fold(f64::NAN, f64::min)
+        };
         let g = inline_glyph(&l).clone();
         assert_eq!(l.inlines.len(), 1);
         // The art sits at its glyph, inside the line.
-        assert!((l.inlines[0].bounds.x0 - g.origin.x).abs() < 1e-6, "{:?} {g:?}", l.inlines[0]);
+        assert!(
+            (l.inlines[0].bounds.x0 - g.origin.x).abs() < 1e-6,
+            "{:?} {g:?}",
+            l.inlines[0]
+        );
         (x(0), g.origin.x, x(2), g.rtl, l.lines[0].rtl)
     };
     // Hebrew: the first word on the right, the graphic left of it, the second word further left.
     let (first, inline, second, inline_rtl, line_rtl) = order("שלום ", " עולם", None);
     assert!(line_rtl && inline_rtl);
-    assert!(second < inline && inline < first, "{second} < {inline} < {first}");
+    assert!(
+        second < inline && inline < first,
+        "{second} < {inline} < {first}"
+    );
     // English set right to left: the words keep their order with the graphic between them.
-    let (first, inline, second, inline_rtl, line_rtl) = order("Hello", "world", Some(ParaDirection::RightToLeft));
+    let (first, inline, second, inline_rtl, line_rtl) =
+        order("Hello", "world", Some(ParaDirection::RightToLeft));
     assert!(line_rtl && !inline_rtl);
-    assert!(first < inline && inline < second, "{first} < {inline} < {second}");
+    assert!(
+        first < inline && inline < second,
+        "{first} < {inline} < {second}"
+    );
     // At the end of a right-to-left paragraph it is the leftmost thing on the line.
     let (first, inline, _, inline_rtl, _) = order("שלום", "", None);
     assert!(inline_rtl && inline < first);
@@ -256,21 +334,49 @@ fn character_alignment_treats_inline_art_as_a_character_of_its_run_size() {
     use vectorcraft_doc::CharAlign;
     let centre_y = |a: CharAlign, scale: f64, big: f64| {
         let mut t = TextObject::point(Point::ZERO, "M", style(big));
-        t.runs.push(TextRun::inline(art(scale), CharStyle { char_align: a, ..style(20.0) }));
-        t.runs.push(TextRun::new("x", CharStyle { char_align: a, ..style(20.0) }));
+        t.runs.push(TextRun::inline(
+            art(scale),
+            CharStyle {
+                char_align: a,
+                ..style(20.0)
+            },
+        ));
+        t.runs.push(TextRun::new(
+            "x",
+            CharStyle {
+                char_align: a,
+                ..style(20.0)
+            },
+        ));
         let l = layout(db(), &t);
-        let x = l.glyphs.iter().find(|g| g.run == 2).map(|g| g.origin.y).unwrap();
+        let x = l
+            .glyphs
+            .iter()
+            .find(|g| g.run == 2)
+            .map(|g| g.origin.y)
+            .unwrap();
         (l.inlines[0].bounds.center().y, x)
     };
     let face = db().face("Source Sans 3", "Regular").unwrap();
     let c = face.ideographic_centre();
     // Next to a 40 pt character, the 20 pt run (graphic and letter alike) moves up by the same.
     let (roman, roman_x) = centre_y(CharAlign::RomanBaseline, 1.0, 40.0);
-    for (a, k) in [(CharAlign::EmBoxTop, 0.5), (CharAlign::EmBoxCenter, 0.0), (CharAlign::EmBoxBottom, -0.5)] {
+    for (a, k) in [
+        (CharAlign::EmBoxTop, 0.5),
+        (CharAlign::EmBoxCenter, 0.0),
+        (CharAlign::EmBoxBottom, -0.5),
+    ] {
         let (y, x) = centre_y(a, 1.0, 40.0);
         let want = (c + k) * 20.0;
-        assert!((roman - y - want).abs() < 1e-6, "{a:?}: {} vs {want}", roman - y);
-        assert!(((roman_x - x) - (roman - y)).abs() < 1e-6, "{a:?}: the graphic moves with its run's letters");
+        assert!(
+            (roman - y - want).abs() < 1e-6,
+            "{a:?}: {} vs {want}",
+            roman - y
+        );
+        assert!(
+            ((roman_x - x) - (roman - y)).abs() < 1e-6,
+            "{a:?}: the graphic moves with its run's letters"
+        );
     }
     // A 60 pt tall graphic in a line of 20 pt text: the line's largest em is still 20 pt, so
     // nothing moves.
@@ -286,7 +392,9 @@ fn top_to_top_leading_spaces_inline_art_by_its_run() {
     use vectorcraft_doc::LeadingModel;
     let lines = |scale: f64| {
         let mut t = text("Ab", art(scale), "cd\nef", 20.0);
-        t.kind = TextKind::Area { frame: PathData::from_bezpath(&Rect::new(0.0, 0.0, 400.0, 400.0).to_path(0.1)) };
+        t.kind = TextKind::Area {
+            frame: PathData::from_bezpath(&Rect::new(0.0, 0.0, 400.0, 400.0).to_path(0.1)),
+        };
         t.para.leading_model = LeadingModel::EmBoxTop;
         let l = layout(db(), &t);
         assert_eq!(l.lines.len(), 2);
@@ -294,7 +402,10 @@ fn top_to_top_leading_spaces_inline_art_by_its_run() {
     };
     let (small0, small1) = lines(1.0);
     let (tall0, tall1) = lines(3.0);
-    assert!((small0 - tall0).abs() < 1e-6 && (small1 - tall1).abs() < 1e-6, "{small0} {small1} / {tall0} {tall1}");
+    assert!(
+        (small0 - tall0).abs() < 1e-6 && (small1 - tall1).abs() < 1e-6,
+        "{small0} {small1} / {tall0} {tall1}"
+    );
 }
 
 #[test]
@@ -310,18 +421,31 @@ fn inline_art_moves_with_vertically_aligned_lines() {
     for frame in [rect, tri] {
         for align in [VerticalAlign::Center, VerticalAlign::Bottom] {
             let mut t = text("A", art(1.0), "B", 20.0);
-            t.kind = TextKind::Area { frame: PathData::from_bezpath(&frame) };
-            t.area = AreaOptions { vertical_align: align, ..AreaOptions::default() };
+            t.kind = TextKind::Area {
+                frame: PathData::from_bezpath(&frame),
+            };
+            t.area = AreaOptions {
+                vertical_align: align,
+                ..AreaOptions::default()
+            };
             let l = layout(db(), &t);
             assert_eq!(l.inlines.len(), 1, "{align:?}");
             let g = inline_glyph(&l);
             let line = &l.lines[g.line];
-            assert!(line.baseline > 100.0, "{align:?}: not aligned, baseline {}", line.baseline);
+            assert!(
+                line.baseline > 100.0,
+                "{align:?}: not aligned, baseline {}",
+                line.baseline
+            );
             // Still centred on the cap height above its (moved) baseline.
             let face = db().face("Source Sans 3", "Regular").unwrap();
             let cap = face.cap_height * 20.0 / face.upem;
             let b = l.inlines[0].bounds;
-            assert!((b.center().y - (line.baseline - cap * 0.5)).abs() < 1e-6, "{align:?}: {b:?} baseline {}", line.baseline);
+            assert!(
+                (b.center().y - (line.baseline - cap * 0.5)).abs() < 1e-6,
+                "{align:?}: {b:?} baseline {}",
+                line.baseline
+            );
             assert!((b.x0 - g.origin.x).abs() < 1e-6, "{align:?}: {b:?}");
         }
     }

@@ -643,8 +643,7 @@ impl Device {
         let queue_priority = [1.0f32];
         let mut queue_create_infos = vec![vk::DeviceQueueCreateInfo::default()
             .queue_family_index(graphics_family)
-            .queue_priorities(&queue_priority)
-            ];
+            .queue_priorities(&queue_priority)];
         if present_family != graphics_family {
             queue_create_infos.push(
                 vk::DeviceQueueCreateInfo::default()
@@ -748,7 +747,8 @@ impl Device {
             vk::PhysicalDeviceCustomBorderColorFeaturesEXT::default();
         let mut color_write_enable_features =
             vk::PhysicalDeviceColorWriteEnableFeaturesEXT::default();
-        let mut depth_bias_control_features = vk::PhysicalDeviceDepthBiasControlFeaturesEXT::default();
+        let mut depth_bias_control_features =
+            vk::PhysicalDeviceDepthBiasControlFeaturesEXT::default();
         let mut shader_quad_control_features =
             vk::PhysicalDeviceShaderQuadControlFeaturesKHR::default();
         let mut line_rasterization_features =
@@ -789,7 +789,10 @@ impl Device {
                 link_next(&mut features2_builder, &mut shader_atomic_int64_features);
                 link_next(&mut features2_builder, &mut shader_draw_parameters_features);
                 link_next(&mut features2_builder, &mut shader_float16_int8_features);
-                link_next(&mut features2_builder, &mut uniform_buffer_standard_layout_features);
+                link_next(
+                    &mut features2_builder,
+                    &mut uniform_buffer_standard_layout_features,
+                );
                 link_next(&mut features2_builder, &mut variable_pointers_features);
             }
             if device_properties.api_version >= vk::API_VERSION_1_2
@@ -841,19 +844,39 @@ impl Device {
                 unsafe { link_next(&mut features2_builder, &mut portability_subset_features) };
             }
             if has_primitive_topology_list_restart {
-                unsafe { link_next(&mut features2_builder, &mut primitive_topology_list_restart_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut primitive_topology_list_restart_features,
+                    )
+                };
             }
             if has_extended_dynamic_state {
                 unsafe { link_next(&mut features2_builder, &mut extended_dynamic_state_features) };
             }
             if has_extended_dynamic_state2 {
-                unsafe { link_next(&mut features2_builder, &mut extended_dynamic_state2_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut extended_dynamic_state2_features,
+                    )
+                };
             }
             if has_extended_dynamic_state3 {
-                unsafe { link_next(&mut features2_builder, &mut extended_dynamic_state3_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut extended_dynamic_state3_features,
+                    )
+                };
             }
             if has_vertex_input_dynamic_state {
-                unsafe { link_next(&mut features2_builder, &mut vertex_input_dynamic_state_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut vertex_input_dynamic_state_features,
+                    )
+                };
             }
             if has_depth_clip_control {
                 unsafe { link_next(&mut features2_builder, &mut depth_clip_control_features) };
@@ -874,10 +897,20 @@ impl Device {
                 unsafe { link_next(&mut features2_builder, &mut transform_feedback_features) };
             }
             if has_pipeline_executable_properties {
-                unsafe { link_next(&mut features2_builder, &mut pipeline_executable_properties_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut pipeline_executable_properties_features,
+                    )
+                };
             }
             if has_workgroup_memory_explicit_layout {
-                unsafe { link_next(&mut features2_builder, &mut workgroup_memory_explicit_layout_features) };
+                unsafe {
+                    link_next(
+                        &mut features2_builder,
+                        &mut workgroup_memory_explicit_layout_features,
+                    )
+                };
             }
             if has_4444_formats {
                 unsafe { link_next(&mut features2_builder, &mut formats_4444_features) };
@@ -1020,18 +1053,33 @@ impl Device {
             unsafe { link_next(&mut properties2_builder, &mut descriptor_buffer_properties) };
         }
         if has_custom_border_color {
-            unsafe { link_next(&mut properties2_builder, &mut custom_border_color_properties) };
+            unsafe {
+                link_next(
+                    &mut properties2_builder,
+                    &mut custom_border_color_properties,
+                )
+            };
         }
         if supported_extensions.contains("VK_EXT_subgroup_size_control")
             || subgroup_size_control_features.subgroup_size_control != 0
         {
-            unsafe { link_next(&mut properties2_builder, &mut subgroup_size_control_properties) };
+            unsafe {
+                link_next(
+                    &mut properties2_builder,
+                    &mut subgroup_size_control_properties,
+                )
+            };
         }
         if has_transform_feedback {
             unsafe { link_next(&mut properties2_builder, &mut transform_feedback_properties) };
         }
         if has_depth_stencil_resolve || device_properties.api_version >= vk::API_VERSION_1_2 {
-            unsafe { link_next(&mut properties2_builder, &mut depth_stencil_resolve_properties) };
+            unsafe {
+                link_next(
+                    &mut properties2_builder,
+                    &mut depth_stencil_resolve_properties,
+                )
+            };
         }
         let mut properties2 = properties2_builder;
         if has_maintenance5 {
@@ -2651,7 +2699,9 @@ impl Device {
     }
 
     /// Port of upstream `Device::DescriptorBufferProperties`.
-    pub fn descriptor_buffer_properties(&self) -> &vk::PhysicalDeviceDescriptorBufferPropertiesEXT<'_> {
+    pub fn descriptor_buffer_properties(
+        &self,
+    ) -> &vk::PhysicalDeviceDescriptorBufferPropertiesEXT<'_> {
         &self.descriptor_buffer_properties
     }
 
@@ -3359,8 +3409,7 @@ fn parse_static_pipeline_cache_blob(file: &[u8]) -> Option<&[u8]> {
 /// valid; otherwise (or on any error) create it empty.
 fn load_static_pipeline_cache(logical: &ash::Device, owns: bool) -> vk::PipelineCache {
     let create = |initial_data: &[u8]| {
-        let ci = vk::PipelineCacheCreateInfo::default()
-            .initial_data(initial_data);
+        let ci = vk::PipelineCacheCreateInfo::default().initial_data(initial_data);
         match unsafe { logical.create_pipeline_cache(&ci, None) } {
             Ok(cache) => cache,
             Err(err) => {
@@ -3826,8 +3875,7 @@ fn get_nvidia_architecture(
 ) -> NvidiaArchitecture {
     if extensions.contains("VK_KHR_fragment_shading_rate") {
         let mut shading_rate = vk::PhysicalDeviceFragmentShadingRatePropertiesKHR::default();
-        let mut properties = vk::PhysicalDeviceProperties2::default()
-            .push_next(&mut shading_rate);
+        let mut properties = vk::PhysicalDeviceProperties2::default().push_next(&mut shading_rate);
         unsafe { instance.get_physical_device_properties2(physical, &mut properties) };
         return if shading_rate.primitive_fragment_shading_rate_with_multiple_viewports != 0 {
             NvidiaArchitecture::AmpereOrNewer
@@ -3837,8 +3885,7 @@ fn get_nvidia_architecture(
     }
     if extensions.contains("VK_EXT_blend_operation_advanced") {
         let mut blend = vk::PhysicalDeviceBlendOperationAdvancedPropertiesEXT::default();
-        let mut properties = vk::PhysicalDeviceProperties2::default()
-            .push_next(&mut blend);
+        let mut properties = vk::PhysicalDeviceProperties2::default().push_next(&mut blend);
         unsafe { instance.get_physical_device_properties2(physical, &mut properties) };
         if blend.advanced_blend_max_color_attachments == 1 {
             return NvidiaArchitecture::Maxwell;
@@ -3846,8 +3893,8 @@ fn get_nvidia_architecture(
         if extensions.contains("VK_EXT_conservative_rasterization") {
             let mut conservative =
                 vk::PhysicalDeviceConservativeRasterizationPropertiesEXT::default();
-            let mut properties = vk::PhysicalDeviceProperties2::default()
-                .push_next(&mut conservative);
+            let mut properties =
+                vk::PhysicalDeviceProperties2::default().push_next(&mut conservative);
             unsafe { instance.get_physical_device_properties2(physical, &mut properties) };
             return if conservative.degenerate_lines_rasterized != 0 {
                 NvidiaArchitecture::Volta

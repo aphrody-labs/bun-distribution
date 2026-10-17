@@ -37,22 +37,25 @@ pub fn show_breakpoints(
         let mut remove_index: Option<usize> = None;
 
         ScrollArea::vertical().show(ui, |ui| {
-            Grid::new("breakpoint_list").num_columns(3).striped(true).show(ui, |ui| {
-                for (i, bp) in debugger.breakpoints().iter().enumerate() {
-                    let mut enabled = bp.enabled;
-                    if ui.checkbox(&mut enabled, "").changed() {
-                        toggle_index = Some(i);
+            Grid::new("breakpoint_list")
+                .num_columns(3)
+                .striped(true)
+                .show(ui, |ui| {
+                    for (i, bp) in debugger.breakpoints().iter().enumerate() {
+                        let mut enabled = bp.enabled;
+                        if ui.checkbox(&mut enabled, "").changed() {
+                            toggle_index = Some(i);
+                        }
+
+                        ui.monospace(format!("{:#010X}", bp.addr));
+
+                        if ui.button(icons::TRASH).clicked() {
+                            remove_index = Some(i);
+                        }
+
+                        ui.end_row();
                     }
-
-                    ui.monospace(format!("{:#010X}", bp.addr));
-
-                    if ui.button(icons::TRASH).clicked() {
-                        remove_index = Some(i);
-                    }
-
-                    ui.end_row();
-                }
-            });
+                });
         });
 
         if let Some(i) = toggle_index {

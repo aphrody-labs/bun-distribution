@@ -14,7 +14,9 @@ use std::{path::PathBuf, process::ExitCode};
 use aphrody_nds_sdk::{Format, Input, Options, SaveType, ScreenId, Step, button, frame_hash, open};
 
 fn usage() -> ExitCode {
-    eprintln!("usage: nds-sdk info <image> | run <image> [--frames N] [--every N] [--tap BUTTON@FRAME]... [--data DIR] [--no-save] [--dump DIR]");
+    eprintln!(
+        "usage: nds-sdk info <image> | run <image> [--frames N] [--every N] [--tap BUTTON@FRAME]... [--data DIR] [--no-save] [--dump DIR]"
+    );
     ExitCode::from(2)
 }
 
@@ -38,7 +40,9 @@ fn button_bit(name: &str) -> Option<u32> {
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
-    let (Some(command), Some(path)) = (args.next(), args.next()) else { return usage() };
+    let (Some(command), Some(path)) = (args.next(), args.next()) else {
+        return usage();
+    };
     if command == "info" {
         return match std::fs::read(&path) {
             Ok(image) => {
@@ -57,12 +61,24 @@ fn main() -> ExitCode {
     if command != "run" {
         return usage();
     }
-    let (mut frames, mut every, mut taps, mut options, mut save, mut dump) =
-        (600_u64, 60_u64, Vec::<(u64, u32)>::new(), Options::default(), true, None::<PathBuf>);
+    let (mut frames, mut every, mut taps, mut options, mut save, mut dump) = (
+        600_u64,
+        60_u64,
+        Vec::<(u64, u32)>::new(),
+        Options::default(),
+        true,
+        None::<PathBuf>,
+    );
     while let Some(flag) = args.next() {
         match flag.as_str() {
             "--frames" => frames = args.next().and_then(|v| v.parse().ok()).unwrap_or(frames),
-            "--every" => every = args.next().and_then(|v| v.parse().ok()).unwrap_or(every).max(1),
+            "--every" => {
+                every = args
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(every)
+                    .max(1)
+            }
             "--data" => options.data_dir = args.next().map(PathBuf::from),
             "--no-save" => save = false,
             "--save-type" => {
@@ -81,7 +97,10 @@ fn main() -> ExitCode {
             "--dump" => dump = args.next().map(PathBuf::from),
             "--tap" => {
                 let spec = args.next().unwrap_or_default();
-                match spec.split_once('@').and_then(|(b, f)| Some((f.parse().ok()?, button_bit(b)?))) {
+                match spec
+                    .split_once('@')
+                    .and_then(|(b, f)| Some((f.parse().ok()?, button_bit(b)?)))
+                {
                     Some(tap) => taps.push(tap),
                     None => return usage(),
                 }
@@ -101,14 +120,22 @@ fn main() -> ExitCode {
             return ExitCode::FAILURE;
         }
     };
-    println!("{} \"{}\" {:.2} Hz", format!("{:?}", machine.platform()), machine.title(), machine.refresh_rate());
+    println!(
+        "{} \"{}\" {:.2} Hz",
+        format!("{:?}", machine.platform()),
+        machine.title(),
+        machine.refresh_rate()
+    );
     for frame in 0..frames {
         // A tap holds the button for 6 frames.
         let buttons = taps
             .iter()
             .filter(|(at, _)| (*at..*at + 6).contains(&frame))
             .fold(0, |acc, (_, bit)| acc | bit);
-        machine.set_input(&Input { buttons, ..Input::default() });
+        machine.set_input(&Input {
+            buttons,
+            ..Input::default()
+        });
         match machine.run_frame() {
             Step::Frame => {}
             Step::Shutdown => {
@@ -123,7 +150,12 @@ fn main() -> ExitCode {
         }
         if (frame + 1) % every == 0 {
             let lit = |id| {
-                machine.image(id).rgba.chunks_exact(4).filter(|p| p[..3] != [0, 0, 0]).count()
+                machine
+                    .image(id)
+                    .rgba
+                    .chunks_exact(4)
+                    .filter(|p| p[..3] != [0, 0, 0])
+                    .count()
             };
             println!(
                 "frame {:>6} hash {:016x} lit px top {} bottom {}",
@@ -139,10 +171,14 @@ fn main() -> ExitCode {
         let _ = std::fs::create_dir_all(&dir);
         for (name, id) in [("top", ScreenId::Top), ("bottom", ScreenId::Bottom)] {
             let image = machine.image(id);
-            let mut ppm = format!("P6
+            let mut ppm = format!(
+                "P6
 {} {}
 255
-", image.width, image.height).into_bytes();
+",
+                image.width, image.height
+            )
+            .into_bytes();
             ppm.extend(image.rgba.chunks_exact(4).flat_map(|p| [p[0], p[1], p[2]]));
             let _ = std::fs::write(dir.join(format!("{name}.ppm")), ppm);
         }

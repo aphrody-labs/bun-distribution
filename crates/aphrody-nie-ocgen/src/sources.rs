@@ -50,13 +50,20 @@ fn find_one(
     entries(dir)?
         .into_iter()
         .find(|path| {
-            path.file_name().and_then(|name| name.to_str()).is_some_and(|name| {
-                name.starts_with(prefix)
-                    && name.ends_with(suffix)
-                    && !reject.is_some_and(|reject| name.starts_with(reject))
-            })
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.starts_with(prefix)
+                        && name.ends_with(suffix)
+                        && !reject.is_some_and(|reject| name.starts_with(reject))
+                })
         })
-        .ok_or_else(|| Error::Io(format!("{prefix}*{suffix} introuvable dans {}", dir.display())))
+        .ok_or_else(|| {
+            Error::Io(format!(
+                "{prefix}*{suffix} introuvable dans {}",
+                dir.display()
+            ))
+        })
 }
 
 /// The editor tables and preview documents the pipeline needs.
@@ -90,8 +97,12 @@ impl EditorSources {
             ".cfg.bin.json",
             Some("chara_edit_parts_type_config"),
         )?;
-        let types_path =
-            find_one(&gamedata, "chara_edit_parts_type_config", ".cfg.bin.json", None)?;
+        let types_path = find_one(
+            &gamedata,
+            "chara_edit_parts_type_config",
+            ".cfg.bin.json",
+            None,
+        )?;
         let catalog_version = catalog_path
             .file_name()
             .and_then(|name| name.to_str())
@@ -121,7 +132,13 @@ impl EditorSources {
         let template =
             CharaEditParam::parse(&read_json(&previews.join("edit_parameter.cfg.bin.json"))?)?;
 
-        Ok(Self { catalog, parts_types, morphologies, template, catalog_version })
+        Ok(Self {
+            catalog,
+            parts_types,
+            morphologies,
+            template,
+            catalog_version,
+        })
     }
 }
 
@@ -172,14 +189,21 @@ fn walk(root: &Path, dir: &Path, out: &mut Vec<Reference>) -> Result<(), Error> 
             walk(root, &path, out)?;
             continue;
         }
-        let relative =
-            path.strip_prefix(root).unwrap_or(&path).to_string_lossy().replace('\\', "/");
+        let relative = path
+            .strip_prefix(root)
+            .unwrap_or(&path)
+            .to_string_lossy()
+            .replace('\\', "/");
         let bytes = fs::read(&path).map_err(|error| Error::Io(format!("{relative}: {error}")))?;
         // A directory can hold notes next to the artwork; only what decodes is a reference.
         let Ok(sheet) = Sheet::decode(&relative, &bytes) else {
             continue;
         };
-        out.push(Reference { relative, sheet, bytes: bytes.len() as u64 });
+        out.push(Reference {
+            relative,
+            sheet,
+            bytes: bytes.len() as u64,
+        });
     }
     Ok(())
 }

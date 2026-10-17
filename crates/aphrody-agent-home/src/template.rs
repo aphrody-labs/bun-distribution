@@ -130,7 +130,9 @@ pub fn instantiate_template(opts: &TemplateOptions) -> Result<TemplateReport, Ho
     }
     let dest = &opts.destination;
     let name = file_name_of(dest)?;
-    let parent = dest.parent().map_or_else(|| PathBuf::from("."), Path::to_path_buf);
+    let parent = dest
+        .parent()
+        .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
     let dest_exists = dest.exists();
     if dest_exists && !dir_is_empty(dest)? && !opts.force {
         return Err(HomeError::HomeExists(dest.clone()));
@@ -145,7 +147,7 @@ pub fn instantiate_template(opts: &TemplateOptions) -> Result<TemplateReport, Ho
         Err(e) => {
             let _ = std::fs::remove_dir_all(&staging);
             return Err(e);
-        },
+        }
     };
 
     let mut replaced_backup = None;
@@ -197,7 +199,11 @@ fn build_staging(opts: &TemplateOptions, staging: &Path, name: &str) -> Result<B
         ("home_name".into(), name.to_string()),
         ("date".into(), today),
     ];
-    vars.extend(opts.user_fields.iter().map(|(k, v)| (format!("user.{k}"), v.clone())));
+    vars.extend(
+        opts.user_fields
+            .iter()
+            .map(|(k, v)| (format!("user.{k}"), v.clone())),
+    );
 
     let mut copied = Vec::new();
     let mut substituted = Vec::new();
@@ -208,7 +214,9 @@ fn build_staging(opts: &TemplateOptions, staging: &Path, name: &str) -> Result<B
             std::fs::create_dir_all(dir).map_err(|e| HomeError::io(dir, e))?;
         }
         let rewritten = if is_text(&file.path) {
-            std::str::from_utf8(&bytes).ok().and_then(|text| substitute(text, &vars))
+            std::str::from_utf8(&bytes)
+                .ok()
+                .and_then(|text| substitute(text, &vars))
         } else {
             None
         };
@@ -216,7 +224,7 @@ fn build_staging(opts: &TemplateOptions, staging: &Path, name: &str) -> Result<B
             Some(text) => {
                 substituted.push(file.path.clone());
                 text.as_bytes()
-            },
+            }
             None => &bytes[..],
         };
         std::fs::write(&target, body).map_err(|e| HomeError::io(&target, e))?;
@@ -249,7 +257,11 @@ mod tests {
     }
 
     fn template(root: &Path) {
-        write(root, SOUL_FILENAME, b"# Soul\n\nTu es {{agent_id}} pour {{user.address_as}}.\n");
+        write(
+            root,
+            SOUL_FILENAME,
+            b"# Soul\n\nTu es {{agent_id}} pour {{user.address_as}}.\n",
+        );
         write(
             root,
             USER_FILENAME,
@@ -263,7 +275,10 @@ mod tests {
     #[test]
     fn substitute_replaces_known_and_keeps_unknown() {
         let vars = vec![("a".to_string(), "1".to_string())];
-        assert_eq!(substitute("x {{a}} {{ a }} {{b}} {{", &vars).unwrap(), "x 1 1 {{b}} {{");
+        assert_eq!(
+            substitute("x {{a}} {{ a }} {{b}} {{", &vars).unwrap(),
+            "x 1 1 {{b}} {{"
+        );
         assert!(substitute("nothing", &vars).is_none());
     }
 
@@ -284,7 +299,10 @@ mod tests {
         let soul = std::fs::read_to_string(dest.join(SOUL_FILENAME)).unwrap();
         assert!(soul.contains("Tu es discord:42 pour Sam."), "{soul}");
         // Binary files are copied verbatim.
-        assert_eq!(std::fs::read(dest.join("avatar.png")).unwrap(), b"\x89PNG{{agent_id}}");
+        assert_eq!(
+            std::fs::read(dest.join("avatar.png")).unwrap(),
+            b"\x89PNG{{agent_id}}"
+        );
         let seed = std::fs::read_to_string(dest.join("memory/seed.md")).unwrap();
         assert!(seed.contains("{{unknown}}") && !seed.contains("{{date}}"));
         assert!(!dest.join(".git").exists());
@@ -296,7 +314,10 @@ mod tests {
         assert_eq!(user.language.as_deref(), Some("fr"));
         assert_eq!(user.avatar.as_deref(), Some("avatar.png"));
         assert_eq!(user.agent_id.as_deref(), Some("discord:42"));
-        assert_eq!(user.template_revision.as_deref(), Some(report.template_revision.as_str()));
+        assert_eq!(
+            user.template_revision.as_deref(),
+            Some(report.template_revision.as_str())
+        );
         assert!(user.updated_at.is_some());
         assert!(user.body.contains("Notes discord-42."));
         // No staging directory left behind.
@@ -316,13 +337,22 @@ mod tests {
             destination: dest.clone(),
             ..TemplateOptions::default()
         };
-        assert!(matches!(instantiate_template(&opts), Err(HomeError::HomeExists(_))));
+        assert!(matches!(
+            instantiate_template(&opts),
+            Err(HomeError::HomeExists(_))
+        ));
         opts.force = true;
         let report = instantiate_template(&opts).unwrap();
         let aside = report.replaced_backup.unwrap();
-        assert_eq!(std::fs::read(aside.join("MEMORY.md")).unwrap(), b"precious\n");
+        assert_eq!(
+            std::fs::read(aside.join("MEMORY.md")).unwrap(),
+            b"precious\n"
+        );
         assert!(!dest.join("MEMORY.md").exists());
-        assert_eq!(UserProfile::load(&dest).unwrap().agent_id.as_deref(), Some("me"));
+        assert_eq!(
+            UserProfile::load(&dest).unwrap().agent_id.as_deref(),
+            Some("me")
+        );
     }
 
     #[test]

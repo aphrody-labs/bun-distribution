@@ -106,7 +106,9 @@ pub fn parse_gpx(s: &str) -> Result<Tracklog, GpxError> {
     let mut pt: Option<Pending> = None;
     let mut text = String::new();
     loop {
-        let ev = reader.read_event().map_err(|e| GpxError::Xml(e.to_string()))?;
+        let ev = reader
+            .read_event()
+            .map_err(|e| GpxError::Xml(e.to_string()))?;
         match ev {
             Event::Start(ref e) | Event::Empty(ref e) => {
                 let name = local(e.name().as_ref()).to_vec();
@@ -181,7 +183,9 @@ pub fn parse_gpx(s: &str) -> Result<Tracklog, GpxError> {
 
 fn finish_point(log: &mut Tracklog, p: Option<Pending>, segment: u32) -> Result<(), GpxError> {
     let Some(p) = p else { return Ok(()) };
-    let (Some(lat), Some(lon)) = (p.lat, p.lon) else { return Ok(()) };
+    let (Some(lat), Some(lon)) = (p.lat, p.lon) else {
+        return Ok(());
+    };
     if !(-90.0..=90.0).contains(&lat) || !(-180.0..=180.0).contains(&lon) {
         return Ok(());
     }
@@ -192,7 +196,13 @@ fn finish_point(log: &mut Tracklog, p: Option<Pending>, segment: u32) -> Result<
     if log.points.len() >= MAX_POINTS {
         return Err(GpxError::TooComplex);
     }
-    log.points.push(TrackPoint { time, latitude: lat, longitude: lon, elevation: p.ele, segment });
+    log.points.push(TrackPoint {
+        time,
+        latitude: lat,
+        longitude: lon,
+        elevation: p.ele,
+        segment,
+    });
     Ok(())
 }
 
@@ -244,7 +254,11 @@ impl Tracklog {
 }
 
 fn gps(p: &TrackPoint) -> Gps {
-    Gps { latitude: p.latitude, longitude: p.longitude, altitude: p.elevation }
+    Gps {
+        latitude: p.latitude,
+        longitude: p.longitude,
+        altitude: p.elevation,
+    }
 }
 
 /// Linear interpolation, taking the short way across the ±180° meridian.
@@ -265,7 +279,11 @@ fn lerp(a: &TrackPoint, b: &TrackPoint, t: f64) -> Gps {
         (Some(x), Some(y)) => Some(x + (y - x) * t),
         (x, y) => x.or(y),
     };
-    Gps { latitude: a.latitude + (b.latitude - a.latitude) * t, longitude: lon, altitude }
+    Gps {
+        latitude: a.latitude + (b.latitude - a.latitude) * t,
+        longitude: lon,
+        altitude,
+    }
 }
 
 #[cfg(test)]
@@ -297,12 +315,26 @@ mod tests {
     fn parses_timed_track_points() {
         let log = parse_gpx(LOG).unwrap();
         assert_eq!(log.tracks, 1);
-        assert_eq!(log.points.len(), 5, "waypoints and the untimed point are left out");
+        assert_eq!(
+            log.points.len(),
+            5,
+            "waypoints and the untimed point are left out"
+        );
         assert_eq!(log.untimed, 1);
         assert_eq!(log.points[0].elevation, Some(1600.0));
         assert_eq!(log.points[2].time, t("2026-05-01T10:02:00Z") + 0.5);
-        assert_eq!((log.points[0].segment, log.points[2].segment, log.points[3].segment), (0, 0, 1));
-        assert_eq!(log.span(), Some((t("2026-05-01T10:00:00Z"), t("2026-05-01T12:00:10Z"))));
+        assert_eq!(
+            (
+                log.points[0].segment,
+                log.points[2].segment,
+                log.points[3].segment
+            ),
+            (0, 0, 1)
+        );
+        assert_eq!(
+            log.span(),
+            Some((t("2026-05-01T10:00:00Z"), t("2026-05-01T12:00:10Z")))
+        );
         // 2026-05-01T10:00:00Z
         assert_eq!(log.points[0].time, 1_777_629_600.0);
     }
@@ -312,7 +344,10 @@ mod tests {
         let log = parse_gpx(LOG).unwrap();
         let (g, m) = log.locate(t("2026-05-01T10:00:30Z"), 300.0).unwrap();
         assert_eq!(m, Match::Interpolated);
-        assert!((g.latitude - 46.0005).abs() < 1e-9 && (g.longitude - 7.0010).abs() < 1e-9, "{g:?}");
+        assert!(
+            (g.latitude - 46.0005).abs() < 1e-9 && (g.longitude - 7.0010).abs() < 1e-9,
+            "{g:?}"
+        );
         assert_eq!(g.altitude, Some(1605.0));
         // exactly on a point
         let (g, _) = log.locate(t("2026-05-01T10:01:00Z"), 300.0).unwrap();
@@ -327,7 +362,10 @@ mod tests {
         assert_eq!((m, g.latitude), (Match::Nearest, 46.0020));
         let (g, m) = log.locate(t("2026-05-01T11:58:00Z"), 300.0).unwrap();
         assert_eq!((m, g.latitude), (Match::Nearest, 47.0));
-        assert!(log.locate(t("2026-05-01T11:00:00Z"), 300.0).is_none(), "an hour from any point");
+        assert!(
+            log.locate(t("2026-05-01T11:00:00Z"), 300.0).is_none(),
+            "an hour from any point"
+        );
         // before the first and after the last point
         assert!(log.locate(t("2026-05-01T09:59:00Z"), 300.0).is_some());
         assert!(log.locate(t("2026-05-01T09:50:00Z"), 300.0).is_none());
@@ -357,8 +395,20 @@ mod tests {
 
     #[test]
     fn interpolation_across_the_antimeridian() {
-        let a = TrackPoint { time: 0.0, latitude: 0.0, longitude: 179.0, elevation: None, segment: 0 };
-        let b = TrackPoint { time: 10.0, latitude: 0.0, longitude: -179.0, elevation: None, segment: 0 };
+        let a = TrackPoint {
+            time: 0.0,
+            latitude: 0.0,
+            longitude: 179.0,
+            elevation: None,
+            segment: 0,
+        };
+        let b = TrackPoint {
+            time: 10.0,
+            latitude: 0.0,
+            longitude: -179.0,
+            elevation: None,
+            segment: 0,
+        };
         let g = lerp(&a, &b, 0.75);
         assert!((g.longitude - -179.5).abs() < 1e-9, "{g:?}");
     }

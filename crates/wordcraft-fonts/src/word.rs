@@ -25,19 +25,73 @@ pub struct Resolved {
 /// metric-compatible come first (Carlito ↔ Calibri, Caladea ↔ Cambria, Liberation ↔ Arial /
 /// Times New Roman / Courier New), then common system fonts, then our bundled families.
 fn substitutes(family: &str) -> &'static [&'static str] {
-    const SANS: &[&str] = &["Carlito", "Helvetica Neue", "Arial", "Liberation Sans", "Noto Sans", "DejaVu Sans", "Source Sans 3"];
-    const SERIF: &[&str] = &["Caladea", "Times New Roman", "Liberation Serif", "Georgia", "Noto Serif", "DejaVu Serif", "Source Serif 4"];
-    const MONO: &[&str] = &["Courier New", "Liberation Mono", "Menlo", "Consolas", "DejaVu Sans Mono", "JetBrains Mono"];
-    const ARIAL: &[&str] = &["Liberation Sans", "Helvetica", "Helvetica Neue", "Arimo", "Source Sans 3"];
+    const SANS: &[&str] = &[
+        "Carlito",
+        "Helvetica Neue",
+        "Arial",
+        "Liberation Sans",
+        "Noto Sans",
+        "DejaVu Sans",
+        "Source Sans 3",
+    ];
+    const SERIF: &[&str] = &[
+        "Caladea",
+        "Times New Roman",
+        "Liberation Serif",
+        "Georgia",
+        "Noto Serif",
+        "DejaVu Serif",
+        "Source Serif 4",
+    ];
+    const MONO: &[&str] = &[
+        "Courier New",
+        "Liberation Mono",
+        "Menlo",
+        "Consolas",
+        "DejaVu Sans Mono",
+        "JetBrains Mono",
+    ];
+    const ARIAL: &[&str] = &[
+        "Liberation Sans",
+        "Helvetica",
+        "Helvetica Neue",
+        "Arimo",
+        "Source Sans 3",
+    ];
     const TIMES: &[&str] = &["Liberation Serif", "Times", "Tinos", "Source Serif 4"];
     // Word's symbol fonts (Symbol, Wingdings…) are proprietary: their characters are drawn as their
     // Unicode equivalents (`wordcraft_doc::symbol_fonts`) from these faces or any face that has them.
-    const SYMBOL: &[&str] = &["Apple Symbols", "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols", "Noto Sans Symbols 2", "Source Sans 3"];
+    const SYMBOL: &[&str] = &[
+        "Apple Symbols",
+        "Segoe UI Symbol",
+        "DejaVu Sans",
+        "Noto Sans Symbols",
+        "Noto Sans Symbols 2",
+        "Source Sans 3",
+    ];
     // Persian / Arabic document fonts. Naskh (book) faces such as B Nazanin, B Lotus, B Zar and
     // Traditional Arabic, then the sans faces (B Yekan, B Titr, IRANSans) people use for
     // headings and screens. Open fonts with full Persian coverage first.
-    const NASKH: &[&str] = &["Noto Naskh Arabic", "XB Zar", "XB Niloofar", "Amiri", "Vazirmatn", "Noto Sans Arabic", "DejaVu Sans", "Source Serif 4"];
-    const ARABIC_SANS: &[&str] = &["Vazirmatn", "Sahel", "Shabnam", "Samim", "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", "Source Sans 3"];
+    const NASKH: &[&str] = &[
+        "Noto Naskh Arabic",
+        "XB Zar",
+        "XB Niloofar",
+        "Amiri",
+        "Vazirmatn",
+        "Noto Sans Arabic",
+        "DejaVu Sans",
+        "Source Serif 4",
+    ];
+    const ARABIC_SANS: &[&str] = &[
+        "Vazirmatn",
+        "Sahel",
+        "Shabnam",
+        "Samim",
+        "Noto Sans Arabic",
+        "Noto Naskh Arabic",
+        "DejaVu Sans",
+        "Source Sans 3",
+    ];
     // Palatino Linotype / Book Antiqua: macOS ships the same design as "Palatino"; open
     // look-alikes with matching metrics (TeX Gyre Pagella, URW P052 / Palladio) on Linux.
     const PALATINO: &[&str] = &[
@@ -67,8 +121,11 @@ fn substitutes(family: &str) -> &'static [&'static str] {
         "palatino linotype" | "book antiqua" | "palatino" => PALATINO,
         "arial" | "helvetica" | "arial nova" => ARIAL,
         "times new roman" | "times" => TIMES,
-        "courier new" | "courier" | "consolas" | "lucida console" | "cascadia code" | "cascadia mono" => MONO,
-        "symbol" | "wingdings" | "wingdings 2" | "wingdings 3" | "segoe ui symbol" | "webdings" => SYMBOL,
+        "courier new" | "courier" | "consolas" | "lucida console" | "cascadia code"
+        | "cascadia mono" => MONO,
+        "symbol" | "wingdings" | "wingdings 2" | "wingdings 3" | "segoe ui symbol" | "webdings" => {
+            SYMBOL
+        }
         "cambria"
         | "cambria math"
         | "georgia"
@@ -92,7 +149,16 @@ fn substitutes(family: &str) -> &'static [&'static str] {
 /// the font itself, and old Russian and Central European documents name them. Other names are
 /// returned unchanged.
 pub fn charset_base_family(family: &str) -> &str {
-    const SUFFIXES: &[&str] = &[" cyr", " ce", " greek", " tur", " baltic", " (arabic)", " (hebrew)", " (vietnamese)"];
+    const SUFFIXES: &[&str] = &[
+        " cyr",
+        " ce",
+        " greek",
+        " tur",
+        " baltic",
+        " (arabic)",
+        " (hebrew)",
+        " (vietnamese)",
+    ];
     let lower = family.trim_end().to_ascii_lowercase();
     SUFFIXES
         .iter()
@@ -215,11 +281,20 @@ pub fn resolve(family: &str, bold: bool, italic: bool) -> Resolved {
         // Windows maps the charset names to the font itself: not a substitution.
         (base.to_string(), false)
     } else {
-        let s = substitutes(base).iter().find(|s| db.has_family(s)).copied().unwrap_or(crate::FALLBACK_FAMILY);
+        let s = substitutes(base)
+            .iter()
+            .find(|s| db.has_family(s))
+            .copied()
+            .unwrap_or(crate::FALLBACK_FAMILY);
         (s.to_string(), true)
     };
     let face = db.face(&fam, style_name(bold, italic));
-    let r = Resolved { synth_bold: bold && face.weight < 600.0, synth_italic: italic && !face.italic, substituted, face: FaceRef::of(&face) };
+    let r = Resolved {
+        synth_bold: bold && face.weight < 600.0,
+        synth_italic: italic && !face.italic,
+        substituted,
+        face: FaceRef::of(&face),
+    };
     let mut c = cache.lock().unwrap_or_else(|e| e.into_inner());
     if c.0 == generation {
         c.1.insert(key, r);
@@ -229,7 +304,10 @@ pub fn resolve(family: &str, bold: bool, italic: bool) -> Resolved {
 
 /// A line's (ascent, descent) from hhea values, both positive: the line gap goes above the ascent.
 fn hhea_line(ascender: i16, descender: i16, line_gap: i16) -> (f64, f64) {
-    (f64::from(ascender) + f64::from(line_gap.max(0)), f64::from(descender).abs())
+    (
+        f64::from(ascender) + f64::from(line_gap.max(0)),
+        f64::from(descender).abs(),
+    )
 }
 
 /// Line metrics for a face in font units: (ascent, descent), both positive, the way word
@@ -239,15 +317,28 @@ fn hhea_line(ascender: i16, descender: i16, line_gap: i16) -> (f64, f64) {
 pub fn line_metrics(face: &crate::FontFace) -> (f64, f64) {
     static CACHE: OnceLock<Mutex<HashMap<u32, (f64, f64)>>> = OnceLock::new();
     let cache = CACHE.get_or_init(|| Mutex::new(HashMap::new()));
-    if let Some(v) = cache.lock().unwrap_or_else(|e| e.into_inner()).get(&face.id()) {
+    if let Some(v) = cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&face.id())
+    {
         return *v;
     }
     let mut v = (face.ascent.max(1.0), face.descent.abs());
     if let Some(f) = face.skrifa() {
         // hhea ascender + descender + line gap (Word on macOS), the gap above the ascent; OS/2
         // win metrics only when the hhea values are missing, and never more than twice the em.
-        let hhea = f.hhea().ok().map(|h| hhea_line(h.ascender().to_i16(), h.descender().to_i16(), h.line_gap().to_i16()));
-        let win = f.os2().ok().map(|o| (o.us_win_ascent() as f64, o.us_win_descent() as f64));
+        let hhea = f.hhea().ok().map(|h| {
+            hhea_line(
+                h.ascender().to_i16(),
+                h.descender().to_i16(),
+                h.line_gap().to_i16(),
+            )
+        });
+        let win = f
+            .os2()
+            .ok()
+            .map(|o| (o.us_win_ascent() as f64, o.us_win_descent() as f64));
         let ok = |m: &(f64, f64)| m.0 > 0.0 && m.0 + m.1 <= face.upem * 2.0;
         if let Some(m) = hhea.filter(ok) {
             v = m;
@@ -255,7 +346,10 @@ pub fn line_metrics(face: &crate::FontFace) -> (f64, f64) {
             v = m;
         }
     }
-    cache.lock().unwrap_or_else(|e| e.into_inner()).insert(face.id(), v);
+    cache
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(face.id(), v);
     v
 }
 
@@ -290,25 +384,46 @@ mod tests {
         for name in ["Palatino Linotype", "Book Antiqua", "palatino"] {
             let list = substitutes(name);
             let pos = |n: &str| list.iter().position(|x| *x == n);
-            assert!(pos("Palatino").is_some() && pos("TeX Gyre Pagella").is_some() && pos("P052").is_some(), "{name}");
+            assert!(
+                pos("Palatino").is_some()
+                    && pos("TeX Gyre Pagella").is_some()
+                    && pos("P052").is_some(),
+                "{name}"
+            );
             // All of them come before the generic serif fallbacks (Caladea, Times New Roman).
-            assert!(pos("Palatino") < pos("Caladea") && pos("TeX Gyre Pagella") < pos("Times New Roman"), "{name}");
+            assert!(
+                pos("Palatino") < pos("Caladea")
+                    && pos("TeX Gyre Pagella") < pos("Times New Roman"),
+                "{name}"
+            );
         }
         // Other serif families are unchanged.
         assert_eq!(substitutes("Georgia").first(), Some(&"Caladea"));
         // Charset aliases are the font itself, so they substitute like it.
-        assert_eq!(charset_base_family("Times New Roman Cyr"), "Times New Roman");
+        assert_eq!(
+            charset_base_family("Times New Roman Cyr"),
+            "Times New Roman"
+        );
         assert_eq!(charset_base_family("Arial CYR"), "Arial");
         assert_eq!(charset_base_family("Courier New CE"), "Courier New");
         assert_eq!(charset_base_family("Arial (Hebrew)"), "Arial");
         assert_eq!(charset_base_family("Cyr"), "Cyr");
         assert_eq!(charset_base_family("Calibri"), "Calibri");
-        assert_eq!(substitutes(charset_base_family("Times New Roman Cyr")), substitutes("Times New Roman"));
+        assert_eq!(
+            substitutes(charset_base_family("Times New Roman Cyr")),
+            substitutes("Times New Roman")
+        );
     }
 
     #[test]
     fn symbol_fonts_substitute_symbol_faces() {
-        for f in ["Symbol", "Wingdings", "Wingdings 2", "Wingdings 3", "Webdings"] {
+        for f in [
+            "Symbol",
+            "Wingdings",
+            "Wingdings 2",
+            "Wingdings 3",
+            "Webdings",
+        ] {
             assert!(substitutes(f).contains(&"Noto Sans Symbols 2"), "{f}");
         }
     }
@@ -318,7 +433,10 @@ mod tests {
         // Word stores a Medium face as the family "Inter Medium" (#219).
         let r = resolve("Inter Medium", false, false);
         assert!(!r.substituted && !r.synth_bold && !r.synth_italic);
-        assert_eq!((r.face.family.as_str(), r.face.style.as_str()), ("Inter", "Medium"));
+        assert_eq!(
+            (r.face.family.as_str(), r.face.style.as_str()),
+            ("Inter", "Medium")
+        );
         // Bold and italic within it are drawn from the Medium face.
         let b = resolve("Inter Medium", true, true);
         assert_eq!(b.face.style, "Medium");

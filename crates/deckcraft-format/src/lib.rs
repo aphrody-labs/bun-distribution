@@ -1,7 +1,14 @@
 //! The native `.deckcraft` format: a zip holding `presentation.json` (the model, minus media
 //! bytes), `media/<id>` files with the embedded media, and `mimetype`. Readers ignore unknown
 //! fields, so newer files open in older builds with what those builds understand.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use std::io::{Cursor, Read, Write};
@@ -44,11 +51,14 @@ pub fn save(p: &Presentation) -> Result<Vec<u8>> {
     let mut buf = Cursor::new(Vec::new());
     {
         let mut z = zip::ZipWriter::new(&mut buf);
-        let stored = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-        let deflate = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        let stored = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Stored);
+        let deflate = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
         let w = |e: zip::result::ZipError| FormatError::Write(e.to_string());
         z.start_file("mimetype", stored).map_err(w)?;
-        z.write_all(MIMETYPE.as_bytes()).map_err(|e| FormatError::Write(e.to_string()))?;
+        z.write_all(MIMETYPE.as_bytes())
+            .map_err(|e| FormatError::Write(e.to_string()))?;
         let m = Manifest {
             format: "deckcraft".into(),
             version: VERSION,
@@ -57,15 +67,22 @@ pub fn save(p: &Presentation) -> Result<Vec<u8>> {
         };
         let json = serde_json::to_vec(&m).map_err(|e| FormatError::Write(e.to_string()))?;
         z.start_file("presentation.json", deflate).map_err(w)?;
-        z.write_all(&json).map_err(|e| FormatError::Write(e.to_string()))?;
+        z.write_all(&json)
+            .map_err(|e| FormatError::Write(e.to_string()))?;
         for item in &p.media {
             if item.link.is_some() && item.data.is_empty() {
                 continue;
             }
             // Already-compressed media is stored, not deflated again.
-            let opts = if is_compressed(&item.content_type) { stored } else { deflate };
-            z.start_file(format!("media/{}", item.id.0), opts).map_err(w)?;
-            z.write_all(&item.data).map_err(|e| FormatError::Write(e.to_string()))?;
+            let opts = if is_compressed(&item.content_type) {
+                stored
+            } else {
+                deflate
+            };
+            z.start_file(format!("media/{}", item.id.0), opts)
+                .map_err(w)?;
+            z.write_all(&item.data)
+                .map_err(|e| FormatError::Write(e.to_string()))?;
         }
         z.finish().map_err(w)?;
     }
@@ -83,24 +100,34 @@ fn is_compressed(ct: &str) -> bool {
 
 /// Does this look like a `.deckcraft` file?
 pub fn sniff(bytes: &[u8]) -> bool {
-    bytes.starts_with(b"PK") && [MIMETYPE, LEGACY_MIMETYPE].iter().any(|m| bytes.windows(m.len()).take(200).any(|w| w == m.as_bytes()))
+    bytes.starts_with(b"PK")
+        && [MIMETYPE, LEGACY_MIMETYPE]
+            .iter()
+            .any(|m| bytes.windows(m.len()).take(200).any(|w| w == m.as_bytes()))
 }
 
 fn read_entry(z: &mut zip::ZipArchive<Cursor<&[u8]>>, name: &str) -> Result<Vec<u8>> {
-    let f = z.by_name(name).map_err(|e| FormatError::Damaged(format!("{name}: {e}")))?;
+    let f = z
+        .by_name(name)
+        .map_err(|e| FormatError::Damaged(format!("{name}: {e}")))?;
     if f.size() > MAX_ENTRY {
         return Err(FormatError::Damaged(format!("{name} is too large")));
     }
     let mut out = Vec::with_capacity(f.size().min(64 << 20) as usize);
-    f.take(MAX_ENTRY).read_to_end(&mut out).map_err(|e| FormatError::Damaged(format!("{name}: {e}")))?;
+    f.take(MAX_ENTRY)
+        .read_to_end(&mut out)
+        .map_err(|e| FormatError::Damaged(format!("{name}: {e}")))?;
     Ok(out)
 }
 
 /// Read a presentation.
 pub fn load(bytes: &[u8]) -> Result<Presentation> {
-    let mut z = zip::ZipArchive::new(Cursor::new(bytes)).map_err(|e| FormatError::NotOurs(e.to_string()))?;
-    let json = read_entry(&mut z, "presentation.json").map_err(|_| FormatError::NotOurs("no presentation.json".into()))?;
-    let m: Manifest = serde_json::from_slice(&json).map_err(|e| FormatError::Damaged(e.to_string()))?;
+    let mut z = zip::ZipArchive::new(Cursor::new(bytes))
+        .map_err(|e| FormatError::NotOurs(e.to_string()))?;
+    let json = read_entry(&mut z, "presentation.json")
+        .map_err(|_| FormatError::NotOurs("no presentation.json".into()))?;
+    let m: Manifest =
+        serde_json::from_slice(&json).map_err(|e| FormatError::Damaged(e.to_string()))?;
     if m.format != "deckcraft" {
         return Err(FormatError::NotOurs(m.format));
     }
@@ -122,13 +149,25 @@ pub fn repair(p: &mut Presentation) {
         p.masters = fresh.masters;
     }
     p.fix_next_id();
-    let first_layout = p.masters.first().and_then(|m| m.layouts.first()).map(|l| l.id).unwrap_or_default();
+    let first_layout = p
+        .masters
+        .first()
+        .and_then(|m| m.layouts.first())
+        .map(|l| l.id)
+        .unwrap_or_default();
     let mut seen = std::collections::HashSet::new();
     for i in 0..p.slides.len() {
-        let needs_layout = p.slides.get(i).is_some_and(|s| p.layout(s.layout).is_none());
+        let needs_layout = p
+            .slides
+            .get(i)
+            .is_some_and(|s| p.layout(s.layout).is_none());
         let dup = p.slides.get(i).is_some_and(|s| !seen.insert(s.id));
         if needs_layout || dup {
-            let new_id = if dup { Some(deckcraft_model::SlideId(p.alloc_id())) } else { None };
+            let new_id = if dup {
+                Some(deckcraft_model::SlideId(p.alloc_id()))
+            } else {
+                None
+            };
             if let Some(s) = p.slides.get_mut(i) {
                 let s = Arc::make_mut(s);
                 if needs_layout {
@@ -140,7 +179,11 @@ pub fn repair(p: &mut Presentation) {
             }
         }
     }
-    if !(p.slide_size.width.is_finite() && p.slide_size.width >= 1.0 && p.slide_size.height.is_finite() && p.slide_size.height >= 1.0) {
+    if !(p.slide_size.width.is_finite()
+        && p.slide_size.width >= 1.0
+        && p.slide_size.height.is_finite()
+        && p.slide_size.height >= 1.0)
+    {
         p.slide_size = defaults::WIDE;
     }
     p.slide_size.width = p.slide_size.width.min(4000.0);
@@ -150,7 +193,9 @@ pub fn repair(p: &mut Presentation) {
 /// Outline text: one slide per unindented line; tab-indented lines become body bullets at their
 /// level (Insert ▸ Slides from Outline, View ▸ Outline copy).
 pub fn outline_to_slides(p: &mut Presentation, text: &str) -> usize {
-    let Some(lay) = defaults::layout_of_kind(p, LayoutType::TitleAndContent) else { return 0 };
+    let Some(lay) = defaults::layout_of_kind(p, LayoutType::TitleAndContent) else {
+        return 0;
+    };
     let mut made = 0;
     let mut cur: Option<deckcraft_model::Slide> = None;
     let flush = |p: &mut Presentation, s: Option<deckcraft_model::Slide>, made: &mut usize| {
@@ -226,8 +271,14 @@ mod tests {
         assert!(sniff(&bytes));
         let q = load(&bytes).unwrap();
         assert_eq!(q.slides.len(), p.slides.len());
-        assert_eq!(q.media(id).map(|m| m.data.as_slice()), Some(&[1u8, 2, 3, 4][..]));
-        assert_eq!(serde_json::to_value(&q.slides).unwrap(), serde_json::to_value(&p.slides).unwrap());
+        assert_eq!(
+            q.media(id).map(|m| m.data.as_slice()),
+            Some(&[1u8, 2, 3, 4][..])
+        );
+        assert_eq!(
+            serde_json::to_value(&q.slides).unwrap(),
+            serde_json::to_value(&p.slides).unwrap()
+        );
     }
 
     #[test]
@@ -257,6 +308,9 @@ mod tests {
         let n = outline_to_slides(&mut p, "Intro\n\tPoint one\n\t\tSub point\nSecond\n\tMore");
         assert_eq!(n, 2);
         let o = slides_to_outline(&p);
-        assert!(o.contains("Intro\n\tPoint one\n\t\tSub point\nSecond"), "{o}");
+        assert!(
+            o.contains("Intro\n\tPoint one\n\t\tSub point\nSecond"),
+            "{o}"
+        );
     }
 }

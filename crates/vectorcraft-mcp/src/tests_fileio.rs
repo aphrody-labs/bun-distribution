@@ -21,8 +21,16 @@ fn text(r: &crate::ToolResult) -> Value {
 /// A headless session with two artboards of different widths (100 and 40 pt) and a rectangle.
 fn two_boards() -> Headless {
     let mut h = Headless::new();
-    h.call("engine.execute", json!({"command": "file.new", "params": {"width": 100, "height": 50, "artboards": 2}})).unwrap();
-    h.call("engine.execute", json!({"command": "artboard.setProps", "params": {"index": 1, "width": 40}})).unwrap();
+    h.call(
+        "engine.execute",
+        json!({"command": "file.new", "params": {"width": 100, "height": 50, "artboards": 2}}),
+    )
+    .unwrap();
+    h.call(
+        "engine.execute",
+        json!({"command": "artboard.setProps", "params": {"index": 1, "width": 40}}),
+    )
+    .unwrap();
     h.call("engine.execute", json!({"command": "shape.rectangle", "params": {"x": 10, "y": 10, "width": 20, "height": 20}})).unwrap();
     h
 }
@@ -30,24 +38,41 @@ fn two_boards() -> Headless {
 #[test]
 fn headless_opens_pdf_ai_and_templates() {
     let mut h = two_boards();
-    let pdf = h.call("engine.execute", json!({"command": "document.serialize", "params": {"format": "pdf"}})).unwrap();
+    let pdf = h
+        .call(
+            "engine.execute",
+            json!({"command": "document.serialize", "params": {"format": "pdf"}}),
+        )
+        .unwrap();
     let pdf = vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
     for name in ["x.pdf", "x.ai"] {
         let path = tmp(name);
         std::fs::write(&path, &pdf).unwrap();
         let r = text(&call_tool(&mut h, "open_file", &json!({"path": path})));
         assert_eq!(r["title"], name);
-        assert_eq!(h.session.doc().unwrap().doc.artboards.len(), 2, "one artboard per page");
+        assert_eq!(
+            h.session.doc().unwrap().doc.artboards.len(),
+            2,
+            "one artboard per page"
+        );
     }
     let ait = tmp("x.ait");
     std::fs::write(&ait, &pdf).unwrap();
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": ait})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
     let tpl = tmp("t.vectorcraft");
-    h.call("engine.execute", json!({"command": "file.saveAsTemplate", "params": {"path": tpl}})).unwrap();
+    h.call(
+        "engine.execute",
+        json!({"command": "file.saveAsTemplate", "params": {"path": tpl}}),
+    )
+    .unwrap();
     let r = text(&call_tool(&mut h, "open_file", &json!({"path": tpl})));
     assert!(r["title"].as_str().unwrap().starts_with("Untitled-"), "{r}");
-    assert_eq!(h.session.doc().unwrap().path, None, "Save asks for a new name");
+    assert_eq!(
+        h.session.doc().unwrap().path,
+        None,
+        "Save asks for a new name"
+    );
 }
 
 #[test]
@@ -97,7 +122,12 @@ fn recording_app() -> (String, std::thread::JoinHandle<Vec<Value>>) {
         let mut seen = vec![];
         for line in BufReader::new(stream).lines() {
             let msg: Value = serde_json::from_str(&line.unwrap()).unwrap();
-            writeln!(out, "{}", json!({"id": msg["id"], "ok": true, "result": {}})).unwrap();
+            writeln!(
+                out,
+                "{}",
+                json!({"id": msg["id"], "ok": true, "result": {}})
+            )
+            .unwrap();
             seen.push(msg);
         }
         seen
@@ -114,7 +144,10 @@ fn export_is_the_same_call_in_the_app_and_headless() {
     drop(remote);
     let seen = app.join().unwrap();
     assert_eq!(seen[0]["method"], "engine.execute");
-    assert_eq!(seen[0]["params"], json!({"command": "document.export", "params": {"format": "png", "artboard": 1, "scale": 2}}));
+    assert_eq!(
+        seen[0]["params"],
+        json!({"command": "document.export", "params": {"format": "png", "artboard": 1, "scale": 2}})
+    );
 
     // Headless runs that very call: artboard 1 (40 pt wide) at scale 2.
     let mut h = two_boards();
@@ -135,7 +168,11 @@ fn exporting_native_keeps_the_document_path() {
     assert_eq!(r["format"], "vectorcraft");
     assert_eq!(h.session.doc().unwrap().path.as_deref(), Some(doc.as_str()));
     // PDF range through the tool: one page.
-    let pdf = text(&call_tool(&mut h, "export", &json!({"format": "pdf", "range": "2"})));
+    let pdf = text(&call_tool(
+        &mut h,
+        "export",
+        &json!({"format": "pdf", "range": "2"}),
+    ));
     let pdf = vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
     assert_eq!(pdf_pages(&pdf), 1);
 }
@@ -169,17 +206,26 @@ fn document_color_mode_puts_rgb_greys_on_the_black_plate() {
                     && let Some(c) = n.appearance.fill_paint().color()
                 {
                     let v = serde_json::to_value(c).unwrap();
-                    assert!(v["model"] == "cmyk" && v["c"] == 0.0 && v["m"] == 0.0 && v["y"] == 0.0, "not K only: {v}");
+                    assert!(
+                        v["model"] == "cmyk" && v["c"] == 0.0 && v["m"] == 0.0 && v["y"] == 0.0,
+                        "not K only: {v}"
+                    );
                     ks.push(v["k"].as_f64().unwrap() as f32);
                 }
             });
         }
         ks
     };
-    let close = |ks: &[f32]| ks.len() == want.len() && ks.iter().zip(want).all(|(k, w)| (k - w).abs() < 0.005);
+    let close = |ks: &[f32]| {
+        ks.len() == want.len() && ks.iter().zip(want).all(|(k, w)| (k - w).abs() < 0.005)
+    };
     let mut h = Headless::new();
     text(&call_tool(&mut h, "open_file", &json!({"path": svg})));
-    let r = text(&call_tool(&mut h, "run_command", &json!({"command": "file.documentColorMode", "params": {"mode": "cmyk", "grays": "black"}})));
+    let r = text(&call_tool(
+        &mut h,
+        "run_command",
+        &json!({"command": "file.documentColorMode", "params": {"mode": "cmyk", "grays": "black"}}),
+    ));
     assert_eq!(r["changed"], 4);
     let ks = k_only(&h);
     assert!(close(&ks), "{ks:?}");
@@ -191,10 +237,18 @@ fn document_color_mode_puts_rgb_greys_on_the_black_plate() {
     assert!(close(&ks), "{ks:?}");
     // document.open takes the same option.
     let mut o = Headless::new();
-    let r = call_tool(&mut o, "run_command", &json!({"command": "document.open", "params": {"path": svg, "colorMode": "cmyk", "grays": "black"}}));
+    let r = call_tool(
+        &mut o,
+        "run_command",
+        &json!({"command": "document.open", "params": {"path": svg, "colorMode": "cmyk", "grays": "black"}}),
+    );
     text(&r);
     let ks = k_only(&o);
     assert!(close(&ks), "{ks:?}");
-    let bad = call_tool(&mut o, "run_command", &json!({"command": "file.documentColorMode", "params": {"mode": "rgb", "grays": "rich"}}));
+    let bad = call_tool(
+        &mut o,
+        "run_command",
+        &json!({"command": "file.documentColorMode", "params": {"mode": "rgb", "grays": "rich"}}),
+    );
     assert!(bad.is_error, "{bad:?}");
 }

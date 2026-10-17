@@ -104,14 +104,21 @@ impl Story {
             let id = self.endnotes.iter().map(|x| x.id).max().unwrap_or(0) + 1;
             let mut text = Story::new(StoryId(0));
             text.chars[0].format = CharFormat::default();
-            self.endnotes.insert((k + i).min(self.endnotes.len()), Arc::new(Footnote { id, text }));
+            self.endnotes.insert(
+                (k + i).min(self.endnotes.len()),
+                Arc::new(Footnote { id, text }),
+            );
         }
     }
 
     pub(crate) fn check_endnotes(&self) -> Result<(), String> {
         let n = self.text.matches(ENDNOTE_REF).count();
         if n != self.endnotes.len() {
-            return Err(format!("story {}: {n} endnote references, {} endnotes", self.id.0, self.endnotes.len()));
+            return Err(format!(
+                "story {}: {n} endnote references, {} endnotes",
+                self.id.0,
+                self.endnotes.len()
+            ));
         }
         Ok(())
     }
@@ -120,8 +127,21 @@ impl Story {
 impl crate::Document {
     /// Stories with endnotes in numbering order (page of their first frame, then id).
     fn endnote_order(&self) -> Vec<&Story> {
-        let key = |st: &Story| -> (usize, u64) { (st.frames.first().and_then(|f| self.page_of_item(*f)).unwrap_or(usize::MAX), st.id.0) };
-        let mut v: Vec<&Story> = self.stories.values().map(|s| s.as_ref()).filter(|s| !s.endnotes.is_empty()).collect();
+        let key = |st: &Story| -> (usize, u64) {
+            (
+                st.frames
+                    .first()
+                    .and_then(|f| self.page_of_item(*f))
+                    .unwrap_or(usize::MAX),
+                st.id.0,
+            )
+        };
+        let mut v: Vec<&Story> = self
+            .stories
+            .values()
+            .map(|s| s.as_ref())
+            .filter(|s| !s.endnotes.is_empty())
+            .collect();
         v.sort_by_key(|s| key(s));
         v
     }
@@ -141,7 +161,10 @@ impl crate::Document {
     /// The endnote frame's text: the heading, then "number separator text" per endnote, in order.
     pub fn endnote_text(&self, id: StoryId) -> Story {
         let o = &self.endnote_options;
-        let para = |style: &str| ParaFormat { style: style.to_string(), ..Default::default() };
+        let para = |style: &str| ParaFormat {
+            style: style.to_string(),
+            ..Default::default()
+        };
         let mut out = Story::with_text(id, &o.heading, para(&o.heading_style));
         let mut n = o.start_at;
         for st in self.endnote_order() {
@@ -154,7 +177,11 @@ impl crate::Document {
                 let pi = out.paras.len() - 1;
                 out.paras[pi] = para(&o.para_style);
                 let at = out.len();
-                out.insert_with(at, &format!("{}{}", o.label(n), o.separator), CharFormat::default());
+                out.insert_with(
+                    at,
+                    &format!("{}{}", o.label(n), o.separator),
+                    CharFormat::default(),
+                );
                 for (r, f) in note.text.runs() {
                     let at = out.len();
                     out.insert_with(at, &note.text.text[r].replace('\n', " "), f.clone());
@@ -167,7 +194,9 @@ impl crate::Document {
 
     /// Bring the endnote frame's story up to date with the endnotes (after any edit).
     pub fn sync_endnote_story(&mut self) {
-        let Some(sid) = self.endnote_story else { return };
+        let Some(sid) = self.endnote_story else {
+            return;
+        };
         let Some(cur) = self.stories.get(&sid) else {
             self.endnote_story = None;
             return;
@@ -176,9 +205,15 @@ impl crate::Document {
         if cur.text == fresh.text && cur.paras == fresh.paras && cur.chars == fresh.chars {
             return;
         }
-        let Some(st) = self.stories.get_mut(&sid) else { return };
+        let Some(st) = self.stories.get_mut(&sid) else {
+            return;
+        };
         let st = Arc::make_mut(st);
         let (frames, rev) = (std::mem::take(&mut st.frames), st.rev);
-        *st = Story { frames, rev: rev + 1, ..fresh };
+        *st = Story {
+            frames,
+            rev: rev + 1,
+            ..fresh
+        };
     }
 }

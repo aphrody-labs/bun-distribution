@@ -44,7 +44,11 @@ pub struct IconIndexPolicy<'a> {
 impl<'a> IconIndexPolicy<'a> {
     #[must_use]
     pub const fn new(root: &'a str, suffix: &'a str, skipped_families: &'a [&'a str]) -> Self {
-        Self { root, suffix, skipped_families }
+        Self {
+            root,
+            suffix,
+            skipped_families,
+        }
     }
 }
 
@@ -87,8 +91,8 @@ where
             Candidate::Keep => selected.push(path.as_ref().to_owned()),
             Candidate::Skip(family) => {
                 *out.stats.skipped.entry(family.to_owned()).or_default() += 1
-            },
-            Candidate::Ignore => {},
+            }
+            Candidate::Ignore => {}
         }
     }
     for path in selected {
@@ -105,31 +109,35 @@ where
             if !is_real_texture(&texture.name, texture.width, texture.height) {
                 continue;
             }
-            out.icons.entry(texture.name.clone()).or_insert_with(|| MenuIcon {
-                name: texture.name.clone(),
-                atlas: path.clone(),
-                texture: texture.name.clone(),
-                rect: None,
-                width: texture.width,
-                height: texture.height,
-            });
+            out.icons
+                .entry(texture.name.clone())
+                .or_insert_with(|| MenuIcon {
+                    name: texture.name.clone(),
+                    atlas: path.clone(),
+                    texture: texture.name.clone(),
+                    rect: None,
+                    width: texture.width,
+                    height: texture.height,
+                });
             for region in &texture.sub_textures {
                 if !is_real_region(&region.name, region.width) {
                     continue;
                 }
-                out.icons.entry(region.name.clone()).or_insert_with(|| MenuIcon {
-                    name: region.name.clone(),
-                    atlas: path.clone(),
-                    texture: texture.name.clone(),
-                    rect: Some(IconRect {
-                        x: region.x,
-                        y: region.y,
-                        w: region.width,
-                        h: region.height,
-                    }),
-                    width: i32::from(region.width),
-                    height: i32::from(region.height),
-                });
+                out.icons
+                    .entry(region.name.clone())
+                    .or_insert_with(|| MenuIcon {
+                        name: region.name.clone(),
+                        atlas: path.clone(),
+                        texture: texture.name.clone(),
+                        rect: Some(IconRect {
+                            x: region.x,
+                            y: region.y,
+                            w: region.width,
+                            h: region.height,
+                        }),
+                        width: i32::from(region.width),
+                        height: i32::from(region.height),
+                    });
             }
         }
     }
@@ -152,7 +160,10 @@ mod tests {
             candidate("data/dx11/menu/200_icon/10_icon_chr/a.g4tx", &POLICY),
             Candidate::Skip("10_icon_chr")
         ));
-        assert!(matches!(candidate("data/dx11/menu/220_img/a.g4tx", &POLICY), Candidate::Ignore));
+        assert!(matches!(
+            candidate("data/dx11/menu/220_img/a.g4tx", &POLICY),
+            Candidate::Ignore
+        ));
         assert!(matches!(
             candidate("data/dx11/menu/200_icon/02_icon_item/a.g4pkm", &POLICY),
             Candidate::Ignore

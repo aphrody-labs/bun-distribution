@@ -7,7 +7,7 @@ use core::{
 
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_utils::prelude::DebugName;
-use slotmap::{new_key_type, Key, KeyData, SecondaryMap, SlotMap};
+use slotmap::{Key, KeyData, SecondaryMap, SlotMap, new_key_type};
 use thiserror::Error;
 
 use crate::{
@@ -16,17 +16,17 @@ use crate::{
     prelude::{SystemIn, SystemSet},
     query::AccessConflicts,
     schedule::{
+        BoxedCondition, InternedSystemSet, ScheduleGraph,
         graph::{
             DagAnalysis, DagGroups, DiGraph,
             Direction::{self, Incoming, Outgoing},
             GraphNodeId, UnGraph,
         },
-        BoxedCondition, InternedSystemSet, ScheduleGraph,
     },
     system::{
         ReadOnlySystem, RunSystemError, ScheduleSystem, System, SystemAccess, SystemStateFlags,
     },
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World},
+    world::{DeferredWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 /// A [`SystemWithAccess`] stored in a [`ScheduleGraph`].
@@ -906,7 +906,9 @@ impl Index<SystemSetKey> for SystemSets {
 
 /// Error returned when calling [`SystemSets::check_type_set_ambiguity`].
 #[derive(Error, Debug)]
-#[error("Tried to order against `{0:?}` in a schedule that has more than one `{0:?}` instance. `{0:?}` is a `SystemTypeSet` and cannot be used for ordering if ambiguous. Use a different set without this restriction.")]
+#[error(
+    "Tried to order against `{0:?}` in a schedule that has more than one `{0:?}` instance. `{0:?}` is a `SystemTypeSet` and cannot be used for ordering if ambiguous. Use a different set without this restriction."
+)]
 pub struct SystemTypeSetAmbiguityError(pub SystemSetKey);
 
 #[cfg(test)]

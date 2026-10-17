@@ -38,7 +38,11 @@ pub fn drawn(preference: Option<f32>, system: f32, native: f32) -> f32 {
 
 /// The display's scale, or 1.0 when egui doesn't know it (or reports nonsense).
 fn usable(native: f32) -> f32 {
-    if native.is_finite() && native > 0.0 { native } else { 1.0 }
+    if native.is_finite() && native > 0.0 {
+        native
+    } else {
+        1.0
+    }
 }
 
 /// Parse a control-channel value: `auto`, or a percentage such as `125` or `125%`.
@@ -47,8 +51,18 @@ pub fn parse(value: &str) -> Result<Option<f32>, String> {
     if value.eq_ignore_ascii_case("auto") {
         return Ok(None);
     }
-    let percent: f64 = value.trim_end_matches('%').trim().parse().map_err(|_| format!("ui-scale must be auto or a percentage, not {value}"))?;
-    valid(percent / 100.0).map(Some).ok_or_else(|| format!("ui-scale must be between {}% and {}%", (MIN * 100.0).round(), (MAX * 100.0).round()))
+    let percent: f64 = value
+        .trim_end_matches('%')
+        .trim()
+        .parse()
+        .map_err(|_| format!("ui-scale must be auto or a percentage, not {value}"))?;
+    valid(percent / 100.0).map(Some).ok_or_else(|| {
+        format!(
+            "ui-scale must be between {}% and {}%",
+            (MIN * 100.0).round(),
+            (MAX * 100.0).round()
+        )
+    })
 }
 
 /// The percentage a factor shows as.
@@ -78,7 +92,11 @@ mod tests {
     #[test]
     fn auto_follows_a_usable_system_scale_only() {
         assert_eq!(zoom(None, 1.25, 1.0), 1.25);
-        assert_eq!(drawn(None, 1.25, 2.0), 2.5, "Auto keeps the display's scale");
+        assert_eq!(
+            drawn(None, 1.25, 2.0),
+            2.5,
+            "Auto keeps the display's scale"
+        );
         for system in [f32::NAN, f32::INFINITY, -1.0, 0.0, 0.1, 40.0] {
             assert_eq!(zoom(None, system, 1.0), 1.0, "{system}");
         }
@@ -87,8 +105,16 @@ mod tests {
     #[test]
     fn a_chosen_size_is_absolute_whatever_the_display_reports() {
         for native in [1.0, 1.25, 2.0, 3.0] {
-            assert_eq!(drawn(Some(1.0), 1.25, native), 1.0, "100% on a {native}× display");
-            assert_eq!(drawn(Some(1.5), 1.0, native), 1.5, "150% on a {native}× display");
+            assert_eq!(
+                drawn(Some(1.0), 1.25, native),
+                1.0,
+                "100% on a {native}× display"
+            );
+            assert_eq!(
+                drawn(Some(1.5), 1.0, native),
+                1.5,
+                "150% on a {native}× display"
+            );
         }
         assert_eq!(zoom(Some(1.0), 1.0, 2.0), 0.5);
         for native in [f32::NAN, f32::INFINITY, 0.0, -2.0] {
@@ -106,7 +132,10 @@ mod tests {
             assert!(parse(bad).is_err(), "{bad}");
         }
         for p in PRESETS {
-            assert_eq!(parse(&p.to_string()).map(|f| f.map(percent)), Ok(Some(u32::from(p))));
+            assert_eq!(
+                parse(&p.to_string()).map(|f| f.map(percent)),
+                Ok(Some(u32::from(p)))
+            );
         }
     }
 
@@ -117,7 +146,9 @@ mod tests {
         sync(&ctx, 1.25, &mut applied);
         assert_eq!(applied, Some(1.25));
         // A bare context's first frame uploads the font atlas; nothing paints it here.
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
         assert_eq!(ctx.zoom_factor(), 1.25);
         assert!(!ctx.options(|o| o.zoom_with_keyboard));
     }
@@ -125,17 +156,32 @@ mod tests {
     #[test]
     fn the_app_draws_at_the_system_scale_until_a_size_is_chosen() {
         // A display that reports 200% (#456: a 1080p screen whose system reports 2×).
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1000.0, 700.0)).with_pixels_per_point(2.0).build_eframe(|_cc| {
-            let mut app = crate::PdfCraftApp::new();
-            app.system_text_scale = 1.25;
-            app
-        });
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1000.0, 700.0))
+            .with_pixels_per_point(2.0)
+            .build_eframe(|_cc| {
+                let mut app = crate::PdfCraftApp::new();
+                app.system_text_scale = 1.25;
+                app
+            });
         h.run_steps(3);
-        assert_eq!(h.ctx.pixels_per_point(), 2.5, "Auto follows the display's scale and the system's text scale");
-        h.state_mut().set_option("ui-scale", "100%").expect("a valid size");
+        assert_eq!(
+            h.ctx.pixels_per_point(),
+            2.5,
+            "Auto follows the display's scale and the system's text scale"
+        );
+        h.state_mut()
+            .set_option("ui-scale", "100%")
+            .expect("a valid size");
         h.run_steps(3);
-        assert_eq!(h.ctx.pixels_per_point(), 1.0, "100% is one screen pixel per point");
-        h.state_mut().set_option("ui-scale", "150%").expect("a valid size");
+        assert_eq!(
+            h.ctx.pixels_per_point(),
+            1.0,
+            "100% is one screen pixel per point"
+        );
+        h.state_mut()
+            .set_option("ui-scale", "150%")
+            .expect("a valid size");
         h.run_steps(3);
         assert_eq!(h.ctx.pixels_per_point(), 1.5);
         assert!(h.state_mut().set_option("ui-scale", "5000").is_err());

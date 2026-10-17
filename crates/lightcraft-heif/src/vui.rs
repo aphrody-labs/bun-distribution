@@ -18,7 +18,12 @@ pub struct Signal {
 
 impl Default for Signal {
     fn default() -> Self {
-        Signal { full_range: false, primaries: 2, transfer: 2, matrix: 2 }
+        Signal {
+            full_range: false,
+            primaries: 2,
+            transfer: 2,
+            matrix: 2,
+        }
     }
 }
 
@@ -29,7 +34,9 @@ const SPS_NUT: u8 = 33;
 /// two-byte header, as an `hvcC` record stores them). `None`: no SPS, or one this reader can't
 /// follow; `Some(Signal::default())`: an SPS without VUI colour fields.
 pub fn signal(parameter_sets: &[&[u8]]) -> Option<Signal> {
-    let sps = parameter_sets.iter().find(|n| n.first().is_some_and(|b| (b >> 1) & 0x3f == SPS_NUT))?;
+    let sps = parameter_sets
+        .iter()
+        .find(|n| n.first().is_some_and(|b| (b >> 1) & 0x3f == SPS_NUT))?;
     parse_sps(&unescape(sps.get(2..)?))
 }
 
@@ -283,7 +290,10 @@ mod tests {
             while !self.bits.len().is_multiple_of(8) {
                 self.bits.push(false);
             }
-            self.bits.chunks(8).map(|c| c.iter().fold(0u8, |a, &b| (a << 1) | u8::from(b))).collect()
+            self.bits
+                .chunks(8)
+                .map(|c| c.iter().fold(0u8, |a, &b| (a << 1) | u8::from(b)))
+                .collect()
         }
     }
 
@@ -392,7 +402,15 @@ mod tests {
             two_rps,
         );
         let s = signal(&[&[0x40, 1, 0xc], &nal, &[0x44, 1]]);
-        assert_eq!(s, Some(Signal { full_range: true, primaries: 12, transfer: 13, matrix: 6 }));
+        assert_eq!(
+            s,
+            Some(Signal {
+                full_range: true,
+                primaries: 12,
+                transfer: 13,
+                matrix: 6
+            })
+        );
     }
 
     #[test]
@@ -410,7 +428,13 @@ mod tests {
             },
             |w| w.ue(0),
         );
-        assert_eq!(signal(&[&range_only]), Some(Signal { full_range: true, ..Signal::default() }));
+        assert_eq!(
+            signal(&[&range_only]),
+            Some(Signal {
+                full_range: true,
+                ..Signal::default()
+            })
+        );
     }
 
     #[test]

@@ -22,7 +22,10 @@ const MAX_PIXELS: u64 = 1 << 26;
 const MAX_HEADER: usize = 64 << 10;
 
 /// The colour of HDR frames: scene-linear light, Rec.709 primaries.
-const LINEAR_709: ColorInfo = ColorInfo { transfer: Transfer::Linear, ..ColorInfo::SRGB_FULL };
+const LINEAR_709: ColorInfo = ColorInfo {
+    transfer: Transfer::Linear,
+    ..ColorInfo::SRGB_FULL
+};
 
 /// Whether `b` starts like a Radiance picture.
 pub fn sniff(b: &[u8]) -> bool {
@@ -57,7 +60,10 @@ pub fn still(name: &str, bytes: &[u8]) -> Result<StillSource> {
         start_timecode: None,
         file_size: Some(bytes.len() as u64),
     };
-    Ok(StillSource { info, frame: Arc::new(frame) })
+    Ok(StillSource {
+        info,
+        frame: Arc::new(frame),
+    })
 }
 
 /// One resolution-line axis: `(is_x, positive)`.
@@ -79,14 +85,20 @@ fn rgbe(p: [u8; 4]) -> [f32; 3] {
         return [0.0; 3];
     }
     let scale = 2f32.powi(i32::from(p[3]) - 136);
-    [f32::from(p[0]) * scale, f32::from(p[1]) * scale, f32::from(p[2]) * scale]
+    [
+        f32::from(p[0]) * scale,
+        f32::from(p[1]) * scale,
+        f32::from(p[2]) * scale,
+    ]
 }
 
 /// Read the pixels of one scan line of `n` pixels into `line`.
 fn scanline(name: &str, b: &[u8], pos: &mut usize, line: &mut [[u8; 4]]) -> Result<()> {
     let n = line.len();
     let take = |pos: &mut usize, k: usize| -> Result<&[u8]> {
-        let s = b.get(*pos..pos.saturating_add(k)).ok_or_else(|| err(name, "truncated pixel data"))?;
+        let s = b
+            .get(*pos..pos.saturating_add(k))
+            .ok_or_else(|| err(name, "truncated pixel data"))?;
         *pos += k;
         Ok(s)
     };
@@ -106,7 +118,9 @@ fn scanline(name: &str, b: &[u8], pos: &mut usize, line: &mut [[u8; 4]]) -> Resu
                 if code > 128 {
                     let run = usize::from(code - 128);
                     let v = take(pos, 1)?[0];
-                    let dst = line.get_mut(x..x + run).ok_or_else(|| err(name, "run past the end of the scan line"))?;
+                    let dst = line
+                        .get_mut(x..x + run)
+                        .ok_or_else(|| err(name, "run past the end of the scan line"))?;
                     for p in dst {
                         p[c] = v;
                     }
@@ -117,7 +131,9 @@ fn scanline(name: &str, b: &[u8], pos: &mut usize, line: &mut [[u8; 4]]) -> Resu
                         return Err(err(name, "empty literal run"));
                     }
                     let src = take(pos, run)?;
-                    let dst = line.get_mut(x..x + run).ok_or_else(|| err(name, "literal past the end of the scan line"))?;
+                    let dst = line
+                        .get_mut(x..x + run)
+                        .ok_or_else(|| err(name, "literal past the end of the scan line"))?;
                     for (p, &v) in dst.iter_mut().zip(src) {
                         p[c] = v;
                     }
@@ -134,8 +150,15 @@ fn scanline(name: &str, b: &[u8], pos: &mut usize, line: &mut [[u8; 4]]) -> Resu
         let p = [s[0], s[1], s[2], s[3]];
         if p[..3] == [1, 1, 1] {
             let count = usize::from(p[3]).checked_shl(shift).unwrap_or(usize::MAX);
-            let prev = if x > 0 { line.get(x - 1).copied() } else { None }.ok_or_else(|| err(name, "run with no previous pixel"))?;
-            let dst = line.get_mut(x..x.saturating_add(count).min(n)).ok_or_else(|| err(name, "run past the end of the scan line"))?;
+            let prev = if x > 0 {
+                line.get(x - 1).copied()
+            } else {
+                None
+            }
+            .ok_or_else(|| err(name, "run with no previous pixel"))?;
+            let dst = line
+                .get_mut(x..x.saturating_add(count).min(n))
+                .ok_or_else(|| err(name, "run past the end of the scan line"))?;
             dst.fill(prev);
             x += dst.len();
             shift = shift.saturating_add(8).min(24);
@@ -159,8 +182,14 @@ pub fn decode(name: &str, b: &[u8]) -> Result<VideoFrame> {
     let mut pos = 0;
     let line = |pos: &mut usize| -> Result<String> {
         let rest = b.get(*pos..).ok_or_else(|| err(name, "truncated header"))?;
-        let end = rest.iter().take(MAX_HEADER).position(|&c| c == b'\n').ok_or_else(|| err(name, "truncated header"))?;
-        let s = String::from_utf8_lossy(rest.get(..end).unwrap_or_default()).trim_end_matches('\r').to_string();
+        let end = rest
+            .iter()
+            .take(MAX_HEADER)
+            .position(|&c| c == b'\n')
+            .ok_or_else(|| err(name, "truncated header"))?;
+        let s = String::from_utf8_lossy(rest.get(..end).unwrap_or_default())
+            .trim_end_matches('\r')
+            .to_string();
         *pos += end + 1;
         Ok(s)
     };
@@ -172,7 +201,9 @@ pub fn decode(name: &str, b: &[u8]) -> Result<VideoFrame> {
         if let Some(f) = l.strip_prefix("FORMAT=") {
             match f.trim() {
                 "32-bit_rle_rgbe" => {}
-                "32-bit_rle_xyze" => return Err(err(name, "the XYZE colour format is not supported")),
+                "32-bit_rle_xyze" => {
+                    return Err(err(name, "the XYZE colour format is not supported"));
+                }
                 other => return Err(err(name, &format!("unknown format {other}"))),
             }
         }
@@ -182,8 +213,14 @@ pub fn decode(name: &str, b: &[u8]) -> Result<VideoFrame> {
     }
     let res = line(&mut pos)?;
     let t: Vec<&str> = res.split_whitespace().collect();
-    let &[a1, n1, a2, n2] = t.as_slice().first_chunk::<4>().ok_or_else(|| err(name, "bad resolution line"))?;
-    let ((x1, p1), (x2, p2)) = (axis(a1).ok_or_else(|| err(name, "bad resolution line"))?, axis(a2).ok_or_else(|| err(name, "bad resolution line"))?);
+    let &[a1, n1, a2, n2] = t
+        .as_slice()
+        .first_chunk::<4>()
+        .ok_or_else(|| err(name, "bad resolution line"))?;
+    let ((x1, p1), (x2, p2)) = (
+        axis(a1).ok_or_else(|| err(name, "bad resolution line"))?,
+        axis(a2).ok_or_else(|| err(name, "bad resolution line"))?,
+    );
     if x1 == x2 {
         return Err(err(name, "resolution line names one axis twice"));
     }
@@ -194,7 +231,9 @@ pub fn decode(name: &str, b: &[u8]) -> Result<VideoFrame> {
         return Err(err(name, "picture size out of range"));
     }
     // a scan line takes at least a few bits of file, so a header cannot ask for more than the data has
-    if (b.len().saturating_sub(pos) as u64).saturating_mul(4096) < (w as u64).saturating_mul(h as u64) {
+    if (b.len().saturating_sub(pos) as u64).saturating_mul(4096)
+        < (w as u64).saturating_mul(h as u64)
+    {
         return Err(err(name, "truncated pixel data"));
     }
     let mut px = vec![1f32; w * h * 4];
@@ -204,9 +243,15 @@ pub fn decode(name: &str, b: &[u8]) -> Result<VideoFrame> {
         for (j, &p) in scan.iter().enumerate() {
             // the first axis counts scan lines, the second runs along one
             let (x, y) = if x1 {
-                (if p1 { i } else { w - 1 - i }, if p2 { h - 1 - j } else { j })
+                (
+                    if p1 { i } else { w - 1 - i },
+                    if p2 { h - 1 - j } else { j },
+                )
             } else {
-                (if p2 { j } else { w - 1 - j }, if p1 { h - 1 - i } else { i })
+                (
+                    if p2 { j } else { w - 1 - j },
+                    if p1 { h - 1 - i } else { i },
+                )
             };
             let [r, g, bl] = rgbe(p);
             if let Some(o) = px.get_mut((y * w + x) * 4..(y * w + x) * 4 + 3) {

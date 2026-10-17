@@ -35,35 +35,74 @@ fn id() -> egui::Id {
 /// document of `size` px (`zoom_levels` sets the range).
 pub fn scrub_zoom(zoom0: f32, dx: f32, size: [u32; 2]) -> f32 {
     // ±40 doublings already span far more than the zoom range; it keeps the power finite.
-    let e = if dx.is_finite() { (dx / DOUBLING).clamp(-40.0, 40.0) } else { 0.0 };
+    let e = if dx.is_finite() {
+        (dx / DOUBLING).clamp(-40.0, 40.0)
+    } else {
+        0.0
+    };
     crate::zoom_levels::clamp(zoom0 * e.exp2(), size)
 }
 
 /// Set `view` to `zoom` (device pixels per document pixel) with document point `doc` shown at
 /// screen point `screen` (egui points) on a display with `ppp` physical pixels per point.
-pub fn anchor_view(view: &mut View, xf: &ViewXform, screen: Pos2, doc: [f64; 2], zoom: f32, ppp: f32) {
+pub fn anchor_view(
+    view: &mut View,
+    xf: &ViewXform,
+    screen: Pos2,
+    doc: [f64; 2],
+    zoom: f32,
+    ppp: f32,
+) {
     view.zoom = zoom;
-    let ppp = if ppp.is_finite() && ppp > 0.0 { ppp } else { 1.0 };
+    let ppp = if ppp.is_finite() && ppp > 0.0 {
+        ppp
+    } else {
+        1.0
+    };
     let d = xf.unmap_vec((screen - xf.rect.center()) / (zoom / ppp));
     view.center = [doc[0] as f32 - d.x, doc[1] as f32 - d.y];
 }
 
 /// Route the canvas buttons for the Zoom tool. Returns true when it consumed the drag (the
 /// canvas then handles only the click).
-pub fn drag(app: &PhotocraftApp, ctx: &egui::Context, view: &mut View, xf: &ViewXform, b: &Buttons, pointer: Option<Pos2>) -> bool {
+pub fn drag(
+    app: &PhotocraftApp,
+    ctx: &egui::Context,
+    view: &mut View,
+    xf: &ViewXform,
+    b: &Buttons,
+    pointer: Option<Pos2>,
+) -> bool {
     let scrubby = app.ui.tool_options.zoom_scrubby;
     if b.started {
-        let anchor = ctx.input(|i| i.pointer.press_origin()).filter(|p| xf.rect.contains(*p)).or(pointer);
+        let anchor = ctx
+            .input(|i| i.pointer.press_origin())
+            .filter(|p| xf.rect.contains(*p))
+            .or(pointer);
         if let Some(anchor) = anchor {
-            let z = ZoomDrag { anchor, doc: xf.to_doc(anchor), zoom0: view.zoom, rect_to: (!scrubby).then_some(anchor) };
+            let z = ZoomDrag {
+                anchor,
+                doc: xf.to_doc(anchor),
+                zoom0: view.zoom,
+                rect_to: (!scrubby).then_some(anchor),
+            };
             ctx.data_mut(|d| d.insert_temp(id(), z));
         }
     }
-    let Some(mut z) = ctx.data(|d| d.get_temp::<ZoomDrag>(id())) else { return b.started || b.dragged || b.stopped };
+    let Some(mut z) = ctx.data(|d| d.get_temp::<ZoomDrag>(id())) else {
+        return b.started || b.dragged || b.stopped;
+    };
     if let Some(p) = pointer.filter(|_| b.dragged || b.stopped) {
         match z.rect_to.as_mut() {
             Some(to) => *to = p,
-            None => anchor_view(view, xf, z.anchor, z.doc, scrub_zoom(z.zoom0, p.x - z.anchor.x, view.doc_size), app.ppp),
+            None => anchor_view(
+                view,
+                xf,
+                z.anchor,
+                z.doc,
+                scrub_zoom(z.zoom0, p.x - z.anchor.x, view.doc_size),
+                app.ppp,
+            ),
         }
         ctx.data_mut(|d| d.insert_temp(id(), z));
     }
@@ -71,7 +110,14 @@ pub fn drag(app: &PhotocraftApp, ctx: &egui::Context, view: &mut View, xf: &View
         ctx.data_mut(|d| d.remove::<ZoomDrag>(id()));
         if let Some(to) = z.rect_to {
             let out = crate::workspace_ui::sticky_mods(app, ctx.input(|i| i.modifiers)).alt;
-            zoom_to_rect(view, xf, Rect::from_two_pos(z.anchor, to), z.anchor, out, app.ppp);
+            zoom_to_rect(
+                view,
+                xf,
+                Rect::from_two_pos(z.anchor, to),
+                z.anchor,
+                out,
+                app.ppp,
+            );
         }
     }
     true
@@ -82,7 +128,14 @@ pub fn drag(app: &PhotocraftApp, ctx: &egui::Context, view: &mut View, xf: &View
 fn zoom_to_rect(view: &mut View, xf: &ViewXform, r: Rect, anchor: Pos2, out: bool, ppp: f32) {
     if out || r.width() < 4.0 || r.height() < 4.0 {
         let doc = xf.to_doc(anchor);
-        anchor_view(view, xf, anchor, doc, crate::zoom_levels::step(view.zoom, if out { -1 } else { 1 }, view.doc_size), ppp);
+        anchor_view(
+            view,
+            xf,
+            anchor,
+            doc,
+            crate::zoom_levels::step(view.zoom, if out { -1 } else { 1 }, view.doc_size),
+            ppp,
+        );
         return;
     }
     // `k` is the ratio of two screen-point lengths, so it scales the zoom in any unit.
@@ -94,11 +147,25 @@ fn zoom_to_rect(view: &mut View, xf: &ViewXform, r: Rect, anchor: Pos2, out: boo
 
 /// Scrubby Zoom off: the zoom rectangle being dragged, as marching ants.
 pub fn draw(ctx: &egui::Context, painter: &egui::Painter) {
-    let Some(z) = ctx.data(|d| d.get_temp::<ZoomDrag>(id())) else { return };
+    let Some(z) = ctx.data(|d| d.get_temp::<ZoomDrag>(id())) else {
+        return;
+    };
     let Some(to) = z.rect_to else { return };
     let r = Rect::from_two_pos(z.anchor, to);
-    let r = Rect::from_min_max(r.min.round() + vec2(0.5, 0.5), r.max.round() + vec2(0.5, 0.5));
-    crate::tool_feedback::draw_ants(painter, &[r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom()], true);
+    let r = Rect::from_min_max(
+        r.min.round() + vec2(0.5, 0.5),
+        r.max.round() + vec2(0.5, 0.5),
+    );
+    crate::tool_feedback::draw_ants(
+        painter,
+        &[
+            r.left_top(),
+            r.right_top(),
+            r.right_bottom(),
+            r.left_bottom(),
+        ],
+        true,
+    );
 }
 
 #[cfg(test)]
@@ -115,7 +182,9 @@ mod tests {
         assert!((scrub_zoom(1.0, DOUBLING, DOC) - 2.0).abs() < 1e-5);
         assert!((scrub_zoom(1.0, -DOUBLING, DOC) - 0.5).abs() < 1e-5);
         // Monotone: every point of drag to the right zooms in a little more.
-        let zs: Vec<f32> = (0..50).map(|i| scrub_zoom(0.7, i as f32 * 3.0, DOC)).collect();
+        let zs: Vec<f32> = (0..50)
+            .map(|i| scrub_zoom(0.7, i as f32 * 3.0, DOC))
+            .collect();
         assert!(zs.windows(2).all(|w| w[1] > w[0]));
         assert_eq!(scrub_zoom(1.0, 1e6, DOC), crate::zoom_levels::MAX);
         assert_eq!(scrub_zoom(1.0, -1e6, DOC), crate::zoom_levels::min(DOC));
@@ -123,22 +192,33 @@ mod tests {
     }
 
     fn harness(scrubby: bool, ppp: f32) -> Harness<'static, PhotocraftApp> {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 400, "height": 300})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 400, "height": 300}))
+            .unwrap();
         app.sync_views();
         app.ui.extras.rulers = false;
         app.ui.tool = crate::state::Tool::Zoom;
         app.ui.tool_options.zoom_scrubby = scrubby;
-        let mut h = Harness::builder().with_size(vec2(1000.0, 700.0)).with_pixels_per_point(ppp).build_ui_state(
-            |ui, app: &mut PhotocraftApp| {
-                // Fonts set up after the first frame only apply from the next one.
-                if !ui.ctx().fonts(|f| f.families().contains(&egui::FontFamily::Name("medium".into()))) {
-                    return;
-                }
-                egui::CentralPanel::default().show(ui, |ui| crate::canvas::document_area(app, ui));
-            },
-            app,
-        );
+        let mut h = Harness::builder()
+            .with_size(vec2(1000.0, 700.0))
+            .with_pixels_per_point(ppp)
+            .build_ui_state(
+                |ui, app: &mut PhotocraftApp| {
+                    // Fonts set up after the first frame only apply from the next one.
+                    if !ui.ctx().fonts(|f| {
+                        f.families()
+                            .contains(&egui::FontFamily::Name("medium".into()))
+                    }) {
+                        return;
+                    }
+                    egui::CentralPanel::default()
+                        .show(ui, |ui| crate::canvas::document_area(app, ui));
+                },
+                app,
+            );
         PhotocraftApp::setup_context(&h.ctx, crate::theme::ThemeKind::ALL[0]);
         h.run_steps(4);
         h
@@ -149,7 +229,12 @@ mod tests {
     }
 
     fn press(h: &mut Harness<'static, PhotocraftApp>, p: Pos2, pressed: bool) {
-        h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Default::default() });
+        h.event(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        });
         h.step();
     }
 
@@ -166,19 +251,27 @@ mod tests {
         // Right: zooms in a little more each frame, the pressed document point stays put.
         let mut last = z0;
         for i in 1..=8 {
-            h.event(Event::PointerMoved(p0 + vec2(i as f32 * 15.0, (i % 3) as f32)));
+            h.event(Event::PointerMoved(
+                p0 + vec2(i as f32 * 15.0, (i % 3) as f32),
+            ));
             h.step();
             let z = h.state().current_zoom();
             assert!(z > last, "frame {i}: {last} -> {z}");
             last = z;
             let s = view_xf(&h).to_screen(doc0[0] as f32, doc0[1] as f32);
-            assert!(s.distance(p0) < 0.5, "anchor drifted to {s:?} (pressed at {p0:?})");
+            assert!(
+                s.distance(p0) < 0.5,
+                "anchor drifted to {s:?} (pressed at {p0:?})"
+            );
         }
         // Back left past the press point: zooms out below the start.
         h.event(Event::PointerMoved(p0 - vec2(60.0, 0.0)));
         h.step();
         let z = h.state().current_zoom();
-        assert!(z < z0 && (z - scrub_zoom(z0, -60.0, h.state().ui.views[0].doc_size)).abs() < 1e-4, "{z0} -> {z}");
+        assert!(
+            z < z0 && (z - scrub_zoom(z0, -60.0, h.state().ui.views[0].doc_size)).abs() < 1e-4,
+            "{z0} -> {z}"
+        );
         press(&mut h, p0 - vec2(60.0, 0.0), false);
         h.run_steps(2);
         // Release keeps the zoom; nothing was painted or recorded.
@@ -191,7 +284,10 @@ mod tests {
         press(&mut h, p0, true);
         press(&mut h, p0, false);
         h.run_steps(2);
-        assert_eq!(h.state().current_zoom(), crate::zoom_levels::step(zc, 1, h.state().ui.views[0].doc_size));
+        assert_eq!(
+            h.state().current_zoom(),
+            crate::zoom_levels::step(zc, 1, h.state().ui.views[0].doc_size)
+        );
     }
 
     #[test]
@@ -214,28 +310,56 @@ mod tests {
             h.state_mut().ui.view.flip_horizontal = flip;
             h.run_steps(2);
             let anchor = view_xf(&h).to_screen(140.0, 110.0);
-            let modifiers = egui::Modifiers { alt: out, ..Default::default() };
+            let modifiers = egui::Modifiers {
+                alt: out,
+                ..Default::default()
+            };
             h.event(Event::ModifiersChanged(modifiers));
             h.event(Event::PointerMoved(anchor));
             h.step();
-            h.event(Event::PointerButton { pos: anchor, button: PointerButton::Primary, pressed: true, modifiers });
+            h.event(Event::PointerButton {
+                pos: anchor,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers,
+            });
             h.step();
-            let steps: &[f32] = if scrubby { &[15.0, 50.0, 100.0, -40.0] } else { &[20.0] };
+            let steps: &[f32] = if scrubby {
+                &[15.0, 50.0, 100.0, -40.0]
+            } else {
+                &[20.0]
+            };
             let mut end = anchor;
             for &dx in steps {
                 end = anchor + vec2(dx, if scrubby { 0.0 } else { 1.0 });
                 h.event(Event::PointerMoved(end));
                 h.step();
                 let actual = view_xf(&h).to_screen(140.0, 110.0);
-                assert!(actual.distance(anchor) < 0.01, "rotation={rotation}, flip={flip}, ppp={ppp}: {anchor:?} -> {actual:?}");
-                let expected = if scrubby { scrub_zoom(1.0, dx, [400, 300]) } else { 1.0 };
+                assert!(
+                    actual.distance(anchor) < 0.01,
+                    "rotation={rotation}, flip={flip}, ppp={ppp}: {anchor:?} -> {actual:?}"
+                );
+                let expected = if scrubby {
+                    scrub_zoom(1.0, dx, [400, 300])
+                } else {
+                    1.0
+                };
                 assert!((h.state().current_zoom() - expected).abs() < 1e-5);
             }
-            h.event(Event::PointerButton { pos: end, button: PointerButton::Primary, pressed: false, modifiers });
+            h.event(Event::PointerButton {
+                pos: end,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers,
+            });
             h.step();
             h.run_steps(2);
             assert!(view_xf(&h).to_screen(140.0, 110.0).distance(anchor) < 0.01);
-            let expected = if scrubby { scrub_zoom(1.0, -40.0, [400, 300]) } else { crate::zoom_levels::step(1.0, if out { -1 } else { 1 }, [400, 300]) };
+            let expected = if scrubby {
+                scrub_zoom(1.0, -40.0, [400, 300])
+            } else {
+                crate::zoom_levels::step(1.0, if out { -1 } else { 1 }, [400, 300])
+            };
             assert!((h.state().current_zoom() - expected).abs() < 1e-5);
             assert_eq!(h.state().ui.views[0].rotation, rotation);
             assert_eq!(h.state().ui.view.flip_horizontal, flip);
@@ -258,7 +382,11 @@ mod tests {
             h.event(Event::PointerMoved(a + (b - a) * t));
             h.step();
         }
-        assert_eq!(h.state().current_zoom(), z0, "no zoom while the rectangle is drawn");
+        assert_eq!(
+            h.state().current_zoom(),
+            z0,
+            "no zoom while the rectangle is drawn"
+        );
         press(&mut h, b, false);
         h.run_steps(2);
         let z = h.state().current_zoom();
@@ -266,6 +394,9 @@ mod tests {
         assert!((z - z0 * k).abs() < z0 * k * 0.02, "{z0} * {k} vs {z}");
         // The rectangle's centre is now the view centre.
         let c = h.state().ui.views[0].center;
-        assert!((c[0] as f64 - mid[0]).abs() < 1.0 && (c[1] as f64 - mid[1]).abs() < 1.0, "{c:?} vs {mid:?}");
+        assert!(
+            (c[0] as f64 - mid[0]).abs() < 1.0 && (c[1] as f64 - mid[1]).abs() < 1.0,
+            "{c:?} vs {mid:?}"
+        );
     }
 }

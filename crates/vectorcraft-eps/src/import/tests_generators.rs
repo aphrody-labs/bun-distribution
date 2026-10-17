@@ -21,8 +21,21 @@ fn file(creator: &str, program: &str) -> Vec<u8> {
 /// `r` came in as vectors, without a warning of an error or of art left out.
 fn clean(r: &Imported) {
     assert!(!r.preview, "{:?}", r.warnings);
-    let bad = ["error", "couldn't", "left out", "mid-grey", "middle colour", "unknown"];
-    assert!(r.warnings.iter().all(|w| !bad.iter().any(|b| w.contains(b))), "{:?}", r.warnings);
+    let bad = [
+        "error",
+        "couldn't",
+        "left out",
+        "mid-grey",
+        "middle colour",
+        "unknown",
+    ];
+    assert!(
+        r.warnings
+            .iter()
+            .all(|w| !bad.iter().any(|b| w.contains(b))),
+        "{:?}",
+        r.warnings
+    );
 }
 
 fn open(creator: &str, program: &str) -> Imported {
@@ -33,7 +46,10 @@ fn open(creator: &str, program: &str) -> Imported {
 
 /// The objects of `kind` (`Node::kind_label`), down through groups.
 fn of_kind(d: &Document, kind: &str) -> Vec<std::sync::Arc<Node>> {
-    all(d).into_iter().filter(|n| n.kind_label() == kind).collect()
+    all(d)
+        .into_iter()
+        .filter(|n| n.kind_label() == kind)
+        .collect()
 }
 
 /// ASCII85 of Flate-compressed `data`, as inline data after an operator.
@@ -50,7 +66,9 @@ pub(super) fn pixel(d: &Document, x: u32, y: u32) -> [u8; 4] {
             _ => None,
         })
         .unwrap();
-    let img = image::load_from_memory(&d.images[&im].bytes).unwrap().to_rgba8();
+    let img = image::load_from_memory(&d.images[&im].bytes)
+        .unwrap()
+        .to_rgba8();
     img.get_pixel(x, y).0
 }
 
@@ -98,10 +116,33 @@ fn square(x0: f64, y0: f64, x1: f64, y1: f64) -> Vec<(f64, f64)> {
 #[test]
 fn cairo_files_read_as_vectors() {
     // Mask rows (1: paint, `Decode [1 0]`) before each image row.
-    let image = a85_flate(&[0b1000_0000, 255, 0, 0, 0, 255, 0, 0b0100_0000, 0, 0, 255, 255, 255, 255]);
+    let image = a85_flate(&[
+        0b1000_0000,
+        255,
+        0,
+        0,
+        0,
+        255,
+        0,
+        0b0100_0000,
+        0,
+        0,
+        255,
+        255,
+        255,
+        255,
+    ]);
     let mut points = square(150.0, 10.0, 190.0, 50.0);
     points.extend([(160.0, 20.0), (160.0, 40.0), (180.0, 40.0), (180.0, 20.0)]);
-    let mesh = a85_flate(&patch(&points, &[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 0.0]]));
+    let mesh = a85_flate(&patch(
+        &points,
+        &[
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 1.0, 0.0],
+        ],
+    ));
     let program = format!(
         r##"%%BeginProlog
 50 dict begin
@@ -187,24 +228,60 @@ end"##,
     // The tiling pattern is a pattern swatch of its cell.
     assert_eq!(d.patterns.len(), 1);
     let pat = &d.patterns[0];
-    assert!(near(pat.tile, Rect::new(0.0, 0.0, 10.0, 10.0)), "{:?}", pat.tile);
-    assert!(d.swatch(&pat.name).is_some_and(|s| matches!(s.paint, Paint::Pattern { .. })));
-    assert!(all(d).iter().any(|n| matches!(fill(n), Some(Paint::Pattern { .. }))));
+    assert!(
+        near(pat.tile, Rect::new(0.0, 0.0, 10.0, 10.0)),
+        "{:?}",
+        pat.tile
+    );
+    assert!(
+        d.swatch(&pat.name)
+            .is_some_and(|s| matches!(s.paint, Paint::Pattern { .. }))
+    );
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| matches!(fill(n), Some(Paint::Pattern { .. })))
+    );
     // The stitched gradient, the dashed curve, the type, the masked image, the stencil and the mesh.
-    assert!(all(d).iter().any(|n| matches!(fill(n), Some(Paint::Gradient(_)))));
-    assert!(all(d).iter().any(|n| stroke(n).is_some_and(|s| s.dash.is_some())));
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| matches!(fill(n), Some(Paint::Gradient(_))))
+    );
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| stroke(n).is_some_and(|s| s.dash.is_some()))
+    );
     assert_eq!(of_kind(d, "Type").len(), 1);
     assert_eq!(of_kind(d, "Image").len(), 2);
-    let im = all(d).into_iter().find(|n| matches!(&n.kind, NodeKind::Image(im) if im.width == 2)).unwrap();
-    let NodeKind::Image(im) = &im.kind else { panic!() };
-    let img = image::load_from_memory(&d.images[&im.key].bytes).unwrap().to_rgba8();
+    let im = all(d)
+        .into_iter()
+        .find(|n| matches!(&n.kind, NodeKind::Image(im) if im.width == 2))
+        .unwrap();
+    let NodeKind::Image(im) = &im.kind else {
+        panic!()
+    };
+    let img = image::load_from_memory(&d.images[&im.key].bytes)
+        .unwrap()
+        .to_rgba8();
     // Painted where the mask is 1, transparent where it is 0.
-    assert_eq!([img.get_pixel(0, 0).0, img.get_pixel(1, 0).0], [[255, 0, 0, 255], [0, 255, 0, 0]]);
-    assert_eq!([img.get_pixel(0, 1).0, img.get_pixel(1, 1).0], [[0, 0, 255, 0], [255, 255, 255, 255]]);
+    assert_eq!(
+        [img.get_pixel(0, 0).0, img.get_pixel(1, 0).0],
+        [[255, 0, 0, 255], [0, 255, 0, 0]]
+    );
+    assert_eq!(
+        [img.get_pixel(0, 1).0, img.get_pixel(1, 1).0],
+        [[0, 0, 255, 0], [255, 255, 255, 255]]
+    );
     let mesh = of_kind(d, "Mesh");
     assert_eq!(mesh.len(), 1);
     // `cm` turned user space y down, as the document is.
-    assert!(near(bounds(&mesh[0]), Rect::new(150.0, 10.0, 190.0, 50.0)), "{:?}", bounds(&mesh[0]));
+    assert!(
+        near(bounds(&mesh[0]), Rect::new(150.0, 10.0, 190.0, 50.0)),
+        "{:?}",
+        bounds(&mesh[0])
+    );
 }
 
 /// cairo's Type 3 fonts (fonts it can't embed otherwise): glyph procedures in an array, picked
@@ -233,18 +310,48 @@ showpage"##;
     let r = open("cairo", program);
     let d = &r.document;
     let groups = of_kind(d, "Group");
-    assert_eq!(groups.len(), 2, "{:?}", all(d).iter().map(|n| n.kind_label()).collect::<Vec<_>>());
+    assert_eq!(
+        groups.len(),
+        2,
+        "{:?}",
+        all(d).iter().map(|n| n.kind_label()).collect::<Vec<_>>()
+    );
     assert_eq!(groups[0].name.as_deref(), Some("AA"));
-    let glyphs: Vec<Rect> = groups[0].children().unwrap().iter().map(|n| bounds(n)).collect();
+    let glyphs: Vec<Rect> = groups[0]
+        .children()
+        .unwrap()
+        .iter()
+        .map(|n| bounds(n))
+        .collect();
     // 500 × 700 units at 20 pt (0.02 pt a unit) on the baseline 10 pt up the page; the second glyph
     // after the first one's width (600 units).
-    assert!(near(glyphs[0], Rect::new(10.0, 126.0, 20.0, 140.0)), "{glyphs:?}");
-    assert!(near(glyphs[1], Rect::new(22.0, 126.0, 32.0, 140.0)), "{glyphs:?}");
-    assert_eq!(fill(&groups[0].children().unwrap()[0]).and_then(Paint::color), Some(Color::rgb(1.0, 0.0, 0.0)));
+    assert!(
+        near(glyphs[0], Rect::new(10.0, 126.0, 20.0, 140.0)),
+        "{glyphs:?}"
+    );
+    assert!(
+        near(glyphs[1], Rect::new(22.0, 126.0, 32.0, 140.0)),
+        "{glyphs:?}"
+    );
+    assert_eq!(
+        fill(&groups[0].children().unwrap()[0]).and_then(Paint::color),
+        Some(Color::rgb(1.0, 0.0, 0.0))
+    );
     // `awidthshow` spaces them (2 more, 3 more after an "A"), in blue: the width measured right.
-    let second: Vec<Rect> = groups[1].children().unwrap().iter().map(|n| bounds(n)).collect();
-    assert!((second[1].x0 - second[0].x0 - 17.0).abs() < 1e-6, "{second:?}");
-    assert_eq!(fill(&groups[1].children().unwrap()[0]).and_then(Paint::color), Some(Color::rgb(0.0, 0.0, 1.0)));
+    let second: Vec<Rect> = groups[1]
+        .children()
+        .unwrap()
+        .iter()
+        .map(|n| bounds(n))
+        .collect();
+    assert!(
+        (second[1].x0 - second[0].x0 - 17.0).abs() < 1e-6,
+        "{second:?}"
+    );
+    assert_eq!(
+        fill(&groups[1].children().unwrap()[0]).and_then(Paint::color),
+        Some(Color::rgb(0.0, 0.0, 1.0))
+    );
 }
 
 /// matplotlib's PostScript backend: a `mpldict` of short procedures defined with `_d`, Type 3
@@ -313,14 +420,34 @@ showpage"##;
     let r = open("Matplotlib v3.9.0, https://matplotlib.org/", program);
     let d = &r.document;
     // The two glyphs are their outlines (even-odd, as `ce` fills them), at 20 pt.
-    let glyphs: Vec<_> = all(d).into_iter().filter(|n| matches!(n.kind, NodeKind::Path { rule: FillRule::EvenOdd, .. })).collect();
+    let glyphs: Vec<_> = all(d)
+        .into_iter()
+        .filter(|n| {
+            matches!(
+                n.kind,
+                NodeKind::Path {
+                    rule: FillRule::EvenOdd,
+                    ..
+                }
+            )
+        })
+        .collect();
     assert_eq!(glyphs.len(), 2);
     let a = bounds(&glyphs[0]);
-    assert!(near(a, Rect::new(20.16, 150.0 - 100.0 - 14.58, 33.52, 50.0)), "{a:?}");
+    assert!(
+        near(a, Rect::new(20.16, 150.0 - 100.0 - 14.58, 33.52, 50.0)),
+        "{a:?}"
+    );
     // Each marker is one object, filled and stroked; the image is its four pixels.
-    let markers = all(d).into_iter().filter(|n| fill(n).is_some() && stroke(n).is_some()).count();
+    let markers = all(d)
+        .into_iter()
+        .filter(|n| fill(n).is_some() && stroke(n).is_some())
+        .count();
     assert_eq!(markers, 2);
-    assert_eq!([pixel(d, 0, 0), pixel(d, 1, 0), pixel(d, 0, 1)], [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]]);
+    assert_eq!(
+        [pixel(d, 0, 0), pixel(d, 1, 0), pixel(d, 0, 1)],
+        [[255, 0, 0, 255], [0, 255, 0, 255], [0, 0, 255, 255]]
+    );
 }
 
 /// CorelDRAW: a `wCorel…Dict` procset of `@` procedures defined with `bd`, `ld` and `xd`,
@@ -390,10 +517,21 @@ spg"##;
     let r = open("CorelDRAW 2024", program);
     let d = &r.document;
     assert_eq!(d.color_mode, ColorMode::Cmyk);
-    let rect = all(d).into_iter().find(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.0, 1.0, 1.0, 0.0))).unwrap();
-    assert!(near(bounds(&rect), Rect::new(10.0, 90.0, 90.0, 140.0)), "{:?}", bounds(&rect));
-    assert!(all(d).iter().any(|n| stroke(n).is_some_and(|s| s.paint.color() == Some(Color::cmyk(1.0, 0.0, 0.0, 0.0)))));
-    let NodeKind::Text(t) = &of_kind(d, "Type")[0].kind else { panic!() };
+    let rect = all(d)
+        .into_iter()
+        .find(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.0, 1.0, 1.0, 0.0)))
+        .unwrap();
+    assert!(
+        near(bounds(&rect), Rect::new(10.0, 90.0, 90.0, 140.0)),
+        "{:?}",
+        bounds(&rect)
+    );
+    assert!(all(d).iter().any(|n| {
+        stroke(n).is_some_and(|s| s.paint.color() == Some(Color::cmyk(1.0, 0.0, 0.0, 0.0)))
+    }));
+    let NodeKind::Text(t) = &of_kind(d, "Type")[0].kind else {
+        panic!()
+    };
     assert!(t.plain_text().starts_with("Corel"));
 }
 
@@ -441,16 +579,47 @@ showpage"##
     );
     let r = open("Affinity Designer 2", &program);
     let d = &r.document;
-    let Some(Paint::Gradient(g)) = all(d).into_iter().find_map(|n| fill(&n).cloned()) else { panic!("no gradient") };
+    let Some(Paint::Gradient(g)) = all(d).into_iter().find_map(|n| fill(&n).cloned()) else {
+        panic!("no gradient")
+    };
     // The sampled function's colours, not its middle one: red, green, blue.
-    let at = |t: f32| g.gradient.stops.iter().find(|s| (s.offset - t).abs() < 1e-3).map(|s| s.color.to_rgb_uncalibrated());
-    assert_eq!([at(0.0), at(0.5), at(1.0)], [Some([1.0, 0.0, 0.0]), Some([0.0, 1.0, 0.0]), Some([0.0, 0.0, 1.0])]);
-    assert!(d.swatch("PANTONE 185 C").is_some_and(|s| s.spot));
-    assert!(all(d).iter().any(|n| matches!(fill(n), Some(Paint::Solid { swatch: Some(s), .. }) if s == "PANTONE 185 C")));
-    assert!(all(d).iter().any(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.3, 0.7, 0.0, 0.0))));
+    let at = |t: f32| {
+        g.gradient
+            .stops
+            .iter()
+            .find(|s| (s.offset - t).abs() < 1e-3)
+            .map(|s| s.color.to_rgb_uncalibrated())
+    };
     assert_eq!(
-        [pixel(d, 0, 0), pixel(d, 1, 0), pixel(d, 0, 1), pixel(d, 1, 1)],
-        [[255, 0, 0, 255], [0, 255, 0, 255], [255, 0, 255, 255], [0, 255, 255, 255]]
+        [at(0.0), at(0.5), at(1.0)],
+        [
+            Some([1.0, 0.0, 0.0]),
+            Some([0.0, 1.0, 0.0]),
+            Some([0.0, 0.0, 1.0])
+        ]
+    );
+    assert!(d.swatch("PANTONE 185 C").is_some_and(|s| s.spot));
+    assert!(all(d).iter().any(
+        |n| matches!(fill(n), Some(Paint::Solid { swatch: Some(s), .. }) if s == "PANTONE 185 C")
+    ));
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.3, 0.7, 0.0, 0.0)))
+    );
+    assert_eq!(
+        [
+            pixel(d, 0, 0),
+            pixel(d, 1, 0),
+            pixel(d, 0, 1),
+            pixel(d, 1, 1)
+        ],
+        [
+            [255, 0, 0, 255],
+            [0, 255, 0, 255],
+            [255, 0, 255, 255],
+            [0, 255, 255, 255]
+        ]
     );
 }
 
@@ -518,10 +687,23 @@ count op_count sub {pop} repeat countdictstack dict_count sub {end} repeat b4_in
 showpage"##;
     let r = open("LibreOffice 24.2", program);
     let d = &r.document;
-    let rect = all(d).into_iter().find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.2, 0.4, 0.8))).unwrap();
-    assert!(near(bounds(&rect), Rect::new(10.0, 10.0, 90.0, 60.0)), "{:?}", bounds(&rect));
-    assert!(all(d).iter().any(|n| stroke(n).is_some_and(|s| (s.width - 1.0).abs() < 1e-9)));
-    let NodeKind::Text(t) = &of_kind(d, "Type")[0].kind else { panic!() };
+    let rect = all(d)
+        .into_iter()
+        .find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.2, 0.4, 0.8)))
+        .unwrap();
+    assert!(
+        near(bounds(&rect), Rect::new(10.0, 10.0, 90.0, 60.0)),
+        "{:?}",
+        bounds(&rect)
+    );
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| stroke(n).is_some_and(|s| (s.width - 1.0).abs() < 1e-9))
+    );
+    let NodeKind::Text(t) = &of_kind(d, "Type")[0].kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "Office");
 }
 
@@ -581,15 +763,33 @@ cleartomark countdictstack exch sub { end } repeat restore
 showpage"##;
     let r = open("GPL Ghostscript 10.04.0 (eps2write)", program);
     let d = &r.document;
-    let red = all(d).into_iter().find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(1.0, 0.0, 0.0))).unwrap();
-    assert!(near(bounds(&red), Rect::new(10.0, 100.0, 90.0, 140.0)), "{:?}", bounds(&red));
-    let form = all(d).into_iter().find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.0, 0.0, 1.0))).unwrap();
-    assert!(near(bounds(&form), Rect::new(120.0, 30.0, 140.0, 50.0)), "{:?}", bounds(&form));
+    let red = all(d)
+        .into_iter()
+        .find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(1.0, 0.0, 0.0)))
+        .unwrap();
+    assert!(
+        near(bounds(&red), Rect::new(10.0, 100.0, 90.0, 140.0)),
+        "{:?}",
+        bounds(&red)
+    );
+    let form = all(d)
+        .into_iter()
+        .find(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.0, 0.0, 1.0)))
+        .unwrap();
+    assert!(
+        near(bounds(&form), Rect::new(120.0, 30.0, 140.0, 50.0)),
+        "{:?}",
+        bounds(&form)
+    );
     assert_eq!(of_kind(d, "Type").len(), 1);
     // Two triangles of a free-form mesh, the second on the first one's edge.
     let meshes = of_kind(d, "Mesh");
     assert_eq!(meshes.len(), 2);
-    assert!(near(bounds(&meshes[1]), Rect::new(150.0, 90.0, 190.0, 140.0)), "{:?}", bounds(&meshes[1]));
+    assert!(
+        near(bounds(&meshes[1]), Rect::new(150.0, 90.0, 190.0, 140.0)),
+        "{:?}",
+        bounds(&meshes[1])
+    );
 }
 
 /// A procset written as the PostScript Language Reference (3rd ed.) describes the Level 2 and 3
@@ -639,9 +839,20 @@ end
 showpage"##;
     let r = open("Example Generator 1.0", program);
     let d = &r.document;
-    let rect = all(d).into_iter().find(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.0, 0.94, 0.94, 0.12))).unwrap();
-    assert!(near(bounds(&rect), Rect::new(10.0, 10.0, 90.0, 60.0)), "{:?}", bounds(&rect));
-    assert!(all(d).iter().any(|n| stroke(n).is_some_and(|s| s.width == 2.0)));
+    let rect = all(d)
+        .into_iter()
+        .find(|n| fill(n).and_then(Paint::color) == Some(Color::cmyk(0.0, 0.94, 0.94, 0.12)))
+        .unwrap();
+    assert!(
+        near(bounds(&rect), Rect::new(10.0, 10.0, 90.0, 60.0)),
+        "{:?}",
+        bounds(&rect)
+    );
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| stroke(n).is_some_and(|s| s.width == 2.0))
+    );
     assert_eq!(of_kind(d, "Type").len(), 1);
 }
 
@@ -658,13 +869,23 @@ fn mesh_and_function_shadings_become_gradient_meshes() {
     );
     clean(&r);
     let m = &of_kind(&r.document, "Mesh")[0];
-    assert!(near(bounds(m), Rect::new(10.0, 40.0, 60.0, 90.0)), "{:?}", bounds(m));
+    assert!(
+        near(bounds(m), Rect::new(10.0, 40.0, 60.0, 90.0)),
+        "{:?}",
+        bounds(m)
+    );
     let NodeKind::Mesh(g) = &m.kind else { panic!() };
     // Its first corner (the domain's origin) is the first sample.
     assert_eq!(g.points[0].color, Color::rgb(1.0, 0.0, 0.0));
 
     // Type 4 packed: 8-bit flags, coordinates and components; a triangle and one on its edge.
-    let tri = [[0u8, 0, 0, 255, 0, 0], [0, 255, 0, 0, 255, 0], [0, 0, 255, 0, 0, 255], [1, 255, 255, 255, 255, 0]].concat();
+    let tri = [
+        [0u8, 0, 0, 255, 0, 0],
+        [0, 255, 0, 0, 255, 0],
+        [0, 0, 255, 0, 0, 255],
+        [1, 255, 255, 255, 255, 0],
+    ]
+    .concat();
     let r = read(&format!(
         "<< /ShadingType 4 /ColorSpace /DeviceRGB /BitsPerCoordinate 8 /BitsPerComponent 8 /BitsPerFlag 8 \
          /Decode [0 255 0 255 0 1 0 1 0 1] /DataSource <{}> >> [0.2 0 0 0.2 0 0] concat shfill",
@@ -682,7 +903,10 @@ fn mesh_and_function_shadings_become_gradient_meshes() {
     assert_eq!(of_kind(&r.document, "Mesh").len(), 2);
 
     // Type 6: a patch, then one sharing its right side (flag 2).
-    let first: Vec<String> = square(10.0, 10.0, 40.0, 40.0).iter().map(|(x, y)| format!("{x} {y}")).collect();
+    let first: Vec<String> = square(10.0, 10.0, 40.0, 40.0)
+        .iter()
+        .map(|(x, y)| format!("{x} {y}"))
+        .collect();
     let right = "40 40 50 40 60 40 70 40 70 30 70 20 70 10 60 10 50 10";
     let r = read(&format!(
         "<< /ShadingType 6 /ColorSpace /DeviceRGB /DataSource [0 {} 1 0 0 0 1 0 0 0 1 1 1 0  2 {right} 1 0 1 0 1 1] >> shfill",
@@ -691,7 +915,11 @@ fn mesh_and_function_shadings_become_gradient_meshes() {
     clean(&r);
     let patches = of_kind(&r.document, "Mesh");
     assert_eq!(patches.len(), 2);
-    assert!(near(bounds(&patches[1]), Rect::new(40.0, 60.0, 70.0, 90.0)), "{:?}", bounds(&patches[1]));
+    assert!(
+        near(bounds(&patches[1]), Rect::new(40.0, 60.0, 70.0, 90.0)),
+        "{:?}",
+        bounds(&patches[1])
+    );
 
     // A mesh through a shading pattern fills the path it paints, clipped to it.
     let r = read(
@@ -701,7 +929,11 @@ fn mesh_and_function_shadings_become_gradient_meshes() {
     );
     clean(&r);
     let o = objects(&r.document);
-    assert!(matches!(o[0].kind, NodeKind::Group { clip: true, .. }), "{:?}", o[0].kind_label());
+    assert!(
+        matches!(o[0].kind, NodeKind::Group { clip: true, .. }),
+        "{:?}",
+        o[0].kind_label()
+    );
     assert_eq!(of_kind(&r.document, "Mesh").len(), 2);
 }
 
@@ -716,7 +948,10 @@ fn masked_images_in_every_interleaving() {
     );
     clean(&r);
     // 1100 0110: painted red, then masked out.
-    assert_eq!((pixel(&r.document, 0, 0), pixel(&r.document, 1, 0)[3]), ([255, 0, 0, 255], 0));
+    assert_eq!(
+        (pixel(&r.document, 0, 0), pixel(&r.document, 1, 0)[3]),
+        ([255, 0, 0, 255], 0)
+    );
     // Separate sources, the mask at twice the resolution.
     let r = read(
         "/DeviceGray setcolorspace 20 20 scale << /ImageType 3 /InterleaveType 3 \
@@ -732,12 +967,28 @@ fn masked_images_in_every_interleaving() {
 /// not reported.
 #[test]
 fn errors_name_the_operator_and_the_procedures() {
-    let r = read("{ 1 (a) add } stopped pop 0 0 10 10 rectfill /inner { 1 (a) add } def /outer { inner } def outer");
-    assert!(r.warnings[0].contains("(typecheck in `add`), in `inner` in `outer`"), "{:?}", r.warnings);
+    let r = read(
+        "{ 1 (a) add } stopped pop 0 0 10 10 rectfill /inner { 1 (a) add } def /outer { inner } def outer",
+    );
+    assert!(
+        r.warnings[0].contains("(typecheck in `add`), in `inner` in `outer`"),
+        "{:?}",
+        r.warnings
+    );
     let r = read("0 0 10 10 rectfill /p { frobnicate } def p");
-    assert!(r.warnings[0].contains("it uses `frobnicate`, which VectorCraft's PostScript reader doesn't know, in `p`"), "{:?}", r.warnings);
+    assert!(
+        r.warnings[0].contains(
+            "it uses `frobnicate`, which VectorCraft's PostScript reader doesn't know, in `p`"
+        ),
+        "{:?}",
+        r.warnings
+    );
     let r = read("0 0 10 10 rectfill 0 0 moveto (x) cvn moveto");
-    assert!(r.warnings[0].contains("typecheck in `moveto`: a number"), "{:?}", r.warnings);
+    assert!(
+        r.warnings[0].contains("typecheck in `moveto`: a number"),
+        "{:?}",
+        r.warnings
+    );
 }
 
 /// Operators programs use to probe the interpreter or measure things: file `status`, `token`,
@@ -757,11 +1008,17 @@ fn probing_operators_answer() {
     super::tests::check("currentcolorrendering /ColorRenderingType known");
     super::tests::check("[ (x) /y ] gcheck not");
     // `strokepath` makes the stroke's outline the path; `nulldevice` paints nothing.
-    let r = read("4 setlinewidth 10 50 moveto 90 50 lineto strokepath fill gsave nulldevice 0 0 100 100 rectfill grestore");
+    let r = read(
+        "4 setlinewidth 10 50 moveto 90 50 lineto strokepath fill gsave nulldevice 0 0 100 100 rectfill grestore",
+    );
     clean(&r);
     let o = objects(&r.document);
     assert_eq!(o.len(), 1);
-    assert!(near(bounds(&o[0]), Rect::new(10.0, 48.0, 90.0, 52.0)), "{:?}", bounds(&o[0]));
+    assert!(
+        near(bounds(&o[0]), Rect::new(10.0, 48.0, 90.0, 52.0)),
+        "{:?}",
+        bounds(&o[0])
+    );
 }
 
 /// A file whose PostScript can't be read opens its Windows metafile preview (vectors) when its
@@ -772,7 +1029,14 @@ fn metafile_and_epsi_previews_stand_in() {
     // A placeable metafile of one red rectangle over its 1000-unit frame.
     let wmf = wmf_rectangle();
     let mut bytes = vec![0xC5, 0xD0, 0xD3, 0xC6];
-    let words = [30u32, ps.len() as u32, 30 + ps.len() as u32, wmf.len() as u32, 0, 0];
+    let words = [
+        30u32,
+        ps.len() as u32,
+        30 + ps.len() as u32,
+        wmf.len() as u32,
+        0,
+        0,
+    ];
     for w in words {
         bytes.extend(w.to_le_bytes());
     }
@@ -781,16 +1045,30 @@ fn metafile_and_epsi_previews_stand_in() {
     bytes.extend(&wmf);
     let r = import(&bytes).unwrap();
     assert!(r.preview);
-    assert!(r.warnings[0].contains("frobnicate") && r.warnings[0].contains("metafile"), "{:?}", r.warnings);
-    let paths: Vec<_> = all(&r.document).into_iter().filter(|n| n.kind_label() == "Path").collect();
+    assert!(
+        r.warnings[0].contains("frobnicate") && r.warnings[0].contains("metafile"),
+        "{:?}",
+        r.warnings
+    );
+    let paths: Vec<_> = all(&r.document)
+        .into_iter()
+        .filter(|n| n.kind_label() == "Path")
+        .collect();
     assert!(!paths.is_empty());
-    assert!(near(bounds(&paths[0]), Rect::new(10.0, 10.0, 90.0, 90.0)), "{:?}", bounds(&paths[0]));
+    assert!(
+        near(bounds(&paths[0]), Rect::new(10.0, 10.0, 90.0, 90.0)),
+        "{:?}",
+        bounds(&paths[0])
+    );
 
     // An EPSI preview: 4 × 2 pixels, 1 bit, black on the left.
     let epsi = "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n%%EndComments\n%%BeginPreview: 4 2 1 2\n% C0\n% C0\n%%EndPreview\nfrobnicate\n";
     let r = import(epsi.as_bytes()).unwrap();
     assert!(r.preview, "{:?}", r.warnings);
-    assert_eq!([pixel(&r.document, 0, 0), pixel(&r.document, 3, 1)], [[0, 0, 0, 255], [255, 255, 255, 255]]);
+    assert_eq!(
+        [pixel(&r.document, 0, 0), pixel(&r.document, 3, 1)],
+        [[0, 0, 0, 255], [255, 255, 255, 255]]
+    );
 }
 
 /// A placeable Windows metafile (1000 units an inch) of a red rectangle from (100, 100) to
@@ -804,7 +1082,9 @@ fn wmf_rectangle() -> Vec<u8> {
         w16(&mut v, x);
     }
     w32(&mut v, 0);
-    let sum = v.chunks(2).fold(0u16, |a, c| a ^ u16::from_le_bytes([c[0], c[1]]));
+    let sum = v
+        .chunks(2)
+        .fold(0u16, |a, c| a ^ u16::from_le_bytes([c[0], c[1]]));
     w16(&mut v, sum);
     let records: Vec<Vec<u16>> = vec![
         vec![0x020B, 0, 0],               // SetWindowOrg
@@ -835,7 +1115,9 @@ fn wmf_rectangle() -> Vec<u8> {
 /// runs after the dictionary that defined them is gone, and as an operand at the top.
 #[test]
 fn immediately_evaluated_names_are_read_as_their_values() {
-    super::tests::check("2 dict begin /v 7 def /p { //v } def currentdict end /d exch def d /p get exec 7 eq");
+    super::tests::check(
+        "2 dict begin /v 7 def /p { //v } def currentdict end /d exch def d /p get exec 7 eq",
+    );
     super::tests::check("/w 3 def //w 3 eq");
     let r = read("/p { 0 0 10 10 } def //p rectfill");
     clean(&r);
@@ -856,8 +1138,16 @@ fn user_paths_and_file_reads() {
     clean(&r);
     let o = objects(&r.document);
     assert_eq!(o.len(), 2);
-    assert!(near(bounds(&o[0]), Rect::new(10.0, 60.0, 40.0, 90.0)), "{:?}", bounds(&o[0]));
-    assert!(stroke(&o[1]).is_some() && near(bounds(&o[1]), Rect::new(60.0, 10.0, 90.0, 40.0)), "{:?}", bounds(&o[1]));
+    assert!(
+        near(bounds(&o[0]), Rect::new(10.0, 60.0, 40.0, 90.0)),
+        "{:?}",
+        bounds(&o[0])
+    );
+    assert!(
+        stroke(&o[1]).is_some() && near(bounds(&o[1]), Rect::new(60.0, 10.0, 90.0, 40.0)),
+        "{:?}",
+        bounds(&o[1])
+    );
     super::tests::check(
         "(ab) /ASCIIHexDecode filter pop (4142) /ASCIIHexDecode filter dup read pop 65 eq exch dup 0 setfileposition read pop 65 eq and",
     );
@@ -876,7 +1166,11 @@ fn hostile_patterns_glyphs_and_shadings_end() {
          /PaintProc { pop P setpattern 0 0 5 5 rectfill } >> matrix makepattern def \
          P setpattern 0 0 50 50 rectfill",
     );
-    assert!(!r.preview && r.warnings.iter().any(|w| w.contains("nested too deeply")), "{:?}", r.warnings);
+    assert!(
+        !r.preview && r.warnings.iter().any(|w| w.contains("nested too deeply")),
+        "{:?}",
+        r.warnings
+    );
     let r = import(&super::tests::eps(
         "0 0 1 1 rectfill /T << /FontType 3 /FontMatrix [1 0 0 1 0 0] /Encoding [/a] \
          /BuildChar { pop pop 0 0 moveto (a) show } >> definefont setfont 0 0 moveto (a) show",
@@ -887,9 +1181,18 @@ fn hostile_patterns_glyphs_and_shadings_end() {
         "0 0 1 1 rectfill << /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 1 0] \
          /Function << /FunctionType 0 /Domain [0 1] /Range [0 1] /Size [99999999] /BitsPerSample 8 /DataSource () >> >> shfill",
     );
-    assert!(r.warnings[0].contains("rangecheck in `shfill`: a sampled function"), "{:?}", r.warnings);
+    assert!(
+        r.warnings[0].contains("rangecheck in `shfill`: a sampled function"),
+        "{:?}",
+        r.warnings
+    );
     // Procedures nesting through operators that run them end at the nesting limit.
-    for body in ["/f { { f } exec } def f", "/f { true { f } if } def f", "/f { 1 { f } repeat } def f", "/f { { f } stopped } def f"] {
+    for body in [
+        "/f { { f } exec } def f",
+        "/f { true { f } if } def f",
+        "/f { 1 { f } repeat } def f",
+        "/f { { f } stopped } def f",
+    ] {
         assert!(import(&super::tests::eps(body)).is_err(), "{body}");
     }
     let r = read("[1e-9] 0 setdash 0 0 moveto 1000 1000 lineto strokepath fill");
@@ -902,8 +1205,12 @@ fn stitch_stops(body: &str) -> Vec<f32> {
     let r = read(body);
     assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     let o = objects(&r.document);
-    let [node] = o.as_slice() else { panic!("{o:?}") };
-    let Some(Paint::Gradient(g)) = fill(node) else { panic!("{node:?}") };
+    let [node] = o.as_slice() else {
+        panic!("{o:?}")
+    };
+    let Some(Paint::Gradient(g)) = fill(node) else {
+        panic!("{node:?}")
+    };
     g.gradient.stops.iter().map(|s| s.offset).collect()
 }
 
@@ -969,7 +1276,13 @@ fn a_stitching_function_that_refers_to_itself_is_rejected_not_crashed() {
     // Not an abort: the reader stops at the error, keeps the rectangle drawn before it, and leaves
     // the rest of the program unread (see `import`: what follows the error is left out).
     assert_eq!(objects(&r.document).len(), 1);
-    assert!(r.warnings.iter().any(|w| w.contains("read up to an error") && w.contains("Function")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("read up to an error") && w.contains("Function")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 /// A stitching function need not point at itself to blow up: a `Functions` array of 1025
@@ -1019,10 +1332,16 @@ end
 showpage"##;
     let r = open("Example Generator 1.0", program);
     let d = &r.document;
-    let Some(Paint::Gradient(g)) = all(d).into_iter().find_map(|n| fill(&n).cloned()) else { panic!("no gradient") };
+    let Some(Paint::Gradient(g)) = all(d).into_iter().find_map(|n| fill(&n).cloned()) else {
+        panic!("no gradient")
+    };
     assert_eq!(g.gradient.kind, vectorcraft_color::GradientKind::Radial);
     // `act` ran the procedure under key 0 (green); there is none under key 2.
-    assert!(all(d).iter().any(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.0, 1.0, 0.0))));
+    assert!(
+        all(d)
+            .iter()
+            .any(|n| fill(n).and_then(Paint::color) == Some(Color::rgb(0.0, 1.0, 0.0)))
+    );
     assert_eq!(objects(d).len(), 3);
 }
 

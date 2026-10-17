@@ -20,7 +20,11 @@ pub struct Entry {
 }
 
 fn pct(done: usize, total: usize) -> f64 {
-    if total == 0 { 0.0 } else { 100.0 * done as f64 / total as f64 }
+    if total == 0 {
+        0.0
+    } else {
+        100.0 * done as f64 / total as f64
+    }
 }
 
 /// The markdown for docs/parity-checklist.md. Ids are counted once (the first catalog row wins), tabs keep
@@ -49,19 +53,34 @@ pub fn render(entries: &[Entry]) -> String {
     s += "Each entry is an Excel ribbon or menu command (feature names only). It counts as implemented when GridCraft \
           registers a command with the same id. This measures breadth only; the overall assessment (depth, \
           fidelity, effort) is in [target-app-parity.md](target-app-parity.md).\n\n";
-    s += &format!("**Overall: {done} / {total} commands implemented ({:.1}%).**\n\n", pct(done, total));
+    s += &format!(
+        "**Overall: {done} / {total} commands implemented ({:.1}%).**\n\n",
+        pct(done, total)
+    );
     s += "| Tab | Implemented | Total | Parity |\n|---|---|---|---|\n";
     for t in &tabs {
         let rows: Vec<&&Entry> = unique.iter().filter(|e| e.tab == *t).collect();
         let d = rows.iter().filter(|e| e.done).count();
-        s += &format!("| {t} | {d} | {} | {:.0}% |\n", rows.len(), pct(d, rows.len()));
+        s += &format!(
+            "| {t} | {d} | {} | {:.0}% |\n",
+            rows.len(),
+            pct(d, rows.len())
+        );
     }
     for t in &tabs {
         let rows: Vec<&&Entry> = unique.iter().filter(|e| e.tab == *t).collect();
         let d = rows.iter().filter(|e| e.done).count();
-        s += &format!("\n## {t} ({d} / {}, {:.0}%)\n", rows.len(), pct(d, rows.len()));
+        s += &format!(
+            "\n## {t} ({d} / {}, {:.0}%)\n",
+            rows.len(),
+            pct(d, rows.len())
+        );
         for (title, want) in [("Implemented", true), ("Missing", false)] {
-            let list: Vec<String> = rows.iter().filter(|e| e.done == want).map(|e| format!("- `{}` {} ({})", e.id, e.label, e.group)).collect();
+            let list: Vec<String> = rows
+                .iter()
+                .filter(|e| e.done == want)
+                .map(|e| format!("- `{}` {} ({})", e.id, e.label, e.group))
+                .collect();
             if !list.is_empty() {
                 s += &format!("\n{title}:\n\n{}\n", list.join("\n"));
             }
@@ -88,7 +107,10 @@ fn entries() -> Vec<Entry> {
 #[cfg(feature = "engine")]
 fn summary_line() -> String {
     let (done, total) = gridcraft_engine::catalog::parity();
-    format!("parity: {done} / {total} catalog commands implemented ({:.1}%)", pct(done, total))
+    format!(
+        "parity: {done} / {total} catalog commands implemented ({:.1}%)",
+        pct(done, total)
+    )
 }
 
 #[cfg(feature = "engine")]
@@ -100,14 +122,22 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
         match *a {
             "--check" => check = true,
             "--out" => out = PathBuf::from(it.next().ok_or("--out needs a path")?),
-            other => return Err(format!("parity: unknown argument `{other}` (usage: cargo xtask parity [--check] [--out PATH])")),
+            other => {
+                return Err(format!(
+                    "parity: unknown argument `{other}` (usage: cargo xtask parity [--check] [--out PATH])"
+                ));
+            }
         }
     }
     let text = render(&entries());
     if check {
-        let current = std::fs::read_to_string(&out).map_err(|e| format!("{}: {e}", out.display()))?;
+        let current =
+            std::fs::read_to_string(&out).map_err(|e| format!("{}: {e}", out.display()))?;
         if current != text {
-            return Err(format!("{} is out of date; run `cargo xtask parity`", out.display()));
+            return Err(format!(
+                "{} is out of date; run `cargo xtask parity`",
+                out.display()
+            ));
         }
         println!("{} ({} up to date)", summary_line(), out.display());
         return Ok(());
@@ -130,13 +160,27 @@ mod tests {
     use super::*;
 
     fn e(id: &str, tab: &str, done: bool) -> Entry {
-        Entry { id: id.into(), tab: tab.into(), group: "G".into(), label: id.to_uppercase(), done }
+        Entry {
+            id: id.into(),
+            tab: tab.into(),
+            group: "G".into(),
+            label: id.to_uppercase(),
+            done,
+        }
     }
 
     #[test]
     fn groups_by_tab_and_counts_unique_ids() {
-        let s = render(&[e("file.new", "File", true), e("file.open", "File", false), e("home.bold", "Home", true), e("file.new", "Home", false)]);
-        assert!(s.contains("**Overall: 2 / 3 commands implemented (66.7%).**"), "{s}");
+        let s = render(&[
+            e("file.new", "File", true),
+            e("file.open", "File", false),
+            e("home.bold", "Home", true),
+            e("file.new", "Home", false),
+        ]);
+        assert!(
+            s.contains("**Overall: 2 / 3 commands implemented (66.7%).**"),
+            "{s}"
+        );
         assert!(s.contains("| File | 1 | 2 | 50% |"), "{s}");
         assert!(s.contains("| Home | 1 | 1 | 100% |"), "{s}");
         assert!(s.contains("## File (1 / 2, 50%)"));

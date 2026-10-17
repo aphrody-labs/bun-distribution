@@ -20,9 +20,17 @@ fn setup(inline: bool) -> (vectorcraft_engine::Session, NodeId) {
     exec(&mut s, "edit.clear", json!({}));
     // Type is painted with the current fill: black, not the circle's red.
     exec(&mut s, "paint.setFill", json!({"color": "#000000"}));
-    let id = id_of(&exec(&mut s, "text.create", json!({"x": 20, "y": 100, "text": "Tap  now", "size": 20})));
+    let id = id_of(&exec(
+        &mut s,
+        "text.create",
+        json!({"x": 20, "y": 100, "text": "Tap  now", "size": 20}),
+    ));
     if inline {
-        exec(&mut s, "text.insertInline", json!({"id": id.0, "at": 4, "symbol": "Dot"}));
+        exec(
+            &mut s,
+            "text.insertInline",
+            json!({"id": id.0, "at": 4, "symbol": "Dot"}),
+        );
     }
     exec(&mut s, "select.none", json!({}));
     (s, id)
@@ -57,19 +65,30 @@ fn canvas_draws_the_symbol_where_the_layout_puts_it() {
     let d = doc(&s);
     let r = art_rect(&d, id);
     // 20 pt tall at 20 pt type, on the pen after "Tap ", centred on the cap-height middle.
-    assert!((r.height() - 20.0).abs() < 0.5 && (r.width() - 20.0).abs() < 0.5, "{r:?}");
+    assert!(
+        (r.height() - 20.0).abs() < 0.5 && (r.width() - 20.0).abs() < 0.5,
+        "{r:?}"
+    );
     assert!(r.x0 > 50.0 && r.x0 < 70.0, "{r:?}");
     assert!(r.center().y < 100.0 && r.center().y > 90.0, "{r:?}");
     let img = raster::render_region(&d, Rect::new(0.0, 0.0, 200.0, 150.0), 2.0);
     let px = |x: f64, y: f64| img.over_white((x * 2.0) as u32, (y * 2.0) as u32);
-    assert!(red(px(r.center().x, r.center().y)), "{:?} at {:?}", px(r.center().x, r.center().y), r.center());
+    assert!(
+        red(px(r.center().x, r.center().y)),
+        "{:?} at {:?}",
+        px(r.center().x, r.center().y),
+        r.center()
+    );
     // Only there: just outside the circle, no red.
     assert!(!red(px(r.x0 - 3.0, r.center().y)) && !red(px(r.center().x, r.y0 - 3.0)));
     // Without the graphic nothing is red, and the text after it sits further left.
     let (plain, pid) = setup(false);
     let pd = doc(&plain);
     let img = raster::render_region(&pd, Rect::new(0.0, 0.0, 200.0, 150.0), 2.0);
-    assert_eq!(img.count(|p| p[0] > 200 && p[1] < 80 && p[2] < 80 && p[3] > 200), 0);
+    assert_eq!(
+        img.count(|p| p[0] > 200 && p[1] < 80 && p[2] < 80 && p[3] > 200),
+        0
+    );
     let w = text(&d, id).bounds().unwrap().width() - text(&pd, pid).bounds().unwrap().width();
     assert!((w - 20.0).abs() < 0.5, "{w}");
 }
@@ -84,15 +103,20 @@ fn canvas_applies_the_text_objects_opacity_to_its_inline_art() {
     let img = raster::render_region(&d, Rect::new(0.0, 0.0, 200.0, 150.0), 2.0);
     let p = img.over_white((r.center().x * 2.0) as u32, (r.center().y * 2.0) as u32);
     // Half red over white: pink.
-    assert!(p[0] > 240 && (100..180).contains(&p[1]) && (100..180).contains(&p[2]), "{p:?}");
+    assert!(
+        p[0] > 240 && (100..180).contains(&p[1]) && (100..180).contains(&p[2]),
+        "{p:?}"
+    );
 }
 
 fn svg_of(s: &mut vectorcraft_engine::Session, params: Value) -> String {
     let v = exec(s, "document.serialize", params);
-    v["text"]
-        .as_str()
-        .map(str::to_string)
-        .unwrap_or_else(|| String::from_utf8(vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap()).unwrap())
+    v["text"].as_str().map(str::to_string).unwrap_or_else(|| {
+        String::from_utf8(
+            vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap(),
+        )
+        .unwrap()
+    })
 }
 
 #[test]
@@ -101,7 +125,10 @@ fn svg_keeps_live_text_and_draws_the_symbol() {
     let svg = svg_of(&mut s, json!({"format": "svg", "outlineText": false}));
     // Live text without the object replacement character; the text after the graphic is placed
     // after it.
-    assert!(svg.contains("<text") && svg.contains(">Tap") && svg.contains("now<"), "{svg}");
+    assert!(
+        svg.contains("<text") && svg.contains(">Tap") && svg.contains("now<"),
+        "{svg}"
+    );
     assert!(!svg.contains('\u{FFFC}'), "{svg}");
     // The symbol's art: a <symbol> def and a <use> of it.
     assert!(svg.contains("<symbol id=\"Dot\""), "{svg}");
@@ -113,7 +140,10 @@ fn svg_keeps_live_text_and_draws_the_symbol() {
     let p = img.over_white((r.center().x * 2.0) as u32, (r.center().y * 2.0) as u32);
     assert!(red(p), "{p:?}");
     // Text as outlines and fewer tspans still draw it.
-    for params in [json!({"format": "svg", "outlineText": true}), json!({"format": "svg", "outlineText": false, "fewerTspans": true})] {
+    for params in [
+        json!({"format": "svg", "outlineText": true}),
+        json!({"format": "svg", "outlineText": false, "fewerTspans": true}),
+    ] {
         let svg = svg_of(&mut s, params.clone());
         assert!(svg.contains("xlink:href=\"#Dot\""), "{params}: {svg}");
         assert!(!svg.contains('\u{FFFC}'), "{params}");
@@ -133,7 +163,13 @@ fn pdf_draws_the_symbol_art() {
     // Without it, nothing red.
     let (mut plain, _) = setup(false);
     let v = exec(&mut plain, "document.serialize", json!({"format": "pdf"}));
-    let back = vectorcraft_pdf::import(&vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap()).unwrap();
+    let back = vectorcraft_pdf::import(
+        &vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap(),
+    )
+    .unwrap();
     let img = raster::render_region(&back, Rect::new(0.0, 0.0, 200.0, 150.0), 2.0);
-    assert_eq!(img.count(|p| p[0] > 200 && p[1] < 80 && p[2] < 80 && p[3] > 200), 0);
+    assert_eq!(
+        img.count(|p| p[0] > 200 && p[1] < 80 && p[2] < 80 && p[3] > 200),
+        0
+    );
 }

@@ -22,7 +22,11 @@ fn la_reduction_moyenne_les_pixels_au_lieu_d_en_jeter() {
     let src = [0, 0, 0, 255, 255, 255, 255, 255];
     let out = reduire_rgba(&src, 2, 1, 1, 1).expect("réduction");
     assert_eq!(out[3], 255, "l'alpha doit rester opaque");
-    assert!((126..=129).contains(&out[0]), "attendu un gris median, obtenu {}", out[0]);
+    assert!(
+        (126..=129).contains(&out[0]),
+        "attendu un gris median, obtenu {}",
+        out[0]
+    );
 }
 
 #[test]
@@ -41,7 +45,10 @@ fn un_pixel_transparent_ne_teinte_pas_son_voisin() {
 
 #[test]
 fn les_dimensions_incoherentes_sont_refusees() {
-    assert!(reduire_rgba(&[0; 8], 3, 1, 1, 1).is_none(), "tampon trop court");
+    assert!(
+        reduire_rgba(&[0; 8], 3, 1, 1, 1).is_none(),
+        "tampon trop court"
+    );
     assert!(reduire_rgba(&[0; 8], 2, 1, 0, 1).is_none(), "cible nulle");
     assert!(reduire_rgba(&[], 0, 0, 1, 1).is_none(), "source vide");
 }
@@ -50,7 +57,9 @@ fn les_dimensions_incoherentes_sont_refusees() {
 fn le_jeu_complet_est_produit_et_chaque_png_a_sa_taille() {
     let p = pet();
     let frame = &p.animation("idle").expect("idle").frames[0];
-    let fichiers = p.brand_assets(frame, TAILLES_FAVICON).expect("assets produits");
+    let fichiers = p
+        .brand_assets(frame, TAILLES_FAVICON)
+        .expect("assets produits");
 
     for t in TAILLES_FAVICON {
         let f = fichiers
@@ -74,7 +83,11 @@ fn l_ico_declare_ses_entrees_avec_des_offsets_qui_tombent_juste() {
     let p = pet();
     let frame = &p.animation("idle").expect("idle").frames[0];
     let fichiers = p.brand_assets(frame, TAILLES_FAVICON).expect("assets");
-    let ico = &fichiers.iter().find(|f| f.nom == "favicon.ico").expect("favicon.ico").octets;
+    let ico = &fichiers
+        .iter()
+        .find(|f| f.nom == "favicon.ico")
+        .expect("favicon.ico")
+        .octets;
 
     assert_eq!(&ico[0..2], &[0, 0], "champ réservé");
     assert_eq!(&ico[2..4], &[1, 0], "type icône");
@@ -112,7 +125,10 @@ fn le_manifeste_porte_les_deux_tailles_exigees_par_une_app_installable() {
             "un manifeste installable exige {taille}"
         );
     }
-    assert!(icones.iter().any(|i| i["purpose"] == "any maskable"), "au moins une icône maskable");
+    assert!(
+        icones.iter().any(|i| i["purpose"] == "any maskable"),
+        "au moins une icône maskable"
+    );
     assert!(
         icones.iter().all(|icon| icon["src"]
             .as_str()
@@ -127,7 +143,10 @@ fn le_svg_reste_leger_et_bien_forme() {
     let svg = svg_depuis_png(&png, 1, 1, "Test");
     assert!(svg.starts_with("<svg"));
     assert!(svg.contains("data:image/png;base64,"));
-    assert!(svg.contains("<title>Test</title>"), "un titre pour l'accessibilité");
+    assert!(
+        svg.contains("<title>Test</title>"),
+        "un titre pour l'accessibilité"
+    );
 
     // Le SVG du jeu complet ne doit pas embarquer la plus grande icône : en base64 (+33 %),
     // la 512 pesait 138 Ko, soit plus que toutes les autres réunies.
@@ -147,15 +166,25 @@ fn tauri_icon_set_has_the_bundle_names_sizes_and_a_256_px_ico() {
     let p = pet();
     let frame = &p.animation("idle").expect("idle").frames[0];
     let fichiers = p.tauri_icons(frame).expect("tauri icons");
-    for (nom, cote) in
-        [("32x32.png", 32), ("128x128.png", 128), ("128x128@2x.png", 256), ("icon.png", 512)]
-    {
-        let f = fichiers.iter().find(|f| f.nom == nom).unwrap_or_else(|| panic!("{nom} missing"));
+    for (nom, cote) in [
+        ("32x32.png", 32),
+        ("128x128.png", 128),
+        ("128x128@2x.png", 256),
+        ("icon.png", 512),
+    ] {
+        let f = fichiers
+            .iter()
+            .find(|f| f.nom == nom)
+            .unwrap_or_else(|| panic!("{nom} missing"));
         let w = u32::from_be_bytes(f.octets[16..20].try_into().expect("width"));
         let h = u32::from_be_bytes(f.octets[20..24].try_into().expect("height"));
         assert_eq!((w, h), (cote, cote), "{nom}");
     }
-    let ico = &fichiers.iter().find(|f| f.nom == "icon.ico").expect("icon.ico").octets;
+    let ico = &fichiers
+        .iter()
+        .find(|f| f.nom == "icon.ico")
+        .expect("icon.ico")
+        .octets;
     let n = usize::from(u16::from_le_bytes([ico[4], ico[5]]));
     assert_eq!(n, 7, "16, 24, 32, 48, 64, 128 and 256 px");
     // The 256 px entry is written as 0 by the ICO convention.

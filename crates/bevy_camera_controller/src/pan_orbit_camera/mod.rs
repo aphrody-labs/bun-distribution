@@ -167,12 +167,12 @@ pub mod extensions;
 /// Common imports.
 pub mod prelude {
     pub use crate::{
-        pan_orbit_camera::controller::{component::*, transform_utils::*, *},
         pan_orbit_camera::DefaultPanOrbitCameraPlugins,
+        pan_orbit_camera::controller::{component::*, transform_utils::*, *},
     };
 }
 
-use bevy_app::{prelude::*, PluginGroupBuilder};
+use bevy_app::{PluginGroupBuilder, prelude::*};
 use bevy_ecs::prelude::SystemSet;
 
 /// Adds [`pan_orbit_camera`](crate::pan_orbit_camera) functionality with all extensions and the default input plugin.

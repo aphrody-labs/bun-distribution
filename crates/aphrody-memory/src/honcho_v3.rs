@@ -118,11 +118,17 @@ impl HonchoV3Provider {
     }
 
     fn messages_path(&self) -> String {
-        format!("/v3/workspaces/{}/sessions/{}/messages/", self.workspace_id, self.session_id)
+        format!(
+            "/v3/workspaces/{}/sessions/{}/messages/",
+            self.workspace_id, self.session_id
+        )
     }
 
     fn chat_path(&self, peer_id: &str) -> String {
-        format!("/v3/workspaces/{}/peers/{}/chat", self.workspace_id, peer_id)
+        format!(
+            "/v3/workspaces/{}/peers/{}/chat",
+            self.workspace_id, peer_id
+        )
     }
 
     fn workspace_path(&self) -> String {
@@ -169,7 +175,7 @@ fn extract_message_id(body: &str) -> Option<String> {
                 .and_then(|m| m.get("id"))
                 .and_then(serde_json::Value::as_str)
                 .map(str::to_string)
-        },
+        }
         serde_json::Value::Array(arr) => arr
             .first()
             .and_then(|m| m.get("id"))
@@ -224,7 +230,7 @@ fn flatten_detail(detail: &serde_json::Value) -> Option<String> {
                 })
                 .collect();
             (!msgs.is_empty()).then(|| msgs.join("; "))
-        },
+        }
         _ => None,
     }
 }
@@ -293,8 +299,11 @@ impl MemoryProvider for HonchoV3Provider {
             return Err(MemoryError::InvalidArgument("agent_id is required".into()));
         }
         let query = q.q.unwrap_or_else(|| DEFAULT_DIALECTIC_QUERY.to_string());
-        let body =
-            DialecticBody { query, session_id: Some(self.session_id.clone()), stream: false };
+        let body = DialecticBody {
+            query,
+            session_id: Some(self.session_id.clone()),
+            stream: false,
+        };
         let resp = self
             .client
             .post(self.endpoint(&self.chat_path(&q.agent_id)))
@@ -373,7 +382,10 @@ mod tests {
 
     #[test]
     fn extract_id_from_bare_array() {
-        assert_eq!(extract_message_id(r#"[{"id":"m4"}]"#).as_deref(), Some("m4"));
+        assert_eq!(
+            extract_message_id(r#"[{"id":"m4"}]"#).as_deref(),
+            Some("m4")
+        );
     }
 
     #[test]
@@ -384,7 +396,10 @@ mod tests {
     #[test]
     fn flatten_validation_detail_array() {
         let v = serde_json::json!([{ "msg": "field required" }, { "msg": "too long" }]);
-        assert_eq!(flatten_detail(&v).as_deref(), Some("field required; too long"));
+        assert_eq!(
+            flatten_detail(&v).as_deref(),
+            Some("field required; too long")
+        );
     }
 
     #[test]

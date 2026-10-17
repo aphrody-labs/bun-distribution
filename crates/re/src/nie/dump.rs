@@ -30,9 +30,17 @@ mod tests {
 
     #[test]
     fn nie_static_address() {
-        let h = Hit { va: 0, module: Some("nie.exe".to_string()), rva: Some(0xD7_2145) };
+        let h = Hit {
+            va: 0,
+            module: Some("nie.exe".to_string()),
+            rva: Some(0xD7_2145),
+        };
         assert_eq!(h.nie_static(), Some(0x1_40D7_2145));
-        let other = Hit { va: 0, module: Some("steam_api64.dll".to_string()), rva: Some(1) };
+        let other = Hit {
+            va: 0,
+            module: Some("steam_api64.dll".to_string()),
+            rva: Some(1),
+        };
         assert_eq!(other.nie_static(), None);
     }
 

@@ -69,7 +69,11 @@ macro_rules! screen_color {
         #[doc = $doc]
         pub const $ident: ScreenColor = ScreenColor {
             name: $name,
-            oklch: Oklch { l: $l, c: $c, h: $h },
+            oklch: Oklch {
+                l: $l,
+                c: $c,
+                h: $h,
+            },
             hex: $hex,
             capture: $capture,
             crop: ($x, $y, $w, $hh),
@@ -867,7 +871,11 @@ pub const SKEW_CSS: &str = "-10deg";
 /// Les longueurs mesurées sur les captures (px à 2560×1440, ÷ 2 pour le canevas 1280×720 du
 /// jeu, cf. `CLAUDE.md` § *Game screens*) : (nom, valeur CSS, provenance).
 pub const SCREEN_LENGTHS: [(&str, &str, &str); 5] = [
-    ("screen-header-height", "80px", "options.png : la barre couvre y 0..160 (160 px / 2)"),
+    (
+        "screen-header-height",
+        "80px",
+        "options.png : la barre couvre y 0..160 (160 px / 2)",
+    ),
     (
         "screen-tab-height",
         "32px",
@@ -883,7 +891,11 @@ pub const SCREEN_LENGTHS: [(&str, &str, &str); 5] = [
         "20px",
         "options.png : la touche « V » tient dans 41x41 (crop 915,1350,41,41) / 2",
     ),
-    ("screen-tile-height", "84px", "main_menu.png : la tuile couvre y 768..934 (167 px / 2)"),
+    (
+        "screen-tile-height",
+        "84px",
+        "main_menu.png : la tuile couvre y 768..934 (167 px / 2)",
+    ),
 ];
 
 /// Le nom de la couleur `--screen-*` donné, ou `None`.
@@ -1405,7 +1417,9 @@ mod tests {
     fn chaque_couleur_cite_une_capture_du_manifeste() {
         for c in SCREEN_COLORS {
             assert!(
-                crate::screens::CAPTURES.iter().any(|cap| cap.file == c.capture),
+                crate::screens::CAPTURES
+                    .iter()
+                    .any(|cap| cap.file == c.capture),
                 "{} cite {} qui n'est pas une capture connue",
                 c.name,
                 c.capture
@@ -1424,7 +1438,12 @@ mod tests {
     #[test]
     fn les_bords_ajustes_ont_un_r2_qui_autorise_a_les_citer() {
         for s in SLANT_SAMPLES {
-            assert!(s.r2 >= 0.95, "{} : R² {} trop bas pour citer un angle", s.capture, s.r2);
+            assert!(
+                s.r2 >= 0.95,
+                "{} : R² {} trop bas pour citer un angle",
+                s.capture,
+                s.r2
+            );
             assert!(s.left_deg < 0.0 && s.right_deg < 0.0);
         }
     }
@@ -1448,7 +1467,11 @@ mod tests {
             let palette =
                 palette_crop(&img, Crop { x, y, w, h }, usize::from(ancre.k)).expect("mesure");
             let dominante = &palette[0];
-            assert_eq!(dominante.hex, ancre.hex, "{} : la classe dominante a changé", ancre.name);
+            assert_eq!(
+                dominante.hex, ancre.hex,
+                "{} : la classe dominante a changé",
+                ancre.name
+            );
             let [l, c, hh] = dominante.oklch;
             let (a1, b1) = (c * hh.to_radians().cos(), c * hh.to_radians().sin());
             let (a2, b2) = (
@@ -1456,7 +1479,11 @@ mod tests {
                 ancre.oklch.c * ancre.oklch.h.to_radians().sin(),
             );
             let de = ((l - ancre.oklch.l).powi(2) + (a1 - a2).powi(2) + (b1 - b2).powi(2)).sqrt();
-            assert!(de < 0.02, "{} : ΔE {de:.4} entre la mesure et la constante", ancre.name);
+            assert!(
+                de < 0.02,
+                "{} : ΔE {de:.4} entre la mesure et la constante",
+                ancre.name
+            );
             assert!(
                 (dominante.part_pct - ancre.share_pct).abs() < 0.5,
                 "{} : part {:.2} % mesurée contre {:.2} % transposée",

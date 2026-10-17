@@ -50,18 +50,31 @@ pub struct RowRects {
 /// Lay out `items` (right to left, with their widths; `Blend` is optional) inside `row`,
 /// leaving the name the span from `name_left`. Returns the indicator rects and the name's
 /// right limit.
-pub fn layout(row: Rect, name_left: f32, items: &[(Indicator, f32)]) -> (Vec<(Indicator, Rect)>, f32) {
+pub fn layout(
+    row: Rect,
+    name_left: f32,
+    items: &[(Indicator, f32)],
+) -> (Vec<(Indicator, Rect)>, f32) {
     let mut right = row.right() - RIGHT_PAD;
     let mut out = Vec::with_capacity(items.len());
     for &(kind, w) in items {
         let w = w.max(0.0);
         // The fx badge hugs its triangle; everything else keeps a gap.
-        let gap = if kind == Indicator::Fx && out.last().is_some_and(|(k, _)| *k == Indicator::FxTriangle) { 1.0 } else { GAP };
+        let gap = if kind == Indicator::Fx
+            && out.last().is_some_and(|(k, _)| *k == Indicator::FxTriangle)
+        {
+            1.0
+        } else {
+            GAP
+        };
         let left = right - w;
         if kind == Indicator::Blend && left - GAP - name_left < MIN_NAME_W {
             continue;
         }
-        out.push((kind, Rect::from_min_max(pos2(left, row.top()), pos2(right, row.bottom()))));
+        out.push((
+            kind,
+            Rect::from_min_max(pos2(left, row.top()), pos2(right, row.bottom())),
+        ));
         right = left - gap;
     }
     let name_right = out.last().map_or(right, |(_, r)| r.left() - GAP);
@@ -90,13 +103,34 @@ pub fn indent(depth: usize, row_width: f32, fixed: f32) -> f32 {
 }
 
 /// A single-line galley cut with "…" to `max_width` (nothing when there's no room).
-pub fn truncated(painter: &Painter, text: &str, font: FontId, color: egui::Color32, italics: bool, max_width: f32) -> Option<Arc<Galley>> {
+pub fn truncated(
+    painter: &Painter,
+    text: &str,
+    font: FontId,
+    color: egui::Color32,
+    italics: bool,
+    max_width: f32,
+) -> Option<Arc<Galley>> {
     if max_width < 8.0 {
         return None;
     }
     let mut job = egui::text::LayoutJob::default();
-    job.append(text, 0.0, egui::TextFormat { font_id: font, color, italics, ..Default::default() });
-    job.wrap = egui::text::TextWrapping { max_width, max_rows: 1, break_anywhere: true, overflow_character: Some('…') };
+    job.append(
+        text,
+        0.0,
+        egui::TextFormat {
+            font_id: font,
+            color,
+            italics,
+            ..Default::default()
+        },
+    );
+    job.wrap = egui::text::TextWrapping {
+        max_width,
+        max_rows: 1,
+        break_anywhere: true,
+        overflow_character: Some('…'),
+    };
     Some(painter.layout_job(job))
 }
 
@@ -119,7 +153,8 @@ pub fn indicators(
     let has_fx = !l.effects.items.is_empty();
     let show_blend = l.blend != BlendMode::Normal && l.blend != BlendMode::PassThrough;
     let fx_galley = has_fx.then(|| painter.layout_no_wrap("fx".into(), fx_font, t.text_dim));
-    let blend_galley = show_blend.then(|| painter.layout_no_wrap(tl!(l.blend.label()).into(), blend_font, t.text_faint));
+    let blend_galley = show_blend
+        .then(|| painter.layout_no_wrap(tl!(l.blend.label()).into(), blend_font, t.text_faint));
     let mut items = Vec::new();
     if locked {
         items.push((Indicator::Lock, ICON_W));
@@ -139,8 +174,20 @@ pub fn indicators(
     let cy = row.center().y;
     for &(kind, r) in &rects {
         match kind {
-            Indicator::Lock => icons::paint(ui, Rect::from_center_size(r.center(), vec2(ICON_W, ICON_W)), "lock", 12.0, t.text_faint),
-            Indicator::Link => icons::paint(ui, Rect::from_center_size(r.center(), vec2(ICON_W, ICON_W)), "link-2", 12.0, t.text_faint),
+            Indicator::Lock => icons::paint(
+                ui,
+                Rect::from_center_size(r.center(), vec2(ICON_W, ICON_W)),
+                "lock",
+                12.0,
+                t.text_faint,
+            ),
+            Indicator::Link => icons::paint(
+                ui,
+                Rect::from_center_size(r.center(), vec2(ICON_W, ICON_W)),
+                "link-2",
+                12.0,
+                t.text_faint,
+            ),
             Indicator::Fx => {
                 if let Some(g) = fx_galley.clone() {
                     painter.galley(pos2(r.left(), cy - g.size().y / 2.0), g, t.text_dim);
@@ -153,20 +200,44 @@ pub fn indicators(
             }
             Indicator::FxTriangle => {
                 let resp = ui.interact(r, ui.id().with(("fx-disclosure", l.id.0)), Sense::click());
-                paint_triangle(painter, r.center(), fx_open, if resp.hovered() { t.text } else { t.icon });
+                paint_triangle(
+                    painter,
+                    r.center(),
+                    fx_open,
+                    if resp.hovered() { t.text } else { t.icon },
+                );
                 if resp.clicked() {
                     clicked = true;
                     let all = ui.input(|i| i.modifiers.alt);
-                    actions.push(("layer.setEffectsExpanded".into(), json!({"layer": l.id.0, "expanded": !fx_open, "all": all})));
+                    actions.push((
+                        "layer.setEffectsExpanded".into(),
+                        json!({"layer": l.id.0, "expanded": !fx_open, "all": all}),
+                    ));
                 }
-                let (verb, name) = (if fx_open { tl!("Collapse") } else { tl!("Expand") }, l.name.clone());
+                let (verb, name) = (
+                    if fx_open {
+                        tl!("Collapse")
+                    } else {
+                        tl!("Expand")
+                    },
+                    l.name.clone(),
+                );
                 let tip = if fx_open {
                     tl!("Hide the layer's effects  ({key}-click: all layers)")
                 } else {
                     tl!("Show the layer's effects  ({key}-click: all layers)")
                 };
-                let resp = resp.on_hover_text(crate::i18n::fmt(tip, &[("key", &crate::shortcuts::pretty("Alt"))]));
-                resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, format!("{verb} effects {name}")));
+                let resp = resp.on_hover_text(crate::i18n::fmt(
+                    tip,
+                    &[("key", &crate::shortcuts::pretty("Alt"))],
+                ));
+                resp.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Button,
+                        true,
+                        format!("{verb} effects {name}"),
+                    )
+                });
             }
         }
     }
@@ -177,16 +248,32 @@ pub fn indicators(
 pub fn paint_triangle(painter: &Painter, c: Pos2, open: bool, color: egui::Color32) {
     let s = 3.0;
     let pts = if open {
-        vec![pos2(c.x - s, c.y - s * 0.6), pos2(c.x + s, c.y - s * 0.6), pos2(c.x, c.y + s * 0.6)]
+        vec![
+            pos2(c.x - s, c.y - s * 0.6),
+            pos2(c.x + s, c.y - s * 0.6),
+            pos2(c.x, c.y + s * 0.6),
+        ]
     } else {
-        vec![pos2(c.x - s * 0.6, c.y - s), pos2(c.x + s * 0.6, c.y), pos2(c.x - s * 0.6, c.y + s)]
+        vec![
+            pos2(c.x - s * 0.6, c.y - s),
+            pos2(c.x + s * 0.6, c.y),
+            pos2(c.x - s * 0.6, c.y + s),
+        ]
     };
     painter.add(Shape::convex_polygon(pts, color, Stroke::NONE));
 }
 
 /// Paint `text` left-aligned at `x`, vertically centred on `cy`, cut to end before `right`.
 /// Returns the painted rect.
-pub fn label(painter: &Painter, x: f32, cy: f32, right: f32, text: &str, font: FontId, color: egui::Color32) -> Option<Rect> {
+pub fn label(
+    painter: &Painter,
+    x: f32,
+    cy: f32,
+    right: f32,
+    text: &str,
+    font: FontId,
+    color: egui::Color32,
+) -> Option<Rect> {
     let g = truncated(painter, text, font, color, false, right - x)?;
     let r = Align2::LEFT_CENTER.anchor_size(pos2(x, cy), g.size());
     painter.galley(r.min, g, color);
@@ -196,7 +283,10 @@ pub fn label(painter: &Painter, x: f32, cy: f32, right: f32, text: &str, font: F
 /// The Layers panel's own items at the top of its panel menu (Photoshop's flyout).
 pub fn panel_menu(app: &mut crate::PhotocraftApp, ui: &mut egui::Ui) {
     let can = app.session.is_enabled("layer.setExpanded");
-    if ui.add_enabled(can, egui::Button::new(tl!("Collapse All Groups"))).clicked() {
+    if ui
+        .add_enabled(can, egui::Button::new(tl!("Collapse All Groups")))
+        .clicked()
+    {
         if let Err(e) = app.run("layer.setExpanded", json!({"all": true, "expanded": false})) {
             app.ui.status = e;
             app.ui.status_error = true;
@@ -215,12 +305,16 @@ pub fn begin(ctx: &egui::Context) {
 }
 
 pub fn record(ctx: &egui::Context, r: RowRects) {
-    ctx.data_mut(|d| d.get_temp_mut_or_default::<Vec<RowRects>>(rects_id()).push(r));
+    ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Vec<RowRects>>(rects_id())
+            .push(r)
+    });
 }
 
 /// The rows the Layers panel drew last frame.
 pub fn recorded(ctx: &egui::Context) -> Vec<RowRects> {
-    ctx.data(|d| d.get_temp::<Vec<RowRects>>(rects_id())).unwrap_or_default()
+    ctx.data(|d| d.get_temp::<Vec<RowRects>>(rects_id()))
+        .unwrap_or_default()
 }
 
 // ------------------------------------------------------------------ in-place rename (#314)
@@ -243,7 +337,12 @@ impl Rename {
     /// The command that applies it, if it changes the name.
     pub fn commit_action(&self) -> Option<(String, Value)> {
         let name = self.text.trim();
-        (!name.is_empty() && name != self.original).then(|| ("layer.setProps".to_string(), json!({"layer": self.layer, "name": name})))
+        (!name.is_empty() && name != self.original).then(|| {
+            (
+                "layer.setProps".to_string(),
+                json!({"layer": self.layer, "name": name}),
+            )
+        })
     }
 }
 
@@ -284,7 +383,16 @@ pub fn start_rename(ctx: &egui::Context, layer: u64, name: &str) -> Option<(Stri
     if previous.as_ref().is_some_and(|r| r.layer == layer) {
         return None;
     }
-    store(ctx, Some(Rename { layer, original: name.to_string(), text: name.to_string(), focused: false, pass: ctx.cumulative_pass_nr() }));
+    store(
+        ctx,
+        Some(Rename {
+            layer,
+            original: name.to_string(),
+            text: name.to_string(),
+            focused: false,
+            pass: ctx.cumulative_pass_nr(),
+        }),
+    );
     previous.and_then(|r| r.commit_action())
 }
 
@@ -313,13 +421,21 @@ pub fn rename_field(ui: &mut egui::Ui, layer: u64, rect: Rect) -> Option<(String
     let ctx = ui.ctx().clone();
     let mut r = rename(&ctx).filter(|r| r.layer == layer)?;
     let id = egui::Id::new(("layer-rename-field", layer));
-    let te = ui.put(rect, egui::TextEdit::singleline(&mut r.text).id(id).font(FontId::proportional(12.5)));
+    let te = ui.put(
+        rect,
+        egui::TextEdit::singleline(&mut r.text)
+            .id(id)
+            .font(FontId::proportional(12.5)),
+    );
     r.pass = ctx.cumulative_pass_nr();
     if !r.focused {
         te.request_focus();
         // Photoshop selects the whole name, so typing replaces it.
         if let Some(mut state) = egui::TextEdit::load_state(&ctx, id) {
-            let all = egui::text::CCursorRange::two(egui::text::CCursor::new(0), egui::text::CCursor::new(r.text.chars().count()));
+            let all = egui::text::CCursorRange::two(
+                egui::text::CCursor::new(0),
+                egui::text::CCursor::new(r.text.chars().count()),
+            );
             state.cursor.set_char_range(Some(all));
             state.store(&ctx, id);
         }
@@ -327,7 +443,13 @@ pub fn rename_field(ui: &mut egui::Ui, layer: u64, rect: Rect) -> Option<(String
         store(&ctx, Some(r));
         return None;
     }
-    let (enter, tab, esc) = ctx.input(|i| (i.key_pressed(egui::Key::Enter), i.key_pressed(egui::Key::Tab), i.key_pressed(egui::Key::Escape)));
+    let (enter, tab, esc) = ctx.input(|i| {
+        (
+            i.key_pressed(egui::Key::Enter),
+            i.key_pressed(egui::Key::Tab),
+            i.key_pressed(egui::Key::Escape),
+        )
+    });
     if tab {
         let up = ctx.input(|i| i.modifiers.shift);
         ctx.data_mut(|d| d.insert_temp(next_rename_id(), (layer, up)));

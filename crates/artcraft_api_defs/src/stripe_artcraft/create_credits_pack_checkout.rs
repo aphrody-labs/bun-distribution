@@ -6,12 +6,11 @@ pub const CREATE_CREDITS_PACK_CHECKOUT_URL_PATH: &str = "/v1/stripe_artcraft/che
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct StripeArtcraftCreateCreditsPackCheckoutRequest {
-  pub credits_pack: Option<ArtcraftCreditsPackSlug>,
+    pub credits_pack: Option<ArtcraftCreditsPackSlug>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct StripeArtcraftCreateCreditsPackCheckoutResponse {
-  pub success: bool,
-  pub stripe_checkout_redirect_url: String,
+    pub success: bool,
+    pub stripe_checkout_redirect_url: String,
 }
-

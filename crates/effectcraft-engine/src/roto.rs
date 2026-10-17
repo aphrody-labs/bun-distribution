@@ -194,12 +194,17 @@ pub(crate) fn sync(before: &Project, after: &mut Project) -> Vec<(ItemId, LayerI
     let mut todo = vec![];
     let mut set = vec![];
     for (cid, it) in &after.items {
-        let ItemKind::Comp(c) = &it.kind else { continue };
+        let ItemKind::Comp(c) = &it.kind else {
+            continue;
+        };
         for l in &c.layers {
             let Some(fxg) = l.effects() else { continue };
             for g in fxg.groups().filter(|g| is_roto(g)) {
                 let key = input_key(after, *cid, l, g.uid);
-                let old = before.comp(*cid).and_then(|bc| bc.layer(l.id)).and_then(|ol| ol.props.find_group(g.uid));
+                let old = before
+                    .comp(*cid)
+                    .and_then(|bc| bc.layer(l.id))
+                    .and_then(|ol| ol.props.find_group(g.uid));
                 if str_of(g, INPUT_KEY) != key {
                     set.push((*cid, l.id, g.uid, key));
                     todo.push((*cid, l.id, g.uid));
@@ -210,7 +215,11 @@ pub(crate) fn sync(before: &Project, after: &mut Project) -> Vec<(ItemId, LayerI
         }
     }
     for (cid, lid, uid, key) in set {
-        if let Some(g) = after.comp_mut(cid).and_then(|c| c.layer_mut(lid)).and_then(|l| l.props.find_group_mut(uid)) {
+        if let Some(g) = after
+            .comp_mut(cid)
+            .and_then(|c| c.layer_mut(lid))
+            .and_then(|l| l.props.find_group_mut(uid))
+        {
             let had = !str_of(g, INPUT_KEY).is_empty();
             set_str(g, INPUT_KEY, key);
             if had {
@@ -219,7 +228,11 @@ pub(crate) fn sync(before: &Project, after: &mut Project) -> Vec<(ItemId, LayerI
         }
     }
     todo.retain(|(c, l, u)| {
-        after.comp(*c).and_then(|c| c.layer(*l)).and_then(|l| l.props.find_group(*u)).is_some_and(|g| !fx::data(&params_static(g)).is_empty())
+        after
+            .comp(*c)
+            .and_then(|c| c.layer(*l))
+            .and_then(|l| l.props.find_group(*u))
+            .is_some_and(|g| !fx::data(&params_static(g)).is_empty())
     });
     todo
 }
@@ -230,10 +243,20 @@ pub(crate) fn params_static(g: &PropGroup) -> Params {
 }
 
 /// Evaluated parameters of an instance at comp time `t`.
-pub(crate) fn params_at(p: &Project, cid: ItemId, layer: &Layer, g: &PropGroup, t: Tick, expr: Option<&dyn ExprHost>) -> Params {
+pub(crate) fn params_at(
+    p: &Project,
+    cid: ItemId,
+    layer: &Layer,
+    g: &PropGroup,
+    t: Tick,
+    expr: Option<&dyn ExprHost>,
+) -> Params {
     match p.comp(cid) {
         Some(c) => {
-            let ctx = EvalCtx { expr, ..EvalCtx::new(p, cid, c, t) };
+            let ctx = EvalCtx {
+                expr,
+                ..EvalCtx::new(p, cid, c, t)
+            };
             flatten_params(g, &mut |pr| ctx.value(layer, pr))
         }
         None => params_static(g),
@@ -249,7 +272,9 @@ pub(crate) fn layer_size(p: &Project, comp: &effectcraft_project::Comp, layer: &
 pub fn frame_limits(comp: &effectcraft_project::Comp, layer: &Layer) -> [i64; 2] {
     let fps = comp.frame_rate.as_f64().max(1e-6);
     let lo = layer.layer_time(layer.in_point.max(Tick::ZERO)).seconds();
-    let hi = layer.layer_time(layer.out_point.min(comp.duration)).seconds();
+    let hi = layer
+        .layer_time(layer.out_point.min(comp.duration))
+        .seconds();
     let a = fx::frame_of(lo, fps);
     let b = (fx::frame_of(hi, fps) - 1).max(a);
     [a, b]
@@ -305,15 +330,38 @@ impl<'a> FrameSource<'a> {
         index: usize,
         size: [f64; 2],
     ) -> FrameSource<'a> {
-        let mut r = Renderer::new(project, footage, RenderOpts { scale: 1.0, ..Default::default() });
+        let mut r = Renderer::new(
+            project,
+            footage,
+            RenderOpts {
+                scale: 1.0,
+                ..Default::default()
+            },
+        );
         r.expr = expr;
         r.cache = Some(cache);
-        let ctx0 = EvalCtx { expr, ..EvalCtx::new(project, cid, comp, Tick::ZERO) };
-        FrameSource { r, accel: None, order: Default::default(), ctx0, comp, layer, index, size, memo: HashMap::new() }
+        let ctx0 = EvalCtx {
+            expr,
+            ..EvalCtx::new(project, cid, comp, Tick::ZERO)
+        };
+        FrameSource {
+            r,
+            accel: None,
+            order: Default::default(),
+            ctx0,
+            comp,
+            layer,
+            index,
+            size,
+            memo: HashMap::new(),
+        }
     }
 
     /// Render with `accel` (deferred readbacks: see [`FrameSource::prefetch`]).
-    pub(crate) fn with_accel(mut self, accel: Option<&'a dyn effectcraft_render::Accelerator>) -> Self {
+    pub(crate) fn with_accel(
+        mut self,
+        accel: Option<&'a dyn effectcraft_render::Accelerator>,
+    ) -> Self {
         self.accel = accel;
         self.r.opts = crate::offload::analysis_opts(accel);
         self
@@ -328,7 +376,9 @@ impl<'a> FrameSource<'a> {
                 continue;
             }
             let this = &*self;
-            let img = crate::offload::in_passes(Some(a), |acc| this.render(f, &this.r.with_accel(acc))).await;
+            let img =
+                crate::offload::in_passes(Some(a), |acc| this.render(f, &this.r.with_accel(acc)))
+                    .await;
             if let Some(img) = img {
                 self.keep(f, img);
             }
@@ -382,10 +432,24 @@ async fn run_work(w: Work, shared: &RotoShared) {
         s.error = Some(msg.to_string());
         s.finished = true;
     };
-    let Some(comp) = w.project.comp(w.comp) else { return fail("composition missing") };
-    let Some(layer) = comp.layer(w.layer) else { return fail("layer missing") };
-    let mut src =
-        FrameSource::new(&w.project, w.footage.as_ref(), w.expr.as_deref(), &w.cache, w.comp, comp, layer, w.effect_index, w.size).with_accel(accel.as_deref());
+    let Some(comp) = w.project.comp(w.comp) else {
+        return fail("composition missing");
+    };
+    let Some(layer) = comp.layer(w.layer) else {
+        return fail("layer missing");
+    };
+    let mut src = FrameSource::new(
+        &w.project,
+        w.footage.as_ref(),
+        w.expr.as_deref(),
+        &w.cache,
+        w.comp,
+        comp,
+        layer,
+        w.effect_index,
+        w.size,
+    )
+    .with_accel(accel.as_deref());
     {
         let mut s = lock(&shared.state);
         s.task = Some(w.task);
@@ -393,7 +457,10 @@ async fn run_work(w: Work, shared: &RotoShared) {
     }
     let cancel = || shared.cancel.load(Ordering::Relaxed);
     let chain = fx::Chain::new(&w.params, w.size, w.fps, 1.0);
-    let mut frozen = FrozenCache { key: fx::frozen_key(&w.params, w.size, w.fps), ..Default::default() };
+    let mut frozen = FrozenCache {
+        key: fx::frozen_key(&w.params, w.size, w.fps),
+        ..Default::default()
+    };
     for (k, f) in w.frames.iter().enumerate() {
         if cancel() {
             let mut s = lock(&shared.state);
@@ -406,16 +473,18 @@ async fn run_work(w: Work, shared: &RotoShared) {
         let mut get = |g: i64| src.get(g);
         let ok = match w.task {
             RotoTask::Propagate => chain.ensure(*f, &mut get, &cancel).is_some(),
-            RotoTask::Freeze => match fx::frame_matte(&w.params, w.size, w.fps, *f, &mut get, &cancel) {
-                Some((a, b)) => {
-                    if let Some(img) = src.get(*f) {
-                        frozen.size = [img.width as usize, img.height as usize];
+            RotoTask::Freeze => {
+                match fx::frame_matte(&w.params, w.size, w.fps, *f, &mut get, &cancel) {
+                    Some((a, b)) => {
+                        if let Some(img) = src.get(*f) {
+                            frozen.size = [img.width as usize, img.height as usize];
+                        }
+                        frozen.frames.insert(*f, fx::freeze_frame(&a, &b));
+                        true
                     }
-                    frozen.frames.insert(*f, fx::freeze_frame(&a, &b));
-                    true
+                    None => false,
                 }
-                None => false,
-            },
+            }
         };
         if !ok && !cancel() {
             return fail(&format!("frame {f} could not be segmented"));
@@ -423,7 +492,11 @@ async fn run_work(w: Work, shared: &RotoShared) {
         let mut s = lock(&shared.state);
         s.done = k as u64 + 1;
         s.elapsed = t0.elapsed().as_secs_f64();
-        s.fps = if s.elapsed > 0.0 { s.done as f64 / s.elapsed } else { 0.0 };
+        s.fps = if s.elapsed > 0.0 {
+            s.done as f64 / s.elapsed
+        } else {
+            0.0
+        };
         crate::offload::report(s.done, s.total);
     }
     if w.task == RotoTask::Freeze {
@@ -450,7 +523,12 @@ pub(crate) fn job_frames(d: &effectcraft_track::roto::RotoData, dir: Direction) 
 impl Session {
     /// The Roto Brush job running in a worker (Freeze or propagation), with its task.
     fn offloaded_roto(&self) -> Option<(&crate::offload::OffloadedJob, RotoTask)> {
-        self.offloaded(JobKind::RotoFreeze).map(|j| (j, RotoTask::Freeze)).or_else(|| self.offloaded(JobKind::RotoPropagate).map(|j| (j, RotoTask::Propagate)))
+        self.offloaded(JobKind::RotoFreeze)
+            .map(|j| (j, RotoTask::Freeze))
+            .or_else(|| {
+                self.offloaded(JobKind::RotoPropagate)
+                    .map(|j| (j, RotoTask::Propagate))
+            })
     }
 
     pub fn is_roto_running(&self) -> bool {
@@ -475,22 +553,38 @@ impl Session {
 
     /// (comp, layer, effect uid, task) of the running job.
     pub fn roto_target(&self) -> Option<(ItemId, LayerId, Uid, RotoTask)> {
-        self.roto_job.as_ref().map(|j| (j.comp, j.layer, j.effect, j.task)).or_else(|| self.offloaded_roto().map(|(j, task)| (j.comp, j.layer, j.uid, task)))
+        self.roto_job
+            .as_ref()
+            .map(|j| (j.comp, j.layer, j.effect, j.task))
+            .or_else(|| {
+                self.offloaded_roto()
+                    .map(|(j, task)| (j.comp, j.layer, j.uid, task))
+            })
     }
 
     /// The segmentation chain a propagation of `effect` computes (its frames' cache keys).
     pub fn roto_chain(&self, comp: ItemId, layer: LayerId, effect: Uid) -> Option<fx::Chain> {
         let c = self.project.comp(comp)?;
         let l = c.layer(layer)?;
-        let g = l.effects()?.groups().find(|g| g.uid == effect && is_roto(g))?;
+        let g = l
+            .effects()?
+            .groups()
+            .find(|g| g.uid == effect && is_roto(g))?;
         let d = fx::data(&params_static(g));
         let t = comp_time_of(c, l, d.base?);
         let params = params_at(&self.project, comp, l, g, t, self.expr.as_deref());
-        Some(fx::Chain::new(&params, layer_size(&self.project, c, l), c.frame_rate.as_f64(), 1.0))
+        Some(fx::Chain::new(
+            &params,
+            layer_size(&self.project, c, l),
+            c.frame_rate.as_f64(),
+            1.0,
+        ))
     }
 
     pub fn stop_roto(&mut self) -> bool {
-        if self.cancel_offloaded(JobKind::RotoFreeze) || self.cancel_offloaded(JobKind::RotoPropagate) {
+        if self.cancel_offloaded(JobKind::RotoFreeze)
+            || self.cancel_offloaded(JobKind::RotoPropagate)
+        {
             return true;
         }
         match &self.roto_job {
@@ -504,7 +598,15 @@ impl Session {
 
     /// Start propagating (or freezing) Roto Brush `effect` on `layer`. `wait`: block until done
     /// (wasm32 always does). Returns the number of frames.
-    pub fn start_roto(&mut self, comp: ItemId, layer: LayerId, effect: Uid, task: RotoTask, dir: Direction, wait: bool) -> Result<usize, String> {
+    pub fn start_roto(
+        &mut self,
+        comp: ItemId,
+        layer: LayerId,
+        effect: Uid,
+        task: RotoTask,
+        dir: Direction,
+        wait: bool,
+    ) -> Result<usize, String> {
         if self.is_roto_running() {
             if !wait {
                 return Err("a Roto Brush job is already running".into());
@@ -521,8 +623,15 @@ impl Session {
         let c = self.project.comp(comp).ok_or("no composition")?;
         let l = c.layer(layer).ok_or("no layer")?;
         let fxg = l.effects().ok_or("the layer has no effects")?;
-        let index = fxg.groups().position(|g| g.uid == effect).ok_or("no such effect")?;
-        let g = fxg.groups().nth(index).filter(|g| is_roto(g)).ok_or("not a Roto Brush & Refine Edge effect")?;
+        let index = fxg
+            .groups()
+            .position(|g| g.uid == effect)
+            .ok_or("no such effect")?;
+        let g = fxg
+            .groups()
+            .nth(index)
+            .filter(|g| is_roto(g))
+            .ok_or("not a Roto Brush & Refine Edge effect")?;
         let size = layer_size(&self.project, c, l);
         let fps = c.frame_rate.as_f64();
         let pstat = params_static(g);
@@ -532,7 +641,14 @@ impl Session {
         }
         let t = comp_time_of(c, l, d.base.unwrap_or(0));
         let params = params_at(&self.project, comp, l, g, t, self.expr.as_deref());
-        let frames = job_frames(&d, if task == RotoTask::Freeze { Direction::Both } else { dir });
+        let frames = job_frames(
+            &d,
+            if task == RotoTask::Freeze {
+                Direction::Both
+            } else {
+                dir
+            },
+        );
         let n = frames.len();
         let work = Work {
             project: self.project.clone(),
@@ -552,8 +668,17 @@ impl Session {
         if !wait && self.offloads() {
             drop(work);
             self.offload_analysis(match task {
-                RotoTask::Freeze => crate::offload::WorkerJob::RotoFreeze { comp, layer, effect },
-                RotoTask::Propagate => crate::offload::WorkerJob::RotoPropagate { comp, layer, effect, direction: dir },
+                RotoTask::Freeze => crate::offload::WorkerJob::RotoFreeze {
+                    comp,
+                    layer,
+                    effect,
+                },
+                RotoTask::Propagate => crate::offload::WorkerJob::RotoPropagate {
+                    comp,
+                    layer,
+                    effect,
+                    direction: dir,
+                },
             })?;
             return Ok(n);
         }
@@ -574,59 +699,99 @@ impl Session {
                     .map_err(|e| e.to_string())?,
             )
         };
-        self.roto_job = Some(RotoJob { shared, thread, comp, layer, effect, task, strokes });
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.roto_job = Some(RotoJob {
+            shared,
+            thread,
+            comp,
+            layer,
+            effect,
+            task,
+            strokes,
+        });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
         self.poll_roto_job();
         Ok(n)
     }
 
     /// Finish a done job: Freeze writes the frozen mattes (one undo step).
     fn poll_roto_job(&mut self) -> bool {
-        let Some(job) = &self.roto_job else { return false };
+        let Some(job) = &self.roto_job else {
+            return false;
+        };
         if !job.is_finished() {
             return false;
         }
-        let Some(mut job) = self.roto_job.take() else { return false };
+        let Some(mut job) = self.roto_job.take() else {
+            return false;
+        };
         if let Some(t) = job.thread.take() {
             let _ = t.join();
         }
         let st = job.progress();
         if let Some(e) = &st.error {
-            self.events.push(Event::Toast { message: format!("Roto Brush: {e}"), error: true });
+            self.events.push(Event::Toast {
+                message: format!("Roto Brush: {e}"),
+                error: true,
+            });
             self.bump();
             return true;
         }
         if st.cancelled {
-            self.events.push(Event::Toast { message: "Roto Brush: stopped".into(), error: false });
+            self.events.push(Event::Toast {
+                message: "Roto Brush: stopped".into(),
+                error: false,
+            });
             self.bump();
             return true;
         }
         match job.task {
             RotoTask::Propagate => {
-                self.events.push(Event::Toast { message: format!("Roto Brush: propagated {} frame(s) in {:.1} s", st.done, st.elapsed), error: false });
+                self.events.push(Event::Toast {
+                    message: format!(
+                        "Roto Brush: propagated {} frame(s) in {:.1} s",
+                        st.done, st.elapsed
+                    ),
+                    error: false,
+                });
                 // Rendered frames depend on the cache: redraw.
                 self.bump();
             }
             RotoTask::Freeze => {
-                let Some(fc) = lock(&job.shared.frozen).take() else { return true };
-                let (cid, lid, uid, strokes) = (job.comp, job.layer, job.effect, job.strokes.clone());
+                let Some(fc) = lock(&job.shared.frozen).take() else {
+                    return true;
+                };
+                let (cid, lid, uid, strokes) =
+                    (job.comp, job.layer, job.effect, job.strokes.clone());
                 let r = self.edit("Freeze", None, |p, _| {
                     let g = p
                         .comp_mut(cid)
                         .and_then(|c| c.layer_mut(lid))
                         .and_then(|l| l.props.find_group_mut(uid))
-                        .ok_or_else(|| crate::EngineError::Other("the Roto Brush effect was removed".into()))?;
+                        .ok_or_else(|| {
+                            crate::EngineError::Other("the Roto Brush effect was removed".into())
+                        })?;
                     if str_of(g, fx::STROKES) != strokes {
-                        return Err(crate::EngineError::Other("the strokes changed while freezing".into()));
+                        return Err(crate::EngineError::Other(
+                            "the strokes changed while freezing".into(),
+                        ));
                     }
                     set_str(g, FROZEN, fc.to_json());
                     Ok(())
                 });
                 let msg = match r {
-                    Ok(()) => format!("Roto Brush: froze {} frame(s) in {:.1} s", fc.frames.len(), st.elapsed),
+                    Ok(()) => format!(
+                        "Roto Brush: froze {} frame(s) in {:.1} s",
+                        fc.frames.len(),
+                        st.elapsed
+                    ),
                     Err(e) => format!("Roto Brush: {e}"),
                 };
-                self.events.push(Event::Toast { message: msg, error: false });
+                self.events.push(Event::Toast {
+                    message: msg,
+                    error: false,
+                });
             }
         }
         true
@@ -637,10 +802,17 @@ impl Session {
     pub fn poll_roto(&mut self, auto: bool) -> bool {
         self.poll_models();
         let changed = self.poll_roto_job();
-        if auto && self.roto_job.is_none() && self.offloaded_roto().is_none() && self.state.roto.auto_propagate {
+        if auto
+            && self.roto_job.is_none()
+            && self.offloaded_roto().is_none()
+            && self.state.roto.auto_propagate
+        {
             while let Some((c, l, e)) = self.roto_pending.first().copied() {
                 self.roto_pending.remove(0);
-                if self.start_roto(c, l, e, RotoTask::Propagate, Direction::Both, false).is_ok() {
+                if self
+                    .start_roto(c, l, e, RotoTask::Propagate, Direction::Both, false)
+                    .is_ok()
+                {
                     return true;
                 }
             }
@@ -651,11 +823,20 @@ impl Session {
     /// The computed frames of an instance (full resolution), by layer frame.
     pub fn roto_computed(&self, comp: ItemId, layer: LayerId, effect: Uid) -> BTreeMap<i64, bool> {
         let mut out = BTreeMap::new();
-        let Some(c) = self.project.comp(comp) else { return out };
+        let Some(c) = self.project.comp(comp) else {
+            return out;
+        };
         let Some(l) = c.layer(layer) else { return out };
-        let Some(g) = l.props.find_group(effect) else { return out };
+        let Some(g) = l.props.find_group(effect) else {
+            return out;
+        };
         let ps = params_static(g);
-        let ch = fx::Chain::new(&ps, layer_size(&self.project, c, l), c.frame_rate.as_f64(), 1.0);
+        let ch = fx::Chain::new(
+            &ps,
+            layer_size(&self.project, c, l),
+            c.frame_rate.as_f64(),
+            1.0,
+        );
         for f in ch.keys.keys() {
             out.insert(*f, ch.is_cached(*f, 1.0));
         }

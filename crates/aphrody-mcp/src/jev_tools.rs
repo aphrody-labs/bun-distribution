@@ -50,7 +50,9 @@ fn configured_router(
         let router = build().map_err(|error| error.to_string())?;
         let _ = cache.set(Arc::new(router));
     }
-    cache.get().ok_or_else(|| "Jev router initialization failed".into())
+    cache
+        .get()
+        .ok_or_else(|| "Jev router initialization failed".into())
 }
 
 /// Run one decision and render the result (or error) as JSON text.
@@ -100,7 +102,7 @@ async fn decide_with_router(
                 Ok(output) => output.to_string(),
                 Err(error) => error_json(&error.to_string()),
             }
-        },
+        }
         Err(error) => error_json(&error.to_string()),
     }
 }
@@ -125,7 +127,12 @@ mod tests {
         })
         .await;
         let output: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert!(output["error"].as_str().unwrap().contains("1 to 64 named questions"));
+        assert!(
+            output["error"]
+                .as_str()
+                .unwrap()
+                .contains("1 to 64 named questions")
+        );
     }
 
     #[tokio::test]
@@ -138,7 +145,12 @@ mod tests {
         })
         .await;
         let output: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert!(output["error"].as_str().unwrap().contains("confidence threshold"));
+        assert!(
+            output["error"]
+                .as_str()
+                .unwrap()
+                .contains("confidence threshold")
+        );
     }
 
     #[tokio::test]
@@ -207,6 +219,9 @@ mod tests {
         })
         .await;
         let value: serde_json::Value = serde_json::from_str(&out).unwrap();
-        assert!(value["error"].as_str().unwrap().contains("question `q`"), "{out}");
+        assert!(
+            value["error"].as_str().unwrap().contains("question `q`"),
+            "{out}"
+        );
     }
 }

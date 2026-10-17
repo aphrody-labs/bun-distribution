@@ -240,8 +240,12 @@ impl ScFbtlEffectInfo {
         let arr2 = |key: &str| -> [i64; 2] {
             let a = v.get(key).and_then(Value::as_array);
             [
-                a.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-                a.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+                a.and_then(|a| a.first())
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0),
+                a.and_then(|a| a.get(1))
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0),
             ]
         };
         Some(Self {
@@ -421,8 +425,12 @@ impl ScTechnicInfo {
             desc_text_id: field_hash(v, "descTextId"),
             recast_time: field_i64(v, "recastTime").unwrap_or(0),
             usable_condition: [
-                uc.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-                uc.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+                uc.and_then(|a| a.first())
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0),
+                uc.and_then(|a| a.get(1))
+                    .and_then(Value::as_i64)
+                    .unwrap_or(0),
             ],
             focus_battle_effect_id: field_hash(v, "focusBattleEffectId"),
         })
@@ -527,7 +535,11 @@ impl ScBasicEffectInfo {
 /// Renvoie les 104 [`ScBasicEffectInfo`] valides (id non-nul).
 #[must_use]
 pub fn parse_basic_effect_config(root: &Value) -> Vec<ScBasicEffectInfo> {
-    extract_list(root, "m_soccerBasicEffectInfoList", ScBasicEffectInfo::from_value)
+    extract_list(
+        root,
+        "m_soccerBasicEffectInfoList",
+        ScBasicEffectInfo::from_value,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -674,7 +686,10 @@ impl SoccerGameAdditionalConfig {
     /// Cherche le ratio d'XP pour un écart de niveau donné. `None` si `id` hors plage.
     #[must_use]
     pub fn exp_ratio(&self, level_gap: i64) -> Option<f64> {
-        self.get_exp_table.iter().find(|e| e.id == level_gap).map(|e| e.ratio)
+        self.get_exp_table
+            .iter()
+            .find(|e| e.id == level_gap)
+            .map(|e| e.ratio)
     }
 }
 
@@ -685,7 +700,11 @@ impl SoccerGameAdditionalConfig {
 pub fn parse_soccer_game_additional_config(root: &Value) -> SoccerGameAdditionalConfig {
     SoccerGameAdditionalConfig {
         team_ai_data: extract_list(root, "m_SoccerTeamAIDataList", SoccerTeamAiData::from_value),
-        get_exp_table: extract_list(root, "m_SoccerGetExpDataTable", SoccerGetExpData::from_value),
+        get_exp_table: extract_list(
+            root,
+            "m_SoccerGetExpDataTable",
+            SoccerGetExpData::from_value,
+        ),
         nice_play_exp: extract_list(
             root,
             "m_SoccerNicePlayExpDataList",
@@ -728,7 +747,10 @@ impl CpuBeansRateInfo {
         if kind == 0 {
             return None;
         }
-        Some(Self { kind, rate: node.var(1).map_or(0.0_f64, |v| v.as_f64()) })
+        Some(Self {
+            kind,
+            rate: node.var(1).map_or(0.0_f64, |v| v.as_f64()),
+        })
     }
 }
 
@@ -888,18 +910,31 @@ pub fn parse_soccer_game_config(root: &Value) -> SoccerGameConfig {
                     // Le noeud suivant doit être le REF_DIFFICULTY
                     let difficulty_index = if i + 1 < children.len() {
                         let ref_node = children[i + 1];
-                        if ref_node.name().contains("REF_DIFFICULTY") { ref_node.int(0) } else { 0 }
+                        if ref_node.name().contains("REF_DIFFICULTY") {
+                            ref_node.int(0)
+                        } else {
+                            0
+                        }
                     } else {
                         0
                     };
-                    game_infos.push(SoccerGameInfo { match_id, id_str, raw, difficulty_index });
+                    game_infos.push(SoccerGameInfo {
+                        match_id,
+                        id_str,
+                        raw,
+                        difficulty_index,
+                    });
                 }
             }
             i += 1;
         }
     });
 
-    SoccerGameConfig { cpu_beans_rates, difficulties, game_infos }
+    SoccerGameConfig {
+        cpu_beans_rates,
+        difficulties,
+        game_infos,
+    }
 }
 
 // ─── Tests unitaires ─────────────────────────────────────────────────────────
@@ -1079,7 +1114,9 @@ mod tests {
             }],
         };
         let info = &cfg.game_infos[0];
-        let diff = cfg.difficulty_of(info).expect("difficulty_of doit résoudre");
+        let diff = cfg
+            .difficulty_of(info)
+            .expect("difficulty_of doit résoudre");
         assert_eq!(diff.difficulty_id, 1);
     }
 }

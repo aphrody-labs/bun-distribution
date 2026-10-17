@@ -6,7 +6,14 @@
 //! with motion blur sub-samples) → **track matte** → **blend** with the layer's mode and opacity.
 //! Adjustment layers run their effects on everything below, limited by their own bounds/masks.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod audio;
 pub mod auto;
@@ -30,7 +37,10 @@ pub use cache::{CacheStats, LayerCache, LayerStore, PrefetchStore};
 use effectcraft_color::BlendMode;
 use effectcraft_effects::{Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params};
 use effectcraft_geom::{Mat3, Mat4, vec2};
-use effectcraft_project::{Comp, Footage, FootageKind, FrameBlend, GroupKind, ItemId, ItemKind, Layer, LayerSource, MatteKind, Project, Quality, Sampling};
+use effectcraft_project::{
+    Comp, Footage, FootageKind, FrameBlend, GroupKind, ItemId, ItemKind, Layer, LayerSource,
+    MatteKind, Project, Quality, Sampling,
+};
 pub use effectcraft_raster::Image;
 use effectcraft_raster::{WarpOpts, composite_warp};
 use effectcraft_time::{FrameRate, TICKS_PER_SECOND, Tick};
@@ -60,13 +70,27 @@ pub trait FootageSource: Send + Sync {
     /// size: either that frame or, when the source can make it more cheaply than the whole frame
     /// (movies, see `effectcraft-media`), the frame already resampled to that size as
     /// [`effectcraft_raster::resample`] would.
-    fn frame_at_size(&self, item: ItemId, footage: &Footage, t: Tick, _width: u32, _height: u32) -> Option<Arc<Image>> {
+    fn frame_at_size(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+        _width: u32,
+        _height: u32,
+    ) -> Option<Arc<Image>> {
         self.frame(item, footage, t)
     }
     /// [`FootageSource::frame`] (`size: None`) or [`FootageSource::frame_at_size`] with float
     /// footage handed over as `float` says ([`FootageSource::frame`] uses [`FloatCurve::Srgb`]).
     /// Sources without float footage can leave the default, which ignores `float`.
-    fn frame_with(&self, item: ItemId, footage: &Footage, t: Tick, size: Option<(u32, u32)>, float: FloatCurve) -> Option<Arc<Image>> {
+    fn frame_with(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+        size: Option<(u32, u32)>,
+        float: FloatCurve,
+    ) -> Option<Arc<Image>> {
         let _ = float;
         match size {
             Some((w, h)) => self.frame_at_size(item, footage, t, w, h),
@@ -76,13 +100,25 @@ pub trait FootageSource: Send + Sync {
     /// `frames` interleaved stereo sample frames of `item`'s audio from source time `t` at
     /// `rate` Hz (`None` when unavailable). The first sample is `t.to_units_floor(rate)`;
     /// a sample boundary uses the earliest representable tick that selects that sample.
-    fn audio(&self, _item: ItemId, _footage: &Footage, _t: Tick, _frames: usize, _rate: u32) -> Option<Vec<f32>> {
+    fn audio(
+        &self,
+        _item: ItemId,
+        _footage: &Footage,
+        _t: Tick,
+        _frames: usize,
+        _rate: u32,
+    ) -> Option<Vec<f32>> {
         None
     }
     /// Auxiliary 3D channels of `item` at source time `t` (multi-layer OpenEXR: depth, IDs,
     /// Cryptomatte, any named channel), with `scale` relative to the file's pixels. `None` when
     /// the footage has none.
-    fn aux(&self, _item: ItemId, _footage: &Footage, _t: Tick) -> Option<Arc<effectcraft_raster::AuxChannels>> {
+    fn aux(
+        &self,
+        _item: ItemId,
+        _footage: &Footage,
+        _t: Tick,
+    ) -> Option<Arc<effectcraft_raster::AuxChannels>> {
         None
     }
     /// The parsed 3D model of a [`effectcraft_project::FootageKind::Model`] item (Advanced 3D).
@@ -147,7 +183,8 @@ impl CancellableFootage<'_> {
             return None;
         }
         let (mut f, mut out) = (Some(f), None);
-        self.inner.cancellable(&self.cancel, &mut || out = f.take().and_then(|f| f()));
+        self.inner
+            .cancellable(&self.cancel, &mut || out = f.take().and_then(|f| f()));
         out
     }
 }
@@ -156,13 +193,32 @@ impl FootageSource for CancellableFootage<'_> {
     fn frame(&self, item: ItemId, footage: &Footage, t: Tick) -> Option<Arc<Image>> {
         self.read(|| self.inner.frame(item, footage, t))
     }
-    fn frame_at_size(&self, item: ItemId, footage: &Footage, t: Tick, width: u32, height: u32) -> Option<Arc<Image>> {
+    fn frame_at_size(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+        width: u32,
+        height: u32,
+    ) -> Option<Arc<Image>> {
         self.read(|| self.inner.frame_at_size(item, footage, t, width, height))
     }
-    fn audio(&self, item: ItemId, footage: &Footage, t: Tick, frames: usize, rate: u32) -> Option<Vec<f32>> {
+    fn audio(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+        frames: usize,
+        rate: u32,
+    ) -> Option<Vec<f32>> {
         self.inner.audio(item, footage, t, frames, rate)
     }
-    fn aux(&self, item: ItemId, footage: &Footage, t: Tick) -> Option<Arc<effectcraft_raster::AuxChannels>> {
+    fn aux(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+    ) -> Option<Arc<effectcraft_raster::AuxChannels>> {
         self.inner.aux(item, footage, t)
     }
     fn model(&self, item: ItemId, footage: &Footage) -> Option<Arc<effectcraft_model::Model>> {
@@ -195,7 +251,14 @@ impl FootageSource for CancellableFootage<'_> {
     fn problem(&self, footage: &Footage) -> Option<String> {
         self.inner.problem(footage)
     }
-    fn frame_with(&self, item: ItemId, footage: &Footage, t: Tick, size: Option<(u32, u32)>, float: FloatCurve) -> Option<Arc<Image>> {
+    fn frame_with(
+        &self,
+        item: ItemId,
+        footage: &Footage,
+        t: Tick,
+        size: Option<(u32, u32)>,
+        float: FloatCurve,
+    ) -> Option<Arc<Image>> {
         self.read(|| self.inner.frame_with(item, footage, t, size, float))
     }
 }
@@ -242,22 +305,35 @@ pub(crate) fn comp_scene(ctx: &EvalCtx, layer: &Layer) -> Option<effectcraft_eff
     let p = (cam * world).0;
     let back = ctx.layer_to_comp(layer).0.inverse()?.0;
     let rows = [p[0], p[1], p[3]];
-    let camera: [[f64; 4]; 3] = std::array::from_fn(|i| std::array::from_fn(|j| (0..3).map(|k| back[i][k] * rows[k][j]).sum()));
+    let camera: [[f64; 4]; 3] = std::array::from_fn(|i| {
+        std::array::from_fn(|j| (0..3).map(|k| back[i][k] * rows[k][j]).sum())
+    });
     let inv = world.inverse();
     let light = three_d::light::lights_at(ctx).first().and_then(|l| {
         let inv = inv.as_ref()?;
         let pos = inv.apply(l.pos);
         let dir = inv.apply_vec(l.dir);
-        let len = (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z).sqrt().max(1e-12);
+        let len = (dir.x * dir.x + dir.y * dir.y + dir.z * dir.z)
+            .sqrt()
+            .max(1e-12);
         let kind = match l.kind {
             effectcraft_project::LightKind::Parallel => 0,
             effectcraft_project::LightKind::Ambient => 2,
             _ => 1,
         };
-        Some(effectcraft_effects::CompLight { pos: [pos.x, pos.y, pos.z], dir: [dir.x / len, dir.y / len, dir.z / len], color: l.color, kind })
+        Some(effectcraft_effects::CompLight {
+            pos: [pos.x, pos.y, pos.z],
+            dir: [dir.x / len, dir.y / len, dir.z / len],
+            color: l.color,
+            kind,
+        })
     });
     let camera_layer = ctx.comp.active_camera(ctx.time).is_some();
-    Some(effectcraft_effects::CompScene { camera: Some(camera), camera_layer, light })
+    Some(effectcraft_effects::CompScene {
+        camera: Some(camera),
+        camera_layer,
+        light,
+    })
 }
 
 /// Nesting limit for effects that render layers (other layers, other times).
@@ -278,7 +354,11 @@ impl EffectHost for FxHost<'_, '_, '_> {
         }
         let sub = self.r.nested();
         // The cached layer buffer is shared; effects get their own copy.
-        let buf = if masks_and_effects { (*sub.content_buf(self.ctx, other)?).clone() } else { sub.source(self.ctx, other)? };
+        let buf = if masks_and_effects {
+            (*sub.content_buf(self.ctx, other)?).clone()
+        } else {
+            sub.source(self.ctx, other)?
+        };
         Some(self.pixels(other, buf, true))
     }
 
@@ -294,8 +374,12 @@ impl EffectHost for FxHost<'_, '_, '_> {
 
     fn audio(&self, id: u64, start: f64, frames: usize, rate: u32) -> Option<Vec<f32>> {
         let other = self.ctx.layer(effectcraft_project::LayerId(id))?;
-        let LayerSource::Footage { item } = &other.source else { return None };
-        let ItemKind::Footage(f) = &self.r.project.item(*item)?.kind else { return None };
+        let LayerSource::Footage { item } = &other.source else {
+            return None;
+        };
+        let ItemKind::Footage(f) = &self.r.project.item(*item)?.kind else {
+            return None;
+        };
         if !f.has_audio {
             return None;
         }
@@ -310,14 +394,20 @@ impl EffectHost for FxHost<'_, '_, '_> {
         let n = effects.min(self.index.load(std::sync::atomic::Ordering::Relaxed));
         let t = self.layer.comp_time(Tick::from_seconds_f64(layer_time));
         let sub = self.r.nested();
-        sub.layer_input(&self.ctx.at(t), self.layer, n).map(|b| (*b).clone())
+        sub.layer_input(&self.ctx.at(t), self.layer, n)
+            .map(|b| (*b).clone())
     }
 
     fn aux(&self) -> Option<Arc<effectcraft_raster::AuxChannels>> {
         match &self.layer.source {
             LayerSource::Footage { item } => {
-                let ItemKind::Footage(f) = &self.r.project.item(*item)?.kind else { return None };
-                let a = self.r.footage.aux(*item, f, self.ctx.source_time(self.layer))?;
+                let ItemKind::Footage(f) = &self.r.project.item(*item)?.kind else {
+                    return None;
+                };
+                let a = self
+                    .r
+                    .footage
+                    .aux(*item, f, self.ctx.source_time(self.layer))?;
                 // Aux pixels per layer pixel (the layer is the footage at its nominal size).
                 if f.width > 0 && a.width > 0 {
                     let mut a = (*a).clone();
@@ -327,10 +417,15 @@ impl EffectHost for FxHost<'_, '_, '_> {
                 Some(a)
             }
             LayerSource::Comp { item } => {
-                if self.r.depth > MAX_FX_DEPTH || self.r.project.comp_contains(*item, self.ctx.comp_id) {
+                if self.r.depth > MAX_FX_DEPTH
+                    || self.r.project.comp_contains(*item, self.ctx.comp_id)
+                {
                     return None;
                 }
-                self.r.nested().comp_aux(*item, self.ctx.nested_time(self.layer)).map(Arc::new)
+                self.r
+                    .nested()
+                    .comp_aux(*item, self.ctx.nested_time(self.layer))
+                    .map(Arc::new)
             }
             _ => None,
         }
@@ -339,8 +434,12 @@ impl EffectHost for FxHost<'_, '_, '_> {
     fn params_at(&self, layer_time: f64) -> Option<Params> {
         let i = self.index.load(std::sync::atomic::Ordering::Relaxed);
         let g = self.layer.effects()?.groups().nth(i)?;
-        let ctx = self.ctx.at(self.layer.comp_time(Tick::from_seconds_f64(layer_time)));
-        Some(effectcraft_effects::flatten_params(g, &mut |pr| ctx.value(self.layer, pr)))
+        let ctx = self
+            .ctx
+            .at(self.layer.comp_time(Tick::from_seconds_f64(layer_time)));
+        Some(effectcraft_effects::flatten_params(g, &mut |pr| {
+            ctx.value(self.layer, pr)
+        }))
     }
 
     fn comp_scene(&self) -> Option<effectcraft_effects::CompScene> {
@@ -349,7 +448,10 @@ impl EffectHost for FxHost<'_, '_, '_> {
 
     fn layer_at(&self, id: u64, comp_time: f64, masks_and_effects: bool) -> Option<LayerPixels> {
         let other = self.ctx.layer(effectcraft_project::LayerId(id))?;
-        if (other.id == self.layer.id && masks_and_effects) || !comp_time.is_finite() || self.r.depth > MAX_FX_DEPTH {
+        if (other.id == self.layer.id && masks_and_effects)
+            || !comp_time.is_finite()
+            || self.r.depth > MAX_FX_DEPTH
+        {
             return None;
         }
         let ctx = self.ctx.at(Tick::from_seconds_f64(comp_time));
@@ -366,16 +468,24 @@ impl EffectHost for FxHost<'_, '_, '_> {
 }
 
 /// The Essential Properties overrides of a precomp layer, evaluated at the context time.
-pub fn essential_overrides(ctx: &EvalCtx, layer: &Layer) -> Vec<effectcraft_project::essential::Override> {
+pub fn essential_overrides(
+    ctx: &EvalCtx,
+    layer: &Layer,
+) -> Vec<effectcraft_project::essential::Override> {
     use effectcraft_project::essential;
     let over = essential::overridden(layer);
-    let Some(g) = essential::group(layer).filter(|_| !over.is_empty()) else { return vec![] };
+    let Some(g) = essential::group(layer).filter(|_| !over.is_empty()) else {
+        return vec![];
+    };
     let mut out = vec![];
     g.walk("", &mut |_, p| {
         if over.contains(&p.uid)
             && let Some(control) = essential::control_of(&p.match_id)
         {
-            out.push(essential::Override { control, value: ctx.value(layer, p) });
+            out.push(essential::Override {
+                control,
+                value: ctx.value(layer, p),
+            });
         }
     });
     out
@@ -390,7 +500,9 @@ impl FootageSource for NoFootage {
 }
 
 /// Which compositor renders a frame (Project Settings ▸ Video Rendering and Effects).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum Backend {
     /// The CPU reference compositor (Mercury Software Only).
@@ -511,7 +623,9 @@ struct CpuFx<'a> {
 
 impl FxTarget for CpuFx<'_> {
     fn gpu(&mut self, steps: &[FxStep]) -> bool {
-        let (Some(a), Some(b)) = (self.accel, &self.buf) else { return false };
+        let (Some(a), Some(b)) = (self.accel, &self.buf) else {
+            return false;
+        };
         match a.effects(steps, b, self.levels) {
             Some(out) => {
                 self.buf = Some(out);
@@ -648,7 +762,11 @@ struct Shutter {
 impl Shutter {
     /// Seconds from the frame time to sub-sample `i` of `n`, spread over the open shutter.
     fn offset(&self, i: usize, n: usize) -> f64 {
-        let f = if n > 1 { i as f64 / (n - 1) as f64 } else { 0.0 };
+        let f = if n > 1 {
+            i as f64 / (n - 1) as f64
+        } else {
+            0.0
+        };
         (self.phase + self.angle * f) * self.frame
     }
 }
@@ -680,7 +798,11 @@ pub struct LayerTiming {
 }
 
 impl<'a> Renderer<'a> {
-    pub fn new(project: &'a Project, footage: &'a dyn FootageSource, opts: RenderOpts) -> Renderer<'a> {
+    pub fn new(
+        project: &'a Project,
+        footage: &'a dyn FootageSource,
+        opts: RenderOpts,
+    ) -> Renderer<'a> {
         Renderer {
             project,
             footage,
@@ -757,8 +879,14 @@ impl<'a> Renderer<'a> {
     /// buffer scale, exactly as [`Self::layer_source`]'s comp branch would render it. `None`
     /// when that branch does more (composition proxy, Essential Properties overrides, frame
     /// blending, recursion) or draws nothing (outside the nested comp's span): use the CPU path.
-    pub fn precomp_source(&self, ctx: &EvalCtx, layer: &Layer) -> Option<(Renderer<'a>, ItemId, Tick, f64)> {
-        let LayerSource::Comp { item } = layer.source else { return None };
+    pub fn precomp_source(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+    ) -> Option<(Renderer<'a>, ItemId, Tick, f64)> {
+        let LayerSource::Comp { item } = layer.source else {
+            return None;
+        };
         if layer.switches.adjustment || self.project.comp_contains(item, ctx.comp_id) {
             return None;
         }
@@ -767,13 +895,32 @@ impl<'a> Renderer<'a> {
         if self.content_times(ctx, layer).is_some() {
             return None;
         }
-        if !nc.covers(lt) || self.proxy_for(item).is_some() || !essential_overrides(ctx, layer).is_empty() || frame_blend_mode(ctx, layer) != FrameBlend::Off {
+        if !nc.covers(lt)
+            || self.proxy_for(item).is_some()
+            || !essential_overrides(ctx, layer).is_empty()
+            || frame_blend_mode(ctx, layer) != FrameBlend::Off
+        {
             return None;
         }
         let s = self.opts.scale;
-        let bs = if s < 1.0 && nc.preserve_resolution { 1.0 } else { s };
+        let bs = if s < 1.0 && nc.preserve_resolution {
+            1.0
+        } else {
+            s
+        };
         let base = self.nested_through(layer);
-        Some((Renderer { opts: RenderOpts { scale: bs, ..base.opts }, ..base }, item, lt, bs))
+        Some((
+            Renderer {
+                opts: RenderOpts {
+                    scale: bs,
+                    ..base.opts
+                },
+                ..base
+            },
+            item,
+            lt,
+            bs,
+        ))
     }
 
     /// The nested comp of a precomp layer whose transformations collapse into this comp: the
@@ -783,14 +930,20 @@ impl<'a> Renderer<'a> {
         if !layer.switches.collapse || layer.switches.adjustment || self.depth > 12 {
             return None;
         }
-        let LayerSource::Comp { item } = &layer.source else { return None };
+        let LayerSource::Comp { item } = &layer.source else {
+            return None;
+        };
         if self.project.comp_contains(*item, ctx.comp_id) || self.project.comp(*item).is_none() {
             return None;
         }
         if layer.masks().is_some_and(|m| !m.children.is_empty()) {
             return None;
         }
-        if layer.switches.effects && layer.effects().is_some_and(|fx| fx.groups().any(|g| g.enabled)) {
+        if layer.switches.effects
+            && layer
+                .effects()
+                .is_some_and(|fx| fx.groups().any(|g| g.enabled))
+        {
             return None;
         }
         if styles::active(ctx, layer) {
@@ -807,13 +960,24 @@ impl<'a> Renderer<'a> {
     /// their transforms are concatenated with the precomp layer's (one resample, no
     /// rasterisation at the precomp's bounds), their opacity multiplied by `opacity`, and their
     /// 3D layers use this comp's camera and lights.
-    pub fn collapse_into(&self, ctx: &EvalCtx<'a>, layer: &'a Layer, item: ItemId, opacity: f32) -> Option<(Renderer<'a>, EvalCtx<'a>)> {
+    pub fn collapse_into(
+        &self,
+        ctx: &EvalCtx<'a>,
+        layer: &'a Layer,
+        item: ItemId,
+        opacity: f32,
+    ) -> Option<(Renderer<'a>, EvalCtx<'a>)> {
         let nc = self.project.comp(item)?;
         let t = ctx.nested_time(layer);
         if !nc.covers(t) {
             return None;
         }
-        let nctx = EvalCtx { comp_id: item, comp: nc, time: t, ..*ctx };
+        let nctx = EvalCtx {
+            comp_id: item,
+            comp: nc,
+            time: t,
+            ..*ctx
+        };
         let (l2c, _) = ctx.layer_to_comp(layer);
         let outer = Some(self.outer.map_or(l2c, |o| o * l2c));
         let world = ctx.world_matrix(layer);
@@ -823,14 +987,31 @@ impl<'a> Renderer<'a> {
             parent: self.collapse3d.map_or(*ctx, |c| c.parent),
         };
         // Motion blur follows the precomp layer's own motion too.
-        let link = Through { comp_id: ctx.comp_id, comp: ctx.comp, time: ctx.time, layer, blur: self.mb_on(ctx, layer) };
+        let link = Through {
+            comp_id: ctx.comp_id,
+            comp: ctx.comp,
+            time: ctx.time,
+            layer,
+            blur: self.mb_on(ctx, layer),
+        };
         let mut through = self.through;
         let slot = through.iter_mut().find(|t| t.is_none());
         let through_lost = self.through_lost || slot.is_none();
         if let Some(slot) = slot {
             *slot = Some(link);
         }
-        Some((Renderer { depth: self.depth + 1, outer, opacity_mul: opacity, collapse3d: Some(c3), through, through_lost, ..*self }, nctx))
+        Some((
+            Renderer {
+                depth: self.depth + 1,
+                outer,
+                opacity_mul: opacity,
+                collapse3d: Some(c3),
+                through,
+                through_lost,
+                ..*self
+            },
+            nctx,
+        ))
     }
 
     pub(crate) fn opacity_mul(&self) -> f32 {
@@ -842,19 +1023,30 @@ impl<'a> Renderer<'a> {
     /// that then takes the precomp layer's track matte, Preserve Transparency and blend mode.
     /// Returns the region left to re-quantise (nested layers drawn straight into `canvas`
     /// quantise their own footprints).
-    fn draw_collapsed(&self, ctx: &EvalCtx<'a>, layer: &Layer, item: ItemId, canvas: &mut Image, blank: bool) -> Region {
+    fn draw_collapsed(
+        &self,
+        ctx: &EvalCtx<'a>,
+        layer: &Layer,
+        item: ItemId,
+        canvas: &mut Image,
+        blank: bool,
+    ) -> Region {
         let opacity = ctx.opacity(layer) as f32 * self.opacity_mul;
         if opacity <= 0.0 {
             return Region::Empty;
         }
-        let matte = layer.track_matte.is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
+        let matte = layer
+            .track_matte
+            .is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
         if layer.blend_mode == BlendMode::Normal && !matte && !layer.preserve_transparency {
             if let Some((sub, nctx)) = self.collapse_into(ctx, layer, item, opacity) {
                 sub.draw_comp(&nctx, canvas, blank);
             }
             return Region::Empty;
         }
-        let Some((sub, nctx)) = self.collapse_into(ctx, layer, item, 1.0) else { return Region::Empty };
+        let Some((sub, nctx)) = self.collapse_into(ctx, layer, item, 1.0) else {
+            return Region::Empty;
+        };
         let mut iso = Image::new(canvas.width, canvas.height);
         sub.draw_comp(&nctx, &mut iso, true);
         self.composite_iso(ctx, layer, iso, canvas, opacity);
@@ -870,7 +1062,8 @@ impl<'a> Renderer<'a> {
         let continuous = match layer.source {
             LayerSource::Text | LayerSource::Shape => true,
             LayerSource::Footage { item } => {
-                layer.switches.collapse && matches!(self.project.item(item).map(|i| &i.kind), Some(ItemKind::Footage(f)) if is_vector_footage(f))
+                layer.switches.collapse
+                    && matches!(self.project.item(item).map(|i| &i.kind), Some(ItemKind::Footage(f)) if is_vector_footage(f))
             }
             _ => false,
         };
@@ -879,7 +1072,10 @@ impl<'a> Renderer<'a> {
         }
         let (l2c, _) = ctx.layer_to_comp(layer);
         let m = self.outer.map_or(l2c, |o| o * l2c);
-        let a = layer.transform().map(|tr| ctx.v3(layer, tr, "anchor", [0.0; 3])).unwrap_or([0.0; 3]);
+        let a = layer
+            .transform()
+            .map(|tr| ctx.v3(layer, tr, "anchor", [0.0; 3]))
+            .unwrap_or([0.0; 3]);
         let p0 = m.apply(vec2(a[0], a[1]));
         let px = m.apply(vec2(a[0] + 1.0, a[1]));
         let py = m.apply(vec2(a[0], a[1] + 1.0));
@@ -890,7 +1086,9 @@ impl<'a> Renderer<'a> {
         // The step is rounded up past rounding noise only: an unscaled layer whose position isn't
         // a whole number maps the unit vectors to lengths a hair over 1, which must stay 1 (#390:
         // rounded up to 2^¼, unscaled text was drawn larger and resampled, softer).
-        let mut k = 2f64.powf((k.log2() * 4.0 - 1e-6).ceil() / 4.0).clamp(1.0 / 16.0, 64.0);
+        let mut k = 2f64
+            .powf((k.log2() * 4.0 - 1e-6).ceil() / 4.0)
+            .clamp(1.0 / 16.0, 64.0);
         // Keep the buffer within about 16 million pixels.
         if let Some(b) = content_bounds(ctx, layer) {
             let area = ((b[2] - b[0]) * (b[3] - b[1])).max(1.0) * s * s;
@@ -907,7 +1105,14 @@ impl<'a> Renderer<'a> {
     }
 
     fn ctx(&self, comp_id: ItemId, comp: &'a Comp, t: Tick) -> EvalCtx<'a> {
-        EvalCtx { project: self.project, comp_id, comp, time: t, expr: self.expr, footage: Some(self.footage) }
+        EvalCtx {
+            project: self.project,
+            comp_id,
+            comp,
+            time: t,
+            expr: self.expr,
+            footage: Some(self.footage),
+        }
     }
 
     /// This renderer with another accelerator (or none): the passes of
@@ -959,7 +1164,12 @@ impl<'a> Renderer<'a> {
 
     /// The Auto timing history and key for a top-level frame of `comp` (`None` unless the
     /// backend is [`Backend::Auto`] and the accelerator keeps history).
-    pub fn frame_auto(&self, a: &'a dyn Accelerator, comp: ItemId, display: bool) -> Option<(&'a AutoPick, AutoKey)> {
+    pub fn frame_auto(
+        &self,
+        a: &'a dyn Accelerator,
+        comp: ItemId,
+        display: bool,
+    ) -> Option<(&'a AutoPick, AutoKey)> {
         if self.opts.backend != Backend::Auto || self.opts.roi.is_some() {
             return None;
         }
@@ -968,7 +1178,9 @@ impl<'a> Renderer<'a> {
 
     /// [`Self::comp_frame`] on the CPU compositor only.
     pub fn comp_frame_cpu(&self, comp_id: ItemId, t: Tick) -> Image {
-        let Some(comp) = self.project.comp(comp_id) else { return Image::new(1, 1) };
+        let Some(comp) = self.project.comp(comp_id) else {
+            return Image::new(1, 1);
+        };
         let s = self.opts.scale;
         let w = ((comp.width as f64 * s).round() as u32).max(1);
         let h = ((comp.height as f64 * s).round() as u32).max(1);
@@ -978,11 +1190,22 @@ impl<'a> Renderer<'a> {
         if self.depth == 0
             && let Some(r) = self.opts.roi
             && comp.has_3d()
-            && (roi_inside(r, comp.width, comp.height) || comp.renderer == effectcraft_project::Renderer::Advanced3D)
+            && (roi_inside(r, comp.width, comp.height)
+                || comp.renderer == effectcraft_project::Renderer::Advanced3D)
         {
-            let full = Renderer { opts: RenderOpts { roi: None, ..self.opts }, ..*self }.comp_frame(comp_id, t);
+            let full = Renderer {
+                opts: RenderOpts {
+                    roi: None,
+                    ..self.opts
+                },
+                ..*self
+            }
+            .comp_frame(comp_id, t);
             let (x0, y0) = ((r[0] * s).round() as i64, (r[1] * s).round() as i64);
-            let (rw, rh) = (((r[2] * s).round() as u32).max(1), ((r[3] * s).round() as u32).max(1));
+            let (rw, rh) = (
+                ((r[2] * s).round() as u32).max(1),
+                ((r[3] * s).round() as u32).max(1),
+            );
             let mut out = Image::new(rw, rh);
             for y in 0..rh as i64 {
                 let sy = y + y0;
@@ -992,7 +1215,8 @@ impl<'a> Renderer<'a> {
                 for x in 0..rw as i64 {
                     let sx = x + x0;
                     if sx >= 0 && sx < full.width as i64 {
-                        out.data[(y * rw as i64 + x) as usize] = full.data[(sy * full.width as i64 + sx) as usize];
+                        out.data[(y * rw as i64 + x) as usize] =
+                            full.data[(sy * full.width as i64 + sx) as usize];
                     }
                 }
             }
@@ -1060,7 +1284,12 @@ impl<'a> Renderer<'a> {
     }
 
     /// Evaluate an effect instance's parameters.
-    fn effect_params(&self, ctx: &EvalCtx, layer: &Layer, g: &effectcraft_project::PropGroup) -> Params {
+    fn effect_params(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        g: &effectcraft_project::PropGroup,
+    ) -> Params {
         // Nested groups (Paint strokes, Puppet meshes and pins) are flattened too.
         effectcraft_effects::flatten_params(g, &mut |pr| ctx.value(layer, pr))
     }
@@ -1071,9 +1300,21 @@ impl<'a> Renderer<'a> {
 
     /// Run the first `limit` effects of the layer's stack (by position; disabled ones count) on
     /// `buf` (layer space, or the comp below for an adjustment layer).
-    fn apply_effects_timed(&self, ctx: &EvalCtx, layer: &Layer, mut buf: Buf, adjustment: bool, limit: usize, timing: Option<&mut Vec<(String, f64)>>) -> Buf {
+    fn apply_effects_timed(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        mut buf: Buf,
+        adjustment: bool,
+        limit: usize,
+        timing: Option<&mut Vec<(String, f64)>>,
+    ) -> Buf {
         // The comp below an adjustment layer is not in its layer space: it stays as it is.
-        let origin = if adjustment { [0.0; 2] } else { ctx.effect_bounds(layer).1 };
+        let origin = if adjustment {
+            [0.0; 2]
+        } else {
+            ctx.effect_bounds(layer).1
+        };
         buf.rebase(origin);
         let mut out = self.effect_space_stack(ctx, layer, buf, adjustment, limit, timing, origin);
         out.rebase([-origin[0], -origin[1]]);
@@ -1093,9 +1334,17 @@ impl<'a> Renderer<'a> {
         timing: Option<&mut Vec<(String, f64)>>,
         origin: [f64; 2],
     ) -> Buf {
-        let mut t = CpuFx { accel: self.active_accel(), levels: self.pipe.levels, buf: Some(buf) };
+        let mut t = CpuFx {
+            accel: self.active_accel(),
+            levels: self.pipe.levels,
+            buf: Some(buf),
+        };
         self.run_effect_stack(ctx, layer, adjustment, limit, timing, origin, &mut t);
-        t.buf.unwrap_or_else(|| Buf { img: Image::new(1, 1), offset: [0.0; 2], scale: self.opts.scale })
+        t.buf.unwrap_or_else(|| Buf {
+            img: Image::new(1, 1),
+            offset: [0.0; 2],
+            scale: self.opts.scale,
+        })
     }
 
     /// Run the layer's video effect stack on `target` (in effect space, measured from `origin`
@@ -1145,7 +1394,14 @@ impl<'a> Renderer<'a> {
                 buf
             });
         }
-        let host = FxHost { r: self, ctx, layer, origin, index: Default::default(), original: original.as_ref() };
+        let host = FxHost {
+            r: self,
+            ctx,
+            layer,
+            origin,
+            index: Default::default(),
+            original: original.as_ref(),
+        };
         let env = EffectEnv {
             masks: &mask_shapes,
             host: Some(&host),
@@ -1154,16 +1410,26 @@ impl<'a> Renderer<'a> {
             effect_index: 0,
             working_space: self.pipe.space,
             working_linear: self.pipe.linear,
-            shutter: self.mb_on(ctx, layer).then_some((ctx.comp.shutter_angle, ctx.comp.shutter_phase, ctx.comp.motion_blur_samples)),
+            shutter: self.mb_on(ctx, layer).then_some((
+                ctx.comp.shutter_angle,
+                ctx.comp.shutter_phase,
+                ctx.comp.motion_blur_samples,
+            )),
         };
         // Video effects in stack order (index, group, spec); disabled and audio effects skipped.
-        let stack: Vec<(usize, &effectcraft_project::PropGroup, &'static effectcraft_effects::EffectSpec)> = fx
+        let stack: Vec<(
+            usize,
+            &effectcraft_project::PropGroup,
+            &'static effectcraft_effects::EffectSpec,
+        )> = fx
             .groups()
             .enumerate()
             .take_while(|(i, _)| *i < limit)
             .filter(|(_, g)| g.enabled)
             .filter_map(|(i, g)| match &g.kind {
-                GroupKind::Effect { effect } => effectcraft_effects::find(effect).map(|s| (i, g, s)),
+                GroupKind::Effect { effect } => {
+                    effectcraft_effects::find(effect).map(|s| (i, g, s))
+                }
                 _ => None,
             })
             .filter(|(_, _, s)| !effectcraft_effects::audio_fx::is_audio_effect(s.id))
@@ -1177,14 +1443,30 @@ impl<'a> Renderer<'a> {
                 && spec.gpu
                 && a.supports_effect(spec.id)
             {
-                let run: Vec<_> = stack[k..].iter().take_while(|(_, _, s)| s.gpu && a.supports_effect(s.id)).collect();
-                let params: Vec<Params> = run.iter().map(|(_, g, _)| self.effect_params(ctx, layer, g)).collect();
+                let run: Vec<_> = stack[k..]
+                    .iter()
+                    .take_while(|(_, _, s)| s.gpu && a.supports_effect(s.id))
+                    .collect();
+                let params: Vec<Params> = run
+                    .iter()
+                    .map(|(_, g, _)| self.effect_params(ctx, layer, g))
+                    .collect();
                 let steps: Vec<FxStep> = run
                     .iter()
                     .zip(&params)
                     .map(|((i, g, s), params)| FxStep {
                         spec: s,
-                        ctx: EffectCtx { params, time: lt.seconds(), layer_size, seed: g.uid as u32, adjustment, env: EffectEnv { effect_index: *i, ..env } },
+                        ctx: EffectCtx {
+                            params,
+                            time: lt.seconds(),
+                            layer_size,
+                            seed: g.uid as u32,
+                            adjustment,
+                            env: EffectEnv {
+                                effect_index: *i,
+                                ..env
+                            },
+                        },
                     })
                     .collect();
                 let t0 = web_time::Instant::now();
@@ -1200,8 +1482,18 @@ impl<'a> Renderer<'a> {
             k += 1;
             let params = self.effect_params(ctx, layer, g);
             host.index.store(i, std::sync::atomic::Ordering::Relaxed);
-            let env = EffectEnv { effect_index: i, ..env };
-            let ectx = EffectCtx { params: &params, time: lt.seconds(), layer_size, seed: g.uid as u32, adjustment, env };
+            let env = EffectEnv {
+                effect_index: i,
+                ..env
+            };
+            let ectx = EffectCtx {
+                params: &params,
+                time: lt.seconds(),
+                layer_size,
+                seed: g.uid as u32,
+                adjustment,
+                env,
+            };
             let t0 = web_time::Instant::now();
             target.cpu(&mut |buf| {
                 let mut buf = effectcraft_effects::apply(spec, &ectx, buf);
@@ -1220,18 +1512,28 @@ impl<'a> Renderer<'a> {
         let s = self.opts.scale;
         match &layer.source {
             LayerSource::Solid { item } => {
-                let ItemKind::Solid(sol) = &self.project.item(*item)?.kind else { return None };
+                let ItemKind::Solid(sol) = &self.project.item(*item)?.kind else {
+                    return None;
+                };
                 let w = ((sol.width as f64 * s).ceil() as u32).max(1);
                 let h = ((sol.height as f64 * s).ceil() as u32).max(1);
                 if layer.switches.adjustment {
-                    return Some(Buf { img: Image::filled(w, h, [1.0; 4]), offset: [0.0; 2], scale: s });
+                    return Some(Buf {
+                        img: Image::filled(w, h, [1.0; 4]),
+                        offset: [0.0; 2],
+                        scale: s,
+                    });
                 }
                 let mut c = sol.color;
                 if let Some(conv) = self.pipe.authored_in() {
                     c = conv.apply(c);
                 }
                 let px = self.pipe.quantize_px([c[0], c[1], c[2], 1.0]);
-                Some(Buf { img: Image::filled(w, h, px), offset: [0.0; 2], scale: s })
+                Some(Buf {
+                    img: Image::filled(w, h, px),
+                    offset: [0.0; 2],
+                    scale: s,
+                })
             }
             LayerSource::Comp { item } => {
                 if self.project.comp_contains(*item, ctx.comp_id) {
@@ -1246,19 +1548,35 @@ impl<'a> Renderer<'a> {
                 if let Some(pf) = self.proxy_for(*item)
                     && let Some(nc) = self.project.comp(*item)
                 {
-                    let img = self.footage.frame_with(*item, pf, lt, None, self.pipe.float_encoding())?;
+                    let img =
+                        self.footage
+                            .frame_with(*item, pf, lt, None, self.pipe.float_encoding())?;
                     return Some(self.footage_buf(&img, pf, nc.width, nc.height));
                 }
                 // Essential Properties overrides render the nested comp with this instance's
                 // values.
                 let ov = essential_overrides(ctx, layer);
-                let tmp = if ov.is_empty() { None } else { effectcraft_project::essential::with_overrides(self.project, *item, &ov) };
+                let tmp = if ov.is_empty() {
+                    None
+                } else {
+                    effectcraft_project::essential::with_overrides(self.project, *item, &ov)
+                };
                 // Preserve resolution when nested: drawn at full size even when this comp renders
                 // smaller (the buffer's scale places it).
-                let full = s < 1.0 && self.project.comp(*item).is_some_and(|nc| nc.preserve_resolution);
+                let full = s < 1.0
+                    && self
+                        .project
+                        .comp(*item)
+                        .is_some_and(|nc| nc.preserve_resolution);
                 let bs = if full { 1.0 } else { s };
                 let base = self.nested_through(layer);
-                let base = Renderer { opts: RenderOpts { scale: bs, ..base.opts }, ..base };
+                let base = Renderer {
+                    opts: RenderOpts {
+                        scale: bs,
+                        ..base.opts
+                    },
+                    ..base
+                };
                 let sub = match &tmp {
                     Some(p) => Renderer { project: p, ..base },
                     None => base,
@@ -1272,14 +1590,24 @@ impl<'a> Renderer<'a> {
                     if w > 1e-6 {
                         let a = sub.comp_frame(*item, nc.frame_rate.tick_of(i));
                         let b = sub.comp_frame(*item, nc.frame_rate.tick_of(i + 1));
-                        return Some(Buf { img: blend_frames(mode, &a, &b, w as f32), offset: [0.0; 2], scale: bs });
+                        return Some(Buf {
+                            img: blend_frames(mode, &a, &b, w as f32),
+                            offset: [0.0; 2],
+                            scale: bs,
+                        });
                     }
                 }
-                Some(Buf { img: sub.comp_frame(*item, lt), offset: [0.0; 2], scale: bs })
+                Some(Buf {
+                    img: sub.comp_frame(*item, lt),
+                    offset: [0.0; 2],
+                    scale: bs,
+                })
             }
             LayerSource::Footage { item } => {
                 let it = self.project.item(*item)?;
-                let ItemKind::Footage(f) = &it.kind else { return None };
+                let ItemKind::Footage(f) = &it.kind else {
+                    return None;
+                };
                 if !f.has_video {
                     return None;
                 }
@@ -1287,7 +1615,11 @@ impl<'a> Renderer<'a> {
                 if layer.switches.collapse && is_vector_footage(f) {
                     let k = self.raster_scale(ctx, layer);
                     if let Some(img) = self.footage.vector_frame(*item, f, k) {
-                        let mut buf = Buf { img: (*img).clone(), offset: [0.0; 2], scale: k };
+                        let mut buf = Buf {
+                            img: (*img).clone(),
+                            offset: [0.0; 2],
+                            scale: k,
+                        };
                         if let Some(c) = self.pipe.media_in(f) {
                             color::convert(&mut buf.img, &c);
                         }
@@ -1298,12 +1630,18 @@ impl<'a> Renderer<'a> {
                 // The proxy is decoded instead, at its own size, and fills the footage's frame.
                 let proxy = self.proxy_for(*item);
                 let pf = proxy.unwrap_or(f);
-                let size = self.reduced_size(f.width, f.height).filter(|_| proxy.is_none());
+                let size = self
+                    .reduced_size(f.width, f.height)
+                    .filter(|_| proxy.is_none());
                 let img = self.footage_frame(ctx, layer, *item, pf, lt, size)?;
                 Some(self.footage_buf(&img, pf, f.width, f.height))
             }
-            LayerSource::Text => Some(self.authored(text::render(ctx, layer, self.raster_scale(ctx, layer)))),
-            LayerSource::Shape => layer.props.sub("contents").map(|c| self.authored(shapes::render(ctx, layer, c, self.raster_scale(ctx, layer)))),
+            LayerSource::Text => {
+                Some(self.authored(text::render(ctx, layer, self.raster_scale(ctx, layer))))
+            }
+            LayerSource::Shape => layer.props.sub("contents").map(|c| {
+                self.authored(shapes::render(ctx, layer, c, self.raster_scale(ctx, layer)))
+            }),
             _ => None,
         }
     }
@@ -1312,20 +1650,41 @@ impl<'a> Renderer<'a> {
     pub fn proxy_for(&self, item: ItemId) -> Option<&'a Footage> {
         let it = self.project.item(item)?;
         let px = it.proxy.as_deref()?;
-        (self.opts.proxy.uses(matches!(it.kind, ItemKind::Comp(_)), px.enabled) && px.footage.has_video).then_some(&px.footage)
+        (self
+            .opts
+            .proxy
+            .uses(matches!(it.kind, ItemKind::Comp(_)), px.enabled)
+            && px.footage.has_video)
+            .then_some(&px.footage)
     }
 
     /// A decoded frame of `f` as a layer buffer covering `w`×`h` layer pixels (the footage's
     /// nominal size; proxies are scaled up to it), converted from its colour profile.
     fn footage_buf(&self, img: &Image, f: &Footage, w: u32, h: u32) -> Buf {
         let s = self.opts.scale;
-        let k = if img.width > 0 { w.max(1) as f64 / img.width as f64 } else { 1.0 };
+        let k = if img.width > 0 {
+            w.max(1) as f64 / img.width as f64
+        } else {
+            1.0
+        };
         // Keep native pixels when downsampling is small; resample otherwise.
         let mut buf = match self.reduced_size(w, h) {
             // The source resampled it already (`FootageSource::frame_at_size`).
-            Some(size) if (img.width, img.height) == size => Buf { img: img.clone(), offset: [0.0; 2], scale: s },
-            Some((rw, rh)) if k <= 1.0 + 1e-9 => Buf { img: effectcraft_raster::resample(img, rw, rh), offset: [0.0; 2], scale: s },
-            _ => Buf { img: img.clone(), offset: [0.0; 2], scale: 1.0 / k },
+            Some(size) if (img.width, img.height) == size => Buf {
+                img: img.clone(),
+                offset: [0.0; 2],
+                scale: s,
+            },
+            Some((rw, rh)) if k <= 1.0 + 1e-9 => Buf {
+                img: effectcraft_raster::resample(img, rw, rh),
+                offset: [0.0; 2],
+                scale: s,
+            },
+            _ => Buf {
+                img: img.clone(),
+                offset: [0.0; 2],
+                scale: 1.0 / k,
+            },
         };
         if let Some(c) = self.pipe.media_in(f) {
             color::convert(&mut buf.img, &c);
@@ -1337,7 +1696,12 @@ impl<'a> Renderer<'a> {
     /// is resampled to it (below 3/4 scale).
     fn reduced_size(&self, w: u32, h: u32) -> Option<(u32, u32)> {
         let s = self.opts.scale;
-        (s < 0.75).then(|| (((w as f64 * s).round() as u32).max(1), ((h as f64 * s).round() as u32).max(1)))
+        (s < 0.75).then(|| {
+            (
+                ((w as f64 * s).round() as u32).max(1),
+                ((h as f64 * s).round() as u32).max(1),
+            )
+        })
     }
 
     /// Authored colours into the working space (linear working spaces).
@@ -1352,24 +1716,60 @@ impl<'a> Renderer<'a> {
     /// when the layer's Frame Blending switch (and the comp's Enable Frame Blending) is on and
     /// `t` falls between frames (footage rate ≠ comp rate, time stretch, time remapping).
     /// `size`: a plain frame may come resampled to it ([`FootageSource::frame_at_size`]).
-    fn footage_frame(&self, ctx: &EvalCtx, layer: &Layer, item: ItemId, f: &Footage, t: Tick, size: Option<(u32, u32)>) -> Option<Arc<Image>> {
+    fn footage_frame(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        item: ItemId,
+        f: &Footage,
+        t: Tick,
+        size: Option<(u32, u32)>,
+    ) -> Option<Arc<Image>> {
         // Interpret Footage ▸ Separate Fields: each field is a frame at twice the rate.
-        if f.fields != effectcraft_project::FieldOrder::Off && matches!(f.kind, FootageKind::Video | FootageKind::Sequence) {
+        if f.fields != effectcraft_project::FieldOrder::Off
+            && matches!(f.kind, FootageKind::Video | FootageKind::Sequence)
+        {
             let field_rate = FrameRate::new(f.frame_rate.num * 2, f.frame_rate.den);
             let i = field_rate.frame_at(t).max(0);
-            let img = self.footage.frame_with(item, f, f.frame_rate.tick_of(i / 2), None, self.pipe.float_curve(f))?;
+            let img = self.footage.frame_with(
+                item,
+                f,
+                f.frame_rate.tick_of(i / 2),
+                None,
+                self.pipe.float_curve(f),
+            )?;
             let dominant_upper = f.fields == effectcraft_project::FieldOrder::UpperFirst;
             // Upper field = even lines (0, 2, …).
             let parity = if (i % 2 == 0) == dominant_upper { 0 } else { 1 };
-            return Some(Arc::new(interpret_pixels(&field_frame(&img, parity), f, self.pipe.linear_footage_space(f))));
+            return Some(Arc::new(interpret_pixels(
+                &field_frame(&img, parity),
+                f,
+                self.pipe.linear_footage_space(f),
+            )));
         }
         // Interpretation is per pixel but not linear: it runs on the frame before resampling.
         let size = size.filter(|_| !(f.invert_alpha || f.linear_light_applies()));
         let img = self.footage_frame_raw(ctx, layer, item, f, t, size)?;
-        if f.invert_alpha || f.linear_light_applies() { Some(Arc::new(interpret_pixels(&img, f, self.pipe.linear_footage_space(f)))) } else { Some(img) }
+        if f.invert_alpha || f.linear_light_applies() {
+            Some(Arc::new(interpret_pixels(
+                &img,
+                f,
+                self.pipe.linear_footage_space(f),
+            )))
+        } else {
+            Some(img)
+        }
     }
 
-    fn footage_frame_raw(&self, ctx: &EvalCtx, layer: &Layer, item: ItemId, f: &Footage, t: Tick, size: Option<(u32, u32)>) -> Option<Arc<Image>> {
+    fn footage_frame_raw(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        item: ItemId,
+        f: &Footage,
+        t: Tick,
+        size: Option<(u32, u32)>,
+    ) -> Option<Arc<Image>> {
         let mode = frame_blend_mode(ctx, layer);
         let float = self.pipe.float_curve(f);
         if mode != FrameBlend::Off && matches!(f.kind, FootageKind::Video | FootageKind::Sequence) {
@@ -1379,7 +1779,18 @@ impl<'a> Renderer<'a> {
                 let key = self.cache.map(|_| {
                     use std::hash::{Hash, Hasher};
                     let mut h = std::collections::hash_map::DefaultHasher::new();
-                    (0x00f8_a3e5_u64, item, i, (w as f32).to_bits(), mode as u8, f.frame_rate.num, f.frame_rate.den, &f.path, float).hash(&mut h);
+                    (
+                        0x00f8_a3e5_u64,
+                        item,
+                        i,
+                        (w as f32).to_bits(),
+                        mode as u8,
+                        f.frame_rate.num,
+                        f.frame_rate.den,
+                        &f.path,
+                        float,
+                    )
+                        .hash(&mut h);
                     h.finish()
                 });
                 if let (Some(c), Some(k)) = (self.cache, key)
@@ -1387,12 +1798,23 @@ impl<'a> Renderer<'a> {
                 {
                     return Some(Arc::new(b.img.clone()));
                 }
-                let a = self.footage.frame_with(item, f, f.frame_rate.tick_of(i), None, float);
-                let b = self.footage.frame_with(item, f, f.frame_rate.tick_of(i + 1), None, float);
+                let a = self
+                    .footage
+                    .frame_with(item, f, f.frame_rate.tick_of(i), None, float);
+                let b = self
+                    .footage
+                    .frame_with(item, f, f.frame_rate.tick_of(i + 1), None, float);
                 if let (Some(a), Some(b)) = (a, b) {
                     let img = blend_frames(mode, &a, &b, w as f32);
                     if let (Some(c), Some(k)) = (self.cache_to_keep(), key) {
-                        c.insert(k, Arc::new(Buf { img: img.clone(), offset: [0.0; 2], scale: 1.0 }));
+                        c.insert(
+                            k,
+                            Arc::new(Buf {
+                                img: img.clone(),
+                                offset: [0.0; 2],
+                                scale: 1.0,
+                            }),
+                        );
                     }
                     return Some(Arc::new(img));
                 }
@@ -1429,7 +1851,9 @@ impl<'a> Renderer<'a> {
 
     /// A buffer converted to the blending space (cached under a key derived from `key`).
     pub(crate) fn to_blend(&self, b: Arc<Buf>, key: Option<u64>) -> Arc<Buf> {
-        let Some(c) = self.pipe.to_blend() else { return b };
+        let Some(c) = self.pipe.to_blend() else {
+            return b;
+        };
         let key = key.map(|k| cache::derive(k, 0x1ea7));
         if let (Some(cache), Some(k)) = (self.cache, key)
             && let Some(x) = cache.get(k)
@@ -1456,7 +1880,13 @@ impl<'a> Renderer<'a> {
         {
             return Some((b, key));
         }
-        let flat = Arc::new(styles::Styled { passes: st.passes.iter().map(|(b, m)| ((**b).clone(), *m)).collect(), body: (*st.body).clone() }.flatten());
+        let flat = Arc::new(
+            styles::Styled {
+                passes: st.passes.iter().map(|(b, m)| ((**b).clone(), *m)).collect(),
+                body: (*st.body).clone(),
+            }
+            .flatten(),
+        );
         if let (Some(c), Some(k)) = (self.cache_to_keep(), key) {
             c.insert(k, flat.clone());
         }
@@ -1475,8 +1905,21 @@ impl<'a> Renderer<'a> {
         self.content_buf_timed(ctx, layer, None).map(|(b, _)| b)
     }
 
-    fn content_buf_timed(&self, ctx: &EvalCtx, layer: &Layer, mut timing: Option<&mut LayerTiming>) -> Option<(Arc<Buf>, Option<u64>)> {
-        let key = self.cache.and_then(|_| cache::layer_key(ctx, layer, self.raster_scale(ctx, layer), self.opts.draft, self.mb_on(ctx, layer)));
+    fn content_buf_timed(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        mut timing: Option<&mut LayerTiming>,
+    ) -> Option<(Arc<Buf>, Option<u64>)> {
+        let key = self.cache.and_then(|_| {
+            cache::layer_key(
+                ctx,
+                layer,
+                self.raster_scale(ctx, layer),
+                self.opts.draft,
+                self.mb_on(ctx, layer),
+            )
+        });
         let key = self.content_key(ctx, layer, key);
         if let (Some(c), Some(k)) = (self.cache, key)
             && let Some(b) = c.get(k)
@@ -1487,7 +1930,14 @@ impl<'a> Renderer<'a> {
             return Some((b, key));
         }
         let buf = self.masked_source(ctx, layer)?;
-        let buf = Arc::new(self.apply_effects_timed(ctx, layer, buf, false, usize::MAX, timing.map(|t| &mut t.effects)));
+        let buf = Arc::new(self.apply_effects_timed(
+            ctx,
+            layer,
+            buf,
+            false,
+            usize::MAX,
+            timing.map(|t| &mut t.effects),
+        ));
         if let (Some(c), Some(k)) = (self.cache_to_keep(), key) {
             c.insert(k, buf.clone());
         }
@@ -1499,7 +1949,16 @@ impl<'a> Renderer<'a> {
     /// what effect `effects` sees. Served from / stored in the layer cache under its own key,
     /// so scrubbing reuses frames rendered for earlier output frames.
     pub fn layer_input(&self, ctx: &EvalCtx, layer: &Layer, effects: usize) -> Option<Arc<Buf>> {
-        let key = self.cache.and_then(|_| cache::input_key(ctx, layer, self.raster_scale(ctx, layer), self.opts.draft, self.mb_on(ctx, layer), effects));
+        let key = self.cache.and_then(|_| {
+            cache::input_key(
+                ctx,
+                layer,
+                self.raster_scale(ctx, layer),
+                self.opts.draft,
+                self.mb_on(ctx, layer),
+                effects,
+            )
+        });
         let key = self.content_key(ctx, layer, key);
         if let (Some(c), Some(k)) = (self.cache, key)
             && let Some(b) = c.get(k)
@@ -1520,38 +1979,77 @@ impl<'a> Renderer<'a> {
     }
 
     /// The layer with its styles: exterior passes and body (cached per pass).
-    fn styled(&self, ctx: &EvalCtx, layer: &Layer, mut timing: Option<&mut LayerTiming>) -> Option<StyledLayer> {
+    fn styled(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        mut timing: Option<&mut LayerTiming>,
+    ) -> Option<StyledLayer> {
         let (content, ckey) = self.content_buf_timed(ctx, layer, timing.as_deref_mut())?;
         if !styles::active(ctx, layer) {
-            return Some(StyledLayer { passes: vec![], body: content.clone(), content, key: ckey, ckey, plain: true });
+            return Some(StyledLayer {
+                passes: vec![],
+                body: content.clone(),
+                content,
+                key: ckey,
+                ckey,
+                plain: true,
+            });
         }
         let modes = styles::pass_modes(ctx, layer);
         let key = ckey.map(|k| cache::styles_key(ctx, layer, k));
         if let (Some(c), Some(k)) = (self.cache, key)
             && let Some(body) = c.get(k)
         {
-            let passes: Option<Vec<_>> = modes.iter().enumerate().map(|(i, m)| c.get(cache::derive(k, i as u64 + 1)).map(|b| (b, *m))).collect();
+            let passes: Option<Vec<_>> = modes
+                .iter()
+                .enumerate()
+                .map(|(i, m)| c.get(cache::derive(k, i as u64 + 1)).map(|b| (b, *m)))
+                .collect();
             if let Some(passes) = passes {
-                return Some(StyledLayer { passes, body, content, key, ckey, plain: false });
+                return Some(StyledLayer {
+                    passes,
+                    body,
+                    content,
+                    key,
+                    ckey,
+                    plain: false,
+                });
             }
         }
         let t0 = web_time::Instant::now();
         let size = source_size(self.project, layer);
-        let layer_size = if size.0 == 0 { [ctx.comp.width as f64, ctx.comp.height as f64] } else { [size.0 as f64, size.1 as f64] };
+        let layer_size = if size.0 == 0 {
+            [ctx.comp.width as f64, ctx.comp.height as f64]
+        } else {
+            [size.0 as f64, size.1 as f64]
+        };
         let st = styles::render(ctx, layer, &content, layer_size);
         if let Some(t) = timing {
             t.cached = false;
-            t.effects.push(("layerStyles".into(), t0.elapsed().as_secs_f64() * 1e3));
+            t.effects
+                .push(("layerStyles".into(), t0.elapsed().as_secs_f64() * 1e3));
         }
         let body = Arc::new(st.body);
-        let passes: Vec<_> = st.passes.into_iter().map(|(b, m)| (Arc::new(b), m)).collect();
+        let passes: Vec<_> = st
+            .passes
+            .into_iter()
+            .map(|(b, m)| (Arc::new(b), m))
+            .collect();
         if let (Some(c), Some(k)) = (self.cache_to_keep(), key) {
             c.insert(k, body.clone());
             for (i, (b, _)) in passes.iter().enumerate() {
                 c.insert(cache::derive(k, i as u64 + 1), b.clone());
             }
         }
-        Some(StyledLayer { passes, body, content, key, ckey, plain: false })
+        Some(StyledLayer {
+            passes,
+            body,
+            content,
+            key,
+            ckey,
+            plain: false,
+        })
     }
 
     /// The styled layer's buffers in the blending space.
@@ -1560,9 +2058,28 @@ impl<'a> Renderer<'a> {
             return st;
         }
         let body = self.to_blend(st.body, st.key);
-        let content = if st.plain { body.clone() } else { self.to_blend(st.content, st.ckey) };
-        let passes = st.passes.into_iter().enumerate().map(|(i, (b, m))| (self.to_blend(b, st.key.map(|k| cache::derive(k, i as u64 + 1))), m)).collect();
-        StyledLayer { passes, body, content, ..st }
+        let content = if st.plain {
+            body.clone()
+        } else {
+            self.to_blend(st.content, st.ckey)
+        };
+        let passes = st
+            .passes
+            .into_iter()
+            .enumerate()
+            .map(|(i, (b, m))| {
+                (
+                    self.to_blend(b, st.key.map(|k| cache::derive(k, i as u64 + 1))),
+                    m,
+                )
+            })
+            .collect();
+        StyledLayer {
+            passes,
+            body,
+            content,
+            ..st
+        }
     }
 
     fn sampling(&self, layer: &Layer) -> effectcraft_raster::Sampling {
@@ -1586,7 +2103,12 @@ impl<'a> Renderer<'a> {
         if r[2] <= 0.0 || r[3] <= 0.0 {
             return None;
         }
-        Some(((r[0] * s).round(), (r[1] * s).round(), ((r[2] * s).round() as u32).max(1), ((r[3] * s).round() as u32).max(1)))
+        Some((
+            (r[0] * s).round(),
+            (r[1] * s).round(),
+            ((r[2] * s).round() as u32).max(1),
+            ((r[3] * s).round() as u32).max(1),
+        ))
     }
 
     /// The region of interest's offset in output pixels for 3D projection (0 without one).
@@ -1653,8 +2175,17 @@ impl<'a> Renderer<'a> {
         let mut outer: Option<Mat3> = None;
         let mut t: Option<Tick> = None;
         for l in self.links() {
-            let at = EvalCtx { comp_id: l.comp_id, comp: l.comp, time: t.unwrap_or(l.time + shift), ..*ctx };
-            let (m, _) = if l.blur { at.layer_to_comp(l.layer) } else { EvalCtx { time: l.time, ..at }.layer_to_comp(l.layer) };
+            let at = EvalCtx {
+                comp_id: l.comp_id,
+                comp: l.comp,
+                time: t.unwrap_or(l.time + shift),
+                ..*ctx
+            };
+            let (m, _) = if l.blur {
+                at.layer_to_comp(l.layer)
+            } else {
+                EvalCtx { time: l.time, ..at }.layer_to_comp(l.layer)
+            };
             outer = Some(outer.map_or(m, |o| o * m));
             t = Some(at.nested_time(l.layer));
         }
@@ -1668,7 +2199,11 @@ impl<'a> Renderer<'a> {
             return self.buf_matrix(&ctx.at(ctx.time + Tick::from_seconds_f64(dt)), layer, buf);
         }
         let (outer, t) = self.outer_at(ctx, dt);
-        let lctx = if self.mb_on(ctx, layer) { ctx.at(t) } else { *ctx };
+        let lctx = if self.mb_on(ctx, layer) {
+            ctx.at(t)
+        } else {
+            *ctx
+        };
         let (l2c, _) = lctx.layer_to_comp(layer);
         self.place_matrix(outer.map_or(l2c, |o| o * l2c), buf)
     }
@@ -1678,18 +2213,29 @@ impl<'a> Renderer<'a> {
     /// Samples Per Frame of them, as After Effects does for shape layers. `None` when the content
     /// holds still (compared through its cache key, which leaves the transform out).
     fn content_times(&self, ctx: &EvalCtx, layer: &Layer) -> Option<Vec<Tick>> {
-        if !matches!(layer.source, LayerSource::Shape | LayerSource::Text) || !self.mb_on(ctx, layer) {
+        if !matches!(layer.source, LayerSource::Shape | LayerSource::Text)
+            || !self.mb_on(ctx, layer)
+        {
             return None;
         }
         let sh = self.shutter(ctx);
         if sh.angle <= 0.0 {
             return None;
         }
-        let n = if self.opts.draft { 4 } else { (sh.samples as usize).clamp(2, 64) };
-        let times: Vec<Tick> = (0..n).map(|i| self.outer_at(ctx, sh.offset(i, n)).1).collect();
+        let n = if self.opts.draft {
+            4
+        } else {
+            (sh.samples as usize).clamp(2, 64)
+        };
+        let times: Vec<Tick> = (0..n)
+            .map(|i| self.outer_at(ctx, sh.offset(i, n)).1)
+            .collect();
         let key = |t: Tick| cache::layer_key(&ctx.at(t), layer, 1.0, false, false);
         let k0 = key(*times.first()?)?;
-        let moves = [times.get(n / 2), times.last()].into_iter().flatten().any(|t| key(*t) != Some(k0));
+        let moves = [times.get(n / 2), times.last()]
+            .into_iter()
+            .flatten()
+            .any(|t| key(*t) != Some(k0));
         moves.then_some(times)
     }
 
@@ -1697,31 +2243,64 @@ impl<'a> Renderer<'a> {
     /// their bounds. Content that also changes its raster scale within the shutter, or would need
     /// an outsized buffer, is drawn once.
     fn blurred_source(&self, ctx: &EvalCtx, layer: &Layer, times: &[Tick]) -> Option<Buf> {
-        let bufs: Vec<Buf> = times.iter().filter_map(|t| self.source(&ctx.at(*t), layer)).collect();
+        let bufs: Vec<Buf> = times
+            .iter()
+            .filter_map(|t| self.source(&ctx.at(*t), layer))
+            .collect();
         let scale = bufs.first()?.scale;
         // Pixel = layer point × scale + offset: with the largest offset every buffer lands at
         // x + (off - its offset) ≥ 0.
         let off = [0, 1].map(|i| bufs.iter().map(|b| b.offset[i]).fold(f64::MIN, f64::max));
-        let w = bufs.iter().map(|b| off[0] - b.offset[0] + b.img.width as f64).fold(0.0, f64::max).ceil();
-        let h = bufs.iter().map(|b| off[1] - b.offset[1] + b.img.height as f64).fold(0.0, f64::max).ceil();
-        if bufs.iter().any(|b| (b.scale - scale).abs() > 1e-9) || !(w * h).is_finite() || w * h > (1u64 << 26) as f64 {
+        let w = bufs
+            .iter()
+            .map(|b| off[0] - b.offset[0] + b.img.width as f64)
+            .fold(0.0, f64::max)
+            .ceil();
+        let h = bufs
+            .iter()
+            .map(|b| off[1] - b.offset[1] + b.img.height as f64)
+            .fold(0.0, f64::max)
+            .ceil();
+        if bufs.iter().any(|b| (b.scale - scale).abs() > 1e-9)
+            || !(w * h).is_finite()
+            || w * h > (1u64 << 26) as f64
+        {
             return self.source(ctx, layer);
         }
         let mut acc = Image::new(w as u32, h as u32);
         let k = 1.0 / bufs.len() as f32;
         for b in &bufs {
             let m = Mat3::translate(vec2(off[0] - b.offset[0], off[1] - b.offset[1]));
-            effectcraft_raster::accumulate_warp(&mut acc, &b.img, &m, effectcraft_raster::Sampling::Bilinear, k);
+            effectcraft_raster::accumulate_warp(
+                &mut acc,
+                &b.img,
+                &m,
+                effectcraft_raster::Sampling::Bilinear,
+                k,
+            );
         }
-        Some(Buf { img: acc, offset: off, scale })
+        Some(Buf {
+            img: acc,
+            offset: off,
+            scale,
+        })
     }
 
     /// A processed-layer cache key that also covers content motion blur (the averaged source
     /// depends on the content at every sub-sample).
     fn content_key(&self, ctx: &EvalCtx, layer: &Layer, key: Option<u64>) -> Option<u64> {
         let k = key?;
-        let Some(times) = self.content_times(ctx, layer) else { return Some(k) };
-        times.iter().try_fold(cache::derive(k, 0x6d62_6c72), |d, t| Some(cache::derive(d, cache::layer_key(&ctx.at(*t), layer, 1.0, false, false)?)))
+        let Some(times) = self.content_times(ctx, layer) else {
+            return Some(k);
+        };
+        times
+            .iter()
+            .try_fold(cache::derive(k, 0x6d62_6c72), |d, t| {
+                Some(cache::derive(
+                    d,
+                    cache::layer_key(&ctx.at(*t), layer, 1.0, false, false)?,
+                ))
+            })
     }
 
     /// Whether a layer is motion blurred: the render options, the comp's switch and the layer's
@@ -1734,9 +2313,15 @@ impl<'a> Renderer<'a> {
     /// What a layer's mask motion blur may do in this render (see [`masks::MaskBlur`]).
     fn mask_blur(&self, ctx: &EvalCtx, layer: &Layer) -> masks::MaskBlur {
         masks::MaskBlur {
-            allowed: self.opts.motion_blur && ctx.comp.enable_motion_blur && self.inherited.is_none_or(|(_, mb)| mb),
+            allowed: self.opts.motion_blur
+                && ctx.comp.enable_motion_blur
+                && self.inherited.is_none_or(|(_, mb)| mb),
             layer: self.layer_motion_blur(layer),
-            samples: if self.opts.draft { 4 } else { ctx.comp.motion_blur_samples as usize },
+            samples: if self.opts.draft {
+                4
+            } else {
+                ctx.comp.motion_blur_samples as usize
+            },
         }
     }
 
@@ -1787,7 +2372,14 @@ impl<'a> Renderer<'a> {
     ///
     /// A quantised buffer placed pixel-exactly (integer translation, Normal, 100%) over a blank
     /// canvas leaves exactly its own (quantised) pixels: nothing to re-quantise.
-    fn footprint(&self, ctx: &EvalCtx, layer: &Layer, buf: &Buf, opacity: f32, blank: bool) -> Region {
+    fn footprint(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        buf: &Buf,
+        opacity: f32,
+        blank: bool,
+    ) -> Region {
         if layer.blend_mode.is_stencil() || self.mb_samples(ctx, layer, buf) > 1 {
             return Region::Full;
         }
@@ -1795,7 +2387,9 @@ impl<'a> Renderer<'a> {
         if !m.is_affine() {
             return Region::Full;
         }
-        let matte = layer.track_matte.is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
+        let matte = layer
+            .track_matte
+            .is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
         let k = &m.0;
         let integral = |v: f64| v == v.round();
         if blank
@@ -1815,8 +2409,14 @@ impl<'a> Renderer<'a> {
         }
         let (w, h) = (buf.img.width as f64, buf.img.height as f64);
         let c = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].map(|(x, y)| m.apply(vec2(x, y)));
-        let (x0, x1) = (c.iter().map(|p| p.x).fold(f64::INFINITY, f64::min), c.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max));
-        let (y0, y1) = (c.iter().map(|p| p.y).fold(f64::INFINITY, f64::min), c.iter().map(|p| p.y).fold(f64::NEG_INFINITY, f64::max));
+        let (x0, x1) = (
+            c.iter().map(|p| p.x).fold(f64::INFINITY, f64::min),
+            c.iter().map(|p| p.x).fold(f64::NEG_INFINITY, f64::max),
+        );
+        let (y0, y1) = (
+            c.iter().map(|p| p.y).fold(f64::INFINITY, f64::min),
+            c.iter().map(|p| p.y).fold(f64::NEG_INFINITY, f64::max),
+        );
         color::PxRect::covering(x0, y0, x1, y1, 3.0).map_or(Region::Full, Region::Rect)
     }
 
@@ -1826,17 +2426,41 @@ impl<'a> Renderer<'a> {
         let samples = self.mb_samples(ctx, layer, buf);
         let (sampling, seed) = (self.sampling(layer), layer.id.0 as u32);
         if samples <= 1 {
-            return Placement { matrices: vec![self.buf_matrix(ctx, layer, buf)], sampling, seed };
+            return Placement {
+                matrices: vec![self.buf_matrix(ctx, layer, buf)],
+                sampling,
+                seed,
+            };
         }
         let sh = self.shutter(ctx);
-        let matrices = (0..samples).map(|i| self.buf_matrix_at(ctx, layer, buf, sh.offset(i, samples))).collect();
-        Placement { matrices, sampling, seed }
+        let matrices = (0..samples)
+            .map(|i| self.buf_matrix_at(ctx, layer, buf, sh.offset(i, samples)))
+            .collect();
+        Placement {
+            matrices,
+            sampling,
+            seed,
+        }
     }
 
     /// Draw a processed layer into `target` (transform, motion blur) with `mode`/`opacity`.
-    fn place(&self, ctx: &EvalCtx, layer: &Layer, buf: &Buf, target: &mut Image, mode: BlendMode, opacity: f32) {
+    fn place(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        buf: &Buf,
+        target: &mut Image,
+        mode: BlendMode,
+        opacity: f32,
+    ) {
         let pl = self.placement(ctx, layer, buf);
-        let opts = WarpOpts { sampling: pl.sampling, opacity, mode, seed: pl.seed, clip: None };
+        let opts = WarpOpts {
+            sampling: pl.sampling,
+            opacity,
+            mode,
+            seed: pl.seed,
+            clip: None,
+        };
         if let [m] = pl.matrices.as_slice() {
             composite_warp(target, &buf.img, m, &opts);
             return;
@@ -1864,9 +2488,15 @@ impl<'a> Renderer<'a> {
             self.draw_adjustment(ctx, layer, canvas, opacity);
             return Region::Full;
         }
-        let mut timing = self.profile.map(|_| LayerTiming { depth: self.depth, layer: layer.name.clone(), ..Default::default() });
+        let mut timing = self.profile.map(|_| LayerTiming {
+            depth: self.depth,
+            layer: layer.name.clone(),
+            ..Default::default()
+        });
         let t0 = web_time::Instant::now();
-        let Some(st) = self.styled(ctx, layer, timing.as_mut()) else { return Region::Empty };
+        let Some(st) = self.styled(ctx, layer, timing.as_mut()) else {
+            return Region::Empty;
+        };
         let st = self.styled_to_blend(st);
         let t1 = web_time::Instant::now();
         let changed = if st.plain {
@@ -1889,9 +2519,18 @@ impl<'a> Renderer<'a> {
     /// Composite a styled layer: exterior passes with their own modes, then the body with the
     /// layer's mode; the layer's opacity fades the whole stack. Knockout clears what is below the
     /// layer's content; switched-off R/G/B channels keep the values below.
-    fn composite_styled(&self, ctx: &EvalCtx, layer: &Layer, st: &StyledLayer, canvas: &mut Image, opacity: f32) {
+    fn composite_styled(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        st: &StyledLayer,
+        canvas: &mut Image,
+        opacity: f32,
+    ) {
         let bl = styles::blending(ctx, layer);
-        let matte = layer.track_matte.is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
+        let matte = layer
+            .track_matte
+            .is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
         if matte || layer.preserve_transparency {
             let mut iso = Image::new(canvas.width, canvas.height);
             for (b, m) in &st.passes {
@@ -1905,28 +2544,44 @@ impl<'a> Renderer<'a> {
         if bl.knockout > 0 {
             let mut k = Image::new(canvas.width, canvas.height);
             self.place(ctx, layer, &st.content, &mut k, BlendMode::Normal, 1.0);
-            tmp.data.par_iter_mut().zip(k.data.par_iter()).for_each(|(p, q)| {
-                let keep = 1.0 - q[3].clamp(0.0, 1.0);
-                for c in p.iter_mut() {
-                    *c *= keep;
-                }
-            });
+            tmp.data
+                .par_iter_mut()
+                .zip(k.data.par_iter())
+                .for_each(|(p, q)| {
+                    let keep = 1.0 - q[3].clamp(0.0, 1.0);
+                    for c in p.iter_mut() {
+                        *c *= keep;
+                    }
+                });
         }
         for (b, m) in &st.passes {
             self.place(ctx, layer, b, &mut tmp, *m, 1.0);
         }
         self.place(ctx, layer, &st.body, &mut tmp, layer.blend_mode, 1.0);
         let ch = bl.channels;
-        canvas.data.par_iter_mut().zip(tmp.data.par_iter()).for_each(|(c, t)| {
-            for i in 0..4 {
-                let v = if i < 3 && !ch[i] { c[i] } else { t[i] };
-                c[i] += (v - c[i]) * opacity;
-            }
-        });
+        canvas
+            .data
+            .par_iter_mut()
+            .zip(tmp.data.par_iter())
+            .for_each(|(c, t)| {
+                for i in 0..4 {
+                    let v = if i < 3 && !ch[i] { c[i] } else { t[i] };
+                    c[i] += (v - c[i]) * opacity;
+                }
+            });
     }
 
-    fn composite_layer(&self, ctx: &EvalCtx, layer: &Layer, buf: &Buf, canvas: &mut Image, opacity: f32) {
-        let matte = layer.track_matte.is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
+    fn composite_layer(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        buf: &Buf,
+        canvas: &mut Image,
+        opacity: f32,
+    ) {
+        let matte = layer
+            .track_matte
+            .is_some_and(|tm| tm.layer != layer.id && ctx.comp.layer(tm.layer).is_some());
         if !matte && !layer.preserve_transparency {
             self.place(ctx, layer, buf, canvas, layer.blend_mode, opacity);
             return;
@@ -1938,14 +2593,34 @@ impl<'a> Renderer<'a> {
     }
 
     /// Apply the track matte / preserve transparency to an isolated layer render, then blend.
-    fn composite_iso(&self, ctx: &EvalCtx, layer: &Layer, iso: Image, canvas: &mut Image, opacity: f32) {
+    fn composite_iso(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        iso: Image,
+        canvas: &mut Image,
+        opacity: f32,
+    ) {
         self.composite_iso_with(ctx, layer, iso, canvas, opacity, None);
     }
 
     /// [`Self::composite_iso`] with the track matte's pixels already drawn (`matte`, e.g. a 3D
     /// matte seen through the camera); otherwise the matte layer is placed in 2D.
-    pub(crate) fn composite_iso_with(&self, ctx: &EvalCtx, layer: &Layer, mut iso: Image, canvas: &mut Image, opacity: f32, matte_img: Option<Image>) {
-        let matte = layer.track_matte.and_then(|tm| ctx.comp.layer(tm.layer).filter(|m| m.id != layer.id).map(|m| (m, tm.kind)));
+    pub(crate) fn composite_iso_with(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        mut iso: Image,
+        canvas: &mut Image,
+        opacity: f32,
+        matte_img: Option<Image>,
+    ) {
+        let matte = layer.track_matte.and_then(|tm| {
+            ctx.comp
+                .layer(tm.layer)
+                .filter(|m| m.id != layer.id)
+                .map(|m| (m, tm.kind))
+        });
         let preserve = layer.preserve_transparency;
         if let Some((m, kind)) = matte {
             let mimg = match matte_img {
@@ -1961,37 +2636,54 @@ impl<'a> Renderer<'a> {
                     mimg
                 }
             };
-            iso.data.par_iter_mut().zip(mimg.data.par_iter()).for_each(|(p, q)| {
-                let k = match kind {
-                    MatteKind::Alpha => q[3],
-                    MatteKind::AlphaInverted => 1.0 - q[3],
-                    MatteKind::Luma => effectcraft_color::luminance(q[0], q[1], q[2]),
-                    MatteKind::LumaInverted => 1.0 - effectcraft_color::luminance(q[0], q[1], q[2]),
-                }
-                .clamp(0.0, 1.0);
-                for c in p.iter_mut() {
-                    *c *= k;
-                }
-            });
+            iso.data
+                .par_iter_mut()
+                .zip(mimg.data.par_iter())
+                .for_each(|(p, q)| {
+                    let k = match kind {
+                        MatteKind::Alpha => q[3],
+                        MatteKind::AlphaInverted => 1.0 - q[3],
+                        MatteKind::Luma => effectcraft_color::luminance(q[0], q[1], q[2]),
+                        MatteKind::LumaInverted => {
+                            1.0 - effectcraft_color::luminance(q[0], q[1], q[2])
+                        }
+                    }
+                    .clamp(0.0, 1.0);
+                    for c in p.iter_mut() {
+                        *c *= k;
+                    }
+                });
         }
         if preserve {
-            iso.data.par_iter_mut().zip(canvas.data.par_iter()).for_each(|(p, q)| {
-                for c in p.iter_mut() {
-                    *c *= q[3];
-                }
-            });
+            iso.data
+                .par_iter_mut()
+                .zip(canvas.data.par_iter())
+                .for_each(|(p, q)| {
+                    for c in p.iter_mut() {
+                        *c *= q[3];
+                    }
+                });
         }
         canvas.blend_from(&iso, layer.blend_mode, opacity, layer.id.0 as u32);
     }
 
     /// Adjustment layer: effects applied to the comp below, limited to the layer's footprint.
     fn draw_adjustment(&self, ctx: &EvalCtx, layer: &Layer, canvas: &mut Image, opacity: f32) {
-        let Some(mut foot) = self.source(ctx, layer) else { return };
+        let Some(mut foot) = self.source(ctx, layer) else {
+            return;
+        };
         let _ = masks::apply(ctx, layer, &mut foot, self.mask_blur(ctx, layer));
         let mut matte = Image::new(canvas.width, canvas.height);
         self.place(ctx, layer, &foot, &mut matte, BlendMode::Normal, 1.0);
-        let o = self.roi_offset().map(|(x, y, _, _)| [-x, -y]).unwrap_or([0.0; 2]);
-        let mut below = Buf { img: canvas.clone(), offset: o, scale: self.opts.scale };
+        let o = self
+            .roi_offset()
+            .map(|(x, y, _, _)| [-x, -y])
+            .unwrap_or([0.0; 2]);
+        let mut below = Buf {
+            img: canvas.clone(),
+            offset: o,
+            scale: self.opts.scale,
+        };
         // Effects run in the working space, not the linear blending space.
         if let Some(c) = self.pipe.from_blend() {
             color::convert(&mut below.img, &c);
@@ -2003,12 +2695,17 @@ impl<'a> Renderer<'a> {
         if adjusted.img.width != canvas.width || adjusted.img.height != canvas.height {
             return;
         }
-        canvas.data.par_iter_mut().zip(adjusted.img.data.par_iter()).zip(matte.data.par_iter()).for_each(|((c, a), m)| {
-            let k = m[3] * opacity;
-            for i in 0..4 {
-                c[i] += (a[i] - c[i]) * k;
-            }
-        });
+        canvas
+            .data
+            .par_iter_mut()
+            .zip(adjusted.img.data.par_iter())
+            .zip(matte.data.par_iter())
+            .for_each(|((c, a), m)| {
+                let k = m[3] * opacity;
+                for i in 0..4 {
+                    c[i] += (a[i] - c[i]) * k;
+                }
+            });
     }
 }
 
@@ -2066,11 +2763,20 @@ impl<'a> Renderer<'a> {
     /// applied).
     pub fn visible_layers(&self, ctx: &EvalCtx<'a>) -> Vec<&'a Layer> {
         let (comp, t) = (ctx.comp, ctx.time);
-        let any_solo = comp.layers.iter().any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(t));
+        let any_solo = comp
+            .layers
+            .iter()
+            .any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(t));
         comp.layers
             .iter()
             .rev()
-            .filter(|l| l.is_active_at(t) && l.has_video() && !l.environment && (!any_solo || l.switches.solo) && (self.opts.guides || !l.switches.guide))
+            .filter(|l| {
+                l.is_active_at(t)
+                    && l.has_video()
+                    && !l.environment
+                    && (!any_solo || l.switches.solo)
+                    && (self.opts.guides || !l.switches.guide)
+            })
             .collect()
     }
 
@@ -2082,7 +2788,12 @@ impl<'a> Renderer<'a> {
     /// A run of consecutive 3D layers prepared for an accelerator (planes, lights, shadow
     /// casters; see [`three_d::Run3d`]) at output size `out`. `None` = draw it with
     /// [`Self::draw_3d_run`] (adjustment or wireframe layers in the run, Advanced 3D).
-    pub fn prepare_3d_run(&self, ctx: &EvalCtx<'a>, run: &[&Layer], out: (u32, u32)) -> Option<three_d::Run3d> {
+    pub fn prepare_3d_run(
+        &self,
+        ctx: &EvalCtx<'a>,
+        run: &[&Layer],
+        out: (u32, u32),
+    ) -> Option<three_d::Run3d> {
         three_d::compose::gpu_run(self, ctx, run, out)
     }
 
@@ -2091,7 +2802,12 @@ impl<'a> Renderer<'a> {
     /// premultiplied over) onto the canvas. `None` = not an Advanced 3D comp, or a layer needs the
     /// 2D compositing path (blend mode, track matte, Preserve Transparency): draw it with
     /// [`Self::draw_3d_run`].
-    pub fn prepare_adv_run<'p>(&'p self, ctx: &'p EvalCtx<'a>, run: &'p [&'p Layer], out: (u32, u32)) -> Option<three_d::adv::Prepared<'p, 'a>> {
+    pub fn prepare_adv_run<'p>(
+        &'p self,
+        ctx: &'p EvalCtx<'a>,
+        run: &'p [&'p Layer],
+        out: (u32, u32),
+    ) -> Option<three_d::adv::Prepared<'p, 'a>> {
         three_d::adv::prepare_run(self, ctx, run, out)
     }
 
@@ -2099,7 +2815,12 @@ impl<'a> Renderer<'a> {
     /// compositing path (blend mode, track matte, Preserve Transparency), split for an
     /// accelerator's compositor ([`three_d::adv::SplitRun`]). `None` = [`Self::prepare_adv_run`]
     /// covers it, or it isn't an Advanced 3D run.
-    pub fn split_adv_run<'p>(&'p self, ctx: &'p EvalCtx<'a>, run: &'p [&'p Layer], out: (u32, u32)) -> Option<three_d::adv::SplitRun<'p, 'a>> {
+    pub fn split_adv_run<'p>(
+        &'p self,
+        ctx: &'p EvalCtx<'a>,
+        run: &'p [&'p Layer],
+        out: (u32, u32),
+    ) -> Option<three_d::adv::SplitRun<'p, 'a>> {
         three_d::adv::split_run(self, ctx, run, out)
     }
 
@@ -2116,20 +2837,33 @@ impl<'a> Renderer<'a> {
 
     /// The pixels a Wireframe-quality layer sets (white, opaque) on a `size` canvas: its
     /// bounds' outline, one pixel wide. Empty when the layer has no bounds.
-    pub fn wireframe_pixels(&self, ctx: &EvalCtx, layer: &Layer, size: (u32, u32)) -> Vec<(u32, u32)> {
-        let Some(b) = content_bounds(ctx, layer) else { return vec![] };
+    pub fn wireframe_pixels(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        size: (u32, u32),
+    ) -> Vec<(u32, u32)> {
+        let Some(b) = content_bounds(ctx, layer) else {
+            return vec![];
+        };
         let s = self.opts.scale;
         let (l2c, _) = ctx.layer_to_comp(layer);
         let m = Mat3::scale(vec2(s, s)) * self.outer.map_or(l2c, |o| o * l2c);
-        let c = [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])].map(|(x, y)| m.apply(vec2(x, y)));
+        let c = [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]
+            .map(|(x, y)| m.apply(vec2(x, y)));
         let (w, h) = (size.0 as i64, size.1 as i64);
         let mut out = vec![];
         for i in 0..4 {
             let (p, q) = (c[i], c[(i + 1) % 4]);
-            let n = ((q.x - p.x).abs().max((q.y - p.y).abs()) * 2.0).ceil().clamp(1.0, 1.0e5) as usize;
+            let n = ((q.x - p.x).abs().max((q.y - p.y).abs()) * 2.0)
+                .ceil()
+                .clamp(1.0, 1.0e5) as usize;
             for j in 0..=n {
                 let t = j as f64 / n as f64;
-                let (x, y) = ((p.x + (q.x - p.x) * t).floor() as i64, (p.y + (q.y - p.y) * t).floor() as i64);
+                let (x, y) = (
+                    (p.x + (q.x - p.x) * t).floor() as i64,
+                    (p.y + (q.y - p.y) * t).floor() as i64,
+                );
                 if x >= 0 && y >= 0 && x < w && y < h {
                     out.push((x as u32, y as u32));
                 }
@@ -2142,7 +2876,13 @@ impl<'a> Renderer<'a> {
     /// runs through [`FxTarget::gpu`], the others through [`FxTarget::cpu`], with the CPU's
     /// parameters and environment. `adjustment`: the stack runs on the comp below (adjustment
     /// layers).
-    pub fn run_effects_on(&self, ctx: &EvalCtx, layer: &Layer, adjustment: bool, target: &mut dyn FxTarget) {
+    pub fn run_effects_on(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        adjustment: bool,
+        target: &mut dyn FxTarget,
+    ) {
         // `target` is used as it is: the comp below for adjustment layers (the callers).
         self.run_effect_stack(ctx, layer, adjustment, usize::MAX, None, [0.0; 2], target);
     }
@@ -2150,7 +2890,12 @@ impl<'a> Renderer<'a> {
     /// [`Renderer::run_effects_on`] for a (non-adjustment) layer's own pixels: `target` holds
     /// them in effect space (as [`Renderer::layer_input`] hands them out) and the result stays
     /// there. Returns the effect-space origin in layer coordinates (rebase by its negation).
-    pub fn run_layer_effects_on(&self, ctx: &EvalCtx, layer: &Layer, target: &mut dyn FxTarget) -> [f64; 2] {
+    pub fn run_layer_effects_on(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        target: &mut dyn FxTarget,
+    ) -> [f64; 2] {
         let origin = ctx.effect_bounds(layer).1;
         self.run_effect_stack(ctx, layer, false, usize::MAX, None, origin, target);
         origin
@@ -2160,7 +2905,15 @@ impl<'a> Renderer<'a> {
     /// its effects show. `None` = the layer changes nothing.
     pub fn adjustment_footprint(&self, ctx: &EvalCtx, layer: &Layer) -> Option<Arc<Buf>> {
         // Cached, so an accelerator sees the same buffer (and uploads it once) every frame.
-        let key = self.cache.and_then(|_| cache::footprint_key(ctx, layer, self.raster_scale(ctx, layer), self.opts.draft, self.mb_on(ctx, layer)));
+        let key = self.cache.and_then(|_| {
+            cache::footprint_key(
+                ctx,
+                layer,
+                self.raster_scale(ctx, layer),
+                self.opts.draft,
+                self.mb_on(ctx, layer),
+            )
+        });
         if let (Some(c), Some(k)) = (self.cache, key)
             && let Some(b) = c.get(k)
         {
@@ -2181,15 +2934,27 @@ impl<'a> Renderer<'a> {
     }
 
     /// Draw a collapsed precomp layer into `canvas` on the CPU.
-    pub fn draw_collapsed_cpu(&self, ctx: &EvalCtx<'a>, layer: &Layer, item: ItemId, canvas: &mut Image) {
+    pub fn draw_collapsed_cpu(
+        &self,
+        ctx: &EvalCtx<'a>,
+        layer: &Layer,
+        item: ItemId,
+        canvas: &mut Image,
+    ) {
         self.draw_collapsed(ctx, layer, item, canvas, false);
     }
 
     /// The layer's finished buffers (styles included) in the blending space.
     pub fn styled_layer(&self, ctx: &EvalCtx, layer: &Layer) -> Option<StyledLayer> {
-        let mut timing = self.profile.map(|_| LayerTiming { depth: self.depth, layer: layer.name.clone(), ..Default::default() });
+        let mut timing = self.profile.map(|_| LayerTiming {
+            depth: self.depth,
+            layer: layer.name.clone(),
+            ..Default::default()
+        });
         let t0 = web_time::Instant::now();
-        let st = self.styled(ctx, layer, timing.as_mut()).map(|st| self.styled_to_blend(st));
+        let st = self
+            .styled(ctx, layer, timing.as_mut())
+            .map(|st| self.styled_to_blend(st));
         if let (Some(prof), Some(mut timing)) = (self.profile, timing) {
             timing.process_ms = t0.elapsed().as_secs_f64() * 1e3;
             if let Ok(mut v) = prof.lock() {
@@ -2205,8 +2970,17 @@ impl<'a> Renderer<'a> {
     }
 
     /// The layer's track matte layer and kind, if it has a valid one.
-    pub fn track_matte<'c>(&self, ctx: &EvalCtx<'c>, layer: &Layer) -> Option<(&'c Layer, MatteKind)> {
-        layer.track_matte.and_then(|tm| ctx.comp.layer(tm.layer).filter(|m| m.id != layer.id).map(|m| (m, tm.kind)))
+    pub fn track_matte<'c>(
+        &self,
+        ctx: &EvalCtx<'c>,
+        layer: &Layer,
+    ) -> Option<(&'c Layer, MatteKind)> {
+        layer.track_matte.and_then(|tm| {
+            ctx.comp
+                .layer(tm.layer)
+                .filter(|m| m.id != layer.id)
+                .map(|m| (m, tm.kind))
+        })
     }
 }
 
@@ -2229,7 +3003,12 @@ pub fn field_frame(img: &Image, parity: usize) -> Image {
             let px = match (above, below) {
                 (Some(a), Some(b)) => {
                     let (p, q) = (img.data[a * w + x], img.data[b * w + x]);
-                    [(p[0] + q[0]) * 0.5, (p[1] + q[1]) * 0.5, (p[2] + q[2]) * 0.5, (p[3] + q[3]) * 0.5]
+                    [
+                        (p[0] + q[0]) * 0.5,
+                        (p[1] + q[1]) * 0.5,
+                        (p[2] + q[2]) * 0.5,
+                        (p[3] + q[3]) * 0.5,
+                    ]
                 }
                 (Some(a), None) => img.data[a * w + x],
                 (None, Some(b)) => img.data[b * w + x],
@@ -2251,7 +3030,11 @@ pub fn interpret_pixels(img: &Image, f: &Footage, space: effectcraft_color::Colo
     let mut out = img.clone();
     for p in out.data.iter_mut() {
         let a = p[3];
-        let mut c = if a > 1e-6 { [p[0] / a, p[1] / a, p[2] / a] } else { [0.0; 3] };
+        let mut c = if a > 1e-6 {
+            [p[0] / a, p[1] / a, p[2] / a]
+        } else {
+            [0.0; 3]
+        };
         if linear {
             // The file's values are linear light: encode them like the rest of the footage.
             c = c.map(|v| space.encode(v));
@@ -2263,7 +3046,11 @@ pub fn interpret_pixels(img: &Image, f: &Footage, space: effectcraft_color::Colo
 }
 
 fn frame_blend_mode(ctx: &EvalCtx, layer: &Layer) -> FrameBlend {
-    if ctx.comp.enable_frame_blending { layer.switches.frame_blend } else { FrameBlend::Off }
+    if ctx.comp.enable_frame_blending {
+        layer.switches.frame_blend
+    } else {
+        FrameBlend::Off
+    }
 }
 
 /// Position of source time `t` among frames at `rate`: the frame at or before `t` and the
@@ -2272,7 +3059,10 @@ fn frame_blend_mode(ctx: &EvalCtx, layer: &Layer) -> FrameBlend {
 pub fn frame_position(t: Tick, rate: FrameRate) -> (i64, f64) {
     let num = t.0 as i128 * rate.num as i128;
     let den = TICKS_PER_SECOND as i128 * rate.den as i128;
-    (num.div_euclid(den) as i64, num.rem_euclid(den) as f64 / den as f64)
+    (
+        num.div_euclid(den) as i64,
+        num.rem_euclid(den) as f64 / den as f64,
+    )
 }
 
 /// Blend two neighbouring frames `w` of the way from `a` to `b`: a cross-fade (Frame Mix) or a
@@ -2318,7 +3108,15 @@ pub fn extended_region(w: u32, h: u32, visible: [f64; 4], margin: f64) -> Option
 }
 
 pub fn render_frame(project: &Project, comp: ItemId, t: Tick, scale: f64) -> Image {
-    Renderer::new(project, &NoFootage, RenderOpts { scale, ..Default::default() }).comp_frame(comp, t)
+    Renderer::new(
+        project,
+        &NoFootage,
+        RenderOpts {
+            scale,
+            ..Default::default()
+        },
+    )
+    .comp_frame(comp, t)
 }
 
 #[cfg(test)]
@@ -2342,7 +3140,11 @@ pub fn content_bounds(ctx: &EvalCtx, layer: &effectcraft_project::Layer) -> Opti
             let paths: Vec<_> = glyphs.into_iter().map(|g| g.0).collect();
             effectcraft_path::bounds(&paths).map(|r| [r.x0, r.y0, r.x1, r.y1])
         }
-        LayerSource::Shape => layer.props.sub("contents").and_then(|c| shapes::content_bounds(ctx, layer, c)).map(|r| [r.x0, r.y0, r.x1, r.y1]),
+        LayerSource::Shape => layer
+            .props
+            .sub("contents")
+            .and_then(|c| shapes::content_bounds(ctx, layer, c))
+            .map(|r| [r.x0, r.y0, r.x1, r.y1]),
         LayerSource::Camera | LayerSource::Light { .. } => None,
         _ => {
             let (w, h) = source_size(ctx.project, layer);

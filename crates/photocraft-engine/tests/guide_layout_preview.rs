@@ -3,14 +3,16 @@ use serde_json::json;
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", json!({"width":100,"height":60})).unwrap();
+    s.execute("file.new", json!({"width":100,"height":60}))
+        .unwrap();
     s
 }
 
 #[test]
 fn pure_preview_matches_commit_and_one_undo_restores_existing_guides() {
     let mut s = session();
-    s.execute("view.newGuideLayout", json!({"columns":2})).unwrap();
+    s.execute("view.newGuideLayout", json!({"columns":2}))
+        .unwrap();
     let before = s.active().unwrap().doc.guides.clone();
     let revision = s.active().unwrap().revision;
     let p = json!({"columns":3,"rows":2,"gutter":4,"rowGutter":6,"margin":[3,7,5,11],"clearExisting":true});
@@ -28,14 +30,25 @@ fn pure_preview_matches_commit_and_one_undo_restores_existing_guides() {
 #[test]
 fn fixed_sizes_center_and_keep_existing_lines() {
     let mut s = session();
-    s.execute("view.newGuideLayout", json!({"margin":5})).unwrap();
+    s.execute("view.newGuideLayout", json!({"margin":5}))
+        .unwrap();
     let before = s.active().unwrap().doc.guides.clone();
     let p = json!({"columns":2,"width":20,"gutter":10,"rows":2,"height":10,"rowGutter":4,"centerColumns":true});
     let result = guide_layout::calculate(&s, &p).unwrap();
     assert_eq!(result.added.vertical, vec![25.0, 45.0, 55.0, 75.0]);
     assert_eq!(result.added.horizontal, vec![18.0, 28.0, 32.0, 42.0]);
-    assert!(before.vertical.iter().all(|g| result.guides.vertical.contains(g)));
-    assert!(before.horizontal.iter().all(|g| result.guides.horizontal.contains(g)));
+    assert!(
+        before
+            .vertical
+            .iter()
+            .all(|g| result.guides.vertical.contains(g))
+    );
+    assert!(
+        before
+            .horizontal
+            .iter()
+            .all(|g| result.guides.horizontal.contains(g))
+    );
 }
 
 #[test]
@@ -53,7 +66,10 @@ fn invalid_geometry_is_atomic() {
         json!({"columns":2,"clearExisting":1}),
         json!({"columns":1,"target":"selectedArtboards"}),
     ] {
-        assert!(s.execute("view.newGuideLayout", params.clone()).is_err(), "accepted {params}");
+        assert!(
+            s.execute("view.newGuideLayout", params.clone()).is_err(),
+            "accepted {params}"
+        );
         assert_eq!(s.active().unwrap().revision, revision);
     }
 }
@@ -61,9 +77,12 @@ fn invalid_geometry_is_atomic() {
 #[test]
 fn selected_artboards_use_offsets_and_clear_only_the_target_ranges() {
     let mut s = session();
-    s.execute("view.newGuideLayout", json!({"margin":5})).unwrap();
-    s.execute("layer.new.artboard", json!({"rect":[200,100,100,60]})).unwrap();
-    let p = json!({"columns":2,"margin":[5,10,5,10],"target":"selectedArtboards","clearExisting":true});
+    s.execute("view.newGuideLayout", json!({"margin":5}))
+        .unwrap();
+    s.execute("layer.new.artboard", json!({"rect":[200,100,100,60]}))
+        .unwrap();
+    let p =
+        json!({"columns":2,"margin":[5,10,5,10],"target":"selectedArtboards","clearExisting":true});
     let preview = guide_layout::calculate(&s, &p).unwrap();
     assert_eq!(preview.added.vertical, vec![210.0, 290.0, 250.0]);
     assert_eq!(preview.added.horizontal, vec![105.0, 155.0]);

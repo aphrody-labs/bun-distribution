@@ -50,7 +50,9 @@ fn decode(g4tx_data: &[u8], tex: &g4tx::G4txTexture) -> Option<(u32, u32, Vec<u8
 }
 
 fn main() {
-    let arg = std::env::args().nth(1).unwrap_or_else(|| "title02_00".into());
+    let arg = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "title02_00".into());
     let dir = aphrody_nie_formats::vfs::resolve_game_dir();
     let mut vfs = Vfs::new();
     vfs.init(dir.join("data").as_path()).expect("vfs init");
@@ -77,8 +79,11 @@ fn main() {
                 }
                 std::fs::write(&out, &buf).unwrap();
                 println!("  tex {:24} {w}x{h} -> {out}", t.name);
-            },
-            None => println!("  tex {:24} {}x{} (non-DDS/skip)", t.name, t.width, t.height),
+            }
+            None => println!(
+                "  tex {:24} {}x{} (non-DDS/skip)",
+                t.name, t.width, t.height
+            ),
         }
     }
 }

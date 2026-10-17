@@ -14,7 +14,11 @@ fn number_paths(v: &Value, path: String, out: &mut Vec<String>) {
         }
         Value::Object(o) => {
             for (k, x) in o {
-                number_paths(x, format!("{path}/{}", k.replace('~', "~0").replace('/', "~1")), out);
+                number_paths(
+                    x,
+                    format!("{path}/{}", k.replace('~', "~0").replace('/', "~1")),
+                    out,
+                );
             }
         }
         _ => {}

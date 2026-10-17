@@ -13,7 +13,13 @@ pub struct Pic {
 
 impl Pic {
     pub fn frame(&self) -> Frame<'_> {
-        Frame { y: &self.y, u: &self.u, v: &self.v, y_stride: self.w, uv_stride: self.w.div_ceil(2) }
+        Frame {
+            y: &self.y,
+            u: &self.u,
+            v: &self.v,
+            y_stride: self.w,
+            uv_stride: self.w.div_ceil(2),
+        }
     }
 }
 
@@ -25,14 +31,23 @@ pub fn synth(w: usize, h: usize, bd: u32, t: usize) -> Pic {
     let sample = |x: f64, y: f64| -> f64 {
         let fx = x - 2.0 * t as f64;
         let fy = y - 1.0 * t as f64;
-        let base = 0.25 + 0.5 * (fx / 97.0).sin() * (fy / 61.0).cos() * 0.5 + 0.2 * ((fx + fy) / (w + h) as f64);
+        let base = 0.25
+            + 0.5 * (fx / 97.0).sin() * (fy / 61.0).cos() * 0.5
+            + 0.2 * ((fx + fy) / (w + h) as f64);
         let d = ((fx - w as f64 / 2.0).powi(2) + (fy - h as f64 / 2.0).powi(2)).sqrt();
         let blob = 0.3 * (-d * d / (2.0 * (w.min(h) as f64 / 5.0).powi(2))).exp();
         // a checkered patch moving right by 4 per frame
         let px = x - 4.0 * t as f64 - w as f64 / 4.0;
         let py = y - h as f64 / 3.0;
-        let patch =
-            if (0.0..24.0).contains(&px) && (0.0..16.0).contains(&py) { if ((px as i32 / 4) + (py as i32 / 4)) % 2 == 0 { 0.25 } else { -0.25 } } else { 0.0 };
+        let patch = if (0.0..24.0).contains(&px) && (0.0..16.0).contains(&py) {
+            if ((px as i32 / 4) + (py as i32 / 4)) % 2 == 0 {
+                0.25
+            } else {
+                -0.25
+            }
+        } else {
+            0.0
+        };
         (base + blob + patch).clamp(0.0, 1.0)
     };
     let mut y = vec![0u16; w * h];
@@ -46,8 +61,10 @@ pub fn synth(w: usize, h: usize, bd: u32, t: usize) -> Pic {
     for j in 0..ch {
         for i in 0..cw {
             let s = sample(2.0 * i as f64, 2.0 * j as f64);
-            u[j * cw + i] = ((0.5 + 0.3 * (s - 0.5) + 0.1 * (i as f64 / 13.0).sin()) * max).round() as u16;
-            v[j * cw + i] = ((0.5 - 0.25 * (s - 0.5) + 0.1 * (j as f64 / 7.0).cos()) * max).round() as u16;
+            u[j * cw + i] =
+                ((0.5 + 0.3 * (s - 0.5) + 0.1 * (i as f64 / 13.0).sin()) * max).round() as u16;
+            v[j * cw + i] =
+                ((0.5 - 0.25 * (s - 0.5) + 0.1 * (j as f64 / 7.0).cos()) * max).round() as u16;
         }
     }
     Pic { w, h, y, u, v }
@@ -75,8 +92,17 @@ pub fn noise(w: usize, h: usize, bd: u32, seed: u32) -> Pic {
 
 pub fn psnr(a: &[u16], b: &[u16], bd: u32) -> f64 {
     let max = ((1u32 << bd) - 1) as f64;
-    let mse = a.iter().zip(b).map(|(&x, &y)| (x as f64 - y as f64).powi(2)).sum::<f64>() / a.len() as f64;
-    if mse == 0.0 { 99.0 } else { 10.0 * (max * max / mse).log10() }
+    let mse = a
+        .iter()
+        .zip(b)
+        .map(|(&x, &y)| (x as f64 - y as f64).powi(2))
+        .sum::<f64>()
+        / a.len() as f64;
+    if mse == 0.0 {
+        99.0
+    } else {
+        10.0 * (max * max / mse).log10()
+    }
 }
 
 pub struct Run {
@@ -93,23 +119,39 @@ pub fn encode_and_check(cfg: EncoderConfig, pics: &[Pic]) -> Run {
     let mut enc = Encoder::new(cfg).expect("config");
     // single-threaded: each packet's picture comes out of its own decode call
     let mut dec = filmcraft_av1::Decoder::with_threads(1);
-    let mut run = Run { packets: Vec::new(), recons: Vec::new(), psnr_y: Vec::new(), lf_levels: Vec::new() };
+    let mut run = Run {
+        packets: Vec::new(),
+        recons: Vec::new(),
+        psnr_y: Vec::new(),
+        lf_levels: Vec::new(),
+    };
     for (i, p) in pics.iter().enumerate() {
         let pkt = enc.encode(&p.frame());
         let rec = enc.last_reconstruction().expect("reconstruction");
-        let out = dec.decode(&pkt.data).unwrap_or_else(|e| panic!("frame {i}: decode error {e:?}"));
+        let out = dec
+            .decode(&pkt.data)
+            .unwrap_or_else(|e| panic!("frame {i}: decode error {e:?}"));
         assert_eq!(out.len(), 1, "frame {i}: one picture per packet");
         let d = &out[0];
         assert_eq!((d.width as usize, d.height as usize), (p.w, p.h));
         for pl in 0..3 {
             if d.planes[pl] != rec[pl] {
-                let first = d.planes[pl].iter().zip(&rec[pl]).position(|(a, b)| a != b).unwrap_or(usize::MAX);
+                let first = d.planes[pl]
+                    .iter()
+                    .zip(&rec[pl])
+                    .position(|(a, b)| a != b)
+                    .unwrap_or(usize::MAX);
                 let pw = if pl == 0 { p.w } else { p.w.div_ceil(2) };
-                panic!("frame {i} plane {pl}: decoder output differs from the reconstruction (first at x {} y {})", first % pw, first / pw);
+                panic!(
+                    "frame {i} plane {pl}: decoder output differs from the reconstruction (first at x {} y {})",
+                    first % pw,
+                    first / pw
+                );
             }
         }
         run.psnr_y.push(psnr(&p.y, &rec[0], bd));
-        run.lf_levels.push(enc.last_loop_filter_level().expect("level"));
+        run.lf_levels
+            .push(enc.last_loop_filter_level().expect("level"));
         run.recons.push(rec);
         run.packets.push(pkt);
     }

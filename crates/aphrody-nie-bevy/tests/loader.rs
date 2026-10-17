@@ -26,7 +26,10 @@ fn headless_app() -> Option<App> {
     register_vfs_source(&mut app, Arc::new(vfs));
     app.add_plugins((
         TaskPoolPlugin::default(),
-        AssetPlugin { meta_check: AssetMetaCheck::Never, ..Default::default() },
+        AssetPlugin {
+            meta_check: AssetMetaCheck::Never,
+            ..Default::default()
+        },
         NieAssetPlugin,
     ));
     Some(app)
@@ -40,7 +43,7 @@ fn drive<A: Asset>(app: &mut App, handle: &Handle<A>) -> Result<(), String> {
         match app.world().resource::<AssetServer>().load_state(handle) {
             LoadState::Loaded => return Ok(()),
             LoadState::Failed(error) => return Err(error.to_string()),
-            LoadState::NotLoaded | LoadState::Loading => {},
+            LoadState::NotLoaded | LoadState::Loading => {}
         }
         if started.elapsed() > Duration::from_secs(60) {
             break;
@@ -67,12 +70,17 @@ fn un_modele_du_jeu_charge_depuis_le_vfs_en_meshes_bevy() {
     assert_eq!(model.meshes.len(), model.submesh_count);
     assert_eq!(model.vertex_counts.len(), model.submesh_count);
     for (i, h) in model.meshes.iter().enumerate() {
-        let mesh = meshes.get(h).unwrap_or_else(|| panic!("Mesh{i} unresolved"));
+        let mesh = meshes
+            .get(h)
+            .unwrap_or_else(|| panic!("Mesh{i} unresolved"));
         assert!(mesh.count_vertices() > 0, "Mesh{i} empty");
         assert!(mesh.indices().is_some(), "Mesh{i} without indices");
         assert_eq!(mesh.count_vertices(), model.vertex_counts[i]);
     }
-    eprintln!("c11010010 -> {} meshes, vertices {:?}", model.submesh_count, model.vertex_counts);
+    eprintln!(
+        "c11010010 -> {} meshes, vertices {:?}",
+        model.submesh_count, model.vertex_counts
+    );
 }
 
 /// Un `.g4tx` du jeu charge en `Image` dont le tampon couvre exactement ses pixels.
@@ -91,8 +99,10 @@ fn un_atlas_du_jeu_charge_depuis_le_vfs_en_image_bevy() {
         eprintln!("SKIP: no .g4tx beside c11010010");
         return;
     };
-    let handle: Handle<Image> =
-        app.world().resource::<AssetServer>().load(format!("{VFS_SOURCE}://{atlas}"));
+    let handle: Handle<Image> = app
+        .world()
+        .resource::<AssetServer>()
+        .load(format!("{VFS_SOURCE}://{atlas}"));
     match drive(&mut app, &handle) {
         Ok(()) => {
             let images = app.world().resource::<Assets<Image>>();
@@ -103,11 +113,11 @@ fn un_atlas_du_jeu_charge_depuis_le_vfs_en_image_bevy() {
                 Some((size.width * size.height * 4) as usize)
             );
             eprintln!("{atlas} -> Image {}x{}", size.width, size.height);
-        },
+        }
         // Un atlas sans payload DDS est un refus nommé, pas un défaut du chargeur.
         Err(reason) if reason.contains("unsupported payload") => {
             eprintln!("SKIP: {atlas}: {reason}")
-        },
+        }
         Err(reason) => panic!("{atlas}: {reason}"),
     }
 }

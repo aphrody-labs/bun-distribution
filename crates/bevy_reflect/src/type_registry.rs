@@ -1,6 +1,6 @@
 use crate::{
-    convert::ReflectConvert, serde::Serializable, FromReflect, Reflect, TypeData, TypeInfo,
-    TypePath, Typed,
+    FromReflect, Reflect, TypeData, TypeInfo, TypePath, Typed, convert::ReflectConvert,
+    serde::Serializable,
 };
 use alloc::{boxed::Box, string::String};
 use bevy_platform::{
@@ -1237,18 +1237,26 @@ mod test {
         assert!(reflect_from_ptr.as_reflect(&wrong_type).is_none());
         assert!(reflect_from_ptr.as_reflect_mut(&mut right_type).is_some());
         assert!(reflect_from_ptr.as_reflect_mut(&mut wrong_type).is_none());
-        assert!(reflect_from_ptr
-            .box_as_reflect(Box::new(right_type.clone()))
-            .is_ok());
-        assert!(reflect_from_ptr
-            .box_as_reflect(Box::new(wrong_type))
-            .is_err());
-        assert!(reflect_from_ptr
-            .arc_as_reflect(Arc::new(right_type))
-            .is_ok());
-        assert!(reflect_from_ptr
-            .arc_as_reflect(Arc::new(wrong_type))
-            .is_err());
+        assert!(
+            reflect_from_ptr
+                .box_as_reflect(Box::new(right_type.clone()))
+                .is_ok()
+        );
+        assert!(
+            reflect_from_ptr
+                .box_as_reflect(Box::new(wrong_type))
+                .is_err()
+        );
+        assert!(
+            reflect_from_ptr
+                .arc_as_reflect(Arc::new(right_type))
+                .is_ok()
+        );
+        assert!(
+            reflect_from_ptr
+                .arc_as_reflect(Arc::new(wrong_type))
+                .is_err()
+        );
     }
 
     #[test]

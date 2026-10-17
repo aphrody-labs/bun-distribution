@@ -73,7 +73,11 @@ impl<const SYSTEM: SystemId> MmioAccess<System<SYSTEM>> for ControlStatus {
     }
 
     fn write(self, sys: &mut System<SYSTEM>, _: WriteMask) {
-        tracing::trace!("CSR write: {:016b} (prev: {:016b})", self.raw(), sys.dsp.csr.raw());
+        tracing::trace!(
+            "CSR write: {:016b} (prev: {:016b})",
+            self.raw(),
+            sys.dsp.csr.raw()
+        );
 
         let was_active = !sys.dsp.csr.halt() && !sys.dsp.csr.reset();
         let mut csr = sys.dsp.csr;
@@ -118,12 +122,12 @@ impl<const SYSTEM: SystemId> MmioAccess<System<SYSTEM>> for ControlStatus {
                     scheduler::dsp_batch_interval(SYSTEM),
                     scheduler::Handler::DspBatch,
                 );
-            },
+            }
             (true, false) => {
                 sys.dsp.scheduler_suspended = false;
                 sys.scheduler.cancel(scheduler::Handler::DspBatch);
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         dsp::refresh_interrupts(sys);
@@ -329,7 +333,7 @@ impl<const SYSTEM: SystemId> MmioAccess<System<SYSTEM>> for AudioDmaControl {
         match (was_playing, self.play()) {
             (false, true) => ai::start_audio_dma(sys),
             (true, false) => ai::stop_audio_dma(sys),
-            _ => {},
+            _ => {}
         }
         dsp::refresh_interrupts(sys);
     }

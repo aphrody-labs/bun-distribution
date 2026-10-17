@@ -50,7 +50,10 @@ fn l_entree_d_installation_decrit_les_octets_reellement_embarques() {
         "spritesheetWidth",
         "spritesheetHeight",
     ] {
-        assert!(j.get(champ).is_some(), "champ absent du manifeste : {champ}");
+        assert!(
+            j.get(champ).is_some(),
+            "champ absent du manifeste : {champ}"
+        );
     }
 }
 
@@ -64,7 +67,9 @@ fn un_atlas_hors_specification_est_refuse_avec_sa_raison() {
     assert!(!c.ok());
     assert_eq!(c.version, None);
     assert!(
-        c.ecarts.iter().any(|e| e.contains("ni v1") && e.contains("ni v2")),
+        c.ecarts
+            .iter()
+            .any(|e| e.contains("ni v1") && e.contains("ni v2")),
         "l'écart doit nommer les deux versions attendues : {:?}",
         c.ecarts
     );
@@ -102,8 +107,14 @@ fn erreur(r: Result<impl std::fmt::Debug, aphrody_identity::Error>) -> String {
 fn l_artefact_v1_passe_le_tui_et_l_installeur_de_la_galerie() {
     let (pet, a) = v1();
     assert_eq!(a.dimensions, (1536, 1872));
-    assert_eq!(codex::dimensions_webp(&a.atlas).expect("webp"), (1536, 1872));
-    assert_eq!(codex::valider_galerie(&a.pet_json, &a.atlas, &a.id).expect("galerie"), Version::V1);
+    assert_eq!(
+        codex::dimensions_webp(&a.atlas).expect("webp"),
+        (1536, 1872)
+    );
+    assert_eq!(
+        codex::valider_galerie(&a.pet_json, &a.atlas, &a.id).expect("galerie"),
+        Version::V1
+    );
     let joue = codex::valider_tui(&a.pet_json, &a.atlas, &a.id).expect("TUI");
     // Sans `animations`, Codex applique ses pistes par défaut : ce sont celles du paquet (qui
     // en ajoute d'autres, les poses de regard notamment).
@@ -120,7 +131,10 @@ fn l_artefact_v1_passe_le_tui_et_l_installeur_de_la_galerie() {
 fn l_artefact_v2_est_pour_l_app_et_le_tui_le_refuse_avec_sa_raison() {
     let pet = Pet::bundled().expect("paquet");
     let a = codex::artefact_v2(&pet, BUNDLED_ATLAS_WEBP).expect("artefact v2");
-    assert_eq!(codex::valider_galerie(&a.pet_json, &a.atlas, &a.id).expect("galerie"), Version::V2);
+    assert_eq!(
+        codex::valider_galerie(&a.pet_json, &a.atlas, &a.id).expect("galerie"),
+        Version::V2
+    );
     let e = erreur(codex::valider_tui(&a.pet_json, &a.atlas, &a.id));
     assert!(e.contains("1536x1872") && e.contains("1536x2288"), "{e}");
 }
@@ -135,12 +149,21 @@ fn les_refus_du_chargeur_codex_sont_reproduits() {
         (r#"{"animations":{"idle":{"frames":[72]}}}"#, "72"),
         (r#"{"animations":{"idle":{"frames":[0],"fps":0}}}"#, "fps"),
         (r#"{"animations":{"idle":{"frames":[0],"fps":61}}}"#, "fps"),
-        (r#"{"animations":{"wave":{"frames":[0],"loop":false,"fallback":"nope"}}}"#, "nope"),
-        (r#"{"frame":{"width":100,"height":208,"columns":8,"rows":9}}"#, "atlas"),
+        (
+            r#"{"animations":{"wave":{"frames":[0],"loop":false,"fallback":"nope"}}}"#,
+            "nope",
+        ),
+        (
+            r#"{"frame":{"width":100,"height":208,"columns":8,"rows":9}}"#,
+            "atlas",
+        ),
     ];
     for (json, motif) in cas {
         let e = erreur(codex::valider_tui(json.as_bytes(), &a.atlas, "x"));
-        assert!(e.contains(motif), "{json} : « {e} » devrait mentionner « {motif} »");
+        assert!(
+            e.contains(motif),
+            "{json} : « {e} » devrait mentionner « {motif} »"
+        );
     }
     // Un manifeste minimal (`{}`) est accepté : Codex complète tout par défaut.
     let p = codex::valider_tui(b"{}", &a.atlas, "dossier").expect("minimal");
@@ -173,14 +196,21 @@ fn installation_dans_un_codex_home_temporaire() {
 
     let cible = codex::installer(&home, &a).expect("installation");
     assert_eq!(cible, home.join("pets").join(&a.id));
-    assert_eq!(std::fs::read(cible.join("pet.json")).expect("pet.json"), a.pet_json);
+    assert_eq!(
+        std::fs::read(cible.join("pet.json")).expect("pet.json"),
+        a.pet_json
+    );
     // Réinstaller remplace un paquet géré.
     codex::installer(&home, &a).expect("réinstallation");
     let restes: Vec<_> = std::fs::read_dir(home.join("pets"))
         .expect("pets")
         .map(|e| e.expect("entrée").file_name())
         .collect();
-    assert_eq!(restes, [std::ffi::OsString::from(&a.id)], "ni étape ni sauvegarde ne restent");
+    assert_eq!(
+        restes,
+        [std::ffi::OsString::from(&a.id)],
+        "ni étape ni sauvegarde ne restent"
+    );
 
     // Un fichier étranger dans le dossier bloque le remplacement.
     std::fs::write(cible.join("notes.txt"), "à moi").expect("écriture");
@@ -212,6 +242,9 @@ fn la_commande_pet_ecrit_puis_verifie_l_artefact() {
         "une v2 passe la galerie, le refus du TUI est attendu"
     );
     assert_eq!(lancer(&["codex", "--inconnu"]), 1);
-    assert_eq!(lancer(&["verifier", &racine.join("absent").to_string_lossy()]), 1);
+    assert_eq!(
+        lancer(&["verifier", &racine.join("absent").to_string_lossy()]),
+        1
+    );
     std::fs::remove_dir_all(&racine).expect("nettoyage");
 }

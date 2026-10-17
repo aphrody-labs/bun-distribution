@@ -14,8 +14,17 @@ fn db() -> &'static FontDb {
 }
 
 fn area(text: &str, size: f64, frame: Rect, fit: AreaFit) -> TextObject {
-    let mut t = TextObject::point(Point::ZERO, text, CharStyle { size, ..CharStyle::default() });
-    t.kind = TextKind::Area { frame: PathData::from_bezpath(&frame.to_path(0.1)) };
+    let mut t = TextObject::point(
+        Point::ZERO,
+        text,
+        CharStyle {
+            size,
+            ..CharStyle::default()
+        },
+    );
+    t.kind = TextKind::Area {
+        frame: PathData::from_bezpath(&frame.to_path(0.1)),
+    };
     t.xf = Affine::IDENTITY;
     t.area.fit = fit;
     t
@@ -38,7 +47,10 @@ fn at_size(t: &TextObject, size: f64) -> TextLayout {
 #[test]
 fn shrink_text_makes_overflowing_text_fit() {
     let t = area(COPY, 14.0, Rect::new(0.0, 0.0, 200.0, 90.0), shrink(30.0));
-    assert!(at_size(&t, 14.0).overflow, "the text overflows at full size");
+    assert!(
+        at_size(&t, 14.0).overflow,
+        "the text overflows at full size"
+    );
     let l = layout(db(), &t);
     assert!(!l.overflow, "shrunk to fit");
     assert!(l.fit_scale < 1.0 && l.fit_scale >= 0.3, "{}", l.fit_scale);
@@ -47,9 +59,15 @@ fn shrink_text_makes_overflowing_text_fit() {
     let size = 14.0 * l.fit_scale;
     assert!((size * 10.0 - (size * 10.0).round()).abs() < 1e-6, "{size}");
     // Maximal: a tenth of a point larger overflows; and the layout is the one at that size.
-    assert!(at_size(&t, size + 0.1).overflow, "{size} + 0.1 pt still fits");
+    assert!(
+        at_size(&t, size + 0.1).overflow,
+        "{size} + 0.1 pt still fits"
+    );
     let same = at_size(&t, size);
-    assert_eq!((same.lines.len(), same.glyphs.len(), same.overflow), (l.lines.len(), l.glyphs.len(), false));
+    assert_eq!(
+        (same.lines.len(), same.glyphs.len(), same.overflow),
+        (l.lines.len(), l.glyphs.len(), false)
+    );
     // Deterministic.
     assert_eq!(layout(db(), &t).fit_scale, l.fit_scale);
 }
@@ -74,13 +92,21 @@ fn shrink_text_respects_its_minimum() {
     assert!(l.overflow, "still overflows at 90 %");
     assert!((l.fit_scale - 0.9).abs() < 1e-9, "{}", l.fit_scale);
     // Out-of-range minimums are clamped (10 %).
-    let l = layout(db(), &area(COPY, 14.0, Rect::new(0.0, 0.0, 120.0, 40.0), shrink(0.0)));
+    let l = layout(
+        db(),
+        &area(COPY, 14.0, Rect::new(0.0, 0.0, 120.0, 40.0), shrink(0.0)),
+    );
     assert!(l.fit_scale >= 0.1 - 1e-9, "{}", l.fit_scale);
 }
 
 #[test]
 fn shrink_text_is_a_no_op_when_the_text_fits() {
-    let t = area("Short text", 14.0, Rect::new(0.0, 0.0, 200.0, 90.0), shrink(50.0));
+    let t = area(
+        "Short text",
+        14.0,
+        Rect::new(0.0, 0.0, 200.0, 90.0),
+        shrink(50.0),
+    );
     let l = layout(db(), &t);
     let plain = at_size(&t, 14.0);
     assert!(!l.overflow);
@@ -99,21 +125,36 @@ fn shrink_text_fills_columns() {
     assert!(l.fit_scale < 1.0);
     assert_eq!(l.frames.len(), 2);
     let second = l.frames[1];
-    assert!(l.glyphs.iter().any(|g| g.origin.x >= second.x0), "text flows into the second column");
+    assert!(
+        l.glyphs.iter().any(|g| g.origin.x >= second.x0),
+        "text flows into the second column"
+    );
     let size = 14.0 * l.fit_scale;
-    assert!(at_size(&t, size + 0.1).overflow, "maximal across columns too");
+    assert!(
+        at_size(&t, size + 0.1).overflow,
+        "maximal across columns too"
+    );
 }
 
 #[test]
 fn shrink_text_scales_leading_and_baseline_shift_not_paragraph_spacing() {
-    let mut t = area(&COPY.repeat(2), 12.0, Rect::new(0.0, 0.0, 200.0, 200.0), shrink(10.0));
+    let mut t = area(
+        &COPY.repeat(2),
+        12.0,
+        Rect::new(0.0, 0.0, 200.0, 200.0),
+        shrink(10.0),
+    );
     for r in &mut t.runs {
         r.style.leading = Some(20.0);
     }
     let l = layout(db(), &t);
     assert!(!l.overflow && l.fit_scale < 1.0);
     let gap = l.lines[2].baseline - l.lines[1].baseline;
-    assert!((gap - 20.0 * l.fit_scale).abs() < 1e-6, "{gap} vs {}", 20.0 * l.fit_scale);
+    assert!(
+        (gap - 20.0 * l.fit_scale).abs() < 1e-6,
+        "{gap} vs {}",
+        20.0 * l.fit_scale
+    );
 }
 
 #[test]
@@ -121,7 +162,11 @@ fn point_type_and_type_on_a_path_ignore_fit() {
     let mut t = TextObject::point(Point::ZERO, COPY, CharStyle::default());
     t.area.fit = shrink(10.0);
     assert_eq!(layout(db(), &t).fit_scale, 1.0);
-    t.kind = TextKind::OnPath { path: PathData::from_bezpath(&kurbo::Line::new((0.0, 0.0), (50.0, 0.0)).to_path(0.1)), start: 0.0, end: None };
+    t.kind = TextKind::OnPath {
+        path: PathData::from_bezpath(&kurbo::Line::new((0.0, 0.0), (50.0, 0.0)).to_path(0.1)),
+        start: 0.0,
+        end: None,
+    };
     let l = layout(db(), &t);
     assert!(l.overflow, "text runs past the path end");
     assert_eq!(l.fit_scale, 1.0);
@@ -130,11 +175,21 @@ fn point_type_and_type_on_a_path_ignore_fit() {
 #[test]
 fn shrink_text_guards_degenerate_sizes() {
     for size in [0.0, 0.01, f64::NAN, 1296.0] {
-        let l = layout(db(), &area(COPY, size, Rect::new(0.0, 0.0, 50.0, 20.0), shrink(10.0)));
-        assert!(l.fit_scale.is_finite() && l.fit_scale > 0.0 && l.fit_scale <= 1.0, "{size}: {}", l.fit_scale);
+        let l = layout(
+            db(),
+            &area(COPY, size, Rect::new(0.0, 0.0, 50.0, 20.0), shrink(10.0)),
+        );
+        assert!(
+            l.fit_scale.is_finite() && l.fit_scale > 0.0 && l.fit_scale <= 1.0,
+            "{size}: {}",
+            l.fit_scale
+        );
     }
     // A zero-height frame.
-    let l = layout(db(), &area(COPY, 12.0, Rect::new(0.0, 0.0, 50.0, 0.0), shrink(10.0)));
+    let l = layout(
+        db(),
+        &area(COPY, 12.0, Rect::new(0.0, 0.0, 50.0, 0.0), shrink(10.0)),
+    );
     assert!(l.overflow);
 }
 
@@ -144,8 +199,20 @@ fn shrink_text_follows_top_to_top_leading_and_character_alignment() {
     // Mixed sizes aligned on the em box centre, leading measured from em box top to top.
     let mut t = area(COPY, 14.0, Rect::new(0.0, 0.0, 200.0, 90.0), shrink(20.0));
     t.para.leading_model = LeadingModel::EmBoxTop;
-    let big = CharStyle { size: 28.0, leading: Some(32.0), char_align: CharAlign::EmBoxCenter, ..CharStyle::default() };
-    t.runs.insert(0, TextRun { text: "Big ".into(), style: big, inline: None });
+    let big = CharStyle {
+        size: 28.0,
+        leading: Some(32.0),
+        char_align: CharAlign::EmBoxCenter,
+        ..CharStyle::default()
+    };
+    t.runs.insert(
+        0,
+        TextRun {
+            text: "Big ".into(),
+            style: big,
+            inline: None,
+        },
+    );
     for r in &mut t.runs {
         r.style.char_align = CharAlign::EmBoxCenter;
     }
@@ -160,7 +227,12 @@ fn shrink_text_follows_top_to_top_leading_and_character_alignment() {
         r.style.leading = r.style.leading.map(|v| v * l.fit_scale);
     }
     let m = layout(db(), &manual);
-    let o = |l: &TextLayout| l.glyphs.iter().map(|g| (g.origin.x, g.origin.y)).collect::<Vec<_>>();
+    let o = |l: &TextLayout| {
+        l.glyphs
+            .iter()
+            .map(|g| (g.origin.x, g.origin.y))
+            .collect::<Vec<_>>()
+    };
     assert_eq!(o(&l), o(&m));
     // First line still touches the frame top (top-to-top: em box top at y = 0, scaled).
     let first = l.lines.first().map(|li| li.baseline).unwrap_or(0.0);

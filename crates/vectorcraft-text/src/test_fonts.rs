@@ -32,19 +32,32 @@ pub fn variable_font() -> Option<Vec<u8>> {
     let (glyf, loca) = (font.glyf().ok()?, font.loca(None).ok()?);
     let metrics = font.glyph_metrics(Size::unscaled(), LocationRef::default());
     let charmap = font.charmap();
-    let widened: Vec<GlyphId> = VARIABLE_CHARS.chars().filter_map(|c| charmap.map(c)).collect();
+    let widened: Vec<GlyphId> = VARIABLE_CHARS
+        .chars()
+        .filter_map(|c| charmap.map(c))
+        .collect();
     let mut variations = Vec::new();
     for g in 0..u32::from(font.maxp().ok()?.num_glyphs()) {
         let gid = write_fonts::types::GlyphId::new(g);
         let id = GlyphId::new(g);
         let deltas = if widened.contains(&id) {
-            let Ok(Some(Glyph::Simple(s))) = loca.get_glyf(id, &glyf) else { return None };
+            let Ok(Some(Glyph::Simple(s))) = loca.get_glyf(id, &glyf) else {
+                return None;
+            };
             let wider = |x: f32| (x * VARIABLE_WIDEN).round() as i16;
-            let mut d: Vec<GlyphDelta> = s.points().map(|p| GlyphDelta::required(wider(f32::from(p.x)), 0)).collect();
+            let mut d: Vec<GlyphDelta> = s
+                .points()
+                .map(|p| GlyphDelta::required(wider(f32::from(p.x)), 0))
+                .collect();
             // The phantom points: left side bearing, advance, top, bottom.
             let advance = wider(metrics.advance_width(id)?);
-            d.extend([(0, 0), (advance, 0), (0, 0), (0, 0)].map(|(x, y)| GlyphDelta::required(x, y)));
-            vec![GlyphDeltas::new(vec![Tent::new(F2Dot14::from_f32(1.0), None)], d)]
+            d.extend(
+                [(0, 0), (advance, 0), (0, 0), (0, 0)].map(|(x, y)| GlyphDelta::required(x, y)),
+            );
+            vec![GlyphDeltas::new(
+                vec![Tent::new(F2Dot14::from_f32(1.0), None)],
+                d,
+            )]
         } else {
             vec![]
         };
@@ -65,7 +78,13 @@ pub fn variable_font() -> Option<Vec<u8>> {
         coordinates: vec![Fixed::from_i32(wght)],
         post_script_name_id: None,
     };
-    let instances = vec![instance(257, 400), instance(258, 550), instance(259, 700), instance(260, 600), instance(261, 650)];
+    let instances = vec![
+        instance(257, 400),
+        instance(258, 550),
+        instance(259, 700),
+        instance(260, 600),
+        instance(261, 650),
+    ];
     let fvar = Fvar::new(AxisInstanceArrays::new(vec![axis], instances));
     let name = name_table(&[
         (1, VARIABLE_FAMILY),
@@ -102,7 +121,14 @@ pub fn name_table(records: &[(u16, &str)]) -> Option<Vec<u8>> {
     }
     for (id, s) in records {
         let bytes: Vec<u8> = s.encode_utf16().flat_map(u16::to_be_bytes).collect();
-        for v in [3, 1, 0x0409, id, u16::try_from(bytes.len()).ok()?, u16::try_from(strings.len()).ok()?] {
+        for v in [
+            3,
+            1,
+            0x0409,
+            id,
+            u16::try_from(bytes.len()).ok()?,
+            u16::try_from(strings.len()).ok()?,
+        ] {
             head.extend_from_slice(&v.to_be_bytes());
         }
         strings.extend(bytes);
@@ -151,7 +177,12 @@ pub fn vertical_font(vorg: bool) -> Option<Vec<u8>> {
         be16(&mut vhea, x);
     }
     vhea.extend_from_slice(&n.to_be_bytes());
-    let name = name_table(&[(1, VERTICAL_FAMILY), (2, "Regular"), (4, "Vertitest Sans Regular"), (6, "VertitestSans-Regular")])?;
+    let name = name_table(&[
+        (1, VERTICAL_FAMILY),
+        (2, "Regular"),
+        (4, "Vertitest Sans Regular"),
+        (6, "VertitestSans-Regular"),
+    ])?;
     let mut builder = FontBuilder::new();
     builder.add_raw(Tag::new(b"name"), name);
     builder.add_raw(Tag::new(b"vhea"), vhea);
@@ -186,11 +217,18 @@ pub const TWIN_VERSIONS: [&str; 2] = ["Version 1.000", "Version 2.000"];
 /// glyphs, as a font library that keeps an old version beside a new one has. `None` when it can't
 /// be built.
 pub fn twin_font(newer: bool) -> Option<Vec<u8>> {
-    const OLDER: &[u8] = include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf");
+    const OLDER: &[u8] =
+        include_bytes!("../../../assets/vectorcraft/fonts/SourceSans3-Regular.ttf");
     const NEWER: &[u8] = include_bytes!("../../../assets/vectorcraft/fonts/Inter-Regular.ttf");
     let font = skrifa::FontRef::new(if newer { NEWER } else { OLDER }).ok()?;
     let version = TWIN_VERSIONS[usize::from(newer)];
-    let name = name_table(&[(1, TWIN_FAMILY), (2, "Regular"), (4, "Twintest Sans Regular"), (5, version), (6, "TwintestSans-Regular")])?;
+    let name = name_table(&[
+        (1, TWIN_FAMILY),
+        (2, "Regular"),
+        (4, "Twintest Sans Regular"),
+        (5, version),
+        (6, "TwintestSans-Regular"),
+    ])?;
     let mut builder = FontBuilder::new();
     builder.add_raw(Tag::new(b"name"), name);
     for r in font.table_directory.table_records() {

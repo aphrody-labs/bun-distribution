@@ -205,7 +205,19 @@ mod loader {
 
     /// Tuple brut : [id, idStr, nameId, pmin, pmax, element, category, tp, growthType, foulRate, recastTime].
     #[derive(serde::Deserialize)]
-    struct RawSkill(String, String, String, u16, u16, i32, i32, u16, u8, u16, u16);
+    struct RawSkill(
+        String,
+        String,
+        String,
+        u16,
+        u16,
+        i32,
+        i32,
+        u16,
+        u8,
+        u16,
+        u16,
+    );
 
     #[derive(serde::Deserialize)]
     struct RawFixture {
@@ -239,7 +251,10 @@ mod loader {
     pub fn load_skill_fixture() -> HashMap<String, SkillInfo> {
         let raw: RawFixture =
             serde_json::from_str(SKILL_JSON).expect("skill_fixture.json embarqué valide");
-        raw.skills.iter().map(|r| (r.0.clone(), SkillInfo::from_raw(r))).collect()
+        raw.skills
+            .iter()
+            .map(|r| (r.0.clone(), SkillInfo::from_raw(r)))
+            .collect()
     }
 }
 
@@ -272,7 +287,11 @@ mod tests {
 
     #[test]
     fn power_at_bornes() {
-        let s = SkillInfo { power_min: 70, power_max: 440, ..Default::default() };
+        let s = SkillInfo {
+            power_min: 70,
+            power_max: 440,
+            ..Default::default()
+        };
         // Bornes fiables (le milieu est indicatif, non vérifié).
         assert_eq!(s.power_at(0), 70);
         assert_eq!(s.power_at(100), 440);
@@ -289,7 +308,9 @@ mod golden_tests {
     #[test]
     fn golden_whs00010() {
         let skills = load_skill_fixture();
-        let s = skills.get("0x63BDA8A4").expect("whs00010 présent dans la fixture");
+        let s = skills
+            .get("0x63BDA8A4")
+            .expect("whs00010 présent dans la fixture");
         assert_eq!(s.skill_id_str, "whs00010");
         assert_eq!(s.power_min, 70);
         assert_eq!(s.power_max, 440);
@@ -306,7 +327,9 @@ mod golden_tests {
     #[test]
     fn golden_whs01780() {
         let skills = load_skill_fixture();
-        let s = skills.get("0x0F8C620D").expect("whs01780 présent dans la fixture");
+        let s = skills
+            .get("0x0F8C620D")
+            .expect("whs01780 présent dans la fixture");
         assert_eq!(s.skill_id_str, "whs01780");
         assert_eq!(s.power_range(), (100, 640));
         assert_eq!(s.element, Element::Feu);

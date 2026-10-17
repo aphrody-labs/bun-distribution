@@ -1,15 +1,15 @@
 use crate::{
-    ui_transform::{UiGlobalTransform, UiTransform},
     ComputedStackIndex, ContentSize, CornerRadius, FocusPolicy, UiRect, Val,
+    ui_transform::{UiGlobalTransform, UiTransform},
 };
-use bevy_camera::{visibility::Visibility, Camera, RenderTarget};
+use bevy_camera::{Camera, RenderTarget, visibility::Visibility};
 use bevy_color::{Alpha, Color};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{prelude::*, system::SystemParam};
 use bevy_math::{Affine2, BVec2, Rect, UVec2, Vec2, Vec4, Vec4Swizzles};
 use bevy_reflect::prelude::*;
 use bevy_sprite::BorderRect;
-use bevy_text::{EmSize, RemSize, DEFAULT_REM_SIZE_PX};
+use bevy_text::{DEFAULT_REM_SIZE_PX, EmSize, RemSize};
 use bevy_utils::once;
 use bevy_window::{PrimaryWindow, WindowRef};
 use core::num::NonZero;

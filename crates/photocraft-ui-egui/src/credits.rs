@@ -47,7 +47,11 @@ pub enum NameMode {
 }
 
 impl NameMode {
-    pub const ALL: [NameMode; 3] = [NameMode::Username, NameMode::DisplayName, NameMode::RealName];
+    pub const ALL: [NameMode; 3] = [
+        NameMode::Username,
+        NameMode::DisplayName,
+        NameMode::RealName,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -105,7 +109,10 @@ impl SortKey {
 
     /// Names and dates read naturally oldest/A first; counts read biggest first.
     pub fn default_ascending(self) -> bool {
-        matches!(self, SortKey::Name | SortKey::FirstCommit | SortKey::LastCommit)
+        matches!(
+            self,
+            SortKey::Name | SortKey::FirstCommit | SortKey::LastCommit
+        )
     }
 
     /// Counts line up on the right of their column; names and dates read from the left.
@@ -147,7 +154,9 @@ impl Contributor {
     /// One line with everything we know, for tooltips.
     pub fn summary(&self) -> String {
         crate::i18n::fmt(
-            tl!("@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} lines (Δ {delta}), +{binAdded} / −{binDeleted} binary assets, {first} – {last}"),
+            tl!(
+                "@{login}: {prs} PRs, {commits} commits, +{added} / −{deleted} lines (Δ {delta}), +{binAdded} / −{binDeleted} binary assets, {first} – {last}"
+            ),
             &[
                 ("login", self.login),
                 ("prs", &group(self.prs)),
@@ -190,12 +199,18 @@ fn dated(d: &str) -> (bool, &str) {
 }
 
 /// Contributors in display order. Ties fall back to the name (A–Z) so the order is stable.
-pub fn sorted(list: &[Contributor], mode: NameMode, key: SortKey, ascending: bool) -> Vec<&Contributor> {
+pub fn sorted(
+    list: &[Contributor],
+    mode: NameMode,
+    key: SortKey,
+    ascending: bool,
+) -> Vec<&Contributor> {
     let mut v: Vec<&Contributor> = list.iter().collect();
     v.sort_by(|a, b| {
         let o = compare(a, b, mode, key);
         let o = if ascending { o } else { o.reverse() };
-        o.then_with(|| compare(a, b, mode, SortKey::Name)).then_with(|| a.login.cmp(b.login))
+        o.then_with(|| compare(a, b, mode, SortKey::Name))
+            .then_with(|| a.login.cmp(b.login))
     });
     v
 }
@@ -214,11 +229,19 @@ fn group(n: u64) -> String {
 
 fn signed(n: i128) -> String {
     let g = group(u64::try_from(n.unsigned_abs()).unwrap_or(u64::MAX));
-    if n < 0 { format!("−{g}") } else { format!("+{g}") }
+    if n < 0 {
+        format!("−{g}")
+    } else {
+        format!("+{g}")
+    }
 }
 
 fn day(iso: &str) -> &str {
-    if iso.is_empty() { "—" } else { iso.get(..10).unwrap_or(iso) }
+    if iso.is_empty() {
+        "—"
+    } else {
+        iso.get(..10).unwrap_or(iso)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -231,7 +254,12 @@ struct View {
 
 impl Default for View {
     fn default() -> Self {
-        View { names: NameMode::Username, key: SortKey::FirstCommit, ascending: true, table: false }
+        View {
+            names: NameMode::Username,
+            key: SortKey::FirstCommit,
+            ascending: true,
+            table: false,
+        }
     }
 }
 
@@ -253,7 +281,12 @@ pub fn contributors_ui(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
 }
 
 /// [`contributors_ui`] over a given list (tests pass their own).
-fn contributors_in(app: &mut PhotocraftApp, ui: &mut egui::Ui, contributors: &[Contributor], total_commits: u64) {
+fn contributors_in(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    contributors: &[Contributor],
+    total_commits: u64,
+) {
     let id = egui::Id::new("credits_view");
     let mut v = ui.data_mut(|d| d.get_temp::<View>(id)).unwrap_or_default();
     ui.horizontal_wrapped(|ui| {
@@ -266,17 +299,24 @@ fn contributors_in(app: &mut PhotocraftApp, ui: &mut egui::Ui, contributors: &[C
         ui.separator();
         ui.label(tl!("Sort"));
         let (press, close) = crate::press_menu::PressCombo::before(ui, "credits_sort");
-        let sort = egui::ComboBox::from_id_salt("credits_sort").selected_text(v.key.label().0).close_behavior(close).show_ui(ui, |ui| {
-            for k in SortKey::ALL {
-                let item = ui.selectable_label(v.key == k, k.label().0);
-                if press.chosen(ui, &item) {
-                    v.key = k;
-                    v.ascending = k.default_ascending();
+        let sort = egui::ComboBox::from_id_salt("credits_sort")
+            .selected_text(v.key.label().0)
+            .close_behavior(close)
+            .show_ui(ui, |ui| {
+                for k in SortKey::ALL {
+                    let item = ui.selectable_label(v.key == k, k.label().0);
+                    if press.chosen(ui, &item) {
+                        v.key = k;
+                        v.ascending = k.default_ascending();
+                    }
                 }
-            }
-        });
+            });
         press.after(&sort.response);
-        if ui.button(if v.ascending { "▲" } else { "▼" }).on_hover_text(tl!("Reverse the order")).clicked() {
+        if ui
+            .button(if v.ascending { "▲" } else { "▼" })
+            .on_hover_text(tl!("Reverse the order"))
+            .clicked()
+        {
             v.ascending = !v.ascending;
         }
         ui.separator();
@@ -290,7 +330,10 @@ fn contributors_in(app: &mut PhotocraftApp, ui: &mut egui::Ui, contributors: &[C
     let list = sorted(contributors, v.names, v.key, v.ascending);
     let counts = crate::i18n::fmt(
         tl!("Contributors: {contributors} · Commits: {commits}"),
-        &[("contributors", &group(list.len() as u64)), ("commits", &group(total_commits))],
+        &[
+            ("contributors", &group(list.len() as u64)),
+            ("commits", &group(total_commits)),
+        ],
     );
     ui.label(RichText::new(counts).small().weak());
     ui.separator();
@@ -300,21 +343,25 @@ fn contributors_in(app: &mut PhotocraftApp, ui: &mut egui::Ui, contributors: &[C
     } else if v.table {
         table(app, ui, &list, &mut v, height);
     } else {
-        egui::ScrollArea::vertical().id_salt("credits_bag").auto_shrink([false, false]).max_height(height).show(ui, |ui| {
-            // Spacing alone separates the names: a "·" between them started some lines.
-            ui.spacing_mut().item_spacing = egui::vec2(14.0, 8.0);
-            // Each name is one unit: otherwise egui flows a link that doesn't fit onto the next
-            // line as wrapped text, at the font's line height instead of the row spacing.
-            ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
-            // horizontal_wrapped gives its first row the interact height; text rows are shorter,
-            // so the first gap came out wider than the rest.
-            ui.spacing_mut().interact_size.y = 0.0;
-            ui.horizontal_wrapped(|ui| {
-                for c in &list {
-                    link(app, ui, c, v.names);
-                }
+        egui::ScrollArea::vertical()
+            .id_salt("credits_bag")
+            .auto_shrink([false, false])
+            .max_height(height)
+            .show(ui, |ui| {
+                // Spacing alone separates the names: a "·" between them started some lines.
+                ui.spacing_mut().item_spacing = egui::vec2(14.0, 8.0);
+                // Each name is one unit: otherwise egui flows a link that doesn't fit onto the next
+                // line as wrapped text, at the font's line height instead of the row spacing.
+                ui.style_mut().wrap_mode = Some(egui::TextWrapMode::Extend);
+                // horizontal_wrapped gives its first row the interact height; text rows are shorter,
+                // so the first gap came out wider than the rest.
+                ui.spacing_mut().interact_size.y = 0.0;
+                ui.horizontal_wrapped(|ui| {
+                    for c in &list {
+                        link(app, ui, c, v.names);
+                    }
+                });
             });
-        });
     }
     ui.data_mut(|d| d.insert_temp(id, v));
 }
@@ -330,9 +377,16 @@ fn table_height(ui: &egui::Ui, rows: usize) -> f32 {
 /// A contributor's name, linking to their GitHub profile. Routes through [`crate::links::open`]
 /// (the platform browser service) rather than `ui.hyperlink_to`'s `ctx.open_url`, which the
 /// desktop build can't rely on (egui_winit needs its "links" feature, which we don't enable).
-fn link(app: &mut PhotocraftApp, ui: &mut egui::Ui, c: &Contributor, names: NameMode) -> egui::Response {
+fn link(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    c: &Contributor,
+    names: NameMode,
+) -> egui::Response {
     let url = format!("https://github.com/{}", c.login);
-    let r = ui.add(egui::Link::new(c.name(names))).on_hover_text(c.summary());
+    let r = ui
+        .add(egui::Link::new(c.name(names)))
+        .on_hover_text(c.summary());
     if r.clicked() {
         crate::links::open(app, ui.ctx(), &url);
     }
@@ -340,7 +394,11 @@ fn link(app: &mut PhotocraftApp, ui: &mut egui::Ui, c: &Contributor, names: Name
 }
 
 fn text_width(ui: &egui::Ui, text: &str, font: &egui::FontId) -> f32 {
-    ui.fonts_mut(|f| f.layout_no_wrap(text.to_string(), font.clone(), egui::Color32::WHITE).size().x)
+    ui.fonts_mut(|f| {
+        f.layout_no_wrap(text.to_string(), font.clone(), egui::Color32::WHITE)
+            .size()
+            .x
+    })
 }
 
 /// A column's width: its widest cell, or its header plus the sort arrow's room, so no column
@@ -369,37 +427,47 @@ fn credits_table(
     let fixed: f32 = widths.iter().flatten().sum::<f32>() + ui.spacing().scroll.allocated_width();
     // The table puts a row gap under its header.
     let body_h = (height - TABLE_HEADER_H - ui.spacing().item_spacing.y).max(TABLE_ROW_H);
-    egui::ScrollArea::horizontal().id_salt((id, "h")).auto_shrink([false, true]).show(ui, |ui| {
-        let flex = (ui.available_width() - fixed).max(flex_min);
-        // No gaps between cells: their padding spaces them, and the header rule runs unbroken.
-        ui.spacing_mut().item_spacing.x = 0.0;
-        let mut b = egui_extras::TableBuilder::new(ui)
-            .id_salt(id)
-            .striped(true)
-            .resizable(false)
-            .auto_shrink([false, false])
-            .min_scrolled_height(body_h)
-            .max_scroll_height(body_h)
-            .cell_layout(egui::Layout::left_to_right(egui::Align::Center));
-        for w in widths {
-            b = b.column(match w {
-                Some(w) => egui_extras::Column::exact(*w),
-                None => egui_extras::Column::exact(flex).clip(true),
-            });
-        }
-        b.header(TABLE_HEADER_H, header).body(body);
-    });
+    egui::ScrollArea::horizontal()
+        .id_salt((id, "h"))
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            let flex = (ui.available_width() - fixed).max(flex_min);
+            // No gaps between cells: their padding spaces them, and the header rule runs unbroken.
+            ui.spacing_mut().item_spacing.x = 0.0;
+            let mut b = egui_extras::TableBuilder::new(ui)
+                .id_salt(id)
+                .striped(true)
+                .resizable(false)
+                .auto_shrink([false, false])
+                .min_scrolled_height(body_h)
+                .max_scroll_height(body_h)
+                .cell_layout(egui::Layout::left_to_right(egui::Align::Center));
+            for w in widths {
+                b = b.column(match w {
+                    Some(w) => egui_extras::Column::exact(*w),
+                    None => egui_extras::Column::exact(flex).clip(true),
+                });
+            }
+            b.header(TABLE_HEADER_H, header).body(body);
+        });
 }
 
 /// The Contributors table; clicking a header sorts by it (again reverses it).
-fn table(app: &mut PhotocraftApp, ui: &mut egui::Ui, list: &[&Contributor], v: &mut View, height: f32) {
+fn table(
+    app: &mut PhotocraftApp,
+    ui: &mut egui::Ui,
+    list: &[&Contributor],
+    v: &mut View,
+    height: f32,
+) {
     let t = crate::theme::Tokens::get(ui.ctx());
     let names = v.names;
     let widths: Vec<Option<f32>> = SortKey::ALL
         .iter()
         .map(|&k| {
             let cells: Vec<String> = list.iter().map(|c| k.cell(c)).collect();
-            (k != SortKey::Name).then(|| column_width(ui, k.label().1, cells.iter().map(String::as_str)))
+            (k != SortKey::Name)
+                .then(|| column_width(ui, k.label().1, cells.iter().map(String::as_str)))
         })
         .collect();
     credits_table(
@@ -413,7 +481,10 @@ fn table(app: &mut PhotocraftApp, ui: &mut egui::Ui, list: &[&Contributor], v: &
                 header.col(|ui| {
                     let sort = (v.key == k).then_some(v.ascending);
                     let (long, short) = k.label();
-                    if header_cell(ui, &t, short, k.numeric(), Some(sort)).on_hover_text(long).clicked() {
+                    if header_cell(ui, &t, short, k.numeric(), Some(sort))
+                        .on_hover_text(long)
+                        .clicked()
+                    {
                         if v.key == k {
                             v.ascending = !v.ascending;
                         } else {
@@ -426,7 +497,9 @@ fn table(app: &mut PhotocraftApp, ui: &mut egui::Ui, list: &[&Contributor], v: &
         },
         |body| {
             body.rows(TABLE_ROW_H, list.len(), |mut row| {
-                let Some(c) = list.get(row.index()) else { return };
+                let Some(c) = list.get(row.index()) else {
+                    return;
+                };
                 row.col(|ui| {
                     ui.add_space(CELL_PAD);
                     link(app, ui, c, names);
@@ -440,7 +513,11 @@ fn table(app: &mut PhotocraftApp, ui: &mut egui::Ui, list: &[&Contributor], v: &
 }
 
 fn cell(ui: &mut egui::Ui, numeric: bool, text: &str) {
-    let layout = if numeric { egui::Layout::right_to_left(egui::Align::Center) } else { egui::Layout::left_to_right(egui::Align::Center) };
+    let layout = if numeric {
+        egui::Layout::right_to_left(egui::Align::Center)
+    } else {
+        egui::Layout::left_to_right(egui::Align::Center)
+    };
     ui.with_layout(layout, |ui| {
         ui.add_space(CELL_PAD);
         ui.add(egui::Label::new(text).selectable(false));
@@ -450,33 +527,75 @@ fn cell(ui: &mut egui::Ui, numeric: bool, text: &str) {
 /// One header: its label (on the right over counts, like their numbers) under a rule. A sortable
 /// one (`sort` is `Some`) is a button, with the arrow on the label's inner side when it's the sort
 /// (`Some(Some(ascending))`), in room every header keeps.
-fn header_cell(ui: &mut egui::Ui, t: &crate::theme::Tokens, label: &str, numeric: bool, sort: Option<Option<bool>>) -> egui::Response {
+fn header_cell(
+    ui: &mut egui::Ui,
+    t: &crate::theme::Tokens,
+    label: &str,
+    numeric: bool,
+    sort: Option<Option<bool>>,
+) -> egui::Response {
     let rect = ui.max_rect();
-    let resp = ui.allocate_rect(rect, if sort.is_some() { egui::Sense::click() } else { egui::Sense::hover() });
-    let kind = if sort.is_some() { egui::WidgetType::Button } else { egui::WidgetType::Label };
+    let resp = ui.allocate_rect(
+        rect,
+        if sort.is_some() {
+            egui::Sense::click()
+        } else {
+            egui::Sense::hover()
+        },
+    );
+    let kind = if sort.is_some() {
+        egui::WidgetType::Button
+    } else {
+        egui::WidgetType::Label
+    };
     resp.widget_info(|| egui::WidgetInfo::labeled(kind, true, label));
-    let resp = if sort.is_some() { resp.on_hover_cursor(egui::CursorIcon::PointingHand) } else { resp };
+    let resp = if sort.is_some() {
+        resp.on_hover_cursor(egui::CursorIcon::PointingHand)
+    } else {
+        resp
+    };
     let current = sort.flatten();
-    let color = if sort.is_none() || current.is_some() || resp.hovered() { t.text } else { t.text_dim };
+    let color = if sort.is_none() || current.is_some() || resp.hovered() {
+        t.text
+    } else {
+        t.text_dim
+    };
     let size = egui::TextStyle::Body.resolve(ui.style()).size;
-    let galley = ui.painter().layout_no_wrap(label.to_string(), crate::theme::semibold(size), color);
+    let galley =
+        ui.painter()
+            .layout_no_wrap(label.to_string(), crate::theme::semibold(size), color);
     let inner = rect.shrink2(egui::vec2(CELL_PAD, 0.0));
     let y = rect.center().y - galley.size().y / 2.0;
     let (text_x, arrow_x) = if numeric {
         let x = inner.right() - galley.size().x;
         (x, x - SORT_ARROW_W / 2.0)
     } else {
-        (inner.left(), inner.left() + galley.size().x + SORT_ARROW_W / 2.0)
+        (
+            inner.left(),
+            inner.left() + galley.size().x + SORT_ARROW_W / 2.0,
+        )
     };
     ui.painter().galley(egui::pos2(text_x, y), galley, color);
     if let Some(ascending) = current {
         let (c, h) = (egui::pos2(arrow_x, rect.center().y), 3.0);
         let pts = if ascending {
-            vec![c + egui::vec2(-h, h * 0.6), c + egui::vec2(h, h * 0.6), c + egui::vec2(0.0, -h * 0.9)]
+            vec![
+                c + egui::vec2(-h, h * 0.6),
+                c + egui::vec2(h, h * 0.6),
+                c + egui::vec2(0.0, -h * 0.9),
+            ]
         } else {
-            vec![c + egui::vec2(-h, -h * 0.6), c + egui::vec2(h, -h * 0.6), c + egui::vec2(0.0, h * 0.9)]
+            vec![
+                c + egui::vec2(-h, -h * 0.6),
+                c + egui::vec2(h, -h * 0.6),
+                c + egui::vec2(0.0, h * 0.9),
+            ]
         };
-        ui.painter().add(egui::Shape::convex_polygon(pts, t.accent, egui::Stroke::NONE));
+        ui.painter().add(egui::Shape::convex_polygon(
+            pts,
+            t.accent,
+            egui::Stroke::NONE,
+        ));
     }
     let line = egui::Rect::from_min_max(egui::pos2(rect.left(), rect.bottom() - 1.0), rect.max);
     ui.painter().rect_filled(line, 0.0, t.separator);
@@ -491,7 +610,11 @@ pub fn models_ui(ui: &mut egui::Ui) {
 /// Share of all commits, whole percent; a model with any commits never reads "0%".
 fn percent(commits: u64, total: u64) -> String {
     let p = 100.0 * commits as f64 / total.max(1) as f64;
-    if commits > 0 && p < 0.5 { "<1%".into() } else { format!("{:.0}%", p.min(100.0)) }
+    if commits > 0 && p < 0.5 {
+        "<1%".into()
+    } else {
+        format!("{:.0}%", p.min(100.0))
+    }
 }
 
 /// The Models table's cells for `m`, column by column; counts are the last three.
@@ -515,11 +638,27 @@ fn models_in(ui: &mut egui::Ui, models: &[Model], total_commits: u64) {
     let t = crate::theme::Tokens::get(ui.ctx());
     // Counted against every commit, or the busiest model's if the total somehow trails it.
     let total = total_commits.max(models.iter().map(|m| m.commits).max().unwrap_or(0));
-    let heads = [tl!("Company"), tl!("Model"), tl!("Version"), tl!("Commits"), tl!("% of all commits"), tl!("Lines +/−")];
+    let heads = [
+        tl!("Company"),
+        tl!("Model"),
+        tl!("Version"),
+        tl!("Commits"),
+        tl!("% of all commits"),
+        tl!("Lines +/−"),
+    ];
     let rows: Vec<[String; 6]> = models.iter().map(|m| model_cells(m, total)).collect();
     // The model name takes the spare width.
-    let widths: Vec<Option<f32>> =
-        (0..heads.len()).map(|i| (i != 1).then(|| column_width(ui, heads[i], rows.iter().filter_map(|r| r.get(i)).map(String::as_str)))).collect();
+    let widths: Vec<Option<f32>> = (0..heads.len())
+        .map(|i| {
+            (i != 1).then(|| {
+                column_width(
+                    ui,
+                    heads[i],
+                    rows.iter().filter_map(|r| r.get(i)).map(String::as_str),
+                )
+            })
+        })
+        .collect();
     let numeric = |i: usize| i >= 3;
     credits_table(
         ui,
@@ -536,7 +675,9 @@ fn models_in(ui: &mut egui::Ui, models: &[Model], total_commits: u64) {
         },
         |body| {
             body.rows(TABLE_ROW_H, rows.len(), |mut row| {
-                let Some(cells) = rows.get(row.index()) else { return };
+                let Some(cells) = rows.get(row.index()) else {
+                    return;
+                };
                 for (i, text) in cells.iter().enumerate() {
                     row.col(|ui| cell(ui, numeric(i), text));
                 }
@@ -549,7 +690,14 @@ fn models_in(ui: &mut egui::Ui, models: &[Model], total_commits: u64) {
 mod tests {
     use super::*;
 
-    fn c(login: &'static str, display: Option<&'static str>, real: Option<&'static str>, added: u64, deleted: u64, first: &'static str) -> Contributor {
+    fn c(
+        login: &'static str,
+        display: Option<&'static str>,
+        real: Option<&'static str>,
+        added: u64,
+        deleted: u64,
+        first: &'static str,
+    ) -> Contributor {
         Contributor {
             login,
             display_name: display,

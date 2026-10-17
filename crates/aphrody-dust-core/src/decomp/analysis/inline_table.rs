@@ -39,7 +39,11 @@ impl InlineTableState {
                 },
                 _ => Self::default(),
             },
-            Self::SubPc { table_base, table_address, size } => {
+            Self::SubPc {
+                table_base,
+                table_address,
+                size,
+            } => {
                 match ins {
                     // ldrb *, [table_base, r* lsr #*]
                     Ins::Ldrb {
@@ -48,7 +52,11 @@ impl InlineTableState {
                         addr:
                             AddrLdrStr::Pre {
                                 rn,
-                                offset: LdrStrOffset::Reg { shift_op: ShiftOp::Lsr, .. },
+                                offset:
+                                    LdrStrOffset::Reg {
+                                        shift_op: ShiftOp::Lsr,
+                                        ..
+                                    },
                                 ..
                             },
                     } if *rn == table_base => Self::ValidTable(InlineTable {
@@ -58,13 +66,15 @@ impl InlineTableState {
                     }),
                     _ => Self::default(),
                 }
-            },
+            }
             Self::ValidTable(_) => Self::default(),
         }
     }
 
     pub fn get_table(self) -> Option<InlineTable> {
-        let Self::ValidTable(table) = self else { return None };
+        let Self::ValidTable(table) = self else {
+            return None;
+        };
         Some(table)
     }
 }
@@ -85,7 +95,9 @@ impl InlineTable {
 impl From<InlineTable> for SymData {
     fn from(val: InlineTable) -> Self {
         match val.kind {
-            InlineTableKind::Byte => SymData::Byte { count: Some(val.count()) },
+            InlineTableKind::Byte => SymData::Byte {
+                count: Some(val.count()),
+            },
         }
     }
 }

@@ -16,7 +16,10 @@ fn encode(pcm: &[f32], channels: u8, bitrate: u32) -> (OpusEncoder, Vec<Vec<u8>>
     let frames = total.div_ceil(FRAME);
     let mut padded = pcm.to_vec();
     padded.resize(frames * FRAME * c, 0.0);
-    let packets = padded.chunks(FRAME * c).map(|f| enc.encode_float(f)).collect();
+    let packets = padded
+        .chunks(FRAME * c)
+        .map(|f| enc.encode_float(f))
+        .collect();
     (enc, packets)
 }
 
@@ -65,7 +68,9 @@ fn snr(orig: &[f32], dec: &[f32]) -> f64 {
 }
 
 fn sine(freq: f32, amp: f32, len: usize) -> Vec<f32> {
-    (0..len).map(|i| amp * (2.0 * std::f32::consts::PI * freq * i as f32 / SR).sin()).collect()
+    (0..len)
+        .map(|i| amp * (2.0 * std::f32::consts::PI * freq * i as f32 / SR).sin())
+        .collect()
 }
 
 fn chirp(f0: f32, f1: f32, amp: f32, len: usize) -> Vec<f32> {
@@ -97,7 +102,12 @@ fn band_energies(x: &[f32]) -> Vec<f64> {
     let mut acc = vec![0f64; edges.len() - 1];
     let mut start = N;
     while start + N <= x.len() - N {
-        let mut re: Vec<f64> = (0..N).map(|i| x[start + i] as f64 * (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / N as f64).cos())).collect();
+        let mut re: Vec<f64> = (0..N)
+            .map(|i| {
+                x[start + i] as f64
+                    * (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / N as f64).cos())
+            })
+            .collect();
         let mut im = vec![0f64; N];
         fft(&mut re, &mut im);
         for k in 1..N / 2 {
@@ -163,7 +173,10 @@ fn chirp_mono() {
     for rate in [64_000, 128_000] {
         let (_, d) = roundtrip(std::slice::from_ref(&x), rate);
         let s = snr(&x, &d[0]);
-        eprintln!("chirp 100 Hz-10 kHz mono @ {} kb/s: SNR {s:.1} dB", rate / 1000);
+        eprintln!(
+            "chirp 100 Hz-10 kHz mono @ {} kb/s: SNR {s:.1} dB",
+            rate / 1000
+        );
         assert!(s > 15.0, "chirp SNR {s:.1} dB at {rate}");
     }
 }
@@ -178,7 +191,11 @@ fn white_noise_mono() {
         let err: Vec<f32> = x.iter().zip(&d[0]).map(|(a, b)| a - b).collect();
         let ee = band_energies(&err);
         let octave_snr: Vec<f64> = eo.iter().zip(&ee).map(|(a, b)| a - b).collect();
-        let worst = eo.iter().zip(&ed).map(|(a, b)| (a - b).abs()).fold(0.0, f64::max);
+        let worst = eo
+            .iter()
+            .zip(&ed)
+            .map(|(a, b)| (a - b).abs())
+            .fold(0.0, f64::max);
         let min_octave = octave_snr.iter().copied().fold(f64::MAX, f64::min);
         eprintln!(
             "white noise mono @ {} kb/s: full-band SNR {s:.1} dB, octave SNRs 100 Hz-16 kHz {:.1?} dB, worst octave energy error {worst:.2} dB",
@@ -188,9 +205,15 @@ fn white_noise_mono() {
         // Full-band noise loses everything above 20 kHz (CELT's last band ends there) and spends
         // few bits per coefficient on 16-20 kHz, so the full-band waveform SNR is low; the band
         // energies must match closely and the octaves below 16 kHz must be waveform-coded.
-        assert!(worst < 1.5, "band energy error {worst:.2} dB at {rate}: {eo:?} vs {ed:?}");
+        assert!(
+            worst < 1.5,
+            "band energy error {worst:.2} dB at {rate}: {eo:?} vs {ed:?}"
+        );
         assert!(s > 0.5, "noise SNR {s:.1} dB at {rate}");
-        assert!(min_octave > if rate >= 128_000 { 10.0 } else { 3.0 }, "octave SNRs {octave_snr:?} at {rate}");
+        assert!(
+            min_octave > if rate >= 128_000 { 10.0 } else { 3.0 },
+            "octave SNRs {octave_snr:?} at {rate}"
+        );
     }
 }
 
@@ -224,7 +247,10 @@ fn lowpass_noise_mono() {
 fn silence_stays_silent() {
     let x = vec![0f32; 48_000];
     let (packets, d) = roundtrip(&[x.clone(), x], 128_000);
-    assert!(packets.iter().all(|p| p.len() == 3), "silence frames are 3-byte packets");
+    assert!(
+        packets.iter().all(|p| p.len() == 3),
+        "silence frames are 3-byte packets"
+    );
     for ch in &d {
         let peak = ch.iter().fold(0f32, |m, v| m.max(v.abs()));
         assert!(peak < 1e-6, "peak {peak}");
@@ -242,7 +268,12 @@ fn stereo_distinct_channels() {
     assert!(sl > 20.0 && sr > 15.0, "stereo SNR L {sl:.1} R {sr:.1}");
     // No leakage of the chirp into the left channel (2-4 kHz octave: chirp only).
     let (el, er) = (band_energies(&d[0]), band_energies(&r));
-    assert!(el[4] < er[4] - 30.0, "chirp energy leaked into L: {} vs {}", el[4], er[4]);
+    assert!(
+        el[4] < er[4] - 30.0,
+        "chirp energy leaked into L: {} vs {}",
+        el[4],
+        er[4]
+    );
 }
 
 #[test]
@@ -262,10 +293,15 @@ fn signal_after_silence_and_loud_transient() {
     x.extend(sine(2_000.0, 0.99, 24_000));
     x.extend(vec![0f32; 24_000]);
     let (_, d) = roundtrip(std::slice::from_ref(&x), 96_000);
-    let s = snr(&x[24_000 + 2 * FRAME..48_000], &d[0][24_000 + 2 * FRAME..48_000]);
+    let s = snr(
+        &x[24_000 + 2 * FRAME..48_000],
+        &d[0][24_000 + 2 * FRAME..48_000],
+    );
     eprintln!("burst after silence @ 96 kb/s: SNR {s:.1} dB");
     assert!(s > 15.0, "burst SNR {s:.1}");
-    let tail_peak = d[0][48_000 + 2 * FRAME..].iter().fold(0f32, |m, v| m.max(v.abs()));
+    let tail_peak = d[0][48_000 + 2 * FRAME..]
+        .iter()
+        .fold(0f32, |m, v| m.max(v.abs()));
     assert!(tail_peak < 1e-3, "tail peak {tail_peak}");
 }
 
@@ -276,7 +312,11 @@ fn ogg_crc(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= (b as u32) << 24;
         for _ in 0..8 {
-            crc = if crc & 0x8000_0000 != 0 { (crc << 1) ^ 0x04C1_1DB7 } else { crc << 1 };
+            crc = if crc & 0x8000_0000 != 0 {
+                (crc << 1) ^ 0x04C1_1DB7
+            } else {
+                crc << 1
+            };
         }
     }
     crc
@@ -312,8 +352,18 @@ fn ogg_opus(enc: &OpusEncoder, packets: &[Vec<u8>], len: usize) -> Vec<u8> {
     let pre_skip = enc.pre_skip() as u64;
     for (i, p) in packets.iter().enumerate() {
         let last = i + 1 == packets.len();
-        let granule = if last { pre_skip + len as u64 } else { ((i + 1) * FRAME) as u64 };
-        ogg_page(&mut out, p, if last { 0x04 } else { 0 }, granule, i as u32 + 2);
+        let granule = if last {
+            pre_skip + len as u64
+        } else {
+            ((i + 1) * FRAME) as u64
+        };
+        ogg_page(
+            &mut out,
+            p,
+            if last { 0x04 } else { 0 },
+            granule,
+            i as u32 + 2,
+        );
     }
     out
 }
@@ -332,8 +382,11 @@ fn ffmpeg_oracle_decodes_ogg_opus() {
     }
     for (channels, rate) in [(1u8, 96_000u32), (2, 192_000)] {
         let len = 48_000;
-        let planar: Vec<Vec<f32>> =
-            if channels == 1 { vec![chirp(150.0, 9_000.0, 0.4, len)] } else { vec![sine(440.0, 0.5, len), chirp(150.0, 9_000.0, 0.3, len)] };
+        let planar: Vec<Vec<f32>> = if channels == 1 {
+            vec![chirp(150.0, 9_000.0, 0.4, len)]
+        } else {
+            vec![sine(440.0, 0.5, len), chirp(150.0, 9_000.0, 0.3, len)]
+        };
         let c = channels as usize;
         let mut pcm = vec![0f32; len * c];
         for (ch, p) in planar.iter().enumerate() {
@@ -342,22 +395,50 @@ fn ffmpeg_oracle_decodes_ogg_opus() {
             }
         }
         let (enc, packets) = encode(&pcm, channels, rate);
-        let path = std::env::temp_dir().join(format!("effectcraft-opusenc-{}-{channels}.opus", std::process::id()));
+        let path = std::env::temp_dir().join(format!(
+            "effectcraft-opusenc-{}-{channels}.opus",
+            std::process::id()
+        ));
         std::fs::write(&path, ogg_opus(&enc, &packets, len)).unwrap();
         let out = Command::new("ffmpeg")
             .args(["-v", "error", "-i"])
             .arg(&path)
-            .args(["-f", "f32le", "-ac", &channels.to_string(), "-ar", "48000", "-"])
+            .args([
+                "-f",
+                "f32le",
+                "-ac",
+                &channels.to_string(),
+                "-ar",
+                "48000",
+                "-",
+            ])
             .output()
             .expect("run ffmpeg");
         let _ = std::fs::remove_file(&path);
-        assert!(out.status.success(), "ffmpeg failed: {}", String::from_utf8_lossy(&out.stderr));
-        let dec: Vec<f32> = out.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
-        assert_eq!(dec.len(), len * c, "ffmpeg must honour pre-skip and the end granule");
+        assert!(
+            out.status.success(),
+            "ffmpeg failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        let dec: Vec<f32> = out
+            .stdout
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+            .collect();
+        assert_eq!(
+            dec.len(),
+            len * c,
+            "ffmpeg must honour pre-skip and the end granule"
+        );
         for ch in 0..c {
             let d: Vec<f32> = (0..len).map(|i| dec[i * c + ch]).collect();
             let s = snr(&planar[ch], &d);
-            eprintln!("ffmpeg {channels} ch @ {} kb/s, channel {ch}: SNR {s:.1} dB", rate / 1000);
+            eprintln!(
+                "ffmpeg {channels} ch @ {} kb/s, channel {ch}: SNR {s:.1} dB",
+                rate / 1000
+            );
             assert!(s > 15.0, "ffmpeg-decoded SNR {s:.1} dB (channel {ch})");
         }
     }

@@ -17,7 +17,11 @@ impl Graph {
     /// Push/relabel; `None` when `cancel` stopped it.
     pub(super) fn push_relabel(&mut self, cancel: &dyn Fn() -> bool) -> Option<f64> {
         let n = self.node_count();
-        let Some(source_height) = u32::try_from(n).ok().filter(|&n| n < u32::MAX / 2).map(|n| n + 2) else {
+        let Some(source_height) = u32::try_from(n)
+            .ok()
+            .filter(|&n| n < u32::MAX / 2)
+            .map(|n| n + 2)
+        else {
             return self.bk(cancel);
         };
         let mut back = vec![0.0f32; n];

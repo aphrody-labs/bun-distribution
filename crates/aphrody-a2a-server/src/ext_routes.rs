@@ -42,14 +42,20 @@ pub struct ExtState {
 
 impl Clone for ExtState {
     fn clone(&self) -> Self {
-        ExtState { registry: self.registry.clone(), task_store: self.task_store.clone() }
+        ExtState {
+            registry: self.registry.clone(),
+            task_store: self.task_store.clone(),
+        }
     }
 }
 
 /// Build the extension router. Mount on the same `axum::Router::nest("/")`
 /// as the AGNTCY `rest_router` to extend the surface.
 pub fn ext_router(registry: Arc<CommandRegistry>, task_store: Arc<dyn TaskStore>) -> Router {
-    let state = ExtState { registry, task_store };
+    let state = ExtState {
+        registry,
+        task_store,
+    };
     Router::new()
         .route("/listCommands", get(handle_list_commands))
         .route("/executeCommand", post(handle_execute_command))
@@ -88,7 +94,9 @@ async fn handle_execute_command(
     let Some(command) = state.registry.get(&payload.command).await else {
         return (
             StatusCode::NOT_FOUND,
-            Json(ErrorPayload { error: format!("command not found: {}", payload.command) }),
+            Json(ErrorPayload {
+                error: format!("command not found: {}", payload.command),
+            }),
         )
             .into_response();
     };
@@ -109,7 +117,10 @@ async fn handle_execute_command(
 
     match command.execute(payload.args).await {
         Ok(result) => Json(result).into_response(),
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorPayload { error: err.message }))
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorPayload { error: err.message }),
+        )
             .into_response(),
     }
 }
@@ -132,7 +143,9 @@ async fn handle_create_task(
     Json(payload): Json<CreateTaskPayload>,
 ) -> axum::response::Response {
     let task_id = uuid::Uuid::new_v4().to_string();
-    let context_id = payload.context_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+    let context_id = payload
+        .context_id
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
     let metadata: Option<HashMap<String, Value>> = payload.metadata.and_then(|v| match v {
         Value::Object(map) => Some(map.into_iter().collect()),
         _ => None,
@@ -151,8 +164,15 @@ async fn handle_create_task(
     };
 
     match state.task_store.create(task).await {
-        Ok(_) => (StatusCode::CREATED, Json(CreateTaskResponse { id: task_id })).into_response(),
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorPayload { error: err.message }))
+        Ok(_) => (
+            StatusCode::CREATED,
+            Json(CreateTaskResponse { id: task_id }),
+        )
+            .into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorPayload { error: err.message }),
+        )
             .into_response(),
     }
 }
@@ -177,11 +197,17 @@ async fn handle_get_task_metadata(
             metadata: task.metadata.as_ref(),
         })
         .into_response(),
-        Ok(None) => {
-            (StatusCode::NOT_FOUND, Json(ErrorPayload { error: format!("task not found: {id}") }))
-                .into_response()
-        },
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorPayload { error: err.message }))
+        Ok(None) => (
+            StatusCode::NOT_FOUND,
+            Json(ErrorPayload {
+                error: format!("task not found: {id}"),
+            }),
+        )
+            .into_response(),
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorPayload { error: err.message }),
+        )
             .into_response(),
     }
 }
@@ -221,8 +247,11 @@ async fn handle_list_task_metadata(State(state): State<ExtState>) -> axum::respo
                 })
                 .collect();
             Json(entries).into_response()
-        },
-        Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ErrorPayload { error: err.message }))
+        }
+        Err(err) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ErrorPayload { error: err.message }),
+        )
             .into_response(),
     }
 }
@@ -255,7 +284,10 @@ mod tests {
             &self,
             _: Vec<String>,
         ) -> Result<CommandExecutionResponse, aphrody_a2a::A2AError> {
-            Ok(CommandExecutionResponse { name: "ping".into(), data: json!("pong") })
+            Ok(CommandExecutionResponse {
+                name: "ping".into(),
+                data: json!("pong"),
+            })
         }
     }
 
@@ -276,7 +308,10 @@ mod tests {
             &self,
             _: Vec<String>,
         ) -> Result<CommandExecutionResponse, aphrody_a2a::A2AError> {
-            Ok(CommandExecutionResponse { name: self.name().into(), data: json!("ok") })
+            Ok(CommandExecutionResponse {
+                name: self.name().into(),
+                data: json!("ok"),
+            })
         }
     }
 
@@ -291,7 +326,10 @@ mod tests {
     #[tokio::test]
     async fn test_list_commands_returns_catalog() {
         let app = make_app().await;
-        let req = Request::builder().uri("/listCommands").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/listCommands")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         let body = resp.into_body().collect().await.unwrap().to_bytes();
@@ -375,7 +413,10 @@ mod tests {
     #[tokio::test]
     async fn test_get_task_metadata_404_for_missing() {
         let app = make_app().await;
-        let req = Request::builder().uri("/tasks/missing/metadata").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/tasks/missing/metadata")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     }
@@ -383,7 +424,10 @@ mod tests {
     #[tokio::test]
     async fn test_list_task_metadata_204_when_empty() {
         let app = make_app().await;
-        let req = Request::builder().uri("/tasks/metadata").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/tasks/metadata")
+            .body(Body::empty())
+            .unwrap();
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::NO_CONTENT);
     }

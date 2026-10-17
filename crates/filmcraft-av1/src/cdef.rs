@@ -41,7 +41,13 @@ pub(crate) fn apply(fs: &FrameState, pool: &Pool) -> Option<FrameBuf> {
 
 fn cdef_block(fs: &FrameState, out: &mut [RowBand; 3], r: usize, c: usize, idx: usize) -> bool {
     let mi = &fs.mi;
-    let sk = |rr: usize, cc: usize| -> bool { if rr < mi.rows && cc < mi.cols { mi.skip[mi.idx(rr, cc)] } else { true } };
+    let sk = |rr: usize, cc: usize| -> bool {
+        if rr < mi.rows && cc < mi.cols {
+            mi.skip[mi.idx(rr, cc)]
+        } else {
+            true
+        }
+    };
     let skip = sk(r, c) && sk(r + 1, c) && sk(r, c + 1) && sk(r + 1, c + 1);
     if skip {
         return false;
@@ -52,8 +58,16 @@ fn cdef_block(fs: &FrameState, out: &mut [RowBand; 3], r: usize, c: usize, idx: 
     let mut pri = (cp.y_pri[idx] << coeff_shift) as i32;
     let sec = (cp.y_sec[idx] << coeff_shift) as i32;
     let dir = if pri == 0 { 0 } else { y_dir };
-    let var_str = if (var >> 6) != 0 { (31 - ((var >> 6) as u32).leading_zeros()).min(12) as i32 } else { 0 };
-    pri = if var != 0 { (pri * (4 + var_str) + 8) >> 4 } else { 0 };
+    let var_str = if (var >> 6) != 0 {
+        (31 - ((var >> 6) as u32).leading_zeros()).min(12) as i32
+    } else {
+        0
+    };
+    pri = if var != 0 {
+        (pri * (4 + var_str) + 8) >> 4
+    } else {
+        0
+    };
     let damping = cp.damping as i32 + coeff_shift as i32;
     filter(fs, out, 0, r, c, pri, sec, damping, dir);
     if fs.num_planes == 1 {
@@ -61,7 +75,11 @@ fn cdef_block(fs: &FrameState, out: &mut [RowBand; 3], r: usize, c: usize, idx: 
     }
     let pri = (cp.uv_pri[idx] << coeff_shift) as i32;
     let sec = (cp.uv_sec[idx] << coeff_shift) as i32;
-    let dir = if pri == 0 { 0 } else { CDEF_UV_DIR[fs.ssx][fs.ssy][y_dir] as usize };
+    let dir = if pri == 0 {
+        0
+    } else {
+        CDEF_UV_DIR[fs.ssx][fs.ssy][y_dir] as usize
+    };
     let damping = cp.damping as i32 + coeff_shift as i32 - 1;
     filter(fs, out, 1, r, c, pri, sec, damping, dir);
     filter(fs, out, 2, r, c, pri, sec, damping, dir);
@@ -96,8 +114,10 @@ fn direction(fs: &FrameState, r: usize, c: usize) -> (usize, i32) {
     cost[2] *= DIV_TABLE[8] as i32;
     cost[6] *= DIV_TABLE[8] as i32;
     for i in 0..7 {
-        cost[0] += (partial[0][i] * partial[0][i] + partial[0][14 - i] * partial[0][14 - i]) * DIV_TABLE[i + 1] as i32;
-        cost[4] += (partial[4][i] * partial[4][i] + partial[4][14 - i] * partial[4][14 - i]) * DIV_TABLE[i + 1] as i32;
+        cost[0] += (partial[0][i] * partial[0][i] + partial[0][14 - i] * partial[0][14 - i])
+            * DIV_TABLE[i + 1] as i32;
+        cost[4] += (partial[4][i] * partial[4][i] + partial[4][14 - i] * partial[4][14 - i])
+            * DIV_TABLE[i + 1] as i32;
     }
     cost[0] += partial[0][7] * partial[0][7] * DIV_TABLE[8] as i32;
     cost[4] += partial[4][7] * partial[4][7] * DIV_TABLE[8] as i32;
@@ -108,7 +128,8 @@ fn direction(fs: &FrameState, r: usize, c: usize) -> (usize, i32) {
         }
         cost[i] *= DIV_TABLE[8] as i32;
         for j in 0..3 {
-            cost[i] += (partial[i][j] * partial[i][j] + partial[i][10 - j] * partial[i][10 - j]) * DIV_TABLE[2 * j + 2] as i32;
+            cost[i] += (partial[i][j] * partial[i][j] + partial[i][10 - j] * partial[i][10 - j])
+                * DIV_TABLE[2 * j + 2] as i32;
         }
         i += 2;
     }
@@ -135,7 +156,17 @@ fn constrain(diff: i32, threshold: i32, adj: u32) -> i32 {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn filter(fs: &FrameState, out: &mut [RowBand; 3], plane: usize, r: usize, c: usize, pri: i32, sec: i32, damping: i32, dir: usize) {
+fn filter(
+    fs: &FrameState,
+    out: &mut [RowBand; 3],
+    plane: usize,
+    r: usize,
+    c: usize,
+    pri: i32,
+    sec: i32,
+    damping: i32,
+    dir: usize,
+) {
     if pri == 0 && sec == 0 {
         // Every tap contributes 0 and the clamp to [min, max] keeps x: CdefFrame = CurrFrame.
         return;
@@ -170,14 +201,28 @@ fn filter(fs: &FrameState, out: &mut [RowBand; 3], plane: usize, r: usize, c: us
         }
     }
     let pri_tap = ((pri >> coeff_shift) & 1) as usize;
-    let off = |d: usize, k: usize| CDEF_DIRECTIONS[d][k][0] as isize * PAD_STRIDE as isize + CDEF_DIRECTIONS[d][k][1] as isize;
+    let off = |d: usize, k: usize| {
+        CDEF_DIRECTIONS[d][k][0] as isize * PAD_STRIDE as isize + CDEF_DIRECTIONS[d][k][1] as isize
+    };
     let pri_off = [off(dir, 0), off(dir, 1)];
     let d_lo = (dir + 6) & 7;
     let d_hi = (dir + 2) & 7;
     let sec_off = [[off(d_lo, 0), off(d_hi, 0)], [off(d_lo, 1), off(d_hi, 1)]];
-    let pri_taps = [CDEF_PRI_TAPS[pri_tap][0] as i32, CDEF_PRI_TAPS[pri_tap][1] as i32];
-    let sec_taps = [CDEF_SEC_TAPS[pri_tap][0] as i32, CDEF_SEC_TAPS[pri_tap][1] as i32];
-    let adj = |t: i32| if t == 0 { 0 } else { (damping - (31 - (t as u32).leading_zeros()) as i32).max(0) as u32 };
+    let pri_taps = [
+        CDEF_PRI_TAPS[pri_tap][0] as i32,
+        CDEF_PRI_TAPS[pri_tap][1] as i32,
+    ];
+    let sec_taps = [
+        CDEF_SEC_TAPS[pri_tap][0] as i32,
+        CDEF_SEC_TAPS[pri_tap][1] as i32,
+    ];
+    let adj = |t: i32| {
+        if t == 0 {
+            0
+        } else {
+            (damping - (31 - (t as u32).leading_zeros()) as i32).max(0) as u32
+        }
+    };
     let (pri_adj, sec_adj) = (adj(pri), adj(sec));
     let dst = &mut out[plane];
     if all_avail {
@@ -277,7 +322,9 @@ fn filter_rows<const W: usize>(
         let drow = &mut dst.row_mut(y0 + i)[x0..x0 + W];
         for j in 0..W {
             let s = sum[j];
-            drow[j] = (x[j] + ((8 + s - (s < 0) as i16) >> 4)).max(min[j]).min(max[j]) as u16;
+            drow[j] = (x[j] + ((8 + s - (s < 0) as i16) >> 4))
+                .max(min[j])
+                .min(max[j]) as u16;
         }
     }
 }

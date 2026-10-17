@@ -187,7 +187,9 @@ impl From<&str> for SecretValue {
 
 impl Clone for SecretValue {
     fn clone(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self {
+            inner: self.inner.clone(),
+        }
     }
 }
 
@@ -257,7 +259,10 @@ impl SecretRef {
     /// Convenience constructor.
     #[must_use]
     pub fn new(provider: impl Into<String>, key: impl Into<String>) -> Self {
-        Self { provider: provider.into(), key: key.into() }
+        Self {
+            provider: provider.into(),
+            key: key.into(),
+        }
     }
 }
 
@@ -311,7 +316,10 @@ impl SecretStore for EnvSecretStore {
         match std::env::var(key) {
             Ok(v) => Ok(Some(SecretValue::from_string(v))),
             Err(std::env::VarError::NotPresent) => Ok(None),
-            Err(source) => Err(SecretsError::EnvVar { key: key.to_owned(), source }),
+            Err(source) => Err(SecretsError::EnvVar {
+                key: key.to_owned(),
+                source,
+            }),
         }
     }
 
@@ -387,7 +395,7 @@ impl SecretStore for CompositeSecretStore {
                 Err(other) => {
                     last_err = Some(other);
                     break;
-                },
+                }
             }
         }
         Err(last_err.unwrap_or(SecretsError::ReadOnly { store: "composite" }))

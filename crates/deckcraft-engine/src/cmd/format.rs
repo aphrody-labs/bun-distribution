@@ -3,7 +3,9 @@
 
 use deckcraft_model::edit as ed;
 use deckcraft_model::resolve;
-use deckcraft_model::text::{Align, Anchor, AutoFit, Bullet, Caps, ParaProps, RunProps, Spacing, Strike, TextDir};
+use deckcraft_model::text::{
+    Align, Anchor, AutoFit, Bullet, Caps, ParaProps, RunProps, Spacing, Strike, TextDir,
+};
 use deckcraft_model::{Effects, Fill, Line, Shape};
 use serde_json::{Value, json};
 
@@ -13,8 +15,24 @@ use crate::{Result, Session};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("format.bold", "Bold", ["Home", "Font"], Some("Cmd+B"), "{on?: bool}", has_text_or_shapes, bold),
-        cmd!("format.italic", "Italic", ["Home", "Font"], Some("Cmd+I"), "{on?: bool}", has_text_or_shapes, italic),
+        cmd!(
+            "format.bold",
+            "Bold",
+            ["Home", "Font"],
+            Some("Cmd+B"),
+            "{on?: bool}",
+            has_text_or_shapes,
+            bold
+        ),
+        cmd!(
+            "format.italic",
+            "Italic",
+            ["Home", "Font"],
+            Some("Cmd+I"),
+            "{on?: bool}",
+            has_text_or_shapes,
+            italic
+        ),
         cmd!(
             "format.underline",
             "Underline",
@@ -33,12 +51,60 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             strike
         ),
-        cmd!("format.superscript", "Superscript", ["Home", "Font"], Some("Cmd+Shift+="), "{on?: bool}", has_text_or_shapes, superscript),
-        cmd!("format.subscript", "Subscript", ["Home", "Font"], Some("Cmd+="), "{on?: bool}", has_text_or_shapes, subscript),
-        cmd!("format.font", "Font", ["Home", "Font"], None, "{family}", has_text_or_shapes, font),
-        cmd!("format.size", "Font Size", ["Home", "Font"], None, "{size: pt}", has_text_or_shapes, size),
-        cmd!("format.grow", "Increase Font Size", ["Home", "Font"], Some("Cmd+Shift+."), "{}", has_text_or_shapes, grow),
-        cmd!("format.shrink", "Decrease Font Size", ["Home", "Font"], Some("Cmd+Shift+,"), "{}", has_text_or_shapes, shrink),
+        cmd!(
+            "format.superscript",
+            "Superscript",
+            ["Home", "Font"],
+            Some("Cmd+Shift+="),
+            "{on?: bool}",
+            has_text_or_shapes,
+            superscript
+        ),
+        cmd!(
+            "format.subscript",
+            "Subscript",
+            ["Home", "Font"],
+            Some("Cmd+="),
+            "{on?: bool}",
+            has_text_or_shapes,
+            subscript
+        ),
+        cmd!(
+            "format.font",
+            "Font",
+            ["Home", "Font"],
+            None,
+            "{family}",
+            has_text_or_shapes,
+            font
+        ),
+        cmd!(
+            "format.size",
+            "Font Size",
+            ["Home", "Font"],
+            None,
+            "{size: pt}",
+            has_text_or_shapes,
+            size
+        ),
+        cmd!(
+            "format.grow",
+            "Increase Font Size",
+            ["Home", "Font"],
+            Some("Cmd+Shift+."),
+            "{}",
+            has_text_or_shapes,
+            grow
+        ),
+        cmd!(
+            "format.shrink",
+            "Decrease Font Size",
+            ["Home", "Font"],
+            Some("Cmd+Shift+,"),
+            "{}",
+            has_text_or_shapes,
+            shrink
+        ),
         cmd!(
             "format.color",
             "Font Color",
@@ -48,7 +114,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             color
         ),
-        cmd!("format.highlight", "Text Highlight Color", ["Home", "Font"], None, "{color? (absent = none)}", has_text_or_shapes, highlight),
+        cmd!(
+            "format.highlight",
+            "Text Highlight Color",
+            ["Home", "Font"],
+            None,
+            "{color? (absent = none)}",
+            has_text_or_shapes,
+            highlight
+        ),
         cmd!(
             "format.case",
             "Change Case",
@@ -58,7 +132,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             case
         ),
-        cmd!("format.caps", "Caps", [], None, "{caps: none|small|all}", has_text_or_shapes, caps),
+        cmd!(
+            "format.caps",
+            "Caps",
+            [],
+            None,
+            "{caps: none|small|all}",
+            has_text_or_shapes,
+            caps
+        ),
         cmd!(
             "format.spacing",
             "Character Spacing",
@@ -68,8 +150,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             spacing
         ),
-        cmd!("format.clear", "Clear All Formatting", ["Home", "Font"], Some("Cmd+Space"), "{}", has_text_or_shapes, clear),
-        cmd!("format.textShadow", "Text Shadow", ["Home", "Font"], None, "{on?: bool}", has_text_or_shapes, text_shadow),
+        cmd!(
+            "format.clear",
+            "Clear All Formatting",
+            ["Home", "Font"],
+            Some("Cmd+Space"),
+            "{}",
+            has_text_or_shapes,
+            clear
+        ),
+        cmd!(
+            "format.textShadow",
+            "Text Shadow",
+            ["Home", "Font"],
+            None,
+            "{on?: bool}",
+            has_text_or_shapes,
+            text_shadow
+        ),
         cmd!(
             "format.textOutline",
             "Text Outline",
@@ -97,10 +195,42 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             rtl
         ),
-        cmd!("format.alignLeft", "Align Left", ["Home", "Paragraph"], Some("Cmd+L"), "{}", has_text_or_shapes, |s, _| align_to(s, Align::Left)),
-        cmd!("format.alignCenter", "Center", ["Home", "Paragraph"], Some("Cmd+E"), "{}", has_text_or_shapes, |s, _| align_to(s, Align::Center)),
-        cmd!("format.alignRight", "Align Right", ["Home", "Paragraph"], Some("Cmd+R"), "{}", has_text_or_shapes, |s, _| align_to(s, Align::Right)),
-        cmd!("format.justify", "Justify", ["Home", "Paragraph"], Some("Cmd+J"), "{}", has_text_or_shapes, |s, _| align_to(s, Align::Justify)),
+        cmd!(
+            "format.alignLeft",
+            "Align Left",
+            ["Home", "Paragraph"],
+            Some("Cmd+L"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| align_to(s, Align::Left)
+        ),
+        cmd!(
+            "format.alignCenter",
+            "Center",
+            ["Home", "Paragraph"],
+            Some("Cmd+E"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| align_to(s, Align::Center)
+        ),
+        cmd!(
+            "format.alignRight",
+            "Align Right",
+            ["Home", "Paragraph"],
+            Some("Cmd+R"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| align_to(s, Align::Right)
+        ),
+        cmd!(
+            "format.justify",
+            "Justify",
+            ["Home", "Paragraph"],
+            Some("Cmd+J"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| align_to(s, Align::Justify)
+        ),
         cmd!(
             "format.bullets",
             "Bullets",
@@ -119,8 +249,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             numbering
         ),
-        cmd!("format.indent", "Increase List Level", ["Home", "Paragraph"], Some("Tab"), "{}", has_text_or_shapes, |s, _| level(s, 1)),
-        cmd!("format.outdent", "Decrease List Level", ["Home", "Paragraph"], Some("Shift+Tab"), "{}", has_text_or_shapes, |s, _| level(s, -1)),
+        cmd!(
+            "format.indent",
+            "Increase List Level",
+            ["Home", "Paragraph"],
+            Some("Tab"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| level(s, 1)
+        ),
+        cmd!(
+            "format.outdent",
+            "Decrease List Level",
+            ["Home", "Paragraph"],
+            Some("Shift+Tab"),
+            "{}",
+            has_text_or_shapes,
+            |s, _| level(s, -1)
+        ),
         cmd!(
             "format.lineSpacing",
             "Line Spacing",
@@ -139,7 +285,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             paragraph
         ),
-        cmd!("format.anchor", "Align Text", ["Home", "Paragraph"], None, "{anchor: top|middle|bottom}", has_text_or_shapes, anchor),
+        cmd!(
+            "format.anchor",
+            "Align Text",
+            ["Home", "Paragraph"],
+            None,
+            "{anchor: top|middle|bottom}",
+            has_text_or_shapes,
+            anchor
+        ),
         cmd!(
             "format.direction",
             "Text Direction",
@@ -149,9 +303,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_text_or_shapes,
             direction
         ),
-        cmd!("format.columns", "Columns", ["Home", "Paragraph"], None, "{count, spacing?: pt}", has_text_or_shapes, columns),
-        cmd!("format.autofit", "Autofit", ["Format Shape", "Text Box"], None, "{mode: none|shrink|resize}", has_text_or_shapes, autofit),
-        cmd!("format.wrap", "Wrap Text in Shape", ["Format Shape", "Text Box"], None, "{on: bool}", has_text_or_shapes, wrap),
+        cmd!(
+            "format.columns",
+            "Columns",
+            ["Home", "Paragraph"],
+            None,
+            "{count, spacing?: pt}",
+            has_text_or_shapes,
+            columns
+        ),
+        cmd!(
+            "format.autofit",
+            "Autofit",
+            ["Format Shape", "Text Box"],
+            None,
+            "{mode: none|shrink|resize}",
+            has_text_or_shapes,
+            autofit
+        ),
+        cmd!(
+            "format.wrap",
+            "Wrap Text in Shape",
+            ["Format Shape", "Text Box"],
+            None,
+            "{on: bool}",
+            has_text_or_shapes,
+            wrap
+        ),
         cmd!(
             "format.margins",
             "Text Box Margins",
@@ -162,7 +340,15 @@ pub fn specs() -> Vec<CommandSpec> {
             margins
         ),
         cmd!(noundo "format.painter", "Format Painter", ["Home", "Clipboard"], Some("Cmd+Shift+C"), "{sticky?: bool}", has_text_or_shapes, painter_pick),
-        cmd!("format.painterApply", "Paste Formatting", [], Some("Cmd+Shift+V"), "{ids?}", has_text_or_shapes, painter_apply),
+        cmd!(
+            "format.painterApply",
+            "Paste Formatting",
+            [],
+            Some("Cmd+Shift+V"),
+            "{ids?}",
+            has_text_or_shapes,
+            painter_apply
+        ),
         cmd!(query "format.state", "Formatting State", [], None, "{} → the effective formatting at the selection (font, size, bold, …)", has_doc, state),
     ]
 }
@@ -173,20 +359,38 @@ fn on_param(p: &Value, current: Option<bool>) -> bool {
 
 /// The effective run props at the selection (first selected run).
 fn current_run(s: &Session) -> RunProps {
-    let Ok(st) = s.doc() else { return RunProps::default() };
+    let Ok(st) = s.doc() else {
+        return RunProps::default();
+    };
     let ctx = super::text::ctx_for(&st.doc, &st.selection);
     let (shape, para, run) = match &st.selection.text {
         Some(t) => {
-            let Some(body) = super::text::body_of(st, t) else { return RunProps::default() };
+            let Some(body) = super::text::body_of(st, t) else {
+                return RunProps::default();
+            };
             let a = t.ordered().0;
-            let rp = if t.is_range() { ed::props_at(body, (a.0, a.1 + 1)) } else { ed::props_at(body, a) };
+            let rp = if t.is_range() {
+                ed::props_at(body, (a.0, a.1 + 1))
+            } else {
+                ed::props_at(body, a)
+            };
             let para = body.paragraphs.get(a.0).cloned().unwrap_or_default();
             (st.shape(t.shape).cloned().unwrap_or_default(), para, rp)
         }
         None => {
-            let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else { return RunProps::default() };
-            let para = sh.text.as_ref().and_then(|t| t.paragraphs.first().cloned()).unwrap_or_default();
-            let rp = para.runs.first().map(|r| r.props.clone()).unwrap_or_default();
+            let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else {
+                return RunProps::default();
+            };
+            let para = sh
+                .text
+                .as_ref()
+                .and_then(|t| t.paragraphs.first().cloned())
+                .unwrap_or_default();
+            let rp = para
+                .runs
+                .first()
+                .map(|r| r.props.clone())
+                .unwrap_or_default();
             (sh, para, rp)
         }
     };
@@ -197,16 +401,26 @@ fn current_run(s: &Session) -> RunProps {
 }
 
 fn current_para(s: &Session) -> ParaProps {
-    let Ok(st) = s.doc() else { return ParaProps::default() };
+    let Ok(st) = s.doc() else {
+        return ParaProps::default();
+    };
     let ctx = super::text::ctx_for(&st.doc, &st.selection);
     let (shape, para) = match &st.selection.text {
         Some(t) => {
-            let para = super::text::body_of(st, t).and_then(|b| b.paragraphs.get(t.caret.0).cloned()).unwrap_or_default();
+            let para = super::text::body_of(st, t)
+                .and_then(|b| b.paragraphs.get(t.caret.0).cloned())
+                .unwrap_or_default();
             (st.shape(t.shape).cloned().unwrap_or_default(), para)
         }
         None => {
-            let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else { return ParaProps::default() };
-            let para = sh.text.as_ref().and_then(|t| t.paragraphs.first().cloned()).unwrap_or_default();
+            let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else {
+                return ParaProps::default();
+            };
+            let para = sh
+                .text
+                .as_ref()
+                .and_then(|t| t.paragraphs.first().cloned())
+                .unwrap_or_default();
             (sh, para)
         }
     };
@@ -228,7 +442,9 @@ fn underline(s: &mut Session, p: &Value) -> Result<Value> {
     let cur = current_run(s).underline.is_some_and(|u| u != "none");
     let v = on_param(p, Some(cur));
     let style = str_param(p, "style").unwrap_or("sng").to_string();
-    format_run(s, &move |r| r.underline = Some(if v { style.clone() } else { "none".into() }))
+    format_run(s, &move |r| {
+        r.underline = Some(if v { style.clone() } else { "none".into() })
+    })
 }
 fn strike(s: &mut Session, p: &Value) -> Result<Value> {
     let cur = current_run(s).strike.is_some_and(|x| x != Strike::None);
@@ -253,22 +469,38 @@ fn subscript(s: &mut Session, p: &Value) -> Result<Value> {
     format_run(s, &move |r| r.baseline = Some(if v { -0.25 } else { 0.0 }))
 }
 fn font(s: &mut Session, p: &Value) -> Result<Value> {
-    let f = str_param(p, "family").ok_or_else(|| bad("format.font", "missing `family`"))?.to_string();
+    let f = str_param(p, "family")
+        .ok_or_else(|| bad("format.font", "missing `family`"))?
+        .to_string();
     format_run(s, &move |r| r.font = Some(f.clone()))
 }
 fn size(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = f64_param(p, "size").ok_or_else(|| bad("format.size", "missing `size`"))?.clamp(1.0, 4000.0);
+    let v = f64_param(p, "size")
+        .ok_or_else(|| bad("format.size", "missing `size`"))?
+        .clamp(1.0, 4000.0);
     format_run(s, &move |r| r.size = Some(v))
 }
 
 /// PowerPoint's font size list (grow/shrink steps through it).
-pub const SIZES: [f64; 20] = [8.0, 9.0, 10.0, 10.5, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0, 48.0, 54.0, 60.0, 66.0];
+pub const SIZES: [f64; 20] = [
+    8.0, 9.0, 10.0, 10.5, 11.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 28.0, 32.0, 36.0, 40.0, 44.0,
+    48.0, 54.0, 60.0, 66.0,
+];
 
 fn step(cur: f64, up: bool) -> f64 {
     if up {
-        SIZES.iter().copied().find(|v| *v > cur + 0.01).unwrap_or((cur + 8.0).min(4000.0))
+        SIZES
+            .iter()
+            .copied()
+            .find(|v| *v > cur + 0.01)
+            .unwrap_or((cur + 8.0).min(4000.0))
     } else {
-        SIZES.iter().rev().copied().find(|v| *v < cur - 0.01).unwrap_or((cur - 1.0).max(1.0))
+        SIZES
+            .iter()
+            .rev()
+            .copied()
+            .find(|v| *v < cur - 0.01)
+            .unwrap_or((cur - 1.0).max(1.0))
     }
 }
 
@@ -290,7 +522,8 @@ fn shrink(s: &mut Session, _p: &Value) -> Result<Value> {
     grow_shrink(s, false)
 }
 fn color(s: &mut Session, p: &Value) -> Result<Value> {
-    let c = color_param(p, "color").ok_or_else(|| bad("format.color", "missing or invalid `color`"))?;
+    let c =
+        color_param(p, "color").ok_or_else(|| bad("format.color", "missing or invalid `color`"))?;
     format_run(s, &move |r| r.fill = Some(Fill::solid(c.clone())))
 }
 fn highlight(s: &mut Session, p: &Value) -> Result<Value> {
@@ -310,12 +543,19 @@ fn spacing(s: &mut Session, p: &Value) -> Result<Value> {
     format_run(s, &move |r| r.spacing = Some(v))
 }
 fn clear(s: &mut Session, _p: &Value) -> Result<Value> {
-    format_run(s, &|r| *r = RunProps { lang: r.lang.clone(), link: r.link.clone(), ..Default::default() })
+    format_run(s, &|r| {
+        *r = RunProps {
+            lang: r.lang.clone(),
+            link: r.link.clone(),
+            ..Default::default()
+        }
+    })
 }
 fn text_shadow(s: &mut Session, p: &Value) -> Result<Value> {
     let v = on_param(p, Some(current_run(s).shadow.is_some()));
     let sh = deckcraft_model::style::Shadow {
-        color: deckcraft_model::ColorRef::rgb(deckcraft_color::Rgba::BLACK).with(deckcraft_color::ColorTransform::Alpha(43000)),
+        color: deckcraft_model::ColorRef::rgb(deckcraft_color::Rgba::BLACK)
+            .with(deckcraft_color::ColorTransform::Alpha(43000)),
         blur: 3.0,
         dist: 2.0,
         dir: 45.0,
@@ -327,12 +567,16 @@ fn text_shadow(s: &mut Session, p: &Value) -> Result<Value> {
         align: String::new(),
         rotate_with_shape: false,
     };
-    format_run(s, &move |r| r.shadow = if v { Some(sh.clone()) } else { None })
+    format_run(s, &move |r| {
+        r.shadow = if v { Some(sh.clone()) } else { None }
+    })
 }
 fn text_outline(s: &mut Session, p: &Value) -> Result<Value> {
     let c = color_param(p, "color");
     let w = f64_or(p, "width", 0.75);
-    format_run(s, &move |r| r.outline = c.clone().map(|c| Line::solid(c, w)))
+    format_run(s, &move |r| {
+        r.outline = c.clone().map(|c| Line::solid(c, w))
+    })
 }
 
 fn case(s: &mut Session, p: &Value) -> Result<Value> {
@@ -345,16 +589,24 @@ fn case(s: &mut Session, p: &Value) -> Result<Value> {
         if collapsed {
             // Shift+F3 with a bare caret changes the word it is in and puts the caret at its start.
             let (wa, wb) = ed::word_at(&body, a);
-            let is_word = ed::text_range(&body, wa, wb).chars().any(char::is_alphanumeric);
+            let is_word = ed::text_range(&body, wa, wb)
+                .chars()
+                .any(char::is_alphanumeric);
             if !(is_word && wa.1 <= a.1 && a.1 < wb.1) {
                 return ok();
             }
             (a, b) = (wa, wb);
         }
-        let m = if mode == "cycle" { ed::next_case(&ed::text_range(&body, a, b)).to_string() } else { mode.clone() };
+        let m = if mode == "cycle" {
+            ed::next_case(&ed::text_range(&body, a, b)).to_string()
+        } else {
+            mode.clone()
+        };
         super::text::edit_text(s, move |body, t| {
             for pi in a.0..=b.0 {
-                let Some(para) = body.paragraphs.get_mut(pi) else { continue };
+                let Some(para) = body.paragraphs.get_mut(pi) else {
+                    continue;
+                };
                 let n = para.char_len();
                 let from = if pi == a.0 { a.1 } else { 0 };
                 let to = if pi == b.0 { b.1 } else { n };
@@ -366,9 +618,18 @@ fn case(s: &mut Session, p: &Value) -> Result<Value> {
                         let re = to.min(pos + len).saturating_sub(pos);
                         if re > rs {
                             let chars: Vec<char> = r.text.chars().collect();
-                            let mid: String = chars.get(rs..re).map(|c| c.iter().collect()).unwrap_or_default();
-                            let pre: String = chars.get(..rs).map(|c| c.iter().collect()).unwrap_or_default();
-                            let post: String = chars.get(re..).map(|c| c.iter().collect()).unwrap_or_default();
+                            let mid: String = chars
+                                .get(rs..re)
+                                .map(|c| c.iter().collect())
+                                .unwrap_or_default();
+                            let pre: String = chars
+                                .get(..rs)
+                                .map(|c| c.iter().collect())
+                                .unwrap_or_default();
+                            let post: String = chars
+                                .get(re..)
+                                .map(|c| c.iter().collect())
+                                .unwrap_or_default();
                             r.text = format!("{pre}{}{post}", ed::change_case(&mid, &m));
                         }
                     }
@@ -383,8 +644,15 @@ fn case(s: &mut Session, p: &Value) -> Result<Value> {
         return ok();
     }
     let mode = if mode == "cycle" {
-        let all: String =
-            st.selection.shapes.iter().filter_map(|id| st.shape(*id)).filter_map(|sh| sh.text.as_ref()).map(|t| t.text()).collect::<Vec<_>>().join(
+        let all: String = st
+            .selection
+            .shapes
+            .iter()
+            .filter_map(|id| st.shape(*id))
+            .filter_map(|sh| sh.text.as_ref())
+            .map(|t| t.text())
+            .collect::<Vec<_>>()
+            .join(
                 "
 ",
             );
@@ -447,14 +715,20 @@ fn bullets(s: &mut Session, p: &Value) -> Result<Value> {
     format_para(s, &move |para| {
         if on {
             para.props.bullet = Some(Bullet::Char { char: ch.clone() });
-            para.props.bullet_font = if explicit_char { Some("Arial".into()) } else { para.props.bullet_font.clone() };
+            para.props.bullet_font = if explicit_char {
+                Some("Arial".into())
+            } else {
+                para.props.bullet_font.clone()
+            };
             if col.is_some() {
                 para.props.bullet_color = col.clone();
             }
             if size.is_some() {
                 para.props.bullet_size = size;
             }
-            if para.props.indent.is_none_or(|i| i >= 0.0) && para.props.margin_left.is_none_or(|m| m == 0.0) {
+            if para.props.indent.is_none_or(|i| i >= 0.0)
+                && para.props.margin_left.is_none_or(|m| m == 0.0)
+            {
                 para.props.margin_left = Some(18.0 + 36.0 * para.level as f64);
                 para.props.indent = Some(-18.0);
             }
@@ -470,10 +744,17 @@ fn numbering(s: &mut Session, p: &Value) -> Result<Value> {
     let cur = matches!(current_para(s).bullet, Some(Bullet::AutoNum { .. }));
     let on = on_param(p, Some(cur));
     let scheme = str_param(p, "scheme").unwrap_or("arabicPeriod").to_string();
-    let start = p.get("start").and_then(Value::as_u64).map(|v| v.clamp(1, 32767) as u32).unwrap_or(1);
+    let start = p
+        .get("start")
+        .and_then(Value::as_u64)
+        .map(|v| v.clamp(1, 32767) as u32)
+        .unwrap_or(1);
     format_para(s, &move |para| {
         if on {
-            para.props.bullet = Some(Bullet::AutoNum { scheme: scheme.clone(), start_at: start });
+            para.props.bullet = Some(Bullet::AutoNum {
+                scheme: scheme.clone(),
+                start_at: start,
+            });
             para.props.margin_left = Some(27.0 + 36.0 * para.level as f64);
             para.props.indent = Some(-27.0);
         } else {
@@ -498,8 +779,11 @@ fn level(s: &mut Session, d: i32) -> Result<Value> {
 }
 
 fn line_spacing(s: &mut Session, p: &Value) -> Result<Value> {
-    let sp =
-        if let Some(pt) = f64_param(p, "pt") { Spacing::Pts(pt.clamp(0.0, 1584.0)) } else { Spacing::Pct(f64_or(p, "lines", 1.0).clamp(0.0, 9.99)) };
+    let sp = if let Some(pt) = f64_param(p, "pt") {
+        Spacing::Pts(pt.clamp(0.0, 1584.0))
+    } else {
+        Spacing::Pct(f64_or(p, "lines", 1.0).clamp(0.0, 9.99))
+    };
     format_para(s, &move |para| para.props.line_spacing = Some(sp))
 }
 
@@ -560,7 +844,11 @@ fn direction(s: &mut Session, p: &Value) -> Result<Value> {
     format_body(s, &move |b| b.vert = Some(d))
 }
 fn columns(s: &mut Session, p: &Value) -> Result<Value> {
-    let n = p.get("count").and_then(Value::as_u64).unwrap_or(1).clamp(1, 16) as u32;
+    let n = p
+        .get("count")
+        .and_then(Value::as_u64)
+        .unwrap_or(1)
+        .clamp(1, 16) as u32;
     let sp = f64_or(p, "spacing", 0.0).max(0.0);
     format_body(s, &move |b| {
         b.columns = Some(n);
@@ -569,7 +857,10 @@ fn columns(s: &mut Session, p: &Value) -> Result<Value> {
 }
 fn autofit(s: &mut Session, p: &Value) -> Result<Value> {
     let m = match str_param(p, "mode").unwrap_or("none") {
-        "shrink" => AutoFit::Shrink { font_scale: 1.0, line_reduction: 0.0 },
+        "shrink" => AutoFit::Shrink {
+            font_scale: 1.0,
+            line_reduction: 0.0,
+        },
         "resize" | "shape" => AutoFit::Shape,
         _ => AutoFit::None,
     };
@@ -580,7 +871,12 @@ fn wrap(s: &mut Session, p: &Value) -> Result<Value> {
     format_body(s, &move |b| b.wrap = Some(on))
 }
 fn margins(s: &mut Session, p: &Value) -> Result<Value> {
-    let (l, t, r, b) = (f64_param(p, "left"), f64_param(p, "top"), f64_param(p, "right"), f64_param(p, "bottom"));
+    let (l, t, r, b) = (
+        f64_param(p, "left"),
+        f64_param(p, "top"),
+        f64_param(p, "right"),
+        f64_param(p, "bottom"),
+    );
     format_body(s, &move |bp| {
         if l.is_some() {
             bp.inset_l = l.map(|v| v.max(0.0));
@@ -622,7 +918,12 @@ fn painter_pick(s: &mut Session, p: &Value) -> Result<Value> {
         painted.line = sh.line.clone();
         painted.effects = sh.effects.clone();
         painted.style = sh.style.clone();
-        painted.run = sh.text.as_ref().and_then(|t| t.paragraphs.first()).and_then(|p| p.runs.first()).map(|r| r.props.clone());
+        painted.run = sh
+            .text
+            .as_ref()
+            .and_then(|t| t.paragraphs.first())
+            .and_then(|p| p.runs.first())
+            .map(|r| r.props.clone());
     }
     s.painter = Some((painted, bool_or(p, "sticky", false)));
     Ok(json!({"armed": true}))
@@ -641,11 +942,22 @@ pub(crate) fn apply_painted(sh: &mut Shape, p: &Painted) {
 }
 
 fn painter_apply(s: &mut Session, p: &Value) -> Result<Value> {
-    let Some((painted, sticky)) = s.painter.clone() else { return Err(bad("format.painterApply", "pick formatting with the Format Painter first")) };
+    let Some((painted, sticky)) = s.painter.clone() else {
+        return Err(bad(
+            "format.painterApply",
+            "pick formatting with the Format Painter first",
+        ));
+    };
     if !sticky {
         s.painter = None;
     }
-    if s.doc()?.selection.text.as_ref().is_some_and(|t| t.is_range()) && ids_param(p, "ids").is_none() {
+    if s.doc()?
+        .selection
+        .text
+        .as_ref()
+        .is_some_and(|t| t.is_range())
+        && ids_param(p, "ids").is_none()
+    {
         if let Some(r) = painted.run.clone() {
             format_run(s, &move |rp| *rp = r.clone())?;
         }
@@ -664,7 +976,9 @@ fn state(s: &mut Session, _p: &Value) -> Result<Value> {
     let r = current_run(s);
     let pp = current_para(s);
     let st = s.doc()?;
-    let family = super::text::ctx_for(&st.doc, &st.selection).map(|c| resolve::font_family(&c, &r)).unwrap_or_default();
+    let family = super::text::ctx_for(&st.doc, &st.selection)
+        .map(|c| resolve::font_family(&c, &r))
+        .unwrap_or_default();
     Ok(json!({
         "font": family,
         "fontRef": r.font,

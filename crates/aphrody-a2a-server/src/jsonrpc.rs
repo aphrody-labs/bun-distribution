@@ -17,7 +17,9 @@ pub struct JsonRpcState<H: RequestHandler> {
 
 impl<H: RequestHandler> Clone for JsonRpcState<H> {
     fn clone(&self) -> Self {
-        JsonRpcState { handler: self.handler.clone() }
+        JsonRpcState {
+            handler: self.handler.clone(),
+        }
     }
 }
 
@@ -27,7 +29,9 @@ impl<H: RequestHandler> Clone for JsonRpcState<H> {
 /// by the `method` field in the JSON-RPC envelope.
 pub fn jsonrpc_router<H: RequestHandler>(handler: Arc<H>) -> axum::Router {
     let state = JsonRpcState { handler };
-    axum::Router::new().route("/", axum::routing::post(handle_jsonrpc::<H>)).with_state(state)
+    axum::Router::new()
+        .route("/", axum::routing::post(handle_jsonrpc::<H>))
+        .with_state(state)
 }
 
 async fn handle_jsonrpc<H: RequestHandler>(
@@ -60,25 +64,35 @@ async fn handle_unary_request<H: RequestHandler>(
     let result: Result<Value, A2AError> = match request.method.as_str() {
         methods::SEND_MESSAGE => match protojson_conv::from_value::<SendMessageRequest>(raw_params)
         {
-            Ok(req) => {
-                state.handler.send_message(params, req).await.and_then(|r| protojson_value(&r))
-            },
+            Ok(req) => state
+                .handler
+                .send_message(params, req)
+                .await
+                .and_then(|r| protojson_value(&r)),
             Err(e) => Err(parse_error(e)),
         },
         methods::GET_TASK => match protojson_conv::from_value::<GetTaskRequest>(raw_params) {
-            Ok(req) => state.handler.get_task(params, req).await.and_then(|r| protojson_value(&r)),
+            Ok(req) => state
+                .handler
+                .get_task(params, req)
+                .await
+                .and_then(|r| protojson_value(&r)),
             Err(e) => Err(parse_error(e)),
         },
         methods::LIST_TASKS => match protojson_conv::from_value::<ListTasksRequest>(raw_params) {
-            Ok(req) => {
-                state.handler.list_tasks(params, req).await.and_then(|r| protojson_value(&r))
-            },
+            Ok(req) => state
+                .handler
+                .list_tasks(params, req)
+                .await
+                .and_then(|r| protojson_value(&r)),
             Err(e) => Err(parse_error(e)),
         },
         methods::CANCEL_TASK => match protojson_conv::from_value::<CancelTaskRequest>(raw_params) {
-            Ok(req) => {
-                state.handler.cancel_task(params, req).await.and_then(|r| protojson_value(&r))
-            },
+            Ok(req) => state
+                .handler
+                .cancel_task(params, req)
+                .await
+                .and_then(|r| protojson_value(&r)),
             Err(e) => Err(parse_error(e)),
         },
         methods::CREATE_PUSH_CONFIG => match parse_create_push_config_request(raw_params) {
@@ -98,7 +112,7 @@ async fn handle_unary_request<H: RequestHandler>(
                     .and_then(|r| protojson_value(&r)),
                 Err(e) => Err(parse_error(e)),
             }
-        },
+        }
         methods::LIST_PUSH_CONFIGS => {
             match protojson_conv::from_value::<ListTaskPushNotificationConfigsRequest>(raw_params) {
                 Ok(req) => state
@@ -108,14 +122,18 @@ async fn handle_unary_request<H: RequestHandler>(
                     .and_then(|r| protojson_value(&r)),
                 Err(e) => Err(parse_error(e)),
             }
-        },
+        }
         methods::DELETE_PUSH_CONFIG => {
             match protojson_conv::from_value::<DeleteTaskPushNotificationConfigRequest>(raw_params)
             {
-                Ok(req) => state.handler.delete_push_config(params, req).await.map(|_| Value::Null),
+                Ok(req) => state
+                    .handler
+                    .delete_push_config(params, req)
+                    .await
+                    .map(|_| Value::Null),
                 Err(e) => Err(parse_error(e)),
             }
-        },
+        }
         methods::GET_EXTENDED_AGENT_CARD => {
             match protojson_conv::from_value::<GetExtendedAgentCardRequest>(raw_params) {
                 Ok(req) => state
@@ -125,7 +143,7 @@ async fn handle_unary_request<H: RequestHandler>(
                     .and_then(|r| protojson_value(&r)),
                 Err(e) => Err(parse_error(e)),
             }
-        },
+        }
         "" => Err(A2AError::invalid_request("method is required")),
         _ => Err(A2AError::method_not_found(&request.method)),
     };
@@ -134,7 +152,7 @@ async fn handle_unary_request<H: RequestHandler>(
         Ok(value) => {
             let resp = JsonRpcResponse::success(id, value);
             Json(resp).into_response()
-        },
+        }
         Err(e) => error_response(id, e),
     }
 }
@@ -153,23 +171,23 @@ async fn handle_streaming_request<H: RequestHandler>(
                 Ok(req) => match state.handler.send_streaming_message(params, req).await {
                     Ok(stream) => {
                         sse::sse_jsonrpc_stream(id, protojson_stream(stream)).into_response()
-                    },
+                    }
                     Err(e) => error_response(id, e),
                 },
                 Err(e) => error_response(id, parse_error(e)),
             }
-        },
+        }
         methods::SUBSCRIBE_TO_TASK => {
             match protojson_conv::from_value::<SubscribeToTaskRequest>(raw_params) {
                 Ok(req) => match state.handler.subscribe_to_task(params, req).await {
                     Ok(stream) => {
                         sse::sse_jsonrpc_stream(id, protojson_stream(stream)).into_response()
-                    },
+                    }
                     Err(e) => error_response(id, e),
                 },
                 Err(e) => error_response(id, parse_error(e)),
             }
-        },
+        }
         _ => error_response(id, A2AError::method_not_found(&request.method)),
     }
 }
@@ -243,7 +261,9 @@ mod tests {
                 history: None,
                 metadata: None,
             };
-            Box::pin(futures::stream::once(async move { Ok(StreamResponse::Task(task)) }))
+            Box::pin(futures::stream::once(async move {
+                Ok(StreamResponse::Task(task))
+            }))
         }
 
         fn cancel(
@@ -253,17 +273,26 @@ mod tests {
             let task = Task {
                 id: ctx.task_id.clone(),
                 context_id: ctx.context_id.clone(),
-                status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Canceled,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
             };
-            Box::pin(futures::stream::once(async move { Ok(StreamResponse::Task(task)) }))
+            Box::pin(futures::stream::once(async move {
+                Ok(StreamResponse::Task(task))
+            }))
         }
     }
 
     fn make_app() -> axum::Router {
-        let handler = Arc::new(DefaultRequestHandler::new(EchoExecutor, InMemoryTaskStore::new()));
+        let handler = Arc::new(DefaultRequestHandler::new(
+            EchoExecutor,
+            InMemoryTaskStore::new(),
+        ));
         jsonrpc_router(handler)
     }
 
@@ -483,8 +512,11 @@ mod tests {
                 "parts": [{"text": "hello"}]
             }
         });
-        let rpc =
-            JsonRpcRequest::new(JsonRpcId::Number(1), methods::SEND_STREAMING_MESSAGE, Some(body));
+        let rpc = JsonRpcRequest::new(
+            JsonRpcId::Number(1),
+            methods::SEND_STREAMING_MESSAGE,
+            Some(body),
+        );
         let req = Request::builder()
             .uri("/")
             .method("POST")
@@ -537,7 +569,11 @@ mod tests {
         let resp = app.oneshot(req).await.unwrap();
         let body = resp.into_body().collect().await.unwrap().to_bytes();
         let rpc_resp: JsonRpcResponse = serde_json::from_slice(&body).unwrap();
-        assert!(rpc_resp.error.is_some(), "unexpected result: {:?}", rpc_resp.result);
+        assert!(
+            rpc_resp.error.is_some(),
+            "unexpected result: {:?}",
+            rpc_resp.result
+        );
         assert_eq!(rpc_resp.error.unwrap().code, error_code::METHOD_NOT_FOUND);
     }
 

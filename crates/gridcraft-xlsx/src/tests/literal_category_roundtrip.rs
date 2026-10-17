@@ -14,7 +14,10 @@ fn literal_category_with_separators_survives_save() {
         (r#"{"red","blue"}"#, r#"{"red","blue"}"#),
         (r#"{"say ""hi"", ok"}"#, r#"{"say ""hi"", ok"}"#),
         (r#"{"a,b","c;d","e"}"#, r#"{"a,b","c;d","e"}"#),
-        (r#"{ "Jan" , "Feb, Mar" ; Apr }"#, r#"{"Jan","Feb, Mar","Apr"}"#),
+        (
+            r#"{ "Jan" , "Feb, Mar" ; Apr }"#,
+            r#"{"Jan","Feb, Mar","Apr"}"#,
+        ),
     ];
     let mut wb = Workbook::default();
     let mut s = Sheet::new("Data");
@@ -35,7 +38,12 @@ fn literal_category_with_separators_survives_save() {
     s.charts.push(Chart {
         id: 1,
         kind: ChartKind::ColumnClustered,
-        anchor: Anchor { cell: gridcraft_core::CellRef::new(0, 3), width: 480.0, height: 300.0, ..Anchor::default() },
+        anchor: Anchor {
+            cell: gridcraft_core::CellRef::new(0, 3),
+            width: 480.0,
+            height: 300.0,
+            ..Anchor::default()
+        },
         title: None,
         series,
         legend: LegendPos::Bottom,

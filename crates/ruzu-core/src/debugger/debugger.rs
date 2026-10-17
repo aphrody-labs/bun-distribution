@@ -527,18 +527,26 @@ mod tests {
         let owner: Arc<Mutex<Option<Debugger>>> = Arc::new(Mutex::new(None));
         let weak_owner = Arc::downgrade(&owner);
         let (done, completed) = mpsc::channel();
-        let debugger = Debugger::new(process, 0, Arc::new(Box::new(move || {
-            let owner = weak_owner.upgrade().unwrap();
-            let debugger = owner.lock().unwrap().take();
-            drop(debugger);
-            done.send(thread::current().name().map(str::to_owned)).unwrap();
-        })));
+        let debugger = Debugger::new(
+            process,
+            0,
+            Arc::new(Box::new(move || {
+                let owner = weak_owner.upgrade().unwrap();
+                let debugger = owner.lock().unwrap().take();
+                drop(debugger);
+                done.send(thread::current().name().map(str::to_owned))
+                    .unwrap();
+            })),
+        );
         let port = debugger.port().unwrap();
         *owner.lock().unwrap() = Some(debugger);
         let mut client = TcpStream::connect(("127.0.0.1", port)).unwrap();
         client.write_all(b"$k#6b").unwrap();
         assert_eq!(
-            completed.recv_timeout(Duration::from_secs(2)).unwrap().as_deref(),
+            completed
+                .recv_timeout(Duration::from_secs(2))
+                .unwrap()
+                .as_deref(),
             Some("DebuggerExit")
         );
         assert!(owner.lock().unwrap().is_none());

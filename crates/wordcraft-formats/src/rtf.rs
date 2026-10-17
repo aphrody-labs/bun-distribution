@@ -19,7 +19,9 @@ use std::collections::HashMap;
 
 use wordcraft_doc::{Align, Document, Rgb};
 
-use crate::model::{self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, make_img};
+use crate::model::{
+    self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, make_img,
+};
 
 /// Deepest group nesting we track; deeper groups share the innermost state.
 const MAX_GROUPS: usize = 512;
@@ -129,9 +131,16 @@ impl Writer {
             ctl.push_str(&format!("\\f{i}"));
         }
         if let Some(s) = f.size {
-            ctl.push_str(&format!("\\fs{}", (s * 2.0).round().clamp(2.0, 3276.0) as i32));
+            ctl.push_str(&format!(
+                "\\fs{}",
+                (s * 2.0).round().clamp(2.0, 3276.0) as i32
+            ));
         }
-        let color = f.color.or(if f.link.is_some() { Some(Rgb(0x05, 0x63, 0xC1)) } else { None });
+        let color = f.color.or(if f.link.is_some() {
+            Some(Rgb(0x05, 0x63, 0xC1))
+        } else {
+            None
+        });
         if let Some(c) = color {
             let i = self.t.color(c);
             ctl.push_str(&format!("\\cf{i}"));
@@ -140,10 +149,18 @@ impl Writer {
             let i = self.t.color(c);
             ctl.push_str(&format!("\\chcbpat{i}"));
         }
-        let body = if ctl.is_empty() { esc(t) } else { format!("{{{ctl} {}}}", esc(t)) };
+        let body = if ctl.is_empty() {
+            esc(t)
+        } else {
+            format!("{{{ctl} {}}}", esc(t))
+        };
         match &f.link {
             Some(l) => {
-                out.push_str(&format!("{{\\field{{\\*\\fldinst{{HYPERLINK \"{}\"}}}}{{\\fldrslt{{{}}}}}}}", esc(&l.replace('"', "%22")), body));
+                out.push_str(&format!(
+                    "{{\\field{{\\*\\fldinst{{HYPERLINK \"{}\"}}}}{{\\fldrslt{{{}}}}}}}",
+                    esc(&l.replace('"', "%22")),
+                    body
+                ));
             }
             None => out.push_str(&body),
         }
@@ -155,9 +172,14 @@ impl Writer {
             "jpeg" | "jpg" => (img.data.to_vec(), "\\jpegblip"),
             _ => {
                 // Re-encode other formats as PNG.
-                let Ok(dec) = image::load_from_memory(&img.data) else { return };
+                let Ok(dec) = image::load_from_memory(&img.data) else {
+                    return;
+                };
                 let mut buf = Vec::new();
-                if dec.write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png).is_err() {
+                if dec
+                    .write_to(&mut std::io::Cursor::new(&mut buf), image::ImageFormat::Png)
+                    .is_err()
+                {
                     return;
                 }
                 (buf, "\\pngblip")
@@ -193,7 +215,14 @@ impl Writer {
         }
     }
 
-    fn para(&mut self, p: &Para, intbl: bool, ls: Option<(usize, String)>, end: &str, out: &mut String) {
+    fn para(
+        &mut self,
+        p: &Para,
+        intbl: bool,
+        ls: Option<(usize, String)>,
+        end: &str,
+        out: &mut String,
+    ) {
         out.push_str("\\pard\\plain");
         if intbl {
             out.push_str("\\intbl");
@@ -221,7 +250,10 @@ impl Writer {
             }
             Kind::Rule => out.push_str("\\brdrb\\brdrs\\brdrw15\\brsp20"),
             Kind::Heading(n) => {
-                let sz = HEAD_SIZES.get(usize::from(n.clamp(1, 6)) - 1).copied().unwrap_or(12.0);
+                let sz = HEAD_SIZES
+                    .get(usize::from(n.clamp(1, 6)) - 1)
+                    .copied()
+                    .unwrap_or(12.0);
                 out.push_str(&format!("\\sb240\\sa80\\keepn\\b\\fs{}", (sz * 2.0) as i32));
             }
             Kind::Title => out.push_str("\\sa80\\fs56"),
@@ -229,7 +261,10 @@ impl Writer {
         }
         if let (Some(li), Some((n, label))) = (p.list, &ls) {
             let lv = li.level.min(8);
-            out.push_str(&format!("\\ls{n}\\ilvl{lv}\\fi-360\\li{}", 720 * (u32::from(lv) + 1)));
+            out.push_str(&format!(
+                "\\ls{n}\\ilvl{lv}\\fi-360\\li{}",
+                720 * (u32::from(lv) + 1)
+            ));
             out.push_str(&format!(" {{\\listtext\\pard\\plain {}\\tab}}", esc(label)));
         }
         out.push(' ');
@@ -238,7 +273,14 @@ impl Writer {
         out.push('\n');
     }
 
-    fn blocks(&mut self, blocks: &[FBlock], intbl: bool, last_end: &str, out: &mut String, depth: usize) {
+    fn blocks(
+        &mut self,
+        blocks: &[FBlock],
+        intbl: bool,
+        last_end: &str,
+        out: &mut String,
+        depth: usize,
+    ) {
         let mut counter = model::ListCounter::default();
         let mut cur_list: Option<usize> = None;
         let mut top_ordered = false;
@@ -269,7 +311,8 @@ impl Writer {
                                         if l == 0 && seen[0] && kinds[0] != ql.ordered {
                                             break;
                                         }
-                                        if let (Some(s), Some(k)) = (seen.get_mut(l), kinds.get_mut(l))
+                                        if let (Some(s), Some(k)) =
+                                            (seen.get_mut(l), kinds.get_mut(l))
                                             && !*s
                                         {
                                             *s = true;
@@ -295,7 +338,12 @@ impl Writer {
                     cur_list = None;
                     if intbl || depth > 0 {
                         // Nested table: its cells' paragraphs flow into this cell.
-                        let inner: Vec<FBlock> = t.rows.iter().flatten().flat_map(|c| c.blocks.clone()).collect();
+                        let inner: Vec<FBlock> = t
+                            .rows
+                            .iter()
+                            .flatten()
+                            .flat_map(|c| c.blocks.clone())
+                            .collect();
                         if depth < model::MAX_DEPTH {
                             self.blocks(&inner, intbl, end, out, depth + 1);
                         }
@@ -306,18 +354,22 @@ impl Writer {
             }
         }
         if blocks.is_empty() && !last_end.is_empty() {
-            out.push_str(&format!("\\pard\\plain{} {last_end}\n", if intbl { "\\intbl" } else { "" }));
+            out.push_str(&format!(
+                "\\pard\\plain{} {last_end}\n",
+                if intbl { "\\intbl" } else { "" }
+            ));
         }
     }
 
     fn table(&mut self, t: &FTable, out: &mut String, depth: usize) {
         let cols = t.cols().max(1);
         let total = 9360.0f32; // 6.5" in twips
-        let widths: Vec<f32> = if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 0.0) {
-            t.widths.iter().map(|w| w * 20.0).collect()
-        } else {
-            vec![total / cols as f32; cols]
-        };
+        let widths: Vec<f32> =
+            if t.widths.len() == cols && t.widths.iter().all(|w| w.is_finite() && *w > 0.0) {
+                t.widths.iter().map(|w| w * 20.0).collect()
+            } else {
+                vec![total / cols as f32; cols]
+            };
         for row in &t.rows {
             out.push_str("\\trowd\\trgaph108\\trleft0");
             if !row.is_empty() && row.iter().all(|c| c.header) {
@@ -380,7 +432,10 @@ fn level_def(ordered: bool, l: usize) -> String {
             "{{\\listlevel\\levelnfc{nfc}\\levelnfcn{nfc}\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace0\\levelindent0{{\\leveltext\\'02\\'{l:02x}.;}}{{\\levelnumbers\\'01;}}\\fi-360\\li{indent}\\lin{indent}}}"
         )
     } else {
-        let ch = ['\u{2022}', '\u{25E6}', '\u{25AA}'].get(l % 3).copied().unwrap_or('\u{2022}');
+        let ch = ['\u{2022}', '\u{25E6}', '\u{25AA}']
+            .get(l % 3)
+            .copied()
+            .unwrap_or('\u{2022}');
         format!(
             "{{\\listlevel\\levelnfc23\\levelnfcn23\\leveljc0\\leveljcn0\\levelfollow0\\levelstartat1\\levelspace0\\levelindent0{{\\leveltext\\'01\\u{}?;}}{{\\levelnumbers;}}\\fi-360\\li{indent}\\lin{indent}}}",
             ch as u32 as i16
@@ -398,8 +453,19 @@ fn rtf_date(s: &str) -> Option<String> {
 /// RTF text of a document.
 pub fn export(doc: &Document) -> String {
     let flow = model::from_doc(doc);
-    let base_font = doc.styles.default_chr.font.clone().unwrap_or_else(|| wordcraft_doc::styles::BODY_FONT.to_string());
-    let mut w = Writer { t: Tables { fonts: vec![base_font], colors: Vec::new() }, lists: Vec::new() };
+    let base_font = doc
+        .styles
+        .default_chr
+        .font
+        .clone()
+        .unwrap_or_else(|| wordcraft_doc::styles::BODY_FONT.to_string());
+    let mut w = Writer {
+        t: Tables {
+            fonts: vec![base_font],
+            colors: Vec::new(),
+        },
+        lists: Vec::new(),
+    };
     let mut body = String::new();
     w.blocks(&flow.blocks, false, "\\par", &mut body, 0);
     export_with(&flow.meta, &w, &body, &doc.last_section)
@@ -408,7 +474,11 @@ pub fn export(doc: &Document) -> String {
 fn export_with(m: &Meta, w: &Writer, body: &str, sec: &wordcraft_doc::SectionProps) -> String {
     let mut out = String::from("{\\rtf1\\ansi\\ansicpg1252\\deff0\\deflang1033\\uc1\n{\\fonttbl");
     for (i, f) in w.t.fonts.iter().enumerate() {
-        let fam = if model::is_mono(f) { "\\fmodern" } else { "\\fswiss" };
+        let fam = if model::is_mono(f) {
+            "\\fmodern"
+        } else {
+            "\\fswiss"
+        };
         out.push_str(&format!("{{\\f{i}{fam}\\fcharset0 {};}}", esc(f)));
     }
     out.push_str("}\n{\\colortbl;");
@@ -418,7 +488,11 @@ fn export_with(m: &Meta, w: &Writer, body: &str, sec: &wordcraft_doc::SectionPro
     out.push_str("}\n{\\*\\generator WordCraft;}\n{\\stylesheet{\\s0\\snext0 Normal;}");
     for n in 1..=6u32 {
         let sz = HEAD_SIZES.get(n as usize - 1).copied().unwrap_or(12.0);
-        out.push_str(&format!("{{\\s{n}\\sbasedon0\\snext0\\outlinelevel{}\\keepn\\b\\fs{} heading {n};}}", n - 1, (sz * 2.0) as i32));
+        out.push_str(&format!(
+            "{{\\s{n}\\sbasedon0\\snext0\\outlinelevel{}\\keepn\\b\\fs{} heading {n};}}",
+            n - 1,
+            (sz * 2.0) as i32
+        ));
     }
     out.push_str(
         "{\\s7\\sbasedon0\\snext0\\fs56 Title;}{\\s8\\sbasedon0\\snext0\\li720\\ri720\\i Quote;}{\\s9\\sbasedon0\\snext9\\sa0\\fs20 Code;}}\n",
@@ -435,12 +509,20 @@ fn export_with(m: &Meta, w: &Writer, body: &str, sec: &wordcraft_doc::SectionPro
         }
         out.push_str("}\n{\\*\\listoverridetable");
         for i in 1..=w.lists.len() {
-            out.push_str(&format!("{{\\listoverride\\listid{i}\\listoverridecount0\\ls{i}}}"));
+            out.push_str(&format!(
+                "{{\\listoverride\\listid{i}\\listoverridecount0\\ls{i}}}"
+            ));
         }
         out.push_str("}\n");
     }
     out.push_str("{\\info");
-    for (k, v) in [("title", &m.title), ("author", &m.author), ("subject", &m.subject), ("keywords", &m.keywords), ("doccomm", &m.description)] {
+    for (k, v) in [
+        ("title", &m.title),
+        ("author", &m.author),
+        ("subject", &m.subject),
+        ("keywords", &m.keywords),
+        ("doccomm", &m.description),
+    ] {
         if !v.is_empty() {
             out.push_str(&format!("{{\\{k} {}}}", esc(v)));
         }
@@ -604,7 +686,10 @@ impl PageGeom {
     fn section(&self) -> wordcraft_doc::SectionProps {
         let mut s = wordcraft_doc::SectionProps::default();
         // Twips to points, ignoring nonsense (zero, negative, or beyond Word's 22").
-        let pt = |v: Option<i32>, lo: f32, hi: f32| v.map(|t| t as f32 / 20.0).filter(|v| v.is_finite() && (lo..=hi).contains(v));
+        let pt = |v: Option<i32>, lo: f32, hi: f32| {
+            v.map(|t| t as f32 / 20.0)
+                .filter(|v| v.is_finite() && (lo..=hi).contains(v))
+        };
         if let Some(w) = pt(self.w, 72.0, 1584.0) {
             s.page_w = w;
         }
@@ -756,7 +841,9 @@ impl Reader {
 
     /// The header or footer group closed: keep what it held and go back to the body.
     fn end_header_footer(&mut self) {
-        let Some((_, which, body)) = self.hf.take() else { return };
+        let Some((_, which, body)) = self.hf.take() else {
+            return;
+        };
         if self.para_has || !self.para.inlines.is_empty() {
             self.end_para(false);
         }
@@ -825,7 +912,11 @@ impl Reader {
     }
 
     fn commit_font(&mut self) {
-        let name = std::mem::take(&mut self.font_name).trim().trim_end_matches(';').trim().to_string();
+        let name = std::mem::take(&mut self.font_name)
+            .trim()
+            .trim_end_matches(';')
+            .trim()
+            .to_string();
         if !name.is_empty() && self.fonts.len() < 4096 {
             self.fonts.insert(self.font_cur, name);
             if let Some(cp) = self.font_cp_cur.take() {
@@ -837,12 +928,24 @@ impl Reader {
     /// A byte of 8-bit text (`\'hh` or raw) as a char, in the current font's code page, else the
     /// default font's, else the document's.
     fn byte_char(&self, b: u8) -> char {
-        let cp = self.st.cp.or_else(|| self.font_cps.get(&self.deff).copied()).unwrap_or(if self.ansicpg == 0 { 1252 } else { self.ansicpg });
+        let cp = self
+            .st
+            .cp
+            .or_else(|| self.font_cps.get(&self.deff).copied())
+            .unwrap_or(if self.ansicpg == 0 {
+                1252
+            } else {
+                self.ansicpg
+            });
         wordcraft_doc::encoding::windows_byte(cp, b)
     }
 
     fn commit_style(&mut self) {
-        let name = std::mem::take(&mut self.style_name).trim().trim_end_matches(';').trim().to_string();
+        let name = std::mem::take(&mut self.style_name)
+            .trim()
+            .trim_end_matches(';')
+            .trim()
+            .to_string();
         if self.styles.len() < 4096 {
             self.styles.insert(self.style_cur, name);
         }
@@ -856,8 +959,16 @@ impl Reader {
         if self.pict_kind == 0 || data.is_empty() {
             return;
         }
-        let sx = if self.pict_sx > 0.0 { self.pict_sx / 100.0 } else { 1.0 };
-        let sy = if self.pict_sy > 0.0 { self.pict_sy / 100.0 } else { 1.0 };
+        let sx = if self.pict_sx > 0.0 {
+            self.pict_sx / 100.0
+        } else {
+            1.0
+        };
+        let sy = if self.pict_sy > 0.0 {
+            self.pict_sy / 100.0
+        } else {
+            1.0
+        };
         let w = self.pict_w.map(|v| v * sx);
         let h = self.pict_h.map(|v| v * sy);
         if let Some(img) = make_img(data, w, h, "") {
@@ -890,7 +1001,8 @@ impl Reader {
                     if c == ';' {
                         let (r, g, b, set) = self.color_cur;
                         if self.colors.len() < 4096 {
-                            self.colors.push(if set { Some(Rgb(r, g, b)) } else { None });
+                            self.colors
+                                .push(if set { Some(Rgb(r, g, b)) } else { None });
                         }
                         self.color_cur = (0, 0, 0, false);
                     }
@@ -952,8 +1064,15 @@ impl Reader {
     }
 
     fn para_kind(&self) -> Kind {
-        let name = self.styles.get(&self.st.style).map(|s| s.to_ascii_lowercase()).unwrap_or_default();
-        if let Some(n) = name.strip_prefix("heading").and_then(|r| r.trim().parse::<u8>().ok()) {
+        let name = self
+            .styles
+            .get(&self.st.style)
+            .map(|s| s.to_ascii_lowercase())
+            .unwrap_or_default();
+        if let Some(n) = name
+            .strip_prefix("heading")
+            .and_then(|r| r.trim().parse::<u8>().ok())
+        {
             return Kind::Heading(n.clamp(1, 6));
         }
         if self.st.style != 0 {
@@ -985,7 +1104,9 @@ impl Reader {
         if let Some(ls) = self.st.ls {
             let list = self.overrides.get(&ls).and_then(|id| self.lists.get(id));
             let lv = self.st.ilvl.min(8);
-            let ordered = list.and_then(|l| l.get(lv as usize).copied()).unwrap_or(false);
+            let ordered = list
+                .and_then(|l| l.get(lv as usize).copied())
+                .unwrap_or(false);
             p.list = Some(ListInfo { ordered, level: lv });
         }
         // Headings and code keep their style formatting implicit.
@@ -1031,7 +1152,9 @@ impl Reader {
             Some(LineSpacing::Exactly(pt(sl.saturating_neg()).max(1.0)))
         } else if self.st.slmult {
             // \sl240\slmult1 is single spacing.
-            Some(LineSpacing::Multiple((sl as f32 / 240.0).clamp(0.06, 132.0)))
+            Some(LineSpacing::Multiple(
+                (sl as f32 / 240.0).clamp(0.06, 132.0),
+            ))
         } else {
             Some(LineSpacing::AtLeast(pt(sl)))
         };
@@ -1049,7 +1172,10 @@ impl Reader {
         self.end_para(true);
         let blocks = std::mem::take(&mut self.cell);
         if self.row.len() < 63 {
-            self.row.push(Cell { blocks, ..Default::default() });
+            self.row.push(Cell {
+                blocks,
+                ..Default::default()
+            });
         }
     }
 
@@ -1098,7 +1224,10 @@ impl Reader {
         if !self.row.is_empty() || !self.cell.is_empty() {
             if !self.cell.is_empty() {
                 let blocks = std::mem::take(&mut self.cell);
-                self.row.push(Cell { blocks, ..Default::default() });
+                self.row.push(Cell {
+                    blocks,
+                    ..Default::default()
+                });
             }
             self.end_row();
         }
@@ -1107,14 +1236,24 @@ impl Reader {
             let rights = std::mem::take(&mut self.table_rights);
             let widths = column_grid(&mut rows, &rights);
             // Word draws only the borders the cells name: no grid style, each cell its own.
-            self.body.push(FBlock::Table(FTable { rows, widths, borderless: true }));
+            self.body.push(FBlock::Table(FTable {
+                rows,
+                widths,
+                borderless: true,
+            }));
         }
     }
 
     fn word(&mut self, w: &str, p: Option<i32>, starred: bool, first_in_group: bool) {
         let on = p != Some(0);
         let pv = p.unwrap_or(0);
-        if self.st.dest == Dest::Skip && !(self.in_info() && matches!(w, "title" | "author" | "subject" | "keywords" | "doccomm" | "creatim")) {
+        if self.st.dest == Dest::Skip
+            && !(self.in_info()
+                && matches!(
+                    w,
+                    "title" | "author" | "subject" | "keywords" | "doccomm" | "creatim"
+                ))
+        {
             if self.in_creatim {
                 let v = pv.clamp(0, 9999) as u32;
                 let c = self.created.get_or_insert((0, 1, 1, 0, 0));
@@ -1147,7 +1286,8 @@ impl Reader {
             "shppict" => return,
             "pict" => Some(Dest::Pict),
             "bkmkstart" => Some(Dest::Bookmark),
-            "header" | "footer" | "headerl" | "headerr" | "headerf" | "footerl" | "footerr" | "footerf"
+            "header" | "footer" | "headerl" | "headerr" | "headerf" | "footerl" | "footerr"
+            | "footerf"
                 if self.hf.is_none() && self.st.dest == Dest::Body && !self.st.intbl =>
             {
                 let footer = w.starts_with("footer");
@@ -1159,12 +1299,16 @@ impl Reader {
                 self.start_header_footer(HeaderFooter { footer, pages });
                 return;
             }
-            "header" | "footer" | "headerl" | "headerr" | "headerf" | "footerl" | "footerr" | "footerf" | "footnote" | "annotation" | "pntext"
-            | "listtext" | "object" | "nonshppict" | "xe" | "tc" | "txe" | "private" | "bkmkend" | "atnid" | "atnauthor" | "comment" | "shpinst"
-            | "do" | "operator" | "company" | "manager" | "category" | "hlinkbase" | "revtime" | "printim" | "buptim" | "version" | "nofpages"
-            | "nofwords" | "nofchars" | "edmins" | "vern" | "themedata" | "colorschememapping" | "latentstyles" | "datastore" | "xmlnstbl"
-            | "rsidtbl" | "generator" | "mmathPr" | "pgdsctbl" | "filetbl" | "revtbl" | "listpicture" | "userprops" | "docvar" | "objdata"
-            | "fontemb" | "fontfile" | "panose" | "falt" | "mhtmltag" | "htmltag" | "pnseclvl" | "background" | "sp" | "pn" | "pgptbl" => {
+            "header" | "footer" | "headerl" | "headerr" | "headerf" | "footerl" | "footerr"
+            | "footerf" | "footnote" | "annotation" | "pntext" | "listtext" | "object"
+            | "nonshppict" | "xe" | "tc" | "txe" | "private" | "bkmkend" | "atnid"
+            | "atnauthor" | "comment" | "shpinst" | "do" | "operator" | "company" | "manager"
+            | "category" | "hlinkbase" | "revtime" | "printim" | "buptim" | "version"
+            | "nofpages" | "nofwords" | "nofchars" | "edmins" | "vern" | "themedata"
+            | "colorschememapping" | "latentstyles" | "datastore" | "xmlnstbl" | "rsidtbl"
+            | "generator" | "mmathPr" | "pgdsctbl" | "filetbl" | "revtbl" | "listpicture"
+            | "userprops" | "docvar" | "objdata" | "fontemb" | "fontfile" | "panose" | "falt"
+            | "mhtmltag" | "htmltag" | "pnseclvl" | "background" | "sp" | "pn" | "pgptbl" => {
                 Some(Dest::Skip)
             }
             "creatim" if self.in_info() => {
@@ -1226,7 +1370,13 @@ impl Reader {
                     }
                     "fcharset" => self.font_cp_cur = wordcraft_doc::encoding::charset_code_page(pv),
                     // A font's explicit code page (`\cpg1251`) wins over its charset.
-                    "cpg" if pv > 0 && wordcraft_doc::encoding::SINGLE_BYTE_CODE_PAGES.contains(&(pv as u16)) => self.font_cp_cur = Some(pv as u16),
+                    "cpg"
+                        if pv > 0
+                            && wordcraft_doc::encoding::SINGLE_BYTE_CODE_PAGES
+                                .contains(&(pv as u16)) =>
+                    {
+                        self.font_cp_cur = Some(pv as u16)
+                    }
                     _ => {}
                 }
                 return;
@@ -1253,7 +1403,11 @@ impl Reader {
             Dest::StyleSheet => {
                 match w {
                     "s" | "cs" | "ds" | "ts" => {
-                        self.style_cur = if w == "s" { pv } else { -1 - pv.saturating_abs() };
+                        self.style_cur = if w == "s" {
+                            pv
+                        } else {
+                            -1 - pv.saturating_abs()
+                        };
                         self.style_name.clear();
                     }
                     _ => {}
@@ -1341,7 +1495,10 @@ impl Reader {
                     self.pending_high = Some(u);
                 } else {
                     let c = match self.pending_high.take() {
-                        Some(h) if (0xDC00..0xE000).contains(&u) => char::decode_utf16([h, u]).next().and_then(|r| r.ok()).unwrap_or('\u{FFFD}'),
+                        Some(h) if (0xDC00..0xE000).contains(&u) => char::decode_utf16([h, u])
+                            .next()
+                            .and_then(|r| r.ok())
+                            .unwrap_or('\u{FFFD}'),
                         _ => char::from_u32(u32::from(u)).unwrap_or('\u{FFFD}'),
                     };
                     self.ch(c);
@@ -1350,19 +1507,33 @@ impl Reader {
             }
             "uc" => self.st.uc = pv.clamp(0, 8) as usize,
             "plain" => {
-                self.st.fmt = Fmt { link: self.st.fmt.link.clone(), ..Default::default() };
+                self.st.fmt = Fmt {
+                    link: self.st.fmt.link.clone(),
+                    ..Default::default()
+                };
                 self.st.hidden = false;
             }
             "pard" => {
                 let field = self.st.field;
-                let (dest, fmt, uc, hidden) = (self.st.dest, self.st.fmt.clone(), self.st.uc, self.st.hidden);
-                self.st = St { dest, fmt, uc, hidden, field, ..Default::default() };
+                let (dest, fmt, uc, hidden) = (
+                    self.st.dest,
+                    self.st.fmt.clone(),
+                    self.st.uc,
+                    self.st.hidden,
+                );
+                self.st = St {
+                    dest,
+                    fmt,
+                    uc,
+                    hidden,
+                    field,
+                    ..Default::default()
+                };
             }
             "b" => self.st.fmt.bold = on,
             "i" => self.st.fmt.italic = on,
-            "ul" | "uld" | "uldash" | "uldashd" | "uldashdd" | "uldb" | "ulth" | "ulw" | "ulwave" | "ulhwave" | "ulldash" | "ulthd" => {
-                self.st.fmt.underline = on
-            }
+            "ul" | "uld" | "uldash" | "uldashd" | "uldashdd" | "uldb" | "ulth" | "ulw"
+            | "ulwave" | "ulhwave" | "ulldash" | "ulthd" => self.st.fmt.underline = on,
             "ulnone" => self.st.fmt.underline = false,
             "strike" | "striked" => self.st.fmt.strike = on,
             "super" | "up" => {
@@ -1377,9 +1548,16 @@ impl Reader {
                 self.st.fmt.sup = false;
                 self.st.fmt.sub = false;
             }
-            "fs" => self.st.fmt.size = if pv > 0 { Some((pv as f32 / 2.0).clamp(1.0, 1638.0)) } else { None },
+            "fs" => {
+                self.st.fmt.size = if pv > 0 {
+                    Some((pv as f32 / 2.0).clamp(1.0, 1638.0))
+                } else {
+                    None
+                }
+            }
             "ansicpg" => {
-                if pv > 0 && wordcraft_doc::encoding::SINGLE_BYTE_CODE_PAGES.contains(&(pv as u16)) {
+                if pv > 0 && wordcraft_doc::encoding::SINGLE_BYTE_CODE_PAGES.contains(&(pv as u16))
+                {
                     self.ansicpg = pv as u16;
                 }
             }
@@ -1400,7 +1578,9 @@ impl Reader {
                 }
             }
             "cf" => self.st.fmt.color = self.colors.get(pv.max(0) as usize).copied().flatten(),
-            "highlight" | "chcbpat" | "cb" => self.st.fmt.background = self.colors.get(pv.max(0) as usize).copied().flatten(),
+            "highlight" | "chcbpat" | "cb" => {
+                self.st.fmt.background = self.colors.get(pv.max(0) as usize).copied().flatten()
+            }
             "v" => self.st.hidden = on,
             "ql" => self.st.align = Some(Align::Left),
             "qc" => self.st.align = Some(Align::Center),
@@ -1428,7 +1608,9 @@ impl Reader {
             "clvmrg" => self.def_cur.vmerge = 2,
             "clmgf" => self.def_cur.hmerge = 1,
             "clmrg" => self.def_cur.hmerge = 2,
-            "clcbpat" => self.def_cur.shading = self.colors.get(pv.max(0) as usize).copied().flatten(),
+            "clcbpat" => {
+                self.def_cur.shading = self.colors.get(pv.max(0) as usize).copied().flatten()
+            }
             "sb" => self.st.sb = Some(pv),
             "sa" => self.st.sa = Some(pv),
             "sl" => self.st.sl = pv,
@@ -1440,16 +1622,18 @@ impl Reader {
             "clbrdrl" => self.cell_side = Some('l'),
             "clbrdrb" => self.cell_side = Some('b'),
             "clbrdrr" => self.cell_side = Some('r'),
-            "brdrs" | "brdrth" | "brdrsh" | "brdrdb" | "brdrdot" | "brdrdash" | "brdrdashsm" | "brdrdashd" | "brdrdashdd" | "brdrhair"
-            | "brdrtriple" | "brdrthtnsg" | "brdrtnthsg" | "brdrthtnmg" | "brdrtnthmg" | "brdrwavy" | "brdrwavydb" | "brdrnone" | "brdrnil"
-            | "brdrtbl"
+            "brdrs" | "brdrth" | "brdrsh" | "brdrdb" | "brdrdot" | "brdrdash" | "brdrdashsm"
+            | "brdrdashd" | "brdrdashdd" | "brdrhair" | "brdrtriple" | "brdrthtnsg"
+            | "brdrtnthsg" | "brdrthtnmg" | "brdrtnthmg" | "brdrwavy" | "brdrwavydb"
+            | "brdrnone" | "brdrnil" | "brdrtbl"
                 if self.cell_side.is_some() || self.st.border_side.is_some() =>
             {
                 use wordcraft_doc::props::{Border, BorderStyle};
                 let style = match w {
                     "brdrnone" | "brdrnil" | "brdrtbl" => BorderStyle::None,
                     "brdrth" => BorderStyle::Thick,
-                    "brdrdb" | "brdrthtnsg" | "brdrtnthsg" | "brdrthtnmg" | "brdrtnthmg" | "brdrwavydb" => BorderStyle::Double,
+                    "brdrdb" | "brdrthtnsg" | "brdrtnthsg" | "brdrthtnmg" | "brdrtnthmg"
+                    | "brdrwavydb" => BorderStyle::Double,
                     "brdrdot" => BorderStyle::Dotted,
                     "brdrdash" | "brdrdashsm" => BorderStyle::Dashed,
                     "brdrdashd" | "brdrdashdd" => BorderStyle::DotDash,
@@ -1457,7 +1641,10 @@ impl Reader {
                     "brdrwavy" => BorderStyle::Wave,
                     _ => BorderStyle::Single,
                 };
-                let b = (style != BorderStyle::None).then_some(Border { style, ..Border::single(0.5) });
+                let b = (style != BorderStyle::None).then_some(Border {
+                    style,
+                    ..Border::single(0.5)
+                });
                 if let Some(slot) = self.cell_border_slot() {
                     *slot = b;
                 }
@@ -1494,7 +1681,11 @@ impl Reader {
             }
             "field" => self.start_field(),
             "fldrslt" => {
-                let link = self.st.field.and_then(|i| self.fields.get(i)).and_then(|s| hyperlink(s));
+                let link = self
+                    .st
+                    .field
+                    .and_then(|i| self.fields.get(i))
+                    .and_then(|s| hyperlink(s));
                 if link.is_some() {
                     self.st.fmt.link = link;
                 }
@@ -1518,7 +1709,9 @@ impl Reader {
 /// The target of a `HYPERLINK "url"` (or `HYPERLINK \l "bookmark"`) field instruction.
 fn hyperlink(instr: &str) -> Option<String> {
     let t = instr.trim();
-    let rest = t.strip_prefix("HYPERLINK").or_else(|| t.strip_prefix("hyperlink"))?;
+    let rest = t
+        .strip_prefix("HYPERLINK")
+        .or_else(|| t.strip_prefix("hyperlink"))?;
     let local = rest.contains("\\l");
     let q0 = rest.find('"');
     let target = match q0 {
@@ -1526,13 +1719,20 @@ fn hyperlink(instr: &str) -> Option<String> {
             let r = rest.get(a + 1..)?;
             r.get(..r.find('"').unwrap_or(r.len()))?.to_string()
         }
-        None => rest.split_whitespace().find(|w| !w.starts_with('\\'))?.to_string(),
+        None => rest
+            .split_whitespace()
+            .find(|w| !w.starts_with('\\'))?
+            .to_string(),
     };
     let target = target.replace("%22", "\"");
     if target.is_empty() {
         return None;
     }
-    Some(if local && !target.starts_with('#') { format!("#{target}") } else { target })
+    Some(if local && !target.starts_with('#') {
+        format!("#{target}")
+    } else {
+        target
+    })
 }
 
 /// Parse RTF bytes into the flow model.
@@ -1556,7 +1756,10 @@ struct Parsed {
 }
 
 fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
-    let start = bytes.iter().position(|b| !b.is_ascii_whitespace()).unwrap_or(0);
+    let start = bytes
+        .iter()
+        .position(|b| !b.is_ascii_whitespace())
+        .unwrap_or(0);
     if !bytes.get(start..).is_some_and(|b| b.starts_with(b"{\\rtf")) {
         return Err("not an RTF document (it doesn't start with {\\rtf)".into());
     }
@@ -1590,7 +1793,8 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
                     while bytes.get(j).is_some_and(|b| b.is_ascii_alphabetic()) && j - i <= 32 {
                         j += 1;
                     }
-                    let word = std::str::from_utf8(bytes.get(i + 1..j).unwrap_or(b"")).unwrap_or("");
+                    let word =
+                        std::str::from_utf8(bytes.get(i + 1..j).unwrap_or(b"")).unwrap_or("");
                     let mut k = j;
                     let neg = bytes.get(k) == Some(&b'-');
                     if neg {
@@ -1601,7 +1805,10 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
                         k += 1;
                     }
                     let param = if k > d0 {
-                        let v = std::str::from_utf8(bytes.get(d0..k).unwrap_or(b"0")).ok().and_then(|s| s.parse::<i64>().ok()).unwrap_or(0);
+                        let v = std::str::from_utf8(bytes.get(d0..k).unwrap_or(b"0"))
+                            .ok()
+                            .and_then(|s| s.parse::<i64>().ok())
+                            .unwrap_or(0);
                         let v = if neg { -v } else { v };
                         Some(v.clamp(i64::from(i32::MIN), i64::from(i32::MAX)) as i32)
                     } else {
@@ -1630,7 +1837,10 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
                         r.info_depth = Some(r.depth());
                     }
                     if r.skip_chars > 0
-                        && matches!(r.st.dest, Dest::Body | Dest::Info(_) | Dest::FldInst | Dest::Bookmark)
+                        && matches!(
+                            r.st.dest,
+                            Dest::Body | Dest::Info(_) | Dest::FldInst | Dest::Bookmark
+                        )
                         && !matches!(word, "par" | "pard" | "cell" | "row")
                     {
                         r.skip_chars -= 1;
@@ -1644,7 +1854,10 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
                 }
                 match n {
                     b'\'' => {
-                        let h = bytes.get(i + 2..i + 4).and_then(|h| std::str::from_utf8(h).ok()).and_then(|h| u8::from_str_radix(h, 16).ok());
+                        let h = bytes
+                            .get(i + 2..i + 4)
+                            .and_then(|h| std::str::from_utf8(h).ok())
+                            .and_then(|h| u8::from_str_radix(h, 16).ok());
                         match h {
                             Some(v) => {
                                 if r.st.dest == Dest::Pict {
@@ -1691,7 +1904,10 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
             _ => {
                 // A run of plain text.
                 let mut j = i;
-                while bytes.get(j).is_some_and(|b| !matches!(b, b'{' | b'}' | b'\\' | b'\r' | b'\n' | 0)) {
+                while bytes
+                    .get(j)
+                    .is_some_and(|b| !matches!(b, b'{' | b'}' | b'\\' | b'\r' | b'\n' | 0))
+                {
                     j += 1;
                 }
                 let chunk = bytes.get(i..j).unwrap_or(b"");
@@ -1719,14 +1935,29 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
     if let Some((y, mo, d, h, mi)) = r.created
         && y > 0
     {
-        r.meta.created = format!("{y:04}-{:02}-{:02}T{:02}:{:02}:00Z", mo.clamp(1, 12), d.clamp(1, 31), h.min(23), mi.min(59));
+        r.meta.created = format!(
+            "{y:04}-{:02}-{:02}T{:02}:{:02}:00Z",
+            mo.clamp(1, 12),
+            d.clamp(1, 31),
+            h.min(23),
+            mi.min(59)
+        );
     }
     let mut blocks = std::mem::take(&mut r.body);
     if blocks.is_empty() {
         blocks.push(FBlock::Para(Para::default()));
     }
     let default_font = r.fonts.get(&r.deff).filter(|n| !model::is_mono(n)).cloned();
-    Ok(Parsed { flow: Flow { blocks, meta: r.meta }, page: r.page, default_font, headers_footers: r.hf_parts, title_page: r.title_page })
+    Ok(Parsed {
+        flow: Flow {
+            blocks,
+            meta: r.meta,
+        },
+        page: r.page,
+        default_font,
+        headers_footers: r.hf_parts,
+        title_page: r.title_page,
+    })
 }
 
 /// The column grid of a table from its rows' cell right edges: every distinct edge starts a grid
@@ -1734,14 +1965,20 @@ fn parse_full(bytes: &[u8]) -> Result<Parsed, String> {
 /// out RTF rows whose cells don't line up. Returns the widths in points, or none (equal columns)
 /// when the edges don't make a grid.
 fn column_grid(rows: &mut [Vec<Cell>], rights: &[Vec<i32>]) -> Vec<f32> {
-    let mut edges: Vec<i32> = rights.iter().flatten().copied().filter(|&x| x > 0).collect();
+    let mut edges: Vec<i32> = rights
+        .iter()
+        .flatten()
+        .copied()
+        .filter(|&x| x > 0)
+        .collect();
     edges.sort_unstable();
     edges.dedup();
     let ok = rights.len() == rows.len()
-        && rows
-            .iter()
-            .zip(rights)
-            .all(|(r, x)| r.len() == x.len() && x.windows(2).all(|w| w.first() < w.get(1)) && x.first().is_some_and(|&v| v > 0))
+        && rows.iter().zip(rights).all(|(r, x)| {
+            r.len() == x.len()
+                && x.windows(2).all(|w| w.first() < w.get(1))
+                && x.first().is_some_and(|&v| v > 0)
+        })
         && !edges.is_empty()
         && edges.len() <= 63;
     if !ok {
@@ -1750,7 +1987,11 @@ fn column_grid(rows: &mut [Vec<Cell>], rights: &[Vec<i32>]) -> Vec<f32> {
     for (row, x) in rows.iter_mut().zip(rights) {
         let mut left = 0;
         for (c, &right) in row.iter_mut().zip(x) {
-            let span = edges.iter().filter(|&&e| e > left && e <= right).count().max(1);
+            let span = edges
+                .iter()
+                .filter(|&&e| e > left && e <= right)
+                .count()
+                .max(1);
             c.colspan = span as u32;
             left = right;
         }
@@ -1768,12 +2009,29 @@ fn column_grid(rows: &mut [Vec<Cell>], rights: &[Vec<i32>]) -> Vec<f32> {
 
 /// Parse RTF bytes into a document.
 pub fn import(bytes: &[u8]) -> Result<Document, String> {
-    let Parsed { flow, page, default_font, headers_footers, title_page } = parse_full(bytes)?;
+    let Parsed {
+        flow,
+        page,
+        default_font,
+        headers_footers,
+        title_page,
+    } = parse_full(bytes)?;
     let mut doc = model::to_doc_in(&flow, page.section());
     for (which, blocks) in &headers_footers {
         let blocks = model::part_blocks(&mut doc, blocks);
-        let id = doc.add_part(if which.footer { wordcraft_doc::PartKind::Footer } else { wordcraft_doc::PartKind::Header }, blocks);
-        let set = if which.footer { &mut doc.last_section.footers } else { &mut doc.last_section.headers };
+        let id = doc.add_part(
+            if which.footer {
+                wordcraft_doc::PartKind::Footer
+            } else {
+                wordcraft_doc::PartKind::Header
+            },
+            blocks,
+        );
+        let set = if which.footer {
+            &mut doc.last_section.footers
+        } else {
+            &mut doc.last_section.headers
+        };
         match which.pages {
             HfPages::Default => set.default = Some(id),
             HfPages::First => set.first = Some(id),
@@ -1803,7 +2061,17 @@ mod tests {
             .map(|b| match b {
                 FBlock::Para(p) => format!("{:?}:{}", p.kind, p.text()),
                 FBlock::Table(t) => {
-                    format!("table{}x{}:{}", t.rows.len(), t.cols(), t.rows.iter().flatten().map(|c| c.text()).collect::<Vec<_>>().join("|"))
+                    format!(
+                        "table{}x{}:{}",
+                        t.rows.len(),
+                        t.cols(),
+                        t.rows
+                            .iter()
+                            .flatten()
+                            .map(|c| c.text())
+                            .collect::<Vec<_>>()
+                            .join("|")
+                    )
                 }
             })
             .collect()
@@ -1827,11 +2095,23 @@ mod tests {
         assert_eq!(t[2], "Normal:link");
         assert_eq!(t[3], "table1x2:a|b");
         assert_eq!(t[4], "Normal:after");
-        let FBlock::Para(p) = &f.blocks[1] else { panic!() };
-        assert!(p.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "bold" && f.bold)));
-        assert!(p.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "red" && f.color == Some(Rgb(255, 0, 0)))));
-        let FBlock::Para(l) = &f.blocks[2] else { panic!() };
-        assert!(matches!(&l.inlines[0], Inline::Text(_, f) if f.link.as_deref() == Some("http://a.b")));
+        let FBlock::Para(p) = &f.blocks[1] else {
+            panic!()
+        };
+        assert!(
+            p.inlines
+                .iter()
+                .any(|i| matches!(i, Inline::Text(t, f) if t == "bold" && f.bold))
+        );
+        assert!(p.inlines.iter().any(
+            |i| matches!(i, Inline::Text(t, f) if t == "red" && f.color == Some(Rgb(255, 0, 0)))
+        ));
+        let FBlock::Para(l) = &f.blocks[2] else {
+            panic!()
+        };
+        assert!(
+            matches!(&l.inlines[0], Inline::Text(_, f) if f.link.as_deref() == Some("http://a.b"))
+        );
     }
 
     #[test]
@@ -1843,22 +2123,48 @@ mod tests {
 \pard\brdrt\brdrdb\brdrl\brdrs\brdrr\brdrs Boxed\par
 \pard\brdrb\brdrs\par}";
         let f = parse(rtf).unwrap();
-        let paras: Vec<&Para> = f.blocks.iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p) } else { None }).collect();
+        let paras: Vec<&Para> = f
+            .blocks
+            .iter()
+            .filter_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
+            .collect();
         let b = paras[0].borders.unwrap();
         let bottom = b.bottom.unwrap();
-        assert_eq!((bottom.width, bottom.color), (0.5, Some(Rgb(216, 216, 216))));
+        assert_eq!(
+            (bottom.width, bottom.color),
+            (0.5, Some(Rgb(216, 216, 216)))
+        );
         assert!(b.top.is_none());
         assert_eq!(paras[0].kind, Kind::Normal);
         // \pard resets them.
         assert!(paras[1].borders.is_none());
         let b = paras[2].borders.unwrap();
-        assert_eq!(b.top.map(|x| x.style), Some(wordcraft_doc::props::BorderStyle::Double));
+        assert_eq!(
+            b.top.map(|x| x.style),
+            Some(wordcraft_doc::props::BorderStyle::Double)
+        );
         assert!(b.left.is_some() && b.right.is_some() && b.bottom.is_none());
         // An empty paragraph with only a bottom border is still a rule.
         assert_eq!(paras[3].kind, Kind::Rule);
         // The document's paragraph carries them.
         let d = import(rtf).unwrap();
-        let first = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Para(p) = &**b { Some(p) } else { None }).unwrap();
+        let first = d
+            .body
+            .iter()
+            .find_map(|b| {
+                if let wordcraft_doc::Block::Para(p) = &**b {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
         assert!(first.props.borders.and_then(|b| b.bottom).is_some());
     }
 
@@ -1878,7 +2184,13 @@ mod tests {
             let p = id.and_then(|id| d.parts.get(&id)).unwrap();
             p.blocks
                 .iter()
-                .filter_map(|b| if let wordcraft_doc::Block::Para(p) = &**b { Some(p.text.clone()) } else { None })
+                .filter_map(|b| {
+                    if let wordcraft_doc::Block::Para(p) = &**b {
+                        Some(p.text.clone())
+                    } else {
+                        None
+                    }
+                })
                 .collect::<Vec<_>>()
                 .join("|")
         };
@@ -1906,11 +2218,24 @@ mod tests {
 \pard\sl300\slmult0 c\par
 \pard d\par}";
         let f = parse(rtf).unwrap();
-        let sp: Vec<model::Spacing> = f.blocks.iter().filter_map(|b| if let FBlock::Para(p) = b { Some(p.spacing) } else { None }).collect();
+        let sp: Vec<model::Spacing> = f
+            .blocks
+            .iter()
+            .filter_map(|b| {
+                if let FBlock::Para(p) = b {
+                    Some(p.spacing)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(sp[0].before, Some(6.0));
         assert_eq!(sp[0].after, Some(7.5));
         assert_eq!(sp[0].line, Some(LineSpacing::Multiple(1.5)));
-        assert_eq!((sp[0].left, sp[0].right, sp[0].first), (Some(36.0), Some(18.0), Some(-18.0)));
+        assert_eq!(
+            (sp[0].left, sp[0].right, sp[0].first),
+            (Some(36.0), Some(18.0), Some(-18.0))
+        );
         assert_eq!(sp[1].line, Some(LineSpacing::Exactly(14.0)));
         assert_eq!(sp[2].line, Some(LineSpacing::AtLeast(15.0)));
         // \pard resets them.
@@ -1918,8 +2243,21 @@ mod tests {
         // The document's defaults are RTF's: single, no space after; the paragraph's own win.
         let d = import(rtf).unwrap();
         assert_eq!(d.styles.default_para.space_after, Some(0.0));
-        assert_eq!(d.styles.default_para.line_spacing, Some(LineSpacing::Multiple(1.0)));
-        let first = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Para(p) = &**b { Some(p) } else { None }).unwrap();
+        assert_eq!(
+            d.styles.default_para.line_spacing,
+            Some(LineSpacing::Multiple(1.0))
+        );
+        let first = d
+            .body
+            .iter()
+            .find_map(|b| {
+                if let wordcraft_doc::Block::Para(p) = &**b {
+                    Some(p)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
         assert_eq!(first.props.space_after, Some(7.5));
         assert_eq!(first.props.indent_first, Some(-18.0));
     }
@@ -1927,20 +2265,38 @@ mod tests {
     #[test]
     fn default_font_is_deff_or_font_zero() {
         // Text that never selects a font is in the default font: \deff, else font 0.
-        let d = import(br"{\rtf1\ansi{\fonttbl{\f0\fnil Times New Roman Cyr;}{\f1 Arial;}}\plain x\par}").unwrap();
-        assert_eq!(d.styles.default_chr.font.as_deref(), Some("Times New Roman Cyr"));
-        let d = import(br"{\rtf1\ansi\deff1{\fonttbl{\f0 Times New Roman;}{\f1 Arial;}} x\par}").unwrap();
+        let d = import(
+            br"{\rtf1\ansi{\fonttbl{\f0\fnil Times New Roman Cyr;}{\f1 Arial;}}\plain x\par}",
+        )
+        .unwrap();
+        assert_eq!(
+            d.styles.default_chr.font.as_deref(),
+            Some("Times New Roman Cyr")
+        );
+        let d = import(br"{\rtf1\ansi\deff1{\fonttbl{\f0 Times New Roman;}{\f1 Arial;}} x\par}")
+            .unwrap();
         assert_eq!(d.styles.default_chr.font.as_deref(), Some("Arial"));
         // No font table: our default stays.
         let d = import(br"{\rtf1\ansi x\par}").unwrap();
-        assert_eq!(d.styles.default_chr.font, wordcraft_doc::StyleSheet::builtin().default_chr.font);
+        assert_eq!(
+            d.styles.default_chr.font,
+            wordcraft_doc::StyleSheet::builtin().default_chr.font
+        );
     }
 
     #[test]
     fn page_size_and_margins() {
-        let d = import(br"{\rtf1\ansi\paperw11906\paperh16838\margl1134\margr850\margt1134\margb1134 x\par}").unwrap();
+        let d = import(
+            br"{\rtf1\ansi\paperw11906\paperh16838\margl1134\margr850\margt1134\margb1134 x\par}",
+        )
+        .unwrap();
         let s = &d.last_section;
-        assert!((s.page_w - 595.3).abs() < 0.1 && (s.page_h - 841.9).abs() < 0.1, "{} x {}", s.page_w, s.page_h);
+        assert!(
+            (s.page_w - 595.3).abs() < 0.1 && (s.page_h - 841.9).abs() < 0.1,
+            "{} x {}",
+            s.page_w,
+            s.page_h
+        );
         assert!((s.margin_left - 56.7).abs() < 0.1 && (s.margin_right - 42.5).abs() < 0.1);
         assert!(!s.landscape);
         let d = import(br"{\rtf1\ansi\paperw11906\paperh16838\landscape x\par}").unwrap();
@@ -1958,10 +2314,18 @@ mod tests {
 \trowd\cellx3000\cellx9000 \pard\intbl c\cell d\cell\row
 \pard after\par}";
         let f = parse(rtf).unwrap();
-        let FBlock::Table(t) = &f.blocks[0] else { panic!() };
+        let FBlock::Table(t) = &f.blocks[0] else {
+            panic!()
+        };
         assert_eq!(t.widths, [100.0, 50.0, 300.0]);
-        assert_eq!(t.rows[0].iter().map(|c| c.colspan).collect::<Vec<_>>(), [1, 2]);
-        assert_eq!(t.rows[1].iter().map(|c| c.colspan).collect::<Vec<_>>(), [2, 1]);
+        assert_eq!(
+            t.rows[0].iter().map(|c| c.colspan).collect::<Vec<_>>(),
+            [1, 2]
+        );
+        assert_eq!(
+            t.rows[1].iter().map(|c| c.colspan).collect::<Vec<_>>(),
+            [2, 1]
+        );
         assert_eq!(t.cols(), 3);
         // RTF tables have no grid style: each cell draws the borders it names, nothing else.
         assert!(t.borderless);
@@ -1969,34 +2333,88 @@ mod tests {
         // A rule under a cell (a letterhead's line): the bottom side only, its width and colour.
         let f =
             parse(br"{\rtf1\ansi{\colortbl;\red174\green174\blue174;}\trowd\clbrdrb\brdrs\brdrw15\brdrcf1\cellx2000\pard\intbl a\cell\row}").unwrap();
-        let FBlock::Table(t) = &f.blocks[0] else { panic!() };
+        let FBlock::Table(t) = &f.blocks[0] else {
+            panic!()
+        };
         let b = t.rows[0][0].borders.unwrap();
         assert!(b.top.is_none() && b.left.is_none() && b.right.is_none());
         let bottom = b.bottom.unwrap();
-        assert_eq!((bottom.style, bottom.width, bottom.color), (wordcraft_doc::props::BorderStyle::Single, 0.75, Some(Rgb(174, 174, 174))));
+        assert_eq!(
+            (bottom.style, bottom.width, bottom.color),
+            (
+                wordcraft_doc::props::BorderStyle::Single,
+                0.75,
+                Some(Rgb(174, 174, 174))
+            )
+        );
         // Every side, in different styles, per cell.
         let f = parse(br"{\rtf1\ansi\trowd\clbrdrt\brdrdb\clbrdrl\brdrs\brdrw10\clbrdrb\brdrdot\clbrdrr\brdrth\cellx2000\cellx4000\pard\intbl a\cell b\cell\row}").unwrap();
-        let FBlock::Table(t) = &f.blocks[0] else { panic!() };
+        let FBlock::Table(t) = &f.blocks[0] else {
+            panic!()
+        };
         let b = t.rows[0][0].borders.unwrap();
         use wordcraft_doc::props::BorderStyle as S;
         assert_eq!(
-            [b.top.map(|x| x.style), b.left.map(|x| x.style), b.bottom.map(|x| x.style), b.right.map(|x| x.style)],
-            [Some(S::Double), Some(S::Single), Some(S::Dotted), Some(S::Thick)]
+            [
+                b.top.map(|x| x.style),
+                b.left.map(|x| x.style),
+                b.bottom.map(|x| x.style),
+                b.right.map(|x| x.style)
+            ],
+            [
+                Some(S::Double),
+                Some(S::Single),
+                Some(S::Dotted),
+                Some(S::Thick)
+            ]
         );
         assert_eq!(b.left.map(|x| x.width), Some(0.5));
-        assert!(t.rows[0][1].borders.is_none(), "the second cell names no borders");
+        assert!(
+            t.rows[0][1].borders.is_none(),
+            "the second cell names no borders"
+        );
         // A border side set to none isn't a border.
-        let f = parse(br"{\rtf1\ansi\trowd\clbrdrl\brdrnone\cellx2000\pard\intbl a\cell\row}").unwrap();
-        let FBlock::Table(t) = &f.blocks[0] else { panic!() };
+        let f =
+            parse(br"{\rtf1\ansi\trowd\clbrdrl\brdrnone\cellx2000\pard\intbl a\cell\row}").unwrap();
+        let FBlock::Table(t) = &f.blocks[0] else {
+            panic!()
+        };
         assert!(t.rows[0][0].borders.is_none());
         // The document's cells carry them.
-        let d = import(br"{\rtf1\ansi\trowd\clbrdrb\brdrs\cellx2000\pard\intbl a\cell\row}").unwrap();
-        let t = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Table(t) = &**b { Some(t) } else { None }).unwrap();
+        let d =
+            import(br"{\rtf1\ansi\trowd\clbrdrb\brdrs\cellx2000\pard\intbl a\cell\row}").unwrap();
+        let t = d
+            .body
+            .iter()
+            .find_map(|b| {
+                if let wordcraft_doc::Block::Table(t) = &**b {
+                    Some(t)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
         assert!(t.props.style.is_none());
-        assert!(t.rows[0].cells[0].props.borders.and_then(|b| b.bottom).is_some());
+        assert!(
+            t.rows[0].cells[0]
+                .props
+                .borders
+                .and_then(|b| b.bottom)
+                .is_some()
+        );
         // The table sizes to the document's page, not Letter.
         let d = import(br"{\rtf1\ansi\paperw11906\margl1134\margr1134\trowd\cellx4818\cellx9638\pard\intbl a\cell b\cell\row}").unwrap();
-        let t = d.body.iter().find_map(|b| if let wordcraft_doc::Block::Table(t) = &**b { Some(t) } else { None }).unwrap();
+        let t = d
+            .body
+            .iter()
+            .find_map(|b| {
+                if let wordcraft_doc::Block::Table(t) = &**b {
+                    Some(t)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
         assert_eq!(t.grid, [240.9, 241.0]);
     }
 
@@ -2025,13 +2443,18 @@ mod tests {
     fn shppict_imports_one_image_and_skips_legacy_duplicate() -> Result<(), String> {
         let pixels = image::RgbaImage::from_pixel(1, 1, image::Rgba([40, 80, 160, 255]));
         let mut png = Vec::new();
-        pixels.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).map_err(|e| e.to_string())?;
+        pixels
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .map_err(|e| e.to_string())?;
         let hex: String = png.iter().map(|b| format!("{b:02x}")).collect();
         let pict = format!("{{\\pict\\pngblip\\picwgoal1440\\pichgoal720 {hex}}}");
         // Also use a supported PNG as the legacy duplicate: it must still be skipped.
         for legacy in [format!("{{\\pict\\wmetafile8 {hex}}}"), pict.clone()] {
             for picture in [format!("{{\\*\\shppict{pict}}}"), pict.clone()] {
-                let f = parse(format!("{{\\rtf1\\ansi Before{picture}{{\\nonshppict{legacy}}}After\\par}}").as_bytes())?;
+                let f = parse(
+                    format!("{{\\rtf1\\ansi Before{picture}{{\\nonshppict{legacy}}}After\\par}}")
+                        .as_bytes(),
+                )?;
                 let images: Vec<_> = f
                     .blocks
                     .iter()
@@ -2055,7 +2478,9 @@ mod tests {
         }
         // Recognizing shppict must not resurrect pictures inside skipped destinations.
         for dest in ["nonshppict", "unknown"] {
-            let f = parse(format!("{{\\rtf1{{\\*\\{dest}{{\\*\\shppict{pict}}}}}Before\\par}}").as_bytes())?;
+            let f = parse(
+                format!("{{\\rtf1{{\\*\\{dest}{{\\*\\shppict{pict}}}}}Before\\par}}").as_bytes(),
+            )?;
             assert_eq!(texts(&f), vec!["Normal:Before"]);
             assert!(f.blocks.iter().all(|b| match b {
                 FBlock::Para(p) => p.inlines.iter().all(|i| !matches!(i, Inline::Image(_))),
@@ -2072,8 +2497,22 @@ mod tests {
         let f = parse(rtf).unwrap();
         assert_eq!(f.meta.title, "Café");
         assert_eq!(f.meta.author, "Café");
-        let inl: Vec<&Inline> = f.blocks.iter().flat_map(|b| if let FBlock::Para(p) = b { p.inlines.iter().collect() } else { vec![] }).collect();
-        assert!(inl.iter().any(|i| matches!(i, Inline::Anchor(n) if n == "café")), "{inl:?}");
+        let inl: Vec<&Inline> = f
+            .blocks
+            .iter()
+            .flat_map(|b| {
+                if let FBlock::Para(p) = b {
+                    p.inlines.iter().collect()
+                } else {
+                    vec![]
+                }
+            })
+            .collect();
+        assert!(
+            inl.iter()
+                .any(|i| matches!(i, Inline::Anchor(n) if n == "café")),
+            "{inl:?}"
+        );
         assert!(
             inl.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "link" && f.link.as_deref() == Some("https://example.test/café"))),
             "{inl:?}"
@@ -2089,6 +2528,9 @@ mod tests {
 
     #[test]
     fn escapes() {
-        assert_eq!(esc("a{b}\\c\té😀"), "a\\{b\\}\\\\c\\tab \\u233?\\u-10179?\\u-8704?");
+        assert_eq!(
+            esc("a{b}\\c\té😀"),
+            "a\\{b\\}\\\\c\\tab \\u233?\\u-10179?\\u-8704?"
+        );
     }
 }

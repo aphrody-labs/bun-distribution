@@ -24,7 +24,11 @@ pub struct PrintTilingTool {
 
 /// `v` snapped to the nearest of `edges` within `tol`.
 fn snap1(v: f64, edges: [f64; 2], tol: f64) -> f64 {
-    edges.into_iter().filter(|e| (e - v).abs() <= tol).min_by(|a, b| (a - v).abs().total_cmp(&(b - v).abs())).unwrap_or(v)
+    edges
+        .into_iter()
+        .filter(|e| (e - v).abs() <= tol)
+        .min_by(|a, b| (a - v).abs().total_cmp(&(b - v).abs()))
+        .unwrap_or(v)
 }
 
 impl Tool for PrintTilingTool {
@@ -39,16 +43,28 @@ impl Tool for PrintTilingTool {
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         match ev.kind {
             PointerKind::Down => {
-                let hit = cx.doc.artboards.iter().position(|a| a.rect.contains(ev.pos));
-                self.drag = Some((hit, hit.and_then(|i| cx.doc.artboards.get(i)).map(|a| a.rect)));
+                let hit = cx
+                    .doc
+                    .artboards
+                    .iter()
+                    .position(|a| a.rect.contains(ev.pos));
+                self.drag = Some((
+                    hit,
+                    hit.and_then(|i| cx.doc.artboards.get(i)).map(|a| a.rect),
+                ));
                 (self.began, self.last) = (false, ev.pos);
                 vec![]
             }
             PointerKind::Drag => {
-                let Some((artboard, rect)) = self.drag else { return vec![] };
+                let Some((artboard, rect)) = self.drag else {
+                    return vec![];
+                };
                 let tol = cx.tol(5.0);
                 let p = match rect {
-                    Some(r) => Point::new(snap1(ev.pos.x, [r.x0, r.x1], tol), snap1(ev.pos.y, [r.y0, r.y1], tol)),
+                    Some(r) => Point::new(
+                        snap1(ev.pos.x, [r.x0, r.x1], tol),
+                        snap1(ev.pos.y, [r.y0, r.y1], tol),
+                    ),
                     None => ev.pos,
                 };
                 self.last = p;
@@ -57,30 +73,47 @@ impl Tool for PrintTilingTool {
                     self.began = true;
                     out.push(Action::Begin("Print Tiling".into()));
                 }
-                out.push(Action::Preview("print.tiling.set".into(), json!({ "origin": [p.x, p.y], "artboard": artboard })));
+                out.push(Action::Preview(
+                    "print.tiling.set".into(),
+                    json!({ "origin": [p.x, p.y], "artboard": artboard }),
+                ));
                 out
             }
             PointerKind::Up => {
                 let began = std::mem::take(&mut self.began);
-                if self.drag.take().is_some() && began { vec![Action::Commit] } else { vec![] }
+                if self.drag.take().is_some() && began {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             PointerKind::DoubleClick => {
                 self.drag = None;
-                vec![Action::Exec("print.tiling.set".into(), json!({ "reset": true }))]
+                vec![Action::Exec(
+                    "print.tiling.set".into(),
+                    json!({ "reset": true }),
+                )]
             }
             PointerKind::Move => vec![],
         }
     }
 
     fn key(&mut self, cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
-        if key == ToolKey::Escape { self.deactivate(cx) } else { vec![] }
+        if key == ToolKey::Escape {
+            self.deactivate(cx)
+        } else {
+            vec![]
+        }
     }
 
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         match self.drag {
             // How far the corner is from the artboard's.
             Some((_, Some(r))) if self.began => {
-                vec![Overlay::Measure { p: self.last, text: cx.offset_label(self.last.x - r.x0, self.last.y - r.y0) }]
+                vec![Overlay::Measure {
+                    p: self.last,
+                    text: cx.offset_label(self.last.x - r.x0, self.last.y - r.y0),
+                }]
             }
             _ => vec![],
         }
@@ -92,7 +125,11 @@ impl Tool for PrintTilingTool {
 
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         self.drag = None;
-        if std::mem::take(&mut self.began) { vec![Action::Cancel] } else { vec![] }
+        if std::mem::take(&mut self.began) {
+            vec![Action::Cancel]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -117,21 +154,48 @@ mod tests {
         assert!(t.pointer(&c, &ev(PointerKind::Down, 50.0, 60.0)).is_empty());
         let a = t.pointer(&c, &ev(PointerKind::Drag, 40.0, 30.0));
         assert_eq!(a.first(), Some(&Action::Begin("Print Tiling".into())));
-        assert_eq!(a.get(1), Some(&Action::Preview("print.tiling.set".into(), json!({"origin": [40.0, 30.0], "artboard": 0}))));
+        assert_eq!(
+            a.get(1),
+            Some(&Action::Preview(
+                "print.tiling.set".into(),
+                json!({"origin": [40.0, 30.0], "artboard": 0})
+            ))
+        );
         // Near the artboard's edge the corner snaps to it.
         let a = t.pointer(&c, &ev(PointerKind::Drag, 2.0, 497.0));
-        assert_eq!(a, vec![Action::Preview("print.tiling.set".into(), json!({"origin": [0.0, 500.0], "artboard": 0}))]);
-        assert!(matches!(t.overlays(&c).as_slice(), [Overlay::Measure { .. }]));
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Up, 2.0, 497.0)), vec![Action::Commit]);
+        assert_eq!(
+            a,
+            vec![Action::Preview(
+                "print.tiling.set".into(),
+                json!({"origin": [0.0, 500.0], "artboard": 0})
+            )]
+        );
+        assert!(matches!(
+            t.overlays(&c).as_slice(),
+            [Overlay::Measure { .. }]
+        ));
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Up, 2.0, 497.0)),
+            vec![Action::Commit]
+        );
         assert!(!t.busy());
         // A click alone changes nothing; a double click resets.
         t.pointer(&c, &ev(PointerKind::Down, 10.0, 10.0));
         assert!(t.pointer(&c, &ev(PointerKind::Up, 10.0, 10.0)).is_empty());
-        assert_eq!(t.pointer(&c, &ev(PointerKind::DoubleClick, 10.0, 10.0)), vec![Action::Exec("print.tiling.set".into(), json!({"reset": true}))]);
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::DoubleClick, 10.0, 10.0)),
+            vec![Action::Exec(
+                "print.tiling.set".into(),
+                json!({"reset": true})
+            )]
+        );
         // Escape mid-drag cancels.
         t.pointer(&c, &ev(PointerKind::Down, 10.0, 10.0));
         t.pointer(&c, &ev(PointerKind::Drag, 20.0, 20.0));
-        assert_eq!(t.key(&c, ToolKey::Escape, Mods::default()), vec![Action::Cancel]);
+        assert_eq!(
+            t.key(&c, ToolKey::Escape, Mods::default()),
+            vec![Action::Cancel]
+        );
         assert_eq!(crate::create("printTiling").id(), "printTiling");
     }
 }

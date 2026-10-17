@@ -161,16 +161,20 @@ impl PtyConfig {
     pub fn with_exposed_defaults(mut self) -> Self {
         self.max_sessions.get_or_insert(EXPOSED_MAX_SESSIONS);
         self.idle_ttl.get_or_insert(EXPOSED_IDLE_TTL);
-        self.max_input_frame_bytes.get_or_insert(EXPOSED_MAX_INPUT_FRAME_BYTES);
-        self.max_output_bytes.get_or_insert(EXPOSED_MAX_OUTPUT_BYTES);
+        self.max_input_frame_bytes
+            .get_or_insert(EXPOSED_MAX_INPUT_FRAME_BYTES);
+        self.max_output_bytes
+            .get_or_insert(EXPOSED_MAX_OUTPUT_BYTES);
         self
     }
 
     /// Return the explicit auth token if configured, or fall back to `APHRODY_OS_AUTH_TOKEN` from env.
     pub fn effective_auth_token(&self) -> Option<String> {
-        self.auth_token
-            .clone()
-            .or_else(|| std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|s| !s.is_empty()))
+        self.auth_token.clone().or_else(|| {
+            std::env::var("APHRODY_OS_AUTH_TOKEN")
+                .ok()
+                .filter(|s| !s.is_empty())
+        })
     }
 }
 
@@ -197,7 +201,10 @@ fn constant_time_eq(left: &str, right: &str) -> bool {
     if left.len() != right.len() {
         return false;
     }
-    left.bytes().zip(right.bytes()).fold(0u8, |diff, (l, r)| diff | (l ^ r)) == 0
+    left.bytes()
+        .zip(right.bytes())
+        .fold(0u8, |diff, (l, r)| diff | (l ^ r))
+        == 0
 }
 
 /// Validate whether an `Origin` header is allowed to connect.
@@ -213,13 +220,13 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
         return false;
     };
     match url.scheme() {
-        "http" | "https" | "tauri" | "app" | "vscode-webview" => {},
+        "http" | "https" | "tauri" | "app" | "vscode-webview" => {}
         _ => return false,
     }
     match url.host() {
         Some(url::Host::Domain(domain)) => {
             domain.eq_ignore_ascii_case("localhost") || domain.ends_with(".localhost")
-        },
+        }
         Some(url::Host::Ipv4(ip)) => {
             if ip.is_loopback() {
                 return true;
@@ -232,7 +239,7 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
                 return true;
             }
             false
-        },
+        }
         Some(url::Host::Ipv6(ip)) => {
             if ip.is_loopback() {
                 return true;
@@ -245,7 +252,7 @@ pub fn is_origin_allowed(origin: &str, bound_addr: Option<SocketAddr>) -> bool {
                 return true;
             }
             false
-        },
+        }
         None => false,
     }
 }
@@ -273,7 +280,7 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
     match url.host() {
         Some(url::Host::Domain(domain)) => {
             domain.eq_ignore_ascii_case("localhost") || domain.ends_with(".localhost")
-        },
+        }
         Some(url::Host::Ipv4(ip)) => {
             if ip.is_loopback() {
                 return true;
@@ -286,7 +293,7 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
             } else {
                 false
             }
-        },
+        }
         Some(url::Host::Ipv6(ip)) => {
             if ip.is_loopback() {
                 return true;
@@ -299,7 +306,7 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
             } else {
                 false
             }
-        },
+        }
         None => false,
     }
 }
@@ -309,7 +316,11 @@ pub fn is_host_allowed(host_header: &str, bound_addr: Option<SocketAddr>) -> boo
 /// Supports `Authorization: Bearer <token>` and `?token=<token>`.
 fn is_authenticated(req: &Request, expected_token: &str) -> bool {
     // 1. Authorization header: "Bearer <token>"
-    if let Some(auth_val) = req.headers().get("authorization").and_then(|v| v.to_str().ok()) {
+    if let Some(auth_val) = req
+        .headers()
+        .get("authorization")
+        .and_then(|v| v.to_str().ok())
+    {
         let auth_val = auth_val.trim();
         if let Some(token) = auth_val.strip_prefix("Bearer ")
             && constant_time_eq(token.trim(), expected_token)
@@ -434,7 +445,9 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
     let active = Arc::new(AtomicUsize::new(0));
     let resumable = resume::Registry::default();
 
-    let listener = TcpListener::bind(addr).await.with_context(|| format!("bind {addr}"))?;
+    let listener = TcpListener::bind(addr)
+        .await
+        .with_context(|| format!("bind {addr}"))?;
     info!("aphrody-terminal-backend listening on {addr}");
 
     // Send READY=1 to systemd (Type=notify)
@@ -465,8 +478,13 @@ pub async fn serve(addr: SocketAddr, mut cfg: PtyConfig) -> Result<()> {
 /// When the shell exits, the remaining output is flushed and the WebSocket is closed.
 #[cfg(test)]
 async fn handle_conn(stream: TcpStream, cfg: PtyConfig) -> Result<()> {
-    handle_conn_limited(stream, cfg, Arc::new(AtomicUsize::new(0)), resume::Registry::default())
-        .await
+    handle_conn_limited(
+        stream,
+        cfg,
+        Arc::new(AtomicUsize::new(0)),
+        resume::Registry::default(),
+    )
+    .await
 }
 
 /// RAII slot in the concurrent-session counter.
@@ -526,15 +544,15 @@ async fn handle_conn_limited(
 
         // 2. Check Host: ensure host matches loopback/localhost or the bound host.
         match req.headers().get("host").and_then(|v| v.to_str().ok()) {
-            Some(host) if is_host_allowed(host, bound_addr) => {},
+            Some(host) if is_host_allowed(host, bound_addr) => {}
             Some(host) => {
                 warn!("rejected websocket connection with foreign host: {host}");
                 return Err(forbidden_response("forbidden host"));
-            },
+            }
             None => {
                 warn!("rejected websocket connection missing host header");
                 return Err(forbidden_response("missing host header"));
-            },
+            }
         }
 
         // 3. Check Authentication Token (if configured or present in environment)
@@ -549,21 +567,27 @@ async fn handle_conn_limited(
             Ok(id) => id,
             Err(()) => return Err(resume::invalid_id_response()),
         };
-        *requested_id_cb.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
-            resume_id.clone();
-        if resume_id.as_ref().is_some_and(|id| resumable_cb.contains(id)) {
+        *requested_id_cb
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = resume_id.clone();
+        if resume_id
+            .as_ref()
+            .is_some_and(|id| resumable_cb.contains(id))
+        {
             return Ok(resp);
         }
 
         // 4. Session quota (after auth so unauthenticated peers cannot consume slots).
         match SessionSlot::try_acquire(&active, max_sessions) {
             Some(s) => {
-                *slot_cb.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(s);
-            },
+                *slot_cb
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(s);
+            }
             None => {
                 warn!("rejected websocket connection: session limit reached");
                 return Err(unavailable_response("too many sessions"));
-            },
+            }
         }
 
         Ok(resp)
@@ -574,10 +598,17 @@ async fn handle_conn_limited(
         .context("WebSocket handshake")?;
 
     // Held for the whole session; released on return.
-    let _slot = slot.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
+    let _slot = slot
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .take();
 
-    let resume_id =
-        { requested_id.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() };
+    let resume_id = {
+        requested_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+    };
     if let Some(id) = resume_id {
         return resume::accept(ws_stream, id, cfg, _slot, resumable).await;
     }
@@ -586,7 +617,10 @@ async fn handle_conn_limited(
     let start = Instant::now();
     let last_activity = Arc::new(AtomicU64::new(0));
     let touch = |a: &AtomicU64| {
-        a.store(u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX), Ordering::Relaxed);
+        a.store(
+            u64::try_from(start.elapsed().as_millis()).unwrap_or(u64::MAX),
+            Ordering::Relaxed,
+        );
     };
     let max_out = cfg.max_output_bytes;
     let max_in = cfg.max_input_frame_bytes;
@@ -614,11 +648,11 @@ async fn handle_conn_limited(
                     if ws_sink.send(Message::Binary(data.into())).await.is_err() {
                         break;
                     }
-                },
+                }
                 PtyEvent::Exit { code } => {
                     debug!("shell exited: {code:?}");
                     break;
-                },
+                }
             }
         }
         let _ = ws_sink.close().await;
@@ -636,7 +670,7 @@ async fn handle_conn_limited(
                     break;
                 }
                 ttl - idle
-            },
+            }
             None => Duration::from_secs(60 * 60 * 24 * 365),
         };
         let msg = tokio::select! {
@@ -652,7 +686,7 @@ async fn handle_conn_limited(
             Some(Err(e)) => {
                 debug!("ws recv error: {e}");
                 break;
-            },
+            }
             None => break,
         };
 
@@ -661,42 +695,46 @@ async fn handle_conn_limited(
         match msg {
             Message::Binary(bytes) if oversize(bytes.len()) => {
                 warn!("dropped oversize binary frame ({} bytes)", bytes.len());
-            },
+            }
             Message::Text(text) if oversize(text.len()) => {
                 warn!("dropped oversize text frame ({} bytes)", text.len());
-            },
+            }
             Message::Binary(bytes) => {
                 if session.write(bytes.to_vec()).await.is_err() {
                     break;
                 }
-            },
+            }
             Message::Text(text) => match serde_json::from_str::<ControlMsg>(&text) {
                 Ok(ControlMsg::Resize { cols, rows }) => {
                     // Applied right away so the shell sees the new size during the session.
                     if let Err(e) = session.resize(cols, rows) {
                         debug!("{e:#}");
                     }
-                },
+                }
                 Ok(ControlMsg::Data { bytes }) if oversize(bytes.len()) => {
                     warn!("dropped oversize data message ({} bytes)", bytes.len());
-                },
+                }
                 Ok(ControlMsg::Data { bytes }) => {
                     if session.write(bytes.to_vec()).await.is_err() {
                         break;
                     }
-                },
+                }
                 Err(e) => {
                     debug!("unrecognised control msg: {e}");
-                },
+                }
             },
             Message::Close(_) => break,
             // Ping/Pong are handled by tungstenite automatically.
-            _ => {},
+            _ => {}
         }
     }
 
     session.close().await;
-    if !forward_done && tokio::time::timeout(TEARDOWN_TIMEOUT, &mut forward_task).await.is_err() {
+    if !forward_done
+        && tokio::time::timeout(TEARDOWN_TIMEOUT, &mut forward_task)
+            .await
+            .is_err()
+    {
         warn!("session teardown timed out: a process still holds the pty open");
         forward_task.abort();
     }
@@ -761,7 +799,10 @@ pub fn start_watchdog_loop() -> Option<tokio::task::JoinHandle<()>> {
 
         // Pet the watchdog at half the timeout interval
         let interval = std::time::Duration::from_micros(watchdog_usec / 2);
-        info!("systemd watchdog enabled, petting every {}ms", interval.as_millis());
+        info!(
+            "systemd watchdog enabled, petting every {}ms",
+            interval.as_millis()
+        );
 
         Some(tokio::spawn(async move {
             let mut ticker = tokio::time::interval(interval);
@@ -798,7 +839,9 @@ mod tests {
     static NOTIFY_ENV: Mutex<()> = Mutex::new(());
 
     fn lock_notify_env() -> MutexGuard<'static, ()> {
-        NOTIFY_ENV.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        NOTIFY_ENV
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     #[cfg(target_os = "windows")]
@@ -812,7 +855,9 @@ mod tests {
     #[cfg(target_os = "windows")]
     #[test]
     fn which_shell_rejects_missing_program() {
-        assert!(!which_shell("aphrody-terminal-backend-no-such-shell-8f3c1d"));
+        assert!(!which_shell(
+            "aphrody-terminal-backend-no-such-shell-8f3c1d"
+        ));
     }
 
     #[cfg(target_os = "windows")]
@@ -821,7 +866,10 @@ mod tests {
         let shell = default_shell();
         let expected = if which_shell("pwsh") { "pwsh" } else { "cmd" };
         assert_eq!(shell, expected);
-        assert!(which::which(&shell).is_ok(), "default shell {shell} must be on PATH");
+        assert!(
+            which::which(&shell).is_ok(),
+            "default shell {shell} must be on PATH"
+        );
     }
 
     #[test]
@@ -875,19 +923,28 @@ mod tests {
 
     /// A shell present on every CI image that loads no user profile.
     fn test_shell() -> String {
-        if cfg!(target_os = "windows") { "cmd".to_owned() } else { "/bin/sh".to_owned() }
+        if cfg!(target_os = "windows") {
+            "cmd".to_owned()
+        } else {
+            "/bin/sh".to_owned()
+        }
     }
 
     /// Accepts one connection on a loopback port and runs `handle_conn` on it.
     async fn start_session() -> (Client, tokio::task::JoinHandle<Result<()>>) {
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("local addr");
-        let cfg = PtyConfig { shell: Some(test_shell()), ..PtyConfig::default() };
+        let cfg = PtyConfig {
+            shell: Some(test_shell()),
+            ..PtyConfig::default()
+        };
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.expect("accept");
             handle_conn(stream, cfg).await
         });
-        let (client, _) = connect_async(format!("ws://{addr}")).await.expect("connect");
+        let (client, _) = connect_async(format!("ws://{addr}"))
+            .await
+            .expect("connect");
         (client, server)
     }
 
@@ -909,7 +966,7 @@ mod tests {
                             break;
                         }
                     }
-                },
+                }
                 // OSC: up to BEL or ST (`ESC \`).
                 Some(']') => {
                     while let Some(c) = chars.next() {
@@ -921,8 +978,8 @@ mod tests {
                             break;
                         }
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         out
@@ -939,7 +996,7 @@ mod tests {
             }
             match tokio::time::timeout_at(deadline, client.next()).await {
                 Ok(Some(Ok(Message::Binary(bytes)))) => raw.extend_from_slice(&bytes),
-                Ok(Some(Ok(_))) => {},
+                Ok(Some(Ok(_))) => {}
                 Ok(Some(Err(e))) => panic!("websocket error: {e}; output so far: {text:?}"),
                 Ok(None) => panic!("session closed early; output so far: {text:?}"),
                 Err(_) => panic!("timed out; output so far: {text:?}"),
@@ -965,13 +1022,17 @@ mod tests {
         let joined = tokio::time::timeout(SESSION_TIMEOUT, server)
             .await
             .expect("handle_conn did not return: the session was not torn down");
-        joined.expect("handle_conn panicked").expect("handle_conn failed");
+        joined
+            .expect("handle_conn panicked")
+            .expect("handle_conn failed");
     }
 
     /// Every decimal number after the last occurrence of `marker` in `text`, in order.
     #[cfg(target_os = "windows")]
     fn numbers_after(text: &str, marker: &str) -> Vec<u32> {
-        let Some(pos) = text.rfind(marker) else { return Vec::new() };
+        let Some(pos) = text.rfind(marker) else {
+            return Vec::new();
+        };
         text[pos + marker.len()..]
             .split(|c: char| !c.is_ascii_digit())
             .filter_map(|n| n.parse().ok())
@@ -983,16 +1044,24 @@ mod tests {
         let _guard = SESSION_TEST_LOCK.lock().await;
         let (mut client, server) = start_session().await;
         let resize = r#"{"type":"resize","cols":137,"rows":43}"#;
-        client.send(Message::Text(resize.into())).await.expect("send resize");
+        client
+            .send(Message::Text(resize.into()))
+            .await
+            .expect("send resize");
 
         // Ask the shell for the terminal size it sees now, while the session is live.
         #[cfg(target_os = "windows")]
         {
             // `mode con` prints the line count, then the column count; the labels are localized,
             // so match on the numbers that follow the command echo.
-            client.send(Message::Binary(b"mode con\r".to_vec())).await.expect("send command");
-            read_until(&mut client, |out| numbers_after(out, "mode con").starts_with(&[43, 137]))
-                .await;
+            client
+                .send(Message::Binary(b"mode con\r".to_vec()))
+                .await
+                .expect("send command");
+            read_until(&mut client, |out| {
+                numbers_after(out, "mode con").starts_with(&[43, 137])
+            })
+            .await;
         }
         #[cfg(not(target_os = "windows"))]
         {
@@ -1027,7 +1096,10 @@ mod tests {
 
         // Sent as a JSON `data` control message to cover that path as well.
         let exit = serde_json::json!({ "type": "data", "bytes": b"exit\r" }).to_string();
-        client.send(Message::Text(exit.into())).await.expect("send exit");
+        client
+            .send(Message::Text(exit.into()))
+            .await
+            .expect("send exit");
 
         read_until_closed(&mut client).await;
         assert_session_ended(server).await;
@@ -1055,15 +1127,24 @@ mod tests {
 
         // Foreign / untrusted browser origins MUST be rejected
         assert!(!is_origin_allowed("http://evil.com", Some(bound)));
-        assert!(!is_origin_allowed("https://attacker.site:8788", Some(bound)));
+        assert!(!is_origin_allowed(
+            "https://attacker.site:8788",
+            Some(bound)
+        ));
         assert!(!is_origin_allowed("http://localhost.evil.com", Some(bound)));
         assert!(!is_origin_allowed("javascript:alert(1)", Some(bound)));
         assert!(!is_origin_allowed("invalid-url", Some(bound)));
 
         // Bound host matching
         let lan_bound: SocketAddr = "192.168.1.50:8788".parse().unwrap();
-        assert!(is_origin_allowed("http://192.168.1.50:8788", Some(lan_bound)));
-        assert!(!is_origin_allowed("http://192.168.1.99:8788", Some(lan_bound)));
+        assert!(is_origin_allowed(
+            "http://192.168.1.50:8788",
+            Some(lan_bound)
+        ));
+        assert!(!is_origin_allowed(
+            "http://192.168.1.99:8788",
+            Some(lan_bound)
+        ));
     }
 
     #[test]
@@ -1113,7 +1194,10 @@ mod tests {
     #[allow(clippy::await_holding_lock)] // the guard serializes process-wide env access across the await
     async fn serve_rejects_non_loopback_without_auth() {
         let addr: SocketAddr = "0.0.0.0:8788".parse().unwrap();
-        let cfg = PtyConfig { auth_token: None, ..PtyConfig::default() };
+        let cfg = PtyConfig {
+            auth_token: None,
+            ..PtyConfig::default()
+        };
         // Unset env var if set
         let _env = lock_notify_env();
         unsafe {
@@ -1183,9 +1267,14 @@ mod tests {
             let (stream, _) = listener3.accept().await.expect("accept");
             handle_conn(stream, cfg3).await
         });
-        let mut req = format!("ws://{addr3}").into_client_request().expect("request");
-        req.headers_mut().insert("Authorization", format!("Bearer {token}").parse().unwrap());
-        let (mut client3, _) = connect_async(req).await.expect("connect with Bearer header");
+        let mut req = format!("ws://{addr3}")
+            .into_client_request()
+            .expect("request");
+        req.headers_mut()
+            .insert("Authorization", format!("Bearer {token}").parse().unwrap());
+        let (mut client3, _) = connect_async(req)
+            .await
+            .expect("connect with Bearer header");
         client3.close(None).await.expect("close");
         drop(client3);
         let _ = server3.await;
@@ -1197,7 +1286,10 @@ mod tests {
 
         let listener = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr = listener.local_addr().expect("local addr");
-        let cfg = PtyConfig { shell: Some(test_shell()), ..PtyConfig::default() };
+        let cfg = PtyConfig {
+            shell: Some(test_shell()),
+            ..PtyConfig::default()
+        };
 
         let server = tokio::spawn(async move {
             let (stream, _) = listener.accept().await.expect("accept");
@@ -1205,8 +1297,11 @@ mod tests {
         });
 
         // Connect with forbidden origin
-        let mut req = format!("ws://{addr}").into_client_request().expect("request");
-        req.headers_mut().insert("Origin", "http://evil.com".parse().unwrap());
+        let mut req = format!("ws://{addr}")
+            .into_client_request()
+            .expect("request");
+        req.headers_mut()
+            .insert("Origin", "http://evil.com".parse().unwrap());
         let res = connect_async(req).await;
         assert!(res.is_err(), "evil.com Origin must be rejected");
 
@@ -1215,15 +1310,22 @@ mod tests {
         // Connect with allowed origin
         let listener2 = TcpListener::bind("127.0.0.1:0").await.expect("bind");
         let addr2 = listener2.local_addr().expect("local addr");
-        let cfg2 = PtyConfig { shell: Some(test_shell()), ..PtyConfig::default() };
+        let cfg2 = PtyConfig {
+            shell: Some(test_shell()),
+            ..PtyConfig::default()
+        };
         let server2 = tokio::spawn(async move {
             let (stream, _) = listener2.accept().await.expect("accept");
             handle_conn(stream, cfg2).await
         });
-        let mut req2 = format!("ws://{addr2}").into_client_request().expect("request");
-        req2.headers_mut().insert("Origin", "http://localhost:8788".parse().unwrap());
-        let (mut client2, _) =
-            connect_async(req2).await.expect("localhost Origin must be accepted");
+        let mut req2 = format!("ws://{addr2}")
+            .into_client_request()
+            .expect("request");
+        req2.headers_mut()
+            .insert("Origin", "http://localhost:8788".parse().unwrap());
+        let (mut client2, _) = connect_async(req2)
+            .await
+            .expect("localhost Origin must be accepted");
         client2.close(None).await.expect("close");
         let _ = server2.await;
     }

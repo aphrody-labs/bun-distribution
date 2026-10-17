@@ -7,10 +7,10 @@ use bevy_ecs::{
     system::lifetimeless::Read,
 };
 use bevy_math::{Vec2, Vec4};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
-    extract_component::ExtractComponent, render_resource::ShaderType,
-    sync_component::SyncComponent, RenderApp,
+    RenderApp, extract_component::ExtractComponent, render_resource::ShaderType,
+    sync_component::SyncComponent,
 };
 
 /// Adds a gradual shading effect to the edges of the screen, drawing focus

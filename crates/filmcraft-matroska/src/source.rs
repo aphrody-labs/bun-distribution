@@ -114,7 +114,10 @@ impl<R: Read + Seek> ReadSeekSource<R> {
     /// Wrap a reader; seeks to the end once to learn the length.
     pub fn new(mut r: R) -> io::Result<Self> {
         let len = r.seek(SeekFrom::End(0))?;
-        Ok(Self { inner: RefCell::new((r, len)), len })
+        Ok(Self {
+            inner: RefCell::new((r, len)),
+            len,
+        })
     }
     /// Unwrap the reader.
     pub fn into_inner(self) -> R {
@@ -127,7 +130,10 @@ impl<R: Read + Seek> ByteSource for ReadSeekSource<R> {
         self.len
     }
     fn read_at(&self, offset: u64, buf: &mut [u8]) -> io::Result<()> {
-        if offset.checked_add(buf.len() as u64).is_none_or(|e| e > self.len) {
+        if offset
+            .checked_add(buf.len() as u64)
+            .is_none_or(|e| e > self.len)
+        {
             return Err(eof());
         }
         let mut g = self.inner.borrow_mut();

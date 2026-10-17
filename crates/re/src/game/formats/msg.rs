@@ -23,7 +23,10 @@ pub struct MsgFile {
 impl MsgFile {
     pub fn parse(buffer: &[u8]) -> Result<Self> {
         if buffer.len() < 16 {
-            return Err(ReError::BufferTooSmall { required: 16, available: buffer.len() });
+            return Err(ReError::BufferTooSmall {
+                required: 16,
+                available: buffer.len(),
+            });
         }
 
         if &buffer[0..4] != MSG_MAGIC {
@@ -48,7 +51,9 @@ impl MsgFile {
                 end += 1;
             }
 
-            let text = String::from_utf8_lossy(&buffer[offset..end]).trim().to_string();
+            let text = String::from_utf8_lossy(&buffer[offset..end])
+                .trim()
+                .to_string();
             if !text.is_empty() {
                 entries.push(MsgEntry {
                     id: i as u32,

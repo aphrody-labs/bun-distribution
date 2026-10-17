@@ -33,9 +33,12 @@ fn to_iecode(siblings: &[CfgEntry]) -> Vec<serde_json::Value> {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
     let path = vfs
         .iter()
         .map(|(p, _)| p.to_string())
@@ -57,8 +60,10 @@ fn main() {
     assert!(!descs.is_empty());
 
     // Aucune description ne doit contenir de balise résiduelle `<...>` ni de furigana `[../..]`.
-    let with_tag =
-        descs.iter().filter(|d| d.description.contains('<') && d.description.contains('>')).count();
+    let with_tag = descs
+        .iter()
+        .filter(|d| d.description.contains('<') && d.description.contains('>'))
+        .count();
     eprintln!("descriptions avec balise `<>` résiduelle = {with_tag} (attendu 0)");
     assert_eq!(with_tag, 0, "sanitize_text doit retirer toutes les balises");
 
@@ -79,7 +84,10 @@ fn main() {
         endou.starts_with("La passion du football l'emportera toujours."),
         "texte Endou inattendu : {snippet:?}"
     );
-    assert!(endou.contains('\n'), "la description d'Endou a 2 lignes (LF préservé)");
+    assert!(
+        endou.contains('\n'),
+        "la description d'Endou a 2 lignes (LF préservé)"
+    );
 
     // Cross-check : le résolveur GÉNÉRIQUE `text::parse_text_file` doit résoudre le même texte
     // (chara_description_text est un fichier TEXT_INFO → index 2).
@@ -87,7 +95,10 @@ fn main() {
     let g_endou =
         aphrody_nie_data::text::find_text(&generic, aphrody_nie_data::hash::HashId(0xFA43_BBBE))
             .expect("résolveur générique trouve Endou");
-    assert_eq!(g_endou, endou, "parse_text_file == parse_chara_descriptions sur Endou");
+    assert_eq!(
+        g_endou, endou,
+        "parse_text_file == parse_chara_descriptions sur Endou"
+    );
     eprintln!(
         "✓ cross-check : text::parse_text_file résout {} entrées (générique == spécifique)",
         generic.len()

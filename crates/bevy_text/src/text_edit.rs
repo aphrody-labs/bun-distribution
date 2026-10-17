@@ -7,8 +7,8 @@ use parley::{PlainEditorDriver, StyleProperty};
 use smol_str::SmolStr;
 use swash::FontRef;
 
-use crate::scroll::{TextLineYBounds, TextViewport};
 use crate::TextBrush;
+use crate::scroll::{TextLineYBounds, TextViewport};
 
 /// A selection within IME preedit text, expressed as byte offsets from the start of the preedit.
 ///

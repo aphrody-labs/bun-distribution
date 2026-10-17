@@ -21,49 +21,60 @@ use crate::generate::generate_image::providers::kinovi::seedream_5p0_pro::draft:
 /// CDN before sending the request.
 #[derive(Clone, Debug)]
 pub enum ImageGenerationDraftRequest {
-  KinoviMidjourney7(KinoviMidjourney7DraftState),
-  KinoviMidjourney7Niji(KinoviMidjourney7NijiDraftState),
-  KinoviMidjourney8(KinoviMidjourney8DraftState),
-  KinoviSeedream5p0Pro(KinoviSeedream5p0ProDraftState),
+    KinoviMidjourney7(KinoviMidjourney7DraftState),
+    KinoviMidjourney7Niji(KinoviMidjourney7NijiDraftState),
+    KinoviMidjourney8(KinoviMidjourney8DraftState),
+    KinoviSeedream5p0Pro(KinoviSeedream5p0ProDraftState),
 }
 
 impl ImageGenerationDraftRequest {
-  pub fn get_provider(&self) -> RouterProvider {
-    match self {
-      Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
-      Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
-      Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
-      Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
+    pub fn get_provider(&self) -> RouterProvider {
+        match self {
+            Self::KinoviMidjourney7(_) => RouterProvider::KinoviWeb,
+            Self::KinoviMidjourney7Niji(_) => RouterProvider::KinoviWeb,
+            Self::KinoviMidjourney8(_) => RouterProvider::KinoviWeb,
+            Self::KinoviSeedream5p0Pro(_) => RouterProvider::KinoviWeb,
+        }
     }
-  }
 
-  pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
-    match self {
-      Self::KinoviMidjourney7(draft) => Ok(KinoviMidjourney7CostState::from_draft(draft).estimate_cost()),
-      Self::KinoviMidjourney7Niji(draft) => Ok(KinoviMidjourney7NijiCostState::from_draft(draft).estimate_cost()),
-      Self::KinoviMidjourney8(draft) => Ok(KinoviMidjourney8CostState::from_draft(draft).estimate_cost()),
-      Self::KinoviSeedream5p0Pro(draft) => Ok(KinoviSeedream5p0ProCostState::from_draft(draft).estimate_cost()),
+    pub fn estimate_cost(&self) -> Result<ImageGenerationCostEstimate, ArtcraftRouterError> {
+        match self {
+            Self::KinoviMidjourney7(draft) => {
+                Ok(KinoviMidjourney7CostState::from_draft(draft).estimate_cost())
+            }
+            Self::KinoviMidjourney7Niji(draft) => {
+                Ok(KinoviMidjourney7NijiCostState::from_draft(draft).estimate_cost())
+            }
+            Self::KinoviMidjourney8(draft) => {
+                Ok(KinoviMidjourney8CostState::from_draft(draft).estimate_cost())
+            }
+            Self::KinoviSeedream5p0Pro(draft) => {
+                Ok(KinoviSeedream5p0ProCostState::from_draft(draft).estimate_cost())
+            }
+        }
     }
-  }
 
-  pub async fn finalize(self, draft_context: ImageGenerationDraftContext<'_>) -> Result<ImageGenerationRequest, ArtcraftRouterError> {
-    match self {
-      Self::KinoviMidjourney7(mut draft) => {
-        let result = draft.to_request(&draft_context).await?;
-        Ok(ImageGenerationRequest::KinoviMidjourney7(result))
-      }
-      Self::KinoviMidjourney7Niji(mut draft) => {
-        let result = draft.to_request(&draft_context).await?;
-        Ok(ImageGenerationRequest::KinoviMidjourney7Niji(result))
-      }
-      Self::KinoviMidjourney8(mut draft) => {
-        let result = draft.to_request(&draft_context).await?;
-        Ok(ImageGenerationRequest::KinoviMidjourney8(result))
-      }
-      Self::KinoviSeedream5p0Pro(mut draft) => {
-        let result = draft.to_request(&draft_context).await?;
-        Ok(ImageGenerationRequest::KinoviSeedream5p0Pro(result))
-      }
+    pub async fn finalize(
+        self,
+        draft_context: ImageGenerationDraftContext<'_>,
+    ) -> Result<ImageGenerationRequest, ArtcraftRouterError> {
+        match self {
+            Self::KinoviMidjourney7(mut draft) => {
+                let result = draft.to_request(&draft_context).await?;
+                Ok(ImageGenerationRequest::KinoviMidjourney7(result))
+            }
+            Self::KinoviMidjourney7Niji(mut draft) => {
+                let result = draft.to_request(&draft_context).await?;
+                Ok(ImageGenerationRequest::KinoviMidjourney7Niji(result))
+            }
+            Self::KinoviMidjourney8(mut draft) => {
+                let result = draft.to_request(&draft_context).await?;
+                Ok(ImageGenerationRequest::KinoviMidjourney8(result))
+            }
+            Self::KinoviSeedream5p0Pro(mut draft) => {
+                let result = draft.to_request(&draft_context).await?;
+                Ok(ImageGenerationRequest::KinoviSeedream5p0Pro(result))
+            }
+        }
     }
-  }
 }

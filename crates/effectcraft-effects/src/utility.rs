@@ -12,8 +12,21 @@ use rayon::prelude::*;
 use crate::util::{premul, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Utility", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Utility",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn grow_bounds(ctx: &EffectCtx, mut b: Buf) -> Buf {
@@ -138,7 +151,14 @@ fn cineon(ctx: &EffectCtx, mut b: Buf) -> Buf {
         gamma: ctx.params.f("gamma") as f32,
         rolloff: ctx.params.f("highlightRolloff") as f32,
     };
-    let std = Cineon { black: 95.0, white: 685.0, ib: 0.0, iw: 1.0, gamma: 1.7, rolloff: c.rolloff };
+    let std = Cineon {
+        black: 95.0,
+        white: 685.0,
+        ib: 0.0,
+        iw: 1.0,
+        gamma: 1.7,
+        rolloff: c.rolloff,
+    };
     let kind = ctx.params.e("conversionType");
     b.img.map_straight(|v| {
         v.map(|x| match kind {
@@ -164,7 +184,14 @@ pub struct Lut {
 
 /// Parse `.cube` text (TITLE, LUT_1D_SIZE, LUT_3D_SIZE, DOMAIN_MIN/MAX, data red-fastest).
 pub fn parse_cube(text: &str) -> Option<Lut> {
-    let mut lut = Lut { n1: 0, d1: vec![], n3: 0, d3: vec![], dmin: [0.0; 3], dmax: [1.0; 3] };
+    let mut lut = Lut {
+        n1: 0,
+        d1: vec![],
+        n3: 0,
+        d3: vec![],
+        dmin: [0.0; 3],
+        dmax: [1.0; 3],
+    };
     let mut rows: Vec<[f32; 3]> = Vec::new();
     let three = |it: &mut std::str::SplitWhitespace| -> Option<[f32; 3]> {
         let a = it.next()?.parse().ok()?;
@@ -210,7 +237,12 @@ pub fn parse_cube(text: &str) -> Option<Lut> {
     }
     let need1 = lut.n1;
     let need3 = lut.n3 * lut.n3 * lut.n3;
-    if (lut.n1 == 0 && lut.n3 == 0) || lut.n1 == 1 || lut.n3 == 1 || rows.len() != need1 + need3 || lut.n3 > 256 {
+    if (lut.n1 == 0 && lut.n3 == 0)
+        || lut.n1 == 1
+        || lut.n3 == 1
+        || rows.len() != need1 + need3
+        || lut.n3 > 256
+    {
         return None;
     }
     lut.d1 = rows[..need1].to_vec();
@@ -220,7 +252,9 @@ pub fn parse_cube(text: &str) -> Option<Lut> {
 
 impl Lut {
     fn norm(&self, c: [f32; 3]) -> [f32; 3] {
-        [0, 1, 2].map(|i| ((c[i] - self.dmin[i]) / (self.dmax[i] - self.dmin[i]).max(1e-9)).clamp(0.0, 1.0))
+        [0, 1, 2].map(|i| {
+            ((c[i] - self.dmin[i]) / (self.dmax[i] - self.dmin[i]).max(1e-9)).clamp(0.0, 1.0)
+        })
     }
     pub fn apply(&self, c: [f32; 3]) -> [f32; 3] {
         let mut c = c;
@@ -281,8 +315,15 @@ impl Lut {
         let (r, fr) = idx(t[0]);
         let (g, fg) = idx(t[1]);
         let (b, fb) = idx(t[2]);
-        let at = |dr: usize, dg: usize, db: usize| self.d3[(r + dr) + (g + dg) * n + (b + db) * n * n];
-        let l = |a: [f32; 3], b: [f32; 3], f: f32| [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+        let at =
+            |dr: usize, dg: usize, db: usize| self.d3[(r + dr) + (g + dg) * n + (b + db) * n * n];
+        let l = |a: [f32; 3], b: [f32; 3], f: f32| {
+            [
+                a[0] + (b[0] - a[0]) * f,
+                a[1] + (b[1] - a[1]) * f,
+                a[2] + (b[2] - a[2]) * f,
+            ]
+        };
         let c00 = l(at(0, 0, 0), at(1, 0, 0), fr);
         let c10 = l(at(0, 1, 0), at(1, 1, 0), fr);
         let c01 = l(at(0, 0, 1), at(1, 0, 1), fr);
@@ -300,7 +341,8 @@ impl Lut {
         let (r, fr) = idx(t[0]);
         let (g, fg) = idx(t[1]);
         let (b, fb) = idx(t[2]);
-        let at = |dr: usize, dg: usize, db: usize| self.d3[(r + dr) + (g + dg) * n + (b + db) * n * n];
+        let at =
+            |dr: usize, dg: usize, db: usize| self.d3[(r + dr) + (g + dg) * n + (b + db) * n * n];
         let c000 = at(0, 0, 0);
         let c111 = at(1, 1, 1);
         let (w1, w2, w3, p1, p2) = if fr > fg {
@@ -319,7 +361,9 @@ impl Lut {
             (fg, fr, fb, at(0, 1, 0), at(1, 1, 0))
         };
         // c = c000 + w1 (p1 - c000) + w2 (p2 - p1) + w3 (c111 - p2), w1 ≥ w2 ≥ w3.
-        [0, 1, 2].map(|i| c000[i] + w1 * (p1[i] - c000[i]) + w2 * (p2[i] - p1[i]) + w3 * (c111[i] - p2[i]))
+        [0, 1, 2].map(|i| {
+            c000[i] + w1 * (p1[i] - c000[i]) + w2 * (p2[i] - p1[i]) + w3 * (c111[i] - p2[i])
+        })
     }
 }
 
@@ -338,7 +382,14 @@ pub fn load_lut(src: &str) -> Option<Arc<Lut>> {
         return v.clone();
     }
     let inline = src.contains('\n') || src.contains("LUT_");
-    let parsed = if inline { parse_cube(src) } else { std::fs::read_to_string(src.trim()).ok().and_then(|t| parse_cube(&t)) }.map(Arc::new);
+    let parsed = if inline {
+        parse_cube(src)
+    } else {
+        std::fs::read_to_string(src.trim())
+            .ok()
+            .and_then(|t| parse_cube(&t))
+    }
+    .map(Arc::new);
     if let Ok(mut m) = cache.lock() {
         m.insert(src.to_string(), parsed.clone());
     }
@@ -355,39 +406,104 @@ fn apply_lut(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 pub fn specs() -> Vec<EffectSpec> {
     vec![
-        spec("ec.utility.growbounds", "Grow Bounds", vec![p("pixels", "Pixels", num(0.0), slider(0.0, 4000.0, 0.0, 500.0, 0))], grow_bounds),
+        spec(
+            "ec.utility.growbounds",
+            "Grow Bounds",
+            vec![p(
+                "pixels",
+                "Pixels",
+                num(0.0),
+                slider(0.0, 4000.0, 0.0, 500.0, 0),
+            )],
+            grow_bounds,
+        ),
         spec(
             "ec.utility.ccoverbrights",
             "CC Overbrights",
             vec![
-                p("channel", "Channel", Value::Enum(0), popup(&["Max RGB", "Red", "Green", "Blue", "Alpha", "Luminance"])),
-                p("highlightColor", "Highlight Color", col(1.0, 0.0, 0.0), ParamUi::Color),
+                p(
+                    "channel",
+                    "Channel",
+                    Value::Enum(0),
+                    popup(&["Max RGB", "Red", "Green", "Blue", "Alpha", "Luminance"]),
+                ),
+                p(
+                    "highlightColor",
+                    "Highlight Color",
+                    col(1.0, 0.0, 0.0),
+                    ParamUi::Color,
+                ),
             ],
             overbrights,
         ),
         spec(
             "ec.utility.hdrcompression",
             "HDR Highlight Compression",
-            vec![p("amount", "Amount", num(100.0), slider(0.0, 100.0, 0.0, 100.0, 1))],
+            vec![p(
+                "amount",
+                "Amount",
+                num(100.0),
+                slider(0.0, 100.0, 0.0, 100.0, 1),
+            )],
             hdr_compression,
         ),
         spec(
             "ec.utility.cineon",
             "Cineon Converter",
             vec![
-                p("conversionType", "Conversion Type", Value::Enum(1), popup(&["Linear to Log", "Log to Linear", "Log to Log"])),
-                p("tenBitBlackPoint", "10 Bit Black Point", num(95.0), slider(0.0, 1023.0, 0.0, 1023.0, 0)),
-                p("internalBlackPoint", "Internal Black Point", num(0.0), slider(-1.0, 2.0, 0.0, 1.0, 3)),
-                p("tenBitWhitePoint", "10 Bit White Point", num(685.0), slider(0.0, 1023.0, 0.0, 1023.0, 0)),
-                p("internalWhitePoint", "Internal White Point", num(1.0), slider(-1.0, 2.0, 0.0, 1.0, 3)),
+                p(
+                    "conversionType",
+                    "Conversion Type",
+                    Value::Enum(1),
+                    popup(&["Linear to Log", "Log to Linear", "Log to Log"]),
+                ),
+                p(
+                    "tenBitBlackPoint",
+                    "10 Bit Black Point",
+                    num(95.0),
+                    slider(0.0, 1023.0, 0.0, 1023.0, 0),
+                ),
+                p(
+                    "internalBlackPoint",
+                    "Internal Black Point",
+                    num(0.0),
+                    slider(-1.0, 2.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "tenBitWhitePoint",
+                    "10 Bit White Point",
+                    num(685.0),
+                    slider(0.0, 1023.0, 0.0, 1023.0, 0),
+                ),
+                p(
+                    "internalWhitePoint",
+                    "Internal White Point",
+                    num(1.0),
+                    slider(-1.0, 2.0, 0.0, 1.0, 3),
+                ),
                 p("gamma", "Gamma", num(1.7), slider(0.1, 5.0, 0.1, 5.0, 2)),
-                p("highlightRolloff", "Highlight Rolloff", num(20.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
+                p(
+                    "highlightRolloff",
+                    "Highlight Rolloff",
+                    num(20.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 0),
+                ),
             ],
             cineon,
         ),
         // `lut`: a path to a `.cube` file (Effect Controls' Choose…, asked for when the effect is
         // applied, as in After Effects), or the `.cube` text itself (commands/automation).
-        spec("ec.utility.applylut", "Apply Color LUT", vec![p("lut", "LUT", Value::Str(String::new()), crate::file_ui(&["cube"]))], apply_lut),
+        spec(
+            "ec.utility.applylut",
+            "Apply Color LUT",
+            vec![p(
+                "lut",
+                "LUT",
+                Value::Str(String::new()),
+                crate::file_ui(&["cube"]),
+            )],
+            apply_lut,
+        ),
     ]
 }
 
@@ -411,13 +527,33 @@ mod tests {
 
     fn run(id: &str, vals: &[(&str, Value)], img: Image) -> Buf {
         let s = crate::find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in vals {
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx =
-            EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: false, env: Default::default() };
-        crate::apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn test_img() -> Image {
@@ -425,7 +561,14 @@ mod tests {
         for y in 0..8 {
             for x in 0..8 {
                 let a = 0.5 + (x as f32) / 16.0;
-                img.set(x, y, premul([x as f32 / 7.0, y as f32 / 7.0, ((x + y) % 5) as f32 / 4.0], a));
+                img.set(
+                    x,
+                    y,
+                    premul(
+                        [x as f32 / 7.0, y as f32 / 7.0, ((x + y) % 5) as f32 / 4.0],
+                        a,
+                    ),
+                );
             }
         }
         img
@@ -435,14 +578,24 @@ mod tests {
     fn identity_lut_is_identity() {
         for n in [2, 17] {
             let lut = parse_cube(&identity_cube(n)).unwrap();
-            for c in [[0.1, 0.5, 0.9], [0.33, 0.77, 0.0], [1.0, 1.0, 1.0], [0.0, 0.0, 0.0], [0.42, 0.42, 0.9]] {
+            for c in [
+                [0.1, 0.5, 0.9],
+                [0.33, 0.77, 0.0],
+                [1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0],
+                [0.42, 0.42, 0.9],
+            ] {
                 let o = lut.apply(c);
                 for i in 0..3 {
                     assert!((o[i] - c[i]).abs() < 1e-5, "n={n} {c:?} -> {o:?}");
                 }
             }
             let img = test_img();
-            let out = run("ec.utility.applylut", &[("lut", Value::Str(identity_cube(n)))], img.clone());
+            let out = run(
+                "ec.utility.applylut",
+                &[("lut", Value::Str(identity_cube(n)))],
+                img.clone(),
+            );
             for (a, b) in out.img.data.iter().zip(img.data.iter()) {
                 for c in 0..4 {
                     assert!((a[c] - b[c]).abs() < 1e-5);
@@ -463,7 +616,10 @@ mod tests {
         }
         let lut = parse_cube(&s).unwrap();
         let o = lut.apply([0.2, 0.5, 0.8]);
-        assert!((o[0] - 0.8).abs() < 1e-5 && (o[1] - 0.5).abs() < 1e-5 && (o[2] - 0.2).abs() < 1e-5, "{o:?}");
+        assert!(
+            (o[0] - 0.8).abs() < 1e-5 && (o[1] - 0.5).abs() < 1e-5 && (o[2] - 0.2).abs() < 1e-5,
+            "{o:?}"
+        );
     }
 
     #[test]
@@ -471,22 +627,41 @@ mod tests {
         assert!(parse_cube("LUT_3D_SIZE 2\n0 0 0\n1 1 1\n").is_none());
         assert!(parse_cube("LUT_3D_SIZE 2\n0 0 zz\n").is_none());
         let img = test_img();
-        let out = run("ec.utility.applylut", &[("lut", Value::Str("LUT_3D_SIZE 3\n0 0 0\n".into()))], img.clone());
+        let out = run(
+            "ec.utility.applylut",
+            &[("lut", Value::Str("LUT_3D_SIZE 3\n0 0 0\n".into()))],
+            img.clone(),
+        );
         assert_eq!(out.img, img);
-        let out = run("ec.utility.applylut", &[("lut", Value::Str("/nonexistent/path.cube".into()))], img.clone());
+        let out = run(
+            "ec.utility.applylut",
+            &[("lut", Value::Str("/nonexistent/path.cube".into()))],
+            img.clone(),
+        );
         assert_eq!(out.img, img);
     }
 
     #[test]
     fn one_d_lut_with_domain() {
-        let lut = parse_cube("LUT_1D_SIZE 2\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 2 2 2\n1 1 1\n0 0 0\n").unwrap();
+        let lut = parse_cube("LUT_1D_SIZE 2\nDOMAIN_MIN 0 0 0\nDOMAIN_MAX 2 2 2\n1 1 1\n0 0 0\n")
+            .unwrap();
         let o = lut.apply([0.5, 1.0, 2.0]);
-        assert!((o[0] - 0.75).abs() < 1e-5 && (o[1] - 0.5).abs() < 1e-5 && o[2].abs() < 1e-5, "{o:?}");
+        assert!(
+            (o[0] - 0.75).abs() < 1e-5 && (o[1] - 0.5).abs() < 1e-5 && o[2].abs() < 1e-5,
+            "{o:?}"
+        );
     }
 
     #[test]
     fn cineon_round_trip() {
-        let c = Cineon { black: 95.0, white: 685.0, ib: 0.0, iw: 1.0, gamma: 1.7, rolloff: 20.0 };
+        let c = Cineon {
+            black: 95.0,
+            white: 685.0,
+            ib: 0.0,
+            iw: 1.0,
+            gamma: 1.7,
+            rolloff: 20.0,
+        };
         for code in [100.0f32, 200.0, 350.0, 500.0, 600.0] {
             let v = code / 1023.0;
             let back = c.lin_to_log(c.log_to_lin(v));
@@ -503,7 +678,10 @@ mod tests {
         let out = run("ec.utility.hdrcompression", &[], img);
         assert_eq!(out.img.data[0], [0.2, 0.3, 0.4, 1.0]);
         let o = out.img.data[1];
-        assert!(o[0] <= 1.0 && o[0] > 0.5 && (o[0] / o[1] - 2.0).abs() < 1e-4, "{o:?}");
+        assert!(
+            o[0] <= 1.0 && o[0] > 0.5 && (o[0] / o[1] - 2.0).abs() < 1e-4,
+            "{o:?}"
+        );
     }
 
     #[test]

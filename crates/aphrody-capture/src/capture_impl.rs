@@ -92,7 +92,9 @@ impl MemDc {
         // Safety: src is a valid screen DC provided by the caller.
         let hdc = unsafe { CreateCompatibleDC(Some(src)) };
         if hdc.is_invalid() {
-            return Err(CaptureError::Win32("CreateCompatibleDC returned NULL".to_owned()));
+            return Err(CaptureError::Win32(
+                "CreateCompatibleDC returned NULL".to_owned(),
+            ));
         }
         Ok(Self { hdc })
     }
@@ -125,7 +127,9 @@ impl CompatBitmap {
         // Safety: src_dc is a valid screen DC; w/h are caller-validated > 0.
         let hbm = unsafe { CreateCompatibleBitmap(src_dc, w, h) };
         if hbm.is_invalid() {
-            return Err(CaptureError::Win32("CreateCompatibleBitmap returned NULL".to_owned()));
+            return Err(CaptureError::Win32(
+                "CreateCompatibleBitmap returned NULL".to_owned(),
+            ));
         }
         Ok(Self { hbm })
     }
@@ -266,7 +270,9 @@ unsafe fn render_to_bgra(
         )
     };
     if rows == 0 {
-        return Err(CaptureError::Win32("GetDIBits returned 0 scan lines".to_owned()));
+        return Err(CaptureError::Win32(
+            "GetDIBits returned 0 scan lines".to_owned(),
+        ));
     }
 
     Ok(buf)
@@ -318,7 +324,13 @@ pub(crate) fn capture_virtual_screen_raw() -> Result<crate::RawFrame> {
     let dc = unsafe { ScreenDc::acquire(None)? };
     // Safety: dc.hdc is valid; w,h > 0.
     let bgra = unsafe { blit_region_to_bgra(&dc, x, y, w, h)? };
-    Ok(crate::RawFrame { origin_x: x, origin_y: y, width: w as u32, height: h as u32, bgra })
+    Ok(crate::RawFrame {
+        origin_x: x,
+        origin_y: y,
+        width: w as u32,
+        height: h as u32,
+        bgra,
+    })
 }
 
 pub(crate) fn capture_virtual_screen() -> Result<Vec<u8>> {
@@ -366,7 +378,9 @@ pub(crate) fn capture_window(handle: usize) -> Result<Vec<u8>> {
     let previous =
         unsafe { SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) };
     if previous.0.is_null() {
-        return Err(CaptureError::Win32("SetThreadDpiAwarenessContext failed".into()));
+        return Err(CaptureError::Win32(
+            "SetThreadDpiAwarenessContext failed".into(),
+        ));
     }
     let _dpi = DpiContext(previous);
     let mut rect = RECT::default();
@@ -374,7 +388,9 @@ pub(crate) fn capture_window(handle: usize) -> Result<Vec<u8>> {
     unsafe { GetWindowRect(hwnd, &mut rect) }.map_err(|e| CaptureError::Win32(e.to_string()))?;
     let (w, h) = (rect.right - rect.left, rect.bottom - rect.top);
     if w <= 0 || h <= 0 {
-        return Err(CaptureError::Win32(format!("invalid window dimensions {w}x{h}")));
+        return Err(CaptureError::Win32(format!(
+            "invalid window dimensions {w}x{h}"
+        )));
     }
     // Safety: display-compatible DC; no desktop pixels are copied.
     let dc = unsafe { ScreenDc::acquire(None)? };
@@ -479,7 +495,10 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> w
     title_buf.truncate(copied as usize);
     let title = String::from_utf16_lossy(&title_buf);
 
-    out.push(WindowInfo { title, handle: hwnd.0 as usize });
+    out.push(WindowInfo {
+        title,
+        handle: hwnd.0 as usize,
+    });
 
     true.into() // continue enumeration
 }
@@ -488,7 +507,10 @@ unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) -> w
 fn find_window_by_title_substr(substr: &str) -> Option<HWND> {
     // Re-use list_windows() for simplicity; avoids a second EnumWindows
     // callback implementation.
-    list_windows().into_iter().find(|w| w.title.contains(substr)).map(|w| HWND(w.handle as *mut _))
+    list_windows()
+        .into_iter()
+        .find(|w| w.title.contains(substr))
+        .map(|w| HWND(w.handle as *mut _))
 }
 
 // suppress unused import warning for GetDesktopWindow (available for future use)
@@ -542,7 +564,11 @@ pub(crate) fn move_window(handle: usize, x: i32, y: i32, width: i32, height: i32
             windows::Win32::UI::WindowsAndMessaging::SET_WINDOW_POS_FLAGS(0),
         )
     };
-    if ok.is_ok() { Ok(()) } else { Err(CaptureError::Win32("SetWindowPos failed".into())) }
+    if ok.is_ok() {
+        Ok(())
+    } else {
+        Err(CaptureError::Win32("SetWindowPos failed".into()))
+    }
 }
 
 pub(crate) fn set_window_text(handle: usize, text: &str) -> Result<()> {
@@ -553,7 +579,11 @@ pub(crate) fn set_window_text(handle: usize, text: &str) -> Result<()> {
             windows::core::PCWSTR(wide.as_ptr()),
         )
     };
-    if ok.is_ok() { Ok(()) } else { Err(CaptureError::Win32("SetWindowTextW failed".into())) }
+    if ok.is_ok() {
+        Ok(())
+    } else {
+        Err(CaptureError::Win32("SetWindowTextW failed".into()))
+    }
 }
 
 pub(crate) fn set_topmost(handle: usize, topmost: bool) -> Result<()> {
@@ -576,7 +606,11 @@ pub(crate) fn set_topmost(handle: usize, topmost: bool) -> Result<()> {
             flags,
         )
     };
-    if ok.is_ok() { Ok(()) } else { Err(CaptureError::Win32("SetWindowPos topmost failed".into())) }
+    if ok.is_ok() {
+        Ok(())
+    } else {
+        Err(CaptureError::Win32("SetWindowPos topmost failed".into()))
+    }
 }
 
 pub(crate) fn switch_to_window(handle: usize) -> Result<()> {
@@ -599,8 +633,9 @@ pub(crate) fn switch_to_window(handle: usize) -> Result<()> {
     // state of the current foreground thread for the duration of the request.
     let foreground = unsafe { GetWindowThreadProcessId(GetForegroundWindow(), None) };
     let current = unsafe { GetCurrentThreadId() };
-    let attached =
-        foreground != 0 && foreground != current && unsafe { AttachThreadInput(current, foreground, true) }.as_bool();
+    let attached = foreground != 0
+        && foreground != current
+        && unsafe { AttachThreadInput(current, foreground, true) }.as_bool();
     let _ = unsafe { BringWindowToTop(hwnd) };
     let ok = unsafe { SetForegroundWindow(hwnd) }.as_bool();
     if attached {
@@ -655,7 +690,11 @@ pub(crate) fn post_message(handle: usize, msg: u32, wparam: usize, lparam: isize
             windows::Win32::Foundation::LPARAM(lparam),
         )
     };
-    if ok.is_ok() { Ok(()) } else { Err(CaptureError::Win32("PostMessageW failed".into())) }
+    if ok.is_ok() {
+        Ok(())
+    } else {
+        Err(CaptureError::Win32("PostMessageW failed".into()))
+    }
 }
 
 pub(crate) fn send_message(handle: usize, msg: u32, wparam: usize, lparam: isize) -> isize {
@@ -699,7 +738,12 @@ pub(crate) fn set_opacity(handle: usize, alpha: u8, click_through: bool) -> Resu
         SetWindowLongPtrW(hwnd, GWL_EXSTYLE, style as isize);
     }
     unsafe {
-        SetLayeredWindowAttributes(hwnd, windows::Win32::Foundation::COLORREF(0), alpha, LWA_ALPHA)
+        SetLayeredWindowAttributes(
+            hwnd,
+            windows::Win32::Foundation::COLORREF(0),
+            alpha,
+            LWA_ALPHA,
+        )
     }
     .map_err(|e| CaptureError::Win32(e.to_string()))
 }
@@ -771,7 +815,11 @@ pub(crate) fn mouse_scroll(axis: &str, direction: &str, times: u32) -> Result<()
     };
     let amount = (times.clamp(1, 40) as i32)
         * 120
-        * if matches!(direction.to_ascii_lowercase().as_str(), "up" | "left") { 1 } else { -1 };
+        * if matches!(direction.to_ascii_lowercase().as_str(), "up" | "left") {
+            1
+        } else {
+            -1
+        };
     let flag = if axis.eq_ignore_ascii_case("horizontal") {
         MOUSEEVENTF_HWHEEL
     } else {
@@ -822,7 +870,10 @@ pub(crate) fn type_unicode(text: &str) -> Result<()> {
     if sent == inputs.len() as u32 {
         Ok(())
     } else {
-        Err(CaptureError::Win32(format!("SendInput sent {sent}/{} events", inputs.len())))
+        Err(CaptureError::Win32(format!(
+            "SendInput sent {sent}/{} events",
+            inputs.len()
+        )))
     }
 }
 
@@ -869,16 +920,32 @@ pub(crate) fn key_scan(scan: u16, action: &str, extended: bool) -> Result<()> {
     if sent == inputs.len() as u32 {
         Ok(())
     } else {
-        Err(CaptureError::Win32(format!("SendInput sent {sent}/{} events", inputs.len())))
+        Err(CaptureError::Win32(format!(
+            "SendInput sent {sent}/{} events",
+            inputs.len()
+        )))
     }
 }
 
-fn send_mouse(flags: windows::Win32::UI::Input::KeyboardAndMouse::MOUSE_EVENT_FLAGS, dx: i32, dy: i32) -> Result<()> {
-    use windows::Win32::UI::Input::KeyboardAndMouse::{INPUT, INPUT_0, INPUT_MOUSE, MOUSEINPUT, SendInput};
+fn send_mouse(
+    flags: windows::Win32::UI::Input::KeyboardAndMouse::MOUSE_EVENT_FLAGS,
+    dx: i32,
+    dy: i32,
+) -> Result<()> {
+    use windows::Win32::UI::Input::KeyboardAndMouse::{
+        INPUT, INPUT_0, INPUT_MOUSE, MOUSEINPUT, SendInput,
+    };
     let input = INPUT {
         r#type: INPUT_MOUSE,
         Anonymous: INPUT_0 {
-            mi: MOUSEINPUT { dx, dy, mouseData: 0, dwFlags: flags, time: 0, dwExtraInfo: 0 },
+            mi: MOUSEINPUT {
+                dx,
+                dy,
+                mouseData: 0,
+                dwFlags: flags,
+                time: 0,
+                dwExtraInfo: 0,
+            },
         },
     };
     // Safety: one fully initialised INPUT with its exact size.
@@ -886,12 +953,18 @@ fn send_mouse(flags: windows::Win32::UI::Input::KeyboardAndMouse::MOUSE_EVENT_FL
     if sent == 1 {
         Ok(())
     } else {
-        Err(CaptureError::Win32("SendInput rejected the mouse event (UIPI or input desktop)".into()))
+        Err(CaptureError::Win32(
+            "SendInput rejected the mouse event (UIPI or input desktop)".into(),
+        ))
     }
 }
 
 pub(crate) fn mouse_move_relative(dx: i32, dy: i32) -> Result<()> {
-    send_mouse(windows::Win32::UI::Input::KeyboardAndMouse::MOUSEEVENTF_MOVE, dx, dy)
+    send_mouse(
+        windows::Win32::UI::Input::KeyboardAndMouse::MOUSEEVENTF_MOVE,
+        dx,
+        dy,
+    )
 }
 
 pub(crate) fn mouse_button_input(button: &str, down: bool) -> Result<()> {
@@ -971,14 +1044,19 @@ fn virtual_key(token: &str) -> Option<u8> {
 }
 
 fn key_shortcut_impl(shortcut: &str, allow_windows: bool) -> Result<()> {
-    let tokens = shortcut.split('+').filter(|v| !v.trim().is_empty()).collect::<Vec<_>>();
+    let tokens = shortcut
+        .split('+')
+        .filter(|v| !v.trim().is_empty())
+        .collect::<Vec<_>>();
     if tokens.is_empty()
         || (!allow_windows
             && tokens
                 .iter()
                 .any(|v| v.eq_ignore_ascii_case("win") || v.eq_ignore_ascii_case("windows")))
     {
-        return Err(CaptureError::Win32("invalid or Windows-key shortcut".into()));
+        return Err(CaptureError::Win32(
+            "invalid or Windows-key shortcut".into(),
+        ));
     }
     let keys = tokens
         .iter()
@@ -1041,6 +1119,9 @@ pub(crate) fn mouse_drag(
 mod window_capture_tests {
     #[test]
     fn invalid_handle_is_rejected_without_desktop_fallback() {
-        assert!(matches!(super::capture_window(0), Err(crate::CaptureError::NotFound(_))));
+        assert!(matches!(
+            super::capture_window(0),
+            Err(crate::CaptureError::NotFound(_))
+        ));
     }
 }

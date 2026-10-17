@@ -6,23 +6,22 @@ use crate::generate::generate_audio::audio_generation_request::AudioGenerationRe
 
 #[derive(Debug, Clone)]
 pub enum AudioGenerationDraftOrRequest {
-  Draft(AudioGenerationDraftRequest),
-  Request(AudioGenerationRequest),
+    Draft(AudioGenerationDraftRequest),
+    Request(AudioGenerationRequest),
 }
 
 impl AudioGenerationDraftOrRequest {
-
-  pub fn get_provider(&self) -> RouterProvider {
-    match self {
-      Self::Draft(draft) => draft.get_provider(),
-      Self::Request(request) => request.get_provider(),
+    pub fn get_provider(&self) -> RouterProvider {
+        match self {
+            Self::Draft(draft) => draft.get_provider(),
+            Self::Request(request) => request.get_provider(),
+        }
     }
-  }
 
-  pub fn estimate_cost(&self) -> Result<AudioGenerationCostEstimate, ArtcraftRouterError> {
-    match self {
-      AudioGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
-      AudioGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+    pub fn estimate_cost(&self) -> Result<AudioGenerationCostEstimate, ArtcraftRouterError> {
+        match self {
+            AudioGenerationDraftOrRequest::Draft(draft) => draft.estimate_cost(),
+            AudioGenerationDraftOrRequest::Request(request) => request.estimate_cost(),
+        }
     }
-  }
 }

@@ -2,7 +2,7 @@ use crate::{
     material_bind_groups::FallbackBuffer,
     render_asset::RenderAssets,
     render_resource::{BindGroupLayout, Buffer, PipelineCache, Sampler, TextureView},
-    renderer::{wgpu_wrapper, RenderDevice},
+    renderer::{RenderDevice, wgpu_wrapper},
     storage::{GpuShaderBuffer, ShaderBuffer},
     texture::GpuImage,
 };
@@ -648,7 +648,9 @@ pub enum AsBindGroupError {
     RetryNextUpdate,
     #[error("Create the bind group via `as_bind_group()` instead")]
     CreateBindGroupDirectly,
-    #[error("At binding index {0}, the provided image sampler `{1}` does not match the required sampler type(s) `{2}`.")]
+    #[error(
+        "At binding index {0}, the provided image sampler `{1}` does not match the required sampler type(s) `{2}`."
+    )]
     InvalidSamplerType(u32, String, String),
 }
 

@@ -102,16 +102,31 @@ impl Table {
         if r1 < r0 {
             return None;
         }
-        Some(RangeRef::new(CellRef::new(r0, self.range.start.col), CellRef::new(r1, self.range.end.col)))
+        Some(RangeRef::new(
+            CellRef::new(r0, self.range.start.col),
+            CellRef::new(r1, self.range.end.col),
+        ))
     }
     pub fn header_range(&self) -> Option<RangeRef> {
-        self.header_row.then(|| RangeRef::new(self.range.start, CellRef::new(self.range.start.row, self.range.end.col)))
+        self.header_row.then(|| {
+            RangeRef::new(
+                self.range.start,
+                CellRef::new(self.range.start.row, self.range.end.col),
+            )
+        })
     }
     pub fn totals_range(&self) -> Option<RangeRef> {
-        self.totals_row.then(|| RangeRef::new(CellRef::new(self.range.end.row, self.range.start.col), self.range.end))
+        self.totals_row.then(|| {
+            RangeRef::new(
+                CellRef::new(self.range.end.row, self.range.start.col),
+                self.range.end,
+            )
+        })
     }
     pub fn column_index(&self, name: &str) -> Option<usize> {
-        self.columns.iter().position(|c| c.name.eq_ignore_ascii_case(name))
+        self.columns
+            .iter()
+            .position(|c| c.name.eq_ignore_ascii_case(name))
     }
 }
 
@@ -226,14 +241,20 @@ pub enum CfRule {
 
 /// Number of icons in an icon set (`3Arrows` → 3, `5Quarters` → 5), always 3 to 5.
 pub fn icon_count(set: &str) -> usize {
-    set.chars().next().and_then(|c| c.to_digit(10)).unwrap_or(3).clamp(3, 5) as usize
+    set.chars()
+        .next()
+        .and_then(|c| c.to_digit(10))
+        .unwrap_or(3)
+        .clamp(3, 5) as usize
 }
 
 /// Excel's default icon-set thresholds: one per icon, the first being the lower bound,
 /// then even percent steps (`0, 33, 67` for three icons).
 pub fn default_icon_thresholds(set: &str) -> Vec<CfValueKind> {
     let k = icon_count(set);
-    (0..k).map(|i| CfValueKind::Percent((i as f64 * 100.0 / k as f64).round())).collect()
+    (0..k)
+        .map(|i| CfValueKind::Percent((i as f64 * 100.0 / k as f64).round()))
+        .collect()
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -775,7 +796,16 @@ impl PrintSettings {
     }
     /// Any header or footer text at all (on any kind of page).
     pub fn has_header_footer(&self) -> bool {
-        [&self.header, &self.footer, &self.first_header, &self.first_footer, &self.even_header, &self.even_footer].iter().any(|t| !t.is_empty())
+        [
+            &self.header,
+            &self.footer,
+            &self.first_header,
+            &self.first_footer,
+            &self.even_header,
+            &self.even_footer,
+        ]
+        .iter()
+        .any(|t| !t.is_empty())
     }
 }
 
@@ -818,7 +848,11 @@ pub struct SheetProtection {
     pub password: Option<crate::PasswordHash>,
     /// The internal hash older GridCraft JSON workbooks stored ([`password_hash`]); still
     /// verified when unprotecting, never written for new passwords.
-    #[serde(rename = "password_hash", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "password_hash",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub legacy_password_hash: Option<u64>,
     pub select_locked: bool,
     pub select_unlocked: bool,

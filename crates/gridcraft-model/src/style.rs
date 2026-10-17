@@ -7,7 +7,9 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct StyleId(pub u32);
 
 impl StyleId {
@@ -45,12 +47,16 @@ impl Color {
             Color::Rgb(v) => Some([(v >> 16) as u8, (v >> 8) as u8, v as u8]),
             Color::Theme(i, tint) => {
                 let base = theme.colors.get(i as usize).copied().unwrap_or(0);
-                Some(apply_tint([(base >> 16) as u8, (base >> 8) as u8, base as u8], tint as f64 / 1000.0))
+                Some(apply_tint(
+                    [(base >> 16) as u8, (base >> 8) as u8, base as u8],
+                    tint as f64 / 1000.0,
+                ))
             }
         }
     }
     pub fn hex(&self, theme: &Theme) -> Option<String> {
-        self.resolve(theme).map(|[r, g, b]| format!("#{r:02X}{g:02X}{b:02X}"))
+        self.resolve(theme)
+            .map(|[r, g, b]| format!("#{r:02X}{g:02X}{b:02X}"))
     }
 }
 
@@ -60,7 +66,11 @@ pub fn apply_tint(rgb: [u8; 3], tint: f64) -> [u8; 3] {
         return rgb;
     }
     let (h, s, l) = rgb_to_hsl(rgb);
-    let l = if tint < 0.0 { l * (1.0 + tint) } else { l * (1.0 - tint) + tint };
+    let l = if tint < 0.0 {
+        l * (1.0 + tint)
+    } else {
+        l * (1.0 - tint) + tint
+    };
     hsl_to_rgb(h, s, l.clamp(0.0, 1.0))
 }
 
@@ -73,7 +83,11 @@ fn rgb_to_hsl([r, g, b]: [u8; 3]) -> (f64, f64, f64) {
         return (0.0, 0.0, l);
     }
     let d = max - min;
-    let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+    let s = if l > 0.5 {
+        d / (2.0 - max - min)
+    } else {
+        d / (max + min)
+    };
     let h = if max == r {
         (g - b) / d + if g < b { 6.0 } else { 0.0 }
     } else if max == g {
@@ -89,7 +103,11 @@ fn hsl_to_rgb(h: f64, s: f64, l: f64) -> [u8; 3] {
         let v = (l * 255.0).round() as u8;
         return [v, v, v];
     }
-    let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+    let q = if l < 0.5 {
+        l * (1.0 + s)
+    } else {
+        l + s - l * s
+    };
     let p = 2.0 * l - q;
     let hue = |mut t: f64| {
         if t < 0.0 {
@@ -108,7 +126,11 @@ fn hsl_to_rgb(h: f64, s: f64, l: f64) -> [u8; 3] {
             p
         }
     };
-    [(hue(h + 1.0 / 3.0) * 255.0).round() as u8, (hue(h) * 255.0).round() as u8, (hue(h - 1.0 / 3.0) * 255.0).round() as u8]
+    [
+        (hue(h + 1.0 / 3.0) * 255.0).round() as u8,
+        (hue(h) * 255.0).round() as u8,
+        (hue(h - 1.0 / 3.0) * 255.0).round() as u8,
+    ]
 }
 
 /// Workbook theme: 12 colours and the heading/body fonts.
@@ -126,7 +148,10 @@ impl Default for Theme {
     fn default() -> Self {
         Theme {
             name: "Craft".into(),
-            colors: [0xFFFFFF, 0x000000, 0xE8E8E8, 0x0E2841, 0x156082, 0xE97132, 0x196B24, 0x0F9ED5, 0xA02B93, 0x4EA72E, 0x467886, 0x96607D],
+            colors: [
+                0xFFFFFF, 0x000000, 0xE8E8E8, 0x0E2841, 0x156082, 0xE97132, 0x196B24, 0x0F9ED5,
+                0xA02B93, 0x4EA72E, 0x467886, 0x96607D,
+            ],
             major_font: crate::DEFAULT_FONT.into(),
             minor_font: crate::DEFAULT_FONT.into(),
         }
@@ -168,7 +193,15 @@ impl Hash for Font {
     fn hash<H: Hasher>(&self, h: &mut H) {
         self.name.hash(h);
         self.size.to_bits().hash(h);
-        (self.bold, self.italic, self.underline, self.strike, self.color, self.vert).hash(h);
+        (
+            self.bold,
+            self.italic,
+            self.underline,
+            self.strike,
+            self.color,
+            self.vert,
+        )
+            .hash(h);
     }
 }
 
@@ -221,7 +254,11 @@ pub struct Fill {
 
 impl Fill {
     pub fn solid(c: Color) -> Fill {
-        Fill { pattern: PatternType::Solid, fg: c, bg: Color::Auto }
+        Fill {
+            pattern: PatternType::Solid,
+            fg: c,
+            bg: Color::Auto,
+        }
     }
 }
 
@@ -248,7 +285,12 @@ impl BorderStyle {
     pub fn width(&self) -> f32 {
         match self {
             BorderStyle::None => 0.0,
-            BorderStyle::Hair | BorderStyle::Thin | BorderStyle::Dashed | BorderStyle::Dotted | BorderStyle::DashDot | BorderStyle::DashDotDot => 1.0,
+            BorderStyle::Hair
+            | BorderStyle::Thin
+            | BorderStyle::Dashed
+            | BorderStyle::Dotted
+            | BorderStyle::DashDot
+            | BorderStyle::DashDotDot => 1.0,
             BorderStyle::Medium
             | BorderStyle::MediumDashed
             | BorderStyle::MediumDashDot
@@ -267,7 +309,10 @@ pub struct BorderLine {
 
 impl BorderLine {
     pub fn thin() -> BorderLine {
-        BorderLine { style: BorderStyle::Thin, color: Color::Auto }
+        BorderLine {
+            style: BorderStyle::Thin,
+            color: Color::Auto,
+        }
     }
     pub fn is_none(&self) -> bool {
         self.style == BorderStyle::None
@@ -326,7 +371,10 @@ pub struct Protection {
 
 impl Default for Protection {
     fn default() -> Self {
-        Protection { locked: true, hidden: false }
+        Protection {
+            locked: true,
+            hidden: false,
+        }
     }
 }
 
@@ -372,7 +420,10 @@ impl Default for StyleTable {
         let d = Style::default();
         let mut index = HashMap::new();
         index.insert(d.clone(), StyleId::DEFAULT);
-        StyleTable { styles: vec![d], index }
+        StyleTable {
+            styles: vec![d],
+            index,
+        }
     }
 }
 
@@ -381,10 +432,16 @@ impl StyleTable {
     pub fn with_default(normal: Style) -> Self {
         let mut index = HashMap::new();
         index.insert(normal.clone(), StyleId::DEFAULT);
-        StyleTable { styles: vec![normal], index }
+        StyleTable {
+            styles: vec![normal],
+            index,
+        }
     }
     pub fn get(&self, id: StyleId) -> &Style {
-        self.styles.get(id.0 as usize).or_else(|| self.styles.first()).unwrap_or(&DEFAULT_STYLE)
+        self.styles
+            .get(id.0 as usize)
+            .or_else(|| self.styles.first())
+            .unwrap_or(&DEFAULT_STYLE)
     }
     pub fn intern(&mut self, s: Style) -> StyleId {
         if self.index.is_empty() && !self.styles.is_empty() {
@@ -411,10 +468,18 @@ impl StyleTable {
         self.styles.is_empty()
     }
     pub fn iter(&self) -> impl Iterator<Item = (StyleId, &Style)> {
-        self.styles.iter().enumerate().map(|(i, s)| (StyleId(i as u32), s))
+        self.styles
+            .iter()
+            .enumerate()
+            .map(|(i, s)| (StyleId(i as u32), s))
     }
     pub fn rebuild_index(&mut self) {
-        self.index = self.styles.iter().enumerate().map(|(i, s)| (s.clone(), StyleId(i as u32))).collect();
+        self.index = self
+            .styles
+            .iter()
+            .enumerate()
+            .map(|(i, s)| (s.clone(), StyleId(i as u32)))
+            .collect();
     }
 }
 
@@ -438,8 +503,14 @@ mod tests {
     #[test]
     fn colors() {
         let th = Theme::default();
-        assert_eq!(Color::from_hex("#FF0000").unwrap().resolve(&th), Some([255, 0, 0]));
-        assert_eq!(Color::from_hex("FF00FF00").unwrap().resolve(&th), Some([0, 255, 0]));
+        assert_eq!(
+            Color::from_hex("#FF0000").unwrap().resolve(&th),
+            Some([255, 0, 0])
+        );
+        assert_eq!(
+            Color::from_hex("FF00FF00").unwrap().resolve(&th),
+            Some([0, 255, 0])
+        );
         assert_eq!(Color::Theme(0, -500).resolve(&th), Some([128, 128, 128]));
         assert_eq!(Color::Theme(1, 500).resolve(&th), Some([128, 128, 128]));
         assert_eq!(Color::Auto.resolve(&th), None);

@@ -24,7 +24,12 @@ type Field = fn(&mut CameraRaw) -> &mut f32;
 
 /// `crs:` scalar name, PhotoCraft field, and the slider range values are clamped to.
 const SCALARS: &[(&str, Field, f32, f32)] = &[
-    ("IncrementalTemperature", |p| &mut p.temperature, -100.0, 100.0),
+    (
+        "IncrementalTemperature",
+        |p| &mut p.temperature,
+        -100.0,
+        100.0,
+    ),
     ("IncrementalTint", |p| &mut p.tint, -100.0, 100.0),
     ("Exposure2012", |p| &mut p.exposure, -5.0, 5.0),
     ("Contrast2012", |p| &mut p.contrast, -100.0, 100.0),
@@ -40,10 +45,30 @@ const SCALARS: &[(&str, Field, f32, f32)] = &[
     ("ParametricShadows", |p| &mut p.curve_shadows, -100.0, 100.0),
     ("ParametricDarks", |p| &mut p.curve_darks, -100.0, 100.0),
     ("ParametricLights", |p| &mut p.curve_lights, -100.0, 100.0),
-    ("ParametricHighlights", |p| &mut p.curve_highlights, -100.0, 100.0),
-    ("ParametricShadowSplit", |p| &mut p.curve_splits[0], 0.0, 100.0),
-    ("ParametricMidtoneSplit", |p| &mut p.curve_splits[1], 0.0, 100.0),
-    ("ParametricHighlightSplit", |p| &mut p.curve_splits[2], 0.0, 100.0),
+    (
+        "ParametricHighlights",
+        |p| &mut p.curve_highlights,
+        -100.0,
+        100.0,
+    ),
+    (
+        "ParametricShadowSplit",
+        |p| &mut p.curve_splits[0],
+        0.0,
+        100.0,
+    ),
+    (
+        "ParametricMidtoneSplit",
+        |p| &mut p.curve_splits[1],
+        0.0,
+        100.0,
+    ),
+    (
+        "ParametricHighlightSplit",
+        |p| &mut p.curve_splits[2],
+        0.0,
+        100.0,
+    ),
     ("HueAdjustmentRed", |p| &mut p.hsl_hue[0], -100.0, 100.0),
     ("HueAdjustmentOrange", |p| &mut p.hsl_hue[1], -100.0, 100.0),
     ("HueAdjustmentYellow", |p| &mut p.hsl_hue[2], -100.0, 100.0),
@@ -52,54 +77,234 @@ const SCALARS: &[(&str, Field, f32, f32)] = &[
     ("HueAdjustmentBlue", |p| &mut p.hsl_hue[5], -100.0, 100.0),
     ("HueAdjustmentPurple", |p| &mut p.hsl_hue[6], -100.0, 100.0),
     ("HueAdjustmentMagenta", |p| &mut p.hsl_hue[7], -100.0, 100.0),
-    ("SaturationAdjustmentRed", |p| &mut p.hsl_sat[0], -100.0, 100.0),
-    ("SaturationAdjustmentOrange", |p| &mut p.hsl_sat[1], -100.0, 100.0),
-    ("SaturationAdjustmentYellow", |p| &mut p.hsl_sat[2], -100.0, 100.0),
-    ("SaturationAdjustmentGreen", |p| &mut p.hsl_sat[3], -100.0, 100.0),
-    ("SaturationAdjustmentAqua", |p| &mut p.hsl_sat[4], -100.0, 100.0),
-    ("SaturationAdjustmentBlue", |p| &mut p.hsl_sat[5], -100.0, 100.0),
-    ("SaturationAdjustmentPurple", |p| &mut p.hsl_sat[6], -100.0, 100.0),
-    ("SaturationAdjustmentMagenta", |p| &mut p.hsl_sat[7], -100.0, 100.0),
-    ("LuminanceAdjustmentRed", |p| &mut p.hsl_lum[0], -100.0, 100.0),
-    ("LuminanceAdjustmentOrange", |p| &mut p.hsl_lum[1], -100.0, 100.0),
-    ("LuminanceAdjustmentYellow", |p| &mut p.hsl_lum[2], -100.0, 100.0),
-    ("LuminanceAdjustmentGreen", |p| &mut p.hsl_lum[3], -100.0, 100.0),
-    ("LuminanceAdjustmentAqua", |p| &mut p.hsl_lum[4], -100.0, 100.0),
-    ("LuminanceAdjustmentBlue", |p| &mut p.hsl_lum[5], -100.0, 100.0),
-    ("LuminanceAdjustmentPurple", |p| &mut p.hsl_lum[6], -100.0, 100.0),
-    ("LuminanceAdjustmentMagenta", |p| &mut p.hsl_lum[7], -100.0, 100.0),
+    (
+        "SaturationAdjustmentRed",
+        |p| &mut p.hsl_sat[0],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentOrange",
+        |p| &mut p.hsl_sat[1],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentYellow",
+        |p| &mut p.hsl_sat[2],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentGreen",
+        |p| &mut p.hsl_sat[3],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentAqua",
+        |p| &mut p.hsl_sat[4],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentBlue",
+        |p| &mut p.hsl_sat[5],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentPurple",
+        |p| &mut p.hsl_sat[6],
+        -100.0,
+        100.0,
+    ),
+    (
+        "SaturationAdjustmentMagenta",
+        |p| &mut p.hsl_sat[7],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentRed",
+        |p| &mut p.hsl_lum[0],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentOrange",
+        |p| &mut p.hsl_lum[1],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentYellow",
+        |p| &mut p.hsl_lum[2],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentGreen",
+        |p| &mut p.hsl_lum[3],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentAqua",
+        |p| &mut p.hsl_lum[4],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentBlue",
+        |p| &mut p.hsl_lum[5],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentPurple",
+        |p| &mut p.hsl_lum[6],
+        -100.0,
+        100.0,
+    ),
+    (
+        "LuminanceAdjustmentMagenta",
+        |p| &mut p.hsl_lum[7],
+        -100.0,
+        100.0,
+    ),
     // Color Grading keeps the split-toning names for the shadow and highlight wheels' hue and
     // saturation, and the balance.
-    ("SplitToningShadowHue", |p| &mut p.grade_shadows.hue, 0.0, 360.0),
-    ("SplitToningShadowSaturation", |p| &mut p.grade_shadows.sat, 0.0, 100.0),
-    ("ColorGradeShadowLum", |p| &mut p.grade_shadows.lum, -100.0, 100.0),
-    ("ColorGradeMidtoneHue", |p| &mut p.grade_midtones.hue, 0.0, 360.0),
-    ("ColorGradeMidtoneSat", |p| &mut p.grade_midtones.sat, 0.0, 100.0),
-    ("ColorGradeMidtoneLum", |p| &mut p.grade_midtones.lum, -100.0, 100.0),
-    ("SplitToningHighlightHue", |p| &mut p.grade_highlights.hue, 0.0, 360.0),
-    ("SplitToningHighlightSaturation", |p| &mut p.grade_highlights.sat, 0.0, 100.0),
-    ("ColorGradeHighlightLum", |p| &mut p.grade_highlights.lum, -100.0, 100.0),
-    ("ColorGradeGlobalHue", |p| &mut p.grade_global.hue, 0.0, 360.0),
-    ("ColorGradeGlobalSat", |p| &mut p.grade_global.sat, 0.0, 100.0),
-    ("ColorGradeGlobalLum", |p| &mut p.grade_global.lum, -100.0, 100.0),
+    (
+        "SplitToningShadowHue",
+        |p| &mut p.grade_shadows.hue,
+        0.0,
+        360.0,
+    ),
+    (
+        "SplitToningShadowSaturation",
+        |p| &mut p.grade_shadows.sat,
+        0.0,
+        100.0,
+    ),
+    (
+        "ColorGradeShadowLum",
+        |p| &mut p.grade_shadows.lum,
+        -100.0,
+        100.0,
+    ),
+    (
+        "ColorGradeMidtoneHue",
+        |p| &mut p.grade_midtones.hue,
+        0.0,
+        360.0,
+    ),
+    (
+        "ColorGradeMidtoneSat",
+        |p| &mut p.grade_midtones.sat,
+        0.0,
+        100.0,
+    ),
+    (
+        "ColorGradeMidtoneLum",
+        |p| &mut p.grade_midtones.lum,
+        -100.0,
+        100.0,
+    ),
+    (
+        "SplitToningHighlightHue",
+        |p| &mut p.grade_highlights.hue,
+        0.0,
+        360.0,
+    ),
+    (
+        "SplitToningHighlightSaturation",
+        |p| &mut p.grade_highlights.sat,
+        0.0,
+        100.0,
+    ),
+    (
+        "ColorGradeHighlightLum",
+        |p| &mut p.grade_highlights.lum,
+        -100.0,
+        100.0,
+    ),
+    (
+        "ColorGradeGlobalHue",
+        |p| &mut p.grade_global.hue,
+        0.0,
+        360.0,
+    ),
+    (
+        "ColorGradeGlobalSat",
+        |p| &mut p.grade_global.sat,
+        0.0,
+        100.0,
+    ),
+    (
+        "ColorGradeGlobalLum",
+        |p| &mut p.grade_global.lum,
+        -100.0,
+        100.0,
+    ),
     ("ColorGradeBlending", |p| &mut p.grade_blending, 0.0, 100.0),
-    ("SplitToningBalance", |p| &mut p.grade_balance, -100.0, 100.0),
+    (
+        "SplitToningBalance",
+        |p| &mut p.grade_balance,
+        -100.0,
+        100.0,
+    ),
     ("Sharpness", |p| &mut p.sharpen_amount, 0.0, 150.0),
     ("SharpenRadius", |p| &mut p.sharpen_radius, 0.5, 3.0),
     ("SharpenDetail", |p| &mut p.sharpen_detail, 0.0, 100.0),
     ("SharpenEdgeMasking", |p| &mut p.sharpen_masking, 0.0, 100.0),
     ("LuminanceSmoothing", |p| &mut p.noise_luminance, 0.0, 100.0),
-    ("LuminanceNoiseReductionDetail", |p| &mut p.noise_luminance_detail, 0.0, 100.0),
+    (
+        "LuminanceNoiseReductionDetail",
+        |p| &mut p.noise_luminance_detail,
+        0.0,
+        100.0,
+    ),
     ("ColorNoiseReduction", |p| &mut p.noise_color, 0.0, 100.0),
-    ("ColorNoiseReductionDetail", |p| &mut p.noise_color_detail, 0.0, 100.0),
+    (
+        "ColorNoiseReductionDetail",
+        |p| &mut p.noise_color_detail,
+        0.0,
+        100.0,
+    ),
     ("GrainAmount", |p| &mut p.grain_amount, 0.0, 100.0),
     ("GrainSize", |p| &mut p.grain_size, 0.0, 100.0),
     ("GrainFrequency", |p| &mut p.grain_roughness, 0.0, 100.0),
-    ("PostCropVignetteAmount", |p| &mut p.vignette_amount, -100.0, 100.0),
-    ("PostCropVignetteMidpoint", |p| &mut p.vignette_midpoint, 0.0, 100.0),
-    ("PostCropVignetteRoundness", |p| &mut p.vignette_roundness, -100.0, 100.0),
-    ("PostCropVignetteFeather", |p| &mut p.vignette_feather, 0.0, 100.0),
-    ("PostCropVignetteHighlightContrast", |p| &mut p.vignette_highlights, 0.0, 100.0),
+    (
+        "PostCropVignetteAmount",
+        |p| &mut p.vignette_amount,
+        -100.0,
+        100.0,
+    ),
+    (
+        "PostCropVignetteMidpoint",
+        |p| &mut p.vignette_midpoint,
+        0.0,
+        100.0,
+    ),
+    (
+        "PostCropVignetteRoundness",
+        |p| &mut p.vignette_roundness,
+        -100.0,
+        100.0,
+    ),
+    (
+        "PostCropVignetteFeather",
+        |p| &mut p.vignette_feather,
+        0.0,
+        100.0,
+    ),
+    (
+        "PostCropVignetteHighlightContrast",
+        |p| &mut p.vignette_highlights,
+        0.0,
+        100.0,
+    ),
 ];
 
 type Curve = fn(&mut CameraRaw) -> &mut Vec<[f32; 2]>;
@@ -110,7 +315,11 @@ const CURVES: &[(&str, Curve)] = &[
     ("ToneCurvePV2012Blue", |p| &mut p.point_curve_blue),
 ];
 
-const STYLES: &[(&str, &str)] = &[("1", "highlightPriority"), ("2", "colorPriority"), ("3", "paintOverlay")];
+const STYLES: &[(&str, &str)] = &[
+    ("1", "highlightPriority"),
+    ("2", "colorPriority"),
+    ("3", "paintOverlay"),
+];
 
 /// Bookkeeping fields Camera Raw writes that carry no setting.
 const METADATA: &[&str] = &[
@@ -158,9 +367,14 @@ fn number(s: &str) -> Option<f32> {
 
 /// `"0, 0"` items of an `rdf:Seq` → curve points.
 fn curve(node: roxmltree::Node<'_, '_>) -> Option<Vec<[f32; 2]>> {
-    let seq = node.children().find(|c| c.is_element() && c.tag_name().namespace() == Some(RDF_NS) && c.tag_name().name() == "Seq")?;
+    let seq = node.children().find(|c| {
+        c.is_element() && c.tag_name().namespace() == Some(RDF_NS) && c.tag_name().name() == "Seq"
+    })?;
     let mut points = Vec::new();
-    for li in seq.children().filter(|c| c.is_element() && c.tag_name().name() == "li") {
+    for li in seq
+        .children()
+        .filter(|c| c.is_element() && c.tag_name().name() == "li")
+    {
         let text = li.text().unwrap_or("");
         let (x, y) = text.split_once(',')?;
         points.push([number(x)?, number(y)?]);
@@ -216,19 +430,28 @@ pub fn load(params: &mut CameraRaw, bytes: &[u8]) -> Result<LoadReport, String> 
     if bytes.len() > MAX_XMP_BYTES {
         return Err("the settings file is too large".into());
     }
-    let text = std::str::from_utf8(bytes).map_err(|_| "not a Camera Raw settings file (not UTF-8 text)".to_string())?;
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| "not a Camera Raw settings file (not UTF-8 text)".to_string())?;
     // Some writers put a byte order mark or an `<?xpacket?>` wrapper first; roxmltree takes both.
     let text = text.trim_start_matches('\u{feff}');
-    let doc = roxmltree::Document::parse(text).map_err(|e| format!("not a Camera Raw settings file ({e})"))?;
+    let doc = roxmltree::Document::parse(text)
+        .map_err(|e| format!("not a Camera Raw settings file ({e})"))?;
     let mut next = params.clone();
     let mut report = LoadReport::default();
     let mut found = false;
-    for desc in doc.descendants().filter(|n| n.is_element() && n.tag_name().namespace() == Some(RDF_NS) && n.tag_name().name() == "Description") {
+    for desc in doc.descendants().filter(|n| {
+        n.is_element()
+            && n.tag_name().namespace() == Some(RDF_NS)
+            && n.tag_name().name() == "Description"
+    }) {
         for a in desc.attributes().filter(|a| a.namespace() == Some(CRS_NS)) {
             found = true;
             apply(&mut next, &mut report, a.name(), a.value());
         }
-        for c in desc.children().filter(|c| c.is_element() && c.tag_name().namespace() == Some(CRS_NS)) {
+        for c in desc
+            .children()
+            .filter(|c| c.is_element() && c.tag_name().namespace() == Some(CRS_NS))
+        {
             found = true;
             let name = c.tag_name().name();
             if let Some((_, field)) = CURVES.iter().find(|(n, _)| *n == name) {
@@ -258,17 +481,28 @@ pub fn load(params: &mut CameraRaw, bytes: &[u8]) -> Result<LoadReport, String> 
 
 fn signed(v: f32, decimals: usize) -> String {
     let s = format!("{v:.decimals$}");
-    if v > 0.0 && !s.starts_with('+') { format!("+{s}") } else { s }
+    if v > 0.0 && !s.starts_with('+') {
+        format!("+{s}")
+    } else {
+        s
+    }
 }
 
 fn escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// Write `params` as a Camera Raw settings file Photoshop's Load Settings… reads.
 pub fn save(params: &CameraRaw) -> String {
     let mut p = params.clone();
-    let wb = if p.temperature != 0.0 || p.tint != 0.0 { "Custom" } else { "As Shot" };
+    let wb = if p.temperature != 0.0 || p.tint != 0.0 {
+        "Custom"
+    } else {
+        "As Shot"
+    };
     let mut out = String::from(
         "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\"PhotoCraft\">\n <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n  <rdf:Description rdf:about=\"\"\n    xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\"\n",
     );
@@ -285,15 +519,29 @@ pub fn save(params: &CameraRaw) -> String {
         };
         out.push_str(&format!("   crs:{name}=\"{text}\"\n"));
     }
-    let style = STYLES.iter().find(|(_, s)| *s == p.vignette_style).map_or("1", |(n, _)| n);
-    out.push_str(&format!("   crs:PostCropVignetteStyle=\"{}\"\n", escape(style)));
+    let style = STYLES
+        .iter()
+        .find(|(_, s)| *s == p.vignette_style)
+        .map_or("1", |(n, _)| n);
+    out.push_str(&format!(
+        "   crs:PostCropVignetteStyle=\"{}\"\n",
+        escape(style)
+    ));
     out.push_str("   crs:ToneCurveName2012=\"Custom\"\n   crs:HasSettings=\"True\">\n");
     for (name, field) in CURVES {
         let points = field(&mut p);
-        let points = if points.is_empty() { vec![[0.0, 0.0], [255.0, 255.0]] } else { points.clone() };
+        let points = if points.is_empty() {
+            vec![[0.0, 0.0], [255.0, 255.0]]
+        } else {
+            points.clone()
+        };
         out.push_str(&format!("   <crs:{name}>\n    <rdf:Seq>\n"));
         for [x, y] in points {
-            out.push_str(&format!("     <rdf:li>{}, {}</rdf:li>\n", x.round(), y.round()));
+            out.push_str(&format!(
+                "     <rdf:li>{}, {}</rdf:li>\n",
+                x.round(),
+                y.round()
+            ));
         }
         out.push_str(&format!("    </rdf:Seq>\n   </crs:{name}>\n"));
     }
@@ -347,17 +595,32 @@ mod tests {
         let r = load(&mut p, FIXTURE).unwrap();
         assert_eq!(p.tint, 10.0);
         assert_eq!(p.exposure, 0.05);
-        assert_eq!((p.contrast, p.highlights, p.shadows, p.whites), (-5.0, -20.0, 10.0, 35.0));
-        assert_eq!((p.texture, p.clarity, p.vibrance, p.saturation), (30.0, 5.0, 20.0, -5.0));
+        assert_eq!(
+            (p.contrast, p.highlights, p.shadows, p.whites),
+            (-5.0, -20.0, 10.0, 35.0)
+        );
+        assert_eq!(
+            (p.texture, p.clarity, p.vibrance, p.saturation),
+            (30.0, 5.0, 20.0, -5.0)
+        );
         assert_eq!((p.hsl_hue[3], p.hsl_sat[3]), (25.0, 20.0));
-        assert_eq!((p.sharpen_amount, p.noise_luminance, p.grain_amount), (15.0, 5.0, 10.0));
+        assert_eq!(
+            (p.sharpen_amount, p.noise_luminance, p.grain_amount),
+            (15.0, 5.0, 10.0)
+        );
         assert_eq!(p.grade_blending, 50.0);
         // The linear tone curve is PhotoCraft's empty one; an element-form setting is read too.
         assert!(p.point_curve.is_empty());
-        assert_eq!(p.point_curve_red, vec![[0.0, 0.0], [128.0, 140.0], [255.0, 255.0]]);
+        assert_eq!(
+            p.point_curve_red,
+            vec![[0.0, 0.0], [128.0, 140.0], [255.0, 255.0]]
+        );
         assert_eq!(p.dehaze, 12.0);
         // Lens vignetting, calibration and geometry have no counterpart.
-        assert_eq!(r.ignored, vec!["VignetteAmount".to_string(), "RedHue".to_string()]);
+        assert_eq!(
+            r.ignored,
+            vec!["VignetteAmount".to_string(), "RedHue".to_string()]
+        );
     }
 
     #[test]
@@ -388,18 +651,30 @@ mod tests {
 
     #[test]
     fn load_applies_only_the_settings_in_the_file() {
-        let mut p = CameraRaw { contrast: 40.0, ..CameraRaw::default() };
+        let mut p = CameraRaw {
+            contrast: 40.0,
+            ..CameraRaw::default()
+        };
         let xmp = br#"<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
             <rdf:Description xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"><crs:Exposure2012>-9</crs:Exposure2012>
             <crs:Clarity2012>abc</crs:Clarity2012></rdf:Description></rdf:RDF></x:xmpmeta>"#;
         let r = load(&mut p, xmp).unwrap();
         assert_eq!((p.exposure, p.contrast, p.clarity), (-5.0, 40.0, 0.0));
-        assert_eq!(r, LoadReport { applied: 1, ignored: vec!["Clarity2012".into()] });
+        assert_eq!(
+            r,
+            LoadReport {
+                applied: 1,
+                ignored: vec!["Clarity2012".into()]
+            }
+        );
     }
 
     #[test]
     fn malformed_input_is_an_error_and_leaves_settings_alone() {
-        let before = CameraRaw { exposure: 0.5, ..CameraRaw::default() };
+        let before = CameraRaw {
+            exposure: 0.5,
+            ..CameraRaw::default()
+        };
         for bad in [
             &b""[..],
             b"\xff\xfe\x00garbage",
@@ -418,6 +693,9 @@ mod tests {
         let mut p = before.clone();
         let r = load(&mut p, xmp).unwrap();
         assert_eq!(p, before);
-        assert_eq!(r.ignored, vec!["Contrast2012".to_string(), "ToneCurvePV2012".to_string()]);
+        assert_eq!(
+            r.ignored,
+            vec!["Contrast2012".to_string(), "ToneCurvePV2012".to_string()]
+        );
     }
 }

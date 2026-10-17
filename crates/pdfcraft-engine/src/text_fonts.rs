@@ -18,13 +18,19 @@ pub fn installed_directories() -> Vec<PathBuf> {
         }
         dirs
     } else if cfg!(windows) {
-        let mut dirs = std::env::var_os("WINDIR").map(|p| PathBuf::from(p).join("Fonts")).into_iter().collect::<Vec<_>>();
+        let mut dirs = std::env::var_os("WINDIR")
+            .map(|p| PathBuf::from(p).join("Fonts"))
+            .into_iter()
+            .collect::<Vec<_>>();
         if let Some(local) = std::env::var_os("LOCALAPPDATA") {
             dirs.push(PathBuf::from(local).join("Microsoft/Windows/Fonts"));
         }
         dirs
     } else {
-        let mut dirs = vec![PathBuf::from("/usr/share/fonts"), PathBuf::from("/usr/local/share/fonts")];
+        let mut dirs = vec![
+            PathBuf::from("/usr/share/fonts"),
+            PathBuf::from("/usr/local/share/fonts"),
+        ];
         if let Some(home) = home {
             dirs.extend([home.join(".local/share/fonts"), home.join(".fonts")]);
         }
@@ -46,14 +52,21 @@ pub fn discover(roots: &[PathBuf]) -> Vec<FontFile> {
             break;
         }
         entries += 1;
-        let Ok(meta) = std::fs::symlink_metadata(&path) else { continue };
+        let Ok(meta) = std::fs::symlink_metadata(&path) else {
+            continue;
+        };
         if meta.file_type().is_symlink() || !seen.insert(path.clone()) {
             continue;
         }
         if meta.is_dir() && depth < 4 {
             if let Ok(children) = std::fs::read_dir(&path) {
                 let remaining = 4096usize.saturating_sub(entries.saturating_add(pending.len()));
-                pending.extend(children.take(remaining).filter_map(Result::ok).map(|p| (p.path(), depth + 1)));
+                pending.extend(
+                    children
+                        .take(remaining)
+                        .filter_map(Result::ok)
+                        .map(|p| (p.path(), depth + 1)),
+                );
             }
         } else if meta.is_file() && meta.len() <= (16 << 20) && font_extension(&path) {
             if meta.len() > budget {
@@ -61,8 +74,10 @@ pub fn discover(roots: &[PathBuf]) -> Vec<FontFile> {
             }
             budget = budget.saturating_sub(meta.len());
             let mut bytes = Vec::new();
-            let read = std::fs::File::open(&path).and_then(|f| f.take((16 << 20) + 1).read_to_end(&mut bytes));
-            if read.is_err() || pdfcraft_fonts::embedding::validate_document_input(&bytes).is_err() {
+            let read = std::fs::File::open(&path)
+                .and_then(|f| f.take((16 << 20) + 1).read_to_end(&mut bytes));
+            if read.is_err() || pdfcraft_fonts::embedding::validate_document_input(&bytes).is_err()
+            {
                 continue;
             }
             if let Ok((family, face)) = pdfcraft_fonts::embedding::names(&bytes) {
@@ -74,5 +89,7 @@ pub fn discover(roots: &[PathBuf]) -> Vec<FontFile> {
     files
 }
 fn font_extension(path: &Path) -> bool {
-    path.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("ttf") || e.eq_ignore_ascii_case("otf"))
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("ttf") || e.eq_ignore_ascii_case("otf"))
 }

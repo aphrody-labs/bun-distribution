@@ -42,7 +42,10 @@ pub fn start(s: &mut Session, items: Option<Vec<ItemId>>, wait: bool) -> crate::
         .values()
         .filter(|i| items.as_ref().is_none_or(|v| v.contains(&i.id)))
         .filter_map(|i| match &i.kind {
-            ItemKind::Footage(f) if f.kind != FootageKind::Data => Some(Job { id: i.id, footage: f.clone() }),
+            ItemKind::Footage(f) if f.kind != FootageKind::Data => Some(Job {
+                id: i.id,
+                footage: f.clone(),
+            }),
             _ => None,
         })
         .collect();
@@ -53,52 +56,69 @@ pub fn start(s: &mut Session, items: Option<Vec<ItemId>>, wait: bool) -> crate::
     let importer = s.importer.clone();
     let rate = s.sequence_rate();
     let n = jobs.len();
-    s.spawn_task("footageCheck", format!("Checking footage ({n} items)"), wait, move |ctl| {
-        let mut found: Vec<(ItemId, Found)> = Vec::with_capacity(jobs.len());
-        let total = jobs.len() as u64;
-        for (k, j) in jobs.into_iter().enumerate() {
-            if !ctl.progress(k as u64, total) {
-                return Err(crate::render_queue::CANCELLED.into());
-            }
-            let f = &j.footage;
-            let present = if f.sequence.is_empty() {
-                exists(services.as_ref(), &f.path)
-            } else {
-                // A sequence is there while any of its frames is (missing frames render as
-                // placeholders, as in After Effects).
-                exists(services.as_ref(), &f.path) || f.sequence.iter().any(|p| exists(services.as_ref(), p))
-            };
-            // Saved without metadata (a hand-written or converted project): probe it now.
-            let needs_probe = present && f.width == 0 && f.height == 0 && f.kind != FootageKind::Audio;
-            let probed = importer.as_ref().filter(|_| needs_probe).map(|imp| match f.kind {
-                // A sequence keeps its files; its first one gives the metadata.
-                FootageKind::Sequence if !f.sequence.is_empty() => imp.probe(&f.path).map(|one| {
-                    let mut nf = Footage {
-                        width: one.width,
-                        height: one.height,
-                        pixel_aspect: one.pixel_aspect,
-                        has_video: one.has_video,
-                        codec: one.codec,
-                        ..f.clone()
-                    };
-                    nf.sync_sequence_duration();
-                    nf
-                }),
-                _ => crate::sequence::probe_path(imp.as_ref(), services.as_ref(), &f.path, rate),
-            });
-            match probed {
-                Some(Ok(mut nf)) => {
-                    nf.alpha = f.alpha;
-                    nf.loop_count = f.loop_count;
-                    found.push((j.id, Found::Probed(Box::new(nf))));
+    s.spawn_task(
+        "footageCheck",
+        format!("Checking footage ({n} items)"),
+        wait,
+        move |ctl| {
+            let mut found: Vec<(ItemId, Found)> = Vec::with_capacity(jobs.len());
+            let total = jobs.len() as u64;
+            for (k, j) in jobs.into_iter().enumerate() {
+                if !ctl.progress(k as u64, total) {
+                    return Err(crate::render_queue::CANCELLED.into());
                 }
-                _ => found.push((j.id, Found::Missing(!present))),
+                let f = &j.footage;
+                let present = if f.sequence.is_empty() {
+                    exists(services.as_ref(), &f.path)
+                } else {
+                    // A sequence is there while any of its frames is (missing frames render as
+                    // placeholders, as in After Effects).
+                    exists(services.as_ref(), &f.path)
+                        || f.sequence.iter().any(|p| exists(services.as_ref(), p))
+                };
+                // Saved without metadata (a hand-written or converted project): probe it now.
+                let needs_probe =
+                    present && f.width == 0 && f.height == 0 && f.kind != FootageKind::Audio;
+                let probed = importer
+                    .as_ref()
+                    .filter(|_| needs_probe)
+                    .map(|imp| match f.kind {
+                        // A sequence keeps its files; its first one gives the metadata.
+                        FootageKind::Sequence if !f.sequence.is_empty() => {
+                            imp.probe(&f.path).map(|one| {
+                                let mut nf = Footage {
+                                    width: one.width,
+                                    height: one.height,
+                                    pixel_aspect: one.pixel_aspect,
+                                    has_video: one.has_video,
+                                    codec: one.codec,
+                                    ..f.clone()
+                                };
+                                nf.sync_sequence_duration();
+                                nf
+                            })
+                        }
+                        _ => crate::sequence::probe_path(
+                            imp.as_ref(),
+                            services.as_ref(),
+                            &f.path,
+                            rate,
+                        ),
+                    });
+                match probed {
+                    Some(Ok(mut nf)) => {
+                        nf.alpha = f.alpha;
+                        nf.loop_count = f.loop_count;
+                        found.push((j.id, Found::Probed(Box::new(nf))));
+                    }
+                    _ => found.push((j.id, Found::Missing(!present))),
+                }
             }
-        }
-        ctl.progress(total, total);
-        let apply: crate::jobs::Apply = Box::new(move |s: &mut Session| Ok(apply(s, found)));
-        Ok(apply)
-    })
+            ctl.progress(total, total);
+            let apply: crate::jobs::Apply = Box::new(move |s: &mut Session| Ok(apply(s, found)));
+            Ok(apply)
+        },
+    )
 }
 
 /// Write the findings into the project. Not an undo step: it records the state of the disk,
@@ -108,7 +128,9 @@ fn apply(s: &mut Session, found: Vec<(ItemId, Found)>) -> Value {
     let (mut missing, mut probed, mut changed) = (0, 0, false);
     let p = std::sync::Arc::make_mut(&mut s.project);
     for (id, f) in found {
-        let Some(ItemKind::Footage(cur)) = p.item_mut(id).map(|i| &mut i.kind) else { continue };
+        let Some(ItemKind::Footage(cur)) = p.item_mut(id).map(|i| &mut i.kind) else {
+            continue;
+        };
         match f {
             Found::Missing(m) => {
                 missing += usize::from(m);
@@ -134,13 +156,18 @@ fn apply(s: &mut Session, found: Vec<(ItemId, Found)>) -> Value {
         s.events.push(crate::Event::PurgeCaches);
     }
     if missing > 0 {
-        s.toast(format!("{missing} footage item(s) missing (File ▸ Dependencies ▸ Find Missing Footage)"));
+        s.toast(format!(
+            "{missing} footage item(s) missing (File ▸ Dependencies ▸ Find Missing Footage)"
+        ));
     }
     json!({"checked": checked, "missing": missing, "probed": probed})
 }
 
 pub(crate) fn command(s: &mut Session, p: &Value) -> crate::Result<Value> {
-    let items = p.get("items").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect());
+    let items = p
+        .get("items")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(ItemId).collect());
     let wait = p.get("wait").and_then(Value::as_bool).unwrap_or(false);
     start(s, items, wait)
 }
@@ -152,8 +179,19 @@ mod tests {
     fn session_with(paths: &[&str]) -> Session {
         let mut s = Session::default();
         for (i, p) in paths.iter().enumerate() {
-            let f = Footage { path: p.to_string(), width: 64, height: 48, has_video: true, ..Default::default() };
-            std::sync::Arc::make_mut(&mut s.project).add_item(&format!("f{i}"), crate::color::Label::None, None, ItemKind::Footage(f));
+            let f = Footage {
+                path: p.to_string(),
+                width: 64,
+                height: 48,
+                has_video: true,
+                ..Default::default()
+            };
+            std::sync::Arc::make_mut(&mut s.project).add_item(
+                &format!("f{i}"),
+                crate::color::Label::None,
+                None,
+                ItemKind::Footage(f),
+            );
         }
         s
     }
@@ -189,7 +227,12 @@ mod tests {
             s.poll_jobs();
             std::thread::yield_now();
         }
-        assert!(s.project.items.values().all(|i| matches!(&i.kind, ItemKind::Footage(f) if f.missing)));
+        assert!(
+            s.project
+                .items
+                .values()
+                .all(|i| matches!(&i.kind, ItemKind::Footage(f) if f.missing))
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -202,20 +245,44 @@ mod tests {
         std::fs::create_dir_all(dir.join("media")).unwrap();
         let clip = dir.join("media").join("ec-relative-clip.png");
         std::fs::write(&clip, b"x").unwrap();
-        let mut s = session_with(&["media/ec-relative-clip.png", "/nonexistent/ec/abs.png", "media/ec-relative-gone.png"]);
+        let mut s = session_with(&[
+            "media/ec-relative-clip.png",
+            "/nonexistent/ec/abs.png",
+            "media/ec-relative-gone.png",
+        ]);
         let path = dir.join("p.ecproj");
-        s.execute("file.saveAs", json!({"path": path.to_string_lossy()})).unwrap();
+        s.execute("file.saveAs", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         let mut o = Session::default();
-        o.execute("file.open", json!({"path": path.to_string_lossy()})).unwrap();
-        let mut paths: Vec<String> =
-            o.project.items.values().filter_map(|i| if let ItemKind::Footage(f) = &i.kind { Some(f.path.clone()) } else { None }).collect();
+        o.execute("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        let mut paths: Vec<String> = o
+            .project
+            .items
+            .values()
+            .filter_map(|i| {
+                if let ItemKind::Footage(f) = &i.kind {
+                    Some(f.path.clone())
+                } else {
+                    None
+                }
+            })
+            .collect();
         paths.sort();
         // Windows joins the stored "media/..." onto the project's folder and leaves a path with mixed
         // separators; `Path` equality compares components, so both spellings are the same file.
-        let expected = ["/nonexistent/ec/abs.png", clip.to_str().unwrap(), "media/ec-relative-gone.png"];
+        let expected = [
+            "/nonexistent/ec/abs.png",
+            clip.to_str().unwrap(),
+            "media/ec-relative-gone.png",
+        ];
         assert_eq!(paths.len(), expected.len(), "{paths:?}");
         for (got, want) in paths.iter().zip(expected) {
-            assert_eq!(std::path::Path::new(got), std::path::Path::new(want), "{paths:?}");
+            assert_eq!(
+                std::path::Path::new(got),
+                std::path::Path::new(want),
+                "{paths:?}"
+            );
         }
         assert!(!o.is_dirty(), "finding the files is no edit");
         let r = o.execute("footage.check", json!({"wait": true})).unwrap();
@@ -226,13 +293,25 @@ mod tests {
     #[test]
     fn open_starts_the_check_when_asked() {
         let mut s = session_with(&["/nonexistent/ec/a.mov"]);
-        let path = std::env::temp_dir().join(format!("ec-footage-open-{}.ecproj", std::process::id()));
-        s.execute("file.saveAs", json!({"path": path.to_string_lossy()})).unwrap();
-        let mut o = Session { check_footage_on_open: true, ..Default::default() };
-        o.execute("file.open", json!({"path": path.to_string_lossy()})).unwrap();
-        assert!(o.jobs().iter().any(|j| j.kind == "footageCheck"), "{:?}", o.jobs());
+        let path =
+            std::env::temp_dir().join(format!("ec-footage-open-{}.ecproj", std::process::id()));
+        s.execute("file.saveAs", json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        let mut o = Session {
+            check_footage_on_open: true,
+            ..Default::default()
+        };
+        o.execute("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        assert!(
+            o.jobs().iter().any(|j| j.kind == "footageCheck"),
+            "{:?}",
+            o.jobs()
+        );
         let mut plain = Session::default();
-        plain.execute("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        plain
+            .execute("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert!(plain.jobs().is_empty());
         let _ = std::fs::remove_file(path);
     }

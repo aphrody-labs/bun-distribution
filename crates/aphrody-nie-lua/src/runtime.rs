@@ -67,7 +67,12 @@ impl RuntimeContext {
 
     pub(crate) fn clear_replaced_by(&self, lua: &Lua, replacement: &Self) -> mlua::Result<()> {
         let globals = lua.globals();
-        for name in self.numbers.keys().chain(self.booleans.keys()).chain(self.strings.keys()) {
+        for name in self
+            .numbers
+            .keys()
+            .chain(self.booleans.keys())
+            .chain(self.strings.keys())
+        {
             let still_present = replacement.numbers.contains_key(name)
                 || replacement.booleans.contains_key(name)
                 || replacement.strings.contains_key(name);
@@ -189,7 +194,11 @@ pub fn install_print_capture(lua: &Lua, sink: Rc<RefCell<Vec<String>>>) -> mlua:
     let f = lua.create_function(move |_, args: Variadic<Value>| {
         // `print` sépare ses arguments par une tabulation — on reproduit, pour que la sortie
         // corresponde à ce qu'un terminal aurait montré.
-        let line = args.iter().map(value_to_string).collect::<Vec<_>>().join("\t");
+        let line = args
+            .iter()
+            .map(value_to_string)
+            .collect::<Vec<_>>()
+            .join("\t");
         sink.borrow_mut().push(line);
         Ok(())
     })?;
@@ -336,11 +345,11 @@ fn execute_inner(
                 Some(bytes) => {
                     loaded.borrow_mut().push(name.to_string());
                     Some(bytes)
-                },
+                }
                 None => {
                     missing.borrow_mut().push(name.to_string());
                     None
-                },
+                }
             },
             Some(Rc::clone(&decoded_include_instructions)),
         )?;
@@ -370,10 +379,16 @@ fn execute_inner(
         })?;
     }
 
-    let mode =
-        if is_lua52_bytecode(data) { mlua::ChunkMode::Binary } else { mlua::ChunkMode::Text };
-    let result =
-        lua.load(data).set_name(options.chunk_name.clone()).set_mode(mode).call::<MultiValue>(());
+    let mode = if is_lua52_bytecode(data) {
+        mlua::ChunkMode::Binary
+    } else {
+        mlua::ChunkMode::Text
+    };
+    let result = lua
+        .load(data)
+        .set_name(options.chunk_name.clone())
+        .set_mode(mode)
+        .call::<MultiValue>(());
 
     let mut out = ExecOutput {
         duration_ms: started.elapsed().as_millis() as u64,
@@ -393,29 +408,41 @@ fn execute_inner(
 
     // Globals manquants relevés par les stubs : la liste d'API hôte que ce script réclame.
     if let Ok(missing) = lua.globals().get::<mlua::Table>("_HOST_MISSING") {
-        let mut names: Vec<String> =
-            missing.pairs::<String, Value>().filter_map(Result::ok).map(|(k, _)| k).collect();
+        let mut names: Vec<String> = missing
+            .pairs::<String, Value>()
+            .filter_map(Result::ok)
+            .map(|(k, _)| k)
+            .collect();
         names.sort_unstable();
         names.dedup();
         out.missing_host_calls = names;
     }
     if let Ok(missing) = lua.globals().get::<mlua::Table>("_HOST_MISSING_READS") {
-        let mut names: Vec<String> =
-            missing.pairs::<String, Value>().filter_map(Result::ok).map(|(k, _)| k).collect();
+        let mut names: Vec<String> = missing
+            .pairs::<String, Value>()
+            .filter_map(Result::ok)
+            .map(|(k, _)| k)
+            .collect();
         names.sort_unstable();
         names.dedup();
         out.missing_host_reads = names;
     }
     if let Ok(missing) = lua.globals().get::<mlua::Table>("_HOST_MISSING_CALLS") {
-        let mut names: Vec<String> =
-            missing.pairs::<String, Value>().filter_map(Result::ok).map(|(k, _)| k).collect();
+        let mut names: Vec<String> = missing
+            .pairs::<String, Value>()
+            .filter_map(Result::ok)
+            .map(|(k, _)| k)
+            .collect();
         names.sort_unstable();
         names.dedup();
         out.missing_host_invocations = names;
     }
     if let Ok(missing) = lua.globals().get::<mlua::Table>("_HOST_MISSING_PATHS") {
-        let mut paths: Vec<String> =
-            missing.pairs::<String, Value>().filter_map(Result::ok).map(|(path, _)| path).collect();
+        let mut paths: Vec<String> = missing
+            .pairs::<String, Value>()
+            .filter_map(Result::ok)
+            .map(|(path, _)| path)
+            .collect();
         paths.sort_unstable();
         paths.dedup();
         out.missing_host_paths = paths;
@@ -467,7 +494,10 @@ pub fn list_globals(lua: &Lua, include_stdlib: bool) -> Vec<GlobalEntry> {
         "xpcall",
     ];
 
-    let Ok(globals) = lua.globals().pairs::<String, Value>().collect::<mlua::Result<Vec<_>>>()
+    let Ok(globals) = lua
+        .globals()
+        .pairs::<String, Value>()
+        .collect::<mlua::Result<Vec<_>>>()
     else {
         return Vec::new();
     };
@@ -512,7 +542,11 @@ pub fn eval_expression(lua: &Lua, expr: &str) -> Result<String, LuaError> {
 
     Ok(match result {
         Ok(values) if values.is_empty() => String::new(),
-        Ok(values) => values.iter().map(value_to_string).collect::<Vec<_>>().join("\t"),
+        Ok(values) => values
+            .iter()
+            .map(value_to_string)
+            .collect::<Vec<_>>()
+            .join("\t"),
         Err(e) => format!("erreur : {e}"),
     })
 }
@@ -523,8 +557,11 @@ mod tests {
 
     #[test]
     fn capture_la_sortie_et_les_retours() {
-        let out = execute(b"print('bonjour', 42) return 7, 'x'", &ExecOptions::default())
-            .expect("exécution");
+        let out = execute(
+            b"print('bonjour', 42) return 7, 'x'",
+            &ExecOptions::default(),
+        )
+        .expect("exécution");
         assert_eq!(out.stdout, vec!["bonjour\t42".to_string()]);
         assert_eq!(out.returned, vec!["7".to_string(), "x".to_string()]);
         assert!(out.error.is_none(), "erreur inattendue : {:?}", out.error);
@@ -543,7 +580,10 @@ mod tests {
         context.set_number("x", 12.5);
         context.set_boolean("isGrayout", false);
         context.set_string("MENU_LINIT_NONE", "none");
-        let options = ExecOptions { context, ..Default::default() };
+        let options = ExecOptions {
+            context,
+            ..Default::default()
+        };
         let out = execute(
             br#"assert(x == 12.5); assert(not isGrayout); assert(MENU_LINIT_NONE == "none")"#,
             &options,
@@ -585,8 +625,10 @@ mod tests {
         // de dépendre d'un fichier d'asset pour tester le contrat de mesure et couvre le format
         // réellement remis à `install_include_with_trace`.
         let lua = crate::new_vm();
-        let include =
-            lua.load("included_value = 41").into_function().expect("compilation de l'include");
+        let include = lua
+            .load("included_value = 41")
+            .into_function()
+            .expect("compilation de l'include");
         let include_bytes = include.dump(false);
         let expected = crate::bytecode::parse(&include_bytes)
             .expect("le dump Lua 5.2 doit être lisible par le décodeur Rust")
@@ -599,14 +641,20 @@ mod tests {
         )
         .expect("exécution avec include binaire");
         assert_eq!(out.returned, vec!["41"]);
-        assert_eq!(out.decoded_include_instructions.get("COMMON"), Some(&expected));
+        assert_eq!(
+            out.decoded_include_instructions.get("COMMON"),
+            Some(&expected)
+        );
         assert_eq!(out.decoded_instructions_total, None);
     }
 
     /// Une boucle infinie doit être coupée par la limite d'instructions, pas figer l'appelant.
     #[test]
     fn interrompt_une_boucle_infinie() {
-        let options = ExecOptions { instruction_limit: Some(100_000), ..Default::default() };
+        let options = ExecOptions {
+            instruction_limit: Some(100_000),
+            ..Default::default()
+        };
         let out = execute(b"while true do end", &options).expect("exécution");
         let msg = out.error.expect("la limite devait interrompre le script");
         assert!(msg.contains("limite d'exécution"), "message : {msg}");
@@ -615,13 +663,22 @@ mod tests {
     /// Un appel à une fonction moteur inexistante ne doit pas arrêter le script, mais être relevé.
     #[test]
     fn releve_les_appels_hote_manquants() {
-        let out = execute(b"MENU_OPEN('titre') SOME_ENGINE_CALL()", &ExecOptions::default())
-            .expect("exécution");
+        let out = execute(
+            b"MENU_OPEN('titre') SOME_ENGINE_CALL()",
+            &ExecOptions::default(),
+        )
+        .expect("exécution");
         assert!(out.error.is_none(), "erreur inattendue : {:?}", out.error);
         assert!(out.missing_host_calls.contains(&"MENU_OPEN".to_string()));
-        assert!(out.missing_host_calls.contains(&"SOME_ENGINE_CALL".to_string()));
+        assert!(
+            out.missing_host_calls
+                .contains(&"SOME_ENGINE_CALL".to_string())
+        );
         assert!(out.missing_host_paths.contains(&"MENU_OPEN()".to_string()));
-        assert!(out.missing_host_paths.contains(&"SOME_ENGINE_CALL()".to_string()));
+        assert!(
+            out.missing_host_paths
+                .contains(&"SOME_ENGINE_CALL()".to_string())
+        );
     }
 
     #[test]
@@ -661,13 +718,18 @@ mod tests {
     #[test]
     fn liste_et_evalue_les_globals() {
         let lua = crate::new_vm();
-        lua.load("mavaleur = 3 matable = {a=1, b=2}").exec().expect("préparation");
+        lua.load("mavaleur = 3 matable = {a=1, b=2}")
+            .exec()
+            .expect("préparation");
 
         let globals = list_globals(&lua, false);
         let names: Vec<&str> = globals.iter().map(|g| g.name.as_str()).collect();
         assert!(names.contains(&"mavaleur"), "globals : {names:?}");
 
-        let table = globals.iter().find(|g| g.name == "matable").expect("matable");
+        let table = globals
+            .iter()
+            .find(|g| g.name == "matable")
+            .expect("matable");
         assert_eq!(table.type_name, "table");
         assert_eq!(table.len, Some(2));
 

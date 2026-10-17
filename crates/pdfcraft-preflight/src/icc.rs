@@ -38,7 +38,11 @@ fn curve() -> Vec<u8> {
     t.extend((N as u32).to_be_bytes());
     for i in 0..N {
         let v = i as f64 / (N - 1) as f64;
-        let lin = if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) };
+        let lin = if v <= 0.04045 {
+            v / 12.92
+        } else {
+            ((v + 0.055) / 1.055).powf(2.4)
+        };
         t.extend(((lin * 65535.0).round() as u16).to_be_bytes());
     }
     t
@@ -113,7 +117,10 @@ mod tests {
     #[test]
     fn profile_is_well_formed() {
         let p = super::srgb();
-        assert_eq!(u32::from_be_bytes(p[0..4].try_into().unwrap()) as usize, p.len());
+        assert_eq!(
+            u32::from_be_bytes(p[0..4].try_into().unwrap()) as usize,
+            p.len()
+        );
         assert_eq!(&p[36..40], b"acsp");
         assert_eq!(&p[12..20], b"mntrRGB ");
         let n = u32::from_be_bytes(p[128..132].try_into().unwrap()) as usize;

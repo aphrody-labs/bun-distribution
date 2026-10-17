@@ -2,190 +2,745 @@
 //! Generated from the contents of assets/icons/.
 
 pub static ICONS: &[(&str, &[u8])] = &[
-    ("accessibility", include_bytes!("../../../assets/pdfcraft/icons/accessibility.svg")),
-    ("align-center", include_bytes!("../../../assets/pdfcraft/icons/align-center.svg")),
-    ("align-justify", include_bytes!("../../../assets/pdfcraft/icons/align-justify.svg")),
-    ("file-spreadsheet", include_bytes!("../../../assets/pdfcraft/icons/file-spreadsheet.svg")),
-    ("file-code", include_bytes!("../../../assets/pdfcraft/icons/file-code.svg")),
-    ("square-terminal", include_bytes!("../../../assets/pdfcraft/icons/square-terminal.svg")),
-    ("align-left", include_bytes!("../../../assets/pdfcraft/icons/align-left.svg")),
-    ("align-right", include_bytes!("../../../assets/pdfcraft/icons/align-right.svg")),
-    ("app-window", include_bytes!("../../../assets/pdfcraft/icons/app-window.svg")),
-    ("arrow-left-right", include_bytes!("../../../assets/pdfcraft/icons/arrow-left-right.svg")),
-    ("arrow-up-down", include_bytes!("../../../assets/pdfcraft/icons/arrow-up-down.svg")),
-    ("arrow-up-right", include_bytes!("../../../assets/pdfcraft/icons/arrow-up-right.svg")),
-    ("badge-check", include_bytes!("../../../assets/pdfcraft/icons/badge-check.svg")),
-    ("bandage", include_bytes!("../../../assets/pdfcraft/icons/bandage.svg")),
-    ("bell", include_bytes!("../../../assets/pdfcraft/icons/bell.svg")),
-    ("blend", include_bytes!("../../../assets/pdfcraft/icons/blend.svg")),
-    ("bold", include_bytes!("../../../assets/pdfcraft/icons/bold.svg")),
-    ("book-open", include_bytes!("../../../assets/pdfcraft/icons/book-open.svg")),
-    ("bookmark", include_bytes!("../../../assets/pdfcraft/icons/bookmark.svg")),
-    ("bookmark-plus", include_bytes!("../../../assets/pdfcraft/icons/bookmark-plus.svg")),
-    ("braces", include_bytes!("../../../assets/pdfcraft/icons/braces.svg")),
-    ("brush", include_bytes!("../../../assets/pdfcraft/icons/brush.svg")),
-    ("brush-cleaning", include_bytes!("../../../assets/pdfcraft/icons/brush-cleaning.svg")),
-    ("camera", include_bytes!("../../../assets/pdfcraft/icons/camera.svg")),
-    ("check", include_bytes!("../../../assets/pdfcraft/icons/check.svg")),
-    ("check-circle-2", include_bytes!("../../../assets/pdfcraft/icons/check-circle-2.svg")),
-    ("chevron-down", include_bytes!("../../../assets/pdfcraft/icons/chevron-down.svg")),
-    ("chevron-left", include_bytes!("../../../assets/pdfcraft/icons/chevron-left.svg")),
-    ("chevron-right", include_bytes!("../../../assets/pdfcraft/icons/chevron-right.svg")),
-    ("chevron-up", include_bytes!("../../../assets/pdfcraft/icons/chevron-up.svg")),
-    ("chevrons-left", include_bytes!("../../../assets/pdfcraft/icons/chevrons-left.svg")),
-    ("chevrons-right", include_bytes!("../../../assets/pdfcraft/icons/chevrons-right.svg")),
-    ("circle", include_bytes!("../../../assets/pdfcraft/icons/circle.svg")),
-    ("circle-check", include_bytes!("../../../assets/pdfcraft/icons/circle-check.svg")),
-    ("circle-dashed", include_bytes!("../../../assets/pdfcraft/icons/circle-dashed.svg")),
-    ("circle-dot", include_bytes!("../../../assets/pdfcraft/icons/circle-dot.svg")),
-    ("circle-help", include_bytes!("../../../assets/pdfcraft/icons/circle-help.svg")),
-    ("circle-x", include_bytes!("../../../assets/pdfcraft/icons/circle-x.svg")),
-    ("clipboard-paste", include_bytes!("../../../assets/pdfcraft/icons/clipboard-paste.svg")),
-    ("clock", include_bytes!("../../../assets/pdfcraft/icons/clock.svg")),
-    ("clock-3", include_bytes!("../../../assets/pdfcraft/icons/clock-3.svg")),
-    ("cloud", include_bytes!("../../../assets/pdfcraft/icons/cloud.svg")),
-    ("cloud-upload", include_bytes!("../../../assets/pdfcraft/icons/cloud-upload.svg")),
-    ("code-xml", include_bytes!("../../../assets/pdfcraft/icons/code-xml.svg")),
-    ("columns-2", include_bytes!("../../../assets/pdfcraft/icons/columns-2.svg")),
-    ("columns-3", include_bytes!("../../../assets/pdfcraft/icons/columns-3.svg")),
-    ("compass", include_bytes!("../../../assets/pdfcraft/icons/compass.svg")),
-    ("contrast", include_bytes!("../../../assets/pdfcraft/icons/contrast.svg")),
-    ("copy", include_bytes!("../../../assets/pdfcraft/icons/copy.svg")),
-    ("copy-plus", include_bytes!("../../../assets/pdfcraft/icons/copy-plus.svg")),
-    ("crop", include_bytes!("../../../assets/pdfcraft/icons/crop.svg")),
-    ("droplet", include_bytes!("../../../assets/pdfcraft/icons/droplet.svg")),
-    ("ellipsis", include_bytes!("../../../assets/pdfcraft/icons/ellipsis.svg")),
-    ("ellipsis-vertical", include_bytes!("../../../assets/pdfcraft/icons/ellipsis-vertical.svg")),
-    ("eraser", include_bytes!("../../../assets/pdfcraft/icons/eraser.svg")),
-    ("external-link", include_bytes!("../../../assets/pdfcraft/icons/external-link.svg")),
-    ("eye", include_bytes!("../../../assets/pdfcraft/icons/eye.svg")),
-    ("eye-off", include_bytes!("../../../assets/pdfcraft/icons/eye-off.svg")),
-    ("file-check", include_bytes!("../../../assets/pdfcraft/icons/file-check.svg")),
-    ("file-down", include_bytes!("../../../assets/pdfcraft/icons/file-down.svg")),
-    ("file-input", include_bytes!("../../../assets/pdfcraft/icons/file-input.svg")),
-    ("file-lock-2", include_bytes!("../../../assets/pdfcraft/icons/file-lock-2.svg")),
-    ("file-minus", include_bytes!("../../../assets/pdfcraft/icons/file-minus.svg")),
-    ("file-output", include_bytes!("../../../assets/pdfcraft/icons/file-output.svg")),
-    ("file-pen-line", include_bytes!("../../../assets/pdfcraft/icons/file-pen-line.svg")),
-    ("file-plus", include_bytes!("../../../assets/pdfcraft/icons/file-plus.svg")),
-    ("file-plus-2", include_bytes!("../../../assets/pdfcraft/icons/file-plus-2.svg")),
-    ("file-scan", include_bytes!("../../../assets/pdfcraft/icons/file-scan.svg")),
-    ("file-search", include_bytes!("../../../assets/pdfcraft/icons/file-search.svg")),
-    ("file-symlink", include_bytes!("../../../assets/pdfcraft/icons/file-symlink.svg")),
-    ("file-text", include_bytes!("../../../assets/pdfcraft/icons/file-text.svg")),
-    ("file-x", include_bytes!("../../../assets/pdfcraft/icons/file-x.svg")),
-    ("files", include_bytes!("../../../assets/pdfcraft/icons/files.svg")),
-    ("film", include_bytes!("../../../assets/pdfcraft/icons/film.svg")),
-    ("filter", include_bytes!("../../../assets/pdfcraft/icons/filter.svg")),
-    ("flip-horizontal-2", include_bytes!("../../../assets/pdfcraft/icons/flip-horizontal-2.svg")),
-    ("flip-vertical-2", include_bytes!("../../../assets/pdfcraft/icons/flip-vertical-2.svg")),
-    ("folder", include_bytes!("../../../assets/pdfcraft/icons/folder.svg")),
-    ("folder-open", include_bytes!("../../../assets/pdfcraft/icons/folder-open.svg")),
-    ("folder-plus", include_bytes!("../../../assets/pdfcraft/icons/folder-plus.svg")),
-    ("gauge", include_bytes!("../../../assets/pdfcraft/icons/gauge.svg")),
-    ("git-compare", include_bytes!("../../../assets/pdfcraft/icons/git-compare.svg")),
-    ("globe", include_bytes!("../../../assets/pdfcraft/icons/globe.svg")),
-    ("grid-3x3", include_bytes!("../../../assets/pdfcraft/icons/grid-3x3.svg")),
-    ("hand", include_bytes!("../../../assets/pdfcraft/icons/hand.svg")),
-    ("hash", include_bytes!("../../../assets/pdfcraft/icons/hash.svg")),
-    ("heading", include_bytes!("../../../assets/pdfcraft/icons/heading.svg")),
-    ("highlighter", include_bytes!("../../../assets/pdfcraft/icons/highlighter.svg")),
-    ("house", include_bytes!("../../../assets/pdfcraft/icons/house.svg")),
-    ("image", include_bytes!("../../../assets/pdfcraft/icons/image.svg")),
-    ("image-plus", include_bytes!("../../../assets/pdfcraft/icons/image-plus.svg")),
-    ("info", include_bytes!("../../../assets/pdfcraft/icons/info.svg")),
-    ("italic", include_bytes!("../../../assets/pdfcraft/icons/italic.svg")),
-    ("languages", include_bytes!("../../../assets/pdfcraft/icons/languages.svg")),
-    ("lasso", include_bytes!("../../../assets/pdfcraft/icons/lasso.svg")),
-    ("layers", include_bytes!("../../../assets/pdfcraft/icons/layers.svg")),
-    ("layout-grid", include_bytes!("../../../assets/pdfcraft/icons/layout-grid.svg")),
-    ("link", include_bytes!("../../../assets/pdfcraft/icons/link.svg")),
-    ("link-2", include_bytes!("../../../assets/pdfcraft/icons/link-2.svg")),
-    ("list", include_bytes!("../../../assets/pdfcraft/icons/list.svg")),
-    ("list-checks", include_bytes!("../../../assets/pdfcraft/icons/list-checks.svg")),
-    ("list-ordered", include_bytes!("../../../assets/pdfcraft/icons/list-ordered.svg")),
-    ("lock", include_bytes!("../../../assets/pdfcraft/icons/lock.svg")),
-    ("lock-open", include_bytes!("../../../assets/pdfcraft/icons/lock-open.svg")),
-    ("maximize", include_bytes!("../../../assets/pdfcraft/icons/maximize.svg")),
-    ("maximize-2", include_bytes!("../../../assets/pdfcraft/icons/maximize-2.svg")),
-    ("message-circle-reply", include_bytes!("../../../assets/pdfcraft/icons/message-circle-reply.svg")),
-    ("message-square", include_bytes!("../../../assets/pdfcraft/icons/message-square.svg")),
-    ("message-square-plus", include_bytes!("../../../assets/pdfcraft/icons/message-square-plus.svg")),
-    ("message-square-quote", include_bytes!("../../../assets/pdfcraft/icons/message-square-quote.svg")),
-    ("message-square-text", include_bytes!("../../../assets/pdfcraft/icons/message-square-text.svg")),
-    ("messages-square", include_bytes!("../../../assets/pdfcraft/icons/messages-square.svg")),
-    ("mic", include_bytes!("../../../assets/pdfcraft/icons/mic.svg")),
-    ("minimize", include_bytes!("../../../assets/pdfcraft/icons/minimize.svg")),
-    ("minimize-2", include_bytes!("../../../assets/pdfcraft/icons/minimize-2.svg")),
-    ("minus", include_bytes!("../../../assets/pdfcraft/icons/minus.svg")),
-    ("monitor", include_bytes!("../../../assets/pdfcraft/icons/monitor.svg")),
-    ("moon", include_bytes!("../../../assets/pdfcraft/icons/moon.svg")),
-    ("mouse-pointer-2", include_bytes!("../../../assets/pdfcraft/icons/mouse-pointer-2.svg")),
-    ("move", include_bytes!("../../../assets/pdfcraft/icons/move.svg")),
-    ("move-right", include_bytes!("../../../assets/pdfcraft/icons/move-right.svg")),
-    ("navigation", include_bytes!("../../../assets/pdfcraft/icons/navigation.svg")),
-    ("paint-bucket", include_bytes!("../../../assets/pdfcraft/icons/paint-bucket.svg")),
-    ("palette", include_bytes!("../../../assets/pdfcraft/icons/palette.svg")),
-    ("panel-left", include_bytes!("../../../assets/pdfcraft/icons/panel-left.svg")),
-    ("panel-right", include_bytes!("../../../assets/pdfcraft/icons/panel-right.svg")),
-    ("panels-top-left", include_bytes!("../../../assets/pdfcraft/icons/panels-top-left.svg")),
-    ("paperclip", include_bytes!("../../../assets/pdfcraft/icons/paperclip.svg")),
-    ("pen-line", include_bytes!("../../../assets/pdfcraft/icons/pen-line.svg")),
-    ("pen-tool", include_bytes!("../../../assets/pdfcraft/icons/pen-tool.svg")),
-    ("pencil", include_bytes!("../../../assets/pdfcraft/icons/pencil.svg")),
-    ("pentagon", include_bytes!("../../../assets/pdfcraft/icons/pentagon.svg")),
-    ("pin", include_bytes!("../../../assets/pdfcraft/icons/pin.svg")),
-    ("pipette", include_bytes!("../../../assets/pdfcraft/icons/pipette.svg")),
-    ("plus", include_bytes!("../../../assets/pdfcraft/icons/plus.svg")),
-    ("presentation", include_bytes!("../../../assets/pdfcraft/icons/presentation.svg")),
-    ("printer", include_bytes!("../../../assets/pdfcraft/icons/printer.svg")),
-    ("rectangle-horizontal", include_bytes!("../../../assets/pdfcraft/icons/rectangle-horizontal.svg")),
-    ("redo-2", include_bytes!("../../../assets/pdfcraft/icons/redo-2.svg")),
-    ("replace", include_bytes!("../../../assets/pdfcraft/icons/replace.svg")),
-    ("reply", include_bytes!("../../../assets/pdfcraft/icons/reply.svg")),
-    ("rotate-ccw", include_bytes!("../../../assets/pdfcraft/icons/rotate-ccw.svg")),
-    ("rotate-cw", include_bytes!("../../../assets/pdfcraft/icons/rotate-cw.svg")),
-    ("rows-3", include_bytes!("../../../assets/pdfcraft/icons/rows-3.svg")),
-    ("ruler", include_bytes!("../../../assets/pdfcraft/icons/ruler.svg")),
-    ("save", include_bytes!("../../../assets/pdfcraft/icons/save.svg")),
-    ("scan", include_bytes!("../../../assets/pdfcraft/icons/scan.svg")),
-    ("scan-text", include_bytes!("../../../assets/pdfcraft/icons/scan-text.svg")),
-    ("scissors", include_bytes!("../../../assets/pdfcraft/icons/scissors.svg")),
-    ("search", include_bytes!("../../../assets/pdfcraft/icons/search.svg")),
-    ("send", include_bytes!("../../../assets/pdfcraft/icons/send.svg")),
-    ("settings", include_bytes!("../../../assets/pdfcraft/icons/settings.svg")),
-    ("settings-2", include_bytes!("../../../assets/pdfcraft/icons/settings-2.svg")),
-    ("share-2", include_bytes!("../../../assets/pdfcraft/icons/share-2.svg")),
-    ("shield-check", include_bytes!("../../../assets/pdfcraft/icons/shield-check.svg")),
-    ("signature", include_bytes!("../../../assets/pdfcraft/icons/signature.svg")),
-    ("sliders-horizontal", include_bytes!("../../../assets/pdfcraft/icons/sliders-horizontal.svg")),
-    ("sparkles", include_bytes!("../../../assets/pdfcraft/icons/sparkles.svg")),
-    ("spline", include_bytes!("../../../assets/pdfcraft/icons/spline.svg")),
-    ("square", include_bytes!("../../../assets/pdfcraft/icons/square.svg")),
-    ("square-dashed", include_bytes!("../../../assets/pdfcraft/icons/square-dashed.svg")),
-    ("square-dashed-mouse-pointer", include_bytes!("../../../assets/pdfcraft/icons/square-dashed-mouse-pointer.svg")),
-    ("squares-subtract", include_bytes!("../../../assets/pdfcraft/icons/squares-subtract.svg")),
-    ("stamp", include_bytes!("../../../assets/pdfcraft/icons/stamp.svg")),
-    ("star", include_bytes!("../../../assets/pdfcraft/icons/star.svg")),
-    ("sticky-note", include_bytes!("../../../assets/pdfcraft/icons/sticky-note.svg")),
-    ("strikethrough", include_bytes!("../../../assets/pdfcraft/icons/strikethrough.svg")),
-    ("sun", include_bytes!("../../../assets/pdfcraft/icons/sun.svg")),
-    ("swatch-book", include_bytes!("../../../assets/pdfcraft/icons/swatch-book.svg")),
-    ("tag", include_bytes!("../../../assets/pdfcraft/icons/tag.svg")),
-    ("text-cursor-input", include_bytes!("../../../assets/pdfcraft/icons/text-cursor-input.svg")),
-    ("text-select", include_bytes!("../../../assets/pdfcraft/icons/text-select.svg")),
-    ("thumbs-down", include_bytes!("../../../assets/pdfcraft/icons/thumbs-down.svg")),
-    ("thumbs-up", include_bytes!("../../../assets/pdfcraft/icons/thumbs-up.svg")),
-    ("trash", include_bytes!("../../../assets/pdfcraft/icons/trash.svg")),
-    ("trash-2", include_bytes!("../../../assets/pdfcraft/icons/trash-2.svg")),
-    ("triangle-alert", include_bytes!("../../../assets/pdfcraft/icons/triangle-alert.svg")),
-    ("type", include_bytes!("../../../assets/pdfcraft/icons/type.svg")),
-    ("underline", include_bytes!("../../../assets/pdfcraft/icons/underline.svg")),
-    ("undo-2", include_bytes!("../../../assets/pdfcraft/icons/undo-2.svg")),
-    ("user-round", include_bytes!("../../../assets/pdfcraft/icons/user-round.svg")),
-    ("wand-sparkles", include_bytes!("../../../assets/pdfcraft/icons/wand-sparkles.svg")),
-    ("wrench", include_bytes!("../../../assets/pdfcraft/icons/wrench.svg")),
+    (
+        "accessibility",
+        include_bytes!("../../../assets/pdfcraft/icons/accessibility.svg"),
+    ),
+    (
+        "align-center",
+        include_bytes!("../../../assets/pdfcraft/icons/align-center.svg"),
+    ),
+    (
+        "align-justify",
+        include_bytes!("../../../assets/pdfcraft/icons/align-justify.svg"),
+    ),
+    (
+        "file-spreadsheet",
+        include_bytes!("../../../assets/pdfcraft/icons/file-spreadsheet.svg"),
+    ),
+    (
+        "file-code",
+        include_bytes!("../../../assets/pdfcraft/icons/file-code.svg"),
+    ),
+    (
+        "square-terminal",
+        include_bytes!("../../../assets/pdfcraft/icons/square-terminal.svg"),
+    ),
+    (
+        "align-left",
+        include_bytes!("../../../assets/pdfcraft/icons/align-left.svg"),
+    ),
+    (
+        "align-right",
+        include_bytes!("../../../assets/pdfcraft/icons/align-right.svg"),
+    ),
+    (
+        "app-window",
+        include_bytes!("../../../assets/pdfcraft/icons/app-window.svg"),
+    ),
+    (
+        "arrow-left-right",
+        include_bytes!("../../../assets/pdfcraft/icons/arrow-left-right.svg"),
+    ),
+    (
+        "arrow-up-down",
+        include_bytes!("../../../assets/pdfcraft/icons/arrow-up-down.svg"),
+    ),
+    (
+        "arrow-up-right",
+        include_bytes!("../../../assets/pdfcraft/icons/arrow-up-right.svg"),
+    ),
+    (
+        "badge-check",
+        include_bytes!("../../../assets/pdfcraft/icons/badge-check.svg"),
+    ),
+    (
+        "bandage",
+        include_bytes!("../../../assets/pdfcraft/icons/bandage.svg"),
+    ),
+    (
+        "bell",
+        include_bytes!("../../../assets/pdfcraft/icons/bell.svg"),
+    ),
+    (
+        "blend",
+        include_bytes!("../../../assets/pdfcraft/icons/blend.svg"),
+    ),
+    (
+        "bold",
+        include_bytes!("../../../assets/pdfcraft/icons/bold.svg"),
+    ),
+    (
+        "book-open",
+        include_bytes!("../../../assets/pdfcraft/icons/book-open.svg"),
+    ),
+    (
+        "bookmark",
+        include_bytes!("../../../assets/pdfcraft/icons/bookmark.svg"),
+    ),
+    (
+        "bookmark-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/bookmark-plus.svg"),
+    ),
+    (
+        "braces",
+        include_bytes!("../../../assets/pdfcraft/icons/braces.svg"),
+    ),
+    (
+        "brush",
+        include_bytes!("../../../assets/pdfcraft/icons/brush.svg"),
+    ),
+    (
+        "brush-cleaning",
+        include_bytes!("../../../assets/pdfcraft/icons/brush-cleaning.svg"),
+    ),
+    (
+        "camera",
+        include_bytes!("../../../assets/pdfcraft/icons/camera.svg"),
+    ),
+    (
+        "check",
+        include_bytes!("../../../assets/pdfcraft/icons/check.svg"),
+    ),
+    (
+        "check-circle-2",
+        include_bytes!("../../../assets/pdfcraft/icons/check-circle-2.svg"),
+    ),
+    (
+        "chevron-down",
+        include_bytes!("../../../assets/pdfcraft/icons/chevron-down.svg"),
+    ),
+    (
+        "chevron-left",
+        include_bytes!("../../../assets/pdfcraft/icons/chevron-left.svg"),
+    ),
+    (
+        "chevron-right",
+        include_bytes!("../../../assets/pdfcraft/icons/chevron-right.svg"),
+    ),
+    (
+        "chevron-up",
+        include_bytes!("../../../assets/pdfcraft/icons/chevron-up.svg"),
+    ),
+    (
+        "chevrons-left",
+        include_bytes!("../../../assets/pdfcraft/icons/chevrons-left.svg"),
+    ),
+    (
+        "chevrons-right",
+        include_bytes!("../../../assets/pdfcraft/icons/chevrons-right.svg"),
+    ),
+    (
+        "circle",
+        include_bytes!("../../../assets/pdfcraft/icons/circle.svg"),
+    ),
+    (
+        "circle-check",
+        include_bytes!("../../../assets/pdfcraft/icons/circle-check.svg"),
+    ),
+    (
+        "circle-dashed",
+        include_bytes!("../../../assets/pdfcraft/icons/circle-dashed.svg"),
+    ),
+    (
+        "circle-dot",
+        include_bytes!("../../../assets/pdfcraft/icons/circle-dot.svg"),
+    ),
+    (
+        "circle-help",
+        include_bytes!("../../../assets/pdfcraft/icons/circle-help.svg"),
+    ),
+    (
+        "circle-x",
+        include_bytes!("../../../assets/pdfcraft/icons/circle-x.svg"),
+    ),
+    (
+        "clipboard-paste",
+        include_bytes!("../../../assets/pdfcraft/icons/clipboard-paste.svg"),
+    ),
+    (
+        "clock",
+        include_bytes!("../../../assets/pdfcraft/icons/clock.svg"),
+    ),
+    (
+        "clock-3",
+        include_bytes!("../../../assets/pdfcraft/icons/clock-3.svg"),
+    ),
+    (
+        "cloud",
+        include_bytes!("../../../assets/pdfcraft/icons/cloud.svg"),
+    ),
+    (
+        "cloud-upload",
+        include_bytes!("../../../assets/pdfcraft/icons/cloud-upload.svg"),
+    ),
+    (
+        "code-xml",
+        include_bytes!("../../../assets/pdfcraft/icons/code-xml.svg"),
+    ),
+    (
+        "columns-2",
+        include_bytes!("../../../assets/pdfcraft/icons/columns-2.svg"),
+    ),
+    (
+        "columns-3",
+        include_bytes!("../../../assets/pdfcraft/icons/columns-3.svg"),
+    ),
+    (
+        "compass",
+        include_bytes!("../../../assets/pdfcraft/icons/compass.svg"),
+    ),
+    (
+        "contrast",
+        include_bytes!("../../../assets/pdfcraft/icons/contrast.svg"),
+    ),
+    (
+        "copy",
+        include_bytes!("../../../assets/pdfcraft/icons/copy.svg"),
+    ),
+    (
+        "copy-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/copy-plus.svg"),
+    ),
+    (
+        "crop",
+        include_bytes!("../../../assets/pdfcraft/icons/crop.svg"),
+    ),
+    (
+        "droplet",
+        include_bytes!("../../../assets/pdfcraft/icons/droplet.svg"),
+    ),
+    (
+        "ellipsis",
+        include_bytes!("../../../assets/pdfcraft/icons/ellipsis.svg"),
+    ),
+    (
+        "ellipsis-vertical",
+        include_bytes!("../../../assets/pdfcraft/icons/ellipsis-vertical.svg"),
+    ),
+    (
+        "eraser",
+        include_bytes!("../../../assets/pdfcraft/icons/eraser.svg"),
+    ),
+    (
+        "external-link",
+        include_bytes!("../../../assets/pdfcraft/icons/external-link.svg"),
+    ),
+    (
+        "eye",
+        include_bytes!("../../../assets/pdfcraft/icons/eye.svg"),
+    ),
+    (
+        "eye-off",
+        include_bytes!("../../../assets/pdfcraft/icons/eye-off.svg"),
+    ),
+    (
+        "file-check",
+        include_bytes!("../../../assets/pdfcraft/icons/file-check.svg"),
+    ),
+    (
+        "file-down",
+        include_bytes!("../../../assets/pdfcraft/icons/file-down.svg"),
+    ),
+    (
+        "file-input",
+        include_bytes!("../../../assets/pdfcraft/icons/file-input.svg"),
+    ),
+    (
+        "file-lock-2",
+        include_bytes!("../../../assets/pdfcraft/icons/file-lock-2.svg"),
+    ),
+    (
+        "file-minus",
+        include_bytes!("../../../assets/pdfcraft/icons/file-minus.svg"),
+    ),
+    (
+        "file-output",
+        include_bytes!("../../../assets/pdfcraft/icons/file-output.svg"),
+    ),
+    (
+        "file-pen-line",
+        include_bytes!("../../../assets/pdfcraft/icons/file-pen-line.svg"),
+    ),
+    (
+        "file-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/file-plus.svg"),
+    ),
+    (
+        "file-plus-2",
+        include_bytes!("../../../assets/pdfcraft/icons/file-plus-2.svg"),
+    ),
+    (
+        "file-scan",
+        include_bytes!("../../../assets/pdfcraft/icons/file-scan.svg"),
+    ),
+    (
+        "file-search",
+        include_bytes!("../../../assets/pdfcraft/icons/file-search.svg"),
+    ),
+    (
+        "file-symlink",
+        include_bytes!("../../../assets/pdfcraft/icons/file-symlink.svg"),
+    ),
+    (
+        "file-text",
+        include_bytes!("../../../assets/pdfcraft/icons/file-text.svg"),
+    ),
+    (
+        "file-x",
+        include_bytes!("../../../assets/pdfcraft/icons/file-x.svg"),
+    ),
+    (
+        "files",
+        include_bytes!("../../../assets/pdfcraft/icons/files.svg"),
+    ),
+    (
+        "film",
+        include_bytes!("../../../assets/pdfcraft/icons/film.svg"),
+    ),
+    (
+        "filter",
+        include_bytes!("../../../assets/pdfcraft/icons/filter.svg"),
+    ),
+    (
+        "flip-horizontal-2",
+        include_bytes!("../../../assets/pdfcraft/icons/flip-horizontal-2.svg"),
+    ),
+    (
+        "flip-vertical-2",
+        include_bytes!("../../../assets/pdfcraft/icons/flip-vertical-2.svg"),
+    ),
+    (
+        "folder",
+        include_bytes!("../../../assets/pdfcraft/icons/folder.svg"),
+    ),
+    (
+        "folder-open",
+        include_bytes!("../../../assets/pdfcraft/icons/folder-open.svg"),
+    ),
+    (
+        "folder-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/folder-plus.svg"),
+    ),
+    (
+        "gauge",
+        include_bytes!("../../../assets/pdfcraft/icons/gauge.svg"),
+    ),
+    (
+        "git-compare",
+        include_bytes!("../../../assets/pdfcraft/icons/git-compare.svg"),
+    ),
+    (
+        "globe",
+        include_bytes!("../../../assets/pdfcraft/icons/globe.svg"),
+    ),
+    (
+        "grid-3x3",
+        include_bytes!("../../../assets/pdfcraft/icons/grid-3x3.svg"),
+    ),
+    (
+        "hand",
+        include_bytes!("../../../assets/pdfcraft/icons/hand.svg"),
+    ),
+    (
+        "hash",
+        include_bytes!("../../../assets/pdfcraft/icons/hash.svg"),
+    ),
+    (
+        "heading",
+        include_bytes!("../../../assets/pdfcraft/icons/heading.svg"),
+    ),
+    (
+        "highlighter",
+        include_bytes!("../../../assets/pdfcraft/icons/highlighter.svg"),
+    ),
+    (
+        "house",
+        include_bytes!("../../../assets/pdfcraft/icons/house.svg"),
+    ),
+    (
+        "image",
+        include_bytes!("../../../assets/pdfcraft/icons/image.svg"),
+    ),
+    (
+        "image-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/image-plus.svg"),
+    ),
+    (
+        "info",
+        include_bytes!("../../../assets/pdfcraft/icons/info.svg"),
+    ),
+    (
+        "italic",
+        include_bytes!("../../../assets/pdfcraft/icons/italic.svg"),
+    ),
+    (
+        "languages",
+        include_bytes!("../../../assets/pdfcraft/icons/languages.svg"),
+    ),
+    (
+        "lasso",
+        include_bytes!("../../../assets/pdfcraft/icons/lasso.svg"),
+    ),
+    (
+        "layers",
+        include_bytes!("../../../assets/pdfcraft/icons/layers.svg"),
+    ),
+    (
+        "layout-grid",
+        include_bytes!("../../../assets/pdfcraft/icons/layout-grid.svg"),
+    ),
+    (
+        "link",
+        include_bytes!("../../../assets/pdfcraft/icons/link.svg"),
+    ),
+    (
+        "link-2",
+        include_bytes!("../../../assets/pdfcraft/icons/link-2.svg"),
+    ),
+    (
+        "list",
+        include_bytes!("../../../assets/pdfcraft/icons/list.svg"),
+    ),
+    (
+        "list-checks",
+        include_bytes!("../../../assets/pdfcraft/icons/list-checks.svg"),
+    ),
+    (
+        "list-ordered",
+        include_bytes!("../../../assets/pdfcraft/icons/list-ordered.svg"),
+    ),
+    (
+        "lock",
+        include_bytes!("../../../assets/pdfcraft/icons/lock.svg"),
+    ),
+    (
+        "lock-open",
+        include_bytes!("../../../assets/pdfcraft/icons/lock-open.svg"),
+    ),
+    (
+        "maximize",
+        include_bytes!("../../../assets/pdfcraft/icons/maximize.svg"),
+    ),
+    (
+        "maximize-2",
+        include_bytes!("../../../assets/pdfcraft/icons/maximize-2.svg"),
+    ),
+    (
+        "message-circle-reply",
+        include_bytes!("../../../assets/pdfcraft/icons/message-circle-reply.svg"),
+    ),
+    (
+        "message-square",
+        include_bytes!("../../../assets/pdfcraft/icons/message-square.svg"),
+    ),
+    (
+        "message-square-plus",
+        include_bytes!("../../../assets/pdfcraft/icons/message-square-plus.svg"),
+    ),
+    (
+        "message-square-quote",
+        include_bytes!("../../../assets/pdfcraft/icons/message-square-quote.svg"),
+    ),
+    (
+        "message-square-text",
+        include_bytes!("../../../assets/pdfcraft/icons/message-square-text.svg"),
+    ),
+    (
+        "messages-square",
+        include_bytes!("../../../assets/pdfcraft/icons/messages-square.svg"),
+    ),
+    (
+        "mic",
+        include_bytes!("../../../assets/pdfcraft/icons/mic.svg"),
+    ),
+    (
+        "minimize",
+        include_bytes!("../../../assets/pdfcraft/icons/minimize.svg"),
+    ),
+    (
+        "minimize-2",
+        include_bytes!("../../../assets/pdfcraft/icons/minimize-2.svg"),
+    ),
+    (
+        "minus",
+        include_bytes!("../../../assets/pdfcraft/icons/minus.svg"),
+    ),
+    (
+        "monitor",
+        include_bytes!("../../../assets/pdfcraft/icons/monitor.svg"),
+    ),
+    (
+        "moon",
+        include_bytes!("../../../assets/pdfcraft/icons/moon.svg"),
+    ),
+    (
+        "mouse-pointer-2",
+        include_bytes!("../../../assets/pdfcraft/icons/mouse-pointer-2.svg"),
+    ),
+    (
+        "move",
+        include_bytes!("../../../assets/pdfcraft/icons/move.svg"),
+    ),
+    (
+        "move-right",
+        include_bytes!("../../../assets/pdfcraft/icons/move-right.svg"),
+    ),
+    (
+        "navigation",
+        include_bytes!("../../../assets/pdfcraft/icons/navigation.svg"),
+    ),
+    (
+        "paint-bucket",
+        include_bytes!("../../../assets/pdfcraft/icons/paint-bucket.svg"),
+    ),
+    (
+        "palette",
+        include_bytes!("../../../assets/pdfcraft/icons/palette.svg"),
+    ),
+    (
+        "panel-left",
+        include_bytes!("../../../assets/pdfcraft/icons/panel-left.svg"),
+    ),
+    (
+        "panel-right",
+        include_bytes!("../../../assets/pdfcraft/icons/panel-right.svg"),
+    ),
+    (
+        "panels-top-left",
+        include_bytes!("../../../assets/pdfcraft/icons/panels-top-left.svg"),
+    ),
+    (
+        "paperclip",
+        include_bytes!("../../../assets/pdfcraft/icons/paperclip.svg"),
+    ),
+    (
+        "pen-line",
+        include_bytes!("../../../assets/pdfcraft/icons/pen-line.svg"),
+    ),
+    (
+        "pen-tool",
+        include_bytes!("../../../assets/pdfcraft/icons/pen-tool.svg"),
+    ),
+    (
+        "pencil",
+        include_bytes!("../../../assets/pdfcraft/icons/pencil.svg"),
+    ),
+    (
+        "pentagon",
+        include_bytes!("../../../assets/pdfcraft/icons/pentagon.svg"),
+    ),
+    (
+        "pin",
+        include_bytes!("../../../assets/pdfcraft/icons/pin.svg"),
+    ),
+    (
+        "pipette",
+        include_bytes!("../../../assets/pdfcraft/icons/pipette.svg"),
+    ),
+    (
+        "plus",
+        include_bytes!("../../../assets/pdfcraft/icons/plus.svg"),
+    ),
+    (
+        "presentation",
+        include_bytes!("../../../assets/pdfcraft/icons/presentation.svg"),
+    ),
+    (
+        "printer",
+        include_bytes!("../../../assets/pdfcraft/icons/printer.svg"),
+    ),
+    (
+        "rectangle-horizontal",
+        include_bytes!("../../../assets/pdfcraft/icons/rectangle-horizontal.svg"),
+    ),
+    (
+        "redo-2",
+        include_bytes!("../../../assets/pdfcraft/icons/redo-2.svg"),
+    ),
+    (
+        "replace",
+        include_bytes!("../../../assets/pdfcraft/icons/replace.svg"),
+    ),
+    (
+        "reply",
+        include_bytes!("../../../assets/pdfcraft/icons/reply.svg"),
+    ),
+    (
+        "rotate-ccw",
+        include_bytes!("../../../assets/pdfcraft/icons/rotate-ccw.svg"),
+    ),
+    (
+        "rotate-cw",
+        include_bytes!("../../../assets/pdfcraft/icons/rotate-cw.svg"),
+    ),
+    (
+        "rows-3",
+        include_bytes!("../../../assets/pdfcraft/icons/rows-3.svg"),
+    ),
+    (
+        "ruler",
+        include_bytes!("../../../assets/pdfcraft/icons/ruler.svg"),
+    ),
+    (
+        "save",
+        include_bytes!("../../../assets/pdfcraft/icons/save.svg"),
+    ),
+    (
+        "scan",
+        include_bytes!("../../../assets/pdfcraft/icons/scan.svg"),
+    ),
+    (
+        "scan-text",
+        include_bytes!("../../../assets/pdfcraft/icons/scan-text.svg"),
+    ),
+    (
+        "scissors",
+        include_bytes!("../../../assets/pdfcraft/icons/scissors.svg"),
+    ),
+    (
+        "search",
+        include_bytes!("../../../assets/pdfcraft/icons/search.svg"),
+    ),
+    (
+        "send",
+        include_bytes!("../../../assets/pdfcraft/icons/send.svg"),
+    ),
+    (
+        "settings",
+        include_bytes!("../../../assets/pdfcraft/icons/settings.svg"),
+    ),
+    (
+        "settings-2",
+        include_bytes!("../../../assets/pdfcraft/icons/settings-2.svg"),
+    ),
+    (
+        "share-2",
+        include_bytes!("../../../assets/pdfcraft/icons/share-2.svg"),
+    ),
+    (
+        "shield-check",
+        include_bytes!("../../../assets/pdfcraft/icons/shield-check.svg"),
+    ),
+    (
+        "signature",
+        include_bytes!("../../../assets/pdfcraft/icons/signature.svg"),
+    ),
+    (
+        "sliders-horizontal",
+        include_bytes!("../../../assets/pdfcraft/icons/sliders-horizontal.svg"),
+    ),
+    (
+        "sparkles",
+        include_bytes!("../../../assets/pdfcraft/icons/sparkles.svg"),
+    ),
+    (
+        "spline",
+        include_bytes!("../../../assets/pdfcraft/icons/spline.svg"),
+    ),
+    (
+        "square",
+        include_bytes!("../../../assets/pdfcraft/icons/square.svg"),
+    ),
+    (
+        "square-dashed",
+        include_bytes!("../../../assets/pdfcraft/icons/square-dashed.svg"),
+    ),
+    (
+        "square-dashed-mouse-pointer",
+        include_bytes!("../../../assets/pdfcraft/icons/square-dashed-mouse-pointer.svg"),
+    ),
+    (
+        "squares-subtract",
+        include_bytes!("../../../assets/pdfcraft/icons/squares-subtract.svg"),
+    ),
+    (
+        "stamp",
+        include_bytes!("../../../assets/pdfcraft/icons/stamp.svg"),
+    ),
+    (
+        "star",
+        include_bytes!("../../../assets/pdfcraft/icons/star.svg"),
+    ),
+    (
+        "sticky-note",
+        include_bytes!("../../../assets/pdfcraft/icons/sticky-note.svg"),
+    ),
+    (
+        "strikethrough",
+        include_bytes!("../../../assets/pdfcraft/icons/strikethrough.svg"),
+    ),
+    (
+        "sun",
+        include_bytes!("../../../assets/pdfcraft/icons/sun.svg"),
+    ),
+    (
+        "swatch-book",
+        include_bytes!("../../../assets/pdfcraft/icons/swatch-book.svg"),
+    ),
+    (
+        "tag",
+        include_bytes!("../../../assets/pdfcraft/icons/tag.svg"),
+    ),
+    (
+        "text-cursor-input",
+        include_bytes!("../../../assets/pdfcraft/icons/text-cursor-input.svg"),
+    ),
+    (
+        "text-select",
+        include_bytes!("../../../assets/pdfcraft/icons/text-select.svg"),
+    ),
+    (
+        "thumbs-down",
+        include_bytes!("../../../assets/pdfcraft/icons/thumbs-down.svg"),
+    ),
+    (
+        "thumbs-up",
+        include_bytes!("../../../assets/pdfcraft/icons/thumbs-up.svg"),
+    ),
+    (
+        "trash",
+        include_bytes!("../../../assets/pdfcraft/icons/trash.svg"),
+    ),
+    (
+        "trash-2",
+        include_bytes!("../../../assets/pdfcraft/icons/trash-2.svg"),
+    ),
+    (
+        "triangle-alert",
+        include_bytes!("../../../assets/pdfcraft/icons/triangle-alert.svg"),
+    ),
+    (
+        "type",
+        include_bytes!("../../../assets/pdfcraft/icons/type.svg"),
+    ),
+    (
+        "underline",
+        include_bytes!("../../../assets/pdfcraft/icons/underline.svg"),
+    ),
+    (
+        "undo-2",
+        include_bytes!("../../../assets/pdfcraft/icons/undo-2.svg"),
+    ),
+    (
+        "user-round",
+        include_bytes!("../../../assets/pdfcraft/icons/user-round.svg"),
+    ),
+    (
+        "wand-sparkles",
+        include_bytes!("../../../assets/pdfcraft/icons/wand-sparkles.svg"),
+    ),
+    (
+        "wrench",
+        include_bytes!("../../../assets/pdfcraft/icons/wrench.svg"),
+    ),
     ("x", include_bytes!("../../../assets/pdfcraft/icons/x.svg")),
-    ("zoom-in", include_bytes!("../../../assets/pdfcraft/icons/zoom-in.svg")),
-    ("zoom-out", include_bytes!("../../../assets/pdfcraft/icons/zoom-out.svg")),
+    (
+        "zoom-in",
+        include_bytes!("../../../assets/pdfcraft/icons/zoom-in.svg"),
+    ),
+    (
+        "zoom-out",
+        include_bytes!("../../../assets/pdfcraft/icons/zoom-out.svg"),
+    ),
 ];

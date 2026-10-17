@@ -21,9 +21,19 @@ const MIN_VISIBLE: f32 = 160.0;
 /// Where the window's content can be seen, in egui points. `monitor` is the monitor's size,
 /// `inner` the content's rect on the desktop (both from [`egui::ViewportInfo`]). `state` says
 /// whether the window is maximized or full screen.
-pub fn visible_part(content: Rect, monitor: Option<Vec2>, inner: Option<Rect>, state: WindowState) -> Rect {
+pub fn visible_part(
+    content: Rect,
+    monitor: Option<Vec2>,
+    inner: Option<Rect>,
+    state: WindowState,
+) -> Rect {
     let Some(m) = monitor else { return content };
-    if state == WindowState::FullScreen || !m.x.is_finite() || !m.y.is_finite() || m.x < 1.0 || m.y < 1.0 {
+    if state == WindowState::FullScreen
+        || !m.x.is_finite()
+        || !m.y.is_finite()
+        || m.x < 1.0
+        || m.y < 1.0
+    {
         return content;
     }
     // A maximized window is usually inside the work area already, but not always (#3737): on X11
@@ -81,7 +91,10 @@ impl WindowState {
 /// `content` cut to `usable`, unless that leaves too little to be a sensible guess.
 fn trusted(content: Rect, usable: Rect) -> Rect {
     let visible = content.intersect(usable);
-    if !visible.is_positive() || visible.height() < MIN_VISIBLE.min(content.height()) || visible.width() < MIN_VISIBLE.min(content.width()) {
+    if !visible.is_positive()
+        || visible.height() < MIN_VISIBLE.min(content.height())
+        || visible.width() < MIN_VISIBLE.min(content.width())
+    {
         return content;
     }
     visible
@@ -125,7 +138,12 @@ pub fn fit_window(ctx: &egui::Context) -> bool {
         return false;
     }
     ctx.data_mut(|d| d.insert_temp(fitted_id(), true));
-    if maximized == Some(true) || fullscreen == Some(true) || !m.is_finite() || !outer.is_finite() || fits(outer.size(), m) {
+    if maximized == Some(true)
+        || fullscreen == Some(true)
+        || !m.is_finite()
+        || !outer.is_finite()
+        || fits(outer.size(), m)
+    {
         return false;
     }
     ctx.send_viewport_cmd(egui::ViewportCommand::Maximized(true));
@@ -141,36 +159,75 @@ mod tests {
     const MONITOR: Vec2 = vec2(1366.0, 768.0);
 
     fn window(x: f32, y: f32, w: f32, h: f32) -> (Rect, Rect) {
-        (Rect::from_min_size(pos2(0.0, 0.0), vec2(w, h)), Rect::from_min_size(pos2(x, y), vec2(w, h)))
+        (
+            Rect::from_min_size(pos2(0.0, 0.0), vec2(w, h)),
+            Rect::from_min_size(pos2(x, y), vec2(w, h)),
+        )
     }
 
     #[test]
     fn a_window_taller_than_its_display_is_cut_at_the_taskbar() {
         // 1440 × 900 at the desktop origin on 1366 × 768: right and bottom are off-screen.
         let (content, inner) = window(0.0, 0.0, 1440.0, 900.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), Normal), Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR)));
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), Normal),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR))
+        );
         // Below a 31 pt title bar, a full-height window reaches under the taskbar.
         let (content, inner) = window(0.0, 31.0, 1366.0, 737.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), Normal).bottom(), 768.0 - TASKBAR - 31.0);
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), Normal).bottom(),
+            768.0 - TASKBAR - 31.0
+        );
         // A small window clear of the taskbar is all visible.
         let (content, inner) = window(100.0, 80.0, 800.0, 500.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), Normal), content);
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), Normal),
+            content
+        );
         // On a second monitor to the right, the same.
         let (content, inner) = window(1366.0 + 100.0, 0.0, 1440.0, 900.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), Normal).bottom(), 768.0 - TASKBAR);
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), Normal).bottom(),
+            768.0 - TASKBAR
+        );
     }
 
     #[test]
     fn maximized_unknown_or_nonsense_input_keeps_the_window() {
         let (content, inner) = window(0.0, 0.0, 1440.0, 900.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), FullScreen), content, "full screen covers the taskbar on purpose");
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), FullScreen),
+            content,
+            "full screen covers the taskbar on purpose"
+        );
         assert_eq!(visible_part(content, None, Some(inner), Normal), content);
-        assert_eq!(visible_part(content, Some(vec2(f32::NAN, 768.0)), Some(inner), Normal), content);
-        assert_eq!(visible_part(content, Some(vec2(0.0, 0.0)), Some(inner), Normal), content);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(Rect::from_min_size(pos2(f32::INFINITY, 0.0), vec2(10.0, 10.0))), Normal), content);
+        assert_eq!(
+            visible_part(content, Some(vec2(f32::NAN, 768.0)), Some(inner), Normal),
+            content
+        );
+        assert_eq!(
+            visible_part(content, Some(vec2(0.0, 0.0)), Some(inner), Normal),
+            content
+        );
+        assert_eq!(
+            visible_part(
+                content,
+                Some(MONITOR),
+                Some(Rect::from_min_size(
+                    pos2(f32::INFINITY, 0.0),
+                    vec2(10.0, 10.0)
+                )),
+                Normal
+            ),
+            content
+        );
         // A guess that would leave almost nothing visible is not trusted.
         let (content, inner) = window(0.0, 600.0, 1000.0, 300.0);
-        assert_eq!(visible_part(content, Some(MONITOR), Some(inner), Normal), content);
+        assert_eq!(
+            visible_part(content, Some(MONITOR), Some(inner), Normal),
+            content
+        );
     }
 
     #[test]
@@ -181,12 +238,24 @@ mod tests {
             let monitor = vec2(1920.0, 1080.0) / scale;
             let content = Rect::from_min_size(pos2(0.0, 0.0), monitor);
             let bottom = monitor.y - TASKBAR;
-            assert_eq!(visible_part(content, Some(monitor), Some(content), Maximized).bottom(), bottom, "at {scale}×");
+            assert_eq!(
+                visible_part(content, Some(monitor), Some(content), Maximized).bottom(),
+                bottom,
+                "at {scale}×"
+            );
             // A window manager that reserves the panel: the maximized window already ends above it.
             let fitted = Rect::from_min_size(pos2(0.0, 0.0), vec2(monitor.x, bottom));
-            assert_eq!(visible_part(fitted, Some(monitor), Some(fitted), Maximized), fitted, "at {scale}×");
+            assert_eq!(
+                visible_part(fitted, Some(monitor), Some(fitted), Maximized),
+                fitted,
+                "at {scale}×"
+            );
             // Full screen is meant to cover the panel.
-            assert_eq!(visible_part(content, Some(monitor), Some(content), FullScreen), content, "at {scale}×");
+            assert_eq!(
+                visible_part(content, Some(monitor), Some(content), FullScreen),
+                content,
+                "at {scale}×"
+            );
         }
     }
 
@@ -195,17 +264,34 @@ mod tests {
         // #3737, Wayland: only the monitor's size is known. A window taller than the monitor less
         // the taskbar can be seen at most down to there, wherever it is.
         let content = Rect::from_min_size(pos2(0.0, 0.0), vec2(1366.0, 740.0));
-        assert_eq!(visible_part(content, Some(MONITOR), None, Normal), Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR)));
+        assert_eq!(
+            visible_part(content, Some(MONITOR), None, Normal),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR))
+        );
         let big = Rect::from_min_size(pos2(0.0, 0.0), vec2(1440.0, 900.0));
-        assert_eq!(visible_part(big, Some(MONITOR), None, Normal), Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR)));
+        assert_eq!(
+            visible_part(big, Some(MONITOR), None, Normal),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1366.0, 768.0 - TASKBAR))
+        );
         // One that fits, or a maximized one, is all visible.
         let small = Rect::from_min_size(pos2(0.0, 0.0), vec2(1000.0, 600.0));
         assert_eq!(visible_part(small, Some(MONITOR), None, Normal), small);
-        assert_eq!(visible_part(content, Some(MONITOR), None, Maximized), content);
-        assert_eq!(visible_part(content, Some(MONITOR), None, FullScreen), content);
+        assert_eq!(
+            visible_part(content, Some(MONITOR), None, Maximized),
+            content
+        );
+        assert_eq!(
+            visible_part(content, Some(MONITOR), None, FullScreen),
+            content
+        );
     }
 
-    fn frame(ctx: &egui::Context, monitor: Option<Vec2>, outer: Option<Rect>, maximized: Option<bool>) -> Vec<egui::ViewportCommand> {
+    fn frame(
+        ctx: &egui::Context,
+        monitor: Option<Vec2>,
+        outer: Option<Rect>,
+        maximized: Option<bool>,
+    ) -> Vec<egui::ViewportCommand> {
         let mut input = egui::RawInput::default();
         if let Some(v) = input.viewports.get_mut(&egui::ViewportId::ROOT) {
             v.monitor_size = monitor;
@@ -216,7 +302,10 @@ mod tests {
             fit_window(ui.ctx());
         });
         out.textures_delta.clear();
-        out.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.commands.clone()).unwrap_or_default()
+        out.viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map(|v| v.commands.clone())
+            .unwrap_or_default()
     }
 
     #[test]
@@ -224,22 +313,39 @@ mod tests {
         let big = Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(1456.0, 939.0)));
         let ctx = egui::Context::default();
         // The monitor isn't known on the first frames: wait.
-        assert!(!frame(&ctx, None, big, Some(false)).contains(&egui::ViewportCommand::Maximized(true)));
-        let maximize = frame(&ctx, Some(MONITOR), big, Some(false)).contains(&egui::ViewportCommand::Maximized(true));
+        assert!(
+            !frame(&ctx, None, big, Some(false)).contains(&egui::ViewportCommand::Maximized(true))
+        );
+        let maximize = frame(&ctx, Some(MONITOR), big, Some(false))
+            .contains(&egui::ViewportCommand::Maximized(true));
         assert_eq!(maximize, !cfg!(target_os = "macos"));
         // Once only: un-maximizing it later is the user's choice.
-        assert!(!frame(&ctx, Some(MONITOR), big, Some(false)).contains(&egui::ViewportCommand::Maximized(true)));
+        assert!(
+            !frame(&ctx, Some(MONITOR), big, Some(false))
+                .contains(&egui::ViewportCommand::Maximized(true))
+        );
         // A window that fits, or one already maximized, is left alone.
         let ctx = egui::Context::default();
         assert!(
-            !frame(&ctx, Some(MONITOR), Some(Rect::from_min_size(pos2(40.0, 40.0), vec2(1200.0, 700.0))), Some(false))
-                .contains(&egui::ViewportCommand::Maximized(true))
+            !frame(
+                &ctx,
+                Some(MONITOR),
+                Some(Rect::from_min_size(pos2(40.0, 40.0), vec2(1200.0, 700.0))),
+                Some(false)
+            )
+            .contains(&egui::ViewportCommand::Maximized(true))
         );
         let ctx = egui::Context::default();
-        assert!(!frame(&ctx, Some(MONITOR), big, Some(true)).contains(&egui::ViewportCommand::Maximized(true)));
+        assert!(
+            !frame(&ctx, Some(MONITOR), big, Some(true))
+                .contains(&egui::ViewportCommand::Maximized(true))
+        );
         // Wayland: no outer rect, but a content area bigger than the monitor is maximized too (#3737).
         let ctx = egui::Context::default();
-        let mut input = egui::RawInput { screen_rect: Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(1440.0, 900.0))), ..Default::default() };
+        let mut input = egui::RawInput {
+            screen_rect: Some(Rect::from_min_size(pos2(0.0, 0.0), vec2(1440.0, 900.0))),
+            ..Default::default()
+        };
         if let Some(v) = input.viewports.get_mut(&egui::ViewportId::ROOT) {
             v.monitor_size = Some(MONITOR);
             v.maximized = Some(false);
@@ -248,8 +354,19 @@ mod tests {
             fit_window(ui.ctx());
         });
         out.textures_delta.clear();
-        let cmds = out.viewport_output.get(&egui::ViewportId::ROOT).map(|v| v.commands.clone()).unwrap_or_default();
-        assert_eq!(cmds.contains(&egui::ViewportCommand::Maximized(true)), !cfg!(target_os = "macos"));
-        assert!(fits(vec2(1366.0, 720.0), MONITOR) && !fits(vec2(1366.0, 740.0), MONITOR) && !fits(vec2(1440.0, 700.0), MONITOR));
+        let cmds = out
+            .viewport_output
+            .get(&egui::ViewportId::ROOT)
+            .map(|v| v.commands.clone())
+            .unwrap_or_default();
+        assert_eq!(
+            cmds.contains(&egui::ViewportCommand::Maximized(true)),
+            !cfg!(target_os = "macos")
+        );
+        assert!(
+            fits(vec2(1366.0, 720.0), MONITOR)
+                && !fits(vec2(1366.0, 740.0), MONITOR)
+                && !fits(vec2(1440.0, 700.0), MONITOR)
+        );
     }
 }

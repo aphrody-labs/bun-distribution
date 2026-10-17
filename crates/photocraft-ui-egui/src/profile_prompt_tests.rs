@@ -13,24 +13,42 @@ use photocraft_engine::Session;
 
 /// A PNG tagged with Adobe RGB, which doesn't match the sRGB working space.
 fn adobe_png() -> Vec<u8> {
-    let mut d = Document::with_background("t", Size::new(8, 8), ColorMode::Rgb, SampleType::U8, Color::rgba(0.2, 0.6, 0.9, 1.0));
-    d.icc_profile = Some(photocraft_cms::Builtin::from_id("adobe-rgb-compat").unwrap().profile().to_bytes());
-    photocraft_io::export(&d, "t.png", &Default::default()).unwrap().bytes
+    let mut d = Document::with_background(
+        "t",
+        Size::new(8, 8),
+        ColorMode::Rgb,
+        SampleType::U8,
+        Color::rgba(0.2, 0.6, 0.9, 1.0),
+    );
+    d.icc_profile = Some(
+        photocraft_cms::Builtin::from_id("adobe-rgb-compat")
+            .unwrap()
+            .profile()
+            .to_bytes(),
+    );
+    photocraft_io::export(&d, "t.png", &Default::default())
+        .unwrap()
+        .bytes
 }
 
 fn harness(background: bool) -> Harness<'static, PhotocraftApp> {
-    let mut h = Harness::builder().with_size(vec2(1400.0, 900.0)).with_max_steps(64).build_eframe(|cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        PhotocraftApp::new(
-            Session::new(),
-            Services {
-                import: Some(Box::new(|name, bytes, depth| {
-                    photocraft_io::import_with_svg_group_depth(name, bytes, depth).map(|r| (r.document, r.warnings)).map_err(|e| e.to_string())
-                })),
-                ..Default::default()
-            },
-        )
-    });
+    let mut h = Harness::builder()
+        .with_size(vec2(1400.0, 900.0))
+        .with_max_steps(64)
+        .build_eframe(|cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            PhotocraftApp::new(
+                Session::new(),
+                Services {
+                    import: Some(Box::new(|name, bytes, depth| {
+                        photocraft_io::import_with_svg_group_depth(name, bytes, depth)
+                            .map(|r| (r.document, r.warnings))
+                            .map_err(|e| e.to_string())
+                    })),
+                    ..Default::default()
+                },
+            )
+        });
     h.state_mut().background_jobs = background;
     h.run_steps(3);
     h
@@ -40,7 +58,9 @@ fn harness(background: bool) -> Harness<'static, PhotocraftApp> {
 fn open_together(h: &mut Harness<'static, PhotocraftApp>, n: usize) {
     let png = adobe_png();
     for i in 0..n {
-        h.state_mut().open_file(&format!("shot{i}.png"), &png).unwrap();
+        h.state_mut()
+            .open_file(&format!("shot{i}.png"), &png)
+            .unwrap();
     }
     for _ in 0..100 {
         h.run_steps(2);
@@ -54,7 +74,12 @@ fn open_together(h: &mut Harness<'static, PhotocraftApp>, n: usize) {
 }
 
 fn press(h: &mut Harness<'static, PhotocraftApp>, p: Pos2, pressed: bool) {
-    h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    });
 }
 
 /// A real click (pointer events, hit-tested like a mouse) rather than an accessibility action.
@@ -70,8 +95,17 @@ fn click_at(h: &mut Harness<'static, PhotocraftApp>, p: Pos2) {
 
 /// Where the live prompt's `button` is: the one prompt that isn't greyed out.
 fn live_button(h: &Harness<'static, PhotocraftApp>, button: &str) -> Pos2 {
-    let live: Vec<_> = h.query_all_by_label(button).filter(|n| !n.accesskit_node().is_disabled()).map(|n| n.rect().center()).collect();
-    assert_eq!(live.len(), 1, "exactly one prompt is live, {} open", h.state().ui.dialogs.len());
+    let live: Vec<_> = h
+        .query_all_by_label(button)
+        .filter(|n| !n.accesskit_node().is_disabled())
+        .map(|n| n.rect().center())
+        .collect();
+    assert_eq!(
+        live.len(),
+        1,
+        "exactly one prompt is live, {} open",
+        h.state().ui.dialogs.len()
+    );
     live[0]
 }
 
@@ -84,7 +118,11 @@ fn prompts_for_files_opened_together_answer_one_at_a_time_with_real_clicks() {
             for left in (0..3).rev() {
                 let at = live_button(&h, button);
                 click_at(&mut h, at);
-                assert_eq!(h.state().ui.dialogs.len(), left, "background {background}: {button} answers the prompt in front");
+                assert_eq!(
+                    h.state().ui.dialogs.len(),
+                    left,
+                    "background {background}: {button} answers the prompt in front"
+                );
             }
         }
     }
@@ -102,12 +140,21 @@ fn an_older_prompt_raised_in_front_gives_way_to_the_live_one() {
         open_together(&mut h, 3);
         let ok = live_button(&h, "OK");
         let oldest = h.state().ui.dialogs[0].id;
-        h.ctx.memory_mut(|m| m.areas_mut().move_to_top(egui::LayerId::new(egui::Order::Foreground, egui::Id::new(("dialog", oldest)))));
+        h.ctx.memory_mut(|m| {
+            m.areas_mut().move_to_top(egui::LayerId::new(
+                egui::Order::Foreground,
+                egui::Id::new(("dialog", oldest)),
+            ))
+        });
         h.run_steps(4);
         // All three are the same size in the same place: a click there must reach the live one.
         for left in [2, 1, 0] {
             click_at(&mut h, ok);
-            assert_eq!(h.state().ui.dialogs.len(), left, "background {background}: OK on the prompt in front answers it");
+            assert_eq!(
+                h.state().ui.dialogs.len(),
+                left,
+                "background {background}: OK on the prompt in front answers it"
+            );
         }
     }
 }

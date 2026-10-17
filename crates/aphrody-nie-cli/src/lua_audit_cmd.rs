@@ -19,7 +19,8 @@ pub fn run(
 ) -> anyhow::Result<()> {
     let root = game_dir.map(PathBuf::from).unwrap_or_else(resolve_game_dir);
     let mut vfs = Vfs::new();
-    vfs.init(root.join("data")).with_context(|| format!("montage VFS de {}", root.display()))?;
+    vfs.init(root.join("data"))
+        .with_context(|| format!("montage VFS de {}", root.display()))?;
 
     let paths: Vec<String> = vfs
         .iter()
@@ -68,7 +69,7 @@ pub fn run(
                     );
                 }
                 continue;
-            },
+            }
         };
         executed += 1;
         // Relevé statique des lectures de globals de CE chunk, pour qualifier ensuite celles que
@@ -84,7 +85,7 @@ pub fn run(
                         .or_default()
                         .push(read.sink);
                 }
-            },
+            }
             Err(error) => {
                 decode_errors += 1;
                 if samples.len() < 20 {
@@ -94,7 +95,7 @@ pub fn run(
                         "error": error.to_string()
                     }));
                 }
-            },
+            }
         }
         let options = ExecOptions {
             chunk_name: path.clone(),
@@ -140,7 +141,7 @@ pub fn run(
                                 };
                                 *sinks.entry(label.to_string()).or_default() += 1;
                             }
-                        },
+                        }
                     }
                     let scripts = missing_host_read_scripts.entry(host).or_default();
                     if !scripts.iter().any(|known| known == path) {
@@ -165,7 +166,7 @@ pub fn run(
                 } else {
                     ok += 1;
                 }
-            },
+            }
             Err(error) => {
                 errors += 1;
                 if samples.len() < 20 {
@@ -173,7 +174,7 @@ pub fn run(
                         json!({ "script": path, "kind": "load", "error": error.to_string() }),
                     );
                 }
-            },
+            }
         }
     }
 

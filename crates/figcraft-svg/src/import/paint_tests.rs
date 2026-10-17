@@ -10,12 +10,20 @@ fn import(svg: &str) -> (Document, Vec<Node>, Vec<String>) {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
     let i = import_svg_with_notes(&mut d, svg.as_bytes(), p, 0.0, 0.0, "x").unwrap();
-    let nodes = d.subtree(i.frame).into_iter().filter_map(|id| d.node(id).cloned()).collect();
+    let nodes = d
+        .subtree(i.frame)
+        .into_iter()
+        .filter_map(|id| d.node(id).cloned())
+        .collect();
     (d, nodes, i.notes)
 }
 
 fn fill(svg: &str) -> Paint {
-    import(svg).1.get(1).and_then(|n| n.fills.first().cloned()).unwrap()
+    import(svg)
+        .1
+        .get(1)
+        .and_then(|n| n.fills.first().cloned())
+        .unwrap()
 }
 
 fn gradient(svg: &str) -> Gradient {
@@ -39,7 +47,10 @@ fn linear_handles_land_in_the_layers_own_space() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="300" height="200"><linearGradient id="g">{DEFS}</linearGradient><rect x="10" y="20" width="200" height="100" fill="url(#g)"/></svg>"##
     ));
     assert_eq!(g.kind, GradientKind::Linear);
-    assert!(near(g.from, (0.0, 0.0)) && near(g.to, (1.0, 0.0)) && near(g.width, (0.0, 1.0)), "{g:?}");
+    assert!(
+        near(g.from, (0.0, 0.0)) && near(g.to, (1.0, 0.0)) && near(g.width, (0.0, 1.0)),
+        "{g:?}"
+    );
     assert_eq!(g.stops.len(), 2);
     // User space through a rotated group: the handles land in the rectangle's own space.
     let g = gradient(&format!(
@@ -54,7 +65,10 @@ fn radial_gradients_center_on_their_focal_point() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><radialGradient id="g" fx="0.25">{DEFS}</radialGradient><rect width="100" height="50" fill="url(#g)"/></svg>"##
     ));
     assert_eq!(g.kind, GradientKind::Radial);
-    assert!(near(g.from, (0.25, 0.5)) && near(g.to, (0.75, 0.5)) && near(g.width, (0.25, 1.0)), "{g:?}");
+    assert!(
+        near(g.from, (0.25, 0.5)) && near(g.to, (0.75, 0.5)) && near(g.width, (0.25, 1.0)),
+        "{g:?}"
+    );
 }
 
 #[test]
@@ -71,7 +85,10 @@ fn reflect_and_repeat_unroll_over_the_box() {
     // Every other period runs backwards.
     assert!(r.stops[2].color.b > 0.9 && r.stops[3].color.r > 0.9);
     let p = gradient(&svg("repeat"));
-    assert!(p.stops[2].color.r > 0.9 && p.stops[3].color.b > 0.9, "a hard edge at each period");
+    assert!(
+        p.stops[2].color.r > 0.9 && p.stops[3].color.b > 0.9,
+        "a hard edge at each period"
+    );
     // Pad stays as it is.
     assert_eq!(gradient(&svg("pad")).stops.len(), 2);
 }
@@ -82,7 +99,9 @@ fn opacity_and_stop_opacity_carry_over() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><linearGradient id="g"><stop offset="0" stop-color="#000" stop-opacity="0.25"/><stop offset="1" stop-color="#000"/></linearGradient><rect width="10" height="10" fill="url(#g)" fill-opacity="0.5"/></svg>"##,
     );
     assert_eq!(p.opacity, 0.5);
-    let PaintKind::Gradient(g) = p.kind else { panic!() };
+    let PaintKind::Gradient(g) = p.kind else {
+        panic!()
+    };
     assert_eq!((g.stops[0].color.a, g.stops[1].color.a), (0.25, 1.0));
 }
 
@@ -90,7 +109,11 @@ const PNG: &str = "iVBORw0KGgoAAAANSUhEUgAAAAQAAAACCAIAAADwyuo0AAAAE0lEQVR4nGP4z
 
 fn image_paint(svg: &str) -> (figcraft_color::ImagePaint, Document) {
     let (d, nodes, _) = import(svg);
-    match nodes.get(1).and_then(|n| n.fills.first()).map(|p| p.kind.clone()) {
+    match nodes
+        .get(1)
+        .and_then(|n| n.fills.first())
+        .map(|p| p.kind.clone())
+    {
         Some(PaintKind::Image(i)) => (i, d),
         k => panic!("{k:?}"),
     }
@@ -103,14 +126,20 @@ fn an_image_pattern_shown_once_is_an_image_fill() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><pattern id="p" patternContentUnits="objectBoundingBox" width="1" height="1"><use href="#img" transform="scale(0.25 0.5)"/></pattern><image id="img" width="4" height="2" href="data:image/png;base64,{PNG}"/></defs><rect width="80" height="40" fill="url(#p)"/></svg>"##
     ));
     assert_eq!(i.scale_mode, ImageScaleMode::Fill);
-    assert_eq!(d.images.get(&i.image).map(|im| (im.width, im.height)), Some((4, 2)));
+    assert_eq!(
+        d.images.get(&i.image).map(|im| (im.width, im.height)),
+        Some((4, 2))
+    );
     // Placed off-centre: a crop that puts it exactly there.
     let (i, _) = image_paint(&format!(
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><pattern id="p" patternUnits="userSpaceOnUse" width="1000" height="1000"><image x="10" width="4" height="2" href="data:image/png;base64,{PNG}"/></pattern></defs><rect width="80" height="40" fill="url(#p)"/></svg>"##
     ));
     assert_eq!(i.scale_mode, ImageScaleMode::Crop);
     let c = i.crop.unwrap();
-    assert!((c[0] - 20.0).abs() < 1e-6 && (c[4] + 2.5).abs() < 1e-6, "{c:?}");
+    assert!(
+        (c[0] - 20.0).abs() < 1e-6 && (c[4] + 2.5).abs() < 1e-6,
+        "{c:?}"
+    );
 }
 
 #[test]
@@ -124,7 +153,10 @@ fn a_repeating_pattern_tiles() {
         r##"<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><pattern id="dots" patternUnits="userSpaceOnUse" width="10" height="10"><circle cx="5" cy="5" r="3" fill="#000"/></pattern></defs><rect width="100" height="100" fill="url(#dots)"/></svg>"##,
     );
     assert_eq!((i.scale_mode, i.scale), (ImageScaleMode::Tile, 0.5));
-    assert_eq!(d.images.get(&i.image).map(|im| (im.width, im.height)), Some((20, 20)));
+    assert_eq!(
+        d.images.get(&i.image).map(|im| (im.width, im.height)),
+        Some((20, 20))
+    );
 }
 
 #[test]

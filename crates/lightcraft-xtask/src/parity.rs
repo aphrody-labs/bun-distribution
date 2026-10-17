@@ -25,10 +25,15 @@ pub enum Status {
 impl Status {
     fn parse(cell: &str) -> Option<Status> {
         let c = cell.trim_start();
-        [("✅", Status::Done), ("🟡", Status::Partial), ("⬜", Status::Missing), ("🚫", Status::OutOfScope)]
-            .into_iter()
-            .find(|(e, _)| c.starts_with(e))
-            .map(|(_, s)| s)
+        [
+            ("✅", Status::Done),
+            ("🟡", Status::Partial),
+            ("⬜", Status::Missing),
+            ("🚫", Status::OutOfScope),
+        ]
+        .into_iter()
+        .find(|(e, _)| c.starts_with(e))
+        .map(|(_, s)| s)
     }
 }
 
@@ -57,10 +62,14 @@ pub struct Doc {
 }
 
 fn is_row_id(s: &str) -> bool {
-    let Some((prefix, rest)) = s.split_once('-') else { return false };
+    let Some((prefix, rest)) = s.split_once('-') else {
+        return false;
+    };
     matches!(prefix, "LR" | "LRC" | "MENU" | "KEY" | "KEYC")
         && !rest.is_empty()
-        && rest.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '-')
+        && rest
+            .chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '-')
 }
 
 /// Directories whose paths are checked (others, e.g. the local-only `plan/`, are ignored).
@@ -68,7 +77,10 @@ const CHECKED_DIRS: &[&str] = &["crates/", "apps/", "docs/", "xtask/", "assets/"
 
 /// A concrete id (not a placeholder such as `cmd:<id>` in prose).
 fn concrete(id: &str) -> bool {
-    !id.is_empty() && id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '*'))
+    !id.is_empty()
+        && id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '*'))
 }
 
 fn classify(span: &str) -> Option<Ref> {
@@ -120,19 +132,29 @@ pub fn parse(md: &str) -> Doc {
             continue;
         }
         let cells: Vec<&str> = t.trim_matches('|').split('|').map(str::trim).collect();
-        let Some(id) = cells.first().copied().filter(|c| is_row_id(c)) else { continue };
+        let Some(id) = cells.first().copied().filter(|c| is_row_id(c)) else {
+            continue;
+        };
         if cells.len() < 6 {
             doc.errors.push(format!("{DOC}:{n}: {id}: expected 6 columns (Id | Feature | Tier | Status | Evidence | Notes)"));
             continue;
         }
         let Some(status) = Status::parse(cells[3]) else {
-            doc.errors.push(format!("{DOC}:{n}: {id}: status `{}` is not one of ✅ 🟡 ⬜ 🚫", cells[3]));
+            doc.errors.push(format!(
+                "{DOC}:{n}: {id}: status `{}` is not one of ✅ 🟡 ⬜ 🚫",
+                cells[3]
+            ));
             continue;
         };
         if !seen.insert(id.to_string()) {
             doc.errors.push(format!("{DOC}:{n}: duplicate id {id}"));
         }
-        doc.rows.push(Row { id: id.to_string(), tier: cells[2].to_string(), status, section: section.clone() });
+        doc.rows.push(Row {
+            id: id.to_string(),
+            tier: cells[2].to_string(),
+            status,
+            section: section.clone(),
+        });
     }
     doc
 }
@@ -142,10 +164,16 @@ pub fn parse(md: &str) -> Doc {
 pub fn ui_command_ids(menus_rs: &str) -> Vec<String> {
     let mut ids = Vec::new();
     for table in ["pub const UI_COMMANDS", "pub const LANGUAGE_COMMANDS"] {
-        let Some(start) = menus_rs.find(table) else { continue };
+        let Some(start) = menus_rs.find(table) else {
+            continue;
+        };
         let body = &menus_rs[start..];
         let body = &body[..body.find("];").unwrap_or(body.len())];
-        ids.extend(body.lines().filter_map(|l| l.trim().strip_prefix("(\"")).filter_map(|l| l.split_once('"').map(|(id, _)| id.to_string())));
+        ids.extend(
+            body.lines()
+                .filter_map(|l| l.trim().strip_prefix("(\""))
+                .filter_map(|l| l.split_once('"').map(|(id, _)| id.to_string())),
+        );
     }
     ids
 }
@@ -158,15 +186,26 @@ fn known(set: &BTreeSet<String>, id: &str) -> bool {
 }
 
 /// Reference problems (empty = OK). `file_lines` returns a repository file's line count (None = missing).
-pub fn check(doc: &Doc, commands: &BTreeSet<String>, controls: &BTreeSet<String>, file_lines: impl Fn(&str) -> Option<usize>) -> Vec<String> {
+pub fn check(
+    doc: &Doc,
+    commands: &BTreeSet<String>,
+    controls: &BTreeSet<String>,
+    file_lines: impl Fn(&str) -> Option<usize>,
+) -> Vec<String> {
     let mut out = doc.errors.clone();
     for (n, r) in &doc.refs {
         match r {
-            Ref::Cmd(id) if !known(commands, id) => out.push(format!("{DOC}:{n}: unknown command `cmd:{id}`")),
-            Ref::Ctl(id) if !known(controls, id) => out.push(format!("{DOC}:{n}: unknown develop control `ctl:{id}`")),
+            Ref::Cmd(id) if !known(commands, id) => {
+                out.push(format!("{DOC}:{n}: unknown command `cmd:{id}`"))
+            }
+            Ref::Ctl(id) if !known(controls, id) => {
+                out.push(format!("{DOC}:{n}: unknown develop control `ctl:{id}`"))
+            }
             Ref::Path(p, line) => match (file_lines(p), line) {
                 (None, _) => out.push(format!("{DOC}:{n}: missing path `{p}`")),
-                (Some(len), Some(l)) if *l == 0 || *l > len => out.push(format!("{DOC}:{n}: `{p}:{l}` is past the end ({len} lines)")),
+                (Some(len), Some(l)) if *l == 0 || *l > len => out.push(format!(
+                    "{DOC}:{n}: `{p}:{l}` is past the end ({len} lines)"
+                )),
                 _ => {}
             },
             _ => {}
@@ -225,9 +264,20 @@ fn pct((done, n): (usize, usize)) -> String {
 
 pub fn summary_table(doc: &Doc) -> String {
     let (sections, total) = summarize(doc);
-    let mut s = String::from("| Section | ✅ | 🟡 | ⬜ | 🚫 | P0 done | P1 done |\n|---|---:|---:|---:|---:|---:|---:|\n");
-    let row =
-        |name: &str, c: &Counts| format!("| {name} | {} | {} | {} | {} | {} | {} |\n", c.done, c.partial, c.missing, c.oos, pct(c.p0), pct(c.p1));
+    let mut s = String::from(
+        "| Section | ✅ | 🟡 | ⬜ | 🚫 | P0 done | P1 done |\n|---|---:|---:|---:|---:|---:|---:|\n",
+    );
+    let row = |name: &str, c: &Counts| {
+        format!(
+            "| {name} | {} | {} | {} | {} | {} | {} |\n",
+            c.done,
+            c.partial,
+            c.missing,
+            c.oos,
+            pct(c.p0),
+            pct(c.p1)
+        )
+    };
     for (name, c) in &sections {
         s += &row(name, c);
     }
@@ -239,7 +289,11 @@ pub fn summary_table(doc: &Doc) -> String {
 /// Weighted completion of the in-scope rows (✅ = 1, 🟡 = ½, ⬜ = 0; 🚫 left out) for `tier`
 /// (`None` = all): (percent, rows).
 pub fn weighted(doc: &Doc, tier: Option<&str>) -> (f64, usize) {
-    let rows: Vec<&Row> = doc.rows.iter().filter(|r| r.status != Status::OutOfScope && tier.is_none_or(|t| r.tier == t)).collect();
+    let rows: Vec<&Row> = doc
+        .rows
+        .iter()
+        .filter(|r| r.status != Status::OutOfScope && tier.is_none_or(|t| r.tier == t))
+        .collect();
     let score: f64 = rows
         .iter()
         .map(|r| match r.status {
@@ -248,7 +302,14 @@ pub fn weighted(doc: &Doc, tier: Option<&str>) -> (f64, usize) {
             _ => 0.0,
         })
         .sum();
-    (if rows.is_empty() { 0.0 } else { score * 100.0 / rows.len() as f64 }, rows.len())
+    (
+        if rows.is_empty() {
+            0.0
+        } else {
+            score * 100.0 / rows.len() as f64
+        },
+        rows.len(),
+    )
 }
 
 /// "Weighted completion: 65.7% of 500 rows (P0 …, P1 …, P2 …)".
@@ -256,9 +317,16 @@ pub fn weighted_line(doc: &Doc) -> String {
     let (all, n) = weighted(doc, None);
     let tiers: Vec<String> = ["P0", "P1", "P2"]
         .iter()
-        .filter_map(|t| Some(weighted(doc, Some(t))).filter(|w| w.1 > 0).map(|(p, n)| format!("{t} {p:.1}% of {n}")))
+        .filter_map(|t| {
+            Some(weighted(doc, Some(t)))
+                .filter(|w| w.1 > 0)
+                .map(|(p, n)| format!("{t} {p:.1}% of {n}"))
+        })
         .collect();
-    format!("Weighted completion (✅ = 1, 🟡 = ½, 🚫 left out): **{all:.1}%** of {n} in-scope rows — {}.", tiers.join(" · "))
+    format!(
+        "Weighted completion (✅ = 1, 🟡 = ½, 🚫 left out): **{all:.1}%** of {n} in-scope rows — {}.",
+        tiers.join(" · ")
+    )
 }
 
 /// Replace the summary between the markers.
@@ -274,30 +342,50 @@ fn registry(what: &str) -> Result<BTreeSet<String>, String> {
         .output()
         .map_err(|e| format!("lightcraft-cli {what}: {e}"))?;
     if !out.status.success() {
-        return Err(format!("lightcraft-cli {what} --json failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "lightcraft-cli {what} --json failed:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| format!("lightcraft-cli {what}: bad JSON: {e}"))?;
-    Ok(v.as_array().into_iter().flatten().filter_map(|c| c["id"].as_str().map(str::to_string)).collect())
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout)
+        .map_err(|e| format!("lightcraft-cli {what}: bad JSON: {e}"))?;
+    Ok(v.as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|c| c["id"].as_str().map(str::to_string))
+        .collect())
 }
 
 pub fn run(root: &Path, write: bool) -> Result<(), String> {
     let path = root.join(DOC);
     let md = std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     let doc = parse(&md);
-    let menus = std::fs::read_to_string(root.join("crates/ui-egui/src/menus.rs")).map_err(|e| format!("menus.rs: {e}"))?;
+    let menus = std::fs::read_to_string(root.join("crates/ui-egui/src/menus.rs"))
+        .map_err(|e| format!("menus.rs: {e}"))?;
     let mut commands = registry("commands")?;
     commands.extend(ui_command_ids(&menus));
     let controls = registry("controls")?;
     let problems = check(&doc, &commands, &controls, |p| {
         let full = root.join(p);
-        if full.is_dir() { Some(0) } else { std::fs::read_to_string(full).ok().map(|s| s.lines().count()) }
+        if full.is_dir() {
+            Some(0)
+        } else {
+            std::fs::read_to_string(full)
+                .ok()
+                .map(|s| s.lines().count())
+        }
     });
 
     let table = summary_table(&doc);
-    println!("Lightroom parity ({DOC}): {} rows, {} references\n", doc.rows.len(), doc.refs.len());
+    println!(
+        "Lightroom parity ({DOC}): {} rows, {} references\n",
+        doc.rows.len(),
+        doc.refs.len()
+    );
     print!("{table}");
     if write {
-        let new = with_summary(&md, &table).ok_or_else(|| format!("{DOC}: summary markers `{BEGIN}` … `{END}` not found"))?;
+        let new = with_summary(&md, &table)
+            .ok_or_else(|| format!("{DOC}: summary markers `{BEGIN}` … `{END}` not found"))?;
         if new != md {
             std::fs::write(&path, new).map_err(|e| format!("{}: {e}", path.display()))?;
             println!("\nupdated the summary in {DOC}");
@@ -315,7 +403,10 @@ pub fn run(root: &Path, write: bool) -> Result<(), String> {
             .filter(|id| id.starts_with("LR-") && !have.contains(id))
             .collect();
         if !missing.is_empty() {
-            println!("\nwarning: catalog ids without a row: {}", missing.join(", "));
+            println!(
+                "\nwarning: catalog ids without a row: {}",
+                missing.join(", ")
+            );
         }
     }
     if problems.is_empty() {
@@ -376,7 +467,10 @@ old
     fn parses_rows_sections_and_statuses() {
         let d = parse(SAMPLE);
         let ids: Vec<&str> = d.rows.iter().map(|r| r.id.as_str()).collect();
-        assert_eq!(ids, ["LR-IMP-ONE", "LR-IMP-TWO", "LR-IMP-THREE", "LR-LIB-ONE"]);
+        assert_eq!(
+            ids,
+            ["LR-IMP-ONE", "LR-IMP-TWO", "LR-IMP-THREE", "LR-LIB-ONE"]
+        );
         assert_eq!(d.rows[0].section, "A. Import (IMP)");
         assert_eq!(d.rows[3].section, "B. Library (LIB)");
         assert_eq!(d.rows[1].status, Status::Partial);
@@ -395,8 +489,17 @@ old
         assert!(refs.contains(&&Ref::Cmd("edit.undo".into())));
         assert!(refs.contains(&&Ref::Path("crates/engine/src/import.rs".into(), Some(12))));
         assert!(refs.contains(&&Ref::Ctl("light.*".into())));
-        assert!(!refs.iter().any(|r| matches!(r, Ref::Cmd(id) if id == "nope")), "comment rows are skipped");
-        assert!(!refs.iter().any(|r| matches!(r, Ref::Path(p, _) if p.starts_with("plan/"))));
+        assert!(
+            !refs
+                .iter()
+                .any(|r| matches!(r, Ref::Cmd(id) if id == "nope")),
+            "comment rows are skipped"
+        );
+        assert!(
+            !refs
+                .iter()
+                .any(|r| matches!(r, Ref::Path(p, _) if p.starts_with("plan/")))
+        );
         assert_eq!(refs.len(), 5);
     }
 
@@ -405,7 +508,9 @@ old
         let d = parse(SAMPLE);
         let cmds = set(&["edit.undo", "library.import"]);
         let ctls = set(&["light.exposure"]);
-        let problems = check(&d, &cmds, &ctls, |p| (p == "crates/engine/src/import.rs").then_some(100));
+        let problems = check(&d, &cmds, &ctls, |p| {
+            (p == "crates/engine/src/import.rs").then_some(100)
+        });
         let unknown: Vec<&String> = problems.iter().filter(|p| p.contains("unknown")).collect();
         assert_eq!(unknown.len(), 1, "{problems:?}");
         assert!(unknown[0].contains("cmd:album.nope"));
@@ -423,15 +528,34 @@ old
         let d = parse(SAMPLE);
         let (sections, total) = summarize(&d);
         assert_eq!(sections.len(), 2);
-        assert_eq!(sections[0].1, Counts { done: 1, partial: 1, missing: 0, oos: 1, p0: (1, 1), p1: (0, 1) });
+        assert_eq!(
+            sections[0].1,
+            Counts {
+                done: 1,
+                partial: 1,
+                missing: 0,
+                oos: 1,
+                p0: (1, 1),
+                p1: (0, 1)
+            }
+        );
         assert_eq!(total.p0, (1, 2));
         let table = summary_table(&d);
-        assert!(table.contains("| A. Import (IMP) | 1 | 1 | 0 | 1 | 1/1 (100%) | 0/1 (0%) |"), "{table}");
-        assert!(table.contains("| **Total** | 1 | 1 | 1 | 1 | 1/2 (50%) | 0/1 (0%) |"), "{table}");
+        assert!(
+            table.contains("| A. Import (IMP) | 1 | 1 | 0 | 1 | 1/1 (100%) | 0/1 (0%) |"),
+            "{table}"
+        );
+        assert!(
+            table.contains("| **Total** | 1 | 1 | 1 | 1 | 1/2 (50%) | 0/1 (0%) |"),
+            "{table}"
+        );
         // three in-scope rows: 1 + ½ + 0
         assert_eq!(weighted(&d, None), (50.0, 3));
         assert_eq!(weighted(&d, Some("P0")), (50.0, 2));
-        assert!(table.contains("**50.0%** of 3 in-scope rows — P0 50.0% of 2 · P1 50.0% of 1."), "{table}");
+        assert!(
+            table.contains("**50.0%** of 3 in-scope rows — P0 50.0% of 2 · P1 50.0% of 1."),
+            "{table}"
+        );
         let new = with_summary(SAMPLE, &table).unwrap();
         assert!(!new.contains("\nold\n"));
         assert!(new.contains(&format!("{BEGIN}\n{table}{END}")));
@@ -442,9 +566,11 @@ old
     fn reads_ui_command_ids() {
         let src = "pub const UI_COMMANDS: &[UiCommand] = &[\n    (\"view.detail\", \"Detail\", Some(\"D\"), \"View\"),\n    (\"app.about\", \"About\", None, \"\"),\n];\nfn x() { (\"not.this\", 1); }";
         assert_eq!(ui_command_ids(src), ["view.detail", "app.about"]);
-        let languages =
-            "pub const LANGUAGE_COMMANDS: &[UiCommand] = &[\n    (\"app.language.english\", Locale::En.name(), None, \"Edit>Language\"),\n];\n";
-        assert_eq!(ui_command_ids(&format!("{languages}{src}")), ["view.detail", "app.about", "app.language.english"]);
+        let languages = "pub const LANGUAGE_COMMANDS: &[UiCommand] = &[\n    (\"app.language.english\", Locale::En.name(), None, \"Edit>Language\"),\n];\n";
+        assert_eq!(
+            ui_command_ids(&format!("{languages}{src}")),
+            ["view.detail", "app.about", "app.language.english"]
+        );
     }
 
     /// The real menu tables: both are found, so every language command is a known id.
@@ -452,9 +578,21 @@ old
     fn reads_the_language_commands_from_menus_rs() {
         let menus = include_str!("../../lightcraft-ui-egui/src/menus.rs");
         let ids = ui_command_ids(menus);
-        for id in ["view.detail", "app.language.english", "app.language.japanese", "app.language.simplifiedChinese", "app.language.portuguese"] {
+        for id in [
+            "view.detail",
+            "app.language.english",
+            "app.language.japanese",
+            "app.language.simplifiedChinese",
+            "app.language.portuguese",
+        ] {
             assert!(ids.iter().any(|known| known == id), "{id} not found");
         }
-        assert_eq!(ids.iter().filter(|id| id.as_str() == "app.language.english").count(), 1, "one Language menu entry per language");
+        assert_eq!(
+            ids.iter()
+                .filter(|id| id.as_str() == "app.language.english")
+                .count(),
+            1,
+            "one Language menu entry per language"
+        );
     }
 }

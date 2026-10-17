@@ -14,31 +14,56 @@ use crate::PhotocraftApp;
 /// layer "Pixels" on top: (harness, A, B, pixels).
 fn panel() -> (egui_kittest::Harness<'static, PhotocraftApp>, u64, u64, u64) {
     let mut s = photocraft_engine::Session::new();
-    s.execute("file.new", json!({"width": 16, "height": 16})).unwrap();
+    s.execute("file.new", json!({"width": 16, "height": 16}))
+        .unwrap();
     let smart = |s: &mut photocraft_engine::Session, name: &str| {
         s.execute("layer.new.layer", json!({})).unwrap();
-        s.execute("edit.fill", json!({"contents": "black"})).unwrap();
-        let id = s.execute("layer.smartObjects.convertToSmartObject", json!({})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("layer.setProps", json!({"layer": id, "name": name})).unwrap();
+        s.execute("edit.fill", json!({"contents": "black"}))
+            .unwrap();
+        let id = s
+            .execute("layer.smartObjects.convertToSmartObject", json!({}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute("layer.setProps", json!({"layer": id, "name": name}))
+            .unwrap();
         id
     };
     let a = smart(&mut s, "Smart A");
-    s.execute("filter.blur.gaussianBlur", json!({"radius": 1})).unwrap();
-    s.execute("filter.other.offset", json!({"horizontal": 2})).unwrap();
+    s.execute("filter.blur.gaussianBlur", json!({"radius": 1}))
+        .unwrap();
+    s.execute("filter.other.offset", json!({"horizontal": 2}))
+        .unwrap();
     let b = smart(&mut s, "Smart B");
-    let c = s.execute("layer.new.layer", json!({})).unwrap()["layer"].as_u64().unwrap();
-    s.execute("layer.setProps", json!({"layer": c, "name": "Pixels"})).unwrap();
+    let c = s.execute("layer.new.layer", json!({})).unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    s.execute("layer.setProps", json!({"layer": c, "name": "Pixels"}))
+        .unwrap();
     // 60 fps steps, so a double-click's two clicks fall inside egui's 0.3 s window.
-    let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1200.0, 900.0)).with_max_steps(64).with_step_dt(1.0 / 60.0).build_eframe(|cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        PhotocraftApp::new(s, crate::Services::default())
-    });
+    let mut h = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1200.0, 900.0))
+        .with_max_steps(64)
+        .with_step_dt(1.0 / 60.0)
+        .build_eframe(|cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            PhotocraftApp::new(s, crate::Services::default())
+        });
     h.run_steps(4);
     (h, a, b, c)
 }
 
 fn filters(h: &egui_kittest::Harness<'static, PhotocraftApp>, id: u64) -> Vec<String> {
-    match &h.state().session.active().unwrap().doc.layer(LayerId(id)).unwrap().content {
+    match &h
+        .state()
+        .session
+        .active()
+        .unwrap()
+        .doc
+        .layer(LayerId(id))
+        .unwrap()
+        .content
+    {
         LayerContent::Smart(sm) => sm.smart_filters.iter().map(|f| f.command.clone()).collect(),
         _ => Vec::new(),
     }
@@ -47,15 +72,27 @@ fn filters(h: &egui_kittest::Harness<'static, PhotocraftApp>, id: u64) -> Vec<St
 /// The centre of the Layers panel row (or footer button) labelled `label`: rows are selectable
 /// labels, which AccessKit calls buttons, unlike the same name drawn elsewhere.
 fn at(h: &egui_kittest::Harness<'static, PhotocraftApp>, label: &str) -> Pos2 {
-    h.query_all_by_label(label).find(|n| n.accesskit_node().role() == Role::Button).unwrap_or_else(|| panic!("`{label}` drawn")).rect().center()
+    h.query_all_by_label(label)
+        .find(|n| n.accesskit_node().role() == Role::Button)
+        .unwrap_or_else(|| panic!("`{label}` drawn"))
+        .rect()
+        .center()
 }
 
 fn selected(h: &egui_kittest::Harness<'static, PhotocraftApp>, label: &str) -> bool {
-    h.get_by_role_and_label(Role::Button, label).accesskit_node().toggled() == Some(Toggled::True)
+    h.get_by_role_and_label(Role::Button, label)
+        .accesskit_node()
+        .toggled()
+        == Some(Toggled::True)
 }
 
 /// Press at `from`, move to `to` in steps and release there, with `modifiers` held on release.
-fn drag(h: &mut egui_kittest::Harness<'static, PhotocraftApp>, from: Pos2, to: Pos2, modifiers: Modifiers) {
+fn drag(
+    h: &mut egui_kittest::Harness<'static, PhotocraftApp>,
+    from: Pos2,
+    to: Pos2,
+    modifiers: Modifiers,
+) {
     h.hover_at(from);
     h.run_steps(1);
     h.drag_at(from);
@@ -66,7 +103,12 @@ fn drag(h: &mut egui_kittest::Harness<'static, PhotocraftApp>, from: Pos2, to: P
     }
     h.event(egui::Event::ModifiersChanged(modifiers));
     h.run_steps(1);
-    h.event(egui::Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers });
+    h.event(egui::Event::PointerButton {
+        pos: to,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers,
+    });
     h.run_steps(4);
     h.event(egui::Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(2);
@@ -75,10 +117,18 @@ fn drag(h: &mut egui_kittest::Harness<'static, PhotocraftApp>, from: Pos2, to: P
 #[test]
 fn a_click_selects_the_filter_and_its_smart_object() {
     let (mut h, a, _, c) = panel();
-    assert_eq!(h.state().session.active().unwrap().active_layer, Some(LayerId(c)));
-    h.get_by_role_and_label(Role::Button, "Gaussian Blur").click();
+    assert_eq!(
+        h.state().session.active().unwrap().active_layer,
+        Some(LayerId(c))
+    );
+    h.get_by_role_and_label(Role::Button, "Gaussian Blur")
+        .click();
     h.run_steps(4);
-    assert_eq!(h.state().session.active().unwrap().active_layer, Some(LayerId(a)), "the smart object becomes active");
+    assert_eq!(
+        h.state().session.active().unwrap().active_layer,
+        Some(LayerId(a)),
+        "the smart object becomes active"
+    );
     assert!(selected(&h, "Gaussian Blur"));
     assert!(!selected(&h, "Offset"));
     // Another layer: the filter is no longer shown selected.
@@ -89,7 +139,10 @@ fn a_click_selects_the_filter_and_its_smart_object() {
     h.run_steps(1);
     h.drop_at(pixels);
     h.run_steps(4);
-    assert_eq!(h.state().session.active().unwrap().active_layer, Some(LayerId(c)));
+    assert_eq!(
+        h.state().session.active().unwrap().active_layer,
+        Some(LayerId(c))
+    );
     assert!(!selected(&h, "Gaussian Blur"));
 }
 
@@ -125,7 +178,11 @@ fn dragging_filters_onto_delete_removes_them() {
     let (from, to) = (at(&h, "Smart Filters"), at(&h, "Delete layer"));
     drag(&mut h, from, to, Modifiers::NONE);
     assert!(filters(&h, a).is_empty());
-    assert_eq!(h.state().session.active().unwrap().doc.layers.len(), 4, "no layer was deleted");
+    assert_eq!(
+        h.state().session.active().unwrap().doc.layers.len(),
+        4,
+        "no layer was deleted"
+    );
 }
 
 /// The report's case: the Camera Raw Filter is ⌥-dragged to another smart object with its
@@ -133,13 +190,30 @@ fn dragging_filters_onto_delete_removes_them() {
 #[test]
 fn a_camera_raw_filter_copies_and_its_copy_opens_on_the_target() {
     let (mut h, a, b, _) = panel();
-    h.state_mut().run("layer.select", json!({"layer": a})).unwrap();
-    h.state_mut().run("filter.cameraRaw", json!({"exposure": 1.0, "contrast": 20})).unwrap();
+    h.state_mut()
+        .run("layer.select", json!({"layer": a}))
+        .unwrap();
+    h.state_mut()
+        .run("filter.cameraRaw", json!({"exposure": 1.0, "contrast": 20}))
+        .unwrap();
     h.run_steps(4);
     let (from, to) = (at(&h, "Camera Raw Filter"), at(&h, "Smart B"));
     drag(&mut h, from, to, Modifiers::ALT);
-    let raw = |h: &egui_kittest::Harness<'static, PhotocraftApp>, id: u64| match &h.state().session.active().unwrap().doc.layer(LayerId(id)).unwrap().content {
-        LayerContent::Smart(sm) => sm.smart_filters.iter().find(|f| f.command == "filter.cameraRaw").map(|f| f.params.clone()),
+    let raw = |h: &egui_kittest::Harness<'static, PhotocraftApp>, id: u64| match &h
+        .state()
+        .session
+        .active()
+        .unwrap()
+        .doc
+        .layer(LayerId(id))
+        .unwrap()
+        .content
+    {
+        LayerContent::Smart(sm) => sm
+            .smart_filters
+            .iter()
+            .find(|f| f.command == "filter.cameraRaw")
+            .map(|f| f.params.clone()),
         _ => None,
     };
     assert_eq!(raw(&h, b), raw(&h, a), "copied with its settings");

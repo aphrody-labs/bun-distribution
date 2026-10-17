@@ -100,7 +100,13 @@ pub fn validate_scene(scene: &Scene) -> Result<(), &'static str> {
 
     for node in &scene.nodes {
         match node {
-            Node::Surface { rect, corners, elevation, outline, .. } => {
+            Node::Surface {
+                rect,
+                corners,
+                elevation,
+                outline,
+                ..
+            } => {
                 validate_rect(*rect, scene.width, scene.height)?;
                 validate_corners(*corners)?;
                 if *elevation > 5 {
@@ -111,12 +117,18 @@ pub fn validate_scene(scene: &Scene) -> Result<(), &'static str> {
                 {
                     return Err("invalid outline width");
                 }
-            },
+            }
             Node::StateLayer { rect, corners, .. } => {
                 validate_rect(*rect, scene.width, scene.height)?;
                 validate_corners(*corners)?;
-            },
-            Node::Ripple { cx, cy, radius, alpha, .. } => {
+            }
+            Node::Ripple {
+                cx,
+                cy,
+                radius,
+                alpha,
+                ..
+            } => {
                 if !cx.is_finite()
                     || !cy.is_finite()
                     || !radius.is_finite()
@@ -130,26 +142,31 @@ pub fn validate_scene(scene: &Scene) -> Result<(), &'static str> {
                 {
                     return Err("invalid ripple geometry");
                 }
-            },
+            }
             Node::Text { rect, text, .. } => {
                 validate_rect(*rect, scene.width, scene.height)?;
                 if text.len() > MAX_TEXT_BYTES {
                     return Err("text exceeds the limit");
                 }
-            },
+            }
             Node::Icon { rect, path, .. } => {
                 validate_rect(*rect, scene.width, scene.height)?;
                 if path.len() > MAX_ICON_BYTES {
                     return Err("icon path exceeds the limit");
                 }
-            },
-            Node::Image { rect, width, height, rgba } => {
+            }
+            Node::Image {
+                rect,
+                width,
+                height,
+                rgba,
+            } => {
                 validate_rect(*rect, scene.width, scene.height)?;
                 if !matches!(rgba8_len(*width, *height), Some(len) if len == rgba.len() && len <= MAX_RGBA_BYTES)
                 {
                     return Err("invalid RGBA image buffer");
                 }
-            },
+            }
         }
     }
     Ok(())
@@ -207,13 +224,28 @@ mod tests {
 
     #[test]
     fn renders_scene_specific_pngs() {
-        assert_eq!(render_untrusted(b"invalid JSON"), Err(CanvasError::InvalidJson));
+        assert_eq!(
+            render_untrusted(b"invalid JSON"),
+            Err(CanvasError::InvalidJson)
+        );
         let red = render_untrusted(
-            &serde_json::to_vec(&scene(Rgba8 { r: 255, g: 0, b: 0, a: 255 })).unwrap(),
+            &serde_json::to_vec(&scene(Rgba8 {
+                r: 255,
+                g: 0,
+                b: 0,
+                a: 255,
+            }))
+            .unwrap(),
         )
         .unwrap();
         let blue = render_untrusted(
-            &serde_json::to_vec(&scene(Rgba8 { r: 0, g: 0, b: 255, a: 255 })).unwrap(),
+            &serde_json::to_vec(&scene(Rgba8 {
+                r: 0,
+                g: 0,
+                b: 255,
+                a: 255,
+            }))
+            .unwrap(),
         )
         .unwrap();
         assert_eq!(&red[..8], b"\x89PNG\r\n\x1a\n");

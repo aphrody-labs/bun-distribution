@@ -68,7 +68,10 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let c = "contentFill.set";
     let mut st = s.state.content_fill.clone();
     if let Some(m) = str_p(p, "method") {
-        st.method = FillMethod::from_name(m).ok_or_else(|| bad(c, "method: object|surface|edgeBlend"))?.name().into();
+        st.method = FillMethod::from_name(m)
+            .ok_or_else(|| bad(c, "method: object|surface|edgeBlend"))?
+            .name()
+            .into();
     }
     if let Some(r) = str_p(p, "range") {
         st.range = match r {
@@ -88,7 +91,8 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::Null) => st.reference_layer = None,
         Some(v) => {
             let comp = s.active_comp().ok_or(EngineError::NoComp)?;
-            st.reference_layer = Some(super::resolve_layer(comp, v).ok_or_else(|| bad(c, format!("no layer {v}")))?);
+            st.reference_layer =
+                Some(super::resolve_layer(comp, v).ok_or_else(|| bad(c, format!("no layer {v}")))?);
             st.reference_time = Some(f_p(p, "referenceTime").unwrap_or(s.time().seconds()));
         }
         None => {
@@ -103,15 +107,28 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// A layer's masked source at comp time `t` on a `w × h` canvas in layer pixels (straight colour
 /// with alpha 1 where kept), and the hole (`true` where the alpha is under one half).
-fn masked_frame(r: &Renderer, ctx: &EvalCtx, layer: &effectcraft_project::Layer, w: u32, h: u32) -> (Image, Vec<bool>) {
+fn masked_frame(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    layer: &effectcraft_project::Layer,
+    w: u32,
+    h: u32,
+) -> (Image, Vec<bool>) {
     let mut img = Image::new(w, h);
     let mut hole = vec![true; (w * h) as usize];
     if let Some(buf) = r.layer_input(ctx, layer, 0) {
         let sc = if buf.scale > 0.0 { buf.scale } else { 1.0 };
         for y in 0..h {
             for x in 0..w {
-                let (bx, by) = ((x as f64 + 0.5) * sc - buf.offset[0], (y as f64 + 0.5) * sc - buf.offset[1]);
-                let p = if (sc - 1.0).abs() < 1e-9 { buf.img.get(bx.floor() as i64, by.floor() as i64) } else { buf.img.sample_bilinear(bx, by) };
+                let (bx, by) = (
+                    (x as f64 + 0.5) * sc - buf.offset[0],
+                    (y as f64 + 0.5) * sc - buf.offset[1],
+                );
+                let p = if (sc - 1.0).abs() < 1e-9 {
+                    buf.img.get(bx.floor() as i64, by.floor() as i64)
+                } else {
+                    buf.img.sample_bilinear(bx, by)
+                };
                 let i = (y * w + x) as usize;
                 if p[3] >= 0.5 {
                     img.data[i] = [p[0] / p[3], p[1] / p[3], p[2] / p[3], 1.0];
@@ -125,16 +142,37 @@ fn masked_frame(r: &Renderer, ctx: &EvalCtx, layer: &effectcraft_project::Layer,
 
 /// Encode a straight-alpha frame (alpha 1) as 8-bit PNG.
 fn png(img: &Image) -> std::result::Result<Vec<u8>, String> {
-    let rgba: Vec<u8> = img.data.iter().flat_map(|p| [p[0], p[1], p[2], p[3]].map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8)).collect();
+    let rgba: Vec<u8> = img
+        .data
+        .iter()
+        .flat_map(|p| [p[0], p[1], p[2], p[3]].map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8))
+        .collect();
     super::comp_more::encode_png(&rgba, img.width, img.height)
 }
 
 fn default_dir(s: &Session, name: &str) -> String {
-    let base = s.path.as_deref().and_then(|p| std::path::Path::new(p).parent().map(|d| d.join("Fill"))).unwrap_or_else(|| {
-        // (the browser has no temporary folder: its storage)
-        if cfg!(target_arch = "wasm32") { std::path::PathBuf::from("/Fill") } else { std::env::temp_dir().join("effectcraft-fill") }
-    });
-    let safe: String = name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let base = s
+        .path
+        .as_deref()
+        .and_then(|p| std::path::Path::new(p).parent().map(|d| d.join("Fill")))
+        .unwrap_or_else(|| {
+            // (the browser has no temporary folder: its storage)
+            if cfg!(target_arch = "wasm32") {
+                std::path::PathBuf::from("/Fill")
+            } else {
+                std::env::temp_dir().join("effectcraft-fill")
+            }
+        });
+    let safe: String = name
+        .chars()
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     let mut k = 1;
     loop {
         let d = base.join(format!("{safe}_Fill_{k}"));
@@ -192,13 +230,19 @@ pub(crate) async fn run_plan(
     r.expr = expr;
     r.cache = Some(cache);
     let r = &r;
-    let ctx0 = EvalCtx { expr, ..EvalCtx::new(project, cid, comp, Tick::ZERO) };
+    let ctx0 = EvalCtx {
+        expr,
+        ..EvalCtx::new(project, cid, comp, Tick::ZERO)
+    };
     let times = &plan.times;
     let n = times.len() as u64;
     let mut frames = Vec::with_capacity(times.len());
     let mut holes = Vec::with_capacity(times.len());
     for (k, t) in times.iter().enumerate() {
-        let (img, hole) = crate::offload::in_passes(accel, |a| masked_frame(&r.with_accel(a), &ctx0.at(*t), layer, w, h)).await;
+        let (img, hole) = crate::offload::in_passes(accel, |a| {
+            masked_frame(&r.with_accel(a), &ctx0.at(*t), layer, w, h)
+        })
+        .await;
         holes.push(dilate(&hole, w as usize, h as usize, plan.expand));
         frames.push(img);
         if !progress(k as u64 + 1, n * 3) {
@@ -212,22 +256,46 @@ pub(crate) async fn run_plan(
     if let Some((rl, rt)) = plan.reference
         && let Some(l) = comp.layer(rl)
     {
-        let (img, hole) = crate::offload::in_passes(accel, |a| masked_frame(&r.with_accel(a), &ctx0.at(rt), l, w, h)).await;
+        let (img, hole) = crate::offload::in_passes(accel, |a| {
+            masked_frame(&r.with_accel(a), &ctx0.at(rt), l, w, h)
+        })
+        .await;
         if hole.iter().all(|b| !*b) {
-            let k = times.iter().enumerate().min_by_key(|(_, t)| (t.0 - rt.0).abs()).map(|(k, _)| k).unwrap_or(0);
+            let k = times
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, t)| (t.0 - rt.0).abs())
+                .map(|(k, _)| k)
+                .unwrap_or(0);
             references.push((k, img));
         }
     }
     message("Filling");
-    let opts = FillOpts { method: FillMethod::from_name(&plan.method).unwrap_or_default(), lighting: plan.lighting, ..Default::default() };
-    let input = FillInput { frames, holes, references };
-    let out = fill_sequence(&input, &opts, &mut |d, t| progress(n + (d as u64 * n / t.max(1) as u64), n * 3)).ok_or(crate::render_queue::CANCELLED)?;
+    let opts = FillOpts {
+        method: FillMethod::from_name(&plan.method).unwrap_or_default(),
+        lighting: plan.lighting,
+        ..Default::default()
+    };
+    let input = FillInput {
+        frames,
+        holes,
+        references,
+    };
+    let out = fill_sequence(&input, &opts, &mut |d, t| {
+        progress(n + (d as u64 * n / t.max(1) as u64), n * 3)
+    })
+    .ok_or(crate::render_queue::CANCELLED)?;
     message("Writing the fill layer");
     let dir = &plan.dir;
     let mut paths = vec![];
     for (k, img) in out.iter().enumerate() {
-        let path = std::path::Path::new(dir).join(format!("fill_{k:05}.png")).to_string_lossy().to_string();
-        services.store_file(&path, &png(img)?).map_err(|e| format!("{path}: {e}"))?;
+        let path = std::path::Path::new(dir)
+            .join(format!("fill_{k:05}.png"))
+            .to_string_lossy()
+            .to_string();
+        services
+            .store_file(&path, &png(img)?)
+            .map_err(|e| format!("{path}: {e}"))?;
         paths.push(path);
         if !progress(2 * n + k as u64 + 1, n * 3) {
             return Err(crate::render_queue::CANCELLED.into());
@@ -239,7 +307,17 @@ pub(crate) async fn run_plan(
 /// Add the fill layer of a finished plan (one undo step).
 pub(crate) fn apply_plan(s: &mut Session, plan: &FillPlan, paths: Vec<String>) -> Result<Value> {
     let importer = s.importer.clone();
-    add_fill_layer(s, plan.comp, plan.layer, &plan.name, paths, (plan.width, plan.height), plan.times[0], plan.times.len(), importer)
+    add_fill_layer(
+        s,
+        plan.comp,
+        plan.layer,
+        &plan.name,
+        paths,
+        (plan.width, plan.height),
+        plan.times[0],
+        plan.times.len(),
+        importer,
+    )
 }
 
 fn generate(s: &mut Session, p: &Value) -> Result<Value> {
@@ -251,7 +329,17 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
         let saved = s.state.content_fill.clone();
         let mut q = p.clone();
         if let Some(o) = q.as_object_mut() {
-            o.retain(|k, _| ["method", "range", "alphaExpansion", "lightingCorrection", "referenceLayer", "referenceTime"].contains(&k.as_str()));
+            o.retain(|k, _| {
+                [
+                    "method",
+                    "range",
+                    "alphaExpansion",
+                    "lightingCorrection",
+                    "referenceLayer",
+                    "referenceTime",
+                ]
+                .contains(&k.as_str())
+            });
         }
         set(s, &q)?;
         std::mem::swap(&mut st, &mut s.state.content_fill);
@@ -260,15 +348,24 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?.clone();
     if !layer.source.is_av() || layer.source.item().is_none() {
-        return Err(bad(c, "Content-Aware Fill needs a footage, solid or precomp layer"));
+        return Err(bad(
+            c,
+            "Content-Aware Fill needs a footage, solid or precomp layer",
+        ));
     }
     let (w, h) = effectcraft_render::source_size(&s.project, &layer);
     if w == 0 || h == 0 {
         return Err(bad(c, "the layer has no pixels"));
     }
     let fr = comp.frame_rate;
-    let (a, b) =
-        if st.range == "entire" { (layer.in_point, layer.out_point) } else { (comp.work_area.0.max(layer.in_point), comp.work_area.1.min(layer.out_point)) };
+    let (a, b) = if st.range == "entire" {
+        (layer.in_point, layer.out_point)
+    } else {
+        (
+            comp.work_area.0.max(layer.in_point),
+            comp.work_area.1.min(layer.out_point),
+        )
+    };
     let (a, b) = (a.max(Tick::ZERO), b.min(comp.duration));
     if b <= a {
         return Err(bad(c, "the range doesn't overlap the layer"));
@@ -281,8 +378,13 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
         ..Default::default()
     };
     let expand = st.alpha_expansion.round().max(0.0) as usize;
-    let reference = st.reference_layer.filter(|r| comp.layer(*r).is_some()).map(|r| (r, Tick::from_seconds_f64(st.reference_time.unwrap_or(0.0))));
-    let dir = str_p(p, "outputDir").map(str::to_string).unwrap_or_else(|| default_dir(s, &layer.name));
+    let reference = st
+        .reference_layer
+        .filter(|r| comp.layer(*r).is_some())
+        .map(|r| (r, Tick::from_seconds_f64(st.reference_time.unwrap_or(0.0))));
+    let dir = str_p(p, "outputDir")
+        .map(str::to_string)
+        .unwrap_or_else(|| default_dir(s, &layer.name));
     let plan = FillPlan {
         comp: cid,
         layer: lid,
@@ -299,28 +401,48 @@ fn generate(s: &mut Session, p: &Value) -> Result<Value> {
     let wait = b_p(p, "wait").unwrap_or(false);
     // The browser: a job worker (its own GPU), the page keeps running.
     if !wait && s.offloads() {
-        s.offload_analysis(crate::offload::WorkerJob::ContentFill { plan: Box::new(plan) }).map_err(EngineError::Other)?;
+        s.offload_analysis(crate::offload::WorkerJob::ContentFill {
+            plan: Box::new(plan),
+        })
+        .map_err(EngineError::Other)?;
         return Ok(json!({"job": "contentFill", "started": true, "worker": true}));
     }
     let lf = LayerFrames::new(s, cid, lid);
     let services = s.services.clone();
     let importer = s.importer.clone();
     let name = layer.name.clone();
-    s.spawn_task("contentFill", format!("Content-Aware Fill: {name}"), wait, move |ctl| {
-        let paths = effectcraft_render::passes::block_on(run_plan(
-            &plan,
-            &lf.project,
-            lf.footage.as_ref(),
-            lf.expr.as_deref(),
-            &lf.cache,
-            services.as_ref(),
-            None,
-            &mut |d, t| ctl.progress(d, t),
-            &mut |m| ctl.message(m),
-        ))?;
-        let apply: Apply = Box::new(move |s: &mut Session| add_fill_layer(s, cid, lid, &name, paths, (w, h), plan.times[0], plan.times.len(), importer));
-        Ok(apply)
-    })
+    s.spawn_task(
+        "contentFill",
+        format!("Content-Aware Fill: {name}"),
+        wait,
+        move |ctl| {
+            let paths = effectcraft_render::passes::block_on(run_plan(
+                &plan,
+                &lf.project,
+                lf.footage.as_ref(),
+                lf.expr.as_deref(),
+                &lf.cache,
+                services.as_ref(),
+                None,
+                &mut |d, t| ctl.progress(d, t),
+                &mut |m| ctl.message(m),
+            ))?;
+            let apply: Apply = Box::new(move |s: &mut Session| {
+                add_fill_layer(
+                    s,
+                    cid,
+                    lid,
+                    &name,
+                    paths,
+                    (w, h),
+                    plan.times[0],
+                    plan.times.len(),
+                    importer,
+                )
+            });
+            Ok(apply)
+        },
+    )
 }
 
 /// Import the rendered sequence and put it in a layer above the source.
@@ -337,28 +459,53 @@ fn add_fill_layer(
     importer: Option<Arc<dyn crate::Importer>>,
 ) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
-    let src = comp.layer(lid).ok_or_else(|| bad("contentFill.generate", "the source layer is gone"))?.clone();
+    let src = comp
+        .layer(lid)
+        .ok_or_else(|| bad("contentFill.generate", "the source layer is gone"))?
+        .clone();
     let fr = comp.frame_rate;
     let dur = fr.tick_of(count as i64);
-    let mut footage = importer.and_then(|i| i.probe(&paths[0]).ok()).filter(|f| f.has_video).unwrap_or_else(|| Footage {
-        path: paths[0].clone(),
-        kind: FootageKind::Sequence,
-        width: size.0,
-        height: size.1,
-        has_video: true,
-        codec: "PNG".into(),
-        ..Default::default()
-    });
+    let mut footage = importer
+        .and_then(|i| i.probe(&paths[0]).ok())
+        .filter(|f| f.has_video)
+        .unwrap_or_else(|| Footage {
+            path: paths[0].clone(),
+            kind: FootageKind::Sequence,
+            width: size.0,
+            height: size.1,
+            has_video: true,
+            codec: "PNG".into(),
+            ..Default::default()
+        });
     footage.kind = FootageKind::Sequence;
     footage.sequence = paths.clone();
     footage.frame_rate = fr;
     footage.duration = dur;
     let (lname, item, layer) = s.edit("Content-Aware Fill", None, |proj, st| {
-        let folder = proj.folder_named("Fill").unwrap_or_else(|| proj.add_item("Fill", Label::Yellow, None, ItemKind::Folder));
-        let n = proj.items.values().filter(|i| i.parent == Some(folder)).count() + 1;
+        let folder = proj
+            .folder_named("Fill")
+            .unwrap_or_else(|| proj.add_item("Fill", Label::Yellow, None, ItemKind::Folder));
+        let n = proj
+            .items
+            .values()
+            .filter(|i| i.parent == Some(folder))
+            .count()
+            + 1;
         let lname = format!("Fill {n} [{name}]");
-        let iid = proj.add_item(&lname, Label::Lavender, Some(folder), ItemKind::Footage(footage));
-        let mut l = build::layer(proj, &comp, &lname, LayerSource::Footage { item: iid }, size, Some(dur));
+        let iid = proj.add_item(
+            &lname,
+            Label::Lavender,
+            Some(folder),
+            ItemKind::Footage(footage),
+        );
+        let mut l = build::layer(
+            proj,
+            &comp,
+            &lname,
+            LayerSource::Footage { item: iid },
+            size,
+            Some(dur),
+        );
         l.start_time = start;
         l.in_point = start;
         l.out_point = (start + dur).min(comp.duration);
@@ -384,7 +531,10 @@ fn open_panel(s: &mut Session, p: &Value) -> Result<Value> {
     if p.as_object().is_some_and(|o| !o.is_empty()) {
         return generate(s, p);
     }
-    s.events.push(crate::Event::Frontend { command: "window.panel".into(), params: json!({"panel": "contentAwareFill"}) });
+    s.events.push(crate::Event::Frontend {
+        command: "window.panel".into(),
+        params: json!({"panel": "contentAwareFill"}),
+    });
     Ok(json!({"frontend": "window.panel"}))
 }
 

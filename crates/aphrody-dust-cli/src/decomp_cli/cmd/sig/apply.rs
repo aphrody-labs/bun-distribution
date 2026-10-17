@@ -60,11 +60,11 @@ impl ApplySignature {
     fn apply_signatures(program: &mut Program, signatures: &Signatures) -> Result<()> {
         log::info!("Applying signature: {}", signatures.name());
         match signatures.apply(program)? {
-            ApplyResult::Applied => {},
+            ApplyResult::Applied => {}
             ApplyResult::NotFound => log::error!("No matching function found"),
             ApplyResult::MultipleFound => {
                 log::error!("Multiple matching functions found, cannot apply signature");
-            },
+            }
         }
         Ok(())
     }

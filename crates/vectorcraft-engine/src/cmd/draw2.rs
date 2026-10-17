@@ -8,7 +8,9 @@ use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::{Appearance, Document, Node, NodeId, NodeKind, PressureProfile, Selection};
 use vectorcraft_geom::hit::fill_contains;
-use vectorcraft_geom::{Anchor, AnchorKind, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2};
+use vectorcraft_geom::{
+    Anchor, AnchorKind, BezPath, FillRule, PathData, Point, Rect, SubPath, Vec2,
+};
 use vectorcraft_pathops as po;
 use vectorcraft_pathops::{BoolOp, Cap, Join, SimplifyOptions};
 
@@ -152,18 +154,30 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// `[[x,y]…]` or `[{x,y}…]`; non-finite points are dropped.
 fn points_param(p: &Value, key: &str, cmd: &str) -> Result<Vec<Point>> {
-    Ok(samples_param(p, key, cmd)?.into_iter().map(|(pt, _)| pt).collect())
+    Ok(samples_param(p, key, cmd)?
+        .into_iter()
+        .map(|(pt, _)| pt)
+        .collect())
 }
 
 /// [`points_param`] with each point's pen pressure, if it has one: `[[x,y,pressure]…]` or
 /// `[{x,y,pressure}…]` (0..1).
 fn samples_param(p: &Value, key: &str, cmd: &str) -> Result<Vec<(Point, Option<f64>)>> {
-    let a = p.get(key).and_then(Value::as_array).ok_or_else(|| bad(cmd, format!("missing array `{key}`")))?;
+    let a = p
+        .get(key)
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, format!("missing array `{key}`")))?;
     let pts: Vec<(Point, Option<f64>)> = a
         .iter()
         .filter_map(|v| match v {
-            Value::Array(xy) => Some((Point::new(xy.first()?.as_f64()?, xy.get(1)?.as_f64()?), xy.get(2).and_then(Value::as_f64))),
-            Value::Object(_) => Some((Point::new(v.get("x")?.as_f64()?, v.get("y")?.as_f64()?), v.get("pressure").and_then(Value::as_f64))),
+            Value::Array(xy) => Some((
+                Point::new(xy.first()?.as_f64()?, xy.get(1)?.as_f64()?),
+                xy.get(2).and_then(Value::as_f64),
+            )),
+            Value::Object(_) => Some((
+                Point::new(v.get("x")?.as_f64()?, v.get("y")?.as_f64()?),
+                v.get("pressure").and_then(Value::as_f64),
+            )),
             _ => None,
         })
         .filter(|(p, _)| p.x.is_finite() && p.y.is_finite())
@@ -190,17 +204,28 @@ fn stroke_pressure(samples: &[(Point, Option<f64>)]) -> Option<PressureProfile> 
             (at, p.unwrap_or(1.0))
         })
         .collect();
-    PressureProfile::from_samples(along.into_iter().map(|(s, p)| (if at > 1e-9 { s / at } else { 0.0 }, p)))
+    PressureProfile::from_samples(
+        along
+            .into_iter()
+            .map(|(s, p)| (if at > 1e-9 { s / at } else { 0.0 }, p)),
+    )
 }
 
 /// The length of a subpath.
 fn subpath_len(sp: &SubPath) -> f64 {
     use kurbo::ParamCurveArclen;
-    PathData::single(sp.clone()).to_bezpath().segments().map(|s| s.arclen(0.01)).sum()
+    PathData::single(sp.clone())
+        .to_bezpath()
+        .segments()
+        .map(|s| s.arclen(0.01))
+        .sum()
 }
 
 fn usize_req(p: &Value, key: &str, cmd: &str) -> Result<usize> {
-    p.get(key).and_then(Value::as_u64).map(|v| v as usize).ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
+    p.get(key)
+        .and_then(Value::as_u64)
+        .map(|v| v as usize)
+        .ok_or_else(|| bad(cmd, format!("missing integer `{key}`")))
 }
 
 fn path_mut(d: &mut Document, id: NodeId) -> Result<&mut PathData> {
@@ -231,14 +256,20 @@ fn dist_to_polyline(pts: &[Point], q: Point) -> f64 {
             let (a, b) = (w[0], w[1]);
             let ab = b - a;
             let l2 = ab.hypot2();
-            let t = if l2 < 1e-18 { 0.0 } else { ((q - a).dot(ab) / l2).clamp(0.0, 1.0) };
+            let t = if l2 < 1e-18 {
+                0.0
+            } else {
+                ((q - a).dot(ab) / l2).clamp(0.0, 1.0)
+            };
             (a + ab * t).distance(q)
         })
         .fold(f64::INFINITY, f64::min)
 }
 
 fn poly_bounds(pts: &[Point], pad: f64) -> Rect {
-    let r = pts.iter().fold(Rect::from_points(pts[0], pts[0]), |r, p| r.union_pt(*p));
+    let r = pts
+        .iter()
+        .fold(Rect::from_points(pts[0], pts[0]), |r, p| r.union_pt(*p));
     r.inflate(pad, pad)
 }
 
@@ -248,7 +279,13 @@ fn brush_region(pts: &[Point], size: f64) -> PathData {
     if pts.len() == 1 {
         pts.push(pts[0] + Vec2::new(0.01, 0.0));
     }
-    po::outline_stroke(&PathData::single(SubPath::polyline(&pts, false)), size, Cap::Round, Join::Round, 4.0)
+    po::outline_stroke(
+        &PathData::single(SubPath::polyline(&pts, false)),
+        size,
+        Cap::Round,
+        Join::Round,
+        4.0,
+    )
 }
 
 /// Path leaves the area tools act on: under the selected objects, or every path when nothing is
@@ -256,8 +293,14 @@ fn brush_region(pts: &[Point], size: f64) -> PathData {
 fn target_paths(doc: &Document, sel: &Selection, area: Rect) -> Vec<NodeId> {
     let mut out = vec![];
     let mut push = |n: &Node| {
-        if let NodeKind::Path { guide: false, path, .. } = &n.kind
-            && path.control_bounds().is_some_and(|b| b.inflate(0.5, 0.5).intersect(area).area() > 0.0 || b.width() == 0.0 || b.height() == 0.0)
+        if let NodeKind::Path {
+            guide: false, path, ..
+        } = &n.kind
+            && path.control_bounds().is_some_and(|b| {
+                b.inflate(0.5, 0.5).intersect(area).area() > 0.0
+                    || b.width() == 0.0
+                    || b.height() == 0.0
+            })
             && !out.contains(&n.id)
         {
             out.push(n.id);
@@ -278,7 +321,16 @@ fn target_paths(doc: &Document, sel: &Selection, area: Rect) -> Vec<NodeId> {
 
 /// The members of a compound path with geometry `pd`: one path per subpath, with fresh ids.
 fn compound_members(d: &mut Document, pd: PathData) -> Vec<Arc<Node>> {
-    pd.subpaths.into_iter().map(|sp| Arc::new(Node::path(d.alloc_id(), PathData::single(sp), Appearance::default()))).collect()
+    pd.subpaths
+        .into_iter()
+        .map(|sp| {
+            Arc::new(Node::path(
+                d.alloc_id(),
+                PathData::single(sp),
+                Appearance::default(),
+            ))
+        })
+        .collect()
 }
 
 /// Give path or compound path `id` the geometry `pd` (dropping a live shape; a compound's members
@@ -312,7 +364,12 @@ fn sibling_with(d: &mut Document, id: NodeId, pd: PathData) -> Result<Node> {
 
 /// Replace path or compound path `id` with `pieces` (first keeps the id, the rest go right above
 /// it; none removes it). `cut` removes the path or puts the other pieces above it. Returns ids.
-pub(super) fn replace_with_pieces(d: &mut Document, cut: &mut Beside, id: NodeId, pieces: Vec<PathData>) -> Result<Vec<NodeId>> {
+pub(super) fn replace_with_pieces(
+    d: &mut Document,
+    cut: &mut Beside,
+    id: NodeId,
+    pieces: Vec<PathData>,
+) -> Result<Vec<NodeId>> {
     let mut it = pieces.into_iter();
     let Some(first) = it.next() else {
         cut.put(d, id, vec![])?;
@@ -339,9 +396,17 @@ pub(super) fn ids_json(ids: &[NodeId]) -> Value {
 
 /// Split a filled path into connected pieces (each outer contour with its holes).
 pub(super) fn components(pd: &PathData) -> Vec<PathData> {
-    let subs: Vec<&SubPath> = pd.subpaths.iter().filter(|s| s.closed && s.anchors.len() >= 2).collect();
+    let subs: Vec<&SubPath> = pd
+        .subpaths
+        .iter()
+        .filter(|s| s.closed && s.anchors.len() >= 2)
+        .collect();
     if subs.len() <= 1 {
-        return if pd.is_empty() { vec![] } else { vec![pd.clone()] };
+        return if pd.is_empty() {
+            vec![]
+        } else {
+            vec![pd.clone()]
+        };
     }
     let bps: Vec<BezPath> = subs
         .iter()
@@ -354,7 +419,9 @@ pub(super) fn components(pd: &PathData) -> Vec<PathData> {
     let samples: Vec<Point> = subs.iter().map(|s| s.segment(0).eval(0.5)).collect();
     let n = subs.len();
     let inside = |j: usize, i: usize| fill_contains(&bps[j], FillRule::NonZero, samples[i]);
-    let depth: Vec<usize> = (0..n).map(|i| (0..n).filter(|&j| j != i && inside(j, i)).count()).collect();
+    let depth: Vec<usize> = (0..n)
+        .map(|i| (0..n).filter(|&j| j != i && inside(j, i)).count())
+        .collect();
     let areas: Vec<f64> = subs.iter().map(|s| s.area().abs()).collect();
     let outers: Vec<usize> = (0..n).filter(|&i| depth[i].is_multiple_of(2)).collect();
     let mut groups: Vec<Vec<SubPath>> = outers.iter().map(|&o| vec![subs[o].clone()]).collect();
@@ -399,7 +466,11 @@ fn cut_subpath(sp: &SubPath, remove: &dyn Fn(Point) -> bool) -> Option<Vec<SubPa
                 let (mut lo, mut hi) = (prev_t, t);
                 for _ in 0..30 {
                     let m = 0.5 * (lo + hi);
-                    if remove(c.eval(m)) == prev_rm { lo = m } else { hi = m }
+                    if remove(c.eval(m)) == prev_rm {
+                        lo = m
+                    } else {
+                        hi = m
+                    }
                 }
                 let b = 0.5 * (lo + hi);
                 if prev_rm {
@@ -428,8 +499,14 @@ fn cut_subpath(sp: &SubPath, remove: &dyn Fn(Point) -> bool) -> Option<Vec<SubPa
     }
     // A closed path's last and first runs meet at anchor 0.
     if sp.closed && runs.len() >= 2 {
-        let first_starts = runs.first().and_then(|r| r.first()).is_some_and(|s| s.0 == 0 && s.1 == 0.0);
-        let last_ends = runs.last().and_then(|r| r.last()).is_some_and(|s| s.0 + 1 == nseg && s.2 == 1.0);
+        let first_starts = runs
+            .first()
+            .and_then(|r| r.first())
+            .is_some_and(|s| s.0 == 0 && s.1 == 0.0);
+        let last_ends = runs
+            .last()
+            .and_then(|r| r.last())
+            .is_some_and(|s| s.0 + 1 == nseg && s.2 == 1.0);
         if first_starts && last_ends {
             let first = runs.remove(0);
             if let Some(last) = runs.last_mut() {
@@ -444,12 +521,24 @@ fn cut_subpath(sp: &SubPath, remove: &dyn Fn(Point) -> bool) -> Option<Vec<SubPa
             let mut anchors: Vec<Anchor> = vec![];
             for &(i, t0, t1) in r {
                 let c = sp.segment(i).subsegment(t0..t1);
-                let (h1, h2) = if sp.segment_is_line(i) { (c.p0, c.p3) } else { (c.p1, c.p2) };
+                let (h1, h2) = if sp.segment_is_line(i) {
+                    (c.p0, c.p3)
+                } else {
+                    (c.p1, c.p2)
+                };
                 match anchors.last_mut() {
                     Some(a) => a.h_out = h1,
-                    None => anchors.push(Anchor { h_out: h1, ..Anchor::corner(c.p0) }),
+                    None => anchors.push(Anchor {
+                        h_out: h1,
+                        ..Anchor::corner(c.p0)
+                    }),
                 }
-                anchors.push(Anchor { p: c.p3, h_in: h2, h_out: c.p3, kind: AnchorKind::Corner });
+                anchors.push(Anchor {
+                    p: c.p3,
+                    h_in: h2,
+                    h_out: c.p3,
+                    kind: AnchorKind::Corner,
+                });
             }
             for a in &mut anchors {
                 *a = Anchor::with_handles(a.p, a.h_in, a.h_out);
@@ -463,7 +552,10 @@ fn cut_subpath(sp: &SubPath, remove: &dyn Fn(Point) -> bool) -> Option<Vec<SubPa
 
 /// Erase from an outline path (open or closed) where `remove` holds. Returns the new geometry per
 /// output object (one object per piece when the path had a single subpath), or None if unchanged.
-pub(super) fn erase_outline(pd: &PathData, remove: &dyn Fn(Point) -> bool) -> Option<Vec<PathData>> {
+pub(super) fn erase_outline(
+    pd: &PathData,
+    remove: &dyn Fn(Point) -> bool,
+) -> Option<Vec<PathData>> {
     let mut changed = false;
     let mut subs = vec![];
     for sp in &pd.subpaths {
@@ -488,11 +580,21 @@ pub(super) fn erase_outline(pd: &PathData, remove: &dyn Fn(Point) -> bool) -> Op
 }
 
 fn stroke_paint(s: &Session) -> Paint {
-    if s.paint.stroke.is_none() { Paint::solid(Color::BLACK) } else { s.paint.stroke.clone() }
+    if s.paint.stroke.is_none() {
+        Paint::solid(Color::BLACK)
+    } else {
+        s.paint.stroke.clone()
+    }
 }
 
 fn path_kind(path: PathData) -> NodeKind {
-    NodeKind::Path { path, rule: FillRule::NonZero, live: None, clipping: false, guide: false }
+    NodeKind::Path {
+        path,
+        rule: FillRule::NonZero,
+        live: None,
+        clipping: false,
+        guide: false,
+    }
 }
 
 // ---------- Pencil / Paintbrush ----------
@@ -501,7 +603,9 @@ fn path_kind(path: PathData) -> NodeKind {
 /// corners) and simplify it to `tol`.
 fn fit_freehand(pts: &[Point], tol: f64, closed: bool) -> SubPath {
     let min = (tol * 0.3).max(0.05);
-    let (Some(&p0), Some(&pn)) = (pts.first(), pts.last()) else { return SubPath::new(vec![], closed) };
+    let (Some(&p0), Some(&pn)) = (pts.first(), pts.last()) else {
+        return SubPath::new(vec![], closed);
+    };
     let mut kept: Vec<Point> = vec![p0];
     for &p in pts.iter().skip(1) {
         if kept.last().is_none_or(|k| k.distance(p) >= min) {
@@ -532,8 +636,20 @@ fn fit_freehand(pts: &[Point], tol: f64, closed: bool) -> SubPath {
     if sp.anchors.len() < 3 {
         return sp;
     }
-    let fitted = po::simplify_with(&PathData::single(sp.clone()), &SimplifyOptions { tolerance: tol, corner_angle_deg: 60.0, straight_lines: false });
-    fitted.subpaths.into_iter().next().filter(|s| s.anchors.len() >= 2).unwrap_or(sp)
+    let fitted = po::simplify_with(
+        &PathData::single(sp.clone()),
+        &SimplifyOptions {
+            tolerance: tol,
+            corner_angle_deg: 60.0,
+            straight_lines: false,
+        },
+    );
+    fitted
+        .subpaths
+        .into_iter()
+        .next()
+        .filter(|s| s.anchors.len() >= 2)
+        .unwrap_or(sp)
 }
 
 fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
@@ -548,22 +664,32 @@ fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
         let id = id_param(ext, "id").ok_or_else(|| bad(C, "extend needs id"))?;
         let at_start = str_param(ext, "end") == Some("start");
         let (pd, _) = path_of(&s.doc()?.doc, id)?;
-        let si = pd.subpaths.iter().rposition(|s| !s.closed && !s.anchors.is_empty()).ok_or_else(|| bad(C, "path has no open end"))?;
+        let si = pd
+            .subpaths
+            .iter()
+            .rposition(|s| !s.closed && !s.anchors.is_empty())
+            .ok_or_else(|| bad(C, "path has no open end"))?;
         let mut sp = pd.subpaths[si].clone();
         let old_len = subpath_len(&sp);
         if at_start {
             sp.reverse();
         }
-        let (Some(first), Some(end)) = (sp.anchors.first().map(|a| a.p), sp.anchors.last().map(|a| a.p)) else {
+        let (Some(first), Some(end)) = (
+            sp.anchors.first().map(|a| a.p),
+            sp.anchors.last().map(|a| a.p),
+        ) else {
             return Err(bad(C, "path has no open end"));
         };
-        let Some(p0) = pts.first_mut() else { return Err(bad(C, "needs points")) };
+        let Some(p0) = pts.first_mut() else {
+            return Err(bad(C, "needs points"));
+        };
         *p0 = end;
         if pts.len() < 2 {
             return Ok(json!({ "id": id.0 }));
         }
         let close_tol = (tol * 4.0).max(6.0);
-        let closing = sp.anchors.len() >= 2 && pts.last().is_some_and(|p| p.distance(first) <= close_tol);
+        let closing =
+            sp.anchors.len() >= 2 && pts.last().is_some_and(|p| p.distance(first) <= close_tol);
         if closing && let Some(l) = pts.last_mut() {
             *l = first;
         }
@@ -588,7 +714,12 @@ fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
             *a = Anchor::with_handles(a.p, a.h_in, a.h_out);
         }
         // The path's pressure (in the direction it is continued in) followed by the stroke's.
-        let old_pressure = s.doc()?.doc.node(id).and_then(|n| n.appearance.stroke()).and_then(|st| st.pressure.clone());
+        let old_pressure = s
+            .doc()?
+            .doc
+            .node(id)
+            .and_then(|n| n.appearance.stroke())
+            .and_then(|st| st.pressure.clone());
         let joined = (old_pressure.is_some() || pressure.is_some()).then(|| {
             let old = old_pressure.map(|p| if at_start { p.reversed() } else { p });
             let total = subpath_len(&sp);
@@ -603,7 +734,11 @@ fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
             if let Some(joined) = joined
                 && let Some(st) = d.node_mut(id).and_then(|n| n.appearance.stroke_mut())
             {
-                st.pressure = if reverse { joined.map(|p| p.reversed()) } else { joined };
+                st.pressure = if reverse {
+                    joined.map(|p| p.reversed())
+                } else {
+                    joined
+                };
             }
             sel.set([id]);
             Ok(())
@@ -614,19 +749,32 @@ fn freehand(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "need at least two points"));
     }
     let sp = fit_freehand(&pts, tol, closed);
-    let fill = if bool_or(p, "fill", false) { s.paint.fill.clone() } else { Paint::None };
+    let fill = if bool_or(p, "fill", false) {
+        s.paint.fill.clone()
+    } else {
+        Paint::None
+    };
     let mut look = s.new_art_look(fill, stroke_paint(s), s.paint.stroke_width.max(0.1));
     if let Some(st) = look.appearance.stroke_mut() {
         st.pressure = pressure;
     }
-    add_look(s, if brush { "Paintbrush" } else { "Pencil" }, path_kind(PathData::single(sp)), look, None)
+    add_look(
+        s,
+        if brush { "Paintbrush" } else { "Pencil" },
+        path_kind(PathData::single(sp)),
+        look,
+        None,
+    )
 }
 
 // ---------- Curvature ----------
 
 fn curvature(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "path.curvature";
-    let arr = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(C, "missing points"))?;
+    let arr = p
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(C, "missing points"))?;
     let pts: Vec<(Point, bool)> = arr
         .iter()
         .filter_map(|v| {
@@ -634,7 +782,12 @@ fn curvature(s: &mut Session, p: &Value) -> Result<Value> {
                 Value::Array(xy) => Point::new(xy.first()?.as_f64()?, xy.get(1)?.as_f64()?),
                 _ => Point::new(v.get("x")?.as_f64()?, v.get("y")?.as_f64()?),
             };
-            (pt.x.is_finite() && pt.y.is_finite()).then(|| (pt, v.get("corner").and_then(Value::as_bool).unwrap_or(false)))
+            (pt.x.is_finite() && pt.y.is_finite()).then(|| {
+                (
+                    pt,
+                    v.get("corner").and_then(Value::as_bool).unwrap_or(false),
+                )
+            })
         })
         .collect();
     if pts.is_empty() {
@@ -649,7 +802,11 @@ fn curvature(s: &mut Session, p: &Value) -> Result<Value> {
         })?;
         return Ok(json!({ "id": id.0 }));
     }
-    let mut look = s.new_art_look(s.paint.fill.clone(), s.paint.stroke.clone(), s.paint.stroke_width);
+    let mut look = s.new_art_look(
+        s.paint.fill.clone(),
+        s.paint.stroke.clone(),
+        s.paint.stroke_width,
+    );
     let ap = &mut look.appearance;
     if ap.stroke_paint().is_none() && ap.fill_paint().is_none() {
         ap.set_stroke(Paint::solid(Color::BLACK));
@@ -666,11 +823,16 @@ enum CurvatureOp {
 }
 
 fn curvature_edit(s: &mut Session, p: &Value) -> Result<Value> {
-    use vectorcraft_tools::draw2::{EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move};
+    use vectorcraft_tools::draw2::{
+        EndCurve, curvature_close, curvature_extend, curvature_insert, curvature_move,
+    };
     const C: &str = "path.curvatureEdit";
     let id = id_param(p, "id").ok_or_else(|| bad(C, "missing id"))?;
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let at = match (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) {
+    let at = match (
+        p.get("x").and_then(Value::as_f64),
+        p.get("y").and_then(Value::as_f64),
+    ) {
         (Some(x), Some(y)) if x.is_finite() && y.is_finite() => Some(Point::new(x, y)),
         (None, None) => None,
         _ => return Err(bad(C, "x and y must be finite numbers")),
@@ -695,14 +857,20 @@ fn curvature_edit(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let anchor = s.edit("Curvature", |d, sel| {
         let path = path_mut(d, id)?;
-        let sp = path.subpaths.get_mut(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let sp = path
+            .subpaths
+            .get_mut(si)
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
         if matches!(op, CurvatureOp::Extend(_) | CurvatureOp::Close) && sp.closed {
             return Err(EngineError::Other("path is already closed".into()));
         }
         let ai = match op {
-            CurvatureOp::Move(ai, q) => curvature_move(sp, ai, q).then_some(ai).ok_or_else(|| EngineError::Other("no such anchor".into()))?,
+            CurvatureOp::Move(ai, q) => curvature_move(sp, ai, q)
+                .then_some(ai)
+                .ok_or_else(|| EngineError::Other("no such anchor".into()))?,
             CurvatureOp::Insert(seg, t, q) => {
-                let ai = curvature_insert(sp, seg, t).ok_or_else(|| EngineError::Other("no such segment".into()))?;
+                let ai = curvature_insert(sp, seg, t)
+                    .ok_or_else(|| EngineError::Other("no such segment".into()))?;
                 if let Some(q) = q {
                     curvature_move(sp, ai, q);
                 }
@@ -735,7 +903,10 @@ fn remove_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
     let ai = usize_req(p, "anchor", C)?;
     let removed = s.edit("Delete Anchor Point", |d, sel| {
-        let sp = path_mut(d, id)?.subpaths.get(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let sp = path_mut(d, id)?
+            .subpaths
+            .get(si)
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
         if ai >= sp.anchors.len() {
             return Err(EngineError::Other("no such anchor".into()));
         }
@@ -753,11 +924,20 @@ fn remove_anchors(s: &mut Session, _: &Value) -> Result<Value> {
         .selection
         .anchors
         .iter()
-        .filter(|(id, set)| !set.is_empty() && st.doc.node(**id).is_some_and(|n| matches!(n.kind, NodeKind::Path { .. })))
+        .filter(|(id, set)| {
+            !set.is_empty()
+                && st
+                    .doc
+                    .node(**id)
+                    .is_some_and(|n| matches!(n.kind, NodeKind::Path { .. }))
+        })
         .map(|(id, set)| (*id, set.iter().copied().collect()))
         .collect();
     if jobs.is_empty() {
-        return Err(bad("path.removeAnchors", "direct-select anchor points of a path"));
+        return Err(bad(
+            "path.removeAnchors",
+            "direct-select anchor points of a path",
+        ));
     }
     let removed = s.edit("Remove Anchor Points", |d, sel| {
         let mut removed = 0;
@@ -809,14 +989,23 @@ fn convert_anchor(s: &mut Session, p: &Value) -> Result<Value> {
     let si = p.get("subpath").and_then(Value::as_u64).unwrap_or(0) as usize;
     let ai = usize_req(p, "anchor", C)?;
     let smooth = str_param(p, "to") == Some("smooth");
-    let target = match (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64)) {
+    let target = match (
+        p.get("x").and_then(Value::as_f64),
+        p.get("y").and_then(Value::as_f64),
+    ) {
         (Some(x), Some(y)) => Some(Point::new(x, y)),
         _ => None,
     };
     s.edit("Convert Anchor Point", |d, _| {
         let path = path_mut(d, id)?;
-        let sp = path.subpaths.get_mut(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
-        let a = sp.anchors.get_mut(ai).ok_or_else(|| EngineError::Other("no such anchor".into()))?;
+        let sp = path
+            .subpaths
+            .get_mut(si)
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let a = sp
+            .anchors
+            .get_mut(ai)
+            .ok_or_else(|| EngineError::Other("no such anchor".into()))?;
         match target {
             _ if !smooth => a.retract(),
             Some(t) if t.distance(a.p) > 1e-9 => *a = Anchor::smooth(a.p, t),
@@ -842,7 +1031,10 @@ fn reshape_segment(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit("Reshape", |d, _| {
         let path = path_mut(d, id)?;
-        let sp = path.subpaths.get_mut(si).ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let sp = path
+            .subpaths
+            .get_mut(si)
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
         if !sp.bend_segment(seg, t, dv) {
             return Err(EngineError::Other("no such segment".into()));
         }
@@ -863,12 +1055,19 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "need `anchor` or `segment` + `t`"));
     }
     let t = f64_or(p, "t", 0.5);
-    if !t.is_finite() || p.get("t").is_some_and(|v| !v.is_f64() && !v.is_i64() && !v.is_u64()) {
+    if !t.is_finite()
+        || p.get("t")
+            .is_some_and(|v| !v.is_f64() && !v.is_i64() && !v.is_u64())
+    {
         return Err(bad(C, "invalid t"));
     }
     let ids = s.edit("Split Path", |d, sel| {
         let path = path_mut(d, id)?;
-        let mut sp = path.subpaths.get(si).cloned().ok_or_else(|| EngineError::Other("no such subpath".into()))?;
+        let mut sp = path
+            .subpaths
+            .get(si)
+            .cloned()
+            .ok_or_else(|| EngineError::Other("no such subpath".into()))?;
         let n = sp.anchors.len();
         let k = match (anchor, seg) {
             (Some(a), _) if a < n => a,
@@ -886,11 +1085,14 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
         };
         let mut pieces = sp.cut_at(&std::collections::BTreeSet::from([k]));
         if sp.closed {
-            path.subpaths[si] = pieces.pop().ok_or_else(|| EngineError::Other("no such anchor".into()))?;
+            path.subpaths[si] = pieces
+                .pop()
+                .ok_or_else(|| EngineError::Other("no such anchor".into()))?;
             sel.set([id]);
             return Ok(vec![id]);
         }
-        let [left, right] = <[SubPath; 2]>::try_from(pieces).map_err(|_| EngineError::Other("cannot split an open path at its end point".into()))?;
+        let [left, right] = <[SubPath; 2]>::try_from(pieces)
+            .map_err(|_| EngineError::Other("cannot split an open path at its end point".into()))?;
         if path.subpaths.len() == 1 {
             path.subpaths[0] = left;
             let node = sibling_with(d, id, PathData::single(right))?;
@@ -920,14 +1122,26 @@ fn knife(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "need at least two points"));
     }
     let st = s.doc()?;
-    let strip = po::outline_stroke(&PathData::single(SubPath::polyline(&pts, false)), KNIFE_GAP, Cap::Butt, Join::Round, 4.0);
+    let strip = po::outline_stroke(
+        &PathData::single(SubPath::polyline(&pts, false)),
+        KNIFE_GAP,
+        Cap::Butt,
+        Join::Round,
+        4.0,
+    );
     let mut plan: Vec<(NodeId, Vec<PathData>)> = vec![];
     for id in target_paths(&st.doc, &st.selection, poly_bounds(&pts, 1.0)) {
         let (pd, rule) = path_of(&st.doc, id)?;
         if !pd.is_closed() {
             continue;
         }
-        let pieces = components(&po::boolean(&pd, rule, &strip, FillRule::NonZero, BoolOp::Difference));
+        let pieces = components(&po::boolean(
+            &pd,
+            rule,
+            &strip,
+            FillRule::NonZero,
+            BoolOp::Difference,
+        ));
         if pieces.len() >= 2 {
             plan.push((id, pieces));
         }
@@ -962,10 +1176,23 @@ fn erase_region(s: &mut Session, p: &Value) -> Result<Value> {
     for id in target_paths(&st.doc, &st.selection, poly_bounds(&pts, r)) {
         let (pd, rule) = path_of(&st.doc, id)?;
         if pd.is_closed() {
-            if po::area(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect), FillRule::NonZero) <= 1e-6 {
+            if po::area(
+                &po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect),
+                FillRule::NonZero,
+            ) <= 1e-6
+            {
                 continue;
             }
-            plan.push((id, components(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Difference))));
+            plan.push((
+                id,
+                components(&po::boolean(
+                    &pd,
+                    rule,
+                    &region,
+                    FillRule::NonZero,
+                    BoolOp::Difference,
+                )),
+            ));
         } else if let Some(pieces) = erase_outline(&pd, &|q| dist_to_polyline(&pts, q) <= r) {
             plan.push((id, pieces));
         }
@@ -1013,8 +1240,23 @@ fn erase_segments(s: &mut Session, p: &Value) -> Result<Value> {
 /// Refit the anchors of an open run `a[lo..=hi]` keeping its end points and outer handles.
 fn refit_run(anchors: &[Anchor], tol: f64) -> Vec<Anchor> {
     let piece = PathData::single(SubPath::new(anchors.to_vec(), false));
-    let fitted = po::simplify_with(&piece, &SimplifyOptions { tolerance: tol, corner_angle_deg: 179.0, straight_lines: false });
-    let Some(mut out) = fitted.subpaths.into_iter().next().map(|s| s.anchors).filter(|a| a.len() >= 2) else { return anchors.to_vec() };
+    let fitted = po::simplify_with(
+        &piece,
+        &SimplifyOptions {
+            tolerance: tol,
+            corner_angle_deg: 179.0,
+            straight_lines: false,
+        },
+    );
+    let Some(mut out) = fitted
+        .subpaths
+        .into_iter()
+        .next()
+        .map(|s| s.anchors)
+        .filter(|a| a.len() >= 2)
+    else {
+        return anchors.to_vec();
+    };
     let (f, l) = (anchors[0], anchors[anchors.len() - 1]);
     let last = out.len() - 1;
     out[0].p = f.p;
@@ -1036,8 +1278,14 @@ fn smooth_subpath(sp: &SubPath, near: &dyn Fn(Point) -> bool, tol: f64) -> Optio
     if sp.closed {
         let Some(k) = marked.iter().position(|m| !m) else {
             // Everything is in range: smooth the whole closed path.
-            let f =
-                po::simplify_with(&PathData::single(sp.clone()), &SimplifyOptions { tolerance: tol, corner_angle_deg: 179.0, straight_lines: false });
+            let f = po::simplify_with(
+                &PathData::single(sp.clone()),
+                &SimplifyOptions {
+                    tolerance: tol,
+                    corner_angle_deg: 179.0,
+                    straight_lines: false,
+                },
+            );
             return f.subpaths.into_iter().next();
         };
         // Rotate so an untouched anchor comes first, duplicate it at the end and treat as open.
@@ -1055,7 +1303,10 @@ fn smooth_subpath(sp: &SubPath, near: &dyn Fn(Point) -> bool, tol: f64) -> Optio
         }
         return Some(SubPath::new(res, true));
     }
-    Some(SubPath::new(smooth_open(&sp.anchors, &marked, near, tol), false))
+    Some(SubPath::new(
+        smooth_open(&sp.anchors, &marked, near, tol),
+        false,
+    ))
 }
 
 /// The segment `c`, which ends in the drag's reach (`near`) and starts outside it, split where it
@@ -1065,7 +1316,9 @@ fn split_at_reach(c: CubicBez, near: &dyn Fn(Point) -> bool) -> Option<(CubicBez
     const STEPS: u32 = 32;
     let step = 1.0 / f64::from(STEPS);
     // Back from the end in reach to the first sample outside, then halving to the crossing.
-    let outside = (1..=STEPS).map(|i| 1.0 - f64::from(i) * step).find(|t| !near(c.eval(*t)))?;
+    let outside = (1..=STEPS)
+        .map(|i| 1.0 - f64::from(i) * step)
+        .find(|t| !near(c.eval(*t)))?;
     let (mut lo, mut hi) = (outside, outside + step);
     for _ in 0..20 {
         let mid = (lo + hi) / 2.0;
@@ -1079,7 +1332,11 @@ fn split_at_reach(c: CubicBez, near: &dyn Fn(Point) -> bool) -> Option<(CubicBez
     let straight = c.p1 == c.p0 && c.p2 == c.p3;
     let part = |range| {
         let s = c.subsegment(range);
-        if straight { CubicBez::new(s.p0, s.p0, s.p3, s.p3) } else { s }
+        if straight {
+            CubicBez::new(s.p0, s.p0, s.p3, s.p3)
+        } else {
+            s
+        }
     };
     (hi > 0.02).then(|| (part(0.0..hi), part(hi..1.0)))
 }
@@ -1087,7 +1344,12 @@ fn split_at_reach(c: CubicBez, near: &dyn Fn(Point) -> bool) -> Option<(CubicBez
 /// `anchors` with each run of `marked` ones refitted, together with the stretch of the segments
 /// leading into the run that is in the drag's reach (`near`): a short drag smooths what is under
 /// it, and the rest of a long segment next to it stays as it was (#1512).
-fn smooth_open(anchors: &[Anchor], marked: &[bool], near: &dyn Fn(Point) -> bool, tol: f64) -> Vec<Anchor> {
+fn smooth_open(
+    anchors: &[Anchor],
+    marked: &[bool],
+    near: &dyn Fn(Point) -> bool,
+    tol: f64,
+) -> Vec<Anchor> {
     let n = anchors.len();
     let mut runs = vec![];
     let mut i = 0;
@@ -1113,18 +1375,30 @@ fn smooth_open(anchors: &[Anchor], marked: &[bool], near: &dyn Fn(Point) -> bool
         let (mut head, mut tail) = (None, None);
         if hi > b
             && let [.., inner, outer] = piece.as_mut_slice()
-            && let Some((far, reach)) = split_at_reach(CubicBez::new(outer.p, outer.h_in, inner.h_out, inner.p), near)
+            && let Some((far, reach)) = split_at_reach(
+                CubicBez::new(outer.p, outer.h_in, inner.h_out, inner.p),
+                near,
+            )
         {
             inner.h_out = reach.p2;
-            tail = Some(Anchor { h_in: far.p1, ..*outer });
+            tail = Some(Anchor {
+                h_in: far.p1,
+                ..*outer
+            });
             *outer = Anchor::with_handles(far.p3, reach.p1, far.p2);
         }
         if lo < a
             && let [outer, inner, ..] = piece.as_mut_slice()
-            && let Some((far, reach)) = split_at_reach(CubicBez::new(outer.p, outer.h_out, inner.h_in, inner.p), near)
+            && let Some((far, reach)) = split_at_reach(
+                CubicBez::new(outer.p, outer.h_out, inner.h_in, inner.p),
+                near,
+            )
         {
             inner.h_in = reach.p2;
-            head = Some(Anchor { h_out: far.p1, ..*outer });
+            head = Some(Anchor {
+                h_out: far.p1,
+                ..*outer
+            });
             *outer = Anchor::with_handles(far.p3, far.p2, reach.p1);
         }
         let new = refit_run(&piece, tol);
@@ -1198,7 +1472,12 @@ fn join_scrub(s: &mut Session, p: &Value) -> Result<Value> {
     let order = |q: Point| -> f64 {
         poly.segments()
             .enumerate()
-            .map(|(i, sg)| (i as f64 + sg.nearest(q, 1e-6).t, sg.nearest(q, 1e-6).distance_sq))
+            .map(|(i, sg)| {
+                (
+                    i as f64 + sg.nearest(q, 1e-6).t,
+                    sg.nearest(q, 1e-6).distance_sq,
+                )
+            })
             .min_by(|a, b| a.1.total_cmp(&b.1))
             .map_or(0.0, |x| x.0)
     };
@@ -1209,7 +1488,10 @@ fn join_scrub(s: &mut Session, p: &Value) -> Result<Value> {
             if sp.closed || sp.anchors.len() < 2 {
                 continue;
             }
-            for (start, a) in [(true, sp.anchors[0].p), (false, sp.anchors[sp.anchors.len() - 1].p)] {
+            for (start, a) in [
+                (true, sp.anchors[0].p),
+                (false, sp.anchors[sp.anchors.len() - 1].p),
+            ] {
                 if dist_to_polyline(&pts, a) <= tol {
                     ends.push((order(a), id, si, start, a));
                 }
@@ -1308,7 +1590,12 @@ fn blob(s: &mut Session, p: &Value) -> Result<Value> {
                 continue;
             }
             let (pd, rule) = path_of(&st.doc, id)?;
-            if pd.is_closed() && po::area(&po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect), FillRule::NonZero) > 1e-6 {
+            if pd.is_closed()
+                && po::area(
+                    &po::boolean(&pd, rule, &region, FillRule::NonZero, BoolOp::Intersect),
+                    FillRule::NonZero,
+                ) > 1e-6
+            {
                 merge_ids.push((id, pd, rule));
             }
         }
@@ -1320,7 +1607,9 @@ fn blob(s: &mut Session, p: &Value) -> Result<Value> {
     let mut inputs: Vec<(&PathData, FillRule)> = vec![(&region, FillRule::NonZero)];
     inputs.extend(merge_ids.iter().map(|(_, pd, r)| (pd, *r)));
     let merged = po::unite_all(&inputs);
-    let Some(((keep, _, _), rest)) = merge_ids.split_last() else { return add_node(s, "Blob Brush", path_kind(region), ap, None) };
+    let Some(((keep, _, _), rest)) = merge_ids.split_last() else {
+        return add_node(s, "Blob Brush", path_kind(region), ap, None);
+    };
     let keep = *keep;
     let others: Vec<NodeId> = rest.iter().map(|m| m.0).collect();
     s.edit("Blob Brush", |d, sel| {

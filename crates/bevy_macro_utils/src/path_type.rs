@@ -81,8 +81,8 @@ fn is_const(path: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_const, PathType};
-    use syn::{parse_str, Path};
+    use super::{PathType, is_const};
+    use syn::{Path, parse_str};
 
     macro_rules! test_path_type {
         ($test_name:ident, $input:expr, $expected:expr) => {

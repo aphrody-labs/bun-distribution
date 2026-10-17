@@ -43,7 +43,9 @@ async fn checkpoint(
     rollout: Option<&RolloutRecorder>,
 ) -> Result<(), EngineError> {
     if let Some(recorder) = rollout {
-        recorder.record_async(json!({"type": ROLLOUT_GOAL_STATE, "goal": goal})).await?;
+        recorder
+            .record_async(json!({"type": ROLLOUT_GOAL_STATE, "goal": goal}))
+            .await?;
         recorder.flush().await?;
     }
     Ok(())
@@ -51,7 +53,11 @@ async fn checkpoint(
 
 /// Restore the last goal checkpoint; corruption must not silently reset progress.
 pub fn restore_goal(lines: &[RolloutLine]) -> Result<Option<GoalState>, EngineError> {
-    let Some(line) = lines.iter().rev().find(|line| line.item["type"] == ROLLOUT_GOAL_STATE) else {
+    let Some(line) = lines
+        .iter()
+        .rev()
+        .find(|line| line.item["type"] == ROLLOUT_GOAL_STATE)
+    else {
         return Ok(None);
     };
     let goal: GoalState = serde_json::from_value(line.item["goal"].clone())
@@ -76,9 +82,9 @@ async fn evaluate(
             .filter_map(|part| match part {
                 Part::Text(text) => Some(json!({"text": text})),
                 Part::FunctionCall { id, name, .. } => Some(json!({"toolCall": name, "id": id})),
-                Part::FunctionResponse { id, name, response, .. } => {
-                    Some(json!({"toolResult": name, "id": id, "response": response}))
-                },
+                Part::FunctionResponse {
+                    id, name, response, ..
+                } => Some(json!({"toolResult": name, "id": id, "response": response})),
                 Part::Image(_) | Part::Reasoning { .. } => None,
             })
             .collect();
@@ -107,19 +113,21 @@ async fn evaluate(
                     return Err(EngineError::Goal("evaluator reply exceeds 16 KiB".into()));
                 }
                 text.push_str(&delta);
-            },
+            }
             ModelStreamEvent::Completed { .. } => {
                 completed = true;
                 break;
-            },
+            }
             ModelStreamEvent::ToolCall { .. } | ModelStreamEvent::ToolCallDelta { .. } => {
                 return Err(EngineError::Goal("evaluator attempted a tool call".into()));
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     if !completed {
-        return Err(EngineError::Goal("evaluator stream ended without completion".into()));
+        return Err(EngineError::Goal(
+            "evaluator stream ended without completion".into(),
+        ));
     }
     let verdict: Verdict = serde_json::from_str(text.trim())
         .map_err(|_| EngineError::Goal("evaluator did not return a strict JSON verdict".into()))?;

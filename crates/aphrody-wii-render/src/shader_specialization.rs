@@ -152,12 +152,24 @@ impl ShaderSpecializationKey {
             }
         }
 
-        masked_copy(&mut key.tev_color_env[..tev_stages], &draw.tev_color_env, 0x00ff_ffff);
-        masked_copy(&mut key.tev_alpha_env[..tev_stages], &draw.tev_alpha_env, 0x00ff_ffff);
+        masked_copy(
+            &mut key.tev_color_env[..tev_stages],
+            &draw.tev_color_env,
+            0x00ff_ffff,
+        );
+        masked_copy(
+            &mut key.tev_alpha_env[..tev_stages],
+            &draw.tev_alpha_env,
+            0x00ff_ffff,
+        );
         masked_copy(&mut key.tev_orders[..tev_stages], &draw.tev_orders, 0x03ff);
 
         if indirect_stages != 0 {
-            masked_copy(&mut key.tev_indirect[..tev_stages], &draw.tev_indirect, 0x001f_ffff);
+            masked_copy(
+                &mut key.tev_indirect[..tev_stages],
+                &draw.tev_indirect,
+                0x001f_ffff,
+            );
         }
 
         if shader.alpha_test_enabled {
@@ -200,7 +212,10 @@ impl ShaderSpecializationKey {
                 .map(|(&name, value)| (name, f64::from(value))),
         );
         constants.extend(
-            TEV_KSEL_NAMES.iter().zip(self.tev_ksel).map(|(&name, value)| (name, f64::from(value))),
+            TEV_KSEL_NAMES
+                .iter()
+                .zip(self.tev_ksel)
+                .map(|(&name, value)| (name, f64::from(value))),
         );
         constants.push(("gx_indirect_refs", f64::from(self.indirect_refs)));
         constants.extend(
@@ -237,16 +252,27 @@ impl ShaderSpecializationKey {
             out[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
             offset += 4;
         };
-        for values in [self.tev_color_env, self.tev_alpha_env, self.tev_orders, self.tev_indirect] {
+        for values in [
+            self.tev_color_env,
+            self.tev_alpha_env,
+            self.tev_orders,
+            self.tev_indirect,
+        ] {
             values.into_iter().for_each(&mut write);
         }
         self.tev_ksel.into_iter().for_each(&mut write);
         write(self.indirect_refs);
         self.color_ctrl.into_iter().for_each(&mut write);
         self.alpha_ctrl.into_iter().for_each(&mut write);
-        [self.alpha_comp0, self.alpha_comp1, self.alpha_op, self.ztex_type, self.ztex_op]
-            .into_iter()
-            .for_each(&mut write);
+        [
+            self.alpha_comp0,
+            self.alpha_comp1,
+            self.alpha_op,
+            self.ztex_type,
+            self.ztex_op,
+        ]
+        .into_iter()
+        .for_each(&mut write);
         debug_assert_eq!(offset, SPECIALIZATION_KEY_BYTES);
         out
     }
@@ -321,10 +347,22 @@ impl ShaderKey {
 fn make_resolver() -> VirtualResolver<'static> {
     let mut r = VirtualResolver::new();
     r.add_module("package::common".parse().unwrap(), COMMON_WESL.into());
-    r.add_module("package::tev_helpers".parse().unwrap(), TEV_HELPERS_WESL.into());
-    r.add_module("package::tev_combiners".parse().unwrap(), TEV_COMBINERS_WESL.into());
-    r.add_module("package::tev_indirect".parse().unwrap(), TEV_INDIRECT_WESL.into());
-    r.add_module("package::alpha_test".parse().unwrap(), ALPHA_TEST_WESL.into());
+    r.add_module(
+        "package::tev_helpers".parse().unwrap(),
+        TEV_HELPERS_WESL.into(),
+    );
+    r.add_module(
+        "package::tev_combiners".parse().unwrap(),
+        TEV_COMBINERS_WESL.into(),
+    );
+    r.add_module(
+        "package::tev_indirect".parse().unwrap(),
+        TEV_INDIRECT_WESL.into(),
+    );
+    r.add_module(
+        "package::alpha_test".parse().unwrap(),
+        ALPHA_TEST_WESL.into(),
+    );
     r.add_module("package::lighting".parse().unwrap(), LIGHTING_WESL.into());
     r.add_module("package::main".parse().unwrap(), MAIN_WESL.into());
     r
@@ -407,7 +445,10 @@ pub(crate) fn compile_variant(key: ShaderKey) -> String {
     }
 
     for i in 0..4u8 {
-        compiler.set_feature(&format!("IND_STAGE_{i}_ENABLED"), i < key.num_indirect_stages);
+        compiler.set_feature(
+            &format!("IND_STAGE_{i}_ENABLED"),
+            i < key.num_indirect_stages,
+        );
     }
 
     compiler.set_feature("HAS_LIGHTING_C0", key.has_lighting_c0);
@@ -419,7 +460,10 @@ pub(crate) fn compile_variant(key: ShaderKey) -> String {
     }
 
     let entry = "package::main".parse().expect("valid module path");
-    let out = compiler.compile(&entry).expect("WESL specialization failed").to_string();
+    let out = compiler
+        .compile(&entry)
+        .expect("WESL specialization failed")
+        .to_string();
     #[cfg(feature = "dump-wgsl")]
     {
         let dir = gecko::paths::cache("wgsl");

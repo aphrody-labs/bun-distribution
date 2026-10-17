@@ -26,15 +26,41 @@ fn small_mp4() -> Option<PathBuf> {
     if out.exists() {
         return Some(out);
     }
-    if !Command::new("ffmpeg").arg("-version").output().is_ok_and(|o| o.status.success()) {
+    if !Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_ok_and(|o| o.status.success())
+    {
         return None;
     }
     std::fs::create_dir_all(fixtures()).unwrap();
     let tmp = fixtures().join(format!("in_place_tmp_{}.mp4", std::process::id()));
     let st = Command::new("ffmpeg")
-        .args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=2"])
-        .args(["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:duration=2"])
-        .args(["-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest"])
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "testsrc2=size=320x240:rate=30:duration=2",
+        ])
+        .args([
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000:duration=2",
+        ])
+        .args([
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:a",
+            "aac",
+            "-shortest",
+        ])
         .arg(&tmp)
         .status()
         .unwrap();
@@ -69,10 +95,14 @@ fn a_long_movie_is_read_in_place_not_whole() {
     // The same movie with 256 MiB of padding after its boxes.
     let large = fixtures().join(format!("in_place_large_{}.mp4", std::process::id()));
     std::fs::copy(&small, &large).unwrap();
-    let mut f = std::fs::OpenOptions::new().append(true).open(&large).unwrap();
+    let mut f = std::fs::OpenOptions::new()
+        .append(true)
+        .open(&large)
+        .unwrap();
     f.write_all(&(8 + PADDING as u32).to_be_bytes()).unwrap();
     f.write_all(b"free").unwrap();
-    f.set_len(std::fs::metadata(&small).unwrap().len() + 8 + PADDING).unwrap();
+    f.set_len(std::fs::metadata(&small).unwrap().len() + 8 + PADDING)
+        .unwrap();
     drop(f);
 
     // Warm up on the small file (code paths, allocator, decoder tables).
@@ -92,9 +122,20 @@ fn a_long_movie_is_read_in_place_not_whole() {
 
     let growth = after.saturating_sub(before);
     eprintln!("peak RSS growth: {} KiB", growth >> 10);
-    assert!(growth < 64 << 20, "probing and decoding a {} MiB movie grew peak RSS by {} MiB", PADDING >> 20, growth >> 20);
+    assert!(
+        growth < 64 << 20,
+        "probing and decoding a {} MiB movie grew peak RSS by {} MiB",
+        PADDING >> 20,
+        growth >> 20
+    );
     // Same movie, same results.
-    assert_eq!(footage, effectcraft_project::Footage { path: footage.path.clone(), ..small_footage });
+    assert_eq!(
+        footage,
+        effectcraft_project::Footage {
+            path: footage.path.clone(),
+            ..small_footage
+        }
+    );
     assert_eq!(frame, small_frame);
     assert_eq!(audio, small_audio);
     assert!(audio.iter().any(|s| s.abs() > 0.1), "the tone decodes");

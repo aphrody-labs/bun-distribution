@@ -80,7 +80,11 @@ fn geometry(rect: (f64, f64, f64, f64), scale: i32) -> Option<(i32, i32, u32, u3
     ))
 }
 
-fn native_geometry(host: &gtk::Window, rect: (f64, f64, f64, f64), scale: i32) -> Option<(i32, i32, u32, u32)> {
+fn native_geometry(
+    host: &gtk::Window,
+    rect: (f64, f64, f64, f64),
+    scale: i32,
+) -> Option<(i32, i32, u32, u32)> {
     // GtkNative's transform maps surface -> widget coordinates. The renderer
     // receives widget coordinates, so invert it (CSD/shadow margins included).
     let (tx, ty) = host.surface_transform();
@@ -138,7 +142,8 @@ impl WaylandRenderWindow {
             .ok_or("Compositor does not support subsurfaces")?;
         let compositor = display.wl_compositor().ok_or("Missing wl_compositor")?;
         let scale = native.scale_factor().max(1);
-        let (x, y, width, height) = native_geometry(host, rect, scale).ok_or("Invalid render extent")?;
+        let (x, y, width, height) =
+            native_geometry(host, rect, scale).ok_or("Invalid render extent")?;
         let surface = compositor.create_surface(&qh, ());
         let subsurface = subcompositor.get_subsurface(&surface, &parent, &qh, ());
         // Keyboard/pointer/touch continue to reach GTK's existing controllers.

@@ -19,13 +19,18 @@ const SCENE_EV01_00050: &str = "AAAAABgFNSo9RUMACgEoAAYCNNG3Zz4yAAAAAXg=";
 
 /// Hex → octets (les fixtures `TRIVIAL`/`COMPOSITE_*` sont définies en hex côté inagle).
 fn hex(s: &str) -> Vec<u8> {
-    (0..s.len() / 2).map(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap()).collect()
+    (0..s.len() / 2)
+        .map(|i| u8::from_str_radix(&s[i * 2..i * 2 + 2], 16).unwrap())
+        .collect()
 }
 
 #[test]
 fn story_threshold_to_episode_grid() {
     assert_eq!(story_threshold_to_episode(STORY_EPISODE_BASE), Some(1));
-    assert_eq!(story_threshold_to_episode(STORY_EPISODE_BASE + STORY_EPISODE_STEP), Some(2));
+    assert_eq!(
+        story_threshold_to_episode(STORY_EPISODE_BASE + STORY_EPISODE_STEP),
+        Some(2)
+    );
     assert_eq!(story_threshold_to_episode(90010), Some(8));
     // Seuils non alignés.
     assert_eq!(story_threshold_to_episode(12345), None);
@@ -94,7 +99,11 @@ fn composite_two_event_flags_17() {
     assert_eq!(c.required_events.len(), 2);
     assert_eq!(c.required_events[0].crc, crc32_str("ev04_02110"));
     assert_eq!(c.required_events[0].crc_hex(), "0x4DEA4516");
-    assert!(c.required_events.iter().all(|e| e.namespace.to_hex() == "0x2A3D4543"));
+    assert!(
+        c.required_events
+            .iter()
+            .all(|e| e.namespace.to_hex() == "0x2A3D4543")
+    );
 }
 
 #[test]

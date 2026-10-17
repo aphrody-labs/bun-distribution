@@ -46,16 +46,29 @@ impl Budget {
     /// The device with the most free memory among the probed GPUs.
     #[must_use]
     pub fn from_profile(profile: &HardwareProfile) -> Self {
-        profile.gpus.iter().max_by_key(|gpu| gpu.vram_free_bytes).map_or(
-            Self { vram_free_bytes: 0, vram_total_bytes: 0 },
-            |gpu| Self { vram_free_bytes: gpu.vram_free_bytes, vram_total_bytes: gpu.vram_bytes },
-        )
+        profile
+            .gpus
+            .iter()
+            .max_by_key(|gpu| gpu.vram_free_bytes)
+            .map_or(
+                Self {
+                    vram_free_bytes: 0,
+                    vram_total_bytes: 0,
+                },
+                |gpu| Self {
+                    vram_free_bytes: gpu.vram_free_bytes,
+                    vram_total_bytes: gpu.vram_bytes,
+                },
+            )
     }
 
     /// No GPU at all.
     #[must_use]
     pub fn cpu_only() -> Self {
-        Self { vram_free_bytes: 0, vram_total_bytes: 0 }
+        Self {
+            vram_free_bytes: 0,
+            vram_total_bytes: 0,
+        }
     }
 }
 
@@ -158,12 +171,12 @@ pub fn plan(
         Some(kv) if kv != KvQuant::F16 && !can_quantize => {
             notes.push("KV quantization unavailable on this build: using f16".to_string());
             KvQuant::F16
-        },
+        }
         Some(kv) => kv,
         None if request.role == Role::Chat && ctx >= KV_QUANT_FROM_CTX && can_quantize => {
             notes.push(format!("KV cache at q8_0 for a {ctx}-token context"));
             KvQuant::Q8_0
-        },
+        }
         None => KvQuant::F16,
     };
 
@@ -194,7 +207,12 @@ pub fn plan(
                 gib(available)
             ));
         }
-        (Placement::Auto { margin_mib: request.margin_mib }, full_bytes.min(available))
+        (
+            Placement::Auto {
+                margin_mib: request.margin_mib,
+            },
+            full_bytes.min(available),
+        )
     } else {
         planned_placement(facts, caps, kv_bytes, available, &mut notes)
     };
@@ -235,8 +253,17 @@ fn planned_placement(
     let full_bytes = facts.file_bytes + kv_bytes + RUNTIME_OVERHEAD_BYTES;
 
     if full_bytes <= available {
-        notes.push(format!("fits entirely on the GPU (about {:.1} GiB)", gib(full_bytes)));
-        return (Placement::Planned { n_gpu_layers: all_layers, n_cpu_moe: None }, full_bytes);
+        notes.push(format!(
+            "fits entirely on the GPU (about {:.1} GiB)",
+            gib(full_bytes)
+        ));
+        return (
+            Placement::Planned {
+                n_gpu_layers: all_layers,
+                n_cpu_moe: None,
+            },
+            full_bytes,
+        );
     }
 
     if facts.is_moe() && caps.n_cpu_moe {
@@ -250,7 +277,10 @@ fn planned_placement(
             "MoE: experts of {moved}/{blocks} layers kept in system RAM (--n-cpu-moe)"
         ));
         return (
-            Placement::Planned { n_gpu_layers: all_layers, n_cpu_moe: Some(moved) },
+            Placement::Planned {
+                n_gpu_layers: all_layers,
+                n_cpu_moe: Some(moved),
+            },
             full_bytes.saturating_sub(freed).min(available),
         );
     }
@@ -258,10 +288,24 @@ fn planned_placement(
     // Dense: each offloaded block brings its share of the KV cache with it.
     let per_block = facts.bytes_per_block() + kv_bytes / u64::from(blocks.max(1));
     let room = available.saturating_sub(RUNTIME_OVERHEAD_BYTES);
-    let layers = u32::try_from(room / per_block.max(1)).unwrap_or(u32::MAX).min(blocks);
-    notes.push(format!("{layers}/{blocks} layers on the GPU, the rest on the CPU"));
-    let used = if layers == 0 { 0 } else { u64::from(layers) * per_block + RUNTIME_OVERHEAD_BYTES };
-    (Placement::Planned { n_gpu_layers: layers, n_cpu_moe: None }, used.min(available))
+    let layers = u32::try_from(room / per_block.max(1))
+        .unwrap_or(u32::MAX)
+        .min(blocks);
+    notes.push(format!(
+        "{layers}/{blocks} layers on the GPU, the rest on the CPU"
+    ));
+    let used = if layers == 0 {
+        0
+    } else {
+        u64::from(layers) * per_block + RUNTIME_OVERHEAD_BYTES
+    };
+    (
+        Placement::Planned {
+            n_gpu_layers: layers,
+            n_cpu_moe: None,
+        },
+        used.min(available),
+    )
 }
 
 #[cfg(test)]
@@ -288,8 +332,12 @@ mod tests {
         if experts > 0 {
             put(&format!("{arch}.expert_count"), experts.to_string());
         }
-        ModelFacts::from_metadata(Path::new("m.gguf"), (file_gib * GIB as f64) as u64, &metadata)
-            .expect("facts")
+        ModelFacts::from_metadata(
+            Path::new("m.gguf"),
+            (file_gib * GIB as f64) as u64,
+            &metadata,
+        )
+        .expect("facts")
     }
 
     fn caps(fit: bool) -> ServerCapabilities {
@@ -311,7 +359,10 @@ mod tests {
     }
 
     fn rtx_4070() -> Budget {
-        Budget { vram_free_bytes: 11 * GIB, vram_total_bytes: 12 * GIB }
+        Budget {
+            vram_free_bytes: 11 * GIB,
+            vram_total_bytes: 12 * GIB,
+        }
     }
 
     #[test]
@@ -340,7 +391,11 @@ mod tests {
         );
         assert_eq!(plan.spec.ctx, 8_192);
         assert_eq!(plan.spec.kv, KvQuant::F16);
-        assert!(plan.notes.iter().any(|note| note.contains("capped to 8192")));
+        assert!(
+            plan.notes
+                .iter()
+                .any(|note| note.contains("capped to 8192"))
+        );
     }
 
     #[test]
@@ -351,7 +406,13 @@ mod tests {
             rtx_4070(),
             &PlanRequest::new(Role::Chat, "m"),
         );
-        assert_eq!(plan.spec.placement, Placement::Planned { n_gpu_layers: 29, n_cpu_moe: None });
+        assert_eq!(
+            plan.spec.placement,
+            Placement::Planned {
+                n_gpu_layers: 29,
+                n_cpu_moe: None
+            }
+        );
     }
 
     #[test]
@@ -363,7 +424,11 @@ mod tests {
             rtx_4070(),
             &PlanRequest::new(Role::Chat, "m"),
         );
-        let Placement::Planned { n_gpu_layers, n_cpu_moe } = plan.spec.placement else {
+        let Placement::Planned {
+            n_gpu_layers,
+            n_cpu_moe,
+        } = plan.spec.placement
+        else {
             panic!("expected a planned split, got {:?}", plan.spec.placement);
         };
         assert_eq!(n_cpu_moe, None);
@@ -380,7 +445,11 @@ mod tests {
             rtx_4070(),
             &PlanRequest::new(Role::Chat, "qwen3-coder-30b-a3b"),
         );
-        let Placement::Planned { n_gpu_layers, n_cpu_moe } = plan.spec.placement else {
+        let Placement::Planned {
+            n_gpu_layers,
+            n_cpu_moe,
+        } = plan.spec.placement
+        else {
             panic!("expected a planned split, got {:?}", plan.spec.placement);
         };
         assert_eq!(n_gpu_layers, 49, "every layer stays addressable on the GPU");
@@ -396,8 +465,15 @@ mod tests {
             rtx_4070(),
             &PlanRequest::new(Role::Chat, "qwen3-30b-a3b"),
         );
-        let Placement::Planned { n_gpu_layers, n_cpu_moe } = plan.spec.placement else {
-            panic!("expected a planned MoE split, got {:?}", plan.spec.placement);
+        let Placement::Planned {
+            n_gpu_layers,
+            n_cpu_moe,
+        } = plan.spec.placement
+        else {
+            panic!(
+                "expected a planned MoE split, got {:?}",
+                plan.spec.placement
+            );
         };
         assert_eq!(n_gpu_layers, 49);
         let moved = n_cpu_moe.expect("experts moved with --n-cpu-moe");
@@ -425,7 +501,12 @@ mod tests {
         build.kv_cache_types = false;
         let mut request = PlanRequest::new(Role::Chat, "m");
         request.kv = Some(KvQuant::Q4_0);
-        let plan = plan(&facts("qwen2", 5.1, 28, 32_768, 0), &build, rtx_4070(), &request);
+        let plan = plan(
+            &facts("qwen2", 5.1, 28, 32_768, 0),
+            &build,
+            rtx_4070(),
+            &request,
+        );
         assert_eq!(plan.spec.kv, KvQuant::F16);
         assert!(plan.notes.iter().any(|note| note.contains("unavailable")));
     }
@@ -434,20 +515,40 @@ mod tests {
     fn qwen3_moe_with_speculative_decoding() {
         let mut request = PlanRequest::new(Role::Chat, "qwen3-30b-a3b-instruct");
         request.draft_model = Some(PathBuf::from("qwen3-4b-instruct.gguf"));
-        let plan =
-            plan(&facts("qwen3moe", 17.3, 48, 262_144, 128), &caps(true), rtx_4070(), &request);
-        let Placement::Planned { n_gpu_layers, n_cpu_moe } = plan.spec.placement else {
-            panic!("expected a planned MoE split, got {:?}", plan.spec.placement);
+        let plan = plan(
+            &facts("qwen3moe", 17.3, 48, 262_144, 128),
+            &caps(true),
+            rtx_4070(),
+            &request,
+        );
+        let Placement::Planned {
+            n_gpu_layers,
+            n_cpu_moe,
+        } = plan.spec.placement
+        else {
+            panic!(
+                "expected a planned MoE split, got {:?}",
+                plan.spec.placement
+            );
         };
         assert_eq!(n_gpu_layers, 49);
         let moved = n_cpu_moe.expect("experts moved with --n-cpu-moe");
         assert!((20..=48).contains(&moved), "got {moved}");
-        assert_eq!(plan.spec.draft_model, Some(PathBuf::from("qwen3-4b-instruct.gguf")));
+        assert_eq!(
+            plan.spec.draft_model,
+            Some(PathBuf::from("qwen3-4b-instruct.gguf"))
+        );
         assert_eq!(plan.spec.kv, KvQuant::Q8_0);
 
         let args = plan.spec.to_args(&caps(true), "127.0.0.1", 8080);
-        assert!(args.windows(2).any(|w| w == ["--n-cpu-moe", &moved.to_string()]));
-        assert!(args.windows(2).any(|w| w == ["--model-draft", "qwen3-4b-instruct.gguf"]));
+        assert!(
+            args.windows(2)
+                .any(|w| w == ["--n-cpu-moe", &moved.to_string()])
+        );
+        assert!(
+            args.windows(2)
+                .any(|w| w == ["--model-draft", "qwen3-4b-instruct.gguf"])
+        );
         assert!(args.windows(2).any(|w| w == ["--cache-type-k", "q8_0"]));
         assert!(args.windows(2).any(|w| w == ["--cache-type-v", "q8_0"]));
     }

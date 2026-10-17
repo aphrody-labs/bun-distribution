@@ -40,8 +40,16 @@ impl GainMap {
         let t = (fv - i0 as f64) as f32;
         (0..self.points_h)
             .map(|j| {
-                let a = self.gains.get((i0 * self.points_h + j) * self.map_planes + mp).copied().unwrap_or(1.0);
-                let b = self.gains.get((i1 * self.points_h + j) * self.map_planes + mp).copied().unwrap_or(1.0);
+                let a = self
+                    .gains
+                    .get((i0 * self.points_h + j) * self.map_planes + mp)
+                    .copied()
+                    .unwrap_or(1.0);
+                let b = self
+                    .gains
+                    .get((i1 * self.points_h + j) * self.map_planes + mp)
+                    .copied()
+                    .unwrap_or(1.0);
                 a + (b - a) * t
             })
             .collect()
@@ -54,7 +62,10 @@ impl GainMap {
         let j0 = (fh.floor() as usize).min(self.points_h - 1);
         let j1 = (j0 + 1).min(self.points_h - 1);
         let t = (fh - j0 as f64) as f32;
-        let (a, b) = (row.get(j0).copied().unwrap_or(1.0), row.get(j1).copied().unwrap_or(1.0));
+        let (a, b) = (
+            row.get(j0).copied().unwrap_or(1.0),
+            row.get(j1).copied().unwrap_or(1.0),
+        );
         a + (b - a) * t
     }
 
@@ -106,13 +117,28 @@ fn gain_map(p: &[u8]) -> Option<GainMap> {
     let (top, left, bottom, right) = (u(0)?, u(1)?, u(2)?, u(3)?);
     let (plane, planes, row_pitch, col_pitch) = (u(4)?, u(5)?, u(6)?, u(7)?);
     let (points_v, points_h) = (u(8)?, u(9)?);
-    let (spacing_v, spacing_h, origin_v, origin_h) = (be64f(p, 40)?, be64f(p, 48)?, be64f(p, 56)?, be64f(p, 64)?);
+    let (spacing_v, spacing_h, origin_v, origin_h) =
+        (be64f(p, 40)?, be64f(p, 48)?, be64f(p, 56)?, be64f(p, 64)?);
     let map_planes = u(18)?;
     let n = points_v.checked_mul(points_h)?.checked_mul(map_planes)?;
-    if n == 0 || n > 1 << 20 || row_pitch == 0 || col_pitch == 0 || spacing_v <= 0.0 || spacing_h <= 0.0 || bottom <= top || right <= left {
+    if n == 0
+        || n > 1 << 20
+        || row_pitch == 0
+        || col_pitch == 0
+        || spacing_v <= 0.0
+        || spacing_h <= 0.0
+        || bottom <= top
+        || right <= left
+    {
         return None;
     }
-    let gains = (0..n).map(|i| be32(p, 76 + 4 * i).map(f32::from_bits).filter(|g| g.is_finite())).collect::<Option<Vec<f32>>>()?;
+    let gains = (0..n)
+        .map(|i| {
+            be32(p, 76 + 4 * i)
+                .map(f32::from_bits)
+                .filter(|g| g.is_finite())
+        })
+        .collect::<Option<Vec<f32>>>()?;
     Some(GainMap {
         top,
         left,
@@ -137,12 +163,18 @@ fn gain_map(p: &[u8]) -> Option<GainMap> {
 pub(crate) fn parse(list: &[u8]) -> (Vec<GainMap>, Vec<String>) {
     let mut maps = Vec::new();
     let mut skipped = Vec::new();
-    let Some(count) = be32(list, 0) else { return (maps, skipped) };
+    let Some(count) = be32(list, 0) else {
+        return (maps, skipped);
+    };
     let mut at = 4usize;
     for _ in 0..count.min(4096) {
-        let (Some(id), Some(size)) = (be32(list, at), be32(list, at.saturating_add(12))) else { break };
+        let (Some(id), Some(size)) = (be32(list, at), be32(list, at.saturating_add(12))) else {
+            break;
+        };
         let start = at.saturating_add(16);
-        let Some(params) = list.get(start..start.saturating_add(size as usize)) else { break };
+        let Some(params) = list.get(start..start.saturating_add(size as usize)) else {
+            break;
+        };
         match (id, gain_map(params)) {
             (9, Some(m)) => maps.push(m),
             _ => {
@@ -192,7 +224,13 @@ mod tests {
 
     #[test]
     fn parses_gain_maps_and_names_others() {
-        let b = list(&[(9, gain_map_params([0, 0, 10, 10], 1, &[[1.0, 2.0], [3.0, 4.0]])), (1, vec![0; 8])]);
+        let b = list(&[
+            (
+                9,
+                gain_map_params([0, 0, 10, 10], 1, &[[1.0, 2.0], [3.0, 4.0]]),
+            ),
+            (1, vec![0; 8]),
+        ]);
         let (maps, skipped) = parse(&b);
         assert_eq!(maps.len(), 1);
         assert_eq!(skipped, vec!["WarpRectilinear".to_string()]);
@@ -208,7 +246,10 @@ mod tests {
 
     #[test]
     fn hostile_lists_do_not_panic() {
-        let b = list(&[(9, gain_map_params([0, 0, 10, 10], 2, &[[1.0, 2.0], [3.0, 4.0]]))]);
+        let b = list(&[(
+            9,
+            gain_map_params([0, 0, 10, 10], 2, &[[1.0, 2.0], [3.0, 4.0]]),
+        )]);
         for n in 0..b.len() {
             let _ = parse(&b[..n]);
         }

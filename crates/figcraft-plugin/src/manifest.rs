@@ -149,7 +149,11 @@ pub enum ParamKind {
 impl Param {
     /// The label shown in the form.
     pub fn title(&self) -> &str {
-        if self.label.is_empty() { &self.name } else { &self.label }
+        if self.label.is_empty() {
+            &self.name
+        } else {
+            &self.label
+        }
     }
 
     /// Whether it holds a value (not a button or a note).
@@ -166,7 +170,10 @@ impl Param {
             ParamKind::Text => Value::String(String::new()),
             ParamKind::Number => serde_json::json!(self.clamp(0.0)),
             ParamKind::Boolean => Value::Bool(false),
-            ParamKind::Select | ParamKind::List => self.options.first().map_or(Value::Null, |o| Value::String(o.clone())),
+            ParamKind::Select | ParamKind::List => self
+                .options
+                .first()
+                .map_or(Value::Null, |o| Value::String(o.clone())),
             ParamKind::Color => Value::String("#000000".into()),
             ParamKind::Button | ParamKind::Note => Value::Null,
         }
@@ -178,7 +185,9 @@ impl Param {
         match self.kind {
             ParamKind::Text => match v {
                 Value::String(s) if s.chars().count() <= MAX_TEXT_VALUE => Ok(v.clone()),
-                Value::String(_) => Err(format!("`{name}` is longer than {MAX_TEXT_VALUE} characters")),
+                Value::String(_) => Err(format!(
+                    "`{name}` is longer than {MAX_TEXT_VALUE} characters"
+                )),
                 Value::Number(n) => Ok(Value::String(n.to_string())),
                 _ => Err(format!("`{name}` must be text")),
             },
@@ -192,10 +201,16 @@ impl Param {
                 .ok_or_else(|| format!("`{name}` must be a number"))?;
                 Ok(serde_json::json!(self.clamp(n)))
             }
-            ParamKind::Boolean => v.as_bool().map(Value::Bool).ok_or_else(|| format!("`{name}` must be true or false")),
+            ParamKind::Boolean => v
+                .as_bool()
+                .map(Value::Bool)
+                .ok_or_else(|| format!("`{name}` must be true or false")),
             ParamKind::Select | ParamKind::List => match v.as_str() {
                 Some(s) if self.options.iter().any(|o| o == s) => Ok(v.clone()),
-                _ => Err(format!("`{name}` must be one of: {}", self.options.join(", "))),
+                _ => Err(format!(
+                    "`{name}` must be one of: {}",
+                    self.options.join(", ")
+                )),
             },
             ParamKind::Color => v
                 .as_str()
@@ -213,10 +228,17 @@ impl Param {
         if !(self.kind == ParamKind::Note && self.name.is_empty()) {
             check_id("parameter name", &self.name, MAX_NAME)?;
         }
-        let max = if self.kind == ParamKind::Note { MAX_TEXT } else { MAX_LABEL };
+        let max = if self.kind == ParamKind::Note {
+            MAX_TEXT
+        } else {
+            MAX_LABEL
+        };
         self.label = clean("parameter label", &self.label, max)?;
         if self.options.len() > MAX_OPTIONS {
-            return Err(format!("parameter `{}` has more than {MAX_OPTIONS} options", self.name));
+            return Err(format!(
+                "parameter `{}` has more than {MAX_OPTIONS} options",
+                self.name
+            ));
         }
         for o in &mut self.options {
             *o = clean("option", o, MAX_LABEL)?;
@@ -236,7 +258,8 @@ impl Param {
 
     /// `n` within the number's bounds.
     fn clamp(&self, n: f64) -> f64 {
-        n.max(self.min.unwrap_or(f64::MIN)).min(self.max.unwrap_or(f64::MAX))
+        n.max(self.min.unwrap_or(f64::MIN))
+            .min(self.max.unwrap_or(f64::MAX))
     }
 }
 
@@ -264,7 +287,10 @@ impl Manifest {
     /// Parse and validate manifest JSON.
     pub fn parse(text: &str) -> Result<Manifest, String> {
         if text.len() > MAX_MANIFEST_BYTES {
-            return Err(format!("the manifest is larger than {} KB", MAX_MANIFEST_BYTES / 1024));
+            return Err(format!(
+                "the manifest is larger than {} KB",
+                MAX_MANIFEST_BYTES / 1024
+            ));
         }
         let m: Manifest = serde_json::from_str(text).map_err(|e| format!("manifest: {e}"))?;
         m.validated()
@@ -300,22 +326,40 @@ impl Manifest {
         self.author = clean("author", &self.author, MAX_NAME)?;
         check_main(&self.main)?;
         if self.api == 0 || self.api > API_VERSION {
-            return Err(format!("plugin API {} isn't supported (this FigCraft runs API {API_VERSION})", self.api));
+            return Err(format!(
+                "plugin API {} isn't supported (this FigCraft runs API {API_VERSION})",
+                self.api
+            ));
         }
         if self.permissions.commands.len() > MAX_ALLOW {
-            return Err(format!("more than {MAX_ALLOW} entries in `permissions.commands`"));
+            return Err(format!(
+                "more than {MAX_ALLOW} entries in `permissions.commands`"
+            ));
         }
         for p in &self.permissions.commands {
             let bare = p.strip_suffix('*').unwrap_or(p);
-            if p.is_empty() || p.len() > MAX_ID || bare.contains('*') || !bare.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_') {
-                return Err(format!("`{}` in `permissions.commands` isn't a command id or `prefix.*`", truncate(p)));
+            if p.is_empty()
+                || p.len() > MAX_ID
+                || bare.contains('*')
+                || !bare
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_')
+            {
+                return Err(format!(
+                    "`{}` in `permissions.commands` isn't a command id or `prefix.*`",
+                    truncate(p)
+                ));
             }
         }
         if self.widget && self.api < 3 {
             return Err("a widget needs plugin API 3 (`\"api\": 3`)".into());
         }
         if self.commands.is_empty() && !self.widget {
-            self.commands.push(PluginCommand { id: "run".into(), label: "Run".into(), params: Vec::new() });
+            self.commands.push(PluginCommand {
+                id: "run".into(),
+                label: "Run".into(),
+                params: Vec::new(),
+            });
         }
         if self.commands.len() > MAX_COMMANDS {
             return Err(format!("more than {MAX_COMMANDS} commands"));
@@ -330,12 +374,18 @@ impl Manifest {
                 c.label = c.id.clone();
             }
             if c.params.len() > MAX_PARAMS {
-                return Err(format!("command `{}` has more than {MAX_PARAMS} parameters", c.id));
+                return Err(format!(
+                    "command `{}` has more than {MAX_PARAMS} parameters",
+                    c.id
+                ));
             }
             for p in &mut c.params {
                 p.check()?;
                 if !p.is_field() {
-                    return Err(format!("parameter `{}`: buttons and notes only go in panels", p.name));
+                    return Err(format!(
+                        "parameter `{}`: buttons and notes only go in panels",
+                        p.name
+                    ));
                 }
             }
             if let Some(dup) = first_duplicate(c.params.iter().map(|p| p.name.as_str())) {
@@ -360,7 +410,10 @@ impl Panel {
     /// Parse and validate a panel spec (it comes from the plugin: untrusted).
     pub fn parse(text: &str) -> Result<Panel, String> {
         if text.len() > MAX_PANEL_BYTES {
-            return Err(format!("the panel is larger than {} KB", MAX_PANEL_BYTES / 1024));
+            return Err(format!(
+                "the panel is larger than {} KB",
+                MAX_PANEL_BYTES / 1024
+            ));
         }
         let mut p: Panel = serde_json::from_str(text).map_err(|e| format!("panel: {e}"))?;
         p.title = clean("title", &p.title, MAX_NAME).map_err(|e| format!("panel: {e}"))?;
@@ -370,7 +423,12 @@ impl Panel {
         for c in &mut p.controls {
             c.check().map_err(|e| format!("panel: {e}"))?;
         }
-        if let Some(dup) = first_duplicate(p.controls.iter().map(|c| c.name.as_str()).filter(|n| !n.is_empty())) {
+        if let Some(dup) = first_duplicate(
+            p.controls
+                .iter()
+                .map(|c| c.name.as_str())
+                .filter(|n| !n.is_empty()),
+        ) {
             return Err(format!("panel: two controls are called `{dup}`"));
         }
         Ok(p)
@@ -378,7 +436,9 @@ impl Panel {
 
     /// The control called `name`.
     pub fn control(&self, name: &str) -> Option<&Param> {
-        self.controls.iter().find(|c| !c.name.is_empty() && c.name == name)
+        self.controls
+            .iter()
+            .find(|c| !c.name.is_empty() && c.name == name)
     }
 
     /// Its fields' values: a field's own value when the spec gives one, else its value in `old`
@@ -388,7 +448,11 @@ impl Panel {
             .iter()
             .filter(|c| c.is_field())
             .map(|c| {
-                let v = c.default.clone().or_else(|| old.get(&c.name).and_then(|v| c.coerce(v).ok())).unwrap_or_else(|| c.default_value());
+                let v = c
+                    .default
+                    .clone()
+                    .or_else(|| old.get(&c.name).and_then(|v| c.coerce(v).ok()))
+                    .unwrap_or_else(|| c.default_value());
                 (c.name.clone(), v)
             })
             .collect()
@@ -403,8 +467,16 @@ fn first_duplicate<'a>(names: impl Iterator<Item = &'a str>) -> Option<&'a str> 
 
 /// An id: 1..=`max` ASCII letters, digits, `.`, `-` or `_`.
 pub(crate) fn check_id(what: &str, id: &str, max: usize) -> Result<(), String> {
-    if id.is_empty() || id.len() > max || !id.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_')) {
-        return Err(format!("{what} `{}` must be 1–{max} letters, digits, `.`, `-` or `_`", truncate(id)));
+    if id.is_empty()
+        || id.len() > max
+        || !id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+    {
+        return Err(format!(
+            "{what} `{}` must be 1–{max} letters, digits, `.`, `-` or `_`",
+            truncate(id)
+        ));
     }
     Ok(())
 }
@@ -429,9 +501,14 @@ fn check_main(main: &str) -> Result<(), String> {
         || main.starts_with(['/', '\\'])
         || main.contains(':')
         || main.chars().any(char::is_control)
-        || main.split(['/', '\\']).any(|part| part == ".." || part.is_empty());
+        || main
+            .split(['/', '\\'])
+            .any(|part| part == ".." || part.is_empty());
     if bad {
-        return Err(format!("`main` must be a relative path to a .wasm file inside the plugin's folder (got `{}`)", truncate(main)));
+        return Err(format!(
+            "`main` must be a relative path to a .wasm file inside the plugin's folder (got `{}`)",
+            truncate(main)
+        ));
     }
     Ok(())
 }

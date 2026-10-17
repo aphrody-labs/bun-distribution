@@ -93,7 +93,13 @@ impl McpClient {
     pub fn from_config(server_name: &str, cfg: &McpServerConfig) -> Result<Self> {
         let cfg = crate::headers::resolve_server_secrets(cfg)?;
         let mut client = match &cfg.transport {
-            McpServerTransportConfig::Stdio { command, args, env, cwd, .. } => {
+            McpServerTransportConfig::Stdio {
+                command,
+                args,
+                env,
+                cwd,
+                ..
+            } => {
                 let cwd_path = cwd.as_ref().map(Path::new);
                 #[cfg(not(target_arch = "wasm32"))]
                 {
@@ -104,7 +110,7 @@ impl McpClient {
                     let _ = (command, args, env, cwd_path);
                     return Err(McpClientError::UnsupportedTransport);
                 }
-            },
+            }
             McpServerTransportConfig::StreamableHttp {
                 url,
                 bearer_token_env_var,
@@ -121,12 +127,12 @@ impl McpClient {
                                 name: "Authorization".to_owned(),
                                 variable: var_name.clone(),
                             });
-                        },
+                        }
                     },
                     None => None,
                 };
                 Self::from_http(url, bearer, http_headers.as_ref())?
-            },
+            }
         };
 
         if let Some(to) = cfg.tool_timeout_sec {
@@ -153,11 +159,16 @@ impl McpClient {
         let params = serde_json::to_value(InitializeParams::default())
             .map_err(|e| McpClientError::Malformed(e.to_string()))?;
 
-        let res = self.transport.call("initialize", params, self.startup_timeout).await?;
+        let res = self
+            .transport
+            .call("initialize", params, self.startup_timeout)
+            .await?;
         let info = parse_server_info(&res)?;
 
         // Send notifications/initialized per spec:
-        self.transport.notify("notifications/initialized", serde_json::json!({})).await?;
+        self.transport
+            .notify("notifications/initialized", serde_json::json!({}))
+            .await?;
 
         self.server_info = Some(info);
         self.initialized = true;
@@ -192,13 +203,17 @@ impl McpClient {
             let mut cursor = None::<String>;
             let mut seen = BTreeSet::new();
             for _ in 0..1024 {
-                let params = cursor
-                    .as_ref()
-                    .map_or_else(|| serde_json::json!({}), |c| serde_json::json!({"cursor": c}));
+                let params = cursor.as_ref().map_or_else(
+                    || serde_json::json!({}),
+                    |c| serde_json::json!({"cursor": c}),
+                );
                 let page = self.transport.call(method, params, budget).await?;
-                let items = page.get(field).and_then(JsonValue::as_array).ok_or_else(|| {
-                    McpClientError::Malformed(format!("{method}: missing {field} array"))
-                })?;
+                let items = page
+                    .get(field)
+                    .and_then(JsonValue::as_array)
+                    .ok_or_else(|| {
+                        McpClientError::Malformed(format!("{method}: missing {field} array"))
+                    })?;
                 if entries.len().saturating_add(items.len()) > 100_000 {
                     return Err(McpClientError::Malformed(format!(
                         "{method}: catalogue exceeds 100000 entries"
@@ -211,22 +226,26 @@ impl McpClient {
                         if !next.is_empty() && seen.insert(next.clone()) =>
                     {
                         cursor = Some(next.clone())
-                    },
+                    }
                     _ => {
                         return Err(McpClientError::Malformed(format!(
                             "{method}: invalid or repeated nextCursor"
                         )));
-                    },
+                    }
                 }
             }
-            Err(McpClientError::Malformed(format!("{method}: catalogue exceeds 1024 pages")))
+            Err(McpClientError::Malformed(format!(
+                "{method}: catalogue exceeds 1024 pages"
+            )))
         };
         #[cfg(not(target_arch = "wasm32"))]
         {
-            tokio::time::timeout(budget, operation).await.map_err(|_| McpClientError::Timeout {
-                method: method.to_owned(),
-                seconds: budget.as_secs(),
-            })?
+            tokio::time::timeout(budget, operation)
+                .await
+                .map_err(|_| McpClientError::Timeout {
+                    method: method.to_owned(),
+                    seconds: budget.as_secs(),
+                })?
         }
         // wasm32 has no tokio timer driver: every page request already carries the per-request
         // `fetch` timeout of the HTTP transport.
@@ -244,7 +263,8 @@ impl McpClient {
 
     /// All advertised resource templates, preserving extension fields.
     pub async fn list_resource_templates(&mut self) -> Result<Vec<JsonValue>> {
-        self.list_all("resources/templates/list", "resourceTemplates").await
+        self.list_all("resources/templates/list", "resourceTemplates")
+            .await
     }
 
     /// Read resource contents without flattening binary or metadata fields.
@@ -253,7 +273,11 @@ impl McpClient {
             self.initialize().await?;
         }
         self.transport
-            .call("resources/read", serde_json::json!({"uri": uri}), self.rpc_timeout)
+            .call(
+                "resources/read",
+                serde_json::json!({"uri": uri}),
+                self.rpc_timeout,
+            )
             .await
     }
 
@@ -302,12 +326,17 @@ impl McpClient {
             "arguments": arguments,
         });
 
-        self.transport.call("tools/call", params, self.rpc_timeout).await
+        self.transport
+            .call("tools/call", params, self.rpc_timeout)
+            .await
     }
 
     /// Ping the server to check connection liveness.
     pub async fn ping(&mut self) -> Result<()> {
-        let _ = self.transport.call("ping", serde_json::json!({}), Duration::from_secs(5)).await?;
+        let _ = self
+            .transport
+            .call("ping", serde_json::json!({}), Duration::from_secs(5))
+            .await?;
         Ok(())
     }
 
@@ -336,7 +365,10 @@ impl McpClientHandle {
     /// Wrap an existing client in a thread-safe handle.
     #[must_use]
     pub fn new(server_name: impl Into<String>, client: McpClient) -> Self {
-        Self { inner: Arc::new(Mutex::new(client)), server_name: server_name.into() }
+        Self {
+            inner: Arc::new(Mutex::new(client)),
+            server_name: server_name.into(),
+        }
     }
 
     /// Server name associated with this client.
@@ -470,14 +502,26 @@ mod lifecycle_tests {
     #[tokio::test]
     async fn catalogue_pages_are_followed_and_shutdown_clears_identity() {
         let mut client = scripted(vec![
-            ("tools/list", json!({}), json!({"tools":[{"name":"first"}],"nextCursor":"opaque"})),
-            ("tools/list", json!({"cursor":"opaque"}), json!({"tools":[{"name":"second"}]})),
+            (
+                "tools/list",
+                json!({}),
+                json!({"tools":[{"name":"first"}],"nextCursor":"opaque"}),
+            ),
+            (
+                "tools/list",
+                json!({"cursor":"opaque"}),
+                json!({"tools":[{"name":"second"}]}),
+            ),
             (
                 "resources/list",
                 json!({}),
                 json!({"resources":[{"uri":"fixture://resource","_meta":{"kept":true}}]}),
             ),
-            ("prompts/list", json!({}), json!({"prompts":[{"name":"explain"}]})),
+            (
+                "prompts/list",
+                json!({}),
+                json!({"prompts":[{"name":"explain"}]}),
+            ),
             (
                 "resources/templates/list",
                 json!({}),
@@ -488,14 +532,24 @@ mod lifecycle_tests {
                 json!({"uri":"fixture://resource"}),
                 json!({"contents":[{"uri":"fixture://resource","blob":"AA=="}]}),
             ),
-            ("prompts/get", json!({"name":"explain","arguments":{}}), json!({"messages":[]})),
+            (
+                "prompts/get",
+                json!({"name":"explain","arguments":{}}),
+                json!({"messages":[]}),
+            ),
         ]);
         let tools = client.list_tools().await.unwrap();
         assert_eq!(
-            tools.iter().map(|tool| tool.name.as_str()).collect::<Vec<_>>(),
+            tools
+                .iter()
+                .map(|tool| tool.name.as_str())
+                .collect::<Vec<_>>(),
             ["first", "second"]
         );
-        assert_eq!(client.list_resources().await.unwrap()[0]["_meta"]["kept"], true);
+        assert_eq!(
+            client.list_resources().await.unwrap()[0]["_meta"]["kept"],
+            true
+        );
         assert_eq!(client.list_prompts().await.unwrap()[0]["name"], "explain");
         assert_eq!(client.list_resource_templates().await.unwrap().len(), 1);
         assert_eq!(
@@ -514,10 +568,21 @@ mod lifecycle_tests {
     #[tokio::test]
     async fn cyclic_cursor_fails_without_returning_partial_tools() {
         let mut client = scripted(vec![
-            ("tools/list", json!({}), json!({"tools":[],"nextCursor":"same"})),
-            ("tools/list", json!({"cursor":"same"}), json!({"tools":[],"nextCursor":"same"})),
+            (
+                "tools/list",
+                json!({}),
+                json!({"tools":[],"nextCursor":"same"}),
+            ),
+            (
+                "tools/list",
+                json!({"cursor":"same"}),
+                json!({"tools":[],"nextCursor":"same"}),
+            ),
         ]);
-        assert!(matches!(client.list_tools().await, Err(McpClientError::Malformed(_))));
+        assert!(matches!(
+            client.list_tools().await,
+            Err(McpClientError::Malformed(_))
+        ));
     }
 
     #[test]

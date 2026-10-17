@@ -107,7 +107,9 @@ impl Preview {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|p| s.trim().eq_ignore_ascii_case(p.id()))
+        Self::ALL
+            .into_iter()
+            .find(|p| s.trim().eq_ignore_ascii_case(p.id()))
     }
 }
 
@@ -140,7 +142,9 @@ impl Overprint {
     }
 
     pub fn from_id(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|o| s.trim().eq_ignore_ascii_case(o.id()))
+        Self::ALL
+            .into_iter()
+            .find(|o| s.trim().eq_ignore_ascii_case(o.id()))
     }
 }
 
@@ -188,13 +192,23 @@ pub struct EpsOutput {
 /// points enclosing it, y up (`[llx, lly, urx, ury]`).
 pub fn bounding_box(region: Rect, origin: Point) -> [i64; 4] {
     let [x0, y0, x1, y1] = hires_box(region, origin);
-    [x0.floor() as i64, y0.floor() as i64, x1.ceil() as i64, y1.ceil() as i64]
+    [
+        x0.floor() as i64,
+        y0.floor() as i64,
+        x1.ceil() as i64,
+        y1.ceil() as i64,
+    ]
 }
 
 /// The `%%HiResBoundingBox` of `region` (see [`bounding_box`]).
 fn hires_box(region: Rect, origin: Point) -> [f64; 4] {
     let r = region.abs();
-    [r.x0 - origin.x, origin.y - r.y1, r.x1 - origin.x, origin.y - r.y0]
+    [
+        r.x0 - origin.x,
+        origin.y - r.y1,
+        r.x1 - origin.x,
+        origin.y - r.y0,
+    ]
 }
 
 /// The document rect a preview must show: the whole-point [`bounding_box`], which it covers.
@@ -206,9 +220,17 @@ pub fn preview_rect(region: Rect, origin: Point) -> Rect {
 /// Write `doc` as EPS with `opts`. `preview` is the art of [`preview_rect`] when
 /// [`EpsOptions::preview`] asks for one, and `thumbnail` a small image of it to embed. Live
 /// geometry effects are applied first; template layers, guides and hidden objects are left out.
-pub fn export(doc: &Document, opts: &EpsOptions, preview: Option<&Raster>, thumbnail: Option<&Raster>) -> Result<EpsOutput, String> {
+pub fn export(
+    doc: &Document,
+    opts: &EpsOptions,
+    preview: Option<&Raster>,
+    thumbnail: Option<&Raster>,
+) -> Result<EpsOutput, String> {
     let r = opts.region;
-    if ![r.x0, r.y0, r.x1, r.y1, opts.origin.x, opts.origin.y].iter().all(|v| v.is_finite()) {
+    if ![r.x0, r.y0, r.x1, r.y1, opts.origin.x, opts.origin.y]
+        .iter()
+        .all(|v| v.is_finite())
+    {
         return Err("the export region is not finite".into());
     }
     let baked = vectorcraft_effects::bake_document(doc);
@@ -222,7 +244,13 @@ pub fn export(doc: &Document, opts: &EpsOptions, preview: Option<&Raster>, thumb
             None
         }
     });
-    let ps = document(opts, &page.setup, &page.body, &page.custom, thumb.as_deref());
+    let ps = document(
+        opts,
+        &page.setup,
+        &page.body,
+        &page.custom,
+        thumb.as_deref(),
+    );
     let bytes = match (opts.preview, preview) {
         (Preview::None, _) => ps.into_bytes(),
         (_, None) => {
@@ -230,7 +258,11 @@ pub fn export(doc: &Document, opts: &EpsOptions, preview: Option<&Raster>, thumb
             ps.into_bytes()
         }
         (kind, Some(img)) => {
-            let tiff = tiff::encode(img, kind == Preview::TiffBlackWhite, opts.transparent_preview && kind == Preview::TiffColor)?;
+            let tiff = tiff::encode(
+                img,
+                kind == Preview::TiffBlackWhite,
+                opts.transparent_preview && kind == Preview::TiffColor,
+            )?;
             dos_eps(ps.as_bytes(), &tiff)?
         }
     };
@@ -249,18 +281,36 @@ const MAX_NATIVE: u64 = 1 << 30;
 
 /// The DSC comments every file of ours has after its version line: creator, title, date,
 /// language level, data, and the spot colours `custom` with their CMYK equivalents.
-pub(crate) fn comments(s: &mut String, title: &str, created: Option<i64>, level: Level, custom: &[(String, [f32; 4])]) {
+pub(crate) fn comments(
+    s: &mut String,
+    title: &str,
+    created: Option<i64>,
+    level: Level,
+    custom: &[(String, [f32; 4])],
+) {
     use std::fmt::Write;
     let _ = writeln!(s, "%%Creator: VectorCraft {}", env!("CARGO_PKG_VERSION"));
     let _ = writeln!(s, "%%Title: {}", ps::string(title));
     if let Some(t) = created {
         let [y, mo, d, h, mi, se] = vectorcraft_doc::metadata::civil(t);
-        let _ = writeln!(s, "%%CreationDate: ({y:04}-{mo:02}-{d:02} {h:02}:{mi:02}:{se:02} UTC)");
+        let _ = writeln!(
+            s,
+            "%%CreationDate: ({y:04}-{mo:02}-{d:02} {h:02}:{mi:02}:{se:02} UTC)"
+        );
     }
     let _ = writeln!(s, "%%LanguageLevel: {}", level.id());
     s.push_str("%%DocumentData: Clean7Bit\n");
     for (i, (name, cmyk)) in custom.iter().enumerate() {
-        let _ = writeln!(s, "{}{}", if i == 0 { "%%DocumentCustomColors: " } else { "%%+ " }, ps::string(name));
+        let _ = writeln!(
+            s,
+            "{}{}",
+            if i == 0 {
+                "%%DocumentCustomColors: "
+            } else {
+                "%%+ "
+            },
+            ps::string(name)
+        );
         let [c, m, y, k] = cmyk.map(|v| ps::num(f64::from(v)));
         let _ = writeln!(s, "%%CMYKCustomColor: {c} {m} {y} {k} {}", ps::string(name));
     }
@@ -268,7 +318,13 @@ pub(crate) fn comments(s: &mut String, title: &str, created: Option<i64>, level:
 
 /// The PostScript program: header comments, thumbnail, prolog, setup, the page and the trailer
 /// with the native document.
-fn document(o: &EpsOptions, setup: &str, body: &str, custom: &[(String, [f32; 4])], thumb: Option<&[u8]>) -> String {
+fn document(
+    o: &EpsOptions,
+    setup: &str,
+    body: &str,
+    custom: &[(String, [f32; 4])],
+    thumb: Option<&[u8]>,
+) -> String {
     use std::fmt::Write;
     let mut s = String::with_capacity(body.len() + setup.len() + 4096);
     let bb = bounding_box(o.region, o.origin);
@@ -276,7 +332,14 @@ fn document(o: &EpsOptions, setup: &str, body: &str, custom: &[(String, [f32; 4]
     s.push_str("%!PS-Adobe-3.0 EPSF-3.0\n"); // brand-ok: the DSC version line every EPS file starts with
     comments(&mut s, &o.title, o.created, o.level, custom);
     let _ = writeln!(s, "%%BoundingBox: {} {} {} {}", bb[0], bb[1], bb[2], bb[3]);
-    let _ = writeln!(s, "%%HiResBoundingBox: {} {} {} {}", ps::num(hi[0]), ps::num(hi[1]), ps::num(hi[2]), ps::num(hi[3]));
+    let _ = writeln!(
+        s,
+        "%%HiResBoundingBox: {} {} {} {}",
+        ps::num(hi[0]),
+        ps::num(hi[1]),
+        ps::num(hi[2]),
+        ps::num(hi[3])
+    );
     s.push_str("%%Pages: 1\n%%EndComments\n");
     if let Some(png) = thumb {
         data_section(&mut s, THUMBNAIL, png);
@@ -291,7 +354,12 @@ fn document(o: &EpsOptions, setup: &str, body: &str, custom: &[(String, [f32; 4]
     }
     s.push_str("%%EndSetup\n%%Page: 1 1\nVCdict begin\nq\n");
     // Document space (y down) onto the page (y up from the origin).
-    let _ = writeln!(s, "[1 0 0 -1 {} {}] cm", ps::num(-o.origin.x), ps::num(o.origin.y));
+    let _ = writeln!(
+        s,
+        "[1 0 0 -1 {} {}] cm",
+        ps::num(-o.origin.x),
+        ps::num(o.origin.y)
+    );
     s.push_str(body);
     s.push_str("Q\nend\nshowpage\n%%PageTrailer\n%%Trailer\n");
     if let Some(native) = o.native.as_deref() {
@@ -337,7 +405,8 @@ const DOS_HEADER: usize = 30;
 
 /// `ps` behind a binary header, followed by the TIFF preview `tiff`.
 fn dos_eps(ps: &[u8], tiff: &[u8]) -> Result<Vec<u8>, String> {
-    let big = || "the file is too large for an EPS preview header (4 GB): choose no preview".to_string();
+    let big =
+        || "the file is too large for an EPS preview header (4 GB): choose no preview".to_string();
     let ps_len = u32::try_from(ps.len()).map_err(|_| big())?;
     let tiff_at = u32::try_from(DOS_HEADER + ps.len()).map_err(|_| big())?;
     let tiff_len = u32::try_from(tiff.len()).map_err(|_| big())?;
@@ -364,7 +433,12 @@ pub fn sections(bytes: &[u8]) -> Option<(&[u8], Option<&[u8]>)> {
     if !bytes.starts_with(&DOS_MAGIC) {
         return Some((bytes, None));
     }
-    let word = |at: usize| bytes.get(at..at + 4).and_then(|b| <[u8; 4]>::try_from(b).ok()).map(|b| u32::from_le_bytes(b) as usize);
+    let word = |at: usize| {
+        bytes
+            .get(at..at + 4)
+            .and_then(|b| <[u8; 4]>::try_from(b).ok())
+            .map(|b| u32::from_le_bytes(b) as usize)
+    };
     let part = |at: usize| {
         let (start, len) = (word(at)?, word(at + 4)?);
         bytes.get(start..start.checked_add(len)?)
@@ -382,7 +456,12 @@ pub fn metafile_preview(bytes: &[u8]) -> Option<&[u8]> {
     if !bytes.starts_with(&DOS_MAGIC) {
         return None;
     }
-    let word = |at: usize| bytes.get(at..at + 4).and_then(|b| <[u8; 4]>::try_from(b).ok()).map(|b| u32::from_le_bytes(b) as usize);
+    let word = |at: usize| {
+        bytes
+            .get(at..at + 4)
+            .and_then(|b| <[u8; 4]>::try_from(b).ok())
+            .map(|b| u32::from_le_bytes(b) as usize)
+    };
     let (start, len) = (word(12)?, word(16)?);
     if start == 0 || len == 0 {
         return None;

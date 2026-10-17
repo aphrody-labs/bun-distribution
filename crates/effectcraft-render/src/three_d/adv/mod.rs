@@ -29,7 +29,8 @@ use crate::{EvalCtx, Image, Renderer};
 /// Whether a comp draws its 3D layers with the Advanced 3D renderer: its own setting, or for a
 /// collapsed precomp's layers, the setting of the outermost comp they collapse into.
 pub(crate) fn active(r: &Renderer, ctx: &EvalCtx) -> bool {
-    r.collapse3d.map_or(ctx.comp, |c| c.parent.comp).renderer == effectcraft_project::Renderer::Advanced3D
+    r.collapse3d.map_or(ctx.comp, |c| c.parent.comp).renderer
+        == effectcraft_project::Renderer::Advanced3D
 }
 
 /// Box-filter a supersampled target down by `k`: (premultiplied colour, mean depth of the
@@ -39,29 +40,33 @@ pub fn resolve(t: &Target, k: u32) -> (Image, Vec<f32>) {
     let mut img = Image::new(w, h);
     let mut depth = vec![f32::INFINITY; (w * h) as usize];
     let n = (k * k) as f32;
-    img.data.par_chunks_mut(w as usize).zip(depth.par_chunks_mut(w as usize)).enumerate().for_each(|(y, (row, drow))| {
-        for x in 0..w as usize {
-            let mut acc = [0.0f32; 4];
-            let (mut dz, mut dn) = (0.0f32, 0.0f32);
-            for j in 0..k as usize {
-                for i in 0..k as usize {
-                    let s = (y * k as usize + j) * t.width as usize + x * k as usize + i;
-                    let c = t.color[s];
-                    for q in 0..4 {
-                        acc[q] += c[q];
-                    }
-                    if t.depth[s].is_finite() {
-                        dz += t.depth[s];
-                        dn += 1.0;
+    img.data
+        .par_chunks_mut(w as usize)
+        .zip(depth.par_chunks_mut(w as usize))
+        .enumerate()
+        .for_each(|(y, (row, drow))| {
+            for x in 0..w as usize {
+                let mut acc = [0.0f32; 4];
+                let (mut dz, mut dn) = (0.0f32, 0.0f32);
+                for j in 0..k as usize {
+                    for i in 0..k as usize {
+                        let s = (y * k as usize + j) * t.width as usize + x * k as usize + i;
+                        let c = t.color[s];
+                        for q in 0..4 {
+                            acc[q] += c[q];
+                        }
+                        if t.depth[s].is_finite() {
+                            dz += t.depth[s];
+                            dn += 1.0;
+                        }
                     }
                 }
+                row[x] = acc.map(|v| v / n);
+                if dn > 0.0 {
+                    drow[x] = dz / dn;
+                }
             }
-            row[x] = acc.map(|v| v / n);
-            if dn > 0.0 {
-                drow[x] = dz / dn;
-            }
-        }
-    });
+        });
     (img, depth)
 }
 
@@ -89,7 +94,11 @@ pub fn scene_of(r: &Renderer, ctx: &EvalCtx, run: &[&Layer], out: (u32, u32)) ->
 
 /// Rasterise one scene (GPU when available, else CPU) and resolve it.
 fn raster_resolved(r: &Renderer, s: &Scene) -> (Image, Vec<f32>) {
-    let target = r.active_accel().and_then(|a| a.raster_3d(s)).filter(|t| t.width == s.width && t.height == s.height).unwrap_or_else(|| raster::render(s));
+    let target = r
+        .active_accel()
+        .and_then(|a| a.raster_3d(s))
+        .filter(|t| t.width == s.width && t.height == s.height)
+        .unwrap_or_else(|| raster::render(s));
     resolve(&target, s.ssaa.max(1))
 }
 
@@ -98,7 +107,11 @@ fn mb_samples(r: &Renderer, ctx: &EvalCtx, layers: &[&Layer]) -> usize {
     if !layers.iter().any(|l| scene::motion_blurred(r, ctx, l)) {
         return 1;
     }
-    if r.opts.draft { 4 } else { ctx.comp.motion_blur_samples.clamp(2, 64) as usize }
+    if r.opts.draft {
+        4
+    } else {
+        ctx.comp.motion_blur_samples.clamp(2, 64) as usize
+    }
 }
 
 /// An Advanced 3D run prepared for an accelerator ([`crate::Accelerator::render_3d`], the GPU
@@ -123,7 +136,12 @@ pub struct Prepared<'p, 'a> {
 }
 
 impl<'p, 'a> Prepared<'p, 'a> {
-    pub fn new(r: &'p Renderer<'a>, ctx: &'p EvalCtx<'a>, layers: &'p [&'p Layer], out: (u32, u32)) -> Self {
+    pub fn new(
+        r: &'p Renderer<'a>,
+        ctx: &'p EvalCtx<'a>,
+        layers: &'p [&'p Layer],
+        out: (u32, u32),
+    ) -> Self {
         let cam = camera_for(r, ctx);
         Prepared {
             r,
@@ -146,7 +164,10 @@ impl<'p, 'a> Prepared<'p, 'a> {
         }
         let ctx = self.ctx;
         let fd = ctx.comp.frame_duration().seconds();
-        let (angle, phase) = (ctx.comp.shutter_angle / 360.0, ctx.comp.shutter_phase / 360.0);
+        let (angle, phase) = (
+            ctx.comp.shutter_angle / 360.0,
+            ctx.comp.shutter_phase / 360.0,
+        );
         let f = phase + angle * i as f64 / (n - 1) as f64;
         let sub = ctx.at(ctx.time + effectcraft_time::Tick::from_seconds_f64(f * fd));
         scene::build_at(self.r, ctx, Some(&sub), self.layers, self.out)
@@ -181,12 +202,18 @@ pub fn render_prepared(p: &Prepared) -> Rendered {
             }
             any = true;
             let (img, d) = raster_resolved(r, &s);
-            acc.data.par_iter_mut().zip(img.data.par_iter()).for_each(|(a, p)| {
-                for c in 0..4 {
-                    a[c] += p[c] * k;
-                }
-            });
-            depth.par_iter_mut().zip(d.par_iter()).for_each(|(a, b)| *a = a.min(*b));
+            acc.data
+                .par_iter_mut()
+                .zip(img.data.par_iter())
+                .for_each(|(a, p)| {
+                    for c in 0..4 {
+                        a[c] += p[c] * k;
+                    }
+                });
+            depth
+                .par_iter_mut()
+                .zip(d.par_iter())
+                .for_each(|(a, b)| *a = a.min(*b));
         }
         if !any {
             return None;
@@ -207,7 +234,12 @@ pub fn render_prepared(p: &Prepared) -> Rendered {
 /// rendered at sub-samples spread over the comp's shutter (angle and phase) and averaged; the
 /// depth is the nearest over the samples. The whole run goes to the accelerator when it
 /// implements [`crate::Accelerator::render_3d`].
-pub(crate) fn render_layers(r: &Renderer, ctx: &EvalCtx, layers: &[&Layer], out: (u32, u32)) -> Option<(Image, Vec<f32>)> {
+pub(crate) fn render_layers(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    layers: &[&Layer],
+    out: (u32, u32),
+) -> Option<(Image, Vec<f32>)> {
     let p = Prepared::new(r, ctx, layers, out);
     if let Some(a) = r.active_accel()
         && let Some(res) = a.render_3d(&p)
@@ -221,8 +253,17 @@ pub(crate) fn render_layers(r: &Renderer, ctx: &EvalCtx, layers: &[&Layer], out:
 /// directly over the canvas (Normal-mode layers without track mattes or Preserve Transparency;
 /// those go through `draw_run`'s 2D path; environment backgrounds draw their sky first). `None`
 /// when the comp isn't Advanced 3D.
-pub(crate) fn prepare_run<'p, 'a>(r: &'p Renderer<'a>, ctx: &'p EvalCtx<'a>, run: &'p [&'p Layer], out: (u32, u32)) -> Option<Prepared<'p, 'a>> {
-    if !active(r, ctx) || run.iter().any(|l| l.environment_background || needs_2d_composite(ctx, l)) {
+pub(crate) fn prepare_run<'p, 'a>(
+    r: &'p Renderer<'a>,
+    ctx: &'p EvalCtx<'a>,
+    run: &'p [&'p Layer],
+    out: (u32, u32),
+) -> Option<Prepared<'p, 'a>> {
+    if !active(r, ctx)
+        || run
+            .iter()
+            .any(|l| l.environment_background || needs_2d_composite(ctx, l))
+    {
         return None;
     }
     Some(Prepared::new(r, ctx, run, out))
@@ -268,13 +309,22 @@ impl<'p, 'a> SplitRun<'p, 'a> {
 
     /// Special layer `i` rendered on its own.
     pub fn special(&self, i: usize) -> Prepared<'_, 'a> {
-        Prepared::new(self.r, self.ctx, std::slice::from_ref(&self.special[i]), self.out)
+        Prepared::new(
+            self.r,
+            self.ctx,
+            std::slice::from_ref(&self.special[i]),
+            self.out,
+        )
     }
 
     /// `f` with special layer `i`'s 3D track matte as a prepared run (`None` when the matte
     /// layer isn't active: a transparent matte). `None` when the layer has no 3D matte (its
     /// matte, if any, is placed in 2D as usual).
-    pub fn with_matte3d<R>(&self, i: usize, f: impl FnOnce(Option<&Prepared<'_, 'a>>) -> R) -> Option<R> {
+    pub fn with_matte3d<R>(
+        &self,
+        i: usize,
+        f: impl FnOnce(Option<&Prepared<'_, 'a>>) -> R,
+    ) -> Option<R> {
         let (solo, active) = self.mattes[i].as_ref()?;
         if !*active {
             return Some(f(None));
@@ -288,14 +338,32 @@ impl<'p, 'a> SplitRun<'p, 'a> {
 /// The run split for an accelerator when some layer needs the 2D compositing path (`None` when
 /// the comp isn't Advanced 3D, a layer is an environment background, or no layer needs it:
 /// `prepare_run` then covers the run).
-pub(crate) fn split_run<'p, 'a>(r: &'p Renderer<'a>, ctx: &'p EvalCtx<'a>, run: &'p [&'p Layer], out: (u32, u32)) -> Option<SplitRun<'p, 'a>> {
-    if !active(r, ctx) || run.iter().any(|l| l.environment_background) || !run.iter().any(|l| needs_2d_composite(ctx, l)) {
+pub(crate) fn split_run<'p, 'a>(
+    r: &'p Renderer<'a>,
+    ctx: &'p EvalCtx<'a>,
+    run: &'p [&'p Layer],
+    out: (u32, u32),
+) -> Option<SplitRun<'p, 'a>> {
+    if !active(r, ctx)
+        || run.iter().any(|l| l.environment_background)
+        || !run.iter().any(|l| needs_2d_composite(ctx, l))
+    {
         return None;
     }
-    let (special, plain): (Vec<&Layer>, Vec<&Layer>) = run.iter().copied().partition(|l| needs_2d_composite(ctx, l));
+    let (special, plain): (Vec<&Layer>, Vec<&Layer>) = run
+        .iter()
+        .copied()
+        .partition(|l| needs_2d_composite(ctx, l));
     let special = far_to_near(r, ctx, special);
     let mattes = special.iter().map(|l| solo_matte(ctx, l)).collect();
-    Some(SplitRun { r, ctx, out, plain, special, mattes })
+    Some(SplitRun {
+        r,
+        ctx,
+        out,
+        plain,
+        special,
+        mattes,
+    })
 }
 
 /// Special layers sorted by their anchor's camera depth, farthest first.
@@ -304,8 +372,16 @@ fn far_to_near<'p>(r: &Renderer, ctx: &EvalCtx, special: Vec<&'p Layer>) -> Vec<
     let mut order: Vec<(f64, &Layer)> = special
         .into_iter()
         .map(|l| {
-            let anchor = l.transform().map_or([0.0; 3], |tr| ctx.v3(l, tr, "anchor", [0.0; 3]));
-            (cam.depth(ctx.world_matrix(l).apply(effectcraft_geom::Vec3::from(anchor))), l)
+            let anchor = l
+                .transform()
+                .map_or([0.0; 3], |tr| ctx.v3(l, tr, "anchor", [0.0; 3]));
+            (
+                cam.depth(
+                    ctx.world_matrix(l)
+                        .apply(effectcraft_geom::Vec3::from(anchor)),
+                ),
+                l,
+            )
         })
         .collect();
     order.sort_by(|a, b| b.0.total_cmp(&a.0));
@@ -315,7 +391,11 @@ fn far_to_near<'p>(r: &Renderer, ctx: &EvalCtx, special: Vec<&'p Layer>) -> Vec<
 /// A layer's 3D track matte, drawn through the camera on its own (no matte, Normal mode, no
 /// Preserve Transparency, visible), and whether it is active now.
 fn solo_matte(ctx: &EvalCtx, l: &Layer) -> Option<(Layer, bool)> {
-    let m = l.track_matte.and_then(|tm| ctx.comp.layer(tm.layer).filter(|m| m.id != l.id && m.is_3d()))?;
+    let m = l.track_matte.and_then(|tm| {
+        ctx.comp
+            .layer(tm.layer)
+            .filter(|m| m.id != l.id && m.is_3d())
+    })?;
     let mut solo = m.clone();
     solo.track_matte = None;
     solo.blend_mode = effectcraft_color::BlendMode::Normal;
@@ -328,7 +408,8 @@ fn solo_matte(ctx: &EvalCtx, l: &Layer) -> Option<(Layer, bool)> {
 fn needs_2d_composite(ctx: &EvalCtx, l: &Layer) -> bool {
     l.blend_mode != effectcraft_color::BlendMode::Normal
         || l.preserve_transparency
-        || l.track_matte.is_some_and(|tm| tm.layer != l.id && ctx.comp.layer(tm.layer).is_some())
+        || l.track_matte
+            .is_some_and(|tm| tm.layer != l.id && ctx.comp.layer(tm.layer).is_some())
 }
 
 /// Draw a run of 3D layers with the Advanced 3D renderer into `canvas`.
@@ -339,32 +420,56 @@ fn needs_2d_composite(ctx: &EvalCtx, l: &Layer) -> bool {
 /// path (matte, Preserve Transparency, blend mode) from the farthest to the nearest.
 pub(crate) fn draw_run(r: &Renderer, ctx: &EvalCtx, run: &[&Layer], canvas: &mut Image) {
     let out = (canvas.width, canvas.height);
-    let (special, plain): (Vec<&Layer>, Vec<&Layer>) = run.iter().copied().partition(|l| needs_2d_composite(ctx, l));
+    let (special, plain): (Vec<&Layer>, Vec<&Layer>) = run
+        .iter()
+        .copied()
+        .partition(|l| needs_2d_composite(ctx, l));
     let main = render_layers(r, ctx, &plain, out);
     if let Some((img, _)) = &main {
-        canvas.data.par_iter_mut().zip(img.data.par_iter()).for_each(|(d, s)| {
-            let k = 1.0 - s[3];
-            *d = [s[0] + d[0] * k, s[1] + d[1] * k, s[2] + d[2] * k, s[3] + d[3] * k];
-        });
+        canvas
+            .data
+            .par_iter_mut()
+            .zip(img.data.par_iter())
+            .for_each(|(d, s)| {
+                let k = 1.0 - s[3];
+                *d = [
+                    s[0] + d[0] * k,
+                    s[1] + d[1] * k,
+                    s[2] + d[2] * k,
+                    s[3] + d[3] * k,
+                ];
+            });
     }
     if special.is_empty() {
         return;
     }
     for l in far_to_near(r, ctx, special) {
-        let Some((mut iso, depth)) = render_layers(r, ctx, &[l], out) else { continue };
+        let Some((mut iso, depth)) = render_layers(r, ctx, &[l], out) else {
+            continue;
+        };
         if let Some((m, md)) = &main {
-            iso.data.par_iter_mut().zip(depth.par_iter()).zip(m.data.par_iter().zip(md.par_iter())).for_each(|((p, z), (q, mz))| {
-                if *mz < *z - 0.01 * z.abs().max(1.0) {
-                    let k = 1.0 - q[3].clamp(0.0, 1.0);
-                    for c in p.iter_mut() {
-                        *c *= k;
+            iso.data
+                .par_iter_mut()
+                .zip(depth.par_iter())
+                .zip(m.data.par_iter().zip(md.par_iter()))
+                .for_each(|((p, z), (q, mz))| {
+                    if *mz < *z - 0.01 * z.abs().max(1.0) {
+                        let k = 1.0 - q[3].clamp(0.0, 1.0);
+                        for c in p.iter_mut() {
+                            *c *= k;
+                        }
                     }
-                }
-            });
+                });
         }
         // A 3D matte layer is drawn through the camera too.
         let matte3d = solo_matte(ctx, l).map(|(solo, active)| {
-            if active { render_layers(r, ctx, &[&solo], out).map(|(i, _)| i).unwrap_or_else(|| Image::new(out.0, out.1)) } else { Image::new(out.0, out.1) }
+            if active {
+                render_layers(r, ctx, &[&solo], out)
+                    .map(|(i, _)| i)
+                    .unwrap_or_else(|| Image::new(out.0, out.1))
+            } else {
+                Image::new(out.0, out.1)
+            }
         });
         r.composite_iso_with(ctx, l, iso, canvas, 1.0, matte3d);
     }

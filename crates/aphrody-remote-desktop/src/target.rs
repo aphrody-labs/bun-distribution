@@ -143,10 +143,13 @@ fn alias(host: &str) -> &str {
 
 fn split_host_port(authority: &str) -> Result<(String, Option<u16>)> {
     let parse_port = |p: &str| -> Result<u16> {
-        p.parse::<u16>().with_context(|| format!("invalid port {p} in {authority}"))
+        p.parse::<u16>()
+            .with_context(|| format!("invalid port {p} in {authority}"))
     };
     if let Some(rest) = authority.strip_prefix('[') {
-        let (host, tail) = rest.split_once(']').with_context(|| format!("unterminated [ in {authority}"))?;
+        let (host, tail) = rest
+            .split_once(']')
+            .with_context(|| format!("unterminated [ in {authority}"))?;
         let port = match tail.strip_prefix(':') {
             Some(p) => Some(parse_port(p)?),
             None if tail.is_empty() => None,
@@ -191,7 +194,7 @@ impl RemoteTarget {
                 let (k, s) = TargetKind::from_scheme(scheme)
                     .with_context(|| format!("unsupported scheme {scheme}:// in {spec}"))?;
                 (k, s, rest)
-            },
+            }
             None => (kind, false, spec),
         };
         let (authority, path) = match rest.find('/') {
@@ -202,33 +205,53 @@ impl RemoteTarget {
         if host.is_empty() {
             bail!("missing host in {spec}");
         }
-        let forward_base =
-            host.strip_suffix("-forward").or_else(|| host.strip_suffix("-tunnel")).map(alias);
+        let forward_base = host
+            .strip_suffix("-forward")
+            .or_else(|| host.strip_suffix("-tunnel"))
+            .map(alias);
         let (id, address, forwarded) = match forward_base {
             Some(base) if inventory.address_of(base).is_some() => {
                 (Some(base.to_owned()), "127.0.0.1".to_owned(), true)
-            },
+            }
             _ => {
                 let name = alias(&host);
                 match inventory.address_of(name) {
                     Some(addr) => (Some(name.to_owned()), addr.to_owned(), false),
-                    None => (inventory.id_of_address(&host).map(str::to_owned), host.clone(), false),
+                    None => (
+                        inventory.id_of_address(&host).map(str::to_owned),
+                        host.clone(),
+                        false,
+                    ),
                 }
-            },
+            }
         };
-        let declared = id.as_deref().and_then(|id| declared_port(inventory, id, kind));
+        let declared = id
+            .as_deref()
+            .and_then(|id| declared_port(inventory, id, kind));
         let port = match explicit_port {
             Some(p) => p,
             None => {
                 let base = declared.unwrap_or_else(|| kind.default_port());
-                if forwarded { base.saturating_add(FORWARD_OFFSET) } else { base }
-            },
+                if forwarded {
+                    base.saturating_add(FORWARD_OFFSET)
+                } else {
+                    base
+                }
+            }
         };
         let path = match (kind, path.as_str()) {
             (TargetKind::McpHttp, "" | "/") => "/mcp".to_owned(),
             _ => path,
         };
-        Ok(Self { kind, id, host: address, port, path, secure, forwarded })
+        Ok(Self {
+            kind,
+            id,
+            host: address,
+            port,
+            path,
+            secure,
+            forwarded,
+        })
     }
 
     /// `host:port` (IPv6 bracketed).
@@ -264,7 +287,10 @@ impl RemoteTarget {
 
     /// Like [`Self::credential`] but an error explaining where to put it.
     pub fn require_credential(&self) -> Result<Secret> {
-        let kind = self.kind.token_kind().context("local target needs no credential")?;
+        let kind = self
+            .kind
+            .token_kind()
+            .context("local target needs no credential")?;
         tokens::require(kind, self.id.as_deref())
     }
 }
@@ -286,7 +312,10 @@ pub fn find_root(root: Option<&Path>) -> Option<PathBuf> {
     if let Some(r) = root.filter(|r| has(r)) {
         return Some(r.to_path_buf());
     }
-    if let Some(r) = std::env::var_os("APHRODY_ROOT").map(PathBuf::from).filter(|r| has(r)) {
+    if let Some(r) = std::env::var_os("APHRODY_ROOT")
+        .map(PathBuf::from)
+        .filter(|r| has(r))
+    {
         return Some(r);
     }
     let cwd = std::env::current_dir().ok()?;
@@ -318,11 +347,17 @@ mod tests {
         assert_eq!(t.url(), "http://10.200.77.10:8793/mcp");
         assert_eq!(t.id.as_deref(), Some("omar"));
         let v = RemoteTarget::resolve("vnc://omar", TargetKind::McpHttp, &inv).unwrap();
-        assert_eq!((v.kind, v.addr()), (TargetKind::Vnc, "10.200.77.10:5900".into()));
+        assert_eq!(
+            (v.kind, v.addr()),
+            (TargetKind::Vnc, "10.200.77.10:5900".into())
+        );
         let w = RemoteTarget::resolve("omar", TargetKind::Ws, &inv).unwrap();
         assert_eq!(w.url(), "ws://10.200.77.10:8795");
         let o = RemoteTarget::resolve("owner", TargetKind::McpHttp, &inv).unwrap();
-        assert_eq!((o.id.as_deref(), o.host.as_str()), (Some("aphro-pc"), "10.200.77.4"));
+        assert_eq!(
+            (o.id.as_deref(), o.host.as_str()),
+            (Some("aphro-pc"), "10.200.77.4")
+        );
         let h = RemoteTarget::resolve("vps", TargetKind::Shell, &inv).unwrap();
         assert_eq!(h.addr(), "10.200.77.1:8790");
     }
@@ -331,16 +366,28 @@ mod tests {
     fn forwards_literals_and_uris() {
         let inv = inv();
         let f = RemoteTarget::resolve("omar-tunnel", TargetKind::McpHttp, &inv).unwrap();
-        assert_eq!((f.addr(), f.forwarded, f.id.as_deref()), ("127.0.0.1:18793".into(), true, Some("omar")));
+        assert_eq!(
+            (f.addr(), f.forwarded, f.id.as_deref()),
+            ("127.0.0.1:18793".into(), true, Some("omar"))
+        );
         let ip = RemoteTarget::resolve("10.200.77.10:5901", TargetKind::Vnc, &inv).unwrap();
         assert_eq!((ip.id.as_deref(), ip.port), (Some("omar"), 5901));
         let lan = RemoteTarget::resolve("192.168.1.50:9000", TargetKind::McpHttp, &inv).unwrap();
-        assert_eq!((lan.id.clone(), lan.url()), (None, "http://192.168.1.50:9000/mcp".into()));
-        let https = RemoteTarget::resolve("https://pc.example/custom", TargetKind::Vnc, &inv).unwrap();
+        assert_eq!(
+            (lan.id.clone(), lan.url()),
+            (None, "http://192.168.1.50:9000/mcp".into())
+        );
+        let https =
+            RemoteTarget::resolve("https://pc.example/custom", TargetKind::Vnc, &inv).unwrap();
         assert_eq!(https.url(), "https://pc.example:8793/custom");
         let v6 = RemoteTarget::resolve("vnc://[::1]:5901", TargetKind::Vnc, &inv).unwrap();
         assert_eq!(v6.addr(), "[::1]:5901");
-        assert_eq!(RemoteTarget::resolve("local", TargetKind::Vnc, &inv).unwrap().kind, TargetKind::Local);
+        assert_eq!(
+            RemoteTarget::resolve("local", TargetKind::Vnc, &inv)
+                .unwrap()
+                .kind,
+            TargetKind::Local
+        );
         assert!(RemoteTarget::resolve("ftp://x", TargetKind::Vnc, &inv).is_err());
         assert!(RemoteTarget::resolve("omar:notaport", TargetKind::Vnc, &inv).is_err());
         assert!(RemoteTarget::resolve("  ", TargetKind::Vnc, &inv).is_err());

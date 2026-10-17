@@ -36,7 +36,9 @@ pub struct ComputerUseController {
 
 impl ComputerUseController {
     pub fn new(pty: Option<PtyController>) -> Self {
-        Self { pty: pty.map(Mutex::new) }
+        Self {
+            pty: pty.map(Mutex::new),
+        }
     }
 
     /// Captures the visible screen as plain text.
@@ -62,7 +64,9 @@ impl ComputerUseController {
                 "no PTY attached to this terminal (use AphrodyTerm::spawn_pty)",
             ));
         };
-        let pty = pty_lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let pty = pty_lock
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
 
         match action {
             ComputerAction::TypeText(text) => {

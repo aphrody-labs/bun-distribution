@@ -4,7 +4,11 @@
 //! on projette un monde entier sous une caméra arbitraire. Brique de base du **match 3D** et, à
 //! terme, des **maps/scènes** du jeu. Z-buffer, éclairage Lambert deux-faces, fond dégradé.
 
-#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, clippy::cast_precision_loss)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_precision_loss
+)]
 
 use std::collections::BTreeSet;
 
@@ -156,7 +160,13 @@ impl Segment {
     /// Un segment d'un pixel, testé en profondeur.
     #[must_use]
     pub fn new(a: V3, b: V3, color: [u8; 3]) -> Self {
-        Self { a, b, color, width: 1, depth_test: true }
+        Self {
+            a,
+            b,
+            color,
+            width: 1,
+            depth_test: true,
+        }
     }
 
     /// Le même, dessiné par-dessus la géométrie.
@@ -242,9 +252,10 @@ pub fn wireframe_segments(model: &crate::glb::Model, color: [u8; 3], limit: usiz
                 if !vues.insert(cle) {
                     continue;
                 }
-                let (Some(a), Some(b)) =
-                    (prim.positions.get(x as usize), prim.positions.get(y as usize))
-                else {
+                let (Some(a), Some(b)) = (
+                    prim.positions.get(x as usize),
+                    prim.positions.get(y as usize),
+                ) else {
                     continue; // indice hors table : on saute plutôt que de paniquer au rendu
                 };
                 out.push(Segment::new(*a, *b, color));
@@ -344,8 +355,12 @@ pub fn render_scene_with_lines(
     for y in 0..h {
         let t = y as f32 / h as f32;
         let mix = |a: u8, b: u8| (f32::from(a) * (1.0 - t) + f32::from(b) * t) as u8;
-        let bg =
-            [mix(bg_top[0], bg_bot[0]), mix(bg_top[1], bg_bot[1]), mix(bg_top[2], bg_bot[2]), 255];
+        let bg = [
+            mix(bg_top[0], bg_bot[0]),
+            mix(bg_top[1], bg_bot[1]),
+            mix(bg_top[2], bg_bot[2]),
+            255,
+        ];
         for x in 0..w {
             let i = ((y * w + x) * 4) as usize;
             px[i..i + 4].copy_from_slice(&bg);
@@ -411,9 +426,18 @@ pub fn render_scene_with_lines(
                     [[0.0, 0.0]; 3]
                 };
                 let poly = clip_near(&[
-                    CVert { c: cam_space(wa), uv: uv[0] },
-                    CVert { c: cam_space(wb), uv: uv[1] },
-                    CVert { c: cam_space(wc), uv: uv[2] },
+                    CVert {
+                        c: cam_space(wa),
+                        uv: uv[0],
+                    },
+                    CVert {
+                        c: cam_space(wb),
+                        uv: uv[1],
+                    },
+                    CVert {
+                        c: cam_space(wc),
+                        uv: uv[2],
+                    },
                 ]);
                 if poly.len() < 3 {
                     continue;
@@ -437,7 +461,18 @@ pub fn render_scene_with_lines(
                 let use_tex = if uv == [[0.0, 0.0]; 3] { None } else { tex };
                 for i in 1..s.len() - 1 {
                     let uvs = [poly[0].uv, poly[i].uv, poly[i + 1].uv];
-                    fill_tex(&mut px, &mut zbuf, w, h, s[0], s[i], s[i + 1], uvs, use_tex, shade);
+                    fill_tex(
+                        &mut px,
+                        &mut zbuf,
+                        w,
+                        h,
+                        s[0],
+                        s[i],
+                        s[i + 1],
+                        uvs,
+                        use_tex,
+                        shade,
+                    );
                 }
             }
         }
@@ -454,10 +489,18 @@ pub fn render_scene_with_lines(
         }
         if !da {
             let t = (NEAR - ca[2]) / (cb[2] - ca[2]);
-            ca = [ca[0] + (cb[0] - ca[0]) * t, ca[1] + (cb[1] - ca[1]) * t, NEAR];
+            ca = [
+                ca[0] + (cb[0] - ca[0]) * t,
+                ca[1] + (cb[1] - ca[1]) * t,
+                NEAR,
+            ];
         } else if !db {
             let t = (NEAR - cb[2]) / (ca[2] - cb[2]);
-            cb = [cb[0] + (ca[0] - cb[0]) * t, cb[1] + (ca[1] - cb[1]) * t, NEAR];
+            cb = [
+                cb[0] + (ca[0] - cb[0]) * t,
+                cb[1] + (ca[1] - cb[1]) * t,
+                NEAR,
+            ];
         }
         trace_segment(&mut px, &zbuf, w, h, to_screen(ca), to_screen(cb), seg);
     }
@@ -558,8 +601,15 @@ fn clip_near(poly: &[CVert]) -> Vec<CVert> {
 fn lerp_near(s: CVert, e: CVert) -> CVert {
     let t = (NEAR - s.c[2]) / (e.c[2] - s.c[2]);
     CVert {
-        c: [s.c[0] + (e.c[0] - s.c[0]) * t, s.c[1] + (e.c[1] - s.c[1]) * t, NEAR],
-        uv: [s.uv[0] + (e.uv[0] - s.uv[0]) * t, s.uv[1] + (e.uv[1] - s.uv[1]) * t],
+        c: [
+            s.c[0] + (e.c[0] - s.c[0]) * t,
+            s.c[1] + (e.c[1] - s.c[1]) * t,
+            NEAR,
+        ],
+        uv: [
+            s.uv[0] + (e.uv[0] - s.uv[0]) * t,
+            s.uv[1] + (e.uv[1] - s.uv[1]) * t,
+        ],
     }
 }
 
@@ -718,7 +768,11 @@ mod tests {
                 up: [0.0, 1.0, 0.0],
                 fov_y: 2.0 * (1.0 / crate::render::FOCALE).atan(),
             };
-            let instance = Instance { model, transform: mat_identity(), two_sided: false };
+            let instance = Instance {
+                model,
+                transform: mat_identity(),
+                two_sided: false,
+            };
             let px = render_scene(&[], &[instance], &cam, w, h, [24, 28, 40], [50, 58, 74]);
             (0..h)
                 .map(|y| {
@@ -737,10 +791,24 @@ mod tests {
 
         let avant = quad(vec![0, 1, 2, 0, 2, 3]);
         let arriere = quad(vec![2, 1, 0, 3, 2, 0]);
-        assert!(peints_reference(&avant) > 500, "la face avant doit être dessinée");
-        assert!(peints_scene(&avant) > 500, "la face avant doit être dessinée");
-        assert_eq!(peints_reference(&arriere), 0, "la face arrière doit être écartée");
-        assert_eq!(peints_scene(&arriere), 0, "la face arrière doit être écartée");
+        assert!(
+            peints_reference(&avant) > 500,
+            "la face avant doit être dessinée"
+        );
+        assert!(
+            peints_scene(&avant) > 500,
+            "la face avant doit être dessinée"
+        );
+        assert_eq!(
+            peints_reference(&arriere),
+            0,
+            "la face arrière doit être écartée"
+        );
+        assert_eq!(
+            peints_scene(&arriere),
+            0,
+            "la face arrière doit être écartée"
+        );
     }
 
     #[test]
@@ -748,8 +816,14 @@ mod tests {
         // Un quad vert au sol (y=0), caméra au-dessus qui regarde l'origine.
         let g = [40u8, 160, 60];
         let tris = vec![
-            Tri { p: [[-5.0, 0.0, -5.0], [5.0, 0.0, -5.0], [5.0, 0.0, 5.0]], color: g },
-            Tri { p: [[-5.0, 0.0, -5.0], [5.0, 0.0, 5.0], [-5.0, 0.0, 5.0]], color: g },
+            Tri {
+                p: [[-5.0, 0.0, -5.0], [5.0, 0.0, -5.0], [5.0, 0.0, 5.0]],
+                color: g,
+            },
+            Tri {
+                p: [[-5.0, 0.0, -5.0], [5.0, 0.0, 5.0], [-5.0, 0.0, 5.0]],
+                color: g,
+            },
         ];
         let cam = Camera {
             eye: [0.0, 12.0, -12.0],
@@ -758,9 +832,16 @@ mod tests {
             fov_y: 0.9,
         };
         let buf = render_world(&tris, &cam, 128, 128, [20, 24, 40], [40, 48, 70]);
-        let green =
-            buf.as_chunks::<4>().0.iter().filter(|p| p[1] > p[0] + 20 && p[1] > p[2] + 20).count();
-        assert!(green > 200, "le quad vert doit couvrir une bonne part de l'image ({green})");
+        let green = buf
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|p| p[1] > p[0] + 20 && p[1] > p[2] + 20)
+            .count();
+        assert!(
+            green > 200,
+            "le quad vert doit couvrir une bonne part de l'image ({green})"
+        );
     }
 
     #[test]
@@ -777,7 +858,11 @@ mod tests {
                 indices: vec![0, 1, 2],
                 texture: Some(0),
             }],
-            textures: vec![Texture { width: 1, height: 1, rgba: vec![230, 40, 40, 255] }],
+            textures: vec![Texture {
+                width: 1,
+                height: 1,
+                rgba: vec![230, 40, 40, 255],
+            }],
         };
         let cam = Camera {
             eye: [0.0, 0.6, 3.0],
@@ -785,7 +870,11 @@ mod tests {
             up: [0.0, 1.0, 0.0],
             fov_y: 0.8,
         };
-        let inst = [Instance { model: &model, transform: mat_identity(), two_sided: false }];
+        let inst = [Instance {
+            model: &model,
+            transform: mat_identity(),
+            two_sided: false,
+        }];
         let buf = render_scene(&[], &inst, &cam, 96, 96, [20, 24, 40], [20, 24, 40]);
         let red = buf
             .as_chunks::<4>()
@@ -793,7 +882,10 @@ mod tests {
             .iter()
             .filter(|p| p[0] > 90 && p[0] > p[1] + 40 && p[0] > p[2] + 40)
             .count();
-        assert!(red > 30, "le triangle texturé rouge instancié doit apparaître ({red})");
+        assert!(
+            red > 30,
+            "le triangle texturé rouge instancié doit apparaître ({red})"
+        );
     }
 
     #[test]
@@ -801,8 +893,10 @@ mod tests {
         // Caméra à l'origine regardant +z ; triangle dont un sommet est DERRIÈRE (z<0). Sans
         // clipping il serait rejeté entièrement ; avec clipping, sa partie visible se rend.
         let g = [60u8, 180, 90];
-        let tris =
-            vec![Tri { p: [[-2.0, -1.0, -1.0], [2.0, -1.0, 3.0], [0.0, 2.0, 3.0]], color: g }];
+        let tris = vec![Tri {
+            p: [[-2.0, -1.0, -1.0], [2.0, -1.0, 3.0], [0.0, 2.0, 3.0]],
+            color: g,
+        }];
         let cam = Camera {
             eye: [0.0, 0.0, 0.0],
             target: [0.0, 0.0, 1.0],
@@ -810,16 +904,28 @@ mod tests {
             fov_y: 1.2,
         };
         let buf = render_world(&tris, &cam, 96, 96, [10, 10, 20], [10, 10, 20]);
-        let lit =
-            buf.as_chunks::<4>().0.iter().filter(|p| p[1] > p[0] + 20 && p[1] > p[2] + 20).count();
-        assert!(lit > 80, "la partie visible du triangle traversant doit se rendre ({lit})");
+        let lit = buf
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|p| p[1] > p[0] + 20 && p[1] > p[2] + 20)
+            .count();
+        assert!(
+            lit > 80,
+            "la partie visible du triangle traversant doit se rendre ({lit})"
+        );
     }
 
     // ─── Segments : grille, fil de fer, sélection ────────────────────────────────────────
 
     /// Caméra qui regarde l'origine depuis le haut et l'avant — la vue d'un éditeur.
     fn cam_editeur() -> Camera {
-        Camera { eye: [0.0, 6.0, 10.0], target: [0.0, 0.0, 0.0], up: [0.0, 1.0, 0.0], fov_y: 0.9 }
+        Camera {
+            eye: [0.0, 6.0, 10.0],
+            target: [0.0, 0.0, 0.0],
+            up: [0.0, 1.0, 0.0],
+            fov_y: 0.9,
+        }
     }
 
     fn compte_pixels(px: &[u8], couleur: [u8; 3]) -> usize {
@@ -839,8 +945,15 @@ mod tests {
             render_scene_with_lines(&[], &[], &[seg], &cam_editeur(), 160, 120, [10; 3], [20; 3]);
         let sans =
             render_scene_with_lines(&[], &[], &[], &cam_editeur(), 160, 120, [10; 3], [20; 3]);
-        assert!(compte_pixels(&avec, rouge) > 20, "le segment doit couvrir des pixels");
-        assert_eq!(compte_pixels(&sans, rouge), 0, "sans segment, aucun pixel rouge");
+        assert!(
+            compte_pixels(&avec, rouge) > 20,
+            "le segment doit couvrir des pixels"
+        );
+        assert_eq!(
+            compte_pixels(&sans, rouge),
+            0,
+            "sans segment, aucun pixel rouge"
+        );
     }
 
     /// Un segment ÉPAIS couvre plus de pixels qu'un fin, sur la même géométrie.
@@ -848,8 +961,16 @@ mod tests {
     fn lepaisseur_change_la_couverture() {
         let vert = [0, 255, 0];
         let base = Segment::new([-3.0, 0.0, 0.0], [3.0, 0.0, 0.0], vert);
-        let fin =
-            render_scene_with_lines(&[], &[], &[base], &cam_editeur(), 160, 120, [10; 3], [20; 3]);
+        let fin = render_scene_with_lines(
+            &[],
+            &[],
+            &[base],
+            &cam_editeur(),
+            160,
+            120,
+            [10; 3],
+            [20; 3],
+        );
         let epais = render_scene_with_lines(
             &[],
             &[],
@@ -907,8 +1028,15 @@ mod tests {
             [10; 3],
             [20; 3],
         );
-        assert_eq!(compte_pixels(&cache, bleu), 0, "le mur doit masquer le segment");
-        assert!(compte_pixels(&par_dessus, bleu) > 20, "`overlay` doit passer par-dessus le mur");
+        assert_eq!(
+            compte_pixels(&cache, bleu),
+            0,
+            "le mur doit masquer le segment"
+        );
+        assert!(
+            compte_pixels(&par_dessus, bleu) > 20,
+            "`overlay` doit passer par-dessus le mur"
+        );
     }
 
     /// La grille a le bon NOMBRE de lignes, et ses deux axes sont distincts du reste.
@@ -931,15 +1059,22 @@ mod tests {
             g.iter().filter(|s| s.color == axe).all(|s| s.width == 2),
             "les axes sont plus épais"
         );
-        assert!(g.iter().all(|s| s.depth_test), "une grille de sol se masque");
+        assert!(
+            g.iter().all(|s| s.depth_test),
+            "une grille de sol se masque"
+        );
     }
 
     /// Un pas nul ou non fini rend une grille VIDE au lieu d'en demander une infinité.
     #[test]
     fn une_grille_au_pas_absurde_est_vide() {
-        for (extent, step) in
-            [(10.0, 0.0), (10.0, -1.0), (10.0, f32::NAN), (0.0, 1.0), (f32::INFINITY, 1.0)]
-        {
+        for (extent, step) in [
+            (10.0, 0.0),
+            (10.0, -1.0),
+            (10.0, f32::NAN),
+            (0.0, 1.0),
+            (f32::INFINITY, 1.0),
+        ] {
             assert!(
                 grid_segments(extent, step, 0.0, [1; 3], [2; 3]).is_empty(),
                 "étendue {extent}, pas {step}"
@@ -979,7 +1114,10 @@ mod tests {
         // De derrière la caméra jusque devant elle.
         let seg = Segment::new([0.0, 1.0, 5.0], [0.0, 1.0, -5.0], jaune);
         let px = render_scene_with_lines(&[], &[], &[seg], &cam, 160, 120, [10; 3], [20; 3]);
-        assert!(compte_pixels(&px, jaune) > 0, "la partie devant la caméra doit se dessiner");
+        assert!(
+            compte_pixels(&px, jaune) > 0,
+            "la partie devant la caméra doit se dessiner"
+        );
     }
 
     /// `render_scene` sans segment rend EXACTEMENT ce qu'il rendait avant l'ajout.
@@ -1019,18 +1157,29 @@ mod tests {
         let seg = Segment::new([-5.0, 0.0, 9.0], [5.0, 0.0, -25.0], jaune);
         let mur = [
             Tri {
-                p: [[-200.0, -200.0, 0.0], [200.0, -200.0, 0.0], [200.0, 200.0, 0.0]],
+                p: [
+                    [-200.0, -200.0, 0.0],
+                    [200.0, -200.0, 0.0],
+                    [200.0, 200.0, 0.0],
+                ],
                 color: [200, 200, 200],
             },
             Tri {
-                p: [[-200.0, -200.0, 0.0], [200.0, 200.0, 0.0], [-200.0, 200.0, 0.0]],
+                p: [
+                    [-200.0, -200.0, 0.0],
+                    [200.0, 200.0, 0.0],
+                    [-200.0, 200.0, 0.0],
+                ],
                 color: [200, 200, 200],
             },
         ];
 
         let avec_mur = render_scene_with_lines(&mur, &[], &[seg], &cam, 320, 240, [10; 3], [20; 3]);
         let sans_mur = render_scene_with_lines(&[], &[], &[seg], &cam, 320, 240, [10; 3], [20; 3]);
-        let (visible, total) = (compte_pixels(&avec_mur, jaune), compte_pixels(&sans_mur, jaune));
+        let (visible, total) = (
+            compte_pixels(&avec_mur, jaune),
+            compte_pixels(&sans_mur, jaune),
+        );
 
         assert!(
             visible > 50,
@@ -1151,7 +1300,12 @@ mod tests {
     fn le_fil_de_fer_deduplique_les_aretes_partagees() {
         let quad = crate::glb::Model {
             primitives: vec![crate::glb::Primitive {
-                positions: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
+                positions: vec![
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                ],
                 normals: Vec::new(),
                 uv: Vec::new(),
                 indices: vec![0, 1, 2, 0, 2, 3],
@@ -1160,7 +1314,11 @@ mod tests {
             textures: Vec::new(),
         };
         let w = wireframe_segments(&quad, [200, 200, 200], usize::MAX);
-        assert_eq!(w.len(), 5, "4 bords + 1 diagonale, la diagonale n'est PAS doublée");
+        assert_eq!(
+            w.len(),
+            5,
+            "4 bords + 1 diagonale, la diagonale n'est PAS doublée"
+        );
     }
 
     /// La borne arrête le tracé — un personnage du jeu noierait l'image sans elle.
@@ -1168,7 +1326,12 @@ mod tests {
     fn le_fil_de_fer_respecte_sa_borne() {
         let quad = crate::glb::Model {
             primitives: vec![crate::glb::Primitive {
-                positions: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
+                positions: vec![
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [1.0, 1.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                ],
                 normals: Vec::new(),
                 uv: Vec::new(),
                 indices: vec![0, 1, 2, 0, 2, 3],

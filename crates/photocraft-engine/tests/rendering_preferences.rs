@@ -8,7 +8,12 @@ fn old_preferences_preserve_cpu_choices() {
         let p: Preferences = serde_json::from_value(json!({"performance": old})).unwrap();
         assert_eq!(p.performance.effective_rendering_mode(), RenderingMode::Cpu);
     }
-    assert_eq!(Preferences::default().performance.effective_rendering_mode(), RenderingMode::Auto);
+    assert_eq!(
+        Preferences::default()
+            .performance
+            .effective_rendering_mode(),
+        RenderingMode::Auto
+    );
 }
 
 #[test]
@@ -17,7 +22,8 @@ fn explicit_choices_override_legacy_flags_and_round_trip() {
     p.performance.use_gpu = false;
     p.performance.gpu_backend = GpuBackend::Cpu;
     for mode in [RenderingMode::Auto, RenderingMode::Gpu, RenderingMode::Cpu] {
-        p.set("performance.renderingMode", json!(mode.name())).unwrap();
+        p.set("performance.renderingMode", json!(mode.name()))
+            .unwrap();
         assert_eq!(p.performance.effective_rendering_mode(), mode);
         let restored: Preferences = serde_json::from_value(p.to_json()).unwrap();
         assert_eq!(restored.performance.effective_rendering_mode(), mode);

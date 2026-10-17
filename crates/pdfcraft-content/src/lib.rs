@@ -5,7 +5,14 @@
 //! [`Parsed::skipped`]) instead of failing the whole stream, and it never panics. Inline images
 //! (`BI … ID … EI`) are kept whole, so a parse → serialize round trip preserves them.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Lexer, Object, PdfString, serialize};
 
@@ -27,7 +34,12 @@ pub struct Op {
 
 impl Op {
     pub fn new(op: &str, operands: Vec<Object>) -> Self {
-        Op { op: op.as_bytes().to_vec(), operands, inline: None, span: 0..0 }
+        Op {
+            op: op.as_bytes().to_vec(),
+            operands,
+            inline: None,
+            span: 0..0,
+        }
     }
 
     pub fn is(&self, op: &str) -> bool {
@@ -67,7 +79,10 @@ fn is_ws(b: u8) -> bool {
 }
 
 fn is_delim(b: u8) -> bool {
-    matches!(b, b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%')
+    matches!(
+        b,
+        b'(' | b')' | b'<' | b'>' | b'[' | b']' | b'{' | b'}' | b'/' | b'%'
+    )
 }
 
 /// Parse a (decoded) content stream.
@@ -80,7 +95,8 @@ pub fn parse(data: &[u8]) -> Parsed {
         lx.skip_ws();
         let Some(&b) = data.get(lx.pos) else { break };
         let at = lx.pos;
-        let operand_start = matches!(b, b'/' | b'(' | b'<' | b'[' | b'+' | b'-' | b'.') || b.is_ascii_digit();
+        let operand_start =
+            matches!(b, b'/' | b'(' | b'<' | b'[' | b'+' | b'-' | b'.') || b.is_ascii_digit();
         if operand_start {
             match lx.object() {
                 Ok(o) => {
@@ -128,7 +144,12 @@ pub fn parse(data: &[u8]) -> Parsed {
             b"BI" => match inline_image(data, lx.pos) {
                 Ok((dict, img, end)) => {
                     lx.pos = end;
-                    out.ops.push(Op { op: b"BI".to_vec(), operands: Vec::new(), inline: Some((dict, img)), span: start.take().unwrap_or(at)..end });
+                    out.ops.push(Op {
+                        op: b"BI".to_vec(),
+                        operands: Vec::new(),
+                        inline: Some((dict, img)),
+                        span: start.take().unwrap_or(at)..end,
+                    });
                     operands.clear();
                 }
                 Err(end) => {
@@ -140,7 +161,12 @@ pub fn parse(data: &[u8]) -> Parsed {
             },
             _ => {
                 let s = start.take().unwrap_or(at);
-                out.ops.push(Op { op: kw.to_vec(), operands: std::mem::take(&mut operands), inline: None, span: s..lx.pos });
+                out.ops.push(Op {
+                    op: kw.to_vec(),
+                    operands: std::mem::take(&mut operands),
+                    inline: None,
+                    span: s..lx.pos,
+                });
             }
         }
     }
@@ -191,7 +217,11 @@ fn end_of_image(data: &[u8], begin: usize) -> Option<(usize, usize)> {
             && (i == begin || is_ws(data[i - 1]))
             && data.get(i + 2).is_none_or(|b| is_ws(*b) || is_delim(*b))
         {
-            let end_data = if i > begin && is_ws(data[i - 1]) { i - 1 } else { i };
+            let end_data = if i > begin && is_ws(data[i - 1]) {
+                i - 1
+            } else {
+                i
+            };
             return Some((end_data, i + 2));
         }
         i += 1;
@@ -275,12 +305,18 @@ impl Pieces {
 
     /// The piece holding joined position `at` (the last piece for positions past the end).
     pub fn piece_of(&self, at: usize) -> usize {
-        self.ends.iter().position(|&e| at < e).unwrap_or(self.ends.len().saturating_sub(1))
+        self.ends
+            .iter()
+            .position(|&e| at < e)
+            .unwrap_or(self.ends.len().saturating_sub(1))
     }
 
     /// The pieces an operator spans: (the one its first token is in, the one its keyword is in).
     pub fn pieces_of(&self, op: &Op) -> (usize, usize) {
-        (self.piece_of(op.span.start), self.piece_of(op.span.end.saturating_sub(1)))
+        (
+            self.piece_of(op.span.start),
+            self.piece_of(op.span.end.saturating_sub(1)),
+        )
     }
 
     /// The joined range of piece `i`, without its separator.
@@ -289,7 +325,11 @@ impl Pieces {
             None => 0,
             Some(p) => self.ends.get(p).copied().unwrap_or(self.data.len()),
         };
-        let end = self.ends.get(i).map_or(self.data.len(), |e| e.saturating_sub(1)).max(start);
+        let end = self
+            .ends
+            .get(i)
+            .map_or(self.data.len(), |e| e.saturating_sub(1))
+            .max(start);
         start..end
     }
 
@@ -298,8 +338,13 @@ impl Pieces {
     /// and the rest of a range that runs on into later pieces is removed from them, so an
     /// operator split across pieces is replaced or removed whole. Everything else is copied byte
     /// for byte. Returns every piece's new bytes (unchanged pieces come back equal).
-    pub fn splice(&self, edits: impl IntoIterator<Item = (std::ops::Range<usize>, Vec<u8>)>) -> Vec<Vec<u8>> {
-        let mut out: Vec<Vec<u8>> = (0..self.len()).map(|i| Vec::with_capacity(self.range(i).len())).collect();
+    pub fn splice(
+        &self,
+        edits: impl IntoIterator<Item = (std::ops::Range<usize>, Vec<u8>)>,
+    ) -> Vec<Vec<u8>> {
+        let mut out: Vec<Vec<u8>> = (0..self.len())
+            .map(|i| Vec::with_capacity(self.range(i).len()))
+            .collect();
         let copy = |out: &mut Vec<Vec<u8>>, from: usize, to: usize| {
             for (i, piece) in out.iter_mut().enumerate() {
                 let r = self.range(i);
@@ -327,7 +372,11 @@ impl Pieces {
 
 /// A number operand, written as an integer when it is one.
 pub fn num(v: f64) -> Object {
-    if v.fract() == 0.0 && v.abs() < 1e15 { Object::Int(v as i64) } else { Object::Real((v * 10_000.0).round() / 10_000.0) }
+    if v.fract() == 0.0 && v.abs() < 1e15 {
+        Object::Int(v as i64)
+    } else {
+        Object::Real((v * 10_000.0).round() / 10_000.0)
+    }
 }
 
 pub fn string(bytes: Vec<u8>) -> Object {
@@ -366,7 +415,14 @@ impl Matrix {
     pub fn then(&self, then: &Matrix) -> Matrix {
         let [a, b, c, d, e, f] = self.0;
         let [a2, b2, c2, d2, e2, f2] = then.0;
-        Matrix([a * a2 + b * c2, a * b2 + b * d2, c * a2 + d * c2, c * b2 + d * d2, e * a2 + f * c2 + e2, e * b2 + f * d2 + f2])
+        Matrix([
+            a * a2 + b * c2,
+            a * b2 + b * d2,
+            c * a2 + d * c2,
+            c * b2 + d * d2,
+            e * a2 + f * c2 + e2,
+            e * b2 + f * d2 + f2,
+        ])
     }
 
     pub fn apply(&self, x: f64, y: f64) -> (f64, f64) {
@@ -381,12 +437,24 @@ impl Matrix {
             return None;
         }
         let (ia, ib, ic, id) = (d / det, -b / det, -c / det, a / det);
-        Some(Matrix([ia, ib, ic, id, -(e * ia + f * ic), -(e * ib + f * id)]))
+        Some(Matrix([
+            ia,
+            ib,
+            ic,
+            id,
+            -(e * ia + f * ic),
+            -(e * ib + f * id),
+        ]))
     }
 
     /// The bounding box of a rectangle `[x0 y0 x1 y1]` after this transform.
     pub fn bbox(&self, r: [f64; 4]) -> [f64; 4] {
-        let pts = [self.apply(r[0], r[1]), self.apply(r[2], r[1]), self.apply(r[0], r[3]), self.apply(r[2], r[3])];
+        let pts = [
+            self.apply(r[0], r[1]),
+            self.apply(r[2], r[1]),
+            self.apply(r[0], r[3]),
+            self.apply(r[2], r[3]),
+        ];
         let mut b = [f64::MAX, f64::MAX, f64::MIN, f64::MIN];
         for (x, y) in pts {
             b = [b[0].min(x), b[1].min(y), b[2].max(x), b[3].max(y)];
@@ -402,5 +470,8 @@ pub fn overlaps(a: [f64; 4], b: [f64; 4], eps: f64) -> bool {
 
 /// Is `inner` inside `outer` (within `eps`)?
 pub fn contains(outer: [f64; 4], inner: [f64; 4], eps: f64) -> bool {
-    inner[0] >= outer[0] - eps && inner[1] >= outer[1] - eps && inner[2] <= outer[2] + eps && inner[3] <= outer[3] + eps
+    inner[0] >= outer[0] - eps
+        && inner[1] >= outer[1] - eps
+        && inner[2] <= outer[2] + eps
+        && inner[3] <= outer[3] + eps
 }

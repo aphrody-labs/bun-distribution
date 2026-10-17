@@ -74,7 +74,10 @@ async fn models(State(engine): State<Arc<InProcessLlama>>) -> Json<Value> {
 }
 
 fn error_response(status: StatusCode, message: &str) -> Response {
-    (status, Json(json!({"error": {"message": message, "type": "invalid_request_error"}})))
+    (
+        status,
+        Json(json!({"error": {"message": message, "type": "invalid_request_error"}})),
+    )
         .into_response()
 }
 
@@ -117,7 +120,7 @@ async fn chat(State(engine): State<Arc<InProcessLlama>>, Json(body): Json<Value>
             Ok(event) => collected.push(&event),
             Err(error) => {
                 return error_response(StatusCode::INTERNAL_SERVER_ERROR, &error.to_string());
-            },
+            }
         }
     }
     Json(collected.into_response_body(&id, &model, created)).into_response()
@@ -151,12 +154,22 @@ struct Chunk {
 
 /// One unified event as one streaming chunk (`None` = nothing to send).
 fn event_to_chunk(event: &ModelStreamEvent, calls: &mut usize) -> Option<Chunk> {
-    let delta = |delta: Value| Some(Chunk { delta, finish_reason: None, usage: None });
+    let delta = |delta: Value| {
+        Some(Chunk {
+            delta,
+            finish_reason: None,
+            usage: None,
+        })
+    };
     match event {
         ModelStreamEvent::Created => delta(json!({"role": "assistant"})),
         ModelStreamEvent::TextDelta(text) => delta(json!({"content": text})),
         ModelStreamEvent::ReasoningDelta(text) => delta(json!({"reasoning_content": text})),
-        ModelStreamEvent::ToolCall { id, name, arguments } => {
+        ModelStreamEvent::ToolCall {
+            id,
+            name,
+            arguments,
+        } => {
             let index = *calls;
             *calls += 1;
             delta(json!({"tool_calls": [{
@@ -165,8 +178,11 @@ fn event_to_chunk(event: &ModelStreamEvent, calls: &mut usize) -> Option<Chunk> 
                 "type": "function",
                 "function": {"name": name, "arguments": arguments.to_string()},
             }]}))
-        },
-        ModelStreamEvent::Completed { usage, finish_reason } => Some(Chunk {
+        }
+        ModelStreamEvent::Completed {
+            usage,
+            finish_reason,
+        } => Some(Chunk {
             delta: json!({}),
             finish_reason: Some(finish_reason.clone().unwrap_or_else(|| "stop".to_owned())),
             usage: usage.as_ref().map(|usage| {
@@ -196,7 +212,11 @@ impl Collected {
         match event {
             ModelStreamEvent::TextDelta(text) => self.content.push_str(text),
             ModelStreamEvent::ReasoningDelta(text) => self.reasoning.push_str(text),
-            ModelStreamEvent::ToolCall { id, name, arguments } => self.calls.push(json!({
+            ModelStreamEvent::ToolCall {
+                id,
+                name,
+                arguments,
+            } => self.calls.push(json!({
                 "id": id,
                 "type": "function",
                 "function": {"name": name, "arguments": arguments.to_string()},
@@ -206,8 +226,8 @@ impl Collected {
                     self.finish_reason = chunk.finish_reason;
                     self.usage = chunk.usage;
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -256,17 +276,25 @@ fn image_source(value: &Value) -> Result<ImageSource, String> {
     let Some(rest) = url.strip_prefix("data:") else {
         return Ok(ImageSource::Url(url.to_owned()));
     };
-    let (meta, data) = rest.split_once(',').ok_or_else(|| "malformed data URL".to_owned())?;
+    let (meta, data) = rest
+        .split_once(',')
+        .ok_or_else(|| "malformed data URL".to_owned())?;
     let mime = meta
         .strip_suffix(";base64")
         .ok_or_else(|| "only base64 data URLs are supported".to_owned())?;
-    let mime = if mime.is_empty() { "application/octet-stream" } else { mime };
+    let mime = if mime.is_empty() {
+        "application/octet-stream"
+    } else {
+        mime
+    };
     Ok(ImageSource::base64(mime, data))
 }
 
 /// A message's content as parts: its text (joined, one part) then its images, in order.
 fn content_parts(content: Option<&Value>) -> Result<Vec<Part>, String> {
-    let Some(content) = content else { return Ok(Vec::new()) };
+    let Some(content) = content else {
+        return Ok(Vec::new());
+    };
     let mut parts = Vec::new();
     if let Value::Array(items) = content {
         for item in items {
@@ -299,7 +327,10 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
     let mut system = Vec::new();
     let mut call_names: HashMap<String, String> = HashMap::new();
     for message in messages {
-        let role = message.get("role").and_then(Value::as_str).unwrap_or("user");
+        let role = message
+            .get("role")
+            .and_then(Value::as_str)
+            .unwrap_or("user");
         let text = message.get("content").map(content_text).unwrap_or_default();
         match role {
             "system" | "developer" => system.push(text),
@@ -308,13 +339,23 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                 if !text.is_empty() {
                     parts.push(Part::Text(text));
                 }
-                for call in
-                    message.get("tool_calls").and_then(Value::as_array).into_iter().flatten()
+                for call in message
+                    .get("tool_calls")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
                 {
-                    let id = call.get("id").and_then(Value::as_str).unwrap_or_default().to_owned();
+                    let id = call
+                        .get("id")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_owned();
                     let function = call.get("function").unwrap_or(&Value::Null);
-                    let name =
-                        function.get("name").and_then(Value::as_str).unwrap_or_default().to_owned();
+                    let name = function
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_owned();
                     let args = function
                         .get("arguments")
                         .and_then(Value::as_str)
@@ -322,8 +363,11 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                     call_names.insert(id.clone(), name.clone());
                     parts.push(Part::function_call(id, name, args));
                 }
-                turn.messages.push(ChatMessage { role: Role::Model, parts });
-            },
+                turn.messages.push(ChatMessage {
+                    role: Role::Model,
+                    parts,
+                });
+            }
             "tool" => {
                 let id = message
                     .get("tool_call_id")
@@ -335,18 +379,30 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                     role: Role::Tool,
                     parts: vec![Part::function_response(id, name, json_or_string(&text))],
                 });
-            },
+            }
             _ => {
                 let parts = content_parts(message.get("content"))?;
-                let parts = if parts.is_empty() { vec![Part::Text(text)] } else { parts };
-                turn.messages.push(ChatMessage { role: Role::User, parts });
-            },
+                let parts = if parts.is_empty() {
+                    vec![Part::Text(text)]
+                } else {
+                    parts
+                };
+                turn.messages.push(ChatMessage {
+                    role: Role::User,
+                    parts,
+                });
+            }
         }
     }
     if !system.is_empty() {
         turn.system = Some(system.join("\n\n"));
     }
-    for tool in body.get("tools").and_then(Value::as_array).into_iter().flatten() {
+    for tool in body
+        .get("tools")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
         let function = tool.get("function").unwrap_or(tool);
         if let Some(name) = function.get("name").and_then(Value::as_str) {
             turn.tools.push(ToolDecl {
@@ -356,12 +412,17 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
                     .and_then(Value::as_str)
                     .unwrap_or_default()
                     .to_owned(),
-                parameters: function.get("parameters").cloned().unwrap_or_else(|| json!({})),
+                parameters: function
+                    .get("parameters")
+                    .cloned()
+                    .unwrap_or_else(|| json!({})),
             });
         }
     }
-    turn.options.temperature =
-        body.get("temperature").and_then(Value::as_f64).map(|value| value as f32);
+    turn.options.temperature = body
+        .get("temperature")
+        .and_then(Value::as_f64)
+        .map(|value| value as f32);
     turn.options.max_output_tokens = body
         .get("max_completion_tokens")
         .or_else(|| body.get("max_tokens"))
@@ -369,9 +430,11 @@ fn request_to_turn(body: &Value) -> Result<ChatTurn, String> {
         .and_then(|value| u32::try_from(value).ok());
     turn.options.stop = match body.get("stop") {
         Some(Value::String(stop)) => vec![stop.clone()],
-        Some(Value::Array(stops)) => {
-            stops.iter().filter_map(Value::as_str).map(str::to_owned).collect()
-        },
+        Some(Value::Array(stops)) => stops
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_owned)
+            .collect(),
         _ => Vec::new(),
     };
     Ok(turn)
@@ -462,7 +525,10 @@ mod tests {
         let second = event_to_chunk(&call("b"), &mut calls).unwrap();
         assert_eq!(first.delta["tool_calls"][0]["index"], 0);
         assert_eq!(second.delta["tool_calls"][0]["index"], 1);
-        assert_eq!(first.delta["tool_calls"][0]["function"]["arguments"], "{\"a\":1}");
+        assert_eq!(
+            first.delta["tool_calls"][0]["function"]["arguments"],
+            "{\"a\":1}"
+        );
     }
 
     #[test]

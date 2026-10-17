@@ -65,34 +65,51 @@ fn load(need: Need) -> Option<Arc<FontData>> {
         Need::Hans => (HANS_PROBE, MAX_HAN_BYTES),
         Need::Hant => (HANT_PROBE, MAX_HAN_BYTES),
     };
-    candidates(need).iter().find_map(|path| read(path, probe, max))
+    candidates(need)
+        .iter()
+        .find_map(|path| read(path, probe, max))
 }
 
 /// The installed fallback face for Devanagari (Hindi), read once. `None` when it is turned off
 /// or no candidate is installed; the interface then draws what the embedded faces can.
 pub fn devanagari_fallback() -> Option<Arc<FontData>> {
     static CACHE: OnceLock<Option<Arc<FontData>>> = OnceLock::new();
-    CACHE.get_or_init(|| script_fallback(&devanagari_candidates(), DEVANAGARI_PROBE)).clone()
+    CACHE
+        .get_or_init(|| script_fallback(&devanagari_candidates(), DEVANAGARI_PROBE))
+        .clone()
 }
 
 /// The installed fallback face for Telugu, read once. `None` when it is turned off or no
 /// candidate is installed; the interface then draws what the embedded faces can.
 pub fn telugu_fallback() -> Option<Arc<FontData>> {
     static CACHE: OnceLock<Option<Arc<FontData>>> = OnceLock::new();
-    CACHE.get_or_init(|| script_fallback(&telugu_candidates(), TELUGU_PROBE)).clone()
+    CACHE
+        .get_or_init(|| script_fallback(&telugu_candidates(), TELUGU_PROBE))
+        .clone()
 }
 
 fn script_fallback(candidates: &[PathBuf], probe: char) -> Option<Arc<FontData>> {
     if std::env::var_os("PDFCRAFT_SYSTEM_FONTS").is_some_and(|v| v == "0") {
         return None;
     }
-    candidates.iter().find_map(|path| read(path, probe, MAX_BYTES))
+    candidates
+        .iter()
+        .find_map(|path| read(path, probe, MAX_BYTES))
 }
 
 /// Well-known locations of Devanagari (Hindi) faces, best first.
 fn devanagari_candidates() -> Vec<PathBuf> {
     if cfg!(windows) {
-        ["Nirmala.ttf", "NirmalaB.ttf", "mangal.ttf", "aparaj.ttf", "utsah.ttf"].iter().map(|f| windows_fonts().join(f)).collect()
+        [
+            "Nirmala.ttf",
+            "NirmalaB.ttf",
+            "mangal.ttf",
+            "aparaj.ttf",
+            "utsah.ttf",
+        ]
+        .iter()
+        .map(|f| windows_fonts().join(f))
+        .collect()
     } else if cfg!(target_os = "macos") {
         [
             "/System/Library/Fonts/Supplemental/DevanagariMT.ttc",
@@ -127,7 +144,10 @@ fn devanagari_candidates() -> Vec<PathBuf> {
 /// Well-known locations of Telugu faces, best first.
 fn telugu_candidates() -> Vec<PathBuf> {
     if cfg!(windows) {
-        ["Nirmala.ttc", "Nirmala.ttf", "gautami.ttf"].iter().map(|f| windows_fonts().join(f)).collect()
+        ["Nirmala.ttc", "Nirmala.ttf", "gautami.ttf"]
+            .iter()
+            .map(|f| windows_fonts().join(f))
+            .collect()
     } else if cfg!(target_os = "macos") {
         [
             "/System/Library/Fonts/KohinoorTelugu.ttc",
@@ -165,12 +185,19 @@ fn candidates(need: Need) -> Vec<PathBuf> {
 
 fn other_candidates() -> Vec<PathBuf> {
     if cfg!(windows) {
-        ["segoeui.ttf", "tahoma.ttf", "arial.ttf"].iter().map(|f| windows_fonts().join(f)).collect()
-    } else if cfg!(target_os = "macos") {
-        ["/System/Library/Fonts/SFArabic.ttf", "/System/Library/Fonts/GeezaPro.ttc", "/System/Library/Fonts/Supplemental/Arial.ttf"]
+        ["segoeui.ttf", "tahoma.ttf", "arial.ttf"]
             .iter()
-            .map(PathBuf::from)
+            .map(|f| windows_fonts().join(f))
             .collect()
+    } else if cfg!(target_os = "macos") {
+        [
+            "/System/Library/Fonts/SFArabic.ttf",
+            "/System/Library/Fonts/GeezaPro.ttc",
+            "/System/Library/Fonts/Supplemental/Arial.ttf",
+        ]
+        .iter()
+        .map(PathBuf::from)
+        .collect()
     } else {
         unix_fonts(&[
             "truetype/noto/NotoSansArabic-Regular.ttf",
@@ -189,16 +216,32 @@ fn other_candidates() -> Vec<PathBuf> {
 fn han_candidates(traditional: bool) -> Vec<PathBuf> {
     if cfg!(windows) {
         // Microsoft YaHei / JhengHei, then the older SimSun / MingLiU collections.
-        let files: &[&str] =
-            if traditional { &["msjh.ttc", "msyh.ttc", "mingliu.ttc", "simsun.ttc"] } else { &["msyh.ttc", "msjh.ttc", "simsun.ttc", "mingliu.ttc"] };
+        let files: &[&str] = if traditional {
+            &["msjh.ttc", "msyh.ttc", "mingliu.ttc", "simsun.ttc"]
+        } else {
+            &["msyh.ttc", "msjh.ttc", "simsun.ttc", "mingliu.ttc"]
+        };
         files.iter().map(|f| windows_fonts().join(f)).collect()
     } else if cfg!(target_os = "macos") {
         let files: &[&str] = if traditional {
-            &["PingFang.ttc", "STHeiti Light.ttc", "STHeiti Medium.ttc", "Hiragino Sans GB.ttc"]
+            &[
+                "PingFang.ttc",
+                "STHeiti Light.ttc",
+                "STHeiti Medium.ttc",
+                "Hiragino Sans GB.ttc",
+            ]
         } else {
-            &["PingFang.ttc", "Hiragino Sans GB.ttc", "STHeiti Light.ttc", "STHeiti Medium.ttc"]
+            &[
+                "PingFang.ttc",
+                "Hiragino Sans GB.ttc",
+                "STHeiti Light.ttc",
+                "STHeiti Medium.ttc",
+            ]
         };
-        files.iter().map(|f| Path::new("/System/Library/Fonts").join(f)).collect()
+        files
+            .iter()
+            .map(|f| Path::new("/System/Library/Fonts").join(f))
+            .collect()
     } else {
         unix_fonts(&[
             "truetype/wqy/wqy-microhei.ttc",
@@ -217,12 +260,17 @@ fn han_candidates(traditional: bool) -> Vec<PathBuf> {
 }
 
 fn windows_fonts() -> PathBuf {
-    let dir = std::env::var_os("WINDIR").or_else(|| std::env::var_os("SystemRoot")).map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
+    let dir = std::env::var_os("WINDIR")
+        .or_else(|| std::env::var_os("SystemRoot"))
+        .map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
     dir.join("Fonts")
 }
 
 fn unix_fonts(files: &'static [&'static str]) -> Vec<PathBuf> {
-    ["/usr/share/fonts", "/usr/local/share/fonts"].iter().flat_map(|dir| files.iter().map(move |f| Path::new(dir).join(f))).collect()
+    ["/usr/share/fonts", "/usr/local/share/fonts"]
+        .iter()
+        .flat_map(|dir| files.iter().map(move |f| Path::new(dir).join(f)))
+        .collect()
 }
 
 fn read(path: &Path, probe: char, max: u64) -> Option<Arc<FontData>> {
@@ -242,7 +290,9 @@ fn read(path: &Path, probe: char, max: u64) -> Option<Arc<FontData>> {
 /// so a face accepted here is one it can load.
 fn face_with(bytes: &[u8], c: char) -> Option<u32> {
     use skrifa::MetadataProvider as _;
-    (0..MAX_FACES).find(|&index| skrifa::FontRef::from_index(bytes, index).is_ok_and(|font| font.charmap().map(c).is_some()))
+    (0..MAX_FACES).find(|&index| {
+        skrifa::FontRef::from_index(bytes, index).is_ok_and(|font| font.charmap().map(c).is_some())
+    })
 }
 
 #[cfg(test)]
@@ -271,7 +321,10 @@ mod tests {
 
     #[test]
     fn a_file_over_the_cap_is_not_read() {
-        let inter = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/Inter-Regular.ttf"));
+        let inter = Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/fonts/Inter-Regular.ttf"
+        ));
         assert!(read(inter, 'A', MAX_BYTES).is_some());
         assert!(read(inter, 'A', 1024).is_none());
     }
@@ -281,13 +334,20 @@ mod tests {
         for need in [Need::Other, Need::Hans, Need::Hant] {
             let list = candidates(need);
             assert!(!list.is_empty(), "{need:?}");
-            assert!(list.iter().all(|p| p.extension().is_some_and(|e| e == "ttf" || e == "ttc")), "{need:?}");
+            assert!(
+                list.iter()
+                    .all(|p| p.extension().is_some_and(|e| e == "ttf" || e == "ttc")),
+                "{need:?}"
+            );
         }
     }
 
     #[test]
     fn a_script_fallback_is_the_first_candidate_with_the_probe() {
-        let inter = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/Inter-Regular.ttf"));
+        let inter = PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/fonts/Inter-Regular.ttf"
+        ));
         let candidates = [PathBuf::from("definitely/not/here.ttf"), inter];
         assert!(script_fallback(&candidates, 'A').is_some());
         assert!(script_fallback(&candidates, TELUGU_PROBE).is_none());
@@ -298,8 +358,15 @@ mod tests {
     fn script_candidates_are_absolute_font_files() {
         for list in [devanagari_candidates(), telugu_candidates()] {
             assert!(!list.is_empty());
-            assert!(list.iter().all(|p| p.is_absolute() || cfg!(windows)), "{list:?}");
-            assert!(list.iter().all(|p| p.extension().is_some_and(|e| e == "ttf" || e == "ttc")), "{list:?}");
+            assert!(
+                list.iter().all(|p| p.is_absolute() || cfg!(windows)),
+                "{list:?}"
+            );
+            assert!(
+                list.iter()
+                    .all(|p| p.extension().is_some_and(|e| e == "ttf" || e == "ttc")),
+                "{list:?}"
+            );
         }
     }
 
@@ -308,7 +375,12 @@ mod tests {
         for need in [Need::Hans, Need::Hant] {
             for path in candidates(need) {
                 let name = path.to_string_lossy().to_lowercase();
-                assert!(!["notosanscjk", "notoserifcjk", "sourcehan", "source-han"].iter().any(|b| name.contains(b)), "{name}");
+                assert!(
+                    !["notosanscjk", "notoserifcjk", "sourcehan", "source-han"]
+                        .iter()
+                        .any(|b| name.contains(b)),
+                    "{name}"
+                );
             }
         }
     }

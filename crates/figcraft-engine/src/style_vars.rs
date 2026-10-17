@@ -26,13 +26,24 @@ pub fn field_type(kind: &StyleKind, key: &str) -> Option<VariableType> {
             };
             ok.then_some(Color)
         }
-        (StyleKind::Effect { effects }, Some((BoundList::Effects, i, field))) => match (&effects.get(i)?.kind, field) {
-            (EffectKind::DropShadow(_) | EffectKind::InnerShadow(_), "color") => Some(Color),
-            (EffectKind::DropShadow(_) | EffectKind::InnerShadow(_), "radius" | "spread" | "offsetX" | "offsetY") => Some(Number),
-            (EffectKind::LayerBlur(_) | EffectKind::BackgroundBlur(_), "radius" | "startRadius") => Some(Number),
-            _ => None,
-        },
-        (StyleKind::Grid { grids }, Some((BoundList::Grids, i, "size" | "count" | "gutter" | "offset"))) => grids.get(i).map(|_| Number),
+        (StyleKind::Effect { effects }, Some((BoundList::Effects, i, field))) => {
+            match (&effects.get(i)?.kind, field) {
+                (EffectKind::DropShadow(_) | EffectKind::InnerShadow(_), "color") => Some(Color),
+                (
+                    EffectKind::DropShadow(_) | EffectKind::InnerShadow(_),
+                    "radius" | "spread" | "offsetX" | "offsetY",
+                ) => Some(Number),
+                (
+                    EffectKind::LayerBlur(_) | EffectKind::BackgroundBlur(_),
+                    "radius" | "startRadius",
+                ) => Some(Number),
+                _ => None,
+            }
+        }
+        (
+            StyleKind::Grid { grids },
+            Some((BoundList::Grids, i, "size" | "count" | "gutter" | "offset")),
+        ) => grids.get(i).map(|_| Number),
         (StyleKind::Text { .. }, None) => match key {
             "fontSize" | "lineHeight" | "letterSpacing" => Some(Number),
             "fontFamily" | "fontStyle" => Some(String),
@@ -63,8 +74,11 @@ pub fn from_layer(n: &Node, field: &str, kind: &StyleKind) -> BTreeMap<String, V
     let mut out = BTreeMap::new();
     for (k, v) in &n.bound {
         let key = match (field, list_binding(k)) {
-            ("fillStyle", Some((BoundList::Fills, i, f))) | ("strokeStyle", Some((BoundList::Strokes, i, f))) => BoundList::Fills.key(i, f),
-            ("effectStyle", Some((BoundList::Effects, ..))) | ("gridStyle", Some((BoundList::Grids, ..))) | ("textStyle", None) => k.clone(),
+            ("fillStyle", Some((BoundList::Fills, i, f)))
+            | ("strokeStyle", Some((BoundList::Strokes, i, f))) => BoundList::Fills.key(i, f),
+            ("effectStyle", Some((BoundList::Effects, ..)))
+            | ("gridStyle", Some((BoundList::Grids, ..)))
+            | ("textStyle", None) => k.clone(),
             _ => continue,
         };
         if field_type(kind, &key).is_some() {
@@ -78,13 +92,25 @@ pub fn from_layer(n: &Node, field: &str, kind: &StyleKind) -> BTreeMap<String, V
 fn resolved(vars: &Variables, st: &Style, modes: &Modes) -> StyleKind {
     let mut kind = st.kind.clone();
     for (key, var) in &st.bound {
-        let Some(val) = vars.resolve(var, modes) else { continue };
+        let Some(val) = vars.resolve(var, modes) else {
+            continue;
+        };
         match (&mut kind, list_binding(key), &val) {
-            (StyleKind::Paint { paints }, Some((BoundList::Fills, i, field)), VariableValue::Color(c)) => {
+            (
+                StyleKind::Paint { paints },
+                Some((BoundList::Fills, i, field)),
+                VariableValue::Color(c),
+            ) => {
                 crate::cmd::styles::set_paint_color(paints, i, stop_binding(field), *c);
             }
-            (StyleKind::Effect { effects }, Some((BoundList::Effects, i, field)), _) => crate::cmd::styles::set_effect_field(effects, i, field, &val),
-            (StyleKind::Grid { grids }, Some((BoundList::Grids, i, field)), VariableValue::Number(x)) => {
+            (StyleKind::Effect { effects }, Some((BoundList::Effects, i, field)), _) => {
+                crate::cmd::styles::set_effect_field(effects, i, field, &val)
+            }
+            (
+                StyleKind::Grid { grids },
+                Some((BoundList::Grids, i, field)),
+                VariableValue::Number(x),
+            ) => {
                 crate::cmd::lists::set_grid_field(grids, i, field, *x);
             }
             (StyleKind::Text { style }, None, _) => set_text_field(style, key, &val),
@@ -96,18 +122,32 @@ fn resolved(vars: &Variables, st: &Style, modes: &Modes) -> StyleKind {
 
 fn set_text_field(style: &mut TextStyle, key: &str, val: &VariableValue) {
     match (key, val) {
-        ("fontSize", VariableValue::Number(x)) if x.is_finite() => style.font_size = x.clamp(1.0, 5000.0),
-        ("lineHeight", VariableValue::Number(x)) if x.is_finite() => style.line_height = LineHeight::Pixels(x.clamp(0.0, 100_000.0)),
-        ("letterSpacing", VariableValue::Number(x)) if x.is_finite() => style.letter_spacing = LetterSpacing::Pixels(x.clamp(-10_000.0, 10_000.0)),
-        ("fontFamily", VariableValue::String(f)) if !f.trim().is_empty() => style.font_family = f.clone(),
-        ("fontStyle", VariableValue::String(f)) if !f.trim().is_empty() => style.font_style = f.clone(),
+        ("fontSize", VariableValue::Number(x)) if x.is_finite() => {
+            style.font_size = x.clamp(1.0, 5000.0)
+        }
+        ("lineHeight", VariableValue::Number(x)) if x.is_finite() => {
+            style.line_height = LineHeight::Pixels(x.clamp(0.0, 100_000.0))
+        }
+        ("letterSpacing", VariableValue::Number(x)) if x.is_finite() => {
+            style.letter_spacing = LetterSpacing::Pixels(x.clamp(-10_000.0, 10_000.0))
+        }
+        ("fontFamily", VariableValue::String(f)) if !f.trim().is_empty() => {
+            style.font_family = f.clone()
+        }
+        ("fontStyle", VariableValue::String(f)) if !f.trim().is_empty() => {
+            style.font_style = f.clone()
+        }
         _ => {}
     }
 }
 
 /// `st`'s value as layer `id` shows it: bound fields resolved in the layer's modes.
 pub fn kind_for<'a>(doc: &Document, st: &'a Style, id: NodeId) -> Cow<'a, StyleKind> {
-    if st.bound.is_empty() { Cow::Borrowed(&st.kind) } else { Cow::Owned(resolved(&doc.variables, st, &doc.modes_for(id))) }
+    if st.bound.is_empty() {
+        Cow::Borrowed(&st.kind)
+    } else {
+        Cow::Owned(resolved(&doc.variables, st, &doc.modes_for(id)))
+    }
 }
 
 /// Each style with bindings stores its value resolved in the default modes (what pickers, exports
@@ -115,7 +155,9 @@ pub fn kind_for<'a>(doc: &Document, st: &'a Style, id: NodeId) -> Cow<'a, StyleK
 pub fn settle(doc: &mut Document) {
     let none = Modes::new();
     for i in 0..doc.styles.len() {
-        let Some(st) = doc.styles.get(i).filter(|s| !s.bound.is_empty()) else { continue };
+        let Some(st) = doc.styles.get(i).filter(|s| !s.bound.is_empty()) else {
+            continue;
+        };
         let mut next = st.clone();
         prune(&mut next);
         next.kind = resolved(&doc.variables, &next, &none);
@@ -138,24 +180,41 @@ pub fn after_load(doc: &mut Document) {
 /// their own modes (only what changed, so unchanged layers stay shared). What an edit since
 /// `before` changed on a layer is left as edited: that unlinks it from the style instead.
 pub fn refresh(doc: &mut Document, before: Option<&Document>, only: Option<&BTreeSet<NodeId>>) {
-    let bound: BTreeSet<&str> = doc.styles.iter().filter(|s| !s.bound.is_empty()).map(|s| s.id.as_str()).collect();
+    let bound: BTreeSet<&str> = doc
+        .styles
+        .iter()
+        .filter(|s| !s.bound.is_empty())
+        .map(|s| s.id.as_str())
+        .collect();
     if bound.is_empty() {
         return;
     }
     let uses = |n: &Node| {
         let r = &n.styles;
-        [&r.fill, &r.stroke, &r.effect, &r.grid, &r.text].into_iter().flatten().any(|s| bound.contains(s.as_str()))
+        [&r.fill, &r.stroke, &r.effect, &r.grid, &r.text]
+            .into_iter()
+            .flatten()
+            .any(|s| bound.contains(s.as_str()))
             || matches!(&n.kind, NodeKind::Text(t) if t.spans().iter().any(|(_, _, s)| s.style_id.as_deref().is_some_and(|i| bound.contains(i))))
     };
     let ids: Vec<NodeId> = match only {
-        Some(ids) => ids.iter().copied().filter(|i| doc.node(*i).is_some_and(uses)).collect(),
+        Some(ids) => ids
+            .iter()
+            .copied()
+            .filter(|i| doc.node(*i).is_some_and(uses))
+            .collect(),
         None => doc.nodes().filter(|n| uses(n)).map(|n| n.id).collect(),
     };
     for id in ids {
         let Some(n) = doc.node(id) else { continue };
         let mut next = n.clone();
         let was = before.and_then(|b| b.node(id));
-        let of = |r: &Option<StyleId>| r.as_deref().and_then(|s| doc.style(s)).filter(|s| !s.bound.is_empty()).map(|s| kind_for(doc, s, id));
+        let of = |r: &Option<StyleId>| {
+            r.as_deref()
+                .and_then(|s| doc.style(s))
+                .filter(|s| !s.bound.is_empty())
+                .map(|s| kind_for(doc, s, id))
+        };
         if let Some(StyleKind::Paint { paints }) = of(&n.styles.fill).as_deref()
             && was.is_none_or(|w| w.fills == n.fills)
         {

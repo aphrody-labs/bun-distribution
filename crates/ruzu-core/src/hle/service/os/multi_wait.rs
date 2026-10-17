@@ -37,7 +37,10 @@ impl HostMultiWaitSignal {
     fn wait(&self, timeout: Option<Duration>) {
         let notified = self.notified.lock().unwrap();
         let mut notified = if let Some(timeout) = timeout {
-            self.cv.wait_timeout_while(notified, timeout, |v| !*v).unwrap().0
+            self.cv
+                .wait_timeout_while(notified, timeout, |v| !*v)
+                .unwrap()
+                .0
         } else {
             self.cv.wait_while(notified, |v| !*v).unwrap()
         };
@@ -117,8 +120,15 @@ impl MultiWait {
     /// Relative nanoseconds converted to the kernel hardware timer's absolute
     /// global-time deadline, as in upstream TimedWaitAny. Both host and guest
     /// suspension are expired by that timer, not by a second host wall clock.
-    pub fn timed_wait_any(&self, kernel: &KernelCore, timeout_ns: i64) -> Option<*mut MultiWaitHolder> {
-        let now = kernel.hardware_timer().expect("MultiWait requires a hardware timer").get_tick();
+    pub fn timed_wait_any(
+        &self,
+        kernel: &KernelCore,
+        timeout_ns: i64,
+    ) -> Option<*mut MultiWaitHolder> {
+        let now = kernel
+            .hardware_timer()
+            .expect("MultiWait requires a hardware timer")
+            .get_tick();
         self.timed_wait_impl(kernel, now.saturating_add(timeout_ns))
     }
 
@@ -153,7 +163,8 @@ impl MultiWait {
             return None;
         }
 
-        let current_thread = kernel.get_current_emu_thread()
+        let current_thread = kernel
+            .get_current_emu_thread()
             .expect("MultiWait requires an initialized kernel thread identity");
 
         let mut object_ids = Vec::with_capacity(holders.len());
@@ -164,7 +175,8 @@ impl MultiWait {
             Vec::new()
         };
         for holder in &holders {
-            let (object_id, waitable_object) = (unsafe { &**holder }).native_waitable_object()
+            let (object_id, waitable_object) = (unsafe { &**holder })
+                .native_waitable_object()
                 .expect("MultiWait holder must own a native kernel synchronization object");
             if trace_wait {
                 kinds.push((unsafe { &**holder }).kind_name());
@@ -232,8 +244,12 @@ impl MultiWait {
         // tests must exercise the real kernel queues, never polling.
         let notification = Arc::new(HostMultiWaitSignal::default());
         for &holder in holders {
-            unsafe { (*holder).host_event().expect("local test wait requires service Events") }
-                .register_host_waiter(&notification);
+            unsafe {
+                (*holder)
+                    .host_event()
+                    .expect("local test wait requires service Events")
+            }
+            .register_host_waiter(&notification);
         }
         let timeout = (timeout_ns > 0).then(|| Duration::from_nanos(timeout_ns as u64));
         loop {
@@ -269,15 +285,19 @@ impl Default for MultiWait {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::event::Event;
+    use super::*;
     use std::sync::mpsc;
 
     #[test]
     fn native_process_and_closed_session_wake_host_selection() {
-        use crate::hle::kernel::{kernel, k_process::{KProcess, ProcessLock, ProcessState},
-            k_server_session::KServerSession, k_scheduler_lock::KScopedSchedulerLock,
-            k_synchronization_object::tests::await_kernel_registration};
+        use crate::hle::kernel::{
+            k_process::{KProcess, ProcessLock, ProcessState},
+            k_scheduler_lock::KScopedSchedulerLock,
+            k_server_session::KServerSession,
+            k_synchronization_object::tests::await_kernel_registration,
+            kernel,
+        };
 
         let mut kernel = Box::new(KernelCore::new());
         kernel.initialize();
@@ -302,7 +322,9 @@ mod tests {
                 let mut wait = MultiWait::new();
                 wait.link_holder(&mut holder);
                 ready_tx.send(thread).unwrap();
-                done_tx.send(wait.wait_any(kernel) == Some(&mut holder as *mut _)).unwrap();
+                done_tx
+                    .send(wait.wait_any(kernel) == Some(&mut holder as *mut _))
+                    .unwrap();
             });
             let thread = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
             await_kernel_registration(&thread);
@@ -327,9 +349,9 @@ mod tests {
     #[test]
     fn native_time_events_support_parentless_host_waits() {
         use crate::hle::kernel::kernel;
-        use crate::hle::service::psc::time::common::OperationEvent;
         use crate::hle::service::psc::time::alarms::Alarms;
         use crate::hle::service::psc::time::clocks::standard_user_system_clock_core::StandardUserSystemClockCore;
+        use crate::hle::service::psc::time::common::OperationEvent;
 
         let mut kernel = Box::new(KernelCore::new());
         kernel.initialize();
@@ -337,36 +359,61 @@ mod tests {
             let operation = OperationEvent::new();
             let alarms = Alarms::new(Box::new(|| 0));
             let correction = StandardUserSystemClockCore::new();
-            let events = [operation.get_event(), alarms.get_event(), correction.get_event()];
+            let events = [
+                operation.get_event(),
+                alarms.get_event(),
+                correction.get_event(),
+            ];
             for event in &events {
-                assert!(event.readable_event().is_some(), "time event missing native owner");
+                assert!(
+                    event.readable_event().is_some(),
+                    "time event missing native owner"
+                );
             }
             let (ready_tx, ready_rx) = mpsc::channel();
-            let workers: Vec<_> = (0..2).map(|_| {
-                let events = events.clone();
-                let ready_tx = ready_tx.clone();
-                std::thread::spawn(move || {
-                    let kernel = kernel::get_kernel_ref().unwrap();
-                    let thread = kernel.get_current_emu_thread().unwrap();
-                    assert!(thread.lock().unwrap().parent.is_none());
-                    let mut holders: Vec<_> = events.into_iter().map(MultiWaitHolder::from_event).collect();
-                    let mut wait = MultiWait::new();
-                    for holder in &mut holders { wait.link_holder(holder); }
-                    let expected = &mut holders[1] as *mut _;
-                    ready_tx.send(thread).unwrap();
-                    assert_eq!(wait.wait_any(kernel), Some(expected));
-                    // Manual-reset: a second wait must still observe the event.
-                    assert_eq!(wait.try_wait_any(kernel), Some(expected));
+            let workers: Vec<_> = (0..2)
+                .map(|_| {
+                    let events = events.clone();
+                    let ready_tx = ready_tx.clone();
+                    std::thread::spawn(move || {
+                        let kernel = kernel::get_kernel_ref().unwrap();
+                        let thread = kernel.get_current_emu_thread().unwrap();
+                        assert!(thread.lock().unwrap().parent.is_none());
+                        let mut holders: Vec<_> = events
+                            .into_iter()
+                            .map(MultiWaitHolder::from_event)
+                            .collect();
+                        let mut wait = MultiWait::new();
+                        for holder in &mut holders {
+                            wait.link_holder(holder);
+                        }
+                        let expected = &mut holders[1] as *mut _;
+                        ready_tx.send(thread).unwrap();
+                        assert_eq!(wait.wait_any(kernel), Some(expected));
+                        // Manual-reset: a second wait must still observe the event.
+                        assert_eq!(wait.try_wait_any(kernel), Some(expected));
+                    })
                 })
-            }).collect();
+                .collect();
             let first = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
             let second = ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
-            assert!(!Arc::ptr_eq(&first, &second), "host threads must have their own identity");
+            assert!(
+                !Arc::ptr_eq(&first, &second),
+                "host threads must have their own identity"
+            );
             crate::hle::kernel::k_synchronization_object::tests::await_kernel_registration(&first);
             crate::hle::kernel::k_synchronization_object::tests::await_kernel_registration(&second);
             events[1].signal();
-            for worker in workers { worker.join().unwrap(); }
-            assert!(events[1].readable_event().unwrap().lock().unwrap().sync_object.is_empty());
+            for worker in workers {
+                worker.join().unwrap();
+            }
+            assert!(events[1]
+                .readable_event()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .sync_object
+                .is_empty());
         }
         kernel.shutdown();
     }
@@ -395,22 +442,24 @@ mod tests {
         let event = Arc::new(Event::new());
         let (ready_tx, ready_rx) = mpsc::channel();
         let (done_tx, done_rx) = mpsc::channel();
-        let threads: Vec<_> = (0..2).map(|_| {
-            let event = Arc::clone(&event);
-            let ready = ready_tx.clone();
-            let done = done_tx.clone();
-            std::thread::spawn(move || {
-                let never_signaled = Arc::new(Event::new());
-                let mut first = MultiWaitHolder::from_event(never_signaled);
-                let mut second = MultiWaitHolder::from_event(event);
-                let mut wait = MultiWait::new();
-                wait.link_holder(&mut first);
-                wait.link_holder(&mut second);
-                ready.send(()).unwrap();
-                assert_eq!(wait.wait_any_local(), Some(&mut second as *mut _));
-                done.send(()).unwrap();
+        let threads: Vec<_> = (0..2)
+            .map(|_| {
+                let event = Arc::clone(&event);
+                let ready = ready_tx.clone();
+                let done = done_tx.clone();
+                std::thread::spawn(move || {
+                    let never_signaled = Arc::new(Event::new());
+                    let mut first = MultiWaitHolder::from_event(never_signaled);
+                    let mut second = MultiWaitHolder::from_event(event);
+                    let mut wait = MultiWait::new();
+                    wait.link_holder(&mut first);
+                    wait.link_holder(&mut second);
+                    ready.send(()).unwrap();
+                    assert_eq!(wait.wait_any_local(), Some(&mut second as *mut _));
+                    done.send(()).unwrap();
+                })
             })
-        }).collect();
+            .collect();
         for _ in 0..2 {
             ready_rx.recv_timeout(Duration::from_secs(2)).unwrap();
         }

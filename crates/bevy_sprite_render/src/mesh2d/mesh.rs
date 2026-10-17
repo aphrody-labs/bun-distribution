@@ -1,37 +1,37 @@
 use core::mem;
 
 use bevy_app::Plugin;
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetId, AssetServer, Handle};
-use bevy_camera::{visibility::ViewVisibility, Camera2d, CompositingSpace};
+use bevy_asset::{AssetId, AssetServer, Handle, embedded_asset, load_embedded_asset};
+use bevy_camera::{Camera2d, CompositingSpace, visibility::ViewVisibility};
 use bevy_platform::collections::HashMap;
 use bevy_render::{
+    RenderStartup,
     camera::{DirtySpecializations, ExtractedCamera},
     material_bind_groups::{
         MaterialBindGroupIndex, MaterialBindGroupSlot, MaterialBindingId, RenderMaterialBindings,
     },
-    mesh::{allocator::MeshSlabId, MeshMetadata, MeshMetadataFallbackBuffer},
+    mesh::{MeshMetadata, MeshMetadataFallbackBuffer, allocator::MeshSlabId},
     render_resource::binding_types::{storage_buffer_read_only, uniform_buffer_sized},
     sync_world::MainEntityHashSet,
-    RenderStartup,
 };
-use bevy_shader::{load_shader_library, Shader, ShaderDefVal, ShaderSettings};
+use bevy_shader::{Shader, ShaderDefVal, ShaderSettings, load_shader_library};
 
 use crate::{
-    prepare_pending_mesh_material2d_queues, tonemapping_pipeline_key, PendingMeshMaterial2dQueues,
-    RenderMaterial2dInstances,
+    PendingMeshMaterial2dQueues, RenderMaterial2dInstances, prepare_pending_mesh_material2d_queues,
+    tonemapping_pipeline_key,
 };
 use bevy_core_pipeline::{
-    core_2d::{AlphaMask2d, Opaque2d, Transparent2d, CORE_2D_DEPTH_FORMAT},
+    core_2d::{AlphaMask2d, CORE_2D_DEPTH_FORMAT, Opaque2d, Transparent2d},
     tonemapping::{
-        get_lut_bind_group_layout_entries, get_lut_bindings, DebandDither, Tonemapping,
-        TonemappingLuts,
+        DebandDither, Tonemapping, TonemappingLuts, get_lut_bind_group_layout_entries,
+        get_lut_bindings,
     },
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     prelude::*,
     query::ROQueryItem,
-    system::{lifetimeless::*, SystemParamItem},
+    system::{SystemParamItem, lifetimeless::*},
 };
 use bevy_math::{Affine3, Affine3Ext, Vec4};
 use bevy_mesh::{
@@ -40,16 +40,17 @@ use bevy_mesh::{
 };
 use bevy_render::prelude::Msaa;
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderSystems,
     batching::{
+        GetBatchData, GetFullBatchData, NoAutomaticBatching,
         gpu_preprocessing::IndirectParametersMetadata,
         no_gpu_preprocessing::{
-            self, batch_and_prepare_binned_render_phase, batch_and_prepare_sorted_render_phase,
-            write_batched_instance_buffer, BatchedInstanceBuffer,
+            self, BatchedInstanceBuffer, batch_and_prepare_binned_render_phase,
+            batch_and_prepare_sorted_render_phase, write_batched_instance_buffer,
         },
-        GetBatchData, GetFullBatchData, NoAutomaticBatching,
     },
     globals::{GlobalsBuffer, GlobalsUniform},
-    mesh::{allocator::MeshAllocator, RenderMesh, RenderMeshBufferInfo},
+    mesh::{RenderMesh, RenderMeshBufferInfo, allocator::MeshAllocator},
     render_asset::RenderAssets,
     render_phase::{
         PhaseItem, PhaseItemExtraIndex, RenderCommand, RenderCommandResult, TrackedRenderPass,
@@ -59,10 +60,9 @@ use bevy_render::{
     sync_world::{MainEntity, MainEntityHashMap},
     texture::{FallbackImage, GpuImage},
     view::{
-        texture_format_from_code, texture_format_to_code, ExtractedView, ResolveCompositingSpaces,
-        ResolvedCompositingSpace, ViewUniform, ViewUniformOffset, ViewUniforms,
+        ExtractedView, ResolveCompositingSpaces, ResolvedCompositingSpace, ViewUniform,
+        ViewUniformOffset, ViewUniforms, texture_format_from_code, texture_format_to_code,
     },
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderSystems,
 };
 use bevy_transform::components::GlobalTransform;
 use bevy_utils::default;

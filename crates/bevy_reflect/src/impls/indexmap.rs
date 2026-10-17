@@ -1,14 +1,14 @@
 use crate::{
-    set::{Set, SetInfo},
-    utility::GenericTypeInfoCell,
     FromReflect, Generics, GetTypeRegistration, PartialReflect, Reflect, ReflectCloneError,
     ReflectFromPtr, ReflectMut, ReflectOwned, ReflectRef, TypeInfo, TypeParamInfo, TypePath,
     TypeRegistration,
+    set::{Set, SetInfo},
+    utility::GenericTypeInfoCell,
 };
 use bevy_platform::prelude::{Box, Vec};
 use bevy_reflect::{
-    map::{DynamicMap, Map, MapInfo},
     MaybeTyped, ReflectFromReflect, ReflectKind, TypeRegistry, Typed,
+    map::{DynamicMap, Map, MapInfo},
 };
 use bevy_reflect_derive::impl_type_path;
 use core::{any::Any, hash::BuildHasher, hash::Hash};

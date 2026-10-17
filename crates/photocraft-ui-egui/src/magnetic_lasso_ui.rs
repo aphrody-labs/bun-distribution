@@ -72,7 +72,11 @@ fn settings(app: &PhotocraftApp, pressure: f32) -> Settings {
 /// Frequency 100, 98 at 0, 47 at the default 57.
 fn spacing(app: &PhotocraftApp) -> f64 {
     let f = app.ui.tool_options.magnetic_frequency;
-    let f = if f.is_finite() { f64::from(f.clamp(0.0, 100.0)) } else { 57.0 };
+    let f = if f.is_finite() {
+        f64::from(f.clamp(0.0, 100.0))
+    } else {
+        57.0
+    };
     (8.0 + (100.0 - f) * 0.9) / f64::from(app.point_zoom().max(0.01))
 }
 
@@ -87,7 +91,12 @@ fn dist(a: [f64; 2], b: [f64; 2]) -> f64 {
 
 /// The edge source for the active document, refreshed when the document or layer changed.
 fn source(app: &mut PhotocraftApp) -> Option<&mut EdgeSource> {
-    if !app.magnetic.source.as_ref().is_some_and(|s| s.is_current(&app.session)) {
+    if !app
+        .magnetic
+        .source
+        .as_ref()
+        .is_some_and(|s| s.is_current(&app.session))
+    {
         app.magnetic.source = EdgeSource::new(&app.session);
     }
     app.magnetic.source.as_mut()
@@ -97,8 +106,16 @@ fn snap(app: &mut PhotocraftApp, p: [f64; 2], s: Settings) -> [f64; 2] {
     source(app).and_then(|src| src.snap(p, s)).unwrap_or(p)
 }
 
-fn trace(app: &mut PhotocraftApp, from: [f64; 2], to: [f64; 2], guide: &[[f64; 2]], s: Settings) -> Vec<[f64; 2]> {
-    let t = source(app).map(|src| src.trace(from, to, guide, s)).unwrap_or_default();
+fn trace(
+    app: &mut PhotocraftApp,
+    from: [f64; 2],
+    to: [f64; 2],
+    guide: &[[f64; 2]],
+    s: Settings,
+) -> Vec<[f64; 2]> {
+    let t = source(app)
+        .map(|src| src.trace(from, to, guide, s))
+        .unwrap_or_default();
     if t.is_empty() { vec![from, to] } else { t }
 }
 
@@ -109,8 +126,12 @@ pub fn pointer(app: &mut PhotocraftApp, ev: ToolEvent, mods: Modifiers) -> bool 
         return false;
     }
     match ev {
-        ToolEvent::Down { x, y, pressure } if x.is_finite() && y.is_finite() => down(app, [x, y], pressure, mods),
-        ToolEvent::Move { x, y, pressure } if x.is_finite() && y.is_finite() => moved(app, [x, y], pressure),
+        ToolEvent::Down { x, y, pressure } if x.is_finite() && y.is_finite() => {
+            down(app, [x, y], pressure, mods)
+        }
+        ToolEvent::Move { x, y, pressure } if x.is_finite() && y.is_finite() => {
+            moved(app, [x, y], pressure)
+        }
         ToolEvent::Up { .. } => end_freehand(app),
         _ => {}
     }
@@ -125,13 +146,22 @@ fn down(app: &mut PhotocraftApp, p: [f64; 2], pressure: f32, mods: Modifiers) {
         app.magnetic = Runtime::default();
         let start = snap(app, p, s);
         let doc = app.session.active().map_or(0, |d| d.doc.id.0);
-        app.ui.magnetic = MagneticLasso { path: vec![start], anchors: vec![0], trail: vec![p], mode, doc, ..Default::default() };
+        app.ui.magnetic = MagneticLasso {
+            path: vec![start],
+            anchors: vec![0],
+            trail: vec![p],
+            mode,
+            doc,
+            ..Default::default()
+        };
         return;
     }
     if near_start(app, p) {
         // On the first point: the border closes there.
         let m = &app.ui.magnetic;
-        let (Some(&first), Some(&last)) = (m.path.first(), m.path.last()) else { return };
+        let (Some(&first), Some(&last)) = (m.path.first(), m.path.last()) else {
+            return;
+        };
         let closing = if mods.alt {
             vec![last, first]
         } else {
@@ -181,7 +211,10 @@ fn moved(app: &mut PhotocraftApp, p: [f64; 2], pressure: f32) {
     let n = ((dist(last, p) / step).ceil() as usize).clamp(1, 256);
     for k in 1..=n {
         let t = k as f64 / n as f64;
-        let q = [last[0] + (p[0] - last[0]) * t, last[1] + (p[1] - last[1]) * t];
+        let q = [
+            last[0] + (p[0] - last[0]) * t,
+            last[1] + (p[1] - last[1]) * t,
+        ];
         if k < n || !app.defer_live_stroke {
             follow(app, q, s, true);
         } else {
@@ -219,7 +252,9 @@ fn follow(app: &mut PhotocraftApp, q: [f64; 2], s: Settings, fasten: bool) {
     let target = snap(app, q, s);
     let every = spacing(app);
     for _ in 0..64 {
-        let Some(&from) = app.ui.magnetic.path.last() else { return };
+        let Some(&from) = app.ui.magnetic.path.last() else {
+            return;
+        };
         let guide = app.ui.magnetic.trail.clone();
         let live = trace(app, from, target, &guide, s);
         // The part of the border `spacing` behind its start no longer changes as the pointer
@@ -230,7 +265,12 @@ fn follow(app: &mut PhotocraftApp, q: [f64; 2], s: Settings, fasten: bool) {
                 m.path.extend(head.into_iter().skip(1));
                 m.anchors.push(m.path.len() - 1);
                 // Edges are looked for along the pointer's path from where it passed the new point.
-                let near = m.trail.iter().enumerate().min_by(|a, b| dist(*a.1, point).total_cmp(&dist(*b.1, point))).map_or(0, |(i, _)| i);
+                let near = m
+                    .trail
+                    .iter()
+                    .enumerate()
+                    .min_by(|a, b| dist(*a.1, point).total_cmp(&dist(*b.1, point)))
+                    .map_or(0, |(i, _)| i);
                 let rest: Vec<[f64; 2]> = m.trail.iter().skip(near + 1).copied().collect();
                 m.trail = std::iter::once(point).chain(rest).collect();
             }
@@ -295,7 +335,8 @@ fn end_freehand(app: &mut PhotocraftApp) {
 fn near_start(app: &PhotocraftApp, p: [f64; 2]) -> bool {
     let m = &app.ui.magnetic;
     let r = close_radius(app);
-    m.path.first().is_some_and(|&first| dist(first, p) <= r) && magnetic::length(&m.path) + magnetic::length(&m.live) > 2.0 * r
+    m.path.first().is_some_and(|&first| dist(first, p) <= r)
+        && magnetic::length(&m.path) + magnetic::length(&m.live) > 2.0 * r
 }
 
 /// Close the border and select it: the live segment fastens, then the last point joins the first
@@ -307,7 +348,9 @@ pub fn close(app: &mut PhotocraftApp, straight: bool) {
     end_freehand(app);
     fasten_live(app);
     let m = &app.ui.magnetic;
-    let (Some(&first), Some(&last)) = (m.path.first(), m.path.last()) else { return };
+    let (Some(&first), Some(&last)) = (m.path.first(), m.path.last()) else {
+        return;
+    };
     if !straight {
         let s = settings(app, 0.0);
         let mut closing = trace(app, last, first, &[], s);
@@ -326,7 +369,11 @@ fn commit(app: &mut PhotocraftApp) {
         return;
     }
     let o = &app.ui.tool_options;
-    let mode = if m.mode.is_empty() { "replace".to_owned() } else { m.mode };
+    let mode = if m.mode.is_empty() {
+        "replace".to_owned()
+    } else {
+        m.mode
+    };
     let p = json!({"points": m.path, "trace": false, "mode": mode, "antiAlias": o.anti_alias, "feather": o.feather});
     let _ = app.run("select.magneticLasso", p);
 }
@@ -368,7 +415,10 @@ pub fn replaces_selection(app: &PhotocraftApp) -> bool {
 /// Once a frame: a border left behind by a tool or document switch is dropped.
 pub fn frame(app: &mut PhotocraftApp) {
     let m = &app.ui.magnetic;
-    if m.active() && (app.ui.tool != Tool::MagneticLasso || app.session.active().map(|d| d.doc.id.0) != Some(m.doc)) {
+    if m.active()
+        && (app.ui.tool != Tool::MagneticLasso
+            || app.session.active().map(|d| d.doc.id.0) != Some(m.doc))
+    {
         cancel(app);
     }
 }
@@ -407,7 +457,11 @@ pub fn keys(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
         return false;
     };
     let w = &mut app.ui.tool_options.magnetic_width;
-    *w = if w.is_finite() { (w.round() + step).clamp(1.0, 256.0) } else { 10.0 };
+    *w = if w.is_finite() {
+        (w.round() + step).clamp(1.0, 256.0)
+    } else {
+        10.0
+    };
     true
 }
 
@@ -419,12 +473,22 @@ pub fn draw(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform, hover:
         return;
     }
     let screen = |q: &[f64; 2]| xf.to_screen(q[0] as f32, q[1] as f32);
-    let pts: Vec<Pos2> = m.path.iter().chain(m.live.iter().skip(1)).map(screen).collect();
+    let pts: Vec<Pos2> = m
+        .path
+        .iter()
+        .chain(m.live.iter().skip(1))
+        .map(screen)
+        .collect();
     crate::tool_feedback::draw_ants(painter, &pts, false);
     for p in m.anchors.iter().filter_map(|&i| m.path.get(i)).map(screen) {
         let r = Rect::from_center_size(p, vec2(5.0, 5.0));
         painter.rect_filled(r, 0.0, Color32::WHITE);
-        painter.rect_stroke(r, 0.0, Stroke::new(1.0, Color32::BLACK), egui::StrokeKind::Outside);
+        painter.rect_stroke(
+            r,
+            0.0,
+            Stroke::new(1.0, Color32::BLACK),
+            egui::StrokeKind::Outside,
+        );
     }
     if let Some(h) = hover
         && near_start(app, xf.to_doc(h))
@@ -438,7 +502,12 @@ pub fn draw(app: &PhotocraftApp, painter: &egui::Painter, xf: &ViewXform, hover:
 
 /// The cursor over the canvas: a crosshair; Preferences › Cursors › Other Cursors › Precise also
 /// shows the detection width around it.
-pub fn cursor(app: &PhotocraftApp, painter: &egui::Painter, p: Pos2, zoom: f32) -> egui::CursorIcon {
+pub fn cursor(
+    app: &PhotocraftApp,
+    painter: &egui::Painter,
+    p: Pos2,
+    zoom: f32,
+) -> egui::CursorIcon {
     if app.session.prefs().cursors.other == photocraft_engine::prefs::OtherCursor::Precise {
         let r = (app.ui.tool_options.magnetic_width.clamp(1.0, 256.0) * zoom).max(2.0);
         painter.circle_stroke(p, r + 0.5, Stroke::new(1.0, Color32::from_black_alpha(140)));

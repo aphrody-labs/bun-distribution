@@ -97,7 +97,11 @@ impl Renderer {
             height: size.1.max(1),
             present_mode: wgpu::PresentMode::Fifo,
             desired_maximum_frame_latency: 2,
-            alpha_mode: caps.alpha_modes.first().copied().unwrap_or(wgpu::CompositeAlphaMode::Auto),
+            alpha_mode: caps
+                .alpha_modes
+                .first()
+                .copied()
+                .unwrap_or(wgpu::CompositeAlphaMode::Auto),
             view_formats: Vec::new(),
             color_space: wgpu::SurfaceColorSpace::Auto,
         };
@@ -207,7 +211,11 @@ impl Renderer {
     fn texture(&self, size: (u32, u32)) -> wgpu::Texture {
         self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("ctr_screen"),
-            size: wgpu::Extent3d { width: size.0, height: size.1, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width: size.0,
+                height: size.1,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -232,17 +240,33 @@ impl Renderer {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&left.create_view(&Default::default())),
+                    resource: wgpu::BindingResource::TextureView(
+                        &left.create_view(&Default::default()),
+                    ),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::TextureView(&right.create_view(&Default::default())),
+                    resource: wgpu::BindingResource::TextureView(
+                        &right.create_view(&Default::default()),
+                    ),
                 },
-                wgpu::BindGroupEntry { binding: 2, resource: wgpu::BindingResource::Sampler(&self.sampler) },
-                wgpu::BindGroupEntry { binding: 3, resource: params.as_entire_binding() },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: params.as_entire_binding(),
+                },
             ],
         });
-        ScreenTarget { size, left, right, params, bind_group }
+        ScreenTarget {
+            size,
+            left,
+            right,
+            params,
+            bind_group,
+        }
     }
 
     fn upload(&self, texture: &wgpu::Texture, image: &Image) {
@@ -259,11 +283,21 @@ impl Renderer {
                 bytes_per_row: Some(image.width * 4),
                 rows_per_image: Some(image.height),
             },
-            wgpu::Extent3d { width: image.width, height: image.height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width: image.width,
+                height: image.height,
+                depth_or_array_layers: 1,
+            },
         );
     }
 
-    fn update(&self, slot: &mut Option<ScreenTarget>, left: &Image, right: Option<&Image>, mode: u32) {
+    fn update(
+        &self,
+        slot: &mut Option<ScreenTarget>,
+        left: &Image,
+        right: Option<&Image>,
+        mode: u32,
+    ) {
         let size = (left.width, left.height);
         if slot.as_ref().is_none_or(|t| t.size != size) {
             *slot = Some(self.target(size));
@@ -286,7 +320,8 @@ impl Renderer {
         (self.top, self.bottom) = (top, bottom);
 
         let frame = match self.surface.get_current_texture() {
-            wgpu::CurrentSurfaceTexture::Success(f) | wgpu::CurrentSurfaceTexture::Suboptimal(f) => f,
+            wgpu::CurrentSurfaceTexture::Success(f)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(f) => f,
             _ => {
                 self.surface.configure(&self.device, &self.config);
                 return false;

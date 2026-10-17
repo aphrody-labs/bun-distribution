@@ -3,9 +3,19 @@
 use std::sync::Arc;
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object, SaveOptions, Stream, write_full};
-use pdfcraft_optimize::{Compression, ImageSettings, Settings, SpaceCategory, audit_space, effective_resolutions, optimize};
+use pdfcraft_optimize::{
+    Compression, ImageSettings, Settings, SpaceCategory, audit_space, effective_resolutions,
+    optimize,
+};
 
-fn image(doc: &mut Document, w: u32, h: u32, n: usize, jpeg: bool, smask: Option<ObjRef>) -> ObjRef {
+fn image(
+    doc: &mut Document,
+    w: u32,
+    h: u32,
+    n: usize,
+    jpeg: bool,
+    smask: Option<ObjRef>,
+) -> ObjRef {
     // A smooth gradient with a little texture (photo-like).
     let mut px = Vec::with_capacity((w * h) as usize * n);
     for y in 0..h {
@@ -24,14 +34,23 @@ fn image(doc: &mut Document, w: u32, h: u32, n: usize, jpeg: bool, smask: Option
     d.set(b"Width".to_vec(), Object::Int(w as i64));
     d.set(b"Height".to_vec(), Object::Int(h as i64));
     d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
-    d.set(b"ColorSpace".to_vec(), Object::name(if n == 1 { "DeviceGray" } else { "DeviceRGB" }));
+    d.set(
+        b"ColorSpace".to_vec(),
+        Object::name(if n == 1 { "DeviceGray" } else { "DeviceRGB" }),
+    );
     if let Some(m) = smask {
         d.set(b"SMask".to_vec(), Object::Ref(m));
     }
     let s = if jpeg {
         let mut out = Vec::new();
-        let ty = if n == 1 { image::ExtendedColorType::L8 } else { image::ExtendedColorType::Rgb8 };
-        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 98).encode(&px, w, h, ty).unwrap();
+        let ty = if n == 1 {
+            image::ExtendedColorType::L8
+        } else {
+            image::ExtendedColorType::Rgb8
+        };
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 98)
+            .encode(&px, w, h, ty)
+            .unwrap();
         d.set(b"Filter".to_vec(), Object::name("DCTDecode"));
         Stream::from_raw(d, out)
     } else {
@@ -41,24 +60,36 @@ fn image(doc: &mut Document, w: u32, h: u32, n: usize, jpeg: bool, smask: Option
 }
 
 fn page(doc: &mut Document, xobjects: &[(&str, ObjRef)], content: &str) -> ObjRef {
-    let pages = doc.root().and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages"))).unwrap();
+    let pages = doc
+        .root()
+        .and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages")))
+        .unwrap();
     let mut x = Dict::new();
     for (n, r) in xobjects {
         x.set(n.as_bytes().to_vec(), Object::Ref(*r));
     }
     let mut res = Dict::new();
     res.set(b"XObject".to_vec(), Object::Dict(x));
-    let c = doc.add(Object::Stream(Stream::from_raw(Dict::new(), content.as_bytes().to_vec())));
+    let c = doc.add(Object::Stream(Stream::from_raw(
+        Dict::new(),
+        content.as_bytes().to_vec(),
+    )));
     let mut p = Dict::new();
     p.set(b"Type".to_vec(), Object::name("Page"));
     p.set(b"Parent".to_vec(), Object::Ref(pages));
-    p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]));
+    p.set(
+        b"MediaBox".to_vec(),
+        Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]),
+    );
     p.set(b"Resources".to_vec(), Object::Dict(res));
     p.set(b"Contents".to_vec(), Object::Ref(c));
     p.set(b"Thumb".to_vec(), Object::Ref(c));
     let r = doc.add(Object::Dict(p));
     doc.update_dict(pages, |d| {
-        let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+        let mut kids = d
+            .get(b"Kids")
+            .and_then(|k| k.as_array().cloned())
+            .unwrap_or_default();
         kids.push(Object::Ref(r));
         d.set(b"Count".to_vec(), Object::Int(kids.len() as i64));
         d.set(b"Kids".to_vec(), Object::Array(kids));
@@ -88,7 +119,11 @@ fn images_are_measured_where_drawn_and_downsampled() {
     let photo = image(&mut doc, 600, 400, 3, true, None);
     // Drawn twice: 300 ppi and 75 ppi → effective 75 (never downsampled below what a use needs).
     let twice = image(&mut doc, 300, 300, 3, false, None);
-    page(&mut doc, &[("Im1", big), ("Im2", small)], "q 144 0 0 144 36 600 cm /Im1 Do Q q 144 0 0 144 300 600 cm /Im2 Do Q");
+    page(
+        &mut doc,
+        &[("Im1", big), ("Im2", small)],
+        "q 144 0 0 144 36 600 cm /Im1 Do Q q 144 0 0 144 300 600 cm /Im2 Do Q",
+    );
     page(
         &mut doc,
         &[("A", masked), ("B", photo), ("C", twice)],
@@ -108,23 +143,50 @@ fn images_are_measured_where_drawn_and_downsampled() {
     assert_eq!(report.images_resampled, 2, "{report:?}");
     assert!(report.thumbnails == 2);
     let b = stream(&doc, big);
-    assert_eq!((b.dict.int(b"Width"), b.dict.int(b"Height"), b.dict.name(b"Filter")), (Some(300), Some(300), Some(&b"DCTDecode"[..])));
+    assert_eq!(
+        (
+            b.dict.int(b"Width"),
+            b.dict.int(b"Height"),
+            b.dict.name(b"Filter")
+        ),
+        (Some(300), Some(300), Some(&b"DCTDecode"[..]))
+    );
     let m = stream(&doc, masked);
     let sm = stream(&doc, mask);
-    assert_eq!((m.dict.int(b"Width"), sm.dict.int(b"Width")), (Some(150), Some(150)), "the soft mask follows its image");
+    assert_eq!(
+        (m.dict.int(b"Width"), sm.dict.int(b"Width")),
+        (Some(150), Some(150)),
+        "the soft mask follows its image"
+    );
     assert_eq!(sm.dict.name(b"Filter"), Some(&b"FlateDecode"[..]));
     assert_eq!(stream(&doc, small).dict.int(b"Width"), Some(100));
-    assert_eq!(stream(&doc, twice).dict.int(b"Width"), Some(300), "75 ppi is below the threshold");
+    assert_eq!(
+        stream(&doc, twice).dict.int(b"Width"),
+        Some(300),
+        "75 ppi is below the threshold"
+    );
     let p = stream(&doc, photo);
     assert_eq!(p.dict.int(b"Width"), Some(600));
     let after_bytes = write_full(&doc, &SaveOptions::default()).unwrap();
-    assert!(after_bytes.len() * 3 < before, "{} → {}", before, after_bytes.len());
+    assert!(
+        after_bytes.len() * 3 < before,
+        "{} → {}",
+        before,
+        after_bytes.len()
+    );
 
     // The optimized file opens, and the page still shows the picture where it was.
     let reopened = Document::open(Arc::new(after_bytes.clone())).unwrap();
     assert_eq!(pdfcraft_annot::page_refs(&reopened).unwrap().len(), 2);
-    let mut r = pdfcraft_render::PageRenderer::new(Arc::new(after_bytes), pdfcraft_render::RenderConfig::default());
-    let out = r.render(pdfcraft_render::RenderRequest { page: 0, scale: 1.0, ..Default::default() });
+    let mut r = pdfcraft_render::PageRenderer::new(
+        Arc::new(after_bytes),
+        pdfcraft_render::RenderConfig::default(),
+    );
+    let out = r.render(pdfcraft_render::RenderRequest {
+        page: 0,
+        scale: 1.0,
+        ..Default::default()
+    });
     assert!(out.error.is_none(), "{:?}", out.error);
     // Top-left image area (36..180 x 600..744 user → y from the top 48..192): drawn, not white.
     let i = ((100 * out.width + 100) * 4) as usize;
@@ -147,7 +209,11 @@ fn an_identity_decode_array_does_not_stop_reduce() {
     with_decode(&mut doc, gray, vec![Object::Real(0.0), Object::Real(1.0)]);
     // A decode array that inverts the colours, and one of the wrong length: left alone.
     let inverted = image(&mut doc, 900, 900, 3, true, None);
-    with_decode(&mut doc, inverted, [1, 0, 1, 0, 1, 0].map(Object::Int).to_vec());
+    with_decode(
+        &mut doc,
+        inverted,
+        [1, 0, 1, 0, 1, 0].map(Object::Int).to_vec(),
+    );
     let odd = image(&mut doc, 900, 900, 3, true, None);
     with_decode(&mut doc, odd, [0, 1].map(Object::Int).to_vec());
     page(
@@ -159,7 +225,10 @@ fn an_identity_decode_array_does_not_stop_reduce() {
     assert_eq!(report.images_resampled, 2, "{report:?}");
     assert_eq!(stream(&doc, scan).dict.int(b"Width"), Some(450));
     assert_eq!(stream(&doc, gray).dict.int(b"Width"), Some(450));
-    assert!(!stream(&doc, scan).dict.contains(b"Decode"), "the default decode array isn't carried over");
+    assert!(
+        !stream(&doc, scan).dict.contains(b"Decode"),
+        "the default decode array isn't carried over"
+    );
     assert_eq!(stream(&doc, inverted).dict.int(b"Width"), Some(900));
     assert_eq!(stream(&doc, odd).dict.int(b"Width"), Some(900));
 }
@@ -168,24 +237,64 @@ fn an_identity_decode_array_does_not_stop_reduce() {
 fn settings_choose_what_happens() {
     let mut doc = Document::new_empty();
     let big = image(&mut doc, 1200, 600, 1, false, None);
-    page(&mut doc, &[("Im1", big)], "q 144 0 0 72 36 600 cm /Im1 Do Q");
+    page(
+        &mut doc,
+        &[("Im1", big)],
+        "q 144 0 0 72 36 600 cm /Im1 Do Q",
+    );
     let mut keep = doc.clone();
     // Off: nothing changes (but the thumbnail goes).
-    let off = ImageSettings { downsample: false, target_ppi: 150.0, above_ppi: 225.0, compression: Compression::Retain };
-    let r = optimize(&mut keep, &Settings { color: off, gray: off, ..Settings::default() }).unwrap();
+    let off = ImageSettings {
+        downsample: false,
+        target_ppi: 150.0,
+        above_ppi: 225.0,
+        compression: Compression::Retain,
+    };
+    let r = optimize(
+        &mut keep,
+        &Settings {
+            color: off,
+            gray: off,
+            ..Settings::default()
+        },
+    )
+    .unwrap();
     assert_eq!((r.images_resampled, r.images_recompressed), (0, 0));
     // Lossless: resampled to 300 ppi, Flate.
-    let lossless = ImageSettings { downsample: true, target_ppi: 300.0, above_ppi: 450.0, compression: Compression::Flate };
-    let r = optimize(&mut doc, &Settings { gray: lossless, ..Settings::default() }).unwrap();
+    let lossless = ImageSettings {
+        downsample: true,
+        target_ppi: 300.0,
+        above_ppi: 450.0,
+        compression: Compression::Flate,
+    };
+    let r = optimize(
+        &mut doc,
+        &Settings {
+            gray: lossless,
+            ..Settings::default()
+        },
+    )
+    .unwrap();
     assert_eq!(r.images_resampled, 1);
     let s = stream(&doc, big);
-    assert_eq!((s.dict.int(b"Width"), s.dict.int(b"Height"), s.dict.name(b"Filter")), (Some(600), Some(300), Some(&b"FlateDecode"[..])));
+    assert_eq!(
+        (
+            s.dict.int(b"Width"),
+            s.dict.int(b"Height"),
+            s.dict.name(b"Filter")
+        ),
+        (Some(600), Some(300), Some(&b"FlateDecode"[..]))
+    );
 }
 
 #[test]
 fn discards_and_clean_up() {
     let mut doc = Document::new_empty();
-    let pages = page(&mut doc, &[], "BT /F1 12 Tf 72 720 Td (Hello world, hello world, hello world, hello world) Tj ET");
+    let pages = page(
+        &mut doc,
+        &[],
+        "BT /F1 12 Tf 72 720 Td (Hello world, hello world, hello world, hello world) Tj ET",
+    );
     let root = doc.root().unwrap();
     let mut vp = Dict::new();
     vp.set(b"PrintScaling".to_vec(), Object::name("None"));
@@ -198,31 +307,63 @@ fn discards_and_clean_up() {
         c.set(b"MarkInfo".to_vec(), Object::Dict(Dict::new()));
     })
     .unwrap();
-    doc.update_dict(pages, |p| p.set(b"StructParents".to_vec(), Object::Int(0))).unwrap();
-    let settings = Settings { discard_tags: true, discard_print_settings: true, ..Settings::default() };
+    doc.update_dict(pages, |p| p.set(b"StructParents".to_vec(), Object::Int(0)))
+        .unwrap();
+    let settings = Settings {
+        discard_tags: true,
+        discard_print_settings: true,
+        ..Settings::default()
+    };
     let r = optimize(&mut doc, &settings).unwrap();
     assert!(r.tags_removed);
-    assert_eq!((r.print_settings, r.thumbnails, r.streams_compressed), (2, 1, 1));
+    assert_eq!(
+        (r.print_settings, r.thumbnails, r.streams_compressed),
+        (2, 1, 1)
+    );
     let c = doc.get(root).as_dict().cloned().unwrap();
     assert!(!c.contains(b"StructTreeRoot") && !c.contains(b"MarkInfo"));
-    let vp = c.get(b"ViewerPreferences").and_then(|v| v.as_dict().cloned()).unwrap();
-    assert!(vp.contains(b"HideToolbar") && !vp.contains(b"Duplex"), "other preferences stay");
+    let vp = c
+        .get(b"ViewerPreferences")
+        .and_then(|v| v.as_dict().cloned())
+        .unwrap();
+    assert!(
+        vp.contains(b"HideToolbar") && !vp.contains(b"Duplex"),
+        "other preferences stay"
+    );
 }
 
 #[test]
 fn space_audit_shares_the_file_out_by_kind() {
     let mut doc = Document::new_empty();
     let img = image(&mut doc, 300, 300, 3, false, None);
-    page(&mut doc, &[("Im0", img)], "q 300 0 0 300 0 0 cm /Im0 Do Q BT ET");
-    let bytes = write_full(&doc, &SaveOptions { object_streams: false, ..SaveOptions::default() }).unwrap();
+    page(
+        &mut doc,
+        &[("Im0", img)],
+        "q 300 0 0 300 0 0 cm /Im0 Do Q BT ET",
+    );
+    let bytes = write_full(
+        &doc,
+        &SaveOptions {
+            object_streams: false,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap();
     let doc = Document::open(Arc::new(bytes.clone())).unwrap();
     let audit = audit_space(&doc, bytes.len() as u64);
     assert_eq!(audit.len(), SpaceCategory::ALL.len());
     let get = |c: SpaceCategory| audit.iter().find(|u| u.category == c).unwrap().clone();
-    let (images, content, overhead) = (get(SpaceCategory::Images), get(SpaceCategory::ContentStreams), get(SpaceCategory::DocumentOverhead));
+    let (images, content, overhead) = (
+        get(SpaceCategory::Images),
+        get(SpaceCategory::ContentStreams),
+        get(SpaceCategory::DocumentOverhead),
+    );
     assert!(images.percent > 80.0, "{audit:?}");
     assert!(content.bytes > 0 && overhead.bytes > 0, "{audit:?}");
-    assert_eq!(audit.iter().map(|u| u.bytes).sum::<u64>(), bytes.len() as u64);
+    assert_eq!(
+        audit.iter().map(|u| u.bytes).sum::<u64>(),
+        bytes.len() as u64
+    );
     assert!((audit.iter().map(|u| u.percent).sum::<f64>() - 100.0).abs() < 1e-6);
 }
 
@@ -233,15 +374,30 @@ fn space_audit_counts_images_a_content_stream_dictionary_points_at_as_images() {
     let mut doc = Document::new_empty();
     let img = image(&mut doc, 300, 300, 3, false, None);
     let p = page(&mut doc, &[("Im0", img)], "q 300 0 0 300 0 0 cm /Im0 Do Q");
-    let c = doc.get(p).as_dict().and_then(|d| d.reference(b"Contents")).unwrap();
+    let c = doc
+        .get(p)
+        .as_dict()
+        .and_then(|d| d.reference(b"Contents"))
+        .unwrap();
     let mut added = Dict::new();
     added.set(b"Kind".to_vec(), Object::name("Image"));
     added.set(b"Image".to_vec(), Object::Ref(img));
-    doc.update_dict(c, |d| d.set(b"PCAdded".to_vec(), Object::Dict(added))).unwrap();
-    let bytes = write_full(&doc, &SaveOptions { object_streams: false, ..SaveOptions::default() }).unwrap();
+    doc.update_dict(c, |d| d.set(b"PCAdded".to_vec(), Object::Dict(added)))
+        .unwrap();
+    let bytes = write_full(
+        &doc,
+        &SaveOptions {
+            object_streams: false,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap();
     let doc = Document::open(Arc::new(bytes.clone())).unwrap();
     let audit = audit_space(&doc, bytes.len() as u64);
-    let images = audit.iter().find(|u| u.category == SpaceCategory::Images).unwrap();
+    let images = audit
+        .iter()
+        .find(|u| u.category == SpaceCategory::Images)
+        .unwrap();
     assert!(images.percent > 80.0, "{audit:?}");
 }
 
@@ -253,22 +409,35 @@ fn invalid_links_and_unreferenced_destinations_go() {
         let mut d = Dict::new();
         d.set(b"Type".to_vec(), Object::name("Annot"));
         d.set(b"Subtype".to_vec(), Object::name("Link"));
-        d.set(b"Rect".to_vec(), Object::Array(vec![0.into(), 0.into(), 10.into(), 10.into()]));
+        d.set(
+            b"Rect".to_vec(),
+            Object::Array(vec![0.into(), 0.into(), 10.into(), 10.into()]),
+        );
         d.set(b"Dest".to_vec(), dest);
         Object::Ref(doc.add(Object::Dict(d)))
     };
     let s = |t: &str| Object::String(pdfcraft_cos::PdfString::literal(t.as_bytes().to_vec()));
     let annots = vec![
-        link(&mut doc, Object::Array(vec![Object::Ref(p), Object::name("Fit")])),
-        link(&mut doc, Object::Array(vec![Object::Ref(ObjRef::new(999, 0)), Object::name("Fit")])),
+        link(
+            &mut doc,
+            Object::Array(vec![Object::Ref(p), Object::name("Fit")]),
+        ),
+        link(
+            &mut doc,
+            Object::Array(vec![Object::Ref(ObjRef::new(999, 0)), Object::name("Fit")]),
+        ),
         link(&mut doc, s("gone")),
         link(&mut doc, s("kept")),
     ];
-    doc.update_dict(p, |d| d.set(b"Annots".to_vec(), Object::Array(annots))).unwrap();
+    doc.update_dict(p, |d| d.set(b"Annots".to_vec(), Object::Array(annots)))
+        .unwrap();
     // Named destinations "kept" (used) and "unused"; a bookmark to a missing name.
     let fit = Object::Array(vec![Object::Ref(p), Object::name("Fit")]);
     let mut tree = Dict::new();
-    tree.set(b"Names".to_vec(), Object::Array(vec![s("kept"), fit.clone(), s("unused"), fit]));
+    tree.set(
+        b"Names".to_vec(),
+        Object::Array(vec![s("kept"), fit.clone(), s("unused"), fit]),
+    );
     let tree = doc.add(Object::Dict(tree));
     let mut names = Dict::new();
     names.set(b"Dests".to_vec(), Object::Ref(tree));
@@ -289,13 +458,35 @@ fn invalid_links_and_unreferenced_destinations_go() {
     })
     .unwrap();
     let report = optimize(&mut doc, &Settings::default()).unwrap();
-    assert_eq!((report.invalid_links, report.invalid_bookmarks, report.unreferenced_dests), (2, 1, 1));
-    let left = doc.get(p).as_dict().unwrap().get(b"Annots").unwrap().as_array().unwrap().len();
+    assert_eq!(
+        (
+            report.invalid_links,
+            report.invalid_bookmarks,
+            report.unreferenced_dests
+        ),
+        (2, 1, 1)
+    );
+    let left = doc
+        .get(p)
+        .as_dict()
+        .unwrap()
+        .get(b"Annots")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len();
     assert_eq!(left, 2);
-    assert!(doc.get(item).as_dict().unwrap().get(b"Dest").is_none(), "the bookmark stays, without its broken destination");
+    assert!(
+        doc.get(item).as_dict().unwrap().get(b"Dest").is_none(),
+        "the bookmark stays, without its broken destination"
+    );
     // Off: nothing changes.
     let mut again = doc.clone();
-    let off = Settings { remove_invalid_links: false, remove_unreferenced_dests: false, ..Settings::default() };
+    let off = Settings {
+        remove_invalid_links: false,
+        remove_unreferenced_dests: false,
+        ..Settings::default()
+    };
     assert_eq!(optimize(&mut again, &off).unwrap().invalid_links, 0);
 }
 
@@ -307,7 +498,11 @@ fn progress_is_reported_per_image_and_a_refusal_cancels() {
         let a = image(&mut doc, 300, 300, 3, false, None);
         let b = image(&mut doc, 300, 300, 1, false, None);
         let c = image(&mut doc, 300, 300, 3, true, None);
-        page(&mut doc, &[("A", a), ("B", b), ("C", c)], "q 72 0 0 72 0 0 cm /A Do Q q 72 0 0 72 100 0 cm /B Do Q q 72 0 0 72 200 0 cm /C Do Q");
+        page(
+            &mut doc,
+            &[("A", a), ("B", b), ("C", c)],
+            "q 72 0 0 72 0 0 cm /A Do Q q 72 0 0 72 100 0 cm /B Do Q q 72 0 0 72 200 0 cm /C Do Q",
+        );
         doc
     };
     let mut seen = Vec::new();
@@ -340,18 +535,27 @@ fn progress_is_reported_per_image_and_a_refusal_cancels() {
 
 /// A page with `resources` and, if given, `contents`.
 fn raw_page(doc: &mut Document, resources: Object, contents: Option<ObjRef>) -> ObjRef {
-    let pages = doc.root().and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages"))).unwrap();
+    let pages = doc
+        .root()
+        .and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages")))
+        .unwrap();
     let mut p = Dict::new();
     p.set(b"Type".to_vec(), Object::name("Page"));
     p.set(b"Parent".to_vec(), Object::Ref(pages));
-    p.set(b"MediaBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]));
+    p.set(
+        b"MediaBox".to_vec(),
+        Object::Array(vec![0.into(), 0.into(), 612.into(), 792.into()]),
+    );
     p.set(b"Resources".to_vec(), resources);
     if let Some(c) = contents {
         p.set(b"Contents".to_vec(), Object::Ref(c));
     }
     let r = doc.add(Object::Dict(p));
     doc.update_dict(pages, |d| {
-        let mut kids = d.get(b"Kids").and_then(|k| k.as_array().cloned()).unwrap_or_default();
+        let mut kids = d
+            .get(b"Kids")
+            .and_then(|k| k.as_array().cloned())
+            .unwrap_or_default();
         kids.push(Object::Ref(r));
         d.set(b"Count".to_vec(), Object::Int(kids.len() as i64));
         d.set(b"Kids".to_vec(), Object::Array(kids));
@@ -382,7 +586,10 @@ fn content(doc: &mut Document, c: &str) -> ObjRef {
 fn form(doc: &mut Document, resources: Option<Object>, c: &str) -> ObjRef {
     let mut d = Dict::new();
     d.set(b"Subtype".to_vec(), Object::name("Form"));
-    d.set(b"BBox".to_vec(), Object::Array(vec![0.into(), 0.into(), 1.into(), 1.into()]));
+    d.set(
+        b"BBox".to_vec(),
+        Object::Array(vec![0.into(), 0.into(), 1.into(), 1.into()]),
+    );
     if let Some(r) = resources {
         d.set(b"Resources".to_vec(), r);
     }
@@ -391,14 +598,28 @@ fn form(doc: &mut Document, resources: Option<Object>, c: &str) -> ObjRef {
 
 fn xobject_names(doc: &Document, resources: &Object) -> Vec<String> {
     let res = doc.resolve(resources);
-    let mut n: Vec<String> =
-        res.as_dict().unwrap().get(b"XObject").unwrap().as_dict().unwrap().iter().map(|(k, _)| String::from_utf8_lossy(k).into_owned()).collect();
+    let mut n: Vec<String> = res
+        .as_dict()
+        .unwrap()
+        .get(b"XObject")
+        .unwrap()
+        .as_dict()
+        .unwrap()
+        .iter()
+        .map(|(k, _)| String::from_utf8_lossy(k).into_owned())
+        .collect();
     n.sort();
     n
 }
 
 fn page_xobjects(doc: &Document, page: ObjRef) -> Vec<String> {
-    let res = doc.get(page).as_dict().unwrap().get(b"Resources").unwrap().clone();
+    let res = doc
+        .get(page)
+        .as_dict()
+        .unwrap()
+        .get(b"Resources")
+        .unwrap()
+        .clone();
     xobject_names(doc, &res)
 }
 
@@ -419,14 +640,23 @@ fn images_and_forms_nothing_draws_are_dropped() {
     // old one, which still names the image, is no longer used.
     let t1 = img(&mut doc);
     let old = content(&mut doc, "q 72 0 0 72 0 0 cm /ImT Do Q");
-    let t = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("ImT", t1)]))), Some(old));
+    let t = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("ImT", t1)]))),
+        Some(old),
+    );
     let new = content(&mut doc, "");
-    doc.update_dict(t, |p| p.set(b"Contents".to_vec(), Object::Ref(new))).unwrap();
+    doc.update_dict(t, |p| p.set(b"Contents".to_vec(), Object::Ref(new)))
+        .unwrap();
     // Dropped: a JPEG a page no longer draws, beside one it does.
     let a1 = img(&mut doc);
     let a2 = image(&mut doc, 64, 64, 3, true, None);
     let c = content(&mut doc, "q 72 0 0 72 0 0 cm /Im1 Do Q");
-    let a = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Im1", a1), ("Im2", a2)]))), Some(c));
+    let a = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("Im1", a1), ("Im2", a2)]))),
+        Some(c),
+    );
     // Dropped from resources the page alone refers to, written as an object of their own.
     let s1 = img(&mut doc);
     let own = doc.add(Object::Dict(resources(xobjects(&[("Unused", s1)]))));
@@ -436,17 +666,28 @@ fn images_and_forms_nothing_draws_are_dropped() {
     let (d3, d4) = (img(&mut doc), img(&mut doc));
     let f = form(&mut doc, None, "/Im3 Do");
     let c = content(&mut doc, "/F Do");
-    let d = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("F", f), ("Im3", d3), ("Im4", d4)]))), Some(c));
+    let d = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("F", f), ("Im3", d3), ("Im4", d4)]))),
+        Some(c),
+    );
 
     // Kept, though the page's own content doesn't name them:
     // - drawn by a form with resources of its own that lack the name (renderers fall back to
     //   the page's);
     let k1 = img(&mut doc);
     let mut procset = Dict::new();
-    procset.set(b"ProcSet".to_vec(), Object::Array(vec![Object::name("PDF")]));
+    procset.set(
+        b"ProcSet".to_vec(),
+        Object::Array(vec![Object::name("PDF")]),
+    );
     let fk = form(&mut doc, Some(Object::Dict(procset)), "/ImK Do");
     let c = content(&mut doc, "/Fk Do");
-    let k = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Fk", fk), ("ImK", k1)]))), Some(c));
+    let k = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("Fk", fk), ("ImK", k1)]))),
+        Some(c),
+    );
     // - drawn by a Type 3 glyph named like an inert key;
     let g6 = img(&mut doc);
     let glyph = content(&mut doc, "/Im6 Do");
@@ -465,12 +706,23 @@ fn images_and_forms_nothing_draws_are_dropped() {
     // - after an inline image whose data runs into the operators (no space before `EI`), or
     //   given as the second of two operands;
     let (l1, l2) = (img(&mut doc), img(&mut doc));
-    let c = content(&mut doc, "BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID 00>EI Q q /ImL Do Q /Other /ImL2 Do");
-    let l = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("ImL", l1), ("ImL2", l2)]))), Some(c));
+    let c = content(
+        &mut doc,
+        "BI /W 1 /H 1 /BPC 8 /CS /G /F /AHx ID 00>EI Q q /ImL Do Q /Other /ImL2 Do",
+    );
+    let l = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("ImL", l1), ("ImL2", l2)]))),
+        Some(c),
+    );
     // - drawn by a form field that is on no page;
     let z1 = img(&mut doc);
     let c = content(&mut doc, "");
-    let z = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Z1", z1)]))), Some(c));
+    let z = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("Z1", z1)]))),
+        Some(c),
+    );
     let wap = form(&mut doc, None, "/Z1 Do");
     let mut appearance = Dict::new();
     appearance.set(b"N".to_vec(), Object::Ref(wap));
@@ -481,7 +733,10 @@ fn images_and_forms_nothing_draws_are_dropped() {
     let mut acroform = Dict::new();
     acroform.set(b"Fields".to_vec(), Object::Array(vec![Object::Ref(widget)]));
     let root = doc.root().unwrap();
-    doc.update_dict(root, |c| c.set(b"AcroForm".to_vec(), Object::Dict(acroform))).unwrap();
+    doc.update_dict(root, |c| {
+        c.set(b"AcroForm".to_vec(), Object::Dict(acroform))
+    })
+    .unwrap();
     // - in resources shared by pages (or with an annotation's appearance), or inherited from the
     //   page tree: left alone;
     let (b1, b2) = (img(&mut doc), img(&mut doc));
@@ -491,14 +746,31 @@ fn images_and_forms_nothing_draws_are_dropped() {
     let c = content(&mut doc, "/X1 Do");
     raw_page(&mut doc, Object::Ref(shared), Some(c));
     let (inh, unused_inh) = (img(&mut doc), img(&mut doc));
-    let tree = doc.root().and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages"))).unwrap();
-    doc.update_dict(tree, |d| d.set(b"Resources".to_vec(), Object::Dict(resources(xobjects(&[("Inh", inh), ("Old", unused_inh)]))))).unwrap();
+    let tree = doc
+        .root()
+        .and_then(|r| doc.get(r).as_dict().and_then(|d| d.reference(b"Pages")))
+        .unwrap();
+    doc.update_dict(tree, |d| {
+        d.set(
+            b"Resources".to_vec(),
+            Object::Dict(resources(xobjects(&[("Inh", inh), ("Old", unused_inh)]))),
+        )
+    })
+    .unwrap();
     // - named by another page for its own image.
     let (r1, r2) = (img(&mut doc), img(&mut doc));
     let c = content(&mut doc, "");
-    let r = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Im9", r1)]))), Some(c));
+    let r = raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("Im9", r1)]))),
+        Some(c),
+    );
     let c = content(&mut doc, "/Im9 Do");
-    raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Im9", r2)]))), Some(c));
+    raw_page(
+        &mut doc,
+        Object::Dict(resources(xobjects(&[("Im9", r2)]))),
+        Some(c),
+    );
 
     let before = write_full(&doc, &SaveOptions::default()).unwrap();
     let report = optimize(&mut doc, &Settings::default()).unwrap();
@@ -516,7 +788,11 @@ fn images_and_forms_nothing_draws_are_dropped() {
     assert_eq!(page_xobjects(&doc, tree), ["Inh", "Old"]);
     assert_eq!(page_xobjects(&doc, r), ["Im9"]);
     let after = write_full(&doc, &SaveOptions::default()).unwrap();
-    assert_eq!((count_images(&before), count_images(&after)), (17, 13), "the dropped images are gone from the file");
+    assert_eq!(
+        (count_images(&before), count_images(&after)),
+        (17, 13),
+        "the dropped images are gone from the file"
+    );
 }
 
 #[test]
@@ -526,13 +802,20 @@ fn nothing_is_dropped_when_a_stream_cannot_be_checked() {
         let mut doc = Document::new_empty();
         let unused = image(&mut doc, 64, 64, 3, false, None);
         let c = content(&mut doc, "");
-        let page = raw_page(&mut doc, Object::Dict(resources(xobjects(&[("Im1", unused)]))), Some(c));
+        let page = raw_page(
+            &mut doc,
+            Object::Dict(resources(xobjects(&[("Im1", unused)]))),
+            Some(c),
+        );
         let other = doc.add(Object::Stream(stream));
         let mut appearance = Dict::new();
         appearance.set(b"N".to_vec(), Object::Ref(other));
         let mut annot = Dict::new();
         annot.set(b"AP".to_vec(), Object::Dict(appearance));
-        doc.update_dict(page, |p| p.set(b"Annots".to_vec(), Object::Array(vec![Object::Dict(annot)]))).unwrap();
+        doc.update_dict(page, |p| {
+            p.set(b"Annots".to_vec(), Object::Array(vec![Object::Dict(annot)]))
+        })
+        .unwrap();
         let report = optimize(&mut doc, &Settings::default()).unwrap();
         (report.unused_xobjects, page_xobjects(&doc, page))
     };
@@ -553,7 +836,13 @@ fn nothing_is_dropped_when_a_stream_cannot_be_checked() {
     };
     // Readable: the image goes.
     assert_eq!(build(flate(&[])), gone);
-    assert_eq!(build(flate(&[("DecodeParms", parms("Predictor", Object::Int(1)))])), gone);
+    assert_eq!(
+        build(flate(&[(
+            "DecodeParms",
+            parms("Predictor", Object::Int(1))
+        )])),
+        gone
+    );
     // The name written with an escape still counts.
     assert_eq!(build(Stream::flate(Dict::new(), b"/Im#31 Do")), kept);
     // Read differently by viewers, or not at all: nothing goes.
@@ -561,10 +850,19 @@ fn nothing_is_dropped_when_a_stream_cannot_be_checked() {
     let cases = [
         Stream::from_raw(flate(&[]).dict, b"not zlib data".to_vec()),
         flate(&[("Filter", dangling.clone())]),
-        flate(&[("Filter", Object::Array(vec![Object::name("FlateDecode"), dangling.clone()]))]),
-        flate(&[("Filter", Object::Array(vec![Object::name("Crypt"), Object::name("FlateDecode")]))]),
+        flate(&[(
+            "Filter",
+            Object::Array(vec![Object::name("FlateDecode"), dangling.clone()]),
+        )]),
+        flate(&[(
+            "Filter",
+            Object::Array(vec![Object::name("Crypt"), Object::name("FlateDecode")]),
+        )]),
         flate(&[("DP", parms("Predictor", Object::Int(1)))]),
-        flate(&[("DecodeParms", Object::Array(vec![Object::Dict(Dict::new()), Object::Dict(Dict::new())]))]),
+        flate(&[(
+            "DecodeParms",
+            Object::Array(vec![Object::Dict(Dict::new()), Object::Dict(Dict::new())]),
+        )]),
         flate(&[("DecodeParms", parms("Predictor", dangling))]),
         flate(&[("DecodeParms", parms("Predictor", Object::Real(12.5)))]),
         flate(&[("F", Object::name("external.dat"))]),
@@ -604,14 +902,20 @@ fn ascii85(data: &[u8]) -> Vec<u8> {
 
 /// `data` as hex digits with the `>` end marker, as ASCIIHexDecode reads it.
 fn ascii_hex(data: &[u8]) -> Vec<u8> {
-    let mut out: Vec<u8> = data.iter().flat_map(|b| format!("{b:02X}").into_bytes()).collect();
+    let mut out: Vec<u8> = data
+        .iter()
+        .flat_map(|b| format!("{b:02X}").into_bytes())
+        .collect();
     out.push(b'>');
     out
 }
 
 fn filtered(names: &[&str], raw: Vec<u8>) -> Stream {
     let mut d = Dict::new();
-    d.set(b"Filter".to_vec(), Object::Array(names.iter().map(|n| Object::name(n)).collect()));
+    d.set(
+        b"Filter".to_vec(),
+        Object::Array(names.iter().map(|n| Object::name(n)).collect()),
+    );
     Stream::from_raw(d, raw)
 }
 
@@ -620,7 +924,8 @@ fn with_content(content: Stream) -> (Document, ObjRef) {
     let mut doc = Document::new_empty();
     let pg = page(&mut doc, &[], "");
     let c = doc.add(Object::Stream(content));
-    doc.update_dict(pg, |d| d.set(b"Contents".to_vec(), Object::Ref(c))).unwrap();
+    doc.update_dict(pg, |d| d.set(b"Contents".to_vec(), Object::Ref(c)))
+        .unwrap();
     (doc, c)
 }
 
@@ -632,14 +937,25 @@ fn vector_ops() -> Vec<u8> {
 fn ascii_wrappers_come_off_filtered_streams_and_the_inner_data_is_unchanged() {
     let ops = vector_ops();
     let inner = Stream::flate(Dict::new(), &ops).raw.to_vec();
-    for (outer, encoded) in [("ASCII85Decode", ascii85(&inner)), ("ASCIIHexDecode", ascii_hex(&inner))] {
+    for (outer, encoded) in [
+        ("ASCII85Decode", ascii85(&inner)),
+        ("ASCIIHexDecode", ascii_hex(&inner)),
+    ] {
         let source = filtered(&[outer, "FlateDecode"], encoded);
         let (mut doc, c) = with_content(source.clone());
         let r = optimize(&mut doc, &Settings::default()).unwrap();
         assert_eq!(r.streams_compressed, 1, "{outer}");
         let after = stream(&doc, c);
-        assert_eq!(after.dict.get(b"Filter"), Some(&Object::Array(vec![Object::name("FlateDecode")])), "{outer}");
-        assert_eq!(after.raw.to_vec(), inner, "{outer}: the inner Flate bytes are kept exactly");
+        assert_eq!(
+            after.dict.get(b"Filter"),
+            Some(&Object::Array(vec![Object::name("FlateDecode")])),
+            "{outer}"
+        );
+        assert_eq!(
+            after.raw.to_vec(),
+            inner,
+            "{outer}: the inner Flate bytes are kept exactly"
+        );
         assert_eq!(after.decoded_strict().unwrap(), ops, "{outer}");
         assert!(after.raw.len() < source.raw.len(), "{outer}");
     }
@@ -650,23 +966,45 @@ fn streams_the_wrapper_stripping_does_not_touch_stay_unchanged() {
     let inner = Stream::flate(Dict::new(), &vector_ops()).raw.to_vec();
     let wrapped = ascii85(&inner);
     let mut with_parms = filtered(&["ASCII85Decode", "FlateDecode"], wrapped.clone());
-    with_parms.dict.set(b"DecodeParms".to_vec(), Object::Dict(Dict::new()));
+    with_parms
+        .dict
+        .set(b"DecodeParms".to_vec(), Object::Dict(Dict::new()));
     let mut image = filtered(&["ASCII85Decode", "FlateDecode"], wrapped.clone());
     image.dict.set(b"Subtype".to_vec(), Object::name("Image"));
     let mut objstm = filtered(&["ASCII85Decode", "FlateDecode"], wrapped.clone());
     objstm.dict.set(b"Type".to_vec(), Object::name("ObjStm"));
     let mut metadata = filtered(&["ASCII85Decode", "FlateDecode"], wrapped.clone());
-    metadata.dict.set(b"Type".to_vec(), Object::name("Metadata"));
+    metadata
+        .dict
+        .set(b"Type".to_vec(), Object::name("Metadata"));
     let cases = [
-        ("malformed ASCII85", filtered(&["ASCII85Decode", "FlateDecode"], b"{{ not ASCII85 ~>".to_vec())),
-        ("malformed ASCIIHex", filtered(&["ASCIIHexDecode", "FlateDecode"], b"G0>".to_vec())),
+        (
+            "malformed ASCII85",
+            filtered(
+                &["ASCII85Decode", "FlateDecode"],
+                b"{{ not ASCII85 ~>".to_vec(),
+            ),
+        ),
+        (
+            "malformed ASCIIHex",
+            filtered(&["ASCIIHexDecode", "FlateDecode"], b"G0>".to_vec()),
+        ),
         ("DecodeParms", with_parms),
-        ("single ASCII filter", filtered(&["ASCII85Decode"], wrapped.clone())),
+        (
+            "single ASCII filter",
+            filtered(&["ASCII85Decode"], wrapped.clone()),
+        ),
         ("image", image),
         ("object stream", objstm),
         ("metadata", metadata),
-        ("crypt after the wrapper", filtered(&["ASCII85Decode", "Crypt", "FlateDecode"], wrapped.clone())),
-        ("tiny", filtered(&["ASCII85Decode", "FlateDecode"], ascii85(b"ab"))),
+        (
+            "crypt after the wrapper",
+            filtered(&["ASCII85Decode", "Crypt", "FlateDecode"], wrapped.clone()),
+        ),
+        (
+            "tiny",
+            filtered(&["ASCII85Decode", "FlateDecode"], ascii85(b"ab")),
+        ),
         ("single Flate", Stream::flate(Dict::new(), &vector_ops())),
     ];
     for (label, s) in cases {

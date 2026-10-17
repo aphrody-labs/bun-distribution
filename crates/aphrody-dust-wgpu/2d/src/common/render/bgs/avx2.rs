@@ -36,7 +36,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
 
         macro_rules! affine_display_area_overflow {
             ($i: literal) => {
-                data.bg_control(BgIndex::new($i)).affine_display_area_overflow()
+                data.bg_control(BgIndex::new($i))
+                    .affine_display_area_overflow()
             };
         }
 
@@ -55,7 +56,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                 match BG_MODE {
                     0 => {
                         render_scanline_bg_text(buffers, BgIndex::new(3), vount, data, vram);
-                    },
+                    }
                     1..=2 => {
                         render_scanline_bg_affine[affine_display_area_overflow!(3) as usize](
                             buffers,
@@ -64,7 +65,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                             vram,
                         );
                         incr_affine!(1);
-                    },
+                    }
                     3..=5 => {
                         render_scanline_bg_extended[affine_display_area_overflow!(3) as usize](
                             buffers,
@@ -73,8 +74,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
                             vram,
                         );
                         incr_affine!(1);
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
 
@@ -82,7 +83,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                 match BG_MODE {
                     0..=1 | 3 => {
                         render_scanline_bg_text(buffers, BgIndex::new(2), vount, data, vram);
-                    },
+                    }
                     2 | 4 => {
                         render_scanline_bg_affine[affine_display_area_overflow!(2) as usize](
                             buffers,
@@ -91,7 +92,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                             vram,
                         );
                         incr_affine!(0);
-                    },
+                    }
                     5 => {
                         render_scanline_bg_extended[affine_display_area_overflow!(2) as usize](
                             buffers,
@@ -100,7 +101,7 @@ pub unsafe fn render_scanline_bgs_and_objs<
                             vram,
                         );
                         incr_affine!(0);
-                    },
+                    }
                     6 => {
                         [
                             render_scanline_bg_large::<_, _, _, _, BG_VRAM_LEN, OBJ_VRAM_LEN, false>,
@@ -109,8 +110,8 @@ pub unsafe fn render_scanline_bgs_and_objs<
                             buffers, data, vram
                         );
                         incr_affine!(0);
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
 

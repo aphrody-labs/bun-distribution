@@ -27,7 +27,9 @@ thread_local! {
 fn hash_color(c: &Color, h: &mut impl Hasher) {
     match *c {
         Color::Rgb { r, g, b } => (0u8, r.to_bits(), g.to_bits(), b.to_bits()).hash(h),
-        Color::Cmyk { c, m, y, k } => (1u8, c.to_bits(), m.to_bits(), y.to_bits(), k.to_bits()).hash(h),
+        Color::Cmyk { c, m, y, k } => {
+            (1u8, c.to_bits(), m.to_bits(), y.to_bits(), k.to_bits()).hash(h)
+        }
         Color::Gray { k } => (2u8, k.to_bits()).hash(h),
         Color::Lab { l, a, b } => (3u8, l.to_bits(), a.to_bits(), b.to_bits()).hash(h),
     }
@@ -38,11 +40,25 @@ fn hash_color(c: &Color, h: &mut impl Hasher) {
 fn key(f: &Freeform, b: Rect, cols: u16, rows: u16, ink: Ink) -> u64 {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     for p in &f.points {
-        (p.at.x.to_bits(), p.at.y.to_bits(), p.opacity.to_bits(), p.spread.to_bits()).hash(&mut h);
+        (
+            p.at.x.to_bits(),
+            p.at.y.to_bits(),
+            p.opacity.to_bits(),
+            p.spread.to_bits(),
+        )
+            .hash(&mut h);
         hash_color(&p.color, &mut h);
     }
     f.lines.hash(&mut h);
-    (b.x0.to_bits(), b.y0.to_bits(), b.x1.to_bits(), b.y1.to_bits(), cols, rows).hash(&mut h);
+    (
+        b.x0.to_bits(),
+        b.y0.to_bits(),
+        b.x1.to_bits(),
+        b.y1.to_bits(),
+        cols,
+        rows,
+    )
+        .hash(&mut h);
     (Arc::as_ptr(&vectorcraft_color::cms::active()) as usize, ink).hash(&mut h);
     h.finish()
 }
@@ -56,7 +72,12 @@ pub(crate) fn rasterize(f: &Freeform, b: Rect, cols: u16, rows: u16, ink: Ink) -
         .map(|([r, g, bl], a)| {
             let a = a.clamp(0.0, 1.0);
             let q = |v: f32| (v.clamp(0.0, 1.0) * a * 255.0).round() as u8;
-            vello_cpu::color::PremulRgba8 { r: q(r), g: q(g), b: q(bl), a: (a * 255.0).round() as u8 }
+            vello_cpu::color::PremulRgba8 {
+                r: q(r),
+                g: q(g),
+                b: q(bl),
+                a: (a * 255.0).round() as u8,
+            }
         })
         .collect();
     Pixmap::from_parts(data, cols, rows)
@@ -64,8 +85,15 @@ pub(crate) fn rasterize(f: &Freeform, b: Rect, cols: u16, rows: u16, ink: Ink) -
 
 /// Set freeform gradient `g` on box `bounds` (in the paint's space, which the context's current
 /// transform maps to pixels) as the context paint. Returns false for an empty box.
-pub(crate) fn set_freeform_paint(ctx: &mut RenderContext, g: &GradientPaint, bounds: Rect, ink: Ink) -> bool {
-    let Some(b) = painted_box(bounds) else { return false };
+pub(crate) fn set_freeform_paint(
+    ctx: &mut RenderContext,
+    g: &GradientPaint,
+    bounds: Rect,
+    ink: Ink,
+) -> bool {
+    let Some(b) = painted_box(bounds) else {
+        return false;
+    };
     let device = b.width().max(b.height()) * ctx.transform().determinant().abs().sqrt();
     let (cols, rows) = grid_size(b, device);
     let f = g.freeform_on(b);
@@ -85,8 +113,19 @@ pub(crate) fn set_freeform_paint(ctx: &mut RenderContext, g: &GradientPaint, bou
             });
             pm
         });
-    let sampler = ImageSampler { x_extend: Extend::Pad, y_extend: Extend::Pad, quality: ImageQuality::Medium, alpha: 1.0 };
-    ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(pm), sampler });
-    ctx.set_paint_transform(Affine::translate(b.origin().to_vec2()) * Affine::scale_non_uniform(b.width() / cols as f64, b.height() / rows as f64));
+    let sampler = ImageSampler {
+        x_extend: Extend::Pad,
+        y_extend: Extend::Pad,
+        quality: ImageQuality::Medium,
+        alpha: 1.0,
+    };
+    ctx.set_paint(vello_cpu::Image {
+        image: vello_cpu::ImageSource::Pixmap(pm),
+        sampler,
+    });
+    ctx.set_paint_transform(
+        Affine::translate(b.origin().to_vec2())
+            * Affine::scale_non_uniform(b.width() / cols as f64, b.height() / rows as f64),
+    );
     true
 }

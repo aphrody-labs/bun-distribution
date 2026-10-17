@@ -126,7 +126,10 @@ pub struct IvfTrame<'a> {
 /// [`FormatError::BadMagic`] si la signature n'est pas `DKIF`.
 pub fn lire_entete_ivf(data: &[u8]) -> Result<IvfHeader, FormatError> {
     if data.len() < 32 {
-        return Err(FormatError::TooShort { got: data.len(), need: 32 });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: 32,
+        });
     }
     if data[..4] != IVF_MAGIC {
         return Err(FormatError::BadMagic { format: "IVF/DKIF" });
@@ -134,7 +137,10 @@ pub fn lire_entete_ivf(data: &[u8]) -> Result<IvfHeader, FormatError> {
     let version = u16::from_le_bytes([data[4], data[5]]);
     let header_len = u16::from_le_bytes([data[6], data[7]]) as usize;
     if header_len < 32 || data.len() < header_len {
-        return Err(FormatError::TooShort { got: data.len(), need: header_len });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: header_len,
+        });
     }
 
     let mut fourcc = [0u8; 4];
@@ -145,7 +151,15 @@ pub fn lire_entete_ivf(data: &[u8]) -> Result<IvfHeader, FormatError> {
     let cadence_den = u32::from_le_bytes([data[20], data[21], data[22], data[23]]);
     let total_images = u32::from_le_bytes([data[24], data[25], data[26], data[27]]);
 
-    Ok(IvfHeader { version, fourcc, largeur, hauteur, cadence_num, cadence_den, total_images })
+    Ok(IvfHeader {
+        version,
+        fourcc,
+        largeur,
+        hauteur,
+        cadence_num,
+        cadence_den,
+        total_images,
+    })
 }
 
 /// Itérateur zéro-copie sur les trames d'un fichier IVF.
@@ -160,11 +174,18 @@ impl<'a> IvfIter<'a> {
     pub fn new(data: &'a [u8]) -> Self {
         let debut = if data.len() >= 32 && data[..4] == IVF_MAGIC {
             let hlen = u16::from_le_bytes([data[6], data[7]]) as usize;
-            if hlen >= 32 && hlen <= data.len() { hlen } else { 32 }
+            if hlen >= 32 && hlen <= data.len() {
+                hlen
+            } else {
+                32
+            }
         } else {
             0
         };
-        Self { tampon: data, pos: debut }
+        Self {
+            tampon: data,
+            pos: debut,
+        }
     }
 }
 
@@ -199,7 +220,10 @@ impl<'a> Iterator for IvfIter<'a> {
         }
 
         self.pos = fin_trame;
-        Some(IvfTrame { timestamp, donnees: &self.tampon[debut_trame..fin_trame] })
+        Some(IvfTrame {
+            timestamp,
+            donnees: &self.tampon[debut_trame..fin_trame],
+        })
     }
 }
 

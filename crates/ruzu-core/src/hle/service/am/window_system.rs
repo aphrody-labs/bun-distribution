@@ -263,37 +263,57 @@ impl WindowSystem {
     pub fn on_home_button_pressed(&self, duration: ButtonPressDuration) {
         self.on_system_button_press(match duration {
             ButtonPressDuration::ShortPressing => SystemButtonType::HomeButtonShortPressing,
-            ButtonPressDuration::MiddlePressing | ButtonPressDuration::LongPressing =>
-                SystemButtonType::HomeButtonLongPressing,
+            ButtonPressDuration::MiddlePressing | ButtonPressDuration::LongPressing => {
+                SystemButtonType::HomeButtonLongPressing
+            }
         });
     }
 
     pub fn on_system_button_press(&self, button: SystemButtonType) {
         let inner = self.lock.lock().unwrap();
         let message = match button {
-            SystemButtonType::HomeButtonShortPressing => AppletMessage::DetectShortPressingHomeButton,
+            SystemButtonType::HomeButtonShortPressing => {
+                AppletMessage::DetectShortPressingHomeButton
+            }
             SystemButtonType::HomeButtonLongPressing => AppletMessage::DetectLongPressingHomeButton,
-            SystemButtonType::CaptureButtonShortPressing => AppletMessage::DetectShortPressingCaptureButton,
-            SystemButtonType::CaptureButtonLongPressing => AppletMessage::DetectLongPressingCaptureButton,
+            SystemButtonType::CaptureButtonShortPressing => {
+                AppletMessage::DetectShortPressingCaptureButton
+            }
+            SystemButtonType::CaptureButtonLongPressing => {
+                AppletMessage::DetectLongPressingCaptureButton
+            }
             _ => return,
         };
         self.send_button_applet_message_locked(&inner, message);
     }
 
     fn send_button_applet_message_locked(&self, inner: &WindowSystemInner, message: AppletMessage) {
-        for aruid in [inner.home_menu_aruid, inner.overlay_display_aruid, inner.application_aruid]
-            .into_iter().flatten() {
-            let Some(applet) = inner.applets.get(&aruid) else { continue };
+        for aruid in [
+            inner.home_menu_aruid,
+            inner.overlay_display_aruid,
+            inner.application_aruid,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            let Some(applet) = inner.applets.get(&aruid) else {
+                continue;
+            };
             let mut applet = applet.lock().unwrap();
             let blocked = match message {
-                AppletMessage::DetectShortPressingHomeButton =>
-                    applet.home_button_short_pressed_blocked ||
-                    (applet.applet_id == AppletId::OverlayDisplay &&
-                     !applet.overlay_watching_short_home_button),
-                AppletMessage::DetectLongPressingHomeButton => applet.home_button_long_pressed_blocked,
+                AppletMessage::DetectShortPressingHomeButton => {
+                    applet.home_button_short_pressed_blocked
+                        || (applet.applet_id == AppletId::OverlayDisplay
+                            && !applet.overlay_watching_short_home_button)
+                }
+                AppletMessage::DetectLongPressingHomeButton => {
+                    applet.home_button_long_pressed_blocked
+                }
                 _ => false,
             };
-            if !blocked { applet.lifecycle_manager.push_unordered_message(message); }
+            if !blocked {
+                applet.lifecycle_manager.push_unordered_message(message);
+            }
         }
         self.request_update();
     }
@@ -318,16 +338,22 @@ impl WindowSystem {
 
     /// Upstream: void PruneTerminatedAppletsLocked()
     fn restart_applet_process_locked(&self, applet: &mut Applet) -> bool {
-        if self.system.is_null() || !super::process_creation::reinitialize_process(
-            self.system, &mut applet.process, applet.program_id,
-        ) {
+        if self.system.is_null()
+            || !super::process_creation::reinitialize_process(
+                self.system,
+                &mut applet.process,
+                applet.program_id,
+            )
+        {
             log::error!("Failed to restart winding applet {:?}", applet.applet_id);
             return false;
         }
         applet.aruid.pid = applet.process.get_process_id();
         applet.is_process_running = false;
         applet.is_completed = false;
-        applet.hid_registration.register_current_process(&applet.process);
+        applet
+            .hid_registration
+            .register_current_process(&applet.process);
         applet.lifecycle_manager.reset_for_relaunch();
         applet.is_activity_runnable = false;
         applet.launch_reason.flag = 1;
@@ -383,16 +409,24 @@ impl WindowSystem {
                             inner.exit_requests.insert(new_aruid, endpoint);
                         }
                         // C++ stores pointers here; Rust stores process IDs.
-                        for id in [&mut inner.foreground_requested_aruid, &mut inner.home_menu_aruid,
-                            &mut inner.application_aruid, &mut inner.overlay_display_aruid] {
-                            if *id == Some(aruid) { *id = Some(new_aruid); }
+                        for id in [
+                            &mut inner.foreground_requested_aruid,
+                            &mut inner.home_menu_aruid,
+                            &mut inner.application_aruid,
+                            &mut inner.overlay_display_aruid,
+                        ] {
+                            if *id == Some(aruid) {
+                                *id = Some(new_aruid);
+                            }
                         }
                     }
                     if let Some(observer) = &self.event_observer {
                         observer.track_applet_process(&applet);
                     }
                     applet.lock().unwrap().process.run();
-                    if let Some(observer) = &self.event_observer { observer.request_update(); }
+                    if let Some(observer) = &self.event_observer {
+                        observer.request_update();
+                    }
                     continue;
                 }
                 a.reserved_applet = None;
@@ -534,7 +568,9 @@ impl WindowSystem {
     }
 
     fn does_overlay_take_input_locked(&self, inner: &WindowSystemInner) -> bool {
-        inner.overlay_display_aruid.and_then(|aruid| inner.applets.get(&aruid))
+        inner
+            .overlay_display_aruid
+            .and_then(|aruid| inner.applets.get(&aruid))
             .is_some_and(|overlay| self.is_overlay_open_locked(&overlay.lock().unwrap()))
     }
 
@@ -802,24 +838,35 @@ mod tests {
     #[test]
     fn system_buttons_follow_watch_and_block_policies_for_all_roots() {
         let window = WindowSystem::new(crate::core::SystemRef::null());
-        let roots: Vec<_> = [AppletId::QLaunch, AppletId::OverlayDisplay, AppletId::Application]
-            .into_iter().enumerate().map(|(index, id)| {
-                let mut applet = Applet::new(crate::core::SystemRef::null(), Process::new(), false);
-                applet.applet_id = id;
-                applet.aruid.pid = index as u64 + 1;
-                let applet = Arc::new(Mutex::new(applet));
-                window.track_applet(applet.clone(), id == AppletId::Application);
-                applet
-            }).collect();
+        let roots: Vec<_> = [
+            AppletId::QLaunch,
+            AppletId::OverlayDisplay,
+            AppletId::Application,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, id)| {
+            let mut applet = Applet::new(crate::core::SystemRef::null(), Process::new(), false);
+            applet.applet_id = id;
+            applet.aruid.pid = index as u64 + 1;
+            let applet = Arc::new(Mutex::new(applet));
+            window.track_applet(applet.clone(), id == AppletId::Application);
+            applet
+        })
+        .collect();
         let drain = |index: usize| {
             let mut applet = roots[index].lock().unwrap();
             let mut messages = Vec::new();
             let mut message = AppletMessage::None;
-            while applet.lifecycle_manager.pop_message(&mut message) { messages.push(message); }
+            while applet.lifecycle_manager.pop_message(&mut message) {
+                messages.push(message);
+            }
             messages
         };
         // Remove initial lifecycle focus notifications from the test observation.
-        for index in 0..3 { drain(index); }
+        for index in 0..3 {
+            drain(index);
+        }
         window.on_home_button_pressed(ButtonPressDuration::ShortPressing);
         assert_eq!(drain(0), vec![AppletMessage::DetectShortPressingHomeButton]);
         assert!(drain(1).is_empty());
@@ -831,20 +878,33 @@ mod tests {
         assert!(drain(0).is_empty());
         assert_eq!(drain(1), vec![AppletMessage::DetectShortPressingHomeButton]);
         drain(2);
-        for duration in [ButtonPressDuration::MiddlePressing, ButtonPressDuration::LongPressing] {
+        for duration in [
+            ButtonPressDuration::MiddlePressing,
+            ButtonPressDuration::LongPressing,
+        ] {
             window.on_home_button_pressed(duration);
             assert_eq!(drain(0), vec![AppletMessage::DetectLongPressingHomeButton]);
             assert_eq!(drain(1), vec![AppletMessage::DetectLongPressingHomeButton]);
             assert!(drain(2).is_empty());
         }
         for (button, message) in [
-            (SystemButtonType::CaptureButtonShortPressing, AppletMessage::DetectShortPressingCaptureButton),
-            (SystemButtonType::CaptureButtonLongPressing, AppletMessage::DetectLongPressingCaptureButton),
+            (
+                SystemButtonType::CaptureButtonShortPressing,
+                AppletMessage::DetectShortPressingCaptureButton,
+            ),
+            (
+                SystemButtonType::CaptureButtonLongPressing,
+                AppletMessage::DetectLongPressingCaptureButton,
+            ),
         ] {
             window.on_system_button_press(button);
-            for index in 0..3 { assert_eq!(drain(index), vec![message]); }
+            for index in 0..3 {
+                assert_eq!(drain(index), vec![message]);
+            }
         }
         window.on_system_button_press(SystemButtonType::None);
-        for index in 0..3 { assert!(drain(index).is_empty()); }
+        for index in 0..3 {
+            assert!(drain(index).is_empty());
+        }
     }
 }

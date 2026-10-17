@@ -5,7 +5,14 @@
 //! Shaping here is style-agnostic: [`shape`] and [`shape_range`] turn text in one face into glyph
 //! ids, clusters and advances in font units. `deckcraft-text` applies sizes, tracking, scaling and
 //! justification on top.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod fallback;
@@ -15,7 +22,8 @@ mod shape;
 
 pub use fallback::{bundled_families, covers_cluster, is_emoji_cluster, ligature_carets};
 pub use fontdb::{
-    FALLBACK_FAMILY, FaceRef, FontDb, FontFace, LAST_RESORT_FAMILY, MISSING_FONT_FAMILY, base_style, bundled, substitutes, system_font_dirs,
+    FALLBACK_FAMILY, FaceRef, FontDb, FontFace, LAST_RESORT_FAMILY, MISSING_FONT_FAMILY,
+    base_style, bundled, substitutes, system_font_dirs,
 };
 pub use harfrust::Feature;
 use harfrust::Tag;
@@ -69,7 +77,11 @@ pub fn feature(tag: &str) -> Option<Feature> {
     if b.len() != 4 {
         return None;
     }
-    Some(Feature::new(Tag::new(&[b[0], b[1], b[2], b[3]]), on as u32, ..))
+    Some(Feature::new(
+        Tag::new(&[b[0], b[1], b[2], b[3]]),
+        on as u32,
+        ..,
+    ))
 }
 
 /// A strong right-to-left character (Hebrew, Arabic, …)?
@@ -84,10 +96,25 @@ pub fn is_rtl(c: char) -> bool {
 /// with the whole string as context), then its clusters put back in text order (each cluster's
 /// glyphs keep the shaper's order). Paragraph layout uses [`shape_range`] directly and keeps the
 /// visual order.
-pub fn shape(face: &FontFace, text: &str, features: &[Feature], map: impl Fn(char) -> char) -> Vec<ShapedGlyph> {
+pub fn shape(
+    face: &FontFace,
+    text: &str,
+    features: &[Feature],
+    map: impl Fn(char) -> char,
+) -> Vec<ShapedGlyph> {
     let mut out = Vec::with_capacity(text.len());
     for (r, rtl) in direction_runs(text) {
-        let mut g = shape_range(face, text, r, &ShapeParams { features, rtl, ..Default::default() }, &map);
+        let mut g = shape_range(
+            face,
+            text,
+            r,
+            &ShapeParams {
+                features,
+                rtl,
+                ..Default::default()
+            },
+            &map,
+        );
         if rtl {
             // Visual (clusters descending) → logical; the sort is stable, so each cluster's
             // glyphs keep the shaper's order.
@@ -127,7 +154,11 @@ fn direction_runs(text: &str) -> Vec<(std::ops::Range<usize>, bool)> {
 
 /// Glyph id of the first of `chars` the face has (0 = .notdef).
 pub fn first_glyph(face: &FontFace, chars: &[char]) -> u32 {
-    chars.iter().map(|c| face.glyph_for(*c)).find(|g| *g != 0).unwrap_or(0)
+    chars
+        .iter()
+        .map(|c| face.glyph_for(*c))
+        .find(|g| *g != 0)
+        .unwrap_or(0)
 }
 
 #[cfg(test)]
@@ -141,7 +172,15 @@ mod tests {
     #[test]
     fn emoji_clusters_are_recognised() {
         let c = |s: &str| s.chars().collect::<Vec<char>>();
-        for yes in ["😀", "👍🏽", "❤\u{FE0F}", "👨\u{200D}👩\u{200D}👧", "🇯🇵", "1\u{FE0F}\u{20E3}", "🏳\u{FE0F}\u{200D}🌈"] {
+        for yes in [
+            "😀",
+            "👍🏽",
+            "❤\u{FE0F}",
+            "👨\u{200D}👩\u{200D}👧",
+            "🇯🇵",
+            "1\u{FE0F}\u{20E3}",
+            "🏳\u{FE0F}\u{200D}🌈",
+        ] {
             assert!(is_emoji_cluster(&c(yes)), "{yes:?}");
         }
         for no in ["a", "1", "❤", "☺\u{FE0E}", "😀\u{FE0E}", "字", "→"] {
@@ -152,7 +191,11 @@ mod tests {
     #[test]
     fn colour_fonts_are_recognised() {
         let db = FontDb::with_font_dirs(Vec::new());
-        assert!(db.add_font(include_bytes!("../../deckcraft-render/tests/fixtures/colr-squares.ttf").to_vec()) > 0);
+        assert!(
+            db.add_font(
+                include_bytes!("../../deckcraft-render/tests/fixtures/colr-squares.ttf").to_vec()
+            ) > 0
+        );
         assert!(db.face("DeckCraft Colr Squares", "Regular").is_color());
         assert!(!fontdb::last_resort_face().is_color());
     }
@@ -171,7 +214,12 @@ mod tests {
         let font = skrifa::FontRef::new(f.data()).unwrap();
         let os2 = font.os2().unwrap();
         let (a, d) = (os2.us_win_ascent() as f64, os2.us_win_descent() as f64);
-        assert!((f.line_split - a / (a + d)).abs() < 1e-9, "{} vs {}", f.line_split, a / (a + d));
+        assert!(
+            (f.line_split - a / (a + d)).abs() < 1e-9,
+            "{} vs {}",
+            f.line_split,
+            a / (a + d)
+        );
         assert!(f.line_split > 0.5 && f.line_split < 1.0);
     }
 
@@ -192,16 +240,28 @@ mod tests {
             assert!(db.has_family("DeckCraft Legacy Semibold"));
             for style in ["Regular", "Bold"] {
                 let f = db.face("DeckCraft Legacy Semibold", style);
-                assert_eq!((f.family.as_str(), f.style.as_str()), ("DeckCraft Legacy", "Semibold"), "{style}");
+                assert_eq!(
+                    (f.family.as_str(), f.style.as_str()),
+                    ("DeckCraft Legacy", "Semibold"),
+                    "{style}"
+                );
             }
-            assert_eq!(db.document_face("DeckCraft Legacy Semibold", "Regular").family, "DeckCraft Legacy", "installed, so not Calibri");
+            assert_eq!(
+                db.document_face("DeckCraft Legacy Semibold", "Regular")
+                    .family,
+                "DeckCraft Legacy",
+                "installed, so not Calibri"
+            );
             // The typographic name still works.
             assert_eq!(db.face("DeckCraft Legacy", "Semibold").style, "Semibold");
         };
         // Loaded directly…
         let db = FontDb::with_font_dirs(Vec::new());
         db.set_system_fallback(false);
-        assert_eq!(db.add_font(include_bytes!("../tests/fixtures/legacy-semibold.ttf").to_vec()), 1);
+        assert_eq!(
+            db.add_font(include_bytes!("../tests/fixtures/legacy-semibold.ttf").to_vec()),
+            1
+        );
         check(&db);
         // …and found by the system font scan under its Windows name, then loaded.
         #[cfg(not(target_arch = "wasm32"))]
@@ -214,7 +274,10 @@ mod tests {
             // family's Regular must still load and pick the Regular file, not settle for Semibold.
             let db = FontDb::with_font_dirs(vec![dir]);
             db.set_system_fallback(false);
-            assert_eq!(db.face("DeckCraft Legacy Semibold", "Regular").style, "Semibold");
+            assert_eq!(
+                db.face("DeckCraft Legacy Semibold", "Regular").style,
+                "Semibold"
+            );
             let regular = db.face("DeckCraft Legacy", "Regular");
             assert_eq!((regular.style.as_str(), regular.weight), ("Regular", 400.0));
         }
@@ -226,20 +289,44 @@ mod tests {
         let db = FontDb::global();
         for missing in ["Qqq Nonexistent", "Avenir Next Qqq", "", "Arimo Qqq"] {
             let f = db.document_face(missing, "Bold");
-            assert_eq!(f.family, db.face(MISSING_FONT_FAMILY, "Bold").family, "{missing:?}");
+            assert_eq!(
+                f.family,
+                db.face(MISSING_FONT_FAMILY, "Bold").family,
+                "{missing:?}"
+            );
         }
         // PowerPoint's own twins and Windows' substitutes, when the font itself is missing.
-        for (missing, twin) in
-            [("Liberation Sans", "Arial"), ("Liberation Serif", "Times New Roman"), ("Arial CE", "Arial"), ("Times New Roman CYR", "Times New Roman")]
-        {
+        for (missing, twin) in [
+            ("Liberation Sans", "Arial"),
+            ("Liberation Serif", "Times New Roman"),
+            ("Arial CE", "Arial"),
+            ("Times New Roman CYR", "Times New Roman"),
+        ] {
             if !db.has_family(missing) {
-                assert_eq!(db.document_face(missing, "Regular").family, db.face(twin, "Regular").family, "{missing}");
+                assert_eq!(
+                    db.document_face(missing, "Regular").family,
+                    db.face(twin, "Regular").family,
+                    "{missing}"
+                );
             }
         }
         // Metric-compatible stand-ins and DeckCraft's default keep their own fallbacks.
         // So do Office's cloud fonts, which PowerPoint downloads and draws as themselves.
-        for kept in ["Arial", "Times New Roman", "Cambria", "Courier New", FALLBACK_FAMILY, "Aptos", "Aptos Display", "Grandview"] {
-            assert_eq!(db.document_face(kept, "Regular").family, db.face(kept, "Regular").family, "{kept}");
+        for kept in [
+            "Arial",
+            "Times New Roman",
+            "Cambria",
+            "Courier New",
+            FALLBACK_FAMILY,
+            "Aptos",
+            "Aptos Display",
+            "Grandview",
+        ] {
+            assert_eq!(
+                db.document_face(kept, "Regular").family,
+                db.face(kept, "Regular").family,
+                "{kept}"
+            );
         }
     }
 
@@ -257,7 +344,10 @@ mod tests {
         let face = any_face();
         let g = shape(&face, "Hello", &[], |c| c);
         assert_eq!(g.len(), 5);
-        assert_eq!(g.iter().map(|g| g.cluster).collect::<Vec<_>>(), vec![0, 1, 2, 3, 4]);
+        assert_eq!(
+            g.iter().map(|g| g.cluster).collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4]
+        );
         assert!(g.iter().all(|g| g.x_advance > 0 && g.gid != 0));
     }
 

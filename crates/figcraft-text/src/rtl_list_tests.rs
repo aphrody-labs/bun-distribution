@@ -39,19 +39,33 @@ fn text(chars: &str, list: ListStyle, align: TextAlignH) -> TextData {
 /// Line `li`'s marker glyphs (they cover no chars), left to right.
 fn marker(l: &TextLayout, li: usize) -> Vec<&crate::Glyph> {
     let ln = &l.lines[li];
-    l.glyphs[ln.glyph_start..ln.glyph_end].iter().filter(|g| g.char_start == g.char_end).collect()
+    l.glyphs[ln.glyph_start..ln.glyph_end]
+        .iter()
+        .filter(|g| g.char_start == g.char_end)
+        .collect()
 }
 
 /// The left and right ends of line `li`'s visible text glyphs (not spaces).
 fn text_span(l: &TextLayout, li: usize) -> (f64, f64) {
     let ln = &l.lines[li];
-    let g = l.glyphs[ln.glyph_start..ln.glyph_end].iter().filter(|g| g.char_end > g.char_start && g.gid != g.face.glyph_for(' '));
-    g.fold((f64::MAX, f64::MIN), |(a, b), g| (a.min(g.x), b.max(g.x + g.advance)))
+    let g = l.glyphs[ln.glyph_start..ln.glyph_end]
+        .iter()
+        .filter(|g| g.char_end > g.char_start && g.gid != g.face.glyph_for(' '));
+    g.fold((f64::MAX, f64::MIN), |(a, b), g| {
+        (a.min(g.x), b.max(g.x + g.advance))
+    })
 }
 
 #[test]
 fn bullets_sit_right_of_right_to_left_text() {
-    let l = layout_in(&text(&format!("{SHALOM} {OLAM}\nabc"), ListStyle::Bulleted, TextAlignH::Right), 300.0);
+    let l = layout_in(
+        &text(
+            &format!("{SHALOM} {OLAM}\nabc"),
+            ListStyle::Bulleted,
+            TextAlignH::Right,
+        ),
+        300.0,
+    );
     if !drawable(&l) {
         return;
     }
@@ -60,7 +74,12 @@ fn bullets_sit_right_of_right_to_left_text() {
     let m = marker(&l, 0);
     assert_eq!(m.len(), 1);
     let (_, text_right) = text_span(&l, 0);
-    assert!((m[0].x + m[0].advance - 300.0).abs() < 0.5, "{} + {}", m[0].x, m[0].advance);
+    assert!(
+        (m[0].x + m[0].advance - 300.0).abs() < 0.5,
+        "{} + {}",
+        m[0].x,
+        m[0].advance
+    );
     assert!(text_right < m[0].x, "{text_right} < {}", m[0].x);
     // The text keeps the gutter's width clear: 1.5 em.
     assert!((300.0 - text_right - 30.0).abs() < 0.5, "{text_right}");
@@ -88,7 +107,11 @@ fn numbers_read_with_the_full_stop_on_their_left() {
         assert!(m[0].x < m[1].x);
         // Half an em between the text and the number; the numbers start at one x.
         let (_, text_right) = text_span(&l, li);
-        assert!((m[0].x - text_right - 10.0).abs() < 0.5, "{} vs {text_right}", m[0].x);
+        assert!(
+            (m[0].x - text_right - 10.0).abs() < 0.5,
+            "{} vs {text_right}",
+            m[0].x
+        );
         assert!((starts[li] - starts[0]).abs() < 1e-6);
         // Inside the box.
         assert!(m[1].x + m[1].advance <= 300.0 + 1e-6);
@@ -111,7 +134,10 @@ fn wrapped_right_to_left_list_lines_hang_from_the_right() {
         assert!(left >= -1e-6, "line {li}: {left}");
     }
     assert_eq!(marker(&l, 0).len(), 1);
-    assert!(marker(&l, 1).is_empty(), "only the paragraph's first line has a bullet");
+    assert!(
+        marker(&l, 1).is_empty(),
+        "only the paragraph's first line has a bullet"
+    );
 }
 
 #[test]

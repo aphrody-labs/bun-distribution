@@ -64,7 +64,9 @@ struct Draw {
 pub type SurfaceColors = [Option<[f32; 3]>; 4];
 
 fn mat_path(path: &BezPath, m: &Mat3) -> BezPath {
-    effectcraft_path::transform(std::slice::from_ref(path), m).pop().unwrap_or_default()
+    effectcraft_path::transform(std::slice::from_ref(path), m)
+        .pop()
+        .unwrap_or_default()
 }
 
 fn group_matrix(ctx: &EvalCtx, layer: &Layer, tr: &PropGroup) -> (Mat3, f32) {
@@ -93,7 +95,10 @@ pub fn item_matrix(ctx: &EvalCtx, layer: &Layer, uid: u64) -> Option<Mat3> {
             if sub.match_id == "group"
                 && let Some(inner) = sub.sub("contents")
             {
-                let gm = sub.sub("transform").map(|t| group_matrix(ctx, layer, t).0).unwrap_or(Mat3::IDENTITY);
+                let gm = sub
+                    .sub("transform")
+                    .map(|t| group_matrix(ctx, layer, t).0)
+                    .unwrap_or(Mat3::IDENTITY);
                 if let Some(r) = walk(ctx, layer, inner, uid, m * gm) {
                     return Some(r);
                 }
@@ -101,11 +106,21 @@ pub fn item_matrix(ctx: &EvalCtx, layer: &Layer, uid: u64) -> Option<Mat3> {
         }
         None
     }
-    walk(ctx, layer, layer.props.sub("contents")?, uid, Mat3::IDENTITY)
+    walk(
+        ctx,
+        layer,
+        layer.props.sub("contents")?,
+        uid,
+        Mat3::IDENTITY,
+    )
 }
 
 fn rule(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> FillRule {
-    if ctx.e(layer, g, "rule") == 1 { FillRule::EvenOdd } else { FillRule::NonZero }
+    if ctx.e(layer, g, "rule") == 1 {
+        FillRule::EvenOdd
+    } else {
+        FillRule::NonZero
+    }
 }
 
 fn stroke_style(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> StrokeStyle {
@@ -123,14 +138,28 @@ fn stroke_style(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> StrokeStyle {
             }
             let dv = ctx.f(layer, d, dm, 0.0);
             pat.push(dv);
-            pat.push(if d.get(gm).is_some() { ctx.f(layer, d, gm, 0.0) } else { dv });
+            pat.push(if d.get(gm).is_some() {
+                ctx.f(layer, d, gm, 0.0)
+            } else {
+                dv
+            });
         }
         Some((pat, ctx.f(layer, d, "offset", 0.0)))
     });
     let taper = g.sub("taper").map(|t| varstroke::Taper {
         percent: ctx.e(layer, t, "units") == 1,
-        start_len: ctx.f(layer, t, "startLength", 0.0) / if ctx.e(layer, t, "units") == 1 { 100.0 } else { 1.0 },
-        end_len: ctx.f(layer, t, "endLength", 0.0) / if ctx.e(layer, t, "units") == 1 { 100.0 } else { 1.0 },
+        start_len: ctx.f(layer, t, "startLength", 0.0)
+            / if ctx.e(layer, t, "units") == 1 {
+                100.0
+            } else {
+                1.0
+            },
+        end_len: ctx.f(layer, t, "endLength", 0.0)
+            / if ctx.e(layer, t, "units") == 1 {
+                100.0
+            } else {
+                1.0
+            },
         start_width: ctx.f(layer, t, "startWidth", 100.0) / 100.0,
         end_width: ctx.f(layer, t, "endWidth", 100.0) / 100.0,
         start_ease: ctx.f(layer, t, "startEase", 0.0) / 100.0,
@@ -155,7 +184,10 @@ fn stroke_style(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> StrokeStyle {
 
 /// Blend mode of a paint item (`blend` holds an index into the Blending Mode menu).
 fn blend_mode(ctx: &EvalCtx, layer: &Layer, g: &PropGroup) -> BlendMode {
-    BlendMode::ALL.get(ctx.e(layer, g, "blend") as usize).copied().unwrap_or_default()
+    BlendMode::ALL
+        .get(ctx.e(layer, g, "blend") as usize)
+        .copied()
+        .unwrap_or_default()
 }
 
 /// Apply a path operator to the live slots in place.
@@ -167,15 +199,30 @@ fn apply(arena: &mut [BezPath], live: &[usize], f: impl FnOnce(&[BezPath]) -> Ve
 }
 
 /// Push a shape's path as a new slot, honouring its Path Direction toggle (1 = reversed).
-fn push_shape(ctx: &EvalCtx, layer: &Layer, g: &PropGroup, p: BezPath, arena: &mut Vec<BezPath>, live: &mut Vec<usize>) {
-    let p = if ctx.e(layer, g, "direction") == 1 { p.reverse_subpaths() } else { p };
+fn push_shape(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    g: &PropGroup,
+    p: BezPath,
+    arena: &mut Vec<BezPath>,
+    live: &mut Vec<usize>,
+) {
+    let p = if ctx.e(layer, g, "direction") == 1 {
+        p.reverse_subpaths()
+    } else {
+        p
+    };
     arena.push(p);
     live.push(arena.len() - 1);
 }
 
 /// Every slot used by `live` or by `draws`, sorted and unique.
 fn used_slots(live: &[usize], draws: &[Draw]) -> Vec<usize> {
-    let mut v: Vec<usize> = live.iter().copied().chain(draws.iter().flat_map(|d| d.slots.iter().copied())).collect();
+    let mut v: Vec<usize> = live
+        .iter()
+        .copied()
+        .chain(draws.iter().flat_map(|d| d.slots.iter().copied()))
+        .collect();
     v.sort_unstable();
     v.dedup();
     v
@@ -183,7 +230,12 @@ fn used_slots(live: &[usize], draws: &[Draw]) -> Vec<usize> {
 
 /// Collect the draws of a contents group and the path slots live at its end (in group space).
 /// `arena` holds every path slot; operators rewrite slots in place.
-fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<BezPath>) -> (Vec<Draw>, Vec<usize>) {
+fn collect(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    contents: &PropGroup,
+    arena: &mut Vec<BezPath>,
+) -> (Vec<Draw>, Vec<usize>) {
     let mut draws: Vec<Draw> = Vec::new();
     let mut live: Vec<usize> = Vec::new();
     let opacity = |g: &PropGroup| (ctx.f(layer, g, "opacity", 100.0) / 100.0) as f32;
@@ -203,7 +255,14 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
             "ellipse" => {
                 let size = ctx.v2(layer, g, "size", [100.0; 2]);
                 let pos = ctx.v2(layer, g, "position", [0.0; 2]);
-                push_shape(ctx, layer, g, effectcraft_path::ellipse(size, pos), arena, &mut live);
+                push_shape(
+                    ctx,
+                    layer,
+                    g,
+                    effectcraft_path::ellipse(size, pos),
+                    arena,
+                    &mut live,
+                );
             }
             "star" => {
                 let star = ctx.e(layer, g, "type") == 0;
@@ -221,14 +280,24 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
             }
             "path" => {
                 if let Some(Value::Path(p)) = ctx.group_value(layer, g, "path") {
-                    push_shape(ctx, layer, g, effectcraft_path::to_kurbo(&p), arena, &mut live);
+                    push_shape(
+                        ctx,
+                        layer,
+                        g,
+                        effectcraft_path::to_kurbo(&p),
+                        arena,
+                        &mut live,
+                    );
                 }
             }
             "fill" => {
                 let mut c = ctx.color(layer, g, "color");
                 c[3] = 1.0;
                 draws.push(Draw {
-                    paint: Paint::Fill { color: c, rule: rule(ctx, layer, g) },
+                    paint: Paint::Fill {
+                        color: c,
+                        rule: rule(ctx, layer, g),
+                    },
                     slots: live.clone(),
                     xf: Mat3::IDENTITY,
                     opacity: opacity(g),
@@ -263,7 +332,10 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                         end: ctx.v2(layer, g, "end", [100.0, 0.0]),
                         rule: rule(ctx, layer, g),
                         stroke,
-                        highlight: (ctx.f(layer, g, "highlightLength", 0.0), ctx.f(layer, g, "highlightAngle", 0.0)),
+                        highlight: (
+                            ctx.f(layer, g, "highlightLength", 0.0),
+                            ctx.f(layer, g, "highlightAngle", 0.0),
+                        ),
                     },
                     slots: live.clone(),
                     xf: Mat3::IDENTITY,
@@ -273,7 +345,11 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 });
             }
             "trim" => {
-                let (s, e, o) = (ctx.f(layer, g, "start", 0.0), ctx.f(layer, g, "end", 100.0), ctx.f(layer, g, "offset", 0.0));
+                let (s, e, o) = (
+                    ctx.f(layer, g, "start", 0.0),
+                    ctx.f(layer, g, "end", 100.0),
+                    ctx.f(layer, g, "offset", 0.0),
+                );
                 // Trim Multiple Shapes: 0 = Simultaneously (each path by the same fractions),
                 // 1 = Individually (one after another, as one continuous length).
                 if ctx.e(layer, g, "mode") == 1 {
@@ -292,11 +368,14 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
             }
             "offset" => {
                 let amount = ctx.f(layer, g, "amount", 10.0);
-                let join = [Join::Miter, Join::Round, Join::Bevel][ctx.e(layer, g, "join").min(2) as usize];
+                let join = [Join::Miter, Join::Round, Join::Bevel]
+                    [ctx.e(layer, g, "join").min(2) as usize];
                 let miter = ctx.f(layer, g, "miter", 4.0);
                 let copies = ctx.f(layer, g, "copies", 1.0);
                 let copy_offset = ctx.f(layer, g, "copyOffset", 0.0);
-                apply(arena, &live, |p| ops::offset(p, amount, join, miter, copies, copy_offset));
+                apply(arena, &live, |p| {
+                    ops::offset(p, amount, join, miter, copies, copy_offset)
+                });
             }
             "twist" => {
                 let angle = ctx.f(layer, g, "angle", 0.0);
@@ -332,9 +411,14 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 draws.clear();
             }
             "group" => {
-                let Some(inner) = g.sub("contents") else { continue };
+                let Some(inner) = g.sub("contents") else {
+                    continue;
+                };
                 let (cd, cl) = collect(ctx, layer, inner, arena);
-                let (m, op) = g.sub("transform").map(|t| group_matrix(ctx, layer, t)).unwrap_or((Mat3::IDENTITY, 1.0));
+                let (m, op) = g
+                    .sub("transform")
+                    .map(|t| group_matrix(ctx, layer, t))
+                    .unwrap_or((Mat3::IDENTITY, 1.0));
                 for i in used_slots(&cl, &cd) {
                     arena[i] = mat_path(&arena[i], &m);
                 }
@@ -349,7 +433,9 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 let copies = ctx.f(layer, g, "copies", 3.0).max(0.0);
                 let offset = ctx.f(layer, g, "offset", 0.0);
                 let n = copies.ceil() as usize;
-                let Some(tr) = g.sub("transform") else { continue };
+                let Some(tr) = g.sub("transform") else {
+                    continue;
+                };
                 let anchor = ctx.v2(layer, tr, "anchor", [0.0; 2]);
                 let pos = ctx.v2(layer, tr, "position", [100.0, 0.0]);
                 let scale = ctx.v2(layer, tr, "scale", [100.0; 2]);
@@ -368,7 +454,8 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 let base_slots = used_slots(&base_live, &base_draws);
                 // Each copy gets its own transformed slots, so operators below the repeater act on
                 // the repeated geometry (copy order: original first).
-                let mut copy_maps: Vec<std::collections::HashMap<usize, usize>> = Vec::with_capacity(n);
+                let mut copy_maps: Vec<std::collections::HashMap<usize, usize>> =
+                    Vec::with_capacity(n);
                 for i in 0..n {
                     let m = step(i as f64 + offset);
                     let mut map = std::collections::HashMap::new();
@@ -386,9 +473,17 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 }
                 for i in order {
                     let m = step(i as f64 + offset);
-                    let t = if n > 1 { i as f32 / (n - 1) as f32 } else { 0.0 };
+                    let t = if n > 1 {
+                        i as f32 / (n - 1) as f32
+                    } else {
+                        0.0
+                    };
                     let opk = so + (eo - so) * t;
-                    let partial = if i + 1 == n && copies.fract() > 0.0 { copies.fract() as f32 } else { 1.0 };
+                    let partial = if i + 1 == n && copies.fract() > 0.0 {
+                        copies.fract() as f32
+                    } else {
+                        1.0
+                    };
                     for d in &base_draws {
                         let mut d = d.clone();
                         d.slots = d.slots.iter().map(|s| copy_maps[i][s]).collect();
@@ -399,7 +494,9 @@ fn collect(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, arena: &mut Vec<B
                 }
             }
             m => {
-                if let Some(i) = effectcraft_project::build::SHAPE_SURFACES.iter().position(|(s, _)| *s == m)
+                if let Some(i) = effectcraft_project::build::SHAPE_SURFACES
+                    .iter()
+                    .position(|(s, _)| *s == m)
                     && g.get("color").is_some()
                     && let Some(slot) = surfaces.get_mut(i)
                 {
@@ -445,7 +542,13 @@ impl GradientRamp {
             let dist = r * (hl / 100.0).clamp(-0.99, 0.99);
             [start[0] + dist * a.cos(), start[1] + dist * a.sin()]
         });
-        GradientRamp { radial, s: start, d, len2, focal }
+        GradientRamp {
+            radial,
+            s: start,
+            d,
+            len2,
+            focal,
+        }
     }
 
     pub(crate) fn t(&self, x: f64, y: f64) -> f64 {
@@ -453,7 +556,9 @@ impl GradientRamp {
         if !self.radial {
             return (vx * self.d[0] + vy * self.d[1]) / self.len2;
         }
-        let Some(f) = self.focal else { return ((vx * vx + vy * vy) / self.len2).sqrt() };
+        let Some(f) = self.focal else {
+            return ((vx * vx + vy * vy) / self.len2).sqrt();
+        };
         // Ray from the focal point through p meets the circle (centre s, radius r) at λ.
         let (px, py) = (x - f[0], y - f[1]);
         let dist = (px * px + py * py).sqrt();
@@ -480,7 +585,14 @@ struct PxRect {
 
 /// Composite `cov`-weighted colour (`color_at(x, y)` in buffer pixels, straight alpha) into the
 /// `r` sub-rectangle of a premultiplied image (`cov` is `r.w × r.h`).
-fn paint(img: &mut Image, r: PxRect, cov: &Mask, opacity: f32, blend: BlendMode, color_at: impl Fn(usize, usize) -> [f32; 4] + Sync) {
+fn paint(
+    img: &mut Image,
+    r: PxRect,
+    cov: &Mask,
+    opacity: f32,
+    blend: BlendMode,
+    color_at: impl Fn(usize, usize) -> [f32; 4] + Sync,
+) {
     let iw = img.width as usize;
     let (x0, y0, rw) = (r.x0 as usize, r.y0 as usize, r.w as usize);
     let row = |y: usize, out: &mut [[f32; 4]], crow: &[f32]| {
@@ -497,10 +609,16 @@ fn paint(img: &mut Image, r: PxRect, cov: &Mask, opacity: f32, blend: BlendMode,
             let src = [col[0] * a, col[1] * a, col[2] * a, a];
             if blend == BlendMode::Normal {
                 let k = 1.0 - a;
-                *px = [src[0] + px[0] * k, src[1] + px[1] * k, src[2] + px[2] * k, a + px[3] * k];
+                *px = [
+                    src[0] + px[0] * k,
+                    src[1] + px[1] * k,
+                    src[2] + px[2] * k,
+                    a + px[3] * k,
+                ];
             } else {
                 // Deterministic per-pixel noise for the dissolve modes.
-                let h = ((x as u32).wrapping_mul(73_856_093) ^ (y as u32).wrapping_mul(19_349_663)).wrapping_mul(2_654_435_761);
+                let h = ((x as u32).wrapping_mul(73_856_093) ^ (y as u32).wrapping_mul(19_349_663))
+                    .wrapping_mul(2_654_435_761);
                 *px = blend_pixel(blend, *px, src, (h >> 8) as f32 / (1u32 << 24) as f32);
             }
         }
@@ -508,7 +626,10 @@ fn paint(img: &mut Image, r: PxRect, cov: &Mask, opacity: f32, blend: BlendMode,
     let rows = img.data.chunks_mut(iw).skip(y0).take(r.h as usize);
     if r.w as usize * r.h as usize >= 64 * 1024 {
         let rows: Vec<&mut [[f32; 4]]> = rows.collect();
-        rows.into_par_iter().zip(cov.data.par_chunks(rw)).enumerate().for_each(|(dy, (out, crow))| row(y0 + dy, out, crow));
+        rows.into_par_iter()
+            .zip(cov.data.par_chunks(rw))
+            .enumerate()
+            .for_each(|(dy, (out, crow))| row(y0 + dy, out, crow));
     } else {
         for (dy, (out, crow)) in rows.zip(cov.data.chunks(rw)).enumerate() {
             row(y0 + dy, out, crow);
@@ -529,8 +650,13 @@ fn draw_coverage(d: &Draw, paths: &[BezPath], m: &Mat3, r: PxRect) -> Mask {
     match &d.paint {
         Paint::Fill { rule, .. } => effectcraft_path::fill_coverage(paths, &sub, r.w, r.h, *rule),
         Paint::Stroke { style, .. } => stroke(style),
-        Paint::Gradient { stroke: Some(style), .. } => stroke(style),
-        Paint::Gradient { rule, .. } => effectcraft_path::fill_coverage(paths, &sub, r.w, r.h, *rule),
+        Paint::Gradient {
+            stroke: Some(style),
+            ..
+        } => stroke(style),
+        Paint::Gradient { rule, .. } => {
+            effectcraft_path::fill_coverage(paths, &sub, r.w, r.h, *rule)
+        }
     }
 }
 
@@ -539,10 +665,15 @@ fn draw_bounds(d: &Draw, paths: &[BezPath]) -> Option<kurbo::Rect> {
     let b = effectcraft_path::bounds(paths)?;
     let stroke = match &d.paint {
         Paint::Stroke { style, .. } => Some(style),
-        Paint::Gradient { stroke: Some(style), .. } => Some(style),
+        Paint::Gradient {
+            stroke: Some(style),
+            ..
+        } => Some(style),
         _ => None,
     };
-    let grow = stroke.map_or(1.0, |style| style.width * style.miter.max(1.0) * 0.5 * d.xf.mean_scale().max(1.0) + 1.0);
+    let grow = stroke.map_or(1.0, |style| {
+        style.width * style.miter.max(1.0) * 0.5 * d.xf.mean_scale().max(1.0) + 1.0
+    });
     Some(b.inflate(grow, grow))
 }
 
@@ -553,11 +684,18 @@ fn visual_bounds(d: &Draw, paths: &[BezPath]) -> Option<kurbo::Rect> {
     let b = effectcraft_path::bounds(paths)?;
     let stroke = match &d.paint {
         Paint::Stroke { style, .. } => Some(style),
-        Paint::Gradient { stroke: Some(style), .. } => Some(style),
+        Paint::Gradient {
+            stroke: Some(style),
+            ..
+        } => Some(style),
         _ => None,
     };
     let grow = stroke.map_or(0.0, |style| style.width * 0.5 * d.xf.mean_scale());
-    Some(if grow.is_finite() && grow > 0.0 { b.inflate(grow, grow) } else { b })
+    Some(if grow.is_finite() && grow > 0.0 {
+        b.inflate(grow, grow)
+    } else {
+        b
+    })
 }
 
 /// Maximum number of coverage pixels rasterised concurrently (bounds peak memory).
@@ -576,12 +714,23 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, s: f64) -> Buf
         .rev()
         .filter(|d| d.opacity > 0.0)
         .filter_map(|d| {
-            let paths: Vec<BezPath> = d.slots.iter().map(|&i| arena[i].clone()).filter(|p| !p.elements().is_empty()).collect();
+            let paths: Vec<BezPath> = d
+                .slots
+                .iter()
+                .map(|&i| arena[i].clone())
+                .filter(|p| !p.elements().is_empty())
+                .collect();
             let b = draw_bounds(d, &paths)?;
             Some((d, paths, b))
         })
         .collect();
-    let Some(b) = resolved.iter().map(|r| r.2).reduce(|a, b| a.union(b)) else { return Buf { img: Image::new(1, 1), offset: [0.0, 0.0], scale: s } };
+    let Some(b) = resolved.iter().map(|r| r.2).reduce(|a, b| a.union(b)) else {
+        return Buf {
+            img: Image::new(1, 1),
+            offset: [0.0, 0.0],
+            scale: s,
+        };
+    };
     // Keep buffers sane for runaway geometry.
     let b = b.intersect(kurbo::Rect::new(-20000.0, -20000.0, 20000.0, 20000.0));
     let w = ((b.width() * s).ceil() as u32 + 4).clamp(1, 16384);
@@ -593,24 +742,46 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, s: f64) -> Buf
         let y0 = (r.y0 * s + offset[1]).floor().max(0.0);
         let x1 = (r.x1 * s + offset[0]).ceil().min(w as f64);
         let y1 = (r.y1 * s + offset[1]).ceil().min(h as f64);
-        (x1 > x0 && y1 > y0).then_some(PxRect { x0: x0 as u32, y0: y0 as u32, w: (x1 - x0) as u32, h: (y1 - y0) as u32 })
+        (x1 > x0 && y1 > y0).then_some(PxRect {
+            x0: x0 as u32,
+            y0: y0 as u32,
+            w: (x1 - x0) as u32,
+            h: (y1 - y0) as u32,
+        })
     };
-    let jobs: Vec<(&Draw, &[BezPath], PxRect)> = resolved.iter().filter_map(|(d, p, b)| Some((*d, p.as_slice(), px_rect(*b)?))).collect();
+    let jobs: Vec<(&Draw, &[BezPath], PxRect)> = resolved
+        .iter()
+        .filter_map(|(d, p, b)| Some((*d, p.as_slice(), px_rect(*b)?)))
+        .collect();
     let mut img = Image::new(w, h);
     let mut i = 0;
     while i < jobs.len() {
         // Next batch: as many draws as fit the pixel budget (at least one).
         let mut j = i;
         let mut px = 0usize;
-        while j < jobs.len() && (j == i || px + jobs[j].2.w as usize * jobs[j].2.h as usize <= BATCH_PIXELS) {
+        while j < jobs.len()
+            && (j == i || px + jobs[j].2.w as usize * jobs[j].2.h as usize <= BATCH_PIXELS)
+        {
             px += jobs[j].2.w as usize * jobs[j].2.h as usize;
             j += 1;
         }
-        let covs: Vec<Mask> = jobs[i..j].par_iter().map(|(d, paths, r)| draw_coverage(d, paths, &m, *r)).collect();
+        let covs: Vec<Mask> = jobs[i..j]
+            .par_iter()
+            .map(|(d, paths, r)| draw_coverage(d, paths, &m, *r))
+            .collect();
         for ((d, _, r), cov) in jobs[i..j].iter().zip(&covs) {
             match &d.paint {
-                Paint::Fill { color, .. } | Paint::Stroke { color, .. } => paint(&mut img, *r, cov, d.opacity, d.blend, |_, _| *color),
-                Paint::Gradient { g, radial, start, end, highlight, .. } => {
+                Paint::Fill { color, .. } | Paint::Stroke { color, .. } => {
+                    paint(&mut img, *r, cov, d.opacity, d.blend, |_, _| *color)
+                }
+                Paint::Gradient {
+                    g,
+                    radial,
+                    start,
+                    end,
+                    highlight,
+                    ..
+                } => {
                     let to_local = (m * d.xf).inverse().unwrap_or(Mat3::IDENTITY);
                     let ramp = GradientRamp::new(*radial, *start, *end, *highlight);
                     paint(&mut img, *r, cov, d.opacity, d.blend, |x, y| {
@@ -622,7 +793,11 @@ pub fn render(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup, s: f64) -> Buf
         }
         i = j;
     }
-    Buf { img, offset, scale: s }
+    Buf {
+        img,
+        offset,
+        scale: s,
+    }
 }
 
 #[cfg(test)]
@@ -630,7 +805,11 @@ mod tests;
 
 /// The filled outlines of a shape layer in layer space with their straight colours (gradient
 /// fills: the colour half way along), without strokes (see [`extrusion_outlines`]).
-pub fn fill_outlines(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) -> Vec<(Vec<BezPath>, [f32; 4])> {
+pub fn fill_outlines(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    contents: &PropGroup,
+) -> Vec<(Vec<BezPath>, [f32; 4])> {
     let mut arena = Vec::new();
     let (draws, _) = collect(ctx, layer, contents, &mut arena);
     draws
@@ -640,10 +819,17 @@ pub fn fill_outlines(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) -> Vec<
         .filter_map(|d| {
             let c = match &d.paint {
                 Paint::Fill { color, .. } => *color,
-                Paint::Gradient { g, stroke: None, .. } => g.sample(0.5),
+                Paint::Gradient {
+                    g, stroke: None, ..
+                } => g.sample(0.5),
                 _ => return None,
             };
-            let paths: Vec<BezPath> = d.slots.iter().map(|&i| arena[i].clone()).filter(|p| !p.elements().is_empty()).collect();
+            let paths: Vec<BezPath> = d
+                .slots
+                .iter()
+                .map(|&i| arena[i].clone())
+                .filter(|p| !p.elements().is_empty())
+                .collect();
             (!paths.is_empty()).then_some((paths, [c[0], c[1], c[2], c[3] * d.opacity]))
         })
         .collect()
@@ -653,7 +839,11 @@ pub fn fill_outlines(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) -> Vec<
 /// (gradient fills: the colour half way along) and strokes, each stroke turned into the region
 /// it covers (outline of the stroke with its width, joins, caps and dashes, overlaps resolved),
 /// with the colours of their extrusion's surfaces.
-pub fn extrusion_outlines(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) -> Vec<(Vec<BezPath>, [f32; 4], SurfaceColors)> {
+pub fn extrusion_outlines(
+    ctx: &EvalCtx,
+    layer: &Layer,
+    contents: &PropGroup,
+) -> Vec<(Vec<BezPath>, [f32; 4], SurfaceColors)> {
     let mut arena = Vec::new();
     let (draws, _) = collect(ctx, layer, contents, &mut arena);
     draws
@@ -661,15 +851,26 @@ pub fn extrusion_outlines(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) ->
         .rev()
         .filter(|d| d.opacity > 0.0)
         .filter_map(|d| {
-            let paths: Vec<BezPath> = d.slots.iter().map(|&i| arena[i].clone()).filter(|p| !p.elements().is_empty()).collect();
+            let paths: Vec<BezPath> = d
+                .slots
+                .iter()
+                .map(|&i| arena[i].clone())
+                .filter(|p| !p.elements().is_empty())
+                .collect();
             if paths.is_empty() {
                 return None;
             }
             let (c, region) = match &d.paint {
                 Paint::Fill { color, .. } => (*color, paths),
-                Paint::Gradient { g, stroke: None, .. } => (g.sample(0.5), paths),
+                Paint::Gradient {
+                    g, stroke: None, ..
+                } => (g.sample(0.5), paths),
                 Paint::Stroke { color, style } => (*color, vec![stroke_region(&paths, style)?]),
-                Paint::Gradient { g, stroke: Some(style), .. } => (g.sample(0.5), vec![stroke_region(&paths, style)?]),
+                Paint::Gradient {
+                    g,
+                    stroke: Some(style),
+                    ..
+                } => (g.sample(0.5), vec![stroke_region(&paths, style)?]),
             };
             Some((region, [c[0], c[1], c[2], c[3] * d.opacity], d.surfaces))
         })
@@ -691,7 +892,12 @@ pub fn content_bounds(ctx: &EvalCtx, layer: &Layer, contents: &PropGroup) -> Opt
     draws
         .iter()
         .filter_map(|d| {
-            let paths: Vec<BezPath> = d.slots.iter().filter_map(|&i| arena.get(i).cloned()).filter(|p| !p.elements().is_empty()).collect();
+            let paths: Vec<BezPath> = d
+                .slots
+                .iter()
+                .filter_map(|&i| arena.get(i).cloned())
+                .filter(|p| !p.elements().is_empty())
+                .collect();
             visual_bounds(d, &paths)
         })
         .reduce(|a, b| a.union(b))

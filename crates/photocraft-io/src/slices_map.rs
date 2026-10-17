@@ -15,24 +15,41 @@ use photocraft_psd::slices::{SliceRecord, SlicesResource};
 pub const SLICES: u16 = photocraft_psd::slices::SLICES;
 
 fn raw(doc: &Document) -> Option<&[u8]> {
-    doc.metadata.psd_resources.iter().find(|(id, _, _)| *id == SLICES).map(|(_, _, d)| d.as_slice())
+    doc.metadata
+        .psd_resources
+        .iter()
+        .find(|(id, _, _)| *id == SLICES)
+        .map(|(_, _, d)| d.as_slice())
 }
 
 /// The document's slices from the raw resource (None or unreadable = no slices).
 pub fn slices_from_psd(raw: Option<&[u8]>, doc: &Document) -> Slices {
-    let Some(res) = raw.and_then(|r| SlicesResource::from_bytes(r).ok()) else { return Slices::default() };
-    let by_psd_id: HashMap<u32, LayerId> = doc.walk().into_iter().filter_map(|(_, _, l)| l.psd_id.map(|p| (p, l.id))).collect();
+    let Some(res) = raw.and_then(|r| SlicesResource::from_bytes(r).ok()) else {
+        return Slices::default();
+    };
+    let by_psd_id: HashMap<u32, LayerId> = doc
+        .walk()
+        .into_iter()
+        .filter_map(|(_, _, l)| l.psd_id.map(|p| (p, l.id)))
+        .collect();
     let list = res
         .slices
         .iter()
         .filter(|s| s.origin != 0)
         .map(|s| {
-            let layer = s.layer_id.and_then(|p| by_psd_id.get(&p).copied()).filter(|_| s.origin == 1);
+            let layer = s
+                .layer_id
+                .and_then(|p| by_psd_id.get(&p).copied())
+                .filter(|_| s.origin == 1);
             Slice {
                 id: s.id,
                 group_id: s.group_id,
                 // A layer-based slice whose layer is gone keeps its rect as a user slice.
-                origin: if s.origin == 1 && layer.is_some() { SliceOrigin::Layer } else { SliceOrigin::User },
+                origin: if s.origin == 1 && layer.is_some() {
+                    SliceOrigin::Layer
+                } else {
+                    SliceOrigin::User
+                },
                 layer,
                 name: s.name.clone(),
                 rect: Rect::new(s.rect[0], s.rect[1], s.rect[2], s.rect[3]),
@@ -50,7 +67,10 @@ pub fn slices_from_psd(raw: Option<&[u8]>, doc: &Document) -> Slices {
             }
         })
         .collect();
-    Slices { group_name: res.group_name, list }
+    Slices {
+        group_name: res.group_name,
+        list,
+    }
 }
 
 /// Sets `doc.slices` from its preserved resource (called after layers and ids are imported).
@@ -65,7 +85,10 @@ pub fn unchanged(doc: &Document) -> bool {
 
 /// The resource to write: `None` keeps the preserved one, `Some(None)` drops it, `Some(Some)` is
 /// a fresh resource. `layer_ids` maps document layers to the PSD layer ids being written.
-pub fn export_resource(doc: &Document, layer_ids: &HashMap<LayerId, u32>) -> (Option<Option<Vec<u8>>>, Option<String>) {
+pub fn export_resource(
+    doc: &Document,
+    layer_ids: &HashMap<LayerId, u32>,
+) -> (Option<Option<Vec<u8>>>, Option<String>) {
     if unchanged(doc) {
         return (None, None);
     }
@@ -126,11 +149,27 @@ pub fn export_resource(doc: &Document, layer_ids: &HashMap<LayerId, u32>) -> (Op
         }
         used.insert(id);
         next_id = id.checked_add(1);
-        records.push(SliceRecord { id, origin: 0, kind: 1, rect: [r.x0, r.y0, r.x1, r.y1], ..Default::default() });
+        records.push(SliceRecord {
+            id,
+            origin: 0,
+            kind: 1,
+            rect: [r.x0, r.y0, r.x1, r.y1],
+            ..Default::default()
+        });
     }
-    let group_name = if doc.slices.group_name.is_empty() { slices::base_name(doc) } else { doc.slices.group_name.clone() };
-    let res = SlicesResource { version: 6, bounds: [0, 0, doc.size.height as i32, doc.size.width as i32], group_name, slices: records };
-    let warning = omitted_auto_slices.then(|| "auto slices omitted because the slice id space is exhausted".to_string());
+    let group_name = if doc.slices.group_name.is_empty() {
+        slices::base_name(doc)
+    } else {
+        doc.slices.group_name.clone()
+    };
+    let res = SlicesResource {
+        version: 6,
+        bounds: [0, 0, doc.size.height as i32, doc.size.width as i32],
+        group_name,
+        slices: records,
+    };
+    let warning = omitted_auto_slices
+        .then(|| "auto slices omitted because the slice id space is exhausted".to_string());
     (Some(Some(res.to_bytes())), warning)
 }
 
@@ -141,7 +180,12 @@ mod tests {
 
     #[test]
     fn slices_survive_a_psd_round_trip() {
-        let mut d = Document::new("site.psd", Size::new(120, 90), ColorMode::Rgb, SampleType::U8);
+        let mut d = Document::new(
+            "site.psd",
+            Size::new(120, 90),
+            ColorMode::Rgb,
+            SampleType::U8,
+        );
         let mut l = Layer::raster("Logo", d.pixel_format());
         l.psd_id = Some(5);
         let lid = l.id;
@@ -170,24 +214,44 @@ mod tests {
         // Read back into a copy of the document without slices.
         let mut back = d.clone();
         back.slices = Slices::default();
-        back.metadata.psd_resources.push((SLICES, String::new(), std::sync::Arc::new(data)));
+        back.metadata
+            .psd_resources
+            .push((SLICES, String::new(), std::sync::Arc::new(data)));
         import(&mut back);
         assert_eq!(back.slices.list, d.slices.list);
         assert!(unchanged(&back));
-        assert_eq!(export_resource(&back, &ids), (None, None), "unchanged → keep the raw resource");
+        assert_eq!(
+            export_resource(&back, &ids),
+            (None, None),
+            "unchanged → keep the raw resource"
+        );
     }
 
     #[test]
     fn auto_slice_ids_do_not_collide_with_maximal_stored_id() {
-        let mut d = Document::new("site.psd", Size::new(120, 90), ColorMode::Rgb, SampleType::U8);
-        d.slices.list.push(Slice { id: u32::MAX, rect: Rect::new(10, 10, 20, 20), ..Default::default() });
+        let mut d = Document::new(
+            "site.psd",
+            Size::new(120, 90),
+            ColorMode::Rgb,
+            SampleType::U8,
+        );
+        d.slices.list.push(Slice {
+            id: u32::MAX,
+            rect: Rect::new(10, 10, 20, 20),
+            ..Default::default()
+        });
         let (resource, warning) = export_resource(&d, &HashMap::new());
         assert!(warning.is_none());
-        let data = resource.flatten().expect("a changed document writes a resource");
+        let data = resource
+            .flatten()
+            .expect("a changed document writes a resource");
         let decoded = SlicesResource::from_bytes(&data).expect("resource is valid");
         let ids: Vec<u32> = decoded.slices.iter().map(|s| s.id).collect();
         assert!(ids.contains(&u32::MAX));
         assert!(ids.contains(&1));
-        assert_eq!(ids.iter().collect::<std::collections::HashSet<_>>().len(), ids.len());
+        assert_eq!(
+            ids.iter().collect::<std::collections::HashSet<_>>().len(),
+            ids.len()
+        );
     }
 }

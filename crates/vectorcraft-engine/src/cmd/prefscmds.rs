@@ -85,67 +85,268 @@ const LINE_STYLE: &[(&str, &str)] = &[("lines", "Lines"), ("dots", "Dots")];
 /// Performance › Graphics Processor (`gpuPreference`), read by the desktop app at startup. The
 /// values are WebGPU's power preferences plus `automatic`; 0.5.0's default, `powerSaving`, reads as
 /// `automatic` (#502).
-pub const GPU_PREFERENCES: &[(&str, &str)] =
-    &[("automatic", "Automatic"), ("lowPower", "Power Saving (integrated)"), ("highPerformance", "High Performance (discrete)")];
+pub const GPU_PREFERENCES: &[(&str, &str)] = &[
+    ("automatic", "Automatic"),
+    ("lowPower", "Power Saving (integrated)"),
+    ("highPerformance", "High Performance (discrete)"),
+];
 /// Performance › Linux Display Server (`linuxDisplayServer`), read by the desktop app at startup:
 /// `x11` opens the window through XWayland on a Wayland session, where dropped files arrive
 /// (winit 0.30 has no Wayland drag and drop, #1151).
-const LINUX_DISPLAY_SERVERS: &[(&str, &str)] = &[("automatic", "Automatic"), ("x11", "X11 (XWayland)")];
-const BLACK: &[(&str, &str)] = &[("accurate", "Display All Blacks Accurately"), ("rich", "Display All Blacks as Rich Black")];
-const BLACK_OUT: &[(&str, &str)] = &[("accurate", "Output All Blacks Accurately"), ("rich", "Output All Blacks as Rich Black")];
+const LINUX_DISPLAY_SERVERS: &[(&str, &str)] =
+    &[("automatic", "Automatic"), ("x11", "X11 (XWayland)")];
+const BLACK: &[(&str, &str)] = &[
+    ("accurate", "Display All Blacks Accurately"),
+    ("rich", "Display All Blacks as Rich Black"),
+];
+const BLACK_OUT: &[(&str, &str)] = &[
+    ("accurate", "Output All Blacks Accurately"),
+    ("rich", "Output All Blacks as Rich Black"),
+];
 
 macro_rules! p {
     ($key:literal, $cat:literal, $sec:literal, $label:literal, bool) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Bool }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Bool,
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, num($min:expr, $max:expr, $unit:literal)) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Num { min: $min, max: $max, unit: $unit } }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Num {
+                min: $min,
+                max: $max,
+                unit: $unit,
+            },
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, len($min:expr, $max:expr, $m:ident)) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Length { min: $min, max: $max, measure: Measure::$m } }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Length {
+                min: $min,
+                max: $max,
+                measure: Measure::$m,
+            },
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, int($min:expr, $max:expr)) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Int { min: $min, max: $max } }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Int {
+                min: $min,
+                max: $max,
+            },
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, choice($c:expr)) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Choice($c) }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Choice($c),
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, color) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Color }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Color,
+        }
     };
     ($key:literal, $cat:literal, $sec:literal, $label:literal, text) => {
-        PrefSpec { key: $key, category: $cat, section: $sec, label: $label, kind: PrefKind::Text }
+        PrefSpec {
+            key: $key,
+            category: $cat,
+            section: $sec,
+            label: $label,
+            kind: PrefKind::Text,
+        }
     };
 }
 
 pub const PREF_SPECS: &[PrefSpec] = &[
     // General
-    p!("keyboardIncrement", "General", "", "Keyboard Increment", len(0.001, 1296.0, General)),
-    p!("constrainAngle", "General", "", "Constrain Angle", num(-360.0, 360.0, "°")),
-    p!("cornerRadius", "General", "", "Corner Radius", len(0.0, 1296.0, General)),
-    p!("pasteOffset", "General", "", "Paste Offset", len(0.0, 1296.0, General)),
-    p!("disableAutoAddDelete", "General", "Options", "Disable Auto Add/Delete", bool),
-    p!("usePreciseCursors", "General", "Options", "Use Precise Cursors", bool),
+    p!(
+        "keyboardIncrement",
+        "General",
+        "",
+        "Keyboard Increment",
+        len(0.001, 1296.0, General)
+    ),
+    p!(
+        "constrainAngle",
+        "General",
+        "",
+        "Constrain Angle",
+        num(-360.0, 360.0, "°")
+    ),
+    p!(
+        "cornerRadius",
+        "General",
+        "",
+        "Corner Radius",
+        len(0.0, 1296.0, General)
+    ),
+    p!(
+        "pasteOffset",
+        "General",
+        "",
+        "Paste Offset",
+        len(0.0, 1296.0, General)
+    ),
+    p!(
+        "disableAutoAddDelete",
+        "General",
+        "Options",
+        "Disable Auto Add/Delete",
+        bool
+    ),
+    p!(
+        "usePreciseCursors",
+        "General",
+        "Options",
+        "Use Precise Cursors",
+        bool
+    ),
     p!("showToolTips", "General", "Options", "Show Tool Tips", bool),
-    p!("antiAliasedArtwork", "General", "Options", "Anti-aliased Artwork", bool),
-    p!("selectSameTintPercent", "General", "Options", "Select Same Tint %", bool),
-    p!("showHomeScreen", "General", "Options", "Show The Home Screen When No Documents Are Open", bool),
-    p!("usePreviewBounds", "General", "Options", "Use Preview Bounds", bool),
-    p!("displayPrintSize", "General", "Options", "Display Print Size at 100% Zoom", bool),
-    p!("doubleClickToIsolate", "General", "Options", "Double Click To Isolate", bool),
-    p!("transformPatternTiles", "General", "Options", "Transform Pattern Tiles", bool),
+    p!(
+        "antiAliasedArtwork",
+        "General",
+        "Options",
+        "Anti-aliased Artwork",
+        bool
+    ),
+    p!(
+        "selectSameTintPercent",
+        "General",
+        "Options",
+        "Select Same Tint %",
+        bool
+    ),
+    p!(
+        "showHomeScreen",
+        "General",
+        "Options",
+        "Show The Home Screen When No Documents Are Open",
+        bool
+    ),
+    p!(
+        "usePreviewBounds",
+        "General",
+        "Options",
+        "Use Preview Bounds",
+        bool
+    ),
+    p!(
+        "displayPrintSize",
+        "General",
+        "Options",
+        "Display Print Size at 100% Zoom",
+        bool
+    ),
+    p!(
+        "doubleClickToIsolate",
+        "General",
+        "Options",
+        "Double Click To Isolate",
+        bool
+    ),
+    p!(
+        "transformPatternTiles",
+        "General",
+        "Options",
+        "Transform Pattern Tiles",
+        bool
+    ),
     p!("scaleCorners", "General", "Options", "Scale Corners", bool),
-    p!("scaleStrokes", "General", "Options", "Scale Strokes & Effects", bool),
-    p!("zoomWithMouseWheel", "General", "Options", "Zoom with Mouse Wheel", bool),
-    p!("scrubNumericFields", "General", "Options", "Scrub Numeric Fields by Dragging", bool),
+    p!(
+        "scaleStrokes",
+        "General",
+        "Options",
+        "Scale Strokes & Effects",
+        bool
+    ),
+    p!(
+        "zoomWithMouseWheel",
+        "General",
+        "Options",
+        "Zoom with Mouse Wheel",
+        bool
+    ),
+    p!(
+        "scrubNumericFields",
+        "General",
+        "Options",
+        "Scrub Numeric Fields by Dragging",
+        bool
+    ),
     // Selection & Anchor Display
-    p!("selectionTolerance", "Selection & Anchor Display", "Selection", "Tolerance", num(1.0, 8.0, "px")),
-    p!("objectSelectionByPathOnly", "Selection & Anchor Display", "Selection", "Object Selection by Path Only", bool),
-    p!("snapToPointTolerance", "Selection & Anchor Display", "Selection", "Snap to Point", num(1.0, 8.0, "px")),
-    p!("ctrlClickSelectsBehind", "Selection & Anchor Display", "Selection", "Command Click to Select Objects Behind", bool),
-    p!("zoomToSelection", "Selection & Anchor Display", "Selection", "Zoom to Selection", bool),
-    p!("moveLockedWithArtboard", "Selection & Anchor Display", "Selection", "Move Locked and Hidden Artwork with Artboard", bool),
-    p!("anchorSize", "Selection & Anchor Display", "Anchor Points, Handle, and Bounding Box Display", "Size", int(1, 7)),
+    p!(
+        "selectionTolerance",
+        "Selection & Anchor Display",
+        "Selection",
+        "Tolerance",
+        num(1.0, 8.0, "px")
+    ),
+    p!(
+        "objectSelectionByPathOnly",
+        "Selection & Anchor Display",
+        "Selection",
+        "Object Selection by Path Only",
+        bool
+    ),
+    p!(
+        "snapToPointTolerance",
+        "Selection & Anchor Display",
+        "Selection",
+        "Snap to Point",
+        num(1.0, 8.0, "px")
+    ),
+    p!(
+        "ctrlClickSelectsBehind",
+        "Selection & Anchor Display",
+        "Selection",
+        "Command Click to Select Objects Behind",
+        bool
+    ),
+    p!(
+        "zoomToSelection",
+        "Selection & Anchor Display",
+        "Selection",
+        "Zoom to Selection",
+        bool
+    ),
+    p!(
+        "moveLockedWithArtboard",
+        "Selection & Anchor Display",
+        "Selection",
+        "Move Locked and Hidden Artwork with Artboard",
+        bool
+    ),
+    p!(
+        "anchorSize",
+        "Selection & Anchor Display",
+        "Anchor Points, Handle, and Bounding Box Display",
+        "Size",
+        int(1, 7)
+    ),
     p!(
         "handleStyle",
         "Selection & Anchor Display",
@@ -174,46 +375,232 @@ pub const PREF_SPECS: &[PrefSpec] = &[
         "Hide Corner Widget for angles greater than",
         num(0.0, 180.0, "°")
     ),
-    p!("penRubberBand", "Selection & Anchor Display", "Enable Rubber Band for", "Pen Tool", bool),
-    p!("curvatureRubberBand", "Selection & Anchor Display", "Enable Rubber Band for", "Curvature Tool", bool),
+    p!(
+        "penRubberBand",
+        "Selection & Anchor Display",
+        "Enable Rubber Band for",
+        "Pen Tool",
+        bool
+    ),
+    p!(
+        "curvatureRubberBand",
+        "Selection & Anchor Display",
+        "Enable Rubber Band for",
+        "Curvature Tool",
+        bool
+    ),
     // Type
-    p!("typeSizeIncrement", "Type", "", "Size/Leading", len(0.001, 1296.0, Type)),
-    p!("trackingIncrement", "Type", "", "Tracking", num(1.0, 1000.0, "/1000 em")),
-    p!("baselineShiftIncrement", "Type", "", "Baseline Shift", len(0.001, 1296.0, Type)),
-    p!("showEastAsianOptions", "Type", "Language Options", "Show East Asian Options", bool),
-    p!("showIndicOptions", "Type", "Language Options", "Show Indic Options", bool),
-    p!("typeSelectionByPathOnly", "Type", "Options", "Type Object Selection by Path Only", bool),
-    p!("fontNamesInEnglish", "Type", "Options", "Show Font Names in English", bool),
-    p!("autoSizeAreaType", "Type", "Options", "Auto Size New Area Type", bool),
-    p!("fontPreview", "Type", "Options", "Enable in-menu font previews", bool),
-    p!("fontPreviewSize", "Type", "Options", "Font Preview Size", choice(&[("small", "Small"), ("medium", "Medium"), ("large", "Large")])),
-    p!("recentFontsCount", "Type", "Options", "Number of Recent Fonts", int(1, 15)),
-    p!("missingGlyphProtection", "Type", "Options", "Enable Missing Glyph Protection", bool),
-    p!("highlightAlternateGlyphs", "Type", "Options", "Highlight Alternate Glyphs", bool),
-    p!("placeholderText", "Type", "Options", "Fill New Type Objects With Placeholder Text", bool),
-    p!("fontsFolder", "Type", "Options", "Additional Fonts Folder", text),
+    p!(
+        "typeSizeIncrement",
+        "Type",
+        "",
+        "Size/Leading",
+        len(0.001, 1296.0, Type)
+    ),
+    p!(
+        "trackingIncrement",
+        "Type",
+        "",
+        "Tracking",
+        num(1.0, 1000.0, "/1000 em")
+    ),
+    p!(
+        "baselineShiftIncrement",
+        "Type",
+        "",
+        "Baseline Shift",
+        len(0.001, 1296.0, Type)
+    ),
+    p!(
+        "showEastAsianOptions",
+        "Type",
+        "Language Options",
+        "Show East Asian Options",
+        bool
+    ),
+    p!(
+        "showIndicOptions",
+        "Type",
+        "Language Options",
+        "Show Indic Options",
+        bool
+    ),
+    p!(
+        "typeSelectionByPathOnly",
+        "Type",
+        "Options",
+        "Type Object Selection by Path Only",
+        bool
+    ),
+    p!(
+        "fontNamesInEnglish",
+        "Type",
+        "Options",
+        "Show Font Names in English",
+        bool
+    ),
+    p!(
+        "autoSizeAreaType",
+        "Type",
+        "Options",
+        "Auto Size New Area Type",
+        bool
+    ),
+    p!(
+        "fontPreview",
+        "Type",
+        "Options",
+        "Enable in-menu font previews",
+        bool
+    ),
+    p!(
+        "fontPreviewSize",
+        "Type",
+        "Options",
+        "Font Preview Size",
+        choice(&[("small", "Small"), ("medium", "Medium"), ("large", "Large")])
+    ),
+    p!(
+        "recentFontsCount",
+        "Type",
+        "Options",
+        "Number of Recent Fonts",
+        int(1, 15)
+    ),
+    p!(
+        "missingGlyphProtection",
+        "Type",
+        "Options",
+        "Enable Missing Glyph Protection",
+        bool
+    ),
+    p!(
+        "highlightAlternateGlyphs",
+        "Type",
+        "Options",
+        "Highlight Alternate Glyphs",
+        bool
+    ),
+    p!(
+        "placeholderText",
+        "Type",
+        "Options",
+        "Fill New Type Objects With Placeholder Text",
+        bool
+    ),
+    p!(
+        "fontsFolder",
+        "Type",
+        "Options",
+        "Additional Fonts Folder",
+        text
+    ),
     // Units
     p!("unitsGeneral", "Units", "", "General", choice(UNITS)),
     p!("unitsStroke", "Units", "", "Stroke", choice(UNITS)),
     p!("unitsType", "Units", "", "Type", choice(UNITS)),
-    p!("unitsAsianType", "Units", "", "East Asian Type", choice(UNITS)),
-    p!("numbersWithoutUnitsArePoints", "Units", "", "Numbers Without Units Are Points", bool),
-    p!("identifyObjectsBy", "Units", "", "Identify Objects By", choice(&[("objectName", "Object Name"), ("xmlId", "XML ID")])),
+    p!(
+        "unitsAsianType",
+        "Units",
+        "",
+        "East Asian Type",
+        choice(UNITS)
+    ),
+    p!(
+        "numbersWithoutUnitsArePoints",
+        "Units",
+        "",
+        "Numbers Without Units Are Points",
+        bool
+    ),
+    p!(
+        "identifyObjectsBy",
+        "Units",
+        "",
+        "Identify Objects By",
+        choice(&[("objectName", "Object Name"), ("xmlId", "XML ID")])
+    ),
     // Guides & Grid
     p!("guideColor", "Guides & Grid", "Guides", "Color", color),
-    p!("guideStyle", "Guides & Grid", "Guides", "Style", choice(LINE_STYLE)),
+    p!(
+        "guideStyle",
+        "Guides & Grid",
+        "Guides",
+        "Style",
+        choice(LINE_STYLE)
+    ),
     p!("gridColor", "Guides & Grid", "Grid", "Color", color),
-    p!("gridStyle", "Guides & Grid", "Grid", "Style", choice(LINE_STYLE)),
-    p!("gridlineEvery", "Guides & Grid", "Grid", "Gridline every", len(1.0, 16383.0, General)),
-    p!("gridSubdivisions", "Guides & Grid", "Grid", "Subdivisions", int(1, 1000)),
-    p!("gridsInBack", "Guides & Grid", "Grid", "Grids In Back", bool),
-    p!("showPixelGrid", "Guides & Grid", "Grid", "Show Pixel Grid (Above 600% Zoom)", bool),
+    p!(
+        "gridStyle",
+        "Guides & Grid",
+        "Grid",
+        "Style",
+        choice(LINE_STYLE)
+    ),
+    p!(
+        "gridlineEvery",
+        "Guides & Grid",
+        "Grid",
+        "Gridline every",
+        len(1.0, 16383.0, General)
+    ),
+    p!(
+        "gridSubdivisions",
+        "Guides & Grid",
+        "Grid",
+        "Subdivisions",
+        int(1, 1000)
+    ),
+    p!(
+        "gridsInBack",
+        "Guides & Grid",
+        "Grid",
+        "Grids In Back",
+        bool
+    ),
+    p!(
+        "showPixelGrid",
+        "Guides & Grid",
+        "Grid",
+        "Show Pixel Grid (Above 600% Zoom)",
+        bool
+    ),
     // Smart Guides
-    p!("smartGuideColor", "Smart Guides", "Display Options", "Color", color),
-    p!("alignmentGuides", "Smart Guides", "Display Options", "Alignment Guides", bool),
-    p!("objectHighlighting", "Smart Guides", "Display Options", "Object Highlighting", bool),
-    p!("transformToolsGuides", "Smart Guides", "Display Options", "Transform Tools", bool),
-    p!("constructionGuides", "Smart Guides", "Display Options", "Construction Guides", bool),
+    p!(
+        "smartGuideColor",
+        "Smart Guides",
+        "Display Options",
+        "Color",
+        color
+    ),
+    p!(
+        "alignmentGuides",
+        "Smart Guides",
+        "Display Options",
+        "Alignment Guides",
+        bool
+    ),
+    p!(
+        "objectHighlighting",
+        "Smart Guides",
+        "Display Options",
+        "Object Highlighting",
+        bool
+    ),
+    p!(
+        "transformToolsGuides",
+        "Smart Guides",
+        "Display Options",
+        "Transform Tools",
+        bool
+    ),
+    p!(
+        "constructionGuides",
+        "Smart Guides",
+        "Display Options",
+        "Construction Guides",
+        bool
+    ),
     p!(
         "constructionAngles",
         "Smart Guides",
@@ -228,10 +615,34 @@ pub const PREF_SPECS: &[PrefSpec] = &[
             ("90° & 45° & 30° Angles", "90° & 45° & 30° Angles"),
         ])
     ),
-    p!("anchorPathLabels", "Smart Guides", "Display Options", "Anchor/Path Labels", bool),
-    p!("measurementLabels", "Smart Guides", "Display Options", "Measurement Labels", bool),
-    p!("spacingGuides", "Smart Guides", "Display Options", "Spacing Guides", bool),
-    p!("snappingTolerance", "Smart Guides", "", "Snapping Tolerance", num(0.0, 40.0, "pt")),
+    p!(
+        "anchorPathLabels",
+        "Smart Guides",
+        "Display Options",
+        "Anchor/Path Labels",
+        bool
+    ),
+    p!(
+        "measurementLabels",
+        "Smart Guides",
+        "Display Options",
+        "Measurement Labels",
+        bool
+    ),
+    p!(
+        "spacingGuides",
+        "Smart Guides",
+        "Display Options",
+        "Spacing Guides",
+        bool
+    ),
+    p!(
+        "snappingTolerance",
+        "Smart Guides",
+        "",
+        "Snapping Tolerance",
+        num(0.0, 40.0, "pt")
+    ),
     // Slices
     p!("showSliceNumbers", "Slices", "", "Show Slice Numbers", bool),
     p!("sliceLineColor", "Slices", "", "Line Color", color),
@@ -252,18 +663,47 @@ pub const PREF_SPECS: &[PrefSpec] = &[
             ("Portuguese", "Portuguese")
         ])
     ),
-    p!("hyphenationExceptions", "Hyphenation", "", "Exceptions (comma separated)", text),
+    p!(
+        "hyphenationExceptions",
+        "Hyphenation",
+        "",
+        "Exceptions (comma separated)",
+        text
+    ),
     // Performance & Storage
-    p!("pluginsFolder", "Performance & Storage", "Plug-ins", "Additional Plug-ins Folder", text),
-    p!("scratchPrimary", "Performance & Storage", "Scratch Disks", "Primary", text),
-    p!("scratchSecondary", "Performance & Storage", "Scratch Disks", "Secondary", text),
+    p!(
+        "pluginsFolder",
+        "Performance & Storage",
+        "Plug-ins",
+        "Additional Plug-ins Folder",
+        text
+    ),
+    p!(
+        "scratchPrimary",
+        "Performance & Storage",
+        "Scratch Disks",
+        "Primary",
+        text
+    ),
+    p!(
+        "scratchSecondary",
+        "Performance & Storage",
+        "Scratch Disks",
+        "Secondary",
+        text
+    ),
     // User Interface
     p!(
         "uiBrightness",
         "User Interface",
         "",
         "Brightness",
-        choice(&[("dark", "Dark"), ("mediumDark", "Medium Dark"), ("mediumLight", "Medium Light"), ("light", "Light")])
+        choice(&[
+            ("dark", "Dark"),
+            ("mediumDark", "Medium Dark"),
+            ("mediumLight", "Medium Light"),
+            ("light", "Light")
+        ])
     ),
     p!(
         "canvasColor",
@@ -278,50 +718,207 @@ pub const PREF_SPECS: &[PrefSpec] = &[
             ("darkGray", "Dark Gray")
         ])
     ),
-    p!("autoCollapseIconPanels", "User Interface", "", "Auto-Collapse Iconic Panels", bool),
-    p!("toolGroupLabels", "User Interface", "", "Show Tool Group Labels", bool),
-    p!("openDocumentsAsTabs", "User Interface", "", "Open Documents As Tabs", bool),
+    p!(
+        "autoCollapseIconPanels",
+        "User Interface",
+        "",
+        "Auto-Collapse Iconic Panels",
+        bool
+    ),
+    p!(
+        "toolGroupLabels",
+        "User Interface",
+        "",
+        "Show Tool Group Labels",
+        bool
+    ),
+    p!(
+        "openDocumentsAsTabs",
+        "User Interface",
+        "",
+        "Open Documents As Tabs",
+        bool
+    ),
     p!("largeTabs", "User Interface", "", "Large Tabs", bool),
-    p!("systemTitleBar", "User Interface", "", "System Title Bar", bool),
-    p!("uiScaling", "User Interface", "UI Scaling", "Scale", num(0.75, 2.0, "×")),
-    p!("scaleCursorWithUi", "User Interface", "UI Scaling", "Scale Cursor Proportional to UI", bool),
+    p!(
+        "systemTitleBar",
+        "User Interface",
+        "",
+        "System Title Bar",
+        bool
+    ),
+    p!(
+        "uiScaling",
+        "User Interface",
+        "UI Scaling",
+        "Scale",
+        num(0.75, 2.0, "×")
+    ),
+    p!(
+        "scaleCursorWithUi",
+        "User Interface",
+        "UI Scaling",
+        "Scale Cursor Proportional to UI",
+        bool
+    ),
     // `auto` or a language code the shell registers (`zh-hant`); the shell shows it as a dropdown.
-    p!("interfaceLanguage", "User Interface", "Language", "Language", text),
+    p!(
+        "interfaceLanguage",
+        "User Interface",
+        "Language",
+        "Language",
+        text
+    ),
     // Performance
-    p!("gpuPerformance", "Performance", "GPU Performance", "GPU Performance", bool),
-    p!("animatedZoom", "Performance", "GPU Performance", "Animated Zoom", bool),
-    p!("gpuPreference", "Performance", "GPU Performance", "Graphics Processor", choice(GPU_PREFERENCES)),
-    p!("historyStates", "Performance", "", "History States", int(5, 1000)),
-    p!("realTimeDrawing", "Performance", "", "Real-time Drawing and Editing", bool),
-    p!("renderThreads", "Performance", "", "Render Threads (-1 = Automatic)", int(-1, 64)),
-    p!("linuxDisplayServer", "Performance", "", "Linux Display Server", choice(LINUX_DISPLAY_SERVERS)),
+    p!(
+        "gpuPerformance",
+        "Performance",
+        "GPU Performance",
+        "GPU Performance",
+        bool
+    ),
+    p!(
+        "animatedZoom",
+        "Performance",
+        "GPU Performance",
+        "Animated Zoom",
+        bool
+    ),
+    p!(
+        "gpuPreference",
+        "Performance",
+        "GPU Performance",
+        "Graphics Processor",
+        choice(GPU_PREFERENCES)
+    ),
+    p!(
+        "historyStates",
+        "Performance",
+        "",
+        "History States",
+        int(5, 1000)
+    ),
+    p!(
+        "realTimeDrawing",
+        "Performance",
+        "",
+        "Real-time Drawing and Editing",
+        bool
+    ),
+    p!(
+        "renderThreads",
+        "Performance",
+        "",
+        "Render Threads (-1 = Automatic)",
+        int(-1, 64)
+    ),
+    p!(
+        "linuxDisplayServer",
+        "Performance",
+        "",
+        "Linux Display Server",
+        choice(LINUX_DISPLAY_SERVERS)
+    ),
     // File Handling
-    p!("backgroundSave", "File Handling", "", "Enable Background Save", bool),
-    p!("backgroundExport", "File Handling", "", "Enable Background Export", bool),
-    p!("autosaveRecovery", "File Handling", "Data Recovery", "Automatically Save Recovery Data", bool),
-    p!("autosaveInterval", "File Handling", "Data Recovery", "Every (minutes)", int(1, 60)),
-    p!("recoveryFolder", "File Handling", "Data Recovery", "Folder", text),
-    p!("recoveryOffForComplex", "File Handling", "Data Recovery", "Turn off Data Recovery for complex documents", bool),
-    p!("recentFilesCount", "File Handling", "Files", "Number of Recent Files to Display", int(0, 30)),
-    p!("lowResProxyEps", "File Handling", "Files", "Use Low Resolution Proxy for Linked EPS", bool),
-    p!("antiAliasedBitmaps", "File Handling", "Files", "Display Bitmaps as Anti-aliased Images in Pixel Preview", bool),
+    p!(
+        "backgroundSave",
+        "File Handling",
+        "",
+        "Enable Background Save",
+        bool
+    ),
+    p!(
+        "backgroundExport",
+        "File Handling",
+        "",
+        "Enable Background Export",
+        bool
+    ),
+    p!(
+        "autosaveRecovery",
+        "File Handling",
+        "Data Recovery",
+        "Automatically Save Recovery Data",
+        bool
+    ),
+    p!(
+        "autosaveInterval",
+        "File Handling",
+        "Data Recovery",
+        "Every (minutes)",
+        int(1, 60)
+    ),
+    p!(
+        "recoveryFolder",
+        "File Handling",
+        "Data Recovery",
+        "Folder",
+        text
+    ),
+    p!(
+        "recoveryOffForComplex",
+        "File Handling",
+        "Data Recovery",
+        "Turn off Data Recovery for complex documents",
+        bool
+    ),
+    p!(
+        "recentFilesCount",
+        "File Handling",
+        "Files",
+        "Number of Recent Files to Display",
+        int(0, 30)
+    ),
+    p!(
+        "lowResProxyEps",
+        "File Handling",
+        "Files",
+        "Use Low Resolution Proxy for Linked EPS",
+        bool
+    ),
+    p!(
+        "antiAliasedBitmaps",
+        "File Handling",
+        "Files",
+        "Display Bitmaps as Anti-aliased Images in Pixel Preview",
+        bool
+    ),
     p!(
         "updateLinks",
         "File Handling",
         "Files",
         "Update Links",
-        choice(&[("automatically", "Automatically"), ("manually", "Manually"), ("askWhenModified", "Ask When Modified")])
+        choice(&[
+            ("automatically", "Automatically"),
+            ("manually", "Manually"),
+            ("askWhenModified", "Ask When Modified")
+        ])
     ),
     // Clipboard Handling
-    p!("copyAsSvg", "Clipboard Handling", "On Copy", "Include SVG Code", bool),
+    p!(
+        "copyAsSvg",
+        "Clipboard Handling",
+        "On Copy",
+        "Include SVG Code",
+        bool
+    ),
     p!("copyAsPdf", "Clipboard Handling", "On Copy", "PDF", bool),
-    p!("copyAicb", "Clipboard Handling", "On Copy", "Legacy vector clipboard (no transparency)", bool),
+    p!(
+        "copyAicb",
+        "Clipboard Handling",
+        "On Copy",
+        "Legacy vector clipboard (no transparency)",
+        bool
+    ),
     p!(
         "aicbMode",
         "Clipboard Handling",
         "On Copy",
         "Legacy vector clipboard",
-        choice(&[("preservePaths", "Preserve Paths"), ("preserveAppearance", "Preserve Appearance and Overprints")])
+        choice(&[
+            ("preservePaths", "Preserve Paths"),
+            ("preserveAppearance", "Preserve Appearance and Overprints")
+        ])
     ),
     p!(
         "pasteTextFormatting",
@@ -331,26 +928,98 @@ pub const PREF_SPECS: &[PrefSpec] = &[
         choice(&[("keep", "Keep Formatting"), ("plain", "Keep Plain Text")])
     ),
     // Appearance of Black
-    p!("blackOnScreen", "Appearance of Black", "", "On Screen", choice(BLACK)),
-    p!("blackOutput", "Appearance of Black", "", "Printing / Exporting", choice(BLACK_OUT)),
+    p!(
+        "blackOnScreen",
+        "Appearance of Black",
+        "",
+        "On Screen",
+        choice(BLACK)
+    ),
+    p!(
+        "blackOutput",
+        "Appearance of Black",
+        "",
+        "Printing / Exporting",
+        choice(BLACK_OUT)
+    ),
     // Devices
-    p!("touchWorkspace", "Devices", "", "Enable Touch Workspace", bool),
-    p!("touchGestures", "Devices", "", "Enable Touch Gestures", bool),
+    p!(
+        "touchWorkspace",
+        "Devices",
+        "",
+        "Enable Touch Workspace",
+        bool
+    ),
+    p!(
+        "touchGestures",
+        "Devices",
+        "",
+        "Enable Touch Gestures",
+        bool
+    ),
     // Graphic Styles panel menu
-    p!("overrideCharColor", "Type", "Graphic Styles", "Override Character Color", bool),
+    p!(
+        "overrideCharColor",
+        "Type",
+        "Graphic Styles",
+        "Override Character Color",
+        bool
+    ),
     // Object → Pattern → Tile Edge Color
-    p!("patternTileEdgeColor", "Guides & Grid", "Pattern Editing", "Tile Edge Color", color),
+    p!(
+        "patternTileEdgeColor",
+        "Guides & Grid",
+        "Pattern Editing",
+        "Tile Edge Color",
+        color
+    ),
     // Object → Create Trim Marks, Effect → Crop Marks
-    p!("japaneseCropMarks", "General", "Options", "Use Japanese Crop Marks", bool),
+    p!(
+        "japaneseCropMarks",
+        "General",
+        "Options",
+        "Use Japanese Crop Marks",
+        bool
+    ),
     // Appearance panel menu
-    p!("newArtBasic", "General", "Appearance Panel", "New Art Has Basic Appearance", bool),
+    p!(
+        "newArtBasic",
+        "General",
+        "Appearance Panel",
+        "New Art Has Basic Appearance",
+        bool
+    ),
     // File Handling (continued)
-    p!("templatesFolder", "File Handling", "Files", "Templates Folder", text),
-    p!("appendConverted", "File Handling", "Files", "Mark Older Files as [Converted] When Opened", bool),
+    p!(
+        "templatesFolder",
+        "File Handling",
+        "Files",
+        "Templates Folder",
+        text
+    ),
+    p!(
+        "appendConverted",
+        "File Handling",
+        "Files",
+        "Mark Older Files as [Converted] When Opened",
+        bool
+    ),
     // Native saves (`document.save {compress}`)
-    p!("useCompression", "File Handling", "Files", "Use Compression", bool),
+    p!(
+        "useCompression",
+        "File Handling",
+        "Files",
+        "Use Compression",
+        bool
+    ),
     // The W/H link of the Transform panel, the Properties panel and the Control bar
-    p!("constrainProportions", "General", "Transform Panel", "Constrain Width and Height Proportions", bool),
+    p!(
+        "constrainProportions",
+        "General",
+        "Transform Panel",
+        "Constrain Width and Height Proportions",
+        bool
+    ),
 ];
 
 pub fn spec(key: &str) -> Option<&'static PrefSpec> {
@@ -368,7 +1037,8 @@ pub const PREF_GROUPS: &[&str] = &["eyedropper", "perspectiveWidget"];
 fn validate_group(key: &str, current: &Value, v: &Value) -> std::result::Result<Value, String> {
     match key {
         "eyedropper" => {
-            let cur: super::EyedropperOptions = serde_json::from_value(current.clone()).unwrap_or_default();
+            let cur: super::EyedropperOptions =
+                serde_json::from_value(current.clone()).unwrap_or_default();
             cur.merged(v).map(|o| json!(o))
         }
         "perspectiveWidget" => {
@@ -388,8 +1058,17 @@ fn validate_group(key: &str, current: &Value, v: &Value) -> std::result::Result<
 /// "true"/"false"; choices by value or label (case-insensitive).
 pub fn validate(key: &str, v: &Value) -> std::result::Result<Value, String> {
     let sp = spec(key).ok_or_else(|| format!("unknown preference `{key}`"))?;
-    let num =
-        || v.as_f64().or_else(|| v.as_str().and_then(|s| s.trim().trim_end_matches(|c: char| c.is_alphabetic() || c == '°').trim().parse().ok()));
+    let num = || {
+        v.as_f64().or_else(|| {
+            v.as_str().and_then(|s| {
+                s.trim()
+                    .trim_end_matches(|c: char| c.is_alphabetic() || c == '°')
+                    .trim()
+                    .parse()
+                    .ok()
+            })
+        })
+    };
     match sp.kind {
         PrefKind::Bool => match v {
             Value::Bool(b) => Ok(json!(b)),
@@ -397,18 +1076,35 @@ pub fn validate(key: &str, v: &Value) -> std::result::Result<Value, String> {
             _ => Err(format!("`{key}` must be true or false")),
         },
         PrefKind::Num { min, max, .. } => in_range(key, num(), min, max),
-        PrefKind::Length { min, max, .. } => in_range(key, v.as_f64().or_else(|| v.as_str().and_then(|s| Unit::Points.parse(s))), min, max),
+        PrefKind::Length { min, max, .. } => in_range(
+            key,
+            v.as_f64()
+                .or_else(|| v.as_str().and_then(|s| Unit::Points.parse(s))),
+            min,
+            max,
+        ),
         PrefKind::Int { min, max } => match num() {
-            Some(x) if x.fract() == 0.0 && (min as f64..=max as f64).contains(&x) => Ok(json!(x as i64)),
-            Some(x) => Err(format!("`{key}` must be a whole number between {min} and {max} (got {x})")),
+            Some(x) if x.fract() == 0.0 && (min as f64..=max as f64).contains(&x) => {
+                Ok(json!(x as i64))
+            }
+            Some(x) => Err(format!(
+                "`{key}` must be a whole number between {min} and {max} (got {x})"
+            )),
             None => Err(format!("`{key}` must be a whole number")),
         },
         PrefKind::Choice(opts) => {
-            let s = v.as_str().ok_or_else(|| format!("`{key}` must be a string"))?;
+            let s = v
+                .as_str()
+                .ok_or_else(|| format!("`{key}` must be a string"))?;
             opts.iter()
                 .find(|(val, label)| val.eq_ignore_ascii_case(s) || label.eq_ignore_ascii_case(s))
                 .map(|(val, _)| json!(val))
-                .ok_or_else(|| format!("`{key}` must be one of {}", opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", ")))
+                .ok_or_else(|| {
+                    format!(
+                        "`{key}` must be one of {}",
+                        opts.iter().map(|o| o.0).collect::<Vec<_>>().join(", ")
+                    )
+                })
         }
         PrefKind::Color => {
             let s = v.as_str().unwrap_or("");
@@ -421,8 +1117,16 @@ pub fn validate(key: &str, v: &Value) -> std::result::Result<Value, String> {
         }
         PrefKind::Text if key == "interfaceLanguage" => {
             let s = v.as_str().map(str::trim).unwrap_or("");
-            let ok = !s.is_empty() && s.len() <= 16 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
-            if ok { Ok(json!(s.to_ascii_lowercase())) } else { Err(format!("`{key}` must be `auto` or a language code such as `en` or `zh-hant`")) }
+            let ok = !s.is_empty()
+                && s.len() <= 16
+                && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-');
+            if ok {
+                Ok(json!(s.to_ascii_lowercase()))
+            } else {
+                Err(format!(
+                    "`{key}` must be `auto` or a language code such as `en` or `zh-hant`"
+                ))
+            }
         }
         PrefKind::Text => match v {
             Value::String(s) => Ok(json!(s)),
@@ -449,7 +1153,11 @@ impl Prefs {
     pub fn set_values(&mut self, values: &Map<String, Value>) -> std::result::Result<(), String> {
         let mut obj = self.to_json();
         for (k, v) in values {
-            obj[k.as_str()] = if PREF_GROUPS.contains(&k.as_str()) { validate_group(k, &obj[k.as_str()], v)? } else { validate(k, v)? };
+            obj[k.as_str()] = if PREF_GROUPS.contains(&k.as_str()) {
+                validate_group(k, &obj[k.as_str()], v)?
+            } else {
+                validate(k, v)?
+            };
         }
         *self = serde_json::from_value(obj).map_err(|e| e.to_string())?;
         Ok(())
@@ -471,7 +1179,9 @@ impl Prefs {
     /// in force refuse: automation may only point them inside its roots ([`crate::file_access`]).
     /// → why each was refused. Nothing is refused without roots, nor a folder cleared or kept.
     fn keep_folders(&self, next: &mut Prefs) -> Vec<String> {
-        let Some(roots) = crate::file_access::current() else { return vec![] };
+        let Some(roots) = crate::file_access::current() else {
+            return vec![];
+        };
         let mut before = self.clone();
         let mut refused = vec![];
         for ((old, _), (new, access)) in before.folders_mut().into_iter().zip(next.folders_mut()) {
@@ -491,7 +1201,10 @@ impl Prefs {
     pub fn reset(&mut self, category: Option<&str>) {
         let d = Prefs::default().to_json();
         let mut obj = self.to_json();
-        for sp in PREF_SPECS.iter().filter(|s| category.is_none_or(|c| c.eq_ignore_ascii_case(s.category))) {
+        for sp in PREF_SPECS
+            .iter()
+            .filter(|s| category.is_none_or(|c| c.eq_ignore_ascii_case(s.category)))
+        {
             obj[sp.key] = d[sp.key].clone();
         }
         if category.is_none() {
@@ -506,7 +1219,10 @@ impl Prefs {
 
     /// The document grid Guides & Grid › Gridline every and Subdivisions set.
     pub fn grid(&self) -> GridPrefs {
-        GridPrefs { spacing: self.gridline_every, subdivisions: self.grid_subdivisions }
+        GridPrefs {
+            spacing: self.gridline_every,
+            subdivisions: self.grid_subdivisions,
+        }
     }
 }
 
@@ -519,15 +1235,21 @@ impl Session {
         for e in self.prefs.keep_folders(&mut p) {
             log::warn!("{e}");
         }
-        let grid_changed = p.gridline_every != self.prefs.gridline_every || p.grid_subdivisions != self.prefs.grid_subdivisions;
+        let grid_changed = p.gridline_every != self.prefs.gridline_every
+            || p.grid_subdivisions != self.prefs.grid_subdivisions;
         let history_changed = p.history_states != self.prefs.history_states;
         let tile_edge_changed = p.pattern_tile_edge_color != self.prefs.pattern_tile_edge_color;
         let fonts_folder_changed = p.fonts_folder != self.prefs.fonts_folder;
-        let hyphen_exceptions_changed = p.hyphenation_exceptions != self.prefs.hyphenation_exceptions;
+        let hyphen_exceptions_changed =
+            p.hyphenation_exceptions != self.prefs.hyphenation_exceptions;
         self.prefs = p;
         if fonts_folder_changed {
             let folder = self.prefs.fonts_folder.trim();
-            vectorcraft_text::set_user_font_dirs(if folder.is_empty() { vec![] } else { vec![folder.into()] });
+            vectorcraft_text::set_user_font_dirs(if folder.is_empty() {
+                vec![]
+            } else {
+                vec![folder.into()]
+            });
             // Once the fonts were scanned, scan again now: the folder's fonts appear (or go) in the
             // font menus, and type in them lays out again. The first scan reads it anyway.
             if vectorcraft_text::FontDb::global().installed_fonts_changed() {
@@ -591,9 +1313,18 @@ fn get(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set(s: &mut Session, p: &Value) -> Result<Value> {
-    let mut values = p.get("values").and_then(Value::as_object).cloned().unwrap_or_default();
+    let mut values = p
+        .get("values")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     if let Some(k) = str_param(p, "key") {
-        values.insert(k.to_string(), p.get("value").cloned().ok_or_else(|| bad("prefs.set", "missing `value`"))?);
+        values.insert(
+            k.to_string(),
+            p.get("value")
+                .cloned()
+                .ok_or_else(|| bad("prefs.set", "missing `value`"))?,
+        );
     }
     if values.is_empty() {
         return Err(bad("prefs.set", "give {key, value} or {values}"));
@@ -609,7 +1340,12 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
         s.set_document_units(s.default_units())?;
     }
     let all = s.prefs.to_json();
-    Ok(Value::Object(values.keys().map(|k| (k.clone(), all[k.as_str()].clone())).collect()))
+    Ok(Value::Object(
+        values
+            .keys()
+            .map(|k| (k.clone(), all[k.as_str()].clone()))
+            .collect(),
+    ))
 }
 
 fn reset(s: &mut Session, p: &Value) -> Result<Value> {

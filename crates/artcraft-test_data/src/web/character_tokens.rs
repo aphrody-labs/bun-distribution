@@ -1,9 +1,9 @@
 //! Production character test data from the test account.
 
 pub struct TestCharacter {
-  pub token: &'static str,
-  pub name: &'static str,
-  pub avatar_cdn_url: &'static str,
+    pub token: &'static str,
+    pub name: &'static str,
+    pub avatar_cdn_url: &'static str,
 }
 
 pub const JIM: TestCharacter = TestCharacter {

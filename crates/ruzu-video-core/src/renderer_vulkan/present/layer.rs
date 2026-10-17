@@ -672,7 +672,10 @@ mod tests {
     fn applet_classification_uses_recording_stack_not_other_stack_bits() {
         let recording = layer_stack_bit(LayerStackId::Recording);
         for mask in [0, !recording, recording, u32::MAX] {
-            let framebuffer = FramebufferConfig { layer_stack_mask: mask, ..Default::default() };
+            let framebuffer = FramebufferConfig {
+                layer_stack_mask: mask,
+                ..Default::default()
+            };
             assert_eq!(is_applet_layer(&framebuffer), mask & recording == 0);
         }
     }

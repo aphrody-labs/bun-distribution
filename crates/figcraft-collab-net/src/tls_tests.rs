@@ -20,13 +20,16 @@ use crate::manage;
 /// `upstream`.
 fn terminator(upstream: SocketAddr) -> SocketAddr {
     let cert = CertificateDer::from(&include_bytes!("testdata/localhost.der")[..]).into_owned();
-    let key = PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(include_bytes!("testdata/localhost-key.der").to_vec()));
-    let cfg = ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
-        .with_safe_default_protocol_versions()
-        .unwrap()
-        .with_no_client_auth()
-        .with_single_cert(vec![cert], key)
-        .unwrap();
+    let key = PrivateKeyDer::Pkcs8(PrivatePkcs8KeyDer::from(
+        include_bytes!("testdata/localhost-key.der").to_vec(),
+    ));
+    let cfg =
+        ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
+            .with_safe_default_protocol_versions()
+            .unwrap()
+            .with_no_client_auth()
+            .with_single_cert(vec![cert], key)
+            .unwrap();
     let cfg = Arc::new(cfg);
     // The name's first address, which a client tries first (Windows takes seconds to give up on
     // a refused one).
@@ -44,7 +47,9 @@ fn terminator(upstream: SocketAddr) -> SocketAddr {
 /// Copy bytes both ways until either side ends (polling with short timeouts: test code).
 fn relay(s: TcpStream, upstream: SocketAddr, cfg: Arc<ServerConfig>) {
     let tick = Some(Duration::from_millis(2));
-    let Ok(mut up) = TcpStream::connect(upstream) else { return };
+    let Ok(mut up) = TcpStream::connect(upstream) else {
+        return;
+    };
     up.set_read_timeout(tick).unwrap();
     s.set_read_timeout(tick).unwrap();
     let mut tls = StreamOwned::new(ServerConnection::new(cfg).unwrap(), s);
@@ -52,7 +57,10 @@ fn relay(s: TcpStream, upstream: SocketAddr, cfg: Arc<ServerConfig>) {
     let pass = |r: io::Result<usize>, to: &mut dyn Write, buf: &[u8]| match r {
         Ok(0) => false,
         Ok(n) => to.write_all(&buf[..n]).and_then(|()| to.flush()).is_ok(),
-        Err(e) => matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut),
+        Err(e) => matches!(
+            e.kind(),
+            io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut
+        ),
     };
     loop {
         let r = tls.read(&mut buf);
@@ -67,7 +75,14 @@ fn relay(s: TcpStream, upstream: SocketAddr, cfg: Arc<ServerConfig>) {
 }
 
 fn secure(host: String, invite: &Invite) -> Invite {
-    Invite { server: Endpoint { host, path: "/".into(), secure: true }, ..invite.clone() }
+    Invite {
+        server: Endpoint {
+            host,
+            path: "/".into(),
+            secure: true,
+        },
+        ..invite.clone()
+    }
 }
 
 #[test]
@@ -77,10 +92,23 @@ fn guests_and_managing_connections_join_over_wss() {
     let wss = secure(format!("localhost:{}", front.port()), &invite);
     assert!(wss.url().starts_with("wss://localhost:"));
     let mut probe = Probe::new();
-    let mut g = Guest::start(quick(GuestConfig::new(wss.clone(), "Ada".into())), probe.inbox.clone()).unwrap();
-    probe.wait("the welcome over TLS", |e| e.iter().any(|e| matches!(e, Event::Welcome { .. })));
+    let mut g = Guest::start(
+        quick(GuestConfig::new(wss.clone(), "Ada".into())),
+        probe.inbox.clone(),
+    )
+    .unwrap();
+    probe.wait("the welcome over TLS", |e| {
+        e.iter().any(|e| matches!(e, Event::Welcome { .. }))
+    });
     // The managing path speaks TLS too: an app's host answers, and refuses to manage files.
-    let err = manage::request(&wss.server, "key", Vec::new(), &fast_limits(), Duration::from_secs(5)).unwrap_err();
+    let err = manage::request(
+        &wss.server,
+        "key",
+        Vec::new(),
+        &fast_limits(),
+        Duration::from_secs(5),
+    )
+    .unwrap_err();
     assert!(err.contains("hosted by an app"), "{err}");
     g.leave();
     host.stop();
@@ -91,7 +119,14 @@ fn a_certificate_for_another_name_is_refused() {
     let (mut host, _hp, invite) = start();
     let front = terminator(host.addr());
     let mut probe = Probe::new();
-    let _g = Guest::start(quick(GuestConfig::new(secure(front.to_string(), &invite), "Ada".into())), probe.inbox.clone()).unwrap();
+    let _g = Guest::start(
+        quick(GuestConfig::new(
+            secure(front.to_string(), &invite),
+            "Ada".into(),
+        )),
+        probe.inbox.clone(),
+    )
+    .unwrap();
     probe.wait("the refusal", |e| {
         e.iter()
             .any(|e| matches!(e, Event::Status(Status::Failed { reason }) if reason.contains(&format!("certificate of {front} is for another name"))))
@@ -111,8 +146,13 @@ fn reader_and_writer_share_one_session_without_blocking_each_other() {
         let _ = io::copy(&mut s.try_clone().unwrap(), &mut s);
     });
     let front = terminator(upstream);
-    let server = Endpoint { host: format!("localhost:{}", front.port()), path: "/".into(), secure: true };
-    let (mut rd, mut wr, _sock) = crate::net::open(&server, Duration::from_secs(5), &fast_limits()).unwrap();
+    let server = Endpoint {
+        host: format!("localhost:{}", front.port()),
+        path: "/".into(),
+        secure: true,
+    };
+    let (mut rd, mut wr, _sock) =
+        crate::net::open(&server, Duration::from_secs(5), &fast_limits()).unwrap();
     rd.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
     let sent: Vec<u8> = (0..8 << 20).map(|i: u32| (i % 251) as u8).collect();
     let expect = sent.clone();

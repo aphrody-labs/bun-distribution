@@ -22,7 +22,9 @@ const MAX_TEXT: usize = 1 << 20;
 /// points. `None` for anything else (including `em`).
 pub fn measure(s: &str) -> Option<f64> {
     let s = s.trim();
-    let split = s.find(|c: char| c.is_ascii_alphabetic() || c == '%').unwrap_or(s.len());
+    let split = s
+        .find(|c: char| c.is_ascii_alphabetic() || c == '%')
+        .unwrap_or(s.len());
     let (num, unit) = s.split_at(split);
     let v: f64 = num.trim().parse().ok()?;
     if !v.is_finite() {
@@ -45,11 +47,16 @@ fn attr_measure(n: XmlNode, name: &str) -> Option<f64> {
 }
 
 fn child<'a, 'd>(n: XmlNode<'a, 'd>, name: &str) -> Option<XmlNode<'a, 'd>> {
-    n.children().find(|c| c.is_element() && c.tag_name().name() == name)
+    n.children()
+        .find(|c| c.is_element() && c.tag_name().name() == name)
 }
 
-fn children<'a, 'd>(n: XmlNode<'a, 'd>, name: &'a str) -> impl Iterator<Item = XmlNode<'a, 'd>> + 'a {
-    n.children().filter(move |c| c.is_element() && c.tag_name().name() == name)
+fn children<'a, 'd>(
+    n: XmlNode<'a, 'd>,
+    name: &'a str,
+) -> impl Iterator<Item = XmlNode<'a, 'd>> + 'a {
+    n.children()
+        .filter(move |c| c.is_element() && c.tag_name().name() == name)
 }
 
 /// The text of an image element: base64 is read whole up to the image cap (`text_of` stops at
@@ -77,7 +84,12 @@ fn text_of(n: XmlNode) -> String {
         {
             s.push_str(t);
             if s.len() > MAX_TEXT {
-                s.truncate(s.char_indices().take_while(|(i, _)| *i < MAX_TEXT).last().map_or(0, |(i, c)| i + c.len_utf8()));
+                s.truncate(
+                    s.char_indices()
+                        .take_while(|(i, _)| *i < MAX_TEXT)
+                        .last()
+                        .map_or(0, |(i, c)| i + c.len_utf8()),
+                );
                 break;
             }
         }
@@ -136,13 +148,22 @@ fn parse_border(n: Option<XmlNode>) -> Option<Border> {
         3 => [e(0), e(1), e(2), e(1)],
         _ => [e(0), e(1), e(2), e(3)],
     };
-    Some(Border { presence: Presence::parse(n.attribute("presence")), edges: four, fill: parse_fill(child(n, "fill")) })
+    Some(Border {
+        presence: Presence::parse(n.attribute("presence")),
+        edges: four,
+        fill: parse_fill(child(n, "fill")),
+    })
 }
 
 fn parse_font(n: Option<XmlNode>) -> FontSpec {
-    let Some(n) = n else { return FontSpec::default() };
+    let Some(n) = n else {
+        return FontSpec::default();
+    };
     FontSpec {
-        typeface: n.attribute("typeface").map(|t| t.trim().to_string()).filter(|t| !t.is_empty()),
+        typeface: n
+            .attribute("typeface")
+            .map(|t| t.trim().to_string())
+            .filter(|t| !t.is_empty()),
         size: attr_measure(n, "size").filter(|s| *s > 0.0),
         bold: n.attribute("weight").map(|w| w == "bold"),
         italic: n.attribute("posture").map(|p| p == "italic"),
@@ -152,7 +173,9 @@ fn parse_font(n: Option<XmlNode>) -> FontSpec {
 }
 
 fn parse_para(n: Option<XmlNode>) -> ParaSpec {
-    let Some(n) = n else { return ParaSpec::default() };
+    let Some(n) = n else {
+        return ParaSpec::default();
+    };
     ParaSpec {
         h_align: HAlign::parse(n.attribute("hAlign")),
         v_align: VAlign::parse(n.attribute("vAlign")),
@@ -167,7 +190,10 @@ fn parse_para(n: Option<XmlNode>) -> ParaSpec {
 
 fn parse_common(n: XmlNode) -> Common {
     Common {
-        name: n.attribute("name").map(str::to_string).filter(|s| !s.is_empty()),
+        name: n
+            .attribute("name")
+            .map(str::to_string)
+            .filter(|s| !s.is_empty()),
         id: n.attribute("id").map(str::to_string),
         x: attr_measure(n, "x"),
         y: attr_measure(n, "y"),
@@ -183,7 +209,11 @@ fn parse_common(n: XmlNode) -> Common {
         border: parse_border(child(n, "border")),
         font: parse_font(child(n, "font")),
         para: parse_para(child(n, "para")),
-        col_span: n.attribute("colSpan").and_then(|c| c.trim().parse::<usize>().ok()).unwrap_or(1).clamp(1, 64),
+        col_span: n
+            .attribute("colSpan")
+            .and_then(|c| c.trim().parse::<usize>().ok())
+            .unwrap_or(1)
+            .clamp(1, 64),
     }
 }
 
@@ -200,10 +230,14 @@ fn parse_rich(body: XmlNode) -> RichText {
     fn styled(base: &Style, css: Option<&str>) -> Style {
         let mut s = base.clone();
         for decl in css.unwrap_or("").split(';') {
-            let Some((k, v)) = decl.split_once(':') else { continue };
+            let Some((k, v)) = decl.split_once(':') else {
+                continue;
+            };
             let v = v.trim();
             match k.trim() {
-                "font-weight" => s.bold = Some(v == "bold" || v.parse::<u32>().is_ok_and(|w| w >= 600)),
+                "font-weight" => {
+                    s.bold = Some(v == "bold" || v.parse::<u32>().is_ok_and(|w| w >= 600))
+                }
                 "font-style" => s.italic = Some(v == "italic" || v == "oblique"),
                 "text-decoration" => s.underline = Some(v.contains("underline")),
                 "font-size" => s.size = measure(v).filter(|x| *x > 0.0),
@@ -244,12 +278,24 @@ fn parse_rich(body: XmlNode) -> RichText {
             match c.tag_name().name() {
                 "p" => {
                     let align = c.attribute("style").and_then(|s| {
-                        s.split(';')
-                            .find_map(|d| d.split_once(':').filter(|(k, _)| k.trim() == "text-align").and_then(|(_, v)| HAlign::parse(Some(v))))
+                        s.split(';').find_map(|d| {
+                            d.split_once(':')
+                                .filter(|(k, _)| k.trim() == "text-align")
+                                .and_then(|(_, v)| HAlign::parse(Some(v)))
+                        })
                     });
-                    out.paragraphs.push(Paragraph { runs: Vec::new(), h_align: align });
+                    out.paragraphs.push(Paragraph {
+                        runs: Vec::new(),
+                        h_align: align,
+                    });
                     explicit.push(false);
-                    walk(c, &styled(style, c.attribute("style")), out, explicit, depth + 1);
+                    walk(
+                        c,
+                        &styled(style, c.attribute("style")),
+                        out,
+                        explicit,
+                        depth + 1,
+                    );
                     // The next text starts a new paragraph.
                     out.paragraphs.push(Paragraph::default());
                     explicit.push(false);
@@ -266,12 +312,22 @@ fn parse_rich(body: XmlNode) -> RichText {
                         "u" => st.underline = Some(true),
                         _ => {}
                     }
-                    let embed = c.attributes().find(|a| a.name() == "embed").map(|a| a.value().trim_start_matches('#').to_string());
+                    let embed = c
+                        .attributes()
+                        .find(|a| a.name() == "embed")
+                        .map(|a| a.value().trim_start_matches('#').to_string());
                     if let Some(e) = embed {
                         push_run(
                             out,
                             explicit,
-                            Run { text: String::new(), bold: st.bold, italic: st.italic, underline: st.underline, size: st.size, embed: Some(e) },
+                            Run {
+                                text: String::new(),
+                                bold: st.bold,
+                                italic: st.italic,
+                                underline: st.underline,
+                                size: st.size,
+                                embed: Some(e),
+                            },
                         );
                     }
                     walk(c, &st, out, explicit, depth + 1);
@@ -295,16 +351,25 @@ fn parse_rich(body: XmlNode) -> RichText {
     // Drop the empty paragraphs `p` boundaries leave behind; blank lines from `br` stay.
     let mut cleaned: Vec<Paragraph> = Vec::new();
     for (i, p) in out.paragraphs.into_iter().enumerate() {
-        let blank = p.runs.iter().all(|r| r.text.trim().is_empty() && r.embed.is_none());
+        let blank = p
+            .runs
+            .iter()
+            .all(|r| r.text.trim().is_empty() && r.embed.is_none());
         if blank && !explicit.get(i).copied().unwrap_or(false) {
             continue;
         }
         cleaned.push(p);
     }
-    while cleaned.last().is_some_and(|p| p.runs.iter().all(|r| r.text.trim().is_empty() && r.embed.is_none())) {
+    while cleaned.last().is_some_and(|p| {
+        p.runs
+            .iter()
+            .all(|r| r.text.trim().is_empty() && r.embed.is_none())
+    }) {
         cleaned.pop();
     }
-    RichText { paragraphs: cleaned }
+    RichText {
+        paragraphs: cleaned,
+    }
 }
 
 /// `<value>`: text, rich text, an image, a line or a rectangle.
@@ -314,7 +379,10 @@ fn parse_value(n: Option<XmlNode>, warnings: &mut Vec<String>) -> Value {
         match c.tag_name().name() {
             "text" => return Value::Text(text_of(c)),
             "exData" => {
-                let html = c.attribute("contentType").is_some_and(|t| t.contains("html")) || child(c, "body").is_some();
+                let html = c
+                    .attribute("contentType")
+                    .is_some_and(|t| t.contains("html"))
+                    || child(c, "body").is_some();
                 if html {
                     let body = child(c, "body").unwrap_or(c);
                     return Value::Rich(parse_rich(body));
@@ -326,11 +394,17 @@ fn parse_value(n: Option<XmlNode>, warnings: &mut Vec<String>) -> Value {
                     warnings.push("an image is larger than 32 MB; it is left out".into());
                     return Value::Empty;
                 };
-                let data = if c.attribute("transferEncoding").is_none_or(|e| e == "base64") {
+                let data = if c
+                    .attribute("transferEncoding")
+                    .is_none_or(|e| e == "base64")
+                {
                     match base64::engine::general_purpose::STANDARD.decode(&raw) {
                         Ok(d) => d,
                         Err(_) => {
-                            warnings.push("an image's base64 data could not be decoded; it is left out".into());
+                            warnings.push(
+                                "an image's base64 data could not be decoded; it is left out"
+                                    .into(),
+                            );
                             return Value::Empty;
                         }
                     }
@@ -341,17 +415,25 @@ fn parse_value(n: Option<XmlNode>, warnings: &mut Vec<String>) -> Value {
                     warnings.push("an image is larger than 32 MB; it is left out".into());
                     return Value::Empty;
                 }
-                return Value::Image { content_type: c.attribute("contentType").unwrap_or("").to_string(), data };
+                return Value::Image {
+                    content_type: c.attribute("contentType").unwrap_or("").to_string(),
+                    data,
+                };
             }
             "line" => {
-                return Value::Line { slope_up: c.attribute("slope") == Some("/"), edge: child(c, "edge").map(parse_edge).unwrap_or_default() };
+                return Value::Line {
+                    slope_up: c.attribute("slope") == Some("/"),
+                    edge: child(c, "edge").map(parse_edge).unwrap_or_default(),
+                };
             }
             "rectangle" => {
                 let mut b = parse_border(Some(c)).unwrap_or_default();
                 b.fill = parse_fill(child(c, "fill"));
                 return Value::Rectangle(b);
             }
-            "date" | "time" | "dateTime" | "integer" | "decimal" | "float" | "boolean" => return Value::Text(text_of(c)),
+            "date" | "time" | "dateTime" | "integer" | "decimal" | "float" | "boolean" => {
+                return Value::Text(text_of(c));
+            }
             _ => {}
         }
     }
@@ -381,23 +463,34 @@ fn parse_caption(n: Option<XmlNode>, warnings: &mut Vec<String>) -> Option<Capti
 /// data (`<items save="1">`, usually hidden), empty when the shown text is the value.
 fn parse_items(n: XmlNode, warnings: &mut Vec<String>) -> (Vec<String>, Vec<String>) {
     let lists: Vec<XmlNode> = children(n, "items").collect();
-    let is_saved = |i: &XmlNode| i.attribute("save") == Some("1") || i.attribute("presence") == Some("hidden");
+    let is_saved =
+        |i: &XmlNode| i.attribute("save") == Some("1") || i.attribute("presence") == Some("hidden");
     let mut over = false;
     let mut texts = |i: &XmlNode| -> Vec<String> {
-        let all: Vec<String> = i.children().filter(|c| c.is_element()).map(text_of).take(MAX_ITEMS + 1).collect();
+        let all: Vec<String> = i
+            .children()
+            .filter(|c| c.is_element())
+            .map(text_of)
+            .take(MAX_ITEMS + 1)
+            .collect();
         if all.len() > MAX_ITEMS {
             over = true;
         }
         all.into_iter().take(MAX_ITEMS).collect()
     };
     let shown = lists.iter().find(|i| !is_saved(i)).or(lists.first());
-    let saved = lists.iter().find(|i| is_saved(i) && shown.is_none_or(|s| s != *i));
+    let saved = lists
+        .iter()
+        .find(|i| is_saved(i) && shown.is_none_or(|s| s != *i));
     let shown: Vec<String> = shown.map(&mut texts).unwrap_or_default();
     let mut saved: Vec<String> = saved.map(&mut texts).unwrap_or_default();
     if over && warnings.len() < 100 {
         warnings.push(format!(
             "{} has more than {MAX_ITEMS} items; the rest are left out",
-            n.attribute("name").map_or_else(|| "a choice list".to_string(), |name| format!("the choice list {name}"))
+            n.attribute("name").map_or_else(
+                || "a choice list".to_string(),
+                |name| format!("the choice list {name}")
+            )
         ));
     }
     // A saved list shorter than the shown one is padded with the shown text.
@@ -409,7 +502,11 @@ fn parse_items(n: XmlNode, warnings: &mut Vec<String>) -> (Vec<String>, Vec<Stri
 
 fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
     let ui = child(n, "ui");
-    let ui_el = ui.and_then(|u| u.children().find(|c| c.is_element() && c.tag_name().name() != "extras" && c.tag_name().name() != "picture"));
+    let ui_el = ui.and_then(|u| {
+        u.children().find(|c| {
+            c.is_element() && c.tag_name().name() != "extras" && c.tag_name().name() != "picture"
+        })
+    });
     let kind = match ui_el.map(|e| e.tag_name().name()) {
         None | Some("textEdit") => Ui::TextEdit,
         Some("numericEdit") => Ui::NumericEdit,
@@ -424,11 +521,18 @@ fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
         Some(_) => Ui::Unknown,
     };
     let value_el = child(n, "value");
-    let max_chars =
-        value_el.and_then(|v| child(v, "text")).and_then(|t| t.attribute("maxChars")).and_then(|m| m.trim().parse::<usize>().ok()).filter(|m| *m > 0);
+    let max_chars = value_el
+        .and_then(|v| child(v, "text"))
+        .and_then(|t| t.attribute("maxChars"))
+        .and_then(|m| m.trim().parse::<usize>().ok())
+        .filter(|m| *m > 0);
     let scripts = parse_events(n);
     let numeric = matches!(kind, Ui::NumericEdit)
-        || value_el.is_some_and(|v| v.children().any(|c| c.is_element() && matches!(c.tag_name().name(), "decimal" | "integer" | "float")));
+        || value_el.is_some_and(|v| {
+            v.children().any(|c| {
+                c.is_element() && matches!(c.tag_name().name(), "decimal" | "integer" | "float")
+            })
+        });
     let (items, item_values) = parse_items(n, warnings);
     let choice = match (kind == Ui::ChoiceList, ui_el) {
         (true, Some(e)) => {
@@ -436,7 +540,9 @@ fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
             ChoiceList {
                 list_box: matches!(open, "always" | "multiSelect"),
                 multi: open == "multiSelect",
-                editable: e.attribute("textEntry").is_some_and(|t| t == "1" || t == "true"),
+                editable: e
+                    .attribute("textEntry")
+                    .is_some_and(|t| t == "1" || t == "true"),
             }
         }
         _ => ChoiceList::default(),
@@ -444,7 +550,11 @@ fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
     let validate_el = child(n, "validate");
     let validate_message = validate_el
         .and_then(|v| child(v, "message"))
-        .and_then(|m| children(m, "text").find(|t| t.attribute("name") == Some("scriptTest")).or_else(|| child(m, "text")))
+        .and_then(|m| {
+            children(m, "text")
+                .find(|t| t.attribute("name") == Some("scriptTest"))
+                .or_else(|| child(m, "text"))
+        })
         .map(text_of)
         .map(|t| t.trim().to_string())
         .filter(|t| !t.is_empty());
@@ -453,26 +563,43 @@ fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
         ui: kind,
         ui_border: ui_el.and_then(|e| parse_border(child(e, "border"))),
         ui_margin: parse_margin(ui_el.and_then(|e| child(e, "margin"))),
-        check_size: ui_el.and_then(|e| attr_measure(e, "size")).filter(|s| *s > 0.0),
+        check_size: ui_el
+            .and_then(|e| attr_measure(e, "size"))
+            .filter(|s| *s > 0.0),
         check_round: ui_el.is_some_and(|e| e.attribute("shape") == Some("round")),
-        multiline: ui_el.is_some_and(|e| e.attribute("multiLine").is_some_and(|m| m == "1" || m == "true")),
+        multiline: ui_el.is_some_and(|e| {
+            e.attribute("multiLine")
+                .is_some_and(|m| m == "1" || m == "true")
+        }),
         caption: parse_caption(child(n, "caption"), warnings),
         value: parse_value(value_el, warnings),
         items,
         item_values,
         choice,
         max_chars,
-        tooltip: child(n, "assist").and_then(|a| child(a, "toolTip")).map(text_of).map(|t| t.trim().to_string()).filter(|t| !t.is_empty()),
+        tooltip: child(n, "assist")
+            .and_then(|a| child(a, "toolTip"))
+            .map(text_of)
+            .map(|t| t.trim().to_string())
+            .filter(|t| !t.is_empty()),
         access: match n.attribute("access") {
             Some("readOnly") => Access::ReadOnly,
             Some("protected") => Access::Protected,
             Some("nonInteractive") => Access::NonInteractive,
             _ => Access::Open,
         },
-        picture: ui.and_then(|u| child(u, "picture")).map(text_of).map(|p| p.trim().to_string()).filter(|p| !p.is_empty()),
+        picture: ui
+            .and_then(|u| child(u, "picture"))
+            .map(text_of)
+            .map(|p| p.trim().to_string())
+            .filter(|p| !p.is_empty()),
         scripts,
-        calculate: child(n, "calculate").and_then(|c| child(c, "script")).map(|s| parse_script(s, "calculate")),
-        validate: validate_el.and_then(|v| child(v, "script")).map(|s| parse_script(s, "validate")),
+        calculate: child(n, "calculate")
+            .and_then(|c| child(c, "script"))
+            .map(|s| parse_script(s, "calculate")),
+        validate: validate_el
+            .and_then(|v| child(v, "script"))
+            .map(|s| parse_script(s, "validate")),
         validate_message,
         numeric,
     }
@@ -480,7 +607,11 @@ fn parse_field(n: XmlNode, warnings: &mut Vec<String>) -> Field {
 
 fn parse_script(s: XmlNode, activity: &str) -> Script {
     let ct = s.attribute("contentType").unwrap_or("");
-    Script { activity: activity.to_string(), text: text_of(s).trim().to_string(), formcalc: !ct.to_ascii_lowercase().contains("javascript") }
+    Script {
+        activity: activity.to_string(),
+        text: text_of(s).trim().to_string(),
+        formcalc: !ct.to_ascii_lowercase().contains("javascript"),
+    }
 }
 
 /// `<event activity="…"><script>…</script></event>` children.
@@ -504,17 +635,34 @@ fn parse_occur(n: Option<XmlNode>) -> Occur {
         Some(m) => Some((m.clamp(0, 1000) as usize).max(min)),
         None => Some(min.max(1)),
     };
-    let initial = int("initial").map_or(min, |i| i.clamp(0, 1000) as usize).max(min);
-    Occur { min, max, initial: max.map_or(initial, |m| initial.min(m)) }
+    let initial = int("initial")
+        .map_or(min, |i| i.clamp(0, 1000) as usize)
+        .max(min);
+    Occur {
+        min,
+        max,
+        initial: max.map_or(initial, |m| initial.min(m)),
+    }
 }
 
 fn parse_page_set(n: XmlNode, warnings: &mut Vec<String>, depth: usize) -> PageSet {
     let mut areas = Vec::new();
     for pa in children(n, "pageArea") {
         let medium = child(pa, "medium");
-        let short = medium.and_then(|m| attr_measure(m, "short")).unwrap_or(612.0).clamp(1.0, 14_400.0);
-        let long = medium.and_then(|m| attr_measure(m, "long")).unwrap_or(792.0).clamp(1.0, 14_400.0);
-        let (width, height) = if medium.and_then(|m| m.attribute("orientation")) == Some("landscape") { (long, short) } else { (short, long) };
+        let short = medium
+            .and_then(|m| attr_measure(m, "short"))
+            .unwrap_or(612.0)
+            .clamp(1.0, 14_400.0);
+        let long = medium
+            .and_then(|m| attr_measure(m, "long"))
+            .unwrap_or(792.0)
+            .clamp(1.0, 14_400.0);
+        let (width, height) =
+            if medium.and_then(|m| m.attribute("orientation")) == Some("landscape") {
+                (long, short)
+            } else {
+                (short, long)
+            };
         let mut content: Vec<Rect> = children(pa, "contentArea")
             .map(|c| {
                 Rect::new(
@@ -528,9 +676,20 @@ fn parse_page_set(n: XmlNode, warnings: &mut Vec<String>, depth: usize) -> PageS
         if content.is_empty() {
             content.push(Rect::new(0.0, 0.0, width, height));
         }
-        let items = pa.children().filter(|c| c.is_element()).filter_map(|c| parse_node(c, warnings, depth + 1)).collect();
+        let items = pa
+            .children()
+            .filter(|c| c.is_element())
+            .filter_map(|c| parse_node(c, warnings, depth + 1))
+            .collect();
         let occur = parse_occur(child(pa, "occur"));
-        areas.push(PageArea { name: pa.attribute("name").map(str::to_string), width, height, content, items, occur_max: occur.max });
+        areas.push(PageArea {
+            name: pa.attribute("name").map(str::to_string),
+            width,
+            height,
+            content,
+            items,
+            occur_max: occur.max,
+        });
     }
     // Nested page sets: take their areas too.
     for ps in children(n, "pageSet") {
@@ -555,9 +714,22 @@ fn parse_subform(n: XmlNode, warnings: &mut Vec<String>, depth: usize) -> Subfor
             }
         }
     }
-    let column_widths: Vec<f64> =
-        n.attribute("columnWidths").map(|s| s.split_whitespace().filter_map(measure).map(|w| w.max(0.0)).take(256).collect()).unwrap_or_default();
-    let break_to_page = |name: &str| children(n, name).any(|b| b.attribute("targetType").is_none_or(|t| t == "pageArea" || t == "contentArea"));
+    let column_widths: Vec<f64> = n
+        .attribute("columnWidths")
+        .map(|s| {
+            s.split_whitespace()
+                .filter_map(measure)
+                .map(|w| w.max(0.0))
+                .take(256)
+                .collect()
+        })
+        .unwrap_or_default();
+    let break_to_page = |name: &str| {
+        children(n, name).any(|b| {
+            b.attribute("targetType")
+                .is_none_or(|t| t == "pageArea" || t == "contentArea")
+        })
+    };
     Subform {
         common,
         layout: Layout::parse(n.attribute("layout")),
@@ -566,10 +738,16 @@ fn parse_subform(n: XmlNode, warnings: &mut Vec<String>, depth: usize) -> Subfor
         page_set,
         occur: parse_occur(child(n, "occur")),
         break_before_page: break_to_page("breakBefore")
-            || child(n, "break").is_some_and(|b| b.attribute("before").is_some_and(|v| v == "pageArea" || v == "contentArea")),
+            || child(n, "break").is_some_and(|b| {
+                b.attribute("before")
+                    .is_some_and(|v| v == "pageArea" || v == "contentArea")
+            }),
         break_after_page: break_to_page("breakAfter"),
         column_widths,
-        overflow_leader: child(n, "overflow").and_then(|o| o.attribute("leader")).map(str::to_string).filter(|s| !s.is_empty()),
+        overflow_leader: child(n, "overflow")
+            .and_then(|o| o.attribute("leader"))
+            .map(str::to_string)
+            .filter(|s| !s.is_empty()),
     }
 }
 
@@ -587,15 +765,28 @@ fn parse_node(c: XmlNode, warnings: &mut Vec<String>, depth: usize) -> Option<No
         }
         "area" => Node::Area(Box::new(Area {
             common: parse_common(c),
-            children: c.children().filter(|k| k.is_element()).filter_map(|k| parse_node(k, warnings, depth + 1)).collect(),
+            children: c
+                .children()
+                .filter(|k| k.is_element())
+                .filter_map(|k| parse_node(k, warnings, depth + 1))
+                .collect(),
         })),
         "field" => Node::Field(Box::new(parse_field(c, warnings))),
-        "draw" => Node::Draw(Box::new(Draw { common: parse_common(c), value: parse_value(child(c, "value"), warnings) })),
+        "draw" => Node::Draw(Box::new(Draw {
+            common: parse_common(c),
+            value: parse_value(child(c, "value"), warnings),
+        })),
         "exclGroup" => Node::ExclGroup(Box::new(ExclGroup {
             common: parse_common(c),
             layout: Layout::parse(c.attribute("layout")),
-            fields: children(c, "field").map(|f| parse_field(f, warnings)).collect(),
-            tooltip: child(c, "assist").and_then(|a| child(a, "toolTip")).map(text_of).map(|t| t.trim().to_string()).filter(|t| !t.is_empty()),
+            fields: children(c, "field")
+                .map(|f| parse_field(f, warnings))
+                .collect(),
+            tooltip: child(c, "assist")
+                .and_then(|a| child(a, "toolTip"))
+                .map(text_of)
+                .map(|t| t.trim().to_string())
+                .filter(|t| !t.is_empty()),
             scripts: parse_events(c),
         })),
         _ => return None,
@@ -604,7 +795,10 @@ fn parse_node(c: XmlNode, warnings: &mut Vec<String>, depth: usize) -> Option<No
 
 /// Which page-number role a field with a layout:ready script plays, if any.
 fn page_role(f: &Field) -> Option<PageRole> {
-    let script = f.scripts.iter().find(|s| s.activity == "ready" || s.activity == "layoutReady")?;
+    let script = f
+        .scripts
+        .iter()
+        .find(|s| s.activity == "ready" || s.activity == "layoutReady")?;
     if script.text.contains("pageCount") {
         Some(PageRole::Count)
     } else if script.text.contains("layout.page(") || script.text.contains("layout.absPage(") {
@@ -648,32 +842,49 @@ pub fn parse(xml: &str) -> Result<(Template, Vec<String>), XfaError> {
             crate::MAX_XML_DEPTH
         )));
     }
-    let opts = roxmltree::ParsingOptions { allow_dtd: false, nodes_limit: MAX_NODES };
-    let doc = roxmltree::Document::parse_with_options(xml, opts).map_err(|e| XfaError::Malformed(format!("template XML: {e}")))?;
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: false,
+        nodes_limit: MAX_NODES,
+    };
+    let doc = roxmltree::Document::parse_with_options(xml, opts)
+        .map_err(|e| XfaError::Malformed(format!("template XML: {e}")))?;
     let root = doc.root_element();
     // The XDP's config packet has a <template> element too: the one we want is in the
     // xfa-template namespace, or at least has a subform in it.
     let is_template = |n: &XmlNode| {
         n.is_element()
             && n.tag_name().name() == "template"
-            && (n.tag_name().namespace().is_some_and(|ns| ns.contains("xfa-template")) || children(*n, "subform").next().is_some())
+            && (n
+                .tag_name()
+                .namespace()
+                .is_some_and(|ns| ns.contains("xfa-template"))
+                || children(*n, "subform").next().is_some())
     };
     let template = if is_template(&root) {
         root
     } else {
-        root.descendants().find(is_template).ok_or_else(|| XfaError::Malformed("no <template> element".into()))?
+        root.descendants()
+            .find(is_template)
+            .ok_or_else(|| XfaError::Malformed("no <template> element".into()))?
     };
     let mut warnings = Vec::new();
-    let sf = children(template, "subform").next().ok_or_else(|| XfaError::Malformed("the template has no root subform".into()))?;
+    let sf = children(template, "subform")
+        .next()
+        .ok_or_else(|| XfaError::Malformed("the template has no root subform".into()))?;
     let mut root_sf = parse_subform(sf, &mut warnings, 0);
     if root_sf.page_set.is_none() {
         // A page set may sit beside the root subform.
-        root_sf.page_set = child(template, "pageSet").map(|ps| parse_page_set(ps, &mut warnings, 0));
+        root_sf.page_set =
+            child(template, "pageSet").map(|ps| parse_page_set(ps, &mut warnings, 0));
     }
     // The form packet beside the template holds the state the form was saved in.
-    let saved = root
-        .descendants()
-        .find(|n| n.is_element() && n.tag_name().name() == "form" && n.tag_name().namespace().is_some_and(|ns| ns.contains("xfa-form")));
+    let saved = root.descendants().find(|n| {
+        n.is_element()
+            && n.tag_name().name() == "form"
+            && n.tag_name()
+                .namespace()
+                .is_some_and(|ns| ns.contains("xfa-form"))
+    });
     if let Some(saved_root) = saved.and_then(|f| children(f, "subform").next()) {
         if let Some(p) = saved_root.attribute("presence") {
             root_sf.common.presence = Presence::parse(Some(p));
@@ -681,8 +892,18 @@ pub fn parse(xml: &str) -> Result<(Template, Vec<String>), XfaError> {
         apply_saved_state(&mut root_sf.children, saved_root, 0);
     }
     let mut page_roles = Vec::new();
-    collect_page_roles(&[Node::Subform(Box::new(root_sf.clone()))], &mut page_roles, 0);
-    Ok((Template { root: root_sf, page_roles }, warnings))
+    collect_page_roles(
+        &[Node::Subform(Box::new(root_sf.clone()))],
+        &mut page_roles,
+        0,
+    );
+    Ok((
+        Template {
+            root: root_sf,
+            page_roles,
+        },
+        warnings,
+    ))
 }
 
 fn parse_access(a: Option<&str>) -> Option<Access> {
@@ -706,18 +927,30 @@ fn apply_saved_state(nodes: &mut [Node], saved: XmlNode, depth: usize) {
     }
     let mut seen: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
     for c in saved.children().filter(|c| c.is_element()) {
-        if !matches!(c.tag_name().name(), "subform" | "subformSet" | "area" | "field" | "draw" | "exclGroup") {
+        if !matches!(
+            c.tag_name().name(),
+            "subform" | "subformSet" | "area" | "field" | "draw" | "exclGroup"
+        ) {
             continue;
         }
-        let Some(name) = c.attribute("name").filter(|n| !n.is_empty()) else { continue };
+        let Some(name) = c.attribute("name").filter(|n| !n.is_empty()) else {
+            continue;
+        };
         let nth = {
             let k = seen.entry(name).or_insert(0);
             *k += 1;
             *k - 1
         };
-        let same: Vec<usize> = nodes.iter().enumerate().filter(|(_, n)| n.common().name.as_deref() == Some(name)).map(|(i, _)| i).collect();
+        let same: Vec<usize> = nodes
+            .iter()
+            .enumerate()
+            .filter(|(_, n)| n.common().name.as_deref() == Some(name))
+            .map(|(i, _)| i)
+            .collect();
         // More saved objects of the name than the template has: further instances.
-        let Some(target) = same.get(nth).copied().and_then(|i| nodes.get_mut(i)) else { continue };
+        let Some(target) = same.get(nth).copied().and_then(|i| nodes.get_mut(i)) else {
+            continue;
+        };
         let presence = c.attribute("presence").map(|p| Presence::parse(Some(p)));
         match target {
             Node::Subform(s) => {
@@ -740,7 +973,10 @@ fn apply_saved_state(nodes: &mut [Node], saved: XmlNode, depth: usize) {
                     f.access = a;
                 }
                 // A caption a script changed (a button's label, say) is saved as plain text.
-                let text = child(c, "caption").and_then(|k| child(k, "value")).and_then(|v| child(v, "text")).and_then(|t| t.text());
+                let text = child(c, "caption")
+                    .and_then(|k| child(k, "value"))
+                    .and_then(|v| child(v, "text"))
+                    .and_then(|t| t.text());
                 if let (Some(caption), Some(text)) = (f.caption.as_mut(), text) {
                     caption.value = Value::Text(text.to_string());
                 }

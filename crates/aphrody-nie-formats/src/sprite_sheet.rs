@@ -34,7 +34,12 @@ pub fn depuis_g4tx(g4tx: &G4tx, index_texture: usize) -> Option<SpriteSheet> {
             hauteur: i32::from(s.height),
         })
         .collect();
-    Some(SpriteSheet { nom: t.name.clone(), largeur: t.width, hauteur: t.height, sprites })
+    Some(SpriteSheet {
+        nom: t.name.clone(),
+        largeur: t.width,
+        hauteur: t.height,
+        sprites,
+    })
 }
 
 #[cfg(test)]
@@ -73,7 +78,10 @@ mod tests {
             sub_texture_count: 1,
             texture_data_size: 0,
         };
-        let g = G4tx { header: entete, textures: alloc::vec![t] };
+        let g = G4tx {
+            header: entete,
+            textures: alloc::vec![t],
+        };
 
         let f = depuis_g4tx(&g, 0).expect("texture 0");
         assert_eq!(f.nom, "gaiji_game");

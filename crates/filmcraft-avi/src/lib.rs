@@ -13,7 +13,17 @@
 //!
 //! Layer L0: no dependencies beyond `std`, no `unsafe`, builds for `wasm32-unknown-unknown`.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod source;
 #[cfg(test)]
@@ -185,7 +195,10 @@ fn io(e: std::io::Error) -> Error {
 }
 
 fn read<S: ByteSource + ?Sized>(src: &S, at: u64, n: u64) -> Result<Vec<u8>> {
-    let end = at.checked_add(n).filter(|e| *e <= src.len()).ok_or_else(|| Error::Invalid(format!("{n} bytes at {at} run past the end")))?;
+    let end = at
+        .checked_add(n)
+        .filter(|e| *e <= src.len())
+        .ok_or_else(|| Error::Invalid(format!("{n} bytes at {at} run past the end")))?;
     let len = usize::try_from(end - at).map_err(|_| Error::Invalid("chunk too large".into()))?;
     let mut buf = vec![0; len];
     src.read_at(at, &mut buf).map_err(io)?;
@@ -201,11 +214,13 @@ fn fourcc(b: &[u8], at: usize) -> [u8; 4] {
 }
 
 fn le16(b: &[u8], at: usize) -> u16 {
-    b.get(at..at + 2).map_or(0, |s| u16::from_le_bytes([s[0], s[1]]))
+    b.get(at..at + 2)
+        .map_or(0, |s| u16::from_le_bytes([s[0], s[1]]))
 }
 
 fn le32(b: &[u8], at: usize) -> u32 {
-    b.get(at..at + 4).map_or(0, |s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
+    b.get(at..at + 4)
+        .map_or(0, |s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
 }
 
 fn le64(b: &[u8], at: usize) -> u64 {
@@ -227,10 +242,14 @@ fn children<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Vec<([u8; 4]
     let mut out = Vec::new();
     let mut at = from;
     while at.checked_add(8).is_some_and(|e| e <= to) {
-        let Ok((id, size, data)) = header_at(src, at) else { break };
+        let Ok((id, size, data)) = header_at(src, at) else {
+            break;
+        };
         out.push((id, size, data));
         // chunks are padded to an even size
-        let Some(next) = data.checked_add(size).and_then(|e| e.checked_add(size & 1)) else { break };
+        let Some(next) = data.checked_add(size).and_then(|e| e.checked_add(size & 1)) else {
+            break;
+        };
         if next <= at {
             break;
         }
@@ -296,11 +315,19 @@ pub fn open_with<S: ByteSource + ?Sized>(src: &S, opts: OpenOptions) -> Result<A
         for &(_, from, to) in movis.iter().skip(1) {
             scan(src, &mut streams, from, to, 0);
         }
-        if streams.iter().all(|s| s.chunks.is_empty()) { scan_all(src, &mut streams, &movis) } else { IndexSource::Idx1 }
+        if streams.iter().all(|s| s.chunks.is_empty()) {
+            scan_all(src, &mut streams, &movis)
+        } else {
+            IndexSource::Idx1
+        }
     } else {
         scan_all(src, &mut streams, &movis)
     };
-    Ok(AviFile { header, streams, index })
+    Ok(AviFile {
+        header,
+        streams,
+        index,
+    })
 }
 
 fn clear(streams: &mut [Stream]) {
@@ -310,7 +337,11 @@ fn clear(streams: &mut [Stream]) {
     }
 }
 
-fn scan_all<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream], movis: &[(u64, u64, u64)]) -> IndexSource {
+fn scan_all<S: ByteSource + ?Sized>(
+    src: &S,
+    streams: &mut [Stream],
+    movis: &[(u64, u64, u64)],
+) -> IndexSource {
     clear(streams);
     for &(_, from, to) in movis {
         scan(src, streams, from, to, 0);
@@ -321,7 +352,11 @@ fn scan_all<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream], movis: &[(u
     IndexSource::Scan
 }
 
-fn parse_hdrl<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Result<(MainHeader, Vec<Stream>)> {
+fn parse_hdrl<S: ByteSource + ?Sized>(
+    src: &S,
+    from: u64,
+    to: u64,
+) -> Result<(MainHeader, Vec<Stream>)> {
     let mut header = MainHeader::default();
     let mut streams = Vec::new();
     for (id, size, data) in children(src, from, to) {
@@ -337,7 +372,11 @@ fn parse_hdrl<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Result<(Ma
                     height: le32(&b, 36),
                 };
             }
-            b"LIST" if size >= 4 && streams.len() < MAX_STREAMS && fourcc(&read(src, data, 4)?, 0) == *b"strl" => {
+            b"LIST"
+                if size >= 4
+                    && streams.len() < MAX_STREAMS
+                    && fourcc(&read(src, data, 4)?, 0) == *b"strl" =>
+            {
                 streams.push(parse_strl(src, data + 4, data + size)?);
             }
             _ => {}
@@ -382,7 +421,9 @@ fn parse_strl<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Result<Str
             b"strf" => strf = Some(read(src, data, size.min(1 << 20))?),
             b"strn" => {
                 let b = read(src, data, size.min(4096))?;
-                let name = String::from_utf8_lossy(b.split(|&c| c == 0).next().unwrap_or_default()).trim().to_string();
+                let name = String::from_utf8_lossy(b.split(|&c| c == 0).next().unwrap_or_default())
+                    .trim()
+                    .to_string();
                 s.name = (!name.is_empty()).then_some(name);
             }
             b"indx" => s.super_index = super_index(&read(src, data, size.min(MAX_HEADER))?),
@@ -403,7 +444,10 @@ fn parse_strl<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Result<Str
             }
             StreamKind::Audio => {
                 let cb = usize::from(le16(&b, 16));
-                let extra = b.get(18.min(b.len())..(18 + cb).min(b.len())).unwrap_or_default().to_vec();
+                let extra = b
+                    .get(18.min(b.len())..(18 + cb).min(b.len()))
+                    .unwrap_or_default()
+                    .to_vec();
                 let mut tag = le16(&b, 0);
                 // WAVE_FORMAT_EXTENSIBLE: the sub-format GUID starts with the real tag
                 if tag == 0xFFFE && extra.len() >= 22 {
@@ -431,13 +475,20 @@ fn parse_strl<S: ByteSource + ?Sized>(src: &S, from: u64, to: u64) -> Result<Str
 /// The `ix##` chunk offsets of an `indx` super index (`AVI_INDEX_OF_INDEXES`, 4 longs per entry).
 fn super_index(b: &[u8]) -> Vec<u64> {
     let longs = usize::from(le16(b, 0));
-    let (subtype, itype, n) = (b.get(2).copied().unwrap_or(0), b.get(3).copied().unwrap_or(0xFF), le32(b, 4) as usize);
+    let (subtype, itype, n) = (
+        b.get(2).copied().unwrap_or(0),
+        b.get(3).copied().unwrap_or(0xFF),
+        le32(b, 4) as usize,
+    );
     if itype != 0 || subtype != 0 || longs != 4 {
         return Vec::new();
     }
     // header 24 bytes, entries of 16: qwOffset, dwSize, dwDuration
     let n = n.min(b.len().saturating_sub(24) / 16);
-    (0..n).map(|k| le64(b, 24 + k * 16)).filter(|&o| o > 0).collect()
+    (0..n)
+        .map(|k| le64(b, 24 + k * 16))
+        .filter(|&o| o > 0)
+        .collect()
 }
 
 /// Fill the chunk tables from the OpenDML standard indexes; false (tables cleared) when a stream
@@ -449,12 +500,20 @@ fn read_odml<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream]) -> bool {
         s.chunks.clear();
         s.keyframes_known = true;
         for &at in &s.super_index {
-            let Ok((id, size, data)) = header_at(src, at) else { continue };
+            let Ok((id, size, data)) = header_at(src, at) else {
+                continue;
+            };
             if &id[..2] != b"ix" {
                 continue;
             }
-            let Ok(b) = read(src, data, size.min(MAX_HEADER * 8)) else { continue };
-            let (longs, subtype, itype) = (usize::from(le16(&b, 0)), b.get(2).copied().unwrap_or(0), b.get(3).copied().unwrap_or(0));
+            let Ok(b) = read(src, data, size.min(MAX_HEADER * 8)) else {
+                continue;
+            };
+            let (longs, subtype, itype) = (
+                usize::from(le16(&b, 0)),
+                b.get(2).copied().unwrap_or(0),
+                b.get(3).copied().unwrap_or(0),
+            );
             // AVI_INDEX_OF_CHUNKS; 2 longs per entry, or 3 for the field index (AVI_INDEX_2FIELD)
             if itype != 1 || !(longs == 2 && subtype == 0 || longs == 3 && subtype == 1) {
                 continue;
@@ -466,16 +525,28 @@ fn read_odml<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream]) -> bool {
                 let e = 24 + k * step;
                 let (off, raw) = (u64::from(le32(&b, e)), le32(&b, e + 4));
                 let size = raw & 0x7FFF_FFFF;
-                let Some(offset) = base.checked_add(off).filter(|o| o.checked_add(u64::from(size)).is_some_and(|end| end <= src.len())) else { continue };
+                let Some(offset) = base.checked_add(off).filter(|o| {
+                    o.checked_add(u64::from(size))
+                        .is_some_and(|end| end <= src.len())
+                }) else {
+                    continue;
+                };
                 total += 1;
                 if total > limit {
                     return false;
                 }
-                s.chunks.push(Chunk { offset, size, key: raw & 0x8000_0000 == 0 });
+                s.chunks.push(Chunk {
+                    offset,
+                    size,
+                    key: raw & 0x8000_0000 == 0,
+                });
             }
         }
     }
-    let ok = streams.iter().any(|s| !s.chunks.is_empty()) && streams.iter().all(|s| !s.super_index.is_empty() || matches!(s.kind, StreamKind::Other(_)));
+    let ok = streams.iter().any(|s| !s.chunks.is_empty())
+        && streams
+            .iter()
+            .all(|s| !s.super_index.is_empty() || matches!(s.kind, StreamKind::Other(_)));
     if !ok {
         clear(streams);
     }
@@ -484,8 +555,16 @@ fn read_odml<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream]) -> bool {
 
 /// Fill the chunk tables from `idx1` (16-byte entries: id, flags, offset, size). Offsets are
 /// relative to the `movi` list's type id, or (some writers) absolute: the first entry decides.
-fn read_idx1<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream], at: u64, size: u64, movi: u64) {
-    let Ok(b) = read(src, at, size.min(src.len() / 2)) else { return };
+fn read_idx1<S: ByteSource + ?Sized>(
+    src: &S,
+    streams: &mut [Stream],
+    at: u64,
+    size: u64,
+    movi: u64,
+) {
+    let Ok(b) = read(src, at, size.min(src.len() / 2)) else {
+        return;
+    };
     let entries: Vec<&[u8]> = b.as_chunks::<16>().0.iter().map(|e| e.as_slice()).collect();
     let id_at = |pos: u64| read(src, pos, 4).ok().map(|v| fourcc(&v, 0));
     let first = entries.iter().find(|e| le32(e, 4) & 1 == 0);
@@ -503,12 +582,24 @@ fn read_idx1<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream], at: u64, s
         if flags & 1 != 0 || &id[2..] == b"pc" {
             continue;
         }
-        let Some(s) = Stream::number(&id).and_then(|n| streams.get_mut(n)) else { continue };
-        let Some(offset) = base.checked_add(off).and_then(|o| o.checked_add(8)).filter(|o| o.checked_add(u64::from(len)).is_some_and(|end| end <= src.len()))
+        let Some(s) = Stream::number(&id).and_then(|n| streams.get_mut(n)) else {
+            continue;
+        };
+        let Some(offset) = base
+            .checked_add(off)
+            .and_then(|o| o.checked_add(8))
+            .filter(|o| {
+                o.checked_add(u64::from(len))
+                    .is_some_and(|end| end <= src.len())
+            })
         else {
             continue;
         };
-        s.chunks.push(Chunk { offset, size: len, key: flags & 0x10 != 0 || s.kind != StreamKind::Video });
+        s.chunks.push(Chunk {
+            offset,
+            size: len,
+            key: flags & 0x10 != 0 || s.kind != StreamKind::Video,
+        });
     }
 }
 
@@ -528,15 +619,28 @@ fn scan<S: ByteSource + ?Sized>(src: &S, streams: &mut [Stream], from: u64, to: 
             continue;
         }
         if let Some(s) = Stream::number(&id).and_then(|n| streams.get_mut(n)) {
-            s.chunks.push(Chunk { offset: data, size: u32::try_from(size).unwrap_or(u32::MAX), key: true });
+            s.chunks.push(Chunk {
+                offset: data,
+                size: u32::try_from(size).unwrap_or(u32::MAX),
+                key: true,
+            });
         }
     }
 }
 
 impl AviFile {
     /// The bytes of chunk `i` of stream `stream`.
-    pub fn read_chunk<S: ByteSource + ?Sized>(&self, src: &S, stream: usize, i: usize) -> Result<Vec<u8>> {
-        let c = self.streams.get(stream).and_then(|s| s.chunks.get(i)).ok_or_else(|| Error::Invalid(format!("no chunk {i} in stream {stream}")))?;
+    pub fn read_chunk<S: ByteSource + ?Sized>(
+        &self,
+        src: &S,
+        stream: usize,
+        i: usize,
+    ) -> Result<Vec<u8>> {
+        let c = self
+            .streams
+            .get(stream)
+            .and_then(|s| s.chunks.get(i))
+            .ok_or_else(|| Error::Invalid(format!("no chunk {i} in stream {stream}")))?;
         read(src, c.offset, u64::from(c.size))
     }
 }

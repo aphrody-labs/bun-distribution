@@ -207,8 +207,15 @@ pub fn sign_hiding(c: &[i32], l: &mut [i32], log2: u32, scan_idx: usize, qp: i32
     let sb_scan = scan_order(log2 - 2, scan_idx);
     let pos = &SCAN_4[scan_idx];
     for &(xs, ys) in sb_scan {
-        let idx = |p: usize| (ys as usize * 4 + pos[p].1 as usize) * n + xs as usize * 4 + pos[p].0 as usize;
-        let (Some(first), Some(last)) = ((0..16).find(|&p| l[idx(p)] != 0), (0..16).rev().find(|&p| l[idx(p)] != 0)) else { continue };
+        let idx = |p: usize| {
+            (ys as usize * 4 + pos[p].1 as usize) * n + xs as usize * 4 + pos[p].0 as usize
+        };
+        let (Some(first), Some(last)) = (
+            (0..16).find(|&p| l[idx(p)] != 0),
+            (0..16).rev().find(|&p| l[idx(p)] != 0),
+        ) else {
+            continue;
+        };
         if last - first <= 3 {
             continue;
         }
@@ -251,7 +258,11 @@ pub fn dequantize(l: &[i32], d: &mut [i32], n: usize, qp: i32, bit_depth: u32) {
     let scale = (LEVEL_SCALE[(qp % 6) as usize] as i64) << (qp / 6);
     for i in 0..n * n {
         let v = l[i];
-        d[i] = if v == 0 { 0 } else { ((v as i64 * 16 * scale + round) >> bd_shift).clamp(-32768, 32767) as i32 };
+        d[i] = if v == 0 {
+            0
+        } else {
+            ((v as i64 * 16 * scale + round) >> bd_shift).clamp(-32768, 32767) as i32
+        };
     }
 }
 
@@ -267,7 +278,11 @@ mod tests {
             for y in 0..n {
                 let mut s = 0i32;
                 for j in 0..n {
-                    let m = if dst { DST_MATRIX[j][y] as i32 } else { TRANS_MATRIX[j * step][y] as i32 };
+                    let m = if dst {
+                        DST_MATRIX[j][y] as i32
+                    } else {
+                        TRANS_MATRIX[j * step][y] as i32
+                    };
                     s += m * c[j * n + x];
                 }
                 tmp[y * n + x] = ((s + 64) >> 7).clamp(-32768, 32767);
@@ -278,7 +293,11 @@ mod tests {
             for x in 0..n {
                 let mut s = 0i32;
                 for j in 0..n {
-                    let m = if dst { DST_MATRIX[j][x] as i32 } else { TRANS_MATRIX[j * step][x] as i32 };
+                    let m = if dst {
+                        DST_MATRIX[j][x] as i32
+                    } else {
+                        TRANS_MATRIX[j * step][x] as i32
+                    };
                     s += m * tmp[y * n + j];
                 }
                 c[y * n + x] = (s + (1 << (bd_shift - 1))) >> bd_shift;
@@ -289,7 +308,13 @@ mod tests {
     #[test]
     fn inverse_matches_matrix_form() {
         let mut seed = 7u32;
-        for &(n, dst) in &[(4usize, true), (4, false), (8, false), (16, false), (32, false)] {
+        for &(n, dst) in &[
+            (4usize, true),
+            (4, false),
+            (8, false),
+            (16, false),
+            (32, false),
+        ] {
             for _ in 0..20 {
                 let mut c = vec![0i32; n * n];
                 for v in c.iter_mut() {
@@ -311,7 +336,9 @@ mod tests {
     fn round_trip_is_close() {
         for &(n, dst) in &[(4usize, true), (8, false), (32, false)] {
             for bd in [8u32, 10] {
-                let r: Vec<i32> = (0..n * n).map(|i| ((i * 37 + i / n * 11) % 61) as i32 - 30).collect();
+                let r: Vec<i32> = (0..n * n)
+                    .map(|i| ((i * 37 + i / n * 11) % 61) as i32 - 30)
+                    .collect();
                 let mut c = vec![0; n * n];
                 forward(&r, &mut c, n, dst, bd);
                 let mut l = vec![0; n * n];

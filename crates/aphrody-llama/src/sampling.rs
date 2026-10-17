@@ -587,7 +587,9 @@ impl LlamaSampler {
     /// ```
     #[must_use]
     pub fn logit_bias(n_vocab: i32, biases: &[LlamaLogitBias]) -> Self {
-        let data = biases.as_ptr().cast::<aphrody_llama_sys::llama_logit_bias>();
+        let data = biases
+            .as_ptr()
+            .cast::<aphrody_llama_sys::llama_logit_bias>();
 
         let sampler = unsafe {
             aphrody_llama_sys::llama_sampler_init_logit_bias(n_vocab, biases.len() as i32, data)

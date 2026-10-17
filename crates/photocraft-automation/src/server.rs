@@ -346,7 +346,10 @@ pub struct ControlParams {
 /// schemars writes for `Value`) becomes `{}`. Tool schemas travel to every provider a client uses,
 /// and some reject the whole request over either construct.
 fn strict_schema(schema: &mut serde_json::Map<String, Value>) {
-    let defs = schema.remove("$defs").and_then(|d| d.as_object().cloned()).unwrap_or_default();
+    let defs = schema
+        .remove("$defs")
+        .and_then(|d| d.as_object().cloned())
+        .unwrap_or_default();
     let mut root = Value::Object(std::mem::take(schema));
     strict_node(&mut root, &defs, 0, true);
     if let Value::Object(m) = root {
@@ -356,7 +359,12 @@ fn strict_schema(schema: &mut serde_json::Map<String, Value>) {
 
 /// `v` (a schema when `is_schema`, else any value that may contain schemas) made strict. Inlining
 /// stops at a fixed depth so a recursive definition can't loop.
-fn strict_node(v: &mut Value, defs: &serde_json::Map<String, Value>, depth: usize, is_schema: bool) {
+fn strict_node(
+    v: &mut Value,
+    defs: &serde_json::Map<String, Value>,
+    depth: usize,
+    is_schema: bool,
+) {
     const MAX_DEPTH: usize = 32;
     if is_schema && *v == Value::Bool(true) {
         *v = json!({});
@@ -370,7 +378,11 @@ fn strict_node(v: &mut Value, defs: &serde_json::Map<String, Value>, depth: usiz
         }
         return;
     };
-    if let Some(def) = m.get("$ref").and_then(Value::as_str).and_then(|r| r.strip_prefix("#/$defs/")).and_then(|name| defs.get(name))
+    if let Some(def) = m
+        .get("$ref")
+        .and_then(Value::as_str)
+        .and_then(|r| r.strip_prefix("#/$defs/"))
+        .and_then(|name| defs.get(name))
         && depth < MAX_DEPTH
     {
         let mut inlined = def.clone();
@@ -394,14 +406,22 @@ fn strict_node(v: &mut Value, defs: &serde_json::Map<String, Value>, depth: usiz
                     }
                 }
             }
-            "items" | "additionalProperties" | "not" | "anyOf" | "oneOf" | "allOf" | "prefixItems" => strict_node(x, defs, depth, true),
+            "items"
+            | "additionalProperties"
+            | "not"
+            | "anyOf"
+            | "oneOf"
+            | "allOf"
+            | "prefixItems" => strict_node(x, defs, depth, true),
             _ => {}
         }
     }
 }
 
 fn ok_json(v: &Value) -> CallToolResult {
-    let text = match json_bytes(v).and_then(|bytes| String::from_utf8(bytes).map_err(|error| AutomationError::Other(error.to_string()))) {
+    let text = match json_bytes(v).and_then(|bytes| {
+        String::from_utf8(bytes).map_err(|error| AutomationError::Other(error.to_string()))
+    }) {
         Ok(text) => text,
         Err(error) => return fail(format!("{error}; operation may have completed")),
     };
@@ -418,7 +438,9 @@ fn bounded_tool_result(result: CallToolResult) -> CallToolResult {
 fn fail(e: impl std::fmt::Display) -> CallToolResult {
     let result = CallToolResult::error(vec![Content::text(e.to_string())]);
     if json_bytes(&result).is_err() {
-        return CallToolResult::error(vec![Content::text("response budget exceeded; operation may have completed")]);
+        return CallToolResult::error(vec![Content::text(
+            "response budget exceeded; operation may have completed",
+        )]);
     }
     result
 }
@@ -434,7 +456,10 @@ fn png_result(png: &[u8], note: String) -> CallToolResult {
         return fail(error);
     }
     let b64 = base64::engine::general_purpose::STANDARD.encode(png);
-    bounded_tool_result(CallToolResult::success(vec![Content::image(b64, "image/png"), Content::text(note)]))
+    bounded_tool_result(CallToolResult::success(vec![
+        Content::image(b64, "image/png"),
+        Content::text(note),
+    ]))
 }
 
 fn to_result(r: Result<Value, AutomationError>) -> Result<CallToolResult, McpError> {
@@ -458,11 +483,15 @@ impl PhotocraftMcp {
     }
 
     pub fn headless_with_workspace(workspace: AuthorizedWorkspace) -> Self {
-        Self::with_backend(Backend::Headless(Arc::new(Mutex::new(Headless::with_workspace(workspace)))))
+        Self::with_backend(Backend::Headless(Arc::new(Mutex::new(
+            Headless::with_workspace(workspace),
+        ))))
     }
 
     pub fn bridge(addr: &str, token: &str) -> Result<Self, AutomationError> {
-        Ok(Self::with_backend(Backend::Bridge(Arc::new(BridgeClient::new(addr, token)?))))
+        Ok(Self::with_backend(Backend::Bridge(Arc::new(
+            BridgeClient::new(addr, token)?,
+        ))))
     }
 
     pub fn with_backend(backend: Backend) -> Self {
@@ -472,7 +501,10 @@ impl PhotocraftMcp {
             strict_schema(&mut schema);
             route.attr.input_schema = Arc::new(schema);
         }
-        PhotocraftMcp { backend: Arc::new(backend), tool_router }
+        PhotocraftMcp {
+            backend: Arc::new(backend),
+            tool_router,
+        }
     }
 
     /// Serve MCP over stdin/stdout until the client disconnects.
@@ -510,9 +542,15 @@ impl PhotocraftMcp {
         }
     }
 
-    async fn screenshot(&self, b: &BridgeClient, max_side: Option<u32>) -> Result<CallToolResult, McpError> {
+    async fn screenshot(
+        &self,
+        b: &BridgeClient,
+        max_side: Option<u32>,
+    ) -> Result<CallToolResult, McpError> {
         if max_side.is_some_and(|side| side > MAX_PREVIEW_SIDE) {
-            return Ok(fail(format!("automation preview side exceeds {MAX_PREVIEW_SIDE} pixels")));
+            return Ok(fail(format!(
+                "automation preview side exceeds {MAX_PREVIEW_SIDE} pixels"
+            )));
         }
         let response = match b.call_read("ui.screenshot", json!({})).await {
             Ok(response) => response,
@@ -533,23 +571,35 @@ impl PhotocraftMcp {
         if let Err(error) = check_png(bytes.len()) {
             return Ok(fail(error));
         }
-        Ok(png_result(&bytes, "screenshot of the live app window".into()))
+        Ok(png_result(
+            &bytes,
+            "screenshot of the live app window".into(),
+        ))
     }
 }
 
 fn downscale_png(png: &[u8], max_side: u32) -> Result<Option<Vec<u8>>, AutomationError> {
     // A compressed reply's byte limit does not bound its decoded pixel allocation.
     let opts = photocraft_codecs::DecodeOptions {
-        limits: photocraft_codecs::Limits { max_width: 8192, max_height: 8192, max_pixels: 16 << 20, max_alloc: 64 << 20 },
+        limits: photocraft_codecs::Limits {
+            max_width: 8192,
+            max_height: 8192,
+            max_pixels: 16 << 20,
+            max_alloc: 64 << 20,
+        },
         ..Default::default()
     };
-    let img = photocraft_codecs::decode_as_with(photocraft_codecs::Format::Png, png, &opts).map_err(|error| AutomationError::Other(error.to_string()))?;
+    let img = photocraft_codecs::decode_as_with(photocraft_codecs::Format::Png, png, &opts)
+        .map_err(|error| AutomationError::Other(error.to_string()))?;
     let (w, h) = img.dimensions();
     if max_side == 0 || w.max(h) <= max_side {
         return Ok(None);
     }
     let s = max_side as f32 / w.max(h) as f32;
-    let (nw, nh) = (((w as f32 * s) as u32).max(1), ((h as f32 * s) as u32).max(1));
+    let (nw, nh) = (
+        ((w as f32 * s) as u32).max(1),
+        ((h as f32 * s) as u32).max(1),
+    );
     let src = img.to_rgba8();
     let mut out = vec![0u8; (nw * nh * 4) as usize];
     for y in 0..nh {
@@ -562,9 +612,11 @@ fn downscale_png(png: &[u8], max_side: u32) -> Result<Option<Vec<u8>>, Automatio
         }
     }
     let small =
-        photocraft_codecs::Image::from_u8(nw, nh, photocraft_codecs::ChannelLayout::Rgba, out).map_err(|error| AutomationError::Other(error.to_string()))?;
+        photocraft_codecs::Image::from_u8(nw, nh, photocraft_codecs::ChannelLayout::Rgba, out)
+            .map_err(|error| AutomationError::Other(error.to_string()))?;
     let bytes =
-        photocraft_codecs::encode(&small, photocraft_codecs::Format::Png, &Default::default()).map_err(|error| AutomationError::Other(error.to_string()))?;
+        photocraft_codecs::encode(&small, photocraft_codecs::Format::Png, &Default::default())
+            .map_err(|error| AutomationError::Other(error.to_string()))?;
     Ok(Some(bytes))
 }
 
@@ -585,8 +637,13 @@ impl PhotocraftMcp {
         to_result(b.call_read("ui.inspect", json!({})).await)
     }
 
-    #[tool(description = "Open an image or document file and make it active. Returns index, size and import warnings.")]
-    async fn doc_open(&self, Parameters(p): Parameters<OpenParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Open an image or document file and make it active. Returns index, size and import warnings."
+    )]
+    async fn doc_open(
+        &self,
+        Parameters(p): Parameters<OpenParams>,
+    ) -> Result<CallToolResult, McpError> {
         let path = PathBuf::from(&p.path);
         if let Some(r) = self.headless_op(move |h| h.open(&path)).await {
             return to_result(r);
@@ -600,7 +657,10 @@ impl PhotocraftMcp {
     #[tool(
         description = "Place a file into the document as a Smart Object layer (Place Embedded), reading `path` beneath the read root. `scale` (percent), `fit` and `center` are the command's own."
     )]
-    async fn doc_place(&self, Parameters(p): Parameters<PlaceParams>) -> Result<CallToolResult, McpError> {
+    async fn doc_place(
+        &self,
+        Parameters(p): Parameters<PlaceParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut opts = serde_json::Map::new();
         if let Some(v) = p.scale {
             opts.insert("scale".into(), json!(v));
@@ -618,16 +678,23 @@ impl PhotocraftMcp {
             o.insert("path".into(), Value::String(p.path.clone()));
         }
         let (path, index) = (p.path, p.index);
-        if let Some(r) = self.headless_op(move |h| h.place(index, &path, &opts)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.place(index, &path, &opts))
+            .await
+        {
             return to_result(r);
         }
-        self.run_command("file.placeEmbedded".into(), bridge_params, true).await
+        self.run_command("file.placeEmbedded".into(), bridge_params, true)
+            .await
     }
 
     #[tool(
         description = "Export each exported layer of the document as its own file beneath the write root (the capability-scoped Layers to Files). A file that already exists is an error, not an overwrite."
     )]
-    async fn doc_export_layers(&self, Parameters(p): Parameters<ExportLayersParams>) -> Result<CallToolResult, McpError> {
+    async fn doc_export_layers(
+        &self,
+        Parameters(p): Parameters<ExportLayersParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut opts = serde_json::Map::new();
         if let Some(v) = p.format {
             opts.insert("format".into(), json!(v));
@@ -648,16 +715,23 @@ impl PhotocraftMcp {
             o.insert("dir".into(), Value::String(p.dir.clone()));
         }
         let (dir, index) = (p.dir, p.index);
-        if let Some(r) = self.headless_op(move |h| h.export_layers(index, &dir, &opts)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.export_layers(index, &dir, &opts))
+            .await
+        {
             return to_result(r);
         }
-        self.run_command("file.export.layersToFiles".into(), bridge_params, true).await
+        self.run_command("file.export.layersToFiles".into(), bridge_params, true)
+            .await
     }
 
     #[tool(
         description = "Export every data set of the document as its own flattened file beneath the write root (the capability-scoped Export Data Sets). The batch is planned first, so colliding filenames are refused before any file is written."
     )]
-    async fn doc_export_data_sets(&self, Parameters(p): Parameters<ExportDataSetsParams>) -> Result<CallToolResult, McpError> {
+    async fn doc_export_data_sets(
+        &self,
+        Parameters(p): Parameters<ExportDataSetsParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut opts = serde_json::Map::new();
         if let Some(v) = p.format {
             opts.insert("format".into(), json!(v));
@@ -674,14 +748,23 @@ impl PhotocraftMcp {
             o.insert("dir".into(), Value::String(p.dir.clone()));
         }
         let (dir, index) = (p.dir, p.index);
-        if let Some(r) = self.headless_op(move |h| h.export_data_sets(index, &dir, &opts)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.export_data_sets(index, &dir, &opts))
+            .await
+        {
             return to_result(r);
         }
-        self.run_command("file.export.dataSetsAsFiles".into(), bridge_params, true).await
+        self.run_command("file.export.dataSetsAsFiles".into(), bridge_params, true)
+            .await
     }
 
-    #[tool(description = "Import a data set CSV from the read root into the document (the capability-scoped Import Variable Data Sets).")]
-    async fn doc_import_data_sets(&self, Parameters(p): Parameters<ImportDataSetsParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Import a data set CSV from the read root into the document (the capability-scoped Import Variable Data Sets)."
+    )]
+    async fn doc_import_data_sets(
+        &self,
+        Parameters(p): Parameters<ImportDataSetsParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut opts = serde_json::Map::new();
         if let Some(v) = p.delimiter {
             opts.insert("delimiter".into(), json!(v));
@@ -692,14 +775,21 @@ impl PhotocraftMcp {
             o.insert("path".into(), Value::String(p.path.clone()));
         }
         let (path, index) = (p.path, p.index);
-        if let Some(r) = self.headless_op(move |h| h.import_data_sets(index, &path, &opts)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.import_data_sets(index, &path, &opts))
+            .await
+        {
             return to_result(r);
         }
-        self.run_command("file.import.variableDataSets".into(), bridge_params, true).await
+        self.run_command("file.import.variableDataSets".into(), bridge_params, true)
+            .await
     }
 
     #[tool(description = "Create a new document (defaults: 1920x1080 RGB 8-bit white).")]
-    async fn doc_new(&self, Parameters(p): Parameters<NewParams>) -> Result<CallToolResult, McpError> {
+    async fn doc_new(
+        &self,
+        Parameters(p): Parameters<NewParams>,
+    ) -> Result<CallToolResult, McpError> {
         let mut params = serde_json::Map::new();
         if let Some(v) = p.width {
             params.insert("width".into(), v.into());
@@ -719,25 +809,41 @@ impl PhotocraftMcp {
         if let Some(v) = p.name {
             params.insert("name".into(), v.into());
         }
-        self.run_command("file.new".into(), Value::Object(params), true).await
+        self.run_command("file.new".into(), Value::Object(params), true)
+            .await
     }
 
-    #[tool(description = "Save the document. `.pcraft` is the lossless native format (incremental); other extensions \
-        (psd, png, jpg, tif, webp, exr, …) export. Without `path` only a PSD, PSB or .pcraft document is written back to its own         file. Returns warnings about anything the format cannot hold.")]
-    async fn doc_save(&self, Parameters(p): Parameters<SaveParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Save the document. `.pcraft` is the lossless native format (incremental); other extensions \
+        (psd, png, jpg, tif, webp, exr, …) export. Without `path` only a PSD, PSB or .pcraft document is written back to its own         file. Returns warnings about anything the format cannot hold."
+    )]
+    async fn doc_save(
+        &self,
+        Parameters(p): Parameters<SaveParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.save_impl(p).await
     }
 
-    #[tool(description = "Export the document to another format (same as doc_save with an explicit path/format).")]
-    async fn doc_export(&self, Parameters(p): Parameters<SaveParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Export the document to another format (same as doc_save with an explicit path/format)."
+    )]
+    async fn doc_export(
+        &self,
+        Parameters(p): Parameters<SaveParams>,
+    ) -> Result<CallToolResult, McpError> {
         if p.path.is_none() {
             return Ok(fail("doc_export needs `path`"));
         }
         self.save_impl(p).await
     }
 
-    #[tool(description = "Document state as JSON: layer tree (top to bottom), history, selection, active layer.")]
-    async fn doc_inspect(&self, Parameters(p): Parameters<DocIndex>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Document state as JSON: layer tree (top to bottom), history, selection, active layer."
+    )]
+    async fn doc_inspect(
+        &self,
+        Parameters(p): Parameters<DocIndex>,
+    ) -> Result<CallToolResult, McpError> {
         if let Some(r) = self
             .headless_op(move |h| {
                 if p.index.is_none() && h.session.active_index().is_none() {
@@ -753,12 +859,26 @@ impl PhotocraftMcp {
         let Some(b) = self.bridge_client() else {
             return Ok(no_backend());
         };
-        let params = p.index.map(|index| json!({"document": index})).unwrap_or_else(|| json!({}));
-        to_result(b.call_read("engine.execute", json!({"command": "document.inspect", "params": params})).await)
+        let params = p
+            .index
+            .map(|index| json!({"document": index}))
+            .unwrap_or_else(|| json!({}));
+        to_result(
+            b.call_read(
+                "engine.execute",
+                json!({"command": "document.inspect", "params": params}),
+            )
+            .await,
+        )
     }
 
-    #[tool(description = "Render the flattened document and return it as a PNG image (bridge mode: window screenshot).")]
-    async fn doc_render_preview(&self, Parameters(p): Parameters<PreviewParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Render the flattened document and return it as a PNG image (bridge mode: window screenshot)."
+    )]
+    async fn doc_render_preview(
+        &self,
+        Parameters(p): Parameters<PreviewParams>,
+    ) -> Result<CallToolResult, McpError> {
         let max = p.max_side.unwrap_or(1024);
         if let Some(r) = self.headless_op(move |h| h.render_png(p.index, max)).await {
             return Ok(match r {
@@ -770,18 +890,28 @@ impl PhotocraftMcp {
             return Ok(no_backend());
         };
         if p.index.is_some() {
-            return Ok(fail("`index` is only supported in headless mode; bridge previews capture the app window"));
+            return Ok(fail(
+                "`index` is only supported in headless mode; bridge previews capture the app window",
+            ));
         }
         self.screenshot(b, Some(max)).await
     }
 
-    #[tool(description = "Render a bounded flattened PNG preview (bridge mode: app window screenshot).")]
-    async fn render_preview(&self, p: Parameters<PreviewParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Render a bounded flattened PNG preview (bridge mode: app window screenshot)."
+    )]
+    async fn render_preview(
+        &self,
+        p: Parameters<PreviewParams>,
+    ) -> Result<CallToolResult, McpError> {
         self.doc_render_preview(p).await
     }
 
     #[tool(description = "Make the document at `index` active.")]
-    async fn doc_select(&self, Parameters(p): Parameters<SelectParams>) -> Result<CallToolResult, McpError> {
+    async fn doc_select(
+        &self,
+        Parameters(p): Parameters<SelectParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.headless_op(move |h| h.select(p.index)).await {
             Some(r) => to_result(r),
             None => bridge_only_headless("doc_select"),
@@ -789,17 +919,25 @@ impl PhotocraftMcp {
     }
 
     #[tool(description = "Close a document (default: the active one) without saving.")]
-    async fn doc_close(&self, Parameters(p): Parameters<DocIndex>) -> Result<CallToolResult, McpError> {
+    async fn doc_close(
+        &self,
+        Parameters(p): Parameters<DocIndex>,
+    ) -> Result<CallToolResult, McpError> {
         match self.headless_op(move |h| h.close(p.index)).await {
             Some(r) => to_result(r),
             None => bridge_only_headless("doc_close"),
         }
     }
 
-    #[tool(description = "List engine commands: id, label, menu path, shortcut, parameter doc, enabled now. \
+    #[tool(
+        description = "List engine commands: id, label, menu path, shortcut, parameter doc, enabled now. \
         `disabledReason` says why a command is off (null when enabled); `needsDocument` is true when it is off because no \
-        document is open: create or open one first (doc_new, doc_open).")]
-    async fn command_list(&self, Parameters(p): Parameters<ListParams>) -> Result<CallToolResult, McpError> {
+        document is open: create or open one first (doc_new, doc_open)."
+    )]
+    async fn command_list(
+        &self,
+        Parameters(p): Parameters<ListParams>,
+    ) -> Result<CallToolResult, McpError> {
         let all = if let Some(r) = self.headless_op(|h| Ok(h.command_list())).await {
             r
         } else {
@@ -817,49 +955,92 @@ impl PhotocraftMcp {
         let items: Vec<Value> = all
             .as_array()
             .cloned()
-            .unwrap_or_else(|| all.get("commands").and_then(Value::as_array).cloned().unwrap_or_default())
+            .unwrap_or_else(|| {
+                all.get("commands")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default()
+            })
             .into_iter()
             .filter(|c| {
-                let hay =
-                    format!("{} {}", c.get("id").and_then(Value::as_str).unwrap_or(""), c.get("label").and_then(Value::as_str).unwrap_or("")).to_lowercase();
-                needle.as_ref().is_none_or(|n| hay.contains(n)) && (!enabled_only || c.get("enabled").and_then(Value::as_bool).unwrap_or(true))
+                let hay = format!(
+                    "{} {}",
+                    c.get("id").and_then(Value::as_str).unwrap_or(""),
+                    c.get("label").and_then(Value::as_str).unwrap_or("")
+                )
+                .to_lowercase();
+                needle.as_ref().is_none_or(|n| hay.contains(n))
+                    && (!enabled_only || c.get("enabled").and_then(Value::as_bool).unwrap_or(true))
             })
             .collect();
         Ok(ok_json(&Value::Array(items)))
     }
 
-    #[tool(description = "Run an engine command by id with JSON params (see command_list). Returns the command's JSON result. \
+    #[tool(
+        description = "Run an engine command by id with JSON params (see command_list). Returns the command's JSON result. \
         Long commands (filters, Content-Aware Fill/Scale, Photomerge, brush import) wait to finish unless `wait` is false: \
-        then they run as a background job and the result is {job: id} (see jobs_list, jobs_cancel).")]
-    async fn command_run(&self, Parameters(p): Parameters<RunParams>) -> Result<CallToolResult, McpError> {
-        self.run_command(p.id, p.params.unwrap_or_else(|| json!({})), p.wait.unwrap_or(true)).await
+        then they run as a background job and the result is {job: id} (see jobs_list, jobs_cancel)."
+    )]
+    async fn command_run(
+        &self,
+        Parameters(p): Parameters<RunParams>,
+    ) -> Result<CallToolResult, McpError> {
+        self.run_command(
+            p.id,
+            p.params.unwrap_or_else(|| json!({})),
+            p.wait.unwrap_or(true),
+        )
+        .await
     }
 
-    #[tool(description = "List background jobs: running ones with progress (0-1), message and elapsed time, then the last few \
-        that ended (state done|failed|cancelled with their result or error). Finished jobs are applied first.")]
+    #[tool(
+        description = "List background jobs: running ones with progress (0-1), message and elapsed time, then the last few \
+        that ended (state done|failed|cancelled with their result or error). Finished jobs are applied first."
+    )]
     async fn jobs_list(&self) -> Result<CallToolResult, McpError> {
         self.jobs_call("jobs.list", json!({}), true).await
     }
 
-    #[tool(description = "Cancel a background job by id (or every running job when `job` is omitted). The document is left \
-        unchanged.")]
-    async fn jobs_cancel(&self, Parameters(p): Parameters<JobCancelParams>) -> Result<CallToolResult, McpError> {
-        self.jobs_call("jobs.cancel", p.job.map_or_else(|| json!({}), |j| json!({"job": j})), false).await
+    #[tool(
+        description = "Cancel a background job by id (or every running job when `job` is omitted). The document is left \
+        unchanged."
+    )]
+    async fn jobs_cancel(
+        &self,
+        Parameters(p): Parameters<JobCancelParams>,
+    ) -> Result<CallToolResult, McpError> {
+        self.jobs_call(
+            "jobs.cancel",
+            p.job.map_or_else(|| json!({}), |j| json!({"job": j})),
+            false,
+        )
+        .await
     }
 
-    #[tool(description = "Run several engine commands in one call, in order (fewer round trips). Returns {completed, failed, \
+    #[tool(
+        description = "Run several engine commands in one call, in order (fewer round trips). Returns {completed, failed, \
         results:[{ok, result|error}]}; stops at the first error unless stop_on_error is false. \
-        Not an atomic transaction: earlier successful steps stay applied (no rollback).")]
-    async fn command_batch(&self, Parameters(p): Parameters<BatchParams>) -> Result<CallToolResult, McpError> {
+        Not an atomic transaction: earlier successful steps stay applied (no rollback)."
+    )]
+    async fn command_batch(
+        &self,
+        Parameters(p): Parameters<BatchParams>,
+    ) -> Result<CallToolResult, McpError> {
         if p.steps.len() > MAX_BATCH_STEPS {
-            return Ok(fail(format!("batch contains {} steps; maximum is {MAX_BATCH_STEPS}", p.steps.len())));
+            return Ok(fail(format!(
+                "batch contains {} steps; maximum is {MAX_BATCH_STEPS}",
+                p.steps.len()
+            )));
         }
         let stop = p.stop_on_error.unwrap_or(true);
         let steps: Vec<Value> =
             p.steps.into_iter().map(|s| json!({"command": s.id, "params": s.params.unwrap_or_else(|| json!({})), "wait": s.wait.unwrap_or(true)})).collect();
         let args = json!({"steps": steps, "stopOnError": stop});
         // The reply travels as escaped JSON text, so steps are charged their escaped size.
-        if let Some(r) = self.headless_op(move |h| h.batch_with_budget(&args, BatchReplyBudget::escaped())).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.batch_with_budget(&args, BatchReplyBudget::escaped()))
+            .await
+        {
             return to_result(r);
         }
         let Some(b) = self.bridge_client() else {
@@ -888,7 +1069,9 @@ impl PhotocraftMcp {
                 }
             }
         }
-        Ok(ok_json(&json!({"completed": results.len() - failed, "failed": failed, "results": results})))
+        Ok(ok_json(
+            &json!({"completed": results.len() - failed, "failed": failed, "results": results}),
+        ))
     }
 
     // ----- live-GUI tools (bridge mode) -----
@@ -904,7 +1087,10 @@ impl PhotocraftMcp {
     }
 
     #[tool(description = "Bridge mode: screenshot of the live app window as PNG.")]
-    async fn ui_screenshot(&self, Parameters(p): Parameters<ScreenshotParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_screenshot(
+        &self,
+        Parameters(p): Parameters<ScreenshotParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
             Some(b) => self.screenshot(b, p.max_side).await,
             None => bridge_only("ui_screenshot"),
@@ -914,7 +1100,10 @@ impl PhotocraftMcp {
     #[tool(
         description = "Bridge mode: send pointer events (document coordinates) to the active tool; with a Color Picker open they sample the image into it instead."
     )]
-    async fn ui_pointer(&self, Parameters(p): Parameters<PointerParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_pointer(
+        &self,
+        Parameters(p): Parameters<PointerParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
             Some(b) => {
                 let mut params = json!({"events": p.events});
@@ -931,7 +1120,10 @@ impl PhotocraftMcp {
     }
 
     #[tool(description = "Bridge mode: activate a menu item by id.")]
-    async fn ui_menu_invoke(&self, Parameters(p): Parameters<MenuParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_menu_invoke(
+        &self,
+        Parameters(p): Parameters<MenuParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
             Some(b) => to_result(b.call("ui.menu.invoke", json!({"id": p.id})).await),
             None => bridge_only("ui_menu_invoke"),
@@ -941,60 +1133,107 @@ impl PhotocraftMcp {
     #[tool(
         description = "Bridge mode: change UI state (tool, panels, dock, zoom, center, fit, theme, brush settings; see `fields`). Unknown fields are an error."
     )]
-    async fn ui_set(&self, Parameters(p): Parameters<UiSetParams>) -> Result<CallToolResult, McpError> {
+    async fn ui_set(
+        &self,
+        Parameters(p): Parameters<UiSetParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
             Some(b) => to_result(b.call("ui.set", p.fields).await),
             None => bridge_only("ui_set"),
         }
     }
 
-    #[tool(description = "Bridge mode: call any control-protocol method (docs/control-protocol.md) with raw params.")]
-    async fn control_call(&self, Parameters(p): Parameters<ControlParams>) -> Result<CallToolResult, McpError> {
+    #[tool(
+        description = "Bridge mode: call any control-protocol method (docs/control-protocol.md) with raw params."
+    )]
+    async fn control_call(
+        &self,
+        Parameters(p): Parameters<ControlParams>,
+    ) -> Result<CallToolResult, McpError> {
         match self.bridge_client() {
-            Some(b) => to_result(b.call(&p.method, p.params.unwrap_or_else(|| json!({}))).await),
+            Some(b) => to_result(
+                b.call(&p.method, p.params.unwrap_or_else(|| json!({})))
+                    .await,
+            ),
             None => bridge_only("control_call"),
         }
     }
 }
 
 fn bridge_only_headless(name: &str) -> Result<CallToolResult, McpError> {
-    Ok(fail(format!("`{name}` is only available in headless mode (in the GUI use the window/tab UI or control_call)")))
+    Ok(fail(format!(
+        "`{name}` is only available in headless mode (in the GUI use the window/tab UI or control_call)"
+    )))
 }
 
 impl PhotocraftMcp {
-    async fn run_command(&self, id: String, params: Value, wait: bool) -> Result<CallToolResult, McpError> {
+    async fn run_command(
+        &self,
+        id: String,
+        params: Value,
+        wait: bool,
+    ) -> Result<CallToolResult, McpError> {
         let (id2, params2) = (id.clone(), params.clone());
-        if let Some(r) = self.headless_op(move |h| h.command_start(&id2, params2, wait)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.command_start(&id2, params2, wait))
+            .await
+        {
             return to_result(r);
         }
         let Some(b) = self.bridge_client() else {
             return Ok(no_backend());
         };
-        to_result(b.call("engine.execute", json!({"command": id, "params": params, "wait": wait})).await)
+        to_result(
+            b.call(
+                "engine.execute",
+                json!({"command": id, "params": params, "wait": wait}),
+            )
+            .await,
+        )
     }
 
     /// `jobs.list` / `jobs.cancel` in either backend; `read` picks the bridge's retry rule.
-    async fn jobs_call(&self, method: &'static str, params: Value, read: bool) -> Result<CallToolResult, McpError> {
+    async fn jobs_call(
+        &self,
+        method: &'static str,
+        params: Value,
+        read: bool,
+    ) -> Result<CallToolResult, McpError> {
         let p2 = params.clone();
-        if let Some(r) = self.headless_op(move |h| h.command_start(method, p2, true)).await {
+        if let Some(r) = self
+            .headless_op(move |h| h.command_start(method, p2, true))
+            .await
+        {
             return to_result(r);
         }
         let Some(b) = self.bridge_client() else {
             return Ok(no_backend());
         };
-        if read { to_result(b.call_read(method, params).await) } else { to_result(b.call(method, params).await) }
+        if read {
+            to_result(b.call_read(method, params).await)
+        } else {
+            to_result(b.call(method, params).await)
+        }
     }
 
     async fn save_impl(&self, p: SaveParams) -> Result<CallToolResult, McpError> {
-        let tga_bits = match p.tga_bits.map(|b| (b, photocraft_io::TgaBits::from_bits(u64::from(b)))) {
+        let tga_bits = match p
+            .tga_bits
+            .map(|b| (b, photocraft_io::TgaBits::from_bits(u64::from(b))))
+        {
             None => None,
             Some((_, Some(bits))) => Some(bits),
             Some((b, None)) => return Ok(fail(format!("`tgaBits` must be 24 or 32, got {b}"))),
         };
-        let dpx_bits = match p.dpx_bits.map(|b| (b, photocraft_io::DpxBits::from_bits(u64::from(b)))) {
+        let dpx_bits = match p
+            .dpx_bits
+            .map(|b| (b, photocraft_io::DpxBits::from_bits(u64::from(b))))
+        {
             None => None,
             Some((_, Some(bits))) => Some(bits),
-            Some((b, None)) => return Ok(fail(format!("`dpxBits` must be 8, 10, 12 or 16, got {b}"))),
+            Some((b, None)) => {
+                return Ok(fail(format!("`dpxBits` must be 8, 10, 12 or 16, got {b}")));
+            }
         };
         if let Some(b) = self.bridge_client() {
             // The bridge forwards to the running app's `app.save`, which takes only an optional
@@ -1012,7 +1251,10 @@ impl PhotocraftMcp {
             .flatten()
             .collect();
             if !unsupported.is_empty() {
-                return Ok(fail(format!("bridge mode saves with the app's current settings; `{}` need headless mode", unsupported.join("`, `"))));
+                return Ok(fail(format!(
+                    "bridge mode saves with the app's current settings; `{}` need headless mode",
+                    unsupported.join("`, `")
+                )));
             }
             let mut params = json!({});
             if let Some(path) = p.path {
@@ -1025,7 +1267,11 @@ impl PhotocraftMcp {
         }
         let Some(r) = self
             .headless_op(move |h| {
-                let mut opts = photocraft_io::ExportOptions { tiff_layers: p.tiff_layers, tga_bits, ..Default::default() };
+                let mut opts = photocraft_io::ExportOptions {
+                    tiff_layers: p.tiff_layers,
+                    tga_bits,
+                    ..Default::default()
+                };
                 opts.encode.dpx_bits = dpx_bits;
                 if let Some(q) = p.quality {
                     opts.encode.jpeg_quality = q.clamp(1, 100);
@@ -1048,7 +1294,10 @@ mod progress;
 mod transport;
 
 /// Used by the render helper in tests and the CLI.
-pub fn render_document_png(doc: &photocraft_doc::Document, max_side: u32) -> Result<Vec<u8>, AutomationError> {
+pub fn render_document_png(
+    doc: &photocraft_doc::Document,
+    max_side: u32,
+) -> Result<Vec<u8>, AutomationError> {
     files::render_png(doc, max_side)
 }
 
@@ -1073,9 +1322,18 @@ mod tests {
         assert!(m.get("$defs").is_none());
         let props = &m["properties"];
         assert_eq!(props["node"]["type"], "object");
-        assert_eq!(props["node"]["description"], "use-site text", "the use site's description wins");
-        assert_eq!(props["node"]["properties"]["child"]["type"], "object", "nested refs inline too");
-        assert_eq!((&props["any"], &props["list"]["items"]), (&json!({}), &json!({})));
+        assert_eq!(
+            props["node"]["description"], "use-site text",
+            "the use site's description wins"
+        );
+        assert_eq!(
+            props["node"]["properties"]["child"]["type"], "object",
+            "nested refs inline too"
+        );
+        assert_eq!(
+            (&props["any"], &props["list"]["items"]),
+            (&json!({}), &json!({}))
+        );
         let text = serde_json::to_string(&s).unwrap();
         assert!(text.len() < 1 << 20, "bounded: {} bytes", text.len());
     }
@@ -1093,8 +1351,16 @@ mod tests {
 
     #[test]
     fn bridge_screenshot_decode_limits_apply_even_without_downscaling() {
-        let image = photocraft_codecs::Image::from_u8(8193, 1, photocraft_codecs::ChannelLayout::Rgba, vec![0; 8193 * 4]).unwrap();
-        let png = photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default()).unwrap();
+        let image = photocraft_codecs::Image::from_u8(
+            8193,
+            1,
+            photocraft_codecs::ChannelLayout::Rgba,
+            vec![0; 8193 * 4],
+        )
+        .unwrap();
+        let png =
+            photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default())
+                .unwrap();
         assert!(downscale_png(b"not a png", 32).is_err());
         assert!(downscale_png(&png, 0).is_err());
         assert!(downscale_png(&png, 1024).is_err());
@@ -1103,20 +1369,41 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn mcp_reports_invalid_filter_parameters_without_changing_history() {
         let mcp = PhotocraftMcp::headless();
-        mcp.headless_op(|h| h.command_run("file.new", json!({"width":8,"height":8}))).await.unwrap().unwrap();
+        mcp.headless_op(|h| h.command_run("file.new", json!({"width":8,"height":8})))
+            .await
+            .unwrap()
+            .unwrap();
         let before = mcp.headless_op(|h| h.inspect(None)).await.unwrap().unwrap();
-        for (params, key) in
-            [(json!({"radius":"big"}), "radius"), (json!({"radus":3}), "radus"), (json!({"radius":5000}), "radius"), (json!({"radius":-4}), "radius")]
-        {
+        for (params, key) in [
+            (json!({"radius":"big"}), "radius"),
+            (json!({"radus":3}), "radus"),
+            (json!({"radius":5000}), "radius"),
+            (json!({"radius":-4}), "radius"),
+        ] {
             for wait in [true, false] {
                 let result = mcp
-                    .command_run(Parameters(RunParams { id: "filter.blur.gaussianBlur".into(), params: Some(params.clone()), wait: Some(wait) }))
+                    .command_run(Parameters(RunParams {
+                        id: "filter.blur.gaussianBlur".into(),
+                        params: Some(params.clone()),
+                        wait: Some(wait),
+                    }))
                     .await
                     .unwrap();
                 assert_eq!(result.is_error, Some(true));
-                let error = &result.content.first().and_then(|c| c.as_text()).unwrap().text;
-                assert!(error.contains("filter.blur.gaussianBlur") && error.contains(key), "{error}");
-                assert_eq!(mcp.headless_op(|h| h.inspect(None)).await.unwrap().unwrap(), before);
+                let error = &result
+                    .content
+                    .first()
+                    .and_then(|c| c.as_text())
+                    .unwrap()
+                    .text;
+                assert!(
+                    error.contains("filter.blur.gaussianBlur") && error.contains(key),
+                    "{error}"
+                );
+                assert_eq!(
+                    mcp.headless_op(|h| h.inspect(None)).await.unwrap().unwrap(),
+                    before
+                );
             }
         }
     }
@@ -1124,9 +1411,15 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn a_panicking_command_does_not_wedge_the_session() {
         let mcp = PhotocraftMcp::headless();
-        let r = mcp.headless_op(|_| -> Result<(), AutomationError> { panic!("boom") }).await.unwrap();
+        let r = mcp
+            .headless_op(|_| -> Result<(), AutomationError> { panic!("boom") })
+            .await
+            .unwrap();
         assert!(r.is_err());
-        let r = mcp.headless_op(|h| h.command_run("file.new", json!({"width": 8, "height": 8}))).await.unwrap();
+        let r = mcp
+            .headless_op(|h| h.command_run("file.new", json!({"width": 8, "height": 8})))
+            .await
+            .unwrap();
         assert!(r.is_ok(), "session still usable after a panic: {r:?}");
     }
 
@@ -1136,18 +1429,58 @@ mod tests {
     #[tokio::test(flavor = "multi_thread")]
     async fn mcp_command_batch_stopped_by_the_budget_keeps_its_step_results() {
         let mcp = PhotocraftMcp::headless();
-        let step = |id: &str, params: Value| RunParams { id: id.into(), params: Some(params), wait: None };
-        let mut steps: Vec<RunParams> = (0..MAX_BATCH_STEPS - 1).map(|_| step("command.list", json!({}))).collect();
+        let step = |id: &str, params: Value| RunParams {
+            id: id.into(),
+            params: Some(params),
+            wait: None,
+        };
+        let mut steps: Vec<RunParams> = (0..MAX_BATCH_STEPS - 1)
+            .map(|_| step("command.list", json!({})))
+            .collect();
         steps.push(step("file.new", json!({"width": 8, "height": 8})));
-        let result = mcp.command_batch(Parameters(BatchParams { steps, stop_on_error: Some(false) })).await.unwrap();
-        assert_ne!(result.is_error, Some(true), "{:?}", result.content.first().and_then(|c| c.as_text()).map(|t| &t.text[..200.min(t.text.len())]));
-        let text = &result.content.first().and_then(|c| c.as_text()).unwrap().text;
+        let result = mcp
+            .command_batch(Parameters(BatchParams {
+                steps,
+                stop_on_error: Some(false),
+            }))
+            .await
+            .unwrap();
+        assert_ne!(
+            result.is_error,
+            Some(true),
+            "{:?}",
+            result
+                .content
+                .first()
+                .and_then(|c| c.as_text())
+                .map(|t| &t.text[..200.min(t.text.len())])
+        );
+        let text = &result
+            .content
+            .first()
+            .and_then(|c| c.as_text())
+            .unwrap()
+            .text;
         let reply: Value = serde_json::from_str(text).unwrap();
         let results = reply["results"].as_array().unwrap();
-        assert!(results.last().unwrap()["error"].as_str().unwrap().contains("batch response budget exceeded"), "{}", results.last().unwrap());
-        assert_eq!(reply["completed"].as_u64().unwrap() as usize, results.len() - 1);
+        assert!(
+            results.last().unwrap()["error"]
+                .as_str()
+                .unwrap()
+                .contains("batch response budget exceeded"),
+            "{}",
+            results.last().unwrap()
+        );
+        assert_eq!(
+            reply["completed"].as_u64().unwrap() as usize,
+            results.len() - 1
+        );
         assert_eq!(reply["failed"], 1);
-        let docs = mcp.headless_op(|h| Ok(h.session.documents().len())).await.unwrap().unwrap();
+        let docs = mcp
+            .headless_op(|h| Ok(h.session.documents().len()))
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(docs, 0, "the step after the budget ran out did not run");
     }
 
@@ -1169,7 +1502,10 @@ mod tests {
             if inspected["history"].as_array().unwrap().last().unwrap() == "Gaussian Blur" {
                 break;
             }
-            assert!(t.elapsed().as_secs() < 60, "doc_inspect never saw the finished job: {inspected}");
+            assert!(
+                t.elapsed().as_secs() < 60,
+                "doc_inspect never saw the finished job: {inspected}"
+            );
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
     }

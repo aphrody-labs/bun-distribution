@@ -110,14 +110,24 @@ pub struct Brush {
 
 impl Default for Brush {
     fn default() -> Self {
-        Self { preset: String::new(), spacing: 1.5, size_jitter: 0.0, rotation_jitter: 0.0, scatter: 0.0, seed: 0 }
+        Self {
+            preset: String::new(),
+            spacing: 1.5,
+            size_jitter: 0.0,
+            rotation_jitter: 0.0,
+            scatter: 0.0,
+            seed: 0,
+        }
     }
 }
 
 impl Brush {
     /// A brush of `preset` with default settings.
     pub fn new(preset: impl Into<String>) -> Self {
-        Self { preset: preset.into(), ..Self::default() }
+        Self {
+            preset: preset.into(),
+            ..Self::default()
+        }
     }
 
     /// Every value in range (NaN: the default).
@@ -166,18 +176,26 @@ impl StrokeProps {
     /// The widest the stroke gets anywhere along the path (the weight, scaled by a width profile
     /// and widened by a brush's reach).
     pub fn max_weight(&self) -> f64 {
-        self.profile().map_or(self.weight, |p| self.weight * p.max_scale()) * self.brush.as_ref().map_or(1.0, Brush::reach_factor)
+        self.profile()
+            .map_or(self.weight, |p| self.weight * p.max_scale())
+            * self.brush.as_ref().map_or(1.0, Brush::reach_factor)
     }
 
     /// The miter limit as the angle (degrees) below which joins bevel: limit = 1 / sin(angle / 2),
     /// so the default limit 4 is ~28.96°.
     pub fn miter_angle(&self) -> f64 {
-        2.0 * (1.0 / self.miter_limit.clamp(1.0, 100.0)).asin().to_degrees()
+        2.0 * (1.0 / self.miter_limit.clamp(1.0, 100.0))
+            .asin()
+            .to_degrees()
     }
 
     /// The miter limit for a miter angle in degrees (kept within the limit's 1–100 range).
     pub fn miter_limit_for(angle: f64) -> f64 {
-        let a = if angle.is_finite() { angle.clamp(1.0, 180.0) } else { 28.955 };
+        let a = if angle.is_finite() {
+            angle.clamp(1.0, 180.0)
+        } else {
+            28.955
+        };
         (1.0 / (a / 2.0).to_radians().sin()).clamp(1.0, 100.0)
     }
 }
@@ -231,7 +249,11 @@ impl WidthSide {
 impl WidthPoint {
     /// A symmetric point.
     pub const fn new(t: f64, scale: f64) -> Self {
-        Self { t, scale, bias: 0.0 }
+        Self {
+            t,
+            scale,
+            bias: 0.0,
+        }
     }
 
     /// A point from its left and right side scales (negative or non-finite sides count as 0).
@@ -239,13 +261,24 @@ impl WidthPoint {
         let clean = |v: f64| if v.is_finite() { v.max(0.0) } else { 0.0 };
         let (l, r) = (clean(left), clean(right));
         let sum = l + r;
-        let bias = if sum > 1e-12 { ((r - l) / sum).clamp(-1.0, 1.0) } else { 0.0 };
-        Self { t, scale: sum / 2.0, bias }
+        let bias = if sum > 1e-12 {
+            ((r - l) / sum).clamp(-1.0, 1.0)
+        } else {
+            0.0
+        };
+        Self {
+            t,
+            scale: sum / 2.0,
+            bias,
+        }
     }
 
     /// The left and right side scales.
     pub fn sides(&self) -> (f64, f64) {
-        (self.scale * (1.0 - self.bias), self.scale * (1.0 + self.bias))
+        (
+            self.scale * (1.0 - self.bias),
+            self.scale * (1.0 + self.bias),
+        )
     }
 
     /// Whether both sides are as wide.
@@ -272,7 +305,13 @@ impl WidthProfile {
 
     /// A profile from `(t, scale)` pairs (sanitized).
     pub fn new(points: impl IntoIterator<Item = (f64, f64)>) -> Self {
-        Self { points: points.into_iter().map(|(t, s)| WidthPoint::new(t, s)).collect() }.sanitized()
+        Self {
+            points: points
+                .into_iter()
+                .map(|(t, s)| WidthPoint::new(t, s))
+                .collect(),
+        }
+        .sanitized()
     }
 
     /// Uniform width with a point at each end (where the width tool starts from).
@@ -291,7 +330,11 @@ impl WidthProfile {
             .map(|p| WidthPoint {
                 t: p.t.clamp(0.0, 1.0),
                 scale: p.scale.clamp(0.0, Self::MAX_SCALE),
-                bias: if p.bias.is_finite() { p.bias.clamp(-1.0, 1.0) } else { 0.0 },
+                bias: if p.bias.is_finite() {
+                    p.bias.clamp(-1.0, 1.0)
+                } else {
+                    0.0
+                },
             })
             .collect();
         points.sort_by(|a, b| a.t.total_cmp(&b.t));
@@ -310,7 +353,10 @@ impl WidthProfile {
             let s = self.interp(t, |p| p.scale);
             return (s, s);
         }
-        (self.interp(t, |p| p.sides().0), self.interp(t, |p| p.sides().1))
+        (
+            self.interp(t, |p| p.sides().0),
+            self.interp(t, |p| p.sides().1),
+        )
     }
 
     /// Whether every point is as wide on both sides.
@@ -322,7 +368,9 @@ impl WidthProfile {
     /// after the last.
     fn interp(&self, t: f64, value: impl Fn(&WidthPoint) -> f64) -> f64 {
         let pts = &self.points;
-        let (Some(first), Some(last)) = (pts.first(), pts.last()) else { return 1.0 };
+        let (Some(first), Some(last)) = (pts.first(), pts.last()) else {
+            return 1.0;
+        };
         if !t.is_finite() || t <= first.t {
             return value(first);
         }
@@ -330,7 +378,9 @@ impl WidthProfile {
             return value(last);
         }
         let k = pts.partition_point(|p| p.t <= t).saturating_sub(1);
-        let (Some(a), Some(b)) = (pts.get(k), pts.get(k + 1)) else { return value(last) };
+        let (Some(a), Some(b)) = (pts.get(k), pts.get(k + 1)) else {
+            return value(last);
+        };
         let h = b.t - a.t;
         if h <= 1e-12 {
             return value(b);
@@ -363,18 +413,28 @@ impl WidthProfile {
             return self.secant(last.saturating_sub(1), value);
         }
         let (d0, d1) = (self.secant(i - 1, value), self.secant(i, value));
-        if d0 * d1 <= 0.0 { 0.0 } else { 2.0 * d0 * d1 / (d0 + d1) }
+        if d0 * d1 <= 0.0 {
+            0.0
+        } else {
+            2.0 * d0 * d1 / (d0 + d1)
+        }
     }
 
     /// The largest side scale (the interpolation never exceeds its points): the widest the
     /// stroke reaches from its centre line is `weight × max_scale / 2`.
     pub fn max_scale(&self) -> f64 {
-        self.points.iter().map(|p| p.sides().0.max(p.sides().1)).fold(0.0, f64::max)
+        self.points
+            .iter()
+            .map(|p| p.sides().0.max(p.sides().1))
+            .fold(0.0, f64::max)
     }
 
     /// Add a symmetric point (kept sorted); returns its index.
     pub fn insert(&mut self, t: f64, scale: f64) -> usize {
-        self.insert_point(WidthPoint::new(t, if scale.is_finite() { scale } else { 1.0 }))
+        self.insert_point(WidthPoint::new(
+            t,
+            if scale.is_finite() { scale } else { 1.0 },
+        ))
     }
 
     /// Add a point at `t` as wide on each side as the stroke already is there; returns its index.
@@ -384,7 +444,11 @@ impl WidthProfile {
     }
 
     fn insert_point(&mut self, mut p: WidthPoint) -> usize {
-        p.t = if p.t.is_finite() { p.t.clamp(0.0, 1.0) } else { 0.0 };
+        p.t = if p.t.is_finite() {
+            p.t.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         p.scale = p.scale.clamp(0.0, Self::MAX_SCALE);
         let i = self.points.partition_point(|q| q.t <= p.t);
         self.points.insert(i, p);
@@ -394,7 +458,9 @@ impl WidthProfile {
     /// Set one side of point `i` to side scale `scale`, keeping the other side. Returns false when
     /// there is no such point.
     pub fn set_side(&mut self, i: usize, side: WidthSide, scale: f64) -> bool {
-        let Some(p) = self.points.get_mut(i) else { return false };
+        let Some(p) = self.points.get_mut(i) else {
+            return false;
+        };
         if !scale.is_finite() {
             return true;
         }
@@ -412,9 +478,14 @@ impl WidthProfile {
     /// Move point `i` along the path (kept between its neighbours, so indices stay put) and/or
     /// change its scale. Returns false when there is no such point.
     pub fn set_point(&mut self, i: usize, t: Option<f64>, scale: Option<f64>) -> bool {
-        let lo = i.checked_sub(1).and_then(|j| self.points.get(j)).map_or(0.0, |p| p.t);
+        let lo = i
+            .checked_sub(1)
+            .and_then(|j| self.points.get(j))
+            .map_or(0.0, |p| p.t);
         let hi = self.points.get(i + 1).map_or(1.0, |p| p.t);
-        let Some(p) = self.points.get_mut(i) else { return false };
+        let Some(p) = self.points.get_mut(i) else {
+            return false;
+        };
         if let Some(t) = t.filter(|t| t.is_finite()) {
             p.t = t.clamp(lo, hi.max(lo));
         }
@@ -428,7 +499,9 @@ impl WidthProfile {
 
     /// The preset this profile is, if any.
     pub fn preset(&self) -> Option<WidthPreset> {
-        WidthPreset::ALL.into_iter().find(|p| p.profile().as_ref() == Some(self))
+        WidthPreset::ALL
+            .into_iter()
+            .find(|p| p.profile().as_ref() == Some(self))
     }
 }
 
@@ -449,8 +522,14 @@ pub enum WidthPreset {
 }
 
 impl WidthPreset {
-    pub const ALL: [WidthPreset; 6] =
-        [WidthPreset::Uniform, WidthPreset::Wedge, WidthPreset::Taper, WidthPreset::Eye, WidthPreset::Rounded, WidthPreset::Pinch];
+    pub const ALL: [WidthPreset; 6] = [
+        WidthPreset::Uniform,
+        WidthPreset::Wedge,
+        WidthPreset::Taper,
+        WidthPreset::Eye,
+        WidthPreset::Rounded,
+        WidthPreset::Pinch,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -478,7 +557,10 @@ impl WidthPreset {
         let s: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect();
         WidthPreset::ALL
             .into_iter()
-            .find(|p| p.id().eq_ignore_ascii_case(&s) || p.label().replace(' ', "").eq_ignore_ascii_case(&s))
+            .find(|p| {
+                p.id().eq_ignore_ascii_case(&s)
+                    || p.label().replace(' ', "").eq_ignore_ascii_case(&s)
+            })
             .or_else(|| s.eq_ignore_ascii_case("bulge").then_some(WidthPreset::Eye))
     }
 
@@ -489,7 +571,14 @@ impl WidthPreset {
             WidthPreset::Wedge => &[(0.0, 1.0), (1.0, 0.0)],
             WidthPreset::Taper => &[(0.0, 0.0), (0.2, 1.0), (0.8, 1.0), (1.0, 0.0)],
             WidthPreset::Eye => &[(0.0, 0.0), (0.5, 1.0), (1.0, 0.0)],
-            WidthPreset::Rounded => &[(0.0, 0.3), (0.05, 0.8), (0.15, 1.0), (0.85, 1.0), (0.95, 0.8), (1.0, 0.3)],
+            WidthPreset::Rounded => &[
+                (0.0, 0.3),
+                (0.05, 0.8),
+                (0.15, 1.0),
+                (0.85, 1.0),
+                (0.95, 0.8),
+                (1.0, 0.3),
+            ],
             WidthPreset::Pinch => &[(0.0, 1.0), (0.5, 0.25), (1.0, 1.0)],
         };
         Some(WidthProfile::new(pts.iter().copied()))
@@ -513,7 +602,14 @@ pub struct Shadow {
 
 impl Default for Shadow {
     fn default() -> Self {
-        Self { color: Color::new(0.0, 0.0, 0.0, 0.25), offset: (0.0, 4.0), radius: 4.0, spread: 0.0, blend: BlendMode::Normal, show_behind: false }
+        Self {
+            color: Color::new(0.0, 0.0, 0.0, 0.25),
+            offset: (0.0, 4.0),
+            radius: 4.0,
+            spread: 0.0,
+            blend: BlendMode::Normal,
+            show_behind: false,
+        }
     }
 }
 
@@ -547,7 +643,13 @@ impl NoiseMode {
 
 /// A grain size (document units) on both axes, sanitised.
 fn grain_of(size: f64, size_y: Option<f64>) -> (f64, f64) {
-    let ok = |v: f64| if v.is_finite() { v.clamp(0.01, 1000.0) } else { 0.5 };
+    let ok = |v: f64| {
+        if v.is_finite() {
+            v.clamp(0.01, 1000.0)
+        } else {
+            0.5
+        }
+    };
     (ok(size), ok(size_y.unwrap_or(size)))
 }
 
@@ -610,7 +712,12 @@ pub struct Texture {
 
 impl Default for Texture {
     fn default() -> Self {
-        Self { size: 0.5, size_y: None, radius: 4.0, clip_to_shape: false }
+        Self {
+            size: 0.5,
+            size_y: None,
+            radius: 4.0,
+            clip_to_shape: false,
+        }
     }
 }
 
@@ -646,7 +753,15 @@ pub struct Glass {
 
 impl Default for Glass {
     fn default() -> Self {
-        Self { light_angle: -45.0, light_intensity: 0.8, refraction: 0.8, depth: 20.0, dispersion: 0.5, frost: 4.0, splay: 0.0 }
+        Self {
+            light_angle: -45.0,
+            light_intensity: 0.8,
+            refraction: 0.8,
+            depth: 20.0,
+            dispersion: 0.5,
+            frost: 4.0,
+            splay: 0.0,
+        }
     }
 }
 
@@ -654,7 +769,8 @@ impl Glass {
     /// The values clamped to their ranges (non-finite ones at their defaults).
     pub fn sanitized(&self) -> Glass {
         let d = Glass::default();
-        let ok = |v: f64, def: f64, lo: f64, hi: f64| if v.is_finite() { v.clamp(lo, hi) } else { def };
+        let ok =
+            |v: f64, def: f64, lo: f64, hi: f64| if v.is_finite() { v.clamp(lo, hi) } else { def };
         Glass {
             light_angle: ok(self.light_angle, d.light_angle, -3600.0, 3600.0),
             light_intensity: ok(self.light_intensity, d.light_intensity, 0.0, 1.0),
@@ -721,14 +837,23 @@ pub struct Blur {
 
 impl Default for Blur {
     fn default() -> Self {
-        Self { radius: 4.0, blur_type: BlurType::Uniform, start_radius: 0.0, start: (0.5, 0.0), end: (0.5, 1.0) }
+        Self {
+            radius: 4.0,
+            blur_type: BlurType::Uniform,
+            start_radius: 0.0,
+            start: (0.5, 0.0),
+            end: (0.5, 1.0),
+        }
     }
 }
 
 impl Blur {
     /// A uniform blur of `radius`.
     pub fn uniform(radius: f64) -> Self {
-        Self { radius, ..Self::default() }
+        Self {
+            radius,
+            ..Self::default()
+        }
     }
 
     pub fn is_progressive(&self) -> bool {
@@ -739,9 +864,21 @@ impl Blur {
     /// (non-finite ones at their defaults) within a thousand boxes of the layer.
     pub fn sanitized(&self) -> Blur {
         let d = Blur::default();
-        let radius = |v: f64| if v.is_finite() { v.clamp(0.0, MAX_BLUR_RADIUS) } else { 0.0 };
+        let radius = |v: f64| {
+            if v.is_finite() {
+                v.clamp(0.0, MAX_BLUR_RADIUS)
+            } else {
+                0.0
+            }
+        };
         let point = |p: (f64, f64), def: (f64, f64)| {
-            let ok = |v: f64, dv: f64| if v.is_finite() { v.clamp(-1000.0, 1000.0) } else { dv };
+            let ok = |v: f64, dv: f64| {
+                if v.is_finite() {
+                    v.clamp(-1000.0, 1000.0)
+                } else {
+                    dv
+                }
+            };
             (ok(p.0, def.0), ok(p.1, def.1))
         };
         Blur {
@@ -756,12 +893,20 @@ impl Blur {
     /// The largest radius anywhere on the layer (sanitised).
     pub fn max_radius(&self) -> f64 {
         let b = self.sanitized();
-        if b.is_progressive() { b.radius.max(b.start_radius) } else { b.radius }
+        if b.is_progressive() {
+            b.radius.max(b.start_radius)
+        } else {
+            b.radius
+        }
     }
 
     /// The same blur scaled by `k` (radii; the unit-box points stay).
     pub fn scaled(&self, k: f64) -> Blur {
-        Blur { radius: self.radius * k, start_radius: self.start_radius * k, ..self.clone() }
+        Blur {
+            radius: self.radius * k,
+            start_radius: self.start_radius * k,
+            ..self.clone()
+        }
     }
 }
 
@@ -806,13 +951,19 @@ impl Effect {
     ];
 
     fn of(kind: EffectKind) -> Self {
-        Self { kind, visible: true }
+        Self {
+            kind,
+            visible: true,
+        }
     }
     pub fn drop_shadow() -> Self {
         Self::of(EffectKind::DropShadow(Shadow::default()))
     }
     pub fn inner_shadow() -> Self {
-        Self::of(EffectKind::InnerShadow(Shadow { offset: (0.0, 4.0), ..Shadow::default() }))
+        Self::of(EffectKind::InnerShadow(Shadow {
+            offset: (0.0, 4.0),
+            ..Shadow::default()
+        }))
     }
     pub fn layer_blur() -> Self {
         Self::of(EffectKind::LayerBlur(Blur::default()))
@@ -833,16 +984,22 @@ impl Effect {
     /// A new effect of a type named like `dropShadow`, `drop shadow` or `DROP_SHADOW` (`blur` is
     /// a layer blur), with its defaults.
     pub fn of_type(name: &str) -> Option<Self> {
-        Some(match name.to_ascii_lowercase().replace(['_', ' ', '-'], "").as_str() {
-            "dropshadow" => Self::drop_shadow(),
-            "innershadow" => Self::inner_shadow(),
-            "layerblur" | "blur" => Self::layer_blur(),
-            "backgroundblur" => Self::background_blur(),
-            "noise" => Self::noise(),
-            "texture" => Self::texture(),
-            "glass" => Self::glass(),
-            _ => return None,
-        })
+        Some(
+            match name
+                .to_ascii_lowercase()
+                .replace(['_', ' ', '-'], "")
+                .as_str()
+            {
+                "dropshadow" => Self::drop_shadow(),
+                "innershadow" => Self::inner_shadow(),
+                "layerblur" | "blur" => Self::layer_blur(),
+                "backgroundblur" => Self::background_blur(),
+                "noise" => Self::noise(),
+                "texture" => Self::texture(),
+                "glass" => Self::glass(),
+                _ => return None,
+            },
+        )
     }
 
     pub fn label(&self) -> &'static str {
@@ -863,7 +1020,9 @@ impl Effect {
             return 0.0;
         }
         match &self.kind {
-            EffectKind::DropShadow(s) => s.radius.abs() * 1.5 + s.spread.max(0.0) + s.offset.0.abs().max(s.offset.1.abs()),
+            EffectKind::DropShadow(s) => {
+                s.radius.abs() * 1.5 + s.spread.max(0.0) + s.offset.0.abs().max(s.offset.1.abs())
+            }
             EffectKind::LayerBlur(b) => b.max_radius() * 1.5,
             EffectKind::Texture(t) if !t.clip_to_shape => t.radius.abs(),
             _ => 0.0,
@@ -928,7 +1087,11 @@ pub struct Corners {
 impl Corners {
     pub fn uniform(&self) -> Option<f64> {
         let [a, b, c, d] = self.radii;
-        if a == b && b == c && c == d { Some(a) } else { None }
+        if a == b && b == c && c == d {
+            Some(a)
+        } else {
+            None
+        }
     }
 }
 
@@ -989,7 +1152,10 @@ pub enum MainAlign {
 impl MainAlign {
     /// An auto gap (the gap comes from the free space, not the gap value).
     pub fn is_auto_gap(self) -> bool {
-        matches!(self, MainAlign::SpaceBetween | MainAlign::SpaceAround | MainAlign::SpaceEvenly)
+        matches!(
+            self,
+            MainAlign::SpaceBetween | MainAlign::SpaceAround | MainAlign::SpaceEvenly
+        )
     }
 }
 
@@ -1113,19 +1279,31 @@ pub struct GridTrack {
 
 impl Default for GridTrack {
     fn default() -> Self {
-        Self { sizing: Sizing::Fill, value: 1.0 }
+        Self {
+            sizing: Sizing::Fill,
+            value: 1.0,
+        }
     }
 }
 
 impl GridTrack {
     pub fn fixed(px: f64) -> Self {
-        Self { sizing: Sizing::Fixed, value: px }
+        Self {
+            sizing: Sizing::Fixed,
+            value: px,
+        }
     }
     pub fn hug() -> Self {
-        Self { sizing: Sizing::Hug, value: 0.0 }
+        Self {
+            sizing: Sizing::Hug,
+            value: 0.0,
+        }
     }
     pub fn fill(fr: f64) -> Self {
-        Self { sizing: Sizing::Fill, value: fr }
+        Self {
+            sizing: Sizing::Fill,
+            value: fr,
+        }
     }
 }
 
@@ -1217,10 +1395,23 @@ impl Default for LayoutGrid {
 
 impl LayoutGrid {
     pub fn columns() -> Self {
-        Self { kind: GridKind::Columns, count: 5, gutter: 20.0, size: 0.0, ..Self::default() }
+        Self {
+            kind: GridKind::Columns,
+            count: 5,
+            gutter: 20.0,
+            size: 0.0,
+            ..Self::default()
+        }
     }
     pub fn rows() -> Self {
-        Self { kind: GridKind::Rows, count: 5, gutter: 20.0, size: 0.0, color: Color::new(0.0, 0.4, 1.0, 0.1), ..Self::default() }
+        Self {
+            kind: GridKind::Rows,
+            count: 5,
+            gutter: 20.0,
+            size: 0.0,
+            color: Color::new(0.0, 0.4, 1.0, 0.1),
+            ..Self::default()
+        }
     }
 }
 
@@ -1237,11 +1428,20 @@ pub enum ExportFormat {
 
 impl ExportFormat {
     /// Every format, in the order the export menus list them.
-    pub const ALL: [ExportFormat; 5] = [ExportFormat::Png, ExportFormat::Jpg, ExportFormat::Svg, ExportFormat::Pdf, ExportFormat::Webp];
+    pub const ALL: [ExportFormat; 5] = [
+        ExportFormat::Png,
+        ExportFormat::Jpg,
+        ExportFormat::Svg,
+        ExportFormat::Pdf,
+        ExportFormat::Webp,
+    ];
 
     /// Pixel formats (their size depends on the export scale).
     pub fn is_raster(self) -> bool {
-        matches!(self, ExportFormat::Png | ExportFormat::Jpg | ExportFormat::Webp)
+        matches!(
+            self,
+            ExportFormat::Png | ExportFormat::Jpg | ExportFormat::Webp
+        )
     }
 
     /// The name menus show ("PNG", "WebP").
@@ -1344,7 +1544,11 @@ impl ExportSize {
             ExportSize::Height { value } if h > 0.0 => value / h,
             _ => 1.0,
         };
-        if s.is_finite() && s > 0.0 { s.min(Self::MAX_SCALE) } else { 1.0 }
+        if s.is_finite() && s > 0.0 {
+            s.min(Self::MAX_SCALE)
+        } else {
+            1.0
+        }
     }
 }
 
@@ -1373,7 +1577,11 @@ impl PrintSettings {
 
     /// The bleed made safe: finite, within `0..=MAX_BLEED`.
     pub fn bleed(&self) -> f64 {
-        if self.bleed.is_finite() { self.bleed.clamp(0.0, Self::MAX_BLEED) } else { 0.0 }
+        if self.bleed.is_finite() {
+            self.bleed.clamp(0.0, Self::MAX_BLEED)
+        } else {
+            0.0
+        }
     }
 
     pub fn marks(&self) -> bool {
@@ -1389,7 +1597,9 @@ impl PrintSettings {
     /// `in` or `"` ("3mm", "0.125 in", "9pt"). `None` unless finite and not negative.
     pub fn parse_length(s: &str) -> Option<f64> {
         let s = s.trim().to_ascii_lowercase();
-        let split = s.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == 'e')).unwrap_or(s.len());
+        let split = s
+            .find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == 'e'))
+            .unwrap_or(s.len());
         let (num, unit) = (s.get(..split)?.trim(), s.get(split..)?.trim());
         let v: f64 = num.parse().ok()?;
         let k = match unit {
@@ -1471,8 +1681,15 @@ impl ExportSetting {
     pub fn next_after(last: Option<&ExportSetting>) -> ExportSetting {
         match last.map(|e| e.size) {
             Some(ExportSize::Scale { value }) => {
-                let size = ExportSize::Scale { value: (value.floor() + 1.0).min(ExportSize::MAX_SCALE) };
-                ExportSetting { suffix: format!("@{}", size.label()), size, format: ExportFormat::Png, ..Default::default() }
+                let size = ExportSize::Scale {
+                    value: (value.floor() + 1.0).min(ExportSize::MAX_SCALE),
+                };
+                ExportSetting {
+                    suffix: format!("@{}", size.label()),
+                    size,
+                    format: ExportFormat::Png,
+                    ..Default::default()
+                }
             }
             _ => ExportSetting::default(),
         }
@@ -1483,7 +1700,11 @@ impl ExportSetting {
     pub fn file_suffix(&self) -> String {
         match self.size {
             _ if !self.suffix.is_empty() => self.suffix.clone(),
-            ExportSize::Scale { value } if (value - 1.0).abs() > 1e-9 && self.format.is_raster() => format!("@{}", self.size.label()),
+            ExportSize::Scale { value }
+                if (value - 1.0).abs() > 1e-9 && self.format.is_raster() =>
+            {
+                format!("@{}", self.size.label())
+            }
             _ => String::new(),
         }
     }

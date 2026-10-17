@@ -43,7 +43,9 @@ const MAX_PROLOG_EVENTS: usize = 10_000;
 fn utf8_text(bytes: &[u8]) -> std::borrow::Cow<'_, [u8]> {
     match xml::utf16_to_utf8(bytes) {
         Some(s) => std::borrow::Cow::Owned(s.into_bytes()),
-        None => std::borrow::Cow::Borrowed(bytes.strip_prefix(&[0xEF, 0xBB, 0xBF][..]).unwrap_or(bytes)),
+        None => {
+            std::borrow::Cow::Borrowed(bytes.strip_prefix(&[0xEF, 0xBB, 0xBF][..]).unwrap_or(bytes))
+        }
     }
 }
 
@@ -121,7 +123,9 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
                 let local = e.local_name().as_ref().to_vec();
                 match depth {
                     1 if !(in_pkg && local == b"package") => {
-                        return Err(DocxError::NotWord("the root element isn't a Flat OPC pkg:package".into()));
+                        return Err(DocxError::NotWord(
+                            "the root element isn't a Flat OPC pkg:package".into(),
+                        ));
                     }
                     2 if in_pkg && local == b"part" => {
                         if files.len() + usize::from(part.is_some()) >= MAX_ENTRIES {
@@ -129,7 +133,11 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
                         }
                         let name = attr(e, b"name").unwrap_or_default();
                         let content_type = attr(e, b"contentType").unwrap_or_default();
-                        part = Some(Part { name, content_type, data: None });
+                        part = Some(Part {
+                            name,
+                            content_type,
+                            data: None,
+                        });
                     }
                     3 if in_pkg => {
                         if let Some(p) = part.as_mut().filter(|p| p.data.is_none()) {
@@ -168,7 +176,14 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
                 {
                     p.data = None;
                     let xml = with_scope(src.get(start..before).unwrap_or_default(), &scope);
-                    store(&p.name, &p.content_type, xml, &mut files, &mut types, &mut total)?;
+                    store(
+                        &p.name,
+                        &p.content_type,
+                        xml,
+                        &mut files,
+                        &mut types,
+                        &mut total,
+                    )?;
                 }
                 if depth == 2
                     && let Some(p) = part.take()
@@ -184,11 +199,18 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
                 }
             }
             Event::Text(ref t) if depth == 3 => {
-                if let Some(Part { data: Some(Data::Binary(b64)), .. }) = part.as_mut() {
-                    let s = std::str::from_utf8(t.as_ref()).map_err(|e| DocxError::Xml(e.to_string()))?;
+                if let Some(Part {
+                    data: Some(Data::Binary(b64)),
+                    ..
+                }) = part.as_mut()
+                {
+                    let s = std::str::from_utf8(t.as_ref())
+                        .map_err(|e| DocxError::Xml(e.to_string()))?;
                     b64.extend(s.chars().filter(|c| !c.is_ascii_whitespace()));
                     if b64.len() as u64 > MAX_BASE64 {
-                        return Err(DocxError::Limit("a binary part is larger than the size limit".into()));
+                        return Err(DocxError::Limit(
+                            "a binary part is larger than the size limit".into(),
+                        ));
                     }
                 }
             }
@@ -197,13 +219,24 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
         }
     }
     if files.is_empty() {
-        return Err(DocxError::NotWord("the Flat OPC package has no parts".into()));
+        return Err(DocxError::NotWord(
+            "the Flat OPC package has no parts".into(),
+        ));
     }
     if !files.contains_key("[Content_Types].xml") {
         let mut w = W::new();
-        w.open("Types", &[("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types")]);
+        w.open(
+            "Types",
+            &[(
+                "xmlns",
+                "http://schemas.openxmlformats.org/package/2006/content-types",
+            )],
+        );
         for (name, ct) in &types {
-            w.empty("Override", &[("PartName", &format!("/{name}")), ("ContentType", ct)]);
+            w.empty(
+                "Override",
+                &[("PartName", &format!("/{name}")), ("ContentType", ct)],
+            );
         }
         w.close("Types");
         files.insert("[Content_Types].xml".into(), w.into_bytes());
@@ -212,7 +245,12 @@ pub(crate) fn unpack(bytes: &[u8]) -> Result<Package, DocxError> {
 }
 
 /// End of a `pkg:part`: store its binary data (inline XML was stored when it ended).
-fn finish_part(p: Part, files: &mut BTreeMap<String, Vec<u8>>, types: &mut Vec<(String, String)>, total: &mut u64) -> Result<(), DocxError> {
+fn finish_part(
+    p: Part,
+    files: &mut BTreeMap<String, Vec<u8>>,
+    types: &mut Vec<(String, String)>,
+    total: &mut u64,
+) -> Result<(), DocxError> {
     match p.data {
         Some(Data::Binary(b64)) => {
             let bytes = base64::engine::general_purpose::STANDARD_NO_PAD
@@ -240,11 +278,15 @@ fn store(
     }
     let len = bytes.len() as u64;
     if len > MAX_PART {
-        return Err(DocxError::Limit(format!("part {name} is larger than the size limit")));
+        return Err(DocxError::Limit(format!(
+            "part {name} is larger than the size limit"
+        )));
     }
     *total = total.saturating_add(len);
     if *total > MAX_TOTAL {
-        return Err(DocxError::Limit("the package is larger than the size limit".into()));
+        return Err(DocxError::Limit(
+            "the package is larger than the size limit".into(),
+        ));
     }
     if !content_type.is_empty() && !content_type.contains(['\r', '\n']) {
         types.push((name.to_string(), content_type.to_string()));
@@ -255,12 +297,16 @@ fn store(
 
 /// An attribute's unescaped value, by local name (any prefix).
 fn attr(e: &BytesStart, local: &[u8]) -> Option<String> {
-    e.attributes().with_checks(false).flatten().find(|a| a.key.local_name().as_ref() == local).map(|a| {
-        match a.normalized_value(quick_xml::XmlVersion::Explicit1_0) {
-            Ok(v) => v.into_owned(),
-            Err(_) => String::from_utf8_lossy(&a.value).into_owned(),
-        }
-    })
+    e.attributes()
+        .with_checks(false)
+        .flatten()
+        .find(|a| a.key.local_name().as_ref() == local)
+        .map(
+            |a| match a.normalized_value(quick_xml::XmlVersion::Explicit1_0) {
+                Ok(v) => v.into_owned(),
+                Err(_) => String::from_utf8_lossy(&a.value).into_owned(),
+            },
+        )
 }
 
 /// The `xmlns` / `xmlns:p` declarations of a start tag, as written (value still escaped).
@@ -270,7 +316,12 @@ fn ns_decls(e: &BytesStart) -> Vec<(String, String)> {
         .flatten()
         .filter(|a| a.key.as_ref() == b"xmlns" || a.key.as_ref().starts_with(b"xmlns:"))
         .filter(|a| !a.value.contains(&b'"'))
-        .map(|a| (String::from_utf8_lossy(a.key.as_ref()).into_owned(), String::from_utf8_lossy(&a.value).into_owned()))
+        .map(|a| {
+            (
+                String::from_utf8_lossy(a.key.as_ref()).into_owned(),
+                String::from_utf8_lossy(&a.value).into_owned(),
+            )
+        })
         .take(256)
         .collect()
 }
@@ -278,13 +329,22 @@ fn ns_decls(e: &BytesStart) -> Vec<(String, String)> {
 /// The inline XML of a part as a document of its own: namespaces it inherits from the package
 /// elements are declared on its root element (unless it declares them itself).
 fn with_scope(frag: &[u8], scope: &[Vec<(String, String)>]) -> Vec<u8> {
-    let decls: Vec<&(String, String)> = scope.iter().flatten().filter(|(k, _)| k != "xmlns:pkg").collect();
-    let Some(open) = root_tag_start(frag) else { return frag.to_vec() };
+    let decls: Vec<&(String, String)> = scope
+        .iter()
+        .flatten()
+        .filter(|(k, _)| k != "xmlns:pkg")
+        .collect();
+    let Some(open) = root_tag_start(frag) else {
+        return frag.to_vec();
+    };
     if decls.is_empty() {
         return frag.get(open..).unwrap_or_default().to_vec();
     }
     let rest = frag.get(open..).unwrap_or_default();
-    let name_end = rest.iter().position(|b| b.is_ascii_whitespace() || *b == b'>' || *b == b'/').unwrap_or(rest.len());
+    let name_end = rest
+        .iter()
+        .position(|b| b.is_ascii_whitespace() || *b == b'>' || *b == b'/')
+        .unwrap_or(rest.len());
     let tag_end = rest.iter().position(|b| *b == b'>').unwrap_or(rest.len());
     let tag = rest.get(..tag_end).unwrap_or_default();
     let mut out = Vec::with_capacity(rest.len() + 256);
@@ -292,7 +352,9 @@ fn with_scope(frag: &[u8], scope: &[Vec<(String, String)>]) -> Vec<u8> {
     // Innermost declarations win: walk from the data element out, skipping prefixes seen.
     let mut seen: Vec<&str> = Vec::new();
     for (k, v) in decls.iter().rev() {
-        let declared = tag.windows(k.len() + 1).any(|w| w.get(..k.len()) == Some(k.as_bytes()) && matches!(w.last(), Some(b'=' | b' ')));
+        let declared = tag.windows(k.len() + 1).any(|w| {
+            w.get(..k.len()) == Some(k.as_bytes()) && matches!(w.last(), Some(b'=' | b' '))
+        });
         if declared || seen.contains(&k.as_str()) {
             continue;
         }
@@ -330,16 +392,27 @@ pub fn write(doc: &Document) -> Result<Vec<u8>, DocxError> {
     let types = parts
         .iter()
         .find(|(n, _)| n == "[Content_Types].xml")
-        .map(|(n, b)| ContentTypes::read(&Package::from_parts(BTreeMap::from([(n.clone(), b.clone())]))))
+        .map(|(n, b)| {
+            ContentTypes::read(&Package::from_parts(BTreeMap::from([(
+                n.clone(),
+                b.clone(),
+            )])))
+        })
         .unwrap_or_default();
-    let mut s = String::from("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<?mso-application progid=\"Word.Document\"?>\n");
+    let mut s = String::from(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<?mso-application progid=\"Word.Document\"?>\n",
+    );
     s.push_str(&format!("<pkg:package xmlns:pkg=\"{PKG_NS}\">"));
     for (name, bytes) in &parts {
         if name == "[Content_Types].xml" {
             continue;
         }
         let ct = types.of(name).unwrap_or("application/octet-stream");
-        s.push_str(&format!("<pkg:part pkg:name=\"/{}\" pkg:contentType=\"{}\"", esc(name), esc(ct)));
+        s.push_str(&format!(
+            "<pkg:part pkg:name=\"/{}\" pkg:contentType=\"{}\"",
+            esc(name),
+            esc(ct)
+        ));
         match xml_fragment(ct, bytes) {
             Some(x) => {
                 s.push_str("><pkg:xmlData>");
@@ -391,7 +464,10 @@ mod tests {
             ),
             XmlKind::FlatOpc
         );
-        assert_eq!(sniff_xml(format!("\u{FEFF}<w:wordDocument xmlns:w=\"{W2003_NS}\"/>").as_bytes()), XmlKind::WordMl2003);
+        assert_eq!(
+            sniff_xml(format!("\u{FEFF}<w:wordDocument xmlns:w=\"{W2003_NS}\"/>").as_bytes()),
+            XmlKind::WordMl2003
+        );
         assert_eq!(sniff_xml(b"<package/>"), XmlKind::Other);
         assert_eq!(sniff_xml(b"<html><body/></html>"), XmlKind::Other);
         assert_eq!(sniff_xml(b"\x00\xff garbage"), XmlKind::Other);
@@ -401,7 +477,10 @@ mod tests {
     #[test]
     fn inline_xml_inherits_namespaces_from_the_package() {
         let frag = b"\n <!-- c --> <w:document><w:body/></w:document>";
-        let scope = vec![vec![("xmlns:pkg".to_string(), PKG_NS.to_string()), ("xmlns:w".to_string(), "urn:w".to_string())]];
+        let scope = vec![vec![
+            ("xmlns:pkg".to_string(), PKG_NS.to_string()),
+            ("xmlns:w".to_string(), "urn:w".to_string()),
+        ]];
         let out = String::from_utf8(with_scope(frag, &scope)).unwrap();
         assert_eq!(out, "<w:document xmlns:w=\"urn:w\"><w:body/></w:document>");
         let own = b"<w:document xmlns:w=\"urn:own\"/>";

@@ -48,12 +48,20 @@ pub fn f32_to_f16(v: f32) -> u16 {
         let half = m >> shift;
         let rem = m & ((1 << shift) - 1);
         let mid = 1 << (shift - 1);
-        let r = if rem > mid || (rem == mid && half & 1 == 1) { half + 1 } else { half };
+        let r = if rem > mid || (rem == mid && half & 1 == 1) {
+            half + 1
+        } else {
+            half
+        };
         return sign | r as u16;
     }
     let half = ((e as u32) << 10) | (man >> 13);
     let rem = man & 0x1fff;
-    let r = if rem > 0x1000 || (rem == 0x1000 && half & 1 == 1) { half + 1 } else { half };
+    let r = if rem > 0x1000 || (rem == 0x1000 && half & 1 == 1) {
+        half + 1
+    } else {
+        half
+    };
     sign | r as u16
 }
 
@@ -83,7 +91,11 @@ pub struct DngWriteOptions {
 
 impl Default for DngWriteOptions {
     fn default() -> Self {
-        Self { compression: DngCompression::Lj92 { tile: 256 }, order: ByteOrder::Little, xmp: None }
+        Self {
+            compression: DngCompression::Lj92 { tile: 256 },
+            order: ByteOrder::Little,
+            xmp: None,
+        }
     }
 }
 
@@ -105,7 +117,14 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
     ifd.set(t::IMAGE_LENGTH, Value::Long(vec![h as u32]));
     ifd.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![cpp as u16]));
     ifd.set(t::PLANAR_CONFIGURATION, Value::Short(vec![1]));
-    ifd.set(t::PHOTOMETRIC, Value::Short(vec![if raw.cfa.is_some() { photometric::CFA } else { photometric::LINEAR_RAW }]));
+    ifd.set(
+        t::PHOTOMETRIC,
+        Value::Short(vec![if raw.cfa.is_some() {
+            photometric::CFA
+        } else {
+            photometric::LINEAR_RAW
+        }]),
+    );
     ifd.set(t::DNG_VERSION, Value::Byte(vec![1, 4, 0, 0]));
     ifd.set(t::DNG_BACKWARD_VERSION, Value::Byte(vec![1, 3, 0, 0]));
     let make = raw.metadata.make.clone().unwrap_or_default();
@@ -117,54 +136,110 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
         ifd.set(t::MODEL, Value::Ascii(model.clone()));
     }
     let unique = format!("{make} {model}").trim().to_string();
-    ifd.set(t::UNIQUE_CAMERA_MODEL, Value::Ascii(if unique.is_empty() { "LightCraft".into() } else { unique }));
-    ifd.set(t::ORIENTATION, Value::Short(vec![raw.orientation.to_exif()]));
+    ifd.set(
+        t::UNIQUE_CAMERA_MODEL,
+        Value::Ascii(if unique.is_empty() {
+            "LightCraft".into()
+        } else {
+            unique
+        }),
+    );
+    ifd.set(
+        t::ORIENTATION,
+        Value::Short(vec![raw.orientation.to_exif()]),
+    );
     ifd.set(t::SOFTWARE, Value::Ascii("LightCraft".into()));
-    let xmp = opts.xmp.clone().unwrap_or_else(|| lightcraft_meta::write_xmp(&raw.metadata, None));
+    let xmp = opts
+        .xmp
+        .clone()
+        .unwrap_or_else(|| lightcraft_meta::write_xmp(&raw.metadata, None));
     ifd.set(t::XMP, Value::Byte(xmp.into_bytes()));
 
     if let Some(cfa) = &raw.cfa {
-        ifd.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![cfa.height as u16, cfa.width as u16]));
+        ifd.set(
+            t::CFA_REPEAT_PATTERN_DIM,
+            Value::Short(vec![cfa.height as u16, cfa.width as u16]),
+        );
         // the tag is anchored at the ActiveArea's top-left, `raw.cfa` at the sensor origin
         let a = raw.active_area;
-        ifd.set(t::CFA_PATTERN_EP, Value::Byte(cfa.shifted(a.x, a.y).pattern));
+        ifd.set(
+            t::CFA_PATTERN_EP,
+            Value::Byte(cfa.shifted(a.x, a.y).pattern),
+        );
         ifd.set(t::CFA_PLANE_COLOR, Value::Byte(vec![0, 1, 2]));
         ifd.set(t::CFA_LAYOUT, Value::Short(vec![1]));
     }
     let b = &raw.black;
-    ifd.set(t::BLACK_LEVEL_REPEAT_DIM, Value::Short(vec![b.repeat_rows as u16, b.repeat_cols as u16]));
+    ifd.set(
+        t::BLACK_LEVEL_REPEAT_DIM,
+        Value::Short(vec![b.repeat_rows as u16, b.repeat_cols as u16]),
+    );
     let mut bl: Vec<f64> = b.values.iter().map(|&v| v as f64).collect();
     if bl.len() == 1 && cpp > 1 {
         bl = vec![bl[0]; cpp];
     }
     ifd.set(t::BLACK_LEVEL, rat_vec(&bl));
     if !b.delta_h.is_empty() {
-        ifd.set(t::BLACK_LEVEL_DELTA_H, Value::SRational(b.delta_h.iter().map(|&v| srational(v as f64)).collect()));
+        ifd.set(
+            t::BLACK_LEVEL_DELTA_H,
+            Value::SRational(b.delta_h.iter().map(|&v| srational(v as f64)).collect()),
+        );
     }
     if !b.delta_v.is_empty() {
-        ifd.set(t::BLACK_LEVEL_DELTA_V, Value::SRational(b.delta_v.iter().map(|&v| srational(v as f64)).collect()));
+        ifd.set(
+            t::BLACK_LEVEL_DELTA_V,
+            Value::SRational(b.delta_v.iter().map(|&v| srational(v as f64)).collect()),
+        );
     }
-    let white: Vec<u32> = (0..cpp).map(|s| raw.white_at(s).round().clamp(0.0, u32::MAX as f32) as u32).collect();
+    let white: Vec<u32> = (0..cpp)
+        .map(|s| raw.white_at(s).round().clamp(0.0, u32::MAX as f32) as u32)
+        .collect();
     if matches!(raw.data, RawData::F32(_)) {
-        ifd.set(t::WHITE_LEVEL, rat_vec(&(0..cpp).map(|s| raw.white_at(s) as f64).collect::<Vec<_>>()));
+        ifd.set(
+            t::WHITE_LEVEL,
+            rat_vec(&(0..cpp).map(|s| raw.white_at(s) as f64).collect::<Vec<_>>()),
+        );
     } else {
         ifd.set(t::WHITE_LEVEL, Value::Long(white));
     }
     let a = raw.active_area;
-    ifd.set(t::ACTIVE_AREA, Value::Long(vec![a.y as u32, a.x as u32, (a.y + a.height) as u32, (a.x + a.width) as u32]));
-    ifd.set(t::DEFAULT_CROP_ORIGIN, Value::Long(vec![raw.crop.x as u32, raw.crop.y as u32]));
-    ifd.set(t::DEFAULT_CROP_SIZE, Value::Long(vec![raw.crop.width as u32, raw.crop.height as u32]));
+    ifd.set(
+        t::ACTIVE_AREA,
+        Value::Long(vec![
+            a.y as u32,
+            a.x as u32,
+            (a.y + a.height) as u32,
+            (a.x + a.width) as u32,
+        ]),
+    );
+    ifd.set(
+        t::DEFAULT_CROP_ORIGIN,
+        Value::Long(vec![raw.crop.x as u32, raw.crop.y as u32]),
+    );
+    ifd.set(
+        t::DEFAULT_CROP_SIZE,
+        Value::Long(vec![raw.crop.width as u32, raw.crop.height as u32]),
+    );
 
     let c = &raw.color;
-    for (i, tag) in [t::CALIBRATION_ILLUMINANT_1, t::CALIBRATION_ILLUMINANT_2].into_iter().enumerate() {
+    for (i, tag) in [t::CALIBRATION_ILLUMINANT_1, t::CALIBRATION_ILLUMINANT_2]
+        .into_iter()
+        .enumerate()
+    {
         if c.color_matrix[i].is_some() {
             ifd.set(tag, Value::Short(vec![c.illuminant[i]]));
         }
     }
     for (pair, tags) in [
         (&c.color_matrix, [t::COLOR_MATRIX_1, t::COLOR_MATRIX_2]),
-        (&c.forward_matrix, [t::FORWARD_MATRIX_1, t::FORWARD_MATRIX_2]),
-        (&c.camera_calibration, [t::CAMERA_CALIBRATION_1, t::CAMERA_CALIBRATION_2]),
+        (
+            &c.forward_matrix,
+            [t::FORWARD_MATRIX_1, t::FORWARD_MATRIX_2],
+        ),
+        (
+            &c.camera_calibration,
+            [t::CAMERA_CALIBRATION_1, t::CAMERA_CALIBRATION_2],
+        ),
     ] {
         for i in 0..2 {
             if let Some(m) = &pair[i] {
@@ -179,52 +254,98 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
         ifd.set(t::AS_SHOT_NEUTRAL, rat_vec(&v));
     } else if let Some(xy) = c.as_shot_white_xy {
         ifd.set(t::AS_SHOT_WHITE_XY, rat_vec(&[xy.x, xy.y]));
-    } else if let Some(m) = raw.wb_multipliers.filter(|m| m.iter().all(|v| *v > 0.0 && v.is_finite())) {
+    } else if let Some(m) = raw
+        .wb_multipliers
+        .filter(|m| m.iter().all(|v| *v > 0.0 && v.is_finite()))
+    {
         // vendor raws (NEF, ARW…) carry white balance as multipliers: the DNG neutral is their reciprocal
         ifd.set(t::AS_SHOT_NEUTRAL, rat_vec(&m.map(|v| 1.0 / v as f64)));
     }
-    ifd.set(t::BASELINE_EXPOSURE, Value::SRational(vec![srational(c.baseline_exposure)]));
+    ifd.set(
+        t::BASELINE_EXPOSURE,
+        Value::SRational(vec![srational(c.baseline_exposure)]),
+    );
     if let Some(v) = c.baseline_sharpness {
         ifd.set(t::BASELINE_SHARPNESS, rat_vec(&[v]));
     }
     // the source's own profile look travels with its data (conversions, smart previews, merges)
     let p = &c.profile;
-    let table_tags = |ifd: &mut IfdBuilder, table: &crate::profile::HsvTable, dims: u16, enc: u16| {
-        ifd.set(dims, Value::Long(vec![table.hue_divisions as u32, table.sat_divisions as u32, table.val_divisions as u32]));
-        if table.srgb_value {
-            ifd.set(enc, Value::Long(vec![1]));
-        }
+    let table_tags =
+        |ifd: &mut IfdBuilder, table: &crate::profile::HsvTable, dims: u16, enc: u16| {
+            ifd.set(
+                dims,
+                Value::Long(vec![
+                    table.hue_divisions as u32,
+                    table.sat_divisions as u32,
+                    table.val_divisions as u32,
+                ]),
+            );
+            if table.srgb_value {
+                ifd.set(enc, Value::Long(vec![1]));
+            }
+        };
+    let flat = |table: &crate::profile::HsvTable| {
+        Value::Float(table.data.iter().flatten().copied().collect())
     };
-    let flat = |table: &crate::profile::HsvTable| Value::Float(table.data.iter().flatten().copied().collect());
     match &p.hue_sat_map {
         [Some(a), b] => {
-            table_tags(&mut ifd, a, t::PROFILE_HUE_SAT_MAP_DIMS, t::PROFILE_HUE_SAT_MAP_ENCODING);
+            table_tags(
+                &mut ifd,
+                a,
+                t::PROFILE_HUE_SAT_MAP_DIMS,
+                t::PROFILE_HUE_SAT_MAP_ENCODING,
+            );
             ifd.set(t::PROFILE_HUE_SAT_MAP_DATA_1, flat(a));
-            if let Some(b) =
-                b.as_ref().filter(|b| (b.hue_divisions, b.sat_divisions, b.val_divisions) == (a.hue_divisions, a.sat_divisions, a.val_divisions))
-            {
+            if let Some(b) = b.as_ref().filter(|b| {
+                (b.hue_divisions, b.sat_divisions, b.val_divisions)
+                    == (a.hue_divisions, a.sat_divisions, a.val_divisions)
+            }) {
                 ifd.set(t::PROFILE_HUE_SAT_MAP_DATA_2, flat(b));
             }
         }
         [None, Some(b)] => {
-            table_tags(&mut ifd, b, t::PROFILE_HUE_SAT_MAP_DIMS, t::PROFILE_HUE_SAT_MAP_ENCODING);
+            table_tags(
+                &mut ifd,
+                b,
+                t::PROFILE_HUE_SAT_MAP_DIMS,
+                t::PROFILE_HUE_SAT_MAP_ENCODING,
+            );
             ifd.set(t::PROFILE_HUE_SAT_MAP_DATA_1, flat(b));
         }
         [None, None] => {}
     }
     if let Some(l) = &p.look_table {
-        table_tags(&mut ifd, l, t::PROFILE_LOOK_TABLE_DIMS, t::PROFILE_LOOK_TABLE_ENCODING);
+        table_tags(
+            &mut ifd,
+            l,
+            t::PROFILE_LOOK_TABLE_DIMS,
+            t::PROFILE_LOOK_TABLE_ENCODING,
+        );
         ifd.set(t::PROFILE_LOOK_TABLE_DATA, flat(l));
     }
     if let Some(curve) = &p.tone_curve {
-        ifd.set(t::PROFILE_TONE_CURVE, Value::Float(curve.points.iter().flatten().copied().collect()));
+        ifd.set(
+            t::PROFILE_TONE_CURVE,
+            Value::Float(curve.points.iter().flatten().copied().collect()),
+        );
     }
     if let Some(map) = &p.gain_table_map {
         // the raw IFD is IFD 0 here, where both tag versions are valid
         let (version2, bytes) = map.to_bytes(opts.order);
-        ifd.set(if version2 { t::PROFILE_GAIN_TABLE_MAP_2 } else { t::PROFILE_GAIN_TABLE_MAP }, Value::Undefined(bytes));
+        ifd.set(
+            if version2 {
+                t::PROFILE_GAIN_TABLE_MAP_2
+            } else {
+                t::PROFILE_GAIN_TABLE_MAP
+            },
+            Value::Undefined(bytes),
+        );
     }
-    for (list, tag) in [(&raw.opcodes.list1, t::OPCODE_LIST_1), (&raw.opcodes.list2, t::OPCODE_LIST_2), (&raw.opcodes.list3, t::OPCODE_LIST_3)] {
+    for (list, tag) in [
+        (&raw.opcodes.list1, t::OPCODE_LIST_1),
+        (&raw.opcodes.list2, t::OPCODE_LIST_2),
+        (&raw.opcodes.list3, t::OPCODE_LIST_3),
+    ] {
         if !list.is_empty() {
             ifd.set(tag, Value::Undefined(opcodes::write_list(list)));
         }
@@ -236,7 +357,10 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
             let bp = if half { 2 } else { 4 };
             ifd.set(t::BITS_PER_SAMPLE, Value::Short(vec![(bp * 8) as u16; cpp]));
             ifd.set(t::SAMPLE_FORMAT, Value::Short(vec![3; cpp]));
-            ifd.set(t::COMPRESSION, Value::Short(vec![compression::ADOBE_DEFLATE]));
+            ifd.set(
+                t::COMPRESSION,
+                Value::Short(vec![compression::ADOBE_DEFLATE]),
+            );
             ifd.set(t::PREDICTOR, Value::Short(vec![3]));
             let (ta, td) = (w.div_ceil(tile), h.div_ceil(tile));
             let tiles: Vec<Vec<u8>> = (0..ta * td)
@@ -264,7 +388,11 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
                     miniz_oxide::deflate::compress_to_vec_zlib(&buf, 6)
                 })
                 .collect();
-            ifd.set_image(ImageData::Tiles { tile_width: tile as u32, tile_height: tile as u32, tiles });
+            ifd.set_image(ImageData::Tiles {
+                tile_width: tile as u32,
+                tile_height: tile as u32,
+                tiles,
+            });
         }
         (RawData::F32(v), _) => {
             ifd.set(t::BITS_PER_SAMPLE, Value::Short(vec![32; cpp]));
@@ -276,14 +404,24 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
                 opts.order.put_u32(&mut tmp, x.to_bits());
                 bytes.extend_from_slice(&tmp);
             }
-            ifd.set_image(ImageData::Strips { rows_per_strip: h as u32, strips: vec![bytes] });
+            ifd.set_image(ImageData::Strips {
+                rows_per_strip: h as u32,
+                strips: vec![bytes],
+            });
         }
         (RawData::U16(v), _) => {
             let maxv = v.iter().copied().max().unwrap_or(0);
             let bits = (16 - maxv.leading_zeros()).max(raw.bits.min(16)).max(2) as u8;
             ifd.set(
                 t::BITS_PER_SAMPLE,
-                Value::Short(vec![if matches!(opts.compression, DngCompression::Uncompressed) { 16 } else { bits as u16 }; cpp]),
+                Value::Short(vec![
+                    if matches!(opts.compression, DngCompression::Uncompressed) {
+                        16
+                    } else {
+                        bits as u16
+                    };
+                    cpp
+                ]),
             );
             match opts.compression {
                 DngCompression::Uncompressed => {
@@ -297,12 +435,18 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
                             b
                         })
                         .collect();
-                    ifd.set_image(ImageData::Strips { rows_per_strip: rows as u32, strips });
+                    ifd.set_image(ImageData::Strips {
+                        rows_per_strip: rows as u32,
+                        strips,
+                    });
                 }
                 DngCompression::Deflate { tile, .. } => {
                     let tile = (tile.max(16) & !15) as usize;
                     ifd.set(t::BITS_PER_SAMPLE, Value::Short(vec![16; cpp]));
-                    ifd.set(t::COMPRESSION, Value::Short(vec![compression::ADOBE_DEFLATE]));
+                    ifd.set(
+                        t::COMPRESSION,
+                        Value::Short(vec![compression::ADOBE_DEFLATE]),
+                    );
                     ifd.set(t::PREDICTOR, Value::Short(vec![2]));
                     let (ta, td) = (w.div_ceil(tile), h.div_ceil(tile));
                     let tiles: Vec<Vec<u8>> = (0..ta * td)
@@ -327,7 +471,11 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
                             miniz_oxide::deflate::compress_to_vec_zlib(&buf, 6)
                         })
                         .collect();
-                    ifd.set_image(ImageData::Tiles { tile_width: tile as u32, tile_height: tile as u32, tiles });
+                    ifd.set_image(ImageData::Tiles {
+                        tile_width: tile as u32,
+                        tile_height: tile as u32,
+                        tiles,
+                    });
                 }
                 DngCompression::Lj92 { tile } => {
                     let tile = (tile.max(2) & !1) as usize;
@@ -357,7 +505,11 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
                             }
                         })
                         .collect();
-                    ifd.set_image(ImageData::Tiles { tile_width: tile as u32, tile_height: tile as u32, tiles });
+                    ifd.set_image(ImageData::Tiles {
+                        tile_width: tile as u32,
+                        tile_height: tile as u32,
+                        tiles,
+                    });
                 }
             }
         }
@@ -367,7 +519,13 @@ pub fn write_dng(raw: &RawImage, opts: &DngWriteOptions) -> Result<Vec<u8>> {
 
 /// Exif `LightSource` code of a white point the rendered DNG writer knows (D65 = 21, D50 = 23).
 fn illuminant_of(white: lightcraft_color::Xy) -> u16 {
-    if (white.x - lightcraft_color::D50.x).abs() < 1e-3 && (white.y - lightcraft_color::D50.y).abs() < 1e-3 { 23 } else { 21 }
+    if (white.x - lightcraft_color::D50.x).abs() < 1e-3
+        && (white.y - lightcraft_color::D50.y).abs() < 1e-3
+    {
+        23
+    } else {
+        21
+    }
 }
 
 /// Render to DNG: a linear DNG (`LinearRaw`, 16-bit float Deflate tiles) of an already rendered,
@@ -384,21 +542,43 @@ pub fn write_rendered_dng(
     metadata: &lightcraft_meta::Metadata,
     xmp: Option<String>,
 ) -> Result<Vec<u8>> {
-    let n = width.checked_mul(height).and_then(|p| p.checked_mul(3)).ok_or(RawError::Limit("image too large"))?;
+    let n = width
+        .checked_mul(height)
+        .and_then(|p| p.checked_mul(3))
+        .ok_or(RawError::Limit("image too large"))?;
     if width == 0 || height == 0 || width > u32::MAX as usize || height > u32::MAX as usize {
-        return Err(RawError::Corrupt(format!("cannot write a {width}×{height} DNG")));
+        return Err(RawError::Corrupt(format!(
+            "cannot write a {width}×{height} DNG"
+        )));
     }
-    let src = rgb.get(..n).ok_or_else(|| RawError::Corrupt(format!("{} samples for a {width}×{height} RGB image", rgb.len())))?;
-    let data: Vec<f32> = src.iter().map(|&v| if v.is_finite() { v.clamp(0.0, 65504.0) } else { 0.0 }).collect();
+    let src = rgb.get(..n).ok_or_else(|| {
+        RawError::Corrupt(format!(
+            "{} samples for a {width}×{height} RGB image",
+            rgb.len()
+        ))
+    })?;
+    let data: Vec<f32> = src
+        .iter()
+        .map(|&v| {
+            if v.is_finite() {
+                v.clamp(0.0, 65504.0)
+            } else {
+                0.0
+            }
+        })
+        .collect();
     let full = crate::Rect::new(0, 0, width, height);
-    let forward = lightcraft_color::bradford(space.white, lightcraft_color::D50).mul(&space.to_xyz());
+    let forward =
+        lightcraft_color::bradford(space.white, lightcraft_color::D50).mul(&space.to_xyz());
     let color = crate::ColorData {
         illuminant: [illuminant_of(space.white), 0],
         color_matrix: [Some(space.from_xyz()), None],
         forward_matrix: [Some(forward), None],
         as_shot_neutral: Some([1.0; 3]),
         profile: crate::profile::ProfileLook {
-            tone_curve: Some(crate::profile::ToneCurve { points: vec![[0.0, 0.0], [1.0, 1.0]] }),
+            tone_curve: Some(crate::profile::ToneCurve {
+                points: vec![[0.0, 0.0], [1.0, 1.0]],
+            }),
             ..Default::default()
         },
         ..Default::default()
@@ -423,5 +603,15 @@ pub fn write_rendered_dng(
         metadata: metadata.clone(),
     };
     let order = ByteOrder::Little;
-    write_dng(&raw, &DngWriteOptions { compression: DngCompression::Deflate { tile: 256, half: true }, order, xmp })
+    write_dng(
+        &raw,
+        &DngWriteOptions {
+            compression: DngCompression::Deflate {
+                tile: 256,
+                half: true,
+            },
+            order,
+            xmp,
+        },
+    )
 }

@@ -32,7 +32,11 @@ pub struct UnlockedCollectionDto {
 
 impl UnlockedCollectionDto {
     fn from_ids(ids: Vec<String>) -> Self {
-        Self { total: ids.len(), unlocked: ids.len(), ids }
+        Self {
+            total: ids.len(),
+            unlocked: ids.len(),
+            ids,
+        }
     }
 }
 
@@ -141,7 +145,10 @@ fn cleared_mode_from_quests(quests: &[game_data::QuestDto]) -> ClearedModeDto {
                 .collect(),
         })
         .collect();
-    ClearedModeDto { cleared: true, chapters }
+    ClearedModeDto {
+        cleared: true,
+        chapters,
+    }
 }
 
 fn build_from_sources(sources: ProfileSources) -> CompleteProfileDto {
@@ -160,7 +167,11 @@ fn build_from_sources(sources: ProfileSources) -> CompleteProfileDto {
             })
             .collect(),
         trophies: UnlockedCollectionDto::from_ids(
-            sources.trophies.into_iter().map(|trophy| trophy.trophy_id).collect(),
+            sources
+                .trophies
+                .into_iter()
+                .map(|trophy| trophy.trophy_id)
+                .collect(),
         ),
         shops: sources
             .shops
@@ -171,7 +182,10 @@ fn build_from_sources(sources: ProfileSources) -> CompleteProfileDto {
                 items: shop
                     .items
                     .into_iter()
-                    .map(|name| CompleteShopItemDto { name, in_stock: true })
+                    .map(|name| CompleteShopItemDto {
+                        name,
+                        in_stock: true,
+                    })
                     .collect(),
             })
             .collect(),
@@ -179,30 +193,62 @@ fn build_from_sources(sources: ProfileSources) -> CompleteProfileDto {
         chronicle: mode.clone(),
         extend: mode,
         formations: UnlockedCollectionDto::from_ids(
-            sources.formations.into_iter().map(|formation| formation.form_id).collect(),
+            sources
+                .formations
+                .into_iter()
+                .map(|formation| formation.form_id)
+                .collect(),
         ),
         uniforms: UnlockedCollectionDto::from_ids(
-            sources.uniforms.into_iter().map(|uniform| uniform.name_id).collect(),
+            sources
+                .uniforms
+                .into_iter()
+                .map(|uniform| uniform.name_id)
+                .collect(),
         ),
         emblems: UnlockedCollectionDto::from_ids(
-            sources.emblems.into_iter().map(|emblem| emblem.emblem_id).collect(),
+            sources
+                .emblems
+                .into_iter()
+                .map(|emblem| emblem.emblem_id)
+                .collect(),
         ),
         special_tactics: UnlockedCollectionDto::from_ids(
-            sources.special_tactics.into_iter().map(|tactic| tactic.tactics_id).collect(),
+            sources
+                .special_tactics
+                .into_iter()
+                .map(|tactic| tactic.tactics_id)
+                .collect(),
         ),
         gallery: UnlockedCollectionDto::from_ids(
-            sources.gallery.into_iter().map(|entry| entry.gallery_id).collect(),
+            sources
+                .gallery
+                .into_iter()
+                .map(|entry| entry.gallery_id)
+                .collect(),
         ),
         movies: UnlockedCollectionDto::from_ids(
-            sources.movies.into_iter().map(|movie| movie.movie_id).collect(),
+            sources
+                .movies
+                .into_iter()
+                .map(|movie| movie.movie_id)
+                .collect(),
         ),
         musics: UnlockedCollectionDto::from_ids(
-            sources.musics.into_iter().map(|music| music.entry_id).collect(),
+            sources
+                .musics
+                .into_iter()
+                .map(|music| music.entry_id)
+                .collect(),
         ),
         constellations: sources
             .belong_teams
             .into_iter()
-            .map(|team| ConstellationDto { team_id: team.team_id, name: team.name, complete: true })
+            .map(|team| ConstellationDto {
+                team_id: team.team_id,
+                name: team.name,
+                complete: true,
+            })
             .collect(),
     }
 }
@@ -218,7 +264,16 @@ mod tests {
     use super::*;
 
     fn stats() -> game_data::StatBlockDto {
-        game_data::StatBlockDto { kc: 1, cr: 1, tc: 1, pr: 1, ps: 1, ag: 1, it: 1, total: 7 }
+        game_data::StatBlockDto {
+            kc: 1,
+            cr: 1,
+            tc: 1,
+            pr: 1,
+            ps: 1,
+            ag: 1,
+            it: 1,
+            total: 7,
+        }
     }
 
     #[test]
@@ -304,7 +359,13 @@ mod tests {
         assert_eq!(value["shops"][0]["items"][0]["in_stock"], true);
         assert_eq!(value["story"], value["chronicle"]);
         assert_eq!(value["chronicle"], value["extend"]);
-        assert_eq!(value["story"]["chapters"][0]["quest_ids"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            value["story"]["chapters"][0]["quest_ids"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
         assert_eq!(value["story"]["chapters"][1]["quest_ids"][0], "q3");
         assert_eq!(value["constellations"][0]["complete"], true);
     }

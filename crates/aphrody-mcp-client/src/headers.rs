@@ -85,18 +85,21 @@ pub fn resolve_header_placeholders(
 /// [`McpClientError::MissingHeaderEnvironment`] for the first unset or empty variable.
 pub fn resolve_server_secrets(cfg: &McpServerConfig) -> Result<McpServerConfig> {
     let mut resolved = cfg.clone();
-    if let McpServerTransportConfig::StreamableHttp { bearer_token_env_var, http_headers, .. } =
-        &mut resolved.transport
+    if let McpServerTransportConfig::StreamableHttp {
+        bearer_token_env_var,
+        http_headers,
+        ..
+    } = &mut resolved.transport
     {
         if let Some(variable) = bearer_token_env_var.as_deref() {
             match std::env::var(variable) {
-                Ok(secret) if !secret.is_empty() => {},
+                Ok(secret) if !secret.is_empty() => {}
                 _ => {
                     return Err(McpClientError::MissingHeaderEnvironment {
                         name: "Authorization".to_owned(),
                         variable: variable.to_owned(),
                     });
-                },
+                }
             }
         }
         if let Some(map) = http_headers.take() {
@@ -125,8 +128,14 @@ mod tests {
 
     #[test]
     fn literal_values_are_returned_unchanged() {
-        assert_eq!(expand_header_value("X-Project", "workspace-1").unwrap(), "workspace-1");
-        assert_eq!(expand_header_value("Authorization", "Bearer abc123").unwrap(), "Bearer abc123");
+        assert_eq!(
+            expand_header_value("X-Project", "workspace-1").unwrap(),
+            "workspace-1"
+        );
+        assert_eq!(
+            expand_header_value("Authorization", "Bearer abc123").unwrap(),
+            "Bearer abc123"
+        );
     }
 
     #[test]
@@ -143,9 +152,11 @@ mod tests {
 
     #[test]
     fn unset_variable_fails_closed_naming_header_and_variable_only() {
-        let error =
-            expand_header_value("Authorization", "Bearer ${APHRODY_MCP_TEST_DEFINITELY_UNSET}")
-                .unwrap_err();
+        let error = expand_header_value(
+            "Authorization",
+            "Bearer ${APHRODY_MCP_TEST_DEFINITELY_UNSET}",
+        )
+        .unwrap_err();
         assert!(matches!(
             &error,
             McpClientError::MissingHeaderEnvironment { name, variable }
@@ -181,7 +192,10 @@ mod tests {
         };
         let headers = http_headers.expect("headers kept");
         assert_eq!(headers.get("X-Path"), Some(&path));
-        assert_eq!(headers.get("X-Project").map(String::as_str), Some("workspace-1"));
+        assert_eq!(
+            headers.get("X-Project").map(String::as_str),
+            Some("workspace-1")
+        );
 
         let stdio = server(serde_json::json!({ "command": "server", "args": ["--stdio"] }));
         assert_eq!(resolve_server_secrets(&stdio).unwrap(), stdio);

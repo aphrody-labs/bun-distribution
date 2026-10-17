@@ -201,7 +201,7 @@ mod native {
                 None => {
                     set_last_error("invalid argv: null pointer or negative argc");
                     AphrodyStatus::Usage as c_int
-                },
+                }
             }
         });
         outcome.unwrap_or_else(|payload| {
@@ -228,7 +228,7 @@ mod native {
                 Err(message) => {
                     set_last_error(message);
                     AphrodyStatus::Usage as c_int
-                },
+                }
             }
         });
         outcome.unwrap_or_else(|payload| {
@@ -259,7 +259,7 @@ mod native {
                     let _guard = capture_lock();
                     let (code, out, err) = with_captured_stdio(|| run_argv(args));
                     json_result(code, &out, &err)
-                },
+                }
                 Err(message) => json_result(AphrodyStatus::Usage as i32, "", &message),
             }
         });
@@ -322,7 +322,9 @@ mod native {
     /// meaningless).
     fn capture_lock() -> std::sync::MutexGuard<'static, ()> {
         static CAPTURE_LOCK: Mutex<()> = Mutex::new(());
-        CAPTURE_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+        CAPTURE_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
     }
 
     /// Capture an async command on its local executor using the same lock as
@@ -396,7 +398,9 @@ mod native {
         }
         // SAFETY: caller guarantees a NUL-terminated string.
         let raw = unsafe { CStr::from_ptr(ptr) };
-        let text = raw.to_str().map_err(|_| "args_json is not valid UTF-8".to_string())?;
+        let text = raw
+            .to_str()
+            .map_err(|_| "args_json is not valid UTF-8".to_string())?;
         let trimmed = text.trim();
         if trimmed.is_empty() {
             return Ok(Vec::new());
@@ -423,7 +427,7 @@ mod native {
             Err(_) => {
                 set_last_error("result contained an interior NUL byte");
                 ptr::null_mut()
-            },
+            }
         }
     }
 

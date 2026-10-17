@@ -2,14 +2,14 @@
 //! [`LoadContext::load_builder`].
 
 use crate::{
-    io::Reader,
-    meta::{loader_settings_meta_transform, MetaTransform, Settings},
     Asset, AssetPath, ErasedAssetIndex, ErasedAssetLoader, ErasedLoadedAsset, Handle, LoadContext,
     LoadDirectError, LoadedAsset, LoadedUntypedAsset, RequestedHandleTypeMismatchError,
     UntypedHandle,
+    io::Reader,
+    meta::{MetaTransform, Settings, loader_settings_meta_transform},
 };
 use alloc::{borrow::ToOwned, boxed::Box, sync::Arc};
-use core::any::{type_name, TypeId};
+use core::any::{TypeId, type_name};
 use std::path::Path;
 use tracing::error;
 

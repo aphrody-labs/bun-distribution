@@ -69,11 +69,14 @@ pub fn is_encrypted(bytes: &[u8]) -> bool {
 /// [`DocxError::PasswordRequired`] once it knows the file is one it can decrypt; a password that
 /// doesn't fit gives [`DocxError::WrongPassword`].
 pub fn decrypt(bytes: &[u8], password: Option<&str>) -> Result<Vec<u8>, DocxError> {
-    let mut comp = cfb::CompoundFile::open(Cursor::new(bytes)).map_err(|e| bad(format!("not a readable compound file ({e})")))?;
+    let mut comp = cfb::CompoundFile::open(Cursor::new(bytes))
+        .map_err(|e| bad(format!("not a readable compound file ({e})")))?;
     let info = stream(&mut comp, "/EncryptionInfo", MAX_INFO)?;
     let package = stream(&mut comp, "/EncryptedPackage", bytes.len() as u64)?;
     let info = parse_info(&info)?;
-    let Some(password) = password else { return Err(DocxError::PasswordRequired) };
+    let Some(password) = password else {
+        return Err(DocxError::PasswordRequired);
+    };
     let pe = &info.password;
     let hn = iterate(pe.hash, &pe.salt, password, pe.spin_count);
     // The verifier (§2.3.4.13): a random value and its hash, both encrypted with keys derived
@@ -82,24 +85,44 @@ pub fn decrypt(bytes: &[u8], password: Option<&str>) -> Result<Vec<u8>, DocxErro
     let key_value = derive_key(pe.hash, &hn, &BK_VERIFIER_VALUE, pe.key_bytes);
     let iv = make_iv(pe.hash, &pe.salt, None, pe.block_size);
     let input = Zeroizing::new(cbc_decrypt(&key_input, &iv, &pe.verifier_input)?);
-    let input = input.get(..pe.salt_size).ok_or_else(|| bad("the password verifier is too short"))?;
+    let input = input
+        .get(..pe.salt_size)
+        .ok_or_else(|| bad("the password verifier is too short"))?;
     let value = Zeroizing::new(cbc_decrypt(&key_value, &iv, &pe.verifier_hash)?);
-    let value = value.get(..pe.hash.size()).ok_or_else(|| bad("the password verifier hash is too short"))?;
+    let value = value
+        .get(..pe.hash.size())
+        .ok_or_else(|| bad("the password verifier hash is too short"))?;
     if !same(&pe.hash.hash(&[input]), value) {
         return Err(DocxError::WrongPassword);
     }
     // The intermediate key that encrypts the package.
     let key_key = derive_key(pe.hash, &hn, &BK_KEY_VALUE, pe.key_bytes);
     let key = Zeroizing::new(cbc_decrypt(&key_key, &iv, &pe.key_value)?);
-    let key = Zeroizing::new(key.get(..info.key_bytes).ok_or_else(|| bad("the encrypted key is too short"))?.to_vec());
+    let key = Zeroizing::new(
+        key.get(..info.key_bytes)
+            .ok_or_else(|| bad("the encrypted key is too short"))?
+            .to_vec(),
+    );
     // Data integrity (§2.3.4.14): an HMAC of the whole EncryptedPackage stream.
     if let Some((enc_key, enc_value)) = &info.integrity {
-        let hmac_key = Zeroizing::new(cbc_decrypt(&key, &make_iv(info.hash, &info.salt, Some(&BK_HMAC_KEY), info.block_size), enc_key)?);
+        let hmac_key = Zeroizing::new(cbc_decrypt(
+            &key,
+            &make_iv(info.hash, &info.salt, Some(&BK_HMAC_KEY), info.block_size),
+            enc_key,
+        )?);
         // The key is the salt, zero-padded to the block size; HMAC pads short keys with zeros
         // anyway, so the padded key gives the same HMAC.
-        let hmac_key = hmac_key.get(..hmac_key.len().min(info.hash.size())).unwrap_or(&[]);
-        let expected = cbc_decrypt(&key, &make_iv(info.hash, &info.salt, Some(&BK_HMAC_VALUE), info.block_size), enc_value)?;
-        let expected = expected.get(..info.hash.size()).ok_or_else(|| bad("the integrity check value is too short"))?;
+        let hmac_key = hmac_key
+            .get(..hmac_key.len().min(info.hash.size()))
+            .unwrap_or(&[]);
+        let expected = cbc_decrypt(
+            &key,
+            &make_iv(info.hash, &info.salt, Some(&BK_HMAC_VALUE), info.block_size),
+            enc_value,
+        )?;
+        let expected = expected
+            .get(..info.hash.size())
+            .ok_or_else(|| bad("the integrity check value is too short"))?;
         if !same(&info.hash.hmac(hmac_key, &package)?, expected) {
             return Err(bad("the document is damaged (its integrity check failed)"));
         }
@@ -111,13 +134,23 @@ pub fn decrypt(bytes: &[u8], password: Option<&str>) -> Result<Vec<u8>, DocxErro
         .map(u64::from_le_bytes)
         .ok_or_else(|| bad("the encrypted package is truncated"))?;
     let data = package.get(8..).unwrap_or(&[]);
-    let size = usize::try_from(size).ok().filter(|s| *s <= data.len()).ok_or_else(|| bad("the encrypted package is truncated"))?;
+    let size = usize::try_from(size)
+        .ok()
+        .filter(|s| *s <= data.len())
+        .ok_or_else(|| bad("the encrypted package is truncated"))?;
     let needed = size.div_ceil(BLOCK).saturating_mul(BLOCK);
-    let data = data.get(..needed).ok_or_else(|| bad("the encrypted package is truncated"))?;
+    let data = data
+        .get(..needed)
+        .ok_or_else(|| bad("the encrypted package is truncated"))?;
     let mut out = Vec::with_capacity(needed);
     for (i, seg) in data.chunks(SEGMENT).enumerate() {
         let i = u32::try_from(i).map_err(|_| bad("the encrypted package is too large"))?;
-        let iv = make_iv(info.hash, &info.salt, Some(&i.to_le_bytes()), info.block_size);
+        let iv = make_iv(
+            info.hash,
+            &info.salt,
+            Some(&i.to_le_bytes()),
+            info.block_size,
+        );
         out.extend_from_slice(&cbc_decrypt(&key, &iv, seg)?);
     }
     out.truncate(size);
@@ -131,7 +164,11 @@ pub fn encrypt(package: &[u8], password: &str) -> Result<Vec<u8>, DocxError> {
 }
 
 /// [`encrypt`] with a chosen spin count (tests use a small one; files should use the default).
-pub fn encrypt_with_spin_count(package: &[u8], password: &str, spin_count: u32) -> Result<Vec<u8>, DocxError> {
+pub fn encrypt_with_spin_count(
+    package: &[u8],
+    password: &str,
+    spin_count: u32,
+) -> Result<Vec<u8>, DocxError> {
     check_password(password)?;
     let spin_count = spin_count.min(MAX_SPIN_COUNT);
     let hash = Hash::Sha512;
@@ -155,14 +192,34 @@ pub fn encrypt_with_spin_count(package: &[u8], password: &str, spin_count: u32) 
     // The password key encryptor (§2.3.4.13).
     let hn = iterate(hash, &password_salt, password, spin_count);
     let iv = make_iv(hash, &password_salt, None, BLOCK);
-    let enc_verifier_input = cbc_encrypt(&derive_key(hash, &hn, &BK_VERIFIER_INPUT, key_bytes), &iv, &padded(&verifier))?;
-    let enc_verifier_hash = cbc_encrypt(&derive_key(hash, &hn, &BK_VERIFIER_VALUE, key_bytes), &iv, &padded(&hash.hash(&[&verifier])))?;
-    let enc_key_value = cbc_encrypt(&derive_key(hash, &hn, &BK_KEY_VALUE, key_bytes), &iv, &padded(&key))?;
+    let enc_verifier_input = cbc_encrypt(
+        &derive_key(hash, &hn, &BK_VERIFIER_INPUT, key_bytes),
+        &iv,
+        &padded(&verifier),
+    )?;
+    let enc_verifier_hash = cbc_encrypt(
+        &derive_key(hash, &hn, &BK_VERIFIER_VALUE, key_bytes),
+        &iv,
+        &padded(&hash.hash(&[&verifier])),
+    )?;
+    let enc_key_value = cbc_encrypt(
+        &derive_key(hash, &hn, &BK_KEY_VALUE, key_bytes),
+        &iv,
+        &padded(&key),
+    )?;
 
     // Data integrity (§2.3.4.14).
-    let enc_hmac_key = cbc_encrypt(&key, &make_iv(hash, &key_data_salt, Some(&BK_HMAC_KEY), BLOCK), &padded(&hmac_salt))?;
+    let enc_hmac_key = cbc_encrypt(
+        &key,
+        &make_iv(hash, &key_data_salt, Some(&BK_HMAC_KEY), BLOCK),
+        &padded(&hmac_salt),
+    )?;
     let hmac = hash.hmac(&hmac_salt, &stream)?;
-    let enc_hmac_value = cbc_encrypt(&key, &make_iv(hash, &key_data_salt, Some(&BK_HMAC_VALUE), BLOCK), &padded(&hmac))?;
+    let enc_hmac_value = cbc_encrypt(
+        &key,
+        &make_iv(hash, &key_data_salt, Some(&BK_HMAC_VALUE), BLOCK),
+        &padded(&hmac),
+    )?;
 
     let b64 = |b: &[u8]| base64::engine::general_purpose::STANDARD.encode(b);
     let params = format!(
@@ -192,12 +249,20 @@ pub fn encrypt_with_spin_count(package: &[u8], password: &str, spin_count: u32) 
     info.extend_from_slice(xml.as_bytes());
 
     let io = |e: std::io::Error| bad(format!("couldn't write the compound file ({e})"));
-    let mut comp = cfb::CompoundFile::create_with_version(cfb::Version::V3, Cursor::new(Vec::new())).map_err(io)?;
+    let mut comp =
+        cfb::CompoundFile::create_with_version(cfb::Version::V3, Cursor::new(Vec::new()))
+            .map_err(io)?;
     for (path, data) in [
         ("/\u{6}DataSpaces/Version", data_space_version()),
         ("/\u{6}DataSpaces/DataSpaceMap", data_space_map()),
-        ("/\u{6}DataSpaces/DataSpaceInfo/StrongEncryptionDataSpace", data_space_definition()),
-        ("/\u{6}DataSpaces/TransformInfo/StrongEncryptionTransform/\u{6}Primary", primary_transform()),
+        (
+            "/\u{6}DataSpaces/DataSpaceInfo/StrongEncryptionDataSpace",
+            data_space_definition(),
+        ),
+        (
+            "/\u{6}DataSpaces/TransformInfo/StrongEncryptionTransform/\u{6}Primary",
+            primary_transform(),
+        ),
         ("/EncryptionInfo", info),
         ("/EncryptedPackage", stream),
     ] {
@@ -206,7 +271,10 @@ pub fn encrypt_with_spin_count(package: &[u8], password: &str, spin_count: u32) 
         {
             comp.create_storage_all(parent).map_err(io)?;
         }
-        comp.create_stream(path).map_err(io)?.write_all(&data).map_err(io)?;
+        comp.create_stream(path)
+            .map_err(io)?
+            .write_all(&data)
+            .map_err(io)?;
     }
     comp.flush().map_err(io)?;
     Ok(comp.into_inner().into_inner())
@@ -218,7 +286,9 @@ pub fn check_password(password: &str) -> Result<(), DocxError> {
         return Err(bad("the password is empty"));
     }
     if password.chars().count() > MAX_PASSWORD_CHARS {
-        return Err(bad(format!("passwords are at most {MAX_PASSWORD_CHARS} characters")));
+        return Err(bad(format!(
+            "passwords are at most {MAX_PASSWORD_CHARS} characters"
+        )));
     }
     Ok(())
 }
@@ -228,7 +298,10 @@ pub fn check_password(password: &str) -> Result<(), DocxError> {
 /// hashed again `spin_count` times with the iteration number appended ([MS-OFFCRYPTO] §2.4.2.4,
 /// the ISO write-protection method). Protection isn't encryption: the document stays readable,
 /// the password only guards turning protection off.
-pub fn protection_hash(password: &str, spin_count: u32) -> Result<Vec<(String, String)>, DocxError> {
+pub fn protection_hash(
+    password: &str,
+    spin_count: u32,
+) -> Result<Vec<(String, String)>, DocxError> {
     check_password(password)?;
     let spin_count = spin_count.min(MAX_SPIN_COUNT);
     let salt = random(SALT)?;
@@ -271,8 +344,16 @@ pub enum PasswordCheck {
 pub fn check_protection_password(attrs: &[(String, String)], password: &str) -> PasswordCheck {
     let get = |k: &str| attrs.iter().find(|(n, _)| n == k).map(|(_, v)| v.trim());
     if get("w:hashValue").is_some() {
-        let Some(hash) = get("w:algorithmName").and_then(Hash::parse) else { return PasswordCheck::Unsupported };
-        return verify(hash, get("w:hashValue"), get("w:saltValue"), get("w:spinCount"), password);
+        let Some(hash) = get("w:algorithmName").and_then(Hash::parse) else {
+            return PasswordCheck::Unsupported;
+        };
+        return verify(
+            hash,
+            get("w:hashValue"),
+            get("w:saltValue"),
+            get("w:spinCount"),
+            password,
+        );
     }
     if get("w:hash").is_none() {
         // §17.15.1.29: without a hash no password is associated with the protection.
@@ -291,14 +372,28 @@ pub fn check_protection_password(attrs: &[(String, String)], password: &str) -> 
         Some(14) => Hash::Sha512,
         _ => return PasswordCheck::Unsupported,
     };
-    verify(hash, get("w:hash"), get("w:salt"), get("w:cryptSpinCount"), &legacy_key_hex(password))
+    verify(
+        hash,
+        get("w:hash"),
+        get("w:salt"),
+        get("w:cryptSpinCount"),
+        &legacy_key_hex(password),
+    )
 }
 
 /// Hash `input` with the stored salt and spin count and compare with the stored hash. Damaged or
 /// out-of-range values are [`PasswordCheck::Unsupported`].
-fn verify(hash: Hash, want: Option<&str>, salt: Option<&str>, spin_count: Option<&str>, input: &str) -> PasswordCheck {
+fn verify(
+    hash: Hash,
+    want: Option<&str>,
+    salt: Option<&str>,
+    spin_count: Option<&str>,
+    input: &str,
+) -> PasswordCheck {
     let dec = |v: &str| base64::engine::general_purpose::STANDARD.decode(v).ok();
-    let Some(want) = want.and_then(dec) else { return PasswordCheck::Unsupported };
+    let Some(want) = want.and_then(dec) else {
+        return PasswordCheck::Unsupported;
+    };
     // §17.15.1.29: without a salt nothing is prepended.
     let salt = match salt {
         Some(v) => match dec(v) {
@@ -316,13 +411,19 @@ fn verify(hash: Hash, want: Option<&str>, salt: Option<&str>, spin_count: Option
     if want.len() != hash.size() || salt.len() > 1024 {
         return PasswordCheck::Unsupported;
     }
-    if same(&iterate_appended(hash, &salt, input, spin_count), &want) { PasswordCheck::Correct } else { PasswordCheck::Incorrect }
+    if same(&iterate_appended(hash, &salt, input, spin_count), &want) {
+        PasswordCheck::Correct
+    } else {
+        PasswordCheck::Incorrect
+    }
 }
 
 /// The initial value of the legacy key's high-order word, by password length 1–15 (ECMA-376
 /// Part 4 §14.8.1, "Initial code array").
-const LEGACY_INITIAL_CODE: [u16; 15] =
-    [0xE1F0, 0x1D0F, 0xCC9C, 0x84C0, 0x110C, 0x0E10, 0xF1CE, 0x313E, 0x1872, 0xE139, 0xD40F, 0x84F9, 0x280C, 0xA96A, 0x4EC3];
+const LEGACY_INITIAL_CODE: [u16; 15] = [
+    0xE1F0, 0x1D0F, 0xCC9C, 0x84C0, 0x110C, 0x0E10, 0xF1CE, 0x313E, 0x1872, 0xE139, 0xD40F, 0x84F9,
+    0x280C, 0xA96A, 0x4EC3,
+];
 
 /// The legacy key's encryption matrix (Part 4 §14.8.1): one row per character position, rows
 /// "Last-14" to "Last", one column per bit 0–6. The password's last character uses the last row.
@@ -351,9 +452,25 @@ const LEGACY_MATRIX: [[u16; 7]; 15] = [
 fn legacy_key(password: &str) -> u32 {
     let mut units = password.encode_utf16().peekable();
     units.next_if_eq(&0xFEFF);
-    let bytes: Zeroizing<Vec<u8>> =
-        Zeroizing::new(units.take(LEGACY_INITIAL_CODE.len()).map(|u| if u & 0xFF != 0 { (u & 0xFF) as u8 } else { (u >> 8) as u8 }).collect());
-    let Some(&initial) = bytes.len().checked_sub(1).and_then(|i| LEGACY_INITIAL_CODE.get(i)) else { return 0 };
+    let bytes: Zeroizing<Vec<u8>> = Zeroizing::new(
+        units
+            .take(LEGACY_INITIAL_CODE.len())
+            .map(|u| {
+                if u & 0xFF != 0 {
+                    (u & 0xFF) as u8
+                } else {
+                    (u >> 8) as u8
+                }
+            })
+            .collect(),
+    );
+    let Some(&initial) = bytes
+        .len()
+        .checked_sub(1)
+        .and_then(|i| LEGACY_INITIAL_CODE.get(i))
+    else {
+        return 0;
+    };
     let mut high = initial;
     let first_row = LEGACY_MATRIX.len() - bytes.len();
     for (row, &c) in LEGACY_MATRIX.iter().skip(first_row).zip(bytes.iter()) {
@@ -378,13 +495,24 @@ fn legacy_key(password: &str) -> u32 {
 /// does ([MS-OE376] 2.1.410 a).
 fn legacy_key_hex(password: &str) -> Zeroizing<String> {
     let key = legacy_key(password);
-    Zeroizing::new(key.to_le_bytes().iter().map(|b| format!("{b:02X}")).collect())
+    Zeroizing::new(
+        key.to_le_bytes()
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect(),
+    )
 }
 
 /// The ISO write-protection hash ([MS-OFFCRYPTO] §2.4.2.4): H0 = H(salt + password as UTF-16LE),
 /// Hn = H(Hn-1 + iterator) — the iterator after the hash, unlike encryption's [`iterate`].
-fn iterate_appended(hash: Hash, salt: &[u8], password: &str, spin_count: u32) -> Zeroizing<Vec<u8>> {
-    let pw: Zeroizing<Vec<u8>> = Zeroizing::new(password.encode_utf16().flat_map(u16::to_le_bytes).collect());
+fn iterate_appended(
+    hash: Hash,
+    salt: &[u8],
+    password: &str,
+    spin_count: u32,
+) -> Zeroizing<Vec<u8>> {
+    let pw: Zeroizing<Vec<u8>> =
+        Zeroizing::new(password.encode_utf16().flat_map(u16::to_le_bytes).collect());
     let mut h = Zeroizing::new(hash.hash(&[salt, &pw]));
     for i in 0..spin_count.min(MAX_SPIN_COUNT) {
         *h = hash.hash(&[&h, &i.to_le_bytes()]);
@@ -397,12 +525,23 @@ fn bad(msg: impl Into<String>) -> DocxError {
 }
 
 /// A root-level stream, at most `cap` bytes.
-fn stream<F: Read + std::io::Seek>(comp: &mut cfb::CompoundFile<F>, path: &str, cap: u64) -> Result<Vec<u8>, DocxError> {
-    let s = comp.open_stream(path).map_err(|e| bad(format!("can't read {} ({e})", path.trim_start_matches('/'))))?;
+fn stream<F: Read + std::io::Seek>(
+    comp: &mut cfb::CompoundFile<F>,
+    path: &str,
+    cap: u64,
+) -> Result<Vec<u8>, DocxError> {
+    let s = comp
+        .open_stream(path)
+        .map_err(|e| bad(format!("can't read {} ({e})", path.trim_start_matches('/'))))?;
     let mut v = Vec::new();
-    s.take(cap.saturating_add(1)).read_to_end(&mut v).map_err(|e| bad(format!("can't read {} ({e})", path.trim_start_matches('/'))))?;
+    s.take(cap.saturating_add(1))
+        .read_to_end(&mut v)
+        .map_err(|e| bad(format!("can't read {} ({e})", path.trim_start_matches('/'))))?;
     if v.len() as u64 > cap {
-        return Err(DocxError::Limit(format!("{} is too large", path.trim_start_matches('/'))));
+        return Err(DocxError::Limit(format!(
+            "{} is too large",
+            path.trim_start_matches('/')
+        )));
     }
     Ok(v)
 }
@@ -464,7 +603,8 @@ impl Hash {
 
     fn hmac(self, key: &[u8], msg: &[u8]) -> Result<Vec<u8>, DocxError> {
         fn go<M: Mac + KeyInit>(key: &[u8], msg: &[u8]) -> Result<Vec<u8>, DocxError> {
-            let mut m = <M as KeyInit>::new_from_slice(key).map_err(|_| bad("bad integrity key"))?;
+            let mut m =
+                <M as KeyInit>::new_from_slice(key).map_err(|_| bad("bad integrity key"))?;
             m.update(msg);
             Ok(m.finalize().into_bytes().to_vec())
         }
@@ -480,7 +620,8 @@ impl Hash {
 /// The password hash after `spin_count` iterations (§2.3.4.11): H0 = H(salt + password as
 /// UTF-16LE), Hn = H(iterator + Hn-1).
 fn iterate(hash: Hash, salt: &[u8], password: &str, spin_count: u32) -> Zeroizing<Vec<u8>> {
-    let pw: Zeroizing<Vec<u8>> = Zeroizing::new(password.encode_utf16().flat_map(u16::to_le_bytes).collect());
+    let pw: Zeroizing<Vec<u8>> =
+        Zeroizing::new(password.encode_utf16().flat_map(u16::to_le_bytes).collect());
     let mut h = Zeroizing::new(hash.hash(&[salt, &pw]));
     for i in 0..spin_count.min(MAX_SPIN_COUNT) {
         *h = hash.hash(&[&i.to_le_bytes(), &h]);
@@ -516,7 +657,8 @@ fn padded(data: &[u8]) -> Zeroizing<Vec<u8>> {
 
 fn random(n: usize) -> Result<Zeroizing<Vec<u8>>, DocxError> {
     let mut v = Zeroizing::new(vec![0u8; n]);
-    getrandom::fill(&mut v).map_err(|e| bad(format!("no secure random numbers available ({e})")))?;
+    getrandom::fill(&mut v)
+        .map_err(|e| bad(format!("no secure random numbers available ({e})")))?;
     Ok(v)
 }
 
@@ -564,7 +706,9 @@ impl Aes {
 fn cbc_encrypt(key: &[u8], iv: &[u8], data: &[u8]) -> Result<Vec<u8>, DocxError> {
     let aes = Aes::new(key)?;
     let (blocks, rest) = data.as_chunks::<BLOCK>();
-    let mut prev: [u8; BLOCK] = iv.try_into().map_err(|_| bad("bad initialization vector"))?;
+    let mut prev: [u8; BLOCK] = iv
+        .try_into()
+        .map_err(|_| bad("bad initialization vector"))?;
     if !rest.is_empty() {
         return Err(bad("encrypted data isn't a whole number of blocks"));
     }
@@ -588,7 +732,9 @@ fn cbc_decrypt(key: &[u8], iv: &[u8], data: &[u8]) -> Result<Vec<u8>, DocxError>
     if !rest.is_empty() {
         return Err(bad("encrypted data isn't a whole number of blocks"));
     }
-    let mut prev: [u8; BLOCK] = iv.try_into().map_err(|_| bad("bad initialization vector"))?;
+    let mut prev: [u8; BLOCK] = iv
+        .try_into()
+        .map_err(|_| bad("bad initialization vector"))?;
     let mut out = Vec::with_capacity(data.len());
     for b in blocks {
         let mut x = aes::Block::default();
@@ -642,33 +788,57 @@ fn parse_info(info: &[u8]) -> Result<Info, DocxError> {
     };
     match (major, minor) {
         (4, 4) => {}
-        (2..=4, 2) => return Err(bad("this file uses Standard encryption (Office 2007), which WordCraft can't open yet")),
-        (3 | 4, 3) => return Err(bad("this file uses extensible encryption, which WordCraft can't open")),
+        (2..=4, 2) => {
+            return Err(bad(
+                "this file uses Standard encryption (Office 2007), which WordCraft can't open yet",
+            ));
+        }
+        (3 | 4, 3) => {
+            return Err(bad(
+                "this file uses extensible encryption, which WordCraft can't open",
+            ));
+        }
         _ => return Err(bad(format!("unknown encryption version {major}.{minor}"))),
     }
     let root = xml::parse(info.get(8..).unwrap_or(&[]))?;
     if root.local() != "encryption" {
         return Err(bad("EncryptionInfo has no <encryption> element"));
     }
-    let key_data = root.els().find(|e| e.local() == "keyData").ok_or_else(|| bad("EncryptionInfo has no keyData"))?;
+    let key_data = root
+        .els()
+        .find(|e| e.local() == "keyData")
+        .ok_or_else(|| bad("EncryptionInfo has no keyData"))?;
     let kd = params(key_data)?;
     let integrity = match root.els().find(|e| e.local() == "dataIntegrity") {
-        Some(di) => Some((b64_attr(di, "encryptedHmacKey")?, b64_attr(di, "encryptedHmacValue")?)),
+        Some(di) => Some((
+            b64_attr(di, "encryptedHmacKey")?,
+            b64_attr(di, "encryptedHmacValue")?,
+        )),
         None => None,
     };
     // The password key encryptor is the `encryptedKey` with a spin count (a certificate key
     // encryptor has none).
-    let encryptors = root.els().find(|e| e.local() == "keyEncryptors").ok_or_else(|| bad("EncryptionInfo has no keyEncryptors"))?;
+    let encryptors = root
+        .els()
+        .find(|e| e.local() == "keyEncryptors")
+        .ok_or_else(|| bad("EncryptionInfo has no keyEncryptors"))?;
     let ek = encryptors
         .els()
         .filter(|e| e.local() == "keyEncryptor")
         .flat_map(|e| e.els())
         .find(|e| e.local() == "encryptedKey" && e.attr("spinCount").is_some())
-        .ok_or_else(|| bad("this file isn't protected with a password (only certificate encryption is listed)"))?;
+        .ok_or_else(|| {
+            bad("this file isn't protected with a password (only certificate encryption is listed)")
+        })?;
     let pe = params(ek)?;
-    let spin_count: u32 = ek.attr("spinCount").and_then(|s| s.trim().parse().ok()).ok_or_else(|| bad("bad spinCount"))?;
+    let spin_count: u32 = ek
+        .attr("spinCount")
+        .and_then(|s| s.trim().parse().ok())
+        .ok_or_else(|| bad("bad spinCount"))?;
     if spin_count > MAX_SPIN_COUNT {
-        return Err(bad(format!("spinCount {spin_count} is over the allowed maximum")));
+        return Err(bad(format!(
+            "spinCount {spin_count} is over the allowed maximum"
+        )));
     }
     Ok(Info {
         hash: kd.hash,
@@ -691,23 +861,32 @@ fn parse_info(info: &[u8]) -> Result<Info, DocxError> {
 }
 
 fn params(e: &xml::El) -> Result<Params, DocxError> {
-    let num = |k: &str| -> Result<usize, DocxError> { e.attr(k).and_then(|s| s.trim().parse::<usize>().ok()).ok_or_else(|| bad(format!("bad {k}"))) };
+    let num = |k: &str| -> Result<usize, DocxError> {
+        e.attr(k)
+            .and_then(|s| s.trim().parse::<usize>().ok())
+            .ok_or_else(|| bad(format!("bad {k}")))
+    };
     let cipher = e.attr("cipherAlgorithm").unwrap_or("");
     if !cipher.eq_ignore_ascii_case("AES") {
         return Err(bad(format!("the {cipher:?} cipher isn't supported")));
     }
     let chaining = e.attr("cipherChaining").unwrap_or("");
     if chaining != "ChainingModeCBC" {
-        return Err(bad(format!("the {chaining:?} chaining mode isn't supported")));
+        return Err(bad(format!(
+            "the {chaining:?} chaining mode isn't supported"
+        )));
     }
     let name = e.attr("hashAlgorithm").unwrap_or("");
-    let hash = Hash::parse(name).ok_or_else(|| bad(format!("the {name:?} hash algorithm isn't supported")))?;
+    let hash = Hash::parse(name)
+        .ok_or_else(|| bad(format!("the {name:?} hash algorithm isn't supported")))?;
     if num("hashSize")? != hash.size() {
         return Err(bad("hashSize doesn't match the hash algorithm"));
     }
     let block_size = num("blockSize")?;
     if block_size != BLOCK {
-        return Err(bad(format!("AES needs a block size of {BLOCK}, not {block_size}")));
+        return Err(bad(format!(
+            "AES needs a block size of {BLOCK}, not {block_size}"
+        )));
     }
     let key_bits = num("keyBits")?;
     if !matches!(key_bits, 128 | 192 | 256) {
@@ -718,13 +897,21 @@ fn params(e: &xml::El) -> Result<Params, DocxError> {
     if salt.is_empty() || salt.len() != salt_size {
         return Err(bad("the salt doesn't match saltSize"));
     }
-    Ok(Params { hash, salt, salt_size, block_size, key_bytes: key_bits / 8 })
+    Ok(Params {
+        hash,
+        salt,
+        salt_size,
+        block_size,
+        key_bytes: key_bits / 8,
+    })
 }
 
 fn b64_attr(e: &xml::El, k: &str) -> Result<Vec<u8>, DocxError> {
     let s = e.attr(k).ok_or_else(|| bad(format!("{k} is missing")))?;
     let s: String = s.chars().filter(|c| !c.is_ascii_whitespace()).collect();
-    base64::engine::general_purpose::STANDARD.decode(s).map_err(|_| bad(format!("{k} isn't valid base64")))
+    base64::engine::general_purpose::STANDARD
+        .decode(s)
+        .map_err(|_| bad(format!("{k} isn't valid base64")))
 }
 
 /// A UNICODE-LP-P4 string (§2.1.2): byte length, UTF-16LE, zero-padded to 4 bytes.
@@ -800,17 +987,32 @@ mod tests {
         use super::PasswordCheck::*;
         let attrs = super::protection_hash("s3cret", 1000).unwrap();
         assert_eq!(super::check_protection_password(&attrs, "s3cret"), Correct);
-        assert_eq!(super::check_protection_password(&attrs, "S3cret"), Incorrect);
+        assert_eq!(
+            super::check_protection_password(&attrs, "S3cret"),
+            Incorrect
+        );
         // Damaged attributes are refused, never accepted.
         let mut bad = attrs.clone();
         bad.retain(|(k, _)| k != "w:hashValue");
         bad.push(("w:hashValue".into(), "not base64!".into()));
-        assert_eq!(super::check_protection_password(&bad, "s3cret"), Unsupported);
+        assert_eq!(
+            super::check_protection_password(&bad, "s3cret"),
+            Unsupported
+        );
         let mut odd = attrs.clone();
         odd.retain(|(k, _)| k != "w:algorithmName");
         odd.push(("w:algorithmName".into(), "WHIRLPOOL".into()));
-        assert_eq!(super::check_protection_password(&odd, "s3cret"), Unsupported);
-        assert_eq!(super::check_protection_password(&[("w:cryptProviderType".into(), "rsaAES".into())], "x"), NoPassword);
+        assert_eq!(
+            super::check_protection_password(&odd, "s3cret"),
+            Unsupported
+        );
+        assert_eq!(
+            super::check_protection_password(
+                &[("w:cryptProviderType".into(), "rsaAES".into())],
+                "x"
+            ),
+            NoPassword
+        );
     }
 
     /// The worked example of ECMA-376 Part 4 §14.8.1: "Example" gives the key 0x64CEED7E, hashed
@@ -822,8 +1024,14 @@ mod tests {
         assert_eq!(super::legacy_key(""), 0);
         // A leading BOM is dropped; only the first 15 characters count.
         assert_eq!(super::legacy_key("\u{FEFF}Example"), 0x64CE_ED7E);
-        assert_eq!(super::legacy_key("abcdefghijklmnopq"), super::legacy_key("abcdefghijklmno"));
-        assert_ne!(super::legacy_key("abcdefghijklmno"), super::legacy_key("abcdefghijklmn"));
+        assert_eq!(
+            super::legacy_key("abcdefghijklmnopq"),
+            super::legacy_key("abcdefghijklmno")
+        );
+        assert_ne!(
+            super::legacy_key("abcdefghijklmno"),
+            super::legacy_key("abcdefghijklmn")
+        );
     }
 
     /// The legacy form (`w:cryptAlgorithmSid`, `w:hash`, `w:salt`, `w:cryptSpinCount`), as Word
@@ -844,18 +1052,39 @@ mod tests {
         };
         let attrs = legacy("4", KNOWN_LEGACY_SHA1, "100000");
         assert_eq!(super::check_protection_password(&attrs, "Example"), Correct);
-        assert_eq!(super::check_protection_password(&attrs, "example"), Incorrect);
+        assert_eq!(
+            super::check_protection_password(&attrs, "example"),
+            Incorrect
+        );
         assert_eq!(super::check_protection_password(&attrs, ""), Incorrect);
         // MD5 (and the other algorithms WordCraft lacks), hostile spin counts: refused.
-        assert_eq!(super::check_protection_password(&legacy("3", KNOWN_LEGACY_SHA1, "100000"), "Example"), Unsupported);
-        assert_eq!(super::check_protection_password(&legacy("4", KNOWN_LEGACY_SHA1, "4294967295"), "Example"), Unsupported);
-        assert_eq!(super::check_protection_password(&legacy("4", KNOWN_LEGACY_SHA1, "-1"), "Example"), Unsupported);
+        assert_eq!(
+            super::check_protection_password(&legacy("3", KNOWN_LEGACY_SHA1, "100000"), "Example"),
+            Unsupported
+        );
+        assert_eq!(
+            super::check_protection_password(
+                &legacy("4", KNOWN_LEGACY_SHA1, "4294967295"),
+                "Example"
+            ),
+            Unsupported
+        );
+        assert_eq!(
+            super::check_protection_password(&legacy("4", KNOWN_LEGACY_SHA1, "-1"), "Example"),
+            Unsupported
+        );
         let mut ext = attrs.clone();
         ext.push(("w:algIdExt".into(), "0000000A".into()));
-        assert_eq!(super::check_protection_password(&ext, "Example"), Unsupported);
+        assert_eq!(
+            super::check_protection_password(&ext, "Example"),
+            Unsupported
+        );
         // No algorithm named: the very old bare-hash form isn't defined, so it's refused.
         let bare = vec![("w:hash".to_string(), KNOWN_LEGACY_SHA1.to_string())];
-        assert_eq!(super::check_protection_password(&bare, "Example"), Unsupported);
+        assert_eq!(
+            super::check_protection_password(&bare, "Example"),
+            Unsupported
+        );
     }
 
     /// SHA-1 of the salt 00 01 … 0F and "7EEDCE64" as UTF-16LE, iterated 100,000 times.
@@ -877,15 +1106,26 @@ mod tests {
         assert!(!is_encrypted(&pkg));
         // The compound file carries the data spaces Word expects.
         let comp = cfb::CompoundFile::open(Cursor::new(&enc)).unwrap();
-        assert!(comp.is_stream("/\u{6}DataSpaces/TransformInfo/StrongEncryptionTransform/\u{6}Primary"));
+        assert!(
+            comp.is_stream("/\u{6}DataSpaces/TransformInfo/StrongEncryptionTransform/\u{6}Primary")
+        );
         assert_eq!(decrypt(&enc, Some("pässwörd 🔑")).unwrap(), pkg);
         let doc = crate::read_with_password(&enc, Some("pässwörd 🔑")).unwrap();
-        assert!(doc.plain_text(wordcraft_doc::StoryRef::Body).contains("Top secret plans"));
+        assert!(
+            doc.plain_text(wordcraft_doc::StoryRef::Body)
+                .contains("Top secret plans")
+        );
         assert_eq!(doc.core.title, "Secret");
         // Without a password, or with the wrong one, it says so instead of opening blank.
         assert_eq!(crate::read(&enc), Err(DocxError::PasswordRequired));
-        assert_eq!(crate::read_with_password(&enc, None), Err(DocxError::PasswordRequired));
-        assert_eq!(decrypt(&enc, Some("Pässwörd 🔑")), Err(DocxError::WrongPassword));
+        assert_eq!(
+            crate::read_with_password(&enc, None),
+            Err(DocxError::PasswordRequired)
+        );
+        assert_eq!(
+            decrypt(&enc, Some("Pässwörd 🔑")),
+            Err(DocxError::WrongPassword)
+        );
         // A package that is a whole number of segments, and an empty one.
         for n in [0usize, SEGMENT, SEGMENT * 2 + 1] {
             let data: Vec<u8> = (0..n).map(|i| (i * 7) as u8).collect();
@@ -902,20 +1142,34 @@ mod tests {
         let enc = encrypt_with_spin_count(&pkg, "pw", 4).unwrap();
         let mut comp = cfb::CompoundFile::open(Cursor::new(enc)).unwrap();
         let mut data = Vec::new();
-        comp.open_stream("/EncryptedPackage").unwrap().read_to_end(&mut data).unwrap();
+        comp.open_stream("/EncryptedPackage")
+            .unwrap()
+            .read_to_end(&mut data)
+            .unwrap();
         let last = data.len() - 1;
         data[last] ^= 1;
-        comp.create_stream("/EncryptedPackage").unwrap().write_all(&data).unwrap();
+        comp.create_stream("/EncryptedPackage")
+            .unwrap()
+            .write_all(&data)
+            .unwrap();
         comp.flush().unwrap();
         let enc = comp.into_inner().into_inner();
-        assert!(matches!(decrypt(&enc, Some("pw")), Err(DocxError::Encryption(m)) if m.contains("integrity")));
+        assert!(
+            matches!(decrypt(&enc, Some("pw")), Err(DocxError::Encryption(m)) if m.contains("integrity"))
+        );
     }
 
     /// A compound file with the given EncryptionInfo and EncryptedPackage streams.
     fn cfb_with(info: &[u8], package: &[u8]) -> Vec<u8> {
         let mut comp = cfb::CompoundFile::create(Cursor::new(Vec::new())).unwrap();
-        comp.create_stream("/EncryptionInfo").unwrap().write_all(info).unwrap();
-        comp.create_stream("/EncryptedPackage").unwrap().write_all(package).unwrap();
+        comp.create_stream("/EncryptionInfo")
+            .unwrap()
+            .write_all(info)
+            .unwrap();
+        comp.create_stream("/EncryptedPackage")
+            .unwrap()
+            .write_all(package)
+            .unwrap();
         comp.flush().unwrap();
         comp.into_inner().into_inner()
     }
@@ -925,9 +1179,15 @@ mod tests {
         let good = encrypt_with_spin_count(&zip_package(), "pw", 2).unwrap();
         let mut comp = cfb::CompoundFile::open(Cursor::new(&good)).unwrap();
         let mut info = Vec::new();
-        comp.open_stream("/EncryptionInfo").unwrap().read_to_end(&mut info).unwrap();
+        comp.open_stream("/EncryptionInfo")
+            .unwrap()
+            .read_to_end(&mut info)
+            .unwrap();
         let mut package = Vec::new();
-        comp.open_stream("/EncryptedPackage").unwrap().read_to_end(&mut package).unwrap();
+        comp.open_stream("/EncryptedPackage")
+            .unwrap()
+            .read_to_end(&mut package)
+            .unwrap();
         let xml = String::from_utf8(info[8..].to_vec()).unwrap();
         // (EncryptionInfo, EncryptedPackage, must fail). Truncations only must not panic: the
         // XML reader is lenient, so cutting the closing tags still reads.
@@ -944,17 +1204,53 @@ mod tests {
             v.extend_from_slice(xml.replacen(from, to, 2).as_bytes());
             v
         };
-        cases.push(([3u8, 0, 2, 0, 0x24, 0, 0, 0].to_vec(), package.clone(), true));
+        cases.push((
+            [3u8, 0, 2, 0, 0x24, 0, 0, 0].to_vec(),
+            package.clone(),
+            true,
+        ));
         cases.push(([9u8, 0, 9, 0].to_vec(), package.clone(), true));
-        cases.push((with("spinCount=\"2\"", "spinCount=\"4294967295\""), package.clone(), true));
-        cases.push((with("keyBits=\"256\"", "keyBits=\"8\""), package.clone(), true));
-        cases.push((with("blockSize=\"16\"", "blockSize=\"4096\""), package.clone(), true));
-        cases.push((with("hashSize=\"64\"", "hashSize=\"0\""), package.clone(), true));
-        cases.push((with("saltSize=\"16\"", "saltSize=\"99999999999999999999\""), package.clone(), true));
+        cases.push((
+            with("spinCount=\"2\"", "spinCount=\"4294967295\""),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("keyBits=\"256\"", "keyBits=\"8\""),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("blockSize=\"16\"", "blockSize=\"4096\""),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("hashSize=\"64\"", "hashSize=\"0\""),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("saltSize=\"16\"", "saltSize=\"99999999999999999999\""),
+            package.clone(),
+            true,
+        ));
         cases.push((with("SHA512", "MD5"), package.clone(), true));
-        cases.push((with("ChainingModeCBC", "ChainingModeCFB"), package.clone(), true));
-        cases.push((with("saltValue=\"", "saltValue=\"!!"), package.clone(), true));
-        cases.push((with("encryptedKeyValue=\"", "encryptedKeyValue=\"AAAA"), package.clone(), true));
+        cases.push((
+            with("ChainingModeCBC", "ChainingModeCFB"),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("saltValue=\"", "saltValue=\"!!"),
+            package.clone(),
+            true,
+        ));
+        cases.push((
+            with("encryptedKeyValue=\"", "encryptedKeyValue=\"AAAA"),
+            package.clone(),
+            true,
+        ));
         // Data integrity is optional; without it a good file still opens.
         cases.push((with("<dataIntegrity", "<nothing"), package.clone(), false));
         let mut huge = package.clone();

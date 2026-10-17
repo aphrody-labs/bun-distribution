@@ -100,7 +100,10 @@ pub fn apply_tint(
     theme: Res<Theme>,
     mut texts: Query<(Ref<Tint>, &mut TextColor)>,
     mut bgs: Query<(Ref<Tint>, &mut BackgroundColor), Without<TextColor>>,
-    mut borders: Query<(Ref<Tint>, &mut BorderColor), (Without<TextColor>, Without<BackgroundColor>)>,
+    mut borders: Query<
+        (Ref<Tint>, &mut BorderColor),
+        (Without<TextColor>, Without<BackgroundColor>),
+    >,
 ) {
     let all = theme.is_changed();
     for (tint, mut color) in &mut texts {
@@ -384,10 +387,7 @@ pub fn navigate(
                 }
             }
             Intent::Accept => {
-                if let Some(action) = navigator
-                    .input_focus()
-                    .and_then(|e| focusables.get(e).ok())
-                {
+                if let Some(action) = navigator.input_focus().and_then(|e| focusables.get(e).ok()) {
                     feedback.write(Feedback::Select);
                     activate.write(Activate(action.0.clone()));
                 }
@@ -456,7 +456,9 @@ pub fn sync_layers(
                 .entity(entity)
                 .insert(AutoDirectionalNavigation::default());
         } else if !active && has {
-            commands.entity(entity).remove::<AutoDirectionalNavigation>();
+            commands
+                .entity(entity)
+                .remove::<AutoDirectionalNavigation>();
         }
     }
 }

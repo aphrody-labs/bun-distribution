@@ -32,7 +32,13 @@ pub(crate) enum Blend {
 impl Blend {
     /// Whether the decoder must keep the 32-bit alpha byte of each pixel.
     pub fn per_pixel(self) -> bool {
-        matches!(self, Blend::Alpha { per_pixel: true, .. })
+        matches!(
+            self,
+            Blend::Alpha {
+                per_pixel: true,
+                ..
+            }
+        )
     }
 }
 
@@ -54,7 +60,12 @@ impl Header {
         let bpp = info.u16(14)? as usize;
         let comp = info.u32(16)?;
         let clr_used = info.u32(32)? as usize;
-        if size < 40 || w <= 0 || h == 0 || !matches!(bpp, 1 | 4 | 8 | 16 | 24 | 32) || !matches!(comp, BI_RGB | BI_BITFIELDS) {
+        if size < 40
+            || w <= 0
+            || h == 0
+            || !matches!(bpp, 1 | 4 | 8 | 16 | 24 | 32)
+            || !matches!(comp, BI_RGB | BI_BITFIELDS)
+        {
             return None;
         }
         let masks = if comp == BI_BITFIELDS {
@@ -64,7 +75,11 @@ impl Header {
         } else {
             [0xFF_0000, 0xFF00, 0xFF]
         };
-        let masks_len = if comp == BI_BITFIELDS && size == 40 { 12 } else { 0 };
+        let masks_len = if comp == BI_BITFIELDS && size == 40 {
+            12
+        } else {
+            0
+        };
         let pal_off = size.checked_add(masks_len)?;
         // Indexed formats take 2^bpp entries when clrUsed is 0. Deeper formats carry only the
         // entries clrUsed names (WMF DIBs can have them), still capped.
@@ -73,7 +88,15 @@ impl Header {
             (true, n) => n.min(1usize << bpp),
             (false, n) => n.min(MAX_PALETTE),
         };
-        Some(Header { w: w as usize, h: h.unsigned_abs() as usize, top_down: h < 0, bpp, masks, pal_off, pal_n })
+        Some(Header {
+            w: w as usize,
+            h: h.unsigned_abs() as usize,
+            top_down: h < 0,
+            bpp,
+            masks,
+            pal_off,
+            pal_n,
+        })
     }
 }
 
@@ -105,10 +128,22 @@ pub(crate) fn decode(info: Bytes, bits: Bytes, keep_alpha: bool) -> Option<Rgba>
             px.get_mut(o..o + 4)?.copy_from_slice(&p);
         }
     }
-    Some(Rgba { w: hd.w, h: hd.h, bottom_up: !hd.top_down, px })
+    Some(Rgba {
+        w: hd.w,
+        h: hd.h,
+        bottom_up: !hd.top_down,
+        px,
+    })
 }
 
-fn pixel(data: &[u8], row: usize, x: usize, hd: &Header, pal: &[u8], keep_alpha: bool) -> Option<[u8; 4]> {
+fn pixel(
+    data: &[u8],
+    row: usize,
+    x: usize,
+    hd: &Header,
+    pal: &[u8],
+    keep_alpha: bool,
+) -> Option<[u8; 4]> {
     let [m_r, m_g, m_b] = hd.masks;
     let [r, g, b] = match hd.bpp {
         1 => {
@@ -117,7 +152,14 @@ fn pixel(data: &[u8], row: usize, x: usize, hd: &Header, pal: &[u8], keep_alpha:
         }
         4 => {
             let b = *data.get(row + x / 2)?;
-            palette(pal, usize::from(if x.is_multiple_of(2) { b >> 4 } else { b & 0x0F }))
+            palette(
+                pal,
+                usize::from(if x.is_multiple_of(2) {
+                    b >> 4
+                } else {
+                    b & 0x0F
+                }),
+            )
         }
         8 => palette(pal, usize::from(*data.get(row + x)?)),
         24 => {
@@ -141,7 +183,9 @@ fn pixel(data: &[u8], row: usize, x: usize, hd: &Header, pal: &[u8], keep_alpha:
 
 /// Palette entries are BGRX quads; an index past the table reads as black rather than failing the image.
 fn palette(pal: &[u8], i: usize) -> [u8; 3] {
-    pal.get(i * 4..i * 4 + 4).and_then(|c| <[u8; 4]>::try_from(c).ok()).map_or([0, 0, 0], |c| [c[2], c[1], c[0]])
+    pal.get(i * 4..i * 4 + 4)
+        .and_then(|c| <[u8; 4]>::try_from(c).ok())
+        .map_or([0, 0, 0], |c| [c[2], c[1], c[0]])
 }
 
 /// Extracts one channel from a masked pixel value and scales it to 8 bits.
@@ -162,16 +206,29 @@ fn field(v: u32, mask: u32) -> u8 {
 /// so the rest of the image keeps its place. A negative destination extent is kept (the caller mirrors).
 pub(crate) fn clip_blit(img: &Rgba, src: [i64; 4], dst: [f64; 4]) -> Option<(Rgba, [f64; 4])> {
     let (iw, ih) = (img.w as i64, img.h as i64);
-    let [sx, sy, sw, sh] = if src[2] > 0 && src[3] > 0 { src } else { [0, 0, iw, ih] };
+    let [sx, sy, sw, sh] = if src[2] > 0 && src[3] > 0 {
+        src
+    } else {
+        [0, 0, iw, ih]
+    };
     // The request's top row in top-down order.
-    let top = if img.bottom_up { ih.saturating_sub(sy).saturating_sub(sh) } else { sy };
+    let top = if img.bottom_up {
+        ih.saturating_sub(sy).saturating_sub(sh)
+    } else {
+        sy
+    };
     let (x0, x1) = (sx.max(0), sx.saturating_add(sw).min(iw));
     let (r0, r1) = (top.max(0), top.saturating_add(sh).min(ih));
     if x1 <= x0 || r1 <= r0 {
         return None;
     }
     let (kx, ky) = (dst[2] / sw as f64, dst[3] / sh as f64);
-    let out = [dst[0] + (x0 - sx) as f64 * kx, dst[1] + (r0 - top) as f64 * ky, (x1 - x0) as f64 * kx, (r1 - r0) as f64 * ky];
+    let out = [
+        dst[0] + (x0 - sx) as f64 * kx,
+        dst[1] + (r0 - top) as f64 * ky,
+        (x1 - x0) as f64 * kx,
+        (r1 - r0) as f64 * ky,
+    ];
     let (x0, x1, r0, r1) = (x0 as usize, x1 as usize, r0 as usize, r1 as usize);
     let (ow, oh) = (x1 - x0, r1 - r0);
     let mut px = Vec::with_capacity(ow * oh * 4);
@@ -179,7 +236,15 @@ pub(crate) fn clip_blit(img: &Rgba, src: [i64; 4], dst: [f64; 4]) -> Option<(Rgb
         let s = (row * img.w + x0) * 4;
         px.extend_from_slice(img.px.get(s..s + ow * 4)?);
     }
-    Some((Rgba { w: ow, h: oh, bottom_up: false, px }, out))
+    Some((
+        Rgba {
+            w: ow,
+            h: oh,
+            bottom_up: false,
+            px,
+        },
+        out,
+    ))
 }
 
 /// Applies a blend to decoded pixels before they are drawn. The picture has no destination pixels, so
@@ -192,7 +257,10 @@ pub(crate) fn prepare(img: &mut Rgba, blend: Blend) {
         Blend::Rop(ROP_SRCAND) => clear_where(img, [255, 255, 255]),
         Blend::Rop(ROP_SRCPAINT | ROP_SRCINVERT) => clear_where(img, [0, 0, 0]),
         Blend::Rop(_) => {}
-        Blend::Alpha { constant, per_pixel } => {
+        Blend::Alpha {
+            constant,
+            per_pixel,
+        } => {
             for p in img.px.as_chunks_mut::<4>().0 {
                 if per_pixel {
                     unpremultiply(p);
@@ -252,8 +320,11 @@ pub(crate) fn flip(img: &mut Rgba, horizontal: bool, vertical: bool) {
 
 /// Swaps the `len` bytes at `a` with those at `b` (`a < b`); does nothing when either is out of range.
 fn swap_rows(px: &mut [u8], a: usize, b: usize, len: usize) {
-    let Some((head, tail)) = px.split_at_mut_checked(b) else { return };
-    if let (Some(top), Some(bottom)) = (head.get_mut(a..a.saturating_add(len)), tail.get_mut(..len)) {
+    let Some((head, tail)) = px.split_at_mut_checked(b) else {
+        return;
+    };
+    if let (Some(top), Some(bottom)) = (head.get_mut(a..a.saturating_add(len)), tail.get_mut(..len))
+    {
         top.swap_with_slice(bottom);
     }
 }

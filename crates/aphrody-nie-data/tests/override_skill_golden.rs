@@ -217,7 +217,11 @@ fn condition_skills_valeurs_exactes() {
     // Toutes les valeurs alignées sur la fixture.
     for (i, (num, id)) in CONDITION_SKILLS.iter().enumerate() {
         assert_eq!(db.condition_skills[i].num, *num, "num à l'index {i}");
-        assert_eq!(db.condition_skills[i].skill_id, HashId(*id), "skillId à l'index {i}");
+        assert_eq!(
+            db.condition_skills[i].skill_id,
+            HashId(*id),
+            "skillId à l'index {i}"
+        );
     }
 }
 
@@ -232,8 +236,15 @@ fn conditions_valeurs_exactes() {
     assert_eq!(db.conditions[32].condition_type, 0);
     assert_eq!(db.conditions[32].ref_condition_skill_data, [58, 3]);
     for (i, (ct, s, c)) in CONDITIONS.iter().enumerate() {
-        assert_eq!(db.conditions[i].condition_type, *ct, "conditionType index {i}");
-        assert_eq!(db.conditions[i].ref_condition_skill_data, [*s, *c], "ref index {i}");
+        assert_eq!(
+            db.conditions[i].condition_type, *ct,
+            "conditionType index {i}"
+        );
+        assert_eq!(
+            db.conditions[i].ref_condition_skill_data,
+            [*s, *c],
+            "ref index {i}"
+        );
     }
 }
 
@@ -245,8 +256,16 @@ fn overrides_valeurs_exactes() {
     assert_eq!(db.overrides[32].override_skill_id, HashId(0x6FB2_DB56));
     assert_eq!(db.overrides[32].ref_condition_data, [32, 1]);
     for (i, (id, s, c)) in OVERRIDES.iter().enumerate() {
-        assert_eq!(db.overrides[i].override_skill_id, HashId(*id), "overrideSkillId index {i}");
-        assert_eq!(db.overrides[i].ref_condition_data, [*s, *c], "ref index {i}");
+        assert_eq!(
+            db.overrides[i].override_skill_id,
+            HashId(*id),
+            "overrideSkillId index {i}"
+        );
+        assert_eq!(
+            db.overrides[i].ref_condition_data,
+            [*s, *c],
+            "ref index {i}"
+        );
     }
 }
 
@@ -277,7 +296,14 @@ fn resolution_override8_condition_a_trois_skills() {
     let c = &r8.conditions[0];
     assert_eq!(c.condition_type, 0);
     let ids: Vec<HashId> = c.required_skills.iter().map(|s| s.skill_id).collect();
-    assert_eq!(ids, vec![HashId(0x7577_A26A), HashId(0x09C2_3C18), HashId(0x111B_676E)]);
+    assert_eq!(
+        ids,
+        vec![
+            HashId(0x7577_A26A),
+            HashId(0x09C2_3C18),
+            HashId(0x111B_676E)
+        ]
+    );
 }
 
 #[test]
@@ -290,10 +316,17 @@ fn resolution_couvre_toutes_les_refs_sans_debordement() {
         let cond_start = *cs as usize;
         let cond_end = (cond_start + *cc as usize).min(CONDITIONS.len());
         let expected_conds = cond_end.saturating_sub(cond_start);
-        assert_eq!(r.conditions.len(), expected_conds, "nb conditions override {oi}");
+        assert_eq!(
+            r.conditions.len(),
+            expected_conds,
+            "nb conditions override {oi}"
+        );
         for (k, ci) in (cond_start..cond_end).enumerate() {
             let (ct, ss, sc) = CONDITIONS[ci];
-            assert_eq!(r.conditions[k].condition_type, ct, "type override {oi} cond {k}");
+            assert_eq!(
+                r.conditions[k].condition_type, ct,
+                "type override {oi} cond {k}"
+            );
             let skill_start = ss as usize;
             let skill_end = (skill_start + sc as usize).min(CONDITION_SKILLS.len());
             let expected_skills = skill_end.saturating_sub(skill_start);

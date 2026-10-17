@@ -16,7 +16,10 @@ pub(crate) fn neighbour_table(m: &Mosaic) -> Vec<[Vec<(isize, isize)>; 3]> {
                 for r in [1isize, 2] {
                     for dy in -r..=r {
                         for dx in -r..=r {
-                            let (x, y) = (px as isize + dx + 6 * cfa.width as isize, py as isize + dy + 6 * cfa.height as isize);
+                            let (x, y) = (
+                                px as isize + dx + 6 * cfa.width as isize,
+                                py as isize + dy + 6 * cfa.height as isize,
+                            );
                             if cfa.color_at(x as usize, y as usize) as usize == c {
                                 list.push((dx, dy));
                             }
@@ -70,7 +73,11 @@ pub(crate) fn bilinear(m: &Mosaic) -> Rgb32f {
                         }
                     }
                 }
-                px[c] = if n > 0 { s / n as f32 } else { m.data[y * w + x] };
+                px[c] = if n > 0 {
+                    s / n as f32
+                } else {
+                    m.data[y * w + x]
+                };
             }
         }
     });

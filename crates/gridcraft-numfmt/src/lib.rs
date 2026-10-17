@@ -1,6 +1,13 @@
 //! GridCraft number formats: Excel format codes (`#,##0.00;[Red](#,##0.00)`, dates, fractions,
 //! scientific…), the General display format and the `TEXT()` worksheet function. en-US only.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod builtin;
@@ -129,9 +136,19 @@ impl NumberFormat {
         let trimmed = code.trim();
         // `checkbox` marks a checkbox cell (Insert › Checkbox): TRUE/FALSE draw as a box, any other
         // value displays as General.
-        if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("general") || trimmed == "checkbox" || (!uncapped && too_long(code)) {
+        if trimmed.is_empty()
+            || trimmed.eq_ignore_ascii_case("general")
+            || trimmed == "checkbox"
+            || (!uncapped && too_long(code))
+        {
             return NumberFormat {
-                inner: Arc::new(Inner { code: code.to_string(), general: true, sections: Vec::new(), num_sections: 0, text_section: None }),
+                inner: Arc::new(Inner {
+                    code: code.to_string(),
+                    general: true,
+                    sections: Vec::new(),
+                    num_sections: 0,
+                    text_section: None,
+                }),
             };
         }
         let sections = parse::parse_sections(code);
@@ -151,7 +168,15 @@ impl NumberFormat {
         } else {
             len
         };
-        NumberFormat { inner: Arc::new(Inner { code: code.to_string(), general: false, sections, num_sections, text_section }) }
+        NumberFormat {
+            inner: Arc::new(Inner {
+                code: code.to_string(),
+                general: false,
+                sections,
+                num_sections,
+                text_section,
+            }),
+        }
     }
 
     pub fn general() -> NumberFormat {
@@ -167,7 +192,10 @@ impl NumberFormat {
     }
 
     fn num_sections(&self) -> &[Section] {
-        self.inner.sections.get(..self.inner.num_sections).unwrap_or(&[])
+        self.inner
+            .sections
+            .get(..self.inner.num_sections)
+            .unwrap_or(&[])
     }
 
     /// True when the code contains date or time tokens.
@@ -176,7 +204,9 @@ impl NumberFormat {
     }
 
     pub fn is_percent(&self) -> bool {
-        self.num_sections().iter().any(|s| s.kind == SecKind::Number && s.percent > 0)
+        self.num_sections()
+            .iter()
+            .any(|s| s.kind == SecKind::Number && s.percent > 0)
     }
 
     /// True for a pure text format such as `@`.
@@ -192,17 +222,31 @@ impl NumberFormat {
         if self.is_text() {
             return FormatKind::Text;
         }
-        const SPECIAL: [&str; 4] = ["00000", "00000-0000", "[<=9999999]###-####;(###) ###-####", "000-00-0000"];
+        const SPECIAL: [&str; 4] = [
+            "00000",
+            "00000-0000",
+            "[<=9999999]###-####;(###) ###-####",
+            "000-00-0000",
+        ];
         if SPECIAL.contains(&self.code()) {
             return FormatKind::Special;
         }
-        let Some(s) = self.inner.sections.first() else { return FormatKind::Custom };
+        let Some(s) = self.inner.sections.first() else {
+            return FormatKind::Custom;
+        };
         match s.kind {
             SecKind::General => return FormatKind::General,
             SecKind::Text => return FormatKind::Text,
             SecKind::Date => {
-                let calendar = s.toks.iter().any(|t| matches!(t, Tok::Date(d) if d.is_calendar()));
-                return if calendar { FormatKind::Date } else { FormatKind::Time };
+                let calendar = s
+                    .toks
+                    .iter()
+                    .any(|t| matches!(t, Tok::Date(d) if d.is_calendar()));
+                return if calendar {
+                    FormatKind::Date
+                } else {
+                    FormatKind::Time
+                };
             }
             SecKind::Number => {}
         }
@@ -266,12 +310,21 @@ impl NumberFormat {
         if self.is_general() {
             return (general(n), false);
         }
-        let Some((sec, drop_sign)) = self.select(n) else { return (general(n), false) };
+        let Some((sec, drop_sign)) = self.select(n) else {
+            return (general(n), false);
+        };
         let minus = n < 0.0 && !drop_sign;
         let out: Option<Out> = match sec.kind {
-            SecKind::Text => Some(render::render_text(sec, &format_general_fit(n, GENERAL_WIDTH).unwrap_or_default())),
+            SecKind::Text => Some(render::render_text(
+                sec,
+                &format_general_fit(n, GENERAL_WIDTH).unwrap_or_default(),
+            )),
             SecKind::General => {
-                let width = if minus { GENERAL_WIDTH - 1 } else { GENERAL_WIDTH };
+                let width = if minus {
+                    GENERAL_WIDTH - 1
+                } else {
+                    GENERAL_WIDTH
+                };
                 Some(render::render_general(sec, n.abs(), width))
             }
             SecKind::Date => {
@@ -284,22 +337,52 @@ impl NumberFormat {
             SecKind::Number => Some(render::render_number(sec, n.abs())),
         };
         let Some(mut out) = out else {
-            return (Formatted { text: OVERFLOW.into(), color: sec.color, fill: None, numeric: true }, true);
+            return (
+                Formatted {
+                    text: OVERFLOW.into(),
+                    color: sec.color,
+                    fill: None,
+                    numeric: true,
+                },
+                true,
+            );
         };
         // Excel drops the minus sign when the first section shows a negative number as all zeros.
         if minus && sec.kind != SecKind::Text && !out.zero {
             out.prepend("-");
         }
-        (Formatted { text: out.text, color: sec.color, fill: out.fill, numeric: true }, false)
+        (
+            Formatted {
+                text: out.text,
+                color: sec.color,
+                fill: out.fill,
+                numeric: true,
+            },
+            false,
+        )
     }
 
     fn format_text(&self, t: &str) -> Formatted {
-        match self.inner.text_section.and_then(|i| self.inner.sections.get(i)) {
+        match self
+            .inner
+            .text_section
+            .and_then(|i| self.inner.sections.get(i))
+        {
             Some(sec) => {
                 let out = render::render_text(sec, t);
-                Formatted { text: out.text, color: sec.color, fill: out.fill, numeric: false }
+                Formatted {
+                    text: out.text,
+                    color: sec.color,
+                    fill: out.fill,
+                    numeric: false,
+                }
             }
-            None => Formatted { text: t.to_string(), color: None, fill: None, numeric: false },
+            None => Formatted {
+                text: t.to_string(),
+                color: None,
+                fill: None,
+                numeric: false,
+            },
         }
     }
 }
@@ -308,11 +391,20 @@ impl NumberFormat {
 pub fn format_value(v: &Value, fmt: &NumberFormat, sys: DateSystem) -> Formatted {
     match v {
         Value::Empty => Formatted::default(),
-        Value::Number(n) if !n.is_finite() => Formatted { text: CellError::Num.as_str().into(), ..Formatted::default() },
+        Value::Number(n) if !n.is_finite() => Formatted {
+            text: CellError::Num.as_str().into(),
+            ..Formatted::default()
+        },
         Value::Number(n) => fmt.format_number(*n, sys).0,
         Value::Text(t) => fmt.format_text(t),
-        Value::Bool(b) => Formatted { text: if *b { "TRUE" } else { "FALSE" }.into(), ..Formatted::default() },
-        Value::Error(e) => Formatted { text: e.as_str().into(), ..Formatted::default() },
+        Value::Bool(b) => Formatted {
+            text: if *b { "TRUE" } else { "FALSE" }.into(),
+            ..Formatted::default()
+        },
+        Value::Error(e) => Formatted {
+            text: e.as_str().into(),
+            ..Formatted::default()
+        },
         Value::Array(a) => match a.data.first() {
             Some(Value::Array(_)) | None => Formatted::default(),
             Some(first) => format_value(first, fmt, sys),
@@ -418,7 +510,11 @@ pub fn text_function(v: &Value, code: &str, sys: DateSystem) -> Result<String, C
         return Err(CellError::Num);
     }
     let (f, overflow) = fmt.format_number(n, sys);
-    if overflow { Err(CellError::Value) } else { Ok(f.text) }
+    if overflow {
+        Err(CellError::Value)
+    } else {
+        Ok(f.text)
+    }
 }
 
 #[cfg(test)]

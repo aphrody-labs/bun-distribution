@@ -32,16 +32,28 @@ impl RawImage {
     /// (see the module docs). Only single-plane integer CFA data is examined.
     pub fn saturation_points(&self) -> [Option<u16>; 3] {
         let none = [None; 3];
-        let (RawData::U16(d), Some(cfa)) = (&self.data, &self.cfa) else { return none };
+        let (RawData::U16(d), Some(cfa)) = (&self.data, &self.cfa) else {
+            return none;
+        };
         let white = self.white_at(0);
         let black = self.black.mean();
         // a hostile file can state any levels: NaN, negative or inverted ones are left alone
-        let levels_ok = black.is_finite() && white.is_finite() && black >= 0.0 && white > black && white <= 65535.0;
-        if self.cpp != 1 || !cfa.valid() || self.width.checked_mul(self.height) != Some(d.len()) || !levels_ok {
+        let levels_ok = black.is_finite()
+            && white.is_finite()
+            && black >= 0.0
+            && white > black
+            && white <= 65535.0;
+        if self.cpp != 1
+            || !cfa.valid()
+            || self.width.checked_mul(self.height) != Some(d.len())
+            || !levels_ok
+        {
             return none;
         }
         let a = self.active_area;
-        let fits = |start: usize, len: usize, max: usize| start.checked_add(len).is_some_and(|end| end <= max);
+        let fits = |start: usize, len: usize, max: usize| {
+            start.checked_add(len).is_some_and(|end| end <= max)
+        };
         if !fits(a.x, a.width, self.width) || !fits(a.y, a.height, self.height) {
             return none;
         }
@@ -63,14 +75,25 @@ impl RawImage {
         let mut out = none;
         for c in 0..3 {
             // the most populated value of the upper half of the range
-            let Some((v, n)) = (lo..hi).map(|v| (v, hist[v][c])).max_by_key(|&(v, n)| (n, v)) else { continue };
-            if (n as f64) < (total[c] as f64 * MIN_SHARE).max(100.0) || v as f32 >= white - NEAR_WHITE * (white - black) {
+            let Some((v, n)) = (lo..hi)
+                .map(|v| (v, hist[v][c]))
+                .max_by_key(|&(v, n)| (n, v))
+            else {
+                continue;
+            };
+            if (n as f64) < (total[c] as f64 * MIN_SHARE).max(100.0)
+                || v as f32 >= white - NEAR_WHITE * (white - black)
+            {
                 continue;
             }
-            let below: u64 = (v.saturating_sub(NEIGHBOURHOOD)..v).map(|u| hist[u][c] as u64).sum();
+            let below: u64 = (v.saturating_sub(NEIGHBOURHOOD)..v)
+                .map(|u| hist[u][c] as u64)
+                .sum();
             let from = (v + ((ABOVE_MARGIN * (white - black)) as usize).max(1) + 1).min(hist.len());
             let above: u64 = hist[from..].iter().map(|h| h[c] as u64).sum();
-            if n as f64 >= MIN_SPIKE * (below as f64 / NEIGHBOURHOOD as f64).max(1.0) && above as f64 <= MAX_ABOVE * n as f64 {
+            if n as f64 >= MIN_SPIKE * (below as f64 / NEIGHBOURHOOD as f64).max(1.0)
+                && above as f64 <= MAX_ABOVE * n as f64
+            {
                 out[c] = Some(v as u16);
             }
         }
@@ -85,9 +108,17 @@ impl RawImage {
         if points.iter().all(Option::is_none) {
             return 0;
         }
-        let (a, w, white) = (self.active_area, self.width, self.white_at(0).round() as u16);
-        let Some(cfa) = self.cfa.clone() else { return 0 };
-        let RawData::U16(d) = &mut self.data else { return 0 };
+        let (a, w, white) = (
+            self.active_area,
+            self.width,
+            self.white_at(0).round() as u16,
+        );
+        let Some(cfa) = self.cfa.clone() else {
+            return 0;
+        };
+        let RawData::U16(d) = &mut self.data else {
+            return 0;
+        };
         let mut changed = 0;
         for y in 0..a.height {
             let row = &mut d[(a.y + y) * w + a.x..][..a.width];
@@ -167,10 +198,16 @@ mod tests {
     #[test]
     fn a_pile_up_below_the_white_level_is_found_and_lifted() {
         let mut r = raw_with(Some(3567), 4095.0);
-        assert!(r.saturation_points().iter().all(|p| *p == Some(3567)), "{:?}", r.saturation_points());
+        assert!(
+            r.saturation_points().iter().all(|p| *p == Some(3567)),
+            "{:?}",
+            r.saturation_points()
+        );
         let before = r.data.clone();
         assert!(r.lift_clipped_samples() > 100);
-        let (RawData::U16(b), RawData::U16(a)) = (&before, &r.data) else { return };
+        let (RawData::U16(b), RawData::U16(a)) = (&before, &r.data) else {
+            return;
+        };
         for (x, y) in b.iter().zip(a) {
             // plateau samples go to the white level, everything else is untouched
             assert_eq!(*y, if *x >= 3567 { 4095 } else { *x });
@@ -234,13 +271,21 @@ mod tests {
     #[test]
     fn decoding_a_dng_lifts_the_plateau() {
         let r = raw_with(Some(3567), 4095.0);
-        let opts = DngWriteOptions { compression: DngCompression::Uncompressed, ..Default::default() };
+        let opts = DngWriteOptions {
+            compression: DngCompression::Uncompressed,
+            ..Default::default()
+        };
         let bytes = write_dng(&r, &opts).unwrap_or_default();
         let back = decode(&bytes).map(|b| b.data);
-        let (Ok(RawData::U16(d)), RawData::U16(orig)) = (back, &r.data) else { panic!("decode failed") };
+        let (Ok(RawData::U16(d)), RawData::U16(orig)) = (back, &r.data) else {
+            panic!("decode failed")
+        };
         assert!(orig.contains(&3567));
         assert!(d.iter().all(|&v| v != 3567));
-        assert_eq!(d.iter().filter(|&&v| v == 4095).count(), orig.iter().filter(|&&v| v == 3567).count());
+        assert_eq!(
+            d.iter().filter(|&&v| v == 4095).count(),
+            orig.iter().filter(|&&v| v == 3567).count()
+        );
     }
 
     /// The reported bug end to end: a white wall that clips at 3567 under a stated 4095, with the camera's
@@ -253,16 +298,26 @@ mod tests {
         // a wall far brighter than any channel's clip point
         let wall = Rgb32f::from_fn(64, 64, |_, _| [4.0, 4.0, 4.0]);
         let n = demosaic::mosaic_from_rgb(&wall, &cfa);
-        r.data = RawData::U16(n.data.iter().map(|&v| (528.0 + v * 3039.0).min(3567.0) as u16).collect());
+        r.data = RawData::U16(
+            n.data
+                .iter()
+                .map(|&v| (528.0 + v * 3039.0).min(3567.0) as u16)
+                .collect(),
+        );
         let render = |r: &RawImage| {
-            let mut img = r.develop(Method::Bilinear).unwrap_or_else(|_| Rgb32f::new(1, 1));
+            let mut img = r
+                .develop(Method::Bilinear)
+                .unwrap_or_else(|_| Rgb32f::new(1, 1));
             highlight::reconstruct(&mut img, wb, 0.99);
             let p = img.get(32, 32);
             [p[0] * wb[0], p[1] * wb[1], p[2] * wb[2]]
         };
         let tint = |p: [f32; 3]| (p[0] / p[1] - 1.0).abs().max((p[2] / p[1] - 1.0).abs());
         let before = render(&r);
-        assert!(tint(before) > 0.3, "the plateau is not recognised as clipped: {before:?}");
+        assert!(
+            tint(before) > 0.3,
+            "the plateau is not recognised as clipped: {before:?}"
+        );
         assert!(r.lift_clipped_samples() > 1000);
         let after = render(&r);
         assert!(tint(after) < 0.01, "{after:?}");

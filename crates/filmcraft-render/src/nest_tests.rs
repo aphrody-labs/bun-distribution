@@ -5,7 +5,10 @@
 use super::*;
 use filmcraft_media::generators::GeneratorSource;
 use filmcraft_media::{DemoScene, Generator, MediaSource};
-use filmcraft_project::{Caption, CaptionFormat, CaptionTrack, ClipId, Label, MediaClip, MediaRef, ParamValue, SequenceSettings, TrackId, TrackKind};
+use filmcraft_project::{
+    Caption, CaptionFormat, CaptionTrack, ClipId, Label, MediaClip, MediaRef, ParamValue,
+    SequenceSettings, TrackId, TrackKind,
+};
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, TimeRange};
 
 const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
@@ -17,7 +20,10 @@ struct Rig {
 
 impl Rig {
     fn new() -> Rig {
-        Rig { p: Project::new("nest"), map: SourceMap::default() }
+        Rig {
+            p: Project::new("nest"),
+            map: SourceMap::default(),
+        }
     }
 
     fn add(&mut self, g: GeneratorSource) -> ItemId {
@@ -43,24 +49,57 @@ impl Rig {
     }
 
     fn matte(&mut self, color: [f32; 4], w: u32, h: u32) -> ItemId {
-        self.add(GeneratorSource::new(Generator::ColorMatte { color }, w, h, FrameRate::FPS_24, Tick(10 * TICKS_PER_SECOND)))
+        self.add(GeneratorSource::new(
+            Generator::ColorMatte { color },
+            w,
+            h,
+            FrameRate::FPS_24,
+            Tick(10 * TICKS_PER_SECOND),
+        ))
     }
 
     fn seq(&mut self, name: &str, w: u32, h: u32, rate: FrameRate) -> ItemId {
-        self.p.new_sequence(name, SequenceSettings { width: w, height: h, frame_rate: rate, ..Default::default() }, 2, 1, None)
+        self.p.new_sequence(
+            name,
+            SequenceSettings {
+                width: w,
+                height: h,
+                frame_rate: rate,
+                ..Default::default()
+            },
+            2,
+            1,
+            None,
+        )
     }
 
     /// `frames` frames of `item` from its start, at the start of V1 of `seq`.
     fn put(&mut self, seq: ItemId, item: ItemId, frames: i64) -> ClipId {
         let rate = self.p.sequence(seq).unwrap().settings.frame_rate;
-        let ti = self.p.make_track_item(item, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.tick_of(frames)), rate).unwrap();
+        let ti = self
+            .p
+            .make_track_item(
+                item,
+                TrackKind::Video,
+                Tick::ZERO,
+                TimeRange::new(Tick::ZERO, rate.tick_of(frames)),
+                rate,
+            )
+            .unwrap();
         let id = ti.id;
-        self.p.sequence_mut(seq).unwrap().video_tracks[0].items.push(ti);
+        self.p.sequence_mut(seq).unwrap().video_tracks[0]
+            .items
+            .push(ti);
         id
     }
 
     fn clip(&mut self, seq: ItemId, clip: ClipId) -> &mut TrackItem {
-        self.p.sequence_mut(seq).unwrap().find_item_mut(clip).unwrap().1
+        self.p
+            .sequence_mut(seq)
+            .unwrap()
+            .find_item_mut(clip)
+            .unwrap()
+            .1
     }
 
     fn frame(&self, seq: ItemId, t: Tick) -> Image {
@@ -69,7 +108,13 @@ impl Rig {
 
     /// The same frame through the frame plan (what the GPU compositor is given).
     fn planned(&self, seq: ItemId, t: Tick) -> Image {
-        plan::execute_cpu(&plan::plan_frame(&self.p, seq, t, RenderOptions::default(), &self.map))
+        plan::execute_cpu(&plan::plan_frame(
+            &self.p,
+            seq,
+            t,
+            RenderOptions::default(),
+            &self.map,
+        ))
     }
 }
 
@@ -80,7 +125,10 @@ fn close(a: [f32; 4], b: [f32; 4]) -> bool {
 /// The largest channel difference between two images of the same size.
 fn worst(a: &Image, b: &Image) -> f32 {
     assert_eq!((a.w, a.h), (b.w, b.h));
-    a.px.iter().zip(&b.px).map(|(x, y)| (x - y).abs()).fold(0.0, f32::max)
+    a.px.iter()
+        .zip(&b.px)
+        .map(|(x, y)| (x - y).abs())
+        .fold(0.0, f32::max)
 }
 
 #[test]
@@ -95,8 +143,15 @@ fn a_smaller_nest_is_shown_at_its_own_size_in_the_middle() {
     for img in [r.frame(outer, Tick(1000)), r.planned(outer, Tick(1000))] {
         assert_eq!((img.w, img.h), (640, 360));
         // the nest covers x 160..480, y 90..270
-        assert!(close(img.get(320, 180), RED) && close(img.get(170, 100), RED) && close(img.get(470, 260), RED));
-        assert!(img.get(150, 180)[3] < 0.02 && img.get(320, 80)[3] < 0.02 && img.get(10, 10)[3] < 0.02, "empty around it");
+        assert!(
+            close(img.get(320, 180), RED)
+                && close(img.get(170, 100), RED)
+                && close(img.get(470, 260), RED)
+        );
+        assert!(
+            img.get(150, 180)[3] < 0.02 && img.get(320, 80)[3] < 0.02 && img.get(10, 10)[3] < 0.02,
+            "empty around it"
+        );
     }
     // Scale to Frame Size fills the frame without touching Motion ▸ Scale
     r.clip(outer, nest).scale_to_frame = true;
@@ -105,7 +160,12 @@ fn a_smaller_nest_is_shown_at_its_own_size_in_the_middle() {
     // Motion ▸ Scale 200% (what Fit to frame sets here) does the same
     let c = r.clip(outer, nest);
     c.scale_to_frame = false;
-    c.effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(200.0);
+    c.effect_mut("motion")
+        .unwrap()
+        .params
+        .get_mut("scale")
+        .unwrap()
+        .value = ParamValue::Float(200.0);
     let img = r.frame(outer, Tick(1000));
     assert!(close(img.get(10, 10), RED) && close(img.get(630, 350), RED));
 }
@@ -126,8 +186,16 @@ fn a_larger_nest_is_cropped_by_the_frame() {
     assert_eq!((small.w as u32, small.h as u32), (w / 2, h / 2));
     // the outer frame is the middle of the inner one, pixel for pixel
     let (ox, oy) = (big.w / 4, big.h / 4);
-    for (x, y) in [(0, 0), (small.w / 2, small.h / 2), (small.w - 1, small.h - 1), (7, small.h - 3)] {
-        assert!(close(small.get(x, y), big.get(x + ox, y + oy)), "({x}, {y})");
+    for (x, y) in [
+        (0, 0),
+        (small.w / 2, small.h / 2),
+        (small.w - 1, small.h - 1),
+        (7, small.h - 3),
+    ] {
+        assert!(
+            close(small.get(x, y), big.get(x + ox, y + oy)),
+            "({x}, {y})"
+        );
     }
 }
 
@@ -146,7 +214,10 @@ fn a_nest_at_another_frame_rate_shows_its_sequence_at_the_same_moment() {
     // 1.5 s into the 24 fps sequence is 1.5 s into the 30 fps one
     let t = FrameRate::FPS_24.tick_of(36);
     assert!(worst(&r.frame(outer, t), &r.frame(inner, t)) < 0.01);
-    assert!(worst(&r.frame(inner, t), &r.frame(inner, Tick::ZERO)) > 0.05, "the footage moves, so the comparison means something");
+    assert!(
+        worst(&r.frame(inner, t), &r.frame(inner, Tick::ZERO)) > 0.05,
+        "the footage moves, so the comparison means something"
+    );
 }
 
 #[test]
@@ -188,15 +259,28 @@ fn opacity_and_effects_on_a_nest_apply_to_its_whole_picture() {
     r.put(inner, red, 48);
     let outer = r.seq("outer", 320, 180, FrameRate::FPS_24);
     let nest = r.put(outer, inner, 48);
-    r.clip(outer, nest).effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(50.0);
+    r.clip(outer, nest)
+        .effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
     for img in [r.frame(outer, Tick(1000)), r.planned(outer, Tick(1000))] {
         let c = img.get(160, 90);
         assert!((c[3] - 0.5).abs() < 0.02, "half transparent: {c:?}");
     }
     // a crop on the nest cuts its picture like any clip's
     let c = r.clip(outer, nest);
-    c.effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(100.0);
-    let mut crop = filmcraft_project::effect::find_effect("crop").unwrap().instance();
+    c.effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(100.0);
+    let mut crop = filmcraft_project::effect::find_effect("crop")
+        .unwrap()
+        .instance();
     crop.params.get_mut("left").unwrap().value = ParamValue::Float(50.0);
     c.effects.push(crop);
     let img = r.frame(outer, Tick(1000));
@@ -234,7 +318,10 @@ fn captions_inside_a_nest_are_part_of_its_picture() {
         for x in 0..with.w {
             if !close(with.get(x, y), without.get(x, y)) {
                 changed += 1;
-                assert!((160..480).contains(&x) && (90..270).contains(&y), "caption pixel outside the nest at ({x}, {y})");
+                assert!(
+                    (160..480).contains(&x) && (90..270).contains(&y),
+                    "caption pixel outside the nest at ({x}, {y})"
+                );
             }
         }
     }
@@ -255,9 +342,24 @@ fn captions_inside_a_nest_are_part_of_its_picture() {
         cue_id: None,
         settings: String::new(),
     });
-    r.p.sequence_mut(outer).unwrap().caption_tracks.push(outer_track);
-    assert!(worst(&r.frame(outer, t), &with) < 0.01, "outer captions are only drawn when asked for");
-    let shown = render_sequence(&r.p, outer, t, RenderOptions { captions: true, ..Default::default() }, &r.map);
+    r.p.sequence_mut(outer)
+        .unwrap()
+        .caption_tracks
+        .push(outer_track);
+    assert!(
+        worst(&r.frame(outer, t), &with) < 0.01,
+        "outer captions are only drawn when asked for"
+    );
+    let shown = render_sequence(
+        &r.p,
+        outer,
+        t,
+        RenderOptions {
+            captions: true,
+            ..Default::default()
+        },
+        &r.map,
+    );
     assert!(worst(&shown, &with) > 0.1, "and are drawn when asked for");
 }
 
@@ -283,9 +385,24 @@ fn two_layer_nest(r: &mut Rig) -> (ItemId, ItemId, ClipId) {
     let inner = r.seq("inner", w, h, FrameRate::FPS_24);
     r.put(inner, ocean, 96);
     let rate = FrameRate::FPS_24;
-    let mut top = r.p.make_track_item(red, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.tick_of(96)), rate).unwrap();
-    top.effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(50.0);
-    r.p.sequence_mut(inner).unwrap().video_tracks[1].items.push(top);
+    let mut top =
+        r.p.make_track_item(
+            red,
+            TrackKind::Video,
+            Tick::ZERO,
+            TimeRange::new(Tick::ZERO, rate.tick_of(96)),
+            rate,
+        )
+        .unwrap();
+    top.effect_mut("opacity")
+        .unwrap()
+        .params
+        .get_mut("opacity")
+        .unwrap()
+        .value = ParamValue::Float(50.0);
+    r.p.sequence_mut(inner).unwrap().video_tracks[1]
+        .items
+        .push(top);
     let outer = r.seq("outer", w, h, FrameRate::FPS_24);
     let nest = r.put(outer, inner, 96);
     (inner, outer, nest)
@@ -299,17 +416,35 @@ fn a_plain_nest_is_planned_as_its_own_layers_and_looks_the_same() {
     // two layers (the nest's clips), not one image of the nest
     assert_eq!(layer_count(&r, outer, t), Some(2));
     assert!(worst(&r.planned(outer, t), &r.frame(outer, t)) < 0.01);
-    assert!(worst(&r.planned(outer, t), &r.frame(inner, t)) < 0.01, "and it is the nested sequence's picture");
+    assert!(
+        worst(&r.planned(outer, t), &r.frame(inner, t)) < 0.01,
+        "and it is the nested sequence's picture"
+    );
     // a nest of the nest still plans down to the two clips
-    let outermost = r.seq("outermost", r.p.sequence(outer).unwrap().settings.width, r.p.sequence(outer).unwrap().settings.height, FrameRate::FPS_24);
+    let outermost = r.seq(
+        "outermost",
+        r.p.sequence(outer).unwrap().settings.width,
+        r.p.sequence(outer).unwrap().settings.height,
+        FrameRate::FPS_24,
+    );
     r.put(outermost, outer, 96);
     assert_eq!(layer_count(&r, outermost, t), Some(2));
     assert!(worst(&r.planned(outermost, t), &r.frame(outermost, t)) < 0.01);
     // with something under the nest in the outer sequence too
     let under = r.matte([0.0, 0.0, 1.0, 1.0], 64, 64);
     let rate = FrameRate::FPS_24;
-    let nest_clip = r.p.sequence_mut(outermost).unwrap().video_tracks[0].items.remove(0);
-    let mut below = r.p.make_track_item(under, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.tick_of(96)), rate).unwrap();
+    let nest_clip = r.p.sequence_mut(outermost).unwrap().video_tracks[0]
+        .items
+        .remove(0);
+    let mut below =
+        r.p.make_track_item(
+            under,
+            TrackKind::Video,
+            Tick::ZERO,
+            TimeRange::new(Tick::ZERO, rate.tick_of(96)),
+            rate,
+        )
+        .unwrap();
     below.scale_to_frame = true;
     let s = r.p.sequence_mut(outermost).unwrap();
     s.video_tracks[0].items.push(below);
@@ -324,19 +459,38 @@ fn a_nest_that_is_not_plain_is_still_drawn_right() {
     // each of these keeps the nest one layer (rendered on the CPU), and the plan matches the reference
     let cases: [(&str, fn(&mut Rig, ItemId, ItemId, ClipId)); 5] = [
         ("half-transparent nest", |r, _, outer, nest| {
-            r.clip(outer, nest).effect_mut("opacity").unwrap().params.get_mut("opacity").unwrap().value = ParamValue::Float(50.0);
+            r.clip(outer, nest)
+                .effect_mut("opacity")
+                .unwrap()
+                .params
+                .get_mut("opacity")
+                .unwrap()
+                .value = ParamValue::Float(50.0);
         }),
         ("moved nest", |r, _, outer, nest| {
-            r.clip(outer, nest).effect_mut("motion").unwrap().params.get_mut("scale").unwrap().value = ParamValue::Float(60.0);
+            r.clip(outer, nest)
+                .effect_mut("motion")
+                .unwrap()
+                .params
+                .get_mut("scale")
+                .unwrap()
+                .value = ParamValue::Float(60.0);
         }),
         ("nest with an effect", |r, _, outer, nest| {
-            let mut crop = filmcraft_project::effect::find_effect("crop").unwrap().instance();
+            let mut crop = filmcraft_project::effect::find_effect("crop")
+                .unwrap()
+                .instance();
             crop.params.get_mut("left").unwrap().value = ParamValue::Float(30.0);
             r.clip(outer, nest).effects.push(crop);
         }),
         ("a blend mode inside the nest", |r, inner, _, _| {
             let top = &mut r.p.sequence_mut(inner).unwrap().video_tracks[1].items[0];
-            top.effect_mut("opacity").unwrap().params.get_mut("blend").unwrap().value = ParamValue::Choice(3);
+            top.effect_mut("opacity")
+                .unwrap()
+                .params
+                .get_mut("blend")
+                .unwrap()
+                .value = ParamValue::Choice(3);
         }),
         ("a nest of another size", |r, inner, _, _| {
             r.p.sequence_mut(inner).unwrap().settings.width /= 2;
@@ -348,14 +502,28 @@ fn a_nest_that_is_not_plain_is_still_drawn_right() {
         // under the nest, so that blending the nest as a whole or layer by layer would differ
         let under = r.matte([0.0, 1.0, 0.0, 1.0], 64, 64);
         let rate = FrameRate::FPS_24;
-        let nest_clip = r.p.sequence_mut(outer).unwrap().video_tracks[0].items.remove(0);
-        let mut below = r.p.make_track_item(under, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, rate.tick_of(96)), rate).unwrap();
+        let nest_clip = r.p.sequence_mut(outer).unwrap().video_tracks[0]
+            .items
+            .remove(0);
+        let mut below =
+            r.p.make_track_item(
+                under,
+                TrackKind::Video,
+                Tick::ZERO,
+                TimeRange::new(Tick::ZERO, rate.tick_of(96)),
+                rate,
+            )
+            .unwrap();
         below.scale_to_frame = true;
         let s = r.p.sequence_mut(outer).unwrap();
         s.video_tracks[0].items.push(below);
         s.video_tracks[1].items.push(nest_clip);
         change(&mut r, inner, outer, nest);
-        assert_eq!(layer_count(&r, outer, t), Some(2), "{what}: the matte and one image of the nest");
+        assert_eq!(
+            layer_count(&r, outer, t),
+            Some(2),
+            "{what}: the matte and one image of the nest"
+        );
         let w = worst(&r.planned(outer, t), &r.frame(outer, t));
         assert!(w < 0.01, "{what}: plan and reference differ by {w}");
     }

@@ -21,20 +21,26 @@ impl Tool for PencilTool {
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         match ev.kind {
             PointerKind::Down => {
-                let Some((sr, _)) = cx.layout.spread_at(ev.pos) else { return vec![] };
+                let Some((sr, _)) = cx.layout.spread_at(ev.pos) else {
+                    return vec![];
+                };
                 self.stroke = Some((sr, cx.layout.xf(sr), vec![ev.pos]));
                 vec![]
             }
             PointerKind::Drag => {
                 if let Some((_, _, pts)) = &mut self.stroke
-                    && pts.last().is_none_or(|q| (*q - ev.pos).hypot() >= cx.tol(1.0))
+                    && pts
+                        .last()
+                        .is_none_or(|q| (*q - ev.pos).hypot() >= cx.tol(1.0))
                 {
                     pts.push(ev.pos);
                 }
                 vec![]
             }
             PointerKind::Up => {
-                let Some((sr, xf, mut pts)) = self.stroke.take() else { return vec![] };
+                let Some((sr, xf, mut pts)) = self.stroke.take() else {
+                    return vec![];
+                };
                 pts.push(ev.pos);
                 let inv = xf.inverse();
                 let spread: Vec<Point> = pts.iter().map(|p| inv * *p).collect();
@@ -45,14 +51,19 @@ impl Tool for PencilTool {
                 }
                 let a: Vec<_> =
                     anchors.iter().map(|a| json!({"p": [a.p.x, a.p.y], "in": [a.h_in.x, a.h_in.y], "out": [a.h_out.x, a.h_out.y]})).collect();
-                vec![Action::Exec("path.create".into(), json!({"spread": sr, "anchors": a, "closed": ev.mods.alt}))]
+                vec![Action::Exec(
+                    "path.create".into(),
+                    json!({"spread": sr, "anchors": a, "closed": ev.mods.alt}),
+                )]
             }
             _ => vec![],
         }
     }
 
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
-        let Some((_, _, pts)) = &self.stroke else { return vec![] };
+        let Some((_, _, pts)) = &self.stroke else {
+            return vec![];
+        };
         let mut path = BezPath::new();
         for (i, p) in pts.iter().enumerate() {
             if i == 0 {
@@ -61,7 +72,11 @@ impl Tool for PencilTool {
                 path.line_to(*p);
             }
         }
-        vec![Overlay::Path { path, color: [0, 0, 0], dashed: false }]
+        vec![Overlay::Path {
+            path,
+            color: [0, 0, 0],
+            dashed: false,
+        }]
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
@@ -95,9 +110,16 @@ impl Tool for PathDragTool {
         match ev.kind {
             PointerKind::Down => {
                 // The selected path, or the one under the pointer.
-                let id = cx.selection.items.first().copied().or_else(|| cx.hit(ev.pos).map(|h| h.1));
+                let id = cx
+                    .selection
+                    .items
+                    .first()
+                    .copied()
+                    .or_else(|| cx.hit(ev.pos).map(|h| h.1));
                 let Some(id) = id else { return vec![] };
-                let Some(loc) = cx.doc.find(id) else { return vec![] };
+                let Some(loc) = cx.doc.find(id) else {
+                    return vec![];
+                };
                 let xf = cx.layout.xf(loc.spread);
                 self.drag = Some((id.0, xf, vec![xf.inverse() * ev.pos]));
                 vec![]
@@ -109,18 +131,29 @@ impl Tool for PathDragTool {
                 vec![]
             }
             PointerKind::Up => {
-                let Some((id, xf, mut pts)) = self.drag.take() else { return vec![] };
+                let Some((id, xf, mut pts)) = self.drag.take() else {
+                    return vec![];
+                };
                 pts.push(xf.inverse() * ev.pos);
                 let points: Vec<_> = pts.iter().map(|p| json!([p.x, p.y])).collect();
-                let cmd = if self.erase { "path.erase" } else { "path.smooth" };
-                vec![Action::Exec(cmd.into(), json!({"id": id, "points": points, "tolerance": cx.tol(6.0)}))]
+                let cmd = if self.erase {
+                    "path.erase"
+                } else {
+                    "path.smooth"
+                };
+                vec![Action::Exec(
+                    cmd.into(),
+                    json!({"id": id, "points": points, "tolerance": cx.tol(6.0)}),
+                )]
             }
             _ => vec![],
         }
     }
 
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
-        let Some((_, xf, pts)) = &self.drag else { return vec![] };
+        let Some((_, xf, pts)) = &self.drag else {
+            return vec![];
+        };
         let mut path = BezPath::new();
         for (i, p) in pts.iter().enumerate() {
             let p = *xf * *p;
@@ -130,7 +163,15 @@ impl Tool for PathDragTool {
                 path.line_to(p);
             }
         }
-        vec![Overlay::Path { path, color: if self.erase { [220, 60, 60] } else { [60, 120, 220] }, dashed: true }]
+        vec![Overlay::Path {
+            path,
+            color: if self.erase {
+                [220, 60, 60]
+            } else {
+                [60, 120, 220]
+            },
+            dashed: true,
+        }]
     }
 
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {

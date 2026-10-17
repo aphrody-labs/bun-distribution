@@ -39,7 +39,11 @@ impl Flick {
     fn tick(&mut self, now: f64) -> f32 {
         let dt = self.last.map_or(0.0, |l| (now - l) as f32);
         self.last = Some(now);
-        if dt.is_finite() { dt.clamp(0.0, MAX_DT) } else { 0.0 }
+        if dt.is_finite() {
+            dt.clamp(0.0, MAX_DT)
+        } else {
+            0.0
+        }
     }
 
     /// A Hand drag moved the pointer by `delta` this frame (`dt` after the previous one).
@@ -69,7 +73,11 @@ impl Flick {
             return Vec2::ZERO;
         }
         let speed = v.length();
-        if speed > MAX_SPEED { v * (MAX_SPEED / speed) } else { v }
+        if speed > MAX_SPEED {
+            v * (MAX_SPEED / speed)
+        } else {
+            v
+        }
     }
 
     /// The drag ended at `now`: start gliding if `enabled` and the pointer was still moving fast
@@ -86,7 +94,11 @@ impl Flick {
     /// gliding (or it just came to rest).
     pub fn step(&mut self, dt: f32) -> Option<Vec2> {
         let v = self.velocity?;
-        let dt = if dt.is_finite() { dt.clamp(0.0, MAX_DT) } else { 0.0 };
+        let dt = if dt.is_finite() {
+            dt.clamp(0.0, MAX_DT)
+        } else {
+            0.0
+        };
         // Exact integral of v·e^(−t/τ) over the step, then the decayed velocity.
         let decay = (-dt / TAU).exp();
         let moved = v * (TAU * (1.0 - decay));
@@ -111,7 +123,10 @@ impl Flick {
 /// distance the glide moves the view this frame (the same sense as a drag delta).
 pub fn frame(ctx: &Context, id: Id, hand_drag: bool, delta: Vec2, enabled: bool) -> Option<Vec2> {
     let (now, interrupt) = ctx.input(|i| {
-        let key = i.events.iter().any(|e| matches!(e, egui::Event::Key { pressed: true, .. }));
+        let key = i
+            .events
+            .iter()
+            .any(|e| matches!(e, egui::Event::Key { pressed: true, .. }));
         (i.time, i.pointer.any_pressed() || key)
     });
     let mut flick = ctx.data(|d| d.get_temp::<Flick>(id)).unwrap_or_default();

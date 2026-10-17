@@ -19,13 +19,27 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of Swatch Conflict.
 pub const KIND: &str = "swatchConflict";
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Swatch Conflict").into(), body, confirm, min_width: 380.0, max_width: Some(440.0), ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Swatch Conflict").into(),
+    body,
+    confirm,
+    min_width: 380.0,
+    max_width: Some(440.0),
+    ..DialogSpec::FORM
+};
 
 /// The choices: (`choice` value, label, what it does).
 const CHOICES: [(&str, &str, &str); 2] = [
-    ("merge", "Merge Swatches", "Use the document's swatch: pasted colors take its color."),
-    ("add", "Add Swatches", "Keep the pasted color as a new swatch with a numbered name."),
+    (
+        "merge",
+        "Merge Swatches",
+        "Use the document's swatch: pasted colors take its color.",
+    ),
+    (
+        "add",
+        "Add Swatches",
+        "Keep the pasted color as a new swatch with a numbered name.",
+    ),
 ];
 
 /// Before running paste `command` with `params`: when the pasted objects' swatches conflict with
@@ -35,8 +49,14 @@ pub fn ask(app: &mut VectorcraftApp, command: &str, params: &Value) -> Option<Di
     if params.get("swatchConflict").is_some() {
         return None;
     }
-    let found = app.session.execute("clipboard.conflicts", &json!({})).ok()?;
-    let conflicts = found["swatches"].as_array().filter(|a| !a.is_empty())?.clone();
+    let found = app
+        .session
+        .execute("clipboard.conflicts", &json!({}))
+        .ok()?;
+    let conflicts = found["swatches"]
+        .as_array()
+        .filter(|a| !a.is_empty())?
+        .clone();
     let fields = json!({
         "conflicts": conflicts, "index": 0, "choice": "merge", "applyToAll": false, "choices": {},
         "__command": command, "__params": params,
@@ -46,7 +66,10 @@ pub fn ask(app: &mut VectorcraftApp, command: &str, params: &Value) -> Option<Di
 }
 
 fn conflicts(d: &Dialog) -> &[Value] {
-    d.fields.get("conflicts").and_then(Value::as_array).map_or(&[], Vec::as_slice)
+    d.fields
+        .get("conflicts")
+        .and_then(Value::as_array)
+        .map_or(&[], Vec::as_slice)
 }
 
 fn index(d: &Dialog) -> usize {
@@ -57,7 +80,9 @@ fn index(d: &Dialog) -> usize {
 fn chip(ui: &mut egui::Ui, hex: Option<&str>, caption: &str) {
     ui.vertical(|ui| {
         let (r, _) = ui.allocate_exact_size(vec2(56.0, 28.0), egui::Sense::hover());
-        let paint = hex.and_then(Color::from_hex).map_or(Paint::None, Paint::solid);
+        let paint = hex
+            .and_then(Color::from_hex)
+            .map_or(Paint::None, Paint::solid);
         widgets::paint_chip(ui, r, &paint);
         label(ui, caption);
     });
@@ -65,11 +90,22 @@ fn chip(ui: &mut egui::Ui, hex: Option<&str>, caption: &str) {
 
 fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let i = index(d);
-    let (count, Some(c)) = (conflicts(d).len(), conflicts(d).get(i).cloned()) else { return true };
+    let (count, Some(c)) = (conflicts(d).len(), conflicts(d).get(i).cloned()) else {
+        return true;
+    };
     let name = c["name"].as_str().unwrap_or_default();
-    ui.label(crate::i18n::fmt(tl!("This document already has a swatch named “{name}” with another color."), &[("name", name)]));
+    ui.label(crate::i18n::fmt(
+        tl!("This document already has a swatch named “{name}” with another color."),
+        &[("name", name)],
+    ));
     if count > 1 {
-        label(ui, &crate::i18n::fmt(tl!("Conflict {n} of {count}"), &[("n", &(i + 1).to_string()), ("count", &count.to_string())]));
+        label(
+            ui,
+            &crate::i18n::fmt(
+                tl!("Conflict {n} of {count}"),
+                &[("n", &(i + 1).to_string()), ("count", &count.to_string())],
+            ),
+        );
     }
     ui.add_space(10.0);
     ui.horizontal(|ui| {
@@ -103,13 +139,24 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
     let choice = d.str("choice");
     if !matches!(choice.as_str(), "merge" | "add") {
-        return Err(format!("choice must be \"merge\" or \"add\", not `{choice}`"));
+        return Err(format!(
+            "choice must be \"merge\" or \"add\", not `{choice}`"
+        ));
     }
     let list = conflicts(d);
     let i = index(d);
     let all = d.bool("applyToAll");
-    let mut choices: Map<String, Value> = d.fields.get("choices").and_then(Value::as_object).cloned().unwrap_or_default();
-    let answered = if all { list.get(i..).unwrap_or_default() } else { list.get(i..=i).unwrap_or_default() };
+    let mut choices: Map<String, Value> = d
+        .fields
+        .get("choices")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
+    let answered = if all {
+        list.get(i..).unwrap_or_default()
+    } else {
+        list.get(i..=i).unwrap_or_default()
+    };
     for c in answered {
         if let Some(n) = c["name"].as_str() {
             choices.insert(n.to_string(), json!(choice));
@@ -122,7 +169,12 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
         app.ui.dialog = Some(next);
         return Ok(Value::Null);
     }
-    let mut params = d.fields.get("__params").cloned().filter(Value::is_object).unwrap_or_else(|| json!({}));
+    let mut params = d
+        .fields
+        .get("__params")
+        .cloned()
+        .filter(Value::is_object)
+        .unwrap_or_else(|| json!({}));
     params["swatchConflict"] = Value::Object(choices);
     app.ui.dialog = None;
     app.run(&d.str("__command"), params)

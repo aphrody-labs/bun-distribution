@@ -15,12 +15,14 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::appearance::{AppearanceItem, FillLayer, LineCap, LineJoin, StrokeLayer};
-use vectorcraft_doc::{Appearance, Document, LiveShape, Node, NodeId, NodeKind, Selection, TraceView};
+use vectorcraft_doc::{
+    Appearance, Document, LiveShape, Node, NodeId, NodeKind, Selection, TraceView,
+};
 use vectorcraft_geom::{FillRule, PathData, Point, Rect, SubPath};
 use vectorcraft_pathops as po;
 use vectorcraft_tools::builder::{
-    self as b, BuilderMap, EDGE_NAME, FACE_NAME, LIVE_PAINT_NAME, SOURCES_NAME, Touched, edge_near, face_at, is_live_paint, sample_polyline,
-    sorted_roots,
+    self as b, BuilderMap, EDGE_NAME, FACE_NAME, LIVE_PAINT_NAME, SOURCES_NAME, Touched, edge_near,
+    face_at, is_live_paint, sample_polyline, sorted_roots,
 };
 use vectorcraft_trace as tr;
 
@@ -188,7 +190,10 @@ fn root_ids(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
         return Err(EngineError::NoNode(*bad_id));
     }
     // Layers are containers, not objects.
-    let ids: Vec<NodeId> = ids.into_iter().filter(|i| d.node(*i).is_some_and(|n| !n.is_layer())).collect();
+    let ids: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|i| d.node(*i).is_some_and(|n| !n.is_layer()))
+        .collect();
     if ids.is_empty() {
         return Err(EngineError::Other("select objects, not layers".into()));
     }
@@ -196,7 +201,11 @@ fn root_ids(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
 }
 
 fn points_param(p: &Value, key: &str) -> Option<Vec<Point>> {
-    p.get(key)?.as_array()?.iter().map(|v| Some(Point::new(v.get(0)?.as_f64()?, v.get(1)?.as_f64()?))).collect()
+    p.get(key)?
+        .as_array()?
+        .iter()
+        .map(|v| Some(Point::new(v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)))
+        .collect()
 }
 
 fn ids_json(ids: &[NodeId]) -> Value {
@@ -204,15 +213,24 @@ fn ids_json(ids: &[NodeId]) -> Value {
 }
 
 fn finite(p: Point) -> bool {
-    p.x.is_finite() && p.y.is_finite() && p.x.abs() <= crate::MAX_COORD && p.y.abs() <= crate::MAX_COORD
+    p.x.is_finite()
+        && p.y.is_finite()
+        && p.x.abs() <= crate::MAX_COORD
+        && p.y.abs() <= crate::MAX_COORD
 }
 
 fn fill_only(paint: Paint) -> Appearance {
-    Appearance { items: vec![AppearanceItem::Fill(FillLayer::new(paint))], ..Default::default() }
+    Appearance {
+        items: vec![AppearanceItem::Fill(FillLayer::new(paint))],
+        ..Default::default()
+    }
 }
 
 fn stroke_only(paint: Paint, width: f64) -> Appearance {
-    Appearance { items: vec![AppearanceItem::Stroke(StrokeLayer::new(paint, width))], ..Default::default() }
+    Appearance {
+        items: vec![AppearanceItem::Stroke(StrokeLayer::new(paint, width))],
+        ..Default::default()
+    }
 }
 
 // ---------- Shape Builder ----------
@@ -220,10 +238,17 @@ fn stroke_only(paint: Paint, width: f64) -> Appearance {
 fn fill_param(s: &Session, p: &Value, cmd: &str) -> Result<Option<Paint>> {
     match p.get("fill") {
         None | Some(Value::Null) => Ok(None),
-        Some(v @ Value::Object(o)) if o.contains_key("color") || o.contains_key("swatch") || o.contains_key("gradient") || o.contains_key("none") => {
+        Some(v @ Value::Object(o))
+            if o.contains_key("color")
+                || o.contains_key("swatch")
+                || o.contains_key("gradient")
+                || o.contains_key("none") =>
+        {
             paint_from(s, v)
         }
-        Some(v) => color_value(v).map(|c| Some(Paint::solid(c))).ok_or_else(|| bad(cmd, format!("bad fill {v}"))),
+        Some(v) => color_value(v)
+            .map(|c| Some(Paint::solid(c)))
+            .ok_or_else(|| bad(cmd, format!("bad fill {v}"))),
     }
 }
 
@@ -239,28 +264,53 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
     let fill = fill_param(s, p, C)?;
     let current_fill = s.paint.fill.clone();
     let roots = root_ids(s, p)?;
-    let label = if erase { "Shape Builder Delete" } else { "Shape Builder" };
+    let label = if erase {
+        "Shape Builder Delete"
+    } else {
+        "Shape Builder"
+    };
     let (ids, merged, touched) = s.edit(label, |d, sel| {
         let (map, leaves) = BuilderMap::new(d, &roots, erase);
         let leaves: Vec<Node> = leaves.into_iter().cloned().collect();
         if map.shapes.is_empty() {
-            return Err(EngineError::Other("Shape Builder: select paths or compound paths".into()));
+            return Err(EngineError::Other(
+                "Shape Builder: select paths or compound paths".into(),
+            ));
         }
-        let step = (d.bounds_of(&roots, false).map(|r| r.width().max(r.height())).unwrap_or(100.0) / 2000.0).max(0.25);
+        let step = (d
+            .bounds_of(&roots, false)
+            .map(|r| r.width().max(r.height()))
+            .unwrap_or(100.0)
+            / 2000.0)
+            .max(0.25);
         let mut touched = Touched::default();
         for q in sample_polyline(&pts, step) {
             touched.add(map.hit(q, piece_tol));
         }
         touched.edges = map.erased_edges(&touched);
         if touched.is_empty() {
-            return Err(EngineError::Other("Shape Builder: no region under the pointer".into()));
+            return Err(EngineError::Other(
+                "Shape Builder: no region under the pointer".into(),
+            ));
         }
-        let cuts: Vec<&SubPath> = touched.edges.iter().filter_map(|&k| map.edges.get(k)?.0.path.subpaths.first()).collect();
+        let cuts: Vec<&SubPath> = touched
+            .edges
+            .iter()
+            .filter_map(|&k| map.edges.get(k)?.0.path.subpaths.first())
+            .collect();
         // Edges come back from the planar map within a few hundredths of the outlines they follow.
         let cut_tol = step * 0.2;
-        let picked: Vec<&po::Region> = touched.regions.iter().filter_map(|&i| map.regions.get(i).map(|r| &r.0)).collect();
+        let picked: Vec<&po::Region> = touched
+            .regions
+            .iter()
+            .filter_map(|&i| map.regions.get(i).map(|r| &r.0))
+            .collect();
         let faces = po::FaceMerger::new(&map.shapes);
-        let union = if picked.is_empty() { PathData::default() } else { faces.merge(&picked) };
+        let union = if picked.is_empty() {
+            PathData::default()
+        } else {
+            faces.merge(&picked)
+        };
         // The merged shape takes the look of the front-most object over the first region, or (for an
         // area only lines enclose) of the front-most object and the current fill.
         let covered = picked.iter().find_map(|r| r.top());
@@ -269,11 +319,22 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
         let mut new_nodes: Vec<Node> = vec![];
         let mut merged_id = None;
         for (i, (sh, leaf)) in map.shapes.iter().zip(&leaves).enumerate() {
-            let pieces: Vec<usize> = map.lines.iter().enumerate().filter(|(_, (l, _))| l.key == i as u64).map(|(k, _)| k).collect();
+            let pieces: Vec<usize> = map
+                .lines
+                .iter()
+                .enumerate()
+                .filter(|(_, (l, _))| l.key == i as u64)
+                .map(|(k, _)| k)
+                .collect();
             if !pieces.is_empty() {
                 // An open path loses the pieces deleted and those between merged (or deleted) regions.
-                let keep: Vec<usize> =
-                    pieces.iter().copied().filter(|k| !touched.lines.contains(k) && !map.line_between(*k, &touched.regions)).collect();
+                let keep: Vec<usize> = pieces
+                    .iter()
+                    .copied()
+                    .filter(|k| {
+                        !touched.lines.contains(k) && !map.line_between(*k, &touched.regions)
+                    })
+                    .collect();
                 if keep.len() == pieces.len() {
                     new_nodes.push(d.reid(leaf));
                 } else {
@@ -295,10 +356,16 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
                         .regions
                         .iter()
                         .enumerate()
-                        .filter(|(k, (r, ..))| r.sources.contains(&i) && !touched.regions.contains(k))
+                        .filter(|(k, (r, ..))| {
+                            r.sources.contains(&i) && !touched.regions.contains(k)
+                        })
                         .map(|(_, (r, ..))| r)
                         .collect();
-                    if kept.is_empty() { PathData::default() } else { faces.merge(&kept) }
+                    if kept.is_empty() {
+                        PathData::default()
+                    } else {
+                        faces.merge(&kept)
+                    }
                 } else {
                     b::node_outline(leaf).map_or_else(|| sh.path.clone(), |o| o.0)
                 };
@@ -341,7 +408,9 @@ fn sb_merge(s: &mut Session, p: &Value) -> Result<Value> {
 /// Remove the roots and insert `nodes` where the front-most root was. Returns the new ids.
 /// (Roots go first: the new nodes may reuse their ids, e.g. Live Paint sources.)
 fn replace_roots(d: &mut Document, roots: &[NodeId], nodes: Vec<Node>) -> Result<Vec<NodeId>> {
-    let Some((&top, rest)) = roots.split_last() else { return Err(EngineError::Other("nothing selected".into())) };
+    let Some((&top, rest)) = roots.split_last() else {
+        return Err(EngineError::Other("nothing selected".into()));
+    };
     let ids = nodes.iter().map(|n| n.id).collect();
     let mut replaced = Beside::replacing(d, roots);
     for r in rest {
@@ -380,11 +449,20 @@ fn sb_regions(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The source nodes a root contributes (a Live Paint group contributes its own sources).
 fn source_nodes(n: &Node) -> Vec<Arc<Node>> {
-    if is_live_paint(n) { b::sources(n).and_then(|g| g.children().cloned()).unwrap_or_default() } else { vec![Arc::new(n.clone())] }
+    if is_live_paint(n) {
+        b::sources(n)
+            .and_then(|g| g.children().cloned())
+            .unwrap_or_default()
+    } else {
+        vec![Arc::new(n.clone())]
+    }
 }
 
 /// Planar map children (sources group, faces, edges) for `sources`.
-fn build_children(d: &mut Document, sources: Vec<Arc<Node>>) -> Result<(Vec<Arc<Node>>, usize, usize)> {
+fn build_children(
+    d: &mut Document,
+    sources: Vec<Arc<Node>>,
+) -> Result<(Vec<Arc<Node>>, usize, usize)> {
     let mut lv = vec![];
     for n in &sources {
         b::leaf_shapes(n, &mut lv);
@@ -397,11 +475,17 @@ fn build_children(d: &mut Document, sources: Vec<Arc<Node>>) -> Result<(Vec<Arc<
         {
             shapes.push(po::Shape::new(path, rule, styles.len() as u64));
             let a = &l.appearance;
-            styles.push((a.fill_paint(), a.stroke_paint(), a.stroke().map(|s| s.width).unwrap_or(1.0)));
+            styles.push((
+                a.fill_paint(),
+                a.stroke_paint(),
+                a.stroke().map(|s| s.width).unwrap_or(1.0),
+            ));
         }
     }
     if shapes.is_empty() {
-        return Err(EngineError::Other("Live Paint: select paths or compound paths".into()));
+        return Err(EngineError::Other(
+            "Live Paint: select paths or compound paths".into(),
+        ));
     }
     let mut children: Vec<Arc<Node>> = vec![];
     let gid = d.alloc_id();
@@ -412,19 +496,26 @@ fn build_children(d: &mut Document, sources: Vec<Arc<Node>>) -> Result<(Vec<Arc<
     // Every path is an edge, open ones included; faces are the areas they enclose.
     let (regs, edges) = po::live_paint(&shapes);
     if regs.is_empty() && edges.is_empty() {
-        return Err(EngineError::Other("Live Paint: these paths are too degenerate to paint".into()));
+        return Err(EngineError::Other(
+            "Live Paint: these paths are too degenerate to paint".into(),
+        ));
     }
     let nfaces = regs.len();
     for r in regs {
         let id = d.alloc_id();
-        let fill = r.top().and_then(|t| styles.get(t)).map_or(Paint::None, |s| s.0.clone());
+        let fill = r
+            .top()
+            .and_then(|t| styles.get(t))
+            .map_or(Paint::None, |s| s.0.clone());
         let mut n = Node::path(id, r.path, fill_only(fill));
         n.name = Some(FACE_NAME.into());
         children.push(Arc::new(n));
     }
     let nedges = edges.len();
     for e in edges {
-        let Some((_, stroke, w)) = styles.get(e.key as usize) else { continue };
+        let Some((_, stroke, w)) = styles.get(e.key as usize) else {
+            continue;
+        };
         let id = d.alloc_id();
         let mut n = Node::path(id, e.path, stroke_only(stroke.clone(), *w));
         n.name = Some(EDGE_NAME.into());
@@ -434,7 +525,11 @@ fn build_children(d: &mut Document, sources: Vec<Arc<Node>>) -> Result<(Vec<Arc<
 }
 
 /// Make a Live Paint group from `roots`; returns (group, faces, edges).
-fn make_live(d: &mut Document, sel: &mut Selection, roots: &[NodeId]) -> Result<(NodeId, usize, usize)> {
+fn make_live(
+    d: &mut Document,
+    sel: &mut Selection,
+    roots: &[NodeId],
+) -> Result<(NodeId, usize, usize)> {
     let mut sources = vec![];
     for r in roots {
         let n = d.node(*r).ok_or(EngineError::NoNode(*r))?;
@@ -462,20 +557,32 @@ fn lp_merge(s: &mut Session, p: &Value) -> Result<Value> {
             .iter()
             .copied()
             .find(|r| d.node(*r).is_some_and(is_live_paint))
-            .ok_or_else(|| EngineError::Other("Live Paint Merge: select a Live Paint group and the paths to add".into()))?;
+            .ok_or_else(|| {
+                EngineError::Other(
+                    "Live Paint Merge: select a Live Paint group and the paths to add".into(),
+                )
+            })?;
         let old = d.node(target).cloned().ok_or(EngineError::NoNode(target))?;
         // Paint to carry over: (point inside face, fill) and (point on edge, stroke).
         let keep_faces: Vec<(Point, Paint)> = b::faces(&old)
             .iter()
             .filter(|f| !f.appearance.fill_paint().is_none())
-            .filter_map(|f| Some((po::interior_point(f.path_data()?)?, f.appearance.fill_paint())))
+            .filter_map(|f| {
+                Some((
+                    po::interior_point(f.path_data()?)?,
+                    f.appearance.fill_paint(),
+                ))
+            })
             .collect();
         let keep_edges: Vec<(Point, Appearance)> = b::edges(&old)
             .iter()
             .filter_map(|e| {
                 let pd = e.path_data()?;
                 let sp = pd.subpaths.first().filter(|sp| sp.segment_count() > 0)?;
-                Some((kurbo::ParamCurve::eval(&sp.segment(0), 0.5), (*e.appearance).clone()))
+                Some((
+                    kurbo::ParamCurve::eval(&sp.segment(0), 0.5),
+                    (*e.appearance).clone(),
+                ))
             })
             .collect();
         let mut sources = source_nodes(&old);
@@ -522,7 +629,10 @@ fn lp_merge(s: &mut Session, p: &Value) -> Result<Value> {
 fn live_targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     let d = &s.doc()?.doc;
     let ids = root_ids(s, p)?;
-    let v: Vec<NodeId> = ids.into_iter().filter(|i| d.node(*i).is_some_and(is_live_paint)).collect();
+    let v: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|i| d.node(*i).is_some_and(is_live_paint))
+        .collect();
     if v.is_empty() {
         return Err(EngineError::Other("select a Live Paint group".into()));
     }
@@ -558,7 +668,9 @@ fn lp_expand(s: &mut Session, p: &Value) -> Result<Value> {
                 ch.retain(|c| match c.name.as_deref() {
                     Some(SOURCES_NAME) => false,
                     Some(FACE_NAME) => !c.appearance.fill_paint().is_none(),
-                    Some(EDGE_NAME) => !c.appearance.stroke_paint().is_none() && c.appearance.stroke_width() > 0.0,
+                    Some(EDGE_NAME) => {
+                        !c.appearance.stroke_paint().is_none() && c.appearance.stroke_width() > 0.0
+                    }
                     _ => true,
                 });
             }
@@ -571,10 +683,16 @@ fn lp_expand(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn lp_fill(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "livePaint.fill";
-    let pt = point_param(p, "point").filter(|q| finite(*q)).ok_or_else(|| bad(C, "missing point [x,y]"))?;
+    let pt = point_param(p, "point")
+        .filter(|q| finite(*q))
+        .ok_or_else(|| bad(C, "missing point [x,y]"))?;
     let paint = paint_from(s, p)?.unwrap_or_else(|| s.paint.fill.clone());
     let group = id_param(p, "group");
-    let roots = if group.is_none() { root_ids(s, p)? } else { vec![] };
+    let roots = if group.is_none() {
+        root_ids(s, p)?
+    } else {
+        vec![]
+    };
     let (g, face) = s.edit("Live Paint Bucket", |d, sel| {
         let gid = match group {
             Some(g) => {
@@ -583,14 +701,23 @@ fn lp_fill(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 g
             }
-            None => match roots.iter().copied().find(|r| d.node(*r).is_some_and(|n| is_live_paint(n) && face_at(n, pt).is_some())) {
+            None => match roots.iter().copied().find(|r| {
+                d.node(*r)
+                    .is_some_and(|n| is_live_paint(n) && face_at(n, pt).is_some())
+            }) {
                 Some(g) => g,
                 None => make_live(d, sel, &roots)?.0,
             },
         };
-        let fid =
-            d.node(gid).and_then(|n| face_at(n, pt)).map(|f| f.id).ok_or_else(|| EngineError::Other("no Live Paint face at that point".into()))?;
-        d.node_mut(fid).ok_or(EngineError::NoNode(fid))?.appearance.set_fill(paint.clone());
+        let fid = d
+            .node(gid)
+            .and_then(|n| face_at(n, pt))
+            .map(|f| f.id)
+            .ok_or_else(|| EngineError::Other("no Live Paint face at that point".into()))?;
+        d.node_mut(fid)
+            .ok_or(EngineError::NoNode(fid))?
+            .appearance
+            .set_fill(paint.clone());
         Ok((gid, fid))
     })?;
     s.remember_paint(&paint);
@@ -599,17 +726,27 @@ fn lp_fill(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn lp_stroke_edge(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "livePaint.strokeEdge";
-    let pt = point_param(p, "point").filter(|q| finite(*q)).ok_or_else(|| bad(C, "missing point [x,y]"))?;
+    let pt = point_param(p, "point")
+        .filter(|q| finite(*q))
+        .ok_or_else(|| bad(C, "missing point [x,y]"))?;
     let g = id_param(p, "group").ok_or_else(|| bad(C, "missing group"))?;
     let paint = paint_from(s, p)?.unwrap_or_else(|| s.paint.stroke.clone());
-    let width = p.get("width").and_then(Value::as_f64).unwrap_or(s.paint.stroke_width.max(0.0));
+    let width = p
+        .get("width")
+        .and_then(Value::as_f64)
+        .unwrap_or(s.paint.stroke_width.max(0.0));
     if !(0.0..=1000.0).contains(&width) {
         return Err(bad(C, "width out of range"));
     }
     let tol = f64_or(p, "tolerance", 4.0).clamp(0.0, 1000.0);
     let edge = s.edit("Live Paint Bucket", |d, _| {
-        let n = d.node(g).filter(|n| is_live_paint(n)).ok_or_else(|| bad(C, format!("{g} is not a Live Paint group")))?;
-        let eid = edge_near(n, pt, tol).map(|e| e.id).ok_or_else(|| EngineError::Other("no Live Paint edge near that point".into()))?;
+        let n = d
+            .node(g)
+            .filter(|n| is_live_paint(n))
+            .ok_or_else(|| bad(C, format!("{g} is not a Live Paint group")))?;
+        let eid = edge_near(n, pt, tol)
+            .map(|e| e.id)
+            .ok_or_else(|| EngineError::Other("no Live Paint edge near that point".into()))?;
         let e = d.node_mut(eid).ok_or(EngineError::NoNode(eid))?;
         e.appearance.set_stroke(paint.clone());
         if let Some(st) = e.appearance.stroke_mut() {
@@ -622,9 +759,14 @@ fn lp_stroke_edge(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn lp_info(s: &mut Session, p: &Value) -> Result<Value> {
-    let g = id_param(p, "group").or_else(|| id_param(p, "id")).ok_or_else(|| bad("livePaint.info", "missing group"))?;
+    let g = id_param(p, "group")
+        .or_else(|| id_param(p, "id"))
+        .ok_or_else(|| bad("livePaint.info", "missing group"))?;
     let d = &s.doc()?.doc;
-    let n = d.node(g).filter(|n| is_live_paint(n)).ok_or_else(|| bad("livePaint.info", format!("{g} is not a Live Paint group")))?;
+    let n = d
+        .node(g)
+        .filter(|n| is_live_paint(n))
+        .ok_or_else(|| bad("livePaint.info", format!("{g} is not a Live Paint group")))?;
     let faces: Vec<Value> = b::faces(n)
         .iter()
         .map(|f| {
@@ -636,7 +778,10 @@ fn lp_info(s: &mut Session, p: &Value) -> Result<Value> {
         .iter()
         .map(|e| json!({ "id": e.id.0, "stroke": e.appearance.stroke_paint().label(), "width": e.appearance.stroke_width() }))
         .collect();
-    let sources = b::sources(n).and_then(|g| g.children()).map(|c| c.len()).unwrap_or(0);
+    let sources = b::sources(n)
+        .and_then(|g| g.children())
+        .map(|c| c.len())
+        .unwrap_or(0);
     Ok(json!({ "faces": faces, "edges": edges, "sources": sources }))
 }
 
@@ -645,31 +790,55 @@ fn lp_info(s: &mut Session, p: &Value) -> Result<Value> {
 fn is_trace_group(n: &Node) -> bool {
     matches!(n.kind, NodeKind::Group { clip: false, .. })
         && n.name.as_deref() == Some(TRACE_NAME)
-        && n.children().is_some_and(|c| c.first().is_some_and(|i| matches!(i.kind, NodeKind::Image(_))))
+        && n.children().is_some_and(|c| {
+            c.first()
+                .is_some_and(|i| matches!(i.kind, NodeKind::Image(_)))
+        })
 }
 
 /// The `view` param ([`TraceView`] id), if given.
 fn view_param(cmd: &str, p: &Value) -> Result<Option<TraceView>> {
-    let Some(v) = p.get("view").filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get("view").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     let ids = || TraceView::ALL.map(TraceView::id).join(", ");
-    v.as_str().and_then(TraceView::from_id).map(Some).ok_or_else(|| bad(cmd, format!("view must be one of {}", ids())))
+    v.as_str()
+        .and_then(TraceView::from_id)
+        .map(Some)
+        .ok_or_else(|| bad(cmd, format!("view must be one of {}", ids())))
 }
 
 fn trace_params(p: &Value) -> Result<tr::TraceParams> {
     let name = str_param(p, "preset").unwrap_or("Default");
-    let base = tr::preset(name).ok_or_else(|| bad("imageTrace.make", format!("unknown preset `{name}` (see imageTrace.presets)")))?;
-    let Some(over) = p.get("params").filter(|v| !v.is_null()) else { return Ok(base) };
+    let base = tr::preset(name).ok_or_else(|| {
+        bad(
+            "imageTrace.make",
+            format!("unknown preset `{name}` (see imageTrace.presets)"),
+        )
+    })?;
+    let Some(over) = p.get("params").filter(|v| !v.is_null()) else {
+        return Ok(base);
+    };
     let mut v = serde_json::to_value(&base).map_err(|e| EngineError::Other(e.to_string()))?;
-    let (Some(o), Some(src)) = (v.as_object_mut(), over.as_object()) else { return Err(bad("imageTrace.make", "params must be an object")) };
+    let (Some(o), Some(src)) = (v.as_object_mut(), over.as_object()) else {
+        return Err(bad("imageTrace.make", "params must be an object"));
+    };
     for (k, val) in src {
         o.insert(k.clone(), val.clone());
     }
-    let params: tr::TraceParams = serde_json::from_value(v).map_err(|e| bad("imageTrace.make", e.to_string()))?;
+    let params: tr::TraceParams =
+        serde_json::from_value(v).map_err(|e| bad("imageTrace.make", e.to_string()))?;
     if !params.fills && !params.strokes {
-        return Err(bad("imageTrace.make", "Create needs fills, strokes or both"));
+        return Err(bad(
+            "imageTrace.make",
+            "Create needs fills, strokes or both",
+        ));
     }
     if !(params.stroke_width.is_finite() && params.stroke_width > 0.0) {
-        return Err(bad("imageTrace.make", "strokeWidth must be a positive number of pixels"));
+        return Err(bad(
+            "imageTrace.make",
+            "strokeWidth must be a positive number of pixels",
+        ));
     }
     Ok(params)
 }
@@ -706,21 +875,45 @@ pub const MAX_TRACE_ANCHORS: usize = 2_000_000;
 /// The live shape for a shape the tracer found (in the image's pixels), placed in the document by `xf`.
 fn traced_shape(shape: tr::TracedShape, xf: vectorcraft_geom::Affine) -> LiveShape {
     use vectorcraft_geom::Affine;
-    let about = |c: Point, deg: f64| Affine::translate(c.to_vec2()) * Affine::rotate(deg.to_radians());
+    let about =
+        |c: Point, deg: f64| Affine::translate(c.to_vec2()) * Affine::rotate(deg.to_radians());
     let mut live = match shape {
-        tr::TracedShape::Rectangle { center, width, height, radius, rotation } => LiveShape::Rectangle {
+        tr::TracedShape::Rectangle {
+            center,
+            width,
+            height,
+            radius,
+            rotation,
+        } => LiveShape::Rectangle {
             w: width,
             h: height,
             radii: [radius; 4],
             kinds: Default::default(),
             xf: about(center, rotation) * Affine::translate((-width / 2.0, -height / 2.0)),
         },
-        tr::TracedShape::Ellipse { center, rx, ry, rotation } => {
-            LiveShape::Ellipse { w: 2.0 * rx, h: 2.0 * ry, pie: (0.0, 360.0), xf: about(center, rotation) * Affine::translate((-rx, -ry)) }
-        }
-        tr::TracedShape::Polygon { center, radius, sides, rotation } => {
-            LiveShape::Polygon { radius, sides, xf: about(center, rotation), radii: vec![], kinds: vec![] }
-        }
+        tr::TracedShape::Ellipse {
+            center,
+            rx,
+            ry,
+            rotation,
+        } => LiveShape::Ellipse {
+            w: 2.0 * rx,
+            h: 2.0 * ry,
+            pie: (0.0, 360.0),
+            xf: about(center, rotation) * Affine::translate((-rx, -ry)),
+        },
+        tr::TracedShape::Polygon {
+            center,
+            radius,
+            sides,
+            rotation,
+        } => LiveShape::Polygon {
+            radius,
+            sides,
+            xf: about(center, rotation),
+            radii: vec![],
+            kinds: vec![],
+        },
     };
     // (Whether the move changed the shape's own numbers does not matter: its path is made from them next.)
     let _ = live.transform(xf);
@@ -731,9 +924,21 @@ fn traced_shape(shape: tr::TracedShape, xf: vectorcraft_geom::Affine) -> LiveSha
 /// document by `xf`.
 fn traced_gradient(g: &tr::TracedGradient, xf: vectorcraft_geom::Affine) -> Paint {
     use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop};
-    let stops = g.stops.iter().map(|&(at, c)| GradientStop::new(at as f32, Color::rgb8(c[0], c[1], c[2]))).collect();
-    let mut paint = GradientPaint::new(Gradient { kind: GradientKind::Linear, stops });
-    paint.geom = Some(GradientGeom { start: xf * g.start, end: xf * g.end, aspect: 1.0, focal: None });
+    let stops = g
+        .stops
+        .iter()
+        .map(|&(at, c)| GradientStop::new(at as f32, Color::rgb8(c[0], c[1], c[2])))
+        .collect();
+    let mut paint = GradientPaint::new(Gradient {
+        kind: GradientKind::Linear,
+        stops,
+    });
+    paint.geom = Some(GradientGeom {
+        start: xf * g.start,
+        end: xf * g.end,
+        aspect: 1.0,
+        focal: None,
+    });
     Paint::Gradient(Box::new(paint))
 }
 
@@ -745,7 +950,12 @@ fn grouped(d: &mut Document, nodes: Vec<Node>, parents: &[Option<usize>]) -> Vec
     let mut inside: Vec<Vec<usize>> = vec![vec![]; n];
     let mut roots = vec![];
     for i in 0..n {
-        match parents.get(i).copied().flatten().and_then(|p| inside.get_mut(p).filter(|_| p != i)) {
+        match parents
+            .get(i)
+            .copied()
+            .flatten()
+            .and_then(|p| inside.get_mut(p).filter(|_| p != i))
+        {
             Some(of) => of.push(i),
             None => roots.push(i),
         }
@@ -760,28 +970,53 @@ fn grouped(d: &mut Document, nodes: Vec<Node>, parents: &[Option<usize>]) -> Vec
     let mut nodes: Vec<Option<Node>> = nodes.into_iter().map(Some).collect();
     let mut built: Vec<Option<Arc<Node>>> = vec![None; n];
     for &i in order.iter().rev() {
-        let Some(node) = nodes.get_mut(i).and_then(Option::take) else { continue };
-        let within: Vec<Arc<Node>> = inside.get(i).into_iter().flatten().filter_map(|&c| built.get_mut(c)?.take()).collect();
-        let made = if within.is_empty() { node } else { Node::group(d.alloc_id(), std::iter::once(Arc::new(node)).chain(within).collect()) };
+        let Some(node) = nodes.get_mut(i).and_then(Option::take) else {
+            continue;
+        };
+        let within: Vec<Arc<Node>> = inside
+            .get(i)
+            .into_iter()
+            .flatten()
+            .filter_map(|&c| built.get_mut(c)?.take())
+            .collect();
+        let made = if within.is_empty() {
+            node
+        } else {
+            Node::group(
+                d.alloc_id(),
+                std::iter::once(Arc::new(node)).chain(within).collect(),
+            )
+        };
         if let Some(slot) = built.get_mut(i) {
             *slot = Some(Arc::new(made));
         }
     }
     // (Paths that are inside each other in a ring are reached from no root: the tracer makes none,
     // and they are kept all the same.)
-    let ring = nodes.into_iter().flatten().map(Arc::new).collect::<Vec<_>>();
-    roots.iter().filter_map(|&r| built.get_mut(r)?.take()).chain(ring).collect()
+    let ring = nodes
+        .into_iter()
+        .flatten()
+        .map(Arc::new)
+        .collect::<Vec<_>>();
+    roots
+        .iter()
+        .filter_map(|&r| built.get_mut(r)?.take())
+        .chain(ring)
+        .collect()
 }
 
 fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
     const C: &str = "imageTrace.make";
     let mut params = trace_params(p)?;
     let view = view_param(C, p)?;
-    let params_json = serde_json::to_value(&params).map_err(|e| EngineError::Other(e.to_string()))?;
+    let params_json =
+        serde_json::to_value(&params).map_err(|e| EngineError::Other(e.to_string()))?;
     // The preset's name if the parameters are exactly that preset's, else "Custom".
     let named = str_param(p, "preset").unwrap_or("Default");
     let preset_label = match tr::preset(named) {
-        Some(b) if serde_json::to_value(&b).ok().as_ref() == Some(&params_json) => named.to_string(),
+        Some(b) if serde_json::to_value(&b).ok().as_ref() == Some(&params_json) => {
+            named.to_string()
+        }
         _ => "Custom".to_string(),
     };
     let roots = root_ids(s, p)?;
@@ -803,11 +1038,18 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
             })
             .ok_or_else(|| bad(C, "select an image (or an Image Trace group)"))?
     };
-    let blob = s.doc()?.doc.images.get(&img.key).ok_or_else(|| EngineError::Other(format!("image data `{}` is missing", img.key)))?;
+    let blob = s
+        .doc()?
+        .doc
+        .images
+        .get(&img.key)
+        .ok_or_else(|| EngineError::Other(format!("image data `{}` is missing", img.key)))?;
     // An image over the tracer's size is traced scaled down (the paths are scaled back below).
-    let raster = tr::Raster::decode_to_fit(&blob.bytes).map_err(|e| EngineError::Other(e.to_string()))?;
+    let raster =
+        tr::Raster::decode_to_fit(&blob.bytes).map_err(|e| EngineError::Other(e.to_string()))?;
     let library = trace_library(s, &mut params)?;
-    let res = tr::trace_within(&raster, &params, MAX_TRACE_ANCHORS).map_err(|e| EngineError::Other(e.to_string()))?;
+    let res = tr::trace_within(&raster, &params, MAX_TRACE_ANCHORS)
+        .map_err(|e| EngineError::Other(e.to_string()))?;
     // Pixel space of the decoded raster → the image object's pixel space → document.
     let sx = img.width.max(1) as f64 / raster.width.max(1) as f64;
     let sy = img.height.max(1) as f64 / raster.height.max(1) as f64;
@@ -815,14 +1057,20 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
     // Document units per raster pixel (stroke widths).
     let unit = xf.determinant().abs().sqrt();
     let (npaths, anchors, colors) = (res.paths.len(), res.anchor_count(), res.palette.len());
-    let label = if expand { "Image Trace (Make and Expand)" } else { "Image Trace" };
+    let label = if expand {
+        "Image Trace (Make and Expand)"
+    } else {
+        "Image Trace"
+    };
     let id = s.edit(label, |d, sel| {
         let src = d.node(target).cloned().ok_or(EngineError::NoNode(target))?;
         let mut image = if is_trace_group(&src) {
             src.children()
                 .and_then(|c| c.first())
                 .map(|c| (**c).clone())
-                .ok_or_else(|| EngineError::Other("Image Trace: the traced image is missing".into()))?
+                .ok_or_else(|| {
+                    EngineError::Other("Image Trace: the traced image is missing".into())
+                })?
         } else {
             src.clone()
         };
@@ -844,9 +1092,18 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
                 *live = Some(Box::new(shape));
             }
             // A library colour fills with the swatch's own colour (its model kept).
-            let color = library.iter().find(|(rgb, _)| *rgb == tp.color).map_or_else(|| Color::rgb8(tp.color[0], tp.color[1], tp.color[2]), |l| l.1);
+            let color = library
+                .iter()
+                .find(|(rgb, _)| *rgb == tp.color)
+                .map_or_else(
+                    || Color::rgb8(tp.color[0], tp.color[1], tp.color[2]),
+                    |l| l.1,
+                );
             // Gradients: a path the tracer found to be a linear gradient is filled with it.
-            let paint = tp.gradient.as_ref().map_or_else(|| Paint::solid(color), |g| traced_gradient(g, xf));
+            let paint = tp
+                .gradient
+                .as_ref()
+                .map_or_else(|| Paint::solid(color), |g| traced_gradient(g, xf));
             n.appearance = match tp.stroke {
                 // Traced lines: round ends and corners, as drawn lines have.
                 Some(width) => Appearance {
@@ -865,11 +1122,17 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
         children.extend(grouped(d, traced, &res.parents));
         let gid = d.alloc_id();
         let mut g = Node::group(gid, children);
-        g.name = if expand { None } else { Some(TRACE_NAME.into()) };
+        g.name = if expand {
+            None
+        } else {
+            Some(TRACE_NAME.into())
+        };
         if !expand {
             // Tracing again keeps the object's view unless another is asked for.
             let view = view.unwrap_or_else(|| src.trace_view());
-            g.extras_mut().trace = Some(Box::new(json!({ "preset": preset_label, "params": params_json, "view": view.id() })));
+            g.extras_mut().trace = Some(Box::new(
+                json!({ "preset": preset_label, "params": params_json, "view": view.id() }),
+            ));
         }
         let (par, idx, _) = d.position(target).ok_or(EngineError::NoNode(target))?;
         d.remove(target)?;
@@ -882,7 +1145,10 @@ fn trace_make(s: &mut Session, p: &Value, expand: bool) -> Result<Value> {
 
 fn trace_targets(s: &Session, p: &Value) -> Result<Vec<NodeId>> {
     let d = &s.doc()?.doc;
-    let v: Vec<NodeId> = root_ids(s, p)?.into_iter().filter(|i| d.node(*i).is_some_and(is_trace_group)).collect();
+    let v: Vec<NodeId> = root_ids(s, p)?
+        .into_iter()
+        .filter(|i| d.node(*i).is_some_and(is_trace_group))
+        .collect();
     if v.is_empty() {
         return Err(EngineError::Other("select an Image Trace object".into()));
     }
@@ -894,16 +1160,24 @@ fn trace_set_view(s: &mut Session, p: &Value) -> Result<Value> {
     let view = view_param(C, p)?.ok_or_else(|| bad(C, "view is required"))?;
     let targets = trace_targets(s, p)?;
     let d = &s.doc()?.doc;
-    if targets.iter().all(|g| d.node(*g).is_some_and(|n| n.trace_view() == view)) {
+    if targets
+        .iter()
+        .all(|g| d.node(*g).is_some_and(|n| n.trace_view() == view))
+    {
         return Ok(json!({ "ids": ids_json(&targets), "view": view.id() }));
     }
     s.edit("Image Trace View", |d, _| {
         for g in &targets {
             let n = d.node_mut(*g).ok_or(EngineError::NoNode(*g))?;
-            if let Some(t) = n.extras_if_any().and_then(|e| e.trace.as_deref_mut()).and_then(Value::as_object_mut) {
+            if let Some(t) = n
+                .extras_if_any()
+                .and_then(|e| e.trace.as_deref_mut())
+                .and_then(Value::as_object_mut)
+            {
                 t.insert("view".into(), json!(view.id()));
             } else {
-                n.extras_mut().trace = Some(Box::new(json!({ "preset": "Custom", "view": view.id() })));
+                n.extras_mut().trace =
+                    Some(Box::new(json!({ "preset": "Custom", "view": view.id() })));
             }
         }
         Ok(())
@@ -918,7 +1192,11 @@ fn trace_release(s: &mut Session, p: &Value) -> Result<Value> {
         let mut released = Beside::replacing(d, &targets);
         for g in &targets {
             let n = d.node(*g).cloned().ok_or(EngineError::NoNode(*g))?;
-            let mut img = (**n.children().and_then(|c| c.first()).ok_or(EngineError::NoNode(*g))?).clone();
+            let mut img = (**n
+                .children()
+                .and_then(|c| c.first())
+                .ok_or(EngineError::NoNode(*g))?)
+            .clone();
             img.visible = true;
             out.push(img.id);
             released.put(d, *g, vec![img])?;

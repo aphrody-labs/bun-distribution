@@ -28,7 +28,11 @@ pub struct Canvas {
 
 impl Canvas {
     fn new(width: u32, height: u32) -> Self {
-        Self { width, height, pixels: vec![0; (width as usize) * (height as usize) * 4] }
+        Self {
+            width,
+            height,
+            pixels: vec![0; (width as usize) * (height as usize) * 4],
+        }
     }
 
     #[inline]
@@ -142,7 +146,13 @@ fn paint_node(
     scheme: &aphrody_m3_tokens::facade::color::DynamicScheme,
 ) {
     match node {
-        Node::Surface { rect, corners, fill, elevation, outline } => {
+        Node::Surface {
+            rect,
+            corners,
+            fill,
+            elevation,
+            outline,
+        } => {
             if *elevation > 0 {
                 paint_shadow(canvas, *rect, *corners, *elevation);
             }
@@ -156,13 +166,24 @@ fn paint_node(
                     outline.color.resolve(scheme),
                 );
             }
-        },
-        Node::StateLayer { rect, corners, content, state } => {
+        }
+        Node::StateLayer {
+            rect,
+            corners,
+            content,
+            state,
+        } => {
             let base = content.resolve(scheme);
             let tinted = base.with_alpha_factor(state.opacity());
             paint_rounded_rect(canvas, *rect, *corners, tinted);
-        },
-        Node::Ripple { cx, cy, radius, color, alpha } => {
+        }
+        Node::Ripple {
+            cx,
+            cy,
+            radius,
+            color,
+            alpha,
+        } => {
             paint_ripple(
                 canvas,
                 *cx,
@@ -170,16 +191,26 @@ fn paint_node(
                 *radius,
                 color.resolve(scheme).with_alpha_factor(*alpha),
             );
-        },
-        Node::Text { rect, text, style, color } => {
+        }
+        Node::Text {
+            rect,
+            text,
+            style,
+            color,
+        } => {
             paint_text(canvas, *rect, text, *style, color.resolve(scheme));
-        },
+        }
         Node::Icon { rect, path, color } => {
             paint_icon(canvas, *rect, path, color.resolve(scheme));
-        },
-        Node::Image { rect, width, height, rgba } => {
+        }
+        Node::Image {
+            rect,
+            width,
+            height,
+            rgba,
+        } => {
             paint_image(canvas, *rect, *width, *height, rgba);
-        },
+        }
     }
 }
 
@@ -203,8 +234,13 @@ fn paint_rounded_rect(
         for x in x0..x1 {
             let px = (x as f32 + 0.5) - cx;
             let py = (y as f32 + 0.5) - cy;
-            let d =
-                sd_rounded_box(px, py, hw, hh, (corners.tl, corners.tr, corners.br, corners.bl));
+            let d = sd_rounded_box(
+                px,
+                py,
+                hw,
+                hh,
+                (corners.tl, corners.tr, corners.br, corners.bl),
+            );
             let coverage = (0.5 - d).clamp(0.0, 1.0);
             if coverage <= 0.0 {
                 continue;
@@ -235,10 +271,15 @@ fn paint_outline(
         for x in x0..x1 {
             let px = (x as f32 + 0.5) - cx;
             let py = (y as f32 + 0.5) - cy;
-            let d =
-                sd_rounded_box(px, py, hw, hh, (corners.tl, corners.tr, corners.br, corners.bl))
-                    .abs()
-                    - stroke_width / 2.0;
+            let d = sd_rounded_box(
+                px,
+                py,
+                hw,
+                hh,
+                (corners.tl, corners.tr, corners.br, corners.bl),
+            )
+            .abs()
+                - stroke_width / 2.0;
             let coverage = (0.5 - d).clamp(0.0, 1.0);
             if coverage <= 0.0 {
                 continue;
@@ -259,13 +300,23 @@ fn paint_shadow(canvas: &mut Canvas, rect: Rect, corners: crate::scene::Corners,
     let y0 = (rect.y.floor() as i64 - pad).max(0);
     let x1 = (rect.x + rect.w).ceil() as i64 + pad;
     let y1 = (rect.y + rect.h).ceil() as i64 + pad;
-    let shadow_color = Rgba8 { r: 0, g: 0, b: 0, a: 255 };
+    let shadow_color = Rgba8 {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 255,
+    };
     for y in y0..y1 {
         for x in x0..x1 {
             let px = (x as f32 + 0.5) - cx;
             let py = (y as f32 + 0.5) - cy;
-            let d =
-                sd_rounded_box(px, py, hw, hh, (corners.tl, corners.tr, corners.br, corners.bl));
+            let d = sd_rounded_box(
+                px,
+                py,
+                hw,
+                hh,
+                (corners.tl, corners.tr, corners.br, corners.bl),
+            );
             let alpha = shadow_alpha(d, sigma) * 0.30;
             if alpha <= 0.003 {
                 continue;
@@ -330,7 +381,11 @@ fn paint_icon(canvas: &mut Canvas, rect: Rect, path: &str, color: Rgba8) {
     let scale_y = f32::from(height as u16) / 24.0;
     let scaled: Vec<Vec<(f32, f32)>> = subpaths
         .into_iter()
-        .map(|line| line.into_iter().map(|(x, y)| (x * scale_x, y * scale_y)).collect())
+        .map(|line| {
+            line.into_iter()
+                .map(|(x, y)| (x * scale_x, y * scale_y))
+                .collect()
+        })
         .collect();
     let coverage = rasterize_polylines(&scaled, width, height, 4);
     canvas.blit_coverage(
@@ -357,8 +412,12 @@ fn paint_image(canvas: &mut Canvas, rect: Rect, src_w: u32, src_h: u32, rgba: &[
             if idx + 4 > rgba.len() {
                 continue;
             }
-            let color =
-                Rgba8 { r: rgba[idx], g: rgba[idx + 1], b: rgba[idx + 2], a: rgba[idx + 3] };
+            let color = Rgba8 {
+                r: rgba[idx],
+                g: rgba[idx + 1],
+                b: rgba[idx + 2],
+                a: rgba[idx + 3],
+            };
             canvas.blend_pixel(
                 rect.x.round() as i64 + i64::from(dx),
                 rect.y.round() as i64 + i64::from(dy),
@@ -409,9 +468,15 @@ mod tests {
         let bg = Rgba8::from_argb(scheme.argb(Role::Surface));
         let fill = Rgba8::from_argb(scheme.argb(Role::PrimaryContainer));
         let corner_idx = 0;
-        assert_eq!(&canvas.pixels[corner_idx..corner_idx + 3], &[bg.r, bg.g, bg.b]);
+        assert_eq!(
+            &canvas.pixels[corner_idx..corner_idx + 3],
+            &[bg.r, bg.g, bg.b]
+        );
         let center = ((32 * 64 + 32) * 4) as usize;
-        assert_eq!(&canvas.pixels[center..center + 3], &[fill.r, fill.g, fill.b]);
+        assert_eq!(
+            &canvas.pixels[center..center + 3],
+            &[fill.r, fill.g, fill.b]
+        );
     }
 
     #[test]
@@ -450,7 +515,12 @@ mod tests {
         scene.nodes.push(Node::Icon {
             rect: Rect::new(4.0, 4.0, 24.0, 24.0),
             path: "M4 4 L20 4 L20 20 L4 20 Z".to_string(),
-            color: Paint::Fixed(Rgba8 { r: 255, g: 0, b: 0, a: 255 }),
+            color: Paint::Fixed(Rgba8 {
+                r: 255,
+                g: 0,
+                b: 0,
+                a: 255,
+            }),
         });
         let canvas = render_scene(&scene);
         let idx = ((12 * 64 + 12) * 4) as usize;
@@ -464,9 +534,19 @@ mod tests {
             rect: Rect::new(2.0, 2.0, 60.0, 24.0),
             text: "M3".to_string(),
             style: crate::scene::TypeStyleName::TitleLarge,
-            color: Paint::Fixed(Rgba8 { r: 0, g: 0, b: 0, a: 255 }),
+            color: Paint::Fixed(Rgba8 {
+                r: 0,
+                g: 0,
+                b: 0,
+                a: 255,
+            }),
         });
         let canvas = render_scene(&scene);
-        assert!(canvas.pixels.chunks_exact(4).any(|p| p[3] > 0 && p[0] < 200));
+        assert!(
+            canvas
+                .pixels
+                .chunks_exact(4)
+                .any(|p| p[3] > 0 && p[0] < 200)
+        );
     }
 }

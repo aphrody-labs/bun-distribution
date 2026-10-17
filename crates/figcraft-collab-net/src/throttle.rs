@@ -19,12 +19,19 @@ pub struct Throttle<T> {
 
 impl<T> Throttle<T> {
     pub fn new(interval: Duration) -> Self {
-        Self { interval, last: None, pending: None }
+        Self {
+            interval,
+            last: None,
+            pending: None,
+        }
     }
 
     /// Offer `v` at `now`: returns it when it may go out now, else keeps it for [`take_due`](Self::take_due).
     pub fn offer(&mut self, v: T, now: Instant) -> Option<T> {
-        if self.last.is_some_and(|l| now.saturating_duration_since(l) < self.interval) {
+        if self
+            .last
+            .is_some_and(|l| now.saturating_duration_since(l) < self.interval)
+        {
             self.pending = Some(v);
             return None;
         }

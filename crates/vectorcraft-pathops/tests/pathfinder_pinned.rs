@@ -22,26 +22,37 @@ fn shapes_of(n: usize, seed: u64) -> Vec<Shape> {
                 1 => shapes::rectangle(Rect::new(x, y, x + 1.5 * s, y + s)),
                 _ => shapes::star(Point::new(x, y), s, s / 2.0, 5, 0.3),
             };
-            let rule = if i % 4 == 3 { FillRule::EvenOdd } else { FillRule::NonZero };
+            let rule = if i % 4 == 3 {
+                FillRule::EvenOdd
+            } else {
+                FillRule::NonZero
+            };
             Shape::new(path, rule, (i % 5) as u64)
         })
         .collect()
 }
 
 fn fnv(s: &str) -> u64 {
-    s.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3))
+    s.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
+        (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
+    })
 }
 
 #[test]
 fn every_pathfinder_operation_is_pinned() {
     use PathfinderOp::*;
-    let ops = [Unite, MinusFront, MinusBack, Intersect, Exclude, Divide, Trim, Merge, Crop, Outline];
+    let ops = [
+        Unite, MinusFront, MinusBack, Intersect, Exclude, Divide, Trim, Merge, Crop, Outline,
+    ];
     let mut got = vec![];
     for (n, seed) in [(2, 3), (5, 7), (12, 11), (30, 13)] {
         let input = shapes_of(n, seed);
         for op in ops {
             let out = pathfinder(op, &input);
-            let text: String = out.iter().map(|s| format!("{}|{:?}|{:?};", s.key, s.rule, s.path)).collect();
+            let text: String = out
+                .iter()
+                .map(|s| format!("{}|{:?}|{:?};", s.key, s.rule, s.path))
+                .collect();
             got.push(fnv(&text));
         }
     }

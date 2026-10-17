@@ -86,7 +86,10 @@ pub(crate) struct Sequence<'a> {
 
 impl<'a> Sequence<'a> {
     pub(crate) fn single(ids: &'a [u32]) -> Self {
-        Self { ids, type_ids: None }
+        Self {
+            ids,
+            type_ids: None,
+        }
     }
 }
 
@@ -174,7 +177,9 @@ impl NativeBert {
             )));
         }
         if !cfg.hidden_size.is_multiple_of(cfg.num_attention_heads) {
-            return Err(Error::InvalidInput("hidden_size not divisible by heads".into()));
+            return Err(Error::InvalidInput(
+                "hidden_size not divisible by heads".into(),
+            ));
         }
         // RoBERTa-style models number positions from `padding_idx + 1`.
         let position_offset = match cfg.model_type.as_deref() {
@@ -206,7 +211,10 @@ impl NativeBert {
             .map_err(|e| Error::InvalidInput(format!("safetensors: {e}")))?;
         let prefix = ["", "bert.", "roberta."]
             .into_iter()
-            .find(|p| st.tensor(&format!("{p}embeddings.word_embeddings.weight")).is_ok())
+            .find(|p| {
+                st.tensor(&format!("{p}embeddings.word_embeddings.weight"))
+                    .is_ok()
+            })
             .ok_or_else(|| {
                 Error::InvalidInput("no `embeddings.word_embeddings.weight` tensor".into())
             })?;
@@ -224,11 +232,22 @@ impl NativeBert {
         let word_view = st
             .tensor(&word_name)
             .map_err(|e| Error::InvalidInput(format!("tensor `{word_name}`: {e}")))?;
-        check_view(&word_name, word_view.dtype(), word_view.shape(), &[dims.vocab, h])?;
+        check_view(
+            &word_name,
+            word_view.dtype(),
+            word_view.shape(),
+            &[dims.vocab, h],
+        )?;
         let word_offset = word_view.data().as_ptr() as usize - map.as_ptr() as usize;
 
-        let positions = get("embeddings.position_embeddings.weight", &[dims.max_positions, h])?;
-        let token_types = get("embeddings.token_type_embeddings.weight", &[dims.type_vocab, h])?;
+        let positions = get(
+            "embeddings.position_embeddings.weight",
+            &[dims.max_positions, h],
+        )?;
+        let token_types = get(
+            "embeddings.token_type_embeddings.weight",
+            &[dims.type_vocab, h],
+        )?;
         let emb_ln_g = get("embeddings.LayerNorm.weight", &[h])?;
         let emb_ln_b = get("embeddings.LayerNorm.bias", &[h])?;
 
@@ -284,7 +303,12 @@ impl NativeBert {
 
         Ok(Self {
             dims,
-            word: MappedRows { map, offset: word_offset, rows: dims.vocab, cols: h },
+            word: MappedRows {
+                map,
+                offset: word_offset,
+                rows: dims.vocab,
+                cols: h,
+            },
             positions,
             token_types,
             emb_ln_g,
@@ -319,7 +343,7 @@ impl NativeBert {
                         let inv = 1.0 / len as f32;
                         acc.iter_mut().for_each(|a| *a *= inv);
                         acc
-                    },
+                    }
                 });
                 start += len;
             }
@@ -347,10 +371,22 @@ impl NativeBert {
                 start += seq.ids.len();
             }
             let mut pooled = vec![0.0f32; cls.len()];
-            kernels::linear(&mut pooled, &cls, &head.dense_w, &head.dense_b, Parallelism::None);
+            kernels::linear(
+                &mut pooled,
+                &cls,
+                &head.dense_w,
+                &head.dense_b,
+                Parallelism::None,
+            );
             pooled.iter_mut().for_each(|v| *v = v.tanh());
             let mut logits = vec![0.0f32; seqs.len()];
-            kernels::linear(&mut logits, &pooled, &head.out_w, &head.out_b, Parallelism::None);
+            kernels::linear(
+                &mut logits,
+                &pooled,
+                &head.out_w,
+                &head.out_b,
+                Parallelism::None,
+            );
             logits
         }))
     }
@@ -546,7 +582,11 @@ fn check_view(name: &str, dtype: Dtype, shape: &[usize], want: &[usize]) -> Resu
 /// Decode little-endian f32 values (safetensors byte order) without alignment assumptions.
 #[inline]
 fn le_f32(bytes: &[u8]) -> impl Iterator<Item = f32> + '_ {
-    bytes.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b))
+    bytes
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
 }
 
 #[derive(Default)]

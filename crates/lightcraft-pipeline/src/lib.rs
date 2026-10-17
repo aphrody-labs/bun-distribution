@@ -21,7 +21,14 @@
 //! [`render_cached`] each stage's output is reused while its inputs are unchanged ([`StageCache`]):
 //! dragging a tone, colour or exposure slider re-runs only the per-pixel stage.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod auto;
 pub mod blemish;
@@ -44,7 +51,10 @@ pub mod transform;
 pub mod upright;
 pub mod visualize;
 
-pub use output::{DeepImage, DeepSamples, DisplaySpace, OutputDepth, OutputSpace, OutputTrc, Proof, ProofLut, proof_profile, register_proof_profile};
+pub use output::{
+    DeepImage, DeepSamples, DisplaySpace, OutputDepth, OutputSpace, OutputTrc, Proof, ProofLut,
+    proof_profile, register_proof_profile,
+};
 pub use visualize::{MaskView, Overlay};
 
 use lightcraft_develop::{DevelopSettings, Treatment};
@@ -161,7 +171,12 @@ impl PixelWindow {
         let (fw, fh) = (full_w.max(1), full_h.max(1));
         let x = self.x.min(fw - 1);
         let y = self.y.min(fh - 1);
-        PixelWindow { x, y, w: self.w.clamp(1, fw - x), h: self.h.clamp(1, fh - y) }
+        PixelWindow {
+            x,
+            y,
+            w: self.w.clamp(1, fw - x),
+            h: self.h.clamp(1, fh - y),
+        }
     }
 }
 
@@ -213,7 +228,12 @@ pub(crate) struct Prepared {
 }
 
 /// Output size for a source of `src_w × src_h` under `s`, fitting `max_w × max_h`.
-pub fn output_size(src_w: usize, src_h: usize, s: &DevelopSettings, req: &RenderRequest) -> (usize, usize) {
+pub fn output_size(
+    src_w: usize,
+    src_h: usize,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+) -> (usize, usize) {
     geometry::Frame::new(src_w, src_h, s, req.apply_crop).fit(req.max_w, req.max_h)
 }
 
@@ -224,8 +244,14 @@ pub fn native_output_size(src_w: usize, src_h: usize, s: &DevelopSettings) -> (f
 }
 
 /// The geometric frame `render` uses for `src` (lens data, automatic CA estimate included).
-pub fn frame_for(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, apply_crop: bool) -> geometry::Frame {
-    let mut frame = geometry::Frame::with_lens(src.width, src.height, s, apply_crop, info.lens.as_ref());
+pub fn frame_for(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    apply_crop: bool,
+) -> geometry::Frame {
+    let mut frame =
+        geometry::Frame::with_lens(src.width, src.height, s, apply_crop, info.lens.as_ref());
     if s.optics.remove_ca && s.section_enabled("optics") {
         frame.add_lateral_ca(optics::estimate_lateral_ca(src));
     }
@@ -249,7 +275,11 @@ pub struct StageCache {
 
 impl Default for StageCache {
     fn default() -> Self {
-        StageCache { entries: Mutex::new(Vec::new()), capacity: 2, ext: Mutex::new(None) }
+        StageCache {
+            entries: Mutex::new(Vec::new()),
+            capacity: 2,
+            ext: Mutex::new(None),
+        }
     }
 }
 
@@ -276,7 +306,11 @@ impl StageCache {
 
     /// The per-view state of type `T` if there is one (unlike [`Self::extension`], never creates it).
     pub fn peek_extension<T: Any + Send + Sync>(&self) -> Option<Arc<T>> {
-        self.ext.lock().unwrap_or_else(|e| e.into_inner()).as_ref().and_then(|e| e.clone().downcast::<T>().ok())
+        self.ext
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .as_ref()
+            .and_then(|e| e.clone().downcast::<T>().ok())
     }
 
     /// Bytes of the intermediate images held (each buffer counted once; the sources they were
@@ -299,8 +333,15 @@ impl StageCache {
                 add(Arc::as_ptr(l) as usize, size(l));
             }
             let pl = &e.planes;
-            let planes = pl.log_l.iter().chain(pl.base.iter().map(|x| &x.1)).chain(pl.clarity.iter().map(|x| &x.1));
-            for p in planes.chain(pl.texture.iter().map(|x| &x.1)).chain(pl.dark.iter().map(|x| &x.1)) {
+            let planes = pl
+                .log_l
+                .iter()
+                .chain(pl.base.iter().map(|x| &x.1))
+                .chain(pl.clarity.iter().map(|x| &x.1));
+            for p in planes
+                .chain(pl.texture.iter().map(|x| &x.1))
+                .chain(pl.dark.iter().map(|x| &x.1))
+            {
                 add(Arc::as_ptr(p) as usize, size(p));
             }
         }
@@ -321,7 +362,10 @@ impl StageCache {
     }
 
     fn get(&self, src: &Arc<Rgb32f>, geo: u64) -> Option<CacheEntry> {
-        self.lock().iter().find(|e| e.geo == geo && Arc::ptr_eq(&e.src, src)).cloned()
+        self.lock()
+            .iter()
+            .find(|e| e.geo == geo && Arc::ptr_eq(&e.src, src))
+            .cloned()
     }
 
     fn put(&self, e: CacheEntry) {
@@ -383,7 +427,12 @@ pub struct Plan<'a> {
 const AIRLIGHT_PROXY_EDGE: usize = 384;
 
 /// Resolve `s` against `src` for `req` (see [`Plan`]).
-pub fn plan<'a>(src: &Rgb32f, info: &SourceInfo, s: &'a DevelopSettings, req: &RenderRequest) -> Plan<'a> {
+pub fn plan<'a>(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &'a DevelopSettings,
+    req: &RenderRequest,
+) -> Plan<'a> {
     let mut settings: Cow<'a, DevelopSettings> = match profiles::effective(s) {
         Cow::Borrowed(b) => upright::resolve(src, info, b),
         Cow::Owned(o) => Cow::Owned(upright::resolve(src, info, &o).into_owned()),
@@ -392,8 +441,14 @@ pub fn plan<'a>(src: &Rgb32f, info: &SourceInfo, s: &'a DevelopSettings, req: &R
     // a window must not choose a spot's source from the pixels it happens to hold: fix them
     // from a fixed-size render of the whole frame first
     if req.window.is_some() && settings.spots.iter().any(|sp| sp.source_offset.is_none()) {
-        let picked: Vec<Option<lightcraft_geom::Point>> =
-            settings.spots.iter().map(|sp| sp.source_offset.or_else(|| spots::pick_source(src, info, &settings, sp, None))).collect();
+        let picked: Vec<Option<lightcraft_geom::Point>> = settings
+            .spots
+            .iter()
+            .map(|sp| {
+                sp.source_offset
+                    .or_else(|| spots::pick_source(src, info, &settings, sp, None))
+            })
+            .collect();
         for (sp, o) in settings.to_mut().spots.iter_mut().zip(picked) {
             sp.source_offset = o;
         }
@@ -408,15 +463,28 @@ pub fn plan<'a>(src: &Rgb32f, info: &SourceInfo, s: &'a DevelopSettings, req: &R
     let (frame, w, h) = match req.window {
         Some(win) => {
             let win = win.clamped(full_w, full_h);
-            if s.section_enabled("effects") && (s.effects.dehaze != 0.0 || s.masks.iter().any(|m| m.adjust.dehaze != 0.0)) {
+            if s.section_enabled("effects")
+                && (s.effects.dehaze != 0.0 || s.masks.iter().any(|m| m.adjust.dehaze != 0.0))
+            {
                 let k = (AIRLIGHT_PROXY_EDGE as f64 / full_w.max(full_h) as f64).min(1.0);
-                let (pw, ph) = (((full_w as f64 * k).round() as usize).max(1), ((full_h as f64 * k).round() as usize).max(1));
+                let (pw, ph) = (
+                    ((full_w as f64 * k).round() as usize).max(1),
+                    ((full_h as f64 * k).round() as usize).max(1),
+                );
                 fixed_air = Some(local::frame_airlight(src, info, s, &frame, pw, ph));
             }
             // (spots grow the rendered window; only 8-bit renders are cut back to the request)
-            let work = if req.depth == OutputDepth::U8 { spots::window_for_reads(s, &frame, full_w, full_h, px_per_long, win) } else { win };
+            let work = if req.depth == OutputDepth::U8 {
+                spots::window_for_reads(s, &frame, full_w, full_h, px_per_long, win)
+            } else {
+                win
+            };
             if work != win {
-                keep = Some(PixelWindow { x: win.x - work.x, y: win.y - work.y, ..win });
+                keep = Some(PixelWindow {
+                    x: win.x - work.x,
+                    y: win.y - work.y,
+                    ..win
+                });
             }
             (frame.window(full_w, full_h, work), work.w, work.h)
         }
@@ -438,14 +506,39 @@ pub fn plan<'a>(src: &Rgb32f, info: &SourceInfo, s: &'a DevelopSettings, req: &R
         local_tone::enabled(info, s),
         src_long,
     ));
-    let lin_key = hash_of((pre_nr_key, [d.nr_luminance, d.nr_detail, d.nr_color, d.nr_color_detail, d.nr_color_smoothness].map(f64::to_bits)));
-    Plan { settings, frame, w, h, px_per_long, src_long, geo, lin_key, pre_nr_key, eyes, fixed_air, keep, mattes: info.mattes.clone() }
+    let lin_key = hash_of((
+        pre_nr_key,
+        [
+            d.nr_luminance,
+            d.nr_detail,
+            d.nr_color,
+            d.nr_color_detail,
+            d.nr_color_smoothness,
+        ]
+        .map(f64::to_bits),
+    ));
+    Plan {
+        settings,
+        frame,
+        w,
+        h,
+        px_per_long,
+        src_long,
+        geo,
+        lin_key,
+        pre_nr_key,
+        eyes,
+        fixed_air,
+        keep,
+        mattes: info.mattes.clone(),
+    }
 }
 
 /// Whether the scene-linear stage needs work only the CPU does (defringe, spot removal).
 pub fn lin_needs_cpu(s: &DevelopSettings, info: &SourceInfo) -> bool {
     let o = &s.optics;
-    let defringe = s.section_enabled("optics") && (o.defringe_purple_amount > 0.0 || o.defringe_green_amount > 0.0);
+    let defringe = s.section_enabled("optics")
+        && (o.defringe_purple_amount > 0.0 || o.defringe_green_amount > 0.0);
     defringe || !s.spots.is_empty() || local_tone::enabled(info, s)
 }
 
@@ -464,8 +557,15 @@ pub fn lin_cpu(img: &mut Rgb32f, info: &SourceInfo, p: &Plan<'_>) {
 /// The settings a render of `s` for `req` uses: the HDR edit for an [`OutputDepth::F32Hdr`]
 /// render, otherwise its SDR rendition (see [`DevelopSettings::sdr_rendition`]). Every renderer
 /// (CPU and GPU) goes through this, so an SDR render of an HDR edit looks the same everywhere.
-pub fn settings_for<'a>(s: &'a DevelopSettings, req: &RenderRequest) -> std::borrow::Cow<'a, DevelopSettings> {
-    if req.depth == OutputDepth::F32Hdr { std::borrow::Cow::Borrowed(s) } else { s.sdr_rendition() }
+pub fn settings_for<'a>(
+    s: &'a DevelopSettings,
+    req: &RenderRequest,
+) -> std::borrow::Cow<'a, DevelopSettings> {
+    if req.depth == OutputDepth::F32Hdr {
+        std::borrow::Cow::Borrowed(s)
+    } else {
+        s.sdr_rendition()
+    }
 }
 
 /// Long edge (pixels) of the small HDR render [`hdr_histogram`] measures.
@@ -481,9 +581,19 @@ pub const HDR_HISTOGRAM_DRAG_EDGE: usize = 192;
 /// white, whatever the headroom limit, so the scale stays put) on the right ([`Histogram::of_hdr`]). A preview of
 /// an HDR edit shows its SDR rendition; this says how far its highlights go. `None` for SDR edits,
 /// high-bit-depth, windowed and proofed requests (their histogram stays the image's).
-pub fn hdr_histogram(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest) -> Option<Histogram> {
+pub fn hdr_histogram(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+) -> Option<Histogram> {
     // a drag's drafts keep their own histogram: a second render per tick would slow them down
-    if !s.hdr.enabled || req.depth != OutputDepth::U8 || req.window.is_some() || req.proof.is_some() || req.quality == Quality::Draft {
+    if !s.hdr.enabled
+        || req.depth != OutputDepth::U8
+        || req.window.is_some()
+        || req.proof.is_some()
+        || req.quality == Quality::Draft
+    {
         return None;
     }
     let k = (HDR_HISTOGRAM_EDGE as f64 / req.max_w.max(req.max_h).max(1) as f64).min(1.0);
@@ -499,18 +609,34 @@ pub fn hdr_histogram(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, req: 
         ..*req
     };
     let deep = render(src, info, s, &hreq).deep?;
-    let DeepSamples::F32(v) = &deep.samples else { return None };
-    Some(Histogram::of_hdr(v.as_chunks::<3>().0, lightcraft_develop::Hdr::MAX_EV_LIMIT as f32))
+    let DeepSamples::F32(v) = &deep.samples else {
+        return None;
+    };
+    Some(Histogram::of_hdr(
+        v.as_chunks::<3>().0,
+        lightcraft_develop::Hdr::MAX_EV_LIMIT as f32,
+    ))
 }
 
 /// Render `src` with settings `s`.
-pub fn render(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest) -> Rendered {
+pub fn render(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+) -> Rendered {
     render_impl(Src::Borrowed(src), info, s, req, None)
 }
 
 /// [`render`], reusing (and refreshing) the intermediate results in `cache`. The output is
 /// identical to [`render`]'s.
-pub fn render_cached(src: &Arc<Rgb32f>, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest, cache: &StageCache) -> Rendered {
+pub fn render_cached(
+    src: &Arc<Rgb32f>,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+    cache: &StageCache,
+) -> Rendered {
     render_impl(Src::Shared(src), info, s, req, Some(cache))
 }
 
@@ -519,7 +645,13 @@ enum Src<'a> {
     Shared(&'a Arc<Rgb32f>),
 }
 
-fn render_impl(src: Src<'_>, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest, cache: Option<&StageCache>) -> Rendered {
+fn render_impl(
+    src: Src<'_>,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+    cache: Option<&StageCache>,
+) -> Rendered {
     // sections switched off with their eye render as if at their defaults (issue #316)
     let effective = s.effective();
     let edit: &DevelopSettings = &effective;
@@ -538,7 +670,16 @@ fn render_impl(src: Src<'_>, info: &SourceInfo, s: &DevelopSettings, req: &Rende
         Src::Shared(a) => a,
     };
     let plan = plan(src_img, info, s, req);
-    let Plan { ref frame, w, h, px_per_long, src_long, geo, lin_key, .. } = plan;
+    let Plan {
+        ref frame,
+        w,
+        h,
+        px_per_long,
+        src_long,
+        geo,
+        lin_key,
+        ..
+    } = plan;
     let s = &*plan.settings;
 
     let shared = match (&src, cache) {
@@ -552,11 +693,19 @@ fn render_impl(src: Src<'_>, info: &SourceInfo, s: &DevelopSettings, req: &Rende
     };
     lap("sample", &mut t);
 
-    let lin = match cached.as_ref().and_then(|e| e.lin.clone()).filter(|(k, _)| *k == lin_key) {
+    let lin = match cached
+        .as_ref()
+        .and_then(|e| e.lin.clone())
+        .filter(|(k, _)| *k == lin_key)
+    {
         Some((_, img)) => img,
         None => {
             // Without a cache the resampled buffer is ours: work on it in place.
-            let mut img = if shared.is_some() { (*sampled).clone() } else { Arc::unwrap_or_clone(sampled.clone()) };
+            let mut img = if shared.is_some() {
+                (*sampled).clone()
+            } else {
+                Arc::unwrap_or_clone(sampled.clone())
+            };
             lin_cpu(&mut img, info, &plan);
             local::denoise(&mut img, s, src_long, frame.output_long(w, h));
             Arc::new(img)
@@ -570,24 +719,54 @@ fn render_impl(src: Src<'_>, info: &SourceInfo, s: &DevelopSettings, req: &Rende
         // per-pixel log luminance and the fine texture band are redone. Keyed so a full-quality
         // render never takes them.
         Some(p) if req.quality == Quality::Draft && p.pre_nr == plan.pre_nr_key => p.for_other_nr(),
-        _ => local::Planes { key: lin_key, pre_nr: plan.pre_nr_key, ..Default::default() },
+        _ => local::Planes {
+            key: lin_key,
+            pre_nr: plan.pre_nr_key,
+            ..Default::default()
+        },
     };
-    let mut prep = local::prepare(lin.clone(), s, frame, px_per_long, req.quality, &mut planes, plan.mattes.as_deref());
+    let mut prep = local::prepare(
+        lin.clone(),
+        s,
+        frame,
+        px_per_long,
+        req.quality,
+        &mut planes,
+        plan.mattes.as_deref(),
+    );
     if let Some(a) = plan.fixed_air {
         prep.air = a;
     }
     lap("prepare", &mut t);
     if let Some((a, c)) = shared {
-        c.put(CacheEntry { src: a.clone(), geo, sampled, lin: Some((lin_key, lin)), planes });
+        c.put(CacheEntry {
+            src: a.clone(),
+            geo,
+            sampled,
+            lin: Some((lin_key, lin)),
+            planes,
+        });
     }
     if req.depth != OutputDepth::U8 {
         let deep = finish::finish_deep(&prep, s, frame, info, req.space, req.depth, req.proof);
         let image = deep.to_rgba8();
         let histogram = Histogram::of_srgb8(&image);
         lap("finish (deep)", &mut t);
-        return Rendered { image, histogram, deep: Some(deep) };
+        return Rendered {
+            image,
+            histogram,
+            deep: Some(deep),
+        };
     }
-    let image = finish::finish(&prep, s, frame, info, req.space, req.display.as_ref(), req.proof);
+    let image = finish::finish(
+        &prep,
+        s,
+        frame,
+        info,
+        req.space,
+        req.display.as_ref(),
+        req.proof,
+    );
     lap("finish", &mut t);
     let cut = |i: &Rgba8| match plan.keep {
         Some(k) => i.crop(k.x, k.y, k.w, k.h),
@@ -601,23 +780,48 @@ fn render_impl(src: Src<'_>, info: &SourceInfo, s: &DevelopSettings, req: &Rende
     let mut image = image;
     let mask = overlay_alpha(req.overlay, &plan, &prep);
     let masks = overlay_alphas_all(req.overlay, &plan, &prep);
-    visualize::apply(&mut image, req.overlay, &plan, mask.as_ref(), masks.as_deref());
-    let mut image = if plan.keep.is_some() { cut(&image) } else { image };
+    visualize::apply(
+        &mut image,
+        req.overlay,
+        &plan,
+        mask.as_ref(),
+        masks.as_deref(),
+    );
+    let mut image = if plan.keep.is_some() {
+        cut(&image)
+    } else {
+        image
+    };
     if req.overlay == Overlay::HdrRange && edit.hdr.enabled {
         // the HDR rendition of the same request says how far above SDR white each pixel goes
-        let hreq = RenderRequest { depth: OutputDepth::F32Hdr, overlay: Overlay::None, proof: None, ..*req };
+        let hreq = RenderRequest {
+            depth: OutputDepth::F32Hdr,
+            overlay: Overlay::None,
+            proof: None,
+            ..*req
+        };
         if let Some(hdr) = render(src_img, info, edit, &hreq).deep {
             visualize::hdr_range(&mut image, &hdr, req.space.luma());
         }
         lap("visualize hdr", &mut t);
     }
-    Rendered { image, histogram, deep: None }
+    Rendered {
+        image,
+        histogram,
+        deep: None,
+    }
 }
 
 /// The colour a colour-range mask would sample at normalized image point `p` (OkLab of the
 /// exposed scene colours, as [`MaskShape::ColorRange`](lightcraft_develop::MaskShape) compares
 /// them), averaged over 3 × 3 pixels of a render fitting `req`. `None` outside the image.
-pub fn color_range_sample(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings, req: &RenderRequest, p: lightcraft_geom::Point) -> Option<[f64; 3]> {
+pub fn color_range_sample(
+    src: &Rgb32f,
+    info: &SourceInfo,
+    s: &DevelopSettings,
+    req: &RenderRequest,
+    p: lightcraft_geom::Point,
+) -> Option<[f64; 3]> {
     let plan = plan(src, info, s, req);
     let mut img = plan.frame.sample(src, plan.w, plan.h);
     lin_cpu(&mut img, info, &plan);
@@ -650,7 +854,16 @@ fn overlay_alpha(o: Overlay, plan: &Plan<'_>, prep: &Prepared) -> Option<Plane> 
         return Some(e.alpha.clone());
     }
     let ev = plan.settings.light.exposure as f32;
-    Some(masks::evaluate_one(m, &plan.frame, plan.w, plan.h, &prep.img, &prep.log_l, ev, plan.mattes.as_deref()))
+    Some(masks::evaluate_one(
+        m,
+        &plan.frame,
+        plan.w,
+        plan.h,
+        &prep.img,
+        &prep.log_l,
+        ev,
+        plan.mattes.as_deref(),
+    ))
 }
 
 /// The alpha planes an `Overlay::AllMasks` shows: one per visible mask that has components,
@@ -661,11 +874,25 @@ fn overlay_alphas_all(o: Overlay, plan: &Plan<'_>, prep: &Prepared) -> Option<Ve
     }
     let ev = plan.settings.light.exposure as f32;
     let mut out = Vec::new();
-    for m in plan.settings.masks.iter().filter(|m| m.visible && !m.components.is_empty()) {
+    for m in plan
+        .settings
+        .masks
+        .iter()
+        .filter(|m| m.visible && !m.components.is_empty())
+    {
         if let Some(e) = prep.masks.iter().find(|e| e.id == m.id) {
             out.push(e.alpha.clone());
         } else {
-            out.push(masks::evaluate_one(m, &plan.frame, plan.w, plan.h, &prep.img, &prep.log_l, ev, plan.mattes.as_deref()));
+            out.push(masks::evaluate_one(
+                m,
+                &plan.frame,
+                plan.w,
+                plan.h,
+                &prep.img,
+                &prep.log_l,
+                ev,
+                plan.mattes.as_deref(),
+            ));
         }
     }
     Some(out)
@@ -674,8 +901,16 @@ fn overlay_alphas_all(o: Overlay, plan: &Plan<'_>, prep: &Prepared) -> Option<Ve
 /// Convenience: render a before/after pair side by side is up to the UI; this renders "before"
 /// (default look, keeping the crop so framing matches, under the photo's own rendering process).
 pub fn before_settings(s: &DevelopSettings) -> DevelopSettings {
-    let mut b = DevelopSettings { crop: s.crop, orientation: s.orientation, process: s.process, ..DevelopSettings::default() };
-    b.wb = lightcraft_develop::WhiteBalance { mode: lightcraft_develop::WbMode::AsShot, ..b.wb };
+    let mut b = DevelopSettings {
+        crop: s.crop,
+        orientation: s.orientation,
+        process: s.process,
+        ..DevelopSettings::default()
+    };
+    b.wb = lightcraft_develop::WhiteBalance {
+        mode: lightcraft_develop::WbMode::AsShot,
+        ..b.wb
+    };
     b
 }
 
@@ -700,7 +935,11 @@ pub(crate) fn timed<R>(what: &str, f: impl FnOnce() -> R) -> R {
     r
 }
 
-pub(crate) fn for_rows<T: Send>(data: &mut [T], w: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) {
+pub(crate) fn for_rows<T: Send>(
+    data: &mut [T],
+    w: usize,
+    f: impl Fn(usize, &mut [T]) + Sync + Send,
+) {
     par_rows(data, w, f)
 }
 

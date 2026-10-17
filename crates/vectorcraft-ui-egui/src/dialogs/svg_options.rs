@@ -60,9 +60,17 @@ const STYLING: [(&str, &str); 4] = [
 ];
 const FONTS: [(bool, &str); 2] = [(false, "SVG"), (true, "Convert To Outlines")];
 const IMAGES: [(&str, &str); 2] = [("embed", "Embed"), ("link", "Link")];
-const OBJECT_IDS: [(&str, &str); 3] = [("layerNames", "Layer Names"), ("minimal", "Minimal"), ("unique", "Unique")];
+const OBJECT_IDS: [(&str, &str); 3] = [
+    ("layerNames", "Layer Names"),
+    ("minimal", "Minimal"),
+    ("unique", "Unique"),
+];
 const PROFILES: [(&str, &str); 2] = [("svg11", "SVG 1.1"), ("tiny12", "SVG Tiny 1.2")];
-const ENCODINGS: [(&str, &str); 3] = [("utf8", "Unicode (UTF-8)"), ("utf16", "Unicode (UTF-16)"), ("latin1", "ISO 8859-1")];
+const ENCODINGS: [(&str, &str); 3] = [
+    ("utf8", "Unicode (UTF-8)"),
+    ("utf16", "Unicode (UTF-16)"),
+    ("latin1", "ISO 8859-1"),
+];
 
 /// Dialog fields that are not SVG options.
 const UI_KEYS: [&str; 5] = ["mode", "path", "showCode", "allArtboards", "range"];
@@ -71,7 +79,10 @@ const UI_KEYS: [&str; 5] = ["mode", "path", "showCode", "allArtboards", "range"]
 /// and Responsive on (as the reference app's Export As starts). Hidden layers are left to the
 /// command (Save keeps them, Export leaves them out).
 pub(super) fn first_use() -> Map<String, Value> {
-    let mut m = serde_json::to_value(vectorcraft_svg::ExportOptions::default()).ok().and_then(|v| v.as_object().cloned()).unwrap_or_default();
+    let mut m = serde_json::to_value(vectorcraft_svg::ExportOptions::default())
+        .ok()
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
     m.remove("hiddenLayers");
     m.insert("styling".into(), json!("css"));
     m.insert("responsive".into(), json!(true));
@@ -84,7 +95,11 @@ pub(super) fn first_use() -> Map<String, Value> {
 pub fn open(app: &mut VectorcraftApp, mode: Mode, path: Option<&str>) {
     let mut fields = first_use();
     // Fonts start from Document Setup → Type → Export.
-    if app.session.active().is_some_and(|st| st.doc.setup.export_text == vectorcraft_doc::ExportText::Appearance) {
+    if app
+        .session
+        .active()
+        .is_some_and(|st| st.doc.setup.export_text == vectorcraft_doc::ExportText::Appearance)
+    {
         fields.insert("outlineText".into(), json!(true));
     }
     // Only options saved with an SVG format are SVG options.
@@ -111,13 +126,25 @@ pub fn open(app: &mut VectorcraftApp, mode: Mode, path: Option<&str>) {
 /// only when saving).
 fn options(d: &Dialog) -> Value {
     let mode = Mode::of(d);
-    let mut o: Map<String, Value> = d.fields.iter().filter(|(k, _)| !UI_KEYS.contains(&k.as_str())).map(|(k, v)| (k.clone(), v.clone())).collect();
+    let mut o: Map<String, Value> = d
+        .fields
+        .iter()
+        .filter(|(k, _)| !UI_KEYS.contains(&k.as_str()))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
     if mode == Mode::Export {
         o.remove("preserveEditing");
         if d.bool("useArtboards") {
             let range = d.str("range");
             let range = range.trim();
-            o.insert("range".into(), json!(if d.bool("allArtboards") || range.is_empty() { "all" } else { range }));
+            o.insert(
+                "range".into(),
+                json!(if d.bool("allArtboards") || range.is_empty() {
+                    "all"
+                } else {
+                    range
+                }),
+            );
         }
     } else {
         o.remove("useArtboards");
@@ -129,7 +156,8 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let opts = options(d);
     if Mode::of(d) == Mode::Export && d.bool("useArtboards") {
         let n = app.session.active().map_or(0, |st| st.doc.artboards.len());
-        let pick: vectorcraft_engine::cmd::fileio::ArtboardPick = serde_json::from_value(opts.clone()).map_err(|e| e.to_string())?;
+        let pick: vectorcraft_engine::cmd::fileio::ArtboardPick =
+            serde_json::from_value(opts.clone()).map_err(|e| e.to_string())?;
         pick.resolve(n)?;
     }
     // Remembered for next time, without the document's artboard range.
@@ -153,13 +181,31 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 
 /// One labelled choice row: the dropdown sets `d.fields[key]` to the chosen value. `forced`: the
 /// value the export uses whatever is chosen (shown, the dropdown disabled).
-fn choice<V: Into<Value> + Copy>(ui: &mut egui::Ui, d: &mut Dialog, key: &str, label: &str, choices: &[(V, &str)], forced: Option<V>) {
+fn choice<V: Into<Value> + Copy>(
+    ui: &mut egui::Ui,
+    d: &mut Dialog,
+    key: &str,
+    label: &str,
+    choices: &[(V, &str)],
+    forced: Option<V>,
+) {
     let t = Tokens::get(ui.ctx());
     ui.label(egui::RichText::new(label).color(t.text_dim));
-    let current = forced.map(Into::into).or_else(|| d.fields.get(key).cloned()).unwrap_or(Value::Null);
-    let shown = choices.iter().find(|(v, _)| (*v).into() == current).or(choices.first()).map_or("", |(_, l)| *l);
+    let current = forced
+        .map(Into::into)
+        .or_else(|| d.fields.get(key).cloned())
+        .unwrap_or(Value::Null);
+    let shown = choices
+        .iter()
+        .find(|(v, _)| (*v).into() == current)
+        .or(choices.first())
+        .map_or("", |(_, l)| *l);
     let labels: Vec<&str> = choices.iter().map(|(_, l)| *l).collect();
-    let picked = ui.add_enabled_ui(forced.is_none(), |ui| widgets::dropdown(ui, key, shown, &labels, 250.0)).inner;
+    let picked = ui
+        .add_enabled_ui(forced.is_none(), |ui| {
+            widgets::dropdown(ui, key, shown, &labels, 250.0)
+        })
+        .inner;
     if let Some((v, _)) = picked.and_then(|i| choices.get(i)) {
         d.fields.insert(key.into(), (*v).into());
     }
@@ -178,11 +224,26 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     if Mode::of(d) == Mode::Export {
         artboards(app, ui, d);
     } else {
-        check(ui, d, "preserveEditing", tl!("Preserve Editing Capabilities"), true);
+        check(
+            ui,
+            d,
+            "preserveEditing",
+            tl!("Preserve Editing Capabilities"),
+            true,
+        );
     }
     ui.add_space(10.0);
     let show = d.bool("showCode");
-    if widgets::secondary_button(ui, if show { tl!("Hide Code") } else { tl!("Show Code") }).clicked() {
+    if widgets::secondary_button(
+        ui,
+        if show {
+            tl!("Hide Code")
+        } else {
+            tl!("Show Code")
+        },
+    )
+    .clicked()
+    {
         d.fields.insert("showCode".into(), json!(!show));
     }
     if show {
@@ -199,31 +260,59 @@ pub(super) fn option_fields(ui: &mut egui::Ui, d: &mut Dialog, screens: bool) {
     let t = Tokens::get(ui.ctx());
     // SVG Tiny has presentation attributes alone and no web fonts.
     let tiny = d.str("profile") == "tiny12";
-    egui::Grid::new("svg-options").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-        choice(ui, d, "profile", tl!("SVG Profile:"), &PROFILES, None);
-        choice(ui, d, "styling", tl!("Styling:"), &STYLING, tiny.then_some("presentation"));
-        choice(ui, d, "outlineText", tl!("Font:"), &FONTS, None);
-        if !screens {
-            choice(ui, d, "images", tl!("Images:"), &IMAGES, None);
-        }
-        choice(ui, d, "objectIds", tl!("Object IDs:"), &OBJECT_IDS, None);
-        widgets::field_label(ui, egui::RichText::new(tl!("Decimal:")).color(t.text_dim));
-        let decimals = d.f64("decimals", 3.0);
-        if let Some(v) = widgets::spin_plain(ui, "svg-decimals", decimals, "", 0, 70.0, 1.0, 1.0, &[]) {
-            let (lo, hi) = (*vectorcraft_svg::DECIMALS.start() as f64, *vectorcraft_svg::DECIMALS.end() as f64);
-            d.fields.insert("decimals".into(), json!(v.round().clamp(lo, hi) as u8));
-        }
-        ui.end_row();
-        choice(ui, d, "encoding", tl!("Encoding:"), &ENCODINGS, None);
-    });
+    egui::Grid::new("svg-options")
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(ui, |ui| {
+            choice(ui, d, "profile", tl!("SVG Profile:"), &PROFILES, None);
+            choice(
+                ui,
+                d,
+                "styling",
+                tl!("Styling:"),
+                &STYLING,
+                tiny.then_some("presentation"),
+            );
+            choice(ui, d, "outlineText", tl!("Font:"), &FONTS, None);
+            if !screens {
+                choice(ui, d, "images", tl!("Images:"), &IMAGES, None);
+            }
+            choice(ui, d, "objectIds", tl!("Object IDs:"), &OBJECT_IDS, None);
+            widgets::field_label(ui, egui::RichText::new(tl!("Decimal:")).color(t.text_dim));
+            let decimals = d.f64("decimals", 3.0);
+            if let Some(v) =
+                widgets::spin_plain(ui, "svg-decimals", decimals, "", 0, 70.0, 1.0, 1.0, &[])
+            {
+                let (lo, hi) = (
+                    *vectorcraft_svg::DECIMALS.start() as f64,
+                    *vectorcraft_svg::DECIMALS.end() as f64,
+                );
+                d.fields
+                    .insert("decimals".into(), json!(v.round().clamp(lo, hi) as u8));
+            }
+            ui.end_row();
+            choice(ui, d, "encoding", tl!("Encoding:"), &ENCODINGS, None);
+        });
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         check(ui, d, "minify", tl!("Minify"), true);
         ui.add_space(12.0);
         check(ui, d, "responsive", tl!("Responsive"), true);
     });
-    check(ui, d, "embedFonts", tl!("Embed Fonts (Glyphs Used)"), !d.bool("outlineText") && !tiny);
-    check(ui, d, "fewerTspans", tl!("Fewer <tspan> Elements"), !d.bool("outlineText"));
+    check(
+        ui,
+        d,
+        "embedFonts",
+        tl!("Embed Fonts (Glyphs Used)"),
+        !d.bool("outlineText") && !tiny,
+    );
+    check(
+        ui,
+        d,
+        "fewerTspans",
+        tl!("Fewer <tspan> Elements"),
+        !d.bool("outlineText"),
+    );
     check(ui, d, "metadata", tl!("Include Metadata"), true);
 }
 
@@ -244,7 +333,9 @@ fn artboards(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
                 d.fields.insert("allArtboards".into(), json!(false));
             }
             let mut range = d.str("range");
-            let edit = egui::TextEdit::singleline(&mut range).hint_text(format!("1-{count}")).desired_width(90.0);
+            let edit = egui::TextEdit::singleline(&mut range)
+                .hint_text(format!("1-{count}"))
+                .desired_width(90.0);
             if ui.add_enabled(!all, edit).changed() {
                 d.fields.insert("range".into(), json!(range));
             }
@@ -256,34 +347,58 @@ fn artboards(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) {
 /// encoded again only when the options or the document change.
 fn code_view(app: &VectorcraftApp, ui: &mut egui::Ui, d: &Dialog) {
     let t = Tokens::get(ui.ctx());
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let mut opts = options(d);
     if let Some(o) = opts.as_object_mut()
         && let Some(r) = o.remove("range")
     {
         // The first artboard of the range (or the first one).
-        let first = r.as_str().and_then(|r| r.split([',', '-', '\u{2013}']).next()).and_then(|n| n.trim().parse::<usize>().ok());
-        o.insert("artboard".into(), json!(first.map_or(0, |n| n.saturating_sub(1))));
+        let first = r
+            .as_str()
+            .and_then(|r| r.split([',', '-', '\u{2013}']).next())
+            .and_then(|n| n.trim().parse::<usize>().ok());
+        o.insert(
+            "artboard".into(),
+            json!(first.map_or(0, |n| n.saturating_sub(1))),
+        );
     }
     // One cached text, replaced when the document or the options change.
     let key = egui::Id::new("svg-code");
     let sig = egui::Id::new((st.uid, st.revision, opts.to_string())).value();
-    let code: Arc<String> = match ui.ctx().data(|m| m.get_temp::<(u64, Arc<String>)>(key)).filter(|(s, _)| *s == sig) {
+    let code: Arc<String> = match ui
+        .ctx()
+        .data(|m| m.get_temp::<(u64, Arc<String>)>(key))
+        .filter(|(s, _)| *s == sig)
+    {
         Some((_, c)) => c,
         None => {
             const MAX: usize = 200_000;
-            let mut text = match vectorcraft_engine::cmd::fileio::encode_all(&st.doc, "svg", &json!({ "svg": opts })) {
+            let mut text = match vectorcraft_engine::cmd::fileio::encode_all(
+                &st.doc,
+                "svg",
+                &json!({ "svg": opts }),
+            ) {
                 // Shown as text whatever the file's encoding.
                 Ok(enc) => enc
                     .files
                     .into_iter()
                     .next()
-                    .map(|(_, b)| vectorcraft_svg::text_of(&b).map_or_else(|_| String::from_utf8_lossy(&b).into_owned(), |t| t.into_owned()))
+                    .map(|(_, b)| {
+                        vectorcraft_svg::text_of(&b).map_or_else(
+                            |_| String::from_utf8_lossy(&b).into_owned(),
+                            |t| t.into_owned(),
+                        )
+                    })
                     .unwrap_or_default(),
                 Err(e) => e.to_string(),
             };
             if text.len() > MAX {
-                let cut = (0..=MAX).rev().find(|i| text.is_char_boundary(*i)).unwrap_or(0);
+                let cut = (0..=MAX)
+                    .rev()
+                    .find(|i| text.is_char_boundary(*i))
+                    .unwrap_or(0);
                 text.truncate(cut);
                 text.push_str("\n…");
             }
@@ -293,16 +408,20 @@ fn code_view(app: &VectorcraftApp, ui: &mut egui::Ui, d: &Dialog) {
         }
     };
     widgets::list_box(ui, |ui| {
-        egui::ScrollArea::both().max_height(260.0).max_width(520.0).auto_shrink([false, true]).show(ui, |ui| {
-            ui.add(
-                egui::TextEdit::multiline(&mut code.as_str())
-                    .font(theme::mono(11.5))
-                    .text_color(t.text)
-                    .frame(egui::Frame::NONE)
-                    .desired_width(f32::INFINITY)
-                    .desired_rows(12),
-            );
-        });
+        egui::ScrollArea::both()
+            .max_height(260.0)
+            .max_width(520.0)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                ui.add(
+                    egui::TextEdit::multiline(&mut code.as_str())
+                        .font(theme::mono(11.5))
+                        .text_color(t.text)
+                        .frame(egui::Frame::NONE)
+                        .desired_width(f32::INFINITY)
+                        .desired_rows(12),
+                );
+            });
     });
 }
 
@@ -333,8 +452,16 @@ mod tests {
             ..Default::default()
         };
         let mut app = VectorcraftApp::new(Session::new(), services);
-        app.run("file.new", json!({"width": 120, "height": 80, "artboards": 2})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 40, "height": 30})).unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 120, "height": 80, "artboards": 2}),
+        )
+        .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 40, "height": 30}),
+        )
+        .unwrap();
         (app, written)
     }
 
@@ -356,10 +483,19 @@ mod tests {
         app.run("file.export.svg", Value::Null).unwrap();
         let d = app.ui.dialog.clone().expect("SVG Options opened");
         assert_eq!(d.kind, KIND);
-        assert_eq!((d.str("styling"), d.bool("responsive"), d.str("mode")), ("css".into(), true, "export".into()), "first-use defaults");
+        assert_eq!(
+            (d.str("styling"), d.bool("responsive"), d.str("mode")),
+            ("css".into(), true, "export".into()),
+            "first-use defaults"
+        );
         frame(&mut app);
         // Show Code draws the SVG the options write.
-        app.ui.dialog.as_mut().unwrap().fields.insert("showCode".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("showCode".into(), json!(true));
         frame(&mut app);
         assert!(app.ui.dialog.is_some());
         let f = &mut app.ui.dialog.as_mut().unwrap().fields;
@@ -370,9 +506,15 @@ mod tests {
         assert!(app.ui.dialog.is_none());
         let svg = text(&written, 0);
         assert_eq!(written.borrow()[0].0, "/tmp/out.svg");
-        assert!(svg.contains("<style>") && !svg.contains(" width=\"120\""), "{svg}");
+        assert!(
+            svg.contains("<style>") && !svg.contains(" width=\"120\""),
+            "{svg}"
+        );
         assert_eq!(app.ui.svg_options["decimals"], 1);
-        assert!(app.ui.svg_options.get("range").is_none(), "the range belongs to the document");
+        assert!(
+            app.ui.svg_options.get("range").is_none(),
+            "the range belongs to the document"
+        );
         // Next time the dialog starts from these choices.
         app.run("file.export.svg", Value::Null).unwrap();
         assert_eq!(app.ui.dialog.as_ref().unwrap().f64("decimals", 0.0), 1.0);
@@ -384,7 +526,10 @@ mod tests {
         app.run("file.export.svg", Value::Null).unwrap();
         super::super::confirm(&mut app).unwrap();
         let names: Vec<String> = written.borrow().iter().map(|(p, _)| p.clone()).collect();
-        assert_eq!(names, ["/tmp/set-Artboard-1.svg", "/tmp/set-Artboard-2.svg"]);
+        assert_eq!(
+            names,
+            ["/tmp/set-Artboard-1.svg", "/tmp/set-Artboard-2.svg"]
+        );
     }
 
     #[test]
@@ -393,36 +538,67 @@ mod tests {
         let r = app.run("file.saveAs", Value::Null).unwrap();
         assert_eq!(r["dialog"], KIND);
         let d = app.ui.dialog.clone().unwrap();
-        assert_eq!((d.str("mode"), d.str("path")), ("save".into(), "/tmp/doc.svg".into()));
+        assert_eq!(
+            (d.str("mode"), d.str("path")),
+            ("save".into(), "/tmp/doc.svg".into())
+        );
         frame(&mut app);
-        app.ui.dialog.as_mut().unwrap().fields.insert("styling".into(), json!("style"));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("styling".into(), json!("style"));
         super::super::confirm(&mut app).unwrap();
         assert!(text(&written, 0).contains("style=\"fill:"));
         let st = app.session.active().unwrap();
         assert_eq!(st.path.as_deref(), Some("/tmp/doc.svg"));
         assert!(!st.is_dirty());
         // Save writes SVG again with the same options, no dialog.
-        app.run("shape.ellipse", json!({"x": 60, "y": 10, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "shape.ellipse",
+            json!({"x": 60, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
         app.run("file.save", Value::Null).unwrap();
         assert!(app.ui.dialog.is_none());
         assert_eq!(written.borrow()[1].0, "/tmp/doc.svg");
-        assert!(text(&written, 1).contains("style=\"fill:") && text(&written, 1).matches("<path").count() == 2);
+        assert!(
+            text(&written, 1).contains("style=\"fill:")
+                && text(&written, 1).matches("<path").count() == 2
+        );
         // Save a Copy (options given) leaves the document's path alone.
-        app.run("file.saveCopy", json!({"path": "/tmp/copy.svg", "svg": {"minify": true}})).unwrap();
-        assert!(!text(&written, 2).trim_end().contains('\n') && !text(&written, 2).contains("<?xml"), "minified");
-        assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/doc.svg"));
+        app.run(
+            "file.saveCopy",
+            json!({"path": "/tmp/copy.svg", "svg": {"minify": true}}),
+        )
+        .unwrap();
+        assert!(
+            !text(&written, 2).trim_end().contains('\n') && !text(&written, 2).contains("<?xml"),
+            "minified"
+        );
+        assert_eq!(
+            app.session.active().unwrap().path.as_deref(),
+            Some("/tmp/doc.svg")
+        );
         // A native Save As needs no options.
-        app.run("file.saveAs", json!({"path": "/tmp/doc.vectorcraft"})).unwrap();
+        app.run("file.saveAs", json!({"path": "/tmp/doc.vectorcraft"}))
+            .unwrap();
         assert!(vectorcraft_format::sniff(&written.borrow()[3].1));
     }
 
     #[test]
     fn profile_encoding_and_embedded_fonts_reach_the_file() {
         let (mut app, written) = app("/tmp/tiny.svg");
-        app.run("text.create", json!({"x": 10, "y": 60, "text": "Grüße €"})).unwrap();
+        app.run("text.create", json!({"x": 10, "y": 60, "text": "Grüße €"}))
+            .unwrap();
         app.run("file.export.svg", Value::Null).unwrap();
         let d = app.ui.dialog.clone().unwrap();
-        assert_eq!((d.str("profile"), d.str("encoding"), d.bool("embedFonts")), ("svg11".into(), "utf8".into(), false), "the defaults");
+        assert_eq!(
+            (d.str("profile"), d.str("encoding"), d.bool("embedFonts")),
+            ("svg11".into(), "utf8".into(), false),
+            "the defaults"
+        );
         let f = &mut app.ui.dialog.as_mut().unwrap().fields;
         f.insert("profile".into(), json!("tiny12"));
         f.insert("encoding".into(), json!("latin1"));
@@ -434,7 +610,12 @@ mod tests {
         let bytes = written.borrow()[0].1.clone();
         assert!(bytes.starts_with(b"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>"));
         let svg = vectorcraft_svg::text_of(&bytes).unwrap();
-        assert!(svg.contains("baseProfile=\"tiny\"") && !svg.contains("<style>") && svg.contains("&#x20AC;"), "{svg}");
+        assert!(
+            svg.contains("baseProfile=\"tiny\"")
+                && !svg.contains("<style>")
+                && svg.contains("&#x20AC;"),
+            "{svg}"
+        );
         // SVG 1.1 with embedded fonts: an @font-face rule for the type.
         app.run("file.export.svg", Value::Null).unwrap();
         let f = &mut app.ui.dialog.as_mut().unwrap().fields;

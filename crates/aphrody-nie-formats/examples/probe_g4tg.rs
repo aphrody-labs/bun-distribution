@@ -34,7 +34,11 @@ fn modes_bc7(data: &[u8]) -> [usize; 9] {
     let mut h = [0usize; 9];
     for bloc in data.as_chunks::<16>().0.iter() {
         let b0 = bloc[0];
-        let m = if b0 == 0 { 8 } else { b0.trailing_zeros() as usize };
+        let m = if b0 == 0 {
+            8
+        } else {
+            b0.trailing_zeros() as usize
+        };
         h[m.min(8)] += 1;
     }
     h
@@ -67,7 +71,9 @@ fn score(w: u32, h: u32, rgba: &[u8]) -> (f64, f64) {
 
 fn main() {
     let mut args = std::env::args().skip(1);
-    let path = args.next().expect("usage: probe_g4tg <fichier> [dossier_png]");
+    let path = args
+        .next()
+        .expect("usage: probe_g4tg <fichier> [dossier_png]");
     let outdir = args.next();
     let data = std::fs::read(&path).expect("lecture");
     let n = data.len();
@@ -139,7 +145,10 @@ fn main() {
         if let Some(d) = &outdir {
             let f = std::path::Path::new(d).join(format!(
                 "{}_{i:02}_{nom}_{w}x{h}.png",
-                std::path::Path::new(&path).file_stem().unwrap().to_string_lossy()
+                std::path::Path::new(&path)
+                    .file_stem()
+                    .unwrap()
+                    .to_string_lossy()
             ));
             if let Some(png) = aphrody_nie_formats::g4tx_decode::encode_rgba_to_png(rgba, *w, *h) {
                 let _ = std::fs::write(f, png);

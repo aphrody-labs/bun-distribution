@@ -57,7 +57,11 @@ pub fn triangulate(outer: &[P], holes: &[Vec<P>]) -> Vec<[usize; 3]> {
         hs.push(r);
     }
     hs.sort_by(|a, b| {
-        let mx = |r: &Vec<usize>| r.iter().map(|&i| pts[i][0]).fold(f64::NEG_INFINITY, f64::max);
+        let mx = |r: &Vec<usize>| {
+            r.iter()
+                .map(|&i| pts[i][0])
+                .fold(f64::NEG_INFINITY, f64::max)
+        };
         mx(b).total_cmp(&mx(a))
     });
     for h in hs {
@@ -68,7 +72,11 @@ pub fn triangulate(outer: &[P], holes: &[Vec<P>]) -> Vec<[usize; 3]> {
 
 /// Join hole `h` into `ring` through a bridge from the hole's rightmost vertex.
 fn bridge(pts: &[P], ring: &mut Vec<usize>, h: &[usize]) {
-    let (hk, &m) = h.iter().enumerate().max_by(|a, b| pts[*a.1][0].total_cmp(&pts[*b.1][0])).unwrap_or((0, &h[0]));
+    let (hk, &m) = h
+        .iter()
+        .enumerate()
+        .max_by(|a, b| pts[*a.1][0].total_cmp(&pts[*b.1][0]))
+        .unwrap_or((0, &h[0]));
     let mp = pts[m];
     // Nearest ring edge hit by the ray +x from M.
     let n = ring.len();
@@ -93,12 +101,20 @@ fn bridge(pts: &[P], ring: &mut Vec<usize>, h: &[usize]) {
     let Some((x, i)) = best else { return };
     let (a, b) = (ring[i], ring[(i + 1) % n]);
     // Candidate: the edge endpoint with the larger x.
-    let mut cand = if pts[a][0] > pts[b][0] { (i, a) } else { ((i + 1) % n, b) };
+    let mut cand = if pts[a][0] > pts[b][0] {
+        (i, a)
+    } else {
+        ((i + 1) % n, b)
+    };
     let ip = [x, mp[1]];
     // Reflex ring vertices inside triangle (M, I, P) block the view: take the one with the
     // smallest angle to the ray (closest on ties).
     let pp = pts[cand.1];
-    let (t0, t1, t2) = if cross(mp, ip, pp) >= 0.0 { (mp, ip, pp) } else { (mp, pp, ip) };
+    let (t0, t1, t2) = if cross(mp, ip, pp) >= 0.0 {
+        (mp, ip, pp)
+    } else {
+        (mp, pp, ip)
+    };
     let mut best_ang = f64::INFINITY;
     for k in 0..n {
         let v = ring[k];
@@ -151,7 +167,8 @@ fn ear_clip(pts: &[P], mut ring: Vec<usize>) -> Vec<[usize; 3]> {
         let scale = 1.0 + pa[0].abs() + pa[1].abs() + pc[0].abs() + pc[1].abs();
         // A straight-through vertex is clipped as a zero-area triangle (keeps every contour edge
         // in the triangulation, so caps meet walls without T-junctions).
-        let straight = cr.abs() <= 1e-12 * scale * scale && (pa[0] - pb[0]) * (pc[0] - pb[0]) + (pa[1] - pb[1]) * (pc[1] - pb[1]) <= 0.0;
+        let straight = cr.abs() <= 1e-12 * scale * scale
+            && (pa[0] - pb[0]) * (pc[0] - pb[0]) + (pa[1] - pb[1]) * (pc[1] - pb[1]) <= 0.0;
         let convex = cr > 0.0 && !straight;
         let mut ear = convex || straight;
         if convex {

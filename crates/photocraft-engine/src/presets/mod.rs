@@ -47,7 +47,10 @@ pub struct Group<T> {
 
 impl<T> Group<T> {
     pub fn new(name: &str, items: Vec<T>) -> Self {
-        Group { name: name.into(), items }
+        Group {
+            name: name.into(),
+            items,
+        }
     }
 }
 
@@ -165,7 +168,9 @@ impl Session {
     /// Restore presets saved by [`PresetState::to_json`]. Missing sets keep their defaults; a
     /// malformed blob is ignored (presets are never worth refusing to start over).
     pub fn load_presets_json(&mut self, v: Value) {
-        let Ok(p) = serde_json::from_value::<Persisted>(v) else { return };
+        let Ok(p) = serde_json::from_value::<Persisted>(v) else {
+            return;
+        };
         let st = &mut self.presets;
         if let Some(g) = p.gradients {
             st.gradients = g;
@@ -216,7 +221,10 @@ impl Session {
 // ------------------------------------------------------------------ shared helpers
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 pub(crate) fn always(_: &Session) -> std::result::Result<(), String> {
@@ -224,16 +232,24 @@ pub(crate) fn always(_: &Session) -> std::result::Result<(), String> {
 }
 
 pub(crate) fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 pub(crate) fn has_layer(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    d.active_layer.filter(|id| d.doc.layer(*id).is_some()).map(|_| ()).ok_or_else(|| "no active layer".into())
+    d.active_layer
+        .filter(|id| d.doc.layer(*id).is_some())
+        .map(|_| ())
+        .ok_or_else(|| "no active layer".into())
 }
 
 pub(crate) fn str_param<'a>(p: &'a Value, k: &str) -> Option<&'a str> {
-    p.get(k).and_then(Value::as_str).map(str::trim).filter(|s| !s.is_empty())
+    p.get(k)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
 }
 
 pub(crate) fn req_str<'a>(p: &'a Value, k: &str, cmd: &str) -> Result<&'a str> {
@@ -241,12 +257,21 @@ pub(crate) fn req_str<'a>(p: &'a Value, k: &str, cmd: &str) -> Result<&'a str> {
 }
 
 /// Locate a preset by name (optionally within `group`): (group index, item index).
-pub(crate) fn find<T: Named>(groups: &[Group<T>], name: &str, group: Option<&str>) -> Option<(usize, usize)> {
+pub(crate) fn find<T: Named>(
+    groups: &[Group<T>],
+    name: &str,
+    group: Option<&str>,
+) -> Option<(usize, usize)> {
     groups
         .iter()
         .enumerate()
         .filter(|(_, g)| group.is_none_or(|n| g.name == n))
-        .find_map(|(gi, g)| g.items.iter().position(|i| i.name() == name).map(|ii| (gi, ii)))
+        .find_map(|(gi, g)| {
+            g.items
+                .iter()
+                .position(|i| i.name() == name)
+                .map(|ii| (gi, ii))
+        })
 }
 
 /// `base`, or `base 2`, `base 3`… so names stay unique across all groups (Photoshop allows
@@ -256,7 +281,10 @@ pub(crate) fn unique_name<T: Named>(groups: &[Group<T>], base: &str) -> String {
     if !taken(base) {
         return base.to_string();
     }
-    (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+    (2..)
+        .map(|i| format!("{base} {i}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| base.to_string())
 }
 
 /// Index of `group` (created at the end when missing), or the first group (created as
@@ -278,13 +306,19 @@ pub(crate) fn group_index<T>(groups: &mut Vec<Group<T>>, group: Option<&str>) ->
 
 /// Generic group/item edits shared by every preset kind: `rename`, `delete`, `move`,
 /// `newGroup`, `renameGroup`, `deleteGroup`.
-pub(crate) fn edit_groups<T: Named>(groups: &mut Vec<Group<T>>, action: &str, p: &Value, cmd: &str) -> Result<Value> {
+pub(crate) fn edit_groups<T: Named>(
+    groups: &mut Vec<Group<T>>,
+    action: &str,
+    p: &Value,
+    cmd: &str,
+) -> Result<Value> {
     let group = str_param(p, "group");
     match action {
         "rename" => {
             let name = req_str(p, "preset", cmd)?;
             let to = req_str(p, "name", cmd)?.to_string();
-            let (gi, ii) = find(groups, name, group).ok_or_else(|| bad(cmd, format!("no preset \"{name}\"")))?;
+            let (gi, ii) = find(groups, name, group)
+                .ok_or_else(|| bad(cmd, format!("no preset \"{name}\"")))?;
             if name != to && find(groups, &to, None).is_some() {
                 return Err(bad(cmd, format!("a preset named \"{to}\" already exists")));
             }
@@ -293,7 +327,11 @@ pub(crate) fn edit_groups<T: Named>(groups: &mut Vec<Group<T>>, action: &str, p:
         }
         "delete" => {
             let names: Vec<String> = match p.get("preset") {
-                Some(Value::Array(a)) => a.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+                Some(Value::Array(a)) => a
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_string)
+                    .collect(),
                 _ => vec![req_str(p, "preset", cmd)?.to_string()],
             };
             // All or nothing: a missing name deletes none of the others.
@@ -316,30 +354,49 @@ pub(crate) fn edit_groups<T: Named>(groups: &mut Vec<Group<T>>, action: &str, p:
         "move" => {
             let name = req_str(p, "preset", cmd)?;
             let to = req_str(p, "to", cmd)?;
-            let (gi, ii) = find(groups, name, group).ok_or_else(|| bad(cmd, format!("no preset \"{name}\"")))?;
+            let (gi, ii) = find(groups, name, group)
+                .ok_or_else(|| bad(cmd, format!("no preset \"{name}\"")))?;
             let item = groups[gi].items.remove(ii);
             let ti = group_index(groups, Some(to));
-            let at = p.get("index").and_then(Value::as_u64).map_or(groups[ti].items.len(), |i| (i as usize).min(groups[ti].items.len()));
+            let at = p
+                .get("index")
+                .and_then(Value::as_u64)
+                .map_or(groups[ti].items.len(), |i| {
+                    (i as usize).min(groups[ti].items.len())
+                });
             groups[ti].items.insert(at, item);
             Ok(json!({"group": to}))
         }
         "newGroup" => {
             let base = str_param(p, "name").unwrap_or("Group");
             let taken = |n: &str| groups.iter().any(|g| g.name == n);
-            let name = if taken(base) { (1..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_default() } else { base.to_string() };
+            let name = if taken(base) {
+                (1..)
+                    .map(|i| format!("{base} {i}"))
+                    .find(|n| !taken(n))
+                    .unwrap_or_default()
+            } else {
+                base.to_string()
+            };
             groups.push(Group::new(&name, Vec::new()));
             Ok(json!({"group": name}))
         }
         "renameGroup" => {
             let g = req_str(p, "group", cmd)?;
             let to = req_str(p, "name", cmd)?.to_string();
-            let i = groups.iter().position(|x| x.name == g).ok_or_else(|| bad(cmd, format!("no group \"{g}\"")))?;
+            let i = groups
+                .iter()
+                .position(|x| x.name == g)
+                .ok_or_else(|| bad(cmd, format!("no group \"{g}\"")))?;
             groups[i].name = to.clone();
             Ok(json!({"group": to}))
         }
         "deleteGroup" => {
             let g = req_str(p, "group", cmd)?;
-            let i = groups.iter().position(|x| x.name == g).ok_or_else(|| bad(cmd, format!("no group \"{g}\"")))?;
+            let i = groups
+                .iter()
+                .position(|x| x.name == g)
+                .ok_or_else(|| bad(cmd, format!("no group \"{g}\"")))?;
             let removed = groups.remove(i);
             Ok(json!({"group": g, "deleted": removed.items.len()}))
         }
@@ -364,7 +421,8 @@ pub fn specs() -> Vec<CommandSpec> {
 /// Run another command's implementation from inside a preset command (checks `enabled`, but
 /// doesn't journal it: the outer command is what an action replays).
 pub(crate) fn call(s: &mut Session, id: &str, p: Value) -> Result<Value> {
-    let spec = crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
+    let spec =
+        crate::commands::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
     (spec.enabled)(s).map_err(|why| EngineError::Disabled(id.to_string(), why))?;
     (spec.run)(s, &p)
 }

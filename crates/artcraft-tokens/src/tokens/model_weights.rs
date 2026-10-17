@@ -12,6 +12,11 @@ use crate::prefixes::TokenPrefix;
 #[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct ModelWeightToken(pub String);
 
-impl_crockford_generator!(ModelWeightToken, 32usize, TokenPrefix::ModelWeight, CrockfordLower);
+impl_crockford_generator!(
+    ModelWeightToken,
+    32usize,
+    TokenPrefix::ModelWeight,
+    CrockfordLower
+);
 impl_mysql_token_from_row!(ModelWeightToken);
 impl_string_token!(ModelWeightToken);

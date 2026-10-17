@@ -68,7 +68,8 @@ fn buttons(ui: &mut Ui, ok_enabled: bool) -> (bool, bool) {
     ui.add_space(8.0);
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if ui.button(tl!("Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+            if ui.button(tl!("Cancel")).clicked() || ui.input(|i| i.key_pressed(egui::Key::Escape))
+            {
                 r.1 = true;
             }
             let okb = ui.add_enabled(ok_enabled, crate::widgets::primary_button(ui, tl!("OK")));
@@ -87,7 +88,11 @@ fn heading(ui: &mut Ui, s: &str) {
 
 fn error(ui: &mut Ui, message: &str) {
     if !message.is_empty() {
-        ui.label(egui::RichText::new(message).small().color(ui.visuals().error_fg_color));
+        ui.label(
+            egui::RichText::new(message)
+                .small()
+                .color(ui.visuals().error_fg_color),
+        );
     }
 }
 
@@ -191,70 +196,108 @@ fn compare_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CompareForm) -> bool {
     let browse = can_browse(app);
     let mut pick: Option<bool> = None;
     if !browse {
-        ui.label(egui::RichText::new(tl!("Comparing with another file needs the desktop app.")).small().weak());
+        ui.label(
+            egui::RichText::new(tl!("Comparing with another file needs the desktop app."))
+                .small()
+                .weak(),
+        );
     }
-    egui::Grid::new("compare_files").num_columns(2).spacing(vec2(16.0, 4.0)).show(ui, |ui| {
-        ui.vertical(|ui| {
-            heading(ui, "Original document");
-            ui.radio_value(&mut f.original_current, true, tl!("This document"));
-            ui.horizontal(|ui| {
-                ui.radio_value(&mut f.original_current, false, "");
-                ui.add_enabled(browse, egui::TextEdit::singleline(&mut f.original).desired_width(170.0).hint_text(tl!("Another file")));
-                if ui.add_enabled(browse, egui::Button::new(tl!("Browse…"))).clicked() {
-                    pick = Some(false);
-                }
+    egui::Grid::new("compare_files")
+        .num_columns(2)
+        .spacing(vec2(16.0, 4.0))
+        .show(ui, |ui| {
+            ui.vertical(|ui| {
+                heading(ui, "Original document");
+                ui.radio_value(&mut f.original_current, true, tl!("This document"));
+                ui.horizontal(|ui| {
+                    ui.radio_value(&mut f.original_current, false, "");
+                    ui.add_enabled(
+                        browse,
+                        egui::TextEdit::singleline(&mut f.original)
+                            .desired_width(170.0)
+                            .hint_text(tl!("Another file")),
+                    );
+                    if ui
+                        .add_enabled(browse, egui::Button::new(tl!("Browse…")))
+                        .clicked()
+                    {
+                        pick = Some(false);
+                    }
+                });
             });
+            ui.vertical(|ui| {
+                heading(ui, "Revised document");
+                ui.horizontal(|ui| {
+                    ui.add_enabled(
+                        browse,
+                        egui::TextEdit::singleline(&mut f.revised).desired_width(170.0),
+                    );
+                    if ui
+                        .add_enabled(browse, egui::Button::new(tl!("Browse…")))
+                        .clicked()
+                    {
+                        pick = Some(true);
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label(tl!("Label changes with:"));
+                    ui.add(egui::TextEdit::singleline(&mut f.author).desired_width(120.0));
+                });
+            });
+            ui.end_row();
         });
-        ui.vertical(|ui| {
-            heading(ui, "Revised document");
-            ui.horizontal(|ui| {
-                ui.add_enabled(browse, egui::TextEdit::singleline(&mut f.revised).desired_width(170.0));
-                if ui.add_enabled(browse, egui::Button::new(tl!("Browse…"))).clicked() {
-                    pick = Some(true);
-                }
-            });
-            ui.horizontal(|ui| {
-                ui.label(tl!("Label changes with:"));
-                ui.add(egui::TextEdit::singleline(&mut f.author).desired_width(120.0));
-            });
-        });
-        ui.end_row();
-    });
     ui.add_space(4.0);
-    if ui.button(if f.more { tl!("<< Less") } else { tl!("More >>") }).clicked() {
+    if ui
+        .button(if f.more {
+            tl!("<< Less")
+        } else {
+            tl!("More >>")
+        })
+        .clicked()
+    {
         f.more = !f.more;
     }
     if f.more {
         heading(ui, "Comparison settings");
-        egui::Grid::new("compare_settings").num_columns(2).spacing(vec2(16.0, 2.0)).show(ui, |ui| {
-            for (i, (_, label)) in COMPARE_SETTINGS.iter().enumerate() {
-                if let Some(on) = f.settings.get_mut(i) {
-                    ui.checkbox(on, tl!(label));
+        egui::Grid::new("compare_settings")
+            .num_columns(2)
+            .spacing(vec2(16.0, 2.0))
+            .show(ui, |ui| {
+                for (i, (_, label)) in COMPARE_SETTINGS.iter().enumerate() {
+                    if let Some(on) = f.settings.get_mut(i) {
+                        ui.checkbox(on, tl!(label));
+                    }
+                    if i % 2 == 1 {
+                        ui.end_row();
+                    }
                 }
-                if i % 2 == 1 {
-                    ui.end_row();
-                }
-            }
-        });
+            });
         ui.label(
             egui::RichText::new(tl!("Formatting, case changes, white space and tables are compared; the other settings are kept for later."))
                 .small()
                 .weak(),
         );
-        egui::Grid::new("compare_show").num_columns(2).spacing(vec2(24.0, 2.0)).show(ui, |ui| {
-            ui.vertical(|ui| {
-                heading(ui, "Show changes at:");
-                ui.radio_value(&mut f.character_level, false, tl!("Word level"));
-                ui.radio_value(&mut f.character_level, true, tl!("Character level"));
+        egui::Grid::new("compare_show")
+            .num_columns(2)
+            .spacing(vec2(24.0, 2.0))
+            .show(ui, |ui| {
+                ui.vertical(|ui| {
+                    heading(ui, "Show changes at:");
+                    ui.radio_value(&mut f.character_level, false, tl!("Word level"));
+                    ui.radio_value(&mut f.character_level, true, tl!("Character level"));
+                });
+                ui.vertical(|ui| {
+                    heading(ui, "Show changes in:");
+                    for (v, l) in [
+                        ("original", "Original document"),
+                        ("revised", "Revised document"),
+                        ("new", "New document"),
+                    ] {
+                        ui.radio_value(&mut f.show_in, v.to_string(), tl!(l));
+                    }
+                });
+                ui.end_row();
             });
-            ui.vertical(|ui| {
-                heading(ui, "Show changes in:");
-                for (v, l) in [("original", "Original document"), ("revised", "Revised document"), ("new", "New document")] {
-                    ui.radio_value(&mut f.show_in, v.to_string(), tl!(l));
-                }
-            });
-            ui.end_row();
-        });
     }
     if let Some(revised) = pick {
         // A blocking picker answers now, while this dialog is out of `app.dialog`: fill it here.
@@ -271,7 +314,9 @@ fn compare_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CompareForm) -> bool {
             }
         } else {
             let _ = app.ask_file(
-                crate::file_dialogs::FileDialogRequest::Open { purpose: "document".into() },
+                crate::file_dialogs::FileDialogRequest::Open {
+                    purpose: "document".into(),
+                },
                 crate::file_dialogs::AfterPick::ComparePath { revised },
             );
         }
@@ -280,11 +325,22 @@ fn compare_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CompareForm) -> bool {
     let params = f.params();
     let (ok, cancel) = buttons(ui, params.is_some());
     if ok && let Some(params) = params {
-        let id = if f.combine { "review.combine" } else { "review.compare" };
+        let id = if f.combine {
+            "review.combine"
+        } else {
+            "review.compare"
+        };
         match app.run(id, params) {
             Ok(v) => {
-                let n = v.get("changes").and_then(Value::as_u64).unwrap_or(0).to_string();
-                app.status(crate::i18n::fmt(tl!("Compared: {changes} changes"), &[("changes", &n)]));
+                let n = v
+                    .get("changes")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(0)
+                    .to_string();
+                app.status(crate::i18n::fmt(
+                    tl!("Compared: {changes} changes"),
+                    &[("changes", &n)],
+                ));
                 return true;
             }
             Err(e) => {
@@ -374,7 +430,10 @@ fn list_change(app: &mut WordApp, f: &mut AutoCorrectForm, params: Value) -> boo
 
 fn autocorrect_ui(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) -> bool {
     ui.horizontal(|ui| {
-        for (i, l) in ["AutoCorrect", "AutoFormat As You Type", "Math AutoCorrect"].into_iter().enumerate() {
+        for (i, l) in ["AutoCorrect", "AutoFormat As You Type", "Math AutoCorrect"]
+            .into_iter()
+            .enumerate()
+        {
             if ui.selectable_label(f.tab == i as u8, tl!(l)).clicked() {
                 f.tab = i as u8;
             }
@@ -386,8 +445,14 @@ fn autocorrect_ui(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) -> bo
         1 => {
             let o = &mut f.options;
             heading(ui, "Replace as you type");
-            ui.checkbox(&mut o.smart_quotes, tl!("Smart quotes instead of straight quotes"));
-            ui.checkbox(&mut o.fractions, tl!("Fractions (1/2) as fraction characters (½)"));
+            ui.checkbox(
+                &mut o.smart_quotes,
+                tl!("Smart quotes instead of straight quotes"),
+            );
+            ui.checkbox(
+                &mut o.fractions,
+                tl!("Fractions (1/2) as fraction characters (½)"),
+            );
             ui.checkbox(&mut o.ordinals, tl!("Ordinals (1st) as superscript"));
             ui.checkbox(&mut o.dashes, tl!("Hyphens (--) as dashes (—)"));
             ui.checkbox(&mut o.links, tl!("Internet addresses as links"));
@@ -413,7 +478,10 @@ fn autocorrect_ui(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) -> bo
 fn autocorrect_tab(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) {
     let o = &mut f.options;
     ui.checkbox(&mut o.two_initial_caps, tl!("Correct TWo INitial CApitals"));
-    ui.checkbox(&mut o.cap_sentences, tl!("Capitalize first letter of sentences"));
+    ui.checkbox(
+        &mut o.cap_sentences,
+        tl!("Capitalize first letter of sentences"),
+    );
     ui.horizontal(|ui| {
         ui.add_space(18.0);
         if ui.small_button(tl!("Exceptions…")).clicked() {
@@ -424,34 +492,63 @@ fn autocorrect_tab(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) {
         exceptions(app, ui, f);
     }
     let o = &mut f.options;
-    ui.checkbox(&mut o.cap_cells, tl!("Capitalize first letter of table cells"));
+    ui.checkbox(
+        &mut o.cap_cells,
+        tl!("Capitalize first letter of table cells"),
+    );
     ui.checkbox(&mut o.cap_days, tl!("Capitalize names of days"));
-    ui.checkbox(&mut o.caps_lock, tl!("Correct accidental usage of cAPS LOCK key"));
+    ui.checkbox(
+        &mut o.caps_lock,
+        tl!("Correct accidental usage of cAPS LOCK key"),
+    );
     ui.checkbox(&mut o.replace_text, tl!("Replace text as you type"));
-    egui::Grid::new("ac_boxes").num_columns(2).spacing(vec2(8.0, 2.0)).show(ui, |ui| {
-        ui.label(tl!("Replace:"));
-        ui.label(tl!("With:"));
-        ui.end_row();
-        ui.add(egui::TextEdit::singleline(&mut f.from).desired_width(110.0));
-        ui.add(egui::TextEdit::singleline(&mut f.to).desired_width(260.0));
-        ui.end_row();
-    });
+    egui::Grid::new("ac_boxes")
+        .num_columns(2)
+        .spacing(vec2(8.0, 2.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Replace:"));
+            ui.label(tl!("With:"));
+            ui.end_row();
+            ui.add(egui::TextEdit::singleline(&mut f.from).desired_width(110.0));
+            ui.add(egui::TextEdit::singleline(&mut f.to).desired_width(260.0));
+            ui.end_row();
+        });
     // The list, filtered to what's typed in Replace (as Word scrolls to it).
     let list = f.options.list();
     let typed = f.from.trim().to_lowercase();
     let mut picked: Option<(String, String)> = None;
-    egui::ScrollArea::vertical().id_salt("ac_list").max_height(170.0).auto_shrink([false, true]).show(ui, |ui| {
-        egui::Grid::new("ac_list_grid").num_columns(2).spacing(vec2(8.0, 1.0)).striped(true).show(ui, |ui| {
-            for (a, b, _) in list.iter().filter(|(a, _, _)| typed.is_empty() || a.to_lowercase().starts_with(&typed)).take(500) {
-                let selected = f.from == *a;
-                if ui.add_sized(vec2(110.0, 16.0), egui::Button::selectable(selected, a.as_str())).clicked() {
-                    picked = Some((a.clone(), b.clone()));
-                }
-                ui.label(b.as_str());
-                ui.end_row();
-            }
+    egui::ScrollArea::vertical()
+        .id_salt("ac_list")
+        .max_height(170.0)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            egui::Grid::new("ac_list_grid")
+                .num_columns(2)
+                .spacing(vec2(8.0, 1.0))
+                .striped(true)
+                .show(ui, |ui| {
+                    for (a, b, _) in list
+                        .iter()
+                        .filter(|(a, _, _)| {
+                            typed.is_empty() || a.to_lowercase().starts_with(&typed)
+                        })
+                        .take(500)
+                    {
+                        let selected = f.from == *a;
+                        if ui
+                            .add_sized(
+                                vec2(110.0, 16.0),
+                                egui::Button::selectable(selected, a.as_str()),
+                            )
+                            .clicked()
+                        {
+                            picked = Some((a.clone(), b.clone()));
+                        }
+                        ui.label(b.as_str());
+                        ui.end_row();
+                    }
+                });
         });
-    });
     if let Some((a, b)) = picked {
         f.from = a;
         f.to = b;
@@ -460,14 +557,20 @@ fn autocorrect_tab(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) {
     let same = list.iter().any(|(a, b, _)| *a == f.from && *b == f.to);
     ui.horizontal(|ui| {
         let label = if exists { tl!("Replace") } else { tl!("Add") };
-        if ui.add_enabled(!f.from.trim().is_empty() && !same, egui::Button::new(label)).clicked() {
+        if ui
+            .add_enabled(!f.from.trim().is_empty() && !same, egui::Button::new(label))
+            .clicked()
+        {
             let p = json!({"add": {"from": f.from, "to": f.to}});
             if list_change(app, f, p) {
                 f.from.clear();
                 f.to.clear();
             }
         }
-        if ui.add_enabled(exists, egui::Button::new(tl!("Delete"))).clicked() {
+        if ui
+            .add_enabled(exists, egui::Button::new(tl!("Delete")))
+            .clicked()
+        {
             let p = json!({"delete": f.from});
             if list_change(app, f, p) {
                 f.from.clear();
@@ -482,26 +585,42 @@ fn exceptions(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) {
         ui.label(tl!("Don't capitalize after:"));
         let list = f.options.exception_list();
         let mut picked = None;
-        egui::ScrollArea::vertical().id_salt("ac_exceptions").max_height(90.0).auto_shrink([false, true]).show(ui, |ui| {
-            for e in &list {
-                if ui.add(egui::Button::selectable(f.exception == *e, e.as_str())).clicked() {
-                    picked = Some(e.clone());
+        egui::ScrollArea::vertical()
+            .id_salt("ac_exceptions")
+            .max_height(90.0)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                for e in &list {
+                    if ui
+                        .add(egui::Button::selectable(f.exception == *e, e.as_str()))
+                        .clicked()
+                    {
+                        picked = Some(e.clone());
+                    }
                 }
-            }
-        });
+            });
         if let Some(e) = picked {
             f.exception = e;
         }
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut f.exception).desired_width(110.0));
             let known = list.contains(&f.exception.trim().to_lowercase());
-            if ui.add_enabled(!f.exception.trim().is_empty() && !known, egui::Button::new(tl!("Add"))).clicked() {
+            if ui
+                .add_enabled(
+                    !f.exception.trim().is_empty() && !known,
+                    egui::Button::new(tl!("Add")),
+                )
+                .clicked()
+            {
                 let p = json!({"addException": f.exception});
                 if list_change(app, f, p) {
                     f.exception.clear();
                 }
             }
-            if ui.add_enabled(known, egui::Button::new(tl!("Delete"))).clicked() {
+            if ui
+                .add_enabled(known, egui::Button::new(tl!("Delete")))
+                .clicked()
+            {
                 let p = json!({"deleteException": f.exception});
                 if list_change(app, f, p) {
                     f.exception.clear();
@@ -512,21 +631,38 @@ fn exceptions(app: &mut WordApp, ui: &mut Ui, f: &mut AutoCorrectForm) {
 }
 
 fn math_tab(ui: &mut Ui, f: &mut AutoCorrectForm) {
-    ui.label(egui::RichText::new(tl!("In equations, typing a name after a backslash replaces it with its symbol.")).small().weak());
+    ui.label(
+        egui::RichText::new(tl!(
+            "In equations, typing a name after a backslash replaces it with its symbol."
+        ))
+        .small()
+        .weak(),
+    );
     ui.horizontal(|ui| {
         ui.label(tl!("Replace:"));
         ui.add(egui::TextEdit::singleline(&mut f.math_filter).desired_width(140.0));
     });
     let filter = f.math_filter.trim().trim_start_matches('\\').to_string();
-    egui::ScrollArea::vertical().id_salt("ac_math").max_height(240.0).auto_shrink([false, true]).show(ui, |ui| {
-        egui::Grid::new("ac_math_grid").num_columns(2).spacing(vec2(16.0, 1.0)).striped(true).show(ui, |ui| {
-            for (name, c) in wordcraft_doc::math_symbols::SYMBOLS.iter().filter(|(n, _)| filter.is_empty() || n.starts_with(filter.as_str())) {
-                ui.label(format!("\\{name}"));
-                ui.label(c.to_string());
-                ui.end_row();
-            }
+    egui::ScrollArea::vertical()
+        .id_salt("ac_math")
+        .max_height(240.0)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            egui::Grid::new("ac_math_grid")
+                .num_columns(2)
+                .spacing(vec2(16.0, 1.0))
+                .striped(true)
+                .show(ui, |ui| {
+                    for (name, c) in wordcraft_doc::math_symbols::SYMBOLS
+                        .iter()
+                        .filter(|(n, _)| filter.is_empty() || n.starts_with(filter.as_str()))
+                    {
+                        ui.label(format!("\\{name}"));
+                        ui.label(c.to_string());
+                        ui.end_row();
+                    }
+                });
         });
-    });
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -553,8 +689,12 @@ pub struct RestrictPane {
 }
 
 /// The editing restrictions, with their `review.restrict` modes.
-pub const EDIT_MODES: [(&str, &str); 4] =
-    [("readOnly", "No changes (read only)"), ("trackedChanges", "Tracked changes"), ("comments", "Comments"), ("forms", "Filling in forms")];
+pub const EDIT_MODES: [(&str, &str); 4] = [
+    ("readOnly", "No changes (read only)"),
+    ("trackedChanges", "Tracked changes"),
+    ("comments", "Comments"),
+    ("forms", "Filling in forms"),
+];
 
 /// The styles the formatting restriction lists: paragraph and character styles not hidden.
 fn listed_styles(app: &WordApp) -> Vec<(String, String)> {
@@ -566,7 +706,16 @@ fn listed_styles(app: &WordApp) -> Vec<(String, String)> {
         .styles
         .iter()
         .filter(|s| matches!(s.kind, StyleKind::Paragraph | StyleKind::Character) && !s.hidden)
-        .map(|s| (s.id.clone(), if s.name.is_empty() { s.id.clone() } else { s.name.clone() }))
+        .map(|s| {
+            (
+                s.id.clone(),
+                if s.name.is_empty() {
+                    s.id.clone()
+                } else {
+                    s.name.clone()
+                },
+            )
+        })
         .collect();
     v.sort_by_key(|a| a.1.to_lowercase());
     v
@@ -575,16 +724,21 @@ fn listed_styles(app: &WordApp) -> Vec<(String, String)> {
 pub fn restrict_pane(app: &mut WordApp, ui: &mut Ui) {
     let mut st = std::mem::take(&mut app.restrict);
     let enforced = app.session.doc.settings.protection.clone();
-    egui::ScrollArea::vertical().id_salt("restrict_pane").show(ui, |ui| match &enforced {
-        Some(mode) => enforced_ui(app, ui, &mut st, mode),
-        None => setup_ui(app, ui, &mut st),
-    });
+    egui::ScrollArea::vertical()
+        .id_salt("restrict_pane")
+        .show(ui, |ui| match &enforced {
+            Some(mode) => enforced_ui(app, ui, &mut st, mode),
+            None => setup_ui(app, ui, &mut st),
+        });
     app.restrict = st;
 }
 
 fn setup_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane) {
     heading(ui, "1. Formatting restrictions");
-    ui.checkbox(&mut st.formatting, tl!("Limit formatting to a selection of styles"));
+    ui.checkbox(
+        &mut st.formatting,
+        tl!("Limit formatting to a selection of styles"),
+    );
     if st.formatting && ui.small_button(tl!("Settings…")).clicked() {
         st.show_styles = !st.show_styles;
     }
@@ -592,7 +746,13 @@ fn setup_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane) {
     if st.allowed.is_none() {
         // Start from the document's own locked styles.
         let doc = &app.session.doc.styles;
-        st.allowed = Some(styles.iter().filter(|(id, _)| !doc.get(id).is_some_and(|s| s.locked)).map(|(id, _)| id.clone()).collect());
+        st.allowed = Some(
+            styles
+                .iter()
+                .filter(|(id, _)| !doc.get(id).is_some_and(|s| s.locked))
+                .map(|(id, _)| id.clone())
+                .collect(),
+        );
     }
     if st.formatting && st.show_styles {
         let allowed = st.allowed.get_or_insert_with(Vec::new);
@@ -605,39 +765,57 @@ fn setup_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane) {
                 allowed.clear();
             }
         });
-        egui::ScrollArea::vertical().id_salt("restrict_styles").max_height(160.0).show(ui, |ui| {
-            for (id, name) in &styles {
-                let mut on = allowed.contains(id);
-                if ui.checkbox(&mut on, tl!(name.as_str())).changed() {
-                    if on {
-                        allowed.push(id.clone());
-                    } else {
-                        allowed.retain(|x| x != id);
+        egui::ScrollArea::vertical()
+            .id_salt("restrict_styles")
+            .max_height(160.0)
+            .show(ui, |ui| {
+                for (id, name) in &styles {
+                    let mut on = allowed.contains(id);
+                    if ui.checkbox(&mut on, tl!(name.as_str())).changed() {
+                        if on {
+                            allowed.push(id.clone());
+                        } else {
+                            allowed.retain(|x| x != id);
+                        }
                     }
                 }
-            }
-        });
+            });
     }
     heading(ui, "2. Editing restrictions");
     ui.checkbox(&mut st.editing, tl!("Only allow this kind of editing:"));
     ui.add_enabled_ui(st.editing, |ui| {
         let current = EDIT_MODES.get(st.mode).map(|m| m.1).unwrap_or("");
-        egui::ComboBox::from_id_salt("restrict_mode").selected_text(tl!(current)).width(220.0).show_ui(ui, |ui| {
-            for (i, (_, label)) in EDIT_MODES.iter().enumerate() {
-                ui.selectable_value(&mut st.mode, i, tl!(label));
-            }
-        });
+        egui::ComboBox::from_id_salt("restrict_mode")
+            .selected_text(tl!(current))
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for (i, (_, label)) in EDIT_MODES.iter().enumerate() {
+                    ui.selectable_value(&mut st.mode, i, tl!(label));
+                }
+            });
     });
     let mode = EDIT_MODES.get(st.mode).map(|m| m.0).unwrap_or("readOnly");
     if st.editing && matches!(mode, "readOnly" | "comments") {
         heading(ui, "Exceptions (optional)");
         ui.label(egui::RichText::new(tl!("Select text, then tick who can still edit it.")).small());
         let (a, b) = app.session.sel.ordered();
-        let inside = app.session.doc.perm_ranges().iter().any(|r| r.everyone() && r.start <= a && b <= r.end && r.start.story == a.story);
+        let inside = app
+            .session
+            .doc
+            .perm_ranges()
+            .iter()
+            .any(|r| r.everyone() && r.start <= a && b <= r.end && r.start.story == a.story);
         let mut everyone = inside;
         let can = inside || a != b;
-        if ui.add_enabled(can, egui::Checkbox::new(&mut everyone, tl!("Everyone"))).changed() {
-            let p = if everyone { json!({"exception": "add"}) } else { json!({"exception": "remove"}) };
+        if ui
+            .add_enabled(can, egui::Checkbox::new(&mut everyone, tl!("Everyone")))
+            .changed()
+        {
+            let p = if everyone {
+                json!({"exception": "add"})
+            } else {
+                json!({"exception": "remove"})
+            };
             if let Err(e) = app.run("review.restrict", p) {
                 st.message = e;
             }
@@ -646,12 +824,20 @@ fn setup_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane) {
     heading(ui, "3. Start enforcement");
     let ready = st.formatting || st.editing;
     if !st.asking {
-        if ui.add_enabled(ready, egui::Button::new(tl!("Start Enforcing Protection"))).clicked() {
+        if ui
+            .add_enabled(ready, egui::Button::new(tl!("Start Enforcing Protection")))
+            .clicked()
+        {
             st.asking = true;
             st.message.clear();
         }
     } else {
-        ui.label(egui::RichText::new(tl!("The password is optional; without it anyone can stop the protection.")).small());
+        ui.label(
+            egui::RichText::new(tl!(
+                "The password is optional; without it anyone can stop the protection."
+            ))
+            .small(),
+        );
         passwords(ui, st, true);
         ui.horizontal(|ui| {
             if ui.button(tl!("OK")).clicked() {
@@ -688,16 +874,27 @@ fn setup_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane) {
 }
 
 fn passwords(ui: &mut Ui, st: &mut RestrictPane, confirm: bool) {
-    egui::Grid::new("restrict_pw").num_columns(2).spacing(vec2(8.0, 4.0)).show(ui, |ui| {
-        ui.label(tl!("Password:"));
-        ui.add(egui::TextEdit::singleline(st.password.as_mut_string()).password(true).desired_width(140.0));
-        ui.end_row();
-        if confirm {
-            ui.label(tl!("Confirm password:"));
-            ui.add(egui::TextEdit::singleline(st.confirm.as_mut_string()).password(true).desired_width(140.0));
+    egui::Grid::new("restrict_pw")
+        .num_columns(2)
+        .spacing(vec2(8.0, 4.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Password:"));
+            ui.add(
+                egui::TextEdit::singleline(st.password.as_mut_string())
+                    .password(true)
+                    .desired_width(140.0),
+            );
             ui.end_row();
-        }
-    });
+            if confirm {
+                ui.label(tl!("Confirm password:"));
+                ui.add(
+                    egui::TextEdit::singleline(st.confirm.as_mut_string())
+                        .password(true)
+                        .desired_width(140.0),
+                );
+                ui.end_row();
+            }
+        });
 }
 
 fn enforced_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane, mode: &str) {
@@ -711,13 +908,22 @@ fn enforced_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane, mode: &str
         _ => "Only the allowed styles can be applied.",
     };
     ui.label(egui::RichText::new(tl!(what)).small());
-    let regions = app.session.doc.perm_ranges().iter().filter(|r| r.everyone() || r.editor.eq_ignore_ascii_case(&app.session.author)).count();
+    let regions = app
+        .session
+        .doc
+        .perm_ranges()
+        .iter()
+        .filter(|r| r.everyone() || r.editor.eq_ignore_ascii_case(&app.session.author))
+        .count();
     if regions > 0 {
         ui.add_space(6.0);
         if ui.button(tl!("Find Next Editable Region")).clicked() {
             let from = app.session.sel.ordered().1;
             if let Some((a, b)) = wordcraft_engine::cmd::protect::next_region(&app.session, &from) {
-                app.session.sel = wordcraft_engine::Selection { anchor: a, focus: b };
+                app.session.sel = wordcraft_engine::Selection {
+                    anchor: a,
+                    focus: b,
+                };
                 app.canvas.want_focus = true;
             }
         }
@@ -750,7 +956,10 @@ fn enforced_ui(app: &mut WordApp, ui: &mut Ui, st: &mut RestrictPane, mode: &str
 }
 
 fn stop(app: &mut WordApp, st: &mut RestrictPane) {
-    let r = app.run("review.restrict", json!({"stop": true, "password": st.password.as_str()}));
+    let r = app.run(
+        "review.restrict",
+        json!({"stop": true, "password": st.password.as_str()}),
+    );
     st.password = Password::default();
     match r {
         Ok(_) => {
@@ -773,22 +982,37 @@ mod tests {
     use crate::{Services, WordApp};
 
     fn app(text: &str) -> WordApp {
-        WordApp::new(Session::new(wordcraft_doc::Document::from_text(text)), Services::default())
+        WordApp::new(
+            Session::new(wordcraft_doc::Document::from_text(text)),
+            Services::default(),
+        )
     }
 
     #[test]
     fn autocorrect_entries_persist_in_prefs_and_junk_is_ignored() {
         let mut a = app("");
-        a.run("tools.autocorrect", json!({"add": {"from": "brb", "to": "be right back"}, "capDays": false})).unwrap();
+        a.run(
+            "tools.autocorrect",
+            json!({"add": {"from": "brb", "to": "be right back"}, "capDays": false}),
+        )
+        .unwrap();
         let saved = serde_json::to_string(&a.prefs()).unwrap();
         let mut b = app("");
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
-        assert_eq!(b.session.prefs.autocorrect.replacement("brb").as_deref(), Some("be right back"));
+        assert_eq!(
+            b.session.prefs.autocorrect.replacement("brb").as_deref(),
+            Some("be right back")
+        );
         assert!(!b.session.prefs.autocorrect.cap_days);
         for c in "brb ".chars() {
-            b.session.run("text.insert", &json!({"text": c.to_string()})).unwrap();
+            b.session
+                .run("text.insert", &json!({"text": c.to_string()}))
+                .unwrap();
         }
-        assert_eq!(b.session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Be right back ");
+        assert_eq!(
+            b.session.doc.plain_text(wordcraft_doc::StoryRef::Body),
+            "Be right back "
+        );
         // A damaged AutoCorrect section reads as the defaults; the rest of the file still loads.
         let mut v: Value = serde_json::from_str(&saved).unwrap();
         v["editing"]["autocorrect"] = json!({"entries": 7, "capDays": "x"});
@@ -799,10 +1023,14 @@ mod tests {
         assert_eq!(c.session.author, "Ada");
         // Hostile entries are dropped on load.
         let mut v: Value = serde_json::from_str(&saved).unwrap();
-        v["editing"]["autocorrect"]["entries"] = json!([["", "x"], ["ok", "fine"], ["ok", "dup"], ["a\nb", "x"]]);
+        v["editing"]["autocorrect"]["entries"] =
+            json!([["", "x"], ["ok", "fine"], ["ok", "dup"], ["a\nb", "x"]]);
         let mut d = app("");
         d.apply_prefs(serde_json::from_value(v).unwrap());
-        assert_eq!(d.session.prefs.autocorrect.entries, vec![("ok".to_string(), "fine".to_string())]);
+        assert_eq!(
+            d.session.prefs.autocorrect.entries,
+            vec![("ok".to_string(), "fine".to_string())]
+        );
     }
 
     #[test]

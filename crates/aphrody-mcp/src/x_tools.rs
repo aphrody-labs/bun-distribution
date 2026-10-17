@@ -62,7 +62,11 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
 });
 
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    TOOLS.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    TOOLS
+        .iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -75,12 +79,18 @@ pub(crate) fn owns(name: &str) -> bool {
 
 fn optional_text<'a>(args: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
     args.get(key)
-        .map(|value| value.as_str().ok_or_else(|| format!("{key} must be a string")))
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| format!("{key} must be a string"))
+        })
         .transpose()
 }
 
 fn count(args: &Value, key: &str, default: u32) -> Result<u32, String> {
-    let Some(value) = args.get(key) else { return Ok(default) };
+    let Some(value) = args.get(key) else {
+        return Ok(default);
+    };
     let count = value
         .as_u64()
         .filter(|value| (1..=100).contains(value))
@@ -93,8 +103,14 @@ fn post_candidate(raw: &Value) -> Result<PostCandidate, String> {
         .get("id")
         .and_then(Value::as_str)
         .ok_or_else(|| "candidate.id must be a string".to_owned())?;
-    let author_id = raw.get("author_id").and_then(Value::as_str).unwrap_or_default();
-    let author_handle = raw.get("author_handle").and_then(Value::as_str).map(str::to_owned);
+    let author_id = raw
+        .get("author_id")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let author_handle = raw
+        .get("author_handle")
+        .and_then(Value::as_str)
+        .map(str::to_owned);
     let text = raw.get("text").and_then(Value::as_str).unwrap_or_default();
     let metric = |key: &str| raw.get(key).and_then(Value::as_u64).unwrap_or(0);
     Ok(PostCandidate {
@@ -107,15 +123,29 @@ fn post_candidate(raw: &Value) -> Result<PostCandidate, String> {
         reply_count: metric("reply_count"),
         repost_count: metric("repost_count"),
         quote_count: metric("quote_count"),
-        is_reply: raw.get("is_reply").and_then(Value::as_bool).unwrap_or(false),
-        is_repost: raw.get("is_repost").and_then(Value::as_bool).unwrap_or(false),
-        has_media: raw.get("has_media").and_then(Value::as_bool).unwrap_or(false),
-        in_network: raw.get("in_network").and_then(Value::as_bool).unwrap_or(false),
+        is_reply: raw
+            .get("is_reply")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        is_repost: raw
+            .get("is_repost")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        has_media: raw
+            .get("has_media")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        in_network: raw
+            .get("in_network")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
     })
 }
 
 fn context(raw: Option<&Value>) -> Result<RankingContext, String> {
-    let Some(raw) = raw else { return Ok(RankingContext::default()) };
+    let Some(raw) = raw else {
+        return Ok(RankingContext::default());
+    };
     if !raw.is_object() {
         return Err("context must be an object".to_owned());
     }
@@ -127,7 +157,10 @@ fn rank(args: &Value) -> Result<Value, String> {
         .get("candidates")
         .and_then(Value::as_array)
         .ok_or_else(|| "candidates must be an array".to_owned())?;
-    let candidates = raw_candidates.iter().map(post_candidate).collect::<Result<Vec<_>, _>>()?;
+    let candidates = raw_candidates
+        .iter()
+        .map(post_candidate)
+        .collect::<Result<Vec<_>, _>>()?;
     let mut originals = std::collections::HashMap::new();
     for raw in raw_candidates {
         if let Some(id) = raw.get("id").and_then(Value::as_str) {
@@ -159,7 +192,11 @@ async fn client_action(args: &Value) -> Result<Value, String> {
         .get("action")
         .and_then(Value::as_str)
         .ok_or_else(|| "action must be a string".to_owned())?;
-    if !["profile", "tweets", "search", "news", "whoami", "rank", "foryou"].contains(&action) {
+    if ![
+        "profile", "tweets", "search", "news", "whoami", "rank", "foryou",
+    ]
+    .contains(&action)
+    {
         return Err(format!("unsupported X action: {action}"));
     }
     let handle = optional_text(args, "handle")?;
@@ -192,9 +229,12 @@ async fn client_action(args: &Value) -> Result<Value, String> {
                 .await
                 .map_err(|error| error.to_string())?;
             serde_json::to_value(
-                client.user_tweets(&id, count, None, 1).await.map_err(|error| error.to_string())?,
+                client
+                    .user_tweets(&id, count, None, 1)
+                    .await
+                    .map_err(|error| error.to_string())?,
             )
-        },
+        }
         "search" => serde_json::to_value(
             client
                 .search(query.unwrap_or_default(), count, None, "Latest", 1)
@@ -210,7 +250,10 @@ async fn client_action(args: &Value) -> Result<Value, String> {
         "whoami" => serde_json::to_value(client.whoami().await.map_err(|error| error.to_string())?),
         "rank" | "foryou" => {
             let viewer_id = client.whoami().await.ok().map(|viewer| viewer.id);
-            let context = RankingContext { viewer_id, ..Default::default() };
+            let context = RankingContext {
+                viewer_id,
+                ..Default::default()
+            };
             let candidates = if action == "foryou" || query.is_some_and(|query| !query.is_empty()) {
                 let query = if action == "foryou" {
                     query.filter(|q| !q.is_empty()).unwrap_or("ai")
@@ -241,7 +284,7 @@ async fn client_action(args: &Value) -> Result<Value, String> {
                 "action": action,
                 "results": ranked
             }))
-        },
+        }
         _ => unreachable!("action checked above"),
     };
     payload.map_err(|error| error.to_string())
@@ -249,8 +292,10 @@ async fn client_action(args: &Value) -> Result<Value, String> {
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     let result = match name {
         "aphrody_x_client" => client_action(&args).await,
         "aphrody_x_algorithm_rank" => rank(&args),
@@ -265,7 +310,7 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
                 result.structured_content = Some(value);
             }
             result
-        },
+        }
         Err(error) => CallToolResult::error(vec![ContentBlock::text(format!("{name}: {error}"))]),
     }
 }
@@ -307,9 +352,17 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_client_action_fails_before_credentials() {
-        assert!(client_action(&json!({ "action": "search" })).await.unwrap_err().contains("query"));
         assert!(
-            client_action(&json!({ "action": "tweets" })).await.unwrap_err().contains("handle")
+            client_action(&json!({ "action": "search" }))
+                .await
+                .unwrap_err()
+                .contains("query")
+        );
+        assert!(
+            client_action(&json!({ "action": "tweets" }))
+                .await
+                .unwrap_err()
+                .contains("handle")
         );
         assert!(
             client_action(&json!({ "action": "whoami", "cookie": "auth_token=x" }))

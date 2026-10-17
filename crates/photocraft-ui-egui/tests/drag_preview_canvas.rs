@@ -43,14 +43,20 @@ impl Image {
 
 fn harness(ppp: f32) -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(egui::vec2(900.0, 640.0)).with_pixels_per_point(ppp).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref() {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(egui::vec2(900.0, 640.0))
+            .with_pixels_per_point(ppp)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -73,13 +79,22 @@ fn setup(h: &mut Harness, background: &str, tool: &str) {
     {
         let app = h.state_mut();
         while app.session.active().is_some() {
-            app.run("file.close", json!({"discard": true})).expect("close");
+            app.run("file.close", json!({"discard": true}))
+                .expect("close");
         }
-        app.run("file.new", json!({"width": 400, "height": 300, "background": background})).expect("new");
+        app.run(
+            "file.new",
+            json!({"width": 400, "height": 300, "background": background}),
+        )
+        .expect("new");
         app.sync_views();
         app.ui.extras.rulers = false;
     }
-    control(h, "ui.set", json!({"tool": tool, "zoom": 1.0, "center": [200, 150]}));
+    control(
+        h,
+        "ui.set",
+        json!({"tool": tool, "zoom": 1.0, "center": [200, 150]}),
+    );
     h.run_steps(3);
 }
 
@@ -102,7 +117,12 @@ fn pointer_move(h: &mut Harness, x: f32, y: f32) {
 
 fn button(h: &mut Harness, x: f32, y: f32, pressed: bool) {
     let p = screen(h, x, y);
-    h.event(egui::Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+    h.event(egui::Event::PointerButton {
+        pos: p,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
 }
 
@@ -112,13 +132,21 @@ fn drag_to(h: &mut Harness, from: [f32; 2], to: [f32; 2]) {
     button(h, from[0], from[1], true);
     for i in 1..=6 {
         let t = i as f32 / 6.0;
-        pointer_move(h, from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t);
+        pointer_move(
+            h,
+            from[0] + (to[0] - from[0]) * t,
+            from[1] + (to[1] - from[1]) * t,
+        );
     }
 }
 
 fn render(h: &mut Harness) -> Image {
     let img = h.render().expect("render");
-    Image { w: img.width(), h: img.height(), px: img.into_raw() }
+    Image {
+        w: img.width(),
+        h: img.height(),
+        px: img.into_raw(),
+    }
 }
 
 /// Fraction of positions along the screen segment `a`–`b` (points) where a pixel within ±2
@@ -135,7 +163,8 @@ fn coverage(img: &Image, ppp: f32, a: Pos2, b: Pos2, test: impl Fn(u8) -> bool) 
         let p = a + dir * (8.0 + i as f32);
         let hit = (-2..=2).any(|o| {
             let q = p + normal * o as f32;
-            img.luma(q.x.round() as i64, q.y.round() as i64).is_some_and(&test)
+            img.luma(q.x.round() as i64, q.y.round() as i64)
+                .is_some_and(&test)
         });
         hits += usize::from(hit);
     }
@@ -160,7 +189,8 @@ fn coverage_along(img: &Image, ppp: f32, pts: &[Pos2], test: impl Fn(u8) -> bool
             let p = a + dir * (i as f32 + 0.5);
             let hit = (-2..=2).any(|o| {
                 let q = p + normal * o as f32;
-                img.luma(q.x.round() as i64, q.y.round() as i64).is_some_and(&test)
+                img.luma(q.x.round() as i64, q.y.round() as i64)
+                    .is_some_and(&test)
             });
             samples += 1;
             hits += usize::from(hit);
@@ -201,7 +231,10 @@ fn marquee_previews_show_while_dragging_on_white_and_black_at_1x_and_2x() {
                         let was = coverage(&before, ppp, p, q, ink(bg));
                         let now = coverage(&img, ppp, p, q, ink(bg));
                         // Ants: half the dashes contrast with the pixels under them.
-                        assert!(was < 0.05 && now > 0.3, "{tool} on {bg} @{ppp}x, edge {i}: {was:.2} → {now:.2} contrasting");
+                        assert!(
+                            was < 0.05 && now > 0.3,
+                            "{tool} on {bg} @{ppp}x, edge {i}: {was:.2} → {now:.2} contrasting"
+                        );
                     }
                 } else {
                     // The ellipse touches its box at the edge midpoints. Walk the curve around
@@ -210,18 +243,28 @@ fn marquee_previews_show_while_dragging_on_white_and_black_at_1x_and_2x() {
                     // curve, so the arc stays inside it where a straight chord would sag out.
                     let (cx, cy) = ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0);
                     let (rx, ry) = ((b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0);
-                    for (mx, my, t0) in
-                        [(cx, a[1], std::f64::consts::TAU * 0.75), (b[0], cy, 0.0), (cx, b[1], std::f64::consts::FRAC_PI_2), (a[0], cy, std::f64::consts::PI)]
-                    {
+                    for (mx, my, t0) in [
+                        (cx, a[1], std::f64::consts::TAU * 0.75),
+                        (b[0], cy, 0.0),
+                        (cx, b[1], std::f64::consts::FRAC_PI_2),
+                        (a[0], cy, std::f64::consts::PI),
+                    ] {
                         let span = 0.3; // rad: ≈ ±21..30 px of arc, ≈ 5 dash periods
                         let pts: Vec<Pos2> = (0..=48)
                             .map(|i| {
                                 let t = t0 - span + 2.0 * span * i as f64 / 48.0;
-                                screen(&h, (cx as f64 + rx as f64 * t.cos()) as f32, (cy as f64 + ry as f64 * t.sin()) as f32)
+                                screen(
+                                    &h,
+                                    (cx as f64 + rx as f64 * t.cos()) as f32,
+                                    (cy as f64 + ry as f64 * t.sin()) as f32,
+                                )
                             })
                             .collect();
                         let now = coverage_along(&img, ppp, &pts, ink(bg));
-                        assert!(now > 0.3, "{tool} on {bg} @{ppp}x at ({mx}, {my}): {now:.2} contrasting");
+                        assert!(
+                            now > 0.3,
+                            "{tool} on {bg} @{ppp}x at ({mx}, {my}): {now:.2} contrasting"
+                        );
                     }
                 }
                 // Each move's frame shows the outline where the pointer is now (no stale frame).
@@ -229,8 +272,14 @@ fn marquee_previews_show_while_dragging_on_white_and_black_at_1x_and_2x() {
                 let img = render(&mut h);
                 if tool == "rectMarquee" {
                     let [top, right, ..] = edges(&h, a, [340.0, 250.0]);
-                    assert!(coverage(&img, ppp, top.0, top.1, ink(bg)) > 0.3, "{tool} {bg} @{ppp}x: top edge follows the pointer");
-                    assert!(coverage(&img, ppp, right.0, right.1, ink(bg)) > 0.3, "{tool} {bg} @{ppp}x: right edge follows the pointer");
+                    assert!(
+                        coverage(&img, ppp, top.0, top.1, ink(bg)) > 0.3,
+                        "{tool} {bg} @{ppp}x: top edge follows the pointer"
+                    );
+                    assert!(
+                        coverage(&img, ppp, right.0, right.1, ink(bg)) > 0.3,
+                        "{tool} {bg} @{ppp}x: right edge follows the pointer"
+                    );
                 }
                 button(&mut h, 340.0, 250.0, false);
                 h.run_steps(2);
@@ -266,7 +315,10 @@ fn lasso_and_crop_previews_show_while_dragging() {
             img.luma(p.x as i64, p.y as i64).unwrap_or(0)
         };
         assert!(px(200.0, 150.0) > 240, "inside the crop frame stays as is");
-        assert!(px(50.0, 40.0) < 180 && px(350.0, 260.0) < 180, "outside the crop frame is dimmed mid-drag");
+        assert!(
+            px(50.0, 40.0) < 180 && px(350.0, 260.0) < 180,
+            "outside the crop frame is dimmed mid-drag"
+        );
         button(&mut h, 300.0, 220.0, false);
         h.run_steps(2);
     }
@@ -292,6 +344,9 @@ fn a_held_marquee_drag_keeps_requesting_frames() {
     drag_to(&mut h, [100.0, 80.0], [300.0, 220.0]);
     // Pointer held still: the animated ants still ask for the next frame within 100 ms.
     let d = still_frame(&mut h);
-    assert!(d.is_some_and(|d| d <= Duration::from_millis(100)), "mid-drag repaint request: {d:?}");
+    assert!(
+        d.is_some_and(|d| d <= Duration::from_millis(100)),
+        "mid-drag repaint request: {d:?}"
+    );
     button(&mut h, 300.0, 220.0, false);
 }

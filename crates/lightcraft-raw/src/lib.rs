@@ -23,7 +23,14 @@
 //! colour matrix: [`spectral`] has matrices fitted to measured spectral sensitivities for 52 models, and
 //! otherwise [`color`] falls back to a documented neutral model. The decoders never panic on malformed input.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod binned;
 pub mod color;
@@ -56,8 +63,9 @@ pub use lightcraft_meta::Metadata;
 pub use lightcraft_raster::Rgb32f;
 pub use opcodes::{Opcode, OpcodeLists};
 pub use preview::{
-    PREVIEW_PREFIX, PreviewColorSpace, PreviewRange, bounded_preview, embedded_preview, embedded_preview_color_space,
-    embedded_preview_dynamic_range_optimized, embedded_preview_from_range,
+    PREVIEW_PREFIX, PreviewColorSpace, PreviewRange, bounded_preview, embedded_preview,
+    embedded_preview_color_space, embedded_preview_dynamic_range_optimized,
+    embedded_preview_from_range,
 };
 pub use semantic::{SemanticMask, semantic_masks};
 
@@ -163,36 +171,69 @@ pub fn probe(bytes: &[u8]) -> Option<RawFormat> {
         return Some(RawFormat::Cr2);
     }
     let (_, _) = Tiff::sniff(bytes)?;
-    let opts = lightcraft_tiff::ParseOptions { max_ifds: 256, ..Default::default() };
+    let opts = lightcraft_tiff::ParseOptions {
+        max_ifds: 256,
+        ..Default::default()
+    };
     let t = Tiff::parse_with(bytes, &opts).ok()?;
     let ifd0 = t.ifds.first()?;
     if ifd0.contains(lightcraft_tiff::tags::DNG_VERSION) {
         return Some(RawFormat::Dng);
     }
-    let make = t.find(lightcraft_tiff::tags::MAKE).and_then(|e| e.value.as_str()).unwrap_or_default().to_ascii_uppercase();
+    let make = t
+        .find(lightcraft_tiff::tags::MAKE)
+        .and_then(|e| e.value.as_str())
+        .unwrap_or_default()
+        .to_ascii_uppercase();
     let has_cfa = has_raw_ifd(&t);
     // Pentax's reader takes the layout from the Exif `CFAPattern` when no IFD has a CFA photometric (uncompressed
     // and PackBits PEFs), so for the Pentax family that tag counts as raw evidence too
-    let pentax_raw = has_cfa || t.exif().is_some_and(|e| e.contains(vendor::EXIF_CFA_PATTERN));
+    let pentax_raw = has_cfa
+        || t.exif()
+            .is_some_and(|e| e.contains(vendor::EXIF_CFA_PATTERN));
     // Samsung's raw IFD uses private compressions 32769..=32773 (`vendor::srw`), 32773 being PackBits elsewhere
-    let samsung_raw = has_cfa || t.all_ifds().iter().any(|i| i.u16(lightcraft_tiff::tags::COMPRESSION).is_some_and(|c| (32769..=32773).contains(&c)));
+    let samsung_raw = has_cfa
+        || t.all_ifds().iter().any(|i| {
+            i.u16(lightcraft_tiff::tags::COMPRESSION)
+                .is_some_and(|c| (32769..=32773).contains(&c))
+        });
     // Sony raws without a CFA IFD (#702): SRF (DSC-F828), whose IFD0 looks like RGB but holds 14-bit samples (12 or
     // 14 count: raw sensor depths; the raw is in Sony's SRF blocks), and the DSLR-A100, whose IFD0 is an old-style
     // JPEG thumbnail (compression 6, which today's TIFF writers don't produce) and whose `SubIFDs` tag addresses its
     // raw data. A camera-authored or exported TIFF has 8- or 16-bit samples, and its SubIFDs hold ordinary images
-    let model = t.find(lightcraft_tiff::tags::MODEL).and_then(|e| e.value.as_str()).unwrap_or_default().trim().to_ascii_uppercase();
+    let model = t
+        .find(lightcraft_tiff::tags::MODEL)
+        .and_then(|e| e.value.as_str())
+        .unwrap_or_default()
+        .trim()
+        .to_ascii_uppercase();
     let sony_raw = has_cfa
-        || ifd0.u64s(lightcraft_tiff::tags::BITS_PER_SAMPLE).is_some_and(|b| b.iter().any(|v| matches!(v, 12 | 14)))
-        || (model == "DSLR-A100" && ifd0.u16(lightcraft_tiff::tags::COMPRESSION) == Some(6) && ifd0.contains(lightcraft_tiff::tags::SUB_IFDS));
-    if make.starts_with("CANON") && t.ifds.len() >= 4 && t.ifds[3].u16(lightcraft_tiff::tags::COMPRESSION) == Some(6) {
+        || ifd0
+            .u64s(lightcraft_tiff::tags::BITS_PER_SAMPLE)
+            .is_some_and(|b| b.iter().any(|v| matches!(v, 12 | 14)))
+        || (model == "DSLR-A100"
+            && ifd0.u16(lightcraft_tiff::tags::COMPRESSION) == Some(6)
+            && ifd0.contains(lightcraft_tiff::tags::SUB_IFDS));
+    if make.starts_with("CANON")
+        && t.ifds.len() >= 4
+        && t.ifds[3].u16(lightcraft_tiff::tags::COMPRESSION) == Some(6)
+    {
         return Some(RawFormat::Cr2);
     }
     if make.starts_with("NIKON") && has_cfa {
-        return Some(if t.all_ifds().len() > 1 { RawFormat::Nef } else { RawFormat::Nrw });
+        return Some(if t.all_ifds().len() > 1 {
+            RawFormat::Nef
+        } else {
+            RawFormat::Nrw
+        });
     }
     // Hasselblad's Sony-built bodies (the Lunar is a NEX-7 inside) write a Sony ARW under their own Make. Sony's
     // raw coding gives them away: compression 32767 or the raw IFD's tone-curve tag 0x7010, which no 3FR / FFF has
-    let sony_coded = || t.all_ifds().iter().any(|i| i.u16(lightcraft_tiff::tags::COMPRESSION) == Some(32767) || i.contains(0x7010));
+    let sony_coded = || {
+        t.all_ifds()
+            .iter()
+            .any(|i| i.u16(lightcraft_tiff::tags::COMPRESSION) == Some(32767) || i.contains(0x7010))
+    };
     if (make.starts_with("SONY") && sony_raw) || (make.starts_with("HASSELBLAD") && sony_coded()) {
         return Some(RawFormat::Arw);
     }
@@ -212,7 +253,11 @@ pub fn probe(bytes: &[u8]) -> Option<RawFormat> {
     if dng::is_plain_cfa_tiff(&t, bytes) {
         return Some(RawFormat::CfaTiff);
     }
-    if has_cfa || thumbnail_shell(&t, bytes.len()).is_some() || is_preview_container(ifd0) || is_leaf_mosaic(ifd0) {
+    if has_cfa
+        || thumbnail_shell(&t, bytes.len()).is_some()
+        || is_preview_container(ifd0)
+        || is_leaf_mosaic(ifd0)
+    {
         return Some(RawFormat::OtherTiff);
     }
     None
@@ -226,13 +271,24 @@ const LEAF_DATA: u16 = 0x8606;
 /// with no Make tag and no CFA photometric, so only Leaf's data block marks it as a raw (issue #1275). A rendered
 /// RGB image that kept the block stays an ordinary image.
 fn is_leaf_mosaic(ifd0: &lightcraft_tiff::Ifd) -> bool {
-    ifd0.contains(LEAF_DATA) && ifd0.u16(lightcraft_tiff::tags::SAMPLES_PER_PIXEL).unwrap_or(1) == 1
+    ifd0.contains(LEAF_DATA)
+        && ifd0
+            .u16(lightcraft_tiff::tags::SAMPLES_PER_PIXEL)
+            .unwrap_or(1)
+            == 1
 }
 
 /// Whether the Exif maker note starts with the signature of the Pentax layouts (`AOC\0` or `PENTAX \0`).
 fn has_pentax_maker_note(t: &Tiff, bytes: &[u8]) -> bool {
-    let Some(e) = t.exif().and_then(|e| e.get(lightcraft_tiff::tags::MAKER_NOTE)) else { return false };
-    bytes.get(e.offset as usize..).is_some_and(|n| n.starts_with(b"AOC\0") || n.starts_with(b"PENTAX \0"))
+    let Some(e) = t
+        .exif()
+        .and_then(|e| e.get(lightcraft_tiff::tags::MAKER_NOTE))
+    else {
+        return false;
+    };
+    bytes
+        .get(e.offset as usize..)
+        .is_some_and(|n| n.starts_with(b"AOC\0") || n.starts_with(b"PENTAX \0"))
 }
 
 /// Whether some IFD is marked as raw: CFA photometric, or a raw-only compression value (99 is not a
@@ -241,7 +297,8 @@ fn has_pentax_maker_note(t: &Tiff, bytes: &[u8]) -> bool {
 fn has_raw_ifd(t: &Tiff) -> bool {
     t.all_ifds().iter().any(|i| {
         i.u16(lightcraft_tiff::tags::PHOTOMETRIC) == Some(lightcraft_tiff::tags::photometric::CFA)
-            || i.u16(lightcraft_tiff::tags::COMPRESSION).is_some_and(|c| matches!(c, 34713 | 32767 | 32769 | 32770 | 99 | 65535))
+            || i.u16(lightcraft_tiff::tags::COMPRESSION)
+                .is_some_and(|c| matches!(c, 34713 | 32767 | 32769 | 32770 | 99 | 65535))
             || i.contains(0x7010)
             || i.contains(lightcraft_tiff::tags::CFA_PATTERN_EP)
             || i.contains(lightcraft_tiff::tags::CFA_REPEAT_PATTERN_DIM)
@@ -253,7 +310,9 @@ fn has_raw_ifd(t: &Tiff) -> bool {
 /// rejects such a file as malformed even though it carries a preview.
 fn is_preview_container(ifd0: &lightcraft_tiff::Ifd) -> bool {
     use lightcraft_tiff::tags::{IMAGE_LENGTH, IMAGE_WIDTH, JPEG_INTERCHANGE_FORMAT, SUB_IFDS};
-    !ifd0.contains(IMAGE_WIDTH) && !ifd0.contains(IMAGE_LENGTH) && (ifd0.contains(JPEG_INTERCHANGE_FORMAT) || ifd0.contains(SUB_IFDS))
+    !ifd0.contains(IMAGE_WIDTH)
+        && !ifd0.contains(IMAGE_LENGTH)
+        && (ifd0.contains(JPEG_INTERCHANGE_FORMAT) || ifd0.contains(SUB_IFDS))
 }
 
 /// A TIFF whose first image is only a reduced copy of a picture stored somewhere else.
@@ -283,14 +342,21 @@ fn thumbnail_shell(t: &Tiff, len: usize) -> Option<ThumbnailShell> {
     if w0 == 0 || h0 == 0 {
         return None;
     }
-    let much_bigger = |(w, h): (u32, u32)| u64::from(w) >= 4 * u64::from(w0) && u64::from(h) >= 4 * u64::from(h0);
-    let shell = |full| Some(ThumbnailShell { thumb: (w0, h0), full });
+    let much_bigger =
+        |(w, h): (u32, u32)| u64::from(w) >= 4 * u64::from(w0) && u64::from(h) >= 4 * u64::from(h0);
+    let shell = |full| {
+        Some(ThumbnailShell {
+            thumb: (w0, h0),
+            full,
+        })
+    };
     let mut best: Option<(u32, u32)> = None;
     for s in &ifd0.sub_ifds {
         if s.image().is_ok()
             && let (Some(w), Some(h)) = (s.u32(IMAGE_WIDTH), s.u32(IMAGE_LENGTH))
             && much_bigger((w, h))
-            && best.is_none_or(|(bw, bh)| u64::from(w) * u64::from(h) > u64::from(bw) * u64::from(bh))
+            && best
+                .is_none_or(|(bw, bh)| u64::from(w) * u64::from(h) > u64::from(bw) * u64::from(bh))
         {
             best = Some((w, h));
         }
@@ -320,17 +386,31 @@ fn thumbnail_shell(t: &Tiff, len: usize) -> Option<ThumbnailShell> {
 
 /// Why [`decode`] gives up on a file [`probe`] called [`RawFormat::OtherTiff`].
 fn other_tiff_reason(bytes: &[u8]) -> String {
-    let t = Tiff::parse_with(bytes, &lightcraft_tiff::ParseOptions { max_ifds: 256, ..Default::default() }).ok();
+    let t = Tiff::parse_with(
+        bytes,
+        &lightcraft_tiff::ParseOptions {
+            max_ifds: 256,
+            ..Default::default()
+        },
+    )
+    .ok();
     // a DNG-style CFA IFD whose lossless JPEG the lossless decoder rejects: say why
     if let Some(t) = &t
         && let Some(info) = dng::raw_ifd(t).and_then(|i| i.image().ok())
         && info.compression == lightcraft_tiff::tags::compression::JPEG
-        && let Some(src) = info.chunks(bytes.len() as u64).first().and_then(|c| lightcraft_tiff::image::chunk_bytes(bytes, c))
+        && let Some(src) = info
+            .chunks(bytes.len() as u64)
+            .first()
+            .and_then(|c| lightcraft_tiff::image::chunk_bytes(bytes, c))
         && let Err(e) = ljpeg::frame_info(src)
     {
         return format!("raw image coded as lossless JPEG that is not decoded yet ({e})");
     }
-    match t.as_ref().filter(|t| !has_raw_ifd(t)).and_then(|t| thumbnail_shell(t, bytes.len())) {
+    match t
+        .as_ref()
+        .filter(|t| !has_raw_ifd(t))
+        .and_then(|t| thumbnail_shell(t, bytes.len()))
+    {
         Some(s) => format!(
             "{}x{} raw image in a private block, not decoded yet (the file's first image is a {}x{} reduced copy)",
             s.full.0, s.full.1, s.thumb.0, s.thumb.1
@@ -386,7 +466,9 @@ fn decode_with(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         RawFormat::Srw => vendor::srw::decode(bytes, mode),
         RawFormat::KodakDcs => vendor::kodak::decode(bytes, mode),
         RawFormat::OtherTiff => Err(RawError::Unsupported(other_tiff_reason(bytes))),
-        other => Err(RawError::Unsupported(format!("{other:?} files are not decoded yet"))),
+        other => Err(RawError::Unsupported(format!(
+            "{other:?} files are not decoded yet"
+        ))),
     }
 }
 
@@ -420,8 +502,14 @@ pub struct RawInfo {
 impl RawInfo {
     /// Size of the developed image before orientation: the default crop, else the active area.
     pub fn developed_size(&self) -> (usize, usize) {
-        let c = self.crop.clipped(self.active_area.width, self.active_area.height);
-        if c.width > 1 && c.height > 1 { (c.width, c.height) } else { (self.active_area.width, self.active_area.height) }
+        let c = self
+            .crop
+            .clipped(self.active_area.width, self.active_area.height);
+        if c.width > 1 && c.height > 1 {
+            (c.width, c.height)
+        } else {
+            (self.active_area.width, self.active_area.height)
+        }
     }
 }
 
@@ -475,12 +563,20 @@ impl Cfa {
                 })
             })
             .collect::<Option<_>>()?;
-        (p.len() == 4).then_some(Cfa { width: 2, height: 2, pattern: p })
+        (p.len() == 4).then_some(Cfa {
+            width: 2,
+            height: 2,
+            pattern: p,
+        })
     }
     /// A 2×2 Bayer layout named in code (`"RGGB"`, `"BGGR"`, `"GRBG"`, `"GBRG"`). Only for literal
     /// names (tested below); anything else falls back to RGGB instead of failing.
     pub(crate) fn bayer_static(s: &'static str) -> Cfa {
-        Cfa::bayer(s).unwrap_or(Cfa { width: 2, height: 2, pattern: vec![0, 1, 1, 2] })
+        Cfa::bayer(s).unwrap_or(Cfa {
+            width: 2,
+            height: 2,
+            pattern: vec![0, 1, 1, 2],
+        })
     }
     /// The Fujifilm X-Trans 6×6 layout (as commonly documented), anchored at (0, 0).
     pub fn xtrans() -> Cfa {
@@ -495,7 +591,11 @@ impl Cfa {
                 })
             })
             .collect();
-        Cfa { width: 6, height: 6, pattern }
+        Cfa {
+            width: 6,
+            height: 6,
+            pattern,
+        }
     }
     #[inline]
     pub fn color_at(&self, x: usize, y: usize) -> u8 {
@@ -503,8 +603,15 @@ impl Cfa {
     }
     /// The same pattern anchored at `(dx, dy)` of the current anchor (e.g. after cropping to an active area).
     pub fn shifted(&self, dx: usize, dy: usize) -> Cfa {
-        let pattern = (0..self.height).flat_map(|y| (0..self.width).map(move |x| (x, y))).map(|(x, y)| self.color_at(x + dx, y + dy)).collect();
-        Cfa { width: self.width, height: self.height, pattern }
+        let pattern = (0..self.height)
+            .flat_map(|y| (0..self.width).map(move |x| (x, y)))
+            .map(|(x, y)| self.color_at(x + dx, y + dy))
+            .collect();
+        Cfa {
+            width: self.width,
+            height: self.height,
+            pattern,
+        }
     }
     pub fn is_bayer(&self) -> bool {
         if self.width != 2 || self.height != 2 {
@@ -521,10 +628,17 @@ impl Cfa {
     }
     /// Pattern name like `"RGGB"` for 2×2 patterns.
     pub fn name(&self) -> String {
-        self.pattern.iter().map(|&c| ['R', 'G', 'B', '?'][c.min(3) as usize]).collect()
+        self.pattern
+            .iter()
+            .map(|&c| ['R', 'G', 'B', '?'][c.min(3) as usize])
+            .collect()
     }
     fn valid(&self) -> bool {
-        self.width > 0 && self.height > 0 && self.width <= 16 && self.height <= 16 && self.pattern.len() == self.width * self.height
+        self.width > 0
+            && self.height > 0
+            && self.width <= 16
+            && self.height <= 16
+            && self.pattern.len() == self.width * self.height
     }
 }
 
@@ -539,13 +653,23 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x: usize, y: usize, width: usize, height: usize) -> Rect {
-        Rect { x, y, width, height }
+        Rect {
+            x,
+            y,
+            width,
+            height,
+        }
     }
     /// Clip to a `w × h` area.
     pub fn clipped(self, w: usize, h: usize) -> Rect {
         let x = self.x.min(w);
         let y = self.y.min(h);
-        Rect { x, y, width: self.width.min(w - x), height: self.height.min(h - y) }
+        Rect {
+            x,
+            y,
+            width: self.width.min(w - x),
+            height: self.height.min(h - y),
+        }
     }
 }
 
@@ -565,25 +689,44 @@ pub struct BlackLevel {
 
 impl Default for BlackLevel {
     fn default() -> Self {
-        BlackLevel { repeat_rows: 1, repeat_cols: 1, values: vec![0.0], delta_h: vec![], delta_v: vec![] }
+        BlackLevel {
+            repeat_rows: 1,
+            repeat_cols: 1,
+            values: vec![0.0],
+            delta_h: vec![],
+            delta_v: vec![],
+        }
     }
 }
 
 impl BlackLevel {
     pub fn uniform(v: f32) -> BlackLevel {
-        BlackLevel { values: vec![v], ..Default::default() }
+        BlackLevel {
+            values: vec![v],
+            ..Default::default()
+        }
     }
     /// Black level at active-area coordinates (x, y) for sample `s` of `cpp`.
     #[inline]
     pub fn at(&self, x: usize, y: usize, s: usize, cpp: usize) -> f32 {
         let (r, c) = (self.repeat_rows.max(1), self.repeat_cols.max(1));
         let idx = ((y % r) * c + (x % c)) * cpp + s;
-        let base = self.values.get(idx).or_else(|| self.values.first()).copied().unwrap_or(0.0);
-        base + self.delta_h.get(x).copied().unwrap_or(0.0) + self.delta_v.get(y).copied().unwrap_or(0.0)
+        let base = self
+            .values
+            .get(idx)
+            .or_else(|| self.values.first())
+            .copied()
+            .unwrap_or(0.0);
+        base + self.delta_h.get(x).copied().unwrap_or(0.0)
+            + self.delta_v.get(y).copied().unwrap_or(0.0)
     }
     /// Mean of the repeat-pattern values (for display / heuristics).
     pub fn mean(&self) -> f32 {
-        if self.values.is_empty() { 0.0 } else { self.values.iter().sum::<f32>() / self.values.len() as f32 }
+        if self.values.is_empty() {
+            0.0
+        } else {
+            self.values.iter().sum::<f32>() / self.values.len() as f32
+        }
     }
 }
 
@@ -724,7 +867,11 @@ impl RawImage {
             return Err(RawError::Unsupported(format!("CFA pattern {}", c.name())));
         }
         let a = self.active_area;
-        if a.width == 0 || a.height == 0 || a.x + a.width > self.width || a.y + a.height > self.height {
+        if a.width == 0
+            || a.height == 0
+            || a.x + a.width > self.width
+            || a.y + a.height > self.height
+        {
             return Err(RawError::Corrupt("active area outside image".into()));
         }
         Ok(())
@@ -732,7 +879,11 @@ impl RawImage {
 
     /// White level for sample `s`.
     pub fn white_at(&self, s: usize) -> f32 {
-        self.white.get(s).or_else(|| self.white.first()).copied().unwrap_or(65535.0)
+        self.white
+            .get(s)
+            .or_else(|| self.white.first())
+            .copied()
+            .unwrap_or(65535.0)
     }
 
     /// Black-subtract, white-scale and crop to the active area, applying `OpcodeList1` (on raw values) first and
@@ -746,7 +897,15 @@ impl RawImage {
             None
         } else {
             let mut v: Vec<f32> = (0..self.data.len()).map(|i| self.data.get(i)).collect();
-            opcodes::apply_list(&self.opcodes.list1, &mut v, self.width, self.height, cpp, self.cfa.as_ref(), 65535.0);
+            opcodes::apply_list(
+                &self.opcodes.list1,
+                &mut v,
+                self.width,
+                self.height,
+                cpp,
+                self.cfa.as_ref(),
+                65535.0,
+            );
             Some(v)
         };
         let src = |i: usize| match &stage1 {
@@ -762,19 +921,35 @@ impl RawImage {
         let mut out = vec![0f32; a.width * a.height * cpp];
         let row_len = a.width * cpp;
         use rayon::prelude::*;
-        out.par_chunks_mut(row_len).enumerate().for_each(|(y, row)| {
-            let base = ((a.y + y) * w + a.x) * cpp;
-            for x in 0..a.width {
-                for s in 0..cpp {
-                    let v = src(base + x * cpp + s);
-                    let b = self.black.at(x, y, s, cpp);
-                    row[x * cpp + s] = (v - b) * scale[s];
+        out.par_chunks_mut(row_len)
+            .enumerate()
+            .for_each(|(y, row)| {
+                let base = ((a.y + y) * w + a.x) * cpp;
+                for x in 0..a.width {
+                    for s in 0..cpp {
+                        let v = src(base + x * cpp + s);
+                        let b = self.black.at(x, y, s, cpp);
+                        row[x * cpp + s] = (v - b) * scale[s];
+                    }
                 }
-            }
-        });
+            });
         let cfa = self.cfa.as_ref().map(|c| c.shifted(a.x, a.y));
-        opcodes::apply_list(&self.opcodes.list2, &mut out, a.width, a.height, cpp, cfa.as_ref(), 1.0);
-        Ok(Normalized { width: a.width, height: a.height, cpp, data: out, cfa })
+        opcodes::apply_list(
+            &self.opcodes.list2,
+            &mut out,
+            a.width,
+            a.height,
+            cpp,
+            cfa.as_ref(),
+            1.0,
+        );
+        Ok(Normalized {
+            width: a.width,
+            height: a.height,
+            cpp,
+            data: out,
+            cfa,
+        })
     }
 
     /// Full "raw → camera RGB" path: normalise, demosaic with `method`, apply `OpcodeList3`, then the default crop.
@@ -801,7 +976,11 @@ impl RawImage {
     /// crop, or all of it when there is none.
     pub fn develop_crop(&self, width: usize, height: usize) -> Rect {
         let c = self.crop.clipped(width, height);
-        if c.width == 0 || c.height == 0 { Rect::new(0, 0, width, height) } else { c }
+        if c.width == 0 || c.height == 0 {
+            Rect::new(0, 0, width, height)
+        } else {
+            c
+        }
     }
 }
 
@@ -828,7 +1007,9 @@ mod tests {
         // every 3×3 block of the X-Trans layout has 5 greens
         for by in 0..2 {
             for bx in 0..2 {
-                let g = (0..9).filter(|i| x.color_at(bx * 3 + i % 3, by * 3 + i / 3) == 1).count();
+                let g = (0..9)
+                    .filter(|i| x.color_at(bx * 3 + i % 3, by * 3 + i / 3) == 1)
+                    .count();
                 assert_eq!(g, 5);
             }
         }
@@ -873,7 +1054,13 @@ mod tests {
 
     #[test]
     fn black_levels() {
-        let b = BlackLevel { repeat_rows: 2, repeat_cols: 2, values: vec![1.0, 2.0, 3.0, 4.0], delta_h: vec![0.5, 0.0], delta_v: vec![0.0, 10.0] };
+        let b = BlackLevel {
+            repeat_rows: 2,
+            repeat_cols: 2,
+            values: vec![1.0, 2.0, 3.0, 4.0],
+            delta_h: vec![0.5, 0.0],
+            delta_v: vec![0.0, 10.0],
+        };
         assert_eq!(b.at(0, 0, 0, 1), 1.5);
         assert_eq!(b.at(1, 1, 0, 1), 14.0);
         assert_eq!(b.at(3, 2, 0, 1), 2.0);
@@ -894,12 +1081,17 @@ mod tests {
         ifd.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![3]));
         ifd.set(t::PHOTOMETRIC, Value::Short(vec![2]));
         ifd.set(t::COMPRESSION, Value::Short(vec![1]));
-        ifd.set_image(ImageData::Strips { rows_per_strip: h, strips: vec![vec![90u8; (w * h * 3) as usize]] });
+        ifd.set_image(ImageData::Strips {
+            rows_per_strip: h,
+            strips: vec![vec![90u8; (w * h * 3) as usize]],
+        });
         ifd
     }
 
     fn exif_size(w: u32, h: u32) -> IfdBuilder {
-        IfdBuilder::new().with(t::PIXEL_X_DIMENSION, Value::Long(vec![w])).with(t::PIXEL_Y_DIMENSION, Value::Long(vec![h]))
+        IfdBuilder::new()
+            .with(t::PIXEL_X_DIMENSION, Value::Long(vec![w]))
+            .with(t::PIXEL_Y_DIMENSION, Value::Long(vec![h]))
     }
 
     fn write(chain: &[IfdBuilder]) -> Vec<u8> {
@@ -915,8 +1107,13 @@ mod tests {
         ifd0.add_sub_ifd(rgb_ifd(64, 48));
         let bytes = write(&[ifd0]);
         assert_eq!(probe(&bytes), Some(RawFormat::OtherTiff));
-        let Err(RawError::Unsupported(why)) = decode(&bytes) else { panic!("expected Unsupported") };
-        assert!(why.contains("64x48") && why.contains("16x12") && why.contains(SHELL_REASON), "{why}");
+        let Err(RawError::Unsupported(why)) = decode(&bytes) else {
+            panic!("expected Unsupported")
+        };
+        assert!(
+            why.contains("64x48") && why.contains("16x12") && why.contains(SHELL_REASON),
+            "{why}"
+        );
         // a sub-IFD that is not much bigger (a pyramid level) does not count
         let mut ifd0 = rgb_ifd(16, 12);
         ifd0.add_sub_ifd(rgb_ifd(32, 24));
@@ -936,8 +1133,13 @@ mod tests {
         assert_eq!(probe(&bytes), None);
         bytes.extend(std::iter::repeat_n(7u8, 2_000));
         assert_eq!(probe(&bytes), Some(RawFormat::OtherTiff));
-        let Err(RawError::Unsupported(why)) = decode(&bytes) else { panic!("expected Unsupported") };
-        assert!(why.contains("400x300") && why.contains("16x12") && why.contains(SHELL_REASON), "{why}");
+        let Err(RawError::Unsupported(why)) = decode(&bytes) else {
+            panic!("expected Unsupported")
+        };
+        assert!(
+            why.contains("400x300") && why.contains("16x12") && why.contains(SHELL_REASON),
+            "{why}"
+        );
         // truncating it never panics
         for n in (0..bytes.len()).step_by(37) {
             let _ = probe(&bytes[..n]);
@@ -963,13 +1165,21 @@ mod tests {
         // a multi-page TIFF whose first page is small
         assert_eq!(probe(&padded(&[rgb_ifd(16, 12), rgb_ifd(400, 300)])), None);
         // no dimensions at all
-        assert_eq!(probe(&padded(&[IfdBuilder::new().with(t::MAKE, Value::Ascii("X".into()))])), None);
+        assert_eq!(
+            probe(&padded(&[
+                IfdBuilder::new().with(t::MAKE, Value::Ascii("X".into()))
+            ])),
+            None
+        );
         // raw evidence without a CFA photometric: Pentax's Exif `CFAPattern` (uncompressed / PackBits PEFs) and
         // Samsung's private compressions (here 32773, PackBits elsewhere: NX1, NX500)
         let mut pef = rgb_ifd(400, 300);
         pef.set(t::MAKE, Value::Ascii("PENTAX Corporation".into()));
         let mut exif = exif_size(400, 300);
-        exif.set(vendor::EXIF_CFA_PATTERN, Value::Undefined(vec![0, 2, 0, 2, 0, 1, 1, 2]));
+        exif.set(
+            vendor::EXIF_CFA_PATTERN,
+            Value::Undefined(vec![0, 2, 0, 2, 0, 1, 1, 2]),
+        );
         pef.set_child(t::EXIF_IFD, exif);
         assert_eq!(probe(&padded(&[pef])), Some(RawFormat::Pef));
         let mut srw = rgb_ifd(400, 300);
@@ -981,7 +1191,11 @@ mod tests {
             let mut cam = rgb_ifd(400, 300);
             cam.set(t::MAKE, Value::Ascii(make.into()));
             cam.set_child(t::EXIF_IFD, exif_size(400, 300));
-            assert_eq!(probe(&padded(&[cam])), None, "{make} TIFF should not be probed as raw");
+            assert_eq!(
+                probe(&padded(&[cam])),
+                None,
+                "{make} TIFF should not be probed as raw"
+            );
         }
     }
 
@@ -1004,14 +1218,34 @@ mod tests {
         };
         let raw_block = || Some(rgb_ifd(64, 48)); // stands in for the A100's raw-data pointer
         assert_eq!(sony("DSC-F828", 14, 1, None), Some(RawFormat::Arw), "SRF");
-        assert_eq!(sony("DSC-F828", 12, 1, None), Some(RawFormat::Arw), "12-bit samples count too");
-        assert_eq!(sony("DSLR-A100", 8, 6, raw_block()), Some(RawFormat::Arw), "A100: old-JPEG IFD0 and SubIFDs");
+        assert_eq!(
+            sony("DSC-F828", 12, 1, None),
+            Some(RawFormat::Arw),
+            "12-bit samples count too"
+        );
+        assert_eq!(
+            sony("DSLR-A100", 8, 6, raw_block()),
+            Some(RawFormat::Arw),
+            "A100: old-JPEG IFD0 and SubIFDs"
+        );
         assert_eq!(sony("DSC-F828", 8, 1, None), None, "an 8-bit TIFF");
         assert_eq!(sony("DSC-F828", 16, 1, None), None, "a 16-bit TIFF");
         // TIFFs exported from A100 photos, with a thumbnail in SubIFDs (Codex review of #702)
-        assert_eq!(sony("DSLR-A100", 8, 1, Some(rgb_ifd(64, 48))), None, "an 8-bit A100 TIFF with a SubIFDs thumbnail");
-        assert_eq!(sony("DSLR-A100", 16, 8, Some(rgb_ifd(64, 48))), None, "a 16-bit A100 TIFF with a SubIFDs thumbnail");
-        assert_eq!(sony("ILCE-7M4", 8, 6, raw_block()), None, "the A100's layout under another model");
+        assert_eq!(
+            sony("DSLR-A100", 8, 1, Some(rgb_ifd(64, 48))),
+            None,
+            "an 8-bit A100 TIFF with a SubIFDs thumbnail"
+        );
+        assert_eq!(
+            sony("DSLR-A100", 16, 8, Some(rgb_ifd(64, 48))),
+            None,
+            "a 16-bit A100 TIFF with a SubIFDs thumbnail"
+        );
+        assert_eq!(
+            sony("ILCE-7M4", 8, 6, raw_block()),
+            None,
+            "the A100's layout under another model"
+        );
     }
 
     // --- containers that are recognised but not decoded, with a preview ---
@@ -1024,7 +1258,9 @@ mod tests {
         for f in [RawFormat::Crw, RawFormat::Mrw, RawFormat::X3f] {
             assert!(!f.is_supported());
         }
-        assert!(matches!(decode(b"\0MRM\0\x01\0\0"), Err(RawError::Unsupported(w)) if w.contains("Mrw")));
+        assert!(
+            matches!(decode(b"\0MRM\0\x01\0\0"), Err(RawError::Unsupported(w)) if w.contains("Mrw"))
+        );
         // too short for the CIFF signature
         assert_eq!(probe(b"II\x1a\0\0\0HEAP"), None);
     }
@@ -1033,7 +1269,14 @@ mod tests {
     /// container with a preview; a TIFF reader would call it malformed.
     #[test]
     fn ifd0_without_dimensions_but_with_a_jpeg_is_a_preview_container() {
-        let jpeg: Vec<u8> = [&[0xffu8, 0xd8, 0xff, 0xc0, 0, 0x0b, 8, 0, 1, 0, 1, 1, 1, 0x11, 0][..], &[0x55; 40], &[0xff, 0xd9]].concat();
+        let jpeg: Vec<u8> = [
+            &[
+                0xffu8, 0xd8, 0xff, 0xc0, 0, 0x0b, 8, 0, 1, 0, 1, 1, 1, 0x11, 0,
+            ][..],
+            &[0x55; 40],
+            &[0xff, 0xd9],
+        ]
+        .concat();
         let off = 8 + 2 + 24 + 4;
         let mut f = b"II*\0\x08\0\0\0\x02\0".to_vec();
         for (tag, v) in [(513u16, off as u32), (514, jpeg.len() as u32)] {
@@ -1067,11 +1310,17 @@ mod tests {
         ifd.set(t::DNG_VERSION, Value::Byte(vec![1, 4, 0, 0]));
         ifd.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![2, 2]));
         ifd.set(t::CFA_PATTERN_EP, Value::Byte(vec![0, 1, 1, 2]));
-        ifd.set_image(ImageData::Tiles { tile_width: 32, tile_height: 16, tiles: vec![vec![0x5au8; 400]] });
+        ifd.set_image(ImageData::Tiles {
+            tile_width: 32,
+            tile_height: 16,
+            tiles: vec![vec![0x5au8; 400]],
+        });
         let bytes = write(&[ifd]);
         assert_eq!(probe(&bytes), Some(RawFormat::Dng));
         let want = "DNG compression 9 (GoPro VC-5) is not decoded yet";
-        let Err(RawError::Unsupported(why)) = decode(&bytes) else { panic!("expected Unsupported from decode") };
+        let Err(RawError::Unsupported(why)) = decode(&bytes) else {
+            panic!("expected Unsupported from decode")
+        };
         assert_eq!(why, want);
         let info = probe_info(&bytes).expect("header probe describes the file");
         assert_eq!((info.width, info.height), (32, 16));
@@ -1097,22 +1346,35 @@ mod tests {
             ifd.set(t::IMAGE_LENGTH, Value::Long(vec![12]));
             ifd.set(t::BITS_PER_SAMPLE, Value::Short(vec![16]));
             ifd.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![1]));
-            ifd.set(t::PHOTOMETRIC, Value::Short(vec![t::photometric::BLACK_IS_ZERO]));
+            ifd.set(
+                t::PHOTOMETRIC,
+                Value::Short(vec![t::photometric::BLACK_IS_ZERO]),
+            );
             ifd.set(t::COMPRESSION, Value::Short(vec![1]));
-            ifd.set_image(ImageData::Tiles { tile_width: 16, tile_height: 12, tiles: vec![vec![0x40; 16 * 12 * 2]] });
+            ifd.set_image(ImageData::Tiles {
+                tile_width: 16,
+                tile_height: 12,
+                tiles: vec![vec![0x40; 16 * 12 * 2]],
+            });
             if leaf_data {
                 ifd.set(LEAF_DATA, Value::Undefined(b"PKTS\0\0\0\x01".to_vec()));
             }
             ifd
         };
-        let bytes = TiffWriter::new(lightcraft_tiff::ByteOrder::Big, false).write(&[mosaic(true)]).unwrap();
+        let bytes = TiffWriter::new(lightcraft_tiff::ByteOrder::Big, false)
+            .write(&[mosaic(true)])
+            .unwrap();
         assert_eq!(probe(&bytes), Some(RawFormat::OtherTiff));
         assert!(matches!(decode(&bytes), Err(RawError::Unsupported(_))));
         assert!(matches!(probe_info(&bytes), Err(RawError::Unsupported(_))));
         assert_eq!(probe(&write(&[mosaic(false)])), None, "a 16-bit grey TIFF");
         let mut rgb = rgb_ifd(16, 12);
         rgb.set(LEAF_DATA, Value::Undefined(b"PKTS\0\0\0\x01".to_vec()));
-        assert_eq!(probe(&write(&[rgb])), None, "a rendered RGB image that kept the block");
+        assert_eq!(
+            probe(&write(&[rgb])),
+            None,
+            "a rendered RGB image that kept the block"
+        );
     }
 
     /// Issue #1275: a Hasselblad Lunar is a Sony NEX-7 ARW under Make HASSELBLAD. Sony's raw coding (compression 32767
@@ -1129,17 +1391,26 @@ mod tests {
             if tone_curve {
                 raw.set(0x7010, Value::Short(vec![8000, 10400, 12900, 14100]));
             }
-            raw.set_image(ImageData::Strips { rows_per_strip: 2, strips: vec![vec![0; 128]] });
+            raw.set_image(ImageData::Strips {
+                rows_per_strip: 2,
+                strips: vec![vec![0; 128]],
+            });
             let mut ifd0 = rgb_ifd(4, 3);
             ifd0.set(t::MAKE, Value::Ascii(make.into()));
             ifd0.set(t::MODEL, Value::Ascii("Lunar".into()));
             ifd0.add_sub_ifd(raw);
             write(&[ifd0])
         };
-        assert_eq!(probe(&file("HASSELBLAD", 32767, false)), Some(RawFormat::Arw));
+        assert_eq!(
+            probe(&file("HASSELBLAD", 32767, false)),
+            Some(RawFormat::Arw)
+        );
         assert_eq!(probe(&file("Hasselblad", 1, true)), Some(RawFormat::Arw));
         let lunar = decode(&file("HASSELBLAD", 32767, true)).unwrap();
-        assert_eq!((lunar.format, lunar.width, lunar.height, lunar.bits), (RawFormat::Arw, 64, 2, 14));
+        assert_eq!(
+            (lunar.format, lunar.width, lunar.height, lunar.bits),
+            (RawFormat::Arw, 64, 2, 14)
+        );
         // a Hasselblad CFA image in another coding is not an ARW
         assert_ne!(probe(&file("HASSELBLAD", 1, false)), Some(RawFormat::Arw));
         assert_ne!(probe(&file("HASSELBLAD", 7, false)), Some(RawFormat::Arw));
@@ -1172,11 +1443,30 @@ mod tests {
             raw.set(t::CFA_REPEAT_PATTERN_DIM, Value::Short(vec![2, 2]));
             raw.set(t::CFA_PATTERN_EP, Value::Byte(p.to_vec()));
         }
-        raw.set_image(ImageData::Strips { rows_per_strip: 6, strips: vec![strip] });
+        raw.set_image(ImageData::Strips {
+            rows_per_strip: 6,
+            strips: vec![strip],
+        });
         let mut ifd0 = rgb_ifd(4, 3);
         ifd0.set(t::MAKE, Value::Ascii("Hasselblad".into()));
-        ifd0.set(t::COLOR_MATRIX_1, Value::SRational(vec![(5, 10), (-1, 10), (0, 10), (-5, 10), (12, 10), (3, 10), (-1, 10), (2, 10), (6, 10)]));
-        ifd0.set(t::AS_SHOT_NEUTRAL, Value::Rational(vec![(2, 5), (1, 1), (3, 5)]));
+        ifd0.set(
+            t::COLOR_MATRIX_1,
+            Value::SRational(vec![
+                (5, 10),
+                (-1, 10),
+                (0, 10),
+                (-5, 10),
+                (12, 10),
+                (3, 10),
+                (-1, 10),
+                (2, 10),
+                (6, 10),
+            ]),
+        );
+        ifd0.set(
+            t::AS_SHOT_NEUTRAL,
+            Value::Rational(vec![(2, 5), (1, 1), (3, 5)]),
+        );
         ifd0.add_sub_ifd(raw);
         write(&[ifd0])
     }
@@ -1192,7 +1482,10 @@ mod tests {
         let bytes = plain_cfa_tiff(1, le_words(&cfa_samples()), None);
         assert_eq!(probe(&bytes), Some(RawFormat::CfaTiff));
         let r = decode(&bytes).unwrap();
-        assert_eq!((r.format, r.width, r.height, r.bits), (RawFormat::CfaTiff, 8, 6, 16));
+        assert_eq!(
+            (r.format, r.width, r.height, r.bits),
+            (RawFormat::CfaTiff, 8, 6, 16)
+        );
         assert_eq!(r.data, RawData::U16(cfa_samples()));
         assert_eq!(r.cfa.as_ref().unwrap().name(), "RGGB");
         assert_eq!((r.black.mean(), r.white.clone()), (256.0, vec![60000.0]));
@@ -1201,7 +1494,14 @@ mod tests {
         assert_eq!(r.color.as_shot_neutral, Some([0.4, 1.0, 0.6]));
         // headers only: the same description without samples
         let i = probe_info(&bytes).unwrap();
-        assert_eq!((i.format, i.cfa.as_ref().map(Cfa::name), i.crop), (RawFormat::CfaTiff, Some("RGGB".to_string()), Rect::new(2, 2, 4, 2)));
+        assert_eq!(
+            (i.format, i.cfa.as_ref().map(Cfa::name), i.crop),
+            (
+                RawFormat::CfaTiff,
+                Some("RGGB".to_string()),
+                Rect::new(2, 2, 4, 2)
+            )
+        );
     }
 
     /// Without DNG's white-balance tag the file is left alone (a Kodak or Sinar TIFF with a CFA IFD, say).
@@ -1214,7 +1514,10 @@ mod tests {
         raw.set(t::SAMPLES_PER_PIXEL, Value::Short(vec![1]));
         raw.set(t::PHOTOMETRIC, Value::Short(vec![t::photometric::CFA]));
         raw.set(t::COMPRESSION, Value::Short(vec![1]));
-        raw.set_image(ImageData::Strips { rows_per_strip: 6, strips: vec![le_words(&cfa_samples())] });
+        raw.set_image(ImageData::Strips {
+            rows_per_strip: 6,
+            strips: vec![le_words(&cfa_samples())],
+        });
         let mut ifd0 = rgb_ifd(4, 3);
         ifd0.add_sub_ifd(raw);
         assert_eq!(probe(&write(&[ifd0])), Some(RawFormat::OtherTiff));
@@ -1263,12 +1566,19 @@ mod tests {
         let ss = sos + 2 + 2 + 1 + 2;
         assert_eq!(strip[ss], 1, "selection value byte");
         strip[ss] = 9;
-        assert!(matches!(ljpeg::decode(&strip, 1 << 20), Err(RawError::Unsupported(w)) if w.contains("selection value 9")));
+        assert!(
+            matches!(ljpeg::decode(&strip, 1 << 20), Err(RawError::Unsupported(w)) if w.contains("selection value 9"))
+        );
         let bytes = plain_cfa_tiff(7, strip, None);
         assert_eq!(probe(&bytes), Some(RawFormat::OtherTiff));
         assert!(!RawFormat::OtherTiff.is_supported());
-        let Err(RawError::Unsupported(why)) = decode(&bytes) else { panic!("expected Unsupported") };
-        assert!(why.contains("lossless JPEG") && why.contains("selection value 9"), "{why}");
+        let Err(RawError::Unsupported(why)) = decode(&bytes) else {
+            panic!("expected Unsupported")
+        };
+        assert!(
+            why.contains("lossless JPEG") && why.contains("selection value 9"),
+            "{why}"
+        );
     }
 
     /// Other codings of a CFA IFD (here Deflate) are not claimed by the plain reader.
@@ -1293,9 +1603,18 @@ mod tests {
             ifd.set_child(t::EXIF_IFD, exif);
             write(&[ifd])
         };
-        assert_eq!(probe(&with_note(b"AOC\0MM\0\x01\0\0\0\0\0\0", true)), Some(RawFormat::Pef));
-        assert_eq!(probe(&with_note(b"PENTAX \0MM\0\0\0\0\0\0\0", true)), Some(RawFormat::Pef));
-        assert_eq!(probe(&with_note(b"STMN100\0\0\0\0\0\0\0\0\0", true)), Some(RawFormat::Srw));
+        assert_eq!(
+            probe(&with_note(b"AOC\0MM\0\x01\0\0\0\0\0\0", true)),
+            Some(RawFormat::Pef)
+        );
+        assert_eq!(
+            probe(&with_note(b"PENTAX \0MM\0\0\0\0\0\0\0", true)),
+            Some(RawFormat::Pef)
+        );
+        assert_eq!(
+            probe(&with_note(b"STMN100\0\0\0\0\0\0\0\0\0", true)),
+            Some(RawFormat::Srw)
+        );
         // without raw evidence (an RGB image from such a body) neither reader claims it (#281)
         assert_eq!(probe(&with_note(b"AOC\0MM\0\x01\0\0\0\0\0\0", false)), None);
         assert_eq!(probe(&with_note(b"STMN100\0\0\0\0\0\0\0\0\0", false)), None);

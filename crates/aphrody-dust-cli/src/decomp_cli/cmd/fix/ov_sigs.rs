@@ -36,7 +36,10 @@ impl FixOvSigs {
         }
 
         let overlay_signatures_address = arm9.base_address() + arm9.overlay_signatures_offset();
-        log::info!("Overlay signature table exists at {:#010x}", overlay_signatures_address);
+        log::info!(
+            "Overlay signature table exists at {:#010x}",
+            overlay_signatures_address
+        );
 
         let symbol_map = symbol_maps.get_mut(ModuleKind::Arm9);
         match symbol_map
@@ -47,14 +50,14 @@ impl FixOvSigs {
                     log::info!("OverlaySignatures symbol already exists, no changes will be made.");
                     return Ok(());
                 }
-            },
+            }
             Err(SymbolMapError::NoSymbolToRename { .. }) => {
                 symbol_map.add_data(
                     Some(OVERLAY_SIGNATURES_SYMBOL_NAME.to_string()),
                     overlay_signatures_address,
                     SymData::Any,
                 )?;
-            },
+            }
             Err(e) => Err(e)?,
         };
 

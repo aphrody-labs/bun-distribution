@@ -3,7 +3,7 @@ use bevy_diagnostic::{Diagnostic, DiagnosticPath, Diagnostics, RegisterDiagnosti
 use bevy_ecs::{resource::Resource, system::Res};
 use bevy_platform::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 
-use crate::{mesh::allocator::MeshAllocator, Extract, ExtractSchedule, RenderApp};
+use crate::{Extract, ExtractSchedule, RenderApp, mesh::allocator::MeshAllocator};
 
 /// Number of meshes allocated by the allocator
 static MESH_ALLOCATOR_SLABS: DiagnosticPath = DiagnosticPath::const_new("mesh_allocator_slabs");

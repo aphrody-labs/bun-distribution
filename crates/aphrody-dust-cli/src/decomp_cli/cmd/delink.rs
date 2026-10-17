@@ -83,7 +83,10 @@ impl Delink {
         let delinks_map = DelinksMap::from_config(
             &config,
             config_path,
-            DelinksMapOptions { migrate_sections: true, generate_gap_files: true },
+            DelinksMapOptions {
+                migrate_sections: true,
+                generate_gap_files: true,
+            },
         )?;
 
         let rom = config.load_rom(config_path)?;
@@ -91,8 +94,12 @@ impl Delink {
         let elf_path = config_path.join(&config.delinks_path);
 
         let program = Program::from_config(config_path, &config, &rom)?;
-        let mut delinker =
-            Delinker { rom, program, elf_path, all_mapping_symbols: self.all_mapping_symbols };
+        let mut delinker = Delinker {
+            rom,
+            program,
+            elf_path,
+            all_mapping_symbols: self.all_mapping_symbols,
+        };
 
         for delinks in delinks_map.iter() {
             // DelinksMap always loads autoload modules, skip delinking them if not specified
@@ -134,7 +141,11 @@ impl ModuleFilterArgs {
 
 impl<'a> Delinker<'a> {
     fn delink_module(&mut self, delinks: &Delinks) -> Result<()> {
-        let symbol_map = self.program.symbol_maps().get(delinks.module_kind()).unwrap();
+        let symbol_map = self
+            .program
+            .symbol_maps()
+            .get(delinks.module_kind())
+            .unwrap();
 
         for file in &delinks.files {
             if file.sections.len() > 0 && file.sections.iter().all(|s| s.migration().is_some()) {
@@ -151,7 +162,7 @@ impl<'a> Delinker<'a> {
                         ModuleKind::Arm9 => self.rom.arm9().end_address()?,
                         ModuleKind::Overlay(id) => {
                             self.rom.arm7_overlays()[id as usize].end_address()
-                        },
+                        }
                         ModuleKind::Autoload(autoload_kind) => self
                             .rom
                             .arm9()
@@ -161,8 +172,11 @@ impl<'a> Delinker<'a> {
                             .context("Failed to find end address of autoload")?,
                     };
 
-                    let symbol_map =
-                        self.program.symbol_maps().get(migrate_section.module_kind()).unwrap();
+                    let symbol_map = self
+                        .program
+                        .symbol_maps()
+                        .get(migrate_section.module_kind())
+                        .unwrap();
                     (symbol_map, section_end)
                 } else {
                     let (_, module_section) = module.sections().by_name(section.name()).unwrap();
@@ -315,7 +329,11 @@ impl<'a> DelinkObject<'a> {
         let obj_section_id = self.object.add_section(vec![], name.clone(), kind);
         let section = self.object.section_mut(obj_section_id);
         if file_section.kind().is_initialized() {
-            let alignment = if file_section.kind().is_executable() { 4 } else { 1 };
+            let alignment = if file_section.kind().is_executable() {
+                4
+            } else {
+                1
+            };
             section.set_data(code, alignment);
         } else {
             section.append_bss(file_section.size().into(), 1);
@@ -330,15 +348,20 @@ impl<'a> DelinkObject<'a> {
             section: dsd_object::write::SymbolSection::Section(obj_section_id),
             flags: dsd_object::SymbolFlags::None,
         });
-        let search_symbol_map =
-            self.program.symbol_maps().get(symbol_module).context("Failed to find symbol map")?;
+        let search_symbol_map = self
+            .program
+            .symbol_maps()
+            .get(symbol_module)
+            .context("Failed to find symbol map")?;
         let mut symbols = search_symbol_map
             .iter_by_address(file_section.address_range())
             .filter(|(_, s)| !s.skip)
             .peekable();
         while let Some((_, symbol)) = symbols.next() {
             // Get symbol data
-            let max_address = symbols.peek().map_or(file_section.end_address(), |(_, s)| s.addr);
+            let max_address = symbols
+                .peek()
+                .map_or(file_section.end_address(), |(_, s)| s.addr);
             let scope = symbol.get_obj_symbol_scope();
             let value = u64::from(symbol.addr - file_section.start_address());
             let flags = symbol.get_obj_symbol_flags();
@@ -358,11 +381,17 @@ impl<'a> DelinkObject<'a> {
 
             let is_thumb = matches!(
                 symbol.kind,
-                SymbolKind::Function(SymFunction { mode: InstructionMode::Thumb, .. })
-                    | SymbolKind::Label(SymLabel { mode: InstructionMode::Thumb, .. })
+                SymbolKind::Function(SymFunction {
+                    mode: InstructionMode::Thumb,
+                    ..
+                }) | SymbolKind::Label(SymLabel {
+                    mode: InstructionMode::Thumb,
+                    ..
+                })
             );
             let thumb_bit = if is_thumb { 1 } else { 0 };
-            self.obj_symbols.insert((symbol.addr | thumb_bit, symbol_module), symbol_id);
+            self.obj_symbols
+                .insert((symbol.addr | thumb_bit, symbol_module), symbol_id);
 
             if all_mapping_symbols
                 || matches!(
@@ -385,7 +414,8 @@ impl<'a> DelinkObject<'a> {
                 }
             }
         }
-        self.obj_sections.insert(file_section.start_address(), obj_section_id);
+        self.obj_sections
+            .insert(file_section.start_address(), obj_section_id);
         Ok(())
     }
 
@@ -412,7 +442,10 @@ impl<'a> DelinkObject<'a> {
         let module_kind = MigrateSection::parse(file_section.name(), src_module)?
             .map_or(self.current_module, |m| m.module_kind());
         let module = self.program.by_module_kind(module_kind).unwrap();
-        for (_, relocation) in module.relocations().iter_range(file_section.address_range()) {
+        for (_, relocation) in module
+            .relocations()
+            .iter_range(file_section.address_range())
+        {
             // Get relocation data
             let offset = relocation.from_address() - file_section.start_address();
             let dest_addr = relocation.to_address();
@@ -436,7 +469,11 @@ impl<'a> DelinkObject<'a> {
                     };
 
                     // Get destination symbol
-                    let thumb_bit = if relocation.kind().calls_thumb_fn() { 1 } else { 0 };
+                    let thumb_bit = if relocation.kind().calls_thumb_fn() {
+                        1
+                    } else {
+                        0
+                    };
                     let symbol_key = (dest_addr | thumb_bit, reloc_module);
                     if let Some(obj_symbol) = self.obj_symbols.get(&symbol_key) {
                         // Use existing symbol
@@ -513,7 +550,7 @@ impl<'a> DelinkObject<'a> {
                         self.obj_symbols.insert(symbol_key, symbol_id);
                         symbol_id
                     }
-                },
+                }
                 RelocationKind::OverlayId => {
                     let overlay_id = dest_addr;
                     if let Some(symbol_id) = self.overlay_id_symbols.get(&overlay_id) {
@@ -533,7 +570,7 @@ impl<'a> DelinkObject<'a> {
                         self.overlay_id_symbols.insert(dest_addr, symbol_id);
                         symbol_id
                     }
-                },
+                }
                 RelocationKind::LinkTimeConst(link_time_const) => {
                     if let Some(symbol_id) = self.link_time_const_symbols.get(&link_time_const) {
                         *symbol_id
@@ -549,10 +586,11 @@ impl<'a> DelinkObject<'a> {
                             section: dsd_object::write::SymbolSection::Undefined,
                             flags: dsd_object::SymbolFlags::None,
                         });
-                        self.link_time_const_symbols.insert(link_time_const, symbol_id);
+                        self.link_time_const_symbols
+                            .insert(link_time_const, symbol_id);
                         symbol_id
                     }
-                },
+                }
             };
 
             // Create relocation

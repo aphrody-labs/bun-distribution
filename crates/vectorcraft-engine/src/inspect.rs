@@ -2,7 +2,9 @@
 
 use serde_json::{Value, json};
 use vectorcraft_color::BlendMode;
-use vectorcraft_doc::{ArrowAlign, Document, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, WidthProfile};
+use vectorcraft_doc::{
+    ArrowAlign, Document, LineCap, LineJoin, Node, NodeKind, StrokeAlign, StrokeLayer, WidthProfile,
+};
 
 use crate::Session;
 
@@ -59,7 +61,11 @@ pub fn node_summary_opts(n: &Node, opts: SummaryOpts) -> Value {
         let style = t.runs.first().map_or(&default, |r| &r.style);
         v["fill"] = json!(style.fill.label());
         v["stroke"] = json!(style.stroke.label());
-        v["strokeWidth"] = json!(if style.stroke.is_none() { 0.0 } else { style.stroke_width });
+        v["strokeWidth"] = json!(if style.stroke.is_none() {
+            0.0
+        } else {
+            style.stroke_width
+        });
         if n.appearance.fill().is_some() || n.appearance.stroke().is_some() {
             v["objectFill"] = json!(n.appearance.fill_paint().label());
             v["objectStroke"] = json!(n.appearance.stroke_paint().label());
@@ -77,7 +83,15 @@ pub fn node_summary_opts(n: &Node, opts: SummaryOpts) -> Value {
         v["strokeOptions"] = stroke_options(&st);
     }
     match &n.kind {
-        NodeKind::Layer { color, template, printable, preview, dim_images, clip, .. } => {
+        NodeKind::Layer {
+            color,
+            template,
+            printable,
+            preview,
+            dim_images,
+            clip,
+            ..
+        } => {
             let [r, g, b] = color.rgb();
             v["color"] = json!(format!("#{r:02x}{g:02x}{b:02x}"));
             v["template"] = json!(template);
@@ -107,14 +121,22 @@ pub fn node_summary_opts(n: &Node, opts: SummaryOpts) -> Value {
     }
     if let Some(ch) = n.children() {
         let total = ch.len();
-        let take_n = opts.child_limit.map_or(total, |l| l.min(total as u64) as usize);
+        let take_n = opts
+            .child_limit
+            .map_or(total, |l| l.min(total as u64) as usize);
         if opts.depth.is_none_or(|d| d > 0) {
             let next = SummaryOpts {
                 depth: opts.depth.map(|d| d.saturating_sub(1)),
                 child_limit: opts.child_limit,
                 compound_member: matches!(n.kind, NodeKind::Compound { .. }),
             };
-            v["children"] = Value::Array(ch.iter().rev().take(take_n).map(|c| node_summary_opts(c, next)).collect());
+            v["children"] = Value::Array(
+                ch.iter()
+                    .rev()
+                    .take(take_n)
+                    .map(|c| node_summary_opts(c, next))
+                    .collect(),
+            );
         }
         if take_n < total || v.get("children").is_none() {
             v["childCount"] = json!(total);
@@ -130,7 +152,9 @@ pub fn document(s: &Session) -> Value {
 /// The same summary with [`SummaryOpts`] applied to the layer tree (artboards and
 /// the rest always come whole): `depth: 0` is the skeleton — top layers with counts.
 pub fn document_opts(s: &Session, opts: SummaryOpts) -> Value {
-    let Some(st) = s.active() else { return Value::Null };
+    let Some(st) = s.active() else {
+        return Value::Null;
+    };
     let d = &st.doc;
     json!({
         "title": st.title(),
@@ -175,7 +199,9 @@ pub struct FindFilter {
 impl FindFilter {
     /// True when no effective filter was given (empty strings count as absent).
     pub fn is_empty(&self) -> bool {
-        [self.name.as_ref(), self.kind.as_ref(), self.text.as_ref()].iter().all(|f| f.is_none())
+        [self.name.as_ref(), self.kind.as_ref(), self.text.as_ref()]
+            .iter()
+            .all(|f| f.is_none())
     }
 
     fn hits(&self, n: &Node) -> bool {
@@ -190,7 +216,9 @@ impl FindFilter {
             return false;
         }
         if let Some(needle) = &self.text {
-            let NodeKind::Text(t) = &n.kind else { return false };
+            let NodeKind::Text(t) = &n.kind else {
+                return false;
+            };
             if !t.plain_text().to_lowercase().contains(needle) {
                 return false;
             }
@@ -207,7 +235,14 @@ pub fn find_nodes(doc: &Document, filter: &FindFilter, limit: u64) -> (Vec<Value
     let mut out = Vec::new();
     let mut total = 0u64;
     let mut ancestors: Vec<u64> = Vec::new();
-    fn walk(nodes: &[Arc<Node>], ancestors: &mut Vec<u64>, filter: &FindFilter, limit: u64, out: &mut Vec<Value>, total: &mut u64) {
+    fn walk(
+        nodes: &[Arc<Node>],
+        ancestors: &mut Vec<u64>,
+        filter: &FindFilter,
+        limit: u64,
+        out: &mut Vec<Value>,
+        total: &mut u64,
+    ) {
         for n in nodes.iter().rev() {
             if filter.hits(n) {
                 *total += 1;
@@ -222,16 +257,35 @@ pub fn find_nodes(doc: &Document, filter: &FindFilter, limit: u64) -> (Vec<Value
             }
         }
     }
-    walk(&doc.layers, &mut ancestors, filter, limit, &mut out, &mut total);
+    walk(
+        &doc.layers,
+        &mut ancestors,
+        filter,
+        limit,
+        &mut out,
+        &mut total,
+    );
     (out, total)
 }
 
 /// Cap names as `stroke.set` takes them.
-pub const CAPS: [(LineCap, &str); 3] = [(LineCap::Butt, "butt"), (LineCap::Round, "round"), (LineCap::Square, "square")];
+pub const CAPS: [(LineCap, &str); 3] = [
+    (LineCap::Butt, "butt"),
+    (LineCap::Round, "round"),
+    (LineCap::Square, "square"),
+];
 /// Join names as `stroke.set` takes them.
-pub const JOINS: [(LineJoin, &str); 3] = [(LineJoin::Miter, "miter"), (LineJoin::Round, "round"), (LineJoin::Bevel, "bevel")];
+pub const JOINS: [(LineJoin, &str); 3] = [
+    (LineJoin::Miter, "miter"),
+    (LineJoin::Round, "round"),
+    (LineJoin::Bevel, "bevel"),
+];
 /// Stroke alignment names as `stroke.set` takes them.
-pub const ALIGNS: [(StrokeAlign, &str); 3] = [(StrokeAlign::Center, "center"), (StrokeAlign::Inside, "inside"), (StrokeAlign::Outside, "outside")];
+pub const ALIGNS: [(StrokeAlign, &str); 3] = [
+    (StrokeAlign::Center, "center"),
+    (StrokeAlign::Inside, "inside"),
+    (StrokeAlign::Outside, "outside"),
+];
 
 fn name_of<T: PartialEq>(table: &[(T, &'static str)], v: T) -> &'static str {
     table.iter().find(|(k, _)| *k == v).map_or("", |(_, n)| n)
@@ -241,7 +295,10 @@ fn name_of<T: PartialEq>(table: &[(T, &'static str)], v: T) -> &'static str {
 /// else the topmost stroke of its own (groups and layers too). None without a stroke.
 pub fn node_stroke(n: &Node) -> Option<StrokeLayer> {
     match &n.kind {
-        NodeKind::Text(t) => Some(t.runs.first().map_or_else(|| vectorcraft_doc::CharStyle::default().stroke_layer(), |r| r.style.stroke_layer())),
+        NodeKind::Text(t) => Some(t.runs.first().map_or_else(
+            || vectorcraft_doc::CharStyle::default().stroke_layer(),
+            |r| r.style.stroke_layer(),
+        )),
         _ => n.appearance.stroke().cloned(),
     }
 }

@@ -174,7 +174,10 @@ pub fn validate_m3_spec(code: &str) -> (i32, Vec<Issue>) {
 
                     // Standard curves definitions (M3, M2 legacy, and Expressive presets)
                     let presets = [
-                        ("Emphasized / Standard", (0.20_f32, 0.00_f32, 0.00_f32, 1.00_f32)),
+                        (
+                            "Emphasized / Standard",
+                            (0.20_f32, 0.00_f32, 0.00_f32, 1.00_f32),
+                        ),
                         ("Emphasized Decelerate", (0.05, 0.70, 0.10, 1.00)),
                         ("Emphasized Accelerate", (0.30, 0.00, 0.80, 0.15)),
                         ("Standard Decelerate", (0.00, 0.00, 0.00, 1.00)),
@@ -225,8 +228,12 @@ pub fn validate_m3_spec(code: &str) -> (i32, Vec<Issue>) {
     }
 
     // 4. Accessibility Interactive labeling checks
-    let interactive_tags =
-        ["<md-icon-button", "<md-fab", "<md-branded-fab", "<md-filled-icon-button"];
+    let interactive_tags = [
+        "<md-icon-button",
+        "<md-fab",
+        "<md-branded-fab",
+        "<md-filled-icon-button",
+    ];
     for tag in &interactive_tags {
         let mut search_idx = 0;
         while let Some(pos) = code[search_idx..].find(tag) {

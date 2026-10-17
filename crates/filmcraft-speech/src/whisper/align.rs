@@ -6,14 +6,24 @@ use candle_core::{Result, Tensor};
 use super::model::Model;
 
 /// Start/end (in mel frames from the window start, 10 ms) of every token of `text`.
-pub fn align(m: &mut Model, xa: &Tensor, prompt: &[u32], text: &[u32], eot: u32, heads: &[(usize, usize)], seg_frames: usize) -> Result<Vec<(usize, usize)>> {
+pub fn align(
+    m: &mut Model,
+    xa: &Tensor,
+    prompt: &[u32],
+    text: &[u32],
+    eot: u32,
+    heads: &[(usize, usize)],
+    seg_frames: usize,
+) -> Result<Vec<(usize, usize)>> {
     let mut tokens = prompt.to_vec();
     tokens.extend_from_slice(text);
     tokens.push(eot);
     m.decoder.reset();
     let (_, qk) = m.decoder.forward(&tokens, xa, false, Some(heads))?;
     m.decoder.reset();
-    let Some(qk) = qk else { return Ok(vec![(0, 0); text.len()]) };
+    let Some(qk) = qk else {
+        return Ok(vec![(0, 0); text.len()]);
+    };
     let (h, t, f_all) = qk.dims3()?;
     let f = (seg_frames / 2).clamp(1, f_all);
     let qk = qk.narrow(2, 0, f)?.contiguous()?;
@@ -143,7 +153,10 @@ mod tests {
 
     #[test]
     fn median_filter_removes_spikes() {
-        assert_eq!(median_filter(&[0.0, 0.0, 9.0, 0.0, 0.0], 3), vec![0.0, 0.0, 0.0, 0.0, 0.0]);
+        assert_eq!(
+            median_filter(&[0.0, 0.0, 9.0, 0.0, 0.0], 3),
+            vec![0.0, 0.0, 0.0, 0.0, 0.0]
+        );
         assert_eq!(median_filter(&[1.0, 2.0, 3.0], 1), vec![1.0, 2.0, 3.0]);
     }
 

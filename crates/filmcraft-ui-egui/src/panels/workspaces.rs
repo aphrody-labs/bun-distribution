@@ -33,17 +33,29 @@ pub fn route(app: &mut FilmcraftApp, id: &str, params: &Value) -> Option<Result<
         "saveAs" => match arg("name") {
             Some(n) => save_new(app, &n),
             None => {
-                app.ui.workspace_dialog = Some(WorkspaceDialog::SaveAs { name: tl!("Untitled Workspace").into() });
+                app.ui.workspace_dialog = Some(WorkspaceDialog::SaveAs {
+                    name: tl!("Untitled Workspace").into(),
+                });
                 Ok(json!({"dialog": "saveWorkspace"}))
             }
         },
         "edit" => {
-            app.ui.workspace_dialog = Some(WorkspaceDialog::Edit { selected: None, name: String::new() });
+            app.ui.workspace_dialog = Some(WorkspaceDialog::Edit {
+                selected: None,
+                name: String::new(),
+            });
             Ok(json!({"dialog": "editWorkspaces", "workspaces": dock::names(&app.workspaces)}))
         }
-        "rename" => rename(app, &arg("from").unwrap_or_default(), &arg("to").unwrap_or_default()),
+        "rename" => rename(
+            app,
+            &arg("from").unwrap_or_default(),
+            &arg("to").unwrap_or_default(),
+        ),
         "delete" => delete(app, &arg("name").unwrap_or_default()),
-        key => match dock::names(&app.workspaces).into_iter().find(|n| slug(n) == key) {
+        key => match dock::names(&app.workspaces)
+            .into_iter()
+            .find(|n| slug(n) == key)
+        {
             Some(n) => {
                 app.set_workspace(&n);
                 Ok(json!({"workspace": n}))
@@ -56,9 +68,17 @@ pub fn route(app: &mut FilmcraftApp, id: &str, params: &Value) -> Option<Result<
 
 /// Save the current layout as the saved layout of `name`.
 fn save(app: &mut FilmcraftApp, name: &str) -> Result<(), String> {
-    crate::dock::Layout { root: app.ui.dock.clone(), floating: app.ui.floating.clone() }.validate()?;
+    crate::dock::Layout {
+        root: app.ui.dock.clone(),
+        floating: app.ui.floating.clone(),
+    }
+    .validate()?;
     let layout = serde_json::to_value(&app.ui.dock).map_err(|e| e.to_string())?;
-    let floating = if app.ui.floating.is_empty() { serde_json::Value::Null } else { serde_json::to_value(&app.ui.floating).map_err(|e| e.to_string())? };
+    let floating = if app.ui.floating.is_empty() {
+        serde_json::Value::Null
+    } else {
+        serde_json::to_value(&app.ui.floating).map_err(|e| e.to_string())?
+    };
     let mut next = app.workspaces.clone();
     let saved = &mut next.saved;
     match saved.iter_mut().find(|s| s.name == name) {
@@ -66,7 +86,11 @@ fn save(app: &mut FilmcraftApp, name: &str) -> Result<(), String> {
             s.layout = layout;
             s.floating = floating;
         }
-        None => saved.push(dock::SavedWorkspace { name: name.to_string(), layout, floating }),
+        None => saved.push(dock::SavedWorkspace {
+            name: name.to_string(),
+            layout,
+            floating,
+        }),
     }
     next.current = name.to_string();
     app.set_workspaces(next)
@@ -96,7 +120,9 @@ fn save_new(app: &mut FilmcraftApp, name: &str) -> Result<Value, String> {
 
 fn rename(app: &mut FilmcraftApp, from: &str, to: &str) -> Result<Value, String> {
     if is_builtin(from) {
-        return Err(format!("`{from}` is a built-in workspace and keeps its name"));
+        return Err(format!(
+            "`{from}` is a built-in workspace and keeps its name"
+        ));
     }
     if !app.workspaces.saved.iter().any(|s| s.name == from) {
         return Err(format!("unknown workspace `{from}`"));
@@ -122,32 +148,70 @@ fn delete(app: &mut FilmcraftApp, name: &str) -> Result<Value, String> {
     let before = next.saved.len();
     next.saved.retain(|s| s.name != name);
     if next.saved.len() == before {
-        return Err(if is_builtin(name) { format!("`{name}` is a built-in workspace and can't be deleted") } else { format!("unknown workspace `{name}`") });
+        return Err(if is_builtin(name) {
+            format!("`{name}` is a built-in workspace and can't be deleted")
+        } else {
+            format!("unknown workspace `{name}`")
+        });
     }
     app.set_workspaces(next)?;
     if app.ui.workspace == name {
         app.set_workspace(if is_builtin(name) { name } else { "Editing" });
     }
-    Ok(if is_builtin(name) { json!({"restored": name}) } else { json!({"deleted": name}) })
+    Ok(if is_builtin(name) {
+        json!({"restored": name})
+    } else {
+        json!({"deleted": name})
+    })
 }
 
 /// Rebuild the Window ▸ Workspaces submenu: every workspace (the current one checked), then the
 /// layout commands in table order.
 pub fn menu(app: &FilmcraftApp, items: &mut Vec<MenuItem>) {
-    splice(items, &app.workspaces, &app.session, Some(&app.ui.workspace), |n| app.ui.language.tr(n).to_string());
+    splice(
+        items,
+        &app.workspaces,
+        &app.session,
+        Some(&app.ui.workspace),
+        |n| app.ui.language.tr(n).to_string(),
+    );
 }
 
 /// The same submenu without a running app: the built-in workspaces in English, none checked
 /// (`menus::default_menu_items`).
 pub fn default_menu(items: &mut Vec<MenuItem>, session: &filmcraft_engine::Session) {
-    splice(items, &dock::WorkspacePrefs::default(), session, None, str::to_string);
+    splice(
+        items,
+        &dock::WorkspacePrefs::default(),
+        session,
+        None,
+        str::to_string,
+    );
 }
 
-fn splice(items: &mut Vec<MenuItem>, prefs: &dock::WorkspacePrefs, session: &filmcraft_engine::Session, current: Option<&str>, tr: impl Fn(&str) -> String) {
-    let is_ws = |it: &MenuItem| it.path.len() == 2 && it.path[0] == "Window" && it.path[1] == "Workspaces";
-    let Some(at) = items.iter().position(is_ws) else { return };
-    let actions: Vec<MenuItem> =
-        items.iter().filter(|it| is_ws(it) && it.id.strip_prefix("window.workspace.").is_some_and(|k| ACTIONS.contains(&k))).cloned().collect();
+fn splice(
+    items: &mut Vec<MenuItem>,
+    prefs: &dock::WorkspacePrefs,
+    session: &filmcraft_engine::Session,
+    current: Option<&str>,
+    tr: impl Fn(&str) -> String,
+) {
+    let is_ws =
+        |it: &MenuItem| it.path.len() == 2 && it.path[0] == "Window" && it.path[1] == "Workspaces";
+    let Some(at) = items.iter().position(is_ws) else {
+        return;
+    };
+    let actions: Vec<MenuItem> = items
+        .iter()
+        .filter(|it| {
+            is_ws(it)
+                && it
+                    .id
+                    .strip_prefix("window.workspace.")
+                    .is_some_and(|k| ACTIONS.contains(&k))
+        })
+        .cloned()
+        .collect();
     items.retain(|it| !is_ws(it));
     let mut sub: Vec<MenuItem> = dock::names(prefs)
         .into_iter()
@@ -169,13 +233,22 @@ fn splice(items: &mut Vec<MenuItem>, prefs: &dock::WorkspacePrefs, session: &fil
 
 /// Save as New Workspace… and Edit Workspaces… dialogs.
 pub fn dialogs(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.workspace_dialog.clone() else { return };
+    let Some(mut d) = app.ui.workspace_dialog.clone() else {
+        return;
+    };
     let mut elems: Vec<(String, egui::Rect, String)> = Vec::new();
-    let mut push = |id: &str, r: &egui::Response, label: &str| elems.push((id.to_string(), r.rect, label.to_string()));
+    let mut push = |id: &str, r: &egui::Response, label: &str| {
+        elems.push((id.to_string(), r.rect, label.to_string()))
+    };
     let mut close = crate::widgets::escape_closes(ctx);
     let mut act: Option<(&str, Value)> = None;
     let names = dock::names(&app.workspaces);
-    let changed: Vec<String> = app.workspaces.saved.iter().map(|s| s.name.clone()).collect();
+    let changed: Vec<String> = app
+        .workspaces
+        .saved
+        .iter()
+        .map(|s| s.name.clone())
+        .collect();
     let (title, shown) = match &d {
         WorkspaceDialog::SaveAs { .. } => ("New Workspace", tl!("New Workspace")),
         WorkspaceDialog::Edit { .. } => ("Edit Workspaces", tl!("Edit Workspaces")),
@@ -220,20 +293,39 @@ pub fn dialogs(app: &mut FilmcraftApp, ctx: &egui::Context) {
                     ui.label(tl!("Name:"));
                     let r = ui.add_enabled(own, egui::TextEdit::singleline(name));
                     push("workspaces.edit.name", &r, "Name");
-                    let r = ui.add_enabled(own && sel.as_deref() != Some(name.trim()), egui::Button::new(tl!("Rename")));
+                    let r = ui.add_enabled(
+                        own && sel.as_deref() != Some(name.trim()),
+                        egui::Button::new(tl!("Rename")),
+                    );
                     push("workspaces.edit.rename", &r, "Rename");
                     if r.clicked()
                         && let Some(s) = &sel
                     {
-                        act = Some(("window.workspace.rename", json!({"from": s, "to": name.clone()})));
+                        act = Some((
+                            "window.workspace.rename",
+                            json!({"from": s, "to": name.clone()}),
+                        ));
                         *selected = Some(name.trim().to_string());
                     }
                 });
                 ui.horizontal(|ui| {
                     // a built-in workspace can't be deleted; its saved changes can
-                    let restore = sel.as_deref().is_some_and(|s| is_builtin(s) && changed.iter().any(|c| c == s));
-                    let label = if restore { "Restore Original" } else { "Delete" };
-                    let r = ui.add_enabled(own || restore, egui::Button::new(if restore { tl!("Restore Original") } else { tl!("Delete") }));
+                    let restore = sel
+                        .as_deref()
+                        .is_some_and(|s| is_builtin(s) && changed.iter().any(|c| c == s));
+                    let label = if restore {
+                        "Restore Original"
+                    } else {
+                        "Delete"
+                    };
+                    let r = ui.add_enabled(
+                        own || restore,
+                        egui::Button::new(if restore {
+                            tl!("Restore Original")
+                        } else {
+                            tl!("Delete")
+                        }),
+                    );
                     push("workspaces.edit.delete", &r, label);
                     if r.clicked()
                         && let Some(s) = &sel

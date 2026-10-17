@@ -16,44 +16,88 @@ use super::*;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("select.same.symbolInstance", "Symbol Instance", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same(
-            s,
+        cmd!(
             "select.same.symbolInstance",
-            |a, b| match (&a.kind, &b.kind) {
-                (NodeKind::SymbolInstance { symbol: x, .. }, NodeKind::SymbolInstance { symbol: y, .. }) => x == y,
-                _ => false,
-            }
-        )),
-        cmd!("select.same.fontFamily", "Font Family", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same_text(
-            s,
-            "select.same.fontFamily",
-            |a, b| a.font_family == b.font_family
-        )),
-        cmd!("select.same.fontFamilyStyle", "Font Family & Style", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same_text(
-            s,
-            "select.same.fontFamilyStyle",
-            |a, b| a.font_family == b.font_family && a.font_style == b.font_style
-        )),
-        cmd!("select.same.fontFamilyStyleSize", "Font Family, Style & Size", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| {
-            same_text(s, "select.same.fontFamilyStyleSize", |a, b| {
-                a.font_family == b.font_family && a.font_style == b.font_style && (a.size - b.size).abs() < 1e-6
+            "Symbol Instance",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same(s, "select.same.symbolInstance", |a, b| {
+                match (&a.kind, &b.kind) {
+                    (
+                        NodeKind::SymbolInstance { symbol: x, .. },
+                        NodeKind::SymbolInstance { symbol: y, .. },
+                    ) => x == y,
+                    _ => false,
+                }
             })
-        }),
-        cmd!("select.same.fontSize", "Font Size", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same_text(
-            s,
+        ),
+        cmd!(
+            "select.same.fontFamily",
+            "Font Family",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same_text(s, "select.same.fontFamily", |a, b| a.font_family
+                == b.font_family)
+        ),
+        cmd!(
+            "select.same.fontFamilyStyle",
+            "Font Family & Style",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same_text(s, "select.same.fontFamilyStyle", |a, b| a.font_family
+                == b.font_family
+                && a.font_style == b.font_style)
+        ),
+        cmd!(
+            "select.same.fontFamilyStyleSize",
+            "Font Family, Style & Size",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| {
+                same_text(s, "select.same.fontFamilyStyleSize", |a, b| {
+                    a.font_family == b.font_family
+                        && a.font_style == b.font_style
+                        && (a.size - b.size).abs() < 1e-6
+                })
+            }
+        ),
+        cmd!(
             "select.same.fontSize",
-            |a, b| (a.size - b.size).abs() < 1e-6
-        )),
-        cmd!("select.same.textFillColor", "Text Fill Color", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same_text(
-            s,
+            "Font Size",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same_text(s, "select.same.fontSize", |a, b| (a.size - b.size).abs()
+                < 1e-6)
+        ),
+        cmd!(
             "select.same.textFillColor",
-            |a, b| a.fill == b.fill
-        )),
-        cmd!("select.same.textStrokeColor", "Text Stroke Color", ["Select", "Same"], None, "{} → {count}", has_selection, |s, _| same_text(
-            s,
+            "Text Fill Color",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same_text(s, "select.same.textFillColor", |a, b| a.fill == b.fill)
+        ),
+        cmd!(
             "select.same.textStrokeColor",
-            |a, b| a.stroke == b.stroke
-        )),
+            "Text Stroke Color",
+            ["Select", "Same"],
+            None,
+            "{} → {count}",
+            has_selection,
+            |s, _| same_text(s, "select.same.textStrokeColor", |a, b| a.stroke
+                == b.stroke)
+        ),
         cmd!(
             "select.object.directionHandles",
             "Direction Handles",
@@ -63,21 +107,42 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             direction_handles
         ),
-        cmd!("select.object.pointText", "Point Text Objects", ["Select", "Object"], None, "{} → {count}", has_doc, |s, _| by_kind(
-            s,
-            |n| matches!(
+        cmd!(
+            "select.object.pointText",
+            "Point Text Objects",
+            ["Select", "Object"],
+            None,
+            "{} → {count}",
+            has_doc,
+            |s, _| by_kind(s, |n| matches!(
                 &n.kind,
                 NodeKind::Text(t) if matches!(t.kind, TextKind::Point)
-            )
-        )),
-        cmd!("select.object.areaText", "Area Text Objects", ["Select", "Object"], None, "{} → {count}", has_doc, |s, _| by_kind(s, |n| matches!(
-            &n.kind,
-            NodeKind::Text(t) if matches!(t.kind, TextKind::Area { .. })
-        ))),
-        cmd!("select.object.brushStrokes", "Brush Strokes", ["Select", "Object"], None, "{} → {count}", has_doc, |s, _| by_kind(s, |n| n
-            .appearance
-            .stroke()
-            .is_some_and(|st| st.brush.is_some()))),
+            ))
+        ),
+        cmd!(
+            "select.object.areaText",
+            "Area Text Objects",
+            ["Select", "Object"],
+            None,
+            "{} → {count}",
+            has_doc,
+            |s, _| by_kind(s, |n| matches!(
+                &n.kind,
+                NodeKind::Text(t) if matches!(t.kind, TextKind::Area { .. })
+            ))
+        ),
+        cmd!(
+            "select.object.brushStrokes",
+            "Brush Strokes",
+            ["Select", "Object"],
+            None,
+            "{} → {count}",
+            has_doc,
+            |s, _| by_kind(s, |n| n
+                .appearance
+                .stroke()
+                .is_some_and(|st| st.brush.is_some()))
+        ),
         cmd!(
             "select.object.bristleBrushStrokes",
             "Bristle Brush Strokes",
@@ -211,7 +276,15 @@ pub fn specs() -> Vec<CommandSpec> {
             guides_unlocked,
             guide_set_layer
         ),
-        cmd!("file.closeAll", "Close All", ["File"], Some("Cmd+Alt+W"), "{} → {closed}", has_doc, close_all),
+        cmd!(
+            "file.closeAll",
+            "Close All",
+            ["File"],
+            Some("Cmd+Alt+W"),
+            "{} → {closed}",
+            has_doc,
+            close_all
+        ),
         cmd!(
             "file.documentColorMode",
             "Document Color Mode",
@@ -264,7 +337,13 @@ fn finish_same(s: &mut Session, cmd: &str, ids: Vec<NodeId>) -> Result<Value> {
 
 fn same(s: &mut Session, cmd: &str, eq: fn(&Node, &Node) -> bool) -> Result<Value> {
     let st = s.doc()?;
-    let r = st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned().ok_or_else(|| bad(cmd, "nothing selected"))?;
+    let r = st
+        .selection
+        .objects
+        .first()
+        .and_then(|id| st.doc.node(*id))
+        .cloned()
+        .ok_or_else(|| bad(cmd, "nothing selected"))?;
     let ids = candidates(s, |n| eq(n, &r))?;
     finish_same(s, cmd, ids)
 }
@@ -337,13 +416,24 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let ids = st.selection.objects.clone();
     let saved = &st.doc.saved_selections;
-    let name = str_param(p, "name").and_then(SavedSelection::clean_name).unwrap_or_else(|| SavedSelection::default_name(saved));
+    let name = str_param(p, "name")
+        .and_then(SavedSelection::clean_name)
+        .unwrap_or_else(|| SavedSelection::default_name(saved));
     let existing = saved.iter().position(|x| x.name == name);
     if existing.is_none() && saved.len() >= SavedSelection::MAX {
-        return Err(bad(C, format!("a document keeps at most {} saved selections", SavedSelection::MAX)));
+        return Err(bad(
+            C,
+            format!(
+                "a document keeps at most {} saved selections",
+                SavedSelection::MAX
+            ),
+        ));
     }
     s.edit("Save Selection", |d, _| {
-        let entry = SavedSelection { name: name.clone(), objects: ids };
+        let entry = SavedSelection {
+            name: name.clone(),
+            objects: ids,
+        };
         match existing.and_then(|i| d.saved_selections.get_mut(i)) {
             Some(x) => *x = entry,
             None => d.saved_selections.push(entry),
@@ -356,7 +446,13 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
 fn recall_selection(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "select.recall";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing name"))?;
-    let ids = s.doc()?.doc.saved_selections.iter().find(|x| x.name == name).map(|x| x.objects.clone());
+    let ids = s
+        .doc()?
+        .doc
+        .saved_selections
+        .iter()
+        .find(|x| x.name == name)
+        .map(|x| x.objects.clone());
     let ids = ids.ok_or_else(|| bad(C, format!("no saved selection `{name}`")))?;
     let st = s.doc()?;
     let can = selectable_ids(&st.doc, st.isolation);
@@ -367,7 +463,11 @@ fn recall_selection(s: &mut Session, p: &Value) -> Result<Value> {
 /// Recall and Edit Selection… need a document with at least one saved selection.
 fn has_saved_selection(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    if st.doc.saved_selections.is_empty() { Err("no saved selections".into()) } else { Ok(()) }
+    if st.doc.saved_selections.is_empty() {
+        Err("no saved selections".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
@@ -386,8 +486,12 @@ fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
     }
     for e in edits {
         let name = str_param(e, "name").ok_or_else(|| bad(C, "missing name"))?;
-        let i = *index.get(name).ok_or_else(|| bad(C, format!("no saved selection `{name}`")))?;
-        let Some(slot) = after.get_mut(i) else { continue };
+        let i = *index
+            .get(name)
+            .ok_or_else(|| bad(C, format!("no saved selection `{name}`")))?;
+        let Some(slot) = after.get_mut(i) else {
+            continue;
+        };
         if bool_or(e, "delete", false) {
             *slot = None;
         } else if let Some(n) = str_param(e, "newName").and_then(SavedSelection::clean_name)
@@ -400,7 +504,10 @@ fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
     let mut names = std::collections::HashSet::with_capacity(after.len());
     for x in &after {
         if !names.insert(x.name.as_str()) {
-            return Err(bad(C, format!("two saved selections would be named `{}`", x.name)));
+            return Err(bad(
+                C,
+                format!("two saved selections would be named `{}`", x.name),
+            ));
         }
     }
     if *before != after {
@@ -416,12 +523,20 @@ fn edit_saved(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn guides_unlocked(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.menu.guides_locked { Err("guides are locked".into()) } else { Ok(()) }
+    if s.menu.guides_locked {
+        Err("guides are locked".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn set_guide_flag(n: &mut Node, on: bool, count: &mut usize) {
     match &mut n.kind {
-        NodeKind::Path { guide, clipping: false, .. } => {
+        NodeKind::Path {
+            guide,
+            clipping: false,
+            ..
+        } => {
             if *guide != on {
                 *guide = on;
                 *count += 1;
@@ -468,8 +583,18 @@ fn guide_paths(d: &vectorcraft_doc::Document) -> Vec<NodeId> {
 fn release_guides(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
     let all = guide_paths(&st.doc);
-    let sel: Vec<NodeId> = all.iter().copied().filter(|id| st.selection.contains(*id)).collect();
-    let targets: Vec<NodeId> = if sel.is_empty() { all.into_iter().filter(|id| st.doc.is_editable(*id)).collect() } else { sel };
+    let sel: Vec<NodeId> = all
+        .iter()
+        .copied()
+        .filter(|id| st.selection.contains(*id))
+        .collect();
+    let targets: Vec<NodeId> = if sel.is_empty() {
+        all.into_iter()
+            .filter(|id| st.doc.is_editable(*id))
+            .collect()
+    } else {
+        sel
+    };
     if targets.is_empty() {
         return Err(EngineError::Other("Release Guides: no guides".into()));
     }
@@ -487,12 +612,21 @@ fn release_guides(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn lock_guides(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = p.get("locked").and_then(Value::as_bool).unwrap_or(!s.menu.guides_locked);
+    let v = p
+        .get("locked")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.menu.guides_locked);
     s.menu.guides_locked = v;
     // Locked guides can't stay selected, ruler guides or guide paths ([`Session::select`] lets
     // those go).
     let st = s.doc()?;
-    if v && (!st.selection.guides.is_empty() || st.selection.objects.iter().any(|id| crate::is_guide_path(&st.doc, *id))) {
+    if v && (!st.selection.guides.is_empty()
+        || st
+            .selection
+            .objects
+            .iter()
+            .any(|id| crate::is_guide_path(&st.doc, *id)))
+    {
         s.select(|_, sel| sel.guides.clear())?;
     }
     Ok(json!({ "locked": v }))
@@ -524,7 +658,10 @@ fn guide_add(s: &mut Session, p: &Value) -> Result<Value> {
     let artboard = match p.get("artboard").filter(|v| !v.is_null()) {
         Some(v) => {
             let boards = &s.doc()?.doc.artboards;
-            let ab = v.as_u64().and_then(|i| boards.get(usize::try_from(i).ok()?)).ok_or_else(|| EngineError::Other("no such artboard".into()))?;
+            let ab = v
+                .as_u64()
+                .and_then(|i| boards.get(usize::try_from(i).ok()?))
+                .ok_or_else(|| EngineError::Other("no such artboard".into()))?;
             Some(ab.id)
         }
         None => None,
@@ -534,10 +671,20 @@ fn guide_add(s: &mut Session, p: &Value) -> Result<Value> {
         Some(l) if st.doc.node(l).is_some_and(Node::is_layer) => Some(l),
         Some(_) => return Err(bad("guide.add", "layer must name a layer or sublayer")),
         // Where new art goes (refused when no layer is shown and unlocked), or that group's layer.
-        None => st.target_parent()?.and_then(|p| if st.doc.node(p).is_some_and(Node::is_layer) { Some(p) } else { st.doc.layer_containing(p) }),
+        None => st.target_parent()?.and_then(|p| {
+            if st.doc.node(p).is_some_and(Node::is_layer) {
+                Some(p)
+            } else {
+                st.doc.layer_containing(p)
+            }
+        }),
     };
     let i = s.edit("New Guide", |d, _| {
-        d.guides.push(Guide { artboard, layer, ..Guide::new(vertical, pos) });
+        d.guides.push(Guide {
+            artboard,
+            layer,
+            ..Guide::new(vertical, pos)
+        });
         Ok(d.guides.len() - 1)
     })?;
     Ok(json!({ "index": i }))
@@ -547,7 +694,12 @@ fn guide_list(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
     let row = |(i, g): (usize, &Guide)| {
         let mut r = json!({ "index": i, "vertical": g.vertical, "pos": g.pos, "selected": st.selection.guides.contains(&i) });
-        if let Some(ab) = st.doc.artboards.iter().position(|a| Some(a.id) == g.artboard) {
+        if let Some(ab) = st
+            .doc
+            .artboards
+            .iter()
+            .position(|a| Some(a.id) == g.artboard)
+        {
             r["artboard"] = json!(ab);
         }
         if let Some(l) = g.layer {
@@ -557,12 +709,17 @@ fn guide_list(s: &mut Session, _: &Value) -> Result<Value> {
         r["editable"] = json!(st.doc.guide_editable(g));
         r
     };
-    Ok(Value::Array(st.doc.guides.iter().enumerate().map(row).collect()))
+    Ok(Value::Array(
+        st.doc.guides.iter().enumerate().map(row).collect(),
+    ))
 }
 
 /// Ruler guide `index` of the active document (`index` validated).
 fn guide_index(s: &Session, v: Option<&Value>, cmd: &str) -> Result<usize> {
-    let i = v.and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(cmd, "an index must be a whole number"))?;
+    let i = v
+        .and_then(Value::as_u64)
+        .and_then(|i| usize::try_from(i).ok())
+        .ok_or_else(|| bad(cmd, "an index must be a whole number"))?;
     if i >= s.doc()?.doc.guides.len() {
         return Err(bad(cmd, format!("no guide {i}")));
     }
@@ -574,14 +731,22 @@ fn editable_guide_index(s: &Session, v: Option<&Value>, cmd: &str) -> Result<usi
     let i = guide_index(s, v, cmd)?;
     let d = &s.doc()?.doc;
     if !d.guides.get(i).is_some_and(|g| d.guide_editable(g)) {
-        return Err(EngineError::Other("the guide is on a hidden or locked layer".into()));
+        return Err(EngineError::Other(
+            "the guide is on a hidden or locked layer".into(),
+        ));
     }
     Ok(i)
 }
 
 fn guide_select(s: &mut Session, p: &Value) -> Result<Value> {
-    let list = p.get("indexes").and_then(Value::as_array).ok_or_else(|| bad("guide.select", "missing indexes"))?;
-    let picked = list.iter().map(|v| guide_index(s, Some(v), "guide.select")).collect::<Result<Vec<_>>>()?;
+    let list = p
+        .get("indexes")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("guide.select", "missing indexes"))?;
+    let picked = list
+        .iter()
+        .map(|v| guide_index(s, Some(v), "guide.select"))
+        .collect::<Result<Vec<_>>>()?;
     if bool_or(p, "toggle", false) {
         // Added to (or taken from) what is selected, the art included.
         s.select(|_, sel| {
@@ -604,7 +769,11 @@ pub(crate) fn guide_remove(s: &mut Session, p: &Value) -> Result<Value> {
     if gone.is_empty() {
         return Err(bad("guide.remove", "no guide selected"));
     }
-    let label = if gone.len() == 1 { "Delete Guide" } else { "Delete Guides" };
+    let label = if gone.len() == 1 {
+        "Delete Guide"
+    } else {
+        "Delete Guides"
+    };
     s.edit(label, |d, sel| {
         d.retain_guides(sel, |i, _| !gone.contains(&i));
         Ok(())
@@ -616,15 +785,20 @@ pub(crate) fn guide_remove(s: &mut Session, p: &Value) -> Result<Value> {
 fn guide_set_layer(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "guide.setLayer";
     let d = &s.doc()?.doc;
-    let layer =
-        id_param(p, "layer").filter(|l| d.node(*l).is_some_and(Node::is_layer)).ok_or_else(|| bad(C, "layer must name a layer or sublayer"))?;
+    let layer = id_param(p, "layer")
+        .filter(|l| d.node(*l).is_some_and(Node::is_layer))
+        .ok_or_else(|| bad(C, "layer must name a layer or sublayer"))?;
     // As objects dragged in the Layers panel: never onto a locked layer.
     if super::layer::locked_within(d, layer) {
         return Err(EngineError::Other("the layer or group is locked".into()));
     }
     let moving: Vec<usize> = match (p.get("index"), p.get("indexes").and_then(Value::as_array)) {
         (Some(v), _) => vec![editable_guide_index(s, Some(v), C)?],
-        (None, Some(list)) => list.iter().take(10_000).map(|v| editable_guide_index(s, Some(v), C)).collect::<Result<Vec<_>>>()?,
+        (None, Some(list)) => list
+            .iter()
+            .take(10_000)
+            .map(|v| editable_guide_index(s, Some(v), C))
+            .collect::<Result<Vec<_>>>()?,
         (None, None) => s.doc()?.selection.guides.clone(),
     };
     if moving.is_empty() {
@@ -658,11 +832,17 @@ pub(crate) fn guide_move(s: &mut Session, p: &Value) -> Result<Value> {
     if moving.is_empty() {
         return Err(bad("guide.move", "no guide selected (or give an index)"));
     }
-    let (dx, dy, copy) = (f64_or(p, "dx", 0.0), f64_or(p, "dy", 0.0), bool_or(p, "copy", false));
+    let (dx, dy, copy) = (
+        f64_or(p, "dx", 0.0),
+        f64_or(p, "dy", 0.0),
+        bool_or(p, "copy", false),
+    );
     s.edit(if copy { "Copy Guide" } else { "Move Guide" }, |d, sel| {
         let mut copies = vec![];
         for &i in &moving {
-            let Some(g) = d.guides.get_mut(i) else { continue };
+            let Some(g) = d.guides.get_mut(i) else {
+                continue;
+            };
             let moved = g.moved(Vec2::new(dx, dy));
             if copy {
                 copies.push(moved);

@@ -75,7 +75,11 @@ pub fn erase(sp: &SubPath, a: At, b: At) -> Vec<SubPath> {
         }
         tail.extend(head.into_iter().skip(1));
         let t = tidy(tail);
-        return if t.len() >= 2 { vec![SubPath::new(t, false)] } else { vec![] };
+        return if t.len() >= 2 {
+            vec![SubPath::new(t, false)]
+        } else {
+            vec![]
+        };
     }
     [tidy(prefix(sp, &w, a)), tidy(suffix(sp, &w, b))]
         .into_iter()
@@ -140,7 +144,12 @@ mod tests {
     use super::*;
 
     fn line(n: usize) -> SubPath {
-        SubPath::polyline(&(0..=n).map(|i| Point::new(i as f64 * 10.0, 0.0)).collect::<Vec<_>>(), false)
+        SubPath::polyline(
+            &(0..=n)
+                .map(|i| Point::new(i as f64 * 10.0, 0.0))
+                .collect::<Vec<_>>(),
+            false,
+        )
     }
 
     #[test]
@@ -153,7 +162,15 @@ mod tests {
         assert!((parts[1].anchors.last().unwrap().p.x - 100.0).abs() < 1e-9);
         // Erasing the very end leaves one piece.
         assert_eq!(erase(&sp, (8, 0.0), (9, 1.0)).len(), 1);
-        let sq = SubPath::polyline(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0), Point::new(100.0, 100.0), Point::new(0.0, 100.0)], true);
+        let sq = SubPath::polyline(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(100.0, 100.0),
+                Point::new(0.0, 100.0),
+            ],
+            true,
+        );
         let open = erase(&sq, (0, 0.25), (0, 0.75));
         assert_eq!(open.len(), 1);
         assert!(!open[0].closed);
@@ -164,7 +181,12 @@ mod tests {
 
     #[test]
     fn smooth_reduces_a_zigzag() {
-        let zig = SubPath::polyline(&(0..=20).map(|i| Point::new(i as f64 * 10.0, if i % 2 == 0 { 0.0 } else { 3.0 })).collect::<Vec<_>>(), false);
+        let zig = SubPath::polyline(
+            &(0..=20)
+                .map(|i| Point::new(i as f64 * 10.0, if i % 2 == 0 { 0.0 } else { 3.0 }))
+                .collect::<Vec<_>>(),
+            false,
+        );
         let s = smooth(&zig, (2, 0.0), (18, 0.0), 4.0);
         assert!(s.anchors.len() < zig.anchors.len(), "{}", s.anchors.len());
         assert!((s.anchors[0].p - zig.anchors[0].p).hypot() < 1e-9);

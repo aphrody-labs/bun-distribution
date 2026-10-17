@@ -35,7 +35,11 @@ pub enum AndroidError {
     #[error(
         "truncated Android binary data at offset {offset}: needed {needed} bytes, got {available}"
     )]
-    Truncated { offset: usize, needed: usize, available: usize },
+    Truncated {
+        offset: usize,
+        needed: usize,
+        available: usize,
+    },
 
     /// Corrupt or invalid ZIP structure in APK / AAB.
     #[error("invalid ZIP / APK structure: {0}")]
@@ -61,7 +65,11 @@ pub enum AndroidError {
     #[error(
         "CRC-32 checksum mismatch for '{path}': expected {expected:#010x}, calculated {calculated:#010x}"
     )]
-    CrcMismatch { path: String, expected: u32, calculated: u32 },
+    CrcMismatch {
+        path: String,
+        expected: u32,
+        calculated: u32,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -207,16 +215,21 @@ impl<'a> AndroidContainer<'a> {
         let signatures = detect_apk_signatures(bytes, cd_offset, &entries);
 
         // Build file census
-        let mut census = FileCensus { total_files: entries.len(), ..Default::default() };
+        let mut census = FileCensus {
+            total_files: entries.len(),
+            ..Default::default()
+        };
 
         let mut has_base_manifest = false;
         let mut has_root_manifest = false;
 
         for entry in &entries {
-            census.total_uncompressed_bytes =
-                census.total_uncompressed_bytes.saturating_add(entry.uncompressed_size);
-            census.total_compressed_bytes =
-                census.total_compressed_bytes.saturating_add(entry.compressed_size);
+            census.total_uncompressed_bytes = census
+                .total_uncompressed_bytes
+                .saturating_add(entry.uncompressed_size);
+            census.total_compressed_bytes = census
+                .total_compressed_bytes
+                .saturating_add(entry.compressed_size);
 
             let p = &entry.path;
             if p == "AndroidManifest.xml" {
@@ -243,7 +256,9 @@ impl<'a> AndroidContainer<'a> {
         }
 
         let container_type = if has_base_manifest
-            || entries.iter().any(|e| e.path.starts_with("BUNDLE-METADATA/"))
+            || entries
+                .iter()
+                .any(|e| e.path.starts_with("BUNDLE-METADATA/"))
         {
             AndroidContainerType::Aab
         } else if has_root_manifest {
@@ -254,14 +269,26 @@ impl<'a> AndroidContainer<'a> {
 
         let _ = eocd_pos;
 
-        Ok(Self { raw: bytes, container_type, entries, census, signatures, cd_offset, cd_size })
+        Ok(Self {
+            raw: bytes,
+            container_type,
+            entries,
+            census,
+            signatures,
+            cd_offset,
+            cd_size,
+        })
     }
 
     /// Read and optionally decompress the raw bytes of a named entry.
     pub fn read_entry(&self, path: &str) -> Result<Vec<u8>, AndroidError> {
-        let entry = self.entries.iter().find(|e| e.path == path).ok_or_else(|| {
-            AndroidError::InvalidZip(format!("entry '{path}' not found in archive"))
-        })?;
+        let entry = self
+            .entries
+            .iter()
+            .find(|e| e.path == path)
+            .ok_or_else(|| {
+                AndroidError::InvalidZip(format!("entry '{path}' not found in archive"))
+            })?;
 
         self.read_entry_info(entry)
     }
@@ -310,13 +337,13 @@ impl<'a> AndroidContainer<'a> {
                     .read_to_end(&mut out)
                     .map_err(|e| AndroidError::Decompression(format!("{}: {}", entry.path, e)))?;
                 out
-            },
+            }
             other => {
                 return Err(AndroidError::Decompression(format!(
                     "unsupported compression method {other} for '{}'",
                     entry.path
                 )));
-            },
+            }
         };
 
         // Validate CRC32
@@ -562,17 +589,17 @@ fn detect_apk_signatures(bytes: &[u8], cd_offset: u64, entries: &[ZipEntryInfo])
                                     match id {
                                         sig_scheme_ids::APK_SIGNATURE_SCHEME_V2_BLOCK_ID => {
                                             sigs.v2_scheme = true;
-                                        },
+                                        }
                                         sig_scheme_ids::APK_SIGNATURE_SCHEME_V3_BLOCK_ID => {
                                             sigs.v3_scheme = true;
-                                        },
+                                        }
                                         sig_scheme_ids::APK_SIGNATURE_SCHEME_V3_1_BLOCK_ID => {
                                             sigs.v3_1_scheme = true;
-                                        },
+                                        }
                                         sig_scheme_ids::SOURCE_STAMP_BLOCK_ID => {
                                             sigs.source_stamp = true;
-                                        },
-                                        _ => {},
+                                        }
+                                        _ => {}
                                     }
                                 }
                                 p += 8 + pair_len_usize;
@@ -753,7 +780,11 @@ impl AxmlDecoder {
     /// Parse raw Android binary XML bytes.
     pub fn parse(data: &[u8]) -> Result<AndroidManifest, AndroidError> {
         if data.len() < 8 {
-            return Err(AndroidError::Truncated { offset: 0, needed: 8, available: data.len() });
+            return Err(AndroidError::Truncated {
+                offset: 0,
+                needed: 8,
+                available: data.len(),
+            });
         }
 
         let chunk_type = read_u16_le(data, 0)?;
@@ -785,7 +816,7 @@ impl AxmlDecoder {
             match c_type {
                 axml_chunks::RES_STRING_POOL_TYPE | axml_chunks::RES_STRING_POOL_ALT_TYPE => {
                     strings = parse_string_pool(&data[cur..cur + c_size])?;
-                },
+                }
                 axml_chunks::RES_XML_START_ELEMENT_TYPE => {
                     if c_header_size + 20 <= c_size && cur + c_header_size + 20 <= total_len {
                         let ns_idx = read_u32_le(data, cur + c_header_size)?;
@@ -840,7 +871,7 @@ impl AxmlDecoder {
                             children: Vec::new(),
                         });
                     }
-                },
+                }
                 axml_chunks::RES_XML_END_ELEMENT_TYPE => {
                     if let Some(finished) = element_stack.pop() {
                         if let Some(parent) = element_stack.last_mut() {
@@ -849,10 +880,10 @@ impl AxmlDecoder {
                             root_elements.push(finished);
                         }
                     }
-                },
+                }
                 _ => {
                     // Ignore other chunks (namespaces, CDATA, etc.)
-                },
+                }
             }
 
             cur += c_size;
@@ -867,14 +898,15 @@ impl AxmlDecoder {
             }
         }
 
-        let root = root_elements.into_iter().find(|e| e.tag == "manifest").unwrap_or_else(|| {
-            AxmlElement {
+        let root = root_elements
+            .into_iter()
+            .find(|e| e.tag == "manifest")
+            .unwrap_or_else(|| AxmlElement {
                 tag: "manifest".to_string(),
                 namespace: None,
                 attributes: Vec::new(),
                 children: Vec::new(),
-            }
-        });
+            });
 
         let mut manifest = AndroidManifest {
             package: root.attr_str("package").unwrap_or_default(),
@@ -949,7 +981,9 @@ impl AxmlDecoder {
 fn parse_component(elem: &AxmlElement) -> AndroidComponent {
     let mut comp = AndroidComponent {
         name: elem.attr_str("name").unwrap_or_default(),
-        exported: elem.attr("exported").map(|a| matches!(a.value, AxmlValue::Boolean(true))),
+        exported: elem
+            .attr("exported")
+            .map(|a| matches!(a.value, AxmlValue::Boolean(true))),
         permission: elem.attr_str("permission"),
         actions: Vec::new(),
         categories: Vec::new(),
@@ -969,8 +1003,14 @@ fn parse_component(elem: &AxmlElement) -> AndroidComponent {
         }
     }
 
-    if comp.actions.iter().any(|a| a == "android.intent.action.MAIN")
-        && comp.categories.iter().any(|c| c == "android.intent.category.LAUNCHER")
+    if comp
+        .actions
+        .iter()
+        .any(|a| a == "android.intent.action.MAIN")
+        && comp
+            .categories
+            .iter()
+            .any(|c| c == "android.intent.category.LAUNCHER")
     {
         comp.is_launcher = true;
     }
@@ -1013,7 +1053,7 @@ fn decode_typed_value(data_type: u8, data: u32, strings: &[String]) -> AxmlValue
             } else {
                 AxmlValue::Raw { data_type, data }
             }
-        },
+        }
         0x10 => AxmlValue::Integer(data as i32),
         0x11 => AxmlValue::Hex(data),
         0x12 => AxmlValue::Boolean(data != 0),
@@ -1022,12 +1062,18 @@ fn decode_typed_value(data_type: u8, data: u32, strings: &[String]) -> AxmlValue
 }
 
 fn resolve_string(strings: &[String], idx: u32) -> Option<String> {
-    if idx == 0xFFFF_FFFF { None } else { strings.get(idx as usize).cloned() }
+    if idx == 0xFFFF_FFFF {
+        None
+    } else {
+        strings.get(idx as usize).cloned()
+    }
 }
 
 fn parse_string_pool(pool_bytes: &[u8]) -> Result<Vec<String>, AndroidError> {
     if pool_bytes.len() < 28 {
-        return Err(AndroidError::MalformedAxml("string pool header too short".to_string()));
+        return Err(AndroidError::MalformedAxml(
+            "string pool header too short".to_string(),
+        ));
     }
 
     let string_count = read_u32_le(pool_bytes, 8)? as usize;
@@ -1188,7 +1234,11 @@ impl DexFile {
     /// Parse a Dalvik Executable byte slice.
     pub fn parse(bytes: &[u8]) -> Result<DexSummary, AndroidError> {
         if bytes.len() < 112 {
-            return Err(AndroidError::Truncated { offset: 0, needed: 112, available: bytes.len() });
+            return Err(AndroidError::Truncated {
+                offset: 0,
+                needed: 112,
+                available: bytes.len(),
+            });
         }
 
         // Magic verification: 'dex\n' + 3 ascii version bytes + '\0'
@@ -1201,7 +1251,9 @@ impl DexFile {
 
         let version = String::from_utf8_lossy(&bytes[4..7]).to_string();
         if bytes[7] != 0 {
-            return Err(AndroidError::MalformedDex("DEX magic not null-terminated".to_string()));
+            return Err(AndroidError::MalformedDex(
+                "DEX magic not null-terminated".to_string(),
+            ));
         }
 
         let checksum = read_u32_le(bytes, 8)?;
@@ -1276,8 +1328,10 @@ impl DexFile {
                 let superclass_idx = read_u32_le(bytes, p + 8)?;
                 let source_file_idx = read_u32_le(bytes, p + 16)?;
 
-                let descriptor =
-                    types.get(class_idx).cloned().unwrap_or_else(|| format!("Type_{class_idx}"));
+                let descriptor = types
+                    .get(class_idx)
+                    .cloned()
+                    .unwrap_or_else(|| format!("Type_{class_idx}"));
                 let superclass = if superclass_idx != 0xFFFF_FFFF {
                     types.get(superclass_idx as usize).cloned()
                 } else {
@@ -1289,7 +1343,12 @@ impl DexFile {
                     None
                 };
 
-                classes.push(DexClassDef { descriptor, superclass, source_file, access_flags });
+                classes.push(DexClassDef {
+                    descriptor,
+                    superclass,
+                    source_file,
+                    access_flags,
+                });
             } else {
                 break;
             }
@@ -1374,7 +1433,9 @@ pub fn read_uleb128(bytes: &[u8]) -> Result<(u32, usize), AndroidError> {
         shift += 7;
     }
 
-    Err(AndroidError::MalformedDex("invalid ULEB128 sequence".to_string()))
+    Err(AndroidError::MalformedDex(
+        "invalid ULEB128 sequence".to_string(),
+    ))
 }
 
 // ---------------------------------------------------------------------------
@@ -1461,7 +1522,12 @@ fn read_u32_le(slice: &[u8], offset: usize) -> Result<u32, AndroidError> {
             available: slice.len().saturating_sub(offset),
         });
     }
-    Ok(u32::from_le_bytes([slice[offset], slice[offset + 1], slice[offset + 2], slice[offset + 3]]))
+    Ok(u32::from_le_bytes([
+        slice[offset],
+        slice[offset + 1],
+        slice[offset + 2],
+        slice[offset + 3],
+    ]))
 }
 
 fn read_u64_le(slice: &[u8], offset: usize) -> Result<u64, AndroidError> {
@@ -1855,7 +1921,9 @@ mod tests {
         assert_eq!(nlibs[&AndroidAbi::Arm64V8a][0].name, "libnative.so");
 
         // Read entry content and verify CRC
-        let read_manifest = container.read_entry("AndroidManifest.xml").expect("read entry");
+        let read_manifest = container
+            .read_entry("AndroidManifest.xml")
+            .expect("read entry");
         assert_eq!(read_manifest, manifest_content);
     }
 
@@ -1920,7 +1988,9 @@ mod tests {
         apk.extend_from_slice(&0u16.to_le_bytes());
 
         let container = AndroidContainer::parse(&apk).expect("parse deflated apk");
-        let decomp = container.read_entry("classes.dex").expect("decompress entry");
+        let decomp = container
+            .read_entry("classes.dex")
+            .expect("decompress entry");
         assert_eq!(decomp, raw_payload);
     }
 
@@ -2093,7 +2163,10 @@ mod tests {
         assert_eq!(c.descriptor, "Lcom/foo/Service;");
         assert_eq!(c.superclass, Some("Ljava/lang/Object;".to_string()));
         assert_eq!(c.source_file, Some("Service.java".to_string()));
-        assert_eq!(c.access_flags, dex_access_flags::ACC_PUBLIC | dex_access_flags::ACC_ABSTRACT);
+        assert_eq!(
+            c.access_flags,
+            dex_access_flags::ACC_PUBLIC | dex_access_flags::ACC_ABSTRACT
+        );
     }
 
     #[test]

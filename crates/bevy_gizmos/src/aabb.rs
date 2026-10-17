@@ -11,14 +11,13 @@ use bevy_ecs::{
     schedule::IntoScheduleConfigs,
     system::{Query, Res},
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
-use bevy_transform::{components::GlobalTransform, TransformSystems};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
+use bevy_transform::{TransformSystems, components::GlobalTransform};
 
 use crate::{
-    color_from_entity,
+    AppGizmoBuilder, color_from_entity,
     config::{GizmoConfigGroup, GizmoConfigStore},
     gizmos::Gizmos,
-    AppGizmoBuilder,
 };
 
 /// A [`Plugin`] that provides visualization of [`Aabb`]s for debugging.

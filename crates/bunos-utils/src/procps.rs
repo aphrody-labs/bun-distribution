@@ -23,7 +23,10 @@ fn ps(_args: Vec<OsString>) -> i32 {
     rows.sort_by_key(|p| p.pid());
     println!("{:>8} {:>8} {:>10} CMD", "PID", "PPID", "RSS(KiB)");
     for p in rows {
-        let ppid = p.parent().map(|pid| pid.to_string()).unwrap_or_else(|| "-".into());
+        let ppid = p
+            .parent()
+            .map(|pid| pid.to_string())
+            .unwrap_or_else(|| "-".into());
         println!(
             "{:>8} {:>8} {:>10} {}",
             p.pid(),
@@ -44,7 +47,10 @@ fn free(args: Vec<OsString>) -> i32 {
     };
     let mut sys = System::new();
     sys.refresh_memory();
-    println!("{:>7} {:>12} {:>12} {:>12} {:>12}", "", "total", "used", "free", "available");
+    println!(
+        "{:>7} {:>12} {:>12} {:>12} {:>12}",
+        "", "total", "used", "free", "available"
+    );
     println!(
         "{:>7} {:>12} {:>12} {:>12} {:>12}",
         "Mem:",
@@ -70,7 +76,11 @@ fn matching(pattern: &str, exact: bool) -> Vec<(sysinfo::Pid, String)> {
         .values()
         .filter_map(|p| {
             let name = p.name().to_string_lossy().into_owned();
-            let hit = if exact { name == pattern } else { name.contains(pattern) };
+            let hit = if exact {
+                name == pattern
+            } else {
+                name.contains(pattern)
+            };
             hit.then(|| (p.pid(), name))
         })
         .collect();
@@ -81,7 +91,11 @@ fn matching(pattern: &str, exact: bool) -> Vec<(sysinfo::Pid, String)> {
 fn pidof(args: Vec<OsString>) -> i32 {
     let mut pids = Vec::new();
     for name in args.iter().skip(1) {
-        pids.extend(matching(&name.to_string_lossy(), true).into_iter().map(|(pid, _)| pid.to_string()));
+        pids.extend(
+            matching(&name.to_string_lossy(), true)
+                .into_iter()
+                .map(|(pid, _)| pid.to_string()),
+        );
     }
     if pids.is_empty() {
         return 1;
@@ -91,20 +105,32 @@ fn pidof(args: Vec<OsString>) -> i32 {
 }
 
 fn pgrep(args: Vec<OsString>) -> i32 {
-    let Some(pattern) = args.iter().skip(1).find(|a| !a.to_string_lossy().starts_with('-')) else {
+    let Some(pattern) = args
+        .iter()
+        .skip(1)
+        .find(|a| !a.to_string_lossy().starts_with('-'))
+    else {
         eprintln!("pgrep: no matching criteria specified");
         return 2;
     };
     let list = args.iter().any(|a| a == "-l");
     let found = matching(&pattern.to_string_lossy(), false);
     for (pid, name) in &found {
-        if list { println!("{pid} {name}") } else { println!("{pid}") }
+        if list {
+            println!("{pid} {name}")
+        } else {
+            println!("{pid}")
+        }
     }
     i32::from(found.is_empty())
 }
 
 fn pkill(args: Vec<OsString>) -> i32 {
-    let Some(pattern) = args.iter().skip(1).find(|a| !a.to_string_lossy().starts_with('-')) else {
+    let Some(pattern) = args
+        .iter()
+        .skip(1)
+        .find(|a| !a.to_string_lossy().starts_with('-'))
+    else {
         eprintln!("pkill: no matching criteria specified");
         return 2;
     };

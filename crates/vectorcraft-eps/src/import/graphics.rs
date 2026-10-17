@@ -8,10 +8,15 @@ use std::sync::Arc;
 
 use kurbo::{PathEl, Shape};
 use vectorcraft_color::swatch::REGISTRATION;
-use vectorcraft_color::{Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use vectorcraft_color::{
+    Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint,
+};
 use vectorcraft_doc::clipnest::{Clip, Drawn, MAX_NEST, deep_clips};
 use vectorcraft_doc::pattern::PatternDef;
-use vectorcraft_doc::{Appearance, AppearanceItem, Dash, Document, FillLayer, LineCap, LineJoin, Node, NodeId, NodeKind, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, Dash, Document, FillLayer, LineCap, LineJoin, Node, NodeId,
+    NodeKind, StrokeLayer,
+};
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Vec2};
 
 use super::interp::{Interp, MAX_GSAVE, matrix_obj};
@@ -54,11 +59,13 @@ const MAX_FUNCTION_VISITS: usize = 1 + MAX_INKS * 8;
 const FUNCTION_OPS: u64 = 8;
 
 pub(super) const FAR_AWAY: &str = "objects far outside the page were left out";
-pub(super) const TOO_MUCH: &str = "the file draws more than VectorCraft reads: the rest was left out";
+pub(super) const TOO_MUCH: &str =
+    "the file draws more than VectorCraft reads: the rest was left out";
 const NESTED_PATTERNS: &str = "patterns nested too deeply are filled with mid-grey";
 /// Deepest patterns and glyph procedures drawn inside each other's art.
 pub(crate) const MAX_APART: u32 = 8;
-const UNKNOWN_FUNCTIONS: &str = "shadings whose functions are of an unknown type are filled with their middle colour";
+const UNKNOWN_FUNCTIONS: &str =
+    "shadings whose functions are of an unknown type are filled with their middle colour";
 const UNKNOWN_SHADINGS: &str = "shadings of an unknown type were left out";
 
 /// A colour space.
@@ -104,7 +111,15 @@ impl Space {
 
 /// A process colour from components in `space` (grey, RGB or CMYK), each clamped to 0–1.
 pub(crate) fn process(space: &Space, c: &[f64]) -> Option<Color> {
-    let v = |i: usize| c.get(i).map_or(0.0, |x| if x.is_finite() { x.clamp(0.0, 1.0) as f32 } else { 0.0 });
+    let v = |i: usize| {
+        c.get(i).map_or(0.0, |x| {
+            if x.is_finite() {
+                x.clamp(0.0, 1.0) as f32
+            } else {
+                0.0
+            }
+        })
+    };
     Some(match space {
         Space::Gray => Color::gray(1.0 - v(0)),
         Space::Rgb => Color::rgb(v(0), v(1), v(2)),
@@ -212,7 +227,9 @@ pub(crate) struct Out {
 }
 
 fn sane(r: Rect) -> bool {
-    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= LIMIT)
+    [r.x0, r.y0, r.x1, r.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= LIMIT)
 }
 
 /// A tiling pattern made into a pattern swatch, as [`Out::tilings`] lists it.
@@ -223,8 +240,15 @@ type Tiling = (Shared<Obj>, Rect, Option<Paint>, String);
 fn tiling_hash(proc: &Shared<Obj>, tile: Rect, under: Option<&Paint>) -> u64 {
     let mut h = DefaultHasher::new();
     proc.hash(&mut h);
-    [tile.x0, tile.y0, tile.x1, tile.y1].map(|v| (v + 0.0).to_bits()).hash(&mut h);
-    if let Some(Paint::Solid { color, swatch, tint }) = under {
+    [tile.x0, tile.y0, tile.x1, tile.y1]
+        .map(|v| (v + 0.0).to_bits())
+        .hash(&mut h);
+    if let Some(Paint::Solid {
+        color,
+        swatch,
+        tint,
+    }) = under
+    {
         let c = match *color {
             Color::Rgb { r, g, b } => [r, g, b, 0.0],
             Color::Cmyk { c, m, y, k } => [c, m, y, k],
@@ -271,11 +295,16 @@ impl Out {
     pub fn begin_group(&mut self) {
         if self.groups.len() >= MAX_NEST {
             self.too_deep += 1;
-            self.warn(&format!("groups nested more than {MAX_NEST} deep were read as part of the group around them"));
+            self.warn(&format!(
+                "groups nested more than {MAX_NEST} deep were read as part of the group around them"
+            ));
             return;
         }
         self.next_clip += 1;
-        self.groups.push(Arc::new(Clip { id: self.next_clip, region: None }));
+        self.groups.push(Arc::new(Clip {
+            id: self.next_clip,
+            region: None,
+        }));
     }
 
     /// End the innermost group open (an end without a beginning ends nothing).
@@ -307,7 +336,10 @@ impl Out {
     pub fn push(&mut self, mut node: Node, clips: &[Arc<Clip>]) -> Option<NodeId> {
         self.merge = None;
         let chain = self.chain(clips);
-        let size = node.path_data().map_or(1, |p| p.subpaths.iter().map(|s| s.anchors.len()).sum()) + chain.len();
+        let size = node
+            .path_data()
+            .map_or(1, |p| p.subpaths.iter().map(|s| s.anchors.len()).sum())
+            + chain.len();
         self.elements = self.elements.saturating_add(size);
         if self.drawn.len() >= MAX_NODES || self.elements > MAX_DRAWN {
             self.warn(TOO_MUCH);
@@ -326,17 +358,42 @@ impl Out {
     /// Count a paint's colour model.
     fn count(&mut self, p: &Paint) {
         match p {
-            Paint::Solid { color: Color::Cmyk { .. }, swatch: None, .. } => self.cmyk += 1,
-            Paint::Solid { color: Color::Rgb { .. }, swatch: None, .. } => self.rgb += 1,
+            Paint::Solid {
+                color: Color::Cmyk { .. },
+                swatch: None,
+                ..
+            } => self.cmyk += 1,
+            Paint::Solid {
+                color: Color::Rgb { .. },
+                swatch: None,
+                ..
+            } => self.rgb += 1,
             _ => {}
         }
     }
 
     /// Fill `bp` with `paint`.
-    fn fill(&mut self, bp: BezPath, rule: FillRule, paint: Paint, overprint: bool, clips: &[Arc<Clip>]) {
+    fn fill(
+        &mut self,
+        bp: BezPath,
+        rule: FillRule,
+        paint: Paint,
+        overprint: bool,
+        clips: &[Arc<Clip>],
+    ) {
         self.count(&paint);
-        let item = AppearanceItem::Fill(FillLayer { overprint, ..FillLayer::new(paint) });
-        let mut n = Node::path(NodeId(0), PathData::from_bezpath(&bp), Appearance { items: vec![item], ..Appearance::default() });
+        let item = AppearanceItem::Fill(FillLayer {
+            overprint,
+            ..FillLayer::new(paint)
+        });
+        let mut n = Node::path(
+            NodeId(0),
+            PathData::from_bezpath(&bp),
+            Appearance {
+                items: vec![item],
+                ..Appearance::default()
+            },
+        );
         if let NodeKind::Path { rule: r, .. } = &mut n.kind {
             *r = rule;
         }
@@ -359,7 +416,14 @@ impl Out {
                 return;
             }
         }
-        let n = Node::path(NodeId(0), PathData::from_bezpath(&bp), Appearance { items: vec![AppearanceItem::Stroke(st)], ..Appearance::default() });
+        let n = Node::path(
+            NodeId(0),
+            PathData::from_bezpath(&bp),
+            Appearance {
+                items: vec![AppearanceItem::Stroke(st)],
+                ..Appearance::default()
+            },
+        );
         self.push(n, clips);
     }
 
@@ -368,18 +432,27 @@ impl Out {
     fn clip(&mut self, path: BezPath, rule: FillRule) -> Option<Arc<Clip>> {
         // Only a polygon that really covers the page: a diamond touching its edges has the page as
         // its bounding box but cuts its corners away (#1542).
-        if path.elements().len() <= 6 && vectorcraft_geom::hit::polygon_covers_rect(&path, self.frame, 0.5) {
+        if path.elements().len() <= 6
+            && vectorcraft_geom::hit::polygon_covers_rect(&path, self.frame, 0.5)
+        {
             return None;
         }
         self.next_clip += 1;
-        Some(Arc::new(Clip { id: self.next_clip, region: Some((path, rule)) }))
+        Some(Arc::new(Clip {
+            id: self.next_clip,
+            region: Some((path, rule)),
+        }))
     }
 }
 
 /// The smallest angle from `a` to `b` (radians, −π to π).
 fn turn(a: f64, b: f64) -> f64 {
     let d = (b - a).rem_euclid(std::f64::consts::TAU);
-    if d > std::f64::consts::PI { d - std::f64::consts::TAU } else { d }
+    if d > std::f64::consts::PI {
+        d - std::f64::consts::TAU
+    } else {
+        d
+    }
 }
 
 /// The angle from `a` counterclockwise to `b` (degrees, 0 to 360), worked out from what is left
@@ -402,7 +475,10 @@ impl Interp<'_> {
 
     /// The current point in user space.
     pub fn user_point(&self) -> Res<Point> {
-        let p = self.g.cur.ok_or(PsError::Ps("nocurrentpoint", String::new()))?;
+        let p = self
+            .g
+            .cur
+            .ok_or(PsError::Ps("nocurrentpoint", String::new()))?;
         let inv = self.xf();
         if inv.determinant().abs() < 1e-12 {
             return ps_err("undefinedresult", "");
@@ -473,7 +549,11 @@ impl Interp<'_> {
             match el {
                 PathEl::MoveTo(p) => {
                     let p = xf * p;
-                    if self.g.cur.is_some() { self.line_to(p)? } else { self.move_to(p)? }
+                    if self.g.cur.is_some() {
+                        self.line_to(p)?
+                    } else {
+                        self.move_to(p)?
+                    }
                 }
                 PathEl::LineTo(p) => self.line_to(xf * p)?,
                 PathEl::QuadTo(a, p) => {
@@ -612,13 +692,24 @@ impl Interp<'_> {
         self.spend(self.g.dash.len() as u64)?;
         let k = self.scale();
         let w = self.g.width * k;
-        let mut st = StrokeLayer::new(self.g.paint.clone(), if w > 0.0 && w.is_finite() { w } else { HAIRLINE });
+        let mut st = StrokeLayer::new(
+            self.g.paint.clone(),
+            if w > 0.0 && w.is_finite() {
+                w
+            } else {
+                HAIRLINE
+            },
+        );
         st.cap = self.g.cap;
         st.join = self.g.join;
         st.miter_limit = self.g.miter.clamp(1.0, 500.0);
         st.overprint = self.g.overprint;
         let pattern: Vec<f64> = self.g.dash.iter().map(|d| d * k).collect();
-        let dash = Dash { pattern, offset: self.g.dash_offset * k, align_corners: false };
+        let dash = Dash {
+            pattern,
+            offset: self.g.dash_offset * k,
+            align_corners: false,
+        };
         st.dash = dash.is_dashed().then_some(dash);
         Ok(st)
     }
@@ -637,7 +728,14 @@ impl Interp<'_> {
             let (op, pts) = match *el {
                 PathEl::MoveTo(p) => (Op::MoveTo, vec![p]),
                 PathEl::LineTo(p) => (Op::LineTo, vec![p]),
-                PathEl::QuadTo(a, p) => (Op::CurveTo, vec![last + (a - last) * (2.0 / 3.0), p + (a - p) * (2.0 / 3.0), p]),
+                PathEl::QuadTo(a, p) => (
+                    Op::CurveTo,
+                    vec![
+                        last + (a - last) * (2.0 / 3.0),
+                        p + (a - p) * (2.0 / 3.0),
+                        p,
+                    ],
+                ),
                 PathEl::CurveTo(a, b, p) => (Op::CurveTo, vec![a, b, p]),
                 PathEl::ClosePath => (Op::ClosePath, vec![]),
             };
@@ -675,12 +773,19 @@ impl Interp<'_> {
     /// Append user path `up` to the current path: a procedure of path operators, or the encoded
     /// form (numbers and a string of operator codes).
     fn user_path(&mut self, up: Obj) -> Res {
-        let items = up.items().cloned().ok_or(PsError::Ps("typecheck", "a user path".into()))?;
+        let items = up
+            .items()
+            .cloned()
+            .ok_or(PsError::Ps("typecheck", "a user path".into()))?;
         let encoded = match (items.get(0), items.get(1), items.len()) {
-            (Some(nums @ (Obj::Array { .. } | Obj::Str(_))), Some(Obj::Str(ops)), 2) => Some((nums, ops.to_vec())),
+            (Some(nums @ (Obj::Array { .. } | Obj::Str(_))), Some(Obj::Str(ops)), 2) => {
+                Some((nums, ops.to_vec()))
+            }
             _ => None,
         };
-        let Some((nums, ops)) = encoded else { return self.call(Obj::Array { items, exec: true }) };
+        let Some((nums, ops)) = encoded else {
+            return self.call(Obj::Array { items, exec: true });
+        };
         // The operators by code, with how many operands each takes.
         const OPS: [(Op, usize); 12] = [
             (Op::SetBBox, 4),
@@ -712,10 +817,14 @@ impl Interp<'_> {
                 repeat = usize::from(code - 32);
                 continue;
             }
-            let &(op, n) = OPS.get(usize::from(code)).ok_or(PsError::Ps("rangecheck", "a user path".into()))?;
+            let &(op, n) = OPS
+                .get(usize::from(code))
+                .ok_or(PsError::Ps("rangecheck", "a user path".into()))?;
             for _ in 0..std::mem::replace(&mut repeat, 1) {
                 for _ in 0..n {
-                    let v = next.next().ok_or(PsError::Ps("rangecheck", "a user path".into()))?;
+                    let v = next
+                        .next()
+                        .ok_or(PsError::Ps("rangecheck", "a user path".into()))?;
                     self.push_num(v)?;
                 }
                 // Each operator run counts as an operation.
@@ -730,7 +839,11 @@ impl Interp<'_> {
     /// current path.
     fn paint_user_path(&mut self, op: Op) -> Res {
         let m = match (op, self.stack.last()) {
-            (Op::UStroke, Some(Obj::Array { items, exec: false })) if items.len() == 6 && self.stack.len() >= 2 => Some(self.pop_matrix()?),
+            (Op::UStroke, Some(Obj::Array { items, exec: false }))
+                if items.len() == 6 && self.stack.len() >= 2 =>
+            {
+                Some(self.pop_matrix()?)
+            }
             _ => None,
         };
         let up = self.pop()?;
@@ -744,7 +857,14 @@ impl Interp<'_> {
             let bp = self.take_path();
             match op {
                 Op::UStroke => self.stroke_path(bp),
-                _ => self.fill_path(bp, if op == Op::UEoFill { FillRule::EvenOdd } else { FillRule::NonZero }),
+                _ => self.fill_path(
+                    bp,
+                    if op == Op::UEoFill {
+                        FillRule::EvenOdd
+                    } else {
+                        FillRule::NonZero
+                    },
+                ),
             }
         });
         self.saved.truncate(depth);
@@ -756,8 +876,14 @@ impl Interp<'_> {
     fn upath(&mut self) -> Res {
         self.pop_bool()?;
         let elements = self.user_elements()?;
-        let b = self.xf().inverse().transform_rect_bbox(self.g.path.bounding_box());
-        let mut items: Vec<Obj> = [b.x0, b.y0, b.x1, b.y1].into_iter().map(Obj::Real).collect();
+        let b = self
+            .xf()
+            .inverse()
+            .transform_rect_bbox(self.g.path.bounding_box());
+        let mut items: Vec<Obj> = [b.x0, b.y0, b.x1, b.y1]
+            .into_iter()
+            .map(Obj::Real)
+            .collect();
         items.push(Obj::Op(Op::SetBBox));
         for (op, pts) in elements {
             items.extend(pts.iter().flat_map(|p| [Obj::Real(p.x), Obj::Real(p.y)]));
@@ -771,8 +897,18 @@ impl Interp<'_> {
     fn exec_form(&mut self) -> Res {
         let d = self.pop_dict()?;
         let get = |k: &str| d.borrow().get(&Key::name(k)).cloned();
-        let m = get("Matrix").and_then(|o| o.items().and_then(|i| super::interp::matrix_of(&i.borrow()))).unwrap_or(Affine::IDENTITY);
-        let bbox: Vec<f64> = get("BBox").and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())).unwrap_or_default();
+        let m = get("Matrix")
+            .and_then(|o| {
+                o.items()
+                    .and_then(|i| super::interp::matrix_of(&i.borrow()))
+            })
+            .unwrap_or(Affine::IDENTITY);
+        let bbox: Vec<f64> = get("BBox")
+            .and_then(|o| {
+                o.items()
+                    .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            })
+            .unwrap_or_default();
         let paint = get("PaintProc").ok_or(PsError::Ps("undefined", "PaintProc".into()))?;
         self.gsave()?;
         let depth = self.saved.len();
@@ -796,7 +932,9 @@ impl Interp<'_> {
     }
 
     fn clip_with(&mut self, path: BezPath, rule: FillRule) {
-        let Some(c) = self.out.clip(path, rule) else { return };
+        let Some(c) = self.out.clip(path, rule) else {
+            return;
+        };
         if self.g.clips.len() < MAX_NEST {
             self.g.clips.push(c);
         } else {
@@ -807,8 +945,15 @@ impl Interp<'_> {
     /// The area the clip leaves, in document space (the page without a clip). The clip path read
     /// counts against the operation budget.
     fn clip_bounds(&mut self) -> Res<Rect> {
-        let (bounds, len) =
-            self.g.clips.iter().rev().find_map(|c| c.region.as_ref()).map_or((self.out.frame, 0), |(p, _)| (p.bounding_box(), p.elements().len()));
+        let (bounds, len) = self
+            .g
+            .clips
+            .iter()
+            .rev()
+            .find_map(|c| c.region.as_ref())
+            .map_or((self.out.frame, 0), |(p, _)| {
+                (p.bounding_box(), p.elements().len())
+            });
         self.spend_elements(len)?;
         Ok(bounds)
     }
@@ -824,12 +969,20 @@ impl Interp<'_> {
             Obj::Name(n) | Obj::Exec(n) => (n.clone(), vec![]),
             Obj::Array { items, .. } => {
                 let v = items.to_vec();
-                let n = v.first().and_then(Obj::text).ok_or(PsError::Ps("typecheck", "setcolorspace".into()))?;
+                let n = v
+                    .first()
+                    .and_then(Obj::text)
+                    .ok_or(PsError::Ps("typecheck", "setcolorspace".into()))?;
                 (n, v)
             }
             _ => return ps_err("typecheck", "setcolorspace"),
         };
-        let arg = |i: usize| items.get(i).cloned().ok_or(PsError::Ps("rangecheck", "setcolorspace".into()));
+        let arg = |i: usize| {
+            items
+                .get(i)
+                .cloned()
+                .ok_or(PsError::Ps("rangecheck", "setcolorspace".into()))
+        };
         Ok(match &*family {
             "DeviceGray" | "CIEBasedA" | "CalGray" => Space::Gray,
             "DeviceRGB" | "CIEBasedABC" | "CalRGB" | "Lab" | "CIEBasedDEF" => Space::Rgb,
@@ -848,19 +1001,28 @@ impl Interp<'_> {
             },
             "Separation" | "DeviceN" => {
                 let names: Vec<Rc<str>> = match arg(1)? {
-                    Obj::Array { items, .. } => items.borrow().iter().filter_map(Obj::text).collect(),
+                    Obj::Array { items, .. } => {
+                        items.borrow().iter().filter_map(Obj::text).collect()
+                    }
                     o => o.text().into_iter().collect(),
                 };
                 if names.len() > MAX_INKS {
                     return ps_err("limitcheck", "DeviceN");
                 }
                 let alt = self.space_of(&arg(2)?, depth + 1)?;
-                Space::Inks { names, alt: Rc::new(alt), tint: arg(3)? }
+                Space::Inks {
+                    names,
+                    alt: Rc::new(alt),
+                    tint: arg(3)?,
+                }
             }
             "Indexed" => {
                 let base = self.space_of(&arg(1)?, depth + 1)?;
-                let hival =
-                    arg(2)?.as_num().filter(|v| (0.0..=MAX_HIVAL as f64).contains(v)).ok_or(PsError::Ps("rangecheck", "Indexed".into()))? as usize;
+                let hival = arg(2)?
+                    .as_num()
+                    .filter(|v| (0.0..=MAX_HIVAL as f64).contains(v))
+                    .ok_or(PsError::Ps("rangecheck", "Indexed".into()))?
+                    as usize;
                 let n = base.n();
                 let table: Vec<f64> = match arg(3)? {
                     Obj::Str(s) => s.borrow().iter().map(|b| f64::from(*b) / 255.0).collect(),
@@ -879,7 +1041,10 @@ impl Interp<'_> {
                     }
                     _ => return ps_err("typecheck", "Indexed"),
                 };
-                Space::Indexed { base: Rc::new(base), table: Rc::new(table) }
+                Space::Indexed {
+                    base: Rc::new(base),
+                    table: Rc::new(table),
+                }
             }
             _ => return ps_err("undefined", &family),
         })
@@ -916,9 +1081,11 @@ impl Interp<'_> {
                 let t = comps.first().copied().unwrap_or(1.0).clamp(0.0, 1.0) as f32;
                 match names.as_slice() {
                     [one] if &**one == "None" => Paint::None,
-                    [one] if &**one == "All" => {
-                        Paint::Solid { color: Color::cmyk(1.0, 1.0, 1.0, 1.0).tinted(t), swatch: Some(REGISTRATION.into()), tint: t }
-                    }
+                    [one] if &**one == "All" => Paint::Solid {
+                        color: Color::cmyk(1.0, 1.0, 1.0, 1.0).tinted(t),
+                        swatch: Some(REGISTRATION.into()),
+                        tint: t,
+                    },
                     [one] => {
                         let full = match self.out.spot_colors.get(one) {
                             Some(c) => *c,
@@ -931,7 +1098,11 @@ impl Interp<'_> {
                                 c
                             }
                         };
-                        Paint::Solid { color: full.tinted(t), swatch: Some(one.to_string()), tint: t }
+                        Paint::Solid {
+                            color: full.tinted(t),
+                            swatch: Some(one.to_string()),
+                            tint: t,
+                        }
                     }
                     _ => Paint::solid(self.tint_color(alt, tint, comps)?),
                 }
@@ -939,7 +1110,10 @@ impl Interp<'_> {
             Space::Indexed { base, table } => {
                 let n = base.n();
                 let i = comps.first().copied().unwrap_or(0.0).round().max(0.0) as usize;
-                let c = table.get(i * n..i * n + n).ok_or(PsError::Ps("rangecheck", "setcolor".into()))?.to_vec();
+                let c = table
+                    .get(i * n..i * n + n)
+                    .ok_or(PsError::Ps("rangecheck", "setcolor".into()))?
+                    .to_vec();
                 Paint::solid(process(base, &c).unwrap_or(Color::BLACK))
             }
             Space::Pattern(_) => Paint::None,
@@ -955,22 +1129,41 @@ impl Interp<'_> {
         }
         self.call(tint.clone())?;
         let n = alt.n();
-        let at = self.stack.len().checked_sub(n).filter(|a| *a >= base).ok_or(PsError::Ps("stackunderflow", "tint transform".into()))?;
-        let v: Vec<f64> = self.stack.split_off(at).iter().map(|o| o.as_num().unwrap_or(0.0)).collect();
+        let at = self
+            .stack
+            .len()
+            .checked_sub(n)
+            .filter(|a| *a >= base)
+            .ok_or(PsError::Ps("stackunderflow", "tint transform".into()))?;
+        let v: Vec<f64> = self
+            .stack
+            .split_off(at)
+            .iter()
+            .map(|o| o.as_num().unwrap_or(0.0))
+            .collect();
         self.stack.truncate(base);
         Ok(process(alt, &v).unwrap_or(Color::BLACK))
     }
 
     /// The current colour as grey, RGB or CMYK components (`currentgray` …).
     fn current_rgb(&self) -> [f32; 3] {
-        self.g.paint.color().map_or([0.0; 3], |c| c.to_rgb_uncalibrated())
+        self.g
+            .paint
+            .color()
+            .map_or([0.0; 3], |c| c.to_rgb_uncalibrated())
     }
 
     /// `setcolor` in a pattern space: the pattern operand, and before it an uncoloured
     /// pattern's colour in the underlying space.
     fn set_pattern(&mut self, base: Option<Rc<Space>>) -> Res {
-        let Obj::Dict(d) = self.pop()? else { return ps_err("typecheck", "") };
-        let uncoloured = d.borrow().get(&Key::name("PaintType")).and_then(Obj::as_num) == Some(2.0);
+        let Obj::Dict(d) = self.pop()? else {
+            return ps_err("typecheck", "");
+        };
+        let uncoloured = d
+            .borrow()
+            .get(&Key::name("PaintType"))
+            .and_then(Obj::as_num)
+            == Some(2.0);
         let under = match base.filter(|_| uncoloured) {
             Some(base) => {
                 let mut c = vec![0.0; base.n()];
@@ -989,9 +1182,15 @@ impl Interp<'_> {
     /// A pattern colour: a shading pattern's gradient, a tiling pattern's swatch (`under`: the
     /// colour an uncoloured one paints in).
     fn pattern_paint(&mut self, d: &DictRef, under: Option<Paint>) -> Res<Paint> {
-        let kind = d.borrow().get(&Key::name("PatternType")).and_then(Obj::as_num);
+        let kind = d
+            .borrow()
+            .get(&Key::name("PatternType"))
+            .and_then(Obj::as_num);
         let sh = d.borrow().get(&Key::name("Shading")).cloned();
-        let m = d.borrow().get(&Key::name("VCMatrix")).and_then(|o| o.items().and_then(|i| super::interp::matrix_of(&i.borrow())));
+        let m = d.borrow().get(&Key::name("VCMatrix")).and_then(|o| {
+            o.items()
+                .and_then(|i| super::interp::matrix_of(&i.borrow()))
+        });
         // Pattern space → the document.
         let m = self.out.page * m.unwrap_or(self.g.ctm);
         match (kind, sh) {
@@ -999,7 +1198,9 @@ impl Interp<'_> {
                 self.g.mesh = Some((sh, m));
                 Ok(Paint::None)
             }
-            (Some(2.0), Some(Obj::Dict(sh))) => Ok(self.gradient(&sh, m)?.map_or(Paint::None, |g| Paint::Gradient(Box::new(g)))),
+            (Some(2.0), Some(Obj::Dict(sh))) => Ok(self
+                .gradient(&sh, m)?
+                .map_or(Paint::None, |g| Paint::Gradient(Box::new(g)))),
             (Some(2.0), _) => ps_err("typecheck", "Shading"),
             _ => self.tiling(d, under, m),
         }
@@ -1010,18 +1211,41 @@ impl Interp<'_> {
     /// space onto the document.
     fn tiling(&mut self, d: &DictRef, under: Option<Paint>, m: Affine) -> Res<Paint> {
         let get = |k: &str| d.borrow().get(&Key::name(k)).cloned();
-        let bbox: Vec<f64> = get("BBox").and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())).unwrap_or_default();
-        let [x0, y0, x1, y1] = bbox[..] else { return ps_err("rangecheck", "BBox") };
-        let step = |k: &str| get(k).and_then(|o| o.as_num()).map(f64::abs).filter(|v| v.is_finite() && *v > 1e-9 && *v < LIMIT);
-        let (Some(xs), Some(ys)) = (step("XStep"), step("YStep")) else { return ps_err("rangecheck", "XStep") };
+        let bbox: Vec<f64> = get("BBox")
+            .and_then(|o| {
+                o.items()
+                    .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            })
+            .unwrap_or_default();
+        let [x0, y0, x1, y1] = bbox[..] else {
+            return ps_err("rangecheck", "BBox");
+        };
+        let step = |k: &str| {
+            get(k)
+                .and_then(|o| o.as_num())
+                .map(f64::abs)
+                .filter(|v| v.is_finite() && *v > 1e-9 && *v < LIMIT)
+        };
+        let (Some(xs), Some(ys)) = (step("XStep"), step("YStep")) else {
+            return ps_err("rangecheck", "XStep");
+        };
         let tile = Rect::from_origin_size((x0.min(x1), y0.min(y1)), (xs, ys));
         let xf = m * Affine::translate(tile.origin().to_vec2());
         let proc = get("PaintProc").ok_or(PsError::Ps("undefined", "PaintProc".into()))?;
-        let key = proc.items().cloned().ok_or(PsError::Ps("typecheck", "PaintProc".into()))?;
+        let key = proc
+            .items()
+            .cloned()
+            .ok_or(PsError::Ps("typecheck", "PaintProc".into()))?;
         let hash = tiling_hash(&key, tile, under.as_ref());
-        let made = self.out.tilings.get(&hash).and_then(|list| list.iter().find(|(p, t, u, _)| p.same(&key) && *t == tile && *u == under));
+        let made = self.out.tilings.get(&hash).and_then(|list| {
+            list.iter()
+                .find(|(p, t, u, _)| p.same(&key) && *t == tile && *u == under)
+        });
         if let Some((.., name)) = made {
-            return Ok(Paint::Pattern { pattern: name.clone(), xf });
+            return Ok(Paint::Pattern {
+                pattern: name.clone(),
+                xf,
+            });
         }
         if self.out.apart >= MAX_APART {
             self.out.warn(NESTED_PATTERNS);
@@ -1046,15 +1270,26 @@ impl Interp<'_> {
         self.out.doc.patterns.push(def);
         // A cell with a NaN corner equals no cell, so the lookup above could never find it.
         if !tile.is_nan() {
-            self.out.tilings.entry(hash).or_insert_with(|| Vec::with_capacity(1)).push((key, tile, under, name.clone()));
+            self.out
+                .tilings
+                .entry(hash)
+                .or_insert_with(|| Vec::with_capacity(1))
+                .push((key, tile, under, name.clone()));
         }
         Ok(Paint::Pattern { pattern: name, xf })
     }
 
     /// The art `draw` draws on its own, in its own space (user space is the document's, the page
     /// `frame`), from a fresh graphics state with the current font: a pattern's cell, a glyph.
-    pub fn draw_apart(&mut self, frame: Rect, draw: impl FnOnce(&mut Self) -> Res) -> Res<Vec<Arc<Node>>> {
-        let fresh = GState { font: self.g.font.clone(), ..GState::default() };
+    pub fn draw_apart(
+        &mut self,
+        frame: Rect,
+        draw: impl FnOnce(&mut Self) -> Res,
+    ) -> Res<Vec<Arc<Node>>> {
+        let fresh = GState {
+            font: self.g.font.clone(),
+            ..GState::default()
+        };
         let g = std::mem::replace(&mut self.g, fresh);
         let saved = std::mem::take(&mut self.saved);
         let drawn = std::mem::take(&mut self.out.drawn);
@@ -1087,24 +1322,40 @@ impl Interp<'_> {
             self.out.warn(UNKNOWN_SHADINGS);
             return Ok(None);
         }
-        let space = self.space_of(&get("ColorSpace").ok_or(PsError::Ps("undefined", "ColorSpace".into()))?, 0)?;
+        let space = self.space_of(
+            &get("ColorSpace").ok_or(PsError::Ps("undefined", "ColorSpace".into()))?,
+            0,
+        )?;
         let nums = |o: Option<Obj>| -> Vec<f64> {
-            o.and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())).unwrap_or_default()
+            o.and_then(|o| {
+                o.items()
+                    .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            })
+            .unwrap_or_default()
         };
         let coords = nums(get("Coords"));
         let domain = nums(get("Domain"));
-        let (d0, d1) = (domain.first().copied().unwrap_or(0.0), domain.get(1).copied().unwrap_or(1.0));
+        let (d0, d1) = (
+            domain.first().copied().unwrap_or(0.0),
+            domain.get(1).copied().unwrap_or(1.0),
+        );
         let f = get("Function").ok_or(PsError::Ps("undefined", "Function".into()))?;
         // Where the colour changes: the ends, and the bounds of stitched linear functions (unless
         // there are too many).
         let mut visits = 0;
-        let ts: Vec<f64> = match linear_points(&f, 0, &mut visits).filter(|p| p.len() <= MAX_STITCH_STOPS) {
-            Some(mut pts) => {
-                pts.retain(|t| (d0.min(d1)..=d0.max(d1)).contains(t));
-                pts.iter().map(|t| if d1 != d0 { (t - d0) / (d1 - d0) } else { 0.0 }).chain([0.0, 1.0]).collect()
-            }
-            None => (0..=SHADING_SAMPLES).map(|i| i as f64 / SHADING_SAMPLES as f64).collect(),
-        };
+        let ts: Vec<f64> =
+            match linear_points(&f, 0, &mut visits).filter(|p| p.len() <= MAX_STITCH_STOPS) {
+                Some(mut pts) => {
+                    pts.retain(|t| (d0.min(d1)..=d0.max(d1)).contains(t));
+                    pts.iter()
+                        .map(|t| if d1 != d0 { (t - d0) / (d1 - d0) } else { 0.0 })
+                        .chain([0.0, 1.0])
+                        .collect()
+                }
+                None => (0..=SHADING_SAMPLES)
+                    .map(|i| i as f64 / SHADING_SAMPLES as f64)
+                    .collect(),
+            };
         let mut ts = ts;
         ts.sort_by(f64::total_cmp);
         ts.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
@@ -1117,19 +1368,40 @@ impl Interp<'_> {
             let paint = self.paint_of(&space, &comps)?;
             let offset = if radial { (r0 + (r1 - r0) * t) / r1 } else { t };
             let stop = match paint {
-                Paint::Solid { color, swatch, tint } => GradientStop { swatch, tint, ..GradientStop::new(offset as f32, color) },
+                Paint::Solid {
+                    color,
+                    swatch,
+                    tint,
+                } => GradientStop {
+                    swatch,
+                    tint,
+                    ..GradientStop::new(offset as f32, color)
+                },
                 _ => GradientStop::new(offset as f32, Color::BLACK),
             };
             stops.push(stop);
         }
         let (gk, geom) = if radial {
             let centre = Point::new(c(3), c(4));
-            let mut geom = GradientGeom { start: centre, end: centre + Vec2::new(r1, 0.0), aspect: 1.0, focal: None };
+            let mut geom = GradientGeom {
+                start: centre,
+                end: centre + Vec2::new(r1, 0.0),
+                aspect: 1.0,
+                focal: None,
+            };
             geom.set_focal(Some(Point::new(c(0), c(1))));
             geom.transform(m, GradientKind::Radial);
             (GradientKind::Radial, geom)
         } else {
-            (GradientKind::Linear, GradientGeom { start: m * Point::new(c(0), c(1)), end: m * Point::new(c(2), c(3)), aspect: 1.0, focal: None })
+            (
+                GradientKind::Linear,
+                GradientGeom {
+                    start: m * Point::new(c(0), c(1)),
+                    end: m * Point::new(c(2), c(3)),
+                    aspect: 1.0,
+                    focal: None,
+                },
+            )
         };
         let mut g = GradientPaint::new(Gradient { kind: gk, stops });
         g.geom = Some(geom);
@@ -1174,7 +1446,11 @@ impl Interp<'_> {
         };
         let get = |k: &str| d.borrow().get(&Key::name(k)).cloned();
         let nums = |o: Option<Obj>| -> Vec<f64> {
-            o.and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())).unwrap_or_default()
+            o.and_then(|o| {
+                o.items()
+                    .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            })
+            .unwrap_or_default()
         };
         let domain = nums(get("Domain"));
         let t = x.first().copied().unwrap_or(0.0);
@@ -1187,7 +1463,10 @@ impl Interp<'_> {
             Some(2.0) => {
                 let c0 = nums(get("C0"));
                 let c1 = nums(get("C1"));
-                let (c0, c1) = (if c0.is_empty() { vec![0.0] } else { c0 }, if c1.is_empty() { vec![1.0] } else { c1 });
+                let (c0, c1) = (
+                    if c0.is_empty() { vec![0.0] } else { c0 },
+                    if c1.is_empty() { vec![1.0] } else { c1 },
+                );
                 let n = get("N").and_then(|o| o.as_num()).unwrap_or(1.0);
                 let x = t.max(0.0).powf(n);
                 Ok(c0.iter().zip(&c1).map(|(a, b)| a + x * (b - a)).collect())
@@ -1201,13 +1480,33 @@ impl Interp<'_> {
                 let n = fs.map_or(0, Shared::len);
                 let bounds = nums(get("Bounds"));
                 let encode = nums(get("Encode"));
-                let (lo, hi) = (domain.first().copied().unwrap_or(0.0), domain.get(1).copied().unwrap_or(1.0));
-                let k = bounds.iter().take_while(|b| t >= **b).count().min(n.saturating_sub(1));
-                let a = if k == 0 { lo } else { bounds.get(k - 1).copied().unwrap_or(lo) };
+                let (lo, hi) = (
+                    domain.first().copied().unwrap_or(0.0),
+                    domain.get(1).copied().unwrap_or(1.0),
+                );
+                let k = bounds
+                    .iter()
+                    .take_while(|b| t >= **b)
+                    .count()
+                    .min(n.saturating_sub(1));
+                let a = if k == 0 {
+                    lo
+                } else {
+                    bounds.get(k - 1).copied().unwrap_or(lo)
+                };
                 let b = bounds.get(k).copied().unwrap_or(hi);
-                let (e0, e1) = (encode.get(2 * k).copied().unwrap_or(0.0), encode.get(2 * k + 1).copied().unwrap_or(1.0));
-                let u = if b != a { e0 + (t - a) / (b - a) * (e1 - e0) } else { e0 };
-                let g = fs.and_then(|fs| fs.get(k)).ok_or(PsError::Ps("rangecheck", "Functions".into()))?;
+                let (e0, e1) = (
+                    encode.get(2 * k).copied().unwrap_or(0.0),
+                    encode.get(2 * k + 1).copied().unwrap_or(1.0),
+                );
+                let u = if b != a {
+                    e0 + (t - a) / (b - a) * (e1 - e0)
+                } else {
+                    e0
+                };
+                let g = fs
+                    .and_then(|fs| fs.get(k))
+                    .ok_or(PsError::Ps("rangecheck", "Functions".into()))?;
                 self.eval_inner(&g, &[u], depth + 1, visits)
             }
             _ => {
@@ -1233,7 +1532,11 @@ impl Interp<'_> {
             }
             InitGraphics => {
                 let font = self.g.font.take();
-                self.g = GState { font, null: self.g.null, ..GState::default() };
+                self.g = GState {
+                    font,
+                    null: self.g.null,
+                    ..GState::default()
+                };
             }
             NullDevice => {
                 self.g.null = true;
@@ -1246,7 +1549,11 @@ impl Interp<'_> {
                 let mut st = self.stroke_layer()?;
                 // A dash pattern far finer than the path would make countless pieces.
                 let period: f64 = st.dash.as_ref().map_or(0.0, |d| d.pattern.iter().sum());
-                let periods = if st.dash.is_some() && period > 0.0 { bp.perimeter(1e-3) / period } else { 0.0 };
+                let periods = if st.dash.is_some() && period > 0.0 {
+                    bp.perimeter(1e-3) / period
+                } else {
+                    0.0
+                };
                 if st.dash.is_some() && !(period > 0.0 && periods < MAX_DASHES) {
                     st.dash = None;
                 }
@@ -1254,8 +1561,17 @@ impl Interp<'_> {
                 let outline = vectorcraft_effects::stroke::line_outline(&bp, &st, st.width, tol);
                 // The path, each entry of the dash pattern in each period, and the outline count
                 // as elements.
-                let dashes = st.dash.as_ref().map_or(0.0, |d| periods * d.pattern.len() as f64) as usize;
-                self.spend_elements(bp.elements().len().saturating_add(dashes).saturating_add(outline.elements().len()))?;
+                let dashes = st
+                    .dash
+                    .as_ref()
+                    .map_or(0.0, |d| periods * d.pattern.len() as f64)
+                    as usize;
+                self.spend_elements(
+                    bp.elements()
+                        .len()
+                        .saturating_add(dashes)
+                        .saturating_add(outline.elements().len()),
+                )?;
                 if outline.elements().len() >= MAX_PATH {
                     return Err(PsError::Limit("a path has too many points"));
                 }
@@ -1359,7 +1675,11 @@ impl Interp<'_> {
                 }
                 // Each entry read counts as an operation.
                 self.spend(items.len() as u64)?;
-                let v: Option<Vec<f64>> = items.borrow().iter().map(|o| o.as_num().filter(|v| v.is_finite() && *v >= 0.0)).collect();
+                let v: Option<Vec<f64>> = items
+                    .borrow()
+                    .iter()
+                    .map(|o| o.as_num().filter(|v| v.is_finite() && *v >= 0.0))
+                    .collect();
                 self.g.dash = v.ok_or(PsError::Ps("typecheck", String::new()))?.into();
                 self.g.dash_offset = offset;
             }
@@ -1380,9 +1700,17 @@ impl Interp<'_> {
             }
             SetHsbColor => {
                 let [h, s, b] = self.nums()?;
-                let [r, g, bl] =
-                    Color::from_hsb((h.rem_euclid(1.0) * 360.0) as f32, s.clamp(0.0, 1.0) as f32, b.clamp(0.0, 1.0) as f32).to_rgb_uncalibrated();
-                self.set_process(Space::Rgb, "DeviceRGB", vec![f64::from(r), f64::from(g), f64::from(bl)])?;
+                let [r, g, bl] = Color::from_hsb(
+                    (h.rem_euclid(1.0) * 360.0) as f32,
+                    s.clamp(0.0, 1.0) as f32,
+                    b.clamp(0.0, 1.0) as f32,
+                )
+                .to_rgb_uncalibrated();
+                self.set_process(
+                    Space::Rgb,
+                    "DeviceRGB",
+                    vec![f64::from(r), f64::from(g), f64::from(bl)],
+                )?;
             }
             SetCmykColor => {
                 let c = self.nums::<4>()?;
@@ -1398,7 +1726,11 @@ impl Interp<'_> {
                 }
             }
             CurrentCmykColor => {
-                let c = self.g.paint.color().map_or([0.0, 0.0, 0.0, 1.0], |c| c.to_cmyk());
+                let c = self
+                    .g
+                    .paint
+                    .color()
+                    .map_or([0.0, 0.0, 0.0, 1.0], |c| c.to_cmyk());
                 for v in c {
                     self.push_num(f64::from(v))?;
                 }
@@ -1435,9 +1767,12 @@ impl Interp<'_> {
             SetPattern => {
                 if !matches!(*self.g.space, Space::Pattern(_)) {
                     self.g.space = Rc::new(Space::Pattern(Some(self.g.space.clone())));
-                    self.g.space_obj = Obj::array(vec![Obj::name("Pattern"), self.g.space_obj.clone()]);
+                    self.g.space_obj =
+                        Obj::array(vec![Obj::name("Pattern"), self.g.space_obj.clone()]);
                 }
-                let Space::Pattern(base) = &*self.g.space else { return ps_err("typecheck", "") };
+                let Space::Pattern(base) = &*self.g.space else {
+                    return ps_err("typecheck", "");
+                };
                 self.set_pattern(base.clone())?;
             }
             MakePattern => {
@@ -1449,8 +1784,9 @@ impl Interp<'_> {
             }
             SetOverprint => self.g.overprint = self.pop_bool()?,
             CurrentOverprint => self.push(Obj::Bool(self.g.overprint))?,
-            SetFlat | SetHalftone | SetTransfer | SetBlackGeneration | SetUnderColorRemoval | SetColorRendering | SetSmoothness | SetStrokeAdjust
-            | SetPageDevice | SetUserParams | SetSystemParams => {
+            SetFlat | SetHalftone | SetTransfer | SetBlackGeneration | SetUnderColorRemoval
+            | SetColorRendering | SetSmoothness | SetStrokeAdjust | SetPageDevice
+            | SetUserParams | SetSystemParams => {
                 self.pop()?;
             }
             SetScreen => {
@@ -1472,7 +1808,11 @@ impl Interp<'_> {
                 self.pop()?;
             }
             SetUCacheParams => {
-                let at = self.stack.iter().rposition(|o| matches!(o, Obj::Mark)).ok_or(PsError::Ps("unmatchedmark", String::new()))?;
+                let at = self
+                    .stack
+                    .iter()
+                    .rposition(|o| matches!(o, Obj::Mark))
+                    .ok_or(PsError::Ps("unmatchedmark", String::new()))?;
                 self.stack.truncate(at);
             }
             UCache => {}
@@ -1481,7 +1821,9 @@ impl Interp<'_> {
                 self.push(Obj::Real(45.0))?;
                 self.push(Obj::proc(vec![]))?;
             }
-            CurrentTransfer | CurrentBlackGeneration | CurrentUnderColorRemoval => self.push(Obj::proc(vec![]))?,
+            CurrentTransfer | CurrentBlackGeneration | CurrentUnderColorRemoval => {
+                self.push(Obj::proc(vec![]))?
+            }
             CurrentColorTransfer => {
                 for _ in 0..4 {
                     self.push(Obj::proc(vec![]))?;
@@ -1504,17 +1846,38 @@ impl Interp<'_> {
             CurrentPageDevice => {
                 let mut d = super::obj::Dict::new();
                 let f = self.out.frame;
-                d.insert(Key::name("PageSize"), Obj::array(vec![Obj::Real(f.width()), Obj::Real(f.height())]));
+                d.insert(
+                    Key::name("PageSize"),
+                    Obj::array(vec![Obj::Real(f.width()), Obj::Real(f.height())]),
+                );
                 self.push(Obj::dict(d))?;
             }
             // The cache and stack sizes programs read (they `get` them without asking first).
             CurrentUserParams | CurrentSystemParams => {
                 let keys: &[&str] = if op == CurrentUserParams {
-                    &["MaxFontItem", "MaxFormItem", "MaxPatternItem", "MaxUPathItem", "MaxOpStack", "MaxDictStack", "MaxExecStack"]
+                    &[
+                        "MaxFontItem",
+                        "MaxFormItem",
+                        "MaxPatternItem",
+                        "MaxUPathItem",
+                        "MaxOpStack",
+                        "MaxDictStack",
+                        "MaxExecStack",
+                    ]
                 } else {
-                    &["MaxFontCache", "MaxFormCache", "MaxPatternCache", "MaxUPathCache", "MaxScreenStorage", "MaxDisplayList"]
+                    &[
+                        "MaxFontCache",
+                        "MaxFormCache",
+                        "MaxPatternCache",
+                        "MaxUPathCache",
+                        "MaxScreenStorage",
+                        "MaxDisplayList",
+                    ]
                 };
-                let d: super::obj::Dict = keys.iter().map(|k| (Key::name(k), Obj::Int(1 << 20))).collect();
+                let d: super::obj::Dict = keys
+                    .iter()
+                    .map(|k| (Key::name(k), Obj::Int(1 << 20)))
+                    .collect();
                 self.push(Obj::dict(d))?;
             }
             ShowPage => return Err(PsError::Quit),
@@ -1618,7 +1981,11 @@ impl Interp<'_> {
             }
             CurveTo | RCurveTo => {
                 let v = self.nums::<6>()?;
-                let o = if op == RCurveTo { self.user_point()?.to_vec2() } else { Vec2::ZERO };
+                let o = if op == RCurveTo {
+                    self.user_point()?.to_vec2()
+                } else {
+                    Vec2::ZERO
+                };
                 if self.g.cur.is_none() {
                     return ps_err("nocurrentpoint", "");
                 }
@@ -1687,7 +2054,14 @@ impl Interp<'_> {
             Clip | EoClip => {
                 self.spend_elements(self.g.path.elements().len())?;
                 let bp = self.g.path.clone();
-                self.clip_with(bp, if op == EoClip { FillRule::EvenOdd } else { FillRule::NonZero });
+                self.clip_with(
+                    bp,
+                    if op == EoClip {
+                        FillRule::EvenOdd
+                    } else {
+                        FillRule::NonZero
+                    },
+                );
             }
             RectClip => {
                 let bp = self.rects()?;
@@ -1696,7 +2070,14 @@ impl Interp<'_> {
             }
             Fill | EoFill => {
                 let bp = self.take_path();
-                self.fill_path(bp, if op == EoFill { FillRule::EvenOdd } else { FillRule::NonZero })?;
+                self.fill_path(
+                    bp,
+                    if op == EoFill {
+                        FillRule::EvenOdd
+                    } else {
+                        FillRule::NonZero
+                    },
+                )?;
             }
             Stroke => {
                 let bp = self.take_path();
@@ -1732,7 +2113,13 @@ impl Interp<'_> {
                     let area = self.clip_bounds()?;
                     let paint = Paint::Gradient(Box::new(g));
                     let clips = self.g.clips.clone();
-                    self.out.fill(area.to_path(0.1), FillRule::NonZero, paint, self.g.overprint, &clips);
+                    self.out.fill(
+                        area.to_path(0.1),
+                        FillRule::NonZero,
+                        paint,
+                        self.g.overprint,
+                        &clips,
+                    );
                     if let Some((_, n)) = self.out.drawn.last() {
                         let id = n.id;
                         self.out.shadings.insert(id);
@@ -1747,12 +2134,22 @@ impl Interp<'_> {
 
 /// Is shading `sh` axial or radial (a gradient)?
 fn is_gradient(sh: &DictRef) -> bool {
-    matches!(sh.borrow().get(&Key::name("ShadingType")).and_then(Obj::as_num), Some(2.0 | 3.0))
+    matches!(
+        sh.borrow()
+            .get(&Key::name("ShadingType"))
+            .and_then(Obj::as_num),
+        Some(2.0 | 3.0)
+    )
 }
 
 /// Is shading `sh` one [`Interp::mesh_fill`] paints?
 fn is_mesh(sh: &DictRef) -> bool {
-    matches!(sh.borrow().get(&Key::name("ShadingType")).and_then(Obj::as_num), Some(1.0 | 4.0 | 5.0 | 6.0 | 7.0))
+    matches!(
+        sh.borrow()
+            .get(&Key::name("ShadingType"))
+            .and_then(Obj::as_num),
+        Some(1.0 | 4.0 | 5.0 | 6.0 | 7.0)
+    )
 }
 
 /// Where a stitched function of linear interpolations changes slope (its bounds), when it is
@@ -1783,10 +2180,15 @@ fn linear_points(f: &Obj, depth: u32, visits: &mut usize) -> Option<Vec<f64>> {
                 return None;
             }
             let fs = items.to_vec();
-            if !fs.iter().all(|g| linear_points(g, depth + 1, visits).is_some_and(|p| p.is_empty())) {
+            if !fs
+                .iter()
+                .all(|g| linear_points(g, depth + 1, visits).is_some_and(|p| p.is_empty()))
+            {
                 return None;
             }
-            d.get(&Key::name("Bounds"))?.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            d.get(&Key::name("Bounds"))?
+                .items()
+                .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
         }
         _ => None,
     }
@@ -1796,7 +2198,11 @@ fn linear_points(f: &Obj, depth: u32, visits: &mut usize) -> Option<Vec<f64>> {
 /// filled with instead.
 pub(crate) fn collapse(nodes: &mut [Arc<Node>], shadings: &HashSet<NodeId>) {
     for n in nodes.iter_mut() {
-        let NodeKind::Group { children, clip: true } = &n.kind else {
+        let NodeKind::Group {
+            children,
+            clip: true,
+        } = &n.kind
+        else {
             if let Some(c) = Arc::make_mut(n).children_mut() {
                 collapse(c, shadings);
             }
@@ -1804,7 +2210,15 @@ pub(crate) fn collapse(nodes: &mut [Arc<Node>], shadings: &HashSet<NodeId>) {
         };
         if let [clip, fill] = children.as_slice()
             && shadings.contains(&fill.id)
-            && let (NodeKind::Path { path, rule, clipping: true, .. }, NodeKind::Path { .. }) = (&clip.kind, &fill.kind)
+            && let (
+                NodeKind::Path {
+                    path,
+                    rule,
+                    clipping: true,
+                    ..
+                },
+                NodeKind::Path { .. },
+            ) = (&clip.kind, &fill.kind)
         {
             let mut p = Node::path(fill.id, path.clone(), (*fill.appearance).clone());
             if let NodeKind::Path { rule: r, .. } = &mut p.kind {

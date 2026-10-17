@@ -20,7 +20,12 @@ pub async fn detect_pwsh() -> PwshRuntimeInfo {
     // Priority 1: pwsh (PowerShell 7+ Core, cross-platform)
     let pwsh_bin = which("pwsh").or_else(|| which("pwsh.exe"));
     if let Some(bin) = pwsh_bin {
-        let version_out = tokio::process::Command::new(&bin).no_window().arg("-Version").output().await.ok();
+        let version_out = tokio::process::Command::new(&bin)
+            .no_window()
+            .arg("-Version")
+            .output()
+            .await
+            .ok();
         let version = version_out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
         return PwshRuntimeInfo {
             available: true,
@@ -42,7 +47,12 @@ pub async fn detect_pwsh() -> PwshRuntimeInfo {
         };
     }
 
-    PwshRuntimeInfo { available: false, kind: "none".to_owned(), path: None, version: None }
+    PwshRuntimeInfo {
+        available: false,
+        kind: "none".to_owned(),
+        path: None,
+        version: None,
+    }
 }
 
 pub async fn eval_script(script: &str, cwd: Option<&str>) -> Result<ExecResult, String> {
@@ -52,13 +62,19 @@ pub async fn eval_script(script: &str, cwd: Option<&str>) -> Result<ExecResult, 
     };
 
     let mut cmd = tokio::process::Command::new(bin).no_window();
-    cmd.arg("-NoProfile").arg("-NonInteractive").arg("-Command").arg(script);
+    cmd.arg("-NoProfile")
+        .arg("-NonInteractive")
+        .arg("-Command")
+        .arg(script);
 
     if let Some(dir) = cwd {
         cmd.current_dir(dir);
     }
 
-    let output = cmd.output().await.map_err(|e| format!("powershell execution error: {e}"))?;
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("powershell execution error: {e}"))?;
 
     Ok(ExecResult {
         exit_code: output.status.code().unwrap_or(-1),

@@ -160,7 +160,12 @@ pub fn osascript_args(album: &str, paths: &[String]) -> Vec<String> {
 
 /// The media item ids the script printed (one per line; blank lines ignored).
 pub fn parse_ids(stdout: &str) -> Vec<String> {
-    stdout.lines().map(str::trim).filter(|l| !l.is_empty()).map(str::to_string).collect()
+    stdout
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(str::to_string)
+        .collect()
 }
 
 /// The AppleScript error number at the end of osascript's message (`… (-1743)`).
@@ -198,9 +203,14 @@ pub fn explain(out: &Output, album: &str) -> String {
 pub fn explain_run_error(e: &RunError) -> String {
     match e {
         RunError::NoPhotos => "Apple Photos couldn't be found on this Mac.".into(),
-        RunError::Spawn(why) => format!("Couldn't run /usr/bin/osascript to add the photos to Apple Photos: {why}"),
+        RunError::Spawn(why) => {
+            format!("Couldn't run /usr/bin/osascript to add the photos to Apple Photos: {why}")
+        }
         RunError::Timeout(t) => {
-            format!("Photos didn't finish adding the photos within {} s; it may still be importing. Check Photos before trying again.", t.as_secs())
+            format!(
+                "Photos didn't finish adding the photos within {} s; it may still be importing. Check Photos before trying again.",
+                t.as_secs()
+            )
         }
     }
 }
@@ -210,7 +220,11 @@ pub fn explain_run_error(e: &RunError) -> String {
 /// prompt, and Photos may ask about duplicates; a first try with one minute timed out while the
 /// prompt was still up.
 pub fn timeout_for(files: usize) -> Duration {
-    Duration::from_secs(600u64.saturating_add(5u64.saturating_mul(files as u64)).min(7200))
+    Duration::from_secs(
+        600u64
+            .saturating_add(5u64.saturating_mul(files as u64))
+            .min(7200),
+    )
 }
 
 /// What an import gave.
@@ -246,13 +260,22 @@ pub fn check(paths: &[String], album: &str) -> Result<String, String> {
     if paths.is_empty() {
         return Err("no files to add to Apple Photos".into());
     }
-    if let Some(p) = paths.iter().find(|p| !std::path::Path::new(p.as_str()).is_absolute()) {
+    if let Some(p) = paths
+        .iter()
+        .find(|p| !std::path::Path::new(p.as_str()).is_absolute())
+    {
         return Err(format!("not an absolute path: {p}"));
     }
     if let Some(p) = paths.iter().find(|p| p.contains('\0')) {
-        return Err(format!("a path can't contain a NUL character: {}", p.escape_debug()));
+        return Err(format!(
+            "a path can't contain a NUL character: {}",
+            p.escape_debug()
+        ));
     }
-    if let Some(p) = paths.iter().find(|p| !std::path::Path::new(p.as_str()).is_file()) {
+    if let Some(p) = paths
+        .iter()
+        .find(|p| !std::path::Path::new(p.as_str()).is_file())
+    {
         return Err(format!("no such file: {p}"));
     }
     let album = album.trim();
@@ -276,7 +299,11 @@ fn execute(runner: &Runner, paths: &[String], album: &str) -> Result<Imported, S
     let mut ids = Vec::new();
     for (i, batch) in paths.chunks(BATCH).enumerate() {
         let left = deadline.saturating_duration_since(std::time::Instant::now());
-        let out = if left.is_zero() { Err(RunError::Timeout(limit)) } else { runner(&osascript_args(album, batch), left) };
+        let out = if left.is_zero() {
+            Err(RunError::Timeout(limit))
+        } else {
+            runner(&osascript_args(album, batch), left)
+        };
         let failed = match out {
             Ok(out) if out.status == Some(0) => {
                 ids.extend(parse_ids(&out.stdout));
@@ -290,9 +317,17 @@ fn execute(runner: &Runner, paths: &[String], album: &str) -> Result<Imported, S
         if i == 0 {
             return Err(failed);
         }
-        return Err(format!("{failed} (Photos had added {} of the {} files before that.)", ids.len(), paths.len()));
+        return Err(format!(
+            "{failed} (Photos had added {} of the {} files before that.)",
+            ids.len(),
+            paths.len()
+        ));
     }
-    Ok(Imported { ids, requested: paths.len(), album: (!album.is_empty()).then(|| album.to_string()) })
+    Ok(Imported {
+        ids,
+        requested: paths.len(),
+        album: (!album.is_empty()).then(|| album.to_string()),
+    })
 }
 
 /// Add `paths` (absolute paths of existing files) to Photos, into `album` when it isn't blank,
@@ -338,7 +373,10 @@ impl ImportJob {
     }
 
     pub fn finished(&self) -> bool {
-        self.outcome.lock().unwrap_or_else(PoisonError::into_inner).is_some()
+        self.outcome
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .is_some()
     }
 
     /// Record the outcome, unless there already is one.
@@ -351,7 +389,10 @@ impl ImportJob {
     }
 
     pub fn outcome(&self) -> Option<Outcome> {
-        self.outcome.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.outcome
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     pub fn requested(&self) -> usize {
@@ -440,7 +481,12 @@ impl Imports {
 
     /// A new job, unless one is reserved or running: two would race in Photos, and a retry of one
     /// that is still going would add its files twice.
-    fn begin(&self, requested: usize, album: &str, exporting: bool) -> Result<Arc<ImportJob>, String> {
+    fn begin(
+        &self,
+        requested: usize,
+        album: &str,
+        exporting: bool,
+    ) -> Result<Arc<ImportJob>, String> {
         let mut g = self.jobs();
         if let Some(r) = g.1.iter().find(|j| !j.finished()) {
             return Err(r.busy());
@@ -471,7 +517,12 @@ impl Imports {
             return Err("an album name can't contain a NUL character".into());
         }
         let job = self.begin(0, album, true)?;
-        Ok(Reservation { runner, album: album.to_string(), job: Some(job), activity: None })
+        Ok(Reservation {
+            runner,
+            album: album.to_string(),
+            job: Some(job),
+            activity: None,
+        })
     }
 
     /// [`Imports::wait_idle_within`] with the [`WaitLimits::default`].
@@ -489,14 +540,18 @@ impl Imports {
     pub fn wait_idle_within(&self, limits: WaitLimits) -> bool {
         let t0 = std::time::Instant::now();
         loop {
-            let Some(job) = self.running() else { return true };
+            let Some(job) = self.running() else {
+                return true;
+            };
             let waited = t0.elapsed();
             if waited >= limits.cap {
                 return false;
             }
             let expired = match job.started() {
                 None => waited >= limits.writing,
-                Some(at) => at.elapsed() >= (limits.import)(job.requested()).saturating_add(limits.margin),
+                Some(at) => {
+                    at.elapsed() >= (limits.import)(job.requested()).saturating_add(limits.margin)
+                }
             };
             if expired {
                 return false;
@@ -524,7 +579,12 @@ impl Default for WaitLimits {
     /// import's osascript limit ([`timeout_for`], at most two hours) and half a minute; three hours
     /// and a minute in all.
     fn default() -> Self {
-        Self { writing: Duration::from_secs(3600), import: timeout_for, margin: Duration::from_secs(30), cap: Duration::from_secs(3600 + 7200 + 60) }
+        Self {
+            writing: Duration::from_secs(3600),
+            import: timeout_for,
+            margin: Duration::from_secs(30),
+            cap: Duration::from_secs(3600 + 7200 + 60),
+        }
     }
 }
 
@@ -535,10 +595,18 @@ impl crate::Session {
     /// ([`Imports::wait_idle`], [`WaitLimits::default`]), so the process never abandons osascript
     /// or the import's result. True when it had to wait.
     pub fn wait_for_photos_imports(&self) -> bool {
-        let Some(job) = self.apple_photos_imports.running() else { return false };
-        log::warn!("Apple Photos: waiting for import {} to finish before exiting", job.id);
+        let Some(job) = self.apple_photos_imports.running() else {
+            return false;
+        };
+        log::warn!(
+            "Apple Photos: waiting for import {} to finish before exiting",
+            job.id
+        );
         if !self.apple_photos_imports.wait_idle() {
-            log::warn!("Apple Photos: gave up waiting for import {}; Photos may still be importing", job.id);
+            log::warn!(
+                "Apple Photos: gave up waiting for import {}; Photos may still be importing",
+                job.id
+            );
         }
         true
     }
@@ -563,7 +631,14 @@ fn row(activity: Option<&Activity>, album: &str) -> Option<TaskGuard> {
 
 /// Ask Photos to import `paths` (checked; `album` trimmed) for `job`: here, or on a worker thread,
 /// holding `row` (the activity stack's) until Photos is done.
-fn launch(runner: &Runner, job: &Arc<ImportJob>, paths: Vec<String>, album: String, background: bool, row: Option<TaskGuard>) {
+fn launch(
+    runner: &Runner,
+    job: &Arc<ImportJob>,
+    paths: Vec<String>,
+    album: String,
+    background: bool,
+    row: Option<TaskGuard>,
+) {
     job.requested.store(paths.len(), Ordering::Relaxed);
     *job.started.lock().unwrap_or_else(PoisonError::into_inner) = Some(std::time::Instant::now());
     job.exporting.store(false, Ordering::Relaxed);
@@ -573,12 +648,16 @@ fn launch(runner: &Runner, job: &Arc<ImportJob>, paths: Vec<String>, album: Stri
         return;
     }
     let (r, j) = (runner.clone(), job.clone());
-    let started = std::thread::Builder::new().name("apple-photos".into()).spawn(move || {
-        let _row = row;
-        run_to_completion(&r, &j, &paths, &album)
-    });
+    let started = std::thread::Builder::new()
+        .name("apple-photos".into())
+        .spawn(move || {
+            let _row = row;
+            run_to_completion(&r, &j, &paths, &album)
+        });
     if let Err(e) = started {
-        job.finish(Outcome::Failed(format!("Couldn't start adding the photos to Apple Photos: {e}")));
+        job.finish(Outcome::Failed(format!(
+            "Couldn't start adding the photos to Apple Photos: {e}"
+        )));
     }
 }
 
@@ -600,7 +679,8 @@ impl Drop for Completion<'_> {
 /// caller.
 fn run_to_completion(runner: &Runner, job: &ImportJob, paths: &[String], album: &str) {
     let _done = Completion(job);
-    let out = crate::guard::catch("the Apple Photos import", || execute(runner, paths, album)).unwrap_or_else(|_| Err(STOPPED.into()));
+    let out = crate::guard::catch("the Apple Photos import", || execute(runner, paths, album))
+        .unwrap_or_else(|_| Err(STOPPED.into()));
     job.finish(out.map_or_else(Outcome::Failed, Outcome::Imported));
 }
 
@@ -649,9 +729,19 @@ impl Reservation {
 
     /// The absolute paths of the files an export wrote (`files`, as `export_batch` reports them:
     /// entries with a `path`; skipped and failed ones are left out), or why there is nothing to do.
-    fn take(&mut self, files: &[Value], cancelled: bool) -> Result<(Arc<ImportJob>, Vec<String>), Value> {
-        let Some(job) = self.job.take() else { return Err(json!({"error": "this import was already handed its files"})) };
-        let paths: Vec<String> = files.iter().filter_map(|f| f.get("path").and_then(Value::as_str)).map(absolute).collect();
+    fn take(
+        &mut self,
+        files: &[Value],
+        cancelled: bool,
+    ) -> Result<(Arc<ImportJob>, Vec<String>), Value> {
+        let Some(job) = self.job.take() else {
+            return Err(json!({"error": "this import was already handed its files"}));
+        };
+        let paths: Vec<String> = files
+            .iter()
+            .filter_map(|f| f.get("path").and_then(Value::as_str))
+            .map(absolute)
+            .collect();
         let skipped = if cancelled {
             Some("the export was cancelled")
         } else if paths.is_empty() {
@@ -700,7 +790,9 @@ impl Reservation {
 impl Drop for Reservation {
     fn drop(&mut self) {
         if let Some(job) = self.job.take() {
-            job.finish(Outcome::Skipped("the export ended before writing its files".into()));
+            job.finish(Outcome::Skipped(
+                "the export ended before writing its files".into(),
+            ));
         }
     }
 }
@@ -711,7 +803,9 @@ fn absolute(path: &str) -> String {
     if p.is_absolute() {
         return path.to_string();
     }
-    std::env::current_dir().map(|d| d.join(p).to_string_lossy().to_string()).unwrap_or_else(|_| path.to_string())
+    std::env::current_dir()
+        .map(|d| d.join(p).to_string_lossy().to_string())
+        .unwrap_or_else(|_| path.to_string())
 }
 
 /// The real runner: `/usr/bin/osascript`, stopped after the timeout.
@@ -731,16 +825,21 @@ pub fn osascript() -> Runner {
             .spawn()
             .map_err(|e| RunError::Spawn(e.to_string()))?;
         // read both pipes while it runs: a long list of ids must not fill a pipe and stall it
-        fn drain(r: Option<impl Read + Send + 'static>) -> std::io::Result<std::thread::JoinHandle<String>> {
-            std::thread::Builder::new().name("osascript-output".into()).spawn(move || {
-                let mut buf = Vec::new();
-                if let Some(mut r) = r {
-                    let _ = r.read_to_end(&mut buf);
-                }
-                String::from_utf8_lossy(&buf).into_owned()
-            })
+        fn drain(
+            r: Option<impl Read + Send + 'static>,
+        ) -> std::io::Result<std::thread::JoinHandle<String>> {
+            std::thread::Builder::new()
+                .name("osascript-output".into())
+                .spawn(move || {
+                    let mut buf = Vec::new();
+                    if let Some(mut r) = r {
+                        let _ = r.read_to_end(&mut buf);
+                    }
+                    String::from_utf8_lossy(&buf).into_owned()
+                })
         }
-        let pipes = drain(child.stdout.take()).and_then(|out| Ok((out, drain(child.stderr.take())?)));
+        let pipes =
+            drain(child.stdout.take()).and_then(|out| Ok((out, drain(child.stderr.take())?)));
         let (stdout, stderr) = match pipes {
             Ok(p) => p,
             Err(e) => {
@@ -766,7 +865,11 @@ pub fn osascript() -> Runner {
                 }
             }
         };
-        Ok(Output { status: status.code(), stdout: stdout.join().unwrap_or_default(), stderr: stderr.join().unwrap_or_default() })
+        Ok(Output {
+            status: status.code(),
+            stdout: stdout.join().unwrap_or_default(),
+            stderr: stderr.join().unwrap_or_default(),
+        })
     })
 }
 
@@ -786,11 +889,19 @@ mod tests {
     }
 
     fn ok(stdout: &str) -> Result<Output, RunError> {
-        Ok(Output { status: Some(0), stdout: stdout.into(), stderr: String::new() })
+        Ok(Output {
+            status: Some(0),
+            stdout: stdout.into(),
+            stderr: String::new(),
+        })
     }
 
     fn failed(stderr: &str) -> Output {
-        Output { status: Some(1), stdout: String::new(), stderr: stderr.into() }
+        Output {
+            status: Some(1),
+            stdout: String::new(),
+            stderr: stderr.into(),
+        }
     }
 
     /// The script part of an argument list: everything before the marker.
@@ -814,18 +925,30 @@ mod tests {
         ];
         let base = osascript_args("", &["/tmp/a.jpg".into()]);
         for album in hostile {
-            let paths = vec!["/tmp/with \"quotes\".jpg".to_string(), "/tmp/new\nline/é\\x.jpg".to_string(), format!("/tmp/-{album}.jpg")];
+            let paths = vec![
+                "/tmp/with \"quotes\".jpg".to_string(),
+                "/tmp/new\nline/é\\x.jpg".to_string(),
+                format!("/tmp/-{album}.jpg"),
+            ];
             let args = osascript_args(album, &paths);
             // the script is the same whatever the input…
             assert_eq!(script_of(&args), script_of(&base));
-            assert!(script_of(&args).chunks(2).all(|c| c[0] == "-e" && SCRIPT.lines().any(|l| l == c[1])));
+            assert!(
+                script_of(&args)
+                    .chunks(2)
+                    .all(|c| c[0] == "-e" && SCRIPT.lines().any(|l| l == c[1]))
+            );
             // …and the input follows the marker as whole arguments, unchanged
             let at = args.iter().position(|a| a == MARKER).unwrap();
             assert_eq!(&args[at + 1], album);
             assert_eq!(&args[at + 2..], &paths[..]);
         }
         // the script reads them from argv only
-        assert!(SCRIPT.starts_with("on run argv") && SCRIPT.contains("item 2 of argv") && SCRIPT.contains("item i of argv"));
+        assert!(
+            SCRIPT.starts_with("on run argv")
+                && SCRIPT.contains("item 2 of argv")
+                && SCRIPT.contains("item i of argv")
+        );
         assert!(!SCRIPT.contains("do shell script"));
         // it imports into the album (made when missing) without skipping Photos' duplicate check
         assert!(SCRIPT.contains("make new album named albumName"));
@@ -837,24 +960,45 @@ mod tests {
     #[test]
     fn the_album_is_a_single_top_level_one() {
         let lookup = SCRIPT.find("every album whose name is albumName").unwrap();
-        let choose = SCRIPT.find("set targetAlbum to item 1 of topLevel").unwrap();
+        let choose = SCRIPT
+            .find("set targetAlbum to item 1 of topLevel")
+            .unwrap();
         let make = SCRIPT.find("make new album named albumName").unwrap();
         let import = SCRIPT.find("import mediaFiles into targetAlbum").unwrap();
         assert!(lookup < choose && choose < make && make < import);
         let filter = &SCRIPT[lookup..choose];
-        assert!(filter.contains("parent of candidate") && filter.contains("candidateParent is missing value"), "{filter}");
+        assert!(
+            filter.contains("parent of candidate")
+                && filter.contains("candidateParent is missing value"),
+            "{filter}"
+        );
         assert!(filter.contains("considering case"), "exact names: {filter}");
         assert!(filter.contains(&format!(
             "if (count of topLevel) > 1 then error \"LightCraft: several top-level albums have this name\" number {AMBIGUOUS_ALBUM}"
         )));
-        let m = explain(&failed(&format!("execution error: LightCraft: several top-level albums have this name ({AMBIGUOUS_ALBUM})")), "Trip");
-        assert!(m.contains("More than one album at the top level of Photos is named “Trip”") && m.contains("nothing was added"), "{m}");
+        let m = explain(
+            &failed(&format!(
+                "execution error: LightCraft: several top-level albums have this name ({AMBIGUOUS_ALBUM})"
+            )),
+            "Trip",
+        );
+        assert!(
+            m.contains("More than one album at the top level of Photos is named “Trip”")
+                && m.contains("nothing was added"),
+            "{m}"
+        );
     }
 
     #[test]
     fn ids_are_one_per_line() {
-        assert_eq!(parse_ids("A1B2/L0/001\nC3D4/L0/001\n"), vec!["A1B2/L0/001", "C3D4/L0/001"]);
-        assert_eq!(parse_ids(" X/L0/001 \r\n\r\n Y/L0/001"), vec!["X/L0/001", "Y/L0/001"]);
+        assert_eq!(
+            parse_ids("A1B2/L0/001\nC3D4/L0/001\n"),
+            vec!["A1B2/L0/001", "C3D4/L0/001"]
+        );
+        assert_eq!(
+            parse_ids(" X/L0/001 \r\n\r\n Y/L0/001"),
+            vec!["X/L0/001", "Y/L0/001"]
+        );
         assert!(parse_ids("").is_empty() && parse_ids("\n \n").is_empty());
     }
 
@@ -864,16 +1008,55 @@ mod tests {
             let m = explain(&failed(stderr), "Trip");
             assert!(m.contains(part), "{stderr:?}: {m}");
         };
-        says("146:180: execution error: Not authorized to send Apple events to Photos. (-1743)", "System Settings › Privacy & Security › Automation");
-        says("execution error: Photos got an error: … (-1744)", "Automation");
-        says("execution error: Can’t get application \"Photos\". (-10814)", "couldn't be found");
-        says("execution error: Photos got an error: Application isn’t running. (-600)", "couldn't be found or opened");
+        says(
+            "146:180: execution error: Not authorized to send Apple events to Photos. (-1743)",
+            "System Settings › Privacy & Security › Automation",
+        );
+        says(
+            "execution error: Photos got an error: … (-1744)",
+            "Automation",
+        );
+        says(
+            "execution error: Can’t get application \"Photos\". (-10814)",
+            "couldn't be found",
+        );
+        says(
+            "execution error: Photos got an error: Application isn’t running. (-600)",
+            "couldn't be found or opened",
+        );
         says("execution error: User canceled. (-128)", "cancelled");
-        says("execution error: Photos got an error: AppleEvent timed out. (-1712)", "didn't answer in time");
-        says("execution error: File not found (-43)", "couldn't find a file");
-        says("execution error: Photos got an error: Something odd happened. (-2700)", "Something odd happened");
-        assert!(explain(&Output { status: Some(3), ..Default::default() }, "").contains("exited with 3"));
-        assert!(explain(&Output { status: None, ..Default::default() }, "").contains("stopped"));
+        says(
+            "execution error: Photos got an error: AppleEvent timed out. (-1712)",
+            "didn't answer in time",
+        );
+        says(
+            "execution error: File not found (-43)",
+            "couldn't find a file",
+        );
+        says(
+            "execution error: Photos got an error: Something odd happened. (-2700)",
+            "Something odd happened",
+        );
+        assert!(
+            explain(
+                &Output {
+                    status: Some(3),
+                    ..Default::default()
+                },
+                ""
+            )
+            .contains("exited with 3")
+        );
+        assert!(
+            explain(
+                &Output {
+                    status: None,
+                    ..Default::default()
+                },
+                ""
+            )
+            .contains("stopped")
+        );
         assert!(explain_run_error(&RunError::NoPhotos).contains("couldn't be found"));
         assert!(explain_run_error(&RunError::Spawn("denied".into())).contains("denied"));
         assert!(explain_run_error(&RunError::Timeout(Duration::from_secs(65))).contains("65 s"));
@@ -900,11 +1083,21 @@ mod tests {
         let (dir, paths) = files("import", 2);
         let (runner, calls) = fake(ok("ID-1/L0/001\nID-2/L0/001\n"));
         let got = import(&runner, &paths, "  Trip “2026”  ").unwrap();
-        assert_eq!(got, Imported { ids: vec!["ID-1/L0/001".into(), "ID-2/L0/001".into()], requested: 2, album: Some("Trip “2026”".into()) });
+        assert_eq!(
+            got,
+            Imported {
+                ids: vec!["ID-1/L0/001".into(), "ID-2/L0/001".into()],
+                requested: 2,
+                album: Some("Trip “2026”".into())
+            }
+        );
         assert_eq!(got.warning(), None);
         let args = calls.lock().unwrap()[0].clone();
         let at = args.iter().position(|a| a == MARKER).unwrap();
-        assert_eq!(&args[at + 1..], &[vec!["Trip “2026”".to_string()], paths.clone()].concat()[..]);
+        assert_eq!(
+            &args[at + 1..],
+            &[vec!["Trip “2026”".to_string()], paths.clone()].concat()[..]
+        );
         // fewer back than asked: a partial import, said so
         let (runner, _) = fake(ok("ID-1/L0/001\n"));
         let got = import(&runner, &paths, "").unwrap();
@@ -912,11 +1105,21 @@ mod tests {
         assert!(got.warning().unwrap().contains("1 of 2"));
         assert_eq!(got.to_json()["warning"], json!(got.warning().unwrap()));
         // a failed run is the mapped message
-        let (runner, _) = fake(Ok(failed("execution error: Not authorized to send Apple events to Photos. (-1743)")));
-        assert!(import(&runner, &paths, "x").unwrap_err().contains("Automation"));
+        let (runner, _) = fake(Ok(failed(
+            "execution error: Not authorized to send Apple events to Photos. (-1743)",
+        )));
+        assert!(
+            import(&runner, &paths, "x")
+                .unwrap_err()
+                .contains("Automation")
+        );
         // a timeout names the request's limit
         let (runner, _) = fake(Err(RunError::Timeout(Duration::from_secs(70))));
-        assert!(import(&runner, &paths, "x").unwrap_err().contains(&format!("{} s", timeout_for(2).as_secs())));
+        assert!(
+            import(&runner, &paths, "x")
+                .unwrap_err()
+                .contains(&format!("{} s", timeout_for(2).as_secs()))
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -930,18 +1133,30 @@ mod tests {
         let r = runs.clone();
         let runner: Runner = Arc::new(move |args: &[String], limit| {
             let files = args.len() - args.iter().position(|a| a == MARKER).unwrap() - 2;
-            r.lock().unwrap().push((files, args.iter().map(|a| a.len() + 1).sum(), limit));
-            Ok(Output { status: Some(0), stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(), stderr: String::new() })
+            r.lock()
+                .unwrap()
+                .push((files, args.iter().map(|a| a.len() + 1).sum(), limit));
+            Ok(Output {
+                status: Some(0),
+                stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(),
+                stderr: String::new(),
+            })
         });
         let got = execute(&runner, &paths, "Big").unwrap();
-        assert_eq!((got.ids.len(), got.requested, got.warning()), (10_000, 10_000, None));
+        assert_eq!(
+            (got.ids.len(), got.requested, got.warning()),
+            (10_000, 10_000, None)
+        );
         let runs = runs.lock().unwrap().clone();
         assert_eq!(runs.len(), 10_000 / BATCH);
         assert!(runs.iter().all(|&(files, _, _)| files == BATCH));
         let biggest = runs.iter().map(|&(_, bytes, _)| bytes).max().unwrap();
         assert!(biggest < 1 << 18, "{biggest} bytes of arguments in one run");
         // every run gets what is left of the request's limit, never more
-        assert!(runs.iter().all(|&(_, _, limit)| limit <= timeout_for(10_000)));
+        assert!(
+            runs.iter()
+                .all(|&(_, _, limit)| limit <= timeout_for(10_000))
+        );
 
         // a later batch failing: the error says how far Photos got
         let calls = Arc::new(Mutex::new(0));
@@ -951,13 +1166,26 @@ mod tests {
             *n += 1;
             let files = args.len() - args.iter().position(|a| a == MARKER).unwrap() - 2;
             if *n == 2 {
-                return Ok(failed("execution error: Photos got an error: User canceled. (-128)"));
+                return Ok(failed(
+                    "execution error: Photos got an error: User canceled. (-128)",
+                ));
             }
-            Ok(Output { status: Some(0), stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(), stderr: String::new() })
+            Ok(Output {
+                status: Some(0),
+                stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(),
+                stderr: String::new(),
+            })
         });
         let e = execute(&runner, &paths[..450], "Big").unwrap_err();
-        assert!(e.contains("cancelled") && e.contains("200 of the 450 files"), "{e}");
-        assert_eq!(*calls.lock().unwrap(), 2, "nothing more is sent after a failed batch");
+        assert!(
+            e.contains("cancelled") && e.contains("200 of the 450 files"),
+            "{e}"
+        );
+        assert_eq!(
+            *calls.lock().unwrap(),
+            2,
+            "nothing more is sent after a failed batch"
+        );
 
         // the batches share the request's one deadline: time a batch takes comes off the next one's
         let limits = Arc::new(Mutex::new(Vec::<Duration>::new()));
@@ -966,14 +1194,25 @@ mod tests {
             l.lock().unwrap().push(limit);
             std::thread::sleep(Duration::from_millis(300));
             let files = args.len() - args.iter().position(|a| a == MARKER).unwrap() - 2;
-            Ok(Output { status: Some(0), stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(), stderr: String::new() })
+            Ok(Output {
+                status: Some(0),
+                stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(),
+                stderr: String::new(),
+            })
         });
         execute(&runner, &paths[..450], "Big").unwrap();
         let limits = limits.lock().unwrap().clone();
         assert_eq!(limits.len(), 3);
         let whole = timeout_for(450);
-        assert!(limits[0] <= whole && limits[0] > whole - Duration::from_millis(250), "{limits:?}");
-        assert!(limits[1] <= whole - Duration::from_millis(300) && limits[2] <= whole - Duration::from_millis(600), "{limits:?}");
+        assert!(
+            limits[0] <= whole && limits[0] > whole - Duration::from_millis(250),
+            "{limits:?}"
+        );
+        assert!(
+            limits[1] <= whole - Duration::from_millis(300)
+                && limits[2] <= whole - Duration::from_millis(600),
+            "{limits:?}"
+        );
     }
 
     #[test]
@@ -981,9 +1220,21 @@ mod tests {
         let (dir, paths) = files("bad", 1);
         let (runner, calls) = fake(ok(""));
         assert!(import(&runner, &[], "").unwrap_err().contains("no files"));
-        assert!(import(&runner, &["relative/a.jpg".into()], "").unwrap_err().contains("absolute"));
-        assert!(import(&runner, &[format!("{}/missing.jpg", dir.display())], "").unwrap_err().contains("no such file"));
-        assert!(import(&runner, &[format!("{}/a\0b.jpg", dir.display())], "").unwrap_err().contains("NUL"));
+        assert!(
+            import(&runner, &["relative/a.jpg".into()], "")
+                .unwrap_err()
+                .contains("absolute")
+        );
+        assert!(
+            import(&runner, &[format!("{}/missing.jpg", dir.display())], "")
+                .unwrap_err()
+                .contains("no such file")
+        );
+        assert!(
+            import(&runner, &[format!("{}/a\0b.jpg", dir.display())], "")
+                .unwrap_err()
+                .contains("NUL")
+        );
         assert!(import(&runner, &paths, "a\0b").unwrap_err().contains("NUL"));
         assert!(calls.lock().unwrap().is_empty());
         let _ = std::fs::remove_dir_all(dir);
@@ -1000,17 +1251,39 @@ mod tests {
         ];
         let (runner, calls) = fake(ok("A/L0/001\nB/L0/001"));
         let imports = Imports::default();
-        let out = imports.reserve(runner.clone(), " Album ").unwrap().run(&exported, false);
+        let out = imports
+            .reserve(runner.clone(), " Album ")
+            .unwrap()
+            .run(&exported, false);
         assert_eq!(out["imported"], 2);
         assert_eq!(out["album"], "Album");
-        assert_eq!((out["job"].as_u64(), out["running"].as_bool()), (Some(1), Some(false)));
+        assert_eq!(
+            (out["job"].as_u64(), out["running"].as_bool()),
+            (Some(1), Some(false))
+        );
         let args = calls.lock().unwrap()[0].clone();
-        assert_eq!(&args[args.len() - 2..], &paths[..], "only the files written, in order");
+        assert_eq!(
+            &args[args.len() - 2..],
+            &paths[..],
+            "only the files written, in order"
+        );
         // nothing written, or cancelled: Photos isn't asked, and the slot is free again
-        let out = imports.reserve(runner.clone(), "").unwrap().run(&[json!({"skipped": "x"})], false);
-        assert!(out["skipped"].as_str().unwrap().contains("wrote no files"), "{out}");
-        let out = imports.reserve(runner.clone(), "").unwrap().run(&exported, true);
-        assert!(out["skipped"].as_str().unwrap().contains("cancelled"), "{out}");
+        let out = imports
+            .reserve(runner.clone(), "")
+            .unwrap()
+            .run(&[json!({"skipped": "x"})], false);
+        assert!(
+            out["skipped"].as_str().unwrap().contains("wrote no files"),
+            "{out}"
+        );
+        let out = imports
+            .reserve(runner.clone(), "")
+            .unwrap()
+            .run(&exported, true);
+        assert!(
+            out["skipped"].as_str().unwrap().contains("cancelled"),
+            "{out}"
+        );
         assert_eq!(calls.lock().unwrap().len(), 1);
         assert!(imports.running().is_none());
         let _ = std::fs::remove_dir_all(dir);
@@ -1025,28 +1298,66 @@ mod tests {
         let (runner, calls) = fake(ok("A\n"));
         let imports = Imports::default();
         let reserved = imports.reserve(runner.clone(), "Trip").unwrap();
-        assert_eq!(reserved.job().map(|j| j.json()), Some(json!({"job": 1, "running": true, "exporting": true, "requested": 0, "album": "Trip"})));
+        assert_eq!(
+            reserved.job().map(|j| j.json()),
+            Some(
+                json!({"job": 1, "running": true, "exporting": true, "requested": 0, "album": "Trip"})
+            )
+        );
         // while the export writes: other imports and exports are refused, naming it
         let e = import_job(&runner, &imports, paths.clone(), "", false, None).unwrap_err();
-        assert!(e.contains("An export is about to add its files to Apple Photos (import 1)"), "{e}");
-        assert!(imports.reserve(runner.clone(), "").err().unwrap().contains("(import 1)"));
+        assert!(
+            e.contains("An export is about to add its files to Apple Photos (import 1)"),
+            "{e}"
+        );
+        assert!(
+            imports
+                .reserve(runner.clone(), "")
+                .err()
+                .unwrap()
+                .contains("(import 1)")
+        );
         assert!(calls.lock().unwrap().is_empty());
         // the export hands over its files: they are imported under its job
         let out = reserved.run(&[json!({"path": paths[0]})], false);
-        assert_eq!((out["job"].as_u64(), out["imported"].as_u64(), out.get("exporting")), (Some(1), Some(1), None), "{out}");
+        assert_eq!(
+            (
+                out["job"].as_u64(),
+                out["imported"].as_u64(),
+                out.get("exporting")
+            ),
+            (Some(1), Some(1), None),
+            "{out}"
+        );
         // an export that fails or never runs (its reservation dropped) frees the slot
         let dropped = imports.reserve(runner.clone(), "").unwrap();
         let id = dropped.job().unwrap().id;
         drop(dropped);
         let j = imports.get(id).unwrap();
         assert!(j.finished() && !j.take_announcement(), "skipped quietly");
-        assert!(j.json()["skipped"].as_str().unwrap().contains("ended before writing"));
+        assert!(
+            j.json()["skipped"]
+                .as_str()
+                .unwrap()
+                .contains("ended before writing")
+        );
         // a file the export reported but that is gone: Photos isn't asked, the slot is freed
-        let out = imports.reserve(runner.clone(), "").unwrap().run(&[json!({"path": format!("{}/gone.jpg", dir.display())})], false);
-        assert!(out["error"].as_str().unwrap().contains("no such file"), "{out}");
+        let out = imports.reserve(runner.clone(), "").unwrap().run(
+            &[json!({"path": format!("{}/gone.jpg", dir.display())})],
+            false,
+        );
+        assert!(
+            out["error"].as_str().unwrap().contains("no such file"),
+            "{out}"
+        );
         assert_eq!(calls.lock().unwrap().len(), 1);
         assert!(imports.running().is_none());
-        assert_eq!(import_job(&runner, &imports, paths, "", false, None).unwrap().id, 4);
+        assert_eq!(
+            import_job(&runner, &imports, paths, "", false, None)
+                .unwrap()
+                .id,
+            4
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1058,7 +1369,11 @@ mod tests {
         let panicky: Runner = Arc::new(|_: &[String], _| panic!("runner exploded"));
         let (good, _) = fake(ok("A\n"));
         let imports = Imports::default();
-        let stopped = |j: &ImportJob| j.json()["error"].as_str().is_some_and(|e| e.contains("stopped unexpectedly"));
+        let stopped = |j: &ImportJob| {
+            j.json()["error"]
+                .as_str()
+                .is_some_and(|e| e.contains("stopped unexpectedly"))
+        };
         // waiting here
         let job = import_job(&panicky, &imports, paths.clone(), "", false, None).unwrap();
         assert!(job.finished() && stopped(&job), "{}", job.json());
@@ -1072,10 +1387,22 @@ mod tests {
         }
         assert!(stopped(&job), "{}", job.json());
         // an export's reservation, waiting and not
-        let out = imports.reserve(panicky.clone(), "").unwrap().run(&[json!({"path": paths[0]})], false);
-        assert!(out["error"].as_str().unwrap().contains("stopped unexpectedly"), "{out}");
+        let out = imports
+            .reserve(panicky.clone(), "")
+            .unwrap()
+            .run(&[json!({"path": paths[0]})], false);
+        assert!(
+            out["error"]
+                .as_str()
+                .unwrap()
+                .contains("stopped unexpectedly"),
+            "{out}"
+        );
         assert!(imports.running().is_none());
-        let started = imports.reserve(panicky, "").unwrap().start(&[json!({"path": paths[0]})]);
+        let started = imports
+            .reserve(panicky, "")
+            .unwrap()
+            .start(&[json!({"path": paths[0]})]);
         let job = imports.get(started["job"].as_u64().unwrap()).unwrap();
         while !job.finished() {
             assert!(t0.elapsed() < Duration::from_secs(20));
@@ -1083,7 +1410,12 @@ mod tests {
         }
         assert!(stopped(&job));
         // the slot is free: the next import runs
-        assert_eq!(import_job(&good, &imports, paths, "", false, None).unwrap().json()["imported"], 1);
+        assert_eq!(
+            import_job(&good, &imports, paths, "", false, None)
+                .unwrap()
+                .json()["imported"],
+            1
+        );
         let _ = std::fs::remove_dir_all(dir);
     }
 
@@ -1125,7 +1457,11 @@ mod tests {
             Arc::new(move |args: &[String], _| {
                 std::thread::sleep(Duration::from_millis(ms));
                 let n = args.len() - args.iter().position(|a| a == MARKER).unwrap() - 2;
-                Ok(Output { status: Some(0), stdout: "ID\n".repeat(n), stderr: String::new() })
+                Ok(Output {
+                    status: Some(0),
+                    stdout: "ID\n".repeat(n),
+                    stderr: String::new(),
+                })
             })
         };
         let imports = Imports::default();
@@ -1138,15 +1474,25 @@ mod tests {
             reserved.run(&written, false)
         });
         let t0 = std::time::Instant::now();
-        assert!(imports.wait_idle_within(limits), "waited for the import, not just the write allowance");
-        assert!(t0.elapsed() >= Duration::from_millis(1000), "{:?}", t0.elapsed());
+        assert!(
+            imports.wait_idle_within(limits),
+            "waited for the import, not just the write allowance"
+        );
+        assert!(
+            t0.elapsed() >= Duration::from_millis(1000),
+            "{:?}",
+            t0.elapsed()
+        );
         assert_eq!(exporter.join().unwrap()["imported"], 2);
         // an import past its own limit is given up on at its deadline (not the cap)
         let job = import_job(&taking(3000), &imports, paths.clone(), "", true, None).unwrap();
         let t0 = std::time::Instant::now();
         assert!(!imports.wait_idle_within(limits));
         let waited = t0.elapsed();
-        assert!(waited >= Duration::from_millis(1500) && waited < Duration::from_millis(2900), "{waited:?}");
+        assert!(
+            waited >= Duration::from_millis(1500) && waited < Duration::from_millis(2900),
+            "{waited:?}"
+        );
         while !job.finished() {
             std::thread::sleep(Duration::from_millis(20));
         }
@@ -1155,13 +1501,19 @@ mod tests {
         let t0 = std::time::Instant::now();
         assert!(!imports.wait_idle_within(limits));
         let waited = t0.elapsed();
-        assert!(waited >= Duration::from_millis(300) && waited < Duration::from_millis(1500), "{waited:?}");
+        assert!(
+            waited >= Duration::from_millis(300) && waited < Duration::from_millis(1500),
+            "{waited:?}"
+        );
         drop(held);
         assert!(imports.wait_idle_within(limits));
         // and the cap holds over everything
         let job = import_job(&taking(1000), &imports, paths, "", true, None).unwrap();
         let t0 = std::time::Instant::now();
-        assert!(!imports.wait_idle_within(WaitLimits { cap: Duration::from_millis(200), ..limits }));
+        assert!(!imports.wait_idle_within(WaitLimits {
+            cap: Duration::from_millis(200),
+            ..limits
+        }));
         assert!(t0.elapsed() < Duration::from_millis(900));
         while !job.finished() {
             std::thread::sleep(Duration::from_millis(20));
@@ -1177,7 +1529,11 @@ mod tests {
         let r: Runner = Arc::new(move |args: &[String], _| {
             let _ = wait.lock().unwrap().recv_timeout(Duration::from_secs(20));
             let files = args.len() - args.iter().position(|a| a == MARKER).unwrap() - 2;
-            Ok(Output { status: Some(0), stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(), stderr: String::new() })
+            Ok(Output {
+                status: Some(0),
+                stdout: (0..files).map(|i| format!("ID-{i}\n")).collect(),
+                stderr: String::new(),
+            })
         });
         (r, go)
     }
@@ -1191,11 +1547,20 @@ mod tests {
         let imports = Imports::default();
         let t0 = std::time::Instant::now();
         let job = import_job(&runner, &imports, paths.clone(), " Trip ", true, None).unwrap();
-        assert!(t0.elapsed() < Duration::from_secs(5), "the caller doesn't wait for Photos");
-        assert_eq!(job.json(), json!({"job": 1, "running": true, "requested": 2, "album": "Trip"}));
+        assert!(
+            t0.elapsed() < Duration::from_secs(5),
+            "the caller doesn't wait for Photos"
+        );
+        assert_eq!(
+            job.json(),
+            json!({"job": 1, "running": true, "requested": 2, "album": "Trip"})
+        );
         assert_eq!(imports.running().map(|j| j.id), Some(1));
         let e = import_job(&runner, &imports, paths.clone(), "", true, None).unwrap_err();
-        assert!(e.contains("still adding 2 file(s) from an earlier request (import 1)"), "{e}");
+        assert!(
+            e.contains("still adding 2 file(s) from an earlier request (import 1)"),
+            "{e}"
+        );
         let e = imports.reserve(runner.clone(), "").err().unwrap();
         assert!(e.contains("still adding"), "{e}");
         go.send(()).unwrap();
@@ -1203,9 +1568,20 @@ mod tests {
             assert!(t0.elapsed() < Duration::from_secs(20), "the job finishes");
             std::thread::sleep(Duration::from_millis(5));
         }
-        assert!(job.take_announcement() && !job.take_announcement(), "announced once");
+        assert!(
+            job.take_announcement() && !job.take_announcement(),
+            "announced once"
+        );
         let done = imports.get(1).unwrap().json();
-        assert_eq!((done["running"].as_bool(), done["imported"].as_u64(), done["album"].as_str()), (Some(false), Some(2), Some("Trip")), "{done}");
+        assert_eq!(
+            (
+                done["running"].as_bool(),
+                done["imported"].as_u64(),
+                done["album"].as_str()
+            ),
+            (Some(false), Some(2), Some("Trip")),
+            "{done}"
+        );
         // finished: the next one may start; a failed one says why
         let (fails, _) = fake(Err(RunError::Spawn("denied".into())));
         let job = import_job(&fails, &imports, paths, "", false, None).unwrap();
@@ -1225,7 +1601,10 @@ mod tests {
         }
         let all = imports.all();
         assert_eq!(all.len(), KEPT_JOBS);
-        assert_eq!((all[0].id, all[KEPT_JOBS - 1].id), (4, KEPT_JOBS as u64 + 3));
+        assert_eq!(
+            (all[0].id, all[KEPT_JOBS - 1].id),
+            (4, KEPT_JOBS as u64 + 3)
+        );
         assert!(imports.get(1).is_none());
         let _ = std::fs::remove_dir_all(dir);
     }
@@ -1246,25 +1625,54 @@ mod tests {
             rows.lock().unwrap().push(a.list());
             let _ = wait.lock().unwrap().recv_timeout(Duration::from_secs(20));
             let n = args.len() - args.iter().position(|x| x == MARKER).unwrap() - 2;
-            Ok(Output { status: Some(0), stdout: "ID\n".repeat(n), stderr: String::new() })
+            Ok(Output {
+                status: Some(0),
+                stdout: "ID\n".repeat(n),
+                stderr: String::new(),
+            })
         });
         let imports = Imports::default();
         let ended = |job: &ImportJob| {
             let deadline = std::time::Instant::now() + Duration::from_secs(20);
             while !(job.finished() && activity.list().is_empty()) {
-                assert!(std::time::Instant::now() < deadline, "the import ends and its row goes");
+                assert!(
+                    std::time::Instant::now() < deadline,
+                    "the import ends and its row goes"
+                );
                 std::thread::sleep(Duration::from_millis(5));
             }
         };
         // waiting for Photos here
         go.send(()).unwrap();
-        let job = import_job(&runner, &imports, paths.clone(), "Trip", false, Some(&activity)).unwrap();
+        let job = import_job(
+            &runner,
+            &imports,
+            paths.clone(),
+            "Trip",
+            false,
+            Some(&activity),
+        )
+        .unwrap();
         assert_eq!(job.json()["imported"], 2);
-        assert!(activity.list().is_empty(), "the row goes when Photos is done");
+        assert!(
+            activity.list().is_empty(),
+            "the row goes when Photos is done"
+        );
         let during = seen.lock().unwrap().last().cloned().unwrap();
         assert_eq!(during.len(), 1, "{during:?}");
-        assert_eq!((during[0].kind, during[0].label.as_str(), during[0].detail.as_str()), (ACTIVITY_KIND, ACTIVITY_LABEL, "Trip"));
-        assert_eq!((during[0].cancellable, during[0].total), (false, 0), "no ✕ and no count");
+        assert_eq!(
+            (
+                during[0].kind,
+                during[0].label.as_str(),
+                during[0].detail.as_str()
+            ),
+            (ACTIVITY_KIND, ACTIVITY_LABEL, "Trip")
+        );
+        assert_eq!(
+            (during[0].cancellable, during[0].total),
+            (false, 0),
+            "no ✕ and no count"
+        );
         // on a worker thread: the row stays while Photos works, and goes once the import ends
         let job = import_job(&runner, &imports, paths.clone(), "", true, Some(&activity)).unwrap();
         assert_eq!(activity.list().first().map(|r| r.kind), Some(ACTIVITY_KIND));
@@ -1273,10 +1681,21 @@ mod tests {
         // an export's own import: the export's row covers it
         let exported: Vec<Value> = paths.iter().map(|p| json!({"path": p})).collect();
         go.send(()).unwrap();
-        imports.reserve(runner.clone(), "").unwrap().shown_in(activity.clone()).run(&exported, false);
-        assert!(seen.lock().unwrap().last().unwrap().is_empty(), "no row of its own while the export's worker waits");
+        imports
+            .reserve(runner.clone(), "")
+            .unwrap()
+            .shown_in(activity.clone())
+            .run(&exported, false);
+        assert!(
+            seen.lock().unwrap().last().unwrap().is_empty(),
+            "no row of its own while the export's worker waits"
+        );
         // ...unless it is left running on its own once the export is done
-        let started = imports.reserve(runner.clone(), "").unwrap().shown_in(activity.clone()).start(&exported);
+        let started = imports
+            .reserve(runner.clone(), "")
+            .unwrap()
+            .shown_in(activity.clone())
+            .start(&exported);
         assert_eq!(started["running"], true);
         assert_eq!(activity.list().first().map(|r| r.kind), Some(ACTIVITY_KIND));
         go.send(()).unwrap();

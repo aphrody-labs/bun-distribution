@@ -33,7 +33,9 @@ use effectcraft_keyframe::Value;
 use effectcraft_project::ParamUi;
 use effectcraft_raster::{Image, Px};
 use effectcraft_track::Homography;
-use effectcraft_track::stabilize::{Framing, Method, Plan, Ripple, StabResult, StabSettings, WarpAnalysis, plan};
+use effectcraft_track::stabilize::{
+    Framing, Method, Plan, Ripple, StabResult, StabSettings, WarpAnalysis, plan,
+};
 use rayon::prelude::*;
 
 use crate::{Buf, EffectCtx, EffectSpec, Params, num, p, popup, slider};
@@ -55,8 +57,18 @@ pub const GROUPS: &[(&str, &str)] = &[
 ];
 
 pub const RESULTS: [&str; 2] = ["Smooth Motion", "No Motion"];
-pub const METHODS: [&str; 4] = ["Position", "Position, Scale, Rotation", "Perspective", "Subspace Warp"];
-pub const FRAMINGS: [&str; 4] = ["Stabilize Only", "Stabilize, Crop", "Stabilize, Crop, Auto-scale", "Stabilize, Synthesize Edges"];
+pub const METHODS: [&str; 4] = [
+    "Position",
+    "Position, Scale, Rotation",
+    "Perspective",
+    "Subspace Warp",
+];
+pub const FRAMINGS: [&str; 4] = [
+    "Stabilize Only",
+    "Stabilize, Crop",
+    "Stabilize, Crop, Auto-scale",
+    "Stabilize, Synthesize Edges",
+];
 
 pub fn specs() -> Vec<EffectSpec> {
     vec![EffectSpec {
@@ -64,28 +76,138 @@ pub fn specs() -> Vec<EffectSpec> {
         name: "Warp Stabilizer",
         category: "Distort",
         params: vec![
-            p("stabilization/result", "Result", Value::Enum(0), popup(&RESULTS)),
-            p("stabilization/smoothness", "Smoothness", num(50.0), slider(0.0, 1000.0, 0.0, 100.0, 0)),
-            p("stabilization/method", "Method", Value::Enum(3), popup(&METHODS)),
-            p("stabilization/preserveScale", "Preserve Scale", Value::Bool(false), ParamUi::Checkbox),
-            p("borders/framing", "Framing", Value::Enum(2), popup(&FRAMINGS)),
-            p("borders/autoScale/maximumScale", "Maximum Scale", num(150.0), slider(100.0, 1000.0, 100.0, 200.0, 0)),
-            p("borders/autoScale/actionSafeMargin", "Action-safe Margin", num(0.0), slider(0.0, 45.0, 0.0, 20.0, 0)),
-            p("borders/additionalScale", "Additional Scale", num(100.0), slider(1.0, 1000.0, 50.0, 150.0, 0)),
-            p("advanced/detailedAnalysis", "Detailed Analysis", Value::Bool(false), ParamUi::Checkbox),
-            p("advanced/rollingShutterRipple", "Rolling Shutter Ripple", Value::Enum(0), popup(&["Automatic Reduction", "Enhanced Reduction"])),
-            p("advanced/cropLessSmoothMore", "Crop Less <-> Smooth More", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("advanced/synthesizeInputRange", "Synthesis Input Range (seconds)", num(1.0), slider(0.0, 10.0, 0.0, 5.0, 2)),
-            p("advanced/synthesizeEdgeFeather", "Synthesis Edge Feather", num(0.0), slider(0.0, 100.0, 0.0, 100.0, 0)),
-            p("advanced/edgeCropping/left", "Left", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 0)),
-            p("advanced/edgeCropping/top", "Top", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 0)),
-            p("advanced/edgeCropping/right", "Right", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 0)),
-            p("advanced/edgeCropping/bottom", "Bottom", num(0.0), slider(0.0, 1000.0, 0.0, 50.0, 0)),
-            p("advanced/hideWarningBanner", "Hide Warning Banner", Value::Bool(false), ParamUi::Checkbox),
-            p("advanced/showTrackPoints", "Show Track Points", Value::Bool(false), ParamUi::Checkbox),
-            p("advanced/trackPointSize", "Track Point Size", num(100.0), slider(0.0, 1000.0, 0.0, 200.0, 0)),
-            p(ANALYSIS, "Analysis", Value::Str(String::new()), ParamUi::Hidden),
-            p(ANALYSIS_KEY, "Analysis Key", Value::Str(String::new()), ParamUi::Hidden),
+            p(
+                "stabilization/result",
+                "Result",
+                Value::Enum(0),
+                popup(&RESULTS),
+            ),
+            p(
+                "stabilization/smoothness",
+                "Smoothness",
+                num(50.0),
+                slider(0.0, 1000.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "stabilization/method",
+                "Method",
+                Value::Enum(3),
+                popup(&METHODS),
+            ),
+            p(
+                "stabilization/preserveScale",
+                "Preserve Scale",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "borders/framing",
+                "Framing",
+                Value::Enum(2),
+                popup(&FRAMINGS),
+            ),
+            p(
+                "borders/autoScale/maximumScale",
+                "Maximum Scale",
+                num(150.0),
+                slider(100.0, 1000.0, 100.0, 200.0, 0),
+            ),
+            p(
+                "borders/autoScale/actionSafeMargin",
+                "Action-safe Margin",
+                num(0.0),
+                slider(0.0, 45.0, 0.0, 20.0, 0),
+            ),
+            p(
+                "borders/additionalScale",
+                "Additional Scale",
+                num(100.0),
+                slider(1.0, 1000.0, 50.0, 150.0, 0),
+            ),
+            p(
+                "advanced/detailedAnalysis",
+                "Detailed Analysis",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "advanced/rollingShutterRipple",
+                "Rolling Shutter Ripple",
+                Value::Enum(0),
+                popup(&["Automatic Reduction", "Enhanced Reduction"]),
+            ),
+            p(
+                "advanced/cropLessSmoothMore",
+                "Crop Less <-> Smooth More",
+                num(50.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "advanced/synthesizeInputRange",
+                "Synthesis Input Range (seconds)",
+                num(1.0),
+                slider(0.0, 10.0, 0.0, 5.0, 2),
+            ),
+            p(
+                "advanced/synthesizeEdgeFeather",
+                "Synthesis Edge Feather",
+                num(0.0),
+                slider(0.0, 100.0, 0.0, 100.0, 0),
+            ),
+            p(
+                "advanced/edgeCropping/left",
+                "Left",
+                num(0.0),
+                slider(0.0, 1000.0, 0.0, 50.0, 0),
+            ),
+            p(
+                "advanced/edgeCropping/top",
+                "Top",
+                num(0.0),
+                slider(0.0, 1000.0, 0.0, 50.0, 0),
+            ),
+            p(
+                "advanced/edgeCropping/right",
+                "Right",
+                num(0.0),
+                slider(0.0, 1000.0, 0.0, 50.0, 0),
+            ),
+            p(
+                "advanced/edgeCropping/bottom",
+                "Bottom",
+                num(0.0),
+                slider(0.0, 1000.0, 0.0, 50.0, 0),
+            ),
+            p(
+                "advanced/hideWarningBanner",
+                "Hide Warning Banner",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "advanced/showTrackPoints",
+                "Show Track Points",
+                Value::Bool(false),
+                ParamUi::Checkbox,
+            ),
+            p(
+                "advanced/trackPointSize",
+                "Track Point Size",
+                num(100.0),
+                slider(0.0, 1000.0, 0.0, 200.0, 0),
+            ),
+            p(
+                ANALYSIS,
+                "Analysis",
+                Value::Str(String::new()),
+                ParamUi::Hidden,
+            ),
+            p(
+                ANALYSIS_KEY,
+                "Analysis Key",
+                Value::Str(String::new()),
+                ParamUi::Hidden,
+            ),
         ],
         render,
         gpu: false,
@@ -127,7 +249,11 @@ fn s<'a>(params: &'a Params, id: &str) -> &'a str {
 /// Stabilization settings from the instance's parameters (`fps`: the analysis' frame rate).
 pub fn settings(params: &Params, fps: f64) -> StabSettings {
     StabSettings {
-        result: if e(params, "stabilization/result") == 1 { StabResult::NoMotion } else { StabResult::SmoothMotion },
+        result: if e(params, "stabilization/result") == 1 {
+            StabResult::NoMotion
+        } else {
+            StabResult::SmoothMotion
+        },
         smoothness: f(params, "stabilization/smoothness"),
         method: match e(params, "stabilization/method") {
             0 => Method::Position,
@@ -148,7 +274,11 @@ pub fn settings(params: &Params, fps: f64) -> StabSettings {
         // AE's 0…100 slider (50 = balanced) onto the planner's −100…100.
         crop_less_smooth_more: (f(params, "advanced/cropLessSmoothMore") - 50.0) * 2.0,
         fps,
-        ripple: if e(params, "advanced/rollingShutterRipple") == 1 { Ripple::Enhanced } else { Ripple::Automatic },
+        ripple: if e(params, "advanced/rollingShutterRipple") == 1 {
+            Ripple::Enhanced
+        } else {
+            Ripple::Automatic
+        },
     }
 }
 
@@ -176,10 +306,23 @@ impl Hasher for KeyHasher {
 
 fn settings_key(s: &StabSettings) -> u64 {
     let mut h = KeyHasher(0x9e37_79b9_7f4a_7c15);
-    for v in [s.smoothness, s.max_scale, s.action_safe, s.additional_scale, s.crop_less_smooth_more, s.fps] {
+    for v in [
+        s.smoothness,
+        s.max_scale,
+        s.action_safe,
+        s.additional_scale,
+        s.crop_less_smooth_more,
+        s.fps,
+    ] {
         h.write_u64(v.to_bits());
     }
-    h.write(format!("{:?}{:?}{:?}{:?}{:?}", s.result, s.method, s.preserve_scale, s.framing, s.ripple).as_bytes());
+    h.write(
+        format!(
+            "{:?}{:?}{:?}{:?}{:?}",
+            s.result, s.method, s.preserve_scale, s.framing, s.ripple
+        )
+        .as_bytes(),
+    );
     h.finish()
 }
 
@@ -240,7 +383,11 @@ pub fn plan_at(params: &Params, time: f64) -> Option<(usize, Arc<WarpAnalysis>, 
     }
     let (key, a) = analysis_cached(j)?;
     let k = a.frame_at(time)?;
-    let fps = if a.frame_duration > 0.0 { 1.0 / a.frame_duration } else { 30.0 };
+    let fps = if a.frame_duration > 0.0 {
+        1.0 / a.frame_duration
+    } else {
+        30.0
+    };
     let pl = plan_cached(key, &a, &settings(params, fps));
     (k < pl.warps.len()).then_some((k, a, pl))
 }
@@ -259,7 +406,12 @@ pub struct PlanSummary {
 
 impl PlanSummary {
     fn of(p: &Plan) -> PlanSummary {
-        PlanSummary { warps: p.warps.iter().map(|h| h.0).collect(), auto_scale: p.auto_scale, crop: p.crop, valid_fraction: p.valid_fraction }
+        PlanSummary {
+            warps: p.warps.iter().map(|h| h.0).collect(),
+            auto_scale: p.auto_scale,
+            crop: p.crop,
+            valid_fraction: p.valid_fraction,
+        }
     }
 }
 
@@ -278,7 +430,11 @@ fn plan_key(params: &Params) -> Option<((u64, u64), Arc<WarpAnalysis>, StabSetti
         return None;
     }
     let (akey, a) = analysis_cached(j)?;
-    let fps = if a.frame_duration > 0.0 { 1.0 / a.frame_duration } else { 30.0 };
+    let fps = if a.frame_duration > 0.0 {
+        1.0 / a.frame_duration
+    } else {
+        30.0
+    };
     let st = settings(params, fps);
     Some(((akey, settings_key(&st)), a, st))
 }
@@ -305,7 +461,11 @@ fn keep_summary(key: (u64, u64), summary: Arc<PlanSummary>) {
 /// cached (seconds for a long Subspace Warp clip). `None` when not analysed.
 pub fn summary(params: &Params) -> Option<([u64; 2], Arc<PlanSummary>)> {
     let (key, a, st) = plan_key(params)?;
-    let cached = summaries().lock().unwrap_or_else(|e| e.into_inner()).get(&key).cloned();
+    let cached = summaries()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&key)
+        .cloned();
     let sum = match cached {
         Some(s) => s,
         None => {
@@ -333,11 +493,19 @@ pub fn summary_at(params: &Params, time: f64) -> Option<(usize, Arc<PlanSummary>
 pub fn cached_summary_at(params: &Params, time: f64) -> Option<(usize, Arc<PlanSummary>)> {
     let (key, a, _) = plan_key(params)?;
     let k = a.frame_at(time)?;
-    let sum = summaries().lock().unwrap_or_else(|e| e.into_inner()).get(&key).cloned();
+    let sum = summaries()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&key)
+        .cloned();
     let sum = match sum {
         Some(s) => s,
         None => {
-            let p = plans().lock().unwrap_or_else(|e| e.into_inner()).get(&key).cloned()?;
+            let p = plans()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .get(&key)
+                .cloned()?;
             let s = Arc::new(PlanSummary::of(&p));
             keep_summary(key, s.clone());
             s
@@ -356,7 +524,10 @@ pub fn motion_between(a: &WarpAnalysis, k: usize, j: usize) -> Homography {
         }
     } else {
         for i in (j + 1..=k).rev() {
-            let inv = a.frames[i].motion(Method::Perspective).inverse().unwrap_or(Homography::IDENTITY);
+            let inv = a.frames[i]
+                .motion(Method::Perspective)
+                .inverse()
+                .unwrap_or(Homography::IDENTITY);
             m = inv.then_after(&m);
         }
     }
@@ -369,21 +540,36 @@ fn inside(r: &[f64; 4], p: [f64; 2]) -> bool {
 
 /// Distance from `p` to the nearest edge of `r` (positive inside).
 fn inset(r: &[f64; 4], p: [f64; 2]) -> f64 {
-    (p[0] - r[0]).min(r[2] - p[0]).min(p[1] - r[1]).min(r[3] - p[1])
+    (p[0] - r[0])
+        .min(r[2] - p[0])
+        .min(p[1] - r[1])
+        .min(r[3] - p[1])
 }
 
 fn lerp_px(a: Px, b: Px, t: f32) -> Px {
-    [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t, a[3] + (b[3] - a[3]) * t]
+    [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+        a[3] + (b[3] - a[3]) * t,
+    ]
 }
 
 fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
-    let Some((k, a, pl)) = plan_at(ctx.params, ctx.time) else { return buf };
+    let Some((k, a, pl)) = plan_at(ctx.params, ctx.time) else {
+        return buf;
+    };
     let size = a.size;
-    if (size[0] - ctx.layer_size[0]).abs() > 0.5 || (size[1] - ctx.layer_size[1]).abs() > 0.5 || ctx.adjustment {
+    if (size[0] - ctx.layer_size[0]).abs() > 0.5
+        || (size[1] - ctx.layer_size[1]).abs() > 0.5
+        || ctx.adjustment
+    {
         return buf;
     }
     let sc = if buf.scale > 0.0 { buf.scale } else { 1.0 };
-    let Some(inv) = pl.warps[k].inverse() else { return buf };
+    let Some(inv) = pl.warps[k].inverse() else {
+        return buf;
+    };
     // Output point → source point of this frame (a mesh lookup for Subspace Warp).
     let mesh = pl.meshes.get(k);
     let finv = pl.framing.inverse().unwrap_or(Homography::IDENTITY);
@@ -391,7 +577,10 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
         Some(m) => m.sample(finv.apply(p)),
         None => inv.apply(p),
     };
-    let (ow, oh) = (((size[0] * sc).ceil() as u32).max(1), ((size[1] * sc).ceil() as u32).max(1));
+    let (ow, oh) = (
+        ((size[0] * sc).ceil() as u32).max(1),
+        ((size[1] * sc).ceil() as u32).max(1),
+    );
     let synth = matches!(settings(ctx.params, 30.0).framing, Framing::SynthesizeEdges);
     let crop = [
         f(ctx.params, "advanced/edgeCropping/left").max(0.0),
@@ -399,20 +588,33 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
         size[0] - f(ctx.params, "advanced/edgeCropping/right").max(0.0),
         size[1] - f(ctx.params, "advanced/edgeCropping/bottom").max(0.0),
     ];
-    let valid = if synth { crop } else { [0.0, 0.0, size[0], size[1]] };
-    let feather = if synth { f(ctx.params, "advanced/synthesizeEdgeFeather").max(0.0) } else { 0.0 };
+    let valid = if synth {
+        crop
+    } else {
+        [0.0, 0.0, size[0], size[1]]
+    };
+    let feather = if synth {
+        f(ctx.params, "advanced/synthesizeEdgeFeather").max(0.0)
+    } else {
+        0.0
+    };
     let src = &buf;
     // Inside the frame, edge pixels extend to the frame's edge; outside it is transparent.
     let sample = |b: &Buf, q: [f64; 2]| {
         if q[0] < 0.0 || q[1] < 0.0 || q[0] > size[0] || q[1] > size[1] {
             return [0.0; 4];
         }
-        b.img.sample_bilinear_clamped(q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1])
+        b.img
+            .sample_bilinear_clamped(q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1])
     };
     let mut out = Image::new(ow, oh);
     // Source position (frame k layer pixels) of every output pixel, and how much of the pixel
     // still needs synthesizing (0 = none).
-    let need_m = Mutex::new(if synth { vec![0.0f32; (ow * oh) as usize] } else { vec![] });
+    let need_m = Mutex::new(if synth {
+        vec![0.0f32; (ow * oh) as usize]
+    } else {
+        vec![]
+    });
     out.rows_mut().for_each(|(y, row)| {
         let mut local = vec![];
         for (x, px) in row.iter_mut().enumerate() {
@@ -458,11 +660,17 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
     if b(ctx.params, "advanced/showTrackPoints") {
         let r = (2.5 * f(ctx.params, "advanced/trackPointSize") / 100.0 * sc).max(0.5);
         for q in &a.frames[k].points {
-            let Some(o) = pl.output_of(k, [q[0] as f64, q[1] as f64]) else { continue };
+            let Some(o) = pl.output_of(k, [q[0] as f64, q[1] as f64]) else {
+                continue;
+            };
             dot(&mut out, [o[0] * sc, o[1] * sc], r, [0.25, 0.75, 1.0, 1.0]);
         }
     }
-    Buf { img: out, offset: [0.0; 2], scale: sc }
+    Buf {
+        img: out,
+        offset: [0.0; 2],
+        scale: sc,
+    }
 }
 
 /// Fill the pixels flagged in `need` (weight = how much synthesized content they take) from
@@ -480,7 +688,10 @@ fn synthesize(
 ) {
     let Some(host) = ctx.env.host else { return };
     let n = a.frames.len();
-    let range = ((f(ctx.params, "advanced/synthesizeInputRange").max(0.0) / a.frame_duration.max(1e-6)).round() as usize).min(60);
+    let range = ((f(ctx.params, "advanced/synthesizeInputRange").max(0.0)
+        / a.frame_duration.max(1e-6))
+    .round() as usize)
+        .min(60);
     let ow = out.width as usize;
     let mut filled = vec![false; need.len()];
     let todo: Vec<usize> = (0..need.len()).filter(|i| need[*i] > 0.0).collect();
@@ -494,7 +705,11 @@ fn synthesize(
                 continue;
             }
             let j = j as usize;
-            let Some(nb) = host.self_at(a.start + j as f64 * a.frame_duration, ctx.env.effect_index) else { continue };
+            let Some(nb) =
+                host.self_at(a.start + j as f64 * a.frame_duration, ctx.env.effect_index)
+            else {
+                continue;
+            };
             let m = motion_between(a, k, j);
             let hits: Vec<(usize, Px)> = todo
                 .par_iter()
@@ -503,7 +718,15 @@ fn synthesize(
                     let (x, y) = (i % ow, i / ow);
                     let q = src_of([(x as f64 + 0.5) / sc, (y as f64 + 0.5) / sc]);
                     let qj = m.apply(q);
-                    inside(crop, qj).then(|| (*i, nb.img.sample_bilinear_clamped(qj[0] * nb.scale + nb.offset[0], qj[1] * nb.scale + nb.offset[1])))
+                    inside(crop, qj).then(|| {
+                        (
+                            *i,
+                            nb.img.sample_bilinear_clamped(
+                                qj[0] * nb.scale + nb.offset[0],
+                                qj[1] * nb.scale + nb.offset[1],
+                            ),
+                        )
+                    })
                 })
                 .collect();
             for (i, px) in hits {
@@ -516,8 +739,14 @@ fn synthesize(
 }
 
 fn dot(img: &mut Image, c: [f64; 2], r: f64, col: Px) {
-    let (x0, x1) = ((c[0] - r - 1.0).floor().max(0.0) as i64, (c[0] + r + 1.0).ceil() as i64);
-    let (y0, y1) = ((c[1] - r - 1.0).floor().max(0.0) as i64, (c[1] + r + 1.0).ceil() as i64);
+    let (x0, x1) = (
+        (c[0] - r - 1.0).floor().max(0.0) as i64,
+        (c[0] + r + 1.0).ceil() as i64,
+    );
+    let (y0, y1) = (
+        (c[1] - r - 1.0).floor().max(0.0) as i64,
+        (c[1] + r + 1.0).ceil() as i64,
+    );
     for y in y0..y1.min(img.height as i64) {
         for x in x0..x1.min(img.width as i64) {
             let d = ((x as f64 + 0.5 - c[0]).hypot(y as f64 + 0.5 - c[1]) - r).clamp(-0.5, 0.5);
@@ -537,7 +766,15 @@ mod tests {
     use effectcraft_track::stabilize::FrameMotion;
 
     fn analysis_json(n: usize, w: f64, h: f64, shift: impl Fn(usize) -> [f64; 2]) -> String {
-        let mut a = WarpAnalysis { version: 1, start: 0.0, frame_duration: 1.0 / 25.0, size: [w, h], detailed: false, frames: vec![], tracks: vec![] };
+        let mut a = WarpAnalysis {
+            version: 1,
+            start: 0.0,
+            frame_duration: 1.0 / 25.0,
+            size: [w, h],
+            detailed: false,
+            frames: vec![],
+            tracks: vec![],
+        };
         for k in 0..n {
             let mut fm = FrameMotion::default();
             if k > 0 {
@@ -554,10 +791,18 @@ mod tests {
 
     fn params(json: &str, framing: u32, result: u32) -> Params {
         let s = &specs()[0];
-        let mut p = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut p = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         p.values.insert(ANALYSIS.into(), Value::Str(json.into()));
-        p.values.insert("borders/framing".into(), Value::Enum(framing));
-        p.values.insert("stabilization/result".into(), Value::Enum(result));
+        p.values
+            .insert("borders/framing".into(), Value::Enum(framing));
+        p.values
+            .insert("stabilization/result".into(), Value::Enum(result));
         p
     }
 
@@ -590,26 +835,65 @@ mod tests {
         for k in 0..10 {
             let d = shift(k);
             let img = frame([32.0 + d[0], 24.0 + d[1]]);
-            let ctx = EffectCtx { params: &ps, time: k as f64 / 25.0, layer_size: [64.0, 48.0], seed: 1, adjustment: false, env: EffectEnv::default() };
-            let out = render(&ctx, Buf { img, offset: [0.0; 2], scale: 1.0 });
+            let ctx = EffectCtx {
+                params: &ps,
+                time: k as f64 / 25.0,
+                layer_size: [64.0, 48.0],
+                seed: 1,
+                adjustment: false,
+                env: EffectEnv::default(),
+            };
+            let out = render(
+                &ctx,
+                Buf {
+                    img,
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+            );
             cs.push(centroid(&out.img));
         }
         for c in &cs {
-            assert!((c[0] - cs[0][0]).abs() < 0.05 && (c[1] - cs[0][1]).abs() < 0.05, "{cs:?}");
+            assert!(
+                (c[0] - cs[0][0]).abs() < 0.05 && (c[1] - cs[0][1]).abs() < 0.05,
+                "{cs:?}"
+            );
         }
         // Not analysed: untouched.
         let ps = params("", 0, 1);
         let img = frame([10.0, 10.0]);
-        let ctx = EffectCtx { params: &ps, time: 0.0, layer_size: [64.0, 48.0], seed: 1, adjustment: false, env: EffectEnv::default() };
-        assert_eq!(render(&ctx, Buf { img: img.clone(), offset: [0.0; 2], scale: 1.0 }).img.data, img.data);
+        let ctx = EffectCtx {
+            params: &ps,
+            time: 0.0,
+            layer_size: [64.0, 48.0],
+            seed: 1,
+            adjustment: false,
+            env: EffectEnv::default(),
+        };
+        assert_eq!(
+            render(
+                &ctx,
+                Buf {
+                    img: img.clone(),
+                    offset: [0.0; 2],
+                    scale: 1.0
+                }
+            )
+            .img
+            .data,
+            img.data
+        );
     }
 
     #[test]
     fn nested_param_lookup() {
         let mut p = Params::default();
-        p.values.insert("#2/@match".into(), Value::Str("borders".into()));
-        p.values.insert("#1/@match".into(), Value::Str("stabilization".into()));
-        p.values.insert("#2/#1/@match".into(), Value::Str("autoScale".into()));
+        p.values
+            .insert("#2/@match".into(), Value::Str("borders".into()));
+        p.values
+            .insert("#1/@match".into(), Value::Str("stabilization".into()));
+        p.values
+            .insert("#2/#1/@match".into(), Value::Str("autoScale".into()));
         p.values.insert("#2/#1/maximumScale".into(), num(120.0));
         p.values.insert("#1/smoothness".into(), num(12.0));
         assert_eq!(f(&p, "borders/autoScale/maximumScale"), 120.0);

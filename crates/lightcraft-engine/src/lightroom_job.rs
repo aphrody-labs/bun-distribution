@@ -21,13 +21,23 @@ const COMMAND: &str = "library.importLightroom";
 const MAX_INDEX_BYTES: usize = 16 * 1024 * 1024;
 
 fn error(message: impl Into<String>) -> crate::EngineError {
-    crate::EngineError::BadParams { cmd: COMMAND.into(), msg: message.into() }
+    crate::EngineError::BadParams {
+        cmd: COMMAND.into(),
+        msg: message.into(),
+    }
 }
 
-fn stage_archive(archive_dir: Option<&Path>, data: &mut CatalogImport) -> crate::Result<Option<PathBuf>> {
-    let archive_path = archive_dir.map(|dir| crate::lightroom_archive::store_best_effort(dir, data).map_err(error)).transpose()?.flatten();
+fn stage_archive(
+    archive_dir: Option<&Path>,
+    data: &mut CatalogImport,
+) -> crate::Result<Option<PathBuf>> {
+    let archive_path = archive_dir
+        .map(|dir| crate::lightroom_archive::store_best_effort(dir, data).map_err(error))
+        .transpose()?
+        .flatten();
     if archive_dir.is_some() && archive_path.is_none() {
-        data.warnings.push("Lightroom source archive exceeded 32 MiB; archive skipped".into());
+        data.warnings
+            .push("Lightroom source archive exceeded 32 MiB; archive skipped".into());
     }
     Ok(archive_path)
 }
@@ -46,7 +56,11 @@ pub struct LightroomLibraryToken {
 impl LightroomLibraryToken {
     fn capture(s: &crate::Session) -> Self {
         Self {
-            library_dir: s.library.as_ref().filter(|library| library.on_disk).map(|library| library.dir.clone()),
+            library_dir: s
+                .library
+                .as_ref()
+                .filter(|library| library.on_disk)
+                .map(|library| library.dir.clone()),
             identity: Arc::clone(&s.library_identity),
         }
     }
@@ -54,7 +68,11 @@ impl LightroomLibraryToken {
     /// Whether `s` still refers to the library which started preparation.
     pub fn matches(&self, s: &crate::Session) -> bool {
         Arc::ptr_eq(&self.identity, &s.library_identity)
-            && self.library_dir == s.library.as_ref().filter(|library| library.on_disk).map(|library| library.dir.clone())
+            && self.library_dir
+                == s.library
+                    .as_ref()
+                    .filter(|library| library.on_disk)
+                    .map(|library| library.dir.clone())
     }
 
     pub fn library_dir(&self) -> Option<&Path> {
@@ -107,7 +125,9 @@ pub struct LightroomArchiveFinalization {
 
 impl LightroomArchiveFinalization {
     pub fn finish(self) -> crate::Result<()> {
-        let (Some(path), Some(bytes)) = (self.path, self.bytes) else { return Ok(()) };
+        let (Some(path), Some(bytes)) = (self.path, self.bytes) else {
+            return Ok(());
+        };
         if bytes.len() > MAX_INDEX_BYTES {
             return Err(error("Lightroom import index exceeds 16 MiB"));
         }
@@ -164,7 +184,11 @@ impl LightroomProgress {
     pub fn step(&self) -> (LightroomStep, usize, usize) {
         let load = |n: &AtomicUsize| n.load(Ordering::Relaxed);
         if !self.photos.load(Ordering::Relaxed) {
-            return (LightroomStep::Catalog, load(&self.catalog_done), load(&self.catalog_total));
+            return (
+                LightroomStep::Catalog,
+                load(&self.catalog_done),
+                load(&self.catalog_total),
+            );
         }
         let (read_done, read_total) = (load(&self.read_done), load(&self.read_total));
         let (add_done, add_total) = (load(&self.add_done), load(&self.add_total));
@@ -179,11 +203,19 @@ impl LightroomProgress {
     /// The whole preparation, 0..=1.
     pub fn fraction(&self) -> f32 {
         let (step, done, total) = self.step();
-        let part = if total == 0 { 0.0 } else { (done as f32 / total as f32).clamp(0.0, 1.0) };
+        let part = if total == 0 {
+            0.0
+        } else {
+            (done as f32 / total as f32).clamp(0.0, 1.0)
+        };
         match step {
             LightroomStep::Catalog => Self::CATALOG_SHARE * part,
             LightroomStep::ReadPhotos => Self::CATALOG_SHARE + Self::READ_SHARE * part,
-            LightroomStep::AddPhotos => Self::CATALOG_SHARE + Self::READ_SHARE + (1.0 - Self::CATALOG_SHARE - Self::READ_SHARE) * part,
+            LightroomStep::AddPhotos => {
+                Self::CATALOG_SHARE
+                    + Self::READ_SHARE
+                    + (1.0 - Self::CATALOG_SHARE - Self::READ_SHARE) * part
+            }
         }
     }
 }
@@ -200,11 +232,23 @@ pub struct LightroomJob {
 
 impl LightroomJob {
     /// Snapshot session state only.  This constructor performs no filesystem work.
-    pub fn new(s: &mut crate::Session, path: PathBuf, update_existing: bool) -> crate::Result<Self> {
+    pub fn new(
+        s: &mut crate::Session,
+        path: PathBuf,
+        update_existing: bool,
+    ) -> crate::Result<Self> {
         // a photo deleted here stays deleted: the catalog's record is matched, not restored
-        let opts = ImportOptions { mode: ImportMode::Add, on_deleted: crate::import::OnDeleted::Skip, ..ImportOptions::default() };
+        let opts = ImportOptions {
+            mode: ImportMode::Add,
+            on_deleted: crate::import::OnDeleted::Skip,
+            ..ImportOptions::default()
+        };
         let import = ImportJob::new(s, opts)?;
-        let archive_dir = s.library.as_ref().filter(|library| library.on_disk).map(|library| library.dir.join("Interop"));
+        let archive_dir = s
+            .library
+            .as_ref()
+            .filter(|library| library.on_disk)
+            .map(|library| library.dir.join("Interop"));
         let progress = LightroomProgress {
             read_total: Arc::clone(&import.read_total),
             read_done: Arc::clone(&import.read_done),
@@ -212,7 +256,14 @@ impl LightroomJob {
             add_done: Arc::clone(&import.done),
             ..LightroomProgress::default()
         };
-        Ok(Self { path, update_existing, import, token: LightroomLibraryToken::capture(s), archive_dir, progress })
+        Ok(Self {
+            path,
+            update_existing,
+            import,
+            token: LightroomLibraryToken::capture(s),
+            archive_dir,
+            progress,
+        })
     }
 
     /// The job's progress, to watch from another thread while [`LightroomJob::prepare`] runs.
@@ -234,8 +285,13 @@ impl LightroomJob {
         if cancel.load(Ordering::Relaxed) {
             return Err(error("Lightroom import cancelled"));
         }
-        let mut data =
-            lightroom_catalog::read_with_progress(&self.path, cancel, &self.progress.catalog_total, &self.progress.catalog_done).map_err(error)?;
+        let mut data = lightroom_catalog::read_with_progress(
+            &self.path,
+            cancel,
+            &self.progress.catalog_total,
+            &self.progress.catalog_done,
+        )
+        .map_err(error)?;
         lightroom_catalog::validate_for_job(&data).map_err(error)?;
         if cancel.load(Ordering::Relaxed) {
             return Err(error("Lightroom import cancelled"));
@@ -262,7 +318,10 @@ impl LightroomJob {
             return Err(error("Lightroom import cancelled"));
         }
         let archive_path = stage_archive(self.archive_dir.as_deref(), &mut data)?;
-        let index_path = self.archive_dir.as_ref().map(|dir| dir.join("lightroom-index.json"));
+        let index_path = self
+            .archive_dir
+            .as_ref()
+            .map(|dir| dir.join("lightroom-index.json"));
         let index = lightroom_catalog::load_index(index_path.as_deref())?;
         Ok(PreparedLightroom {
             data,
@@ -279,14 +338,19 @@ impl LightroomJob {
 }
 
 /// Apply prepared data on the owner thread.  No source, archive or index filesystem work occurs.
-pub fn commit_prepared(s: &mut crate::Session, mut prepared: PreparedLightroom) -> crate::Result<LightroomCompletion> {
+pub fn commit_prepared(
+    s: &mut crate::Session,
+    mut prepared: PreparedLightroom,
+) -> crate::Result<LightroomCompletion> {
     if prepared.cancelled {
         prepared.normal.rollback();
         return Err(error("Lightroom import cancelled"));
     }
     if !prepared.token.matches(s) {
         prepared.normal.rollback();
-        return Err(error("Lightroom import belongs to a different open library"));
+        return Err(error(
+            "Lightroom import belongs to a different open library",
+        ));
     }
     // A command-scoped Lightroom import must never rewrite source XMP sidecars.  Direct depth-0
     // callers do not set this transient flag, so they cannot affect a later command.
@@ -296,7 +360,11 @@ pub fn commit_prepared(s: &mut crate::Session, mut prepared: PreparedLightroom) 
 
     let undo0 = s.undo.len();
     prepared.normal.revalidate_add(s);
-    let options = ImportOptions { mode: ImportMode::Add, on_deleted: crate::import::OnDeleted::Skip, ..ImportOptions::default() };
+    let options = ImportOptions {
+        mode: ImportMode::Add,
+        on_deleted: crate::import::OnDeleted::Skip,
+        ..ImportOptions::default()
+    };
     let now = prepared.now.clone();
     let files = crate::import::commit_prepared(s, &options, &now, prepared.normal)?;
     let applied = lightroom_catalog::apply_prepared(
@@ -311,14 +379,28 @@ pub fn commit_prepared(s: &mut crate::Session, mut prepared: PreparedLightroom) 
             undo0,
         },
     )?;
-    let path = prepared.token.library_dir().map(|dir| dir.join("Interop/lightroom-index.json"));
-    let bytes = if path.is_some() { Some(serde_json::to_vec(&applied.index).map_err(|e| error(e.to_string()))?) } else { None };
-    Ok(LightroomCompletion { report: applied.report, finalization: LightroomArchiveFinalization { path, bytes } })
+    let path = prepared
+        .token
+        .library_dir()
+        .map(|dir| dir.join("Interop/lightroom-index.json"));
+    let bytes = if path.is_some() {
+        Some(serde_json::to_vec(&applied.index).map_err(|e| error(e.to_string()))?)
+    } else {
+        None
+    };
+    Ok(LightroomCompletion {
+        report: applied.report,
+        finalization: LightroomArchiveFinalization { path, bytes },
+    })
 }
 
 fn normalize(path: &str) -> String {
     let path = path.replace('\\', "/");
-    if cfg!(windows) { path.to_lowercase() } else { path }
+    if cfg!(windows) {
+        path.to_lowercase()
+    } else {
+        path
+    }
 }
 
 #[cfg(test)]
@@ -408,7 +490,11 @@ mod tests {
         };
         set(&p.catalog_done, 14);
         p.photos.store(true, Ordering::Relaxed);
-        assert_eq!(p.step(), (LightroomStep::ReadPhotos, 0, 0), "the photos are not counted yet");
+        assert_eq!(
+            p.step(),
+            (LightroomStep::ReadPhotos, 0, 0),
+            "the photos are not counted yet"
+        );
         forward(&p);
         set(&p.add_total, 100);
         set(&p.read_total, 100);
@@ -464,14 +550,20 @@ mod tests {
         let before = session.catalog.photo(id).map(|photo| photo.develop.clone());
         let prepared = prepared_for(&session, path, 5);
         commit_prepared(&mut session, prepared).unwrap();
-        assert_eq!(session.catalog.photo(id).map(|photo| photo.develop.clone()), before);
+        assert_eq!(
+            session.catalog.photo(id).map(|photo| photo.develop.clone()),
+            before
+        );
         assert_eq!(session.catalog.photo(id).map(|photo| photo.rating), Some(5));
         assert_eq!(session.undo.len(), 3);
     }
 
     #[test]
     fn oversized_history_archive_keeps_prepared_import_successful_with_warning() {
-        let archive_dir = std::env::temp_dir().join(format!("lightcraft-lr-prepared-scale-{}", std::process::id()));
+        let archive_dir = std::env::temp_dir().join(format!(
+            "lightcraft-lr-prepared-scale-{}",
+            std::process::id()
+        ));
         let mut data = empty_data();
         data.photos = (0..5_000)
             .map(|source_id| {
@@ -517,7 +609,8 @@ mod tests {
         assert!(
             completion.report["warnings"]
                 .as_array()
-                .is_some_and(|warnings| warnings.iter().any(|warning| warning == "Lightroom source archive exceeded 32 MiB; archive skipped"))
+                .is_some_and(|warnings| warnings.iter().any(|warning| warning
+                    == "Lightroom source archive exceeded 32 MiB; archive skipped"))
         );
         assert_eq!(session.catalog.len(), 5_000);
         std::fs::remove_dir_all(archive_dir).unwrap();
@@ -525,7 +618,8 @@ mod tests {
 
     #[test]
     fn execute_fn_import_does_not_rewrite_source_sidecar() {
-        let dir = std::env::temp_dir().join(format!("lightcraft-lr-job-sidecar-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("lightcraft-lr-job-sidecar-{}", std::process::id()));
         let path = dir.join("source.jpg");
         let sidecar = dir.join("source.xmp");
         std::fs::create_dir_all(&dir).unwrap();

@@ -80,7 +80,10 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
         "ec.generate.beam" => beam(e, ctx, b),
         "ec.generate.lensflare" => lens_flare(e, ctx, b),
         "ec.generate.radiowaves" => radio_waves(e, ctx, b),
-        "ec.generate.vegas" | "ec.generate.stroke" | "ec.generate.scribble" | "ec.generate.writeon" => paint(e, id, ctx, b),
+        "ec.generate.vegas"
+        | "ec.generate.stroke"
+        | "ec.generate.scribble"
+        | "ec.generate.writeon" => paint(e, id, ctx, b),
         "ec.generate.paintbucket" => paint_bucket(e, ctx, b),
         "ec.generate.eyedropperfill" => eyedropper(e, ctx, b),
         "ec.generate.ccgluegun" => glue_gun(e, ctx, b),
@@ -92,7 +95,14 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// A same-size per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, aux: Option<&GpuImage>, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    aux: Option<&GpuImage>,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, aux, &out, data);
     b.img = out;
@@ -102,8 +112,20 @@ fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, aux: Option<&GpuImage>
 /// The buffer on the CPU for building a plan: its pixels when `pixels` (read back), else only
 /// its geometry.
 fn cpu_buf(e: &mut Enc, b: &GBuf, pixels: bool) -> Option<Buf> {
-    let img = if pixels { e.download(&b.img)? } else { Image { width: b.img.width, height: b.img.height, data: vec![] } };
-    Some(Buf { img, offset: b.offset, scale: b.scale })
+    let img = if pixels {
+        e.download(&b.img)?
+    } else {
+        Image {
+            width: b.img.width,
+            height: b.img.height,
+            data: vec![],
+        }
+    };
+    Some(Buf {
+        img,
+        offset: b.offset,
+        scale: b.scale,
+    })
 }
 
 fn rgb(c: [f32; 4]) -> [f32; 4] {
@@ -127,7 +149,14 @@ impl Items {
         let (w, h) = (w as i32, h as i32);
         let tx = (w + TILE - 1) / TILE;
         let ty = (h + TILE - 1) / TILE;
-        Items { stride, recs: vec![], w, h, tiles: vec![vec![]; (tx * ty).max(0) as usize], tx }
+        Items {
+            stride,
+            recs: vec![],
+            w,
+            h,
+            tiles: vec![vec![]; (tx * ty).max(0) as usize],
+            tx,
+        }
     }
 
     /// Add an item (`rec` = its fields, without the bounds) covering float bounds `bb`
@@ -147,7 +176,8 @@ impl Items {
         let start = self.recs.len();
         self.recs.extend_from_slice(rec);
         self.recs.resize(start + self.stride - 4, 0.0);
-        self.recs.extend([x0 as f32, y0 as f32, x1 as f32, y1 as f32]);
+        self.recs
+            .extend([x0 as f32, y0 as f32, x1 as f32, y1 as f32]);
         for ty in y0 / TILE..=y1 / TILE {
             for tx in x0 / TILE..=x1 / TILE {
                 self.tiles[(ty * self.tx + tx) as usize].push(i);
@@ -194,7 +224,13 @@ struct Variant {
 
 impl Variant {
     fn plain(hard: f64) -> Variant {
-        Variant { mul: 1.0, add: 0.0, min: NO_MIN as f64, hard, linear: false }
+        Variant {
+            mul: 1.0,
+            add: 0.0,
+            min: NO_MIN as f64,
+            hard,
+            linear: false,
+        }
     }
 
     fn radius(&self, r: f64) -> f64 {
@@ -204,12 +240,37 @@ impl Variant {
 
 /// Rasterise segments (a, b, radius, value) into up to four coverages (x, y, z, w), one per
 /// variant, max-combined as raster_segs.
-fn raster_segs(e: &mut Enc, w: u32, h: u32, segs: impl Iterator<Item = ([f64; 2], [f64; 2], f64, f32)>, variants: &[Variant]) -> Option<GpuImage> {
+fn raster_segs(
+    e: &mut Enc,
+    w: u32,
+    h: u32,
+    segs: impl Iterator<Item = ([f64; 2], [f64; 2], f64, f32)>,
+    variants: &[Variant],
+) -> Option<GpuImage> {
     let mut items = Items::new(10, w, h);
     for (a, z, r, v) in segs {
-        let pad = variants.iter().map(|k| k.radius(r)).fold(f64::NEG_INFINITY, f64::max) + 1.0;
-        let bb = [a[0].min(z[0]) - pad, a[1].min(z[1]) - pad, a[0].max(z[0]) + pad, a[1].max(z[1]) + pad];
-        items.push(bb, &[a[0] as f32, a[1] as f32, z[0] as f32, z[1] as f32, r as f32, v]);
+        let pad = variants
+            .iter()
+            .map(|k| k.radius(r))
+            .fold(f64::NEG_INFINITY, f64::max)
+            + 1.0;
+        let bb = [
+            a[0].min(z[0]) - pad,
+            a[1].min(z[1]) - pad,
+            a[0].max(z[0]) + pad,
+            a[1].max(z[1]) + pad,
+        ];
+        items.push(
+            bb,
+            &[
+                a[0] as f32,
+                a[1] as f32,
+                z[0] as f32,
+                z[1] as f32,
+                r as f32,
+                v,
+            ],
+        );
     }
     let (data, items_at, tx) = items.data()?;
     let buf = e.data(&data);
@@ -228,7 +289,13 @@ fn raster_segs(e: &mut Enc, w: u32, h: u32, segs: impl Iterator<Item = ([f64; 2]
 /// A plan's coverage (x).
 fn coverage(e: &mut Enc, w: u32, h: u32, cov: &Coverage) -> Option<GpuImage> {
     match cov {
-        Coverage::Segs { segs, hardness } => raster_segs(e, w, h, segs.iter().map(|s| (s.a, s.b, s.r, s.v)), &[Variant::plain(*hardness)]),
+        Coverage::Segs { segs, hardness } => raster_segs(
+            e,
+            w,
+            h,
+            segs.iter().map(|s| (s.a, s.b, s.r, s.v)),
+            &[Variant::plain(*hardness)],
+        ),
         Coverage::Convex(polys) => {
             const STRIDE: usize = 1 + 32 + 4;
             let mut items = Items::new(STRIDE, w, h);
@@ -240,10 +307,20 @@ fn coverage(e: &mut Enc, w: u32, h: u32, cov: &Coverage) -> Option<GpuImage> {
                     return None;
                 }
                 let mut rec = vec![poly.len() as f32];
-                let mut bb = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+                let mut bb = [
+                    f64::INFINITY,
+                    f64::INFINITY,
+                    f64::NEG_INFINITY,
+                    f64::NEG_INFINITY,
+                ];
                 for q in poly {
                     rec.extend([q[0] as f32, q[1] as f32]);
-                    bb = [bb[0].min(q[0]), bb[1].min(q[1]), bb[2].max(q[0]), bb[3].max(q[1])];
+                    bb = [
+                        bb[0].min(q[0]),
+                        bb[1].min(q[1]),
+                        bb[2].max(q[0]),
+                        bb[3].max(q[1]),
+                    ];
                 }
                 items.push(bb, &rec);
             }
@@ -283,10 +360,25 @@ fn paint(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 fn marks(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let cpu = cpu_buf(e, &b, false)?;
-    let Some(m) = effectcraft_effects::marks_plan(id, ctx, &cpu) else { return Some(b) };
+    let Some(m) = effectcraft_effects::marks_plan(id, ctx, &cpu) else {
+        return Some(b);
+    };
     let core = Variant::plain(1.0);
-    let halo = if m.softness > 0.0 { Variant { add: m.thickness * m.softness.max(0.0) + 0.5, ..Variant::plain(0.0) } } else { core };
-    let cov = raster_segs(e, b.img.width, b.img.height, m.segs.iter().map(|s| (s.a, s.b, s.r, s.v)), &[core, halo])?;
+    let halo = if m.softness > 0.0 {
+        Variant {
+            add: m.thickness * m.softness.max(0.0) + 0.5,
+            ..Variant::plain(0.0)
+        }
+    } else {
+        core
+    };
+    let cov = raster_segs(
+        e,
+        b.img.width,
+        b.img.height,
+        m.segs.iter().map(|s| (s.a, s.b, s.r, s.v)),
+        &[core, halo],
+    )?;
     let mut p = Params::default();
     p.u[0][0] = m.composite as u32;
     p.f[0] = m.inside;
@@ -300,8 +392,18 @@ fn lightning(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let cpu = cpu_buf(e, &b, false)?;
     let plan = effectcraft_effects::bolt_plan(ctx, &cpu);
     let (w, h) = (b.img.width, b.img.height);
-    let core = Variant { mul: plan.core, min: 0.3, ..Variant::plain(0.6) };
-    let cov = raster_segs(e, w, h, plan.segs.iter().map(|s| (s.a, s.b, s.r, s.v)), &[Variant::plain(0.0), core])?;
+    let core = Variant {
+        mul: plan.core,
+        min: 0.3,
+        ..Variant::plain(0.6)
+    };
+    let cov = raster_segs(
+        e,
+        w,
+        h,
+        plan.segs.iter().map(|s| (s.a, s.b, s.r, s.v)),
+        &[Variant::plain(0.0), core],
+    )?;
     let glow = gauss_plane(e, &cov, plan.width * 0.5, plan.width * 0.5);
     let m = e.scratch(w, h);
     e.pixels("fg2_pair", &Params::default(), &cov, Some(&glow), &m, None);
@@ -314,20 +416,50 @@ fn lightning(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 fn advanced_lightning(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let pr = ctx.params;
-    let cpu = cpu_buf(e, &b, effectcraft_effects::plan_reads_pixels("ec.generate.advancedlightning", ctx))?;
+    let cpu = cpu_buf(
+        e,
+        &b,
+        effectcraft_effects::plan_reads_pixels("ec.generate.advancedlightning", ctx),
+    )?;
     let core_r = (pr.f("coreSettings/coreRadius") * b.scale).max(0.3);
     let glow_r = pr.f("glowSettings/glowRadius") * b.scale;
     let segs = effectcraft_effects::lightning_segments(ctx, &cpu);
     let (w, h) = (b.img.width, b.img.height);
-    let linear = Variant { linear: true, ..Variant::plain(0.0) };
-    let core = raster_segs(e, w, h, segs.iter().map(|(a, z, i)| ([a.0, a.1], [z.0, z.1], core_r, *i)), &[linear])?;
+    let linear = Variant {
+        linear: true,
+        ..Variant::plain(0.0)
+    };
+    let core = raster_segs(
+        e,
+        w,
+        h,
+        segs.iter()
+            .map(|(a, z, i)| ([a.0, a.1], [z.0, z.1], core_r, *i)),
+        &[linear],
+    )?;
     let glow = glow_r > 0.5;
-    let blurred = if glow { gauss_plane(e, &core, glow_r / 3.0, glow_r / 3.0) } else { core.clone() };
+    let blurred = if glow {
+        gauss_plane(e, &core, glow_r / 3.0, glow_r / 3.0)
+    } else {
+        core.clone()
+    };
     let m = e.scratch(w, h);
-    e.pixels("fg2_pair", &Params::default(), &core, Some(&blurred), &m, None);
+    e.pixels(
+        "fg2_pair",
+        &Params::default(),
+        &core,
+        Some(&blurred),
+        &m,
+        None,
+    );
     let mut p = Params::default();
     p.u[0] = [pr.b("compositeOnOriginal") as u32, glow as u32, 0, 0];
-    p.f[0] = [(pr.f("coreSettings/coreOpacity") / 100.0) as f32, (pr.f("glowSettings/glowOpacity") / 100.0) as f32, 0.0, 0.0];
+    p.f[0] = [
+        (pr.f("coreSettings/coreOpacity") / 100.0) as f32,
+        (pr.f("glowSettings/glowOpacity") / 100.0) as f32,
+        0.0,
+        0.0,
+    ];
     p.f[1] = rgb(pr.color("coreSettings/coreColor"));
     p.f[2] = rgb(pr.color("glowSettings/glowColor"));
     run(e, "fg2_adv_bolt", &p, b, Some(&m), None)
@@ -346,10 +478,25 @@ fn text(e: &mut Enc, id: &str, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
             effectcraft_effects::poly_segs(pl, false, pass.r, 1.0, &mut segs);
         }
         let sw = look.stroke_w.max(0.0);
-        let at = |add: f64| Variant { add, min: 0.05, ..Variant::plain(1.0) };
-        let cov = raster_segs(e, w, h, segs.iter().map(|s| (s.a, s.b, s.r, s.v)), &[at(0.0), at(sw * 0.5), at(-sw * 0.5)])?;
+        let at = |add: f64| Variant {
+            add,
+            min: 0.05,
+            ..Variant::plain(1.0)
+        };
+        let cov = raster_segs(
+            e,
+            w,
+            h,
+            segs.iter().map(|s| (s.a, s.b, s.r, s.v)),
+            &[at(0.0), at(sw * 0.5), at(-sw * 0.5)],
+        )?;
         let mut p = Params::default();
-        p.u[0] = [look.display, look.on_original as u32, (look.display != 0 && sw > 0.0) as u32, (pass.r - sw * 0.5 > 0.05) as u32];
+        p.u[0] = [
+            look.display,
+            look.on_original as u32,
+            (look.display != 0 && sw > 0.0) as u32,
+            (pass.r - sw * 0.5 > 0.05) as u32,
+        ];
         p.f[0] = look.fill;
         p.f[1] = look.stroke;
         p.f[2][0] = look.opacity;
@@ -362,7 +509,9 @@ fn text(e: &mut Enc, id: &str, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 
 fn radio_waves(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let cpu = cpu_buf(e, &b, false)?;
-    let Some(plan) = effectcraft_effects::radio_plan(ctx, &cpu) else { return Some(b) };
+    let Some(plan) = effectcraft_effects::radio_plan(ctx, &cpu) else {
+        return Some(b);
+    };
     let n = plan.waves.len();
     let mut data = Vec::with_capacity(n * 13);
     let mut outlines = Vec::new();
@@ -425,10 +574,25 @@ fn beam(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let t0 = time * (1.0 - len);
     let (dx, dy) = (en.0 - s.0, en.1 - s.1);
     let mut p = Params::default();
-    p.u[0] = [pr.b("perspective3d") as u32, pr.b("compositeOnOriginal") as u32, (len > 0.0) as u32, 0];
+    p.u[0] = [
+        pr.b("perspective3d") as u32,
+        pr.b("compositeOnOriginal") as u32,
+        (len > 0.0) as u32,
+        0,
+    ];
     p.f[0] = [s.0 as f32, s.1 as f32, dx as f32, dy as f32];
-    p.f[1] = [t0 as f32, (t0 + len) as f32, (pr.f("startThickness") * b.scale) as f32, (pr.f("endThickness") * b.scale) as f32];
-    p.f[2] = [(pr.f("softness") / 100.0).clamp(0.0, 1.0) as f32, (dx * dx + dy * dy).max(1e-9) as f32, 0.0, 0.0];
+    p.f[1] = [
+        t0 as f32,
+        (t0 + len) as f32,
+        (pr.f("startThickness") * b.scale) as f32,
+        (pr.f("endThickness") * b.scale) as f32,
+    ];
+    p.f[2] = [
+        (pr.f("softness") / 100.0).clamp(0.0, 1.0) as f32,
+        (dx * dx + dy * dy).max(1e-9) as f32,
+        0.0,
+        0.0,
+    ];
     p.f[3] = rgb(pr.color("insideColor"));
     p.f[4] = rgb(pr.color("outsideColor"));
     run(e, "fg2_beam", &p, b, None, None)
@@ -447,12 +611,30 @@ fn lens_flare(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         _ => (0.03, 8.0, 0.25),
     };
     let ghosts = effectcraft_effects::flare_ghosts(lens);
-    let data: Vec<f32> = ghosts.iter().flat_map(|g| [g.t as f32, g.r as f32, g.c[0], g.c[1], g.c[2], g.k, g.ring as u32 as f32]).collect();
+    let data: Vec<f32> = ghosts
+        .iter()
+        .flat_map(|g| {
+            [
+                g.t as f32,
+                g.r as f32,
+                g.c[0],
+                g.c[1],
+                g.c[2],
+                g.k,
+                g.ring as u32 as f32,
+            ]
+        })
+        .collect();
     let mut p = Params::default();
     p.u[0][0] = ghosts.len() as u32;
     p.f[0] = [f.0 as f32, f.1 as f32, c.0 as f32, c.1 as f32];
     p.f[1] = [diag as f32, core_k, rays, halo_r];
-    p.f[2] = [(pr.f("flareBrightness") / 100.0) as f32, (pr.f("blendWithOriginal") / 100.0) as f32, 0.0, 0.0];
+    p.f[2] = [
+        (pr.f("flareBrightness") / 100.0) as f32,
+        (pr.f("blendWithOriginal") / 100.0) as f32,
+        0.0,
+        0.0,
+    ];
     let buf = e.data(&data);
     run(e, "fg2_flare", &p, b, None, Some(&buf))
 }
@@ -472,11 +654,20 @@ fn glue_gun(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     for i in 0..beads {
         let a = hash(i, 1) * 2.0 * std::f64::consts::PI;
         let d = if i == 0 { 0.0 } else { hash(i, 2) * rad * 0.35 };
-        data.extend([(q.0 + a.cos() * d) as f32, (q.1 + a.sin() * d) as f32, (rad * (0.75 + 0.25 * hash(i, 3))) as f32]);
+        data.extend([
+            (q.0 + a.cos() * d) as f32,
+            (q.1 + a.sin() * d) as f32,
+            (rad * (0.75 + 0.25 * hash(i, 3))) as f32,
+        ]);
     }
     let mut p = Params::default();
     p.u[0] = [beads as u32, (pr.e("style") == 1) as u32, 0, 0];
-    p.f[0] = [(refl.cos() * 0.6) as f32, (-refl.sin() * 0.6) as f32, 0.53, strength];
+    p.f[0] = [
+        (refl.cos() * 0.6) as f32,
+        (-refl.sin() * 0.6) as f32,
+        0.53,
+        strength,
+    ];
     p.f[1][0] = strength.clamp(0.0, 1.0).max(0.3);
     let buf = e.data(&data);
     run(e, "fg2_glue", &p, b, None, Some(&buf))
@@ -528,7 +719,11 @@ fn paint_bucket(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let cov = match pr.e("stroke") {
         1 => {
             let s = pr.f("featherSoftness") * sc * 0.5;
-            if s > 0.05 { gauss_plane(e, &region, s, s) } else { region }
+            if s > 0.05 {
+                gauss_plane(e, &region, s, s)
+            } else {
+                region
+            }
         }
         2 => morph_frac(e, &region, pr.f("spreadRadius") * sc, DILATE_X),
         3 => morph_frac(e, &region, pr.f("spreadRadius") * sc, ERODE_X),

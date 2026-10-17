@@ -377,7 +377,10 @@ mod tests {
         let words = emit_spirv(&program, &profile, &Default::default());
 
         assert_eq!(count_opcode(&words, rspirv::spirv::Op::EmitStreamVertex), 1);
-        assert_eq!(count_opcode(&words, rspirv::spirv::Op::EndStreamPrimitive), 1);
+        assert_eq!(
+            count_opcode(&words, rspirv::spirv::Op::EndStreamPrimitive),
+            1
+        );
     }
 
     #[test]

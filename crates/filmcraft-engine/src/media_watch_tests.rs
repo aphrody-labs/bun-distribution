@@ -48,9 +48,19 @@ fn a_rerendered_movie_is_read_again_without_an_undo_step() {
     assert_eq!(refresh(&mut s), json!({"refreshed": [item.0]}));
     let m = s.project.item(item).unwrap().as_media().unwrap().clone();
     assert_eq!(m.info.duration.0, length.0 * 2, "the new length");
-    assert_eq!(m.identity, crate::relink::identity_of(&*s.services, &a.to_string_lossy()).ok(), "relinking compares with the new file");
+    assert_eq!(
+        m.identity,
+        crate::relink::identity_of(&*s.services, &a.to_string_lossy()).ok(),
+        "relinking compares with the new file"
+    );
     let after = frame_rgba(&mut s, 3, 1.0).2;
-    assert!(psnr(&after, &reference("watch-rerender-ref", DemoScene::CityNight, 24)) > 40.0, "the new picture");
+    assert!(
+        psnr(
+            &after,
+            &reference("watch-rerender-ref", DemoScene::CityNight, 24)
+        ) > 40.0,
+        "the new picture"
+    );
     assert!(psnr(&after, &before) < 30.0, "not the old one");
     assert_eq!(s.history.undo.len(), undo, "the file changed, not the edit");
     assert!(!s.is_dirty());

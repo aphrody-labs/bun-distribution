@@ -128,7 +128,11 @@ impl<'a> Scope<'a> {
         }
         let groups: Vec<ObjRef> = match d.get(b"OCGs").map(|g| (*doc.resolve(g)).clone()) {
             Some(Object::Array(a)) => a.iter().filter_map(Object::as_ref).collect(),
-            Some(_) => d.get(b"OCGs").and_then(Object::as_ref).into_iter().collect(),
+            Some(_) => d
+                .get(b"OCGs")
+                .and_then(Object::as_ref)
+                .into_iter()
+                .collect(),
             None => Vec::new(),
         };
         !groups.is_empty() && groups.iter().all(|g| self.hidden_layers.contains(g))
@@ -149,7 +153,9 @@ impl<'a> Scope<'a> {
     fn glyph_hit(&self, b: [f64; 4], origin: (f64, f64)) -> bool {
         let (gw, gh) = (b[2] - b[0], b[3] - b[1]);
         if gw < 0.01 || gh < 0.01 {
-            return self.rects.iter().any(|r| origin.0 >= r[0] && origin.0 <= r[2] && origin.1 >= r[1] && origin.1 <= r[3]);
+            return self.rects.iter().any(|r| {
+                origin.0 >= r[0] && origin.0 <= r[2] && origin.1 >= r[1] && origin.1 <= r[3]
+            });
         }
         let (mx, my) = ((gw * 0.2).min(1.0), (gh * 0.2).min(1.0));
         self.rects.iter().any(|r| {
@@ -161,7 +167,10 @@ impl<'a> Scope<'a> {
 }
 
 fn res_dict(doc: &Document, res: &Dict, key: &[u8]) -> Dict {
-    res.get(key).map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default()
+    res.get(key)
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_dict().cloned())
+        .unwrap_or_default()
 }
 
 /// Does this font write vertically? Only a Type0 (composite) font can: its `/Encoding` is a
@@ -210,7 +219,14 @@ pub(crate) fn prune(xo: &mut Dict, replaced: &[Vec<u8>], content: &[Vec<u8>]) {
 /// Whether `content` draws the XObject `name` of the resource dictionary `xo`: directly, or
 /// through a form that has no /Resources of its own (such a form draws through its caller's).
 /// `None` when that cannot be told (a form that will not decode, or nesting past the limit).
-fn content_draws(doc: &Document, content: &[Vec<u8>], xo: &Dict, name: &[u8], depth: usize, seen: &mut HashSet<ObjRef>) -> Option<bool> {
+fn content_draws(
+    doc: &Document,
+    content: &[Vec<u8>],
+    xo: &Dict,
+    name: &[u8],
+    depth: usize,
+    seen: &mut HashSet<ObjRef>,
+) -> Option<bool> {
     let joined = Pieces::join(content);
     let ops = joined.parse().ops;
     for op in ops.iter().filter(|op| op.is("Do")) {
@@ -218,10 +234,15 @@ fn content_draws(doc: &Document, content: &[Vec<u8>], xo: &Dict, name: &[u8], de
         if n == name {
             return Some(true);
         }
-        let Some(r) = xo.get(n).and_then(Object::as_ref) else { continue };
+        let Some(r) = xo.get(n).and_then(Object::as_ref) else {
+            continue;
+        };
         let obj = doc.get(r);
         let Object::Stream(s) = &*obj else { continue };
-        if s.dict.name(b"Subtype") != Some(b"Form") || s.dict.contains(b"Resources") || !seen.insert(r) {
+        if s.dict.name(b"Subtype") != Some(b"Form")
+            || s.dict.contains(b"Resources")
+            || !seen.insert(r)
+        {
             continue;
         }
         if depth >= MAX_DEPTH {
@@ -252,7 +273,12 @@ pub(crate) fn unlink_doomed(doc: &mut Document, doomed: &[ObjRef]) -> Result<(),
         return Ok(());
     }
     let doomed: HashSet<ObjRef> = doomed.iter().copied().collect();
-    let Some(top) = doc.root().and_then(|root| doc.get(root).as_dict().and_then(|d| d.reference(b"Pages"))) else { return Ok(()) };
+    let Some(top) = doc
+        .root()
+        .and_then(|root| doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")))
+    else {
+        return Ok(());
+    };
     // Every page-tree node with a /Resources of its own, and the pages that draw through it
     // (the nearest such node above a page, or the page itself). Cycles are cut as in
     // `pdfcraft_model::pages`.
@@ -269,19 +295,39 @@ pub(crate) fn unlink_doomed(doc: &mut Document, doomed: &[ObjRef]) -> Result<(),
             holders.push((node, Vec::new()));
             holder = Some(holders.len() - 1);
         }
-        let is_pages = d.name(b"Type") == Some(b"Pages") || (d.contains(b"Kids") && d.name(b"Type") != Some(b"Page"));
+        let is_pages = d.name(b"Type") == Some(b"Pages")
+            || (d.contains(b"Kids") && d.name(b"Type") != Some(b"Page"));
         if is_pages {
-            let kids = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
+            let kids = d
+                .get(b"Kids")
+                .map(|k| doc.resolve(k))
+                .and_then(|k| k.as_array().cloned())
+                .unwrap_or_default();
             stack.extend(kids.iter().filter_map(Object::as_ref).map(|k| (k, holder)));
         } else if let Some(h) = holder.and_then(|i| holders.get_mut(i)) {
             h.1.push(node);
         }
     }
-    let index: HashMap<ObjRef, usize> = pdfcraft_model::pages(doc).iter().enumerate().map(|(i, p)| (p.obj, i)).collect();
+    let index: HashMap<ObjRef, usize> = pdfcraft_model::pages(doc)
+        .iter()
+        .enumerate()
+        .map(|(i, p)| (p.obj, i))
+        .collect();
     for (node, users) in holders {
-        let Some(res) = doc.get(node).as_dict().and_then(|d| d.get(b"Resources")).and_then(|r| doc.resolve(r).as_dict().cloned()) else { continue };
+        let Some(res) = doc
+            .get(node)
+            .as_dict()
+            .and_then(|d| d.get(b"Resources"))
+            .and_then(|r| doc.resolve(r).as_dict().cloned())
+        else {
+            continue;
+        };
         let mut xo = res_dict(doc, &res, b"XObject");
-        let names: Vec<Vec<u8>> = xo.iter().filter(|(_, v)| v.as_ref().is_some_and(|r| doomed.contains(&r))).map(|(n, _)| n.to_vec()).collect();
+        let names: Vec<Vec<u8>> = xo
+            .iter()
+            .filter(|(_, v)| v.as_ref().is_some_and(|r| doomed.contains(&r)))
+            .map(|(n, _)| n.to_vec())
+            .collect();
         if names.is_empty() {
             continue;
         }
@@ -324,14 +370,27 @@ pub(crate) fn unlink_doomed(doc: &mut Document, doomed: &[ObjRef]) -> Result<(),
 fn clip_out(rects: &[[f64; 4]], ctm: &Matrix, around: [f64; 4]) -> Option<Vec<Op>> {
     let inv = ctm.invert()?;
     let mut ops = Vec::new();
-    let big = [around[0] - 10.0, around[1] - 10.0, around[2] + 10.0, around[3] + 10.0];
+    let big = [
+        around[0] - 10.0,
+        around[1] - 10.0,
+        around[2] + 10.0,
+        around[3] + 10.0,
+    ];
     for r in rects.iter().filter(|r| overlaps(**r, around, 0.0)) {
-        let outer = [(big[0], big[1]), (big[2], big[1]), (big[2], big[3]), (big[0], big[3])];
+        let outer = [
+            (big[0], big[1]),
+            (big[2], big[1]),
+            (big[2], big[3]),
+            (big[0], big[3]),
+        ];
         let inner = [(r[0], r[1]), (r[0], r[3]), (r[2], r[3]), (r[2], r[1])];
         for poly in [outer, inner] {
             for (k, (x, y)) in poly.iter().enumerate() {
                 let (u, v) = inv.apply(*x, *y);
-                ops.push(Op::new(if k == 0 { "m" } else { "l" }, vec![num(u), num(v)]));
+                ops.push(Op::new(
+                    if k == 0 { "m" } else { "l" },
+                    vec![num(u), num(v)],
+                ));
             }
             ops.push(Op::new("h", vec![]));
         }
@@ -350,7 +409,13 @@ struct Glyph {
 }
 
 /// Process a scope's content streams (state flows from one stream to the next).
-pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<u8>], resources: &Dict, ctm: Matrix) -> Output {
+pub(crate) fn process(
+    doc: &mut Document,
+    scope: &mut Scope<'_>,
+    streams: &[Vec<u8>],
+    resources: &Dict,
+    ctm: Matrix,
+) -> Output {
     let mut out = Output::default();
     let fallback = Rc::new(Metrics::fallback());
     let mut gs = Gs {
@@ -410,11 +475,26 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
         for op in piece {
             let o = op.op.as_slice();
             // Path construction.
-            if matches!(o, b"m" | b"l" | b"c" | b"v" | b"y" | b"h" | b"re" | b"W" | b"W*") {
+            if matches!(
+                o,
+                b"m" | b"l" | b"c" | b"v" | b"y" | b"h" | b"re" | b"W" | b"W*"
+            ) {
                 let pts: Vec<(f64, f64)> = match o {
-                    b"re" => op.nums::<4>().map(|[x, y, w, h]| vec![(x, y), (x + w, y), (x, y + h), (x + w, y + h)]).unwrap_or_default(),
+                    b"re" => op
+                        .nums::<4>()
+                        .map(|[x, y, w, h]| vec![(x, y), (x + w, y), (x, y + h), (x + w, y + h)])
+                        .unwrap_or_default(),
                     b"h" | b"W" | b"W*" => Vec::new(),
-                    _ => op.operands.iter().filter_map(Object::as_f64).collect::<Vec<_>>().as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).collect(),
+                    _ => op
+                        .operands
+                        .iter()
+                        .filter_map(Object::as_f64)
+                        .collect::<Vec<_>>()
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|p| (p[0], p[1]))
+                        .collect(),
                 };
                 for (x, y) in pts {
                     let (u, v) = gs.ctm.apply(x, y);
@@ -427,11 +507,15 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                 path.push(op);
                 continue;
             }
-            if matches!(o, b"S" | b"s" | b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"n") {
+            if matches!(
+                o,
+                b"S" | b"s" | b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"n"
+            ) {
                 let body = std::mem::take(&mut path);
                 let bbox = path_box.take();
                 let clips = std::mem::replace(&mut clip, false);
-                let hit = scope.mode == Mode::Apply && o != b"n" && bbox.is_some_and(|b| scope.hits(b));
+                let hit =
+                    scope.mode == Mode::Apply && o != b"n" && bbox.is_some_and(|b| scope.hits(b));
                 if !hit {
                     ops.extend(body);
                     ops.push(op);
@@ -451,7 +535,11 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                     // paint it clipped, then set its clip with a no-op path.
                     scope.report.paths_clipped += 1;
                     if let Some(c) = clip_out(scope.rects, &gs.ctm, b) {
-                        let plain: Vec<Op> = body.iter().filter(|p| !p.is("W") && !p.is("W*")).cloned().collect();
+                        let plain: Vec<Op> = body
+                            .iter()
+                            .filter(|p| !p.is("W") && !p.is("W*"))
+                            .cloned()
+                            .collect();
                         ops.push(Op::new("q", vec![]));
                         ops.extend(c);
                         ops.extend(plain);
@@ -497,12 +585,17 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                 b"Tf" => {
                     gs.size = op.num(1).unwrap_or(gs.size);
                     if let Some(name) = op.name(0) {
-                        let font_dict = fonts_res.get(name).and_then(|f| doc.resolve(f).as_dict().cloned());
+                        let font_dict = fonts_res
+                            .get(name)
+                            .and_then(|f| doc.resolve(f).as_dict().cloned());
                         gs.vertical = font_dict.as_ref().is_some_and(|d| is_vertical(doc, d));
                         gs.font = match scope.fonts.get(name) {
                             Some(f) => f.clone(),
                             None => {
-                                let m = font_dict.as_ref().map(|d| Rc::new(Metrics::from_dict(doc, d))).unwrap_or_else(|| fallback.clone());
+                                let m = font_dict
+                                    .as_ref()
+                                    .map(|d| Rc::new(Metrics::from_dict(doc, d)))
+                                    .unwrap_or_else(|| fallback.clone());
                                 scope.fonts.insert(name.to_vec(), m.clone());
                                 m
                             }
@@ -544,7 +637,12 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                         tm = tlm;
                     }
                     let items: Vec<Object> = match o {
-                        b"TJ" => op.operands.first().and_then(Object::as_array).cloned().unwrap_or_default(),
+                        b"TJ" => op
+                            .operands
+                            .first()
+                            .and_then(Object::as_array)
+                            .cloned()
+                            .unwrap_or_default(),
                         _ => op.operands.last().cloned().into_iter().collect(),
                     };
                     // Vertical-writing text is laid out horizontally by `show`, so its glyphs are
@@ -555,7 +653,9 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                         && scope.mode == Mode::Apply
                         && scope.hidden_text.is_none()
                         && !scope.rects.is_empty()
-                        && items.iter().any(|o| matches!(o, Object::String(s) if !s.bytes.is_empty()))
+                        && items
+                            .iter()
+                            .any(|o| matches!(o, Object::String(s) if !s.bytes.is_empty()))
                     {
                         out.vertical = true;
                     }
@@ -607,7 +707,9 @@ pub(crate) fn process(doc: &mut Document, scope: &mut Scope<'_>, streams: &[Vec<
                     }
                 }
                 b"Do" => {
-                    if let Some(new) = xobject(doc, scope, &op, &gs, resources, &mut xobjects, &mut out) {
+                    if let Some(new) =
+                        xobject(doc, scope, &op, &gs, resources, &mut xobjects, &mut out)
+                    {
                         changed = true;
                         if let Some(n) = new {
                             ops.push(n);
@@ -654,8 +756,15 @@ fn show(scope: &Scope<'_>, gs: &Gs, tm: &mut Matrix, items: &[Object]) -> (Vec<O
                 let mut pos = 0;
                 for (code, len) in f.codes(bytes) {
                     let w0 = f.width(code);
-                    let spacing = gs.char_spacing + if f.is_space(code, len) { gs.word_spacing } else { 0.0 };
-                    let trm = Matrix([size * gs.scale, 0.0, 0.0, size, 0.0, gs.rise]).then(tm).then(&gs.ctm);
+                    let spacing = gs.char_spacing
+                        + if f.is_space(code, len) {
+                            gs.word_spacing
+                        } else {
+                            0.0
+                        };
+                    let trm = Matrix([size * gs.scale, 0.0, 0.0, size, 0.0, gs.rise])
+                        .then(tm)
+                        .then(&gs.ctm);
                     let b = trm.bbox([0.0, f.descent, w0, f.ascent]);
                     let origin = trm.apply(0.0, 0.0);
                     let advance = w0 * size + spacing;
@@ -663,11 +772,16 @@ fn show(scope: &Scope<'_>, gs: &Gs, tm: &mut Matrix, items: &[Object]) -> (Vec<O
                         // Invisible (Tr 3) and clip-only (Tr 7) text, or text wholly off the page.
                         Some(page) => {
                             let degenerate = b[2] - b[0] < 0.01 && b[3] - b[1] < 0.01;
-                            matches!(gs.render_mode, 3 | 7) || !(overlaps(page, b, 0.0) || degenerate)
+                            matches!(gs.render_mode, 3 | 7)
+                                || !(overlaps(page, b, 0.0) || degenerate)
                         }
                         None => scope.glyph_hit(b, origin),
                     };
-                    glyphs.push(Glyph { bytes: pos..pos + len, advance, hit });
+                    glyphs.push(Glyph {
+                        bytes: pos..pos + len,
+                        advance,
+                        hit,
+                    });
                     *tm = Matrix::translate(advance * gs.scale, 0.0).then(tm);
                     pos += len;
                 }
@@ -714,9 +828,15 @@ fn xobject(
     let name = op.name(0)?.to_vec();
     let r = xobjects.get(&name)?.as_ref()?;
     let obj = doc.get(r);
-    let Object::Stream(s) = &*obj else { return None };
+    let Object::Stream(s) = &*obj else {
+        return None;
+    };
     match s.dict.name(b"Subtype") {
-        _ if s.dict.get(b"OC").is_some_and(|oc| scope.layer_hidden(doc, oc)) => {
+        _ if s
+            .dict
+            .get(b"OC")
+            .is_some_and(|oc| scope.layer_hidden(doc, oc)) =>
+        {
             if scope.mode == Mode::Verify {
                 return None;
             }
@@ -757,11 +877,27 @@ fn xobject(
             }
         }
         Some(b"Form") => {
-            let m = s.dict.get(b"Matrix").and_then(|m| Matrix::from_operands(doc.resolve(m).as_array()?)).unwrap_or_default();
+            let m = s
+                .dict
+                .get(b"Matrix")
+                .and_then(|m| Matrix::from_operands(doc.resolve(m).as_array()?))
+                .unwrap_or_default();
             let fctm = m.then(&gs.ctm);
             let bbox = s.dict.get(b"BBox").and_then(|b| {
-                let v: Vec<f64> = doc.resolve(b).as_array()?.iter().filter_map(Object::as_f64).collect();
-                (v.len() == 4).then(|| [v[0].min(v[2]), v[1].min(v[3]), v[0].max(v[2]), v[1].max(v[3])])
+                let v: Vec<f64> = doc
+                    .resolve(b)
+                    .as_array()?
+                    .iter()
+                    .filter_map(Object::as_f64)
+                    .collect();
+                (v.len() == 4).then(|| {
+                    [
+                        v[0].min(v[2]),
+                        v[1].min(v[3]),
+                        v[0].max(v[2]),
+                        v[1].max(v[3]),
+                    ]
+                })
             });
             if let Some(bb) = bbox
                 && !scope.everywhere()
@@ -788,7 +924,10 @@ fn xobject(
                 }
                 Err(_) => return None,
             };
-            let own = s.dict.get(b"Resources").and_then(|r| doc.resolve(r).as_dict().cloned());
+            let own = s
+                .dict
+                .get(b"Resources")
+                .and_then(|r| doc.resolve(r).as_dict().cloned());
             let res = own.clone().unwrap_or_else(|| resources.clone());
             let saved_fonts = std::mem::take(&mut scope.fonts);
             scope.depth += 1;
@@ -822,10 +961,14 @@ fn xobject(
                 res.set(b"XObject".to_vec(), Object::Dict(xo));
                 dict.set(b"Resources".to_vec(), Object::Dict(res));
             }
-            let (changed, empty) = tags::touched(doc, &res, &data, new_data.as_deref().unwrap_or(&data));
+            let (changed, empty) =
+                tags::touched(doc, &res, &data, new_data.as_deref().unwrap_or(&data));
             let stream = match new_data {
                 Some(d) => Stream::flate(dict, &d),
-                None => Stream { dict, raw: s.raw.clone() },
+                None => Stream {
+                    dict,
+                    raw: s.raw.clone(),
+                },
             };
             let nr = doc.add(Object::Stream(stream));
             out.tag_changes.push((r, nr, changed, empty));
@@ -843,7 +986,12 @@ fn xobject(
 
 /// Remove marked-content blocks of hidden layers (`/OC /name BDC … EMC`, nested blocks
 /// included). Returns the remaining operators and how many blocks went.
-fn strip_hidden_layers(doc: &Document, scope: &Scope<'_>, ops: Vec<Op>, props: &Dict) -> (Vec<Op>, usize) {
+fn strip_hidden_layers(
+    doc: &Document,
+    scope: &Scope<'_>,
+    ops: Vec<Op>,
+    props: &Dict,
+) -> (Vec<Op>, usize) {
     let mut out = Vec::with_capacity(ops.len());
     // For each open marked-content block: does it hide its contents?
     let mut stack: Vec<bool> = Vec::new();
@@ -855,7 +1003,9 @@ fn strip_hidden_layers(doc: &Document, scope: &Scope<'_>, ops: Vec<Op>, props: &
                 let this = op.is("BDC")
                     && op.name(0) == Some(b"OC")
                     && match op.operands.get(1) {
-                        Some(Object::Name(n)) => props.get(n).is_some_and(|o| scope.layer_hidden(doc, o)),
+                        Some(Object::Name(n)) => {
+                            props.get(n).is_some_and(|o| scope.layer_hidden(doc, o))
+                        }
                         Some(o) => scope.layer_hidden(doc, o),
                         None => false,
                     };

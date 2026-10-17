@@ -10,43 +10,113 @@ fn every_spec_matches_a_prefs_field_and_back() {
     let all = Prefs::default().to_json();
     let obj = all.as_object().unwrap();
     for sp in PREF_SPECS {
-        assert!(obj.contains_key(sp.key), "spec `{}` has no Prefs field", sp.key);
-        assert!(PREF_CATEGORIES.contains(&sp.category), "spec `{}` has unknown category", sp.key);
+        assert!(
+            obj.contains_key(sp.key),
+            "spec `{}` has no Prefs field",
+            sp.key
+        );
+        assert!(
+            PREF_CATEGORIES.contains(&sp.category),
+            "spec `{}` has unknown category",
+            sp.key
+        );
         // Defaults validate against their own spec.
-        assert!(validate(sp.key, &obj[sp.key]).is_ok(), "default of `{}` fails validation", sp.key);
+        assert!(
+            validate(sp.key, &obj[sp.key]).is_ok(),
+            "default of `{}` fails validation",
+            sp.key
+        );
     }
     for k in obj.keys() {
-        assert!(PREF_SPECS.iter().any(|s| s.key == k) || PREF_GROUPS.contains(&k.as_str()), "Prefs field `{k}` has no spec");
+        assert!(
+            PREF_SPECS.iter().any(|s| s.key == k) || PREF_GROUPS.contains(&k.as_str()),
+            "Prefs field `{k}` has no spec"
+        );
     }
     for c in PREF_CATEGORIES {
-        assert!(PREF_SPECS.iter().any(|s| s.category == *c), "category {c} is empty");
+        assert!(
+            PREF_SPECS.iter().any(|s| s.category == *c),
+            "category {c} is empty"
+        );
     }
 }
 
 #[test]
 fn set_and_get_keyboard_increment_drives_nudge() {
     let mut s = Session::new();
-    s.execute("prefs.set", &json!({"key": "keyboardIncrement", "value": 5})).unwrap();
-    assert_eq!(s.execute("prefs.get", &json!({"key": "keyboardIncrement"})).unwrap(), json!(5.0));
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-    let r = s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "keyboardIncrement", "value": 5}),
+    )
+    .unwrap();
+    assert_eq!(
+        s.execute("prefs.get", &json!({"key": "keyboardIncrement"}))
+            .unwrap(),
+        json!(5.0)
+    );
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
+    let r = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 10, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
     let id = NodeId(r["id"].as_u64().unwrap());
-    s.execute("object.nudge", &json!({"dx": 1, "dy": 0})).unwrap();
-    let b = s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap();
+    s.execute("object.nudge", &json!({"dx": 1, "dy": 0}))
+        .unwrap();
+    let b = s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .geometric_bounds()
+        .unwrap();
     assert!((b.x0 - 15.0).abs() < 1e-9);
 }
 
 #[test]
 fn set_rejects_out_of_range_and_wrong_types() {
     let mut s = Session::new();
-    assert!(s.execute("prefs.set", &json!({"key": "keyboardIncrement", "value": -1})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "anchorSize", "value": 9})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "anchorSize", "value": 2.5})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "scaleStrokes", "value": 3})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "uiBrightness", "value": "purple"})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "gridColor", "value": "#12345"})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "nope", "value": 1})).is_err());
-    assert!(s.execute("prefs.set", &json!({"key": "scaleStrokes"})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            &json!({"key": "keyboardIncrement", "value": -1})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "anchorSize", "value": 9}))
+            .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "anchorSize", "value": 2.5}))
+            .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "scaleStrokes", "value": 3}))
+            .is_err()
+    );
+    assert!(
+        s.execute(
+            "prefs.set",
+            &json!({"key": "uiBrightness", "value": "purple"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "gridColor", "value": "#12345"}))
+            .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "nope", "value": 1}))
+            .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", &json!({"key": "scaleStrokes"}))
+            .is_err()
+    );
     assert_eq!(s.prefs, Prefs::default());
 }
 
@@ -68,15 +138,26 @@ fn set_normalizes_strings_labels_and_colours() {
 #[test]
 fn batch_set_is_atomic() {
     let mut s = Session::new();
-    assert!(s.execute("prefs.set", &json!({"values": {"keyboardIncrement": 3, "anchorSize": 99}})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            &json!({"values": {"keyboardIncrement": 3, "anchorSize": 99}})
+        )
+        .is_err()
+    );
     assert_eq!(s.prefs.keyboard_increment, 1.0);
 }
 
 #[test]
 fn grid_prefs_apply_to_open_documents() {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-    s.execute("prefs.set", &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}}),
+    )
+    .unwrap();
     let g = &s.doc().unwrap().doc.grid;
     assert_eq!((g.spacing, g.subdivisions), (36.0, 4));
 }
@@ -86,8 +167,13 @@ fn grid_prefs_apply_to_open_documents() {
 #[test]
 fn grid_prefs_apply_to_new_documents() {
     let mut s = Session::new();
-    s.execute("prefs.set", &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}})).unwrap();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}}),
+    )
+    .unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     let g = &s.doc().unwrap().doc.grid;
     assert_eq!((g.spacing, g.subdivisions), (36.0, 4));
 }
@@ -101,21 +187,40 @@ const GRIDLESS_SVG: &str = r#"<svg xmlns="http://www.w3.org/2000/svg" width="100
 #[test]
 fn grid_prefs_apply_to_opened_files_without_a_grid() {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-    s.execute("prefs.set", &json!({"values": {"gridlineEvery": 18, "gridSubdivisions": 3}})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"gridlineEvery": 18, "gridSubdivisions": 3}}),
+    )
+    .unwrap();
     let native = vectorcraft_format::save(&s.doc().unwrap().doc, false);
     let mut pdf = |editing: bool| {
-        let v = s.execute("document.exportPdf", &json!({"preserveEditing": editing})).unwrap();
+        let v = s
+            .execute("document.exportPdf", &json!({"preserveEditing": editing}))
+            .unwrap();
         vectorcraft_format::base64_decode(v["dataBase64"].as_str().unwrap()).unwrap()
     };
     let (editable, plain) = (pdf(true), pdf(false));
-    s.execute("prefs.set", &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"gridlineEvery": 36, "gridSubdivisions": 4}}),
+    )
+    .unwrap();
     let mut open = |name: &str, bytes: &[u8]| {
-        let r = s.execute("document.open", &json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)})).unwrap();
+        let r = s
+            .execute(
+                "document.open",
+                &json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)}),
+            )
+            .unwrap();
         let g = &s.doc().unwrap().doc.grid;
         (g.spacing, g.subdivisions, r["restored"].as_bool().unwrap())
     };
-    assert_eq!(open("drawing.svg", GRIDLESS_SVG.as_bytes()), (36.0, 4, false));
+    assert_eq!(
+        open("drawing.svg", GRIDLESS_SVG.as_bytes()),
+        (36.0, 4, false)
+    );
     assert_eq!(open("plain.pdf", &plain), (36.0, 4, false));
     assert_eq!(open("saved.vectorcraft", &native), (18.0, 3, false));
     assert_eq!(open("editable.pdf", &editable), (18.0, 3, true));
@@ -131,14 +236,28 @@ fn grid_prefs_apply_to_reverted_files_without_a_grid() {
     let (svg, native) = (path("drawing.svg"), path("saved.vectorcraft"));
     std::fs::write(&svg, GRIDLESS_SVG).unwrap();
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-    s.execute("prefs.set", &json!({"values": {"gridlineEvery": 18, "gridSubdivisions": 3}})).unwrap();
-    s.execute("document.save", &json!({"path": native})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"gridlineEvery": 18, "gridSubdivisions": 3}}),
+    )
+    .unwrap();
+    s.execute("document.save", &json!({"path": native}))
+        .unwrap();
     // The preference changes while the file is open, which sets the open documents' grid.
     let mut reverted = |file: &str, every: f64| {
         s.execute("document.open", &json!({"path": file})).unwrap();
-        s.execute("prefs.set", &json!({"values": {"gridlineEvery": every, "gridSubdivisions": 4}})).unwrap();
-        s.execute("shape.rectangle", &json!({"x": 20, "y": 20, "width": 10, "height": 10})).unwrap();
+        s.execute(
+            "prefs.set",
+            &json!({"values": {"gridlineEvery": every, "gridSubdivisions": 4}}),
+        )
+        .unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": 20, "y": 20, "width": 10, "height": 10}),
+        )
+        .unwrap();
         s.execute("file.revert", &json!({})).unwrap();
         let g = &s.doc().unwrap().doc.grid;
         (g.spacing, g.subdivisions)
@@ -151,10 +270,16 @@ fn grid_prefs_apply_to_reverted_files_without_a_grid() {
 #[test]
 fn history_states_limit_undo_depth() {
     let mut s = Session::new();
-    s.execute("prefs.set", &json!({"key": "historyStates", "value": 5})).unwrap();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("prefs.set", &json!({"key": "historyStates", "value": 5}))
+        .unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     for i in 0..9 {
-        s.execute("shape.rectangle", &json!({"x": i * 10, "y": 0, "width": 5, "height": 5})).unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": i * 10, "y": 0, "width": 5, "height": 5}),
+        )
+        .unwrap();
     }
     assert!(s.doc().unwrap().history.undo.len() <= 5);
 }
@@ -162,13 +287,21 @@ fn history_states_limit_undo_depth() {
 #[test]
 fn reset_category_and_all() {
     let mut s = Session::new();
-    s.execute("prefs.set", &json!({"values": {"keyboardIncrement": 7, "gridColor": "#000000"}})).unwrap();
-    s.execute("prefs.reset", &json!({"category": "General"})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"values": {"keyboardIncrement": 7, "gridColor": "#000000"}}),
+    )
+    .unwrap();
+    s.execute("prefs.reset", &json!({"category": "General"}))
+        .unwrap();
     assert_eq!(s.prefs.keyboard_increment, 1.0);
     assert_eq!(s.prefs.grid_color, "#000000");
     s.execute("prefs.reset", &json!({})).unwrap();
     assert_eq!(s.prefs, Prefs::default());
-    assert!(s.execute("prefs.reset", &json!({"category": "Bogus"})).is_err());
+    assert!(
+        s.execute("prefs.reset", &json!({"category": "Bogus"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -177,12 +310,19 @@ fn list_describes_every_pref() {
     let l = s.execute("prefs.list", &json!({})).unwrap();
     let a = l.as_array().unwrap();
     assert_eq!(a.len(), PREF_SPECS.len());
-    assert!(a.iter().any(|e| e["key"] == "renderThreads" && e["kind"] == "integer" && e["min"] == -1));
+    assert!(
+        a.iter()
+            .any(|e| e["key"] == "renderThreads" && e["kind"] == "integer" && e["min"] == -1)
+    );
 }
 
 #[test]
 fn prefs_serde_round_trip_and_tolerates_missing_fields() {
-    let p = Prefs { ui_scaling: 1.25, units_general: "millimeters".into(), ..Default::default() };
+    let p = Prefs {
+        ui_scaling: 1.25,
+        units_general: "millimeters".into(),
+        ..Default::default()
+    };
     let back: Prefs = serde_json::from_value(p.to_json()).unwrap();
     assert_eq!(back, p);
     let partial: Prefs = serde_json::from_value(json!({"keyboardIncrement": 4})).unwrap();
@@ -197,29 +337,73 @@ fn prefs_serde_round_trip_and_tolerates_missing_fields() {
 fn gpu_preference_defaults_to_automatic_and_validates() {
     let mut s = Session::new();
     assert_eq!(s.prefs.gpu_preference, "automatic");
-    assert_eq!(s.execute("prefs.get", &json!({"key": "gpuPreference"})).unwrap(), json!("automatic"));
-    s.execute("prefs.set", &json!({"key": "gpuPreference", "value": "highPerformance"})).unwrap();
+    assert_eq!(
+        s.execute("prefs.get", &json!({"key": "gpuPreference"}))
+            .unwrap(),
+        json!("automatic")
+    );
+    s.execute(
+        "prefs.set",
+        &json!({"key": "gpuPreference", "value": "highPerformance"}),
+    )
+    .unwrap();
     assert_eq!(s.prefs.gpu_preference, "highPerformance");
-    s.execute("prefs.set", &json!({"key": "gpuPreference", "value": "Power Saving (integrated)"})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "gpuPreference", "value": "Power Saving (integrated)"}),
+    )
+    .unwrap();
     assert_eq!(s.prefs.gpu_preference, "lowPower");
-    s.execute("prefs.set", &json!({"key": "gpuPreference", "value": "automatic"})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "gpuPreference", "value": "automatic"}),
+    )
+    .unwrap();
     assert_eq!(s.prefs.gpu_preference, "automatic");
-    for bad in [json!("powerSaving"), json!("turbo"), json!(""), json!(1), json!(null), json!(["highPerformance"])] {
-        assert!(s.execute("prefs.set", &json!({"key": "gpuPreference", "value": bad})).is_err(), "{bad}");
+    for bad in [
+        json!("powerSaving"),
+        json!("turbo"),
+        json!(""),
+        json!(1),
+        json!(null),
+        json!(["highPerformance"]),
+    ] {
+        assert!(
+            s.execute("prefs.set", &json!({"key": "gpuPreference", "value": bad}))
+                .is_err(),
+            "{bad}"
+        );
         assert_eq!(s.prefs.gpu_preference, "automatic");
     }
-    let p = Prefs { gpu_preference: "lowPower".into(), ..Default::default() };
+    let p = Prefs {
+        gpu_preference: "lowPower".into(),
+        ..Default::default()
+    };
     let back: Prefs = serde_json::from_value(p.to_json()).unwrap();
     assert_eq!(back.gpu_preference, "lowPower");
     // Preference files written before the preference existed get the default.
     let old: Prefs = serde_json::from_value(json!({"gpuPerformance": true})).unwrap();
     assert_eq!(old.gpu_preference, "automatic");
     let l = s.execute("prefs.list", &json!({})).unwrap();
-    let row = l.as_array().unwrap().iter().find(|e| e["key"] == "gpuPreference").unwrap().clone();
+    let row = l
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["key"] == "gpuPreference")
+        .unwrap()
+        .clone();
     assert_eq!(row["category"], "Performance");
-    assert_eq!(row["options"], json!(["automatic", "lowPower", "highPerformance"]));
-    s.execute("prefs.set", &json!({"key": "gpuPreference", "value": "highPerformance"})).unwrap();
-    s.execute("prefs.reset", &json!({"category": "Performance"})).unwrap();
+    assert_eq!(
+        row["options"],
+        json!(["automatic", "lowPower", "highPerformance"])
+    );
+    s.execute(
+        "prefs.set",
+        &json!({"key": "gpuPreference", "value": "highPerformance"}),
+    )
+    .unwrap();
+    s.execute("prefs.reset", &json!({"category": "Performance"}))
+        .unwrap();
     assert_eq!(s.prefs.gpu_preference, "automatic");
 }
 
@@ -229,14 +413,26 @@ fn gpu_preference_defaults_to_automatic_and_validates() {
 fn linux_display_server_defaults_to_automatic_and_validates() {
     let mut s = Session::new();
     assert_eq!(s.prefs.linux_display_server, "automatic");
-    s.execute("prefs.set", &json!({"key": "linuxDisplayServer", "value": "X11 (XWayland)"})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "linuxDisplayServer", "value": "X11 (XWayland)"}),
+    )
+    .unwrap();
     assert_eq!(s.prefs.linux_display_server, "x11");
     for bad in [json!("wayland"), json!(""), json!(11), json!(null)] {
-        assert!(s.execute("prefs.set", &json!({"key": "linuxDisplayServer", "value": bad})).is_err(), "{bad}");
+        assert!(
+            s.execute(
+                "prefs.set",
+                &json!({"key": "linuxDisplayServer", "value": bad})
+            )
+            .is_err(),
+            "{bad}"
+        );
         assert_eq!(s.prefs.linux_display_server, "x11");
     }
     assert_eq!(s.prefs.to_json()["linuxDisplayServer"], "x11");
-    s.execute("prefs.reset", &json!({"category": "Performance"})).unwrap();
+    s.execute("prefs.reset", &json!({"category": "Performance"}))
+        .unwrap();
     assert_eq!(s.prefs.linux_display_server, "automatic");
 }
 
@@ -247,49 +443,97 @@ fn linux_display_server_defaults_to_automatic_and_validates() {
 fn selection_preferences_drive_the_selection_tool() {
     use vectorcraft_tools::{Mods, PointerEvent, PointerKind};
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     let rect = |s: &mut Session, x: f64| {
-        NodeId(s.execute("shape.rectangle", &json!({"x": x, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap())
+        NodeId(
+            s.execute(
+                "shape.rectangle",
+                &json!({"x": x, "y": 100, "width": 100, "height": 100}),
+            )
+            .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        )
     };
     // Two filled squares overlapping between x = 150 and 200, `front` on top.
     let (back, front) = (rect(&mut s, 100.0), rect(&mut s, 150.0));
     s.select_tool("selection", ViewInfo::default()).unwrap();
-    let set = |s: &mut Session, key: &str, value: Value| s.execute("prefs.set", &json!({"key": key, "value": value})).unwrap();
+    let set = |s: &mut Session, key: &str, value: Value| {
+        s.execute("prefs.set", &json!({"key": key, "value": value}))
+            .unwrap()
+    };
     let click = |s: &mut Session, x: f64, mods: Mods| {
         for k in [PointerKind::Down, PointerKind::Up] {
             // Halfway between the bounding box's handles.
-            s.pointer(&PointerEvent::new(k, x, 125.0).with_mods(mods), ViewInfo::default()).unwrap();
+            s.pointer(
+                &PointerEvent::new(k, x, 125.0).with_mods(mods),
+                ViewInfo::default(),
+            )
+            .unwrap();
         }
         s.doc().unwrap().selection.objects.clone()
     };
     let plain = Mods::default();
     // Tolerance: the right edge's stroke ends at x = 250.5.
-    assert_eq!(click(&mut s, 252.5, plain), vec![front], "2 px out: within the default 3 px");
-    assert!(click(&mut s, 256.5, plain).is_empty(), "6 px out: beyond 3 px");
+    assert_eq!(
+        click(&mut s, 252.5, plain),
+        vec![front],
+        "2 px out: within the default 3 px"
+    );
+    assert!(
+        click(&mut s, 256.5, plain).is_empty(),
+        "6 px out: beyond 3 px"
+    );
     set(&mut s, "selectionTolerance", json!(8));
-    assert_eq!(click(&mut s, 256.5, plain), vec![front], "6 px out: within 8 px");
+    assert_eq!(
+        click(&mut s, 256.5, plain),
+        vec![front],
+        "6 px out: within 8 px"
+    );
     set(&mut s, "selectionTolerance", json!(1));
-    assert!(click(&mut s, 252.5, plain).is_empty(), "2 px out: beyond 1 px");
+    assert!(
+        click(&mut s, 252.5, plain).is_empty(),
+        "2 px out: beyond 1 px"
+    );
     set(&mut s, "selectionTolerance", json!(3));
     // Object Selection by Path Only: the fill no longer selects, the path does.
     assert_eq!(click(&mut s, 225.0, plain), vec![front]);
     set(&mut s, "objectSelectionByPathOnly", json!(true));
-    assert!(click(&mut s, 225.0, plain).is_empty(), "a click inside the fill selects nothing");
-    assert_eq!(click(&mut s, 250.0, plain), vec![front], "a click on the path selects it");
+    assert!(
+        click(&mut s, 225.0, plain).is_empty(),
+        "a click inside the fill selects nothing"
+    );
+    assert_eq!(
+        click(&mut s, 250.0, plain),
+        vec![front],
+        "a click on the path selects it"
+    );
     set(&mut s, "objectSelectionByPathOnly", json!(false));
     // Command Click to Select Objects Behind (on by default): each Cmd/Ctrl-click goes one down,
     // then back to the top.
-    let cmd = Mods { cmd: true, ..Mods::default() };
+    let cmd = Mods {
+        cmd: true,
+        ..Mods::default()
+    };
     assert_eq!(click(&mut s, 175.0, plain), vec![front]);
     assert_eq!(click(&mut s, 175.0, cmd), vec![back], "the object behind");
-    assert_eq!(click(&mut s, 175.0, cmd), vec![front], "back to the topmost");
+    assert_eq!(
+        click(&mut s, 175.0, cmd),
+        vec![front],
+        "back to the topmost"
+    );
     set(&mut s, "ctrlClickSelectsBehind", json!(false));
     assert_eq!(click(&mut s, 175.0, cmd), vec![front], "off: a plain click");
     // Double Click To Isolate (on by default) isolates a group; off, it doesn't.
     s.execute("select.all", &json!({})).unwrap();
     s.execute("object.group", &json!({})).unwrap();
     let double = |s: &mut Session| {
-        s.pointer(&PointerEvent::new(PointerKind::DoubleClick, 175.0, 150.0), ViewInfo::default()).unwrap();
+        s.pointer(
+            &PointerEvent::new(PointerKind::DoubleClick, 175.0, 150.0),
+            ViewInfo::default(),
+        )
+        .unwrap();
         s.doc().unwrap().isolation
     };
     set(&mut s, "doubleClickToIsolate", json!(false));
@@ -306,14 +550,22 @@ fn selection_preferences_drive_the_selection_tool() {
 fn double_clicking_a_single_object_isolates_it() {
     use vectorcraft_tools::{PointerEvent, PointerKind};
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     let id = |v: Value| NodeId(v["id"].as_u64().unwrap());
-    let rect = |s: &mut Session, x: f64| id(s.execute("shape.rectangle", &json!({"x": x, "y": 100, "width": 50, "height": 50})).unwrap());
+    let rect = |s: &mut Session, x: f64| {
+        id(s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": 100, "width": 50, "height": 50}),
+        )
+        .unwrap())
+    };
     let (a, b) = (rect(&mut s, 100.0), rect(&mut s, 200.0));
     s.select_tool("selection", ViewInfo::default()).unwrap();
     let ev = |s: &mut Session, kinds: &[PointerKind], x: f64, y: f64| {
         for k in kinds {
-            s.pointer(&PointerEvent::new(*k, x, y), ViewInfo::default()).unwrap();
+            s.pointer(&PointerEvent::new(*k, x, y), ViewInfo::default())
+                .unwrap();
         }
     };
     let click = [PointerKind::Down, PointerKind::Up];
@@ -342,12 +594,21 @@ fn double_clicking_a_single_object_isolates_it() {
     // A double-click on the empty canvas leaves isolation, the object selected.
     ev(&mut s, &double, 50.0, 350.0);
     let st = s.doc().unwrap();
-    assert_eq!((st.isolation, st.selection.objects.clone()), (None, vec![a]));
+    assert_eq!(
+        (st.isolation, st.selection.objects.clone()),
+        (None, vec![a])
+    );
     assert!(st.doc.node(b).is_some());
     // Type is not isolated.
-    let t = id(s.execute("text.create", &json!({"x": 100, "y": 300, "text": "Type"})).unwrap());
+    let t = id(s
+        .execute("text.create", &json!({"x": 100, "y": 300, "text": "Type"}))
+        .unwrap());
     assert!(s.execute("object.isolate", &json!({"id": t.0})).is_err());
-    s.execute("prefs.set", &json!({"key": "doubleClickToIsolate", "value": false})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "doubleClickToIsolate", "value": false}),
+    )
+    .unwrap();
     ev(&mut s, &double, 225.0, 125.0);
     assert_eq!(s.doc().unwrap().isolation, None, "off: no isolation");
 }
@@ -358,18 +619,31 @@ fn double_clicking_a_single_object_isolates_it() {
 fn use_precise_cursors_makes_drawing_cursors_crosshairs() {
     use vectorcraft_tools::{Cursor, Mods};
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     let cursor = |s: &mut Session, tool: &str| {
         s.select_tool(tool, ViewInfo::default()).unwrap();
-        s.cursor(vectorcraft_geom::Point::new(300.0, 300.0), Mods::default(), ViewInfo::default())
+        s.cursor(
+            vectorcraft_geom::Point::new(300.0, 300.0),
+            Mods::default(),
+            ViewInfo::default(),
+        )
     };
     assert_eq!(cursor(&mut s, "pen"), Cursor::Pen);
     assert_eq!(cursor(&mut s, "eyedropper"), Cursor::Eyedropper);
-    s.execute("prefs.set", &json!({"key": "usePreciseCursors", "value": true})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "usePreciseCursors", "value": true}),
+    )
+    .unwrap();
     assert_eq!(cursor(&mut s, "pen"), Cursor::Crosshair);
     assert_eq!(cursor(&mut s, "eyedropper"), Cursor::Crosshair);
     assert_eq!(cursor(&mut s, "selection"), Cursor::Arrow);
-    s.execute("prefs.set", &json!({"key": "usePreciseCursors", "value": false})).unwrap();
+    s.execute(
+        "prefs.set",
+        &json!({"key": "usePreciseCursors", "value": false}),
+    )
+    .unwrap();
     assert_eq!(cursor(&mut s, "eyedropper"), Cursor::Eyedropper);
 }
 
@@ -377,26 +651,44 @@ fn use_precise_cursors_makes_drawing_cursors_crosshairs() {
 
 fn new_doc() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
+    s.execute("file.new", &json!({"width": 400, "height": 400}))
+        .unwrap();
     s
 }
 
 fn square(s: &mut Session, x: f64, y: f64) -> NodeId {
-    NodeId(s.execute("shape.rectangle", &json!({"x": x, "y": y, "width": 50, "height": 50})).unwrap()["id"].as_u64().unwrap())
+    NodeId(
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": y, "width": 50, "height": 50}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    )
 }
 
 fn set_pref(s: &mut Session, key: &str, value: Value) {
-    s.execute("prefs.set", &json!({"key": key, "value": value})).unwrap();
+    s.execute("prefs.set", &json!({"key": key, "value": value}))
+        .unwrap();
 }
 
 fn gesture(s: &mut Session, v: ViewInfo, events: &[(vectorcraft_tools::PointerKind, f64, f64)]) {
     for (k, x, y) in events {
-        s.pointer(&vectorcraft_tools::PointerEvent::new(*k, *x, *y), v).unwrap();
+        s.pointer(&vectorcraft_tools::PointerEvent::new(*k, *x, *y), v)
+            .unwrap();
     }
 }
 
 fn top_left(s: &Session, id: NodeId) -> (f64, f64) {
-    let b = s.doc().unwrap().doc.node(id).unwrap().geometric_bounds().unwrap();
+    let b = s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .geometric_bounds()
+        .unwrap();
     (b.x0, b.y0)
 }
 
@@ -408,20 +700,46 @@ fn snap_to_point_lands_a_dragged_selection_on_anchors() {
     let mut s = new_doc();
     let a = square(&mut s, 100.0, 100.0);
     square(&mut s, 300.0, 100.0);
-    let v = ViewInfo { smart_guides: false, ..ViewInfo::default() };
+    let v = ViewInfo {
+        smart_guides: false,
+        ..ViewInfo::default()
+    };
     s.select_tool("selection", v).unwrap();
     // Grabbed by its centre and dropped 1.5, 1 px from the other square's top-left anchor.
     let drag = |s: &mut Session, v: ViewInfo| {
-        gesture(s, v, &[(Down, 125.0, 125.0), (Drag, 200.0, 110.0), (Drag, 301.5, 101.0), (Up, 301.5, 101.0)]);
+        gesture(
+            s,
+            v,
+            &[
+                (Down, 125.0, 125.0),
+                (Drag, 200.0, 110.0),
+                (Drag, 301.5, 101.0),
+                (Up, 301.5, 101.0),
+            ],
+        );
         let at = top_left(s, a);
         s.execute("edit.undo", &json!({})).unwrap();
         at
     };
-    assert_eq!(drag(&mut s, v), (275.0, 75.0), "the centre lands on the anchor");
+    assert_eq!(
+        drag(&mut s, v),
+        (275.0, 75.0),
+        "the centre lands on the anchor"
+    );
     set_pref(&mut s, "snapToPointTolerance", json!(1));
     assert_eq!(drag(&mut s, v), (276.5, 76.0), "1.8 px is beyond 1 px");
     set_pref(&mut s, "snapToPointTolerance", json!(2));
-    assert_eq!(drag(&mut s, ViewInfo { snap_to_point: false, ..v }), (276.5, 76.0), "View › Snap to Point off");
+    assert_eq!(
+        drag(
+            &mut s,
+            ViewInfo {
+                snap_to_point: false,
+                ..v
+            }
+        ),
+        (276.5, 76.0),
+        "View › Snap to Point off"
+    );
 }
 
 /// Smart Guides › Spacing Guides (#394): a square dragged 21 pt to the right of a row of two
@@ -437,8 +755,20 @@ fn spacing_guides_space_a_dragged_square_like_its_row() {
     s.select_tool("selection", v).unwrap();
     // `m` grabbed by its centre and dragged so its left edge is 21 pt from the second square.
     let drag = |s: &mut Session| {
-        gesture(s, v, &[(Down, 225.0, 330.0), (Drag, 200.0, 330.0), (Drag, 186.0, 330.0)]);
-        let marks = s.overlays(v).iter().filter(|o| matches!(o, vectorcraft_tools::Overlay::Line { a, b, .. } if a.y == b.y)).count();
+        gesture(
+            s,
+            v,
+            &[
+                (Down, 225.0, 330.0),
+                (Drag, 200.0, 330.0),
+                (Drag, 186.0, 330.0),
+            ],
+        );
+        let marks = s
+            .overlays(v)
+            .iter()
+            .filter(|o| matches!(o, vectorcraft_tools::Overlay::Line { a, b, .. } if a.y == b.y))
+            .count();
         gesture(s, v, &[(Up, 186.0, 330.0)]);
         let at = top_left(s, m).0;
         s.execute("edit.undo", &json!({})).unwrap();
@@ -464,14 +794,24 @@ fn smart_guide_display_preferences_filter_the_overlays() {
     let b = square(&mut s, 200.0, 100.0);
     let v = ViewInfo::default();
     s.select_tool("selection", v).unwrap();
-    let count = |s: &mut Session, f: &dyn Fn(&Overlay) -> bool| s.overlays(v).iter().filter(|o| f(o)).count();
+    let count = |s: &mut Session, f: &dyn Fn(&Overlay) -> bool| {
+        s.overlays(v).iter().filter(|o| f(o)).count()
+    };
     let line = |o: &Overlay| matches!(o, Overlay::Line { .. });
     let label = |o: &Overlay| matches!(o, Overlay::Label { .. });
     let measure = |o: &Overlay| matches!(o, Overlay::Measure { .. });
     // `b` grabbed by its centre and dragged so its left edge comes `off` px from the first
     // square's right edge (x = 150): the x of its left edge mid-drag, before the pointer is let go.
     let drag_to = |s: &mut Session, off: f64| {
-        gesture(s, v, &[(Down, 225.0, 125.0), (Drag, 200.0, 125.0), (Drag, 175.0 + off, 125.0)]);
+        gesture(
+            s,
+            v,
+            &[
+                (Down, 225.0, 125.0),
+                (Drag, 200.0, 125.0),
+                (Drag, 175.0 + off, 125.0),
+            ],
+        );
         top_left(s, b).0
     };
     let release = |s: &mut Session| {
@@ -480,8 +820,18 @@ fn smart_guide_display_preferences_filter_the_overlays() {
     };
     assert_eq!(drag_to(&mut s, 3.0), 150.0, "3 px off: into line");
     assert!(count(&mut s, &line) > 0 && count(&mut s, &measure) == 1);
-    let magenta = s.overlays(v).iter().find_map(|o| if let Overlay::Line { color, .. } = o { Some(*color) } else { None });
-    assert_eq!(magenta, Some(vectorcraft_tools::guides::MAGENTA), "the default colour");
+    let magenta = s.overlays(v).iter().find_map(|o| {
+        if let Overlay::Line { color, .. } = o {
+            Some(*color)
+        } else {
+            None
+        }
+    });
+    assert_eq!(
+        magenta,
+        Some(vectorcraft_tools::guides::MAGENTA),
+        "the default colour"
+    );
     release(&mut s);
     set_pref(&mut s, "smartGuideColor", json!("#00ff00"));
     drag_to(&mut s, 3.0);
@@ -533,11 +883,29 @@ fn rubber_band_preferences_hide_the_preview_to_the_pointer() {
     use vectorcraft_tools::Overlay;
     use vectorcraft_tools::PointerKind::{Down, Move, Up};
     let v = ViewInfo::default();
-    for (tool, key) in [("pen", "penRubberBand"), ("curvature", "curvatureRubberBand")] {
+    for (tool, key) in [
+        ("pen", "penRubberBand"),
+        ("curvature", "curvatureRubberBand"),
+    ] {
         let mut s = new_doc();
         s.select_tool(tool, v).unwrap();
-        gesture(&mut s, v, &[(Down, 50.0, 50.0), (Up, 50.0, 50.0), (Down, 150.0, 50.0), (Up, 150.0, 50.0), (Move, 200.0, 150.0)]);
-        let bands = |s: &mut Session| s.overlays(v).iter().filter(|o| matches!(o, Overlay::Path { .. })).count();
+        gesture(
+            &mut s,
+            v,
+            &[
+                (Down, 50.0, 50.0),
+                (Up, 50.0, 50.0),
+                (Down, 150.0, 50.0),
+                (Up, 150.0, 50.0),
+                (Move, 200.0, 150.0),
+            ],
+        );
+        let bands = |s: &mut Session| {
+            s.overlays(v)
+                .iter()
+                .filter(|o| matches!(o, Overlay::Path { .. }))
+                .count()
+        };
         assert_eq!(bands(&mut s), 1, "{tool}: the rubber band");
         set_pref(&mut s, key, json!(false));
         assert_eq!(bands(&mut s), 0, "{tool}: off");
@@ -549,13 +917,21 @@ fn rubber_band_preferences_hide_the_preview_to_the_pointer() {
 #[test]
 fn move_locked_and_hidden_artwork_with_artboard() {
     let mut s = new_doc();
-    let (free, locked, hidden) = (square(&mut s, 10.0, 10.0), square(&mut s, 100.0, 10.0), square(&mut s, 200.0, 10.0));
+    let (free, locked, hidden) = (
+        square(&mut s, 10.0, 10.0),
+        square(&mut s, 100.0, 10.0),
+        square(&mut s, 200.0, 10.0),
+    );
     for (id, cmd) in [(locked, "object.lock"), (hidden, "object.hide")] {
         s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
         s.execute(cmd, &json!({})).unwrap();
     }
     let moved = |s: &mut Session| {
-        s.execute("artboard.move", &json!({"index": 0, "dx": 30, "dy": 0, "moveArt": true})).unwrap();
+        s.execute(
+            "artboard.move",
+            &json!({"index": 0, "dx": 30, "dy": 0, "moveArt": true}),
+        )
+        .unwrap();
         let xs = [free, locked, hidden].map(|id| top_left(s, id).0);
         s.execute("edit.undo", &json!({})).unwrap();
         xs
@@ -573,24 +949,56 @@ fn transform_pattern_tiles_is_the_transforms_default() {
     let mut s = new_doc();
     let tile = square(&mut s, 0.0, 0.0);
     s.execute("select.set", &json!({"ids": [tile.0]})).unwrap();
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
     let big = square(&mut s, 100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [big.0], "swatch": "Dots"}))
+        .unwrap();
     s.execute("select.set", &json!({"ids": [big.0]})).unwrap();
-    let tiles = |s: &Session| match s.doc().unwrap().doc.node(big).unwrap().appearance.fill_paint() {
+    let tiles = |s: &Session| match s
+        .doc()
+        .unwrap()
+        .doc
+        .node(big)
+        .unwrap()
+        .appearance
+        .fill_paint()
+    {
         Paint::Pattern { xf, .. } => xf.as_coeffs(),
         p => panic!("not a pattern: {p:?}"),
     };
-    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
-    assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "off: the tiles stay");
+    s.execute("object.move", &json!({"dx": 10, "dy": 0}))
+        .unwrap();
+    assert_eq!(
+        tiles(&s),
+        [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        "off: the tiles stay"
+    );
     set_pref(&mut s, "transformPatternTiles", json!(true));
-    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
-    assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0], "on: they move with the art");
-    assert_eq!(s.journal.last().unwrap().1["patterns"], json!(true), "the journal keeps the choice");
-    s.execute("object.scale", &json!({"sx": 200, "origin": [0, 0], "patterns": false})).unwrap();
+    s.execute("object.move", &json!({"dx": 10, "dy": 0}))
+        .unwrap();
+    assert_eq!(
+        tiles(&s),
+        [1.0, 0.0, 0.0, 1.0, 10.0, 0.0],
+        "on: they move with the art"
+    );
+    assert_eq!(
+        s.journal.last().unwrap().1["patterns"],
+        json!(true),
+        "the journal keeps the choice"
+    );
+    s.execute(
+        "object.scale",
+        &json!({"sx": 200, "origin": [0, 0], "patterns": false}),
+    )
+    .unwrap();
     assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0], "the param wins");
-    s.execute("object.scale", &json!({"sx": 50, "origin": [0, 0]})).unwrap();
+    s.execute("object.scale", &json!({"sx": 50, "origin": [0, 0]}))
+        .unwrap();
     assert_eq!(tiles(&s), [0.5, 0.0, 0.0, 0.5, 5.0, 0.0]);
 }
 
@@ -598,17 +1006,30 @@ fn transform_pattern_tiles_is_the_transforms_default() {
 fn patterned_square(s: &mut Session) -> NodeId {
     let tile = square(s, 0.0, 0.0);
     s.execute("select.set", &json!({"ids": [tile.0]})).unwrap();
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
     let id = square(s, 100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [id.0], "swatch": "Dots"})).unwrap();
+    s.execute("paint.setFill", &json!({"ids": [id.0], "swatch": "Dots"}))
+        .unwrap();
     s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
     id
 }
 
 /// The tile transform of the pattern fill of `id`.
 fn pattern_tiles(s: &Session, id: NodeId) -> [f64; 6] {
-    match s.doc().unwrap().doc.node(id).unwrap().appearance.fill_paint() {
+    match s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .appearance
+        .fill_paint()
+    {
         vectorcraft_color::Paint::Pattern { xf, .. } => xf.as_coeffs(),
         p => panic!("not a pattern: {p:?}"),
     }
@@ -622,14 +1043,37 @@ fn transform_again_repeats_the_options_of_the_transform_it_repeats() {
     let mut s = new_doc();
     let id = patterned_square(&mut s);
     set_pref(&mut s, "transformPatternTiles", json!(true));
-    s.execute("object.move", &json!({"dx": 10, "dy": 0, "patterns": false})).unwrap();
+    s.execute(
+        "object.move",
+        &json!({"dx": 10, "dy": 0, "patterns": false}),
+    )
+    .unwrap();
     s.execute("object.transformAgain", &json!({})).unwrap();
     assert_eq!(top_left(&s, id), (120.0, 100.0), "the square moved twice");
-    assert_eq!(pattern_tiles(&s, id), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "the tiles stay");
-    assert_eq!(s.journal.last().unwrap().1, json!({"patterns": false}), "the journal keeps the choice");
-    s.execute("object.scale", &json!({"sx": 200, "strokes": true})).unwrap();
+    assert_eq!(
+        pattern_tiles(&s, id),
+        [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        "the tiles stay"
+    );
+    assert_eq!(
+        s.journal.last().unwrap().1,
+        json!({"patterns": false}),
+        "the journal keeps the choice"
+    );
+    s.execute("object.scale", &json!({"sx": 200, "strokes": true}))
+        .unwrap();
     s.execute("object.transformAgain", &json!({})).unwrap();
-    assert_eq!(s.doc().unwrap().doc.node(id).unwrap().appearance.stroke_width(), 4.0, "the 1 pt stroke scaled twice");
+    assert_eq!(
+        s.doc()
+            .unwrap()
+            .doc
+            .node(id)
+            .unwrap()
+            .appearance
+            .stroke_width(),
+        4.0,
+        "the 1 pt stroke scaled twice"
+    );
 }
 
 /// A recorded Transform Again plays back with the Transform Patterns its step records, whatever the
@@ -638,20 +1082,33 @@ fn transform_again_repeats_the_options_of_the_transform_it_repeats() {
 fn a_recorded_transform_again_plays_back_with_its_transform_patterns() {
     let mut s = new_doc();
     let id = patterned_square(&mut s);
-    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    s.execute("object.move", &json!({"dx": 10, "dy": 0}))
+        .unwrap();
     let start = s.journal.len();
     s.execute("object.transformAgain", &json!({})).unwrap();
     let action = s.journal_for_action(start);
-    assert_eq!(action, [("object.transformAgain".to_string(), json!({"patterns": false}))], "recorded with the preference off");
+    assert_eq!(
+        action,
+        [(
+            "object.transformAgain".to_string(),
+            json!({"patterns": false})
+        )],
+        "recorded with the preference off"
+    );
     // With the preference on, a Move moves the tiles, and the recorded Transform Again leaves them.
     set_pref(&mut s, "transformPatternTiles", json!(true));
-    s.execute("object.move", &json!({"dx": 10, "dy": 0})).unwrap();
+    s.execute("object.move", &json!({"dx": 10, "dy": 0}))
+        .unwrap();
     assert_eq!(pattern_tiles(&s, id), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0]);
     for (cmd, p) in &action {
         s.execute(cmd, p).unwrap();
     }
     assert_eq!(top_left(&s, id), (140.0, 100.0), "the square moved");
-    assert_eq!(pattern_tiles(&s, id), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0], "the tiles stay");
+    assert_eq!(
+        pattern_tiles(&s, id),
+        [1.0, 0.0, 0.0, 1.0, 10.0, 0.0],
+        "the tiles stay"
+    );
 }
 
 /// General › Transform Pattern Tiles (#394) applies to Align and Distribute as it does to the
@@ -663,13 +1120,30 @@ fn align_and_distribute_follow_transform_pattern_tiles() {
     let mut s = new_doc();
     let plain = square(&mut s, 0.0, 0.0);
     s.execute("select.set", &json!({"ids": [plain.0]})).unwrap();
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
     let far = square(&mut s, 300.0, 0.0);
     let filled = square(&mut s, 100.0, 0.0);
-    s.execute("paint.setFill", &json!({"ids": [filled.0], "swatch": "Dots"})).unwrap();
-    s.execute("select.set", &json!({"ids": [plain.0, filled.0, far.0]})).unwrap();
-    let tiles = |s: &Session| match s.doc().unwrap().doc.node(filled).unwrap().appearance.fill_paint() {
+    s.execute(
+        "paint.setFill",
+        &json!({"ids": [filled.0], "swatch": "Dots"}),
+    )
+    .unwrap();
+    s.execute("select.set", &json!({"ids": [plain.0, filled.0, far.0]}))
+        .unwrap();
+    let tiles = |s: &Session| match s
+        .doc()
+        .unwrap()
+        .doc
+        .node(filled)
+        .unwrap()
+        .appearance
+        .fill_paint()
+    {
         Paint::Pattern { xf, .. } => xf.as_coeffs(),
         p => panic!("not a pattern: {p:?}"),
     };
@@ -678,21 +1152,45 @@ fn align_and_distribute_follow_transform_pattern_tiles() {
     for (cmd, p, dx) in [
         ("object.align", json!({"horizontal": "left"}), -100.0),
         ("object.distribute", json!({"horizontal": "left"}), 50.0),
-        ("object.distributeSpacing", json!({"axis": "horizontal"}), 50.0),
+        (
+            "object.distributeSpacing",
+            json!({"axis": "horizontal"}),
+            50.0,
+        ),
     ] {
         s.execute(cmd, &p).unwrap();
-        assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: off, the tiles stay");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(false), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            tiles(&s),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "{cmd}: off, the tiles stay"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(false),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         set_pref(&mut s, "transformPatternTiles", json!(true));
         s.execute(cmd, &p).unwrap();
-        assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, dx, 0.0], "{cmd}: on, they move with the square");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(true), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            tiles(&s),
+            [1.0, 0.0, 0.0, 1.0, dx, 0.0],
+            "{cmd}: on, they move with the square"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(true),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         let mut p = p;
         p["patterns"] = json!(false);
         s.execute(cmd, &p).unwrap();
-        assert_eq!(tiles(&s), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: the param wins");
+        assert_eq!(
+            tiles(&s),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "{cmd}: the param wins"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         set_pref(&mut s, "transformPatternTiles", json!(false));
     }
@@ -707,12 +1205,32 @@ fn art_moved_with_its_artboard_follows_transform_pattern_tiles() {
     let mut s = new_doc();
     let plain = square(&mut s, 500.0, 0.0);
     s.execute("select.set", &json!({"ids": [plain.0]})).unwrap();
-    s.execute("object.pattern.make", &json!({"name": "Dots", "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "object.pattern.make",
+        &json!({"name": "Dots", "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("object.pattern.done", &json!({})).unwrap();
-    s.execute("artboard.new", &json!({"x": 1000, "y": 0, "width": 400, "height": 400})).unwrap();
+    s.execute(
+        "artboard.new",
+        &json!({"x": 1000, "y": 0, "width": 400, "height": 400}),
+    )
+    .unwrap();
     let filled = square(&mut s, 1100.0, 100.0);
-    s.execute("paint.setFill", &json!({"ids": [filled.0], "swatch": "Dots"})).unwrap();
-    let tiles = |s: &Session, id: NodeId| match s.doc().unwrap().doc.node(id).unwrap().appearance.fill_paint() {
+    s.execute(
+        "paint.setFill",
+        &json!({"ids": [filled.0], "swatch": "Dots"}),
+    )
+    .unwrap();
+    let tiles = |s: &Session, id: NodeId| match s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .unwrap()
+        .appearance
+        .fill_paint()
+    {
         Paint::Pattern { xf, .. } => xf.as_coeffs(),
         p => panic!("not a pattern: {p:?}"),
     };
@@ -722,32 +1240,88 @@ fn art_moved_with_its_artboard_follows_transform_pattern_tiles() {
     // 20 pt right of artboard 0, and `artboard.setProps` puts it at x 1030. `moved` and `ids` name
     // the art moved or its copies.
     for (cmd, p, key, d) in [
-        ("artboard.move", json!({"index": 1, "dx": 30, "dy": 0, "moveArt": true}), Some("moved"), [30.0, 0.0]),
-        ("artboard.move", json!({"indices": [0, 1], "dx": 30, "dy": 0, "moveArt": true}), Some("moved"), [30.0, 0.0]),
-        ("artboard.move", json!({"index": 1, "dx": 0, "dy": 500, "moveArt": true, "copy": true}), Some("moved"), [0.0, 500.0]),
-        ("artboard.duplicate", json!({"index": 1, "art": true}), Some("ids"), [420.0, 0.0]),
-        ("artboard.rearrange", json!({"layout": "row"}), None, [-580.0, 0.0]),
-        ("artboard.setProps", json!({"index": 1, "x": 1030, "moveArt": true}), None, [30.0, 0.0]),
+        (
+            "artboard.move",
+            json!({"index": 1, "dx": 30, "dy": 0, "moveArt": true}),
+            Some("moved"),
+            [30.0, 0.0],
+        ),
+        (
+            "artboard.move",
+            json!({"indices": [0, 1], "dx": 30, "dy": 0, "moveArt": true}),
+            Some("moved"),
+            [30.0, 0.0],
+        ),
+        (
+            "artboard.move",
+            json!({"index": 1, "dx": 0, "dy": 500, "moveArt": true, "copy": true}),
+            Some("moved"),
+            [0.0, 500.0],
+        ),
+        (
+            "artboard.duplicate",
+            json!({"index": 1, "art": true}),
+            Some("ids"),
+            [420.0, 0.0],
+        ),
+        (
+            "artboard.rearrange",
+            json!({"layout": "row"}),
+            None,
+            [-580.0, 0.0],
+        ),
+        (
+            "artboard.setProps",
+            json!({"index": 1, "x": 1030, "moveArt": true}),
+            None,
+            [30.0, 0.0],
+        ),
     ] {
         let run = |s: &mut Session, p: &Value| {
             let r = s.execute(cmd, p).unwrap();
-            let ids = key.and_then(|k| r[k].as_array().cloned()).unwrap_or_else(|| vec![json!(filled.0)]);
-            assert_eq!(ids.len(), 1, "{cmd}: the square alone goes with the artboard");
+            let ids = key
+                .and_then(|k| r[k].as_array().cloned())
+                .unwrap_or_else(|| vec![json!(filled.0)]);
+            assert_eq!(
+                ids.len(),
+                1,
+                "{cmd}: the square alone goes with the artboard"
+            );
             NodeId(ids[0].as_u64().unwrap())
         };
         let id = run(&mut s, &p);
-        assert_eq!(tiles(&s, id), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: off, the tiles stay");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(false), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            tiles(&s, id),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "{cmd}: off, the tiles stay"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(false),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         set_pref(&mut s, "transformPatternTiles", json!(true));
         let id = run(&mut s, &p);
-        assert_eq!(tiles(&s, id), [1.0, 0.0, 0.0, 1.0, d[0], d[1]], "{cmd}: on, they move with the square");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(true), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            tiles(&s, id),
+            [1.0, 0.0, 0.0, 1.0, d[0], d[1]],
+            "{cmd}: on, they move with the square"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(true),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         let mut p = p;
         p["patterns"] = json!(false);
         let id = run(&mut s, &p);
-        assert_eq!(tiles(&s, id), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: the param wins");
+        assert_eq!(
+            tiles(&s, id),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "{cmd}: the param wins"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         set_pref(&mut s, "transformPatternTiles", json!(false));
     }
@@ -763,7 +1337,12 @@ fn whole_objects_moved_with_selected_anchors_follow_transform_pattern_tiles() {
     let mut s = new_doc();
     let filled = patterned_square(&mut s);
     let other = square(&mut s, 300.0, 100.0);
-    let v = ViewInfo { smart_guides: false, snap_to_point: false, corner_widgets: false, ..ViewInfo::default() };
+    let v = ViewInfo {
+        smart_guides: false,
+        snap_to_point: false,
+        corner_widgets: false,
+        ..ViewInfo::default()
+    };
     s.select_tool("directSelection", v).unwrap();
     // The square is selected whole with the top-left anchor of `other`, as a click on the square's
     // fill and a Shift-click on that anchor select them. Each move takes both 10 pt right: Shift
@@ -774,32 +1353,83 @@ fn whole_objects_moved_with_selected_anchors_follow_transform_pattern_tiles() {
         ("path.moveAnchors", None),
     ] {
         let run = |s: &mut Session, p: Option<&Value>| {
-            s.execute("select.set", &json!({"ids": [filled.0]})).unwrap();
-            s.execute("select.anchors", &json!({"id": other.0, "anchors": [[0, 0]], "mode": "add"})).unwrap();
+            s.execute("select.set", &json!({"ids": [filled.0]}))
+                .unwrap();
+            s.execute(
+                "select.anchors",
+                &json!({"id": other.0, "anchors": [[0, 0]], "mode": "add"}),
+            )
+            .unwrap();
             match p {
                 Some(p) => {
                     s.execute(cmd, p).unwrap();
                 }
-                None => gesture(s, v, &[(Down, 300.0, 100.0), (Drag, 305.0, 100.0), (Drag, 310.0, 100.0), (Up, 310.0, 100.0)]),
+                None => gesture(
+                    s,
+                    v,
+                    &[
+                        (Down, 300.0, 100.0),
+                        (Drag, 305.0, 100.0),
+                        (Drag, 310.0, 100.0),
+                        (Up, 310.0, 100.0),
+                    ],
+                ),
             }
-            assert_eq!(top_left(s, filled), (110.0, 100.0), "{cmd}: the square moves whole");
-            let anchors = &s.doc().unwrap().doc.node(other).unwrap().path_data().unwrap().subpaths[0].anchors;
-            assert_eq!((anchors[0].p.x, anchors[1].p.x), (310.0, 350.0), "{cmd}: the selected anchor moves alone");
+            assert_eq!(
+                top_left(s, filled),
+                (110.0, 100.0),
+                "{cmd}: the square moves whole"
+            );
+            let anchors = &s
+                .doc()
+                .unwrap()
+                .doc
+                .node(other)
+                .unwrap()
+                .path_data()
+                .unwrap()
+                .subpaths[0]
+                .anchors;
+            assert_eq!(
+                (anchors[0].p.x, anchors[1].p.x),
+                (310.0, 350.0),
+                "{cmd}: the selected anchor moves alone"
+            );
             assert_eq!(s.journal.last().unwrap().0, cmd);
         };
         run(&mut s, p.as_ref());
-        assert_eq!(pattern_tiles(&s, filled), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: off, the tiles stay");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(false), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            pattern_tiles(&s, filled),
+            [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            "{cmd}: off, the tiles stay"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(false),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         set_pref(&mut s, "transformPatternTiles", json!(true));
         run(&mut s, p.as_ref());
-        assert_eq!(pattern_tiles(&s, filled), [1.0, 0.0, 0.0, 1.0, 10.0, 0.0], "{cmd}: on, they move with the square");
-        assert_eq!(s.journal.last().unwrap().1["patterns"], json!(true), "{cmd}: the journal keeps the choice");
+        assert_eq!(
+            pattern_tiles(&s, filled),
+            [1.0, 0.0, 0.0, 1.0, 10.0, 0.0],
+            "{cmd}: on, they move with the square"
+        );
+        assert_eq!(
+            s.journal.last().unwrap().1["patterns"],
+            json!(true),
+            "{cmd}: the journal keeps the choice"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         if let Some(mut p) = p {
             p["patterns"] = json!(false);
             run(&mut s, Some(&p));
-            assert_eq!(pattern_tiles(&s, filled), [1.0, 0.0, 0.0, 1.0, 0.0, 0.0], "{cmd}: the param wins");
+            assert_eq!(
+                pattern_tiles(&s, filled),
+                [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                "{cmd}: the param wins"
+            );
             s.execute("edit.undo", &json!({})).unwrap();
         }
         set_pref(&mut s, "transformPatternTiles", json!(false));
@@ -811,19 +1441,28 @@ fn whole_objects_moved_with_selected_anchors_follow_transform_pattern_tiles() {
 #[test]
 fn select_same_tint_percent() {
     let mut s = new_doc();
-    s.execute("swatch.new", &json!({"name": "Ink", "color": "#cc0066", "spot": true})).unwrap();
+    s.execute(
+        "swatch.new",
+        &json!({"name": "Ink", "color": "#cc0066", "spot": true}),
+    )
+    .unwrap();
     // Before the others: new art takes the last fill applied.
     square(&mut s, 300.0, 10.0);
     let ids: Vec<NodeId> = [(10.0, 40), (100.0, 40), (200.0, 80)]
         .into_iter()
         .map(|(x, tint)| {
             let id = square(&mut s, x, 10.0);
-            s.execute("paint.setFill", &json!({"ids": [id.0], "swatch": "Ink", "tint": tint})).unwrap();
+            s.execute(
+                "paint.setFill",
+                &json!({"ids": [id.0], "swatch": "Ink", "tint": tint}),
+            )
+            .unwrap();
             id
         })
         .collect();
     let same = |s: &mut Session| {
-        s.execute("select.set", &json!({"ids": [ids[0].0]})).unwrap();
+        s.execute("select.set", &json!({"ids": [ids[0].0]}))
+            .unwrap();
         s.execute("select.same.fillColor", &json!({})).unwrap();
         s.doc().unwrap().selection.objects.len()
     };
@@ -833,7 +1472,10 @@ fn select_same_tint_percent() {
 }
 
 fn style_at(s: &Session, id: NodeId, byte: usize) -> vectorcraft_doc::CharStyle {
-    let Some(vectorcraft_doc::NodeKind::Text(t)) = s.doc().unwrap().doc.node(id).map(|n| &n.kind) else { panic!("not text") };
+    let Some(vectorcraft_doc::NodeKind::Text(t)) = s.doc().unwrap().doc.node(id).map(|n| &n.kind)
+    else {
+        panic!("not text")
+    };
     let mut at = 0;
     for r in &t.runs {
         if byte < at + r.text.len() {
@@ -852,44 +1494,82 @@ fn type_increments_step_the_type() {
     use vectorcraft_tools::PointerKind::{Down, Up};
     use vectorcraft_tools::{Mods, ToolKey};
     let mut s = new_doc();
-    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "Hello world", "size": 20})).unwrap()["id"].as_u64().unwrap());
+    let id = NodeId(
+        s.execute(
+            "text.create",
+            &json!({"x": 100, "y": 100, "text": "Hello world", "size": 20}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
     s.execute("type.size.increase", &json!({})).unwrap();
     assert_eq!(style_at(&s, id, 0).size, 22.0, "Size/Leading is 2 pt");
     set_pref(&mut s, "typeSizeIncrement", json!(3));
     s.execute("type.size.decrease", &json!({})).unwrap();
     assert_eq!(style_at(&s, id, 0).size, 19.0);
-    s.execute("type.step", &json!({"attribute": "leading"})).unwrap();
-    assert!((style_at(&s, id, 0).leading.unwrap() - (19.0 * 1.2 + 3.0)).abs() < 1e-9, "from Auto");
+    s.execute("type.step", &json!({"attribute": "leading"}))
+        .unwrap();
+    assert!(
+        (style_at(&s, id, 0).leading.unwrap() - (19.0 * 1.2 + 3.0)).abs() < 1e-9,
+        "from Auto"
+    );
     set_pref(&mut s, "baselineShiftIncrement", json!(1.5));
-    s.execute("type.step", &json!({"attribute": "baselineShift", "by": -2})).unwrap();
+    s.execute(
+        "type.step",
+        &json!({"attribute": "baselineShift", "by": -2}),
+    )
+    .unwrap();
     assert_eq!(style_at(&s, id, 10).baseline_shift, -3.0);
     // The Type tool: Alt+→ tracks the selected text by Tracking (20/1000 em), Cmd-Alt five times.
     let v = ViewInfo::default();
     s.select_tool("type", v).unwrap();
     gesture(&mut s, v, &[(Down, 102.0, 95.0), (Up, 102.0, 95.0)]);
     assert_eq!(s.tool_options()["editing"], json!(id.0), "editing the text");
-    let alt = Mods { alt: true, ..Mods::default() };
-    let select = |s: &mut Session, a: usize, b: usize| s.set_tool_option("select", &json!({"start": a, "end": b}));
+    let alt = Mods {
+        alt: true,
+        ..Mods::default()
+    };
+    let select = |s: &mut Session, a: usize, b: usize| {
+        s.set_tool_option("select", &json!({"start": a, "end": b}))
+    };
     select(&mut s, 0, 5);
     s.tool_key(ToolKey::Right, alt, v).unwrap();
-    assert_eq!((style_at(&s, id, 0).tracking, style_at(&s, id, 6).tracking), (20.0, 0.0));
-    s.tool_key(ToolKey::Left, Mods { cmd: true, ..alt }, v).unwrap();
+    assert_eq!(
+        (style_at(&s, id, 0).tracking, style_at(&s, id, 6).tracking),
+        (20.0, 0.0)
+    );
+    s.tool_key(ToolKey::Left, Mods { cmd: true, ..alt }, v)
+        .unwrap();
     assert_eq!(style_at(&s, id, 4).tracking, -80.0);
     // At a caret: Alt+← kerns the character before it, Alt+↓ opens up the paragraph's leading.
     select(&mut s, 3, 3);
     s.tool_key(ToolKey::Left, alt, v).unwrap();
-    assert_eq!((style_at(&s, id, 2).kerning, style_at(&s, id, 3).kerning), (Some(-20.0), None));
+    assert_eq!(
+        (style_at(&s, id, 2).kerning, style_at(&s, id, 3).kerning),
+        (Some(-20.0), None)
+    );
     let leading = style_at(&s, id, 0).leading.unwrap();
     s.tool_key(ToolKey::Down, alt, v).unwrap();
     assert_eq!(style_at(&s, id, 8).leading, Some(leading + 3.0));
     // Alt+Shift+↑ raises the selected text's baseline.
     select(&mut s, 6, 11);
-    s.tool_key(ToolKey::Up, Mods { shift: true, ..alt }, v).unwrap();
-    assert_eq!((style_at(&s, id, 0).baseline_shift, style_at(&s, id, 6).baseline_shift), (-3.0, -1.5));
+    s.tool_key(ToolKey::Up, Mods { shift: true, ..alt }, v)
+        .unwrap();
+    assert_eq!(
+        (
+            style_at(&s, id, 0).baseline_shift,
+            style_at(&s, id, 6).baseline_shift
+        ),
+        (-3.0, -1.5)
+    );
     // The font size shortcut steps the selected text while the tool edits.
     s.execute("type.size.increase", &json!({})).unwrap();
-    assert_eq!((style_at(&s, id, 0).size, style_at(&s, id, 6).size), (19.0, 22.0));
+    assert_eq!(
+        (style_at(&s, id, 0).size, style_at(&s, id, 6).size),
+        (19.0, 22.0)
+    );
 }
 
 /// Type › Fill New Type Objects With Placeholder Text (#394, on by default): type the Type tool
@@ -910,11 +1590,26 @@ fn new_type_starts_with_placeholder_text() {
     gesture(&mut s, v, &[(Down, 50.0, 50.0), (Up, 50.0, 50.0)]);
     let placeholder = text(&s);
     assert!(placeholder.len() > 10, "{placeholder}");
-    assert_eq!((s.tool_options()["start"].clone(), s.tool_options()["end"].clone()), (json!(0), json!(placeholder.len())), "selected");
+    assert_eq!(
+        (
+            s.tool_options()["start"].clone(),
+            s.tool_options()["end"].clone()
+        ),
+        (json!(0), json!(placeholder.len())),
+        "selected"
+    );
     s.tool_text("Hi", v).unwrap();
     assert_eq!(text(&s), "Hi");
     // Area type is filled to its frame.
-    gesture(&mut s, v, &[(Down, 100.0, 150.0), (Drag, 300.0, 300.0), (Up, 300.0, 300.0)]);
+    gesture(
+        &mut s,
+        v,
+        &[
+            (Down, 100.0, 150.0),
+            (Drag, 300.0, 300.0),
+            (Up, 300.0, 300.0),
+        ],
+    );
     assert!(text(&s).len() > placeholder.len());
     set_pref(&mut s, "placeholderText", json!(false));
     gesture(&mut s, v, &[(Down, 50.0, 350.0), (Up, 50.0, 350.0)]);
@@ -932,13 +1627,25 @@ fn missing_glyph_protection_keeps_glyphs_a_new_font_lacks() {
         return; // Installed fonts of these names cover other characters.
     }
     let mut s = new_doc();
-    let id = NodeId(s.execute("text.create", &json!({"x": 10, "y": 50, "text": "a\u{180}c", "font": from})).unwrap()["id"].as_u64().unwrap());
+    let id = NodeId(
+        s.execute(
+            "text.create",
+            &json!({"x": 10, "y": 50, "text": "a\u{180}c", "font": from}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     s.execute("select.set", &json!({"ids": [id.0]})).unwrap();
     let fonts = |s: &Session| [0, 1, 3].map(|b| style_at(s, id, b).font_family);
     s.execute("text.setStyle", &json!({"font": to})).unwrap();
     assert_eq!(fonts(&s), [to, from, to], "the character keeps its font");
     s.execute("edit.undo", &json!({})).unwrap();
-    s.execute("text.setRangeStyle", &json!({"id": id.0, "start": 1, "end": 4, "font": to})).unwrap();
+    s.execute(
+        "text.setRangeStyle",
+        &json!({"id": id.0, "start": 1, "end": 4, "font": to}),
+    )
+    .unwrap();
     assert_eq!(fonts(&s), [from, from, to]);
     s.execute("edit.undo", &json!({})).unwrap();
     set_pref(&mut s, "missingGlyphProtection", json!(false));
@@ -955,27 +1662,60 @@ fn missing_glyph_protection_keeps_glyphs_a_new_font_lacks() {
 fn type_selection_by_path_only_picks_type_on_its_baseline() {
     use vectorcraft_tools::{PointerEvent, PointerKind};
     let mut s = new_doc();
-    let id = NodeId(s.execute("text.create", &json!({"x": 100, "y": 100, "text": "Hello world", "size": 20})).unwrap()["id"].as_u64().unwrap());
+    let id = NodeId(
+        s.execute(
+            "text.create",
+            &json!({"x": 100, "y": 100, "text": "Hello world", "size": 20}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     s.execute("select.none", &json!({})).unwrap();
-    let b = s.doc().unwrap().doc.node(id).and_then(|n| n.geometric_bounds()).unwrap();
-    assert!(b.y0 < 95.0 && b.x1 > 130.0, "the glyphs rise above the baseline at y = 100: {b:?}");
+    let b = s
+        .doc()
+        .unwrap()
+        .doc
+        .node(id)
+        .and_then(|n| n.geometric_bounds())
+        .unwrap();
+    assert!(
+        b.y0 < 95.0 && b.x1 > 130.0,
+        "the glyphs rise above the baseline at y = 100: {b:?}"
+    );
     s.select_tool("selection", ViewInfo::default()).unwrap();
     let click = |s: &mut Session, x: f64, y: f64| {
         for k in [PointerKind::Down, PointerKind::Up] {
-            s.pointer(&PointerEvent::new(k, x, y), ViewInfo::default()).unwrap();
+            s.pointer(&PointerEvent::new(k, x, y), ViewInfo::default())
+                .unwrap();
         }
         s.doc().unwrap().selection.objects.clone()
     };
     // Clear of the bounding box's handles: 15 px in from the left, halfway up the glyphs.
     let (x, glyphs) = (b.x0 + 15.0, (b.y0 + 100.0) / 2.0);
-    assert_eq!(click(&mut s, x, glyphs), vec![id], "off: a click among the glyphs selects the type");
+    assert_eq!(
+        click(&mut s, x, glyphs),
+        vec![id],
+        "off: a click among the glyphs selects the type"
+    );
     assert!(click(&mut s, x, 300.0).is_empty(), "empty canvas deselects");
     set_pref(&mut s, "typeSelectionByPathOnly", json!(true));
-    assert!(click(&mut s, x, glyphs).is_empty(), "on: a click among the glyphs selects nothing");
-    assert_eq!(click(&mut s, x, 101.0), vec![id], "on: a click on the baseline selects it");
+    assert!(
+        click(&mut s, x, glyphs).is_empty(),
+        "on: a click among the glyphs selects nothing"
+    );
+    assert_eq!(
+        click(&mut s, x, 101.0),
+        vec![id],
+        "on: a click on the baseline selects it"
+    );
     assert!(click(&mut s, x, 300.0).is_empty());
     set_pref(&mut s, "typeSelectionByPathOnly", json!(false));
-    assert_eq!(click(&mut s, x, glyphs), vec![id], "off again: the glyphs select it");
+    assert_eq!(
+        click(&mut s, x, glyphs),
+        vec![id],
+        "off again: the glyphs select it"
+    );
 }
 
 /// Type Object Selection by Path Only (#394) with real layout: every line's baseline picks point
@@ -994,9 +1734,14 @@ world", "size": 20}),
         )
         .unwrap();
     let src = NodeId(created["id"].as_u64().unwrap());
-    s.execute("text.setStyle", &json!({"fill": "#00ff00"})).unwrap();
-    let NodeKind::Text(t) = &s.doc().unwrap().doc.node(src).unwrap().kind else { panic!("not type") };
-    let [(a, _), (b, _)] = t.cached_baselines[..] else { panic!("two baselines: {:?}", t.cached_baselines) };
+    s.execute("text.setStyle", &json!({"fill": "#00ff00"}))
+        .unwrap();
+    let NodeKind::Text(t) = &s.doc().unwrap().doc.node(src).unwrap().kind else {
+        panic!("not type")
+    };
+    let [(a, _), (b, _)] = t.cached_baselines[..] else {
+        panic!("two baselines: {:?}", t.cached_baselines)
+    };
     let (first, second) = (t.xf * a, t.xf * b);
     assert!(first.y == 100.0 && second.y > 115.0, "{first:?} {second:?}");
     let click = |s: &mut Session, tool: &str, x: f64, y: f64| {
@@ -1009,20 +1754,48 @@ world", "size": 20}),
     set_pref(&mut s, "typeSelectionByPathOnly", json!(true));
     let x = first.x + 15.0;
     assert!(click(&mut s, "selection", x, 300.0).is_empty());
-    assert_eq!(click(&mut s, "selection", x, second.y + 1.0), vec![src], "the second line's baseline");
-    assert!(click(&mut s, "selection", x, (first.y + second.y) / 2.0).is_empty(), "between the lines");
+    assert_eq!(
+        click(&mut s, "selection", x, second.y + 1.0),
+        vec![src],
+        "the second line's baseline"
+    );
+    assert!(
+        click(&mut s, "selection", x, (first.y + second.y) / 2.0).is_empty(),
+        "between the lines"
+    );
     // The Type tool: a click among the glyphs puts the caret in that type, it adds none.
     assert_eq!(click(&mut s, "type", x, first.y - 7.0), vec![src]);
     assert!(s.tool_wants_text(), "editing");
-    let texts =
-        |s: &Session| s.doc().unwrap().doc.layers[0].children().map_or(0, |c| c.iter().filter(|n| matches!(n.kind, NodeKind::Text(_))).count());
+    let texts = |s: &Session| {
+        s.doc().unwrap().doc.layers[0].children().map_or(0, |c| {
+            c.iter()
+                .filter(|n| matches!(n.kind, NodeKind::Text(_)))
+                .count()
+        })
+    };
     assert_eq!(texts(&s), 1, "no new type");
     // The Eyedropper: a click among the glyphs samples the type into the selected type.
     s.select_tool("selection", v).unwrap();
-    let dst = NodeId(s.execute("text.create", &json!({"x": 100, "y": 300, "text": "Target"})).unwrap()["id"].as_u64().unwrap());
+    let dst = NodeId(
+        s.execute(
+            "text.create",
+            &json!({"x": 100, "y": 300, "text": "Target"}),
+        )
+        .unwrap()["id"]
+            .as_u64()
+            .unwrap(),
+    );
     click(&mut s, "eyedropper", x, first.y - 7.0);
-    let NodeKind::Text(t) = &s.doc().unwrap().doc.node(dst).unwrap().kind else { panic!("not type") };
-    assert_eq!((t.first_style().size, t.first_style().fill.color().map(|c| c.to_hex())), (20.0, Some("#00ff00".into())));
+    let NodeKind::Text(t) = &s.doc().unwrap().doc.node(dst).unwrap().kind else {
+        panic!("not type")
+    };
+    assert_eq!(
+        (
+            t.first_style().size,
+            t.first_style().fill.color().map(|c| c.to_hex())
+        ),
+        (20.0, Some("#00ff00".into()))
+    );
 }
 
 /// Preferences › Type › Show Font Names in English (#394): stored and read by the font menus.
@@ -1050,11 +1823,19 @@ fn hyphenation_exceptions_preference_reaches_the_hyphenator() {
     let mut s = Session::new();
     set_pref(&mut s, "hyphenationExceptions", json!(""));
     assert!(vectorcraft_text::hyphenation_exceptions().is_empty());
-    s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 200}))
+        .unwrap();
     let before = s.doc().unwrap().revision;
-    set_pref(&mut s, "hyphenationExceptions", json!("typography, hap-pen"));
+    set_pref(
+        &mut s,
+        "hyphenationExceptions",
+        json!("typography, hap-pen"),
+    );
     assert_eq!(s.prefs.hyphenation_exceptions, "typography, hap-pen");
-    assert_eq!(vectorcraft_text::hyphenation_exceptions(), "typography, hap-pen");
+    assert_eq!(
+        vectorcraft_text::hyphenation_exceptions(),
+        "typography, hap-pen"
+    );
     assert!(s.doc().unwrap().revision > before, "type reflows");
     set_pref(&mut s, "hyphenationExceptions", json!(""));
     assert!(vectorcraft_text::hyphenation_exceptions().is_empty());
@@ -1069,14 +1850,33 @@ fn snap_to_point_lands_the_grabbed_anchor_on_another_anchor() {
     let mut s = new_doc();
     let a = square(&mut s, 100.0, 100.0);
     square(&mut s, 300.0, 100.0);
-    for v in [ViewInfo { smart_guides: false, ..ViewInfo::default() }, ViewInfo::default()] {
+    for v in [
+        ViewInfo {
+            smart_guides: false,
+            ..ViewInfo::default()
+        },
+        ViewInfo::default(),
+    ] {
         s.select_tool("selection", v).unwrap();
         // Nothing selected, so no bounding box handle sits on the corner.
         s.execute("select.none", &json!({})).unwrap();
         // Pressed 2 px left of and below the top-right anchor (150, 100), released with the
         // pointer 1.4 px from the other square's top-left anchor (300, 100).
-        gesture(&mut s, v, &[(Down, 148.0, 102.0), (Drag, 200.0, 110.0), (Drag, 299.0, 101.0), (Up, 299.0, 101.0)]);
-        assert_eq!(top_left(&s, a), (250.0, 100.0), "the grabbed anchor lands on the anchor ({v:?})");
+        gesture(
+            &mut s,
+            v,
+            &[
+                (Down, 148.0, 102.0),
+                (Drag, 200.0, 110.0),
+                (Drag, 299.0, 101.0),
+                (Up, 299.0, 101.0),
+            ],
+        );
+        assert_eq!(
+            top_left(&s, a),
+            (250.0, 100.0),
+            "the grabbed anchor lands on the anchor ({v:?})"
+        );
         s.execute("edit.undo", &json!({})).unwrap();
     }
 }
@@ -1090,18 +1890,55 @@ fn snap_to_point_cues_anchors_and_lands_pen_clicks_on_them() {
     let mut s = new_doc();
     square(&mut s, 300.0, 100.0);
     s.execute("select.none", &json!({})).unwrap();
-    let on = ViewInfo { smart_guides: false, ..ViewInfo::default() };
-    let off = ViewInfo { snap_to_point: false, ..on };
+    let on = ViewInfo {
+        smart_guides: false,
+        ..ViewInfo::default()
+    };
+    let off = ViewInfo {
+        snap_to_point: false,
+        ..on
+    };
     s.select_tool("selection", on).unwrap();
     let near = vectorcraft_geom::Point::new(302.0, 102.0);
     assert_eq!(s.cursor(near, Mods::default(), on), Cursor::ArrowHollow);
-    assert_eq!(s.cursor(vectorcraft_geom::Point::new(325.0, 125.0), Mods::default(), on), Cursor::Arrow, "away from the anchors");
-    assert_eq!(s.cursor(near, Mods::default(), off), Cursor::Arrow, "Snap to Point off");
+    assert_eq!(
+        s.cursor(
+            vectorcraft_geom::Point::new(325.0, 125.0),
+            Mods::default(),
+            on
+        ),
+        Cursor::Arrow,
+        "away from the anchors"
+    );
+    assert_eq!(
+        s.cursor(near, Mods::default(), off),
+        Cursor::Arrow,
+        "Snap to Point off"
+    );
     for (v, first) in [(on, (300.0, 100.0)), (off, (301.0, 101.0))] {
         s.select_tool("pen", v).unwrap();
-        gesture(&mut s, v, &[(Down, 301.0, 101.0), (Up, 301.0, 101.0), (Down, 200.0, 250.0), (Up, 200.0, 250.0)]);
+        gesture(
+            &mut s,
+            v,
+            &[
+                (Down, 301.0, 101.0),
+                (Up, 301.0, 101.0),
+                (Down, 200.0, 250.0),
+                (Up, 200.0, 250.0),
+            ],
+        );
         let id = *s.doc().unwrap().selection.objects.first().unwrap();
-        let p = s.doc().unwrap().doc.node(id).unwrap().path_data().unwrap().subpaths[0].anchors[0].p;
+        let p = s
+            .doc()
+            .unwrap()
+            .doc
+            .node(id)
+            .unwrap()
+            .path_data()
+            .unwrap()
+            .subpaths[0]
+            .anchors[0]
+            .p;
         assert_eq!((p.x, p.y), first, "{v:?}");
         s.execute("edit.undo", &json!({})).unwrap();
         s.execute("select.none", &json!({})).unwrap();

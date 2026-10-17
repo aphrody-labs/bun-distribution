@@ -1,6 +1,6 @@
 use core::f32::consts::FRAC_PI_2;
 
-use bevy_math::{ops, Isometry2d, Isometry3d, Quat, Rot2, Vec2, Vec3A, Vec3Swizzles};
+use bevy_math::{Isometry2d, Isometry3d, Quat, Rot2, Vec2, Vec3A, Vec3Swizzles, ops};
 
 use crate::{
     Bounded2d, BoundingCircle, BoundingVolume, Capsule2d, Circle, Cuboid, Cylinder, Ellipse,
@@ -253,7 +253,7 @@ pub trait BoundedExtrusion: Primitive2d + Bounded2d {
 mod tests {
     use core::f32::consts::FRAC_PI_4;
 
-    use bevy_math::{ops, Dir2, EulerRot, Isometry3d, Quat, Vec2, Vec3, Vec3A};
+    use bevy_math::{Dir2, EulerRot, Isometry3d, Quat, Vec2, Vec3, Vec3A, ops};
 
     use crate::{
         Bounded3d, BoundingVolume, Capsule2d, Circle, Ellipse, Extrusion, Line2d, Polygon,

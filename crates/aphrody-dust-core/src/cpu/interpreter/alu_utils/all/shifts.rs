@@ -8,7 +8,11 @@ fn lsl_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
 }
 
 pub fn lsl_imm_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
-    if shift == 0 { value } else { lsl_s(regs, value, shift) }
+    if shift == 0 {
+        value
+    } else {
+        lsl_s(regs, value, shift)
+    }
 }
 
 pub fn lsl_reg(value: u32, shift: u8) -> u32 {
@@ -56,7 +60,11 @@ fn asr_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
 }
 
 pub fn asr_imm_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
-    asr_s(regs, (value as i32).wrapping_shr(shift.wrapping_sub(1) as u32) as u32, 1)
+    asr_s(
+        regs,
+        (value as i32).wrapping_shr(shift.wrapping_sub(1) as u32) as u32,
+        1,
+    )
 }
 
 pub fn asr_reg_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
@@ -103,7 +111,8 @@ pub fn ror_reg_s(regs: &mut Regs, value: u32, shift: u8) -> u32 {
     if shift == 0 {
         value
     } else {
-        regs.cpsr.set_carry(value & 1_u32.wrapping_shl((shift - 1) as u32) != 0);
+        regs.cpsr
+            .set_carry(value & 1_u32.wrapping_shl((shift - 1) as u32) != 0);
         value.rotate_right(shift as u32)
     }
 }

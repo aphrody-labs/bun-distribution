@@ -10,8 +10,15 @@ fn make_blend_state(
     dst_factor: wgpu::BlendFactor,
     operation: wgpu::BlendOperation,
 ) -> wgpu::BlendState {
-    let component = wgpu::BlendComponent { src_factor, dst_factor, operation };
-    wgpu::BlendState { color: component, alpha: component }
+    let component = wgpu::BlendComponent {
+        src_factor,
+        dst_factor,
+        operation,
+    };
+    wgpu::BlendState {
+        color: component,
+        alpha: component,
+    }
 }
 
 // Blend factor approximations for logic ops.
@@ -114,7 +121,10 @@ pub(crate) struct UberPipelineKey {
 
 impl From<FullPipelineKey> for UberPipelineKey {
     fn from(key: FullPipelineKey) -> Self {
-        Self { shader: key.shader, fixed: key.fixed }
+        Self {
+            shader: key.shader,
+            fixed: key.fixed,
+        }
     }
 }
 
@@ -305,7 +315,11 @@ fn create_pipeline(
         // In subtract mode the hardware ignores the configured src/dst
         // factors and computes `dst = dst - src` with ONE/ONE.
         let (src_factor, dst_factor, operation) = if key.subtract {
-            (wgpu::BlendFactor::One, wgpu::BlendFactor::One, wgpu::BlendOperation::ReverseSubtract)
+            (
+                wgpu::BlendFactor::One,
+                wgpu::BlendFactor::One,
+                wgpu::BlendOperation::ReverseSubtract,
+            )
         } else {
             (
                 helpers::map_src_blend_factor(key.src_factor),
@@ -317,8 +331,11 @@ fn create_pipeline(
     } else if key.logic_op_enable {
         let (be, sub, sf, df) = logic_op_approximation(key.logic_op);
         be.then(|| {
-            let operation =
-                if sub { wgpu::BlendOperation::ReverseSubtract } else { wgpu::BlendOperation::Add };
+            let operation = if sub {
+                wgpu::BlendOperation::ReverseSubtract
+            } else {
+                wgpu::BlendOperation::Add
+            };
             make_blend_state(sf, df, operation)
         })
     } else {
@@ -366,7 +383,11 @@ fn create_pipeline(
         fragment: Some(wgpu::FragmentState {
             module: shader,
             entry_point: Some(if key.ztex { "fs_main_ztex" } else { "fs_main" }),
-            targets: &[Some(wgpu::ColorTargetState { format: surface_format, blend, write_mask })],
+            targets: &[Some(wgpu::ColorTargetState {
+                format: surface_format,
+                blend,
+                write_mask,
+            })],
             compilation_options: wgpu::PipelineCompilationOptions {
                 constants,
                 ..Default::default()
@@ -457,7 +478,12 @@ impl PipelineCompiler {
             })
             .expect("failed to start GX pipeline compiler");
 
-        Self { request_tx, result_rx, shutdown_tx, thread: Some(thread) }
+        Self {
+            request_tx,
+            result_rx,
+            shutdown_tx,
+            thread: Some(thread),
+        }
     }
 
     pub(crate) fn request(
@@ -466,7 +492,13 @@ impl PipelineCompiler {
         key: FullPipelineKey,
         shader: wgpu::ShaderModule,
     ) -> bool {
-        self.request_tx.try_send(PipelineCompileRequest { generation, key, shader }).is_ok()
+        self.request_tx
+            .try_send(PipelineCompileRequest {
+                generation,
+                key,
+                shader,
+            })
+            .is_ok()
     }
 
     pub(crate) fn try_recv(&self) -> Option<PipelineCompileResult> {

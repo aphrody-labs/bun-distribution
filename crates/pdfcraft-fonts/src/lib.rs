@@ -5,7 +5,14 @@
 //! programs, so it has no glyph outlines for document fonts and cannot subset or re-embed. That
 //! is phase F 4.2 in docs/plan/execution-plan.md.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod craft;
 pub mod embedding;
@@ -16,14 +23,19 @@ mod shaping;
 pub mod source_shaping;
 mod std14;
 pub use craft::{
-    CRAFT_FONTS, CraftFont, SHIPPORI_MINCHO, document_arabic_font, document_hebrew_font, document_japanese_font, document_japanese_font_for_style,
-    document_japanese_fonts_for_style, document_thai_font, ui_arabic_fonts, ui_chinese_fonts, ui_cjk_fonts, ui_hebrew_fonts, ui_japanese_fonts,
-    ui_telugu_fonts, ui_thai_fonts,
+    CRAFT_FONTS, CraftFont, SHIPPORI_MINCHO, document_arabic_font, document_hebrew_font,
+    document_japanese_font, document_japanese_font_for_style, document_japanese_fonts_for_style,
+    document_thai_font, ui_arabic_fonts, ui_chinese_fonts, ui_cjk_fonts, ui_hebrew_fonts,
+    ui_japanese_fonts, ui_telugu_fonts, ui_thai_fonts,
 };
 pub use script::{
-    GlyphError, GlyphOutline, INTER_REGULAR, MAX_SIGNATURE_CHARS, ScriptOutline, japanese_glyph, japanese_glyph_from, script_missing, script_outline,
+    GlyphError, GlyphOutline, INTER_REGULAR, MAX_SIGNATURE_CHARS, ScriptOutline, japanese_glyph,
+    japanese_glyph_from, script_missing, script_outline,
 };
-pub use shaping::{ShapedCluster, ShapedScript, arabic_glyph, arabic_has, shape_arabic, shape_thai, shaped_glyph, thai_has};
+pub use shaping::{
+    ShapedCluster, ShapedScript, arabic_glyph, arabic_has, shape_arabic, shape_thai, shaped_glyph,
+    thai_has,
+};
 pub use std14::Std14;
 
 /// Advance of `s` in Helvetica at `size` points, using the exact standard-14 metrics.
@@ -72,13 +84,23 @@ pub fn wrap(text: &str, size: f64, width: f64) -> Vec<String> {
 }
 
 /// [`wrap`], measuring with `measure` (for example [`cjk_width`]).
-pub fn wrap_with(text: &str, size: f64, width: f64, measure: impl Fn(&str, f64) -> f64) -> Vec<String> {
+pub fn wrap_with(
+    text: &str,
+    size: f64,
+    width: f64,
+    measure: impl Fn(&str, f64) -> f64,
+) -> Vec<String> {
     let mut lines = Vec::new();
     for para in text.split(['\n', '\r']) {
         let mut line = String::new();
         for word in para.split(' ') {
-            let candidate = if line.is_empty() { word.to_string() } else { format!("{line} {word}") };
-            if measure(&candidate, size) <= width || line.is_empty() && measure(word, size) <= width {
+            let candidate = if line.is_empty() {
+                word.to_string()
+            } else {
+                format!("{line} {word}")
+            };
+            if measure(&candidate, size) <= width || line.is_empty() && measure(word, size) <= width
+            {
                 line = candidate;
                 continue;
             }
@@ -115,7 +137,15 @@ pub fn win_ansi_byte(c: char) -> Option<u8> {
 /// Encode text in WinAnsiEncoding (ISO 32000-2 Annex D); tabs become spaces and unmappable
 /// characters become `?`.
 pub fn win_ansi(s: &str) -> Vec<u8> {
-    s.chars().map(|c| if c == '\t' { b' ' } else { win_ansi_byte(c).unwrap_or(b'?') }).collect()
+    s.chars()
+        .map(|c| {
+            if c == '\t' {
+                b' '
+            } else {
+                win_ansi_byte(c).unwrap_or(b'?')
+            }
+        })
+        .collect()
 }
 
 /// The character encoding of a predefined Unicode CMap (`UniJIS-UTF16-H`, `UniGB-UCS2-H`, …;
@@ -196,7 +226,8 @@ pub fn first_non_win_ansi(s: &str) -> Option<char> {
 /// don't count: appearances lay lines out themselves. PdfCraft refuses such text with
 /// [`undrawable_message`] instead of writing `?` (AGENTS.md §4: never lose work silently).
 pub fn first_undrawable(s: &str) -> Option<char> {
-    s.chars().find(|c| !matches!(c, '\n' | '\r') && !win_ansi_encodable(*c))
+    s.chars()
+        .find(|c| !matches!(c, '\n' | '\r') && !win_ansi_encodable(*c))
 }
 
 /// The error for text the standard fonts can't draw ([`first_undrawable`]): which character, in
@@ -219,13 +250,18 @@ pub const UNDRAWN_MARK: &[u8] = b"PCUndrawn";
 
 /// The character [`UNDRAWN_MARK`] records on `d`, if PdfCraft drew its appearance with `?`.
 pub fn undrawn_mark(d: &pdfcraft_cos::Dict) -> Option<char> {
-    d.get(UNDRAWN_MARK).and_then(pdfcraft_cos::Object::as_string).and_then(|s| s.to_text().chars().next())
+    d.get(UNDRAWN_MARK)
+        .and_then(pdfcraft_cos::Object::as_string)
+        .and_then(|s| s.to_text().chars().next())
 }
 
 /// Record (`Some`) or clear (`None`) [`UNDRAWN_MARK`] on `d`, for the appearance just drawn.
 pub fn set_undrawn_mark(d: &mut pdfcraft_cos::Dict, c: Option<char>) {
     match c {
-        Some(c) => d.set(UNDRAWN_MARK.to_vec(), pdfcraft_cos::PdfString::text(&c.to_string())),
+        Some(c) => d.set(
+            UNDRAWN_MARK.to_vec(),
+            pdfcraft_cos::PdfString::text(&c.to_string()),
+        ),
         None => {
             d.remove(UNDRAWN_MARK);
         }
@@ -268,7 +304,10 @@ mod tests {
         assert_eq!(first_undrawable("a\u{7}b"), Some('\u{7}'));
         assert_eq!(first_undrawable("𠀋"), Some('𠀋'));
         let m = undrawable_message("the comment", '签');
-        assert_eq!(m, "the standard fonts can't draw \"签\" (U+7B7E) in the comment; only Western European characters can be written there for now");
+        assert_eq!(
+            m,
+            "the standard fonts can't draw \"签\" (U+7B7E) in the comment; only Western European characters can be written there for now"
+        );
         assert!(undrawable_message("the reason", '\u{7}').contains("\"\\u{7}\" (U+0007)"));
         assert!(undrawable_message("x", '𠀋').contains("(U+2000B)"));
     }
@@ -278,7 +317,11 @@ mod tests {
         let mut d = pdfcraft_cos::Dict::new();
         assert_eq!(undrawn_mark(&d), None);
         set_undrawn_mark(&mut d, Some('𠀋'));
-        assert_eq!(undrawn_mark(&d), Some('𠀋'), "beyond U+FFFF, as a UTF-16 text string");
+        assert_eq!(
+            undrawn_mark(&d),
+            Some('𠀋'),
+            "beyond U+FFFF, as a UTF-16 text string"
+        );
         set_undrawn_mark(&mut d, Some('签'));
         assert_eq!(undrawn_mark(&d), Some('签'));
         set_undrawn_mark(&mut d, None);
@@ -305,7 +348,9 @@ mod tests {
     fn win_ansi_covers_the_0x80_to_0x9f_glyphs() {
         // Every character in the WinAnsiEncoding table encodes to its code and back (#347).
         for (code, &u) in encodings::WIN_ANSI.iter().enumerate() {
-            let Some(c) = char::from_u32(u).filter(|_| u != 0) else { continue };
+            let Some(c) = char::from_u32(u).filter(|_| u != 0) else {
+                continue;
+            };
             assert_eq!(win_ansi_byte(c), Some(code as u8), "{c:?} (U+{u:04X})");
             assert_eq!(win_ansi(&c.to_string()), [code as u8]);
         }
@@ -320,11 +365,23 @@ mod tests {
 
     #[test]
     fn unicode_cmaps_encode_cjk_text() {
-        assert_eq!(UnicodeCMap::from_name(b"UniJIS-UTF16-H"), Some(UnicodeCMap::Utf16));
+        assert_eq!(
+            UnicodeCMap::from_name(b"UniJIS-UTF16-H"),
+            Some(UnicodeCMap::Utf16)
+        );
         assert_eq!(UnicodeCMap::from_name(b"UniGB-UCS2-V"), None);
-        assert_eq!(UnicodeCMap::from_name(b"UniJIS-UCS2-HW-H"), Some(UnicodeCMap::Ucs2));
-        assert_eq!(UnicodeCMap::from_name(b"UniKS-UTF8-H"), Some(UnicodeCMap::Utf8));
-        assert_eq!(UnicodeCMap::from_name(b"UniJIS2004-UTF32-H"), Some(UnicodeCMap::Utf32));
+        assert_eq!(
+            UnicodeCMap::from_name(b"UniJIS-UCS2-HW-H"),
+            Some(UnicodeCMap::Ucs2)
+        );
+        assert_eq!(
+            UnicodeCMap::from_name(b"UniKS-UTF8-H"),
+            Some(UnicodeCMap::Utf8)
+        );
+        assert_eq!(
+            UnicodeCMap::from_name(b"UniJIS2004-UTF32-H"),
+            Some(UnicodeCMap::Utf32)
+        );
         assert_eq!(UnicodeCMap::from_name(b"Identity-H"), None);
         assert_eq!(UnicodeCMap::from_name(b"90ms-RKSJ-H"), None);
         assert_eq!(UnicodeCMap::from_name(b"\xff\xfe"), None);
@@ -342,7 +399,15 @@ mod tests {
         assert_eq!(cjk_width("令和", 10.0), 20.0);
         assert_eq!(cjk_width("ｱ", 10.0), 5.0);
         assert_eq!(cjk_width("A", 10.0), helvetica_width("A", 10.0));
-        let lines = wrap_with("日本語のテキストは文字単位で折り返されます", 10.0, 45.0, cjk_width);
-        assert!(lines.len() > 3 && lines.iter().all(|l| cjk_width(l, 10.0) <= 45.0), "{lines:?}");
+        let lines = wrap_with(
+            "日本語のテキストは文字単位で折り返されます",
+            10.0,
+            45.0,
+            cjk_width,
+        );
+        assert!(
+            lines.len() > 3 && lines.iter().all(|l| cjk_width(l, 10.0) <= 45.0),
+            "{lines:?}"
+        );
     }
 }

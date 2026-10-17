@@ -12,7 +12,10 @@ fn imported(effects: Value) -> (Vec<figcraft_doc::Effect>, Vec<String>) {
         ]}
     ]}});
     let (doc, warnings) = import(&file, &no_images).unwrap();
-    (doc.nodes().find(|n| n.name == "S").unwrap().effects.clone(), warnings)
+    (
+        doc.nodes().find(|n| n.name == "S").unwrap().effects.clone(),
+        warnings,
+    )
 }
 
 #[test]
@@ -25,15 +28,42 @@ fn noise_texture_and_glass_import() {
         {"type": "GLASS", "lightIntensity": 0.6, "lightAngle": 30, "refraction": 0.9, "depth": 12, "dispersion": 0.2, "radius": 8, "visible": false}
     ]));
     assert!(warnings.is_empty(), "{warnings:?}");
-    let EffectKind::Noise(a) = &fx[0].kind else { panic!("{fx:?}") };
-    assert_eq!((a.mode, a.size, a.size_y, a.density), (NoiseMode::Duo, 2.5, None, 0.7));
-    assert_eq!((a.color.a, a.secondary.b, a.blend), (0.5, 1.0, figcraft_doc::color::BlendMode::Multiply));
-    let EffectKind::Noise(b) = &fx[1].kind else { panic!("{fx:?}") };
-    assert_eq!((b.mode, b.size, b.size_y, b.density, b.opacity), (NoiseMode::Multi, 1.0, Some(3.0), 1.0, 0.4));
-    let EffectKind::Texture(t) = &fx[2].kind else { panic!("{fx:?}") };
+    let EffectKind::Noise(a) = &fx[0].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (a.mode, a.size, a.size_y, a.density),
+        (NoiseMode::Duo, 2.5, None, 0.7)
+    );
+    assert_eq!(
+        (a.color.a, a.secondary.b, a.blend),
+        (0.5, 1.0, figcraft_doc::color::BlendMode::Multiply)
+    );
+    let EffectKind::Noise(b) = &fx[1].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (b.mode, b.size, b.size_y, b.density, b.opacity),
+        (NoiseMode::Multi, 1.0, Some(3.0), 1.0, 0.4)
+    );
+    let EffectKind::Texture(t) = &fx[2].kind else {
+        panic!("{fx:?}")
+    };
     assert_eq!((t.size, t.radius, t.clip_to_shape), (1.5, 6.0, true));
-    let EffectKind::Glass(g) = &fx[3].kind else { panic!("{fx:?}") };
-    assert_eq!((g.light_intensity, g.light_angle, g.refraction, g.depth, g.dispersion, g.frost), (0.6, 30.0, 0.9, 12.0, 0.2, 8.0));
+    let EffectKind::Glass(g) = &fx[3].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (
+            g.light_intensity,
+            g.light_angle,
+            g.refraction,
+            g.depth,
+            g.dispersion,
+            g.frost
+        ),
+        (0.6, 30.0, 0.9, 12.0, 0.2, 8.0)
+    );
     assert!(!fx[3].visible);
 }
 
@@ -44,10 +74,19 @@ fn junk_effect_values_import_sanitised() {
         {"type": "NOISE", "noiseType": 7, "density": -2, "noiseSize": -1},
         {"type": "TEXTURE", "radius": "far"}
     ]));
-    let EffectKind::Glass(g) = &fx[0].kind else { panic!("{fx:?}") };
-    assert_eq!((g.refraction, g.depth, g.dispersion), (figcraft_doc::Glass::default().refraction, 1.0, 1.0));
-    let EffectKind::Noise(n) = &fx[1].kind else { panic!("{fx:?}") };
+    let EffectKind::Glass(g) = &fx[0].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (g.refraction, g.depth, g.dispersion),
+        (figcraft_doc::Glass::default().refraction, 1.0, 1.0)
+    );
+    let EffectKind::Noise(n) = &fx[1].kind else {
+        panic!("{fx:?}")
+    };
     assert_eq!((n.mode, n.density, n.size), (NoiseMode::Mono, 0.0, 0.0));
-    let EffectKind::Texture(t) = &fx[2].kind else { panic!("{fx:?}") };
+    let EffectKind::Texture(t) = &fx[2].kind else {
+        panic!("{fx:?}")
+    };
     assert_eq!(t.radius, figcraft_doc::Texture::default().radius);
 }

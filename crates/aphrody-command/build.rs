@@ -12,7 +12,13 @@ fn main() {
         .args(["rev-parse", "--short=10", "HEAD"])
         .output()
         .ok()
-        .and_then(|o| if o.status.success() { String::from_utf8(o.stdout).ok() } else { None })
+        .and_then(|o| {
+            if o.status.success() {
+                String::from_utf8(o.stdout).ok()
+            } else {
+                None
+            }
+        })
         .map_or_else(|| "unknown".to_string(), |s| s.trim().to_string());
     println!("cargo:rustc-env=APHRODY_GIT_SHA={sha}");
 

@@ -18,8 +18,20 @@ impl FootageSource for RecordingNative {
     fn frame(&self, _: ItemId, _: &Footage, _: Tick) -> Option<Arc<Image>> {
         None
     }
-    fn audio(&self, _: ItemId, footage: &Footage, start: Tick, frames: usize, rate: u32) -> Option<Vec<f32>> {
-        self.calls.lock().unwrap().push((start, start.to_units_floor(i64::from(rate)), frames, rate));
+    fn audio(
+        &self,
+        _: ItemId,
+        footage: &Footage,
+        start: Tick,
+        frames: usize,
+        rate: u32,
+    ) -> Option<Vec<f32>> {
+        self.calls.lock().unwrap().push((
+            start,
+            start.to_units_floor(i64::from(rate)),
+            frames,
+            rate,
+        ));
         Some(self.pool.audio_samples(footage, start, frames, rate))
     }
 }
@@ -69,7 +81,10 @@ fn chunk<'a>(bytes: &'a [u8], name: &[u8; 4]) -> &'a [u8] {
 fn first_sample_tick(index: i64, rate: u32) -> Tick {
     let numerator = i128::from(index) * i128::from(TICKS_PER_SECOND);
     let denominator = i128::from(rate);
-    Tick((numerator.div_euclid(denominator) + i128::from(numerator.rem_euclid(denominator) != 0)) as i64)
+    Tick(
+        (numerator.div_euclid(denominator) + i128::from(numerator.rem_euclid(denominator) != 0))
+            as i64,
+    )
 }
 fn check(native_rate: u32, output_rate: u32) {
     let frame_rate = FrameRate::FPS_24;
@@ -93,19 +108,50 @@ fn check(native_rate: u32, output_rate: u32) {
         assert_eq!(oracle_tick.to_units_floor(i64::from(output_rate)), first);
         let expected = pool.audio_samples(&footage, oracle_tick, frames, output_rate);
         assert_eq!(expected.len(), frames * 2);
-        assert!(expected.iter().any(|sample| *sample != 0.0), "the real native decoding/resampling control must not be silent");
+        assert!(
+            expected.iter().any(|sample| *sample != 0.0),
+            "the real native decoding/resampling control must not be silent"
+        );
         if impulses {
-            assert_eq!(expected[..2], [0.75, -0.75], "the actual native provider decodes the first indexed source impulse");
-            assert_eq!(expected[expected.len() - 2..], [0.25, -0.25], "the actual native provider decodes the last indexed source impulse");
+            assert_eq!(
+                expected[..2],
+                [0.75, -0.75],
+                "the actual native provider decodes the first indexed source impulse"
+            );
+            assert_eq!(
+                expected[expected.len() - 2..],
+                [0.25, -0.25],
+                "the actual native provider decodes the last indexed source impulse"
+            );
         }
-        let provider = RecordingNative { pool, calls: Mutex::default() };
+        let provider = RecordingNative {
+            pool,
+            calls: Mutex::default(),
+        };
         let mut project = Project::default();
         let duration = Tick::from_seconds_f64(1.0);
-        let item = project.add_item("Native WAV", Default::default(), None, ItemKind::Footage(footage));
+        let item = project.add_item(
+            "Native WAV",
+            Default::default(),
+            None,
+            ItemKind::Footage(footage),
+        );
         let mut comp = Comp::new(4, 4, frame_rate, duration);
         comp.work_area = span;
-        comp.layers.push(build::layer(&mut project, &comp, "Native WAV", LayerSource::Footage { item }, (4, 4), None));
-        let comp = project.add_item("Comp", Default::default(), None, ItemKind::Comp(comp.into()));
+        comp.layers.push(build::layer(
+            &mut project,
+            &comp,
+            "Native WAV",
+            LayerSource::Footage { item },
+            (4, 4),
+            None,
+        ));
+        let comp = project.add_item(
+            "Comp",
+            Default::default(),
+            None,
+            ItemKind::Comp(comp.into()),
+        );
         let settings = RenderSettings::default();
         let mut output = OutputModule::for_format(OutputFormat::Wav);
         output.audio_sample_rate = output_rate;
@@ -113,7 +159,9 @@ fn check(native_rate: u32, output_rate: u32) {
         output.audio_format = AudioFormat::F32;
         let files: Arc<Mutex<Vec<(String, Vec<u8>)>>> = Default::default();
         let received = files.clone();
-        let sink: Box<Sink> = Box::new(move |name: &str, bytes: Vec<u8>| received.lock().unwrap().push((name.into(), bytes)));
+        let sink: Box<Sink> = Box::new(move |name: &str, bytes: Vec<u8>| {
+            received.lock().unwrap().push((name.into(), bytes))
+        });
         let job = Job {
             project: &project,
             footage: &provider,
@@ -130,17 +178,32 @@ fn check(native_rate: u32, output_rate: u32) {
         let report = export(&job, &mut |_| true).unwrap();
         assert!(report.audio);
         let files = files.lock().unwrap();
-        let wav = &files.iter().find(|(name, _)| name.ends_with(".wav")).unwrap().1;
+        let wav = &files
+            .iter()
+            .find(|(name, _)| name.ends_with(".wav"))
+            .unwrap()
+            .1;
         assert_eq!(&wav[..4], b"RIFF");
         assert_eq!(&wav[8..12], b"WAVE");
         let format = chunk(wav, b"fmt ");
         assert_eq!(u16::from_le_bytes(format[..2].try_into().unwrap()), 3);
-        assert_eq!(u32::from_le_bytes(format[4..8].try_into().unwrap()), output_rate);
+        assert_eq!(
+            u32::from_le_bytes(format[4..8].try_into().unwrap()),
+            output_rate
+        );
         let pcm = chunk(wav, b"data");
         assert_eq!(pcm.len(), frames * 8, "native work-area sample count");
-        let actual: Vec<f32> = pcm.as_chunks::<4>().0.iter().map(|bytes| f32::from_le_bytes(*bytes)).collect();
+        let actual: Vec<f32> = pcm
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|bytes| f32::from_le_bytes(*bytes))
+            .collect();
         let calls = provider.calls.lock().unwrap();
-        assert!(!calls.is_empty(), "production export actually called the real native provider");
+        assert!(
+            !calls.is_empty(),
+            "production export actually called the real native provider"
+        );
         eprintln!(
             "native_rate={native_rate} output_rate={output_rate} loops={loops} first={first} end={end} count={frames} provider_calls={calls:?} first_actual={:?} first_expected={:?} last_actual={:?} last_expected={:?}",
             &actual[..2],
@@ -150,10 +213,18 @@ fn check(native_rate: u32, output_rate: u32) {
         );
         if actual != expected {
             let first_mismatch = actual.iter().zip(&expected).position(|(a, b)| a != b);
-            mismatches.push((loops, first_mismatch, actual[..2].to_vec(), expected[..2].to_vec()));
+            mismatches.push((
+                loops,
+                first_mismatch,
+                actual[..2].to_vec(),
+                expected[..2].to_vec(),
+            ));
         }
     }
-    assert!(mismatches.is_empty(), "production native WAV export must preserve the native provider's selected sample positions: {mismatches:?}");
+    assert!(
+        mismatches.is_empty(),
+        "production native WAV export must preserve the native provider's selected sample positions: {mismatches:?}"
+    );
 }
 #[test]
 fn native_media_wav_work_area_preserves_44100_positions() {

@@ -37,13 +37,21 @@ async fn real_server_plans_launches_answers_and_stops() {
     let facts = ModelFacts::read(&model).expect("gguf facts");
     let caps = ServerCapabilities::probe(&binary).expect("server capabilities");
     let budget = Budget::from_profile(&aphrody_models::accel::probe());
-    let plan = plan(&facts, &caps, budget, &PlanRequest::new(Role::Chat, "smoke-model"));
+    let plan = plan(
+        &facts,
+        &caps,
+        budget,
+        &PlanRequest::new(Role::Chat, "smoke-model"),
+    );
     eprintln!(
         "facts: {} {} blocks, trained ctx {}",
         facts.architecture, facts.block_count, facts.context_length
     );
     eprintln!("build: {:?}", caps.version);
-    eprintln!("plan: {:?} ctx {} kv {:?}", plan.spec.placement, plan.spec.ctx, plan.spec.kv);
+    eprintln!(
+        "plan: {:?} ctx {} kv {:?}",
+        plan.spec.placement, plan.spec.ctx, plan.spec.kv
+    );
     for note in &plan.notes {
         eprintln!("  - {note}");
     }
@@ -51,17 +59,30 @@ async fn real_server_plans_launches_answers_and_stops() {
     let root = tempfile::tempdir().expect("tempdir");
     let supervisor = Supervisor::new(
         StateDirs::new(root.path()),
-        DaemonCommand { program: PathBuf::from(DAEMON), args: Vec::new() },
+        DaemonCommand {
+            program: PathBuf::from(DAEMON),
+            args: Vec::new(),
+        },
     );
-    let options =
-        EnsureOptions { ready_timeout: Duration::from_secs(300), ..EnsureOptions::default() };
+    let options = EnsureOptions {
+        ready_timeout: Duration::from_secs(300),
+        ..EnsureOptions::default()
+    };
     let endpoint = match supervisor.ensure(&binary, &plan, options).await {
         Ok(endpoint) => endpoint,
         Err(error) => panic!("launch failed: {error}"),
     };
-    eprintln!("ready at {} (pid {})", endpoint.base_url(), endpoint.state.server_pid);
+    eprintln!(
+        "ready at {} (pid {})",
+        endpoint.base_url(),
+        endpoint.state.server_pid
+    );
 
-    let tokens = endpoint.client().count_tokens("The quick brown fox").await.expect("tokenize");
+    let tokens = endpoint
+        .client()
+        .count_tokens("The quick brown fox")
+        .await
+        .expect("tokenize");
     assert!(tokens > 0, "tokenize returned no tokens");
 
     let client = OpenAiCompatClient::from_provider(
@@ -88,15 +109,21 @@ async fn real_server_plans_launches_answers_and_stops() {
         match event.expect("event") {
             ModelStreamEvent::TextDelta(delta) => text.push_str(&delta),
             ModelStreamEvent::Completed { .. } => completed = true,
-            _ => {},
+            _ => {}
         }
     }
     eprintln!("model said: {text:?}");
     assert!(completed, "the stream did not complete");
     assert!(!text.trim().is_empty(), "the model produced no text");
 
-    let attached = supervisor.ensure(&binary, &plan, options).await.expect("attach");
-    assert!(attached.attached, "a second ensure must reuse the running server");
+    let attached = supervisor
+        .ensure(&binary, &plan, options)
+        .await
+        .expect("attach");
+    assert!(
+        attached.attached,
+        "a second ensure must reuse the running server"
+    );
 
     assert!(supervisor.stop(Role::Chat).await.expect("stop"));
     assert!(supervisor.status(Role::Chat).is_none());

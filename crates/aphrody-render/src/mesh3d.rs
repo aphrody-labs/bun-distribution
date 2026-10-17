@@ -197,12 +197,24 @@ impl MeshData {
         let center = if positions.is_empty() {
             [0.0; 3]
         } else {
-            [(min[0] + max[0]) * 0.5, (min[1] + max[1]) * 0.5, (min[2] + max[2]) * 0.5]
+            [
+                (min[0] + max[0]) * 0.5,
+                (min[1] + max[1]) * 0.5,
+                (min[2] + max[2]) * 0.5,
+            ]
         };
         let c = Vec3::from_array(center);
-        let radius =
-            positions.iter().map(|p| Vec3::from_array(*p).sub(c).length()).fold(0.0_f32, f32::max);
-        Self { positions, normals, indices, bounds_center: center, bounds_radius: radius }
+        let radius = positions
+            .iter()
+            .map(|p| Vec3::from_array(*p).sub(c).length())
+            .fold(0.0_f32, f32::max);
+        Self {
+            positions,
+            normals,
+            indices,
+            bounds_center: center,
+            bounds_radius: radius,
+        }
     }
 }
 
@@ -233,33 +245,56 @@ impl Geometry {
             Self::Box { size } => {
                 0_u8.hash(&mut h);
                 floats(&mut h, size);
-            },
-            Self::RoundedBox { size, radius, segments } => {
+            }
+            Self::RoundedBox {
+                size,
+                radius,
+                segments,
+            } => {
                 1_u8.hash(&mut h);
                 floats(&mut h, size);
                 floats(&mut h, &[*radius]);
                 segments.hash(&mut h);
-            },
-            Self::Sphere { radius, width_segments, height_segments } => {
+            }
+            Self::Sphere {
+                radius,
+                width_segments,
+                height_segments,
+            } => {
                 2_u8.hash(&mut h);
                 floats(&mut h, &[*radius]);
                 (width_segments, height_segments).hash(&mut h);
-            },
+            }
             Self::Plane { size } => {
                 3_u8.hash(&mut h);
                 floats(&mut h, size);
-            },
-            Self::Cylinder { radius_top, radius_bottom, height, radial_segments, open_ended } => {
+            }
+            Self::Cylinder {
+                radius_top,
+                radius_bottom,
+                height,
+                radial_segments,
+                open_ended,
+            } => {
                 4_u8.hash(&mut h);
                 floats(&mut h, &[*radius_top, *radius_bottom, *height]);
                 (radial_segments, open_ended).hash(&mut h);
-            },
-            Self::Torus { radius, tube, radial_segments, tubular_segments } => {
+            }
+            Self::Torus {
+                radius,
+                tube,
+                radial_segments,
+                tubular_segments,
+            } => {
                 5_u8.hash(&mut h);
                 floats(&mut h, &[*radius, *tube]);
                 (radial_segments, tubular_segments).hash(&mut h);
-            },
-            Self::Mesh { positions, normals, indices } => {
+            }
+            Self::Mesh {
+                positions,
+                normals,
+                indices,
+            } => {
                 6_u8.hash(&mut h);
                 positions.len().hash(&mut h);
                 for p in positions {
@@ -270,7 +305,7 @@ impl Geometry {
                     floats(&mut h, n);
                 }
                 indices.hash(&mut h);
-            },
+            }
         }
         h.finish()
     }
@@ -290,8 +325,12 @@ impl Geometry {
                     check_len(size[2], "box.size")?,
                 ];
                 Ok(box_mesh(s))
-            },
-            Self::RoundedBox { size, radius, segments } => {
+            }
+            Self::RoundedBox {
+                size,
+                radius,
+                segments,
+            } => {
                 let s = [
                     check_len(size[0], "rounded_box.size")?,
                     check_len(size[1], "rounded_box.size")?,
@@ -299,33 +338,49 @@ impl Geometry {
                 ];
                 let r = check_len(*radius, "rounded_box.radius")?;
                 Ok(rounded_box_mesh(s, r, clamp_segments(*segments, 1).min(64)))
-            },
-            Self::Sphere { radius, width_segments, height_segments } => Ok(sphere_mesh(
+            }
+            Self::Sphere {
+                radius,
+                width_segments,
+                height_segments,
+            } => Ok(sphere_mesh(
                 check_len(*radius, "sphere.radius")?,
                 clamp_segments(*width_segments, 3),
                 clamp_segments(*height_segments, 2),
             )),
-            Self::Plane { size } => {
-                Ok(plane_mesh(check_len(size[0], "plane.size")?, check_len(size[1], "plane.size")?))
-            },
-            Self::Cylinder { radius_top, radius_bottom, height, radial_segments, open_ended } => {
-                Ok(cylinder_mesh(
-                    check_len(*radius_top, "cylinder.radius_top")?,
-                    check_len(*radius_bottom, "cylinder.radius_bottom")?,
-                    check_len(*height, "cylinder.height")?,
-                    clamp_segments(*radial_segments, 3),
-                    *open_ended,
-                ))
-            },
-            Self::Torus { radius, tube, radial_segments, tubular_segments } => Ok(torus_mesh(
+            Self::Plane { size } => Ok(plane_mesh(
+                check_len(size[0], "plane.size")?,
+                check_len(size[1], "plane.size")?,
+            )),
+            Self::Cylinder {
+                radius_top,
+                radius_bottom,
+                height,
+                radial_segments,
+                open_ended,
+            } => Ok(cylinder_mesh(
+                check_len(*radius_top, "cylinder.radius_top")?,
+                check_len(*radius_bottom, "cylinder.radius_bottom")?,
+                check_len(*height, "cylinder.height")?,
+                clamp_segments(*radial_segments, 3),
+                *open_ended,
+            )),
+            Self::Torus {
+                radius,
+                tube,
+                radial_segments,
+                tubular_segments,
+            } => Ok(torus_mesh(
                 check_len(*radius, "torus.radius")?,
                 check_len(*tube, "torus.tube")?,
                 clamp_segments(*radial_segments, 2),
                 clamp_segments(*tubular_segments, 3),
             )),
-            Self::Mesh { positions, normals, indices } => {
-                custom_mesh(positions, normals.as_deref(), indices)
-            },
+            Self::Mesh {
+                positions,
+                normals,
+                indices,
+            } => custom_mesh(positions, normals.as_deref(), indices),
         }
     }
 }
@@ -443,7 +498,11 @@ fn sphere_mesh(radius: f32, width_segments: u32, height_segments: u32) -> MeshDa
         for ix in 0..=width_segments {
             let u = ix as f32 / width_segments as f32;
             let (phi, theta) = (u * std::f32::consts::TAU, v * std::f32::consts::PI);
-            let n = Vec3::new(-phi.cos() * theta.sin(), theta.cos(), phi.sin() * theta.sin());
+            let n = Vec3::new(
+                -phi.cos() * theta.sin(),
+                theta.cos(),
+                phi.sin() * theta.sin(),
+            );
             row.push(positions.len() as u32);
             positions.push(n.scale(radius).to_array());
             normals.push(n.normalize_or(Vec3::Y).to_array());
@@ -471,7 +530,12 @@ fn sphere_mesh(radius: f32, width_segments: u32, height_segments: u32) -> MeshDa
 fn plane_mesh(w: f32, h: f32) -> MeshData {
     let (hw, hh) = (w * 0.5, h * 0.5);
     MeshData::finish(
-        vec![[-hw, -hh, 0.0], [hw, -hh, 0.0], [hw, hh, 0.0], [-hw, hh, 0.0]],
+        vec![
+            [-hw, -hh, 0.0],
+            [hw, -hh, 0.0],
+            [hw, hh, 0.0],
+            [-hw, hh, 0.0],
+        ],
         vec![[0.0, 0.0, 1.0]; 4],
         vec![0, 1, 2, 0, 2, 3],
     )
@@ -485,7 +549,11 @@ fn cylinder_mesh(
     open_ended: bool,
 ) -> MeshData {
     let half_h = height * 0.5;
-    let slope = if height > 0.0 { (radius_bottom - radius_top) / height } else { 0.0 };
+    let slope = if height > 0.0 {
+        (radius_bottom - radius_top) / height
+    } else {
+        0.0
+    };
     let mut positions = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
@@ -519,7 +587,11 @@ fn cylinder_mesh(
                 continue;
             }
             let y = if top { half_h } else { -half_h };
-            let n = if top { [0.0, 1.0, 0.0] } else { [0.0, -1.0, 0.0] };
+            let n = if top {
+                [0.0, 1.0, 0.0]
+            } else {
+                [0.0, -1.0, 0.0]
+            };
             let center = positions.len() as u32;
             positions.push([0.0, y, 0.0]);
             normals.push(n);
@@ -556,7 +628,11 @@ fn torus_mesh(radius: f32, tube: f32, radial: u32, tubular: u32) -> MeshData {
             );
             let center = Vec3::new(radius * u.cos(), radius * u.sin(), 0.0);
             positions.push(p.to_array());
-            normals.push(p.sub(center).normalize_or(Vec3::new(0.0, 0.0, 1.0)).to_array());
+            normals.push(
+                p.sub(center)
+                    .normalize_or(Vec3::new(0.0, 0.0, 1.0))
+                    .to_array(),
+            );
         }
     }
     let mut indices = Vec::new();
@@ -584,7 +660,9 @@ fn custom_mesh(
         )));
     }
     if indices.len() % 3 != 0 {
-        return Err(MeshError::InvalidMesh("index count is not a multiple of 3".into()));
+        return Err(MeshError::InvalidMesh(
+            "index count is not a multiple of 3".into(),
+        ));
     }
     if positions.iter().flatten().any(|v| !v.is_finite()) {
         return Err(MeshError::InvalidMesh("non-finite vertex position".into()));
@@ -597,11 +675,15 @@ fn custom_mesh(
             if n.iter().flatten().any(|v| !v.is_finite()) {
                 return Err(MeshError::InvalidMesh("non-finite vertex normal".into()));
             }
-            n.iter().map(|v| Vec3::from_array(*v).normalize_or(Vec3::Y).to_array()).collect()
-        },
+            n.iter()
+                .map(|v| Vec3::from_array(*v).normalize_or(Vec3::Y).to_array())
+                .collect()
+        }
         Some(_) => {
-            return Err(MeshError::InvalidMesh("normal count differs from position count".into()));
-        },
+            return Err(MeshError::InvalidMesh(
+                "normal count differs from position count".into(),
+            ));
+        }
         None => {
             let mut acc = vec![Vec3::ZERO; positions.len()];
             for tri in indices.chunks_exact(3) {
@@ -613,10 +695,16 @@ fn custom_mesh(
                     acc[i as usize] = acc[i as usize].add(n);
                 }
             }
-            acc.into_iter().map(|n| n.normalize_or(Vec3::Y).to_array()).collect()
-        },
+            acc.into_iter()
+                .map(|n| n.normalize_or(Vec3::Y).to_array())
+                .collect()
+        }
     };
-    Ok(MeshData::finish(positions.to_vec(), normals, indices.to_vec()))
+    Ok(MeshData::finish(
+        positions.to_vec(),
+        normals,
+        indices.to_vec(),
+    ))
 }
 
 /// Deduplicating tessellation cache keyed by [`Geometry::cache_key`].
@@ -682,24 +770,39 @@ mod tests {
             if face.length() < 1e-9 {
                 continue;
             }
-            let n = tri
-                .iter()
-                .fold(Vec3::ZERO, |acc, &i| acc.add(Vec3::from_array(mesh.normals[i as usize])));
+            let n = tri.iter().fold(Vec3::ZERO, |acc, &i| {
+                acc.add(Vec3::from_array(mesh.normals[i as usize]))
+            });
             total += 1;
             if face.dot(n) > 0.0 {
                 agree += 1;
             }
         }
         assert!(total > 0);
-        assert_eq!(agree, total, "{} of {total} triangles wound inward", total - agree);
+        assert_eq!(
+            agree,
+            total,
+            "{} of {total} triangles wound inward",
+            total - agree
+        );
     }
 
     #[test]
     fn primitives_are_wound_counter_clockwise() {
         for g in [
-            Geometry::Box { size: [1.0, 2.0, 3.0] },
-            Geometry::RoundedBox { size: [2.0, 1.0, 0.2], radius: 0.08, segments: 4 },
-            Geometry::Sphere { radius: 1.0, width_segments: 16, height_segments: 8 },
+            Geometry::Box {
+                size: [1.0, 2.0, 3.0],
+            },
+            Geometry::RoundedBox {
+                size: [2.0, 1.0, 0.2],
+                radius: 0.08,
+                segments: 4,
+            },
+            Geometry::Sphere {
+                radius: 1.0,
+                width_segments: 16,
+                height_segments: 8,
+            },
             Geometry::Plane { size: [2.0, 1.0] },
             Geometry::Cylinder {
                 radius_top: 0.5,
@@ -715,7 +818,12 @@ mod tests {
                 radial_segments: 12,
                 open_ended: false,
             },
-            Geometry::Torus { radius: 1.0, tube: 0.3, radial_segments: 8, tubular_segments: 24 },
+            Geometry::Torus {
+                radius: 1.0,
+                tube: 0.3,
+                radial_segments: 8,
+                tubular_segments: 24,
+            },
         ] {
             let mesh = g.tessellate().expect("valid geometry");
             assert_eq!(mesh.positions.len(), mesh.normals.len());
@@ -725,9 +833,13 @@ mod tests {
 
     #[test]
     fn rounded_box_stays_inside_its_extents() {
-        let mesh = Geometry::RoundedBox { size: [2.0, 1.0, 0.5], radius: 0.2, segments: 6 }
-            .tessellate()
-            .expect("valid");
+        let mesh = Geometry::RoundedBox {
+            size: [2.0, 1.0, 0.5],
+            radius: 0.2,
+            segments: 6,
+        }
+        .tessellate()
+        .expect("valid");
         for p in &mesh.positions {
             assert!(
                 p[0].abs() <= 1.0 + 1e-5 && p[1].abs() <= 0.5 + 1e-5 && p[2].abs() <= 0.25 + 1e-5
@@ -745,17 +857,28 @@ mod tests {
         .tessellate()
         .expect("valid");
         assert_eq!(ok.normals[0], [0.0, 0.0, 1.0]);
-        let bad =
-            Geometry::Mesh { positions: vec![[0.0; 3]], normals: None, indices: vec![0, 1, 2] };
+        let bad = Geometry::Mesh {
+            positions: vec![[0.0; 3]],
+            normals: None,
+            indices: vec![0, 1, 2],
+        };
         assert!(bad.tessellate().is_err());
-        let nan = Geometry::Sphere { radius: f32::NAN, width_segments: 8, height_segments: 8 };
+        let nan = Geometry::Sphere {
+            radius: f32::NAN,
+            width_segments: 8,
+            height_segments: 8,
+        };
         assert!(nan.tessellate().is_err());
     }
 
     #[test]
     fn cache_deduplicates_identical_geometry() {
         let mut cache = MeshCache::new();
-        let g = Geometry::Sphere { radius: 1.0, width_segments: 8, height_segments: 6 };
+        let g = Geometry::Sphere {
+            radius: 1.0,
+            width_segments: 8,
+            height_segments: 6,
+        };
         let (k1, a) = cache.get(&g).expect("valid");
         let (k2, b) = cache.get(&g.clone()).expect("valid");
         assert_eq!(k1, k2);
@@ -765,9 +888,13 @@ mod tests {
 
     #[test]
     fn segment_counts_are_bounded() {
-        let mesh = Geometry::Sphere { radius: 1.0, width_segments: u32::MAX, height_segments: 0 }
-            .tessellate()
-            .expect("clamped");
+        let mesh = Geometry::Sphere {
+            radius: 1.0,
+            width_segments: u32::MAX,
+            height_segments: 0,
+        }
+        .tessellate()
+        .expect("clamped");
         assert!(mesh.positions.len() <= ((MAX_SEGMENTS + 1) * 3) as usize);
     }
 }

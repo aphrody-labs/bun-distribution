@@ -16,7 +16,8 @@ use std::sync::Arc;
 use serde_json::Value;
 
 use crate::{
-    AlphaMode, Animation, Channel, ChannelPath, Interp, Mat4, Material, Mesh, Model, ModelError, Node, Primitive, Result, Skin, TexRef, Texture, Wrap, perr,
+    AlphaMode, Animation, Channel, ChannelPath, Interp, Mat4, Material, Mesh, Model, ModelError,
+    Node, Primitive, Result, Skin, TexRef, Texture, Wrap, perr,
 };
 
 const GLB_MAGIC: u32 = 0x4654_6C67;
@@ -25,12 +26,18 @@ const CHUNK_BIN: u32 = 0x004E_4942;
 
 /// Split a GLB container into its JSON text and BIN chunk.
 pub fn split_glb(b: &[u8]) -> Result<(&[u8], Option<&[u8]>)> {
-    let u32_at = |o: usize| -> Option<u32> { b.get(o..o + 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]])) };
+    let u32_at = |o: usize| -> Option<u32> {
+        b.get(o..o + 4)
+            .map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
+    };
     if u32_at(0) != Some(GLB_MAGIC) {
         return Err(perr("not a GLB file"));
     }
     if u32_at(4) != Some(2) {
-        return Err(ModelError::Unsupported(format!("GLB version {}", u32_at(4).unwrap_or(0))));
+        return Err(ModelError::Unsupported(format!(
+            "GLB version {}",
+            u32_at(4).unwrap_or(0)
+        )));
     }
     let total = (u32_at(8).unwrap_or(0) as usize).min(b.len());
     let mut o = 12;
@@ -39,7 +46,9 @@ pub fn split_glb(b: &[u8]) -> Result<(&[u8], Option<&[u8]>)> {
     while o + 8 <= total {
         let len = u32_at(o).unwrap_or(0) as usize;
         let ty = u32_at(o + 4).unwrap_or(0);
-        let data = b.get(o + 8..o + 8 + len).ok_or_else(|| perr("GLB chunk runs past the end of the file"))?;
+        let data = b
+            .get(o + 8..o + 8 + len)
+            .ok_or_else(|| perr("GLB chunk runs past the end of the file"))?;
         match ty {
             CHUNK_JSON if json.is_none() => json = Some(data),
             CHUNK_BIN if bin.is_none() => bin = Some(data),
@@ -85,7 +94,8 @@ pub fn uri_decode(s: &str) -> String {
     while i < b.len() {
         if b[i] == b'%'
             && i + 2 < b.len()
-            && let Ok(v) = u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or("zz"), 16)
+            && let Ok(v) =
+                u8::from_str_radix(std::str::from_utf8(&b[i + 1..i + 3]).unwrap_or("zz"), 16)
         {
             out.push(v);
             i += 3;
@@ -100,8 +110,14 @@ pub fn uri_decode(s: &str) -> String {
 /// Bytes of a `data:` URI or an external resource.
 fn load_uri(uri: &str, resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<Vec<u8>> {
     if let Some(rest) = uri.strip_prefix("data:") {
-        let (meta, data) = rest.split_once(',').ok_or_else(|| perr("malformed data URI"))?;
-        return if meta.ends_with(";base64") { base64_decode(data).ok_or_else(|| perr("bad base64 in data URI")) } else { Ok(uri_decode(data).into_bytes()) };
+        let (meta, data) = rest
+            .split_once(',')
+            .ok_or_else(|| perr("malformed data URI"))?;
+        return if meta.ends_with(";base64") {
+            base64_decode(data).ok_or_else(|| perr("bad base64 in data URI"))
+        } else {
+            Ok(uri_decode(data).into_bytes())
+        };
     }
     let name = uri_decode(uri);
     resolve(&name).ok_or(ModelError::Missing(name))
@@ -113,7 +129,10 @@ struct Doc<'a> {
 }
 
 fn arr<'v>(v: &'v Value, k: &str) -> &'v [Value] {
-    v.get(k).and_then(Value::as_array).map(Vec::as_slice).unwrap_or(&[])
+    v.get(k)
+        .and_then(Value::as_array)
+        .map(Vec::as_slice)
+        .unwrap_or(&[])
 }
 fn idx(v: &Value, k: &str) -> Option<usize> {
     v.get(k).and_then(Value::as_u64).map(|x| x as usize)
@@ -134,7 +153,9 @@ fn nums<const N: usize>(v: &Value, k: &str, d: [f64; N]) -> [f64; N] {
 impl Doc<'_> {
     /// An accessor as `f32` rows of `n` components (normalised integers mapped to 0..1 / -1..1).
     fn floats(&self, a: usize) -> Result<(Vec<f32>, usize)> {
-        let acc = arr(self.j, "accessors").get(a).ok_or_else(|| perr(format!("no accessor {a}")))?;
+        let acc = arr(self.j, "accessors")
+            .get(a)
+            .ok_or_else(|| perr(format!("no accessor {a}")))?;
         let n = match acc.get("type").and_then(Value::as_str).unwrap_or("") {
             "SCALAR" => 1,
             "VEC2" => 2,
@@ -147,7 +168,10 @@ impl Doc<'_> {
         };
         let count = idx(acc, "count").unwrap_or(0);
         let ct = idx(acc, "componentType").unwrap_or(5126);
-        let norm = acc.get("normalized").and_then(Value::as_bool).unwrap_or(false);
+        let norm = acc
+            .get("normalized")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let csize = match ct {
             5120 | 5121 => 1,
             5122 | 5123 => 2,
@@ -159,8 +183,13 @@ impl Doc<'_> {
             // No buffer view: all zeros (sparse substitution is not supported).
             return Ok((out, n));
         };
-        let view = arr(self.j, "bufferViews").get(bv).ok_or_else(|| perr(format!("no bufferView {bv}")))?;
-        let buf = self.buffers.get(idx(view, "buffer").unwrap_or(0)).ok_or_else(|| perr("bufferView buffer out of range"))?;
+        let view = arr(self.j, "bufferViews")
+            .get(bv)
+            .ok_or_else(|| perr(format!("no bufferView {bv}")))?;
+        let buf = self
+            .buffers
+            .get(idx(view, "buffer").unwrap_or(0))
+            .ok_or_else(|| perr("bufferView buffer out of range"))?;
         let base = idx(view, "byteOffset").unwrap_or(0) + idx(acc, "byteOffset").unwrap_or(0);
         let elem = csize * n;
         // Matrices of 1/2-byte components pad columns to 4 bytes; ignored (rare).
@@ -168,7 +197,9 @@ impl Doc<'_> {
         for i in 0..count {
             for c in 0..n {
                 let o = base + i * stride + c * csize;
-                let s = buf.get(o..o + csize).ok_or_else(|| perr("accessor reads past its buffer"))?;
+                let s = buf
+                    .get(o..o + csize)
+                    .ok_or_else(|| perr("accessor reads past its buffer"))?;
                 out[i * n + c] = match ct {
                     5126 => f32::from_le_bytes([s[0], s[1], s[2], s[3]]),
                     5125 => u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as f32,
@@ -196,7 +227,9 @@ impl Doc<'_> {
 
     /// Integer accessor (indices, joints) read exactly.
     fn ints(&self, a: usize) -> Result<Vec<u32>> {
-        let acc = arr(self.j, "accessors").get(a).ok_or_else(|| perr(format!("no accessor {a}")))?;
+        let acc = arr(self.j, "accessors")
+            .get(a)
+            .ok_or_else(|| perr(format!("no accessor {a}")))?;
         let ct = idx(acc, "componentType").unwrap_or(5125);
         if ct == 5126 {
             return Ok(self.floats(a)?.0.into_iter().map(|v| v as u32).collect());
@@ -213,16 +246,27 @@ impl Doc<'_> {
             5122 | 5123 => 2,
             _ => 4,
         };
-        let Some(bv) = idx(acc, "bufferView") else { return Ok(vec![0; count * n]) };
-        let view = arr(self.j, "bufferViews").get(bv).ok_or_else(|| perr(format!("no bufferView {bv}")))?;
-        let buf = self.buffers.get(idx(view, "buffer").unwrap_or(0)).ok_or_else(|| perr("bufferView buffer out of range"))?;
+        let Some(bv) = idx(acc, "bufferView") else {
+            return Ok(vec![0; count * n]);
+        };
+        let view = arr(self.j, "bufferViews")
+            .get(bv)
+            .ok_or_else(|| perr(format!("no bufferView {bv}")))?;
+        let buf = self
+            .buffers
+            .get(idx(view, "buffer").unwrap_or(0))
+            .ok_or_else(|| perr("bufferView buffer out of range"))?;
         let base = idx(view, "byteOffset").unwrap_or(0) + idx(acc, "byteOffset").unwrap_or(0);
-        let stride = idx(view, "byteStride").filter(|s| *s > 0).unwrap_or(csize * n);
+        let stride = idx(view, "byteStride")
+            .filter(|s| *s > 0)
+            .unwrap_or(csize * n);
         let mut out = Vec::with_capacity(count * n);
         for i in 0..count {
             for c in 0..n {
                 let o = base + i * stride + c * csize;
-                let s = buf.get(o..o + csize).ok_or_else(|| perr("accessor reads past its buffer"))?;
+                let s = buf
+                    .get(o..o + csize)
+                    .ok_or_else(|| perr("accessor reads past its buffer"))?;
                 out.push(match csize {
                     1 => s[0] as u32,
                     2 => u16::from_le_bytes([s[0], s[1]]) as u32,
@@ -236,11 +280,21 @@ impl Doc<'_> {
 
 /// Parse a `.gltf` (JSON) or `.glb` file.
 pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<Model> {
-    let (json, bin) = if bytes.starts_with(b"glTF") { split_glb(bytes)? } else { (bytes, None) };
+    let (json, bin) = if bytes.starts_with(b"glTF") {
+        split_glb(bytes)?
+    } else {
+        (bytes, None)
+    };
     let j: Value = serde_json::from_slice(json).map_err(|e| perr(format!("glTF JSON: {e}")))?;
-    let ver = j.get("asset").and_then(|a| a.get("version")).and_then(Value::as_str).unwrap_or("");
+    let ver = j
+        .get("asset")
+        .and_then(|a| a.get("version"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
     if !ver.starts_with('2') {
-        return Err(ModelError::Unsupported(format!("glTF version `{ver}` (2.0 required)")));
+        return Err(ModelError::Unsupported(format!(
+            "glTF version `{ver}` (2.0 required)"
+        )));
     }
     for ext in arr(&j, "extensionsRequired") {
         let e = ext.as_str().unwrap_or("");
@@ -252,7 +306,9 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
     for (i, b) in arr(&j, "buffers").iter().enumerate() {
         let data = match b.get("uri").and_then(Value::as_str) {
             Some(u) => load_uri(u, resolve)?,
-            None if i == 0 => bin.map(<[u8]>::to_vec).ok_or_else(|| perr("buffer 0 has no uri and the file has no BIN chunk"))?,
+            None if i == 0 => bin
+                .map(<[u8]>::to_vec)
+                .ok_or_else(|| perr("buffer 0 has no uri and the file has no BIN chunk"))?,
             None => vec![],
         };
         buffers.push(data);
@@ -268,7 +324,8 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
             arr(&j, "bufferViews").get(bv).and_then(|v| {
                 let b = d.buffers.get(idx(v, "buffer").unwrap_or(0))?;
                 let o = idx(v, "byteOffset").unwrap_or(0);
-                b.get(o..o + idx(v, "byteLength").unwrap_or(0)).map(<[u8]>::to_vec)
+                b.get(o..o + idx(v, "byteLength").unwrap_or(0))
+                    .map(<[u8]>::to_vec)
             })
         } else {
             None
@@ -288,28 +345,53 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
             continue;
         };
         let samp = idx(t, "sampler").and_then(|s| arr(&j, "samplers").get(s));
-        let ws = samp.and_then(|s| s.get("wrapS")).and_then(Value::as_u64).unwrap_or(10497);
-        let wt = samp.and_then(|s| s.get("wrapT")).and_then(Value::as_u64).unwrap_or(10497);
+        let ws = samp
+            .and_then(|s| s.get("wrapS"))
+            .and_then(Value::as_u64)
+            .unwrap_or(10497);
+        let wt = samp
+            .and_then(|s| s.get("wrapT"))
+            .and_then(Value::as_u64)
+            .unwrap_or(10497);
         let w = [wrap(ws), wrap(wt)];
-        let tex = if img.wrap == w { img } else { Arc::new(Texture { wrap: w, ..(*img).clone() }) };
+        let tex = if img.wrap == w {
+            img
+        } else {
+            Arc::new(Texture {
+                wrap: w,
+                ..(*img).clone()
+            })
+        };
         tex_map.push(Some(textures.len()));
         textures.push(tex);
     }
     let tref = |v: Option<&Value>| -> Option<TexRef> {
         let v = v?;
         let t = tex_map.get(idx(v, "index")?).copied().flatten()?;
-        Some(TexRef { texture: t, uv_set: idx(v, "texCoord").unwrap_or(0) as u32 })
+        Some(TexRef {
+            texture: t,
+            uv_set: idx(v, "texCoord").unwrap_or(0) as u32,
+        })
     };
 
     let mut materials = vec![];
     for m in arr(&j, "materials") {
-        let pbr = m.get("pbrMetallicRoughness").cloned().unwrap_or(Value::Null);
+        let pbr = m
+            .get("pbrMetallicRoughness")
+            .cloned()
+            .unwrap_or(Value::Null);
         let bc = nums(&pbr, "baseColorFactor", [1.0; 4]);
         let ext = m.get("extensions");
-        let strength = ext.and_then(|e| e.get("KHR_materials_emissive_strength")).map_or(1.0, |e| num(e, "emissiveStrength", 1.0));
+        let strength = ext
+            .and_then(|e| e.get("KHR_materials_emissive_strength"))
+            .map_or(1.0, |e| num(e, "emissiveStrength", 1.0));
         let em = nums(m, "emissiveFactor", [0.0; 3]);
         materials.push(Material {
-            name: m.get("name").and_then(Value::as_str).unwrap_or("").to_string(),
+            name: m
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
             base_color: bc.map(|v| v as f32),
             base_color_tex: tref(pbr.get("baseColorTexture")),
             metallic: num(&pbr, "metallicFactor", 1.0) as f32,
@@ -318,8 +400,14 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
             normal_tex: tref(m.get("normalTexture")),
             normal_scale: m.get("normalTexture").map_or(1.0, |n| num(n, "scale", 1.0)) as f32,
             occlusion_tex: tref(m.get("occlusionTexture")),
-            occlusion_strength: m.get("occlusionTexture").map_or(1.0, |n| num(n, "strength", 1.0)) as f32,
-            emissive: [(em[0] * strength) as f32, (em[1] * strength) as f32, (em[2] * strength) as f32],
+            occlusion_strength: m
+                .get("occlusionTexture")
+                .map_or(1.0, |n| num(n, "strength", 1.0)) as f32,
+            emissive: [
+                (em[0] * strength) as f32,
+                (em[1] * strength) as f32,
+                (em[2] * strength) as f32,
+            ],
             emissive_tex: tref(m.get("emissiveTexture")),
             alpha_mode: match m.get("alphaMode").and_then(Value::as_str) {
                 Some("MASK") => AlphaMode::Mask,
@@ -327,14 +415,24 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 _ => AlphaMode::Opaque,
             },
             alpha_cutoff: num(m, "alphaCutoff", 0.5) as f32,
-            double_sided: m.get("doubleSided").and_then(Value::as_bool).unwrap_or(false),
+            double_sided: m
+                .get("doubleSided")
+                .and_then(Value::as_bool)
+                .unwrap_or(false),
             unlit: ext.and_then(|e| e.get("KHR_materials_unlit")).is_some(),
         });
     }
 
     let mut meshes = vec![];
     for m in arr(&j, "meshes") {
-        let mut mesh = Mesh { name: m.get("name").and_then(Value::as_str).unwrap_or("").to_string(), primitives: vec![] };
+        let mut mesh = Mesh {
+            name: m
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+            primitives: vec![],
+        };
         for p in arr(m, "primitives") {
             if let Some(prim) = primitive(&d, p, &materials)? {
                 mesh.primitives.push(prim);
@@ -345,19 +443,27 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
 
     let mut nodes = vec![];
     for n in arr(&j, "nodes") {
-        let matrix = n.get("matrix").and_then(Value::as_array).filter(|a| a.len() == 16).map(|a| {
-            // Column-major in the file.
-            let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect();
-            let mut m = [[0.0; 4]; 4];
-            for c in 0..4 {
-                for r in 0..4 {
-                    m[r][c] = v[c * 4 + r];
+        let matrix = n
+            .get("matrix")
+            .and_then(Value::as_array)
+            .filter(|a| a.len() == 16)
+            .map(|a| {
+                // Column-major in the file.
+                let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect();
+                let mut m = [[0.0; 4]; 4];
+                for c in 0..4 {
+                    for r in 0..4 {
+                        m[r][c] = v[c * 4 + r];
+                    }
                 }
-            }
-            Mat4(m)
-        });
+                Mat4(m)
+            });
         nodes.push(Node {
-            name: n.get("name").and_then(Value::as_str).unwrap_or("").to_string(),
+            name: n
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
             translation: nums(n, "translation", [0.0; 3]),
             rotation: nums(n, "rotation", [0.0, 0.0, 0.0, 1.0]),
             scale: nums(n, "scale", [1.0; 3]),
@@ -365,14 +471,25 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
             mesh: idx(n, "mesh").filter(|&m| m < meshes.len()),
             skin: idx(n, "skin"),
             camera: idx(n, "camera"),
-            light: n.get("extensions").and_then(|e| e.get("KHR_lights_punctual")).and_then(|e| idx(e, "light")),
-            children: arr(n, "children").iter().filter_map(Value::as_u64).map(|c| c as usize).collect(),
+            light: n
+                .get("extensions")
+                .and_then(|e| e.get("KHR_lights_punctual"))
+                .and_then(|e| idx(e, "light")),
+            children: arr(n, "children")
+                .iter()
+                .filter_map(Value::as_u64)
+                .map(|c| c as usize)
+                .collect(),
         });
     }
 
     let scene = idx(&j, "scene").unwrap_or(0);
     let roots: Vec<usize> = match arr(&j, "scenes").get(scene) {
-        Some(s) => arr(s, "nodes").iter().filter_map(Value::as_u64).map(|c| c as usize).collect(),
+        Some(s) => arr(s, "nodes")
+            .iter()
+            .filter_map(Value::as_u64)
+            .map(|c| c as usize)
+            .collect(),
         None => {
             // No scene: every node that is nobody's child.
             let mut child = vec![false; nodes.len()];
@@ -389,7 +506,11 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
 
     let mut skins = vec![];
     for s in arr(&j, "skins") {
-        let joints: Vec<usize> = arr(s, "joints").iter().filter_map(Value::as_u64).map(|c| c as usize).collect();
+        let joints: Vec<usize> = arr(s, "joints")
+            .iter()
+            .filter_map(Value::as_u64)
+            .map(|c| c as usize)
+            .collect();
         let inverse_bind = match idx(s, "inverseBindMatrices") {
             Some(a) => {
                 let (f, _) = d.floats(a)?;
@@ -409,13 +530,23 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
             }
             None => vec![Mat4::IDENTITY; joints.len()],
         };
-        skins.push(Skin { joints, inverse_bind });
+        skins.push(Skin {
+            joints,
+            inverse_bind,
+        });
     }
 
     let mut animations = vec![];
     for a in arr(&j, "animations") {
         let samplers = arr(a, "samplers");
-        let mut anim = Animation { name: a.get("name").and_then(Value::as_str).unwrap_or("").to_string(), channels: vec![] };
+        let mut anim = Animation {
+            name: a
+                .get("name")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
+            channels: vec![],
+        };
         for c in arr(a, "channels") {
             let Some(t) = c.get("target") else { continue };
             let Some(node) = idx(t, "node") else { continue };
@@ -425,38 +556,75 @@ pub fn parse(bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>) -> Result<
                 Some("scale") => ChannelPath::Scale,
                 _ => continue,
             };
-            let Some(s) = idx(c, "sampler").and_then(|s| samplers.get(s)) else { continue };
+            let Some(s) = idx(c, "sampler").and_then(|s| samplers.get(s)) else {
+                continue;
+            };
             let interp = match s.get("interpolation").and_then(Value::as_str) {
                 Some("STEP") => Interp::Step,
                 Some("CUBICSPLINE") => Interp::CubicSpline,
                 _ => Interp::Linear,
             };
-            let (Some(input), Some(output)) = (idx(s, "input"), idx(s, "output")) else { continue };
+            let (Some(input), Some(output)) = (idx(s, "input"), idx(s, "output")) else {
+                continue;
+            };
             let (times, _) = d.floats(input)?;
             let (values, _) = d.floats(output)?;
-            anim.channels.push(Channel { node, path, interp, times, values });
+            anim.channels.push(Channel {
+                node,
+                path,
+                interp,
+                times,
+                values,
+            });
         }
         animations.push(anim);
     }
 
-    let cameras = arr(&j, "cameras").iter().enumerate().map(|(i, c)| camera(c, i)).collect();
+    let cameras = arr(&j, "cameras")
+        .iter()
+        .enumerate()
+        .map(|(i, c)| camera(c, i))
+        .collect();
     let lights = j
         .get("extensions")
         .and_then(|e| e.get("KHR_lights_punctual"))
-        .map(|e| arr(e, "lights").iter().enumerate().map(|(i, l)| light(l, i)).collect())
+        .map(|e| {
+            arr(e, "lights")
+                .iter()
+                .enumerate()
+                .map(|(i, l)| light(l, i))
+                .collect()
+        })
         .unwrap_or_default();
-    Ok(Model { meshes, nodes, roots, materials, textures, skins, animations, cameras, lights })
+    Ok(Model {
+        meshes,
+        nodes,
+        roots,
+        materials,
+        textures,
+        skins,
+        animations,
+        cameras,
+        lights,
+    })
 }
 
 fn name_or(v: &Value, d: String) -> String {
-    v.get("name").and_then(Value::as_str).filter(|s| !s.is_empty()).map(str::to_string).unwrap_or(d)
+    v.get("name")
+        .and_then(Value::as_str)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .unwrap_or(d)
 }
 
 /// A glTF camera (glTF 2.0 §5.12): `perspective` {yfov, aspectRatio?, znear} or
 /// `orthographic` {xmag, ymag}.
 fn camera(c: &Value, i: usize) -> crate::ModelCamera {
     let projection = match (c.get("type").and_then(Value::as_str), c.get("orthographic")) {
-        (Some("orthographic"), Some(o)) => crate::CameraProjection::Orthographic { xmag: num(o, "xmag", 1.0), ymag: num(o, "ymag", 1.0) },
+        (Some("orthographic"), Some(o)) => crate::CameraProjection::Orthographic {
+            xmag: num(o, "xmag", 1.0),
+            ymag: num(o, "ymag", 1.0),
+        },
         _ => {
             let p = c.get("perspective").cloned().unwrap_or(Value::Null);
             crate::CameraProjection::Perspective {
@@ -466,7 +634,10 @@ fn camera(c: &Value, i: usize) -> crate::ModelCamera {
             }
         }
     };
-    crate::ModelCamera { name: name_or(c, format!("Camera {}", i + 1)), projection }
+    crate::ModelCamera {
+        name: name_or(c, format!("Camera {}", i + 1)),
+        projection,
+    }
 }
 
 /// A `KHR_lights_punctual` light: type, color, intensity, range, spot cone angles.
@@ -475,8 +646,12 @@ fn light(l: &Value, i: usize) -> crate::ModelLight {
         Some("directional") => crate::ModelLightKind::Directional,
         Some("spot") => {
             let s = l.get("spot").cloned().unwrap_or(Value::Null);
-            let outer = num(&s, "outerConeAngle", std::f64::consts::FRAC_PI_4).clamp(1e-3, std::f64::consts::FRAC_PI_2);
-            crate::ModelLightKind::Spot { inner: num(&s, "innerConeAngle", 0.0).clamp(0.0, outer), outer }
+            let outer = num(&s, "outerConeAngle", std::f64::consts::FRAC_PI_4)
+                .clamp(1e-3, std::f64::consts::FRAC_PI_2);
+            crate::ModelLightKind::Spot {
+                inner: num(&s, "innerConeAngle", 0.0).clamp(0.0, outer),
+                outer,
+            }
         }
         _ => crate::ModelLightKind::Point,
     };
@@ -494,32 +669,75 @@ fn primitive(d: &Doc, p: &Value, materials: &[Material]) -> Result<Option<Primit
     if !matches!(mode, 4..=6) {
         return Ok(None);
     }
-    let attrs = p.get("attributes").ok_or_else(|| perr("primitive without attributes"))?;
-    let Some(pa) = idx(attrs, "POSITION") else { return Ok(None) };
+    let attrs = p
+        .get("attributes")
+        .ok_or_else(|| perr("primitive without attributes"))?;
+    let Some(pa) = idx(attrs, "POSITION") else {
+        return Ok(None);
+    };
     let (pos, _) = d.floats(pa)?;
-    let positions: Vec<[f32; 3]> = pos.as_chunks::<3>().0.iter().map(|c| [c[0], c[1], c[2]]).collect();
+    let positions: Vec<[f32; 3]> = pos
+        .as_chunks::<3>()
+        .0
+        .iter()
+        .map(|c| [c[0], c[1], c[2]])
+        .collect();
     let n = positions.len();
     let vec3s = |a: Option<usize>| -> Result<Vec<[f32; 3]>> {
         Ok(match a {
-            Some(a) => d.floats(a)?.0.as_chunks::<3>().0.iter().map(|c| [c[0], c[1], c[2]]).collect(),
+            Some(a) => d
+                .floats(a)?
+                .0
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1], c[2]])
+                .collect(),
             None => vec![],
         })
     };
     let mut normals = vec3s(idx(attrs, "NORMAL"))?;
     let uvs: Vec<[f32; 2]> = match idx(attrs, "TEXCOORD_0") {
-        Some(a) => d.floats(a)?.0.as_chunks::<2>().0.iter().map(|c| [c[0], c[1]]).collect(),
+        Some(a) => d
+            .floats(a)?
+            .0
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| [c[0], c[1]])
+            .collect(),
         None => vec![],
     };
     let tangents: Vec<[f32; 4]> = match idx(attrs, "TANGENT") {
-        Some(a) => d.floats(a)?.0.as_chunks::<4>().0.iter().map(|c| [c[0], c[1], c[2], c[3]]).collect(),
+        Some(a) => d
+            .floats(a)?
+            .0
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| [c[0], c[1], c[2], c[3]])
+            .collect(),
         None => vec![],
     };
     let joints: Vec<[u16; 4]> = match idx(attrs, "JOINTS_0") {
-        Some(a) => d.ints(a)?.as_chunks::<4>().0.iter().map(|c| [c[0] as u16, c[1] as u16, c[2] as u16, c[3] as u16]).collect(),
+        Some(a) => d
+            .ints(a)?
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| [c[0] as u16, c[1] as u16, c[2] as u16, c[3] as u16])
+            .collect(),
         None => vec![],
     };
     let weights: Vec<[f32; 4]> = match idx(attrs, "WEIGHTS_0") {
-        Some(a) => d.floats(a)?.0.as_chunks::<4>().0.iter().map(|c| [c[0], c[1], c[2], c[3]]).collect(),
+        Some(a) => d
+            .floats(a)?
+            .0
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|c| [c[0], c[1], c[2], c[3]])
+            .collect(),
         None => vec![],
     };
     let raw: Vec<u32> = match idx(p, "indices") {
@@ -534,7 +752,11 @@ fn primitive(d: &Doc, p: &Value, materials: &[Material]) -> Result<Option<Primit
         5 => {
             for i in 2..raw.len() {
                 let (a, b, c) = (raw[i - 2], raw[i - 1], raw[i]);
-                if i % 2 == 0 { indices.extend([a, b, c]) } else { indices.extend([b, a, c]) }
+                if i % 2 == 0 {
+                    indices.extend([a, b, c])
+                } else {
+                    indices.extend([b, a, c])
+                }
             }
         }
         6 => {
@@ -553,7 +775,11 @@ fn primitive(d: &Doc, p: &Value, materials: &[Material]) -> Result<Option<Primit
         positions,
         normals,
         uvs: if uvs.len() == n { uvs } else { vec![] },
-        tangents: if tangents.len() == n { tangents } else { vec![] },
+        tangents: if tangents.len() == n {
+            tangents
+        } else {
+            vec![]
+        },
         joints: if skinned { joints } else { vec![] },
         weights: if skinned { weights } else { vec![] },
         indices,

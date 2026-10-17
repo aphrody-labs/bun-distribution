@@ -10,7 +10,14 @@
 //! - counted from the tree: never-crash attribute coverage, `docs/parity-checklist.md`'s live count.
 //!
 //! `--check` fails when `docs/scorecard.md` differs from what would be generated.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -58,7 +65,11 @@ pub struct Checklist {
 impl Checklist {
     pub fn counts(&self) -> (usize, usize, usize) {
         let n = |s| self.item.iter().filter(|i| i.status == s).count();
-        (n(ItemStatus::Done), n(ItemStatus::Partial), n(ItemStatus::Missing))
+        (
+            n(ItemStatus::Done),
+            n(ItemStatus::Partial),
+            n(ItemStatus::Missing),
+        )
     }
 }
 
@@ -87,7 +98,12 @@ fn load_checklists(root: &Path) -> Result<Vec<Checklist>, String> {
     let mut out = Vec::new();
     let mut ids = BTreeSet::new();
     for f in files {
-        let name = format!("scorecard/{}", f.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default());
+        let name = format!(
+            "scorecard/{}",
+            f.file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default()
+        );
         let text = std::fs::read_to_string(&f).map_err(|e| format!("read {name}: {e}"))?;
         let c = parse_checklist(&name, &text)?;
         for i in &c.item {
@@ -132,10 +148,17 @@ pub fn parse_corpus(src: &str) -> Vec<Corpus> {
                 break;
             }
         }
-        let Some(body) = lit.split_once("Source {").map(|(_, b)| b.split('}').next().unwrap_or("")) else { continue };
+        let Some(body) = lit
+            .split_once("Source {")
+            .map(|(_, b)| b.split('}').next().unwrap_or(""))
+        else {
+            continue;
+        };
         let mut c = Corpus::default();
         for field in body.split(',') {
-            let Some((k, v)) = field.split_once(':') else { continue };
+            let Some((k, v)) = field.split_once(':') else {
+                continue;
+            };
             let v = v.trim().trim_matches('"').to_string();
             match k.trim() {
                 "label" => c.label = v,
@@ -145,8 +168,13 @@ pub fn parse_corpus(src: &str) -> Vec<Corpus> {
                 _ => {}
             }
         }
-        let mut doc: Vec<&str> =
-            lines.iter().take(i).rev().take_while(|l| l.trim_start().starts_with("///")).map(|l| l.trim_start().trim_start_matches('/').trim()).collect();
+        let mut doc: Vec<&str> = lines
+            .iter()
+            .take(i)
+            .rev()
+            .take_while(|l| l.trim_start().starts_with("///"))
+            .map(|l| l.trim_start().trim_start_matches('/').trim())
+            .collect();
         doc.reverse();
         c.doc = doc.join(" ");
         c.files = c
@@ -205,7 +233,10 @@ fn structs(src: &str) -> BTreeMap<String, Vec<(String, String)>> {
             && let Some((name, ty)) = rest.split_once(':')
             && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
         {
-            fields.push((name.to_string(), ty.trim().trim_end_matches(',').trim().to_string()));
+            fields.push((
+                name.to_string(),
+                ty.trim().trim_end_matches(',').trim().to_string(),
+            ));
         }
     }
     out
@@ -237,16 +268,28 @@ fn blocks<'a>(src: &'a str, starts: &str) -> Vec<(&'a str, String)> {
 /// Methods of `impl <ty>` blocks → the `self.` fields each one reads.
 fn helper_methods(src: &str, ty: &str) -> BTreeMap<String, BTreeSet<String>> {
     let mut out: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
-    for (_, body) in blocks(src, "impl ").into_iter().filter(|(h, _)| *h == format!("impl {ty}")) {
+    for (_, body) in blocks(src, "impl ")
+        .into_iter()
+        .filter(|(h, _)| *h == format!("impl {ty}"))
+    {
         let mut name: Option<String> = None;
         for line in body.lines() {
             let t = line.trim_start();
             if let Some(rest) = t.strip_prefix("pub fn ").or_else(|| t.strip_prefix("fn ")) {
-                name = Some(rest.chars().take_while(|c| c.is_ascii_alphanumeric() || *c == '_').collect());
+                name = Some(
+                    rest.chars()
+                        .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+                        .collect(),
+                );
             }
             if let Some(n) = &name {
                 let a = accesses(line);
-                out.entry(n.clone()).or_default().extend(a.pairs.iter().filter_map(|p| p.strip_prefix("self.")).map(str::to_string));
+                out.entry(n.clone()).or_default().extend(
+                    a.pairs
+                        .iter()
+                        .filter_map(|p| p.strip_prefix("self."))
+                        .map(str::to_string),
+                );
             }
         }
     }
@@ -262,13 +305,23 @@ pub fn pref_fields(src: &str) -> Vec<PrefField> {
         match s.get(&ty) {
             Some(sub) => {
                 let helpers = helper_methods(src, &ty);
-                out.extend(sub.iter().map(|(f, _)| PrefField {
-                    section: Some(name.clone()),
-                    field: f.clone(),
-                    helpers: helpers.iter().filter(|(_, used)| used.contains(f)).map(|(m, _)| m.clone()).collect(),
+                out.extend(sub.iter().map(|(f, _)| {
+                    PrefField {
+                        section: Some(name.clone()),
+                        field: f.clone(),
+                        helpers: helpers
+                            .iter()
+                            .filter(|(_, used)| used.contains(f))
+                            .map(|(m, _)| m.clone())
+                            .collect(),
+                    }
                 }))
             }
-            None => out.push(PrefField { section: None, field: name, helpers: BTreeSet::new() }),
+            None => out.push(PrefField {
+                section: None,
+                field: name,
+                helpers: BTreeSet::new(),
+            }),
         }
     }
     out
@@ -277,7 +330,10 @@ pub fn pref_fields(src: &str) -> Vec<PrefField> {
 /// The engine code inside `prefs.rs`: its `impl Session` blocks (e.g. `apply_prefs`, which
 /// pushes preferences into live state). Everything else there is the model itself.
 pub fn session_code(src: &str) -> String {
-    blocks(src, "impl Session").into_iter().map(|(_, b)| b).collect()
+    blocks(src, "impl Session")
+        .into_iter()
+        .map(|(_, b)| b)
+        .collect()
 }
 
 fn ident_char(c: u8) -> bool {
@@ -294,15 +350,29 @@ pub struct Accesses {
 
 pub fn accesses(src: &str) -> Accesses {
     let b = src.as_bytes();
-    let mut a = Accesses { mentions_prefs: src.contains("prefs"), ..Default::default() };
+    let mut a = Accesses {
+        mentions_prefs: src.contains("prefs"),
+        ..Default::default()
+    };
     for (i, &c) in b.iter().enumerate() {
         if c != b'.' {
             continue;
         }
         let end = b.iter().skip(i + 1).take_while(|&&x| ident_char(x)).count();
-        let Some(name) = src.get(i + 1..i + 1 + end).filter(|n| n.bytes().next().is_some_and(|x| x.is_ascii_alphabetic() || x == b'_')) else { continue };
+        let Some(name) = src.get(i + 1..i + 1 + end).filter(|n| {
+            n.bytes()
+                .next()
+                .is_some_and(|x| x.is_ascii_alphabetic() || x == b'_')
+        }) else {
+            continue;
+        };
         a.singles.insert(name.to_string());
-        let start = b.iter().take(i).rev().take_while(|&&x| ident_char(x)).count();
+        let start = b
+            .iter()
+            .take(i)
+            .rev()
+            .take_while(|&&x| ident_char(x))
+            .count();
         if let Some(prev) = src.get(i - start..i).filter(|p| !p.is_empty()) {
             a.pairs.insert(format!("{prev}.{name}"));
         }
@@ -315,7 +385,10 @@ pub fn accesses(src: &str) -> Accesses {
 /// that mentions `prefs`. Generic names (`enabled`) can be counted as read by accident, never
 /// the other way round, so the count is a lower bound.
 pub fn is_read(f: &PrefField, files: &[Accesses]) -> bool {
-    let reads = |a: &Accesses, s: &str, name: &str| a.pairs.contains(&format!("{s}.{name}")) || (a.singles.contains(s) && a.singles.contains(name));
+    let reads = |a: &Accesses, s: &str, name: &str| {
+        a.pairs.contains(&format!("{s}.{name}"))
+            || (a.singles.contains(s) && a.singles.contains(name))
+    };
     files.iter().any(|a| match &f.section {
         Some(s) => reads(a, s, &f.field) || f.helpers.iter().any(|m| reads(a, s, m)),
         None => a.mentions_prefs && a.singles.contains(&f.field),
@@ -357,12 +430,18 @@ pub fn strip_tests(src: &str) -> String {
 /// so its field accesses are the appliers (canvas colours, autosave, history log).
 fn audit_sources(root: &Path) -> Vec<(PathBuf, String)> {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return;
+        };
         for e in rd.flatten() {
             let p = e.path();
             let name = e.file_name().to_string_lossy().into_owned();
             if p.is_dir() {
-                if !matches!(name.as_str(), "tests" | "examples" | "benches" | "fuzz" | "target") && !name.starts_with('.') {
+                if !matches!(
+                    name.as_str(),
+                    "tests" | "examples" | "benches" | "fuzz" | "target"
+                ) && !name.starts_with('.')
+                {
                     walk(&p, out);
                 }
             } else if name.ends_with(".rs") && name != "tests.rs" {
@@ -388,14 +467,24 @@ fn audit_sources(root: &Path) -> Vec<(PathBuf, String)> {
 
 /// Preferences that nothing reads (sorted paths).
 pub fn prefs_audit(root: &Path) -> Result<(usize, Vec<String>), String> {
-    let src = std::fs::read_to_string(root.join(PREFS_RS)).map_err(|e| format!("read {PREFS_RS}: {e}"))?;
+    let src = std::fs::read_to_string(root.join(PREFS_RS))
+        .map_err(|e| format!("read {PREFS_RS}: {e}"))?;
     let fields = pref_fields(&src);
     if fields.is_empty() {
-        return Err(format!("{PREFS_RS}: no `pub struct Preferences` fields found (did the struct move?)"));
+        return Err(format!(
+            "{PREFS_RS}: no `pub struct Preferences` fields found (did the struct move?)"
+        ));
     }
-    let mut files: Vec<Accesses> = audit_sources(root).iter().map(|(_, s)| accesses(s)).collect();
+    let mut files: Vec<Accesses> = audit_sources(root)
+        .iter()
+        .map(|(_, s)| accesses(s))
+        .collect();
     files.push(accesses(&session_code(&strip_tests(&src))));
-    let unread: Vec<String> = fields.iter().filter(|f| !is_read(f, &files)).map(PrefField::path).collect();
+    let unread: Vec<String> = fields
+        .iter()
+        .filter(|f| !is_read(f, &files))
+        .map(PrefField::path)
+        .collect();
     Ok((fields.len(), unread))
 }
 
@@ -408,8 +497,14 @@ const NEVER_CRASH: &str = "deny(clippy::unwrap_used";
 fn never_crash(root: &Path) -> (usize, Vec<String>) {
     let mut roots = Vec::new();
     for (dir, lib_only) in [("crates", true), ("apps", false)] {
-        let Ok(rd) = std::fs::read_dir(root.join(dir)) else { continue };
-        let mut pkgs: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.join("Cargo.toml").exists()).collect();
+        let Ok(rd) = std::fs::read_dir(root.join(dir)) else {
+            continue;
+        };
+        let mut pkgs: Vec<PathBuf> = rd
+            .flatten()
+            .map(|e| e.path())
+            .filter(|p| p.join("Cargo.toml").exists())
+            .collect();
         pkgs.sort();
         for p in pkgs {
             let lib = p.join("src/lib.rs");
@@ -427,7 +522,12 @@ fn never_crash(root: &Path) -> (usize, Vec<String>) {
     let missing = roots
         .iter()
         .filter(|r| !std::fs::read_to_string(r).is_ok_and(|s| s.contains(NEVER_CRASH)))
-        .map(|r| r.strip_prefix(root).unwrap_or(r).to_string_lossy().replace('\\', "/"))
+        .map(|r| {
+            r.strip_prefix(root)
+                .unwrap_or(r)
+                .to_string_lossy()
+                .replace('\\', "/")
+        })
         .collect();
     (roots.len(), missing)
 }
@@ -435,7 +535,9 @@ fn never_crash(root: &Path) -> (usize, Vec<String>) {
 /// `**626 of 626 menu items live (100.0%).**` from `docs/parity-checklist.md`.
 fn parity_line(root: &Path) -> Option<String> {
     let s = std::fs::read_to_string(root.join("docs/parity-checklist.md")).ok()?;
-    s.lines().find(|l| l.contains("menu items live")).map(|l| l.trim().trim_matches('*').trim_end_matches('.').to_string())
+    s.lines()
+        .find(|l| l.contains("menu items live"))
+        .map(|l| l.trim().trim_matches('*').trim_end_matches('.').to_string())
 }
 
 // ---- rendering -------------------------------------------------------------------------------
@@ -451,7 +553,14 @@ fn status_word(s: ItemStatus) -> &'static str {
 pub fn render_checklist(c: &Checklist) -> String {
     let mut s = String::from("| Id | Target | Status | Issue | Note |\n|---|---|---|---|---|\n");
     for i in &c.item {
-        s.push_str(&format!("| {} | {} | {} | {} | {} |\n", i.id, i.target, status_word(i.status), perf::issue_link(i.issue), i.note.as_deref().unwrap_or("")));
+        s.push_str(&format!(
+            "| {} | {} | {} | {} | {} |\n",
+            i.id,
+            i.target,
+            status_word(i.status),
+            perf::issue_link(i.issue),
+            i.note.as_deref().unwrap_or("")
+        ));
     }
     s
 }
@@ -469,12 +578,18 @@ pub struct Inputs {
 }
 
 pub fn gather(root: &Path) -> Result<Inputs, String> {
-    let budgets = perf::parse_budgets(&std::fs::read_to_string(root.join(perf::BUDGETS)).map_err(|e| format!("read {}: {e}", perf::BUDGETS))?)?;
+    let budgets = perf::parse_budgets(
+        &std::fs::read_to_string(root.join(perf::BUDGETS))
+            .map_err(|e| format!("read {}: {e}", perf::BUDGETS))?,
+    )?;
     let baseline = match std::fs::read_to_string(root.join(perf::BASELINE)) {
         Ok(t) => Some(serde_json::from_str(&t).map_err(|e| format!("{}: {e}", perf::BASELINE))?),
         Err(_) => None,
     };
-    let corpora = parse_corpus(&std::fs::read_to_string(root.join(CORPUS_RS)).map_err(|e| format!("read {CORPUS_RS}: {e}"))?);
+    let corpora = parse_corpus(
+        &std::fs::read_to_string(root.join(CORPUS_RS))
+            .map_err(|e| format!("read {CORPUS_RS}: {e}"))?,
+    );
     Ok(Inputs {
         budgets,
         baseline,
@@ -489,7 +604,11 @@ pub fn gather(root: &Path) -> Result<Inputs, String> {
 
 fn checklist_row(c: &Checklist, key: &str) -> String {
     let (d, p, m) = c.counts();
-    format!("| [{}](#{}) | {d} | {p} | {m} | {key} |\n", c.title, anchor(&c.title))
+    format!(
+        "| [{}](#{}) | {d} | {p} | {m} | {key} |\n",
+        c.title,
+        anchor(&c.title)
+    )
 }
 
 /// GitHub's heading anchor: lower-case, spaces to `-`, punctuation dropped.
@@ -512,11 +631,26 @@ pub fn anchor(title: &str) -> String {
 pub fn render(inp: &Inputs) -> String {
     let outcomes = perf::outcomes_from_baseline(&inp.budgets, inp.baseline.as_ref());
     let (pass, over, tracked, nm) = perf::counts(&outcomes);
-    let not_run = outcomes.iter().filter(|o| o.status == perf::Status::NotRun).count();
-    let full = inp.baseline.as_ref().and_then(|b| b.get("modes")?.get("full"));
+    let not_run = outcomes
+        .iter()
+        .filter(|o| o.status == perf::Status::NotRun)
+        .count();
+    let full = inp
+        .baseline
+        .as_ref()
+        .and_then(|b| b.get("modes")?.get("full"));
     let machine = inp.baseline.as_ref().and_then(|b| b.get("machine"));
-    let ms = |k: &str| machine.and_then(|m| m.get(k)).and_then(Value::as_str).unwrap_or("unknown").to_string();
-    let base_date = full.and_then(|f| f.get("date")).and_then(Value::as_str).map(|d| d.get(..10).unwrap_or(d).to_string());
+    let ms = |k: &str| {
+        machine
+            .and_then(|m| m.get(k))
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string()
+    };
+    let base_date = full
+        .and_then(|f| f.get("date"))
+        .and_then(Value::as_str)
+        .map(|d| d.get(..10).unwrap_or(d).to_string());
     let (unread_n, total_prefs) = (inp.prefs.1.len(), inp.prefs.0);
     let (roots, missing_nc) = (&inp.never_crash.0, &inp.never_crash.1);
 
@@ -531,15 +665,26 @@ here supersede estimates elsewhere.\n\n## Summary\n\n| Area | Done | Partial | M
             "{} scenarios: {pass} within budget, {over} over budget or failing, {tracked} tracked only, {not_run} not run, {nm} not measurable yet (baseline {d})",
             outcomes.len()
         ),
-        None => format!("{} scenarios, not run yet (no baseline); {nm} not measurable yet", outcomes.len()),
+        None => format!(
+            "{} scenarios, not run yet (no baseline); {nm} not measurable yet",
+            outcomes.len()
+        ),
     };
-    s.push_str(&format!("| [Performance](#performance) | {pass} | {over} | {} | {perf_key} |\n", nm + not_run));
+    s.push_str(&format!(
+        "| [Performance](#performance) | {pass} | {over} | {} | {perf_key} |\n",
+        nm + not_run
+    ));
     let corpus_key = inp
         .corpora
         .iter()
         .map(|c| {
             let of = c.files.map_or_else(String::new, |f| format!("/{f}"));
-            format!("{}: oracle ≥ {}{of}, round trip ≥ {}{of}", c.label, c.pass_floor.unwrap_or(0), c.roundtrip_floor.unwrap_or(0))
+            format!(
+                "{}: oracle ≥ {}{of}, round trip ≥ {}{of}",
+                c.label,
+                c.pass_floor.unwrap_or(0),
+                c.roundtrip_floor.unwrap_or(0)
+            )
         })
         .collect::<Vec<_>>()
         .join("; ");
@@ -571,8 +716,14 @@ rows are targets the code doesn't meet yet: they are reported, and only their re
     match (&base_date, full) {
         (Some(d), Some(f)) => {
             let load = perf::fmt_load(f.get("load_avg_start"));
-            let commit = f.get("commit").and_then(Value::as_str).map_or_else(|| "unknown".into(), |c| c.get(..10).unwrap_or(c).to_string());
-            let ram = machine.and_then(|m| m.get("ram_bytes")).and_then(Value::as_u64).map_or_else(|| "?".into(), |b| format!("{} GB", b >> 30));
+            let commit = f.get("commit").and_then(Value::as_str).map_or_else(
+                || "unknown".into(),
+                |c| c.get(..10).unwrap_or(c).to_string(),
+            );
+            let ram = machine
+                .and_then(|m| m.get("ram_bytes"))
+                .and_then(Value::as_u64)
+                .map_or_else(|| "?".into(), |b| format!("{} GB", b >> 30));
             s.push_str(&format!(
                 "Baseline: {d}, commit `{commit}`, {} ({ram}), GPU {}, {}; load average {load} (1/5/15 min) at the start of the run.\n\n",
                 ms("cpu"),
@@ -592,7 +743,14 @@ rows are targets the code doesn't meet yet: they are reported, and only their re
                 s.push_str("Corpus floors (`crates/io/tests/corpus.rs`): the enforced minimums; the corpus tests (cargo feature `corpus`, `cargo xtask test-corpus`, always run in CI) fail below them.\n\n| Corpus | Directory | Files | Oracle pass floor | Round-trip floor |\n|---|---|---:|---:|---:|\n");
                 for k in &inp.corpora {
                     let n = |v: Option<u32>| v.map_or_else(|| "–".into(), |x| x.to_string());
-                    s.push_str(&format!("| {} | `{}` | {} | {} | {} |\n", k.label, k.dir, n(k.files), n(k.pass_floor), n(k.roundtrip_floor)));
+                    s.push_str(&format!(
+                        "| {} | `{}` | {} | {} | {} |\n",
+                        k.label,
+                        k.dir,
+                        n(k.files),
+                        n(k.pass_floor),
+                        n(k.roundtrip_floor)
+                    ));
                 }
                 s.push('\n');
             }
@@ -605,7 +763,15 @@ except its `impl Session` blocks; tests excluded; the schema-driven dialog never
 It is a heuristic lower bound: a generic name can look read when it isn't.\n\n"
                 ));
                 if !inp.prefs.1.is_empty() {
-                    s.push_str(&format!("Unread: {}.\n\n", inp.prefs.1.iter().map(|p| format!("`{p}`")).collect::<Vec<_>>().join(", ")));
+                    s.push_str(&format!(
+                        "Unread: {}.\n\n",
+                        inp.prefs
+                            .1
+                            .iter()
+                            .map(|p| format!("`{p}`"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ));
                 }
             }
             "automation" => {
@@ -614,11 +780,21 @@ It is a heuristic lower bound: a generic name can look read when it isn't.\n\n"
                 }
             }
             "reliability" => {
-                s.push_str(&format!("Never-crash attribute on {} of {roots} crate roots", roots - missing_nc.len()));
+                s.push_str(&format!(
+                    "Never-crash attribute on {} of {roots} crate roots",
+                    roots - missing_nc.len()
+                ));
                 if missing_nc.is_empty() {
                     s.push_str(".\n\n");
                 } else {
-                    s.push_str(&format!("; missing: {}.\n\n", missing_nc.iter().map(|m| format!("`{m}`")).collect::<Vec<_>>().join(", ")));
+                    s.push_str(&format!(
+                        "; missing: {}.\n\n",
+                        missing_nc
+                            .iter()
+                            .map(|m| format!("`{m}`"))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ));
                 }
             }
             _ => {}
@@ -637,15 +813,23 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
     let text = render(&inp);
     let path = root.join(OUT);
     if check {
-        let current = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
+        let current = std::fs::read_to_string(&path)
+            .unwrap_or_default()
+            .replace("\r\n", "\n");
         if current != text {
-            return Err(format!("{OUT} is stale: run `cargo xtask scorecard` and commit the result"));
+            return Err(format!(
+                "{OUT} is stale: run `cargo xtask scorecard` and commit the result"
+            ));
         }
         println!("{OUT} is up to date");
         return Ok(());
     }
     std::fs::write(&path, &text).map_err(|e| format!("write {OUT}: {e}"))?;
-    println!("wrote {OUT}: settings that do nothing {} of {}", inp.prefs.1.len(), inp.prefs.0);
+    println!(
+        "wrote {OUT}: settings that do nothing {} of {}",
+        inp.prefs.1.len(),
+        inp.prefs.0
+    );
     if let Ok(t) = std::fs::read_to_string(crate::root().join("target/perf/results.json"))
         && let Ok(v) = serde_json::from_str::<Value>(&t)
     {
@@ -724,7 +908,10 @@ pub struct Preferences {
             ]
         );
         // Section helper methods: `colors()` reads grid_colors, `size()` reads grid_size.
-        let helpers: Vec<Vec<String>> = fields.iter().map(|f| f.helpers.iter().cloned().collect()).collect();
+        let helpers: Vec<Vec<String>> = fields
+            .iter()
+            .map(|f| f.helpers.iter().cloned().collect())
+            .collect();
         assert_eq!(helpers[3], ["colors"]);
         assert_eq!(helpers[4], ["size"]);
         assert!(helpers[2].is_empty());
@@ -748,13 +935,31 @@ pub struct Preferences {
             // Not prefs: `.workspace_locked` in a file that never mentions prefs doesn't count.
             accesses("state.workspace_locked = true;"),
         ];
-        let unread: Vec<String> = fields.iter().filter(|f| !is_read(f, &files)).map(PrefField::path).collect();
-        assert_eq!(unread, ["general.animated_zoom", "interface.grid_size", "workspace_locked"]);
+        let unread: Vec<String> = fields
+            .iter()
+            .filter(|f| !is_read(f, &files))
+            .map(PrefField::path)
+            .collect();
+        assert_eq!(
+            unread,
+            [
+                "general.animated_zoom",
+                "interface.grid_size",
+                "workspace_locked"
+            ]
+        );
         // A word inside an identifier or a string is not an access.
-        let a = accesses("let animated_zoom = 1; \"general.animated_zoom\".len(); x.animated_zoomed");
-        assert!(a.pairs.contains("general.animated_zoom"), "string paths look like accesses; documented lower bound");
+        let a =
+            accesses("let animated_zoom = 1; \"general.animated_zoom\".len(); x.animated_zoomed");
+        assert!(
+            a.pairs.contains("general.animated_zoom"),
+            "string paths look like accesses; documented lower bound"
+        );
         assert!(a.singles.contains("animated_zoom"), "and so do their parts");
-        assert!(!a.singles.contains("general"), "`let animated_zoom` and `\"general` are not accesses");
+        assert!(
+            !a.singles.contains("general"),
+            "`let animated_zoom` and `\"general` are not accesses"
+        );
         assert!(a.singles.contains("animated_zoomed"));
     }
 
@@ -783,11 +988,28 @@ const PHOTOSHOP: Source = Source { label: "photoshop oracles", dir: "corpus/phot
         let c = parse_corpus(src);
         assert_eq!(c.len(), 3);
         assert_eq!(
-            (c[0].label.as_str(), c[0].dir.as_str(), c[0].files, c[0].pass_floor, c[0].roundtrip_floor),
+            (
+                c[0].label.as_str(),
+                c[0].dir.as_str(),
+                c[0].files,
+                c[0].pass_floor,
+                c[0].roundtrip_floor
+            ),
             ("io corpus", "corpus/psd", Some(170), Some(133), Some(169))
         );
-        assert_eq!((c[1].files, c[1].pass_floor, c[1].roundtrip_floor), (Some(309), Some(212), Some(307)));
-        assert_eq!((c[2].dir.as_str(), c[2].files, c[2].pass_floor, c[2].roundtrip_floor), ("corpus/photoshop", Some(256), Some(74), Some(256)));
+        assert_eq!(
+            (c[1].files, c[1].pass_floor, c[1].roundtrip_floor),
+            (Some(309), Some(212), Some(307))
+        );
+        assert_eq!(
+            (
+                c[2].dir.as_str(),
+                c[2].files,
+                c[2].pass_floor,
+                c[2].roundtrip_floor
+            ),
+            ("corpus/photoshop", Some(256), Some(74), Some(256))
+        );
         assert!(parse_corpus("const X: u32 = 1;").is_empty());
     }
 
@@ -797,7 +1019,10 @@ const PHOTOSHOP: Source = Source { label: "photoshop oracles", dir: "corpus/phot
         let c = parse_checklist("t.toml", ok).unwrap();
         assert_eq!(c.counts(), (0, 1, 0));
         assert!(render_checklist(&c).contains("| T-1 | Pencil | partial | [#213](https://github.com/storytold/photocraft/issues/213) |  |"));
-        assert!(parse_checklist("t.toml", &ok.replace("partial", "almost")).is_err(), "status must be done|partial|missing");
+        assert!(
+            parse_checklist("t.toml", &ok.replace("partial", "almost")).is_err(),
+            "status must be done|partial|missing"
+        );
         assert!(parse_checklist("t.toml", &ok.replace("Pencil", "a | b")).is_err());
         assert!(parse_checklist("t.toml", &format!("{ok}bogus = 1\n")).is_err());
     }
@@ -813,13 +1038,26 @@ const PHOTOSHOP: Source = Source { label: "photoshop oracles", dir: "corpus/phot
         let root = crate::root();
         let inp = gather(&root).unwrap_or_else(|e| panic!("{e}"));
         let a = render(&inp);
-        assert_eq!(a, render(&gather(&root).unwrap()), "rendering is deterministic");
+        assert_eq!(
+            a,
+            render(&gather(&root).unwrap()),
+            "rendering is deterministic"
+        );
         // The committed file is current (what `--check` enforces in CI).
-        let committed = std::fs::read_to_string(root.join(OUT)).unwrap_or_default().replace("\r\n", "\n");
-        assert!(committed == a, "{OUT} is stale: run `cargo xtask scorecard`");
+        let committed = std::fs::read_to_string(root.join(OUT))
+            .unwrap_or_default()
+            .replace("\r\n", "\n");
+        assert!(
+            committed == a,
+            "{OUT} is stale: run `cargo xtask scorecard`"
+        );
         // Every scenario and every checklist area shows up.
         for sc in &inp.budgets.scenario {
-            assert!(a.contains(&format!("| {} |", sc.id)), "{} missing from the scorecard", sc.id);
+            assert!(
+                a.contains(&format!("| {} |", sc.id)),
+                "{} missing from the scorecard",
+                sc.id
+            );
         }
     }
 }

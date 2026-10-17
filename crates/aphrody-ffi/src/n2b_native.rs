@@ -163,7 +163,10 @@ pub unsafe extern "C" fn node2bun_scan_with_options_json(
             .map_err(|_| "project root is not UTF-8".to_string())?;
         let root = PathBuf::from(root);
         if !root.is_dir() {
-            return Err(format!("project root is not a directory: {}", root.display()));
+            return Err(format!(
+                "project root is not a directory: {}",
+                root.display()
+            ));
         }
         let options = if options_ptr.is_null() {
             ScanOptions {
@@ -196,7 +199,10 @@ pub unsafe extern "C" fn node2bun_scan_with_options_json(
     let result = match outcome {
         Ok(Ok(report)) => ScanResult::Success { ok: true, report },
         Ok(Err(error)) => ScanResult::Error { ok: false, error },
-        Err(_) => ScanResult::Error { ok: false, error: "N2B scan panicked".into() },
+        Err(_) => ScanResult::Error {
+            ok: false,
+            error: "N2B scan panicked".into(),
+        },
     };
     serde_json::to_string(&result)
         .ok()
@@ -241,7 +247,10 @@ mod scan_tests {
         let actual: serde_json::Value =
             serde_json::from_str(unsafe { CStr::from_ptr(pointer) }.to_str().unwrap()).unwrap();
         unsafe { node2bun_string_free(pointer) };
-        assert_eq!(actual, serde_json::json!({ "ok": true, "report": expected }));
+        assert_eq!(
+            actual,
+            serde_json::json!({ "ok": true, "report": expected })
+        );
     }
 
     #[test]
@@ -292,7 +301,10 @@ mod scan_tests {
                 .iter()
                 .any(|finding| finding["rule_id"] == "shebang/node")
         );
-        assert_eq!(std::fs::read_to_string(script).expect("read fixture"), original);
+        assert_eq!(
+            std::fs::read_to_string(script).expect("read fixture"),
+            original
+        );
     }
 
     #[test]
@@ -303,7 +315,10 @@ mod scan_tests {
             serde_json::from_str(unsafe { CStr::from_ptr(pointer) }.to_str().expect("UTF-8"))
                 .expect("JSON");
         unsafe { node2bun_string_free(pointer) };
-        assert_eq!(json, serde_json::json!({ "ok": false, "error": "project root is null" }));
+        assert_eq!(
+            json,
+            serde_json::json!({ "ok": false, "error": "project root is null" })
+        );
     }
 
     #[test]
@@ -322,6 +337,9 @@ mod scan_tests {
         unsafe { node2bun_string_free(pointer) };
         assert_eq!(report["ok"], true);
         assert_eq!(report["report"]["findings_total"], 0);
-        assert_eq!(std::fs::read_to_string(script).expect("read fixture"), original);
+        assert_eq!(
+            std::fs::read_to_string(script).expect("read fixture"),
+            original
+        );
     }
 }

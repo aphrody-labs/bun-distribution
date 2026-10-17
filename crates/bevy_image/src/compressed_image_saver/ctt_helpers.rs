@@ -1,11 +1,11 @@
 use std::env;
 
 use ctt::{
-    encoders::{
-        astcenc::{AstcencSettings, AstcencUsage, NormalSwizzle},
-        Encoder,
-    },
     AlphaMode, TargetFormat,
+    encoders::{
+        Encoder,
+        astcenc::{AstcencSettings, AstcencUsage, NormalSwizzle},
+    },
 };
 use ktx2::Format;
 use wgpu_types::{AstcBlock, AstcChannel, TextureFormat};

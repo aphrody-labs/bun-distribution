@@ -11,7 +11,14 @@
 //! Every decoder is bounded by a caller-supplied `max_output` (decompression-bomb
 //! defence) and never panics on malformed input.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod ascii85;
 mod asciihex;
@@ -79,11 +86,17 @@ impl Filter {
 
     /// True for the image codecs (DCT, JPX, JBIG2, CCITT fax).
     pub fn is_image_codec(&self) -> bool {
-        matches!(self, Filter::Dct | Filter::Jpx | Filter::Jbig2 | Filter::CcittFax)
+        matches!(
+            self,
+            Filter::Dct | Filter::Jpx | Filter::Jbig2 | Filter::CcittFax
+        )
     }
 
     fn is_decodable(&self) -> bool {
-        matches!(self, Filter::Flate | Filter::Lzw | Filter::AsciiHex | Filter::Ascii85 | Filter::RunLength)
+        matches!(
+            self,
+            Filter::Flate | Filter::Lzw | Filter::AsciiHex | Filter::Ascii85 | Filter::RunLength
+        )
     }
 }
 
@@ -101,7 +114,13 @@ pub struct Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Params { predictor: 1, colors: 1, bits_per_component: 8, columns: 1, early_change: 1 }
+        Params {
+            predictor: 1,
+            colors: 1,
+            bits_per_component: 8,
+            columns: 1,
+            early_change: 1,
+        }
     }
 }
 
@@ -109,7 +128,10 @@ impl Default for Params {
 #[derive(Debug, thiserror::Error)]
 pub enum FilterError {
     #[error("{filter}: corrupt data: {detail}")]
-    Corrupt { filter: &'static str, detail: String },
+    Corrupt {
+        filter: &'static str,
+        detail: String,
+    },
     #[error("decoded output exceeds the limit of {0} bytes")]
     LimitExceeded(usize),
     #[error("unsupported filter: {0}")]
@@ -123,12 +145,25 @@ pub(crate) struct Failure {
 }
 
 impl Failure {
-    pub(crate) fn corrupt(filter: &'static str, detail: impl Into<String>, partial: Vec<u8>) -> Self {
-        Failure { error: FilterError::Corrupt { filter, detail: detail.into() }, partial }
+    pub(crate) fn corrupt(
+        filter: &'static str,
+        detail: impl Into<String>,
+        partial: Vec<u8>,
+    ) -> Self {
+        Failure {
+            error: FilterError::Corrupt {
+                filter,
+                detail: detail.into(),
+            },
+            partial,
+        }
     }
 
     pub(crate) fn limit(max: usize) -> Self {
-        Failure { error: FilterError::LimitExceeded(max), partial: Vec::new() }
+        Failure {
+            error: FilterError::LimitExceeded(max),
+            partial: Vec::new(),
+        }
     }
 }
 
@@ -139,18 +174,31 @@ pub(crate) type Step = Result<Vec<u8>, Failure>;
 /// Image codecs, `Crypt` and unknown filters anywhere in the chain give
 /// [`FilterError::Unsupported`] (callers keep such data encoded). `max_output` bounds
 /// every intermediate buffer.
-pub fn decode(chain: &[(Filter, Params)], data: &[u8], max_output: usize) -> Result<Vec<u8>, FilterError> {
+pub fn decode(
+    chain: &[(Filter, Params)],
+    data: &[u8],
+    max_output: usize,
+) -> Result<Vec<u8>, FilterError> {
     run(chain, data, max_output, true).map(|(v, _)| v)
 }
 
 /// Like [`decode`], but on corrupt data returns what was decoded before the error and
 /// reports `partial = true` (the behaviour viewers expect). The remaining filters of the
 /// chain still run on the partial data. Limit and unsupported errors are still errors.
-pub fn decode_tolerant(chain: &[(Filter, Params)], data: &[u8], max_output: usize) -> Result<(Vec<u8>, bool), FilterError> {
+pub fn decode_tolerant(
+    chain: &[(Filter, Params)],
+    data: &[u8],
+    max_output: usize,
+) -> Result<(Vec<u8>, bool), FilterError> {
     run(chain, data, max_output, false)
 }
 
-fn run(chain: &[(Filter, Params)], data: &[u8], max: usize, strict: bool) -> Result<(Vec<u8>, bool), FilterError> {
+fn run(
+    chain: &[(Filter, Params)],
+    data: &[u8],
+    max: usize,
+    strict: bool,
+) -> Result<(Vec<u8>, bool), FilterError> {
     if let Some((f, _)) = chain.iter().find(|(f, _)| !f.is_decodable()) {
         return Err(FilterError::Unsupported(f.name().to_owned()));
     }
@@ -159,7 +207,10 @@ fn run(chain: &[(Filter, Params)], data: &[u8], max: usize, strict: bool) -> Res
     for (filter, params) in chain {
         cur = Cow::Owned(match decode_one(filter, params, &cur, max) {
             Ok(v) => v,
-            Err(Failure { error: FilterError::Corrupt { .. }, partial: out }) if !strict => {
+            Err(Failure {
+                error: FilterError::Corrupt { .. },
+                partial: out,
+            }) if !strict => {
                 partial = true;
                 out
             }
@@ -172,11 +223,18 @@ fn run(chain: &[(Filter, Params)], data: &[u8], max: usize, strict: bool) -> Res
 fn decode_one(filter: &Filter, params: &Params, data: &[u8], max: usize) -> Step {
     match filter {
         Filter::Flate => with_predictor(flate::decode(data, max), params, "FlateDecode"),
-        Filter::Lzw => with_predictor(lzw::decode(data, params.early_change != 0, max), params, "LZWDecode"),
+        Filter::Lzw => with_predictor(
+            lzw::decode(data, params.early_change != 0, max),
+            params,
+            "LZWDecode",
+        ),
         Filter::AsciiHex => asciihex::decode(data, max),
         Filter::Ascii85 => ascii85::decode(data, max),
         Filter::RunLength => runlength::decode(data, max),
-        other => Err(Failure { error: FilterError::Unsupported(other.name().to_owned()), partial: Vec::new() }),
+        other => Err(Failure {
+            error: FilterError::Unsupported(other.name().to_owned()),
+            partial: Vec::new(),
+        }),
     }
 }
 
@@ -200,11 +258,17 @@ fn with_predictor(step: Step, params: &Params, name: &'static str) -> Step {
 pub fn encode(filter: &Filter, params: &Params, data: &[u8]) -> Result<Vec<u8>, FilterError> {
     match filter {
         Filter::Flate => Ok(flate::encode(&predictor::encode(params, data)?)),
-        Filter::Lzw => Ok(lzw::encode(&predictor::encode(params, data)?, params.early_change != 0)),
+        Filter::Lzw => Ok(lzw::encode(
+            &predictor::encode(params, data)?,
+            params.early_change != 0,
+        )),
         Filter::AsciiHex => Ok(asciihex::encode(data)),
         Filter::Ascii85 => Ok(ascii85::encode(data)),
         Filter::RunLength => Ok(runlength::encode(data)),
-        other => Err(FilterError::Unsupported(format!("encoding with {}", other.name()))),
+        other => Err(FilterError::Unsupported(format!(
+            "encoding with {}",
+            other.name()
+        ))),
     }
 }
 
@@ -249,16 +313,44 @@ mod tests {
     #[test]
     fn default_params() {
         let p = Params::default();
-        assert_eq!((p.predictor, p.colors, p.bits_per_component, p.columns, p.early_change), (1, 1, 8, 1, 1));
+        assert_eq!(
+            (
+                p.predictor,
+                p.colors,
+                p.bits_per_component,
+                p.columns,
+                p.early_change
+            ),
+            (1, 1, 8, 1, 1)
+        );
     }
 
     #[test]
     fn unsupported_filters() {
-        for f in [Filter::Dct, Filter::Jpx, Filter::Jbig2, Filter::CcittFax, Filter::Crypt, Filter::Unknown("X".into())] {
-            let chain = [(Filter::AsciiHex, Params::default()), (f.clone(), Params::default())];
-            assert!(matches!(decode(&chain, b"00>", 100), Err(FilterError::Unsupported(_))));
-            assert!(matches!(decode_tolerant(&chain, b"00>", 100), Err(FilterError::Unsupported(_))));
-            assert!(matches!(encode(&f, &Params::default(), b"x"), Err(FilterError::Unsupported(_))));
+        for f in [
+            Filter::Dct,
+            Filter::Jpx,
+            Filter::Jbig2,
+            Filter::CcittFax,
+            Filter::Crypt,
+            Filter::Unknown("X".into()),
+        ] {
+            let chain = [
+                (Filter::AsciiHex, Params::default()),
+                (f.clone(), Params::default()),
+            ];
+            assert!(matches!(
+                decode(&chain, b"00>", 100),
+                Err(FilterError::Unsupported(_))
+            ));
+            assert!(matches!(
+                decode_tolerant(&chain, b"00>", 100),
+                Err(FilterError::Unsupported(_))
+            ));
+            assert!(matches!(
+                encode(&f, &Params::default(), b"x"),
+                Err(FilterError::Unsupported(_))
+            ));
         }
     }
 
@@ -272,18 +364,30 @@ mod tests {
         let data = b"Hello, chained filters! Hello, chained filters!".repeat(10);
         let z = encode_flate(&data);
         let a = encode(&Filter::Ascii85, &Params::default(), &z).unwrap();
-        let chain = [(Filter::Ascii85, Params::default()), (Filter::Flate, Params::default())];
+        let chain = [
+            (Filter::Ascii85, Params::default()),
+            (Filter::Flate, Params::default()),
+        ];
         assert_eq!(decode(&chain, &a, 1 << 20).unwrap(), data);
     }
 
     #[test]
     fn chain_three_filters_with_predictor() {
-        let p = Params { predictor: 12, colors: 3, columns: 5, ..Params::default() };
+        let p = Params {
+            predictor: 12,
+            colors: 3,
+            columns: 5,
+            ..Params::default()
+        };
         let data: Vec<u8> = (0..300u32).map(|i| (i * 7 % 251) as u8).collect();
         let lzw = encode(&Filter::Lzw, &p, &data).unwrap();
         let rl = encode(&Filter::RunLength, &Params::default(), &lzw).unwrap();
         let hex = encode(&Filter::AsciiHex, &Params::default(), &rl).unwrap();
-        let chain = [(Filter::AsciiHex, Params::default()), (Filter::RunLength, Params::default()), (Filter::Lzw, p)];
+        let chain = [
+            (Filter::AsciiHex, Params::default()),
+            (Filter::RunLength, Params::default()),
+            (Filter::Lzw, p),
+        ];
         assert_eq!(decode(&chain, &hex, 1 << 20).unwrap(), data);
     }
 
@@ -291,18 +395,26 @@ mod tests {
     fn limit_applies_to_intermediate_buffers() {
         let hex = encode(&Filter::AsciiHex, &Params::default(), &[7u8; 100]).unwrap();
         let chain = [(Filter::AsciiHex, Params::default())];
-        assert!(matches!(decode(&chain, &hex, 99), Err(FilterError::LimitExceeded(99))));
+        assert!(matches!(
+            decode(&chain, &hex, 99),
+            Err(FilterError::LimitExceeded(99))
+        ));
         assert_eq!(decode(&chain, &hex, 100).unwrap().len(), 100);
     }
 
     #[test]
     fn tolerant_flate_returns_partial() {
-        let data: Vec<u8> = (0..20_000u32).map(|i| (i % 97) as u8 ^ (i / 300) as u8).collect();
+        let data: Vec<u8> = (0..20_000u32)
+            .map(|i| (i % 97) as u8 ^ (i / 300) as u8)
+            .collect();
         let mut z = encode_flate(&data);
         let cut = z.len() / 2;
         z.truncate(cut);
         let chain = [(Filter::Flate, Params::default())];
-        assert!(matches!(decode(&chain, &z, 1 << 20), Err(FilterError::Corrupt { .. })));
+        assert!(matches!(
+            decode(&chain, &z, 1 << 20),
+            Err(FilterError::Corrupt { .. })
+        ));
         let (out, partial) = decode_tolerant(&chain, &z, 1 << 20).unwrap();
         assert!(partial);
         assert!(!out.is_empty() && out.len() < data.len());
@@ -315,7 +427,11 @@ mod tests {
 
     #[test]
     fn tolerant_partial_flows_through_predictor() {
-        let p = Params { predictor: 12, columns: 4, ..Params::default() };
+        let p = Params {
+            predictor: 12,
+            columns: 4,
+            ..Params::default()
+        };
         let data: Vec<u8> = (0..4000u32).map(|i| (i * 31 % 256) as u8).collect();
         let mut z = encode(&Filter::Flate, &p, &data).unwrap();
         z.truncate(z.len() - 20);

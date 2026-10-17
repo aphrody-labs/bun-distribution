@@ -133,7 +133,11 @@ static TOOLS: LazyLock<Vec<Tool>> = LazyLock::new(|| {
 });
 
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    TOOLS.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    TOOLS
+        .iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -152,12 +156,18 @@ fn required_text<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {
 }
 
 fn text_arg<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {
-    args.get(key).and_then(Value::as_str).ok_or_else(|| format!("{key} must be a string"))
+    args.get(key)
+        .and_then(Value::as_str)
+        .ok_or_else(|| format!("{key} must be a string"))
 }
 
 fn optional_text<'a>(args: &'a Value, key: &str) -> Result<Option<&'a str>, String> {
     args.get(key)
-        .map(|value| value.as_str().ok_or_else(|| format!("{key} must be a string")))
+        .map(|value| {
+            value
+                .as_str()
+                .ok_or_else(|| format!("{key} must be a string"))
+        })
         .transpose()
 }
 
@@ -167,7 +177,9 @@ fn optional_count(
     default: u64,
     maximum: Option<u64>,
 ) -> Result<u64, String> {
-    let Some(value) = args.get(key) else { return Ok(default) };
+    let Some(value) = args.get(key) else {
+        return Ok(default);
+    };
     let value = value
         .as_u64()
         .filter(|value| *value > 0)
@@ -182,7 +194,9 @@ fn optional_count(
 
 fn item_url(identifier: &str) -> reqwest::Url {
     let mut url = reqwest::Url::parse(ARCHIVE_ORG).expect("static URL");
-    url.path_segments_mut().expect("HTTPS URL").extend(["metadata", identifier]);
+    url.path_segments_mut()
+        .expect("HTTPS URL")
+        .extend(["metadata", identifier]);
     url
 }
 
@@ -202,7 +216,9 @@ fn search_url(query: &str, rows: u64, page: u64) -> reqwest::Url {
     {
         let mut pairs = url.query_pairs_mut();
         pairs.append_pair("q", query).append_pair("output", "json");
-        pairs.append_pair("rows", &rows.to_string()).append_pair("page", &page.to_string());
+        pairs
+            .append_pair("rows", &rows.to_string())
+            .append_pair("page", &page.to_string());
         for field in FIELDS {
             pairs.append_pair("fl[]", field);
         }
@@ -214,7 +230,9 @@ fn wayback_url(page_url: &str, from: Option<&str>, to: Option<&str>, limit: u64)
     let mut url = reqwest::Url::parse(WAYBACK_CDX).expect("static URL");
     {
         let mut pairs = url.query_pairs_mut();
-        pairs.append_pair("url", page_url).append_pair("output", "json");
+        pairs
+            .append_pair("url", page_url)
+            .append_pair("output", "json");
         if let Some(from) = from {
             pairs.append_pair("from", from);
         }
@@ -228,13 +246,17 @@ fn wayback_url(page_url: &str, from: Option<&str>, to: Option<&str>, limit: u64)
 
 fn google_dns_url(name: &str, record_type: &str) -> reqwest::Url {
     let mut url = reqwest::Url::parse(GOOGLE_DOH).expect("static URL");
-    url.query_pairs_mut().append_pair("name", name).append_pair("type", record_type);
+    url.query_pairs_mut()
+        .append_pair("name", name)
+        .append_pair("type", record_type);
     url
 }
 
 fn google_suggest_url(query: &str, client: &str) -> reqwest::Url {
     let mut url = reqwest::Url::parse(GOOGLE_SUGGEST).expect("static URL");
-    url.query_pairs_mut().append_pair("client", client).append_pair("q", query);
+    url.query_pairs_mut()
+        .append_pair("client", client)
+        .append_pair("q", query);
     url
 }
 
@@ -269,13 +291,19 @@ fn google_sheet_url(spreadsheet_id: &str, gid: Option<&str>) -> reqwest::Url {
 
 fn google_doc_url(document_id: &str) -> reqwest::Url {
     let mut url = reqwest::Url::parse("https://docs.google.com").expect("static URL");
-    url.path_segments_mut().expect("HTTPS URL").extend(["document", "d", document_id, "export"]);
+    url.path_segments_mut()
+        .expect("HTTPS URL")
+        .extend(["document", "d", document_id, "export"]);
     url.query_pairs_mut().append_pair("format", "txt");
     url
 }
 
 async fn get_text(url: reqwest::Url, service: &str) -> Result<String, String> {
-    let response = CLIENT.get(url).send().await.map_err(|error| error.to_string())?;
+    let response = CLIENT
+        .get(url)
+        .send()
+        .await
+        .map_err(|error| error.to_string())?;
     let status = response.status();
     let body = response.text().await.map_err(|error| error.to_string())?;
     if !status.is_success() {
@@ -293,7 +321,10 @@ async fn get_json(url: reqwest::Url, service: &str) -> Result<Value, String> {
 }
 
 fn suggestions(data: &Value) -> Value {
-    let items = data.as_array().and_then(|array| array.get(1)).and_then(Value::as_array);
+    let items = data
+        .as_array()
+        .and_then(|array| array.get(1))
+        .and_then(Value::as_array);
     Value::Array(items.map_or_else(Vec::new, |items| {
         items
             .iter()
@@ -303,7 +334,10 @@ fn suggestions(data: &Value) -> Value {
                     Value::Object(_) => "[object Object]".to_owned(),
                     Value::Array(array) => array
                         .iter()
-                        .map(|item| item.as_str().map_or_else(|| item.to_string(), str::to_owned))
+                        .map(|item| {
+                            item.as_str()
+                                .map_or_else(|| item.to_string(), str::to_owned)
+                        })
                         .collect::<Vec<_>>()
                         .join(","),
                     other => other.to_string(),
@@ -337,7 +371,11 @@ fn calendar_events(ics: &str) -> Value {
         } else if let Some(event) = current.as_mut()
             && let Some((key, value)) = line.split_once(':')
         {
-            let key = key.split(';').next().unwrap_or_default().to_ascii_lowercase();
+            let key = key
+                .split(';')
+                .next()
+                .unwrap_or_default()
+                .to_ascii_lowercase();
             let value = value
                 .replace("\\,", ",")
                 .replace("\\;", ";")
@@ -350,9 +388,15 @@ fn calendar_events(ics: &str) -> Value {
 }
 
 fn captures(data: Value) -> Result<Value, String> {
-    let rows = data.as_array().ok_or("Wayback CDX response must be an array")?;
-    let Some((columns, entries)) = rows.split_first() else { return Ok(json!([])) };
-    let columns = columns.as_array().ok_or("Wayback CDX columns must be an array")?;
+    let rows = data
+        .as_array()
+        .ok_or("Wayback CDX response must be an array")?;
+    let Some((columns, entries)) = rows.split_first() else {
+        return Ok(json!([]));
+    };
+    let columns = columns
+        .as_array()
+        .ok_or("Wayback CDX columns must be an array")?;
     let columns: Vec<&str> = columns
         .iter()
         .map(|column| column.as_str().ok_or("Wayback CDX column must be a string"))
@@ -364,7 +408,10 @@ fn captures(data: Value) -> Result<Value, String> {
             .iter()
             .enumerate()
             .map(|(index, column)| {
-                (column.to_string(), fields.get(index).cloned().unwrap_or(json!("")))
+                (
+                    column.to_string(),
+                    fields.get(index).cloned().unwrap_or(json!("")),
+                )
             })
             .collect::<serde_json::Map<_, _>>();
         result.push(Value::Object(capture));
@@ -373,13 +420,19 @@ fn captures(data: Value) -> Result<Value, String> {
 }
 
 enum Output {
-    Json { value: Value, structured: Option<Value> },
+    Json {
+        value: Value,
+        structured: Option<Value>,
+    },
     Text(String),
 }
 
 impl Output {
     fn json(value: Value) -> Self {
-        Self::Json { structured: value.is_object().then(|| value.clone()), value }
+        Self::Json {
+            structured: value.is_object().then(|| value.clone()),
+            value,
+        }
     }
 }
 
@@ -387,22 +440,28 @@ async fn run(name: &str, args: &Value) -> Result<Output, String> {
     match name {
         "aphrody_detect_frameworks" => {
             let url = required_text(args, "url")?;
-            let report =
-                aphrody_web_detect::detect_url(url).await.map_err(|error| error.to_string())?;
-            Ok(Output::json(serde_json::to_value(report).map_err(|error| error.to_string())?))
-        },
+            let report = aphrody_web_detect::detect_url(url)
+                .await
+                .map_err(|error| error.to_string())?;
+            Ok(Output::json(
+                serde_json::to_value(report).map_err(|error| error.to_string())?,
+            ))
+        }
         "aphrody_archive_item" => {
-            let item =
-                get_json(item_url(required_text(args, "identifier")?), "Internet Archive").await?;
+            let item = get_json(
+                item_url(required_text(args, "identifier")?),
+                "Internet Archive",
+            )
+            .await?;
             Ok(Output::json(item))
-        },
+        }
         "aphrody_archive_search" => {
             let query = required_text(args, "query")?;
             let rows = optional_count(args, "rows", 50, Some(1000))?;
             let page = optional_count(args, "page", 1, None)?;
             let result = get_json(search_url(query, rows, page), "Internet Archive").await?;
             Ok(Output::json(result))
-        },
+        }
         "aphrody_archive_wayback" => {
             let page_url = required_text(args, "url")?;
             reqwest::Url::parse(page_url).map_err(|error| format!("url: {error}"))?;
@@ -415,7 +474,7 @@ async fn run(name: &str, args: &Value) -> Result<Output, String> {
                 value: result.clone(),
                 structured: Some(json!({ "captures": result })),
             })
-        },
+        }
         "aphrody_google_dns" => {
             let domain = args
                 .get("name")
@@ -424,13 +483,13 @@ async fn run(name: &str, args: &Value) -> Result<Output, String> {
             let record_type = optional_text(args, "type")?.unwrap_or("A");
             let result = get_json(google_dns_url(domain, record_type), "Google DNS").await?;
             Ok(Output::json(result))
-        },
+        }
         "aphrody_google_suggest" => {
             let query = text_arg(args, "query")?;
             let client = optional_text(args, "client")?.unwrap_or("chrome");
             let data = get_json(google_suggest_url(query, client), "Google Suggest").await?;
             Ok(Output::json(suggestions(&data)))
-        },
+        }
         "aphrody_google_supported_languages" => {
             let target = optional_text(args, "target")?;
             let mut response =
@@ -439,29 +498,35 @@ async fn run(name: &str, args: &Value) -> Result<Output, String> {
             let total = response["data"]["languages"].as_array().map_or(0, Vec::len);
             response["total"] = json!(total);
             Ok(Output::json(response))
-        },
+        }
         "aphrody_google_calendar_public" => {
             let id = text_arg(args, "calendarId")?;
             let body = get_text(google_calendar_url(id), "Google Calendar").await?;
             Ok(Output::json(calendar_events(&body)))
-        },
+        }
         "aphrody_google_sheet_export" => {
             let id = text_arg(args, "spreadsheetId")?;
             let gid = optional_text(args, "gid")?;
-            Ok(Output::Text(get_text(google_sheet_url(id, gid), "Google Sheets").await?))
-        },
+            Ok(Output::Text(
+                get_text(google_sheet_url(id, gid), "Google Sheets").await?,
+            ))
+        }
         "aphrody_google_doc_export" => {
             let id = text_arg(args, "documentId")?;
-            Ok(Output::Text(get_text(google_doc_url(id), "Google Docs").await?))
-        },
+            Ok(Output::Text(
+                get_text(google_doc_url(id), "Google Docs").await?,
+            ))
+        }
         _ => Err(format!("unknown public web tool: {name}")),
     }
 }
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     match run(name, &args).await {
         Ok(Output::Json { value, structured }) => {
             let mut result = CallToolResult::success(vec![ContentBlock::text(
@@ -469,7 +534,7 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
             )]);
             result.structured_content = structured;
             result
-        },
+        }
         Ok(Output::Text(text)) => CallToolResult::success(vec![ContentBlock::text(text)]),
         Err(error) => CallToolResult::error(vec![ContentBlock::text(format!("{name}: {error}"))]),
     }
@@ -505,7 +570,11 @@ mod tests {
 
     #[tokio::test]
     async fn detection_rejects_non_web_url_before_network() {
-        let result = run("aphrody_detect_frameworks", &json!({ "url": "file:///tmp/a" })).await;
+        let result = run(
+            "aphrody_detect_frameworks",
+            &json!({ "url": "file:///tmp/a" }),
+        )
+        .await;
         assert!(result.is_err());
     }
 
@@ -514,7 +583,11 @@ mod tests {
         assert_eq!(item_url("with/slash").path(), "/metadata/with%2Fslash");
         let search = search_url("collection:test & more", 50, 1);
         let pairs: Vec<_> = search.query_pairs().collect();
-        assert!(pairs.iter().any(|(key, value)| key == "q" && value == "collection:test & more"));
+        assert!(
+            pairs
+                .iter()
+                .any(|(key, value)| key == "q" && value == "collection:test & more")
+        );
         assert_eq!(pairs.iter().filter(|(key, _)| key == "fl[]").count(), 8);
         let wayback = wayback_url("https://example.com/a?b=1", Some("2020"), None, 100);
         assert!(
@@ -523,14 +596,21 @@ mod tests {
                 .any(|(key, value)| key == "url" && value == "https://example.com/a?b=1")
         );
         let dns = google_dns_url("example.com", "MX");
-        assert_eq!(dns.as_str(), "https://dns.google/resolve?name=example.com&type=MX");
+        assert_eq!(
+            dns.as_str(),
+            "https://dns.google/resolve?name=example.com&type=MX"
+        );
         assert_eq!(
             serde_json::to_value(get("aphrody_google_dns").unwrap()).unwrap()["inputSchema"]["properties"]
                 ["type"]["default"],
             "A"
         );
         let suggest = google_suggest_url("rust & bun", "firefox");
-        assert!(suggest.query_pairs().any(|(key, value)| key == "q" && value == "rust & bun"));
+        assert!(
+            suggest
+                .query_pairs()
+                .any(|(key, value)| key == "q" && value == "rust & bun")
+        );
         assert_eq!(
             google_calendar_url("team@example.com").as_str(),
             "https://calendar.google.com/calendar/ical/team@example.com/public/basic.ics"
@@ -569,9 +649,12 @@ mod tests {
 
     #[tokio::test]
     async fn supported_languages_uses_shared_registry_without_network() {
-        let Output::Json { value, structured } =
-            run("aphrody_google_supported_languages", &json!({ "target": "fr-FR" })).await.unwrap()
-        else {
+        let Output::Json { value, structured } = run(
+            "aphrody_google_supported_languages",
+            &json!({ "target": "fr-FR" }),
+        )
+        .await
+        .unwrap() else {
             panic!("expected JSON output");
         };
         assert_eq!(value["total"], 195);
@@ -581,27 +664,61 @@ mod tests {
 
     #[test]
     fn cdx_table_becomes_named_captures() {
-        let value =
-            captures(json!([["timestamp", "original"], ["20200101", "https://example.com"]]))
-                .unwrap();
-        assert_eq!(value, json!([{ "timestamp": "20200101", "original": "https://example.com" }]));
+        let value = captures(json!([
+            ["timestamp", "original"],
+            ["20200101", "https://example.com"]
+        ]))
+        .unwrap();
+        assert_eq!(
+            value,
+            json!([{ "timestamp": "20200101", "original": "https://example.com" }])
+        );
         assert_eq!(captures(json!([])).unwrap(), json!([]));
     }
 
     #[tokio::test]
     async fn invalid_input_fails_before_network() {
         assert!(
-            run("aphrody_archive_search", &json!({ "query": "x", "rows": 1001 })).await.is_err()
+            run(
+                "aphrody_archive_search",
+                &json!({ "query": "x", "rows": 1001 })
+            )
+            .await
+            .is_err()
         );
-        assert!(run("aphrody_archive_wayback", &json!({ "url": "not a url" })).await.is_err());
+        assert!(
+            run("aphrody_archive_wayback", &json!({ "url": "not a url" }))
+                .await
+                .is_err()
+        );
         assert!(run("aphrody_google_dns", &json!({})).await.is_err());
         assert!(
-            run("aphrody_google_dns", &json!({ "name": "example.com", "type": 5 })).await.is_err()
+            run(
+                "aphrody_google_dns",
+                &json!({ "name": "example.com", "type": 5 })
+            )
+            .await
+            .is_err()
         );
         assert!(run("aphrody_google_suggest", &json!({})).await.is_err());
-        assert!(run("aphrody_google_supported_languages", &json!({ "target": 3 })).await.is_err());
-        assert!(run("aphrody_google_calendar_public", &json!({})).await.is_err());
-        assert!(run("aphrody_google_sheet_export", &json!({})).await.is_err());
+        assert!(
+            run(
+                "aphrody_google_supported_languages",
+                &json!({ "target": 3 })
+            )
+            .await
+            .is_err()
+        );
+        assert!(
+            run("aphrody_google_calendar_public", &json!({}))
+                .await
+                .is_err()
+        );
+        assert!(
+            run("aphrody_google_sheet_export", &json!({}))
+                .await
+                .is_err()
+        );
         assert!(run("aphrody_google_doc_export", &json!({})).await.is_err());
     }
 }

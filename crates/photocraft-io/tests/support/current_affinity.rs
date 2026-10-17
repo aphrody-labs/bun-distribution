@@ -21,7 +21,19 @@ fn solid(id: u32) -> F {
                 vec![tag(b"FilS")],
                 vec![(
                     tag(b"Colr"),
-                    F::Def(id + 2, vec![tag(b"RGBA")], vec![(tag(b"_col"), F::Struct([1f32, 0.0, 0.0, 1.0].into_iter().flat_map(f32::to_le_bytes).collect()))]),
+                    F::Def(
+                        id + 2,
+                        vec![tag(b"RGBA")],
+                        vec![(
+                            tag(b"_col"),
+                            F::Struct(
+                                [1f32, 0.0, 0.0, 1.0]
+                                    .into_iter()
+                                    .flat_map(f32::to_le_bytes)
+                                    .collect(),
+                            ),
+                        )],
+                    ),
                 )],
             ),
         )],
@@ -50,7 +62,18 @@ fn board(id: u32, x: f64, marker: Marker, curve: bool) -> F {
         Marker::Legacy => fields.push((tag(b"ABEn"), F::Bool(true))),
         Marker::Current | Marker::OtherProperties => {
             fields.push((tag(b"ABEn"), F::Bool(false)));
-            fields.push((tag(b"phrp"), F::Def(id + 2, vec![tag(if matches!(marker, Marker::Current) { b"aprp" } else { b"prps" })], vec![])));
+            fields.push((
+                tag(b"phrp"),
+                F::Def(
+                    id + 2,
+                    vec![tag(if matches!(marker, Marker::Current) {
+                        b"aprp"
+                    } else {
+                        b"prps"
+                    })],
+                    vec![],
+                ),
+            ));
         }
     }
     F::Def(id, vec![tag(if curve { b"PCrv" } else { b"ShpN" })], fields)
@@ -63,12 +86,28 @@ pub fn document(marker: Marker, curve: bool, method: Method) -> Vec<u8> {
         vec![
             (tag(b"SprB"), F::F64s(vec![0.0, 0.0, 40.0, 16.0])),
             (tag(b"SprT"), F::Bool(true)),
-            (tag(b"Chld"), F::Shared(vec![board(100, 0.0, marker, curve), board(200, 24.0, marker, curve)])),
+            (
+                tag(b"Chld"),
+                F::Shared(vec![
+                    board(100, 0.0, marker, curve),
+                    board(200, 24.0, marker, curve),
+                ]),
+            ),
         ],
     );
     let stream = synth::stream(&[
-        (tag(b"UVCn"), F::Obj(tag(b"UVCn"), vec![(tag(b"UPPI"), F::F64(144.0))])),
-        (tag(b"DocR"), F::Def(1, vec![tag(b"DocN")], vec![(tag(b"Chld"), F::Shared(vec![spread]))])),
+        (
+            tag(b"UVCn"),
+            F::Obj(tag(b"UVCn"), vec![(tag(b"UPPI"), F::F64(144.0))]),
+        ),
+        (
+            tag(b"DocR"),
+            F::Def(
+                1,
+                vec![tag(b"DocN")],
+                vec![(tag(b"Chld"), F::Shared(vec![spread]))],
+            ),
+        ),
     ]);
     synth::container(&[("doc.dat", &stream, method)], None)
 }

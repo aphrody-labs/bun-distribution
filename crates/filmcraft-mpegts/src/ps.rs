@@ -5,7 +5,10 @@ use std::collections::HashMap;
 
 use crate::es::Splitter;
 use crate::pes;
-use crate::{ByteSource, Codec, Error, File, Format, LpcmFormat, Result, Stream, StreamId, Unit, Unwrap, read_some};
+use crate::{
+    ByteSource, Codec, Error, File, Format, LpcmFormat, Result, Stream, StreamId, Unit, Unwrap,
+    read_some,
+};
 
 /// Sequential reader with a refillable window.
 struct Win<'a, S: ByteSource + ?Sized> {
@@ -90,7 +93,11 @@ fn lpcm_format(h: &[u8]) -> Option<LpcmFormat> {
     let bits = [16, 20, 24, 0][(b >> 6) as usize];
     let sample_rate = [48_000, 96_000, 44_100, 32_000][((b >> 4) & 3) as usize];
     let channels = (b & 7) as u32 + 1;
-    (bits > 0).then_some(LpcmFormat { sample_rate, channels, bits })
+    (bits > 0).then_some(LpcmFormat {
+        sample_rate,
+        channels,
+        bits,
+    })
 }
 
 struct EsState {
@@ -145,7 +152,12 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, mpeg1: bool) -> Result<File>
                 if w.len() < 4 {
                     break None;
                 }
-                if let Some(i) = w.windows(4).position(|x| x[0] == 0 && x[1] == 0 && x[2] == 1 && (x[3] == 0xBA || (0xBD..=0xEF).contains(&x[3]))) {
+                if let Some(i) = w.windows(4).position(|x| {
+                    x[0] == 0
+                        && x[1] == 0
+                        && x[2] == 1
+                        && (x[3] == 0xBA || (0xBD..=0xEF).contains(&x[3]))
+                }) {
                     break Some(p + i as u64);
                 }
                 p += (w.len() - 3) as u64;
@@ -210,10 +222,17 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, mpeg1: bool) -> Result<File>
                 let key = (id, sub);
                 let e = streams.entry(key).or_insert_with(|| {
                     let codec = codec_for(id, sub, &psm, mpeg1);
-                    let lpcm = if codec == Codec::LpcmDvd { lpcm_format(&payload[1.min(payload.len())..]) } else { None };
+                    let lpcm = if codec == Codec::LpcmDvd {
+                        lpcm_format(&payload[1.min(payload.len())..])
+                    } else {
+                        None
+                    };
                     order.push(key);
                     let stream = Stream {
-                        id: StreamId::Ps { stream_id: id, sub_id: sub },
+                        id: StreamId::Ps {
+                            stream_id: id,
+                            sub_id: sub,
+                        },
                         stream_type: psm.get(&id).copied().unwrap_or(0),
                         codec: codec.clone(),
                         language: None,
@@ -222,10 +241,16 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, mpeg1: bool) -> Result<File>
                         pes_packets: 0,
                         skipped_bytes: 0,
                     };
-                    EsState { stream, split: Splitter::new(&codec) }
+                    EsState {
+                        stream,
+                        split: Splitter::new(&codec),
+                    }
                 });
                 e.stream.pes_packets += 1;
-                e.split.pes_start(h.pts.map(|t| unwrap.unwrap(t)), h.dts.map(|t| unwrap.unwrap(t)));
+                e.split.pes_start(
+                    h.pts.map(|t| unwrap.unwrap(t)),
+                    h.dts.map(|t| unwrap.unwrap(t)),
+                );
                 e.split.feed(pos, &payload[skip..]);
             }
         }
@@ -237,21 +262,38 @@ pub(crate) fn scan<S: ByteSource + ?Sized>(src: &S, mpeg1: bool) -> Result<File>
     }
     let mut out = Vec::new();
     for key in order {
-        let Some(mut e) = streams.remove(&key) else { continue };
+        let Some(mut e) = streams.remove(&key) else {
+            continue;
+        };
         e.split.finish();
         e.stream.units = std::mem::take(&mut e.split.units);
         e.stream.skipped_bytes = e.split.skipped;
         out.push(e.stream);
     }
     if out.is_empty() {
-        return Err(Error::Invalid("program stream without elementary streams".into()));
+        return Err(Error::Invalid(
+            "program stream without elementary streams".into(),
+        ));
     }
-    Ok(File { format: Format::Ps { mpeg1 }, streams: out, program: None, pcr_range: scr, warnings })
+    Ok(File {
+        format: Format::Ps { mpeg1 },
+        streams: out,
+        program: None,
+        pcr_range: scr,
+        warnings,
+    })
 }
 
 /// Collect unit `u` of stream `st`, starting at the PES packet at `u.pos`.
-pub(crate) fn read<S: ByteSource + ?Sized>(src: &S, st: &Stream, u: &Unit, out: &mut Vec<u8>) -> Result<()> {
-    let StreamId::Ps { stream_id, sub_id } = st.id else { return Err(Error::Invalid("not a PS stream".into())) };
+pub(crate) fn read<S: ByteSource + ?Sized>(
+    src: &S,
+    st: &Stream,
+    u: &Unit,
+    out: &mut Vec<u8>,
+) -> Result<()> {
+    let StreamId::Ps { stream_id, sub_id } = st.id else {
+        return Err(Error::Invalid("not a PS stream".into()));
+    };
     let need = u.size as usize;
     let mut skip = u.offset as usize;
     let mut pos = u.pos;
@@ -269,7 +311,11 @@ pub(crate) fn read<S: ByteSource + ?Sized>(src: &S, st: &Stream, u: &Unit, out: 
                 let payload = &pkt[h.header_len.min(pkt.len())..];
                 let matches = stream_id != 0xBD || payload.first().copied() == sub_id;
                 if matches {
-                    let s0 = if stream_id == 0xBD { sub_id.map_or(0, sub_header).min(payload.len()) } else { 0 };
+                    let s0 = if stream_id == 0xBD {
+                        sub_id.map_or(0, sub_header).min(payload.len())
+                    } else {
+                        0
+                    };
                     let mut bytes = &payload[s0..];
                     if skip > 0 {
                         let s = skip.min(bytes.len());
@@ -322,10 +368,26 @@ mod tests {
 
     #[test]
     fn capped_window_returns_what_the_uncapped_window_returned() {
-        for len in [0usize, 1, 31, 32, 33, 1000, (1 << 20) - 1, 1 << 20, (1 << 20) + 5, (3 << 20) + 17] {
+        for len in [
+            0usize,
+            1,
+            31,
+            32,
+            33,
+            1000,
+            (1 << 20) - 1,
+            1 << 20,
+            (1 << 20) + 5,
+            (3 << 20) + 17,
+        ] {
             let d = data(len);
             let mut new = Win::new(d.as_slice());
-            let mut old = OldWin { src: &d, buf: Vec::new(), start: 0, zero_filled: 0 };
+            let mut old = OldWin {
+                src: &d,
+                buf: Vec::new(),
+                start: 0,
+                zero_filled: 0,
+            };
             let len64 = len as u64;
             let mut positions = vec![
                 0,
@@ -345,8 +407,23 @@ mod tests {
             ];
             positions.extend((0..40).map(|k| len64.saturating_sub(100) + k * 3));
             for &pos in &positions {
-                for n in [0usize, 1, 4, 32, 33, 1000, 65_541, 1 << 20, (1 << 20) + 1, 2 << 20] {
-                    assert_eq!(new.get(pos, n).unwrap(), old.get(pos, n).as_slice(), "len {len} pos {pos} n {n}");
+                for n in [
+                    0usize,
+                    1,
+                    4,
+                    32,
+                    33,
+                    1000,
+                    65_541,
+                    1 << 20,
+                    (1 << 20) + 1,
+                    2 << 20,
+                ] {
+                    assert_eq!(
+                        new.get(pos, n).unwrap(),
+                        old.get(pos, n).as_slice(),
+                        "len {len} pos {pos} n {n}"
+                    );
                 }
             }
         }
@@ -357,14 +434,27 @@ mod tests {
         let len = (2 << 20) + 1000;
         let d = data(len);
         let mut new = Win::new(d.as_slice());
-        let mut old = OldWin { src: &d, buf: Vec::new(), start: 0, zero_filled: 0 };
+        let mut old = OldWin {
+            src: &d,
+            buf: Vec::new(),
+            start: 0,
+            zero_filled: 0,
+        };
         // a PES packet whose length runs past the end of the file, asked for once per packet
         let first = (2u64 << 20) as usize;
         for k in 0..500 {
             let pos = (first + k) as u64;
             assert_eq!(new.get(pos, 2000).unwrap(), old.get(pos, 2000).as_slice());
         }
-        assert!(new.zero_filled <= 1000, "zeroed {} bytes, only 1000 are left in the file", new.zero_filled);
-        assert!(old.zero_filled > 499 * ((1 << 20) - 1000), "the reference zeroes about a megabyte per miss: {}", old.zero_filled);
+        assert!(
+            new.zero_filled <= 1000,
+            "zeroed {} bytes, only 1000 are left in the file",
+            new.zero_filled
+        );
+        assert!(
+            old.zero_filled > 499 * ((1 << 20) - 1000),
+            "the reference zeroes about a megabyte per miss: {}",
+            old.zero_filled
+        );
     }
 }

@@ -108,7 +108,9 @@ fn rfc3339(unix_secs: u64) -> String {
 
 /// Current wall clock as unix seconds (0 if the clock predates the epoch).
 pub(crate) fn now_unix() -> u64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs())
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs())
 }
 
 /// The persisted registry document.
@@ -329,8 +331,9 @@ impl ModelStore {
         let prefix = read_prefix(path, inspect::PREFIX_BYTES)?;
         let inspection = inspect::inspect_prefix(&prefix, &reference.basename());
 
-        let stored_path =
-            path.strip_prefix(&self.root).map_or_else(|_| path.display().to_string(), to_slash);
+        let stored_path = path
+            .strip_prefix(&self.root)
+            .map_or_else(|_| path.display().to_string(), to_slash);
 
         Ok(InstalledModel {
             reference: reference.clone(),
@@ -355,7 +358,9 @@ impl ModelStore {
     /// [`ModelError::Io`] when the path is unreadable.
     pub fn adopt_local(&self, path: impl AsRef<Path>) -> Result<InstalledModel> {
         let path = path.as_ref();
-        let absolute = path.canonicalize().map_or_else(|_| path.to_path_buf(), |p| strip_unc(&p));
+        let absolute = path
+            .canonicalize()
+            .map_or_else(|_| path.to_path_buf(), |p| strip_unc(&p));
         let reference = ModelRef::Local(absolute.clone());
         let entry = self.describe_file(&reference, &absolute, None)?;
         self.record(entry.clone())?;
@@ -392,8 +397,9 @@ impl ModelStore {
     /// [`ModelError::NotInstalled`] when the reference is unknown, or
     /// [`ModelError::Io`] when the bytes cannot be read.
     pub fn verify(&self, reference: &ModelRef) -> Result<VerifyReport> {
-        let entry =
-            self.get(reference)?.ok_or_else(|| ModelError::NotInstalled(reference.to_string()))?;
+        let entry = self
+            .get(reference)?
+            .ok_or_else(|| ModelError::NotInstalled(reference.to_string()))?;
         let meta =
             std::fs::metadata(&entry.path).map_err(|e| ModelError::io(entry.path.clone(), e))?;
         let actual = digest::sha256_file(&entry.path)?;
@@ -475,8 +481,11 @@ impl ModelStore {
         report.removed_parts.sort();
 
         let mut registry = self.load_registry()?;
-        let mut owned: Vec<InstalledModel> =
-            registry.values().filter(|m| m.path.starts_with(&self.root)).cloned().collect();
+        let mut owned: Vec<InstalledModel> = registry
+            .values()
+            .filter(|m| m.path.starts_with(&self.root))
+            .cloned()
+            .collect();
         let mut held: u64 = owned.iter().map(|m| m.bytes).sum();
 
         // Oldest use first: that is the eviction order.
@@ -518,8 +527,11 @@ impl ModelStore {
             return Ok(BTreeMap::new());
         }
 
-        let doc: RegistryDoc = serde_json::from_slice(&raw)
-            .map_err(|source| ModelError::Registry { path: path.clone(), source })?;
+        let doc: RegistryDoc =
+            serde_json::from_slice(&raw).map_err(|source| ModelError::Registry {
+                path: path.clone(),
+                source,
+            })?;
         if doc.version != REGISTRY_VERSION {
             return Err(ModelError::Inspect {
                 path,
@@ -536,8 +548,9 @@ impl ModelStore {
             // `stored_path` is root-relative for owned artefacts and absolute
             // for adopted ones; rebuilding through `join` handles both, since
             // joining an absolute path replaces the base.
-            entry.path =
-                self.root.join(PathBuf::from(entry.stored_path.replace('/', MAIN_SEP_STR)));
+            entry.path = self
+                .root
+                .join(PathBuf::from(entry.stored_path.replace('/', MAIN_SEP_STR)));
             map.insert(entry.reference.to_string(), entry);
         }
         Ok(map)
@@ -548,8 +561,10 @@ impl ModelStore {
             version: REGISTRY_VERSION,
             entries: registry.values().cloned().collect(),
         };
-        let mut json = serde_json::to_vec_pretty(&doc)
-            .map_err(|source| ModelError::Registry { path: self.registry_path(), source })?;
+        let mut json = serde_json::to_vec_pretty(&doc).map_err(|source| ModelError::Registry {
+            path: self.registry_path(),
+            source,
+        })?;
         json.push(b'\n');
         atomic_write(&self.registry_path(), &json)
     }
@@ -595,7 +610,7 @@ pub(crate) fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         Err(e) => {
             let _ = std::fs::remove_file(&tmp);
             Err(ModelError::io(path.to_path_buf(), e))
-        },
+        }
     }
 }
 
@@ -624,7 +639,9 @@ fn walk_files(root: &Path) -> Result<Vec<PathBuf>> {
         for entry in entries {
             let entry = entry.map_err(|e| ModelError::io(dir.clone(), e))?;
             let path = entry.path();
-            let file_type = entry.file_type().map_err(|e| ModelError::io(path.clone(), e))?;
+            let file_type = entry
+                .file_type()
+                .map_err(|e| ModelError::io(path.clone(), e))?;
             if file_type.is_dir() {
                 stack.push(path);
             } else if file_type.is_file() {
@@ -690,8 +707,14 @@ mod tests {
         let r = ModelRef::parse("hf:BAAI/bge/onnx/model.onnx@v1").unwrap();
         let path = store.path_for(&r);
         assert!(path.starts_with(store.root()));
-        assert!(path.ends_with(Path::new("hf/BAAI/bge/v1/onnx/model.onnx")), "{path:?}");
-        assert_eq!(store.part_path_for(&r).file_name().unwrap(), "model.onnx.part");
+        assert!(
+            path.ends_with(Path::new("hf/BAAI/bge/v1/onnx/model.onnx")),
+            "{path:?}"
+        );
+        assert_eq!(
+            store.part_path_for(&r).file_name().unwrap(),
+            "model.onnx.part"
+        );
     }
 
     #[test]
@@ -738,7 +761,10 @@ mod tests {
         let removed = store.remove(&r).unwrap();
         assert_eq!(removed.bytes, 7);
         assert!(!path.exists());
-        assert!(!path.parent().unwrap().exists(), "empty dirs should be pruned");
+        assert!(
+            !path.parent().unwrap().exists(),
+            "empty dirs should be pruned"
+        );
         assert!(store.root().is_dir(), "the root itself must survive");
         assert!(store.get(&r).unwrap().is_none());
     }
@@ -761,7 +787,10 @@ mod tests {
         assert!(matches!(entry.reference, ModelRef::Local(_)));
 
         store.remove(&entry.reference).unwrap();
-        assert!(outside.is_file(), "adopted files belong to the user, not the store");
+        assert!(
+            outside.is_file(),
+            "adopted files belong to the user, not the store"
+        );
     }
 
     #[test]
@@ -851,7 +880,10 @@ mod tests {
         let entry = store.adopt_local(&outside).unwrap();
 
         let report = store.gc(0).unwrap();
-        assert!(report.evicted.is_empty(), "adopted bytes are not the store's to reclaim");
+        assert!(
+            report.evicted.is_empty(),
+            "adopted bytes are not the store's to reclaim"
+        );
         assert!(outside.is_file());
         assert!(store.get(&entry.reference).unwrap().is_some());
     }
@@ -867,7 +899,10 @@ mod tests {
         assert_eq!(entry.recency(), entry.last_used_at.unwrap());
 
         let absent = ModelRef::parse("hf:a/b/absent.gguf").unwrap();
-        assert!(!store.touch(&absent).unwrap(), "touching an absent model is a no-op");
+        assert!(
+            !store.touch(&absent).unwrap(),
+            "touching an absent model is a no-op"
+        );
     }
 
     #[test]
@@ -943,7 +978,10 @@ mod tests {
             PathBuf::from(r"\\?\UNC\server\share\m.gguf")
         );
         // Anything already plain is returned unchanged.
-        assert_eq!(strip_unc(Path::new("/home/u/m.gguf")), PathBuf::from("/home/u/m.gguf"));
+        assert_eq!(
+            strip_unc(Path::new("/home/u/m.gguf")),
+            PathBuf::from("/home/u/m.gguf")
+        );
     }
 
     #[test]

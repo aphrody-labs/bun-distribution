@@ -14,8 +14,11 @@ use aphrody_nie_index::atlas::{Atlas, ScanConfig, ToolRecord};
 use clap::{CommandFactory, Subcommand};
 
 /// Binaires connus de la chaîne, dans l'ordre `(chemin relatif, rôle)`.
-const BINARIES: &[(&str, &str)] =
-    &[("nie.exe", "reference"), ("dist/nie.exe", "produced"), ("nie_eacpatched.exe", "patched")];
+const BINARIES: &[(&str, &str)] = &[
+    ("nie.exe", "reference"),
+    ("dist/nie.exe", "produced"),
+    ("nie_eacpatched.exe", "patched"),
+];
 
 #[derive(Debug, Subcommand)]
 pub enum AtlasCmd {
@@ -173,22 +176,62 @@ pub enum AtlasCmd {
 
 pub fn run(cmd: AtlasCmd) -> Result<()> {
     match cmd {
-        AtlasCmd::Build { db, root, kb, no_kb, row_cap, no_link, redis, json } => {
-            build(&db, &root, &kb, no_kb, row_cap, no_link, redis.as_deref(), json)
-        },
+        AtlasCmd::Build {
+            db,
+            root,
+            kb,
+            no_kb,
+            row_cap,
+            no_link,
+            redis,
+            json,
+        } => build(
+            &db,
+            &root,
+            &kb,
+            no_kb,
+            row_cap,
+            no_link,
+            redis.as_deref(),
+            json,
+        ),
         AtlasCmd::Status { db, json } => status(&db, json),
         AtlasCmd::Menu { db, json } => menu_screens(&db, json),
-        AtlasCmd::Search { query, db, kind, limit, json } => {
-            search(&db, &query, kind.as_deref(), limit, json)
-        },
+        AtlasCmd::Search {
+            query,
+            db,
+            kind,
+            limit,
+            json,
+        } => search(&db, &query, kind.as_deref(), limit, json),
         AtlasCmd::Gaps { db, limit, json } => gaps(&db, limit, json),
         AtlasCmd::Next { db } => next(&db),
-        AtlasCmd::Metric { name, value, db, total, source, note, refresh } => {
-            metric(&db, &name, value, total, &source, note.as_deref(), refresh)
-        },
-        AtlasCmd::Run { step, db, area, ok, ms, metrics, log } => {
-            run_step(&db, &step, area.as_deref(), ok, ms, metrics.as_deref(), log.as_deref())
-        },
+        AtlasCmd::Metric {
+            name,
+            value,
+            db,
+            total,
+            source,
+            note,
+            refresh,
+        } => metric(&db, &name, value, total, &source, note.as_deref(), refresh),
+        AtlasCmd::Run {
+            step,
+            db,
+            area,
+            ok,
+            ms,
+            metrics,
+            log,
+        } => run_step(
+            &db,
+            &step,
+            area.as_deref(),
+            ok,
+            ms,
+            metrics.as_deref(),
+            log.as_deref(),
+        ),
         AtlasCmd::Docs { db, orphans, limit } => docs(&db, orphans, limit),
         AtlasCmd::Dupes { db, zone, limit } => dupes(&db, zone.as_deref(), limit),
         AtlasCmd::Sync { db, redis, prefix } => sync(&db, &redis, &prefix),
@@ -212,23 +255,38 @@ fn build(
     let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
 
     let tracked = git_tracked(&root);
-    let scan = atlas.scan(&ScanConfig::new(&root), &tracked).context("scan du dépôt")?;
+    let scan = atlas
+        .scan(&ScanConfig::new(&root), &tracked)
+        .context("scan du dépôt")?;
     let crates = atlas.import_crates(&root).context("import des crates")?;
     let docs = atlas.import_docs(&root).context("import des documents")?;
     let binaries = atlas
         .import_binaries(
             &root,
-            &BINARIES.iter().map(|(p, r)| ((*p).to_string(), (*r).to_string())).collect::<Vec<_>>(),
+            &BINARIES
+                .iter()
+                .map(|(p, r)| ((*p).to_string(), (*r).to_string()))
+                .collect::<Vec<_>>(),
         )
         .context("import des binaires")?;
     let forge = atlas.import_forge(&root).context("import de la forge")?;
-    let menu_screens = atlas.import_menu(&root).context("import du catalogue menu")?;
-    let mut tools = atlas.import_repo_tools(&root).context("import des outils du dépôt")?;
-    tools += atlas.import_tools(&cli_tools()).context("import des sous-commandes nie")?;
+    let menu_screens = atlas
+        .import_menu(&root)
+        .context("import du catalogue menu")?;
+    let mut tools = atlas
+        .import_repo_tools(&root)
+        .context("import des outils du dépôt")?;
+    tools += atlas
+        .import_tools(&cli_tools())
+        .context("import des sous-commandes nie")?;
 
     let mut kb_digest = None;
     if !no_kb {
-        let kb_path = if kb.is_absolute() { kb.to_path_buf() } else { root.join(kb) };
+        let kb_path = if kb.is_absolute() {
+            kb.to_path_buf()
+        } else {
+            root.join(kb)
+        };
         if kb_path.is_file() {
             let digest = atlas
                 .import_kb(&kb_path, row_cap)
@@ -246,7 +304,9 @@ fn build(
     let linked = if no_link {
         0
     } else {
-        atlas.link_ported_symbols(&root).context("appariement symbole → source Rust")?
+        atlas
+            .link_ported_symbols(&root)
+            .context("appariement symbole → source Rust")?
     };
 
     atlas.record_metric(
@@ -329,7 +389,10 @@ fn record_kb_metrics(atlas: &Atlas, digest: &aphrody_nie_index::atlas::KbDigest)
         None,
         "atlas import_kb (COUNT borné par --row-cap)",
         None,
-        Some(&format!("{} tables, {} plafonnées", digest.tables, digest.capped)),
+        Some(&format!(
+            "{} tables, {} plafonnées",
+            digest.tables, digest.capped
+        )),
     )?;
     if let Some(cov) = digest.coverage {
         atlas.record_metric(
@@ -353,7 +416,11 @@ fn record_kb_metrics(atlas: &Atlas, digest: &aphrody_nie_index::atlas::KbDigest)
     // Sans ligne de couverture, la seule mesure disponible est le digest lui-même.
     let functions: Option<i64> = atlas
         .conn()
-        .query_row("SELECT n_rows FROM atlas_kb_table WHERE name = 'function'", [], |r| r.get(0))
+        .query_row(
+            "SELECT n_rows FROM atlas_kb_table WHERE name = 'function'",
+            [],
+            |r| r.get(0),
+        )
         .ok();
     if let Some(total) = functions
         && total > 0
@@ -538,7 +605,10 @@ fn metric(
     let atlas = Atlas::open(db)?;
     atlas.record_metric(name, value, total, source, None, note)?;
     let gaps = if refresh { atlas.refresh_gaps()? } else { 0 };
-    println!("metric name={name} value={value} total={} gaps={gaps}", total.unwrap_or(0.0));
+    println!(
+        "metric name={name} value={value} total={} gaps={gaps}",
+        total.unwrap_or(0.0)
+    );
     Ok(())
 }
 
@@ -599,9 +669,16 @@ fn dupes(db: &Path, zone: Option<&str>, limit: usize) -> Result<()> {
          GROUP BY sha256 HAVING n > 1
          ORDER BY total DESC LIMIT ?2",
     )?;
-    let rows = stmt.query_map(aphrody_nie_index::rusqlite::params![zone, limit as i64], |r| {
-        Ok((r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, String>(3)?))
-    })?;
+    let rows = stmt.query_map(
+        aphrody_nie_index::rusqlite::params![zone, limit as i64],
+        |r| {
+            Ok((
+                r.get::<_, i64>(1)?,
+                r.get::<_, i64>(2)?,
+                r.get::<_, String>(3)?,
+            ))
+        },
+    )?;
     let mut groups = 0usize;
     let mut wasted = 0i64;
     for row in rows {
@@ -616,7 +693,9 @@ fn dupes(db: &Path, zone: Option<&str>, limit: usize) -> Result<()> {
 
 fn sync(db: &Path, redis: &str, prefix: &str) -> Result<()> {
     let atlas = Atlas::open(db)?;
-    let keys = atlas.sync_redis(redis, prefix).with_context(|| format!("miroir redis {redis}"))?;
+    let keys = atlas
+        .sync_redis(redis, prefix)
+        .with_context(|| format!("miroir redis {redis}"))?;
     println!("atlas-sync redis={redis} prefix={prefix} keys={keys}");
     Ok(())
 }
@@ -624,7 +703,9 @@ fn sync(db: &Path, redis: &str, prefix: &str) -> Result<()> {
 fn link(db: &Path, root: &Path) -> Result<()> {
     let mut atlas = Atlas::open(db)?;
     let root = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
-    let linked = atlas.link_ported_symbols(&root).context("appariement symbole → source Rust")?;
+    let linked = atlas
+        .link_ported_symbols(&root)
+        .context("appariement symbole → source Rust")?;
     let gaps = atlas.refresh_gaps().context("calcul des écarts")?;
     println!("atlas-link linked={linked} gaps_updated={gaps}");
     Ok(())
@@ -632,8 +713,11 @@ fn link(db: &Path, root: &Path) -> Result<()> {
 
 /// Chemins suivis par git, pour distinguer versionné et matière locale (`data/re/`).
 fn git_tracked(root: &Path) -> HashSet<String> {
-    let Ok(out) =
-        std::process::Command::new("git").arg("-C").arg(root).args(["ls-files", "-z"]).output()
+    let Ok(out) = std::process::Command::new("git")
+        .arg("-C")
+        .arg(root)
+        .args(["ls-files", "-z"])
+        .output()
     else {
         return HashSet::new();
     };

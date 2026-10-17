@@ -19,8 +19,14 @@ pub(super) struct Reader<'a> {
 
 impl<'a> Reader<'a> {
     pub fn take(&mut self, len: usize) -> Result<&'a [u8]> {
-        let end = self.pos.checked_add(len).ok_or_else(|| invalid("length overflow"))?;
-        let b = self.bytes.get(self.pos..end).ok_or_else(|| invalid("truncated document"))?;
+        let end = self
+            .pos
+            .checked_add(len)
+            .ok_or_else(|| invalid("length overflow"))?;
+        let b = self
+            .bytes
+            .get(self.pos..end)
+            .ok_or_else(|| invalid("truncated document"))?;
         self.pos = end;
         Ok(b)
     }
@@ -30,11 +36,20 @@ impl<'a> Reader<'a> {
     }
 
     pub fn le_i32(&mut self) -> Result<i32> {
-        Ok(i32::from_le_bytes(self.take(4)?.try_into().map_err(|_| invalid("invalid integer"))?))
+        Ok(i32::from_le_bytes(
+            self.take(4)?
+                .try_into()
+                .map_err(|_| invalid("invalid integer"))?,
+        ))
     }
 
     pub fn be_u32(&mut self) -> Result<usize> {
-        usize::try_from(u32::from_be_bytes(self.take(4)?.try_into().map_err(|_| invalid("invalid integer"))?)).map_err(|_| invalid("length overflow"))
+        usize::try_from(u32::from_be_bytes(
+            self.take(4)?
+                .try_into()
+                .map_err(|_| invalid("invalid integer"))?,
+        ))
+        .map_err(|_| invalid("length overflow"))
     }
 
     fn count(&mut self) -> Result<usize> {
@@ -61,7 +76,10 @@ pub(super) enum Value {
     String(String),
     Ref(i32),
     Array(Vec<Value>),
-    Object { class: Arc<Class>, members: Vec<Value> },
+    Object {
+        class: Arc<Class>,
+        members: Vec<Value>,
+    },
 }
 
 pub(super) struct Graph {
@@ -80,7 +98,12 @@ impl Graph {
     pub fn resolve<'a>(&'a self, mut value: &'a Value) -> Result<&'a Value> {
         for _ in 0..MAX_DEPTH {
             match value {
-                Value::Ref(id) => value = self.objects.get(id).ok_or_else(|| invalid("missing object reference"))?,
+                Value::Ref(id) => {
+                    value = self
+                        .objects
+                        .get(id)
+                        .ok_or_else(|| invalid("missing object reference"))?
+                }
                 _ => return Ok(value),
             }
         }
@@ -95,12 +118,17 @@ impl Graph {
     }
 
     pub fn field<'a>(&'a self, value: &'a Value, name: &str) -> Result<&'a Value> {
-        self.optional_field(value, name)?.ok_or_else(|| invalid(format!("missing field {name}")))
+        self.optional_field(value, name)?
+            .ok_or_else(|| invalid(format!("missing field {name}")))
     }
 
     pub fn optional_field<'a>(&'a self, value: &'a Value, name: &str) -> Result<Option<&'a Value>> {
         match self.resolve(value)? {
-            Value::Object { class, members } => Ok(class.names.iter().position(|n| n == name).and_then(|i| members.get(i))),
+            Value::Object { class, members } => Ok(class
+                .names
+                .iter()
+                .position(|n| n == name)
+                .and_then(|i| members.get(i))),
             _ => Err(invalid("expected a serialized object")),
         }
     }
@@ -155,7 +183,11 @@ pub(super) fn parse(reader: &mut Reader<'_>, ctl: &Interrupt<'_>) -> Result<Grap
     let mut parser = Parser {
         reader,
         ctl,
-        graph: Graph { root: Value::Ref(root), objects: HashMap::new(), order: Vec::new() },
+        graph: Graph {
+            root: Value::Ref(root),
+            objects: HashMap::new(),
+            order: Vec::new(),
+        },
         classes: HashMap::new(),
         items: 0,
         strings: 0,
@@ -173,7 +205,10 @@ pub(super) fn parse(reader: &mut Reader<'_>, ctl: &Interrupt<'_>) -> Result<Grap
 
 impl Parser<'_, '_> {
     fn budget(&mut self, n: usize) -> Result<()> {
-        self.items = self.items.checked_add(n).ok_or_else(|| invalid("object count overflow"))?;
+        self.items = self
+            .items
+            .checked_add(n)
+            .ok_or_else(|| invalid("object count overflow"))?;
         if self.items > MAX_ITEMS {
             return Err(invalid("too many serialized objects or members"));
         }
@@ -189,11 +224,15 @@ impl Parser<'_, '_> {
             }
             len |= usize::from(b & 127) << shift;
             if b & 128 == 0 {
-                self.strings = self.strings.checked_add(len).ok_or_else(|| invalid("string length overflow"))?;
+                self.strings = self
+                    .strings
+                    .checked_add(len)
+                    .ok_or_else(|| invalid("string length overflow"))?;
                 if self.strings > MAX_STRINGS {
                     return Err(invalid("serialized strings are too large"));
                 }
-                return String::from_utf8(self.reader.take(len)?.to_vec()).map_err(|_| invalid("invalid UTF-8 string"));
+                return String::from_utf8(self.reader.take(len)?.to_vec())
+                    .map_err(|_| invalid("invalid UTF-8 string"));
             }
         }
         Err(invalid("invalid string length"))
@@ -202,7 +241,15 @@ impl Parser<'_, '_> {
     fn primitive(&mut self, tag: u8) -> Result<Value> {
         macro_rules! number {
             ($ty:ty, $variant:ident) => {
-                Value::$variant(<$ty>::from_le_bytes(self.reader.take(size_of::<$ty>())?.try_into().map_err(|_| invalid("invalid primitive"))?).into())
+                Value::$variant(
+                    <$ty>::from_le_bytes(
+                        self.reader
+                            .take(size_of::<$ty>())?
+                            .try_into()
+                            .map_err(|_| invalid("invalid primitive"))?,
+                    )
+                    .into(),
+                )
             };
         }
         Ok(match tag {
@@ -238,7 +285,12 @@ impl Parser<'_, '_> {
                 Value::Null
             }
             13 | 16 => {
-                let n = u64::from_le_bytes(self.reader.take(8)?.try_into().map_err(|_| invalid("invalid integer"))?);
+                let n = u64::from_le_bytes(
+                    self.reader
+                        .take(8)?
+                        .try_into()
+                        .map_err(|_| invalid("invalid integer"))?,
+                );
                 // Metadata dates may use the high bits; their bit pattern stays intact.
                 Value::Int(n as i64)
             }
@@ -299,7 +351,9 @@ impl Parser<'_, '_> {
                 None => self.value(depth + 1)?,
             });
         }
-        self.graph.objects.insert(id, Value::Object { class, members });
+        self.graph
+            .objects
+            .insert(id, Value::Object { class, members });
         Ok(Value::Ref(id))
     }
 
@@ -319,7 +373,11 @@ impl Parser<'_, '_> {
             }
             let tag = self.reader.byte()?;
             if matches!(tag, 13 | 14) {
-                let count = if tag == 13 { usize::from(self.reader.byte()?) } else { self.reader.count()? };
+                let count = if tag == 13 {
+                    usize::from(self.reader.byte()?)
+                } else {
+                    self.reader.count()?
+                };
                 if count == 0 || count > len - values.len() {
                     return Err(invalid("invalid array null run"));
                 }
@@ -344,7 +402,11 @@ impl Parser<'_, '_> {
             1 => {
                 let id = self.reader.le_i32()?;
                 let metadata = self.reader.le_i32()?;
-                let class = self.classes.get(&metadata).cloned().ok_or_else(|| invalid("missing class metadata"))?;
+                let class = self
+                    .classes
+                    .get(&metadata)
+                    .cloned()
+                    .ok_or_else(|| invalid("missing class metadata"))?;
                 self.object(id, class, depth)
             }
             2..=5 => {
@@ -352,17 +414,26 @@ impl Parser<'_, '_> {
                 let name = self.string()?;
                 let count = self.reader.count()?;
                 self.budget(count)?;
-                let names = (0..count).map(|_| self.string()).collect::<Result<Vec<_>>>()?;
+                let names = (0..count)
+                    .map(|_| self.string())
+                    .collect::<Result<Vec<_>>>()?;
                 let primitives = if tag >= 4 {
                     let types = self.reader.take(count)?.to_vec();
-                    types.into_iter().map(|t| self.type_info(t)).collect::<Result<Vec<_>>>()?
+                    types
+                        .into_iter()
+                        .map(|t| self.type_info(t))
+                        .collect::<Result<Vec<_>>>()?
                 } else {
                     vec![None; count]
                 };
                 if matches!(tag, 3 | 5) {
                     self.reader.le_i32()?;
                 }
-                let class = Arc::new(Class { name, names, primitives });
+                let class = Arc::new(Class {
+                    name,
+                    names,
+                    primitives,
+                });
                 if self.classes.insert(id, class.clone()).is_some() {
                     return Err(invalid("duplicate class metadata"));
                 }
@@ -384,7 +455,9 @@ impl Parser<'_, '_> {
                 }
                 let mut len = 1usize;
                 for _ in 0..rank {
-                    len = len.checked_mul(self.reader.count()?).ok_or_else(|| invalid("array size overflow"))?;
+                    len = len
+                        .checked_mul(self.reader.count()?)
+                        .ok_or_else(|| invalid("array size overflow"))?;
                 }
                 if kind >= 3 {
                     for _ in 0..rank {
@@ -411,7 +484,11 @@ impl Parser<'_, '_> {
             15..=17 => {
                 let id = self.reader.le_i32()?;
                 let len = self.reader.count()?;
-                let primitive = if tag == 15 { Some(self.reader.byte()?) } else { None };
+                let primitive = if tag == 15 {
+                    Some(self.reader.byte()?)
+                } else {
+                    None
+                };
                 self.array(id, len, primitive, depth)
             }
             _ => Err(invalid(format!("unsupported NRBF record {tag}"))),

@@ -59,7 +59,7 @@ use bevy_window::{PrimaryWindow, Window};
 use core::fmt::Debug;
 
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{prelude::*, Reflect};
+use bevy_reflect::{Reflect, prelude::*};
 
 /// Resource representing which entity has input focus, if any. Input events (other than pointer-like inputs) will be
 /// dispatched to the current focus entity, or to the primary window if no entity has focus.
@@ -544,8 +544,8 @@ mod tests {
     use bevy_app::Startup;
     use bevy_ecs::{observer::On, system::RunSystemOnce, world::DeferredWorld};
     use bevy_input::{
-        keyboard::{Key, KeyCode},
         ButtonState, InputPlugin,
+        keyboard::{Key, KeyCode},
     };
 
     #[derive(Component, Default)]

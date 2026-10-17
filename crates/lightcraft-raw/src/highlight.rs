@@ -104,7 +104,10 @@ fn sample<const N: usize>(l: &Level<N>, scale: f32, x: usize, y: usize) -> [f32;
     let fx = ((x as f32 + 0.5) / scale - 0.5).clamp(0.0, cw.saturating_sub(1) as f32);
     let fy = ((y as f32 + 0.5) / scale - 0.5).clamp(0.0, ch.saturating_sub(1) as f32);
     let (x0, y0) = (fx.floor() as usize, fy.floor() as usize);
-    let (x1, y1) = ((x0 + 1).min(cw.saturating_sub(1)), (y0 + 1).min(ch.saturating_sub(1)));
+    let (x1, y1) = (
+        (x0 + 1).min(cw.saturating_sub(1)),
+        (y0 + 1).min(ch.saturating_sub(1)),
+    );
     let (tx, ty) = (fx - x0 as f32, fy - y0 as f32);
     let g = |xx: usize, yy: usize| cv.get(yy * cw + xx).copied().unwrap_or([0.0; N]);
     let (a, b, c, d) = (g(x0, y0), g(x1, y0), g(x0, y1), g(x1, y1));
@@ -125,42 +128,54 @@ fn sources(img: &Rgb32f, wb: [f32; 3], clip: f32, clipped: &impl Clipped) -> (Le
     let mut cells = vec![[0f32; 3]; cw * ch];
     let mut lum = vec![0f32; cw * ch];
     let mut near = vec![false; cw * ch];
-    cells.par_chunks_mut(cw).zip(lum.par_chunks_mut(cw)).zip(near.par_chunks_mut(cw)).enumerate().for_each(|(y, ((crow, lrow), nrow))| {
-        let mut touched = vec![false; cw];
-        let row = |r: usize| img.data.get(r * w..(r + 1) * w).unwrap_or(&[]);
-        let (r0, r1) = (row(2 * y), row(2 * y + 1));
-        let lo = SOURCE_LO * clip;
-        for x in 0..cw {
-            let (mut a, mut sum, mut n, mut hit) = ([0f32; 3], 0f32, 0usize, false);
-            let span = 2 * x..(2 * x + 2).min(w);
-            let (i0, i1) = (2 * y * w + 2 * x, (2 * y + 1) * w + 2 * x);
-            let pixels = r0.get(span.clone()).unwrap_or(&[]).iter().zip(i0..).chain(r1.get(span).unwrap_or(&[]).iter().zip(i1..));
-            for (p, i) in pixels {
-                let q = [p[0] * wb[0], p[1] * wb[1], p[2] * wb[2]];
-                let s = q[0].max(0.0) + q[1].max(0.0) + q[2].max(0.0);
-                sum += s;
-                n += 1;
-                let top = p[0].max(p[1]).max(p[2]);
-                if clipped(i, p).iter().any(|&c| c) {
-                    hit = true;
-                    continue;
+    cells
+        .par_chunks_mut(cw)
+        .zip(lum.par_chunks_mut(cw))
+        .zip(near.par_chunks_mut(cw))
+        .enumerate()
+        .for_each(|(y, ((crow, lrow), nrow))| {
+            let mut touched = vec![false; cw];
+            let row = |r: usize| img.data.get(r * w..(r + 1) * w).unwrap_or(&[]);
+            let (r0, r1) = (row(2 * y), row(2 * y + 1));
+            let lo = SOURCE_LO * clip;
+            for x in 0..cw {
+                let (mut a, mut sum, mut n, mut hit) = ([0f32; 3], 0f32, 0usize, false);
+                let span = 2 * x..(2 * x + 2).min(w);
+                let (i0, i1) = (2 * y * w + 2 * x, (2 * y + 1) * w + 2 * x);
+                let pixels = r0
+                    .get(span.clone())
+                    .unwrap_or(&[])
+                    .iter()
+                    .zip(i0..)
+                    .chain(r1.get(span).unwrap_or(&[]).iter().zip(i1..));
+                for (p, i) in pixels {
+                    let q = [p[0] * wb[0], p[1] * wb[1], p[2] * wb[2]];
+                    let s = q[0].max(0.0) + q[1].max(0.0) + q[2].max(0.0);
+                    sum += s;
+                    n += 1;
+                    let top = p[0].max(p[1]).max(p[2]);
+                    if clipped(i, p).iter().any(|&c| c) {
+                        hit = true;
+                        continue;
+                    }
+                    if top > lo && s > 1e-4 {
+                        let b = smoothstep(SOURCE_LO, SOURCE_HI, top / clip) / s;
+                        a[0] += b * q[0].max(0.0);
+                        a[1] += b * q[2].max(0.0);
+                        a[2] += b * s;
+                    }
                 }
-                if top > lo && s > 1e-4 {
-                    let b = smoothstep(SOURCE_LO, SOURCE_HI, top / clip) / s;
-                    a[0] += b * q[0].max(0.0);
-                    a[1] += b * q[2].max(0.0);
-                    a[2] += b * s;
-                }
+                let k = 1.0 / n.max(1) as f32;
+                crow[x] = a.map(|v| v * k);
+                lrow[x] = (sum * k).max(1e-6);
+                touched[x] = hit;
             }
-            let k = 1.0 / n.max(1) as f32;
-            crow[x] = a.map(|v| v * k);
-            lrow[x] = (sum * k).max(1e-6);
-            touched[x] = hit;
-        }
-        for (x, nr) in nrow.iter_mut().enumerate() {
-            *nr = touched.get(x.saturating_sub(MARGIN)..=(x + MARGIN).min(cw - 1)).is_some_and(|t| t.iter().any(|&t| t));
-        }
-    });
+            for (x, nr) in nrow.iter_mut().enumerate() {
+                *nr = touched
+                    .get(x.saturating_sub(MARGIN)..=(x + MARGIN).min(cw - 1))
+                    .is_some_and(|t| t.iter().any(|&t| t));
+            }
+        });
     // leave out cells near clipped pixels and on strong edges (luminance ratios to the neighbours)
     let (lum, near_ref) = (&lum, &near);
     let (edge_lo, edge_hi) = (EDGE_LO.exp2(), EDGE_HI.exp2());
@@ -188,14 +203,27 @@ fn sources(img: &Rgb32f, wb: [f32; 3], clip: f32, clipped: &impl Clipped) -> (Le
             *cell = cell.map(|v| v * keep);
         }
     });
-    (Level { w: cw, h: ch, cells }, near)
+    (
+        Level {
+            w: cw,
+            h: ch,
+            cells,
+        },
+        near,
+    )
 }
 
 /// The quarter-resolution rim level of `img`: every `4 × 4` block's white-balanced RGB of its unclipped pixels
 /// above [`RIM_LO`] of the clip level, weighted (steeply) towards the clip, as densities. Pixels next to clipped
 /// ones (`margin`, by half-resolution cell) are left out, like the colour sources: they were demosaiced partly from
 /// clipped samples, and lens fringes along clipped content would pass for its colour.
-fn rim(img: &Rgb32f, wb: [f32; 3], clip: f32, clipped: &impl Clipped, margin: &(dyn Fn(usize, usize) -> bool + Sync)) -> Level<4> {
+fn rim(
+    img: &Rgb32f,
+    wb: [f32; 3],
+    clip: f32,
+    clipped: &impl Clipped,
+    margin: &(dyn Fn(usize, usize) -> bool + Sync),
+) -> Level<4> {
     let (w, h) = (img.width, img.height);
     let (cw, ch) = (w.div_ceil(4), h.div_ceil(4));
     let mut cells = vec![[0f32; 4]; cw * ch];
@@ -203,10 +231,19 @@ fn rim(img: &Rgb32f, wb: [f32; 3], clip: f32, clipped: &impl Clipped, margin: &(
         for (x, cell) in row.iter_mut().enumerate() {
             let (mut a, mut n) = ([0f32; 4], 0usize);
             for sy in 4 * y..(4 * y + 4).min(h) {
-                for (i, p) in img.data.get(sy * w + 4 * x..sy * w + (4 * x + 4).min(w)).unwrap_or(&[]).iter().enumerate() {
+                for (i, p) in img
+                    .data
+                    .get(sy * w + 4 * x..sy * w + (4 * x + 4).min(w))
+                    .unwrap_or(&[])
+                    .iter()
+                    .enumerate()
+                {
                     n += 1;
                     let top = p[0].max(p[1]).max(p[2]) / clip;
-                    if !(RIM_LO..1.0).contains(&top) || margin((4 * x + i) / 2, sy / 2) || clipped(sy * w + 4 * x + i, p).iter().any(|&c| c) {
+                    if !(RIM_LO..1.0).contains(&top)
+                        || margin((4 * x + i) / 2, sy / 2)
+                        || clipped(sy * w + 4 * x + i, p).iter().any(|&c| c)
+                    {
                         continue;
                     }
                     let k = ((top - RIM_LO) / (1.0 - RIM_LO)).powi(4);
@@ -219,7 +256,11 @@ fn rim(img: &Rgb32f, wb: [f32; 3], clip: f32, clipped: &impl Clipped, margin: &(
             *cell = a.map(|v| v / n.max(1) as f32);
         }
     });
-    Level { w: cw, h: ch, cells }
+    Level {
+        w: cw,
+        h: ch,
+        cells,
+    }
 }
 
 /// The next coarser level: each `2 × 2` block's mean densities.
@@ -229,8 +270,16 @@ fn pull<const N: usize>(l: &Level<N>) -> Level<N> {
     cells.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
         for (x, cell) in row.iter_mut().enumerate() {
             let (mut s, mut n) = ([0f32; N], 0usize);
-            for (sx, sy) in [(2 * x, 2 * y), (2 * x + 1, 2 * y), (2 * x, 2 * y + 1), (2 * x + 1, 2 * y + 1)] {
-                if let Some(c) = (sx < l.w && sy < l.h).then(|| l.cells.get(sy * l.w + sx)).flatten() {
+            for (sx, sy) in [
+                (2 * x, 2 * y),
+                (2 * x + 1, 2 * y),
+                (2 * x, 2 * y + 1),
+                (2 * x + 1, 2 * y + 1),
+            ] {
+                if let Some(c) = (sx < l.w && sy < l.h)
+                    .then(|| l.cells.get(sy * l.w + sx))
+                    .flatten()
+                {
                     for k in 0..N {
                         s[k] += c[k];
                     }
@@ -247,44 +296,73 @@ fn pull<const N: usize>(l: &Level<N>) -> Level<N> {
 /// cell of the coarser levels: each level's own sources blended with the next coarser estimate. The top level is
 /// its own sources' weighted mean (normalised: however sparse they are in a large empty picture, the empty part
 /// never pulls the estimate anywhere), and `empty` (at zero weight) when it has none at all.
-fn push<const N: usize>(levels: &mut [Level<N>], empty: [f32; N], needed: Option<&(dyn Fn(usize, usize) -> bool + Sync)>) {
+fn push<const N: usize>(
+    levels: &mut [Level<N>],
+    empty: [f32; N],
+    needed: Option<&(dyn Fn(usize, usize) -> bool + Sync)>,
+) {
     let estimate = |cell: [f32; N], prior: [f32; N]| -> [f32; N] {
         let weight = cell[N - 1];
         let d = weight + PRIOR;
-        std::array::from_fn(|k| if k + 1 == N { weight } else { (cell[k] + PRIOR * prior[k]) / d })
+        std::array::from_fn(|k| {
+            if k + 1 == N {
+                weight
+            } else {
+                (cell[k] + PRIOR * prior[k]) / d
+            }
+        })
     };
-    let Some(last) = levels.last_mut() else { return };
+    let Some(last) = levels.last_mut() else {
+        return;
+    };
     last.cells.iter_mut().for_each(|c| {
         let weight = c[N - 1];
-        *c = if weight > 0.0 { std::array::from_fn(|k| if k + 1 == N { weight } else { c[k] / weight }) } else { empty };
+        *c = if weight > 0.0 {
+            std::array::from_fn(|k| if k + 1 == N { weight } else { c[k] / weight })
+        } else {
+            empty
+        };
     });
     for i in (0..levels.len().saturating_sub(1)).rev() {
         let (fine, coarse) = levels.split_at_mut(i + 1);
-        let (Some(fine), Some(coarse)) = (fine.last_mut(), coarse.first()) else { continue };
+        let (Some(fine), Some(coarse)) = (fine.last_mut(), coarse.first()) else {
+            continue;
+        };
         let w = fine.w;
         let needed = needed.filter(|_| i == 0);
-        fine.cells.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
-            for (x, cell) in row.iter_mut().enumerate() {
-                if needed.is_some_and(|f| !f(x, y)) {
-                    continue;
+        fine.cells
+            .par_chunks_mut(w)
+            .enumerate()
+            .for_each(|(y, row)| {
+                for (x, cell) in row.iter_mut().enumerate() {
+                    if needed.is_some_and(|f| !f(x, y)) {
+                        continue;
+                    }
+                    *cell = estimate(*cell, sample(coarse, 2.0, x, y));
                 }
-                *cell = estimate(*cell, sample(coarse, 2.0, x, y));
-            }
-        });
+            });
     }
 }
 
 /// How many stops two chromaticities differ by in any channel ratio.
 fn unlike(a: [f32; 3], b: [f32; 3]) -> f32 {
-    let ratio = |i: usize, j: usize| (a[i].max(1e-6) * b[j].max(1e-6)) / (a[j].max(1e-6) * b[i].max(1e-6));
-    [(0, 1), (0, 2), (1, 2)].iter().map(|&(i, j)| ratio(i, j).log2().abs()).fold(0.0f32, f32::max)
+    let ratio =
+        |i: usize, j: usize| (a[i].max(1e-6) * b[j].max(1e-6)) / (a[j].max(1e-6) * b[i].max(1e-6));
+    [(0, 1), (0, 2), (1, 2)]
+        .iter()
+        .map(|&(i, j)| ratio(i, j).log2().abs())
+        .fold(0.0f32, f32::max)
 }
 
 /// How far channel `c` of a pixel (sensor values `p`, clipped channels `cl`) only bounds its true value from below:
 /// fully once clipped, and increasingly from `FLOOR_LO` of the clip on, so that nothing compared with it jumps where
 /// it clips.
 fn bound(p: [f32; 3], cl: [bool; 3], clip: f32, c: usize) -> f32 {
-    if cl[c] { 1.0 } else { smoothstep(FLOOR_LO, 1.0, p[c] / clip) }
+    if cl[c] {
+        1.0
+    } else {
+        smoothstep(FLOOR_LO, 1.0, p[c] / clip)
+    }
 }
 
 /// How many stops the channels of a partly clipped pixel (sensor values `p`, white-balanced `q`, clipped channels
@@ -300,13 +378,24 @@ fn contradiction(p: [f32; 3], q: [f32; 3], cl: [bool; 3], r: [f32; 3], clip: f32
             lo = lo.min(level / (1.0 - w));
         }
     }
-    if hi > 0.0 && lo > 0.0 && lo.is_finite() { (hi / lo).log2().max(0.0) } else { 0.0 }
+    if hi > 0.0 && lo > 0.0 && lo.is_finite() {
+        (hi / lo).log2().max(0.0)
+    } else {
+        0.0
+    }
 }
 
 /// The white-balanced colour of a partly clipped pixel (sensor values `p`, white-balanced `q`, clipped channels
 /// `cl`) whose colour is estimated at chromaticity `r`: clipped channels rebuilt, unclipped ones kept. `None`
 /// when no unclipped channel can tell the level.
-fn rebuild(p: [f32; 3], q: [f32; 3], cl: [bool; 3], r: [f32; 3], clip: f32, max_level: f32) -> Option<[f32; 3]> {
+fn rebuild(
+    p: [f32; 3],
+    q: [f32; 3],
+    cl: [bool; 3],
+    r: [f32; 3],
+    clip: f32,
+    max_level: f32,
+) -> Option<[f32; 3]> {
     // The white-balanced channel sum the unclipped channels imply: their mean, except that a channel about to clip
     // counts more and more as the floor it is about to become (continuous with the neighbours where it has).
     let (mut sum, mut near_clip, mut k) = (0f32, 0f32, 0usize);
@@ -325,10 +414,15 @@ fn rebuild(p: [f32; 3], q: [f32; 3], cl: [bool; 3], r: [f32; 3], clip: f32, max_
     // clips first), and the pair would show as magenta or red. They keep the estimate's ratio instead, at the level
     // that lifts each to its clip (no channel above the clipped neutral), and so does a channel about to clip (the
     // same floor, so nothing jumps where it clips).
-    let floor = (0..3).filter(|&c| cl[c]).map(|c| q[c] / r[c].max(1e-3)).fold(0.0f32, f32::max);
+    let floor = (0..3)
+        .filter(|&c| cl[c])
+        .map(|c| q[c] / r[c].max(1e-3))
+        .fold(0.0f32, f32::max);
     let top = r[0].max(r[1]).max(r[2]).max(1e-3);
     let sum = (sum / k as f32).max(near_clip.max(floor).min(max_level / top));
-    Some(std::array::from_fn(|c| if cl[c] { q[c].max(sum * r[c]) } else { q[c] }))
+    Some(std::array::from_fn(|c| {
+        if cl[c] { q[c].max(sum * r[c]) } else { q[c] }
+    }))
 }
 
 /// Reconstruct partially clipped channels, with a neutral that is neutral in camera RGB. See
@@ -359,14 +453,24 @@ pub const CLIPPED_B: u8 = 4;
 /// true value, so one clipped specular sample among many unclipped ones neither escapes reconstruction nor
 /// (as the block's maximum would) lifts the channel to the clip level, which reads as a coloured speckle (#548).
 /// A mask of the wrong length is ignored (clipping is then told by the values alone).
-pub fn reconstruct_masked(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], mask: &[u8]) -> usize {
+pub fn reconstruct_masked(
+    img: &mut Rgb32f,
+    wb: [f32; 3],
+    clip: f32,
+    white: [f32; 3],
+    mask: &[u8],
+) -> usize {
     if mask.len() != img.data.len() {
         return reconstruct_with(img, wb, clip, white);
     }
     rebuild_clipped(img, wb, clip, white, &|i, p| {
         let m = mask.get(i).copied().unwrap_or(0);
         let v = by_value(p, clip);
-        [v[0] || m & CLIPPED_R != 0, v[1] || m & CLIPPED_G != 0, v[2] || m & CLIPPED_B != 0]
+        [
+            v[0] || m & CLIPPED_R != 0,
+            v[1] || m & CLIPPED_G != 0,
+            v[2] || m & CLIPPED_B != 0,
+        ]
     })
 }
 
@@ -380,14 +484,27 @@ fn by_value(p: &[f32; 3], clip: f32) -> [bool; 3] {
 }
 
 /// [`reconstruct_with`], with `clipped` telling the clipped channels.
-fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], clipped: &impl Clipped) -> usize {
+fn rebuild_clipped(
+    img: &mut Rgb32f,
+    wb: [f32; 3],
+    clip: f32,
+    white: [f32; 3],
+    clipped: &impl Clipped,
+) -> usize {
     let (w, h) = (img.width, img.height);
-    let count = img.data.par_iter().enumerate().filter(|(i, p)| clipped(*i, p).iter().any(|&c| c)).count();
+    let count = img
+        .data
+        .par_iter()
+        .enumerate()
+        .filter(|(i, p)| clipped(*i, p).iter().any(|&c| c))
+        .count();
     if count == 0 || w == 0 || h == 0 {
         return 0;
     }
     // a white far from the camera's neutral (or not a number) is a broken colour model: keep the camera's
-    let plausible = white.iter().all(|v| v.is_finite() && (1.0 / 16.0..=16.0).contains(v));
+    let plausible = white
+        .iter()
+        .all(|v| v.is_finite() && (1.0 / 16.0..=16.0).contains(v));
     let white = if plausible { white } else { [1.0; 3] };
     let total = white[0] + white[1] + white[2];
     let neutral = [white[0] / total, white[1] / total, white[2] / total];
@@ -401,34 +518,50 @@ fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], c
     }
     // a clipped pixel samples the cells within one of its own, which are within one of a clipped cell
     let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
-    let needed = |x: usize, y: usize| (y.saturating_sub(1)..=(y + 1).min(ch - 1)).any(|yy| near.get(yy * cw + x).copied().unwrap_or(false));
+    let needed = |x: usize, y: usize| {
+        (y.saturating_sub(1)..=(y + 1).min(ch - 1))
+            .any(|yy| near.get(yy * cw + x).copied().unwrap_or(false))
+    };
     push(&mut levels, [neutral[0], neutral[2], 0.0], Some(&needed));
     // How much reliable content lies around each needed cell: its density at any scale up to [`REACH`] (level
     // i's cells span 2^i cells of level 0). Near reliable content some fine level is dense with it; far from it
     // only the widest one may still hold a little, and the trust fades with that. Kept in the third entry of the
     // level 0 estimates, which clipped pixels sample with their colour.
     let reach = REACH * w.max(h) as f32 / 2.0;
-    let widest = (0..levels.len()).find(|&i| (1u64 << i.min(62)) as f32 >= reach).unwrap_or(levels.len().saturating_sub(1));
+    let widest = (0..levels.len())
+        .find(|&i| (1u64 << i.min(62)) as f32 >= reach)
+        .unwrap_or(levels.len().saturating_sub(1));
     if let Some((first, coarser)) = levels.split_first_mut() {
-        let support: Vec<(&Level<3>, f32)> = coarser.iter().take(widest).enumerate().map(|(i, l)| (l, (1u64 << (i + 1).min(62)) as f32)).collect();
+        let support: Vec<(&Level<3>, f32)> = coarser
+            .iter()
+            .take(widest)
+            .enumerate()
+            .map(|(i, l)| (l, (1u64 << (i + 1).min(62)) as f32))
+            .collect();
         let fw = first.w;
-        first.cells.par_chunks_mut(fw).enumerate().for_each(|(y, row)| {
-            for (x, cell) in row.iter_mut().enumerate() {
-                if !needed(x, y) {
-                    continue;
-                }
-                let mut t = 0f32;
-                for &(l, scale) in &support {
-                    t = t.max(smoothstep(0.0, SUPPORT, sample(l, scale, x, y)[2]));
-                    if t >= 1.0 {
-                        break;
+        first
+            .cells
+            .par_chunks_mut(fw)
+            .enumerate()
+            .for_each(|(y, row)| {
+                for (x, cell) in row.iter_mut().enumerate() {
+                    if !needed(x, y) {
+                        continue;
                     }
+                    let mut t = 0f32;
+                    for &(l, scale) in &support {
+                        t = t.max(smoothstep(0.0, SUPPORT, sample(l, scale, x, y)[2]));
+                        if t >= 1.0 {
+                            break;
+                        }
+                    }
+                    cell[2] = t;
                 }
-                cell[2] = t;
-            }
-        });
+            });
     }
-    let Some(field) = levels.first() else { return count };
+    let Some(field) = levels.first() else {
+        return count;
+    };
     // the rim (level 0 of its pyramid holds the estimate), if there is one anywhere at all
     let rims = {
         let mut levels = vec![rim(img, wb, clip, clipped, &needed)];
@@ -437,7 +570,11 @@ fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], c
             levels.push(next);
         }
         push(&mut levels, [0.0; 4], None);
-        Some(levels).filter(|levels| levels.last().is_some_and(|top| top.cells.iter().any(|c| c[3] > 0.0)))
+        Some(levels).filter(|levels| {
+            levels
+                .last()
+                .is_some_and(|top| top.cells.iter().any(|c| c[3] > 0.0))
+        })
     };
     let rim_field = rims.as_ref().and_then(|l| l.first());
     let max_level = wb.iter().cloned().fold(0.0f32, f32::max) * clip;
@@ -461,7 +598,11 @@ fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], c
                 if off > AGREE.0 {
                     off = off.min(edge.map_or(0.0, |edge| {
                         let s = edge[0] + edge[1] + edge[2];
-                        if s > 1e-6 { unlike([edge[0] / s, edge[1] / s, edge[2] / s], borrowed) } else { 0.0 }
+                        if s > 1e-6 {
+                            unlike([edge[0] / s, edge[1] / s, edge[2] / s], borrowed)
+                        } else {
+                            0.0
+                        }
                     }));
                 }
                 trust *= 1.0 - smoothstep(AGREE.0, AGREE.1, off);
@@ -487,14 +628,32 @@ fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], c
                 let past = ratio.log2().min(64.0);
                 let k = smoothstep(NEAR_RIM, NEAR_RIM + DEPTH, past);
                 let s = edge[0] + edge[1] + edge[2];
-                (k < 1.0 && s > 1e-6).then(|| rebuild(p, q, cl, [edge[0] / s, edge[1] / s, edge[2] / s], clip, max_level)).flatten().map(|a| (a, k))
+                (k < 1.0 && s > 1e-6)
+                    .then(|| {
+                        rebuild(
+                            p,
+                            q,
+                            cl,
+                            [edge[0] / s, edge[1] / s, edge[2] / s],
+                            clip,
+                            max_level,
+                        )
+                    })
+                    .flatten()
+                    .map(|a| (a, k))
             });
             let past_rim = |b: [f32; 3]| -> [f32; 3] {
                 let Some((a, k)) = at_rim else { return b };
                 std::array::from_fn(|c| a[c] + (b[c] - a[c]) * k)
             };
-            let local = (trust > 0.0).then(|| rebuild(p, q, cl, borrowed, clip, max_level)).flatten().map(past_rim);
-            let plain = (trust < 1.0).then(|| rebuild(p, q, cl, neutral, clip, max_level)).flatten().map(past_rim);
+            let local = (trust > 0.0)
+                .then(|| rebuild(p, q, cl, borrowed, clip, max_level))
+                .flatten()
+                .map(past_rim);
+            let plain = (trust < 1.0)
+                .then(|| rebuild(p, q, cl, neutral, clip, max_level))
+                .flatten()
+                .map(past_rim);
             let mut out = match (local, plain) {
                 (Some(a), Some(b)) => std::array::from_fn(|c| b[c] + (a[c] - b[c]) * trust),
                 (Some(a), None) | (None, Some(a)) => a,
@@ -507,17 +666,34 @@ fn rebuild_clipped(img: &mut Rgb32f, wb: [f32; 3], clip: f32, white: [f32; 3], c
             // with the unclipped neighbours) to the last one clipping (all of it: continuous with the fully clipped
             // ones). The way is measured in stops: how far the rebuilt clipped channels lie above their clip,
             // against how far the lowest unclipped channel still lies below its own.
-            let above = (0..3).filter(|&c| cl[c]).map(|c| (out[c] / q[c].max(1e-9)).max(1.0).log2()).fold(0.0f32, f32::max);
-            let lowest = (0..3).filter(|&c| !cl[c]).map(|c| p[c]).fold(f32::MAX, f32::min);
+            let above = (0..3)
+                .filter(|&c| cl[c])
+                .map(|c| (out[c] / q[c].max(1e-9)).max(1.0).log2())
+                .fold(0.0f32, f32::max);
+            let lowest = (0..3)
+                .filter(|&c| !cl[c])
+                .map(|c| p[c])
+                .fold(f32::MAX, f32::min);
             let below = (clip / lowest.max(1e-6)).log2().max(0.0);
-            let way = if above > 0.0 && lowest < clip { above / (above + below) } else { 0.0 };
+            let way = if above > 0.0 && lowest < clip {
+                above / (above + below)
+            } else {
+                0.0
+            };
             // The brightness goes over in the second half of the way, and so does the colour of a strongly coloured
             // pixel; a pale one's goes over from the start ([`PALE`]).
             let u = [out[0] / white[0], out[1] / white[1], out[2] / white[2]];
             let (lo, hi) = (u[0].min(u[1]).min(u[2]), u[0].max(u[1]).max(u[2]));
-            let saturation = if hi > 0.0 && hi.is_finite() { 1.0 - lo.max(0.0) / hi } else { 1.0 };
+            let saturation = if hi > 0.0 && hi.is_finite() {
+                1.0 - lo.max(0.0) / hi
+            } else {
+                1.0
+            };
             let start = 0.5 * smoothstep(PALE.0, PALE.1, saturation);
-            let (t_level, t_colour) = (smoothstep(0.5, 1.0, way), smoothstep(start, start + 0.5, way));
+            let (t_level, t_colour) = (
+                smoothstep(0.5, 1.0, way),
+                smoothstep(start, start + 0.5, way),
+            );
             if t_colour > 0.0 {
                 let level = (out[0] + out[1] + out[2]) / total;
                 let full = q.iter().cloned().fold(0.0f32, f32::max).max(max_level);
@@ -573,8 +749,14 @@ mod tests {
     fn off_the_way_to_neutral(got: [f32; 3], from: [f32; 3]) -> f32 {
         let d: [f32; 3] = std::array::from_fn(|c| 1.0 / 3.0 - from[c]);
         let len = d.iter().map(|v| v * v).sum::<f32>();
-        let t = if len > 0.0 { ((0..3).map(|c| (got[c] - from[c]) * d[c]).sum::<f32>() / len).clamp(0.0, 1.0) } else { 0.0 };
-        (0..3).map(|c| (got[c] - (from[c] + d[c] * t)).abs()).fold(0.0, f32::max)
+        let t = if len > 0.0 {
+            ((0..3).map(|c| (got[c] - from[c]) * d[c]).sum::<f32>() / len).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        (0..3)
+            .map(|c| (got[c] - (from[c] + d[c] * t)).abs())
+            .fold(0.0, f32::max)
     }
 
     /// Issue #523: the clipped sky beside a branch took the colour of the branch's fringes and of the branch
@@ -589,13 +771,19 @@ mod tests {
             let away = chroma(balanced(img.get(30, y)));
             assert!(away == chroma(balanced(img.get(170, y))), "row {y}");
             let off = off_the_way_to_neutral(away, chroma(sky));
-            assert!(off < 0.005, "row {y}: the clipped sky {away:?} is not the sky's colour on its way to neutral ({off})");
+            assert!(
+                off < 0.005,
+                "row {y}: the clipped sky {away:?} is not the sky's colour on its way to neutral ({off})"
+            );
             for x in [84, 86, 88, 101, 103, 105] {
                 let got = chroma(balanced(img.get(x, y)));
                 worst = worst.max((0..3).map(|c| (got[c] - away[c]).abs()).fold(0.0, f32::max));
             }
         }
-        assert!(worst < 0.01, "clipped sky beside the branch is off the sky away from it by {worst}");
+        assert!(
+            worst < 0.01,
+            "clipped sky beside the branch is off the sky away from it by {worst}"
+        );
     }
 
     /// A warm light with red and green clipped: left at their clip levels the pair reads red-magenta (the white
@@ -609,9 +797,15 @@ mod tests {
         });
         reconstruct(&mut img, WB, 0.99);
         let q = balanced(img.get(32, 32));
-        assert!((q[2] - 0.8).abs() < 0.1, "the unclipped channel is about kept: {q:?}");
+        assert!(
+            (q[2] - 0.8).abs() < 0.1,
+            "the unclipped channel is about kept: {q:?}"
+        );
         let ratio = q[1] / q[0];
-        assert!((0.6..=1.05).contains(&ratio), "green / red {ratio} ({q:?}): not a warm white");
+        assert!(
+            (0.6..=1.05).contains(&ratio),
+            "green / red {ratio} ({q:?}): not a warm white"
+        );
     }
 
     #[test]
@@ -622,16 +816,30 @@ mod tests {
         reconstruct_with(&mut img, WB, 0.99, white);
         let q = balanced(img.get(4, 4));
         let k = q[1] / white[1];
-        assert!((0..3).all(|c| (q[c] - white[c] * k).abs() < 1e-4 * k), "{q:?} is not along {white:?}");
-        assert!(k >= 2.5 * 0.99 - 1e-4, "clipped neutral at least as bright as the highest clip level: {k}");
+        assert!(
+            (0..3).all(|c| (q[c] - white[c] * k).abs() < 1e-4 * k),
+            "{q:?} is not along {white:?}"
+        );
+        assert!(
+            k >= 2.5 * 0.99 - 1e-4,
+            "clipped neutral at least as bright as the highest clip level: {k}"
+        );
         assert_eq!(img.data[0], [0.3, 0.6, 0.4]);
         // a white that cannot be right falls back to camera neutral, and nothing overflows
-        for bad in [[f32::NAN, 1.0, 1.0], [2.5e38, 0.74, 0.74], [1.0, 0.0, 1.0], [40.0, 1.0, 1.0]] {
+        for bad in [
+            [f32::NAN, 1.0, 1.0],
+            [2.5e38, 0.74, 0.74],
+            [1.0, 0.0, 1.0],
+            [40.0, 1.0, 1.0],
+        ] {
             let mut img = Rgb32f::filled(4, 4, [1.0; 3]);
             img.data[0] = [1.0, 1.0, 0.5];
             reconstruct_with(&mut img, WB, 0.99, bad);
             let q = balanced(img.get(1, 1));
-            assert!((q[0] - q[1]).abs() < 1e-4 && (q[2] - q[1]).abs() < 1e-4, "{bad:?}: {q:?}");
+            assert!(
+                (q[0] - q[1]).abs() < 1e-4 && (q[2] - q[1]).abs() < 1e-4,
+                "{bad:?}: {q:?}"
+            );
             assert!(img.data.iter().flatten().all(|v| v.is_finite()), "{bad:?}");
         }
     }
@@ -651,10 +859,23 @@ mod tests {
         let mut img = img0.clone();
         reconstruct(&mut img, WB, 0.99);
         let row: Vec<[f32; 3]> = (0..240).map(|x| chroma(balanced(img.get(x, 30)))).collect();
-        let step = row.windows(2).map(|w| (0..3).map(|c| (w[1][c] - w[0][c]).abs()).fold(0.0, f32::max)).fold(0.0, f32::max);
-        assert!(step < 0.01, "largest chromaticity step between neighbours {step}");
+        let step = row
+            .windows(2)
+            .map(|w| {
+                (0..3)
+                    .map(|c| (w[1][c] - w[0][c]).abs())
+                    .fold(0.0, f32::max)
+            })
+            .fold(0.0, f32::max);
+        assert!(
+            step < 0.01,
+            "largest chromaticity step between neighbours {step}"
+        );
         let end = row[239];
-        assert!(end.iter().all(|v| (v - 1.0 / 3.0).abs() < 1e-3), "fully clipped end {end:?}");
+        assert!(
+            end.iter().all(|v| (v - 1.0 / 3.0).abs() < 1e-3),
+            "fully clipped end {end:?}"
+        );
     }
 
     /// A smooth pink ramp (`[0.9k, k, 0.8k]`, k from 0.8 to 1.35) whose green clips first, then red, then blue,
@@ -663,23 +884,45 @@ mod tests {
     fn rebuilt_ramp(rows: std::ops::Range<usize>, h: usize) -> (Vec<[f32; 3]>, usize) {
         let (w, k0, k1) = (1600usize, 0.8f32, 1.35f32);
         let k = |x: usize| k0 + (k1 - k0) * x as f32 / (w - 1) as f32;
-        let img0 = Rgb32f::from_fn(w, h, |x, y| if rows.contains(&y) { [0.9 * k(x), k(x), 0.8 * k(x)].map(|v| v.min(1.0)) } else { [0.01; 3] });
+        let img0 = Rgb32f::from_fn(w, h, |x, y| {
+            if rows.contains(&y) {
+                [0.9 * k(x), k(x), 0.8 * k(x)].map(|v| v.min(1.0))
+            } else {
+                [0.01; 3]
+            }
+        });
         let mut img = img0.clone();
         reconstruct(&mut img, WB, 0.99);
         let y = (rows.start + rows.end) / 2;
         let row: Vec<[f32; 3]> = (0..w).map(|x| balanced(img.get(x, y))).collect();
-        (row, (0..w).find(|&x| img0.get(x, y)[1] >= 0.99).unwrap_or(0))
+        (
+            row,
+            (0..w).find(|&x| img0.get(x, y)[1] >= 0.99).unwrap_or(0),
+        )
     }
 
     /// No channel changes by more than `at_clip` (relative) where green first clips, nor by 3 % anywhere.
     fn assert_continuous(row: &[[f32; 3]], first: usize, at_clip: f32, case: &str) {
         // across the first clip the colour carries on as it was (the sensor's own colour, not a fade)
         let (a, b) = (row[first - 1], row[first]);
-        assert!((0..3).all(|c| (b[c] / a[c] - 1.0).abs() < at_clip), "{case}, first clip: {a:?} then {b:?}");
-        let worst = row.windows(2).map(|p| (0..3).map(|c| (p[1][c] / p[0][c] - 1.0).abs()).fold(0.0, f32::max)).fold(0.0, f32::max);
+        assert!(
+            (0..3).all(|c| (b[c] / a[c] - 1.0).abs() < at_clip),
+            "{case}, first clip: {a:?} then {b:?}"
+        );
+        let worst = row
+            .windows(2)
+            .map(|p| {
+                (0..3)
+                    .map(|c| (p[1][c] / p[0][c] - 1.0).abs())
+                    .fold(0.0, f32::max)
+            })
+            .fold(0.0, f32::max);
         // (a smooth ramp moves 0.04 % per pixel here; the rebuilt colour turns faster where it leaves the colour of
         // the unclipped part for neutral, but never by a step)
-        assert!(worst < 0.03, "{case}: largest relative step between neighbours {worst}");
+        assert!(
+            worst < 0.03,
+            "{case}: largest relative step between neighbours {worst}"
+        );
     }
 
     /// The rebuilt colour has no step anywhere along the ramp: not where green first clips (the neutral fade starts
@@ -720,7 +963,11 @@ mod tests {
         let (w, h) = (320usize, 96usize);
         let k = |x: usize| 0.7 * (1.2 * x as f32 / (w - 1) as f32).exp2();
         let branches = [150usize, 200, 250];
-        let on_branch = |x: usize| branches.iter().any(|&b| (b.saturating_sub(1)..=b + 2).contains(&x));
+        let on_branch = |x: usize| {
+            branches
+                .iter()
+                .any(|&b| (b.saturating_sub(1)..=b + 2).contains(&x))
+        };
         let img0 = Rgb32f::from_fn(w, h, |x, y| {
             sensor(if y >= 72 {
                 [0.5, 0.6, 0.22]
@@ -735,7 +982,8 @@ mod tests {
         let at = |x: usize, y: usize| chroma(balanced(img.get(x, y)));
         let first = (0..w).find(|&x| img0.get(x, 20)[1] >= 0.99).unwrap_or(0);
         assert!(first > 0 && first < 150);
-        let diff = |a: [f32; 3], b: [f32; 3]| (0..3).map(|c| (a[c] - b[c]).abs()).fold(0.0, f32::max);
+        let diff =
+            |a: [f32; 3], b: [f32; 3]| (0..3).map(|c| (a[c] - b[c]).abs()).fold(0.0, f32::max);
         for y in [20, 50] {
             // no step where green clips
             let step = diff(at(first - 1, y), at(first, y));
@@ -743,14 +991,26 @@ mod tests {
             for x in first..w {
                 // nothing but the sky's colour on its way to neutral (no green from the foliage)...
                 let off = off_the_way_to_neutral(at(x, y), chroma(sky));
-                assert!(on_branch(x) || off < 0.005, "row {y}, x {x}: {:?} is off the sky's way to neutral by {off}", at(x, y));
+                assert!(
+                    on_branch(x) || off < 0.005,
+                    "row {y}, x {x}: {:?} is off the sky's way to neutral by {off}",
+                    at(x, y)
+                );
                 // ... the same beside the branches as above them ...
                 let beside = diff(at(x, y), at(x, 20));
-                assert!(on_branch(x) || beside < 0.005, "row {y}, x {x}: {:?} beside a branch, {:?} above", at(x, y), at(x, 20));
+                assert!(
+                    on_branch(x) || beside < 0.005,
+                    "row {y}, x {x}: {:?} beside a branch, {:?} above",
+                    at(x, y),
+                    at(x, 20)
+                );
             }
             // ... and neutral well before the last channel clips (the sky is 0.7 stops past green's clip there)
             let end = at(w - 1, y);
-            assert!(end.iter().all(|v| (v - 1.0 / 3.0).abs() < 0.002), "row {y}: {end:?} at the end");
+            assert!(
+                end.iter().all(|v| (v - 1.0 / 3.0).abs() < 0.002),
+                "row {y}: {end:?} at the end"
+            );
         }
     }
 
@@ -777,13 +1037,20 @@ mod tests {
             });
             let mut out = img.clone();
             let n = reconstruct_with(&mut out, [2.1, 1.0, 1.6], 0.99, [1.02, 0.99, 1.05]);
-            let clipped = img.data.iter().filter(|p| p.iter().any(|&v| v >= 0.99)).count();
+            let clipped = img
+                .data
+                .iter()
+                .filter(|p| p.iter().any(|&v| v >= 0.99))
+                .count();
             assert_eq!(n, clipped);
             for (a, b) in img.data.iter().zip(&out.data) {
                 if a.iter().all(|&v| v < 0.99) {
                     assert_eq!(a, b, "{w}×{h}");
                 } else {
-                    assert!(b.iter().all(|v| v.is_finite() && *v >= 0.0), "{w}×{h}: {b:?}");
+                    assert!(
+                        b.iter().all(|v| v.is_finite() && *v >= 0.0),
+                        "{w}×{h}: {b:?}"
+                    );
                 }
             }
         }
@@ -811,7 +1078,11 @@ mod tests {
         let mut img = truth.map(|p| p.map(|v| v.min(1.0)));
         let first = (0..256).find(|&x| img.get(x, 8)[0] >= 0.999).unwrap();
         // near the unclipped gradient (within the reach of its colour) red is rebuilt from it
-        let err = |img: &Rgb32f| -> f32 { (first..first + 12).map(|x| (img.get(x, 8)[0] - truth.get(x, 8)[0]).abs()).sum() };
+        let err = |img: &Rgb32f| -> f32 {
+            (first..first + 12)
+                .map(|x| (img.get(x, 8)[0] - truth.get(x, 8)[0]).abs())
+                .sum()
+        };
         let before = err(&img);
         let n = reconstruct(&mut img, [1.0, 1.0, 1.0], 0.999);
         assert!(n > 0);
@@ -857,10 +1128,21 @@ mod tests {
     /// unmarked pixels are left as they were; a mask of another size leaves clipping to the values.
     #[test]
     fn a_mask_marks_the_clipped_channels() {
-        let base = Rgb32f::from_fn(32, 32, |x, _| if x >= 16 { [0.2, 0.5, 0.25] } else { [0.5, 0.5, 0.5] });
-        let mask: Vec<u8> = (0..32 * 32).map(|i| if i % 32 >= 16 { CLIPPED_R } else { 0 }).collect();
+        let base = Rgb32f::from_fn(32, 32, |x, _| {
+            if x >= 16 {
+                [0.2, 0.5, 0.25]
+            } else {
+                [0.5, 0.5, 0.5]
+            }
+        });
+        let mask: Vec<u8> = (0..32 * 32)
+            .map(|i| if i % 32 >= 16 { CLIPPED_R } else { 0 })
+            .collect();
         let mut img = base.clone();
-        assert_eq!(reconstruct_masked(&mut img, [1.0; 3], 0.99, [1.0; 3], &mask), 512);
+        assert_eq!(
+            reconstruct_masked(&mut img, [1.0; 3], 0.99, [1.0; 3], &mask),
+            512
+        );
         for (p, b) in img.data.iter().zip(&base.data) {
             assert!(p.iter().all(|v| v.is_finite()), "{p:?}");
             if b[0] == 0.5 {
@@ -875,7 +1157,10 @@ mod tests {
         // the values alone see nothing clipped here, nor does a mask of another size
         let mut plain = base.clone();
         assert_eq!(reconstruct(&mut plain, [1.0; 3], 0.99), 0);
-        assert_eq!(reconstruct_masked(&mut plain, [1.0; 3], 0.99, [1.0; 3], &mask[1..]), 0);
+        assert_eq!(
+            reconstruct_masked(&mut plain, [1.0; 3], 0.99, [1.0; 3], &mask[1..]),
+            0
+        );
         assert!(plain.data == base.data);
     }
 }

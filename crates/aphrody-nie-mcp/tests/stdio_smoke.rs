@@ -23,7 +23,9 @@ fn response_for(reader: &mut impl std::io::BufRead, id: u64) -> serde_json::Valu
 }
 
 fn text_content(response: &serde_json::Value) -> &str {
-    response["result"]["content"][0]["text"].as_str().expect("text tool result")
+    response["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text tool result")
 }
 
 #[test]
@@ -53,7 +55,10 @@ fn initialize_list_and_call_stay_on_clean_stdio() {
         }),
     );
     let initialized = response_for(&mut reader, 1);
-    assert_eq!(initialized["result"]["serverInfo"]["name"], "aphrody-nie-game");
+    assert_eq!(
+        initialized["result"]["serverInfo"]["name"],
+        "aphrody-nie-game"
+    );
 
     request(
         &mut stdin,
@@ -77,8 +82,15 @@ fn initialize_list_and_call_stay_on_clean_stdio() {
         .iter()
         .filter(|tool| tool["name"].as_str().is_some_and(|n| n.starts_with("cli_")))
         .count();
-    assert_eq!(generes, 47, "bindings generated from the public CLI commands");
-    assert_eq!(tools.len() - generes, 19, "explicit tools from `compatibility_router`");
+    assert_eq!(
+        generes, 47,
+        "bindings generated from the public CLI commands"
+    );
+    assert_eq!(
+        tools.len() - generes,
+        19,
+        "explicit tools from `compatibility_router`"
+    );
     assert!(tools.iter().any(|tool| tool["name"] == "cli_info"));
     assert!(tools.iter().any(|tool| tool["name"] == "cli_play"));
     for compatibility_name in [
@@ -152,7 +164,11 @@ fn initialize_list_and_call_stay_on_clean_stdio() {
     let bridge = response_for(&mut reader, 5);
     let bridge: serde_json::Value =
         serde_json::from_str(text_content(&bridge)).expect("explorer_status JSON");
-    assert!(bridge["url"].as_str().is_some_and(|url| url.ends_with("/bridge")));
+    assert!(
+        bridge["url"]
+            .as_str()
+            .is_some_and(|url| url.ends_with("/bridge"))
+    );
 
     request(
         &mut stdin,
@@ -167,7 +183,11 @@ fn initialize_list_and_call_stay_on_clean_stdio() {
     assert_eq!(launch["result"]["isError"], true);
     let launch: serde_json::Value =
         serde_json::from_str(text_content(&launch)).expect("game_launch error JSON");
-    assert!(launch["error"].as_str().is_some_and(|error| error.contains("not found")));
+    assert!(
+        launch["error"]
+            .as_str()
+            .is_some_and(|error| error.contains("not found"))
+    );
 
     request(
         &mut stdin,

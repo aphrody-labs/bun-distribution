@@ -36,7 +36,12 @@ impl WrapPolygon {
         let points: Vec<[i32; 2]> = points
             .into_iter()
             .take(MAX_WRAP_POINTS)
-            .map(|(x, y)| [x.clamp(-MAX_COORD, MAX_COORD) as i32, y.clamp(-MAX_COORD, MAX_COORD) as i32])
+            .map(|(x, y)| {
+                [
+                    x.clamp(-MAX_COORD, MAX_COORD) as i32,
+                    y.clamp(-MAX_COORD, MAX_COORD) as i32,
+                ]
+            })
             .collect();
         (points.len() >= 3).then_some(WrapPolygon { edited, points })
     }
@@ -46,14 +51,20 @@ impl WrapPolygon {
         let s = WRAP_SPACE as f32;
         WrapPolygon::new(
             edited,
-            pts.iter().filter(|(x, y)| x.is_finite() && y.is_finite()).map(|(x, y)| ((x * s).round() as i64, (y * s).round() as i64)),
+            pts.iter()
+                .filter(|(x, y)| x.is_finite() && y.is_finite())
+                .map(|(x, y)| ((x * s).round() as i64, (y * s).round() as i64)),
         )
     }
 
     /// The points in unit coordinates (0..1 across the object).
     pub fn unit(&self) -> Vec<(f32, f32)> {
         let s = WRAP_SPACE as f32;
-        self.points.iter().take(MAX_WRAP_POINTS).map(|[x, y]| (*x as f32 / s, *y as f32 / s)).collect()
+        self.points
+            .iter()
+            .take(MAX_WRAP_POINTS)
+            .map(|[x, y]| (*x as f32 / s, *y as f32 / s))
+            .collect()
     }
 }
 
@@ -62,7 +73,13 @@ impl WrapPolygon {
 /// freeforms).
 pub fn shape_outline(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<(f32, f32)>> {
     use std::f32::consts::{FRAC_PI_2, PI, TAU};
-    let pos = |v: f32| if v.is_finite() { v.clamp(0.0, 1.0e6) } else { 0.0 };
+    let pos = |v: f32| {
+        if v.is_finite() {
+            v.clamp(0.0, 1.0e6)
+        } else {
+            0.0
+        }
+    };
     let (w, h) = (pos(w), pos(h));
     let pts = match kind {
         // A freeform's paths (ink among them) aren't known from its kind: its frame is its outline.
@@ -73,13 +90,25 @@ pub fn shape_outline(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<(f32, f32)>>
         | ShapeKind::StraightConnector
         | ShapeKind::ElbowConnector
         | ShapeKind::CurvedConnector => return None,
-        ShapeKind::Ellipse => (0..48).map(|i| (i as f32) * TAU / 48.0).map(|a| (0.5 + 0.5 * a.cos(), 0.5 + 0.5 * a.sin())).collect(),
+        ShapeKind::Ellipse => (0..48)
+            .map(|i| (i as f32) * TAU / 48.0)
+            .map(|a| (0.5 + 0.5 * a.cos(), 0.5 + 0.5 * a.sin()))
+            .collect(),
         ShapeKind::RoundedRectangle => {
             // Corner radius as drawn: 16% of the shorter side.
             let r = 0.16 * w.min(h);
-            let (rx, ry) = if w > 0.0 && h > 0.0 { (r / w, r / h) } else { (0.0, 0.0) };
+            let (rx, ry) = if w > 0.0 && h > 0.0 {
+                (r / w, r / h)
+            } else {
+                (0.0, 0.0)
+            };
             let mut pts = Vec::new();
-            for (cx, cy, a0) in [(1.0 - rx, 1.0 - ry, 0.0), (rx, 1.0 - ry, FRAC_PI_2), (rx, ry, PI), (1.0 - rx, ry, PI + FRAC_PI_2)] {
+            for (cx, cy, a0) in [
+                (1.0 - rx, 1.0 - ry, 0.0),
+                (rx, 1.0 - ry, FRAC_PI_2),
+                (rx, ry, PI),
+                (1.0 - rx, ry, PI + FRAC_PI_2),
+            ] {
                 for k in 0..=6 {
                     let a = a0 + FRAC_PI_2 * k as f32 / 6.0;
                     pts.push((cx + rx * a.cos(), cy + ry * a.sin()));
@@ -92,7 +121,15 @@ pub fn shape_outline(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<(f32, f32)>>
         ShapeKind::Arrow => {
             // As drawn: the head is half the height long, the shaft 40% of the height thick.
             let head = if w > 0.0 { (0.5 * h / w).min(1.0) } else { 0.5 };
-            vec![(0.0, 0.3), (1.0 - head, 0.3), (1.0 - head, 0.0), (1.0, 0.5), (1.0 - head, 1.0), (1.0 - head, 0.7), (0.0, 0.7)]
+            vec![
+                (0.0, 0.3),
+                (1.0 - head, 0.3),
+                (1.0 - head, 0.0),
+                (1.0, 0.5),
+                (1.0 - head, 1.0),
+                (1.0 - head, 0.7),
+                (0.0, 0.7),
+            ]
         }
         ShapeKind::Star => (0..10)
             .map(|i| {
@@ -113,7 +150,9 @@ pub fn shape_outline(kind: ShapeKind, w: f32, h: f32) -> Option<Vec<(f32, f32)>>
                 for k in 0..10 {
                     let t = k as f32 / 10.0;
                     let u = 1.0 - t;
-                    let b = |a: f32, b: f32, c: f32, d: f32| u * u * u * a + 3.0 * u * u * t * b + 3.0 * u * t * t * c + t * t * t * d;
+                    let b = |a: f32, b: f32, c: f32, d: f32| {
+                        u * u * u * a + 3.0 * u * u * t * b + 3.0 * u * t * t * c + t * t * t * d
+                    };
                     pts.push((b(p0.0, p1.0, p2.0, p3.0), b(p0.1, p1.1, p2.1, p3.1)));
                 }
             }
@@ -130,7 +169,11 @@ pub const ALPHA_GRID: usize = 48;
 /// of a `gw` × `gh` grid laid over the picture that `opaque` says hold visible pixels, at most
 /// [`MAX_DERIVED_POINTS`] points. `None` when every cell is opaque (or none is): the picture's
 /// rectangle is its outline.
-pub fn alpha_outline(gw: usize, gh: usize, opaque: impl Fn(usize, usize) -> bool) -> Option<Vec<(f32, f32)>> {
+pub fn alpha_outline(
+    gw: usize,
+    gh: usize,
+    opaque: impl Fn(usize, usize) -> bool,
+) -> Option<Vec<(f32, f32)>> {
     let (gw, gh) = (gw.clamp(1, 1024), gh.clamp(1, 1024));
     // Each row's first and last opaque cells are all the hull can need.
     let mut pts: Vec<(i32, i32)> = Vec::new();
@@ -144,13 +187,22 @@ pub fn alpha_outline(gw: usize, gh: usize, opaque: impl Fn(usize, usize) -> bool
         let last = (first..gw).rev().find(|&x| opaque(x, y)).unwrap_or(first);
         full &= first == 0 && last + 1 == gw;
         let (y0, y1) = (y as i32, y as i32 + 1);
-        pts.extend([(first as i32, y0), (first as i32, y1), (last as i32 + 1, y0), (last as i32 + 1, y1)]);
+        pts.extend([
+            (first as i32, y0),
+            (first as i32, y1),
+            (last as i32 + 1, y0),
+            (last as i32 + 1, y1),
+        ]);
     }
     if full || pts.is_empty() {
         return None;
     }
     let hull = simplify_convex(convex_hull(pts), MAX_DERIVED_POINTS);
-    (hull.len() >= 3).then(|| hull.into_iter().map(|(x, y)| (x as f32 / gw as f32, y as f32 / gh as f32)).collect())
+    (hull.len() >= 3).then(|| {
+        hull.into_iter()
+            .map(|(x, y)| (x as f32 / gw as f32, y as f32 / gh as f32))
+            .collect()
+    })
 }
 
 /// The convex hull of integer points, counter-clockwise (monotone chain).
@@ -161,15 +213,22 @@ fn convex_hull(mut pts: Vec<(i32, i32)>) -> Vec<(i32, i32)> {
         return pts;
     }
     let cross = |o: (i32, i32), a: (i32, i32), b: (i32, i32)| {
-        (a.0 as i64 - o.0 as i64) * (b.1 as i64 - o.1 as i64) - (a.1 as i64 - o.1 as i64) * (b.0 as i64 - o.0 as i64)
+        (a.0 as i64 - o.0 as i64) * (b.1 as i64 - o.1 as i64)
+            - (a.1 as i64 - o.1 as i64) * (b.0 as i64 - o.0 as i64)
     };
     let mut hull: Vec<(i32, i32)> = Vec::with_capacity(pts.len() * 2);
     for pass in 0..2 {
         let start = hull.len();
-        let iter: Box<dyn Iterator<Item = &(i32, i32)>> = if pass == 0 { Box::new(pts.iter()) } else { Box::new(pts.iter().rev()) };
+        let iter: Box<dyn Iterator<Item = &(i32, i32)>> = if pass == 0 {
+            Box::new(pts.iter())
+        } else {
+            Box::new(pts.iter().rev())
+        };
         for &p in iter {
             while hull.len() >= start + 2 {
-                let (Some(&a), Some(&b)) = (hull.get(hull.len() - 2), hull.last()) else { break };
+                let (Some(&a), Some(&b)) = (hull.get(hull.len() - 2), hull.last()) else {
+                    break;
+                };
                 if cross(a, b, p) <= 0 {
                     hull.pop();
                 } else {
@@ -190,9 +249,13 @@ fn simplify_convex(mut pts: Vec<(i32, i32)>, max: usize) -> Vec<(i32, i32)> {
         let n = pts.len();
         let area = |i: usize| {
             let (a, b, c) = (pts[(i + n - 1) % n], pts[i], pts[(i + 1) % n]);
-            ((b.0 as i64 - a.0 as i64) * (c.1 as i64 - a.1 as i64) - (b.1 as i64 - a.1 as i64) * (c.0 as i64 - a.0 as i64)).abs()
+            ((b.0 as i64 - a.0 as i64) * (c.1 as i64 - a.1 as i64)
+                - (b.1 as i64 - a.1 as i64) * (c.0 as i64 - a.0 as i64))
+                .abs()
         };
-        let Some(i) = (0..n).min_by_key(|&i| area(i)) else { break };
+        let Some(i) = (0..n).min_by_key(|&i| area(i)) else {
+            break;
+        };
         pts.remove(i);
     }
     pts
@@ -208,7 +271,13 @@ mod tests {
         let p = WrapPolygon::new(true, (0..5000).map(|i| (i, i64::MAX))).unwrap();
         assert_eq!(p.points.len(), MAX_WRAP_POINTS);
         assert!(p.points.iter().all(|[_, y]| *y as i64 == MAX_COORD));
-        assert!(WrapPolygon::from_unit(false, &[(f32::NAN, 0.0), (0.0, 0.0), (1.0, 0.0), (0.5, 1.0)]).is_some_and(|p| p.points.len() == 3));
+        assert!(
+            WrapPolygon::from_unit(
+                false,
+                &[(f32::NAN, 0.0), (0.0, 0.0), (1.0, 0.0), (0.5, 1.0)]
+            )
+            .is_some_and(|p| p.points.len() == 3)
+        );
     }
 
     #[test]
@@ -224,8 +293,15 @@ mod tests {
         ] {
             for (w, h) in [(100.0, 50.0), (0.0, 0.0), (f32::NAN, 10.0)] {
                 let pts = shape_outline(kind, w, h).unwrap();
-                assert!(pts.len() >= 3 && pts.len() <= MAX_DERIVED_POINTS, "{kind:?}");
-                assert!(pts.iter().all(|(x, y)| (-0.001..=1.001).contains(x) && (-0.001..=1.001).contains(y)), "{kind:?}");
+                assert!(
+                    pts.len() >= 3 && pts.len() <= MAX_DERIVED_POINTS,
+                    "{kind:?}"
+                );
+                assert!(
+                    pts.iter()
+                        .all(|(x, y)| (-0.001..=1.001).contains(x) && (-0.001..=1.001).contains(y)),
+                    "{kind:?}"
+                );
             }
         }
         assert!(shape_outline(ShapeKind::Rectangle, 10.0, 10.0).is_none());
@@ -240,7 +316,10 @@ mod tests {
         };
         let pts = alpha_outline(20, 20, disc).unwrap();
         assert!(pts.len() >= 8 && pts.len() <= MAX_DERIVED_POINTS);
-        assert!(pts.iter().all(|(x, y)| (0.05..=0.95).contains(x) && (0.05..=0.95).contains(y)));
+        assert!(
+            pts.iter()
+                .all(|(x, y)| (0.05..=0.95).contains(x) && (0.05..=0.95).contains(y))
+        );
         assert!(alpha_outline(20, 20, |_, _| true).is_none());
         assert!(alpha_outline(20, 20, |_, _| false).is_none());
         // A big grid with a noisy outline is cut down to the cap.

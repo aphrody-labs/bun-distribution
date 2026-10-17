@@ -44,7 +44,12 @@ pub fn inverse4(coefs: &[i32; 16], tx_type: u8) -> [i32; 16] {
     let col_adst = matches!(tx_type, ADST_DCT | ADST_ADST);
     let mut t = [[0i32; 4]; 4];
     for i in 0..4 {
-        let r = [coefs[i * 4], coefs[i * 4 + 1], coefs[i * 4 + 2], coefs[i * 4 + 3]];
+        let r = [
+            coefs[i * 4],
+            coefs[i * 4 + 1],
+            coefs[i * 4 + 2],
+            coefs[i * 4 + 3],
+        ];
         t[i] = if row_adst { iadst4(r) } else { idct4(r) };
     }
     let mut out = [0i32; 16];
@@ -90,7 +95,15 @@ fn fwht(y: [i32; 4]) -> [i32; 4] {
 pub fn inverse_wht(coefs: &[i32; 16]) -> [i32; 16] {
     let mut t = [[0i32; 4]; 4];
     for i in 0..4 {
-        t[i] = iwht([coefs[i * 4], coefs[i * 4 + 1], coefs[i * 4 + 2], coefs[i * 4 + 3]], 2);
+        t[i] = iwht(
+            [
+                coefs[i * 4],
+                coefs[i * 4 + 1],
+                coefs[i * 4 + 2],
+                coefs[i * 4 + 3],
+            ],
+            2,
+        );
     }
     let mut out = [0i32; 16];
     for j in 0..4 {
@@ -151,7 +164,9 @@ fn invert16(m: [[f64; 16]; 16]) -> [[f64; 16]; 16] {
         r[i] = 1.0;
     }
     for col in 0..16 {
-        let piv = (col..16).max_by(|&x, &y| a[x][col].abs().total_cmp(&a[y][col].abs())).unwrap_or(col);
+        let piv = (col..16)
+            .max_by(|&x, &y| a[x][col].abs().total_cmp(&a[y][col].abs()))
+            .unwrap_or(col);
         a.swap(col, piv);
         inv.swap(col, piv);
         let d = a[col][col];
@@ -195,7 +210,11 @@ impl Quant {
         let mut lv = [0i32; 16];
         for k in 0..16 {
             let coef: f64 = (0..16).map(|q| f[k][q] * res[q] as f64).sum();
-            let (qs, rnd) = if k == 0 { (self.dcq, self.round_dc) } else { (self.acq, self.round_ac) };
+            let (qs, rnd) = if k == 0 {
+                (self.dcq, self.round_dc)
+            } else {
+                (self.acq, self.round_ac)
+            };
             let l = (coef.abs() / qs as f64 + rnd).floor() as i32;
             lv[k] = if coef < 0.0 { -l } else { l };
         }
@@ -211,7 +230,11 @@ impl Quant {
         for k in 0..16 {
             deq[k] = levels[k] * if k == 0 { self.dcq } else { self.acq };
         }
-        if self.lossless { inverse_wht(&deq) } else { inverse4(&deq, tx_type) }
+        if self.lossless {
+            inverse_wht(&deq)
+        } else {
+            inverse4(&deq, tx_type)
+        }
     }
 }
 
@@ -239,7 +262,9 @@ mod tests {
         for ty in 0..4u8 {
             let f = &forward_matrices()[ty as usize];
             let r: [i32; 16] = std::array::from_fn(|i| (i as i32 * 37 % 61) - 30);
-            let c: [i32; 16] = std::array::from_fn(|k| (0..16).map(|q| f[k][q] * r[q] as f64).sum::<f64>().round() as i32);
+            let c: [i32; 16] = std::array::from_fn(|k| {
+                (0..16).map(|q| f[k][q] * r[q] as f64).sum::<f64>().round() as i32
+            });
             let back = inverse4(&c, ty);
             for i in 0..16 {
                 assert!((back[i] - r[i]).abs() <= 1, "type {ty}: {back:?} vs {r:?}");

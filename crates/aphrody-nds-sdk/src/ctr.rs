@@ -11,7 +11,7 @@ use aphrody_ctr_emu::{
 use crate::{
     Options,
     format::Platform,
-    handheld::{Handheld, Image, Input, Error, Result, ScreenId, ScreenSpec, Step, err},
+    handheld::{Error, Handheld, Image, Input, Result, ScreenId, ScreenSpec, Step, err},
 };
 
 /// A running Nintendo 3DS.
@@ -29,17 +29,27 @@ pub struct Ctr {
 }
 
 fn convert(image: CtrImage) -> Image {
-    Image { width: image.width, height: image.height, rgba: image.rgba }
+    Image {
+        width: image.width,
+        height: image.height,
+        rgba: image.rgba,
+    }
 }
 
 impl Ctr {
     /// Boots an image held in memory: `.3dsx`, `.cxi`, `.cci`/`.3ds` or `.cia`.
     pub fn from_image(name: &str, image: &[u8], options: &Options) -> Result<Self> {
         let mut builder = Emu::builder();
-        if let Some(dir) = options.data_dir.clone().or_else(|| crate::default_data_dir("3ds")) {
+        if let Some(dir) = options
+            .data_dir
+            .clone()
+            .or_else(|| crate::default_data_dir("3ds"))
+        {
             builder = builder.data_dir(dir);
         }
-        let emu = builder.boot_bytes(name, image).map_err(|e| Error(e.to_string()))?;
+        let emu = builder
+            .boot_bytes(name, image)
+            .map_err(|e| Error(e.to_string()))?;
         let mut machine = Self {
             emu,
             title: name.to_owned(),
@@ -64,7 +74,11 @@ impl Ctr {
 }
 
 fn blank((width, height): (u32, u32)) -> Image {
-    Image { width, height, rgba: std::sync::Arc::new(vec![0; (width * height * 4) as usize]) }
+    Image {
+        width,
+        height,
+        rgba: std::sync::Arc::new(vec![0; (width * height * 4) as usize]),
+    }
 }
 
 impl Handheld for Ctr {
@@ -78,8 +92,16 @@ impl Handheld for Ctr {
 
     fn screens(&self) -> [ScreenSpec; 2] {
         [
-            ScreenSpec { id: ScreenId::Top, width: TOP_SIZE.0, height: TOP_SIZE.1 },
-            ScreenSpec { id: ScreenId::Bottom, width: BOTTOM_SIZE.0, height: BOTTOM_SIZE.1 },
+            ScreenSpec {
+                id: ScreenId::Top,
+                width: TOP_SIZE.0,
+                height: TOP_SIZE.1,
+            },
+            ScreenSpec {
+                id: ScreenId::Bottom,
+                width: BOTTOM_SIZE.0,
+                height: BOTTOM_SIZE.1,
+            },
         ]
     }
 
@@ -101,7 +123,10 @@ impl Handheld for Ctr {
             self.samples.clear();
         }
         let pcm = self.emu.take_audio();
-        self.samples.extend(pcm.iter().flat_map(|pair| pair.map(|s| f32::from(s) / 32768.0)));
+        self.samples.extend(
+            pcm.iter()
+                .flat_map(|pair| pair.map(|s| f32::from(s) / 32768.0)),
+        );
         self.console.push_str(&self.emu.take_console());
         self.capture();
         match outcome {
@@ -159,7 +184,9 @@ impl Handheld for Ctr {
     }
 
     fn load_state(&mut self, state: &[u8]) -> Result<()> {
-        self.emu.load_state(state).map_err(|e| err("load state", e))?;
+        self.emu
+            .load_state(state)
+            .map_err(|e| err("load state", e))?;
         self.capture();
         Ok(())
     }
@@ -171,8 +198,12 @@ impl Handheld for Ctr {
 
     fn registers(&mut self) -> Vec<(String, u32)> {
         let regs = self.emu.debug().registers();
-        let mut out: Vec<(String, u32)> =
-            regs.r.iter().enumerate().map(|(i, v)| (format!("r{i}"), *v)).collect();
+        let mut out: Vec<(String, u32)> = regs
+            .r
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (format!("r{i}"), *v))
+            .collect();
         out.push(("cpsr".into(), regs.cpsr));
         out.push(("spsr".into(), regs.spsr));
         out

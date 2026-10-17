@@ -58,12 +58,28 @@ pub fn scene_log_mean(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> O
     if !any {
         return None;
     }
-    let fit = |img: &Rgb32f| lightcraft_raster::resample::fit(img, 512, 512, lightcraft_raster::resample::Filter::Box);
+    let fit = |img: &Rgb32f| {
+        lightcraft_raster::resample::fit(img, 512, 512, lightcraft_raster::resample::Filter::Box)
+    };
     let (img, weight) = (fit(&clean), fit(&weight));
     // the mean of the valid pixels under each proxy pixel
-    let kept: Vec<[f32; 3]> = img.data.iter().zip(&weight.data).filter(|(_, w)| w[0] > 1e-6).map(|(p, w)| p.map(|v| v / w[0])).collect();
-    let mut kept = Rgb32f { width: kept.len(), height: 1, data: kept };
-    let base = DevelopSettings { wb: s.wb, process: s.process, ..DevelopSettings::default() };
+    let kept: Vec<[f32; 3]> = img
+        .data
+        .iter()
+        .zip(&weight.data)
+        .filter(|(_, w)| w[0] > 1e-6)
+        .map(|(p, w)| p.map(|v| v / w[0]))
+        .collect();
+    let mut kept = Rgb32f {
+        width: kept.len(),
+        height: 1,
+        data: kept,
+    };
+    let base = DevelopSettings {
+        wb: s.wb,
+        process: s.process,
+        ..DevelopSettings::default()
+    };
     // (white balance is per pixel: the valid pixels can be balanced in a row of their own)
     crate::local::scene_linear_pre(&mut kept, info, &base);
     let (mut sum, mut n) = (0f64, 0usize);
@@ -89,7 +105,9 @@ pub fn scene_log_mean(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> O
 /// their exposure less. A source without a single valid pixel gets Exposure 0 (and the rest of the
 /// recipe).
 pub fn auto_tone(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> AutoTone {
-    let exposure = scene_log_mean(src, info, s).map_or(0.0, |m| (EXPOSURE_AT_GREY + EXPOSURE_SLOPE * m).clamp(-2.0, 3.0));
+    let exposure = scene_log_mean(src, info, s).map_or(0.0, |m| {
+        (EXPOSURE_AT_GREY + EXPOSURE_SLOPE * m).clamp(-2.0, 3.0)
+    });
     AutoTone {
         exposure: (exposure * 100.0).round() / 100.0,
         contrast: CONTRAST,
@@ -108,8 +126,14 @@ pub fn auto_tone(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> AutoTo
 /// differ only in colour stay apart in grey. Bands with almost no colourful pixels stay at 0.
 pub fn auto_bw_mix(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> [f64; 8] {
     use lightcraft_color::perceptual::{lab_to_lch, oklab_from_2020};
-    let mut img = lightcraft_raster::resample::fit(src, 512, 512, lightcraft_raster::resample::Filter::Box);
-    let base = DevelopSettings { wb: s.wb, light: s.light, process: s.process, ..DevelopSettings::default() };
+    let mut img =
+        lightcraft_raster::resample::fit(src, 512, 512, lightcraft_raster::resample::Filter::Box);
+    let base = DevelopSettings {
+        wb: s.wb,
+        light: s.light,
+        process: s.process,
+        ..DevelopSettings::default()
+    };
     crate::local::scene_linear_pre(&mut img, info, &base);
     let gain = 2f32.powf(base.light.exposure as f32);
     let (mut mass, mut sum_l) = ([0f64; 8], [0f64; 8]);
@@ -144,7 +168,8 @@ pub fn auto_bw_mix(src: &Rgb32f, info: &SourceInfo, s: &DevelopSettings) -> [f64
 
 /// Grey-world white balance weighted towards mid-tone, low-chroma pixels. Returns (temp, tint).
 pub fn auto_wb(src: &Rgb32f, info: &SourceInfo) -> (f64, f64) {
-    let img = lightcraft_raster::resample::fit(src, 256, 256, lightcraft_raster::resample::Filter::Box);
+    let img =
+        lightcraft_raster::resample::fit(src, 256, 256, lightcraft_raster::resample::Filter::Box);
     let (mut acc, mut wsum) = ([0.0f64; 3], 0.0f64);
     for c in &img.data {
         let y = luminance_2020(*c);
@@ -154,7 +179,8 @@ pub fn auto_wb(src: &Rgb32f, info: &SourceInfo) -> (f64, f64) {
         let mx = c[0].max(c[1]).max(c[2]);
         let mn = c[0].min(c[1]).min(c[2]);
         let chroma = (mx - mn) / (mx + 1e-6);
-        let w = (1.0 - chroma).powi(2) as f64 * (1.0 - ((y.log2() + 2.5) / 4.0).abs().min(1.0)) as f64;
+        let w =
+            (1.0 - chroma).powi(2) as f64 * (1.0 - ((y.log2() + 2.5) / 4.0).abs().min(1.0)) as f64;
         for i in 0..3 {
             acc[i] += c[i] as f64 * w;
         }
@@ -166,8 +192,13 @@ pub fn auto_wb(src: &Rgb32f, info: &SourceInfo) -> (f64, f64) {
     let avg = acc.map(|v| v / wsum);
     // the white that makes `avg` neutral, through the same model the white balance renders with
     // (`local::wb_matrix_for`): the camera's own colour model, else a Bradford adaptation
-    let camera = info.camera_color.as_deref().filter(|_| info.raw && !info.relative_wb);
-    let seen = match camera.and_then(|cc| lightcraft_raw::color::neutral_white(&cc.tags, cc.developed_for, avg)) {
+    let camera = info
+        .camera_color
+        .as_deref()
+        .filter(|_| info.raw && !info.relative_wb);
+    let seen = match camera
+        .and_then(|cc| lightcraft_raw::color::neutral_white(&cc.tags, cc.developed_for, avg))
+    {
         Some(white) => white,
         None => {
             let shot = lightcraft_color::cct::temp_tint_to_xy(info.as_shot_temp, info.as_shot_tint);
@@ -175,7 +206,10 @@ pub fn auto_wb(src: &Rgb32f, info: &SourceInfo) -> (f64, f64) {
         }
     };
     let (t, tint) = xy_to_temp_tint(seen);
-    (t.clamp(2000.0, 50000.0).round(), tint.clamp(-150.0, 150.0).round())
+    (
+        t.clamp(2000.0, 50000.0).round(),
+        tint.clamp(-150.0, 150.0).round(),
+    )
 }
 
 /// Temperature/tint currently in effect (for UI display).
@@ -190,8 +224,11 @@ mod tests {
     #[test]
     fn exposure_follows_the_log_average_luminance() {
         let flat = |y: f32| Rgb32f::filled(64, 64, [y; 3]);
-        let auto = |img: &Rgb32f| auto_tone(img, &SourceInfo::default(), &DevelopSettings::default());
-        let log_mean = |img: &Rgb32f| scene_log_mean(img, &SourceInfo::default(), &DevelopSettings::default()).unwrap();
+        let auto =
+            |img: &Rgb32f| auto_tone(img, &SourceInfo::default(), &DevelopSettings::default());
+        let log_mean = |img: &Rgb32f| {
+            scene_log_mean(img, &SourceInfo::default(), &DevelopSettings::default()).unwrap()
+        };
         // a scene at middle grey gets the exposure at grey; each EV darker adds 0.41 EV
         assert!(log_mean(&flat(0.18)).abs() < 1e-3);
         assert_eq!(auto(&flat(0.18)).exposure, -0.58);
@@ -199,33 +236,65 @@ mod tests {
         // darker scenes get more, brighter ones less, within -2..3 EV
         let ramp = |lo: f32, step: f32| Rgb32f::from_fn(64, 64, |x, _| [lo + x as f32 * step; 3]);
         let (dark, bright) = (auto(&ramp(0.01, 0.0003)), auto(&ramp(0.8, 0.01)));
-        assert!(dark.exposure > 0.5 && bright.exposure < -1.0, "{dark:?} {bright:?}");
+        assert!(
+            dark.exposure > 0.5 && bright.exposure < -1.0,
+            "{dark:?} {bright:?}"
+        );
         assert_eq!(auto(&flat(1e-9)).exposure, 3.0);
         assert_eq!(auto(&flat(1e6)).exposure, -2.0);
         // the rest is one recipe
         assert_eq!(
-            (dark.contrast, dark.highlights, dark.shadows, dark.whites, dark.blacks, dark.vibrance, dark.saturation),
+            (
+                dark.contrast,
+                dark.highlights,
+                dark.shadows,
+                dark.whites,
+                dark.blacks,
+                dark.vibrance,
+                dark.saturation
+            ),
             (68.0, -66.0, 52.0, 0.0, 0.0, 30.0, 0.0)
         );
-        assert_eq!((dark.contrast, dark.shadows), (bright.contrast, bright.shadows));
+        assert_eq!(
+            (dark.contrast, dark.shadows),
+            (bright.contrast, bright.shadows)
+        );
     }
 
     #[test]
     fn pixels_that_are_not_finite_are_left_out() {
-        let auto = |img: &Rgb32f| auto_tone(img, &SourceInfo::default(), &DevelopSettings::default());
+        let auto =
+            |img: &Rgb32f| auto_tone(img, &SourceInfo::default(), &DevelopSettings::default());
         // half middle grey, half NaN (or infinite): the grey half alone decides, as if the rest weren't there
         for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
             let half = Rgb32f::from_fn(64, 64, |x, _| if x < 32 { [0.18; 3] } else { [bad; 3] });
             assert_eq!(auto(&half).exposure, -0.58, "{bad}");
             // also through the resampling of a source larger than the proxy (proxy pixels on the border mix both halves)
-            let big = Rgb32f::from_fn(1030, 700, |x, _| if x < 515 { [0.045; 3] } else { [bad; 3] });
-            assert!((auto(&big).exposure - (-0.58 + 2.0 * 0.41)).abs() < 1e-9, "{bad}");
+            let big = Rgb32f::from_fn(
+                1030,
+                700,
+                |x, _| if x < 515 { [0.045; 3] } else { [bad; 3] },
+            );
+            assert!(
+                (auto(&big).exposure - (-0.58 + 2.0 * 0.41)).abs() < 1e-9,
+                "{bad}"
+            );
             // a few broken pixels scattered over a grey image change nothing
-            let speckled = Rgb32f::from_fn(1030, 700, |x, y| if (x * 7 + y * 13) % 97 == 0 { [bad; 3] } else { [0.18; 3] });
+            let speckled = Rgb32f::from_fn(1030, 700, |x, y| {
+                if (x * 7 + y * 13) % 97 == 0 {
+                    [bad; 3]
+                } else {
+                    [0.18; 3]
+                }
+            });
             assert_eq!(auto(&speckled).exposure, -0.58, "{bad}");
         }
         // with no valid pixel at all (or none at all) there is nothing to measure: Exposure 0, the recipe as usual
-        for img in [Rgb32f::filled(8, 8, [f32::NAN; 3]), Rgb32f::filled(600, 600, [f32::INFINITY; 3]), Rgb32f::new(0, 0)] {
+        for img in [
+            Rgb32f::filled(8, 8, [f32::NAN; 3]),
+            Rgb32f::filled(600, 600, [f32::INFINITY; 3]),
+            Rgb32f::new(0, 0),
+        ] {
             let a = auto(&img);
             assert_eq!((a.exposure, a.contrast, a.vibrance), (0.0, 68.0, 30.0));
         }
@@ -267,13 +336,22 @@ mod bw_tests {
     #[test]
     fn auto_bw_mix_pushes_light_and_dark_hues_apart() {
         // left: a light yellow, right: a dark blue (scene-linear Rec. 2020)
-        let src = Rgb32f::from_fn(64, 32, |x, _| if x < 32 { [0.55, 0.5, 0.05] } else { [0.01, 0.02, 0.12] });
+        let src = Rgb32f::from_fn(64, 32, |x, _| {
+            if x < 32 {
+                [0.55, 0.5, 0.05]
+            } else {
+                [0.01, 0.02, 0.12]
+            }
+        });
         let m = auto_bw_mix(&src, &SourceInfo::default(), &DevelopSettings::default());
         let (yellow, blue) = (m[2], m[5]);
         assert!(yellow > 0.0 && blue < 0.0, "{m:?}");
         // an image without colour leaves the mix alone
         let grey = Rgb32f::from_fn(16, 16, |x, _| [x as f32 / 16.0; 3]);
-        assert_eq!(auto_bw_mix(&grey, &SourceInfo::default(), &DevelopSettings::default()), [0.0; 8]);
+        assert_eq!(
+            auto_bw_mix(&grey, &SourceInfo::default(), &DevelopSettings::default()),
+            [0.0; 8]
+        );
     }
 }
 
@@ -286,7 +364,11 @@ mod tint_tests {
         // The picker delegates a sampled patch to this same auto_wb implementation.
         for (rgb, sign) in [([0.18, 0.24, 0.18], 1.0), ([0.24, 0.18, 0.24], -1.0)] {
             let img = Rgb32f::filled(16, 16, rgb);
-            let info = SourceInfo { raw: true, relative_wb: true, ..Default::default() };
+            let info = SourceInfo {
+                raw: true,
+                relative_wb: true,
+                ..Default::default()
+            };
             let (temp, tint) = auto_wb(&img, &info);
             assert!(tint * sign > 0.0, "{rgb:?}: temp {temp}, tint {tint}");
             let mut s = DevelopSettings::default();

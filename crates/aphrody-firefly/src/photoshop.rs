@@ -139,7 +139,10 @@ impl Input {
     /// A pre-signed external (S3-style) input URL.
     #[must_use]
     pub fn external(href: impl Into<String>) -> Self {
-        Self { href: href.into(), storage: Storage::External }
+        Self {
+            href: href.into(),
+            storage: Storage::External,
+        }
     }
 }
 
@@ -162,7 +165,12 @@ impl Output {
     /// A pre-signed external output URL with an inferred type.
     #[must_use]
     pub fn external(href: impl Into<String>, kind: OutputType) -> Self {
-        Self { href: href.into(), storage: Storage::External, kind, overwrite: Some(true) }
+        Self {
+            href: href.into(),
+            storage: Storage::External,
+            kind,
+            overwrite: Some(true),
+        }
     }
 }
 
@@ -269,7 +277,10 @@ impl PhotoshopJob {
     #[must_use]
     pub fn all_succeeded(&self) -> bool {
         if !self.outputs.is_empty() {
-            return self.outputs.iter().all(|o| o.status == PsJobStatus::Succeeded);
+            return self
+                .outputs
+                .iter()
+                .all(|o| o.status == PsJobStatus::Succeeded);
         }
         matches!(&self.status, Some(PsJobStatus::Succeeded))
     }
@@ -493,7 +504,11 @@ impl PhotoshopClient {
         let http = reqwest::Client::builder()
             .user_agent(concat!("aphrody-firefly/", env!("CARGO_PKG_VERSION")))
             .build()?;
-        Ok(Self { http, tokens: TokenCache::new(creds), poll: PollConfig::default() })
+        Ok(Self {
+            http,
+            tokens: TokenCache::new(creds),
+            poll: PollConfig::default(),
+        })
     }
 
     /// Build from `FIREFLY_CLIENT_ID` / `FIREFLY_CLIENT_SECRET`.
@@ -720,8 +735,11 @@ impl PhotoshopClient {
                 body: crate::auth::truncate(&text, 512),
             });
         }
-        let submit: SubmitResponse = serde_json::from_str(&text)
-            .map_err(|source| FireflyError::Decode { endpoint: endpoint.to_string(), source })?;
+        let submit: SubmitResponse =
+            serde_json::from_str(&text).map_err(|source| FireflyError::Decode {
+                endpoint: endpoint.to_string(),
+                source,
+            })?;
         Ok(submit.links.self_link.href)
     }
 
@@ -741,7 +759,10 @@ impl PhotoshopClient {
                     .map(|e| crate::auth::truncate(&e.to_string(), 512))
                     .unwrap_or_default();
                 return Err(FireflyError::JobFailed {
-                    job_id: job.job_id.clone().unwrap_or_else(|| status_href.to_string()),
+                    job_id: job
+                        .job_id
+                        .clone()
+                        .unwrap_or_else(|| status_href.to_string()),
                     status: "failed".to_string(),
                     detail,
                 });
@@ -774,8 +795,10 @@ impl PhotoshopClient {
                 body: crate::auth::truncate(&text, 512),
             });
         }
-        serde_json::from_str(&text)
-            .map_err(|source| FireflyError::Decode { endpoint: status_href.to_string(), source })
+        serde_json::from_str(&text).map_err(|source| FireflyError::Decode {
+            endpoint: status_href.to_string(),
+            source,
+        })
     }
 }
 
@@ -794,9 +817,12 @@ mod tests {
 
     #[test]
     fn endpoints_are_under_psd_service() {
-        for ep in
-            [OP_DOCUMENT_MANIFEST, OP_DOCUMENT_OPERATIONS, OP_SMART_OBJECT, OP_RENDITION_CREATE]
-        {
+        for ep in [
+            OP_DOCUMENT_MANIFEST,
+            OP_DOCUMENT_OPERATIONS,
+            OP_SMART_OBJECT,
+            OP_RENDITION_CREATE,
+        ] {
             assert!(ep.starts_with(PSD_SERVICE_BASE));
         }
     }
@@ -839,7 +865,10 @@ mod tests {
         let json =
             r#"{"_links":{"self":{"href":"https://image.adobe.io/pie/psdService/status/J1"}}}"#;
         let s: SubmitResponse = serde_json::from_str(json).unwrap();
-        assert_eq!(s.links.self_link.href, "https://image.adobe.io/pie/psdService/status/J1");
+        assert_eq!(
+            s.links.self_link.href,
+            "https://image.adobe.io/pie/psdService/status/J1"
+        );
     }
 
     #[test]
@@ -858,7 +887,10 @@ mod tests {
         .unwrap();
         assert!(ok.all_terminal());
         assert!(ok.all_succeeded());
-        assert_eq!(ok.outputs[0].links.as_ref().unwrap().self_link.href, "https://cc/o.png");
+        assert_eq!(
+            ok.outputs[0].links.as_ref().unwrap().self_link.href,
+            "https://cc/o.png"
+        );
 
         let failed: PhotoshopJob = serde_json::from_str(
             r#"{"jobId":"J1","outputs":[{"status":"failed","errors":{"code":"X"}}]}"#,
@@ -903,7 +935,12 @@ mod tests {
 
     #[test]
     fn lightroom_endpoints_under_lr_service() {
-        for ep in [OP_LR_AUTO_TONE, OP_LR_AUTO_STRAIGHTEN, OP_LR_EDIT, OP_LR_PRESET] {
+        for ep in [
+            OP_LR_AUTO_TONE,
+            OP_LR_AUTO_STRAIGHTEN,
+            OP_LR_EDIT,
+            OP_LR_PRESET,
+        ] {
             assert!(ep.starts_with(LR_SERVICE_BASE));
         }
         for ep in [OP_SENSEI_CUTOUT, OP_SENSEI_MASK] {

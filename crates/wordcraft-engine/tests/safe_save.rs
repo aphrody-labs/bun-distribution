@@ -12,7 +12,11 @@ struct Scratch(PathBuf);
 impl Scratch {
     fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
-        let path = std::env::temp_dir().join(format!("wordcraft-safe-save-test-{}-{}", std::process::id(), NEXT.fetch_add(1, Ordering::Relaxed)));
+        let path = std::env::temp_dir().join(format!(
+            "wordcraft-safe-save-test-{}-{}",
+            std::process::id(),
+            NEXT.fetch_add(1, Ordering::Relaxed)
+        ));
         std::fs::create_dir(&path).unwrap();
         Self(path)
     }
@@ -20,7 +24,10 @@ impl Scratch {
         self.0.join(name)
     }
     fn names(&self) -> Vec<String> {
-        let mut names: Vec<_> = std::fs::read_dir(&self.0).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        let mut names: Vec<_> = std::fs::read_dir(&self.0)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
         names.sort();
         names
     }
@@ -31,7 +38,11 @@ impl Drop for Scratch {
     }
 }
 fn original(path: &Path) -> Vec<u8> {
-    let bytes = io::save_bytes("original.docx", &Document::from_text("Original synthetic contract.")).unwrap();
+    let bytes = io::save_bytes(
+        "original.docx",
+        &Document::from_text("Original synthetic contract."),
+    )
+    .unwrap();
     std::fs::write(path, &bytes).unwrap();
     bytes
 }
@@ -39,7 +50,10 @@ fn edited() -> Document {
     Document::from_text("Original synthetic contract. Edited sentinel.")
 }
 fn saved(path: &Path) {
-    assert_eq!(io::open_path(path).unwrap().plain_text(StoryRef::Body), edited().plain_text(StoryRef::Body));
+    assert_eq!(
+        io::open_path(path).unwrap().plain_text(StoryRef::Body),
+        edited().plain_text(StoryRef::Body)
+    );
 }
 
 #[test]
@@ -51,7 +65,10 @@ fn an_existing_temporary_file_is_not_overwritten_or_removed() {
     std::fs::write(&neighbour, b"Keep this existing sibling.").unwrap();
     io::save_path(&path, &edited()).unwrap();
     saved(&path);
-    assert_eq!(std::fs::read(&neighbour).unwrap(), b"Keep this existing sibling.");
+    assert_eq!(
+        std::fs::read(&neighbour).unwrap(),
+        b"Keep this existing sibling."
+    );
     assert_eq!(d.names(), ["contract.docx", "contract.docx.tmp"]);
 }
 
@@ -65,7 +82,10 @@ fn an_existing_temporary_directory_does_not_block_a_save() {
     std::fs::write(neighbour.join("keep"), b"Keep this directory.").unwrap();
     io::save_path(&path, &edited()).unwrap();
     saved(&path);
-    assert_eq!(std::fs::read(neighbour.join("keep")).unwrap(), b"Keep this directory.");
+    assert_eq!(
+        std::fs::read(neighbour.join("keep")).unwrap(),
+        b"Keep this directory."
+    );
 }
 
 #[cfg(unix)]
@@ -105,7 +125,10 @@ fn failed_save_as_keeps_original_dirty_session_and_destination() {
     assert_eq!(s.path.as_ref(), Some(&path));
     assert_eq!(s.doc.plain_text(StoryRef::Body), before);
     assert_eq!(std::fs::read(&path).unwrap(), bytes);
-    assert_eq!(std::fs::read(blocked.join("keep")).unwrap(), b"Keep this destination.");
+    assert_eq!(
+        std::fs::read(blocked.join("keep")).unwrap(),
+        b"Keep this destination."
+    );
     assert_eq!(d.names(), ["blocked.docx", "original.docx"]);
 }
 
@@ -134,7 +157,10 @@ fn missing_parent_keeps_original_and_session_unchanged() {
     let mut s = Session::new(edited());
     s.path = Some(path.clone());
     s.dirty = true;
-    assert!(s.run("file.saveAs", &json!({"path": d.path("missing/copy.docx")})).is_err());
+    assert!(
+        s.run("file.saveAs", &json!({"path": d.path("missing/copy.docx")}))
+            .is_err()
+    );
     assert!(s.dirty);
     assert_eq!(s.path, Some(path.clone()));
     assert_eq!(std::fs::read(path).unwrap(), bytes);
@@ -148,11 +174,20 @@ fn encrypted_save_reopens_only_with_password_and_leaves_neighbours_alone() {
     original(&path);
     let neighbour = d.path("contract.docx.tmp");
     std::fs::write(&neighbour, b"Keep this sibling.").unwrap();
-    io::save_path_with(&path, &edited(), Some("synthetic-test-password"), &io::ExportOptions::default()).unwrap();
+    io::save_path_with(
+        &path,
+        &edited(),
+        Some("synthetic-test-password"),
+        &io::ExportOptions::default(),
+    )
+    .unwrap();
     assert!(io::needs_password(&io::open_path(&path).unwrap_err()));
     let (doc, encrypted) = io::open_path_with(&path, Some("synthetic-test-password")).unwrap();
     assert!(encrypted);
-    assert_eq!(doc.plain_text(StoryRef::Body), edited().plain_text(StoryRef::Body));
+    assert_eq!(
+        doc.plain_text(StoryRef::Body),
+        edited().plain_text(StoryRef::Body)
+    );
     assert_eq!(std::fs::read(&neighbour).unwrap(), b"Keep this sibling.");
     assert_eq!(d.names(), ["contract.docx", "contract.docx.tmp"]);
 }
@@ -167,5 +202,8 @@ fn replacement_keeps_existing_unix_permissions() {
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
     io::save_path(&path, &edited()).unwrap();
     saved(&path);
-    assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o777, 0o600);
+    assert_eq!(
+        std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
 }

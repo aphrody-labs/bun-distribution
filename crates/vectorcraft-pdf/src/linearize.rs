@@ -26,7 +26,13 @@ fn failed(why: &str) -> PdfError {
 }
 
 /// Catalog entries whose objects opening the document needs: they go with the catalog.
-const OPEN_KEYS: [&[u8]; 5] = [b"ViewerPreferences", b"Threads", b"OpenAction", b"AcroForm", b"OCProperties"];
+const OPEN_KEYS: [&[u8]; 5] = [
+    b"ViewerPreferences",
+    b"Threads",
+    b"OpenAction",
+    b"AcroForm",
+    b"OCProperties",
+];
 /// Keys whose objects aren't part of what a page uses: its parent (the page tree) and its
 /// thumbnail (shown without the page).
 const NOT_USED: [&[u8]; 2] = [b"Parent", b"Thumb"];
@@ -77,19 +83,35 @@ pub(crate) fn parse(pdf: &[u8]) -> Result<Parsed<'_>, &'static str> {
     order.sort_by_key(|e| e.1);
     let mut objects = HashMap::with_capacity(order.len());
     for &(n, off) in &order {
-        let o = indirect(pdf, off).filter(|o| o.num == n && o.generation == 0).ok_or("an object can't be read")?;
+        let o = indirect(pdf, off)
+            .filter(|o| o.num == n && o.generation == 0)
+            .ok_or("an object can't be read")?;
         objects.insert(n, o);
     }
-    let trailer = Lexer::at(pdf, xref.trailer_at()).object(0).ok_or("bad trailer")?;
-    let Some(&Obj::Ref(root, _)) = trailer.get(b"Root") else { return Err("no catalog") };
+    let trailer = Lexer::at(pdf, xref.trailer_at())
+        .object(0)
+        .ok_or("bad trailer")?;
+    let Some(&Obj::Ref(root, _)) = trailer.get(b"Root") else {
+        return Err("no catalog");
+    };
     let catalog = &objects.get(&root).ok_or("no catalog")?.value;
-    let Some(&Obj::Ref(tree, _)) = catalog.get(b"Pages") else { return Err("no pages") };
+    let Some(&Obj::Ref(tree, _)) = catalog.get(b"Pages") else {
+        return Err("no pages");
+    };
     let (mut pages, mut nodes) = (vec![], HashSet::new());
     page_tree(&objects, tree, 0, &mut pages, &mut nodes)?;
     if pages.is_empty() {
         return Err("no pages");
     }
-    Ok(Parsed { xref, objects, order, trailer, root, pages, nodes })
+    Ok(Parsed {
+        xref,
+        objects,
+        order,
+        trailer,
+        root,
+        pages,
+        nodes,
+    })
 }
 
 /// The pages under page tree node `n`, in order, and the tree's nodes.
@@ -104,9 +126,13 @@ pub(crate) fn page_tree(
     match node.value.name(b"Type") {
         Some(b"Page") if !pages.contains(&n) => pages.push(n),
         Some(b"Pages") if depth < MAX_TREE_DEPTH && nodes.insert(n) => {
-            let Some(Obj::Array(kids)) = node.value.get(b"Kids") else { return Err("a page tree node has no kids") };
+            let Some(Obj::Array(kids)) = node.value.get(b"Kids") else {
+                return Err("a page tree node has no kids");
+            };
             for kid in kids {
-                let Obj::Ref(k, _) = kid else { return Err("a page tree kid isn't a reference") };
+                let Obj::Ref(k, _) = kid else {
+                    return Err("a page tree kid isn't a reference");
+                };
                 page_tree(objects, *k, depth + 1, pages, nodes)?;
             }
         }
@@ -117,9 +143,17 @@ pub(crate) fn page_tree(
 
 /// The objects reached from `starts` (themselves included), breadth first, not entering those
 /// `stop` names.
-fn reach(objects: &HashMap<u32, Indirect<'_>>, starts: &[u32], stop: impl Fn(u32) -> bool) -> Vec<u32> {
+fn reach(
+    objects: &HashMap<u32, Indirect<'_>>,
+    starts: &[u32],
+    stop: impl Fn(u32) -> bool,
+) -> Vec<u32> {
     let mut seen = HashSet::new();
-    let mut queue: VecDeque<u32> = starts.iter().copied().filter(|n| objects.contains_key(n) && seen.insert(*n)).collect();
+    let mut queue: VecDeque<u32> = starts
+        .iter()
+        .copied()
+        .filter(|n| objects.contains_key(n) && seen.insert(*n))
+        .collect();
     let mut out = vec![];
     let mut links = vec![];
     while let Some(n) = queue.pop_front() {
@@ -141,12 +175,25 @@ fn reach(objects: &HashMap<u32, Indirect<'_>>, starts: &[u32], stop: impl Fn(u32
 /// linearised order and numbering, a placeholder linearization dictionary and hint stream, and the
 /// plan [`write`] lays it out with.
 pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
-    let Parsed { objects, order: entries, trailer, root, pages, nodes, .. } = parse(pdf).map_err(failed)?;
+    let Parsed {
+        objects,
+        order: entries,
+        trailer,
+        root,
+        pages,
+        nodes,
+        ..
+    } = parse(pdf).map_err(failed)?;
     if trailer.get(b"Encrypt").is_some() || trailer.get(b"Prev").is_some() {
         return Err(failed("the file was updated or encrypted already"));
     }
-    let catalog = &objects.get(&root).ok_or_else(|| failed("no catalog"))?.value;
-    let Some(&first_page_object) = pages.first() else { return Err(failed("no pages")) };
+    let catalog = &objects
+        .get(&root)
+        .ok_or_else(|| failed("no catalog"))?
+        .value;
+    let Some(&first_page_object) = pages.first() else {
+        return Err(failed("no pages"));
+    };
     let page_set: HashSet<u32> = pages.iter().copied().collect();
     let stop = |n: u32| n == root || page_set.contains(&n) || nodes.contains(&n);
 
@@ -158,18 +205,37 @@ pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
         }
     }
     starts.retain(|n| !stop(*n));
-    let open: Vec<u32> = std::iter::once(root).chain(reach(&objects, &starts, stop)).collect();
+    let open: Vec<u32> = std::iter::once(root)
+        .chain(reach(&objects, &starts, stop))
+        .collect();
     let mut taken: HashSet<u32> = open.iter().copied().collect();
     // What each page uses (pages don't enter other pages).
-    let uses: Vec<Vec<u32>> = pages.iter().map(|&p| reach(&objects, &[p], |n| n != p && stop(n))).collect();
-    let first_page: Vec<u32> = uses.first().map_or(&[][..], Vec::as_slice).iter().copied().filter(|n| !taken.contains(n)).collect();
+    let uses: Vec<Vec<u32>> = pages
+        .iter()
+        .map(|&p| reach(&objects, &[p], |n| n != p && stop(n)))
+        .collect();
+    let first_page: Vec<u32> = uses
+        .first()
+        .map_or(&[][..], Vec::as_slice)
+        .iter()
+        .copied()
+        .filter(|n| !taken.contains(n))
+        .collect();
     taken.extend(&first_page);
     let rest = uses.get(1..).unwrap_or_default();
     let mut users: HashMap<u32, usize> = HashMap::new();
     for n in rest.iter().flatten().filter(|n| !taken.contains(n)) {
         *users.entry(*n).or_default() += 1;
     }
-    let own: Vec<Vec<u32>> = rest.iter().map(|u| u.iter().copied().filter(|n| users.get(n) == Some(&1)).collect()).collect();
+    let own: Vec<Vec<u32>> = rest
+        .iter()
+        .map(|u| {
+            u.iter()
+                .copied()
+                .filter(|n| users.get(n) == Some(&1))
+                .collect()
+        })
+        .collect();
     let mut shared = vec![];
     for &n in rest.iter().flatten() {
         if users.get(&n).is_some_and(|c| *c > 1) && !shared.contains(&n) {
@@ -177,18 +243,41 @@ pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
         }
     }
     taken.extend(own.iter().flatten().chain(&shared));
-    let other: Vec<u32> = entries.iter().map(|e| e.0).filter(|n| !taken.contains(n)).collect();
-    if own.iter().any(|p| p.first().is_none_or(|n| !page_set.contains(n))) || first_page.first() != Some(&first_page_object) {
+    let other: Vec<u32> = entries
+        .iter()
+        .map(|e| e.0)
+        .filter(|n| !taken.contains(n))
+        .collect();
+    if own
+        .iter()
+        .any(|p| p.first().is_none_or(|n| !page_set.contains(n)))
+        || first_page.first() != Some(&first_page_object)
+    {
         return Err(failed("a page object is used by something else"));
     }
 
     // Their shared object hint table entries: the first page's objects, then the shared ones.
-    let index: HashMap<u32, u32> = first_page.iter().chain(&shared).enumerate().map(|(i, n)| (*n, i as u32)).collect();
-    let shared_ids: Vec<Vec<u32>> =
-        rest.iter().map(|u| u.iter().filter(|n| users.get(n) != Some(&1)).filter_map(|n| index.get(n).copied()).collect()).collect();
+    let index: HashMap<u32, u32> = first_page
+        .iter()
+        .chain(&shared)
+        .enumerate()
+        .map(|(i, n)| (*n, i as u32))
+        .collect();
+    let shared_ids: Vec<Vec<u32>> = rest
+        .iter()
+        .map(|u| {
+            u.iter()
+                .filter(|n| users.get(n) != Some(&1))
+                .filter_map(|n| index.get(n).copied())
+                .collect()
+        })
+        .collect();
 
     // Numbers: the second part from 1, then the first part.
-    let mut numbers = Numbers { next: 1, of: HashMap::with_capacity(objects.len()) };
+    let mut numbers = Numbers {
+        next: 1,
+        of: HashMap::with_capacity(objects.len()),
+    };
     let own_new: Vec<Vec<u32>> = own.iter().map(|p| numbers.assign(p)).collect();
     let shared_new = numbers.assign(&shared);
     let other_new = numbers.assign(&other);
@@ -202,7 +291,10 @@ pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
     }
 
     // The file in that order.
-    let head = entries.first().and_then(|e| pdf.get(..e.1)).ok_or_else(|| failed("no objects"))?;
+    let head = entries
+        .first()
+        .and_then(|e| pdf.get(..e.1))
+        .ok_or_else(|| failed("no objects"))?;
     let mut out = Vec::with_capacity(pdf.len() + 256);
     out.extend_from_slice(head);
     let mut offsets = vec![0usize; size as usize];
@@ -215,18 +307,38 @@ pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
         out.extend_from_slice(b"\nendobj\n");
     };
     let body = |n: u32| -> Result<Vec<u8>, PdfError> {
-        let o = objects.get(&n).ok_or_else(|| failed("an object is missing"))?;
+        let o = objects
+            .get(&n)
+            .ok_or_else(|| failed("an object is missing"))?;
         // Up to `endobj`, without the white space before it.
-        let end = o.endobj - pdf.get(..o.endobj).map_or(0, |b| b.iter().rev().take_while(|c| c.is_ascii_whitespace()).count());
-        renumber(pdf, o.value_span.0, end.max(o.value_span.1), o.value_span.1, &number)
+        let end = o.endobj
+            - pdf.get(..o.endobj).map_or(0, |b| {
+                b.iter()
+                    .rev()
+                    .take_while(|c| c.is_ascii_whitespace())
+                    .count()
+            });
+        renumber(
+            pdf,
+            o.value_span.0,
+            end.max(o.value_span.1),
+            o.value_span.1,
+            &number,
+        )
     };
     put(first, b"<</Linearized 1>>", &mut out);
     for (&n, &new) in open.iter().zip(&open_new) {
         put(new, &body(n)?, &mut out);
     }
     put(hint, b"<</Length 0>>\nstream\n\nendstream", &mut out);
-    let order = first_page.iter().zip(&first_page_new).chain(own.iter().flatten().zip(own_new.iter().flatten()));
-    for (&n, &new) in order.chain(shared.iter().zip(&shared_new)).chain(other.iter().zip(&other_new)) {
+    let order = first_page
+        .iter()
+        .zip(&first_page_new)
+        .chain(own.iter().flatten().zip(own_new.iter().flatten()));
+    for (&n, &new) in order
+        .chain(shared.iter().zip(&shared_new))
+        .chain(other.iter().zip(&other_new))
+    {
         put(new, &body(n)?, &mut out);
     }
     let table = out.len();
@@ -234,15 +346,33 @@ pub(crate) fn prepare(pdf: &[u8]) -> Result<(Vec<u8>, Plan), PdfError> {
     for off in offsets.iter().skip(1) {
         out.extend_from_slice(format!("{off:010} 00000 n\r\n").as_bytes());
     }
-    let Obj::Dict { start, end, .. } = &trailer else { return Err(failed("bad trailer")) };
-    let Some(Obj::Int { start: size_start, end: size_end, .. }) = trailer.get(b"Size") else { return Err(failed("the trailer has no size")) };
+    let Obj::Dict { start, end, .. } = &trailer else {
+        return Err(failed("bad trailer"));
+    };
+    let Some(Obj::Int {
+        start: size_start,
+        end: size_end,
+        ..
+    }) = trailer.get(b"Size")
+    else {
+        return Err(failed("the trailer has no size"));
+    };
     let mut dict = renumber(pdf, *start, *size_start, *size_start, &number)?;
     dict.extend_from_slice(size.to_string().as_bytes());
     dict.extend(renumber(pdf, *size_end, *end, *end, &number)?);
     out.extend_from_slice(b"trailer\n");
     out.extend(dict);
     out.extend_from_slice(format!("\nstartxref\n{table}\n%%EOF\n").as_bytes());
-    let plan = Plan { first, hint, open: open_new, first_page: first_page_new, pages: own_new, shared: shared_new, other: other_new, shared_ids };
+    let plan = Plan {
+        first,
+        hint,
+        open: open_new,
+        first_page: first_page_new,
+        pages: own_new,
+        shared: shared_new,
+        other: other_new,
+        shared_ids,
+    };
     Ok((out, plan))
 }
 
@@ -274,7 +404,13 @@ impl Numbers {
 
 /// `pdf[start..end]` with the references in `start..refs_end` renumbered as `number`
 /// says (references to objects that aren't there become `null`).
-fn renumber(pdf: &[u8], start: usize, end: usize, refs_end: usize, number: &HashMap<u32, u32>) -> Result<Vec<u8>, PdfError> {
+fn renumber(
+    pdf: &[u8],
+    start: usize,
+    end: usize,
+    refs_end: usize,
+    number: &HashMap<u32, u32>,
+) -> Result<Vec<u8>, PdfError> {
     let mut out = Vec::with_capacity(end.saturating_sub(start) + 16);
     let mut at = start;
     for (s, e, n) in ref_spans(pdf, start, refs_end) {
@@ -332,26 +468,45 @@ fn bits(v: u64) -> u32 {
 
 /// A 32-bit hint table value.
 fn u32_of(v: usize) -> Result<u64, PdfError> {
-    u32::try_from(v).map(u64::from).map_err(|_| failed("the file is too large"))
+    u32::try_from(v)
+        .map(u64::from)
+        .map_err(|_| failed("the file is too large"))
 }
 
 /// The page offset and shared object hint tables → (the hint stream's data, where the shared
 /// object table starts), from where each object starts and how long it is, the hint stream left
 /// out.
-fn hint_tables(plan: &Plan, at: &HashMap<u32, (usize, usize)>) -> Result<(Vec<u8>, usize), PdfError> {
+fn hint_tables(
+    plan: &Plan,
+    at: &HashMap<u32, (usize, usize)>,
+) -> Result<(Vec<u8>, usize), PdfError> {
     let len = |n: &u32| at.get(n).map_or(0, |a| a.1);
-    let pages: Vec<&[u32]> = std::iter::once(plan.first_page.as_slice()).chain(plan.pages.iter().map(Vec::as_slice)).collect();
+    let pages: Vec<&[u32]> = std::iter::once(plan.first_page.as_slice())
+        .chain(plan.pages.iter().map(Vec::as_slice))
+        .collect();
     let counts: Vec<u64> = pages.iter().map(|p| p.len() as u64).collect();
-    let lengths = pages.iter().map(|p| u32_of(p.iter().map(len).sum())).collect::<Result<Vec<u64>, _>>()?;
-    let nshared: Vec<u64> = std::iter::once(0).chain(plan.shared_ids.iter().map(|s| s.len() as u64)).collect();
+    let lengths = pages
+        .iter()
+        .map(|p| u32_of(p.iter().map(len).sum()))
+        .collect::<Result<Vec<u64>, _>>()?;
+    let nshared: Vec<u64> = std::iter::once(0)
+        .chain(plan.shared_ids.iter().map(|s| s.len() as u64))
+        .collect();
     let span = |v: &[u64]| {
-        let (min, max) = (v.iter().copied().min().unwrap_or(0), v.iter().copied().max().unwrap_or(0));
+        let (min, max) = (
+            v.iter().copied().min().unwrap_or(0),
+            v.iter().copied().max().unwrap_or(0),
+        );
         (min, bits(max - min))
     };
     let ((min_count, count_bits), (min_len, len_bits)) = (span(&counts), span(&lengths));
     let entries = plan.first_page.len() + plan.shared.len();
     let id_bits = bits(entries.saturating_sub(1) as u64);
-    let first_at = plan.first_page.first().and_then(|n| at.get(n)).map_or(0, |a| a.0);
+    let first_at = plan
+        .first_page
+        .first()
+        .and_then(|n| at.get(n))
+        .map_or(0, |a| a.0);
     let mut b = Bits::default();
     // The page offset hint table: its header, then each item for every page.
     b.put(min_count, 32);
@@ -364,21 +519,39 @@ fn hint_tables(plan: &Plan, at: &HashMap<u32, (usize, usize)>) -> Result<(Vec<u8
     b.put(0, 16);
     b.put(min_len, 32);
     b.put(u64::from(len_bits), 16);
-    b.put(u64::from(bits(nshared.iter().copied().max().unwrap_or(0))), 16);
+    b.put(
+        u64::from(bits(nshared.iter().copied().max().unwrap_or(0))),
+        16,
+    );
     b.put(u64::from(id_bits), 16);
     // No fractional positions of shared objects.
     b.put(0, 16);
     b.put(1, 16);
     b.column(counts.iter().map(|c| c - min_count), count_bits);
     b.column(lengths.iter().map(|l| l - min_len), len_bits);
-    b.column(nshared.iter().copied(), bits(nshared.iter().copied().max().unwrap_or(0)));
-    b.column(plan.shared_ids.iter().flatten().map(|i| u64::from(*i)), id_bits);
+    b.column(
+        nshared.iter().copied(),
+        bits(nshared.iter().copied().max().unwrap_or(0)),
+    );
+    b.column(
+        plan.shared_ids.iter().flatten().map(|i| u64::from(*i)),
+        id_bits,
+    );
     b.column(lengths.iter().map(|l| l - min_len), len_bits);
     // The shared object hint table: one object a group, the first page's objects first.
     let shared_at = b.out.len();
-    let groups = plan.first_page.iter().chain(&plan.shared).map(|n| u32_of(len(n))).collect::<Result<Vec<u64>, _>>()?;
+    let groups = plan
+        .first_page
+        .iter()
+        .chain(&plan.shared)
+        .map(|n| u32_of(len(n)))
+        .collect::<Result<Vec<u64>, _>>()?;
     let (min_group, group_bits) = span(&groups);
-    let first_shared = plan.shared.first().and_then(|n| Some((*n, at.get(n)?.0))).unwrap_or((0, 0));
+    let first_shared = plan
+        .shared
+        .first()
+        .and_then(|n| Some((*n, at.get(n)?.0)))
+        .unwrap_or((0, 0));
     b.put(u64::from(first_shared.0), 32);
     b.put(u32_of(first_shared.1)?, 32);
     b.put(plan.first_page.len() as u64, 32);
@@ -399,16 +572,35 @@ fn padded(v: usize) -> String {
 
 /// Lay out a [`prepare`]d file (encrypted after it, or not) as `plan` says, the hint stream
 /// encrypted with `cipher` when the file is.
-pub(crate) fn write(pdf: &[u8], plan: &Plan, cipher: Option<&mut Cipher>) -> Result<Vec<u8>, PdfError> {
+pub(crate) fn write(
+    pdf: &[u8],
+    plan: &Plan,
+    cipher: Option<&mut Cipher>,
+) -> Result<Vec<u8>, PdfError> {
     let xref = Xref::read(pdf).ok_or_else(|| failed("no cross-reference table"))?;
     let mut entries = xref.objects(pdf);
     entries.sort_by_key(|e| e.1);
     // Each object's bytes run to where the next one starts.
-    let ends = entries.iter().skip(1).map(|e| e.1).chain(std::iter::once(xref.at()));
-    let bytes: HashMap<u32, &[u8]> = entries.iter().zip(ends).filter_map(|(&(n, off), end)| Some((n, pdf.get(off..end)?))).collect();
-    let head = entries.first().and_then(|e| pdf.get(..e.1)).ok_or_else(|| failed("no objects"))?;
-    let trailer = Lexer::at(pdf, xref.trailer_at()).object(0).ok_or_else(|| failed("bad trailer"))?;
-    let (Obj::Dict { start, end, .. }, Some(Obj::Int { value: size, .. })) = (&trailer, trailer.get(b"Size")) else {
+    let ends = entries
+        .iter()
+        .skip(1)
+        .map(|e| e.1)
+        .chain(std::iter::once(xref.at()));
+    let bytes: HashMap<u32, &[u8]> = entries
+        .iter()
+        .zip(ends)
+        .filter_map(|(&(n, off), end)| Some((n, pdf.get(off..end)?)))
+        .collect();
+    let head = entries
+        .first()
+        .and_then(|e| pdf.get(..e.1))
+        .ok_or_else(|| failed("no objects"))?;
+    let trailer = Lexer::at(pdf, xref.trailer_at())
+        .object(0)
+        .ok_or_else(|| failed("bad trailer"))?;
+    let (Obj::Dict { start, end, .. }, Some(Obj::Int { value: size, .. })) =
+        (&trailer, trailer.get(b"Size"))
+    else {
         return Err(failed("bad trailer"));
     };
     let size = u32::try_from(*size).map_err(|_| failed("bad trailer"))?;
@@ -419,18 +611,34 @@ pub(crate) fn write(pdf: &[u8], plan: &Plan, cipher: Option<&mut Cipher>) -> Res
     // The first part: the linearization dictionary, the catalog part with the encryption
     // dictionary, the hint stream and the first page, which the first page's table covers.
     let open: Vec<u32> = plan.open.iter().copied().chain(encrypt).collect();
-    let mut first_part: Vec<u32> = [plan.first, plan.hint].into_iter().chain(open.iter().copied()).chain(plan.first_page.iter().copied()).collect();
+    let mut first_part: Vec<u32> = [plan.first, plan.hint]
+        .into_iter()
+        .chain(open.iter().copied())
+        .chain(plan.first_page.iter().copied())
+        .collect();
     first_part.sort_unstable();
-    let rest: Vec<u32> = plan.pages.iter().flatten().chain(&plan.shared).chain(&plan.other).copied().collect();
+    let rest: Vec<u32> = plan
+        .pages
+        .iter()
+        .flatten()
+        .chain(&plan.shared)
+        .chain(&plan.other)
+        .copied()
+        .collect();
     let complete = (1..size).all(|n| bytes.contains_key(&n));
-    if !complete || !first_part.iter().copied().eq(plan.first..size) || rest.len() + 1 != plan.first as usize {
+    if !complete
+        || !first_part.iter().copied().eq(plan.first..size)
+        || rest.len() + 1 != plan.first as usize
+    {
         return Err(failed("the objects don't match the plan"));
     }
     let len = |n: &u32| bytes.get(n).map_or(0, |b| b.len());
 
     // The layout without the hint stream (where its tables place the objects).
     let lin_len = linearization(plan, [0; 5]).len();
-    let dict = pdf.get(*start..end.saturating_sub(2)).ok_or_else(|| failed("bad trailer"))?;
+    let dict = pdf
+        .get(*start..end.saturating_sub(2))
+        .ok_or_else(|| failed("bad trailer"))?;
     let first_table = |prev: usize, at: &dyn Fn(u32) -> usize| {
         let mut t = format!("xref\n{} {}\n", plan.first, size - plan.first).into_bytes();
         for n in plan.first..size {
@@ -463,10 +671,21 @@ pub(crate) fn write(pdf: &[u8], plan: &Plan, cipher: Option<&mut Cipher>) -> Res
         Some(c) => c.stream(plan.hint, &tables)?,
         None => tables,
     };
-    let mut hint = format!("{} 0 obj\n<</Length {}/S {shared_at}>>\nstream\n", plan.hint, data.len()).into_bytes();
+    let mut hint = format!(
+        "{} 0 obj\n<</Length {}/S {shared_at}>>\nstream\n",
+        plan.hint,
+        data.len()
+    )
+    .into_bytes();
     hint.extend_from_slice(&data);
     hint.extend_from_slice(b"\nendstream\nendobj\n");
-    let shift = |off: usize| if off >= hint_at { off + hint.len() } else { off };
+    let shift = |off: usize| {
+        if off >= hint_at {
+            off + hint.len()
+        } else {
+            off
+        }
+    };
     let offset = |n: u32| match n {
         n if n == plan.first => head.len(),
         n if n == plan.hint => hint_at,
@@ -481,12 +700,19 @@ pub(crate) fn write(pdf: &[u8], plan: &Plan, cipher: Option<&mut Cipher>) -> Res
     };
     let main_at = shift(main_at);
     let entries_at = main_at + format!("xref\n0 {}\n", plan.first).len();
-    let tail = format!("trailer\n<</Size {}>>\nstartxref\n{}\n%%EOF\n", plan.first, head.len() + lin_len);
+    let tail = format!(
+        "trailer\n<</Size {}>>\nstartxref\n{}\n%%EOF\n",
+        plan.first,
+        head.len() + lin_len
+    );
     let total = main_at + main.len() + tail.len();
     if total >= 10usize.pow(WIDTH as u32) {
         return Err(failed("the file is too large"));
     }
-    let lin = linearization(plan, [total, hint_at, hint.len(), shift(first_end), entries_at - 1]);
+    let lin = linearization(
+        plan,
+        [total, hint_at, hint.len(), shift(first_end), entries_at - 1],
+    );
     let table = first_table(main_at, &offset);
     if lin.len() != lin_len || table.len() != table_len {
         return Err(failed("the layout moved"));

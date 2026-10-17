@@ -7,7 +7,9 @@
 
 use std::fmt::Write;
 
-use designcraft_doc::story::{FORCED_LINE_BREAK, NEXT_PAGE_NUMBER, PAGE_NUMBER, PREV_PAGE_NUMBER, TABLE_ANCHOR};
+use designcraft_doc::story::{
+    FORCED_LINE_BREAK, NEXT_PAGE_NUMBER, PAGE_NUMBER, PREV_PAGE_NUMBER, TABLE_ANCHOR,
+};
 use designcraft_doc::{Align, Document, Position, Story};
 
 /// Characters of a run as plain text (`None`: dropped).
@@ -21,9 +23,20 @@ fn plain_char(c: char) -> Option<&'static str> {
 }
 
 fn table_text(story: &Story, id: u64, nl: &str) -> String {
-    let Some(t) = story.tables.get(&id) else { return String::new() };
+    let Some(t) = story.tables.get(&id) else {
+        return String::new();
+    };
     (0..t.nrows())
-        .map(|r| (0..t.ncols()).map(|c| t.cell(r, c).map(|x| x.text.text.replace('\n', " ")).unwrap_or_default()).collect::<Vec<_>>().join("\t"))
+        .map(|r| {
+            (0..t.ncols())
+                .map(|c| {
+                    t.cell(r, c)
+                        .map(|x| x.text.text.replace('\n', " "))
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<_>>()
+                .join("\t")
+        })
         .collect::<Vec<_>>()
         .join(nl)
 }
@@ -31,8 +44,11 @@ fn table_text(story: &Story, id: u64, nl: &str) -> String {
 /// Text Only: the story's text, CRLF between paragraphs.
 pub fn plain_text(story: &Story) -> String {
     // Tracked deletions aren't part of the text.
-    let deleted: Vec<std::ops::Range<usize>> =
-        story.runs().filter(|(_, f)| f.over.change == Some(designcraft_doc::ChangeMark::Deleted)).map(|(r, _)| r).collect();
+    let deleted: Vec<std::ops::Range<usize>> = story
+        .runs()
+        .filter(|(_, f)| f.over.change == Some(designcraft_doc::ChangeMark::Deleted))
+        .map(|(r, _)| r)
+        .collect();
     let mut out = String::with_capacity(story.text.len() + 16);
     for (i, r) in story.para_ranges().into_iter().enumerate() {
         if i > 0 {
@@ -100,7 +116,9 @@ pub fn rtf(doc: &Document, story: &Story) -> String {
             }
             let cp = styles.resolve_char(&base, f);
             // Hidden conditional text isn't exported.
-            if doc.conditions_hide(&cp.conditions) || cp.change == designcraft_doc::ChangeMark::Deleted {
+            if doc.conditions_hide(&cp.conditions)
+                || cp.change == designcraft_doc::ChangeMark::Deleted
+            {
                 continue;
             }
             if !fonts.contains(&cp.font_family) {
@@ -139,14 +157,25 @@ pub fn rtf(doc: &Document, story: &Story) -> String {
             twips(pp.space_after)
         );
         if runs.is_empty() {
-            let f = fonts.iter().position(|x| *x == base.font_family).unwrap_or(0);
-            let _ = write!(out, "\\plain\\f{f}\\fs{} ", (base.size * 2.0).round() as i64);
+            let f = fonts
+                .iter()
+                .position(|x| *x == base.font_family)
+                .unwrap_or(0);
+            let _ = write!(
+                out,
+                "\\plain\\f{f}\\fs{} ",
+                (base.size * 2.0).round() as i64
+            );
         }
         for (r, cp) in runs {
             let f = fonts.iter().position(|x| *x == cp.font_family).unwrap_or(0);
             let st = cp.font_style.to_ascii_lowercase();
             let _ = write!(out, "{{\\plain\\f{f}\\fs{}", (cp.size * 2.0).round() as i64);
-            if st.contains("bold") || st.contains("black") || st.contains("heavy") || st.contains("semibold") {
+            if st.contains("bold")
+                || st.contains("black")
+                || st.contains("heavy")
+                || st.contains("semibold")
+            {
                 out.push_str("\\b");
             }
             if st.contains("italic") || st.contains("oblique") {
@@ -194,10 +223,24 @@ mod tests {
     use super::*;
 
     fn story() -> Story {
-        let mut st = Story::with_text(StoryId(1), "Plain bold {x}\nCafé\u{2028}two\u{E00A}", Default::default());
+        let mut st = Story::with_text(
+            StoryId(1),
+            "Plain bold {x}\nCafé\u{2028}two\u{E00A}",
+            Default::default(),
+        );
         let b = st.text.find("bold").unwrap();
-        st.format_chars(b..b + 4, |f| f.over = CharAttrs { font_style: Some("Bold".into()), ..Default::default() });
-        st.format_paras(0..1, |p| p.para = ParaAttrs { align: Some(Align::Center), ..Default::default() });
+        st.format_chars(b..b + 4, |f| {
+            f.over = CharAttrs {
+                font_style: Some("Bold".into()),
+                ..Default::default()
+            }
+        });
+        st.format_paras(0..1, |p| {
+            p.para = ParaAttrs {
+                align: Some(Align::Center),
+                ..Default::default()
+            }
+        });
         st
     }
 
@@ -210,10 +253,28 @@ mod tests {
     fn rtf_round_trips_through_the_importer() {
         let doc = Document::new(&NewDocument::default());
         let r = rtf(&doc, &story());
-        assert!(r.starts_with("{\\rtf1") && r.contains("\\qc") && r.contains("\\{x\\}") && r.contains("Caf\\u233?"), "{r}");
+        assert!(
+            r.starts_with("{\\rtf1")
+                && r.contains("\\qc")
+                && r.contains("\\{x\\}")
+                && r.contains("Caf\\u233?"),
+            "{r}"
+        );
         let back = crate::rtf::import(r.as_bytes()).unwrap().story;
-        assert_eq!(back.text.trim_end_matches('\n'), "Plain bold {x}\nCafé\u{2028}two");
-        assert_eq!(back.format_after(back.text.find("bold").unwrap()).over.font_style.as_deref(), Some("Bold"));
-        assert_ne!(back.format_after(1).over.font_style.as_deref(), Some("Bold"));
+        assert_eq!(
+            back.text.trim_end_matches('\n'),
+            "Plain bold {x}\nCafé\u{2028}two"
+        );
+        assert_eq!(
+            back.format_after(back.text.find("bold").unwrap())
+                .over
+                .font_style
+                .as_deref(),
+            Some("Bold")
+        );
+        assert_ne!(
+            back.format_after(1).over.font_style.as_deref(),
+            Some("Bold")
+        );
     }
 }

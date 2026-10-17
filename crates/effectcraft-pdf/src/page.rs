@@ -8,7 +8,8 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use effectcraft_svg::{
-    Affine, BezPath, BlendMode, Cap, FillRule, Gradient, GradientKind, Group, Image as SvgImage, Join, Node, Paint, SoftMask, Spread, Stroke,
+    Affine, BezPath, BlendMode, Cap, FillRule, Gradient, GradientKind, Group, Image as SvgImage,
+    Join, Node, Paint, SoftMask, Spread, Stroke,
 };
 use kurbo::{Point, Shape as _};
 
@@ -29,28 +30,67 @@ pub struct Page {
 /// The pages in order.
 pub fn pages(file: &File) -> Vec<Page> {
     let mut out = vec![];
-    let Some(cat) = file.catalog() else { return out };
-    let Some(root) = file.get_dict(cat, "Pages") else { return out };
-    fn walk(file: &File, node: &Dict, inherited: (Option<Dict>, Option<Vec<f64>>, Option<Vec<f64>>, i32), out: &mut Vec<Page>, depth: usize) {
+    let Some(cat) = file.catalog() else {
+        return out;
+    };
+    let Some(root) = file.get_dict(cat, "Pages") else {
+        return out;
+    };
+    fn walk(
+        file: &File,
+        node: &Dict,
+        inherited: (Option<Dict>, Option<Vec<f64>>, Option<Vec<f64>>, i32),
+        out: &mut Vec<Page>,
+        depth: usize,
+    ) {
         if depth > 32 || out.len() > 10_000 {
             return;
         }
         let res = file.get_dict(node, "Resources").cloned().or(inherited.0);
-        let media = file.get(node, "MediaBox").map(|m| file.nums(m)).filter(|v| v.len() == 4).or(inherited.1);
-        let crop = file.get(node, "CropBox").map(|m| file.nums(m)).filter(|v| v.len() == 4).or(inherited.2);
-        let rot = file.get_num(node, "Rotate").map(|r| r as i32).unwrap_or(inherited.3);
+        let media = file
+            .get(node, "MediaBox")
+            .map(|m| file.nums(m))
+            .filter(|v| v.len() == 4)
+            .or(inherited.1);
+        let crop = file
+            .get(node, "CropBox")
+            .map(|m| file.nums(m))
+            .filter(|v| v.len() == 4)
+            .or(inherited.2);
+        let rot = file
+            .get_num(node, "Rotate")
+            .map(|r| r as i32)
+            .unwrap_or(inherited.3);
         match file.get(node, "Kids").and_then(Obj::array) {
             Some(kids) if file.get(node, "Type").and_then(Obj::name) != Some("Page") => {
                 for k in kids {
                     if let Some(d) = file.resolve(k).dict() {
-                        walk(file, d, (res.clone(), media.clone(), crop.clone(), rot), out, depth + 1);
+                        walk(
+                            file,
+                            d,
+                            (res.clone(), media.clone(), crop.clone(), rot),
+                            out,
+                            depth + 1,
+                        );
                     }
                 }
             }
             _ => {
-                let b = crop.or(media).unwrap_or_else(|| vec![0.0, 0.0, 612.0, 792.0]);
-                let bbox = [b[0].min(b[2]), b[1].min(b[3]), b[0].max(b[2]), b[1].max(b[3])];
-                out.push(Page { dict: node.clone(), resources: res.unwrap_or_default(), bbox, rotate: rot.rem_euclid(360) });
+                let b = crop
+                    .or(media)
+                    .unwrap_or_else(|| vec![0.0, 0.0, 612.0, 792.0]);
+                let bbox = [
+                    b[0].min(b[2]),
+                    b[1].min(b[3]),
+                    b[0].max(b[2]),
+                    b[1].max(b[3]),
+                ];
+                out.push(Page {
+                    dict: node.clone(),
+                    resources: res.unwrap_or_default(),
+                    bbox,
+                    rotate: rot.rem_euclid(360),
+                });
             }
         }
     }
@@ -267,15 +307,21 @@ impl<'a> Interp<'a> {
                 "cm" => self.gs.ctm *= affine(&nums()),
                 "w" => self.gs.lw = n(0),
                 "J" => self.gs.cap = [Cap::Butt, Cap::Round, Cap::Square][(n(0) as usize).min(2)],
-                "j" => self.gs.join = [Join::Miter, Join::Round, Join::Bevel][(n(0) as usize).min(2)],
+                "j" => {
+                    self.gs.join = [Join::Miter, Join::Round, Join::Bevel][(n(0) as usize).min(2)]
+                }
                 "M" => self.gs.miter = n(0),
                 "d" => {
                     let arr = args.first().map(|a| self.file.nums(a)).unwrap_or_default();
-                    self.gs.dash = (!arr.is_empty() && arr.iter().any(|v| *v > 0.0)).then(|| (arr, n(1)));
+                    self.gs.dash =
+                        (!arr.is_empty() && arr.iter().any(|v| *v > 0.0)).then(|| (arr, n(1)));
                 }
                 "gs" => {
                     if let Some(name) = args.first().and_then(Obj::name)
-                        && let Some(g) = self.file.get_dict(res, "ExtGState").and_then(|e| self.file.get_dict(e, name))
+                        && let Some(g) = self
+                            .file
+                            .get_dict(res, "ExtGState")
+                            .and_then(|e| self.file.get_dict(e, name))
                     {
                         let g = g.clone();
                         self.ext_gstate(&g, res, depth);
@@ -297,7 +343,8 @@ impl<'a> Interp<'a> {
                 "c" => {
                     self.ensure_start();
                     let p = Point::new(n(4), n(5));
-                    self.path.curve_to(Point::new(n(0), n(1)), Point::new(n(2), n(3)), p);
+                    self.path
+                        .curve_to(Point::new(n(0), n(1)), Point::new(n(2), n(3)), p);
                     self.cur = Some(p);
                 }
                 "v" => {
@@ -349,7 +396,8 @@ impl<'a> Interp<'a> {
                 "W" => self.pending_clip = Some(FillRule::NonZero),
                 "W*" => self.pending_clip = Some(FillRule::EvenOdd),
                 // Colour (ignored inside uncoloured patterns and `d1` glyphs).
-                "g" | "G" | "rg" | "RG" | "k" | "K" | "cs" | "CS" | "sc" | "scn" | "SC" | "SCN" if locked => {}
+                "g" | "G" | "rg" | "RG" | "k" | "K" | "cs" | "CS" | "sc" | "scn" | "SC" | "SCN"
+                    if locked => {}
                 "g" => self.gs.fill_cs = Cs::Gray,
                 "G" => self.gs.stroke_cs = Cs::Gray,
                 "rg" => self.gs.fill_cs = Cs::Rgb,
@@ -357,7 +405,10 @@ impl<'a> Interp<'a> {
                 "k" => self.gs.fill_cs = Cs::Cmyk,
                 "K" => self.gs.stroke_cs = Cs::Cmyk,
                 "cs" | "CS" => {
-                    let cs = args.first().map(|a| color_space(self.file, a, Some(res))).unwrap_or(Cs::Gray);
+                    let cs = args
+                        .first()
+                        .map(|a| color_space(self.file, a, Some(res)))
+                        .unwrap_or(Cs::Gray);
                     let init = Fill::Color(cs.to_rgb(&cs.initial()));
                     if op == "cs" {
                         self.gs.fill_cs = cs;
@@ -369,12 +420,17 @@ impl<'a> Interp<'a> {
                 }
                 "sc" | "scn" | "SC" | "SCN" => {
                     let fill = op.starts_with('s');
-                    let cs = if fill { self.gs.fill_cs.clone() } else { self.gs.stroke_cs.clone() };
-                    let v = if let (Cs::Pattern, Some(name)) = (&cs, args.last().and_then(Obj::name)) {
-                        self.pattern(res, name, pattern_base, &nums())
+                    let cs = if fill {
+                        self.gs.fill_cs.clone()
                     } else {
-                        Fill::Color(cs.to_rgb(&nums()))
+                        self.gs.stroke_cs.clone()
                     };
+                    let v =
+                        if let (Cs::Pattern, Some(name)) = (&cs, args.last().and_then(Obj::name)) {
+                            self.pattern(res, name, pattern_base, &nums())
+                        } else {
+                            Fill::Color(cs.to_rgb(&nums()))
+                        };
                     if fill {
                         self.gs.fill = v;
                     } else {
@@ -409,7 +465,11 @@ impl<'a> Interp<'a> {
                 "Ts" => self.gs.rise = n(0),
                 "Tr" => self.gs.render_mode = (n(0) as i64).clamp(0, 7) as u8,
                 "Tf" => {
-                    self.gs.font = args.first().and_then(Obj::name).map(str::to_string).and_then(|name| self.font(res, &name));
+                    self.gs.font = args
+                        .first()
+                        .and_then(Obj::name)
+                        .map(str::to_string)
+                        .and_then(|name| self.font(res, &name));
                     self.gs.font_size = n(1);
                 }
                 "Td" => self.text_move(n(0), n(1)),
@@ -430,7 +490,8 @@ impl<'a> Interp<'a> {
                     if op != "Tj" {
                         self.text_move(0.0, -self.gs.leading);
                     }
-                    if let Some(Obj::Str(s)) = args.iter().rev().find(|a| matches!(a, Obj::Str(_))) {
+                    if let Some(Obj::Str(s)) = args.iter().rev().find(|a| matches!(a, Obj::Str(_)))
+                    {
                         let s = s.clone();
                         self.show(&[TextItem::Str(s)], res, pattern_base, depth);
                     }
@@ -480,7 +541,9 @@ impl<'a> Interp<'a> {
             if !locked {
                 match op.as_str() {
                     "g" | "rg" | "k" => self.gs.fill = Fill::Color(self.gs.fill_cs.to_rgb(&nums())),
-                    "G" | "RG" | "K" => self.gs.stroke = Fill::Color(self.gs.stroke_cs.to_rgb(&nums())),
+                    "G" | "RG" | "K" => {
+                        self.gs.stroke = Fill::Color(self.gs.stroke_cs.to_rgb(&nums()))
+                    }
                     _ => {}
                 }
             }
@@ -538,7 +601,11 @@ impl<'a> Interp<'a> {
         // An optional-content membership dictionary names its groups in /OCGs.
         let d = match self.file.get(ocg, "OCGs") {
             Some(Obj::Dict(g)) => g,
-            Some(Obj::Array(a)) => a.first().map(|x| self.file.resolve(x)).and_then(Obj::dict).unwrap_or(ocg),
+            Some(Obj::Array(a)) => a
+                .first()
+                .map(|x| self.file.resolve(x))
+                .and_then(Obj::dict)
+                .unwrap_or(ocg),
             _ => ocg,
         };
         match self.file.get(d, "Name") {
@@ -588,7 +655,10 @@ impl<'a> Interp<'a> {
             self.gs.dash = (!arr.is_empty() && arr.iter().any(|v| *v > 0.0)).then_some((arr, ph));
         }
         if let Some(Obj::Array(fa)) = f.get(g, "Font")
-            && let (Some(Obj::Dict(fd)), Some(size)) = (fa.first().map(|x| f.resolve(x)), fa.get(1).and_then(|x| f.resolve(x).num()))
+            && let (Some(Obj::Dict(fd)), Some(size)) = (
+                fa.first().map(|x| f.resolve(x)),
+                fa.get(1).and_then(|x| f.resolve(x).num()),
+            )
         {
             let mut sk = vec![];
             self.gs.font = Some(Rc::new(Font::load(f, fd, &mut sk)));
@@ -600,7 +670,10 @@ impl<'a> Interp<'a> {
         // Blend mode: a group composited with it, open until the mode changes or `Q`.
         let bm = match f.get(g, "BM") {
             Some(Obj::Name(n)) => Some(n.clone()),
-            Some(Obj::Array(a)) => a.first().and_then(|x| f.resolve(x).name()).map(str::to_string),
+            Some(Obj::Array(a)) => a
+                .first()
+                .and_then(|x| f.resolve(x).name())
+                .map(str::to_string),
             _ => None,
         };
         if let Some(bm) = bm {
@@ -626,14 +699,30 @@ impl<'a> Interp<'a> {
             Some(sm) => {
                 let Some(sm) = sm.dict().cloned() else { return };
                 let luminosity = f.get(&sm, "S").and_then(Obj::name) != Some("Alpha");
-                let Some(Obj::Stream(gd, graw)) = f.get(&sm, "G").cloned() else { return };
+                let Some(Obj::Stream(gd, graw)) = f.get(&sm, "G").cloned() else {
+                    return;
+                };
                 // Backdrop: in the group's colour space (black by default).
                 let bc = f.get(&sm, "BC").map(|b| f.nums(b)).unwrap_or_default();
-                let gcs = f.get_dict(&gd, "Group").and_then(|gr| f.get(gr, "CS")).map(|c| color_space(f, c, Some(res))).unwrap_or(Cs::Rgb);
-                let backdrop = if bc.is_empty() { [0.0; 3] } else { gcs.to_rgb(&bc) };
+                let gcs = f
+                    .get_dict(&gd, "Group")
+                    .and_then(|gr| f.get(gr, "CS"))
+                    .map(|c| color_space(f, c, Some(res)))
+                    .unwrap_or(Cs::Rgb);
+                let backdrop = if bc.is_empty() {
+                    [0.0; 3]
+                } else {
+                    gcs.to_rgb(&bc)
+                };
                 let saved_b = std::mem::replace(&mut self.b, Builder::new());
                 let ctm = self.gs.ctm;
-                let saved_gs = std::mem::replace(&mut self.gs, GState { ctm, ..GState::default() });
+                let saved_gs = std::mem::replace(
+                    &mut self.gs,
+                    GState {
+                        ctm,
+                        ..GState::default()
+                    },
+                );
                 let saved_stack = std::mem::take(&mut self.saved);
                 self.form(&gd, &graw, res, depth);
                 let mask_b = std::mem::replace(&mut self.b, saved_b);
@@ -649,7 +738,11 @@ impl<'a> Interp<'a> {
                 let mut content = Group::new("Soft Mask");
                 content.children = nodes;
                 let mut grp = Group::new("Soft Mask Group");
-                grp.mask = Some(Box::new(SoftMask { content, luminosity, backdrop }));
+                grp.mask = Some(Box::new(SoftMask {
+                    content,
+                    luminosity,
+                    backdrop,
+                }));
                 self.gs.mask_depth = Some(self.b.depth());
                 self.b.open_group(grp);
             }
@@ -676,14 +769,29 @@ impl<'a> Interp<'a> {
         let path = std::mem::take(&mut self.path);
         self.cur = None;
         self.start = None;
-        self.paint_path(path.clone(), fill, rule.unwrap_or(FillRule::NonZero), stroke, "Path", depth);
+        self.paint_path(
+            path.clone(),
+            fill,
+            rule.unwrap_or(FillRule::NonZero),
+            stroke,
+            "Path",
+            depth,
+        );
         if let Some(r) = self.pending_clip.take() {
             self.b.clip(self.gs.ctm * path, r);
         }
     }
 
     /// Fill and / or stroke `path` (user space) with the current graphics state.
-    fn paint_path(&mut self, path: BezPath, fill: bool, rule: FillRule, stroke: bool, name: &str, depth: usize) {
+    fn paint_path(
+        &mut self,
+        path: BezPath,
+        fill: bool,
+        rule: FillRule,
+        stroke: bool,
+        name: &str,
+        depth: usize,
+    ) {
         if path.elements().is_empty() {
             return;
         }
@@ -703,7 +811,13 @@ impl<'a> Interp<'a> {
                     let page = ctm * path.clone();
                     let d = self.b.depth();
                     let mut sk = vec![];
-                    let img = crate::shading::shading_image(self.file, &sf.sh, sf.space, self.page_box, &mut sk);
+                    let img = crate::shading::shading_image(
+                        self.file,
+                        &sf.sh,
+                        sf.space,
+                        self.page_box,
+                        &mut sk,
+                    );
                     for s in sk {
                         self.b.skip(&s);
                     }
@@ -722,7 +836,11 @@ impl<'a> Interp<'a> {
             self.paint_of(&sf).map(|p| {
                 // Width 0: the thinnest line the device can draw (one pixel).
                 let s = { (ctm.determinant().abs()).sqrt() };
-                let width = if self.gs.lw <= 0.0 { if s > 0.0 { 1.0 / s } else { 1.0 } } else { self.gs.lw };
+                let width = if self.gs.lw <= 0.0 {
+                    if s > 0.0 { 1.0 / s } else { 1.0 }
+                } else {
+                    self.gs.lw
+                };
                 Stroke {
                     paint: p,
                     opacity: self.gs.stroke_alpha,
@@ -737,7 +855,8 @@ impl<'a> Interp<'a> {
             None
         };
         if fill_paint.is_some() || stroke.is_some() {
-            self.b.fill_stroke_named(name, path, ctm, fill_paint, stroke);
+            self.b
+                .fill_stroke_named(name, path, ctm, fill_paint, stroke);
         }
     }
 
@@ -770,8 +889,17 @@ impl<'a> Interp<'a> {
         }
         let (xs, ys) = (t.xstep.abs().max(1e-6), t.ystep.abs().max(1e-6));
         let inv = t.space.inverse();
-        let corners = [(area.x0, area.y0), (area.x1, area.y0), (area.x1, area.y1), (area.x0, area.y1)].map(|(x, y)| inv * Point::new(x, y));
-        let (mut lo, mut hi) = (Point::new(f64::MAX, f64::MAX), Point::new(f64::MIN, f64::MIN));
+        let corners = [
+            (area.x0, area.y0),
+            (area.x1, area.y0),
+            (area.x1, area.y1),
+            (area.x0, area.y1),
+        ]
+        .map(|(x, y)| inv * Point::new(x, y));
+        let (mut lo, mut hi) = (
+            Point::new(f64::MAX, f64::MAX),
+            Point::new(f64::MIN, f64::MIN),
+        );
         for c in corners {
             lo = Point::new(lo.x.min(c.x), lo.y.min(c.y));
             hi = Point::new(hi.x.max(c.x), hi.y.max(c.y));
@@ -781,7 +909,9 @@ impl<'a> Interp<'a> {
         let i1 = ((hi.x - bx0) / xs).ceil();
         let j0 = ((lo.y - by1) / ys).floor();
         let j1 = ((hi.y - by0) / ys).ceil();
-        if !(i0.is_finite() && i1.is_finite() && j0.is_finite() && j1.is_finite()) || (i1 - i0 + 1.0) * (j1 - j0 + 1.0) > MAX_TILES as f64 {
+        if !(i0.is_finite() && i1.is_finite() && j0.is_finite() && j1.is_finite())
+            || (i1 - i0 + 1.0) * (j1 - j0 + 1.0) > MAX_TILES as f64
+        {
             self.b.skip("tiling pattern (too many tiles)");
             return;
         }
@@ -803,13 +933,34 @@ impl<'a> Interp<'a> {
     fn shading_gradient(&mut self, sh: &Dict) -> Option<Gradient> {
         let f = self.file;
         let ty = f.get_num(sh, "ShadingType").unwrap_or(0.0) as i32;
-        let cs = f.get(sh, "ColorSpace").map(|c| color_space(f, c, None)).unwrap_or(Cs::Rgb);
+        let cs = f
+            .get(sh, "ColorSpace")
+            .map(|c| color_space(f, c, None))
+            .unwrap_or(Cs::Rgb);
         let coords = f.get(sh, "Coords").map(|c| f.nums(c)).unwrap_or_default();
-        let func = f.get(sh, "Function").map(|x| Func::read(f, x)).unwrap_or(Func::Unsupported);
-        let dom = f.get(sh, "Domain").map(|d| f.nums(d)).filter(|d| d.len() == 2).unwrap_or_else(|| vec![0.0, 1.0]);
+        let func = f
+            .get(sh, "Function")
+            .map(|x| Func::read(f, x))
+            .unwrap_or(Func::Unsupported);
+        let dom = f
+            .get(sh, "Domain")
+            .map(|d| f.nums(d))
+            .filter(|d| d.len() == 2)
+            .unwrap_or_else(|| vec![0.0, 1.0]);
         let kind = match (ty, coords.len()) {
-            (2, 4) => GradientKind::Linear { x1: coords[0], y1: coords[1], x2: coords[2], y2: coords[3] },
-            (3, 6) => GradientKind::Radial { cx: coords[3], cy: coords[4], r: coords[5], fx: coords[0], fy: coords[1] },
+            (2, 4) => GradientKind::Linear {
+                x1: coords[0],
+                y1: coords[1],
+                x2: coords[2],
+                y2: coords[3],
+            },
+            (3, 6) => GradientKind::Radial {
+                cx: coords[3],
+                cy: coords[4],
+                r: coords[5],
+                fx: coords[0],
+                fy: coords[1],
+            },
             _ => {
                 self.b.skip(&format!("shading type {ty}"));
                 return None;
@@ -834,20 +985,44 @@ impl<'a> Interp<'a> {
                 (t, [c[0], c[1], c[2], 1.0])
             })
             .collect();
-        Some(Gradient { kind, stops, bbox_units: false, transform: Affine::IDENTITY, spread: Spread::Pad })
+        Some(Gradient {
+            kind,
+            stops,
+            bbox_units: false,
+            transform: Affine::IDENTITY,
+            spread: Spread::Pad,
+        })
     }
 
     fn pattern(&mut self, res: &Dict, name: &str, base: Affine, comps: &[f64]) -> Fill {
         let f = self.file;
-        let Some(po) = f.get_dict(res, "Pattern").and_then(|pp| pp.get(name)).map(|x| f.resolve(x)) else { return Fill::None };
-        let Some(p) = po.dict() else { return Fill::None };
-        let m = f.get(p, "Matrix").map(|m| affine(&f.nums(m))).unwrap_or(Affine::IDENTITY);
+        let Some(po) = f
+            .get_dict(res, "Pattern")
+            .and_then(|pp| pp.get(name))
+            .map(|x| f.resolve(x))
+        else {
+            return Fill::None;
+        };
+        let Some(p) = po.dict() else {
+            return Fill::None;
+        };
+        let m = f
+            .get(p, "Matrix")
+            .map(|m| affine(&f.nums(m)))
+            .unwrap_or(Affine::IDENTITY);
         match f.get_num(p, "PatternType").unwrap_or(0.0) as i32 {
             2 => {
-                let Some(sh_obj) = f.get(p, "Shading") else { return Fill::None };
-                let Some(sh) = sh_obj.dict() else { return Fill::None };
+                let Some(sh_obj) = f.get(p, "Shading") else {
+                    return Fill::None;
+                };
+                let Some(sh) = sh_obj.dict() else {
+                    return Fill::None;
+                };
                 if !matches!(f.get_num(sh, "ShadingType").unwrap_or(0.0) as i32, 2 | 3) {
-                    return Fill::Shading(Rc::new(ShadingFill { sh: sh_obj.clone(), space: base * m }));
+                    return Fill::Shading(Rc::new(ShadingFill {
+                        sh: sh_obj.clone(),
+                        space: base * m,
+                    }));
                 }
                 let sh = sh.clone();
                 match self.shading_gradient(&sh) {
@@ -860,22 +1035,40 @@ impl<'a> Interp<'a> {
                 }
             }
             1 => {
-                let Obj::Stream(d, raw) = po else { return Fill::None };
-                let Some(content) = decode_stream(f, d, raw) else { return Fill::None };
-                let bb = f.get(d, "BBox").map(|b| f.nums(b)).filter(|b| b.len() == 4).unwrap_or_else(|| vec![0.0, 0.0, 1.0, 1.0]);
-                let uncolored = (f.get_num(d, "PaintType").unwrap_or(1.0) as i32 == 2).then(|| match comps.len() {
-                    1 => Cs::Gray.to_rgb(comps),
-                    4 => Cs::Cmyk.to_rgb(comps),
-                    3 => Cs::Rgb.to_rgb(comps),
-                    _ => [0.0; 3],
+                let Obj::Stream(d, raw) = po else {
+                    return Fill::None;
+                };
+                let Some(content) = decode_stream(f, d, raw) else {
+                    return Fill::None;
+                };
+                let bb = f
+                    .get(d, "BBox")
+                    .map(|b| f.nums(b))
+                    .filter(|b| b.len() == 4)
+                    .unwrap_or_else(|| vec![0.0, 0.0, 1.0, 1.0]);
+                let uncolored = (f.get_num(d, "PaintType").unwrap_or(1.0) as i32 == 2).then(|| {
+                    match comps.len() {
+                        1 => Cs::Gray.to_rgb(comps),
+                        4 => Cs::Cmyk.to_rgb(comps),
+                        3 => Cs::Rgb.to_rgb(comps),
+                        _ => [0.0; 3],
+                    }
                 });
                 Fill::Tiling(Rc::new(Tiling {
                     space: base * m,
-                    bbox: [bb[0].min(bb[2]), bb[1].min(bb[3]), bb[0].max(bb[2]), bb[1].max(bb[3])],
+                    bbox: [
+                        bb[0].min(bb[2]),
+                        bb[1].min(bb[3]),
+                        bb[0].max(bb[2]),
+                        bb[1].max(bb[3]),
+                    ],
                     xstep: f.get_num(d, "XStep").unwrap_or(bb[2] - bb[0]),
                     ystep: f.get_num(d, "YStep").unwrap_or(bb[3] - bb[1]),
                     content,
-                    res: f.get_dict(d, "Resources").cloned().unwrap_or_else(|| res.clone()),
+                    res: f
+                        .get_dict(d, "Resources")
+                        .cloned()
+                        .unwrap_or_else(|| res.clone()),
                     uncolored,
                 }))
             }
@@ -885,8 +1078,12 @@ impl<'a> Interp<'a> {
 
     fn shade(&mut self, res: &Dict, name: &str) {
         let f = self.file;
-        let Some(sh_obj) = f.get_dict(res, "Shading").and_then(|s| f.get(s, name)) else { return };
-        let Some(sh) = sh_obj.dict().cloned() else { return };
+        let Some(sh_obj) = f.get_dict(res, "Shading").and_then(|s| f.get(s, name)) else {
+            return;
+        };
+        let Some(sh) = sh_obj.dict().cloned() else {
+            return;
+        };
         if !matches!(f.get_num(&sh, "ShadingType").unwrap_or(0.0) as i32, 2 | 3) {
             // Function-based and mesh shadings paint only their own extent.
             let mut sk = vec![];
@@ -900,12 +1097,17 @@ impl<'a> Interp<'a> {
             }
             return;
         }
-        let Some(g) = self.shading_gradient(&sh) else { return };
+        let Some(g) = self.shading_gradient(&sh) else {
+            return;
+        };
         // Fill everything (the current clip limits it): the page box in user space.
         let inv = self.gs.ctm.inverse();
         let b = self.page_box;
         let mut path = BezPath::new();
-        for (i, (x, y)) in [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])].into_iter().enumerate() {
+        for (i, (x, y)) in [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]
+            .into_iter()
+            .enumerate()
+        {
             let p = inv * Point::new(x, y);
             if i == 0 {
                 path.move_to(p);
@@ -914,7 +1116,12 @@ impl<'a> Interp<'a> {
             }
         }
         path.close_path();
-        self.b.fill_stroke(path, self.gs.ctm, Some((Paint::Gradient(g), self.gs.fill_alpha, FillRule::NonZero)), None);
+        self.b.fill_stroke(
+            path,
+            self.gs.ctm,
+            Some((Paint::Gradient(g), self.gs.fill_alpha, FillRule::NonZero)),
+            None,
+        );
     }
 
     /// Run a form XObject (matrix, bounding-box clip, its own resources) in a saved state.
@@ -923,17 +1130,31 @@ impl<'a> Interp<'a> {
             return;
         }
         let f = self.file;
-        let Some(content) = decode_stream(f, d, raw) else { return };
-        let m = f.get(d, "Matrix").map(|m| affine(&f.nums(m))).unwrap_or(Affine::IDENTITY);
-        let form_res = f.get_dict(d, "Resources").cloned().unwrap_or_else(|| res.clone());
+        let Some(content) = decode_stream(f, d, raw) else {
+            return;
+        };
+        let m = f
+            .get(d, "Matrix")
+            .map(|m| affine(&f.nums(m)))
+            .unwrap_or(Affine::IDENTITY);
+        let form_res = f
+            .get_dict(d, "Resources")
+            .cloned()
+            .unwrap_or_else(|| res.clone());
         self.saved.push((self.gs.clone(), self.b.depth()));
         // A transparency group XObject (§11.6.6) composites as one object: the current alpha
         // (and the blend-mode and soft-mask groups already open around it) apply to its
         // result, and its contents start from the initial alpha.
         let bb = f.get(d, "BBox").map(|b| f.nums(b)).unwrap_or_default();
-        let bbox_path = |ctm: Affine| (bb.len() == 4).then(|| ctm * m * kurbo::Rect::new(bb[0], bb[1], bb[2], bb[3]).to_path(0.1));
+        let bbox_path = |ctm: Affine| {
+            (bb.len() == 4)
+                .then(|| ctm * m * kurbo::Rect::new(bb[0], bb[1], bb[2], bb[3]).to_path(0.1))
+        };
         let mut clipped = false;
-        if let Some(tg) = f.get_dict(d, "Group").filter(|g| f.get(g, "S").and_then(Obj::name) == Some("Transparency")) {
+        if let Some(tg) = f
+            .get_dict(d, "Group")
+            .filter(|g| f.get(g, "S").and_then(Obj::name) == Some("Transparency"))
+        {
             let mut grp = Group::new("Transparency Group");
             // The bounding box clips the group itself (its children stay its direct children,
             // as knockout needs).
@@ -969,7 +1190,13 @@ impl<'a> Interp<'a> {
 
     fn xobject(&mut self, res: &Dict, name: &str, depth: usize) {
         let f = self.file;
-        let Some(x) = f.get_dict(res, "XObject").and_then(|xs| xs.get(name)).map(|x| f.resolve(x)) else { return };
+        let Some(x) = f
+            .get_dict(res, "XObject")
+            .and_then(|xs| xs.get(name))
+            .map(|x| f.resolve(x))
+        else {
+            return;
+        };
         let Obj::Stream(d, raw) = x else { return };
         match f.get(d, "Subtype").and_then(Obj::name) {
             Some("Form") => self.form(d, raw, res, depth),
@@ -1046,14 +1273,26 @@ impl<'a> Interp<'a> {
             match it {
                 TextItem::Adjust(v) => {
                     let d = -v / 1000.0 * fs;
-                    self.tm *= if font.vertical { Affine::translate((0.0, d)) } else { Affine::translate((d * th, 0.0)) };
+                    self.tm *= if font.vertical {
+                        Affine::translate((0.0, d))
+                    } else {
+                        Affine::translate((d * th, 0.0))
+                    };
                 }
                 TextItem::Str(s) => {
                     for (code, nbytes) in font.codes(s) {
                         let w0 = font.width(code);
                         let trm = self.tm * Affine::new([fs * th, 0.0, 0.0, fs, 0.0, rise]);
-                        let (w1y, vx, vy) = if font.vertical { font.vmetrics(code) } else { (0.0, 0.0, 0.0) };
-                        let trm = if font.vertical { trm * Affine::translate((-vx, -vy)) } else { trm };
+                        let (w1y, vx, vy) = if font.vertical {
+                            font.vmetrics(code)
+                        } else {
+                            (0.0, 0.0, 0.0)
+                        };
+                        let trm = if font.vertical {
+                            trm * Affine::translate((-vx, -vy))
+                        } else {
+                            trm
+                        };
                         if let Some((proc_, t3res)) = font.type3_proc(code) {
                             let proc_ = proc_.to_vec();
                             let r = t3res.cloned().unwrap_or_else(|| res.clone());
@@ -1064,18 +1303,27 @@ impl<'a> Interp<'a> {
                             missing = true;
                         }
                         text.push_str(&font.unicode(code));
-                        let tw = if nbytes == 1 && code == 32 { self.gs.word_spacing } else { 0.0 };
-                        if font.vertical {
-                            self.tm *= Affine::translate((0.0, w1y * fs - self.gs.char_spacing - tw));
+                        let tw = if nbytes == 1 && code == 32 {
+                            self.gs.word_spacing
                         } else {
-                            self.tm *= Affine::translate(((w0 * fs + self.gs.char_spacing + tw) * th, 0.0));
+                            0.0
+                        };
+                        if font.vertical {
+                            self.tm *=
+                                Affine::translate((0.0, w1y * fs - self.gs.char_spacing - tw));
+                        } else {
+                            self.tm *= Affine::translate((
+                                (w0 * fs + self.gs.char_spacing + tw) * th,
+                                0.0,
+                            ));
                         }
                     }
                 }
             }
         }
         if missing && !matches!(font.program, crate::font::Program::Type3 { .. }) {
-            self.b.skip(&format!("glyphs missing from font {}", font.base_name));
+            self.b
+                .skip(&format!("glyphs missing from font {}", font.base_name));
         }
         if path.elements().is_empty() {
             return;
@@ -1084,7 +1332,11 @@ impl<'a> Interp<'a> {
         let fill = matches!(mode, 0 | 2 | 4 | 6);
         let stroke = matches!(mode, 1 | 2 | 5 | 6);
         let label: String = text.chars().filter(|c| !c.is_control()).take(40).collect();
-        let name = if label.trim().is_empty() { "Text".to_string() } else { format!("Text: {}", label.trim()) };
+        let name = if label.trim().is_empty() {
+            "Text".to_string()
+        } else {
+            format!("Text: {}", label.trim())
+        };
         if mode >= 4 {
             let clip = self.text_clip.get_or_insert_with(BezPath::new);
             clip.extend(self.gs.ctm * path.clone());
@@ -1095,7 +1347,14 @@ impl<'a> Interp<'a> {
     }
 
     /// Run a Type 3 glyph procedure with `m` (glyph space → user space).
-    fn type3_glyph(&mut self, content: &[u8], res: &Dict, m: Affine, pattern_base: Affine, depth: usize) {
+    fn type3_glyph(
+        &mut self,
+        content: &[u8],
+        res: &Dict,
+        m: Affine,
+        pattern_base: Affine,
+        depth: usize,
+    ) {
         if depth >= 8 {
             return;
         }

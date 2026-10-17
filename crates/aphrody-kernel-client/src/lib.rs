@@ -88,7 +88,10 @@ impl fmt::Debug for ClientOptions {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("ClientOptions")
             .field("endpoint", &self.endpoint)
-            .field("auth_token", &self.auth_token.as_ref().map(|_| "<redacted>"))
+            .field(
+                "auth_token",
+                &self.auth_token.as_ref().map(|_| "<redacted>"),
+            )
             .field("timeout", &self.timeout)
             .finish()
     }
@@ -98,7 +101,11 @@ impl ClientOptions {
     /// Build options using the kernel endpoint convention and an optional caller-provided token.
     #[must_use]
     pub fn new(endpoint: impl Into<String>) -> Self {
-        Self { endpoint: endpoint.into(), auth_token: None, timeout: DEFAULT_REQUEST_TIMEOUT }
+        Self {
+            endpoint: endpoint.into(),
+            auth_token: None,
+            timeout: DEFAULT_REQUEST_TIMEOUT,
+        }
     }
 
     /// Sets the token without making it observable in formatted diagnostics.
@@ -146,9 +153,14 @@ impl<T: AsyncRead + AsyncWrite + Unpin + Send> KernelIo for T {}
 impl KernelClient {
     /// Connects to the platform's local socket or named pipe.
     pub async fn connect(options: ClientOptions) -> Result<Self, KernelClientError> {
-        let stream =
-            connect_endpoint(&options.endpoint).await.map_err(KernelClientError::Connect)?;
-        Ok(Self::from_stream(stream, options.auth_token, options.timeout))
+        let stream = connect_endpoint(&options.endpoint)
+            .await
+            .map_err(KernelClientError::Connect)?;
+        Ok(Self::from_stream(
+            stream,
+            options.auth_token,
+            options.timeout,
+        ))
     }
 
     /// Creates a client over an existing stream; useful to embed or test the protocol contract.
@@ -180,8 +192,12 @@ impl KernelClient {
         arguments: Value,
     ) -> Result<Value, KernelClientError> {
         self.ensure_initialized().await?;
-        let result =
-            self.request("tools/call", json!({ "name": tool, "arguments": arguments })).await?;
+        let result = self
+            .request(
+                "tools/call",
+                json!({ "name": tool, "arguments": arguments }),
+            )
+            .await?;
         if result.get("isError").and_then(Value::as_bool) == Some(true) {
             let message = result
                 .get("content")
@@ -191,7 +207,10 @@ impl KernelClient {
                 .filter_map(|part| part.get("text").and_then(Value::as_str))
                 .collect::<Vec<_>>()
                 .join("\n");
-            return Err(KernelClientError::Tool { tool: tool.to_owned(), message });
+            return Err(KernelClientError::Tool {
+                tool: tool.to_owned(),
+                message,
+            });
         }
         Ok(result.get("structuredContent").cloned().unwrap_or(result))
     }
@@ -249,8 +268,16 @@ impl KernelClient {
         let message = json!({ "jsonrpc": "2.0", "method": method, "params": params });
         let line = encode(&message).map_err(KernelClientError::Io)?;
         let mut stream = self.stream.lock().await;
-        stream.get_mut().write_all(&line).await.map_err(KernelClientError::Io)?;
-        stream.get_mut().flush().await.map_err(KernelClientError::Io)
+        stream
+            .get_mut()
+            .write_all(&line)
+            .await
+            .map_err(KernelClientError::Io)?;
+        stream
+            .get_mut()
+            .flush()
+            .await
+            .map_err(KernelClientError::Io)
     }
 
     async fn request(&self, method: &str, params: Value) -> Result<Value, KernelClientError> {
@@ -259,14 +286,24 @@ impl KernelClient {
             let message = json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params });
             let line = encode(&message).map_err(KernelClientError::Io)?;
             let mut stream = self.stream.lock().await;
-            stream.get_mut().write_all(&line).await.map_err(KernelClientError::Io)?;
-            stream.get_mut().flush().await.map_err(KernelClientError::Io)?;
+            stream
+                .get_mut()
+                .write_all(&line)
+                .await
+                .map_err(KernelClientError::Io)?;
+            stream
+                .get_mut()
+                .flush()
+                .await
+                .map_err(KernelClientError::Io)?;
             loop {
                 let response = read_frame(&mut stream).await?;
                 let response: Value = serde_json::from_slice(&response)
                     .map_err(|error| KernelClientError::Protocol(error.to_string()))?;
                 if !response.is_object() {
-                    return Err(KernelClientError::Protocol("expected JSON-RPC object".into()));
+                    return Err(KernelClientError::Protocol(
+                        "expected JSON-RPC object".into(),
+                    ));
                 }
                 if response.get("method").is_some() || response.get("id").is_none() {
                     continue;
@@ -308,7 +345,7 @@ async fn connect_endpoint(endpoint: &str) -> io::Result<Box<dyn KernelIo>> {
                 Err(error) if error.raw_os_error() == Some(ERROR_PIPE_BUSY) && attempts < 50 => {
                     attempts += 1;
                     tokio::time::sleep(Duration::from_millis(20)).await;
-                },
+                }
                 Err(error) => return Err(error),
             }
         }
@@ -320,7 +357,10 @@ async fn connect_endpoint(endpoint: &str) -> io::Result<Box<dyn KernelIo>> {
     #[cfg(not(any(windows, unix)))]
     {
         let _ = endpoint;
-        Err(io::Error::new(io::ErrorKind::Unsupported, "no local kernel socket on this target"))
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            "no local kernel socket on this target",
+        ))
     }
 }
 
@@ -343,12 +383,18 @@ async fn read_frame<R: AsyncRead + Unpin>(
     loop {
         let available = reader.fill_buf().await.map_err(KernelClientError::Io)?;
         if available.is_empty() {
-            return if frame.is_empty() { Err(KernelClientError::Closed) } else { Ok(frame) };
+            return if frame.is_empty() {
+                Err(KernelClientError::Closed)
+            } else {
+                Ok(frame)
+            };
         }
         let newline = available.iter().position(|byte| *byte == b'\n');
         let consumed = newline.map_or(available.len(), |position| position + 1);
         if frame.len().saturating_add(consumed) > MAX_MESSAGE_BYTES {
-            return Err(KernelClientError::Protocol("kernel response exceeds frame limit".into()));
+            return Err(KernelClientError::Protocol(
+                "kernel response exceeds frame limit".into(),
+            ));
         }
         frame.extend_from_slice(&available[..consumed]);
         reader.consume(consumed);
@@ -399,7 +445,10 @@ mod tests {
             response.push(b'\n');
             reader.get_mut().write_all(&response).await.unwrap();
         });
-        let result = client.call_tool("coreutils_status", json!({})).await.unwrap();
+        let result = client
+            .call_tool("coreutils_status", json!({}))
+            .await
+            .unwrap();
         assert_eq!(result, json!({ "available": true }));
         server.await.unwrap();
     }
@@ -410,7 +459,10 @@ mod tests {
         let options = ClientOptions::new("local").with_auth_token("secret-token");
         assert!(!format!("{options:?}").contains("secret-token"));
         let client = KernelClient::from_stream(Box::new(client_io), None, Duration::from_millis(5));
-        assert!(matches!(client.tools().await, Err(KernelClientError::Timeout)));
+        assert!(matches!(
+            client.tools().await,
+            Err(KernelClientError::Timeout)
+        ));
     }
 
     #[tokio::test]
@@ -467,7 +519,10 @@ mod tests {
             reader.get_mut().write_all(&response).await.unwrap();
         });
 
-        let result = client.call_method("desktop/window_list", json!({})).await.unwrap();
+        let result = client
+            .call_method("desktop/window_list", json!({}))
+            .await
+            .unwrap();
         assert_eq!(result, json!({ "windows": ["main", "terminal"] }));
         server.await.unwrap();
     }
@@ -496,7 +551,7 @@ mod tests {
         match result {
             Err(KernelClientError::Protocol(msg)) => {
                 assert_eq!(msg, "response id does not match request");
-            },
+            }
             other => panic!("expected Protocol error, got {other:?}"),
         }
         server.await.unwrap();

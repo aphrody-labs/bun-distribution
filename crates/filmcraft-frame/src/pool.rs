@@ -31,7 +31,10 @@ struct Shelf<T> {
 
 impl<T> Shelf<T> {
     const fn new() -> Self {
-        Self { bufs: Vec::new(), bytes: 0 }
+        Self {
+            bufs: Vec::new(),
+            bytes: 0,
+        }
     }
 
     fn size(b: &Vec<T>) -> usize {
@@ -75,7 +78,10 @@ static F32: Mutex<Vec<Vec<f32>>> = Mutex::new(Vec::new());
 const F32_MAX_BYTES: usize = 320 << 20;
 
 fn take<T>(shelf: &Mutex<Shelf<T>>, len: usize) -> Vec<T> {
-    let found = shelf.lock().unwrap_or_else(PoisonError::into_inner).take(len);
+    let found = shelf
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .take(len);
     match found {
         Some(b) => {
             REUSED.fetch_add(1, Ordering::Relaxed);
@@ -88,7 +94,10 @@ fn take<T>(shelf: &Mutex<Shelf<T>>, len: usize) -> Vec<T> {
 fn give<T>(shelf: &Mutex<Shelf<T>>, plane: Arc<Vec<T>>) {
     // a plane something else still shows (a monitor, a GPU upload in flight) is theirs
     if let Ok(b) = Arc::try_unwrap(plane) {
-        shelf.lock().unwrap_or_else(PoisonError::into_inner).give(b, MAX_BYTES);
+        shelf
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .give(b, MAX_BYTES);
     }
 }
 
@@ -132,12 +141,18 @@ pub fn recycle_f32(buf: Vec<f32>) {
 /// Hand back a frame nobody needs any more: its planes are kept for the next [`take_u8`] /
 /// [`take_u16`] unless something else still holds the frame or a plane.
 pub fn recycle(frame: Arc<VideoFrame>) {
-    let Ok(f) = Arc::try_unwrap(frame) else { return };
+    let Ok(f) = Arc::try_unwrap(frame) else {
+        return;
+    };
     match f.data {
         PixelData::Rgba8(d) => give(&U8, d),
         PixelData::RgbaF32(_) => {}
-        PixelData::Yuv8 { planes, alpha, .. } => planes.into_iter().chain(alpha).for_each(|p| give(&U8, p)),
-        PixelData::Yuv16 { planes, alpha, .. } => planes.into_iter().chain(alpha).for_each(|p| give(&U16, p)),
+        PixelData::Yuv8 { planes, alpha, .. } => {
+            planes.into_iter().chain(alpha).for_each(|p| give(&U8, p))
+        }
+        PixelData::Yuv16 { planes, alpha, .. } => {
+            planes.into_iter().chain(alpha).for_each(|p| give(&U16, p))
+        }
     }
 }
 
@@ -164,8 +179,17 @@ pub fn stats() -> PoolStats {
     let idle = |n: usize, m: usize| n.saturating_add(m);
     let a = U8.lock().unwrap_or_else(PoisonError::into_inner).bytes;
     let b = U16.lock().unwrap_or_else(PoisonError::into_inner).bytes;
-    let c: usize = F32.lock().unwrap_or_else(PoisonError::into_inner).iter().map(|b| b.len().saturating_mul(4)).sum();
-    PoolStats { idle_bytes: idle(idle(a, b), c), f32_idle_bytes: c, reused: REUSED.load(Ordering::Relaxed) }
+    let c: usize = F32
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+        .map(|b| b.len().saturating_mul(4))
+        .sum();
+    PoolStats {
+        idle_bytes: idle(idle(a, b), c),
+        f32_idle_bytes: c,
+        reused: REUSED.load(Ordering::Relaxed),
+    }
 }
 
 #[cfg(test)]
@@ -208,7 +232,10 @@ mod tests {
         recycle_f32(b);
         // the same allocation, length and contents (the caller overwrites it)
         let again = take_f32_overwritten(len);
-        assert_eq!((again.as_ptr() as usize, again.len(), again[17]), (at, len, 4.5));
+        assert_eq!(
+            (again.as_ptr() as usize, again.len(), again[17]),
+            (at, len, 4.5)
+        );
         // another length does not match, and is not handed the idle one
         recycle_f32(again);
         let other = take_f32_overwritten(len + 1);
@@ -218,7 +245,11 @@ mod tests {
         recycle_f32(vec![0.0; 100]);
         let budget_len = F32_MAX_BYTES / 4;
         recycle_f32(vec![0.0; budget_len + 1]);
-        assert!(stats().idle_bytes <= F32_MAX_BYTES + (U8_BYTES_UPPER_BOUND), "idle {}", stats().idle_bytes);
+        assert!(
+            stats().idle_bytes <= F32_MAX_BYTES + (U8_BYTES_UPPER_BOUND),
+            "idle {}",
+            stats().idle_bytes
+        );
         // leave nothing behind for other tests
         drop(take_f32_overwritten(len));
     }
@@ -232,7 +263,11 @@ mod tests {
                 width: 1,
                 height: 1,
                 data: PixelData::Yuv8 {
-                    planes: [Arc::new(vec![fill; n]), Arc::new(vec![fill; c]), Arc::new(vec![fill; c])],
+                    planes: [
+                        Arc::new(vec![fill; n]),
+                        Arc::new(vec![fill; c]),
+                        Arc::new(vec![fill; c]),
+                    ],
                     chroma: Chroma::C420,
                     alpha: None,
                 },
@@ -242,7 +277,9 @@ mod tests {
             })
         };
         let plane_ptrs = |frame: &VideoFrame| match &frame.data {
-            PixelData::Yuv8 { planes, .. } => planes.each_ref().map(|plane| plane.as_ptr() as usize),
+            PixelData::Yuv8 { planes, .. } => {
+                planes.each_ref().map(|plane| plane.as_ptr() as usize)
+            }
             _ => panic!("fixture has three byte planes"),
         };
         // A frame someone else still holds is left alone. The reuse statistic is global:
@@ -253,7 +290,10 @@ mod tests {
         recycle(shared);
         let fresh = take_u8(n);
         assert!(fresh.capacity() >= n);
-        assert!(!held_ptrs.contains(&(fresh.as_ptr() as usize)), "a shared plane cannot be handed out");
+        assert!(
+            !held_ptrs.contains(&(fresh.as_ptr() as usize)),
+            "a shared plane cannot be handed out"
+        );
         assert_eq!(held.byte_size(), n + 2 * c);
         // An unshared frame's exact allocations come back, empty. Equal-size chroma
         // planes may be taken in either order.

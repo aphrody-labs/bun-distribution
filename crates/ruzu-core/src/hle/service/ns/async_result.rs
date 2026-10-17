@@ -94,7 +94,10 @@ mod tests {
         let result = IAsyncResult::new(None);
         assert_eq!(result.cancel(), RESULT_SUCCESS);
         for (id, implemented) in [(0, false), (1, true), (2, false)] {
-            assert_eq!(result.handlers()[&id].handler_callback.is_some(), implemented);
+            assert_eq!(
+                result.handlers()[&id].handler_callback.is_some(),
+                implemented
+            );
         }
     }
 }

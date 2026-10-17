@@ -46,7 +46,11 @@ fn dirty_recycled_planes_decode_bit_exact() {
     for _ in 0..8 {
         let dirty = |len: usize| Arc::new(vec![0xAAu8; len]);
         let f = VideoFrame {
-            data: PixelData::Yuv8 { planes: [dirty(w * h), dirty(w * h / 4), dirty(w * h / 4)], chroma: Chroma::C420, alpha: None },
+            data: PixelData::Yuv8 {
+                planes: [dirty(w * h), dirty(w * h / 4), dirty(w * h / 4)],
+                chroma: Chroma::C420,
+                alpha: None,
+            },
             ..VideoFrame::rgba8(w as u32, h as u32, vec![0; w * h * 4])
         };
         filmcraft_frame::pool::recycle(Arc::new(f));
@@ -56,8 +60,17 @@ fn dirty_recycled_planes_decode_bit_exact() {
     let src = filmcraft_codecs::open_bytes("pool_h264.mp4", bytes(&file)).expect("open");
     let rate = src.info().frame_rate();
     for i in 0..n {
-        let f = src.video_frame(FrameRequest::full(rate.tick_of(i as i64))).expect("frame");
-        assert_eq!(max_diff(&planes(&f), &reference(i)), 0, "frame {i} decoded into a recycled buffer");
+        let f = src
+            .video_frame(FrameRequest::full(rate.tick_of(i as i64)))
+            .expect("frame");
+        assert_eq!(
+            max_diff(&planes(&f), &reference(i)),
+            0,
+            "frame {i} decoded into a recycled buffer"
+        );
     }
-    assert!(filmcraft_frame::pool::stats().reused > reused_before, "the decoder took the dirty pooled buffers");
+    assert!(
+        filmcraft_frame::pool::stats().reused > reused_before,
+        "the decoder took the dirty pooled buffers"
+    );
 }

@@ -24,8 +24,13 @@ fn saving_app(typed: &'static str) -> (VectorcraftApp, Written) {
         ..Default::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
-    app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
+    app.run("file.new", json!({"width": 100, "height": 100}))
+        .unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+    )
+    .unwrap();
     (app, written)
 }
 
@@ -38,12 +43,17 @@ fn saves_add_the_format_extension_to_a_bare_name() {
     let (mut app, w) = saving_app("/tmp/Untitled-1");
     app.run("file.save", json!({})).unwrap();
     assert_eq!(last(&w), "/tmp/Untitled-1.vectorcraft");
-    assert_eq!(app.session.active().unwrap().path.as_deref(), Some("/tmp/Untitled-1.vectorcraft"));
+    assert_eq!(
+        app.session.active().unwrap().path.as_deref(),
+        Some("/tmp/Untitled-1.vectorcraft")
+    );
     let (mut app, w) = saving_app("/tmp/copy");
-    app.run("file.saveCopy", json!({"format": "svg", "svg": {}})).unwrap();
+    app.run("file.saveCopy", json!({"format": "svg", "svg": {}}))
+        .unwrap();
     assert_eq!(last(&w), "/tmp/copy.svg");
     let (mut app, w) = saving_app("/tmp/as");
-    app.run("file.saveAs", json!({"format": "pdf", "options": {}})).unwrap();
+    app.run("file.saveAs", json!({"format": "pdf", "options": {}}))
+        .unwrap();
     assert_eq!(last(&w), "/tmp/as.pdf");
 }
 
@@ -54,7 +64,11 @@ fn exports_add_the_format_extension_to_a_bare_name() {
     assert_eq!(last(&w), "/tmp/art.png");
     app.run("select.all", json!({})).unwrap();
     app.run("document.exportSelection", json!({})).unwrap();
-    assert_eq!(last(&w), "/tmp/art.png", "Export Selection: its default format");
+    assert_eq!(
+        last(&w),
+        "/tmp/art.png",
+        "Export Selection: its default format"
+    );
     io::save_command_output(&mut app, "document.export", "txt", json!({"format": "txt"})).unwrap();
     assert_eq!(last(&w), "/tmp/art.txt");
 }

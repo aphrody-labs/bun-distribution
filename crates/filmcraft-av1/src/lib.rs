@@ -5,7 +5,17 @@
 
 // Items used only by stages still being written (inter prediction, post filters).
 #![allow(dead_code)]
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod bits;
 mod cdef;
@@ -70,10 +80,18 @@ pub struct Picture {
 
 impl Picture {
     pub fn plane_width(&self, plane: usize) -> u32 {
-        if plane == 0 { self.width } else { (self.width + self.subsampling_x as u32) >> self.subsampling_x }
+        if plane == 0 {
+            self.width
+        } else {
+            (self.width + self.subsampling_x as u32) >> self.subsampling_x
+        }
     }
     pub fn plane_height(&self, plane: usize) -> u32 {
-        if plane == 0 { self.height } else { (self.height + self.subsampling_y as u32) >> self.subsampling_y }
+        if plane == 0 {
+            self.height
+        } else {
+            (self.height + self.subsampling_y as u32) >> self.subsampling_y
+        }
     }
 }
 

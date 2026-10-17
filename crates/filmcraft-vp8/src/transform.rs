@@ -69,7 +69,9 @@ pub fn inverse_dct(input: &[i16; 16]) -> [i16; 16] {
 #[inline]
 pub fn add_residue(plane: &mut [u8], stride: usize, pos: usize, residue: &[i16; 16]) {
     for r in 0..4 {
-        let Some(row) = plane.get_mut(pos + r * stride..pos + r * stride + 4) else { return };
+        let Some(row) = plane.get_mut(pos + r * stride..pos + r * stride + 4) else {
+            return;
+        };
         for (c, px) in row.iter_mut().enumerate() {
             *px = (i32::from(*px) + i32::from(residue[4 * r + c])).clamp(0, 255) as u8;
         }
@@ -86,9 +88,17 @@ mod tests {
             let mut b = [0i16; 16];
             b[0] = dc;
             let out = inverse_dct(&b);
-            assert!(out.iter().all(|&v| i32::from(v) == (i32::from(dc) + 4) >> 3), "dct dc {dc}");
+            assert!(
+                out.iter()
+                    .all(|&v| i32::from(v) == (i32::from(dc) + 4) >> 3),
+                "dct dc {dc}"
+            );
             let out = inverse_wht(&b);
-            assert!(out.iter().all(|&v| i32::from(v) == (i32::from(dc) + 3) >> 3), "wht dc {dc}");
+            assert!(
+                out.iter()
+                    .all(|&v| i32::from(v) == (i32::from(dc) + 3) >> 3),
+                "wht dc {dc}"
+            );
         }
     }
 }

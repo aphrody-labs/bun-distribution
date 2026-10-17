@@ -4,7 +4,7 @@ use crate::{
     Bounded2d, BoundingCircle, BoundingVolume, Capsule3d, Cone, ConicalFrustum, Cuboid, Cylinder,
     InfinitePlane3d, Line3d, Segment3d, Sphere, Torus, Triangle2d, Triangle3d,
 };
-use bevy_math::{ops, Isometry2d, Isometry3d, Mat3, Vec2, Vec3, Vec3A};
+use bevy_math::{Isometry2d, Isometry3d, Mat3, Vec2, Vec3, Vec3A, ops};
 
 #[cfg(feature = "alloc")]
 use crate::Polyline3d;
@@ -363,7 +363,7 @@ impl Bounded3d for Triangle3d {
 #[cfg(test)]
 mod tests {
     use crate::BoundingVolume;
-    use bevy_math::{ops, Dir3, Isometry3d, Quat, Vec3, Vec3A};
+    use bevy_math::{Dir3, Isometry3d, Quat, Vec3, Vec3A, ops};
 
     use crate::{
         Bounded3d, Capsule3d, Cone, ConicalFrustum, Cuboid, Cylinder, InfinitePlane3d, Line3d,

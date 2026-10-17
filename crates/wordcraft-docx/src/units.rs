@@ -13,7 +13,11 @@ pub fn measure(s: &str, per_pt: f32) -> Option<f32> {
     if t.is_empty() || t.len() > 40 {
         return None;
     }
-    let split = t.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E')).unwrap_or(t.len());
+    let split = t
+        .find(|c: char| {
+            !(c.is_ascii_digit() || c == '.' || c == '-' || c == '+' || c == 'e' || c == 'E')
+        })
+        .unwrap_or(t.len());
     let (num, unit) = t.split_at(split);
     let v: f64 = num.parse().ok()?;
     if !v.is_finite() {
@@ -44,7 +48,8 @@ pub fn int(s: &str) -> Option<i64> {
         return Some(v);
     }
     let v: f64 = t.parse().ok()?;
-    v.is_finite().then(|| v.round().clamp(i64::MIN as f64, i64::MAX as f64) as i64)
+    v.is_finite()
+        .then(|| v.round().clamp(i64::MIN as f64, i64::MAX as f64) as i64)
 }
 
 pub fn u32_of(s: &str) -> Option<u32> {

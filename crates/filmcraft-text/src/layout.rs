@@ -109,7 +109,15 @@ impl Hash for TextStyle {
         hf(h, self.size);
         hf(h, self.tracking);
         hf(h, self.baseline_shift);
-        (self.kerning, self.ligatures, self.faux_bold, self.faux_italic, self.caps, self.underline).hash(h);
+        (
+            self.kerning,
+            self.ligatures,
+            self.faux_bold,
+            self.faux_italic,
+            self.caps,
+            self.underline,
+        )
+            .hash(h);
     }
 }
 
@@ -167,7 +175,10 @@ impl<'a> Styles<'a> {
     fn new(text: &str, base: &'a TextStyle, runs: &'a [StyleRun]) -> Self {
         let mut list = vec![base];
         list.extend(runs.iter().map(|r| &r.style));
-        let prim = list.iter().map(|s| fonts::resolve(&s.family, &s.style)).collect();
+        let prim = list
+            .iter()
+            .map(|s| fonts::resolve(&s.family, &s.style))
+            .collect();
         let per_byte = (!runs.is_empty()).then(|| {
             let mut v = vec![0u16; text.len() + 1];
             for (i, r) in runs.iter().enumerate() {
@@ -178,10 +189,17 @@ impl<'a> Styles<'a> {
             }
             v
         });
-        Styles { list, prim, per_byte }
+        Styles {
+            list,
+            prim,
+            per_byte,
+        }
     }
     fn at(&self, byte: usize) -> usize {
-        self.per_byte.as_ref().and_then(|v| v.get(byte)).map_or(0, |&i| i as usize)
+        self.per_byte
+            .as_ref()
+            .and_then(|v| v.get(byte))
+            .map_or(0, |&i| i as usize)
     }
     fn rich(&self) -> bool {
         self.per_byte.is_some()
@@ -237,15 +255,25 @@ impl Layout {
     /// Caret position `(x, baseline, line)` for byte offset `pos`.
     pub fn caret(&self, pos: usize) -> (f32, f32, usize) {
         let li = self.line_of(pos);
-        let Some(l) = self.lines.get(li) else { return (0.0, 0.0, 0) };
-        let x = l.carets.iter().min_by_key(|(b, _)| b.abs_diff(pos)).map_or(l.x, |c| c.1);
+        let Some(l) = self.lines.get(li) else {
+            return (0.0, 0.0, 0);
+        };
+        let x = l
+            .carets
+            .iter()
+            .min_by_key(|(b, _)| b.abs_diff(pos))
+            .map_or(l.x, |c| c.1);
         (x, l.baseline, li)
     }
     /// Nearest caret byte offset to point `(x, y)`.
     pub fn hit(&self, x: f32, y: f32) -> usize {
         let d = |l: &Line| {
             if self.vertical {
-                let dx = if x < l.x - l.ascent * 0.5 { l.x - l.ascent * 0.5 - x } else { (x - l.x - l.width - l.ascent * 0.5).max(0.0) };
+                let dx = if x < l.x - l.ascent * 0.5 {
+                    l.x - l.ascent * 0.5 - x
+                } else {
+                    (x - l.x - l.width - l.ascent * 0.5).max(0.0)
+                };
                 line_dist(l, y) + dx
             } else {
                 line_dist(l, y)
@@ -254,7 +282,10 @@ impl Layout {
         let Some(l) = self.lines.iter().min_by(|a, b| d(a).total_cmp(&d(b))) else {
             return 0;
         };
-        l.carets.iter().min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs())).map_or(l.range.start, |c| c.0)
+        l.carets
+            .iter()
+            .min_by(|a, b| (a.1 - x).abs().total_cmp(&(b.1 - x).abs()))
+            .map_or(l.range.start, |c| c.0)
     }
     /// Selection highlight rectangles `[x0, y0, x1, y1]` for the byte range `a..b`.
     pub fn selection_rects(&self, a: usize, b: usize) -> Vec<[f32; 4]> {
@@ -266,7 +297,12 @@ impl Layout {
             if s > e || (s == e && !(a < l.range.start && b > l.range.end)) {
                 continue;
             }
-            let xs: Vec<f32> = l.carets.iter().filter(|(p, _)| *p >= s && *p <= e).map(|c| c.1).collect();
+            let xs: Vec<f32> = l
+                .carets
+                .iter()
+                .filter(|(p, _)| *p >= s && *p <= e)
+                .map(|c| c.1)
+                .collect();
             if xs.len() < 2 && b <= l.range.end {
                 continue;
             }
@@ -275,7 +311,12 @@ impl Layout {
             if b > l.range.end {
                 x1 += l.ascent * 0.25; // selected newline
             }
-            out.push([x0.min(x1), l.baseline - l.ascent, x1, l.baseline + l.descent]);
+            out.push([
+                x0.min(x1),
+                l.baseline - l.ascent,
+                x1,
+                l.baseline + l.descent,
+            ]);
         }
         out
     }
@@ -324,15 +365,29 @@ fn uses_vertical_form(c: char) -> bool {
     matches!(c as u32, 0x2E80..=0x9FFF | 0xF900..=0xFAFF | 0xFE10..=0xFE1F | 0xFE30..=0xFE4F | 0xFF00..=0xFFEF | 0x20000..=0x3FFFF)
 }
 
-fn shape_item(text: &str, chars: &[(usize, char, char)], rtl: bool, face: FaceId, size: f32, style: &TextStyle, vertical: bool) -> Vec<ShapedGlyph> {
+fn shape_item(
+    text: &str,
+    chars: &[(usize, char, char)],
+    rtl: bool,
+    face: FaceId,
+    size: f32,
+    style: &TextStyle,
+    vertical: bool,
+) -> Vec<ShapedGlyph> {
     let f = fonts::face(face);
-    let (Some(font), Some(data)) = (f.font(), f.shaper_data()) else { return Vec::new() };
+    let (Some(font), Some(data)) = (f.font(), f.shaper_data()) else {
+        return Vec::new();
+    };
     let shaper = data.shaper(&font).build();
     let mut buf = UnicodeBuffer::new();
     for &(b, _, sc) in chars {
         buf.add(if sc == '\t' { ' ' } else { sc }, b as u32);
     }
-    buf.set_direction(if rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+    buf.set_direction(if rtl {
+        Direction::RightToLeft
+    } else {
+        Direction::LeftToRight
+    });
     buf.guess_segment_properties();
     let mut feats = Vec::new();
     if vertical && chars.first().is_some_and(|c| uses_vertical_form(c.1)) {
@@ -393,7 +448,9 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
             underlines: Vec::new(),
         }];
     }
-    let default_level = para.rtl.map(|r| if r { Level::rtl() } else { Level::ltr() });
+    let default_level = para
+        .rtl
+        .map(|r| if r { Level::rtl() } else { Level::ltr() });
     let bidi = BidiInfo::new(text, default_level);
     let pinfo = &bidi.paragraphs[0];
     let base_rtl = pinfo.level.is_rtl();
@@ -409,7 +466,11 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
                 Caps::Small => (c, false),
             };
             let pf = sty.prim[si].face;
-            let face = if sc.is_whitespace() { pf } else { fonts::fallback_for(sc, pf) };
+            let face = if sc.is_whitespace() {
+                pf
+            } else {
+                fonts::fallback_for(sc, pf)
+            };
             (b, c, sc, face, bidi.levels[b].is_rtl(), small, si)
         })
         .collect();
@@ -419,12 +480,21 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
     while i < chars.len() {
         let (face, rtl, small, si) = (chars[i].3, chars[i].4, chars[i].5, chars[i].6);
         let mut j = i + 1;
-        while j < chars.len() && chars[j].3 == face && chars[j].4 == rtl && chars[j].5 == small && chars[j].6 == si {
+        while j < chars.len()
+            && chars[j].3 == face
+            && chars[j].4 == rtl
+            && chars[j].5 == small
+            && chars[j].6 == si
+        {
             j += 1;
         }
         let st = sty.list[si];
         let sub: Vec<(usize, char, char)> = chars[i..j].iter().map(|c| (c.0, c.1, c.2)).collect();
-        let size = if small { st.size * SMALL_CAPS_SCALE } else { st.size };
+        let size = if small {
+            st.size * SMALL_CAPS_SCALE
+        } else {
+            st.size
+        };
         let mut glyphs = shape_item(text, &sub, rtl, face, size, st, para.vertical);
         // tracking after each cluster
         if st.tracking != 0.0 {
@@ -435,8 +505,17 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
                 }
             }
         }
-        let end = if j < chars.len() { chars[j].0 } else { text.len() };
-        items.push(Item { range: chars[i].0..end, rtl, glyphs, style: si });
+        let end = if j < chars.len() {
+            chars[j].0
+        } else {
+            text.len()
+        };
+        items.push(Item {
+            range: chars[i].0..end,
+            rtl,
+            glyphs,
+            style: si,
+        });
         i = j;
     }
     // advance per char byte (cluster start)
@@ -509,7 +588,9 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
         let mut extents: HashMap<usize, (f32, f32, bool)> = HashMap::new();
         for run in runs {
             let rtl = levels[run.start].is_rtl();
-            let mut idx: Vec<usize> = (0..items.len()).filter(|&k| items[k].range.start < run.end && items[k].range.end > run.start).collect();
+            let mut idx: Vec<usize> = (0..items.len())
+                .filter(|&k| items[k].range.start < run.end && items[k].range.end > run.start)
+                .collect();
             if rtl {
                 idx.reverse();
             }
@@ -543,15 +624,26 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
         let mut carets = Vec::new();
         let mut cluster_starts: Vec<usize> = extents.keys().copied().collect();
         cluster_starts.sort_unstable();
-        let char_bytes: Vec<usize> = text[r.clone()].char_indices().map(|(b, _)| r.start + b).collect();
+        let char_bytes: Vec<usize> = text[r.clone()]
+            .char_indices()
+            .map(|(b, _)| r.start + b)
+            .collect();
         for (ci, &cs) in cluster_starts.iter().enumerate() {
             let (x0, x1, rtl) = extents[&cs];
             let next = cluster_starts.get(ci + 1).copied().unwrap_or(r.end);
-            let members: Vec<usize> = char_bytes.iter().copied().filter(|b| *b >= cs && *b < next).collect();
+            let members: Vec<usize> = char_bytes
+                .iter()
+                .copied()
+                .filter(|b| *b >= cs && *b < next)
+                .collect();
             let n = members.len().max(1) as f32;
             for (mi, b) in members.iter().enumerate() {
                 let f = mi as f32 / n;
-                let x = if rtl { x1 - (x1 - x0) * f } else { x0 + (x1 - x0) * f };
+                let x = if rtl {
+                    x1 - (x1 - x0) * f
+                } else {
+                    x0 + (x1 - x0) * f
+                };
                 carets.push((base + b, x));
             }
         }
@@ -563,7 +655,9 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
                 .filter(|&&cs| cs < ce)
                 .filter_map(|&cs| {
                     let si = sty.at(base + cs);
-                    sty.list[si].underline.then(|| (extents[&cs].0, extents[&cs].1, si as u16))
+                    sty.list[si]
+                        .underline
+                        .then(|| (extents[&cs].0, extents[&cs].1, si as u16))
                 })
                 .collect();
             segs.sort_by(|a, b| a.0.total_cmp(&b.0));
@@ -603,7 +697,11 @@ fn paragraph(text: &str, base: usize, sty: &Styles, para: &ParagraphStyle) -> Ve
                 desc = desc.max(m.descent);
             }
         }
-        let content_w = if space_extra > 0.0 { para.width.unwrap_or(content) } else { content };
+        let content_w = if space_extra > 0.0 {
+            para.width.unwrap_or(content)
+        } else {
+            content
+        };
         out.push(ParaLine {
             range: base + r.start..base + r.end,
             glyphs,
@@ -624,11 +722,20 @@ pub fn layout_uncached(text: &str, style: &TextStyle, para: &ParagraphStyle) -> 
 }
 
 /// Lay out `text` with per-character style runs (see [`StyleRun`]); `style` is the base style.
-pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], para: &ParagraphStyle) -> Layout {
+pub fn layout_rich_uncached(
+    text: &str,
+    style: &TextStyle,
+    runs: &[StyleRun],
+    para: &ParagraphStyle,
+) -> Layout {
     let sty = Styles::new(text, style, runs);
     let pm = fonts::face(sty.prim[0].face).metrics(style.size);
     let line_h = (pm.ascent + pm.descent + pm.line_gap).max(style.size * 0.5) + para.leading;
-    let mut lay = Layout { missing_font: sty.prim.iter().any(|p| p.missing), text_len: text.len(), ..Default::default() };
+    let mut lay = Layout {
+        missing_font: sty.prim.iter().any(|p| p.missing),
+        text_len: text.len(),
+        ..Default::default()
+    };
     if para.vertical {
         return layout_vertical(text, &sty, para, line_h, lay);
     }
@@ -651,7 +758,11 @@ pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], pa
     for (i, pl) in plines.into_iter().enumerate() {
         if i > 0 {
             // rich text: a line holding a larger run pushes its baseline down
-            baseline += if rich { line_h.max(prev_desc + pl.ascent + para.leading) } else { line_h };
+            baseline += if rich {
+                line_h.max(prev_desc + pl.ascent + para.leading)
+            } else {
+                line_h
+            };
             if box_h.is_some_and(|h| baseline + pl.descent > h + 0.01) {
                 lay.overflow = true;
                 break;
@@ -678,12 +789,14 @@ pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], pa
                 let st = sty.list[*si as usize];
                 let um = fonts::face(sty.prim[*si as usize].face).metrics(st.size);
                 let y = baseline - st.baseline_shift + um.underline_pos;
-                lay.underlines.push([x0 + shift, y, x1 + shift, y + um.underline_thickness]);
+                lay.underlines
+                    .push([x0 + shift, y, x1 + shift, y + um.underline_thickness]);
                 lay.underline_runs.push(*si);
             }
         } else if style.underline && pl.content > 0.0 {
             let y = baseline - style.baseline_shift + pm.underline_pos;
-            lay.underlines.push([x, y, x + pl.content, y + pm.underline_thickness]);
+            lay.underlines
+                .push([x, y, x + pl.content, y + pm.underline_thickness]);
             lay.underline_runs.push(0);
         }
         lay.lines.push(Line {
@@ -694,7 +807,11 @@ pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], pa
             ascent: pl.ascent,
             descent: pl.descent,
             glyphs: g0..lay.glyphs.len(),
-            carets: pl.carets.into_iter().map(|(b, cx)| (b, cx + shift)).collect(),
+            carets: pl
+                .carets
+                .into_iter()
+                .map(|(b, cx)| (b, cx + shift))
+                .collect(),
         });
     }
     let (mut x0, mut x1) = (f32::MAX, f32::MIN);
@@ -707,7 +824,12 @@ pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], pa
         x1 = x1.max(w);
     }
     if let (Some(first), Some(last)) = (lay.lines.first(), lay.lines.last()) {
-        lay.bounds = [x0, first.baseline - first.ascent, x1.max(x0), last.baseline + last.descent];
+        lay.bounds = [
+            x0,
+            first.baseline - first.ascent,
+            x1.max(x0),
+            last.baseline + last.descent,
+        ];
     }
     if let Some(h) = box_h {
         // a sized box is its own bounds, however much text it holds
@@ -719,11 +841,20 @@ pub fn layout_rich_uncached(text: &str, style: &TextStyle, runs: &[StyleRun], pa
 
 /// Vertical layout: each grapheme is its own line (so carets, hit testing and selection work
 /// unchanged), stacked top to bottom and centred on its column; columns run right to left.
-fn layout_vertical(text: &str, sty: &Styles, para: &ParagraphStyle, col_w: f32, mut lay: Layout) -> Layout {
+fn layout_vertical(
+    text: &str,
+    sty: &Styles,
+    para: &ParagraphStyle,
+    col_w: f32,
+    mut lay: Layout,
+) -> Layout {
     let style = sty.list[0];
     let pm = fonts::face(sty.prim[0].face).metrics(style.size);
     let row = (pm.ascent + pm.descent).max(style.size * 0.5) + style.tracking * style.size / 1000.0;
-    let flat = ParagraphStyle { vertical: true, ..Default::default() };
+    let flat = ParagraphStyle {
+        vertical: true,
+        ..Default::default()
+    };
     lay.vertical = true;
     let rich = sty.rich();
     let mut base = 0usize;
@@ -754,7 +885,10 @@ fn layout_vertical(text: &str, sty: &Styles, para: &ParagraphStyle, col_w: f32, 
                 // The alternate glyph hangs from its vertical origin. A horizontal ascent
                 // is not the top bearing of a vertical punctuation glyph (OpenType VORG/vmtx).
                 let font = fonts::face(g.face);
-                if text.get(g.cluster..).and_then(|s| s.chars().next()).is_some_and(uses_vertical_form)
+                if text
+                    .get(g.cluster..)
+                    .and_then(|s| s.chars().next())
+                    .is_some_and(uses_vertical_form)
                     && let Some(origin) = font.vertical_origin(g.id, g.size)
                 {
                     g.y += baseline - pl.ascent + origin;
@@ -770,12 +904,14 @@ fn layout_vertical(text: &str, sty: &Styles, para: &ParagraphStyle, col_w: f32, 
                     let st = sty.list[*si as usize];
                     let um = fonts::face(sty.prim[*si as usize].face).metrics(st.size);
                     let x = *x1 + shift - st.baseline_shift + um.underline_pos;
-                    lay.underlines.push([x, y_top, x + um.underline_thickness, y_top + row]);
+                    lay.underlines
+                        .push([x, y_top, x + um.underline_thickness, y_top + row]);
                     lay.underline_runs.push(*si);
                 }
             } else if style.underline && pl.content > 0.0 {
                 let x = shift + pl.left_trim + pl.content + pm.underline_pos;
-                lay.underlines.push([x, y_top, x + pm.underline_thickness, y_top + row]);
+                lay.underlines
+                    .push([x, y_top, x + pm.underline_thickness, y_top + row]);
                 lay.underline_runs.push(0);
             }
             lay.lines.push(Line {
@@ -796,7 +932,12 @@ fn layout_vertical(text: &str, sty: &Styles, para: &ParagraphStyle, col_w: f32, 
         y0 = y0.min(l.baseline - l.ascent);
         y1 = y1.max(l.baseline + l.descent);
     }
-    lay.bounds = [-(ncols.max(1) as f32 - 0.5) * col_w, y0, col_w / 2.0, y1.max(y0)];
+    lay.bounds = [
+        -(ncols.max(1) as f32 - 0.5) * col_w,
+        y0,
+        col_w / 2.0,
+        y1.max(y0),
+    ];
     lay
 }
 
@@ -811,7 +952,12 @@ pub fn layout(text: &str, style: &TextStyle, para: &ParagraphStyle) -> Arc<Layou
 }
 
 /// Lay out `text` with per-character style runs (cached by text, styles and runs).
-pub fn layout_rich(text: &str, style: &TextStyle, runs: &[StyleRun], para: &ParagraphStyle) -> Arc<Layout> {
+pub fn layout_rich(
+    text: &str,
+    style: &TextStyle,
+    runs: &[StyleRun],
+    para: &ParagraphStyle,
+) -> Arc<Layout> {
     let mut h = std::collections::hash_map::DefaultHasher::new();
     text.hash(&mut h);
     style.hash(&mut h);
@@ -820,7 +966,11 @@ pub fn layout_rich(text: &str, style: &TextStyle, runs: &[StyleRun], para: &Para
     let key = h.finish();
     static CLOCK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let now = CLOCK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if let Some(e) = cache().lock().unwrap_or_else(|e| e.into_inner()).get_mut(&key) {
+    if let Some(e) = cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get_mut(&key)
+    {
         e.0 = now;
         return e.1.clone();
     }
@@ -848,25 +998,60 @@ mod tests {
     use super::*;
 
     fn st(size: f32) -> TextStyle {
-        TextStyle { size, ..Default::default() }
+        TextStyle {
+            size,
+            ..Default::default()
+        }
     }
 
     #[test]
     fn kerning_and_ligatures_change_advances() {
         let kern = measure("AVAVAV", &st(100.0));
-        let nokern = measure("AVAVAV", &TextStyle { kerning: false, ..st(100.0) });
-        assert!(kern < nokern - 5.0, "kerning tightens AV: {kern} vs {nokern}");
+        let nokern = measure(
+            "AVAVAV",
+            &TextStyle {
+                kerning: false,
+                ..st(100.0)
+            },
+        );
+        assert!(
+            kern < nokern - 5.0,
+            "kerning tightens AV: {kern} vs {nokern}"
+        );
         // tracking adds 1/1000 em per cluster
-        let tracked = measure("AVAVAV", &TextStyle { tracking: 100.0, ..st(100.0) });
-        assert!((tracked - kern - 6.0 * 10.0).abs() < 0.5, "{tracked} {kern}");
+        let tracked = measure(
+            "AVAVAV",
+            &TextStyle {
+                tracking: 100.0,
+                ..st(100.0)
+            },
+        );
+        assert!(
+            (tracked - kern - 6.0 * 10.0).abs() < 0.5,
+            "{tracked} {kern}"
+        );
     }
 
     #[test]
     fn point_text_alignment() {
-        let l = layout("Hello", &st(50.0), &ParagraphStyle { align: Align::Center, ..Default::default() });
+        let l = layout(
+            "Hello",
+            &st(50.0),
+            &ParagraphStyle {
+                align: Align::Center,
+                ..Default::default()
+            },
+        );
         let line = &l.lines[0];
         assert!((line.x + line.width / 2.0).abs() < 0.01);
-        let r = layout("Hello", &st(50.0), &ParagraphStyle { align: Align::Right, ..Default::default() });
+        let r = layout(
+            "Hello",
+            &st(50.0),
+            &ParagraphStyle {
+                align: Align::Right,
+                ..Default::default()
+            },
+        );
         assert!((r.lines[0].x + r.lines[0].width).abs() < 0.01);
         assert_eq!(l.glyphs.len(), 5);
         assert!(l.bounds[1] < -30.0 && l.bounds[3] > 5.0, "{:?}", l.bounds);
@@ -874,11 +1059,23 @@ mod tests {
 
     #[test]
     fn wraps_area_text_and_justifies() {
-        let p = ParagraphStyle { width: Some(300.0), align: Align::Justify, ..Default::default() };
-        let l = layout("the quick brown fox jumps over the lazy dog again and again", &st(40.0), &p);
+        let p = ParagraphStyle {
+            width: Some(300.0),
+            align: Align::Justify,
+            ..Default::default()
+        };
+        let l = layout(
+            "the quick brown fox jumps over the lazy dog again and again",
+            &st(40.0),
+            &p,
+        );
         assert!(l.lines.len() >= 3, "{}", l.lines.len());
         for line in &l.lines[..l.lines.len() - 1] {
-            assert!((line.width - 300.0).abs() < 0.5, "justified to the box: {}", line.width);
+            assert!(
+                (line.width - 300.0).abs() < 0.5,
+                "justified to the box: {}",
+                line.width
+            );
         }
         // the lines tile the text
         assert_eq!(l.lines[0].range.start, 0);
@@ -886,18 +1083,40 @@ mod tests {
             assert_eq!(w[0].range.end, w[1].range.start);
             assert!(w[1].baseline > w[0].baseline);
         }
-        let left = layout("the quick brown fox jumps over the lazy dog", &st(40.0), &ParagraphStyle { width: Some(300.0), ..Default::default() });
+        let left = layout(
+            "the quick brown fox jumps over the lazy dog",
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                ..Default::default()
+            },
+        );
         assert!(left.lines.iter().all(|l| l.width <= 300.0 + 0.01));
     }
 
     #[test]
     fn a_box_height_leaves_out_the_lines_that_do_not_fit() {
         let text = "the quick brown fox jumps over the lazy dog again and again";
-        let free = layout(text, &st(40.0), &ParagraphStyle { width: Some(300.0), ..Default::default() });
+        let free = layout(
+            text,
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                ..Default::default()
+            },
+        );
         assert!(free.lines.len() >= 3 && !free.overflow);
         // room for two lines only
         let h = free.lines[1].baseline + free.lines[1].descent + 1.0;
-        let boxed = layout(text, &st(40.0), &ParagraphStyle { width: Some(300.0), height: Some(h), ..Default::default() });
+        let boxed = layout(
+            text,
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                height: Some(h),
+                ..Default::default()
+            },
+        );
         assert_eq!(boxed.lines.len(), 2);
         assert!(boxed.overflow);
         assert_eq!(boxed.lines[..], free.lines[..2]);
@@ -905,14 +1124,37 @@ mod tests {
         assert_eq!(boxed.bounds, [0.0, 0.0, 300.0, h], "the box is the bounds");
         assert_eq!(boxed.text_len, text.len());
         // a box tall enough for everything hides nothing; a box too short for one line keeps the first
-        let tall = layout(text, &st(40.0), &ParagraphStyle { width: Some(300.0), height: Some(5000.0), ..Default::default() });
+        let tall = layout(
+            text,
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                height: Some(5000.0),
+                ..Default::default()
+            },
+        );
         assert_eq!(tall.lines.len(), free.lines.len());
         assert!(!tall.overflow);
-        let tiny = layout(text, &st(40.0), &ParagraphStyle { width: Some(300.0), height: Some(2.0), ..Default::default() });
+        let tiny = layout(
+            text,
+            &st(40.0),
+            &ParagraphStyle {
+                width: Some(300.0),
+                height: Some(2.0),
+                ..Default::default()
+            },
+        );
         assert_eq!(tiny.lines.len(), 1);
         assert!(tiny.overflow);
         // point text has no box: the height is ignored
-        let point = layout("a\nb\nc", &st(40.0), &ParagraphStyle { height: Some(2.0), ..Default::default() });
+        let point = layout(
+            "a\nb\nc",
+            &st(40.0),
+            &ParagraphStyle {
+                height: Some(2.0),
+                ..Default::default()
+            },
+        );
         assert_eq!(point.lines.len(), 3);
         assert!(!point.overflow);
     }
@@ -924,7 +1166,14 @@ mod tests {
         assert_eq!(l.lines[1].range, 4..7);
         assert_eq!(l.lines[2].range, 8..8);
         let gap = l.lines[1].baseline - l.lines[0].baseline;
-        let l2 = layout("one\ntwo", &st(30.0), &ParagraphStyle { leading: 10.0, ..Default::default() });
+        let l2 = layout(
+            "one\ntwo",
+            &st(30.0),
+            &ParagraphStyle {
+                leading: 10.0,
+                ..Default::default()
+            },
+        );
         assert!((l2.lines[1].baseline - l2.lines[0].baseline - gap - 10.0).abs() < 1e-3);
     }
 
@@ -933,11 +1182,21 @@ mod tests {
         // Japanese glyphs come from the craft-fonts (built with CRAFT_FONTS_DIR) or a system font:
         // skip where neither is present.
         crate::fonts::scan_system();
-        if !crate::fonts::all_faces().iter().any(|f| "日本語縦書き".chars().all(|c| f.has_char(c))) {
+        if !crate::fonts::all_faces()
+            .iter()
+            .any(|f| "日本語縦書き".chars().all(|c| f.has_char(c)))
+        {
             eprintln!("SKIPPED: no Japanese font installed");
             return;
         }
-        let l = layout("日本語\n縦書き", &st(40.0), &ParagraphStyle { vertical: true, ..Default::default() });
+        let l = layout(
+            "日本語\n縦書き",
+            &st(40.0),
+            &ParagraphStyle {
+                vertical: true,
+                ..Default::default()
+            },
+        );
         assert!(l.vertical);
         assert_eq!(l.glyphs.len(), 6);
         assert!(l.glyphs.iter().all(|g| g.id != 0));
@@ -953,7 +1212,9 @@ mod tests {
         };
         fonts::scan_system();
         let face = fonts::all_faces().into_iter().find(|f| {
-            ((f.info.family.contains("Hiragino") && !f.info.family.contains(" GB") && !f.info.family.contains(" TC"))
+            ((f.info.family.contains("Hiragino")
+                && !f.info.family.contains(" GB")
+                && !f.info.family.contains(" TC"))
                 || f.info.family.contains("Shippori")
                 || f.info.family.contains("BIZ UD"))
                 && "国、。「」ー".chars().all(|c| f.has_char(c))
@@ -963,50 +1224,98 @@ mod tests {
             eprintln!("SKIPPED: no Japanese font with vertical alternates available");
             return;
         };
-        let style = TextStyle { family: face.info.family.clone(), style: face.info.style.clone(), ..st(48.0) };
+        let style = TextStyle {
+            family: face.info.family.clone(),
+            style: face.info.style.clone(),
+            ..st(48.0)
+        };
         let text = "国、。「」ーABC";
         let horizontal = layout_uncached(text, &style, &ParagraphStyle::default());
-        let vertical = layout_uncached(text, &style, &ParagraphStyle { vertical: true, ..Default::default() });
+        let vertical = layout_uncached(
+            text,
+            &style,
+            &ParagraphStyle {
+                vertical: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(vertical.glyphs.len(), 9);
         assert_eq!(vertical.glyphs[0].id, horizontal.glyphs[0].id);
         for i in 1..6 {
-            assert_ne!(vertical.glyphs[i].id, horizontal.glyphs[i].id, "{}: vertical form for glyph {i}", face.info.family);
+            assert_ne!(
+                vertical.glyphs[i].id, horizontal.glyphs[i].id,
+                "{}: vertical form for glyph {i}",
+                face.info.family
+            );
         }
         for i in [1, 2] {
             let g = &vertical.glyphs[i];
             let line = &vertical.lines[i];
             let font = fonts::face(g.face);
-            let bounds = font.font().unwrap().glyph_metrics(Size::unscaled(), LocationRef::default()).bounds(skrifa::GlyphId::new(g.id)).unwrap();
+            let bounds = font
+                .font()
+                .unwrap()
+                .glyph_metrics(Size::unscaled(), LocationRef::default())
+                .bounds(skrifa::GlyphId::new(g.id))
+                .unwrap();
             let scale = g.size / font.units_per_em();
             let ink_x = g.x + (bounds.x_min + bounds.x_max) * scale / 2.0;
             let ink_y = g.y - (bounds.y_min + bounds.y_max) * scale / 2.0;
             let centre_x = line.x + line.width / 2.0;
             let cell_top = line.baseline - line.ascent;
-            assert!(ink_x > centre_x, "{}: punctuation ink on the right ({ink_x}, {centre_x})", face.info.family);
-            assert!(ink_y < cell_top + g.size / 2.0, "{}: punctuation ink at the top ({ink_y}, {cell_top})", face.info.family);
+            assert!(
+                ink_x > centre_x,
+                "{}: punctuation ink on the right ({ink_x}, {centre_x})",
+                face.info.family
+            );
+            assert!(
+                ink_y < cell_top + g.size / 2.0,
+                "{}: punctuation ink at the top ({ink_y}, {cell_top})",
+                face.info.family
+            );
         }
         for i in 6..9 {
-            assert_eq!(vertical.glyphs[i].id, horizontal.glyphs[i].id, "Latin shaping stays unchanged");
+            assert_eq!(
+                vertical.glyphs[i].id, horizontal.glyphs[i].id,
+                "Latin shaping stays unchanged"
+            );
         }
-        assert_eq!(layout_uncached(text, &style, &ParagraphStyle::default()), horizontal);
-        eprintln!("verified vertical punctuation with {} / {}", face.info.family, face.info.style);
+        assert_eq!(
+            layout_uncached(text, &style, &ParagraphStyle::default()),
+            horizontal
+        );
+        eprintln!(
+            "verified vertical punctuation with {} / {}",
+            face.info.family, face.info.style
+        );
     }
 
     #[test]
     fn vertical_text_stacks_characters_in_columns() {
-        let p = ParagraphStyle { vertical: true, ..Default::default() };
+        let p = ParagraphStyle {
+            vertical: true,
+            ..Default::default()
+        };
         let l = layout("abc\nde", &st(40.0), &p);
         assert!(l.vertical);
         assert_eq!(l.lines.len(), 5, "one line per character");
         // first column: same centre x, increasing baselines
         let cx = |i: usize| l.lines[i].x + l.lines[i].width / 2.0;
-        assert!((cx(0) - cx(2)).abs() < 1e-3 && l.lines[1].baseline > l.lines[0].baseline && l.lines[2].baseline > l.lines[1].baseline);
+        assert!(
+            (cx(0) - cx(2)).abs() < 1e-3
+                && l.lines[1].baseline > l.lines[0].baseline
+                && l.lines[2].baseline > l.lines[1].baseline
+        );
         // second column is to the left of the first
         assert!(cx(3) < cx(0) - 20.0, "{} {}", cx(3), cx(0));
         assert_eq!(l.lines[3].range, 4..5);
         // taller than wide for a single column
         let one = layout("abcdef", &st(40.0), &p);
-        assert!(one.bounds[3] - one.bounds[1] > 3.0 * (one.bounds[2] - one.bounds[0]), "{:?}", one.bounds);
+        assert!(
+            one.bounds[3] - one.bounds[1] > 3.0 * (one.bounds[2] - one.bounds[0]),
+            "{:?}",
+            one.bounds
+        );
         // hit testing finds the character in the second column
         let (x, b, _) = l.caret(4);
         assert_eq!(l.hit(x + 1.0, b - 5.0), 4);
@@ -1017,17 +1326,41 @@ mod tests {
 
     #[test]
     fn vertical_underline_runs_down_the_column() {
-        let s = TextStyle { underline: true, ..st(60.0) };
+        let s = TextStyle {
+            underline: true,
+            ..st(60.0)
+        };
         let h = layout("A", &s, &ParagraphStyle::default());
-        let v = layout("A", &s, &ParagraphStyle { vertical: true, ..Default::default() });
+        let v = layout(
+            "A",
+            &s,
+            &ParagraphStyle {
+                vertical: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(h.underlines.len(), 1);
         assert_eq!(v.underlines.len(), 1, "vertical cells get an underline");
         let [hx0, hy0, hx1, hy1] = h.underlines[0];
         let [vx0, vy0, vx1, vy1] = v.underlines[0];
-        assert!(hx1 - hx0 > hy1 - hy0, "horizontal underline is a wide strip");
+        assert!(
+            hx1 - hx0 > hy1 - hy0,
+            "horizontal underline is a wide strip"
+        );
         assert!(vy1 - vy0 > vx1 - vx0, "vertical underline is a tall strip");
-        let runs = [StyleRun { range: 0..1, style: s.clone() }];
-        let rich = layout_rich("A", &st(60.0), &runs, &ParagraphStyle { vertical: true, ..Default::default() });
+        let runs = [StyleRun {
+            range: 0..1,
+            style: s.clone(),
+        }];
+        let rich = layout_rich(
+            "A",
+            &st(60.0),
+            &runs,
+            &ParagraphStyle {
+                vertical: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(rich.underlines.len(), 1);
         assert_eq!(rich.underline_runs, vec![1]);
     }
@@ -1035,22 +1368,48 @@ mod tests {
     #[test]
     fn vertical_cells_keep_combining_marks_with_their_base() {
         let style = st(32.0);
-        let para = ParagraphStyle { vertical: true, ..Default::default() };
+        let para = ParagraphStyle {
+            vertical: true,
+            ..Default::default()
+        };
         let decomposed = layout_uncached("e\u{301}x", &style, &para);
         let composed = layout_uncached("éx", &style, &para);
-        assert_eq!(decomposed.lines.len(), 2, "the combining acute must not get another vertical cell");
+        assert_eq!(
+            decomposed.lines.len(),
+            2,
+            "the combining acute must not get another vertical cell"
+        );
         assert_eq!(decomposed.lines[0].range, 0..3);
         assert_eq!(decomposed.lines[1].range, 3..4);
-        assert_eq!(decomposed.text_len, 4, "retain the original UTF-8 source offsets");
         assert_eq!(
-            decomposed.glyphs.iter().map(|g| (g.id, g.x, g.y)).collect::<Vec<_>>(),
-            composed.glyphs.iter().map(|g| (g.id, g.x, g.y)).collect::<Vec<_>>()
+            decomposed.text_len, 4,
+            "retain the original UTF-8 source offsets"
+        );
+        assert_eq!(
+            decomposed
+                .glyphs
+                .iter()
+                .map(|g| (g.id, g.x, g.y))
+                .collect::<Vec<_>>(),
+            composed
+                .glyphs
+                .iter()
+                .map(|g| (g.id, g.x, g.y))
+                .collect::<Vec<_>>()
         );
         assert_eq!(decomposed.bounds, composed.bounds);
-        assert_eq!(decomposed.caret(0).1, decomposed.caret(1).1, "base and combining mark occupy the same cell");
+        assert_eq!(
+            decomposed.caret(0).1,
+            decomposed.caret(1).1,
+            "base and combining mark occupy the same cell"
+        );
         for text in ["葛\u{e0101}x", "👩\u{200d}👧x"] {
             let lay = layout_uncached(text, &style, &para);
-            assert_eq!(lay.lines.len(), 2, "variation selectors and ZWJ sequences stay with their base");
+            assert_eq!(
+                lay.lines.len(),
+                2,
+                "variation selectors and ZWJ sequences stay with their base"
+            );
             assert_eq!(lay.lines[0].range, 0..text.len() - 1);
             assert_eq!(lay.lines[1].range, text.len() - 1..text.len());
         }
@@ -1060,20 +1419,38 @@ mod tests {
     fn vertical_kana_keep_decomposed_dakuten_in_the_same_cell() {
         fonts::scan_system();
         let Some(face) = fonts::all_faces().into_iter().find(|f| {
-            (f.info.family.contains("Hiragino") || f.info.family.contains("Shippori") || f.info.family.contains("BIZ UD"))
+            (f.info.family.contains("Hiragino")
+                || f.info.family.contains("Shippori")
+                || f.info.family.contains("BIZ UD"))
                 && "かがはぱ\u{3099}\u{309a}".chars().all(|c| f.has_char(c))
         }) else {
             eprintln!("SKIPPED: no Japanese font covering combining dakuten/handakuten");
             return;
         };
-        let style = TextStyle { family: face.info.family.clone(), style: face.info.style.clone(), ..st(48.0) };
-        let para = ParagraphStyle { vertical: true, ..Default::default() };
+        let style = TextStyle {
+            family: face.info.family.clone(),
+            style: face.info.style.clone(),
+            ..st(48.0)
+        };
+        let para = ParagraphStyle {
+            vertical: true,
+            ..Default::default()
+        };
         let nfd = layout_uncached("か\u{3099}は\u{309a}", &style, &para);
         let nfc = layout_uncached("がぱ", &style, &para);
         assert_eq!(nfd.lines.len(), 2);
         assert_eq!(nfd.lines[0].range, 0..6);
         assert_eq!(nfd.lines[1].range, 6..12);
-        assert_eq!(nfd.glyphs.iter().map(|g| (g.id, g.x, g.y)).collect::<Vec<_>>(), nfc.glyphs.iter().map(|g| (g.id, g.x, g.y)).collect::<Vec<_>>());
+        assert_eq!(
+            nfd.glyphs
+                .iter()
+                .map(|g| (g.id, g.x, g.y))
+                .collect::<Vec<_>>(),
+            nfc.glyphs
+                .iter()
+                .map(|g| (g.id, g.x, g.y))
+                .collect::<Vec<_>>()
+        );
         assert_eq!(nfd.bounds, nfc.bounds);
     }
 
@@ -1097,8 +1474,18 @@ mod tests {
     #[test]
     fn bidi_reorders_rtl_runs() {
         // Hebrew letters are laid out right-to-left: the first logical letter is rightmost.
-        let l = layout("ab \u{5d0}\u{5d1}\u{5d2} cd", &st(40.0), &ParagraphStyle::default());
-        let x_of = |byte: usize| l.glyphs.iter().find(|g| g.cluster == byte).map(|g| g.x).unwrap();
+        let l = layout(
+            "ab \u{5d0}\u{5d1}\u{5d2} cd",
+            &st(40.0),
+            &ParagraphStyle::default(),
+        );
+        let x_of = |byte: usize| {
+            l.glyphs
+                .iter()
+                .find(|g| g.cluster == byte)
+                .map(|g| g.x)
+                .unwrap()
+        };
         let alef = "ab ".len();
         let gimel = alef + 4;
         assert!(x_of(alef) > x_of(gimel), "alef right of gimel");
@@ -1109,11 +1496,31 @@ mod tests {
     fn caps_and_small_caps() {
         let s = st(50.0);
         let up = measure("HELLO", &s);
-        let all = measure("hello", &TextStyle { caps: Caps::All, ..s.clone() });
+        let all = measure(
+            "hello",
+            &TextStyle {
+                caps: Caps::All,
+                ..s.clone()
+            },
+        );
         assert!((up - all).abs() < 0.01);
-        let small = measure("hello", &TextStyle { caps: Caps::Small, ..s.clone() });
+        let small = measure(
+            "hello",
+            &TextStyle {
+                caps: Caps::Small,
+                ..s.clone()
+            },
+        );
         assert!(small < up * 0.9 && small > up * 0.6, "{small} {up}");
-        let l = layout("Hi", &TextStyle { baseline_shift: 10.0, underline: true, ..s }, &ParagraphStyle::default());
+        let l = layout(
+            "Hi",
+            &TextStyle {
+                baseline_shift: 10.0,
+                underline: true,
+                ..s
+            },
+            &ParagraphStyle::default(),
+        );
         assert!((l.glyphs[0].y + 10.0).abs() < 1e-3);
         assert_eq!(l.underlines.len(), 1);
     }
@@ -1132,7 +1539,14 @@ mod tests {
     #[test]
     fn fallback_font_for_missing_glyphs() {
         // Inter lacks Devanagari/Hebrew; Noto Serif lacks Hebrew too → glyphs still produced (notdef)
-        let l = layout("A\u{3b1}", &TextStyle { family: "Noto Serif".into(), ..st(40.0) }, &ParagraphStyle::default());
+        let l = layout(
+            "A\u{3b1}",
+            &TextStyle {
+                family: "Noto Serif".into(),
+                ..st(40.0)
+            },
+            &ParagraphStyle::default(),
+        );
         assert_eq!(l.glyphs.len(), 2);
         assert!(l.glyphs.iter().all(|g| g.id != 0));
     }
@@ -1140,25 +1554,50 @@ mod tests {
     #[test]
     fn style_runs_split_items_and_grow_lines() {
         let base = st(40.0);
-        let big = TextStyle { size: 80.0, ..base.clone() };
+        let big = TextStyle {
+            size: 80.0,
+            ..base.clone()
+        };
         let text = "small BIG small";
         let plain = layout(text, &base, &ParagraphStyle::default());
-        let runs = [StyleRun { range: 6..9, style: big.clone() }];
+        let runs = [StyleRun {
+            range: 6..9,
+            style: big.clone(),
+        }];
         let rich = layout_rich(text, &base, &runs, &ParagraphStyle::default());
         // glyphs carry their style index; the run is wider than the plain text
         let tagged: Vec<u16> = rich.glyphs.iter().map(|g| g.run).collect();
         assert_eq!(tagged.iter().filter(|r| **r == 1).count(), 3, "{tagged:?}");
-        assert!(rich.glyphs.iter().filter(|g| g.run == 1).all(|g| g.size == 80.0));
+        assert!(
+            rich.glyphs
+                .iter()
+                .filter(|g| g.run == 1)
+                .all(|g| g.size == 80.0)
+        );
         assert!(rich.lines[0].width > plain.lines[0].width + 30.0);
-        assert!(rich.lines[0].ascent > plain.lines[0].ascent * 1.5, "the line grows to the run");
+        assert!(
+            rich.lines[0].ascent > plain.lines[0].ascent * 1.5,
+            "the line grows to the run"
+        );
         // carets still cover every character boundary
         assert_eq!(rich.lines[0].carets.len(), text.len() + 1);
         // a line holding a big run moves down from the line above it
-        let two = layout_rich("next\nBIG", &base, &[StyleRun { range: 5..8, style: big }], &ParagraphStyle::default());
+        let two = layout_rich(
+            "next\nBIG",
+            &base,
+            &[StyleRun {
+                range: 5..8,
+                style: big,
+            }],
+            &ParagraphStyle::default(),
+        );
         let two_plain = layout("next\nBIG", &base, &ParagraphStyle::default());
         assert!(two.lines[1].baseline > two_plain.lines[1].baseline + 10.0);
         // no runs: identical to the plain layout
-        assert_eq!(*layout_rich(text, &base, &[], &ParagraphStyle::default()), *plain);
+        assert_eq!(
+            *layout_rich(text, &base, &[], &ParagraphStyle::default()),
+            *plain
+        );
     }
 
     #[test]
@@ -1166,8 +1605,22 @@ mod tests {
         let base = st(40.0);
         let text = "ab cd ef";
         let runs = [
-            StyleRun { range: 3..5, style: TextStyle { underline: true, baseline_shift: 10.0, ..base.clone() } },
-            StyleRun { range: 6..8, style: TextStyle { tracking: 500.0, faux_bold: true, ..base.clone() } },
+            StyleRun {
+                range: 3..5,
+                style: TextStyle {
+                    underline: true,
+                    baseline_shift: 10.0,
+                    ..base.clone()
+                },
+            },
+            StyleRun {
+                range: 6..8,
+                style: TextStyle {
+                    tracking: 500.0,
+                    faux_bold: true,
+                    ..base.clone()
+                },
+            },
         ];
         let l = layout_rich(text, &base, &runs, &ParagraphStyle::default());
         assert_eq!(l.underlines.len(), 1, "only the underlined run");
@@ -1176,11 +1629,19 @@ mod tests {
         let a = l.glyphs.iter().find(|g| g.cluster == 0).unwrap();
         assert!((c.y - (a.y - 10.0)).abs() < 1e-3, "baseline shift per run");
         let u = l.underlines[0];
-        assert!(u[0] >= l.caret(3).0 - 0.01 && u[2] <= l.caret(5).0 + 0.01, "{u:?}");
+        assert!(
+            u[0] >= l.caret(3).0 - 0.01 && u[2] <= l.caret(5).0 + 0.01,
+            "{u:?}"
+        );
         assert!(l.glyphs.iter().filter(|g| g.run == 2).all(|g| g.synth_bold));
         // tracking widens only the tracked run: 2 clusters × 0.5 em
         let plain = layout(text, &base, &ParagraphStyle::default());
-        assert!((l.lines[0].width - plain.lines[0].width - 2.0 * 20.0).abs() < 0.5, "{} {}", l.lines[0].width, plain.lines[0].width);
+        assert!(
+            (l.lines[0].width - plain.lines[0].width - 2.0 * 20.0).abs() < 0.5,
+            "{} {}",
+            l.lines[0].width,
+            plain.lines[0].width
+        );
     }
 
     #[test]

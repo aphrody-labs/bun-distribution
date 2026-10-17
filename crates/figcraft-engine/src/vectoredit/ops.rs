@@ -33,10 +33,17 @@ pub fn move_vertices(net: &mut VectorNetwork, idx: &[usize], d: Vec2) {
 /// Map vertices `idx` through `m` (scale, rotate, flip…); the handles at them follow its linear
 /// part. Nothing changes when any result wouldn't be finite.
 pub fn transform_vertices(net: &mut VectorNetwork, idx: &[usize], m: Affine) {
-    let set: std::collections::BTreeSet<usize> = idx.iter().copied().filter(|i| *i < net.vertices.len()).collect();
+    let set: std::collections::BTreeSet<usize> = idx
+        .iter()
+        .copied()
+        .filter(|i| *i < net.vertices.len())
+        .collect();
     let [a, b, c, d, _, _] = m.as_coeffs();
     let map_t = |t: (f64, f64)| (a * t.0 + c * t.1, b * t.0 + d * t.1);
-    let points: Vec<(usize, Point)> = set.iter().filter_map(|i| Some((*i, m * net.vertices.get(*i)?.point()))).collect();
+    let points: Vec<(usize, Point)> = set
+        .iter()
+        .filter_map(|i| Some((*i, m * net.vertices.get(*i)?.point())))
+        .collect();
     // (segment, at its start, the mapped handle).
     let handles: Vec<(usize, bool, (f64, f64))> = net
         .segments
@@ -69,13 +76,25 @@ pub fn transform_vertices(net: &mut VectorNetwork, idx: &[usize], m: Affine) {
 
 /// Set a handle to `rel` (relative to its vertex). The vertex's other handle follows its mirroring
 /// (none, angle, or angle and length); `independent` (Alt-drag) breaks the mirroring.
-pub fn set_handle(net: &mut VectorNetwork, seg: usize, start: bool, rel: (f64, f64), independent: bool) {
+pub fn set_handle(
+    net: &mut VectorNetwork,
+    seg: usize,
+    start: bool,
+    rel: (f64, f64),
+    independent: bool,
+) {
     if !(rel.0.is_finite() && rel.1.is_finite()) {
         return;
     }
-    let Some(s) = net.segments.get(seg).copied() else { return };
+    let Some(s) = net.segments.get(seg).copied() else {
+        return;
+    };
     let vi = if start { s.a } else { s.b };
-    let mode = if independent { HandleMirroring::None } else { net.mirroring(vi) };
+    let mode = if independent {
+        HandleMirroring::None
+    } else {
+        net.mirroring(vi)
+    };
     net.set_handle(seg, start, rel);
     if independent {
         if let Some(v) = net.vertices.get_mut(vi) {
@@ -83,14 +102,23 @@ pub fn set_handle(net: &mut VectorNetwork, seg: usize, start: bool, rel: (f64, f
         }
         return;
     }
-    let others: Vec<(usize, bool)> = net.incident(vi).into_iter().filter(|(i, st)| !(*i == seg && *st == start)).collect();
-    let [(oi, ostart)] = others.as_slice() else { return };
+    let others: Vec<(usize, bool)> = net
+        .incident(vi)
+        .into_iter()
+        .filter(|(i, st)| !(*i == seg && *st == start))
+        .collect();
+    let [(oi, ostart)] = others.as_slice() else {
+        return;
+    };
     let r = tvec(rel);
     let mirrored = match mode {
         HandleMirroring::None => return,
         HandleMirroring::AngleAndLength => -r,
         HandleMirroring::Angle => {
-            let len = net.handle(*oi, *ostart).map(|h| tvec(h).hypot()).unwrap_or(0.0);
+            let len = net
+                .handle(*oi, *ostart)
+                .map(|h| tvec(h).hypot())
+                .unwrap_or(0.0);
             if r.hypot() < 1e-9 {
                 return;
             }
@@ -123,7 +151,11 @@ pub fn set_mirroring(net: &mut VectorNetwork, verts: &[usize], mode: HandleMirro
                 HandleMirroring::None => {}
                 HandleMirroring::Angle | HandleMirroring::AngleAndLength => {
                     // Keep the longer handle's direction; the other turns opposite.
-                    let (lead, lead_is_first) = if h1.hypot() >= h2.hypot() { (h1, true) } else { (h2, false) };
+                    let (lead, lead_is_first) = if h1.hypot() >= h2.hypot() {
+                        (h1, true)
+                    } else {
+                        (h2, false)
+                    };
                     if lead.hypot() > 1e-9 {
                         let other_len = if mode == HandleMirroring::AngleAndLength {
                             (h1.hypot() + h2.hypot()) / 2.0
@@ -133,8 +165,19 @@ pub fn set_mirroring(net: &mut VectorNetwork, verts: &[usize], mode: HandleMirro
                             h1.hypot()
                         };
                         let dir = lead.normalize();
-                        let lead_len = if mode == HandleMirroring::AngleAndLength { other_len } else { lead.hypot() };
-                        let (a, b) = (dir * lead_len, -dir * if other_len > 1e-9 { other_len } else { lead_len });
+                        let lead_len = if mode == HandleMirroring::AngleAndLength {
+                            other_len
+                        } else {
+                            lead.hypot()
+                        };
+                        let (a, b) = (
+                            dir * lead_len,
+                            -dir * if other_len > 1e-9 {
+                                other_len
+                            } else {
+                                lead_len
+                            },
+                        );
                         let (n1, n2) = if lead_is_first { (a, b) } else { (b, a) };
                         net.set_handle(*s1, *a1, (n1.x, n1.y));
                         net.set_handle(*s2, *a2, (n2.x, n2.y));
@@ -162,7 +205,10 @@ pub fn make_smooth(net: &mut VectorNetwork, vi: usize, d: Vec2) {
         return;
     }
     let inc = net.incident(vi);
-    let scored: Vec<(usize, bool, f64)> = inc.iter().map(|(s, st)| (*s, *st, away(net, *s, *st).map(|a| a.dot(d)).unwrap_or(0.0))).collect();
+    let scored: Vec<(usize, bool, f64)> = inc
+        .iter()
+        .map(|(s, st)| (*s, *st, away(net, *s, *st).map(|a| a.dot(d)).unwrap_or(0.0)))
+        .collect();
     match scored.as_slice() {
         [] => return,
         [(s, st, dot)] => {
@@ -171,7 +217,11 @@ pub fn make_smooth(net: &mut VectorNetwork, vi: usize, d: Vec2) {
         }
         _ => {
             let fwd = scored.iter().copied().max_by(|a, b| a.2.total_cmp(&b.2));
-            let back = scored.iter().copied().filter(|x| Some(*x) != fwd).min_by(|a, b| a.2.total_cmp(&b.2));
+            let back = scored
+                .iter()
+                .copied()
+                .filter(|x| Some(*x) != fwd)
+                .min_by(|a, b| a.2.total_cmp(&b.2));
             if let (Some((s1, a1, _)), Some((s2, a2, _))) = (fwd, back) {
                 net.set_handle(s1, a1, (d.x, d.y));
                 net.set_handle(s2, a2, (-d.x, -d.y));
@@ -187,9 +237,22 @@ pub fn make_smooth(net: &mut VectorNetwork, vi: usize, d: Vec2) {
 /// to each (endpoints stay as they are).
 pub fn auto_smooth(net: &mut VectorNetwork, vi: usize) {
     let inc = net.incident(vi);
-    let [(s1, a1), (s2, a2)] = inc.as_slice() else { return };
-    let other = |s: usize, st: bool| net.segments.get(s).and_then(|x| net.vertices.get(if st { x.b } else { x.a })).map(|v| v.point());
-    let (Some(v), Some(p1), Some(p2)) = (net.vertices.get(vi).map(|v| v.point()), other(*s1, *a1), other(*s2, *a2)) else { return };
+    let [(s1, a1), (s2, a2)] = inc.as_slice() else {
+        return;
+    };
+    let other = |s: usize, st: bool| {
+        net.segments
+            .get(s)
+            .and_then(|x| net.vertices.get(if st { x.b } else { x.a }))
+            .map(|v| v.point())
+    };
+    let (Some(v), Some(p1), Some(p2)) = (
+        net.vertices.get(vi).map(|v| v.point()),
+        other(*s1, *a1),
+        other(*s2, *a2),
+    ) else {
+        return;
+    };
     let dir = p1 - p2;
     if dir.hypot() < 1e-9 {
         return;
@@ -216,8 +279,15 @@ pub fn make_sharp(net: &mut VectorNetwork, vi: usize) {
 
 /// Bend a segment so its curve passes through `p` at parameter `t` (the Bend tool).
 pub fn bend(net: &mut VectorNetwork, seg: usize, t: f64, p: Point) {
-    let Some(s) = net.segments.get(seg).copied() else { return };
-    let (Some(a), Some(b)) = (net.vertices.get(s.a).copied(), net.vertices.get(s.b).copied()) else { return };
+    let Some(s) = net.segments.get(seg).copied() else {
+        return;
+    };
+    let (Some(a), Some(b)) = (
+        net.vertices.get(s.a).copied(),
+        net.vertices.get(s.b).copied(),
+    ) else {
+        return;
+    };
     if !(t.is_finite() && p.x.is_finite() && p.y.is_finite()) {
         return;
     }
@@ -236,7 +306,11 @@ pub fn bend(net: &mut VectorNetwork, seg: usize, t: f64, p: Point) {
 pub fn split_segment(net: &mut VectorNetwork, seg: usize, t: f64) -> Option<usize> {
     let s = net.segments.get(seg).copied()?;
     let c: CubicBez = net.cubic(seg)?;
-    let t = if t.is_finite() { t.clamp(0.01, 0.99) } else { 0.5 };
+    let t = if t.is_finite() {
+        t.clamp(0.01, 0.99)
+    } else {
+        0.5
+    };
     let l = c.subsegment(0.0..t);
     let r = c.subsegment(t..1.0);
     net.vertices.push(Vertex::new(l.p3.x, l.p3.y));
@@ -259,7 +333,12 @@ pub fn split_segment(net: &mut VectorNetwork, seg: usize, t: f64) -> Option<usiz
         if let Some(v) = net.vertices.get_mut(mid) {
             v.mirror = Some(HandleMirroring::Angle);
         }
-        Segment { a: mid, b: s.b, ta: (r.p1.x - r.p0.x, r.p1.y - r.p0.y), tb: (r.p2.x - r.p3.x, r.p2.y - r.p3.y) }
+        Segment {
+            a: mid,
+            b: s.b,
+            ta: (r.p1.x - r.p0.x, r.p1.y - r.p0.y),
+            tb: (r.p2.x - r.p3.x, r.p2.y - r.p3.y),
+        }
     };
     net.segments.push(new_seg);
     let ni = net.segments.len() - 1;
@@ -291,7 +370,11 @@ fn remove_vertex_index(net: &mut VectorNetwork, vi: usize) {
 
 /// Remove segments (fixing region loops); points left without any segment go too.
 pub fn remove_segments(net: &mut VectorNetwork, segs: &[usize]) {
-    let mut touched: Vec<usize> = segs.iter().filter_map(|s| net.segments.get(*s)).flat_map(|s| [s.a, s.b]).collect();
+    let mut touched: Vec<usize> = segs
+        .iter()
+        .filter_map(|s| net.segments.get(*s))
+        .flat_map(|s| [s.a, s.b])
+        .collect();
     remove_segments_only(net, segs);
     touched.sort_unstable();
     touched.dedup();
@@ -304,7 +387,11 @@ pub fn remove_segments(net: &mut VectorNetwork, segs: &[usize]) {
 }
 
 fn remove_segments_only(net: &mut VectorNetwork, segs: &[usize]) {
-    let mut segs: Vec<usize> = segs.iter().copied().filter(|s| *s < net.segments.len()).collect();
+    let mut segs: Vec<usize> = segs
+        .iter()
+        .copied()
+        .filter(|s| *s < net.segments.len())
+        .collect();
     segs.sort_unstable();
     segs.dedup();
     let mut map: Vec<Option<usize>> = (0..net.segments.len()).map(Some).collect();
@@ -319,7 +406,10 @@ fn remove_segments_only(net: &mut VectorNetwork, segs: &[usize]) {
     }
     for r in &mut net.regions {
         for lp in &mut r.loops {
-            *lp = lp.iter().filter_map(|i| map.get(*i).copied().flatten()).collect();
+            *lp = lp
+                .iter()
+                .filter_map(|i| map.get(*i).copied().flatten())
+                .collect();
         }
         r.loops.retain(|l| l.len() >= 2);
     }
@@ -338,13 +428,27 @@ pub fn delete_vertices(net: &mut VectorNetwork, idx: &[usize], heal: bool) {
         let touching: Vec<usize> = net.incident(vi).into_iter().map(|(i, _)| i).collect();
         let mut healed = None;
         if heal && let [s1, s2] = touching.as_slice() {
-            let (Some(x), Some(y)) = (net.segments.get(*s1).copied(), net.segments.get(*s2).copied()) else { continue };
+            let (Some(x), Some(y)) = (
+                net.segments.get(*s1).copied(),
+                net.segments.get(*s2).copied(),
+            ) else {
+                continue;
+            };
             let o1 = if x.a == vi { (x.b, x.tb) } else { (x.a, x.ta) };
             let o2 = if y.a == vi { (y.b, y.tb) } else { (y.a, y.ta) };
             if o1.0 != o2.0 {
                 let curved = !(x.is_straight() && y.is_straight());
-                let (ta, tb) = if curved { heal_handles(net, vi, o1, o2).unwrap_or((o1.1, o2.1)) } else { (o1.1, o2.1) };
-                healed = Some(Segment { a: o1.0, b: o2.0, ta, tb });
+                let (ta, tb) = if curved {
+                    heal_handles(net, vi, o1, o2).unwrap_or((o1.1, o2.1))
+                } else {
+                    (o1.1, o2.1)
+                };
+                healed = Some(Segment {
+                    a: o1.0,
+                    b: o2.0,
+                    ta,
+                    tb,
+                });
             }
         }
         // Remove touching segments (descending) and fix region loops (the healed segment takes
@@ -392,9 +496,17 @@ pub fn delete_vertices(net: &mut VectorNetwork, idx: &[usize], heal: bool) {
 /// Handles for the curve that heals over deleted point `vi` between `(vertex, handle)` ends `o1`
 /// and `o2`: each end keeps its handle's direction (towards the deleted point when it had none),
 /// and the lengths are chosen so the curve still passes through the deleted point.
-fn heal_handles(net: &VectorNetwork, vi: usize, o1: (usize, (f64, f64)), o2: (usize, (f64, f64))) -> Option<((f64, f64), (f64, f64))> {
+fn heal_handles(
+    net: &VectorNetwork,
+    vi: usize,
+    o1: (usize, (f64, f64)),
+    o2: (usize, (f64, f64)),
+) -> Option<((f64, f64), (f64, f64))> {
     let p = net.vertices.get(vi)?.point();
-    let (a, b) = (net.vertices.get(o1.0)?.point(), net.vertices.get(o2.0)?.point());
+    let (a, b) = (
+        net.vertices.get(o1.0)?.point(),
+        net.vertices.get(o2.0)?.point(),
+    );
     let dir = |h: (f64, f64), from: Point| {
         let h = tvec(h);
         let d = if h.hypot() > 1e-9 { h } else { p - from };
@@ -404,8 +516,14 @@ fn heal_handles(net: &VectorNetwork, vi: usize, o1: (usize, (f64, f64)), o2: (us
     let (la, lb) = ((p - a).hypot(), (p - b).hypot());
     let t = la / (la + lb).max(1e-12);
     // B(t) with both handles zero, and how much each handle length moves it.
-    let (u, k1, k2) = (1.0 - t, 3.0 * (1.0 - t).powi(2) * t, 3.0 * (1.0 - t) * t * t);
-    let base = (a.to_vec2() * (u.powi(3) + 3.0 * u * u * t) + b.to_vec2() * (3.0 * u * t * t + t.powi(3))).to_point();
+    let (u, k1, k2) = (
+        1.0 - t,
+        3.0 * (1.0 - t).powi(2) * t,
+        3.0 * (1.0 - t) * t * t,
+    );
+    let base = (a.to_vec2() * (u.powi(3) + 3.0 * u * u * t)
+        + b.to_vec2() * (3.0 * u * t * t + t.powi(3)))
+    .to_point();
     let r = p - base;
     let (c1, c2) = (d1 * k1, d2 * k2);
     let det = c1.cross(c2);
@@ -469,7 +587,9 @@ pub fn cut_segment(net: &mut VectorNetwork, seg: usize, t: f64) -> Option<(usize
 /// Cut the path at a point: every segment after the first gets its own copy of the point.
 pub fn cut_vertex(net: &mut VectorNetwork, vi: usize) -> Vec<usize> {
     let inc = net.incident(vi);
-    let Some(v) = net.vertices.get(vi).copied() else { return vec![] };
+    let Some(v) = net.vertices.get(vi).copied() else {
+        return vec![];
+    };
     let mut out = vec![vi];
     for (s, st) in inc.into_iter().skip(1) {
         net.vertices.push(Vertex { mirror: None, ..v });
@@ -495,7 +615,9 @@ pub fn cut_vertex(net: &mut VectorNetwork, vi: usize) -> Vec<usize> {
 /// shortcut: crossings within 1% of a segment's ends are skipped; cut those at the point instead.
 pub fn cut_across(net: &mut VectorNetwork, a: Point, b: Point) -> Vec<usize> {
     use figcraft_geom::kurbo::{Line, PathSeg};
-    if !(a.x.is_finite() && a.y.is_finite() && b.x.is_finite() && b.y.is_finite()) || (b - a).hypot() < 1e-9 {
+    if !(a.x.is_finite() && a.y.is_finite() && b.x.is_finite() && b.y.is_finite())
+        || (b - a).hypot() < 1e-9
+    {
         return vec![];
     }
     let line = Line::new(a, b);
@@ -569,16 +691,29 @@ pub fn part(net: &VectorNetwork, verts: &[usize]) -> VectorNetwork {
     }
     let mut smap = vec![None; net.segments.len()];
     for (i, s) in net.segments.iter().enumerate() {
-        if let (Some(Some(a)), Some(Some(b)), Some(slot)) = (vmap.get(s.a), vmap.get(s.b), smap.get_mut(i)) {
+        if let (Some(Some(a)), Some(Some(b)), Some(slot)) =
+            (vmap.get(s.a), vmap.get(s.b), smap.get_mut(i))
+        {
             *slot = Some(out.segments.len());
             out.segments.push(Segment { a: *a, b: *b, ..*s });
         }
     }
     for r in &net.regions {
-        let loops: Vec<Vec<usize>> =
-            r.loops.iter().map(|l| l.iter().filter_map(|i| smap.get(*i).copied().flatten()).collect::<Vec<_>>()).filter(|l| !l.is_empty()).collect();
+        let loops: Vec<Vec<usize>> = r
+            .loops
+            .iter()
+            .map(|l| {
+                l.iter()
+                    .filter_map(|i| smap.get(*i).copied().flatten())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|l| !l.is_empty())
+            .collect();
         if !loops.is_empty() {
-            out.regions.push(Region { loops, winding: r.winding });
+            out.regions.push(Region {
+                loops,
+                winding: r.winding,
+            });
         }
     }
     reopen_loops(&mut out);
@@ -610,7 +745,9 @@ fn path_between(net: &VectorNetwork, from: usize, to: usize, skip: usize) -> Opt
             if s == skip {
                 continue;
             }
-            let Some(seg) = net.segments.get(s) else { continue };
+            let Some(seg) = net.segments.get(s) else {
+                continue;
+            };
             let w = if st { seg.b } else { seg.a };
             if !seen.get(w).copied().unwrap_or(true) {
                 if let Some(x) = seen.get_mut(w) {
@@ -628,19 +765,42 @@ fn path_between(net: &VectorNetwork, from: usize, to: usize, skip: usize) -> Opt
 
 /// Connect two points with a new segment (handles relative to each end). Closing an open path
 /// (both points were its ends) makes the loop a fill region. Returns the new segment.
-pub fn connect(net: &mut VectorNetwork, a: usize, b: usize, ta: (f64, f64), tb: (f64, f64)) -> Option<usize> {
+pub fn connect(
+    net: &mut VectorNetwork,
+    a: usize,
+    b: usize,
+    ta: (f64, f64),
+    tb: (f64, f64),
+) -> Option<usize> {
     if a == b || a >= net.vertices.len() || b >= net.vertices.len() {
         return None;
     }
     let ends = net.incident(a).len() == 1 && net.incident(b).len() == 1;
-    let finite_t = |t: (f64, f64)| if t.0.is_finite() && t.1.is_finite() { t } else { (0.0, 0.0) };
-    net.segments.push(Segment { a, b, ta: finite_t(ta), tb: finite_t(tb) });
+    let finite_t = |t: (f64, f64)| {
+        if t.0.is_finite() && t.1.is_finite() {
+            t
+        } else {
+            (0.0, 0.0)
+        }
+    };
+    net.segments.push(Segment {
+        a,
+        b,
+        ta: finite_t(ta),
+        tb: finite_t(tb),
+    });
     let si = net.segments.len() - 1;
     if ends && let Some(mut lp) = path_between(net, b, a, si) {
-        let unfilled = !net.regions.iter().any(|r| r.loops.iter().flatten().any(|s| lp.contains(s)));
+        let unfilled = !net
+            .regions
+            .iter()
+            .any(|r| r.loops.iter().flatten().any(|s| lp.contains(s)));
         if unfilled {
             lp.insert(0, si);
-            net.regions.push(Region { loops: vec![lp], winding: WindingRule::NonZero });
+            net.regions.push(Region {
+                loops: vec![lp],
+                winding: WindingRule::NonZero,
+            });
         }
     }
     Some(si)
@@ -659,7 +819,13 @@ pub fn merge_vertices(net: &mut VectorNetwork, keep: usize, drop: usize) {
             s.b = keep;
         }
     }
-    let collapsed: Vec<usize> = net.segments.iter().enumerate().filter(|(_, s)| s.a == s.b && s.is_straight()).map(|(i, _)| i).collect();
+    let collapsed: Vec<usize> = net
+        .segments
+        .iter()
+        .enumerate()
+        .filter(|(_, s)| s.a == s.b && s.is_straight())
+        .map(|(i, _)| i)
+        .collect();
     remove_segments_only(net, &collapsed);
     remove_vertex_index(net, drop);
     reopen_loops(net);
@@ -668,11 +834,18 @@ pub fn merge_vertices(net: &mut VectorNetwork, keep: usize, drop: usize) {
 /// Join points (⌘J): two points that overlap merge; otherwise open ends are connected in pairs
 /// (nearest first). `smooth` continues each end's curve. Returns the number of joins.
 pub fn join(net: &mut VectorNetwork, verts: &[usize], smooth: bool) -> usize {
-    let mut verts: Vec<usize> = verts.iter().copied().filter(|v| *v < net.vertices.len()).collect();
+    let mut verts: Vec<usize> = verts
+        .iter()
+        .copied()
+        .filter(|v| *v < net.vertices.len())
+        .collect();
     verts.sort_unstable();
     verts.dedup();
     if let [a, b] = verts.as_slice() {
-        let (pa, pb) = (net.vertices.get(*a).map(|v| v.point()), net.vertices.get(*b).map(|v| v.point()));
+        let (pa, pb) = (
+            net.vertices.get(*a).map(|v| v.point()),
+            net.vertices.get(*b).map(|v| v.point()),
+        );
         if let (Some(pa), Some(pb)) = (pa, pb)
             && (pa - pb).hypot() < 0.5
         {
@@ -680,11 +853,21 @@ pub fn join(net: &mut VectorNetwork, verts: &[usize], smooth: bool) -> usize {
             return 1;
         }
     }
-    let mut ends: Vec<usize> = if verts.len() == 2 { verts.clone() } else { verts.iter().copied().filter(|v| net.incident(*v).len() <= 1).collect() };
+    let mut ends: Vec<usize> = if verts.len() == 2 {
+        verts.clone()
+    } else {
+        verts
+            .iter()
+            .copied()
+            .filter(|v| net.incident(*v).len() <= 1)
+            .collect()
+    };
     let mut joins = 0;
     while ends.len() >= 2 {
         let a = ends.remove(0);
-        let Some(pa) = net.vertices.get(a).map(|v| v.point()) else { continue };
+        let Some(pa) = net.vertices.get(a).map(|v| v.point()) else {
+            continue;
+        };
         let Some((k, _)) = ends
             .iter()
             .enumerate()
@@ -694,21 +877,30 @@ pub fn join(net: &mut VectorNetwork, verts: &[usize], smooth: bool) -> usize {
             break;
         };
         let b = ends.remove(k);
-        let Some(pb) = net.vertices.get(b).map(|v| v.point()) else { continue };
+        let Some(pb) = net.vertices.get(b).map(|v| v.point()) else {
+            continue;
+        };
         let (ta, tb) = if smooth {
             let len = (pb - pa).hypot() / 3.0;
             let out = |v: usize, toward: Vec2| -> Vec2 {
                 // Continue the existing curve out of the end; fall back to the chord.
                 let inc = net.incident(v);
                 let dir = match inc.as_slice() {
-                    [(s, st)] => {
-                        net.handle(*s, *st).map(tvec).filter(|h| h.hypot() > 1e-9).map(|h| -h.normalize()).or_else(|| away(net, *s, *st).map(|a| -a))
-                    }
+                    [(s, st)] => net
+                        .handle(*s, *st)
+                        .map(tvec)
+                        .filter(|h| h.hypot() > 1e-9)
+                        .map(|h| -h.normalize())
+                        .or_else(|| away(net, *s, *st).map(|a| -a)),
                     _ => None,
                 };
                 dir.unwrap_or(toward) * len
             };
-            let chord = if (pb - pa).hypot() > 1e-9 { (pb - pa).normalize() } else { Vec2::ZERO };
+            let chord = if (pb - pa).hypot() > 1e-9 {
+                (pb - pa).normalize()
+            } else {
+                Vec2::ZERO
+            };
             let (oa, ob) = (out(a, chord), out(b, -chord));
             ((oa.x, oa.y), (ob.x, ob.y))
         } else {
@@ -733,7 +925,9 @@ pub fn in_polygon(points: &[Point], poly: &[Point]) -> Vec<usize> {
             let mut inside = false;
             let n = poly.len();
             for k in 0..n {
-                let (Some(a), Some(b)) = (poly.get(k), poly.get((k + 1) % n)) else { continue };
+                let (Some(a), Some(b)) = (poly.get(k), poly.get((k + 1) % n)) else {
+                    continue;
+                };
                 if (a.y > p.y) != (b.y > p.y) {
                     let x = a.x + (p.y - a.y) * (b.x - a.x) / (b.y - a.y);
                     if p.x < x {
@@ -749,7 +943,9 @@ pub fn in_polygon(points: &[Point], poly: &[Point]) -> Vec<usize> {
 
 /// The parameter ranges of segment `seg` inside a circle (sampled, edges refined).
 fn inside_ranges(net: &VectorNetwork, seg: usize, c: Point, r: f64) -> Vec<(f64, f64)> {
-    let Some(cb) = net.cubic(seg) else { return vec![] };
+    let Some(cb) = net.cubic(seg) else {
+        return vec![];
+    };
     // Strictly inside, so points exactly on the circle (earlier cuts) count as outside.
     let inside = |t: f64| (cb.eval(t) - c).hypot() < r * (1.0 - 1e-9) - 1e-9;
     // Bisect the boundary between an inside and an outside parameter; return the outside end.
@@ -798,7 +994,12 @@ pub fn erase(net: &mut VectorNetwork, c: Point, r: f64) -> bool {
     // (`split_segment` clamps to 1%..99%, so ranges within 1% of an end count as reaching it.)
     const EPS: f64 = 0.01;
     for _ in 0..10_000 {
-        let hit = (0..net.segments.len()).find_map(|si| inside_ranges(net, si, c, r).first().copied().map(|rg| (si, rg)));
+        let hit = (0..net.segments.len()).find_map(|si| {
+            inside_ranges(net, si, c, r)
+                .first()
+                .copied()
+                .map(|rg| (si, rg))
+        });
         let Some((si, (t0, t1))) = hit else { break };
         changed = true;
         if t0 <= EPS && t1 >= 1.0 - EPS {
@@ -829,11 +1030,26 @@ mod tests {
     use super::*;
 
     fn square() -> VectorNetwork {
-        VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0), Point::new(100.0, 100.0), Point::new(0.0, 100.0)], true)
+        VectorNetwork::from_points(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(100.0, 0.0),
+                Point::new(100.0, 100.0),
+                Point::new(0.0, 100.0),
+            ],
+            true,
+        )
     }
 
     fn open_line() -> VectorNetwork {
-        VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(50.0, 0.0), Point::new(100.0, 0.0)], false)
+        VectorNetwork::from_points(
+            &[
+                Point::new(0.0, 0.0),
+                Point::new(50.0, 0.0),
+                Point::new(100.0, 0.0),
+            ],
+            false,
+        )
     }
 
     #[test]
@@ -846,11 +1062,17 @@ mod tests {
         set_mirroring(&mut n, &[1], HandleMirroring::Angle);
         set_handle(&mut n, 1, true, (0.0, 30.0), false);
         let other = n.segments[0].tb;
-        assert!(other.0.abs() < 1e-9 && (other.1 + 22.360679).abs() < 1e-4, "angle mirrors, length kept: {other:?}");
+        assert!(
+            other.0.abs() < 1e-9 && (other.1 + 22.360679).abs() < 1e-4,
+            "angle mirrors, length kept: {other:?}"
+        );
         assert_eq!(n.mirroring(1), HandleMirroring::Angle);
         set_handle(&mut n, 1, true, (10.0, 0.0), true);
         assert_eq!(n.mirroring(1), HandleMirroring::None);
-        assert!(n.segments[0].tb.1 < -20.0, "independent drag leaves the other handle");
+        assert!(
+            n.segments[0].tb.1 < -20.0,
+            "independent drag leaves the other handle"
+        );
         set_mirroring(&mut n, &[1], HandleMirroring::AngleAndLength);
         let (a, b) = (tvec(n.segments[1].ta), tvec(n.segments[0].tb));
         assert!((a + b).hypot() < 1e-9, "made symmetric: {a:?} {b:?}");
@@ -947,7 +1169,10 @@ mod tests {
         assert_eq!(m.vertices.len(), 2, "the orphaned end goes");
         let mut h = square();
         delete_vertices(&mut h, &[1], true);
-        assert_eq!((h.vertices.len(), h.segments.len(), h.regions.len()), (3, 3, 1));
+        assert_eq!(
+            (h.vertices.len(), h.segments.len(), h.regions.len()),
+            (3, 3, 1)
+        );
         let mut d = square();
         delete_vertices(&mut d, &[1], false);
         assert_eq!((d.vertices.len(), d.segments.len()), (3, 2));
@@ -962,13 +1187,26 @@ mod tests {
         make_smooth(&mut d, 99, Vec2::new(1.0, 1.0));
         bend(&mut d, 0, f64::NAN, Point::new(1.0, 1.0));
         move_vertices(&mut d, &[0], Vec2::new(f64::INFINITY, 0.0));
-        assert!(d.vertices.iter().all(|v| v.x.is_finite() && v.y.is_finite()));
+        assert!(
+            d.vertices
+                .iter()
+                .all(|v| v.x.is_finite() && v.y.is_finite())
+        );
     }
 
     #[test]
     fn lasso_polygon() {
-        let pts = [Point::new(5.0, 5.0), Point::new(50.0, 50.0), Point::new(15.0, 5.0)];
-        let poly = [Point::new(0.0, 0.0), Point::new(20.0, 0.0), Point::new(20.0, 20.0), Point::new(0.0, 20.0)];
+        let pts = [
+            Point::new(5.0, 5.0),
+            Point::new(50.0, 50.0),
+            Point::new(15.0, 5.0),
+        ];
+        let poly = [
+            Point::new(0.0, 0.0),
+            Point::new(20.0, 0.0),
+            Point::new(20.0, 20.0),
+            Point::new(0.0, 20.0),
+        ];
         assert_eq!(in_polygon(&pts, &poly), vec![0, 2]);
         assert!(in_polygon(&pts, &poly[..2]).is_empty());
     }
@@ -976,11 +1214,16 @@ mod tests {
     #[test]
     fn eraser_cuts_through_and_removes() {
         // A straight line from 0 to 100: erasing around 50 leaves two pieces with a gap.
-        let mut n = VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0)], false);
+        let mut n =
+            VectorNetwork::from_points(&[Point::new(0.0, 0.0), Point::new(100.0, 0.0)], false);
         assert!(erase(&mut n, Point::new(50.0, 0.0), 10.0));
         assert_eq!(n.segments.len(), 2);
         let ends: Vec<f64> = n.vertices.iter().map(|v| v.x).collect();
-        assert!(ends.iter().any(|x| (x - 40.0).abs() < 0.01) && ends.iter().any(|x| (x - 60.0).abs() < 0.01), "{ends:?}");
+        assert!(
+            ends.iter().any(|x| (x - 40.0).abs() < 0.01)
+                && ends.iter().any(|x| (x - 60.0).abs() < 0.01),
+            "{ends:?}"
+        );
         // Erasing an end shortens it; erasing everything removes it all.
         assert!(erase(&mut n, Point::new(0.0, 0.0), 5.0));
         assert!(n.vertices.iter().all(|v| v.x >= 4.99), "start shortened");

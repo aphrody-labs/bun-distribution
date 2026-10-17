@@ -98,10 +98,13 @@ impl BridgeControl {
                     self.url()
                 );
                 return;
-            },
+            }
         };
         self.inner.listening.store(true, Ordering::Release);
-        eprintln!("[aphrody-nie-game] explorer bridge listening on {}", self.url());
+        eprintln!(
+            "[aphrody-nie-game] explorer bridge listening on {}",
+            self.url()
+        );
         let control = self.clone();
         tokio::spawn(async move {
             while let Ok((stream, _)) = listener.accept().await {
@@ -130,7 +133,10 @@ impl BridgeControl {
 
     pub(super) async fn send(&self, command: Value) -> Result<Value, String> {
         if !self.inner.listening.load(Ordering::Acquire) {
-            return Err(format!("explorer bridge is not listening on port {}", self.inner.port));
+            return Err(format!(
+                "explorer bridge is not listening on port {}",
+                self.inner.port
+            ));
         }
         let peer = self
             .inner
@@ -151,7 +157,13 @@ impl BridgeControl {
         let (tx, rx) = oneshot::channel();
         self.inner.pending.lock().await.insert(id, tx);
         let frame = json!({ "type": "request", "id": id, "command": command }).to_string();
-        if let Err(error) = connection.sender.lock().await.send(Message::Text(frame.into())).await {
+        if let Err(error) = connection
+            .sender
+            .lock()
+            .await
+            .send(Message::Text(frame.into()))
+            .await
+        {
             self.inner.pending.lock().await.remove(&id);
             return Err(format!("could not send explorer command: {error}"));
         }
@@ -162,7 +174,7 @@ impl BridgeControl {
             Err(_) => {
                 self.inner.pending.lock().await.remove(&id);
                 Err("explorer did not reply within 5000 ms".to_owned())
-            },
+            }
         }
     }
 
@@ -187,8 +199,12 @@ impl BridgeControl {
         .await?;
         let generation = self.inner.generation.fetch_add(1, Ordering::Relaxed);
         let (sender, mut receiver) = websocket.split();
-        let connection = Connection { generation, sender: Arc::new(Mutex::new(sender)) };
-        self.fail_pending("explorer bridge connection was replaced").await;
+        let connection = Connection {
+            generation,
+            sender: Arc::new(Mutex::new(sender)),
+        };
+        self.fail_pending("explorer bridge connection was replaced")
+            .await;
         *self.inner.connection.write().await = Some(connection);
         *self.inner.peer.write().await = None;
 
@@ -225,7 +241,7 @@ impl BridgeControl {
                         since: Instant::now(),
                         generation,
                     });
-                },
+                }
                 Some("response") => {
                     let Some(id) = frame.get("id").and_then(Value::as_u64) else {
                         continue;
@@ -243,8 +259,8 @@ impl BridgeControl {
                             .to_owned())
                     };
                     let _ = pending.send(result);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -304,8 +320,9 @@ mod tests {
     async fn bridge_round_trip_preserves_the_existing_client_protocol() {
         let bridge = control(free_port());
         bridge.start().await;
-        let (mut client, _) =
-            tokio_tungstenite::connect_async(bridge.url()).await.expect("connect bridge client");
+        let (mut client, _) = tokio_tungstenite::connect_async(bridge.url())
+            .await
+            .expect("connect bridge client");
         client
             .send(Message::Text(
                 json!({
@@ -319,7 +336,11 @@ mod tests {
             .expect("send hello");
 
         let reply = tokio::spawn(async move {
-            let request = client.next().await.expect("bridge request").expect("valid frame");
+            let request = client
+                .next()
+                .await
+                .expect("bridge request")
+                .expect("valid frame");
             let request: Value =
                 serde_json::from_str(request.to_text().expect("text frame")).expect("request JSON");
             assert_eq!(request["command"]["cmd"], "state");
@@ -339,13 +360,19 @@ mod tests {
         });
 
         tokio::time::timeout(Duration::from_secs(1), async {
-            while !bridge.status().await["connected"].as_bool().unwrap_or(false) {
+            while !bridge.status().await["connected"]
+                .as_bool()
+                .unwrap_or(false)
+            {
                 tokio::task::yield_now().await;
             }
         })
         .await
         .expect("hello accepted");
-        let result = bridge.send(json!({ "cmd": "state" })).await.expect("bridge response");
+        let result = bridge
+            .send(json!({ "cmd": "state" }))
+            .await
+            .expect("bridge response");
         assert_eq!(result["app"], "test-explorer");
         assert_eq!(result["state"]["prefix"], "data");
         reply.await.expect("client task");

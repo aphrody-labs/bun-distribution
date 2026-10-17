@@ -104,7 +104,10 @@ fn seg_count(p: &ShapePath) -> usize {
 fn cubic(c: &[P; 4], t: f64) -> P {
     let u = 1.0 - t;
     let (a, b, cc, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-    [a * c[0][0] + b * c[1][0] + cc * c[2][0] + d * c[3][0], a * c[0][1] + b * c[1][1] + cc * c[2][1] + d * c[3][1]]
+    [
+        a * c[0][0] + b * c[1][0] + cc * c[2][0] + d * c[3][0],
+        a * c[0][1] + b * c[1][1] + cc * c[2][1] + d * c[3][1],
+    ]
 }
 
 fn seg_len(c: &[P; 4]) -> f64 {
@@ -191,7 +194,13 @@ fn from_cubics(cs: &[[P; 4]], closed: bool) -> ShapePath {
             v[j] = c[3];
         }
     }
-    ShapePath { vertices: v, in_tangents: ins, out_tangents: outs, closed, feather: Vec::new() }
+    ShapePath {
+        vertices: v,
+        in_tangents: ins,
+        out_tangents: outs,
+        closed,
+        feather: Vec::new(),
+    }
 }
 
 /// Exactly the same outline with `total` vertices (≥ the current count), the extra vertices
@@ -212,7 +221,11 @@ pub fn with_vertex_count(p: &ShapePath, total: usize) -> ShapePath {
     let mut k: Vec<usize> = want.iter().map(|w| 1 + w.floor() as usize).collect();
     let mut left = pieces - k.iter().sum::<usize>();
     let mut order: Vec<usize> = (0..m).collect();
-    order.sort_by(|a, b| (want[*b] - want[*b].floor()).total_cmp(&(want[*a] - want[*a].floor())).then(a.cmp(b)));
+    order.sort_by(|a, b| {
+        (want[*b] - want[*b].floor())
+            .total_cmp(&(want[*a] - want[*a].floor()))
+            .then(a.cmp(b))
+    });
     for i in order.iter().cycle() {
         if left == 0 {
             break;
@@ -262,7 +275,10 @@ pub fn polyline(p: &ShapePath, total: usize) -> ShapePath {
 }
 
 fn has_curves(p: &ShapePath) -> bool {
-    p.in_tangents.iter().chain(&p.out_tangents).any(|t| t[0].abs() > 1e-9 || t[1].abs() > 1e-9)
+    p.in_tangents
+        .iter()
+        .chain(&p.out_tangents)
+        .any(|t| t[0].abs() > 1e-9 || t[1].abs() > 1e-9)
 }
 
 /// Rotate a closed path's vertex order to start at `k`.
@@ -277,7 +293,14 @@ fn rotate(p: &ShapePath, k: usize) -> ShapePath {
         in_tangents: r(&p.in_tangents),
         out_tangents: r(&p.out_tangents),
         closed: p.closed,
-        feather: p.feather.iter().map(|f| effectcraft_keyframe::FeatherPoint { segment: (f.segment + n - k % n) % n, ..*f }).collect(),
+        feather: p
+            .feather
+            .iter()
+            .map(|f| effectcraft_keyframe::FeatherPoint {
+                segment: (f.segment + n - k % n) % n,
+                ..*f
+            })
+            .collect(),
     }
 }
 
@@ -287,7 +310,11 @@ pub fn reversed(p: &ShapePath) -> ShapePath {
     if n == 0 {
         return p.clone();
     }
-    let idx: Vec<usize> = if p.closed { (0..n).map(|i| (n - i) % n).collect() } else { (0..n).rev().collect() };
+    let idx: Vec<usize> = if p.closed {
+        (0..n).map(|i| (n - i) % n).collect()
+    } else {
+        (0..n).rev().collect()
+    };
     ShapePath {
         vertices: idx.iter().map(|i| p.vertices[*i]).collect(),
         in_tangents: idx.iter().map(|i| p.out_tangents[*i]).collect(),
@@ -300,14 +327,26 @@ pub fn reversed(p: &ShapePath) -> ShapePath {
 
 fn signed_area(v: &[P]) -> f64 {
     let n = v.len();
-    (0..n).map(|i| v[i][0] * v[(i + 1) % n][1] - v[(i + 1) % n][0] * v[i][1]).sum::<f64>() * 0.5
+    (0..n)
+        .map(|i| v[i][0] * v[(i + 1) % n][1] - v[(i + 1) % n][0] * v[i][1])
+        .sum::<f64>()
+        * 0.5
 }
 
 /// Centroid and RMS radius of points.
 fn frame(v: &[P]) -> (P, f64) {
     let n = v.len().max(1) as f64;
-    let c = [v.iter().map(|p| p[0]).sum::<f64>() / n, v.iter().map(|p| p[1]).sum::<f64>() / n];
-    let r = (v.iter().map(|p| (p[0] - c[0]).powi(2) + (p[1] - c[1]).powi(2)).sum::<f64>() / n).sqrt().max(1e-9);
+    let c = [
+        v.iter().map(|p| p[0]).sum::<f64>() / n,
+        v.iter().map(|p| p[1]).sum::<f64>() / n,
+    ];
+    let r = (v
+        .iter()
+        .map(|p| (p[0] - c[0]).powi(2) + (p[1] - c[1]).powi(2))
+        .sum::<f64>()
+        / n)
+        .sqrt()
+        .max(1e-9);
     (c, r)
 }
 
@@ -332,7 +371,8 @@ fn shape_contexts(v: &[P]) -> Vec<[f64; RBINS * ABINS]> {
                 if !(0.0..RBINS as f64).contains(&lr) {
                     continue;
                 }
-                let a = (d[1].atan2(d[0]) + std::f64::consts::PI) / std::f64::consts::TAU * ABINS as f64;
+                let a = (d[1].atan2(d[0]) + std::f64::consts::PI) / std::f64::consts::TAU
+                    * ABINS as f64;
                 let ai = (a as usize).min(ABINS - 1);
                 h[lr as usize * ABINS + ai] += 1.0;
             }
@@ -344,11 +384,27 @@ fn shape_contexts(v: &[P]) -> Vec<[f64; RBINS * ABINS]> {
 }
 
 fn chi2(a: &[f64], b: &[f64]) -> f64 {
-    a.iter().zip(b).map(|(x, y)| if x + y > 1e-12 { (x - y) * (x - y) / (x + y) } else { 0.0 }).sum::<f64>() * 0.5
+    a.iter()
+        .zip(b)
+        .map(|(x, y)| {
+            if x + y > 1e-12 {
+                (x - y) * (x - y) / (x + y)
+            } else {
+                0.0
+            }
+        })
+        .sum::<f64>()
+        * 0.5
 }
 
 /// Matching cost of `a[i] ↔ b[(i + k) % n]`.
-fn cost(a: &[P], b: &[P], sa: Option<&[[f64; RBINS * ABINS]]>, sb: Option<&[[f64; RBINS * ABINS]]>, k: usize) -> f64 {
+fn cost(
+    a: &[P],
+    b: &[P],
+    sa: Option<&[[f64; RBINS * ABINS]]>,
+    sb: Option<&[[f64; RBINS * ABINS]]>,
+    k: usize,
+) -> f64 {
     let n = a.len();
     let (ca, ra) = frame(a);
     let (cb, rb) = frame(b);
@@ -413,9 +469,20 @@ pub fn correspond(a: &ShapePath, b: &ShapePath, o: &InterpOpts) -> (ShapePath, S
         if !o.first_vertices_match {
             let n = ra.len();
             let use_sc = o.quality > 0.0;
-            let (sa, sb) = if use_sc { (Some(shape_contexts(&ra.vertices)), Some(shape_contexts(&rb.vertices))) } else { (None, None) };
+            let (sa, sb) = if use_sc {
+                (
+                    Some(shape_contexts(&ra.vertices)),
+                    Some(shape_contexts(&rb.vertices)),
+                )
+            } else {
+                (None, None)
+            };
             // Quality limits the offsets examined exhaustively (coarse step), then refines.
-            let step = if o.quality >= 50.0 { 1 } else { ((n as f64 / 24.0).ceil() as usize).max(1) };
+            let step = if o.quality >= 50.0 {
+                1
+            } else {
+                ((n as f64 / 24.0).ceil() as usize).max(1)
+            };
             let mut best = (f64::MAX, 0usize);
             let mut k = 0;
             while k < n {
@@ -448,7 +515,9 @@ pub fn interpolate(a: &ShapePath, b: &ShapePath, u: f64, o: &InterpOpts) -> Shap
         return if u < 1.0 { a.clone() } else { b.clone() };
     }
     let n = a.len();
-    let lin = |pa: &[P], pb: &[P]| -> Vec<P> { pa.iter().zip(pb).map(|(x, y)| lerp(*x, *y, u)).collect() };
+    let lin = |pa: &[P], pb: &[P]| -> Vec<P> {
+        pa.iter().zip(pb).map(|(x, y)| lerp(*x, *y, u)).collect()
+    };
     if o.linear {
         return ShapePath {
             vertices: lin(&a.vertices, &b.vertices),
@@ -469,7 +538,11 @@ pub fn interpolate(a: &ShapePath, b: &ShapePath, u: f64, o: &InterpOpts) -> Shap
         cross += p[0] * q[1] - p[1] * q[0];
     }
     let theta = cross.atan2(dot);
-    let s = if ss > 1e-12 { dot.hypot(cross) / ss } else { 1.0 };
+    let s = if ss > 1e-12 {
+        dot.hypot(cross) / ss
+    } else {
+        1.0
+    };
     let rot = |v: P, ang: f64, k: f64| {
         let (sn, cs) = ang.sin_cos();
         [k * (cs * v[0] - sn * v[1]), k * (sn * v[0] + cs * v[1])]
@@ -477,7 +550,13 @@ pub fn interpolate(a: &ShapePath, b: &ShapePath, u: f64, o: &InterpOpts) -> Shap
     let (th_u, s_u) = (theta * u, s.max(1e-9).powf(u));
     let c_u = lerp(ca, cb, u);
     let w = (o.bending_resistance / 100.0).clamp(0.0, 1.0);
-    let mut out = ShapePath { vertices: vec![], in_tangents: vec![], out_tangents: vec![], closed: a.closed, feather: a.feather.clone() };
+    let mut out = ShapePath {
+        vertices: vec![],
+        in_tangents: vec![],
+        out_tangents: vec![],
+        closed: a.closed,
+        feather: a.feather.clone(),
+    };
     for i in 0..n {
         // Rigid path: a's vertex carried by the interpolated similarity, plus the residual
         // (b − fully transformed a) blended in linearly.
@@ -487,7 +566,10 @@ pub fn interpolate(a: &ShapePath, b: &ShapePath, u: f64, o: &InterpOpts) -> Shap
         let rigid = add(add(rot(pa, th_u, s_u), c_u), mul(resid, u));
         let linear = lerp(a.vertices[i], b.vertices[i], u);
         out.vertices.push(lerp(linear, rigid, w));
-        for (src_a, src_b, dst) in [(&a.in_tangents, &b.in_tangents, &mut out.in_tangents), (&a.out_tangents, &b.out_tangents, &mut out.out_tangents)] {
+        for (src_a, src_b, dst) in [
+            (&a.in_tangents, &b.in_tangents, &mut out.in_tangents),
+            (&a.out_tangents, &b.out_tangents, &mut out.out_tangents),
+        ] {
             let ta = src_a[i];
             let tr = sub(src_b[i], rot(ta, theta, s));
             let rigid_t = add(rot(ta, th_u, s_u), mul(tr, u));
@@ -537,7 +619,12 @@ mod tests {
         let e = ShapePath::ellipse([50.0, 50.0], 80.0, 40.0);
         let m = with_vertex_count(&e, 23);
         assert_eq!(m.len(), 23);
-        assert!((length(&m) - length(&e)).abs() < 0.05, "{} vs {}", length(&m), length(&e));
+        assert!(
+            (length(&m) - length(&e)).abs() < 0.05,
+            "{} vs {}",
+            length(&m),
+            length(&e)
+        );
         // Points on the split path lie on the ellipse.
         for i in 0..m.len() {
             let v = m.vertices[i];
@@ -555,41 +642,84 @@ mod tests {
         let a = star([100.0, 100.0], 60.0, 5, 0.0);
         let b0 = star([140.0, 110.0], 50.0, 5, 0.3);
         let b = rotate(&b0, 3);
-        let o = InterpOpts { first_vertices_match: false, add_vertices: None, ..Default::default() };
+        let o = InterpOpts {
+            first_vertices_match: false,
+            add_vertices: None,
+            ..Default::default()
+        };
         let (ra, rb) = correspond(&a, &b, &o);
         assert_eq!(ra.len(), rb.len());
         // The true correspondence is recovered (b0's vertex 0 matches a's vertex 0).
-        assert!((rb.vertices[0][0] - b0.vertices[0][0]).abs() < 1e-9 && (rb.vertices[0][1] - b0.vertices[0][1]).abs() < 1e-9);
+        assert!(
+            (rb.vertices[0][0] - b0.vertices[0][0]).abs() < 1e-9
+                && (rb.vertices[0][1] - b0.vertices[0][1]).abs() < 1e-9
+        );
         assert!(paths_cross(&ra, &rb) <= 1);
         // With First Vertices Match the given (bad) start is kept: paths cross.
-        let o2 = InterpOpts { first_vertices_match: true, add_vertices: None, ..Default::default() };
+        let o2 = InterpOpts {
+            first_vertices_match: true,
+            add_vertices: None,
+            ..Default::default()
+        };
         let (xa, xb) = correspond(&a, &b, &o2);
         assert!(paths_cross(&xa, &xb) > 5);
         // In-betweens keep the vertex count and stay star-like (area between the ends).
         let mid = interpolate(&ra, &rb, 0.5, &o);
         assert_eq!(mid.len(), ra.len());
-        let (aa, ab, am) = (signed_area(&ra.vertices).abs(), signed_area(&rb.vertices).abs(), signed_area(&mid.vertices).abs());
-        assert!(am > ab.min(aa) * 0.8 && am < aa.max(ab) * 1.2, "{aa} {ab} {am}");
+        let (aa, ab, am) = (
+            signed_area(&ra.vertices).abs(),
+            signed_area(&rb.vertices).abs(),
+            signed_area(&mid.vertices).abs(),
+        );
+        assert!(
+            am > ab.min(aa) * 0.8 && am < aa.max(ab) * 1.2,
+            "{aa} {ab} {am}"
+        );
         // Different vertex counts with added vertices.
         let c = ShapePath::ellipse([100.0, 100.0], 120.0, 120.0);
-        let o3 = InterpOpts { first_vertices_match: false, ..Default::default() };
+        let o3 = InterpOpts {
+            first_vertices_match: false,
+            ..Default::default()
+        };
         let (pa, pb) = correspond(&a, &c, &o3);
         assert_eq!(pa.len(), pb.len());
         assert!(pa.len() >= 25);
-        assert!(paths_cross(&pa, &pb) <= pa.len() / 10, "{}", paths_cross(&pa, &pb));
+        assert!(
+            paths_cross(&pa, &pb) <= pa.len() / 10,
+            "{}",
+            paths_cross(&pa, &pb)
+        );
     }
 
     #[test]
     fn rigid_interpolation_turns_instead_of_collapsing() {
-        let a = ShapePath::polygon(&[[-50.0, -10.0], [50.0, -10.0], [50.0, 10.0], [-50.0, 10.0]], true);
+        let a = ShapePath::polygon(
+            &[[-50.0, -10.0], [50.0, -10.0], [50.0, 10.0], [-50.0, 10.0]],
+            true,
+        );
         // The same bar turned 90°.
-        let b = ShapePath::polygon(&[[10.0, -50.0], [10.0, 50.0], [-10.0, 50.0], [-10.0, -50.0]], true);
-        let o = InterpOpts { bending_resistance: 100.0, ..Default::default() };
+        let b = ShapePath::polygon(
+            &[[10.0, -50.0], [10.0, 50.0], [-10.0, 50.0], [-10.0, -50.0]],
+            true,
+        );
+        let o = InterpOpts {
+            bending_resistance: 100.0,
+            ..Default::default()
+        };
         let m = interpolate(&a, &b, 0.5, &o);
         let len = (m.vertices[1][0] - m.vertices[0][0]).hypot(m.vertices[1][1] - m.vertices[0][1]);
         assert!((len - 100.0).abs() < 1e-6, "{len}");
-        let lin = interpolate(&a, &b, 0.5, &InterpOpts { linear: true, ..Default::default() });
-        let l2 = (lin.vertices[1][0] - lin.vertices[0][0]).hypot(lin.vertices[1][1] - lin.vertices[0][1]);
+        let lin = interpolate(
+            &a,
+            &b,
+            0.5,
+            &InterpOpts {
+                linear: true,
+                ..Default::default()
+            },
+        );
+        let l2 = (lin.vertices[1][0] - lin.vertices[0][0])
+            .hypot(lin.vertices[1][1] - lin.vertices[0][1]);
         assert!(l2 < 80.0);
     }
 }

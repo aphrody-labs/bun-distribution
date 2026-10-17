@@ -390,7 +390,9 @@ impl PlayerPage {
     fn refresh_devices(&self) {
         if let Some(controller) = self.controller.borrow().as_ref() {
             hid_core::frontend::emulated_controller::EmulatedController::reload_from_player(
-                controller, &self.state.borrow());
+                controller,
+                &self.state.borrow(),
+            );
         }
     }
 
@@ -433,8 +435,12 @@ impl PlayerPage {
             .as_ref()
             .is_some_and(|controller| controller.lock().is_connected(true));
 
-        with_controller(&player_one, |player_one| player_one.set_npad_style_index(npad_type));
-        with_controller(&handheld, |handheld| handheld.set_npad_style_index(npad_type));
+        with_controller(&player_one, |player_one| {
+            player_one.set_npad_style_index(npad_type)
+        });
+        with_controller(&handheld, |handheld| {
+            handheld.set_npad_style_index(npad_type)
+        });
 
         let selected = if is_connected {
             if npad_type == hid_core::hid_types::NpadStyleIndex::Handheld {
@@ -449,7 +455,9 @@ impl PlayerPage {
         } else {
             current.unwrap_or(player_one)
         };
-        with_controller(&selected, |selected| selected.set_npad_style_index(npad_type));
+        with_controller(&selected, |selected| {
+            selected.set_npad_style_index(npad_type)
+        });
         *self.controller.borrow_mut() = Some(selected);
     }
 
@@ -857,7 +865,11 @@ impl PlayerPage {
     /// The decisions themselves live in the free functions below so they can be
     /// checked without a display.
     fn update_controller_layout(&self, layout: ControllerType) {
-        let layout = if self.debug.get() { ControllerType::ProController } else { layout };
+        let layout = if self.debug.get() {
+            ControllerType::ProController
+        } else {
+            layout
+        };
         let groups = self.groups.borrow();
 
         // `layout_show`: upstream un-hides everything, then applies the
@@ -886,7 +898,11 @@ impl PlayerPage {
         }
 
         // `UpdateMotionButtons`.
-        let (motion_1, motion_2) = if self.debug.get() { (false, false) } else { motion_visibility(layout) };
+        let (motion_1, motion_2) = if self.debug.get() {
+            (false, false)
+        } else {
+            motion_visibility(layout)
+        };
         if let Some(widget) = groups.get("motion_1") {
             widget.set_visible(motion_1);
         }
@@ -983,22 +999,26 @@ pub fn page(
     // `ui->controllerFrame->SetController(emulated_controller)`. Keep the
     // stable controller owned by HIDCore; no frontend-local adapter exists.
     hid_core::frontend::emulated_controller::EmulatedController::reload_from_player(
-        &controller, &state.borrow());
+        &controller,
+        &state.borrow(),
+    );
     *page.controller.borrow_mut() = Some(Arc::clone(&controller));
     *page.configuration_controllers.borrow_mut() = std::mem::take(&mut configuration_controllers);
     *page.input_subsystem.borrow_mut() = Some(Rc::clone(&input_subsystem));
-    let initial_type = if debug { ControllerType::ProController } else { state.borrow().controller_type };
+    let initial_type = if debug {
+        ControllerType::ProController
+    } else {
+        state.borrow().controller_type
+    };
     let supported_styles = hid_core.lock().get_supported_style_tag();
     let enable_all = *common::settings::values()
         .enable_all_controllers
         .get_value();
     let controller_types = Rc::new(if debug {
         vec![(ControllerType::ProController, "Pro Controller")]
-    } else { set_connectable_controllers(
-        supported_styles,
-        index,
-        enable_all,
-    ) });
+    } else {
+        set_connectable_controllers(supported_styles, index, enable_all)
+    });
 
     install_group_style();
 
@@ -1461,7 +1481,11 @@ pub fn page(
             }
 
             page.state.borrow_mut().profile_name = profile_name;
-            let selected_type = if debug { ControllerType::ProController } else { page.state.borrow().controller_type };
+            let selected_type = if debug {
+                ControllerType::ProController
+            } else {
+                page.state.borrow().controller_type
+            };
             controller_type.set_selected(get_index_from_controller_type(
                 &controller_types,
                 selected_type,
@@ -1686,21 +1710,23 @@ pub fn page(
 
         page_owner.refresh_devices();
         if !debug {
-        if let Some(controller) = page_owner.controller.borrow().as_ref() {
-            use hid_core::hid_core::with_controller;
-            let npad_type =
+            if let Some(controller) = page_owner.controller.borrow().as_ref() {
+                use hid_core::hid_core::with_controller;
+                let npad_type =
                 hid_core::frontend::emulated_controller::EmulatedController::map_settings_type_to_npad(
                     selected_controller_type,
                 );
-            with_controller(controller, |controller| controller.set_npad_style_index(npad_type));
-            with_controller(controller, |controller| {
-                if is_connected {
-                    controller.connect(true);
-                } else {
-                    controller.disconnect();
-                }
-            });
-        }
+                with_controller(controller, |controller| {
+                    controller.set_npad_style_index(npad_type)
+                });
+                with_controller(controller, |controller| {
+                    if is_connected {
+                        controller.connect(true);
+                    } else {
+                        controller.disconnect();
+                    }
+                });
+            }
         }
         for controller in page_owner.configuration_controllers.borrow().iter() {
             hid_core::hid_core::with_controller(controller, |controller| {
@@ -2756,10 +2782,14 @@ mod tests {
             let other = hid.lock().get_emulated_controller_by_index(9);
             let input = Rc::new(RefCell::new(input_common::InputSubsystem::new()));
             let profiles = Rc::new(InputProfileContext::new(InputProfiles::new()));
-            let initial = common::param_package::ParamPackage::from_serialized("engine:keyboard,code:72");
+            let initial =
+                common::param_package::ParamPackage::from_serialized("engine:keyboard,code:72");
             other.lock().set_button_param(0, initial.clone());
             let page = page(9, input, hid, profiles, None, true);
-            assert_eq!(common::settings::values().players.get_value()[9].buttons[0], initial.serialize());
+            assert_eq!(
+                common::settings::values().players.get_value()[9].buttons[0],
+                initial.serialize()
+            );
             fn clear(widget: &gtk::Widget) -> bool {
                 if let Some(button) = widget.downcast_ref::<gtk::Button>() {
                     if button.label().as_deref() == Some("Clear") {
@@ -2769,7 +2799,9 @@ mod tests {
                 }
                 let mut child = widget.first_child();
                 while let Some(widget) = child {
-                    if clear(&widget) { return true; }
+                    if clear(&widget) {
+                        return true;
+                    }
                     child = widget.next_sibling();
                 }
                 false
@@ -2785,7 +2817,10 @@ mod tests {
             assert!(!other.lock().is_configuring_mode());
             let mut settings = common::settings::values_mut();
             settings.players.set_global(!global);
-            assert_eq!(settings.players.get_value()[9].buttons[0], "engine:keyboard,code:71");
+            assert_eq!(
+                settings.players.get_value()[9].buttons[0],
+                "engine:keyboard,code:71"
+            );
         }
     }
 
@@ -2799,7 +2834,10 @@ mod tests {
         for name in ["home", "screenshot", "motion_1", "motion_2"] {
             draft.register_group(name, &gtk::Box::new(gtk::Orientation::Vertical, 0));
         }
-        for kind in [ControllerType::ProController, ControllerType::DualJoyconDetached] {
+        for kind in [
+            ControllerType::ProController,
+            ControllerType::DualJoyconDetached,
+        ] {
             draft.update_controller_layout(kind);
             let groups = draft.groups.borrow();
             assert!(!groups["home"].is_sensitive());
@@ -2815,10 +2853,15 @@ mod tests {
         let page = page(9, input, hid, profiles, None, true);
         assert!(other.lock().is_configuring_mode());
         assert!(!player_one.lock().is_configuring_mode());
-        let before = common::settings::values().players.get_value()[0].buttons.clone();
+        let before = common::settings::values().players.get_value()[0]
+            .buttons
+            .clone();
         (page.apply)();
         assert!(other.lock().is_configuring_mode());
-        assert_eq!(common::settings::values().players.get_value()[0].buttons, before);
+        assert_eq!(
+            common::settings::values().players.get_value()[0].buttons,
+            before
+        );
         drop(page);
         assert!(!other.lock().is_configuring_mode());
         assert!(!player_one.lock().is_configuring_mode());

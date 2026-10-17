@@ -27,7 +27,10 @@ impl FileReader {
         let file = std::fs::File::open(path)?;
         let m = file.metadata()?;
         if !m.is_file() {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, format!("{} is not a file", path.display())));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!("{} is not a file", path.display()),
+            ));
         }
         Ok(Self { file, len: m.len() })
     }
@@ -50,7 +53,12 @@ impl filmcraft_media::ByteReader for FileReader {
             let (mut done, mut at) = (0usize, offset);
             while let Some(rest) = buf.get_mut(done..).filter(|r| !r.is_empty()) {
                 match std::os::windows::fs::FileExt::seek_read(&self.file, rest, at) {
-                    Ok(0) => return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "read past end of file")),
+                    Ok(0) => {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            "read past end of file",
+                        ));
+                    }
                     Ok(n) => {
                         done = done.saturating_add(n);
                         at = at.saturating_add(n as u64);
@@ -66,7 +74,9 @@ impl filmcraft_media::ByteReader for FileReader {
 
 #[cfg(any(unix, windows))]
 fn name_of(path: &Path) -> String {
-    path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()
+    path.file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default()
 }
 
 /// Open a movie/audio file for the media pool, reading only what its container needs; files the
@@ -76,7 +86,12 @@ fn name_of(path: &Path) -> String {
 pub(crate) fn open_source(path: &Path) -> Option<Result<SharedSource>> {
     let reader = FileReader::open(path).ok()?;
     let reader: filmcraft_media::SharedReader = std::sync::Arc::new(reader);
-    let opened = filmcraft_media::reader::open_reader(&name_of(path), reader, &filmcraft_codecs::reader_openers(), &filmcraft_codecs::openers());
+    let opened = filmcraft_media::reader::open_reader(
+        &name_of(path),
+        reader,
+        &filmcraft_codecs::reader_openers(),
+        &filmcraft_codecs::openers(),
+    );
     Some(opened.map_err(Into::into))
 }
 
@@ -142,18 +157,24 @@ pub(crate) fn movie_header(_path: &Path) -> Option<Vec<u8>> {
 #[cfg(any(unix, windows))]
 pub(crate) fn probe_source(path: &Path) -> Option<Result<SharedSource>> {
     let ext = crate::ext_of(path);
-    if crate::STILL_EXTENSIONS.contains(&ext.as_str()) || crate::MODEL_EXTENSIONS.contains(&ext.as_str()) {
+    if crate::STILL_EXTENSIONS.contains(&ext.as_str())
+        || crate::MODEL_EXTENSIONS.contains(&ext.as_str())
+    {
         return None;
     }
     let reader = FileReader::open(path).ok()?;
     let reader: filmcraft_media::SharedReader = std::sync::Arc::new(reader);
-    let head = filmcraft_media::reader::read_range(&*reader, 0, filmcraft_media::reader::HEAD_LEN).ok()?;
+    let head =
+        filmcraft_media::reader::read_range(&*reader, 0, filmcraft_media::reader::HEAD_LEN).ok()?;
     let name = path.to_string_lossy();
     if crate::layered::sniff(&name, &head) || image::guess_format(&head).is_ok() {
         return None;
     }
     let name = name_of(path);
-    filmcraft_codecs::reader_openers().into_iter().find_map(|open| open(&name, &head, &reader)).map(|r| r.map_err(Into::into))
+    filmcraft_codecs::reader_openers()
+        .into_iter()
+        .find_map(|open| open(&name, &head, &reader))
+        .map(|r| r.map_err(Into::into))
 }
 
 #[cfg(not(any(unix, windows)))]

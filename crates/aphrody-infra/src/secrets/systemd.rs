@@ -21,7 +21,12 @@ pub fn parse_env_file(path: &Path) -> Result<BTreeMap<String, String>> {
         let stripped = trimmed.strip_prefix("export ").unwrap_or(trimmed);
         if let Some((k, v)) = stripped.split_once('=') {
             let key = k.trim().to_string();
-            let val = v.trim().trim_matches('"').trim_matches('\'').trim().to_string();
+            let val = v
+                .trim()
+                .trim_matches('"')
+                .trim_matches('\'')
+                .trim()
+                .to_string();
             map.insert(key, val);
         }
     }
@@ -69,7 +74,11 @@ pub fn render_env_file(
 
     fs::rename(&temp_path, dest_path)?;
 
-    Ok(format!("Successfully provisioned {:?} with {} secrets", dest_path, secrets.len()))
+    Ok(format!(
+        "Successfully provisioned {:?} with {} secrets",
+        dest_path,
+        secrets.len()
+    ))
 }
 
 #[cfg(test)]
@@ -83,7 +92,10 @@ mod tests {
         fs::write(temp.path(), sample).unwrap();
 
         let parsed = parse_env_file(temp.path()).unwrap();
-        assert_eq!(parsed.get("DATABASE_URL").unwrap(), "postgres://user:pass@localhost:5432/db");
+        assert_eq!(
+            parsed.get("DATABASE_URL").unwrap(),
+            "postgres://user:pass@localhost:5432/db"
+        );
         assert_eq!(parsed.get("JWT_SECRET").unwrap(), "superjwttoken");
     }
 }

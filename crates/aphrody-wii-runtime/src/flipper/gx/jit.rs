@@ -70,7 +70,11 @@ pub struct ResolvedArray {
 
 impl ResolvedArray {
     pub const fn null() -> Self {
-        Self { host_base: std::ptr::null(), stride: 0, _pad: 0 }
+        Self {
+            host_base: std::ptr::null(),
+            stride: 0,
+            _pad: 0,
+        }
     }
 }
 
@@ -101,7 +105,11 @@ pub fn resolve_addr(mem1: &[u8], mem2: &[u8], addr: u32) -> *const u8 {
     } else if addr >= MEM2_BASE as usize {
         let off = addr - MEM2_BASE as usize;
 
-        if off < mem2.len() { unsafe { mem2.as_ptr().add(off) } } else { std::ptr::null() }
+        if off < mem2.len() {
+            unsafe { mem2.as_ptr().add(off) }
+        } else {
+            std::ptr::null()
+        }
     } else {
         std::ptr::null()
     }
@@ -155,15 +163,25 @@ impl JitVertexEngine {
         flag_builder.set("is_pic", "false").unwrap();
         flag_builder.set("opt_level", "speed").unwrap();
         flag_builder.set("preserve_frame_pointers", "true").unwrap();
-        let want_verifier = if cfg!(feature = "vtx-jit-validate") { "true" } else { "false" };
+        let want_verifier = if cfg!(feature = "vtx-jit-validate") {
+            "true"
+        } else {
+            "false"
+        };
         flag_builder.set("enable_verifier", want_verifier).unwrap();
         flag_builder.set("enable_probestack", "false").unwrap();
         flag_builder.set("unwind_info", "false").unwrap();
-        flag_builder.set("enable_heap_access_spectre_mitigation", "false").unwrap();
-        flag_builder.set("enable_table_access_spectre_mitigation", "false").unwrap();
+        flag_builder
+            .set("enable_heap_access_spectre_mitigation", "false")
+            .unwrap();
+        flag_builder
+            .set("enable_table_access_spectre_mitigation", "false")
+            .unwrap();
 
         let isa_builder = cranelift_native::builder().expect("host ISA");
-        let isa = isa_builder.finish(settings::Flags::new(flag_builder)).expect("ISA finish");
+        let isa = isa_builder
+            .finish(settings::Flags::new(flag_builder))
+            .expect("ISA finish");
 
         let mut jit_builder = JITBuilder::with_isa(isa, default_libcall_names());
 
@@ -249,12 +267,12 @@ impl JitVertexEngine {
                 self.cache.insert(key, c);
                 self.last_hit = Some((key, func));
                 Some(func)
-            },
+            }
             None => {
                 self.failed.insert(key);
                 self.stats.fallbacks += 1;
                 None
-            },
+            }
         }
     }
 
@@ -273,8 +291,12 @@ impl JitVertexEngine {
         let pointer_ty = self.module.target_config().pointer_type();
         builder::build_parser(&mut self.ctx, &mut self.fn_ctx, pointer_ty, key);
 
-        self.module.define_function(func_id, &mut self.ctx).expect("define vtx parser fn");
-        self.module.finalize_definitions().expect("finalize vtx jit");
+        self.module
+            .define_function(func_id, &mut self.ctx)
+            .expect("define vtx parser fn");
+        self.module
+            .finalize_definitions()
+            .expect("finalize vtx jit");
 
         let raw = self.module.get_finalized_function(func_id);
         let func: ParserFn = unsafe { std::mem::transmute(raw) };
@@ -333,7 +355,11 @@ pub fn resolve_arrays_for_draw(
         if matches!(attr, AttributeType::Index8 | AttributeType::Index16) {
             let base = cp_regs[ARRAY_BASE_REG + array_idx];
             let stride = cp_regs[ARRAY_STRIDE_REG + array_idx];
-            ResolvedArray { host_base: self::resolve_addr(mem1, mem2, base), stride, _pad: 0 }
+            ResolvedArray {
+                host_base: self::resolve_addr(mem1, mem2, base),
+                stride,
+                _pad: 0,
+            }
         } else {
             ResolvedArray::null()
         }
@@ -390,8 +416,16 @@ pub fn resolve_arrays_for_draw(
 
     let m1_start = mem1.as_ptr() as usize;
     let m1_end = m1_start + mem1.len();
-    let m2_start = if mem2.is_empty() { 0 } else { mem2.as_ptr() as usize };
-    let m2_end = if mem2.is_empty() { 0 } else { m2_start + mem2.len() };
+    let m2_start = if mem2.is_empty() {
+        0
+    } else {
+        mem2.as_ptr() as usize
+    };
+    let m2_end = if mem2.is_empty() {
+        0
+    } else {
+        m2_start + mem2.len()
+    };
     let bank_remaining_from = |p: *const u8| -> usize {
         let p = p as usize;
         if p == 0 {

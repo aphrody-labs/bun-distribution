@@ -39,7 +39,13 @@ fn push_visual(out: &mut String, text: &str, base: Level) {
 
 /// The `line` of paragraph `para` (a non-empty byte range of `text`) in display order, as egui
 /// needs it, appended to `out`.
-fn push_line(out: &mut String, text: &str, info: &BidiInfo<'_>, para: &ParagraphInfo, line: Range<usize>) {
+fn push_line(
+    out: &mut String,
+    text: &str,
+    info: &BidiInfo<'_>,
+    para: &ParagraphInfo,
+    line: Range<usize>,
+) {
     let (levels, runs) = info.visual_runs(para, line);
     // First the true display order, every character left to right as it appears on screen.
     let mut shown = String::with_capacity(text.len());
@@ -103,10 +109,18 @@ pub fn wrap(text: &str, mut fits: impl FnMut(&str) -> bool) -> Vec<Line> {
     for para in &info.paragraphs {
         let whole = text.get(para.range.clone()).unwrap_or_default();
         // unicode-bidi ends a paragraph at the `\r` of `\r\n`; the `\n` is no new paragraph.
-        if whole == "\n" && text.get(..para.range.start).is_some_and(|before| before.ends_with('\r')) {
+        if whole == "\n"
+            && text
+                .get(..para.range.start)
+                .is_some_and(|before| before.ends_with('\r'))
+        {
             continue;
         }
-        let content = para.range.start..para.range.start.saturating_add(whole.trim_end_matches(is_paragraph_separator).len());
+        let content = para.range.start
+            ..para
+                .range
+                .start
+                .saturating_add(whole.trim_end_matches(is_paragraph_separator).len());
         let rtl = para.level.is_rtl();
         for line in break_lines(text, content, &mut fits) {
             let mut out = String::new();
@@ -132,7 +146,11 @@ pub fn visual_auto(text: &str) -> Cow<'_, str> {
 
 /// The byte ranges of the lines `range` of `text` breaks into: as many words as `fits` accepts
 /// per line, a word too wide for any line split between characters. Always at least one line.
-fn break_lines(text: &str, range: Range<usize>, fits: &mut impl FnMut(&str) -> bool) -> Vec<Range<usize>> {
+fn break_lines(
+    text: &str,
+    range: Range<usize>,
+    fits: &mut impl FnMut(&str) -> bool,
+) -> Vec<Range<usize>> {
     let mut lines = Vec::new();
     let mut current: Option<Range<usize>> = None;
     for word in words(text, range.clone()) {
@@ -235,7 +253,9 @@ const MAX_PLACEHOLDERS: usize = 64;
 fn push_rtl_line(out: &mut String, line: &str) {
     let edge = |c: char| c.is_whitespace() || c == '·';
     let core = line.trim_start_matches(edge);
-    let lead = line.get(..line.len().saturating_sub(core.len())).unwrap_or_default();
+    let lead = line
+        .get(..line.len().saturating_sub(core.len()))
+        .unwrap_or_default();
     let trimmed = core.trim_end_matches(edge);
     let tail = core.get(trimmed.len()..).unwrap_or_default();
     let mut core = trimmed;
@@ -247,13 +267,22 @@ fn push_rtl_line(out: &mut String, line: &str) {
         colon = ":";
     }
     // A line that already uses the stand-in characters is reordered with its placeholders as text.
-    let reserved = core.chars().any(|c| (PLACEHOLDER_BASE..PLACEHOLDER_BASE.saturating_add(MAX_PLACEHOLDERS as u32)).contains(&u32::from(c)));
-    let (masked, names) = if reserved { (core.to_owned(), Vec::new()) } else { mask_placeholders(core) };
+    let reserved = core.chars().any(|c| {
+        (PLACEHOLDER_BASE..PLACEHOLDER_BASE.saturating_add(MAX_PLACEHOLDERS as u32))
+            .contains(&u32::from(c))
+    });
+    let (masked, names) = if reserved {
+        (core.to_owned(), Vec::new())
+    } else {
+        mask_placeholders(core)
+    };
     let mut visual = String::with_capacity(masked.len());
     push_visual(&mut visual, &masked, Level::rtl());
     out.push_str(lead);
     for c in visual.chars() {
-        let index = u32::from(c).checked_sub(PLACEHOLDER_BASE).and_then(|i| usize::try_from(i).ok());
+        let index = u32::from(c)
+            .checked_sub(PLACEHOLDER_BASE)
+            .and_then(|i| usize::try_from(i).ok());
         match index.and_then(|i| names.get(i)) {
             Some(name) => out.push_str(name),
             None => out.push(c),
@@ -273,9 +302,18 @@ fn mask_placeholders(text: &str) -> (String, Vec<&str>) {
     while names.len() < MAX_PLACEHOLDERS
         && let Some((start, end)) = next_atom(rest)
     {
-        let (Some(before), Some(atom), Some(after)) = (rest.get(..start), rest.get(start..end), rest.get(end..)) else { break };
+        let (Some(before), Some(atom), Some(after)) =
+            (rest.get(..start), rest.get(start..end), rest.get(end..))
+        else {
+            break;
+        };
         // `names.len()` is below MAX_PLACEHOLDERS, so the sum is a private-use scalar.
-        let Some(stand_in) = u32::try_from(names.len()).ok().and_then(|i| char::from_u32(PLACEHOLDER_BASE.saturating_add(i))) else { break };
+        let Some(stand_in) = u32::try_from(names.len())
+            .ok()
+            .and_then(|i| char::from_u32(PLACEHOLDER_BASE.saturating_add(i)))
+        else {
+            break;
+        };
         masked.push_str(before);
         masked.push(stand_in);
         names.push(atom);
@@ -293,12 +331,25 @@ fn next_atom(text: &str) -> Option<(usize, usize)> {
     });
     let shortcut = text.find(is_modifier_key).map(|at| {
         // The shortcut is the stretch around the symbol up to a space, a bracket or script text.
-        let outside = |c: char| c.is_whitespace() || is_rtl_script(c) || matches!(c, '(' | ')' | '[' | ']' | '{' | '}');
+        let outside = |c: char| {
+            c.is_whitespace() || is_rtl_script(c) || matches!(c, '(' | ')' | '[' | ']' | '{' | '}')
+        };
         let start = text
             .get(..at)
-            .and_then(|before| before.rfind(outside).and_then(|i| before.get(i..)?.chars().next().map(|c| i.saturating_add(c.len_utf8()))))
+            .and_then(|before| {
+                before.rfind(outside).and_then(|i| {
+                    before
+                        .get(i..)?
+                        .chars()
+                        .next()
+                        .map(|c| i.saturating_add(c.len_utf8()))
+                })
+            })
             .unwrap_or(0);
-        let end = text.get(at..).and_then(|after| after.find(outside)).map_or(text.len(), |i| at.saturating_add(i));
+        let end = text
+            .get(at..)
+            .and_then(|after| after.find(outside))
+            .map_or(text.len(), |i| at.saturating_add(i));
         (start, end)
     });
     match (placeholder, shortcut) {
@@ -351,7 +402,13 @@ mod tests {
 
     #[test]
     fn text_without_rtl_is_borrowed_unchanged() {
-        for s in ["", "report.pdf", "日本語の文字.pdf", "a (b) [c]", "caf\u{00E9} \u{200E}x"] {
+        for s in [
+            "",
+            "report.pdf",
+            "日本語の文字.pdf",
+            "a (b) [c]",
+            "caf\u{00E9} \u{200E}x",
+        ] {
             assert!(matches!(visual(s), Cow::Borrowed(v) if v == s), "{s:?}");
         }
     }
@@ -366,10 +423,16 @@ mod tests {
 
     #[test]
     fn latin_and_numbers_keep_their_own_order() {
-        assert_eq!(visual("report واحد اثنين final.pdf"), "report اثنين واحد final.pdf");
+        assert_eq!(
+            visual("report واحد اثنين final.pdf"),
+            "report اثنين واحد final.pdf"
+        );
         // A number inside right-to-left text reads left to right, to the left of what precedes it.
         assert_eq!(visual("ملف 2024.pdf"), "2024 ملف.pdf");
-        assert_eq!(visual(r"C:\Users\me\واحد اثنين\a.pdf"), r"C:\Users\me\اثنين واحد\a.pdf");
+        assert_eq!(
+            visual(r"C:\Users\me\واحد اثنين\a.pdf"),
+            r"C:\Users\me\اثنين واحد\a.pdf"
+        );
     }
 
     #[test]
@@ -396,7 +459,10 @@ mod tests {
         assert_eq!(display_rtl("حفظ باسم…"), "…باسم حفظ");
         // Latin words and numbers keep their own order inside the line.
         assert_eq!(display_rtl("إنشاء PDF من ملف"), "ملف من PDF إنشاء");
-        assert_eq!(display_rtl("تصدير إلى Microsoft Word الآن"), "الآن Microsoft Word إلى تصدير");
+        assert_eq!(
+            display_rtl("تصدير إلى Microsoft Word الآن"),
+            "الآن Microsoft Word إلى تصدير"
+        );
         assert_eq!(display_rtl("صالح لمدة 5 سنوات"), "سنوات 5 لمدة صالح");
         // Keyboard shortcuts are not reversed.
         assert_eq!(display_rtl("طباعة (⌘P)"), "(⌘P) طباعة");
@@ -409,7 +475,10 @@ mod tests {
     fn rtl_labels_keep_placeholders_whole() {
         // Two placeholders around a colon stay together, left to right: a file name and its error.
         assert_eq!(display_rtl("تعذّر فتح {name}: {e}"), "{name}: {e} فتح تعذّر");
-        assert_eq!(display_rtl("فشل {label}، السبب {e}"), "{e} السبب ،{label} فشل");
+        assert_eq!(
+            display_rtl("فشل {label}، السبب {e}"),
+            "{e} السبب ،{label} فشل"
+        );
         assert_eq!(display_rtl("{n} صفحات"), "صفحات {n}");
         assert_eq!(display_rtl("الصفحة {p} من {n}"), "{n} من {p} الصفحة");
         // Adjacent placeholders keep their order, as numbers around a slash would.
@@ -429,9 +498,15 @@ mod tests {
         // A caption's colon stays next to its widget; a sentence's colon ends the sentence.
         assert_eq!(display_rtl("الاسم:"), "الاسم:");
         assert_eq!(display_rtl("صادرة عن: "), "عن صادرة: ");
-        assert_eq!(display_rtl("اختر المعرّف الرقمي الذي تريد استخدامه:"), ":استخدامه تريد الذي الرقمي المعرّف اختر");
+        assert_eq!(
+            display_rtl("اختر المعرّف الرقمي الذي تريد استخدامه:"),
+            ":استخدامه تريد الذي الرقمي المعرّف اختر"
+        );
         // Each line is its own paragraph.
-        assert_eq!(display_rtl("تعذّر عرض الصفحة.\n{e}"), ".الصفحة عرض تعذّر\n{e}");
+        assert_eq!(
+            display_rtl("تعذّر عرض الصفحة.\n{e}"),
+            ".الصفحة عرض تعذّر\n{e}"
+        );
     }
 
     #[test]
@@ -457,7 +532,11 @@ mod tests {
             long.as_str(),
         ] {
             let v = display_rtl(s);
-            assert!(v.chars().count() <= s.chars().count(), "{:?}", s.chars().take(12).collect::<String>());
+            assert!(
+                v.chars().count() <= s.chars().count(),
+                "{:?}",
+                s.chars().take(12).collect::<String>()
+            );
         }
     }
 
@@ -467,11 +546,17 @@ mod tests {
     }
 
     fn rtl(text: &str) -> Line {
-        Line { text: text.to_owned(), rtl: true }
+        Line {
+            text: text.to_owned(),
+            rtl: true,
+        }
     }
 
     fn ltr(text: &str) -> Line {
-        Line { text: text.to_owned(), rtl: false }
+        Line {
+            text: text.to_owned(),
+            rtl: false,
+        }
     }
 
     #[test]
@@ -485,21 +570,36 @@ mod tests {
     #[test]
     fn arabic_lines_break_in_reading_order() {
         // The first words go on the first line, each line reordered on its own.
-        assert_eq!(wrap_at("واحد اثنين ثلاثة أربعة", 11), [rtl("اثنين واحد"), rtl("أربعة ثلاثة")]);
-        assert_eq!(wrap_at("واحد اثنين ثلاثة أربعة", 80), [rtl("أربعة ثلاثة اثنين واحد")]);
+        assert_eq!(
+            wrap_at("واحد اثنين ثلاثة أربعة", 11),
+            [rtl("اثنين واحد"), rtl("أربعة ثلاثة")]
+        );
+        assert_eq!(
+            wrap_at("واحد اثنين ثلاثة أربعة", 80),
+            [rtl("أربعة ثلاثة اثنين واحد")]
+        );
     }
 
     #[test]
     fn base_direction_comes_from_the_first_strong_character() {
         // Latin first: a left-to-right paragraph with an Arabic phrase inside it.
-        assert_eq!(wrap_at("See واحد اثنين here", 80), [ltr("See اثنين واحد here")]);
+        assert_eq!(
+            wrap_at("See واحد اثنين here", 80),
+            [ltr("See اثنين واحد here")]
+        );
         // Persian first: right to left, the Latin words and the number left to right inside it.
-        assert_eq!(wrap_at("فایل PDF نسخه 2 است", 80), [rtl("است 2 نسخه PDF فایل")]);
+        assert_eq!(
+            wrap_at("فایل PDF نسخه 2 است", 80),
+            [rtl("است 2 نسخه PDF فایل")]
+        );
         assert_eq!(wrap_at("سلام Hello World", 80), [rtl("Hello World سلام")]);
         // Leading neutrals and numbers don't decide it.
         assert_eq!(wrap_at("12. واحد اثنين", 80), [rtl("اثنين واحد .12")]);
         // Each paragraph finds its own direction.
-        assert_eq!(wrap_at("واحد اثنين\nOK then\n\nשלום עולם", 80), [rtl("اثنين واحد"), ltr("OK then"), ltr(""), rtl("עולם שלום")]);
+        assert_eq!(
+            wrap_at("واحد اثنين\nOK then\n\nשלום עולם", 80),
+            [rtl("اثنين واحد"), ltr("OK then"), ltr(""), rtl("עולם שלום")]
+        );
     }
 
     #[test]
@@ -524,16 +624,32 @@ mod tests {
     fn wrapping_handles_odd_widths_and_input() {
         assert_eq!(wrap_at("", 10), Vec::<Line>::new());
         // A word wider than the line is broken between characters.
-        assert_eq!(wrap_at("abcdefghij واحد", 4), [ltr("abcd"), ltr("efgh"), ltr("ij"), ltr("واحد")]);
+        assert_eq!(
+            wrap_at("abcdefghij واحد", 4),
+            [ltr("abcd"), ltr("efgh"), ltr("ij"), ltr("واحد")]
+        );
         // Extra spaces between words don't make empty lines; \r\n is one break.
-        assert_eq!(wrap_at("واحد    اثنين\r\nب", 5), [rtl("واحد"), rtl("اثنين"), rtl("ب")]);
+        assert_eq!(
+            wrap_at("واحد    اثنين\r\nب", 5),
+            [rtl("واحد"), rtl("اثنين"), rtl("ب")]
+        );
         // Nothing fits: one character per line, never an endless loop.
         assert_eq!(wrap("واحد", |_| false).len(), 4);
         let long = "ا ب ۱ (ج) ".repeat(5_000);
-        for s in ["\u{202E}ا\u{202C}b", "\u{064B}", "\n\n", "\u{2029}ا", long.as_str()] {
+        for s in [
+            "\u{202E}ا\u{202C}b",
+            "\u{064B}",
+            "\n\n",
+            "\u{2029}ا",
+            long.as_str(),
+        ] {
             let lines = wrap_at(s, 7);
             let shown: usize = lines.iter().map(|l| l.text.chars().count()).sum();
-            assert!(shown <= s.chars().count(), "{:?}", s.chars().take(12).collect::<String>());
+            assert!(
+                shown <= s.chars().count(),
+                "{:?}",
+                s.chars().take(12).collect::<String>()
+            );
         }
     }
 
@@ -545,9 +661,18 @@ mod tests {
         let mut shown = Vec::new();
         let output = ctx.run_ui(egui::RawInput::default(), |ui| {
             for line in wrap(text, |_| true) {
-                let galley = ui.painter().layout_no_wrap(line.text, egui::FontId::proportional(13.0), egui::Color32::WHITE);
+                let galley = ui.painter().layout_no_wrap(
+                    line.text,
+                    egui::FontId::proportional(13.0),
+                    egui::Color32::WHITE,
+                );
                 let glyphs = galley.rows.iter().flat_map(|row| row.glyphs.iter());
-                shown.push(glyphs.filter(|g| g.advance_width > 0.0).map(|g| g.chr).collect());
+                shown.push(
+                    glyphs
+                        .filter(|g| g.advance_width > 0.0)
+                        .map(|g| g.chr)
+                        .collect(),
+                );
             }
         });
         output.drop_without_applying_deltas();
@@ -565,17 +690,40 @@ mod tests {
         if pdfcraft_fonts::ui_arabic_fonts().is_empty() {
             return;
         }
-        assert_eq!(on_screen("من به مدرسه می\u{200C}روم"), [rev("من به مدرسه میروم")]);
-        assert_eq!(on_screen("فایل PDF نسخه 2 است"), [format!("{} 2 {} PDF {}", rev("است"), rev("نسخه"), rev("فایل"))]);
-        assert_eq!(on_screen("سال ۱۴۰۲ شمسی"), [format!("{} ۱۴۰۲ {}", rev("شمسی"), rev("سال"))]);
+        assert_eq!(
+            on_screen("من به مدرسه می\u{200C}روم"),
+            [rev("من به مدرسه میروم")]
+        );
+        assert_eq!(
+            on_screen("فایل PDF نسخه 2 است"),
+            [format!(
+                "{} 2 {} PDF {}",
+                rev("است"),
+                rev("نسخه"),
+                rev("فایل")
+            )]
+        );
+        assert_eq!(
+            on_screen("سال ۱۴۰۲ شمسی"),
+            [format!("{} ۱۴۰۲ {}", rev("شمسی"), rev("سال"))]
+        );
         assert_eq!(on_screen("ب۱۲"), ["۱۲ب"]);
-        assert_eq!(on_screen("See واحد اثنين here"), [format!("See {} {} here", rev("اثنين"), rev("واحد"))]);
-        assert_eq!(on_screen("واحد (اثنين)."), [format!(".({}) {}", rev("اثنين"), rev("واحد"))]);
+        assert_eq!(
+            on_screen("See واحد اثنين here"),
+            [format!("See {} {} here", rev("اثنين"), rev("واحد"))]
+        );
+        assert_eq!(
+            on_screen("واحد (اثنين)."),
+            [format!(".({}) {}", rev("اثنين"), rev("واحد"))]
+        );
     }
 
     #[test]
     fn single_line_with_its_own_direction() {
-        assert!(matches!(visual_auto("Ada Lovelace"), Cow::Borrowed("Ada Lovelace")));
+        assert!(matches!(
+            visual_auto("Ada Lovelace"),
+            Cow::Borrowed("Ada Lovelace")
+        ));
         assert_eq!(visual_auto("علی رضایی"), "رضایی علی");
         assert_eq!(visual_auto("علی 2"), "2 علی");
         assert_eq!(visual_auto("Team علی رضایی"), "Team رضایی علی");
@@ -597,7 +745,11 @@ mod tests {
         ];
         for s in odd {
             let v = visual(s);
-            assert!(v.chars().count() <= s.chars().count(), "{:?}", s.chars().take(12).collect::<String>());
+            assert!(
+                v.chars().count() <= s.chars().count(),
+                "{:?}",
+                s.chars().take(12).collect::<String>()
+            );
         }
     }
 }

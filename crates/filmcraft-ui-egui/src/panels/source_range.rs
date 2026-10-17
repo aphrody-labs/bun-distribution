@@ -25,7 +25,11 @@ fn key(which: Which) -> egui::Id {
     egui::Id::new(("monitor-range-edit", which as u8))
 }
 fn self_item(app: &FilmcraftApp, which: Which) -> Option<ItemId> {
-    if which == Which::Source { app.session.state.source_item } else { app.session.state.active_sequence }
+    if which == Which::Source {
+        app.session.state.source_item
+    } else {
+        app.session.state.active_sequence
+    }
 }
 fn drag(ctx: &egui::Context, which: Which) -> Option<Drag> {
     ctx.data(|d| d.get_temp(key(which)))
@@ -38,7 +42,9 @@ pub fn preview(app: &FilmcraftApp, ctx: &egui::Context) -> Option<TimeRange> {
     preview_for(app, ctx, Which::Source)
 }
 pub fn preview_for(app: &FilmcraftApp, ctx: &egui::Context, which: Which) -> Option<TimeRange> {
-    drag(ctx, which).filter(|d| Some(d.item) == self_item(app, which) && d.revision == app.session.revision).map(|d| d.preview)
+    drag(ctx, which)
+        .filter(|d| Some(d.item) == self_item(app, which) && d.revision == app.session.revision)
+        .map(|d| d.preview)
 }
 
 #[derive(Default)]
@@ -51,7 +57,13 @@ pub struct Interaction {
 }
 
 /// `shown`: the part of the clip or sequence the bar shows (its time zoom range).
-pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Which, shown: (Tick, Tick)) -> Interaction {
+pub fn interact(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    bar: Rect,
+    which: Which,
+    shown: (Tick, Tick),
+) -> Interaction {
     let ctx = ui.ctx().clone();
     let Some(item) = self_item(app, which) else {
         clear(&ctx, which);
@@ -63,26 +75,47 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
     };
     let enabled = view.subclip.is_none() && view.start.0 >= 0 && view.end > view.start;
     if let Some(d) = drag(&ctx, which)
-        && (d.item != item || d.revision != app.session.revision || ctx.input(|i| i.key_pressed(egui::Key::Escape)))
+        && (d.item != item
+            || d.revision != app.session.revision
+            || ctx.input(|i| i.key_pressed(egui::Key::Escape)))
     {
         clear(&ctx, which);
     }
     let selected = preview_for(app, &ctx, which).unwrap_or_else(|| view.selected_range());
     let span = shown.1.0.saturating_sub(shown.0.0).max(1) as f64;
-    let xof = |t: Tick| bar.min.x + (t.0.saturating_sub(shown.0.0) as f64 / span).clamp(0.0, 1.0) as f32 * bar.width();
+    let xof = |t: Tick| {
+        bar.min.x
+            + (t.0.saturating_sub(shown.0.0) as f64 / span).clamp(0.0, 1.0) as f32 * bar.width()
+    };
     // what is off a zoomed bar has no handle (past either end of it all, it sits at that end)
-    let shows = |t: Tick| (t >= shown.0 || shown.0 <= view.start) && (t <= shown.1 || shown.1 >= view.end);
+    let shows =
+        |t: Tick| (t >= shown.0 || shown.0 <= view.start) && (t <= shown.1 || shown.1 >= view.end);
     let (a, b) = (xof(selected.start), xof(selected.end()));
     let mid = (a + b) * 0.5;
     let band = Rect::from_min_max(pos2(a, bar.min.y + 8.0), pos2(b, bar.max.y));
-    let body = Rect::from_min_max(pos2((a + 6.0).min(mid), band.min.y), pos2((b - 6.0).max(mid), band.max.y));
-    let inside = Rect::from_min_max(pos2(a - 6.0, bar.min.y), pos2((a + 6.0).min(mid), bar.max.y)).intersect(bar.expand2(vec2(6.0, 0.0)));
-    let outside = Rect::from_min_max(pos2((b - 6.0).max(mid), bar.min.y), pos2(b + 6.0, bar.max.y)).intersect(bar.expand2(vec2(6.0, 0.0)));
+    let body = Rect::from_min_max(
+        pos2((a + 6.0).min(mid), band.min.y),
+        pos2((b - 6.0).max(mid), band.max.y),
+    );
+    let inside = Rect::from_min_max(
+        pos2(a - 6.0, bar.min.y),
+        pos2((a + 6.0).min(mid), bar.max.y),
+    )
+    .intersect(bar.expand2(vec2(6.0, 0.0)));
+    let outside = Rect::from_min_max(
+        pos2((b - 6.0).max(mid), bar.min.y),
+        pos2(b + 6.0, bar.max.y),
+    )
+    .intersect(bar.expand2(vec2(6.0, 0.0)));
     let mut result = Interaction::default();
     let ids = if which == Which::Source {
         ["source.range.body", "source.range.in", "source.range.out"]
     } else {
-        ["program.range.body", "program.range.in", "program.range.out"]
+        [
+            "program.range.body",
+            "program.range.in",
+            "program.range.out",
+        ]
     };
     for (id, label, edge, rect) in [
         (ids[0], "Move marked range", RangeEdge::Move, body),
@@ -98,14 +131,24 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
         {
             continue;
         }
-        if (edge == RangeEdge::In && !shows(selected.start)) || (edge == RangeEdge::Out && !shows(selected.end())) {
+        if (edge == RangeEdge::In && !shows(selected.start))
+            || (edge == RangeEdge::Out && !shows(selected.end()))
+        {
             continue;
         }
         app.auto.add(id, rect, label);
-        let response =
-            ui.add_enabled_ui(enabled && rect.width() > 0.0, |ui| ui.interact(rect, egui::Id::new(id), Sense::click_and_drag())).inner.on_hover_text(label);
+        let response = ui
+            .add_enabled_ui(enabled && rect.width() > 0.0, |ui| {
+                ui.interact(rect, egui::Id::new(id), Sense::click_and_drag())
+            })
+            .inner
+            .on_hover_text(label);
         let cursor = if edge == RangeEdge::Move {
-            if cfg!(windows) { egui::CursorIcon::PointingHand } else { egui::CursorIcon::Grab }
+            if cfg!(windows) {
+                egui::CursorIcon::PointingHand
+            } else {
+                egui::CursorIcon::Grab
+            }
         } else {
             egui::CursorIcon::ResizeHorizontal
         };
@@ -118,7 +161,9 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
             result.out_hot = response.hovered();
         }
         if response.drag_started() {
-            let Some(pointer) = ctx.input(|i| i.pointer.press_origin()) else { continue };
+            let Some(pointer) = ctx.input(|i| i.pointer.press_origin()) else {
+                continue;
+            };
             let bounds = TimeRange::from_bounds(view.start, view.end);
             let original = view.selected_range();
             if let Err(e) = adjust_range(bounds, original, view.rate, edge, Tick::ZERO) {
@@ -130,11 +175,24 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
             } else {
                 app.stop();
             }
-            app.ui.focused = if which == Which::Source { PanelKind::Source } else { PanelKind::Program };
+            app.ui.focused = if which == Which::Source {
+                PanelKind::Source
+            } else {
+                PanelKind::Program
+            };
             ctx.data_mut(|d| {
                 d.insert_temp(
                     key(which),
-                    Drag { item, edge, bounds, original, preview: original, rate: view.rate, pointer_x: pointer.x, revision: app.session.revision },
+                    Drag {
+                        item,
+                        edge,
+                        bounds,
+                        original,
+                        preview: original,
+                        rate: view.rate,
+                        pointer_x: pointer.x,
+                        revision: app.session.revision,
+                    },
                 )
             });
         }
@@ -142,8 +200,8 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
             result.handled = true;
             ctx.set_cursor_icon(cursor);
             if let Some(pos) = response.interact_pointer_pos() {
-                let raw =
-                    (f64::from(pos.x - d.pointer_x) / f64::from(bar.width().max(1.0)) * span).clamp(-(d.bounds.duration.0 as f64), d.bounds.duration.0 as f64);
+                let raw = (f64::from(pos.x - d.pointer_x) / f64::from(bar.width().max(1.0)) * span)
+                    .clamp(-(d.bounds.duration.0 as f64), d.bounds.duration.0 as f64);
                 if raw.is_finite() {
                     match adjust_range(d.bounds, d.original, d.rate, d.edge, Tick(raw as i64)) {
                         Ok(r) => {
@@ -165,13 +223,22 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
             }
             if response.drag_stopped() {
                 clear(&ctx, which);
-                if d.preview != d.original && d.revision == app.session.revision && self_item(app, which) == Some(item) {
+                if d.preview != d.original
+                    && d.revision == app.session.revision
+                    && self_item(app, which) == Some(item)
+                {
                     let mut params = json!({"item":item.0});
                     if edge != RangeEdge::Out {
                         params["in"] = json!(d.preview.start.0);
                     }
                     if edge != RangeEdge::In {
-                        params["out"] = json!(d.preview.end().0.saturating_sub(d.rate.frame_duration().0).max(view.start.0));
+                        params["out"] = json!(
+                            d.preview
+                                .end()
+                                .0
+                                .saturating_sub(d.rate.frame_duration().0)
+                                .max(view.start.0)
+                        );
                     }
                     if let Err(e) = app.session.execute("project.setMarks", params) {
                         app.ui.status = e.to_string();
@@ -185,24 +252,48 @@ pub fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, which: Whi
             && edge == RangeEdge::Move
             && let Some(pos) = response.interact_pointer_pos()
         {
-            let time = shown.0.0.saturating_add(((f64::from(pos.x - bar.min.x) / f64::from(bar.width().max(1.0))).clamp(0.0, 1.0) * span) as i64);
-            if let Err(e) = app.session.execute(if which == Which::Source { "source.setPlayhead" } else { "playhead.set" }, json!({"time":time})) {
+            let time = shown.0.0.saturating_add(
+                ((f64::from(pos.x - bar.min.x) / f64::from(bar.width().max(1.0))).clamp(0.0, 1.0)
+                    * span) as i64,
+            );
+            if let Err(e) = app.session.execute(
+                if which == Which::Source {
+                    "source.setPlayhead"
+                } else {
+                    "playhead.set"
+                },
+                json!({"time":time}),
+            ) {
                 app.ui.status = e.to_string();
             }
         }
     }
-    let time = if which == Which::Source { app.session.state.source_playhead } else { app.session.playhead() };
+    let time = if which == Which::Source {
+        app.session.state.source_playhead
+    } else {
+        app.session.playhead()
+    };
     if shows(time) {
         let x = xof(time);
         let rect = Rect::from_min_max(pos2(x - 7.0, bar.max.y - 12.0), pos2(x + 7.0, bar.max.y));
-        let id = if which == Which::Source { "source.playhead" } else { "program.playhead" };
+        let id = if which == Which::Source {
+            "source.playhead"
+        } else {
+            "program.playhead"
+        };
         app.auto.add(id, rect, "Scrub playhead");
-        let playhead = ui.interact(rect, egui::Id::new(id), Sense::click_and_drag()).on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
+        let playhead = ui
+            .interact(rect, egui::Id::new(id), Sense::click_and_drag())
+            .on_hover_cursor(egui::CursorIcon::ResizeHorizontal);
         if (playhead.dragged() || playhead.clicked())
             && let Some(pos) = playhead.interact_pointer_pos()
         {
-            let f = (f64::from(pos.x - bar.min.x) / f64::from(bar.width().max(1.0))).clamp(0.0, 1.0);
-            result.scrub = Some(view.rate.snap(Tick(shown.0.0.saturating_add((f * span) as i64))));
+            let f =
+                (f64::from(pos.x - bar.min.x) / f64::from(bar.width().max(1.0))).clamp(0.0, 1.0);
+            result.scrub = Some(
+                view.rate
+                    .snap(Tick(shown.0.0.saturating_add((f * span) as i64))),
+            );
             result.handled = true;
         }
     }
@@ -216,9 +307,24 @@ pub fn trim_cue(p: &egui::Painter, x: f32, bar: Rect, inward: f32) {
     let (top, bottom) = (bar.min.y + 8.0, bar.max.y);
     let mid = (top + bottom) * 0.5;
     let stroke = Stroke::new(1.2, red);
-    p.line(vec![pos2(x + inward, top), pos2(x, top), pos2(x, bottom), pos2(x + inward, bottom)], stroke);
+    p.line(
+        vec![
+            pos2(x + inward, top),
+            pos2(x, top),
+            pos2(x, bottom),
+            pos2(x + inward, bottom),
+        ],
+        stroke,
+    );
     p.line_segment([pos2(x - 9.0, mid), pos2(x + 9.0, mid)], stroke);
     for direction in [-1.0_f32, 1.0] {
-        p.line(vec![pos2(x + direction * 6.0, mid - 2.5), pos2(x + direction * 9.0, mid), pos2(x + direction * 6.0, mid + 2.5)], stroke);
+        p.line(
+            vec![
+                pos2(x + direction * 6.0, mid - 2.5),
+                pos2(x + direction * 9.0, mid),
+                pos2(x + direction * 6.0, mid + 2.5),
+            ],
+            stroke,
+        );
     }
 }

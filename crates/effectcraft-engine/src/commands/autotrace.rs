@@ -58,8 +58,19 @@ pub fn channel_field(img: &Image, ch: Channel, invert: bool) -> Vec<f32> {
 }
 
 /// Trace one frame: outlines in layer space.
-fn trace_frame(img: &Image, offset: [f64; 2], ch: Channel, invert: bool, blur: f64, o: &TraceOpts) -> Vec<Traced> {
-    let src = if blur > 0.0 { effectcraft_raster::gaussian_blur(img, blur / 2.0, blur / 2.0, false) } else { img.clone() };
+fn trace_frame(
+    img: &Image,
+    offset: [f64; 2],
+    ch: Channel,
+    invert: bool,
+    blur: f64,
+    o: &TraceOpts,
+) -> Vec<Traced> {
+    let src = if blur > 0.0 {
+        effectcraft_raster::gaussian_blur(img, blur / 2.0, blur / 2.0, false)
+    } else {
+        img.clone()
+    };
     let field = channel_field(&src, ch, invert);
     let mut out = trace(&field, img.width as usize, img.height as usize, o);
     for t in &mut out {
@@ -77,10 +88,14 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?.clone();
     if !layer.source.is_av() {
-        return Err(bad(c, "auto-trace needs a footage, solid, precomp, text or shape layer"));
+        return Err(bad(
+            c,
+            "auto-trace needs a footage, solid, precomp, text or shape layer",
+        ));
     }
     let ch = match str_p(p, "channel") {
-        Some(x) => Channel::from_name(x).ok_or_else(|| bad(c, "channel: alpha|red|green|blue|luminance"))?,
+        Some(x) => Channel::from_name(x)
+            .ok_or_else(|| bad(c, "channel: alpha|red|green|blue|luminance"))?,
         None => Channel::Alpha,
     };
     let invert = b_p(p, "invert").unwrap_or(false);
@@ -92,7 +107,10 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
         corner_roundness: (f_p(p, "cornerRoundness").unwrap_or(50.0) / 100.0).clamp(0.0, 1.0),
     };
     let fr = comp.frame_rate;
-    let work_area = matches!(str_p(p, "timeSpan"), Some("workArea" | "work area" | "work_area"));
+    let work_area = matches!(
+        str_p(p, "timeSpan"),
+        Some("workArea" | "work area" | "work_area")
+    );
     let times: Vec<Tick> = if work_area {
         let a = comp.work_area.0.max(layer.in_point);
         let b = comp.work_area.1.min(layer.out_point);
@@ -113,9 +131,11 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
         use rayon::prelude::*;
         times
             .par_iter()
-            .map(|t| match crate::tracking::source_frame(r, project, cid, &comp, &layer, *t, expr) {
-                Some((img, off)) => trace_frame(&img, off, ch, invert, blur, &o),
-                None => vec![],
+            .map(|t| {
+                match crate::tracking::source_frame(r, project, cid, &comp, &layer, *t, expr) {
+                    Some((img, off)) => trace_frame(&img, off, ch, invert, blur, &o),
+                    None => vec![],
+                }
             })
             .collect()
     };
@@ -129,15 +149,29 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
     let target = s.edit("Auto-trace", None, |proj, st| {
         let target = if new_layer {
             // A solid the size of the layer, in the same place, carries the masks.
-            let folder = proj.folder_named("Solids").unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
+            let folder = proj
+                .folder_named("Solids")
+                .unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
             let name = format!("Auto-traced {}", layer.name);
             let sid = proj.add_item(
                 &name,
                 Label::Red,
                 Some(folder),
-                ItemKind::Solid(Solid { color: [1.0, 1.0, 1.0], width: sw.max(1), height: sh.max(1), pixel_aspect: comp.pixel_aspect }),
+                ItemKind::Solid(Solid {
+                    color: [1.0, 1.0, 1.0],
+                    width: sw.max(1),
+                    height: sh.max(1),
+                    pixel_aspect: comp.pixel_aspect,
+                }),
             );
-            let mut l = build::layer(proj, &comp, &name, LayerSource::Solid { item: sid }, (sw.max(1), sh.max(1)), None);
+            let mut l = build::layer(
+                proj,
+                &comp,
+                &name,
+                LayerSource::Solid { item: sid },
+                (sw.max(1), sh.max(1)),
+                None,
+            );
             l.start_time = layer.start_time;
             l.in_point = layer.in_point;
             l.out_point = layer.out_point;
@@ -158,12 +192,21 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
         };
         let mut next = proj.next_id;
         let l = super::layer_mut(proj, cid, target)?;
-        let masks = l.props.sub_mut("masks").ok_or_else(|| bad(c, "this layer can't have masks"))?;
+        let masks = l
+            .props
+            .sub_mut("masks")
+            .ok_or_else(|| bad(c, "this layer can't have masks"))?;
         let base = masks.children.len();
         for k in 0..n_masks {
             // Depth decides the mode: outlines add, holes subtract.
-            let Some(first) = frames.iter().find_map(|f| f.get(k)) else { continue };
-            let mode = if first.depth % 2 == 0 { MaskMode::Add } else { MaskMode::Subtract };
+            let Some(first) = frames.iter().find_map(|f| f.get(k)) else {
+                continue;
+            };
+            let mode = if first.depth % 2 == 0 {
+                MaskMode::Add
+            } else {
+                MaskMode::Subtract
+            };
             let mode = if k == 0 { MaskMode::Add } else { mode };
             let mut g = build::mask(
                 &mut Ids(&mut next),
@@ -176,7 +219,10 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
                 if let Some(path) = g.get_mut("path") {
                     for (f, lt) in frames.iter().zip(&layer_times) {
                         if let Some(tr) = f.get(k) {
-                            effectcraft_keyframe::set_key(&mut path.keys, Keyframe::new(*lt, KV::Path(tr.path.clone())));
+                            effectcraft_keyframe::set_key(
+                                &mut path.keys,
+                                Keyframe::new(*lt, KV::Path(tr.path.clone())),
+                            );
                         }
                     }
                 }
@@ -184,7 +230,10 @@ fn run(s: &mut Session, p: &Value) -> Result<Value> {
                     && frames.iter().any(|f| f.get(k).is_none())
                 {
                     for (f, lt) in frames.iter().zip(&layer_times) {
-                        let mut key = Keyframe::new(*lt, KV::Scalar(if f.get(k).is_some() { 100.0 } else { 0.0 }));
+                        let mut key = Keyframe::new(
+                            *lt,
+                            KV::Scalar(if f.get(k).is_some() { 100.0 } else { 0.0 }),
+                        );
                         key.in_interp = Interp::Hold;
                         key.out_interp = Interp::Hold;
                         effectcraft_keyframe::set_key(&mut op.keys, key);

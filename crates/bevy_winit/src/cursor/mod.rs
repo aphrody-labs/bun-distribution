@@ -6,7 +6,7 @@ mod custom_cursor;
 #[cfg(feature = "custom_cursor")]
 pub use custom_cursor::*;
 
-use crate::{converters::convert_system_cursor_icon, state::WinitAppRunnerState, WINIT_WINDOWS};
+use crate::{WINIT_WINDOWS, converters::convert_system_cursor_icon, state::WinitAppRunnerState};
 use bevy_app::{App, Last, Plugin};
 #[cfg(feature = "custom_cursor")]
 use bevy_asset::Assets;
@@ -166,7 +166,9 @@ fn update_cursors(
                     };
 
                     let Some(rgba) = maybe_rgba else {
-                        tracing::warn!("Cursor image {handle:?} not accepted because it's not rgba8 or rgba32float format");
+                        tracing::warn!(
+                            "Cursor image {handle:?} not accepted because it's not rgba8 or rgba32float format"
+                        );
                         continue;
                     };
 
@@ -207,7 +209,9 @@ fn update_cursors(
                 }
                 #[cfg(not(all(target_family = "wasm", target_os = "unknown")))]
                 {
-                    bevy_log::error_once!("CustomCursor::Url is not supported on this platform. Falling back to CursorIcon::System(SystemCursorIcon::Default)");
+                    bevy_log::error_once!(
+                        "CustomCursor::Url is not supported on this platform. Falling back to CursorIcon::System(SystemCursorIcon::Default)"
+                    );
                     CursorSource::System(winit::window::CursorIcon::Default)
                 }
             }

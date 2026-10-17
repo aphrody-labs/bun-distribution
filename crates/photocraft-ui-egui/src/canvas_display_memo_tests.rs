@@ -6,7 +6,11 @@ use serde_json::json;
 
 fn app() -> PhotocraftApp {
     let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-    app.run("file.new", json!({"width": 64, "height": 48, "mode": "gray"})).unwrap();
+    app.run(
+        "file.new",
+        json!({"width": 64, "height": 48, "mode": "gray"}),
+    )
+    .unwrap();
     app
 }
 
@@ -17,18 +21,29 @@ fn duotone_display_document_is_built_once_per_snapshot() {
     let (a, key) = display_doc(&mut app, 0);
     assert_eq!(key, 1 << 41);
     let (b, _) = display_doc(&mut app, 0);
-    assert!(std::sync::Arc::ptr_eq(&a, &b), "the second call reuses the first's document");
-    assert_eq!(a.layers.len(), app.session.documents()[0].doc.layers.len() + 1, "with the ink display layer");
+    assert!(
+        std::sync::Arc::ptr_eq(&a, &b),
+        "the second call reuses the first's document"
+    );
+    assert_eq!(
+        a.layers.len(),
+        app.session.documents()[0].doc.layers.len() + 1,
+        "with the ink display layer"
+    );
     app.run("edit.fill", json!({"color": "#808080"})).unwrap();
     let (c, _) = display_doc(&mut app, 0);
     assert!(!std::sync::Arc::ptr_eq(&a, &c), "an edit builds it again");
-    assert_eq!(c.layers.last().map(|l| l.name.as_str()), a.layers.last().map(|l| l.name.as_str()));
+    assert_eq!(
+        c.layers.last().map(|l| l.name.as_str()),
+        a.layers.last().map(|l| l.name.as_str())
+    );
 }
 
 #[test]
 fn live_adjust_document_is_built_once_per_setting() {
     let mut app = app();
-    app.run("layer.newAdjustmentLayer.levels", json!({})).unwrap();
+    app.run("layer.newAdjustmentLayer.levels", json!({}))
+        .unwrap();
     let id = app.session.documents()[0].active_layer.unwrap();
     app.live_adjust = Some((id, json!({"inBlack": 20})));
     let (a, k1) = display_doc(&mut app, 0);
@@ -38,9 +53,15 @@ fn live_adjust_document_is_built_once_per_setting() {
     app.live_adjust = Some((id, json!({"inBlack": 40})));
     let (c, k3) = display_doc(&mut app, 0);
     assert_ne!(k1, k3);
-    assert!(!std::sync::Arc::ptr_eq(&a, &c), "a new setting builds it again");
+    assert!(
+        !std::sync::Arc::ptr_eq(&a, &c),
+        "a new setting builds it again"
+    );
     app.live_adjust = None;
     let (d, k4) = display_doc(&mut app, 0);
     assert_eq!(k4, 0);
-    assert!(std::sync::Arc::ptr_eq(&d, &app.session.documents()[0].doc), "no preview: the document itself");
+    assert!(
+        std::sync::Arc::ptr_eq(&d, &app.session.documents()[0].doc),
+        "no preview: the document itself"
+    );
 }

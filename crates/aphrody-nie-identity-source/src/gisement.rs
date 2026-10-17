@@ -347,10 +347,16 @@ pub fn build_aphrody_dossier(
     aura_pairs.sort_by_key(|(h, _)| h.0);
 
     let find_skill = |h: HashId| -> Option<&SkillInfo> {
-        skill_pairs.binary_search_by_key(&h.0, |(k, _)| k.0).ok().map(|i| &skill_pairs[i].1)
+        skill_pairs
+            .binary_search_by_key(&h.0, |(k, _)| k.0)
+            .ok()
+            .map(|i| &skill_pairs[i].1)
     };
     let find_aura = |h: HashId| -> Option<&AuraCmd> {
-        aura_pairs.binary_search_by_key(&h.0, |(k, _)| k.0).ok().map(|i| &aura_pairs[i].1)
+        aura_pairs
+            .binary_search_by_key(&h.0, |(k, _)| k.0)
+            .ok()
+            .map(|i| &aura_pairs[i].1)
     };
 
     // Variantes d'Aphrody.
@@ -364,7 +370,10 @@ pub fn build_aphrody_dossier(
     }
 
     // Assets par code (3 entrées, toujours disponibles).
-    let assets = SERIES.iter().map(|s| AphrodyAssets::for_code(s.code, s.face_subdir)).collect();
+    let assets = SERIES
+        .iter()
+        .map(|s| AphrodyAssets::for_code(s.code, s.face_subdir))
+        .collect();
 
     AphrodyDossier {
         identity: AphrodyIdentity::known(),
@@ -399,7 +408,10 @@ where
                 cutin,
             });
         } else if let Some(cmd) = find_aura(slot.skill_id) {
-            auras.push(AphrodyAura { learn_level: slot.learn_level, cmd: cmd.clone() });
+            auras.push(AphrodyAura {
+                learn_level: slot.learn_level,
+                cmd: cmd.clone(),
+            });
         } else {
             unresolved.push(slot.skill_id);
         }
@@ -429,8 +441,14 @@ mod tests {
         // Les 3 codes/base_ids vérifiés (inagle_characters).
         assert_eq!(SERIES.len(), 3);
         assert_eq!(SERIES[0].base_id, HashId(0x37D7_ACFB));
-        assert_eq!(code_for_base(HashId(0xFC57_A11C)).unwrap().code, "c05026590");
-        assert_eq!(code_for_base(HashId(0xCA01_BFAB)).unwrap().code, "c07080010");
+        assert_eq!(
+            code_for_base(HashId(0xFC57_A11C)).unwrap().code,
+            "c05026590"
+        );
+        assert_eq!(
+            code_for_base(HashId(0xCA01_BFAB)).unwrap().code,
+            "c07080010"
+        );
         assert!(code_for_base(HashId(0x0000_0001)).is_none());
     }
 
@@ -443,8 +461,14 @@ mod tests {
     #[test]
     fn assets_templates() {
         let a = AphrodyAssets::for_code("c01001900", "01_ie1");
-        assert_eq!(a.face_g4tx, "data/dx11/chr/_face/01_ie1/c01001900/c01001900.g4tx");
+        assert_eq!(
+            a.face_g4tx,
+            "data/dx11/chr/_face/01_ie1/c01001900/c01001900.g4tx"
+        );
         assert_eq!(a.voice_acb, "data/common/sound_asset/ja/c01001900.acb");
-        assert_eq!(a.icon_g4tx, "data/dx11/menu/200_icon/10_icon_chr/face/c01001900_l.g4tx");
+        assert_eq!(
+            a.icon_g4tx,
+            "data/dx11/menu/200_icon/10_icon_chr/face/c01001900_l.g4tx"
+        );
     }
 }

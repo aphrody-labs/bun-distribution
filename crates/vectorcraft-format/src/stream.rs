@@ -105,8 +105,13 @@ impl<W: Write> Gz<W> {
                 self.buf.clear();
             }
             let (before_in, before_out) = (self.deflate.total_in(), self.deflate.total_out());
-            let status = self.deflate.compress_vec(input, &mut self.buf, flush).map_err(io::Error::other)?;
-            let taken = usize::try_from(self.deflate.total_in() - before_in).unwrap_or(input.len()).min(input.len());
+            let status = self
+                .deflate
+                .compress_vec(input, &mut self.buf, flush)
+                .map_err(io::Error::other)?;
+            let taken = usize::try_from(self.deflate.total_in() - before_in)
+                .unwrap_or(input.len())
+                .min(input.len());
             input = input.get(taken..).unwrap_or_default();
             let made = self.deflate.total_out() - before_out;
             let full = self.buf.len() == self.buf.capacity();
@@ -130,7 +135,14 @@ impl<W: Write> Gz<W> {
             return Ok(());
         }
         self.deflate(&[], FlushCompress::Sync)?;
-        self.deflate = Compress::new(if packed { Compression::none() } else { Compression::default() }, false);
+        self.deflate = Compress::new(
+            if packed {
+                Compression::none()
+            } else {
+                Compression::default()
+            },
+            false,
+        );
         self.stored = packed;
         Ok(())
     }
@@ -216,7 +228,15 @@ pub(crate) struct KeyScan<W: Write> {
 
 impl<W: Write> KeyScan<W> {
     pub(crate) fn new(inner: W) -> Self {
-        Self { inner, keys: HashSet::new(), active: true, matched: 0, after_tag: false, value: None, escaped: false }
+        Self {
+            inner,
+            keys: HashSet::new(),
+            active: true,
+            matched: 0,
+            after_tag: false,
+            value: None,
+            escaped: false,
+        }
     }
 
     fn scan(&mut self, buf: &[u8]) {
@@ -303,7 +323,9 @@ mod tests {
             rest = rest.get(at + TAG.len()..).unwrap_or_default();
             let value = rest.trim_ascii_start();
             if value.first() == Some(&b'"')
-                && let Some(Ok(s)) = serde_json::Deserializer::from_slice(value).into_iter::<String>().next()
+                && let Some(Ok(s)) = serde_json::Deserializer::from_slice(value)
+                    .into_iter::<String>()
+                    .next()
             {
                 out.insert(s);
             }
@@ -324,9 +346,15 @@ mod tests {
     #[test]
     fn finds_the_keys_the_whole_text_search_found() {
         let v = serde_json::json!({"key": "a", "x": [{"key": "b \"q\" \\ é"}, {"monkey": "no"}, {"k": "key"}], "s": "\"key\": \"no\"", "key2": "n", "o": {"key": 3}});
-        for json in [serde_json::to_vec(&v).unwrap(), serde_json::to_vec_pretty(&v).unwrap()] {
+        for json in [
+            serde_json::to_vec(&v).unwrap(),
+            serde_json::to_vec_pretty(&v).unwrap(),
+        ] {
             let want = string_members(&json);
-            assert_eq!(want, HashSet::from(["a".to_string(), "b \"q\" \\ é".to_string()]));
+            assert_eq!(
+                want,
+                HashSet::from(["a".to_string(), "b \"q\" \\ é".to_string()])
+            );
             for chunk in [1, 2, 3, 7, 64, json.len()] {
                 assert_eq!(scanned(&json, chunk), want, "chunk {chunk}");
             }
@@ -334,7 +362,8 @@ mod tests {
     }
 
     fn arb_json() -> impl Strategy<Value = serde_json::Value> {
-        let key = prop::sample::select(vec!["key", "k", "kkey", "key ", "x"]).prop_map(str::to_string);
+        let key =
+            prop::sample::select(vec!["key", "k", "kkey", "key ", "x"]).prop_map(str::to_string);
         let leaf = prop_oneof![
             Just(serde_json::Value::Null),
             any::<i32>().prop_map(serde_json::Value::from),
@@ -343,7 +372,8 @@ mod tests {
         leaf.prop_recursive(4, 32, 6, move |inner| {
             prop_oneof![
                 prop::collection::vec(inner.clone(), 0..5).prop_map(serde_json::Value::from),
-                prop::collection::vec((key.clone(), inner), 0..5).prop_map(|m| serde_json::Value::Object(m.into_iter().collect())),
+                prop::collection::vec((key.clone(), inner), 0..5)
+                    .prop_map(|m| serde_json::Value::Object(m.into_iter().collect())),
             ]
         })
     }

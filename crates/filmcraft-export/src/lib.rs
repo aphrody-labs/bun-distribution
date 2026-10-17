@@ -11,7 +11,17 @@
 //! [`ExportSettings`] carries every Export-mode setting (frame size, rate, bitrate encoding, audio
 //! format, multiplexer, captions, effects, metadata) as serde data; [`presets`] defines the
 //! built-in presets.
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 use std::io::Write;
 
@@ -135,31 +145,39 @@ pub enum Format {
 
 impl Format {
     pub fn from_name(s: &str) -> Option<Format> {
-        Some(match s.to_ascii_lowercase().replace([' ', '-', '_', '.'], "").as_str() {
-            "h264" | "mp4" | "avc" | "m4v" => Format::H264,
-            "hevc" | "h265" | "hvc1" | "hev1" | "x265" => Format::Hevc,
-            "av1" | "av01" => Format::Av1,
-            "prores" | "mov" | "appleprores" => Format::ProRes,
-            "dnxhr" | "dnxhd" | "dnx" | "avid" | "aviddnxhr" | "aviddnxhd" | "vc3" => Format::DnxHr,
-            "apv" | "apv1" => Format::Apv,
-            "mxf" | "mxfop1a" | "op1a" => Format::MxfOp1a,
-            "mxfopatom" | "opatom" | "mxfatom" | "avidmxf" => Format::MxfOpAtom,
-            "mjpeg" | "motionjpeg" | "jpeg" => Format::Mjpeg,
-            "png" | "pngsequence" => Format::PngSequence,
-            "tif" | "tiff" | "tiffsequence" => Format::TiffSequence,
-            "bmp" | "bmpsequence" => Format::BmpSequence,
-            // "jpeg" alone stays Motion-JPEG (QuickTime), as it always was
-            "jpg" | "jpgsequence" | "jpegsequence" => Format::JpegSequence,
-            "tga" | "targa" | "tgasequence" | "targasequence" => Format::TgaSequence,
-            "dpx" | "dpxsequence" => Format::DpxSequence,
-            "exr" | "openexr" | "exrsequence" | "openexrsequence" => Format::ExrSequence,
-            "gif" | "animatedgif" => Format::Gif,
-            "wav" | "waveform" | "waveformaudio" => Format::Wav,
-            "aif" | "aiff" | "aifc" => Format::Aiff,
-            "aac" | "aacaudio" | "m4a" | "adts" => Format::Aac,
-            "flac" | "fla" => Format::Flac,
-            _ => return None,
-        })
+        Some(
+            match s
+                .to_ascii_lowercase()
+                .replace([' ', '-', '_', '.'], "")
+                .as_str()
+            {
+                "h264" | "mp4" | "avc" | "m4v" => Format::H264,
+                "hevc" | "h265" | "hvc1" | "hev1" | "x265" => Format::Hevc,
+                "av1" | "av01" => Format::Av1,
+                "prores" | "mov" | "appleprores" => Format::ProRes,
+                "dnxhr" | "dnxhd" | "dnx" | "avid" | "aviddnxhr" | "aviddnxhd" | "vc3" => {
+                    Format::DnxHr
+                }
+                "apv" | "apv1" => Format::Apv,
+                "mxf" | "mxfop1a" | "op1a" => Format::MxfOp1a,
+                "mxfopatom" | "opatom" | "mxfatom" | "avidmxf" => Format::MxfOpAtom,
+                "mjpeg" | "motionjpeg" | "jpeg" => Format::Mjpeg,
+                "png" | "pngsequence" => Format::PngSequence,
+                "tif" | "tiff" | "tiffsequence" => Format::TiffSequence,
+                "bmp" | "bmpsequence" => Format::BmpSequence,
+                // "jpeg" alone stays Motion-JPEG (QuickTime), as it always was
+                "jpg" | "jpgsequence" | "jpegsequence" => Format::JpegSequence,
+                "tga" | "targa" | "tgasequence" | "targasequence" => Format::TgaSequence,
+                "dpx" | "dpxsequence" => Format::DpxSequence,
+                "exr" | "openexr" | "exrsequence" | "openexrsequence" => Format::ExrSequence,
+                "gif" | "animatedgif" => Format::Gif,
+                "wav" | "waveform" | "waveformaudio" => Format::Wav,
+                "aif" | "aiff" | "aifc" => Format::Aiff,
+                "aac" | "aacaudio" | "m4a" | "adts" => Format::Aac,
+                "flac" | "fla" => Format::Flac,
+                _ => return None,
+            },
+        )
     }
     /// Stable id, as accepted by [`Format::from_name`] and used in serialized settings.
     pub fn id(self) -> &'static str {
@@ -255,7 +273,10 @@ impl Format {
     }
     /// Sound without picture: Waveform Audio, AIFF, AAC Audio and FLAC.
     pub fn is_audio_only(self) -> bool {
-        matches!(self, Format::Wav | Format::Aiff | Format::Aac | Format::Flac)
+        matches!(
+            self,
+            Format::Wav | Format::Aiff | Format::Aac | Format::Flac
+        )
     }
     /// H.264 or H.265: MPEG-4 (or QuickTime) with AAC audio, set up with the same bitrate controls.
     pub fn is_h26x(self) -> bool {
@@ -505,19 +526,35 @@ pub struct ColorSignal {
 
 impl Default for ColorSignal {
     fn default() -> Self {
-        ColorSignal { primaries: 1, transfer: 1, matrix: 1 }
+        ColorSignal {
+            primaries: 1,
+            transfer: 1,
+            matrix: 1,
+        }
     }
 }
 
 impl ColorSignal {
-    pub const PQ: ColorSignal = ColorSignal { primaries: 9, transfer: 16, matrix: 9 };
-    pub const HLG: ColorSignal = ColorSignal { primaries: 9, transfer: 18, matrix: 9 };
+    pub const PQ: ColorSignal = ColorSignal {
+        primaries: 9,
+        transfer: 16,
+        matrix: 9,
+    };
+    pub const HLG: ColorSignal = ColorSignal {
+        primaries: 9,
+        transfer: 18,
+        matrix: 9,
+    };
     pub fn is_hdr(&self) -> bool {
         matches!(self.transfer, 16 | 18)
     }
     /// (Kr, Kb) of the matrix.
     pub fn kr_kb(&self) -> (f32, f32) {
-        if self.matrix == 9 { (0.2627, 0.0593) } else { (0.2126, 0.0722) }
+        if self.matrix == 9 {
+            (0.2627, 0.0593)
+        } else {
+            (0.2126, 0.0722)
+        }
     }
     /// Sample-entry boxes: `colr` (nclx for MP4, nclc for MOV) plus `mdcv`/`clli` for PQ
     /// (mastering display BT.2020/D65, 1000/0.0001 cd/m²; MaxCLL/MaxFALL 0 = unknown).
@@ -526,11 +563,24 @@ impl ColorSignal {
             return;
         }
         if let Some(v) = e.video.as_mut() {
-            let (p, t, m) = (self.primaries as u16, self.transfer as u16, self.matrix as u16);
+            let (p, t, m) = (
+                self.primaries as u16,
+                self.transfer as u16,
+                self.matrix as u16,
+            );
             v.color = Some(if mov {
-                filmcraft_isobmff::ColorInfo::Nclc { primaries: p, transfer: t, matrix: m }
+                filmcraft_isobmff::ColorInfo::Nclc {
+                    primaries: p,
+                    transfer: t,
+                    matrix: m,
+                }
             } else {
-                filmcraft_isobmff::ColorInfo::Nclx { primaries: p, transfer: t, matrix: m, full_range: false }
+                filmcraft_isobmff::ColorInfo::Nclx {
+                    primaries: p,
+                    transfer: t,
+                    matrix: m,
+                    full_range: false,
+                }
             });
             if let Some((md, cll)) = self.static_metadata() {
                 v.mastering_display = Some(md);
@@ -542,7 +592,12 @@ impl ColorSignal {
     /// and (MaxCLL, MaxFALL) = (0, 0), unknown. `None` for HLG and SDR. The one definition of these
     /// values: the `mdcv` / `clli` boxes and the SEI messages of every encoder come from here.
     pub fn static_metadata(&self) -> Option<(filmcraft_isobmff::MasteringDisplay, (u16, u16))> {
-        (self.transfer == 16).then(|| (filmcraft_isobmff::MasteringDisplay::bt2020(1000.0, 0.0001), (0, 0)))
+        (self.transfer == 16).then(|| {
+            (
+                filmcraft_isobmff::MasteringDisplay::bt2020(1000.0, 0.0001),
+                (0, 0),
+            )
+        })
     }
 }
 
@@ -607,10 +662,13 @@ impl ExportSettings {
             validate_range(range)?;
         }
         if !self.scale.is_finite() || self.scale <= 0.0 {
-            return Err(ExportError::Unsupported("output scale must be finite and positive".into()));
+            return Err(ExportError::Unsupported(
+                "output scale must be finite and positive".into(),
+            ));
         }
         if let Some((width, height)) = self.frame_size {
-            filmcraft_project::validate_frame_size(width, height).map_err(ExportError::Unsupported)?;
+            filmcraft_project::validate_frame_size(width, height)
+                .map_err(ExportError::Unsupported)?;
         }
         if let Some(rate) = self.frame_rate
             && (rate.num <= 0
@@ -618,42 +676,79 @@ impl ExportSettings {
                 || rate.as_f64() > 1000.0
                 || rate.num > i64::from(u32::MAX)
                 || rate.den > i64::from(u32::MAX)
-                || (i128::from(filmcraft_time::TICKS_PER_SECOND) * i128::from(rate.den) / i128::from(rate.num.max(1))) > i128::from(Tick::MAX.0))
+                || (i128::from(filmcraft_time::TICKS_PER_SECOND) * i128::from(rate.den)
+                    / i128::from(rate.num.max(1)))
+                    > i128::from(Tick::MAX.0))
         {
-            return Err(ExportError::Unsupported("output frame rate must be positive and at most 1000 fps".into()));
+            return Err(ExportError::Unsupported(
+                "output frame rate must be positive and at most 1000 fps".into(),
+            ));
         }
-        if self.audio.sample_rate.is_some_and(|rate| rate == 0 || rate > 384_000) {
-            return Err(ExportError::Unsupported("output sample rate must be between 1 and 384000 Hz".into()));
+        if self
+            .audio
+            .sample_rate
+            .is_some_and(|rate| rate == 0 || rate > 384_000)
+        {
+            return Err(ExportError::Unsupported(
+                "output sample rate must be between 1 and 384000 Hz".into(),
+            ));
         }
         if self.audio.float && self.audio.bits != 32 {
-            return Err(ExportError::Unsupported("floating-point audio is 32-bit: set the sample size to 32".into()));
+            return Err(ExportError::Unsupported(
+                "floating-point audio is 32-bit: set the sample size to 32".into(),
+            ));
         }
         let sample_format = self.audio.sample_format();
-        if (self.has_audio() || self.format.is_audio_only()) && self.audio_codec() != AudioCodec::Aac && !self.supports_sample_format(sample_format) {
-            let codec = if self.audio_codec() == AudioCodec::Flac { "FLAC" } else { self.format.label() };
-            return Err(ExportError::Unsupported(format!("{codec} audio has no {} samples: choose 16, 24 or 32 bit", sample_format.label())));
+        if (self.has_audio() || self.format.is_audio_only())
+            && self.audio_codec() != AudioCodec::Aac
+            && !self.supports_sample_format(sample_format)
+        {
+            let codec = if self.audio_codec() == AudioCodec::Flac {
+                "FLAC"
+            } else {
+                self.format.label()
+            };
+            return Err(ExportError::Unsupported(format!(
+                "{codec} audio has no {} samples: choose 16, 24 or 32 bit",
+                sample_format.label()
+            )));
         }
         if self.field_order != FieldOrder::Progressive && self.has_video() {
-            return Err(ExportError::Unsupported(format!("{} field order: FilmCraft's encoders write progressive frames", self.field_order.label())));
+            return Err(ExportError::Unsupported(format!(
+                "{} field order: FilmCraft's encoders write progressive frames",
+                self.field_order.label()
+            )));
         }
         if self.effects.image_overlay.enabled && self.effects.image_overlay.path.trim().is_empty() {
-            return Err(ExportError::Unsupported("image overlay: no image file chosen".into()));
+            return Err(ExportError::Unsupported(
+                "image overlay: no image file chosen".into(),
+            ));
         }
         if self.format == Format::Hevc && self.bitrate_mode == BitrateMode::Vbr2Pass {
-            return Err(ExportError::Unsupported("H.265 export has no two-pass mode: choose CBR or VBR, 1 pass".into()));
+            return Err(ExportError::Unsupported(
+                "H.265 export has no two-pass mode: choose CBR or VBR, 1 pass".into(),
+            ));
         }
         if self.format == Format::Av1 && self.bitrate_mode == BitrateMode::Vbr2Pass {
-            return Err(ExportError::Unsupported("AV1 export has no two-pass mode: choose CBR or VBR, 1 pass".into()));
+            return Err(ExportError::Unsupported(
+                "AV1 export has no two-pass mode: choose CBR or VBR, 1 pass".into(),
+            ));
         }
         if self.bitrate_mode == BitrateMode::Crf {
             if self.format == Format::Hevc {
-                return Err(ExportError::Unsupported("H.265 export has no CRF mode: choose CBR or VBR, 1 pass".into()));
+                return Err(ExportError::Unsupported(
+                    "H.265 export has no CRF mode: choose CBR or VBR, 1 pass".into(),
+                ));
             }
             if self.format == Format::Av1 {
-                return Err(ExportError::Unsupported("AV1 export has no CRF mode: choose CBR or VBR, 1 pass".into()));
+                return Err(ExportError::Unsupported(
+                    "AV1 export has no CRF mode: choose CBR or VBR, 1 pass".into(),
+                ));
             }
             if !self.crf.is_finite() || !(0.0..=51.0).contains(&self.crf) {
-                return Err(ExportError::Unsupported("CRF must be between 0 and 51".into()));
+                return Err(ExportError::Unsupported(
+                    "CRF must be between 0 and 51".into(),
+                ));
             }
         }
         Ok(())
@@ -690,7 +785,10 @@ impl Progress {
 
     /// [`Progress::eta`] at a given time (tests, and hosts with a clock of their own).
     pub fn eta_at(&self, now: web_time::Instant) -> Option<std::time::Duration> {
-        let (done, total) = (self.done.load(Ordering::Relaxed), self.total.load(Ordering::Relaxed));
+        let (done, total) = (
+            self.done.load(Ordering::Relaxed),
+            self.total.load(Ordering::Relaxed),
+        );
         let mut pace = self.pace.lock().unwrap_or_else(|e| e.into_inner());
         pace.observe(now, done);
         if self.finished.load(Ordering::Relaxed) || done >= total {
@@ -773,12 +871,31 @@ pub trait AudioEncoder: Send {
     }
 }
 
-pub type EncoderFactory = fn(format: Format, width: u32, height: u32, rate: FrameRate, settings: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>>;
-pub type AudioEncoderFactory = fn(format: Format, sample_rate: u32, channels: u32, settings: &ExportSettings) -> Option<Result<Box<dyn AudioEncoder>>>;
+pub type EncoderFactory = fn(
+    format: Format,
+    width: u32,
+    height: u32,
+    rate: FrameRate,
+    settings: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>>;
+pub type AudioEncoderFactory = fn(
+    format: Format,
+    sample_rate: u32,
+    channels: u32,
+    settings: &ExportSettings,
+) -> Option<Result<Box<dyn AudioEncoder>>>;
 
 fn video_factories() -> &'static RwLock<Vec<EncoderFactory>> {
     static F: OnceLock<RwLock<Vec<EncoderFactory>>> = OnceLock::new();
-    F.get_or_init(|| RwLock::new(vec![h264_factory, prores_factory, dnx_factory, apv_factory, mjpeg_factory]))
+    F.get_or_init(|| {
+        RwLock::new(vec![
+            h264_factory,
+            prores_factory,
+            dnx_factory,
+            apv_factory,
+            mjpeg_factory,
+        ])
+    })
 }
 fn audio_factories() -> &'static RwLock<Vec<AudioEncoderFactory>> {
     static F: OnceLock<RwLock<Vec<AudioEncoderFactory>>> = OnceLock::new();
@@ -802,7 +919,11 @@ static HW_DECLINED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64:
 /// The hardware encoder counters so far.
 pub fn hw_encode_stats() -> HwEncodeStats {
     use std::sync::atomic::Ordering::Relaxed;
-    HwEncodeStats { frames: HW_FRAMES.load(Relaxed), sessions: HW_SESSIONS.load(Relaxed), declined: HW_DECLINED.load(Relaxed) }
+    HwEncodeStats {
+        frames: HW_FRAMES.load(Relaxed),
+        sessions: HW_SESSIONS.load(Relaxed),
+        declined: HW_DECLINED.load(Relaxed),
+    }
 }
 
 /// A hardware encoder encoded a picture.
@@ -850,8 +971,17 @@ pub enum Stage {
 const STAGES: usize = 9;
 
 impl Stage {
-    pub const ALL: [Stage; STAGES] =
-        [Stage::Setup, Stage::Loudness, Stage::Render, Stage::Encode, Stage::Convert, Stage::Audio, Stage::Mux, Stage::Finish, Stage::Wait];
+    pub const ALL: [Stage; STAGES] = [
+        Stage::Setup,
+        Stage::Loudness,
+        Stage::Render,
+        Stage::Encode,
+        Stage::Convert,
+        Stage::Audio,
+        Stage::Mux,
+        Stage::Finish,
+        Stage::Wait,
+    ];
 
     /// The name in `perf.stats`.
     pub fn name(self) -> &'static str {
@@ -869,19 +999,33 @@ impl Stage {
     }
 }
 
-static STAGE_NS: [std::sync::atomic::AtomicU64; STAGES] = [const { std::sync::atomic::AtomicU64::new(0) }; STAGES];
+static STAGE_NS: [std::sync::atomic::AtomicU64; STAGES] =
+    [const { std::sync::atomic::AtomicU64::new(0) }; STAGES];
 
 /// Wall time each export stage has taken so far in this process, in nanoseconds, summed over every
 /// stepped export (they only grow: diff two readings to measure one export). Measuring costs two
 /// clock reads per stage per batch; nothing an export does depends on it.
 pub fn stage_times() -> Vec<(Stage, u64)> {
-    Stage::ALL.iter().map(|s| (*s, STAGE_NS.get(*s as usize).map_or(0, |a| a.load(std::sync::atomic::Ordering::Relaxed)))).collect()
+    Stage::ALL
+        .iter()
+        .map(|s| {
+            (
+                *s,
+                STAGE_NS
+                    .get(*s as usize)
+                    .map_or(0, |a| a.load(std::sync::atomic::Ordering::Relaxed)),
+            )
+        })
+        .collect()
 }
 
 /// Add `d` to a stage's wall time (also for encoders outside this crate: [`Stage::Convert`]).
 pub fn note_stage(stage: Stage, d: std::time::Duration) {
     if let Some(a) = STAGE_NS.get(stage as usize) {
-        a.fetch_add(u64::try_from(d.as_nanos()).unwrap_or(u64::MAX), std::sync::atomic::Ordering::Relaxed);
+        a.fetch_add(
+            u64::try_from(d.as_nanos()).unwrap_or(u64::MAX),
+            std::sync::atomic::Ordering::Relaxed,
+        );
     }
 }
 
@@ -904,7 +1048,11 @@ pub fn register_encoder(f: EncoderFactory) {
 
 /// Whether `f` is among the registered video encoder factories (startup diagnostics, tests).
 pub fn encoder_registered(f: EncoderFactory) -> bool {
-    video_factories().read().unwrap_or_else(|e| e.into_inner()).iter().any(|x| std::ptr::fn_addr_eq(*x, f))
+    video_factories()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .any(|x| std::ptr::fn_addr_eq(*x, f))
 }
 
 /// Renders one export frame on something other than the CPU reference renderer — today the GPU
@@ -934,7 +1082,9 @@ fn frame_renderer_factories() -> &'static RwLock<Vec<FrameRendererFactory>> {
 /// Register a frame-renderer factory (tried before those registered earlier). Registering the
 /// same factory twice is harmless.
 pub fn register_frame_renderer(f: FrameRendererFactory) {
-    let mut g = frame_renderer_factories().write().unwrap_or_else(|e| e.into_inner());
+    let mut g = frame_renderer_factories()
+        .write()
+        .unwrap_or_else(|e| e.into_inner());
     if !g.iter().any(|x| std::ptr::fn_addr_eq(*x, f)) {
         g.insert(0, f);
     }
@@ -942,21 +1092,30 @@ pub fn register_frame_renderer(f: FrameRendererFactory) {
 
 /// Whether `f` is among the registered frame-renderer factories (startup diagnostics, tests).
 pub fn frame_renderer_registered(f: FrameRendererFactory) -> bool {
-    frame_renderer_factories().read().unwrap_or_else(|e| e.into_inner()).iter().any(|x| std::ptr::fn_addr_eq(*x, f))
+    frame_renderer_factories()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .any(|x| std::ptr::fn_addr_eq(*x, f))
 }
 
 /// Clear the registered frame-renderer factories. Test-only: registration is a process-wide
 /// startup step and tests that register their own must not see each other's.
 #[cfg(test)]
 pub(crate) fn reset_frame_renderers_for_tests() {
-    frame_renderer_factories().write().unwrap_or_else(|e| e.into_inner()).clear();
+    frame_renderer_factories()
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .clear();
     GPU_FRAMES.store(0, Ordering::Relaxed);
     GPU_FALLBACKS.store(0, Ordering::Relaxed);
 }
 
 /// Pick the first registered factory that can build a renderer for this host.
 pub(crate) fn build_frame_renderer() -> Option<Box<dyn FrameRenderer>> {
-    let g = frame_renderer_factories().read().unwrap_or_else(|e| e.into_inner());
+    let g = frame_renderer_factories()
+        .read()
+        .unwrap_or_else(|e| e.into_inner());
     g.iter().filter_map(|f| f()).next()
 }
 
@@ -976,7 +1135,10 @@ pub fn note_gpu_fallback() {
 
 /// Time an export worker waited for a free GPU renderer (process-wide, for the bench).
 pub(crate) fn note_lock_wait(d: std::time::Duration) {
-    LOCK_WAIT_NS.fetch_add(u64::try_from(d.as_nanos()).unwrap_or(u64::MAX), Ordering::Relaxed);
+    LOCK_WAIT_NS.fetch_add(
+        u64::try_from(d.as_nanos()).unwrap_or(u64::MAX),
+        Ordering::Relaxed,
+    );
 }
 
 /// Total time export workers waited for a GPU renderer since [`reset_export_lock_wait`].
@@ -997,10 +1159,16 @@ pub struct GpuRenderStats {
 }
 
 pub fn gpu_render_stats() -> GpuRenderStats {
-    GpuRenderStats { frames: GPU_FRAMES.load(Ordering::Relaxed), fallbacks: GPU_FALLBACKS.load(Ordering::Relaxed) }
+    GpuRenderStats {
+        frames: GPU_FRAMES.load(Ordering::Relaxed),
+        fallbacks: GPU_FALLBACKS.load(Ordering::Relaxed),
+    }
 }
 pub fn register_audio_encoder(f: AudioEncoderFactory) {
-    audio_factories().write().unwrap_or_else(|e| e.into_inner()).insert(0, f);
+    audio_factories()
+        .write()
+        .unwrap_or_else(|e| e.into_inner())
+        .insert(0, f);
 }
 
 type FormatProbe = (Format, fn() -> bool);
@@ -1015,7 +1183,10 @@ fn format_probes() -> &'static RwLock<Vec<FormatProbe>> {
 /// Registering the same probe twice is harmless.
 pub fn register_format_probe(format: Format, probe: fn() -> bool) {
     let mut g = format_probes().write().unwrap_or_else(|e| e.into_inner());
-    if !g.iter().any(|(f, p)| *f == format && std::ptr::fn_addr_eq(*p, probe)) {
+    if !g
+        .iter()
+        .any(|(f, p)| *f == format && std::ptr::fn_addr_eq(*p, probe))
+    {
         g.push((format, probe));
     }
 }
@@ -1031,7 +1202,10 @@ fn hdr_probes() -> &'static RwLock<Vec<FormatProbe>> {
 /// exports as tone-mapped SDR unless a probe says otherwise. Registering the same probe twice is harmless.
 pub fn register_hdr_probe(format: Format, probe: fn() -> bool) {
     let mut g = hdr_probes().write().unwrap_or_else(|e| e.into_inner());
-    if !g.iter().any(|(f, p)| *f == format && std::ptr::fn_addr_eq(*p, probe)) {
+    if !g
+        .iter()
+        .any(|(f, p)| *f == format && std::ptr::fn_addr_eq(*p, probe))
+    {
         g.push((format, probe));
     }
 }
@@ -1039,7 +1213,13 @@ pub fn register_hdr_probe(format: Format, probe: fn() -> bool) {
 /// Whether a registered probe says the encoder of `format` writes HDR here (false without one).
 pub fn hdr_available(format: Format) -> bool {
     // the probes run outside the lock: one may take a while
-    let probes: Vec<fn() -> bool> = hdr_probes().read().unwrap_or_else(|e| e.into_inner()).iter().filter(|(f, _)| *f == format).map(|(_, p)| *p).collect();
+    let probes: Vec<fn() -> bool> = hdr_probes()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .filter(|(f, _)| *f == format)
+        .map(|(_, p)| *p)
+        .collect();
     probes.into_iter().any(|p| p())
 }
 
@@ -1049,7 +1229,12 @@ pub fn available(format: Format) -> bool {
     if !Format::ALL.contains(&format) {
         return false;
     }
-    format.has_builtin_encoder() || format_probes().read().unwrap_or_else(|e| e.into_inner()).iter().any(|(f, probe)| *f == format && probe())
+    format.has_builtin_encoder()
+        || format_probes()
+            .read()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .any(|(f, probe)| *f == format && probe())
 }
 
 struct MjpegEncoder {
@@ -1067,19 +1252,44 @@ impl VideoEncoder for MjpegEncoder {
         self.rate.num as u32
     }
     fn encode(&mut self, f: &EncoderFrame) -> Result<Vec<EncodedPacket>> {
-        let rgb: Vec<u8> = f.rgba.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect();
+        let rgb: Vec<u8> = f
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2]])
+            .collect();
         let mut out = Vec::new();
         let mut enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, self.quality);
-        enc.encode(&rgb, f.width, f.height, image::ExtendedColorType::Rgb8).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(vec![EncodedPacket { data: out, key: true, duration: self.rate.den as u32, composition_offset: 0 }])
+        enc.encode(&rgb, f.width, f.height, image::ExtendedColorType::Rgb8)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(vec![EncodedPacket {
+            data: out,
+            key: true,
+            duration: self.rate.den as u32,
+            composition_offset: 0,
+        }])
     }
     fn flush(&mut self) -> Result<Vec<EncodedPacket>> {
         Ok(Vec::new())
     }
 }
 
-fn mjpeg_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>> {
-    (format == Format::Mjpeg).then(|| Ok(Box::new(MjpegEncoder { w: w as u16, h: h as u16, quality: s.quality.clamp(1, 100), rate }) as Box<dyn VideoEncoder>))
+fn mjpeg_factory(
+    format: Format,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>> {
+    (format == Format::Mjpeg).then(|| {
+        Ok(Box::new(MjpegEncoder {
+            w: w as u16,
+            h: h as u16,
+            quality: s.quality.clamp(1, 100),
+            rate,
+        }) as Box<dyn VideoEncoder>)
+    })
 }
 
 /// AAC-LC (our encoder), 320 kbps stereo by default.
@@ -1096,7 +1306,10 @@ impl AudioEncoder for AacEncoder {
     fn encode(&mut self, planar: &[Vec<f32>]) -> Result<Vec<Vec<u8>>> {
         let refs: Vec<&[f32]> = if planar.len() == 6 {
             // ours: L, R, C, LFE, Ls, Rs → AAC channel configuration 6: C, L, R, Ls, Rs, LFE
-            [2usize, 0, 1, 4, 5, 3].iter().map(|&c| planar[c].as_slice()).collect()
+            [2usize, 0, 1, 4, 5, 3]
+                .iter()
+                .map(|&c| planar[c].as_slice())
+                .collect()
         } else {
             planar.iter().map(Vec::as_slice).collect()
         };
@@ -1124,11 +1337,17 @@ pub(crate) struct FlacAudio {
 impl FlacAudio {
     pub(crate) fn new(sample_rate: u32, channels: u32, s: &ExportSettings) -> Result<Self> {
         let format = s.audio.sample_format();
-        let ch = u8::try_from(channels).map_err(|_| ExportError::Unsupported("FLAC: too many audio channels".into()))?;
+        let ch = u8::try_from(channels)
+            .map_err(|_| ExportError::Unsupported("FLAC: too many audio channels".into()))?;
         let mut cfg = filmcraft_flac::EncoderConfig::new(sample_rate, ch, format.bits() as u8);
         cfg.level = s.audio.flac_level.min(8);
-        let enc = filmcraft_flac::Encoder::new(cfg).map_err(|e| ExportError::Unsupported(format!("FLAC: {e}")))?;
-        Ok(FlacAudio { enc, format, tail: 0 })
+        let enc = filmcraft_flac::Encoder::new(cfg)
+            .map_err(|e| ExportError::Unsupported(format!("FLAC: {e}")))?;
+        Ok(FlacAudio {
+            enc,
+            format,
+            tail: 0,
+        })
     }
 }
 
@@ -1137,9 +1356,14 @@ impl AudioEncoder for FlacAudio {
         SampleEntry::flac(&self.enc.streaminfo())
     }
     fn encode(&mut self, planar: &[Vec<f32>]) -> Result<Vec<Vec<u8>>> {
-        let ints: Vec<Vec<i32>> = planar.iter().map(|c| c.iter().map(|&s| self.format.quantise(s)).collect()).collect();
+        let ints: Vec<Vec<i32>> = planar
+            .iter()
+            .map(|c| c.iter().map(|&s| self.format.quantise(s)).collect())
+            .collect();
         let refs: Vec<&[i32]> = ints.iter().map(Vec::as_slice).collect();
-        self.enc.encode_frames(&refs).map_err(|e| ExportError::Encode(format!("FLAC: {e}")))
+        self.enc
+            .encode_frames(&refs)
+            .map_err(|e| ExportError::Encode(format!("FLAC: {e}")))
     }
     fn flush(&mut self) -> Result<Vec<Vec<u8>>> {
         Ok(self.flush_timed()?.into_iter().map(|(au, _)| au).collect())
@@ -1147,7 +1371,11 @@ impl AudioEncoder for FlacAudio {
     fn flush_timed(&mut self) -> Result<Vec<(Vec<u8>, u32)>> {
         self.tail = self.enc.pending_samples() as u32;
         let last = self.enc.finish();
-        Ok(if last.is_empty() { Vec::new() } else { vec![(last, self.tail)] })
+        Ok(if last.is_empty() {
+            Vec::new()
+        } else {
+            vec![(last, self.tail)]
+        })
     }
     fn priming(&self) -> u32 {
         0
@@ -1160,15 +1388,30 @@ impl AudioEncoder for FlacAudio {
     }
 }
 
-fn aac_factory(_format: Format, sample_rate: u32, channels: u32, s: &ExportSettings) -> Option<Result<Box<dyn AudioEncoder>>> {
+fn aac_factory(
+    _format: Format,
+    sample_rate: u32,
+    channels: u32,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn AudioEncoder>>> {
     // AAC caps a frame at 6144 bits per channel (ISO/IEC 14496-3 §4.5.3.2): 6 bits per sample, so
     // 264.6 kbps for stereo at 22.05 kHz; a higher setting is capped instead of refused
     let max = (6 * sample_rate as u64 * channels.max(1) as u64).min(u32::MAX as u64) as u32;
     let bps = (s.audio.bitrate_kbps.clamp(32, 512) * 1000).min(max);
     Some(
-        filmcraft_aac::Encoder::new(filmcraft_aac::EncoderConfig::cbr(sample_rate, channels as usize, bps))
-            .map(|enc| Box::new(AacEncoder { enc, rate: sample_rate, channels }) as Box<dyn AudioEncoder>)
-            .map_err(|e| ExportError::Encode(e.to_string())),
+        filmcraft_aac::Encoder::new(filmcraft_aac::EncoderConfig::cbr(
+            sample_rate,
+            channels as usize,
+            bps,
+        ))
+        .map(|enc| {
+            Box::new(AacEncoder {
+                enc,
+                rate: sample_rate,
+                channels,
+            }) as Box<dyn AudioEncoder>
+        })
+        .map_err(|e| ExportError::Encode(e.to_string())),
     )
 }
 
@@ -1186,7 +1429,11 @@ struct ProResEncoder {
 
 impl VideoEncoder for ProResEncoder {
     fn sample_entry(&self) -> SampleEntry {
-        let mut e = SampleEntry::prores(filmcraft_isobmff::FourCc(self.profile.fourcc()), self.w as u16, self.h as u16);
+        let mut e = SampleEntry::prores(
+            filmcraft_isobmff::FourCc(self.profile.fourcc()),
+            self.w as u16,
+            self.h as u16,
+        );
         self.signal.apply_to(&mut e, true);
         e
     }
@@ -1199,8 +1446,23 @@ impl VideoEncoder for ProResEncoder {
         let (w, h) = (f.width as usize, f.height as usize);
         timed(Stage::Convert, || match (chroma, f.hdr) {
             (filmcraft_prores::ChromaFormat::Yuv444, hdr) => {
-                let (kr, kb) = if hdr.is_some() { self.signal.kr_kb() } else { (0.2126, 0.0722) };
-                to_yuv444_10(f.rgba, hdr, w, h, kr, kb, &mut fr.y, &mut fr.cb, &mut fr.cr, fr.alpha.as_deref_mut())
+                let (kr, kb) = if hdr.is_some() {
+                    self.signal.kr_kb()
+                } else {
+                    (0.2126, 0.0722)
+                };
+                to_yuv444_10(
+                    f.rgba,
+                    hdr,
+                    w,
+                    h,
+                    kr,
+                    kb,
+                    &mut fr.y,
+                    &mut fr.cb,
+                    &mut fr.cr,
+                    fr.alpha.as_deref_mut(),
+                )
             }
             (_, Some(rgb)) => {
                 let (kr, kb) = self.signal.kr_kb();
@@ -1208,8 +1470,16 @@ impl VideoEncoder for ProResEncoder {
             }
             (_, None) => rgba_to_yuv422_10(f.rgba, w, h, &mut fr.y, &mut fr.cb, &mut fr.cr),
         });
-        let data = self.enc.encode(&fr).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(vec![EncodedPacket { data, key: true, duration: self.rate.den as u32, composition_offset: 0 }])
+        let data = self
+            .enc
+            .encode(&fr)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(vec![EncodedPacket {
+            data,
+            key: true,
+            duration: self.rate.den as u32,
+            composition_offset: 0,
+        }])
     }
     fn flush(&mut self) -> Result<Vec<EncodedPacket>> {
         Ok(Vec::new())
@@ -1237,50 +1507,81 @@ pub fn to_yuv444_10(
     let (sb, sr) = (2.0 * (1.0 - kb), 2.0 * (1.0 - kr));
     let rgb_at = |i: usize| -> [f32; 3] {
         match hdr {
-            Some(f) => f.get(i * 3..i * 3 + 3).map_or([0.0; 3], |p| [p[0], p[1], p[2]]),
-            None => rgba.get(i * 4..i * 4 + 3).map_or([0.0; 3], |p| [p[0] as f32 / 255.0, p[1] as f32 / 255.0, p[2] as f32 / 255.0]),
+            Some(f) => f
+                .get(i * 3..i * 3 + 3)
+                .map_or([0.0; 3], |p| [p[0], p[1], p[2]]),
+            None => rgba.get(i * 4..i * 4 + 3).map_or([0.0; 3], |p| {
+                [
+                    p[0] as f32 / 255.0,
+                    p[1] as f32 / 255.0,
+                    p[2] as f32 / 255.0,
+                ]
+            }),
         }
     };
-    y.par_chunks_mut(w).zip(cb.par_chunks_mut(w).zip(cr.par_chunks_mut(w))).enumerate().for_each(|(row, (yr, (cbr, crr)))| {
-        for (x, (yv, (cbv, crv))) in yr.iter_mut().zip(cbr.iter_mut().zip(crr.iter_mut())).enumerate() {
-            let [r, g, b] = rgb_at(row * w + x);
-            let yy = kr * r + kg * g + kb * b;
-            *yv = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
-            *cbv = (512.0 + 896.0 * (b - yy) / sb).round().clamp(4.0, 1019.0) as u16;
-            *crv = (512.0 + 896.0 * (r - yy) / sr).round().clamp(4.0, 1019.0) as u16;
-        }
-    });
+    y.par_chunks_mut(w)
+        .zip(cb.par_chunks_mut(w).zip(cr.par_chunks_mut(w)))
+        .enumerate()
+        .for_each(|(row, (yr, (cbr, crr)))| {
+            for (x, (yv, (cbv, crv))) in yr
+                .iter_mut()
+                .zip(cbr.iter_mut().zip(crr.iter_mut()))
+                .enumerate()
+            {
+                let [r, g, b] = rgb_at(row * w + x);
+                let yy = kr * r + kg * g + kb * b;
+                *yv = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
+                *cbv = (512.0 + 896.0 * (b - yy) / sb).round().clamp(4.0, 1019.0) as u16;
+                *crv = (512.0 + 896.0 * (r - yy) / sr).round().clamp(4.0, 1019.0) as u16;
+            }
+        });
     if let (Some(a), None) = (alpha, hdr) {
         for (i, dst) in a.iter_mut().enumerate().take(n) {
-            *dst = rgba.get(i * 4 + 3).map_or(1023, |&v| ((v as u32 * 1023 + 127) / 255) as u16);
+            *dst = rgba
+                .get(i * 4 + 3)
+                .map_or(1023, |&v| ((v as u32 * 1023 + 127) / 255) as u16);
         }
     }
 }
 
 /// BT.709 limited-range 10-bit 4:2:2 from straight RGBA8 (chroma averaged horizontally).
-pub fn rgba_to_yuv422_10(rgba: &[u8], w: usize, h: usize, y: &mut [u16], cb: &mut [u16], cr: &mut [u16]) {
+pub fn rgba_to_yuv422_10(
+    rgba: &[u8],
+    w: usize,
+    h: usize,
+    y: &mut [u16],
+    cb: &mut [u16],
+    cr: &mut [u16],
+) {
     let cw = w.div_ceil(2);
     debug_assert!(y.len() >= w * h && rgba.len() >= w * h * 4);
-    y.par_chunks_mut(w).zip(cb.par_chunks_mut(cw).zip(cr.par_chunks_mut(cw))).enumerate().for_each(|(row, (yr, (cbr, crr)))| {
-        let src = &rgba[row * w * 4..(row + 1) * w * 4];
-        let mut us = vec![0f32; w];
-        let mut vs = vec![0f32; w];
-        for x in 0..w {
-            let (r, g, b) = (src[x * 4] as f32 / 255.0, src[x * 4 + 1] as f32 / 255.0, src[x * 4 + 2] as f32 / 255.0);
-            let yy = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-            yr[x] = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
-            us[x] = (b - yy) / 1.8556;
-            vs[x] = (r - yy) / 1.5748;
-        }
-        for cx in 0..cw {
-            let a = cx * 2;
-            let b2 = (a + 1).min(w - 1);
-            let u = (us[a] + us[b2]) * 0.5;
-            let v = (vs[a] + vs[b2]) * 0.5;
-            cbr[cx] = (512.0 + 896.0 * u).round().clamp(4.0, 1019.0) as u16;
-            crr[cx] = (512.0 + 896.0 * v).round().clamp(4.0, 1019.0) as u16;
-        }
-    });
+    y.par_chunks_mut(w)
+        .zip(cb.par_chunks_mut(cw).zip(cr.par_chunks_mut(cw)))
+        .enumerate()
+        .for_each(|(row, (yr, (cbr, crr)))| {
+            let src = &rgba[row * w * 4..(row + 1) * w * 4];
+            let mut us = vec![0f32; w];
+            let mut vs = vec![0f32; w];
+            for x in 0..w {
+                let (r, g, b) = (
+                    src[x * 4] as f32 / 255.0,
+                    src[x * 4 + 1] as f32 / 255.0,
+                    src[x * 4 + 2] as f32 / 255.0,
+                );
+                let yy = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                yr[x] = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
+                us[x] = (b - yy) / 1.8556;
+                vs[x] = (r - yy) / 1.5748;
+            }
+            for cx in 0..cw {
+                let a = cx * 2;
+                let b2 = (a + 1).min(w - 1);
+                let u = (us[a] + us[b2]) * 0.5;
+                let v = (vs[a] + vs[b2]) * 0.5;
+                cbr[cx] = (512.0 + 896.0 * u).round().clamp(4.0, 1019.0) as u16;
+                crr[cx] = (512.0 + 896.0 * v).round().clamp(4.0, 1019.0) as u16;
+            }
+        });
 }
 
 /// The ProRes profile named by [`ExportSettings::prores_profile`].
@@ -1298,42 +1599,76 @@ pub fn prores_profile(name: &str) -> filmcraft_prores::Profile {
 
 /// Limited-range 10-bit 4:2:2 from encoded R'G'B' floats with matrix (Kr, Kb).
 #[allow(clippy::too_many_arguments)]
-pub fn rgbf_to_yuv422_10(rgb: &[f32], w: usize, h: usize, kr: f32, kb: f32, y: &mut [u16], cb: &mut [u16], cr: &mut [u16]) {
+pub fn rgbf_to_yuv422_10(
+    rgb: &[f32],
+    w: usize,
+    h: usize,
+    kr: f32,
+    kb: f32,
+    y: &mut [u16],
+    cb: &mut [u16],
+    cr: &mut [u16],
+) {
     let cw = w.div_ceil(2);
     debug_assert!(rgb.len() >= w * h * 3 && y.len() >= w * h);
     let kg = 1.0 - kr - kb;
     let (sb, sr) = (2.0 * (1.0 - kb), 2.0 * (1.0 - kr));
-    y.par_chunks_mut(w).zip(cb.par_chunks_mut(cw).zip(cr.par_chunks_mut(cw))).enumerate().for_each(|(row, (yr, (cbr, crr)))| {
-        let src = &rgb[row * w * 3..(row + 1) * w * 3];
-        let mut us = vec![0f32; w];
-        let mut vs = vec![0f32; w];
-        for x in 0..w {
-            let (r, g, b) = (src[x * 3], src[x * 3 + 1], src[x * 3 + 2]);
-            let yy = kr * r + kg * g + kb * b;
-            yr[x] = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
-            us[x] = (b - yy) / sb;
-            vs[x] = (r - yy) / sr;
-        }
-        for cx in 0..cw {
-            let a = cx * 2;
-            let b2 = (a + 1).min(w - 1);
-            cbr[cx] = (512.0 + 896.0 * (us[a] + us[b2]) * 0.5).round().clamp(4.0, 1019.0) as u16;
-            crr[cx] = (512.0 + 896.0 * (vs[a] + vs[b2]) * 0.5).round().clamp(4.0, 1019.0) as u16;
-        }
-    });
+    y.par_chunks_mut(w)
+        .zip(cb.par_chunks_mut(cw).zip(cr.par_chunks_mut(cw)))
+        .enumerate()
+        .for_each(|(row, (yr, (cbr, crr)))| {
+            let src = &rgb[row * w * 3..(row + 1) * w * 3];
+            let mut us = vec![0f32; w];
+            let mut vs = vec![0f32; w];
+            for x in 0..w {
+                let (r, g, b) = (src[x * 3], src[x * 3 + 1], src[x * 3 + 2]);
+                let yy = kr * r + kg * g + kb * b;
+                yr[x] = (64.0 + 876.0 * yy).round().clamp(4.0, 1019.0) as u16;
+                us[x] = (b - yy) / sb;
+                vs[x] = (r - yy) / sr;
+            }
+            for cx in 0..cw {
+                let a = cx * 2;
+                let b2 = (a + 1).min(w - 1);
+                cbr[cx] = (512.0 + 896.0 * (us[a] + us[b2]) * 0.5)
+                    .round()
+                    .clamp(4.0, 1019.0) as u16;
+                crr[cx] = (512.0 + 896.0 * (vs[a] + vs[b2]) * 0.5)
+                    .round()
+                    .clamp(4.0, 1019.0) as u16;
+            }
+        });
 }
 
-fn prores_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>> {
+fn prores_factory(
+    format: Format,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>> {
     (format == Format::ProRes).then(|| {
         let profile = prores_profile(&s.prores_profile);
         let mut cfg = filmcraft_prores::EncoderConfig::new(profile, w, h);
         if s.signal.is_hdr() {
-            cfg.color = filmcraft_prores::ColorInfo { primaries: s.signal.primaries, transfer: s.signal.transfer, matrix: s.signal.matrix };
+            cfg.color = filmcraft_prores::ColorInfo {
+                primaries: s.signal.primaries,
+                transfer: s.signal.transfer,
+                matrix: s.signal.matrix,
+            };
         }
         let alpha = s.keeps_alpha();
         cfg.encode_alpha = alpha;
         let enc = filmcraft_prores::Encoder::with_config(cfg);
-        Ok(Box::new(ProResEncoder { enc, profile, alpha, w, h, rate, signal: s.signal }) as Box<dyn VideoEncoder>)
+        Ok(Box::new(ProResEncoder {
+            enc,
+            profile,
+            alpha,
+            w,
+            h,
+            rate,
+            signal: s.signal,
+        }) as Box<dyn VideoEncoder>)
     })
 }
 
@@ -1360,7 +1695,11 @@ struct DnxEncoder {
 
 impl VideoEncoder for DnxEncoder {
     fn sample_entry(&self) -> SampleEntry {
-        let mut e = SampleEntry::dnx(filmcraft_isobmff::FourCc(*b"AVdh"), self.w as u16, self.h as u16);
+        let mut e = SampleEntry::dnx(
+            filmcraft_isobmff::FourCc(*b"AVdh"),
+            self.w as u16,
+            self.h as u16,
+        );
         self.signal.apply_to(&mut e, true);
         e
     }
@@ -1368,38 +1707,86 @@ impl VideoEncoder for DnxEncoder {
         self.rate.num as u32
     }
     fn encode(&mut self, f: &EncoderFrame) -> Result<Vec<EncodedPacket>> {
-        let mut fr = filmcraft_dnx::Frame::new(f.width, f.height, filmcraft_dnx::ChromaFormat::Yuv422, 10, false);
+        let mut fr = filmcraft_dnx::Frame::new(
+            f.width,
+            f.height,
+            filmcraft_dnx::ChromaFormat::Yuv422,
+            10,
+            false,
+        );
         match f.hdr {
             Some(rgb) => {
                 let (kr, kb) = self.signal.kr_kb();
-                rgbf_to_yuv422_10(rgb, f.width as usize, f.height as usize, kr, kb, &mut fr.y, &mut fr.cb, &mut fr.cr)
+                rgbf_to_yuv422_10(
+                    rgb,
+                    f.width as usize,
+                    f.height as usize,
+                    kr,
+                    kb,
+                    &mut fr.y,
+                    &mut fr.cb,
+                    &mut fr.cr,
+                )
             }
-            None => rgba_to_yuv422_10(f.rgba, f.width as usize, f.height as usize, &mut fr.y, &mut fr.cb, &mut fr.cr),
+            None => rgba_to_yuv422_10(
+                f.rgba,
+                f.width as usize,
+                f.height as usize,
+                &mut fr.y,
+                &mut fr.cb,
+                &mut fr.cr,
+            ),
         }
         // the encoder rescales 10-bit input to its coded depth
-        let data = self.enc.encode(&fr).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(vec![EncodedPacket { data, key: true, duration: self.rate.den as u32, composition_offset: 0 }])
+        let data = self
+            .enc
+            .encode(&fr)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(vec![EncodedPacket {
+            data,
+            key: true,
+            duration: self.rate.den as u32,
+            composition_offset: 0,
+        }])
     }
     fn flush(&mut self) -> Result<Vec<EncodedPacket>> {
         Ok(Vec::new())
     }
 }
 
-fn dnx_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>> {
+fn dnx_factory(
+    format: Format,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>> {
     (format == Format::DnxHr).then(|| {
         let mut cfg = filmcraft_dnx::EncoderConfig::new(dnx_profile(&s.dnx_profile), w, h);
         if s.signal.primaries == 9 {
             cfg.color_volume = filmcraft_dnx::ColorVolume::Bt2020Ncl;
         }
-        let enc = filmcraft_dnx::Encoder::with_config(cfg).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(Box::new(DnxEncoder { enc, w, h, rate, signal: s.signal }) as Box<dyn VideoEncoder>)
+        let enc = filmcraft_dnx::Encoder::with_config(cfg)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(Box::new(DnxEncoder {
+            enc,
+            w,
+            h,
+            rate,
+            signal: s.signal,
+        }) as Box<dyn VideoEncoder>)
     })
 }
 
 /// The APV profile named by [`ExportSettings::apv_profile`].
 pub fn apv_profile(name: &str) -> filmcraft_apv::Profile {
     use filmcraft_apv::Profile;
-    match name.to_ascii_lowercase().replace([' ', '_'], "-").trim_start_matches("apv-").trim_start_matches("apv") {
+    match name
+        .to_ascii_lowercase()
+        .replace([' ', '_'], "-")
+        .trim_start_matches("apv-")
+        .trim_start_matches("apv")
+    {
         "422-12" | "42212" => Profile::P422_12,
         "444-10" | "44410" => Profile::P444_10,
         "444-12" | "44412" => Profile::P444_12,
@@ -1422,7 +1809,8 @@ struct ApvEncoder {
 
 impl VideoEncoder for ApvEncoder {
     fn sample_entry(&self) -> SampleEntry {
-        let apvc = filmcraft_isobmff::ApvConfig::parse(&self.enc.decoder_config_record()).unwrap_or_default();
+        let apvc = filmcraft_isobmff::ApvConfig::parse(&self.enc.decoder_config_record())
+            .unwrap_or_default();
         let mut e = SampleEntry::apv(apvc, self.w as u16, self.h as u16);
         self.signal.apply_to(&mut e, true);
         e
@@ -1432,7 +1820,13 @@ impl VideoEncoder for ApvEncoder {
     }
     fn encode(&mut self, f: &EncoderFrame) -> Result<Vec<EncodedPacket>> {
         let (w, h) = (f.width as usize, f.height as usize);
-        let mut fr = filmcraft_apv::Frame::new(f.width, f.height, self.chroma, 10, self.chroma == filmcraft_apv::ChromaFormat::Yuv4444);
+        let mut fr = filmcraft_apv::Frame::new(
+            f.width,
+            f.height,
+            self.chroma,
+            10,
+            self.chroma == filmcraft_apv::ChromaFormat::Yuv4444,
+        );
         let mut y422 = vec![0u16; w * h];
         let cw = w.div_ceil(2);
         let mut cb422 = vec![0u16; cw * h];
@@ -1463,29 +1857,59 @@ impl VideoEncoder for ApvEncoder {
                 }
                 if let Some(a) = fr.alpha.as_mut() {
                     for (i, dst) in a.iter_mut().enumerate() {
-                        *dst = f.rgba.get(i * 4 + 3).map_or(1023, |&v| ((v as u32 * 1023 + 127) / 255) as u16);
+                        *dst = f
+                            .rgba
+                            .get(i * 4 + 3)
+                            .map_or(1023, |&v| ((v as u32 * 1023 + 127) / 255) as u16);
                     }
                 }
             }
         }
-        let data = self.enc.encode_raw_au(&fr).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(vec![EncodedPacket { data, key: true, duration: self.rate.den as u32, composition_offset: 0 }])
+        let data = self
+            .enc
+            .encode_raw_au(&fr)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(vec![EncodedPacket {
+            data,
+            key: true,
+            duration: self.rate.den as u32,
+            composition_offset: 0,
+        }])
     }
     fn flush(&mut self) -> Result<Vec<EncodedPacket>> {
         Ok(Vec::new())
     }
 }
 
-fn apv_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>> {
+fn apv_factory(
+    format: Format,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>> {
     (format == Format::Apv).then(|| {
         let profile = apv_profile(&s.apv_profile);
         let mut cfg = filmcraft_apv::EncoderConfig::new(profile, w, h);
         if s.signal.is_hdr() {
-            cfg.color = filmcraft_apv::ColorInfo { primaries: s.signal.primaries, transfer: s.signal.transfer, matrix: s.signal.matrix, full_range: false };
+            cfg.color = filmcraft_apv::ColorInfo {
+                primaries: s.signal.primaries,
+                transfer: s.signal.transfer,
+                matrix: s.signal.matrix,
+                full_range: false,
+            };
         }
         let chroma = cfg.chroma;
-        let enc = filmcraft_apv::Encoder::with_config(cfg).map_err(|e| ExportError::Encode(e.to_string()))?;
-        Ok(Box::new(ApvEncoder { enc, chroma, w, h, rate, signal: s.signal }) as Box<dyn VideoEncoder>)
+        let enc = filmcraft_apv::Encoder::with_config(cfg)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
+        Ok(Box::new(ApvEncoder {
+            enc,
+            chroma,
+            w,
+            h,
+            rate,
+            signal: s.signal,
+        }) as Box<dyn VideoEncoder>)
     })
 }
 
@@ -1505,7 +1929,12 @@ struct H264Encoder {
 impl H264Encoder {
     fn packets(&self, ps: Vec<filmcraft_h264enc::Packet>) -> Vec<EncodedPacket> {
         ps.into_iter()
-            .map(|p| EncodedPacket { data: p.data, key: p.keyframe, duration: self.rate.den as u32, composition_offset: (p.pts - p.dts) as i32 })
+            .map(|p| EncodedPacket {
+                data: p.data,
+                key: p.keyframe,
+                duration: self.rate.den as u32,
+                composition_offset: (p.pts - p.dts) as i32,
+            })
             .collect()
     }
 }
@@ -1527,13 +1956,38 @@ impl VideoEncoder for H264Encoder {
         timed(Stage::Convert, || match f.hdr {
             Some(rgb) => {
                 let (kr, kb) = self.signal.kr_kb();
-                rgbf_to_yuv420_8(rgb, f.width as usize, f.height as usize, kr, kb, &mut self.y, &mut self.u, &mut self.v)
+                rgbf_to_yuv420_8(
+                    rgb,
+                    f.width as usize,
+                    f.height as usize,
+                    kr,
+                    kb,
+                    &mut self.y,
+                    &mut self.u,
+                    &mut self.v,
+                )
             }
-            None => rgba_to_yuv420_8(f.rgba, f.width as usize, f.height as usize, &mut self.y, &mut self.u, &mut self.v),
+            None => rgba_to_yuv420_8(
+                f.rgba,
+                f.width as usize,
+                f.height as usize,
+                &mut self.y,
+                &mut self.u,
+                &mut self.v,
+            ),
         });
         let cw = (f.width as usize).div_ceil(2);
-        let frame = filmcraft_h264enc::YuvFrame { y: &self.y, u: &self.u, v: &self.v, y_stride: f.width as usize, uv_stride: cw };
-        let ps = self.enc.try_encode(&frame, f.index as i64 * self.rate.den).map_err(|e| ExportError::Encode(e.to_string()))?;
+        let frame = filmcraft_h264enc::YuvFrame {
+            y: &self.y,
+            u: &self.u,
+            v: &self.v,
+            y_stride: f.width as usize,
+            uv_stride: cw,
+        };
+        let ps = self
+            .enc
+            .try_encode(&frame, f.index as i64 * self.rate.den)
+            .map_err(|e| ExportError::Encode(e.to_string()))?;
         Ok(self.packets(ps))
     }
     fn flush(&mut self) -> Result<Vec<EncodedPacket>> {
@@ -1550,66 +2004,92 @@ impl VideoEncoder for H264Encoder {
 }
 
 /// BT.709 limited-range 8-bit 4:2:0 from straight RGBA8 (2×2 chroma average).
-pub fn rgba_to_yuv420_8(rgba: &[u8], w: usize, h: usize, y: &mut Vec<u8>, u: &mut Vec<u8>, v: &mut Vec<u8>) {
+pub fn rgba_to_yuv420_8(
+    rgba: &[u8],
+    w: usize,
+    h: usize,
+    y: &mut Vec<u8>,
+    u: &mut Vec<u8>,
+    v: &mut Vec<u8>,
+) {
     let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
     y.resize(w * h, 0);
     u.resize(cw * ch, 0);
     v.resize(cw * ch, 0);
-    y.par_chunks_mut(w * 2).zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw))).enumerate().for_each(|(cy, (yr, (ur, vr)))| {
-        let rows = yr.len() / w;
-        let mut us = vec![0f32; cw];
-        let mut vs = vec![0f32; cw];
-        let mut cnt = vec![0f32; cw];
-        for dy in 0..rows {
-            let row = cy * 2 + dy;
-            let src = &rgba[row * w * 4..(row + 1) * w * 4];
-            for x in 0..w {
-                let (r, g, b) = (src[x * 4] as f32 / 255.0, src[x * 4 + 1] as f32 / 255.0, src[x * 4 + 2] as f32 / 255.0);
-                let yy = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                yr[dy * w + x] = (16.0 + 219.0 * yy).round().clamp(1.0, 254.0) as u8;
-                us[x / 2] += (b - yy) / 1.8556;
-                vs[x / 2] += (r - yy) / 1.5748;
-                cnt[x / 2] += 1.0;
+    y.par_chunks_mut(w * 2)
+        .zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw)))
+        .enumerate()
+        .for_each(|(cy, (yr, (ur, vr)))| {
+            let rows = yr.len() / w;
+            let mut us = vec![0f32; cw];
+            let mut vs = vec![0f32; cw];
+            let mut cnt = vec![0f32; cw];
+            for dy in 0..rows {
+                let row = cy * 2 + dy;
+                let src = &rgba[row * w * 4..(row + 1) * w * 4];
+                for x in 0..w {
+                    let (r, g, b) = (
+                        src[x * 4] as f32 / 255.0,
+                        src[x * 4 + 1] as f32 / 255.0,
+                        src[x * 4 + 2] as f32 / 255.0,
+                    );
+                    let yy = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                    yr[dy * w + x] = (16.0 + 219.0 * yy).round().clamp(1.0, 254.0) as u8;
+                    us[x / 2] += (b - yy) / 1.8556;
+                    vs[x / 2] += (r - yy) / 1.5748;
+                    cnt[x / 2] += 1.0;
+                }
             }
-        }
-        for cx in 0..cw {
-            ur[cx] = (128.0 + 224.0 * us[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
-            vr[cx] = (128.0 + 224.0 * vs[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
-        }
-    });
+            for cx in 0..cw {
+                ur[cx] = (128.0 + 224.0 * us[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
+                vr[cx] = (128.0 + 224.0 * vs[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
+            }
+        });
 }
 
 /// Limited-range 8-bit 4:2:0 from encoded R'G'B' floats with matrix (Kr, Kb).
 #[allow(clippy::too_many_arguments)]
-pub fn rgbf_to_yuv420_8(rgb: &[f32], w: usize, h: usize, kr: f32, kb: f32, y: &mut Vec<u8>, u: &mut Vec<u8>, v: &mut Vec<u8>) {
+pub fn rgbf_to_yuv420_8(
+    rgb: &[f32],
+    w: usize,
+    h: usize,
+    kr: f32,
+    kb: f32,
+    y: &mut Vec<u8>,
+    u: &mut Vec<u8>,
+    v: &mut Vec<u8>,
+) {
     let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
     let kg = 1.0 - kr - kb;
     let (sb, sr) = (2.0 * (1.0 - kb), 2.0 * (1.0 - kr));
     y.resize(w * h, 0);
     u.resize(cw * ch, 0);
     v.resize(cw * ch, 0);
-    y.par_chunks_mut(w * 2).zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw))).enumerate().for_each(|(cy, (yr, (ur, vr)))| {
-        let rows = yr.len() / w;
-        let mut us = vec![0f32; cw];
-        let mut vs = vec![0f32; cw];
-        let mut cnt = vec![0f32; cw];
-        for dy in 0..rows {
-            let row = cy * 2 + dy;
-            let src = &rgb[row * w * 3..(row + 1) * w * 3];
-            for x in 0..w {
-                let (r, g, b) = (src[x * 3], src[x * 3 + 1], src[x * 3 + 2]);
-                let yy = kr * r + kg * g + kb * b;
-                yr[dy * w + x] = (16.0 + 219.0 * yy).round().clamp(1.0, 254.0) as u8;
-                us[x / 2] += (b - yy) / sb;
-                vs[x / 2] += (r - yy) / sr;
-                cnt[x / 2] += 1.0;
+    y.par_chunks_mut(w * 2)
+        .zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw)))
+        .enumerate()
+        .for_each(|(cy, (yr, (ur, vr)))| {
+            let rows = yr.len() / w;
+            let mut us = vec![0f32; cw];
+            let mut vs = vec![0f32; cw];
+            let mut cnt = vec![0f32; cw];
+            for dy in 0..rows {
+                let row = cy * 2 + dy;
+                let src = &rgb[row * w * 3..(row + 1) * w * 3];
+                for x in 0..w {
+                    let (r, g, b) = (src[x * 3], src[x * 3 + 1], src[x * 3 + 2]);
+                    let yy = kr * r + kg * g + kb * b;
+                    yr[dy * w + x] = (16.0 + 219.0 * yy).round().clamp(1.0, 254.0) as u8;
+                    us[x / 2] += (b - yy) / sb;
+                    vs[x / 2] += (r - yy) / sr;
+                    cnt[x / 2] += 1.0;
+                }
             }
-        }
-        for cx in 0..cw {
-            ur[cx] = (128.0 + 224.0 * us[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
-            vr[cx] = (128.0 + 224.0 * vs[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
-        }
-    });
+            for cx in 0..cw {
+                ur[cx] = (128.0 + 224.0 * us[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
+                vr[cx] = (128.0 + 224.0 * vs[cx] / cnt[cx]).round().clamp(1.0, 254.0) as u8;
+            }
+        });
 }
 
 /// Limited-range 10-bit 4:2:0 (code values 0..1023, not MSB-aligned) from encoded R'G'B' floats with
@@ -1620,8 +2100,22 @@ pub fn rgbf_to_yuv420_8(rgb: &[f32], w: usize, h: usize, kr: f32, kb: f32, y: &m
 /// The planes are resized to `w * h` and `ceil(w / 2) * ceil(h / 2)`. A `rgb` slice of the wrong
 /// length, a zero size or a size whose arithmetic overflows is an error.
 #[allow(clippy::too_many_arguments)]
-pub fn rgbf_to_yuv420_10(rgb: &[f32], w: usize, h: usize, kr: f32, kb: f32, y: &mut Vec<u16>, u: &mut Vec<u16>, v: &mut Vec<u16>) -> Result<()> {
-    let bad = || ExportError::Encode(format!("a {w}x{h} HDR picture needs w*h*3 floats, got {}", rgb.len()));
+pub fn rgbf_to_yuv420_10(
+    rgb: &[f32],
+    w: usize,
+    h: usize,
+    kr: f32,
+    kb: f32,
+    y: &mut Vec<u16>,
+    u: &mut Vec<u16>,
+    v: &mut Vec<u16>,
+) -> Result<()> {
+    let bad = || {
+        ExportError::Encode(format!(
+            "a {w}x{h} HDR picture needs w*h*3 floats, got {}",
+            rgb.len()
+        ))
+    };
     let px = w.checked_mul(h).ok_or_else(bad)?;
     if w == 0 || h == 0 || px.checked_mul(3) != Some(rgb.len()) {
         return Err(bad());
@@ -1637,31 +2131,44 @@ pub fn rgbf_to_yuv420_10(rgb: &[f32], w: usize, h: usize, kr: f32, kb: f32, y: &
     v.resize(cw * ch, 0);
     let unit = |x: f32| if x.is_nan() { 0.0 } else { x.clamp(0.0, 1.0) };
     let code = |x: f32| x.round().clamp(4.0, 1019.0) as u16;
-    y.par_chunks_mut(w * 2).zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw))).enumerate().for_each(|(cy, (yr, (ur, vr)))| {
-        let rows = yr.len() / w;
-        let mut us = vec![0f32; cw];
-        let mut vs = vec![0f32; cw];
-        let mut cnt = vec![0f32; cw];
-        for (dy, yrow) in yr.chunks_exact_mut(w).enumerate().take(rows) {
-            let row = cy * 2 + dy;
-            let Some(src) = rgb.get(row * w * 3..(row + 1) * w * 3) else { continue };
-            for (x, (&[r, g, b], yo)) in src.as_chunks::<3>().0.iter().zip(yrow.iter_mut()).enumerate() {
-                let (r, g, b) = (unit(r), unit(g), unit(b));
-                let yy = kr * r + kg * g + kb * b;
-                *yo = code(64.0 + 876.0 * yy);
-                if let (Some(a), Some(c), Some(n)) = (us.get_mut(x / 2), vs.get_mut(x / 2), cnt.get_mut(x / 2)) {
-                    *a += (b - yy) / sb;
-                    *c += (r - yy) / sr;
-                    *n += 1.0;
+    y.par_chunks_mut(w * 2)
+        .zip(u.par_chunks_mut(cw).zip(v.par_chunks_mut(cw)))
+        .enumerate()
+        .for_each(|(cy, (yr, (ur, vr)))| {
+            let rows = yr.len() / w;
+            let mut us = vec![0f32; cw];
+            let mut vs = vec![0f32; cw];
+            let mut cnt = vec![0f32; cw];
+            for (dy, yrow) in yr.chunks_exact_mut(w).enumerate().take(rows) {
+                let row = cy * 2 + dy;
+                let Some(src) = rgb.get(row * w * 3..(row + 1) * w * 3) else {
+                    continue;
+                };
+                for (x, (&[r, g, b], yo)) in src
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
+                    .zip(yrow.iter_mut())
+                    .enumerate()
+                {
+                    let (r, g, b) = (unit(r), unit(g), unit(b));
+                    let yy = kr * r + kg * g + kb * b;
+                    *yo = code(64.0 + 876.0 * yy);
+                    if let (Some(a), Some(c), Some(n)) =
+                        (us.get_mut(x / 2), vs.get_mut(x / 2), cnt.get_mut(x / 2))
+                    {
+                        *a += (b - yy) / sb;
+                        *c += (r - yy) / sr;
+                        *n += 1.0;
+                    }
                 }
             }
-        }
-        for (cx, (uo, vo)) in ur.iter_mut().zip(vr.iter_mut()).enumerate() {
-            let n = cnt.get(cx).copied().unwrap_or(1.0).max(1.0);
-            *uo = code(512.0 + 896.0 * us.get(cx).copied().unwrap_or(0.0) / n);
-            *vo = code(512.0 + 896.0 * vs.get(cx).copied().unwrap_or(0.0) / n);
-        }
-    });
+            for (cx, (uo, vo)) in ur.iter_mut().zip(vr.iter_mut()).enumerate() {
+                let n = cnt.get(cx).copied().unwrap_or(1.0).max(1.0);
+                *uo = code(512.0 + 896.0 * us.get(cx).copied().unwrap_or(0.0) / n);
+                *vo = code(512.0 + 896.0 * vs.get(cx).copied().unwrap_or(0.0) / n);
+            }
+        });
     Ok(())
 }
 
@@ -1672,23 +2179,46 @@ pub(crate) fn h264_slices(height: u32) -> usize {
     (height.div_ceil(16) as usize).div_ceil(4).max(1)
 }
 
-fn h264_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSettings) -> Option<Result<Box<dyn VideoEncoder>>> {
+fn h264_factory(
+    format: Format,
+    w: u32,
+    h: u32,
+    rate: FrameRate,
+    s: &ExportSettings,
+) -> Option<Result<Box<dyn VideoEncoder>>> {
     if format != Format::H264 {
         return None;
     }
     let mut cfg = filmcraft_h264enc::EncoderConfig::new(w, h, rate.num as u32, rate.den as u32);
     // MXF carries the Annex B byte stream (ST 381-3) with in-band parameter sets
-    cfg.format = if s.format.is_mxf() { filmcraft_h264enc::PacketFormat::AnnexB } else { filmcraft_h264enc::PacketFormat::LengthPrefixed };
+    cfg.format = if s.format.is_mxf() {
+        filmcraft_h264enc::PacketFormat::AnnexB
+    } else {
+        filmcraft_h264enc::PacketFormat::LengthPrefixed
+    };
     cfg.aud = s.format.is_mxf();
-    cfg.keyint = s.keyframe_distance.filter(|k| *k > 0).unwrap_or_else(|| (rate.num as f64 / rate.den as f64 * 2.0).round().max(1.0) as u32);
+    cfg.keyint = s
+        .keyframe_distance
+        .filter(|k| *k > 0)
+        .unwrap_or_else(|| (rate.num as f64 / rate.den as f64 * 2.0).round().max(1.0) as u32);
     cfg.slices = h264_slices(h);
     let kbps = s.bitrate_kbps.max(100);
-    let max = s.max_bitrate_kbps.filter(|m| *m >= kbps).unwrap_or_else(|| (u64::from(kbps) * 3 / 2).min(u64::from(u32::MAX)) as u32);
+    let max = s
+        .max_bitrate_kbps
+        .filter(|m| *m >= kbps)
+        .unwrap_or_else(|| (u64::from(kbps) * 3 / 2).min(u64::from(u32::MAX)) as u32);
     cfg.rate = match s.bitrate_mode {
         BitrateMode::Cbr => filmcraft_h264enc::RateControl::Cbr { kbps },
         // the encoder clamps to 0..=51; a NaN from a hand-edited preset becomes the default
-        BitrateMode::Crf => filmcraft_h264enc::RateControl::Crf(if s.crf.is_finite() { s.crf } else { DEFAULT_CRF }),
-        _ => filmcraft_h264enc::RateControl::Vbr { target_kbps: kbps, max_kbps: max },
+        BitrateMode::Crf => filmcraft_h264enc::RateControl::Crf(if s.crf.is_finite() {
+            s.crf
+        } else {
+            DEFAULT_CRF
+        }),
+        _ => filmcraft_h264enc::RateControl::Vbr {
+            target_kbps: kbps,
+            max_kbps: max,
+        },
     };
     cfg.pass = match &s.h264_pass {
         H264Pass::Single => filmcraft_h264enc::Pass::Single,
@@ -1705,7 +2235,12 @@ fn h264_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSetti
         cfg.sar = (n.clamp(1, 65535) as u16, d.clamp(1, 65535) as u16);
     }
     if s.signal.is_hdr() {
-        cfg.color = filmcraft_h264enc::ColorConfig { primaries: s.signal.primaries, transfer: s.signal.transfer, matrix: s.signal.matrix, full_range: false };
+        cfg.color = filmcraft_h264enc::ColorConfig {
+            primaries: s.signal.primaries,
+            transfer: s.signal.transfer,
+            matrix: s.signal.matrix,
+            full_range: false,
+        };
         if let Some((md, cll)) = s.signal.static_metadata() {
             let mut b = [0u8; 24];
             b.copy_from_slice(&md.to_bytes());
@@ -1715,13 +2250,28 @@ fn h264_factory(format: Format, w: u32, h: u32, rate: FrameRate, s: &ExportSetti
     }
     Some(
         filmcraft_h264enc::Encoder::new(cfg)
-            .map(|enc| Box::new(H264Encoder { enc, w, h, rate, y: Vec::new(), u: Vec::new(), v: Vec::new(), signal: s.signal }) as Box<dyn VideoEncoder>)
+            .map(|enc| {
+                Box::new(H264Encoder {
+                    enc,
+                    w,
+                    h,
+                    rate,
+                    y: Vec::new(),
+                    u: Vec::new(),
+                    v: Vec::new(),
+                    signal: s.signal,
+                }) as Box<dyn VideoEncoder>
+            })
             .map_err(|e| ExportError::Encode(e.to_string())),
     )
 }
 
 /// The range to export (settings → In/Out → whole sequence).
-pub fn export_range(project: &Project, seq: ItemId, settings: &ExportSettings) -> Result<TimeRange> {
+pub fn export_range(
+    project: &Project,
+    seq: ItemId,
+    settings: &ExportSettings,
+) -> Result<TimeRange> {
     let q = project.sequence(seq).ok_or(ExportError::NoSequence)?;
     q.check_bounds().map_err(ExportError::Unsupported)?;
     if let Some(r) = settings.range {
@@ -1730,12 +2280,19 @@ pub fn export_range(project: &Project, seq: ItemId, settings: &ExportSettings) -
     }
     let fd = q.settings.frame_rate.frame_duration();
     let a = q.mark_in.unwrap_or(Tick::ZERO);
-    let minimum_end = a.0.checked_add(fd.0).ok_or_else(|| ExportError::Unsupported("export In point overflows the time range".into()))?;
+    let minimum_end = a.0.checked_add(fd.0).ok_or_else(|| {
+        ExportError::Unsupported("export In point overflows the time range".into())
+    })?;
     let b = match q.mark_out {
-        Some(out) => out.0.checked_add(fd.0).ok_or_else(|| ExportError::Unsupported("export Out point overflows the time range".into()))?,
+        Some(out) => out.0.checked_add(fd.0).ok_or_else(|| {
+            ExportError::Unsupported("export Out point overflows the time range".into())
+        })?,
         None => q.duration().0,
     };
-    let duration = b.max(minimum_end).checked_sub(a.0).ok_or_else(|| ExportError::Unsupported("export range duration overflows".into()))?;
+    let duration = b
+        .max(minimum_end)
+        .checked_sub(a.0)
+        .ok_or_else(|| ExportError::Unsupported("export range duration overflows".into()))?;
     let range = TimeRange::new(a, Tick(duration));
     validate_range(range)?;
     Ok(range)
@@ -1743,7 +2300,14 @@ pub fn export_range(project: &Project, seq: ItemId, settings: &ExportSettings) -
 
 /// Validate input time before frame/sample conversion or any `TimeRange::end` arithmetic.
 pub fn validate_range(range: TimeRange) -> Result<()> {
-    if range.start.0 < 0 || range.duration.0 <= 0 || range.start.0.checked_add(range.duration.0).is_none_or(|end| end > Tick::MAX.0) {
+    if range.start.0 < 0
+        || range.duration.0 <= 0
+        || range
+            .start
+            .0
+            .checked_add(range.duration.0)
+            .is_none_or(|end| end > Tick::MAX.0)
+    {
         return Err(ExportError::Unsupported("export range must start at or after zero, have positive duration and end within supported time bounds".into()));
     }
     Ok(())
@@ -1764,7 +2328,13 @@ fn gif_delay_cs(rate: FrameRate, i: i64) -> u16 {
     let num = i128::from(rate.num.max(1));
     let den = i128::from(rate.den.max(0));
     // start of frame `k` in centiseconds, rounded half up
-    let at = |k: i64| i128::from(k.max(0)).saturating_mul(200).saturating_mul(den).saturating_add(num) / num.saturating_mul(2);
+    let at = |k: i64| {
+        i128::from(k.max(0))
+            .saturating_mul(200)
+            .saturating_mul(den)
+            .saturating_add(num)
+            / num.saturating_mul(2)
+    };
     let cs = at(i.saturating_add(1)).saturating_sub(at(i));
     u16::try_from(cs.clamp(0, i128::from(u16::MAX))).unwrap_or(u16::MAX)
 }
@@ -1775,7 +2345,10 @@ struct SharedBuf(Arc<Mutex<Vec<u8>>>);
 
 impl Write for SharedBuf {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        self.0.lock().unwrap_or_else(|e| e.into_inner()).extend_from_slice(buf);
+        self.0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .extend_from_slice(buf);
         Ok(buf.len())
     }
     fn flush(&mut self) -> std::io::Result<()> {
@@ -1797,12 +2370,27 @@ pub fn encode_still(format: Format, rgba: Vec<u8>, w: u32, h: u32, alpha: bool) 
 }
 
 /// [`encode_still`] with the JPEG quality (1–100; ignored by the lossless formats).
-pub fn encode_still_with_quality(format: Format, rgba: Vec<u8>, w: u32, h: u32, alpha: bool, quality: u8) -> Result<Vec<u8>> {
+pub fn encode_still_with_quality(
+    format: Format,
+    rgba: Vec<u8>,
+    w: u32,
+    h: u32,
+    alpha: bool,
+    quality: u8,
+) -> Result<Vec<u8>> {
     encode_still_with(format, rgba, w, h, alpha, quality, ExrCompression::None)
 }
 
 /// [`encode_still_with_quality`] with the OpenEXR compression (ignored by the other formats).
-pub fn encode_still_with(format: Format, rgba: Vec<u8>, w: u32, h: u32, alpha: bool, quality: u8, exr: ExrCompression) -> Result<Vec<u8>> {
+pub fn encode_still_with(
+    format: Format,
+    rgba: Vec<u8>,
+    w: u32,
+    h: u32,
+    alpha: bool,
+    quality: u8,
+    exr: ExrCompression,
+) -> Result<Vec<u8>> {
     let enc = |e: image::ImageError| ExportError::Encode(e.to_string());
     let mut out = std::io::Cursor::new(Vec::new());
     match format {
@@ -1820,25 +2408,49 @@ pub fn encode_still_with(format: Format, rgba: Vec<u8>, w: u32, h: u32, alpha: b
         Format::TgaSequence => return raster::tga(&rgba, w, h, alpha),
         Format::DpxSequence => return raster::dpx(&rgba, w, h),
         Format::ExrSequence => return raster::exr(&rgba, w, h, alpha, exr),
-        Format::PngSequence => {
-            image::ImageEncoder::write_image(image::codecs::png::PngEncoder::new(&mut out), &rgba, w, h, image::ExtendedColorType::Rgba8).map_err(enc)?
-        }
+        Format::PngSequence => image::ImageEncoder::write_image(
+            image::codecs::png::PngEncoder::new(&mut out),
+            &rgba,
+            w,
+            h,
+            image::ExtendedColorType::Rgba8,
+        )
+        .map_err(enc)?,
         Format::TiffSequence | Format::BmpSequence => {
-            let img = image::RgbaImage::from_raw(w, h, rgba).ok_or_else(|| ExportError::Encode("frame size".into()))?;
-            let f = if format == Format::TiffSequence { image::ImageFormat::Tiff } else { image::ImageFormat::Bmp };
+            let img = image::RgbaImage::from_raw(w, h, rgba)
+                .ok_or_else(|| ExportError::Encode("frame size".into()))?;
+            let f = if format == Format::TiffSequence {
+                image::ImageFormat::Tiff
+            } else {
+                image::ImageFormat::Bmp
+            };
             if alpha && format == Format::TiffSequence {
                 img.write_to(&mut out, f).map_err(enc)?
             } else {
-                image::DynamicImage::ImageRgba8(img).to_rgb8().write_to(&mut out, f).map_err(enc)?
+                image::DynamicImage::ImageRgba8(img)
+                    .to_rgb8()
+                    .write_to(&mut out, f)
+                    .map_err(enc)?
             }
         }
-        _ => return Err(ExportError::Unsupported(format!("{} is not an image sequence", format.label()))),
+        _ => {
+            return Err(ExportError::Unsupported(format!(
+                "{} is not an image sequence",
+                format.label()
+            )));
+        }
     }
     Ok(out.into_inner())
 }
 
 /// Run an export (blocking; call from a worker thread).
-pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, sources: &dyn SourceProvider, progress: &Progress) -> Result<Report> {
+pub fn export(
+    project: &Arc<Project>,
+    seq: ItemId,
+    settings: &ExportSettings,
+    sources: &dyn SourceProvider,
+    progress: &Progress,
+) -> Result<Report> {
     settings.validate()?;
     if stepped(settings.format) {
         let mut ex = Exporter::new(project.clone(), seq, settings, progress)?;
@@ -1847,7 +2459,11 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
                 Step::Progress => {}
                 Step::Done(r) => return Ok(r),
                 // only asynchronous (web) sources defer; a blocking export cannot wait for them
-                Step::Pending => return Err(ExportError::Io("media data is still loading; run the export as a stepped job".into())),
+                Step::Pending => {
+                    return Err(ExportError::Io(
+                        "media data is still loading; run the export as a stepped job".into(),
+                    ));
+                }
             }
         }
     }
@@ -1864,21 +2480,29 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
             // the sizes are known up front: refuse an AIFF that cannot hold them before measuring
             let mut writer = match settings.format {
                 Format::Flac => {
-                    let mut cfg = filmcraft_flac::EncoderConfig::new(sr, ch as u8, fmt.bits() as u8);
+                    let mut cfg =
+                        filmcraft_flac::EncoderConfig::new(sr, ch as u8, fmt.bits() as u8);
                     cfg.level = settings.audio.flac_level.min(8);
-                    AudioWriter::Flac(Box::new(filmcraft_flac::Encoder::new(cfg).map_err(|e| ExportError::Unsupported(format!("FLAC: {e}")))?))
+                    AudioWriter::Flac(Box::new(
+                        filmcraft_flac::Encoder::new(cfg)
+                            .map_err(|e| ExportError::Unsupported(format!("FLAC: {e}")))?,
+                    ))
                 }
                 Format::Wav => AudioWriter::Pcm(pcm::PcmContainer::Wav),
                 _ => AudioWriter::Pcm(pcm::PcmContainer::Aiff),
             };
             let head = match &writer {
-                AudioWriter::Pcm(c) => pcm::header(*c, ch, sr, fmt, frames).map_err(ExportError::Unsupported)?,
+                AudioWriter::Pcm(c) => {
+                    pcm::header(*c, ch, sr, fmt, frames).map_err(ExportError::Unsupported)?
+                }
                 AudioWriter::Flac(enc) => enc.header(),
             };
             // one second per chunk: memory stays flat however long the range is
             let chunk = i64::from(sr.max(1));
             if !settings.part_of_batch {
-                progress.total.store(frames.div_ceil(chunk as u64).max(1), Ordering::Relaxed);
+                progress
+                    .total
+                    .store(frames.div_ceil(chunk as u64).max(1), Ordering::Relaxed);
                 progress.set_status(format!("Exporting audio ({})", settings.format.label()));
             }
             a.measure(settings, sources, &cancelled)?;
@@ -1893,11 +2517,18 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
                 }
                 buf.clear();
                 match &mut writer {
-                    AudioWriter::Pcm(c) => pcm::encode(*c, &audio_out::interleave(&planar), fmt, &mut buf),
+                    AudioWriter::Pcm(c) => {
+                        pcm::encode(*c, &audio_out::interleave(&planar), fmt, &mut buf)
+                    }
                     AudioWriter::Flac(enc) => {
-                        let ints: Vec<Vec<i32>> = planar.iter().map(|c| c.iter().map(|&s| fmt.quantise(s)).collect()).collect();
+                        let ints: Vec<Vec<i32>> = planar
+                            .iter()
+                            .map(|c| c.iter().map(|&s| fmt.quantise(s)).collect())
+                            .collect();
                         let refs: Vec<&[i32]> = ints.iter().map(Vec::as_slice).collect();
-                        buf = enc.encode(&refs).map_err(|e| ExportError::Encode(format!("FLAC: {e}")))?;
+                        buf = enc
+                            .encode(&refs)
+                            .map_err(|e| ExportError::Encode(format!("FLAC: {e}")))?;
                     }
                 }
                 out.write_all(&buf).map_err(io)?;
@@ -1911,7 +2542,8 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
                     out.write_all(&enc.finish()).map_err(io)?;
                     // the frame sizes and MD5 are known now: fill them into STREAMINFO
                     use std::io::{Seek, SeekFrom};
-                    out.seek(SeekFrom::Start(filmcraft_flac::STREAMINFO_OFFSET)).map_err(io)?;
+                    out.seek(SeekFrom::Start(filmcraft_flac::STREAMINFO_OFFSET))
+                        .map_err(io)?;
                     out.write_all(&enc.streaminfo()).map_err(io)?;
                     out.seek(SeekFrom::End(0)).map_err(io)?;
                 }
@@ -1929,13 +2561,17 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
             let (w, h) = (pipe.w, pipe.h);
             if !settings.part_of_batch {
                 progress.total.store(count, Ordering::Relaxed);
-                progress.set_status(format!("Exporting {count} frames ({})", settings.format.label()));
+                progress.set_status(format!(
+                    "Exporting {count} frames ({})",
+                    settings.format.label()
+                ));
             }
             let mut total = 0u64;
             let gif_buf = SharedBuf::default();
             let mut gif = if settings.format == Format::Gif {
                 let mut enc = image::codecs::gif::GifEncoder::new_with_speed(gif_buf.clone(), 10);
-                enc.set_repeat(image::codecs::gif::Repeat::Infinite).map_err(|e| ExportError::Encode(e.to_string()))?;
+                enc.set_repeat(image::codecs::gif::Repeat::Infinite)
+                    .map_err(|e| ExportError::Encode(e.to_string()))?;
                 Some(enc)
             } else {
                 None
@@ -1947,11 +2583,19 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
                 }
                 let end = (f + batch).min(f1);
                 if let Some(enc) = gif.as_mut() {
-                    let frames: Vec<Vec<u8>> = (f..end).into_par_iter().map(|fi| pipe.frame(fi, sources).0).collect();
+                    let frames: Vec<Vec<u8>> = (f..end)
+                        .into_par_iter()
+                        .map(|fi| pipe.frame(fi, sources).0)
+                        .collect();
                     for (fi, rgba) in (f..end).zip(frames) {
-                        let img = image::RgbaImage::from_raw(w, h, rgba).ok_or_else(|| ExportError::Encode("frame".into()))?;
-                        let delay = image::Delay::from_numer_denom_ms(u32::from(gif_delay_cs(pipe.rate, fi - f0)) * 10, 1);
-                        enc.encode_frame(image::Frame::from_parts(img, 0, 0, delay)).map_err(|e| ExportError::Encode(e.to_string()))?;
+                        let img = image::RgbaImage::from_raw(w, h, rgba)
+                            .ok_or_else(|| ExportError::Encode("frame".into()))?;
+                        let delay = image::Delay::from_numer_denom_ms(
+                            u32::from(gif_delay_cs(pipe.rate, fi - f0)) * 10,
+                            1,
+                        );
+                        enc.encode_frame(image::Frame::from_parts(img, 0, 0, delay))
+                            .map_err(|e| ExportError::Encode(e.to_string()))?;
                     }
                 } else {
                     let written: Vec<Result<u64>> = (f..end)
@@ -1966,7 +2610,11 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
                                 settings.quality,
                                 settings.exr_compression,
                             )?;
-                            write_output(settings, &pcm::image_sequence_path(&settings.path, (fi - f0) as u64, count), data)
+                            write_output(
+                                settings,
+                                &pcm::image_sequence_path(&settings.path, (fi - f0) as u64, count),
+                                data,
+                            )
                         })
                         .collect();
                     for r in written {
@@ -1986,7 +2634,10 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
         }
         _ => {
             // Handled by the stepped exporter above; reaching here would be a dispatch bug.
-            return Err(ExportError::Unsupported(format!("{:?} must run as a stepped export", settings.format)));
+            return Err(ExportError::Unsupported(format!(
+                "{:?} must run as a stepped export",
+                settings.format
+            )));
         }
     };
     let secs = t0.elapsed().as_secs_f64();
@@ -1994,7 +2645,14 @@ pub fn export(project: &Arc<Project>, seq: ItemId, settings: &ExportSettings, so
         progress.finished.store(true, Ordering::Relaxed);
         progress.set_status(format!("Done in {secs:.1}s"));
     }
-    Ok(Report { path: settings.path.clone(), frames: nframes, seconds: secs, bytes, render_fps: nframes as f64 / secs.max(1e-6), extra_files: Vec::new() })
+    Ok(Report {
+        path: settings.path.clone(),
+        frames: nframes,
+        seconds: secs,
+        bytes,
+        render_fps: nframes as f64 / secs.max(1e-6),
+        extra_files: Vec::new(),
+    })
 }
 
 #[cfg(test)]

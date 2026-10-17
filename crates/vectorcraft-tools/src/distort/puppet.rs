@@ -45,31 +45,53 @@ fn outlines_of(nodes: &[&Node]) -> Option<(Vec<BezPath>, Rect)> {
         });
     }
     let first = *pts.first()?;
-    let b = pts.iter().fold(Rect::from_points(first, first), |r, p| r.union_pt(*p));
+    let b = pts
+        .iter()
+        .fold(Rect::from_points(first, first), |r, p| r.union_pt(*p));
     Some((outlines, b))
 }
 
 /// The mesh the engine uses for `ids` (shared so tool overlays match the command).
 pub fn mesh_for(doc: &Document, ids: &[NodeId], expand: f64) -> Option<Mesh> {
     let (o, b) = mesh_input(doc, ids)?;
-    Some(Mesh::build(&o, b, MeshOptions { expand, ..Default::default() }))
+    Some(Mesh::build(
+        &o,
+        b,
+        MeshOptions {
+            expand,
+            ..Default::default()
+        },
+    ))
 }
 
 /// The mesh over `nodes` (a rest shape).
 fn mesh_of(nodes: &[Arc<Node>], expand: f64) -> Option<Mesh> {
     let refs: Vec<&Node> = nodes.iter().map(|n| n.as_ref()).collect();
     let (o, b) = outlines_of(&refs)?;
-    Some(Mesh::build(&o, b, MeshOptions { expand, ..Default::default() }))
+    Some(Mesh::build(
+        &o,
+        b,
+        MeshOptions {
+            expand,
+            ..Default::default()
+        },
+    ))
 }
 
 /// The solver's view of the pins.
 fn solver_pins(pins: &[PuppetPin]) -> Vec<arap::Pin> {
-    pins.iter().map(|q| arap::Pin { angle: q.angle, ..arap::Pin::new(q.rest, q.at) }).collect()
+    pins.iter()
+        .map(|q| arap::Pin {
+            angle: q.angle,
+            ..arap::Pin::new(q.rest, q.at)
+        })
+        .collect()
 }
 
 /// Do the pins leave the art as it is (each where it started, turned by nothing)?
 fn at_rest(pins: &[PuppetPin]) -> bool {
-    pins.iter().all(|q| q.rest == q.at && q.angle.is_none_or(|a| a == 0.0))
+    pins.iter()
+        .all(|q| q.rest == q.at && q.angle.is_none_or(|a| a == 0.0))
 }
 
 /// A rest shape and the pins placed on it (`None`: none yet).
@@ -79,10 +101,25 @@ pub type RestPins = (Vec<Arc<Node>>, Option<Vec<PuppetPin>>);
 /// these objects as the last warp left them; when something else edited them since, the same pins
 /// starting again from the objects as they are; `None` pins: none placed yet.
 pub fn rest_and_pins(doc: &Document, ids: &[NodeId]) -> Option<RestPins> {
-    let current: Vec<Arc<Node>> = ids.iter().map(|id| doc.node_arc(*id).cloned()).collect::<Option<_>>()?;
+    let current: Vec<Arc<Node>> = ids
+        .iter()
+        .map(|id| doc.node_arc(*id).cloned())
+        .collect::<Option<_>>()?;
     Some(match doc.puppet.as_deref().filter(|p| p.ids == ids) {
         Some(p) if p.holds(doc, ids) => (p.rest.clone(), Some(p.pins.clone())),
-        Some(p) => (current, Some(p.pins.iter().map(|q| PuppetPin { rest: q.at, at: q.at, angle: q.angle.map(|_| 0.0) }).collect())),
+        Some(p) => (
+            current,
+            Some(
+                p.pins
+                    .iter()
+                    .map(|q| PuppetPin {
+                        rest: q.at,
+                        at: q.at,
+                        angle: q.angle.map(|_| 0.0),
+                    })
+                    .collect(),
+            ),
+        ),
         None => (current, None),
     })
 }
@@ -106,18 +143,46 @@ impl PinSet {
         let (rest, pins) = rest_and_pins(doc, ids)?;
         let mesh = mesh_of(&rest, expand)?;
         let auto = pins.is_none();
-        let pins = pins.unwrap_or_else(|| default_pins(&mesh).into_iter().map(|p| PuppetPin { rest: p, at: p, angle: None }).collect());
+        let pins = pins.unwrap_or_else(|| {
+            default_pins(&mesh)
+                .into_iter()
+                .map(|p| PuppetPin {
+                    rest: p,
+                    at: p,
+                    angle: None,
+                })
+                .collect()
+        });
         let warped = !at_rest(&pins);
-        let deformed = if warped { arap::deform(&mesh, &solver_pins(&pins)) } else { mesh.verts.clone() };
-        Some(Self { ids: ids.to_vec(), pins, auto, mesh, deformed, warped })
+        let deformed = if warped {
+            arap::deform(&mesh, &solver_pins(&pins))
+        } else {
+            mesh.verts.clone()
+        };
+        Some(Self {
+            ids: ids.to_vec(),
+            pins,
+            auto,
+            mesh,
+            deformed,
+            warped,
+        })
     }
     /// Where on the rest shape the art now at `q` comes from (None: off the mesh).
     pub fn rest_of(&self, q: Point) -> Option<Point> {
-        if self.warped { self.mesh.unmap(&self.deformed, q) } else { self.mesh.contains(q).then_some(q) }
+        if self.warped {
+            self.mesh.unmap(&self.deformed, q)
+        } else {
+            self.mesh.contains(q).then_some(q)
+        }
     }
     /// The turn (radians) the art has around pin `i`: the one it holds, else the warp's there.
     pub fn turn_of(&self, i: usize) -> f64 {
-        self.pins.get(i).map_or(0.0, |q| q.angle.or_else(|| self.mesh.turn_at(&self.deformed, q.rest)).unwrap_or(0.0))
+        self.pins.get(i).map_or(0.0, |q| {
+            q.angle
+                .or_else(|| self.mesh.turn_at(&self.deformed, q.rest))
+                .unwrap_or(0.0)
+        })
     }
     /// The `object.puppetWarp` params that set `pins` on these objects.
     pub fn params(&self, pins: &[PuppetPin], expand: f64) -> Value {
@@ -147,10 +212,18 @@ impl PinSet {
 /// Put `pins` on `ids`: warp their rest shape (see [`rest_and_pins`]) so each pin lands where it
 /// is now, and keep the pins in the document. With no pins the art stays as it is and the pins
 /// start again from it.
-pub fn warp_from_rest(doc: &mut Document, ids: &[NodeId], pins: Vec<PuppetPin>, expand: f64) -> Result<(), String> {
+pub fn warp_from_rest(
+    doc: &mut Document,
+    ids: &[NodeId],
+    pins: Vec<PuppetPin>,
+    expand: f64,
+) -> Result<(), String> {
     let (rest, _) = rest_and_pins(doc, ids).ok_or("nothing to warp")?;
     let rest = if pins.is_empty() {
-        ids.iter().map(|id| doc.node_arc(*id).cloned()).collect::<Option<Vec<_>>>().ok_or("nothing to warp")?
+        ids.iter()
+            .map(|id| doc.node_arc(*id).cloned())
+            .collect::<Option<Vec<_>>>()
+            .ok_or("nothing to warp")?
     } else {
         let mesh = mesh_of(&rest, expand).ok_or("nothing to warp")?;
         if let Some(i) = pins.iter().position(|q| !mesh.contains(q.rest)) {
@@ -165,8 +238,17 @@ pub fn warp_from_rest(doc: &mut Document, ids: &[NodeId], pins: Vec<PuppetPin>, 
         }
         rest
     };
-    let result = ids.iter().map(|id| doc.node_arc(*id).cloned()).collect::<Option<Vec<_>>>().ok_or("the artwork is gone")?;
-    doc.puppet = Some(Arc::new(PuppetPins { ids: ids.to_vec(), rest, result, pins }));
+    let result = ids
+        .iter()
+        .map(|id| doc.node_arc(*id).cloned())
+        .collect::<Option<Vec<_>>>()
+        .ok_or("the artwork is gone")?;
+    doc.puppet = Some(Arc::new(PuppetPins {
+        ids: ids.to_vec(),
+        rest,
+        result,
+        pins,
+    }));
     Ok(())
 }
 
@@ -185,7 +267,12 @@ enum Gesture {
     Move { from: Point, to: Point },
     /// The art turns around pin `pin`: `base` (radians) is its turn when the drag began, `from`
     /// the pointer's angle around it then, `angle` how far the drag has turned it since.
-    Turn { pin: usize, base: f64, from: f64, angle: f64 },
+    Turn {
+        pin: usize,
+        base: f64,
+        from: f64,
+        angle: f64,
+    },
 }
 
 /// What the cached pins were computed from (holding the objects keeps the pointers unique).
@@ -199,11 +286,21 @@ struct Key {
 impl Key {
     fn of(cx: &ToolContext, expand: f64) -> Option<Self> {
         let ids = cx.selection.objects.clone();
-        let nodes = ids.iter().map(|id| cx.doc.node_arc(*id).cloned()).collect::<Option<_>>()?;
-        Some(Self { ids, nodes, puppet: cx.doc.puppet.clone(), expand })
+        let nodes = ids
+            .iter()
+            .map(|id| cx.doc.node_arc(*id).cloned())
+            .collect::<Option<_>>()?;
+        Some(Self {
+            ids,
+            nodes,
+            puppet: cx.doc.puppet.clone(),
+            expand,
+        })
     }
     fn same(&self, o: &Key) -> bool {
-        let ptrs = |a: &[Arc<Node>], b: &[Arc<Node>]| a.len() == b.len() && a.iter().zip(b).all(|(x, y)| Arc::ptr_eq(x, y));
+        let ptrs = |a: &[Arc<Node>], b: &[Arc<Node>]| {
+            a.len() == b.len() && a.iter().zip(b).all(|(x, y)| Arc::ptr_eq(x, y))
+        };
         let puppet = match (&self.puppet, &o.puppet) {
             (Some(a), Some(b)) => Arc::ptr_eq(a, b),
             (a, b) => a.is_none() && b.is_none(),
@@ -260,11 +357,19 @@ impl PuppetWarpTool {
     fn pins(&self, cx: &ToolContext) -> Option<Arc<Cached>> {
         let key = Key::of(cx, self.expand).filter(|k| !k.ids.is_empty())?;
         let mut cache = self.cache.lock().ok();
-        if let Some(c) = cache.as_deref().and_then(Option::as_ref).filter(|c| c.key.same(&key)) {
+        if let Some(c) = cache
+            .as_deref()
+            .and_then(Option::as_ref)
+            .filter(|c| c.key.same(&key))
+        {
             return Some(c.clone());
         }
         let set = PinSet::of(cx.doc, &key.ids, self.expand)?;
-        let c = Arc::new(Cached { mesh: set.mesh_path(), key, set });
+        let c = Arc::new(Cached {
+            mesh: set.mesh_path(),
+            key,
+            set,
+        });
         if let Some(slot) = cache.as_deref_mut() {
             *slot = Some(c.clone());
         }
@@ -283,7 +388,13 @@ impl PuppetWarpTool {
     }
     fn pin_at(cx: &ToolContext, set: &PinSet, p: Point) -> Option<usize> {
         let tol = cx.tol(7.0);
-        set.pins.iter().enumerate().map(|(i, q)| (i, q.at.distance(p))).filter(|(_, d)| *d <= tol).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(i, _)| i)
+        set.pins
+            .iter()
+            .enumerate()
+            .map(|(i, q)| (i, q.at.distance(p)))
+            .filter(|(_, d)| *d <= tol)
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+            .map(|(i, _)| i)
     }
     /// The selected pin the art would turn around with Alt held at `p`: near it, not on a pin.
     fn turn_pin_at(&self, cx: &ToolContext, set: &PinSet, p: Point) -> Option<usize> {
@@ -304,7 +415,9 @@ impl PuppetWarpTool {
         for (i, q) in pins.iter_mut().enumerate() {
             match g {
                 Gesture::Move { from, to } if self.selected.contains(&i) => q.at += to - from,
-                Gesture::Turn { pin, base, angle, .. } if pin == i => q.angle = Some(base + angle),
+                Gesture::Turn {
+                    pin, base, angle, ..
+                } if pin == i => q.angle = Some(base + angle),
                 _ => {}
             }
         }
@@ -312,7 +425,10 @@ impl PuppetWarpTool {
     }
     /// Run `object.puppetWarp` with `pins`, then look at the pins it left.
     fn apply(&self, set: &PinSet, pins: &[PuppetPin]) -> Vec<Action> {
-        vec![Action::Exec("object.puppetWarp".into(), set.params(pins, self.expand)), Action::Notify("pins".into())]
+        vec![
+            Action::Exec("object.puppetWarp".into(), set.params(pins, self.expand)),
+            Action::Notify("pins".into()),
+        ]
     }
     /// Select pin `i` (Shift: add it to the selection or take it out). → whether it is selected.
     fn pick(&mut self, i: usize, shift: bool) -> bool {
@@ -356,7 +472,10 @@ impl Tool for PuppetWarpTool {
                     // Click an object to select it: its pins appear at once.
                     if let Some(h) = vectorcraft_doc::hit::hit_test(cx.doc, p, cx.hit_options()) {
                         return vec![
-                            Action::Exec("select.set".into(), json!({"ids": [h.top_object(cx.isolation).0]})),
+                            Action::Exec(
+                                "select.set".into(),
+                                json!({"ids": [h.top_object(cx.isolation).0]}),
+                            ),
                             Action::Notify("pins".into()),
                         ];
                     }
@@ -367,7 +486,12 @@ impl Tool for PuppetWarpTool {
                     && let Some(i) = self.turn_pin_at(cx, set, p)
                     && let Some(q) = set.pins.get(i)
                 {
-                    self.drag = Some(Gesture::Turn { pin: i, base: set.turn_of(i), from: (p - q.at).atan2(), angle: 0.0 });
+                    self.drag = Some(Gesture::Turn {
+                        pin: i,
+                        base: set.turn_of(i),
+                        from: (p - q.at).atan2(),
+                        angle: 0.0,
+                    });
                     self.start = Some(c.clone());
                     return vec![Action::Begin("Puppet Warp".into())];
                 }
@@ -382,7 +506,11 @@ impl Tool for PuppetWarpTool {
                 match set.rest_of(p) {
                     Some(rest) => {
                         let mut pins = set.pins.clone();
-                        pins.push(PuppetPin { rest, at: p, angle: None });
+                        pins.push(PuppetPin {
+                            rest,
+                            at: p,
+                            angle: None,
+                        });
                         self.pick(pins.len() - 1, ev.mods.shift);
                         self.apply(set, &pins)
                     }
@@ -397,16 +525,25 @@ impl Tool for PuppetWarpTool {
                 }
             }
             PointerKind::Drag => {
-                let (Some(mut g), Some(c)) = (self.drag, self.start.clone()) else { return vec![] };
+                let (Some(mut g), Some(c)) = (self.drag, self.start.clone()) else {
+                    return vec![];
+                };
                 match &mut g {
                     Gesture::Move { to, .. } => *to = p,
-                    Gesture::Turn { pin, from, angle, .. } => {
-                        let Some(q) = c.set.pins.get(*pin) else { return vec![] };
+                    Gesture::Turn {
+                        pin, from, angle, ..
+                    } => {
+                        let Some(q) = c.set.pins.get(*pin) else {
+                            return vec![];
+                        };
                         *angle = (p - q.at).atan2() - *from;
                     }
                 }
                 self.drag = Some(g);
-                vec![Action::Preview("object.puppetWarp".into(), c.set.params(&self.targets(&c.set, g), self.expand))]
+                vec![Action::Preview(
+                    "object.puppetWarp".into(),
+                    c.set.params(&self.targets(&c.set, g), self.expand),
+                )]
             }
             PointerKind::Up => match self.drag.take() {
                 Some(_) => {
@@ -424,22 +561,38 @@ impl Tool for PuppetWarpTool {
         matches!(key, ToolKey::Delete | ToolKey::Backspace)
             && self.drag.is_none()
             && cx.selection.objects == self.ids
-            && self.pins(cx).is_some_and(|c| self.selected.iter().any(|i| *i < c.set.pins.len()))
+            && self
+                .pins(cx)
+                .is_some_and(|c| self.selected.iter().any(|i| *i < c.set.pins.len()))
     }
     fn key(&mut self, cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
         if !self.claims_key(cx, key) {
             return vec![];
         }
-        let Some(c) = self.pins(cx) else { return vec![] };
+        let Some(c) = self.pins(cx) else {
+            return vec![];
+        };
         let gone = std::mem::take(&mut self.selected);
-        let pins: Vec<PuppetPin> = c.set.pins.iter().enumerate().filter(|(i, _)| !gone.contains(i)).map(|(_, q)| *q).collect();
+        let pins: Vec<PuppetPin> = c
+            .set
+            .pins
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !gone.contains(i))
+            .map(|(_, q)| *q)
+            .collect();
         self.apply(&c.set, &pins)
     }
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         let mut out = vec![];
         if let Some(c) = self.pins(cx) {
             if self.show_mesh {
-                out.push(Overlay::Path { path: c.mesh.clone(), color: [0x9a, 0x9a, 0x9a], width: 0.5, dashed: false });
+                out.push(Overlay::Path {
+                    path: c.mesh.clone(),
+                    color: [0x9a, 0x9a, 0x9a],
+                    width: 0.5,
+                    dashed: false,
+                });
             }
             let r = cx.tol(5.0);
             for (i, q) in c.set.pins.iter().enumerate() {
@@ -450,7 +603,12 @@ impl Tool for PuppetWarpTool {
                     width: if sel { 3.0 } else { 1.5 },
                     dashed: false,
                 });
-                out.push(Overlay::Anchor { p: q.at, color: BLUE, filled: sel, size: 3.0 });
+                out.push(Overlay::Anchor {
+                    p: q.at,
+                    color: BLUE,
+                    filled: sel,
+                    size: 3.0,
+                });
             }
             // The dotted circle of a turn: around the pin being turned, or the one Alt would turn.
             let ring = match (self.drag, self.hover) {
@@ -460,16 +618,27 @@ impl Tool for PuppetWarpTool {
             };
             if let Some(q) = ring.and_then(|i| c.set.pins.get(i)) {
                 let rr = cx.tol(TURN_RING_PX);
-                out.push(Overlay::Path { path: super::ellipse_path(q.at, rr, rr, 0.0), color: BLUE, width: 1.0, dashed: true });
+                out.push(Overlay::Path {
+                    path: super::ellipse_path(q.at, rr, rr, 0.0),
+                    color: BLUE,
+                    width: 1.0,
+                    dashed: true,
+                });
             }
         }
         if let Some(p) = self.off_mesh {
-            out.push(Overlay::Label { p, text: OFF_MESH.into(), color: WARN });
+            out.push(Overlay::Label {
+                p,
+                text: OFF_MESH.into(),
+                color: WARN,
+            });
         }
         out
     }
     fn cursor(&self, cx: &ToolContext, p: Point, mods: Mods) -> Cursor {
-        let Some(c) = self.pins(cx) else { return Cursor::Arrow };
+        let Some(c) = self.pins(cx) else {
+            return Cursor::Arrow;
+        };
         if mods.alt && self.turn_pin_at(cx, &c.set, p).is_some() {
             Cursor::Rotate
         } else if Self::pin_at(cx, &c.set, p).is_some() {
@@ -482,7 +651,16 @@ impl Tool for PuppetWarpTool {
         }
     }
     fn options(&self) -> Value {
-        let pins = self.last_pins().map(|c| c.set.pins.iter().map(|q| json!([q.at.x, q.at.y])).collect::<Vec<_>>()).unwrap_or_default();
+        let pins = self
+            .last_pins()
+            .map(|c| {
+                c.set
+                    .pins
+                    .iter()
+                    .map(|q| json!([q.at.x, q.at.y]))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
         json!({"showMesh": self.show_mesh, "expand": self.expand, "pins": pins, "selected": self.selected})
     }
     fn set_option(&mut self, key: &str, value: &Value) {
@@ -496,7 +674,11 @@ impl Tool for PuppetWarpTool {
             // Select All Pins (false: deselect them all).
             "selectAllPins" => {
                 let n = self.last_pins().map_or(0, |c| c.set.pins.len());
-                self.selected = if value.as_bool() == Some(false) { vec![] } else { (0..n).collect() };
+                self.selected = if value.as_bool() == Some(false) {
+                    vec![]
+                } else {
+                    (0..n).collect()
+                };
             }
             _ => {}
         }
@@ -518,7 +700,11 @@ impl Tool for PuppetWarpTool {
             *c = None;
         }
         self.start = None;
-        if self.drag.take().is_some() { vec![Action::Commit] } else { vec![] }
+        if self.drag.take().is_some() {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -529,11 +715,17 @@ mod tests {
     use vectorcraft_doc::Selection;
 
     fn alt() -> Mods {
-        Mods { alt: true, ..Default::default() }
+        Mods {
+            alt: true,
+            ..Default::default()
+        }
     }
 
     fn shift() -> Mods {
-        Mods { shift: true, ..Default::default() }
+        Mods {
+            shift: true,
+            ..Default::default()
+        }
     }
 
     /// The tool on a document, running the `object.puppetWarp` actions it emits the way the
@@ -550,15 +742,42 @@ mod tests {
     impl Rig {
         fn new() -> Self {
             let (doc, id) = doc_with_rect();
-            Self { doc, sel: Selection { objects: vec![id], ..Default::default() }, base: None, tool: PuppetWarpTool::default(), last: Value::Null }
+            Self {
+                doc,
+                sel: Selection {
+                    objects: vec![id],
+                    ..Default::default()
+                },
+                base: None,
+                tool: PuppetWarpTool::default(),
+                last: Value::Null,
+            }
         }
         fn run(&mut self, p: &Value) {
             let pts = |k: &str| -> Vec<Point> {
-                p[k].as_array().unwrap().iter().map(|q| Point::new(q[0].as_f64().unwrap(), q[1].as_f64().unwrap())).collect()
+                p[k].as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|q| Point::new(q[0].as_f64().unwrap(), q[1].as_f64().unwrap()))
+                    .collect()
             };
-            let angles = p["angles"].as_array().unwrap().iter().map(|a| a.as_f64().map(f64::to_radians));
-            let pins = pts("pins").into_iter().zip(pts("moved")).zip(angles).map(|((rest, at), angle)| PuppetPin { rest, at, angle }).collect();
-            let ids: Vec<NodeId> = p["ids"].as_array().unwrap().iter().map(|i| NodeId(i.as_u64().unwrap())).collect();
+            let angles = p["angles"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|a| a.as_f64().map(f64::to_radians));
+            let pins = pts("pins")
+                .into_iter()
+                .zip(pts("moved"))
+                .zip(angles)
+                .map(|((rest, at), angle)| PuppetPin { rest, at, angle })
+                .collect();
+            let ids: Vec<NodeId> = p["ids"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|i| NodeId(i.as_u64().unwrap()))
+                .collect();
             assert_eq!(p["rest"], json!(true));
             warp_from_rest(&mut self.doc, &ids, pins, p["expand"].as_f64().unwrap()).unwrap();
             self.last = p.clone();
@@ -584,7 +803,10 @@ mod tests {
         }
         fn ev(&mut self, kind: PointerKind, x: f64, y: f64, mods: Mods) -> Vec<Action> {
             let p = paint();
-            let acts = self.tool.pointer(&cx(&self.doc, &self.sel, &p), &PointerEvent::new(kind, x, y).with_mods(mods));
+            let acts = self.tool.pointer(
+                &cx(&self.doc, &self.sel, &p),
+                &PointerEvent::new(kind, x, y).with_mods(mods),
+            );
             self.apply(acts)
         }
         fn click(&mut self, x: f64, y: f64, mods: Mods) -> Vec<Action> {
@@ -594,14 +816,21 @@ mod tests {
         }
         fn drag(&mut self, from: (f64, f64), to: (f64, f64), mods: Mods) -> Vec<Action> {
             let mut a = self.ev(PointerKind::Down, from.0, from.1, mods);
-            a.extend(self.ev(PointerKind::Drag, (from.0 + to.0) / 2.0, (from.1 + to.1) / 2.0, mods));
+            a.extend(self.ev(
+                PointerKind::Drag,
+                (from.0 + to.0) / 2.0,
+                (from.1 + to.1) / 2.0,
+                mods,
+            ));
             a.extend(self.ev(PointerKind::Drag, to.0, to.1, mods));
             a.extend(self.ev(PointerKind::Up, to.0, to.1, mods));
             a
         }
         fn key(&mut self, k: ToolKey) -> Vec<Action> {
             let p = paint();
-            let acts = self.tool.key(&cx(&self.doc, &self.sel, &p), k, Mods::default());
+            let acts = self
+                .tool
+                .key(&cx(&self.doc, &self.sel, &p), k, Mods::default());
             self.apply(acts)
         }
         fn claims(&self, k: ToolKey) -> bool {
@@ -614,13 +843,22 @@ mod tests {
         }
         fn cursor(&self, x: f64, y: f64, mods: Mods) -> Cursor {
             let p = paint();
-            self.tool.cursor(&cx(&self.doc, &self.sel, &p), Point::new(x, y), mods)
+            self.tool
+                .cursor(&cx(&self.doc, &self.sel, &p), Point::new(x, y), mods)
         }
         fn pins(&self) -> Vec<PuppetPin> {
-            self.doc.puppet.as_ref().map(|p| p.pins.clone()).unwrap_or_default()
+            self.doc
+                .puppet
+                .as_ref()
+                .map(|p| p.pins.clone())
+                .unwrap_or_default()
         }
         fn bounds(&self) -> Rect {
-            self.doc.node(self.sel.objects[0]).unwrap().geometric_bounds().unwrap()
+            self.doc
+                .node(self.sel.objects[0])
+                .unwrap()
+                .geometric_bounds()
+                .unwrap()
         }
     }
 
@@ -628,27 +866,48 @@ mod tests {
     fn puppet_tool_autopins_adds_and_drags() {
         let mut r = Rig::new();
         // The automatic pins show as soon as there is art selected.
-        assert_eq!(r.overlays().iter().filter(|o| matches!(o, Overlay::Anchor { .. })).count(), 3, "3 automatic pins");
+        assert_eq!(
+            r.overlays()
+                .iter()
+                .filter(|o| matches!(o, Overlay::Anchor { .. }))
+                .count(),
+            3,
+            "3 automatic pins"
+        );
         // Click inside the rect away from them: adds a pin (one command, the pins kept in the document).
         let acts = r.click(130.0, 170.0, Mods::default());
-        assert!(matches!(&acts[0], Action::Exec(c, _) if c == "object.puppetWarp"), "{acts:?}");
+        assert!(
+            matches!(&acts[0], Action::Exec(c, _) if c == "object.puppetWarp"),
+            "{acts:?}"
+        );
         assert_eq!(r.pins().len(), 4, "3 auto pins + 1");
         assert_eq!(r.tool.options()["selected"], json!([3]));
         // Drag the new pin.
-        assert_eq!(r.ev(PointerKind::Down, 130.0, 170.0, Mods::default()), vec![Action::Begin("Puppet Warp".into())]);
+        assert_eq!(
+            r.ev(PointerKind::Down, 130.0, 170.0, Mods::default()),
+            vec![Action::Begin("Puppet Warp".into())]
+        );
         let acts = r.ev(PointerKind::Drag, 120.0, 190.0, Mods::default());
-        let Action::Preview(cmd, v) = &acts[0] else { panic!("{acts:?}") };
+        let Action::Preview(cmd, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
         assert_eq!(cmd, "object.puppetWarp");
         assert_eq!(v["moved"][3], json!([120.0, 190.0]));
         assert_eq!(v["pins"][3], json!([130.0, 170.0]));
-        assert_eq!(r.ev(PointerKind::Up, 120.0, 190.0, Mods::default())[0], Action::Commit);
+        assert_eq!(
+            r.ev(PointerKind::Up, 120.0, 190.0, Mods::default())[0],
+            Action::Commit
+        );
         // Alt-click on a pin doesn't delete it (Alt turns the art around a pin): Delete does.
         r.click(120.0, 190.0, alt());
         assert_eq!(r.pins().len(), 4);
         assert!(r.claims(ToolKey::Delete));
         r.key(ToolKey::Delete);
         assert_eq!(r.pins().len(), 3);
-        assert!(!r.claims(ToolKey::Delete), "nothing selected: Delete is Clear's");
+        assert!(
+            !r.claims(ToolKey::Delete),
+            "nothing selected: Delete is Clear's"
+        );
     }
 
     #[test]
@@ -662,8 +921,13 @@ mod tests {
         // Dragging one moves both.
         r.ev(PointerKind::Down, 110.0, 110.0, Mods::default());
         let acts = r.ev(PointerKind::Drag, 110.0, 100.0, Mods::default());
-        let Action::Preview(_, v) = &acts[0] else { panic!("{acts:?}") };
-        assert_eq!((v["moved"][a].clone(), v["moved"][b].clone()), (json!([110.0, 100.0]), json!([190.0, 100.0])));
+        let Action::Preview(_, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
+        assert_eq!(
+            (v["moved"][a].clone(), v["moved"][b].clone()),
+            (json!([110.0, 100.0]), json!([190.0, 100.0]))
+        );
         assert_eq!(v["moved"][0], v["pins"][0], "unselected pins stay");
         r.ev(PointerKind::Up, 110.0, 100.0, Mods::default());
         // Shift-click takes a pin out of the selection without dragging.
@@ -686,27 +950,54 @@ mod tests {
         // Alt near (not on) the selected pin: the turn ring and cursor.
         r.ev(PointerKind::Move, 125.0, 150.0, alt());
         assert_eq!(r.cursor(125.0, 150.0, alt()), Cursor::Rotate);
-        assert!(r.overlays().iter().any(|o| matches!(o, Overlay::Path { dashed: true, .. })), "dotted ring");
-        assert_ne!(r.cursor(125.0, 150.0, Mods::default()), Cursor::Rotate, "only with Alt");
+        assert!(
+            r.overlays()
+                .iter()
+                .any(|o| matches!(o, Overlay::Path { dashed: true, .. })),
+            "dotted ring"
+        );
+        assert_ne!(
+            r.cursor(125.0, 150.0, Mods::default()),
+            Cursor::Rotate,
+            "only with Alt"
+        );
         // Drag a quarter turn around it.
-        assert_eq!(r.ev(PointerKind::Down, 125.0, 150.0, alt()), vec![Action::Begin("Puppet Warp".into())]);
+        assert_eq!(
+            r.ev(PointerKind::Down, 125.0, 150.0, alt()),
+            vec![Action::Begin("Puppet Warp".into())]
+        );
         let acts = r.ev(PointerKind::Drag, 110.0, 165.0, alt());
-        let Action::Preview(cmd, v) = &acts[0] else { panic!("{acts:?}") };
+        let Action::Preview(cmd, v) = &acts[0] else {
+            panic!("{acts:?}")
+        };
         assert_eq!(cmd, "object.puppetWarp");
-        assert!((v["angles"][i].as_f64().unwrap() - 90.0).abs() < 1e-6, "{v}");
+        assert!(
+            (v["angles"][i].as_f64().unwrap() - 90.0).abs() < 1e-6,
+            "{v}"
+        );
         assert_eq!(v["moved"][i], v["pins"][i], "the pin stays put");
         assert_eq!(v["angles"][0], Value::Null, "other pins turn freely");
         r.ev(PointerKind::Up, 110.0, 165.0, alt());
         // The turned pin keeps its turn through the next warp.
         let q = r.pins()[0].at;
         r.drag((q.x, q.y), (q.x + 5.0, q.y), Mods::default());
-        assert!((r.last["angles"][i].as_f64().unwrap() - 90.0).abs() < 1e-6, "{}", r.last);
+        assert!(
+            (r.last["angles"][i].as_f64().unwrap() - 90.0).abs() < 1e-6,
+            "{}",
+            r.last
+        );
     }
 
     #[test]
     fn show_mesh_is_on_by_default_and_expand_may_be_zero() {
         let mut t = PuppetWarpTool::default();
-        assert_eq!((t.options()["showMesh"].clone(), t.options()["expand"].clone()), (json!(true), json!(3.0)));
+        assert_eq!(
+            (
+                t.options()["showMesh"].clone(),
+                t.options()["expand"].clone()
+            ),
+            (json!(true), json!(3.0))
+        );
         t.set_option("expand", &json!(0));
         assert_eq!(t.options()["expand"], json!(0.0));
         t.set_option("expand", &json!(f64::NAN));
@@ -726,7 +1017,12 @@ mod tests {
         // Back where it started: the original shape, not a warp of a warp.
         let back = r.doc.node(r.sel.objects[0]).unwrap();
         let (a, b) = (rest.path_data().unwrap(), back.path_data().unwrap());
-        let worst = a.subpaths[0].anchors.iter().zip(&b.subpaths[0].anchors).map(|(x, y)| x.p.distance(y.p)).fold(0.0, f64::max);
+        let worst = a.subpaths[0]
+            .anchors
+            .iter()
+            .zip(&b.subpaths[0].anchors)
+            .map(|(x, y)| x.p.distance(y.p))
+            .fold(0.0, f64::max);
         assert!(worst < 0.01, "{worst}");
     }
 
@@ -738,12 +1034,29 @@ mod tests {
         assert!(r.click(400.0, 400.0, Mods::default()).is_empty());
         assert_eq!(r.pins().len(), 4);
         assert!(r.tool.selected.is_empty(), "the click deselects the pins");
-        assert!(r.overlays().iter().any(|o| matches!(o, Overlay::Label { text, .. } if text == OFF_MESH)));
+        assert!(
+            r.overlays()
+                .iter()
+                .any(|o| matches!(o, Overlay::Label { text, .. } if text == OFF_MESH))
+        );
         r.ev(PointerKind::Move, 450.0, 450.0, Mods::default());
-        assert!(!r.overlays().iter().any(|o| matches!(o, Overlay::Label { .. })), "gone once the pointer moves on");
+        assert!(
+            !r.overlays()
+                .iter()
+                .any(|o| matches!(o, Overlay::Label { .. })),
+            "gone once the pointer moves on"
+        );
         // The command refuses a pin off the mesh.
         let ids = r.sel.objects.clone();
-        let off = PuppetPin { rest: Point::new(400.0, 400.0), at: Point::new(400.0, 400.0), angle: None };
-        assert!(warp_from_rest(&mut r.doc, &ids, vec![off], 3.0).unwrap_err().contains("off the artwork"));
+        let off = PuppetPin {
+            rest: Point::new(400.0, 400.0),
+            at: Point::new(400.0, 400.0),
+            angle: None,
+        };
+        assert!(
+            warp_from_rest(&mut r.doc, &ids, vec![off], 3.0)
+                .unwrap_err()
+                .contains("off the artwork")
+        );
     }
 }

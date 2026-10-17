@@ -132,7 +132,9 @@ enum SpiritCommands {
 }
 
 fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
     let cli = Cli::parse();
 
@@ -143,7 +145,7 @@ fn main() -> anyhow::Result<()> {
                 let envelope: TeamExportEnvelope = serde_json::from_str(&content)?;
                 let lineup = decrypt_team_envelope(&envelope, &passphrase)?;
                 println!("{}", serde_json::to_string_pretty(&lineup)?);
-            },
+            }
         },
         Commands::Package { cmd } => match cmd {
             PackageCommands::Info { file } => {
@@ -153,22 +155,28 @@ fn main() -> anyhow::Result<()> {
                     "Package GUID: {}\nFile size: {} bytes\nPayload offset: 0x{:X}",
                     header.package_id, header.file_size, header.payload_offset
                 );
-            },
+            }
         },
         Commands::Save { cmd } => match cmd {
-            SaveCommands::Park { live_save, mod_save } => {
+            SaveCommands::Park {
+                live_save,
+                mod_save,
+            } => {
                 let mut session = SaveSession::new(live_save, mod_save);
                 session.park_and_install_mod_save()?;
                 // Forget drop so session stays active
                 std::mem::forget(session);
                 println!("Mod save installed and original save parked successfully.");
-            },
-            SaveCommands::Restore { live_save, mod_save } => {
+            }
+            SaveCommands::Restore {
+                live_save,
+                mod_save,
+            } => {
                 let mut session = SaveSession::new(live_save, mod_save);
                 session.is_active = true;
                 session.restore_original_save()?;
                 println!("Original save restored successfully.");
-            },
+            }
         },
         Commands::Eac { cmd } => match cmd {
             EacCommands::Scan { file, json } => {
@@ -186,7 +194,7 @@ fn main() -> anyhow::Result<()> {
                         report.patched_count
                     );
                 }
-            },
+            }
             EacCommands::Patch { file, out } => {
                 let target = out.unwrap_or_else(|| {
                     if let Some(stem) = file.file_stem().and_then(|s| s.to_str()) {
@@ -205,7 +213,7 @@ fn main() -> anyhow::Result<()> {
                     report.total_sites_found,
                     report.patched_count
                 );
-            },
+            }
         },
         Commands::Spirit { cmd } => match cmd {
             SpiritCommands::Cards { query, json } => {
@@ -222,8 +230,12 @@ fn main() -> anyhow::Result<()> {
                         println!("  0x{} | {:<30} | {}", c.hex_id, c.name, c.variant);
                     }
                 }
-            },
-            SpiritCommands::Moves { query, category, json } => {
+            }
+            SpiritCommands::Moves {
+                query,
+                category,
+                json,
+            } => {
                 let mut moves: Vec<&aphrody_nie_launcher::SpecialMove> = if let Some(q) = query {
                     aphrody_nie_launcher::search_special_moves(&q)
                 } else {
@@ -240,7 +252,7 @@ fn main() -> anyhow::Result<()> {
                         println!("  0x{} | {:<35} | {}", m.hex_id, m.name, m.category);
                     }
                 }
-            },
+            }
         },
     }
 

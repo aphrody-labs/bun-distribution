@@ -11,7 +11,14 @@
 //! The browser build's [`NetLink`] joins sessions through the browser's WebSocket API (`web-sys`);
 //! hosting needs the desktop app. Its connection logic (`driver.rs`) is target-independent and
 //! tested natively.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(any(target_arch = "wasm32", test))]
 mod driver;

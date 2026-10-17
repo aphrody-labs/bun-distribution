@@ -30,7 +30,9 @@ fn used_fonts(p: &Presentation) -> Vec<String> {
         }
     };
     for slide in &p.slides {
-        let Some(ctx) = Ctx::for_slide(p, slide) else { continue };
+        let Some(ctx) = Ctx::for_slide(p, slide) else {
+            continue;
+        };
         deckcraft_model::walk(&slide.shapes, &mut |s, _| {
             if let Some(body) = &s.text {
                 body_fonts(&ctx, s, body, &mut add);

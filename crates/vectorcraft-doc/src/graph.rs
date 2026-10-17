@@ -54,7 +54,9 @@ impl GraphKind {
     /// Parse an id, also accepting the tool ids (`columnGraph`, `stackedBarGraph`…).
     pub fn parse(s: &str) -> Option<Self> {
         let s = s.strip_suffix("Graph").unwrap_or(s);
-        Self::ALL.into_iter().find(|k| k.id().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|k| k.id().eq_ignore_ascii_case(s))
     }
     pub fn label(self) -> &'static str {
         match self {
@@ -76,7 +78,9 @@ impl GraphKind {
         use GraphKind::*;
         let vertical = |k| matches!(k, Column | StackedColumn | Line | Area);
         let horizontal = |k| matches!(k, Bar | StackedBar);
-        self == graph || (vertical(self) && vertical(graph)) || (horizontal(self) && horizontal(graph))
+        self == graph
+            || (vertical(self) && vertical(graph))
+            || (horizontal(self) && horizontal(graph))
     }
 }
 
@@ -96,7 +100,12 @@ impl GraphDesign {
     /// A design name cleaned up: trimmed, without control characters, at most [`Self::MAX_NAME`] long; `None` when
     /// nothing is left.
     pub fn clean_name(name: &str) -> Option<String> {
-        let n: String = name.trim().chars().filter(|c| !c.is_control()).take(Self::MAX_NAME).collect();
+        let n: String = name
+            .trim()
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(Self::MAX_NAME)
+            .collect();
         Some(n.trim().to_string()).filter(|n| !n.is_empty())
     }
 
@@ -111,7 +120,10 @@ impl GraphDesign {
         }
         if let Some(ch) = n.children_mut() {
             let old = std::mem::take(ch);
-            *ch = old.iter().map(|c| std::sync::Arc::new(Self::plain_art(c))).collect();
+            *ch = old
+                .iter()
+                .map(|c| std::sync::Arc::new(Self::plain_art(c)))
+                .collect();
         }
         n
     }
@@ -126,11 +138,16 @@ impl crate::Document {
             if kept.len() >= GraphDesign::MAX {
                 break;
             }
-            let Some(name) = GraphDesign::clean_name(&d.name) else { continue };
+            let Some(name) = GraphDesign::clean_name(&d.name) else {
+                continue;
+            };
             if kept.iter().any(|k| k.name == name) || d.art.count() > GraphDesign::MAX_NODES {
                 continue;
             }
-            kept.push(GraphDesign { name, art: std::sync::Arc::new(GraphDesign::plain_art(&d.art)) });
+            kept.push(GraphDesign {
+                name,
+                art: std::sync::Arc::new(GraphDesign::plain_art(&d.art)),
+            });
         }
         self.graph_designs = kept;
     }
@@ -215,7 +232,13 @@ impl ValueAxisSide {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        [ValueAxisSide::Left, ValueAxisSide::Right, ValueAxisSide::Both].into_iter().find(|k| k.id().eq_ignore_ascii_case(s))
+        [
+            ValueAxisSide::Left,
+            ValueAxisSide::Right,
+            ValueAxisSide::Both,
+        ]
+        .into_iter()
+        .find(|k| k.id().eq_ignore_ascii_case(s))
     }
     fn is_left(&self) -> bool {
         *self == ValueAxisSide::Left
@@ -241,7 +264,9 @@ impl TickLength {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        [TickLength::None, TickLength::Short, TickLength::Full].into_iter().find(|k| k.id().eq_ignore_ascii_case(s))
+        [TickLength::None, TickLength::Short, TickLength::Full]
+            .into_iter()
+            .find(|k| k.id().eq_ignore_ascii_case(s))
     }
     fn is_short(&self) -> bool {
         *self == TickLength::Short
@@ -400,27 +425,53 @@ fn edge_to_edge_before_the_option() -> bool {
 impl GraphSpec {
     /// The type series `s` is drawn as: its own type when it combines with the graph's, else the graph's.
     pub fn series_kind(&self, s: usize) -> GraphKind {
-        self.series_kinds.get(s).copied().flatten().filter(|k| k.combines_with(self.kind)).unwrap_or(self.kind)
+        self.series_kinds
+            .get(s)
+            .copied()
+            .flatten()
+            .filter(|k| k.combines_with(self.kind))
+            .unwrap_or(self.kind)
     }
 
     /// The data with blank cells as `None`, every row as long as the longest (at most [`MAX_GRAPH_CATEGORIES`] rows
     /// of [`MAX_GRAPH_SERIES`] cells).
     pub fn cells(&self) -> Vec<Vec<Option<f64>>> {
-        let width = self.rows.iter().map(Vec::len).max().unwrap_or(0).min(MAX_GRAPH_SERIES);
+        let width = self
+            .rows
+            .iter()
+            .map(Vec::len)
+            .max()
+            .unwrap_or(0)
+            .min(MAX_GRAPH_SERIES);
         let blank: HashSet<[usize; 2]> = self.blanks.iter().copied().collect();
         self.rows
             .iter()
             .take(MAX_GRAPH_CATEGORIES)
             .enumerate()
-            .map(|(c, r)| (0..width).map(|s| r.get(s).copied().filter(|_| !blank.contains(&[c, s]))).collect())
+            .map(|(c, r)| {
+                (0..width)
+                    .map(|s| r.get(s).copied().filter(|_| !blank.contains(&[c, s])))
+                    .collect()
+            })
             .collect()
     }
 
     /// Store `cells`, a blank (`None`) as a 0 placeholder listed in `blanks`.
     pub fn set_cells(&mut self, cells: Vec<Vec<Option<f64>>>) {
-        self.blanks =
-            cells.iter().enumerate().flat_map(|(c, r)| r.iter().enumerate().filter(|(_, v)| v.is_none()).map(move |(s, _)| [c, s])).collect();
-        self.rows = cells.into_iter().map(|r| r.into_iter().map(|v| v.unwrap_or(0.0)).collect()).collect();
+        self.blanks = cells
+            .iter()
+            .enumerate()
+            .flat_map(|(c, r)| {
+                r.iter()
+                    .enumerate()
+                    .filter(|(_, v)| v.is_none())
+                    .map(move |(s, _)| [c, s])
+            })
+            .collect();
+        self.rows = cells
+            .into_iter()
+            .map(|r| r.into_iter().map(|v| v.unwrap_or(0.0)).collect())
+            .collect();
     }
 }
 

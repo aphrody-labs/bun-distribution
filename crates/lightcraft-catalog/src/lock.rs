@@ -55,14 +55,25 @@ impl LockOwner {
             host: host_name(),
             program: program.to_string(),
             version: env!("CARGO_PKG_VERSION").to_string(),
-            since: web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0),
+            since: web_time::SystemTime::now()
+                .duration_since(web_time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0),
         }
     }
 
     /// "LightCraft 0.3.0 (process 123 on studio-mac)".
     pub fn describe(&self) -> String {
-        let program = if self.program.is_empty() { "another LightCraft" } else { self.program.as_str() };
-        let version = if self.version.is_empty() { String::new() } else { format!(" {}", self.version) };
+        let program = if self.program.is_empty() {
+            "another LightCraft"
+        } else {
+            self.program.as_str()
+        };
+        let version = if self.version.is_empty() {
+            String::new()
+        } else {
+            format!(" {}", self.version)
+        };
         let host = if self.host.is_empty() {
             String::new()
         } else if self.host == host_name() {
@@ -76,8 +87,13 @@ impl LockOwner {
 
 /// The computer's name, best effort (empty if unknown).
 fn host_name() -> String {
-    let env = ["COMPUTERNAME", "HOSTNAME"].iter().find_map(|k| std::env::var(k).ok().filter(|h| !h.trim().is_empty()));
-    env.or_else(|| std::fs::read_to_string("/etc/hostname").ok()).map(|h| h.trim().to_string()).filter(|h| !h.is_empty()).unwrap_or_default()
+    let env = ["COMPUTERNAME", "HOSTNAME"]
+        .iter()
+        .find_map(|k| std::env::var(k).ok().filter(|h| !h.trim().is_empty()));
+    env.or_else(|| std::fs::read_to_string("/etc/hostname").ok())
+        .map(|h| h.trim().to_string())
+        .filter(|h| !h.is_empty())
+        .unwrap_or_default()
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -101,17 +117,32 @@ impl LibraryLock {
     /// Lock `dir` (which must exist) for this process. Fails only when another process holds it.
     pub fn acquire(dir: &Path, program: &str) -> Result<LibraryLock, LockError> {
         let unlocked = |why: io::Error| {
-            log::warn!("library {}: can't lock {LOCK} ({why}); opening it without protection against a second program", dir.display());
-            LibraryLock { dir: dir.to_path_buf(), file: None, held: false }
+            log::warn!(
+                "library {}: can't lock {LOCK} ({why}); opening it without protection against a second program",
+                dir.display()
+            );
+            LibraryLock {
+                dir: dir.to_path_buf(),
+                file: None,
+                held: false,
+            }
         };
-        let file = match OpenOptions::new().read(true).write(true).create(true).truncate(false).open(dir.join(LOCK)) {
+        let file = match OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(dir.join(LOCK))
+        {
             Ok(f) => f,
             Err(e) => return Ok(unlocked(e)),
         };
         match file.try_lock() {
             Ok(()) => {}
             Err(TryLockError::WouldBlock) => {
-                let owner = std::fs::read(dir.join(OWNER)).ok().and_then(|b| serde_json::from_slice::<LockOwner>(&b).ok());
+                let owner = std::fs::read(dir.join(OWNER))
+                    .ok()
+                    .and_then(|b| serde_json::from_slice::<LockOwner>(&b).ok());
                 return Err(LockError::InUse(owner));
             }
             Err(TryLockError::Error(e)) => return Ok(unlocked(e)),
@@ -122,7 +153,11 @@ impl LibraryLock {
         {
             log::warn!("library {}: can't write {OWNER}: {e}", dir.display());
         }
-        Ok(LibraryLock { dir: dir.to_path_buf(), file: Some(file), held: true })
+        Ok(LibraryLock {
+            dir: dir.to_path_buf(),
+            file: Some(file),
+            held: true,
+        })
     }
 
     /// The OS lock is held (`false`: the file system can't lock; opened unprotected).

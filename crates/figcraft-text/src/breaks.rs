@@ -25,8 +25,7 @@ enum Class {
 const OPEN: &str = "([{‘“〈《「『【〔〖〘〚〝（［｛｢";
 /// Closing brackets, quotes and punctuation, iteration marks, small kana and the prolonged sound
 /// mark (line-start prohibited; the small katakana extensions U+31F0..U+31FF are a range below).
-const CLOSE: &str =
-    ")]},.:;!?’”‥…‼⁇⁈⁉、。々〉》」』】〕〗〙〛〜〞〟〻ぁぃぅぇぉっゃゅょゎゕゖゝゞ゠ァィゥェォッャュョヮヵヶ・ーヽヾ！），．：；？］｝｡｣､･ｰ";
+const CLOSE: &str = ")]},.:;!?’”‥…‼⁇⁈⁉、。々〉》」』】〕〗〙〛〜〞〟〻ぁぃぅぇぉっゃゅょゎゕゖゝゞ゠ァィゥェォッャュョヮヵヶ・ーヽヾ！），．：；？］｝｡｣､･ｰ";
 
 fn class(c: char) -> Class {
     if c.is_ascii_alphanumeric() {

@@ -12,9 +12,18 @@ const T: Duration = Duration::from_secs(20);
 const SETTLE: Duration = Duration::from_secs(120);
 
 fn crop_tool() -> Headless {
-    let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
-    for (method, params) in [("ui.set", json!({"view": "detail"})), ("engine.execute", json!({"command": "panel.crop"}))] {
+    for (method, params) in [
+        ("ui.set", json!({"view": "detail"})),
+        ("engine.execute", json!({"command": "panel.crop"})),
+    ] {
         let r = h.request(method, params, T);
         assert_eq!(r["ok"], true, "{r}");
     }
@@ -28,7 +37,15 @@ fn has(h: &Headless, id: &str) -> bool {
 
 fn angle(h: &Headless) -> f64 {
     let id = h.app.session.active().expect("a photo");
-    h.app.session.catalog.photo(id).expect("the photo").develop.crop.geometry.angle
+    h.app
+        .session
+        .catalog
+        .photo(id)
+        .expect("the photo")
+        .develop
+        .crop
+        .geometry
+        .angle
 }
 
 /// The crop box lies inside the rotated photo (issue #742: a typed or slid angle shrinks it to fit,
@@ -37,7 +54,11 @@ fn crop_fits(h: &Headless) -> bool {
     let id = h.app.session.active().expect("a photo");
     let p = h.app.session.catalog.photo(id).expect("the photo");
     let (w, h) = (p.width as f64, p.height as f64);
-    let (w, h) = if p.develop.orientation.swaps_axes() { (h, w) } else { (w, h) };
+    let (w, h) = if p.develop.orientation.swaps_axes() {
+        (h, w)
+    } else {
+        (w, h)
+    };
     let g = p.develop.crop.geometry;
     g.rect != lightcraft_geom::Rect::UNIT && g.is_within_image(w, h)
 }
@@ -55,8 +76,15 @@ fn outside_the_crop_box_the_pointer_shows_rotation() {
     let mut h = crop_tool();
     let img = h.app.image_rect.expect("the photo on screen");
     hover(&mut h, egui::pos2(img.left() - 24.0, img.center().y));
-    assert_eq!(h.last_cursor, egui::CursorIcon::None, "the system cursor gives way to the glyph");
-    assert!(has(&h, "cropRotateCursor"), "the rotation glyph is drawn at the pointer");
+    assert_eq!(
+        h.last_cursor,
+        egui::CursorIcon::None,
+        "the system cursor gives way to the glyph"
+    );
+    assert!(
+        has(&h, "cropRotateCursor"),
+        "the rotation glyph is drawn at the pointer"
+    );
     hover(&mut h, img.center());
     assert_eq!(h.last_cursor, egui::CursorIcon::Move);
     assert!(!has(&h, "cropRotateCursor"));
@@ -74,8 +102,15 @@ fn rotating_shows_the_angle() {
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     assert!(angle(&h) != 0.0, "the drag rotated the crop");
-    assert!(has(&h, "cropAngleReadout"), "the angle is shown while rotating");
-    let r = h.request("ui.pointer", json!({"events": [{"kind": "up", "x": -0.05, "y": 0.3}]}), T);
+    assert!(
+        has(&h, "cropAngleReadout"),
+        "the angle is shown while rotating"
+    );
+    let r = h.request(
+        "ui.pointer",
+        json!({"events": [{"kind": "up", "x": -0.05, "y": 0.3}]}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     assert!(!has(&h, "cropAngleReadout"), "and gone once released");
@@ -98,18 +133,33 @@ fn the_straighten_value_takes_an_exact_angle() {
     let r = h.request("ui.key", json!({"key": "Enter"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!((angle(&h) - 2.5).abs() < 1e-9, "typed 2.5°, got {}", angle(&h));
-    assert!(crop_fits(&h), "the Straighten value shrinks the crop to fit the photo");
+    assert!(
+        (angle(&h) - 2.5).abs() < 1e-9,
+        "typed 2.5°, got {}",
+        angle(&h)
+    );
+    assert!(
+        crop_fits(&h),
+        "the Straighten value shrinks the crop to fit the photo"
+    );
 }
 
 /// The angle next to the pointer reads like the Straighten value, in degrees.
 #[test]
 fn the_angle_reads_like_the_straighten_value() {
     use crate::panels::detail::crop_angle_label;
-    assert_eq!(crop_angle_label(0.0), "0.00°", "as the Angle field shows it at rest");
+    assert_eq!(
+        crop_angle_label(0.0),
+        "0.00°",
+        "as the Angle field shows it at rest"
+    );
     assert_eq!(crop_angle_label(2.5), "+2.50°");
     assert_eq!(crop_angle_label(-12.254), "-12.25°");
-    assert_eq!(crop_angle_label(-0.001), "0.00°", "no minus zero, and every zero the same");
+    assert_eq!(
+        crop_angle_label(-0.001),
+        "0.00°",
+        "no minus zero, and every zero the same"
+    );
 }
 
 /// Hovering the Straighten value says that a value can be typed there.
@@ -119,11 +169,18 @@ fn the_straighten_value_says_it_can_be_typed() {
     let r = h.request("ui.hoverWidget", json!({"id": "sliderValue:crop.angle"}), T);
     assert_eq!(r["ok"], true, "{r}");
     // tooltips wait for the pointer to rest
-    let _ = h.step_until(Duration::from_secs(5), |h| h.painted_text().iter().any(|t| t.contains("type")));
+    let _ = h.step_until(Duration::from_secs(5), |h| {
+        h.painted_text().iter().any(|t| t.contains("type"))
+    });
     assert!(
-        h.painted_text().iter().any(|t| t == "Click to type a value"),
+        h.painted_text()
+            .iter()
+            .any(|t| t == "Click to type a value"),
         "{:?}",
-        h.painted_text().iter().filter(|t| t.contains("lick")).collect::<Vec<_>>()
+        h.painted_text()
+            .iter()
+            .filter(|t| t.contains("lick"))
+            .collect::<Vec<_>>()
     );
 }
 
@@ -133,8 +190,12 @@ fn the_straighten_value_says_it_can_be_typed() {
 fn command_held_shows_the_straighten_crosshair() {
     let mut h = crop_tool();
     let img = h.app.image_rect.expect("the photo on screen");
-    h.events.push(egui::Event::ModifiersChanged(egui::Modifiers::COMMAND));
-    h.events.push(egui::Event::PointerMoved(egui::pos2(img.left() - 24.0, img.center().y)));
+    h.events
+        .push(egui::Event::ModifiersChanged(egui::Modifiers::COMMAND));
+    h.events.push(egui::Event::PointerMoved(egui::pos2(
+        img.left() - 24.0,
+        img.center().y,
+    )));
     h.settle(SETTLE);
     assert_eq!(h.last_cursor, egui::CursorIcon::Crosshair);
     assert!(!has(&h, "cropRotateCursor"));
@@ -156,8 +217,15 @@ fn the_crop_panel_has_an_angle_field() {
     let r = h.request("ui.key", json!({"key": "Enter"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!((angle(&h) + 3.25).abs() < 1e-9, "typed -3.25°, got {}", angle(&h));
-    assert!(crop_fits(&h), "the Angle field shrinks the crop to fit the photo");
+    assert!(
+        (angle(&h) + 3.25).abs() < 1e-9,
+        "typed -3.25°, got {}",
+        angle(&h)
+    );
+    assert!(
+        crop_fits(&h),
+        "the Angle field shrinks the crop to fit the photo"
+    );
 }
 
 /// Rotating with the pointer at the canvas's corner keeps the angle readout on the canvas (and so
@@ -168,7 +236,10 @@ fn the_readout_stays_on_the_canvas() {
     let img = h.app.image_rect.expect("the photo on screen");
     let canvas = h.app.canvas_rect.expect("the canvas");
     let corner = canvas.right_bottom() - egui::vec2(4.0, 4.0);
-    let (x, y) = ((corner.x - img.left()) / img.width(), (corner.y - img.top()) / img.height());
+    let (x, y) = (
+        (corner.x - img.left()) / img.width(),
+        (corner.y - img.top()) / img.height(),
+    );
     let r = h.request(
         "ui.pointer",
         json!({"events": [{"kind": "down", "x": x, "y": y - 0.1}, {"kind": "drag", "x": x, "y": y - 0.05}, {"kind": "drag", "x": x, "y": y}]}),
@@ -176,7 +247,13 @@ fn the_readout_stays_on_the_canvas() {
     );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    let readout = h.app.widgets.iter().find(|(w, _)| w == "cropAngleReadout").map(|(_, r)| *r).expect("the readout while rotating");
+    let readout = h
+        .app
+        .widgets
+        .iter()
+        .find(|(w, _)| w == "cropAngleReadout")
+        .map(|(_, r)| *r)
+        .expect("the readout while rotating");
     assert!(canvas.contains_rect(readout), "{readout:?} in {canvas:?}");
 }
 
@@ -185,11 +262,19 @@ fn the_readout_stays_on_the_canvas() {
 fn dragging_the_angle_field_is_one_undo_step() {
     let mut h = crop_tool();
     let undo = h.app.session.undo.len();
-    let r = h.request("ui.dragWidget", json!({"id": "cropAngleField", "dx": 40.0, "dy": 0.0, "steps": 6}), T);
+    let r = h.request(
+        "ui.dragWidget",
+        json!({"id": "cropAngleField", "dx": 40.0, "dy": 0.0, "steps": 6}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     assert!(angle(&h) > 0.0, "dragged right: {}", angle(&h));
-    assert_eq!(h.app.session.undo.len(), undo + 1, "one step for the whole drag");
+    assert_eq!(
+        h.app.session.undo.len(),
+        undo + 1,
+        "one step for the whole drag"
+    );
 }
 
 /// Typing into the Angle field one key at a time applies the angle once, on Return: no undo step
@@ -211,11 +296,19 @@ fn typing_in_the_angle_field_applies_on_return() {
         assert_eq!(r["ok"], true, "{r}");
         h.settle(SETTLE);
     }
-    assert_eq!((angle(&h), h.app.session.undo.len()), (before, undo), "nothing applied while typing");
+    assert_eq!(
+        (angle(&h), h.app.session.undo.len()),
+        (before, undo),
+        "nothing applied while typing"
+    );
     let r = h.request("ui.key", json!({"key": "Enter"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!((angle(&h) + 3.25).abs() < 1e-9, "applied on Return: {}", angle(&h));
+    assert!(
+        (angle(&h) + 3.25).abs() < 1e-9,
+        "applied on Return: {}",
+        angle(&h)
+    );
     assert_eq!(h.app.session.undo.len(), undo + 1, "as one undo step");
 }
 
@@ -226,7 +319,10 @@ fn the_readout_follows_the_pointer_in_the_margin() {
     let mut h = crop_tool();
     let img = h.app.image_rect.expect("the photo on screen");
     let canvas = h.app.canvas_rect.expect("the canvas");
-    assert!(img.left() - canvas.left() > 150.0, "this test needs a margin beside the photo");
+    assert!(
+        img.left() - canvas.left() > 150.0,
+        "this test needs a margin beside the photo"
+    );
     let at = egui::pos2(canvas.left() + 40.0, img.center().y);
     let x = (at.x - img.left()) / img.width();
     let r = h.request(
@@ -236,8 +332,17 @@ fn the_readout_follows_the_pointer_in_the_margin() {
     );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    let readout = h.app.widgets.iter().find(|(w, _)| w == "cropAngleReadout").map(|(_, r)| *r).expect("the readout while rotating");
-    assert!(readout.distance_to_pos(at) < 60.0, "{readout:?} near {at:?}");
+    let readout = h
+        .app
+        .widgets
+        .iter()
+        .find(|(w, _)| w == "cropAngleReadout")
+        .map(|(_, r)| *r)
+        .expect("the readout while rotating");
+    assert!(
+        readout.distance_to_pos(at) < 60.0,
+        "{readout:?} near {at:?}"
+    );
 }
 
 /// Placing the readout never panics, whatever the bounds (a NaN or an empty rect).
@@ -245,11 +350,19 @@ fn the_readout_follows_the_pointer_in_the_margin() {
 fn placing_the_readout_never_panics() {
     use crate::panels::detail::readout_rect;
     let size = egui::vec2(50.0, 20.0);
-    for bounds in [egui::Rect::NAN, egui::Rect::NOTHING, egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(10.0, 10.0))] {
+    for bounds in [
+        egui::Rect::NAN,
+        egui::Rect::NOTHING,
+        egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(10.0, 10.0)),
+    ] {
         let r = readout_rect(egui::pos2(5.0, 5.0), size, bounds);
         assert_eq!(r.size(), size, "{bounds:?}");
     }
-    let r = readout_rect(egui::pos2(f32::NAN, 5.0), size, egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0)));
+    let r = readout_rect(
+        egui::pos2(f32::NAN, 5.0),
+        size,
+        egui::Rect::from_min_size(egui::pos2(0.0, 0.0), egui::vec2(100.0, 100.0)),
+    );
     assert_eq!(r.size(), size);
 }
 
@@ -271,8 +384,16 @@ fn escape_in_the_angle_field_keeps_the_angle() {
     let r = h.request("ui.key", json!({"key": "Escape"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert_eq!((angle(&h), h.app.session.undo.len()), (before, undo), "Esc applied nothing");
-    assert_eq!(h.app.ui.right, crate::state::RightPanel::Crop, "and only left the field");
+    assert_eq!(
+        (angle(&h), h.app.session.undo.len()),
+        (before, undo),
+        "Esc applied nothing"
+    );
+    assert_eq!(
+        h.app.ui.right,
+        crate::state::RightPanel::Crop,
+        "and only left the field"
+    );
 }
 
 /// Leaving the Angle field another way than Esc (Tab here) applies the typed angle, as Return does.
@@ -293,7 +414,11 @@ fn leaving_the_angle_field_applies_the_angle() {
     let r = h.request("ui.key", json!({"key": "Tab"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!((angle(&h) - 4.5).abs() < 1e-9, "applied on leaving: {}", angle(&h));
+    assert!(
+        (angle(&h) - 4.5).abs() < 1e-9,
+        "applied on leaving: {}",
+        angle(&h)
+    );
     assert_eq!(h.app.session.undo.len(), undo + 1);
 }
 
@@ -329,7 +454,10 @@ fn a_rotation_cut_short_leaves_nothing_behind() {
     assert!(has(&h, "cropAngleReadout"), "rotating");
     for (method, params) in [
         ("engine.execute", json!({"command": "tool.done"})),
-        ("ui.pointer", json!({"events": [{"kind": "up", "x": -0.05, "y": 0.3}]})),
+        (
+            "ui.pointer",
+            json!({"events": [{"kind": "up", "x": -0.05, "y": 0.3}]}),
+        ),
         ("engine.execute", json!({"command": "panel.crop"})),
     ] {
         let r = h.request(method, params, T);
@@ -361,7 +489,11 @@ fn the_angle_field_reads_angles_as_people_type_them() {
         let r = h.request("ui.key", json!({"key": "Enter"}), T);
         assert_eq!(r["ok"], true, "{r}");
         h.settle(SETTLE);
-        assert!((angle(&h) - want).abs() < 1e-9, "{typed:?}: want {want}, got {}", angle(&h));
+        assert!(
+            (angle(&h) - want).abs() < 1e-9,
+            "{typed:?}: want {want}, got {}",
+            angle(&h)
+        );
     }
 }
 
@@ -369,12 +501,19 @@ fn the_angle_field_reads_angles_as_people_type_them() {
 #[test]
 fn the_angle_field_writes_the_angle_like_the_readout() {
     let mut h = crop_tool();
-    let r = h.request("engine.execute", json!({"command": "crop.straighten", "params": {"angle": 2.5}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "crop.straighten", "params": {"angle": 2.5}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     let texts = h.painted_text();
     // the field's number follows its label (its "°" is painted on its own)
-    let field = texts.iter().position(|t| t == "Angle").and_then(|i| texts.get(i + 1));
+    let field = texts
+        .iter()
+        .position(|t| t == "Angle")
+        .and_then(|i| texts.get(i + 1));
     assert_eq!(field.map(String::as_str), Some("+2.50"), "{texts:?}");
 }
 
@@ -387,31 +526,58 @@ fn the_angle_field_writes_the_angle_like_the_readout() {
 fn rotating_the_crop_dims_nothing_inside_the_box() {
     let mut h = crop_tool();
     let plain = h.paint();
-    let r = h.request("engine.execute", json!({"command": "develop.set", "params": {"control": "crop.angle", "value": -45.0}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "develop.set", "params": {"control": "crop.angle", "value": -45.0}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
     assert_eq!(angle(&h), -45.0);
     let rotated = h.paint();
     let img = h.app.image_rect.expect("the photo on screen");
-    let corner = |i: usize| h.app.widgets.iter().find(|(w, _)| *w == format!("cropHandle:{i}")).map(|(_, r)| r.center()).expect("a corner handle");
+    let corner = |i: usize| {
+        h.app
+            .widgets
+            .iter()
+            .find(|(w, _)| *w == format!("cropHandle:{i}"))
+            .map(|(_, r)| r.center())
+            .expect("a corner handle")
+    };
     let c = [corner(0), corner(1), corner(2), corner(3)];
     let at = |u: f32, v: f32| c[0] + (c[1] - c[0]) * u + (c[3] - c[0]) * v;
-    let pixel = |im: &egui::ColorImage, p: egui::Pos2| im.pixels[p.y.round() as usize * im.size[0] + p.x.round() as usize];
+    let pixel = |im: &egui::ColorImage, p: egui::Pos2| {
+        im.pixels[p.y.round() as usize * im.size[0] + p.x.round() as usize]
+    };
     let mut checked = 0;
     for u in [0.15, 0.25, 0.5, 0.75, 0.85] {
         for v in [0.15, 0.25, 0.5, 0.75, 0.85] {
             let p = at(u, v);
             // clear of the 0° guide lines (thirds of the photo) and of the photo's edge
-            let thirds = |t: f32, lo: f32, len: f32| [1.0 / 3.0, 2.0 / 3.0].iter().any(|f| (t - (lo + f * len)).abs() < 3.0);
-            if !img.shrink(4.0).contains(p) || thirds(p.x, img.left(), img.width()) || thirds(p.y, img.top(), img.height()) {
+            let thirds = |t: f32, lo: f32, len: f32| {
+                [1.0 / 3.0, 2.0 / 3.0]
+                    .iter()
+                    .any(|f| (t - (lo + f * len)).abs() < 3.0)
+            };
+            if !img.shrink(4.0).contains(p)
+                || thirds(p.x, img.left(), img.width())
+                || thirds(p.y, img.top(), img.height())
+            {
                 continue;
             }
-            assert_eq!(pixel(&rotated, p), pixel(&plain, p), "inside the box at ({u}, {v}) = {p:?}");
+            assert_eq!(
+                pixel(&rotated, p),
+                pixel(&plain, p),
+                "inside the box at ({u}, {v}) = {p:?}"
+            );
             checked += 1;
         }
     }
     assert!(checked >= 12, "{checked} points inside the box compared");
     let corner_px = img.left_top() + egui::vec2(6.0, 6.0);
     let lum = |c: egui::Color32| u32::from(c.r()) + u32::from(c.g()) + u32::from(c.b());
-    assert!(lum(pixel(&rotated, corner_px)) < lum(pixel(&plain, corner_px)), "the photo's corner, outside the box, is dimmed");
+    assert!(
+        lum(pixel(&rotated, corner_px)) < lum(pixel(&plain, corner_px)),
+        "the photo's corner, outside the box, is dimmed"
+    );
 }

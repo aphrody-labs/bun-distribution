@@ -57,7 +57,9 @@ pub struct PtySession {
 
 impl std::fmt::Debug for PtySession {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("PtySession").field("exited", &self.has_exited()).finish_non_exhaustive()
+        f.debug_struct("PtySession")
+            .field("exited", &self.has_exited())
+            .finish_non_exhaustive()
     }
 }
 
@@ -91,7 +93,12 @@ impl PtySession {
         with_terminal_state: bool,
     ) -> Result<Self> {
         let pair = native_pty_system()
-            .openpty(PtySize { rows: cfg.rows, cols: cfg.cols, pixel_width: 0, pixel_height: 0 })
+            .openpty(PtySize {
+                rows: cfg.rows,
+                cols: cfg.cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
             .context("openpty")?;
 
         let shell = cfg.shell.clone().unwrap_or_else(default_shell);
@@ -104,7 +111,10 @@ impl PtySession {
             cmd.cwd(cwd);
         }
 
-        let mut child = pair.slave.spawn_command(cmd).with_context(|| format!("spawn {shell}"))?;
+        let mut child = pair
+            .slave
+            .spawn_command(cmd)
+            .with_context(|| format!("spawn {shell}"))?;
         // The slave is owned by the child now; the master carries I/O and resizes.
         drop(pair.slave);
         let killer = child.clone_killer();
@@ -118,7 +128,11 @@ impl PtySession {
         let writer_task = tokio::task::spawn_blocking(move || {
             let mut writer = writer;
             while let Some(data) = input_rx.blocking_recv() {
-                if writer.write_all(&data).and_then(|()| writer.flush()).is_err() {
+                if writer
+                    .write_all(&data)
+                    .and_then(|()| writer.flush())
+                    .is_err()
+                {
                     break;
                 }
             }
@@ -151,15 +165,17 @@ impl PtySession {
                         // Keep draining after the host leaves: on Windows, closing the
                         // pseudoconsole can wait until its last frame has been read.
                         if forwarding
-                            && output.blocking_send(PtyEvent::Output(buf[..n].to_vec())).is_err()
+                            && output
+                                .blocking_send(PtyEvent::Output(buf[..n].to_vec()))
+                                .is_err()
                         {
                             forwarding = false;
                         }
-                    },
+                    }
                     Err(e) => {
                         debug!("pty read error: {e}");
                         break;
-                    },
+                    }
                 }
             }
         });
@@ -173,7 +189,7 @@ impl PtySession {
                     Err(e) => {
                         debug!("wait for shell: {e}");
                         None
-                    },
+                    }
                 };
                 exited.store(true, Ordering::SeqCst);
                 code
@@ -219,19 +235,35 @@ impl PtySession {
 
     /// Queues `bytes` for the shell's input, waiting while the input queue is full.
     pub async fn write(&self, bytes: Vec<u8>) -> Result<()> {
-        let input = self.input.as_ref().ok_or_else(|| anyhow!("pty session is closed"))?;
-        input.send(bytes).await.map_err(|_| anyhow!("pty input is closed"))
+        let input = self
+            .input
+            .as_ref()
+            .ok_or_else(|| anyhow!("pty session is closed"))?;
+        input
+            .send(bytes)
+            .await
+            .map_err(|_| anyhow!("pty input is closed"))
     }
 
     /// Resizes the pty; the shell receives the new size right away.
     pub fn resize(&self, cols: u16, rows: u16) -> Result<()> {
         let guard = lock(&self.master);
-        let master = guard.as_ref().ok_or_else(|| anyhow!("pty session has ended"))?;
+        let master = guard
+            .as_ref()
+            .ok_or_else(|| anyhow!("pty session has ended"))?;
         master
-            .resize(PtySize { rows, cols, pixel_width: 0, pixel_height: 0 })
+            .resize(PtySize {
+                rows,
+                cols,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
             .map_err(|e| anyhow!("resize pty: {e}"))?;
         if let Some(terminal) = &self.terminal_state {
-            terminal.lock().unwrap_or_else(PoisonError::into_inner).resize(cols, rows);
+            terminal
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .resize(cols, rows);
         }
         Ok(())
     }
@@ -289,7 +321,11 @@ mod tests {
 
     /// A shell present on every CI image that loads no user profile, run with `script`.
     fn run(script: &str) -> PtyConfig {
-        let (shell, flag) = if cfg!(windows) { ("cmd", "/c") } else { ("/bin/sh", "-c") };
+        let (shell, flag) = if cfg!(windows) {
+            ("cmd", "/c")
+        } else {
+            ("/bin/sh", "-c")
+        };
         PtyConfig {
             shell: Some(shell.to_owned()),
             args: vec![flag.to_owned(), script.to_owned()],
@@ -306,7 +342,10 @@ mod tests {
                 Ok(Some(PtyEvent::Output(bytes))) => out.extend_from_slice(&bytes),
                 Ok(Some(PtyEvent::Exit { code })) => return (out, code),
                 Ok(None) => panic!("channel closed without an exit event"),
-                Err(_) => panic!("timed out; output so far: {:?}", String::from_utf8_lossy(&out)),
+                Err(_) => panic!(
+                    "timed out; output so far: {:?}",
+                    String::from_utf8_lossy(&out)
+                ),
             }
         }
     }
@@ -337,7 +376,12 @@ mod tests {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .snapshot();
-        assert!(snapshot.lines.iter().any(|line| line.contains("aphrody-rio-vt")));
+        assert!(
+            snapshot
+                .lines
+                .iter()
+                .any(|line| line.contains("aphrody-rio-vt"))
+        );
         session.close().await;
     }
 
@@ -377,7 +421,10 @@ mod tests {
             ..PtyConfig::default()
         };
         let session = PtySession::spawn(&cfg, tx).expect("spawn");
-        session.write(b"echo ready\r".to_vec()).await.expect("write");
+        session
+            .write(b"echo ready\r".to_vec())
+            .await
+            .expect("write");
         let started = tokio::time::Instant::now();
         session.close().await;
         assert!(started.elapsed() < TEARDOWN_TIMEOUT + Duration::from_secs(2));
@@ -390,7 +437,10 @@ mod tests {
         let (tx, mut rx) = mpsc::channel(16);
         let session = PtySession::spawn(&run("exit 0"), tx).expect("spawn");
         collect(&mut rx).await;
-        assert!(session.resize(100, 30).is_err(), "the master is closed once the shell exits");
+        assert!(
+            session.resize(100, 30).is_err(),
+            "the master is closed once the shell exits"
+        );
         session.close().await;
     }
 }

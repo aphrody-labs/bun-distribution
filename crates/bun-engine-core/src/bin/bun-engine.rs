@@ -23,10 +23,18 @@ fn main() -> ExitCode {
             args.next();
             let shell = std::env::current_exe()
                 .ok()
-                .and_then(|exe| Some(exe.parent()?.join(format!("bun-os-shell{}", std::env::consts::EXE_SUFFIX))))
+                .and_then(|exe| {
+                    Some(
+                        exe.parent()?
+                            .join(format!("bun-os-shell{}", std::env::consts::EXE_SUFFIX)),
+                    )
+                })
                 .filter(|path| path.is_file());
             let Some(shell) = shell else {
-                return fail("bun-os-shell is not built next to bun-engine (cargo build -p bun-os-shell)".into());
+                return fail(
+                    "bun-os-shell is not built next to bun-engine (cargo build -p bun-os-shell)"
+                        .into(),
+                );
             };
             return match std::process::Command::new(shell).args(args).status() {
                 Ok(status) => ExitCode::from(status.code().unwrap_or(1).clamp(0, 255) as u8),
@@ -62,7 +70,9 @@ fn main() -> ExitCode {
     let (mut fsr, mut sharpness) = (false, 0.25_f32);
     #[cfg(feature = "steam")]
     let mut steam_args = Vec::<String>::new();
-    let mut cmdline = String::from("console=ttyS0 earlyprintk=serial,ttyS0 reboot=k panic=1 pci=off nomodule noapic");
+    let mut cmdline = String::from(
+        "console=ttyS0 earlyprintk=serial,ttyS0 reboot=k panic=1 pci=off nomodule noapic",
+    );
     while let Some(a) = args.next() {
         match a.as_str() {
             "--frames" => frames = args.next().and_then(|v| v.parse().ok()).unwrap_or(frames),
@@ -76,7 +86,12 @@ fn main() -> ExitCode {
             },
             "--trace" => trace = args.next().map(PathBuf::from),
             "--fsr" => fsr = true,
-            "--sharpness" => sharpness = args.next().and_then(|v| v.parse().ok()).unwrap_or(sharpness),
+            "--sharpness" => {
+                sharpness = args
+                    .next()
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(sharpness)
+            }
             #[cfg(feature = "steam")]
             flag if flag == "--steam" || flag.starts_with("--steam-") => {
                 steam_args.push(a.clone());
@@ -96,20 +111,27 @@ fn main() -> ExitCode {
     };
     let mut machine: Box<dyn Machine> = match system.as_str() {
         #[cfg(any(feature = "nds", feature = "ctr"))]
-        "nds" | "3ds" => match bun_engine::machine::handheld::HandheldMachine::from_path(std::path::Path::new(&path)) {
+        "nds" | "3ds" => match bun_engine::machine::handheld::HandheldMachine::from_path(
+            std::path::Path::new(&path),
+        ) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
         "psx" => {
             let Some(bios) = bios.as_ref().and_then(|p| fs::read(p).ok()) else {
-                return fail("psx needs --bios <512 KiB BIOS> (bep add free-firmware openbios)".into());
+                return fail(
+                    "psx needs --bios <512 KiB BIOS> (bep add free-firmware openbios)".into(),
+                );
             };
             match bun_engine::machine::psx::Psx::new(&bios, &rom) {
                 Ok(m) => Box::new(m),
                 Err(e) => return fail(e),
             }
         }
-        "gba" => match bun_engine::machine::gba::Gba::from_rom(&rom, bios.as_ref().and_then(|p| fs::read(p).ok()).as_deref()) {
+        "gba" => match bun_engine::machine::gba::Gba::from_rom(
+            &rom,
+            bios.as_ref().and_then(|p| fs::read(p).ok()).as_deref(),
+        ) {
             Ok(m) => Box::new(m),
             Err(e) => return fail(e),
         },
@@ -146,7 +168,11 @@ fn main() -> ExitCode {
         },
         #[cfg(feature = "cpp-host")]
         core @ ("melonds" | "dolphin" | "azahar" | "kyty") => {
-            match bun_engine::machine::cpp_host::CppHost::open(core, std::path::Path::new(&path), bios.as_deref()) {
+            match bun_engine::machine::cpp_host::CppHost::open(
+                core,
+                std::path::Path::new(&path),
+                bios.as_deref(),
+            ) {
                 Ok(m) => Box::new(m),
                 Err(e) => return fail(e),
             }
@@ -156,7 +182,12 @@ fn main() -> ExitCode {
     if !headless && !machine.screens().is_empty() {
         // One Bevy app: window, input, audio and the machine plugin.
         let options = bun_engine::runtime::run::RunOptions {
-            title: format!("Bun Engine - {}", std::path::Path::new(&path).file_stem().map_or_else(Default::default, |s| s.to_string_lossy())),
+            title: format!(
+                "Bun Engine - {}",
+                std::path::Path::new(&path)
+                    .file_stem()
+                    .map_or_else(Default::default, |s| s.to_string_lossy())
+            ),
             frames: (frames != u64::MAX).then_some(frames),
             out,
             fsr,
@@ -169,7 +200,11 @@ fn main() -> ExitCode {
             None
         } else {
             match bun_engine::steam::options::parse(&steam_args) {
-                Ok(steam) => Some(bun_engine::steam::SteamPlugin::new(steam, system.as_str(), path.as_str())),
+                Ok(steam) => Some(bun_engine::steam::SteamPlugin::new(
+                    steam,
+                    system.as_str(),
+                    path.as_str(),
+                )),
                 Err(e) => return fail(e),
             }
         };
@@ -185,7 +220,9 @@ fn main() -> ExitCode {
         }
         return match (report.failure, exit) {
             (Some(e), _) => fail(e),
-            (None, bun_engine::bevy::app::AppExit::Error(code)) => fail(format!("exited with code {code}")),
+            (None, bun_engine::bevy::app::AppExit::Error(code)) => {
+                fail(format!("exited with code {code}"))
+            }
             (None, _) => ExitCode::SUCCESS,
         };
     }
@@ -211,8 +248,11 @@ fn main() -> ExitCode {
         }
         flush(&mut *machine);
     }
-    println!("
-{}: {done} frames", machine.name());
+    println!(
+        "
+{}: {done} frames",
+        machine.name()
+    );
     if let Some(why) = machine.diagnostic() {
         eprintln!("stopped: {why}");
     }
@@ -236,7 +276,12 @@ fn trace_line(frame: u64, keys: u32, screens: &[bun_engine::machine::Screen]) ->
         .iter()
         .map(|s| {
             let mut h: u64 = 0xcbf2_9ce4_8422_2325;
-            for b in (s.width as u64).to_le_bytes().iter().chain(&(s.height as u64).to_le_bytes()).chain(&s.rgb) {
+            for b in (s.width as u64)
+                .to_le_bytes()
+                .iter()
+                .chain(&(s.height as u64).to_le_bytes())
+                .chain(&s.rgb)
+            {
                 h = (h ^ u64::from(*b)).wrapping_mul(0x0100_0000_01b3);
             }
             format!("\"{h:016x}\"")

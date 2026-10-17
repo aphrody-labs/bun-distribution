@@ -70,8 +70,14 @@ fn source(s: &Session, v: &Value, fmt: &str) -> Option<String> {
                 _ => Some(String::new()),
             }
         }
-        "rtf" => p::str(v, "rtf").map(str::to_string).or_else(|| clip_text(s, v).filter(|t| looks_like_rtf(t))).and_then(non_empty),
-        "html" => p::str(v, "html").map(str::to_string).or_else(|| clip_text(s, v).filter(|t| looks_like_html(t))).and_then(non_empty),
+        "rtf" => p::str(v, "rtf")
+            .map(str::to_string)
+            .or_else(|| clip_text(s, v).filter(|t| looks_like_rtf(t)))
+            .and_then(non_empty),
+        "html" => p::str(v, "html")
+            .map(str::to_string)
+            .or_else(|| clip_text(s, v).filter(|t| looks_like_html(t)))
+            .and_then(non_empty),
         "picture" => p::str(v, "picture").map(str::to_string).and_then(non_empty),
         "text" => clip_text(s, v).and_then(non_empty),
         _ => None,
@@ -80,7 +86,11 @@ fn source(s: &Session, v: &Value, fmt: &str) -> Option<String> {
 
 /// Formats the clipboard can be pasted as, best first.
 pub fn available(s: &Session, v: &Value) -> Vec<&'static str> {
-    FORMATS.iter().map(|(id, _)| *id).filter(|id| source(s, v, id).is_some()).collect()
+    FORMATS
+        .iter()
+        .map(|(id, _)| *id)
+        .filter(|id| source(s, v, id).is_some())
+        .collect()
 }
 
 fn formats_json(ids: &[&str]) -> Value {
@@ -90,11 +100,17 @@ fn formats_json(ids: &[&str]) -> Value {
 fn paste_special(s: &mut Session, v: &Value) -> CmdResult {
     for k in ["text", "html", "rtf"] {
         if p::str(v, k).is_some_and(|t| t.len() > MAX_PASTE_BYTES) {
-            return Err(CmdError::Params(format!("`{k}` is larger than {} MB", MAX_PASTE_BYTES >> 20)));
+            return Err(CmdError::Params(format!(
+                "`{k}` is larger than {} MB",
+                MAX_PASTE_BYTES >> 20
+            )));
         }
     }
     if p::str(v, "picture").is_some_and(|t| t.len() > MAX_PICTURE_BYTES) {
-        return Err(CmdError::Params(format!("`picture` is larger than {} MB", MAX_PICTURE_BYTES >> 20)));
+        return Err(CmdError::Params(format!(
+            "`picture` is larger than {} MB",
+            MAX_PICTURE_BYTES >> 20
+        )));
     }
     let ids = available(s, v);
     let Some(fmt) = p::str(v, "as") else {
@@ -114,13 +130,20 @@ fn paste_special(s: &mut Session, v: &Value) -> CmdResult {
         "html" => "html",
         "picture" | "png" | "image" => "picture",
         "text" | "unformatted" | "plain" => "text",
-        other => return Err(CmdError::Params(format!("unknown format `{other}` (formatted, rtf, html, picture or text)"))),
+        other => {
+            return Err(CmdError::Params(format!(
+                "unknown format `{other}` (formatted, rtf, html, picture or text)"
+            )));
+        }
     };
     let Some(src) = source(s, v, fmt) else {
         return Err(CmdError::Failed(if ids.is_empty() {
             "the clipboard is empty".into()
         } else {
-            format!("the clipboard has no {fmt} content (available: {})", ids.join(", "))
+            format!(
+                "the clipboard has no {fmt} content (available: {})",
+                ids.join(", ")
+            )
         }));
     };
     let frag = match fmt {
@@ -135,9 +158,16 @@ fn paste_special(s: &mut Session, v: &Value) -> CmdResult {
             r["pastedAs"] = json!(fmt);
             return Ok(r);
         }
-        "formatted" => s.clipboard.clone().ok_or_else(|| CmdError::Failed("the clipboard is empty".into()))?,
+        "formatted" => s
+            .clipboard
+            .clone()
+            .ok_or_else(|| CmdError::Failed("the clipboard is empty".into()))?,
         "html" => adopt(s, wordcraft_formats::html::import(html_fragment(&src))),
-        _ => adopt(s, wordcraft_formats::rtf::import(src.as_bytes()).map_err(|e| CmdError::Failed(format!("bad RTF: {e}")))?),
+        _ => adopt(
+            s,
+            wordcraft_formats::rtf::import(src.as_bytes())
+                .map_err(|e| CmdError::Failed(format!("bad RTF: {e}")))?,
+        ),
     };
     insert(s, frag)?;
     let mut r = sel_result(s)?;
@@ -168,7 +198,9 @@ pub fn html_fragment(html: &str) -> &str {
 /// Whether an imported document has anything to paste: text, a table, or a picture it carries.
 fn has_content(d: &Document) -> bool {
     d.body.iter().any(|b| match &**b {
-        Block::Para(p) => !p.text.trim().is_empty() || (!p.objects.is_empty() && !d.media.is_empty()),
+        Block::Para(p) => {
+            !p.text.trim().is_empty() || (!p.objects.is_empty() && !d.media.is_empty())
+        }
         Block::Table(_) => true,
     })
 }
@@ -177,13 +209,16 @@ fn has_content(d: &Document) -> bool {
 /// fragment of this document. `None` when neither is given, either is larger than
 /// [`MAX_PASTE_BYTES`], or it holds nothing to paste (the caller pastes the text then).
 pub fn rich_fragment(s: &mut Session, v: &Value) -> Option<Fragment> {
-    let fits = |k: &str| p::str(v, k).filter(|t| !t.trim().is_empty() && t.len() <= MAX_PASTE_BYTES);
+    let fits =
+        |k: &str| p::str(v, k).filter(|t| !t.trim().is_empty() && t.len() <= MAX_PASTE_BYTES);
     let doc = fits("html").map(|html| wordcraft_formats::html::import(html_fragment(html)));
     let doc = match doc.filter(has_content) {
         Some(d) => d,
         None => {
             let rtf = fits("rtf").filter(|t| looks_like_rtf(t))?;
-            wordcraft_formats::rtf::import(rtf.as_bytes()).ok().filter(has_content)?
+            wordcraft_formats::rtf::import(rtf.as_bytes())
+                .ok()
+                .filter(has_content)?
         }
     };
     Some(adopt(s, doc))
@@ -216,7 +251,11 @@ pub fn merge_formatting(s: &Session, frag: &mut Fragment) {
     base.del = None;
     base.fmt_change = None;
     let (start, _) = s.sel.ordered();
-    let para = s.doc.para_at(&start).map(|p| p.props.clone()).unwrap_or_default();
+    let para = s
+        .doc
+        .para_at(&start)
+        .map(|p| p.props.clone())
+        .unwrap_or_default();
     for b in &mut frag.blocks {
         each_para(b, 0, &mut |p| {
             p.props = para.clone();
@@ -228,7 +267,10 @@ pub fn merge_formatting(s: &Session, frag: &mut Fragment) {
                 if src.italic == Some(true) {
                     run.props.italic = Some(true);
                 }
-                if src.underline.is_some_and(|u| u != wordcraft_doc::props::Underline::None) {
+                if src
+                    .underline
+                    .is_some_and(|u| u != wordcraft_doc::props::Underline::None)
+                {
                     run.props.underline = src.underline;
                 }
                 if src.strike == Some(true) {
@@ -312,20 +354,45 @@ fn adopt(s: &mut Session, src: Document) -> Fragment {
         let ext = key.rsplit_once('.').map(|(_, e)| e).unwrap_or("png");
         media.insert(key.clone(), s.doc.add_media(data.to_vec(), ext));
     }
-    let next_abs = s.doc.numbering.abstracts.iter().map(|a| a.id.saturating_add(1)).max().unwrap_or(0);
+    let next_abs = s
+        .doc
+        .numbering
+        .abstracts
+        .iter()
+        .map(|a| a.id.saturating_add(1))
+        .max()
+        .unwrap_or(0);
     let mut abs_map = BTreeMap::new();
     for (i, a) in src.numbering.abstracts.iter().enumerate() {
         let id = next_abs.saturating_add(i as u32);
         abs_map.insert(a.id, id);
-        s.doc.numbering.abstracts.push(wordcraft_doc::numbering::AbstractNum { id, ..a.clone() });
+        s.doc
+            .numbering
+            .abstracts
+            .push(wordcraft_doc::numbering::AbstractNum { id, ..a.clone() });
     }
-    let next_num = s.doc.numbering.nums.iter().map(|n| n.id.saturating_add(1)).max().unwrap_or(1).max(1);
+    let next_num = s
+        .doc
+        .numbering
+        .nums
+        .iter()
+        .map(|n| n.id.saturating_add(1))
+        .max()
+        .unwrap_or(1)
+        .max(1);
     let mut num_map = BTreeMap::new();
     for (i, n) in src.numbering.nums.iter().enumerate() {
         let id = next_num.saturating_add(i as u32);
         num_map.insert(n.id, id);
-        let abstract_id = abs_map.get(&n.abstract_id).copied().unwrap_or(n.abstract_id);
-        s.doc.numbering.nums.push(wordcraft_doc::numbering::Num { id, abstract_id, ..n.clone() });
+        let abstract_id = abs_map
+            .get(&n.abstract_id)
+            .copied()
+            .unwrap_or(n.abstract_id);
+        s.doc.numbering.nums.push(wordcraft_doc::numbering::Num {
+            id,
+            abstract_id,
+            ..n.clone()
+        });
     }
     for st in &src.styles.styles {
         if s.doc.styles.get(&st.id).is_none() {
@@ -355,6 +422,10 @@ fn adopt(s: &mut Session, src: Document) -> Fragment {
         });
     }
     // Text box stories the imported shapes show; pasting gives each a new story of its own.
-    let parts = src.parts.into_iter().filter(|(_, p)| p.kind == wordcraft_doc::PartKind::TextBox).collect();
+    let parts = src
+        .parts
+        .into_iter()
+        .filter(|(_, p)| p.kind == wordcraft_doc::PartKind::TextBox)
+        .collect();
     Fragment { blocks, parts }
 }

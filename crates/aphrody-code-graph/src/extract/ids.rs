@@ -49,14 +49,20 @@ mod tests {
 
     #[test]
     fn ids_match_the_graphify_recipe() {
-        assert_eq!(make_id(&["crates/ai/rag/src/store.rs"]), "crates_ai_rag_src_store_rs");
+        assert_eq!(
+            make_id(&["crates/ai/rag/src/store.rs"]),
+            "crates_ai_rag_src_store_rs"
+        );
         assert_eq!(
             make_id(&[file_stem("crates/ai/rag/src/store.rs"), "RagStore"]),
             "crates_ai_rag_src_store_ragstore"
         );
         assert_eq!(make_id(&["a_b", ".open"]), "a_b_open");
         assert_eq!(normalize_id("__Hello,  World__"), "hello_world");
-        assert_eq!(normalize_id(&normalize_id("İslem Yap")), normalize_id("İslem Yap"));
+        assert_eq!(
+            normalize_id(&normalize_id("İslem Yap")),
+            normalize_id("İslem Yap")
+        );
     }
 
     #[test]

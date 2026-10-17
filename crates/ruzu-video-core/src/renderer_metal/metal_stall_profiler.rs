@@ -27,9 +27,16 @@ pub(super) enum Operation {
 }
 
 const OPERATIONS: [Operation; COUNT] = [
-    Operation::ShaderBuild, Operation::MslCompile, Operation::RenderPipeline,
-    Operation::ComputePipeline, Operation::GeometryPipeline, Operation::TessellationPipeline,
-    Operation::GpuWait, Operation::Drawable, Operation::Upload, Operation::Download,
+    Operation::ShaderBuild,
+    Operation::MslCompile,
+    Operation::RenderPipeline,
+    Operation::ComputePipeline,
+    Operation::GeometryPipeline,
+    Operation::TessellationPipeline,
+    Operation::GpuWait,
+    Operation::Drawable,
+    Operation::Upload,
+    Operation::Download,
 ];
 
 #[derive(Clone, Copy, Default)]
@@ -55,10 +62,15 @@ impl Window {
     }
 
     fn present(&mut self, now: Instant) -> Option<(Duration, [Sample; COUNT])> {
-        let elapsed = self.previous.replace(now).map(|previous| now.duration_since(previous));
+        let elapsed = self
+            .previous
+            .replace(now)
+            .map(|previous| now.duration_since(previous));
         let samples = std::mem::take(&mut self.samples);
         self.frame += 1;
-        elapsed.filter(|elapsed| *elapsed >= THRESHOLD).map(|elapsed| (elapsed, samples))
+        elapsed
+            .filter(|elapsed| *elapsed >= THRESHOLD)
+            .map(|elapsed| (elapsed, samples))
     }
 }
 
@@ -90,7 +102,9 @@ impl Span {
 
 impl Drop for Span {
     fn drop(&mut self) {
-        let Some((origin, start, op, site)) = self.timing else { return };
+        let Some((origin, start, op, site)) = self.timing else {
+            return;
+        };
         let elapsed = start.elapsed();
         WINDOW.with(|window| window.borrow_mut().observe(op, elapsed));
         if elapsed >= THRESHOLD {

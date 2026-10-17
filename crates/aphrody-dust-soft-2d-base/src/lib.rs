@@ -8,11 +8,11 @@ pub mod render;
 
 use aphrody_dust_core::{
     gpu::{
-        SCREEN_WIDTH, Scanline,
         engine_2d::{
             AffineBgIndex, BgControl, BgIndex, BrightnessControl, ColorEffectsControl, Control,
             Role,
         },
+        Scanline, SCREEN_WIDTH,
     },
     utils::Bytes,
 };

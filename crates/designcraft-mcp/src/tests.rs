@@ -19,7 +19,12 @@ fn rpc(s: &mut Server, id: u64, method: &str, params: Value) -> Value {
 }
 
 fn call(s: &mut Server, name: &str, args: Value) -> Value {
-    let v = rpc(s, 99, "tools/call", json!({"name": name, "arguments": args}));
+    let v = rpc(
+        s,
+        99,
+        "tools/call",
+        json!({"name": name, "arguments": args}),
+    );
     assert!(v.get("error").is_none(), "{v}");
     v["result"].clone()
 }
@@ -32,11 +37,22 @@ fn ok(s: &mut Server, name: &str, args: Value) -> Value {
 }
 
 fn text_of(result: &Value) -> String {
-    result["content"].as_array().unwrap().iter().filter(|c| c["type"] == "text").map(|c| c["text"].as_str().unwrap().to_string()).collect()
+    result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|c| c["type"] == "text")
+        .map(|c| c["text"].as_str().unwrap().to_string())
+        .collect()
 }
 
 fn image_of(result: &Value) -> Vec<u8> {
-    let img = result["content"].as_array().unwrap().iter().find(|c| c["type"] == "image").expect("image block");
+    let img = result["content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["type"] == "image")
+        .expect("image block");
     assert_eq!(img["mimeType"], "image/png");
     base64_decode(img["data"].as_str().unwrap())
 }
@@ -55,17 +71,28 @@ const PNG_MAGIC: &[u8] = b"\x89PNG\r\n\x1a\n";
 fn framing_basics() {
     let mut s = server();
     assert_eq!(s.handle_line("   "), None);
-    assert_eq!(s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#), None);
+    assert_eq!(
+        s.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#),
+        None
+    );
     assert!(s.is_initialized());
     let v: Value = serde_json::from_str(&s.handle_line("{not json").unwrap()).unwrap();
     assert_eq!(v["error"]["code"], -32700);
     assert_eq!(v["id"], Value::Null);
-    let v: Value = serde_json::from_str(&s.handle_line(r#"{"jsonrpc":"2.0","id":"abc","method":"nope"}"#).unwrap()).unwrap();
+    let v: Value = serde_json::from_str(
+        &s.handle_line(r#"{"jsonrpc":"2.0","id":"abc","method":"nope"}"#)
+            .unwrap(),
+    )
+    .unwrap();
     assert_eq!(v["error"]["code"], -32601);
     assert_eq!(v["id"], "abc");
-    let v: Value = serde_json::from_str(&s.handle_line(r#"{"jsonrpc":"2.0","id":3}"#).unwrap()).unwrap();
+    let v: Value =
+        serde_json::from_str(&s.handle_line(r#"{"jsonrpc":"2.0","id":3}"#).unwrap()).unwrap();
     assert_eq!(v["error"]["code"], -32600);
-    assert_eq!(s.handle_line(r#"{"jsonrpc":"2.0","id":9,"result":{}}"#), None);
+    assert_eq!(
+        s.handle_line(r#"{"jsonrpc":"2.0","id":9,"result":{}}"#),
+        None
+    );
     assert_eq!(rpc(&mut s, 4, "ping", json!({}))["result"], json!({}));
     let v: Value = serde_json::from_str(
         &s.handle_line(r#"[{"jsonrpc":"2.0","id":1,"method":"ping"},{"jsonrpc":"2.0","method":"notifications/initialized"}]"#).unwrap(),
@@ -73,7 +100,10 @@ fn framing_basics() {
     .unwrap();
     assert_eq!(v.as_array().unwrap().len(), 1);
     // tools/call without a name is a protocol error, not a tool error.
-    assert_eq!(rpc(&mut s, 5, "tools/call", json!({}))["error"]["code"], -32602);
+    assert_eq!(
+        rpc(&mut s, 5, "tools/call", json!({}))["error"]["code"],
+        -32602
+    );
 }
 
 #[test]
@@ -91,29 +121,56 @@ fn protocol_round_trip_over_serve() {
     .join("\n");
     let mut out = Vec::new();
     s.serve(input.as_bytes(), &mut out).unwrap();
-    let lines: Vec<Value> = String::from_utf8(out).unwrap().lines().map(|l| serde_json::from_str(l).unwrap()).collect();
-    assert_eq!(lines.len(), 5, "one reply per request, none for the notification");
+    let lines: Vec<Value> = String::from_utf8(out)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert_eq!(
+        lines.len(),
+        5,
+        "one reply per request, none for the notification"
+    );
     assert_eq!(lines[0]["result"]["protocolVersion"], PROTOCOL_VERSION);
     assert_eq!(lines[0]["result"]["serverInfo"]["name"], "designcraft");
     assert!(lines[0]["result"]["capabilities"]["tools"].is_object());
-    assert!(lines[0]["result"]["instructions"].as_str().unwrap().contains("headless"));
+    assert!(
+        lines[0]["result"]["instructions"]
+            .as_str()
+            .unwrap()
+            .contains("headless")
+    );
     let tools = lines[1]["result"]["tools"].as_array().unwrap();
     assert_eq!(tools.len(), tool_definitions().len());
     let listed: Value = serde_json::from_str(&text_of(&lines[2]["result"])).unwrap();
     assert_eq!(listed["count"], 1);
     assert_eq!(listed["commands"][0]["id"], "frame.create");
     let created: Value = serde_json::from_str(&text_of(&lines[3]["result"])).unwrap();
-    assert!(created["id"].is_u64() && created["story"].is_u64(), "{created}");
-    let doc: Value = serde_json::from_str(lines[4]["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
+    assert!(
+        created["id"].is_u64() && created["story"].is_u64(),
+        "{created}"
+    );
+    let doc: Value =
+        serde_json::from_str(lines[4]["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(doc["stories"][0]["preview"], "Hi");
 }
 
 #[test]
 fn initialize_negotiates_version() {
     let mut s = server();
-    let v = rpc(&mut s, 1, "initialize", json!({"protocolVersion": "2024-11-05"}));
+    let v = rpc(
+        &mut s,
+        1,
+        "initialize",
+        json!({"protocolVersion": "2024-11-05"}),
+    );
     assert_eq!(v["result"]["protocolVersion"], "2024-11-05");
-    let v = rpc(&mut s, 2, "initialize", json!({"protocolVersion": "1999-01-01"}));
+    let v = rpc(
+        &mut s,
+        2,
+        "initialize",
+        json!({"protocolVersion": "1999-01-01"}),
+    );
     assert_eq!(v["result"]["protocolVersion"], PROTOCOL_VERSION);
 }
 
@@ -124,11 +181,26 @@ fn tool_definitions_are_well_formed() {
     for t in &defs {
         let name = t["name"].as_str().unwrap();
         assert!(names.insert(name), "duplicate tool {name}");
-        assert!(name.chars().all(|c| c.is_ascii_lowercase() || c == '_'), "{name}");
-        assert!(t["description"].as_str().unwrap().len() > 20, "{name} needs a description");
+        assert!(
+            name.chars().all(|c| c.is_ascii_lowercase() || c == '_'),
+            "{name}"
+        );
+        assert!(
+            t["description"].as_str().unwrap().len() > 20,
+            "{name} needs a description"
+        );
         assert_eq!(t["inputSchema"]["type"], "object", "{name}");
-        for r in t["inputSchema"]["required"].as_array().into_iter().flatten() {
-            assert!(t["inputSchema"]["properties"].get(r.as_str().unwrap()).is_some(), "{name}: required `{r}` not in properties");
+        for r in t["inputSchema"]["required"]
+            .as_array()
+            .into_iter()
+            .flatten()
+        {
+            assert!(
+                t["inputSchema"]["properties"]
+                    .get(r.as_str().unwrap())
+                    .is_some(),
+                "{name}: required `{r}` not in properties"
+            );
         }
     }
     for want in [
@@ -163,7 +235,10 @@ fn tool_definitions_are_well_formed() {
     let mut s = server();
     for name in names {
         let r = call(&mut s, name, json!({}));
-        assert!(!text_of(&r).contains("unknown tool"), "{name} not dispatched");
+        assert!(
+            !text_of(&r).contains("unknown tool"),
+            "{name} not dispatched"
+        );
     }
 }
 
@@ -172,15 +247,35 @@ fn tool_definitions_are_well_formed() {
 #[test]
 fn builds_a_small_layout_and_renders_it() {
     let mut s = server();
-    let d = ok(&mut s, "new_document", json!({"width": 400, "height": 300, "margins": 24, "title": "Flyer"}));
+    let d = ok(
+        &mut s,
+        "new_document",
+        json!({"width": 400, "height": 300, "margins": 24, "title": "Flyer"}),
+    );
     assert_eq!(d["index"], 1);
-    let f = ok(&mut s, "execute", json!({"command": "frame.create", "params": {"rect": [24, 24, 376, 150], "content": "text"}}));
+    let f = ok(
+        &mut s,
+        "execute",
+        json!({"command": "frame.create", "params": {"rect": [24, 24, 376, 150], "content": "text"}}),
+    );
     let (frame, story) = (f["id"].as_u64().unwrap(), f["story"].as_u64().unwrap());
-    let st = ok(&mut s, "set_story_text", json!({"frame": frame, "text": "Summer Fair\nSaturday in the park"}));
+    let st = ok(
+        &mut s,
+        "set_story_text",
+        json!({"frame": frame, "text": "Summer Fair\nSaturday in the park"}),
+    );
     assert_eq!(st["id"], story);
     assert_eq!(st["paragraphs"], 2);
-    ok(&mut s, "execute", json!({"command": "selection.set", "params": {"ids": [frame]}}));
-    ok(&mut s, "execute", json!({"command": "type.char", "params": {"size": 28}}));
+    ok(
+        &mut s,
+        "execute",
+        json!({"command": "selection.set", "params": {"ids": [frame]}}),
+    );
+    ok(
+        &mut s,
+        "execute",
+        json!({"command": "type.char", "params": {"size": 28}}),
+    );
     let got = ok(&mut s, "get_story", json!({"story": story}));
     assert_eq!(got["text"], "Summer Fair\nSaturday in the park");
     assert!(got["lines"].as_u64().unwrap() >= 2);
@@ -190,11 +285,17 @@ fn builds_a_small_layout_and_renders_it() {
     let png = image_of(&r);
     assert!(png.starts_with(PNG_MAGIC));
     let info: Value = serde_json::from_str(&text_of(&r)).unwrap();
-    assert_eq!((info["width"].as_u64(), info["height"].as_u64()), (Some(400), Some(300)));
+    assert_eq!(
+        (info["width"].as_u64(), info["height"].as_u64()),
+        (Some(400), Some(300))
+    );
     // The page isn't blank: dark text pixels on white paper.
     let img = image::load_from_memory(&png).unwrap().to_rgba8();
     assert_eq!(img.dimensions(), (400, 300));
-    assert!(img.pixels().any(|p| p.0[0] < 128 && p.0[3] > 200), "no text was drawn");
+    assert!(
+        img.pixels().any(|p| p.0[0] < 128 && p.0[3] > 200),
+        "no text was drawn"
+    );
 
     let doc = ok(&mut s, "inspect_document", json!({}));
     assert_eq!(doc["title"], "Flyer");
@@ -215,7 +316,10 @@ fn type_tool_gesture_then_typing() {
     ok(&mut s, "type_text", json!({"text": "World"}));
     let doc = ok(&mut s, "inspect_document", json!({}));
     let story = doc["stories"][0]["id"].as_u64().unwrap();
-    assert_eq!(ok(&mut s, "get_story", json!({"story": story}))["text"], "Hello\nWorld");
+    assert_eq!(
+        ok(&mut s, "get_story", json!({"story": story}))["text"],
+        "Hello\nWorld"
+    );
     // Escape leaves the text and selects the frame; Cmd+Z undoes through the shortcut.
     let k = ok(&mut s, "key", json!({"key": "Escape"}));
     assert_eq!(k["handledBy"], "tool");
@@ -243,9 +347,17 @@ fn batch_stops_on_first_error() {
     assert_eq!(v["completed"], 1);
     assert!(v["error"].as_str().unwrap().contains("no.such.command"));
     let doc = ok(&mut s, "inspect_document", json!({}));
-    assert_eq!(doc["spreads"][0]["items"].as_array().unwrap().len(), 1, "the third command must not run");
+    assert_eq!(
+        doc["spreads"][0]["items"].as_array().unwrap().len(),
+        1,
+        "the third command must not run"
+    );
 
-    let v = ok(&mut s, "batch", json!({"commands": [{"command": "edit.undo"}, {"command": "document.history"}]}));
+    let v = ok(
+        &mut s,
+        "batch",
+        json!({"commands": [{"command": "edit.undo"}, {"command": "document.history"}]}),
+    );
     assert_eq!(v["completed"], 2);
 }
 
@@ -280,10 +392,21 @@ fn ui_only_tools_explain_how_to_connect() {
 fn files_place_and_export() {
     let mut s = server();
     // A 4×2 red PNG made by the renderer's encoder.
-    let px = designcraft_render::Rendered { width: 4, height: 2, pixels: [255, 0, 0, 255].repeat(8) };
+    let px = designcraft_render::Rendered {
+        width: 4,
+        height: 2,
+        pixels: [255, 0, 0, 255].repeat(8),
+    };
     let png = px.to_png();
-    let placed = ok(&mut s, "place_image", json!({"base64": base64_encode(&png), "name": "red.png", "x": 50, "y": 60, "width": 100}));
-    assert!(placed["id"].is_u64() && placed["asset"].is_u64(), "{placed}");
+    let placed = ok(
+        &mut s,
+        "place_image",
+        json!({"base64": base64_encode(&png), "name": "red.png", "x": 50, "y": 60, "width": 100}),
+    );
+    assert!(
+        placed["id"].is_u64() && placed["asset"].is_u64(),
+        "{placed}"
+    );
     let img_path = tmp("red.png");
     std::fs::write(&img_path, &png).unwrap();
     // With a graphic frame selected, Place replaces its content; deselect for a new frame.
@@ -297,7 +420,11 @@ fn files_place_and_export() {
     assert!(std::fs::read(&out).unwrap().starts_with(PNG_MAGIC));
     let r = call(&mut s, "render_page", json!({"path": tmp("render.png")}));
     assert_eq!(r["isError"], false);
-    assert!(std::fs::read(tmp("render.png")).unwrap().starts_with(PNG_MAGIC));
+    assert!(
+        std::fs::read(tmp("render.png"))
+            .unwrap()
+            .starts_with(PNG_MAGIC)
+    );
 
     let doc_path = tmp("saved.designcraft");
     let saved = ok(&mut s, "save_document", json!({"path": doc_path}));
@@ -310,7 +437,12 @@ fn files_place_and_export() {
 
     let sample = ok(&mut s, "new_document", json!({"sample": true}));
     assert!(sample["index"].is_u64());
-    assert!(ok(&mut s, "inspect_document", json!({}))["pageCount"].as_u64().unwrap() > 1);
+    assert!(
+        ok(&mut s, "inspect_document", json!({}))["pageCount"]
+            .as_u64()
+            .unwrap()
+            > 1
+    );
     let r = call(&mut s, "render_page", json!({"page": 999}));
     assert_eq!(r["isError"], true);
 }
@@ -324,7 +456,10 @@ fn list_commands_filters() {
     let some = ok(&mut s, "list_commands", json!({"filter": "Arrange"}));
     assert!(some["count"].as_u64().unwrap() >= 4);
     let enabled = ok(&mut s, "list_commands", json!({"enabledOnly": true}));
-    assert!(enabled["count"].as_u64().unwrap() < n, "nothing is selected, so some commands are disabled");
+    assert!(
+        enabled["count"].as_u64().unwrap() < n,
+        "nothing is selected, so some commands are disabled"
+    );
     let r = call(&mut s, "nope", json!({}));
     assert_eq!(r["isError"], true);
     assert_eq!(call(&mut s, "execute", json!([1]))["isError"], true);
@@ -338,7 +473,9 @@ fn fake_app() -> (String, std::sync::mpsc::Receiver<Value>) {
     let addr = listener.local_addr().unwrap().to_string();
     let (tx, rx) = std::sync::mpsc::channel();
     std::thread::spawn(move || {
-        let Ok((stream, _)) = listener.accept() else { return };
+        let Ok((stream, _)) = listener.accept() else {
+            return;
+        };
         let mut out = stream.try_clone().unwrap();
         for line in BufReader::new(stream).lines() {
             let Ok(line) = line else { break };
@@ -346,7 +483,11 @@ fn fake_app() -> (String, std::sync::mpsc::Receiver<Value>) {
             let p = &req["params"];
             let reply = match req["method"].as_str().unwrap() {
                 "ui.screenshot" => {
-                    let px = designcraft_render::Rendered { width: 3, height: 3, pixels: vec![0; 36] };
+                    let px = designcraft_render::Rendered {
+                        width: 3,
+                        height: 3,
+                        pixels: vec![0; 36],
+                    };
                     std::fs::write(p["path"].as_str().unwrap(), px.to_png()).unwrap();
                     json!({"ok": true, "result": {"path": p["path"], "width": 3, "height": 3}})
                 }
@@ -374,15 +515,28 @@ fn connect_mode_forwards_to_the_app() {
     assert!(image_of(&r).starts_with(PNG_MAGIC));
     let got = seen.recv().unwrap();
     assert_eq!(got["method"], "ui.screenshot");
-    assert!(!std::path::Path::new(got["params"]["path"].as_str().unwrap()).exists(), "temp screenshot is removed");
+    assert!(
+        !std::path::Path::new(got["params"]["path"].as_str().unwrap()).exists(),
+        "temp screenshot is removed"
+    );
 
     ok(&mut s, "click", json!({"x": 10, "y": 20, "count": 2}));
     let got = seen.recv().unwrap();
-    assert_eq!((got["method"].as_str(), got["params"]["x"].as_i64(), got["params"]["count"].as_i64()), (Some("ui.click"), Some(10), Some(2)));
+    assert_eq!(
+        (
+            got["method"].as_str(),
+            got["params"]["x"].as_i64(),
+            got["params"]["count"].as_i64()
+        ),
+        (Some("ui.click"), Some(10), Some(2))
+    );
     assert_eq!(ok(&mut s, "ui_inspect", json!({}))["tool"], "selection");
     let r = call(&mut s, "menu_list", json!({}));
     assert_eq!(r["isError"], true);
-    assert!(text_of(&r).contains("nope"), "app errors are passed through");
+    assert!(
+        text_of(&r).contains("nope"),
+        "app errors are passed through"
+    );
 }
 
 #[test]
@@ -407,7 +561,10 @@ fn batch_steps_use_earlier_results() {
     );
     assert_eq!(v["completed"], 4);
     let id = v["results"][0]["id"].as_u64().unwrap();
-    assert_eq!(v["results"][3][0]["text"], format!("A note for frame {id}."));
+    assert_eq!(
+        v["results"][3][0]["text"],
+        format!("A note for frame {id}.")
+    );
     // The same as script text.
     let v = ok(
         &mut s,
@@ -420,32 +577,83 @@ fn batch_steps_use_earlier_results() {
 #[test]
 fn explicit_typing_honors_caret_range_and_undo_without_changing_shortcuts() {
     let mut s = server();
-    assert_eq!(call(&mut s, "type_text", json!({"text":"X"}))["isError"], true);
-    let f = ok(&mut s, "execute", json!({"command":"frame.create","params":{"rect":[36,36,300,200],"content":"text","text":"Hello"}}));
+    assert_eq!(
+        call(&mut s, "type_text", json!({"text":"X"}))["isError"],
+        true
+    );
+    let f = ok(
+        &mut s,
+        "execute",
+        json!({"command":"frame.create","params":{"rect":[36,36,300,200],"content":"text","text":"Hello"}}),
+    );
     let story = f["story"].as_u64().unwrap();
     for (anchor, focus, expected) in [(5, 5, "HelloX"), (0, 5, "X")] {
-        ok(&mut s, "set_story_text", json!({"story":story,"text":"Hello"}));
-        ok(&mut s, "execute", json!({"command":"text.select","params":{"story":story,"anchor":anchor,"focus":focus}}));
+        ok(
+            &mut s,
+            "set_story_text",
+            json!({"story":story,"text":"Hello"}),
+        );
+        ok(
+            &mut s,
+            "execute",
+            json!({"command":"text.select","params":{"story":story,"anchor":anchor,"focus":focus}}),
+        );
         ok(&mut s, "type_text", json!({"text":"X"}));
-        assert_eq!(ok(&mut s, "get_story", json!({"story":story}))["text"], expected);
+        assert_eq!(
+            ok(&mut s, "get_story", json!({"story":story}))["text"],
+            expected
+        );
         ok(&mut s, "execute", json!({"command":"edit.undo"}));
-        assert_eq!(ok(&mut s, "get_story", json!({"story":story}))["text"], "Hello");
+        assert_eq!(
+            ok(&mut s, "get_story", json!({"story":story}))["text"],
+            "Hello"
+        );
     }
-    ok(&mut s, "execute", json!({"command":"text.placeCaret","params":{"frame":f["id"],"point":[100,50]}}));
+    ok(
+        &mut s,
+        "execute",
+        json!({"command":"text.placeCaret","params":{"frame":f["id"],"point":[100,50]}}),
+    );
     ok(&mut s, "type_text", json!({"text":"X"}));
-    assert_eq!(ok(&mut s, "get_story", json!({"story":story}))["text"], "HelloX");
-    assert_eq!(ok(&mut s, "key", json!({"key":"T"}))["handledBy"], "tool.select");
-    assert_eq!(ok(&mut s, "get_story", json!({"story":story}))["text"], "HelloX");
+    assert_eq!(
+        ok(&mut s, "get_story", json!({"story":story}))["text"],
+        "HelloX"
+    );
+    assert_eq!(
+        ok(&mut s, "key", json!({"key":"T"}))["handledBy"],
+        "tool.select"
+    );
+    assert_eq!(
+        ok(&mut s, "get_story", json!({"story":story}))["text"],
+        "HelloX"
+    );
 }
 
 #[test]
 fn story_queries_distinguish_missing_from_empty() {
     let mut s = server();
-    assert_eq!(call(&mut s, "get_story", json!({"story":999}))["isError"], true);
-    let f = ok(&mut s, "execute", json!({"command":"frame.create","params":{"rect":[36,36,300,200],"content":"text"}}));
-    assert_eq!(ok(&mut s, "get_story", json!({"story":f["story"]}))["text"], "");
-    assert_eq!(ok(&mut s, "get_story", json!({"frame":f["id"]}))["text"], "");
-    ok(&mut s, "execute", json!({"command":"text.select","params":{"story":f["story"],"anchor":0}}));
+    assert_eq!(
+        call(&mut s, "get_story", json!({"story":999}))["isError"],
+        true
+    );
+    let f = ok(
+        &mut s,
+        "execute",
+        json!({"command":"frame.create","params":{"rect":[36,36,300,200],"content":"text"}}),
+    );
+    assert_eq!(
+        ok(&mut s, "get_story", json!({"story":f["story"]}))["text"],
+        ""
+    );
+    assert_eq!(
+        ok(&mut s, "get_story", json!({"frame":f["id"]}))["text"],
+        ""
+    );
+    ok(
+        &mut s,
+        "execute",
+        json!({"command":"text.select","params":{"story":f["story"],"anchor":0}}),
+    );
     assert_eq!(ok(&mut s, "get_story", json!({}))["text"], "");
 }
 
@@ -455,9 +663,17 @@ fn page_contract_rejects_supplied_invalid_values_without_writes() {
     ok(&mut s, "new_document", json!({"sample":true}));
     let path = tmp("page-contract.png");
     for tool in ["export_png", "render_page"] {
-        for page in
-            [json!(-1), json!(-2), json!(1.5), Value::Null, json!("0"), json!(true), json!(u64::MAX), json!(18446744073709551616_f64), json!(99)]
-        {
+        for page in [
+            json!(-1),
+            json!(-2),
+            json!(1.5),
+            Value::Null,
+            json!("0"),
+            json!(true),
+            json!(u64::MAX),
+            json!(18446744073709551616_f64),
+            json!(99),
+        ] {
             std::fs::write(&path, b"KEEP").unwrap();
             let args = json!({"page":page,"path":path,"scale":0.1});
             assert_eq!(call(&mut s, tool, args)["isError"], true, "{tool}: {page}");
@@ -467,24 +683,43 @@ fn page_contract_rejects_supplied_invalid_values_without_writes() {
     let first = image_of(&call(&mut s, "render_page", json!({"page":0,"scale":0.1})));
     let next = image_of(&call(&mut s, "render_page", json!({"page":1,"scale":0.1})));
     assert_ne!(first, next);
-    assert_eq!(first, image_of(&call(&mut s, "render_page", json!({"scale":0.1}))));
-    ok(&mut s, "export_png", json!({"page":1,"path":path,"scale":0.1}));
+    assert_eq!(
+        first,
+        image_of(&call(&mut s, "render_page", json!({"scale":0.1})))
+    );
+    ok(
+        &mut s,
+        "export_png",
+        json!({"page":1,"path":path,"scale":0.1}),
+    );
     assert_eq!(std::fs::read(&path).unwrap(), next);
     ok(&mut s, "export_png", json!({"path":path,"scale":0.1}));
     assert_eq!(std::fs::read(&path).unwrap(), first);
     for tool in ["render_page", "export_png"] {
-        let definition = tool_definitions().into_iter().find(|v| v["name"] == tool).unwrap();
-        assert_eq!(definition["inputSchema"]["properties"]["page"]["minimum"], 0);
+        let definition = tool_definitions()
+            .into_iter()
+            .find(|v| v["name"] == tool)
+            .unwrap();
+        assert_eq!(
+            definition["inputSchema"]["properties"]["page"]["minimum"],
+            0
+        );
     }
     let mut b = Headless::with_document();
     for method in ["ui.render", "app.export"] {
         for page in [json!(-1), Value::Null, json!("0"), json!(99)] {
             std::fs::write(&path, b"KEEP").unwrap();
-            assert!(b.call(method, json!({"page":page,"path":path,"scale":0.1})).is_err());
+            assert!(
+                b.call(method, json!({"page":page,"path":path,"scale":0.1}))
+                    .is_err()
+            );
             assert_eq!(std::fs::read(&path).unwrap(), b"KEEP");
         }
         std::fs::remove_file(&path).unwrap();
-        assert!(b.call(method, json!({"page":-1,"path":path,"scale":0.1})).is_err());
+        assert!(
+            b.call(method, json!({"page":-1,"path":path,"scale":0.1}))
+                .is_err()
+        );
         assert!(!path.exists());
     }
 }
@@ -492,11 +727,32 @@ fn page_contract_rejects_supplied_invalid_values_without_writes() {
 #[test]
 fn explicit_typing_rejects_stale_selection_and_closed_document() {
     let mut b = Headless::with_document();
-    let f = b.session.execute("frame.create", &json!({"rect":[36,36,300,200],"content":"text","text":"Hello"})).unwrap();
-    b.session.execute("text.select", &json!({"story":f["story"],"anchor":5})).unwrap();
-    b.session.active_mut().unwrap().selection.text.as_mut().unwrap().story.0 = 999;
+    let f = b
+        .session
+        .execute(
+            "frame.create",
+            &json!({"rect":[36,36,300,200],"content":"text","text":"Hello"}),
+        )
+        .unwrap();
+    b.session
+        .execute("text.select", &json!({"story":f["story"],"anchor":5}))
+        .unwrap();
+    b.session
+        .active_mut()
+        .unwrap()
+        .selection
+        .text
+        .as_mut()
+        .unwrap()
+        .story
+        .0 = 999;
     assert!(b.call("ui.text", json!({"text":"X"})).is_err());
-    assert_eq!(b.session.execute("story.get", &json!({"story":f["story"]})).unwrap()["text"], "Hello");
+    assert_eq!(
+        b.session
+            .execute("story.get", &json!({"story":f["story"]}))
+            .unwrap()["text"],
+        "Hello"
+    );
     b.session.execute("file.close", &json!({})).unwrap();
     assert!(b.call("ui.text", json!({"text":"X"})).is_err());
 }

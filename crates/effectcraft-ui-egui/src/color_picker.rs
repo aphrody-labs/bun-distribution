@@ -16,10 +16,17 @@ use crate::widgets::{open_popup, popup_is_open, pressed_outside, select_all};
 /// user picks a colour.
 pub fn srgb_color_button(ui: &mut Ui, c: &mut [f32; 3]) -> Response {
     let (rect, mut resp) = ui.allocate_exact_size(ui.spacing().interact_size, Sense::click());
-    resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::ColorButton, ui.is_enabled(), srgb_hex(*c)));
-    let stroke = if resp.hovered() { ui.visuals().widgets.hovered.fg_stroke } else { ui.visuals().widgets.inactive.bg_stroke };
+    resp.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::ColorButton, ui.is_enabled(), srgb_hex(*c))
+    });
+    let stroke = if resp.hovered() {
+        ui.visuals().widgets.hovered.fg_stroke
+    } else {
+        ui.visuals().widgets.inactive.bg_stroke
+    };
     ui.painter().rect_filled(rect, 2.0, srgb32(*c));
-    ui.painter().rect_stroke(rect, 2.0, stroke, StrokeKind::Inside);
+    ui.painter()
+        .rect_stroke(rect, 2.0, stroke, StrokeKind::Inside);
     if resp.clicked() {
         open_popup(ui, resp.id);
     }
@@ -38,9 +45,12 @@ pub fn color_popup(ui: &mut Ui, id: egui::Id, pos: egui::Pos2, c: &mut [f32; 3])
     let orig_id = id.with("original");
     let original = ui.data_mut(|d| *d.get_temp_mut_or_insert_with(orig_id, || *c));
     let mut out = Outcome::default();
-    let area = egui::Area::new(id.with("area")).order(egui::Order::Foreground).fixed_pos(pos + vec2(0.0, 4.0)).show(ui.ctx(), |ui| {
-        egui::Frame::popup(ui.style()).show(ui, |ui| out = color_picker(ui, id, c, original));
-    });
+    let area = egui::Area::new(id.with("area"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos + vec2(0.0, 4.0))
+        .show(ui.ctx(), |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| out = color_picker(ui, id, c, original));
+        });
     // Escape is the picker's: consume it, so nothing later this pass takes it too.
     if ui.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
         out.close = Some(false);
@@ -169,12 +179,21 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
     let state_id = id.with("pick");
     let mut pick = match ui.data(|d| d.get_temp::<([f32; 3], [f32; 3])>(state_id)) {
         Some((hsv, rgb)) if rgb == *c => Pick { hsv, rgb },
-        Some((hsv, _)) => Pick { hsv: keep_hue(rgb_to_hsv(*c), hsv), rgb: *c },
-        None => Pick { hsv: rgb_to_hsv(*c), rgb: *c },
+        Some((hsv, _)) => Pick {
+            hsv: keep_hue(rgb_to_hsv(*c), hsv),
+            rgb: *c,
+        },
+        None => Pick {
+            hsv: rgb_to_hsv(*c),
+            rgb: *c,
+        },
     };
     // The slider's channel is remembered between pickers, as After Effects does.
     let chan_id = egui::Id::new("color-picker-channel");
-    let mut chan = ui.data(|d| d.get_temp::<usize>(chan_id)).and_then(|i| CHANS.get(i).map(|c| c.0)).unwrap_or(Chan::H);
+    let mut chan = ui
+        .data(|d| d.get_temp::<usize>(chan_id))
+        .and_then(|i| CHANS.get(i).map(|c| c.0))
+        .unwrap_or(Chan::H);
     let before = pick;
     let mut out = Outcome::default();
 
@@ -189,10 +208,16 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
             ui.add_space(8.0);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 6.0;
-                if ui.add_sized(vec2(72.0, 20.0), egui::Button::new(tr("OK"))).clicked() {
+                if ui
+                    .add_sized(vec2(72.0, 20.0), egui::Button::new(tr("OK")))
+                    .clicked()
+                {
                     out.close = Some(true);
                 }
-                if ui.add_sized(vec2(72.0, 20.0), egui::Button::new(tr("Cancel"))).clicked() {
+                if ui
+                    .add_sized(vec2(72.0, 20.0), egui::Button::new(tr("Cancel")))
+                    .clicked()
+                {
                     out.close = Some(false);
                 }
             });
@@ -200,7 +225,10 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
         ui.vertical(|ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             if swatches(ui, pick.rgb, original) {
-                pick = Pick { hsv: keep_hue(rgb_to_hsv(original), pick.hsv), rgb: original };
+                pick = Pick {
+                    hsv: keep_hue(rgb_to_hsv(original), pick.hsv),
+                    rgb: original,
+                };
             }
             ui.add_space(4.0);
             let mut field = |ui: &mut Ui, ch: Chan, name: &str, scale: f32, suffix: &str| {
@@ -217,8 +245,16 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
                     if ch == Chan::H && v >= 360.0 {
                         v = 0.0;
                     }
-                    let drag = egui::DragValue::new(&mut v).range(0.0..=scale).fixed_decimals(0).suffix(suffix).speed(scale / 255.0);
-                    if ui.add_sized(vec2(56.0, 18.0), drag).labelled_by(radio.id).changed() {
+                    let drag = egui::DragValue::new(&mut v)
+                        .range(0.0..=scale)
+                        .fixed_decimals(0)
+                        .suffix(suffix)
+                        .speed(scale / 255.0);
+                    if ui
+                        .add_sized(vec2(56.0, 18.0), drag)
+                        .labelled_by(radio.id)
+                        .changed()
+                    {
                         pick = pick.set(ch, v.round() / scale);
                     }
                 });
@@ -235,7 +271,10 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
                 ui.spacing_mut().item_spacing.x = 4.0;
                 let mut rgb = pick.rgb;
                 if hex_field(ui, id.with("hex"), &mut rgb) {
-                    pick = Pick { hsv: keep_hue(rgb_to_hsv(rgb), pick.hsv), rgb };
+                    pick = Pick {
+                        hsv: keep_hue(rgb_to_hsv(rgb), pick.hsv),
+                        rgb,
+                    };
                 }
             });
         });
@@ -253,15 +292,29 @@ fn color_picker(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3], original: [f32; 3])
 }
 
 /// The channels in the order of their buttons.
-const CHANS: [(Chan, &str); 6] = [(Chan::H, "H"), (Chan::S, "S"), (Chan::V, "B"), (Chan::R, "R"), (Chan::G, "G"), (Chan::B, "B")];
+const CHANS: [(Chan, &str); 6] = [
+    (Chan::H, "H"),
+    (Chan::S, "S"),
+    (Chan::V, "B"),
+    (Chan::R, "R"),
+    (Chan::G, "G"),
+    (Chan::B, "B"),
+];
 
 /// Drag or click on the square to set its two channels.
 fn square(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
     let (rect, resp) = ui.allocate_exact_size(vec2(SQUARE, SQUARE), Sense::click_and_drag());
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, true, "Color field"));
     let (x, y) = chan.square();
-    if let Some(p) = resp.interact_pointer_pos().filter(|_| resp.is_pointer_button_down_on()) {
-        *pick = pick.at(chan, (p.x - rect.min.x) / rect.width(), 1.0 - (p.y - rect.min.y) / rect.height());
+    if let Some(p) = resp
+        .interact_pointer_pos()
+        .filter(|_| resp.is_pointer_button_down_on())
+    {
+        *pick = pick.at(
+            chan,
+            (p.x - rect.min.x) / rect.width(),
+            1.0 - (p.y - rect.min.y) / rect.height(),
+        );
     }
     // Hue changes unevenly across a row, so the HSB squares get a finer grid.
     let n: u32 = if chan.is_hsv() { 24 } else { 8 };
@@ -270,7 +323,10 @@ fn square(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
     for yi in 0..=n {
         for xi in 0..=n {
             let (u, v) = (xi as f32 / n as f32, yi as f32 / n as f32);
-            mesh.colored_vertex(rect.lerp_inside(vec2(u, v)), srgb32(pick.at(chan, u, 1.0 - v).rgb));
+            mesh.colored_vertex(
+                rect.lerp_inside(vec2(u, v)),
+                srgb32(pick.at(chan, u, 1.0 - v).rgb),
+            );
             if xi < n && yi < n {
                 let k = yi * row + xi;
                 mesh.add_triangle(k, k + 1, k + row);
@@ -281,15 +337,30 @@ fn square(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
     ui.painter().add(mesh);
     let at = rect.lerp_inside(vec2(pick.get(x), 1.0 - pick.get(y)));
     let light = pick.rgb[0] * 0.3 + pick.rgb[1] * 0.59 + pick.rgb[2] * 0.11 > 0.6;
-    ui.painter().circle_stroke(at, 5.0, Stroke::new(1.5, if light { Color32::BLACK } else { Color32::WHITE }));
+    ui.painter().circle_stroke(
+        at,
+        5.0,
+        Stroke::new(
+            1.5,
+            if light {
+                Color32::BLACK
+            } else {
+                Color32::WHITE
+            },
+        ),
+    );
 }
 
 /// Drag or click on the slider to set `chan`; arrows on both sides mark its value.
 fn slider(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
-    let (outer, resp) = ui.allocate_exact_size(vec2(SLIDER_W + 12.0, SQUARE), Sense::click_and_drag());
+    let (outer, resp) =
+        ui.allocate_exact_size(vec2(SLIDER_W + 12.0, SQUARE), Sense::click_and_drag());
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Slider, true, "Color slider"));
     let bar = Rect::from_center_size(outer.center(), vec2(SLIDER_W, SQUARE));
-    if let Some(p) = resp.interact_pointer_pos().filter(|_| resp.is_pointer_button_down_on()) {
+    if let Some(p) = resp
+        .interact_pointer_pos()
+        .filter(|_| resp.is_pointer_button_down_on())
+    {
         *pick = pick.set(chan, 1.0 - (p.y - bar.min.y) / bar.height());
     }
     let n: u32 = if chan == Chan::H { 36 } else { 16 };
@@ -297,7 +368,11 @@ fn slider(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
     for i in 0..=n {
         let t = i as f32 / n as f32;
         // The hue slider shows pure hues; the others vary their channel in the current colour.
-        let col = if chan == Chan::H { hsv_to_rgb([1.0 - t, 1.0, 1.0]) } else { pick.set(chan, 1.0 - t).rgb };
+        let col = if chan == Chan::H {
+            hsv_to_rgb([1.0 - t, 1.0, 1.0])
+        } else {
+            pick.set(chan, 1.0 - t).rgb
+        };
         let y = bar.min.y + t * bar.height();
         mesh.colored_vertex(pos2(bar.min.x, y), srgb32(col));
         mesh.colored_vertex(pos2(bar.max.x, y), srgb32(col));
@@ -313,8 +388,10 @@ fn slider(ui: &mut Ui, chan: Chan, pick: &mut Pick) {
     let stroke = Stroke::new(1.2, fg);
     for (edge, dir) in [(outer.min.x + 1.0, 1.0), (outer.max.x - 1.0, -1.0)] {
         let tip = pos2(edge + dir * 4.0, y);
-        ui.painter().line_segment([pos2(edge, y - 4.0), tip], stroke);
-        ui.painter().line_segment([pos2(edge, y + 4.0), tip], stroke);
+        ui.painter()
+            .line_segment([pos2(edge, y - 4.0), tip], stroke);
+        ui.painter()
+            .line_segment([pos2(edge, y + 4.0), tip], stroke);
     }
 }
 
@@ -324,11 +401,18 @@ fn swatches(ui: &mut Ui, new: [f32; 3], original: [f32; 3]) -> bool {
     let (top, bottom) = rect.split_top_bottom_at_fraction(0.5);
     let new_resp = ui.interact(top, ui.id().with("new-swatch"), Sense::hover());
     new_resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Other, true, "New color"));
-    let old = ui.interact(bottom, ui.id().with("original-swatch"), Sense::click()).on_hover_text(tr("Original color: click to go back to it"));
+    let old = ui
+        .interact(bottom, ui.id().with("original-swatch"), Sense::click())
+        .on_hover_text(tr("Original color: click to go back to it"));
     old.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, "Original color"));
     ui.painter().rect_filled(top, 0.0, srgb32(new));
     ui.painter().rect_filled(bottom, 0.0, srgb32(original));
-    ui.painter().rect_stroke(rect, 0.0, ui.visuals().widgets.inactive.bg_stroke, StrokeKind::Outside);
+    ui.painter().rect_stroke(
+        rect,
+        0.0,
+        ui.visuals().widgets.inactive.bg_stroke,
+        StrokeKind::Outside,
+    );
     old.clicked()
 }
 
@@ -348,11 +432,19 @@ fn keep_hue(mut hsv: [f32; 3], old: [f32; 3]) -> [f32; 3] {
 /// shows the colour. Focusing it selects the code, so typing replaces it; a valid code applies as
 /// it is typed.
 fn hex_field(ui: &mut Ui, id: egui::Id, c: &mut [f32; 3]) -> bool {
-    let mut text = ui.data(|d| d.get_temp::<String>(id)).unwrap_or_else(|| srgb_hex(*c).trim_start_matches('#').to_string());
+    let mut text = ui
+        .data(|d| d.get_temp::<String>(id))
+        .unwrap_or_else(|| srgb_hex(*c).trim_start_matches('#').to_string());
     let mut changed = false;
     let label = ui.label("#");
     let resp = ui
-        .add(egui::TextEdit::singleline(&mut text).id(id.with("edit")).desired_width(62.0).char_limit(7).font(egui::TextStyle::Monospace))
+        .add(
+            egui::TextEdit::singleline(&mut text)
+                .id(id.with("edit"))
+                .desired_width(62.0)
+                .char_limit(7)
+                .font(egui::TextStyle::Monospace),
+        )
         .labelled_by(label.id);
     if resp.gained_focus() {
         select_all(ui.ctx(), resp.id, &text);

@@ -89,19 +89,31 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
 
 /// Lit un `u16` petit-boutiste borné.
 pub(crate) fn rd_u16(b: &[u8], at: usize) -> Result<u16> {
-    let s = b.get(at..at + 2).ok_or(PeError::Truncated { at, need: 2, len: b.len() })?;
+    let s = b.get(at..at + 2).ok_or(PeError::Truncated {
+        at,
+        need: 2,
+        len: b.len(),
+    })?;
     Ok(u16::from_le_bytes([s[0], s[1]]))
 }
 
 /// Lit un `u32` petit-boutiste borné.
 pub(crate) fn rd_u32(b: &[u8], at: usize) -> Result<u32> {
-    let s = b.get(at..at + 4).ok_or(PeError::Truncated { at, need: 4, len: b.len() })?;
+    let s = b.get(at..at + 4).ok_or(PeError::Truncated {
+        at,
+        need: 4,
+        len: b.len(),
+    })?;
     Ok(u32::from_le_bytes([s[0], s[1], s[2], s[3]]))
 }
 
 /// Lit un `u64` petit-boutiste borné.
 pub(crate) fn rd_u64(b: &[u8], at: usize) -> Result<u64> {
-    let s = b.get(at..at + 8).ok_or(PeError::Truncated { at, need: 8, len: b.len() })?;
+    let s = b.get(at..at + 8).ok_or(PeError::Truncated {
+        at,
+        need: 8,
+        len: b.len(),
+    })?;
     let mut a = [0u8; 8];
     a.copy_from_slice(s);
     Ok(u64::from_le_bytes(a))

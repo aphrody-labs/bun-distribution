@@ -172,7 +172,10 @@ fn sprit_table_info_0_sprite_hash() {
     let root = fixture_boost_grp();
     let cfg = parse_boost_grp_config(&root);
     // BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_0.var[1] = -1341563653 → 0xB0095CFB
-    assert_eq!(cfg.sprit_table[0].sprite_hash, SPRITE_HASH_0, "sprite_hash[0] = 0xB0095CFB");
+    assert_eq!(
+        cfg.sprit_table[0].sprite_hash, SPRITE_HASH_0,
+        "sprite_hash[0] = 0xB0095CFB"
+    );
 }
 
 #[test]
@@ -181,7 +184,10 @@ fn sprit_table_info_3_table_index_et_hash() {
     let cfg = parse_boost_grp_config(&root);
     // BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_3.var[0] = 3, var[1] = 1372344836 → 0x51CC5204
     assert_eq!(cfg.sprit_table[1].table_index, 3, "table_index[3] = 3");
-    assert_eq!(cfg.sprit_table[1].sprite_hash, SPRITE_HASH_3, "sprite_hash[3] = 0x51CC5204");
+    assert_eq!(
+        cfg.sprit_table[1].sprite_hash, SPRITE_HASH_3,
+        "sprite_hash[3] = 0x51CC5204"
+    );
 }
 
 // ─── Tests sur fixture : BoostPlayerGrpConfig ────────────────────────────────
@@ -208,7 +214,11 @@ fn config_0_type_et_table_refs() {
     let cfg = parse_boost_grp_config(&root);
     // BOOST_PLAYER_GRP_CONFIG_0.var[1] = 0, var[2..5] = [0,1,2,3]
     assert_eq!(cfg.configs[0].config_type, 0, "config_type[0] = 0");
-    assert_eq!(cfg.configs[0].table_refs, [0, 1, 2, 3], "table_refs[0] = [0,1,2,3]");
+    assert_eq!(
+        cfg.configs[0].table_refs,
+        [0, 1, 2, 3],
+        "table_refs[0] = [0,1,2,3]"
+    );
 }
 
 #[test]
@@ -218,7 +228,11 @@ fn config_1_duration_et_rotation() {
     // BOOST_PLAYER_GRP_CONFIG_1 : duration=1209600, config_type=1, table_refs=[1,2,3,0]
     assert_eq!(cfg.configs[1].duration, 1209600, "duration[1] = 1209600");
     assert_eq!(cfg.configs[1].config_type, 1, "config_type[1] = 1");
-    assert_eq!(cfg.configs[1].table_refs, [1, 2, 3, 0], "table_refs[1] = [1,2,3,0]");
+    assert_eq!(
+        cfg.configs[1].table_refs,
+        [1, 2, 3, 0],
+        "table_refs[1] = [1,2,3,0]"
+    );
 }
 
 // ─── Tests sur fixture : BoostPlayerGrpInfo ──────────────────────────────────
@@ -236,7 +250,10 @@ fn group_0_hash() {
     let root = fixture_boost_grp();
     let cfg = parse_boost_grp_config(&root);
     // BOOST_PLAYER_GRP_INFO_0.var[0] = 1762786800 → 0x6911FDF0
-    assert_eq!(cfg.groups[0].group_hash, GROUP_HASH_0, "group_hash[0] = 0x6911FDF0");
+    assert_eq!(
+        cfg.groups[0].group_hash, GROUP_HASH_0,
+        "group_hash[0] = 0x6911FDF0"
+    );
 }
 
 // ─── Tests sur fixture : BoostPlayerGrpInfoRefConfig ─────────────────────────
@@ -255,7 +272,10 @@ fn ref_config_0_offset_et_count() {
     let cfg = parse_boost_grp_config(&root);
     // BOOST_PLAYER_GRP_INFO_REF_CONFIG_0.var[0] = 0, var[1] = 2 (fixture)
     assert_eq!(cfg.ref_configs[0].config_offset, 0, "config_offset[0] = 0");
-    assert_eq!(cfg.ref_configs[0].config_count, 2, "config_count[0] = 2 (fixture)");
+    assert_eq!(
+        cfg.ref_configs[0].config_count, 2,
+        "config_count[0] = 2 (fixture)"
+    );
 }
 
 // ─── Tests : accesseurs ──────────────────────────────────────────────────────
@@ -266,8 +286,15 @@ fn configs_of_plage_correcte() {
     let cfg = parse_boost_grp_config(&root);
     // configs_of doit renvoyer la tranche correcte
     let slice = cfg.configs_of(&cfg.ref_configs[0]);
-    assert_eq!(slice.len(), 2, "configs_of : 2 configs pour offset=0, count=2");
-    assert_eq!(slice[0].duration, 1814400, "premier config : duration=1814400");
+    assert_eq!(
+        slice.len(),
+        2,
+        "configs_of : 2 configs pour offset=0, count=2"
+    );
+    assert_eq!(
+        slice[0].duration, 1814400,
+        "premier config : duration=1814400"
+    );
 }
 
 #[test]
@@ -320,7 +347,11 @@ fn real_file_sprit_table_compte() {
     };
     let cfg = parse_boost_grp_config(&root);
     // dump réel : BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_LIST_BEG_0.var[0] = 4
-    assert_eq!(cfg.sprit_table.len(), 4, "dump réel : 4 BOOST_PLAYER_GRP_SPRIT_TABLE_INFO");
+    assert_eq!(
+        cfg.sprit_table.len(),
+        4,
+        "dump réel : 4 BOOST_PLAYER_GRP_SPRIT_TABLE_INFO"
+    );
 }
 
 #[test]
@@ -330,7 +361,11 @@ fn real_file_config_compte() {
     };
     let cfg = parse_boost_grp_config(&root);
     // dump réel : BOOST_PLAYER_GRP_CONFIG_LIST_BEG_0.var[0] = 5
-    assert_eq!(cfg.configs.len(), 5, "dump réel : 5 BOOST_PLAYER_GRP_CONFIG");
+    assert_eq!(
+        cfg.configs.len(),
+        5,
+        "dump réel : 5 BOOST_PLAYER_GRP_CONFIG"
+    );
 }
 
 #[test]
@@ -352,7 +387,10 @@ fn real_file_sprit_table_info_0() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_0.var[0] = 0, var[1] = -1341563653 → 0xB0095CFB
-    assert_eq!(cfg.sprit_table[0].table_index, 0, "sprit_table[0].table_index = 0");
+    assert_eq!(
+        cfg.sprit_table[0].table_index, 0,
+        "sprit_table[0].table_index = 0"
+    );
     assert_eq!(
         cfg.sprit_table[0].sprite_hash, SPRITE_HASH_0,
         "sprit_table[0].sprite_hash = 0xB0095CFB"
@@ -367,7 +405,10 @@ fn real_file_sprit_table_info_1() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_1.var[0] = 1, var[1] = -1196427471 → 0xB8AFF731
-    assert_eq!(cfg.sprit_table[1].table_index, 1, "sprit_table[1].table_index = 1");
+    assert_eq!(
+        cfg.sprit_table[1].table_index, 1,
+        "sprit_table[1].table_index = 1"
+    );
     assert_eq!(
         cfg.sprit_table[1].sprite_hash, SPRITE_HASH_1,
         "sprit_table[1].sprite_hash = 0xB8AFF731"
@@ -396,7 +437,10 @@ fn real_file_sprit_table_info_3() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_SPRIT_TABLE_INFO_3.var[0] = 3, var[1] = 1372344836 → 0x51CC5204
-    assert_eq!(cfg.sprit_table[3].table_index, 3, "sprit_table[3].table_index = 3");
+    assert_eq!(
+        cfg.sprit_table[3].table_index, 3,
+        "sprit_table[3].table_index = 3"
+    );
     assert_eq!(
         cfg.sprit_table[3].sprite_hash, SPRITE_HASH_3,
         "sprit_table[3].sprite_hash = 0x51CC5204"
@@ -411,9 +455,16 @@ fn real_file_config_0() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_CONFIG_0 : var[0]=1814400, var[1]=0, var[2..5]=[0,1,2,3]
-    assert_eq!(cfg.configs[0].duration, 1814400, "configs[0].duration = 1814400");
+    assert_eq!(
+        cfg.configs[0].duration, 1814400,
+        "configs[0].duration = 1814400"
+    );
     assert_eq!(cfg.configs[0].config_type, 0, "configs[0].config_type = 0");
-    assert_eq!(cfg.configs[0].table_refs, [0, 1, 2, 3], "configs[0].table_refs = [0,1,2,3]");
+    assert_eq!(
+        cfg.configs[0].table_refs,
+        [0, 1, 2, 3],
+        "configs[0].table_refs = [0,1,2,3]"
+    );
 }
 
 #[test]
@@ -424,9 +475,16 @@ fn real_file_config_1() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_CONFIG_1 : var[0]=1209600, var[1]=1, var[2..5]=[1,2,3,0]
-    assert_eq!(cfg.configs[1].duration, 1209600, "configs[1].duration = 1209600");
+    assert_eq!(
+        cfg.configs[1].duration, 1209600,
+        "configs[1].duration = 1209600"
+    );
     assert_eq!(cfg.configs[1].config_type, 1, "configs[1].config_type = 1");
-    assert_eq!(cfg.configs[1].table_refs, [1, 2, 3, 0], "configs[1].table_refs = [1,2,3,0]");
+    assert_eq!(
+        cfg.configs[1].table_refs,
+        [1, 2, 3, 0],
+        "configs[1].table_refs = [1,2,3,0]"
+    );
 }
 
 #[test]
@@ -437,8 +495,15 @@ fn real_file_config_4_rotation_complete() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_CONFIG_4 : var[0]=1209600, var[1]=1, var[2..5]=[0,1,2,3]
-    assert_eq!(cfg.configs[4].duration, 1209600, "configs[4].duration = 1209600");
-    assert_eq!(cfg.configs[4].table_refs, [0, 1, 2, 3], "configs[4].table_refs = [0,1,2,3]");
+    assert_eq!(
+        cfg.configs[4].duration, 1209600,
+        "configs[4].duration = 1209600"
+    );
+    assert_eq!(
+        cfg.configs[4].table_refs,
+        [0, 1, 2, 3],
+        "configs[4].table_refs = [0,1,2,3]"
+    );
 }
 
 #[test]
@@ -449,7 +514,10 @@ fn real_file_group_0_hash() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_INFO_0.var[0] = 1762786800 → 0x6911FDF0
-    assert_eq!(cfg.groups[0].group_hash, GROUP_HASH_0, "groups[0].group_hash = 0x6911FDF0");
+    assert_eq!(
+        cfg.groups[0].group_hash, GROUP_HASH_0,
+        "groups[0].group_hash = 0x6911FDF0"
+    );
 }
 
 #[test]
@@ -460,8 +528,14 @@ fn real_file_ref_config_0() {
     let cfg = parse_boost_grp_config(&root);
 
     // BOOST_PLAYER_GRP_INFO_REF_CONFIG_0 : var[0]=0, var[1]=5
-    assert_eq!(cfg.ref_configs[0].config_offset, 0, "ref_configs[0].config_offset = 0");
-    assert_eq!(cfg.ref_configs[0].config_count, 5, "ref_configs[0].config_count = 5");
+    assert_eq!(
+        cfg.ref_configs[0].config_offset, 0,
+        "ref_configs[0].config_offset = 0"
+    );
+    assert_eq!(
+        cfg.ref_configs[0].config_count, 5,
+        "ref_configs[0].config_count = 5"
+    );
 }
 
 #[test]
@@ -473,7 +547,11 @@ fn real_file_configs_of_toutes_les_configs() {
 
     // REF_CONFIG_0 = [0, 5] → configs_of renvoie les 5 configs
     let slice = cfg.configs_of(&cfg.ref_configs[0]);
-    assert_eq!(slice.len(), 5, "configs_of : 5 configs pour le groupe 0x6911FDF0");
+    assert_eq!(
+        slice.len(),
+        5,
+        "configs_of : 5 configs pour le groupe 0x6911FDF0"
+    );
 }
 
 #[test]
@@ -485,7 +563,10 @@ fn real_file_find_group() {
 
     // find_group(0x6911FDF0) doit trouver le groupe
     let found = cfg.find_group(GROUP_HASH_0);
-    assert!(found.is_some(), "find_group(0x6911FDF0) doit trouver le groupe");
+    assert!(
+        found.is_some(),
+        "find_group(0x6911FDF0) doit trouver le groupe"
+    );
 
     // hash absent → None
     assert!(cfg.find_group(HashId(0xDEADBEEF)).is_none());
@@ -499,7 +580,10 @@ fn real_file_tous_sprit_table_indices_croissants() {
     let cfg = parse_boost_grp_config(&root);
     // Les indices 0..3 doivent être dans l'ordre croissant dans le dump réel
     for (i, entry) in cfg.sprit_table.iter().enumerate() {
-        assert_eq!(entry.table_index, i as i64, "sprit_table[{i}].table_index = {i}");
+        assert_eq!(
+            entry.table_index, i as i64,
+            "sprit_table[{i}].table_index = {i}"
+        );
     }
 }
 
@@ -509,6 +593,10 @@ fn real_file_tous_sprit_hashes_non_nuls() {
         return;
     };
     let cfg = parse_boost_grp_config(&root);
-    let nuls = cfg.sprit_table.iter().filter(|e| e.sprite_hash.is_zero()).count();
+    let nuls = cfg
+        .sprit_table
+        .iter()
+        .filter(|e| e.sprite_hash.is_zero())
+        .count();
     assert_eq!(nuls, 0, "tous les sprite_hash doivent être non-nuls");
 }

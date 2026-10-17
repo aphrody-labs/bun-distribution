@@ -29,7 +29,9 @@ pub fn pack(pngs: &[Vec<u8>]) -> Result<Vec<u8>, String> {
     for png in pngs {
         let (w, h) = png_size(png)?;
         if w != h || w == 0 || w > 256 {
-            return Err(format!("icon images must be square and at most 256 px, got {w}x{h}"));
+            return Err(format!(
+                "icon images must be square and at most 256 px, got {w}x{h}"
+            ));
         }
         let dim = if w == 256 { 0 } else { w as u8 };
         out.extend_from_slice(&[dim, dim, 0, 0]); // width, height, palette size, reserved
@@ -49,7 +51,10 @@ pub fn run(args: &[&str]) -> Result<(), String> {
     let [out, inputs @ ..] = args else {
         return Err("usage: cargo xtask ico <out.ico> <in.png>…".into());
     };
-    let pngs = inputs.iter().map(|p| std::fs::read(p).map_err(|e| format!("read {p}: {e}"))).collect::<Result<Vec<_>, _>>()?;
+    let pngs = inputs
+        .iter()
+        .map(|p| std::fs::read(p).map_err(|e| format!("read {p}: {e}")))
+        .collect::<Result<Vec<_>, _>>()?;
     let ico = pack(&pngs)?;
     std::fs::write(Path::new(out), &ico).map_err(|e| format!("write {out}: {e}"))?;
     println!("{out}: {} images, {} bytes", pngs.len(), ico.len());
@@ -76,11 +81,17 @@ mod tests {
         assert_eq!(&ico[..6], &[0, 0, 1, 0, 2, 0]);
         // Entry 0: 16 px at offset 6 + 32.
         assert_eq!(&ico[6..8], &[16, 16]);
-        assert_eq!(u32::from_le_bytes(ico[14..18].try_into().unwrap()), a.len() as u32);
+        assert_eq!(
+            u32::from_le_bytes(ico[14..18].try_into().unwrap()),
+            a.len() as u32
+        );
         assert_eq!(u32::from_le_bytes(ico[18..22].try_into().unwrap()), 38);
         // Entry 1: 256 px stored as 0, right after the first payload.
         assert_eq!(&ico[22..24], &[0, 0]);
-        assert_eq!(u32::from_le_bytes(ico[34..38].try_into().unwrap()), 38 + a.len() as u32);
+        assert_eq!(
+            u32::from_le_bytes(ico[34..38].try_into().unwrap()),
+            38 + a.len() as u32
+        );
         assert_eq!(&ico[38..38 + a.len()], &a[..]);
         assert_eq!(&ico[38 + a.len()..], &b[..]);
     }
@@ -96,7 +107,9 @@ mod tests {
     #[test]
     fn committed_icon_is_valid() {
         let path = crate::root().join("assets/app-icon/wordcraft.ico");
-        let Ok(ico) = std::fs::read(&path) else { return };
+        let Ok(ico) = std::fs::read(&path) else {
+            return;
+        };
         assert_eq!(&ico[..4], &[0, 0, 1, 0]);
         let n = u16::from_le_bytes([ico[4], ico[5]]) as usize;
         assert!(n >= 4, "expected several sizes in {}", path.display());

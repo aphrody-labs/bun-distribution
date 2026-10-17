@@ -218,11 +218,32 @@ pub(crate) fn has_struct_tree(doc: &Document) -> bool {
 /// Walks the structure tree in document order, telling `v` about each element.
 fn walk<V: Visitor>(doc: &Document, pages: &[Page], v: &mut V) {
     let Some(root) = struct_root(doc) else { return };
-    let role_map = root.as_dict().and_then(|d| d.get(b"RoleMap")).map(|o| doc.resolve(o)).and_then(|o| o.as_dict().cloned()).unwrap_or_default();
-    let page_index: HashMap<ObjRef, usize> = pages.iter().enumerate().map(|(i, p)| (p.obj, i)).collect();
-    let mut w = Walker { doc, role_map, page_index, seen: HashSet::new(), frames: Vec::new(), tasks: Vec::new(), opened: 0 };
+    let role_map = root
+        .as_dict()
+        .and_then(|d| d.get(b"RoleMap"))
+        .map(|o| doc.resolve(o))
+        .and_then(|o| o.as_dict().cloned())
+        .unwrap_or_default();
+    let page_index: HashMap<ObjRef, usize> =
+        pages.iter().enumerate().map(|(i, p)| (p.obj, i)).collect();
+    let mut w = Walker {
+        doc,
+        role_map,
+        page_index,
+        seen: HashSet::new(),
+        frames: Vec::new(),
+        tasks: Vec::new(),
+        opened: 0,
+    };
     if root.as_dict().is_some_and(|d| d.contains(b"K")) {
-        w.tasks.push(Task::Node { loc: Loc { owner: root, path: vec![Step::K] }, depth: 0, page: None });
+        w.tasks.push(Task::Node {
+            loc: Loc {
+                owner: root,
+                path: vec![Step::K],
+            },
+            depth: 0,
+            page: None,
+        });
     }
     while let Some(task) = w.tasks.pop() {
         w.step(task, v);
@@ -247,28 +268,43 @@ enum Step {
 
 impl Loc {
     fn value(&self) -> Option<&Object> {
-        self.path.iter().try_fold(&*self.owner, |cur, step| match step {
-            Step::Index(n) => match cur {
-                Object::Array(items) => items.get(*n),
-                _ => None,
-            },
-            Step::K => cur.as_dict()?.get(b"K"),
-        })
+        self.path
+            .iter()
+            .try_fold(&*self.owner, |cur, step| match step {
+                Step::Index(n) => match cur {
+                    Object::Array(items) => items.get(*n),
+                    _ => None,
+                },
+                Step::K => cur.as_dict()?.get(b"K"),
+            })
     }
 
     fn with(&self, step: Step) -> Loc {
         let mut path = self.path.clone();
         path.push(step);
-        Loc { owner: self.owner.clone(), path }
+        Loc {
+            owner: self.owner.clone(),
+            path,
+        }
     }
 }
 
 /// Work still to do. The walk is depth first: the last task pushed runs first.
 enum Task {
     /// Read the value at `loc`, a kid at nesting `depth`, on page `page` if known.
-    Node { loc: Loc, depth: usize, page: Option<usize> },
+    Node {
+        loc: Loc,
+        depth: usize,
+        page: Option<usize>,
+    },
     /// Items `next..len` of the array at `loc`, each at nesting `depth`.
-    Items { loc: Loc, next: usize, len: usize, depth: usize, page: Option<usize> },
+    Items {
+        loc: Loc,
+        next: usize,
+        len: usize,
+        depth: usize,
+        page: Option<usize>,
+    },
     /// The innermost open element has no more kids.
     Close,
 }
@@ -292,12 +328,28 @@ impl Walker<'_> {
     fn step<V: Visitor>(&mut self, task: Task, v: &mut V) {
         match task {
             Task::Node { loc, depth, page } => self.node(&loc, depth, page, v),
-            Task::Items { loc, next, len, depth, page } => {
+            Task::Items {
+                loc,
+                next,
+                len,
+                depth,
+                page,
+            } => {
                 // The rest of the array waits below the item that is read now.
                 if next + 1 < len {
-                    self.tasks.push(Task::Items { loc: loc.clone(), next: next + 1, len, depth, page });
+                    self.tasks.push(Task::Items {
+                        loc: loc.clone(),
+                        next: next + 1,
+                        len,
+                        depth,
+                        page,
+                    });
                 }
-                self.tasks.push(Task::Node { loc: loc.with(Step::Index(next)), depth, page });
+                self.tasks.push(Task::Node {
+                    loc: loc.with(Step::Index(next)),
+                    depth,
+                    page,
+                });
             }
             Task::Close => self.close(v),
         }
@@ -312,7 +364,13 @@ impl Walker<'_> {
         let Some(value) = loc.value() else { return };
         match value {
             Object::Array(items) if !items.is_empty() => {
-                self.tasks.push(Task::Items { loc: loc.clone(), next: 0, len: items.len(), depth: depth + 1, page });
+                self.tasks.push(Task::Items {
+                    loc: loc.clone(),
+                    next: 0,
+                    len: items.len(),
+                    depth: depth + 1,
+                    page,
+                });
             }
             Object::Int(_) => self.mark_content(),
             Object::Ref(r) => self.reference(*r, depth, page, v),
@@ -328,22 +386,42 @@ impl Walker<'_> {
         }
         let target = self.doc.get(r);
         if target.as_dict().is_some() {
-            self.dict(&Loc { owner: target, path: Vec::new() }, depth, page, Some(r), v);
+            self.dict(
+                &Loc {
+                    owner: target,
+                    path: Vec::new(),
+                },
+                depth,
+                page,
+                Some(r),
+                v,
+            );
         }
     }
 
     /// A dictionary. Marked content and object references only mark the open element; a
     /// dictionary with /S is an element, and its /K kids are read inside it.
-    fn dict<V: Visitor>(&mut self, loc: &Loc, depth: usize, page: Option<usize>, object: Option<ObjRef>, v: &mut V) {
-        let Some(d) = loc.value().and_then(|o| o.as_dict()) else { return };
+    fn dict<V: Visitor>(
+        &mut self,
+        loc: &Loc,
+        depth: usize,
+        page: Option<usize>,
+        object: Option<ObjRef>,
+        v: &mut V,
+    ) {
+        let Some(d) = loc.value().and_then(|o| o.as_dict()) else {
+            return;
+        };
         match d.name(b"Type") {
             Some(b"MCR") => return self.mark_content(),
             Some(b"OBJR") => {
                 self.mark_content();
-                let annotation = d
-                    .get(b"Obj")
-                    .and_then(Object::as_ref)
-                    .is_some_and(|o| self.doc.get(o).as_dict().is_some_and(|a| a.contains(b"Subtype") && a.contains(b"Rect")));
+                let annotation = d.get(b"Obj").and_then(Object::as_ref).is_some_and(|o| {
+                    self.doc
+                        .get(o)
+                        .as_dict()
+                        .is_some_and(|a| a.contains(b"Subtype") && a.contains(b"Rect"))
+                });
                 if annotation && let Some(parent) = self.frames.last_mut() {
                     parent.annot = true;
                 }
@@ -356,7 +434,11 @@ impl Walker<'_> {
         let alt = self.has_text(d, b"Alt") || self.has_text(d, b"ActualText");
         let ty = self.standard(s);
         let kind = kind_of(&ty);
-        let attrs = if matches!(kind, Kind::Table | Kind::Td | Kind::Th) { self.attr_dicts(d) } else { Vec::new() };
+        let attrs = if matches!(kind, Kind::Table | Kind::Td | Kind::Th) {
+            self.attr_dicts(d)
+        } else {
+            Vec::new()
+        };
         let frame = Frame {
             object,
             ty,
@@ -380,13 +462,19 @@ impl Walker<'_> {
         }
         self.tasks.push(Task::Close);
         if d.contains(b"K") {
-            self.tasks.push(Task::Node { loc: loc.with(Step::K), depth: depth + 1, page });
+            self.tasks.push(Task::Node {
+                loc: loc.with(Step::K),
+                depth: depth + 1,
+                page,
+            });
         }
     }
 
     /// The innermost element has no more kids: report it, and pass its content up to its parent.
     fn close<V: Visitor>(&mut self, v: &mut V) {
-        let Some(frame) = self.frames.pop() else { return };
+        let Some(frame) = self.frames.pop() else {
+            return;
+        };
         if let Some(parent) = self.frames.last_mut() {
             parent.sub_content |= frame.subtree_content();
             parent.sub_annot |= frame.subtree_annot();
@@ -402,12 +490,17 @@ impl Walker<'_> {
     }
 
     fn page_of(&self, d: &Dict) -> Option<usize> {
-        d.get(b"Pg").and_then(Object::as_ref).and_then(|r| self.page_index.get(&r).copied())
+        d.get(b"Pg")
+            .and_then(Object::as_ref)
+            .and_then(|r| self.page_index.get(&r).copied())
     }
 
     /// Whether `key` holds a string with some text in it.
     fn has_text(&self, d: &Dict, key: &[u8]) -> bool {
-        d.get(key).map(|o| self.doc.resolve(o)).and_then(|o| o.as_string().map(|s| !s.to_text().trim().is_empty())).unwrap_or(false)
+        d.get(key)
+            .map(|o| self.doc.resolve(o))
+            .and_then(|o| o.as_string().map(|s| !s.to_text().trim().is_empty()))
+            .unwrap_or(false)
     }
 
     /// The standard type of `ty`, following the role map (a bounded number of steps).
@@ -417,7 +510,12 @@ impl Walker<'_> {
             if STANDARD.contains(&t.as_slice()) {
                 return t;
             }
-            match self.role_map.get(&t).map(|o| self.doc.resolve(o)).and_then(|o| o.as_name().map(<[u8]>::to_vec)) {
+            match self
+                .role_map
+                .get(&t)
+                .map(|o| self.doc.resolve(o))
+                .and_then(|o| o.as_name().map(<[u8]>::to_vec))
+            {
                 Some(n) if n != t => t = n,
                 _ => break,
             }
@@ -427,7 +525,9 @@ impl Walker<'_> {
 
     /// The attribute dictionaries of an element: the dictionaries its /A entry holds, one or an array.
     fn attr_dicts(&self, d: &Dict) -> Vec<Arc<Object>> {
-        let Some(a) = d.get(b"A").map(|o| self.doc.resolve(o)) else { return Vec::new() };
+        let Some(a) = d.get(b"A").map(|o| self.doc.resolve(o)) else {
+            return Vec::new();
+        };
         let held: Vec<Arc<Object>> = match &*a {
             Object::Array(items) => items.iter().map(|x| self.doc.resolve(x)).collect(),
             other => vec![self.doc.resolve(other)],
@@ -439,12 +539,18 @@ impl Walker<'_> {
 /// The integer value of `key` in the first attribute dictionary that has the key. `None` when no
 /// attribute dictionary has it; `Some(None)` when its value is not an integer.
 fn attr_int(attrs: &[Arc<Object>], key: &[u8]) -> Option<Option<i64>> {
-    attrs.iter().find_map(|a| a.as_dict()?.get(key)).map(Object::as_int)
+    attrs
+        .iter()
+        .find_map(|a| a.as_dict()?.get(key))
+        .map(Object::as_int)
 }
 
 /// A span attribute: at least 1, at most `MAX_SPAN`; 1 when absent or not an integer.
 fn span(attrs: &[Arc<Object>], key: &[u8]) -> usize {
-    attr_int(attrs, key).flatten().filter(|n| *n >= 1).map_or(1, |n| n.min(MAX_SPAN as i64) as usize)
+    attr_int(attrs, key)
+        .flatten()
+        .filter(|n| *n >= 1)
+        .map_or(1, |n| n.min(MAX_SPAN as i64) as usize)
 }
 
 /// The depth of the table a row belongs to, given the row's ancestors: the table itself, or the
@@ -453,7 +559,10 @@ fn row_owner(path: &[Frame]) -> Option<usize> {
     let (parent, rest) = path.split_last()?;
     match parent.kind {
         Kind::Table => Some(rest.len()),
-        Kind::Section => rest.last().filter(|grand| grand.kind == Kind::Table).map(|_| rest.len() - 1),
+        Kind::Section => rest
+            .last()
+            .filter(|grand| grand.kind == Kind::Table)
+            .map(|_| rest.len() - 1),
         _ => None,
     }
 }
@@ -502,7 +611,11 @@ fn covered_end(carry: &[Run], cursor: &mut usize, col: usize) -> Option<usize> {
 /// The runs that reach into the next row: `carry` one row shorter, merged with this row's `row`
 /// runs. A column takes the longer of the two. Both inputs are sorted and disjoint.
 fn carry_into_next_row(carry: &[Run], row: &[Run]) -> Vec<Run> {
-    let mut points: Vec<usize> = carry.iter().chain(row).flat_map(|r| [r.start, r.end]).collect();
+    let mut points: Vec<usize> = carry
+        .iter()
+        .chain(row)
+        .flat_map(|r| [r.start, r.end])
+        .collect();
     points.sort_unstable();
     points.dedup();
     let mut out: Vec<Run> = Vec::new();
@@ -515,7 +628,10 @@ fn carry_into_next_row(carry: &[Run], row: &[Run]) -> Vec<Run> {
         while row.get(b).is_some_and(|r| r.end <= from) {
             b += 1;
         }
-        let before = carry.get(a).filter(|r| r.start <= from).map_or(0, |r| r.rows.saturating_sub(1));
+        let before = carry
+            .get(a)
+            .filter(|r| r.start <= from)
+            .map_or(0, |r| r.rows.saturating_sub(1));
         let here = row.get(b).filter(|r| r.start <= from).map_or(0, |r| r.rows);
         let rows = before.max(here);
         if rows == 0 {
@@ -523,7 +639,11 @@ fn carry_into_next_row(carry: &[Run], row: &[Run]) -> Vec<Run> {
         }
         match out.last_mut() {
             Some(last) if last.end == from && last.rows == rows => last.end = to,
-            _ => out.push(Run { start: from, end: to, rows }),
+            _ => out.push(Run {
+                start: from,
+                end: to,
+                rows,
+            }),
         }
     }
     out
@@ -548,7 +668,15 @@ struct Table {
 
 impl Table {
     fn new(depth: usize) -> Table {
-        Table { depth, has_th: false, range: None, carry: Vec::new(), col: 0, cursor: 0, starts: Vec::new() }
+        Table {
+            depth,
+            has_th: false,
+            range: None,
+            carry: Vec::new(),
+            col: 0,
+            cursor: 0,
+            starts: Vec::new(),
+        }
     }
 
     fn start_row(&mut self) {
@@ -565,7 +693,11 @@ impl Table {
         }
         let end = start.saturating_add(col_span);
         if row_span > 1 {
-            self.starts.push(Run { start, end, rows: row_span.saturating_sub(1) });
+            self.starts.push(Run {
+                start,
+                end,
+                rows: row_span.saturating_sub(1),
+            });
         }
         self.col = end;
     }
@@ -625,17 +757,26 @@ impl Found {
     /// Counts a finding at document position `index`. Its text is built only if it is kept.
     fn add(&mut self, index: usize, make: impl FnOnce() -> Finding) {
         self.total = self.total.saturating_add(1);
-        let keep = self.kept.len() < MAX_FINDINGS || self.kept.peek().is_some_and(|last| index < last.index);
+        let keep = self.kept.len() < MAX_FINDINGS
+            || self.kept.peek().is_some_and(|last| index < last.index);
         if keep {
             if self.kept.len() >= MAX_FINDINGS {
                 self.kept.pop();
             }
-            self.kept.push(Kept { index, finding: make() });
+            self.kept.push(Kept {
+                index,
+                finding: make(),
+            });
         }
     }
 
     fn into_result(self) -> (Vec<Finding>, usize) {
-        let findings = self.kept.into_sorted_vec().into_iter().map(|k| k.finding).collect();
+        let findings = self
+            .kept
+            .into_sorted_vec()
+            .into_iter()
+            .map(|k| k.finding)
+            .collect();
         (findings, self.total)
     }
 }
@@ -666,14 +807,23 @@ impl Visitor for Checks {
     fn enter(&mut self, ancestors: &[Frame], e: &Frame) {
         let parent = ancestors.last().map(|p| p.kind);
         if e.alt && e.alt_above {
-            self.add(Rule::NestedAltText, e.index, || finding(e, "its alternate text is inside another element's and will never be read"));
+            self.add(Rule::NestedAltText, e.index, || {
+                finding(
+                    e,
+                    "its alternate text is inside another element's and will never be read",
+                )
+            });
         }
         match e.kind {
             Kind::Figure if !e.alt && !e.alt_above => {
-                self.add(Rule::FiguresAltText, e.index, || finding(e, "no alternate text"));
+                self.add(Rule::FiguresAltText, e.index, || {
+                    finding(e, "no alternate text")
+                });
             }
             Kind::Formula if !e.alt && !e.alt_above => {
-                self.add(Rule::OtherElementsAltText, e.index, || finding(e, "no alternate text"));
+                self.add(Rule::OtherElementsAltText, e.index, || {
+                    finding(e, "no alternate text")
+                });
             }
             Kind::Table => {
                 self.tables.push(Table::new(ancestors.len()));
@@ -683,7 +833,9 @@ impl Visitor for Checks {
             }
             Kind::Tr => {
                 if !matches!(parent, Some(Kind::Table | Kind::Section)) {
-                    self.add(Rule::TableRows, e.index, || finding(e, "not in a Table, THead, TBody or TFoot"));
+                    self.add(Rule::TableRows, e.index, || {
+                        finding(e, "not in a Table, THead, TBody or TFoot")
+                    });
                 }
                 if let Some(table) = row_owner(ancestors).and_then(|depth| self.table_at(depth)) {
                     table.start_row();
@@ -703,10 +855,14 @@ impl Visitor for Checks {
                 }
             }
             Kind::Li if parent != Some(Kind::L) => {
-                self.add(Rule::ListItems, e.index, || finding(e, "not in an L (list)"));
+                self.add(Rule::ListItems, e.index, || {
+                    finding(e, "not in an L (list)")
+                });
             }
             Kind::Lbl | Kind::LBody if !matches!(parent, Some(Kind::Li | Kind::NoteOrToc)) => {
-                self.add(Rule::LblLBody, e.index, || finding(e, "not in an LI (list item)"));
+                self.add(Rule::LblLBody, e.index, || {
+                    finding(e, "not in an LI (list item)")
+                });
             }
             Kind::Heading(level) => {
                 let prev = self.heading;
@@ -733,15 +889,24 @@ impl Visitor for Checks {
     fn exit(&mut self, ancestors: &[Frame], e: &Frame) {
         match e.kind {
             Kind::Table => {
-                let is_ours = self.tables.last().is_some_and(|t| t.depth == ancestors.len());
+                let is_ours = self
+                    .tables
+                    .last()
+                    .is_some_and(|t| t.depth == ancestors.len());
                 let table = if is_ours { self.tables.pop() } else { None };
                 if let Some(table) = table {
                     if !table.has_th {
-                        self.add(Rule::TableHeaders, e.index, || finding(e, "no header cells (TH)"));
+                        self.add(Rule::TableHeaders, e.index, || {
+                            finding(e, "no header cells (TH)")
+                        });
                     }
                     if let Some((narrow, wide)) = table.range.filter(|(lo, hi)| lo != hi) {
                         self.add(Rule::TableRegularity, e.index, || {
-                            worded(e, IRREGULAR, vec![("{min}", narrow.to_string()), ("{max}", wide.to_string())])
+                            worded(
+                                e,
+                                IRREGULAR,
+                                vec![("{min}", narrow.to_string()), ("{max}", wide.to_string())],
+                            )
                         });
                     }
                 }
@@ -755,10 +920,14 @@ impl Visitor for Checks {
         }
         if e.alt {
             if !e.subtree_content() {
-                self.add(Rule::AltTextAssociated, e.index, || finding(e, "alternate text on an element with no page content"));
+                self.add(Rule::AltTextAssociated, e.index, || {
+                    finding(e, "alternate text on an element with no page content")
+                });
             }
             if e.subtree_annot() {
-                self.add(Rule::AltTextHidesAnnotation, e.index, || finding(e, "alternate text hides an annotation inside it"));
+                self.add(Rule::AltTextHidesAnnotation, e.index, || {
+                    finding(e, "alternate text hides an annotation inside it")
+                });
             }
         }
     }
@@ -766,14 +935,30 @@ impl Visitor for Checks {
 
 /// Evaluates the structure rules in `selected` in one walk of the tree. Each rule's result is its
 /// first `MAX_FINDINGS` findings in document order, and the total number of findings.
-pub(crate) fn run(doc: &Document, pages: &[Page], selected: &BTreeSet<Rule>) -> BTreeMap<Rule, (Vec<Finding>, usize)> {
-    let found: BTreeMap<Rule, Found> = RULES.into_iter().filter(|r| selected.contains(r)).map(|r| (r, Found::default())).collect();
+pub(crate) fn run(
+    doc: &Document,
+    pages: &[Page],
+    selected: &BTreeSet<Rule>,
+) -> BTreeMap<Rule, (Vec<Finding>, usize)> {
+    let found: BTreeMap<Rule, Found> = RULES
+        .into_iter()
+        .filter(|r| selected.contains(r))
+        .map(|r| (r, Found::default()))
+        .collect();
     if found.is_empty() {
         return BTreeMap::new();
     }
-    let mut checks = Checks { found, heading: 0, tables: Vec::new() };
+    let mut checks = Checks {
+        found,
+        heading: 0,
+        tables: Vec::new(),
+    };
     walk(doc, pages, &mut checks);
-    checks.found.into_iter().map(|(rule, found)| (rule, found.into_result())).collect()
+    checks
+        .found
+        .into_iter()
+        .map(|(rule, found)| (rule, found.into_result()))
+        .collect()
 }
 
 #[cfg(test)]
@@ -814,7 +999,10 @@ mod tests {
 
     impl Lcg {
         fn below(&mut self, n: usize) -> usize {
-            self.0 = self.0.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
+            self.0 = self
+                .0
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
             ((self.0 >> 33) as usize) % n
         }
     }

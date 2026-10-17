@@ -12,15 +12,21 @@ use pbjson_types::{Struct, Timestamp, Value, value};
 use serde_json::{Value as JsonValue, json};
 
 fn string_value(value: &str) -> Value {
-    Value { kind: Some(value::Kind::StringValue(value.to_string())) }
+    Value {
+        kind: Some(value::Kind::StringValue(value.to_string())),
+    }
 }
 
 fn number_value(value: f64) -> Value {
-    Value { kind: Some(value::Kind::NumberValue(value)) }
+    Value {
+        kind: Some(value::Kind::NumberValue(value)),
+    }
 }
 
 fn bool_value(value: bool) -> Value {
-    Value { kind: Some(value::Kind::BoolValue(value)) }
+    Value {
+        kind: Some(value::Kind::BoolValue(value)),
+    }
 }
 
 fn struct_value(fields: impl IntoIterator<Item = (&'static str, Value)>) -> Struct {
@@ -112,7 +118,10 @@ fn task_protojson_roundtrip_serializes_protojson_primitives() {
                 extensions: vec![],
                 reference_task_ids: vec![],
             }),
-            timestamp: Some(Timestamp { seconds: 1_700_000_000, nanos: 0 }),
+            timestamp: Some(Timestamp {
+                seconds: 1_700_000_000,
+                nanos: 0,
+            }),
         }),
         artifacts: vec![Artifact {
             artifact_id: "artifact-1".to_string(),
@@ -153,7 +162,10 @@ fn task_protojson_roundtrip_serializes_protojson_primitives() {
     let json = serde_json::to_value(&task).unwrap();
     let timestamp = json["status"]["timestamp"].as_str().unwrap();
     assert_eq!(json["status"]["state"], json!("TASK_STATE_COMPLETED"));
-    assert!(matches!(timestamp, "2023-11-14T22:13:20Z" | "2023-11-14T22:13:20+00:00"));
+    assert!(matches!(
+        timestamp,
+        "2023-11-14T22:13:20Z" | "2023-11-14T22:13:20+00:00"
+    ));
     assert_eq!(json["artifacts"][0]["parts"][0]["raw"], json!("AAECAw=="));
     assert_eq!(json["history"][0]["parts"][0]["data"]["score"], json!(0.98));
     assert_eq!(json["metadata"]["source"], json!("protojson-test"));
@@ -204,7 +216,9 @@ fn agent_card_protojson_deserializes_null_skills_as_empty() {
     };
 
     let mut json = serde_json::to_value(&card).unwrap();
-    json.as_object_mut().unwrap().insert("skills".to_string(), JsonValue::Null);
+    json.as_object_mut()
+        .unwrap()
+        .insert("skills".to_string(), JsonValue::Null);
 
     let parsed: AgentCard = serde_json::from_value(json).unwrap();
 
@@ -216,35 +230,43 @@ fn agent_card_protojson_deserializes_null_skills_as_empty() {
 #[test]
 fn stream_response_protojson_roundtrip_serializes_oneof_payloads() {
     let response = StreamResponse {
-        payload: Some(stream_response::Payload::StatusUpdate(TaskStatusUpdateEvent {
-            task_id: "task-42".to_string(),
-            context_id: "ctx-42".to_string(),
-            status: Some(TaskStatus {
-                state: TaskState::Working as i32,
-                message: Some(Message {
-                    message_id: "msg-progress".to_string(),
-                    context_id: "ctx-42".to_string(),
-                    task_id: "task-42".to_string(),
-                    role: Role::Agent as i32,
-                    parts: vec![Part {
+        payload: Some(stream_response::Payload::StatusUpdate(
+            TaskStatusUpdateEvent {
+                task_id: "task-42".to_string(),
+                context_id: "ctx-42".to_string(),
+                status: Some(TaskStatus {
+                    state: TaskState::Working as i32,
+                    message: Some(Message {
+                        message_id: "msg-progress".to_string(),
+                        context_id: "ctx-42".to_string(),
+                        task_id: "task-42".to_string(),
+                        role: Role::Agent as i32,
+                        parts: vec![Part {
+                            metadata: None,
+                            filename: String::new(),
+                            media_type: "text/plain".to_string(),
+                            content: Some(part::Content::Text("working".to_string())),
+                        }],
                         metadata: None,
-                        filename: String::new(),
-                        media_type: "text/plain".to_string(),
-                        content: Some(part::Content::Text("working".to_string())),
-                    }],
-                    metadata: None,
-                    extensions: vec![],
-                    reference_task_ids: vec![],
+                        extensions: vec![],
+                        reference_task_ids: vec![],
+                    }),
+                    timestamp: Some(Timestamp {
+                        seconds: 1_700_000_300,
+                        nanos: 0,
+                    }),
                 }),
-                timestamp: Some(Timestamp { seconds: 1_700_000_300, nanos: 0 }),
-            }),
-            metadata: Some(struct_value([("progress", number_value(0.5))])),
-        })),
+                metadata: Some(struct_value([("progress", number_value(0.5))])),
+            },
+        )),
     };
 
     let json = serde_json::to_value(&response).unwrap();
     assert!(json.get("statusUpdate").is_some());
-    assert_eq!(json["statusUpdate"]["status"]["state"], json!("TASK_STATE_WORKING"));
+    assert_eq!(
+        json["statusUpdate"]["status"]["state"],
+        json!("TASK_STATE_WORKING")
+    );
     assert_eq!(json["statusUpdate"]["metadata"]["progress"], json!(0.5));
 
     let roundtrip: StreamResponse = serde_json::from_value(json).unwrap();

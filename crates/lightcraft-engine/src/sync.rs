@@ -65,8 +65,18 @@ impl SyncProgress {
     /// (done, of how many), both halves together.
     pub fn counts(&self) -> (usize, usize) {
         use std::sync::atomic::Ordering::Relaxed;
-        let done = self.files.done.load(Relaxed).saturating_add(self.checked.load(Relaxed));
-        (done, self.files.total.load(Relaxed).saturating_add(self.to_check.load(Relaxed)))
+        let done = self
+            .files
+            .done
+            .load(Relaxed)
+            .saturating_add(self.checked.load(Relaxed));
+        (
+            done,
+            self.files
+                .total
+                .load(Relaxed)
+                .saturating_add(self.to_check.load(Relaxed)),
+        )
     }
 }
 
@@ -137,7 +147,12 @@ impl Default for SyncChoice {
     /// Lightroom Classic's defaults: import the new files, leave the rest to be looked at; and
     /// photos whose file moved follow it (nothing is lost, and undo puts them back).
     fn default() -> Self {
-        SyncChoice { import_new: true, relink_moved: true, remove_missing: false, read_metadata: false }
+        SyncChoice {
+            import_new: true,
+            relink_moved: true,
+            remove_missing: false,
+            read_metadata: false,
+        }
     }
 }
 
@@ -168,18 +183,37 @@ impl SyncInput {
         if lightcraft_catalog::folders::is_startup_disk(path) {
             return Err(invalid("choose a folder, not the whole startup disk"));
         }
-        let f = Filter { library_folder: Some(path.to_string()), ..Default::default() };
+        let f = Filter {
+            library_folder: Some(path.to_string()),
+            ..Default::default()
+        };
         let ids = s.catalog.query(&f, &Sort::default());
         if ids.is_empty() {
-            return Err(invalid(format!("{path}: no photo in the library was imported from it")));
+            return Err(invalid(format!(
+                "{path}: no photo in the library was imported from it"
+            )));
         }
-        if !disk && (lightcraft_catalog::folders::is_disk_root(path) || crate::cmd::library::covers_other_disks(s, path, &ids)) {
-            return Err(invalid(format!("{path} is a whole disk or holds disks: pass `disk: true` to synchronize it")));
+        if !disk
+            && (lightcraft_catalog::folders::is_disk_root(path)
+                || crate::cmd::library::covers_other_disks(s, path, &ids))
+        {
+            return Err(invalid(format!(
+                "{path} is a whole disk or holds disks: pass `disk: true` to synchronize it"
+            )));
         }
         let namings = s.sidecar_namings(&ids);
-        let photos = ids.iter().zip(namings).filter_map(|(id, naming)| s.catalog.photo(*id).map(|p| (Arc::clone(p), naming))).collect();
+        let photos = ids
+            .iter()
+            .zip(namings)
+            .filter_map(|(id, naming)| s.catalog.photo(*id).map(|p| (Arc::clone(p), naming)))
+            .collect();
         let (scan, _) = ScanInput::new(s, &[path.to_string()]);
-        Ok(SyncInput { folder: path.to_string(), scan, photos, labels: s.catalog.clone() })
+        Ok(SyncInput {
+            folder: path.to_string(),
+            scan,
+            photos,
+            labels: s.catalog.clone(),
+        })
     }
 }
 
@@ -190,14 +224,27 @@ impl SyncInput {
 /// library's photos, which run on several threads too. Stops early when `progress.files.cancel`
 /// is set.
 pub fn scan_with(input: SyncInput, progress: &SyncProgress) -> FolderChanges {
-    let SyncInput { folder, scan, photos, labels } = input;
+    let SyncInput {
+        folder,
+        scan,
+        photos,
+        labels,
+    } = input;
     let seen: Vec<Arc<Photo>> = photos.iter().map(|(p, _)| Arc::clone(p)).collect();
     if !cfg!(target_arch = "wasm32") && !Path::new(&folder).is_dir() {
-        return FolderChanges { path: folder, seen, offline: true, ..Default::default() };
+        return FolderChanges {
+            path: folder,
+            seen,
+            offline: true,
+            ..Default::default()
+        };
     }
     // (no threads on the web: one after the other there)
     #[cfg(target_arch = "wasm32")]
-    let (out, checks) = (crate::import::scan_with(scan, std::slice::from_ref(&folder), &progress.files), check_photos(&photos, &labels, progress));
+    let (out, checks) = (
+        crate::import::scan_with(scan, std::slice::from_ref(&folder), &progress.files),
+        check_photos(&photos, &labels, progress),
+    );
     #[cfg(not(target_arch = "wasm32"))]
     let (out, checks) = std::thread::scope(|sc| {
         let photos = &photos;
@@ -207,10 +254,19 @@ pub fn scan_with(input: SyncInput, progress: &SyncProgress) -> FolderChanges {
         // (a check that panicked counts as nothing found; the scan still reports the rest)
         (out, checks.join().unwrap_or_default())
     });
-    let mut changes = FolderChanges { path: folder, seen, ..Default::default() };
+    let mut changes = FolderChanges {
+        path: folder,
+        seen,
+        ..Default::default()
+    };
     for ((p, _), check) in photos.iter().zip(checks) {
-        let Some(file) = crate::cmd::missing::checked_path(p) else { continue };
-        let found = FolderPhoto { id: p.id.0, path: file.to_string() };
+        let Some(file) = crate::cmd::missing::checked_path(p) else {
+            continue;
+        };
+        let found = FolderPhoto {
+            id: p.id.0,
+            path: file.to_string(),
+        };
         match check {
             Check::Missing => changes.missing.push(found),
             Check::News => changes.metadata.push(found),
@@ -222,10 +278,17 @@ pub fn scan_with(input: SyncInput, progress: &SyncProgress) -> FolderChanges {
         if moved_from.values().any(|to| *to == c.path) {
             continue;
         }
-        let browsed = c.existing.and_then(|id| labels.photo(PhotoId(id))).is_some_and(|p| p.local && !p.deleted);
+        let browsed = c
+            .existing
+            .and_then(|id| labels.photo(PhotoId(id)))
+            .is_some_and(|p| p.local && !p.deleted);
         match (c.duplicate.as_deref(), &c.error) {
             // a file only looked at in Local is not in the library yet: it is new
-            (Some("path"), _) if browsed => changes.new.push(ImportCandidate { duplicate: None, existing: None, ..c }),
+            (Some("path"), _) if browsed => changes.new.push(ImportCandidate {
+                duplicate: None,
+                existing: None,
+                ..c
+            }),
             (Some("path"), _) => {}
             (Some(_), _) => changes.duplicates += 1,
             (None, Some(_)) => changes.unreadable.push(c),
@@ -235,7 +298,11 @@ pub fn scan_with(input: SyncInput, progress: &SyncProgress) -> FolderChanges {
     let missing = std::mem::take(&mut changes.missing);
     for m in missing {
         match moved_from.get(&m.path) {
-            Some(to) => changes.moved.push(FolderMoved { id: m.id, from: m.path, to: to.clone() }),
+            Some(to) => changes.moved.push(FolderMoved {
+                id: m.id,
+                from: m.path,
+                to: to.clone(),
+            }),
             None => changes.missing.push(m),
         }
     }
@@ -250,10 +317,37 @@ fn same_for_sync(a: &Arc<Photo>, b: &Arc<Photo>) -> bool {
     if Arc::ptr_eq(a, b) {
         return true;
     }
-    let meta = |p: &Photo| lightcraft_catalog::Meta { regions: Vec::new(), ..p.meta.clone() };
-    (&a.source, a.deleted, a.local, a.copy_of, &a.content_hash, a.file_size, a.rating, a.flag, a.label, &a.captured, &a.edited, &a.develop)
-        == (&b.source, b.deleted, b.local, b.copy_of, &b.content_hash, b.file_size, b.rating, b.flag, b.label, &b.captured, &b.edited, &b.develop)
-        && meta(a) == meta(b)
+    let meta = |p: &Photo| lightcraft_catalog::Meta {
+        regions: Vec::new(),
+        ..p.meta.clone()
+    };
+    (
+        &a.source,
+        a.deleted,
+        a.local,
+        a.copy_of,
+        &a.content_hash,
+        a.file_size,
+        a.rating,
+        a.flag,
+        a.label,
+        &a.captured,
+        &a.edited,
+        &a.develop,
+    ) == (
+        &b.source,
+        b.deleted,
+        b.local,
+        b.copy_of,
+        &b.content_hash,
+        b.file_size,
+        b.rating,
+        b.flag,
+        b.label,
+        &b.captured,
+        &b.edited,
+        &b.develop,
+    ) && meta(a) == meta(b)
 }
 
 /// The content a hash stands for: a Duplicate's own hash is the original's plus `:dup<id>`.
@@ -291,7 +385,10 @@ fn match_moved(
     let mut moved: HashMap<String, String> = HashMap::new();
     for c in candidates.iter().filter(usable) {
         let hash = probes.get(&c.path).and_then(|i| i.content_hash.as_deref());
-        if let Some(from) = hash.and_then(|h| by_hash.get_mut(base_hash(h))).and_then(std::collections::VecDeque::pop_front) {
+        if let Some(from) = hash
+            .and_then(|h| by_hash.get_mut(base_hash(h)))
+            .and_then(std::collections::VecDeque::pop_front)
+        {
             moved.insert(from.to_string(), c.path.clone());
         }
     }
@@ -305,7 +402,11 @@ fn match_moved(
         }
     }
     let mut found: HashMap<(u64, u32, u32), Vec<&str>> = HashMap::new();
-    for c in candidates.iter().filter(usable).filter(|c| !moved.values().any(|to| *to == c.path)) {
+    for c in candidates
+        .iter()
+        .filter(usable)
+        .filter(|c| !moved.values().any(|to| *to == c.path))
+    {
         if let Some(k) = key(c.file_size, c.width, c.height) {
             found.entry(k).or_default().push(c.path.as_str());
         }
@@ -328,7 +429,9 @@ enum Check {
 }
 
 fn check_photo(p: &Photo, naming: SidecarNaming, labels: &Catalog) -> Check {
-    let Some(file) = crate::cmd::missing::checked_path(p) else { return Check::Nothing };
+    let Some(file) = crate::cmd::missing::checked_path(p) else {
+        return Check::Nothing;
+    };
     if !Path::new(file).exists() {
         Check::Missing
     } else if p.copy_of.is_none() && sidecar_has_news(labels, p, naming) {
@@ -340,7 +443,11 @@ fn check_photo(p: &Photo, naming: SidecarNaming, labels: &Catalog) -> Check {
 
 /// [`check_photo`] for each photo, in order, on several threads (each file is a wait on the
 /// disk, not work for the CPU). Photos not reached before a cancel count as nothing found.
-fn check_photos(photos: &[(Arc<Photo>, SidecarNaming)], labels: &Catalog, progress: &SyncProgress) -> Vec<Check> {
+fn check_photos(
+    photos: &[(Arc<Photo>, SidecarNaming)],
+    labels: &Catalog,
+    progress: &SyncProgress,
+) -> Vec<Check> {
     use std::sync::atomic::Ordering::Relaxed;
     progress.to_check.store(photos.len(), Relaxed);
     let cancel = &progress.files.cancel;
@@ -363,19 +470,36 @@ fn check_photos(photos: &[(Arc<Photo>, SidecarNaming)], labels: &Catalog, progre
                     sc.spawn(|| {
                         while !cancel.load(Relaxed) {
                             let i = next.fetch_add(1, Relaxed);
-                            let Some((p, naming)) = photos.get(i) else { break };
+                            let Some((p, naming)) = photos.get(i) else {
+                                break;
+                            };
                             let c = check(p, *naming);
-                            if let Some(slot) = found.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get_mut(i) {
+                            if let Some(slot) = found
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                                .get_mut(i)
+                            {
                                 *slot = c;
                             }
                         }
                     });
                 }
             });
-            return found.into_inner().unwrap_or_else(std::sync::PoisonError::into_inner);
+            return found
+                .into_inner()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
         }
     }
-    photos.iter().map(|(p, naming)| if cancel.load(Relaxed) { Check::Nothing } else { check(p, *naming) }).collect()
+    photos
+        .iter()
+        .map(|(p, naming)| {
+            if cancel.load(Relaxed) {
+                Check::Nothing
+            } else {
+                check(p, *naming)
+            }
+        })
+        .collect()
 }
 
 /// [`scan_with`] on the calling thread.
@@ -389,7 +513,9 @@ pub fn scan(s: &mut Session, path: &str, disk: bool) -> Result<FolderChanges> {
 }
 
 fn not_there(path: &str) -> EngineError {
-    invalid(format!("{path} is not there (moved, renamed, or on a disk that isn't connected)"))
+    invalid(format!(
+        "{path} is not there (moved, renamed, or on a disk that isn't connected)"
+    ))
 }
 
 impl Session {
@@ -398,15 +524,25 @@ impl Session {
     /// gets done. Used once. (Changes elsewhere in the library don't matter.)
     pub fn take_folder_changes(&mut self, path: &str) -> Option<FolderChanges> {
         let c = self.folder_changes.take()?;
-        if lightcraft_catalog::query::folder_key(&c.path) != lightcraft_catalog::query::folder_key(path) {
+        if lightcraft_catalog::query::folder_key(&c.path)
+            != lightcraft_catalog::query::folder_key(path)
+        {
             return None;
         }
-        let f = Filter { library_folder: Some(path.to_string()), ..Default::default() };
+        let f = Filter {
+            library_folder: Some(path.to_string()),
+            ..Default::default()
+        };
         let mut now: Vec<PhotoId> = self.catalog.query(&f, &Sort::default());
         let mut then: Vec<PhotoId> = c.seen.iter().map(|p| p.id).collect();
         now.sort();
         then.sort();
-        let unchanged = now == then && c.seen.iter().all(|p| self.catalog.photo(p.id).is_some_and(|q| same_for_sync(p, q)));
+        let unchanged = now == then
+            && c.seen.iter().all(|p| {
+                self.catalog
+                    .photo(p.id)
+                    .is_some_and(|q| same_for_sync(p, q))
+            });
         unchanged.then_some(c)
     }
 }
@@ -414,30 +550,55 @@ impl Session {
 /// Whether `p`'s XMP sidecar file was saved after the library last had its say about the photo
 /// (imported, or edited here) and says something the library doesn't.
 fn sidecar_has_news(labels: &Catalog, p: &Photo, naming: SidecarNaming) -> bool {
-    let Source::File { path } = &p.source else { return false };
-    let Some(file) = crate::sidecar::find_sidecar(path, naming) else { return false };
-    let Ok(meta) = std::fs::metadata(&file) else { return false };
+    let Source::File { path } = &p.source else {
+        return false;
+    };
+    let Some(file) = crate::sidecar::find_sidecar(path, naming) else {
+        return false;
+    };
+    let Ok(meta) = std::fs::metadata(&file) else {
+        return false;
+    };
     if meta.len() > MAX_SIDECAR_BYTES {
         return false;
     }
-    let saved = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs());
-    let Some(saved) = saved.and_then(|s| i64::try_from(s).ok()) else { return false };
-    let seen = [Some(p.imported.as_str()), p.edited.as_deref()].into_iter().flatten().filter_map(lightcraft_catalog::stacks::iso_seconds).max();
+    let saved = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs());
+    let Some(saved) = saved.and_then(|s| i64::try_from(s).ok()) else {
+        return false;
+    };
+    let seen = [Some(p.imported.as_str()), p.edited.as_deref()]
+        .into_iter()
+        .flatten()
+        .filter_map(lightcraft_catalog::stacks::iso_seconds)
+        .max();
     if seen.is_some_and(|t| saved <= t) {
         return false;
     }
-    let Ok(text) = std::fs::read_to_string(&file) else { return false };
-    let Ok(sc) = crate::sidecar::parse_sidecar(&text, crate::crs::Target::for_photo(p)) else { return false };
+    let Ok(text) = std::fs::read_to_string(&file) else {
+        return false;
+    };
+    let Ok(sc) = crate::sidecar::parse_sidecar(&text, crate::crs::Target::for_photo(p)) else {
+        return false;
+    };
     let sc = sc.resolve_label(labels);
     let mut q = p.clone();
     crate::sidecar::merge_into(&mut q, &sc, "");
-    (q.rating, q.flag, q.label, &q.meta, &q.captured, &q.develop) != (p.rating, p.flag, p.label, &p.meta, &p.captured, &p.develop)
+    (q.rating, q.flag, q.label, &q.meta, &q.captured, &q.develop)
+        != (p.rating, p.flag, p.label, &p.meta, &p.captured, &p.develop)
 }
 
 /// Act on `changes` as `choice` says, as one undo step ("Synchronize Folder"). A missing photo
 /// whose file is back by now is left alone. Once the import is in, a part that fails is
 /// reported in `failed` and the rest is still done (and still one step).
-pub fn synchronize(s: &mut Session, changes: FolderChanges, choice: SyncChoice) -> Result<SyncReport> {
+pub fn synchronize(
+    s: &mut Session,
+    changes: FolderChanges,
+    choice: SyncChoice,
+) -> Result<SyncReport> {
     let (work, mut commit) = SyncJob::start(s, changes, choice)?;
     let mut steps = Vec::new();
     work.run(&SyncProgress::default(), |step| {
@@ -492,17 +653,37 @@ pub enum SyncStep {
     /// Missing photos whose file is still gone.
     Remove(Vec<PhotoId>),
     /// Sidecars read (photo, its file, what the sidecar says or why it couldn't be read).
-    Sidecars(Vec<(PhotoId, String, std::result::Result<crate::sidecar::SidecarData, String>)>),
+    Sidecars(
+        Vec<(
+            PhotoId,
+            String,
+            std::result::Result<crate::sidecar::SidecarData, String>,
+        )>,
+    ),
 }
 
 impl SyncJob {
     /// Ready a synchronize of `changes` as `choice` says. Reads no file.
-    pub fn start(s: &mut Session, changes: FolderChanges, choice: SyncChoice) -> Result<(SyncWork, SyncCommit)> {
+    pub fn start(
+        s: &mut Session,
+        changes: FolderChanges,
+        choice: SyncChoice,
+    ) -> Result<(SyncWork, SyncCommit)> {
         if changes.offline {
             return Err(not_there(&changes.path));
         }
-        let FolderChanges { new, missing, metadata, moved, probes, .. } = changes;
-        let opts = ImportOptions { mode: ImportMode::Add, ..Default::default() };
+        let FolderChanges {
+            new,
+            missing,
+            metadata,
+            moved,
+            probes,
+            ..
+        } = changes;
+        let opts = ImportOptions {
+            mode: ImportMode::Add,
+            ..Default::default()
+        };
         let import = if choice.import_new && !new.is_empty() {
             s.import_probes = probes;
             let job = crate::import::ImportJob::new(s, opts.clone())?;
@@ -510,9 +691,12 @@ impl SyncJob {
         } else {
             None
         };
-        let now = import.as_ref().map_or_else(|| (s.clock)(), |(j, _)| j.now().to_string());
+        let now = import
+            .as_ref()
+            .map_or_else(|| (s.clock)(), |(j, _)| j.now().to_string());
         let sidecars = if choice.read_metadata {
-            let namings = s.sidecar_namings(&metadata.iter().map(|m| PhotoId(m.id)).collect::<Vec<_>>());
+            let namings =
+                s.sidecar_namings(&metadata.iter().map(|m| PhotoId(m.id)).collect::<Vec<_>>());
             metadata
                 .into_iter()
                 .zip(namings)
@@ -526,8 +710,16 @@ impl SyncJob {
         };
         let work = SyncWork {
             import,
-            moved: if choice.relink_moved { moved } else { Vec::new() },
-            missing: if choice.remove_missing { missing } else { Vec::new() },
+            moved: if choice.relink_moved {
+                moved
+            } else {
+                Vec::new()
+            },
+            missing: if choice.remove_missing {
+                missing
+            } else {
+                Vec::new()
+            },
             sidecars,
         };
         let commit = SyncCommit {
@@ -550,8 +742,16 @@ impl SyncWork {
     pub fn run(self, progress: &SyncProgress, mut send: impl FnMut(SyncStep) -> bool) {
         use std::sync::atomic::Ordering::Relaxed;
         let cancel = &progress.files.cancel;
-        let SyncWork { import, moved, missing, sidecars } = self;
-        let pieces = import.as_ref().map_or(0, |(_, f)| f.len()) + moved.len() + missing.len() + sidecars.len();
+        let SyncWork {
+            import,
+            moved,
+            missing,
+            sidecars,
+        } = self;
+        let pieces = import.as_ref().map_or(0, |(_, f)| f.len())
+            + moved.len()
+            + missing.len()
+            + sidecars.len();
         progress.to_check.store(pieces, Relaxed);
         progress.checked.store(0, Relaxed);
         let step = |n: usize| {
@@ -575,8 +775,11 @@ impl SyncWork {
         }
         // still where the scan found it, and still gone from where the photo says
         let checked = moved.len();
-        let relink: Vec<(PhotoId, String)> =
-            moved.into_iter().filter(|m| Path::new(&m.to).is_file() && !Path::new(&m.from).exists()).map(|m| (PhotoId(m.id), m.to)).collect();
+        let relink: Vec<(PhotoId, String)> = moved
+            .into_iter()
+            .filter(|m| Path::new(&m.to).is_file() && !Path::new(&m.from).exists())
+            .map(|m| (PhotoId(m.id), m.to))
+            .collect();
         step(checked);
         if !relink.is_empty() && !send(SyncStep::Relink(relink)) {
             return;
@@ -584,7 +787,11 @@ impl SyncWork {
         if cancel.load(Relaxed) {
             return;
         }
-        let gone: Vec<PhotoId> = missing.iter().filter(|m| !Path::new(&m.path).exists()).map(|m| PhotoId(m.id)).collect();
+        let gone: Vec<PhotoId> = missing
+            .iter()
+            .filter(|m| !Path::new(&m.path).exists())
+            .map(|m| PhotoId(m.id))
+            .collect();
         step(missing.len());
         if !gone.is_empty() && !send(SyncStep::Remove(gone)) {
             return;
@@ -604,9 +811,16 @@ impl SyncWork {
 }
 
 /// Read and parse photo file `path`'s XMP sidecar file.
-fn read_sidecar(path: &str, naming: SidecarNaming, target: crate::crs::Target) -> std::result::Result<crate::sidecar::SidecarData, String> {
-    let file = crate::sidecar::find_sidecar(path, naming).ok_or_else(|| "no XMP sidecar".to_string())?;
-    let len = std::fs::metadata(&file).map_err(|e| format!("{}: {e}", file.display()))?.len();
+fn read_sidecar(
+    path: &str,
+    naming: SidecarNaming,
+    target: crate::crs::Target,
+) -> std::result::Result<crate::sidecar::SidecarData, String> {
+    let file =
+        crate::sidecar::find_sidecar(path, naming).ok_or_else(|| "no XMP sidecar".to_string())?;
+    let len = std::fs::metadata(&file)
+        .map_err(|e| format!("{}: {e}", file.display()))?
+        .len();
     if len > MAX_SIDECAR_BYTES {
         return Err(format!("{}: too large for an XMP sidecar", file.display()));
     }
@@ -619,7 +833,10 @@ impl SyncCommit {
     /// end, and the rest is still done.
     pub fn apply(&mut self, s: &mut Session, step: SyncStep) {
         if !Arc::ptr_eq(&self.library, &s.library_identity) {
-            self.report.failed.push((String::new(), "another library was opened: the rest of the synchronize was dropped".into()));
+            self.report.failed.push((
+                String::new(),
+                "another library was opened: the rest of the synchronize was dropped".into(),
+            ));
             return;
         }
         let commits = s.commits();
@@ -636,16 +853,21 @@ impl SyncCommit {
     fn apply_step(&mut self, s: &mut Session, step: SyncStep) {
         let report = &mut self.report;
         match step {
-            SyncStep::Import(prepared) => match crate::import::commit_prepared(s, &self.opts, &self.now, prepared) {
-                Ok(r) => {
-                    report.imported += r.imported.len();
-                    report.failed.extend(r.failed);
+            SyncStep::Import(prepared) => {
+                match crate::import::commit_prepared(s, &self.opts, &self.now, prepared) {
+                    Ok(r) => {
+                        report.imported += r.imported.len();
+                        report.failed.extend(r.failed);
+                    }
+                    Err(e) => report.failed.push((String::new(), e.to_string())),
                 }
-                Err(e) => report.failed.push((String::new(), e.to_string())),
-            },
+            }
             SyncStep::Relink(moved) => {
-                let ops: Vec<Op> =
-                    moved.iter().filter(|(id, _)| s.catalog.photo(*id).is_some()).map(|(id, to)| crate::cmd::missing::relink_op(*id, to)).collect();
+                let ops: Vec<Op> = moved
+                    .iter()
+                    .filter(|(id, _)| s.catalog.photo(*id).is_some())
+                    .map(|(id, to)| crate::cmd::missing::relink_op(*id, to))
+                    .collect();
                 let n = ops.len();
                 if n > 0 {
                     match s.commit("Relink Moved Photos", Op::Batch { ops }) {
@@ -658,7 +880,10 @@ impl SyncCommit {
                 let ops: Vec<Op> = gone
                     .iter()
                     .filter(|id| s.catalog.photo(**id).is_some_and(|p| p.in_library()))
-                    .map(|id| Op::SetDeleted { id: *id, deleted: true })
+                    .map(|id| Op::SetDeleted {
+                        id: *id,
+                        deleted: true,
+                    })
                     .collect();
                 let n = ops.len();
                 if n > 0 {
@@ -671,7 +896,10 @@ impl SyncCommit {
             SyncStep::Sidecars(read) => {
                 let mut ops = Vec::new();
                 for (id, path, sc) in read {
-                    match sc.map_err(EngineError::Other).and_then(|sc| s.sidecar_op(id, sc)) {
+                    match sc
+                        .map_err(EngineError::Other)
+                        .and_then(|sc| s.sidecar_op(id, sc))
+                    {
                         Ok(op) => ops.push(op),
                         Err(e) => report.failed.push((path, e.to_string())),
                     }
@@ -691,7 +919,9 @@ impl SyncCommit {
     pub fn finish(mut self, s: &mut Session) -> SyncReport {
         // a report line once, however many steps came after a library switch
         self.report.failed.dedup();
-        let ours = Arc::ptr_eq(&self.library, &s.library_identity) && !self.interleaved && self.after_last == Some(s.undo.len());
+        let ours = Arc::ptr_eq(&self.library, &s.library_identity)
+            && !self.interleaved
+            && self.after_last == Some(s.undo.len());
         let steps = if ours { self.own.min(s.undo.len()) } else { 0 };
         s.merge_undo(steps, "Synchronize Folder");
         if let Some(last) = s.undo.last_mut().filter(|_| steps == 1) {

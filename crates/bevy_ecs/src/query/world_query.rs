@@ -4,7 +4,7 @@ use crate::{
     component::{ComponentId, Components},
     query::{FilteredAccess, FilteredAccessSet},
     storage::Table,
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
 use variadics_please::all_tuples;
 

@@ -41,7 +41,12 @@ fn formation(input: &str) -> Result<formations::Formation, String> {
             })
         })
         .collect::<Result<Vec<_>, String>>()?;
-    Ok(formations::Formation { id: input.id, name: input.name, label: input.label, positions })
+    Ok(formations::Formation {
+        id: input.id,
+        name: input.name,
+        label: input.label,
+        positions,
+    })
 }
 
 #[derive(serde::Deserialize)]
@@ -72,7 +77,11 @@ pub fn team_position_factor(
     slot: &str,
     formation_json: &str,
 ) -> Result<String, String> {
-    json(&owner::get_position_match_factor(position, slot, &formation(formation_json)?))
+    json(&owner::get_position_match_factor(
+        position,
+        slot,
+        &formation(formation_json)?,
+    ))
 }
 
 #[cfg_attr(target_arch = "wasm32", wasm_bindgen)]
@@ -103,9 +112,14 @@ pub fn team_recalculate_stats(
 pub fn team_element_synergies(members_json: &str, formation_json: &str) -> Result<String, String> {
     let members: Vec<(String, Member)> =
         serde_json::from_str(members_json).map_err(|error| error.to_string())?;
-    let members =
-        members.into_iter().map(|(slot, member)| (slot, member.into())).collect::<Vec<_>>();
-    json(&owner::calculate_element_synergies(&members, &formation(formation_json)?))
+    let members = members
+        .into_iter()
+        .map(|(slot, member)| (slot, member.into()))
+        .collect::<Vec<_>>();
+    json(&owner::calculate_element_synergies(
+        &members,
+        &formation(formation_json)?,
+    ))
 }
 
 #[cfg(test)]
@@ -121,13 +135,13 @@ mod tests {
                 for (a, b) in a.iter().zip(b) {
                     assert_browser_json(a, b);
                 }
-            },
+            }
             (Value::Object(a), Value::Object(b)) => {
                 assert_eq!(a.len(), b.len());
                 for (key, value) in a {
                     assert_browser_json(value, &b[key]);
                 }
-            },
+            }
             _ => assert_eq!(actual, expected),
         }
     }
@@ -167,7 +181,11 @@ mod tests {
             );
         }
         for case in fixtures["synergies"].as_array().unwrap() {
-            let pairs = case["members"].as_object().unwrap().iter().collect::<Vec<_>>();
+            let pairs = case["members"]
+                .as_object()
+                .unwrap()
+                .iter()
+                .collect::<Vec<_>>();
             let actual =
                 team_element_synergies(&serde_json::to_string(&pairs).unwrap(), &formation)
                     .unwrap();

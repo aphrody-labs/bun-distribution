@@ -50,7 +50,10 @@ fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
     if from >= hay.len() {
         return None;
     }
-    hay[from..].windows(needle.len()).position(|w| w == needle).map(|p| p + from)
+    hay[from..]
+        .windows(needle.len())
+        .position(|w| w == needle)
+        .map(|p| p + from)
 }
 
 /// Strip PFB segment headers (`0x80 type len32le`).
@@ -70,7 +73,8 @@ fn unpfb(data: &[u8]) -> Vec<u8> {
 }
 
 fn tokens(s: &[u8]) -> impl Iterator<Item = &[u8]> {
-    s.split(|c| c.is_ascii_whitespace() || matches!(c, b'[' | b']' | b'{' | b'}')).filter(|t| !t.is_empty())
+    s.split(|c| c.is_ascii_whitespace() || matches!(c, b'[' | b']' | b'{' | b'}'))
+        .filter(|t| !t.is_empty())
 }
 
 impl Type1 {
@@ -82,7 +86,9 @@ impl Type1 {
         // /FontMatrix [a b c d e f]
         if let Some(p) = find(clear, b"/FontMatrix", 0) {
             let end = find(clear, b"]", p).unwrap_or(clear.len());
-            let v: Vec<f64> = tokens(&clear[p + 11..end]).filter_map(|t| std::str::from_utf8(t).ok()?.parse().ok()).collect();
+            let v: Vec<f64> = tokens(&clear[p + 11..end])
+                .filter_map(|t| std::str::from_utf8(t).ok()?.parse().ok())
+                .collect();
             if v.len() == 6 {
                 f.font_matrix = Some([v[0], v[1], v[2], v[3], v[4], v[5]]);
             }
@@ -96,10 +102,13 @@ impl Type1 {
                     break;
                 }
                 if t == b"put" && last.len() >= 3 && last[last.len() - 3] == b"dup" {
-                    let code = std::str::from_utf8(last[last.len() - 2]).ok().and_then(|c| c.parse::<u8>().ok());
+                    let code = std::str::from_utf8(last[last.len() - 2])
+                        .ok()
+                        .and_then(|c| c.parse::<u8>().ok());
                     let name = last[last.len() - 1].strip_prefix(b"/");
                     if let (Some(c), Some(n)) = (code, name) {
-                        f.encoding.insert(c, String::from_utf8_lossy(n).into_owned());
+                        f.encoding
+                            .insert(c, String::from_utf8_lossy(n).into_owned());
                     }
                 }
                 last.push(t);
@@ -116,14 +125,27 @@ impl Type1 {
         let hex = body.iter().take(4).all(u8::is_ascii_hexdigit);
         let raw: Vec<u8> = if hex {
             let digits: Vec<u8> = body.iter().copied().filter(u8::is_ascii_hexdigit).collect();
-            digits.as_chunks::<2>().0.iter().map(|p| (hexv(p[0]) << 4) | hexv(p[1])).collect()
+            digits
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|p| (hexv(p[0]) << 4) | hexv(p[1]))
+                .collect()
         } else {
             body.to_vec()
         };
         let priv_ = decrypt(&raw, EEXEC_R, 4);
-        let len_iv =
-            find(&priv_, b"/lenIV", 0).and_then(|p| tokens(&priv_[p + 6..]).next()).and_then(|t| std::str::from_utf8(t).ok()?.parse::<i64>().ok()).unwrap_or(4);
-        let cs = |bytes: &[u8]| if len_iv < 0 { bytes.to_vec() } else { decrypt(bytes, CHARSTRING_R, len_iv as usize) };
+        let len_iv = find(&priv_, b"/lenIV", 0)
+            .and_then(|p| tokens(&priv_[p + 6..]).next())
+            .and_then(|t| std::str::from_utf8(t).ok()?.parse::<i64>().ok())
+            .unwrap_or(4);
+        let cs = |bytes: &[u8]| {
+            if len_iv < 0 {
+                bytes.to_vec()
+            } else {
+                decrypt(bytes, CHARSTRING_R, len_iv as usize)
+            }
+        };
         // Binary items: `<n> RD <n bytes>` (RD may be spelt `-|`).
         let read_binary = |p: usize| -> Option<(Vec<u8>, usize)> {
             // p points at the length token.
@@ -161,8 +183,15 @@ impl Type1 {
                 while r < priv_.len() && priv_[r].is_ascii_digit() {
                     r += 1;
                 }
-                let Some(i) = std::str::from_utf8(&priv_[s..r]).ok().and_then(|x| x.parse::<usize>().ok()) else { break };
-                let Some((bytes, end)) = read_binary(r) else { break };
+                let Some(i) = std::str::from_utf8(&priv_[s..r])
+                    .ok()
+                    .and_then(|x| x.parse::<usize>().ok())
+                else {
+                    break;
+                };
+                let Some((bytes, end)) = read_binary(r) else {
+                    break;
+                };
                 if i < 65536 {
                     if f.subrs.len() <= i {
                         f.subrs.resize(i + 1, vec![]);
@@ -176,13 +205,22 @@ impl Type1 {
         let mut q = cs_at + 12;
         // Skip `n dict dup begin`.
         q = find(&priv_, b"begin", q).map(|b| b + 5).unwrap_or(q);
-        while let Some(slash) = priv_[q.min(priv_.len())..].iter().position(|&c| c == b'/').map(|x| x + q) {
+        while let Some(slash) = priv_[q.min(priv_.len())..]
+            .iter()
+            .position(|&c| c == b'/')
+            .map(|x| x + q)
+        {
             let mut e = slash + 1;
-            while e < priv_.len() && !priv_[e].is_ascii_whitespace() && !matches!(priv_[e], b'/' | b'[' | b'{') {
+            while e < priv_.len()
+                && !priv_[e].is_ascii_whitespace()
+                && !matches!(priv_[e], b'/' | b'[' | b'{')
+            {
                 e += 1;
             }
             let name = String::from_utf8_lossy(&priv_[slash + 1..e]).into_owned();
-            let Some((bytes, end)) = read_binary(e) else { break };
+            let Some((bytes, end)) = read_binary(e) else {
+                break;
+            };
             f.charstrings.insert(name, bytes);
             q = end;
             // Stop at the end of the CharStrings dictionary.
@@ -320,16 +358,21 @@ impl T1<'_> {
             match b0 {
                 32..=246 => self.stack.push(b0 as f64 - 139.0),
                 247..=250 => {
-                    self.stack.push((b0 as f64 - 247.0) * 256.0 + *cs.get(i).unwrap_or(&0) as f64 + 108.0);
+                    self.stack.push(
+                        (b0 as f64 - 247.0) * 256.0 + *cs.get(i).unwrap_or(&0) as f64 + 108.0,
+                    );
                     i += 1;
                 }
                 251..=254 => {
-                    self.stack.push(-(b0 as f64 - 251.0) * 256.0 - *cs.get(i).unwrap_or(&0) as f64 - 108.0);
+                    self.stack.push(
+                        -(b0 as f64 - 251.0) * 256.0 - *cs.get(i).unwrap_or(&0) as f64 - 108.0,
+                    );
                     i += 1;
                 }
                 255 => {
                     let b = |k: usize| *cs.get(i + k).unwrap_or(&0);
-                    self.stack.push(i32::from_be_bytes([b(0), b(1), b(2), b(3)]) as f64);
+                    self.stack
+                        .push(i32::from_be_bytes([b(0), b(1), b(2), b(3)]) as f64);
                     i += 4;
                 }
                 13 => {
@@ -371,7 +414,14 @@ impl T1<'_> {
                     self.stack.clear();
                 }
                 8 => {
-                    let d = [s(self, 0), s(self, 1), s(self, 2), s(self, 3), s(self, 4), s(self, 5)];
+                    let d = [
+                        s(self, 0),
+                        s(self, 1),
+                        s(self, 2),
+                        s(self, 3),
+                        s(self, 4),
+                        s(self, 5),
+                    ];
                     self.rcurve(d);
                     self.stack.clear();
                 }
@@ -522,8 +572,30 @@ mod tests {
     #[test]
     fn type1_decrypts_and_draws() {
         // hsbw 50 600; rmoveto 0 0; 500 hlineto 500 vlineto -500 hlineto closepath endchar
-        let cs = vec![50 + 139, 248, 236, 13, 139, 139, 21, 248, 136, 6, 248, 136, 7, 252, 136, 6, 9, 14];
-        let font = write_test_type1(&[(".notdef", vec![139, 139, 13, 14]), ("box", cs)], &[(65, "box")]);
+        let cs = vec![
+            50 + 139,
+            248,
+            236,
+            13,
+            139,
+            139,
+            21,
+            248,
+            136,
+            6,
+            248,
+            136,
+            7,
+            252,
+            136,
+            6,
+            9,
+            14,
+        ];
+        let font = write_test_type1(
+            &[(".notdef", vec![139, 139, 13, 14]), ("box", cs)],
+            &[(65, "box")],
+        );
         let t = Type1::parse(&font).unwrap();
         assert_eq!(t.font_matrix, Some([0.001, 0.0, 0.0, 0.001, 0.0, 0.0]));
         assert_eq!(t.encoding.get(&65).map(String::as_str), Some("box"));

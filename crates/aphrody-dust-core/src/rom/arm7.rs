@@ -24,7 +24,10 @@ pub struct Arm7Offsets {
 impl<'a> Arm7<'a> {
     /// Creates a new ARM7 program from raw data.
     pub fn new<T: Into<Cow<'a, [u8]>>>(data: T, offsets: Arm7Offsets) -> Self {
-        Self { data: data.into(), offsets }
+        Self {
+            data: data.into(),
+            offsets,
+        }
     }
 
     /// Returns a reference to the full data.

@@ -11,8 +11,22 @@ use rayon::prelude::*;
 use crate::util::{Plane, gauss_plane, morph_frac, premul, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, category: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category, params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    category: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category,
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pct() -> ParamUi {
@@ -28,17 +42,20 @@ fn apply_matte(img: &mut Image, m: &Plane, view: u32) {
     if view == 1 {
         return;
     }
-    img.data.par_iter_mut().zip(m.data.par_iter()).for_each(|(px, &k)| {
-        let k = k.clamp(0.0, 1.0);
-        if view == 2 {
-            let a = px[3] * k;
-            *px = [a, a, a, 1.0];
-        } else {
-            for c in px.iter_mut() {
-                *c *= k;
+    img.data
+        .par_iter_mut()
+        .zip(m.data.par_iter())
+        .for_each(|(px, &k)| {
+            let k = k.clamp(0.0, 1.0);
+            if view == 2 {
+                let a = px[3] * k;
+                *px = [a, a, a, 1.0];
+            } else {
+                for c in px.iter_mut() {
+                    *c *= k;
+                }
             }
-        }
-    });
+        });
 }
 
 /// Edge thin (positive erodes, negative grows) and feather (Gaussian) of a matte, in buffer pixels.
@@ -50,7 +67,11 @@ fn thin_feather(m: Plane, thin: f64, feather: f64) -> Plane {
     } else {
         m
     };
-    if feather > 0.0 { gauss_plane(&m, feather * 0.5, feather * 0.5) } else { m }
+    if feather > 0.0 {
+        gauss_plane(&m, feather * 0.5, feather * 0.5)
+    } else {
+        m
+    }
 }
 
 /// Plane of `f(straight colour, alpha)` over the image.
@@ -86,7 +107,11 @@ fn hue_dist(a: [f32; 3], b: [f32; 3]) -> f32 {
 
 fn chroma(c: [f32; 3]) -> [f32; 2] {
     let s = c[0] + c[1] + c[2];
-    if s <= 1e-6 { [1.0 / 3.0, 1.0 / 3.0] } else { [c[0] / s, c[1] / s] }
+    if s <= 1e-6 {
+        [1.0 / 3.0, 1.0 / 3.0]
+    } else {
+        [c[0] / s, c[1] / s]
+    }
 }
 
 fn linear_color_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
@@ -102,9 +127,13 @@ fn linear_color_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
             1 => hue_dist(c, key),
             2 => {
                 let pc = chroma(c);
-                ((pc[0] - kc[0]).powi(2) + (pc[1] - kc[1]).powi(2)).sqrt() / std::f32::consts::SQRT_2
+                ((pc[0] - kc[0]).powi(2) + (pc[1] - kc[1]).powi(2)).sqrt()
+                    / std::f32::consts::SQRT_2
             }
-            _ => ((c[0] - key[0]).powi(2) + (c[1] - key[1]).powi(2) + (c[2] - key[2]).powi(2)).sqrt() / 3f32.sqrt(),
+            _ => {
+                ((c[0] - key[0]).powi(2) + (c[1] - key[1]).powi(2) + (c[2] - key[2]).powi(2)).sqrt()
+                    / 3f32.sqrt()
+            }
         };
         let v = if soft > 1e-6 {
             ((d - tol) / soft).clamp(0.0, 1.0)
@@ -125,10 +154,17 @@ fn color_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let k = ctx.params.color("keyColor");
     let tol = ctx.params.f("colorTolerance") as f32 / 255.0;
     let m = matte_of(&b.img, |c, _| {
-        let d = (c[0] - k[0]).abs().max((c[1] - k[1]).abs()).max((c[2] - k[2]).abs());
+        let d = (c[0] - k[0])
+            .abs()
+            .max((c[1] - k[1]).abs())
+            .max((c[2] - k[2]).abs());
         if d <= tol { 0.0 } else { 1.0 }
     });
-    let m = thin_feather(m, ctx.params.f("edgeThin") * b.scale, ctx.params.f("edgeFeather") * b.scale);
+    let m = thin_feather(
+        m,
+        ctx.params.f("edgeThin") * b.scale,
+        ctx.params.f("edgeFeather") * b.scale,
+    );
     apply_matte(&mut b.img, &m, 0);
     b
 }
@@ -176,7 +212,11 @@ fn luma_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
             }
         }
     });
-    let m = thin_feather(m, ctx.params.f("edgeThin") * b.scale, ctx.params.f("edgeFeather") * b.scale);
+    let m = thin_feather(
+        m,
+        ctx.params.f("edgeThin") * b.scale,
+        ctx.params.f("edgeFeather") * b.scale,
+    );
     apply_matte(&mut b.img, &m, 0);
     b
 }
@@ -213,7 +253,13 @@ fn color_difference_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
         return b;
     }
     let accurate = pr.e("colorMatchingAccuracy") == 1;
-    let lin = |c: [f32; 3]| if accurate { c.map(|v| srgb_to_linear(v.clamp(0.0, 1.0))) } else { c };
+    let lin = |c: [f32; 3]| {
+        if accurate {
+            c.map(|v| srgb_to_linear(v.clamp(0.0, 1.0)))
+        } else {
+            c
+        }
+    };
     let k = pr.color("keyColor");
     let key = lin([k[0], k[1], k[2]]);
     let (pi, o1, o2) = primary([key[0], key[1], key[2], 1.0]);
@@ -221,11 +267,21 @@ fn color_difference_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let kd2 = (key[pi] - key[o2]).max(1e-3);
     let lv = |pre: &str| {
         let g = |s: &str| pr.f(&format!("{pre}{s}")) as f32;
-        (g("InBlack"), g("InWhite"), g("Gamma"), g("OutBlack"), g("OutWhite"))
+        (
+            g("InBlack"),
+            g("InWhite"),
+            g("Gamma"),
+            g("OutBlack"),
+            g("OutWhite"),
+        )
     };
     let pa = lv("partialA");
     let pb = lv("partialB");
-    let (mb, mw, mg) = (pr.f("blackLevel") as f32, pr.f("whiteLevel") as f32, pr.f("gamma") as f32);
+    let (mb, mw, mg) = (
+        pr.f("blackLevel") as f32,
+        pr.f("whiteLevel") as f32,
+        pr.f("gamma") as f32,
+    );
     let (w, h) = (b.img.width as usize, b.img.height as usize);
     let src = b.img.clone();
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
@@ -273,7 +329,13 @@ fn to_lab(c: [f32; 3]) -> [f32; 3] {
     let x = (0.4124 * l[0] + 0.3576 * l[1] + 0.1805 * l[2]) / 0.95047;
     let y = 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
     let z = (0.0193 * l[0] + 0.1192 * l[1] + 0.9505 * l[2]) / 1.08883;
-    let f = |t: f32| if t > 0.008_856 { t.cbrt() } else { 7.787 * t + 16.0 / 116.0 };
+    let f = |t: f32| {
+        if t > 0.008_856 {
+            t.cbrt()
+        } else {
+            7.787 * t + 16.0 / 116.0
+        }
+    };
     let (fx, fy, fz) = (f(x), f(y), f(z));
     [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
 }
@@ -338,9 +400,17 @@ fn extract(ctx: &EffectCtx, mut b: Buf) -> Buf {
             };
         let mut k = 1.0f32;
         if v < bp {
-            k = if bs > 0.0 { (1.0 - (bp - v) / bs).clamp(0.0, 1.0) } else { 0.0 };
+            k = if bs > 0.0 {
+                (1.0 - (bp - v) / bs).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
         } else if v > wp {
-            k = if ws > 0.0 { (1.0 - (v - wp) / ws).clamp(0.0, 1.0) } else { 0.0 };
+            k = if ws > 0.0 {
+                (1.0 - (v - wp) / ws).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
         }
         if inv { 1.0 - k } else { k }
     });
@@ -353,7 +423,11 @@ fn extract(ctx: &EffectCtx, mut b: Buf) -> Buf {
 /// Secondary-channel estimate: `balance` weights the larger of the two secondaries.
 #[inline]
 fn secondary(c: [f32; 3], o1: usize, o2: usize, bal: f32) -> f32 {
-    let (hi, lo) = if c[o1] > c[o2] { (c[o1], c[o2]) } else { (c[o2], c[o1]) };
+    let (hi, lo) = if c[o1] > c[o2] {
+        (c[o1], c[o2])
+    } else {
+        (c[o2], c[o1])
+    };
     bal * hi + (1.0 - bal) * lo
 }
 
@@ -396,35 +470,39 @@ fn screen_key(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if soft > 0.0 {
         m = gauss_plane(&m, soft * 0.5, soft * 0.5);
     }
-    b.img.data.par_iter_mut().zip(m.data.par_iter()).for_each(|(px, &k)| {
-        let k = k.clamp(0.0, 1.0);
-        let (c, a0) = unpremul(*px);
-        let alpha = a0 * k;
-        match view {
-            1 => *px = [alpha, alpha, alpha, 1.0],
-            2 => {
-                let v = if alpha <= 1e-3 {
-                    0.0
-                } else if alpha >= 0.999 {
-                    1.0
-                } else {
-                    0.5
-                };
-                *px = [v, v, v, 1.0];
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(m.data.par_iter())
+        .for_each(|(px, &k)| {
+            let k = k.clamp(0.0, 1.0);
+            let (c, a0) = unpremul(*px);
+            let alpha = a0 * k;
+            match view {
+                1 => *px = [alpha, alpha, alpha, 1.0],
+                2 => {
+                    let v = if alpha <= 1e-3 {
+                        0.0
+                    } else if alpha >= 0.999 {
+                        1.0
+                    } else {
+                        0.5
+                    };
+                    *px = [v, v, v, 1.0];
+                }
+                _ => {
+                    let mut fg = if source_edges || k <= 1e-4 {
+                        c
+                    } else {
+                        let s = 1.0 - k;
+                        [0, 1, 2].map(|i| ((c[i] - s * screen[i]).max(0.0) / k).min(c[i].max(1.0)))
+                    };
+                    let spill = (fg[pi] - secondary(fg, o1, o2, bal)).max(0.0);
+                    fg[pi] -= spill * despill;
+                    *px = premul(fg, alpha);
+                }
             }
-            _ => {
-                let mut fg = if source_edges || k <= 1e-4 {
-                    c
-                } else {
-                    let s = 1.0 - k;
-                    [0, 1, 2].map(|i| ((c[i] - s * screen[i]).max(0.0) / k).min(c[i].max(1.0)))
-                };
-                let spill = (fg[pi] - secondary(fg, o1, o2, bal)).max(0.0);
-                fg[pi] -= spill * despill;
-                *px = premul(fg, alpha);
-            }
-        }
-    });
+        });
     b
 }
 
@@ -477,7 +555,11 @@ fn advanced_spill(ctx: &EffectCtx, mut b: Buf) -> Buf {
             .par_iter()
             .map(|px| {
                 let (c, a) = unpremul(*px);
-                [(c[0] - c[1].max(c[2])).max(0.0) * a, (c[1] - c[0].max(c[2])).max(0.0) * a, (c[2] - c[0].max(c[1])).max(0.0) * a]
+                [
+                    (c[0] - c[1].max(c[2])).max(0.0) * a,
+                    (c[1] - c[0].max(c[2])).max(0.0) * a,
+                    (c[2] - c[0].max(c[1])).max(0.0) * a,
+                ]
             })
             .reduce(|| [0.0; 3], |x, y| [x[0] + y[0], x[1] + y[1], x[2] + y[2]]);
         if ex[1] >= ex[0] && ex[1] >= ex[2] {
@@ -501,9 +583,25 @@ fn advanced_spill(ctx: &EffectCtx, mut b: Buf) -> Buf {
     // neutral light (so suppressed areas keep their brightness without the cast).
     let key = ctx.params.color("ultraSettings/keyColor");
     let key_hue = effectcraft_color::rgb_to_hsl(key[0], key[1], key[2]).0;
-    let tol = if ultra { ctx.params.get("ultraSettings/tolerance").map(Value::as_f64).unwrap_or(100.0) as f32 / 100.0 } else { 1.0 };
-    let desat = if ultra { ctx.params.f("ultraSettings/desaturate") as f32 / 100.0 } else { 0.0 };
-    let neutral = if ultra { ctx.params.f("ultraSettings/spillColorCorrection") as f32 / 100.0 } else { 0.0 };
+    let tol = if ultra {
+        ctx.params
+            .get("ultraSettings/tolerance")
+            .map(Value::as_f64)
+            .unwrap_or(100.0) as f32
+            / 100.0
+    } else {
+        1.0
+    };
+    let desat = if ultra {
+        ctx.params.f("ultraSettings/desaturate") as f32 / 100.0
+    } else {
+        0.0
+    };
+    let neutral = if ultra {
+        ctx.params.f("ultraSettings/spillColorCorrection") as f32 / 100.0
+    } else {
+        0.0
+    };
     b.img.map_straight(|mut c| {
         let w = if tol < 1.0 {
             let h = effectcraft_color::rgb_to_hsl(c[0], c[1], c[2]).0;
@@ -540,23 +638,32 @@ fn key_cleaner(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if ctx.params.b("reduceChatter") {
         a = gauss_plane(&a, 1.0, 1.0).map(|v| ((v - 0.5) * 1.5 + 0.5).clamp(0.0, 1.0));
     }
-    let est = if r > 0.0 && strength > 0.0 { Some(gaussian_blur(&b.img, r * 0.5, r * 0.5, true)) } else { None };
-    b.img.data.par_iter_mut().zip(a.data.par_iter()).enumerate().for_each(|(i, (px, &na))| {
-        let (mut c, a0) = unpremul(*px);
-        if let Some(e) = &est
-            && a0 > 1e-4
-            && a0 < 0.999
-        {
-            let (ec, ea) = unpremul(e.data[i]);
-            if ea > 1e-4 {
-                let t = strength * (1.0 - a0);
-                c = [0, 1, 2].map(|k| c[k] + (ec[k] - c[k]) * t);
+    let est = if r > 0.0 && strength > 0.0 {
+        Some(gaussian_blur(&b.img, r * 0.5, r * 0.5, true))
+    } else {
+        None
+    };
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(a.data.par_iter())
+        .enumerate()
+        .for_each(|(i, (px, &na))| {
+            let (mut c, a0) = unpremul(*px);
+            if let Some(e) = &est
+                && a0 > 1e-4
+                && a0 < 0.999
+            {
+                let (ec, ea) = unpremul(e.data[i]);
+                if ea > 1e-4 {
+                    let t = strength * (1.0 - a0);
+                    c = [0, 1, 2].map(|k| c[k] + (ec[k] - c[k]) * t);
+                }
             }
-        }
-        let na = ((na - 0.5) * contrast + 0.5).clamp(0.0, 1.0);
-        let na = if a0 <= 1e-6 { 0.0 } else { na };
-        *px = premul(c, na);
-    });
+            let na = ((na - 0.5) * contrast + 0.5).clamp(0.0, 1.0);
+            let na = if a0 <= 1e-6 { 0.0 } else { na };
+            *px = premul(c, na);
+        });
     b
 }
 
@@ -573,10 +680,20 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("view", "View", Value::Enum(0), view_popup()),
                 p("keyColor", "Key Color", col(0.0, 0.0, 1.0), ParamUi::Color),
-                p("matchColors", "Match colors", Value::Enum(0), popup(&["Using RGB", "Using Hue", "Using Chroma"])),
+                p(
+                    "matchColors",
+                    "Match colors",
+                    Value::Enum(0),
+                    popup(&["Using RGB", "Using Hue", "Using Chroma"]),
+                ),
                 p("tolerance", "Matching Tolerance", num(10.0), pct()),
                 p("softness", "Matching Softness", num(10.0), pct()),
-                p("keyOperation", "Key Operation", Value::Enum(0), popup(&["Key Colors", "Keep Colors"])),
+                p(
+                    "keyOperation",
+                    "Key Operation",
+                    Value::Enum(0),
+                    popup(&["Key Colors", "Keep Colors"]),
+                ),
             ],
             linear_color_key,
         ),
@@ -597,7 +714,17 @@ pub fn specs() -> Vec<EffectSpec> {
             "Luma Key",
             "Obsolete",
             vec![
-                p("keyType", "Key Type", Value::Enum(1), popup(&["Key Out Brighter", "Key Out Darker", "Key Out Similar", "Key Out Dissimilar"])),
+                p(
+                    "keyType",
+                    "Key Type",
+                    Value::Enum(1),
+                    popup(&[
+                        "Key Out Brighter",
+                        "Key Out Darker",
+                        "Key Out Similar",
+                        "Key Out Dissimilar",
+                    ]),
+                ),
                 p("threshold", "Threshold", num(0.0), b255()),
                 p("tolerance", "Tolerance", num(0.0), b255()),
                 p("edgeThin", "Edge Thin", num(0.0), thin()),
@@ -612,17 +739,32 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("view", "View", Value::Enum(7), popup(&COLOR_DIFF_VIEWS)),
                 p("keyColor", "Key Color", col(0.0, 0.0, 1.0), ParamUi::Color),
-                p("colorMatchingAccuracy", "Color Matching Accuracy", Value::Enum(0), popup(&["Faster", "More Accurate"])),
+                p(
+                    "colorMatchingAccuracy",
+                    "Color Matching Accuracy",
+                    Value::Enum(0),
+                    popup(&["Faster", "More Accurate"]),
+                ),
                 p("partialAInBlack", "Partial A In Black", num(0.0), b255()),
                 p("partialAInWhite", "Partial A In White", num(255.0), b255()),
                 p("partialAGamma", "Partial A Gamma", num(1.0), gamma()),
                 p("partialAOutBlack", "Partial A Out Black", num(0.0), b255()),
-                p("partialAOutWhite", "Partial A Out White", num(255.0), b255()),
+                p(
+                    "partialAOutWhite",
+                    "Partial A Out White",
+                    num(255.0),
+                    b255(),
+                ),
                 p("partialBInBlack", "Partial B In Black", num(0.0), b255()),
                 p("partialBInWhite", "Partial B In White", num(255.0), b255()),
                 p("partialBGamma", "Partial B Gamma", num(1.0), gamma()),
                 p("partialBOutBlack", "Partial B Out Black", num(0.0), b255()),
-                p("partialBOutWhite", "Partial B Out White", num(255.0), b255()),
+                p(
+                    "partialBOutWhite",
+                    "Partial B Out White",
+                    num(255.0),
+                    b255(),
+                ),
                 p("blackLevel", "Matte In Black", num(0.0), b255()),
                 p("whiteLevel", "Matte In White", num(255.0), b255()),
                 p("gamma", "Matte Gamma", num(1.0), gamma()),
@@ -635,7 +777,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "Keying",
             vec![
                 p("fuzziness", "Fuzziness", num(0.0), b255()),
-                p("colorSpace", "Color Space", Value::Enum(0), popup(&["Lab", "YUV", "RGB"])),
+                p(
+                    "colorSpace",
+                    "Color Space",
+                    Value::Enum(0),
+                    popup(&["Lab", "YUV", "RGB"]),
+                ),
                 p("minL", "Min (L, Y, R)", num(0.0), b255()),
                 p("maxL", "Max (L, Y, R)", num(255.0), b255()),
                 p("minA", "Min (a, U, G)", num(0.0), b255()),
@@ -650,7 +797,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "Extract",
             "Keying",
             vec![
-                p("channel", "Channel", Value::Enum(0), popup(&["Luminance", "Red", "Green", "Blue", "Alpha"])),
+                p(
+                    "channel",
+                    "Channel",
+                    Value::Enum(0),
+                    popup(&["Luminance", "Red", "Green", "Blue", "Alpha"]),
+                ),
                 p("blackPoint", "Black Point", num(0.0), b255()),
                 p("whitePoint", "White Point", num(255.0), b255()),
                 p("blackSoftness", "Black Softness", num(0.0), b255()),
@@ -664,17 +816,52 @@ pub fn specs() -> Vec<EffectSpec> {
             "Screen Key",
             "Keying",
             vec![
-                p("view", "View", Value::Enum(0), popup(&["Final Result", "Screen Matte", "Status", "Source"])),
-                p("screenColor", "Screen Colour", col(0.15, 0.75, 0.25), ParamUi::Color),
-                p("screenGain", "Screen Gain", num(100.0), slider(0.0, 200.0, 0.0, 200.0, 1)),
+                p(
+                    "view",
+                    "View",
+                    Value::Enum(0),
+                    popup(&["Final Result", "Screen Matte", "Status", "Source"]),
+                ),
+                p(
+                    "screenColor",
+                    "Screen Colour",
+                    col(0.15, 0.75, 0.25),
+                    ParamUi::Color,
+                ),
+                p(
+                    "screenGain",
+                    "Screen Gain",
+                    num(100.0),
+                    slider(0.0, 200.0, 0.0, 200.0, 1),
+                ),
                 p("screenBalance", "Screen Balance", num(50.0), pct()),
                 p("despill", "Despill", num(100.0), pct()),
                 p("clipBlack", "Clip Black", num(0.0), pct()),
                 p("clipWhite", "Clip White", num(100.0), pct()),
-                p("screenPreblur", "Screen Pre-blur", num(0.0), slider(0.0, 100.0, 0.0, 10.0, 1)),
-                p("screenShrinkGrow", "Screen Shrink/Grow", num(0.0), slider(-50.0, 50.0, -10.0, 10.0, 1)),
-                p("screenSoftness", "Screen Softness", num(0.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-                p("edgeColor", "Edge Colour", Value::Enum(0), popup(&["Screen Subtract", "Source"])),
+                p(
+                    "screenPreblur",
+                    "Screen Pre-blur",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 10.0, 1),
+                ),
+                p(
+                    "screenShrinkGrow",
+                    "Screen Shrink/Grow",
+                    num(0.0),
+                    slider(-50.0, 50.0, -10.0, 10.0, 1),
+                ),
+                p(
+                    "screenSoftness",
+                    "Screen Softness",
+                    num(0.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 1),
+                ),
+                p(
+                    "edgeColor",
+                    "Edge Colour",
+                    Value::Enum(0),
+                    popup(&["Screen Subtract", "Source"]),
+                ),
             ],
             screen_key,
         ),
@@ -683,9 +870,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "Spill Suppressor",
             "Obsolete",
             vec![
-                p("colorToSuppress", "Color To Suppress", col(0.0, 0.0, 1.0), ParamUi::Color),
-                p("colorAccuracy", "Color Accuracy", Value::Enum(0), popup(&["Faster", "Better"])),
-                p("suppression", "Suppression", num(100.0), slider(0.0, 200.0, 0.0, 100.0, 0)),
+                p(
+                    "colorToSuppress",
+                    "Color To Suppress",
+                    col(0.0, 0.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "colorAccuracy",
+                    "Color Accuracy",
+                    Value::Enum(0),
+                    popup(&["Faster", "Better"]),
+                ),
+                p(
+                    "suppression",
+                    "Suppression",
+                    num(100.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 0),
+                ),
             ],
             spill_suppressor,
         ),
@@ -694,14 +896,39 @@ pub fn specs() -> Vec<EffectSpec> {
             "Advanced Spill Suppressor",
             "Keying",
             vec![
-                p("method", "Method", Value::Enum(0), popup(&["Standard", "Ultra"])),
-                p("suppression", "Suppression", num(100.0), slider(0.0, 200.0, 0.0, 100.0, 0)),
-                p("ultraSettings/keyColor", "Key Color", col(0.0, 1.0, 0.0), ParamUi::Color),
+                p(
+                    "method",
+                    "Method",
+                    Value::Enum(0),
+                    popup(&["Standard", "Ultra"]),
+                ),
+                p(
+                    "suppression",
+                    "Suppression",
+                    num(100.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "ultraSettings/keyColor",
+                    "Key Color",
+                    col(0.0, 1.0, 0.0),
+                    ParamUi::Color,
+                ),
                 p("ultraSettings/tolerance", "Tolerance", num(50.0), pct()),
                 p("ultraSettings/desaturate", "Desaturate", num(0.0), pct()),
                 p("ultraSettings/spillRange", "Spill Range", num(50.0), pct()),
-                p("ultraSettings/spillColorCorrection", "Spill Color Correction", num(0.0), pct()),
-                p("ultraSettings/lumaCorrection", "Luma Correction", num(0.0), pct()),
+                p(
+                    "ultraSettings/spillColorCorrection",
+                    "Spill Color Correction",
+                    num(0.0),
+                    pct(),
+                ),
+                p(
+                    "ultraSettings/lumaCorrection",
+                    "Luma Correction",
+                    num(0.0),
+                    pct(),
+                ),
             ],
             advanced_spill,
         ),
@@ -710,9 +937,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "Key Cleaner",
             "Keying",
             vec![
-                p("additionalEdgeRadius", "Additional Edge Radius", num(3.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-                p("reduceChatter", "Reduce Chatter", Value::Bool(false), ParamUi::Checkbox),
-                p("alphaContrast", "Alpha Contrast", num(100.0), slider(100.0, 500.0, 100.0, 300.0, 0)),
+                p(
+                    "additionalEdgeRadius",
+                    "Additional Edge Radius",
+                    num(3.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 1),
+                ),
+                p(
+                    "reduceChatter",
+                    "Reduce Chatter",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "alphaContrast",
+                    "Alpha Contrast",
+                    num(100.0),
+                    slider(100.0, 500.0, 100.0, 300.0, 0),
+                ),
                 p("strength", "Strength", num(100.0), pct()),
             ],
             key_cleaner,
@@ -730,7 +972,15 @@ mod tests {
         let mut img = Image::new(16, 8);
         for y in 0..8 {
             for x in 0..16 {
-                img.set(x, y, if x < 8 { [0.1, 0.8, 0.15, 1.0] } else { [0.9, 0.2, 0.1, 1.0] });
+                img.set(
+                    x,
+                    y,
+                    if x < 8 {
+                        [0.1, 0.8, 0.15, 1.0]
+                    } else {
+                        [0.9, 0.2, 0.1, 1.0]
+                    },
+                );
             }
         }
         img
@@ -738,13 +988,34 @@ mod tests {
 
     fn run(id: &str, over: &[(&str, Value)], img: Image) -> Image {
         let s = find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in over {
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx =
-            EffectCtx { params: &params, time: 0.0, layer_size: [img.width as f64, img.height as f64], seed: 1, adjustment: false, env: Default::default() };
-        apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 }).img
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [img.width as f64, img.height as f64],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
+        .img
     }
 
     fn green() -> Value {
@@ -753,14 +1024,22 @@ mod tests {
 
     #[test]
     fn linear_color_key_removes_green() {
-        let out = run("ec.key.linearcolor", &[("keyColor", green())], green_screen());
+        let out = run(
+            "ec.key.linearcolor",
+            &[("keyColor", green())],
+            green_screen(),
+        );
         assert!(out.get(2, 2)[3] < 0.01);
         assert!(out.get(12, 2)[3] > 0.99);
     }
 
     #[test]
     fn color_difference_key_removes_green() {
-        let out = run("ec.key.colordifference", &[("keyColor", green())], green_screen());
+        let out = run(
+            "ec.key.colordifference",
+            &[("keyColor", green())],
+            green_screen(),
+        );
         assert!(out.get(2, 2)[3] < 0.01, "{:?}", out.get(2, 2));
         assert!(out.get(12, 2)[3] > 0.99);
     }
@@ -780,7 +1059,11 @@ mod tests {
 
     #[test]
     fn screen_key_matte_view_is_opaque() {
-        let out = run("ec.key.screen", &[("screenColor", green()), ("view", Value::Enum(1))], green_screen());
+        let out = run(
+            "ec.key.screen",
+            &[("screenColor", green()), ("view", Value::Enum(1))],
+            green_screen(),
+        );
         assert!(out.data.iter().all(|p| p[3] == 1.0));
         assert!(out.get(2, 2)[0] < 0.01 && out.get(12, 2)[0] > 0.99);
     }
@@ -808,7 +1091,11 @@ mod tests {
         img.set(0, 0, [0.05, 0.05, 0.05, 1.0]);
         img.set(1, 0, [0.5, 0.5, 0.5, 1.0]);
         img.set(2, 0, [1.0, 1.0, 1.0, 1.0]);
-        let out = run("ec.key.extract", &[("blackPoint", num(50.0)), ("whitePoint", num(200.0))], img);
+        let out = run(
+            "ec.key.extract",
+            &[("blackPoint", num(50.0)), ("whitePoint", num(200.0))],
+            img,
+        );
         assert_eq!(out.get(0, 0)[3], 0.0);
         assert_eq!(out.get(1, 0)[3], 1.0);
         assert_eq!(out.get(2, 0)[3], 0.0);
@@ -832,18 +1119,45 @@ mod tests {
     #[test]
     fn color_difference_key_partials_views_and_levels() {
         // Source view passes through.
-        let src = run("ec.key.colordifference", &[("keyColor", green()), ("view", Value::Enum(0))], green_screen());
+        let src = run(
+            "ec.key.colordifference",
+            &[("keyColor", green()), ("view", Value::Enum(0))],
+            green_screen(),
+        );
         assert_eq!(src.get(2, 2), green_screen().get(2, 2));
         // Matte views are opaque grey; the corrected matte keys the screen.
-        let m = run("ec.key.colordifference", &[("keyColor", green()), ("view", Value::Enum(6))], green_screen());
+        let m = run(
+            "ec.key.colordifference",
+            &[("keyColor", green()), ("view", Value::Enum(6))],
+            green_screen(),
+        );
         assert!(m.get(2, 2)[0] < 0.01 && m.get(12, 2)[0] > 0.99 && m.get(2, 2)[3] == 1.0);
         // Partial A's output white caps that partial (and so the final matte where only A keeps).
-        let pa = run("ec.key.colordifference", &[("keyColor", green()), ("view", Value::Enum(2)), ("partialAOutWhite", num(128.0))], green_screen());
-        assert!((pa.get(12, 2)[0] - 128.0 / 255.0).abs() < 1e-3, "{:?}", pa.get(12, 2));
+        let pa = run(
+            "ec.key.colordifference",
+            &[
+                ("keyColor", green()),
+                ("view", Value::Enum(2)),
+                ("partialAOutWhite", num(128.0)),
+            ],
+            green_screen(),
+        );
+        assert!(
+            (pa.get(12, 2)[0] - 128.0 / 255.0).abs() < 1e-3,
+            "{:?}",
+            pa.get(12, 2)
+        );
         // The four-up view shows a different panel per quadrant.
-        let four = run("ec.key.colordifference", &[("keyColor", green()), ("view", Value::Enum(8))], green_screen());
+        let four = run(
+            "ec.key.colordifference",
+            &[("keyColor", green()), ("view", Value::Enum(8))],
+            green_screen(),
+        );
         assert_eq!(four.get(2, 2)[3], 1.0, "matte panel is opaque");
-        assert!(four.get(12, 6)[3] > 0.99, "final output keeps the foreground");
+        assert!(
+            four.get(12, 6)[3] > 0.99,
+            "final output keeps the foreground"
+        );
     }
 
     #[test]
@@ -852,16 +1166,33 @@ mod tests {
         // the yellow chroma along the key direction.
         let img = Image::filled(1, 1, [0.7, 0.7, 0.3, 1.0]);
         let yellow = Value::Color([1.0, 1.0, 0.0, 1.0]);
-        let better = run("ec.key.spill", &[("colorToSuppress", yellow), ("colorAccuracy", Value::Enum(1))], img);
+        let better = run(
+            "ec.key.spill",
+            &[
+                ("colorToSuppress", yellow),
+                ("colorAccuracy", Value::Enum(1)),
+            ],
+            img,
+        );
         let px = better.get(0, 0);
-        assert!((px[0] - px[2]).abs() < 1e-4 && (px[1] - px[2]).abs() < 1e-4, "{px:?}");
+        assert!(
+            (px[0] - px[2]).abs() < 1e-4 && (px[1] - px[2]).abs() < 1e-4,
+            "{px:?}"
+        );
     }
 
     #[test]
     fn advanced_spill_ultra_reads_its_twirl_down() {
         // Ultra with a blue key leaves a green pixel alone.
         let img = Image::filled(1, 1, [0.3, 0.8, 0.3, 1.0]);
-        let out = run("ec.key.advancedspill", &[("method", Value::Enum(1)), ("ultraSettings/keyColor", Value::Color([0.0, 0.0, 1.0, 1.0]))], img);
+        let out = run(
+            "ec.key.advancedspill",
+            &[
+                ("method", Value::Enum(1)),
+                ("ultraSettings/keyColor", Value::Color([0.0, 0.0, 1.0, 1.0])),
+            ],
+            img,
+        );
         assert!((out.get(0, 0)[1] - 0.8).abs() < 1e-5);
     }
 
@@ -875,7 +1206,10 @@ mod tests {
     #[test]
     fn advanced_spill_ultra_tolerance_desaturate_and_color_correction() {
         let ultra = |extra: &[(&str, Value)], c: [f32; 4]| {
-            let mut v = vec![("method", Value::Enum(1)), ("ultraSettings/keyColor", Value::Color([0.0, 1.0, 0.0, 1.0]))];
+            let mut v = vec![
+                ("method", Value::Enum(1)),
+                ("ultraSettings/keyColor", Value::Color([0.0, 1.0, 0.0, 1.0])),
+            ];
             v.extend_from_slice(extra);
             run("ec.key.advancedspill", &v, Image::filled(1, 1, c)).get(0, 0)
         };
@@ -891,6 +1225,9 @@ mod tests {
         let plain = ultra(&[], g);
         let cc = ultra(&[("ultraSettings/spillColorCorrection", num(100.0))], g);
         let sum = |p: [f32; 4]| p[0] + p[1] + p[2];
-        assert!(sum(cc) > sum(plain) + 0.1 && (sum(cc) - sum(g)).abs() < 1e-4, "{plain:?} {cc:?}");
+        assert!(
+            sum(cc) > sum(plain) + 0.1 && (sum(cc) - sum(g)).abs() < 1e-4,
+            "{plain:?} {cc:?}"
+        );
     }
 }

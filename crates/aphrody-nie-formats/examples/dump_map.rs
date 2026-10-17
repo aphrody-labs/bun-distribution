@@ -39,7 +39,10 @@ fn main() {
     for (i, n) in mat_names.iter().enumerate() {
         println!("  mat[{i}] = {n:?}");
     }
-    println!("noms de textures (material_base_names): {:?}", md.material_base_names);
+    println!(
+        "noms de textures (material_base_names): {:?}",
+        md.material_base_names
+    );
     println!("g4mg: {} octets", g4mg_bytes.len());
 
     println!("\n=== SUBMESHES ===");
@@ -76,7 +79,11 @@ fn main() {
             edges.push(d(p(b), p(c)));
         }
         edges.sort_by(|a, b| a.partial_cmp(b).unwrap());
-        let med = if edges.is_empty() { 0.0 } else { edges[edges.len() / 2] };
+        let med = if edges.is_empty() {
+            0.0
+        } else {
+            edges[edges.len() / 2]
+        };
         let mx = edges.last().copied().unwrap_or(0.0);
         let bad = edges.iter().filter(|&&e| e > 1e4).count();
         // bbox des positions
@@ -94,9 +101,16 @@ fn main() {
         if i == 0 {
             println!(
                 "    pos[0..3]={:?}",
-                g.positions.iter().take(3).map(|p| (p.x, p.y, p.z)).collect::<Vec<_>>()
+                g.positions
+                    .iter()
+                    .take(3)
+                    .map(|p| (p.x, p.y, p.z))
+                    .collect::<Vec<_>>()
             );
-            println!("    idx[0..9]={:?}", g.indices.iter().take(9).collect::<Vec<_>>());
+            println!(
+                "    idx[0..9]={:?}",
+                g.indices.iter().take(9).collect::<Vec<_>>()
+            );
         }
     }
 }

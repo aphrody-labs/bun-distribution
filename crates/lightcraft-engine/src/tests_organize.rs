@@ -25,36 +25,70 @@ fn smart_album_from_view_updates_live_and_persists() {
     s.execute("library.filter", &json!({"rating": 4})).unwrap();
     let want = s.visible_cloned();
     assert!(!want.is_empty());
-    let r = s.execute("album.createSmart", &json!({"name": "Four plus"})).unwrap();
+    let r = s
+        .execute("album.createSmart", &json!({"name": "Four plus"}))
+        .unwrap();
     let id = r["id"].as_u64().unwrap();
     assert_eq!(r["count"].as_u64().unwrap() as usize, want.len());
     s.execute("library.clearFilter", &json!({})).unwrap();
-    s.execute("library.source", &json!({"kind": "album", "id": id})).unwrap();
+    s.execute("library.source", &json!({"kind": "album", "id": id}))
+        .unwrap();
     let mut got = s.visible_cloned();
     got.sort();
     let mut w = want.clone();
     w.sort();
     assert_eq!(got, w);
     // live: rating another photo 5 adds it; rating a member 1 removes it
-    let other = s.catalog.photos().find(|p| p.rating < 4 && !p.deleted).unwrap().id;
-    s.execute("photo.rate", &json!({"ids": [other.0], "rating": 5})).unwrap();
+    let other = s
+        .catalog
+        .photos()
+        .find(|p| p.rating < 4 && !p.deleted)
+        .unwrap()
+        .id;
+    s.execute("photo.rate", &json!({"ids": [other.0], "rating": 5}))
+        .unwrap();
     assert!(s.visible_cloned().contains(&other));
-    s.execute("photo.rate", &json!({"ids": [want[0].0], "rating": 1})).unwrap();
+    s.execute("photo.rate", &json!({"ids": [want[0].0], "rating": 1}))
+        .unwrap();
     assert!(!s.visible_cloned().contains(&want[0]));
     // manual membership changes are refused
-    assert!(s.execute("album.addPhotos", &json!({"id": id, "ids": [want[0].0]})).is_err());
+    assert!(
+        s.execute("album.addPhotos", &json!({"id": id, "ids": [want[0].0]}))
+            .is_err()
+    );
     // edit rules (merge), rename; undo the rename
-    s.execute("album.setRules", &json!({"id": id, "rules": {"flag": "pick"}})).unwrap();
-    let rules = s.catalog.album(lightcraft_catalog::AlbumId(id)).unwrap().smart.clone().unwrap();
+    s.execute(
+        "album.setRules",
+        &json!({"id": id, "rules": {"flag": "pick"}}),
+    )
+    .unwrap();
+    let rules = s
+        .catalog
+        .album(lightcraft_catalog::AlbumId(id))
+        .unwrap()
+        .smart
+        .clone()
+        .unwrap();
     assert_eq!((rules.rating, rules.flag), (4, Some(Flag::Pick)));
-    s.execute("album.rename", &json!({"id": id, "name": "Best picks"})).unwrap();
+    s.execute("album.rename", &json!({"id": id, "name": "Best picks"}))
+        .unwrap();
     s.execute("edit.undo", &json!({})).unwrap();
-    assert_eq!(s.catalog.album(lightcraft_catalog::AlbumId(id)).unwrap().name, "Four plus");
+    assert_eq!(
+        s.catalog
+            .album(lightcraft_catalog::AlbumId(id))
+            .unwrap()
+            .name,
+        "Four plus"
+    );
     // rules via params: camera + lens + date range
     let r2 = s
         .execute("album.createSmart", &json!({"name": "Range", "rules": {"dateFrom": "2000-01-01", "dateTo": "2100", "lens": "", "edited": true}}))
         .unwrap();
-    let edited = s.catalog.photos().filter(|p| !p.deleted && p.is_edited()).count();
+    let edited = s
+        .catalog
+        .photos()
+        .filter(|p| !p.deleted && p.is_edited())
+        .count();
     assert_eq!(r2["count"].as_u64().unwrap() as usize, edited);
     let listed = s.execute("albums.list", &json!({})).unwrap();
     assert!(listed.to_string().contains("\"rulesText\""), "{listed}");
@@ -71,12 +105,23 @@ fn smart_album_from_view_updates_live_and_persists() {
 #[test]
 fn smart_album_from_smart_album_view_keeps_its_rules() {
     let mut s = Session::with_demo();
-    let id = s.execute("album.createSmart", &json!({"name": "Picks", "rules": {"flag": "pick"}})).unwrap()["id"].as_u64().unwrap();
-    s.execute("library.source", &json!({"kind": "album", "id": id})).unwrap();
+    let id = s
+        .execute(
+            "album.createSmart",
+            &json!({"name": "Picks", "rules": {"flag": "pick"}}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
+    s.execute("library.source", &json!({"kind": "album", "id": id}))
+        .unwrap();
     s.execute("library.filter", &json!({"rating": 3})).unwrap();
     let r = s.view_rules();
     assert_eq!((r.flag, r.rating, r.album), (Some(Flag::Pick), 3, None));
-    assert_eq!(s.source, LibrarySource::Album(lightcraft_catalog::AlbumId(id)));
+    assert_eq!(
+        s.source,
+        LibrarySource::Album(lightcraft_catalog::AlbumId(id))
+    );
 }
 
 /// Saving the view of a smart album keeps the filter bar's settings even when the album holds a
@@ -84,11 +129,26 @@ fn smart_album_from_smart_album_view_keeps_its_rules() {
 #[test]
 fn smart_album_view_keeps_the_filter_bar_over_a_stale_rule() {
     let mut s = Session::with_demo();
-    let gone = s.execute("album.create", &json!({"name": "Gone", "addSelected": false})).unwrap()["id"].as_u64().unwrap();
+    let gone = s
+        .execute(
+            "album.create",
+            &json!({"name": "Gone", "addSelected": false}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
     let rules = json!({"ruleSet": {"rules": [{"field": "album", "op": "isNot", "value": gone}]}});
-    let id = s.execute("album.createSmart", &json!({"name": "Not in Gone", "rules": rules})).unwrap()["id"].as_u64().unwrap();
+    let id = s
+        .execute(
+            "album.createSmart",
+            &json!({"name": "Not in Gone", "rules": rules}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
     s.execute("album.delete", &json!({"id": gone})).unwrap();
-    s.execute("library.source", &json!({"kind": "album", "id": id})).unwrap();
+    s.execute("library.source", &json!({"kind": "album", "id": id}))
+        .unwrap();
     s.execute("library.filter", &json!({"rating": 3})).unwrap();
     let r = s.view_rules();
     assert_eq!(r.rating, 3, "the filter bar's rating survives");
@@ -100,35 +160,85 @@ fn virtual_copies_are_independent_and_persist() {
     let dir = temp_dir("vc");
     let mut s = open(&dir);
     let src = s.visible_cloned()[1];
-    let album = s.execute("album.create", &json!({"name": "Keep", "addSelected": false})).unwrap()["id"].as_u64().unwrap();
-    s.execute("album.addPhotos", &json!({"id": album, "ids": [src.0]})).unwrap();
-    s.execute("library.select", &json!({"ids": [src.0]})).unwrap();
-    s.execute("develop.set", &json!({"control": "light.exposure", "value": 0.5})).unwrap();
+    let album = s
+        .execute(
+            "album.create",
+            &json!({"name": "Keep", "addSelected": false}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
+    s.execute("album.addPhotos", &json!({"id": album, "ids": [src.0]}))
+        .unwrap();
+    s.execute("library.select", &json!({"ids": [src.0]}))
+        .unwrap();
+    s.execute(
+        "develop.set",
+        &json!({"control": "light.exposure", "value": 0.5}),
+    )
+    .unwrap();
     let undo_before = s.undo.len();
     let r = s.execute("photo.virtualCopy", &json!({})).unwrap();
     assert_eq!(s.undo.len(), undo_before + 1);
     let c1 = lightcraft_catalog::PhotoId(r["ids"][0].as_u64().unwrap());
-    let r2 = s.execute("photo.virtualCopy", &json!({"ids": [src.0]})).unwrap();
+    let r2 = s
+        .execute("photo.virtualCopy", &json!({"ids": [src.0]}))
+        .unwrap();
     let c2 = lightcraft_catalog::PhotoId(r2["ids"][0].as_u64().unwrap());
-    let (p, a, b) = (s.catalog.photo(src).unwrap().clone(), s.catalog.photo(c1).unwrap().clone(), s.catalog.photo(c2).unwrap().clone());
-    assert_eq!((a.copy_of, a.copy_name.as_deref()), (Some(src), Some("Copy 1")));
+    let (p, a, b) = (
+        s.catalog.photo(src).unwrap().clone(),
+        s.catalog.photo(c1).unwrap().clone(),
+        s.catalog.photo(c2).unwrap().clone(),
+    );
+    assert_eq!(
+        (a.copy_of, a.copy_name.as_deref()),
+        (Some(src), Some("Copy 1"))
+    );
     assert_eq!(b.copy_name.as_deref(), Some("Copy 2"));
     assert_eq!(a.source, p.source, "shares the original file");
-    assert_eq!(a.develop.light.exposure, 0.5, "starts from the current settings");
+    assert_eq!(
+        a.develop.light.exposure, 0.5,
+        "starts from the current settings"
+    );
     // a copy of a copy names itself after the master
-    let r3 = s.execute("photo.virtualCopy", &json!({"ids": [c1.0]})).unwrap();
-    let c3 = s.catalog.photo(lightcraft_catalog::PhotoId(r3["ids"][0].as_u64().unwrap())).unwrap().clone();
-    assert_eq!((c3.copy_of, c3.copy_name.as_deref()), (Some(src), Some("Copy 3")));
+    let r3 = s
+        .execute("photo.virtualCopy", &json!({"ids": [c1.0]}))
+        .unwrap();
+    let c3 = s
+        .catalog
+        .photo(lightcraft_catalog::PhotoId(r3["ids"][0].as_u64().unwrap()))
+        .unwrap()
+        .clone();
+    assert_eq!(
+        (c3.copy_of, c3.copy_name.as_deref()),
+        (Some(src), Some("Copy 3"))
+    );
     // independent settings
-    s.execute("library.select", &json!({"ids": [c1.0]})).unwrap();
-    s.execute("develop.set", &json!({"control": "light.exposure", "value": -1.0})).unwrap();
+    s.execute("library.select", &json!({"ids": [c1.0]}))
+        .unwrap();
+    s.execute(
+        "develop.set",
+        &json!({"control": "light.exposure", "value": -1.0}),
+    )
+    .unwrap();
     assert_eq!(s.catalog.photo(src).unwrap().develop.light.exposure, 0.5);
     assert_eq!(s.catalog.photo(c1).unwrap().develop.light.exposure, -1.0);
     // same album, stacked (expanded) with the original, visible in the grid
-    assert!(s.catalog.album(lightcraft_catalog::AlbumId(album)).unwrap().photos.starts_with(&[src, c2, c1, c3.id]));
-    assert_eq!(s.catalog.stack_of(c1).unwrap().photos, vec![src, c2, c1, c3.id]);
+    assert!(
+        s.catalog
+            .album(lightcraft_catalog::AlbumId(album))
+            .unwrap()
+            .photos
+            .starts_with(&[src, c2, c1, c3.id])
+    );
+    assert_eq!(
+        s.catalog.stack_of(c1).unwrap().photos,
+        vec![src, c2, c1, c3.id]
+    );
     assert!(s.visible_cloned().contains(&c2));
-    let found = s.execute("catalog.query", &json!({"filter": {"text": "copy:yes"}})).unwrap();
+    let found = s
+        .execute("catalog.query", &json!({"filter": {"text": "copy:yes"}}))
+        .unwrap();
     assert_eq!(found["total"], 3);
     // undo removes a copy completely
     s.execute("edit.undo", &json!({})).unwrap(); // exposure
@@ -148,7 +258,11 @@ fn stacks_group_collapse_and_replay() {
     let vis = s.visible_cloned();
     let n = vis.len();
     let (a, b, c) = (vis[2], vis[3], vis[4]);
-    s.execute("library.select", &json!({"ids": [a.0, b.0, c.0], "active": b.0})).unwrap();
+    s.execute(
+        "library.select",
+        &json!({"ids": [a.0, b.0, c.0], "active": b.0}),
+    )
+    .unwrap();
     let r = s.execute("stack.group", &json!({})).unwrap();
     assert_eq!(r["count"], 3);
     // collapsed by default: the top (the active photo) stands for the stack
@@ -175,7 +289,9 @@ fn stacks_group_collapse_and_replay() {
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(s.catalog.stack_of(c).unwrap().photos.len(), 3);
     // auto-stack the rest of the view: a huge gap groups everything unstacked
-    let pre = s.execute("stack.auto", &json!({"gap": 1e9, "preview": true})).unwrap();
+    let pre = s
+        .execute("stack.auto", &json!({"gap": 1e9, "preview": true}))
+        .unwrap();
     assert_eq!(pre["stacks"], 1);
     assert_eq!(s.catalog.stacks().count(), 1, "preview changes nothing");
     s.execute("stack.auto", &json!({"gap": 1e9})).unwrap();
@@ -187,7 +303,8 @@ fn stacks_group_collapse_and_replay() {
     drop(s);
     let mut s2 = open(&dir);
     assert_eq!(s2.catalog.to_snapshot(), expect);
-    s2.execute("library.select", &json!({"ids": [b.0]})).unwrap();
+    s2.execute("library.select", &json!({"ids": [b.0]}))
+        .unwrap();
     s2.execute("stack.ungroup", &json!({})).unwrap();
     assert_eq!(s2.catalog.stacks().count(), 1);
     let _ = std::fs::remove_dir_all(&dir);
@@ -199,21 +316,39 @@ fn album_source_reports_in_library_state_and_persists_the_view() {
     // tagged enum) and `view.json` empty, so the view was lost on the next launch.
     let dir = temp_dir("album-view");
     let mut s = open(&dir);
-    let id = s.execute("album.create", &json!({"name": "Trip"})).unwrap()["id"].as_u64().unwrap();
-    s.execute("library.source", &json!({"kind": "album", "id": id})).unwrap();
-    s.execute("library.sort", &json!({"key": "fileName"})).unwrap();
+    let id = s.execute("album.create", &json!({"name": "Trip"})).unwrap()["id"]
+        .as_u64()
+        .unwrap();
+    s.execute("library.source", &json!({"kind": "album", "id": id}))
+        .unwrap();
+    s.execute("library.sort", &json!({"key": "fileName"}))
+        .unwrap();
     let st = s.execute("library.state", &json!({})).unwrap();
     assert_eq!(st["source"], json!({"kind": "album", "id": id}));
     // the reported source is what `library.source` takes
-    s.execute("library.source", &json!({"kind": "all"})).unwrap();
+    s.execute("library.source", &json!({"kind": "all"}))
+        .unwrap();
     s.execute("library.source", &st["source"]).unwrap();
-    assert_eq!(s.source, LibrarySource::Album(lightcraft_catalog::AlbumId(id)));
-    assert_eq!(s.execute("library.state", &json!({})).unwrap()["source"], json!({"kind": "album", "id": id}));
+    assert_eq!(
+        s.source,
+        LibrarySource::Album(lightcraft_catalog::AlbumId(id))
+    );
+    assert_eq!(
+        s.execute("library.state", &json!({})).unwrap()["source"],
+        json!({"kind": "album", "id": id})
+    );
     s.close_library().unwrap();
     drop(s);
     let s2 = open(&dir);
-    assert_eq!(s2.source, LibrarySource::Album(lightcraft_catalog::AlbumId(id)));
-    assert_eq!(serde_json::to_value(s2.sort).unwrap()["key"], "fileName", "the rest of the view is restored too");
+    assert_eq!(
+        s2.source,
+        LibrarySource::Album(lightcraft_catalog::AlbumId(id))
+    );
+    assert_eq!(
+        serde_json::to_value(s2.sort).unwrap()["key"],
+        "fileName",
+        "the rest of the view is restored too"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -224,15 +359,24 @@ fn filters_are_not_restored_when_a_library_reopens() {
     let dir = temp_dir("filter-not-restored");
     let mut s = open(&dir);
     let all = s.visible_cloned().len();
-    s.execute("library.sort", &json!({"key": "fileName"})).unwrap();
-    s.execute("library.filter", &json!({"rating": 5, "date": "2026-01-16", "person": "Jane Doe"})).unwrap();
+    s.execute("library.sort", &json!({"key": "fileName"}))
+        .unwrap();
+    s.execute(
+        "library.filter",
+        &json!({"rating": 5, "date": "2026-01-16", "person": "Jane Doe"}),
+    )
+    .unwrap();
     assert!(s.visible_cloned().len() < all);
     s.close_library().unwrap();
     drop(s);
     let mut s2 = open(&dir);
     assert_eq!(s2.filter, lightcraft_catalog::Filter::default());
     assert_eq!(s2.visible_cloned().len(), all);
-    assert_eq!(serde_json::to_value(s2.sort).unwrap()["key"], "fileName", "the rest of the view is restored");
+    assert_eq!(
+        serde_json::to_value(s2.sort).unwrap()["key"],
+        "fileName",
+        "the rest of the view is restored"
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -243,12 +387,19 @@ fn filter_chips_clear_one_filter_and_total_ignores_the_filter() {
     let all = s.visible_cloned().len();
     assert!(all > 1);
     assert_eq!(s.source_total(), Some(all));
-    s.execute("library.filter", &json!({"rating": 4, "date": "2026-01-16", "text": "x"})).unwrap();
+    s.execute(
+        "library.filter",
+        &json!({"rating": 4, "date": "2026-01-16", "text": "x"}),
+    )
+    .unwrap();
     // the total is the source's, whatever the filter hides
     assert_eq!(s.source_total(), Some(all));
     let chips = crate::filter_chips(&s.filter, &s.catalog);
     let labels: Vec<&str> = chips.iter().map(|c| c.label.as_str()).collect();
-    assert_eq!(labels, ["Search: “x”", "Rating ≥ 4★", "Date: January 16, 2026"]);
+    assert_eq!(
+        labels,
+        ["Search: “x”", "Rating ≥ 4★", "Date: January 16, 2026"]
+    );
     // clearing the date chip leaves the other two filters alone
     s.execute("library.filter", &chips[2].clear).unwrap();
     assert_eq!(s.filter.date, None);
@@ -264,7 +415,11 @@ fn filter_chips_clear_one_filter_and_total_ignores_the_filter() {
 fn random_sort_persists_with_the_view() {
     let dir = temp_dir("random-view");
     let mut s = open(&dir);
-    s.execute("library.sort", &json!({"key": "random", "seed": 123_456_789})).unwrap();
+    s.execute(
+        "library.sort",
+        &json!({"key": "random", "seed": 123_456_789}),
+    )
+    .unwrap();
     s.close_library().unwrap();
     drop(s);
     let s2 = open(&dir);
@@ -279,14 +434,33 @@ fn deleting_an_album_folder_preserves_photos_and_restores_its_subtree() {
     use lightcraft_catalog::AlbumId;
     let dir = temp_dir("delete-folder");
     let mut s = open(&dir);
-    let make = |s: &mut Session, p| s.execute("album.create", &p).unwrap()["id"].as_u64().unwrap();
+    let make = |s: &mut Session, p| {
+        s.execute("album.create", &p).unwrap()["id"]
+            .as_u64()
+            .unwrap()
+    };
     let outer = make(&mut s, json!({"name": "Trips", "folder": true}));
-    let nested = make(&mut s, json!({"name": "Europe", "folder": true, "parent": outer}));
-    let album = make(&mut s, json!({"name": "Best", "parent": nested, "addSelected": true}));
+    let nested = make(
+        &mut s,
+        json!({"name": "Europe", "folder": true, "parent": outer}),
+    );
+    let album = make(
+        &mut s,
+        json!({"name": "Best", "parent": nested, "addSelected": true}),
+    );
     let sibling = make(&mut s, json!({"name": "Kept", "addSelected": true}));
-    let smart = s.execute("album.createSmart", &json!({"name": "Rated", "parent": outer, "rules": {"rating": 4}})).unwrap()["id"].as_u64().unwrap();
-    s.execute("album.reorder", &json!({"id": album, "parent": nested})).unwrap();
-    s.execute("library.source", &json!({"kind": "album", "id": album})).unwrap();
+    let smart = s
+        .execute(
+            "album.createSmart",
+            &json!({"name": "Rated", "parent": outer, "rules": {"rating": 4}}),
+        )
+        .unwrap()["id"]
+        .as_u64()
+        .unwrap();
+    s.execute("album.reorder", &json!({"id": album, "parent": nested}))
+        .unwrap();
+    s.execute("library.source", &json!({"kind": "album", "id": album}))
+        .unwrap();
     let before = s.catalog.to_snapshot();
     let photos = serde_json::to_value(s.catalog.photos().collect::<Vec<_>>()).unwrap();
     let undo_before = s.undo.len();
@@ -295,21 +469,40 @@ fn deleting_an_album_folder_preserves_photos_and_restores_its_subtree() {
         assert!(s.catalog.album(AlbumId(id)).is_none());
     }
     assert!(s.catalog.album(AlbumId(sibling)).is_some());
-    assert_eq!(serde_json::to_value(s.catalog.photos().collect::<Vec<_>>()).unwrap(), photos);
-    assert_eq!(s.source, LibrarySource::All, "a deleted descendant cannot remain the source");
+    assert_eq!(
+        serde_json::to_value(s.catalog.photos().collect::<Vec<_>>()).unwrap(),
+        photos
+    );
+    assert_eq!(
+        s.source,
+        LibrarySource::All,
+        "a deleted descendant cannot remain the source"
+    );
     assert_eq!(s.undo.len(), undo_before + 1);
     let deleted = s.catalog.to_snapshot();
     s.execute("edit.undo", &json!({})).unwrap();
-    assert_eq!(s.catalog.to_snapshot(), before, "all album fields and memberships restored");
+    assert_eq!(
+        s.catalog.to_snapshot(),
+        before,
+        "all album fields and memberships restored"
+    );
     s.execute("edit.redo", &json!({})).unwrap();
     assert_eq!(s.catalog.to_snapshot(), deleted);
     let undo_after = s.undo.len();
     assert!(s.execute("album.delete", &json!({"id": outer})).is_err());
-    assert_eq!(s.catalog.to_snapshot(), deleted, "missing id leaves the catalog unchanged");
+    assert_eq!(
+        s.catalog.to_snapshot(),
+        deleted,
+        "missing id leaves the catalog unchanged"
+    );
     assert_eq!(s.undo.len(), undo_after);
     drop(s);
     let reopened = open(&dir);
-    assert_eq!(reopened.catalog.to_snapshot(), deleted, "journal replay preserves the deletion");
+    assert_eq!(
+        reopened.catalog.to_snapshot(),
+        deleted,
+        "journal replay preserves the deletion"
+    );
     drop(reopened);
     let _ = std::fs::remove_dir_all(dir);
 }

@@ -1,14 +1,14 @@
 use bevy_app::{App, Plugin, PostUpdate};
 use bevy_asset::{
-    asset_changed::AssetChanged, AsAssetId, Asset, AssetApp, AssetEventSystems, AssetId, Assets,
-    Handle,
+    AsAssetId, Asset, AssetApp, AssetEventSystems, AssetId, Assets, Handle,
+    asset_changed::AssetChanged,
 };
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     error::Result,
     lifecycle::HookContext,
     prelude::*,
-    system::{lifetimeless::SRes, SystemParamItem},
+    system::{SystemParamItem, lifetimeless::SRes},
     world::DeferredWorld,
 };
 use bevy_image::TextureAtlasLayout;
@@ -32,9 +32,9 @@ use bevy_sprite::{Anchor, Sprite};
 use core::hash::Hash;
 
 use crate::{
-    check_entities_needing_specialization, mark_2d_meshes_as_changed_if_their_materials_changed,
     AlphaMode2d, ExtendedMaterial2d, Material2dKey, Material2dPlugin, MaterialExtension2d,
-    MeshMaterial2d, SpriteMeshMaterial,
+    MeshMaterial2d, SpriteMeshMaterial, check_entities_needing_specialization,
+    mark_2d_meshes_as_changed_if_their_materials_changed,
 };
 
 /// Adds the necessary systems and resources for a [`SpriteMaterial`] of type `M`.

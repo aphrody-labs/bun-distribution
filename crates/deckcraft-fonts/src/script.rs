@@ -94,7 +94,10 @@ const RANGES: &[(u32, u32, ScriptTag)] = &[
 /// semicolon and question mark, tatweel, the harakat (combining vowel marks) and the BOM-like
 /// U+FEFF. They take the script of the text around them.
 fn arabic_common(cp: u32) -> bool {
-    matches!(cp, 0x060C | 0x061B | 0x061F | 0x0640 | 0x064B..=0x0655 | 0x0670 | 0xFEFF | 0xFD3E | 0xFD3F)
+    matches!(
+        cp,
+        0x060C | 0x061B | 0x061F | 0x0640 | 0x064B..=0x0655 | 0x0670 | 0xFEFF | 0xFD3E | 0xFD3F
+    )
 }
 
 /// The script of `c`, or `None` for Common and Inherited characters (spaces, digits,
@@ -114,8 +117,9 @@ pub fn script_of(c: char) -> Option<ScriptTag> {
 pub fn slot_of_script(s: ScriptTag) -> FontSlot {
     match &s {
         b"Hani" | b"Hira" | b"Kana" | b"Hang" | b"Bopo" => FontSlot::EastAsian,
-        b"Arab" | b"Hebr" | b"Syrc" | b"Thaa" | b"Nkoo" | b"Deva" | b"Beng" | b"Guru" | b"Gujr" | b"Orya" | b"Taml" | b"Telu" | b"Knda" | b"Mlym"
-        | b"Sinh" | b"Thai" | b"Laoo" | b"Tibt" | b"Mymr" | b"Khmr" => FontSlot::ComplexScript,
+        b"Arab" | b"Hebr" | b"Syrc" | b"Thaa" | b"Nkoo" | b"Deva" | b"Beng" | b"Guru" | b"Gujr"
+        | b"Orya" | b"Taml" | b"Telu" | b"Knda" | b"Mlym" | b"Sinh" | b"Thai" | b"Laoo"
+        | b"Tibt" | b"Mymr" | b"Khmr" => FontSlot::ComplexScript,
         _ => FontSlot::Latin,
     }
 }
@@ -127,7 +131,10 @@ pub fn slot_of(c: char) -> Option<FontSlot> {
         return Some(slot_of_script(s));
     }
     let cp = c as u32;
-    if (0x3000..=0x303F).contains(&cp) || (0xFF00..=0xFFEF).contains(&cp) || (0x3200..=0x33FF).contains(&cp) {
+    if (0x3000..=0x303F).contains(&cp)
+        || (0xFF00..=0xFFEF).contains(&cp)
+        || (0x3200..=0x33FF).contains(&cp)
+    {
         return Some(FontSlot::EastAsian);
     }
     None
@@ -149,8 +156,12 @@ pub fn default_language(s: ScriptTag) -> Option<&'static str> {
 /// Resolve every character's script and slot, giving Common/Inherited characters the value of the
 /// preceding character with one (or, at the start, the following one; Latin when there is none).
 pub fn resolve(chars: &[char]) -> Vec<(Option<ScriptTag>, FontSlot)> {
-    let own: Vec<(Option<ScriptTag>, Option<FontSlot>)> = chars.iter().map(|c| (script_of(*c), slot_of(*c))).collect();
-    let first = own.iter().find_map(|(s, sl)| sl.map(|sl| (*s, sl))).unwrap_or((None, FontSlot::Latin));
+    let own: Vec<(Option<ScriptTag>, Option<FontSlot>)> =
+        chars.iter().map(|c| (script_of(*c), slot_of(*c))).collect();
+    let first = own
+        .iter()
+        .find_map(|(s, sl)| sl.map(|sl| (*s, sl)))
+        .unwrap_or((None, FontSlot::Latin));
     let mut prev = first;
     own.into_iter()
         .map(|(s, sl)| {
@@ -180,7 +191,8 @@ pub fn joins_following(c: char) -> bool {
 /// An Arabic letter that joins to the preceding letter (joining type D or R).
 pub fn joins_preceding(c: char) -> bool {
     let cp = c as u32;
-    matches!(cp, 0x0622..=0x064A | 0x066E..=0x06D3 | 0x06FA..=0x06FC | 0x06FF | 0x0750..=0x077F | 0x08A0..=0x08C9) && cp != 0x0621
+    matches!(cp, 0x0622..=0x064A | 0x066E..=0x06D3 | 0x06FA..=0x06FC | 0x06FF | 0x0750..=0x077F | 0x08A0..=0x08C9)
+        && cp != 0x0621
 }
 
 #[cfg(test)]

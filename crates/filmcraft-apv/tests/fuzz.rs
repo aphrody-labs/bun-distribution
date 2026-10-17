@@ -19,9 +19,13 @@ impl Rng {
 
 fn seeds() -> Vec<Vec<u8>> {
     let mut v = Vec::new();
-    for (p, w, h) in
-        [(Profile::P422_10, 64u32, 48u32), (Profile::P422_12, 70, 38), (Profile::P444_10, 48, 32), (Profile::P4444_10, 64, 32), (Profile::P400_10, 32, 32)]
-    {
+    for (p, w, h) in [
+        (Profile::P422_10, 64u32, 48u32),
+        (Profile::P422_12, 70, 38),
+        (Profile::P444_10, 48, 32),
+        (Profile::P4444_10, 64, 32),
+        (Profile::P400_10, 32, 32),
+    ] {
         let chroma = p.default_chroma();
         let depth = p.default_bit_depth();
         let mut f = Frame::new(w, h, chroma, depth, chroma == ChromaFormat::Yuv4444);
@@ -99,7 +103,10 @@ fn mutated_streams_never_panic() {
 
         let res = catch_unwind(AssertUnwindSafe(|| {
             for depth in [None, Some(8), Some(16)] {
-                let opts = DecodeOptions { bit_depth: depth, threads: i % 2 == 0 };
+                let opts = DecodeOptions {
+                    bit_depth: depth,
+                    threads: i % 2 == 0,
+                };
                 if let Ok(f) = decode_frame_with(&d, &opts) {
                     decoded_ok += 1;
                     assert_eq!(f.y.len(), (f.width as usize) * (f.height as usize));

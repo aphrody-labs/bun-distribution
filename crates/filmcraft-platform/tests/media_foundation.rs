@@ -25,7 +25,10 @@ fn hardware(s: &Stream) -> Option<Box<dyn VideoDecoder>> {
         }
         Some(Err(e)) => panic!("factory error: {e}"),
         None => {
-            eprintln!("SKIPPED: no Media Foundation hardware decoder for {}", s.entry.codec.name());
+            eprintln!(
+                "SKIPPED: no Media Foundation hardware decoder for {}",
+                s.entry.codec.name()
+            );
             None
         }
     }
@@ -45,7 +48,11 @@ fn parity(name: &str, s: &Stream) {
     let b = decode_all(sw.as_mut(), &s.samples);
     assert!(a.len() >= 40, "{name}: {} pictures", a.len());
     assert_same(name, &a, &b);
-    assert!(hw.name().starts_with("Media Foundation"), "{name}: stayed in hardware ({})", hw.name());
+    assert!(
+        hw.name().starts_with("Media Foundation"),
+        "{name}: stayed in hardware ({})",
+        hw.name()
+    );
 
     // reset + reseek to each later sync sample, decode a stretch, flush mid-stream
     let syncs: Vec<usize> = (1..s.samples.len()).filter(|&i| s.sync[i]).collect();
@@ -63,7 +70,11 @@ fn parity(name: &str, s: &Stream) {
     // back to the start after seeking around: the whole stream again
     hw.reset();
     sw.reset();
-    assert_same(&format!("{name} after resets"), &decode_all(hw.as_mut(), &s.samples), &decode_all(sw.as_mut(), &s.samples));
+    assert_same(
+        &format!("{name} after resets"),
+        &decode_all(hw.as_mut(), &s.samples),
+        &decode_all(sw.as_mut(), &s.samples),
+    );
     drained_decoder_restarts_only_at_idr(name, s);
     // random-access / disposable answers match the software decoder's
     for (smp, _) in &s.samples {
@@ -79,18 +90,37 @@ fn drained_decoder_restarts_only_at_idr(name: &str, s: &Stream) {
     use filmcraft_codecs::hw::{NalCodec, StreamInfo};
     let info = filmcraft_platform::media_foundation::stream_info(&s.entry).unwrap();
     let is_idr = |i: usize| match &info {
-        StreamInfo::Nal(n) => n.nal_types(&s.samples[i].0).iter().any(|&t| if n.codec == NalCodec::H264 { t == 5 } else { matches!(t, 19 | 20) }),
+        StreamInfo::Nal(n) => n.nal_types(&s.samples[i].0).iter().any(|&t| {
+            if n.codec == NalCodec::H264 {
+                t == 5
+            } else {
+                matches!(t, 19 | 20)
+            }
+        }),
         StreamInfo::Frame(f) => f.is_random_access(&s.samples[i].0),
     };
-    let Ok(mut mf) = MfDecoder::new(info.clone()) else { return };
+    let Ok(mut mf) = MfDecoder::new(info.clone()) else {
+        return;
+    };
     let mid = s.samples.len() / 2;
-    let Some(idr) = (mid..s.samples.len()).find(|&i| s.sync[i] && is_idr(i)) else { return };
+    let Some(idr) = (mid..s.samples.len()).find(|&i| s.sync[i] && is_idr(i)) else {
+        return;
+    };
     let mut sw = software(s);
-    let before: Vec<_> = s.samples[..mid].iter().flat_map(|(d, p)| mf.decode(d, *p).unwrap()).collect();
+    let before: Vec<_> = s.samples[..mid]
+        .iter()
+        .flat_map(|(d, p)| mf.decode(d, *p).unwrap())
+        .collect();
     let drained = mf.flush();
-    assert!(before.len() + drained.len() >= mid.saturating_sub(1), "{name}: flush returns the held pictures");
+    assert!(
+        before.len() + drained.len() >= mid.saturating_sub(1),
+        "{name}: flush returns the held pictures"
+    );
     if mid > 0 && !s.sync[mid] {
-        assert!(mf.decode(&s.samples[mid].0, s.samples[mid].1).is_err(), "{name}: continuing mid-GOP after a flush is an error");
+        assert!(
+            mf.decode(&s.samples[mid].0, s.samples[mid].1).is_err(),
+            "{name}: continuing mid-GOP after a flush is an error"
+        );
     }
     // flush, then an IDR: same pictures as software for the run that follows
     mf.reset();
@@ -197,7 +227,9 @@ fn large_fixture(ff: &std::path::Path, codec: &str, size: &str) -> Option<std::p
 
 fn large(codec: &str, size: &str) {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let Some(path) = large_fixture(&ff, codec, size) else { return };
+    let Some(path) = large_fixture(&ff, codec, size) else {
+        return;
+    };
     parity(&format!("{codec} {size}"), &read_stream(&path));
 }
 
@@ -240,11 +272,22 @@ fn mid_stream_failure_continues_in_software() {
             let before = filmcraft_codecs::hw::hw_stats().fallbacks;
             let out = decode_all(&mut d, &s.samples);
             assert!(!d.is_hardware(), "{name}: switched to software");
-            assert!(filmcraft_codecs::hw::hw_stats().fallbacks > before, "{name}: fallback counted");
-            assert_same(&format!("{name} failing at sample {fail_at}"), &out, &reference);
+            assert!(
+                filmcraft_codecs::hw::hw_stats().fallbacks > before,
+                "{name}: fallback counted"
+            );
+            assert_same(
+                &format!("{name} failing at sample {fail_at}"),
+                &out,
+                &reference,
+            );
             // the instance stays in software across seeks
             d.reset();
-            assert_same(&format!("{name} after the fallback and a reset"), &decode_all(&mut d, &s.samples), &reference);
+            assert_same(
+                &format!("{name} after the fallback and a reset"),
+                &decode_all(&mut d, &s.samples),
+                &reference,
+            );
         }
     }
 }
@@ -275,31 +318,39 @@ fn damaged_samples_and_parameter_sets_never_crash_or_hang() {
         for seed in 1..=6u64 {
             let samples = s.samples.clone();
             let entry = s.entry.clone();
-            bounded(&format!("{name} seed {seed}"), Duration::from_secs(60), move || {
-                let mut seed = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
-                let mut d = filmcraft_platform::media_foundation_factory(&entry).unwrap().unwrap();
-                for (i, (smp, pts)) in samples.iter().enumerate().take(40) {
-                    let mut m = smp.clone();
-                    match xorshift(&mut seed) % 4 {
-                        0 => {
-                            for _ in 0..1 + xorshift(&mut seed) % 8 {
-                                let at = (xorshift(&mut seed) as usize) % m.len().max(1);
-                                if let Some(b) = m.get_mut(at) {
-                                    *b ^= 1 << (xorshift(&mut seed) % 8);
+            bounded(
+                &format!("{name} seed {seed}"),
+                Duration::from_secs(60),
+                move || {
+                    let mut seed = seed.wrapping_mul(0x9E37_79B9_7F4A_7C15) | 1;
+                    let mut d = filmcraft_platform::media_foundation_factory(&entry)
+                        .unwrap()
+                        .unwrap();
+                    for (i, (smp, pts)) in samples.iter().enumerate().take(40) {
+                        let mut m = smp.clone();
+                        match xorshift(&mut seed) % 4 {
+                            0 => {
+                                for _ in 0..1 + xorshift(&mut seed) % 8 {
+                                    let at = (xorshift(&mut seed) as usize) % m.len().max(1);
+                                    if let Some(b) = m.get_mut(at) {
+                                        *b ^= 1 << (xorshift(&mut seed) % 8);
+                                    }
                                 }
                             }
+                            1 => m.truncate((xorshift(&mut seed) as usize) % m.len().max(1)),
+                            2 if m.len() > 4 => {
+                                m[..4].copy_from_slice(&(xorshift(&mut seed) as u32).to_be_bytes())
+                            }
+                            _ => {}
                         }
-                        1 => m.truncate((xorshift(&mut seed) as usize) % m.len().max(1)),
-                        2 if m.len() > 4 => m[..4].copy_from_slice(&(xorshift(&mut seed) as u32).to_be_bytes()),
-                        _ => {}
+                        let _ = d.decode(&m, *pts);
+                        if i % 13 == 12 {
+                            d.reset();
+                        }
                     }
-                    let _ = d.decode(&m, *pts);
-                    if i % 13 == 12 {
-                        d.reset();
-                    }
-                }
-                let _ = d.flush();
-            });
+                    let _ = d.flush();
+                },
+            );
         }
         // damaged parameter sets: the factory declines or the decoder errors / falls back
         let rec = match &s.entry.codec {
@@ -326,16 +377,29 @@ fn damaged_samples_and_parameter_sets_never_crash_or_hang() {
                 }
             }
             let samples: Vec<_> = s.samples.iter().take(12).cloned().collect();
-            bounded(&format!("{name} record round {round}"), Duration::from_secs(60), move || {
-                let Some(info) = (if hevc { NalStreamInfo::from_hvcc(&r) } else { NalStreamInfo::from_avcc(&r) }).ok() else { return };
-                let Ok(mut vt) = MfDecoder::new(info) else { return };
-                for (smp, pts) in &samples {
-                    if vt.decode(smp, *pts).is_err() {
-                        break;
+            bounded(
+                &format!("{name} record round {round}"),
+                Duration::from_secs(60),
+                move || {
+                    let Some(info) = (if hevc {
+                        NalStreamInfo::from_hvcc(&r)
+                    } else {
+                        NalStreamInfo::from_avcc(&r)
+                    })
+                    .ok() else {
+                        return;
+                    };
+                    let Ok(mut vt) = MfDecoder::new(info) else {
+                        return;
+                    };
+                    for (smp, pts) in &samples {
+                        if vt.decode(smp, *pts).is_err() {
+                            break;
+                        }
                     }
-                }
-                let _ = vt.flush();
-            });
+                    let _ = vt.flush();
+                },
+            );
         }
     }
 }
@@ -361,21 +425,53 @@ fn hevc_422_10bit_matches_ffmpeg_when_the_hardware_takes_it() {
         "-pix_fmt",
         "yuv422p10le",
     ];
-    let Some(path) = fixture(&ff, "hevc_422_10.mp4", &args) else { return };
+    let Some(path) = fixture(&ff, "hevc_422_10.mp4", &args) else {
+        return;
+    };
     let s = read_stream(&path);
     let Some(mut hw) = hardware(&s) else { return };
     let out = decode_all(hw.as_mut(), &s.samples);
-    let o =
-        std::process::Command::new(&ff).args(["-v", "error", "-i", path.to_str().unwrap(), "-f", "rawvideo", "-pix_fmt", "yuv422p10le", "-"]).output().unwrap();
+    let o = std::process::Command::new(&ff)
+        .args([
+            "-v",
+            "error",
+            "-i",
+            path.to_str().unwrap(),
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "yuv422p10le",
+            "-",
+        ])
+        .output()
+        .unwrap();
     let (w, h) = (640usize, 360usize);
     let fsize = (w * h + 2 * (w / 2) * h) * 2;
     assert_eq!(out.len(), o.stdout.len() / fsize, "frame count");
     for (i, f) in out.iter().enumerate() {
-        let raw: Vec<u16> = o.stdout[i * fsize..(i + 1) * fsize].as_chunks::<2>().0.iter().map(|b| u16::from_le_bytes([b[0], b[1]])).collect();
-        let filmcraft_frame::PixelData::Yuv16 { planes, chroma, bits, .. } = &f.frame.data else { panic!("16-bit planes") };
+        let raw: Vec<u16> = o.stdout[i * fsize..(i + 1) * fsize]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|b| u16::from_le_bytes([b[0], b[1]]))
+            .collect();
+        let filmcraft_frame::PixelData::Yuv16 {
+            planes,
+            chroma,
+            bits,
+            ..
+        } = &f.frame.data
+        else {
+            panic!("16-bit planes")
+        };
         assert_eq!((*chroma, *bits), (filmcraft_frame::Chroma::C422, 10));
         let (y, c) = (w * h, (w / 2) * h);
-        assert!(planes[0][..] == raw[..y] && planes[1][..] == raw[y..y + c] && planes[2][..] == raw[y + c..], "frame {i} differs from ffmpeg");
+        assert!(
+            planes[0][..] == raw[..y]
+                && planes[1][..] == raw[y..y + c]
+                && planes[2][..] == raw[y + c..],
+            "frame {i} differs from ffmpeg"
+        );
     }
 }
 
@@ -384,13 +480,19 @@ fn hevc_422_10bit_matches_ffmpeg_when_the_hardware_takes_it() {
 #[test]
 fn repeated_initialisation() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let Some(path) = named(&ff, "h264_high.mp4") else { return };
+    let Some(path) = named(&ff, "h264_high.mp4") else {
+        return;
+    };
     let s = read_stream(&path);
     let reference = decode_all(software(&s).as_mut(), &s.samples[..13]);
     for round in 0..40 {
         let Some(mut hw) = hardware(&s) else { return };
         if round % 8 == 0 {
-            assert_same(&format!("round {round}"), &decode_all(hw.as_mut(), &s.samples[..13]), &reference);
+            assert_same(
+                &format!("round {round}"),
+                &decode_all(hw.as_mut(), &s.samples[..13]),
+                &reference,
+            );
         }
     }
 }
@@ -400,23 +502,29 @@ fn repeated_initialisation() {
 #[test]
 fn concurrent_decoders_share_the_device() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let jobs: Vec<_> = ["h264_high.mp4", "hevc_main.mp4", "hevc_main10.mp4", "h264_high.mp4", "hevc_main.mp4"]
-        .into_iter()
-        .filter_map(|n| named(&ff, n))
-        .map(|path| {
-            std::thread::spawn(move || {
-                let s = read_stream(&path);
-                let Some(mut hw) = hardware(&s) else { return };
-                let n = s.samples.len().min(40);
-                let a = decode_all(hw.as_mut(), &s.samples[..n]);
-                hw.reset();
-                let b = decode_all(hw.as_mut(), &s.samples[..n]);
-                let c = decode_all(software(&s).as_mut(), &s.samples[..n]);
-                assert_same("concurrent", &a, &c);
-                assert_same("concurrent, after a reset", &b, &c);
-            })
+    let jobs: Vec<_> = [
+        "h264_high.mp4",
+        "hevc_main.mp4",
+        "hevc_main10.mp4",
+        "h264_high.mp4",
+        "hevc_main.mp4",
+    ]
+    .into_iter()
+    .filter_map(|n| named(&ff, n))
+    .map(|path| {
+        std::thread::spawn(move || {
+            let s = read_stream(&path);
+            let Some(mut hw) = hardware(&s) else { return };
+            let n = s.samples.len().min(40);
+            let a = decode_all(hw.as_mut(), &s.samples[..n]);
+            hw.reset();
+            let b = decode_all(hw.as_mut(), &s.samples[..n]);
+            let c = decode_all(software(&s).as_mut(), &s.samples[..n]);
+            assert_same("concurrent", &a, &c);
+            assert_same("concurrent, after a reset", &b, &c);
         })
-        .collect();
+    })
+    .collect();
     for j in jobs {
         j.join().unwrap();
     }
@@ -426,7 +534,9 @@ fn concurrent_decoders_share_the_device() {
 #[test]
 fn decoder_moves_between_threads() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let Some(path) = named(&ff, "hevc_main.mp4") else { return };
+    let Some(path) = named(&ff, "hevc_main.mp4") else {
+        return;
+    };
     let s = read_stream(&path);
     let Some(mut hw) = hardware(&s) else { return };
     let reference = decode_all(software(&s).as_mut(), &s.samples[..30]);
@@ -441,7 +551,9 @@ fn decoder_moves_between_threads() {
     let mut hw = hw;
     hw.reset();
     let samples = s.samples.clone();
-    let out = std::thread::spawn(move || decode_all(hw.as_mut(), &samples[..30])).join().unwrap();
+    let out = std::thread::spawn(move || decode_all(hw.as_mut(), &samples[..30]))
+        .join()
+        .unwrap();
     assert_same("second thread", &out, &reference);
 }
 
@@ -572,7 +684,9 @@ fn frame_fixture(ff: &std::path::Path, codec: &str, size: &str) -> Option<std::p
 fn frame_parity(codec: &str, sizes: &[&str]) {
     let ff = filmcraft_testkit::require_ffmpeg!();
     for size in sizes {
-        let Some(path) = frame_fixture(&ff, codec, size) else { continue };
+        let Some(path) = frame_fixture(&ff, codec, size) else {
+            continue;
+        };
         parity(&format!("{codec} {size}"), &read_stream(&path));
     }
 }
@@ -604,7 +718,8 @@ fn damaged_av1c(name: &str, s: &Stream, c: &filmcraft_isobmff::Av1Config) {
     for round in 0..24 {
         let mut cfg = c.clone();
         if round % 3 == 2 {
-            cfg.config_obus.truncate(cfg.config_obus.len() * (round + 1) / 30);
+            cfg.config_obus
+                .truncate(cfg.config_obus.len() * (round + 1) / 30);
         } else {
             for _ in 0..1 + round % 4 {
                 let at = (xorshift(&mut seed) as usize) % cfg.config_obus.len().max(1);
@@ -616,16 +731,24 @@ fn damaged_av1c(name: &str, s: &Stream, c: &filmcraft_isobmff::Av1Config) {
         let mut entry = s.entry.clone();
         entry.codec = filmcraft_isobmff::CodecConfig::Av1(cfg);
         let samples: Vec<_> = s.samples.iter().take(12).cloned().collect();
-        bounded(&format!("{name} av1C round {round}"), Duration::from_secs(60), move || {
-            let Some(info) = filmcraft_platform::media_foundation::stream_info(&entry) else { return };
-            let Ok(mut d) = MfDecoder::new(info) else { return };
-            for (smp, pts) in &samples {
-                if d.decode(smp, *pts).is_err() {
-                    break;
+        bounded(
+            &format!("{name} av1C round {round}"),
+            Duration::from_secs(60),
+            move || {
+                let Some(info) = filmcraft_platform::media_foundation::stream_info(&entry) else {
+                    return;
+                };
+                let Ok(mut d) = MfDecoder::new(info) else {
+                    return;
+                };
+                for (smp, pts) in &samples {
+                    if d.decode(smp, *pts).is_err() {
+                        break;
+                    }
                 }
-            }
-            let _ = d.flush();
-        });
+                let _ = d.flush();
+            },
+        );
     }
 }
 
@@ -636,18 +759,37 @@ fn damaged_av1c(name: &str, s: &Stream, c: &filmcraft_isobmff::Av1Config) {
 fn in_band_format_changes_fall_back_to_software() {
     let ff = filmcraft_testkit::require_ffmpeg!();
     for codec in ["vp9", "av1"] {
-        let (Some(big), Some(small)) = (frame_fixture(&ff, codec, "1920x1080"), frame_fixture(&ff, codec, "640x360")) else { continue };
+        let (Some(big), Some(small)) = (
+            frame_fixture(&ff, codec, "1920x1080"),
+            frame_fixture(&ff, codec, "640x360"),
+        ) else {
+            continue;
+        };
         let (a, b) = (read_stream(&big), read_stream(&small));
         let Some(mut hw) = hardware(&a) else { continue };
         let mut sw = software(&a);
         // (the second stream's pictures come later in time, as in a real stream)
-        let samples: Vec<_> = a.samples[..8].iter().cloned().chain(b.samples[..8].iter().map(|(d, p)| (d.clone(), p + 100_000))).collect();
+        let samples: Vec<_> = a.samples[..8]
+            .iter()
+            .cloned()
+            .chain(b.samples[..8].iter().map(|(d, p)| (d.clone(), p + 100_000)))
+            .collect();
         let before = filmcraft_codecs::hw::hw_stats().fallbacks;
         let got = decode_all(hw.as_mut(), &samples);
         let want = decode_all(sw.as_mut(), &samples);
-        assert!(filmcraft_codecs::hw::hw_stats().fallbacks > before, "{codec}: the change was counted as a fallback");
-        assert!(!hw.name().starts_with("Media Foundation"), "{codec}: continued in {}", hw.name());
+        assert!(
+            filmcraft_codecs::hw::hw_stats().fallbacks > before,
+            "{codec}: the change was counted as a fallback"
+        );
+        assert!(
+            !hw.name().starts_with("Media Foundation"),
+            "{codec}: continued in {}",
+            hw.name()
+        );
         assert_same(&format!("{codec} 1080p then 360p"), &got, &want);
-        assert!(got.iter().any(|f| f.frame.width == 640) && got.iter().any(|f| f.frame.width == 1920), "{codec}: both sizes came out");
+        assert!(
+            got.iter().any(|f| f.frame.width == 640) && got.iter().any(|f| f.frame.width == 1920),
+            "{codec}: both sizes came out"
+        );
     }
 }

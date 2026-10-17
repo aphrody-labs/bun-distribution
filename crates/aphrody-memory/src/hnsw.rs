@@ -42,7 +42,9 @@ fn indexable(v: &[f32]) -> bool {
 }
 
 fn index_error(e: aphrody_web_index::IndexError) -> MemoryError {
-    MemoryError::Internal { message: format!("vector index: {e}") }
+    MemoryError::Internal {
+        message: format!("vector index: {e}"),
+    }
 }
 
 /// Key bookkeeping between string record keys and the `u64` keys of the
@@ -58,14 +60,19 @@ struct Ann {
 impl Ann {
     fn index_for(&mut self, dim: usize) -> Result<&Index, MemoryError> {
         if let std::collections::hash_map::Entry::Vacant(entry) = self.by_dim.entry(dim) {
-            let params = IndexParams { quantization: Quantization::None, ..IndexParams::new(dim) };
+            let params = IndexParams {
+                quantization: Quantization::None,
+                ..IndexParams::new(dim)
+            };
             entry.insert(Index::new(params).map_err(index_error)?);
         }
         Ok(&self.by_dim[&dim])
     }
 
     fn remove(&mut self, key: &str) {
-        let Some((dim, id)) = self.slots.remove(key) else { return };
+        let Some((dim, id)) = self.slots.remove(key) else {
+            return;
+        };
         self.keys.remove(&id);
         if let Some(index) = self.by_dim.get(&dim) {
             index.remove(id);
@@ -85,7 +92,9 @@ impl Ann {
         let mut groups: HashMap<usize, Vec<(u64, Vec<f32>)>> = HashMap::new();
         for (key, embedding) in batch {
             self.remove(key);
-            let Some(v) = embedding.filter(|v| indexable(v)) else { continue };
+            let Some(v) = embedding.filter(|v| indexable(v)) else {
+                continue;
+            };
             let id = self.next;
             self.next += 1;
             self.slots.insert(key.to_owned(), (v.len(), id));
@@ -93,14 +102,20 @@ impl Ann {
             groups.entry(v.len()).or_default().push((id, v.to_vec()));
         }
         for (dim, items) in groups {
-            self.index_for(dim)?.add_batch(&items).map_err(index_error)?;
+            self.index_for(dim)?
+                .add_batch(&items)
+                .map_err(index_error)?;
         }
         Ok(())
     }
 
     fn search(&self, query: &[f32], top_k: usize) -> Result<Vec<(&str, f32)>, MemoryError> {
-        let Some(index) = self.by_dim.get(&query.len()) else { return Ok(Vec::new()) };
-        let hits = index.search(query, top_k, Some(top_k.max(EF_SEARCH))).map_err(index_error)?;
+        let Some(index) = self.by_dim.get(&query.len()) else {
+            return Ok(Vec::new());
+        };
+        let hits = index
+            .search(query, top_k, Some(top_k.max(EF_SEARCH)))
+            .map_err(index_error)?;
         Ok(hits
             .into_iter()
             .filter_map(|(id, score)| self.keys.get(&id).map(|k| (k.as_str(), score)))
@@ -142,7 +157,11 @@ impl HnswBackend {
         }
 
         let mut ann = Ann::default();
-        ann.insert_all(index.iter().map(|(k, r)| (k.as_str(), r.embedding.as_deref())))?;
+        ann.insert_all(
+            index
+                .iter()
+                .map(|(k, r)| (k.as_str(), r.embedding.as_deref())),
+        )?;
         Ok(Self { root, index, ann })
     }
 
@@ -157,8 +176,11 @@ impl HnswBackend {
             lines.push(serde_json::to_string(&pair)?);
         }
 
-        let content =
-            if lines.is_empty() { String::new() } else { format!("{}\n", lines.join("\n")) };
+        let content = if lines.is_empty() {
+            String::new()
+        } else {
+            format!("{}\n", lines.join("\n"))
+        };
 
         fs::write(&tmp_path, content.as_bytes()).await?;
         fs::rename(&tmp_path, &index_path).await?;
@@ -182,7 +204,11 @@ impl HnswBackend {
         &mut self,
         batch: Vec<(String, MemoryRecord)>,
     ) -> Result<(), MemoryError> {
-        self.ann.insert_all(batch.iter().map(|(k, r)| (k.as_str(), r.embedding.as_deref())))?;
+        self.ann.insert_all(
+            batch
+                .iter()
+                .map(|(k, r)| (k.as_str(), r.embedding.as_deref())),
+        )?;
         for (key, value) in batch {
             self.index.insert(key, value);
         }
@@ -296,7 +322,12 @@ mod tests {
 
         assert_eq!(results.len(), 3);
         for w in results.windows(2) {
-            assert!(w[0].1 >= w[1].1, "results not sorted: {} < {}", w[0].1, w[1].1);
+            assert!(
+                w[0].1 >= w[1].1,
+                "results not sorted: {} < {}",
+                w[0].1,
+                w[1].1
+            );
         }
         assert_eq!(results[0].0.content, "near");
     }
@@ -329,10 +360,16 @@ mod tests {
         let rec = MemoryRecord::new("vec", "moved").with_embedding(vec![1.0, 0.0]);
         let key = format!("vec/{}", rec.id);
         b.put(&key, rec.clone()).await.unwrap();
-        b.put(&key, rec.with_embedding(vec![0.0, 1.0])).await.unwrap();
+        b.put(&key, rec.with_embedding(vec![0.0, 1.0]))
+            .await
+            .unwrap();
         let results = b.search(&vec![0.0, 1.0], 10).await.unwrap();
         assert_eq!(results.len(), 1);
-        assert!((results[0].1 - 1.0).abs() < 1e-5, "stale vector served: {}", results[0].1);
+        assert!(
+            (results[0].1 - 1.0).abs() < 1e-5,
+            "stale vector served: {}",
+            results[0].1
+        );
     }
 
     #[tokio::test]
@@ -389,7 +426,10 @@ mod tests {
         let batch: Vec<(String, MemoryRecord)> = (0..N)
             .map(|i| {
                 let v: Vec<f32> = (0..DIM).map(|_| next()).collect();
-                (format!("r/{i:04}"), MemoryRecord::new("r", format!("{i}")).with_embedding(v))
+                (
+                    format!("r/{i:04}"),
+                    MemoryRecord::new("r", format!("{i}")).with_embedding(v),
+                )
             })
             .collect();
         let corpus: Vec<(String, Vec<f32>)> = batch
@@ -401,8 +441,10 @@ mod tests {
         let (mut found, mut total) = (0usize, 0usize);
         for _ in 0..20 {
             let q: Vec<f32> = (0..DIM).map(|_| next()).collect();
-            let mut exact: Vec<(f32, &str)> =
-                corpus.iter().map(|(k, v)| (crate::cosine_similarity(&q, v), k.as_str())).collect();
+            let mut exact: Vec<(f32, &str)> = corpus
+                .iter()
+                .map(|(k, v)| (crate::cosine_similarity(&q, v), k.as_str()))
+                .collect();
             exact.sort_by(|a, b| b.0.total_cmp(&a.0));
             let truth: Vec<&str> = exact[..K].iter().map(|(_, k)| *k).collect();
             let got = b.search(&q, K).await.unwrap();
@@ -426,7 +468,10 @@ mod tests {
         let r = MemoryRecord::new("vec", "x").with_embedding(vec![1.0, 2.0, 3.0]);
         b.put(&format!("vec/{}", r.id), r).await.unwrap();
         let results = b.search(&vec![0.0_f32, 0.0, 0.0], 5).await.unwrap();
-        assert!(results.is_empty(), "zero query must rank nothing, got {results:?}");
+        assert!(
+            results.is_empty(),
+            "zero query must rank nothing, got {results:?}"
+        );
     }
 
     #[tokio::test]

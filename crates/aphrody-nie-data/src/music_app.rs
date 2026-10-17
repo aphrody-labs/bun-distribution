@@ -168,7 +168,10 @@ impl MusicAppConfig {
     /// Renvoie toutes les pistes d'une catégorie donnée (`app_category`).
     #[must_use]
     pub fn items_of_category(&self, app_category: i64) -> Vec<&MusicAppItem> {
-        self.items.iter().filter(|it| it.app_category == app_category).collect()
+        self.items
+            .iter()
+            .filter(|it| it.app_category == app_category)
+            .collect()
     }
 }
 

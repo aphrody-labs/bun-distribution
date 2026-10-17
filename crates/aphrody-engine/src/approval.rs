@@ -50,11 +50,11 @@ impl ApprovalGate {
                     if id == request_id =>
                 {
                     return Some(decision);
-                },
+                }
                 Op::Interrupt => return Some(ReviewDecision::Abort),
                 // A decision for a different request, or an unrelated op, is
                 // ignored while we wait for the one we asked about.
-                _ => {},
+                _ => {}
             }
         }
         None

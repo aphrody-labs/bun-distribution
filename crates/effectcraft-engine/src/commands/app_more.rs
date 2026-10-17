@@ -7,12 +7,18 @@ use effectcraft_geom::{Mat4, Vec3, vec3};
 use effectcraft_project::{ItemId, ItemKind, LayerSource};
 use serde_json::{Value, json};
 
-use super::{CommandSpec, always, b_p, bad, comp_id, has_comp, has_layers, has_project_selection, str_p};
+use super::{
+    CommandSpec, always, b_p, bad, comp_id, has_comp, has_layers, has_project_selection, str_p,
+};
 use crate::{EngineError, Event, Result, Session, cmd, query};
 
 /// Run `f` (which may run several undoable commands) as one undo step named `label`; on error
 /// the project is restored.
-pub(crate) fn grouped<T>(s: &mut Session, label: &str, f: impl FnOnce(&mut Session) -> Result<T>) -> Result<T> {
+pub(crate) fn grouped<T>(
+    s: &mut Session,
+    label: &str,
+    f: impl FnOnce(&mut Session) -> Result<T>,
+) -> Result<T> {
     // The steps `f` records go to an empty stack (so the undo limit can't drop the snapshot
     // taken before them), then become one step on the real one.
     let saved = std::mem::take(&mut s.history.undo);
@@ -45,7 +51,9 @@ pub(crate) fn grouped<T>(s: &mut Session, label: &str, f: impl FnOnce(&mut Sessi
 }
 
 fn id_of(v: &Value, key: &str) -> Result<u64> {
-    v.get(key).and_then(Value::as_u64).ok_or_else(|| EngineError::Other(format!("expected `{key}` in {v}")))
+    v.get(key)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| EngineError::Other(format!("expected `{key}` in {v}")))
 }
 
 // ---------------------------------------------------------------- Edit ▸ History
@@ -55,26 +63,48 @@ fn id_of(v: &Value, key: &str) -> Result<u64> {
 fn history(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(n) = p.get("steps").and_then(Value::as_u64) {
         if n as usize > s.history.undo.len() {
-            return Err(bad("edit.history", format!("only {} undo steps", s.history.undo.len())));
+            return Err(bad(
+                "edit.history",
+                format!("only {} undo steps", s.history.undo.len()),
+            ));
         }
         for _ in 0..n {
             s.undo();
         }
     } else if let Some(n) = p.get("redo").and_then(Value::as_u64) {
         if n as usize > s.history.redo.len() {
-            return Err(bad("edit.history", format!("only {} redo steps", s.history.redo.len())));
+            return Err(bad(
+                "edit.history",
+                format!("only {} redo steps", s.history.redo.len()),
+            ));
         }
         for _ in 0..n {
             s.redo();
         }
     }
-    let undo: Vec<&str> = s.history.undo.iter().rev().map(|(l, _)| l.as_str()).collect();
-    let redo: Vec<&str> = s.history.redo.iter().rev().map(|(l, _)| l.as_str()).collect();
+    let undo: Vec<&str> = s
+        .history
+        .undo
+        .iter()
+        .rev()
+        .map(|(l, _)| l.as_str())
+        .collect();
+    let redo: Vec<&str> = s
+        .history
+        .redo
+        .iter()
+        .rev()
+        .map(|(l, _)| l.as_str())
+        .collect();
     Ok(json!({"undo": undo, "redo": redo}))
 }
 
 fn has_history(s: &Session) -> std::result::Result<(), String> {
-    if s.history.undo.is_empty() && s.history.redo.is_empty() { Err("nothing to undo".into()) } else { Ok(()) }
+    if s.history.undo.is_empty() && s.history.redo.is_empty() {
+        Err("nothing to undo".into())
+    } else {
+        Ok(())
+    }
 }
 
 // ---------------------------------------------------------------- recent footage / presets
@@ -82,14 +112,28 @@ fn has_history(s: &Session) -> std::result::Result<(), String> {
 fn import_recent(s: &mut Session, p: &Value) -> Result<Value> {
     let path = match (str_p(p, "path"), p.get("index").and_then(Value::as_u64)) {
         (Some(x), _) => x.to_string(),
-        (None, Some(i)) => s.prefs.recent_footage.get(i as usize).cloned().ok_or_else(|| bad("file.importRecent", format!("no recent footage #{i}")))?,
-        _ => s.prefs.recent_footage.first().cloned().ok_or_else(|| bad("file.importRecent", "no recent footage"))?,
+        (None, Some(i)) => s
+            .prefs
+            .recent_footage
+            .get(i as usize)
+            .cloned()
+            .ok_or_else(|| bad("file.importRecent", format!("no recent footage #{i}")))?,
+        _ => s
+            .prefs
+            .recent_footage
+            .first()
+            .cloned()
+            .ok_or_else(|| bad("file.importRecent", "no recent footage"))?,
     };
     super::file::import(s, &json!({"paths": [path]}))
 }
 
 fn has_recent_footage(s: &Session) -> std::result::Result<(), String> {
-    if s.prefs.recent_footage.is_empty() { Err("no recent footage".into()) } else { Ok(()) }
+    if s.prefs.recent_footage.is_empty() {
+        Err("no recent footage".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn clear_recent_footage(s: &mut Session, _: &Value) -> Result<Value> {
@@ -102,8 +146,18 @@ fn clear_recent_footage(s: &mut Session, _: &Value) -> Result<Value> {
 fn apply_recent_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let path = match (str_p(p, "path"), p.get("index").and_then(Value::as_u64)) {
         (Some(x), _) => x.to_string(),
-        (None, Some(i)) => s.prefs.recent_presets.get(i as usize).cloned().ok_or_else(|| bad("anim.applyRecentPreset", format!("no recent preset #{i}")))?,
-        _ => s.prefs.recent_presets.first().cloned().ok_or_else(|| bad("anim.applyRecentPreset", "no recent animation presets"))?,
+        (None, Some(i)) => s
+            .prefs
+            .recent_presets
+            .get(i as usize)
+            .cloned()
+            .ok_or_else(|| bad("anim.applyRecentPreset", format!("no recent preset #{i}")))?,
+        _ => s
+            .prefs
+            .recent_presets
+            .first()
+            .cloned()
+            .ok_or_else(|| bad("anim.applyRecentPreset", "no recent animation presets"))?,
     };
     let mut q = json!({"path": path});
     if let Some(l) = p.get("layers") {
@@ -114,7 +168,11 @@ fn apply_recent_preset(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn has_recent_presets(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
-    if s.prefs.recent_presets.is_empty() { Err("no recent animation presets".into()) } else { Ok(()) }
+    if s.prefs.recent_presets.is_empty() {
+        Err("no recent animation presets".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn clear_recent_presets(s: &mut Session, _: &Value) -> Result<Value> {
@@ -127,9 +185,13 @@ fn clear_recent_presets(s: &mut Session, _: &Value) -> Result<Value> {
 // ---------------------------------------------------------------- File menu
 
 fn save_copy_xml(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("file.saveCopyAsXml", "missing `path` (.ecprojx)"))?;
-    let xml = crate::xml_project::to_xml(&s.project.to_file_json_with_view(&s.saved_view())?).map_err(EngineError::Other)?;
-    s.services.write_file(path, xml.as_bytes()).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    let path =
+        str_p(p, "path").ok_or_else(|| bad("file.saveCopyAsXml", "missing `path` (.ecprojx)"))?;
+    let xml = crate::xml_project::to_xml(&s.project.to_file_json_with_view(&s.saved_view())?)
+        .map_err(EngineError::Other)?;
+    s.services
+        .write_file(path, xml.as_bytes())
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     s.toast(format!("Saved an XML copy to {path}"));
     Ok(json!({"path": path, "bytes": xml.len()}))
 }
@@ -138,13 +200,34 @@ fn save_copy_xml(s: &mut Session, p: &Value) -> Result<Value> {
 /// composition of its layers; every layer using the footage now uses the comp, and the footage
 /// item goes. One undo step.
 fn replace_with_layered_comp(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = p.get("item").and_then(Value::as_u64).map(ItemId).or_else(|| s.state.project_selection.first().copied());
-    let item = item.ok_or_else(|| bad("file.replaceWithLayeredComp", "select a layered footage item"))?;
+    let item = p
+        .get("item")
+        .and_then(Value::as_u64)
+        .map(ItemId)
+        .or_else(|| s.state.project_selection.first().copied());
+    let item = item.ok_or_else(|| {
+        bad(
+            "file.replaceWithLayeredComp",
+            "select a layered footage item",
+        )
+    })?;
     let path = match s.project.item(item).map(|i| &i.kind) {
-        Some(ItemKind::Footage(f)) if f.codec == "PSD" || f.path.to_ascii_lowercase().ends_with(".psd") => f.path.clone(),
-        _ => return Err(bad("file.replaceWithLayeredComp", "the item is not layered footage (a Photoshop file)")),
+        Some(ItemKind::Footage(f))
+            if f.codec == "PSD" || f.path.to_ascii_lowercase().ends_with(".psd") =>
+        {
+            f.path.clone()
+        }
+        _ => {
+            return Err(bad(
+                "file.replaceWithLayeredComp",
+                "the item is not layered footage (a Photoshop file)",
+            ));
+        }
     };
-    let bytes = s.services.read_file(&path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+    let bytes = s
+        .services
+        .read_file(&path)
+        .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
     grouped(s, "Replace Footage", |s| {
         let (comp, _, _) = super::file::import_psd_comp(s, &path, bytes, false)?;
         let comp = ItemId(comp);
@@ -172,8 +255,17 @@ fn replace_with_layered_comp(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn has_footage(s: &Session) -> std::result::Result<(), String> {
     has_project_selection(s)?;
-    let ok = s.state.project_selection.iter().any(|i| matches!(s.project.item(*i).map(|x| &x.kind), Some(ItemKind::Footage(_))));
-    if ok { Ok(()) } else { Err("select a footage item".into()) }
+    let ok = s.state.project_selection.iter().any(|i| {
+        matches!(
+            s.project.item(*i).map(|x| &x.kind),
+            Some(ItemKind::Footage(_))
+        )
+    });
+    if ok {
+        Ok(())
+    } else {
+        Err("select a footage item".into())
+    }
 }
 
 /// `File.execute()` from scripts (and agents): open a file with its default application.
@@ -191,7 +283,10 @@ fn execute_file(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("file.executeFile", format!("no file {path}")));
     }
     if s.prefs.scripting.warn_executing_files && !b_p(p, "confirmed").unwrap_or(false) {
-        s.events.push(Event::Frontend { command: "app.confirmExecute".into(), params: json!({"path": path}) });
+        s.events.push(Event::Frontend {
+            command: "app.confirmExecute".into(),
+            params: json!({"path": path}),
+        });
         return Ok(json!({"needsConfirmation": path}));
     }
     let url = super::layer_menu::file_url(path);
@@ -214,11 +309,19 @@ fn slot_p(p: &Value, cmd: &str, shift: bool) -> Result<String> {
 /// Bind `keys` to the bindable `key`, taking it from whatever had it.
 fn reassign(s: &mut Session, key: &str, slot: &str, cmd: &str) -> Result<Value> {
     let t = s.shortcuts();
-    let b = t.find(key).cloned().ok_or_else(|| bad(cmd, format!("`{key}` can't have a shortcut")))?;
+    let b = t
+        .find(key)
+        .cloned()
+        .ok_or_else(|| bad(cmd, format!("`{key}` can't have a shortcut")))?;
     let holders: Vec<(crate::shortcuts::Bindable, Vec<String>)> = t
         .bindables
         .iter()
-        .filter(|x| x.key != key && t.keys.get(&x.key).is_some_and(|k| k.iter().any(|k| k == slot)))
+        .filter(|x| {
+            x.key != key
+                && t.keys
+                    .get(&x.key)
+                    .is_some_and(|k| k.iter().any(|k| k == slot))
+        })
         .map(|x| (x.clone(), t.keys.get(&x.key).cloned().unwrap_or_default()))
         .collect();
     let mine = t.keys.get(key).cloned().unwrap_or_default();
@@ -232,7 +335,9 @@ fn reassign(s: &mut Session, key: &str, slot: &str, cmd: &str) -> Result<Value> 
     let created = s.keymaps.set(&b, &keys).map_err(|e| bad(cmd, e))?;
     s.shortcuts_changed();
     if let Some(n) = &created {
-        s.toast(format!("The default shortcuts can't be changed: created the preset \"{n}\""));
+        s.toast(format!(
+            "The default shortcuts can't be changed: created the preset \"{n}\""
+        ));
     }
     Ok(json!({"command": key, "keys": keys, "replaced": replaced, "preset": s.keymaps.active}))
 }
@@ -259,7 +364,12 @@ pub(crate) fn view_command(v: effectcraft_render::three_d::View3D) -> &'static s
 fn assign_view_shortcut(s: &mut Session, p: &Value) -> Result<Value> {
     let slot = slot_p(p, "view.assign3dShortcut", false)?;
     let cid = comp_id(s, p)?;
-    let cur = s.state.views3d.get(&cid).map(|v| v.current).unwrap_or_default();
+    let cur = s
+        .state
+        .views3d
+        .get(&cid)
+        .map(|v| v.current)
+        .unwrap_or_default();
     reassign(s, view_command(cur), &slot, "view.assign3dShortcut")
 }
 
@@ -267,7 +377,9 @@ fn assign_view_shortcut(s: &mut Session, p: &Value) -> Result<Value> {
 /// The frontend fills in the current workspace.
 fn assign_workspace_shortcut(s: &mut Session, p: &Value) -> Result<Value> {
     let slot = slot_p(p, "window.assignWorkspaceShortcut", true)?;
-    let Some(ws) = str_p(p, "workspace") else { return super::frontend(s, "window.assignWorkspaceShortcut", p) };
+    let Some(ws) = str_p(p, "workspace") else {
+        return super::frontend(s, "window.assignWorkspaceShortcut", p);
+    };
     let key = crate::shortcuts::binding_key("window.workspace", &json!({"name": ws}));
     reassign(s, &key, &slot, "window.assignWorkspaceShortcut")
 }
@@ -281,9 +393,14 @@ fn log_file(s: &Session) -> std::path::PathBuf {
 fn enable_logging(s: &mut Session, p: &Value) -> Result<Value> {
     let on = b_p(p, "on").unwrap_or(!crate::logging::is_enabled());
     let file = log_file(s);
-    crate::logging::set_enabled(on, file.clone()).map_err(|e| EngineError::Other(format!("cannot write {}: {e}", file.display())))?;
+    crate::logging::set_enabled(on, file.clone())
+        .map_err(|e| EngineError::Other(format!("cannot write {}: {e}", file.display())))?;
     s.prefs_revision += 1;
-    s.toast(if on { format!("Logging to {}", file.display()) } else { "Logging off".into() });
+    s.toast(if on {
+        format!("Logging to {}", file.display())
+    } else {
+        "Logging off".into()
+    });
     Ok(json!({"enabled": on, "path": file.to_string_lossy()}))
 }
 
@@ -330,18 +447,29 @@ pub const IMPORT_FORMATS: &[&str] = &[
 pub fn system_report(s: &Session) -> Value {
     let mem = crate::sysinfo::memory();
     let gb = |b: u64| format!("{:.1} GB", b as f64 / (1u64 << 30) as f64);
-    let export: Vec<&str> = s.exporter.as_ref().map(|e| e.formats().into_iter().map(|f| f.label()).collect()).unwrap_or_default();
+    let export: Vec<&str> = s
+        .exporter
+        .as_ref()
+        .map(|e| e.formats().into_iter().map(|f| f.label()).collect())
+        .unwrap_or_default();
     let gpu = s.accel.as_ref().map(|a| a.name());
     let budgets = s.prefs.cache_budgets(mem.or(s.sys_memory));
     let mut issues = vec![];
     if gpu.is_none() {
         issues.push(match &s.accel_note {
-            Some(why) => format!("No GPU compositor ({why}): rendering uses the CPU (all features still work)."),
-            None => "No GPU compositor: rendering uses the CPU (all features still work).".to_string(),
+            Some(why) => format!(
+                "No GPU compositor ({why}): rendering uses the CPU (all features still work)."
+            ),
+            None => {
+                "No GPU compositor: rendering uses the CPU (all features still work).".to_string()
+            }
         });
     }
     if mem.is_some_and(|m| m.total < 8 << 30) {
-        issues.push("Less than 8 GB of memory: use lower preview resolutions for long or large comps.".to_string());
+        issues.push(
+            "Less than 8 GB of memory: use lower preview resolutions for long or large comps."
+                .to_string(),
+        );
     }
     if s.exporter.is_none() {
         issues.push("Export is not available in this build.".to_string());
@@ -367,8 +495,23 @@ pub fn system_report(s: &Session) -> Value {
 
 /// The report as text (the dialog and `--` CLI output).
 pub fn report_text(r: &Value) -> String {
-    let st = |k: &str| r.get(k).and_then(Value::as_str).unwrap_or("unknown").to_string();
-    let list = |k: &str| r.get(k).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).collect::<Vec<_>>().join(", ")).unwrap_or_default();
+    let st = |k: &str| {
+        r.get(k)
+            .and_then(Value::as_str)
+            .unwrap_or("unknown")
+            .to_string()
+    };
+    let list = |k: &str| {
+        r.get(k)
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_str)
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            })
+            .unwrap_or_default()
+    };
     let mut t = format!(
         "{}\nOperating system: {} ({})\nCPU: {} ({} logical cores)\n",
         st("app"),
@@ -378,10 +521,17 @@ pub fn report_text(r: &Value) -> String {
         r.get("cores").and_then(Value::as_u64).unwrap_or(1)
     );
     match r.get("memory").filter(|m| !m.is_null()) {
-        Some(m) => t.push_str(&format!("Memory: {} ({} available)\n", m["total"].as_str().unwrap_or("?"), m["available"].as_str().unwrap_or("?"))),
+        Some(m) => t.push_str(&format!(
+            "Memory: {} ({} available)\n",
+            m["total"].as_str().unwrap_or("?"),
+            m["available"].as_str().unwrap_or("?")
+        )),
         None => t.push_str("Memory: unknown\n"),
     }
-    match (r.get("gpu").and_then(Value::as_str), r.get("gpuNote").and_then(Value::as_str)) {
+    match (
+        r.get("gpu").and_then(Value::as_str),
+        r.get("gpuNote").and_then(Value::as_str),
+    ) {
         (Some(gpu), _) => t.push_str(&format!("GPU: {gpu}\n")),
         (None, Some(why)) => t.push_str(&format!("GPU: none (CPU compositing): {why}\n")),
         (None, None) => t.push_str("GPU: none (CPU compositing)\n"),
@@ -396,16 +546,27 @@ pub fn report_text(r: &Value) -> String {
         c["footage"].as_str().unwrap_or("?"),
         c["preview"].as_str().unwrap_or("?")
     ));
-    t.push_str(&format!("Import: {}\nExport: {}\n", list("import"), list("export")));
+    t.push_str(&format!(
+        "Import: {}\nExport: {}\n",
+        list("import"),
+        list("export")
+    ));
     let issues = list("issues");
-    t.push_str(&if issues.is_empty() { "No compatibility issues found.".to_string() } else { format!("Issues: {issues}") });
+    t.push_str(&if issues.is_empty() {
+        "No compatibility issues found.".to_string()
+    } else {
+        format!("Issues: {issues}")
+    });
     t
 }
 
 fn report(s: &mut Session, p: &Value) -> Result<Value> {
     let r = system_report(s);
     if !b_p(p, "quiet").unwrap_or(false) {
-        s.events.push(Event::Frontend { command: "app.showReport".into(), params: json!({"title": "System Compatibility Report", "text": report_text(&r)}) });
+        s.events.push(Event::Frontend {
+            command: "app.showReport".into(),
+            params: json!({"title": "System Compatibility Report", "text": report_text(&r)}),
+        });
     }
     Ok(r)
 }
@@ -458,8 +619,16 @@ pub(crate) fn ae(v: [f64; 3]) -> Vec3 {
 fn create_vr_environment(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let src = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
-    let name = s.project.item(cid).map(|i| i.name.clone()).unwrap_or_default();
-    let size = p.get("size").and_then(Value::as_u64).unwrap_or(1024).clamp(64, 8192);
+    let name = s
+        .project
+        .item(cid)
+        .map(|i| i.name.clone())
+        .unwrap_or_default();
+    let size = p
+        .get("size")
+        .and_then(Value::as_u64)
+        .unwrap_or(1024)
+        .clamp(64, 8192);
     let center = match p.get("position").and_then(Value::as_array) {
         Some(a) => [0, 1, 2].map(|i| a.get(i).and_then(Value::as_f64).unwrap_or(0.0)),
         None => [src.width as f64 / 2.0, src.height as f64 / 2.0, 0.0],
@@ -479,20 +648,49 @@ fn create_vr_environment(s: &mut Session, p: &Value) -> Result<Value> {
             let o = orientation_for_axes(ae(r), ae([-u[0], -u[1], -u[2]]), ae(fw));
             let cam =
                 id_of(&s.execute("layer.newCamera", json!({"comp": fc, "name": format!("{fname} Camera"), "angleOfView": 90.0, "type": "oneNode"}))?, "layer")?;
-            s.execute("prop.set", json!({"comp": fc, "layer": cam, "path": "transform/position", "value": center}))?;
-            s.execute("prop.set", json!({"comp": fc, "layer": cam, "path": "transform/orientation", "value": o}))?;
+            s.execute(
+                "prop.set",
+                json!({"comp": fc, "layer": cam, "path": "transform/position", "value": center}),
+            )?;
+            s.execute(
+                "prop.set",
+                json!({"comp": fc, "layer": cam, "path": "transform/orientation", "value": o}),
+            )?;
             // The scene, nested as a collapsed 3D precomp whose layer maps the scene's
             // coordinates onto the face comp's unchanged (anchor = position): its 3D layers are
             // seen through the face camera and edits to the scene show in every face. Lights
             // inside a collapsed precomp do not light it (the containing comp's do), so the
             // scene's lights are copied next to it.
-            let pre = id_of(&s.execute("layer.addItem", json!({"comp": fc, "item": cid.0, "time": 0.0}))?, "layer")?;
+            let pre = id_of(
+                &s.execute(
+                    "layer.addItem",
+                    json!({"comp": fc, "item": cid.0, "time": 0.0}),
+                )?,
+                "layer",
+            )?;
             let mid = [src.width as f64 / 2.0, src.height as f64 / 2.0, 0.0];
-            s.execute("layer.setSwitch", json!({"comp": fc, "layers": [pre], "switch": "threeD", "value": true}))?;
-            s.execute("layer.setSwitch", json!({"comp": fc, "layers": [pre], "switch": "collapse", "value": true}))?;
-            s.execute("prop.set", json!({"comp": fc, "layer": pre, "path": "transform/anchor", "value": mid}))?;
-            s.execute("prop.set", json!({"comp": fc, "layer": pre, "path": "transform/position", "value": mid}))?;
-            let lights: Vec<effectcraft_project::Layer> = src.layers.iter().filter(|l| l.is_light()).cloned().collect();
+            s.execute(
+                "layer.setSwitch",
+                json!({"comp": fc, "layers": [pre], "switch": "threeD", "value": true}),
+            )?;
+            s.execute(
+                "layer.setSwitch",
+                json!({"comp": fc, "layers": [pre], "switch": "collapse", "value": true}),
+            )?;
+            s.execute(
+                "prop.set",
+                json!({"comp": fc, "layer": pre, "path": "transform/anchor", "value": mid}),
+            )?;
+            s.execute(
+                "prop.set",
+                json!({"comp": fc, "layer": pre, "path": "transform/position", "value": mid}),
+            )?;
+            let lights: Vec<effectcraft_project::Layer> = src
+                .layers
+                .iter()
+                .filter(|l| l.is_light())
+                .cloned()
+                .collect();
             if !lights.is_empty() {
                 s.edit("Create VR Environment", None, |proj, _| {
                     let mut next = proj.next_id;
@@ -526,10 +724,22 @@ fn create_vr_environment(s: &mut Session, p: &Value) -> Result<Value> {
             "comp",
         )?;
         for (i, fc) in faces.iter().enumerate() {
-            let l = id_of(&s.execute("layer.addItem", json!({"comp": cube, "item": fc, "time": 0.0}))?, "layer")?;
+            let l = id_of(
+                &s.execute(
+                    "layer.addItem",
+                    json!({"comp": cube, "item": fc, "time": 0.0}),
+                )?,
+                "layer",
+            )?;
             let (c, rr) = CELLS_3X2[i];
-            let pos = [(c as f64 + 0.5) * size as f64, (rr as f64 + 0.5) * size as f64];
-            s.execute("prop.set", json!({"comp": cube, "layer": l, "path": "transform/position", "value": pos}))?;
+            let pos = [
+                (c as f64 + 0.5) * size as f64,
+                (rr as f64 + 0.5) * size as f64,
+            ];
+            s.execute(
+                "prop.set",
+                json!({"comp": cube, "layer": l, "path": "transform/position", "value": pos}),
+            )?;
         }
         let out = id_of(
             &s.execute(
@@ -538,11 +748,26 @@ fn create_vr_environment(s: &mut Session, p: &Value) -> Result<Value> {
             )?,
             "comp",
         )?;
-        let l = id_of(&s.execute("layer.addItem", json!({"comp": out, "item": cube, "time": 0.0}))?, "layer")?;
+        let l = id_of(
+            &s.execute(
+                "layer.addItem",
+                json!({"comp": out, "item": cube, "time": 0.0}),
+            )?,
+            "layer",
+        )?;
         s.execute("prop.set", json!({"comp": out, "layer": l, "path": "transform/scale", "value": [200.0 / 3.0, 50.0, 100.0]}))?;
-        s.execute("effect.apply", json!({"comp": out, "layers": [l], "effect": "ec.vr.converter"}))?;
-        s.execute("prop.set", json!({"comp": out, "layer": l, "path": "effects/#1/sourceProjection", "value": 2}))?;
-        s.execute("prop.set", json!({"comp": out, "layer": l, "path": "effects/#1/targetProjection", "value": 0}))?;
+        s.execute(
+            "effect.apply",
+            json!({"comp": out, "layers": [l], "effect": "ec.vr.converter"}),
+        )?;
+        s.execute(
+            "prop.set",
+            json!({"comp": out, "layer": l, "path": "effects/#1/sourceProjection", "value": 2}),
+        )?;
+        s.execute(
+            "prop.set",
+            json!({"comp": out, "layer": l, "path": "effects/#1/targetProjection", "value": 0}),
+        )?;
         Ok(json!({"faces": faces, "cubeMap": cube, "output": out}))
     })?;
     s.open_comp(ItemId(r["output"].as_u64().unwrap_or(0)));
@@ -554,8 +779,16 @@ fn create_vr_environment(s: &mut Session, p: &Value) -> Result<Value> {
 fn extract_cubemap(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let src = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
-    let name = s.project.item(cid).map(|i| i.name.clone()).unwrap_or_default();
-    let face = p.get("faceSize").and_then(Value::as_u64).unwrap_or((src.width / 4).max(16) as u64).clamp(16, 8192);
+    let name = s
+        .project
+        .item(cid)
+        .map(|i| i.name.clone())
+        .unwrap_or_default();
+    let face = p
+        .get("faceSize")
+        .and_then(Value::as_u64)
+        .unwrap_or((src.width / 4).max(16) as u64)
+        .clamp(16, 8192);
     let (w, h) = (face * 3, face * 2);
     let r = grouped(s, "Extract Cubemap", |s| {
         let cube = id_of(
@@ -565,12 +798,34 @@ fn extract_cubemap(s: &mut Session, p: &Value) -> Result<Value> {
             )?,
             "comp",
         )?;
-        let l = id_of(&s.execute("layer.addItem", json!({"comp": cube, "item": cid.0, "time": 0.0}))?, "layer")?;
-        let scale = [w as f64 / src.width.max(1) as f64 * 100.0, h as f64 / src.height.max(1) as f64 * 100.0, 100.0];
-        s.execute("prop.set", json!({"comp": cube, "layer": l, "path": "transform/scale", "value": scale}))?;
-        s.execute("effect.apply", json!({"comp": cube, "layers": [l], "effect": "ec.vr.converter"}))?;
-        s.execute("prop.set", json!({"comp": cube, "layer": l, "path": "effects/#1/sourceProjection", "value": 0}))?;
-        s.execute("prop.set", json!({"comp": cube, "layer": l, "path": "effects/#1/targetProjection", "value": 2}))?;
+        let l = id_of(
+            &s.execute(
+                "layer.addItem",
+                json!({"comp": cube, "item": cid.0, "time": 0.0}),
+            )?,
+            "layer",
+        )?;
+        let scale = [
+            w as f64 / src.width.max(1) as f64 * 100.0,
+            h as f64 / src.height.max(1) as f64 * 100.0,
+            100.0,
+        ];
+        s.execute(
+            "prop.set",
+            json!({"comp": cube, "layer": l, "path": "transform/scale", "value": scale}),
+        )?;
+        s.execute(
+            "effect.apply",
+            json!({"comp": cube, "layers": [l], "effect": "ec.vr.converter"}),
+        )?;
+        s.execute(
+            "prop.set",
+            json!({"comp": cube, "layer": l, "path": "effects/#1/sourceProjection", "value": 0}),
+        )?;
+        s.execute(
+            "prop.set",
+            json!({"comp": cube, "layer": l, "path": "effects/#1/targetProjection", "value": 2}),
+        )?;
         Ok(json!({"cubeMap": cube, "layer": l, "faceSize": face}))
     })?;
     s.open_comp(ItemId(r["cubeMap"].as_u64().unwrap_or(0)));
@@ -579,23 +834,91 @@ fn extract_cubemap(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("edit.history", "History", [], None, "{steps?: n (undo n steps), redo?: n}", has_history, history),
-        cmd!("file.importRecent", "Import Recent Footage", [], None, "{index? | path?}", has_recent_footage, import_recent),
-        cmd!("file.clearRecentFootage", "Clear Recent Footage", ["File", "Import Recent Footage"], None, "{}", has_recent_footage, clear_recent_footage),
-        cmd!("anim.applyRecentPreset", "Recent Animation Presets", [], None, "{index? | path?, layers?}", has_recent_presets, apply_recent_preset),
+        cmd!(
+            "edit.history",
+            "History",
+            [],
+            None,
+            "{steps?: n (undo n steps), redo?: n}",
+            has_history,
+            history
+        ),
+        cmd!(
+            "file.importRecent",
+            "Import Recent Footage",
+            [],
+            None,
+            "{index? | path?}",
+            has_recent_footage,
+            import_recent
+        ),
+        cmd!(
+            "file.clearRecentFootage",
+            "Clear Recent Footage",
+            ["File", "Import Recent Footage"],
+            None,
+            "{}",
+            has_recent_footage,
+            clear_recent_footage
+        ),
+        cmd!(
+            "anim.applyRecentPreset",
+            "Recent Animation Presets",
+            [],
+            None,
+            "{index? | path?, layers?}",
+            has_recent_presets,
+            apply_recent_preset
+        ),
         cmd!(
             "anim.clearRecentPresets",
             "Clear Recent Presets",
             ["Animation", "Recent Animation Presets"],
             None,
             "{}",
-            |s| if s.prefs.recent_presets.is_empty() { Err("no recent animation presets".into()) } else { Ok(()) },
+            |s| if s.prefs.recent_presets.is_empty() {
+                Err("no recent animation presets".into())
+            } else {
+                Ok(())
+            },
             clear_recent_presets
         ),
-        cmd!("file.saveCopyAsXml", "Save a Copy As XML...", ["File", "Save As"], None, "{path: .ecprojx}", always, save_copy_xml),
-        cmd!("file.replaceWithLayeredComp", "With Layered Comp", ["File", "Replace Footage"], None, "{item?}", has_footage, replace_with_layered_comp),
-        cmd!("file.executeFile", "Execute File", [], None, "{path, confirmed?}", always, execute_file),
-        cmd!("view.assign3dShortcut", "Assign Shortcut to 3D View", [], None, "{slot: F10|F11|F12, comp?}", has_comp, assign_view_shortcut),
+        cmd!(
+            "file.saveCopyAsXml",
+            "Save a Copy As XML...",
+            ["File", "Save As"],
+            None,
+            "{path: .ecprojx}",
+            always,
+            save_copy_xml
+        ),
+        cmd!(
+            "file.replaceWithLayeredComp",
+            "With Layered Comp",
+            ["File", "Replace Footage"],
+            None,
+            "{item?}",
+            has_footage,
+            replace_with_layered_comp
+        ),
+        cmd!(
+            "file.executeFile",
+            "Execute File",
+            [],
+            None,
+            "{path, confirmed?}",
+            always,
+            execute_file
+        ),
+        cmd!(
+            "view.assign3dShortcut",
+            "Assign Shortcut to 3D View",
+            [],
+            None,
+            "{slot: F10|F11|F12, comp?}",
+            has_comp,
+            assign_view_shortcut
+        ),
         cmd!(
             "window.assignWorkspaceShortcut",
             "Assign Shortcut to Workspace",
@@ -605,9 +928,33 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             assign_workspace_shortcut
         ),
-        cmd!("help.enableLogging", "Enable Logging", ["Help"], None, "{on?}", always, enable_logging),
-        cmd!("help.revealLogFile", "Reveal Logging File", ["Help"], None, "{}", always, reveal_log),
-        cmd!("help.systemReport", "System Compatibility Report...", ["Help"], None, "{quiet?}", always, report),
+        cmd!(
+            "help.enableLogging",
+            "Enable Logging",
+            ["Help"],
+            None,
+            "{on?}",
+            always,
+            enable_logging
+        ),
+        cmd!(
+            "help.revealLogFile",
+            "Reveal Logging File",
+            ["Help"],
+            None,
+            "{}",
+            always,
+            reveal_log
+        ),
+        cmd!(
+            "help.systemReport",
+            "System Compatibility Report...",
+            ["Help"],
+            None,
+            "{quiet?}",
+            always,
+            report
+        ),
         cmd!(
             "comp.vr.createEnvironment",
             "Create VR Environment...",
@@ -617,8 +964,18 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             create_vr_environment
         ),
-        cmd!("comp.vr.extractCubemap", "Extract Cubemap...", ["Composition", "VR"], None, "{comp?, faceSize?}", has_comp, extract_cubemap),
-        query!("help.systemInfo", "System Information", "{}", |s, _| Ok(system_report(s))),
+        cmd!(
+            "comp.vr.extractCubemap",
+            "Extract Cubemap...",
+            ["Composition", "VR"],
+            None,
+            "{comp?, faceSize?}",
+            has_comp,
+            extract_cubemap
+        ),
+        query!("help.systemInfo", "System Information", "{}", |s, _| Ok(
+            system_report(s)
+        )),
     ]
 }
 
@@ -634,12 +991,24 @@ mod tests {
         let f = dir.join("run #1 100%.txt");
         std::fs::write(&f, "x").unwrap();
         let mut s = crate::Session::default();
-        s.execute("prefs.set", json!({"key": "scripting.allowScriptsWriteFiles", "value": true})).unwrap();
+        s.execute(
+            "prefs.set",
+            json!({"key": "scripting.allowScriptsWriteFiles", "value": true}),
+        )
+        .unwrap();
         s.drain_events();
-        s.execute("file.executeFile", json!({"path": f.to_string_lossy(), "confirmed": true})).unwrap();
+        s.execute(
+            "file.executeFile",
+            json!({"path": f.to_string_lossy(), "confirmed": true}),
+        )
+        .unwrap();
         let expected = super::super::layer_menu::file_url(&f.to_string_lossy());
         assert!(expected.ends_with("/run%20%231%20100%25.txt"), "{expected}");
-        assert!(s.drain_events().iter().any(|e| matches!(e, crate::Event::OpenUrl(u) if *u == expected)));
+        assert!(
+            s.drain_events()
+                .iter()
+                .any(|e| matches!(e, crate::Event::OpenUrl(u) if *u == expected))
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

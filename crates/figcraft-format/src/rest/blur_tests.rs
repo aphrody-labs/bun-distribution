@@ -23,12 +23,24 @@ fn progressive_blurs_import() {
         {"type": "BACKGROUND_BLUR", "radius": 10, "blurType": "PROGRESSIVE"},
         {"type": "LAYER_BLUR", "radius": 6, "blurType": "NORMAL", "startRadius": 3}
     ]));
-    let EffectKind::LayerBlur(a) = &fx[0].kind else { panic!("{fx:?}") };
-    assert_eq!((a.blur_type, a.radius, a.start_radius, a.start, a.end), (BlurType::Progressive, 24.0, 4.0, (0.5, 0.2), (0.5, 1.0)));
+    let EffectKind::LayerBlur(a) = &fx[0].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (a.blur_type, a.radius, a.start_radius, a.start, a.end),
+        (BlurType::Progressive, 24.0, 4.0, (0.5, 0.2), (0.5, 1.0))
+    );
     // Missing fields take the defaults: from the top (no blur) to the bottom.
-    let EffectKind::BackgroundBlur(b) = &fx[1].kind else { panic!("{fx:?}") };
-    assert_eq!((b.blur_type, b.start_radius, b.start, b.end), (BlurType::Progressive, 0.0, (0.5, 0.0), (0.5, 1.0)));
-    let EffectKind::LayerBlur(c) = &fx[2].kind else { panic!("{fx:?}") };
+    let EffectKind::BackgroundBlur(b) = &fx[1].kind else {
+        panic!("{fx:?}")
+    };
+    assert_eq!(
+        (b.blur_type, b.start_radius, b.start, b.end),
+        (BlurType::Progressive, 0.0, (0.5, 0.0), (0.5, 1.0))
+    );
+    let EffectKind::LayerBlur(c) = &fx[2].kind else {
+        panic!("{fx:?}")
+    };
     assert!(!c.is_progressive());
     assert_eq!(c.radius, 6.0);
 }
@@ -40,7 +52,15 @@ fn hostile_progressive_fields_are_clamped() {
         {"type": "BACKGROUND_BLUR", "radius": 5, "blurType": 7, "startOffset": [1, 2]}
     ]));
     let a = fx[0].blur().unwrap();
-    assert_eq!((a.radius, a.start_radius, a.start, a.end), (figcraft_doc::MAX_BLUR_RADIUS, 0.0, (0.5, 0.0), (1000.0, -1000.0)));
+    assert_eq!(
+        (a.radius, a.start_radius, a.start, a.end),
+        (
+            figcraft_doc::MAX_BLUR_RADIUS,
+            0.0,
+            (0.5, 0.0),
+            (1000.0, -1000.0)
+        )
+    );
     let b = fx[1].blur().unwrap();
     assert!(!b.is_progressive());
 }

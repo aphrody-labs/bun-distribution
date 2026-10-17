@@ -5,9 +5,9 @@ use core::any::Any;
 use thiserror::Error;
 
 use crate::{
+    MaterialProperties,
     descriptor::{CachedRenderPipelineId, RenderPipelineDescriptor},
     key::ErasedMaterialPipelineKey,
-    MaterialProperties,
 };
 
 /// A type erased function pointer for specializing a material pipeline. The implementation is

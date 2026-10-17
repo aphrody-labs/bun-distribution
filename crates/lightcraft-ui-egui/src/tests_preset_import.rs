@@ -12,7 +12,13 @@ const T: Duration = Duration::from_secs(20);
 const SETTLE: Duration = Duration::from_secs(120);
 
 fn app() -> Headless {
-    let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        lightcraft_engine::Session::with_demo(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     h.settle(SETTLE);
     h
@@ -26,8 +32,15 @@ fn temp_dir(tag: &str) -> std::path::PathBuf {
 }
 
 fn import(h: &mut Headless, paths: &[&std::path::Path]) -> serde_json::Value {
-    let paths: Vec<String> = paths.iter().map(|p| p.to_string_lossy().to_string()).collect();
-    let r = h.request("engine.execute", json!({"command": "file.importPresets", "params": {"paths": paths}}), T);
+    let paths: Vec<String> = paths
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect();
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "file.importPresets", "params": {"paths": paths}}),
+        T,
+    );
     h.settle(SETTLE);
     r
 }
@@ -76,7 +89,10 @@ fn a_broken_cube_says_why() {
     let t = toast(&h);
     assert!(t.contains("Broken"), "{t}");
     assert!(!t.contains("No new presets"), "{t}");
-    let reason = r["result"]["profiles"]["failed"][0][1].as_str().unwrap_or_default().to_string();
+    let reason = r["result"]["profiles"]["failed"][0][1]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
     assert!(!reason.is_empty() && t.contains(&reason), "{t} / {r}");
     // with a good one alongside, both outcomes are in the one toast
     let good = dir.join("Good.cube");

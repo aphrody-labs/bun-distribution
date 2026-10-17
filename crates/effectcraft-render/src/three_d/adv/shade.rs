@@ -24,12 +24,20 @@ pub fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
 }
 #[inline]
 pub fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 #[inline]
 pub fn norm(a: [f32; 3]) -> [f32; 3] {
     let l = dot(a, a).sqrt();
-    if l > 1e-20 { [a[0] / l, a[1] / l, a[2] / l] } else { [0.0, 0.0, -1.0] }
+    if l > 1e-20 {
+        [a[0] / l, a[1] / l, a[2] / l]
+    } else {
+        [0.0, 0.0, -1.0]
+    }
 }
 #[inline]
 fn add(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
@@ -51,12 +59,20 @@ fn mix(a: f32, b: f32, t: f32) -> f32 {
 /// sRGB-encoded → linear light.
 #[inline]
 pub fn srgb_to_linear(c: f32) -> f32 {
-    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
 }
 /// Linear light → sRGB-encoded (over-range values continue the curve).
 #[inline]
 pub fn linear_to_srgb(c: f32) -> f32 {
-    if c <= 0.0031308 { c * 12.92 } else { 1.055 * c.powf(1.0 / 2.4) - 0.055 }
+    if c <= 0.0031308 {
+        c * 12.92
+    } else {
+        1.055 * c.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// GGX / Trowbridge–Reitz normal distribution, `a = roughness²`.
@@ -79,12 +95,25 @@ pub fn g_smith(n_v: f32, n_l: f32, rough: f32) -> f32 {
 #[inline]
 pub fn f_schlick(f0: [f32; 3], v_h: f32) -> [f32; 3] {
     let k = (1.0 - v_h).clamp(0.0, 1.0).powi(5);
-    [f0[0] + (1.0 - f0[0]) * k, f0[1] + (1.0 - f0[1]) * k, f0[2] + (1.0 - f0[2]) * k]
+    [
+        f0[0] + (1.0 - f0[0]) * k,
+        f0[1] + (1.0 - f0[1]) * k,
+        f0[2] + (1.0 - f0[2]) * k,
+    ]
 }
 
 /// Cook–Torrance BRDF × N·L × π for one light: (diffuse colour factor, specular colour).
 /// Returned as the reflected fraction of the light's irradiance.
-pub fn brdf(base: [f32; 3], metallic: f32, rough: f32, spec_k: f32, diff_k: f32, n: [f32; 3], v: [f32; 3], l: [f32; 3]) -> [f32; 3] {
+pub fn brdf(
+    base: [f32; 3],
+    metallic: f32,
+    rough: f32,
+    spec_k: f32,
+    diff_k: f32,
+    n: [f32; 3],
+    v: [f32; 3],
+    l: [f32; 3],
+) -> [f32; 3] {
     let n_l = dot(n, l);
     if n_l <= 0.0 {
         return [0.0; 3];
@@ -94,7 +123,11 @@ pub fn brdf(base: [f32; 3], metallic: f32, rough: f32, spec_k: f32, diff_k: f32,
     let n_h = dot(n, h).max(0.0);
     let v_h = dot(v, h).max(0.0);
     let r = rough.clamp(0.03, 1.0);
-    let f0 = [mix(0.04 * spec_k, base[0], metallic), mix(0.04 * spec_k, base[1], metallic), mix(0.04 * spec_k, base[2], metallic)];
+    let f0 = [
+        mix(0.04 * spec_k, base[0], metallic),
+        mix(0.04 * spec_k, base[1], metallic),
+        mix(0.04 * spec_k, base[2], metallic),
+    ];
     let f = f_schlick(f0, v_h);
     let d = d_ggx(n_h, r * r);
     let g = g_smith(n_v, n_l, r);
@@ -112,7 +145,12 @@ pub fn brdf(base: [f32; 3], metallic: f32, rough: f32, spec_k: f32, diff_k: f32,
 pub fn env_brdf(n_v: f32, rough: f32) -> (f32, f32) {
     let c0 = [-1.0, -0.0275, -0.572, 0.022];
     let c1 = [1.0, 0.0425, 1.04, -0.04];
-    let r = [rough * c0[0] + c1[0], rough * c0[1] + c1[1], rough * c0[2] + c1[2], rough * c0[3] + c1[3]];
+    let r = [
+        rough * c0[0] + c1[0],
+        rough * c0[1] + c1[1],
+        rough * c0[2] + c1[2],
+        rough * c0[3] + c1[3],
+    ];
     let a004 = (r[0] * r[0]).min((-9.28 * n_v).exp2()) * r[0] + r[1];
     (-1.04 * a004 + r[2], 1.04 * a004 + r[3])
 }
@@ -144,9 +182,17 @@ pub fn sample(t: &TexInfo, texels: &[[f32; 4]], u: f32, v: f32) -> [f32; 4] {
     let get = |xi: i64, yi: i64| -> [f32; 4] {
         let xi = wrap(xi, w, t.wrap_u);
         let yi = wrap(yi, h, t.wrap_v);
-        texels.get(t.offset as usize + (yi * w + xi) as usize).copied().unwrap_or([0.0; 4])
+        texels
+            .get(t.offset as usize + (yi * w + xi) as usize)
+            .copied()
+            .unwrap_or([0.0; 4])
     };
-    let (a, b, c, d) = (get(x0, y0), get(x0 + 1, y0), get(x0, y0 + 1), get(x0 + 1, y0 + 1));
+    let (a, b, c, d) = (
+        get(x0, y0),
+        get(x0 + 1, y0),
+        get(x0, y0 + 1),
+        get(x0 + 1, y0 + 1),
+    );
     let mut o = [0.0; 4];
     for k in 0..4 {
         let top = a[k] + (b[k] - a[k]) * fx;
@@ -173,18 +219,36 @@ pub fn equirect_dir(u: f32, v: f32, rot: f32) -> [f32; 3] {
 }
 
 /// Diffuse (irradiance) and roughness-filtered specular radiance of the environment.
-pub fn env_light(s: &Scene, e: &EnvInfo, n: [f32; 3], r: [f32; 3], rough: f32) -> ([f32; 3], [f32; 3]) {
+pub fn env_light(
+    s: &Scene,
+    e: &EnvInfo,
+    n: [f32; 3],
+    r: [f32; 3],
+    rough: f32,
+) -> ([f32; 3], [f32; 3]) {
     let (u, v) = equirect_uv(n, e.rotation);
-    let irr = s.textures.get(e.irradiance as usize).map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
+    let irr = s
+        .textures
+        .get(e.irradiance as usize)
+        .map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
     let (u, v) = equirect_uv(r, e.rotation);
     let lv = rough.clamp(0.0, 1.0) * (e.mips.saturating_sub(1)) as f32;
     let l0 = lv.floor() as u32;
     let l1 = (l0 + 1).min(e.mips.saturating_sub(1));
     let f = lv - l0 as f32;
-    let a = s.textures.get((e.radiance + l0) as usize).map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
-    let b = s.textures.get((e.radiance + l1) as usize).map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
+    let a = s
+        .textures
+        .get((e.radiance + l0) as usize)
+        .map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
+    let b = s
+        .textures
+        .get((e.radiance + l1) as usize)
+        .map_or([0.0; 4], |t| sample(t, &s.texels, u, v));
     let spec = [mix(a[0], b[0], f), mix(a[1], b[1], f), mix(a[2], b[2], f)];
-    (scale([irr[0], irr[1], irr[2]], e.intensity), scale(spec, e.intensity))
+    (
+        scale([irr[0], irr[1], irr[2]], e.intensity),
+        scale(spec, e.intensity),
+    )
 }
 
 /// Light-space position (u, v in shadow-map pixels, depth) of a world point.
@@ -209,11 +273,17 @@ pub fn shadow_coord(m: &ShadowMap, p: [f32; 3]) -> Option<(f32, f32, f32)> {
 /// Fraction of light reaching `p` through shadow map `m` (1 = lit), PCF over a 5×5 grid
 /// spread over `radius` texels.
 pub fn shadow_factor(m: &ShadowMap, texels: &[f32], p: [f32; 3], n_l: f32) -> f32 {
-    let Some((u, v, z)) = shadow_coord(m, p) else { return 1.0 };
+    let Some((u, v, z)) = shadow_coord(m, p) else {
+        return 1.0;
+    };
     let size = m.size as i64;
     // Slope-scaled bias (world units are pixels).
     // Texel footprint (world units) × PCF reach, steeper for grazing light.
-    let texel = if m.ortho { 1.0 / m.focal } else { z.abs() / m.focal };
+    let texel = if m.ortho {
+        1.0 / m.focal
+    } else {
+        z.abs() / m.focal
+    };
     let bias = m.bias * texel * (1.0 + m.radius) * (1.0 + 3.0 * (1.0 - n_l.clamp(0.0, 1.0)));
     let step = m.radius / 2.0;
     let mut lit = 0.0;
@@ -321,7 +391,15 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
     if !f.front && !m.double_sided {
         return None;
     }
-    let tex = |i: i32| -> Option<[f32; 4]> { (i >= 0).then(|| s.textures.get(i as usize).map(|t| sample(t, &s.texels, f.uv[0], f.uv[1]))).flatten() };
+    let tex = |i: i32| -> Option<[f32; 4]> {
+        (i >= 0)
+            .then(|| {
+                s.textures
+                    .get(i as usize)
+                    .map(|t| sample(t, &s.texels, f.uv[0], f.uv[1]))
+            })
+            .flatten()
+    };
     let mut base = m.base;
     if let Some(t) = tex(m.tex_base) {
         for k in 0..4 {
@@ -341,7 +419,10 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
     if let Some(t) = tex(m.tex_emissive) {
         emissive = [emissive[0] * t[0], emissive[1] * t[1], emissive[2] * t[2]];
     }
-    if m.unlit || !m.accepts_lights || (s.lights.is_empty() && s.env.is_none() && s.ambient == [0.0; 3]) {
+    if m.unlit
+        || !m.accepts_lights
+        || (s.lights.is_empty() && s.env.is_none() && s.ambient == [0.0; 3])
+    {
         let c = add(rgb, emissive);
         return Some([c[0] * alpha, c[1] * alpha, c[2] * alpha, alpha]);
     }
@@ -355,19 +436,30 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
         n = scale(n, -1.0);
     }
     if let Some(t) = tex(m.tex_normal) {
-        let tn = [(t[0] * 2.0 - 1.0) * m.normal_scale, (t[1] * 2.0 - 1.0) * m.normal_scale, t[2] * 2.0 - 1.0];
+        let tn = [
+            (t[0] * 2.0 - 1.0) * m.normal_scale,
+            (t[1] * 2.0 - 1.0) * m.normal_scale,
+            t[2] * 2.0 - 1.0,
+        ];
         let tg = [f.tangent[0], f.tangent[1], f.tangent[2]];
         // Gram-Schmidt against the shading normal.
         let tg = norm(sub(tg, scale(n, dot(n, tg))));
         let sign = if f.front { f.tangent[3] } else { -f.tangent[3] };
         let bt = scale(cross(n, tg), sign);
-        n = norm(add(add(scale(tg, tn[0]), scale(bt, tn[1])), scale(n, tn[2])));
+        n = norm(add(
+            add(scale(tg, tn[0]), scale(bt, tn[1])),
+            scale(n, tn[2]),
+        ));
     }
     let ao = match tex(m.tex_occlusion) {
         Some(t) => 1.0 + m.occlusion_strength * (t[0] - 1.0),
         None => 1.0,
     };
-    let v = if s.ortho { scale(s.cam_fwd, -1.0) } else { norm(sub(s.eye, f.pos)) };
+    let v = if s.ortho {
+        scale(s.cam_fwd, -1.0)
+    } else {
+        norm(sub(s.eye, f.pos))
+    };
     let mut out = [0.0f32; 3];
     for l in &s.lights {
         let (to_l, dist) = if l.kind == 0 {
@@ -375,7 +467,11 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
         } else {
             let d = sub(l.pos, f.pos);
             let len = dot(d, d).sqrt();
-            if len < 1e-6 { ([0.0, 0.0, -1.0], 0.0) } else { (scale(d, 1.0 / len), len) }
+            if len < 1e-6 {
+                ([0.0, 0.0, -1.0], 0.0)
+            } else {
+                (scale(d, 1.0 / len), len)
+            }
         };
         let k = attenuation(l, f.pos, to_l, dist);
         if k <= 0.0 {
@@ -385,7 +481,11 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
         if n_l <= 0.0 {
             continue;
         }
-        let sh = if m.receives_shadows { light_shadow(s, l, f.pos, n_l) } else { 1.0 };
+        let sh = if m.receives_shadows {
+            light_shadow(s, l, f.pos, n_l)
+        } else {
+            1.0
+        };
         let b = brdf(rgb, metallic, rough, m.specular_k, m.diffuse_k, n, v, to_l);
         for c in 0..3 {
             out[c] += b[c] * l.color[c] * k * sh;
@@ -398,11 +498,16 @@ pub fn shade(s: &Scene, f: &Frag) -> Option<[f32; 4]> {
         let n_v = dot(n, v).clamp(1e-4, 1.0);
         let r = sub(scale(n, 2.0 * dot(n, v)), v);
         let (irr, spec) = env_light(s, e, n, r, rough);
-        let f0 = [mix(0.04 * m.specular_k, rgb[0], metallic), mix(0.04 * m.specular_k, rgb[1], metallic), mix(0.04 * m.specular_k, rgb[2], metallic)];
+        let f0 = [
+            mix(0.04 * m.specular_k, rgb[0], metallic),
+            mix(0.04 * m.specular_k, rgb[1], metallic),
+            mix(0.04 * m.specular_k, rgb[2], metallic),
+        ];
         let (a, b) = env_brdf(n_v, rough);
         for c in 0..3 {
             let fs = f0[c] * a + b;
-            out[c] += (irr[c] * rgb[c] * (1.0 - fs) * (1.0 - metallic) * m.diffuse_k + spec[c] * fs) * ao;
+            out[c] +=
+                (irr[c] * rgb[c] * (1.0 - fs) * (1.0 - metallic) * m.diffuse_k + spec[c] * fs) * ao;
         }
     }
     let c = add(out, emissive);

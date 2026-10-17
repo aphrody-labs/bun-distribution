@@ -4,7 +4,7 @@ use bevy_utils::prelude::DebugName;
 use super::{IntoSystem, ReadOnlySystem, RunSystemError, System};
 use crate::{
     schedule::InternedSystemSet,
-    system::{input::SystemInput, SystemIn},
+    system::{SystemIn, input::SystemInput},
     world::unsafe_world_cell::UnsafeWorldCell,
 };
 

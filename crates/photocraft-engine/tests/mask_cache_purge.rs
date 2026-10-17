@@ -15,14 +15,28 @@ fn purge_all_is_enabled_by_cached_masks_and_releases_them_at_every_depth() {
     assert!(!session.is_enabled("edit.purge.all"));
     let canvas = Rect::new(0, 0, 32, 32);
     for sample in SampleType::ALL {
-        let mut input = Surface::with_default(PixelFormat { mode: ColorMode::Grayscale, sample, alpha: false }, &[1.0]);
+        let mut input = Surface::with_default(
+            PixelFormat {
+                mode: ColorMode::Grayscale,
+                sample,
+                alpha: false,
+            },
+            &[1.0],
+        );
         input.fill_rect(Rect::new(8, 8, 24, 24), &[0.0]);
         let mut layer = Layer::raster("mask", PixelFormat::RGBA8);
-        layer.mask = Some(LayerMask { surface: input, feather: 2.0, ..LayerMask::reveal_all() });
+        layer.mask = Some(LayerMask {
+            surface: input,
+            feather: 2.0,
+            ..LayerMask::reveal_all()
+        });
         let before = masks::combined_mask(&layer, canvas).unwrap();
         let accounted = masks::cache_bytes();
         assert!(accounted > 0, "{sample:?}");
-        assert!(session.is_enabled("edit.purge.all"), "only the mask cache enables purge");
+        assert!(
+            session.is_enabled("edit.purge.all"),
+            "only the mask cache enables purge"
+        );
 
         let result = session.execute("edit.purge.all", json!({})).unwrap();
         assert_eq!(result["purged"], json!(["mask cache"]));
@@ -34,7 +48,10 @@ fn purge_all_is_enabled_by_cached_masks_and_releases_them_at_every_depth() {
         assert_eq!(before, after, "purge preserves pixels at {sample:?}");
         let old_tile = before.tiles().next().unwrap().1;
         let new_tile = after.tiles().next().unwrap().1;
-        assert!(!Arc::ptr_eq(old_tile, new_tile), "the result was rebuilt after purge");
+        assert!(
+            !Arc::ptr_eq(old_tile, new_tile),
+            "the result was rebuilt after purge"
+        );
         session.execute("edit.purge.all", json!({})).unwrap();
         assert_eq!(masks::cache_bytes(), 0);
     }

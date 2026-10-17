@@ -24,7 +24,12 @@ impl<K: Eq + Hash + Clone, V> Lru<K, V> {
     /// An LRU holding at most `budget` cost units (e.g. bytes). The most recent entry is always
     /// kept, even if it alone exceeds the budget.
     pub fn new(budget: usize) -> Self {
-        Lru { map: HashMap::new(), order: BTreeMap::new(), cost: 0, budget }
+        Lru {
+            map: HashMap::new(),
+            order: BTreeMap::new(),
+            cost: 0,
+            budget,
+        }
     }
 
     fn touch(&mut self, k: &K) {
@@ -72,7 +77,9 @@ impl<K: Eq + Hash + Clone, V> Lru<K, V> {
         self.map.insert(k, (v, cost, t));
         self.cost += cost;
         while self.cost > self.budget && self.map.len() > 1 {
-            let Some((_, old)) = self.order.pop_first() else { break };
+            let Some((_, old)) = self.order.pop_first() else {
+                break;
+            };
             if let Some((_, c, _)) = self.map.remove(&old) {
                 self.cost -= c;
             }

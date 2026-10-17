@@ -9,13 +9,17 @@ use super::{CommandSpec, always, b_p, bad, comp_id, f_p, has_comp, str_p, time_p
 use crate::{EngineError, Result, Session, cmd};
 
 pub(crate) fn rate_p(p: &Value) -> Option<FrameRate> {
-    f_p(p, "frameRate").or(f_p(p, "fps")).map(FrameRate::from_f64)
+    f_p(p, "frameRate")
+        .or(f_p(p, "fps"))
+        .map(FrameRate::from_f64)
 }
 
 /// A zero, negative or tiny rate would make a zero-length frame (and divide by zero later).
 fn check_rate(p: &Value, cmd: &str) -> Result<()> {
     match f_p(p, "frameRate").or(f_p(p, "fps")) {
-        Some(f) if !(limits::MIN_FPS..=limits::MAX_FPS).contains(&f) => Err(bad(cmd, "frameRate: fps from 0.001 to 1000")),
+        Some(f) if !(limits::MIN_FPS..=limits::MAX_FPS).contains(&f) => {
+            Err(bad(cmd, "frameRate: fps from 0.001 to 1000"))
+        }
         _ => Ok(()),
     }
 }
@@ -45,7 +49,12 @@ fn apply_settings(c: &mut Comp, p: &Value) {
     if let Some(t) = f_p(p, "startTime") {
         c.display_start = Tick::from_seconds_f64(t);
     } else if let Some(tc) = str_p(p, "startTimecode")
-        && let Ok(f) = effectcraft_time::parse_timecode(tc, c.frame_rate, c.frame_rate.supports_drop_frame(), 0)
+        && let Ok(f) = effectcraft_time::parse_timecode(
+            tc,
+            c.frame_rate,
+            c.frame_rate.supports_drop_frame(),
+            0,
+        )
     {
         c.display_start = c.frame_rate.tick_of(f);
     }
@@ -60,7 +69,10 @@ fn apply_settings(c: &mut Comp, p: &Value) {
     if let Some(d) = f_p(p, "duration") {
         let old = c.duration;
         // Whole frames, at least one.
-        c.duration = c.frame_rate.snap_nearest(Tick::from_seconds_f64(d)).max(c.frame_rate.frame_duration());
+        c.duration = c
+            .frame_rate
+            .snap_nearest(Tick::from_seconds_f64(d))
+            .max(c.frame_rate.frame_duration());
         if c.work_area.1 == old {
             c.work_area.1 = c.duration;
         }
@@ -84,10 +96,16 @@ fn apply_settings(c: &mut Comp, p: &Value) {
         c.shutter_phase = a.clamp(-360.0, 360.0);
     }
     if let Some(n) = p.get("motionBlurSamples").and_then(Value::as_u64) {
-        c.motion_blur_samples = n.clamp(limits::MOTION_BLUR_SAMPLES.0.into(), limits::MOTION_BLUR_SAMPLES.1.into()) as u32;
+        c.motion_blur_samples = n.clamp(
+            limits::MOTION_BLUR_SAMPLES.0.into(),
+            limits::MOTION_BLUR_SAMPLES.1.into(),
+        ) as u32;
     }
     if let Some(n) = p.get("adaptiveSampleLimit").and_then(Value::as_u64) {
-        c.motion_blur_adaptive_limit = n.clamp(limits::ADAPTIVE_SAMPLE_LIMIT.0.into(), limits::ADAPTIVE_SAMPLE_LIMIT.1.into()) as u32;
+        c.motion_blur_adaptive_limit = n.clamp(
+            limits::ADAPTIVE_SAMPLE_LIMIT.0.into(),
+            limits::ADAPTIVE_SAMPLE_LIMIT.1.into(),
+        ) as u32;
     }
     if let Some(b) = p.get("preserveFrameRate").and_then(Value::as_bool) {
         c.preserve_frame_rate = b;
@@ -101,7 +119,12 @@ fn new_comp(s: &mut Session, p: &Value) -> Result<Value> {
     check_rate(p, "comp.new")?;
     let name = str_p(p, "name").unwrap_or("Comp 1").to_string();
     let rate = rate_p(p).unwrap_or(FrameRate::FPS_29_97);
-    let mut c = Comp::new(1920, 1080, rate, rate.snap_nearest(Tick::from_seconds_f64(10.0)));
+    let mut c = Comp::new(
+        1920,
+        1080,
+        rate,
+        rate.snap_nearest(Tick::from_seconds_f64(10.0)),
+    );
     // Settings ▸ 3D ▸ Default 3D Renderer.
     if s.prefs.three_d.default_renderer == "advanced" {
         c.renderer = effectcraft_project::Renderer::Advanced3D;
@@ -111,7 +134,11 @@ fn new_comp(s: &mut Session, p: &Value) -> Result<Value> {
         let mut name = name.clone();
         let mut k = 2;
         while proj.items.values().any(|i| i.name == name) {
-            name = format!("{} {k}", name.trim_end_matches(|ch: char| ch.is_ascii_digit()).trim_end());
+            name = format!(
+                "{} {k}",
+                name.trim_end_matches(|ch: char| ch.is_ascii_digit())
+                    .trim_end()
+            );
             k += 1;
         }
         let id = proj.add_item(&name, Label::Sandstone, None, ItemKind::Comp(c.into()));
@@ -139,14 +166,27 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
         Ok(())
     })?;
     let c = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    Ok(json!({"width": c.width, "height": c.height, "frameRate": c.frame_rate.as_f64(), "duration": c.duration.seconds()}))
+    Ok(
+        json!({"width": c.width, "height": c.height, "frameRate": c.frame_rate.as_f64(), "duration": c.duration.seconds()}),
+    )
 }
 
 fn open(s: &mut Session, p: &Value) -> Result<Value> {
     let id = match p.get("comp").or(p.get("item")) {
         Some(Value::Number(n)) => ItemId(n.as_u64().unwrap_or(0)),
-        Some(Value::String(name)) => s.project.items.values().find(|i| &i.name == name && i.as_comp().is_some()).map(|i| i.id).ok_or(EngineError::NoComp)?,
-        _ => *s.state.project_selection.iter().find(|i| s.project.comp(**i).is_some()).ok_or_else(|| bad("comp.open", "missing `comp`"))?,
+        Some(Value::String(name)) => s
+            .project
+            .items
+            .values()
+            .find(|i| &i.name == name && i.as_comp().is_some())
+            .map(|i| i.id)
+            .ok_or(EngineError::NoComp)?,
+        _ => *s
+            .state
+            .project_selection
+            .iter()
+            .find(|i| s.project.comp(**i).is_some())
+            .ok_or_else(|| bad("comp.open", "missing `comp`"))?,
     };
     if s.project.comp(id).is_none() {
         return Err(EngineError::NoComp);
@@ -220,7 +260,10 @@ fn trim_to_wa(s: &mut Session, p: &Value) -> Result<Value> {
         let fd = c.frame_duration();
         // An interval that is already inverted must not become a negative duration.
         if a < Tick::ZERO || b > c.duration || a + fd > b {
-            return Err(bad("comp.trimToWorkArea", "the work area must cover at least one frame inside the composition"));
+            return Err(bad(
+                "comp.trimToWorkArea",
+                "the work area must cover at least one frame inside the composition",
+            ));
         }
         for l in &mut c.layers {
             l.start_time -= a;
@@ -236,7 +279,9 @@ fn trim_to_wa(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn comp_switch(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
-    let name = str_p(p, "switch").ok_or_else(|| bad("comp.setSwitch", "missing `switch`"))?.to_string();
+    let name = str_p(p, "switch")
+        .ok_or_else(|| bad("comp.setSwitch", "missing `switch`"))?
+        .to_string();
     let v = b_p(p, "value");
     let r = s.edit("Composition Switch", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
@@ -245,7 +290,12 @@ fn comp_switch(s: &mut Session, p: &Value) -> Result<Value> {
             "motionBlur" => &mut c.enable_motion_blur,
             "frameBlending" => &mut c.enable_frame_blending,
             "draft3d" | "draft3D" => &mut c.draft_3d,
-            _ => return Err(bad("comp.setSwitch", "switch: hideShy|motionBlur|frameBlending|draft3d")),
+            _ => {
+                return Err(bad(
+                    "comp.setSwitch",
+                    "switch: hideShy|motionBlur|frameBlending|draft3d",
+                ));
+            }
         };
         *slot = v.unwrap_or(!*slot);
         Ok(*slot)
@@ -259,7 +309,11 @@ fn add_marker(s: &mut Session, p: &Value) -> Result<Value> {
     let comment = str_p(p, "comment").unwrap_or("").to_string();
     s.edit("Add Marker", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
-        c.markers.push(Marker { time: t, comment, ..Default::default() });
+        c.markers.push(Marker {
+            time: t,
+            comment,
+            ..Default::default()
+        });
         c.markers.sort_by_key(|m| m.time);
         Ok(())
     })?;
@@ -296,12 +350,68 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             settings
         ),
-        cmd!("comp.setPosterTime", "Set Poster Time", ["Composition"], None, "{}", has_comp, poster),
-        cmd!("comp.trimToWorkArea", "Trim Comp to Work Area", ["Composition"], Some("Cmd+Shift+X"), "{comp?}", has_comp, trim_to_wa),
-        cmd!("comp.open", "Open Composition", [], None, "{comp: id|name}", always, open),
-        cmd!("comp.close", "Close Composition", [], None, "{comp?}", has_comp, close),
-        cmd!("comp.workArea", "Set Work Area", [], None, "{start?, end?, set?: begin|end (at CTI)}", has_comp, work_area),
-        cmd!("comp.setSwitch", "Composition Switch", [], None, "{switch: hideShy|motionBlur|frameBlending|draft3d, value?}", has_comp, comp_switch),
-        cmd!("comp.addMarker", "Add Marker", [], Some("Num*"), "{time?, comment?}", has_comp, add_marker),
+        cmd!(
+            "comp.setPosterTime",
+            "Set Poster Time",
+            ["Composition"],
+            None,
+            "{}",
+            has_comp,
+            poster
+        ),
+        cmd!(
+            "comp.trimToWorkArea",
+            "Trim Comp to Work Area",
+            ["Composition"],
+            Some("Cmd+Shift+X"),
+            "{comp?}",
+            has_comp,
+            trim_to_wa
+        ),
+        cmd!(
+            "comp.open",
+            "Open Composition",
+            [],
+            None,
+            "{comp: id|name}",
+            always,
+            open
+        ),
+        cmd!(
+            "comp.close",
+            "Close Composition",
+            [],
+            None,
+            "{comp?}",
+            has_comp,
+            close
+        ),
+        cmd!(
+            "comp.workArea",
+            "Set Work Area",
+            [],
+            None,
+            "{start?, end?, set?: begin|end (at CTI)}",
+            has_comp,
+            work_area
+        ),
+        cmd!(
+            "comp.setSwitch",
+            "Composition Switch",
+            [],
+            None,
+            "{switch: hideShy|motionBlur|frameBlending|draft3d, value?}",
+            has_comp,
+            comp_switch
+        ),
+        cmd!(
+            "comp.addMarker",
+            "Add Marker",
+            [],
+            Some("Num*"),
+            "{time?, comment?}",
+            has_comp,
+            add_marker
+        ),
     ]
 }

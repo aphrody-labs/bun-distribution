@@ -329,12 +329,31 @@ pub(crate) async fn run(action: OcrAction) -> miette::Result<()> {
 /// callable with no tokio runtime in sight.
 fn run_blocking(action: OcrAction) -> miette::Result<()> {
     match action {
-        OcrAction::Page { image, model, prompt, max_tokens, raw, result_v2, deposit, output } => {
-            page(&image, &model, prompt.as_deref(), max_tokens, raw, result_v2, &deposit, &output)
-        },
-        OcrAction::Ppocr { image, model, deposit, output } => {
-            ppocr_page(&image, &model, &deposit, &output)
-        },
+        OcrAction::Page {
+            image,
+            model,
+            prompt,
+            max_tokens,
+            raw,
+            result_v2,
+            deposit,
+            output,
+        } => page(
+            &image,
+            &model,
+            prompt.as_deref(),
+            max_tokens,
+            raw,
+            result_v2,
+            &deposit,
+            &output,
+        ),
+        OcrAction::Ppocr {
+            image,
+            model,
+            deposit,
+            output,
+        } => ppocr_page(&image, &model, &deposit, &output),
         OcrAction::Audit { input, output } => audit(&input, &output),
         OcrAction::Db { action } => db(action),
         OcrAction::Clean { input, out } => clean(&input, out.as_deref()),
@@ -402,7 +421,7 @@ fn run_blocking(action: OcrAction) -> miette::Result<()> {
                 server.then_some(server_port),
                 &deposit,
             )
-        },
+        }
     }
 }
 
@@ -458,7 +477,13 @@ fn image_identity(path: &Path) -> miette::Result<aphrody_ocr::ocr_core::ImageIde
     }
     Ok(aphrody_ocr::ocr_core::ImageIdentity {
         path: path.to_path_buf(),
-        sha256: Some(digest.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()),
+        sha256: Some(
+            digest
+                .finalize()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect::<String>(),
+        ),
         media_type: None,
     })
 }
@@ -466,7 +491,10 @@ fn image_identity(path: &Path) -> miette::Result<aphrody_ocr::ocr_core::ImageIde
 fn ensure_unchanged_image(before: &aphrody_ocr::ocr_core::ImageIdentity) -> miette::Result<()> {
     let after = image_identity(&before.path)?;
     if after.sha256 != before.sha256 {
-        return Err(miette::miette!("image changed during OCR: {}", before.path.display()));
+        return Err(miette::miette!(
+            "image changed during OCR: {}",
+            before.path.display()
+        ));
     }
     Ok(())
 }
@@ -504,7 +532,11 @@ fn v2_from_page(
             quality: Quality::default(),
             error: None,
         }],
-        status: if markdown.is_some() { OcrStatus::Text } else { OcrStatus::NoText },
+        status: if markdown.is_some() {
+            OcrStatus::Text
+        } else {
+            OcrStatus::NoText
+        },
         markdown,
         blocks: Vec::new(),
         quality: Quality::default(),
@@ -517,12 +549,18 @@ fn db(action: DbAction) -> miette::Result<()> {
     match action {
         DbAction::Ingest { inputs, db, output } => ingest(&inputs, db.as_deref(), &output),
         DbAction::Stats { db, output } => stats(db.as_deref(), &output),
-        DbAction::List { status, limit, db, output } => {
-            list(status.as_deref(), limit, db.as_deref(), &output)
-        },
-        DbAction::Show { page_id, sha256, db, output } => {
-            show(&page_id, sha256.as_deref(), db.as_deref(), &output)
-        },
+        DbAction::List {
+            status,
+            limit,
+            db,
+            output,
+        } => list(status.as_deref(), limit, db.as_deref(), &output),
+        DbAction::Show {
+            page_id,
+            sha256,
+            db,
+            output,
+        } => show(&page_id, sha256.as_deref(), db.as_deref(), &output),
     }
 }
 
@@ -594,15 +632,24 @@ fn stats(db: Option<&Path>, output: &OutputOpts) -> miette::Result<()> {
     let store = open_store(db)?;
     let stats = store.stats().map_err(|e| miette::miette!("{e}"))?;
     let mut table = aphrody_models::Report::new("OCR corpus", &["STATUS", "PAGES"])
-        .with_summary(format!("{} page(s), {} depositable", stats.total(), stats.depositable()))
+        .with_summary(format!(
+            "{} page(s), {} depositable",
+            stats.total(),
+            stats.depositable()
+        ))
         .with_footer(
-            store.path().map_or_else(|| "in-memory".to_owned(), |path| path.display().to_string()),
+            store
+                .path()
+                .map_or_else(|| "in-memory".to_owned(), |path| path.display().to_string()),
         );
     table.push(vec!["text".into(), stats.text.to_string()]);
     table.push(vec!["no-text".into(), stats.no_text.to_string()]);
     table.push(vec!["unreadable".into(), stats.unreadable.to_string()]);
     table.push(vec!["needs-review".into(), stats.needs_review.to_string()]);
-    table.push(vec!["processing-error".into(), stats.processing_error.to_string()]);
+    table.push(vec![
+        "processing-error".into(),
+        stats.processing_error.to_string(),
+    ]);
     let json = serde_json::to_value(stats).map_err(|e| miette::miette!("serialise stats: {e}"))?;
     output.emit_report(&table, &json)
 }
@@ -628,7 +675,7 @@ fn list(
                     "unknown status `{other}`: expected text, no-text, unreadable, needs-review \
                      or processing-error"
                 ));
-            },
+            }
         });
     }
     let store = open_store(db)?;
@@ -670,7 +717,12 @@ fn show(
     table.push(vec![
         "text".into(),
         record.markdown.clone().unwrap_or_else(|| {
-            record.blocks.iter().map(|block| block.text.as_str()).collect::<Vec<_>>().join("\n")
+            record
+                .blocks
+                .iter()
+                .map(|block| block.text.as_str())
+                .collect::<Vec<_>>()
+                .join("\n")
         }),
     ]);
     let json =
@@ -711,8 +763,12 @@ fn ppocr_page(
                     "PP-OCR failed on {requested} ({error}); CPU retry also failed: {fallback}"
                 )
             })?;
-            (regions, providers, Some(format!("provider fallback: {requested} failed: {error}")))
-        },
+            (
+                regions,
+                providers,
+                Some(format!("provider fallback: {requested} failed: {error}")),
+            )
+        }
         Err(error) => return Err(miette::miette!("{error}")),
     };
     ensure_unchanged_image(&identity)?;
@@ -722,11 +778,18 @@ fn ppocr_page(
         .map(aphrody_ocr::PpOcr::block)
         .filter(|block| !block.text.is_empty())
         .collect::<Vec<_>>();
-    let confidences = blocks.iter().filter_map(|block| block.confidence).collect::<Vec<_>>();
+    let confidences = blocks
+        .iter()
+        .filter_map(|block| block.confidence)
+        .collect::<Vec<_>>();
     let mean_confidence = (!confidences.is_empty())
         .then(|| confidences.iter().sum::<f32>() / confidences.len() as f32);
     let elapsed_ms = started.elapsed().as_millis();
-    let status = if blocks.is_empty() { OcrStatus::NoText } else { OcrStatus::Text };
+    let status = if blocks.is_empty() {
+        OcrStatus::NoText
+    } else {
+        OcrStatus::Text
+    };
     let reasons = fallback_reason.into_iter().collect::<Vec<_>>();
     let result = OcrResult {
         schema: RESULT_SCHEMA_V2.into(),
@@ -742,16 +805,26 @@ fn ppocr_page(
             },
             status: AttemptStatus::Completed,
             elapsed_ms,
-            quality: Quality { mean_confidence, reasons: reasons.clone() },
+            quality: Quality {
+                mean_confidence,
+                reasons: reasons.clone(),
+            },
             error: None,
         }],
         status,
         markdown: None,
         blocks,
-        quality: Quality { mean_confidence, reasons },
+        quality: Quality {
+            mean_confidence,
+            reasons,
+        },
         raw: None,
     };
-    deposit(deposit_opts.open()?.as_mut(), &result, Some("aphrody ocr ppocr"));
+    deposit(
+        deposit_opts.open()?.as_mut(),
+        &result,
+        Some("aphrody ocr ppocr"),
+    );
 
     let mut report =
         aphrody_models::Report::new(format!("PP-OCR {}", image.display()), &["FIELD", "VALUE"]);
@@ -760,7 +833,12 @@ fn ppocr_page(
     report.push(vec!["regions".into(), result.blocks.len().to_string()]);
     report.push(vec![
         "text".into(),
-        result.blocks.iter().map(|block| block.text.as_str()).collect::<Vec<_>>().join("\\n"),
+        result
+            .blocks
+            .iter()
+            .map(|block| block.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\\n"),
     ]);
     let json = serde_json::to_value(&result)
         .map_err(|e| miette::miette!("serialise PP-OCR result: {e}"))?;
@@ -770,7 +848,11 @@ fn ppocr_page(
 fn options(model: &str, prompt: Option<&str>, max_tokens: u32, raw: bool) -> OcrOptions {
     // Start from the model's own defaults so the trained prompt follows the
     // model choice; an explicit --prompt still wins.
-    let mut options = OcrOptions { max_tokens, keep_raw: raw, ..OcrOptions::for_model(model) };
+    let mut options = OcrOptions {
+        max_tokens,
+        keep_raw: raw,
+        ..OcrOptions::for_model(model)
+    };
     if let Some(prompt) = prompt {
         options.prompt = prompt.to_owned();
     }
@@ -795,11 +877,18 @@ fn page(
     ensure_unchanged_image(&identity)?;
 
     let record = v2_from_page(&result, model, identity);
-    deposit(deposit_opts.open()?.as_mut(), &record, Some("aphrody ocr page"));
+    deposit(
+        deposit_opts.open()?.as_mut(),
+        &record,
+        Some("aphrody ocr page"),
+    );
 
-    let json =
-        if result_v2 { serde_json::to_value(&record) } else { serde_json::to_value(&result) }
-            .map_err(|e| miette::miette!("serialise result: {e}"))?;
+    let json = if result_v2 {
+        serde_json::to_value(&record)
+    } else {
+        serde_json::to_value(&result)
+    }
+    .map_err(|e| miette::miette!("serialise result: {e}"))?;
 
     let mut report =
         aphrody_models::Report::new(format!("OCR {}", image.display()), &["FIELD", "VALUE"]);
@@ -807,7 +896,10 @@ fn page(
     report.push(vec!["elapsed".into(), format!("{} ms", result.elapsed_ms)]);
     report.push(vec![
         "text".into(),
-        result.text.markdown().map_or_else(|| "(none)".to_owned(), ToOwned::to_owned),
+        result
+            .text
+            .markdown()
+            .map_or_else(|| "(none)".to_owned(), ToOwned::to_owned),
     ]);
 
     output.emit_report(&report, &json)
@@ -836,7 +928,7 @@ fn batch(
         Some(port) => {
             eprintln!("starting llama-server on 127.0.0.1:{port} (loading {model})…");
             Some(ServerRunner::start(opts.clone(), port).map_err(|e| miette::miette!("{e}"))?)
-        },
+        }
         None => None,
     };
     let runner = if resident.is_some() {
@@ -867,7 +959,7 @@ fn batch(
                     .open(path)
                     .map_err(|e| miette::miette!("open {}: {e}", path.display()))?,
             )
-        },
+        }
         None => Box::new(std::io::stdout()),
     };
 
@@ -888,7 +980,10 @@ fn batch(
     // One loop over both backends: the file selection and its order have to be
     // identical, or a resumed run would skip different pages than it recorded.
     let images = aphrody_ocr::list_images_sorted(dir).map_err(|e| miette::miette!("{e}"))?;
-    let pending: Vec<PathBuf> = images.into_iter().filter(|p| !is_done_path(p, &done)).collect();
+    let pending: Vec<PathBuf> = images
+        .into_iter()
+        .filter(|p| !is_done_path(p, &done))
+        .collect();
     let total = pending.len();
 
     for image in pending.into_iter().take(limit.unwrap_or(usize::MAX)) {
@@ -898,7 +993,7 @@ fn batch(
                 failed += 1;
                 eprintln!("page failed ({}): {error}", image.display());
                 continue;
-            },
+            }
         };
         let outcome = match (&resident, &runner) {
             (Some(server), _) => server.read(&image),
@@ -938,12 +1033,12 @@ fn batch(
                          {rate:.1}s/page"
                     );
                 }
-            },
+            }
             Err(e) => {
                 // One unreadable plate must not cost the other 399.
                 failed += 1;
                 eprintln!("page failed ({}): {e}", image.display());
-            },
+            }
         }
     }
 
@@ -986,7 +1081,7 @@ fn batch_ppocr(
             eprintln!("PP-OCR could not start on {requested} ({error}); retrying on CPU");
             let cpu = aphrody_infer::SessionConfig::with_only(aphrody_models::Accelerator::Cpu);
             aphrody_ocr::PpOcr::load(model, &cpu).map_err(|e| miette::miette!("{e}"))?
-        },
+        }
         Err(error) => return Err(miette::miette!("{error}")),
     };
     let providers = runner.providers();
@@ -1013,13 +1108,16 @@ fn batch_ppocr(
                     .open(path)
                     .map_err(|e| miette::miette!("open {}: {e}", path.display()))?,
             )
-        },
+        }
         None => Box::new(std::io::stdout()),
     };
     let mut store = deposit_opts.open()?;
 
     let images = aphrody_ocr::list_images_sorted(dir).map_err(|e| miette::miette!("{e}"))?;
-    let pending: Vec<PathBuf> = images.into_iter().filter(|p| !is_done_path(p, &done)).collect();
+    let pending: Vec<PathBuf> = images
+        .into_iter()
+        .filter(|p| !is_done_path(p, &done))
+        .collect();
     let total = pending.len();
     eprintln!("reading {} with {model} (PP-OCR)", dir.display());
 
@@ -1040,12 +1138,15 @@ fn batch_ppocr(
                 failed += 1;
                 eprintln!("page failed ({}): {error}", image.display());
                 continue;
-            },
+            }
         };
         let page_started = Instant::now();
         let mut outcome = runner.recognise_path(&image);
         if outcome.is_err() && !fell_back {
-            let reason = outcome.as_ref().err().map_or_else(String::new, ToString::to_string);
+            let reason = outcome
+                .as_ref()
+                .err()
+                .map_or_else(String::new, ToString::to_string);
             eprintln!("PP-OCR inference failed on the accelerator ({reason}); moving to CPU");
             let cpu = aphrody_infer::SessionConfig::with_only(aphrody_models::Accelerator::Cpu);
             match aphrody_ocr::PpOcr::load(model, &cpu) {
@@ -1054,7 +1155,7 @@ fn batch_ppocr(
                     provider = Some("cpu".to_owned());
                     fell_back = true;
                     outcome = runner.recognise_path(&image);
-                },
+                }
                 Err(e) => eprintln!("CPU session could not be created either: {e}"),
             }
         }
@@ -1065,14 +1166,21 @@ fn batch_ppocr(
                 failed += 1;
                 eprintln!("page failed ({}): {e}", image.display());
                 continue;
-            },
+            }
         };
         if let Err(error) = ensure_unchanged_image(&identity) {
             failed += 1;
             eprintln!("page failed ({}): {error}", image.display());
             continue;
         }
-        let result = ppocr_result(&image, identity, model, provider.clone(), regions, page_started);
+        let result = ppocr_result(
+            &image,
+            identity,
+            model,
+            provider.clone(),
+            regions,
+            page_started,
+        );
         read += 1;
         if result.status == aphrody_ocr::ocr_core::OcrStatus::Text {
             with_text += 1;
@@ -1082,10 +1190,14 @@ fn batch_ppocr(
                 if let Err(e) = writeln!(sink, "{line}").and_then(|()| sink.flush()) {
                     eprintln!("write failed: {e}");
                 }
-            },
+            }
             Err(e) => eprintln!("serialise failed ({}): {e}", result.page_id),
         }
-        deposit(store.as_mut(), &result, Some("aphrody ocr batch --engine ppocr"));
+        deposit(
+            store.as_mut(),
+            &result,
+            Some("aphrody ocr batch --engine ppocr"),
+        );
         if read % 10 == 0 {
             eprintln!("  {read}/{total} read, {with_text} with text, {failed} failed");
         }
@@ -1118,7 +1230,10 @@ fn ppocr_result(
         .map(aphrody_ocr::PpOcr::block)
         .filter(|block| !block.text.is_empty())
         .collect::<Vec<_>>();
-    let confidences = blocks.iter().filter_map(|block| block.confidence).collect::<Vec<_>>();
+    let confidences = blocks
+        .iter()
+        .filter_map(|block| block.confidence)
+        .collect::<Vec<_>>();
     let mean_confidence = (!confidences.is_empty())
         .then(|| confidences.iter().sum::<f32>() / confidences.len() as f32);
     let elapsed_ms = started.elapsed().as_millis();
@@ -1136,13 +1251,23 @@ fn ppocr_result(
             },
             status: AttemptStatus::Completed,
             elapsed_ms,
-            quality: Quality { mean_confidence, reasons: Vec::new() },
+            quality: Quality {
+                mean_confidence,
+                reasons: Vec::new(),
+            },
             error: None,
         }],
-        status: if blocks.is_empty() { OcrStatus::NoText } else { OcrStatus::Text },
+        status: if blocks.is_empty() {
+            OcrStatus::NoText
+        } else {
+            OcrStatus::Text
+        },
         markdown: None,
         blocks,
-        quality: Quality { mean_confidence, reasons: Vec::new() },
+        quality: Quality {
+            mean_confidence,
+            reasons: Vec::new(),
+        },
         raw: None,
     };
     // Detector noise goes before the furniture test, so a plate whose only
@@ -1163,7 +1288,10 @@ fn ppocr_result(
         // clearly text nor clearly empty, so it goes to review rather than
         // into a public corpus, and it stays visible in the store either way.
         result.status = OcrStatus::NeedsReview;
-        result.quality.reasons.push(format!("thin-page: content score {}", result.content_score()));
+        result.quality.reasons.push(format!(
+            "thin-page: content score {}",
+            result.content_score()
+        ));
     }
     result
 }
@@ -1216,7 +1344,9 @@ fn audit(input: &Path, output: &OutputOpts) -> miette::Result<()> {
     }
 
     let report = aphrody_ocr::audit::audit_batch(
-        pages.iter().map(|(image, text)| (image.clone(), text.as_deref())),
+        pages
+            .iter()
+            .map(|(image, text)| (image.clone(), text.as_deref())),
     );
 
     let blocking = report.has_blocking() || invalid > 0 || blocked_status > 0;
@@ -1239,10 +1369,10 @@ fn audit(input: &Path, output: &OutputOpts) -> miette::Result<()> {
     });
 
     for page in &report.flagged {
-        let name = page
-            .image
-            .file_name()
-            .map_or_else(|| page.image.display().to_string(), |n| n.to_string_lossy().into_owned());
+        let name = page.image.file_name().map_or_else(
+            || page.image.display().to_string(),
+            |n| n.to_string_lossy().into_owned(),
+        );
         for finding in &page.findings {
             let (kind, detail) = describe(finding);
             table.push(vec![name.clone(), kind.to_owned(), detail]);
@@ -1263,7 +1393,10 @@ fn audit(input: &Path, output: &OutputOpts) -> miette::Result<()> {
             report
                 .flagged
                 .iter()
-                .filter(|p| p.findings.iter().any(aphrody_ocr::audit::Finding::is_blocking))
+                .filter(|p| p
+                    .findings
+                    .iter()
+                    .any(aphrody_ocr::audit::Finding::is_blocking))
                 .count()
         ));
     }
@@ -1365,7 +1498,7 @@ fn already_done(path: &Path) -> miette::Result<std::collections::BTreeSet<PathBu
         // No file yet simply means nothing is done.
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
             return Ok(std::collections::BTreeSet::new());
-        },
+        }
         Err(e) => return Err(miette::miette!("read {}: {e}", path.display())),
     };
 
@@ -1374,15 +1507,18 @@ fn already_done(path: &Path) -> miette::Result<std::collections::BTreeSet<PathBu
         let Ok(line) = line else { continue };
         // A run killed mid-write leaves a partial last line; skipping it is
         // correct — that page will simply be read again.
-        let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) else { continue };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) else {
+            continue;
+        };
         // Two shapes share this file: the historical `"image": "path"` and the
         // v2 record's `"image": { "path": … }`. A reader that knew only the
         // first would resume a v2 run by reading every page again.
         let recorded = match value.get("image") {
             Some(serde_json::Value::String(path)) => Some(path.clone()),
-            Some(image) => {
-                image.get("path").and_then(serde_json::Value::as_str).map(ToOwned::to_owned)
-            },
+            Some(image) => image
+                .get("path")
+                .and_then(serde_json::Value::as_str)
+                .map(ToOwned::to_owned),
             None => None,
         };
         if let Some(image) = recorded {
@@ -1405,8 +1541,10 @@ fn is_done_path(image: &Path, done: &std::collections::BTreeSet<PathBuf>) -> boo
         return true;
     }
     // Recorded paths may come from either platform: split basenames on both separators.
-    portable_name(image)
-        .is_some_and(|name| done.iter().any(|recorded| portable_name(recorded) == Some(name)))
+    portable_name(image).is_some_and(|name| {
+        done.iter()
+            .any(|recorded| portable_name(recorded) == Some(name))
+    })
 }
 
 /// Basename of a path recorded on Linux or Windows, whatever the current platform.
@@ -1439,8 +1577,13 @@ fn write_line<T: serde::Serialize>(
 /// par être détruit depuis un contexte où bloquer est interdit, ce qui panique.
 /// Il est donc aiguillé AVANT qu'un runtime n'existe.
 pub(crate) fn is_synchronous_server_batch(argv: &[std::ffi::OsString]) -> bool {
-    let words: Vec<String> = argv.iter().map(|a| a.to_string_lossy().into_owned()).collect();
-    let Some(ocr) = words.iter().position(|w| w == "ocr") else { return false };
+    let words: Vec<String> = argv
+        .iter()
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect();
+    let Some(ocr) = words.iter().position(|w| w == "ocr") else {
+        return false;
+    };
     words.get(ocr + 1).is_some_and(|w| w == "batch") && words.iter().any(|w| w == "--server")
 }
 
@@ -1472,7 +1615,7 @@ pub(crate) fn run_sync_server_batch(argv: &[std::ffi::OsString]) -> i32 {
         Err(e) => {
             let _ = e.print();
             return 2;
-        },
+        }
     };
     let Wrapper::Ocr { action } = parsed.command;
 
@@ -1481,7 +1624,7 @@ pub(crate) fn run_sync_server_batch(argv: &[std::ffi::OsString]) -> i32 {
         Err(report) => {
             eprintln!("aphrody: {report:?}");
             70 // EX_SOFTWARE (sysexits.h)
-        },
+        }
     }
 }
 
@@ -1571,7 +1714,11 @@ mod tests {
     #[test]
     fn an_absent_resume_file_means_nothing_is_done() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(already_done(&dir.path().join("absent.jsonl")).unwrap().is_empty());
+        assert!(
+            already_done(&dir.path().join("absent.jsonl"))
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]

@@ -50,9 +50,12 @@ fn load(vfs: &Vfs, prefix: &str, must_contain: &str) -> Option<serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let item_root = load(&vfs, "item_config", "/gamedata/item/").expect("item_config introuvable");
     let items = aphrody_nie_data::item::parse_all_items(&item_root);
@@ -88,7 +91,12 @@ fn main() {
         let name = aphrody_nie_data::item::resolve_name(it, &item_text).unwrap_or("");
         let desc = aphrody_nie_data::item::resolve_description(it, &item_text);
         let dsnip: Option<String> = desc.map(|d| d.chars().take(50).collect());
-        eprintln!("  item {} → {:?}  desc={:?}", it.item_id.to_hex(), name, dsnip);
+        eprintln!(
+            "  item {} → {:?}  desc={:?}",
+            it.item_id.to_hex(),
+            name,
+            dsnip
+        );
     }
     eprintln!("✓ END-TO-END OK : {named} noms / {described} descriptions d'objets résolus");
 }

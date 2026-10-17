@@ -108,7 +108,10 @@ impl CameraTracks {
         self.frames == 0
     }
     pub fn track(&self, id: u32) -> Option<&Track2D> {
-        self.tracks.binary_search_by_key(&id, |t| t.id).ok().map(|i| &self.tracks[i])
+        self.tracks
+            .binary_search_by_key(&id, |t| t.id)
+            .ok()
+            .map(|i| &self.tracks[i])
     }
 }
 
@@ -123,11 +126,19 @@ pub struct Distortion {
 }
 
 impl Distortion {
-    pub const NONE: Distortion = Distortion { k1: 0.0, k2: 0.0, radius: 0.0 };
+    pub const NONE: Distortion = Distortion {
+        k1: 0.0,
+        k2: 0.0,
+        radius: 0.0,
+    };
 
     /// No distortion for frames of `size` (the radius set, coefficients zero).
     pub fn for_size(size: [f64; 2]) -> Distortion {
-        Distortion { k1: 0.0, k2: 0.0, radius: 0.5 * size[0].hypot(size[1]) }
+        Distortion {
+            k1: 0.0,
+            k2: 0.0,
+            radius: 0.5 * size[0].hypot(size[1]),
+        }
     }
     pub fn is_none(&self) -> bool {
         self.radius <= 0.0 || (self.k1 == 0.0 && self.k2 == 0.0)
@@ -169,7 +180,10 @@ impl Distortion {
         let d = 1.0 + self.k1 * r2 + self.k2 * r2 * r2;
         // d(r2)/dp = 2 p / R².
         let dd = (self.k1 + 2.0 * self.k2 * r2) * 2.0 / (self.radius * self.radius);
-        let j = [[d + p[0] * dd * p[0], p[0] * dd * p[1]], [p[1] * dd * p[0], d + p[1] * dd * p[1]]];
+        let j = [
+            [d + p[0] * dd * p[0], p[0] * dd * p[1]],
+            [p[1] * dd * p[0], d + p[1] * dd * p[1]],
+        ];
         let k = [[p[0] * r2, p[0] * r2 * r2], [p[1] * r2, p[1] * r2 * r2]];
         (j, k)
     }
@@ -186,7 +200,11 @@ pub enum ShotType {
 }
 
 impl ShotType {
-    pub const ALL: [ShotType; 3] = [ShotType::FixedAngle, ShotType::VariableZoom, ShotType::SpecifyAngle];
+    pub const ALL: [ShotType; 3] = [
+        ShotType::FixedAngle,
+        ShotType::VariableZoom,
+        ShotType::SpecifyAngle,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             ShotType::FixedAngle => "Fixed Angle of View",
@@ -217,7 +235,12 @@ pub enum SolveMethod {
 }
 
 impl SolveMethod {
-    pub const ALL: [SolveMethod; 4] = [SolveMethod::Auto, SolveMethod::Typical, SolveMethod::MostlyFlat, SolveMethod::TripodPan];
+    pub const ALL: [SolveMethod; 4] = [
+        SolveMethod::Auto,
+        SolveMethod::Typical,
+        SolveMethod::MostlyFlat,
+        SolveMethod::TripodPan,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             SolveMethod::Auto => "Auto Detect",
@@ -276,7 +299,12 @@ impl SolvedFrame {
     /// Project a world point to layer pixels (`None` behind the camera).
     pub fn project(&self, size: [f64; 2], x: V3) -> Option<[f64; 2]> {
         let c = self.to_cam(x);
-        (c[2] > 1e-9).then(|| [self.focal * c[0] / c[2] + size[0] * 0.5, self.focal * c[1] / c[2] + size[1] * 0.5])
+        (c[2] > 1e-9).then(|| {
+            [
+                self.focal * c[0] / c[2] + size[0] * 0.5,
+                self.focal * c[1] / c[2] + size[1] * 0.5,
+            ]
+        })
     }
 }
 
@@ -365,11 +393,18 @@ impl CameraSolve {
     /// Points tracked on frame `k`.
     pub fn visible(&self, k: usize) -> impl Iterator<Item = &SolvedPoint> {
         let k = k as u32;
-        self.points.iter().filter(move |p| p.first <= k && k <= p.last)
+        self.points
+            .iter()
+            .filter(move |p| p.first <= k && k <= p.last)
     }
     /// Median focal length of the solved frames (layer pixels).
     pub fn focal(&self) -> f64 {
-        let mut f: Vec<f64> = self.frames.iter().filter(|c| c.solved).map(|c| c.focal).collect();
+        let mut f: Vec<f64> = self
+            .frames
+            .iter()
+            .filter(|c| c.solved)
+            .map(|c| c.focal)
+            .collect();
         if f.is_empty() {
             return 0.0;
         }
@@ -384,15 +419,27 @@ impl CameraSolve {
     /// The plane through points `ids` seen from frame `k` (needs three points; with more the
     /// plane is a least-squares fit).
     pub fn target(&self, ids: &[u32], k: usize) -> Option<Target> {
-        let pts: Vec<V3> = ids.iter().filter_map(|i| self.point(*i)).map(|p| p.pos).collect();
-        let cam = self.frames.get(k).filter(|c| c.solved).or_else(|| self.frames.iter().find(|c| c.solved))?;
+        let pts: Vec<V3> = ids
+            .iter()
+            .filter_map(|i| self.point(*i))
+            .map(|p| p.pos)
+            .collect();
+        let cam = self
+            .frames
+            .get(k)
+            .filter(|c| c.solved)
+            .or_else(|| self.frames.iter().find(|c| c.solved))?;
         geometry::fit_plane(&pts).map(|(c, mut n, spread)| {
             if linalg::dot(n, linalg::sub(cam.center, c)) < 0.0 {
                 n = linalg::scale(n, -1.0);
             }
             // After Effects sizes the target from the camera distance when the points are close.
             let depth = linalg::norm(linalg::sub(cam.center, c));
-            Target { center: c, normal: n, size: (spread * 2.0).max(depth * 0.12) }
+            Target {
+                center: c,
+                normal: n,
+                size: (spread * 2.0).max(depth * 0.12),
+            }
         })
     }
 
@@ -400,14 +447,22 @@ impl CameraSolve {
     /// camera, +x along that camera's right vector projected on the plane).
     pub fn ground_from(&self, ids: &[u32], k: usize) -> Option<Ground> {
         let t = self.target(ids, k)?;
-        let cam = self.frames.get(k).filter(|c| c.solved).or_else(|| self.frames.iter().find(|c| c.solved))?;
+        let cam = self
+            .frames
+            .get(k)
+            .filter(|c| c.solved)
+            .or_else(|| self.frames.iter().find(|c| c.solved))?;
         let right = linalg::mtv(&cam.r(), [1.0, 0.0, 0.0]);
         let mut x = linalg::sub(right, linalg::scale(t.normal, linalg::dot(right, t.normal)));
         if linalg::norm(x) < 1e-6 {
             let fwd = linalg::mtv(&cam.r(), [0.0, 0.0, 1.0]);
             x = linalg::cross(fwd, t.normal);
         }
-        Some(Ground { origin: t.center, normal: t.normal, x_axis: linalg::normalize(x) })
+        Some(Ground {
+            origin: t.center,
+            normal: t.normal,
+            x_axis: linalg::normalize(x),
+        })
     }
 
     /// Canonical solve coordinates → composition world, for a camera whose zoom on the first
@@ -426,7 +481,11 @@ impl CameraSolve {
                 let t = linalg::scale(linalg::mv(&r, g.origin), -zoom0);
                 Similarity { s: zoom0, r, t }
             }
-            None => Similarity { s: zoom0, r: linalg::I3, t: [comp[0] * 0.5, comp[1] * 0.5, -zoom0] },
+            None => Similarity {
+                s: zoom0,
+                r: linalg::I3,
+                t: [comp[0] * 0.5, comp[1] * 0.5, -zoom0],
+            },
         }
     }
 

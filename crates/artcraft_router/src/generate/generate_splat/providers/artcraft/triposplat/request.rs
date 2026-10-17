@@ -7,11 +7,14 @@ use crate::generate::generate_splat::providers::artcraft::request_common::send_a
 
 #[derive(Clone, Debug)]
 pub struct ArtcraftTripoSplatRequestState {
-  pub request: OmniGenSplatCostAndGenerateRequest,
+    pub request: OmniGenSplatCostAndGenerateRequest,
 }
 
 impl ArtcraftTripoSplatRequestState {
-  pub async fn send(&self, client: &RouterArtcraftClient) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
-    send_artcraft_omni_splat_request(&self.request, client).await
-  }
+    pub async fn send(
+        &self,
+        client: &RouterArtcraftClient,
+    ) -> Result<GenerateSplatResponse, ArtcraftRouterError> {
+        send_artcraft_omni_splat_request(&self.request, client).await
+    }
 }

@@ -71,14 +71,14 @@ pub(crate) mod skip {
 
 pub use appearance::StrokeGradientMode;
 pub use appearance::{
-    Appearance, AppearanceItem, ArrowAlign, Arrowhead, Dash, Effect, FillLayer, LineCap, LineJoin, PressureProfile, ProfilePreset, SavedProfile,
-    StrokeAlign, StrokeLayer, WidthProfile,
+    Appearance, AppearanceItem, ArrowAlign, Arrowhead, Dash, Effect, FillLayer, LineCap, LineJoin,
+    PressureProfile, ProfilePreset, SavedProfile, StrokeAlign, StrokeLayer, WidthProfile,
 };
 pub use assets::ExportAsset;
 pub use corners::LiveCorners;
 pub use graph::{
-    GraphDesign, GraphKind, GraphSpec, LabelStyles, MAX_GRAPH_CATEGORIES, MAX_GRAPH_SERIES, PiePosition, PieSort, SeriesPaint, TickLength,
-    ValueAxisSide,
+    GraphDesign, GraphKind, GraphSpec, LabelStyles, MAX_GRAPH_CATEGORIES, MAX_GRAPH_SERIES,
+    PiePosition, PieSort, SeriesPaint, TickLength, ValueAxisSide,
 };
 pub use hit::{Hit, HitKind};
 pub use links::{LinkInfo, PlacementOptions};
@@ -86,7 +86,10 @@ pub use live::{BlendOrientation, BlendSpacing, BlendSpec, EnvelopeKind, Gradient
 pub use metadata::{CopyrightStatus, DocMetadata};
 pub use node::Knockout;
 pub use node::Scaling;
-pub use node::{Extras, ExtrasMut, ImageObject, LAYER_COLORS, LayerColor, LiveShape, Node, NodeExtras, NodeId, NodeKind, OpacityMask};
+pub use node::{
+    Extras, ExtrasMut, ImageObject, LAYER_COLORS, LayerColor, LiveShape, Node, NodeExtras, NodeId,
+    NodeKind, OpacityMask,
+};
 pub use node::{ImageMap, ObjectAttributes};
 pub use orient::OrientedBox;
 pub use pattern::{Overlap, PatternDef, PatternEdit, RepeatKind, RepeatSpec, TileType};
@@ -100,9 +103,10 @@ pub use setup::{Background, DocSetup, ExportText, GridSize, Quotes};
 pub use slices::{CellAlign, CellVAlign, Slice, SliceArea, SliceKind, SliceOptions, SliceSource};
 pub use style_libs::StyleLibrary;
 pub use text::{
-    AreaFit, AreaOptions, Burasagari, CharAlign, CharPosition, CharStyle, Composer, Digits, FirstBaseline, InlineArt, Justify, Kinsoku, LeadingModel,
-    Mojikumi, ParaDirection, ParaStyle, PathAlign, PathEffect, ScriptMetrics, TabAlign, TabStop, TextKind, TextObject, TextRun, TextStyleDef,
-    TextWrap, VerticalAlign, WrapShape,
+    AreaFit, AreaOptions, Burasagari, CharAlign, CharPosition, CharStyle, Composer, Digits,
+    FirstBaseline, InlineArt, Justify, Kinsoku, LeadingModel, Mojikumi, ParaDirection, ParaStyle,
+    PathAlign, PathEffect, ScriptMetrics, TabAlign, TabStop, TextKind, TextObject, TextRun,
+    TextStyleDef, TextWrap, VerticalAlign, WrapShape,
 };
 pub use trace::TraceView;
 pub use variables::{DataSet, DataValue, Variable, VariableKind, Variables};
@@ -195,9 +199,15 @@ impl Unit {
     /// The rulers' label step at `zoom` (screen pixels per point), in this unit: the first of
     /// 1, 2, 5 × 10ⁿ that puts labels at least 50 pixels apart. Ticks mark every tenth of it.
     pub fn ruler_step(self, zoom: f64) -> f64 {
-        const STEPS: [f64; 19] =
-            [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0];
-        STEPS.iter().copied().find(|s| s * self.points() * zoom >= 50.0).unwrap_or(10000.0)
+        const STEPS: [f64; 19] = [
+            0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0, 25.0, 50.0, 100.0, 200.0, 500.0,
+            1000.0, 2000.0, 5000.0, 10000.0,
+        ];
+        STEPS
+            .iter()
+            .copied()
+            .find(|s| s * self.points() * zoom >= 50.0)
+            .unwrap_or(10000.0)
     }
     /// `v` (points) on the nearest ruler tick at `zoom` ([`Self::ruler_step`]).
     pub fn snap_to_ruler_tick(self, v: f64, zoom: f64) -> f64 {
@@ -218,7 +228,11 @@ impl Unit {
     pub fn number(self, pt: f64) -> String {
         // Three decimals for the small units (`595.276 pt`), four for the large ones (`8.2677 in`,
         // `35.2778 mm`, the `0.0078 in` stroke preset); trailing zeros are trimmed (`1 pt` is `1`).
-        let decimals = if matches!(self, Unit::Points | Unit::Pixels | Unit::Picas) { 3 } else { 4 };
+        let decimals = if matches!(self, Unit::Points | Unit::Pixels | Unit::Picas) {
+            3
+        } else {
+            4
+        };
         let s = format!("{:.*}", decimals, self.from_pt(pt));
         let s = s.trim_end_matches('0').trim_end_matches('.');
         if s == "-0" { "0".into() } else { s.into() }
@@ -249,9 +263,19 @@ impl Unit {
     /// The unit `name` names: its label, suffix or [`Unit::key`] in any case, ignoring spaces and
     /// punctuation (`Millimeters`, `mm`, `Feet & Inches`, `feetInches`).
     pub fn named(name: &str) -> Option<Unit> {
-        let letters = |s: &'static str| s.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase());
-        let given = || name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase());
-        Unit::ALL.into_iter().find(|u| letters(u.label()).eq(given()) || u.suffix().chars().eq(given()))
+        let letters = |s: &'static str| {
+            s.chars()
+                .filter(char::is_ascii_alphanumeric)
+                .map(|c| c.to_ascii_lowercase())
+        };
+        let given = || {
+            name.chars()
+                .filter(char::is_ascii_alphanumeric)
+                .map(|c| c.to_ascii_lowercase())
+        };
+        Unit::ALL
+            .into_iter()
+            .find(|u| letters(u.label()).eq(given()) || u.suffix().chars().eq(given()))
     }
     /// A point value as the canvas measurement labels show it: two decimals and the suffix
     /// (`12.50 mm`).
@@ -296,7 +320,9 @@ fn parse_measure(s: &str, default: Unit) -> Option<f64> {
         && !s.ends_with("pt")
         && !s.ends_with("px")
     {
-        return Some(p.trim().parse::<f64>().ok()? * 12.0 + pt.trim().parse::<f64>().unwrap_or(0.0));
+        return Some(
+            p.trim().parse::<f64>().ok()? * 12.0 + pt.trim().parse::<f64>().unwrap_or(0.0),
+        );
     }
     let (v, unit) = number_unit(s)?;
     Some(unit.unwrap_or(default).to_pt(v))
@@ -305,7 +331,9 @@ fn parse_measure(s: &str, default: Unit) -> Option<f64> {
 /// A number with an optional unit suffix (`12`, `3 mm`, `2in`) → (the number, its unit).
 fn number_unit(s: &str) -> Option<(f64, Option<Unit>)> {
     let s = s.trim();
-    let num_end = s.find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-')).unwrap_or(s.len());
+    let num_end = s
+        .find(|c: char| !(c.is_ascii_digit() || c == '.' || c == '-'))
+        .unwrap_or(s.len());
     let v: f64 = s.get(..num_end)?.trim().parse().ok()?;
     let unit = match s.get(num_end..)?.trim() {
         "" => None,
@@ -326,7 +354,10 @@ fn number_unit(s: &str) -> Option<(f64, Option<Unit>)> {
 /// A unitless field value (percent, degrees, counts) with the same `+ - * /` arithmetic as
 /// [`Unit::parse`] (`45*2`, `100/3`); text other than digits, `.` and operators reads as nothing.
 pub fn parse_number(s: &str) -> Option<f64> {
-    if !s.chars().all(|c| c.is_ascii_digit() || " .+-*/".contains(c)) {
+    if !s
+        .chars()
+        .all(|c| c.is_ascii_digit() || " .+-*/".contains(c))
+    {
         return None;
     }
     // A leading `+` is a sign (`+5`), as a plain number read it.
@@ -402,7 +433,10 @@ impl SavedSelection {
 
     /// The first "Selection N" none of `saved` is named.
     pub fn default_name(saved: &[SavedSelection]) -> String {
-        (1..=saved.len() + 1).map(|i| format!("Selection {i}")).find(|n| !saved.iter().any(|x| &x.name == n)).unwrap_or_default()
+        (1..=saved.len() + 1)
+            .map(|i| format!("Selection {i}"))
+            .find(|n| !saved.iter().any(|x| &x.name == n))
+            .unwrap_or_default()
     }
 }
 
@@ -425,12 +459,20 @@ pub struct Guide {
 impl Guide {
     /// A canvas guide.
     pub fn new(vertical: bool, pos: f64) -> Self {
-        Self { vertical, pos, artboard: None, layer: None }
+        Self {
+            vertical,
+            pos,
+            artboard: None,
+            layer: None,
+        }
     }
 
     /// Moved by `d` (a vertical guide across, a horizontal one down).
     pub fn moved(&self, d: Vec2) -> Self {
-        Self { pos: self.pos + if self.vertical { d.x } else { d.y }, ..self.clone() }
+        Self {
+            pos: self.pos + if self.vertical { d.x } else { d.y },
+            ..self.clone()
+        }
     }
 }
 
@@ -442,7 +484,10 @@ pub struct GridPrefs {
 
 impl Default for GridPrefs {
     fn default() -> Self {
-        Self { spacing: 72.0, subdivisions: 8 }
+        Self {
+            spacing: 72.0,
+            subdivisions: 8,
+        }
     }
 }
 
@@ -497,7 +542,13 @@ impl GraphicStyle {
     }
     /// A style capturing `n`'s transparency and `appearance` (in unit-box space).
     pub fn of(name: impl Into<String>, appearance: Appearance, n: &Node) -> Self {
-        Self { opacity: n.opacity, blend: n.blend, isolate: n.isolate, knockout: n.knockout, ..Self::new(name, appearance) }
+        Self {
+            opacity: n.opacity,
+            blend: n.blend,
+            isolate: n.isolate,
+            knockout: n.knockout,
+            ..Self::new(name, appearance)
+        }
     }
     /// The style's appearance as object `n` takes it: placed gradients stored in unit-box space
     /// land at the same place relative to `n`'s geometric bounds.
@@ -514,11 +565,13 @@ impl GraphicStyle {
     }
     /// Give `n` this style's transparency.
     pub fn apply_transparency(&self, n: &mut Node) {
-        (n.opacity, n.blend, n.isolate, n.knockout) = (self.opacity, self.blend, self.isolate, self.knockout);
+        (n.opacity, n.blend, n.isolate, n.knockout) =
+            (self.opacity, self.blend, self.isolate, self.knockout);
     }
     /// Does `n` have this style's transparency?
     pub fn transparency_matches(&self, n: &Node) -> bool {
-        (n.opacity, n.blend, n.isolate, n.knockout) == (self.opacity, self.blend, self.isolate, self.knockout)
+        (n.opacity, n.blend, n.isolate, n.knockout)
+            == (self.opacity, self.blend, self.isolate, self.knockout)
     }
 }
 
@@ -763,7 +816,8 @@ impl Document {
             index: Default::default(),
         };
         let id = d.alloc_id();
-        d.layers.push(Arc::new(Node::layer(id, "Layer 1", LayerColor::Preset(0))));
+        d.layers
+            .push(Arc::new(Node::layer(id, "Layer 1", LayerColor::Preset(0))));
         d
     }
 
@@ -857,9 +911,17 @@ impl Document {
     /// [`Document::index_path`] of every id in `ids` that is in the tree, in one walk of it: an
     /// edit of many objects looks them all up for the cost of one search instead of one each. Like
     /// `index_path`, an id that appears twice maps to its first place in tree order.
-    pub fn index_paths(&self, ids: impl IntoIterator<Item = NodeId>) -> std::collections::HashMap<NodeId, Vec<usize>> {
+    pub fn index_paths(
+        &self,
+        ids: impl IntoIterator<Item = NodeId>,
+    ) -> std::collections::HashMap<NodeId, Vec<usize>> {
         use std::collections::{HashMap, HashSet};
-        fn walk(nodes: &[Arc<Node>], want: &HashSet<NodeId>, path: &mut Vec<usize>, out: &mut HashMap<NodeId, Vec<usize>>) -> bool {
+        fn walk(
+            nodes: &[Arc<Node>],
+            want: &HashSet<NodeId>,
+            path: &mut Vec<usize>,
+            out: &mut HashMap<NodeId, Vec<usize>>,
+        ) -> bool {
             for (i, n) in nodes.iter().enumerate() {
                 path.push(i);
                 if want.contains(&n.id) && !out.contains_key(&n.id) {
@@ -881,7 +943,11 @@ impl Document {
         let mut out = HashMap::with_capacity(want.len());
         // Cached paths that still check out ([`id_index`]); the rest take one walk. For a good
         // share of the document, one walk is quicker than checking each cached path.
-        if let Some(cache) = self.index.get().filter(|c| want.len().saturating_mul(8) < c.len()) {
+        if let Some(cache) = self
+            .index
+            .get()
+            .filter(|c| want.len().saturating_mul(8) < c.len())
+        {
             want.retain(|id| match cache.get(id) {
                 Some(Some(p)) if self.node_at(&p).is_some_and(|n| n.id == *id) => {
                     out.insert(*id, p);
@@ -969,10 +1035,17 @@ impl Document {
     }
 
     /// Children list of a container (or the top-level layer list for `None`).
-    pub fn children_mut(&mut self, parent: Option<NodeId>) -> Result<&mut Vec<Arc<Node>>, DocError> {
+    pub fn children_mut(
+        &mut self,
+        parent: Option<NodeId>,
+    ) -> Result<&mut Vec<Arc<Node>>, DocError> {
         match parent {
             None => Ok(&mut self.layers),
-            Some(p) => self.node_mut(p).ok_or(DocError::NoNode(p))?.children_mut().ok_or(DocError::NotContainer(p)),
+            Some(p) => self
+                .node_mut(p)
+                .ok_or(DocError::NoNode(p))?
+                .children_mut()
+                .ok_or(DocError::NotContainer(p)),
         }
     }
     pub fn children(&self, parent: Option<NodeId>) -> Option<&Vec<Arc<Node>>> {
@@ -983,7 +1056,12 @@ impl Document {
     }
 
     /// Insert `node` into `parent` at `index` (clamped; `usize::MAX` = top).
-    pub fn insert(&mut self, parent: Option<NodeId>, index: usize, node: Node) -> Result<NodeId, DocError> {
+    pub fn insert(
+        &mut self,
+        parent: Option<NodeId>,
+        index: usize,
+        node: Node,
+    ) -> Result<NodeId, DocError> {
         let id = node.id;
         let ch = self.children_mut(parent)?;
         let i = index.min(ch.len());
@@ -1004,11 +1082,18 @@ impl Document {
     }
 
     /// Move a node to `parent` at `index` (index measured after removal).
-    pub fn move_node(&mut self, id: NodeId, parent: Option<NodeId>, index: usize) -> Result<(), DocError> {
+    pub fn move_node(
+        &mut self,
+        id: NodeId,
+        parent: Option<NodeId>,
+        index: usize,
+    ) -> Result<(), DocError> {
         if let Some(p) = parent
             && self.ancestry(p).is_some_and(|a| a.contains(&id))
         {
-            return Err(DocError::Invalid("cannot move an object into itself".into()));
+            return Err(DocError::Invalid(
+                "cannot move an object into itself".into(),
+            ));
         }
         let n = self.remove(id)?;
         let ch = self.children_mut(parent)?;
@@ -1039,18 +1124,38 @@ impl Document {
     /// Remove the nodes `ids` names, as [`Document::remove_many`] does, and put the node that `make`
     /// builds from them (in the order of `ids`) in the parent of the last of them, at that node's
     /// index less the number of listed nodes below it there. Returns the new node's id.
-    pub fn wrap(&mut self, ids: &[NodeId], make: impl FnOnce(Vec<Arc<Node>>) -> Node) -> Result<NodeId, DocError> {
+    pub fn wrap(
+        &mut self,
+        ids: &[NodeId],
+        make: impl FnOnce(Vec<Arc<Node>>) -> Node,
+    ) -> Result<NodeId, DocError> {
         let places = self.places(ids)?;
         let last = ids.len().checked_sub(1);
-        let found = places.iter().find_map(|(up, kids)| kids.iter().find(|(_, k)| Some(*k) == last).map(|(i, _)| (up.clone(), *i)));
-        let Some((up, i)) = found else { return Err(DocError::Invalid("nothing to wrap".into())) };
+        let found = places.iter().find_map(|(up, kids)| {
+            kids.iter()
+                .find(|(_, k)| Some(*k) == last)
+                .map(|(i, _)| (up.clone(), *i))
+        });
+        let Some((up, i)) = found else {
+            return Err(DocError::Invalid("nothing to wrap".into()));
+        };
         // The parent and each node it is in move down by the listed nodes before them.
-        let below = |parent: &[usize], index: usize| places.get(parent).map_or(0, |kids| kids.partition_point(|(j, _)| *j < index));
-        let to: Vec<usize> = up.iter().enumerate().map(|(l, &j)| j.saturating_sub(below(&up[..l], j))).collect();
+        let below = |parent: &[usize], index: usize| {
+            places
+                .get(parent)
+                .map_or(0, |kids| kids.partition_point(|(j, _)| *j < index))
+        };
+        let to: Vec<usize> = up
+            .iter()
+            .enumerate()
+            .map(|(l, &j)| j.saturating_sub(below(&up[..l], j)))
+            .collect();
         let at = i.saturating_sub(below(&up, i));
         let node = make(self.take(places, ids.len())?);
         let id = node.id;
-        let children = self.children_at(&to).ok_or_else(|| DocError::Invalid("the container of the listed objects is gone".into()))?;
+        let children = self.children_at(&to).ok_or_else(|| {
+            DocError::Invalid("the container of the listed objects is gone".into())
+        })?;
         let at = at.min(children.len());
         children.insert(at, Arc::new(node));
         self.index.clear();
@@ -1061,7 +1166,11 @@ impl Document {
     /// list order, in one pass over the children of each parent. Each anchor is listed once and none
     /// lies inside another. For an anchor that is not in the tree, is listed twice or lies inside
     /// another listed anchor, it fails with `NoNode` and leaves the document as it was.
-    pub fn insert_beside(&mut self, items: Vec<(NodeId, Vec<Node>)>, replace: bool) -> Result<(), DocError> {
+    pub fn insert_beside(
+        &mut self,
+        items: Vec<(NodeId, Vec<Node>)>,
+        replace: bool,
+    ) -> Result<(), DocError> {
         let anchors: Vec<NodeId> = items.iter().map(|(id, _)| *id).collect();
         let places = self.places(&anchors)?;
         let mut lists: Vec<Vec<Node>> = items.into_iter().map(|(_, nodes)| nodes).collect();
@@ -1082,7 +1191,10 @@ impl Document {
         let paths = self.index_paths(ids.iter().copied());
         let mut places = Places::new();
         for (k, id) in ids.iter().enumerate() {
-            let (&i, up) = paths.get(id).and_then(|p| p.split_last()).ok_or(DocError::NoNode(*id))?;
+            let (&i, up) = paths
+                .get(id)
+                .and_then(|p| p.split_last())
+                .ok_or(DocError::NoNode(*id))?;
             match places.get_mut(up) {
                 Some(kids) => kids.push((i, k)),
                 None => {
@@ -1096,11 +1208,21 @@ impl Document {
         // An id listed twice has one path, so its parent lists the same child twice. A listed node
         // lies inside another when its parent's path, or a part of it from the top, is the path of a
         // listed node.
-        let twice = places.values().flat_map(|kids| kids.windows(2)).find(|w| w[0].0 == w[1].0).map(|w| w[1].1);
+        let twice = places
+            .values()
+            .flat_map(|kids| kids.windows(2))
+            .find(|w| w[0].0 == w[1].0)
+            .map(|w| w[1].1);
         let listed = |path: &[usize]| {
-            path.split_last().is_some_and(|(i, up)| places.get(up).is_some_and(|kids| kids.binary_search_by_key(i, |(j, _)| *j).is_ok()))
+            path.split_last().is_some_and(|(i, up)| {
+                places
+                    .get(up)
+                    .is_some_and(|kids| kids.binary_search_by_key(i, |(j, _)| *j).is_ok())
+            })
         };
-        let nested = places.iter().find(|(up, _)| (1..=up.len()).any(|l| listed(&up[..l])));
+        let nested = places
+            .iter()
+            .find(|(up, _)| (1..=up.len()).any(|l| listed(&up[..l])));
         let inner = nested.and_then(|(_, kids)| kids.first()).map(|(_, k)| *k);
         if let Some(id) = twice.or(inner).and_then(|k| ids.get(k)) {
             return Err(DocError::NoNode(*id));
@@ -1123,9 +1245,15 @@ impl Document {
     /// Rebuild the children of each parent in `places` once, the parents later in tree order
     /// first. `each` gets each listed child, its place in the list and the parent's new children,
     /// onto which it pushes what takes the child's place.
-    fn edit_children(&mut self, places: Places, mut each: impl FnMut(usize, Arc<Node>, &mut Vec<Arc<Node>>)) -> Result<(), DocError> {
+    fn edit_children(
+        &mut self,
+        places: Places,
+        mut each: impl FnMut(usize, Arc<Node>, &mut Vec<Arc<Node>>),
+    ) -> Result<(), DocError> {
         for (up, kids) in places.into_iter().rev() {
-            let children = self.children_at(&up).ok_or_else(|| DocError::Invalid("a container of the listed objects is gone".into()))?;
+            let children = self.children_at(&up).ok_or_else(|| {
+                DocError::Invalid("a container of the listed objects is gone".into())
+            })?;
             let old = std::mem::take(children);
             children.reserve(old.len());
             let mut kids = kids.into_iter().peekable();
@@ -1149,15 +1277,26 @@ impl Document {
 
     /// Default target layer: the topmost visible, unlocked layer.
     pub fn default_layer(&self) -> Option<NodeId> {
-        self.layers.iter().rev().find(|l| l.visible && !l.locked).or(self.layers.last()).map(|l| l.id)
+        self.layers
+            .iter()
+            .rev()
+            .find(|l| l.visible && !l.locked)
+            .or(self.layers.last())
+            .map(|l| l.id)
     }
 
     /// Add a new top-level layer above all others.
     pub fn add_layer(&mut self, name: Option<&str>) -> NodeId {
         let id = self.alloc_id();
         let n = self.layers.len();
-        let name = name.map(str::to_string).unwrap_or_else(|| self.next_layer_name());
-        self.layers.push(Arc::new(Node::layer(id, &name, LayerColor::Preset((n % LAYER_COLORS.len()) as u8))));
+        let name = name
+            .map(str::to_string)
+            .unwrap_or_else(|| self.next_layer_name());
+        self.layers.push(Arc::new(Node::layer(
+            id,
+            &name,
+            LayerColor::Preset((n % LAYER_COLORS.len()) as u8),
+        )));
         id
     }
     /// The default name of a new layer or sublayer, "Layer N". Layers and sublayers share the
@@ -1170,7 +1309,10 @@ impl Document {
                 taken.extend(n.name.as_deref());
             }
         });
-        (count + 1..).map(|i| format!("Layer {i}")).find(|name| !taken.contains(name.as_str())).unwrap_or_default()
+        (count + 1..)
+            .map(|i| format!("Layer {i}"))
+            .find(|name| !taken.contains(name.as_str()))
+            .unwrap_or_default()
     }
 
     /// Visit every node depth first in paint order (bottom to top).
@@ -1184,20 +1326,31 @@ impl Document {
     }
     /// Is the node (and every ancestor) visible and unlocked?
     pub fn is_editable(&self, id: NodeId) -> bool {
-        self.ancestry(id).is_some_and(|a| a.iter().all(|i| self.node(*i).is_some_and(|n| n.visible && !n.locked)))
+        self.ancestry(id).is_some_and(|a| {
+            a.iter()
+                .all(|i| self.node(*i).is_some_and(|n| n.visible && !n.locked))
+        })
     }
     pub fn is_visible(&self, id: NodeId) -> bool {
-        self.ancestry(id).is_some_and(|a| a.iter().all(|i| self.node(*i).is_some_and(|n| n.visible)))
+        self.ancestry(id)
+            .is_some_and(|a| a.iter().all(|i| self.node(*i).is_some_and(|n| n.visible)))
     }
     /// The innermost layer or sublayer containing `id` (`id` itself when it is a layer).
     pub fn layer_containing(&self, id: NodeId) -> Option<NodeId> {
         let a = self.ancestry(id)?;
-        a.iter().rev().copied().find(|i| self.node(*i).is_some_and(Node::is_layer))
+        a.iter()
+            .rev()
+            .copied()
+            .find(|i| self.node(*i).is_some_and(Node::is_layer))
     }
     /// Every art object the Selection tool can reach (Select All): the visible, unlocked objects
     /// of the visible, unlocked, non-template layers, looking through sublayers (bottom first).
     pub fn selectable_art(&self) -> Vec<NodeId> {
-        self.layers.iter().filter(|l| l.visible && !l.locked && !l.is_template()).flat_map(|l| l.layer_art(true)).collect()
+        self.layers
+            .iter()
+            .filter(|l| l.visible && !l.locked && !l.is_template())
+            .flat_map(|l| l.layer_art(true))
+            .collect()
     }
     /// Colour of the innermost layer or sublayer containing `id` (selection highlight colour).
     pub fn layer_color(&self, id: NodeId) -> [u8; 3] {
@@ -1211,11 +1364,22 @@ impl Document {
     pub fn bounds_of(&self, ids: &[NodeId], visual: bool) -> Option<Rect> {
         ids.iter()
             .filter_map(|id| self.node(*id))
-            .fold(None, |acc, n| vectorcraft_geom::union_opt(acc, if visual { n.visual_bounds() } else { n.geometric_bounds() }))
+            .fold(None, |acc, n| {
+                vectorcraft_geom::union_opt(
+                    acc,
+                    if visual {
+                        n.visual_bounds()
+                    } else {
+                        n.geometric_bounds()
+                    },
+                )
+            })
     }
     /// Bounds of all art.
     pub fn art_bounds(&self) -> Option<Rect> {
-        self.layers.iter().fold(None, |acc, l| vectorcraft_geom::union_opt(acc, l.visual_bounds()))
+        self.layers.iter().fold(None, |acc, l| {
+            vectorcraft_geom::union_opt(acc, l.visual_bounds())
+        })
     }
     /// Artboard index containing point `p` (topmost = last).
     pub fn artboard_at(&self, p: Point) -> Option<usize> {
@@ -1230,7 +1394,12 @@ impl Document {
         // 3e-14 pt past the top edge, #1295): a millionth of a point is far below anything visible.
         let rect = rect.inflate(1e-6, 1e-6);
         fn collect(n: &Node, rect: Rect, all: bool, out: &mut Vec<NodeId>) {
-            for c in n.children().into_iter().flatten().filter(|c| c.rides_with_artboard(all)) {
+            for c in n
+                .children()
+                .into_iter()
+                .flatten()
+                .filter(|c| c.rides_with_artboard(all))
+            {
                 if c.is_layer() {
                     collect(c, rect, all, out);
                 } else if let Some(b) = c.geometric_bounds()
@@ -1246,7 +1415,11 @@ impl Document {
             }
         }
         let mut art = vec![];
-        for l in self.layers.iter().filter(|l| l.rides_with_artboard(locked_and_hidden)) {
+        for l in self
+            .layers
+            .iter()
+            .filter(|l| l.rides_with_artboard(locked_and_hidden))
+        {
             collect(l, rect, locked_and_hidden, &mut art);
         }
         art
@@ -1255,12 +1428,21 @@ impl Document {
     /// artboard for an artboard guide, None (the whole canvas) for a canvas guide or one whose
     /// artboard is gone.
     pub fn guide_span(&self, g: &Guide) -> Option<(f64, f64)> {
-        let r = self.artboards.iter().find(|a| Some(a.id) == g.artboard)?.rect;
-        Some(if g.vertical { (r.y0, r.y1) } else { (r.x0, r.x1) })
+        let r = self
+            .artboards
+            .iter()
+            .find(|a| Some(a.id) == g.artboard)?
+            .rect;
+        Some(if g.vertical {
+            (r.y0, r.y1)
+        } else {
+            (r.x0, r.x1)
+        })
     }
     /// The layer (or sublayer) ruler guide `g` is on, if it is on one this document has.
     fn guide_layer(&self, g: &Guide) -> Option<NodeId> {
-        g.layer.filter(|l| self.node(*l).is_some_and(Node::is_layer))
+        g.layer
+            .filter(|l| self.node(*l).is_some_and(Node::is_layer))
     }
     /// Is ruler guide `g` shown: on no layer, or on a layer that (with the layers around it) is
     /// visible? A guide whose layer is gone shows as one on no layer.
@@ -1274,7 +1456,11 @@ impl Document {
     /// Put the ruler guides on no layer this document has (from files saved before guides had
     /// layers, or of layers merged into `layer`) on layer `layer`. Returns how many.
     pub fn rehome_guides(&mut self, layer: NodeId) -> usize {
-        let lost: Vec<bool> = self.guides.iter().map(|g| self.guide_layer(g).is_none()).collect();
+        let lost: Vec<bool> = self
+            .guides
+            .iter()
+            .map(|g| self.guide_layer(g).is_none())
+            .collect();
         let mut n = 0;
         for (g, lost) in self.guides.iter_mut().zip(lost) {
             if lost {
@@ -1287,12 +1473,17 @@ impl Document {
     /// Put the ruler guides on no layer (from files saved before guides had layers), or on one that
     /// is gone, on the top visible, unlocked layer ([`Self::default_layer`]). Returns how many.
     pub fn adopt_guides(&mut self) -> usize {
-        self.default_layer().map_or(0, |home| self.rehome_guides(home))
+        self.default_layer()
+            .map_or(0, |home| self.rehome_guides(home))
     }
     /// Delete the ruler guides whose layer was deleted (they go with it), keeping `sel`'s guides in
     /// step. Guides on no layer stay. Returns how many went.
     pub fn drop_guides_of_deleted_layers(&mut self, sel: &mut Selection) -> usize {
-        let gone: Vec<bool> = self.guides.iter().map(|g| g.layer.is_some() && self.guide_layer(g).is_none()).collect();
+        let gone: Vec<bool> = self
+            .guides
+            .iter()
+            .map(|g| g.layer.is_some() && self.guide_layer(g).is_none())
+            .collect();
         self.retain_guides(sel, |i, _| !gone.get(i).copied().unwrap_or(false))
     }
     /// Copy the ruler guides of layer `from` and of its sublayers onto their copies in `copy` (made
@@ -1314,7 +1505,10 @@ impl Document {
             .iter()
             .filter_map(|g| {
                 let to = pairs.iter().find(|(a, _)| Some(*a) == g.layer)?.1;
-                Some(Guide { layer: Some(to), ..g.clone() })
+                Some(Guide {
+                    layer: Some(to),
+                    ..g.clone()
+                })
             })
             .collect();
         let n = copies.len();
@@ -1323,24 +1517,41 @@ impl Document {
     }
     /// The ruler guides on layer `layer` (not its sublayers'), by index.
     pub fn guides_on(&self, layer: NodeId) -> impl Iterator<Item = (usize, &Guide)> + '_ {
-        self.guides.iter().enumerate().filter(move |(_, g)| g.layer == Some(layer))
+        self.guides
+            .iter()
+            .enumerate()
+            .filter(move |(_, g)| g.layer == Some(layer))
     }
     /// Does ruler guide `g` run past `p` (up to `tol` beyond its ends)?
     pub fn guide_passes(&self, g: &Guide, p: Point, tol: f64) -> bool {
         let along = if g.vertical { p.y } else { p.x };
-        self.guide_span(g).is_none_or(|(a, b)| along >= a - tol && along <= b + tol)
+        self.guide_span(g)
+            .is_none_or(|(a, b)| along >= a - tol && along <= b + tol)
     }
     /// Keep the ruler guides `keep` accepts (by index), the selected ones left keeping their
     /// place among the rest (the selected art stays selected). Returns how many went.
-    pub fn retain_guides(&mut self, sel: &mut Selection, keep: impl Fn(usize, &Guide) -> bool) -> usize {
-        let kept: Vec<bool> = self.guides.iter().enumerate().map(|(i, g)| keep(i, g)).collect();
+    pub fn retain_guides(
+        &mut self,
+        sel: &mut Selection,
+        keep: impl Fn(usize, &Guide) -> bool,
+    ) -> usize {
+        let kept: Vec<bool> = self
+            .guides
+            .iter()
+            .enumerate()
+            .map(|(i, g)| keep(i, g))
+            .collect();
         // Where each kept guide ends up.
         let (mut to, mut n) = (Vec::with_capacity(kept.len()), 0);
         for k in &kept {
             to.push(k.then_some(n));
             n += usize::from(*k);
         }
-        sel.guides = sel.guides.iter().filter_map(|i| to.get(*i).copied().flatten()).collect();
+        sel.guides = sel
+            .guides
+            .iter()
+            .filter_map(|i| to.get(*i).copied().flatten())
+            .collect();
         let before = self.guides.len();
         let mut flags = kept.into_iter();
         self.guides.retain(|_| flags.next().unwrap_or(true));
@@ -1356,14 +1567,25 @@ impl Document {
     /// with Artboard).
     pub fn map_artboard_guides(&mut self, id: u32, xf: Affine) {
         for g in self.guides.iter_mut().filter(|g| g.artboard == Some(id)) {
-            g.pos = if g.vertical { (xf * Point::new(g.pos, 0.0)).x } else { (xf * Point::new(0.0, g.pos)).y };
+            g.pos = if g.vertical {
+                (xf * Point::new(g.pos, 0.0)).x
+            } else {
+                (xf * Point::new(0.0, g.pos)).y
+            };
         }
     }
     /// Copy the guides of artboard `from` onto artboard `to`, `d` away (with a copy of their
     /// artboard).
     pub fn copy_artboard_guides(&mut self, from: u32, to: u32, d: Vec2) {
-        let copies: Vec<Guide> =
-            self.guides.iter().filter(|g| g.artboard == Some(from)).map(|g| Guide { artboard: Some(to), ..g.moved(d) }).collect();
+        let copies: Vec<Guide> = self
+            .guides
+            .iter()
+            .filter(|g| g.artboard == Some(from))
+            .map(|g| Guide {
+                artboard: Some(to),
+                ..g.moved(d)
+            })
+            .collect();
         self.guides.extend(copies);
     }
     pub fn next_artboard_id(&self) -> u32 {
@@ -1404,12 +1626,18 @@ impl Document {
             if kept.len() >= SavedSelection::MAX {
                 break;
             }
-            let Some(name) = SavedSelection::clean_name(&s.name) else { continue };
+            let Some(name) = SavedSelection::clean_name(&s.name) else {
+                continue;
+            };
             if kept.iter().any(|k| k.name == name) {
                 continue;
             }
             let mut seen = std::collections::HashSet::new();
-            let objects = s.objects.into_iter().filter(|id| ids.contains(id) && seen.insert(*id)).collect();
+            let objects = s
+                .objects
+                .into_iter()
+                .filter(|id| ids.contains(id) && seen.insert(*id))
+                .collect();
             kept.push(SavedSelection { name, objects });
         }
         self.saved_selections = kept.into();
@@ -1463,7 +1691,10 @@ impl Document {
     /// The default name of a new graphic style: the first free "Graphic Style N", N counting on
     /// from the number of styles.
     pub fn new_graphic_style_name(&self) -> String {
-        (self.graphic_styles.len() + 1..).map(|i| format!("Graphic Style {i}")).find(|n| self.graphic_style(n).is_none()).unwrap_or_default()
+        (self.graphic_styles.len() + 1..)
+            .map(|i| format!("Graphic Style {i}"))
+            .find(|n| self.graphic_style(n).is_none())
+            .unwrap_or_default()
     }
     /// `base`, or the first free "`base` N" (N from 2) when a symbol already has that name.
     pub fn unique_symbol_name(&self, base: &str) -> String {
@@ -1471,7 +1702,10 @@ impl Document {
         if !taken(base) {
             return base.to_string();
         }
-        (2..).map(|i| format!("{base} {i}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+        (2..)
+            .map(|i| format!("{base} {i}"))
+            .find(|n| !taken(n))
+            .unwrap_or_else(|| base.to_string())
     }
 }
 
@@ -1480,9 +1714,18 @@ fn default_graphic_styles() -> Vec<GraphicStyle> {
     let solid = |hex| Paint::solid(Color::from_hex(hex).unwrap_or(Color::BLACK));
     [
         GraphicStyle::new(DEFAULT_GRAPHIC_STYLE, Appearance::default_art()),
-        GraphicStyle::new("Black Outline", Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.0)),
-        GraphicStyle::new("Heavy Ink", Appearance::basic(solid("#1b1464"), Paint::solid(Color::BLACK), 4.0)),
-        GraphicStyle::new("Sunshine", Appearance::basic(solid("#fbb03b"), solid("#f15a24"), 2.0)),
+        GraphicStyle::new(
+            "Black Outline",
+            Appearance::basic(Paint::None, Paint::solid(Color::BLACK), 1.0),
+        ),
+        GraphicStyle::new(
+            "Heavy Ink",
+            Appearance::basic(solid("#1b1464"), Paint::solid(Color::BLACK), 4.0),
+        ),
+        GraphicStyle::new(
+            "Sunshine",
+            Appearance::basic(solid("#fbb03b"), solid("#f15a24"), 2.0),
+        ),
     ]
     .into_iter()
     .zip(1..)
@@ -1507,9 +1750,27 @@ mod tests {
         let mut d = Document::new(612.0, 792.0);
         let layer = d.layers[0].id;
         let a = d.alloc_id();
-        d.insert(Some(layer), usize::MAX, Node::path(a, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(layer),
+            usize::MAX,
+            Node::path(
+                a,
+                shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         let b = d.alloc_id();
-        d.insert(Some(layer), usize::MAX, Node::path(b, shapes::rectangle(Rect::new(20.0, 0.0, 30.0, 10.0)), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(layer),
+            usize::MAX,
+            Node::path(
+                b,
+                shapes::rectangle(Rect::new(20.0, 0.0, 30.0, 10.0)),
+                Appearance::default_art(),
+            ),
+        )
+        .unwrap();
         (d, a, b)
     }
 
@@ -1525,10 +1786,21 @@ mod tests {
     fn art_on_artboard_takes_unlocked_objects_wholly_inside() {
         let (mut d, a, b) = doc_with_rects();
         let wide = Rect::new(-1.0, -1.0, 40.0, 15.0);
-        assert_eq!(d.art_on_artboard(Rect::new(-1.0, -1.0, 15.0, 15.0), false), vec![a]);
-        assert_eq!(d.art_on_artboard(Rect::new(-1.0, -1.0, 25.0, 15.0), false), vec![a], "b only half inside");
+        assert_eq!(
+            d.art_on_artboard(Rect::new(-1.0, -1.0, 15.0, 15.0), false),
+            vec![a]
+        );
+        assert_eq!(
+            d.art_on_artboard(Rect::new(-1.0, -1.0, 25.0, 15.0), false),
+            vec![a],
+            "b only half inside"
+        );
         // Flush with the artboard's edges counts as inside: the right and bottom ones too (#890).
-        for board in [Rect::new(0.0, 0.0, 10.0, 10.0), Rect::new(-5.0, 0.0, 10.0, 15.0), Rect::new(0.0, -5.0, 15.0, 10.0)] {
+        for board in [
+            Rect::new(0.0, 0.0, 10.0, 10.0),
+            Rect::new(-5.0, 0.0, 10.0, 15.0),
+            Rect::new(0.0, -5.0, 15.0, 10.0),
+        ] {
             assert_eq!(d.art_on_artboard(board, false), vec![a], "{board:?}");
         }
         d.node_mut(a).unwrap().locked = true;
@@ -1539,7 +1811,11 @@ mod tests {
         assert_eq!(d.art_on_artboard(wide, true), vec![a, b]);
         Arc::make_mut(&mut d.layers[0]).locked = true;
         assert!(d.art_on_artboard(wide, false).is_empty());
-        assert_eq!(d.art_on_artboard(wide, true), vec![a, b], "a locked layer's art too");
+        assert_eq!(
+            d.art_on_artboard(wide, true),
+            vec![a, b],
+            "a locked layer's art too"
+        );
     }
 
     #[test]
@@ -1552,13 +1828,23 @@ mod tests {
             Rect::new(0.0, 0.0, 10.0 - roundoff, 10.0),
             Rect::new(0.0, 0.0, 10.0, 10.0 - roundoff),
         ] {
-            assert_eq!(d.art_on_artboard(board, false), vec![a], "roundoff at {board:?}");
+            assert_eq!(
+                d.art_on_artboard(board, false),
+                vec![a],
+                "roundoff at {board:?}"
+            );
         }
         // A real overhang remains outside.
-        for board in
-            [Rect::new(0.001, 0.0, 10.0, 10.0), Rect::new(0.0, 0.001, 10.0, 10.0), Rect::new(0.0, 0.0, 9.999, 10.0), Rect::new(0.0, 0.0, 10.0, 9.999)]
-        {
-            assert!(d.art_on_artboard(board, false).is_empty(), "overhang at {board:?}");
+        for board in [
+            Rect::new(0.001, 0.0, 10.0, 10.0),
+            Rect::new(0.0, 0.001, 10.0, 10.0),
+            Rect::new(0.0, 0.0, 9.999, 10.0),
+            Rect::new(0.0, 0.0, 10.0, 9.999),
+        ] {
+            assert!(
+                d.art_on_artboard(board, false).is_empty(),
+                "overhang at {board:?}"
+            );
         }
     }
 
@@ -1654,12 +1940,18 @@ mod tests {
     #[test]
     fn char_position_round_trips() {
         let st = CharStyle {
-            position: CharPosition::Subscript(ScriptMetrics { size: 50.0, position: 20.0 }),
+            position: CharPosition::Subscript(ScriptMetrics {
+                size: 50.0,
+                position: 20.0,
+            }),
             small_caps: Some(75.0),
             ..CharStyle::default()
         };
         let v = serde_json::to_value(&st).unwrap();
-        assert_eq!(v["position"], serde_json::json!({"kind": "subscript", "size": 50.0, "position": 20.0}));
+        assert_eq!(
+            v["position"],
+            serde_json::json!({"kind": "subscript", "size": 50.0, "position": 20.0})
+        );
         assert_eq!(serde_json::from_value::<CharStyle>(v).unwrap(), st);
         let plain = serde_json::to_value(CharStyle::default()).unwrap();
         assert!(plain.get("position").is_none() && plain.get("small_caps").is_none());
@@ -1671,7 +1963,10 @@ mod tests {
     fn units() {
         assert_eq!(Unit::Inches.parse("1"), Some(72.0));
         assert_eq!(Unit::Points.parse("1in"), Some(72.0));
-        assert_eq!(Unit::Points.parse("10 mm").map(|v| (v * 1000.0).round()), Some(28346.0));
+        assert_eq!(
+            Unit::Points.parse("10 mm").map(|v| (v * 1000.0).round()),
+            Some(28346.0)
+        );
         assert_eq!(Unit::Points.parse("2p6"), Some(30.0));
         assert_eq!(Unit::Points.parse("10+5"), Some(15.0));
         assert_eq!(Unit::Points.parse("100/4"), Some(25.0));

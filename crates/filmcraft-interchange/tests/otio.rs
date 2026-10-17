@@ -5,7 +5,10 @@ mod support;
 
 use filmcraft_interchange::{ExportOptions, Format, detect, import};
 use filmcraft_media::Generator;
-use filmcraft_project::{Keyframe, Label, Marker, MarkerId, MarkerKind, MediaRef, Param, ParamValue, Project, TrackKind, TransitionAlign};
+use filmcraft_project::{
+    Keyframe, Label, Marker, MarkerId, MarkerKind, MediaRef, Param, ParamValue, Project, TrackKind,
+    TransitionAlign,
+};
 use filmcraft_time::{FrameRate, TICKS_PER_SECOND, Tick};
 use proptest::prelude::*;
 use support::*;
@@ -14,7 +17,11 @@ fn rt(v: f64, rate: f64) -> String {
     format!(r#"{{"OTIO_SCHEMA": "RationalTime.1", "rate": {rate}, "value": {v}}}"#)
 }
 fn tr(s: f64, d: f64, rate: f64) -> String {
-    format!(r#"{{"OTIO_SCHEMA": "TimeRange.1", "start_time": {}, "duration": {}}}"#, rt(s, rate), rt(d, rate))
+    format!(
+        r#"{{"OTIO_SCHEMA": "TimeRange.1", "start_time": {}, "duration": {}}}"#,
+        rt(s, rate),
+        rt(d, rate)
+    )
 }
 
 fn doc() -> String {
@@ -114,25 +121,64 @@ fn golden_gaps_and_transitions() {
     assert_eq!(v1.items.len(), 3);
     let (a, b, c) = (&v1.items[0], &v1.items[1], &v1.items[2]);
     // source times are relative to the reference's available range start
-    assert_eq!((a.start, a.duration, a.source_in), (r.tick_of(12), r.tick_of(48), r.tick_of(48)));
+    assert_eq!(
+        (a.start, a.duration, a.source_in),
+        (r.tick_of(12), r.tick_of(48), r.tick_of(48))
+    );
     assert_eq!(media_key(p, a.item), "/footage/river a.mov");
     assert_eq!(a.markers[0].name, "kingfisher");
     assert_eq!(a.markers[0].start, r.tick_of(60));
     assert_eq!(a.markers[0].color, Label::Rose);
-    assert_eq!((b.start, b.duration, b.source_in, b.speed), (r.tick_of(60), r.tick_of(36), r.tick_of(10), 2.0));
+    assert_eq!(
+        (b.start, b.duration, b.source_in, b.speed),
+        (r.tick_of(60), r.tick_of(36), r.tick_of(10), 2.0)
+    );
     assert_eq!(media_key(p, b.item), "/proj/clips/river_b.mov");
     assert_eq!(c.start, r.tick_of(120));
     assert!(!c.enabled);
     assert!(p.item(c.item).unwrap().as_media().unwrap().offline);
     let ts = &v1.transitions;
     assert_eq!(ts.len(), 3);
-    assert_eq!((ts[0].from, ts[0].to, ts[0].start, ts[0].duration, ts[0].align), (None, Some(a.id), r.tick_of(12), r.tick_of(6), TransitionAlign::StartAtCut));
     assert_eq!(
-        (ts[1].from, ts[1].to, ts[1].start, ts[1].duration, ts[1].align),
-        (Some(a.id), Some(b.id), r.tick_of(54), r.tick_of(12), TransitionAlign::CenterAtCut)
+        (
+            ts[0].from,
+            ts[0].to,
+            ts[0].start,
+            ts[0].duration,
+            ts[0].align
+        ),
+        (
+            None,
+            Some(a.id),
+            r.tick_of(12),
+            r.tick_of(6),
+            TransitionAlign::StartAtCut
+        )
     );
-    assert_eq!((ts[2].from, ts[2].to, ts[2].start, ts[2].align), (Some(c.id), None, r.tick_of(144), TransitionAlign::EndAtCut));
-    assert!(ts.iter().all(|t| t.effect.effect == "cross_dissolve"), "{rep}");
+    assert_eq!(
+        (
+            ts[1].from,
+            ts[1].to,
+            ts[1].start,
+            ts[1].duration,
+            ts[1].align
+        ),
+        (
+            Some(a.id),
+            Some(b.id),
+            r.tick_of(54),
+            r.tick_of(12),
+            TransitionAlign::CenterAtCut
+        )
+    );
+    assert_eq!(
+        (ts[2].from, ts[2].to, ts[2].start, ts[2].align),
+        (Some(c.id), None, r.tick_of(144), TransitionAlign::EndAtCut)
+    );
+    assert!(
+        ts.iter().all(|t| t.effect.effect == "cross_dissolve"),
+        "{rep}"
+    );
     let amb = &s.audio_tracks[0].items[0];
     assert_eq!(amb.duration, r.tick_of(150));
     assert!(rep.mentions("Reverb"), "{rep}");
@@ -148,7 +194,13 @@ fn project() -> (Project, filmcraft_project::ItemId) {
         m.info.start_timecode = Some(86_400);
     }
     let b = media(&mut p, "/m/b.mov", true, true, r);
-    let g = generator(&mut p, "Matte", Generator::ColorMatte { color: [0.2, 0.4, 0.6, 1.0] });
+    let g = generator(
+        &mut p,
+        "Matte",
+        Generator::ColorMatte {
+            color: [0.2, 0.4, 0.6, 1.0],
+        },
+    );
     let nest = sequence(&mut p, "Inner", r, false);
     clip(&mut p, nest, TrackKind::Video, 0, b, 0, 50, 5);
     let s = sequence(&mut p, "Outer", r, false);
@@ -156,7 +208,18 @@ fn project() -> (Project, filmcraft_project::ItemId) {
     let a1 = clip(&mut p, s, TrackKind::Audio, 0, a, 0, 48, 24);
     link(&mut p, s, &[v1, a1]);
     let v2 = clip(&mut p, s, TrackKind::Video, 0, nest, 48, 40, 3);
-    transition(&mut p, s, TrackKind::Video, 0, "iris_round", Some(v1), Some(v2), 40, 16, TransitionAlign::CenterAtCut);
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "iris_round",
+        Some(v1),
+        Some(v2),
+        40,
+        16,
+        TransitionAlign::CenterAtCut,
+    );
     clip(&mut p, s, TrackKind::Video, 1, g, 10, 20, 0);
     {
         let q = p.sequence_mut(s).unwrap();
@@ -171,10 +234,19 @@ fn project() -> (Project, filmcraft_project::ItemId) {
         let (_, it) = q.find_item_mut(v1).unwrap();
         it.label = Label::Teal;
         let mut op = Param::new(ParamValue::Float(100.0));
-        op.keyframes.push(Keyframe::new(r.tick_of(24), ParamValue::Float(0.0)));
-        op.keyframes.push(Keyframe::new(r.tick_of(36), ParamValue::Float(100.0)));
-        it.effect_mut("opacity").unwrap().params.insert("opacity".into(), op);
-        it.effects.push(filmcraft_project::find_effect("gaussian_blur").unwrap().instance());
+        op.keyframes
+            .push(Keyframe::new(r.tick_of(24), ParamValue::Float(0.0)));
+        op.keyframes
+            .push(Keyframe::new(r.tick_of(36), ParamValue::Float(100.0)));
+        it.effect_mut("opacity")
+            .unwrap()
+            .params
+            .insert("opacity".into(), op);
+        it.effects.push(
+            filmcraft_project::find_effect("gaussian_blur")
+                .unwrap()
+                .instance(),
+        );
         it.markers.push(Marker {
             id: MarkerId(5),
             start: r.tick_of(30),
@@ -218,8 +290,14 @@ fn lossless_roundtrip_with_filmcraft_metadata() {
     assert_eq!(links(q, si), links(&p, s));
     assert_eq!(qs.settings, ps.settings);
     assert_eq!(
-        qs.markers.iter().map(|m| (&m.name, m.start, m.kind, m.color)).collect::<Vec<_>>(),
-        ps.markers.iter().map(|m| (&m.name, m.start, m.kind, m.color)).collect::<Vec<_>>()
+        qs.markers
+            .iter()
+            .map(|m| (&m.name, m.start, m.kind, m.color))
+            .collect::<Vec<_>>(),
+        ps.markers
+            .iter()
+            .map(|m| (&m.name, m.start, m.kind, m.color))
+            .collect::<Vec<_>>()
     );
     assert!(qs.video_tracks[1].locked);
     assert_eq!(qs.audio_tracks[1].volume_db, -3.0);
@@ -228,28 +306,61 @@ fn lossless_roundtrip_with_filmcraft_metadata() {
     assert_eq!(format!("{:?}", qa.effects), format!("{:?}", pa.effects)); // NaN auto points compare unequal
     assert_eq!(qa.label, Label::Teal);
     assert_eq!(
-        qa.markers.iter().map(|m| (&m.name, m.start, m.duration)).collect::<Vec<_>>(),
-        pa.markers.iter().map(|m| (&m.name, m.start, m.duration)).collect::<Vec<_>>()
+        qa.markers
+            .iter()
+            .map(|m| (&m.name, m.start, m.duration))
+            .collect::<Vec<_>>(),
+        pa.markers
+            .iter()
+            .map(|m| (&m.name, m.start, m.duration))
+            .collect::<Vec<_>>()
     );
     assert_eq!(qs.audio_tracks[1].items[0].gain_db, 4.5);
-    assert_eq!(qs.audio_tracks[1].items[0].start, ps.audio_tracks[1].items[0].start);
-    assert_eq!(qs.video_tracks[0].transitions[0].effect.effect, "iris_round");
+    assert_eq!(
+        qs.audio_tracks[1].items[0].start,
+        ps.audio_tracks[1].items[0].start
+    );
+    assert_eq!(
+        qs.video_tracks[0].transitions[0].effect.effect,
+        "iris_round"
+    );
     // media info and generator restored
     let qa_media = q.item(qa.item).unwrap().as_media().unwrap();
-    assert_eq!(qa_media.info, p.item(pa.item).unwrap().as_media().unwrap().info);
-    let gm = q.item(qs.video_tracks[1].items[0].item).unwrap().as_media().unwrap();
-    assert_eq!(gm.media, MediaRef::Generator(Generator::ColorMatte { color: [0.2, 0.4, 0.6, 1.0] }));
+    assert_eq!(
+        qa_media.info,
+        p.item(pa.item).unwrap().as_media().unwrap().info
+    );
+    let gm = q
+        .item(qs.video_tracks[1].items[0].item)
+        .unwrap()
+        .as_media()
+        .unwrap();
+    assert_eq!(
+        gm.media,
+        MediaRef::Generator(Generator::ColorMatte {
+            color: [0.2, 0.4, 0.6, 1.0]
+        })
+    );
     // nested sequence
     let nested = qs.video_tracks[0].items[1].item;
     assert_eq!(q.item(nested).unwrap().name, "Inner");
-    assert_eq!(q.sequence(nested).unwrap().video_tracks[0].items[0].source_in, FrameRate::FPS_23_976.tick_of(5));
+    assert_eq!(
+        q.sequence(nested).unwrap().video_tracks[0].items[0].source_in,
+        FrameRate::FPS_23_976.tick_of(5)
+    );
     // relative media paths
-    let o = ExportOptions { relative_to: Some("/m/otio".into()), ..Default::default() };
+    let o = ExportOptions {
+        relative_to: Some("/m/otio".into()),
+        ..Default::default()
+    };
     let (bytes, _) = filmcraft_interchange::export(&p, s, Format::Otio, &o).unwrap();
     let t = String::from_utf8(bytes.clone()).unwrap();
     assert!(t.contains("\"target_url\": \"../a.mov\""), "{t}");
     let (imp2, _) = import(&bytes, Format::Otio, Some("/m/otio")).unwrap();
-    assert_eq!(structure(&imp2.project, imp2.sequences[0], TrackKind::Video), structure(&p, s, TrackKind::Video));
+    assert_eq!(
+        structure(&imp2.project, imp2.sequences[0], TrackKind::Video),
+        structure(&p, s, TrackKind::Video)
+    );
 }
 
 #[test]
@@ -265,8 +376,16 @@ fn collections_and_bare_tracks() {
     assert_eq!(imp.sequences.len(), 2);
     let s = imp.project.sequence(imp.sequences[0]).unwrap();
     assert_eq!(s.settings.frame_rate, FrameRate::FPS_25);
-    assert_eq!(s.video_tracks[0].items[0].duration, FrameRate::FPS_25.tick_of(50));
-    let m = imp.project.item(s.video_tracks[0].items[0].item).unwrap().as_media().unwrap();
+    assert_eq!(
+        s.video_tracks[0].items[0].duration,
+        FrameRate::FPS_25.tick_of(50)
+    );
+    let m = imp
+        .project
+        .item(s.video_tracks[0].items[0].item)
+        .unwrap()
+        .as_media()
+        .unwrap();
     assert_eq!(m.media, MediaRef::Generator(Generator::BarsAndTone));
     assert!(import(b"{\"OTIO_SCHEMA\": \"Clip.2\"}", Format::Otio, None).is_err());
     assert!(import(b"not json", Format::Otio, None).is_err());
@@ -288,21 +407,34 @@ struct G {
 }
 
 fn gen_clip() -> impl Strategy<Value = G> {
-    (0usize..3, 0i64..3, 20i64..150, 0usize..3, 0i64..2000, 0u8..5, prop::bool::weighted(0.9), 0u8..6, 1i64..9, any::<bool>(), 0i64..2000).prop_map(
-        |(track, gap, dur, media, src, speed, enabled, tr, tr_len, audio, subframe)| G {
-            track,
-            gap: gap * 5,
-            dur,
-            media,
-            src,
-            speed,
-            enabled,
-            tr,
-            tr_len,
-            audio,
-            subframe,
-        },
+    (
+        0usize..3,
+        0i64..3,
+        20i64..150,
+        0usize..3,
+        0i64..2000,
+        0u8..5,
+        prop::bool::weighted(0.9),
+        0u8..6,
+        1i64..9,
+        any::<bool>(),
+        0i64..2000,
     )
+        .prop_map(
+            |(track, gap, dur, media, src, speed, enabled, tr, tr_len, audio, subframe)| G {
+                track,
+                gap: gap * 5,
+                dur,
+                media,
+                src,
+                speed,
+                enabled,
+                tr,
+                tr_len,
+                audio,
+                subframe,
+            },
+        )
 }
 
 proptest! {

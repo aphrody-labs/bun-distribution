@@ -30,37 +30,82 @@ fn eps_text_with_bundled_fonts_and_show_variants() {
     // Not embedded: drawn with the bundled stand-in, like the same text in a PDF.
     let doc = eps(b"/Helvetica findfont 40 scalefont setfont 10 30 moveto (Hi) show\n");
     assert_eq!(shape_names(&doc), vec!["Text: Hi"]);
-    let pdf = parse(&page_pdf("BT /F1 40 Tf 10 30 Td (Hi) Tj ET", "/Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>", vec![])).unwrap();
+    let pdf = parse(&page_pdf(
+        "BT /F1 40 Tf 10 30 Td (Hi) Tj ET",
+        "/Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>",
+        vec![],
+    ))
+    .unwrap();
     let (a, b) = (render(&doc), render(&pdf));
     let (ia, ib) = (coverage(&a, 0, 0, 200, 100), coverage(&b, 0, 0, 200, 100));
     assert!(ia > 100.0 && (ia - ib).abs() < 1.0, "eps {ia} vs pdf {ib}");
     assert_eq!(ink_x(&a), ink_x(&b));
     // ashow spreads the letters; widthshow widens spaces only; selectfont; stringwidth centres.
-    let plain = ink_x(&render(&eps(b"/Helvetica 30 selectfont 10 30 moveto (HHH) show\n")));
-    let spread = ink_x(&render(&eps(b"/Helvetica 30 selectfont 10 30 moveto 10 0 (HHH) ashow\n")));
+    let plain = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 10 30 moveto (HHH) show\n",
+    )));
+    let spread = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 10 30 moveto 10 0 (HHH) ashow\n",
+    )));
     assert_eq!(spread.0, plain.0);
-    assert!(((spread.1 - plain.1) - 20).abs() <= 1, "{plain:?} {spread:?}");
-    let ws = ink_x(&render(&eps(b"/Helvetica 30 selectfont 10 30 moveto 15 0 72 (HHH) widthshow\n")));
+    assert!(
+        ((spread.1 - plain.1) - 20).abs() <= 1,
+        "{plain:?} {spread:?}"
+    );
+    let ws = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 10 30 moveto 15 0 72 (HHH) widthshow\n",
+    )));
     assert!(((ws.1 - plain.1) - 30).abs() <= 1, "{plain:?} {ws:?}");
-    let centred = ink_x(&render(&eps(b"/Helvetica 30 selectfont 100 (HHH) stringwidth pop 2 div sub 30 moveto (HHH) show\n")));
+    let centred = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 100 (HHH) stringwidth pop 2 div sub 30 moveto (HHH) show\n",
+    )));
     let mid = (centred.0 + centred.1) as f64 / 2.0;
     assert!((mid - 100.0).abs() < 3.0, "{centred:?}");
     // xshow: explicit advances.
-    let xs = ink_x(&render(&eps(b"/Helvetica 30 selectfont 10 30 moveto (HH) [50 0] xshow\n")));
-    let one = ink_x(&render(&eps(b"/Helvetica 30 selectfont 10 30 moveto (H) show\n")));
+    let xs = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 10 30 moveto (HH) [50 0] xshow\n",
+    )));
+    let one = ink_x(&render(&eps(
+        b"/Helvetica 30 selectfont 10 30 moveto (H) show\n",
+    )));
     assert!(((xs.1 - one.1) - 50).abs() <= 1, "{one:?} {xs:?}");
     // makefont mirrors; charpath clips; colour applies.
     let doc = eps(b"1 0 0 setrgbcolor /Helvetica findfont [40 0 0 40 0 0] makefont setfont 10 30 moveto (I) false charpath clip 0 0 200 100 rectfill\n");
     let img = render(&doc);
     assert!(coverage(&img, 0, 0, 200, 100) > 50.0);
-    assert!(coverage(&img, 60, 0, 200, 100) < 1.0, "only the glyph is painted");
+    assert!(
+        coverage(&img, 60, 0, 200, 100) < 1.0,
+        "only the glyph is painted"
+    );
 }
 
 #[test]
 fn eps_text_with_an_embedded_type1_font_and_reencoding() {
     // hsbw 50 600; 0 0 rmoveto; 500 hlineto 500 vlineto -500 hlineto closepath endchar
-    let cs = vec![50 + 139, 248, 236, 13, 139, 139, 21, 248, 136, 6, 248, 136, 7, 252, 136, 6, 9, 14];
-    let raw = crate::type1::write_test_type1(&[(".notdef", vec![139, 139, 13, 14]), ("box", cs)], &[(66, "box")]);
+    let cs = vec![
+        50 + 139,
+        248,
+        236,
+        13,
+        139,
+        139,
+        21,
+        248,
+        136,
+        6,
+        248,
+        136,
+        7,
+        252,
+        136,
+        6,
+        9,
+        14,
+    ];
+    let raw = crate::type1::write_test_type1(
+        &[(".notdef", vec![139, 139, 13, 14]), ("box", cs)],
+        &[(66, "box")],
+    );
     // Give the program a name.
     let mut font = vec![];
     let nl = raw.iter().position(|c| *c == b'\n').unwrap() + 1;
@@ -91,7 +136,11 @@ fn eps_text_with_an_embedded_type1_font_and_reencoding() {
 fn ccitt_page(img: &[Vec<bool>], k: i64, mask: bool) -> Doc {
     let (w, h) = (img[0].len(), img.len());
     let data = crate::ccitt::tests::encode(img, k);
-    let kind = if mask { "/ImageMask true" } else { "/ColorSpace /DeviceGray /BitsPerComponent 1" };
+    let kind = if mask {
+        "/ImageMask true"
+    } else {
+        "/ColorSpace /DeviceGray /BitsPerComponent 1"
+    };
     let bytes = page_pdf(
         "0 0 1 rg q 200 0 0 100 0 0 cm /Im Do Q",
         "/XObject << /Im 10 0 R >>",
@@ -112,19 +161,29 @@ fn ccitt_page(img: &[Vec<bool>], k: i64, mask: bool) -> Doc {
 #[test]
 fn ccitt_images_and_stencil_masks() {
     // Left half black, a white bar on rows 4..6 (20×10 pixels → 10 PDF units per pixel).
-    let img: Vec<Vec<bool>> = (0..10).map(|y| (0..20).map(|x| x < 10 && !(4..6).contains(&y)).collect()).collect();
+    let img: Vec<Vec<bool>> = (0..10)
+        .map(|y| (0..20).map(|x| x < 10 && !(4..6).contains(&y)).collect())
+        .collect();
     for k in [-1, 0, 2] {
         let doc = ccitt_page(&img, k, false);
         let r = render(&doc);
         let px = |x: usize, y: usize| r.get(x as i64 * 10 + 5, y as i64 * 10 + 5);
-        assert!(px(2, 2)[0] < 0.01 && px(2, 2)[3] > 0.99, "K {k}: black {:?}", px(2, 2));
+        assert!(
+            px(2, 2)[0] < 0.01 && px(2, 2)[3] > 0.99,
+            "K {k}: black {:?}",
+            px(2, 2)
+        );
         assert!(px(15, 2)[0] > 0.99, "K {k}: white {:?}", px(15, 2));
         assert!(px(2, 4)[0] > 0.99, "K {k}: the white bar {:?}", px(2, 4));
         // Stencil mask: black (sample 0) pixels paint the fill colour, the rest is clear.
         let doc = ccitt_page(&img, k, true);
         let r = render(&doc);
         let px = |x: usize, y: usize| r.get(x as i64 * 10 + 5, y as i64 * 10 + 5);
-        assert!(px(2, 2)[2] > 0.99 && px(2, 2)[3] > 0.99, "K {k}: mask {:?}", px(2, 2));
+        assert!(
+            px(2, 2)[2] > 0.99 && px(2, 2)[3] > 0.99,
+            "K {k}: mask {:?}",
+            px(2, 2)
+        );
         assert_eq!(px(15, 2)[3], 0.0, "K {k}");
     }
 }
@@ -198,9 +257,15 @@ fn truncated_and_corrupt_pdfs_never_panic() {
     fonts.push((13, "<< /Type /XObject /Subtype /Image /Width 2 /Height 2 /ColorSpace /DeviceRGB /BitsPerComponent 8 >>".into(), Some(vec![255; 12])));
     survive(
         "text and images",
-        &page_pdf("BT /F1 40 Tf 10 10 Td (AAA) Tj ET q 50 0 0 50 0 0 cm /Im Do Q", "/Font << /F1 10 0 R >> /XObject << /Im 13 0 R >>", fonts),
+        &page_pdf(
+            "BT /F1 40 Tf 10 10 Td (AAA) Tj ET q 50 0 0 50 0 0 cm /Im Do Q",
+            "/Font << /F1 10 0 R >> /XObject << /Im 13 0 R >>",
+            fonts,
+        ),
     );
-    let img: Vec<Vec<bool>> = (0..8).map(|y| (0..16).map(|x| (x + y) % 3 == 0).collect()).collect();
+    let img: Vec<Vec<bool>> = (0..8)
+        .map(|y| (0..16).map(|x| (x + y) % 3 == 0).collect())
+        .collect();
     let data = crate::ccitt::tests::encode(&img, -1);
     survive(
         "ccitt",
@@ -219,7 +284,14 @@ fn truncated_and_corrupt_pdfs_never_panic() {
 #[test]
 fn hostile_structures_return_errors_or_draw_nothing() {
     // Not a PDF / EPS at all, empty, and headers alone.
-    for b in [&b""[..], b"%PDF-", b"%PDF-1.7\n%%EOF", b"%!PS-Adobe-3.0 EPSF-3.0\n", b"\xC5\xD0\xD3\xC6", b"hello"] {
+    for b in [
+        &b""[..],
+        b"%PDF-",
+        b"%PDF-1.7\n%%EOF",
+        b"%!PS-Adobe-3.0 EPSF-3.0\n",
+        b"\xC5\xD0\xD3\xC6",
+        b"hello",
+    ] {
         let _ = parse(b);
         let _ = page_count(b);
     }
@@ -299,7 +371,13 @@ fn truncated_and_corrupt_eps_never_panic() {
 #[test]
 fn closing_an_empty_path_is_a_no_op() {
     // "s", "b" and "b*" closed the path without a current point (kurbo asserts on that).
-    for ops in ["s", "b", "b*", "0 0 m 50 0 l 50 50 l b s b*", "f s 10 10 m 20 20 l s"] {
+    for ops in [
+        "s",
+        "b",
+        "b*",
+        "0 0 m 50 0 l 50 50 l b s b*",
+        "f s 10 10 m 20 20 l s",
+    ] {
         let doc = parse(&page_pdf(ops, "", vec![])).unwrap();
         let _ = render(&doc);
     }
@@ -309,7 +387,9 @@ fn closing_an_empty_path_is_a_no_op() {
 fn postscript_radix_numbers_outside_2_to_36_are_not_numbers() {
     // `0#7` asked `i64::from_str_radix` for radix 0, which panics (found by fuzzing).
     for n in ["0#7", "1#1", "37#1", "99999999999#1", "16#FF"] {
-        let src = format!("%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n{n} pop 0 0 moveto 10 10 lineto stroke\n");
+        let src = format!(
+            "%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 100 100\n{n} pop 0 0 moveto 10 10 lineto stroke\n"
+        );
         let _ = parse(src.as_bytes());
     }
 }

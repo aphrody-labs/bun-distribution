@@ -43,9 +43,18 @@ impl TabsForm {
     /// The caret paragraph's stops and the document's default interval.
     pub fn read(app: &WordApp) -> Option<TabsForm> {
         let s = &app.session;
-        let rp = s.doc.para_at(&s.sel.focus).map(|p| s.doc.styles.resolve_para(&p.props))?;
+        let rp = s
+            .doc
+            .para_at(&s.sel.focus)
+            .map(|p| s.doc.styles.resolve_para(&p.props))?;
         let k = unit().pt_per_unit();
-        let stops: Vec<TabStop> = rp.tabs.iter().copied().filter(|t| t.align != TabAlign::Clear && t.pos.is_finite()).take(64).collect();
+        let stops: Vec<TabStop> = rp
+            .tabs
+            .iter()
+            .copied()
+            .filter(|t| t.align != TabAlign::Clear && t.pos.is_finite())
+            .take(64)
+            .collect();
         let first = stops.first().copied();
         let default_tab = s.doc.settings.default_tab / k;
         Some(TabsForm {
@@ -70,15 +79,26 @@ impl TabsForm {
         }
         self.stops.retain(|t| (t.pos - pos).abs() >= SAME_POS);
         self.cleared.retain(|c| (c - pos).abs() >= SAME_POS);
-        self.stops.push(TabStop { pos, align: self.align, leader: self.leader });
+        self.stops.push(TabStop {
+            pos,
+            align: self.align,
+            leader: self.leader,
+        });
         self.stops.sort_by(|a, b| a.pos.total_cmp(&b.pos));
-        self.selected = self.stops.iter().position(|t| (t.pos - pos).abs() < SAME_POS);
+        self.selected = self
+            .stops
+            .iter()
+            .position(|t| (t.pos - pos).abs() < SAME_POS);
     }
 
     /// Clear the selected stop (or the one at the position field).
     pub fn clear(&mut self) {
         let pos = self.pos * unit().pt_per_unit();
-        let i = self.selected.filter(|i| *i < self.stops.len()).or_else(|| self.stops.iter().position(|t| (t.pos - pos).abs() < SAME_POS));
+        let i = self.selected.filter(|i| *i < self.stops.len()).or_else(|| {
+            self.stops
+                .iter()
+                .position(|t| (t.pos - pos).abs() < SAME_POS)
+        });
         if let Some(i) = i {
             let t = self.stops.remove(i);
             self.cleared.push(t.pos);
@@ -101,8 +121,17 @@ impl TabsForm {
                 v.insert("set".into(), json!(self.stops));
             }
         } else {
-            let set: Vec<&TabStop> = self.stops.iter().filter(|t| !self.basis.contains(t)).collect();
-            let clear: Vec<f32> = self.basis.iter().filter(|b| !self.stops.iter().any(|t| (t.pos - b.pos).abs() < SAME_POS)).map(|b| b.pos).collect();
+            let set: Vec<&TabStop> = self
+                .stops
+                .iter()
+                .filter(|t| !self.basis.contains(t))
+                .collect();
+            let clear: Vec<f32> = self
+                .basis
+                .iter()
+                .filter(|b| !self.stops.iter().any(|t| (t.pos - b.pos).abs() < SAME_POS))
+                .map(|b| b.pos)
+                .collect();
             if !set.is_empty() {
                 v.insert("set".into(), json!(set));
             }
@@ -111,7 +140,10 @@ impl TabsForm {
             }
         }
         if (self.default_tab - self.basis_default).abs() > 1e-4 {
-            v.insert("default".into(), json!(self.default_tab * unit().pt_per_unit()));
+            v.insert(
+                "default".into(),
+                json!(self.default_tab * unit().pt_per_unit()),
+            );
         }
         (!v.is_empty()).then_some(Value::Object(v))
     }
@@ -124,18 +156,35 @@ pub fn tabs(app: &mut WordApp, ui: &mut Ui, f: &mut TabsForm) -> bool {
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             ui.label(tl!("Tab stop position:"));
-            ui.add(egui::DragValue::new(&mut f.pos).speed(0.05).range(-22.0 * 72.0 / k..=22.0 * 72.0 / k).measure(u).max_decimals(2));
+            ui.add(
+                egui::DragValue::new(&mut f.pos)
+                    .speed(0.05)
+                    .range(-22.0 * 72.0 / k..=22.0 * 72.0 / k)
+                    .measure(u)
+                    .max_decimals(2),
+            );
             let mut pick = None;
-            egui::Frame::new().stroke(Stroke::new(1.0, Tokens::get(ui.ctx()).input_border)).inner_margin(4.0).show(ui, |ui| {
-                ui.set_min_size(vec2(150.0, 96.0));
-                egui::ScrollArea::vertical().max_height(96.0).show(ui, |ui| {
-                    for (i, t) in f.stops.iter().enumerate() {
-                        if ui.selectable_label(f.selected == Some(i), u.format_with(t.pos, crate::options::decimal())).clicked() {
-                            pick = Some(i);
-                        }
-                    }
+            egui::Frame::new()
+                .stroke(Stroke::new(1.0, Tokens::get(ui.ctx()).input_border))
+                .inner_margin(4.0)
+                .show(ui, |ui| {
+                    ui.set_min_size(vec2(150.0, 96.0));
+                    egui::ScrollArea::vertical()
+                        .max_height(96.0)
+                        .show(ui, |ui| {
+                            for (i, t) in f.stops.iter().enumerate() {
+                                if ui
+                                    .selectable_label(
+                                        f.selected == Some(i),
+                                        u.format_with(t.pos, crate::options::decimal()),
+                                    )
+                                    .clicked()
+                                {
+                                    pick = Some(i);
+                                }
+                            }
+                        });
                 });
-            });
             if let Some(i) = pick
                 && let Some(t) = f.stops.get(i)
             {
@@ -148,7 +197,13 @@ pub fn tabs(app: &mut WordApp, ui: &mut Ui, f: &mut TabsForm) -> bool {
         ui.add_space(12.0);
         ui.vertical(|ui| {
             ui.label(tl!("Default tab stops:"));
-            ui.add(egui::DragValue::new(&mut f.default_tab).speed(0.05).range(1.0 / k..=1584.0 / k).measure(u).max_decimals(2));
+            ui.add(
+                egui::DragValue::new(&mut f.default_tab)
+                    .speed(0.05)
+                    .range(1.0 / k..=1584.0 / k)
+                    .measure(u)
+                    .max_decimals(2),
+            );
             ui.add_space(8.0);
             ui.label(tl!("Tab stops to be cleared:"));
             let list = if f.clear_all {
@@ -156,8 +211,16 @@ pub fn tabs(app: &mut WordApp, ui: &mut Ui, f: &mut TabsForm) -> bool {
             } else {
                 {
                     // `1,5 cm; 3 cm` where the comma is the decimal separator.
-                    let sep = if crate::options::decimal() == ',' { "; " } else { ", " };
-                    f.cleared.iter().map(|p| u.format_with(*p, crate::options::decimal())).collect::<Vec<_>>().join(sep)
+                    let sep = if crate::options::decimal() == ',' {
+                        "; "
+                    } else {
+                        ", "
+                    };
+                    f.cleared
+                        .iter()
+                        .map(|p| u.format_with(*p, crate::options::decimal()))
+                        .collect::<Vec<_>>()
+                        .join(sep)
                 }
             };
             ui.label(egui::RichText::new(list).weak());
@@ -193,10 +256,16 @@ pub fn tabs(app: &mut WordApp, ui: &mut Ui, f: &mut TabsForm) -> bool {
         if ui.button(tl!("Set")).clicked() {
             f.set();
         }
-        if ui.add_enabled(!f.stops.is_empty(), egui::Button::new(tl!("Clear"))).clicked() {
+        if ui
+            .add_enabled(!f.stops.is_empty(), egui::Button::new(tl!("Clear")))
+            .clicked()
+        {
             f.clear();
         }
-        if ui.add_enabled(!f.stops.is_empty(), egui::Button::new(tl!("Clear All"))).clicked() {
+        if ui
+            .add_enabled(!f.stops.is_empty(), egui::Button::new(tl!("Clear All")))
+            .clicked()
+        {
             f.clear_all();
         }
     });
@@ -204,7 +273,10 @@ pub fn tabs(app: &mut WordApp, ui: &mut Ui, f: &mut TabsForm) -> bool {
     if ok {
         // A position typed but not Set is set on OK, as the field shows it.
         let pos = f.pos * k;
-        let typed = f.selected.is_none() && !f.clear_all && f.cleared.iter().all(|c| (c - pos).abs() >= SAME_POS) && pos > 0.0;
+        let typed = f.selected.is_none()
+            && !f.clear_all
+            && f.cleared.iter().all(|c| (c - pos).abs() >= SAME_POS)
+            && pos > 0.0;
         if typed && !f.stops.iter().any(|t| (t.pos - pos).abs() < SAME_POS) {
             f.set();
         }
@@ -263,7 +335,17 @@ const WIDTHS: [f32; 9] = [0.25, 0.5, 0.75, 1.0, 1.5, 2.25, 3.0, 4.5, 6.0];
 impl LineForm {
     fn read(b: Option<&Borders>) -> LineForm {
         let side = |x: Option<Border>| x.filter(Border::is_visible);
-        let s = b.map(|b| [side(b.top), side(b.bottom), side(b.left), side(b.right), side(b.between)]).unwrap_or_default();
+        let s = b
+            .map(|b| {
+                [
+                    side(b.top),
+                    side(b.bottom),
+                    side(b.left),
+                    side(b.right),
+                    side(b.between),
+                ]
+            })
+            .unwrap_or_default();
         let on = s.map(|x| x.is_some());
         let first = s.iter().flatten().next().copied();
         let w = |i: usize| s.get(i).copied().flatten().map(|x| x.width).unwrap_or(0.0);
@@ -288,7 +370,10 @@ impl LineForm {
         LineForm {
             setting,
             style: first.map(|f| f.style).unwrap_or(BorderStyle::Single),
-            color: first.and_then(|f| f.color).map(Rgb::hex).unwrap_or_default(),
+            color: first
+                .and_then(|f| f.color)
+                .map(Rgb::hex)
+                .unwrap_or_default(),
             width: if width > 0.0 { width } else { 0.5 },
             sides: on,
         }
@@ -298,8 +383,12 @@ impl LineForm {
         self.setting = s;
         match s {
             Setting::None => self.sides = [false; 5],
-            Setting::Box | Setting::Shadow | Setting::ThreeD => self.sides = [true, true, true, true, false],
-            Setting::Custom if !self.sides.iter().any(|x| *x) => self.sides = [true, true, true, true, false],
+            Setting::Box | Setting::Shadow | Setting::ThreeD => {
+                self.sides = [true, true, true, true, false]
+            }
+            Setting::Custom if !self.sides.iter().any(|x| *x) => {
+                self.sides = [true, true, true, true, false]
+            }
             Setting::Custom => {}
         }
     }
@@ -308,7 +397,11 @@ impl LineForm {
         if let Some(x) = self.sides.get_mut(side) {
             *x = !*x;
         }
-        self.setting = if self.sides.iter().any(|x| *x) { Setting::Custom } else { Setting::None };
+        self.setting = if self.sides.iter().any(|x| *x) {
+            Setting::Custom
+        } else {
+            Setting::None
+        };
     }
 
     /// The width of `side` under the setting (Shadow and 3-D double their heavier sides).
@@ -323,13 +416,21 @@ impl LineForm {
     }
 
     fn border(&self, side: usize) -> Border {
-        Border { style: self.style, width: self.side_width(side), color: Rgb::parse(&self.color), space: 0.0 }
+        Border {
+            style: self.style,
+            width: self.side_width(side),
+            color: Rgb::parse(&self.color),
+            space: 0.0,
+        }
     }
 
     /// The `sides` parameter of `para.borders` / `design.pageBorders`.
     fn sides_param(&self) -> Value {
         let mut m = serde_json::Map::new();
-        for (i, k) in ["top", "bottom", "left", "right", "between"].into_iter().enumerate() {
+        for (i, k) in ["top", "bottom", "left", "right", "between"]
+            .into_iter()
+            .enumerate()
+        {
             if self.sides.get(i).copied().unwrap_or(false) {
                 let mut side = json!({"style": self.style.ooxml(), "width": self.side_width(i)});
                 if Rgb::parse(&self.color).is_some() {
@@ -364,7 +465,10 @@ pub struct BordersForm {
 impl BordersForm {
     pub fn read(app: &WordApp, tab: u8) -> Option<BordersForm> {
         let s = &app.session;
-        let rp = s.doc.para_at(&s.sel.focus).map(|p| s.doc.styles.resolve_para(&p.props))?;
+        let rp = s
+            .doc
+            .para_at(&s.sel.focus)
+            .map(|p| s.doc.styles.resolve_para(&p.props))?;
         let sect = wordcraft_engine::cmd::page::sect(s);
         let mut f = BordersForm {
             tab: tab.min(2),
@@ -383,14 +487,23 @@ impl BordersForm {
 
     /// The commands OK runs, in order: only the parts that changed.
     pub fn commands(&self) -> Vec<(&'static str, Value)> {
-        let Some(b) = self.basis.as_deref() else { return Vec::new() };
+        let Some(b) = self.basis.as_deref() else {
+            return Vec::new();
+        };
         let mut out = Vec::new();
         if self.para != b.para || self.to_text != b.to_text {
             if self.to_text {
-                let first = [TOP, LEFT, BOTTOM, RIGHT].into_iter().find(|i| self.para.sides.get(*i).copied().unwrap_or(false));
+                let first = [TOP, LEFT, BOTTOM, RIGHT]
+                    .into_iter()
+                    .find(|i| self.para.sides.get(*i).copied().unwrap_or(false));
                 let border = match first {
                     Some(i) => self.para.border(i),
-                    None => Border { style: BorderStyle::None, width: 0.0, color: None, space: 0.0 },
+                    None => Border {
+                        style: BorderStyle::None,
+                        width: 0.0,
+                        color: None,
+                        space: 0.0,
+                    },
                 };
                 out.push(("format.set", json!({"props": {"border": border}})));
             } else {
@@ -398,12 +511,28 @@ impl BordersForm {
             }
         }
         if self.page != b.page || self.whole_doc != b.whole_doc {
-            let apply = if self.whole_doc { "document" } else { "section" };
-            out.push(("design.pageBorders", json!({"sides": self.page.sides_param(), "applyTo": apply})));
+            let apply = if self.whole_doc {
+                "document"
+            } else {
+                "section"
+            };
+            out.push((
+                "design.pageBorders",
+                json!({"sides": self.page.sides_param(), "applyTo": apply}),
+            ));
         }
         if self.fill != b.fill || self.fill_to_text != b.fill_to_text {
-            let color = Rgb::parse(&self.fill).map(|c| json!(c.hex())).unwrap_or(Value::Null);
-            out.push((if self.fill_to_text { "format.shading" } else { "para.shading" }, json!({"color": color})));
+            let color = Rgb::parse(&self.fill)
+                .map(|c| json!(c.hex()))
+                .unwrap_or(Value::Null);
+            out.push((
+                if self.fill_to_text {
+                    "format.shading"
+                } else {
+                    "para.shading"
+                },
+                json!({"color": color}),
+            ));
         }
         out
     }
@@ -422,7 +551,10 @@ impl BordersForm {
 /// The Borders and Shading dialog body. Returns true to close.
 pub fn borders(app: &mut WordApp, ui: &mut Ui, f: &mut BordersForm) -> bool {
     ui.horizontal(|ui| {
-        for (i, l) in ["Borders", "Page Border", "Shading"].into_iter().enumerate() {
+        for (i, l) in ["Borders", "Page Border", "Shading"]
+            .into_iter()
+            .enumerate()
+        {
             if ui.selectable_label(f.tab == i as u8, tl!(l)).clicked() {
                 f.tab = i as u8;
             }
@@ -433,7 +565,14 @@ pub fn borders(app: &mut WordApp, ui: &mut Ui, f: &mut BordersForm) -> bool {
     match f.tab {
         0 => {
             let to_text = f.to_text;
-            lines(ui, "para", &mut f.para, &theme, Rgb::parse(&f.fill), Target::from(to_text));
+            lines(
+                ui,
+                "para",
+                &mut f.para,
+                &theme,
+                Rgb::parse(&f.fill),
+                Target::from(to_text),
+            );
             ui.horizontal(|ui| {
                 ui.label(tl!("Apply to:"));
                 ui.radio_value(&mut f.to_text, false, tl!("Paragraph"));
@@ -453,7 +592,12 @@ pub fn borders(app: &mut WordApp, ui: &mut Ui, f: &mut BordersForm) -> bool {
             color_menu(ui, &theme, &mut f.fill);
             ui.add_space(6.0);
             let fill = Rgb::parse(&f.fill);
-            preview(ui, &LineForm::read(None), fill, Target::from(f.fill_to_text));
+            preview(
+                ui,
+                &LineForm::read(None),
+                fill,
+                Target::from(f.fill_to_text),
+            );
             ui.horizontal(|ui| {
                 ui.label(tl!("Apply to:"));
                 ui.radio_value(&mut f.fill_to_text, false, tl!("Paragraph"));
@@ -479,19 +623,34 @@ enum Target {
 impl From<bool> for Target {
     /// `true`: the selected text; `false`: the paragraphs.
     fn from(text: bool) -> Target {
-        if text { Target::Text } else { Target::Paragraph }
+        if text {
+            Target::Text
+        } else {
+            Target::Paragraph
+        }
     }
 }
 
 /// Setting, style, colour and width on the left; the preview with its side toggles on the right.
-fn lines(ui: &mut Ui, id: &str, l: &mut LineForm, theme: &[Rgb], fill: Option<Rgb>, target: Target) {
+fn lines(
+    ui: &mut Ui,
+    id: &str,
+    l: &mut LineForm,
+    theme: &[Rgb],
+    fill: Option<Rgb>,
+    target: Target,
+) {
     let between = target == Target::Paragraph;
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.label(egui::RichText::new(tl!("Setting:")).font(semibold(12.5)));
-            for (s, label) in
-                [(Setting::None, "None"), (Setting::Box, "Box"), (Setting::Shadow, "Shadow"), (Setting::ThreeD, "3-D"), (Setting::Custom, "Custom")]
-            {
+            for (s, label) in [
+                (Setting::None, "None"),
+                (Setting::Box, "Box"),
+                (Setting::Shadow, "Shadow"),
+                (Setting::ThreeD, "3-D"),
+                (Setting::Custom, "Custom"),
+            ] {
                 if ui.radio(l.setting == s, tl!(label)).clicked() {
                     l.apply_setting(s);
                 }
@@ -500,21 +659,35 @@ fn lines(ui: &mut Ui, id: &str, l: &mut LineForm, theme: &[Rgb], fill: Option<Rg
         ui.add_space(8.0);
         ui.vertical(|ui| {
             ui.label(tl!("Style:"));
-            let current = STYLES.iter().find(|(s, _)| *s == l.style).map(|(_, n)| *n).unwrap_or("Single");
-            egui::ComboBox::from_id_salt((id, "style")).selected_text(tl!(current)).width(120.0).show_ui(ui, |ui| {
-                for (s, n) in STYLES {
-                    ui.selectable_value(&mut l.style, s, tl!(n));
-                }
-            });
+            let current = STYLES
+                .iter()
+                .find(|(s, _)| *s == l.style)
+                .map(|(_, n)| *n)
+                .unwrap_or("Single");
+            egui::ComboBox::from_id_salt((id, "style"))
+                .selected_text(tl!(current))
+                .width(120.0)
+                .show_ui(ui, |ui| {
+                    for (s, n) in STYLES {
+                        ui.selectable_value(&mut l.style, s, tl!(n));
+                    }
+                });
             ui.label(tl!("Color:"));
             color_menu(ui, theme, &mut l.color);
             ui.label(tl!("Width:"));
             egui::ComboBox::from_id_salt((id, "width"))
-                .selected_text(crate::i18n::fmt(tl!("{n} pt"), &[("n", &l.width.to_string())]))
+                .selected_text(crate::i18n::fmt(
+                    tl!("{n} pt"),
+                    &[("n", &l.width.to_string())],
+                ))
                 .width(120.0)
                 .show_ui(ui, |ui| {
                     for w in WIDTHS {
-                        ui.selectable_value(&mut l.width, w, crate::i18n::fmt(tl!("{n} pt"), &[("n", &w.to_string())]));
+                        ui.selectable_value(
+                            &mut l.width,
+                            w,
+                            crate::i18n::fmt(tl!("{n} pt"), &[("n", &w.to_string())]),
+                        );
                     }
                 });
         });
@@ -526,12 +699,20 @@ fn lines(ui: &mut Ui, id: &str, l: &mut LineForm, theme: &[Rgb], fill: Option<Rg
             }
             ui.horizontal_wrapped(|ui| {
                 ui.set_max_width(180.0);
-                let mut sides = vec![(TOP, "Top"), (BOTTOM, "Bottom"), (LEFT, "Left"), (RIGHT, "Right")];
+                let mut sides = vec![
+                    (TOP, "Top"),
+                    (BOTTOM, "Bottom"),
+                    (LEFT, "Left"),
+                    (RIGHT, "Right"),
+                ];
                 if between {
                     sides.push((BETWEEN, "Between"));
                 }
                 for (i, n) in sides {
-                    if ui.selectable_label(l.sides.get(i).copied().unwrap_or(false), tl!(n)).clicked() {
+                    if ui
+                        .selectable_label(l.sides.get(i).copied().unwrap_or(false), tl!(n))
+                        .clicked()
+                    {
                         l.toggle(i);
                     }
                 }
@@ -548,19 +729,38 @@ fn preview(ui: &mut Ui, l: &LineForm, fill: Option<Rgb>, target: Target) -> Opti
     let (r, resp) = ui.allocate_exact_size(vec2(180.0, 120.0), Sense::click());
     let resp = resp.on_hover_cursor(egui::CursorIcon::PointingHand);
     let p = ui.painter_at(r);
-    p.rect(r, 2.0, t.input, Stroke::new(1.0, t.input_border), egui::StrokeKind::Inside);
+    p.rect(
+        r,
+        2.0,
+        t.input,
+        Stroke::new(1.0, t.input_border),
+        egui::StrokeKind::Inside,
+    );
     // Two paragraphs of grey lines; the borders go around the first (or its text).
     let bar = t.text_dim.gamma_multiply(0.45);
-    let para = Rect::from_min_max(pos2(r.min.x + 22.0, r.min.y + 22.0), pos2(r.max.x - 22.0, r.min.y + 66.0));
+    let para = Rect::from_min_max(
+        pos2(r.min.x + 22.0, r.min.y + 22.0),
+        pos2(r.max.x - 22.0, r.min.y + 66.0),
+    );
     let line_rows = |y0: f32, n: usize, last: f32| {
         for i in 0..n {
             let y = y0 + i as f32 * 9.0;
             let w = if i + 1 == n { last } else { 1.0 };
-            p.rect_filled(Rect::from_min_size(pos2(para.min.x + 4.0, y), vec2((para.width() - 8.0) * w, 4.0)), 1.0, bar);
+            p.rect_filled(
+                Rect::from_min_size(
+                    pos2(para.min.x + 4.0, y),
+                    vec2((para.width() - 8.0) * w, 4.0),
+                ),
+                1.0,
+                bar,
+            );
         }
     };
     let area = match target {
-        Target::Text => Rect::from_min_max(para.min, pos2(para.min.x + para.width() * 0.62, para.min.y + 14.0)),
+        Target::Text => Rect::from_min_max(
+            para.min,
+            pos2(para.min.x + para.width() * 0.62, para.min.y + 14.0),
+        ),
         Target::Paragraph => para,
         Target::Page => r.shrink(10.0),
     };
@@ -569,13 +769,21 @@ fn preview(ui: &mut Ui, l: &LineForm, fill: Option<Rgb>, target: Target) -> Opti
     }
     line_rows(para.min.y + 6.0, 4, 0.6);
     line_rows(para.max.y + 10.0, 3, 0.4);
-    let color = Rgb::parse(&l.color).map(crate::theme::c32).unwrap_or(t.text);
+    let color = Rgb::parse(&l.color)
+        .map(crate::theme::c32)
+        .unwrap_or(t.text);
     let edges = [
         (TOP, [area.left_top(), area.right_top()]),
         (BOTTOM, [area.left_bottom(), area.right_bottom()]),
         (LEFT, [area.left_top(), area.left_bottom()]),
         (RIGHT, [area.right_top(), area.right_bottom()]),
-        (BETWEEN, [pos2(area.min.x, area.center().y), pos2(area.max.x, area.center().y)]),
+        (
+            BETWEEN,
+            [
+                pos2(area.min.x, area.center().y),
+                pos2(area.max.x, area.center().y),
+            ],
+        ),
     ];
     for (side, seg) in edges {
         if l.sides.get(side).copied().unwrap_or(false) && (side != BETWEEN || between) {
@@ -586,23 +794,44 @@ fn preview(ui: &mut Ui, l: &LineForm, fill: Option<Rgb>, target: Target) -> Opti
         return None;
     }
     let at = resp.interact_pointer_pos()?;
-    let d = |side: usize| -> f32 { edges.iter().find(|(s, _)| *s == side).map(|(_, [a, b])| dist_to_segment(at, *a, *b)).unwrap_or(f32::MAX) };
+    let d = |side: usize| -> f32 {
+        edges
+            .iter()
+            .find(|(s, _)| *s == side)
+            .map(|(_, [a, b])| dist_to_segment(at, *a, *b))
+            .unwrap_or(f32::MAX)
+    };
     let mut sides = vec![TOP, BOTTOM, LEFT, RIGHT];
     if between {
         sides.push(BETWEEN);
     }
-    sides.into_iter().map(|s| (s, d(s))).filter(|(_, dist)| *dist < 14.0).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(s, _)| s)
+    sides
+        .into_iter()
+        .map(|s| (s, d(s)))
+        .filter(|(_, dist)| *dist < 14.0)
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(s, _)| s)
 }
 
 fn dist_to_segment(p: egui::Pos2, a: egui::Pos2, b: egui::Pos2) -> f32 {
     let ab = b - a;
     let len2 = ab.length_sq();
-    let k = if len2 > 0.0 { ((p - a).dot(ab) / len2).clamp(0.0, 1.0) } else { 0.0 };
+    let k = if len2 > 0.0 {
+        ((p - a).dot(ab) / len2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     (p - (a + ab * k)).length()
 }
 
 /// One border line in the preview, roughly as it prints.
-fn draw_line(p: &egui::Painter, [a, b]: [egui::Pos2; 2], style: BorderStyle, width: f32, color: egui::Color32) {
+fn draw_line(
+    p: &egui::Painter,
+    [a, b]: [egui::Pos2; 2],
+    style: BorderStyle,
+    width: f32,
+    color: egui::Color32,
+) {
     let px = (width * 1.2).clamp(1.0, 6.0);
     let normal = (b - a).normalized().rot90();
     let stroke = Stroke::new(px, color);
@@ -620,21 +849,43 @@ fn draw_line(p: &egui::Painter, [a, b]: [egui::Pos2; 2], style: BorderStyle, wid
             p.extend(egui::Shape::dashed_line(&[a, b], stroke, px, px * 1.5));
         }
         BorderStyle::Dashed => {
-            p.extend(egui::Shape::dashed_line(&[a, b], stroke, px * 4.0, px * 2.0));
+            p.extend(egui::Shape::dashed_line(
+                &[a, b],
+                stroke,
+                px * 4.0,
+                px * 2.0,
+            ));
         }
         BorderStyle::DotDash => {
-            p.extend(egui::Shape::dashed_line_with_offset(&[a, b], stroke, &[px * 4.0, px], &[px * 2.0, px * 2.0], 0.0));
+            p.extend(egui::Shape::dashed_line_with_offset(
+                &[a, b],
+                stroke,
+                &[px * 4.0, px],
+                &[px * 2.0, px * 2.0],
+                0.0,
+            ));
         }
         BorderStyle::Wave => {
             let len = (b - a).length();
             let dir = (b - a).normalized();
             let n = (len / 4.0).ceil().max(1.0) as usize;
-            let pts: Vec<egui::Pos2> =
-                (0..=n.min(400)).map(|i| a + dir * (len * i as f32 / n as f32) + normal * if i % 2 == 0 { -1.5 } else { 1.5 }).collect();
+            let pts: Vec<egui::Pos2> = (0..=n.min(400))
+                .map(|i| {
+                    a + dir * (len * i as f32 / n as f32)
+                        + normal * if i % 2 == 0 { -1.5 } else { 1.5 }
+                })
+                .collect();
             p.add(egui::Shape::line(pts, Stroke::new(1.0, color)));
         }
         BorderStyle::Single | BorderStyle::Thick => {
-            p.line_segment([a, b], if style == BorderStyle::Thick { Stroke::new((px * 1.5).min(6.0), color) } else { stroke });
+            p.line_segment(
+                [a, b],
+                if style == BorderStyle::Thick {
+                    Stroke::new((px * 1.5).min(6.0), color)
+                } else {
+                    stroke
+                },
+            );
         }
     }
 }
@@ -646,7 +897,10 @@ mod tests {
     use wordcraft_engine::Session;
 
     fn app_with(text: &str) -> WordApp {
-        let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), crate::Services::default());
+        let mut app = WordApp::new(
+            Session::new(wordcraft_doc::Document::new()),
+            crate::Services::default(),
+        );
         let _ = app.run("document.setText", json!({"text": text}));
         app
     }
@@ -657,7 +911,9 @@ mod tests {
     fn borders_dialog_ok_applies_box_in_one_undo_step() {
         let mut app = app_with("Boxed paragraph");
         let _ = app.run("para.borders", json!({}));
-        let Some(Dialog::Borders { form }) = app.dialog.take() else { panic!("Borders and Shading opens from the menu item") };
+        let Some(Dialog::Borders { form }) = app.dialog.take() else {
+            panic!("Borders and Shading opens from the menu item")
+        };
         let mut f = *form;
         assert_eq!(f.para.setting, Setting::None);
         f.para.apply_setting(Setting::Box);
@@ -668,20 +924,46 @@ mod tests {
         f.fill = "DDEEFF".into();
         let undo_before = app.session.undo_labels().len();
         f.apply(&mut app);
-        let props = app.session.doc.para_at(&app.session.sel.focus).map(|p| p.props.clone()).unwrap_or_default();
+        let props = app
+            .session
+            .doc
+            .para_at(&app.session.sel.focus)
+            .map(|p| p.props.clone())
+            .unwrap_or_default();
         let b = props.borders.unwrap_or_default();
         for side in [b.top, b.bottom, b.left, b.right] {
             let side = side.unwrap_or_default();
-            assert_eq!((side.style, side.width, side.color), (BorderStyle::Double, 1.5, Rgb::parse("1F4E79")));
+            assert_eq!(
+                (side.style, side.width, side.color),
+                (BorderStyle::Double, 1.5, Rgb::parse("1F4E79"))
+            );
         }
         assert!(b.between.is_none());
         assert_eq!(props.shading, Rgb::parse("DDEEFF"));
-        let pb = app.session.doc.last_section.page_borders.unwrap_or_default();
-        assert_eq!(pb.right.map(|x| x.width), Some(1.0), "Shadow doubles the right and bottom lines");
+        let pb = app
+            .session
+            .doc
+            .last_section
+            .page_borders
+            .unwrap_or_default();
+        assert_eq!(
+            pb.right.map(|x| x.width),
+            Some(1.0),
+            "Shadow doubles the right and bottom lines"
+        );
         assert_eq!(pb.top.map(|x| x.width), Some(0.5));
-        assert_eq!(app.session.undo_labels().len(), undo_before + 1, "one undo step");
+        assert_eq!(
+            app.session.undo_labels().len(),
+            undo_before + 1,
+            "one undo step"
+        );
         let _ = app.run("edit.undo", json!({}));
-        let props = app.session.doc.para_at(&app.session.sel.focus).map(|p| p.props.clone()).unwrap_or_default();
+        let props = app
+            .session
+            .doc
+            .para_at(&app.session.sel.focus)
+            .map(|p| p.props.clone())
+            .unwrap_or_default();
         assert!(props.borders.is_none() && props.shading.is_none());
         assert!(app.session.doc.last_section.page_borders.is_none());
         // Reading the result back gives the same setting.
@@ -697,7 +979,9 @@ mod tests {
     fn tabs_form_sets_and_clears() {
         let mut app = app_with("a\tb");
         let _ = app.run("para.tabs", json!({}));
-        let Some(Dialog::Tabs { form }) = app.dialog.take() else { panic!("Tabs opens without params") };
+        let Some(Dialog::Tabs { form }) = app.dialog.take() else {
+            panic!("Tabs opens without params")
+        };
         let mut f = *form;
         assert!(f.stops.is_empty());
         let k = unit().pt_per_unit();
@@ -711,8 +995,20 @@ mod tests {
         f.clear();
         let params = f.params().unwrap_or_default();
         let _ = app.run("para.tabs", params);
-        let props = app.session.doc.para_at(&app.session.sel.focus).map(|p| p.props.clone()).unwrap_or_default();
-        assert_eq!(props.tabs, Some(vec![TabStop { pos: 72.0, align: TabAlign::Right, leader: TabLeader::Dot }]));
+        let props = app
+            .session
+            .doc
+            .para_at(&app.session.sel.focus)
+            .map(|p| p.props.clone())
+            .unwrap_or_default();
+        assert_eq!(
+            props.tabs,
+            Some(vec![TabStop {
+                pos: 72.0,
+                align: TabAlign::Right,
+                leader: TabLeader::Dot
+            }])
+        );
         let mut f = TabsForm::read(&app).unwrap_or_else(|| panic!("form"));
         assert!(f.params().is_none());
         f.clear_all();

@@ -7,7 +7,8 @@
 //! on a machine without fonts.
 
 use figcraft_doc::{
-    DecorationLength, DecorationStyle, ListStyle, ParaList, TextAlignH, TextAutoResize, TextData, TextDecoration, color::Color, color::Paint,
+    DecorationLength, DecorationStyle, ListStyle, ParaList, TextAlignH, TextAutoResize, TextData,
+    TextDecoration, color::Color, color::Paint,
 };
 use figcraft_geom::{Rect, Shape};
 
@@ -36,8 +37,14 @@ fn starts(l: &TextLayout) -> Vec<(f64, Option<f64>)> {
         .iter()
         .map(|ln| {
             let gl = l.glyphs.get(ln.glyph_start..ln.glyph_end).unwrap_or(&[]);
-            let text = gl.iter().find(|g| g.char_end > g.char_start).map_or(f64::NAN, |g| g.x);
-            (text, gl.iter().find(|g| g.char_end == g.char_start).map(|g| g.x))
+            let text = gl
+                .iter()
+                .find(|g| g.char_end > g.char_start)
+                .map_or(f64::NAN, |g| g.x);
+            (
+                text,
+                gl.iter().find(|g| g.char_end == g.char_start).map(|g| g.x),
+            )
         })
         .collect()
 }
@@ -49,10 +56,16 @@ fn pl(list: ListStyle, indent: u8) -> ParaList {
 #[test]
 fn list_numbering_by_level() {
     use ListStyle::{Bulleted as B, None as P, Numbered as N};
-    let many: Vec<ParaList> = std::iter::once(pl(N, 0)).chain(std::iter::repeat_n(pl(N, 1), 27)).collect();
+    let many: Vec<ParaList> = std::iter::once(pl(N, 0))
+        .chain(std::iter::repeat_n(pl(N, 1), 27))
+        .collect();
     // (paragraphs, markers, derivation)
     let cases: Vec<(Vec<ParaList>, Vec<&str>, &str)> = vec![
-        (vec![pl(N, 0), pl(N, 0), pl(N, 0)], vec!["1.", "2.", "3."], "a numbered list counts its items"),
+        (
+            vec![pl(N, 0), pl(N, 0), pl(N, 0)],
+            vec!["1.", "2.", "3."],
+            "a numbered list counts its items",
+        ),
         (
             vec![pl(N, 0), pl(N, 1), pl(N, 1), pl(N, 0)],
             vec!["1.", "a.", "b.", "2."],
@@ -68,15 +81,35 @@ fn list_numbering_by_level() {
             vec!["\u{2022}", "\u{25E6}", "\u{25AA}", "\u{2022}"],
             "silent: bullets change shape per level, round again",
         ),
-        (vec![pl(N, 0), pl(N, 0), pl(P, 0), pl(N, 0)], vec!["1.", "2.", "", "1."], "silent: a plain paragraph ends a list, the next starts at 1"),
-        (vec![pl(N, 0), pl(B, 0), pl(N, 0)], vec!["1.", "\u{2022}", "1."], "silent: the other kind of list at the same level starts the count again"),
-        (vec![pl(N, 0), pl(N, 1), pl(N, 0), pl(N, 1)], vec!["1.", "a.", "2.", "a."], "a shallower item starts the deeper count again"),
-        (vec![pl(N, 2), pl(N, 2), pl(N, 2), pl(N, 2)], vec!["i.", "ii.", "iii.", "iv."], "roman numerals at the third level"),
+        (
+            vec![pl(N, 0), pl(N, 0), pl(P, 0), pl(N, 0)],
+            vec!["1.", "2.", "", "1."],
+            "silent: a plain paragraph ends a list, the next starts at 1",
+        ),
+        (
+            vec![pl(N, 0), pl(B, 0), pl(N, 0)],
+            vec!["1.", "\u{2022}", "1."],
+            "silent: the other kind of list at the same level starts the count again",
+        ),
+        (
+            vec![pl(N, 0), pl(N, 1), pl(N, 0), pl(N, 1)],
+            vec!["1.", "a.", "2.", "a."],
+            "a shallower item starts the deeper count again",
+        ),
+        (
+            vec![pl(N, 2), pl(N, 2), pl(N, 2), pl(N, 2)],
+            vec!["i.", "ii.", "iii.", "iv."],
+            "roman numerals at the third level",
+        ),
     ];
     for (lists, want, why) in cases {
         assert_eq!(list_markers(&lists), want, "{why}");
     }
-    assert_eq!(list_markers(&many).last().map(String::as_str), Some("aa."), "silent: letters go on past z as aa");
+    assert_eq!(
+        list_markers(&many).last().map(String::as_str),
+        Some("aa."),
+        "silent: letters go on past z as aa"
+    );
 }
 
 #[test]
@@ -84,40 +117,81 @@ fn nested_items_indent_by_one_gutter() {
     // Tab nests an item: each level moves the item and its marker in by one marker gutter (bullets:
     // one and a half ems, 30 px at 20 px); a hanging list puts the outer gutter outside the box so
     // item text lines up with plain paragraphs.
-    let Some(mut t) = text("One\nTwo\nThree") else { return };
-    t.paragraphs = vec![pl(ListStyle::Bulleted, 0), pl(ListStyle::Bulleted, 1), pl(ListStyle::Bulleted, 2)];
+    let Some(mut t) = text("One\nTwo\nThree") else {
+        return;
+    };
+    t.paragraphs = vec![
+        pl(ListStyle::Bulleted, 0),
+        pl(ListStyle::Bulleted, 1),
+        pl(ListStyle::Bulleted, 2),
+    ];
     let Some(l) = laid(&t) else { return };
     // (hanging, text x per level, marker x per level, derivation)
     for (hanging, text_x, marker_x, why) in [
-        (false, [30.0, 60.0, 90.0], [0.0, 30.0, 60.0], "inside the box: level n's text at (n + 1) gutters"),
-        (true, [0.0, 30.0, 60.0], [-30.0, 0.0, 30.0], "hanging list: one gutter less, the outer bullet left of the box"),
+        (
+            false,
+            [30.0, 60.0, 90.0],
+            [0.0, 30.0, 60.0],
+            "inside the box: level n's text at (n + 1) gutters",
+        ),
+        (
+            true,
+            [0.0, 30.0, 60.0],
+            [-30.0, 0.0, 30.0],
+            "hanging list: one gutter less, the outer bullet left of the box",
+        ),
     ] {
         t.hanging_list = hanging;
-        let l = if hanging { laid(&t).unwrap() } else { l.clone() };
+        let l = if hanging {
+            laid(&t).unwrap()
+        } else {
+            l.clone()
+        };
         for (i, (x, m)) in starts(&l).into_iter().enumerate() {
             assert!((x - text_x[i]).abs() < EPS, "{why}: line {i} text at {x}");
-            assert!(m.is_some_and(|m| (m - marker_x[i]).abs() < EPS), "{why}: line {i} marker at {m:?}");
+            assert!(
+                m.is_some_and(|m| (m - marker_x[i]).abs() < EPS),
+                "{why}: line {i} marker at {m:?}"
+            );
         }
-        assert_eq!(l.ink_bounds().is_some_and(|b| b.x0 <= -30.0), hanging, "{why}: exports reach the hanging bullet");
+        assert_eq!(
+            l.ink_bounds().is_some_and(|b| b.x0 <= -30.0),
+            hanging,
+            "{why}: exports reach the hanging bullet"
+        );
     }
     // A plain paragraph next to a hanging list starts where the items' text does.
     t.paragraphs.push(pl(ListStyle::None, 0));
     t.characters.push_str("\nPlain");
     let l = laid(&t).unwrap();
-    assert!(starts(&l)[3].0.abs() < EPS && starts(&l)[0].0.abs() < EPS, "hanging list: items line up with plain text");
+    assert!(
+        starts(&l)[3].0.abs() < EPS && starts(&l)[0].0.abs() < EPS,
+        "hanging list: items line up with plain text"
+    );
 }
 
 #[test]
 fn list_spacing_between_items_only() {
     // List spacing is the space between items of a list; paragraphs around it keep the paragraph
     // spacing (silent on both set at once: between two items the list spacing replaces it).
-    let Some(mut t) = text("Intro\nA\nB\nOutro") else { return };
+    let Some(mut t) = text("Intro\nA\nB\nOutro") else {
+        return;
+    };
     t.style.line_height = figcraft_doc::LineHeight::Pixels(30.0);
-    t.paragraphs = vec![pl(ListStyle::None, 0), pl(ListStyle::Bulleted, 0), pl(ListStyle::Bulleted, 0), pl(ListStyle::None, 0)];
+    t.paragraphs = vec![
+        pl(ListStyle::None, 0),
+        pl(ListStyle::Bulleted, 0),
+        pl(ListStyle::Bulleted, 0),
+        pl(ListStyle::None, 0),
+    ];
     (t.paragraph_spacing, t.list_spacing) = (10.0, 4.0);
     let Some(l) = laid(&t) else { return };
     let tops: Vec<f64> = l.lines.iter().map(|ln| ln.top).collect();
-    assert_eq!(tops, [0.0, 40.0, 74.0, 114.0], "plain→item +10, item→item +4, item→plain +10");
+    assert_eq!(
+        tops,
+        [0.0, 40.0, 74.0, 114.0],
+        "plain→item +10, item→item +4, item→plain +10"
+    );
     assert!((l.height - 144.0).abs() < EPS);
 }
 
@@ -126,37 +200,62 @@ fn hanging_punctuation_outside_the_aligned_edge() {
     // Hanging punctuation: opening quotes and brackets at a line's start sit left of a left-aligned
     // (or justified) box; closing punctuation at its end right of a right-aligned (or justified)
     // one, so the letters line up. Silent on centred text and right-to-left paragraphs: no hang.
-    let Some(mut t) = text("\u{201C}Quote\u{201D} here.") else { return };
+    let Some(mut t) = text("\u{201C}Quote\u{201D} here.") else {
+        return;
+    };
     t.auto_resize = TextAutoResize::Height;
     let Some(plain) = laid(&t) else { return };
     let open = plain.glyphs[0].advance;
     t.hanging_punctuation = true;
     let l = laid(&t).unwrap();
-    assert!((l.glyphs[0].x + open).abs() < EPS && l.glyphs[1].x.abs() < EPS, "left: the quote hangs, Q starts the line");
+    assert!(
+        (l.glyphs[0].x + open).abs() < EPS && l.glyphs[1].x.abs() < EPS,
+        "left: the quote hangs, Q starts the line"
+    );
     t.align_h = TextAlignH::Right;
     let l = laid(&t).unwrap();
     let last = l.glyphs.last().unwrap();
     let before = &l.glyphs[l.glyphs.len() - 2];
-    assert!((before.x + before.advance - 400.0).abs() < EPS && last.x >= 400.0 - EPS, "right: the full stop hangs past the edge");
+    assert!(
+        (before.x + before.advance - 400.0).abs() < EPS && last.x >= 400.0 - EPS,
+        "right: the full stop hangs past the edge"
+    );
     t.align_h = TextAlignH::Center;
     let (a, b) = (laid(&t).unwrap(), {
         t.hanging_punctuation = false;
         laid(&t).unwrap()
     });
-    assert!((a.glyphs[0].x - b.glyphs[0].x).abs() < EPS, "centred: nothing hangs");
+    assert!(
+        (a.glyphs[0].x - b.glyphs[0].x).abs() < EPS,
+        "centred: nothing hangs"
+    );
     // Hanging punctuation takes no room in the box: a line that fits only without its opening
     // quote stays on one line.
     let mut t = text("\u{201C}ab cd").unwrap();
     t.auto_resize = TextAutoResize::Height;
     let w = layout(&t, None, None).width;
     let room = w - plain.glyphs[0].advance + 0.01;
-    assert_eq!(layout(&t, Some(room), None).lines.len(), 2, "without hanging it wraps");
+    assert_eq!(
+        layout(&t, Some(room), None).lines.len(),
+        2,
+        "without hanging it wraps"
+    );
     t.hanging_punctuation = true;
-    assert_eq!(layout(&t, Some(room), None).lines.len(), 1, "with hanging it fits");
+    assert_eq!(
+        layout(&t, Some(room), None).lines.len(),
+        1,
+        "with hanging it fits"
+    );
 }
 
 /// (decoration, look change, top edge, height, derivation)
-type Case<'a> = (TextDecoration, &'a dyn Fn(&mut figcraft_doc::DecorationLook), Option<f64>, f64, &'a str);
+type Case<'a> = (
+    TextDecoration,
+    &'a dyn Fn(&mut figcraft_doc::DecorationLook),
+    Option<f64>,
+    f64,
+    &'a str,
+);
 
 #[test]
 fn decoration_style_thickness_offset_and_colour() {
@@ -165,15 +264,28 @@ fn decoration_style_thickness_offset_and_colour() {
     let Some(base) = laid(&t) else { return };
     let baseline = base.lines[0].baseline;
     let red = Color::new(1.0, 0.0, 0.0, 1.0);
-    let set = |t: &mut TextData, d: TextDecoration, f: &dyn Fn(&mut figcraft_doc::DecorationLook)| {
-        t.style.decoration = d;
-        t.style.decoration_look = None;
-        t.style.set_look(f);
-    };
+    let set =
+        |t: &mut TextData, d: TextDecoration, f: &dyn Fn(&mut figcraft_doc::DecorationLook)| {
+            t.style.decoration = d;
+            t.style.decoration_look = None;
+            t.style.set_look(f);
+        };
     let auto = base.decorations[0].rect;
     let cases: [Case; 5] = [
-        (TextDecoration::Underline, &|l| l.thickness = DecorationLength::Pixels(3.0), None, 3.0, "thickness in px"),
-        (TextDecoration::Underline, &|l| l.thickness = DecorationLength::Percent(10.0), None, 2.0, "thickness in % of the font size: 10% of 20"),
+        (
+            TextDecoration::Underline,
+            &|l| l.thickness = DecorationLength::Pixels(3.0),
+            None,
+            3.0,
+            "thickness in px",
+        ),
+        (
+            TextDecoration::Underline,
+            &|l| l.thickness = DecorationLength::Percent(10.0),
+            None,
+            2.0,
+            "thickness in % of the font size: 10% of 20",
+        ),
         (
             TextDecoration::Underline,
             &|l| l.offset = DecorationLength::Pixels(4.0),
@@ -207,15 +319,27 @@ fn decoration_style_thickness_offset_and_colour() {
     let mut strike = t.clone();
     strike.style.decoration_look = None;
     let plain_strike = laid(&strike).unwrap().decorations[0].rect;
-    assert!((laid(&t).unwrap().decorations[0].rect.y0 - plain_strike.y0).abs() < EPS, "strikethrough stays at the font's position");
+    assert!(
+        (laid(&t).unwrap().decorations[0].rect.y0 - plain_strike.y0).abs() < EPS,
+        "strikethrough stays at the font's position"
+    );
     // Wavy swings either side; dotted is a row of dots; both inside their rect.
     for style in [DecorationStyle::Wavy, DecorationStyle::Dotted] {
         set(&mut t, TextDecoration::Underline, &|l| l.style = style);
         let d = laid(&t).unwrap().decorations[0].clone();
         assert_eq!(d.kind, style);
         let b = d.path().bounding_box();
-        assert!(b.x0 >= d.rect.x0 - EPS && b.x1 <= d.rect.x1 + EPS && b.y0 >= d.rect.y0 - EPS && b.y1 <= d.rect.y1 + EPS, "{style:?} inside {b:?}");
-        assert!(style != DecorationStyle::Wavy || d.rect.height() > d.thickness, "a wave is taller than its thickness");
+        assert!(
+            b.x0 >= d.rect.x0 - EPS
+                && b.x1 <= d.rect.x1 + EPS
+                && b.y0 >= d.rect.y0 - EPS
+                && b.y1 <= d.rect.y1 + EPS,
+            "{style:?} inside {b:?}"
+        );
+        assert!(
+            style != DecorationStyle::Wavy || d.rect.height() > d.thickness,
+            "a wave is taller than its thickness"
+        );
     }
     // Colour: the line paints with its own colour, the glyphs keep theirs.
     set(&mut t, TextDecoration::Underline, &|l| l.color = Some(red));
@@ -237,11 +361,18 @@ fn skip_ink_breaks_under_descenders() {
     t.style.set_look(|l| l.skip_ink = true);
     let l = laid(&t).unwrap();
     assert!(l.decorations.len() > 1, "on: broken under g, y and p");
-    let t2 = TextData { characters: "mmm".into(), ..t.clone() };
+    let t2 = TextData {
+        characters: "mmm".into(),
+        ..t.clone()
+    };
     let l2 = laid(&t2).unwrap();
     // Only when the line and its gap clear the baseline: some fonts put the underline so close
     // that it touches every glyph's foot, and then it breaks under those too.
-    let clear = l2.decorations.first().zip(l2.lines.first()).is_some_and(|(d, ln)| d.rect.y0 - d.thickness.max(1.0) / 2.0 > ln.baseline);
+    let clear = l2
+        .decorations
+        .first()
+        .zip(l2.lines.first())
+        .is_some_and(|(d, ln)| d.rect.y0 - d.thickness.max(1.0) / 2.0 > ln.baseline);
     if clear {
         assert_eq!(l2.decorations.len(), 1, "no descenders: one line");
     }
@@ -250,12 +381,31 @@ fn skip_ink_breaks_under_descenders() {
 #[test]
 fn decoration_shapes() {
     // Font-free: the path of each style for a 100 px line, 2 px thick.
-    let d = |kind| Decoration { rect: Rect::new(0.0, 10.0, 100.0, 12.0), style: 0, kind, thickness: 2.0 };
-    assert_eq!(d(DecorationStyle::Solid).path().bounding_box(), Rect::new(0.0, 10.0, 100.0, 12.0), "solid: the bar");
+    let d = |kind| Decoration {
+        rect: Rect::new(0.0, 10.0, 100.0, 12.0),
+        style: 0,
+        kind,
+        thickness: 2.0,
+    };
+    assert_eq!(
+        d(DecorationStyle::Solid).path().bounding_box(),
+        Rect::new(0.0, 10.0, 100.0, 12.0),
+        "solid: the bar"
+    );
     let dots = d(DecorationStyle::Dotted).path();
-    let count = dots.elements().iter().filter(|e| matches!(e, figcraft_geom::kurbo::PathEl::MoveTo(_))).count();
+    let count = dots
+        .elements()
+        .iter()
+        .filter(|e| matches!(e, figcraft_geom::kurbo::PathEl::MoveTo(_)))
+        .count();
     assert_eq!(count, 25, "dotted: a 2 px dot every 4 px");
-    let wave = Decoration { rect: Rect::new(0.0, 7.0, 100.0, 15.0), ..d(DecorationStyle::Wavy) };
+    let wave = Decoration {
+        rect: Rect::new(0.0, 7.0, 100.0, 15.0),
+        ..d(DecorationStyle::Wavy)
+    };
     let b = wave.path().bounding_box();
-    assert!((b.x0, b.x1) == (0.0, 100.0) && b.y0 >= 7.0 - EPS && b.y1 <= 15.0 + EPS, "wavy: across, within the band {b:?}");
+    assert!(
+        (b.x0, b.x1) == (0.0, 100.0) && b.y0 >= 7.0 - EPS && b.y1 <= 15.0 + EPS,
+        "wavy: across, within the band {b:?}"
+    );
 }

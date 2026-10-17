@@ -16,15 +16,29 @@ const MIN_BITMAP_SIDE: f64 = 1e-6;
 pub enum PlacedItem {
     /// A filled and/or stroked path. The stroke width is in target units; 0 is a cosmetic hairline that
     /// the renderer draws at its minimum width.
-    Path { path: BezPath, fill: Option<[u8; 4]>, stroke: Option<([u8; 4], f64)>, even_odd: bool },
+    Path {
+        path: BezPath,
+        fill: Option<[u8; 4]>,
+        stroke: Option<([u8; 4], f64)>,
+        even_odd: bool,
+    },
     /// `Picture::items[index]`, a bitmap, stretched into `rect`.
     Bitmap { index: usize, rect: Rect },
     /// `Picture::items[index]`, a pattern fill: `path` (target units) filled with the item's tile
     /// repeated; `tile` maps tile pixels to target units.
-    Pattern { index: usize, path: BezPath, even_odd: bool, tile: Affine },
+    Pattern {
+        index: usize,
+        path: BezPath,
+        even_odd: bool,
+        tile: Affine,
+    },
     /// `Picture::items[index]`, a text string: `transform` maps its text space to target units;
     /// `clip` (target units) bounds what it draws.
-    Text { index: usize, transform: Affine, clip: Option<Rect> },
+    Text {
+        index: usize,
+        transform: Affine,
+        clip: Option<Rect>,
+    },
 }
 
 impl Picture {
@@ -36,12 +50,20 @@ impl Picture {
     /// The transform that fits the picture into `r` with the crop fractions `crop` (left, top, right,
     /// bottom) removed first: the visible part fills `r`. None for a degenerate size.
     pub fn fit(&self, r: Rect, crop: [f32; 4]) -> Option<Affine> {
-        let [cl, ct, cr, cb] = crop.map(|v| if v.is_finite() { f64::from(v.clamp(0.0, 0.95)) } else { 0.0 });
+        let [cl, ct, cr, cb] = crop.map(|v| {
+            if v.is_finite() {
+                f64::from(v.clamp(0.0, 0.95))
+            } else {
+                0.0
+            }
+        });
         let (w, h) = (f64::from(self.width), f64::from(self.height));
         let sx = r.width() / (w * (1.0 - cl - cr).max(0.05));
         let sy = r.height() / (h * (1.0 - ct - cb).max(0.05));
-        (sx.is_finite() && sy.is_finite() && sx > 0.0 && sy > 0.0)
-            .then(|| Affine::translate((r.x0 - cl * w * sx, r.y0 - ct * h * sy)) * Affine::scale_non_uniform(sx, sy))
+        (sx.is_finite() && sy.is_finite() && sx > 0.0 && sy > 0.0).then(|| {
+            Affine::translate((r.x0 - cl * w * sx, r.y0 - ct * h * sy))
+                * Affine::scale_non_uniform(sx, sy)
+        })
     }
 
     /// The items placed into `r` with `crop` applied. Items that are not finite or reach past ±1e6
@@ -49,43 +71,87 @@ impl Picture {
     /// widths are scaled to target units (along the mean axis scale, so a non-uniform fit keeps
     /// strokes even).
     pub fn place(&self, r: Rect, crop: [f32; 4]) -> Vec<PlacedItem> {
-        let Some(tf) = self.fit(r, crop) else { return Vec::new() };
+        let Some(tf) = self.fit(r, crop) else {
+            return Vec::new();
+        };
         let c = tf.as_coeffs();
         let k = (c[0].abs() + c[3].abs()) / 2.0;
         let mut out = Vec::with_capacity(self.items.len());
         for (index, item) in self.items.iter().enumerate() {
             match item {
-                Item::Path { segs, fill, stroke, even_odd } => {
+                Item::Path {
+                    segs,
+                    fill,
+                    stroke,
+                    even_odd,
+                } => {
                     let path = tf * bez(segs);
                     if in_range(path.bounding_box()) {
                         let stroke = stroke.map(|(c, w)| (c, f64::from(w) * k));
-                        out.push(PlacedItem::Path { path, fill: *fill, stroke, even_odd: *even_odd });
+                        out.push(PlacedItem::Path {
+                            path,
+                            fill: *fill,
+                            stroke,
+                            even_odd: *even_odd,
+                        });
                     }
                 }
-                Item::Pattern { segs, even_odd, tile: t } => {
+                Item::Pattern {
+                    segs,
+                    even_odd,
+                    tile: t,
+                } => {
                     let path = tf * bez(segs);
                     let tile = tf
                         * Affine::translate((f64::from(t.origin[0]), f64::from(t.origin[1])))
                         * Affine::scale_non_uniform(f64::from(t.cell[0]), f64::from(t.cell[1]));
                     let det = tile.determinant();
                     if in_range(path.bounding_box()) && det.is_finite() && det.abs() > 1e-12 {
-                        out.push(PlacedItem::Pattern { index, path, even_odd: *even_odd, tile });
+                        out.push(PlacedItem::Pattern {
+                            index,
+                            path,
+                            even_odd: *even_odd,
+                            tile,
+                        });
                     }
                 }
                 Item::Text(t) => {
                     let transform = tf * Affine::new(t.transform);
-                    let clip =
-                        t.clip.map(|[x0, y0, x1, y1]| tf.transform_rect_bbox(Rect::new(f64::from(x0), f64::from(y0), f64::from(x1), f64::from(y1))));
+                    let clip = t.clip.map(|[x0, y0, x1, y1]| {
+                        tf.transform_rect_bbox(Rect::new(
+                            f64::from(x0),
+                            f64::from(y0),
+                            f64::from(x1),
+                            f64::from(y1),
+                        ))
+                    });
                     let c = transform.as_coeffs();
                     let origin = Rect::new(c[4], c[5], c[4], c[5]);
-                    if in_range(origin) && c.iter().all(|v| v.is_finite()) && clip.is_none_or(in_range) {
-                        out.push(PlacedItem::Text { index, transform, clip });
+                    if in_range(origin)
+                        && c.iter().all(|v| v.is_finite())
+                        && clip.is_none_or(in_range)
+                    {
+                        out.push(PlacedItem::Text {
+                            index,
+                            transform,
+                            clip,
+                        });
                     }
                 }
-                Item::Bitmap { rect: [x, y, w, h], .. } => {
+                Item::Bitmap {
+                    rect: [x, y, w, h], ..
+                } => {
                     let (x0, y0) = (f64::from(*x), f64::from(*y));
-                    let rect = tf.transform_rect_bbox(Rect::new(x0, y0, x0 + f64::from(*w), y0 + f64::from(*h)));
-                    if in_range(rect) && rect.width() > MIN_BITMAP_SIDE && rect.height() > MIN_BITMAP_SIDE {
+                    let rect = tf.transform_rect_bbox(Rect::new(
+                        x0,
+                        y0,
+                        x0 + f64::from(*w),
+                        y0 + f64::from(*h),
+                    ));
+                    if in_range(rect)
+                        && rect.width() > MIN_BITMAP_SIDE
+                        && rect.height() > MIN_BITMAP_SIDE
+                    {
                         out.push(PlacedItem::Bitmap { index, rect });
                     }
                 }
@@ -100,10 +166,19 @@ impl Item {
     /// RGBA) when a renderer can draw them: both sides in 1..=[`MAX_BITMAP_SIDE`] and exactly that many
     /// pixels. None for paths and for bitmaps that cannot be drawn.
     pub fn take_pixels(&mut self) -> Option<(u32, u32, Vec<u8>)> {
-        let Item::Bitmap { width, height, rgba, .. } = self else { return None };
+        let Item::Bitmap {
+            width,
+            height,
+            rgba,
+            ..
+        } = self
+        else {
+            return None;
+        };
         let (w, h, px) = (*width, *height, std::mem::take(rgba));
         let sides = (1..=MAX_BITMAP_SIDE).contains(&w) && (1..=MAX_BITMAP_SIDE).contains(&h);
-        (sides && px.len() == (w as usize).saturating_mul(h as usize).saturating_mul(4)).then_some((w, h, px))
+        (sides && px.len() == (w as usize).saturating_mul(h as usize).saturating_mul(4))
+            .then_some((w, h, px))
     }
 }
 
@@ -130,7 +205,11 @@ fn bez(segs: &[Seg]) -> BezPath {
                 if !open {
                     p.move_to(start);
                 }
-                p.curve_to((f64::from(a), f64::from(b)), (f64::from(c), f64::from(d)), (f64::from(e), f64::from(f)));
+                p.curve_to(
+                    (f64::from(a), f64::from(b)),
+                    (f64::from(c), f64::from(d)),
+                    (f64::from(e), f64::from(f)),
+                );
                 open = true;
             }
             Seg::Close => {
@@ -146,5 +225,7 @@ fn bez(segs: &[Seg]) -> BezPath {
 
 /// Whether a placed box is finite and within ±[`MAX_COORD`].
 fn in_range(b: Rect) -> bool {
-    [b.x0, b.y0, b.x1, b.y1].iter().all(|v| v.is_finite() && v.abs() < MAX_COORD)
+    [b.x0, b.y0, b.x1, b.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() < MAX_COORD)
 }

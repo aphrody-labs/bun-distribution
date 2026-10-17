@@ -5,7 +5,9 @@ use vectorcraft_color::{BlendMode, Color, GradientPaint, Paint};
 use vectorcraft_doc::{Appearance, CharStyle, Document, Node, NodeId, NodeKind};
 
 use super::appearance::{ItemTarget, appearance_targets, edit_items, edit_items_then, item_target};
-use super::gradient::{item_paint_bounds, place_paint, place_run_paint, run_paint_mut, run_stroke_weight, unplaced};
+use super::gradient::{
+    item_paint_bounds, place_paint, place_run_paint, run_paint_mut, run_stroke_weight, unplaced,
+};
 use super::*;
 use crate::{DocState, EngineError};
 
@@ -55,14 +57,25 @@ pub fn specs() -> Vec<CommandSpec> {
             "{fill?: bool (true: bring the Fill proxy forward, false: the Stroke proxy; omitted: swap which is in front)} → {fillActive}",
             always,
             |s, p| {
-                s.fill_active = p.get("fill").and_then(Value::as_bool).unwrap_or(!s.fill_active);
+                s.fill_active = p
+                    .get("fill")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(!s.fill_active);
                 Ok(json!({ "fillActive": s.fill_active }))
             }
         ),
-        cmd!("paint.none", "None", [], Some("/"), "{} set the active proxy (fill or stroke) to None", has_doc, |s, _| {
-            let f = s.fill_active;
-            set_paint(s, &json!({"none": true}), f)
-        }),
+        cmd!(
+            "paint.none",
+            "None",
+            [],
+            Some("/"),
+            "{} set the active proxy (fill or stroke) to None",
+            has_doc,
+            |s, _| {
+                let f = s.fill_active;
+                set_paint(s, &json!({"none": true}), f)
+            }
+        ),
         cmd!(
             "transparency.set",
             "Transparency",
@@ -94,7 +107,8 @@ pub fn proxy_specs() -> Vec<CommandSpec> {
             None,
             "{stroke?: bool (default: the active proxy), ids?|id?, item?: appearance item index|null, target?: \"object\"|\"contents\"} replace the active proxy's colours by their complements ((highest + lowest) − each component, over RGB or CMY; grey unchanged) keeping each colour's model; honours the Appearance panel's active item as paint.invert does; with nothing selected, the default → {changed}",
             has_doc,
-            |s, p| proxy_recolor(s, p, "paint.complement", "Complement", &|c: Color| c.complement_keep_model())
+            |s, p| proxy_recolor(s, p, "paint.complement", "Complement", &|c: Color| c
+                .complement_keep_model())
         ),
         cmd!(
             "paint.lastColor",
@@ -116,7 +130,8 @@ pub fn proxy_specs() -> Vec<CommandSpec> {
             "{stroke?: bool (default: the active proxy), ids?|id?, item?: appearance item index|null, target?: \"object\"|\"contents\"} apply the last gradient used (paint.recent lastGradient), fitted to each object, to the active proxy of the selection and the default",
             has_doc,
             |s, p| {
-                let paint = super::gradient::unplaced(&Paint::Gradient(Box::new(s.last_gradient.clone())));
+                let paint =
+                    super::gradient::unplaced(&Paint::Gradient(Box::new(s.last_gradient.clone())));
                 apply_to_proxy(s, p, paint)
             }
         ),
@@ -237,7 +252,10 @@ pub(crate) fn painted<'a>(n: &'a Node, top: bool, out: &mut Vec<&'a Node>) {
         _ => !top && n.is_container(),
     };
     if expand {
-        n.children().into_iter().flatten().for_each(|c| painted(c, false, out));
+        n.children()
+            .into_iter()
+            .flatten()
+            .for_each(|c| painted(c, false, out));
     } else {
         out.push(n);
     }
@@ -253,7 +271,8 @@ impl DocState {
         if self.selection.is_empty() {
             return (false, false);
         }
-        let ids: std::collections::HashSet<NodeId> = self.selection.objects.iter().copied().collect();
+        let ids: std::collections::HashSet<NodeId> =
+            self.selection.objects.iter().copied().collect();
         let (mut selected, mut nodes) = (vec![], vec![]);
         self.doc.walk(|n| {
             if ids.contains(&n.id) {
@@ -261,12 +280,18 @@ impl DocState {
                 painted(n, true, &mut nodes);
             }
         });
-        let first = self.selection.objects.first().and_then(|id| self.doc.node(*id));
+        let first = self
+            .selection
+            .objects
+            .first()
+            .and_then(|id| self.doc.node(*id));
         let differ = |stroke: bool| {
             let item = first.and_then(|f| f.appearance.item_of_kind(item, !stroke));
             let set = if item.is_some() { &selected } else { &nodes };
             let mut paints = set.iter().map(|n| proxy_paint(n, stroke, item));
-            let Some(p0) = paints.next() else { return false };
+            let Some(p0) = paints.next() else {
+                return false;
+            };
             paints.any(|p| !same_in_proxy(&p0, &p))
         };
         (differ(false), differ(true))
@@ -276,26 +301,32 @@ impl DocState {
 impl Session {
     /// [`DocState::proxy_mixed`] of the active document for the Appearance panel's active item.
     pub fn proxy_mixed(&self) -> (bool, bool) {
-        self.active().map_or((false, false), |st| st.proxy_mixed(self.appearance_item()))
+        self.active()
+            .map_or((false, false), |st| st.proxy_mixed(self.appearance_item()))
     }
 }
 
 fn proxies(s: &mut Session, _: &Value) -> Result<Value> {
     let (fill, stroke) = s.proxy_paints();
     let (fill_mixed, stroke_mixed) = s.proxy_mixed();
-    Ok(json!({"fill": fill, "stroke": stroke, "fillActive": s.fill_active, "fillMixed": fill_mixed, "strokeMixed": stroke_mixed}))
+    Ok(
+        json!({"fill": fill, "stroke": stroke, "fillActive": s.fill_active, "fillMixed": fill_mixed, "strokeMixed": stroke_mixed}),
+    )
 }
 
 /// `stroke` param, defaulting to the proxy that is in front.
 fn stroke_param(s: &Session, p: &Value) -> bool {
-    p.get("stroke").and_then(Value::as_bool).unwrap_or(!s.fill_active)
+    p.get("stroke")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.fill_active)
 }
 
 /// The model RGB colours given in `p` are stored in: the document's in a CMYK document (`None` in
 /// an RGB one, or with `keepModel`).
 fn new_color_model(s: &Session, p: &Value) -> Option<vectorcraft_color::cms::Model> {
     let mode = s.active()?.doc.color_mode;
-    (mode != vectorcraft_doc::ColorMode::Rgb && !bool_or(p, "keepModel", false)).then(|| mode.model())
+    (mode != vectorcraft_doc::ColorMode::Rgb && !bool_or(p, "keepModel", false))
+        .then(|| mode.model())
 }
 
 /// Parse a paint from params (color / none / swatch / gradient). None = no paint keys given. A
@@ -315,19 +346,30 @@ pub(crate) fn paint_from(s: &Session, p: &Value) -> Result<Option<Paint>> {
         if d.swatch(name).is_none() && d.pattern(name).is_some() {
             return Ok(Some(vectorcraft_doc::pattern::pattern_paint(name)));
         }
-        let sw = d.swatch(name).ok_or_else(|| EngineError::Other(format!("no swatch `{name}`")))?;
+        let sw = d
+            .swatch(name)
+            .ok_or_else(|| EngineError::Other(format!("no swatch `{name}`")))?;
         let tint = tint_param(p, "paint")?;
         return match &sw.paint {
-            Paint::Solid { .. } => swatch_solid(d, name, tint).map(Some).map_err(|e| bad("paint", e)),
+            Paint::Solid { .. } => swatch_solid(d, name, tint)
+                .map(Some)
+                .map_err(|e| bad("paint", e)),
             _ if tint.is_some() => Err(bad("paint", "`tint` applies to global and spot colours")),
-            Paint::Gradient(g) => Ok(Some(Paint::Gradient(Box::new(GradientPaint { swatch: Some(name.to_string()), ..(**g).clone() })))),
+            Paint::Gradient(g) => Ok(Some(Paint::Gradient(Box::new(GradientPaint {
+                swatch: Some(name.to_string()),
+                ..(**g).clone()
+            })))),
             other => Ok(Some(other.clone())),
         };
     }
     if let Some(g) = p.get("gradient") {
         let g = super::gradient::link_stops(&s.doc()?.doc, g).map_err(|e| bad("paint", e))?;
         let mut gp = super::gradient::parse_gradient(&g).map_err(|e| bad("paint", e))?;
-        gp.gradient.stops.iter_mut().filter(|st| st.swatch.is_none()).for_each(|st| st.color = new_color(st.color));
+        gp.gradient
+            .stops
+            .iter_mut()
+            .filter(|st| st.swatch.is_none())
+            .for_each(|st| st.color = new_color(st.color));
         return Ok(Some(Paint::Gradient(Box::new(gp))));
     }
     if let Some(c) = p.get("color") {
@@ -341,32 +383,51 @@ pub(crate) fn paint_from(s: &Session, p: &Value) -> Result<Option<Paint>> {
 pub(crate) fn tint_param(p: &Value, cmd: &str) -> Result<Option<f32>> {
     p.get("tint")
         .filter(|v| !v.is_null())
-        .map(|v| v.as_f64().map(|t| (t / 100.0).clamp(0.0, 1.0) as f32).ok_or_else(|| bad(cmd, "`tint` must be a number (%)")))
+        .map(|v| {
+            v.as_f64()
+                .map(|t| (t / 100.0).clamp(0.0, 1.0) as f32)
+                .ok_or_else(|| bad(cmd, "`tint` must be a number (%)"))
+        })
         .transpose()
 }
 
 /// The solid paint colour swatch `name` applies at `tint` (0..1): a global or spot colour links to
 /// itself (default 100%), a tint swatch to its base (default: its own tint), a process colour is
 /// just its colour (it has no tints).
-pub(crate) fn swatch_solid(d: &Document, name: &str, tint: Option<f32>) -> std::result::Result<Paint, String> {
-    let sw = d.swatch(name).ok_or_else(|| format!("no swatch `{name}`"))?;
+pub(crate) fn swatch_solid(
+    d: &Document,
+    name: &str,
+    tint: Option<f32>,
+) -> std::result::Result<Paint, String> {
+    let sw = d
+        .swatch(name)
+        .ok_or_else(|| format!("no swatch `{name}`"))?;
     if sw.paint.color().is_none() {
         return Err(format!("`{name}` isn't a colour swatch"));
     }
     match (d.swatch_link(name), tint) {
         // A tint swatch whose base is gone keeps its colour.
-        (Some((base, own)), _) => Ok(d.tint_paint(&base, tint.unwrap_or(own)).unwrap_or_else(|| sw.paint.clone())),
+        (Some((base, own)), _) => Ok(d
+            .tint_paint(&base, tint.unwrap_or(own))
+            .unwrap_or_else(|| sw.paint.clone())),
         (None, None) => Ok(sw.paint.clone()),
-        (None, Some(_)) => Err(format!("`{name}` is a process colour: tints apply to global and spot colours")),
+        (None, Some(_)) => Err(format!(
+            "`{name}` is a process colour: tints apply to global and spot colours"
+        )),
     }
 }
 
 fn set_paint(s: &mut Session, p: &Value, fill: bool) -> Result<Value> {
-    let cmd = if fill { "paint.setFill" } else { "paint.setStroke" };
+    let cmd = if fill {
+        "paint.setFill"
+    } else {
+        "paint.setStroke"
+    };
     if p.get("tint").is_some() && p.get("swatch").is_none() {
         return Err(bad(cmd, "`tint` goes with a global or spot `swatch`"));
     }
-    let paint = paint_from(s, p)?.ok_or_else(|| bad(cmd, "give color, none, swatch or gradient"))?;
+    let paint =
+        paint_from(s, p)?.ok_or_else(|| bad(cmd, "give color, none, swatch or gradient"))?;
     apply_paint(s, p, paint, fill)
 }
 
@@ -380,7 +441,11 @@ fn apply_to_proxy(s: &mut Session, p: &Value, paint: Paint) -> Result<Value> {
 /// `paint.setFill`) and of the defaults for new art, focus its proxy unless `focus` is false, and
 /// remember the paint.
 fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<Value> {
-    let cmd = if fill { "paint.setFill" } else { "paint.setStroke" };
+    let cmd = if fill {
+        "paint.setFill"
+    } else {
+        "paint.setStroke"
+    };
     // Characters selected with the Type tool take the paint, not the whole type object (#1063).
     if p.get("ids").is_none()
         && p.get("item").is_none()
@@ -390,7 +455,9 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
         // When the type comes out as it was, the document and its undo history stay as they are.
         let before = s.doc()?.doc.clone();
         super::overprint::edit_counted(s, if fill { "Fill Color" } else { "Stroke Color" }, |d| {
-            let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else { return Err(EngineError::NoNode(id)) };
+            let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else {
+                return Err(EngineError::NoNode(id));
+            };
             let (xf, lb) = (t.xf, t.local_bounds());
             vectorcraft_text::edit::style_range(&mut t.runs, a, b, |st| {
                 if fill {
@@ -399,7 +466,12 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
                     if !paint.is_none() {
                         run_stroke_weight(st);
                     }
-                    st.stroke = place_run_paint(&paint, p, xf, vectorcraft_doc::appearance::stroke_paint_bounds(lb, st.stroke_width));
+                    st.stroke = place_run_paint(
+                        &paint,
+                        p,
+                        xf,
+                        vectorcraft_doc::appearance::stroke_paint_bounds(lb, st.stroke_width),
+                    );
                 }
             });
             super::typecmd::refresh_bounds(t);
@@ -417,7 +489,11 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
     let ids = super::graph::paint_targets(&s.doc()?.doc, &selected);
     // The gradient mesh point last clicked with the Mesh tool or Direct Selection: a solid fill
     // recolours just that point of its mesh.
-    let mesh_point = if fill && matches!(paint, Paint::Solid { .. }) { focused_mesh_point(s) } else { None };
+    let mesh_point = if fill && matches!(paint, Paint::Solid { .. }) {
+        focused_mesh_point(s)
+    } else {
+        None
+    };
     let label = if fill { "Fill Color" } else { "Stroke Color" };
     edit_items_then(
         s,
@@ -498,7 +574,10 @@ fn apply_paint(s: &mut Session, p: &Value, paint: Paint, fill: bool) -> Result<V
 fn focused_mesh_point(s: &Session) -> Option<(NodeId, usize)> {
     let o = s.tool_options();
     let pt = o.get("meshPoint")?;
-    Some((NodeId(pt.get("id")?.as_u64()?), usize::try_from(pt.get("index")?.as_u64()?).ok()?))
+    Some((
+        NodeId(pt.get("id")?.as_u64()?),
+        usize::try_from(pt.get("index")?.as_u64()?).ok()?,
+    ))
 }
 
 /// A type run's stroke; a painted stroke on a run without one gets 1 pt.
@@ -580,14 +659,24 @@ fn default_paint(s: &mut Session, p: &Value) -> Result<Value> {
 /// Invert / Complement (`cmd`, undone as `label`): recolour the active proxy of the targets (or the
 /// default when there are none) and remember the first target's new paint. The Appearance panel's
 /// active item of the proxy's kind is recoloured in each selected object's own stack instead.
-fn proxy_recolor(s: &mut Session, p: &Value, cmd: &str, label: &str, f: &dyn Fn(Color) -> Color) -> Result<Value> {
+fn proxy_recolor(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    label: &str,
+    f: &dyn Fn(Color) -> Color,
+) -> Result<Value> {
     let stroke = stroke_param(s, p);
     let ids = match ids_param(p, "ids") {
         Some(ids) => ids,
         None => super::edit::selected_roots(s)?,
     };
     if ids.is_empty() {
-        let def = if stroke { &mut s.paint.stroke } else { &mut s.paint.fill };
+        let def = if stroke {
+            &mut s.paint.stroke
+        } else {
+            &mut s.paint.fill
+        };
         let changed = super::colorcmds::map_paint(def, f);
         let shown = def.clone();
         s.remember_paint(&shown);
@@ -599,9 +688,13 @@ fn proxy_recolor(s: &mut Session, p: &Value, cmd: &str, label: &str, f: &dyn Fn(
             let ids = item.targets(s, p)?;
             let mut changed = 0;
             edit_items(s, &ids, item, cmd, label, !stroke, |n, i| {
-                let paint =
-                    if stroke { n.appearance.stroke_at_mut(i).map(|l| &mut l.paint) } else { n.appearance.fill_at_mut(i).map(|l| &mut l.paint) };
-                changed += paint.is_some_and(|paint| super::colorcmds::map_paint(paint, f)) as usize;
+                let paint = if stroke {
+                    n.appearance.stroke_at_mut(i).map(|l| &mut l.paint)
+                } else {
+                    n.appearance.fill_at_mut(i).map(|l| &mut l.paint)
+                };
+                changed +=
+                    paint.is_some_and(|paint| super::colorcmds::map_paint(paint, f)) as usize;
                 Ok(())
             })?;
             (json!({ "changed": changed }), Some(index))
@@ -612,8 +705,18 @@ fn proxy_recolor(s: &mut Session, p: &Value, cmd: &str, label: &str, f: &dyn Fn(
             (super::colorcmds::recolor(s, &q, label, f)?, None)
         }
     };
-    let shown_ids = if shown_item.is_some() { ids } else { leaf_targets(s, &ids)? };
-    if let Some(shown) = shown_ids.first().and_then(|id| s.doc().ok()?.doc.node(*id).map(|n| proxy_paint(n, stroke, shown_item))) {
+    let shown_ids = if shown_item.is_some() {
+        ids
+    } else {
+        leaf_targets(s, &ids)?
+    };
+    if let Some(shown) = shown_ids.first().and_then(|id| {
+        s.doc()
+            .ok()?
+            .doc
+            .node(*id)
+            .map(|n| proxy_paint(n, stroke, shown_item))
+    }) {
         s.remember_paint(&shown);
     }
     Ok(r)
@@ -627,20 +730,35 @@ fn transparency(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // While an opacity mask is edited the selection is its art, so the Appearance panel's active
     // item (a row of that art) doesn't stand for the masked object.
-    let editing_mask = p.get("ids").is_none() && p.get("id").is_none() && s.doc()?.doc.mask_edit.is_some();
-    let item = if editing_mask && p.get("item").is_none() { ItemTarget::Top } else { item_target(s, p, C)? };
+    let editing_mask =
+        p.get("ids").is_none() && p.get("id").is_none() && s.doc()?.doc.mask_edit.is_some();
+    let item = if editing_mask && p.get("item").is_none() {
+        ItemTarget::Top
+    } else {
+        item_target(s, p, C)?
+    };
     let mut q = p.as_object().cloned().unwrap_or_default();
     q.remove("item");
     q.remove("id");
-    q.insert("ids".into(), json!(ids.iter().map(|id| id.0).collect::<Vec<_>>()));
+    q.insert(
+        "ids".into(),
+        json!(ids.iter().map(|id| id.0).collect::<Vec<_>>()),
+    );
     let ItemTarget::Item { index, explicit } = item else {
         return s.execute("object.setProps", &Value::Object(q));
     };
     // Opacity and blend belong to the targeted fill/stroke; isolate/knockout/knockoutShape stay object-level.
-    let item_ids = if editing_mask { ids } else { appearance_targets(s, p)? };
+    let item_ids = if editing_mask {
+        ids
+    } else {
+        appearance_targets(s, p)?
+    };
     if explicit {
         let d = &s.doc()?.doc;
-        if !item_ids.iter().any(|id| d.node(*id).is_some_and(|n| index < n.appearance.items.len())) {
+        if !item_ids.iter().any(|id| {
+            d.node(*id)
+                .is_some_and(|n| index < n.appearance.items.len())
+        }) {
             return Err(bad(C, format!("no appearance item {index}")));
         }
     }
@@ -657,7 +775,10 @@ fn transparency(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if opacity.is_some() || blend.is_some() {
         let ids: Vec<u64> = item_ids.iter().map(|id| id.0).collect();
-        s.execute("appearance.setItem", &json!({ "index": index, "ids": ids, "opacity": opacity, "blend": blend }))?;
+        s.execute(
+            "appearance.setItem",
+            &json!({ "index": index, "ids": ids, "opacity": opacity, "blend": blend }),
+        )?;
     }
     if q.keys().all(|k| k == "ids") {
         return ok();

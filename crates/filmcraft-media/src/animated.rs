@@ -151,7 +151,11 @@ impl AnimatedSource {
                 frame_rate: rate_of(&durations),
                 par: (1, 1),
                 codec: format.codec().into(),
-                pixel_format: if has_alpha { "RGBA 8-bit".into() } else { "RGB 8-bit".into() },
+                pixel_format: if has_alpha {
+                    "RGBA 8-bit".into()
+                } else {
+                    "RGB 8-bit".into()
+                },
                 color: filmcraft_color::ColorInfo::SRGB_FULL,
                 has_alpha,
                 bitrate: None,
@@ -162,8 +166,15 @@ impl AnimatedSource {
             start_timecode: None,
             file_size: Some(file_size),
         };
-        let frames = pictures.into_iter().map(|(w, h, rgba)| Arc::new(VideoFrame::rgba8(w, h, rgba))).collect();
-        Some(Self { info, frames, starts })
+        let frames = pictures
+            .into_iter()
+            .map(|(w, h, rgba)| Arc::new(VideoFrame::rgba8(w, h, rgba)))
+            .collect();
+        Some(Self {
+            info,
+            frames,
+            starts,
+        })
     }
 
     /// Number of distinct frames kept.
@@ -191,7 +202,10 @@ fn rate_of(durations: &[Tick]) -> FrameRate {
     let mut best = (0usize, 0i64);
     let mut i = 0;
     while let Some(&v) = sorted.get(i) {
-        let run = sorted.get(i..).map_or(0, |rest| rest.iter().take_while(|&&x| x == v).count()).max(1);
+        let run = sorted
+            .get(i..)
+            .map_or(0, |rest| rest.iter().take_while(|&&x| x == v).count())
+            .max(1);
         if run > best.0 {
             best = (run, v);
         }
@@ -203,7 +217,11 @@ fn rate_of(durations: &[Tick]) -> FrameRate {
     }
     let rate = FrameRate::new(TICKS_PER_SECOND, ticks);
     let fps = rate.as_f64();
-    if (1.0..=120.0).contains(&fps) { rate } else { FrameRate::FPS_30 }
+    if (1.0..=120.0).contains(&fps) {
+        rate
+    } else {
+        FrameRate::FPS_30
+    }
 }
 
 impl MediaSource for AnimatedSource {
@@ -212,7 +230,10 @@ impl MediaSource for AnimatedSource {
     }
 
     fn video_frame(&self, req: FrameRequest) -> Result<Arc<VideoFrame>> {
-        self.frames.get(self.index_at(req.time)).cloned().ok_or(MediaError::NoStream("video"))
+        self.frames
+            .get(self.index_at(req.time))
+            .cloned()
+            .ok_or(MediaError::NoStream("video"))
     }
 
     fn audio(&self, _start: i64, _frames: usize, _sample_rate: u32) -> Result<AudioBuffer> {

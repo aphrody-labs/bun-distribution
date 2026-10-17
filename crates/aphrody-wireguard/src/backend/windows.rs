@@ -52,7 +52,11 @@ fn to_set_peer(p: &Peer) -> Result<SetPeer> {
 }
 
 fn netsh(args: &[&str]) -> Result<()> {
-    let out = Command::new("netsh").no_window().args(args).output().map_err(err)?;
+    let out = Command::new("netsh")
+        .no_window()
+        .args(args)
+        .output()
+        .map_err(err)?;
     if out.status.success() {
         Ok(())
     } else {
@@ -95,11 +99,16 @@ impl Handle {
         adapter.set_config(&set).map_err(err)?;
         // Addresses and, unless `Table = off`, one route per allowed IP (wg-quick semantics).
         let routes = if cfg.interface.table == Table::Off {
-            SetInterface { peers: Vec::new(), ..set }
+            SetInterface {
+                peers: Vec::new(),
+                ..set
+            }
         } else {
             set
         };
-        adapter.set_default_route(&cfg.interface.addresses, &routes).map_err(err)?;
+        adapter
+            .set_default_route(&cfg.interface.addresses, &routes)
+            .map_err(err)?;
         if let Some(mtu) = cfg.interface.mtu {
             for fam in ["ipv4", "ipv6"] {
                 netsh(&[
@@ -114,7 +123,11 @@ impl Handle {
             }
         }
         adapter.up().map_err(err)?;
-        Ok(Self { name: name.to_owned(), adapter, _wg: wg })
+        Ok(Self {
+            name: name.to_owned(),
+            adapter,
+            _wg: wg,
+        })
     }
 
     pub(super) fn open(name: &str, _backend: Backend) -> Result<Self> {
@@ -122,7 +135,11 @@ impl Handle {
         let adapter = Adapter::open(&wg, name).map_err(|e| {
             Error::Backend(format!("adaptateur {name} absent (tunnel arrêté?): {e}"))
         })?;
-        Ok(Self { name: name.to_owned(), adapter, _wg: wg })
+        Ok(Self {
+            name: name.to_owned(),
+            adapter,
+            _wg: wg,
+        })
     }
 
     /// Routes are installed by [`Handle::create`] together with the addresses.
@@ -148,7 +165,15 @@ impl Handle {
                     "validate=no",
                 ])?;
             } else {
-                netsh(&["interface", fam, "add", "dnsservers", &name, &ip, "validate=no"])?;
+                netsh(&[
+                    "interface",
+                    fam,
+                    "add",
+                    "dnsservers",
+                    &name,
+                    &ip,
+                    "validate=no",
+                ])?;
             }
         }
         Ok(())
@@ -214,12 +239,16 @@ impl Handle {
 
     pub(super) fn patch_peer(&self, patch: &PeerPatch) -> Result<()> {
         self.replace_peers(|peers| {
-            let current = peers.iter().find(|p| p.public_key == Some(patch.public_key.0));
+            let current = peers
+                .iter()
+                .find(|p| p.public_key == Some(patch.public_key.0));
             let current = current.map(|p| Peer {
                 public_key: patch.public_key,
                 preshared_key: p.preshared_key.map(Key),
                 allowed_ips: p.allowed_ips.clone(),
-                endpoint: Some(p.endpoint).filter(|e| e.port() != 0).map(|e| e.to_string()),
+                endpoint: Some(p.endpoint)
+                    .filter(|e| e.port() != 0)
+                    .map(|e| e.to_string()),
                 persistent_keepalive: p.keep_alive,
             });
             let new = to_set_peer(&patch.merge(current.as_ref())?)?;

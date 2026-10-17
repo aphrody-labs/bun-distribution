@@ -41,7 +41,14 @@
 //! checked against [`Limits`] before allocating.
 
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod cameras;
 mod color;
@@ -77,7 +84,9 @@ pub use crate::develop::{DevelopOptions, Developed, RawInfo, WhiteBalance, devel
 pub use crate::error::RawError;
 pub use crate::look::{CameraLook, LookRejected, PROXY_EDGE, Reference, ToneCurve, fit_look};
 pub use crate::opcodes::GainMap;
-pub use crate::preview::{Preview, PreviewColorSpace, embedded_preview, embedded_preview_color_space, embedded_previews};
+pub use crate::preview::{
+    Preview, PreviewColorSpace, embedded_preview, embedded_preview_color_space, embedded_previews,
+};
 pub use crate::sensor::{BlackLevels, Cfa, Rect, Sensor};
 pub use crate::tone::{Tone, retone};
 
@@ -94,7 +103,9 @@ pub fn orientation(bytes: &[u8]) -> Option<u16> {
     }
     let tiff = Tiff::new(bytes)?;
     let ifd = tiff.ifd_at(tiff.first_ifd, 0)?;
-    tiff.tag_uint(&ifd, tag::ORIENTATION).filter(|o| (1..=8).contains(o)).map(|o| o as u16)
+    tiff.tag_uint(&ifd, tag::ORIENTATION)
+        .filter(|o| (1..=8).contains(o))
+        .map(|o| o as u16)
 }
 
 /// Camera raw container families.
@@ -139,7 +150,9 @@ impl RawFormat {
 }
 
 /// File extensions of the raw formats this crate recognises.
-pub const EXTENSIONS: &[&str] = &["dng", "cr2", "cr3", "nef", "nrw", "arw", "srf", "sr2", "pef", "orf", "rw2", "raf"];
+pub const EXTENSIONS: &[&str] = &[
+    "dng", "cr2", "cr3", "nef", "nrw", "arw", "srf", "sr2", "pef", "orf", "rw2", "raf",
+];
 
 /// Decompression-bomb guards, checked on header values before allocating
 /// (the same shape and defaults as `photocraft-codecs`' limits).
@@ -155,7 +168,12 @@ pub struct Limits {
 
 impl Default for Limits {
     fn default() -> Self {
-        Limits { max_width: 1 << 18, max_height: 1 << 18, max_pixels: 1 << 28, max_alloc: 2 << 30 }
+        Limits {
+            max_width: 1 << 18,
+            max_height: 1 << 18,
+            max_pixels: 1 << 28,
+            max_alloc: 2 << 30,
+        }
     }
 }
 
@@ -163,18 +181,29 @@ impl Limits {
     /// Checks a `width × height` buffer of `bytes_per_pixel` bytes per pixel.
     pub fn check(&self, width: u64, height: u64, bytes_per_pixel: u64) -> Result<(), RawError> {
         if width == 0 || height == 0 {
-            return Err(RawError::Malformed(format!("zero-sized image {width}x{height}")));
+            return Err(RawError::Malformed(format!(
+                "zero-sized image {width}x{height}"
+            )));
         }
         if width > u64::from(self.max_width) || height > u64::from(self.max_height) {
-            return Err(RawError::LimitExceeded(format!("dimensions {width}x{height} exceed {}x{}", self.max_width, self.max_height)));
+            return Err(RawError::LimitExceeded(format!(
+                "dimensions {width}x{height} exceed {}x{}",
+                self.max_width, self.max_height
+            )));
         }
         let pixels = width.saturating_mul(height);
         if pixels > self.max_pixels {
-            return Err(RawError::LimitExceeded(format!("{pixels} pixels exceed {}", self.max_pixels)));
+            return Err(RawError::LimitExceeded(format!(
+                "{pixels} pixels exceed {}",
+                self.max_pixels
+            )));
         }
         let bytes = pixels.saturating_mul(bytes_per_pixel);
         if bytes > self.max_alloc || usize::try_from(bytes).is_err() {
-            return Err(RawError::LimitExceeded(format!("{bytes} bytes exceed {}", self.max_alloc)));
+            return Err(RawError::LimitExceeded(format!(
+                "{bytes} bytes exceed {}",
+                self.max_alloc
+            )));
         }
         Ok(())
     }
@@ -219,7 +248,12 @@ pub fn identify(bytes: &[u8]) -> Option<RawFormat> {
     if ifds.iter().any(|i| i.has(tag::DNG_VERSION)) {
         return Some(RawFormat::Dng);
     }
-    if ifds.iter().any(|i| matches!(t.tag_uint(i, tag::PHOTOMETRIC), Some(PHOTOMETRIC_CFA | PHOTOMETRIC_LINEAR_RAW))) {
+    if ifds.iter().any(|i| {
+        matches!(
+            t.tag_uint(i, tag::PHOTOMETRIC),
+            Some(PHOTOMETRIC_CFA | PHOTOMETRIC_LINEAR_RAW)
+        )
+    }) {
         let make = ifds.iter().find_map(|i| t.tag_ascii(i, tag::MAKE));
         return Some(make_format(make.as_deref()));
     }
@@ -238,7 +272,9 @@ pub fn is_raw(bytes: &[u8]) -> bool {
 pub fn decode(bytes: &[u8], limits: &Limits) -> Result<Sensor, RawError> {
     let format = identify(bytes).ok_or(RawError::NotRaw)?;
     match format {
-        RawFormat::Cr3 => Err(RawError::unsupported("Canon CR3 (ISO BMFF / CRX) is not decoded yet")),
+        RawFormat::Cr3 => Err(RawError::unsupported(
+            "Canon CR3 (ISO BMFF / CRX) is not decoded yet",
+        )),
         RawFormat::Raf => raf::decode(bytes, limits),
         _ => {
             let t = Tiff::new(bytes).ok_or(RawError::NotRaw)?;
@@ -264,7 +300,10 @@ fn lift_clipped(mut s: Sensor) -> Sensor {
 /// components, samples)`; at most `max_samples` samples are allocated.
 /// Exposed for fuzzing and tools.
 #[doc(hidden)]
-pub fn decode_lossless_jpeg(bytes: &[u8], max_samples: usize) -> Result<(usize, usize, usize, Vec<u16>), RawError> {
+pub fn decode_lossless_jpeg(
+    bytes: &[u8],
+    max_samples: usize,
+) -> Result<(usize, usize, usize, Vec<u16>), RawError> {
     ljpeg::decode(bytes, max_samples).map(|(f, v)| (f.width, f.height, f.components, v))
 }
 

@@ -84,7 +84,10 @@ pub fn find_skill(vfs: &Vfs, query: &str) -> Result<Option<SkillInfo>, String> {
     if q.is_empty() {
         return Ok(None);
     }
-    if let Some(exact) = skills.iter().find(|s| s.skill_id_str.eq_ignore_ascii_case(&q)) {
+    if let Some(exact) = skills
+        .iter()
+        .find(|s| s.skill_id_str.eq_ignore_ascii_case(&q))
+    {
         return Ok(Some(exact.clone()));
     }
     Ok(skills.into_iter().find(|s| {
@@ -508,7 +511,12 @@ pub fn decode_cfgbin_typed(vfs: &Vfs, path: &str) -> Result<CfgbinTyped, String>
             json: serde_json::to_string(&value).map_err(|error| error.to_string())?,
             brut,
         }),
-        None => Ok(CfgbinTyped { cle, famille: None, json: String::new(), brut }),
+        None => Ok(CfgbinTyped {
+            cle,
+            famille: None,
+            json: String::new(),
+            brut,
+        }),
     }
 }
 
@@ -548,8 +556,11 @@ pub fn list_shops(vfs: &Vfs) -> Result<Vec<ShopDto>, String> {
     let shop_text = load_text(vfs, "shop").unwrap_or_default();
 
     // Index nom d'objet par identifiant, pour rendre l'inventaire lisible.
-    let item_names: HashMap<String, String> =
-        list_items(vfs).unwrap_or_default().into_iter().map(|i| (i.item_id, i.name)).collect();
+    let item_names: HashMap<String, String> = list_items(vfs)
+        .unwrap_or_default()
+        .into_iter()
+        .map(|i| (i.item_id, i.name))
+        .collect();
 
     Ok(shops
         .iter()
@@ -929,22 +940,24 @@ pub fn list_belong_teams(vfs: &Vfs) -> Result<Vec<BelongTeamDto>, String> {
     )?;
     let team_text = load_text(vfs, "team")?;
 
-    Ok(aphrody_nie_data::belong_team::parse_belong_team_config(&config)
-        .iter()
-        .map(|t| BelongTeamDto {
-            team_id: t.belong_team_id.to_hex(),
-            name: aphrody_nie_data::belong_team::resolve_team_name(t, &team_text)
-                .map(str::to_string),
-            binder_order: t.binder_team_order_type as f64,
-            seasons: SEASONS
-                .iter()
-                .filter(|(s, _)| t.appears_in(*s))
-                .map(|(_, l)| (*l).to_string())
-                .collect(),
-            emblem_id_v: t.team_emblem_id_v.to_hex(),
-            kit_id_v: t.team_kit_v.to_hex(),
-        })
-        .collect())
+    Ok(
+        aphrody_nie_data::belong_team::parse_belong_team_config(&config)
+            .iter()
+            .map(|t| BelongTeamDto {
+                team_id: t.belong_team_id.to_hex(),
+                name: aphrody_nie_data::belong_team::resolve_team_name(t, &team_text)
+                    .map(str::to_string),
+                binder_order: t.binder_team_order_type as f64,
+                seasons: SEASONS
+                    .iter()
+                    .filter(|(s, _)| t.appears_in(*s))
+                    .map(|(_, l)| (*l).to_string())
+                    .collect(),
+                emblem_id_v: t.team_emblem_id_v.to_hex(),
+                kit_id_v: t.team_kit_v.to_hex(),
+            })
+            .collect(),
+    )
 }
 
 /// Formation de terrain (`formation_config`) — puissances offensive/défensive et tranche de
@@ -992,7 +1005,11 @@ pub fn list_formations(vfs: &Vfs) -> Result<Vec<FormationDto>, String> {
             placement_count: f.placement_count as f64,
             power_offense: f.power_offense as f64,
             power_defense: f.power_defense as f64,
-            positions: cfg.placements_of(f).iter().map(|p| p.position_id as f64).collect(),
+            positions: cfg
+                .placements_of(f)
+                .iter()
+                .map(|p| p.position_id as f64)
+                .collect(),
         })
         .collect())
 }
@@ -1041,8 +1058,14 @@ pub fn list_uniforms(vfs: &Vfs) -> Result<Vec<UniformDto>, String> {
             model_count: r.model_count as f64,
             resolved_count: r.models.len() as f64,
             type_id: r.type_id.map(|t| t as f64),
-            fielder_model_id: r.models.first().map(|m| m.uniform_fielder_model_id_crc.to_hex()),
-            keeper_model_id: r.models.first().map(|m| m.uniform_keeper_model_id_crc.to_hex()),
+            fielder_model_id: r
+                .models
+                .first()
+                .map(|m| m.uniform_fielder_model_id_crc.to_hex()),
+            keeper_model_id: r
+                .models
+                .first()
+                .map(|m| m.uniform_keeper_model_id_crc.to_hex()),
         })
         .collect())
 }
@@ -1182,7 +1205,10 @@ pub fn list_charas(vfs: &Vfs) -> Result<Vec<CharaDto>, String> {
                     .map(str::to_string),
                 gender: base.gender as f64,
                 element: aphrody_nie_data::chara_param::element_id_to_names(cp.element)
-                    .map_or_else(|| format!("? ({})", cp.element), |(fr, _, _)| fr.to_string()),
+                    .map_or_else(
+                        || format!("? ({})", cp.element),
+                        |(fr, _, _)| fr.to_string(),
+                    ),
                 main_position: aphrody_nie_data::chara_param::position_code_owned(cp.main_position)
                     .unwrap_or_else(|| "?".to_string()),
                 sub_position: aphrody_nie_data::chara_param::position_code_owned(cp.sub_position)
@@ -1190,7 +1216,9 @@ pub fn list_charas(vfs: &Vfs) -> Result<Vec<CharaDto>, String> {
                 growth_pattern: cp.growth_pattern as f64,
                 series: aphrody_nie_data::chara_base::resolve_series_name_fr(base, &series)
                     .map(str::to_string),
-                team: base.belong_team_id.and_then(|t| teams.get(&t.to_hex()).cloned()),
+                team: base
+                    .belong_team_id
+                    .and_then(|t| teams.get(&t.to_hex()).cloned()),
                 skills: cp
                     .skills
                     .iter()
@@ -1270,22 +1298,24 @@ pub fn list_opponent_teams(vfs: &Vfs) -> Result<Vec<OpponentTeamDto>, String> {
         _ => HashMap::new(),
     };
 
-    Ok(aphrody_nie_data::opponent_team::parse_opponent_team_config(&config)
-        .opponents
-        .iter()
-        .map(|o| OpponentTeamDto {
-            opponent_id: o.opponent_id.to_hex(),
-            team_id: o.team_id.to_hex(),
-            team_name: teams.get(&o.team_id.to_hex()).cloned(),
-            team_type: o.team_type as f64,
-            difficulty_type: o.difficulty_type as f64,
-            flag_no: o.flag_no as f64,
-            open_cond: o.open_cond.clone(),
-            formation_cond: o.formation_cond.clone(),
-            bg_texture_name: o.bg_texture_name.clone(),
-            game_id: o.game_id.to_hex(),
-        })
-        .collect())
+    Ok(
+        aphrody_nie_data::opponent_team::parse_opponent_team_config(&config)
+            .opponents
+            .iter()
+            .map(|o| OpponentTeamDto {
+                opponent_id: o.opponent_id.to_hex(),
+                team_id: o.team_id.to_hex(),
+                team_name: teams.get(&o.team_id.to_hex()).cloned(),
+                team_type: o.team_type as f64,
+                difficulty_type: o.difficulty_type as f64,
+                flag_no: o.flag_no as f64,
+                open_cond: o.open_cond.clone(),
+                formation_cond: o.formation_cond.clone(),
+                bg_texture_name: o.bg_texture_name.clone(),
+                game_id: o.game_id.to_hex(),
+            })
+            .collect(),
+    )
 }
 
 /// Vidéo du jeu (`movie_playing_config`) — chemin USM, BGM, sous-titres.
@@ -1444,7 +1474,7 @@ pub fn list_dictionary(vfs: &Vfs) -> Result<Vec<DictionaryDto>, String> {
                     Some((b.chara_id.to_hex(), nom))
                 })
                 .collect()
-        },
+        }
         _ => HashMap::new(),
     };
     let cartes = load_text(vfs, "map").unwrap_or_default();
@@ -1570,7 +1600,7 @@ pub fn list_drops(vfs: &Vfs) -> Result<Vec<DropDto>, String> {
                     Some((b.chara_id.to_hex(), nom))
                 })
                 .collect()
-        },
+        }
         _ => HashMap::new(),
     };
 
@@ -1582,7 +1612,11 @@ pub fn list_drops(vfs: &Vfs) -> Result<Vec<DropDto>, String> {
             chara_id: s.chara_id.to_hex(),
             name: noms.get(&s.chara_id.to_hex()).cloned(),
             weight: s.weight as f64,
-            share_pct: if total > 0.0 { s.weight as f64 * 100.0 / total } else { 0.0 },
+            share_pct: if total > 0.0 {
+                s.weight as f64 * 100.0 / total
+            } else {
+                0.0
+            },
             run_cond: s.run_cond.clone(),
         })
         .collect())
@@ -1620,7 +1654,11 @@ pub fn list_capsule_rates(vfs: &Vfs) -> Result<Vec<CapsuleRateDto>, String> {
                 table_id: table.id.to_hex(),
                 rank: r.rank as f64,
                 rate: r.rate as f64,
-                share_pct: if total > 0.0 { r.rate as f64 * 100.0 / total } else { 0.0 },
+                share_pct: if total > 0.0 {
+                    r.rate as f64 * 100.0 / total
+                } else {
+                    0.0
+                },
             });
         }
     }
@@ -1632,7 +1670,9 @@ pub fn list_capsule_rates(vfs: &Vfs) -> Result<Vec<CapsuleRateDto>, String> {
 /// Les langues du jeu, dans l'ordre d'affichage. Relevé sur l'installation Steam :
 /// `data/common/text/` porte `ja`, `fr`, `en`, `de`, `es`, `it`, `pt`, `zh_hans`, `zh_hant`
 /// (plus `common`, `event`, `map`, qui ne sont pas des langues).
-pub const LANGUES: [&str; 9] = ["fr", "en", "ja", "de", "es", "it", "pt", "zh_hans", "zh_hant"];
+pub const LANGUES: [&str; 9] = [
+    "fr", "en", "ja", "de", "es", "it", "pt", "zh_hans", "zh_hant",
+];
 
 /// Un nom dans une langue.
 #[derive(Serialize, specta::Type)]
@@ -1729,7 +1769,10 @@ pub fn list_noms(vfs: &Vfs) -> Result<Vec<NomsDto>, String> {
                     .entry(cle)
                     .or_insert_with(|| ("chara".to_string(), Vec::new()))
                     .1
-                    .push(NomLangueDto { langue: langue.to_string(), nom });
+                    .push(NomLangueDto {
+                        langue: langue.to_string(),
+                        nom,
+                    });
             }
         }
 
@@ -1743,7 +1786,10 @@ pub fn list_noms(vfs: &Vfs) -> Result<Vec<NomsDto>, String> {
                     .entry(s.skill_id_str.clone())
                     .or_insert_with(|| ("skill".to_string(), Vec::new()))
                     .1
-                    .push(NomLangueDto { langue: langue.to_string(), nom });
+                    .push(NomLangueDto {
+                        langue: langue.to_string(),
+                        nom,
+                    });
             }
         }
 
@@ -1753,24 +1799,36 @@ pub fn list_noms(vfs: &Vfs) -> Result<Vec<NomsDto>, String> {
                 let Some(nom) = aphrody_nie_data::item::resolve_name(it, &textes) else {
                     continue;
                 };
-                let cle = it.internal_code.clone().unwrap_or_else(|| it.item_id.to_hex());
+                let cle = it
+                    .internal_code
+                    .clone()
+                    .unwrap_or_else(|| it.item_id.to_hex());
                 index
                     .entry(cle)
                     .or_insert_with(|| ("item".to_string(), Vec::new()))
                     .1
-                    .push(NomLangueDto { langue: langue.to_string(), nom: nom.to_string() });
+                    .push(NomLangueDto {
+                        langue: langue.to_string(),
+                        nom: nom.to_string(),
+                    });
             }
         }
     }
 
-    Ok(index.into_iter().map(|(code, (kind, noms))| NomsDto { kind, code, noms }).collect())
+    Ok(index
+        .into_iter()
+        .map(|(code, (kind, noms))| NomsDto { kind, code, noms })
+        .collect())
 }
 /// Query native game records directly from the mounted VFS, without a database or dump.
 /// `domain` selects a native game collection; `query`, `element`, `position`,
 /// and `category` are optional case-insensitive substring filters. Results carry
 /// total and matched counts before the bounded page is selected.
 pub fn query_vfs(vfs: &Vfs, request: &serde_json::Value) -> Result<serde_json::Value, String> {
-    let domain = request.get("domain").and_then(serde_json::Value::as_str).unwrap_or("characters");
+    let domain = request
+        .get("domain")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("characters");
     let records = load_domain_records(vfs, domain)?;
     query_records(domain, &records, request)
 }
@@ -1820,7 +1878,11 @@ pub fn query_records(
     request: &serde_json::Value,
 ) -> Result<serde_json::Value, String> {
     let text = |key: &str| {
-        request.get(key).and_then(serde_json::Value::as_str).unwrap_or("").to_lowercase()
+        request
+            .get(key)
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("")
+            .to_lowercase()
     };
     let query = text("query");
     let fields = [
@@ -1833,7 +1895,11 @@ pub fn query_records(
         "item_id",
         "team_id",
     ];
-    let filters = [("element", "element"), ("position", "main_position"), ("category", "category")];
+    let filters = [
+        ("element", "element"),
+        ("position", "main_position"),
+        ("category", "category"),
+    ];
     let matches: Vec<_> = records
         .iter()
         .filter(|record| {
@@ -1854,8 +1920,15 @@ pub fn query_records(
                 })
         })
         .collect();
-    let offset = request.get("offset").and_then(serde_json::Value::as_u64).unwrap_or(0);
-    let limit = request.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(50).min(50_000);
+    let offset = request
+        .get("offset")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0);
+    let limit = request
+        .get("limit")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(50)
+        .min(50_000);
     let items: Vec<_> = matches
         .iter()
         .skip(usize::try_from(offset).unwrap_or(usize::MAX))
@@ -1908,8 +1981,10 @@ mod tests {
             .duration_since(std::time::UNIX_EPOCH)
             .expect("system clock")
             .as_nanos();
-        let disk_path = std::env::temp_dir()
-            .join(format!("nie-app-typed-cfgbin-{}-{stamp}.cfg.bin", std::process::id()));
+        let disk_path = std::env::temp_dir().join(format!(
+            "nie-app-typed-cfgbin-{}-{stamp}.cfg.bin",
+            std::process::id()
+        ));
         std::fs::write(&disk_path, &bytes).expect("write cfg.bin fixture");
 
         let mut vfs = Vfs::new();
@@ -1956,7 +2031,9 @@ mod tests {
     /// element=1 (Vent), category=1 (Tir) »).
     #[test]
     fn list_skills_sur_le_vrai_jeu() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip list_skills_sur_le_vrai_jeu : jeu absent");
@@ -1972,8 +2049,10 @@ mod tests {
             skills.len()
         );
 
-        let whs00010 =
-            skills.iter().find(|s| s.skill_id_str == "whs00010").expect("whs00010 introuvable");
+        let whs00010 = skills
+            .iter()
+            .find(|s| s.skill_id_str == "whs00010")
+            .expect("whs00010 introuvable");
         assert_eq!(whs00010.power_min, 70);
         assert_eq!(whs00010.power_max, 440);
         assert_eq!(whs00010.element, "Vent");
@@ -1985,7 +2064,9 @@ mod tests {
     /// factorisé pour les 4 tests `list_*_sur_le_vrai_jeu` ci-dessous, même convention que
     /// `list_skills_sur_le_vrai_jeu`.
     fn real_vfs_or_skip(test_name: &str) -> Option<Vfs> {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip {test_name} : jeu absent");
@@ -2027,7 +2108,11 @@ mod tests {
             "attendu > 400 Avatar/Keshin résolus (443 de référence), obtenu {}",
             auras.len()
         );
-        eprintln!("{} Avatar/Keshin résolus, ex. : {}", auras.len(), auras[0].name);
+        eprintln!(
+            "{} Avatar/Keshin résolus, ex. : {}",
+            auras.len(),
+            auras[0].name
+        );
     }
 
     /// Cf. `aphrody-nie-game/examples/export_trophies.rs` (référence déjà validée end-to-end,
@@ -2044,7 +2129,11 @@ mod tests {
             "attendu > 200 succès résolus (231 de référence), obtenu {}",
             trophies.len()
         );
-        eprintln!("{} succès résolus, ex. : {}", trophies.len(), trophies[0].name);
+        eprintln!(
+            "{} succès résolus, ex. : {}",
+            trophies.len(),
+            trophies[0].name
+        );
     }
 
     /// Cf. `aphrody-nie-game/examples/export_quests.rs` (référence déjà validée end-to-end,
@@ -2061,7 +2150,11 @@ mod tests {
             "attendu > 150 quêtes résolues (182 de référence), obtenu {}",
             quests.len()
         );
-        eprintln!("{} quêtes résolues, ex. : {}", quests.len(), quests[0].title);
+        eprintln!(
+            "{} quêtes résolues, ex. : {}",
+            quests.len(),
+            quests[0].title
+        );
     }
 
     /// Cf. `aphrody-nie-game/examples/export_characters.rs` (référence déjà validée end-to-end,
@@ -2091,7 +2184,11 @@ mod tests {
 
         let stats = calculate_character_stats(&vfs, &roster[0].chara_param_id, 50, 0)
             .expect("calculate_character_stats");
-        assert!(stats.total > 0, "stats nulles pour {} — calcul cassé", roster[0].name);
+        assert!(
+            stats.total > 0,
+            "stats nulles pour {} — calcul cassé",
+            roster[0].name
+        );
         eprintln!(
             "{} Lv50 rang N : total={} (Kc{} Cr{} Tc{} Pr{} Ps{} Ag{} It{})",
             roster[0].name,
@@ -2138,7 +2235,12 @@ mod tests {
             return;
         };
         let gallery = list_gallery(&vfs).expect("list_gallery");
-        assert_eq!(gallery.len(), 360, "attendu 360 illustrations, obtenu {}", gallery.len());
+        assert_eq!(
+            gallery.len(),
+            360,
+            "attendu 360 illustrations, obtenu {}",
+            gallery.len()
+        );
         assert_eq!(gallery[0].img_path, "img_story_ev01_main_0010");
         // La condition d'ouverture est un blob base64 : la décoder est le seul moyen de vérifier
         // que `unlock_condition` est branché et pas court-circuité.
@@ -2154,7 +2256,12 @@ mod tests {
             return;
         };
         let tricks = list_tricks(&vfs).expect("list_tricks");
-        assert_eq!(tricks.len(), 9, "attendu 9 feintes, obtenu {}", tricks.len());
+        assert_eq!(
+            tricks.len(),
+            9,
+            "attendu 9 feintes, obtenu {}",
+            tricks.len()
+        );
         assert!(
             tricks.iter().all(|t| !t.trick_id_name.is_empty()),
             "une feinte sans nom interne — parsing RDBN décalé"
@@ -2172,10 +2279,22 @@ mod tests {
             return;
         };
         let activities = list_activities(&vfs).expect("list_activities");
-        assert_eq!(activities.len(), 13, "attendu 13 activités, obtenu {}", activities.len());
-        let roots: Vec<&str> =
-            activities.iter().filter(|a| a.is_root).map(|a| a.name.as_str()).collect();
-        assert_eq!(roots, ["StoryMode"], "attendu une seule racine `StoryMode`, obtenu {roots:?}");
+        assert_eq!(
+            activities.len(),
+            13,
+            "attendu 13 activités, obtenu {}",
+            activities.len()
+        );
+        let roots: Vec<&str> = activities
+            .iter()
+            .filter(|a| a.is_root)
+            .map(|a| a.name.as_str())
+            .collect();
+        assert_eq!(
+            roots,
+            ["StoryMode"],
+            "attendu une seule racine `StoryMode`, obtenu {roots:?}"
+        );
         assert!(activities.iter().any(|a| a.name == "StoryMode_SubTask_09"));
     }
 
@@ -2188,7 +2307,12 @@ mod tests {
             return;
         };
         let teams = list_belong_teams(&vfs).expect("list_belong_teams");
-        assert_eq!(teams.len(), 208, "attendu 208 équipes, obtenu {}", teams.len());
+        assert_eq!(
+            teams.len(),
+            208,
+            "attendu 208 équipes, obtenu {}",
+            teams.len()
+        );
         let named = teams.iter().filter(|t| t.name.is_some()).count();
         assert_eq!(
             named, 208,
@@ -2206,7 +2330,12 @@ mod tests {
             return;
         };
         let formations = list_formations(&vfs).expect("list_formations");
-        assert_eq!(formations.len(), 115, "attendu 115 formations, obtenu {}", formations.len());
+        assert_eq!(
+            formations.len(),
+            115,
+            "attendu 115 formations, obtenu {}",
+            formations.len()
+        );
         // Les 1073 lignes de `m_SoccerFormPlacementInfoList` sont TOUTES couvertes par les
         // tranches `placementInfo` : une somme inférieure signalerait une tranche débordante
         // (`placements_of` renvoie alors `&[]` en silence).
@@ -2225,7 +2354,12 @@ mod tests {
             return;
         };
         let uniforms = list_uniforms(&vfs).expect("list_uniforms");
-        assert_eq!(uniforms.len(), 627, "attendu 627 uniformes, obtenu {}", uniforms.len());
+        assert_eq!(
+            uniforms.len(),
+            627,
+            "attendu 627 uniformes, obtenu {}",
+            uniforms.len()
+        );
         let resolus = uniforms.iter().filter(|u| u.resolved_count > 0.0).count();
         assert_eq!(
             resolus, 627,
@@ -2238,7 +2372,9 @@ mod tests {
     /// (« nie doit couvrir tout nie.exe »), RDBN et T2B mélangés, sans aucun crash/erreur.
     #[test]
     fn decode_cfgbin_sur_un_echantillon_large() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip decode_cfgbin_sur_un_echantillon_large : jeu absent");
@@ -2273,7 +2409,7 @@ mod tests {
                         "{path} : forme JSON inattendue"
                     );
                     ok += 1;
-                },
+                }
                 Err(e) => failed.push((path.clone(), e)),
             }
         }
@@ -2300,7 +2436,9 @@ mod tests {
     /// vide dans l'encyclopédie — un faux vert exactement comme une suite à « 0 passed ».
     #[test]
     fn nouvelles_familles_sur_le_vrai_jeu() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip nouvelles_familles_sur_le_vrai_jeu : jeu absent");
@@ -2310,9 +2448,15 @@ mod tests {
         vfs.init(&data_dir).expect("vfs init");
 
         let charas = list_charas(&vfs).expect("list_charas");
-        assert!(charas.len() > 1000, "attendu > 1000 personnages, obtenu {}", charas.len());
         assert!(
-            charas.iter().any(|c| c.stats.total > 0 && !c.internal_code.is_empty()),
+            charas.len() > 1000,
+            "attendu > 1000 personnages, obtenu {}",
+            charas.len()
+        );
+        assert!(
+            charas
+                .iter()
+                .any(|c| c.stats.total > 0 && !c.internal_code.is_empty()),
             "aucun personnage avec code interne ET stats calculées"
         );
 

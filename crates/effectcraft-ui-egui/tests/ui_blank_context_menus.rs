@@ -7,24 +7,43 @@ use serde_json::json;
 
 fn harness() -> Harness<'static, EffectcraftApp> {
     let mut session = Session::default();
-    session.execute("comp.new", json!({"name":"Empty", "width":640,"height":360,"duration":4})).unwrap();
-    let mut h = Harness::builder().with_size(vec2(1600.0, 1000.0)).build_eframe(|_| EffectcraftApp::new(session));
+    session
+        .execute(
+            "comp.new",
+            json!({"name":"Empty", "width":640,"height":360,"duration":4}),
+        )
+        .unwrap();
+    let mut h = Harness::builder()
+        .with_size(vec2(1600.0, 1000.0))
+        .build_eframe(|_| EffectcraftApp::new(session));
     h.run_steps(3);
     h
 }
 fn rect(h: &Harness<'_, EffectcraftApp>, id: &str) -> Rect {
-    let e = h.state().auto.find(id).unwrap_or_else(|| panic!("missing {id}"));
+    let e = h
+        .state()
+        .auto
+        .find(id)
+        .unwrap_or_else(|| panic!("missing {id}"));
     Rect::from_min_size(pos2(e.rect[0], e.rect[1]), vec2(e.rect[2], e.rect[3]))
 }
 fn snapshot(h: &mut Harness<'_, EffectcraftApp>, name: &str) {
     if let Ok(dir) = std::env::var("BLANK_CONTEXT_MENU_SNAPSHOTS") {
-        h.render().unwrap().save(format!("{dir}/{name}.png")).unwrap();
+        h.render()
+            .unwrap()
+            .save(format!("{dir}/{name}.png"))
+            .unwrap();
     }
 }
 fn right_click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
     for pressed in [true, false] {
         h.input_mut().events.push(Event::PointerMoved(p));
-        h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Secondary, pressed, modifiers: Modifiers::NONE });
+        h.input_mut().events.push(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Secondary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        });
         h.step();
     }
     h.run_steps(3);
@@ -40,9 +59,19 @@ fn project_blank_menu_creates_a_folder_and_undo_restores_the_project() {
     h.get_by_label("New Folder").click();
     h.run_steps(3);
     assert_eq!(h.state().session.project.items.len(), before + 1);
-    assert!(h.state().session.project.items.values().any(|i| i.is_folder()));
+    assert!(
+        h.state()
+            .session
+            .project
+            .items
+            .values()
+            .any(|i| i.is_folder())
+    );
     assert!(h.query_by_label("New Folder").is_none());
-    h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+    h.state_mut()
+        .session
+        .execute("edit.undo", json!({}))
+        .unwrap();
     assert_eq!(h.state().session.project.items.len(), before);
 }
 
@@ -62,15 +91,29 @@ fn timeline_blank_outline_and_time_graph_create_layers() {
     for graph in [false, true] {
         let mut h = harness();
         let area = rect(&h, "timeline.layerMarquee");
-        let p = if graph { pos2(area.max.x + 150.0, area.center().y) } else { area.center() };
+        let p = if graph {
+            pos2(area.max.x + 150.0, area.center().y)
+        } else {
+            area.center()
+        };
         right_click(&mut h, p);
         h.get_by_label("New ⏵").click();
         h.run_steps(3);
-        snapshot(&mut h, if graph { "timeline-graph" } else { "timeline-outline" });
+        snapshot(
+            &mut h,
+            if graph {
+                "timeline-graph"
+            } else {
+                "timeline-outline"
+            },
+        );
         h.get_by_label("Null Object").click();
         h.run_steps(3);
         assert_eq!(h.state().session.active_comp().unwrap().layers.len(), 1);
-        h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+        h.state_mut()
+            .session
+            .execute("edit.undo", json!({}))
+            .unwrap();
         assert!(h.state().session.active_comp().unwrap().layers.is_empty());
     }
 }
@@ -96,7 +139,10 @@ fn project_item_and_timeline_layer_keep_their_own_context_menus() {
     assert!(h.query_by_label("Open Composition").is_some());
     assert!(h.query_by_label("New Folder").is_none());
     egui::Popup::close_all(&h.ctx);
-    h.state_mut().session.execute("layer.newNull", json!({})).unwrap();
+    h.state_mut()
+        .session
+        .execute("layer.newNull", json!({}))
+        .unwrap();
     h.run_steps(3);
     let id = h.state().session.active_comp().unwrap().layers[0].id;
     let r = rect(&h, &format!("timeline.layer.{}.row", id.0));
@@ -138,9 +184,17 @@ fn timeline_blank_menu_opens_current_comp_in_essential_graphics() {
         let mut h = harness();
         let comp = h.state().session.active_comp_id().unwrap();
         let area = rect(&h, "timeline.layerMarquee");
-        let p = if graph { pos2(area.max.x + 150.0, area.center().y) } else { area.center() };
+        let p = if graph {
+            pos2(area.max.x + 150.0, area.center().y)
+        } else {
+            area.center()
+        };
         right_click(&mut h, p);
-        let target = if graph { "timeline.context.graph.essentialGraphics" } else { "timeline.context.outline.essentialGraphics" };
+        let target = if graph {
+            "timeline.context.graph.essentialGraphics"
+        } else {
+            "timeline.context.outline.essentialGraphics"
+        };
         assert!(h.state().auto.find(target).is_some());
         h.get_by_label("Open in Essential Graphics").click();
         h.run_steps(3);
@@ -155,10 +209,33 @@ fn timeline_blank_menu_opens_current_comp_in_essential_graphics() {
 #[test]
 fn timeline_property_names_have_the_property_menu() {
     let mut h = harness();
-    let layer = h.state_mut().session.execute("layer.newSolid", json!({"name": "Plate", "color": "#406080"})).unwrap()["layer"].as_u64().unwrap();
-    h.state_mut().session.execute("prop.set", json!({"layer": layer, "path": "transform/rotation", "value": 30})).unwrap();
-    let props =
-        |h: &Harness<'_, EffectcraftApp>| h.state().session.active_comp().unwrap().layer(effectcraft_engine::project::LayerId(layer)).unwrap().props.clone();
+    let layer = h
+        .state_mut()
+        .session
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Plate", "color": "#406080"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
+    h.state_mut()
+        .session
+        .execute(
+            "prop.set",
+            json!({"layer": layer, "path": "transform/rotation", "value": 30}),
+        )
+        .unwrap();
+    let props = |h: &Harness<'_, EffectcraftApp>| {
+        h.state()
+            .session
+            .active_comp()
+            .unwrap()
+            .layer(effectcraft_engine::project::LayerId(layer))
+            .unwrap()
+            .props
+            .clone()
+    };
     let uid = |h: &Harness<'_, EffectcraftApp>, path: &str| props(h).prop(path).unwrap().uid;
     h.state_mut().ui.timeline.open_layers.insert(layer);
     let transform = props(&h).sub("transform").unwrap().uid;
@@ -172,7 +249,12 @@ fn timeline_property_names_have_the_property_menu() {
         let p = rect(h, &format!("timeline.prop.{uid}.menu.{entry}")).center();
         for pressed in [true, false] {
             h.input_mut().events.push(Event::PointerMoved(p));
-            h.input_mut().events.push(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE });
+            h.input_mut().events.push(Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed,
+                modifiers: Modifiers::NONE,
+            });
             h.step();
         }
         h.run_steps(3);
@@ -181,9 +263,15 @@ fn timeline_property_names_have_the_property_menu() {
     let rotation = uid(&h, "transform/rotation");
     menu(&mut h, rotation);
     assert!(h.query_by_label("Edit Value…").is_some());
-    assert!(h.query_by_label("Separate Dimensions").is_none(), "only Position separates");
+    assert!(
+        h.query_by_label("Separate Dimensions").is_none(),
+        "only Position separates"
+    );
     choose(&mut h, rotation, "reset");
-    assert_eq!(props(&h).prop("transform/rotation").unwrap().value.as_f64(), 0.0);
+    assert_eq!(
+        props(&h).prop("transform/rotation").unwrap().value.as_f64(),
+        0.0
+    );
     // Separate Dimensions on Position; X Position's menu has it too, and joins them again.
     let position = uid(&h, "transform/position");
     menu(&mut h, position);
@@ -197,7 +285,16 @@ fn timeline_property_names_have_the_property_menu() {
     let opacity = uid(&h, "transform/opacity");
     menu(&mut h, opacity);
     choose(&mut h, opacity, "addExpression");
-    assert_eq!(props(&h).prop("transform/opacity").unwrap().expr.as_ref().map(|e| e.text.clone()).as_deref(), Some("transform.opacity"));
+    assert_eq!(
+        props(&h)
+            .prop("transform/opacity")
+            .unwrap()
+            .expr
+            .as_ref()
+            .map(|e| e.text.clone())
+            .as_deref(),
+        Some("transform.opacity")
+    );
     menu(&mut h, opacity);
     choose(&mut h, opacity, "removeExpression");
     assert!(props(&h).prop("transform/opacity").unwrap().expr.is_none());
@@ -205,7 +302,17 @@ fn timeline_property_names_have_the_property_menu() {
     menu(&mut h, opacity);
     choose(&mut h, opacity, "essentialGraphics");
     let comp = h.state().session.active_comp_id().unwrap();
-    assert_eq!(h.state().session.project.comp(comp).unwrap().essential.as_ref().map_or(0, |e| e.controls.len()), 1);
+    assert_eq!(
+        h.state()
+            .session
+            .project
+            .comp(comp)
+            .unwrap()
+            .essential
+            .as_ref()
+            .map_or(0, |e| e.controls.len()),
+        1
+    );
     // Edit Value… opens the value dialog.
     let scale = uid(&h, "transform/scale");
     menu(&mut h, scale);
@@ -220,9 +327,15 @@ fn context_menu_rows_leave_no_gap_between_them() {
     let mut h = harness();
     let p = rect(&h, "project.empty").center();
     right_click(&mut h, p);
-    let rows = ["newComp", "newFolder", "import"].map(|key| rect(&h, &format!("project.context.{key}")));
+    let rows =
+        ["newComp", "newFolder", "import"].map(|key| rect(&h, &format!("project.context.{key}")));
     for pair in rows.windows(2) {
-        assert!((pair[1].top() - pair[0].bottom()).abs() < 0.5, "gap between {:?} and {:?}", pair[0], pair[1]);
+        assert!(
+            (pair[1].top() - pair[0].bottom()).abs() < 0.5,
+            "gap between {:?} and {:?}",
+            pair[0],
+            pair[1]
+        );
     }
     snapshot(&mut h, "project-rows");
 }

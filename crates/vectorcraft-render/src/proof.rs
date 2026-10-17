@@ -24,7 +24,9 @@ use vectorcraft_color::Color;
 use vectorcraft_color::cms::{self, Cms, PROCESS_PLATES};
 pub use vectorcraft_color::cms::{Intent, ProofSetup, ProofTarget};
 use vectorcraft_doc::Document;
-pub use vectorcraft_doc::inks::{Inks, Link, Plate, inks, map_document_colors, map_node_colors, plates, spot_color};
+pub use vectorcraft_doc::inks::{
+    Inks, Link, Plate, inks, map_document_colors, map_node_colors, plates, spot_color,
+};
 use vectorcraft_doc::overprint::multiply_overprints;
 
 use crate::RenderOptions;
@@ -34,7 +36,14 @@ pub(crate) fn overprints(opts: &RenderOptions) -> bool {
     opts.overprint_preview || opts.proof.as_ref().is_some_and(|p| p.separations.is_some())
 }
 
-fn plate_color(doc: &Document, c: &Cms, proof: &ProofSetup, visible: &[String], color: &Color, link: Link) -> Color {
+fn plate_color(
+    doc: &Document,
+    c: &Cms,
+    proof: &ProofSetup,
+    visible: &[String],
+    color: &Color,
+    link: Link,
+) -> Color {
     let ink = inks(doc, c, color, link, proof.intent);
     let rgb = if visible.len() == 1 {
         [1.0 - ink.on_plate(&visible[0]); 3]
@@ -46,7 +55,10 @@ fn plate_color(doc: &Document, c: &Cms, proof: &ProofSetup, visible: &[String], 
             }
         }
         let mut rgb = c.proof_cmyk_to_srgb(cmyk, proof);
-        for name in visible.iter().filter(|v| !PROCESS_PLATES.contains(&v.as_str())) {
+        for name in visible
+            .iter()
+            .filter(|v| !PROCESS_PLATES.contains(&v.as_str()))
+        {
             let t = ink.spot_tint(name);
             if t > 0.0
                 && let Some(sc) = spot_color(doc, name)
@@ -65,8 +77,13 @@ fn plate_color(doc: &Document, c: &Cms, proof: &ProofSetup, visible: &[String], 
 
 /// The document as it should be drawn for these options (overprints, separations).
 pub(crate) fn prepare<'a>(doc: &'a Document, opts: &RenderOptions) -> Cow<'a, Document> {
-    let seps = opts.proof.as_ref().and_then(|p| p.separations.as_ref().map(|s| (p, s)));
-    let overprint = overprints(opts) && (doc.layers.iter().any(|l| l.has_overprint()) || doc.symbols.iter().any(|s| s.art.has_overprint()));
+    let seps = opts
+        .proof
+        .as_ref()
+        .and_then(|p| p.separations.as_ref().map(|s| (p, s)));
+    let overprint = overprints(opts)
+        && (doc.layers.iter().any(|l| l.has_overprint())
+            || doc.symbols.iter().any(|s| s.art.has_overprint()));
     if !overprint && seps.is_none() {
         return Cow::Borrowed(doc);
     }
@@ -83,15 +100,21 @@ pub(crate) fn prepare<'a>(doc: &'a Document, opts: &RenderOptions) -> Cow<'a, Do
     if let Some((proof, visible)) = seps {
         let c = cms::active();
         let src = doc.clone();
-        map_document_colors(&mut d, &mut |col, sw| plate_color(&src, &c, proof, visible, col, sw));
+        map_document_colors(&mut d, &mut |col, sw| {
+            plate_color(&src, &c, proof, visible, col, sw)
+        });
     }
     Cow::Owned(d)
 }
 
 /// Soft-proof the rendered (premultiplied RGBA8) pixels in place.
 pub(crate) fn post(pixels: &mut [u8], opts: &RenderOptions) {
-    let Some(proof) = opts.proof.as_ref() else { return };
-    if proof.separations.is_some() || matches!(proof.target, ProofTarget::MonitorRgb | ProofTarget::Srgb) {
+    let Some(proof) = opts.proof.as_ref() else {
+        return;
+    };
+    if proof.separations.is_some()
+        || matches!(proof.target, ProofTarget::MonitorRgb | ProofTarget::Srgb)
+    {
         return;
     }
     let lut = cms::active().proof_lut(proof);
@@ -107,10 +130,20 @@ pub(crate) fn post(pixels: &mut [u8], opts: &RenderOptions) {
             continue;
         }
         last_in.copy_from_slice(px);
-        let un = |c: u8| if a == 255 { c } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+        let un = |c: u8| {
+            if a == 255 {
+                c
+            } else {
+                ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8
+            }
+        };
         let out = lut.apply8([un(px[0]), un(px[1]), un(px[2])]);
         for i in 0..3 {
-            px[i] = if a == 255 { out[i] } else { ((out[i] as u32 * a as u32 + 127) / 255) as u8 };
+            px[i] = if a == 255 {
+                out[i]
+            } else {
+                ((out[i] as u32 * a as u32 + 127) / 255) as u8
+            };
         }
         last_out.copy_from_slice(px);
     }
@@ -133,7 +166,10 @@ pub struct ProofView {
 static VIEW: RwLock<Option<ProofView>> = RwLock::new(None);
 
 pub fn view() -> ProofView {
-    VIEW.read().unwrap_or_else(|e| e.into_inner()).clone().unwrap_or_default()
+    VIEW.read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
+        .unwrap_or_default()
 }
 
 pub fn set_view(v: ProofView) {
@@ -144,8 +180,14 @@ pub fn set_view(v: ProofView) {
 pub fn active_proof() -> Option<ProofSetup> {
     let v = view();
     match v.separations {
-        Some(s) => Some(ProofSetup { separations: Some(s), ..v.setup }),
-        None if v.proof_colors => Some(ProofSetup { separations: None, ..v.setup }),
+        Some(s) => Some(ProofSetup {
+            separations: Some(s),
+            ..v.setup
+        }),
+        None if v.proof_colors => Some(ProofSetup {
+            separations: None,
+            ..v.setup
+        }),
         None => None,
     }
 }

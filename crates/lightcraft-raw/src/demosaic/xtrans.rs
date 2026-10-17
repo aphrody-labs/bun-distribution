@@ -28,7 +28,12 @@ impl Offsets {
     fn new(m: &Mosaic) -> Offsets {
         let (pw, ph) = (m.cfa.width.max(1), m.cfa.height.max(1));
         // phases are evaluated far from the borders (pattern coordinates wrap)
-        let col = |x: isize, y: isize| m.cfa.color_at(x.rem_euclid(pw as isize) as usize, y.rem_euclid(ph as isize) as usize);
+        let col = |x: isize, y: isize| {
+            m.cfa.color_at(
+                x.rem_euclid(pw as isize) as usize,
+                y.rem_euclid(ph as isize) as usize,
+            )
+        };
         let mut green = Vec::new();
         let mut rb = Vec::new();
         for py in 0..ph as isize {
@@ -107,7 +112,10 @@ fn green(m: &Mosaic, off: &Offsets) -> Vec<f32> {
                     continue;
                 }
                 vals.clear();
-                vals.extend(ring.iter().map(|&(dx, dy)| m.data[(i as isize + dy * w as isize + dx) as usize]));
+                vals.extend(
+                    ring.iter()
+                        .map(|&(dx, dy)| m.data[(i as isize + dy * w as isize + dx) as usize]),
+                );
                 *o = robust_mean(&vals);
                 continue;
             }
@@ -232,10 +240,15 @@ mod tests {
                         break;
                     }
                 }
-                *o = if vals.is_empty() { m.get(x, y) } else { robust_mean(&vals) };
+                *o = if vals.is_empty() {
+                    m.get(x, y)
+                } else {
+                    robust_mean(&vals)
+                };
             }
         }
-        let gg = |x: isize, y: isize| g[super::super::reflect(y, h) * w + super::super::reflect(x, w)];
+        let gg =
+            |x: isize, y: isize| g[super::super::reflect(y, h) * w + super::super::reflect(x, w)];
         Rgb32f::from_fn(w, h, |x, y| {
             let (x, y) = (x as isize, y as isize);
             let own = m.color(x, y) as usize;
@@ -274,8 +287,18 @@ mod tests {
                 (seed >> 8) as f32 / (1u32 << 24) as f32
             })
             .collect();
-        let m = Mosaic { w, h, data: &data, cfa: &cfa };
+        let m = Mosaic {
+            w,
+            h,
+            data: &data,
+            cfa: &cfa,
+        };
         let (a, b) = (directional(&m), reference(&m));
-        assert!(a.data.iter().zip(&b.data).all(|(p, q)| p.map(f32::to_bits) == q.map(f32::to_bits)));
+        assert!(
+            a.data
+                .iter()
+                .zip(&b.data)
+                .all(|(p, q)| p.map(f32::to_bits) == q.map(f32::to_bits))
+        );
     }
 }

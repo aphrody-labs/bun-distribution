@@ -19,17 +19,20 @@ fn dir(e: &EffectInstance) -> u32 {
 fn masked(a: &Image, b: &Image, m: impl Fn(f32, f32) -> f32 + Sync) -> Image {
     let (w, h) = (a.w, a.h);
     let mut out = Image::new(w, h);
-    out.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        let v = (y as f32 + 0.5) / h as f32;
-        for x in 0..w {
-            let u = (x as f32 + 0.5) / w as f32;
-            let k = m(u, v).clamp(0.0, 1.0);
-            let i = (y * w + x) * 4;
-            for c in 0..4 {
-                row[x * 4 + c] = a.px[i + c] * (1.0 - k) + b.px[i + c] * k;
+    out.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let v = (y as f32 + 0.5) / h as f32;
+            for x in 0..w {
+                let u = (x as f32 + 0.5) / w as f32;
+                let k = m(u, v).clamp(0.0, 1.0);
+                let i = (y * w + x) * 4;
+                for c in 0..4 {
+                    row[x * 4 + c] = a.px[i + c] * (1.0 - k) + b.px[i + c] * k;
+                }
             }
-        }
-    });
+        });
     out
 }
 
@@ -96,23 +99,37 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
         "film_dissolve" => {
             // blend in a gamma-2.2-like space for a filmic, less-dippy dissolve
             let mut out = Image::new(a.w, a.h);
-            out.px.par_iter_mut().zip(a.px.par_iter().zip(b.px.par_iter())).for_each(|(o, (x, y))| {
-                let g = 1.0 / 2.2;
-                let v = x.max(0.0).powf(g) * (1.0 - p) + y.max(0.0).powf(g) * p;
-                *o = v.powf(2.2);
-            });
+            out.px
+                .par_iter_mut()
+                .zip(a.px.par_iter().zip(b.px.par_iter()))
+                .for_each(|(o, (x, y))| {
+                    let g = 1.0 / 2.2;
+                    let v = x.max(0.0).powf(g) * (1.0 - p) + y.max(0.0).powf(g) * p;
+                    *o = v.powf(2.2);
+                });
             out
         }
         "additive_dissolve" => {
             let (ka, kb) = ((2.0 * (1.0 - p)).min(1.0), (2.0 * p).min(1.0));
             let mut out = Image::new(a.w, a.h);
-            out.px.par_iter_mut().zip(a.px.par_iter().zip(b.px.par_iter())).for_each(|(o, (x, y))| *o = (x * ka + y * kb).min(1.0));
+            out.px
+                .par_iter_mut()
+                .zip(a.px.par_iter().zip(b.px.par_iter()))
+                .for_each(|(o, (x, y))| *o = (x * ka + y * kb).min(1.0));
             out
         }
         "dip_to_black" | "dip_to_white" => {
-            let col = if id == "dip_to_black" { [0.0, 0.0, 0.0, 1.0] } else { [1.0, 1.0, 1.0, 1.0] };
+            let col = if id == "dip_to_black" {
+                [0.0, 0.0, 0.0, 1.0]
+            } else {
+                [1.0, 1.0, 1.0, 1.0]
+            };
             let mut out = Image::filled(a.w, a.h, col);
-            let (src, k) = if p < 0.5 { (a, 1.0 - p * 2.0) } else { (b, (p - 0.5) * 2.0) };
+            let (src, k) = if p < 0.5 {
+                (a, 1.0 - p * 2.0)
+            } else {
+                (b, (p - 0.5) * 2.0)
+            };
             let mut s = src.clone();
             s.scale_alpha(k);
             over(&mut out, &s);
@@ -149,9 +166,20 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
             let mut out = b.clone();
             let off_x = w * 0.5 * pd;
             let off_y = h * 0.5 * pd;
-            let quads = [(-off_x, -off_y, 0.0, 0.0), (off_x, -off_y, 0.5, 0.0), (-off_x, off_y, 0.0, 0.5), (off_x, off_y, 0.5, 0.5)];
+            let quads = [
+                (-off_x, -off_y, 0.0, 0.0),
+                (off_x, -off_y, 0.5, 0.0),
+                (-off_x, off_y, 0.0, 0.5),
+                (off_x, off_y, 0.5, 0.5),
+            ];
             for (dx, dy, qx, qy) in quads {
-                let mut q = masked(a, &Image::new(a.w, a.h), move |u, v| if u >= qx && u < qx + 0.5 && v >= qy && v < qy + 0.5 { 0.0 } else { 1.0 });
+                let mut q = masked(a, &Image::new(a.w, a.h), move |u, v| {
+                    if u >= qx && u < qx + 0.5 && v >= qy && v < qy + 0.5 {
+                        0.0
+                    } else {
+                        1.0
+                    }
+                });
                 q = shifted(&q, dx, dy);
                 over(&mut out, &q);
             }
@@ -159,8 +187,16 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
         }
         "split" => {
             let mut out = b.clone();
-            let left = masked(a, &Image::new(a.w, a.h), |u, _| if u < 0.5 { 0.0 } else { 1.0 });
-            let right = masked(a, &Image::new(a.w, a.h), |u, _| if u >= 0.5 { 0.0 } else { 1.0 });
+            let left = masked(
+                a,
+                &Image::new(a.w, a.h),
+                |u, _| if u < 0.5 { 0.0 } else { 1.0 },
+            );
+            let right = masked(
+                a,
+                &Image::new(a.w, a.h),
+                |u, _| if u >= 0.5 { 0.0 } else { 1.0 },
+            );
             over(&mut out, &shifted(&left, -w * 0.5 * pd, 0.0));
             over(&mut out, &shifted(&right, w * 0.5 * pd, 0.0));
             out
@@ -171,7 +207,13 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
             let bb = masked(&Image::new(a.w, a.h), b, |_, _| 1.0);
             for i in 0..bands {
                 let sign = if i % 2 == 0 { 1.0 } else { -1.0 };
-                let band = masked(&Image::new(a.w, a.h), &bb, move |_, v| if (v * bands as f32).floor() as i32 == i { 1.0 } else { 0.0 });
+                let band = masked(&Image::new(a.w, a.h), &bb, move |_, v| {
+                    if (v * bands as f32).floor() as i32 == i {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                });
                 over(&mut out, &shifted(&band, sign * w * (1.0 - pd), 0.0));
             }
             out
@@ -208,7 +250,9 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
         "cross_zoom" => {
             let z = 1.0 + 3.0 * (if pd < 0.5 { pd * 2.0 } else { (1.0 - pd) * 2.0 });
             let src = if pd < 0.5 { a } else { b };
-            let m = Affine::translate(w / 2.0, h / 2.0).then_apply(&Affine::scale(z, z)).then_apply(&Affine::translate(-w / 2.0, -h / 2.0));
+            let m = Affine::translate(w / 2.0, h / 2.0)
+                .then_apply(&Affine::scale(z, z))
+                .then_apply(&Affine::translate(-w / 2.0, -h / 2.0));
             let mut out = src.transformed(a.w, a.h, &m);
             let blur = (z as f32 - 1.0) * 6.0 * (a.w as f32 / 1920.0);
             if blur > 0.3 {
@@ -218,13 +262,24 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
         }
         "flip_over" | "cube_spin" => {
             // Horizontal squeeze approximating a 3D rotation (A shrinks, then B grows).
-            let (src, k) = if pd < 0.5 { (a, 1.0 - pd * 2.0) } else { (b, (pd - 0.5) * 2.0) };
+            let (src, k) = if pd < 0.5 {
+                (a, 1.0 - pd * 2.0)
+            } else {
+                (b, (pd - 0.5) * 2.0)
+            };
             let k = k.max(0.001);
-            let cxp = if id == "cube_spin" { if pd < 0.5 { 0.0 } else { w } } else { w / 2.0 };
-            let m = Affine::translate(cxp, 0.0).then_apply(&Affine::scale(k, 1.0)).then_apply(&Affine::translate(-cxp, 0.0));
+            let cxp = if id == "cube_spin" {
+                if pd < 0.5 { 0.0 } else { w }
+            } else {
+                w / 2.0
+            };
+            let m = Affine::translate(cxp, 0.0)
+                .then_apply(&Affine::scale(k, 1.0))
+                .then_apply(&Affine::translate(-cxp, 0.0));
             if id == "cube_spin" {
                 let ma = Affine::scale(1.0 - pd, 1.0);
-                let mb = Affine::translate(w * (1.0 - pd), 0.0).then_apply(&Affine::scale(pd.max(0.001), 1.0));
+                let mb = Affine::translate(w * (1.0 - pd), 0.0)
+                    .then_apply(&Affine::scale(pd.max(0.001), 1.0));
                 let mut out = a.transformed(a.w, a.h, &ma);
                 over(&mut out, &b.transformed(a.w, a.h, &mb));
                 return out;
@@ -233,21 +288,27 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
         }
         "page_turn" => {
             // Diagonal fold line sweeping from the bottom-right corner, with a shaded curl band.
-            let mut out = masked(a, b, |u, v| step(1.0 - p * 1.1, 1.0 - (u + v) * 0.5 + 0.0) * 0.0 + if (u + v) * 0.5 > 1.0 - p { 1.0 } else { 0.0 });
+            let mut out = masked(a, b, |u, v| {
+                step(1.0 - p * 1.1, 1.0 - (u + v) * 0.5 + 0.0) * 0.0
+                    + if (u + v) * 0.5 > 1.0 - p { 1.0 } else { 0.0 }
+            });
             let w_ = a.w;
-            out.px.par_chunks_mut(w_ * 4).enumerate().for_each(|(y, row)| {
-                for x in 0..w_ {
-                    let u = x as f32 / a.w as f32;
-                    let v = y as f32 / a.h as f32;
-                    let d = (u + v) * 0.5 - (1.0 - p);
-                    if d < 0.0 && d > -0.06 {
-                        let shade = 0.75 + 0.25 * (-d / 0.06);
-                        for c in 0..3 {
-                            row[x * 4 + c] *= shade;
+            out.px
+                .par_chunks_mut(w_ * 4)
+                .enumerate()
+                .for_each(|(y, row)| {
+                    for x in 0..w_ {
+                        let u = x as f32 / a.w as f32;
+                        let v = y as f32 / a.h as f32;
+                        let d = (u + v) * 0.5 - (1.0 - p);
+                        if d < 0.0 && d > -0.06 {
+                            let shade = 0.75 + 0.25 * (-d / 0.06);
+                            for c in 0..3 {
+                                row[x * 4 + c] *= shade;
+                            }
                         }
                     }
-                }
-            });
+                });
             out
         }
         _ => masked(a, b, |_, _| p),
@@ -255,5 +316,9 @@ fn legacy(id: &str, e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
 }
 
 fn ease_in_out(t: f64) -> f64 {
-    if t < 0.5 { 4.0 * t * t * t } else { 1.0 - (-2.0 * t + 2.0).powi(3) / 2.0 }
+    if t < 0.5 {
+        4.0 * t * t * t
+    } else {
+        1.0 - (-2.0 * t + 2.0).powi(3) / 2.0
+    }
 }

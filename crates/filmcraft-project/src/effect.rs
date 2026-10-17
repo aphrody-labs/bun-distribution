@@ -17,7 +17,10 @@ use crate::mask::Mask;
 pub use audio::{GEQ10_LABELS, GEQ20_LABELS, GEQ30_LABELS, PREMIERE_AUDIO_EFFECTS};
 
 mod vfx;
-pub use vfx::{EASINGS, ECHO_OPERATORS, FRAME_LAYOUTS, LIGHT_IDS, SIMPLE_BLEND, TRACK_CHOICES, auto_point, ultra_key_setting};
+pub use vfx::{
+    EASINGS, ECHO_OPERATORS, FRAME_LAYOUTS, LIGHT_IDS, SIMPLE_BLEND, TRACK_CHOICES, auto_point,
+    ultra_key_setting,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum EffectKind {
@@ -92,7 +95,11 @@ impl EffectDef {
         EffectInstance {
             effect: self.id.to_string(),
             enabled: true,
-            params: self.params.iter().map(|p| (p.id.to_string(), Param::new(p.default.clone()))).collect(),
+            params: self
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), Param::new(p.default.clone())))
+                .collect(),
             masks: Vec::new(),
             post_fader: false,
             essential: false,
@@ -131,10 +138,21 @@ impl EffectInstance {
         self.params.get_mut(id)
     }
     pub fn f64_at(&self, id: &str, t: filmcraft_time::Tick) -> f64 {
-        self.params.get(id).map(|p| p.f64_at(t)).or_else(|| self.def().and_then(|d| d.param(id)).and_then(|p| p.default.as_f64())).unwrap_or(0.0)
+        self.params
+            .get(id)
+            .map(|p| p.f64_at(t))
+            .or_else(|| {
+                self.def()
+                    .and_then(|d| d.param(id))
+                    .and_then(|p| p.default.as_f64())
+            })
+            .unwrap_or(0.0)
     }
     pub fn vec2_at(&self, id: &str, t: filmcraft_time::Tick) -> Vec2 {
-        self.params.get(id).map(|p| p.vec2_at(t)).unwrap_or_default()
+        self.params
+            .get(id)
+            .map(|p| p.vec2_at(t))
+            .unwrap_or_default()
     }
     pub fn is_animated(&self) -> bool {
         self.params.values().any(Param::is_animated) || self.masks.iter().any(Mask::is_animated)
@@ -171,11 +189,25 @@ pub const BLEND_MODES: &[&str] = &[
     "Luminosity",
 ];
 
-pub(crate) fn f(id: &'static str, label: &'static str, def: f64, min: f64, max: f64, unit: &'static str) -> ParamDef {
+pub(crate) fn f(
+    id: &'static str,
+    label: &'static str,
+    def: f64,
+    min: f64,
+    max: f64,
+    unit: &'static str,
+) -> ParamDef {
     ParamDef {
         id,
         label,
-        kind: ParamKind::Float { min, max, soft_min: min, soft_max: max, unit, decimals: 1 },
+        kind: ParamKind::Float {
+            min,
+            max,
+            soft_min: min,
+            soft_max: max,
+            unit,
+            decimals: 1,
+        },
         default: ParamValue::Float(def),
         animatable: true,
         group: None,
@@ -193,47 +225,149 @@ pub(crate) fn fs(
     ParamDef {
         id,
         label,
-        kind: ParamKind::Float { min, max, soft_min: smin, soft_max: smax, unit, decimals },
+        kind: ParamKind::Float {
+            min,
+            max,
+            soft_min: smin,
+            soft_max: smax,
+            unit,
+            decimals,
+        },
         default: ParamValue::Float(def),
         animatable: true,
         group: None,
     }
 }
 pub(crate) fn pt(id: &'static str, label: &'static str, x: f64, y: f64) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Point, default: ParamValue::Vec2(Vec2::new(x, y)), animatable: true, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Point,
+        default: ParamValue::Vec2(Vec2::new(x, y)),
+        animatable: true,
+        group: None,
+    }
 }
 pub(crate) fn col(id: &'static str, label: &'static str, c: [f32; 4]) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Color, default: ParamValue::Color(c), animatable: true, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Color,
+        default: ParamValue::Color(c),
+        animatable: true,
+        group: None,
+    }
 }
 pub(crate) fn b(id: &'static str, label: &'static str, v: bool) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Bool, default: ParamValue::Bool(v), animatable: false, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Bool,
+        default: ParamValue::Bool(v),
+        animatable: false,
+        group: None,
+    }
 }
-pub(crate) fn ch(id: &'static str, label: &'static str, opts: &'static [&'static str], def: u32) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Choice(opts), default: ParamValue::Choice(def), animatable: false, group: None }
+pub(crate) fn ch(
+    id: &'static str,
+    label: &'static str,
+    opts: &'static [&'static str],
+    def: u32,
+) -> ParamDef {
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Choice(opts),
+        default: ParamValue::Choice(def),
+        animatable: false,
+        group: None,
+    }
 }
 pub(crate) fn ang(id: &'static str, label: &'static str, def: f64) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Angle, default: ParamValue::Float(def), animatable: true, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Angle,
+        default: ParamValue::Float(def),
+        animatable: true,
+        group: None,
+    }
 }
 fn curve(id: &'static str, label: &'static str, hue: bool) -> ParamDef {
-    let default = if hue { ParamValue::Curve(vec![]) } else { ParamValue::Curve(vec![[0.0, 0.0], [1.0, 1.0]]) };
-    ParamDef { id, label, kind: ParamKind::Curve { hue }, default, animatable: false, group: None }
+    let default = if hue {
+        ParamValue::Curve(vec![])
+    } else {
+        ParamValue::Curve(vec![[0.0, 0.0], [1.0, 1.0]])
+    };
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Curve { hue },
+        default,
+        animatable: false,
+        group: None,
+    }
 }
 fn wheel(id: &'static str, label: &'static str) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Wheel, default: ParamValue::Vec2(Vec2::new(0.0, 0.0)), animatable: true, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Wheel,
+        default: ParamValue::Vec2(Vec2::new(0.0, 0.0)),
+        animatable: true,
+        group: None,
+    }
 }
 pub(crate) fn txt(id: &'static str, label: &'static str) -> ParamDef {
-    ParamDef { id, label, kind: ParamKind::Text, default: ParamValue::Text(String::new()), animatable: false, group: None }
+    ParamDef {
+        id,
+        label,
+        kind: ParamKind::Text,
+        default: ParamValue::Text(String::new()),
+        animatable: false,
+        group: None,
+    }
 }
 fn grp(mut p: ParamDef, g: &'static str) -> ParamDef {
     p.group = Some(g);
     p
 }
 
-fn video(id: &'static str, name: &'static str, cat: &'static [&'static str], params: Vec<ParamDef>) -> EffectDef {
-    EffectDef { id, name, kind: EffectKind::Video, category: cat, params, intrinsic: false, accelerated: true, float32: true, yuv: false }
+fn video(
+    id: &'static str,
+    name: &'static str,
+    cat: &'static [&'static str],
+    params: Vec<ParamDef>,
+) -> EffectDef {
+    EffectDef {
+        id,
+        name,
+        kind: EffectKind::Video,
+        category: cat,
+        params,
+        intrinsic: false,
+        accelerated: true,
+        float32: true,
+        yuv: false,
+    }
 }
-fn audio(id: &'static str, name: &'static str, cat: &'static [&'static str], params: Vec<ParamDef>) -> EffectDef {
-    EffectDef { id, name, kind: EffectKind::Audio, category: cat, params, intrinsic: false, accelerated: false, float32: true, yuv: false }
+fn audio(
+    id: &'static str,
+    name: &'static str,
+    cat: &'static [&'static str],
+    params: Vec<ParamDef>,
+) -> EffectDef {
+    EffectDef {
+        id,
+        name,
+        kind: EffectKind::Audio,
+        category: cat,
+        params,
+        intrinsic: false,
+        accelerated: false,
+        float32: true,
+        yuv: false,
+    }
 }
 
 const ADJUST: &[&str] = &["Video Effects", "Adjust"];
@@ -269,11 +403,27 @@ fn build_effects() -> Vec<EffectDef> {
             params: vec![
                 pt("position", "Position", f64::NAN, f64::NAN),
                 fs("scale", "Scale", 100.0, (0.0, 10000.0), (0.0, 100.0), "", 1),
-                fs("scale_width", "Scale Width", 100.0, (0.0, 10000.0), (0.0, 100.0), "", 1),
+                fs(
+                    "scale_width",
+                    "Scale Width",
+                    100.0,
+                    (0.0, 10000.0),
+                    (0.0, 100.0),
+                    "",
+                    1,
+                ),
                 b("uniform_scale", "Uniform Scale", true),
                 ang("rotation", "Rotation", 0.0),
                 pt("anchor", "Anchor Point", f64::NAN, f64::NAN),
-                fs("anti_flicker", "Anti-flicker Filter", 0.0, (0.0, 1.0), (0.0, 1.0), "", 2),
+                fs(
+                    "anti_flicker",
+                    "Anti-flicker Filter",
+                    0.0,
+                    (0.0, 1.0),
+                    (0.0, 1.0),
+                    "",
+                    2,
+                ),
             ],
             intrinsic: true,
             accelerated: true,
@@ -285,7 +435,18 @@ fn build_effects() -> Vec<EffectDef> {
             name: "Opacity",
             kind: EffectKind::Video,
             category: &[],
-            params: vec![fs("opacity", "Opacity", 100.0, (0.0, 100.0), (0.0, 100.0), "%", 1), ch("blend", "Blend Mode", BLEND_MODES, 0)],
+            params: vec![
+                fs(
+                    "opacity",
+                    "Opacity",
+                    100.0,
+                    (0.0, 100.0),
+                    (0.0, 100.0),
+                    "%",
+                    1,
+                ),
+                ch("blend", "Blend Mode", BLEND_MODES, 0),
+            ],
             intrinsic: true,
             accelerated: true,
             float32: true,
@@ -296,7 +457,15 @@ fn build_effects() -> Vec<EffectDef> {
             name: "Time Remapping",
             kind: EffectKind::Video,
             category: &[],
-            params: vec![fs("speed", "Speed", 100.0, (-10000.0, 10000.0), (0.0, 200.0), "%", 2)],
+            params: vec![fs(
+                "speed",
+                "Speed",
+                100.0,
+                (-10000.0, 10000.0),
+                (0.0, 200.0),
+                "%",
+                2,
+            )],
             intrinsic: true,
             accelerated: true,
             float32: true,
@@ -307,7 +476,18 @@ fn build_effects() -> Vec<EffectDef> {
             name: "Volume",
             kind: EffectKind::Audio,
             category: &[],
-            params: vec![b("bypass", "Bypass", false), fs("level", "Level", 0.0, (-287.5, 15.0), (-60.0, 15.0), "dB", 1)],
+            params: vec![
+                b("bypass", "Bypass", false),
+                fs(
+                    "level",
+                    "Level",
+                    0.0,
+                    (-287.5, 15.0),
+                    (-60.0, 15.0),
+                    "dB",
+                    1,
+                ),
+            ],
             intrinsic: true,
             accelerated: false,
             float32: true,
@@ -333,7 +513,15 @@ fn build_effects() -> Vec<EffectDef> {
             name: "Panner",
             kind: EffectKind::Audio,
             category: &[],
-            params: vec![fs("balance", "Balance", 0.0, (-100.0, 100.0), (-100.0, 100.0), "", 1)],
+            params: vec![fs(
+                "balance",
+                "Balance",
+                0.0,
+                (-100.0, 100.0),
+                (-100.0, 100.0),
+                "",
+                1,
+            )],
             intrinsic: true,
             accelerated: false,
             float32: true,
@@ -344,7 +532,10 @@ fn build_effects() -> Vec<EffectDef> {
             "brightness_contrast",
             "Brightness & Contrast",
             COLOR_CORR,
-            vec![f("brightness", "Brightness", 0.0, -100.0, 100.0, ""), f("contrast", "Contrast", 0.0, -100.0, 100.0, "")],
+            vec![
+                f("brightness", "Brightness", 0.0, -100.0, 100.0, ""),
+                f("contrast", "Contrast", 0.0, -100.0, 100.0, ""),
+            ],
         ),
         video(
             "tint",
@@ -402,36 +593,129 @@ fn build_effects() -> Vec<EffectDef> {
             vec![
                 grp(b("basic_on", "Basic Correction", true), "Basic Correction"),
                 grp(txt("input_lut", "Input LUT"), "Basic Correction"),
-                grp(f("temperature", "Temperature", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(f("tint", "Tint", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(fs("exposure", "Exposure", 0.0, (-5.0, 5.0), (-5.0, 5.0), "", 1), "Basic Correction"),
-                grp(f("contrast", "Contrast", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(f("highlights", "Highlights", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(f("shadows", "Shadows", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(f("whites", "Whites", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(f("blacks", "Blacks", 0.0, -100.0, 100.0, ""), "Basic Correction"),
-                grp(fs("saturation", "Saturation", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1), "Basic Correction"),
+                grp(
+                    f("temperature", "Temperature", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("tint", "Tint", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    fs("exposure", "Exposure", 0.0, (-5.0, 5.0), (-5.0, 5.0), "", 1),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("contrast", "Contrast", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("highlights", "Highlights", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("shadows", "Shadows", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("whites", "Whites", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("blacks", "Blacks", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
+                grp(
+                    fs(
+                        "saturation",
+                        "Saturation",
+                        100.0,
+                        (0.0, 200.0),
+                        (0.0, 200.0),
+                        "",
+                        1,
+                    ),
+                    "Basic Correction",
+                ),
                 // HDR mode (PQ / HLG sequences): the grading range in cd/m² and the speculars above it
-                grp(fs("hdr_white", "HDR White", 1000.0, (100.0, 10_000.0), (100.0, 10_000.0), "nits", 0), "Basic Correction"),
-                grp(f("hdr_specular", "HDR Specular", 0.0, -100.0, 100.0, ""), "Basic Correction"),
+                grp(
+                    fs(
+                        "hdr_white",
+                        "HDR White",
+                        1000.0,
+                        (100.0, 10_000.0),
+                        (100.0, 10_000.0),
+                        "nits",
+                        0,
+                    ),
+                    "Basic Correction",
+                ),
+                grp(
+                    f("hdr_specular", "HDR Specular", 0.0, -100.0, 100.0, ""),
+                    "Basic Correction",
+                ),
                 grp(b("creative_on", "Creative", true), "Creative"),
                 grp(
                     ch(
                         "look",
                         "Look",
-                        &["None", "Teal & Orange", "Warm Film", "Cool Blue", "Bleach Bypass", "Faded Matte", "Monochrome", "Golden Hour", "Night"],
+                        &[
+                            "None",
+                            "Teal & Orange",
+                            "Warm Film",
+                            "Cool Blue",
+                            "Bleach Bypass",
+                            "Faded Matte",
+                            "Monochrome",
+                            "Golden Hour",
+                            "Night",
+                        ],
                         0,
                     ),
                     "Creative",
                 ),
                 grp(txt("look_lut", "Look LUT"), "Creative"),
-                grp(fs("look_intensity", "Intensity", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1), "Creative"),
-                grp(f("faded_film", "Faded Film", 0.0, 0.0, 100.0, ""), "Creative"),
+                grp(
+                    fs(
+                        "look_intensity",
+                        "Intensity",
+                        100.0,
+                        (0.0, 200.0),
+                        (0.0, 200.0),
+                        "",
+                        1,
+                    ),
+                    "Creative",
+                ),
+                grp(
+                    f("faded_film", "Faded Film", 0.0, 0.0, 100.0, ""),
+                    "Creative",
+                ),
                 grp(f("sharpen", "Sharpen", 0.0, -100.0, 100.0, ""), "Creative"),
-                grp(f("vibrance", "Vibrance", 0.0, -100.0, 100.0, ""), "Creative"),
-                grp(fs("creative_sat", "Saturation", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1), "Creative"),
-                grp(col("shadow_tint", "Shadow Tint", [0.5, 0.5, 0.5, 1.0]), "Creative"),
-                grp(col("highlight_tint", "Highlight Tint", [0.5, 0.5, 0.5, 1.0]), "Creative"),
+                grp(
+                    f("vibrance", "Vibrance", 0.0, -100.0, 100.0, ""),
+                    "Creative",
+                ),
+                grp(
+                    fs(
+                        "creative_sat",
+                        "Saturation",
+                        100.0,
+                        (0.0, 200.0),
+                        (0.0, 200.0),
+                        "",
+                        1,
+                    ),
+                    "Creative",
+                ),
+                grp(
+                    col("shadow_tint", "Shadow Tint", [0.5, 0.5, 0.5, 1.0]),
+                    "Creative",
+                ),
+                grp(
+                    col("highlight_tint", "Highlight Tint", [0.5, 0.5, 0.5, 1.0]),
+                    "Creative",
+                ),
                 grp(b("curves_on", "Curves", true), "Curves"),
                 grp(curve("curve_luma", "Luma Curve", false), "Curves"),
                 grp(curve("curve_red", "Red Curve", false), "Curves"),
@@ -442,33 +726,181 @@ fn build_effects() -> Vec<EffectDef> {
                 grp(curve("hue_vs_luma", "Hue vs Luma", true), "Curves"),
                 grp(curve("luma_vs_sat", "Luma vs Sat", true), "Curves"),
                 grp(curve("sat_vs_sat", "Sat vs Sat", true), "Curves"),
-                grp(fs("curves_hdr_range", "HDR Range", 1000.0, (100.0, 10_000.0), (100.0, 10_000.0), "nits", 0), "Curves"),
-                grp(b("wheels_on", "Color Wheels & Match", true), "Color Wheels & Match"),
+                grp(
+                    fs(
+                        "curves_hdr_range",
+                        "HDR Range",
+                        1000.0,
+                        (100.0, 10_000.0),
+                        (100.0, 10_000.0),
+                        "nits",
+                        0,
+                    ),
+                    "Curves",
+                ),
+                grp(
+                    b("wheels_on", "Color Wheels & Match", true),
+                    "Color Wheels & Match",
+                ),
                 grp(wheel("wheel_shadows", "Shadows"), "Color Wheels & Match"),
-                grp(f("wheel_shadows_l", "Shadows Lightness", 0.0, -100.0, 100.0, ""), "Color Wheels & Match"),
+                grp(
+                    f(
+                        "wheel_shadows_l",
+                        "Shadows Lightness",
+                        0.0,
+                        -100.0,
+                        100.0,
+                        "",
+                    ),
+                    "Color Wheels & Match",
+                ),
                 grp(wheel("wheel_midtones", "Midtones"), "Color Wheels & Match"),
-                grp(f("wheel_midtones_l", "Midtones Lightness", 0.0, -100.0, 100.0, ""), "Color Wheels & Match"),
-                grp(wheel("wheel_highlights", "Highlights"), "Color Wheels & Match"),
-                grp(f("wheel_highlights_l", "Highlights Lightness", 0.0, -100.0, 100.0, ""), "Color Wheels & Match"),
+                grp(
+                    f(
+                        "wheel_midtones_l",
+                        "Midtones Lightness",
+                        0.0,
+                        -100.0,
+                        100.0,
+                        "",
+                    ),
+                    "Color Wheels & Match",
+                ),
+                grp(
+                    wheel("wheel_highlights", "Highlights"),
+                    "Color Wheels & Match",
+                ),
+                grp(
+                    f(
+                        "wheel_highlights_l",
+                        "Highlights Lightness",
+                        0.0,
+                        -100.0,
+                        100.0,
+                        "",
+                    ),
+                    "Color Wheels & Match",
+                ),
                 grp(b("hsl_on", "Enable HSL Secondary", false), "HSL Secondary"),
-                grp(fs("hsl_hue", "Hue Center", 0.0, (0.0, 360.0), (0.0, 360.0), "°", 0), "HSL Secondary"),
-                grp(fs("hsl_hue_range", "Hue Range", 30.0, (1.0, 180.0), (1.0, 180.0), "°", 0), "HSL Secondary"),
-                grp(fs("hsl_sat_min", "Saturation Min", 10.0, (0.0, 100.0), (0.0, 100.0), "", 0), "HSL Secondary"),
-                grp(fs("hsl_luma_min", "Luma Min", 5.0, (0.0, 100.0), (0.0, 100.0), "", 0), "HSL Secondary"),
-                grp(fs("hsl_luma_max", "Luma Max", 95.0, (0.0, 100.0), (0.0, 100.0), "", 0), "HSL Secondary"),
-                grp(f("hsl_soft", "Soften", 20.0, 0.0, 100.0, ""), "HSL Secondary"),
-                grp(ch("hsl_show_mask", "Show Mask", &["Off", "Color/Gray", "Color/Black", "White/Black"], 0), "HSL Secondary"),
-                grp(f("hsl_denoise", "Denoise", 0.0, 0.0, 100.0, ""), "HSL Secondary"),
+                grp(
+                    fs(
+                        "hsl_hue",
+                        "Hue Center",
+                        0.0,
+                        (0.0, 360.0),
+                        (0.0, 360.0),
+                        "°",
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    fs(
+                        "hsl_hue_range",
+                        "Hue Range",
+                        30.0,
+                        (1.0, 180.0),
+                        (1.0, 180.0),
+                        "°",
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    fs(
+                        "hsl_sat_min",
+                        "Saturation Min",
+                        10.0,
+                        (0.0, 100.0),
+                        (0.0, 100.0),
+                        "",
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    fs(
+                        "hsl_luma_min",
+                        "Luma Min",
+                        5.0,
+                        (0.0, 100.0),
+                        (0.0, 100.0),
+                        "",
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    fs(
+                        "hsl_luma_max",
+                        "Luma Max",
+                        95.0,
+                        (0.0, 100.0),
+                        (0.0, 100.0),
+                        "",
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    f("hsl_soft", "Soften", 20.0, 0.0, 100.0, ""),
+                    "HSL Secondary",
+                ),
+                grp(
+                    ch(
+                        "hsl_show_mask",
+                        "Show Mask",
+                        &["Off", "Color/Gray", "Color/Black", "White/Black"],
+                        0,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    f("hsl_denoise", "Denoise", 0.0, 0.0, 100.0, ""),
+                    "HSL Secondary",
+                ),
                 grp(f("hsl_blur", "Blur", 0.0, 0.0, 100.0, ""), "HSL Secondary"),
-                grp(f("hsl_temp", "Temperature", 0.0, -100.0, 100.0, ""), "HSL Secondary"),
-                grp(f("hsl_tint", "Tint", 0.0, -100.0, 100.0, ""), "HSL Secondary"),
-                grp(fs("hsl_sat", "Saturation", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1), "HSL Secondary"),
-                grp(f("hsl_hue_shift", "Hue Shift", 0.0, -180.0, 180.0, "°"), "HSL Secondary"),
+                grp(
+                    f("hsl_temp", "Temperature", 0.0, -100.0, 100.0, ""),
+                    "HSL Secondary",
+                ),
+                grp(
+                    f("hsl_tint", "Tint", 0.0, -100.0, 100.0, ""),
+                    "HSL Secondary",
+                ),
+                grp(
+                    fs(
+                        "hsl_sat",
+                        "Saturation",
+                        100.0,
+                        (0.0, 200.0),
+                        (0.0, 200.0),
+                        "",
+                        1,
+                    ),
+                    "HSL Secondary",
+                ),
+                grp(
+                    f("hsl_hue_shift", "Hue Shift", 0.0, -180.0, 180.0, "°"),
+                    "HSL Secondary",
+                ),
                 grp(b("vignette_on", "Vignette", true), "Vignette"),
-                grp(f("vignette_amount", "Amount", 0.0, -5.0, 5.0, ""), "Vignette"),
-                grp(f("vignette_midpoint", "Midpoint", 50.0, 0.0, 100.0, ""), "Vignette"),
-                grp(f("vignette_roundness", "Roundness", 0.0, -100.0, 100.0, ""), "Vignette"),
-                grp(f("vignette_feather", "Feather", 50.0, 0.0, 100.0, ""), "Vignette"),
+                grp(
+                    f("vignette_amount", "Amount", 0.0, -5.0, 5.0, ""),
+                    "Vignette",
+                ),
+                grp(
+                    f("vignette_midpoint", "Midpoint", 50.0, 0.0, 100.0, ""),
+                    "Vignette",
+                ),
+                grp(
+                    f("vignette_roundness", "Roundness", 0.0, -100.0, 100.0, ""),
+                    "Vignette",
+                ),
+                grp(
+                    f("vignette_feather", "Feather", 50.0, 0.0, 100.0, ""),
+                    "Vignette",
+                ),
             ],
         ),
         video(
@@ -476,8 +908,21 @@ fn build_effects() -> Vec<EffectDef> {
             "Gaussian Blur",
             BLUR,
             vec![
-                fs("blurriness", "Blurriness", 0.0, (0.0, 3000.0), (0.0, 100.0), "", 1),
-                ch("dimensions", "Blur Dimensions", &["Horizontal and Vertical", "Horizontal", "Vertical"], 0),
+                fs(
+                    "blurriness",
+                    "Blurriness",
+                    0.0,
+                    (0.0, 3000.0),
+                    (0.0, 100.0),
+                    "",
+                    1,
+                ),
+                ch(
+                    "dimensions",
+                    "Blur Dimensions",
+                    &["Horizontal and Vertical", "Horizontal", "Vertical"],
+                    0,
+                ),
                 b("repeat_edge", "Repeat Edge Pixels", false),
             ],
         ),
@@ -485,9 +930,33 @@ fn build_effects() -> Vec<EffectDef> {
             "directional_blur",
             "Directional Blur",
             BLUR,
-            vec![ang("direction", "Direction", 0.0), fs("length", "Blur Length", 0.0, (0.0, 1000.0), (0.0, 20.0), "", 1)],
+            vec![
+                ang("direction", "Direction", 0.0),
+                fs(
+                    "length",
+                    "Blur Length",
+                    0.0,
+                    (0.0, 1000.0),
+                    (0.0, 20.0),
+                    "",
+                    1,
+                ),
+            ],
         ),
-        video("sharpen", "Sharpen", BLUR, vec![fs("amount", "Sharpen Amount", 0.0, (0.0, 4000.0), (0.0, 100.0), "", 0)]),
+        video(
+            "sharpen",
+            "Sharpen",
+            BLUR,
+            vec![fs(
+                "amount",
+                "Sharpen Amount",
+                0.0,
+                (0.0, 4000.0),
+                (0.0, 100.0),
+                "",
+                0,
+            )],
+        ),
         video(
             "unsharp_mask",
             "Unsharp Mask",
@@ -495,34 +964,104 @@ fn build_effects() -> Vec<EffectDef> {
             vec![
                 fs("amount", "Amount", 50.0, (0.0, 500.0), (0.0, 500.0), "", 0),
                 fs("radius", "Radius", 1.0, (0.1, 250.0), (0.1, 250.0), "", 1),
-                fs("threshold", "Threshold", 0.0, (0.0, 255.0), (0.0, 255.0), "", 0),
+                fs(
+                    "threshold",
+                    "Threshold",
+                    0.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
             ],
         ),
-        video("camera_blur", "Camera Blur", vfx::LEGACY, vec![f("percent", "Percent Blur", 0.0, 0.0, 100.0, "")]),
+        video(
+            "camera_blur",
+            "Camera Blur",
+            vfx::LEGACY,
+            vec![f("percent", "Percent Blur", 0.0, 0.0, 100.0, "")],
+        ),
         video("black_white", "Black & White", IMAGE_CONTROL, vec![]),
         video(
             "color_pass",
             "Color Pass",
             IMAGE_CONTROL,
-            vec![col("color", "Color", [1.0, 0.0, 0.0, 1.0]), f("similarity", "Similarity", 10.0, 0.0, 100.0, ""), b("reverse", "Reverse", false)],
+            vec![
+                col("color", "Color", [1.0, 0.0, 0.0, 1.0]),
+                f("similarity", "Similarity", 10.0, 0.0, 100.0, ""),
+                b("reverse", "Reverse", false),
+            ],
         ),
-        video("gamma_correction", "Gamma Correction", IMAGE_CONTROL, vec![fs("gamma", "Gamma", 10.0, (1.0, 28.0), (1.0, 28.0), "", 0)]),
+        video(
+            "gamma_correction",
+            "Gamma Correction",
+            IMAGE_CONTROL,
+            vec![fs("gamma", "Gamma", 10.0, (1.0, 28.0), (1.0, 28.0), "", 0)],
+        ),
         video(
             "invert",
             "Invert",
             IMAGE_CONTROL,
-            vec![ch("channel", "Channel", &["RGB", "Red", "Green", "Blue", "Alpha"], 0), f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%")],
+            vec![
+                ch(
+                    "channel",
+                    "Channel",
+                    &["RGB", "Red", "Green", "Blue", "Alpha"],
+                    0,
+                ),
+                f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%"),
+            ],
         ),
         video(
             "levels",
             "Levels",
             ADJUST,
             vec![
-                fs("in_black", "(RGB) Input Black Level", 0.0, (0.0, 255.0), (0.0, 255.0), "", 0),
-                fs("in_white", "(RGB) Input White Level", 255.0, (0.0, 255.0), (0.0, 255.0), "", 0),
-                fs("out_black", "(RGB) Output Black Level", 0.0, (0.0, 255.0), (0.0, 255.0), "", 0),
-                fs("out_white", "(RGB) Output White Level", 255.0, (0.0, 255.0), (0.0, 255.0), "", 0),
-                fs("gamma", "(RGB) Gamma", 100.0, (10.0, 1000.0), (10.0, 300.0), "", 0),
+                fs(
+                    "in_black",
+                    "(RGB) Input Black Level",
+                    0.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "in_white",
+                    "(RGB) Input White Level",
+                    255.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "out_black",
+                    "(RGB) Output Black Level",
+                    0.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "out_white",
+                    "(RGB) Output White Level",
+                    255.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "gamma",
+                    "(RGB) Gamma",
+                    100.0,
+                    (10.0, 1000.0),
+                    (10.0, 300.0),
+                    "",
+                    0,
+                ),
             ],
         ),
         video(
@@ -531,9 +1070,25 @@ fn build_effects() -> Vec<EffectDef> {
             ADJUST,
             vec![
                 f("brightness", "Brightness", 0.0, -100.0, 100.0, ""),
-                fs("contrast", "Contrast", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1),
+                fs(
+                    "contrast",
+                    "Contrast",
+                    100.0,
+                    (0.0, 200.0),
+                    (0.0, 200.0),
+                    "",
+                    1,
+                ),
                 ang("hue", "Hue", 0.0),
-                fs("saturation", "Saturation", 100.0, (0.0, 200.0), (0.0, 200.0), "", 1),
+                fs(
+                    "saturation",
+                    "Saturation",
+                    100.0,
+                    (0.0, 200.0),
+                    (0.0, 200.0),
+                    "",
+                    1,
+                ),
             ],
         ),
         video(
@@ -541,24 +1096,69 @@ fn build_effects() -> Vec<EffectDef> {
             "Extract",
             ADJUST,
             vec![
-                fs("black", "Black Input Level", 0.0, (0.0, 255.0), (0.0, 255.0), "", 0),
-                fs("white", "White Input Level", 255.0, (0.0, 255.0), (0.0, 255.0), "", 0),
+                fs(
+                    "black",
+                    "Black Input Level",
+                    0.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "white",
+                    "White Input Level",
+                    255.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
                 f("softness", "Softness", 0.0, 0.0, 100.0, ""),
                 b("invert", "Invert", false),
             ],
         ),
-        video("posterize", "Posterize", STYLIZE, vec![fs("levels", "Level", 7.0, (2.0, 255.0), (2.0, 32.0), "", 0)]),
+        video(
+            "posterize",
+            "Posterize",
+            STYLIZE,
+            vec![fs("levels", "Level", 7.0, (2.0, 255.0), (2.0, 32.0), "", 0)],
+        ),
         video(
             "mosaic",
             "Mosaic",
             STYLIZE,
             vec![
-                fs("horizontal", "Horizontal Blocks", 10.0, (1.0, 4000.0), (1.0, 200.0), "", 0),
-                fs("vertical", "Vertical Blocks", 10.0, (1.0, 4000.0), (1.0, 200.0), "", 0),
+                fs(
+                    "horizontal",
+                    "Horizontal Blocks",
+                    10.0,
+                    (1.0, 4000.0),
+                    (1.0, 200.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "vertical",
+                    "Vertical Blocks",
+                    10.0,
+                    (1.0, 4000.0),
+                    (1.0, 200.0),
+                    "",
+                    0,
+                ),
                 b("sharp", "Sharp Colors", false),
             ],
         ),
-        video("find_edges", "Find Edges", STYLIZE, vec![b("invert", "Invert", false), f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%")]),
+        video(
+            "find_edges",
+            "Find Edges",
+            STYLIZE,
+            vec![
+                b("invert", "Invert", false),
+                f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%"),
+            ],
+        ),
         video(
             "emboss",
             "Emboss",
@@ -570,7 +1170,12 @@ fn build_effects() -> Vec<EffectDef> {
                 f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%"),
             ],
         ),
-        video("replicate", "Replicate", vfx::LEGACY, vec![fs("count", "Count", 2.0, (2.0, 16.0), (2.0, 16.0), "", 0)]),
+        video(
+            "replicate",
+            "Replicate",
+            vfx::LEGACY,
+            vec![fs("count", "Count", 2.0, (2.0, 16.0), (2.0, 16.0), "", 0)],
+        ),
         video(
             "strobe",
             "Strobe Light",
@@ -578,17 +1183,50 @@ fn build_effects() -> Vec<EffectDef> {
             vec![
                 col("color", "Strobe Color", [1.0, 1.0, 1.0, 1.0]),
                 f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%"),
-                fs("duration", "Strobe Duration (secs)", 0.05, (0.0, 30.0), (0.0, 1.0), "", 2),
-                fs("period", "Strobe Period (secs)", 0.5, (0.0, 30.0), (0.0, 2.0), "", 2),
+                fs(
+                    "duration",
+                    "Strobe Duration (secs)",
+                    0.05,
+                    (0.0, 30.0),
+                    (0.0, 1.0),
+                    "",
+                    2,
+                ),
+                fs(
+                    "period",
+                    "Strobe Period (secs)",
+                    0.5,
+                    (0.0, 30.0),
+                    (0.0, 2.0),
+                    "",
+                    2,
+                ),
             ],
         ),
         video(
             "noise",
             "Noise",
             NOISE,
-            vec![f("amount", "Amount of Noise", 0.0, 0.0, 100.0, "%"), b("color", "Use Color Noise", true), b("clip", "Clipping", true)],
+            vec![
+                f("amount", "Amount of Noise", 0.0, 0.0, 100.0, "%"),
+                b("color", "Use Color Noise", true),
+                b("clip", "Clipping", true),
+            ],
         ),
-        video("median", "Median", vfx::OBSOLETE, vec![fs("radius", "Radius", 0.0, (0.0, 100.0), (0.0, 20.0), "", 0)]),
+        video(
+            "median",
+            "Median",
+            vfx::OBSOLETE,
+            vec![fs(
+                "radius",
+                "Radius",
+                0.0,
+                (0.0, 100.0),
+                (0.0, 20.0),
+                "",
+                0,
+            )],
+        ),
         video(
             "crop",
             "Crop",
@@ -599,12 +1237,33 @@ fn build_effects() -> Vec<EffectDef> {
                 f("right", "Right", 0.0, 0.0, 100.0, "%"),
                 f("bottom", "Bottom", 0.0, 0.0, 100.0, "%"),
                 b("zoom", "Zoom", false),
-                fs("feather", "Edge Feather", 0.0, (0.0, 1000.0), (0.0, 100.0), "", 0),
+                fs(
+                    "feather",
+                    "Edge Feather",
+                    0.0,
+                    (0.0, 1000.0),
+                    (0.0, 100.0),
+                    "",
+                    0,
+                ),
             ],
         ),
         video("horizontal_flip", "Horizontal Flip", TRANSFORM, vec![]),
         video("vertical_flip", "Vertical Flip", TRANSFORM, vec![]),
-        video("edge_feather", "Edge Feather", vfx::LEGACY, vec![fs("amount", "Amount", 0.0, (0.0, 100.0), (0.0, 100.0), "", 0)]),
+        video(
+            "edge_feather",
+            "Edge Feather",
+            vfx::LEGACY,
+            vec![fs(
+                "amount",
+                "Amount",
+                0.0,
+                (0.0, 100.0),
+                (0.0, 100.0),
+                "",
+                0,
+            )],
+        ),
         video(
             "transform",
             "Transform",
@@ -613,8 +1272,24 @@ fn build_effects() -> Vec<EffectDef> {
                 pt("anchor", "Anchor Point", f64::NAN, f64::NAN),
                 pt("position", "Position", f64::NAN, f64::NAN),
                 b("uniform_scale", "Uniform Scale", true),
-                fs("scale_height", "Scale Height", 100.0, (0.0, 10000.0), (0.0, 600.0), "", 1),
-                fs("scale_width", "Scale Width", 100.0, (0.0, 10000.0), (0.0, 600.0), "", 1),
+                fs(
+                    "scale_height",
+                    "Scale Height",
+                    100.0,
+                    (0.0, 10000.0),
+                    (0.0, 600.0),
+                    "",
+                    1,
+                ),
+                fs(
+                    "scale_width",
+                    "Scale Width",
+                    100.0,
+                    (0.0, 10000.0),
+                    (0.0, 600.0),
+                    "",
+                    1,
+                ),
                 f("skew", "Skew", 0.0, -70.0, 70.0, ""),
                 ang("skew_axis", "Skew Axis", 0.0),
                 ang("rotation", "Rotation", 0.0),
@@ -623,16 +1298,46 @@ fn build_effects() -> Vec<EffectDef> {
                 f("shutter_angle", "Shutter Angle", 180.0, 0.0, 360.0, ""),
             ],
         ),
-        video("mirror", "Mirror", DISTORT, vec![pt("center", "Reflection Center", f64::NAN, f64::NAN), ang("angle", "Reflection Angle", 0.0)]),
-        video("offset", "Offset", TRANSFORM, vec![pt("shift", "Shift Center To", f64::NAN, f64::NAN), f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%")]),
+        video(
+            "mirror",
+            "Mirror",
+            DISTORT,
+            vec![
+                pt("center", "Reflection Center", f64::NAN, f64::NAN),
+                ang("angle", "Reflection Angle", 0.0),
+            ],
+        ),
+        video(
+            "offset",
+            "Offset",
+            TRANSFORM,
+            vec![
+                pt("shift", "Shift Center To", f64::NAN, f64::NAN),
+                f("blend", "Blend With Original", 0.0, 0.0, 100.0, "%"),
+            ],
+        ),
         video(
             "lens_distortion",
             "Lens Distortion",
             DISTORT,
             vec![
                 f("curvature", "Curvature", 0.0, -100.0, 100.0, ""),
-                f("v_decentering", "Vertical Decentering", 0.0, -100.0, 100.0, ""),
-                f("h_decentering", "Horizontal Decentering", 0.0, -100.0, 100.0, ""),
+                f(
+                    "v_decentering",
+                    "Vertical Decentering",
+                    0.0,
+                    -100.0,
+                    100.0,
+                    "",
+                ),
+                f(
+                    "h_decentering",
+                    "Horizontal Decentering",
+                    0.0,
+                    -100.0,
+                    100.0,
+                    "",
+                ),
             ],
         ),
         video(
@@ -641,7 +1346,15 @@ fn build_effects() -> Vec<EffectDef> {
             DISTORT,
             vec![
                 ang("angle", "Angle", 50.0),
-                fs("radius", "Twirl Radius", 30.0, (0.0, 100.0), (0.0, 100.0), "", 1),
+                fs(
+                    "radius",
+                    "Twirl Radius",
+                    30.0,
+                    (0.0, 100.0),
+                    (0.0, 100.0),
+                    "",
+                    1,
+                ),
                 pt("center", "Twirl Center", f64::NAN, f64::NAN),
             ],
         ),
@@ -650,17 +1363,53 @@ fn build_effects() -> Vec<EffectDef> {
             "Wave Warp",
             DISTORT,
             vec![
-                fs("height", "Wave Height", 10.0, (-4000.0, 4000.0), (-100.0, 100.0), "", 0),
-                fs("width", "Wave Width", 40.0, (1.0, 4000.0), (1.0, 400.0), "", 0),
+                fs(
+                    "height",
+                    "Wave Height",
+                    10.0,
+                    (-4000.0, 4000.0),
+                    (-100.0, 100.0),
+                    "",
+                    0,
+                ),
+                fs(
+                    "width",
+                    "Wave Width",
+                    40.0,
+                    (1.0, 4000.0),
+                    (1.0, 400.0),
+                    "",
+                    0,
+                ),
                 ang("direction", "Direction", 90.0),
-                fs("speed", "Wave Speed", 1.0, (-100.0, 100.0), (-10.0, 10.0), "", 1),
+                fs(
+                    "speed",
+                    "Wave Speed",
+                    1.0,
+                    (-100.0, 100.0),
+                    (-10.0, 10.0),
+                    "",
+                    1,
+                ),
             ],
         ),
         video(
             "basic_3d",
             "Basic 3D",
             PERSPECTIVE,
-            vec![ang("swivel", "Swivel", 0.0), ang("tilt", "Tilt", 0.0), fs("distance", "Distance to Image", 0.0, (-10000.0, 10000.0), (-100.0, 100.0), "", 1)],
+            vec![
+                ang("swivel", "Swivel", 0.0),
+                ang("tilt", "Tilt", 0.0),
+                fs(
+                    "distance",
+                    "Distance to Image",
+                    0.0,
+                    (-10000.0, 10000.0),
+                    (-100.0, 100.0),
+                    "",
+                    1,
+                ),
+            ],
         ),
         video(
             "drop_shadow",
@@ -670,8 +1419,24 @@ fn build_effects() -> Vec<EffectDef> {
                 col("color", "Shadow Color", [0.0, 0.0, 0.0, 1.0]),
                 f("opacity", "Opacity", 50.0, 0.0, 100.0, "%"),
                 ang("direction", "Direction", 135.0),
-                fs("distance", "Distance", 5.0, (0.0, 4000.0), (0.0, 120.0), "", 1),
-                fs("softness", "Softness", 0.0, (0.0, 1000.0), (0.0, 250.0), "", 1),
+                fs(
+                    "distance",
+                    "Distance",
+                    5.0,
+                    (0.0, 4000.0),
+                    (0.0, 120.0),
+                    "",
+                    1,
+                ),
+                fs(
+                    "softness",
+                    "Softness",
+                    0.0,
+                    (0.0, 1000.0),
+                    (0.0, 250.0),
+                    "",
+                    1,
+                ),
                 b("only", "Shadow Only", false),
             ],
         ),
@@ -680,7 +1445,15 @@ fn build_effects() -> Vec<EffectDef> {
             "Bevel Alpha",
             vfx::OBSOLETE,
             vec![
-                fs("thickness", "Edge Thickness", 2.0, (0.0, 200.0), (0.0, 10.0), "", 1),
+                fs(
+                    "thickness",
+                    "Edge Thickness",
+                    2.0,
+                    (0.0, 200.0),
+                    (0.0, 10.0),
+                    "",
+                    1,
+                ),
                 ang("angle", "Light Angle", -60.0),
                 col("color", "Light Color", [1.0, 1.0, 1.0, 1.0]),
                 f("intensity", "Light Intensity", 40.0, 0.0, 100.0, ""),
@@ -692,16 +1465,44 @@ fn build_effects() -> Vec<EffectDef> {
             KEYING,
             vec![
                 col("key_color", "Key Color", [0.0, 0.8, 0.2, 1.0]),
-                ch("output", "Output", &["Composite", "Alpha Channel", "Color Channel"], 0),
-                ch("setting", "Setting", &["Default", "Relaxed", "Aggressive", "Custom"], 0),
-                grp(f("transparency", "Transparency", 45.0, 0.0, 100.0, ""), "Matte Generation"),
-                grp(f("highlight", "Highlight", 10.0, 0.0, 100.0, ""), "Matte Generation"),
-                grp(f("shadow", "Shadow", 50.0, 0.0, 100.0, ""), "Matte Generation"),
-                grp(f("tolerance", "Tolerance", 50.0, 0.0, 100.0, ""), "Matte Generation"),
-                grp(f("pedestal", "Pedestal", 10.0, 0.0, 100.0, ""), "Matte Generation"),
+                ch(
+                    "output",
+                    "Output",
+                    &["Composite", "Alpha Channel", "Color Channel"],
+                    0,
+                ),
+                ch(
+                    "setting",
+                    "Setting",
+                    &["Default", "Relaxed", "Aggressive", "Custom"],
+                    0,
+                ),
+                grp(
+                    f("transparency", "Transparency", 45.0, 0.0, 100.0, ""),
+                    "Matte Generation",
+                ),
+                grp(
+                    f("highlight", "Highlight", 10.0, 0.0, 100.0, ""),
+                    "Matte Generation",
+                ),
+                grp(
+                    f("shadow", "Shadow", 50.0, 0.0, 100.0, ""),
+                    "Matte Generation",
+                ),
+                grp(
+                    f("tolerance", "Tolerance", 50.0, 0.0, 100.0, ""),
+                    "Matte Generation",
+                ),
+                grp(
+                    f("pedestal", "Pedestal", 10.0, 0.0, 100.0, ""),
+                    "Matte Generation",
+                ),
                 grp(f("choke", "Choke", 0.0, 0.0, 100.0, ""), "Matte Cleanup"),
                 grp(f("soften", "Soften", 0.0, 0.0, 100.0, ""), "Matte Cleanup"),
-                grp(f("spill", "Spill", 50.0, 0.0, 100.0, ""), "Spill Suppression"),
+                grp(
+                    f("spill", "Spill", 50.0, 0.0, 100.0, ""),
+                    "Spill Suppression",
+                ),
             ],
         ),
         video(
@@ -709,8 +1510,18 @@ fn build_effects() -> Vec<EffectDef> {
             "Track Matte Key",
             KEYING,
             vec![
-                ch("matte", "Matte", &["None", "Video 1", "Video 2", "Video 3", "Video 4"], 0),
-                ch("composite", "Composite Using", &["Matte Alpha", "Matte Luma"], 0),
+                ch(
+                    "matte",
+                    "Matte",
+                    &["None", "Video 1", "Video 2", "Video 3", "Video 4"],
+                    0,
+                ),
+                ch(
+                    "composite",
+                    "Composite Using",
+                    &["Matte Alpha", "Matte Luma"],
+                    0,
+                ),
                 b("reverse", "Reverse", false),
             ],
         ),
@@ -720,12 +1531,36 @@ fn build_effects() -> Vec<EffectDef> {
             KEYING,
             vec![
                 col("color", "Key Color", [0.0, 0.0, 1.0, 1.0]),
-                fs("tolerance", "Color Tolerance", 0.0, (0.0, 255.0), (0.0, 255.0), "", 0),
+                fs(
+                    "tolerance",
+                    "Color Tolerance",
+                    0.0,
+                    (0.0, 255.0),
+                    (0.0, 255.0),
+                    "",
+                    0,
+                ),
                 fs("thin", "Edge Thin", 0.0, (-5.0, 5.0), (-5.0, 5.0), "", 0),
-                fs("feather", "Edge Feather", 0.0, (0.0, 50.0), (0.0, 50.0), "", 1),
+                fs(
+                    "feather",
+                    "Edge Feather",
+                    0.0,
+                    (0.0, 50.0),
+                    (0.0, 50.0),
+                    "",
+                    1,
+                ),
             ],
         ),
-        video("luma_key", "Luma Key", KEYING, vec![f("threshold", "Threshold", 0.0, 0.0, 100.0, "%"), f("cutoff", "Cutoff", 0.0, 0.0, 100.0, "%")]),
+        video(
+            "luma_key",
+            "Luma Key",
+            KEYING,
+            vec![
+                f("threshold", "Threshold", 0.0, 0.0, 100.0, "%"),
+                f("cutoff", "Cutoff", 0.0, 0.0, 100.0, "%"),
+            ],
+        ),
         video(
             "four_color_gradient",
             "4-Color Gradient",
@@ -798,7 +1633,10 @@ fn build_effects() -> Vec<EffectDef> {
             "clip_name",
             "Clip Name",
             vfx::OBSOLETE,
-            vec![pt("position", "Position", f64::NAN, f64::NAN), fs("size", "Size", 15.0, (1.0, 100.0), (1.0, 50.0), "%", 1)],
+            vec![
+                pt("position", "Position", f64::NAN, f64::NAN),
+                fs("size", "Size", 15.0, (1.0, 100.0), (1.0, 50.0), "%", 1),
+            ],
         ),
         video("simple_text", "Simple Text", vfx::UTILITY, vec![]),
         // ---- audio effects ----
@@ -844,7 +1682,10 @@ fn build_effects() -> Vec<EffectDef> {
     v.extend(crate::graphic::layer_defs());
     // YUV badge for the colour/intrinsic set
     for e in &mut v {
-        if matches!(e.id, "brightness_contrast" | "proc_amp" | "crop" | "gaussian_blur" | "tint" | "lumetri") {
+        if matches!(
+            e.id,
+            "brightness_contrast" | "proc_amp" | "crop" | "gaussian_blur" | "tint" | "lumetri"
+        ) {
             e.yuv = true;
         }
     }
@@ -864,16 +1705,26 @@ pub fn find_effect(id: &str) -> Option<&'static EffectDef> {
 /// Case-insensitive lookup by id or display name.
 pub fn find_effect_by_name(name: &str) -> Option<&'static EffectDef> {
     let n = name.to_ascii_lowercase();
-    effect_defs().iter().find(|e| e.id == n || e.name.to_ascii_lowercase() == n)
+    effect_defs()
+        .iter()
+        .find(|e| e.id == n || e.name.to_ascii_lowercase() == n)
 }
 
 /// Intrinsic video effects every video track item carries (Motion, Opacity, Time Remapping).
 pub fn intrinsic_video() -> Vec<EffectInstance> {
-    ["motion", "opacity", "time_remap"].iter().filter_map(|id| find_effect(id)).map(EffectDef::instance).collect()
+    ["motion", "opacity", "time_remap"]
+        .iter()
+        .filter_map(|id| find_effect(id))
+        .map(EffectDef::instance)
+        .collect()
 }
 
 pub fn intrinsic_audio() -> Vec<EffectInstance> {
-    ["volume", "channel_volume", "panner"].iter().filter_map(|id| find_effect(id)).map(EffectDef::instance).collect()
+    ["volume", "channel_volume", "panner"]
+        .iter()
+        .filter_map(|id| find_effect(id))
+        .map(EffectDef::instance)
+        .collect()
 }
 
 #[cfg(test)]
@@ -889,7 +1740,10 @@ mod tests {
             assert_eq!(inst.params.len(), e.params.len());
         }
         assert!(effect_defs().len() > 90);
-        assert_eq!(find_effect_by_name("Gaussian Blur").unwrap().id, "gaussian_blur");
+        assert_eq!(
+            find_effect_by_name("Gaussian Blur").unwrap().id,
+            "gaussian_blur"
+        );
         assert_eq!(intrinsic_video().len(), 3);
     }
 }

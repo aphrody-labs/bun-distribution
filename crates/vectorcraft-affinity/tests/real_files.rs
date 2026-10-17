@@ -18,7 +18,11 @@ fn files(dir: &Path, out: &mut Vec<PathBuf>) {
         let p = e.path();
         if p.is_dir() {
             files(&p, out);
-        } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| ["af", "afdesign", "afphoto", "afpub", "aftemplate"].contains(&e)) {
+        } else if p
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| ["af", "afdesign", "afphoto", "afpub", "aftemplate"].contains(&e))
+        {
             out.push(p);
         }
     }
@@ -26,7 +30,9 @@ fn files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 fn samples() -> Option<PathBuf> {
     let pinned = corpus::pinned();
-    std::env::var_os("AFFINITY_SAMPLES").map(PathBuf::from).or(pinned)
+    std::env::var_os("AFFINITY_SAMPLES")
+        .map(PathBuf::from)
+        .or(pinned)
 }
 
 #[test]
@@ -47,7 +53,13 @@ fn public_documents_parse_completely() {
             Err(e) => failures.push(format!("{}: {e}", p.display())),
         }
     }
-    assert!(failures.is_empty(), "{} of {} failed:\n{}", failures.len(), paths.len(), failures.join("\n"));
+    assert!(
+        failures.is_empty(),
+        "{} of {} failed:\n{}",
+        failures.len(),
+        paths.len(),
+        failures.join("\n")
+    );
     eprintln!("{} Affinity documents parsed", paths.len());
 }
 
@@ -92,8 +104,13 @@ fn affinity3_feature_retention_matches_pinned_signatures() {
     let Some(dir) = corpus::pinned() else { return };
     let expected = include_str!("support/affinity3-signatures.txt");
     let mut checked = std::collections::BTreeSet::new();
-    for line in expected.lines().filter(|l| !l.starts_with('#') && !l.is_empty()) {
-        let (name, signature) = line.split_once('\t').expect("signature row must have a tab");
+    for line in expected
+        .lines()
+        .filter(|l| !l.starts_with('#') && !l.is_empty())
+    {
+        let (name, signature) = line
+            .split_once('\t')
+            .expect("signature row must have a tab");
         assert!(checked.insert(name), "duplicate fixture {name}");
         let bytes = std::fs::read(dir.join(name)).unwrap();
         let doc = vectorcraft_affinity::read(&bytes, Limits::default()).unwrap();
@@ -103,13 +120,22 @@ fn affinity3_feature_retention_matches_pinned_signatures() {
             "{name}: imported feature retention changed; review the pinned input and warning changes before updating this baseline"
         );
         assert!(
-            doc.saved_by.as_deref().is_some_and(|v| v.starts_with("Affinity 3.")),
+            doc.saved_by
+                .as_deref()
+                .is_some_and(|v| v.starts_with("Affinity 3.")),
             "{name}: expected an actual Affinity 3 document, got {:?}",
             doc.saved_by
         );
     }
     let manifest = include_str!("../../vectorcraft-xtask/affinity-corpus.sha256");
-    let af_names: std::collections::BTreeSet<_> =
-        manifest.lines().filter_map(|l| l.split_once("  ")).map(|(_, n)| n).filter(|n| n.ends_with(".af")).collect();
-    assert_eq!(checked, af_names, "every pinned .af file needs a reviewed structural baseline");
+    let af_names: std::collections::BTreeSet<_> = manifest
+        .lines()
+        .filter_map(|l| l.split_once("  "))
+        .map(|(_, n)| n)
+        .filter(|n| n.ends_with(".af"))
+        .collect();
+    assert_eq!(
+        checked, af_names,
+        "every pinned .af file needs a reviewed structural baseline"
+    );
 }

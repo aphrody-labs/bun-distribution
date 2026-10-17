@@ -48,9 +48,18 @@ impl ToolHostSubsystem {
         spec: ToolHostSpec<'_>,
         occupied: &HashSet<String>,
     ) -> Result<Option<Arc<dyn SystemSubsystem>>, String> {
-        let ToolHostSpec { name, description, env, binary, args } = spec;
+        let ToolHostSpec {
+            name,
+            description,
+            env,
+            binary,
+            args,
+        } = spec;
         let explicit = std::env::var(env).ok();
-        if explicit.as_deref().is_some_and(|value| value.trim().is_empty()) {
+        if explicit
+            .as_deref()
+            .is_some_and(|value| value.trim().is_empty())
+        {
             return Ok(None);
         }
         let (command, args) = match explicit {
@@ -58,7 +67,7 @@ impl ToolHostSubsystem {
                 let mut parts = command.split_whitespace().map(str::to_owned);
                 let program = parts.next().map(PathBuf::from).unwrap_or_default();
                 (program, parts.collect())
-            },
+            }
             None => match crate::mcp_proxy::installed_binary(binary) {
                 Some(path) => (path, args.to_vec()),
                 None => return Ok(None),
@@ -72,8 +81,9 @@ impl ToolHostSubsystem {
             tools: Vec::new(),
         };
         let listed = host.run(&["list"], LIST_TIMEOUT).await?;
-        let array =
-            listed.as_array().ok_or_else(|| format!("tool host {name}: list is not an array"))?;
+        let array = listed
+            .as_array()
+            .ok_or_else(|| format!("tool host {name}: list is not an array"))?;
         for tool in array {
             let definition = crate::mcp_proxy::provider_tool(tool)?;
             if !occupied.contains(&definition.name) {
@@ -84,7 +94,8 @@ impl ToolHostSubsystem {
     }
 
     async fn run(&self, tail: &[&str], timeout: Duration) -> Result<Value, String> {
-        let child = tokio::process::Command::new(&self.command).no_window()
+        let child = tokio::process::Command::new(&self.command)
+            .no_window()
             .args(&self.args)
             .args(tail)
             .stdin(Stdio::null())
@@ -98,10 +109,16 @@ impl ToolHostSubsystem {
             .map_err(|_| format!("tool host {} timed out", self.name))?
             .map_err(|error| format!("tool host {}: {error}", self.name))?;
         if output.stdout.len() > MAX_OUTPUT {
-            return Err(format!("tool host {} output exceeds {MAX_OUTPUT} bytes", self.name));
+            return Err(format!(
+                "tool host {} output exceeds {MAX_OUTPUT} bytes",
+                self.name
+            ));
         }
         if !output.status.success() {
-            return Err(format!("tool host {} exited with {}", self.name, output.status));
+            return Err(format!(
+                "tool host {} exited with {}",
+                self.name, output.status
+            ));
         }
         serde_json::from_slice(&output.stdout)
             .map_err(|error| format!("tool host {}: invalid JSON: {error}", self.name))
@@ -154,8 +171,12 @@ esac
             tools: Vec::new(),
         };
         let listed = host.run(&["list"], LIST_TIMEOUT).await.unwrap();
-        host.tools.push(crate::mcp_proxy::provider_tool(&listed[0]).unwrap());
-        let result = host.call("probe", serde_json::json!({"a": 1})).await.unwrap();
+        host.tools
+            .push(crate::mcp_proxy::provider_tool(&listed[0]).unwrap());
+        let result = host
+            .call("probe", serde_json::json!({"a": 1}))
+            .await
+            .unwrap();
         assert_eq!(result["content"][0]["text"], "called probe");
         assert!(host.call("missing", serde_json::json!({})).await.is_err());
     }

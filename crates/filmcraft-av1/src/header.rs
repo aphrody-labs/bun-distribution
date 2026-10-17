@@ -73,7 +73,10 @@ pub struct SequenceHeader {
 impl SequenceHeader {
     pub fn parse(data: &[u8]) -> Result<SequenceHeader> {
         let mut r = BitReader::new(data);
-        let mut s = SequenceHeader { profile: r.f(3)? as u8, ..Default::default() };
+        let mut s = SequenceHeader {
+            profile: r.f(3)? as u8,
+            ..Default::default()
+        };
         if s.profile > 2 {
             return Err(Error::Unsupported("seq_profile > 2"));
         }
@@ -126,7 +129,11 @@ impl SequenceHeader {
         s.frame_height_bits = r.f(4)? + 1;
         s.max_frame_width = r.f(s.frame_width_bits)? + 1;
         s.max_frame_height = r.f(s.frame_height_bits)? + 1;
-        s.frame_id_numbers_present = if s.reduced_still_picture_header { false } else { r.flag()? };
+        s.frame_id_numbers_present = if s.reduced_still_picture_header {
+            false
+        } else {
+            r.flag()?
+        };
         if s.frame_id_numbers_present {
             s.delta_frame_id_length_minus_2 = r.f(4)?;
             s.additional_frame_id_length_minus_1 = r.f(3)?;
@@ -147,9 +154,17 @@ impl SequenceHeader {
                 s.enable_jnt_comp = r.flag()?;
                 s.enable_ref_frame_mvs = r.flag()?;
             }
-            s.seq_force_screen_content_tools = if r.flag()? { SELECT_SCREEN_CONTENT_TOOLS as u32 } else { r.f(1)? };
+            s.seq_force_screen_content_tools = if r.flag()? {
+                SELECT_SCREEN_CONTENT_TOOLS as u32
+            } else {
+                r.f(1)?
+            };
             if s.seq_force_screen_content_tools > 0 {
-                s.seq_force_integer_mv = if r.flag()? { SELECT_INTEGER_MV as u32 } else { r.f(1)? };
+                s.seq_force_integer_mv = if r.flag()? {
+                    SELECT_INTEGER_MV as u32
+                } else {
+                    r.f(1)?
+                };
             } else {
                 s.seq_force_integer_mv = SELECT_INTEGER_MV as u32;
             }
@@ -192,7 +207,10 @@ fn parse_color_config(r: &mut BitReader, profile: u8) -> Result<ColorConfig> {
         c.subsampling_x = 1;
         c.subsampling_y = 1;
         return Ok(c);
-    } else if c.color_primaries == 1 && c.transfer_characteristics == 13 && c.matrix_coefficients == 0 {
+    } else if c.color_primaries == 1
+        && c.transfer_characteristics == 13
+        && c.matrix_coefficients == 0
+    {
         c.color_range = true;
     } else {
         c.color_range = r.flag()?;
@@ -205,7 +223,11 @@ fn parse_color_config(r: &mut BitReader, profile: u8) -> Result<ColorConfig> {
             _ => {
                 if c.bit_depth == 12 {
                     c.subsampling_x = r.f(1)? as u8;
-                    c.subsampling_y = if c.subsampling_x == 1 { r.f(1)? as u8 } else { 0 };
+                    c.subsampling_y = if c.subsampling_x == 1 {
+                        r.f(1)? as u8
+                    } else {
+                        0
+                    };
                 } else {
                     c.subsampling_x = 1;
                 }
@@ -271,7 +293,10 @@ pub struct LoopFilterDeltas {
 
 impl LoopFilterDeltas {
     pub fn defaults() -> Self {
-        LoopFilterDeltas { ref_deltas: [1, 0, 0, 0, -1, 0, -1, -1], mode_deltas: [0, 0] }
+        LoopFilterDeltas {
+            ref_deltas: [1, 0, 0, 0, -1, 0, -1, -1],
+            mode_deltas: [0, 0],
+        }
     }
 }
 
@@ -475,10 +500,23 @@ fn tile_log2(blk: u32, target: u32) -> u32 {
 
 impl FrameHeader {
     /// uncompressed_header( ). `st` holds the cross-frame state.
-    pub(crate) fn parse(r: &mut BitReader, st: &mut HeaderState, temporal_id: u32, spatial_id: u32) -> Result<FrameHeader> {
+    pub(crate) fn parse(
+        r: &mut BitReader,
+        st: &mut HeaderState,
+        temporal_id: u32,
+        spatial_id: u32,
+    ) -> Result<FrameHeader> {
         let seq = st.seq;
-        let mut h = FrameHeader { temporal_id, spatial_id, ..Default::default() };
-        let id_len = if seq.frame_id_numbers_present { seq.additional_frame_id_length_minus_1 + seq.delta_frame_id_length_minus_2 + 3 } else { 0 };
+        let mut h = FrameHeader {
+            temporal_id,
+            spatial_id,
+            ..Default::default()
+        };
+        let id_len = if seq.frame_id_numbers_present {
+            seq.additional_frame_id_length_minus_1 + seq.delta_frame_id_length_minus_2 + 3
+        } else {
+            0
+        };
         let all_frames = (1u32 << NUM_REF_FRAMES) - 1;
         if seq.reduced_still_picture_header {
             h.frame_type = KEY_FRAME as u8;
@@ -508,13 +546,24 @@ impl FrameHeader {
                 return Ok(h);
             }
             h.frame_type = r.f(2)? as u8;
-            h.frame_is_intra = h.frame_type == INTRA_ONLY_FRAME as u8 || h.frame_type == KEY_FRAME as u8;
+            h.frame_is_intra =
+                h.frame_type == INTRA_ONLY_FRAME as u8 || h.frame_type == KEY_FRAME as u8;
             h.show_frame = r.flag()?;
             if h.show_frame && seq.decoder_model_info_present && !seq.equal_picture_interval {
                 r.f(seq.frame_presentation_time_length_minus_1 + 1)?;
             }
-            h.showable_frame = if h.show_frame { h.frame_type != KEY_FRAME as u8 } else { r.flag()? };
-            h.error_resilient_mode = if h.frame_type == SWITCH_FRAME as u8 || (h.frame_type == KEY_FRAME as u8 && h.show_frame) { true } else { r.flag()? };
+            h.showable_frame = if h.show_frame {
+                h.frame_type != KEY_FRAME as u8
+            } else {
+                r.flag()?
+            };
+            h.error_resilient_mode = if h.frame_type == SWITCH_FRAME as u8
+                || (h.frame_type == KEY_FRAME as u8 && h.show_frame)
+            {
+                true
+            } else {
+                r.flag()?
+            };
         }
         if h.frame_type == KEY_FRAME as u8 && h.show_frame {
             for rs in st.refs.iter_mut() {
@@ -527,9 +576,17 @@ impl FrameHeader {
         }
         h.disable_cdf_update = r.flag()?;
         h.allow_screen_content_tools =
-            if seq.seq_force_screen_content_tools == SELECT_SCREEN_CONTENT_TOOLS as u32 { r.flag()? } else { seq.seq_force_screen_content_tools != 0 };
+            if seq.seq_force_screen_content_tools == SELECT_SCREEN_CONTENT_TOOLS as u32 {
+                r.flag()?
+            } else {
+                seq.seq_force_screen_content_tools != 0
+            };
         if h.allow_screen_content_tools {
-            h.force_integer_mv = if seq.seq_force_integer_mv == SELECT_INTEGER_MV as u32 { r.flag()? } else { seq.seq_force_integer_mv != 0 };
+            h.force_integer_mv = if seq.seq_force_integer_mv == SELECT_INTEGER_MV as u32 {
+                r.flag()?
+            } else {
+                seq.seq_force_integer_mv != 0
+            };
         }
         if h.frame_is_intra {
             h.force_integer_mv = true;
@@ -558,7 +615,11 @@ impl FrameHeader {
             r.flag()?
         };
         h.order_hint = r.f(seq.order_hint_bits)?;
-        h.primary_ref_frame = if h.frame_is_intra || h.error_resilient_mode { PRIMARY_REF_NONE } else { r.f(3)? as usize };
+        h.primary_ref_frame = if h.frame_is_intra || h.error_resilient_mode {
+            PRIMARY_REF_NONE
+        } else {
+            r.f(3)? as usize
+        };
         if seq.decoder_model_info_present && r.flag()? {
             for op in 0..=seq.operating_points_cnt_minus_1 {
                 if seq.decoder_model_present_for_this_op[op] {
@@ -571,8 +632,17 @@ impl FrameHeader {
                 }
             }
         }
-        h.refresh_frame_flags = if h.frame_type == SWITCH_FRAME as u8 || (h.frame_type == KEY_FRAME as u8 && h.show_frame) { all_frames } else { r.f(8)? };
-        if (!h.frame_is_intra || h.refresh_frame_flags != all_frames) && h.error_resilient_mode && seq.enable_order_hint {
+        h.refresh_frame_flags = if h.frame_type == SWITCH_FRAME as u8
+            || (h.frame_type == KEY_FRAME as u8 && h.show_frame)
+        {
+            all_frames
+        } else {
+            r.f(8)?
+        };
+        if (!h.frame_is_intra || h.refresh_frame_flags != all_frames)
+            && h.error_resilient_mode
+            && seq.enable_order_hint
+        {
             for rs in st.refs.iter_mut() {
                 let roh = r.f(seq.order_hint_bits)?;
                 if roh != rs.order_hint {
@@ -638,15 +708,25 @@ impl FrameHeader {
             h.allow_high_precision_mv = if h.force_integer_mv { false } else { r.flag()? };
             h.interpolation_filter = if r.flag()? { SWITCHABLE } else { r.f(2)? as u8 };
             h.is_motion_mode_switchable = r.flag()?;
-            h.use_ref_frame_mvs = if h.error_resilient_mode || !seq.enable_ref_frame_mvs { false } else { r.flag()? };
+            h.use_ref_frame_mvs = if h.error_resilient_mode || !seq.enable_ref_frame_mvs {
+                false
+            } else {
+                r.flag()?
+            };
             for i in 0..REFS_PER_FRAME {
                 let rf = LAST_FRAME + i;
                 let hint = st.refs[h.ref_frame_idx[i]].order_hint;
                 h.order_hints[rf] = hint;
-                h.ref_frame_sign_bias[rf] = seq.enable_order_hint && relative_dist(seq, hint, h.order_hint) > 0;
+                h.ref_frame_sign_bias[rf] =
+                    seq.enable_order_hint && relative_dist(seq, hint, h.order_hint) > 0;
             }
         }
-        h.disable_frame_end_update_cdf = if seq.reduced_still_picture_header || h.disable_cdf_update { true } else { r.flag()? };
+        h.disable_frame_end_update_cdf = if seq.reduced_still_picture_header || h.disable_cdf_update
+        {
+            true
+        } else {
+            r.flag()?
+        };
         if h.primary_ref_frame == PRIMARY_REF_NONE {
             // setup_past_independence( )
             st.seg_features = SegmentationFeatures::default();
@@ -720,7 +800,12 @@ impl FrameHeader {
         };
         h.reference_select = if h.frame_is_intra { false } else { r.flag()? };
         h.skip_mode_params(r, seq, st.refs)?;
-        h.allow_warped_motion = if h.frame_is_intra || h.error_resilient_mode || !seq.enable_warped_motion { false } else { r.flag()? };
+        h.allow_warped_motion =
+            if h.frame_is_intra || h.error_resilient_mode || !seq.enable_warped_motion {
+                false
+            } else {
+                r.flag()?
+            };
         h.reduced_tx_set = r.flag()?;
         h.global_motion_params(r)?;
         h.film_grain_params(r, seq, st.refs)?;
@@ -728,10 +813,19 @@ impl FrameHeader {
     }
 
     fn superres_params(&mut self, r: &mut BitReader, seq: &SequenceHeader) -> Result<()> {
-        self.use_superres = if seq.enable_superres { r.flag()? } else { false };
-        self.superres_denom = if self.use_superres { r.f(SUPERRES_DENOM_BITS as u32)? + SUPERRES_DENOM_MIN as u32 } else { SUPERRES_NUM as u32 };
+        self.use_superres = if seq.enable_superres {
+            r.flag()?
+        } else {
+            false
+        };
+        self.superres_denom = if self.use_superres {
+            r.f(SUPERRES_DENOM_BITS as u32)? + SUPERRES_DENOM_MIN as u32
+        } else {
+            SUPERRES_NUM as u32
+        };
         self.upscaled_width = self.frame_width;
-        self.frame_width = (self.upscaled_width * SUPERRES_NUM as u32 + self.superres_denom / 2) / self.superres_denom;
+        self.frame_width = (self.upscaled_width * SUPERRES_NUM as u32 + self.superres_denom / 2)
+            / self.superres_denom;
         Ok(())
     }
 
@@ -765,7 +859,13 @@ impl FrameHeader {
     }
 
     /// Set frame refs process (7.8).
-    fn set_frame_refs(&mut self, seq: &SequenceHeader, refs: &[RefInfo; NUM_REF_FRAMES], last: usize, gold: usize) {
+    fn set_frame_refs(
+        &mut self,
+        seq: &SequenceHeader,
+        refs: &[RefInfo; NUM_REF_FRAMES],
+        last: usize,
+        gold: usize,
+    ) {
         let mut idx = [-1i32; REFS_PER_FRAME];
         idx[0] = last as i32;
         idx[GOLDEN_FRAME - LAST_FRAME] = gold as i32;
@@ -773,7 +873,9 @@ impl FrameHeader {
         used[last] = true;
         used[gold] = true;
         let cur = 1i32 << (seq.order_hint_bits - 1);
-        let shifted: Vec<i32> = (0..NUM_REF_FRAMES).map(|i| cur + relative_dist(seq, refs[i].order_hint, self.order_hint)).collect();
+        let shifted: Vec<i32> = (0..NUM_REF_FRAMES)
+            .map(|i| cur + relative_dist(seq, refs[i].order_hint, self.order_hint))
+            .collect();
         // ALTREF: latest backward
         {
             let mut rf = -1i32;
@@ -843,8 +945,16 @@ impl FrameHeader {
 
     fn tile_info(&mut self, r: &mut BitReader, seq: &SequenceHeader) -> Result<()> {
         let sb128 = seq.use_128x128_superblock;
-        let sb_cols = if sb128 { (self.mi_cols + 31) >> 5 } else { (self.mi_cols + 15) >> 4 };
-        let sb_rows = if sb128 { (self.mi_rows + 31) >> 5 } else { (self.mi_rows + 15) >> 4 };
+        let sb_cols = if sb128 {
+            (self.mi_cols + 31) >> 5
+        } else {
+            (self.mi_cols + 15) >> 4
+        };
+        let sb_rows = if sb128 {
+            (self.mi_rows + 31) >> 5
+        } else {
+            (self.mi_rows + 15) >> 4
+        };
         let sb_shift = if sb128 { 5 } else { 4 };
         let sb_size = sb_shift + 2;
         let max_tile_width_sb = MAX_TILE_WIDTH as u32 >> sb_size;
@@ -935,10 +1045,15 @@ impl FrameHeader {
     fn quantization_params(&mut self, r: &mut BitReader, seq: &SequenceHeader) -> Result<()> {
         let q = &mut self.quant;
         q.base_q_idx = r.f(8)?;
-        let read_delta_q = |r: &mut BitReader| -> Result<i32> { if r.flag()? { r.su(7) } else { Ok(0) } };
+        let read_delta_q =
+            |r: &mut BitReader| -> Result<i32> { if r.flag()? { r.su(7) } else { Ok(0) } };
         q.delta_q_y_dc = read_delta_q(r)?;
         if seq.color.num_planes > 1 {
-            let diff_uv_delta = if seq.color.separate_uv_delta_q { r.flag()? } else { false };
+            let diff_uv_delta = if seq.color.separate_uv_delta_q {
+                r.flag()?
+            } else {
+                false
+            };
             q.delta_q_u_dc = read_delta_q(r)?;
             q.delta_q_u_ac = read_delta_q(r)?;
             if diff_uv_delta {
@@ -953,7 +1068,11 @@ impl FrameHeader {
         if q.using_qmatrix {
             q.qm_y = r.f(4)?;
             q.qm_u = r.f(4)?;
-            q.qm_v = if !seq.color.separate_uv_delta_q { q.qm_u } else { r.f(4)? };
+            q.qm_v = if !seq.color.separate_uv_delta_q {
+                q.qm_u
+            } else {
+                r.f(4)?
+            };
         }
         Ok(())
     }
@@ -1014,7 +1133,12 @@ impl FrameHeader {
         Ok(())
     }
 
-    fn loop_filter_params(&mut self, r: &mut BitReader, seq: &SequenceHeader, st: &mut HeaderState) -> Result<()> {
+    fn loop_filter_params(
+        &mut self,
+        r: &mut BitReader,
+        seq: &SequenceHeader,
+        st: &mut HeaderState,
+    ) -> Result<()> {
         let lf = &mut self.lf;
         if self.coded_lossless || self.allow_intrabc {
             lf.level = [0; 4];
@@ -1080,7 +1204,12 @@ impl FrameHeader {
     }
 
     fn lr_params(&mut self, r: &mut BitReader, seq: &SequenceHeader) -> Result<()> {
-        const REMAP: [u8; 4] = [RESTORE_NONE as u8, RESTORE_SWITCHABLE as u8, RESTORE_WIENER as u8, RESTORE_SGRPROJ as u8];
+        const REMAP: [u8; 4] = [
+            RESTORE_NONE as u8,
+            RESTORE_SWITCHABLE as u8,
+            RESTORE_WIENER as u8,
+            RESTORE_SGRPROJ as u8,
+        ];
         let l = &mut self.lr;
         if self.all_lossless || self.allow_intrabc || !seq.enable_restoration {
             l.frame_restoration_type = [RESTORE_NONE as u8; 3];
@@ -1110,14 +1239,24 @@ impl FrameHeader {
                 }
             }
             l.loop_restoration_size[0] = (RESTORATION_TILESIZE_MAX as u32) >> (2 - shift);
-            let uv_shift = if seq.color.subsampling_x == 1 && seq.color.subsampling_y == 1 && uses_chroma { r.f(1)? } else { 0 };
+            let uv_shift =
+                if seq.color.subsampling_x == 1 && seq.color.subsampling_y == 1 && uses_chroma {
+                    r.f(1)?
+                } else {
+                    0
+                };
             l.loop_restoration_size[1] = l.loop_restoration_size[0] >> uv_shift;
             l.loop_restoration_size[2] = l.loop_restoration_size[0] >> uv_shift;
         }
         Ok(())
     }
 
-    fn skip_mode_params(&mut self, r: &mut BitReader, seq: &SequenceHeader, refs: &[RefInfo; NUM_REF_FRAMES]) -> Result<()> {
+    fn skip_mode_params(
+        &mut self,
+        r: &mut BitReader,
+        seq: &SequenceHeader,
+        refs: &[RefInfo; NUM_REF_FRAMES],
+    ) -> Result<()> {
         let mut allowed = false;
         if !(self.frame_is_intra || !self.reference_select || !seq.enable_order_hint) {
             let mut fwd = -1i32;
@@ -1130,7 +1269,9 @@ impl FrameHeader {
                         fwd = i as i32;
                         fwd_hint = ref_hint;
                     }
-                } else if relative_dist(seq, ref_hint, self.order_hint) > 0 && (bwd < 0 || relative_dist(seq, ref_hint, bwd_hint) < 0) {
+                } else if relative_dist(seq, ref_hint, self.order_hint) > 0
+                    && (bwd < 0 || relative_dist(seq, ref_hint, bwd_hint) < 0)
+                {
                     bwd = i as i32;
                     bwd_hint = ref_hint;
                 }
@@ -1139,20 +1280,28 @@ impl FrameHeader {
                 allowed = false;
             } else if bwd >= 0 {
                 allowed = true;
-                self.skip_mode_frame = [LAST_FRAME + fwd.min(bwd) as usize, LAST_FRAME + fwd.max(bwd) as usize];
+                self.skip_mode_frame = [
+                    LAST_FRAME + fwd.min(bwd) as usize,
+                    LAST_FRAME + fwd.max(bwd) as usize,
+                ];
             } else {
                 let mut second = -1i32;
                 let mut second_hint = 0u32;
                 for i in 0..REFS_PER_FRAME {
                     let ref_hint = refs[self.ref_frame_idx[i]].order_hint;
-                    if relative_dist(seq, ref_hint, fwd_hint) < 0 && (second < 0 || relative_dist(seq, ref_hint, second_hint) > 0) {
+                    if relative_dist(seq, ref_hint, fwd_hint) < 0
+                        && (second < 0 || relative_dist(seq, ref_hint, second_hint) > 0)
+                    {
                         second = i as i32;
                         second_hint = ref_hint;
                     }
                 }
                 if second >= 0 {
                     allowed = true;
-                    self.skip_mode_frame = [LAST_FRAME + fwd.min(second) as usize, LAST_FRAME + fwd.max(second) as usize];
+                    self.skip_mode_frame = [
+                        LAST_FRAME + fwd.min(second) as usize,
+                        LAST_FRAME + fwd.max(second) as usize,
+                    ];
                 }
             }
         }
@@ -1200,7 +1349,13 @@ impl FrameHeader {
         Ok(())
     }
 
-    fn read_global_param(&mut self, r: &mut BitReader, typ: usize, rf: usize, idx: usize) -> Result<()> {
+    fn read_global_param(
+        &mut self,
+        r: &mut BitReader,
+        typ: usize,
+        rf: usize,
+        idx: usize,
+    ) -> Result<()> {
         let mut abs_bits = GM_ABS_ALPHA_BITS as u32;
         let mut prec_bits = GM_ALPHA_PREC_BITS as u32;
         if idx < 2 {
@@ -1214,7 +1369,11 @@ impl FrameHeader {
             }
         }
         let prec_diff = WARPEDMODEL_PREC_BITS as u32 - prec_bits;
-        let round = if idx % 3 == 2 { 1i32 << WARPEDMODEL_PREC_BITS } else { 0 };
+        let round = if idx % 3 == 2 {
+            1i32 << WARPEDMODEL_PREC_BITS
+        } else {
+            0
+        };
         let sub = if idx % 3 == 2 { 1i32 << prec_bits } else { 0 };
         let mx = 1i32 << abs_bits;
         let rr = (self.prev_gm_params[rf][idx] >> prec_diff) - sub;
@@ -1223,18 +1382,30 @@ impl FrameHeader {
         Ok(())
     }
 
-    fn film_grain_params(&mut self, r: &mut BitReader, seq: &SequenceHeader, refs: &[RefInfo; NUM_REF_FRAMES]) -> Result<()> {
+    fn film_grain_params(
+        &mut self,
+        r: &mut BitReader,
+        seq: &SequenceHeader,
+        refs: &[RefInfo; NUM_REF_FRAMES],
+    ) -> Result<()> {
         if !seq.film_grain_params_present || (!self.show_frame && !self.showable_frame) {
             self.film_grain = FilmGrainParams::default();
             return Ok(());
         }
-        let mut g = FilmGrainParams { apply_grain: r.flag()?, ..Default::default() };
+        let mut g = FilmGrainParams {
+            apply_grain: r.flag()?,
+            ..Default::default()
+        };
         if !g.apply_grain {
             self.film_grain = FilmGrainParams::default();
             return Ok(());
         }
         g.grain_seed = r.f(16)?;
-        g.update_grain = if self.frame_type == INTER_FRAME as u8 { r.flag()? } else { true };
+        g.update_grain = if self.frame_type == INTER_FRAME as u8 {
+            r.flag()?
+        } else {
+            true
+        };
         if !g.update_grain {
             let idx = r.f(3)? as usize;
             let seed = g.grain_seed;
@@ -1251,8 +1422,15 @@ impl FrameHeader {
             g.point_y_value[i] = r.f(8)? as u8;
             g.point_y_scaling[i] = r.f(8)? as u8;
         }
-        g.chroma_scaling_from_luma = if seq.color.mono_chrome { false } else { r.flag()? };
-        if seq.color.mono_chrome || g.chroma_scaling_from_luma || (seq.color.subsampling_x == 1 && seq.color.subsampling_y == 1 && g.num_y_points == 0) {
+        g.chroma_scaling_from_luma = if seq.color.mono_chrome {
+            false
+        } else {
+            r.flag()?
+        };
+        if seq.color.mono_chrome
+            || g.chroma_scaling_from_luma
+            || (seq.color.subsampling_x == 1 && seq.color.subsampling_y == 1 && g.num_y_points == 0)
+        {
             g.num_cb_points = 0;
             g.num_cr_points = 0;
         } else {
@@ -1339,7 +1517,11 @@ fn decode_signed_subexp_with_ref(r: &mut BitReader, low: i32, high: i32, rr: i32
 
 fn decode_unsigned_subexp_with_ref(r: &mut BitReader, mx: i32, rr: i32) -> Result<i32> {
     let v = decode_subexp(r, mx)?;
-    Ok(if (rr << 1) <= mx { inverse_recenter(rr, v) } else { mx - 1 - inverse_recenter(mx - 1 - rr, v) })
+    Ok(if (rr << 1) <= mx {
+        inverse_recenter(rr, v)
+    } else {
+        mx - 1 - inverse_recenter(mx - 1 - rr, v)
+    })
 }
 
 fn decode_subexp(r: &mut BitReader, num_syms: i32) -> Result<i32> {

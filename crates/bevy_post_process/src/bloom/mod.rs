@@ -17,8 +17,9 @@ use bevy_core_pipeline::{
     tonemapping::tonemapping,
 };
 use bevy_ecs::prelude::*;
-use bevy_math::{ops, UVec2};
+use bevy_math::{UVec2, ops};
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     extract_component::{
@@ -28,14 +29,13 @@ use bevy_render::{
     renderer::{RenderContext, RenderDevice, ViewQuery},
     texture::{CachedTexture, TextureCache},
     view::ViewTarget,
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use downsampling_pipeline::{
-    prepare_downsampling_pipeline, BloomDownsamplingPipeline, BloomDownsamplingPipelineIds,
-    BloomUniforms,
+    BloomDownsamplingPipeline, BloomDownsamplingPipelineIds, BloomUniforms,
+    prepare_downsampling_pipeline,
 };
 use upsampling_pipeline::{
-    prepare_upsampling_pipeline, BloomUpsamplingPipeline, UpsamplingPipelineIds,
+    BloomUpsamplingPipeline, UpsamplingPipelineIds, prepare_upsampling_pipeline,
 };
 
 const BLOOM_TEXTURE_FORMAT: TextureFormat = TextureFormat::Rg11b10Ufloat;

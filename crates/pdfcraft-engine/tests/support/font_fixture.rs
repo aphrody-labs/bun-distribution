@@ -88,7 +88,12 @@ pub fn cff_font() -> Vec<u8> {
         be32(&mut cmap, cp);
         be32(&mut cmap, gid);
     }
-    let names = [(1, "Rect Font"), (2, "Regular"), (6, "RectFont-Regular"), (13, "MIT License")];
+    let names = [
+        (1, "Rect Font"),
+        (2, "Regular"),
+        (6, "RectFont-Regular"),
+        (13, "MIT License"),
+    ];
     let mut name = Vec::new();
     be16(&mut name, 0);
     be16(&mut name, names.len() as u16);
@@ -102,7 +107,15 @@ pub fn cff_font() -> Vec<u8> {
         data.extend(bytes);
     }
     name.extend(data);
-    let tables = [(*b"CFF ", cff), (*b"cmap", cmap), (*b"head", head), (*b"hhea", hhea), (*b"hmtx", hmtx), (*b"maxp", maxp), (*b"name", name)];
+    let tables = [
+        (*b"CFF ", cff),
+        (*b"cmap", cmap),
+        (*b"head", head),
+        (*b"hhea", hhea),
+        (*b"hmtx", hmtx),
+        (*b"maxp", maxp),
+        (*b"name", name),
+    ];
     let mut out = b"OTTO".to_vec();
     be16(&mut out, 7);
     be16(&mut out, 64);
@@ -116,7 +129,11 @@ pub fn cff_font() -> Vec<u8> {
         while padded.len() % 4 != 0 {
             padded.push(0);
         }
-        let sum = padded.as_chunks::<4>().0.iter().fold(0u32, |s, b| s.wrapping_add(u32::from_be_bytes(*b)));
+        let sum = padded
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .fold(0u32, |s, b| s.wrapping_add(u32::from_be_bytes(*b)));
         be32(&mut out, sum);
         be32(&mut out, offset as u32);
         be32(&mut out, bytes.len() as u32);

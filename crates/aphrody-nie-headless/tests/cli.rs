@@ -22,7 +22,10 @@ fn fichier_temp(contenu: &[u8]) -> tempfile::NamedTempFile {
 
 /// Crée un fichier JSON temporaire dont l'extension active le chemin de lecture JSON.
 fn fichier_json_temp(contenu: &[u8]) -> tempfile::NamedTempFile {
-    let mut f = tempfile::Builder::new().suffix(".json").tempfile().expect("tempfile JSON");
+    let mut f = tempfile::Builder::new()
+        .suffix(".json")
+        .tempfile()
+        .expect("tempfile JSON");
     f.write_all(contenu).expect("écriture temp JSON");
     f
 }
@@ -39,8 +42,9 @@ fn cmd() -> Command {
 fn build_utf_fixture() -> Vec<u8> {
     let string_pool: &[u8] = b"TestTable\0ColA\0ColB\0hello\0world\0";
     let schema: &[u8] = &[0x24, 0x00, 0x00, 0x00, 0x0A, 0x2A, 0x00, 0x00, 0x00, 0x0F];
-    let row_data: &[u8] =
-        &[0x00, 0x00, 0x00, 42, 0x00, 0x00, 0x00, 20, 0x00, 0x00, 0x00, 99, 0x00, 0x00, 0x00, 26];
+    let row_data: &[u8] = &[
+        0x00, 0x00, 0x00, 42, 0x00, 0x00, 0x00, 20, 0x00, 0x00, 0x00, 99, 0x00, 0x00, 0x00, 26,
+    ];
 
     let rows_offset_rel: u32 = 0x22;
     let string_offset_rel: u32 = 0x32;
@@ -78,7 +82,11 @@ fn build_crilayla_payload(payload: &[u8]) -> Vec<u8> {
     }
     impl Bw {
         fn new() -> Self {
-            Self { bytes: Vec::new(), cur: 0, used: 0 }
+            Self {
+                bytes: Vec::new(),
+                cur: 0,
+                used: 0,
+            }
         }
         fn push_bit(&mut self, bit: u8) {
             self.cur = (self.cur << 1) | (bit & 1);
@@ -303,7 +311,11 @@ fn taille_octets_correcte() {
 
 #[test]
 fn fichier_inexistant_renvoie_erreur() {
-    cmd().arg("detect").arg("/tmp/__nie_headless_inexistant_abc123.bin").assert().failure();
+    cmd()
+        .arg("detect")
+        .arg("/tmp/__nie_headless_inexistant_abc123.bin")
+        .assert()
+        .failure();
 }
 
 #[test]
@@ -346,13 +358,28 @@ fn sortie_json_pretty_valide() {
 /// La sous-commande `match` sans arguments produit une sortie terse valide.
 #[test]
 fn match_sortie_terse_valide() {
-    let sortie = cmd().arg("match").assert().success().get_output().stdout.clone();
+    let sortie = cmd()
+        .arg("match")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
     let s = String::from_utf8(sortie).expect("UTF-8");
     let s = s.trim();
     // Format attendu : "home=... away=... résultat=H-A horloge=CLOCK"
-    assert!(s.starts_with("home="), "sortie doit commencer par 'home=': {s}");
-    assert!(s.contains("résultat="), "sortie doit contenir 'résultat=': {s}");
-    assert!(s.contains("horloge="), "sortie doit contenir 'horloge=': {s}");
+    assert!(
+        s.starts_with("home="),
+        "sortie doit commencer par 'home=': {s}"
+    );
+    assert!(
+        s.contains("résultat="),
+        "sortie doit contenir 'résultat=': {s}"
+    );
+    assert!(
+        s.contains("horloge="),
+        "sortie doit contenir 'horloge=': {s}"
+    );
 }
 
 /// L'horloge finale est toujours 900_000 pour 90 minutes (CONFIRMÉ).
@@ -360,9 +387,19 @@ fn match_sortie_terse_valide() {
 /// Formule C : `minutes * 10_000 + seconds` (`FUN_1412aa4a0` case 7 L282-288).
 #[test]
 fn match_horloge_900000() {
-    let sortie = cmd().arg("match").arg("--seed=42").assert().success().get_output().stdout.clone();
+    let sortie = cmd()
+        .arg("match")
+        .arg("--seed=42")
+        .assert()
+        .success()
+        .get_output()
+        .stdout
+        .clone();
     let s = String::from_utf8(sortie).expect("UTF-8");
-    assert!(s.contains("horloge=900000"), "horloge finale doit être 900000 : {s}");
+    assert!(
+        s.contains("horloge=900000"),
+        "horloge finale doit être 900000 : {s}"
+    );
 }
 
 /// Deux exécutions avec la même graine produisent la même sortie (déterminisme).

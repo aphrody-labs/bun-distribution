@@ -8,7 +8,7 @@
 //! solid color backgrounds, etc.
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, embedded_asset, load_embedded_asset};
 use bevy_ecs::{
     component::Component,
     entity::Entity,
@@ -16,33 +16,33 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     resource::Resource,
     schedule::IntoScheduleConfigs,
-    system::{lifetimeless::Read, Commands, Query, Res, ResMut},
+    system::{Commands, Query, Res, ResMut, lifetimeless::Read},
 };
 use bevy_log::warn;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_render::{
+    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     extract_component::{ExtractComponent, ExtractComponentPlugin},
     render_resource::{
-        binding_types::uniform_buffer, BindGroup, BindGroupEntries, BindGroupLayoutDescriptor,
-        BindGroupLayoutEntries, CachedRenderPipelineId, CompareFunction, DepthStencilState,
-        DownlevelFlags, FragmentState, MultisampleState, PipelineCache, RenderPipelineDescriptor,
-        ShaderStages, SpecializedRenderPipeline, SpecializedRenderPipelines,
+        BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
+        CachedRenderPipelineId, CompareFunction, DepthStencilState, DownlevelFlags, FragmentState,
+        MultisampleState, PipelineCache, RenderPipelineDescriptor, ShaderStages,
+        SpecializedRenderPipeline, SpecializedRenderPipelines, binding_types::uniform_buffer,
     },
     renderer::{RenderAdapter, RenderDevice},
     sync_component::SyncComponent,
     view::{Msaa, ViewUniform, ViewUniforms},
-    GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::Shader;
 use bevy_utils::prelude::default;
 
 use crate::{
+    FullscreenShader,
     core_3d::CORE_3D_DEPTH_FORMAT,
     prepass::{
-        prepass_target_descriptors, MotionVectorPrepass, NormalPrepass, PreviousViewData,
-        PreviousViewUniforms,
+        MotionVectorPrepass, NormalPrepass, PreviousViewData, PreviousViewUniforms,
+        prepass_target_descriptors,
     },
-    FullscreenShader,
 };
 
 /// When added to a camera with [`MotionVectorPrepass`], disables the automatic background motion
@@ -114,7 +114,8 @@ impl Plugin for BackgroundMotionVectorsPlugin {
         if !downlevel_flags.contains(BackgroundMotionVectorsPlugin::required_downlevel_flags()) {
             warn!(
                 "BackgroundMotionVectorsPlugin not loaded. GPU lacks support for required downlevel capability flags: {:?}.",
-                BackgroundMotionVectorsPlugin::required_downlevel_flags().difference(downlevel_flags)
+                BackgroundMotionVectorsPlugin::required_downlevel_flags()
+                    .difference(downlevel_flags)
             );
             return;
         }
@@ -178,11 +179,10 @@ impl SpecializedRenderPipeline for BackgroundMotionVectorsPipeline {
         let mut targets = prepass_target_descriptors(key.normal_prepass, true, false);
         // The shader only outputs to attachment at location 1, set write mask of the other attachments to empty
         // to avoid WebGPU validation error "Color target has no corresponding fragment stage output but writeMask is not zero".
-        for target in
-            targets
-                .iter_mut()
-                .enumerate()
-                .filter_map(|(i, t)| if i == 1 { None } else { t.as_mut() })
+        for target in targets
+            .iter_mut()
+            .enumerate()
+            .filter_map(|(i, t)| if i == 1 { None } else { t.as_mut() })
         {
             target.write_mask = bevy_render::render_resource::ColorWrites::empty();
         }

@@ -35,7 +35,10 @@ pub fn psd_style(id: &str) -> Option<&'static str> {
     if l == "none" || l == "warpnone" {
         return Some("warpNone");
     }
-    STYLES.iter().find(|(psd, short)| psd.to_ascii_lowercase() == l || short.to_ascii_lowercase() == l).map(|(psd, _)| *psd)
+    STYLES
+        .iter()
+        .find(|(psd, short)| psd.to_ascii_lowercase() == l || short.to_ascii_lowercase() == l)
+        .map(|(psd, _)| *psd)
 }
 
 /// Short id (`flag`, `none`) for a PSD style name (`warpFlag`, `warpNone`): the reverse of [`psd_style`].
@@ -43,7 +46,10 @@ pub fn short_style(psd: &str) -> Option<&'static str> {
     if psd == "warpNone" {
         return Some("none");
     }
-    STYLES.iter().find(|(p, _)| *p == psd).map(|(_, short)| *short)
+    STYLES
+        .iter()
+        .find(|(p, _)| *p == psd)
+        .map(|(_, short)| *short)
 }
 
 /// Where a glyph goes when the layout is bent: see [`Warp::place_glyph`].
@@ -74,14 +80,24 @@ impl Warp {
     /// Prepares `w` for text whose bounds are `[x0, y0, x1, y1]` (text space). `None` for
     /// `warpNone`, unknown styles, an all-zero warp or empty bounds.
     pub fn new(w: &TextWarp, bounds: [f32; 4]) -> Option<Warp> {
-        let style = WarpStyle::parse(&w.style).filter(|s| s.is_preset() && s.psd_name() == w.style)?;
-        StyleWarp::new(style, f64::from(w.value), f64::from(w.horizontal_distortion), f64::from(w.vertical_distortion), !w.horizontal, bounds.map(f64::from))
-            .map(|s| Warp(Kind::Style(Box::new(s))))
+        let style =
+            WarpStyle::parse(&w.style).filter(|s| s.is_preset() && s.psd_name() == w.style)?;
+        StyleWarp::new(
+            style,
+            f64::from(w.value),
+            f64::from(w.horizontal_distortion),
+            f64::from(w.vertical_distortion),
+            !w.horizontal,
+            bounds.map(f64::from),
+        )
+        .map(|s| Warp(Kind::Style(Box::new(s))))
     }
 
     /// The deformation of type on a path (`None` for any other shape, or a path without length).
     pub fn on_path(shape: &TextShape) -> Option<Warp> {
-        let TextShape::Path { path, start, flip } = shape else { return None };
+        let TextShape::Path { path, start, flip } = shape else {
+            return None;
+        };
         PathFrame::new(path, *start, *flip).map(|f| Warp(Kind::Path(f)))
     }
 
@@ -131,7 +147,9 @@ impl PathFrame {
             if p.iter().any(|q| !q.0.is_finite() || !q.1.is_finite()) {
                 return None;
             }
-            let poly = (p[1].0 - p[0].0).hypot(p[1].1 - p[0].1) + (p[2].0 - p[1].0).hypot(p[2].1 - p[1].1) + (p[3].0 - p[2].0).hypot(p[3].1 - p[2].1);
+            let poly = (p[1].0 - p[0].0).hypot(p[1].1 - p[0].1)
+                + (p[2].0 - p[1].0).hypot(p[2].1 - p[1].1)
+                + (p[3].0 - p[2].0).hypot(p[3].1 - p[2].1);
             let n = ((poly / 2.0).ceil() as usize).clamp(4, 128);
             if pts.is_empty() {
                 pts.push(p[0]);
@@ -140,7 +158,10 @@ impl PathFrame {
                 let t = i as f64 / n as f64;
                 let u = 1.0 - t;
                 let (a, b, c, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-                pts.push((a * p[0].0 + b * p[1].0 + c * p[2].0 + d * p[3].0, a * p[0].1 + b * p[1].1 + c * p[2].1 + d * p[3].1));
+                pts.push((
+                    a * p[0].0 + b * p[1].0 + c * p[2].0 + d * p[3].0,
+                    a * p[0].1 + b * p[1].1 + c * p[2].1 + d * p[3].1,
+                ));
             }
         }
         // Drop repeated points so every piece has a direction.
@@ -156,7 +177,11 @@ impl PathFrame {
             }
             cum.push(acc);
         }
-        (pts.len() >= 2 && acc.is_finite() && acc > 1e-6 && start.is_finite()).then(|| PathFrame { pts, cum, start: f64::from(start) })
+        (pts.len() >= 2 && acc.is_finite() && acc > 1e-6 && start.is_finite()).then(|| PathFrame {
+            pts,
+            cum,
+            start: f64::from(start),
+        })
     }
 
     fn length(&self) -> f64 {
@@ -195,7 +220,13 @@ mod tests {
     use super::*;
 
     fn warp(style: &str, value: f32) -> Warp {
-        let w = TextWarp { style: psd_style(style).unwrap().into(), value, horizontal_distortion: 0.0, vertical_distortion: 0.0, horizontal: true };
+        let w = TextWarp {
+            style: psd_style(style).unwrap().into(),
+            value,
+            horizontal_distortion: 0.0,
+            vertical_distortion: 0.0,
+            horizontal: true,
+        };
         Warp::new(&w, [0.0, -40.0, 200.0, 10.0]).unwrap()
     }
 
@@ -217,9 +248,17 @@ mod tests {
         assert_eq!(psd_style("warpTwist"), Some("warpTwist"));
         assert_eq!(psd_style("none"), Some("warpNone"));
         assert_eq!(psd_style("spiral"), None);
-        let none = TextWarp { style: "warpNone".into(), value: 50.0, ..Default::default() };
+        let none = TextWarp {
+            style: "warpNone".into(),
+            value: 50.0,
+            ..Default::default()
+        };
         assert!(Warp::new(&none, [0.0, 0.0, 10.0, 10.0]).is_none());
-        let flat = TextWarp { style: "warpArc".into(), value: 0.0, ..Default::default() };
+        let flat = TextWarp {
+            style: "warpArc".into(),
+            value: 0.0,
+            ..Default::default()
+        };
         assert!(Warp::new(&flat, [0.0, 0.0, 10.0, 10.0]).is_none());
     }
 
@@ -244,7 +283,10 @@ mod tests {
         // As in Photoshop: the bottom edge keeps its corners, the middle rises and the ends of
         // the upper rows swing out and down along the arc.
         let corner = w.apply(0.0, 10.0);
-        assert!(corner.0.abs() < 1e-9 && (corner.1 - 10.0).abs() < 1e-9, "{corner:?}");
+        assert!(
+            corner.0.abs() < 1e-9 && (corner.1 - 10.0).abs() < 1e-9,
+            "{corner:?}"
+        );
         assert!(mid.1 < -15.0, "the middle rises: {mid:?}");
         assert!(end.1 > mid.1 + 5.0, "ends drop below the centre: {end:?}");
         assert!(end.0 < 0.0, "ends swing out along the arc: {end:?}");

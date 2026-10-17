@@ -420,7 +420,9 @@ impl Bsd {
             .as_mut()
             .unwrap()
             .socket
-            .lock().unwrap().accept();
+            .lock()
+            .unwrap()
+            .accept();
 
         if bsd_errno != NetErrno::Success {
             return (-1, translate_errno(bsd_errno));
@@ -584,7 +586,8 @@ impl Bsd {
             }
             FcntlCmd::SETFL => {
                 let enable = (arg & FLAG_O_NONBLOCK) != 0;
-                let bsd_errno = translate_errno(descriptor.socket.lock().unwrap().set_non_block(enable));
+                let bsd_errno =
+                    translate_errno(descriptor.socket.lock().unwrap().set_non_block(enable));
                 if bsd_errno != Errno::SUCCESS {
                     return (-1, bsd_errno);
                 }
@@ -621,7 +624,8 @@ impl Bsd {
 
         match optname {
             OptName::ERROR => {
-                let (pending_err, getsockopt_err) = descriptor.socket.lock().unwrap().get_pending_error();
+                let (pending_err, getsockopt_err) =
+                    descriptor.socket.lock().unwrap().get_pending_error();
                 if getsockopt_err == NetErrno::Success {
                     let translated_pending_err = translate_errno(pending_err);
                     if optval.len() != std::mem::size_of::<Errno>() {
@@ -675,7 +679,9 @@ impl Bsd {
             return translate_errno(
                 descriptor
                     .socket
-                    .lock().unwrap().set_linger(linger.onoff != 0, linger.linger),
+                    .lock()
+                    .unwrap()
+                    .set_linger(linger.onoff != 0, linger.linger),
             );
         }
 
@@ -695,10 +701,18 @@ impl Bsd {
                 assert!(value == 0 || value == 1);
                 translate_errno(descriptor.socket.lock().unwrap().set_broadcast(value != 0))
             }
-            OptName::SNDBUF => translate_errno(descriptor.socket.lock().unwrap().set_snd_buf(value)),
-            OptName::RCVBUF => translate_errno(descriptor.socket.lock().unwrap().set_rcv_buf(value)),
-            OptName::SNDTIMEO => translate_errno(descriptor.socket.lock().unwrap().set_snd_timeo(value)),
-            OptName::RCVTIMEO => translate_errno(descriptor.socket.lock().unwrap().set_rcv_timeo(value)),
+            OptName::SNDBUF => {
+                translate_errno(descriptor.socket.lock().unwrap().set_snd_buf(value))
+            }
+            OptName::RCVBUF => {
+                translate_errno(descriptor.socket.lock().unwrap().set_rcv_buf(value))
+            }
+            OptName::SNDTIMEO => {
+                translate_errno(descriptor.socket.lock().unwrap().set_snd_timeo(value))
+            }
+            OptName::RCVTIMEO => {
+                translate_errno(descriptor.socket.lock().unwrap().set_rcv_timeo(value))
+            }
             OptName::NOSIGPIPE => {
                 log::warn!("(STUBBED) setting NOSIGPIPE to {}", value);
                 Errno::SUCCESS
@@ -741,8 +755,7 @@ impl Bsd {
             }
         }
 
-        let (ret, bsd_errno) =
-            translate_result(socket.recv(flags as i32, message.as_mut_slice()));
+        let (ret, bsd_errno) = translate_result(socket.recv(flags as i32, message.as_mut_slice()));
 
         // Restore original state
         if (descriptor.flags & FLAG_O_NONBLOCK) == 0 {
@@ -788,11 +801,8 @@ impl Bsd {
 
         let p_addr_in = if use_addr { Some(&mut addr_in) } else { None };
 
-        let (ret, bsd_errno) = translate_result(socket.recv_from(
-            flags as i32,
-            message.as_mut_slice(),
-            p_addr_in,
-        ));
+        let (ret, bsd_errno) =
+            translate_result(socket.recv_from(flags as i32, message.as_mut_slice(), p_addr_in));
 
         // Restore original state
         if (descriptor.flags & FLAG_O_NONBLOCK) == 0 {
@@ -826,7 +836,13 @@ impl Bsd {
             return (-1, Errno::BADF);
         }
         let descriptor = self.file_descriptors[fd as usize].as_mut().unwrap();
-        translate_result(descriptor.socket.lock().unwrap().send(message, flags as i32))
+        translate_result(
+            descriptor
+                .socket
+                .lock()
+                .unwrap()
+                .send(message, flags as i32),
+        )
     }
 
     /// SendToImpl
@@ -859,11 +875,11 @@ impl Bsd {
         };
 
         let descriptor = self.file_descriptors[fd as usize].as_mut().unwrap();
-        translate_result(
-            descriptor
-                .socket
-                .lock().unwrap().send_to(flags, message, p_addr_in.as_ref()),
-        )
+        translate_result(descriptor.socket.lock().unwrap().send_to(
+            flags,
+            message,
+            p_addr_in.as_ref(),
+        ))
     }
 
     /// CloseImpl -- close a file descriptor.
@@ -879,7 +895,9 @@ impl Bsd {
                 .as_mut()
                 .unwrap()
                 .socket
-                .lock().unwrap().close(),
+                .lock()
+                .unwrap()
+                .close(),
         );
         if bsd_errno != Errno::SUCCESS {
             return bsd_errno;
@@ -923,7 +941,9 @@ impl Bsd {
         if !self.is_file_descriptor_valid(fd) {
             return None;
         }
-        Some(Arc::clone(&self.file_descriptors[fd as usize].as_ref()?.socket))
+        Some(Arc::clone(
+            &self.file_descriptors[fd as usize].as_ref()?.socket,
+        ))
     }
 
     /// EventFd -- create event fd (stubbed).
@@ -946,7 +966,11 @@ impl Bsd {
     ) {
         for optional_descriptor in self.file_descriptors.iter_mut() {
             if let Some(descriptor) = optional_descriptor {
-                descriptor.socket.lock().unwrap().handle_proxy_packet(packet);
+                descriptor
+                    .socket
+                    .lock()
+                    .unwrap()
+                    .handle_proxy_packet(packet);
             }
         }
     }
@@ -1459,10 +1483,21 @@ mod tests {
         assert_eq!(duplicate_fd, 1);
         let duplicate = bsd.get_socket(duplicate_fd).unwrap();
         assert!(Arc::ptr_eq(&source, &duplicate));
-        assert_eq!(bsd.fcntl_impl(1, FcntlCmd::GETFL, 0), (FLAG_O_NONBLOCK, Errno::SUCCESS));
+        assert_eq!(
+            bsd.fcntl_impl(1, FcntlCmd::GETFL, 0),
+            (FLAG_O_NONBLOCK, Errno::SUCCESS)
+        );
         assert_eq!(bsd.fcntl_impl(1, FcntlCmd::SETFL, 0), (0, Errno::SUCCESS));
-        assert_eq!(bsd.fcntl_impl(0, FcntlCmd::GETFL, 0), (FLAG_O_NONBLOCK, Errno::SUCCESS));
-        assert!(!bsd.file_descriptors[1].as_ref().unwrap().is_connection_based);
+        assert_eq!(
+            bsd.fcntl_impl(0, FcntlCmd::GETFL, 0),
+            (FLAG_O_NONBLOCK, Errno::SUCCESS)
+        );
+        assert!(
+            !bsd.file_descriptors[1]
+                .as_ref()
+                .unwrap()
+                .is_connection_based
+        );
         assert!(source.lock().unwrap().is_opened());
         assert_eq!(bsd.close_impl(1), Errno::SUCCESS);
         assert!(bsd.get_socket(1).is_none());
@@ -1493,13 +1528,25 @@ mod tests {
         });
         for fd in 1..MAX_FD {
             assert_eq!(bsd.duplicate_socket_impl(0), Ok(fd as i32));
-            assert!(bsd.file_descriptors[fd].as_ref().unwrap().is_connection_based);
+            assert!(
+                bsd.file_descriptors[fd]
+                    .as_ref()
+                    .unwrap()
+                    .is_connection_based
+            );
         }
         assert_eq!(bsd.duplicate_socket_impl(0), Err(Errno::MFILE));
-        let input = PollFD { fd: MAX_FD as i32, events: 0, revents: 0 };
-        let bytes = unsafe { std::slice::from_raw_parts(
-            &input as *const PollFD as *const u8, std::mem::size_of::<PollFD>(),
-        ) };
+        let input = PollFD {
+            fd: MAX_FD as i32,
+            events: 0,
+            revents: 0,
+        };
+        let bytes = unsafe {
+            std::slice::from_raw_parts(
+                &input as *const PollFD as *const u8,
+                std::mem::size_of::<PollFD>(),
+            )
+        };
         let mut output = vec![0; bytes.len()];
         assert_eq!(bsd.poll_impl(&mut output, bytes, 1, 0), (0, Errno::SUCCESS));
     }

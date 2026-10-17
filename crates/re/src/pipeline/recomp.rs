@@ -651,7 +651,11 @@ pub fn verify(ctx: &mut Ctx) -> StageReport {
                 ]
                 .into_iter()
                 .chain(interp.then(|| "--interp".to_string()))
-                .chain(rc.input.iter().flat_map(|i| ["--input".to_string(), i.clone()]))
+                .chain(
+                    rc.input
+                        .iter()
+                        .flat_map(|i| ["--input".to_string(), i.clone()]),
+                )
                 .collect::<Vec<_>>(),
                 None,
                 timeout,

@@ -1,7 +1,7 @@
 //! Concrete curve structures used to load glTF curves into the animation system.
 
 use bevy_curve::{cores::*, iterable::IterableCurve, *};
-use bevy_math::{vec4, Quat, Vec4, VectorSpace};
+use bevy_math::{Quat, Vec4, VectorSpace, vec4};
 use bevy_reflect::Reflect;
 use either::Either;
 use thiserror::Error;
@@ -246,10 +246,10 @@ where
             | InterpolationDatum::RightTail(v) => Either::Left(v.iter().cloned()),
 
             InterpolationDatum::Between(u, v, s) => {
-                let interpolated =
-                    u.iter()
-                        .zip(v.iter())
-                        .map(move |(x, y)| if s >= 1.0 { y.clone() } else { x.clone() });
+                let interpolated = u
+                    .iter()
+                    .zip(v.iter())
+                    .map(move |(x, y)| if s >= 1.0 { y.clone() } else { x.clone() });
                 Either::Right(interpolated)
             }
         }

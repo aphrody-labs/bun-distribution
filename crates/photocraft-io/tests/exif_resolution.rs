@@ -1,7 +1,9 @@
 //! #1691: the EXIF resolution of an imported photo becomes the document's, and a PSD save keeps
 //! its EXIF copy in step with the ResolutionInfo resource.
 
-use photocraft_codecs::{ChannelLayout, EncodeOptions, Format, Image, Metadata, SampleType, exif_resolution};
+use photocraft_codecs::{
+    ChannelLayout, EncodeOptions, Format, Image, Metadata, SampleType, exif_resolution,
+};
 use photocraft_io::*;
 
 /// Big-endian EXIF: XResolution 300/1, YResolution 300/1, ResolutionUnit 2.
@@ -30,15 +32,28 @@ fn camera_exif() -> Vec<u8> {
 
 #[test]
 fn webp_with_exif_resolution_imports_at_it_and_psd_save_follows_the_document() {
-    let meta = Metadata { exif: Some(camera_exif()), ..Default::default() };
-    let img = Image::from_raw(6, 4, ChannelLayout::Rgb, SampleType::U8, vec![50; 72]).unwrap().with_meta(meta);
+    let meta = Metadata {
+        exif: Some(camera_exif()),
+        ..Default::default()
+    };
+    let img = Image::from_raw(6, 4, ChannelLayout::Rgb, SampleType::U8, vec![50; 72])
+        .unwrap()
+        .with_meta(meta);
     let webp = photocraft_codecs::encode(&img, Format::WebP, &EncodeOptions::default()).unwrap();
     let mut doc = import("photo.webp", &webp).unwrap().document;
     assert_eq!(doc.resolution_dpi, 300.0);
 
     doc.resolution_dpi = 240.0;
-    let psd = export(&doc, "photo.psd", &ExportOptions::default()).unwrap().bytes;
+    let psd = export(&doc, "photo.psd", &ExportOptions::default())
+        .unwrap()
+        .bytes;
     let back = import("photo.psd", &psd).unwrap().document;
     assert_eq!(back.resolution_dpi, 240.0);
-    assert_eq!(back.metadata.exif.as_deref().and_then(|e| exif_resolution(e)), Some((240.0, 240.0)));
+    assert_eq!(
+        back.metadata
+            .exif
+            .as_deref()
+            .and_then(|e| exif_resolution(e)),
+        Some((240.0, 240.0))
+    );
 }

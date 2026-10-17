@@ -35,7 +35,14 @@ fn bounds(values: &[Value], width: usize) -> Option<((usize, usize), (usize, usi
 
 /// The kept span of `0..len` given the non-blank span and the trim flags.
 fn keep(len: usize, nonblank: (usize, usize), (lead, trail): (bool, bool)) -> (usize, usize) {
-    (if lead { nonblank.0 } else { 0 }, if trail { nonblank.1 } else { len.saturating_sub(1) })
+    (
+        if lead { nonblank.0 } else { 0 },
+        if trail {
+            nonblank.1
+        } else {
+            len.saturating_sub(1)
+        },
+    )
 }
 
 impl Evaluator<'_> {
@@ -85,7 +92,9 @@ impl Evaluator<'_> {
         let none = rows == (false, false) && cols == (false, false);
         match ev {
             Ev::R(areas) => {
-                let [a] = areas.as_slice() else { return Err(CellError::Value) };
+                let [a] = areas.as_slice() else {
+                    return Err(CellError::Value);
+                };
                 if none {
                     return Ok(Ev::R(vec![*a]));
                 }
@@ -100,8 +109,16 @@ impl Evaluator<'_> {
                 let (h_all, w_all) = (a.range.height() as usize, a.range.width() as usize);
                 let (kr0, kr1) = keep(h_all, (r0, r1), rows);
                 let (kc0, kc1) = keep(w_all, (c0, c1), cols);
-                let at = |r: usize, c: usize| CellRef::new(a.range.start.row.saturating_add(r as u32), a.range.start.col.saturating_add(c as u32));
-                Ok(Ev::R(vec![Area { sheet: a.sheet, range: RangeRef::new(at(kr0, kc0), at(kr1, kc1)) }]))
+                let at = |r: usize, c: usize| {
+                    CellRef::new(
+                        a.range.start.row.saturating_add(r as u32),
+                        a.range.start.col.saturating_add(c as u32),
+                    )
+                };
+                Ok(Ev::R(vec![Area {
+                    sheet: a.sheet,
+                    range: RangeRef::new(at(kr0, kc0), at(kr1, kc1)),
+                }]))
             }
             Ev::V(Value::Array(arr)) => {
                 if none {
@@ -116,7 +133,9 @@ impl Evaluator<'_> {
                         data.push(arr.get(r, c).cloned().unwrap_or(Value::Empty));
                     }
                 }
-                Array::new(kr1 + 1 - kr0, kc1 + 1 - kc0, data).map(|a| Ev::V(Value::from(a))).ok_or(CellError::Value)
+                Array::new(kr1 + 1 - kr0, kc1 + 1 - kc0, data)
+                    .map(|a| Ev::V(Value::from(a)))
+                    .ok_or(CellError::Value)
             }
             Ev::V(Value::Error(e)) => Err(e),
             Ev::V(Value::Empty) if !none => Err(CellError::Calc),

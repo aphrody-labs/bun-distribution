@@ -39,7 +39,10 @@ fn aphrody_bin() -> std::path::PathBuf {
         return path.into();
     }
     let exe = std::env::current_exe().expect("current exe");
-    let profile_dir = exe.parent().and_then(std::path::Path::parent).expect("target profile dir");
+    let profile_dir = exe
+        .parent()
+        .and_then(std::path::Path::parent)
+        .expect("target profile dir");
     let bin = profile_dir.join(format!("aphrody{}", std::env::consts::EXE_SUFFIX));
     assert!(
         bin.is_file(),
@@ -57,11 +60,17 @@ fn aphrody_bin() -> std::path::PathBuf {
 /// a broken server).
 async fn spawn_and_handshake() {
     let env: HashMap<String, String> = HashMap::new();
-    let mut client =
-        McpClient::from_stdio(black_box(&aphrody_bin().to_string_lossy()), &["mcp-server"], &env)
-            .await
-            .expect("aphrody-mcp: stdio spawn must succeed (built binary missing?)");
-    let info = client.initialize().await.expect("aphrody-mcp: initialize handshake must succeed");
+    let mut client = McpClient::from_stdio(
+        black_box(&aphrody_bin().to_string_lossy()),
+        &["mcp-server"],
+        &env,
+    )
+    .await
+    .expect("aphrody-mcp: stdio spawn must succeed (built binary missing?)");
+    let info = client
+        .initialize()
+        .await
+        .expect("aphrody-mcp: initialize handshake must succeed");
     // Touch the returned ServerInfo so the optimiser cannot elide the call.
     black_box(&info);
 }

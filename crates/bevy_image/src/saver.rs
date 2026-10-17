@@ -1,8 +1,8 @@
 use std::io::Cursor;
 
-use bevy_asset::{saver::AssetSaver, AssetPath, AsyncWriteExt};
+use bevy_asset::{AssetPath, AsyncWriteExt, saver::AssetSaver};
 use bevy_reflect::TypePath;
-use image::{write_buffer_with_format, ExtendedColorType};
+use image::{ExtendedColorType, write_buffer_with_format};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use wgpu_types::TextureFormat;
@@ -61,7 +61,7 @@ impl AssetSaver for ImageSaver {
                     return Err(SaveImageError::UnsupportedSaveColorTypeForFormat(
                         ImageFormat::Png,
                         asset.texture_descriptor.format,
-                    ))
+                    ));
                 }
             },
             // FIXME: https://github.com/rust-lang/rust/issues/129031
@@ -126,7 +126,9 @@ pub enum SaveImageFormatSetting {
 #[derive(Error, Debug)]
 pub enum SaveImageError {
     /// Cannot deduce file format from extension because there is no extension.
-    #[error("SaveImageFormatSetting::FromExtension was set, but the asset path \"{0}\" has no extension")]
+    #[error(
+        "SaveImageFormatSetting::FromExtension was set, but the asset path \"{0}\" has no extension"
+    )]
     MissingExtension(AssetPath<'static>),
     /// Cannot deduce file format from extension since this extension is unknown. Holds the
     /// extension that could not be matched.
@@ -134,13 +136,17 @@ pub enum SaveImageError {
     UnknownExtension(String),
     /// [`Image::data`] is [`None`], so there is no data to save. See
     /// [`RenderAssetUsages`](bevy_asset::RenderAssetUsages) for more.
-    #[error("the provided image does not contain any pixel data. Its data may live on the GPU (which we can't save out) due to `RenderAssetUsages`")]
+    #[error(
+        "the provided image does not contain any pixel data. Its data may live on the GPU (which we can't save out) due to `RenderAssetUsages`"
+    )]
     ImageMissingData,
     /// The image saver doesn't support the file format being requested.
     #[error("the requested file format {0:?} is not supported for saving")]
     UnsupportedFormat(ImageFormat),
     /// The image saver doesn't support the texture format of the image data for the image format.
-    #[error("the image uses a texture format \"{1:?}\" that is not supported for saving by the image format \"{0:?}\"")]
+    #[error(
+        "the image uses a texture format \"{1:?}\" that is not supported for saving by the image format \"{0:?}\""
+    )]
     UnsupportedSaveColorTypeForFormat(ImageFormat, TextureFormat),
     /// The [`image`] crate returned an error.
     #[error(transparent)]
@@ -156,12 +162,12 @@ mod tests {
 
     use bevy_app::{App, TaskPoolPlugin};
     use bevy_asset::{
-        io::{
-            memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
-            AssetSourceBuilder, AssetSourceId,
-        },
-        saver::{save_using_saver, SavedAsset},
         AssetApp, AssetPath, AssetPlugin, AssetServer, Assets, RenderAssetUsages,
+        io::{
+            AssetSourceBuilder, AssetSourceId,
+            memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
+        },
+        saver::{SavedAsset, save_using_saver},
     };
     use bevy_color::Srgba;
     use bevy_ecs::world::World;

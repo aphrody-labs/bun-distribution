@@ -11,7 +11,10 @@ pub fn snap_to_grid(v: f64, spacing: f64, origin: f64) -> f64 {
 }
 
 pub fn snap_point_to_grid(p: Point, spacing: f64) -> Point {
-    Point::new(snap_to_grid(p.x, spacing, 0.0), snap_to_grid(p.y, spacing, 0.0))
+    Point::new(
+        snap_to_grid(p.x, spacing, 0.0),
+        snap_to_grid(p.y, spacing, 0.0),
+    )
 }
 
 /// A candidate alignment line for smart guides.
@@ -23,7 +26,11 @@ pub enum Axis {
 
 /// Find the closest target within `tol` to `v`. Returns (target, delta).
 pub fn closest(v: f64, targets: impl IntoIterator<Item = f64>, tol: f64) -> Option<(f64, f64)> {
-    targets.into_iter().map(|t| (t, t - v)).filter(|(_, d)| d.abs() <= tol).min_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
+    targets
+        .into_iter()
+        .map(|t| (t, t - v))
+        .filter(|(_, d)| d.abs() <= tol)
+        .min_by(|a, b| a.1.abs().total_cmp(&b.1.abs()))
 }
 
 #[cfg(test)]

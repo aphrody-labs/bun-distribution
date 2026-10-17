@@ -244,7 +244,10 @@ fn real_obj_lottery_0_et_688() {
     };
     let cfg = parse_craft_obj_config(&root);
     // entrée 0 : [-1717452464, 2]
-    assert_eq!(cfg.lottery_unique_charas[0].chara_id, HashId::from_i64(-1717452464));
+    assert_eq!(
+        cfg.lottery_unique_charas[0].chara_id,
+        HashId::from_i64(-1717452464)
+    );
     assert_eq!(cfg.lottery_unique_charas[0].weight, 2.0);
     // entrée 688 : [150881673, 1,5] — seul Float de la liste
     assert_eq!(cfg.lottery_unique_charas[688].chara_id, HashId(0x08FE_4589));
@@ -276,9 +279,15 @@ fn real_obj_npc_stick() {
     // npc 1 : [1.7, 0, 1.5, -1, 0, 0]
     assert_eq!(cfg.npc_stick_points[1].raw, [1.7, 0.0, 1.5, -1.0, 0.0, 0.0]);
     // npc 2 : [-1.7, 0, 1.5, -1, 0, 0]
-    assert_eq!(cfg.npc_stick_points[2].raw, [-1.7, 0.0, 1.5, -1.0, 0.0, 0.0]);
+    assert_eq!(
+        cfg.npc_stick_points[2].raw,
+        [-1.7, 0.0, 1.5, -1.0, 0.0, 0.0]
+    );
     // npc 6 : [-4, 0, 5, -1, 0, 0]
-    assert_eq!(cfg.npc_stick_points[6].raw, [-4.0, 0.0, 5.0, -1.0, 0.0, 0.0]);
+    assert_eq!(
+        cfg.npc_stick_points[6].raw,
+        [-4.0, 0.0, 5.0, -1.0, 0.0, 0.0]
+    );
 }
 
 #[test]
@@ -388,7 +397,11 @@ fn real_obj_categories_resolvent_toutes_et_la_cinquieme_sature() {
     assert_eq!(repartition, [70, 36, 40, 12, 2]);
     assert_eq!(repartition.iter().sum::<usize>(), cfg.objs.len());
 
-    assert_eq!(cfg.max_placeable(3), Some(20), "catégorie 3 = la ligne L du HUD");
+    assert_eq!(
+        cfg.max_placeable(3),
+        Some(20),
+        "catégorie 3 = la ligne L du HUD"
+    );
     assert_eq!(cfg.max_placeable(2), Some(50), "catégorie 2 = la ligne M");
     assert_eq!(cfg.max_placeable(1), Some(80), "catégorie 1 = la ligne S");
     assert_eq!(cfg.max_placeable(4), Some(100));
@@ -397,7 +410,11 @@ fn real_obj_categories_resolvent_toutes_et_la_cinquieme_sature() {
         Some(repartition[4]),
         "la catégorie 5 plafonne à 2 et ne compte que 2 objets"
     );
-    assert_eq!(cfg.max_placeable(6), None, "une catégorie absente n'est pas illimitée");
+    assert_eq!(
+        cfg.max_placeable(6),
+        None,
+        "une catégorie absente n'est pas illimitée"
+    );
 }
 
 #[test]
@@ -494,7 +511,10 @@ fn fixture_theme_type_0_et_1() {
     let t1 = &cfg.theme_types[1];
     assert_eq!(t1.type_id, HashId(0x3D56_4C8A));
     assert_eq!(t1.variant_hash, HashId(0x8CE9_4D48));
-    assert_eq!(t1.data_b64, "AAAAACEFNY12ZtgAEwIoAAYCNLCWyF8oAAYCMgAAAAEyAAAAAXg=");
+    assert_eq!(
+        t1.data_b64,
+        "AAAAACEFNY12ZtgAEwIoAAYCNLCWyF8oAAYCMgAAAAEyAAAAAXg="
+    );
     assert_eq!(t1.extra_hash, HashId(0x0EB2_AC6A));
 }
 
@@ -533,7 +553,10 @@ fn real_theme_types() {
     assert_eq!(cfg.theme_types[0].data_b64, "");
     // type 1 : data_b64 présent
     assert_eq!(cfg.theme_types[1].type_id, HashId(0x3D56_4C8A));
-    assert_eq!(cfg.theme_types[1].data_b64, "AAAAACEFNY12ZtgAEwIoAAYCNLCWyF8oAAYCMgAAAAEyAAAAAXg=");
+    assert_eq!(
+        cfg.theme_types[1].data_b64,
+        "AAAAACEFNY12ZtgAEwIoAAYCNLCWyF8oAAYCMgAAAAEyAAAAAXg="
+    );
     assert_eq!(cfg.theme_types[1].extra_hash, HashId(0x0EB2_AC6A));
 }
 

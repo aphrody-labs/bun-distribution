@@ -16,7 +16,8 @@ use std::sync::Arc;
 use wordcraft_doc::{Align, Document};
 
 use crate::model::{
-    self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, base64_encode, data_uri, make_img, mime_of, parse_color,
+    self, Cell, FBlock, FTable, Flow, Fmt, Inline, Kind, ListInfo, Meta, Para, base64_encode,
+    data_uri, make_img, mime_of, parse_color,
 };
 
 /// Open elements kept at most (deeper start tags are ignored).
@@ -28,7 +29,11 @@ const MAX_STACK: usize = 256;
 /// Decode an entity body (`amp`, `#38`, `#x26`) to its text.
 pub fn decode_entity(name: &str) -> Option<String> {
     if let Some(num) = name.strip_prefix('#') {
-        let v = if let Some(h) = num.strip_prefix(['x', 'X']) { u32::from_str_radix(h, 16).ok()? } else { num.parse::<u32>().ok()? };
+        let v = if let Some(h) = num.strip_prefix(['x', 'X']) {
+            u32::from_str_radix(h, 16).ok()?
+        } else {
+            num.parse::<u32>().ok()?
+        };
         let c = match v {
             0 => '\u{FFFD}',
             0x80..=0x9F => crate::txt::cp1252(v as u8),
@@ -167,11 +172,17 @@ pub fn unescape(s: &str) -> String {
 /// Decode HTML bytes: BOM, then a `charset` in the first 2 KB, else UTF-8 with a Windows-1252
 /// fallback.
 pub fn decode(b: &[u8]) -> String {
-    if b.starts_with(&[0xFF, 0xFE]) || b.starts_with(&[0xFE, 0xFF]) || b.starts_with(&[0xEF, 0xBB, 0xBF]) {
+    if b.starts_with(&[0xFF, 0xFE])
+        || b.starts_with(&[0xFE, 0xFF])
+        || b.starts_with(&[0xEF, 0xBB, 0xBF])
+    {
         return crate::txt::decode(b);
     }
-    let head = String::from_utf8_lossy(b.get(..b.len().min(2048)).unwrap_or(b)).to_ascii_lowercase();
-    let latin = head.contains("charset=windows-1252") || head.contains("charset=iso-8859-1") || head.contains("charset=\"windows-1252\"");
+    let head =
+        String::from_utf8_lossy(b.get(..b.len().min(2048)).unwrap_or(b)).to_ascii_lowercase();
+    let latin = head.contains("charset=windows-1252")
+        || head.contains("charset=iso-8859-1")
+        || head.contains("charset=\"windows-1252\"");
     if !latin && let Ok(s) = std::str::from_utf8(b) {
         return s.to_string();
     }
@@ -184,7 +195,11 @@ pub fn decode(b: &[u8]) -> String {
 #[derive(Debug)]
 enum Tok {
     Text(String),
-    Start { name: String, attrs: Vec<(String, String)>, self_close: bool },
+    Start {
+        name: String,
+        attrs: Vec<(String, String)>,
+        self_close: bool,
+    },
     End(String),
 }
 
@@ -203,7 +218,9 @@ impl Lexer<'_> {
         let start = self.pos;
         let hay = self.rest().as_bytes();
         let p = pat.as_bytes();
-        let found = hay.windows(p.len().max(1)).position(|w| w.eq_ignore_ascii_case(p));
+        let found = hay
+            .windows(p.len().max(1))
+            .position(|w| w.eq_ignore_ascii_case(p));
         match found {
             Some(k) => self.pos += k + p.len(),
             None => self.pos = self.s.len(),
@@ -233,8 +250,12 @@ impl Lexer<'_> {
             return Some(Tok::Text(String::new()));
         }
         if rest.starts_with("</") {
-            let name: String =
-                rest.strip_prefix("</").unwrap_or("").chars().take_while(|c| c.is_ascii_alphanumeric() || *c == ':' || *c == '-').collect();
+            let name: String = rest
+                .strip_prefix("</")
+                .unwrap_or("")
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric() || *c == ':' || *c == '-')
+                .collect();
             if name.is_empty() {
                 self.pos += 2;
                 return Some(Tok::Text("</".into()));
@@ -247,7 +268,10 @@ impl Lexer<'_> {
             return Some(Tok::Text("<".into()));
         }
         // Start tag.
-        let name: String = rest[1..].chars().take_while(|c| c.is_ascii_alphanumeric() || *c == ':' || *c == '-').collect();
+        let name: String = rest[1..]
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric() || *c == ':' || *c == '-')
+            .collect();
         let mut i = 1 + name.len();
         let mut attrs = Vec::new();
         let mut self_close = false;
@@ -273,7 +297,10 @@ impl Lexer<'_> {
                 _ => {}
             }
             let a0 = i;
-            while b.get(i).is_some_and(|c| !c.is_ascii_whitespace() && !matches!(c, b'=' | b'>' | b'/')) {
+            while b
+                .get(i)
+                .is_some_and(|c| !c.is_ascii_whitespace() && !matches!(c, b'=' | b'>' | b'/'))
+            {
                 i += 1;
             }
             let an = rest.get(a0..i).unwrap_or("").to_ascii_lowercase();
@@ -293,13 +320,20 @@ impl Lexer<'_> {
                 match b.get(i) {
                     Some(&q) if q == b'"' || q == b'\'' => {
                         let v0 = i + 1;
-                        let e = rest.get(v0..).and_then(|r| r.find(q as char)).map(|k| v0 + k).unwrap_or(rest.len());
+                        let e = rest
+                            .get(v0..)
+                            .and_then(|r| r.find(q as char))
+                            .map(|k| v0 + k)
+                            .unwrap_or(rest.len());
                         val = unescape(rest.get(v0..e).unwrap_or(""));
                         i = e + 1;
                     }
                     _ => {
                         let v0 = i;
-                        while b.get(i).is_some_and(|c| !c.is_ascii_whitespace() && *c != b'>') {
+                        while b
+                            .get(i)
+                            .is_some_and(|c| !c.is_ascii_whitespace() && *c != b'>')
+                        {
                             i += 1;
                         }
                         val = unescape(rest.get(v0..i).unwrap_or(""));
@@ -311,7 +345,11 @@ impl Lexer<'_> {
             }
         }
         self.pos += i.min(rest.len());
-        Some(Tok::Start { name: name.to_ascii_lowercase(), attrs, self_close })
+        Some(Tok::Start {
+            name: name.to_ascii_lowercase(),
+            attrs,
+            self_close,
+        })
     }
 }
 
@@ -354,18 +392,35 @@ struct TableB {
 
 /// Whether an element's `border` attribute or `style` declares a visible border.
 fn declares_border(attrs: &[(String, String)], is_table: bool) -> bool {
-    if is_table && attr(attrs, "border").is_some_and(|b| b.trim().parse::<u32>().map(|n| n > 0).unwrap_or(b.trim().is_empty())) {
+    if is_table
+        && attr(attrs, "border").is_some_and(|b| {
+            b.trim()
+                .parse::<u32>()
+                .map(|n| n > 0)
+                .unwrap_or(b.trim().is_empty())
+        })
+    {
         return true;
     }
-    let Some(style) = attr(attrs, "style") else { return false };
+    let Some(style) = attr(attrs, "style") else {
+        return false;
+    };
     style.split(';').any(|decl| {
-        let Some((name, value)) = decl.split_once(':') else { return false };
+        let Some((name, value)) = decl.split_once(':') else {
+            return false;
+        };
         let name = name.trim().to_ascii_lowercase();
-        if !matches!(name.as_str(), "border" | "border-top" | "border-right" | "border-bottom" | "border-left") {
+        if !matches!(
+            name.as_str(),
+            "border" | "border-top" | "border-right" | "border-bottom" | "border-left"
+        ) {
             return false;
         }
         let value = value.trim().to_ascii_lowercase();
-        !value.is_empty() && !value.split_whitespace().any(|tok| matches!(tok, "none" | "hidden" | "0" | "0px" | "0pt"))
+        !value.is_empty()
+            && !value
+                .split_whitespace()
+                .any(|tok| matches!(tok, "none" | "hidden" | "0" | "0px" | "0pt"))
     })
 }
 
@@ -415,10 +470,13 @@ fn is_void(n: &str) -> bool {
 
 fn block_kind(n: &str) -> Option<ElKind> {
     Some(match n {
-        "p" | "div" | "section" | "article" | "header" | "footer" | "main" | "nav" | "aside" | "figure" | "figcaption" | "address" | "dl" | "dt"
-        | "dd" | "center" | "form" | "fieldset" | "body" | "html" | "caption" | "thead" | "tbody" | "tfoot" | "details" | "summary" | "legend"
-        | "hgroup" => ElKind::Block,
-        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => ElKind::Heading(n.get(1..2).and_then(|d| d.parse().ok()).unwrap_or(1)),
+        "p" | "div" | "section" | "article" | "header" | "footer" | "main" | "nav" | "aside"
+        | "figure" | "figcaption" | "address" | "dl" | "dt" | "dd" | "center" | "form"
+        | "fieldset" | "body" | "html" | "caption" | "thead" | "tbody" | "tfoot" | "details"
+        | "summary" | "legend" | "hgroup" => ElKind::Block,
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => {
+            ElKind::Heading(n.get(1..2).and_then(|d| d.parse().ok()).unwrap_or(1))
+        }
         "blockquote" => ElKind::Quote,
         "pre" | "listing" | "xmp" | "plaintext" => ElKind::Pre,
         "ul" | "menu" | "dir" => ElKind::List(false),
@@ -501,14 +559,24 @@ fn css_len_pt(v: &str) -> Option<f32> {
 }
 
 /// Apply a `style` attribute to formatting / block properties.
-fn apply_style(css: &str, f: &mut Fmt, align: &mut Option<Align>, preserve: &mut bool, page_break: &mut bool) {
+fn apply_style(
+    css: &str,
+    f: &mut Fmt,
+    align: &mut Option<Align>,
+    preserve: &mut bool,
+    page_break: &mut bool,
+) {
     for decl in css.split(';').take(64) {
-        let Some((k, v)) = decl.split_once(':') else { continue };
+        let Some((k, v)) = decl.split_once(':') else {
+            continue;
+        };
         let k = k.trim().to_ascii_lowercase();
         let v = v.trim().trim_end_matches("!important").trim();
         let lv = v.to_ascii_lowercase();
         match k.as_str() {
-            "font-weight" => f.bold = lv.starts_with("bold") || lv.parse::<u32>().is_ok_and(|w| w >= 600),
+            "font-weight" => {
+                f.bold = lv.starts_with("bold") || lv.parse::<u32>().is_ok_and(|w| w >= 600)
+            }
             "font-style" => f.italic = lv == "italic" || lv == "oblique",
             "text-decoration" | "text-decoration-line" => {
                 if lv.contains("none") {
@@ -538,10 +606,21 @@ fn apply_style(css: &str, f: &mut Fmt, align: &mut Option<Align>, preserve: &mut
                 }
             }
             "font-family" => {
-                let fam = v.split(',').next().unwrap_or("").trim().trim_matches(['"', '\'']).to_string();
+                let fam = v
+                    .split(',')
+                    .next()
+                    .unwrap_or("")
+                    .trim()
+                    .trim_matches(['"', '\''])
+                    .to_string();
                 if model::is_mono(&fam) || fam.eq_ignore_ascii_case("monospace") {
                     f.code = true;
-                } else if !fam.is_empty() && !matches!(fam.to_ascii_lowercase().as_str(), "serif" | "sans-serif" | "inherit" | "initial") {
+                } else if !fam.is_empty()
+                    && !matches!(
+                        fam.to_ascii_lowercase().as_str(),
+                        "serif" | "sans-serif" | "inherit" | "initial"
+                    )
+                {
                     f.font = Some(fam);
                 }
             }
@@ -566,7 +645,10 @@ fn apply_style(css: &str, f: &mut Fmt, align: &mut Option<Align>, preserve: &mut
 }
 
 fn attr<'a>(attrs: &'a [(String, String)], name: &str) -> Option<&'a str> {
-    attrs.iter().find(|(k, _)| k == name).map(|(_, v)| v.as_str())
+    attrs
+        .iter()
+        .find(|(k, _)| k == name)
+        .map(|(_, v)| v.as_str())
 }
 
 impl<'r> Builder<'r> {
@@ -608,7 +690,9 @@ impl<'r> Builder<'r> {
             for (i, e) in self.stack.iter().enumerate().rev() {
                 match e.kind {
                     ElKind::Cell | ElKind::Table => break,
-                    ElKind::Heading(n) if p.kind == Kind::Normal => p.kind = Kind::Heading(n.clamp(1, 6)),
+                    ElKind::Heading(n) if p.kind == Kind::Normal => {
+                        p.kind = Kind::Heading(n.clamp(1, 6))
+                    }
                     ElKind::Pre if p.kind == Kind::Normal => p.kind = Kind::Code,
                     ElKind::Quote if p.kind == Kind::Normal => p.kind = Kind::Quote,
                     ElKind::Li if li_at.is_none() => li_at = Some(i),
@@ -625,7 +709,10 @@ impl<'r> Builder<'r> {
                 }
             }
             if let (Some((o, _)), Some(li)) = (list_level, li_at) {
-                p.list = Some(ListInfo { ordered: o, level: lists.saturating_sub(1).min(8) as u8 });
+                p.list = Some(ListInfo {
+                    ordered: o,
+                    level: lists.saturating_sub(1).min(8) as u8,
+                });
                 self.para_cont = self.stack.get(li).is_some_and(|e| e.used);
                 if let Some(e) = self.stack.get_mut(li) {
                     e.used = true;
@@ -633,7 +720,12 @@ impl<'r> Builder<'r> {
             } else {
                 self.para_cont = false;
             }
-            p.page_break = self.stack.iter().rev().take_while(|e| e.kind != ElKind::Cell).any(|e| e.page_break);
+            p.page_break = self
+                .stack
+                .iter()
+                .rev()
+                .take_while(|e| e.kind != ElKind::Cell)
+                .any(|e| e.page_break);
             self.para = Some(p);
         }
         self.para.get_or_insert_with(Para::default)
@@ -648,14 +740,22 @@ impl<'r> Builder<'r> {
     }
 
     fn flush(&mut self) {
-        let Some(mut p) = self.para.take() else { return };
-        let (pre_lead, pre_tail) = (self.pre_lead.take().unwrap_or(false), std::mem::take(&mut self.pre_tail));
+        let Some(mut p) = self.para.take() else {
+            return;
+        };
+        let (pre_lead, pre_tail) = (
+            self.pre_lead.take().unwrap_or(false),
+            std::mem::take(&mut self.pre_tail),
+        );
         if p.kind != Kind::Code {
             // Preserved white space keeps its spaces and tabs at the edges; line breaks there
             // (source formatting) still go.
             const ALL: &[char] = &[' ', '\t', '\r', '\n'];
             const BREAKS: &[char] = &['\r', '\n'];
-            p.trim_with(if pre_lead { BREAKS } else { ALL }, if pre_tail { BREAKS } else { ALL });
+            p.trim_with(
+                if pre_lead { BREAKS } else { ALL },
+                if pre_tail { BREAKS } else { ALL },
+            );
             if p.text().trim().is_empty() {
                 // Only white space (indentation between blocks): nothing to keep.
                 p.trim();
@@ -698,7 +798,11 @@ impl<'r> Builder<'r> {
             return;
         }
         let inside_table_only = matches!(
-            self.stack.iter().rev().find(|e| matches!(e.kind, ElKind::Table | ElKind::Tr | ElKind::Cell)).map(|e| e.kind),
+            self.stack
+                .iter()
+                .rev()
+                .find(|e| matches!(e.kind, ElKind::Table | ElKind::Tr | ElKind::Cell))
+                .map(|e| e.kind),
             Some(ElKind::Table | ElKind::Tr)
         );
         if inside_table_only && t.trim().is_empty() {
@@ -711,7 +815,8 @@ impl<'r> Builder<'r> {
             for line in t.split('\n') {
                 if !first {
                     // A newline right after <pre> is ignored.
-                    let empty_start = self.para.as_ref().is_none_or(|p| p.inlines.is_empty()) && self.pre_fresh();
+                    let empty_start =
+                        self.para.as_ref().is_none_or(|p| p.inlines.is_empty()) && self.pre_fresh();
                     if !empty_start {
                         self.start_para();
                         self.flush();
@@ -720,7 +825,13 @@ impl<'r> Builder<'r> {
                 first = false;
                 let line = line.trim_end_matches('\r');
                 if !line.is_empty() {
-                    self.start_para().push_text(line, &Fmt { code: false, ..f.clone() });
+                    self.start_para().push_text(
+                        line,
+                        &Fmt {
+                            code: false,
+                            ..f.clone()
+                        },
+                    );
                     self.mark_pre_used();
                 }
             }
@@ -765,7 +876,11 @@ impl<'r> Builder<'r> {
     }
 
     fn pre_fresh(&self) -> bool {
-        self.stack.iter().rev().find(|e| e.kind == ElKind::Pre).is_some_and(|e| !e.used)
+        self.stack
+            .iter()
+            .rev()
+            .find(|e| e.kind == ElKind::Pre)
+            .is_some_and(|e| !e.used)
     }
 
     fn mark_pre_used(&mut self) {
@@ -789,7 +904,11 @@ impl<'r> Builder<'r> {
         match e.kind {
             ElKind::Cell => {
                 self.flush();
-                let blocks = if self.containers.len() > 1 { self.containers.pop().unwrap_or_default() } else { Vec::new() };
+                let blocks = if self.containers.len() > 1 {
+                    self.containers.pop().unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
                 let mut cell = self.cells.pop().unwrap_or_default();
                 cell.blocks = blocks;
                 if let Some(t) = self.tables.last_mut() {
@@ -809,7 +928,11 @@ impl<'r> Builder<'r> {
                         t.rows.push(r);
                     }
                     let borderless = !t.bordered;
-                    let mut ft = FTable { rows: t.rows.into_iter().filter(|r| !r.is_empty()).collect(), widths: Vec::new(), borderless };
+                    let mut ft = FTable {
+                        rows: t.rows.into_iter().filter(|r| !r.is_empty()).collect(),
+                        widths: Vec::new(),
+                        borderless,
+                    };
                     if !ft.rows.is_empty() {
                         ft.insert_covered();
                         self.container().push(FBlock::Table(ft));
@@ -839,7 +962,19 @@ impl<'r> Builder<'r> {
         // A body-content start tag implicitly ends an omitted </head>.
         if !matches!(
             name,
-            "html" | "head" | "base" | "basefont" | "bgsound" | "link" | "meta" | "noframes" | "noscript" | "script" | "style" | "template" | "title"
+            "html"
+                | "head"
+                | "base"
+                | "basefont"
+                | "bgsound"
+                | "link"
+                | "meta"
+                | "noframes"
+                | "noscript"
+                | "script"
+                | "style"
+                | "template"
+                | "title"
         ) && let Some(k) = self.find_open(|e| e.kind == ElKind::Head, |_| false)
         {
             self.pop_to(k);
@@ -870,37 +1005,66 @@ impl<'r> Builder<'r> {
         let in_table = self.tables.len() < model::MAX_DEPTH;
         // Implicit closes.
         if closes_p(name)
-            && let Some(k) = self.find_open(|e| e.name == "p", |e| matches!(e.kind, ElKind::Cell | ElKind::Table | ElKind::Li | ElKind::Quote))
+            && let Some(k) = self.find_open(
+                |e| e.name == "p",
+                |e| {
+                    matches!(
+                        e.kind,
+                        ElKind::Cell | ElKind::Table | ElKind::Li | ElKind::Quote
+                    )
+                },
+            )
         {
             self.pop_to(k);
         }
-        if matches!(name, "h1" | "h2" | "h3" | "h4" | "h5" | "h6") && self.stack.last().is_some_and(|e| matches!(e.kind, ElKind::Heading(_))) {
+        if matches!(name, "h1" | "h2" | "h3" | "h4" | "h5" | "h6")
+            && self
+                .stack
+                .last()
+                .is_some_and(|e| matches!(e.kind, ElKind::Heading(_)))
+        {
             let k = self.stack.len() - 1;
             self.pop_to(k);
         }
         if name == "li"
-            && let Some(k) = self.find_open(|e| e.kind == ElKind::Li, |e| matches!(e.kind, ElKind::List(_) | ElKind::Table | ElKind::Cell))
+            && let Some(k) = self.find_open(
+                |e| e.kind == ElKind::Li,
+                |e| matches!(e.kind, ElKind::List(_) | ElKind::Table | ElKind::Cell),
+            )
         {
             self.pop_to(k);
         }
         if matches!(name, "dt" | "dd")
-            && let Some(k) =
-                self.find_open(|e| e.name == "dt" || e.name == "dd", |e| matches!(e.kind, ElKind::Table | ElKind::Cell) || e.name == "dl")
+            && let Some(k) = self.find_open(
+                |e| e.name == "dt" || e.name == "dd",
+                |e| matches!(e.kind, ElKind::Table | ElKind::Cell) || e.name == "dl",
+            )
         {
             self.pop_to(k);
         }
         if is_table_part && !self.tables.is_empty() {
             if matches!(name, "td" | "th")
-                && let Some(k) = self.find_open(|e| e.kind == ElKind::Cell, |e| matches!(e.kind, ElKind::Table | ElKind::Tr))
+                && let Some(k) = self.find_open(
+                    |e| e.kind == ElKind::Cell,
+                    |e| matches!(e.kind, ElKind::Table | ElKind::Tr),
+                )
             {
                 self.pop_to(k);
             }
             if name == "tr"
-                && let Some(k) = self.find_open(|e| matches!(e.kind, ElKind::Tr | ElKind::Cell), |e| e.kind == ElKind::Table)
+                && let Some(k) = self.find_open(
+                    |e| matches!(e.kind, ElKind::Tr | ElKind::Cell),
+                    |e| e.kind == ElKind::Table,
+                )
             {
                 // Pop to the outermost of cell/row inside the current table.
                 let mut kk = k;
-                while kk > 0 && self.stack.get(kk - 1).is_some_and(|e| matches!(e.kind, ElKind::Tr | ElKind::Cell)) {
+                while kk > 0
+                    && self
+                        .stack
+                        .get(kk - 1)
+                        .is_some_and(|e| matches!(e.kind, ElKind::Tr | ElKind::Cell))
+                {
                     kk -= 1;
                 }
                 self.pop_to(kk);
@@ -908,9 +1072,13 @@ impl<'r> Builder<'r> {
         }
         if name == "a"
             && !self.in_head()
-            && let Some(id) = attr(attrs, "id").or_else(|| attr(attrs, "name")).filter(|s| !s.is_empty())
+            && let Some(id) = attr(attrs, "id")
+                .or_else(|| attr(attrs, "name"))
+                .filter(|s| !s.is_empty())
         {
-            self.start_para().inlines.push(Inline::Anchor(id.to_string()));
+            self.start_para()
+                .inlines
+                .push(Inline::Anchor(id.to_string()));
         }
         // Element-specific work.
         match name {
@@ -931,7 +1099,11 @@ impl<'r> Builder<'r> {
             }
             "img" => {
                 let alt = attr(attrs, "alt").unwrap_or("").to_string();
-                let dim = |k: &str| attr(attrs, k).and_then(|v| v.trim().trim_end_matches("px").trim().parse::<f32>().ok()).map(|p| p * 0.75);
+                let dim = |k: &str| {
+                    attr(attrs, k)
+                        .and_then(|v| v.trim().trim_end_matches("px").trim().parse::<f32>().ok())
+                        .map(|p| p * 0.75)
+                };
                 let mut w = dim("width");
                 let mut h = dim("height");
                 if let Some(st) = attr(attrs, "style") {
@@ -946,7 +1118,13 @@ impl<'r> Builder<'r> {
                     }
                 }
                 let img = attr(attrs, "src")
-                    .and_then(|src| if src.trim_start().starts_with("data:") { data_uri(src).map(Arc::new) } else { (self.images)(src.trim()) })
+                    .and_then(|src| {
+                        if src.trim_start().starts_with("data:") {
+                            data_uri(src).map(Arc::new)
+                        } else {
+                            (self.images)(src.trim())
+                        }
+                    })
                     .and_then(|d| make_img(d, w, h, &alt));
                 let f = self.fmt();
                 match img {
@@ -958,7 +1136,9 @@ impl<'r> Builder<'r> {
             }
             _ => {}
         }
-        if is_void(name) || self_close && block_kind(name).is_none() && !matches!(name, "a" | "span") {
+        if is_void(name)
+            || self_close && block_kind(name).is_none() && !matches!(name, "a" | "span")
+        {
             return;
         }
         if self.stack.len() >= MAX_STACK {
@@ -1000,11 +1180,18 @@ impl<'r> Builder<'r> {
                     }
                 }
                 if let Some(sz) = attr(attrs, "size").and_then(|s| s.trim().parse::<i32>().ok()) {
-                    fmt.size = Some([7.5, 10.0, 12.0, 13.5, 18.0, 24.0, 36.0].get((sz.clamp(1, 7) - 1) as usize).copied().unwrap_or(12.0));
+                    fmt.size = Some(
+                        [7.5, 10.0, 12.0, 13.5, 18.0, 24.0, 36.0]
+                            .get((sz.clamp(1, 7) - 1) as usize)
+                            .copied()
+                            .unwrap_or(12.0),
+                    );
                 }
             }
             "a" => {
-                if let Some(h) = attr(attrs, "href").filter(|h| wordcraft_doc::link::is_safe_href(h)) {
+                if let Some(h) =
+                    attr(attrs, "href").filter(|h| wordcraft_doc::link::is_safe_href(h))
+                {
                     fmt.link = Some(h.trim().to_string());
                 }
             }
@@ -1029,7 +1216,11 @@ impl<'r> Builder<'r> {
             preserve = true;
         }
         match kind {
-            ElKind::Table => self.tables.push(TableB { rows: Vec::new(), row: None, bordered: declares_border(attrs, true) }),
+            ElKind::Table => self.tables.push(TableB {
+                rows: Vec::new(),
+                row: None,
+                bordered: declares_border(attrs, true),
+            }),
             ElKind::Tr => {
                 if let Some(t) = self.tables.last_mut()
                     && let Some(r) = t.row.take()
@@ -1038,7 +1229,9 @@ impl<'r> Builder<'r> {
                 }
             }
             ElKind::Cell => {
-                let tb = self.find_open(|e| e.kind == ElKind::Tr, |e| e.kind == ElKind::Table).is_none();
+                let tb = self
+                    .find_open(|e| e.kind == ElKind::Tr, |e| e.kind == ElKind::Table)
+                    .is_none();
                 if let Some(t) = self.tables.last_mut()
                     && declares_border(attrs, false)
                 {
@@ -1051,12 +1244,21 @@ impl<'r> Builder<'r> {
                     }
                     t.row = Some(Vec::new());
                 }
-                let num = |k: &str| attr(attrs, k).and_then(|v| v.trim().parse::<u32>().ok()).map(|v| v.clamp(1, 63));
-                let shading = attr(attrs, "bgcolor").and_then(parse_color).or(fmt.background);
+                let num = |k: &str| {
+                    attr(attrs, k)
+                        .and_then(|v| v.trim().parse::<u32>().ok())
+                        .map(|v| v.clamp(1, 63))
+                };
+                let shading = attr(attrs, "bgcolor")
+                    .and_then(parse_color)
+                    .or(fmt.background);
                 self.cells.push(Cell {
                     blocks: Vec::new(),
                     colspan: num("colspan").unwrap_or(1),
-                    rowspan: attr(attrs, "rowspan").and_then(|v| v.trim().parse::<u32>().ok()).map(|v| v.clamp(1, 1000)).unwrap_or(1),
+                    rowspan: attr(attrs, "rowspan")
+                        .and_then(|v| v.trim().parse::<u32>().ok())
+                        .map(|v| v.clamp(1, 1000))
+                        .unwrap_or(1),
                     covered: false,
                     header: name == "th",
                     shading,
@@ -1067,7 +1269,15 @@ impl<'r> Builder<'r> {
             }
             _ => {}
         }
-        self.stack.push(El { name: name.to_string(), kind, fmt, align, preserve, page_break, used: false });
+        self.stack.push(El {
+            name: name.to_string(),
+            kind,
+            fmt,
+            align,
+            preserve,
+            page_break,
+            used: false,
+        });
     }
 
     fn end(&mut self, name: &str) {
@@ -1083,7 +1293,10 @@ impl<'r> Builder<'r> {
         } else if name == "tr" {
             self.find_open(|e| e.kind == ElKind::Tr, |e| e.kind == ElKind::Table)
         } else {
-            self.find_open(|e| e.name == name, |e| !crosses && matches!(e.kind, ElKind::Table | ElKind::Cell))
+            self.find_open(
+                |e| e.name == name,
+                |e| !crosses && matches!(e.kind, ElKind::Table | ElKind::Cell),
+            )
         };
         if let Some(k) = target {
             self.pop_to(k);
@@ -1102,7 +1315,10 @@ impl<'r> Builder<'r> {
         if let Some(t) = self.title.take() {
             self.meta.title = t;
         }
-        Flow { blocks, meta: self.meta }
+        Flow {
+            blocks,
+            meta: self.meta,
+        }
     }
 }
 
@@ -1123,9 +1339,17 @@ pub fn parse_with(s: &str, images: ImageLoader) -> Flow {
         }
         match t {
             Tok::Text(t) => b.text(&t),
-            Tok::Start { name, attrs, self_close } => {
+            Tok::Start {
+                name,
+                attrs,
+                self_close,
+            } => {
                 b.close_head_for_start(&name);
-                if matches!(name.as_str(), "script" | "style" | "noscript" | "template" | "textarea") && !self_close {
+                if matches!(
+                    name.as_str(),
+                    "script" | "style" | "noscript" | "template" | "textarea"
+                ) && !self_close
+                {
                     lx.skip_past(&format!("</{name}"));
                     lx.skip_past(">");
                     continue;
@@ -1205,7 +1429,11 @@ pub fn inlines_html(inlines: &[Inline]) -> String {
                 let mut open = String::new();
                 let mut close: Vec<&str> = Vec::new();
                 // A script or other non-web target is written as plain text (`is_safe_href`).
-                if let Some(l) = f.link.as_deref().filter(|l| wordcraft_doc::link::is_safe_href(l)) {
+                if let Some(l) = f
+                    .link
+                    .as_deref()
+                    .filter(|l| wordcraft_doc::link::is_safe_href(l))
+                {
                     open.push_str(&format!("<a href=\"{}\">", esc(l)));
                     close.push("</a>");
                 }
@@ -1288,7 +1516,11 @@ fn para_attrs(p: &Para) -> String {
     if p.page_break {
         css.push("break-before:page;page-break-before:always");
     }
-    if css.is_empty() { String::new() } else { format!(" style=\"{}\"", css.join(";")) }
+    if css.is_empty() {
+        String::new()
+    } else {
+        format!(" style=\"{}\"", css.join(";"))
+    }
 }
 
 fn para_html(p: &Para) -> String {
@@ -1319,7 +1551,10 @@ fn table_html(t: &FTable, out: &mut String, depth: usize) {
             if c.rowspan > 1 {
                 attrs.push_str(&format!(" rowspan=\"{}\"", c.rowspan));
             }
-            let mut css = vec!["padding:4px 6px".to_string(), "vertical-align:top".to_string()];
+            let mut css = vec![
+                "padding:4px 6px".to_string(),
+                "vertical-align:top".to_string(),
+            ];
             if !t.borderless {
                 css.insert(0, "border:1px solid #999".to_string());
             }
@@ -1327,7 +1562,11 @@ fn table_html(t: &FTable, out: &mut String, depth: usize) {
                 css.push(format!("background-color:#{}", s.hex()));
             }
             let single = match c.blocks.as_slice() {
-                [FBlock::Para(p)] if p.kind == Kind::Normal && p.list.is_none() && !p.page_break => Some(p),
+                [FBlock::Para(p)]
+                    if p.kind == Kind::Normal && p.list.is_none() && !p.page_break =>
+                {
+                    Some(p)
+                }
                 _ => None,
             };
             if let Some(a) = single.and_then(|p| align_css(p.align)) {
@@ -1418,7 +1657,10 @@ fn blocks_html(blocks: &[FBlock], out: &mut String, depth: usize) {
                     if q.kind != Kind::Quote || q.list.is_some() {
                         break;
                     }
-                    out.push_str(&para_html(&Para { kind: Kind::Normal, ..q.clone() }));
+                    out.push_str(&para_html(&Para {
+                        kind: Kind::Normal,
+                        ..q.clone()
+                    }));
                     out.push('\n');
                     i += 1;
                 }
@@ -1445,17 +1687,28 @@ fn close_list(stack: &mut Vec<(bool, bool)>, out: &mut String) {
 /// A complete HTML document.
 pub fn export(doc: &Document) -> String {
     let flow = model::from_doc(doc);
-    export_flow(&flow, doc.styles.default_chr.lang.as_deref().unwrap_or("en"))
+    export_flow(
+        &flow,
+        doc.styles.default_chr.lang.as_deref().unwrap_or("en"),
+    )
 }
 
 pub fn export_flow(flow: &Flow, lang: &str) -> String {
     let m = &flow.meta;
     let mut out = String::new();
     out.push_str("<!DOCTYPE html>\n");
-    out.push_str(&format!("<html lang=\"{}\">\n<head>\n<meta charset=\"utf-8\">\n", esc(lang)));
+    out.push_str(&format!(
+        "<html lang=\"{}\">\n<head>\n<meta charset=\"utf-8\">\n",
+        esc(lang)
+    ));
     out.push_str("<meta name=\"generator\" content=\"WordCraft\">\n");
     out.push_str(&format!("<title>{}</title>\n", esc(&m.title)));
-    for (k, v) in [("author", &m.author), ("description", &m.description), ("keywords", &m.keywords), ("subject", &m.subject)] {
+    for (k, v) in [
+        ("author", &m.author),
+        ("description", &m.description),
+        ("keywords", &m.keywords),
+        ("subject", &m.subject),
+    ] {
         if !v.is_empty() {
             out.push_str(&format!("<meta name=\"{k}\" content=\"{}\">\n", esc(v)));
         }
@@ -1478,7 +1731,12 @@ mod tests {
         f.blocks
             .iter()
             .map(|b| match b {
-                FBlock::Para(p) => format!("{:?}{:?}:{}", p.kind, p.list.map(|l| (l.ordered, l.level)), p.text()),
+                FBlock::Para(p) => format!(
+                    "{:?}{:?}:{}",
+                    p.kind,
+                    p.list.map(|l| (l.ordered, l.level)),
+                    p.text()
+                ),
                 FBlock::Table(t) => format!("table{}x{}", t.rows.len(), t.cols()),
             })
             .collect()
@@ -1494,12 +1752,30 @@ mod tests {
 
     #[test]
     fn borderless_tables_get_no_grid_style() {
-        assert_eq!(table_style("<table><tr><td>a<td>b</table>").as_deref(), Some(""));
-        assert_eq!(table_style("<table style='border:none'><tr><td style='border:0'>a</table>").as_deref(), Some(""));
-        assert_eq!(table_style("<table border=0><tr><td style='border: 0px none'>a</table>").as_deref(), Some(""));
-        assert_eq!(table_style("<table border=1><tr><td>a</table>").as_deref(), Some("TableGrid"));
-        assert_eq!(table_style("<table style='border:1px solid #000'><tr><td>a</table>").as_deref(), Some("TableGrid"));
-        assert_eq!(table_style("<table><tr><td style='border:1px solid #999'>a</table>").as_deref(), Some("TableGrid"));
+        assert_eq!(
+            table_style("<table><tr><td>a<td>b</table>").as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            table_style("<table style='border:none'><tr><td style='border:0'>a</table>").as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            table_style("<table border=0><tr><td style='border: 0px none'>a</table>").as_deref(),
+            Some("")
+        );
+        assert_eq!(
+            table_style("<table border=1><tr><td>a</table>").as_deref(),
+            Some("TableGrid")
+        );
+        assert_eq!(
+            table_style("<table style='border:1px solid #000'><tr><td>a</table>").as_deref(),
+            Some("TableGrid")
+        );
+        assert_eq!(
+            table_style("<table><tr><td style='border:1px solid #999'>a</table>").as_deref(),
+            Some("TableGrid")
+        );
     }
 
     #[test]
@@ -1512,7 +1788,11 @@ mod tests {
         ] {
             let out = export(&crate::model::to_doc(&parse(src)));
             assert_eq!(out.contains("border:1px"), grid, "{src}: {out}");
-            assert_eq!(table_style(&out).as_deref(), Some(if grid { "TableGrid" } else { "" }), "{src}");
+            assert_eq!(
+                table_style(&out).as_deref(),
+                Some(if grid { "TableGrid" } else { "" }),
+                "{src}"
+            );
             assert!(out.contains(">A</td>") && out.contains(">B</td>"), "{out}");
         }
     }
@@ -1524,7 +1804,15 @@ mod tests {
         let f = parse(
             "<p style=\"white-space:pre\">  Alpha  Beta  </p><p style=\"white-space:pre-wrap\">\n  Gamma  \n</p><pre>  Alpha  </pre><p>  Alpha  Beta  </p>",
         );
-        assert_eq!(texts(&f), vec!["NormalNone:  Alpha  Beta  ", "NormalNone:  Gamma  ", "CodeNone:  Alpha  ", "NormalNone:Alpha Beta"]);
+        assert_eq!(
+            texts(&f),
+            vec![
+                "NormalNone:  Alpha  Beta  ",
+                "NormalNone:  Gamma  ",
+                "CodeNone:  Alpha  ",
+                "NormalNone:Alpha Beta"
+            ]
+        );
     }
 
     #[test]
@@ -1548,15 +1836,22 @@ mod tests {
                 "CodeNone:l2",
             ]
         );
-        let FBlock::Para(p) = &f.blocks[1] else { panic!() };
+        let FBlock::Para(p) = &f.blocks[1] else {
+            panic!()
+        };
         assert!(matches!(&p.inlines[1], Inline::Text(t, f) if t == "bold" && f.bold));
     }
 
     #[test]
     fn omitted_head_keeps_body_text() {
-        let f = parse("<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>T</title>\n<body><p>Hello world</p><p>Second</p></body></html>");
+        let f = parse(
+            "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>T</title>\n<body><p>Hello world</p><p>Second</p></body></html>",
+        );
         assert_eq!(f.meta.title, "T");
-        assert_eq!(texts(&f), vec!["NormalNone:Hello world", "NormalNone:Second"]);
+        assert_eq!(
+            texts(&f),
+            vec!["NormalNone:Hello world", "NormalNone:Second"]
+        );
 
         for body in [
             "<p>Hello world</p>",
@@ -1577,16 +1872,27 @@ mod tests {
 
     #[test]
     fn styles_and_links() {
-        let f = parse("<p style='text-align:center'><span style=\"color:#ff0000;font-weight:700\">red</span> <a href=\"http://x\">l</a><br>n</p>");
-        let FBlock::Para(p) = &f.blocks[0] else { panic!() };
+        let f = parse(
+            "<p style='text-align:center'><span style=\"color:#ff0000;font-weight:700\">red</span> <a href=\"http://x\">l</a><br>n</p>",
+        );
+        let FBlock::Para(p) = &f.blocks[0] else {
+            panic!()
+        };
         assert_eq!(p.align, Some(Align::Center));
-        assert!(matches!(&p.inlines[0], Inline::Text(t, f) if t == "red" && f.bold && f.color == Some(wordcraft_doc::Rgb(255,0,0))));
-        assert!(p.inlines.iter().any(|i| matches!(i, Inline::Text(t, f) if t == "l" && f.link.as_deref() == Some("http://x"))));
+        assert!(
+            matches!(&p.inlines[0], Inline::Text(t, f) if t == "red" && f.bold && f.color == Some(wordcraft_doc::Rgb(255,0,0)))
+        );
+        assert!(p.inlines.iter().any(
+            |i| matches!(i, Inline::Text(t, f) if t == "l" && f.link.as_deref() == Some("http://x"))
+        ));
         assert!(p.text().ends_with("l\nn"));
     }
 
     #[test]
     fn entities() {
-        assert_eq!(unescape("a &lt;b&gt; &#65;&#x42; &bogus; &"), "a <b> AB &bogus; &");
+        assert_eq!(
+            unescape("a &lt;b&gt; &#65;&#x42; &bogus; &"),
+            "a <b> AB &bogus; &"
+        );
     }
 }

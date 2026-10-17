@@ -40,7 +40,10 @@ pub const DEFAULT_FILTER: &str = "warn,effectcraft=info";
 static ENABLED: AtomicBool = AtomicBool::new(false);
 /// The filter for standard error and the session log: (target prefix or every target, level).
 static FILTER: OnceLock<Vec<(Option<String>, LevelFilter)>> = OnceLock::new();
-static STATE: Mutex<State> = Mutex::new(State { file: None, recent: VecDeque::new() });
+static STATE: Mutex<State> = Mutex::new(State {
+    file: None,
+    recent: VecDeque::new(),
+});
 static SESSION: Mutex<Sink> = Mutex::new(Sink::new(MAX_FILE_BYTES));
 
 struct State {
@@ -54,16 +57,27 @@ const RECENT: usize = 300;
 
 impl log::Log for Logger {
     fn enabled(&self, m: &log::Metadata) -> bool {
-        m.level() <= log::Level::Warn || (ENABLED.load(Ordering::Relaxed) && m.target().starts_with("effectcraft")) || shown(m)
+        m.level() <= log::Level::Warn
+            || (ENABLED.load(Ordering::Relaxed) && m.target().starts_with("effectcraft"))
+            || shown(m)
     }
     fn log(&self, r: &log::Record) {
         if !self.enabled(r.metadata()) {
             return;
         }
-        let line = format_line(&timestamp(unix_millis()), r.level(), &thread_name(), r.target(), &r.args().to_string());
+        let line = format_line(
+            &timestamp(unix_millis()),
+            r.level(),
+            &thread_name(),
+            r.target(),
+            &r.args().to_string(),
+        );
         if shown(r.metadata()) {
             let _ = writeln!(std::io::stderr(), "{line}");
-            SESSION.lock().unwrap_or_else(PoisonError::into_inner).write(&format!("{line}\n"));
+            SESSION
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .write(&format!("{line}\n"));
         }
         let Ok(mut st) = STATE.lock() else { return };
         if r.level() <= log::Level::Warn {
@@ -74,7 +88,10 @@ impl log::Log for Logger {
         }
         if ENABLED.load(Ordering::Relaxed)
             && let Some(f) = &st.file
-            && let Ok(mut out) = std::fs::OpenOptions::new().create(true).append(true).open(f)
+            && let Ok(mut out) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(f)
         {
             let _ = writeln!(out, "{line}");
         }
@@ -83,7 +100,10 @@ impl log::Log for Logger {
 }
 
 fn unix_millis() -> u64 {
-    web_time::SystemTime::now().duration_since(web_time::UNIX_EPOCH).map(|d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX)).unwrap_or(0)
+    web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
+        .map(|d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+        .unwrap_or(0)
 }
 
 fn thread_name() -> String {
@@ -98,7 +118,13 @@ fn timestamp(ms: u64) -> String {
     let secs = ms / 1000;
     let (days, rem) = (secs / 86_400, secs % 86_400);
     let (y, m, d) = civil_from_days(days);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z", rem / 3600, rem % 3600 / 60, rem % 60, ms % 1000)
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}.{:03}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60,
+        ms % 1000
+    )
 }
 
 /// Days since 1970-01-01 to a proleptic Gregorian (year, month, day) (Howard Hinnant's
@@ -128,7 +154,9 @@ pub fn install() {
     static LOGGER: Logger = Logger;
     if log::set_logger(&LOGGER).is_ok() {
         let filter = FILTER.get_or_init(|| {
-            let spec = std::env::var("RUST_LOG").ok().filter(|s| !s.trim().is_empty());
+            let spec = std::env::var("RUST_LOG")
+                .ok()
+                .filter(|s| !s.trim().is_empty());
             parse_filter(spec.as_deref().unwrap_or(DEFAULT_FILTER))
         });
         log::set_max_level(filter.iter().map(|d| d.1).fold(LevelFilter::Info, Ord::max));
@@ -137,7 +165,9 @@ pub fn install() {
 
 /// Whether the filter lets a record through to standard error and the session log.
 fn shown(m: &log::Metadata) -> bool {
-    FILTER.get().is_some_and(|f| m.level() <= level_for(f, m.target()))
+    FILTER
+        .get()
+        .is_some_and(|f| m.level() <= level_for(f, m.target()))
 }
 
 /// `RUST_LOG`'s directives, as env_logger reads them: `level`, `target=level` or a bare target
@@ -148,7 +178,10 @@ fn parse_filter(spec: &str) -> Vec<(Option<String>, LevelFilter)> {
         .filter(|d| !d.is_empty())
         .filter_map(|d| match d.split_once('=') {
             Some((t, l)) => Some((Some(t.trim().to_string()), l.trim().parse().ok()?)),
-            None => Some(d.parse().map_or_else(|_| (Some(d.to_string()), LevelFilter::Trace), |l| (None, l))),
+            None => Some(
+                d.parse()
+                    .map_or_else(|_| (Some(d.to_string()), LevelFilter::Trace), |l| (None, l)),
+            ),
         })
         .collect()
 }
@@ -175,7 +208,10 @@ pub fn install_panic_hook() {
 
 /// The `Logs` folder inside `config_dir` (the settings folder), or in the temporary folder.
 pub fn log_dir(config_dir: Option<&Path>) -> PathBuf {
-    config_dir.map(Path::to_path_buf).unwrap_or_else(std::env::temp_dir).join("Logs")
+    config_dir
+        .map(Path::to_path_buf)
+        .unwrap_or_else(std::env::temp_dir)
+        .join("Logs")
 }
 
 /// Help ▸ Enable Logging's file inside `config_dir` (the settings folder), or the temporary folder.
@@ -184,7 +220,11 @@ pub fn log_path(config_dir: Option<&Path>) -> PathBuf {
 }
 
 fn numbered(dir: &Path, n: usize) -> PathBuf {
-    if n == 0 { dir.join(SESSION_LOG) } else { dir.join(format!("effectcraft.{n}.log")) }
+    if n == 0 {
+        dir.join(SESSION_LOG)
+    } else {
+        dir.join(format!("effectcraft.{n}.log"))
+    }
 }
 
 /// Shift the previous session logs up one (`.log` → `.1.log` → … → `.<KEEP>.log`, the oldest
@@ -214,7 +254,11 @@ pub fn attach_session_log(dir: &Path) -> Result<PathBuf, String> {
 
 /// This run's session log (once [`attach_session_log`] succeeded).
 pub fn session_file() -> Option<PathBuf> {
-    SESSION.lock().unwrap_or_else(PoisonError::into_inner).path.clone()
+    SESSION
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .path
+        .clone()
 }
 
 /// Where lines go besides standard error: kept in memory until a file is attached, then
@@ -231,7 +275,15 @@ struct Sink {
 
 impl Sink {
     const fn new(max_bytes: u64) -> Sink {
-        Sink { file: None, path: None, pending: Vec::new(), dropped: 0, written: 0, max_bytes, capped: false }
+        Sink {
+            file: None,
+            path: None,
+            pending: Vec::new(),
+            dropped: 0,
+            written: 0,
+            max_bytes,
+            capped: false,
+        }
     }
 
     /// Append `line` to the file, or keep it until [`Sink::attach`].
@@ -254,7 +306,10 @@ impl Sink {
             self.append(&line);
         }
         if self.dropped > 0 {
-            let note = format!("{} earlier log lines were dropped before the log file was opened\n", self.dropped);
+            let note = format!(
+                "{} earlier log lines were dropped before the log file was opened\n",
+                self.dropped
+            );
             self.dropped = 0;
             self.append(&note);
         }
@@ -264,11 +319,16 @@ impl Sink {
         if self.capped {
             return;
         }
-        let Some(file) = self.file.as_mut() else { return };
+        let Some(file) = self.file.as_mut() else {
+            return;
+        };
         let len = u64::try_from(line.len()).unwrap_or(u64::MAX);
         let text = if self.written.saturating_add(len) > self.max_bytes {
             self.capped = true;
-            format!("log file reached {} bytes; later records go to standard error only\n", self.max_bytes)
+            format!(
+                "log file reached {} bytes; later records go to standard error only\n",
+                self.max_bytes
+            )
         } else {
             self.written = self.written.saturating_add(len);
             line.to_owned()
@@ -288,8 +348,17 @@ pub fn set_enabled(on: bool, file: PathBuf) -> std::io::Result<()> {
         if let Some(d) = file.parent() {
             std::fs::create_dir_all(d)?;
         }
-        let mut f = std::fs::OpenOptions::new().create(true).append(true).open(&file)?;
-        writeln!(f, "{} INFO  effectcraft: logging enabled ({} {})", timestamp(unix_millis()), std::env::consts::OS, env!("CARGO_PKG_VERSION"))?;
+        let mut f = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&file)?;
+        writeln!(
+            f,
+            "{} INFO  effectcraft: logging enabled ({} {})",
+            timestamp(unix_millis()),
+            std::env::consts::OS,
+            env!("CARGO_PKG_VERSION")
+        )?;
     }
     if let Ok(mut st) = STATE.lock() {
         st.file = Some(file);
@@ -309,7 +378,10 @@ pub fn current_file() -> Option<PathBuf> {
 
 /// Recent warnings and errors, oldest first.
 pub fn recent() -> Vec<String> {
-    STATE.lock().map(|s| s.recent.iter().cloned().collect()).unwrap_or_default()
+    STATE
+        .lock()
+        .map(|s| s.recent.iter().cloned().collect())
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -323,16 +395,31 @@ mod tests {
         let f = parse_filter("info, wgpu=warn,wgpu_core=debug, effectcraft , bogus=loud");
         assert_eq!(level_for(&f, "eframe::native"), LevelFilter::Info);
         assert_eq!(level_for(&f, "wgpu_hal::metal"), LevelFilter::Warn);
-        assert_eq!(level_for(&f, "wgpu_core::device"), LevelFilter::Debug, "the longest matching target wins");
-        assert_eq!(level_for(&f, "effectcraft_ui_egui"), LevelFilter::Trace, "a bare target: every level");
+        assert_eq!(
+            level_for(&f, "wgpu_core::device"),
+            LevelFilter::Debug,
+            "the longest matching target wins"
+        );
+        assert_eq!(
+            level_for(&f, "effectcraft_ui_egui"),
+            LevelFilter::Trace,
+            "a bare target: every level"
+        );
         assert_eq!(f.len(), 4, "an unknown level is skipped");
-        assert_eq!(level_for(&parse_filter("wgpu=debug"), "winit"), LevelFilter::Off);
+        assert_eq!(
+            level_for(&parse_filter("wgpu=debug"), "winit"),
+            LevelFilter::Off
+        );
         assert!(parse_filter("").is_empty());
     }
 
     fn temp_dir(tag: &str) -> PathBuf {
         static N: AtomicUsize = AtomicUsize::new(0);
-        let d = std::env::temp_dir().join(format!("effectcraft-logging-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "effectcraft-logging-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
@@ -374,7 +461,10 @@ mod tests {
         assert_eq!(read(&dir.join(SESSION_LOG)), "run 4");
         assert_eq!(read(&dir.join("effectcraft.1.log")), "run 3");
         assert_eq!(read(&dir.join("effectcraft.2.log")), "run 2");
-        assert!(!dir.join("effectcraft.3.log").exists(), "only {KEEP} old logs are kept");
+        assert!(
+            !dir.join("effectcraft.3.log").exists(),
+            "only {KEEP} old logs are kept"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -409,8 +499,15 @@ mod tests {
         }
         sink.attach(file);
         let text = read(&path);
-        assert_eq!(text.lines().filter(|l| l.starts_with("line ")).count(), MAX_PENDING);
-        assert_eq!(text.matches("5 earlier log lines were dropped").count(), 1, "{text}");
+        assert_eq!(
+            text.lines().filter(|l| l.starts_with("line ")).count(),
+            MAX_PENDING
+        );
+        assert_eq!(
+            text.matches("5 earlier log lines were dropped").count(),
+            1,
+            "{text}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -424,7 +521,10 @@ mod tests {
             sink.write(&format!("line {i:02} with some padding\n"));
         }
         let text = read(&path);
-        assert!(text.lines().filter(|l| l.starts_with("line ")).count() < 5, "{text}");
+        assert!(
+            text.lines().filter(|l| l.starts_with("line ")).count() < 5,
+            "{text}"
+        );
         assert_eq!(text.matches("log file reached").count(), 1, "{text}");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -432,7 +532,13 @@ mod tests {
     #[test]
     fn a_line_carries_time_level_thread_target_and_message() {
         assert_eq!(
-            format_line("2026-10-08T07:59:17.728Z", log::Level::Warn, "main", "effectcraft_engine::autosave", "disk full\n"),
+            format_line(
+                "2026-10-08T07:59:17.728Z",
+                log::Level::Warn,
+                "main",
+                "effectcraft_engine::autosave",
+                "disk full\n"
+            ),
             "2026-10-08T07:59:17.728Z WARN  [main] effectcraft_engine::autosave: disk full"
         );
     }

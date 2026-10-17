@@ -22,7 +22,11 @@ pub(crate) fn surfaces(doc: &Document, mut visit: impl FnMut(&Surface)) {
         if let Some(video) = &layer.video {
             // Undo retains the whole clip, not only the displayed frame. Visit aliases too:
             // Tiles tracks every owner and counts their shared allocations only once.
-            for frame in video.frames.iter().chain(video.original_frames.iter().flatten()) {
+            for frame in video
+                .frames
+                .iter()
+                .chain(video.original_frames.iter().flatten())
+            {
                 visit(frame);
             }
         }
@@ -39,10 +43,13 @@ impl Tiles {
     pub(crate) fn add(&mut self, doc: &Document) {
         surfaces(doc, |surface| {
             for (_, tile) in surface.tiles() {
-                let count = self.refs.entry(Arc::as_ptr(tile) as usize).or_insert_with(|| {
-                    self.bytes += tile.bytes().len() as u128;
-                    (0, tile.bytes().len())
-                });
+                let count = self
+                    .refs
+                    .entry(Arc::as_ptr(tile) as usize)
+                    .or_insert_with(|| {
+                        self.bytes += tile.bytes().len() as u128;
+                        (0, tile.bytes().len())
+                    });
                 count.0 += 1;
             }
         });

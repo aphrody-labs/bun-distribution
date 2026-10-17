@@ -9,7 +9,11 @@ fn crc32_bitwise(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= (b as u32) << 24;
         for _ in 0..8 {
-            crc = if crc & 0x8000_0000 != 0 { (crc << 1) ^ 0x04C1_1DB7 } else { crc << 1 };
+            crc = if crc & 0x8000_0000 != 0 {
+                (crc << 1) ^ 0x04C1_1DB7
+            } else {
+                crc << 1
+            };
         }
     }
     crc
@@ -36,7 +40,9 @@ fn table_crc_equals_the_bitwise_crc() {
     for b in 0..=255u8 {
         assert_eq!(ts::crc32_mpeg(&[b]), crc32_bitwise(&[b]));
     }
-    for n in [0usize, 1, 2, 3, 4, 5, 15, 16, 17, 183, 184, 1023, 1024, 4096] {
+    for n in [
+        0usize, 1, 2, 3, 4, 5, 15, 16, 17, 183, 184, 1023, 1024, 4096,
+    ] {
         for seed in 1..6u32 {
             let d = noise(seed * 7919 + n as u32, n);
             assert_eq!(ts::crc32_mpeg(&d), crc32_bitwise(&d), "len {n} seed {seed}");
@@ -95,17 +101,37 @@ fn program_stream_with_large_pes_packets_gives_back_every_frame() {
         for (s, frames) in f.streams.iter().zip([&a, &b]) {
             assert_eq!(s.units.len(), frames.len());
             for (i, fr) in frames.iter().enumerate() {
-                assert_eq!(&f.read_unit(&data, f.streams.iter().position(|x| std::ptr::eq(x, s)).unwrap(), i).unwrap(), fr, "mpeg1 {mpeg1} unit {i}");
+                assert_eq!(
+                    &f.read_unit(
+                        &data,
+                        f.streams.iter().position(|x| std::ptr::eq(x, s)).unwrap(),
+                        i
+                    )
+                    .unwrap(),
+                    fr,
+                    "mpeg1 {mpeg1} unit {i}"
+                );
             }
         }
         // cut inside the last packets: never panics, and the units before the cut are intact
-        for cut in [data.len() - 1, data.len() - 4, data.len() - 30_000, data.len() - 61_000, 100_000, 1 << 20] {
+        for cut in [
+            data.len() - 1,
+            data.len() - 4,
+            data.len() - 30_000,
+            data.len() - 61_000,
+            100_000,
+            1 << 20,
+        ] {
             let d = &data[..cut];
             let Ok(f) = open(d) else { continue };
             for (si, frames) in [&a, &b].into_iter().enumerate() {
                 let Some(s) = f.streams.get(si) else { continue };
                 for i in 0..s.units.len().saturating_sub(1) {
-                    assert_eq!(f.read_unit(d, si, i).unwrap(), frames[i], "cut {cut} stream {si} unit {i}");
+                    assert_eq!(
+                        f.read_unit(d, si, i).unwrap(),
+                        frames[i],
+                        "cut {cut} stream {si} unit {i}"
+                    );
                 }
             }
         }

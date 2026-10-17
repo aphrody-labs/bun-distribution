@@ -9,7 +9,14 @@
 //!   with the origin at the top-left of the displayed page.
 //! - An optional root directory confines every path a tool reads or writes.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod a11y;
 mod batch;
@@ -45,7 +52,11 @@ pub enum Content {
     /// Structured data (MCP: a text block with the JSON plus `structuredContent`).
     Json(Value),
     /// A PNG image.
-    Png { data: Vec<u8>, width: u32, height: u32 },
+    Png {
+        data: Vec<u8>,
+        width: u32,
+        height: u32,
+    },
 }
 
 /// Why a tool call failed.
@@ -121,14 +132,22 @@ impl Default for Automation {
 
 impl Automation {
     pub fn new() -> Self {
-        Self { session: Session::new(), root: None, renderers: HashMap::new(), texts: TextCache::default() }
+        Self {
+            session: Session::new(),
+            root: None,
+            renderers: HashMap::new(),
+            texts: TextCache::default(),
+        }
     }
 
     /// Confine every path the tools read or write to `root` (relative paths resolve inside it).
     pub fn with_root(mut self, root: impl Into<PathBuf>) -> std::io::Result<Self> {
         let root = root.into().canonicalize()?;
         if !root.is_dir() {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "the root must be a folder"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "the root must be a folder",
+            ));
         }
         self.root = Some(root);
         Ok(self)
@@ -163,7 +182,9 @@ impl Automation {
         let empty = json!({});
         let args = if args.is_null() { &empty } else { args };
         if !args.is_object() {
-            return Err(ToolError::InvalidArgs("arguments must be a JSON object".into()));
+            return Err(ToolError::InvalidArgs(
+                "arguments must be a JSON object".into(),
+            ));
         }
         let def = tools::find(name).ok_or_else(|| ToolError::UnknownTool(name.into()))?;
         tools::check_args(def, args)?;
@@ -171,7 +192,9 @@ impl Automation {
         let out = match name {
             "doc_open" => self.doc_open(&a)?,
             "doc_batch" => self.doc_batch(&a)?,
-            "doc_list" => json!({ "documents": self.session.docs().iter().map(summary).collect::<Vec<_>>() }),
+            "doc_list" => {
+                json!({ "documents": self.session.docs().iter().map(summary).collect::<Vec<_>>() })
+            }
             "doc_info" => {
                 let id = self.doc(&a)?.id;
                 self.session.refresh_fonts(id);
@@ -180,7 +203,10 @@ impl Automation {
             "doc_close" => self.doc_close(&a)?,
             "doc_save" => self.doc_save(&a)?,
             "doc_set_info" => {
-                let edit = Edit::SetInfo { key: a.str("key")?.into(), value: a.str("value")?.into() };
+                let edit = Edit::SetInfo {
+                    key: a.str("key")?.into(),
+                    value: a.str("value")?.into(),
+                };
                 self.apply(&a, edit)?
             }
             "page_render" => return self.page_render(&a).map(|c| vec![c]),
@@ -190,7 +216,9 @@ impl Automation {
             "page_rotate" => {
                 let degrees = a.int("degrees")?;
                 if degrees % 90 != 0 {
-                    return Err(ToolError::InvalidArgs("degrees must be a multiple of 90".into()));
+                    return Err(ToolError::InvalidArgs(
+                        "degrees must be a multiple of 90".into(),
+                    ));
                 }
                 let doc = self.doc(&a)?;
                 let base = match a.opt_ints("pages")? {
@@ -201,15 +229,24 @@ impl Automation {
                     "all" => pdfcraft_engine::PageParity::Both,
                     "even" => pdfcraft_engine::PageParity::Even,
                     "odd" => pdfcraft_engine::PageParity::Odd,
-                    s => return Err(ToolError::InvalidArgs(format!("unknown subset {s:?} (all, even, odd)"))),
+                    s => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "unknown subset {s:?} (all, even, odd)"
+                        )));
+                    }
                 };
                 let orientation = match a.opt_str("orientation")?.unwrap_or("all") {
                     "all" => pdfcraft_engine::PageOrientation::Both,
                     "landscape" => pdfcraft_engine::PageOrientation::Landscape,
                     "portrait" => pdfcraft_engine::PageOrientation::Portrait,
-                    o => return Err(ToolError::InvalidArgs(format!("unknown orientation {o:?} (all, landscape, portrait)"))),
+                    o => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "unknown orientation {o:?} (all, landscape, portrait)"
+                        )));
+                    }
                 };
-                let pages = pdfcraft_engine::filter_pages(&self.doc(&a)?.info, &base, parity, orientation);
+                let pages =
+                    pdfcraft_engine::filter_pages(&self.doc(&a)?.info, &base, parity, orientation);
                 if pages.is_empty() {
                     return Err(failed("no pages match the filters"));
                 }
@@ -222,7 +259,14 @@ impl Automation {
                 let page = self.page(&a)?;
                 let given = a.nums::<8>("corners")?;
                 let doc = self.doc(&a)?;
-                let (id, info) = (doc.id, doc.info.pages.get(page).cloned().ok_or_else(|| failed("no such page"))?);
+                let (id, info) = (
+                    doc.id,
+                    doc.info
+                        .pages
+                        .get(page)
+                        .cloned()
+                        .ok_or_else(|| failed("no such page"))?,
+                );
                 let corners = match given {
                     Some(c) => [0, 1, 2, 3].map(|i| {
                         let [x, y] = info.view_to_user(c[2 * i] as f32, c[2 * i + 1] as f32);
@@ -235,16 +279,31 @@ impl Automation {
                 let level = match a.opt_int("level")? {
                     None => 0,
                     Some(l @ 0..=100) => l as u8,
-                    Some(l) => return Err(ToolError::InvalidArgs(format!("level must be between 0 and 100, not {l}"))),
+                    Some(l) => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "level must be between 0 and 100, not {l}"
+                        )));
+                    }
                 };
                 let look = match a.opt_str("mode")? {
                     None => pdfcraft_engine::camera_clean::Look::Colour,
-                    Some(m) => pdfcraft_engine::camera_clean::Look::from_name(m)
-                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown mode {m:?} (original, colour, greyscale, bw)")))?,
+                    Some(m) => {
+                        pdfcraft_engine::camera_clean::Look::from_name(m).ok_or_else(|| {
+                            ToolError::InvalidArgs(format!(
+                                "unknown mode {m:?} (original, colour, greyscale, bw)"
+                            ))
+                        })?
+                    }
                 };
-                self.session.enhance_camera_page_at(id, page, corners, look, level).map_err(failed)?;
+                self.session
+                    .enhance_camera_page_at(id, page, corners, look, level)
+                    .map_err(failed)?;
                 let r = |v: f32| (v * 100.0).round() / 100.0;
-                let used: Vec<f32> = corners.iter().flat_map(|&[x, y]| info.user_to_view(x as f32, y as f32)).map(r).collect();
+                let used: Vec<f32> = corners
+                    .iter()
+                    .flat_map(|&[x, y]| info.user_to_view(x as f32, y as f32))
+                    .map(r)
+                    .collect();
                 let mut out = summary(self.doc(&a)?);
                 out["corners"] = json!(used);
                 out["detected"] = json!(given.is_none());
@@ -285,7 +344,9 @@ impl Automation {
                 let n = self.doc(&a)?.info.pages.len();
                 let (from, to) = (a.int("from")?, a.int("to")?);
                 if from < 1 || to < from || to as usize > n {
-                    return Err(ToolError::InvalidArgs(format!("from and to must satisfy 1 ≤ from ≤ to ≤ {n}")));
+                    return Err(ToolError::InvalidArgs(format!(
+                        "from and to must satisfy 1 ≤ from ≤ to ≤ {n}"
+                    )));
                 }
                 let style = match a.opt_str("style")?.unwrap_or("decimal") {
                     "decimal" => L::Decimal,
@@ -294,21 +355,49 @@ impl Automation {
                     "upper-alpha" => L::UpperAlpha,
                     "lower-alpha" => L::LowerAlpha,
                     "none" => L::None,
-                    other => return Err(ToolError::InvalidArgs(format!("unknown style {other:?}"))),
+                    other => {
+                        return Err(ToolError::InvalidArgs(format!("unknown style {other:?}")));
+                    }
                 };
                 let prefix = a.opt_str("prefix")?.unwrap_or_default().to_string();
                 let first = a.opt_int("start")?.unwrap_or(1).clamp(1, u32::MAX as i64) as u32;
-                let mut out = self.apply(&a, Edit::NumberPages { from: from as usize - 1, to: to as usize - 1, style, prefix, first })?;
-                out["labels"] = json!(self.doc(&a)?.info.pages.iter().map(|p| p.label.clone()).collect::<Vec<_>>());
+                let mut out = self.apply(
+                    &a,
+                    Edit::NumberPages {
+                        from: from as usize - 1,
+                        to: to as usize - 1,
+                        style,
+                        prefix,
+                        first,
+                    },
+                )?;
+                out["labels"] = json!(
+                    self.doc(&a)?
+                        .info
+                        .pages
+                        .iter()
+                        .map(|p| p.label.clone())
+                        .collect::<Vec<_>>()
+                );
                 out
             }
             "bookmark_list" => self.bookmark_listing(&a)?,
             "bookmark_add" => {
                 let page = self.page(&a)?;
                 let parent = a.opt_path("parent")?.unwrap_or_default();
-                let index = a.opt_int("position")?.map_or(usize::MAX, |p| (p.max(1) - 1) as usize);
+                let index = a
+                    .opt_int("position")?
+                    .map_or(usize::MAX, |p| (p.max(1) - 1) as usize);
                 let title = a.str("title")?.to_string();
-                self.apply(&a, Edit::AddBookmark { parent, index, title, page })?
+                self.apply(
+                    &a,
+                    Edit::AddBookmark {
+                        parent,
+                        index,
+                        title,
+                        page,
+                    },
+                )?
             }
             "bookmark_rename" => {
                 let (path, title) = (a.path("path")?, a.str("title")?.to_string());
@@ -321,8 +410,17 @@ impl Automation {
             "bookmark_move" => {
                 let from = a.path("path")?;
                 let to_parent = a.opt_path("parent")?.unwrap_or_default();
-                let index = a.opt_int("position")?.map_or(usize::MAX, |p| (p.max(1) - 1) as usize);
-                self.apply(&a, Edit::MoveBookmark { from, to_parent, index })?
+                let index = a
+                    .opt_int("position")?
+                    .map_or(usize::MAX, |p| (p.max(1) - 1) as usize);
+                self.apply(
+                    &a,
+                    Edit::MoveBookmark {
+                        from,
+                        to_parent,
+                        index,
+                    },
+                )?
             }
             "bookmark_set_page" => {
                 let (path, page) = (a.path("path")?, self.page(&a)?);
@@ -339,13 +437,26 @@ impl Automation {
             "page_replace" => {
                 let pages = self.pages(&a, "pages")?;
                 let path = self.resolve(a.str("path")?, false)?;
-                let bytes = Arc::new(std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?);
-                let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                let bytes = Arc::new(
+                    std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?,
+                );
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
                 let src_pages = match a.opt_ints("from_pages")? {
                     Some(p) => one_based(&p)?,
                     None => (0..pages.len()).collect(),
                 };
-                self.apply(&a, Edit::ReplacePages { pages, name, bytes, src_pages })?
+                self.apply(
+                    &a,
+                    Edit::ReplacePages {
+                        pages,
+                        name,
+                        bytes,
+                        src_pages,
+                    },
+                )?
             }
             "page_duplicate" => {
                 let pages = self.pages(&a, "pages")?;
@@ -354,7 +465,10 @@ impl Automation {
             "page_set_box" => self.page_set_box(&a)?,
             "doc_create" => self.doc_create(&a)?,
             "doc_flatten" => {
-                let (comments, fields) = (a.opt_bool("comments")?.unwrap_or(true), a.opt_bool("fields")?.unwrap_or(true));
+                let (comments, fields) = (
+                    a.opt_bool("comments")?.unwrap_or(true),
+                    a.opt_bool("fields")?.unwrap_or(true),
+                );
                 if !comments && !fields {
                     return Err(ToolError::InvalidArgs("nothing to flatten".into()));
                 }
@@ -405,11 +519,21 @@ impl Automation {
                     .filter(|p| p.len() == 2)
                     .and_then(|p| Some([p.first()?.as_f64()?, p.get(1)?.as_f64()?]))
                     .filter(|p| p.iter().all(|v| v.is_finite() && v.abs() <= 1e9))
-                    .ok_or_else(|| ToolError::InvalidArgs("point must contain two finite coordinates".into()))?;
+                    .ok_or_else(|| {
+                        ToolError::InvalidArgs("point must contain two finite coordinates".into())
+                    })?;
                 let doc = self.doc(&a)?;
                 let p = &doc.info.pages[page];
-                let user = p.view_to_user(point[0] as f32, point[1] as f32).map(f64::from);
-                let images: Vec<_> = doc.page_images(page).iter().enumerate().filter(|(_, im)| im.contains(user)).map(|(i, _)| i + 1).collect();
+                let user = p
+                    .view_to_user(point[0] as f32, point[1] as f32)
+                    .map(f64::from);
+                let images: Vec<_> = doc
+                    .page_images(page)
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, im)| im.contains(user))
+                    .map(|(i, _)| i + 1)
+                    .collect();
                 json!({"page":page+1,"images":images})
             }
             "page_images" => {
@@ -437,16 +561,23 @@ impl Automation {
                 let n = self.doc(&a)?.page_images(page).len();
                 let k = a.int("image")?;
                 if k < 1 || k as usize > n {
-                    return Err(ToolError::InvalidArgs(format!("image {k} is out of range: page {} has {n} images", page + 1)));
+                    return Err(ToolError::InvalidArgs(format!(
+                        "image {k} is out of range: page {} has {n} images",
+                        page + 1
+                    )));
                 }
                 let index = k as usize - 1;
                 if name == "image_save" {
-                    let (ext, bytes) = self.doc(&a)?.page_image_file(page, index).map_err(failed)?;
+                    let (ext, bytes) =
+                        self.doc(&a)?.page_image_file(page, index).map_err(failed)?;
                     let mut path = self.resolve(a.str("path")?, true)?;
                     if path.is_dir() {
                         // Adding the extension to a folder's name would write beside it: "." is the
                         // root, so that would land outside it.
-                        return Err(failed(format!("{}: is a folder, not a file", path.display())));
+                        return Err(failed(format!(
+                            "{}: is a folder, not a file",
+                            path.display()
+                        )));
                     }
                     if path.extension().is_none() {
                         path.set_extension(ext);
@@ -457,13 +588,26 @@ impl Automation {
                     use pdfcraft_engine::ImageEdit;
                     let change = match a.str("action")? {
                         "move" => {
-                            let r: Vec<f64> =
-                                a.get("rect").and_then(Value::as_array).map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
-                            let r = <[f64; 4]>::try_from(r).map_err(|_| ToolError::InvalidArgs("move needs rect: 4 numbers".into()))?;
+                            let r: Vec<f64> = a
+                                .get("rect")
+                                .and_then(Value::as_array)
+                                .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                                .unwrap_or_default();
+                            let r = <[f64; 4]>::try_from(r).map_err(|_| {
+                                ToolError::InvalidArgs("move needs rect: 4 numbers".into())
+                            })?;
                             // Top-left-origin points → user space.
                             let info = &self.doc(&a)?.info.pages[page];
-                            let (u0, u1) = (info.view_to_user(r[0] as f32, r[1] as f32), info.view_to_user(r[2] as f32, r[3] as f32));
-                            ImageEdit::Move([u0[0].min(u1[0]) as f64, u0[1].min(u1[1]) as f64, u0[0].max(u1[0]) as f64, u0[1].max(u1[1]) as f64])
+                            let (u0, u1) = (
+                                info.view_to_user(r[0] as f32, r[1] as f32),
+                                info.view_to_user(r[2] as f32, r[3] as f32),
+                            );
+                            ImageEdit::Move([
+                                u0[0].min(u1[0]) as f64,
+                                u0[1].min(u1[1]) as f64,
+                                u0[0].max(u1[0]) as f64,
+                                u0[1].max(u1[1]) as f64,
+                            ])
                         }
                         "rotate" => ImageEdit::Rotate(a.opt_int("quarters")?.unwrap_or(1) as i32),
                         "flip_horizontal" => ImageEdit::Flip { horizontal: true },
@@ -471,15 +615,30 @@ impl Automation {
                         "delete" => ImageEdit::Delete,
                         "replace" => {
                             let path = self.resolve(a.str("path")?, false)?;
-                            let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                            let bytes = std::fs::read(&path)
+                                .map_err(|e| failed(format!("{}: {e}", path.display())))?;
                             ImageEdit::Replace {
-                                name: path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+                                name: path
+                                    .file_name()
+                                    .map(|n| n.to_string_lossy().into_owned())
+                                    .unwrap_or_default(),
                                 bytes: Arc::new(bytes),
                             }
                         }
-                        other => return Err(ToolError::InvalidArgs(format!("unknown action {other:?}"))),
+                        other => {
+                            return Err(ToolError::InvalidArgs(format!(
+                                "unknown action {other:?}"
+                            )));
+                        }
                     };
-                    self.apply(&a, Edit::EditPageImage { page, index, change })?
+                    self.apply(
+                        &a,
+                        Edit::EditPageImage {
+                            page,
+                            index,
+                            change,
+                        },
+                    )?
                 }
             }
             "text_paragraphs" => {
@@ -509,13 +668,19 @@ impl Automation {
             }
             "text_font_files" => {
                 let roots = if let Some(paths) = a.get("directories") {
-                    let paths = paths
-                        .as_array()
-                        .filter(|p| p.len() <= 16)
-                        .ok_or_else(|| ToolError::InvalidArgs("directories must be at most 16 paths".into()))?;
+                    let paths = paths.as_array().filter(|p| p.len() <= 16).ok_or_else(|| {
+                        ToolError::InvalidArgs("directories must be at most 16 paths".into())
+                    })?;
                     paths
                         .iter()
-                        .map(|p| self.resolve(p.as_str().ok_or_else(|| ToolError::InvalidArgs("directory must be a path".into()))?, false))
+                        .map(|p| {
+                            self.resolve(
+                                p.as_str().ok_or_else(|| {
+                                    ToolError::InvalidArgs("directory must be a path".into())
+                                })?,
+                                false,
+                            )
+                        })
                         .collect::<Result<Vec<_>>>()?
                 } else if let Some(root) = &self.root {
                     vec![root.clone()]
@@ -530,17 +695,28 @@ impl Automation {
                 let file = std::fs::File::open(&path).map_err(failed)?;
                 use std::io::Read;
                 let mut bytes = Vec::new();
-                file.take((16 << 20) + 1).read_to_end(&mut bytes).map_err(failed)?;
+                file.take((16 << 20) + 1)
+                    .read_to_end(&mut bytes)
+                    .map_err(failed)?;
                 if bytes.len() > 16 << 20 {
                     return Err(ToolError::InvalidArgs("font input exceeds 16 MiB".into()));
                 }
-                let before: Vec<_> = self.doc(&a)?.text_editor_fonts(page).into_iter().map(|f| f.resource).collect();
-                let mut out = self.apply(&a, Edit::RegisterTextFont { page, bytes: Arc::new(bytes) })?;
-                let added = self
+                let before: Vec<_> = self
                     .doc(&a)?
                     .text_editor_fonts(page)
                     .into_iter()
-                    .find(|f| !before.contains(&f.resource) && !f.resource.starts_with("PCApproved"));
+                    .map(|f| f.resource)
+                    .collect();
+                let mut out = self.apply(
+                    &a,
+                    Edit::RegisterTextFont {
+                        page,
+                        bytes: Arc::new(bytes),
+                    },
+                )?;
+                let added = self.doc(&a)?.text_editor_fonts(page).into_iter().find(|f| {
+                    !before.contains(&f.resource) && !f.resource.starts_with("PCApproved")
+                });
                 if let Some(f) = added {
                     out["resource"] = json!(f.resource);
                     out["font"] = json!(f.face);
@@ -568,14 +744,25 @@ impl Automation {
                     ranges: parse_style_ranges(a.get("ranges"))?,
                     ..Default::default()
                 };
-                let layout = doc.text_edit_layout(page, k as usize - 1, text, &style).map_err(failed)?;
+                let layout = doc
+                    .text_edit_layout(page, k as usize - 1, text, &style)
+                    .map_err(failed)?;
                 let info = &doc.info.pages[page];
                 let view_rect = |r: [f64; 4]| {
                     let a = info.user_to_view(r[0] as f32, r[1] as f32);
                     let b = info.user_to_view(r[2] as f32, r[3] as f32);
-                    [a[0].min(b[0]), a[1].min(b[1]), a[0].max(b[0]), a[1].max(b[1])]
+                    [
+                        a[0].min(b[0]),
+                        a[1].min(b[1]),
+                        a[0].max(b[0]),
+                        a[1].max(b[1]),
+                    ]
                 };
-                let fonts: Vec<_> = doc.text_editor_fonts(page).into_iter().map(|f| json!({"resource": f.resource, "face": f.face})).collect();
+                let fonts: Vec<_> = doc
+                    .text_editor_fonts(page)
+                    .into_iter()
+                    .map(|f| json!({"resource": f.resource, "face": f.face}))
+                    .collect();
                 json!({ "page": page + 1, "paragraph": k, "source_rect": view_rect(layout.source_rect),
                     "draft_rect": layout.draft_rect.map(view_rect), "overflow": layout.overflow, "embedded_fonts": fonts })
             }
@@ -584,7 +771,10 @@ impl Automation {
                 let n = self.doc(&a)?.text_blocks(page).len();
                 let k = a.int("paragraph")?;
                 if k < 1 || k as usize > n {
-                    return Err(ToolError::InvalidArgs(format!("paragraph {k} is out of range: page {} has {n} paragraphs", page + 1)));
+                    return Err(ToolError::InvalidArgs(format!(
+                        "paragraph {k} is out of range: page {} has {n} paragraphs",
+                        page + 1
+                    )));
                 }
                 let block = self.doc(&a)?.text_blocks(page)[k as usize - 1].clone();
                 let text = a.opt_str("text")?.map(str::to_owned).unwrap_or(block.text);
@@ -609,9 +799,17 @@ impl Automation {
                         "helvetica" => pdfcraft_engine::FontFamily::Helvetica,
                         "times" => pdfcraft_engine::FontFamily::Times,
                         "courier" => pdfcraft_engine::FontFamily::Courier,
-                        other => return Err(ToolError::InvalidArgs(format!("unknown font {other:?} (helvetica, times, courier)"))),
+                        other => {
+                            return Err(ToolError::InvalidArgs(format!(
+                                "unknown font {other:?} (helvetica, times, courier)"
+                            )));
+                        }
                     };
-                    style.family = Some((family, a.opt_bool("bold")?.unwrap_or(false), a.opt_bool("italic")?.unwrap_or(false)));
+                    style.family = Some((
+                        family,
+                        a.opt_bool("bold")?.unwrap_or(false),
+                        a.opt_bool("italic")?.unwrap_or(false),
+                    ));
                 }
                 if let Some(c) = a.opt_str("color")? {
                     style.color = Some(comments::parse_color(c)?);
@@ -622,12 +820,23 @@ impl Automation {
                         "center" => pdfcraft_engine::TextAlign::Center,
                         "right" => pdfcraft_engine::TextAlign::Right,
                         "justify" => pdfcraft_engine::TextAlign::Justify,
-                        other => return Err(ToolError::InvalidArgs(format!("unknown align {other:?}"))),
+                        other => {
+                            return Err(ToolError::InvalidArgs(format!("unknown align {other:?}")));
+                        }
                     });
                 }
-                let mut out = self.apply(&a, Edit::EditTextBlock { page, block: k as usize - 1, text, style })?;
+                let mut out = self.apply(
+                    &a,
+                    Edit::EditTextBlock {
+                        page,
+                        block: k as usize - 1,
+                        text,
+                        style,
+                    },
+                )?;
                 if let Some(b) = self.doc(&a)?.text_blocks(page).get(k as usize - 1) {
-                    out["paragraph"] = json!({ "text": b.text, "lines": b.lines.len(), "font": b.base_font });
+                    out["paragraph"] =
+                        json!({ "text": b.text, "lines": b.lines.len(), "font": b.base_font });
                 }
                 out
             }
@@ -636,10 +845,20 @@ impl Automation {
                 let n = self.doc(&a)?.text_lines(page).len();
                 let line = a.int("line")?;
                 if line < 1 || line as usize > n {
-                    return Err(ToolError::InvalidArgs(format!("line {line} is out of range: page {} has {n} lines", page + 1)));
+                    return Err(ToolError::InvalidArgs(format!(
+                        "line {line} is out of range: page {} has {n} lines",
+                        page + 1
+                    )));
                 }
                 let text = a.str("text")?.to_owned();
-                let mut out = self.apply(&a, Edit::EditTextLine { page, line: line as usize - 1, text })?;
+                let mut out = self.apply(
+                    &a,
+                    Edit::EditTextLine {
+                        page,
+                        line: line as usize - 1,
+                        text,
+                    },
+                )?;
                 let after = self.doc(&a)?.text_lines(page);
                 if let Some(l) = after.get(line as usize - 1) {
                     out["line"] = json!({ "text": l.text, "font": l.base_font });
@@ -657,12 +876,24 @@ impl Automation {
             }
             "doc_open_revision" => {
                 let id = self.doc(&a)?.id;
-                let n = usize::try_from(a.opt_int("revision")?.ok_or_else(|| ToolError::InvalidArgs("revision is required".into()))?).unwrap_or(0);
+                let n = usize::try_from(
+                    a.opt_int("revision")?
+                        .ok_or_else(|| ToolError::InvalidArgs("revision is required".into()))?,
+                )
+                .unwrap_or(0);
                 let new = self.session.open_revision(id, n).map_err(failed)?;
-                summary(self.session.get(new).ok_or_else(|| failed("the document vanished"))?)
+                summary(
+                    self.session
+                        .get(new)
+                        .ok_or_else(|| failed("the document vanished"))?,
+                )
             }
-            "doc_export_images" | "doc_export_text" | "doc_export_all_images" => self.export(name, &a)?,
-            "doc_header_footer" | "doc_watermark" | "doc_background" | "doc_remove_marks" => self.marks(name, &a)?,
+            "doc_export_images" | "doc_export_text" | "doc_export_all_images" => {
+                self.export(name, &a)?
+            }
+            "doc_header_footer" | "doc_watermark" | "doc_background" | "doc_remove_marks" => {
+                self.marks(name, &a)?
+            }
             "doc_unprotect" => {
                 let mut out = self.apply(&a, Edit::RemoveProtection)?;
                 out["security"] = security(self.doc(&a)?);
@@ -672,8 +903,15 @@ impl Automation {
             "form_fill" => self.form_fill(&a)?,
             "form_set_image" => {
                 let path = self.resolve(a.str("path")?, false)?;
-                let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-                self.apply(&a, Edit::SetFieldImage { name: a.str("field")?.to_owned(), image: Arc::new(bytes) })?
+                let bytes =
+                    std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                self.apply(
+                    &a,
+                    Edit::SetFieldImage {
+                        name: a.str("field")?.to_owned(),
+                        image: Arc::new(bytes),
+                    },
+                )?
             }
             "form_reset" => self.form_reset(&a)?,
             "form_add_field" => self.form_add_field(&a)?,
@@ -707,8 +945,12 @@ impl Automation {
             "doc_audit_redactions" => self.doc_audit_redactions(&a)?,
             "fill_sign_add" => self.fill_sign_add(&a)?,
             "fill_sign_date_format" => self.fill_sign_date_format(&a)?,
-            "measure_distance" => self.measurement_add(&a, pdfcraft_engine::measure::Kind::Distance)?,
-            "measure_perimeter" => self.measurement_add(&a, pdfcraft_engine::measure::Kind::Perimeter)?,
+            "measure_distance" => {
+                self.measurement_add(&a, pdfcraft_engine::measure::Kind::Distance)?
+            }
+            "measure_perimeter" => {
+                self.measurement_add(&a, pdfcraft_engine::measure::Kind::Perimeter)?
+            }
             "measure_area" => self.measurement_add(&a, pdfcraft_engine::measure::Kind::Area)?,
             "measure_info" => self.measurement_info(&a)?,
             "measure_list" => self.measurement_list(&a)?,
@@ -807,25 +1049,37 @@ impl Automation {
     /// One page of a document's bookmarks: `offset` (from 0) and `limit` (1 to `MAX_BOOKMARK_PAGE`).
     fn bookmark_listing(&self, a: &Args) -> Result<Value> {
         let id = a.int("doc")?;
-        let id = DocId(u64::try_from(id).map_err(|_| ToolError::InvalidArgs("doc must be positive".into()))?);
+        let id = DocId(
+            u64::try_from(id).map_err(|_| ToolError::InvalidArgs("doc must be positive".into()))?,
+        );
         let offset = a.opt_int("offset")?.unwrap_or(0);
-        let offset = usize::try_from(offset).map_err(|_| ToolError::InvalidArgs("offset must be 0 or more".into()))?;
+        let offset = usize::try_from(offset)
+            .map_err(|_| ToolError::InvalidArgs("offset must be 0 or more".into()))?;
         let limit = a.opt_int("limit")?.unwrap_or(BOOKMARK_PAGE as i64);
         let limit = usize::try_from(limit)
             .ok()
             .filter(|l| (1..=MAX_BOOKMARK_PAGE).contains(l))
-            .ok_or_else(|| ToolError::InvalidArgs(format!("limit must be from 1 to {MAX_BOOKMARK_PAGE}")))?;
+            .ok_or_else(|| {
+                ToolError::InvalidArgs(format!("limit must be from 1 to {MAX_BOOKMARK_PAGE}"))
+            })?;
         let page = self
             .session
             .bookmark_page(id, offset, limit)
-            .ok_or_else(|| ToolError::Failed(format!("no open document with id {} (see doc_list)", id.0)))?;
-        Ok(json!({ "bookmarks": nest_rows(&page.rows), "next": page.next, "truncated": page.truncated }))
+            .ok_or_else(|| {
+                ToolError::Failed(format!("no open document with id {} (see doc_list)", id.0))
+            })?;
+        Ok(
+            json!({ "bookmarks": nest_rows(&page.rows), "next": page.next, "truncated": page.truncated }),
+        )
     }
 
     fn doc(&self, a: &Args) -> Result<&Document> {
         let id = a.int("doc")?;
-        let id = u64::try_from(id).map_err(|_| ToolError::InvalidArgs("doc must be positive".into()))?;
-        self.session.get(DocId(id)).ok_or_else(|| ToolError::Failed(format!("no open document with id {id} (see doc_list)")))
+        let id =
+            u64::try_from(id).map_err(|_| ToolError::InvalidArgs("doc must be positive".into()))?;
+        self.session.get(DocId(id)).ok_or_else(|| {
+            ToolError::Failed(format!("no open document with id {id} (see doc_list)"))
+        })
     }
 
     /// The document, if its security allows copying text and images out of it (Table 22, bit 5).
@@ -838,9 +1092,23 @@ impl Automation {
     fn doc_open(&mut self, a: &Args) -> Result<Value> {
         let path = self.resolve(a.str("path")?, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        let id = self.session.open(name, Some(path.to_string_lossy().into_owned()), Arc::new(bytes), a.opt_str("password")?).map_err(failed)?;
-        let doc = self.session.get(id).ok_or_else(|| failed("the document vanished"))?;
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let id = self
+            .session
+            .open(
+                name,
+                Some(path.to_string_lossy().into_owned()),
+                Arc::new(bytes),
+                a.opt_str("password")?,
+            )
+            .map_err(failed)?;
+        let doc = self
+            .session
+            .get(id)
+            .ok_or_else(|| failed("the document vanished"))?;
         Ok(summary(doc))
     }
 
@@ -849,7 +1117,9 @@ impl Automation {
         let id = doc.id;
         let discard_changes = a.opt_bool("discard_changes")?.unwrap_or(false);
         if doc.dirty && !discard_changes {
-            return Err(failed("the document has unsaved changes: save it with doc_save, or pass discard_changes: true"));
+            return Err(failed(
+                "the document has unsaved changes: save it with doc_save, or pass discard_changes: true",
+            ));
         }
         self.session.close(id);
         self.renderers.remove(&id);
@@ -862,7 +1132,11 @@ impl Automation {
         let id = doc.id;
         let target = match a.opt_str("path")? {
             Some(p) => self.resolve(p, true)?,
-            None => PathBuf::from(doc.path.clone().ok_or_else(|| failed("the document has never been saved: pass a path"))?),
+            None => PathBuf::from(
+                doc.path
+                    .clone()
+                    .ok_or_else(|| failed("the document has never been saved: pass a path"))?,
+            ),
         };
         let same_file = doc.path.as_deref().is_some_and(|p| Path::new(p) == target);
         // Saving to a new file is a full rewrite unless asked otherwise, like Save As.
@@ -871,14 +1145,23 @@ impl Automation {
         if flatten_fill_sign {
             self.apply(a, Edit::FlattenFillSign)?;
         }
-        let bytes = if full { self.session.save_full_bytes(id) } else { self.session.save_bytes(id) }.map_err(failed)?;
+        let bytes = if full {
+            self.session.save_full_bytes(id)
+        } else {
+            self.session.save_bytes(id)
+        }
+        .map_err(failed)?;
         // A save that adds or removes encryption, or must not keep the old revision (Sanitize,
         // redaction), is rewritten in full even when an incremental save was asked for.
         let incremental = !full && bytes.starts_with(&self.doc(a)?.saved_bytes());
         write_atomic(&target, &bytes)?;
         let path = target.to_string_lossy().into_owned();
-        self.session.mark_saved(id, bytes.clone(), Some(path.clone())).map_err(failed)?;
-        Ok(json!({ "path": path, "bytes": bytes.len(), "incremental": incremental, "document": summary(self.doc(a)?) }))
+        self.session
+            .mark_saved(id, bytes.clone(), Some(path.clone()))
+            .map_err(failed)?;
+        Ok(
+            json!({ "path": path, "bytes": bytes.len(), "incremental": incremental, "document": summary(self.doc(a)?) }),
+        )
     }
 
     fn doc_revisions(&mut self, a: &Args) -> Result<Value> {
@@ -891,8 +1174,11 @@ impl Automation {
             .map(|(i, end)| {
                 let start = if i == 0 { 0 } else { ends[i - 1] };
                 // A signature signs the revision its byte range ends in.
-                let signed: Vec<&str> =
-                    sigs.iter().filter(|s| s.signed && s.signed_len > start && s.signed_len <= *end).map(|s| s.field.as_str()).collect();
+                let signed: Vec<&str> = sigs
+                    .iter()
+                    .filter(|s| s.signed && s.signed_len > start && s.signed_len <= *end)
+                    .map(|s| s.field.as_str())
+                    .collect();
                 json!({ "revision": i + 1, "end": end, "bytes": end - start, "signed_by": signed })
             })
             .collect();
@@ -928,7 +1214,9 @@ impl Automation {
         }
         match a.get("magnification") {
             None => {}
-            Some(Value::Number(p)) => v.magnification = M::Percent(p.as_f64().unwrap_or(100.0).clamp(1.0, 6400.0)),
+            Some(Value::Number(p)) => {
+                v.magnification = M::Percent(p.as_f64().unwrap_or(100.0).clamp(1.0, 6400.0))
+            }
             Some(Value::String(m)) => {
                 v.magnification = match m.as_str() {
                     "default" => M::Default,
@@ -968,7 +1256,11 @@ impl Automation {
                 o => return Err(bad(format!("binding is left or right, not {o:?}"))),
             };
         }
-        let mut out = if v != before { self.apply(a, Edit::SetInitialView(Box::new(v.clone())))? } else { json!({}) };
+        let mut out = if v != before {
+            self.apply(a, Edit::SetInitialView(Box::new(v.clone())))?
+        } else {
+            json!({})
+        };
         out["initial_view"] = json!({
             "navigation": format!("{:?}", v.navigation),
             "layout": format!("{:?}", v.layout),
@@ -1007,12 +1299,20 @@ impl Automation {
             }
             s.above_ppi = s.above_ppi.max(s.target_ppi);
             if let Some(c) = v.get("compression").and_then(Value::as_str) {
-                let q = v.get("quality").and_then(Value::as_u64).unwrap_or(60).clamp(1, 100) as u8;
+                let q = v
+                    .get("quality")
+                    .and_then(Value::as_u64)
+                    .unwrap_or(60)
+                    .clamp(1, 100) as u8;
                 s.compression = match c {
                     "jpeg" => Compression::Jpeg(q),
                     "zip" | "flate" => Compression::Flate,
                     "retain" => Compression::Retain,
-                    other => return Err(ToolError::InvalidArgs(format!("unknown compression {other:?} (jpeg, zip, retain)"))),
+                    other => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "unknown compression {other:?} (jpeg, zip, retain)"
+                        )));
+                    }
                 };
             }
             Ok(s)
@@ -1021,12 +1321,21 @@ impl Automation {
         settings.gray = images("gray", settings.gray)?;
         for (key, flag) in [
             ("discard_thumbnails", &mut settings.discard_thumbnails),
-            ("discard_alternate_images", &mut settings.discard_alternate_images),
+            (
+                "discard_alternate_images",
+                &mut settings.discard_alternate_images,
+            ),
             ("discard_tags", &mut settings.discard_tags),
-            ("discard_print_settings", &mut settings.discard_print_settings),
+            (
+                "discard_print_settings",
+                &mut settings.discard_print_settings,
+            ),
             ("flate_unencoded", &mut settings.flate_unencoded),
             ("remove_invalid_links", &mut settings.remove_invalid_links),
-            ("remove_unreferenced_dests", &mut settings.remove_unreferenced_dests),
+            (
+                "remove_unreferenced_dests",
+                &mut settings.remove_unreferenced_dests,
+            ),
         ] {
             if let Some(b) = a.opt_bool(key)? {
                 *flag = b;
@@ -1041,11 +1350,16 @@ impl Automation {
                 .map(|x| {
                     x.as_str()
                         .and_then(pdfcraft_engine::Hidden::from_id)
-                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown discard category {x}")))
+                        .ok_or_else(|| {
+                            ToolError::InvalidArgs(format!("unknown discard category {x}"))
+                        })
                 })
                 .collect::<Result<_>>()?,
         };
-        let (bytes, r) = self.session.optimized_bytes(id, &settings, &discard).map_err(failed)?;
+        let (bytes, r) = self
+            .session
+            .optimized_bytes(id, &settings, &discard)
+            .map_err(failed)?;
         write_atomic(&path, &bytes)?;
         let o = &r.optimize;
         Ok(json!({
@@ -1072,12 +1386,17 @@ impl Automation {
 
     /// A watermark or background picture: `file` (an image or a PDF) and `file_page` (1-based).
     fn mark_file(&self, a: &Args) -> Result<Option<pdfcraft_engine::MarkFile>> {
-        let Some(p) = a.opt_str("file")? else { return Ok(None) };
+        let Some(p) = a.opt_str("file")? else {
+            return Ok(None);
+        };
         let path = self.resolve(p, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
         let page = a.opt_int("file_page")?.unwrap_or(1).max(1) as usize - 1;
         Ok(Some(pdfcraft_engine::MarkFile {
-            name: path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(),
+            name: path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default(),
             bytes: Arc::new(bytes),
             page,
         }))
@@ -1090,7 +1409,12 @@ impl Automation {
         let mut out = summary(doc);
         // Text the edit stored as typed but drew with `?` (its font can't draw it): said, not silent.
         if !doc.edit_notices.is_empty() {
-            out["warnings"] = json!(doc.edit_notices.iter().map(ToString::to_string).collect::<Vec<_>>());
+            out["warnings"] = json!(
+                doc.edit_notices
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+            );
         }
         Ok(out)
     }
@@ -1102,13 +1426,27 @@ impl Automation {
             Some(_) => self.pages(a, "pages")?,
             None => (0..n).collect(),
         };
-        let color =
-            |key: &str, default: [f64; 3]| -> Result<[f64; 3]> { Ok(a.opt_str(key)?.map(comments::parse_color).transpose()?.unwrap_or(default)) };
+        let color = |key: &str, default: [f64; 3]| -> Result<[f64; 3]> {
+            Ok(a.opt_str(key)?
+                .map(comments::parse_color)
+                .transpose()?
+                .unwrap_or(default))
+        };
         let replace = a.opt_bool("replace")?.unwrap_or(false);
         let edit = match tool {
             "doc_header_footer" => {
                 let mut hf = HeaderFooter::default();
-                for (k, key) in ["header_left", "header_center", "header_right", "footer_left", "footer_center", "footer_right"].iter().enumerate() {
+                for (k, key) in [
+                    "header_left",
+                    "header_center",
+                    "header_right",
+                    "footer_left",
+                    "footer_center",
+                    "footer_right",
+                ]
+                .iter()
+                .enumerate()
+                {
                     hf.text[k] = a.opt_str(key)?.unwrap_or_default().to_string();
                 }
                 if let Some(s) = a.opt_num("font_size")? {
@@ -1117,12 +1455,17 @@ impl Automation {
                 hf.color = color("color", hf.color)?;
                 if let Some(m) = a.get("margins").and_then(Value::as_array) {
                     let m: Vec<f64> = m.iter().filter_map(Value::as_f64).collect();
-                    hf.margins = <[f64; 4]>::try_from(m).map_err(|_| ToolError::InvalidArgs("margins must be 4 numbers".into()))?;
+                    hf.margins = <[f64; 4]>::try_from(m)
+                        .map_err(|_| ToolError::InvalidArgs("margins must be 4 numbers".into()))?;
                 }
                 if let Some(s) = a.opt_int("start_number")? {
                     hf.start_number = s.clamp(1, u32::MAX as i64) as u32;
                 }
-                Edit::AddHeaderFooter { pages, settings: hf, replace }
+                Edit::AddHeaderFooter {
+                    pages,
+                    settings: hf,
+                    replace,
+                }
             }
             "doc_watermark" => {
                 let d = Watermark::default();
@@ -1141,11 +1484,20 @@ impl Automation {
                     rotation: a.opt_num("rotation")?.unwrap_or(d.rotation),
                     behind: a.opt_bool("behind")?.unwrap_or(false),
                     offset: [
-                        a.opt_num("offset_x")?.unwrap_or(0.0).clamp(-WATERMARK_MAX_OFFSET, WATERMARK_MAX_OFFSET),
-                        a.opt_num("offset_y")?.unwrap_or(0.0).clamp(-WATERMARK_MAX_OFFSET, WATERMARK_MAX_OFFSET),
+                        a.opt_num("offset_x")?
+                            .unwrap_or(0.0)
+                            .clamp(-WATERMARK_MAX_OFFSET, WATERMARK_MAX_OFFSET),
+                        a.opt_num("offset_y")?
+                            .unwrap_or(0.0)
+                            .clamp(-WATERMARK_MAX_OFFSET, WATERMARK_MAX_OFFSET),
                     ],
                 };
-                Edit::AddWatermark { pages, settings: wm, replace, file }
+                Edit::AddWatermark {
+                    pages,
+                    settings: wm,
+                    replace,
+                    file,
+                }
             }
             "doc_background" => Edit::AddBackground {
                 pages,
@@ -1177,26 +1529,41 @@ impl Automation {
             Some(_) => self.pages(a, "pages")?,
             None => (0..doc.info.pages.len()).collect(),
         };
-        let stem = doc.name.trim_end_matches(".pdf").trim_end_matches(".PDF").to_string();
+        let stem = doc
+            .name
+            .trim_end_matches(".pdf")
+            .trim_end_matches(".PDF")
+            .to_string();
         let mut ex = pdfcraft_engine::export::Exporter::new(doc);
         if tool == "doc_export_text" {
             let path = self.resolve(a.str("path")?, true)?;
             let text = ex.text_of(&pages).map_err(failed)?;
             write_atomic(&path, text.as_bytes())?;
-            return Ok(json!({ "path": path.to_string_lossy(), "pages": pages.len(), "bytes": text.len() }));
+            return Ok(
+                json!({ "path": path.to_string_lossy(), "pages": pages.len(), "bytes": text.len() }),
+            );
         }
         let folder = self.resolve(a.str("folder")?, true)?;
-        std::fs::create_dir_all(&folder).map_err(|e| failed(format!("{}: {e}", folder.display())))?;
+        std::fs::create_dir_all(&folder)
+            .map_err(|e| failed(format!("{}: {e}", folder.display())))?;
         if tool == "doc_export_all_images" {
             let min = u32::try_from(a.opt_int("min_size")?.unwrap_or(0).max(0)).unwrap_or(u32::MAX);
-            let out = pdfcraft_engine::export::extract_images(&doc.export_source(), &pages, min).map_err(failed)?;
+            let out = pdfcraft_engine::export::extract_images(&doc.export_source(), &pages, min)
+                .map_err(failed)?;
             let mut files = Vec::new();
             for (k, img) in out.images.iter().enumerate() {
-                let path = child(&folder, &pdfcraft_engine::export::image_file_name(&stem, img, k + 1));
+                let path = child(
+                    &folder,
+                    &pdfcraft_engine::export::image_file_name(&stem, img, k + 1),
+                );
                 write_atomic(&path, &img.data)?;
                 files.push(json!({ "path": path.to_string_lossy(), "page": img.page + 1, "width": img.width, "height": img.height }));
             }
-            let skipped: Vec<Value> = out.skipped.iter().map(|(p, r, why)| json!({ "page": p + 1, "object": r.num, "reason": why })).collect();
+            let skipped: Vec<Value> = out
+                .skipped
+                .iter()
+                .map(|(p, r, why)| json!({ "page": p + 1, "object": r.num, "reason": why }))
+                .collect();
             return Ok(json!({ "count": files.len(), "files": files, "skipped": skipped }));
         }
         let dpi = a.opt_num("dpi")?.unwrap_or(150.0);
@@ -1205,13 +1572,20 @@ impl Automation {
             "png" => pdfcraft_engine::export::ImageFormat::Png,
             "jpeg" | "jpg" => pdfcraft_engine::export::ImageFormat::Jpeg { quality },
             "tiff" | "tif" => pdfcraft_engine::export::ImageFormat::Tiff,
-            f => return Err(ToolError::InvalidArgs(format!("unknown format {f:?} (png, jpeg, tiff)"))),
+            f => {
+                return Err(ToolError::InvalidArgs(format!(
+                    "unknown format {f:?} (png, jpeg, tiff)"
+                )));
+            }
         };
         let mut files = Vec::new();
         let mut lowered = Vec::new();
         for p in pages {
             let img = ex.image(p, dpi, format).map_err(failed)?;
-            let path = child(&folder, &format!("{stem}_page_{}.{}", p + 1, format.extension()));
+            let path = child(
+                &folder,
+                &format!("{stem}_page_{}.{}", p + 1, format.extension()),
+            );
             write_atomic(&path, &img)?;
             files.push(path.to_string_lossy().into_owned());
             // A page too large for the renderer at `dpi` is drawn at the most it allows.
@@ -1231,47 +1605,90 @@ impl Automation {
         let (name, bytes) = match a.str("from")? {
             "blank" => {
                 let n = a.opt_int("pages")?.unwrap_or(1).clamp(1, 10_000) as usize;
-                let (w, h) = (a.opt_num("width")?.unwrap_or(612.0), a.opt_num("height")?.unwrap_or(792.0));
-                ("Untitled.pdf".to_string(), self.session.create_blank(w, h, n).map_err(failed)?)
+                let (w, h) = (
+                    a.opt_num("width")?.unwrap_or(612.0),
+                    a.opt_num("height")?.unwrap_or(792.0),
+                );
+                (
+                    "Untitled.pdf".to_string(),
+                    self.session.create_blank(w, h, n).map_err(failed)?,
+                )
             }
             "images" => {
-                let resolution = a.opt_num("dpi")?.map_or(pdfcraft_engine::ImageResolution::Embedded, pdfcraft_engine::ImageResolution::Dpi);
+                let resolution = a.opt_num("dpi")?.map_or(
+                    pdfcraft_engine::ImageResolution::Embedded,
+                    pdfcraft_engine::ImageResolution::Dpi,
+                );
                 let mut images = Vec::new();
                 for p in a.strs("paths")? {
                     let path = self.resolve(p, false)?;
-                    let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-                    images.push((path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default(), bytes));
+                    let bytes = std::fs::read(&path)
+                        .map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                    images.push((
+                        path.file_name()
+                            .map(|n| n.to_string_lossy().into_owned())
+                            .unwrap_or_default(),
+                        bytes,
+                    ));
                 }
                 let name = if images.len() == 1 {
-                    format!("{}.pdf", images[0].0.rsplit_once('.').map_or(images[0].0.as_str(), |(s, _)| s))
+                    format!(
+                        "{}.pdf",
+                        images[0]
+                            .0
+                            .rsplit_once('.')
+                            .map_or(images[0].0.as_str(), |(s, _)| s)
+                    )
                 } else {
                     "Images.pdf".into()
                 };
-                (name, self.session.create_from_images_with_resolution(&images, resolution).map_err(failed)?)
+                (
+                    name,
+                    self.session
+                        .create_from_images_with_resolution(&images, resolution)
+                        .map_err(failed)?,
+                )
             }
             "text" => {
                 let (title, text) = match (a.opt_str("text")?, a.opt_str("path")?) {
                     (Some(t), _) => ("Text".to_string(), t.to_string()),
                     (None, Some(p)) => {
                         let path = self.resolve(p, false)?;
-                        let t = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-                        (path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default(), pdfcraft_engine::decode_text(&t))
+                        let t = std::fs::read(&path)
+                            .map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                        (
+                            path.file_stem()
+                                .map(|s| s.to_string_lossy().into_owned())
+                                .unwrap_or_default(),
+                            pdfcraft_engine::decode_text(&t),
+                        )
                     }
-                    (None, None) => return Err(ToolError::InvalidArgs("text needs `text` or `path`".into())),
+                    (None, None) => {
+                        return Err(ToolError::InvalidArgs("text needs `text` or `path`".into()));
+                    }
                 };
                 // The page font is Helvetica/WinAnsi: text it would turn into `?` is refused (with
                 // its line) by `pdfcraft_create::from_text`, as for every other caller.
-                let bytes = self.session.create_from_text(&title, &text).map_err(|e| match e {
-                    pdfcraft_engine::EditError::Create(pdfcraft_engine::CreateError::Invalid(m)) => ToolError::InvalidArgs(m),
-                    e => failed(e),
-                })?;
+                let bytes = self
+                    .session
+                    .create_from_text(&title, &text)
+                    .map_err(|e| match e {
+                        pdfcraft_engine::EditError::Create(
+                            pdfcraft_engine::CreateError::Invalid(m),
+                        ) => ToolError::InvalidArgs(m),
+                        e => failed(e),
+                    })?;
                 (format!("{title}.pdf"), bytes)
             }
             other => return Err(ToolError::InvalidArgs(format!("unknown source {other:?}"))),
         };
         let name = a.opt_str("name")?.map(str::to_owned).unwrap_or(name);
         let id = self.session.open_new(name, bytes).map_err(failed)?;
-        Ok(summary(self.session.get(id).ok_or_else(|| failed("the document vanished"))?))
+        Ok(summary(
+            self.session
+                .get(id)
+                .ok_or_else(|| failed("the document vanished"))?,
+        ))
     }
 
     fn page_set_box(&mut self, a: &Args) -> Result<Value> {
@@ -1284,32 +1701,58 @@ impl Automation {
         };
         let which = match a.opt_str("box")? {
             None => PageBox::Crop,
-            Some(b) => PageBox::from_name(b).ok_or_else(|| ToolError::InvalidArgs(format!("unknown box {b:?}")))?,
+            Some(b) => PageBox::from_name(b)
+                .ok_or_else(|| ToolError::InvalidArgs(format!("unknown box {b:?}")))?,
         };
         let nums = |key: &str| -> Result<Option<[f64; 4]>> {
             a.get(key)
                 .map(|v| {
-                    let v: Vec<f64> = v.as_array().map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
-                    <[f64; 4]>::try_from(v).map_err(|_| ToolError::InvalidArgs(format!("{key} must be 4 numbers")))
+                    let v: Vec<f64> = v
+                        .as_array()
+                        .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                        .unwrap_or_default();
+                    <[f64; 4]>::try_from(v)
+                        .map_err(|_| ToolError::InvalidArgs(format!("{key} must be 4 numbers")))
                 })
                 .transpose()
         };
         let spec = match (nums("margins")?, nums("rect")?) {
-            (Some(_), Some(_)) => return Err(ToolError::InvalidArgs("pass margins or rect, not both".into())),
+            (Some(_), Some(_)) => {
+                return Err(ToolError::InvalidArgs(
+                    "pass margins or rect, not both".into(),
+                ));
+            }
             (Some(m), None) => BoxSpec::Margins(m),
             (None, Some(r)) => {
                 // Top-left-origin points on the displayed page → user space (one page at a time).
                 if pages.len() != 1 {
-                    return Err(ToolError::InvalidArgs("rect applies to a single page; use margins for several".into()));
+                    return Err(ToolError::InvalidArgs(
+                        "rect applies to a single page; use margins for several".into(),
+                    ));
                 }
                 let p = &doc.info.pages[pages[0]];
-                let (u0, u1) = (p.view_to_user(r[0] as f32, r[1] as f32), p.view_to_user(r[2] as f32, r[3] as f32));
-                BoxSpec::Rect([u0[0].min(u1[0]) as f64, u0[1].min(u1[1]) as f64, u0[0].max(u1[0]) as f64, u0[1].max(u1[1]) as f64])
+                let (u0, u1) = (
+                    p.view_to_user(r[0] as f32, r[1] as f32),
+                    p.view_to_user(r[2] as f32, r[3] as f32),
+                );
+                BoxSpec::Rect([
+                    u0[0].min(u1[0]) as f64,
+                    u0[1].min(u1[1]) as f64,
+                    u0[0].max(u1[0]) as f64,
+                    u0[1].max(u1[1]) as f64,
+                ])
             }
             (None, None) => BoxSpec::Remove,
         };
         let mut out = self.apply(a, Edit::SetPageBox { pages, which, spec })?;
-        out["page_sizes"] = json!(self.doc(a)?.info.pages.iter().map(|p| [p.width, p.height]).collect::<Vec<_>>());
+        out["page_sizes"] = json!(
+            self.doc(a)?
+                .info
+                .pages
+                .iter()
+                .map(|p| [p.width, p.height])
+                .collect::<Vec<_>>()
+        );
         Ok(out)
     }
 
@@ -1319,7 +1762,9 @@ impl Automation {
         // Restrictions only exist behind a permissions password (ISO 32000-2 §7.6.4.4: /P is
         // enforced against the owner password; without one everything stays allowed). Refuse a
         // restriction that could not take effect instead of writing an unrestricted file (#134).
-        let restriction = ["printing", "changes", "copy", "accessibility"].into_iter().find(|k| a.get(k).is_some());
+        let restriction = ["printing", "changes", "copy", "accessibility"]
+            .into_iter()
+            .find(|k| a.get(k).is_some());
         if let (None, Some(key)) = (a.opt_str("permissions_password")?, restriction) {
             return Err(ToolError::InvalidArgs(format!(
                 "`{key}` needs `permissions_password`: with open_password alone the document is encrypted but nothing is restricted"
@@ -1351,9 +1796,15 @@ impl Automation {
                 Some("aes-128") => Algorithm::Aes128,
                 Some("rc4-128") => Algorithm::Rc4_128,
                 Some("rc4-40") => Algorithm::Rc4_40,
-                Some(o) => return Err(ToolError::InvalidArgs(format!("unknown compatibility {o:?}"))),
+                Some(o) => {
+                    return Err(ToolError::InvalidArgs(format!(
+                        "unknown compatibility {o:?}"
+                    )));
+                }
             },
-            encrypt_metadata: a.opt_bool("encrypt_metadata")?.unwrap_or(d.encrypt_metadata),
+            encrypt_metadata: a
+                .opt_bool("encrypt_metadata")?
+                .unwrap_or(d.encrypt_metadata),
         };
         let mut out = self.apply(a, Edit::Protect(p))?;
         out["security"] = security(self.doc(a)?);
@@ -1364,12 +1815,20 @@ impl Automation {
         let doc = self.doc(a)?;
         let at = self.position(a, "at")?;
         // Default to the size of the neighbouring page, as Acrobat does; Letter for empty files.
-        let near = doc.info.pages.get(at.saturating_sub(1)).or(doc.info.pages.first());
-        let (w, h) = near.map(|p| (f64::from(p.width), f64::from(p.height))).unwrap_or((612.0, 792.0));
+        let near = doc
+            .info
+            .pages
+            .get(at.saturating_sub(1))
+            .or(doc.info.pages.first());
+        let (w, h) = near
+            .map(|p| (f64::from(p.width), f64::from(p.height)))
+            .unwrap_or((612.0, 792.0));
         let width = a.opt_num("width")?.unwrap_or(w);
         let height = a.opt_num("height")?.unwrap_or(h);
         if !(1.0..=14400.0).contains(&width) || !(1.0..=14400.0).contains(&height) {
-            return Err(ToolError::InvalidArgs("width and height must be between 1 and 14400 points".into()));
+            return Err(ToolError::InvalidArgs(
+                "width and height must be between 1 and 14400 points".into(),
+            ));
         }
         self.apply(a, Edit::InsertBlankPage { at, width, height })
     }
@@ -1379,8 +1838,20 @@ impl Automation {
         let path = self.resolve(a.str("path")?, false)?;
         let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
         let pages = a.opt_ints("pages")?.map(|p| one_based(&p)).transpose()?;
-        let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-        self.apply(a, Edit::InsertPagesFrom { name, bytes: Arc::new(bytes), pages, at, field_conflicts: pdfcraft_organize::FieldConflicts::Rename })
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        self.apply(
+            a,
+            Edit::InsertPagesFrom {
+                name,
+                bytes: Arc::new(bytes),
+                pages,
+                at,
+                field_conflicts: pdfcraft_organize::FieldConflicts::Rename,
+            },
+        )
     }
 
     /// Write freshly created bytes to `out` and/or open them as a new document.
@@ -1394,7 +1865,11 @@ impl Automation {
         }
         if a.opt_bool("open")?.unwrap_or(out.is_none()) {
             let id = self.session.open_new(name, bytes).map_err(failed)?;
-            result["document"] = summary(self.session.get(id).ok_or_else(|| failed("the document vanished"))?);
+            result["document"] = summary(
+                self.session
+                    .get(id)
+                    .ok_or_else(|| failed("the document vanished"))?,
+            );
         }
         Ok(result)
     }
@@ -1402,49 +1877,95 @@ impl Automation {
     fn doc_create_multiple(&mut self, a: &Args) -> Result<Value> {
         let paths = a.strs("paths")?;
         if paths.is_empty() {
-            return Err(ToolError::InvalidArgs("paths must list at least one file".into()));
+            return Err(ToolError::InvalidArgs(
+                "paths must list at least one file".into(),
+            ));
         }
         let separate = match a.opt_str("mode")? {
             None | Some("combine") => false,
             Some("separate") => true,
-            Some(m) => return Err(ToolError::InvalidArgs(format!("mode must be \"combine\" or \"separate\", not {m:?}"))),
+            Some(m) => {
+                return Err(ToolError::InvalidArgs(format!(
+                    "mode must be \"combine\" or \"separate\", not {m:?}"
+                )));
+            }
         };
         if separate {
             return self.create_separate(a, &paths);
         }
         let ranges: Vec<Option<String>> = match a.get("pages") {
             None | Some(Value::Null) => vec![None; paths.len()],
-            Some(Value::Array(v)) if v.len() == paths.len() => v.iter().map(|x| x.as_str().map(str::to_owned)).collect(),
-            Some(_) => return Err(ToolError::InvalidArgs("pages must list a range (or null) for each path".into())),
+            Some(Value::Array(v)) if v.len() == paths.len() => {
+                v.iter().map(|x| x.as_str().map(str::to_owned)).collect()
+            }
+            Some(_) => {
+                return Err(ToolError::InvalidArgs(
+                    "pages must list a range (or null) for each path".into(),
+                ));
+            }
         };
         // Each file is read, converted and copied in turn, so a long list holds one file at a time.
-        let sources = paths.into_iter().zip(ranges).map(|(p, range)| -> std::result::Result<pdfcraft_engine::CombineSource, ToolError> {
-            let path = self.resolve(p, false)?;
-            let bytes = std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
-            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            let (_, pdf) = self.session.convert_to_pdf(&name, &Arc::new(bytes)).map_err(failed)?;
-            let title = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-            Ok((title, pdf, range))
-        });
-        let bytes = self.session.combine_each(sources)?.ok_or_else(|| ToolError::InvalidArgs("paths must list at least one file".into()))?;
+        let sources = paths.into_iter().zip(ranges).map(
+            |(p, range)| -> std::result::Result<pdfcraft_engine::CombineSource, ToolError> {
+                let path = self.resolve(p, false)?;
+                let bytes =
+                    std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?;
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let (_, pdf) = self
+                    .session
+                    .convert_to_pdf(&name, &Arc::new(bytes))
+                    .map_err(failed)?;
+                let title = path
+                    .file_stem()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                Ok((title, pdf, range))
+            },
+        );
+        let bytes = self
+            .session
+            .combine_each(sources)?
+            .ok_or_else(|| ToolError::InvalidArgs("paths must list at least one file".into()))?;
         self.deliver(a, "Combined", bytes)
     }
 
     /// One PDF per file, written into `out_dir`; a file that fails doesn't stop the others.
     fn create_separate(&mut self, a: &Args, paths: &[&str]) -> Result<Value> {
-        let dir = self.resolve(a.str("out_dir").map_err(|_| ToolError::InvalidArgs("mode \"separate\" needs out_dir".into()))?, true)?;
+        let dir = self.resolve(
+            a.str("out_dir")
+                .map_err(|_| ToolError::InvalidArgs("mode \"separate\" needs out_dir".into()))?,
+            true,
+        )?;
         std::fs::create_dir_all(&dir).map_err(|e| failed(format!("{}: {e}", dir.display())))?;
         let mut out = Vec::new();
         for &p in paths {
-            let converted = self.resolve(p, false).map_err(|e| e.to_string()).and_then(|src| {
-                let bytes = std::fs::read(&src).map_err(|e| format!("{}: {e}", src.display()))?;
-                let name = src.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-                let stem = src.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| "document".into());
-                let (kind, pdf) = self.session.convert_to_pdf(&name, &Arc::new(bytes)).map_err(|e| e.to_string())?;
-                Ok((kind, stem, pdf))
-            });
+            let converted = self
+                .resolve(p, false)
+                .map_err(|e| e.to_string())
+                .and_then(|src| {
+                    let bytes =
+                        std::fs::read(&src).map_err(|e| format!("{}: {e}", src.display()))?;
+                    let name = src
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
+                    let stem = src
+                        .file_stem()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_else(|| "document".into());
+                    let (kind, pdf) = self
+                        .session
+                        .convert_to_pdf(&name, &Arc::new(bytes))
+                        .map_err(|e| e.to_string())?;
+                    Ok((kind, stem, pdf))
+                });
             out.push(match converted {
-                Ok((pdfcraft_engine::SourceKind::Pdf, ..)) => json!({ "path": p, "skipped": "already a PDF" }),
+                Ok((pdfcraft_engine::SourceKind::Pdf, ..)) => {
+                    json!({ "path": p, "skipped": "already a PDF" })
+                }
                 Ok((_, stem, pdf)) => {
                     let target = unused(&dir, &stem);
                     write_atomic(&target, &pdf)?;
@@ -1459,11 +1980,18 @@ impl Automation {
     fn page_extract(&mut self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
         let (id, name) = (doc.id, format!("{} (extract)", doc.name));
-        let stem = Path::new(&doc.name).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "page".into());
+        let stem = Path::new(&doc.name)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "page".into());
         let pages = self.pages(a, "pages")?;
         let mut out = if a.opt_bool("separate")?.unwrap_or(false) {
             // Each page as its own file.
-            let dir = self.resolve(a.str("out_dir").map_err(|_| ToolError::InvalidArgs("separate files need out_dir".into()))?, true)?;
+            let dir = self.resolve(
+                a.str("out_dir")
+                    .map_err(|_| ToolError::InvalidArgs("separate files need out_dir".into()))?,
+                true,
+            )?;
             std::fs::create_dir_all(&dir).map_err(|e| failed(format!("{}: {e}", dir.display())))?;
             let mut files = Vec::new();
             for &p in &pages {
@@ -1487,7 +2015,9 @@ impl Automation {
     fn doc_combine(&mut self, a: &Args) -> Result<Value> {
         let paths = a.strs("paths")?;
         if paths.len() < 2 {
-            return Err(ToolError::InvalidArgs("combine needs at least two files".into()));
+            return Err(ToolError::InvalidArgs(
+                "combine needs at least two files".into(),
+            ));
         }
         let ranges: Vec<Option<String>> = match a.get("pages") {
             None | Some(Value::Null) => vec![None; paths.len()],
@@ -1497,31 +2027,51 @@ impl Automation {
                 .map(|(index, value)| match value {
                     Value::Null => Ok(None),
                     Value::String(range) => Ok(Some(range.clone())),
-                    _ => Err(ToolError::InvalidArgs(format!("pages[{index}] must be a range string or null"))),
+                    _ => Err(ToolError::InvalidArgs(format!(
+                        "pages[{index}] must be a range string or null"
+                    ))),
                 })
                 .collect::<Result<_>>()?,
-            Some(_) => return Err(ToolError::InvalidArgs("pages must list a range (or null) for each path".into())),
+            Some(_) => {
+                return Err(ToolError::InvalidArgs(
+                    "pages must list a range (or null) for each path".into(),
+                ));
+            }
         };
         let passwords: Vec<Option<String>> = match a.get("passwords") {
             None | Some(Value::Null) => vec![None; paths.len()],
-            Some(Value::Array(v)) if v.len() == paths.len() && v.iter().all(|x| x.is_string() || x.is_null()) => {
+            Some(Value::Array(v))
+                if v.len() == paths.len() && v.iter().all(|x| x.is_string() || x.is_null()) =>
+            {
                 v.iter().map(|x| x.as_str().map(str::to_owned)).collect()
             }
-            Some(_) => return Err(ToolError::InvalidArgs("passwords must list a password (or null) for each path".into())),
+            Some(_) => {
+                return Err(ToolError::InvalidArgs(
+                    "passwords must list a password (or null) for each path".into(),
+                ));
+            }
         };
         // Entries sharing a group number are one file split into parts placed apart.
         let groups: Option<Vec<Option<u64>>> = match a.get("groups") {
             None | Some(Value::Null) => None,
-            Some(Value::Array(v)) if v.len() == paths.len() && v.iter().all(|x| x.is_u64() || x.is_null()) => {
+            Some(Value::Array(v))
+                if v.len() == paths.len() && v.iter().all(|x| x.is_u64() || x.is_null()) =>
+            {
                 Some(v.iter().map(Value::as_u64).collect())
             }
-            Some(_) => return Err(ToolError::InvalidArgs("groups must list a number (or null) for each path".into())),
+            Some(_) => {
+                return Err(ToolError::InvalidArgs(
+                    "groups must list a number (or null) for each path".into(),
+                ));
+            }
         };
         let field_conflicts = match a.opt_str("field_conflicts")? {
             None | Some("rename") => pdfcraft_organize::FieldConflicts::Rename,
             Some("merge") => pdfcraft_organize::FieldConflicts::Merge,
             Some(other) => {
-                return Err(ToolError::InvalidArgs(format!("field_conflicts must be \"rename\" or \"merge\", not {other:?}")));
+                return Err(ToolError::InvalidArgs(format!(
+                    "field_conflicts must be \"rename\" or \"merge\", not {other:?}"
+                )));
             }
         };
         let mut sources: Vec<CombineSource> = Vec::new();
@@ -1533,47 +2083,78 @@ impl Automation {
             let bytes = match first {
                 Some((g, first_path, at)) => {
                     if *first_path != path {
-                        return Err(ToolError::InvalidArgs(format!("groups[{i}]: group {g} is {}, not {}", first_path.display(), path.display())));
+                        return Err(ToolError::InvalidArgs(format!(
+                            "groups[{i}]: group {g} is {}, not {}",
+                            first_path.display(),
+                            path.display()
+                        )));
                     }
-                    sources.get(*at).map(|s| s.1.clone()).ok_or_else(|| failed("group source missing"))?
+                    sources
+                        .get(*at)
+                        .map(|s| s.1.clone())
+                        .ok_or_else(|| failed("group source missing"))?
                 }
                 None => {
                     if let Some(g) = group {
                         firsts.push((g, path.clone(), sources.len()));
                     }
-                    let bytes = Arc::new(std::fs::read(&path).map_err(|e| failed(format!("{}: {e}", path.display())))?);
+                    let bytes = Arc::new(
+                        std::fs::read(&path)
+                            .map_err(|e| failed(format!("{}: {e}", path.display())))?,
+                    );
                     // Images and text files are made into PDFs first (#569), as in the Combine files tab.
-                    let file_name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().into_owned())
+                        .unwrap_or_default();
                     self.session.as_pdf(&file_name, &bytes).map_err(failed)?
                 }
             };
-            let name = path.file_stem().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let name = path
+                .file_stem()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
             sources.push((name, bytes, range));
         }
         let passwords: Vec<Option<&str>> = passwords.iter().map(Option::as_deref).collect();
         let combined = match groups {
-            None => self.session.combine_unlocked_reporting(&sources, &passwords, field_conflicts),
+            None => self
+                .session
+                .combine_unlocked_reporting(&sources, &passwords, field_conflicts),
             Some(groups) => {
                 // A path without a group is a file of its own: give it a key no group uses.
-                let mut next = groups.iter().flatten().max().map_or(Some(0), |m| m.checked_add(1));
+                let mut next = groups
+                    .iter()
+                    .flatten()
+                    .max()
+                    .map_or(Some(0), |m| m.checked_add(1));
                 let mut keys = Vec::with_capacity(groups.len());
                 for g in &groups {
                     keys.push(match g {
                         Some(g) => *g,
                         None => {
-                            let own = next.ok_or_else(|| ToolError::InvalidArgs("group numbers are too large".into()))?;
+                            let own = next.ok_or_else(|| {
+                                ToolError::InvalidArgs("group numbers are too large".into())
+                            })?;
                             next = own.checked_add(1);
                             own
                         }
                     });
                 }
-                self.session.combine_grouped_reporting(&sources, &keys, &passwords, field_conflicts)
+                self.session
+                    .combine_grouped_reporting(&sources, &keys, &passwords, field_conflicts)
             }
         }
         .map_err(failed)?;
         let mut result = self.deliver(a, "Combined", combined.bytes)?;
         if !combined.renamed_fields.is_empty() {
-            result["renamed_fields"] = json!(combined.renamed_fields.iter().map(|(old, new)| json!([old, new])).collect::<Vec<_>>());
+            result["renamed_fields"] = json!(
+                combined
+                    .renamed_fields
+                    .iter()
+                    .map(|(old, new)| json!([old, new]))
+                    .collect::<Vec<_>>()
+            );
         }
         Ok(result)
     }
@@ -1581,10 +2162,21 @@ impl Automation {
     fn doc_split(&mut self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
         let id = doc.id;
-        let stem = Path::new(&doc.name).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "part".into());
+        let stem = Path::new(&doc.name)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "part".into());
         let bookmarks = a.opt_bool("bookmarks")?.unwrap_or(false);
         let max_mb = a.opt_num("max_mb")?;
-        let chosen = [a.get("every").is_some(), a.get("before").is_some(), bookmarks, max_mb.is_some()].iter().filter(|x| **x).count();
+        let chosen = [
+            a.get("every").is_some(),
+            a.get("before").is_some(),
+            bookmarks,
+            max_mb.is_some(),
+        ]
+        .iter()
+        .filter(|x| **x)
+        .count();
         if chosen != 1 {
             return Err(ToolError::InvalidArgs(
                 "pass exactly one of every (pages per file), before (page numbers), bookmarks: true, or max_mb".into(),
@@ -1595,7 +2187,9 @@ impl Automation {
             if !mb.is_finite() || mb <= 0.0 {
                 return Err(ToolError::InvalidArgs("max_mb must be positive".into()));
             }
-            self.session.split_by_size(id, (mb * 1_048_576.0) as usize).map_err(failed)?
+            self.session
+                .split_by_size(id, (mb * 1_048_576.0) as usize)
+                .map_err(failed)?
         } else {
             let by = match (a.opt_int("every")?, a.opt_ints("before")?) {
                 (Some(n), None) if n > 0 => pdfcraft_organize::SplitBy::PageCount(n as usize),
@@ -1607,7 +2201,11 @@ impl Automation {
                     }
                     pdfcraft_organize::SplitBy::Before(titles.iter().map(|t| t.0).collect())
                 }
-                _ => return Err(ToolError::InvalidArgs("every must be a positive page count".into())),
+                _ => {
+                    return Err(ToolError::InvalidArgs(
+                        "every must be a positive page count".into(),
+                    ));
+                }
             };
             self.session.split(id, &by).map_err(failed)?
         };
@@ -1616,7 +2214,17 @@ impl Automation {
         let mut files = Vec::new();
         let mut used = std::collections::HashSet::new();
         for (i, (first, last, bytes)) in parts.iter().enumerate() {
-            let safe = |t: &str| t.chars().map(|c| if c.is_alphanumeric() || " -_.,()".contains(c) { c } else { '_' }).collect::<String>();
+            let safe = |t: &str| {
+                t.chars()
+                    .map(|c| {
+                        if c.is_alphanumeric() || " -_.,()".contains(c) {
+                            c
+                        } else {
+                            '_'
+                        }
+                    })
+                    .collect::<String>()
+            };
             let file = match titles.iter().find(|t| t.0 + 1 == *first) {
                 Some((_, t)) => format!("{stem}-{}.pdf", safe(t)),
                 None => format!("{stem}-part{}.pdf", i + 1),
@@ -1630,7 +2238,9 @@ impl Automation {
             }
             let path = child(&dir, &unique);
             write_atomic(&path, bytes)?;
-            files.push(json!({ "path": path.to_string_lossy(), "first_page": first, "last_page": last }));
+            files.push(
+                json!({ "path": path.to_string_lossy(), "first_page": first, "last_page": last }),
+            );
         }
         Ok(json!({ "files": files }))
     }
@@ -1642,10 +2252,15 @@ impl Automation {
         let n = self.doc(a)?.info.pages.len();
         let pages = one_based(&a.ints(key)?)?;
         if pages.is_empty() {
-            return Err(ToolError::InvalidArgs(format!("{key} must list at least one page")));
+            return Err(ToolError::InvalidArgs(format!(
+                "{key} must list at least one page"
+            )));
         }
         if let Some(p) = pages.iter().find(|p| **p >= n) {
-            return Err(ToolError::InvalidArgs(format!("page {} is out of range: the document has {n} pages", p + 1)));
+            return Err(ToolError::InvalidArgs(format!(
+                "page {} is out of range: the document has {n} pages",
+                p + 1
+            )));
         }
         Ok(pages)
     }
@@ -1655,17 +2270,30 @@ impl Automation {
         let n = self.doc(a)?.info.pages.len();
         let at = a.int(key)?;
         if at < 1 || at as usize > n + 1 {
-            return Err(ToolError::InvalidArgs(format!("{key} must be between 1 and {} (the document has {n} pages)", n + 1)));
+            return Err(ToolError::InvalidArgs(format!(
+                "{key} must be between 1 and {} (the document has {n} pages)",
+                n + 1
+            )));
         }
         Ok(at as usize - 1)
     }
 
     fn renderer(&mut self, id: DocId) -> Result<&mut PageRenderer> {
-        let doc = self.session.get(id).ok_or_else(|| failed("no such document"))?;
+        let doc = self
+            .session
+            .get(id)
+            .ok_or_else(|| failed("no such document"))?;
         let colors = self.session.reading_colors(id).unwrap_or_default();
         let fresh = || {
-            let config = RenderConfig { password: doc.password.as_deref().map(Arc::from), reading_colors: colors, ..Default::default() };
-            (doc.display.clone(), PageRenderer::new(doc.display.clone(), config))
+            let config = RenderConfig {
+                password: doc.password.as_deref().map(Arc::from),
+                reading_colors: colors,
+                ..Default::default()
+            };
+            (
+                doc.display.clone(),
+                PageRenderer::new(doc.display.clone(), config),
+            )
         };
         let entry = self.renderers.entry(id).or_insert_with(fresh);
         if !Arc::ptr_eq(&entry.0, &doc.display) {
@@ -1679,30 +2307,57 @@ impl Automation {
         let page = self.page(a)?;
         let dpi = a.opt_num("dpi")?.unwrap_or(DEFAULT_DPI);
         if !(1.0..=MAX_DPI).contains(&dpi) {
-            return Err(ToolError::InvalidArgs(format!("dpi must be between 1 and {MAX_DPI}")));
+            return Err(ToolError::InvalidArgs(format!(
+                "dpi must be between 1 and {MAX_DPI}"
+            )));
         }
         let scale = (dpi / 72.0) as f32;
         let out = if let Some(block) = a.opt_int("hide_text_block")? {
             let index = usize::try_from(block)
                 .ok()
                 .and_then(|n| n.checked_sub(1))
-                .ok_or_else(|| ToolError::InvalidArgs("hide_text_block must be a positive paragraph index from text_paragraphs".into()))?;
-            self.doc(a)?.text_edit_preview(page, index).map_err(failed)?.render_background(scale).map_err(failed)?
+                .ok_or_else(|| {
+                    ToolError::InvalidArgs(
+                        "hide_text_block must be a positive paragraph index from text_paragraphs"
+                            .into(),
+                    )
+                })?;
+            self.doc(a)?
+                .text_edit_preview(page, index)
+                .map_err(failed)?
+                .render_background(scale)
+                .map_err(failed)?
         } else {
-            self.renderer(id)?.render(RenderRequest { page, kind: RequestKind::Pixels, tile: None, scale, tag: 0, preview: false })
+            self.renderer(id)?.render(RenderRequest {
+                page,
+                kind: RequestKind::Pixels,
+                tile: None,
+                scale,
+                tag: 0,
+                preview: false,
+            })
         };
         if let Some(e) = out.error {
-            return Err(failed(format!("page {} could not be rendered: {e}", page + 1)));
+            return Err(failed(format!(
+                "page {} could not be rendered: {e}",
+                page + 1
+            )));
         }
         let data = encode_png(out.width, out.height, &out.rgba)?;
-        Ok(Content::Png { data, width: out.width, height: out.height })
+        Ok(Content::Png {
+            data,
+            width: out.width,
+            height: out.height,
+        })
     }
 
     fn page(&self, a: &Args) -> Result<usize> {
         let n = self.doc(a)?.info.pages.len();
         let p = a.int("page")?;
         if p < 1 || p as usize > n {
-            return Err(ToolError::InvalidArgs(format!("page {p} is out of range: the document has {n} pages")));
+            return Err(ToolError::InvalidArgs(format!(
+                "page {p} is out of range: the document has {n} pages"
+            )));
         }
         Ok(p as usize - 1)
     }
@@ -1722,7 +2377,10 @@ impl Automation {
         pages: &[usize],
         extract: &mut impl FnMut(&Arc<Vec<u8>>, Option<Arc<str>>, &[usize]) -> PageTexts,
     ) -> Result<PageTexts> {
-        let doc = self.session.get(id).ok_or_else(|| failed("no such document"))?;
+        let doc = self
+            .session
+            .get(id)
+            .ok_or_else(|| failed("no such document"))?;
         let (bytes, n) = (doc.bytes.clone(), doc.info.pages.len());
         let password: Option<Arc<str>> = doc.password.as_deref().map(Arc::from);
         self.texts.prepare(id, &bytes);
@@ -1749,7 +2407,18 @@ impl Automation {
         }
         // The batch owns its Arcs: evicting a cache entry cannot lose a requested result. A
         // worker that fails to return a page is an explicit failure, never an empty success.
-        Ok(pages.iter().map(|p| (*p, results.get(p).cloned().unwrap_or_else(|| Err("text extraction returned no result".into())))).collect())
+        Ok(pages
+            .iter()
+            .map(|p| {
+                (
+                    *p,
+                    results
+                        .get(p)
+                        .cloned()
+                        .unwrap_or_else(|| Err("text extraction returned no result".into())),
+                )
+            })
+            .collect())
     }
 
     fn text_extract(&mut self, a: &Args) -> Result<Value> {
@@ -1766,7 +2435,11 @@ impl Automation {
             Some(r) => t.column_text(&t.glyphs_in(r)),
             None => t.plain_text(),
         };
-        let out: Vec<Value> = pages.iter().zip(texts).map(|(p, t)| json!({ "page": p + 1, "text": text(&t) })).collect();
+        let out: Vec<Value> = pages
+            .iter()
+            .zip(texts)
+            .map(|(p, t)| json!({ "page": p + 1, "text": text(&t) }))
+            .collect();
         Ok(json!({ "pages": out }))
     }
 
@@ -1778,15 +2451,26 @@ impl Automation {
         self.text_find_with(a, &mut extract_parallel)
     }
 
-    fn text_find_with(&mut self, a: &Args, extract: &mut impl FnMut(&Arc<Vec<u8>>, Option<Arc<str>>, &[usize]) -> PageTexts) -> Result<Value> {
+    fn text_find_with(
+        &mut self,
+        a: &Args,
+        extract: &mut impl FnMut(&Arc<Vec<u8>>, Option<Arc<str>>, &[usize]) -> PageTexts,
+    ) -> Result<Value> {
         let doc = self.doc(a)?;
         let (id, n) = (doc.id, doc.info.pages.len());
         let query = a.str("query")?;
-        let limit = usize::try_from(a.opt_int("limit")?.unwrap_or(500).max(1)).unwrap_or(usize::MAX);
+        let limit =
+            usize::try_from(a.opt_int("limit")?.unwrap_or(500).max(1)).unwrap_or(usize::MAX);
         let start = match a.opt_int("start_page")? {
             None => 0,
-            Some(p) if p >= 1 && usize::try_from(p).is_ok_and(|p| p <= n) => usize::try_from(p - 1).unwrap_or(0),
-            Some(p) => return Err(ToolError::InvalidArgs(format!("start_page {p} is out of range: the document has {n} pages"))),
+            Some(p) if p >= 1 && usize::try_from(p).is_ok_and(|p| p <= n) => {
+                usize::try_from(p - 1).unwrap_or(0)
+            }
+            Some(p) => {
+                return Err(ToolError::InvalidArgs(format!(
+                    "start_page {p} is out of range: the document has {n} pages"
+                )));
+            }
         };
         let skip = usize::try_from(a.opt_int("skip")?.unwrap_or(0).max(0)).unwrap_or(usize::MAX);
         let mut matches = Vec::new();
@@ -1804,7 +2488,8 @@ impl Automation {
                     Err(mut error) => {
                         warning_count += 1;
                         if warnings.len() < FIND_MAX_WARNINGS {
-                            let end = error.floor_char_boundary(FIND_MAX_WARNING_BYTES.min(error.len()));
+                            let end =
+                                error.floor_char_boundary(FIND_MAX_WARNING_BYTES.min(error.len()));
                             let truncated = end < error.len();
                             error.truncate(end);
                             warnings.push(json!({ "page": p + 1, "error": error, "error_truncated": truncated }));
@@ -1815,8 +2500,16 @@ impl Automation {
                 let skip_here = if p == start { skip } else { 0 };
                 // One extra match proves that the caller needs a continuation. Include skipped
                 // matches on the starting page when bounding the temporary per-page result.
-                let needed = limit.saturating_sub(matches.len()).saturating_add(skip_here).saturating_add(1);
-                for (k, r) in text.find_opts_limited(query, false, false, needed).into_iter().enumerate().skip(skip_here) {
+                let needed = limit
+                    .saturating_sub(matches.len())
+                    .saturating_add(skip_here)
+                    .saturating_add(1);
+                for (k, r) in text
+                    .find_opts_limited(query, false, false, needed)
+                    .into_iter()
+                    .enumerate()
+                    .skip(skip_here)
+                {
                     if matches.len() == limit {
                         next = Some(json!({ "start_page": p + 1, "skip": k }));
                         break 'search;
@@ -1861,7 +2554,10 @@ impl Automation {
             .filter(|c| {
                 (!enabled_only || c.get("enabled").and_then(Value::as_bool) == Some(true))
                     && (filter.is_empty()
-                        || ["id", "label", "menu"].iter().any(|k| c.get(k).is_some_and(|v| v.to_string().to_lowercase().contains(&filter))))
+                        || ["id", "label", "menu"].iter().any(|k| {
+                            c.get(k)
+                                .is_some_and(|v| v.to_string().to_lowercase().contains(&filter))
+                        }))
             })
             .collect();
         Ok(json!({ "commands": list }))
@@ -1878,8 +2574,15 @@ impl Automation {
     /// followed) must be inside the root before anything about the rest is reported.
     fn resolve(&self, path: &str, for_write: bool) -> Result<PathBuf> {
         let p = Path::new(path);
-        let Some(root) = &self.root else { return Ok(p.to_path_buf()) };
-        let outside = || failed(format!("{path} is outside the allowed directory {}", root.display()));
+        let Some(root) = &self.root else {
+            return Ok(p.to_path_buf());
+        };
+        let outside = || {
+            failed(format!(
+                "{path} is outside the allowed directory {}",
+                root.display()
+            ))
+        };
         let joined = lexical(&root.join(p)).ok_or_else(outside)?;
         if foreign_share(&joined, root) {
             return Err(outside());
@@ -1887,7 +2590,10 @@ impl Automation {
         let mut existing = joined.as_path();
         let mut rest = Vec::new();
         while !existing.exists() {
-            if existing.symlink_metadata().is_ok_and(|m| m.file_type().is_symlink()) {
+            if existing
+                .symlink_metadata()
+                .is_ok_and(|m| m.file_type().is_symlink())
+            {
                 return Err(outside()); // a broken link: going on would tell whether its target exists
             }
             match (existing.file_name(), existing.parent()) {
@@ -1904,7 +2610,9 @@ impl Automation {
         }
         if !rest.is_empty() && !for_write {
             // Missing, below a folder inside the root: say why, as the system reports it.
-            real = joined.canonicalize().map_err(|e| failed(format!("{path}: {e}")))?;
+            real = joined
+                .canonicalize()
+                .map_err(|e| failed(format!("{path}: {e}")))?;
             if !real.starts_with(root) {
                 return Err(outside()); // it appeared, as a link out, since the check above
             }
@@ -1942,7 +2650,9 @@ fn lexical(path: &Path) -> Option<PathBuf> {
 fn foreign_share(path: &Path, root: &Path) -> bool {
     use std::path::{Component, Prefix};
     fn share(p: &Path) -> Option<String> {
-        let Some(Component::Prefix(prefix)) = p.components().next() else { return None };
+        let Some(Component::Prefix(prefix)) = p.components().next() else {
+            return None;
+        };
         let (kind, a, b) = match prefix.kind() {
             Prefix::Disk(_) | Prefix::VerbatimDisk(_) => return None,
             Prefix::UNC(host, share) | Prefix::VerbatimUNC(host, share) => ("unc", host, share),
@@ -1957,8 +2667,13 @@ fn foreign_share(path: &Path, root: &Path) -> bool {
 // ---- JSON helpers ----------------------------------------------------------------------------
 
 fn parse_style_ranges(value: Option<&Value>) -> Result<Vec<pdfcraft_engine::RangeStyle>> {
-    let Some(value) = value else { return Ok(Vec::new()) };
-    let values = value.as_array().filter(|v| v.len() <= 1024).ok_or_else(|| Args::wrong("ranges", "an array of at most 1024 style objects"))?;
+    let Some(value) = value else {
+        return Ok(Vec::new());
+    };
+    let values = value
+        .as_array()
+        .filter(|v| v.len() <= 1024)
+        .ok_or_else(|| Args::wrong("ranges", "an array of at most 1024 style objects"))?;
     values
         .iter()
         .map(|v| {
@@ -1987,7 +2702,13 @@ fn parse_style_ranges(value: Option<&Value>) -> Result<Vec<pdfcraft_engine::Rang
                     _ => Err(Args::wrong("font", "helvetica, times or courier")),
                 })
                 .transpose()?
-                .map(|f| -> Result<_> { Ok((f, a.opt_bool("bold")?.unwrap_or(false), a.opt_bool("italic")?.unwrap_or(false))) })
+                .map(|f| -> Result<_> {
+                    Ok((
+                        f,
+                        a.opt_bool("bold")?.unwrap_or(false),
+                        a.opt_bool("italic")?.unwrap_or(false),
+                    ))
+                })
                 .transpose()?;
             Ok(pdfcraft_engine::RangeStyle {
                 range: start..end,
@@ -2020,27 +2741,49 @@ impl Args<'_> {
         self.opt_str(key)?.ok_or_else(|| Self::missing(key))
     }
     fn opt_str(&self, key: &str) -> Result<Option<&str>> {
-        self.get(key).map(|v| v.as_str().ok_or_else(|| Self::wrong(key, "a string"))).transpose()
+        self.get(key)
+            .map(|v| v.as_str().ok_or_else(|| Self::wrong(key, "a string")))
+            .transpose()
     }
     fn int(&self, key: &str) -> Result<i64> {
         self.opt_int(key)?.ok_or_else(|| Self::missing(key))
     }
     fn opt_int(&self, key: &str) -> Result<Option<i64>> {
-        self.get(key).map(|v| v.as_i64().ok_or_else(|| Self::wrong(key, "an integer"))).transpose()
+        self.get(key)
+            .map(|v| v.as_i64().ok_or_else(|| Self::wrong(key, "an integer")))
+            .transpose()
     }
     fn opt_num(&self, key: &str) -> Result<Option<f64>> {
-        self.get(key).map(|v| v.as_f64().filter(|f| f.is_finite()).ok_or_else(|| Self::wrong(key, "a number"))).transpose()
+        self.get(key)
+            .map(|v| {
+                v.as_f64()
+                    .filter(|f| f.is_finite())
+                    .ok_or_else(|| Self::wrong(key, "a number"))
+            })
+            .transpose()
     }
     fn opt_bool(&self, key: &str) -> Result<Option<bool>> {
-        self.get(key).map(|v| v.as_bool().ok_or_else(|| Self::wrong(key, "true or false"))).transpose()
+        self.get(key)
+            .map(|v| v.as_bool().ok_or_else(|| Self::wrong(key, "true or false")))
+            .transpose()
     }
     fn ints(&self, key: &str) -> Result<Vec<i64>> {
         self.opt_ints(key)?.ok_or_else(|| Self::missing(key))
     }
     fn opt_ints(&self, key: &str) -> Result<Option<Vec<i64>>> {
-        let Some(v) = self.get(key) else { return Ok(None) };
-        let arr = v.as_array().ok_or_else(|| Self::wrong(key, "an array of integers"))?;
-        arr.iter().map(|x| x.as_i64().ok_or_else(|| Self::wrong(key, "an array of integers"))).collect::<Result<Vec<_>>>().map(Some)
+        let Some(v) = self.get(key) else {
+            return Ok(None);
+        };
+        let arr = v
+            .as_array()
+            .ok_or_else(|| Self::wrong(key, "an array of integers"))?;
+        arr.iter()
+            .map(|x| {
+                x.as_i64()
+                    .ok_or_else(|| Self::wrong(key, "an array of integers"))
+            })
+            .collect::<Result<Vec<_>>>()
+            .map(Some)
     }
     /// A 1-based bookmark path → 0-based indices.
     fn path(&self, key: &str) -> Result<Vec<usize>> {
@@ -2051,13 +2794,31 @@ impl Args<'_> {
         Ok(p)
     }
     fn opt_path(&self, key: &str) -> Result<Option<Vec<usize>>> {
-        let Some(v) = self.opt_ints(key)? else { return Ok(None) };
-        v.iter().map(|i| if *i >= 1 { Ok(*i as usize - 1) } else { Err(Self::wrong(key, "1-based positions")) }).collect::<Result<Vec<_>>>().map(Some)
+        let Some(v) = self.opt_ints(key)? else {
+            return Ok(None);
+        };
+        v.iter()
+            .map(|i| {
+                if *i >= 1 {
+                    Ok(*i as usize - 1)
+                } else {
+                    Err(Self::wrong(key, "1-based positions"))
+                }
+            })
+            .collect::<Result<Vec<_>>>()
+            .map(Some)
     }
     fn strs(&self, key: &str) -> Result<Vec<&str>> {
         let v = self.get(key).ok_or_else(|| Self::missing(key))?;
-        let arr = v.as_array().ok_or_else(|| Self::wrong(key, "an array of strings"))?;
-        arr.iter().map(|x| x.as_str().ok_or_else(|| Self::wrong(key, "an array of strings"))).collect()
+        let arr = v
+            .as_array()
+            .ok_or_else(|| Self::wrong(key, "an array of strings"))?;
+        arr.iter()
+            .map(|x| {
+                x.as_str()
+                    .ok_or_else(|| Self::wrong(key, "an array of strings"))
+            })
+            .collect()
     }
 }
 
@@ -2096,7 +2857,15 @@ fn close_row(open: &mut Vec<(usize, Value, Vec<Value>)>, roots: &mut Vec<Value>)
 fn one_based(pages: &[i64]) -> Result<Vec<usize>> {
     pages
         .iter()
-        .map(|p| if *p >= 1 { Ok(*p as usize - 1) } else { Err(ToolError::InvalidArgs(format!("page numbers start at 1 (got {p})"))) })
+        .map(|p| {
+            if *p >= 1 {
+                Ok(*p as usize - 1)
+            } else {
+                Err(ToolError::InvalidArgs(format!(
+                    "page numbers start at 1 (got {p})"
+                )))
+            }
+        })
         .collect()
 }
 
@@ -2216,7 +2985,9 @@ fn info(d: &Document) -> Value {
 /// A user-space rectangle on 0-based `page` in displayed-page coordinates; unchanged when the
 /// page is unknown (a malformed annotation that points at no page).
 fn view_rect(i: &pdfcraft_render::DocInfo, page: usize, rect: [f32; 4]) -> [f32; 4] {
-    i.pages.get(page).map_or(rect, |p| comments::rect_to_view(p, rect))
+    i.pages
+        .get(page)
+        .map_or(rect, |p| comments::rect_to_view(p, rect))
 }
 
 fn outline(items: &[pdfcraft_render::OutlineItem]) -> Value {
@@ -2244,16 +3015,36 @@ fn encode_png(width: u32, height: u32, premultiplied: &[u8]) -> Result<Vec<u8>> 
 }
 
 /// Extract the text of `pages` (0-based) with one renderer per worker thread.
-fn extract_parallel(bytes: &Arc<Vec<u8>>, password: Option<Arc<str>>, pages: &[usize]) -> PageTexts {
+fn extract_parallel(
+    bytes: &Arc<Vec<u8>>,
+    password: Option<Arc<str>>,
+    pages: &[usize],
+) -> PageTexts {
     let extract = |r: &mut PageRenderer, p: usize| {
-        let out = r.render(RenderRequest { page: p, kind: RequestKind::Text, tile: None, scale: 1.0, tag: 0, preview: false });
+        let out = r.render(RenderRequest {
+            page: p,
+            kind: RequestKind::Text,
+            tile: None,
+            scale: 1.0,
+            tag: 0,
+            preview: false,
+        });
         match out.error {
             Some(e) => Err(e),
             None => Ok(out.text.unwrap_or_default()),
         }
     };
-    let config = RenderConfig { password, ..Default::default() };
-    let workers = if cfg!(target_arch = "wasm32") { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).min(8) };
+    let config = RenderConfig {
+        password,
+        ..Default::default()
+    };
+    let workers = if cfg!(target_arch = "wasm32") {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .min(8)
+    };
     // Small jobs aren't worth a second parse of the document.
     if workers == 1 || pages.len() < 8 {
         let mut r = PageRenderer::new(bytes.clone(), config);
@@ -2275,7 +3066,10 @@ fn extract_parallel(bytes: &Arc<Vec<u8>>, password: Option<Arc<str>>, pages: &[u
                 })
             })
             .collect();
-        handles.into_iter().flat_map(|h| h.join().unwrap_or_default()).collect()
+        handles
+            .into_iter()
+            .flat_map(|h| h.join().unwrap_or_default())
+            .collect()
     });
     out.sort_by_key(|(p, _)| *p);
     out
@@ -2285,7 +3079,16 @@ fn extract_parallel(bytes: &Arc<Vec<u8>>, password: Option<Arc<str>>, pages: &[u
 /// colons (a Windows drive or stream) and control characters become `_`, and a name of only dots
 /// gets a leading `_`, so it is one plain file name and can't lead out of `dir`.
 fn child(dir: &Path, name: &str) -> PathBuf {
-    let mut safe: String = name.chars().map(|c| if matches!(c, '/' | '\\' | ':') || c.is_control() { '_' } else { c }).collect();
+    let mut safe: String = name
+        .chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':') || c.is_control() {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
     if safe.chars().all(|c| c == '.') {
         safe.insert(0, '_');
     }
@@ -2298,7 +3101,10 @@ fn unused(dir: &Path, stem: &str) -> PathBuf {
     if !first.exists() {
         return first;
     }
-    (2..10_000u32).map(|n| child(dir, &format!("{stem} ({n}).pdf"))).find(|p| !p.exists()).unwrap_or(first)
+    (2..10_000u32)
+        .map(|n| child(dir, &format!("{stem} ({n}).pdf")))
+        .find(|p| !p.exists())
+        .unwrap_or(first)
 }
 
 /// Write via a temporary file in the same directory, then rename over the target.
@@ -2307,18 +3113,35 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> Result<()> {
 }
 
 /// [`write_atomic`], trying the staging names that `suffixes` give.
-fn write_atomic_with(path: &Path, bytes: &[u8], suffixes: impl IntoIterator<Item = u64>) -> Result<()> {
+fn write_atomic_with(
+    path: &Path,
+    bytes: &[u8],
+    suffixes: impl IntoIterator<Item = u64>,
+) -> Result<()> {
     use std::io::Write;
     // A folder can't be replaced, and staging beside it could land outside the root: "." names
     // the root itself, whose parent isn't ours to write in.
     if path.is_dir() {
-        return Err(failed(format!("{}: is a folder, not a file", path.display())));
+        return Err(failed(format!(
+            "{}: is a folder, not a file",
+            path.display()
+        )));
     }
-    let dir = path.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
-    let name = path.file_name().ok_or_else(|| failed(format!("{}: not a file path", path.display())))?;
+    let dir = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    let name = path
+        .file_name()
+        .ok_or_else(|| failed(format!("{}: not a file path", path.display())))?;
     std::fs::create_dir_all(dir).map_err(|e| failed(format!("{}: {e}", dir.display())))?;
-    let (tmp, file) =
-        create_staging(dir, &name.to_string_lossy(), StagingName::SuffixThenTag, suffixes).map_err(|e| failed(format!("{}: {e}", dir.display())))?;
+    let (tmp, file) = create_staging(
+        dir,
+        &name.to_string_lossy(),
+        StagingName::SuffixThenTag,
+        suffixes,
+    )
+    .map_err(|e| failed(format!("{}: {e}", dir.display())))?;
     // Closed at the end of the block, before the rename.
     let written = {
         let mut file = file;
@@ -2343,12 +3166,18 @@ mod tests {
     fn numbered_pages(n: usize) -> Vec<u8> {
         let mut objs: Vec<String> = vec!["<< /Type /Catalog /Pages 2 0 R >>".into()];
         let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 4 + 2 * i)).collect();
-        objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")));
+        objs.push(format!(
+            "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+            kids.join(" ")
+        ));
         objs.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".into());
         for i in 0..n {
             objs.push(format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >> >>", 5 + 2 * i));
             let body = format!("BT /F1 24 Tf 20 150 Td (Page {}) Tj ET", i + 1);
-            objs.push(format!("<< /Length {} >>\nstream\n{body}\nendstream", body.len()));
+            objs.push(format!(
+                "<< /Length {} >>\nstream\n{body}\nendstream",
+                body.len()
+            ));
         }
         let mut out = b"%PDF-1.7\n".to_vec();
         let mut offsets = Vec::new();
@@ -2357,11 +3186,19 @@ mod tests {
             out.extend_from_slice(format!("{} 0 obj\n{o}\nendobj\n", i + 1).as_bytes());
         }
         let xref = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes(),
+        );
         for o in offsets {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+                objs.len() + 1
+            )
+            .as_bytes(),
+        );
         out
     }
 
@@ -2373,7 +3210,9 @@ mod tests {
     }
 
     fn search_document(a: &mut Automation, pages: usize) -> DocId {
-        a.session.open("synthetic.pdf", None, Arc::new(numbered_pages(pages)), None).unwrap()
+        a.session
+            .open("synthetic.pdf", None, Arc::new(numbered_pages(pages)), None)
+            .unwrap()
     }
 
     #[test]
@@ -2383,13 +3222,31 @@ mod tests {
         let first = search_document(&mut a, 200);
         let second = search_document(&mut a, 200);
         for id in [first, second] {
-            let result = json(&mut a, "text_find", json!({ "doc": id.0, "query": "absent" }));
+            let result = json(
+                &mut a,
+                "text_find",
+                json!({ "doc": id.0, "query": "absent" }),
+            );
             assert_eq!(result["complete"], true);
             assert!(a.texts.bytes() <= 16 * 1024);
-            assert!(a.texts.len() < 200, "an exhaustive search must not retain every page");
-            let found = json(&mut a, "text_find", json!({ "doc": id.0, "query": "Page", "limit": 1000 }));
-            assert_eq!(found["count"], 200, "eviction inside a batch must not discard its matches");
-            eprintln!("200 pages searched: {} resident pages, {} estimated bytes (budget 16384)", a.texts.len(), a.texts.bytes());
+            assert!(
+                a.texts.len() < 200,
+                "an exhaustive search must not retain every page"
+            );
+            let found = json(
+                &mut a,
+                "text_find",
+                json!({ "doc": id.0, "query": "Page", "limit": 1000 }),
+            );
+            assert_eq!(
+                found["count"], 200,
+                "eviction inside a batch must not discard its matches"
+            );
+            eprintln!(
+                "200 pages searched: {} resident pages, {} estimated bytes (budget 16384)",
+                a.texts.len(),
+                a.texts.bytes()
+            );
         }
         assert!(a.texts.get(first, 0).is_none());
         let text = a.page_texts(first, &[0]).unwrap().remove(0);
@@ -2397,11 +3254,19 @@ mod tests {
         let again = a.page_texts(first, &[0]).unwrap().remove(0);
         assert!(Arc::ptr_eq(&text, &again), "cache hits reuse glyph storage");
         assert!(a.texts.bytes() <= 16 * 1024);
-        json(&mut a, "page_delete", json!({ "doc": first.0, "pages": [1] }));
+        json(
+            &mut a,
+            "page_delete",
+            json!({ "doc": first.0, "pages": [1] }),
+        );
         let edited = a.page_texts(first, &[0]).unwrap().remove(0);
         assert_eq!(edited.plain_text(), "Page 2");
         assert!(!Arc::ptr_eq(&text, &edited));
-        json(&mut a, "doc_close", json!({ "doc": first.0, "discard_changes": true }));
+        json(
+            &mut a,
+            "doc_close",
+            json!({ "doc": first.0, "discard_changes": true }),
+        );
         json(&mut a, "doc_close", json!({ "doc": second.0 }));
         assert_eq!((a.texts.bytes(), a.texts.len()), (0, 0));
     }
@@ -2413,9 +3278,17 @@ mod tests {
         let error = a.page_texts(id, &[0, 3, 1]).unwrap_err();
         assert!(error.to_string().contains("page 4: page is out of range"));
         assert!(a.texts.get(id, 0).is_some());
-        assert!(a.texts.get(id, 1).is_some(), "successful extraction after the failed entry is retained");
-        let results = a.page_text_results(id, &[2], &mut |_, _, _| vec![]).unwrap();
-        assert!(results[0].1.is_err(), "a missing worker result must not become an empty page");
+        assert!(
+            a.texts.get(id, 1).is_some(),
+            "successful extraction after the failed entry is retained"
+        );
+        let results = a
+            .page_text_results(id, &[2], &mut |_, _, _| vec![])
+            .unwrap();
+        assert!(
+            results[0].1.is_err(),
+            "a missing worker result must not become an empty page"
+        );
     }
 
     #[test]
@@ -2425,10 +3298,24 @@ mod tests {
         let mut extract = |bytes: &Arc<Vec<u8>>, password, pages: &[usize]| {
             extract_parallel(bytes, password, pages)
                 .into_iter()
-                .map(|(p, result)| (p, if [2, 6].contains(&p) { Err(format!("synthetic page {} failure", p + 1)) } else { result }))
+                .map(|(p, result)| {
+                    (
+                        p,
+                        if [2, 6].contains(&p) {
+                            Err(format!("synthetic page {} failure", p + 1))
+                        } else {
+                            result
+                        },
+                    )
+                })
                 .collect()
         };
-        let all = a.text_find_with(&Args(&json!({ "doc": id.0, "query": "Page" })), &mut extract).unwrap();
+        let all = a
+            .text_find_with(
+                &Args(&json!({ "doc": id.0, "query": "Page" })),
+                &mut extract,
+            )
+            .unwrap();
         assert_eq!(all["count"], 14);
         assert_eq!(all["complete"], false);
         assert_eq!(all["warning_count"], 2);
@@ -2436,14 +3323,23 @@ mod tests {
         assert_eq!(all["warnings"][1]["page"], 7);
         assert!(all.get("next").is_none());
         assert_eq!(all["matches"][13]["page"], 16);
-        assert!(a.texts.get(id, 7).is_some(), "success after a failure in the same batch is cached");
+        assert!(
+            a.texts.get(id, 7).is_some(),
+            "success after a failure in the same batch is cached"
+        );
         let mut args = json!({ "doc": id.0, "query": "Page", "limit": 4 });
         let mut matches = Vec::new();
         let mut warned = Vec::new();
         loop {
             let part = a.text_find_with(&Args(&args), &mut extract).unwrap();
             matches.extend(part["matches"].as_array().unwrap().iter().cloned());
-            warned.extend(part["warnings"].as_array().unwrap().iter().map(|w| w["page"].clone()));
+            warned.extend(
+                part["warnings"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|w| w["page"].clone()),
+            );
             if !part["warnings"].as_array().unwrap().is_empty() {
                 assert_eq!(part["complete"], false);
             }
@@ -2451,7 +3347,11 @@ mod tests {
             args["start_page"] = next["start_page"].clone();
             args["skip"] = next["skip"].clone();
         }
-        assert_eq!(matches, *all["matches"].as_array().unwrap(), "no readable match is lost or repeated");
+        assert_eq!(
+            matches,
+            *all["matches"].as_array().unwrap(),
+            "no readable match is lost or repeated"
+        );
         assert_eq!(warned, vec![json!(3), json!(7)]);
     }
 
@@ -2460,19 +3360,26 @@ mod tests {
         let mut a = Automation::new();
         let id = search_document(&mut a, 200);
         let first = a
-            .text_find_with(&Args(&json!({ "doc": id.0, "query": "Page", "limit": 1 })), &mut |bytes, password, pages| {
-                assert!(pages.iter().all(|p| *p < FIND_FIRST_BATCH), "a bounded search must not reach the bad page at the end");
-                extract_parallel(bytes, password, pages)
-            })
+            .text_find_with(
+                &Args(&json!({ "doc": id.0, "query": "Page", "limit": 1 })),
+                &mut |bytes, password, pages| {
+                    assert!(
+                        pages.iter().all(|p| *p < FIND_FIRST_BATCH),
+                        "a bounded search must not reach the bad page at the end"
+                    );
+                    extract_parallel(bytes, password, pages)
+                },
+            )
             .unwrap();
         assert_eq!(first["count"], 1);
         assert_eq!(first["warning_count"], 0);
         assert_eq!(first["next"], json!({ "start_page": 2, "skip": 0 }));
         a.texts.remove(&id);
         let failures = a
-            .text_find_with(&Args(&json!({ "doc": id.0, "query": "Page" })), &mut |_, _, pages| {
-                pages.iter().map(|p| (*p, Err("界".repeat(2000)))).collect()
-            })
+            .text_find_with(
+                &Args(&json!({ "doc": id.0, "query": "Page" })),
+                &mut |_, _, pages| pages.iter().map(|p| (*p, Err("界".repeat(2000)))).collect(),
+            )
             .unwrap();
         assert_eq!(failures["count"], 0);
         assert_eq!(failures["complete"], false);
@@ -2481,12 +3388,15 @@ mod tests {
         assert_eq!(failures["warnings_truncated"], true);
         let warnings = failures["warnings"].as_array().unwrap();
         assert_eq!(warnings.len(), FIND_MAX_WARNINGS);
-        assert!(warnings.iter().all(|w| w["error"].as_str().unwrap().len() <= FIND_MAX_WARNING_BYTES && w["error_truncated"] == true));
+        assert!(warnings.iter().all(|w| w["error"].as_str().unwrap().len()
+            <= FIND_MAX_WARNING_BYTES
+            && w["error_truncated"] == true));
     }
 
     #[test]
     fn a_bounded_text_find_reads_only_the_pages_it_needs_and_says_it_stopped() {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-automation-find-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-automation-find-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("long.pdf"), numbered_pages(200)).unwrap();
@@ -2496,37 +3406,73 @@ mod tests {
 
         // #971: the first match is on page 1 and the next on page 10, so the rest of the 200 pages
         // aren't extracted or cached.
-        let first = json(&mut a, "text_find", json!({ "doc": doc, "query": "Page 1", "limit": 1 }));
+        let first = json(
+            &mut a,
+            "text_find",
+            json!({ "doc": doc, "query": "Page 1", "limit": 1 }),
+        );
         assert_eq!(first["count"], 1);
         assert_eq!(first["matches"][0]["page"], 1);
         assert_eq!(first["complete"], false, "{first}");
         assert_eq!(first["next"], json!({ "start_page": 10, "skip": 0 }));
-        assert!(extracted(&a) <= 3 * FIND_FIRST_BATCH, "{} pages extracted for one match", extracted(&a));
+        assert!(
+            extracted(&a) <= 3 * FIND_FIRST_BATCH,
+            "{} pages extracted for one match",
+            extracted(&a)
+        );
 
         // Following `next` returns every match exactly once, in order, and then says it's complete.
         // "1" appears twice on pages like 11 and 101, so continuing has to skip within a page.
-        let all = json(&mut a, "text_find", json!({ "doc": doc, "query": "1", "limit": 10_000 }));
+        let all = json(
+            &mut a,
+            "text_find",
+            json!({ "doc": doc, "query": "1", "limit": 10_000 }),
+        );
         assert_eq!(all["complete"], true);
         assert!(all.get("next").is_none());
         let mut pieced = Vec::new();
         let mut args = json!({ "doc": doc, "query": "1", "limit": 3 });
         loop {
             let found = json(&mut a, "text_find", args.clone());
-            pieced.extend(found["matches"].as_array().unwrap().iter().map(|m| (m["page"].clone(), m["rects"].clone())));
+            pieced.extend(
+                found["matches"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|m| (m["page"].clone(), m["rects"].clone())),
+            );
             if found["complete"] == true {
                 break;
             }
             args["start_page"] = found["next"]["start_page"].clone();
             args["skip"] = found["next"]["skip"].clone();
         }
-        let expected: Vec<_> = all["matches"].as_array().unwrap().iter().map(|m| (m["page"].clone(), m["rects"].clone())).collect();
+        let expected: Vec<_> = all["matches"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| (m["page"].clone(), m["rects"].clone()))
+            .collect();
         assert_eq!(all["count"], expected.len());
         assert_eq!(pieced, expected);
 
         // A search that runs to the end below its limit is complete; a start page past the end is refused.
-        let few = json(&mut a, "text_find", json!({ "doc": doc, "query": "Page 200", "start_page": 150 }));
-        assert_eq!((few["count"].clone(), few["complete"].clone()), (json!(1), json!(true)));
-        assert!(a.call("text_find", &json!({ "doc": doc, "query": "x", "start_page": 201 })).is_err());
+        let few = json(
+            &mut a,
+            "text_find",
+            json!({ "doc": doc, "query": "Page 200", "start_page": 150 }),
+        );
+        assert_eq!(
+            (few["count"].clone(), few["complete"].clone()),
+            (json!(1), json!(true))
+        );
+        assert!(
+            a.call(
+                "text_find",
+                &json!({ "doc": doc, "query": "x", "start_page": 201 })
+            )
+            .is_err()
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2545,11 +3491,32 @@ mod tests {
     #[test]
     fn names_from_documents_become_one_plain_file_name() {
         let dir = std::env::temp_dir().join("out");
-        for name in ["../../x.png", "/abs/x.png", r"..\..\x.png", "C:x.png", r"\\host\share\x.png", "a:stream", "..", ".", "", "tab\there", "ok.png"]
-        {
+        for name in [
+            "../../x.png",
+            "/abs/x.png",
+            r"..\..\x.png",
+            "C:x.png",
+            r"\\host\share\x.png",
+            "a:stream",
+            "..",
+            ".",
+            "",
+            "tab\there",
+            "ok.png",
+        ] {
             let p = child(&dir, name);
-            assert_eq!(p.parent(), Some(dir.as_path()), "{name:?} -> {}", p.display());
-            assert_eq!(p.components().count(), dir.components().count() + 1, "{name:?} -> {}", p.display());
+            assert_eq!(
+                p.parent(),
+                Some(dir.as_path()),
+                "{name:?} -> {}",
+                p.display()
+            );
+            assert_eq!(
+                p.components().count(),
+                dir.components().count() + 1,
+                "{name:?} -> {}",
+                p.display()
+            );
         }
         assert_eq!(child(&dir, "ok.png"), dir.join("ok.png"));
         assert_eq!(child(&dir, "../x.png"), dir.join(".._x.png"));
@@ -2570,20 +3537,33 @@ mod tests {
         ] {
             assert!(foreign_share(Path::new(p), local), "{p}");
         }
-        for p in [r"C:\work\root\x.pdf", r"c:\elsewhere\x.pdf", r"\\?\C:\work\root\x.pdf", r"D:\x.pdf", r"C:x.pdf"] {
+        for p in [
+            r"C:\work\root\x.pdf",
+            r"c:\elsewhere\x.pdf",
+            r"\\?\C:\work\root\x.pdf",
+            r"D:\x.pdf",
+            r"C:x.pdf",
+        ] {
             assert!(!foreign_share(Path::new(p), local), "{p}");
         }
         // A root on a share accepts that share, however it is spelled, and nothing else.
         let shared = Path::new(r"\\?\UNC\Server\Docs\root");
-        assert!(!foreign_share(Path::new(r"\\server\docs\root\x.pdf"), shared));
-        assert!(!foreign_share(Path::new(r"\\?\UNC\SERVER\DOCS\x.pdf"), shared));
+        assert!(!foreign_share(
+            Path::new(r"\\server\docs\root\x.pdf"),
+            shared
+        ));
+        assert!(!foreign_share(
+            Path::new(r"\\?\UNC\SERVER\DOCS\x.pdf"),
+            shared
+        ));
         assert!(foreign_share(Path::new(r"\\server\other\x.pdf"), shared));
         assert!(foreign_share(Path::new(r"\\attacker\docs\x.pdf"), shared));
     }
 
     /// A fresh, empty folder for one staging test.
     fn staging_dir(test: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("pdfcraft-staging-{}-{test}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("pdfcraft-staging-{}-{test}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -2610,7 +3590,11 @@ mod tests {
         }
         #[cfg(not(any(unix, windows)))]
         {
-            Err(std::io::Error::other(format!("no symbolic links here: {} {}", target.display(), link.display())))
+            Err(std::io::Error::other(format!(
+                "no symbolic links here: {} {}",
+                target.display(),
+                link.display()
+            )))
         }
     }
 
@@ -2629,7 +3613,10 @@ mod tests {
         assert_eq!(read(&outside), "PRECIOUS");
         assert_eq!(read(&staged(&dir, 1)), "PRECIOUS");
         assert_eq!(read(&staged(&dir, 2)), "PLANTED");
-        assert!(!staged(&dir, 3).exists(), "the staging file was renamed into place");
+        assert!(
+            !staged(&dir, 3).exists(),
+            "the staging file was renamed into place"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2660,7 +3647,10 @@ mod tests {
         }
         write_atomic_with(&target, b"NEW", [1, 2]).unwrap();
         assert_eq!(read(&target), "NEW");
-        assert!(!unborn.exists(), "nothing was created through the dangling link");
+        assert!(
+            !unborn.exists(),
+            "nothing was created through the dangling link"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -2682,7 +3672,10 @@ mod tests {
 
     /// The names in a folder: what a test can see was left behind.
     fn listing(dir: &Path) -> Vec<String> {
-        let mut names: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name().to_string_lossy().into_owned()).collect();
+        let mut names: Vec<_> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
         names.sort();
         names
     }
@@ -2691,7 +3684,11 @@ mod tests {
     fn staging_names_differ_between_saves_and_fit_long_names() {
         let suffixes: std::collections::HashSet<u64> = staging_suffixes().take(64).collect();
         assert_eq!(suffixes.len(), 64);
-        assert_ne!(staging_suffixes().next(), staging_suffixes().next(), "each save draws new names");
+        assert_ne!(
+            staging_suffixes().next(),
+            staging_suffixes().next(),
+            "each save draws new names"
+        );
         // 60 four-byte characters: a 244-byte name, within every system's limit. Its staging name
         // must be too (on Linux the whole name in it would be 275 bytes).
         let dir = staging_dir("long");
@@ -2726,7 +3723,10 @@ mod tests {
         perms.set_readonly(true);
         std::fs::set_permissions(&target, perms.clone()).unwrap();
         let e = write_atomic_with(&target, b"NEW", [7]).unwrap_err();
-        assert!(e.to_string().contains(&target.display().to_string()), "the rename failed, not the staging: {e}");
+        assert!(
+            e.to_string().contains(&target.display().to_string()),
+            "the rename failed, not the staging: {e}"
+        );
         assert_eq!(read(&target), "OLD");
         assert_eq!(listing(&dir), ["out.pdf"], "the staging file was removed");
         #[allow(clippy::permissions_set_readonly_false)]

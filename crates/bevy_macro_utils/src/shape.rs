@@ -1,6 +1,6 @@
 use syn::{
-    punctuated::Punctuated, spanned::Spanned, token::Comma, Data, DataEnum, DataUnion, Error,
-    Field, Fields,
+    Data, DataEnum, DataUnion, Error, Field, Fields, punctuated::Punctuated, spanned::Spanned,
+    token::Comma,
 };
 
 /// Get the fields of a data structure if that structure is a struct;

@@ -25,7 +25,11 @@ enum Ours {
     Bound(&'static str),
     /// Bound to this command on other keys where the documented ones collide with another
     /// documented shortcut: (command, macOS keys, Windows/Linux keys; empty: the macOS keys).
-    Moved(&'static str, &'static [&'static str], &'static [&'static str]),
+    Moved(
+        &'static str,
+        &'static [&'static str],
+        &'static [&'static str],
+    ),
     /// A held key, pointer gesture or presentation key; the shortcuts panel lists it under this label.
     Gesture(&'static str),
     /// A tool key in vector edit mode.
@@ -56,25 +60,66 @@ impl Row {
         self
     }
     fn keys(&self, p: Platform) -> &'static [&'static str] {
-        if p == Platform::Other && !self.win.is_empty() { self.win } else { self.mac }
+        if p == Platform::Other && !self.win.is_empty() {
+            self.win
+        } else {
+            self.mac
+        }
     }
     /// The keys that fire the row's command here, and the command.
     fn ours(&self, p: Platform) -> Option<(&'static str, &'static [&'static str])> {
         match self.ours {
             Bound(id) => Some((id, self.keys(p))),
-            Moved(id, mac, win) => Some((id, if p == Platform::Other && !win.is_empty() { win } else { mac })),
+            Moved(id, mac, win) => Some((
+                id,
+                if p == Platform::Other && !win.is_empty() {
+                    win
+                } else {
+                    mac
+                },
+            )),
             _ => None,
         }
     }
 }
 
-const fn doc(group: Group, action: &'static str, mac: &'static [&'static str], win: &'static [&'static str], ours: Ours, note: &'static str) -> Row {
-    Row { group, action, mac, win, ours, documented: true, reserved: "", note }
+const fn doc(
+    group: Group,
+    action: &'static str,
+    mac: &'static [&'static str],
+    win: &'static [&'static str],
+    ours: Ours,
+    note: &'static str,
+) -> Row {
+    Row {
+        group,
+        action,
+        mac,
+        win,
+        ours,
+        documented: true,
+        reserved: "",
+        note,
+    }
 }
 
 /// A binding the documentation is silent on: today's keys, pinned.
-const fn pin(group: Group, id: &'static str, mac: &'static [&'static str], win: &'static [&'static str]) -> Row {
-    Row { group, action: id, mac, win, ours: Bound(id), documented: false, reserved: "", note: "documentation silent: pinned" }
+const fn pin(
+    group: Group,
+    id: &'static str,
+    mac: &'static [&'static str],
+    win: &'static [&'static str],
+) -> Row {
+    Row {
+        group,
+        action: id,
+        mac,
+        win,
+        ours: Bound(id),
+        documented: false,
+        reserved: "",
+        note: "documentation silent: pinned",
+    }
 }
 
 const BROWSER_TAB: &str = "browsers keep it for their tabs and windows (web build)";
@@ -336,25 +381,50 @@ fn is_chord(spec: &str) -> bool {
 fn documented_shortcuts_fire_their_commands_on_both_platforms() {
     for row in ROWS {
         for p in PLATFORMS {
-            assert!(row.keys(p).iter().all(|k| !is_chord(k) || parse(k).is_some()), "{}: keys don't parse", row.action);
+            assert!(
+                row.keys(p)
+                    .iter()
+                    .all(|k| !is_chord(k) || parse(k).is_some()),
+                "{}: keys don't parse",
+                row.action
+            );
             if let Some((id, keys)) = row.ours(p) {
                 assert!(!keys.is_empty(), "{}", row.action);
                 for k in keys {
-                    assert!(fires(p, k).contains(&Some(id)), "{p:?}: `{k}` should run {id} ({}), runs {:?}", row.action, fires(p, k));
+                    assert!(
+                        fires(p, k).contains(&Some(id)),
+                        "{p:?}: `{k}` should run {id} ({}), runs {:?}",
+                        row.action,
+                        fires(p, k)
+                    );
                 }
                 // The panel lists the binding in the row's tab.
-                assert!(KEYS.iter().any(|b| b.id == id && b.group == row.group), "{id} isn't in the {:?} tab", row.group);
+                assert!(
+                    KEYS.iter().any(|b| b.id == id && b.group == row.group),
+                    "{id} isn't in the {:?} tab",
+                    row.group
+                );
             }
             if let Moved(id, ..) = row.ours {
                 let ours = row.ours(p).map(|o| o.1).unwrap_or_default();
                 for k in row.keys(p).iter().filter(|k| !ours.contains(k)) {
-                    assert!(!fires(p, k).contains(&Some(id)), "{p:?}: `{k}` was moved off {id}");
-                    assert!(fires(p, k).iter().any(Option::is_some), "{p:?}: `{k}` should be the conflicting documented command");
+                    assert!(
+                        !fires(p, k).contains(&Some(id)),
+                        "{p:?}: `{k}` was moved off {id}"
+                    );
+                    assert!(
+                        fires(p, k).iter().any(Option::is_some),
+                        "{p:?}: `{k}` should be the conflicting documented command"
+                    );
                 }
             }
         }
         if let Gesture(label) = row.ours {
-            assert!(GESTURES.iter().any(|g| g.0 == row.group && g.1 == label), "the panel's {:?} tab doesn't list `{label}`", row.group);
+            assert!(
+                GESTURES.iter().any(|g| g.0 == row.group && g.1 == label),
+                "the panel's {:?} tab doesn't list `{label}`",
+                row.group
+            );
         }
         assert!(row.documented || !row.note.is_empty());
     }
@@ -365,14 +435,34 @@ fn vector_edit_tool_keys() {
     for row in ROWS {
         let VectorTool(tool) = row.ours else { continue };
         let mut s = Session::new();
-        let r = s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 10, "height": 10})).unwrap();
-        s.execute("vector.edit.begin", &json!({"id": id_of(&r["id"]).unwrap()})).unwrap();
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 10, "height": 10}),
+            )
+            .unwrap();
+        s.execute(
+            "vector.edit.begin",
+            &json!({"id": id_of(&r["id"]).unwrap()}),
+        )
+        .unwrap();
         for k in row.mac {
             let (m, key) = parse(k).unwrap();
-            assert!(crate::vectoredit::key(&mut s, key, m.shift, m.alt, m.cmd).unwrap(), "`{k}` taken");
-            assert_eq!(s.ds().unwrap().vector_edit.as_ref().unwrap().tool, tool, "`{k}`");
+            assert!(
+                crate::vectoredit::key(&mut s, key, m.shift, m.alt, m.cmd).unwrap(),
+                "`{k}` taken"
+            );
+            assert_eq!(
+                s.ds().unwrap().vector_edit.as_ref().unwrap().tool,
+                tool,
+                "`{k}`"
+            );
         }
-        assert_eq!(tool.shortcut(), row.mac[0], "the tooltip shows the documented key");
+        assert_eq!(
+            tool.shortcut(),
+            row.mac[0],
+            "the tooltip shows the documented key"
+        );
     }
 }
 
@@ -381,8 +471,14 @@ fn every_default_binding_is_in_the_table() {
     for b in KEYS {
         for p in PLATFORMS {
             for k in b.keys(p) {
-                let listed = ROWS.iter().filter_map(|r| r.ours(p)).any(|(id, keys)| id == b.id && keys.iter().any(|x| chord(p, x) == chord(p, k)));
-                assert!(listed, "{p:?}: `{k}` ({}) has no row: add it, documented or pinned", b.id);
+                let listed = ROWS.iter().filter_map(|r| r.ours(p)).any(|(id, keys)| {
+                    id == b.id && keys.iter().any(|x| chord(p, x) == chord(p, k))
+                });
+                assert!(
+                    listed,
+                    "{p:?}: `{k}` ({}) has no row: add it, documented or pinned",
+                    b.id
+                );
             }
         }
     }
@@ -391,20 +487,36 @@ fn every_default_binding_is_in_the_table() {
 #[test]
 fn counts_match_the_docs() {
     let documented: Vec<&Row> = ROWS.iter().filter(|r| r.documented).collect();
-    let bound = documented.iter().filter(|r| matches!(r.ours, Bound(_) | Gesture(_) | VectorTool(_))).count();
-    let moved = documented.iter().filter(|r| matches!(r.ours, Moved(..))).count();
-    let missing = documented.iter().filter(|r| matches!(r.ours, Missing)).count();
+    let bound = documented
+        .iter()
+        .filter(|r| matches!(r.ours, Bound(_) | Gesture(_) | VectorTool(_)))
+        .count();
+    let moved = documented
+        .iter()
+        .filter(|r| matches!(r.ours, Moved(..)))
+        .count();
+    let missing = documented
+        .iter()
+        .filter(|r| matches!(r.ours, Missing))
+        .count();
     let reserved = documented.iter().filter(|r| !r.reserved.is_empty()).count();
     let pinned = ROWS.len() - documented.len();
     // docs/ui-parity.md quotes these.
-    assert_eq!((documented.len(), bound, moved, missing, reserved, pinned), (129, 128, 1, 0, 2, 48));
+    assert_eq!(
+        (documented.len(), bound, moved, missing, reserved, pinned),
+        (129, 128, 1, 0, 2, 48)
+    );
 }
 
 #[test]
 fn no_binding_takes_a_chord_the_system_keeps() {
     for (p, spec, what) in OS_RESERVED {
         for b in KEYS {
-            assert!(b.keys(*p).iter().all(|k| chord(*p, k) != chord(*p, spec)), "{p:?}: {} uses `{spec}` ({what})", b.id);
+            assert!(
+                b.keys(*p).iter().all(|k| chord(*p, k) != chord(*p, spec)),
+                "{p:?}: {} uses `{spec}` ({what})",
+                b.id
+            );
         }
     }
 }
@@ -414,15 +526,32 @@ fn modifiers_read_the_platform_way() {
     for b in KEYS {
         for k in b.keys(Platform::Mac) {
             let shown = display(k, Platform::Mac);
-            assert!(!shown.contains("Ctrl") && !shown.contains("Alt"), "{}: macOS shows `{shown}`", b.id);
+            assert!(
+                !shown.contains("Ctrl") && !shown.contains("Alt"),
+                "{}: macOS shows `{shown}`",
+                b.id
+            );
         }
         for k in b.keys(Platform::Other) {
             let shown = display(k, Platform::Other);
-            assert!(!shown.contains(['⌘', '⌥', '⌃', '⇧']), "{}: Windows/Linux shows `{shown}`", b.id);
+            assert!(
+                !shown.contains(['⌘', '⌥', '⌃', '⇧']),
+                "{}: Windows/Linux shows `{shown}`",
+                b.id
+            );
             // Windows and Linux have no Command key: Cmd and Ctrl both mean Ctrl there.
-            assert!(!(k.contains("Cmd") && k.contains("Ctrl")), "{}: `{k}` names Ctrl twice off macOS", b.id);
+            assert!(
+                !(k.contains("Cmd") && k.contains("Ctrl")),
+                "{}: `{k}` names Ctrl twice off macOS",
+                b.id
+            );
         }
-        assert!(b.keys(Platform::Mac).iter().chain(b.keys(Platform::Other)).all(|k| !k.contains("Option") && !k.contains("Win")));
+        assert!(
+            b.keys(Platform::Mac)
+                .iter()
+                .chain(b.keys(Platform::Other))
+                .all(|k| !k.contains("Option") && !k.contains("Win"))
+        );
     }
 }
 
@@ -431,9 +560,20 @@ fn control_held_while_dragging_suspends_snapping() {
     use crate::tools::{PointerEvent, PointerKind};
     let mut s = Session::new();
     for x in [0, 400] {
-        s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 100, "height": 100})).unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": x, "y": 0, "width": 100, "height": 100}),
+        )
+        .unwrap();
     }
-    let b = id_of(&s.execute("shape.rectangle", &json!({"x": 200, "y": 300, "width": 100, "height": 100})).unwrap()["id"]).unwrap();
+    let b = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 200, "y": 300, "width": 100, "height": 100}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
     s.execute("select.set", &json!({"ids": [b]})).unwrap();
     let ev = |kind, x, y, ctrl| {
         let mut e = PointerEvent::at(kind, x, y, 1.0);
@@ -442,8 +582,10 @@ fn control_held_while_dragging_suspends_snapping() {
     };
     // Grabbed at its centre and dropped 2 px off equal gaps between the other two.
     for (ctrl, want) in [(false, (200.0, 0.0)), (true, (198.0, 2.0))] {
-        s.pointer(&ev(PointerKind::Down, 250.0, 350.0, ctrl)).unwrap();
-        s.pointer(&ev(PointerKind::Move, 248.0, 52.0, ctrl)).unwrap();
+        s.pointer(&ev(PointerKind::Down, 250.0, 350.0, ctrl))
+            .unwrap();
+        s.pointer(&ev(PointerKind::Move, 248.0, 52.0, ctrl))
+            .unwrap();
         s.pointer(&ev(PointerKind::Up, 248.0, 52.0, ctrl)).unwrap();
         let r = s.doc().unwrap().world_bounds(b).unwrap();
         assert_eq!((r.x0, r.y0), want, "Control held: {ctrl}");

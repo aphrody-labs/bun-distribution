@@ -181,7 +181,10 @@ pub fn synth_shape(p: &FaceParams) -> [[f64; 2]; N] {
 /// Face frame → layer pixels.
 fn to_layer(c: [f64; 2], b: f64, roll_deg: f64, q: [f64; 2]) -> [f64; 2] {
     let (sn, cs) = roll_deg.to_radians().sin_cos();
-    [c[0] + b * (cs * q[0] - sn * q[1]), c[1] + b * (sn * q[0] + cs * q[1])]
+    [
+        c[0] + b * (cs * q[0] - sn * q[1]),
+        c[1] + b * (sn * q[0] + cs * q[1]),
+    ]
 }
 
 /// Layer pixels → face frame.
@@ -207,7 +210,11 @@ fn hash(i: i64, j: i64) -> f64 {
 fn seg_dist(p: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
     let d = [b[0] - a[0], b[1] - a[1]];
     let l2 = d[0] * d[0] + d[1] * d[1];
-    let t = if l2 > 0.0 { (((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) / l2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if l2 > 0.0 {
+        (((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) / l2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     (p[0] - a[0] - t * d[0]).hypot(p[1] - a[1] - t * d[1])
 }
 
@@ -225,11 +232,21 @@ fn face_color(p: &FaceParams, s: &[[f64; 2]; N], q: [f64; 2]) -> Option<[f32; 3]
             col = [0.28, 0.18, 0.12];
         }
         let e = EYE[side];
-        let ec = [(s[e[0]][0] + s[e[1]][0]) / 2.0, (s[e[2]][1] + s[e[3]][1]) / 2.0];
-        let (hw, hh) = ((s[e[1]][0] - s[e[0]][0]).abs() / 2.0, (s[e[3]][1] - s[e[2]][1]).abs() / 2.0);
+        let ec = [
+            (s[e[0]][0] + s[e[1]][0]) / 2.0,
+            (s[e[2]][1] + s[e[3]][1]) / 2.0,
+        ];
+        let (hw, hh) = (
+            (s[e[1]][0] - s[e[0]][0]).abs() / 2.0,
+            (s[e[3]][1] - s[e[2]][1]).abs() / 2.0,
+        );
         if ((q[0] - ec[0]) / hw).powi(2) + ((q[1] - ec[1]) / hh).powi(2) <= 1.0 {
             let pupil = s[e[4]];
-            col = if (q[0] - pupil[0]).hypot(q[1] - pupil[1]) < 0.055 { [0.12, 0.08, 0.06] } else { [0.95, 0.95, 0.93] };
+            col = if (q[0] - pupil[0]).hypot(q[1] - pupil[1]) < 0.055 {
+                [0.12, 0.08, 0.06]
+            } else {
+                [0.95, 0.95, 0.93]
+            };
         }
     }
     let _ = p;
@@ -239,8 +256,14 @@ fn face_color(p: &FaceParams, s: &[[f64; 2]; N], q: [f64; 2]) -> Option<[f32; 3]
         }
     }
     let m = MOUTH;
-    let mc = [(s[m[0]][0] + s[m[1]][0]) / 2.0, (s[m[2]][1] + s[m[3]][1]) / 2.0];
-    let (mw, mh) = ((s[m[1]][0] - s[m[0]][0]) / 2.0, (s[m[3]][1] - s[m[2]][1]) / 2.0);
+    let mc = [
+        (s[m[0]][0] + s[m[1]][0]) / 2.0,
+        (s[m[2]][1] + s[m[3]][1]) / 2.0,
+    ];
+    let (mw, mh) = (
+        (s[m[1]][0] - s[m[0]][0]) / 2.0,
+        (s[m[3]][1] - s[m[2]][1]) / 2.0,
+    );
     if ((q[0] - mc[0]) / mw).powi(2) + ((q[1] - mc[1]) / mh).powi(2) <= 1.0 {
         col = [0.42, 0.08, 0.1];
     }
@@ -258,10 +281,14 @@ pub fn render_synthetic(w: u32, h: u32, p: &FaceParams, background_seed: i64) ->
             let mut acc = [0.0f32; 3];
             for sy in 0..2 {
                 for sx in 0..2 {
-                    let l = [x as f64 + 0.25 + 0.5 * sx as f64, y as f64 + 0.25 + 0.5 * sy as f64];
+                    let l = [
+                        x as f64 + 0.25 + 0.5 * sx as f64,
+                        y as f64 + 0.25 + 0.5 * sy as f64,
+                    ];
                     let q = to_face(p.center, p.height, p.roll, l);
                     let c = face_color(p, &s, q).unwrap_or_else(|| {
-                        let n = hash((l[0] / 9.0) as i64 + background_seed, (l[1] / 9.0) as i64) as f32;
+                        let n =
+                            hash((l[0] / 9.0) as i64 + background_seed, (l[1] / 9.0) as i64) as f32;
                         [0.15 + 0.1 * n, 0.35 + 0.2 * n, 0.45 + 0.25 * n]
                     });
                     for k in 0..3 {
@@ -310,7 +337,12 @@ pub fn pdm() -> &'static Pdm {
                 brow_raise: [u() * 2.0 - 1.0, u() * 2.0 - 1.0],
                 ..Default::default()
             };
-            data.push(synth_shape(&p).iter().flat_map(|q| [q[0], q[1]]).collect::<Vec<f64>>());
+            data.push(
+                synth_shape(&p)
+                    .iter()
+                    .flat_map(|q| [q[0], q[1]])
+                    .collect::<Vec<f64>>(),
+            );
         }
         let mut mean = vec![0.0; dim];
         for d in &data {
@@ -370,22 +402,37 @@ fn fit_similarity(src: &[[f64; 2]], dst: &[[f64; 2]], w: &[f64]) -> Option<[f64;
         return None;
     }
     let (a, b) = (dt / ss, cr / ss);
-    Some([a, b, cd[0] - (a * cs[0] - b * cs[1]), cd[1] - (b * cs[0] + a * cs[1])])
+    Some([
+        a,
+        b,
+        cd[0] - (a * cs[0] - b * cs[1]),
+        cd[1] - (b * cs[0] + a * cs[1]),
+    ])
 }
 
 fn sim_apply(t: &[f64; 4], q: [f64; 2]) -> [f64; 2] {
-    [t[0] * q[0] - t[1] * q[1] + t[2], t[1] * q[0] + t[0] * q[1] + t[3]]
+    [
+        t[0] * q[0] - t[1] * q[1] + t[2],
+        t[1] * q[0] + t[0] * q[1] + t[3],
+    ]
 }
 
 fn sim_inverse(t: &[f64; 4], p: [f64; 2]) -> [f64; 2] {
     let d = [p[0] - t[2], p[1] - t[3]];
     let s2 = t[0] * t[0] + t[1] * t[1];
-    [(t[0] * d[0] + t[1] * d[1]) / s2, (-t[1] * d[0] + t[0] * d[1]) / s2]
+    [
+        (t[0] * d[0] + t[1] * d[1]) / s2,
+        (-t[1] * d[0] + t[0] * d[1]) / s2,
+    ]
 }
 
 /// Fit the shape model to detected landmarks (`w` = 0 for missing ones), starting from the
 /// face-frame similarity `init`. Returns (model landmarks in layer pixels, similarity).
-pub fn fit_shape(detected: &[[f64; 2]; N], w: &[f64; N], init: [f64; 4]) -> ([[f64; 2]; N], [f64; 4]) {
+pub fn fit_shape(
+    detected: &[[f64; 2]; N],
+    w: &[f64; N],
+    init: [f64; 4],
+) -> ([[f64; 2]; N], [f64; 4]) {
     let m = pdm();
     let k = m.modes.len();
     let mut b = vec![0.0; k];
@@ -395,7 +442,12 @@ pub fn fit_shape(detected: &[[f64; 2]; N], w: &[f64; N], init: [f64; 4]) -> ([[f
         for i in 0..N {
             for d in 0..2 {
                 let j = 2 * i + d;
-                s[i][d] = m.mean[j] + m.modes.iter().zip(b).map(|(row, bk)| row[j] * bk).sum::<f64>();
+                s[i][d] = m.mean[j]
+                    + m.modes
+                        .iter()
+                        .zip(b)
+                        .map(|(row, bk)| row[j] * bk)
+                        .sum::<f64>();
             }
         }
         s
@@ -450,7 +502,11 @@ struct Skin {
 
 fn features(px: [f32; 4]) -> [f32; 3] {
     let s = (px[0] + px[1] + px[2]).max(1e-4);
-    [0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2], px[0] / s, px[1] / s]
+    [
+        0.2126 * px[0] + 0.7152 * px[1] + 0.0722 * px[2],
+        px[0] / s,
+        px[1] / s,
+    ]
 }
 
 impl Skin {
@@ -495,13 +551,19 @@ struct Learned {
 
 impl std::fmt::Debug for Learned {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Learned").field("model", &self.model.info().id).finish_non_exhaustive()
+        f.debug_struct("Learned")
+            .field("model", &self.model.info().id)
+            .finish_non_exhaustive()
     }
 }
 
 /// A frame as trained models see it: straight RGB, size.
 fn model_input(frame: &Frame) -> (Vec<[f32; 3]>, usize, usize) {
-    (crate::roto::rgb_of(frame.img), frame.img.width as usize, frame.img.height as usize)
+    (
+        crate::roto::rgb_of(frame.img),
+        frame.img.width as usize,
+        frame.img.height as usize,
+    )
 }
 
 /// Where the outline meets the direction of canonical face-frame point `q` from `center`.
@@ -509,13 +571,20 @@ fn outline_point(outline: &[[f64; 2]], center: [f64; 2], roll: f64, q: [f64; 2])
     let dir = to_layer([0.0; 2], 1.0, roll, q);
     let rad = ray_radius(outline, center, dir[1].atan2(dir[0]));
     let len = dir[0].hypot(dir[1]).max(1e-12);
-    [center[0] + dir[0] / len * rad, center[1] + dir[1] / len * rad]
+    [
+        center[0] + dir[0] / len * rad,
+        center[1] + dir[1] / len * rad,
+    ]
 }
 
 /// A trained model's face as a fit: its outline and named points (all measured); chin and jaw
 /// where the outline meets their canonical directions, as in the classical fit.
 fn fit_from_face(face: &Face, topo: &Topology, offset: [f64; 2]) -> Option<FaceFit> {
-    let pt = |i: usize| face.points.get(i).map(|p| [p[0] as f64 - offset[0], p[1] as f64 - offset[1]]);
+    let pt = |i: usize| {
+        face.points
+            .get(i)
+            .map(|p| [p[0] as f64 - offset[0], p[1] as f64 - offset[1]])
+    };
     let outline: Vec<[f64; 2]> = topo.outline.iter().map(|&i| pt(i)).collect::<Option<_>>()?;
     let (center, b, _, ellipse_roll) = polygon_ellipse(&outline)?;
     if !b.is_finite() || b <= 1.0 {
@@ -544,7 +613,14 @@ fn fit_from_face(face: &Face, topo: &Topology, offset: [f64; 2]) -> Option<FaceF
         landmarks[k] = outline_point(&outline, center, roll, LANDMARKS[k].2);
         detected[k] = true;
     }
-    Some(FaceFit { landmarks, detected, outline, center, height: b, roll })
+    Some(FaceFit {
+        landmarks,
+        detected,
+        outline,
+        center,
+        height: b,
+        roll,
+    })
 }
 
 /// A pixel window of a frame in layer coordinates.
@@ -562,19 +638,28 @@ impl Window {
         let y0 = ((c[1] - ry + oy).floor() as i64).max(0);
         let x1 = ((c[0] + rx + ox).ceil() as i64).min(frame.img.width as i64);
         let y1 = ((c[1] + ry + oy).ceil() as i64).min(frame.img.height as i64);
-        (x1 > x0 + 4 && y1 > y0 + 4).then(|| Window { x0, y0, w: (x1 - x0) as usize, h: (y1 - y0) as usize })
+        (x1 > x0 + 4 && y1 > y0 + 4).then(|| Window {
+            x0,
+            y0,
+            w: (x1 - x0) as usize,
+            h: (y1 - y0) as usize,
+        })
     }
     fn px(&self, frame: &Frame, i: usize, j: usize) -> [f32; 4] {
         frame.img.get(self.x0 + i as i64, self.y0 + j as i64)
     }
     /// Layer position of the centre of window pixel `(i, j)`.
     fn layer(&self, frame: &Frame, i: usize, j: usize) -> [f64; 2] {
-        [(self.x0 + i as i64) as f64 + 0.5 - frame.offset[0], (self.y0 + j as i64) as f64 + 0.5 - frame.offset[1]]
+        [
+            (self.x0 + i as i64) as f64 + 0.5 - frame.offset[0],
+            (self.y0 + j as i64) as f64 + 0.5 - frame.offset[1],
+        ]
     }
     fn cell(&self, frame: &Frame, p: [f64; 2]) -> Option<(usize, usize)> {
         let x = (p[0] + frame.offset[0]).floor() as i64 - self.x0;
         let y = (p[1] + frame.offset[1]).floor() as i64 - self.y0;
-        (x >= 0 && y >= 0 && (x as usize) < self.w && (y as usize) < self.h).then_some((x as usize, y as usize))
+        (x >= 0 && y >= 0 && (x as usize) < self.w && (y as usize) < self.h)
+            .then_some((x as usize, y as usize))
     }
 }
 
@@ -634,11 +719,21 @@ struct Blob {
 
 impl Blob {
     fn extreme(&self, dir: [f64; 2]) -> [f64; 2] {
-        self.pts.iter().map(|p| p.0).max_by(|a, b| (a[0] * dir[0] + a[1] * dir[1]).total_cmp(&(b[0] * dir[0] + b[1] * dir[1]))).unwrap_or(self.centroid)
+        self.pts
+            .iter()
+            .map(|p| p.0)
+            .max_by(|a, b| {
+                (a[0] * dir[0] + a[1] * dir[1]).total_cmp(&(b[0] * dir[0] + b[1] * dir[1]))
+            })
+            .unwrap_or(self.centroid)
     }
     /// Extreme along `v` (`sign` −1 = top) among the pixels within `band` of the column `u`.
     fn lid(&self, u: f64, band: f64, sign: f64) -> [f64; 2] {
-        let c = self.pts.iter().filter(|p| (p.0[0] - u).abs() <= band).map(|p| p.0);
+        let c = self
+            .pts
+            .iter()
+            .filter(|p| (p.0[0] - u).abs() <= band)
+            .map(|p| p.0);
         let best = c.max_by(|a, b| (sign * a[1]).total_cmp(&(sign * b[1])));
         best.map(|p| [u, p[1]]).unwrap_or(self.centroid)
     }
@@ -650,7 +745,11 @@ impl Blob {
             s[1] += k * q[1];
             w += k;
         }
-        if w > 1e-12 { [s[0] / w, s[1] / w] } else { self.centroid }
+        if w > 1e-12 {
+            [s[0] / w, s[1] / w]
+        } else {
+            self.centroid
+        }
     }
 }
 
@@ -692,10 +791,18 @@ impl FaceTracker {
             height: hh.max(hw / ASPECT),
             roll: 0.0,
         };
-        let mut t = FaceTracker { skin, prev: guess, expect: canon, learned: None };
+        let mut t = FaceTracker {
+            skin,
+            prev: guess,
+            expect: canon,
+            learned: None,
+        };
         let fit = t.fit(frame)?;
         // A face shows at least two of: left eye, right eye, mouth.
-        let found = [EYE[0][4], EYE[1][4], MOUTH[0]].iter().filter(|i| fit.detected[**i]).count();
+        let found = [EYE[0][4], EYE[1][4], MOUTH[0]]
+            .iter()
+            .filter(|i| fit.detected[**i])
+            .count();
         if found < 2 {
             return None;
         }
@@ -705,15 +812,30 @@ impl FaceTracker {
 
     /// [`FaceTracker::new`] with a trained model, if any: the model finds the face in `region`
     /// and follows it. Without a model, or when it finds no face there, the classical tracker.
-    pub fn new_with(frame: &Frame, region: [f64; 4], model: Option<Arc<dyn FaceModel>>) -> Option<(FaceTracker, FaceFit)> {
+    pub fn new_with(
+        frame: &Frame,
+        region: [f64; 4],
+        model: Option<Arc<dyn FaceModel>>,
+    ) -> Option<(FaceTracker, FaceFit)> {
         if let Some(model) = model {
             let (rgb, w, h) = model_input(frame);
             let (ox, oy) = (frame.offset[0], frame.offset[1]);
-            let r = [region[0] + ox, region[1] + oy, region[2] + ox, region[3] + oy].map(|v| v as f32);
+            let r = [
+                region[0] + ox,
+                region[1] + oy,
+                region[2] + ox,
+                region[3] + oy,
+            ]
+            .map(|v| v as f32);
             if let Ok(Some(face)) = model.find(&rgb, w, h, r)
                 && let Some(fit) = fit_from_face(&face, model.topology(), frame.offset)
             {
-                let mut t = FaceTracker { skin: Skin::default(), prev: fit.clone(), expect: LANDMARKS.map(|l| l.2), learned: Some(Learned { model, face }) };
+                let mut t = FaceTracker {
+                    skin: Skin::default(),
+                    prev: fit.clone(),
+                    expect: LANDMARKS.map(|l| l.2),
+                    learned: Some(Learned { model, face }),
+                };
                 t.accept(&fit);
                 return Some((t, fit));
             }
@@ -732,7 +854,9 @@ impl FaceTracker {
     }
 
     fn accept(&mut self, fit: &FaceFit) {
-        self.expect = fit.landmarks.map(|p| to_face(fit.center, fit.height, fit.roll, p));
+        self.expect = fit
+            .landmarks
+            .map(|p| to_face(fit.center, fit.height, fit.roll, p));
         self.prev = fit.clone();
     }
 
@@ -777,7 +901,12 @@ impl FaceTracker {
                         continue;
                     }
                     let (i, j) = (ci as i64 + di, cj as i64 + dj);
-                    if i >= 0 && j >= 0 && (i as usize) < w && (j as usize) < h && skin[j as usize * w + i as usize] {
+                    if i >= 0
+                        && j >= 0
+                        && (i as usize) < w
+                        && (j as usize) < h
+                        && skin[j as usize * w + i as usize]
+                    {
                         seed = Some((i as usize, j as usize));
                         break 'search;
                     }
@@ -796,7 +925,12 @@ impl FaceTracker {
             let p = win.layer(frame, i, j);
             mx += p[0];
             my += p[1];
-            let nb = [(i.wrapping_sub(1), j), (i + 1, j), (i, j.wrapping_sub(1)), (i, j + 1)];
+            let nb = [
+                (i.wrapping_sub(1), j),
+                (i + 1, j),
+                (i, j.wrapping_sub(1)),
+                (i, j + 1),
+            ];
             for (a, b) in nb {
                 if a < w && b < h && !comp[b * w + a] && skin[b * w + a] {
                     comp[b * w + a] = true;
@@ -856,7 +990,15 @@ impl FaceTracker {
         }
         let b = major;
         // Non-skin components inside the face outline (shrunk a little: anti-aliased edges).
-        let inner: Vec<[f64; 2]> = outline.iter().map(|p| [center[0] + 0.9 * (p[0] - center[0]), center[1] + 0.9 * (p[1] - center[1])]).collect();
+        let inner: Vec<[f64; 2]> = outline
+            .iter()
+            .map(|p| {
+                [
+                    center[0] + 0.9 * (p[0] - center[0]),
+                    center[1] + 0.9 * (p[1] - center[1]),
+                ]
+            })
+            .collect();
         let mut feat = vec![false; w * h];
         for j in 0..h {
             for i in 0..w {
@@ -896,7 +1038,10 @@ impl FaceTracker {
                 }
                 if pts.len() >= min_area {
                     let n = pts.len() as f64;
-                    let centroid = [pts.iter().map(|p| p.0[0]).sum::<f64>() / n, pts.iter().map(|p| p.0[1]).sum::<f64>() / n];
+                    let centroid = [
+                        pts.iter().map(|p| p.0[0]).sum::<f64>() / n,
+                        pts.iter().map(|p| p.0[1]).sum::<f64>() / n,
+                    ];
                     blobs.push(Blob { pts, centroid });
                 }
             }
@@ -905,10 +1050,17 @@ impl FaceTracker {
         let ex = &self.expect;
         let mean_of = |ids: &[usize]| {
             let n = ids.len() as f64;
-            [ids.iter().map(|i| ex[*i][0]).sum::<f64>() / n, ids.iter().map(|i| ex[*i][1]).sum::<f64>() / n]
+            [
+                ids.iter().map(|i| ex[*i][0]).sum::<f64>() / n,
+                ids.iter().map(|i| ex[*i][1]).sum::<f64>() / n,
+            ]
         };
         let mut used = vec![false; blobs.len()];
-        let take = |target: [f64; 2], radius: f64, prefer_large: bool, used: &mut Vec<bool>| -> Option<usize> {
+        let take = |target: [f64; 2],
+                    radius: f64,
+                    prefer_large: bool,
+                    used: &mut Vec<bool>|
+         -> Option<usize> {
             let mut best: Option<(usize, f64)> = None;
             for (k, bl) in blobs.iter().enumerate() {
                 if used[k] {
@@ -918,7 +1070,11 @@ impl FaceTracker {
                 if d > radius {
                     continue;
                 }
-                let score = if prefer_large { -(bl.pts.len() as f64) } else { d };
+                let score = if prefer_large {
+                    -(bl.pts.len() as f64)
+                } else {
+                    d
+                };
                 if best.is_none_or(|b| score < b.1) {
                     best = Some((k, score));
                 }
@@ -936,9 +1092,18 @@ impl FaceTracker {
         };
         let eye_ids = [EYE[0].to_vec(), EYE[1].to_vec()];
         let mouth = take(mean_of(&MOUTH), 0.25, true, &mut used);
-        let eyes = [take(mean_of(&eye_ids[0]), 0.15, false, &mut used), take(mean_of(&eye_ids[1]), 0.15, false, &mut used)];
-        let brows = [take(mean_of(&BROW[0]), 0.15, false, &mut used), take(mean_of(&BROW[1]), 0.15, false, &mut used)];
-        let nostrils = [take(ex[NOSTRIL[0]], 0.07, false, &mut used), take(ex[NOSTRIL[1]], 0.07, false, &mut used)];
+        let eyes = [
+            take(mean_of(&eye_ids[0]), 0.15, false, &mut used),
+            take(mean_of(&eye_ids[1]), 0.15, false, &mut used),
+        ];
+        let brows = [
+            take(mean_of(&BROW[0]), 0.15, false, &mut used),
+            take(mean_of(&BROW[1]), 0.15, false, &mut used),
+        ];
+        let nostrils = [
+            take(ex[NOSTRIL[0]], 0.07, false, &mut used),
+            take(ex[NOSTRIL[1]], 0.07, false, &mut used),
+        ];
         for side in 0..2 {
             let sg = if side == 0 { -1.0 } else { 1.0 };
             if let Some(k) = eyes[side] {
@@ -967,9 +1132,19 @@ impl FaceTracker {
                 // The middle: the brow's centre line at its mid column.
                 let mid = 0.5 * (inner[0] + outer[0]);
                 let band = 0.1 * (outer[0] - inner[0]).abs().max(0.05);
-                let col: Vec<f64> = bl.pts.iter().filter(|p| (p.0[0] - mid).abs() <= band).map(|p| p.0[1]).collect();
+                let col: Vec<f64> = bl
+                    .pts
+                    .iter()
+                    .filter(|p| (p.0[0] - mid).abs() <= band)
+                    .map(|p| p.0[1])
+                    .collect();
                 if !col.is_empty() {
-                    set(br[1], [mid, col.iter().sum::<f64>() / col.len() as f64], &mut det, &mut wgt);
+                    set(
+                        br[1],
+                        [mid, col.iter().sum::<f64>() / col.len() as f64],
+                        &mut det,
+                        &mut wgt,
+                    );
                 }
             }
             if let Some(k) = nostrils[side] {
@@ -978,7 +1153,12 @@ impl FaceTracker {
         }
         if let (Some(a), Some(c)) = (nostrils[0], nostrils[1]) {
             let (p, q) = (blobs[a].centroid, blobs[c].centroid);
-            set(NOSE_TIP, [0.5 * (p[0] + q[0]), 0.5 * (p[1] + q[1]) - 0.06], &mut det, &mut wgt);
+            set(
+                NOSE_TIP,
+                [0.5 * (p[0] + q[0]), 0.5 * (p[1] + q[1]) - 0.06],
+                &mut det,
+                &mut wgt,
+            );
         }
         if let Some(k) = mouth {
             let bl = &blobs[k];
@@ -1009,7 +1189,11 @@ impl FaceTracker {
                 w2[i] = 0.0;
             }
         }
-        let (model, sim) = if w2 != wgt { fit_shape(&det, &w2, init) } else { (model, init) };
+        let (model, sim) = if w2 != wgt {
+            fit_shape(&det, &w2, init)
+        } else {
+            (model, init)
+        };
         let _ = sim;
         let mut landmarks = model;
         let mut detected = [false; N];
@@ -1023,8 +1207,19 @@ impl FaceTracker {
         let jl = landmarks[JAW[0]];
         let jr = landmarks[JAW[1]];
         let roll_jaw = (jr[1] - jl[1]).atan2(jr[0] - jl[0]).to_degrees();
-        let roll = if (roll_jaw - roll).abs() < 20.0 { roll_jaw } else { roll };
-        Some(FaceFit { landmarks, detected, outline, center, height: b, roll })
+        let roll = if (roll_jaw - roll).abs() < 20.0 {
+            roll_jaw
+        } else {
+            roll
+        };
+        Some(FaceFit {
+            landmarks,
+            detected,
+            outline,
+            center,
+            height: b,
+            roll,
+        })
     }
 }
 
@@ -1090,7 +1285,9 @@ pub fn measure(l: &[[f64; 2]; N], reference_height: f64) -> [f64; 14] {
     let q = l.map(|p| to_face(c, b, roll, p));
     let canon = LANDMARKS.map(|x| x.2);
     // Inner features slide with yaw and pitch (see `synth_shape`).
-    let inner = [EYE[0][4], EYE[1][4], MOUTH[0], MOUTH[1], EYE[0][0], EYE[1][0], EYE[0][1], EYE[1][1]];
+    let inner = [
+        EYE[0][4], EYE[1][4], MOUTH[0], MOUTH[1], EYE[0][0], EYE[1][0], EYE[0][1], EYE[1][1],
+    ];
     let n = inner.len() as f64;
     let du = inner.iter().map(|i| q[*i][0] - canon[*i][0]).sum::<f64>() / n;
     let dv = inner.iter().map(|i| q[*i][1] - canon[*i][1]).sum::<f64>() / n;
@@ -1106,7 +1303,10 @@ pub fn measure(l: &[[f64; 2]; N], reference_height: f64) -> [f64; 14] {
         (eye_v - q[BROW[side][1]][1]) * 100.0
     };
     let mw = (q[MOUTH[1]][0] - q[MOUTH[0]][0]).abs();
-    let mc = [0.5 * (q[MOUTH[0]][0] + q[MOUTH[1]][0]), 0.5 * (q[MOUTH[2]][1] + q[MOUTH[3]][1])];
+    let mc = [
+        0.5 * (q[MOUTH[0]][0] + q[MOUTH[1]][0]),
+        0.5 * (q[MOUTH[2]][1] + q[MOUTH[3]][1]),
+    ];
     [
         c[0],
         c[1],
@@ -1145,7 +1345,10 @@ mod tests {
     fn frame_params(t: usize) -> FaceParams {
         let tf = t as f64;
         FaceParams {
-            center: [160.0 + 30.0 * (tf * 0.15).sin(), 120.0 + 12.0 * (tf * 0.1).cos()],
+            center: [
+                160.0 + 30.0 * (tf * 0.15).sin(),
+                120.0 + 12.0 * (tf * 0.1).cos(),
+            ],
             height: 62.0 * (1.0 + 0.08 * (tf * 0.07).sin()),
             roll: 14.0 * (tf * 0.12).sin(),
             yaw: 12.0 * (tf * 0.09).sin(),
@@ -1160,9 +1363,21 @@ mod tests {
     #[test]
     fn shape_model_spans_the_synthetic_shapes() {
         let m = pdm();
-        assert!(m.modes.len() >= 5 && m.modes.len() <= 14, "{} modes", m.modes.len());
+        assert!(
+            m.modes.len() >= 5 && m.modes.len() <= 14,
+            "{} modes",
+            m.modes.len()
+        );
         // A synthetic shape is reproduced from half its landmarks.
-        let p = FaceParams { yaw: 15.0, mouth_open: 0.8, eye_open: [0.3, 0.9], center: [100.0, 80.0], height: 50.0, roll: 10.0, ..Default::default() };
+        let p = FaceParams {
+            yaw: 15.0,
+            mouth_open: 0.8,
+            eye_open: [0.3, 0.9],
+            center: [100.0, 80.0],
+            height: 50.0,
+            roll: 10.0,
+            ..Default::default()
+        };
         let truth = synth_landmarks(&p);
         let mut w = [0.0; N];
         for (i, wi) in w.iter_mut().enumerate() {
@@ -1170,7 +1385,9 @@ mod tests {
         }
         let (sn, cs) = 10f64.to_radians().sin_cos();
         let (fit, _) = fit_shape(&truth, &w, [50.0 * cs, 50.0 * sn, 100.0, 80.0]);
-        let err = (0..N).map(|i| (fit[i][0] - truth[i][0]).hypot(fit[i][1] - truth[i][1])).fold(0.0, f64::max);
+        let err = (0..N)
+            .map(|i| (fit[i][0] - truth[i][0]).hypot(fit[i][1] - truth[i][1]))
+            .fold(0.0, f64::max);
         assert!(err < 0.06 * 50.0, "max error {err}");
     }
 
@@ -1180,13 +1397,31 @@ mod tests {
         let p0 = frame_params(0);
         let img0 = render_synthetic(w, h, &p0, 3);
         // The user's mask: a loose box around the face.
-        let region = [p0.center[0] - 60.0, p0.center[1] - 75.0, p0.center[0] + 60.0, p0.center[1] + 75.0];
-        let (mut tr, fit0) = FaceTracker::new(&Frame { img: &img0, offset: [0.0; 2] }, region).expect("face found");
+        let region = [
+            p0.center[0] - 60.0,
+            p0.center[1] - 75.0,
+            p0.center[0] + 60.0,
+            p0.center[1] + 75.0,
+        ];
+        let (mut tr, fit0) = FaceTracker::new(
+            &Frame {
+                img: &img0,
+                offset: [0.0; 2],
+            },
+            region,
+        )
+        .expect("face found");
         let mut fits = vec![fit0];
         let n = 40;
         for t in 1..n {
             let img = render_synthetic(w, h, &frame_params(t), 3);
-            fits.push(tr.step(&Frame { img: &img, offset: [0.0; 2] }).unwrap_or_else(|| panic!("lost at {t}")));
+            fits.push(
+                tr.step(&Frame {
+                    img: &img,
+                    offset: [0.0; 2],
+                })
+                .unwrap_or_else(|| panic!("lost at {t}")),
+            );
         }
         let mut per = [0.0f64; N];
         let mut worst = 0.0f64;
@@ -1196,7 +1431,8 @@ mod tests {
             let p = frame_params(t);
             let truth = synth_landmarks(&p);
             for i in 0..N {
-                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1]) / p.height;
+                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1])
+                    / p.height;
                 per[i] += e / n as f64;
                 worst = worst.max(e);
             }
@@ -1208,12 +1444,23 @@ mod tests {
             }
             outline_err += (oe / f.outline.len() as f64).abs() / n as f64;
             meas.push((p, measure(&f.landmarks, fits[0].height)));
-            assert!((f.roll - p.roll).abs() < 3.0, "frame {t}: roll {} vs {}", f.roll, p.roll);
+            assert!(
+                (f.roll - p.roll).abs() < 3.0,
+                "frame {t}: roll {} vs {}",
+                f.roll,
+                p.roll
+            );
         }
         let mean = per.iter().sum::<f64>() / N as f64;
-        eprintln!("face landmarks: mean error {mean:.4}, worst {worst:.4} face heights; outline {outline_err:.4}");
+        eprintln!(
+            "face landmarks: mean error {mean:.4}, worst {worst:.4} face heights; outline {outline_err:.4}"
+        );
         for (i, e) in per.iter().enumerate() {
-            assert!(*e < 0.04, "{}: mean error {e:.3} (face heights)", LANDMARKS[i].0);
+            assert!(
+                *e < 0.04,
+                "{}: mean error {e:.3} (face heights)",
+                LANDMARKS[i].0
+            );
         }
         assert!(mean < 0.02, "mean landmark error {mean:.4}");
         assert!(worst < 0.08, "worst landmark error {worst:.3}");
@@ -1221,7 +1468,11 @@ mod tests {
         // Measurements follow the generator: mouth openness and yaw correlate strongly.
         let mo: Vec<f64> = meas.iter().map(|m| m.1[10]).collect();
         let mt: Vec<f64> = meas.iter().map(|m| m.0.mouth_open).collect();
-        assert!(corr(&mo, &mt) > 0.95, "mouth openness r = {}", corr(&mo, &mt));
+        assert!(
+            corr(&mo, &mt) > 0.95,
+            "mouth openness r = {}",
+            corr(&mo, &mt)
+        );
         let yw: Vec<f64> = meas.iter().map(|m| m.1[4]).collect();
         let yt: Vec<f64> = meas.iter().map(|m| m.0.yaw).collect();
         assert!(corr(&yw, &yt) > 0.9, "yaw r = {}", corr(&yw, &yt));
@@ -1235,12 +1486,25 @@ mod tests {
 
     #[test]
     fn measurements_of_the_synthetic_model_are_exact() {
-        let p = FaceParams { center: [50.0, 60.0], height: 40.0, roll: 20.0, yaw: 10.0, pitch: -5.0, ..Default::default() };
+        let p = FaceParams {
+            center: [50.0, 60.0],
+            height: 40.0,
+            roll: 20.0,
+            yaw: 10.0,
+            pitch: -5.0,
+            ..Default::default()
+        };
         let m = measure(&synth_landmarks(&p), 40.0);
-        assert!((m[0] - 50.0).abs() < 1e-6 && (m[1] - 60.0).abs() < 1e-6, "{m:?}");
+        assert!(
+            (m[0] - 50.0).abs() < 1e-6 && (m[1] - 60.0).abs() < 1e-6,
+            "{m:?}"
+        );
         assert!((m[2] - 100.0).abs() < 1e-6);
         assert!((m[5] - 20.0).abs() < 1e-6);
-        assert!((m[4] - 10.0).abs() < 0.5 && (m[3] + 5.0).abs() < 0.5, "{m:?}");
+        assert!(
+            (m[4] - 10.0).abs() < 0.5 && (m[3] + 5.0).abs() < 0.5,
+            "{m:?}"
+        );
     }
 
     /// A stand-in trained model: it "sees" the synthetic clip's true landmarks (points
@@ -1253,7 +1517,11 @@ mod tests {
     }
 
     fn fake(lose_at: usize, blind: bool) -> Arc<Fake> {
-        Arc::new(Fake { frame: 0.into(), lose_at, blind })
+        Arc::new(Fake {
+            frame: 0.into(),
+            lose_at,
+            blind,
+        })
     }
 
     const OUTLINE_POINTS: usize = 36;
@@ -1275,13 +1543,23 @@ mod tests {
         }
         a
     };
-    static FAKE_TOPOLOGY: Topology = Topology { outline: &FAKE_OUTLINE, landmarks: &FAKE_LANDMARKS };
-    static FAKE_INFO: effectcraft_segment::ModelInfo = effectcraft_segment::ModelInfo { id: "fake", name: "Fake", ..effectcraft_segment::FACE_LANDMARKER };
+    static FAKE_TOPOLOGY: Topology = Topology {
+        outline: &FAKE_OUTLINE,
+        landmarks: &FAKE_LANDMARKS,
+    };
+    static FAKE_INFO: effectcraft_segment::ModelInfo = effectcraft_segment::ModelInfo {
+        id: "fake",
+        name: "Fake",
+        ..effectcraft_segment::FACE_LANDMARKER
+    };
 
     impl Fake {
         fn face(t: usize) -> Face {
             let p = frame_params(t);
-            let mut points: Vec<[f32; 2]> = synth_landmarks(&p).iter().map(|q| [q[0] as f32, q[1] as f32]).collect();
+            let mut points: Vec<[f32; 2]> = synth_landmarks(&p)
+                .iter()
+                .map(|q| [q[0] as f32, q[1] as f32])
+                .collect();
             for k in 0..OUTLINE_POINTS {
                 let a = k as f64 / OUTLINE_POINTS as f64 * std::f64::consts::TAU;
                 let q = to_layer(p.center, p.height, p.roll, [ASPECT * a.sin(), -a.cos()]);
@@ -1298,13 +1576,31 @@ mod tests {
         fn topology(&self) -> &'static Topology {
             &FAKE_TOPOLOGY
         }
-        fn find(&self, _: &[[f32; 3]], _: usize, _: usize, r: [f32; 4]) -> effectcraft_segment::Result<Option<Face>> {
+        fn find(
+            &self,
+            _: &[[f32; 3]],
+            _: usize,
+            _: usize,
+            r: [f32; 4],
+        ) -> effectcraft_segment::Result<Option<Face>> {
             let c = frame_params(0).center;
-            let inside = (r[0] as f64) < c[0] && c[0] < r[2] as f64 && (r[1] as f64) < c[1] && c[1] < r[3] as f64;
+            let inside = (r[0] as f64) < c[0]
+                && c[0] < r[2] as f64
+                && (r[1] as f64) < c[1]
+                && c[1] < r[3] as f64;
             Ok((inside && !self.blind).then(|| Fake::face(0)))
         }
-        fn follow(&self, _: &[[f32; 3]], _: usize, _: usize, _: &Face) -> effectcraft_segment::Result<Option<Face>> {
-            let t = self.frame.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+        fn follow(
+            &self,
+            _: &[[f32; 3]],
+            _: usize,
+            _: usize,
+            _: &Face,
+        ) -> effectcraft_segment::Result<Option<Face>> {
+            let t = self
+                .frame
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+                + 1;
             Ok((t < self.lose_at).then(|| Fake::face(t)))
         }
     }
@@ -1314,14 +1610,29 @@ mod tests {
         let (w, h) = (320, 240);
         let p0 = frame_params(0);
         let img0 = render_synthetic(w, h, &p0, 3);
-        let frame0 = Frame { img: &img0, offset: [0.0; 2] };
-        let region = [p0.center[0] - 60.0, p0.center[1] - 75.0, p0.center[0] + 60.0, p0.center[1] + 75.0];
-        let (mut tr, fit0) = FaceTracker::new_with(&frame0, region, Some(fake(30, false))).expect("face found");
+        let frame0 = Frame {
+            img: &img0,
+            offset: [0.0; 2],
+        };
+        let region = [
+            p0.center[0] - 60.0,
+            p0.center[1] - 75.0,
+            p0.center[0] + 60.0,
+            p0.center[1] + 75.0,
+        ];
+        let (mut tr, fit0) =
+            FaceTracker::new_with(&frame0, region, Some(fake(30, false))).expect("face found");
         assert_eq!(tr.model().map(|m| m.id), Some("fake"));
         let mut fits = vec![fit0];
         for t in 1..30 {
             let img = render_synthetic(w, h, &frame_params(t), 3);
-            fits.push(tr.step(&Frame { img: &img, offset: [0.0; 2] }).unwrap_or_else(|| panic!("lost at {t}")));
+            fits.push(
+                tr.step(&Frame {
+                    img: &img,
+                    offset: [0.0; 2],
+                })
+                .unwrap_or_else(|| panic!("lost at {t}")),
+            );
         }
         let mut meas = vec![];
         for (t, f) in fits.iter().enumerate() {
@@ -1329,12 +1640,27 @@ mod tests {
             let truth = synth_landmarks(&p);
             // The model's points are the landmarks; chin and jaw come from its outline.
             for i in 0..N {
-                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1]) / p.height;
-                assert!(e < if i < CHIN { 1e-4 } else { 0.06 }, "frame {t} {}: {e}", LANDMARKS[i].0);
+                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1])
+                    / p.height;
+                assert!(
+                    e < if i < CHIN { 1e-4 } else { 0.06 },
+                    "frame {t} {}: {e}",
+                    LANDMARKS[i].0
+                );
             }
             assert!(f.detected.iter().all(|d| *d) && f.outline.len() == OUTLINE_POINTS);
-            assert!((f.height - p.height).abs() < 0.03 * p.height, "frame {t}: height {} vs {}", f.height, p.height);
-            assert!((f.roll - p.roll).abs() < 3.0, "frame {t}: roll {} vs {}", f.roll, p.roll);
+            assert!(
+                (f.height - p.height).abs() < 0.03 * p.height,
+                "frame {t}: height {} vs {}",
+                f.height,
+                p.height
+            );
+            assert!(
+                (f.roll - p.roll).abs() < 3.0,
+                "frame {t}: roll {} vs {}",
+                f.roll,
+                p.roll
+            );
             meas.push((p, measure(&f.landmarks, fits[0].height)));
         }
         let pick = |k: usize| meas.iter().map(|m| m.1[k]).collect::<Vec<_>>();
@@ -1344,13 +1670,28 @@ mod tests {
         assert!(corr(&pick(5), &rt) > 0.98);
         // The model loses the face: so does the tracker.
         let img = render_synthetic(w, h, &frame_params(30), 3);
-        assert!(tr.step(&Frame { img: &img, offset: [0.0; 2] }).is_none());
+        assert!(
+            tr.step(&Frame {
+                img: &img,
+                offset: [0.0; 2]
+            })
+            .is_none()
+        );
         // A model that finds no face in the mask leaves the face to the classical tracker.
-        let (classic, _) = FaceTracker::new_with(&frame0, region, Some(fake(30, true))).expect("the classic tracker finds it");
+        let (classic, _) = FaceTracker::new_with(&frame0, region, Some(fake(30, true)))
+            .expect("the classic tracker finds it");
         assert!(classic.model().is_none());
         // Layer offsets: frame pixels = layer + offset; fits stay in layer pixels.
-        let shifted = Frame { img: &img0, offset: [10.0, -4.0] };
-        let moved = [region[0] - 10.0, region[1] + 4.0, region[2] - 10.0, region[3] + 4.0];
+        let shifted = Frame {
+            img: &img0,
+            offset: [10.0, -4.0],
+        };
+        let moved = [
+            region[0] - 10.0,
+            region[1] + 4.0,
+            region[2] - 10.0,
+            region[3] + 4.0,
+        ];
         let (_, f) = FaceTracker::new_with(&shifted, moved, Some(fake(9, false))).expect("found");
         let truth = synth_landmarks(&p0);
         assert!((f.landmarks[EYE[0][4]][0] - (truth[EYE[0][4]][0] - 10.0)).abs() < 1e-3);
@@ -1363,36 +1704,83 @@ mod tests {
     /// chin tightly, the mouth corners (the cartoon mouth's ends, as it turns) more loosely.
     #[test]
     fn mediapipe_follows_the_synthetic_face() {
-        let Ok(path) = std::env::var("EFFECTCRAFT_FACE_LANDMARKER") else { return };
-        let Ok(effectcraft_segment::Loaded::Face(model)) = effectcraft_segment::load("mediapipe-face", &std::fs::read(path).unwrap()) else {
+        let Ok(path) = std::env::var("EFFECTCRAFT_FACE_LANDMARKER") else {
+            return;
+        };
+        let Ok(effectcraft_segment::Loaded::Face(model)) =
+            effectcraft_segment::load("mediapipe-face", &std::fs::read(path).unwrap())
+        else {
             panic!("not a face model")
         };
         let (w, h) = (320, 240);
         let p0 = frame_params(0);
         let img0 = render_synthetic(w, h, &p0, 3);
-        let region = [p0.center[0] - 60.0, p0.center[1] - 75.0, p0.center[0] + 60.0, p0.center[1] + 75.0];
-        let (mut tr, fit0) = FaceTracker::new_with(&Frame { img: &img0, offset: [0.0; 2] }, region, Some(model)).expect("face found");
+        let region = [
+            p0.center[0] - 60.0,
+            p0.center[1] - 75.0,
+            p0.center[0] + 60.0,
+            p0.center[1] + 75.0,
+        ];
+        let (mut tr, fit0) = FaceTracker::new_with(
+            &Frame {
+                img: &img0,
+                offset: [0.0; 2],
+            },
+            region,
+            Some(model),
+        )
+        .expect("face found");
         assert_eq!(tr.model().map(|m| m.id), Some("mediapipe-face"));
         let mut fits = vec![fit0];
         let n = 40;
         for t in 1..n {
             let img = render_synthetic(w, h, &frame_params(t), 3);
-            fits.push(tr.step(&Frame { img: &img, offset: [0.0; 2] }).unwrap_or_else(|| panic!("lost at {t}")));
+            fits.push(
+                tr.step(&Frame {
+                    img: &img,
+                    offset: [0.0; 2],
+                })
+                .unwrap_or_else(|| panic!("lost at {t}")),
+            );
         }
-        let held = [(EYE[0][1], 0.04), (EYE[0][4], 0.04), (EYE[1][1], 0.04), (EYE[1][4], 0.04), (CHIN, 0.04), (MOUTH[0], 0.08), (MOUTH[1], 0.08)];
+        let held = [
+            (EYE[0][1], 0.04),
+            (EYE[0][4], 0.04),
+            (EYE[1][1], 0.04),
+            (EYE[1][4], 0.04),
+            (CHIN, 0.04),
+            (MOUTH[0], 0.08),
+            (MOUTH[1], 0.08),
+        ];
         for (t, f) in fits.iter().enumerate() {
             let p = frame_params(t);
             let truth = synth_landmarks(&p);
             for &(i, bound) in &held {
-                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1]) / p.height;
-                assert!(e < bound, "frame {t} {}: {e:.3} face heights", LANDMARKS[i].0);
+                let e = (f.landmarks[i][0] - truth[i][0]).hypot(f.landmarks[i][1] - truth[i][1])
+                    / p.height;
+                assert!(
+                    e < bound,
+                    "frame {t} {}: {e:.3} face heights",
+                    LANDMARKS[i].0
+                );
             }
-            assert!((f.roll - p.roll).abs() < 3.0, "frame {t}: roll {} vs {}", f.roll, p.roll);
+            assert!(
+                (f.roll - p.roll).abs() < 3.0,
+                "frame {t}: roll {} vs {}",
+                f.roll,
+                p.roll
+            );
         }
         // Head Scale follows the face's size (relative to the first frame).
         let h0 = frame_params(0).height;
         let base = measure(&fits[0].landmarks, 1.0)[2];
-        let worst_scale = fits.iter().enumerate().map(|(t, f)| (measure(&f.landmarks, 1.0)[2] / base - frame_params(t).height / h0).abs()).fold(0.0, f64::max);
+        let worst_scale = fits
+            .iter()
+            .enumerate()
+            .map(|(t, f)| {
+                (measure(&f.landmarks, 1.0)[2] / base - frame_params(t).height / h0).abs()
+            })
+            .fold(0.0, f64::max);
         assert!(worst_scale < 0.05, "Head Scale off by {worst_scale:.3}");
     }
 }

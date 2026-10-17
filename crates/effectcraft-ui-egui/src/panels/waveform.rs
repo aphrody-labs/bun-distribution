@@ -32,7 +32,9 @@ pub struct Cache {
 
 /// The footage item whose audio a layer plays, when it has audio.
 pub fn audio_item(project: &Project, l: &Layer) -> Option<ItemId> {
-    let LayerSource::Footage { item } = &l.source else { return None };
+    let LayerSource::Footage { item } = &l.source else {
+        return None;
+    };
     match &project.item(*item)?.kind {
         ItemKind::Footage(f) if f.has_audio && !f.missing => Some(*item),
         _ => None,
@@ -45,9 +47,16 @@ pub fn summary(app: &EffectcraftApp, ctx: &egui::Context, item: ItemId) -> Optio
     if let Some(s) = m.get(&item.0) {
         return s.clone();
     }
-    let ItemKind::Footage(f) = &app.session.project.item(item)?.kind else { return None };
+    let ItemKind::Footage(f) = &app.session.project.item(item)?.kind else {
+        return None;
+    };
     m.insert(item.0, None);
-    let (f, footage, map, ctx) = (f.clone(), app.session.footage.clone(), app.waveforms.map.clone(), ctx.clone());
+    let (f, footage, map, ctx) = (
+        f.clone(),
+        app.session.footage.clone(),
+        app.waveforms.map.clone(),
+        ctx.clone(),
+    );
     // Settings ▸ Disk ▸ Database and Cache Folder: summaries are kept on disk between sessions.
     let cache = app.session.media_cache_folder();
     std::thread::Builder::new()
@@ -58,7 +67,13 @@ pub fn summary(app: &EffectcraftApp, ctx: &egui::Context, item: ItemId) -> Optio
             let peaks = match file.as_deref().and_then(media_cache::load_peaks) {
                 Some(p) => p,
                 None => {
-                    let p = effectcraft_engine::render::audio::footage_peaks(footage.as_ref(), item, &f, f.duration, BINS_PER_SEC);
+                    let p = effectcraft_engine::render::audio::footage_peaks(
+                        footage.as_ref(),
+                        item,
+                        &f,
+                        f.duration,
+                        BINS_PER_SEC,
+                    );
                     if let Some(file) = &file
                         && let Err(e) = media_cache::store_peaks(file, &p)
                     {
@@ -68,7 +83,13 @@ pub fn summary(app: &EffectcraftApp, ctx: &egui::Context, item: ItemId) -> Optio
                 }
             };
             if let Ok(mut m) = map.lock() {
-                m.insert(item.0, Some(Arc::new(Summary { bins_per_sec: BINS_PER_SEC, peaks })));
+                m.insert(
+                    item.0,
+                    Some(Arc::new(Summary {
+                        bins_per_sec: BINS_PER_SEC,
+                        peaks,
+                    })),
+                );
             }
             ctx.request_repaint();
         })
@@ -90,18 +111,25 @@ fn level_gains(levels: Option<&Property>, t: Tick) -> [f32; 2] {
 /// Draw `layer`'s waveform in `rect` (left channel above right), columns mapped through the
 /// timeline's time map and the layer's time mapping, limited to its [in, out) span.
 pub(crate) fn draw(p: &Painter, rect: Rect, tm: &TMap, layer: &Layer, s: &Summary, color: Color32) {
-    let mid = [rect.min.y + rect.height() * 0.25, rect.min.y + rect.height() * 0.75];
+    let mid = [
+        rect.min.y + rect.height() * 0.25,
+        rect.min.y + rect.height() * 0.75,
+    ];
     let half = rect.height() * 0.25 - 1.0;
     let x0 = tm.x(layer.in_point.seconds()).max(rect.min.x).floor() as i32;
     let x1 = tm.x(layer.out_point.seconds()).min(rect.max.x).ceil() as i32;
     let n = s.peaks.len() as i64;
     let levels = layer.props.sub("audio").and_then(|g| g.get("levels"));
     for c in 0..2 {
-        p.line_segment([pos2(x0 as f32, mid[c]), pos2(x1 as f32, mid[c])], Stroke::new(1.0, color.gamma_multiply(0.5)));
+        p.line_segment(
+            [pos2(x0 as f32, mid[c]), pos2(x1 as f32, mid[c])],
+            Stroke::new(1.0, color.gamma_multiply(0.5)),
+        );
     }
     for x in x0..x1 {
         let (ta, tb) = (tm.t(x as f32), tm.t(x as f32 + 1.0));
-        let src = |t: f64| layer.layer_time(Tick::from_seconds_f64(t)).seconds() * s.bins_per_sec as f64;
+        let src =
+            |t: f64| layer.layer_time(Tick::from_seconds_f64(t)).seconds() * s.bins_per_sec as f64;
         let (ba, bb) = (src(ta).floor() as i64, src(tb).ceil() as i64);
         let (ba, bb) = (ba.min(bb).clamp(0, n), ba.max(bb).max(ba + 1).clamp(0, n));
         if ba >= bb {
@@ -116,9 +144,18 @@ pub(crate) fn draw(p: &Painter, rect: Rect, tm: &TMap, layer: &Layer, s: &Summar
         }
         let gain = level_gains(levels, Tick::from_seconds_f64((ta + tb) * 0.5));
         for c in 0..2 {
-            let (lo, hi) = ((agg[c * 2] * gain[c]).clamp(-1.0, 1.0), (agg[c * 2 + 1] * gain[c]).clamp(-1.0, 1.0));
+            let (lo, hi) = (
+                (agg[c * 2] * gain[c]).clamp(-1.0, 1.0),
+                (agg[c * 2 + 1] * gain[c]).clamp(-1.0, 1.0),
+            );
             let (ya, yb) = (mid[c] - hi * half, mid[c] - lo * half);
-            p.line_segment([pos2(x as f32 + 0.5, ya), pos2(x as f32 + 0.5, yb.max(ya + 1.0))], Stroke::new(1.0, color));
+            p.line_segment(
+                [
+                    pos2(x as f32 + 0.5, ya),
+                    pos2(x as f32 + 0.5, yb.max(ya + 1.0)),
+                ],
+                Stroke::new(1.0, color),
+            );
         }
     }
 }

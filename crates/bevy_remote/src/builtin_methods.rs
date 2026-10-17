@@ -4,7 +4,7 @@ use alloc::sync::Arc;
 use core::any::TypeId;
 use std::sync::Mutex;
 
-use anyhow::{anyhow, Result as AnyhowResult};
+use anyhow::{Result as AnyhowResult, anyhow};
 use bevy_dev_tools::schedule_data::serde::ScheduleData;
 use bevy_ecs::{
     component::ComponentId,
@@ -22,20 +22,19 @@ use bevy_ecs::{
 use bevy_log::warn_once;
 use bevy_platform::collections::HashMap;
 use bevy_reflect::{
+    GetPath, PartialReflect, Reflect, TypeRegistration, TypeRegistry,
     serde::{ReflectSerializer, TypedReflectDeserializer},
     structs::DynamicStruct,
-    GetPath, PartialReflect, Reflect, TypeRegistration, TypeRegistry,
 };
-use serde::{de::DeserializeSeed as _, de::IntoDeserializer, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeSeed as _, de::IntoDeserializer};
 use serde_json::{Map, Value};
 
 use crate::{
-    error_codes,
+    BrpError, BrpResult, PreviousScheduleBuildMetadata, error_codes,
     schemas::{
-        json_schema::{export_type, JsonSchemaBevyType},
+        json_schema::{JsonSchemaBevyType, export_type},
         open_rpc::OpenRpcDocument,
     },
-    BrpError, BrpResult, PreviousScheduleBuildMetadata,
 };
 
 #[cfg(all(feature = "http", not(target_family = "wasm")))]
@@ -1770,7 +1769,7 @@ pub fn schedule_graph(In(params): In<Option<Value>>, world: &mut World) -> BrpRe
             Err(err) => {
                 return Err(BrpError::internal(format!(
                     "Failed to initialize schedule with label={label:?}: {err}"
-                )))
+                )));
             }
         }
         // Note: we don't need to insert into the `PreviousScheduleBuildMetadata`, since the
@@ -2473,17 +2472,23 @@ mod tests {
         let f2_index = system_index(&response, "f2").unwrap();
         let apply_deferred_index = system_index(&response, "apply_deferred").unwrap();
         assert_eq!(response.schedule_data.dependency.len(), 3);
-        assert!(response
-            .schedule_data
-            .dependency
-            .contains(&(f1_index, f2_index)));
-        assert!(response
-            .schedule_data
-            .dependency
-            .contains(&(f1_index, apply_deferred_index)));
-        assert!(response
-            .schedule_data
-            .dependency
-            .contains(&(apply_deferred_index, f2_index)));
+        assert!(
+            response
+                .schedule_data
+                .dependency
+                .contains(&(f1_index, f2_index))
+        );
+        assert!(
+            response
+                .schedule_data
+                .dependency
+                .contains(&(f1_index, apply_deferred_index))
+        );
+        assert!(
+            response
+                .schedule_data
+                .dependency
+                .contains(&(apply_deferred_index, f2_index))
+        );
     }
 }

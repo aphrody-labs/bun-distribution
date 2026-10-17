@@ -83,7 +83,9 @@ impl FilmcraftApp {
 
     /// Aim the scrub stream at `at` (opening it if needed) and play one grain.
     fn scrub_grain(&mut self, at: Tick, now: f64) {
-        let Some(seq_id) = self.session.state.active_sequence else { return };
+        let Some(seq_id) = self.session.state.active_sequence else {
+            return;
+        };
         let Some(a) = self.audio.as_ref() else { return };
         let sr = a.sample_rate();
         if sr == 0 {
@@ -91,15 +93,27 @@ impl FilmcraftApp {
         }
         let total = ((GRAIN_S * sr as f64) as i64).max(1);
         {
-            let mut g = self.scrub.grain.lock().unwrap_or_else(PoisonError::into_inner);
-            *g = Grain { cursor: at.to_units_floor(sr as i64), left: total, total };
+            let mut g = self
+                .scrub
+                .grain
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
+            *g = Grain {
+                cursor: at.to_units_floor(sr as i64),
+                left: total,
+                total,
+            };
         }
         self.scrub.last_move = now;
         if self.scrub.open {
             return;
         }
         let mix = crate::playback_mix(&self.session, seq_id, sr);
-        let fill = grain_fill(mix, self.scrub.grain.clone(), ((RAMP_S * sr as f64) as i64).max(1));
+        let fill = grain_fill(
+            mix,
+            self.scrub.grain.clone(),
+            ((RAMP_S * sr as f64) as i64).max(1),
+        );
         let Some(a) = self.audio.as_mut() else { return };
         a.stop();
         match a.start(fill) {
@@ -110,7 +124,11 @@ impl FilmcraftApp {
 }
 
 /// The scrub stream's callback: the rest of the current grain (faded at its ends), then silence.
-fn grain_fill(mut mix: impl FnMut(i64, &mut [f32], usize) + Send + 'static, grain: Arc<Mutex<Grain>>, ramp: i64) -> Box<dyn FnMut(&mut [f32], usize) + Send> {
+fn grain_fill(
+    mut mix: impl FnMut(i64, &mut [f32], usize) + Send + 'static,
+    grain: Arc<Mutex<Grain>>,
+    ramp: i64,
+) -> Box<dyn FnMut(&mut [f32], usize) + Send> {
     Box::new(move |buf: &mut [f32], ch: usize| {
         let ch = ch.max(1);
         let n = (buf.len() / ch) as i64;
@@ -123,7 +141,9 @@ fn grain_fill(mut mix: impl FnMut(i64, &mut [f32], usize) + Send + 'static, grai
             (now, take)
         };
         buf.fill(0.0);
-        let Some(part) = buf.get_mut(..(take as usize).saturating_mul(ch)) else { return };
+        let Some(part) = buf.get_mut(..(take as usize).saturating_mul(ch)) else {
+            return;
+        };
         if part.is_empty() {
             return;
         }
@@ -149,7 +169,11 @@ mod tests {
 
     #[test]
     fn a_grain_plays_once_from_its_cursor_then_silence() {
-        let grain = Arc::new(Mutex::new(Grain { cursor: 1000, left: 300, total: 300 }));
+        let grain = Arc::new(Mutex::new(Grain {
+            cursor: 1000,
+            left: 300,
+            total: 300,
+        }));
         let starts = Arc::new(Mutex::new(Vec::new()));
         let seen = starts.clone();
         let mix = move |c: i64, b: &mut [f32], _: usize| {
@@ -160,14 +184,25 @@ mod tests {
         let a = run(&mut fill, 256);
         let b = run(&mut fill, 256);
         let c = run(&mut fill, 256);
-        assert_eq!(*starts.lock().unwrap(), vec![1000, 1256], "continues where it left off");
+        assert_eq!(
+            *starts.lock().unwrap(),
+            vec![1000, 1256],
+            "continues where it left off"
+        );
         assert_eq!(a[0], 0.0, "fades in");
         assert_eq!(a[200], 1.0);
-        assert!(b[..44 * 2].iter().all(|s| *s < 1.0 + f32::EPSILON) && b[43 * 2 + 1] < 0.2, "fades out at its end");
+        assert!(
+            b[..44 * 2].iter().all(|s| *s < 1.0 + f32::EPSILON) && b[43 * 2 + 1] < 0.2,
+            "fades out at its end"
+        );
         assert!(b[44 * 2..].iter().all(|s| *s == 0.0), "then silence");
         assert!(c.iter().all(|s| *s == 0.0));
         // a new move re-aims it
-        *grain.lock().unwrap() = Grain { cursor: 5000, left: 300, total: 300 };
+        *grain.lock().unwrap() = Grain {
+            cursor: 5000,
+            left: 300,
+            total: 300,
+        };
         run(&mut fill, 256);
         assert_eq!(starts.lock().unwrap().last(), Some(&5000));
     }
@@ -197,7 +232,8 @@ mod tests {
 
     fn app(scrub_audio: bool) -> (FilmcraftApp, Arc<Mutex<Option<Fill>>>) {
         let mut s = filmcraft_engine::Session::default();
-        s.execute("file.openDemoProject", serde_json::json!({})).unwrap();
+        s.execute("file.openDemoProject", serde_json::json!({}))
+            .unwrap();
         s.prefs.audio.scrub_audio = scrub_audio;
         let mut app = FilmcraftApp::new(s);
         let fill = Arc::new(Mutex::new(None));
@@ -227,7 +263,10 @@ mod tests {
         assert_eq!(loudness(&fill), 0.0, "one grain, then silence");
         app.session.set_playhead(rate.tick_of(72));
         assert!(app.scrub_tick(0.04, true));
-        assert!(loudness(&fill) > 0.0, "the next move plays again on the same stream");
+        assert!(
+            loudness(&fill) > 0.0,
+            "the next move plays again on the same stream"
+        );
         assert!(app.scrub_tick(0.05, false), "lingers briefly after release");
         assert!(!app.scrub_tick(0.05 + LINGER_S, false), "then closes");
         assert!(fill.lock().unwrap().is_none());
@@ -257,13 +296,19 @@ mod tests {
         let rate = app.session.sequence_rate();
         app.scrub_tick(0.0, true);
         app.session.set_playhead(rate.tick_of(60));
-        assert!(app.scrub_tick(0.02, true), "a grain opened the scrub stream");
+        assert!(
+            app.scrub_tick(0.02, true),
+            "a grain opened the scrub stream"
+        );
         // Source playback starts (it replaces the stream with its own)
         app.source_playback.clock.playing = true;
         let source_fill: Fill = Box::new(|buf: &mut [f32], _| buf.fill(0.5));
         *fill.lock().unwrap() = Some(source_fill);
         assert!(!app.scrub_tick(0.05 + LINGER_S, false));
-        assert!(fill.lock().unwrap().is_some(), "the Source playback stream is still playing");
+        assert!(
+            fill.lock().unwrap().is_some(),
+            "the Source playback stream is still playing"
+        );
         assert!(!app.scrub.is_open());
     }
 }

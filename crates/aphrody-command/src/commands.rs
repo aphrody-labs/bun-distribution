@@ -83,11 +83,26 @@ pub(crate) async fn dispatch_a2a(
         aphrody_a2a_coord::AiManifest::load_repo_default().map_err(|e| miette::miette!("{e}"))?;
 
     match action {
-        crate::A2aAction::Serve { bind, unix, no_tcp, coord_dir } => {
-            let addr: SocketAddr =
-                bind.parse().map_err(|e| miette::miette!("invalid --bind: {e}"))?;
-            let cfg = ListenerConfig { bind: addr, manifest, repo_root, dry_run: false };
-            let env_path = |k: &str| std::env::var_os(k).filter(|v| !v.is_empty()).map(Into::into);
+        crate::A2aAction::Serve {
+            bind,
+            unix,
+            no_tcp,
+            coord_dir,
+        } => {
+            let addr: SocketAddr = bind
+                .parse()
+                .map_err(|e| miette::miette!("invalid --bind: {e}"))?;
+            let cfg = ListenerConfig {
+                bind: addr,
+                manifest,
+                repo_root,
+                dry_run: false,
+            };
+            let env_path = |k: &str| {
+                std::env::var_os(k)
+                    .filter(|v| !v.is_empty())
+                    .map(Into::into)
+            };
             let opts = listener::ServeOptions {
                 unix: unix.or_else(|| env_path("A2A_SOCKET")),
                 no_tcp,
@@ -104,15 +119,33 @@ pub(crate) async fn dispatch_a2a(
             listener::serve_with_options(cfg, opts)
                 .await
                 .map_err(|e| miette::miette!("a2a serve failed: {e}"))?;
-        },
-        crate::A2aAction::Tick { iteration, side, peer, subject, body, kind } => {
-            let opts =
-                TickOptions { iteration, side, peer: Some(peer), subject, body, kind: Some(kind) };
+        }
+        crate::A2aAction::Tick {
+            iteration,
+            side,
+            peer,
+            subject,
+            body,
+            kind,
+        } => {
+            let opts = TickOptions {
+                iteration,
+                side,
+                peer: Some(peer),
+                subject,
+                body,
+                kind: Some(kind),
+            };
             let env = listener::run_tick(&manifest, &repo_root, &opts)
                 .map_err(|e| miette::miette!("a2a tick: {e}"))?;
             println!("{}", serde_json::to_string_pretty(&env).unwrap_or_default());
-        },
-        crate::A2aAction::Invoke { prompt, peer, dry_run, claim } => {
+        }
+        crate::A2aAction::Invoke {
+            prompt,
+            peer,
+            dry_run,
+            claim,
+        } => {
             let peer_id = PeerId::parse(&peer).ok_or_else(|| {
                 miette::miette!("unknown peer {peer:?}; use grok|agy|claude|codex|bxc")
             })?;
@@ -150,27 +183,39 @@ pub(crate) async fn dispatch_a2a(
                     result.exit_code
                 ));
             }
-        },
-        crate::A2aAction::Send { instruction, target, source, yolo } => {
+        }
+        crate::A2aAction::Send {
+            instruction,
+            target,
+            source,
+            yolo,
+        } => {
             let registry = aphrody_a2a_coord::PeerRegistry::from_env(&repo_root);
             let mailbox = aphrody_a2a_coord::mailbox::Mailbox::new(manifest.coord_dir(&repo_root));
             let source = source.unwrap_or_else(|| "aphrody".to_owned());
-            let params =
-                aphrody_a2a_coord::SendParams { target, source_agent: source, instruction, yolo };
+            let params = aphrody_a2a_coord::SendParams {
+                target,
+                source_agent: source,
+                instruction,
+                yolo,
+            };
             let out = aphrody_a2a_coord::bridge::send(&registry, &mailbox, &params)
                 .await
                 .map_err(|e| miette::miette!("a2a send: {e}"))?;
             println!("{}", serde_json::to_string_pretty(&out).unwrap_or_default());
-        },
+        }
         crate::A2aAction::Peers => {
             let registry = aphrody_a2a_coord::PeerRegistry::from_env(&repo_root);
-            println!("{}", serde_json::to_string_pretty(registry.peers()).unwrap_or_default());
-        },
+            println!(
+                "{}",
+                serde_json::to_string_pretty(registry.peers()).unwrap_or_default()
+            );
+        }
         crate::A2aAction::Inbox { .. } | crate::A2aAction::Register => {
             return Err(miette::miette!(
                 "a2a inbox/register need APHRODY_A2A_HUB_URL (and APHRODY_A2A_TOKEN_FILE)"
             ));
-        },
+        }
     }
     Ok(())
 }
@@ -190,7 +235,9 @@ async fn dispatch_a2a_hub(action: crate::A2aAction) -> miette::Result<Option<cra
         return Ok(Some(action));
     }
     let hub = HubClient::from_env().map_err(|e| miette::miette!("a2a hub: {e}"))?;
-    let Some(hub) = hub else { return Ok(Some(action)) };
+    let Some(hub) = hub else {
+        return Ok(Some(action));
+    };
     let me = SelfIdentity::detect();
     let fail = |e: aphrody_a2a_coord::HubError| miette::miette!("a2a hub {}: {e}", hub.base());
     // Every hub command doubles as a heartbeat.
@@ -198,20 +245,42 @@ async fn dispatch_a2a_hub(action: crate::A2aAction) -> miette::Result<Option<cra
     match action {
         crate::A2aAction::Peers => {
             let peers = hub.peers().await.map_err(fail)?;
-            println!("{}", serde_json::to_string_pretty(&peers).unwrap_or_default());
-        },
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&peers).unwrap_or_default()
+            );
+        }
         crate::A2aAction::Register => {
             println!("{}", serde_json::to_string_pretty(&me).unwrap_or_default());
-        },
-        crate::A2aAction::Send { instruction, target, source, .. } => {
+        }
+        crate::A2aAction::Send {
+            instruction,
+            target,
+            source,
+            ..
+        } => {
             let from = source.unwrap_or_else(|| me.id.clone());
             let sent = hub
-                .send(&from, &target, EnvelopeKind::Ask, "a2a.message", &instruction)
+                .send(
+                    &from,
+                    &target,
+                    EnvelopeKind::Ask,
+                    "a2a.message",
+                    &instruction,
+                )
                 .await
                 .map_err(fail)?;
-            println!("{}", serde_json::to_string_pretty(&sent).unwrap_or_default());
-        },
-        crate::A2aAction::Inbox { id, limit, ack, all } => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&sent).unwrap_or_default()
+            );
+        }
+        crate::A2aAction::Inbox {
+            id,
+            limit,
+            ack,
+            all,
+        } => {
             let mailbox = id.unwrap_or_else(|| me.id.clone());
             let envelopes = hub.inbox(&mailbox, limit).await.map_err(fail)?;
             let shown: Vec<_> = envelopes
@@ -223,8 +292,11 @@ async fn dispatch_a2a_hub(action: crate::A2aAction) -> miette::Result<Option<cra
                     hub.acknowledge(&mailbox, envelope).await.map_err(fail)?;
                 }
             }
-            println!("{}", serde_json::to_string_pretty(&shown).unwrap_or_default());
-        },
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&shown).unwrap_or_default()
+            );
+        }
         other => return Ok(Some(other)),
     }
     Ok(None)
@@ -422,7 +494,9 @@ impl AutoCommand {
             .map_err(|e| miette::miette!("Erreur lors de l'appel au moteur {}: {}", cmd, e))?;
 
         if !status.success() {
-            return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
+            return Err(miette::Report::new(SubprocessExit(
+                status.code().unwrap_or(1),
+            )));
         }
         Ok(())
     }
@@ -479,7 +553,7 @@ impl TerminalCommand for GoogleCommand {
                 println!("  generate             Generate one Gemini response with Antigravity");
                 println!("  generate-stream      Stream one Gemini response from stdin");
                 return Ok(());
-            },
+            }
             "routes" => {
                 if self.args.len() > 1 && self.args[1..] != ["--json"] {
                     return Err(miette::miette!("Usage: aphrody google routes [--json]"));
@@ -490,7 +564,7 @@ impl TerminalCommand for GoogleCommand {
                         .map_err(|error| miette::miette!("{error}"))?
                 );
                 return Ok(());
-            },
+            }
             "dns" => {
                 let name = self.args.get(1).map(|s| s.as_str()).ok_or_else(|| {
                     miette::miette!("Usage: aphrody google dns <domain> [record_type] [--json]")
@@ -506,7 +580,9 @@ impl TerminalCommand for GoogleCommand {
                 }
 
                 let mut url = reqwest::Url::parse("https://dns.google/resolve").unwrap();
-                url.query_pairs_mut().append_pair("name", name).append_pair("type", record_type);
+                url.query_pairs_mut()
+                    .append_pair("name", name)
+                    .append_pair("type", record_type);
 
                 let client = reqwest::Client::builder()
                     .timeout(std::time::Duration::from_secs(10))
@@ -558,7 +634,7 @@ impl TerminalCommand for GoogleCommand {
                     }
                 }
                 return Ok(());
-            },
+            }
             "suggest" => {
                 let query = self.args[1..]
                     .iter()
@@ -567,14 +643,18 @@ impl TerminalCommand for GoogleCommand {
                     .collect::<Vec<_>>()
                     .join(" ");
                 if query.trim().is_empty() {
-                    return Err(miette::miette!("Usage: aphrody google suggest <query> [--json]"));
+                    return Err(miette::miette!(
+                        "Usage: aphrody google suggest <query> [--json]"
+                    ));
                 }
                 let json = self.args.iter().any(|a| a == "--json");
 
                 let mut url =
                     reqwest::Url::parse("https://suggestqueries.google.com/complete/search")
                         .unwrap();
-                url.query_pairs_mut().append_pair("client", "chrome").append_pair("q", &query);
+                url.query_pairs_mut()
+                    .append_pair("client", "chrome")
+                    .append_pair("q", &query);
 
                 let client = reqwest::Client::builder()
                     .timeout(std::time::Duration::from_secs(10))
@@ -615,9 +695,13 @@ impl TerminalCommand for GoogleCommand {
                     }
                 }
                 return Ok(());
-            },
+            }
             "languages" | "langs" => {
-                let target = self.args.get(1).map(|s| s.as_str()).filter(|s| !s.starts_with('-'));
+                let target = self
+                    .args
+                    .get(1)
+                    .map(|s| s.as_str())
+                    .filter(|s| !s.starts_with('-'));
                 let json = self.args.iter().any(|a| a == "--json");
                 let langs = aphrody_google::languages::supported_languages(target);
                 if json {
@@ -637,8 +721,8 @@ impl TerminalCommand for GoogleCommand {
                     }
                 }
                 return Ok(());
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         // Every other command (status, env, doctor, login, whoami, models, generate, …) is the
@@ -683,7 +767,7 @@ impl TerminalCommand for TranslateCommand {
                     return Err(miette::miette!(
                         "Provide exactly one text or --file for JSON translation"
                     ));
-                },
+                }
             };
             let translated = translator
                 .translate_with_lang_strict(&text, &self.source, &self.target)
@@ -698,7 +782,9 @@ impl TerminalCommand for TranslateCommand {
                     "provider": "aphrody-translate",
                 })
             );
-            translator.persist().map_err(|error| miette::miette!("{error}"))?;
+            translator
+                .persist()
+                .map_err(|error| miette::miette!("{error}"))?;
             return Ok(());
         }
 
@@ -710,7 +796,11 @@ impl TerminalCommand for TranslateCommand {
                     .await
                     .map_err(|e| miette::miette!("{e}"))?
             } else {
-                let src = if self.source == "auto" { "en" } else { &self.source };
+                let src = if self.source == "auto" {
+                    "en"
+                } else {
+                    &self.source
+                };
                 translator
                     .translate_with_lang(text, src, &self.target)
                     .await
@@ -733,7 +823,11 @@ impl TerminalCommand for TranslateCommand {
                     .await
                     .map_err(|e| miette::miette!("{e}"))?
             } else {
-                let src = if self.source == "auto" { "en" } else { &self.source };
+                let src = if self.source == "auto" {
+                    "en"
+                } else {
+                    &self.source
+                };
                 translator
                     .translate_with_lang(&content, src, &self.target)
                     .await
@@ -794,7 +888,9 @@ impl TerminalCommand for SshCommand {
                 .status()
                 .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", ssh.display()))?;
             if !status.success() {
-                return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
+                return Err(miette::Report::new(SubprocessExit(
+                    status.code().unwrap_or(1),
+                )));
             }
             return Ok(());
         }
@@ -802,14 +898,15 @@ impl TerminalCommand for SshCommand {
         if let Ok(explicit) = std::env::var("APHRODY_SSH_BIN") {
             let p = std::path::PathBuf::from(explicit.trim());
             if !explicit.trim().is_empty() && p.exists() {
-                let status =
-                    std::process::Command::new(&p)
-                        .no_window()
-                        .args(&self.args)
-                        .status()
-                        .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", p.display()))?;
+                let status = std::process::Command::new(&p)
+                    .no_window()
+                    .args(&self.args)
+                    .status()
+                    .map_err(|e| miette::miette!("Échec du spawn `{}`: {e}", p.display()))?;
                 if !status.success() {
-                    return Err(miette::Report::new(SubprocessExit(status.code().unwrap_or(1))));
+                    return Err(miette::Report::new(SubprocessExit(
+                        status.code().unwrap_or(1),
+                    )));
                 }
                 return Ok(());
             }
@@ -817,7 +914,9 @@ impl TerminalCommand for SshCommand {
 
         let mut full_args = vec!["aphrody-ssh".to_string()];
         full_args.extend(self.args.clone());
-        aphrody_ssh::run_from_args(full_args).await.map_err(|e| miette::miette!("{e}"))?;
+        aphrody_ssh::run_from_args(full_args)
+            .await
+            .map_err(|e| miette::miette!("{e}"))?;
         Ok(())
     }
 }
@@ -860,7 +959,10 @@ impl SearchCommand {
         let hits = brave::web_search(&brave::base_url(), &key, &query).await?;
         if self.json {
             let out = serde_json::json!({ "provider": "brave", "query": query.q, "results": hits });
-            println!("{}", serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?
+            );
             return Ok(());
         }
         for hit in &hits {
@@ -928,7 +1030,7 @@ impl TerminalCommand for SearchCommand {
                     return Ok(());
                 }
                 return Err(miette::miette!("{e}"));
-            },
+            }
         };
 
         if self.json {
@@ -944,7 +1046,10 @@ impl TerminalCommand for SearchCommand {
                 })
                 .collect();
             let out = serde_json::json!({ "provider": "google", "query": q, "results": hits });
-            println!("{}", serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?);
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&out).map_err(|e| miette::miette!("{e}"))?
+            );
             return Ok(());
         }
         for hit in results.content.organic.iter().take(usize::from(num)) {
@@ -964,7 +1069,11 @@ impl TerminalCommand for SearchCommand {
             format!(
                 "via Aphrody Web Rust · profil {:?} · {}",
                 results.profile_used,
-                if results.authenticated { "authentifié" } else { "anonyme" }
+                if results.authenticated {
+                    "authentifié"
+                } else {
+                    "anonyme"
+                }
             )
             .dimmed()
         );
@@ -1018,7 +1127,11 @@ fn binary_version() -> String {
     let sha = env!("APHRODY_GIT_SHA");
     let built_unix: u64 = env!("APHRODY_BUILD_UNIX").parse().unwrap_or(0);
     let target = env!("APHRODY_TARGET");
-    let built_date = if built_unix > 0 { epoch_to_date(built_unix) } else { "unknown".to_string() };
+    let built_date = if built_unix > 0 {
+        epoch_to_date(built_unix)
+    } else {
+        "unknown".to_string()
+    };
     format!("{version} (commit {sha}, built {built_date}, target {target})")
 }
 
@@ -1106,7 +1219,9 @@ impl TermCommand {
             .parse()
             .map_err(|e| miette::miette!("invalid --addr '{}': {e}", self.addr))?;
 
-        let env_token = std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|s| !s.is_empty());
+        let env_token = std::env::var("APHRODY_OS_AUTH_TOKEN")
+            .ok()
+            .filter(|s| !s.is_empty());
         let explicit_token = self.token.clone().or(env_token);
 
         // Require authentication token when binding to non-loopback addresses (e.g. 0.0.0.0)
@@ -1172,13 +1287,20 @@ mod term_command_tests {
             std::env::remove_var("APHRODY_OS_AUTH_TOKEN");
         }
 
-        let cmd =
-            TermCommand { addr: "0.0.0.0:8788".to_string(), shell: None, cwd: None, token: None };
+        let cmd = TermCommand {
+            addr: "0.0.0.0:8788".to_string(),
+            shell: None,
+            cwd: None,
+            token: None,
+        };
 
         let res = cmd.validate_and_configure();
         assert!(res.is_err(), "non-loopback without token must be rejected");
         let err_str = res.unwrap_err().to_string();
-        assert!(err_str.contains("non-loopback address"), "unexpected error: {err_str}");
+        assert!(
+            err_str.contains("non-loopback address"),
+            "unexpected error: {err_str}"
+        );
 
         if let Some(tok) = _env_guard {
             unsafe {
@@ -1196,9 +1318,14 @@ mod term_command_tests {
             token: Some("custom-token-secret-1234567890".to_string()),
         };
 
-        let (addr, cfg) = cmd.validate_and_configure().expect("should accept with explicit token");
+        let (addr, cfg) = cmd
+            .validate_and_configure()
+            .expect("should accept with explicit token");
         assert_eq!(addr, "0.0.0.0:8788".parse().unwrap());
-        assert_eq!(cfg.auth_token.as_deref(), Some("custom-token-secret-1234567890"));
+        assert_eq!(
+            cfg.auth_token.as_deref(),
+            Some("custom-token-secret-1234567890")
+        );
     }
 
     #[test]
@@ -1208,10 +1335,16 @@ mod term_command_tests {
             std::env::remove_var("APHRODY_OS_AUTH_TOKEN");
         }
 
-        let cmd =
-            TermCommand { addr: "127.0.0.1:8788".to_string(), shell: None, cwd: None, token: None };
+        let cmd = TermCommand {
+            addr: "127.0.0.1:8788".to_string(),
+            shell: None,
+            cwd: None,
+            token: None,
+        };
 
-        let (addr, cfg) = cmd.validate_and_configure().expect("loopback should succeed");
+        let (addr, cfg) = cmd
+            .validate_and_configure()
+            .expect("loopback should succeed");
         assert_eq!(addr, "127.0.0.1:8788".parse().unwrap());
         let token = cfg.auth_token.expect("token should be generated");
         assert_eq!(token.len(), 32);

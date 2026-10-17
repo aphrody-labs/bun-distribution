@@ -53,7 +53,7 @@ pub fn normalize_roster_identifier(input: RosterIdentifierInput<'_>) -> Option<S
                 return None;
             }
             value as u64
-        },
+        }
         RosterIdentifierInput::Text(value) => parse_text(value)?,
     };
 
@@ -116,7 +116,10 @@ fn parse_text(raw: &str) -> Option<u64> {
         (value, 10)
     } else if value.len() <= 8
         && value.as_bytes().iter().all(u8::is_ascii_hexdigit)
-        && value.as_bytes().iter().any(|byte| matches!(byte, b'a'..=b'f' | b'A'..=b'F'))
+        && value
+            .as_bytes()
+            .iter()
+            .any(|byte| matches!(byte, b'a'..=b'f' | b'A'..=b'F'))
     {
         (value, 16)
     } else {
@@ -136,7 +139,10 @@ mod tests {
 
     #[test]
     fn accepts_numeric_boundaries_and_rejects_non_integers() {
-        assert_eq!(normalize_roster_identifier_number(0.0).as_deref(), Some("0x00000000"));
+        assert_eq!(
+            normalize_roster_identifier_number(0.0).as_deref(),
+            Some("0x00000000")
+        );
         assert_eq!(
             normalize_roster_identifier_number(4_294_967_295.0).as_deref(),
             Some("0xFFFFFFFF")
@@ -148,20 +154,46 @@ mod tests {
 
     #[test]
     fn parses_decimal_and_prefixed_hex_strings() {
-        assert_eq!(normalize_roster_identifier_str(" 42 ").as_deref(), Some("0x0000002A"));
-        assert_eq!(normalize_roster_identifier_str("00042").as_deref(), Some("0x0000002A"));
-        assert_eq!(normalize_roster_identifier_str("0x2a").as_deref(), Some("0x0000002A"));
-        assert_eq!(normalize_roster_identifier_str("0XFFFFFFFF").as_deref(), Some("0xFFFFFFFF"));
-        assert_eq!(normalize_roster_identifier_str("ABCDEF12").as_deref(), Some("0xABCDEF12"));
+        assert_eq!(
+            normalize_roster_identifier_str(" 42 ").as_deref(),
+            Some("0x0000002A")
+        );
+        assert_eq!(
+            normalize_roster_identifier_str("00042").as_deref(),
+            Some("0x0000002A")
+        );
+        assert_eq!(
+            normalize_roster_identifier_str("0x2a").as_deref(),
+            Some("0x0000002A")
+        );
+        assert_eq!(
+            normalize_roster_identifier_str("0XFFFFFFFF").as_deref(),
+            Some("0xFFFFFFFF")
+        );
+        assert_eq!(
+            normalize_roster_identifier_str("ABCDEF12").as_deref(),
+            Some("0xABCDEF12")
+        );
     }
 
     #[test]
     fn preserves_decimal_hex_ambiguity_rule_and_rejects_malformed_text() {
         // Digits only are decimal, even when their hexadecimal interpretation differs.
-        assert_eq!(normalize_roster_identifier_str("123").as_deref(), Some("0x0000007B"));
-        for value in
-            ["", "0x", "0x100000000", "4294967296", "-1", "+1", "0g10", "deadbeef0", "G123"]
-        {
+        assert_eq!(
+            normalize_roster_identifier_str("123").as_deref(),
+            Some("0x0000007B")
+        );
+        for value in [
+            "",
+            "0x",
+            "0x100000000",
+            "4294967296",
+            "-1",
+            "+1",
+            "0g10",
+            "deadbeef0",
+            "G123",
+        ] {
             assert_eq!(normalize_roster_identifier_str(value), None, "{value}");
         }
     }
@@ -175,7 +207,10 @@ mod tests {
             RosterIdentifierInput::Text("zz"),
             RosterIdentifierInput::Text("3"),
         ];
-        assert_eq!(normalize_roster_identifiers(values, 2), ["0x00000001", "0x00000002"]);
+        assert_eq!(
+            normalize_roster_identifiers(values, 2),
+            ["0x00000001", "0x00000002"]
+        );
         assert!(normalize_roster_identifiers(values, 0).is_empty());
         assert_eq!(normalize_roster_identifiers(values, 8_000).len(), 3);
     }

@@ -178,7 +178,10 @@ pub fn scan_bytes_bounded(
         });
     }
     if max_hits > MAX_AOB_SCAN_HITS {
-        return Err(BoundedAobError::HitLimitTooHigh { limit: max_hits, max: MAX_AOB_SCAN_HITS });
+        return Err(BoundedAobError::HitLimitTooHigh {
+            limit: max_hits,
+            max: MAX_AOB_SCAN_HITS,
+        });
     }
 
     let pattern = Pattern::parse(pattern_source)?;
@@ -189,8 +192,10 @@ pub fn scan_bytes_bounded(
         });
     }
 
-    let candidate_count =
-        haystack.len().checked_sub(pattern.len()).map_or(0, |remaining| remaining + 1);
+    let candidate_count = haystack
+        .len()
+        .checked_sub(pattern.len())
+        .map_or(0, |remaining| remaining + 1);
     let comparisons = candidate_count.saturating_mul(pattern.len());
     if comparisons > MAX_AOB_SCAN_COMPARISONS {
         return Err(BoundedAobError::WorkLimitExceeded {
@@ -259,7 +264,10 @@ mod tests {
 
     #[test]
     fn parse_rejects_garbage_and_empty() {
-        assert_eq!(Pattern::parse("44 ZZ"), Err(AobError::BadByte("ZZ".to_owned())));
+        assert_eq!(
+            Pattern::parse("44 ZZ"),
+            Err(AobError::BadByte("ZZ".to_owned()))
+        );
         assert_eq!(Pattern::parse("   "), Err(AobError::Empty));
     }
 
@@ -283,7 +291,10 @@ mod tests {
     #[test]
     fn empty_and_too_long_patterns_find_nothing() {
         // motif vide (construit à la main) → aucun match, is_empty vrai.
-        let empty = Pattern { bytes: vec![], mask: vec![] };
+        let empty = Pattern {
+            bytes: vec![],
+            mask: vec![],
+        };
         assert!(empty.is_empty());
         assert_eq!(empty.find_in(b"abc"), None);
         assert!(empty.find_all(b"abc", 4).is_empty());
@@ -356,7 +367,9 @@ mod tests {
     fn bounded_scan_validates_before_allocating_or_scanning() {
         assert_eq!(
             scan_bytes_bounded("not-hex", &[], 1),
-            Err(BoundedAobError::Pattern(AobError::BadByte("not-hex".to_owned())))
+            Err(BoundedAobError::Pattern(AobError::BadByte(
+                "not-hex".to_owned()
+            )))
         );
         let report = scan_bytes_bounded("AA", &[0xAA], 0).unwrap();
         assert!(report.offsets.is_empty());

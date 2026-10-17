@@ -99,7 +99,10 @@ pub struct PersistentWriteSavestate<'a> {
 impl<'a> PersistentWriteSavestate<'a> {
     #[inline]
     pub fn new(save: &'a mut Vec<u8>) -> Self {
-        PersistentWriteSavestate { save, structs: Vec::new() }
+        PersistentWriteSavestate {
+            save,
+            structs: Vec::new(),
+        }
     }
 }
 
@@ -145,7 +148,10 @@ impl<'a> WriteSavestate for PersistentWriteSavestate<'a> {
     fn start_struct(&mut self) -> Result<(), Self::Error> {
         let start_pos = u32::try_from(self.save.len()).map_err(|_| WriteError::SaveTooLarge)?;
         self.save.extend_from_slice(&[0; 4]);
-        self.structs.push(StructInfo { start_pos, fields: Vec::new() });
+        self.structs.push(StructInfo {
+            start_pos,
+            fields: Vec::new(),
+        });
 
         Ok(())
     }
@@ -260,7 +266,10 @@ impl_storable_tuples!(
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11),
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12),
     (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13),
-    (A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O, 14),
+    (
+        A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O,
+        14
+    ),
     (
         A, 0, B, 1, C, 2, D, 3, E, 4, F, 5, G, 6, H, 7, I, 8, J, 9, K, 10, L, 11, M, 12, N, 13, O,
         14, P, 15

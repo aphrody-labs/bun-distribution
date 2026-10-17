@@ -156,9 +156,14 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_NETWORK_GLOBAL_LIFETIME";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "network::tests::test_room_network_init_and_shutdown"])
+                .args([
+                    "--exact",
+                    "network::tests::test_room_network_init_and_shutdown"
+                ])
                 .env(CHILD, "1")
-                .status().unwrap().success());
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         let mut rn = RoomNetwork::new();

@@ -12,12 +12,23 @@ use vectorcraft_geom::Affine;
 
 fn image(d: &mut Document, key: &str, link: Option<LinkInfo>) {
     let (id, layer) = (d.alloc_id(), d.layers[0].id);
-    let im = ImageObject { key: key.into(), width: 600, height: 300, xf: Affine::IDENTITY, link, placement: Default::default() };
-    d.insert(Some(layer), 0, Node::new(id, NodeKind::Image(Box::new(im)))).unwrap();
+    let im = ImageObject {
+        key: key.into(),
+        width: 600,
+        height: 300,
+        xf: Affine::IDENTITY,
+        link,
+        placement: Default::default(),
+    };
+    d.insert(Some(layer), 0, Node::new(id, NodeKind::Image(Box::new(im))))
+        .unwrap();
 }
 
 fn blob(full: &[u8], proxy: Option<&[u8]>) -> ImageBlob {
-    ImageBlob { proxy: proxy.map(|p| Arc::new(p.to_vec())), ..ImageBlob::new("image/jpeg", full.to_vec()) }
+    ImageBlob {
+        proxy: proxy.map(|p| Arc::new(p.to_vec())),
+        ..ImageBlob::new("image/jpeg", full.to_vec())
+    }
 }
 
 #[test]
@@ -30,7 +41,8 @@ fn link_details_round_trip_and_linked_only_images_save_their_preview() {
         hash: Some("img0123456789abcdef".into()),
         ..LinkInfo::new("/work/art/photo.jpg")
     };
-    d.images.insert("linked".into(), blob(&[1, 2, 3, 4], Some(&[9, 9])));
+    d.images
+        .insert("linked".into(), blob(&[1, 2, 3, 4], Some(&[9, 9])));
     d.images.insert("both".into(), blob(&[5, 6, 7], Some(&[8])));
     d.images.insert("small".into(), blob(&[4, 4], None));
     image(&mut d, "linked", Some(link.clone()));
@@ -46,13 +58,29 @@ fn link_details_round_trip_and_linked_only_images_save_their_preview() {
             v["images"][k]["proxy"].clone(),
         )
     };
-    assert_eq!(saved("linked"), ("image/png".into(), vec![9, 9], Value::Bool(true)), "only linked images show it: the preview");
-    assert_eq!(saved("both"), ("image/jpeg".into(), vec![5, 6, 7], Value::Null), "an embedded image shows it too: the full bytes");
-    assert_eq!(saved("small"), ("image/jpeg".into(), vec![4, 4], Value::Null), "no preview: the full bytes");
+    assert_eq!(
+        saved("linked"),
+        ("image/png".into(), vec![9, 9], Value::Bool(true)),
+        "only linked images show it: the preview"
+    );
+    assert_eq!(
+        saved("both"),
+        ("image/jpeg".into(), vec![5, 6, 7], Value::Null),
+        "an embedded image shows it too: the full bytes"
+    );
+    assert_eq!(
+        saved("small"),
+        ("image/jpeg".into(), vec![4, 4], Value::Null),
+        "no preview: the full bytes"
+    );
 
     let back = load(&bytes).unwrap();
     let linked = &back.images["linked"];
-    assert_eq!((linked.bytes.as_slice(), linked.is_proxy()), (&[9u8, 9][..], true), "the preview stands in until the file is read");
+    assert_eq!(
+        (linked.bytes.as_slice(), linked.is_proxy()),
+        (&[9u8, 9][..], true),
+        "the preview stands in until the file is read"
+    );
     assert!(!back.images["both"].is_proxy() && back.images["both"].proxy.is_none());
     let mut links = vec![];
     back.visit_images(|_, im| links.push(im.link.clone()));

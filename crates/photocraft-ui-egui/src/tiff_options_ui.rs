@@ -22,27 +22,44 @@ pub struct Prompt {
 /// `true` when `path` is a TIFF name (`.tif` / `.tiff`).
 pub fn is_tiff_path(path: &str) -> bool {
     let name = path.rsplit(['/', '\\']).next().unwrap_or(path);
-    name.rsplit_once('.').is_some_and(|(stem, ext)| !stem.is_empty() && (ext.eq_ignore_ascii_case("tif") || ext.eq_ignore_ascii_case("tiff")))
+    name.rsplit_once('.').is_some_and(|(stem, ext)| {
+        !stem.is_empty() && (ext.eq_ignore_ascii_case("tif") || ext.eq_ignore_ascii_case("tiff"))
+    })
 }
 
 /// Whether saving the active document to `path` should go through the prompt: a TIFF that
 /// would carry layer data, with the preference on.
 pub fn wants_prompt(app: &PhotocraftApp, path: &str) -> bool {
-    if !is_tiff_path(path) || !app.session.prefs().file_handling.ask_before_saving_layered_tiff {
+    if !is_tiff_path(path)
+        || !app
+            .session
+            .prefs()
+            .file_handling
+            .ask_before_saving_layered_tiff
+    {
         return false;
     }
-    app.session.active().is_some_and(|st| photocraft_engine::file_cmds::tiff_would_write_layers(&st.doc))
+    app.session
+        .active()
+        .is_some_and(|st| photocraft_engine::file_cmds::tiff_would_write_layers(&st.doc))
 }
 
 /// Parks the save behind the prompt.
 pub fn park(app: &mut PhotocraftApp, path: String) -> Result<(), String> {
     let doc = app.active_doc_id()?;
-    app.tiff_options = Some(Prompt { doc, path, discard_layers: false, dont_ask_again: false });
+    app.tiff_options = Some(Prompt {
+        doc,
+        path,
+        discard_layers: false,
+        dont_ask_again: false,
+    });
     Ok(())
 }
 
 pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(p) = &mut app.tiff_options else { return };
+    let Some(p) = &mut app.tiff_options else {
+        return;
+    };
     let (mut ok, mut cancel) = (false, false);
     let (mut discard, mut dont_ask) = (p.discard_layers, p.dont_ask_again);
     let modal = egui::Modal::new(egui::Id::new("tiff-options")).show(ctx, |ui| {
@@ -66,13 +83,21 @@ pub fn show(app: &mut PhotocraftApp, ctx: &egui::Context) {
     p.discard_layers = discard;
     p.dont_ask_again = dont_ask;
     if ok || ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Enter)) {
-        let Some(p) = app.tiff_options.take() else { return };
+        let Some(p) = app.tiff_options.take() else {
+            return;
+        };
         if p.dont_ask_again {
-            app.session.edit_prefs(|prefs| prefs.file_handling.ask_before_saving_layered_tiff = false);
+            app.session
+                .edit_prefs(|prefs| prefs.file_handling.ask_before_saving_layered_tiff = false);
         }
-        let settings = ExportSettings { tiff_layers: !p.discard_layers, ..app.save_settings() };
+        let settings = ExportSettings {
+            tiff_layers: !p.discard_layers,
+            ..app.save_settings()
+        };
         let step = serde_json::json!({"path": p.path, "tiffLayers": !p.discard_layers});
-        let written = app.with_document(p.doc, |app| app.write_document(p.path, &settings, p.discard_layers));
+        let written = app.with_document(p.doc, |app| {
+            app.write_document(p.path, &settings, p.discard_layers)
+        });
         if written.is_ok() {
             // An action being recorded keeps the Save As with this answer (#2032).
             app.session.journal.push(("file.saveAs".into(), step));

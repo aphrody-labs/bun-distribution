@@ -7,8 +7,8 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     world::DeferredWorld,
 };
-use bevy_reflect::std_traits::ReflectDefault;
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 
 /// A component indicating that a widget is disabled and should be "grayed out".
 /// This is used to prevent user interaction with the widget. It should not, however, prevent

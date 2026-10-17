@@ -24,7 +24,10 @@
 mod sraw;
 
 use super::{active_rows, black_from_columns, white_from_data};
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result, ljpeg};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result, ljpeg,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::chunk_bytes;
 use lightcraft_tiff::{ByteOrder, Ifd, Tiff, Value, makernote, tags as t};
@@ -43,7 +46,9 @@ const SHOT_INFO: u16 = 0x0004;
 const WB_INFO: u16 = 0x0029;
 
 fn raw_ifd(tiff: &Tiff) -> Option<&Ifd> {
-    tiff.ifds.get(3).or_else(|| tiff.ifds.iter().rev().find(|i| i.contains(CR2_SLICE)))
+    tiff.ifds
+        .get(3)
+        .or_else(|| tiff.ifds.iter().rev().find(|i| i.contains(CR2_SLICE)))
 }
 
 /// Bayer layout from the raw IFD's `CR2CFAPattern` (`0xc5e0`) value; `None` for missing/unknown values.
@@ -64,14 +69,25 @@ fn cfa_from_tag(v: Option<u64>) -> Option<Cfa> {
 /// one. Other types are returned value by value.
 fn words(v: &Value, order: ByteOrder) -> Vec<u64> {
     match v {
-        Value::Byte(b) | Value::Undefined(b) => b.as_chunks::<2>().0.iter().map(|c| u64::from(order.u16(*c))).collect(),
+        Value::Byte(b) | Value::Undefined(b) => b
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u64::from(order.u16(*c)))
+            .collect(),
         _ => v.to_u64_vec(),
     }
 }
 
 /// WB multipliers (R, G, B; G = 1) from one set of levels, when they are plausible.
 fn wb_from_levels(r: f32, g1: f32, g2: f32, b: f32) -> Option<[f32; 3]> {
-    if g1 < 256.0 || g2 < 256.0 || r < 64.0 || b < 64.0 || g1 > 16384.0 || (g1 - g2).abs() > 0.05 * g1 {
+    if g1 < 256.0
+        || g2 < 256.0
+        || r < 64.0
+        || b < 64.0
+        || g1 > 16384.0
+        || (g1 - g2).abs() > 0.05 * g1
+    {
         return None;
     }
     let g = (g1 + g2) / 2.0;
@@ -110,7 +126,13 @@ fn wb_from_wb_info(m: &makernote::MakerNote) -> Option<[f32; 3]> {
         _ => return None,
     };
     let b = m.ifd.bytes(WB_INFO)?;
-    let level = |i: usize| Some(m.order.u32(b.get(4 * (row + i)..4 * (row + i + 1))?.try_into().ok()?) as i32 as f32);
+    let level = |i: usize| {
+        Some(
+            m.order
+                .u32(b.get(4 * (row + i)..4 * (row + i + 1))?.try_into().ok()?) as i32
+                as f32,
+        )
+    };
     wb_from_levels(level(1)?, level(0)?, level(3)?, level(2)?)
 }
 
@@ -126,7 +148,10 @@ fn masked_columns(data: &[u16], width: usize, active: Rect, white: f32) -> Range
     let column_mean = |x: usize| {
         let (mut sum, mut n) = (0.0, 0usize);
         for y in (active.y..active.y.saturating_add(active.height)).step_by(step) {
-            if let Some(&v) = y.checked_mul(width).and_then(|i| data.get(i.checked_add(x)?)) {
+            if let Some(&v) = y
+                .checked_mul(width)
+                .and_then(|i| data.get(i.checked_add(x)?))
+            {
                 sum += f64::from(v);
                 n += 1;
             }
@@ -136,7 +161,9 @@ fn masked_columns(data: &[u16], width: usize, active: Rect, white: f32) -> Range
     let means: Vec<f64> = (2..limit).map_while(column_mean).collect();
     let mut first: Vec<f64> = means.iter().take(8).copied().collect();
     first.sort_by(f64::total_cmp);
-    let Some(&level) = first.get(first.len() / 2) else { return 0..0 };
+    let Some(&level) = first.get(first.len() / 2) else {
+        return 0..0;
+    };
     let tolerance = ((f64::from(white) - level) / 256.0).max(16.0);
     let end = match means.iter().position(|&m| m > level + tolerance) {
         // `means[k]` is column `2 + k`: stop two columns before it
@@ -155,10 +182,26 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
         Some(v) if v != 1 => return Err(RawError::Unsupported(format!("Canon raw type {v}"))),
         _ => {}
     }
-    let off = raw.u64(t::STRIP_OFFSETS).ok_or(RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(t::STRIP_OFFSETS)))?;
-    let len = raw.u64(t::STRIP_BYTE_COUNTS).unwrap_or(bytes.len() as u64 - off.min(bytes.len() as u64));
-    let chunk = lightcraft_tiff::image::Chunk { index: 0, x: 0, y: 0, width: 0, height: 0, plane: 0, offset: off, len };
-    let src = chunk_bytes(bytes, &chunk).ok_or_else(|| RawError::Corrupt("raw strip outside file".into()))?;
+    let off =
+        raw.u64(t::STRIP_OFFSETS)
+            .ok_or(RawError::Tiff(lightcraft_tiff::TiffError::MissingTag(
+                t::STRIP_OFFSETS,
+            )))?;
+    let len = raw
+        .u64(t::STRIP_BYTE_COUNTS)
+        .unwrap_or(bytes.len() as u64 - off.min(bytes.len() as u64));
+    let chunk = lightcraft_tiff::image::Chunk {
+        index: 0,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        plane: 0,
+        offset: off,
+        len,
+    };
+    let src = chunk_bytes(bytes, &chunk)
+        .ok_or_else(|| RawError::Corrupt("raw strip outside file".into()))?;
     let (fw, fh, nc, prec) = ljpeg::frame_info(src)?;
     let frame = match mode {
         Mode::Full => Some(ljpeg::decode(src, (fw * fh * nc).min(crate::MAX_SAMPLES))?),
@@ -178,7 +221,9 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
             total
         }
     };
-    let slices = raw.u64s(CR2_SLICE).filter(|s| s.len() == 3 && s[1] > 0 && s[2] > 0);
+    let slices = raw
+        .u64s(CR2_SLICE)
+        .filter(|s| s.len() == 3 && s[1] > 0 && s[2] > 0);
     let widths: Vec<usize> = match &slices {
         Some(s) => {
             let n = s[0].min(64) as usize;
@@ -190,7 +235,9 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     };
     let width: usize = widths.iter().sum();
     if width == 0 || total % width != 0 {
-        return Err(RawError::Corrupt(format!("CR2 slices ({width}) do not divide the frame ({total} samples)")));
+        return Err(RawError::Corrupt(format!(
+            "CR2 slices ({width}) do not divide the frame ({total} samples)"
+        )));
     }
     let height = total / width;
     let mut data = Vec::new();
@@ -210,11 +257,24 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
 
     // maker note: sensor borders and white balance
     let make = ifd0.string(t::MAKE).unwrap_or_default();
-    let mn =
-        tiff.exif().and_then(|e| e.get(t::MAKER_NOTE)).and_then(|e| makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make));
+    let mn = tiff
+        .exif()
+        .and_then(|e| e.get(t::MAKER_NOTE))
+        .and_then(|e| {
+            makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)
+        });
     let mut active = Rect::new(0, 0, width, height);
-    if let Some(si) = mn.as_ref().and_then(|m| m.ifd.u64s(SENSOR_INFO)).filter(|v| v.len() >= 9) {
-        let (l, tp, r, b) = (si[5] as usize, si[6] as usize, si[7] as usize, si[8] as usize);
+    if let Some(si) = mn
+        .as_ref()
+        .and_then(|m| m.ifd.u64s(SENSOR_INFO))
+        .filter(|v| v.len() >= 9)
+    {
+        let (l, tp, r, b) = (
+            si[5] as usize,
+            si[6] as usize,
+            si[7] as usize,
+            si[8] as usize,
+        );
         if r > l && b > tp && r < width && b < height {
             active = Rect::new(l, tp, r - l + 1, b - tp + 1);
         }
@@ -227,7 +287,13 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let cfa = cfa_from_tag(raw.u64(CR2_CFA_PATTERN)).unwrap_or_else(|| Cfa::bayer_static("RGGB"));
     let white = white_from_data(&active_rows(&data, width, active), prec as u32);
     let black = match masked_columns(&data, width, active, white) {
-        cols if cols.len() >= 2 => black_from_columns(&data, width, cols, active.y..active.y + active.height, active),
+        cols if cols.len() >= 2 => black_from_columns(
+            &data,
+            width,
+            cols,
+            active.y..active.y + active.height,
+            active,
+        ),
         _ => BlackLevel::uniform(0.0),
     };
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
@@ -262,18 +328,35 @@ pub(crate) mod tests {
     use lightcraft_tiff::{ByteOrder, IfdBuilder, ImageData, TiffWriter, Value};
 
     /// Build a synthetic CR2: IFD0..IFD2 placeholders + IFD3 holding a sliced 2-component LJ92 frame.
-    pub(crate) fn synthetic_cr2(w: usize, h: usize, slices: Option<[u16; 3]>) -> (Vec<u8>, Vec<u16>) {
+    pub(crate) fn synthetic_cr2(
+        w: usize,
+        h: usize,
+        slices: Option<[u16; 3]>,
+    ) -> (Vec<u8>, Vec<u16>) {
         synthetic_cr2_note(w, h, slices, None)
     }
 
     /// Like [`synthetic_cr2`], with `note` as the Exif maker note (bytes as stored).
-    fn synthetic_cr2_note(w: usize, h: usize, slices: Option<[u16; 3]>, note: Option<Vec<u8>>) -> (Vec<u8>, Vec<u16>) {
-        let img: Vec<u16> = (0..w * h).map(|i| 1024 + ((i * 7919) % 12000) as u16).collect();
+    fn synthetic_cr2_note(
+        w: usize,
+        h: usize,
+        slices: Option<[u16; 3]>,
+        note: Option<Vec<u8>>,
+    ) -> (Vec<u8>, Vec<u16>) {
+        let img: Vec<u16> = (0..w * h)
+            .map(|i| 1024 + ((i * 7919) % 12000) as u16)
+            .collect();
         (synthetic_cr2_of(&img, w, h, slices, note), img)
     }
 
     /// A synthetic CR2 whose sensor samples are `img` (`w`×`h`, 14-bit), with `note` as the Exif maker note.
-    fn synthetic_cr2_of(img: &[u16], w: usize, h: usize, slices: Option<[u16; 3]>, note: Option<Vec<u8>>) -> Vec<u8> {
+    fn synthetic_cr2_of(
+        img: &[u16],
+        w: usize,
+        h: usize,
+        slices: Option<[u16; 3]>,
+        note: Option<Vec<u8>>,
+    ) -> Vec<u8> {
         let widths: Vec<usize> = match slices {
             Some([n, sw, last]) => {
                 let mut v = vec![sw as usize; n as usize];
@@ -308,10 +391,18 @@ pub(crate) mod tests {
         if let Some(s) = slices {
             ifd3.set(CR2_SLICE, Value::Short(s.to_vec()));
         }
-        ifd3.set_image(ImageData::Strips { rows_per_strip: h as u32, strips: vec![enc] });
+        ifd3.set_image(ImageData::Strips {
+            rows_per_strip: h as u32,
+            strips: vec![enc],
+        });
         // (real files also carry a "CR\x02\0" signature at offset 8; probe recognises the structure without it)
         TiffWriter::new(ByteOrder::Little, false)
-            .write(&[ifd0, IfdBuilder::new().with(1, Value::Short(vec![0])), IfdBuilder::new().with(1, Value::Short(vec![0])), ifd3])
+            .write(&[
+                ifd0,
+                IfdBuilder::new().with(1, Value::Short(vec![0])),
+                IfdBuilder::new().with(1, Value::Short(vec![0])),
+                ifd3,
+            ])
             .unwrap()
     }
 
@@ -325,7 +416,11 @@ pub(crate) mod tests {
             assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
             assert_eq!(r.data, RawData::U16(img));
             assert_eq!(r.orientation, Orientation::Rotate270);
-            assert_eq!(r.cfa.as_ref().map(Cfa::name).as_deref(), Some("GBRG"), "CR2CFAPattern 3");
+            assert_eq!(
+                r.cfa.as_ref().map(Cfa::name).as_deref(),
+                Some("GBRG"),
+                "CR2CFAPattern 3"
+            );
             assert_eq!(r.metadata.iso, Some(400));
             assert!(r.develop(crate::Method::Ahd).is_ok());
         }
@@ -361,16 +456,31 @@ pub(crate) mod tests {
         let le = words(&Value::Undefined(b.clone()), ByteOrder::Little);
         assert_eq!(&le[71..75], &[1988, 745, 745, 1641]);
         let wb = wb_from_color_balance(&le).unwrap();
-        assert!((wb[0] - 1988.0 / 745.0).abs() < 1e-5 && wb[1] == 1.0 && (wb[2] - 1641.0 / 745.0).abs() < 1e-5);
+        assert!(
+            (wb[0] - 1988.0 / 745.0).abs() < 1e-5
+                && wb[1] == 1.0
+                && (wb[2] - 1641.0 / 745.0).abs() < 1e-5
+        );
         // read as single bytes (the old behaviour) nothing is plausible
-        assert!(wb_from_color_balance(&b.iter().map(|&x| u64::from(x)).collect::<Vec<_>>()).is_none());
+        assert!(
+            wb_from_color_balance(&b.iter().map(|&x| u64::from(x)).collect::<Vec<_>>()).is_none()
+        );
         // big-endian note: same words, bytes swapped
         let mut be = b.clone();
-        be.as_chunks_mut::<2>().0.iter_mut().for_each(|c| c.swap(0, 1));
+        be.as_chunks_mut::<2>()
+            .0
+            .iter_mut()
+            .for_each(|c| c.swap(0, 1));
         assert_eq!(words(&Value::Undefined(be), ByteOrder::Big), le);
         // SHORT values pass through, an odd trailing byte is ignored
-        assert_eq!(words(&Value::Short(vec![1, 2, 3]), ByteOrder::Little), vec![1, 2, 3]);
-        assert_eq!(words(&Value::Undefined(vec![1, 0, 2]), ByteOrder::Little), vec![1]);
+        assert_eq!(
+            words(&Value::Short(vec![1, 2, 3]), ByteOrder::Little),
+            vec![1, 2, 3]
+        );
+        assert_eq!(
+            words(&Value::Undefined(vec![1, 0, 2]), ByteOrder::Little),
+            vec![1]
+        );
     }
 
     /// Light reaches columns left of the `SensorInfo` border (as on the EOS 6D): the black level comes from the
@@ -378,14 +488,28 @@ pub(crate) mod tests {
     #[test]
     fn black_from_masked_columns_only() {
         let (w, h, border, light) = (40, 12, 20, 14);
-        let data: Vec<u16> = (0..w * h).map(|i| if i % w < light { 2048 + (i % 2) as u16 } else { 6000 }).collect();
+        let data: Vec<u16> = (0..w * h)
+            .map(|i| {
+                if i % w < light {
+                    2048 + (i % 2) as u16
+                } else {
+                    6000
+                }
+            })
+            .collect();
         let active = Rect::new(border, 2, w - border, h - 2);
         let cols = masked_columns(&data, w, active, 15000.0);
         assert_eq!(cols, 2..light - 2);
         let black = black_from_columns(&data, w, cols, 2..h, active);
-        assert!(black.values.iter().all(|v| (2048.0..=2049.0).contains(v)), "{:?}", black.values);
+        assert!(
+            black.values.iter().all(|v| (2048.0..=2049.0).contains(v)),
+            "{:?}",
+            black.values
+        );
         // the whole border masked: every column but the two next to the image
-        let dark: Vec<u16> = (0..w * h).map(|i| if i % w < border { 2048 } else { 6000 }).collect();
+        let dark: Vec<u16> = (0..w * h)
+            .map(|i| if i % w < border { 2048 } else { 6000 })
+            .collect();
         assert_eq!(masked_columns(&dark, w, active, 15000.0), 2..border - 2);
         // too narrow a border, or no samples (headers-only decode): none
         assert!(masked_columns(&dark, w, Rect::new(5, 0, 30, h), 15000.0).is_empty());
@@ -415,7 +539,8 @@ pub(crate) mod tests {
     }
 
     fn decode_with_color_data(ty: u16, data: &[u8]) -> RawImage {
-        let (mut bytes, _) = synthetic_cr2_note(64, 10, None, Some(note_with(COLOR_BALANCE, ty, data)));
+        let (mut bytes, _) =
+            synthetic_cr2_note(64, 10, None, Some(note_with(COLOR_BALANCE, ty, data)));
         patch_note(&mut bytes);
         crate::decode(&bytes).unwrap()
     }
@@ -427,7 +552,11 @@ pub(crate) mod tests {
         let (mut note, mut data, mut at) = (Vec::new(), Vec::new(), Vec::new());
         note.extend_from_slice(&(entries.len() as u16).to_le_bytes());
         for (tag, ty, value) in entries {
-            let count = if *ty == 3 { value.len() / 2 } else { value.len() } as u32;
+            let count = if *ty == 3 {
+                value.len() / 2
+            } else {
+                value.len()
+            } as u32;
             note.extend_from_slice(&tag.to_le_bytes());
             note.extend_from_slice(&ty.to_le_bytes());
             note.extend_from_slice(&count.to_le_bytes());
@@ -441,7 +570,8 @@ pub(crate) mod tests {
         let tiff = Tiff::parse(&bytes).unwrap();
         let off = tiff.exif().unwrap().get(t::MAKER_NOTE).unwrap().offset as usize;
         for (field, value) in at {
-            bytes[off + field..off + field + 4].copy_from_slice(&((off + value) as u32).to_le_bytes());
+            bytes[off + field..off + field + 4]
+                .copy_from_slice(&((off + value) as u32).to_le_bytes());
         }
         crate::decode(&bytes).unwrap()
     }
@@ -462,7 +592,10 @@ pub(crate) mod tests {
         rows[74..78].copy_from_slice(&[820, 1901, 4000, 820]);
         rows[18..22].copy_from_slice(&[850, 1805, 6000, 850]);
         let wb_info: Vec<u8> = rows.iter().flat_map(|x| x.to_le_bytes()).collect();
-        let wb = |si: u16| decode_with_note(&[(0x0004, 3, shot_info(si)), (0x0029, 1, wb_info.clone())]).wb_multipliers;
+        let wb = |si: u16| {
+            decode_with_note(&[(0x0004, 3, shot_info(si)), (0x0029, 1, wb_info.clone())])
+                .wb_multipliers
+        };
         assert_eq!(wb(15), Some([1747.0 / 848.0, 1.0, 1676.0 / 848.0]));
         assert_eq!(wb(0), Some([1805.0 / 850.0, 1.0, 1684.0 / 850.0]));
         // each preset its own row (Custom 2: row 74); an empty row (Daylight here), an implausible one (Cloudy:
@@ -472,14 +605,31 @@ pub(crate) mod tests {
         assert_eq!(wb(2), None);
         assert_eq!(wb(14), None);
         // without ShotInfo, or with WBInfo too short for the row
-        assert_eq!(decode_with_note(&[(0x0029, 1, wb_info.clone())]).wb_multipliers, None);
-        assert_eq!(decode_with_note(&[(0x0004, 3, shot_info(15)), (0x0029, 1, wb_info[..4 * 68].to_vec())]).wb_multipliers, None);
+        assert_eq!(
+            decode_with_note(&[(0x0029, 1, wb_info.clone())]).wb_multipliers,
+            None
+        );
+        assert_eq!(
+            decode_with_note(&[
+                (0x0004, 3, shot_info(15)),
+                (0x0029, 1, wb_info[..4 * 68].to_vec())
+            ])
+            .wb_multipliers,
+            None
+        );
         // ColorData, when it gives levels, wins
         let mut color_data = vec![0u8; 2 * 120];
         color_data[0..2].copy_from_slice(&[0xfd, 0xff]);
         color_data[142..150].copy_from_slice(&[0xc4, 0x07, 0xe9, 0x02, 0xe9, 0x02, 0x69, 0x06]);
-        let both = decode_with_note(&[(0x0004, 3, shot_info(15)), (0x0029, 1, wb_info.clone()), (COLOR_BALANCE, 7, color_data)]);
-        assert_eq!(both.wb_multipliers, Some([1988.0 / 745.0, 1.0, 1641.0 / 745.0]));
+        let both = decode_with_note(&[
+            (0x0004, 3, shot_info(15)),
+            (0x0029, 1, wb_info.clone()),
+            (COLOR_BALANCE, 7, color_data),
+        ]);
+        assert_eq!(
+            both.wb_multipliers,
+            Some([1988.0 / 745.0, 1.0, 1641.0 / 745.0])
+        );
     }
 
     /// `ColorData` stored as UNDEFINED bytes (versions -3 / -4: PowerShot, EOS M) gives the as-shot WB from word 71,
@@ -490,8 +640,15 @@ pub(crate) mod tests {
         bytes[0..2].copy_from_slice(&[0xfd, 0xff]); // version -3
         bytes[142..150].copy_from_slice(&[0xc4, 0x07, 0xe9, 0x02, 0xe9, 0x02, 0x69, 0x06]); // 1988 745 745 1641
         for ty in [7, 3] {
-            let wb = decode_with_color_data(ty, &bytes).wb_multipliers.unwrap_or_else(|| panic!("type {ty}: no WB"));
-            assert!((wb[0] - 1988.0 / 745.0).abs() < 1e-5 && wb[1] == 1.0 && (wb[2] - 1641.0 / 745.0).abs() < 1e-5, "type {ty}: {wb:?}");
+            let wb = decode_with_color_data(ty, &bytes)
+                .wb_multipliers
+                .unwrap_or_else(|| panic!("type {ty}: no WB"));
+            assert!(
+                (wb[0] - 1988.0 / 745.0).abs() < 1e-5
+                    && wb[1] == 1.0
+                    && (wb[2] - 1641.0 / 745.0).abs() < 1e-5,
+                "type {ty}: {wb:?}"
+            );
         }
     }
 
@@ -509,7 +666,10 @@ pub(crate) mod tests {
             })
             .collect();
         // SensorInfo: width, height, three unused words, then the inclusive left/top/right/bottom borders
-        let si: Vec<u8> = [w, h, 0, 0, 0, left, top, w - 1, h - 1].iter().flat_map(|&v| (v as u16).to_le_bytes()).collect();
+        let si: Vec<u8> = [w, h, 0, 0, 0, left, top, w - 1, h - 1]
+            .iter()
+            .flat_map(|&v| (v as u16).to_le_bytes())
+            .collect();
         let mut bytes = synthetic_cr2_of(&img, w, h, None, Some(note_with(SENSOR_INFO, 3, &si)));
         patch_note(&mut bytes);
         let r = crate::decode(&bytes).unwrap();

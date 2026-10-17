@@ -95,14 +95,23 @@ pub fn prerender_objs<
                 if x_start <= -(8 << width_shift) {
                     continue;
                 }
-                let y_in_obj =
-                    if attrs.1.y_flip() { y_in_obj ^ ((8 << height_shift) - 1) } else { y_in_obj };
+                let y_in_obj = if attrs.1.y_flip() {
+                    y_in_obj ^ ((8 << height_shift) - 1)
+                } else {
+                    y_in_obj
+                };
                 (if attrs.1.x_flip() {
                     prerender_obj_normal::<_, _, _, _, BG_VRAM_LEN, OBJ_VRAM_LEN, true>
                 } else {
                     prerender_obj_normal::<_, _, _, _, BG_VRAM_LEN, OBJ_VRAM_LEN, false>
                 })(
-                    buffers, (attrs.0, (), attrs.2), x_start, y_in_obj, width_shift, data, vram
+                    buffers,
+                    (attrs.0, (), attrs.2),
+                    x_start,
+                    y_in_obj,
+                    width_shift,
+                    data,
+                    vram,
                 );
             }
         }
@@ -131,7 +140,11 @@ fn prerender_obj_rot_scale<
     let (start_x, end_x, start_rel_x_in_square_obj) = {
         let bounds_width = 8 << bounds_width_shift;
         if bounds_x_start < 0 {
-            (0, (bounds_x_start + bounds_width) as usize, -(bounds_width >> 1) - bounds_x_start)
+            (
+                0,
+                (bounds_x_start + bounds_width) as usize,
+                -(bounds_width >> 1) - bounds_x_start,
+            )
         } else {
             (
                 bounds_x_start as usize,
@@ -178,11 +191,18 @@ fn prerender_obj_rot_scale<
             }
             (
                 tile_number
-                    << if R::IS_A { 7 + data.control().a_obj_bitmap_1d_boundary() } else { 7 },
+                    << if R::IS_A {
+                        7 + data.control().a_obj_bitmap_1d_boundary()
+                    } else {
+                        7
+                    },
                 width_shift + 1,
             )
         } else if data.control().bitmap_objs_256x256() {
-            (((tile_number & 0x1F) << 4) + ((tile_number & !0x1F) << 7), 9)
+            (
+                ((tile_number & 0x1F) << 4) + ((tile_number & !0x1F) << 7),
+                9,
+            )
         } else {
             (((tile_number & 0xF) << 4) + ((tile_number & !0xF) << 7), 8)
         };
@@ -216,7 +236,11 @@ fn prerender_obj_rot_scale<
             pos[1] = pos[1].wrapping_add(params[2] as i32);
         }
     } else {
-        let tile_base = if R::IS_A { data.control().a_tile_base() } else { 0 } + {
+        let tile_base = if R::IS_A {
+            data.control().a_tile_base()
+        } else {
+            0
+        } + {
             let tile_number = attrs.2.tile_number() as u32;
             if data.control().obj_tile_1d_mapping() {
                 tile_number << (5 + data.control().obj_tile_1d_boundary())
@@ -391,7 +415,12 @@ fn prerender_obj_normal<
             if data.control().bitmap_objs_256x256() {
                 return;
             }
-            (tile_number << if R::IS_A { 7 + data.control().a_obj_bitmap_1d_boundary() } else { 7 })
+            (tile_number
+                << if R::IS_A {
+                    7 + data.control().a_obj_bitmap_1d_boundary()
+                } else {
+                    7
+                })
                 + (y_in_obj << (width_shift + 1))
         } else if data.control().bitmap_objs_256x256() {
             ((tile_number & 0x1F) << 4) + ((tile_number & !0x1F) << 7) + (y_in_obj << 9)
@@ -443,7 +472,11 @@ fn prerender_obj_normal<
             x_in_obj = x_in_obj.wrapping_add(x_in_obj_incr as u32);
         }
     } else {
-        let mut tile_base = if R::IS_A { data.control().a_tile_base() } else { 0 } + {
+        let mut tile_base = if R::IS_A {
+            data.control().a_tile_base()
+        } else {
+            0
+        } + {
             let tile_number = attrs.2.tile_number() as u32;
             if data.control().obj_tile_1d_mapping() {
                 let tile_number_off = tile_number << (5 + data.control().obj_tile_1d_boundary());

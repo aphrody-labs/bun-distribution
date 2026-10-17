@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct MediaUploadToken(pub String);
 
 impl_string_token!(MediaUploadToken);
-impl_crockford_generator!(MediaUploadToken, 32usize, TokenPrefix::MediaUpload, CrockfordLower);
+impl_crockford_generator!(
+    MediaUploadToken,
+    32usize,
+    TokenPrefix::MediaUpload,
+    CrockfordLower
+);

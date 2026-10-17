@@ -20,7 +20,10 @@ fn black_white_and_grey_have_the_limited_range_codes() {
     for (px, code) in [([0.0; 3], 64u16), ([1.0; 3], 940), ([0.5; 3], 502)] {
         let (y, u, v) = convert(&flat(4, 4, px), 4, 4);
         assert!(y.iter().all(|c| *c == code), "{px:?}: {y:?}");
-        assert!(u.iter().chain(&v).all(|c| *c == 512), "{px:?}: neutral chroma");
+        assert!(
+            u.iter().chain(&v).all(|c| *c == 512),
+            "{px:?}: neutral chroma"
+        );
         assert_eq!((y.len(), u.len(), v.len()), (16, 4, 4));
     }
 }
@@ -49,7 +52,10 @@ fn out_of_range_and_non_finite_values_clamp_instead_of_wrapping() {
     px[9..].copy_from_slice(&[f32::NAN, f32::NEG_INFINITY, f32::NAN]);
     let (y, u, v) = convert(&px, 4, 1);
     assert_eq!(y, vec![940, 64, 940, 64]);
-    assert!(u.iter().chain(&v).all(|c| (64..=960).contains(c)), "{u:?} {v:?}");
+    assert!(
+        u.iter().chain(&v).all(|c| (64..=960).contains(c)),
+        "{u:?} {v:?}"
+    );
     // all NaN: black
     let (y, u, v) = convert(&[f32::NAN; 2 * 2 * 3], 2, 2);
     assert_eq!((y, u, v), (vec![64; 4], vec![512], vec![512]));
@@ -60,7 +66,9 @@ fn odd_sizes_average_the_pixels_they_have() {
     // 3x3: the chroma planes are 2x2; the right column and bottom row average one or two pixels
     let (y, u, v) = convert(&flat(3, 3, [1.0, 0.0, 0.0]), 3, 3);
     assert_eq!((y.len(), u.len(), v.len()), (9, 4, 4));
-    assert!(y.iter().all(|c| *c == 294) && u.iter().all(|c| *c == 387) && v.iter().all(|c| *c == 960));
+    assert!(
+        y.iter().all(|c| *c == 294) && u.iter().all(|c| *c == 387) && v.iter().all(|c| *c == 960)
+    );
     // 1x1
     let (y, u, v) = convert(&[0.0, 0.0, 1.0], 1, 1);
     assert_eq!((y, u, v), (vec![116], vec![960], vec![476]));
@@ -75,7 +83,9 @@ fn odd_sizes_average_the_pixels_they_have() {
 fn a_ramp_has_every_code_a_10_bit_picture_can_have() {
     // a smooth horizontal ramp: 877 distinct luma codes in 64..=940, far more than 8 bits hold
     let w = 1024usize;
-    let rgb: Vec<f32> = (0..w).flat_map(|x| [x as f32 / (w - 1) as f32; 3]).collect();
+    let rgb: Vec<f32> = (0..w)
+        .flat_map(|x| [x as f32 / (w - 1) as f32; 3])
+        .collect();
     let (y, _, _) = convert(&rgb, w, 1);
     let mut codes: Vec<u16> = y.clone();
     codes.dedup();
@@ -87,7 +97,9 @@ fn a_ramp_has_every_code_a_10_bit_picture_can_have() {
 #[test]
 fn hostile_input_is_an_error_not_a_panic() {
     let (mut y, mut u, mut v) = (Vec::new(), Vec::new(), Vec::new());
-    let mut run = |rgb: &[f32], w: usize, h: usize| rgbf_to_yuv420_10(rgb, w, h, 0.2627, 0.0593, &mut y, &mut u, &mut v);
+    let mut run = |rgb: &[f32], w: usize, h: usize| {
+        rgbf_to_yuv420_10(rgb, w, h, 0.2627, 0.0593, &mut y, &mut u, &mut v)
+    };
     assert!(run(&[], 0, 0).is_err());
     assert!(run(&[0.0; 3], 0, 1).is_err());
     assert!(run(&[0.0; 3], 1, 0).is_err());
@@ -95,7 +107,10 @@ fn hostile_input_is_an_error_not_a_panic() {
     assert!(run(&[0.0; 13], 2, 2).is_err(), "long");
     assert!(run(&[0.0; 6], 2, 2).is_err());
     assert!(run(&[0.0; 3], usize::MAX, 2).is_err(), "w*h overflows");
-    assert!(run(&[0.0; 3], usize::MAX / 2, 3).is_err(), "w*h*3 overflows");
+    assert!(
+        run(&[0.0; 3], usize::MAX / 2, 3).is_err(),
+        "w*h*3 overflows"
+    );
     assert!(run(&[0.0; 3], 1 << 40, 1 << 40).is_err());
 }
 
@@ -125,13 +140,25 @@ fn which_exports_are_hdr() {
     // H.264, ProRes, DNxHR and APV follow the working space, whatever the probes say
     for f in [Format::H264, Format::ProRes, Format::DnxHr, Format::Apv] {
         assert!(hdr_output(true, false, f, never), "{f:?}");
-        assert!(!hdr_output(false, false, f, hevc_only), "{f:?}: SDR working space");
-        assert!(!hdr_output(true, true, f, hevc_only), "{f:?}: SDR asked for");
+        assert!(
+            !hdr_output(false, false, f, hevc_only),
+            "{f:?}: SDR working space"
+        );
+        assert!(
+            !hdr_output(true, true, f, hevc_only),
+            "{f:?}: SDR asked for"
+        );
     }
     // H.265 only where a registered encoder writes HDR
-    assert!(!hdr_output(true, false, Format::Hevc, never), "no probe: tone-mapped SDR, as with VideoToolbox");
+    assert!(
+        !hdr_output(true, false, Format::Hevc, never),
+        "no probe: tone-mapped SDR, as with VideoToolbox"
+    );
     assert!(hdr_output(true, false, Format::Hevc, hevc_only));
-    assert!(!hdr_output(true, true, Format::Hevc, hevc_only), "settings.sdr forces SDR");
+    assert!(
+        !hdr_output(true, true, Format::Hevc, hevc_only),
+        "settings.sdr forces SDR"
+    );
     assert!(!hdr_output(false, false, Format::Hevc, hevc_only));
     // formats without HDR output
     assert!(!hdr_output(true, false, Format::Mjpeg, |_| true));
@@ -143,13 +170,19 @@ fn only_pq_has_static_metadata_and_it_is_what_h264_writes() {
     assert!(ColorSignal::default().static_metadata().is_none());
     let (md, cll) = ColorSignal::PQ.static_metadata().unwrap();
     assert_eq!(cll, (0, 0));
-    assert_eq!(md, filmcraft_isobmff::MasteringDisplay::bt2020(1000.0, 0.0001));
+    assert_eq!(
+        md,
+        filmcraft_isobmff::MasteringDisplay::bt2020(1000.0, 0.0001)
+    );
     assert_eq!(md.to_bytes().len(), 24);
     // the box on the sample entry is the same value
     let mut e = filmcraft_isobmff::SampleEntry::hevc(Default::default(), 64, 64);
     ColorSignal::PQ.apply_to(&mut e, false);
     let v = e.video.as_ref().unwrap();
-    assert_eq!((v.mastering_display, v.content_light), (Some(md), Some((0, 0))));
+    assert_eq!(
+        (v.mastering_display, v.content_light),
+        (Some(md), Some((0, 0)))
+    );
     let mut e = filmcraft_isobmff::SampleEntry::hevc(Default::default(), 64, 64);
     ColorSignal::HLG.apply_to(&mut e, false);
     let v = e.video.as_ref().unwrap();
@@ -173,10 +206,24 @@ fn unescape(b: &[u8]) -> Vec<u8> {
 
 #[test]
 fn the_software_h264_sei_is_the_static_metadata_laid_out_as_messages() {
-    let s = ExportSettings { format: Format::H264, signal: ColorSignal::PQ, ..Default::default() };
-    let mut enc = h264_factory(Format::H264, 64, 64, FrameRate::FPS_24, &s).unwrap().unwrap();
+    let s = ExportSettings {
+        format: Format::H264,
+        signal: ColorSignal::PQ,
+        ..Default::default()
+    };
+    let mut enc = h264_factory(Format::H264, 64, 64, FrameRate::FPS_24, &s)
+        .unwrap()
+        .unwrap();
     let rgb = vec![0.5f32; 64 * 64 * 3];
-    let mut packets = enc.encode(&EncoderFrame { width: 64, height: 64, rgba: &[], hdr: Some(&rgb), index: 0 }).unwrap();
+    let mut packets = enc
+        .encode(&EncoderFrame {
+            width: 64,
+            height: 64,
+            rgba: &[],
+            hdr: Some(&rgb),
+            index: 0,
+        })
+        .unwrap();
     packets.extend(enc.flush().unwrap());
     // find the SEI NAL unit (type 6) of the length-prefixed first access unit
     let data = &packets[0].data;

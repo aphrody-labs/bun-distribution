@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct EmailSenderJobToken(pub String);
 
 impl_string_token!(EmailSenderJobToken);
-impl_crockford_generator!(EmailSenderJobToken, 32usize, TokenPrefix::EmailSenderJob, CrockfordLower);
+impl_crockford_generator!(
+    EmailSenderJobToken,
+    32usize,
+    TokenPrefix::EmailSenderJob,
+    CrockfordLower
+);

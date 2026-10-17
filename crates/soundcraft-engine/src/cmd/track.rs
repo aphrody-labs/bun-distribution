@@ -16,9 +16,33 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             new_track
         ),
-        cmd!("track.group", "Group...", ["Track"], Some("Cmd+G"), "{name?, tracks?, edit?: true, mix?: true}", has_selection, group),
-        cmd!("track.ungroup", "Delete Group", [], None, "{group: id|name}", always, delete_group),
-        cmd!("track.group_toggle", "Toggle Group Active", [], None, "{group: id|name}", always, toggle_group),
+        cmd!(
+            "track.group",
+            "Group...",
+            ["Track"],
+            Some("Cmd+G"),
+            "{name?, tracks?, edit?: true, mix?: true}",
+            has_selection,
+            group
+        ),
+        cmd!(
+            "track.ungroup",
+            "Delete Group",
+            [],
+            None,
+            "{group: id|name}",
+            always,
+            delete_group
+        ),
+        cmd!(
+            "track.group_toggle",
+            "Toggle Group Active",
+            [],
+            None,
+            "{group: id|name}",
+            always,
+            toggle_group
+        ),
         cmd!(
             "track.duplicate",
             "Duplicate...",
@@ -28,14 +52,30 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             duplicate
         ),
-        cmd!("track.split_into_mono", "Split into Mono", ["Track"], None, "{tracks?}", has_selection, split_mono),
-        cmd!("track.make_inactive", "Make Inactive", ["Track"], None, "{tracks?, inactive?: bool}", has_selection, |e, p| flag(
-            e,
-            p,
+        cmd!(
+            "track.split_into_mono",
+            "Split into Mono",
+            ["Track"],
+            None,
+            "{tracks?}",
+            has_selection,
+            split_mono
+        ),
+        cmd!(
             "track.make_inactive",
-            |t, v| t.inactive = v,
-            |t| t.inactive
-        )),
+            "Make Inactive",
+            ["Track"],
+            None,
+            "{tracks?, inactive?: bool}",
+            has_selection,
+            |e, p| flag(
+                e,
+                p,
+                "track.make_inactive",
+                |t, v| t.inactive = v,
+                |t| t.inactive
+            )
+        ),
         cmd!(
             "track.move_to_new_folder",
             "Move to New Folder...",
@@ -54,70 +94,234 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             change_width
         ),
-        cmd!("track.delete", "Delete", ["Track"], None, "{tracks?}", has_selection, delete),
-        cmd!("track.rename", "Rename Track", [], None, "{track, name}", has_tracks, rename),
-        cmd!("track.comments", "Track Comments", [], None, "{track, comments}", has_tracks, comments),
-        cmd!("track.color", "Track Color", [], None, "{tracks?, color: [r,g,b] | palette index}", has_selection, color),
-        cmd!("track.height", "Track Height", [], None, "{tracks?, height: micro|mini|small|medium|large|jumbo|extreme}", has_selection, height),
-        cmd!("track.view", "Track View", [], None, "{tracks?, view: waveform|blocks|notes|volume|pan|mute|<automation id>}", has_selection, view),
-        cmd!("track.hide", "Hide Track", [], None, "{tracks?, hidden?: bool}", has_selection, |e, p| flag(
-            e,
-            p,
+        cmd!(
+            "track.delete",
+            "Delete",
+            ["Track"],
+            None,
+            "{tracks?}",
+            has_selection,
+            delete
+        ),
+        cmd!(
+            "track.rename",
+            "Rename Track",
+            [],
+            None,
+            "{track, name}",
+            has_tracks,
+            rename
+        ),
+        cmd!(
+            "track.comments",
+            "Track Comments",
+            [],
+            None,
+            "{track, comments}",
+            has_tracks,
+            comments
+        ),
+        cmd!(
+            "track.color",
+            "Track Color",
+            [],
+            None,
+            "{tracks?, color: [r,g,b] | palette index}",
+            has_selection,
+            color
+        ),
+        cmd!(
+            "track.height",
+            "Track Height",
+            [],
+            None,
+            "{tracks?, height: micro|mini|small|medium|large|jumbo|extreme}",
+            has_selection,
+            height
+        ),
+        cmd!(
+            "track.view",
+            "Track View",
+            [],
+            None,
+            "{tracks?, view: waveform|blocks|notes|volume|pan|mute|<automation id>}",
+            has_selection,
+            view
+        ),
+        cmd!(
             "track.hide",
-            |t, v| t.hidden = v,
-            |t| t.hidden
-        )),
-        cmd!("track.pin", "Pin Track", [], None, "{tracks?}", has_selection, |e, p| flag(e, p, "track.pin", |t, v| t.pinned = v, |t| t.pinned)),
-        cmd!("track.move", "Move Track", [], None, "{track, to: index}", has_tracks, move_track),
-        cmd!("track.freeze", "Freeze", ["Track"], None, "{tracks?}", has_selection, |e, p| flag(
-            e,
-            p,
+            "Hide Track",
+            [],
+            None,
+            "{tracks?, hidden?: bool}",
+            has_selection,
+            |e, p| flag(e, p, "track.hide", |t, v| t.hidden = v, |t| t.hidden)
+        ),
+        cmd!(
+            "track.pin",
+            "Pin Track",
+            [],
+            None,
+            "{tracks?}",
+            has_selection,
+            |e, p| flag(e, p, "track.pin", |t, v| t.pinned = v, |t| t.pinned)
+        ),
+        cmd!(
+            "track.move",
+            "Move Track",
+            [],
+            None,
+            "{track, to: index}",
+            has_tracks,
+            move_track
+        ),
+        cmd!(
             "track.freeze",
-            |t, v| t.frozen = v,
-            |t| t.frozen
-        )),
-        cmd!("track.commit", "Commit...", ["Track"], Some("Alt+Shift+C"), "{tracks?}", has_selection, commit),
-        cmd!("track.bounce", "Bounce...", ["Track"], Some("Cmd+Alt+Shift+B"), "{tracks?}", has_selection, commit),
-        cmd!("track.bypass_inserts", "All", ["Track", "Bypass Inserts"], None, "{tracks?, bypass?: bool}", has_selection, bypass_inserts),
-        cmd!("track.mute_sends", "All", ["Track", "Mute Sends"], None, "{tracks?, mute?: bool}", has_selection, mute_sends),
-        cmd!("track.set_record_to_input_only", "Set Record Tracks to Input Only", ["Track"], Some("Alt+K"), "{}", always, |e, _| {
-            let s = e.session_mut();
-            let mut n = 0;
-            for t in &mut s.tracks {
-                if t.mixer.record_arm {
-                    t.mixer.input_monitor = true;
-                    n += 1;
+            "Freeze",
+            ["Track"],
+            None,
+            "{tracks?}",
+            has_selection,
+            |e, p| flag(e, p, "track.freeze", |t, v| t.frozen = v, |t| t.frozen)
+        ),
+        cmd!(
+            "track.commit",
+            "Commit...",
+            ["Track"],
+            Some("Alt+Shift+C"),
+            "{tracks?}",
+            has_selection,
+            commit
+        ),
+        cmd!(
+            "track.bounce",
+            "Bounce...",
+            ["Track"],
+            Some("Cmd+Alt+Shift+B"),
+            "{tracks?}",
+            has_selection,
+            commit
+        ),
+        cmd!(
+            "track.bypass_inserts",
+            "All",
+            ["Track", "Bypass Inserts"],
+            None,
+            "{tracks?, bypass?: bool}",
+            has_selection,
+            bypass_inserts
+        ),
+        cmd!(
+            "track.mute_sends",
+            "All",
+            ["Track", "Mute Sends"],
+            None,
+            "{tracks?, mute?: bool}",
+            has_selection,
+            mute_sends
+        ),
+        cmd!(
+            "track.set_record_to_input_only",
+            "Set Record Tracks to Input Only",
+            ["Track"],
+            Some("Alt+K"),
+            "{}",
+            always,
+            |e, _| {
+                let s = e.session_mut();
+                let mut n = 0;
+                for t in &mut s.tracks {
+                    if t.mixer.record_arm {
+                        t.mixer.input_monitor = true;
+                        n += 1;
+                    }
                 }
+                Ok(json!({"tracks": n}))
             }
-            Ok(json!({"tracks": n}))
-        }),
+        ),
         cmd!(noundo "track.scroll_to", "Scroll to Track...", ["Track"], Some("Cmd+Alt+F"), "{track}", has_tracks, |e, p| {
             let t = track_param(e, "track.scroll_to", p, "track")?.ok_or_else(|| bad("track.scroll_to", "`track` required"))?;
             let s = e.session_mut();
             s.edit.selected_tracks = vec![t];
             Ok(json!({"track": t}))
         }),
-        cmd!("track.clear_clip_indicators", "Clear All Clip Indicators", ["Track"], Some("Alt+C"), "{}", always, |_, _| Ok(json!({"cleared": true}))),
-        cmd!("track.clear_trim_automation", "Clear Trim Automation", ["Track"], None, "{tracks?}", has_selection, |_, _| Ok(json!({}))),
-        cmd!("track.create_click", "Create Click Track", ["Track"], None, "{}", always, create_click),
-        cmd!("track.playlist_new", "New Playlist", [], None, "{track?, name?}", has_selection, |e, p| new_playlist(e, p, false)),
-        cmd!("track.playlist_duplicate", "Duplicate Playlist", [], None, "{track?, name?}", has_selection, |e, p| new_playlist(e, p, true)),
-        cmd!("track.playlist_select", "Select Playlist", [], None, "{track?, index | name}", has_selection, select_playlist),
-        cmd!("track.playlist_delete_unused", "Delete Unused Playlists", [], None, "{track?}", has_selection, |e, p| {
-            let tracks = tracks_required(e, "track.playlist_delete_unused", p)?;
-            let s = e.session_mut();
-            let mut n = 0;
-            for t in tracks {
-                if let Some(tr) = s.track_mut(t)
-                    && let Some(active) = tr.playlists.get(tr.active_playlist).cloned()
-                {
-                    n += tr.playlists.len() - 1;
-                    tr.playlists = vec![active];
-                    tr.active_playlist = 0;
+        cmd!(
+            "track.clear_clip_indicators",
+            "Clear All Clip Indicators",
+            ["Track"],
+            Some("Alt+C"),
+            "{}",
+            always,
+            |_, _| Ok(json!({"cleared": true}))
+        ),
+        cmd!(
+            "track.clear_trim_automation",
+            "Clear Trim Automation",
+            ["Track"],
+            None,
+            "{tracks?}",
+            has_selection,
+            |_, _| Ok(json!({}))
+        ),
+        cmd!(
+            "track.create_click",
+            "Create Click Track",
+            ["Track"],
+            None,
+            "{}",
+            always,
+            create_click
+        ),
+        cmd!(
+            "track.playlist_new",
+            "New Playlist",
+            [],
+            None,
+            "{track?, name?}",
+            has_selection,
+            |e, p| new_playlist(e, p, false)
+        ),
+        cmd!(
+            "track.playlist_duplicate",
+            "Duplicate Playlist",
+            [],
+            None,
+            "{track?, name?}",
+            has_selection,
+            |e, p| new_playlist(e, p, true)
+        ),
+        cmd!(
+            "track.playlist_select",
+            "Select Playlist",
+            [],
+            None,
+            "{track?, index | name}",
+            has_selection,
+            select_playlist
+        ),
+        cmd!(
+            "track.playlist_delete_unused",
+            "Delete Unused Playlists",
+            [],
+            None,
+            "{track?}",
+            has_selection,
+            |e, p| {
+                let tracks = tracks_required(e, "track.playlist_delete_unused", p)?;
+                let s = e.session_mut();
+                let mut n = 0;
+                for t in tracks {
+                    if let Some(tr) = s.track_mut(t)
+                        && let Some(active) = tr.playlists.get(tr.active_playlist).cloned()
+                    {
+                        n += tr.playlists.len() - 1;
+                        tr.playlists = vec![active];
+                        tr.active_playlist = 0;
+                    }
                 }
+                Ok(json!({"deleted": n}))
             }
-            Ok(json!({"deleted": n}))
-        }),
+        ),
         cmd!(noundo "track.folder_toggle", "Open/Close Folder", [], None, "{track, open?: bool}", has_tracks, |e, p| {
             let t = track_param(e, "track.folder_toggle", p, "track")?.ok_or_else(|| bad("track.folder_toggle", "`track` required"))?;
             let v = p.get("open").and_then(Value::as_bool);
@@ -126,22 +330,32 @@ pub fn specs() -> Vec<CommandSpec> {
             tr.folder_open = v.unwrap_or(!tr.folder_open);
             Ok(json!({"open": tr.folder_open}))
         }),
-        cmd!("track.vca", "Assign to VCA", [], None, "{tracks?, vca: VCA track id|name | null}", has_selection, |e, p| {
-            let tracks = tracks_required(e, "track.vca", p)?;
-            let vca = track_param(e, "track.vca", p, "vca")?;
-            if let Some(v) = vca
-                && e.session().track(v).is_none_or(|t| t.kind != TrackKind::Vca)
-            {
-                return Err(bad("track.vca", "`vca` must be a VCA Master track"));
-            }
-            let s = e.session_mut();
-            for t in &tracks {
-                if let Some(tr) = s.track_mut(*t) {
-                    tr.mixer.vca = vca.map(|v| v.0);
+        cmd!(
+            "track.vca",
+            "Assign to VCA",
+            [],
+            None,
+            "{tracks?, vca: VCA track id|name | null}",
+            has_selection,
+            |e, p| {
+                let tracks = tracks_required(e, "track.vca", p)?;
+                let vca = track_param(e, "track.vca", p, "vca")?;
+                if let Some(v) = vca
+                    && e.session()
+                        .track(v)
+                        .is_none_or(|t| t.kind != TrackKind::Vca)
+                {
+                    return Err(bad("track.vca", "`vca` must be a VCA Master track"));
                 }
+                let s = e.session_mut();
+                for t in &tracks {
+                    if let Some(tr) = s.track_mut(*t) {
+                        tr.mixer.vca = vca.map(|v| v.0);
+                    }
+                }
+                Ok(json!({"vca": vca}))
             }
-            Ok(json!({"vca": vca}))
-        }),
+        ),
         cmd!(
             "track.playlist_promote",
             "Promote to Main Playlist",
@@ -150,20 +364,35 @@ pub fn specs() -> Vec<CommandSpec> {
             "{track, playlist: index, start?, end?} (copy that range from an alternate playlist into the active one)",
             has_tracks,
             |e, p| {
-                let t = track_param(e, "track.playlist_promote", p, "track")?.ok_or_else(|| bad("track.playlist_promote", "`track` required"))?;
-                let idx =
-                    p.get("playlist").and_then(Value::as_u64).ok_or_else(|| bad("track.playlist_promote", "`playlist` index required"))? as usize;
+                let t = track_param(e, "track.playlist_promote", p, "track")?
+                    .ok_or_else(|| bad("track.playlist_promote", "`track` required"))?;
+                let idx = p
+                    .get("playlist")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| bad("track.playlist_promote", "`playlist` index required"))?
+                    as usize;
                 let r = range_param(e, "track.playlist_promote", p)?;
                 if r.is_empty() {
                     return Err(bad("track.playlist_promote", "give `start` and `end`"));
                 }
                 let s = e.session_mut();
                 let (src, active) = {
-                    let tr = s.track(t).ok_or_else(|| bad("track.playlist_promote", "no track"))?;
-                    (tr.playlists.get(idx).cloned().ok_or_else(|| bad("track.playlist_promote", "no such playlist"))?, tr.active_playlist)
+                    let tr = s
+                        .track(t)
+                        .ok_or_else(|| bad("track.playlist_promote", "no track"))?;
+                    (
+                        tr.playlists
+                            .get(idx)
+                            .cloned()
+                            .ok_or_else(|| bad("track.playlist_promote", "no such playlist"))?,
+                        tr.active_playlist,
+                    )
                 };
                 if idx == active {
-                    return Err(bad("track.playlist_promote", "that playlist is already active"));
+                    return Err(bad(
+                        "track.playlist_promote",
+                        "that playlist is already active",
+                    ));
                 }
                 // Copy the clips of the source playlist inside the range (via a temporary active switch).
                 if let Some(tr) = s.track_mut(t) {
@@ -178,15 +407,39 @@ pub fn specs() -> Vec<CommandSpec> {
                 Ok(json!({"clips": ids}))
             }
         ),
-        cmd!("track.input", "Track Input", [], None, "{tracks?, input: none|bus name|hardware name}", has_selection, |e, p| route(e, p, true)),
-        cmd!("track.output", "Track Output", [], None, "{tracks?, output: main|none|bus name}", has_selection, |e, p| route(e, p, false)),
-        cmd!("track.timebase", "Track Timebase", [], None, "{tracks?, ticks: bool}", has_selection, |e, p| flag(
-            e,
-            p,
+        cmd!(
+            "track.input",
+            "Track Input",
+            [],
+            None,
+            "{tracks?, input: none|bus name|hardware name}",
+            has_selection,
+            |e, p| route(e, p, true)
+        ),
+        cmd!(
+            "track.output",
+            "Track Output",
+            [],
+            None,
+            "{tracks?, output: main|none|bus name}",
+            has_selection,
+            |e, p| route(e, p, false)
+        ),
+        cmd!(
             "track.timebase",
-            |t, v| t.ticks_timebase = v,
-            |t| t.ticks_timebase
-        )),
+            "Track Timebase",
+            [],
+            None,
+            "{tracks?, ticks: bool}",
+            has_selection,
+            |e, p| flag(
+                e,
+                p,
+                "track.timebase",
+                |t, v| t.ticks_timebase = v,
+                |t| t.ticks_timebase
+            )
+        ),
         cmd!(
             "track.elastic",
             "Elastic Audio",
@@ -196,7 +449,9 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             |e, p| {
                 let tracks = tracks_required(e, "track.elastic", p)?;
-                let alg = str_param(p, "algorithm").filter(|a| *a != "none").map(str::to_string);
+                let alg = str_param(p, "algorithm")
+                    .filter(|a| *a != "none")
+                    .map(str::to_string);
                 let s = e.session_mut();
                 for t in tracks {
                     if let Some(tr) = s.track_mut(t) {
@@ -212,16 +467,22 @@ pub fn specs() -> Vec<CommandSpec> {
 fn new_track(e: &mut Engine, p: &Value) -> Result<Value> {
     let count = i64_or(p, "count", 1).clamp(1, 128);
     let kind = match str_param(p, "kind") {
-        Some(k) => TrackKind::from_id(k).ok_or_else(|| bad("track.new", format!("unknown kind `{k}`")))?,
+        Some(k) => {
+            TrackKind::from_id(k).ok_or_else(|| bad("track.new", format!("unknown kind `{k}`")))?
+        }
         None => TrackKind::Audio,
     };
-    let default_fmt = if matches!(kind, TrackKind::Master | TrackKind::Aux | TrackKind::Instrument | TrackKind::Folder) {
+    let default_fmt = if matches!(
+        kind,
+        TrackKind::Master | TrackKind::Aux | TrackKind::Instrument | TrackKind::Folder
+    ) {
         ChannelFormat::Stereo
     } else {
         ChannelFormat::Mono
     };
     let format = match str_param(p, "format") {
-        Some(f) => ChannelFormat::from_id(f).ok_or_else(|| bad("track.new", format!("unknown format `{f}`")))?,
+        Some(f) => ChannelFormat::from_id(f)
+            .ok_or_else(|| bad("track.new", format!("unknown format `{f}`")))?,
         None => default_fmt,
     };
     let name = str_param(p, "name").map(str::to_string);
@@ -236,7 +497,11 @@ fn new_track(e: &mut Engine, p: &Value) -> Result<Value> {
                 t.ticks_timebase = tb;
             }
             if kind == TrackKind::Instrument {
-                t.instrument = Some(soundcraft_model::Insert::new(instrument.clone().unwrap_or_else(|| "subtractive_synth".into())));
+                t.instrument = Some(soundcraft_model::Insert::new(
+                    instrument
+                        .clone()
+                        .unwrap_or_else(|| "subtractive_synth".into()),
+                ));
             }
         }
         ids.push(id);
@@ -249,8 +514,12 @@ fn group(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.group", p)?;
     let s = e.session_mut();
     let id = GroupId(s.alloc());
-    let letter = (b'a'..=b'z').map(char::from).find(|c| !s.groups.iter().any(|g| g.letter == *c)).unwrap_or('z');
-    let name = str_param(p, "name").map_or_else(|| format!("Group {}", s.groups.len() + 1), str::to_string);
+    let letter = (b'a'..=b'z')
+        .map(char::from)
+        .find(|c| !s.groups.iter().any(|g| g.letter == *c))
+        .unwrap_or('z');
+    let name = str_param(p, "name")
+        .map_or_else(|| format!("Group {}", s.groups.len() + 1), str::to_string);
     let color = s.next_track_color();
     s.groups.push(Group {
         id,
@@ -261,16 +530,27 @@ fn group(e: &mut Engine, p: &Value) -> Result<Value> {
         mix: bool_or(p, "mix", true),
         active: true,
         color,
-        attributes: vec!["volume".into(), "mute".into(), "solo".into(), "record".into()],
+        attributes: vec![
+            "volume".into(),
+            "mute".into(),
+            "solo".into(),
+            "record".into(),
+        ],
     });
     Ok(json!({"group": id}))
 }
 
 fn find_group(e: &Engine, p: &Value, cmd: &str) -> Result<GroupId> {
     let s = e.session();
-    let g = match (p.get("group").and_then(Value::as_u64), str_param(p, "group")) {
+    let g = match (
+        p.get("group").and_then(Value::as_u64),
+        str_param(p, "group"),
+    ) {
         (Some(n), _) => s.groups.iter().find(|g| g.id.0 == n),
-        (_, Some(name)) => s.groups.iter().find(|g| g.name == name || g.letter.to_string() == name),
+        (_, Some(name)) => s
+            .groups
+            .iter()
+            .find(|g| g.name == name || g.letter.to_string() == name),
         _ => None,
     };
     g.map(|g| g.id).ok_or_else(|| bad(cmd, "unknown `group`"))
@@ -295,13 +575,21 @@ fn toggle_group(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn duplicate(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.duplicate", p)?;
-    let (pl, auto, ins, snd) =
-        (bool_or(p, "playlists", true), bool_or(p, "automation", true), bool_or(p, "inserts", true), bool_or(p, "sends", true));
+    let (pl, auto, ins, snd) = (
+        bool_or(p, "playlists", true),
+        bool_or(p, "automation", true),
+        bool_or(p, "inserts", true),
+        bool_or(p, "sends", true),
+    );
     let s = e.session_mut();
     let mut out = Vec::new();
     for t in tracks {
-        let Some(idx) = s.track_index(t) else { continue };
-        let Some(mut nt) = s.tracks.get(idx).cloned() else { continue };
+        let Some(idx) = s.track_index(t) else {
+            continue;
+        };
+        let Some(mut nt) = s.tracks.get(idx).cloned() else {
+            continue;
+        };
         nt.id = soundcraft_model::TrackId(s.alloc());
         nt.name = s.unique_track_name(&format!("{}.dup", nt.name));
         if !pl {
@@ -336,7 +624,9 @@ fn split_mono(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     let mut out = Vec::new();
     for t in tracks {
-        let Some(src) = s.track(t).cloned() else { continue };
+        let Some(src) = s.track(t).cloned() else {
+            continue;
+        };
         if src.channels() < 2 || src.kind != TrackKind::Audio {
             continue;
         }
@@ -346,7 +636,11 @@ fn split_mono(e: &mut Engine, p: &Value) -> Result<Value> {
                 (2, 1) => "R".to_string(),
                 _ => format!("{}", ch + 1),
             };
-            let id = s.add_track(TrackKind::Audio, ChannelFormat::Mono, Some(&format!("{}.{suffix}", src.name)));
+            let id = s.add_track(
+                TrackKind::Audio,
+                ChannelFormat::Mono,
+                Some(&format!("{}.{suffix}", src.name)),
+            );
             let mut clips = src.clips().to_vec();
             for c in &mut clips {
                 c.id = s.new_clip_id();
@@ -374,7 +668,12 @@ fn flag(
     get: fn(&soundcraft_model::Track) -> bool,
 ) -> Result<Value> {
     let tracks = tracks_required(e, cmd, p)?;
-    let explicit = p.get("inactive").or_else(|| p.get("hidden")).or_else(|| p.get("value")).or_else(|| p.get("ticks")).and_then(Value::as_bool);
+    let explicit = p
+        .get("inactive")
+        .or_else(|| p.get("hidden"))
+        .or_else(|| p.get("value"))
+        .or_else(|| p.get("ticks"))
+        .and_then(Value::as_bool);
     let s = e.session_mut();
     let target = explicit.unwrap_or_else(|| !tracks.iter().all(|t| s.track(*t).is_some_and(get)));
     for t in &tracks {
@@ -389,15 +688,26 @@ fn move_to_folder(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.move_to_new_folder", p)?;
     let name = str_param(p, "name").map(str::to_string);
     let s = e.session_mut();
-    let first_idx = tracks.iter().filter_map(|t| s.track_index(*t)).min().unwrap_or(0);
-    let fid = s.add_track(TrackKind::Folder, ChannelFormat::Stereo, Some(name.as_deref().unwrap_or("Folder")));
+    let first_idx = tracks
+        .iter()
+        .filter_map(|t| s.track_index(*t))
+        .min()
+        .unwrap_or(0);
+    let fid = s.add_track(
+        TrackKind::Folder,
+        ChannelFormat::Stereo,
+        Some(name.as_deref().unwrap_or("Folder")),
+    );
     // Place the folder above its first member.
     if let Some(i) = s.track_index(fid) {
         let f = s.tracks.remove(i);
         s.tracks.insert(first_idx.min(s.tracks.len()), f);
     }
     // A routing folder sums its members through its own bus.
-    let fname = s.track(fid).map(|x| x.name.clone()).unwrap_or_else(|| "Folder".into());
+    let fname = s
+        .track(fid)
+        .map(|x| x.name.clone())
+        .unwrap_or_else(|| "Folder".into());
     let bus = s.add_bus(&format!("{fname} Bus"), ChannelFormat::Stereo);
     if let Some(f) = s.track_mut(fid) {
         f.mixer.input = Route::Bus(bus);
@@ -415,7 +725,9 @@ fn move_to_folder(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn change_width(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.change_width", p)?;
-    let f = str_param(p, "format").and_then(ChannelFormat::from_id).ok_or_else(|| bad("track.change_width", "`format` required"))?;
+    let f = str_param(p, "format")
+        .and_then(ChannelFormat::from_id)
+        .ok_or_else(|| bad("track.change_width", "`format` required"))?;
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
@@ -443,11 +755,18 @@ fn delete(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn rename(e: &mut Engine, p: &Value) -> Result<Value> {
-    let t = track_param(e, "track.rename", p, "track")?.ok_or_else(|| bad("track.rename", "`track` required"))?;
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad("track.rename", "`name` required"))?;
+    let t = track_param(e, "track.rename", p, "track")?
+        .ok_or_else(|| bad("track.rename", "`track` required"))?;
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad("track.rename", "`name` required"))?;
     let s = e.session_mut();
     if s.tracks.iter().any(|x| x.name == name && x.id != t) {
-        return Err(bad("track.rename", format!("a track named `{name}` already exists")));
+        return Err(bad(
+            "track.rename",
+            format!("a track named `{name}` already exists"),
+        ));
     }
     if let Some(tr) = s.track_mut(t) {
         tr.name = name.chars().take(64).collect();
@@ -456,7 +775,8 @@ fn rename(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn comments(e: &mut Engine, p: &Value) -> Result<Value> {
-    let t = track_param(e, "track.comments", p, "track")?.ok_or_else(|| bad("track.comments", "`track` required"))?;
+    let t = track_param(e, "track.comments", p, "track")?
+        .ok_or_else(|| bad("track.comments", "`track` required"))?;
     let c = str_param(p, "comments").unwrap_or_default().to_string();
     if let Some(tr) = e.session_mut().track_mut(t) {
         tr.comments = c;
@@ -468,11 +788,26 @@ fn color(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.color", p)?;
     let c = match p.get("color") {
         Some(Value::Array(a)) if a.len() == 3 => {
-            let v: Vec<u8> = a.iter().map(|x| x.as_u64().unwrap_or(0).min(255) as u8).collect();
-            [v.first().copied().unwrap_or(0), v.get(1).copied().unwrap_or(0), v.get(2).copied().unwrap_or(0)]
+            let v: Vec<u8> = a
+                .iter()
+                .map(|x| x.as_u64().unwrap_or(0).min(255) as u8)
+                .collect();
+            [
+                v.first().copied().unwrap_or(0),
+                v.get(1).copied().unwrap_or(0),
+                v.get(2).copied().unwrap_or(0),
+            ]
         }
-        Some(v) if v.is_u64() => soundcraft_model::TRACK_COLORS.get(v.as_u64().unwrap_or(0) as usize % 16).copied().unwrap_or([128, 128, 128]),
-        _ => return Err(bad("track.color", "`color` must be [r,g,b] or a palette index")),
+        Some(v) if v.is_u64() => soundcraft_model::TRACK_COLORS
+            .get(v.as_u64().unwrap_or(0) as usize % 16)
+            .copied()
+            .unwrap_or([128, 128, 128]),
+        _ => {
+            return Err(bad(
+                "track.color",
+                "`color` must be [r,g,b] or a palette index",
+            ));
+        }
     };
     let s = e.session_mut();
     for t in &tracks {
@@ -485,7 +820,9 @@ fn color(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn height(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.height", p)?;
-    let h = str_param(p, "height").and_then(TrackHeight::from_id).ok_or_else(|| bad("track.height", "unknown height"))?;
+    let h = str_param(p, "height")
+        .and_then(TrackHeight::from_id)
+        .ok_or_else(|| bad("track.height", "unknown height"))?;
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
@@ -497,9 +834,13 @@ fn height(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn view(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.view", p)?;
-    let v = str_param(p, "view").ok_or_else(|| bad("track.view", "`view` required"))?.to_string();
-    let ok = matches!(v.as_str(), "waveform" | "blocks" | "notes" | "regions" | "clip_gain" | "playlists")
-        || soundcraft_model::AutoParam::parse(&v).is_some();
+    let v = str_param(p, "view")
+        .ok_or_else(|| bad("track.view", "`view` required"))?
+        .to_string();
+    let ok = matches!(
+        v.as_str(),
+        "waveform" | "blocks" | "notes" | "regions" | "clip_gain" | "playlists"
+    ) || soundcraft_model::AutoParam::parse(&v).is_some();
     if !ok {
         return Err(bad("track.view", format!("unknown view `{v}`")));
     }
@@ -513,7 +854,8 @@ fn view(e: &mut Engine, p: &Value) -> Result<Value> {
 }
 
 fn move_track(e: &mut Engine, p: &Value) -> Result<Value> {
-    let t = track_param(e, "track.move", p, "track")?.ok_or_else(|| bad("track.move", "`track` required"))?;
+    let t = track_param(e, "track.move", p, "track")?
+        .ok_or_else(|| bad("track.move", "`track` required"))?;
     let to = i64_or(p, "to", 0).max(0) as usize;
     let s = e.session_mut();
     if let Some(i) = s.track_index(t) {
@@ -537,10 +879,12 @@ fn commit(e: &mut Engine, p: &Value) -> Result<Value> {
 fn bypass_inserts(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks = tracks_required(e, "track.bypass_inserts", p)?;
     let s = e.session_mut();
-    let target = p
-        .get("bypass")
-        .and_then(Value::as_bool)
-        .unwrap_or_else(|| !tracks.iter().all(|t| s.track(*t).is_some_and(|tr| tr.mixer.inserts.iter().flatten().all(|i| i.bypass))));
+    let target = p.get("bypass").and_then(Value::as_bool).unwrap_or_else(|| {
+        !tracks.iter().all(|t| {
+            s.track(*t)
+                .is_some_and(|tr| tr.mixer.inserts.iter().flatten().all(|i| i.bypass))
+        })
+    });
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
             for i in tr.mixer.inserts.iter_mut().flatten() {
@@ -588,7 +932,9 @@ fn new_playlist(e: &mut Engine, p: &Value, dup: bool) -> Result<Value> {
             c.id = s.new_clip_id();
         }
         if let Some(tr) = s.track_mut(*t) {
-            let n = name.clone().unwrap_or_else(|| format!("{}.{:02}", tr.name, tr.playlists.len() + 1));
+            let n = name
+                .clone()
+                .unwrap_or_else(|| format!("{}.{:02}", tr.name, tr.playlists.len() + 1));
             tr.playlists.push(Playlist { name: n, clips });
             tr.active_playlist = tr.playlists.len() - 1;
         }
@@ -603,7 +949,10 @@ fn select_playlist(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     for t in &tracks {
         if let Some(tr) = s.track_mut(*t) {
-            let i = idx.or_else(|| name.as_ref().and_then(|n| tr.playlists.iter().position(|p| &p.name == n)));
+            let i = idx.or_else(|| {
+                name.as_ref()
+                    .and_then(|n| tr.playlists.iter().position(|p| &p.name == n))
+            });
             match i {
                 Some(i) if i < tr.playlists.len() => tr.active_playlist = i,
                 _ => return Err(bad("track.playlist_select", "no such playlist")),
@@ -617,14 +966,18 @@ pub(crate) fn parse_route(s: &soundcraft_model::Session, v: &str) -> Route {
     match v.to_ascii_lowercase().as_str() {
         "" | "none" | "no input" | "no output" => Route::None,
         "main" | "out 1-2" | "master" => Route::Main,
-        _ => s.bus_by_name(v).map_or_else(|| Route::Hardware(v.to_string()), |b| Route::Bus(b.id)),
+        _ => s
+            .bus_by_name(v)
+            .map_or_else(|| Route::Hardware(v.to_string()), |b| Route::Bus(b.id)),
     }
 }
 
 fn route(e: &mut Engine, p: &Value, input: bool) -> Result<Value> {
     let key = if input { "input" } else { "output" };
     let tracks = tracks_required(e, "track.route", p)?;
-    let v = str_param(p, key).ok_or_else(|| bad("track.route", format!("`{key}` required")))?.to_string();
+    let v = str_param(p, key)
+        .ok_or_else(|| bad("track.route", format!("`{key}` required")))?
+        .to_string();
     let create_bus = bool_or(p, "create_bus", true);
     let s = e.session_mut();
     let mut r = parse_route(s, &v);
@@ -635,7 +988,13 @@ fn route(e: &mut Engine, p: &Value, input: bool) -> Result<Value> {
         let fmt = tracks
             .first()
             .and_then(|t| s.track(*t))
-            .map_or(ChannelFormat::Stereo, |t| if t.kind == TrackKind::Aux { t.format } else { ChannelFormat::Stereo });
+            .map_or(ChannelFormat::Stereo, |t| {
+                if t.kind == TrackKind::Aux {
+                    t.format
+                } else {
+                    ChannelFormat::Stereo
+                }
+            });
         r = Route::Bus(s.add_bus(&name.clone(), fmt));
     }
     for t in &tracks {
@@ -659,25 +1018,51 @@ mod tests {
         let mut e = crate::demo::demo_engine();
         let kick = e.session().track_by_name("Kick").map(|t| t.id.0).unwrap();
         // Duplicate the playlist, then clear a range on the new active playlist and promote it back from the first.
-        e.execute("track.playlist_duplicate", &json!({"track": kick})).unwrap();
-        e.execute("edit.clear", &json!({"tracks": [kick], "start": {"seconds": 10.0}, "end": {"seconds": 12.0}})).unwrap();
+        e.execute("track.playlist_duplicate", &json!({"track": kick}))
+            .unwrap();
+        e.execute(
+            "edit.clear",
+            &json!({"tracks": [kick], "start": {"seconds": 10.0}, "end": {"seconds": 12.0}}),
+        )
+        .unwrap();
         let gap = |e: &Engine| {
-            e.session().track(soundcraft_model::TrackId(kick)).unwrap().playlist().unwrap().clip_at(e.session().sample_rate.samples(11.0)).is_none()
+            e.session()
+                .track(soundcraft_model::TrackId(kick))
+                .unwrap()
+                .playlist()
+                .unwrap()
+                .clip_at(e.session().sample_rate.samples(11.0))
+                .is_none()
         };
         assert!(gap(&e));
         e.execute("track.playlist_promote", &json!({"track": kick, "playlist": 0, "start": {"seconds": 10.0}, "end": {"seconds": 12.0}})).unwrap();
         assert!(!gap(&e));
-        assert!(e.execute("track.playlist_promote", &json!({"track": kick, "playlist": 1, "start": 0, "end": 10})).is_err());
+        assert!(
+            e.execute(
+                "track.playlist_promote",
+                &json!({"track": kick, "playlist": 1, "start": 0, "end": 10})
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn folder_routes_members_through_its_bus() {
         let mut e = crate::demo::demo_engine();
-        let r = e.execute("track.move_to_new_folder", &json!({"tracks": ["Kick", "Snare"], "name": "Drums"})).unwrap();
+        let r = e
+            .execute(
+                "track.move_to_new_folder",
+                &json!({"tracks": ["Kick", "Snare"], "name": "Drums"}),
+            )
+            .unwrap();
         assert!(r["bus"].is_u64());
         let s = e.session();
         let kick = s.track_by_name("Kick").unwrap();
         assert!(matches!(kick.mixer.output, Route::Bus(_)));
-        assert!(s.tracks.iter().any(|t| t.kind == TrackKind::Folder && t.mixer.input == kick.mixer.output));
+        assert!(
+            s.tracks
+                .iter()
+                .any(|t| t.kind == TrackKind::Folder && t.mixer.input == kick.mixer.output)
+        );
     }
 }

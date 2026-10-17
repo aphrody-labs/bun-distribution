@@ -16,22 +16,44 @@ fn ok(h: &mut Headless, name: &str, args: Value) -> Value {
 /// The fill gradient of the selected object.
 fn gradient(h: &Headless) -> GradientPaint {
     let st = h.session.doc().unwrap();
-    match st.doc.node(st.selection.objects[0]).unwrap().appearance.fill_paint() {
+    match st
+        .doc
+        .node(st.selection.objects[0])
+        .unwrap()
+        .appearance
+        .fill_paint()
+    {
         Paint::Gradient(g) => *g,
         p => panic!("not a gradient: {p:?}"),
     }
 }
 
 fn offsets(g: &GradientPaint) -> Vec<f32> {
-    g.gradient.stops.iter().map(|s| (s.offset * 100.0).round()).collect()
+    g.gradient
+        .stops
+        .iter()
+        .map(|s| (s.offset * 100.0).round())
+        .collect()
 }
 
 #[test]
 fn gradient_annotator_end_to_end() {
     let mut h = Headless::new();
-    h.call("engine.execute", json!({"command": "file.new", "params": {"width": 300, "height": 300}})).unwrap();
-    ok(&mut h, "draw_shape", json!({"shape": "rectangle", "x": 100, "y": 100, "width": 100, "height": 100}));
-    ok(&mut h, "run_command", json!({"command": "paint.setFill", "params": {"gradient": {"start": [100, 150], "end": [200, 150]}}}));
+    h.call(
+        "engine.execute",
+        json!({"command": "file.new", "params": {"width": 300, "height": 300}}),
+    )
+    .unwrap();
+    ok(
+        &mut h,
+        "draw_shape",
+        json!({"shape": "rectangle", "x": 100, "y": 100, "width": 100, "height": 100}),
+    );
+    ok(
+        &mut h,
+        "run_command",
+        json!({"command": "paint.setFill", "params": {"gradient": {"start": [100, 150], "end": [200, 150]}}}),
+    );
     // A click on the bar adds a stop at 30 %.
     let click = json!({"tool": "gradient", "events": [{"kind": "down", "x": 130, "y": 150}, {"kind": "up", "x": 130, "y": 150}]});
     ok(&mut h, "pointer_gesture", click);
@@ -48,8 +70,15 @@ fn gradient_annotator_end_to_end() {
     let end = json!({"events": [{"kind": "down", "x": 200, "y": 150}, {"kind": "drag", "x": 230, "y": 120}, {"kind": "up", "x": 230, "y": 120}]});
     ok(&mut h, "pointer_gesture", end);
     let g = gradient(&h).geom.unwrap();
-    assert_eq!((g.start, g.end), (Point::new(100.0, 150.0), Point::new(230.0, 120.0)));
+    assert_eq!(
+        (g.start, g.end),
+        (Point::new(100.0, 150.0), Point::new(230.0, 120.0))
+    );
     // Double-clicking a stop asks for its popover.
-    let dbl = ok(&mut h, "pointer_gesture", json!({"events": [{"kind": "doubleclick", "x": 100, "y": 160}]}));
+    let dbl = ok(
+        &mut h,
+        "pointer_gesture",
+        json!({"events": [{"kind": "doubleclick", "x": 100, "y": 160}]}),
+    );
     assert_eq!(dbl["requests"][0]["dialog"], "gradientStop", "{dbl}");
 }

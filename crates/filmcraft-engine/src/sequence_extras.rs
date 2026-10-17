@@ -16,11 +16,15 @@
 //! caption tracks), keep only video or only audio.
 
 use filmcraft_edit as edit;
-use filmcraft_project::{ClipId, ItemKind, Label, Marker, MarkerId, MarkerKind, Sequence, TrackId, TrackKind};
+use filmcraft_project::{
+    ClipId, ItemKind, Label, Marker, MarkerId, MarkerKind, Sequence, TrackId, TrackKind,
+};
 use filmcraft_time::{Tick, TimeRange};
 use serde_json::{Value, json};
 
-use crate::commands::{CommandSpec, bad, bool_p, f64_p, has_seq, marker_color_p, sequence_time_p, str_p, u64_p};
+use crate::commands::{
+    CommandSpec, bad, bool_p, f64_p, has_seq, marker_color_p, sequence_time_p, str_p, u64_p,
+};
 use crate::{EngineError, Result, Session};
 
 type Run = fn(&mut Session, &Value) -> Result<Value>;
@@ -35,7 +39,16 @@ fn spec(
     enabled: Enabled,
     run: Run,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu, shortcut, params, enabled, run, journal: true }
+    CommandSpec {
+        id,
+        label,
+        menu,
+        shortcut,
+        params,
+        enabled,
+        run,
+        journal: true,
+    }
 }
 
 pub(crate) fn commands() -> Vec<CommandSpec> {
@@ -50,7 +63,15 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             has_clips_or_edit_points,
             apply_default_transitions,
         ),
-        spec("sequence.normalizeMixTrack", "Normalize Mix Track…", &["Sequence"], None, r#"{"db":f64=0}"#, has_audio_clips, normalize_mix),
+        spec(
+            "sequence.normalizeMixTrack",
+            "Normalize Mix Track…",
+            &["Sequence"],
+            None,
+            r#"{"db":f64=0}"#,
+            has_audio_clips,
+            normalize_mix,
+        ),
         spec(
             "sequence.transcribe",
             "Transcribe Sequence…",
@@ -96,13 +117,21 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
 
 fn has_clips_or_edit_points(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    if s.state.selection.is_empty() && s.state.edit_points.is_empty() { Err("select clips or edit points".into()) } else { Ok(()) }
+    if s.state.selection.is_empty() && s.state.edit_points.is_empty() {
+        Err("select clips or edit points".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_audio_clips(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
     let q = s.active_sequence().ok_or("no sequence is open")?;
-    if q.audio_tracks.iter().any(|t| !t.items.is_empty()) { Ok(()) } else { Err("the sequence has no audio clips".into()) }
+    if q.audio_tracks.iter().any(|t| !t.items.is_empty()) {
+        Ok(())
+    } else {
+        Err("the sequence has no audio clips".into())
+    }
 }
 
 /// Transcribe Sequence runs `transcript.generate`: disabled like it in a build without
@@ -114,7 +143,13 @@ fn can_transcribe_sequence(s: &Session) -> std::result::Result<(), String> {
 
 fn has_caption_track(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    if s.active_sequence().is_some_and(|q| !q.caption_tracks.is_empty()) { Ok(()) } else { Err("the sequence has no caption track".into()) }
+    if s.active_sequence()
+        .is_some_and(|q| !q.caption_tracks.is_empty())
+    {
+        Ok(())
+    } else {
+        Err("the sequence has no caption track".into())
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -142,12 +177,31 @@ fn apply_default_transitions(s: &mut Session, p: &Value) -> Result<Value> {
 /// transition goes at the selected clips' edges (as Apply Default Transitions to Selection), or at
 /// the selected edit points, instead of at the playhead (#1124). `None` when nothing of `kind` is
 /// selected. `p`'s settings (`effect`, `frames`, `params`, `reverse`) apply to every edge.
-pub(crate) fn apply_to_selection(s: &mut Session, p: &Value, kind: TrackKind) -> Result<Option<Value>> {
+pub(crate) fn apply_to_selection(
+    s: &mut Session,
+    p: &Value,
+    kind: TrackKind,
+) -> Result<Option<Value>> {
     let q = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let on_kind = |c: ClipId| q.find_item(c).and_then(|(t, _)| q.track(t)).is_some_and(|t| t.kind == kind);
-    let clips: Vec<ClipId> = s.state.selection.iter().copied().filter(|c| on_kind(*c)).collect();
+    let on_kind = |c: ClipId| {
+        q.find_item(c)
+            .and_then(|(t, _)| q.track(t))
+            .is_some_and(|t| t.kind == kind)
+    };
+    let clips: Vec<ClipId> = s
+        .state
+        .selection
+        .iter()
+        .copied()
+        .filter(|c| on_kind(*c))
+        .collect();
     let edges = if clips.is_empty() {
-        s.state.edit_points.iter().filter(|e| on_kind(e.clip)).map(|e| (kind, e.clip, if e.out { "out" } else { "in" })).collect()
+        s.state
+            .edit_points
+            .iter()
+            .filter(|e| on_kind(e.clip))
+            .map(|e| (kind, e.clip, if e.out { "out" } else { "in" }))
+            .collect()
     } else {
         clip_edges(q, &clips)
     };
@@ -159,7 +213,11 @@ pub(crate) fn apply_to_selection(s: &mut Session, p: &Value, kind: TrackKind) ->
     if clips.is_empty() && edges.is_empty() {
         return Ok(None);
     }
-    let label = if kind == TrackKind::Video { "Apply Video Transition" } else { "Apply Audio Transition" };
+    let label = if kind == TrackKind::Video {
+        "Apply Video Transition"
+    } else {
+        "Apply Audio Transition"
+    };
     apply_at_edges(s, edges, p, label).map(Some)
 }
 
@@ -168,29 +226,47 @@ fn clip_edges(q: &Sequence, clips: &[ClipId]) -> Vec<(TrackKind, ClipId, &'stati
     // (track, clip, edge) per distinct cut
     let mut edges: Vec<(TrackKind, ClipId, &'static str, Tick, TrackId)> = Vec::new();
     for c in clips {
-        let Some((tid, it)) = q.find_item(*c) else { continue };
+        let Some((tid, it)) = q.find_item(*c) else {
+            continue;
+        };
         let Some(tr) = q.track(tid) else { continue };
         for (edge, at) in [("in", it.start), ("out", it.end())] {
             if edges.iter().any(|e| e.4 == tid && e.3 == at) {
                 continue;
             }
             // an existing transition at this cut stays
-            if tr.transitions.iter().any(|x| x.start <= at && x.end() >= at && (x.from == Some(*c) || x.to == Some(*c))) {
+            if tr
+                .transitions
+                .iter()
+                .any(|x| x.start <= at && x.end() >= at && (x.from == Some(*c) || x.to == Some(*c)))
+            {
                 continue;
             }
             edges.push((tr.kind, *c, edge, at, tid));
         }
     }
-    edges.into_iter().map(|(kind, clip, edge, _, _)| (kind, clip, edge)).collect()
+    edges
+        .into_iter()
+        .map(|(kind, clip, edge, _, _)| (kind, clip, edge))
+        .collect()
 }
 
 /// Apply a transition at each (track kind, clip, edge) with `settings`, as one undo step `label`.
-fn apply_at_edges(s: &mut Session, edges: Vec<(TrackKind, ClipId, &'static str)>, settings: &Value, label: &str) -> Result<Value> {
+fn apply_at_edges(
+    s: &mut Session,
+    edges: Vec<(TrackKind, ClipId, &'static str)>,
+    settings: &Value,
+    label: &str,
+) -> Result<Value> {
     let n0 = s.history.undo.len();
     let mut ids = Vec::new();
     let mut errors = Vec::new();
     for (kind, clip, edge) in edges {
-        let cmd = if kind == TrackKind::Video { "sequence.applyVideoTransition" } else { "sequence.applyAudioTransition" };
+        let cmd = if kind == TrackKind::Video {
+            "sequence.applyVideoTransition"
+        } else {
+            "sequence.applyAudioTransition"
+        };
         let mut args = settings.as_object().cloned().unwrap_or_default();
         args.insert("clip".into(), json!(clip.0));
         args.insert("edge".into(), json!(edge));
@@ -201,7 +277,12 @@ fn apply_at_edges(s: &mut Session, edges: Vec<(TrackKind, ClipId, &'static str)>
     }
     crate::clip_ops::collapse_history(s, n0, label);
     if ids.is_empty() {
-        return Err(EngineError::Other(errors.into_iter().next().unwrap_or_else(|| "no transition could be applied to the selection".into())));
+        return Err(EngineError::Other(
+            errors
+                .into_iter()
+                .next()
+                .unwrap_or_else(|| "no transition could be applied to the selection".into()),
+        ));
     }
     Ok(json!({"transitions": ids}))
 }
@@ -217,7 +298,9 @@ pub fn mix_peak_db(s: &Session) -> Result<f64> {
     let q = s.project.sequence(seq_id).ok_or(EngineError::NoSequence)?;
     let sr = q.settings.sample_rate.max(1);
     let total = q.duration().to_units_floor(sr as i64);
-    let provider = s.media.full_res_provider(s.project.clone(), s.services.clone());
+    let provider = s
+        .media
+        .full_res_provider(s.project.clone(), s.services.clone());
     let mut peak = 0f32;
     let mut pos = 0i64;
     while pos < total {
@@ -226,7 +309,11 @@ pub fn mix_peak_db(s: &Session) -> Result<f64> {
         peak = b.peaks().into_iter().fold(peak, f32::max);
         pos += n as i64;
     }
-    Ok(if peak > 0.0 { 20.0 * (peak as f64).log10() } else { f64::NEG_INFINITY })
+    Ok(if peak > 0.0 {
+        20.0 * (peak as f64).log10()
+    } else {
+        f64::NEG_INFINITY
+    })
 }
 
 /// Sequence ▸ Normalize Mix Track…: set the Mix fader so the mix peaks at `db` (default 0 dBFS).
@@ -235,12 +322,20 @@ pub fn mix_peak_db(s: &Session) -> Result<f64> {
 fn normalize_mix(s: &mut Session, p: &Value) -> Result<Value> {
     let target = f64_p(p, "db").unwrap_or(0.0);
     if !(-96.0..=24.0).contains(&target) {
-        return Err(bad("sequence.normalizeMixTrack", "the target must be between -96 and +24 dB"));
+        return Err(bad(
+            "sequence.normalizeMixTrack",
+            "the target must be between -96 and +24 dB",
+        ));
     }
-    let before = s.active_sequence().map(|q| q.master_volume_db).unwrap_or(0.0);
+    let before = s
+        .active_sequence()
+        .map(|q| q.master_volume_db)
+        .unwrap_or(0.0);
     let first = mix_peak_db(s)?;
     if !first.is_finite() {
-        return Err(EngineError::Other("the mix is silent: nothing to normalize".into()));
+        return Err(EngineError::Other(
+            "the mix is silent: nothing to normalize".into(),
+        ));
     }
     let n0 = s.history.undo.len();
     let mut peak = first;
@@ -256,8 +351,13 @@ fn normalize_mix(s: &mut Session, p: &Value) -> Result<Value> {
         peak = mix_peak_db(s)?;
     }
     crate::clip_ops::collapse_history(s, n0, "Normalize Mix Track");
-    let after = s.active_sequence().map(|q| q.master_volume_db).unwrap_or(0.0);
-    Ok(json!({"peakBeforeDb": first, "peakDb": peak, "gainDb": after - before, "masterVolumeDb": after}))
+    let after = s
+        .active_sequence()
+        .map(|q| q.master_volume_db)
+        .unwrap_or(0.0);
+    Ok(
+        json!({"peakBeforeDb": first, "peakDb": peak, "gainDb": after - before, "masterVolumeDb": after}),
+    )
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -271,10 +371,17 @@ fn transcribe(s: &mut Session, p: &Value) -> Result<Value> {
     let track = match p.get("track") {
         None => None,
         Some(Value::String(t)) if t.eq_ignore_ascii_case("mix") => None,
-        Some(_) => Some(crate::commands::track_p(s, p, "track", "sequence.transcribe")?.ok_or_else(|| bad("sequence.transcribe", "unknown `track`"))?),
+        Some(_) => Some(
+            crate::commands::track_p(s, p, "track", "sequence.transcribe")?
+                .ok_or_else(|| bad("sequence.transcribe", "unknown `track`"))?,
+        ),
     };
     let mut items = Vec::new();
-    for t in q.audio_tracks.iter().filter(|t| track.is_none_or(|x| x == t.id)) {
+    for t in q
+        .audio_tracks
+        .iter()
+        .filter(|t| track.is_none_or(|x| x == t.id))
+    {
         for it in t.items.iter().filter(|i| i.enabled) {
             if !items.contains(&it.item.0) {
                 items.push(it.item.0);
@@ -282,7 +389,9 @@ fn transcribe(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if items.is_empty() {
-        return Err(EngineError::Other("there are no audio clips to transcribe".into()));
+        return Err(EngineError::Other(
+            "there are no audio clips to transcribe".into(),
+        ));
     }
     let mut params = json!({"items": items});
     for k in ["language", "diarize", "maxSpeakers", "model"] {
@@ -331,11 +440,16 @@ impl SimplifyOptions {
 }
 
 fn is_text(p: &filmcraft_project::Project, it: &filmcraft_project::TrackItem) -> bool {
-    p.item(it.item).is_some_and(|x| matches!(x.kind, ItemKind::Graphic { .. }))
+    p.item(it.item)
+        .is_some_and(|x| matches!(x.kind, ItemKind::Graphic { .. }))
 }
 
 /// Apply Simplify Sequence to `q` (a copy). Returns what changed.
-pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o: &SimplifyOptions) -> Value {
+pub fn simplify_sequence(
+    proj: &filmcraft_project::Project,
+    q: &mut Sequence,
+    o: &SimplifyOptions,
+) -> Value {
     let mut removed_clips = 0usize;
     // keep only video / audio
     if o.keep == "video" {
@@ -363,7 +477,10 @@ pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o:
     }
     for t in q.video_tracks.iter_mut().chain(q.audio_tracks.iter_mut()) {
         for it in &mut t.items {
-            if it.link.is_some_and(|l| links.get(&l).copied().unwrap_or(0) < 2) {
+            if it
+                .link
+                .is_some_and(|l| links.get(&l).copied().unwrap_or(0) < 2)
+            {
                 it.link = None;
             }
         }
@@ -381,7 +498,11 @@ pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o:
         for t in tracks.iter_mut() {
             for it in &mut t.items {
                 let n = it.effects.len();
-                it.effects.retain(|e| e.def().is_none_or(|d| d.intrinsic || filmcraft_project::graphic::is_layer_id(d.id)) || e.essential);
+                it.effects.retain(|e| {
+                    e.def().is_none_or(|d| {
+                        d.intrinsic || filmcraft_project::graphic::is_layer_id(d.id)
+                    }) || e.essential
+                });
                 removed_effects += n - it.effects.len();
             }
             if !video {
@@ -397,12 +518,23 @@ pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o:
         for ti in 1..q.video_tracks.len() {
             let ids: Vec<ClipId> = q.video_tracks[ti].items.iter().map(|i| i.id).collect();
             for id in ids {
-                let Some(pos) = q.video_tracks[ti].items.iter().position(|i| i.id == id) else { continue };
+                let Some(pos) = q.video_tracks[ti].items.iter().position(|i| i.id == id) else {
+                    continue;
+                };
                 let it = q.video_tracks[ti].items[pos].clone();
-                if q.video_tracks[ti].transitions.iter().any(|x| x.from == Some(id) || x.to == Some(id)) {
+                if q.video_tracks[ti]
+                    .transitions
+                    .iter()
+                    .any(|x| x.from == Some(id) || x.to == Some(id))
+                {
                     continue;
                 }
-                let Some(dest) = (0..ti).find(|&d| !q.video_tracks[d].locked && edit::track_range_empty(&q.video_tracks[d], it.range())) else { continue };
+                let Some(dest) = (0..ti).find(|&d| {
+                    !q.video_tracks[d].locked
+                        && edit::track_range_empty(&q.video_tracks[d], it.range())
+                }) else {
+                    continue;
+                };
                 q.video_tracks[ti].items.remove(pos);
                 q.video_tracks[dest].items.push(it);
                 q.video_tracks[dest].sort();
@@ -413,8 +545,15 @@ pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o:
     // close gaps: spans where no track has anything
     let mut closed = Tick::ZERO;
     if o.close_gaps {
-        let mut spans: Vec<TimeRange> = q.all_tracks().flat_map(|t| t.items.iter().map(|i| i.range())).collect();
-        spans.extend(q.caption_tracks.iter().flat_map(|t| t.captions.iter().map(|c| c.range())));
+        let mut spans: Vec<TimeRange> = q
+            .all_tracks()
+            .flat_map(|t| t.items.iter().map(|i| i.range()))
+            .collect();
+        spans.extend(
+            q.caption_tracks
+                .iter()
+                .flat_map(|t| t.captions.iter().map(|c| c.range())),
+        );
         spans.sort_by_key(|r| r.start);
         let mut gaps: Vec<TimeRange> = Vec::new();
         let mut cursor = Tick::ZERO;
@@ -459,15 +598,28 @@ pub fn simplify_sequence(proj: &filmcraft_project::Project, q: &mut Sequence, o:
 fn simplify(s: &mut Session, p: &Value) -> Result<Value> {
     let o = SimplifyOptions::from_params(p)?;
     let seq_id = s.state.active_sequence.ok_or(EngineError::NoSequence)?;
-    let src = s.project.item(seq_id).cloned().ok_or(EngineError::NoSequence)?;
-    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| format!("{} (Simplified)", src.name));
+    let src = s
+        .project
+        .item(seq_id)
+        .cloned()
+        .ok_or(EngineError::NoSequence)?;
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("{} (Simplified)", src.name));
     let (id, report) = s.edit("Simplify Sequence", |pr, st| {
-        let ItemKind::Sequence(q) = &src.kind else { return Err(EngineError::NoSequence) };
+        let ItemKind::Sequence(q) = &src.kind else {
+            return Err(EngineError::NoSequence);
+        };
         let mut q = (**q).clone();
         let report = simplify_sequence(pr, &mut q, &o);
         q.check().map_err(EngineError::Other)?;
         let bin = pr.root.parent_of(seq_id).filter(|b| b.0 != 0);
-        let id = pr.add_item(&name, src.label, ItemKind::Sequence(std::sync::Arc::new(q)), bin);
+        let id = pr.add_item(
+            &name,
+            src.label,
+            ItemKind::Sequence(std::sync::Arc::new(q)),
+            bin,
+        );
         st.active_sequence = Some(id);
         if !st.open_sequences.contains(&id) {
             st.open_sequences.push(id);
@@ -498,18 +650,32 @@ fn active_caption_track(s: &Session, p: &Value) -> Option<TrackId> {
         let n: usize = v.as_str()?.trim_start_matches(['C', 'c']).parse().ok()?;
         return q.caption_tracks.get(n.checked_sub(1)?).map(|t| t.id);
     }
-    if let Some(t) = s.state.caption_selection.iter().find_map(|c| q.find_caption(*c).map(|x| x.0)) {
+    if let Some(t) = s
+        .state
+        .caption_selection
+        .iter()
+        .find_map(|c| q.find_caption(*c).map(|x| x.0))
+    {
         return Some(t);
     }
     let tg = s.targeting().targeted;
-    q.caption_tracks.iter().find(|t| tg.contains(&t.id)).or(q.caption_tracks.first()).map(|t| t.id)
+    q.caption_tracks
+        .iter()
+        .find(|t| tg.contains(&t.id))
+        .or(q.caption_tracks.first())
+        .map(|t| t.id)
 }
 
 fn show_active_only(s: &mut Session, p: &Value) -> Result<Value> {
-    let active = active_caption_track(s, p).ok_or_else(|| bad("captions.showActiveOnly", "no such caption track"))?;
+    let active = active_caption_track(s, p)
+        .ok_or_else(|| bad("captions.showActiveOnly", "no such caption track"))?;
     s.edit("Show Active Caption Tracks Only", |pr, st| {
         let seq = st.active_sequence.ok_or(EngineError::NoSequence)?;
-        for t in &mut pr.sequence_mut(seq).ok_or(EngineError::NoSequence)?.caption_tracks {
+        for t in &mut pr
+            .sequence_mut(seq)
+            .ok_or(EngineError::NoSequence)?
+            .caption_tracks
+        {
             t.enabled = t.id == active;
         }
         Ok(())
@@ -522,15 +688,38 @@ fn show_active_only(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------------------------------------------------------------------------------------------
 
 fn add_flash_cue(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = s.sequence_rate().snap(sequence_time_p(s, p, "", "markers.addFlashCue")?.unwrap_or(s.playhead()));
-    let n = s.active_sequence().map(|q| q.markers.iter().filter(|m| m.kind == MarkerKind::FlashCue).count()).unwrap_or(0) + 1;
-    let name = str_p(p, "name").map(str::to_string).unwrap_or_else(|| format!("Cue Point {n}"));
+    let t = s
+        .sequence_rate()
+        .snap(sequence_time_p(s, p, "", "markers.addFlashCue")?.unwrap_or(s.playhead()));
+    let n = s
+        .active_sequence()
+        .map(|q| {
+            q.markers
+                .iter()
+                .filter(|m| m.kind == MarkerKind::FlashCue)
+                .count()
+        })
+        .unwrap_or(0)
+        + 1;
+    let name = str_p(p, "name")
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("Cue Point {n}"));
     let comment = str_p(p, "comment").unwrap_or("").to_string();
     let color = marker_color_p(p, "markers.addFlashCue")?.unwrap_or(Label::Green);
-    let dur = u64_p(p, "durationFrames").map(|f| s.sequence_rate().tick_of(f as i64)).unwrap_or(Tick::ZERO);
+    let dur = u64_p(p, "durationFrames")
+        .map(|f| s.sequence_rate().tick_of(f as i64))
+        .unwrap_or(Tick::ZERO);
     let id = s.edit_sequence("Add Flash Cue Marker", |q, ctx, _| {
         let id = MarkerId(ctx.alloc());
-        q.markers.push(Marker { id, start: t, duration: dur, name, comment, kind: MarkerKind::FlashCue, color });
+        q.markers.push(Marker {
+            id,
+            start: t,
+            duration: dur,
+            name,
+            comment,
+            kind: MarkerKind::FlashCue,
+            color,
+        });
         q.markers.sort_by_key(|m| m.start);
         Ok(id)
     })?;

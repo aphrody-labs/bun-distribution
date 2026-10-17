@@ -28,7 +28,9 @@ fn registry() -> &'static Registry {
 }
 
 fn lock() -> MutexGuard<'static, HashMap<u64, Arc<Handle>>> {
-    registry().lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    registry()
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn next_id() -> u64 {
@@ -108,13 +110,13 @@ pub unsafe extern "C" fn web_internal_index_open(
                     Err(e) => {
                         set_error(e);
                         return 0;
-                    },
+                    }
                 }
-            },
+            }
             Err(err) => {
                 set_error(err);
                 return 0;
-            },
+            }
         };
         let id = next_id();
         lock().insert(id, Arc::new(opened));
@@ -124,12 +126,20 @@ pub unsafe extern "C" fn web_internal_index_open(
 
 /// Number of live vectors, or -1 for an unknown handle.
 pub extern "C" fn web_internal_index_len(handle_id: u64) -> i64 {
-    guard(-1, || handle(handle_id).map(|h| ffi_api::len(&h) as i64).unwrap_or(-1))
+    guard(-1, || {
+        handle(handle_id)
+            .map(|h| ffi_api::len(&h) as i64)
+            .unwrap_or(-1)
+    })
 }
 
 /// Vector dimension, or 0 for an unknown handle.
 pub extern "C" fn web_internal_index_dim(handle_id: u64) -> u32 {
-    guard(0, || handle(handle_id).map(|h| ffi_api::dim(&h) as u32).unwrap_or(0))
+    guard(0, || {
+        handle(handle_id)
+            .map(|h| ffi_api::dim(&h) as u32)
+            .unwrap_or(0)
+    })
 }
 
 /// Insert or replace one vector.
@@ -144,7 +154,9 @@ pub unsafe extern "C" fn web_internal_index_add(
     dim: u32,
 ) -> i32 {
     guard(INDEX_ERROR, || {
-        let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
+        let Some(h) = handle(handle_id) else {
+            return INDEX_UNKNOWN_HANDLE;
+        };
         let Some(vector) = (unsafe { f32_slice(vector_ptr, dim as usize) }) else {
             set_error("null vector");
             return INDEX_ERROR;
@@ -154,7 +166,7 @@ pub unsafe extern "C" fn web_internal_index_add(
             Err(e) => {
                 set_error(e);
                 INDEX_ERROR
-            },
+            }
         }
     })
 }
@@ -173,7 +185,9 @@ pub unsafe extern "C" fn web_internal_index_add_batch(
     dim: u32,
 ) -> i32 {
     guard(INDEX_ERROR, || {
-        let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
+        let Some(h) = handle(handle_id) else {
+            return INDEX_UNKNOWN_HANDLE;
+        };
         if keys_ptr.is_null() || flat_ptr.is_null() {
             set_error("null batch pointer");
             return INDEX_ERROR;
@@ -187,7 +201,7 @@ pub unsafe extern "C" fn web_internal_index_add_batch(
             Err(e) => {
                 set_error(e);
                 INDEX_ERROR
-            },
+            }
         }
     })
 }
@@ -207,7 +221,9 @@ pub unsafe extern "C" fn web_internal_index_search(
     ef: u32,
 ) -> *mut c_char {
     guard(std::ptr::null_mut(), || {
-        let Some(h) = handle(handle_id) else { return error_json("unknown index handle") };
+        let Some(h) = handle(handle_id) else {
+            return error_json("unknown index handle");
+        };
         let Some(query) = (unsafe { f32_slice(query_ptr, dim as usize) }) else {
             return error_json("null query");
         };
@@ -229,13 +245,15 @@ pub extern "C" fn web_internal_index_remove(handle_id: u64, key: u64) -> i32 {
 /// Persist the index to its path (atomic replace).
 pub extern "C" fn web_internal_index_save(handle_id: u64) -> i32 {
     guard(INDEX_ERROR, || {
-        let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
+        let Some(h) = handle(handle_id) else {
+            return INDEX_UNKNOWN_HANDLE;
+        };
         match ffi_api::save(&h) {
             Ok(()) => INDEX_OK,
             Err(e) => {
                 set_error(e);
                 INDEX_ERROR
-            },
+            }
         }
     })
 }
@@ -243,13 +261,15 @@ pub extern "C" fn web_internal_index_save(handle_id: u64) -> i32 {
 /// Rebuild without tombstones.
 pub extern "C" fn web_internal_index_compact(handle_id: u64) -> i32 {
     guard(INDEX_ERROR, || {
-        let Some(h) = handle(handle_id) else { return INDEX_UNKNOWN_HANDLE };
+        let Some(h) = handle(handle_id) else {
+            return INDEX_UNKNOWN_HANDLE;
+        };
         match ffi_api::compact(&h) {
             Ok(()) => INDEX_OK,
             Err(e) => {
                 set_error(e);
                 INDEX_ERROR
-            },
+            }
         }
     })
 }
@@ -378,7 +398,10 @@ mod tests {
         unsafe {
             let id = web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
             assert!(id > 0);
-            assert_eq!(web_internal_index_add(id, 7, [1.0f32, 0.0, 0.0].as_ptr(), 3), INDEX_OK);
+            assert_eq!(
+                web_internal_index_add(id, 7, [1.0f32, 0.0, 0.0].as_ptr(), 3),
+                INDEX_OK
+            );
             let keys = [8u64, 9];
             let flat = [0.0f32, 1.0, 0.0, 0.0, 0.0, 1.0];
             assert_eq!(
@@ -402,7 +425,10 @@ mod tests {
             web_internal_index_close(reopened);
 
             std::fs::write(dir.join("t.hnsw"), b"garbage").unwrap();
-            assert_eq!(web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 0), 0);
+            assert_eq!(
+                web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 0),
+                0
+            );
             let rebuilt = web_internal_index_open(path.as_ptr(), 3, std::ptr::null(), 1);
             assert!(rebuilt > 0);
             assert_eq!(web_internal_index_len(rebuilt), 0);

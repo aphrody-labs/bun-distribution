@@ -157,7 +157,9 @@ impl Gamedata {
     #[must_use]
     pub fn bgm_hash(&self) -> Option<u32> {
         let brut = self.bgm_name.as_deref()?;
-        let hex = brut.strip_prefix("0x").or_else(|| brut.strip_prefix("0X"))?;
+        let hex = brut
+            .strip_prefix("0x")
+            .or_else(|| brut.strip_prefix("0X"))?;
         let v = u32::from_str_radix(hex, 16).ok()?;
         (v != 0 && v != u32::MAX).then_some(v)
     }
@@ -397,7 +399,9 @@ pub fn empreinte(vfs: &Vfs, prefixe: &str) -> String {
     let (n, octets) = vfs
         .iter()
         .filter(|(p, _)| p.starts_with(prefixe) && p.ends_with(".usm"))
-        .fold((0u64, 0u64), |(n, o), (_, e)| (n + 1, o + u64::from(e.file_size)));
+        .fold((0u64, 0u64), |(n, o), (_, e)| {
+            (n + 1, o + u64::from(e.file_size))
+        });
     format!("{n}:{octets}")
 }
 
@@ -442,7 +446,7 @@ pub fn apercu(vfs: &Vfs, chemin: &str, jointure: Option<&Jointure>) -> Film {
             let mut f = depuis_apercu(chemin, taille, &a);
             greffer(vfs, &mut f, jointure);
             f
-        },
+        }
     }
 }
 
@@ -567,7 +571,7 @@ fn depuis_usm(chemin: &str, taille: u64, u: &Usm) -> Film {
                 let gain = 100.0 - (produit as f64 * 100.0 / taille as f64);
                 f.gain_remux = Some((gain * 100.0).round() / 100.0);
             }
-        },
+        }
         Err(e) => f.remux_impossible = Some(e.to_string()),
     }
     f
@@ -598,7 +602,11 @@ pub fn catalogue(vfs: &Vfs, prefixe: &str, profond: bool) -> Catalogue {
     let films: Vec<Film> = chemins_films(vfs, prefixe)
         .iter()
         .map(|c| {
-            if profond { complet(vfs, c, Some(&jointure)) } else { apercu(vfs, c, Some(&jointure)) }
+            if profond {
+                complet(vfs, c, Some(&jointure))
+            } else {
+                apercu(vfs, c, Some(&jointure))
+            }
         })
         .collect();
 
@@ -612,7 +620,10 @@ pub fn catalogue(vfs: &Vfs, prefixe: &str, profond: bool) -> Catalogue {
         rubriques,
         langues: usm::LANGUES
             .iter()
-            .map(|(code, nom)| Langue { code: (*code).to_string(), nom: (*nom).to_string() })
+            .map(|(code, nom)| Langue {
+                code: (*code).to_string(),
+                nom: (*nom).to_string(),
+            })
             .collect(),
     }
 }
@@ -632,7 +643,10 @@ pub fn wav_bande_son(vfs: &Vfs, cache_dir: &Path, film: &Film) -> Result<Vec<u8>
         let brut = vfs.read(&film.chemin).map_err(|e| e.to_string())?;
         let u = usm::demuxer_nomme(&brut, usm::nom_fichier_de(&film.chemin))
             .map_err(|e| e.to_string())?;
-        let piste = u.pistes.first().ok_or_else(|| "conteneur sans piste".to_string())?;
+        let piste = u
+            .pistes
+            .first()
+            .ok_or_else(|| "conteneur sans piste".to_string())?;
         return aphrody_nie_formats::cri_audio::decode_to_wav(&piste.octets)
             .map_err(|e| e.to_string());
     }
@@ -649,24 +663,39 @@ mod tests {
 
     #[test]
     fn cle_de_jointure_retire_le_prefixe_data() {
-        assert_eq!(cle_jointure("data/common/movie/ev01_00050.usm"), "common/movie/ev01_00050.usm");
+        assert_eq!(
+            cle_jointure("data/common/movie/ev01_00050.usm"),
+            "common/movie/ev01_00050.usm"
+        );
         assert_eq!(cle_jointure("common/movie/x.usm"), "common/movie/x.usm");
     }
 
     #[test]
     fn bgm_hash_ignore_les_valeurs_vides() {
-        let vide = Gamedata { bgm_name: Some("0x00000000".into()), ..Gamedata::default() };
+        let vide = Gamedata {
+            bgm_name: Some("0x00000000".into()),
+            ..Gamedata::default()
+        };
         assert_eq!(vide.bgm_hash(), None);
-        let absent = Gamedata { bgm_name: Some("0xFFFFFFFF".into()), ..Gamedata::default() };
+        let absent = Gamedata {
+            bgm_name: Some("0xFFFFFFFF".into()),
+            ..Gamedata::default()
+        };
         assert_eq!(absent.bgm_hash(), None);
-        let vrai = Gamedata { bgm_name: Some("0xD0750D09".into()), ..Gamedata::default() };
+        let vrai = Gamedata {
+            bgm_name: Some("0xD0750D09".into()),
+            ..Gamedata::default()
+        };
         assert_eq!(vrai.bgm_hash(), Some(0xD075_0D09));
     }
 
     #[test]
     fn bgm_name_est_le_crc32_du_nom_du_film() {
         // Le lien mesuré sur le réel : ce « nom de musique » est le nom du film, haché.
-        let g = Gamedata { bgm_name: Some("0xD0750D09".into()), ..Gamedata::default() };
+        let g = Gamedata {
+            bgm_name: Some("0xD0750D09".into()),
+            ..Gamedata::default()
+        };
         assert_eq!(g.bgm_hash(), Some(soundtrack::hash_de_cue("ev01_00050")));
     }
 
@@ -684,9 +713,15 @@ mod tests {
     fn le_json_est_en_camel_case_et_omet_le_vide() {
         let f = Film::en_erreur("data/common/movie/L5logo.usm", 1, "x".into());
         let v = serde_json::to_value(&f).expect("sérialisable");
-        assert!(v.get("lisibleNavigateur").is_some(), "les champs passent en camelCase");
+        assert!(
+            v.get("lisibleNavigateur").is_some(),
+            "les champs passent en camelCase"
+        );
         assert!(v.get("totalImagesDeclare").is_some());
         assert!(v.get("bandeSon").is_none(), "un champ vide ne s'écrit pas");
-        assert!(v.get("dechiffre").is_none(), "un booléen faux ne s'écrit pas");
+        assert!(
+            v.get("dechiffre").is_none(),
+            "un booléen faux ne s'écrit pas"
+        );
     }
 }

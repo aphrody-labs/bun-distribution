@@ -21,14 +21,22 @@ const ID: &str = "layer.rasterize.layerStyle";
 /// Whether Rasterize › Layer Style applies to `l`: visible effects on a layer whose content can
 /// become pixels (not a group or an adjustment layer).
 pub fn can_bake(l: &Layer) -> bool {
-    photocraft_compose::effects::has_effects(l) && !matches!(l.content, LayerContent::Group(_) | LayerContent::Adjustment(_))
+    photocraft_compose::effects::has_effects(l)
+        && !matches!(
+            l.content,
+            LayerContent::Group(_) | LayerContent::Adjustment(_)
+        )
 }
 
 /// Some selected layer (or the active one) has effects to bake.
 fn enabled(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
     let ids = d.selected_layers().into_iter().chain(d.active_layer);
-    if ids.filter_map(|id| d.doc.layer(id)).any(can_bake) { Ok(()) } else { Err("no selected layer has layer effects to rasterize".into()) }
+    if ids.filter_map(|id| d.doc.layer(id)).any(can_bake) {
+        Ok(())
+    } else {
+        Err("no selected layer has layer effects to rasterize".into())
+    }
 }
 
 /// Bake one layer (type, shape, fill and Smart Object content is rasterized first, in the same
@@ -45,12 +53,15 @@ fn bake_one(s: &mut Session, id: LayerId, key: &str) -> Result<bool> {
     let r = s.edit("Rasterize Layer Style", |doc, _| {
         let l = doc.layer(id).cloned().ok_or(EngineError::NoLayer(id))?;
         if !matches!(l.content, LayerContent::Raster(_)) {
-            return Err(EngineError::Other("the layer could not be rasterized".into()));
+            return Err(EngineError::Other(
+                "the layer could not be rasterized".into(),
+            ));
         }
         let canvas = doc.bounds();
         let fmt = doc.pixel_format();
         // The pixels (also those past the canvas) and everything the effects reach from them.
-        let area = photocraft_compose::layer_bounds(&l, canvas).inflate(photocraft_compose::effects::margin(&l).max(0));
+        let area = photocraft_compose::layer_bounds(&l, canvas)
+            .inflate(photocraft_compose::effects::margin(&l).max(0));
         let mut alone = l.clone();
         alone.visible = true;
         alone.opacity = 1.0;
@@ -112,9 +123,20 @@ fn rasterize_layer_style(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     let Some(&first) = done.first() else {
-        return Err(EngineError::Other(if many { "none of the selected layers has layer effects" } else { "the layer has no layer effects" }.into()));
+        return Err(EngineError::Other(
+            if many {
+                "none of the selected layers has layer effects"
+            } else {
+                "the layer has no layer effects"
+            }
+            .into(),
+        ));
     };
-    let active = s.active().and_then(|d| d.active_layer).map(|id| id.0).filter(|id| done.contains(id));
+    let active = s
+        .active()
+        .and_then(|d| d.active_layer)
+        .map(|id| id.0)
+        .filter(|id| done.contains(id));
     Ok(json!({"layer": active.unwrap_or(first), "layers": done}))
 }
 

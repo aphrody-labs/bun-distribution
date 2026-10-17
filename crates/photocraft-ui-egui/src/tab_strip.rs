@@ -17,9 +17,20 @@ pub fn fit(natural: &[f32], selected: usize, avail: f32, min_w: f32, chevron_w: 
 }
 
 /// A label laid out on one row no wider than `max_w`, cut with '…' when it doesn't fit.
-pub fn elided(ui: &Ui, text: &str, font: egui::FontId, color: egui::Color32, max_w: f32) -> std::sync::Arc<egui::Galley> {
+pub fn elided(
+    ui: &Ui,
+    text: &str,
+    font: egui::FontId,
+    color: egui::Color32,
+    max_w: f32,
+) -> std::sync::Arc<egui::Galley> {
     let mut job = egui::text::LayoutJob::simple_singleline(text.to_owned(), font, color);
-    job.wrap = egui::text::TextWrapping { max_width: max_w.max(1.0), max_rows: 1, break_anywhere: true, overflow_character: Some('…') };
+    job.wrap = egui::text::TextWrapping {
+        max_width: max_w.max(1.0),
+        max_rows: 1,
+        break_anywhere: true,
+        overflow_character: Some('…'),
+    };
     ui.painter().layout_job(job)
 }
 
@@ -55,15 +66,33 @@ pub const CHEVRON_W: f32 = 18.0;
 
 /// Draw the » overflow button at `r`: hover tip `tip`, listing the tabs named by `labels` at the
 /// indices in `overflow`. A picked index is left in `picked`.
-pub fn overflow_button(ui: &mut Ui, id: egui::Id, r: Rect, tip: &str, labels: &[&str], overflow: &[usize], picked: &mut Option<usize>) {
+pub fn overflow_button(
+    ui: &mut Ui,
+    id: egui::Id,
+    r: Rect,
+    tip: &str,
+    labels: &[&str],
+    overflow: &[usize],
+    picked: &mut Option<usize>,
+) {
     let t = Tokens::get(ui.ctx());
     let resp = ui.interact(r, id, Sense::click());
     let mut paint_ui = ui.new_child(egui::UiBuilder::new().max_rect(r));
     paint_ui.set_clip_rect(r.intersect(ui.clip_rect()));
     if resp.hovered() {
-        paint_ui.painter().rect_filled(r.shrink2(vec2(1.0, 3.0)), t.radius_sm, t.hover.gamma_multiply(0.6));
+        paint_ui.painter().rect_filled(
+            r.shrink2(vec2(1.0, 3.0)),
+            t.radius_sm,
+            t.hover.gamma_multiply(0.6),
+        );
     }
-    crate::icons::paint(&paint_ui, r, "chevrons-right", 12.0, if resp.hovered() { t.text } else { t.text_dim });
+    crate::icons::paint(
+        &paint_ui,
+        r,
+        "chevrons-right",
+        12.0,
+        if resp.hovered() { t.text } else { t.text_dim },
+    );
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tip));
     let resp = resp.on_hover_text(tip);
     egui::Popup::menu(&resp).show(|ui| {
@@ -99,7 +128,16 @@ fn tabs_in(
     // Panel names are English keys; draw them in the UI language.
     let names: Vec<&str> = tabs.iter().map(|n| tl!(n)).collect();
     let tabs = names.as_slice();
-    let natural: Vec<f32> = tabs.iter().map(|n| ui.painter().layout_no_wrap((*n).to_owned(), font.clone(), t.text).size().x + pad).collect();
+    let natural: Vec<f32> = tabs
+        .iter()
+        .map(|n| {
+            ui.painter()
+                .layout_no_wrap((*n).to_owned(), font.clone(), t.text)
+                .size()
+                .x
+                + pad
+        })
+        .collect();
     let f = fit(&natural, *selected, area.width(), min_w, CHEVRON_W);
     let mut x = area.left();
     let mut out = StripOut {
@@ -114,19 +152,25 @@ fn tabs_in(
         dropped_out: None,
     };
     // Without reordering, drags on a tab fall through to the strip behind it.
-    let sense = if reorderable { Sense::click_and_drag() } else { Sense::click() };
+    let sense = if reorderable {
+        Sense::click_and_drag()
+    } else {
+        Sense::click()
+    };
     let mut drag: Option<(usize, bool)> = None;
     for &(i, w) in &f.shown {
         let Some(name) = tabs.get(i) else { continue };
         let r = Rect::from_min_size(pos2(x, area.top()), vec2(w, area.height()));
         // The padding gives way (down to a third) before the label is cut.
         let galley = elided(ui, name, font.clone(), t.text, (w - pad / 3.0).max(1.0));
-        let cut = galley.size().x + pad + 0.5 < natural.get(i).copied().unwrap_or(0.0) && galley.size().x + pad / 3.0 >= w - 0.5;
-        let resp = craft_ui::tabs::Tab::new(id.with(("tab", i)), name, i == *selected).sense(sense).focus_stroke(Stroke::new(1.0, t.accent)).show_at(
-            ui,
-            r,
-            |ui, resp| paint_tab(ui, r, i, galley, resp, active(i)),
-        );
+        let cut = galley.size().x + pad + 0.5 < natural.get(i).copied().unwrap_or(0.0)
+            && galley.size().x + pad / 3.0 >= w - 0.5;
+        let resp = craft_ui::tabs::Tab::new(id.with(("tab", i)), name, i == *selected)
+            .sense(sense)
+            .focus_stroke(Stroke::new(1.0, t.accent))
+            .show_at(ui, r, |ui, resp| {
+                paint_tab(ui, r, i, galley, resp, active(i))
+            });
         let resp = if cut { resp.on_hover_text(*name) } else { resp };
         if resp.drag_started() {
             *selected = i;
@@ -160,7 +204,15 @@ fn tabs_in(
     if !f.overflow.is_empty() && f.overflow_width > 0.0 {
         let r = Rect::from_min_size(pos2(x, area.top()), vec2(f.overflow_width, area.height()));
         let mut picked = None;
-        overflow_button(ui, id.with("tab-overflow"), r, tl!("More panels"), tabs, &f.overflow, &mut picked);
+        overflow_button(
+            ui,
+            id.with("tab-overflow"),
+            r,
+            tl!("More panels"),
+            tabs,
+            &f.overflow,
+            &mut picked,
+        );
         if let Some(i) = picked {
             out.clicked = true;
             *selected = i;
@@ -168,7 +220,10 @@ fn tabs_in(
         out.chevron = Some(r);
     }
     if let Some((tab, released)) = drag
-        && let Some(p) = ui.ctx().pointer_interact_pos().or_else(|| ui.ctx().pointer_latest_pos())
+        && let Some(p) = ui
+            .ctx()
+            .pointer_interact_pos()
+            .or_else(|| ui.ctx().pointer_latest_pos())
     {
         match drop_slot(&out.tabs, area, p) {
             Some(slot) => {
@@ -176,11 +231,17 @@ fn tabs_in(
                 let before = match out.tabs.get(slot) {
                     Some((b, _)) => Some(*b),
                     // After the last tab on the strip: before the first overflowing one, if any.
-                    None => out.tabs.last().map(|(l, _)| l + 1).filter(|b| *b < tabs.len()),
+                    None => out
+                        .tabs
+                        .last()
+                        .map(|(l, _)| l + 1)
+                        .filter(|b| *b < tabs.len()),
                 };
                 if released {
                     out.reorder = Some((tab, before));
-                } else if let Some((_, r)) = out.tabs.get(slot.min(out.tabs.len().saturating_sub(1))) {
+                } else if let Some((_, r)) =
+                    out.tabs.get(slot.min(out.tabs.len().saturating_sub(1)))
+                {
                     crate::widgets::drop_line(ui, *r, slot >= out.tabs.len(), true, &t);
                 }
             }
@@ -203,7 +264,16 @@ pub fn drop_slot(tabs: &[(usize, Rect)], area: Rect, p: egui::Pos2) -> Option<us
 /// Photoshop-grammar strip (Pro themes): flat tabs on the dark strip; `menu_left` is where the
 /// panel menu button starts.
 #[allow(clippy::too_many_arguments)]
-pub fn pro_tabs(ui: &mut Ui, id: egui::Id, strip: Rect, menu_left: f32, tabs: &[&str], selected: &mut usize, collapsed: bool, reorderable: bool) -> StripOut {
+pub fn pro_tabs(
+    ui: &mut Ui,
+    id: egui::Id,
+    strip: Rect,
+    menu_left: f32,
+    tabs: &[&str],
+    selected: &mut usize,
+    collapsed: bool,
+    reorderable: bool,
+) -> StripOut {
     let t = Tokens::get(ui.ctx());
     let area = Rect::from_min_max(strip.min, pos2(menu_left.max(strip.left()), strip.bottom()));
     let sel = *selected;
@@ -220,9 +290,19 @@ pub fn pro_tabs(ui: &mut Ui, id: egui::Id, strip: Rect, menu_left: f32, tabs: &[
         |i| i == sel && !collapsed,
         |ui, r, i, galley, resp, active| {
             if active {
-                ui.painter().rect_filled(r, CornerRadius { nw: if i == 0 { 3 } else { 0 }, ne: 0, sw: 0, se: 0 }, t.card);
+                ui.painter().rect_filled(
+                    r,
+                    CornerRadius {
+                        nw: if i == 0 { 3 } else { 0 },
+                        ne: 0,
+                        sw: 0,
+                        se: 0,
+                    },
+                    t.card,
+                );
             } else if resp.hovered() {
-                ui.painter().rect_filled(r, 0.0, t.hover.gamma_multiply(0.4));
+                ui.painter()
+                    .rect_filled(r, 0.0, t.hover.gamma_multiply(0.4));
             }
             let color = if active {
                 t.text
@@ -231,13 +311,22 @@ pub fn pro_tabs(ui: &mut Ui, id: egui::Id, strip: Rect, menu_left: f32, tabs: &[
             } else {
                 t.text_faint
             };
-            ui.painter().with_clip_rect(r.intersect(ui.clip_rect())).galley_with_override_text_color(r.center() - galley.size() / 2.0, galley, color);
+            ui.painter()
+                .with_clip_rect(r.intersect(ui.clip_rect()))
+                .galley_with_override_text_color(r.center() - galley.size() / 2.0, galley, color);
         },
     )
 }
 
 /// Studio strip: pill tabs in `area` (the row minus the menu button).
-pub fn pill_tabs(ui: &mut Ui, id: egui::Id, area: Rect, tabs: &[&str], selected: &mut usize, reorderable: bool) -> StripOut {
+pub fn pill_tabs(
+    ui: &mut Ui,
+    id: egui::Id,
+    area: Rect,
+    tabs: &[&str],
+    selected: &mut usize,
+    reorderable: bool,
+) -> StripOut {
     let t = Tokens::get(ui.ctx());
     let sel = *selected;
     tabs_in(
@@ -257,13 +346,21 @@ pub fn pill_tabs(ui: &mut Ui, id: egui::Id, area: Rect, tabs: &[&str], selected:
             if active {
                 crate::widgets::surface(ui, r, t.hover, true);
                 if !t.bevel {
-                    ui.painter().rect_stroke(r, t.radius_sm, Stroke::new(1.0, t.field_border), StrokeKind::Inside);
+                    ui.painter().rect_stroke(
+                        r,
+                        t.radius_sm,
+                        Stroke::new(1.0, t.field_border),
+                        StrokeKind::Inside,
+                    );
                 }
             } else if resp.hovered() {
-                ui.painter().rect_filled(r, t.radius_sm, t.hover.gamma_multiply(0.6));
+                ui.painter()
+                    .rect_filled(r, t.radius_sm, t.hover.gamma_multiply(0.6));
             }
             let color = if active { t.text } else { t.text_dim };
-            ui.painter().with_clip_rect(r.intersect(ui.clip_rect())).galley_with_override_text_color(r.center() - galley.size() / 2.0, galley, color);
+            ui.painter()
+                .with_clip_rect(r.intersect(ui.clip_rect()))
+                .galley_with_override_text_color(r.center() - galley.size() / 2.0, galley, color);
         },
     )
 }
@@ -288,9 +385,16 @@ mod tests {
         let f = fit(&[50.0, 70.0, 120.0], 0, 200.0, 40.0, 18.0);
         assert!(f.overflow.is_empty());
         assert!((total(&f) - 200.0).abs() < 0.1, "{f:?}");
-        assert_eq!(f.shown[0], (0, 50.0), "a tab narrower than the cap keeps its width");
+        assert_eq!(
+            f.shown[0],
+            (0, 50.0),
+            "a tab narrower than the cap keeps its width"
+        );
         assert_eq!(f.shown[1], (1, 70.0));
-        assert!((f.shown[2].1 - 80.0).abs() < 0.1, "only the widest shrank: {f:?}");
+        assert!(
+            (f.shown[2].1 - 80.0).abs() < 0.1,
+            "only the widest shrank: {f:?}"
+        );
     }
 
     #[test]
@@ -302,7 +406,10 @@ mod tests {
             assert!(!f.overflow.is_empty() && !f.overflow.contains(&sel));
             assert!(total(&f) <= 120.0 - 18.0 + 1e-3, "{f:?}");
             assert_eq!(f.shown.len() + f.overflow.len(), 4);
-            assert!(f.shown.windows(2).all(|w| w[0].0 < w[1].0), "tab order kept");
+            assert!(
+                f.shown.windows(2).all(|w| w[0].0 < w[1].0),
+                "tab order kept"
+            );
         }
     }
 
@@ -312,7 +419,10 @@ mod tests {
             for natural in [&[][..], &[f32::NAN, 50.0][..], &[1e9, -5.0, 30.0][..]] {
                 for sel in [0, 1, 99] {
                     let f = fit(natural, sel, avail, 40.0, 18.0);
-                    assert!(f.shown.iter().all(|(_, w)| w.is_finite() && *w >= 0.0), "{avail} {natural:?} {f:?}");
+                    assert!(
+                        f.shown.iter().all(|(_, w)| w.is_finite() && *w >= 0.0),
+                        "{avail} {natural:?} {f:?}"
+                    );
                     assert_eq!(f.shown.len() + f.overflow.len(), natural.len());
                 }
             }
@@ -327,20 +437,41 @@ mod tests {
             let area = Rect::from_min_size(pos2(20.0, 20.0), vec2(width, 26.0));
             let mut selected = 3;
             let mut output = ctx.run_ui(egui::RawInput::default(), |ui| {
-                let out =
-                    pro_tabs(ui, ui.id().with("tiny-tabs"), area, area.right(), &["Color", "Swatches", "Gradients", "Patterns"], &mut selected, false, false);
+                let out = pro_tabs(
+                    ui,
+                    ui.id().with("tiny-tabs"),
+                    area,
+                    area.right(),
+                    &["Color", "Swatches", "Gradients", "Patterns"],
+                    &mut selected,
+                    false,
+                    false,
+                );
                 assert!(out.tabs.iter().any(|(i, _)| *i == 3));
                 for (_, rect) in &out.tabs {
-                    assert!(rect.left() >= area.left() && rect.right() <= area.right() + 0.001, "{width}: {rect:?}");
+                    assert!(
+                        rect.left() >= area.left() && rect.right() <= area.right() + 0.001,
+                        "{width}: {rect:?}"
+                    );
                 }
                 if let Some(chevron) = out.chevron {
-                    assert!(chevron.left() >= area.left() && chevron.right() <= area.right() + 0.001, "{width}: {chevron:?}");
+                    assert!(
+                        chevron.left() >= area.left() && chevron.right() <= area.right() + 0.001,
+                        "{width}: {chevron:?}"
+                    );
                 }
             });
             output.textures_delta.clear();
             assert_eq!(selected, 3);
-            for shape in output.shapes.iter().filter(|s| matches!(s.shape, egui::Shape::Text(_))) {
-                assert!(shape.clip_rect.right() <= area.right() + 0.001, "{width}: text is clipped to its tab");
+            for shape in output
+                .shapes
+                .iter()
+                .filter(|s| matches!(s.shape, egui::Shape::Text(_)))
+            {
+                assert!(
+                    shape.clip_rect.right() <= area.right() + 0.001,
+                    "{width}: text is clipped to its tab"
+                );
             }
         }
     }
@@ -355,9 +486,20 @@ mod tests {
                 let rect = Rect::from_min_size(pos2(20.25, 20.25), vec2(width, 26.0));
                 for _ in 0..3 {
                     let mut picked = None;
-                    let input = egui::RawInput { events: vec![egui::Event::PointerMoved(rect.center())], ..Default::default() };
+                    let input = egui::RawInput {
+                        events: vec![egui::Event::PointerMoved(rect.center())],
+                        ..Default::default()
+                    };
                     let mut output = ctx.run_ui(input, |ui| {
-                        overflow_button(ui, ui.id().with("tiny-overflow"), rect, "More panels", &["Layers"], &[0], &mut picked);
+                        overflow_button(
+                            ui,
+                            ui.id().with("tiny-overflow"),
+                            rect,
+                            "More panels",
+                            &["Layers"],
+                            &[0],
+                            &mut picked,
+                        );
                     });
                     output.textures_delta.clear();
                     let mut icons = 0;
@@ -366,9 +508,15 @@ mod tests {
                         if matches!(&shape.shape, egui::Shape::Rect(rect) if rect.brush.is_some()) {
                             icons += 1;
                         }
-                        let painted = shape.shape.visual_bounding_rect().intersect(shape.clip_rect);
+                        let painted = shape
+                            .shape
+                            .visual_bounding_rect()
+                            .intersect(shape.clip_rect);
                         if painted.is_positive() {
-                            assert!(rect.contains_rect(painted), "{scale}x, width {width}: {painted:?}");
+                            assert!(
+                                rect.contains_rect(painted),
+                                "{scale}x, width {width}: {painted:?}"
+                            );
                         }
                     }
                     assert!(icons > 0, "the actual SVG icon was painted");

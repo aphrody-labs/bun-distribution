@@ -61,27 +61,37 @@ impl ToolExecutor for ViewImageTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let path_str = arguments.get("path").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let path_str = arguments
+            .get("path")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "view_image".to_string(),
                 message: "missing required argument `path` (string)".to_string(),
-            }
-        })?;
+            })?;
 
         let path = Path::new(path_str);
 
         #[cfg(not(target_arch = "wasm32"))]
         {
             if !path.exists() {
-                return Ok(ToolOutput::error(format!("File not found: `{}`", path.display())));
+                return Ok(ToolOutput::error(format!(
+                    "File not found: `{}`",
+                    path.display()
+                )));
             }
 
-            let bytes = tokio::fs::read(path).await.map_err(|e| ToolError::Execution {
-                tool: "view_image".to_string(),
-                message: format!("failed to read `{}`: {e}", path.display()),
-            })?;
+            let bytes = tokio::fs::read(path)
+                .await
+                .map_err(|e| ToolError::Execution {
+                    tool: "view_image".to_string(),
+                    message: format!("failed to read `{}`: {e}", path.display()),
+                })?;
 
-            let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("").to_ascii_lowercase();
+            let ext = path
+                .extension()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_ascii_lowercase();
 
             let mime = match ext.as_str() {
                 "png" => "image/png",

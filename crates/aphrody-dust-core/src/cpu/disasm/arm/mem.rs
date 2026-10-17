@@ -21,7 +21,11 @@ pub(super) fn load_store_wb<
         "{}{cond}{}{} r{src_dst_reg}, [r{base_reg}",
         if LOAD { "ldr" } else { "str" },
         if BYTE { "b" } else { "" },
-        if ADDRESSING == WbAddressing::PostUser { "t" } else { "" },
+        if ADDRESSING == WbAddressing::PostUser {
+            "t"
+        } else {
+            ""
+        },
     );
     if !ADDRESSING.preincrement() {
         ctx.next_instr.opcode.push(']');
@@ -33,7 +37,7 @@ pub(super) fn load_store_wb<
             if offset != 0 {
                 let _ = write!(ctx.next_instr.opcode, ", #{offset_sign}{offset:#05X}");
             }
-        },
+        }
         WbOffTy::Reg(shift_ty) => {
             let off_reg = instr & 0xF;
             let _ = write!(ctx.next_instr.opcode, ", {offset_sign}r{off_reg}, ");
@@ -51,9 +55,9 @@ pub(super) fn load_store_wb<
                     } else {
                         write!(ctx.next_instr.opcode, "ror #{shift}")
                     }
-                },
+                }
             };
-        },
+        }
     }
     if ADDRESSING.preincrement() {
         ctx.next_instr.opcode.push(']');
@@ -167,7 +171,13 @@ pub(super) fn ldm_stm<
             let _ = if start == reg - 1 {
                 write!(ctx.next_instr.opcode, "{separator} r{start}")
             } else {
-                write!(ctx.next_instr.opcode, "{} r{}-r{}", separator, start, reg - 1)
+                write!(
+                    ctx.next_instr.opcode,
+                    "{} r{}-r{}",
+                    separator,
+                    start,
+                    reg - 1
+                )
             };
             range_start = None;
             separator = ",";

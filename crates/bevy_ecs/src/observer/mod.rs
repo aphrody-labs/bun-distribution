@@ -1574,11 +1574,13 @@ mod tests {
         observer.remove::<Observer>();
         let id = observer.id();
         let event_key = world.event_key::<EventA>().unwrap();
-        assert!(!world
-            .observers
-            .get_observers_mut(event_key)
-            .global_observers
-            .contains_key(&id));
+        assert!(
+            !world
+                .observers
+                .get_observers_mut(event_key)
+                .global_observers
+                .contains_key(&id)
+        );
     }
 
     #[test]
@@ -1589,11 +1591,13 @@ mod tests {
         let mut observer = world.spawn(observer);
         observer.remove::<Observer>();
         let event_key = world.event_key::<EventA>().unwrap();
-        assert!(!world
-            .observers
-            .get_observers_mut(event_key)
-            .entity_observers
-            .contains_key(&entity));
+        assert!(
+            !world
+                .observers
+                .get_observers_mut(event_key)
+                .entity_observers
+                .contains_key(&entity)
+        );
     }
 
     #[test]
@@ -1604,11 +1608,13 @@ mod tests {
         let mut observer = world.spawn(observer);
         observer.remove::<Observer>();
         let event_key = world.event_key::<EventA>().unwrap();
-        assert!(!world
-            .observers
-            .get_observers_mut(event_key)
-            .component_observers()
-            .contains_key(&a));
+        assert!(
+            !world
+                .observers
+                .get_observers_mut(event_key)
+                .component_observers()
+                .contains_key(&a)
+        );
     }
 
     #[derive(Resource)]

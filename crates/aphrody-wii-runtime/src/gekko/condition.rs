@@ -117,7 +117,11 @@ impl ConditionRegister {
     #[inline(always)]
     pub fn set_bit(&mut self, bit: u8, val: bool) {
         let mask = 1u32 << (31 - bit);
-        let raw = if val { self.raw() | mask } else { self.raw() & !mask };
+        let raw = if val {
+            self.raw() | mask
+        } else {
+            self.raw() & !mask
+        };
         *self = Self::from(raw);
     }
 

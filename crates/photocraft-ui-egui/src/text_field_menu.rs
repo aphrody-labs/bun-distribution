@@ -22,7 +22,9 @@
 //! menu instead (`canvas_tool_menu`, over a misspelled word of the text being edited, #4370).
 
 use egui::text::CCursorRange;
-use egui::{Context, Event, Id, Key, Modifiers, PointerButton, Pos2, RawInput, SurrenderFocusOn, Ui};
+use egui::{
+    Context, Event, Id, Key, Modifiers, PointerButton, Pos2, RawInput, SurrenderFocusOn, Ui,
+};
 
 /// One menu item.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -74,7 +76,8 @@ struct State {
 
 impl State {
     fn load(ctx: &Context) -> State {
-        ctx.data(|d| d.get_temp::<State>(menu_id())).unwrap_or_default()
+        ctx.data(|d| d.get_temp::<State>(menu_id()))
+            .unwrap_or_default()
     }
 
     fn store(self, ctx: &Context) {
@@ -124,7 +127,15 @@ impl egui::plugin::Plugin for TextFieldMenu {
             return;
         }
         let before = input.events.len();
-        input.events.retain(|e| !matches!(e, Event::Key { key: Key::Escape, .. }));
+        input.events.retain(|e| {
+            !matches!(
+                e,
+                Event::Key {
+                    key: Key::Escape,
+                    ..
+                }
+            )
+        });
         if input.events.len() != before {
             state.close();
             state.store(ctx);
@@ -140,8 +151,17 @@ impl egui::plugin::Plugin for TextFieldMenu {
             // other way; or a press elsewhere, which closes the menu and does what it does
             // without it. (The menu's rect is last pass's: none before it was first drawn.)
             let menu = ctx.memory(|m| m.area_rect(menu_id()));
-            let elsewhere = ctx.input(|i| i.pointer.any_pressed() && i.pointer.interact_pos().zip(menu).is_some_and(|(p, r)| !r.contains(p)));
-            if ctx.read_response(open.field).is_none() || !ctx.memory(|m| m.has_focus(open.field)) || elsewhere {
+            let elsewhere = ctx.input(|i| {
+                i.pointer.any_pressed()
+                    && i.pointer
+                        .interact_pos()
+                        .zip(menu)
+                        .is_some_and(|(p, r)| !r.contains(p))
+            });
+            if ctx.read_response(open.field).is_none()
+                || !ctx.memory(|m| m.has_focus(open.field))
+                || elsewhere
+            {
                 state.close();
                 state.restore_now(&ctx);
             }
@@ -159,11 +179,21 @@ impl egui::plugin::Plugin for TextFieldMenu {
         {
             let surrender = ctx.options(|o| o.input_options.surrender_focus_on);
             ctx.options_mut(|o| o.input_options.surrender_focus_on = SurrenderFocusOn::Never);
-            state.open = Some(Open { field, pos, has_selection, surrender });
+            state.open = Some(Open {
+                field,
+                pos,
+                has_selection,
+                surrender,
+            });
             ctx.move_to_top(egui::LayerId::new(egui::Order::Foreground, menu_id()));
             ctx.request_repaint();
         }
-        state.last = focused.and_then(|id| egui::TextEdit::load_state(&ctx, id)?.cursor.char_range().map(|r| (id, r)));
+        state.last = focused.and_then(|id| {
+            egui::TextEdit::load_state(&ctx, id)?
+                .cursor
+                .char_range()
+                .map(|r| (id, r))
+        });
         state.store(&ctx);
     }
 }
@@ -171,8 +201,17 @@ impl egui::plugin::Plugin for TextFieldMenu {
 /// A secondary press this pass inside the focused text field `field`: where, and whether the
 /// field has a selection. A press inside the selection the field had at the end of the last pass
 /// (`last`) keeps it: egui moved the caret to the pointer.
-fn secondary_press_in(ctx: &Context, field: Id, last: Option<(Id, CCursorRange)>) -> Option<(Pos2, bool)> {
-    let (pressed, origin) = ctx.input(|i| (i.pointer.button_pressed(PointerButton::Secondary), i.pointer.press_origin()));
+fn secondary_press_in(
+    ctx: &Context,
+    field: Id,
+    last: Option<(Id, CCursorRange)>,
+) -> Option<(Pos2, bool)> {
+    let (pressed, origin) = ctx.input(|i| {
+        (
+            i.pointer.button_pressed(PointerButton::Secondary),
+            i.pointer.press_origin(),
+        )
+    });
     let pos = origin.filter(|_| pressed)?;
     let mut state = egui::TextEdit::load_state(ctx, field)?;
     let response = ctx.read_response(field)?;
@@ -183,7 +222,10 @@ fn secondary_press_in(ctx: &Context, field: Id, last: Option<(Id, CCursorRange)>
     if let Some((id, before)) = last
         && id == field
         && !before.is_empty()
-        && range.is_some_and(|now| before.as_sorted_char_range().contains(&now.primary.index) || before.as_sorted_char_range().end == now.primary.index)
+        && range.is_some_and(|now| {
+            before.as_sorted_char_range().contains(&now.primary.index)
+                || before.as_sorted_char_range().end == now.primary.index
+        })
     {
         state.cursor.set_char_range(Some(before));
         state.store(ctx, field);
@@ -217,37 +259,45 @@ pub fn show(ctx: &Context) {
 fn draw(ctx: &Context, open: &Open) -> Option<Action> {
     let id = menu_id();
     let screen = ctx.content_rect();
-    let size = ctx.memory(|m| m.area_rect(id)).map_or(egui::vec2(180.0, 170.0), |r| r.size());
-    let pos = egui::pos2(open.pos.x.min(screen.right() - size.x).max(screen.left()), open.pos.y.min(screen.bottom() - size.y).max(screen.top()));
+    let size = ctx
+        .memory(|m| m.area_rect(id))
+        .map_or(egui::vec2(180.0, 170.0), |r| r.size());
+    let pos = egui::pos2(
+        open.pos.x.min(screen.right() - size.x).max(screen.left()),
+        open.pos.y.min(screen.bottom() - size.y).max(screen.top()),
+    );
     let mut chosen = None;
-    egui::Area::new(id).order(egui::Order::Foreground).fixed_pos(pos).show(ctx, |ui| {
-        egui::Frame::menu(ui.style()).show(ui, |ui| {
-            let t = crate::theme::Tokens::get(ui.ctx());
-            let v = &mut ui.style_mut().visuals;
-            v.widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
-            v.widgets.inactive.bg_stroke = egui::Stroke::NONE;
-            v.widgets.hovered.weak_bg_fill = t.accent;
-            v.widgets.hovered.bg_fill = t.accent;
-            v.widgets.hovered.bg_stroke = egui::Stroke::NONE;
-            v.widgets.hovered.fg_stroke = egui::Stroke::new(1.0, egui::Color32::WHITE);
-            v.widgets.hovered.corner_radius = egui::CornerRadius::same(3);
-            ui.spacing_mut().item_spacing.y = 0.0;
-            ui.set_width(170.0);
-            for row in ROWS {
-                let Some((label, keys, action)) = *row else {
-                    ui.separator();
-                    continue;
-                };
-                let mut item = egui::Button::new(tl!(label)).min_size(egui::vec2(170.0, 20.0));
-                if !keys.is_empty() {
-                    item = item.shortcut_text(crate::shortcuts::pretty(keys));
+    egui::Area::new(id)
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos)
+        .show(ctx, |ui| {
+            egui::Frame::menu(ui.style()).show(ui, |ui| {
+                let t = crate::theme::Tokens::get(ui.ctx());
+                let v = &mut ui.style_mut().visuals;
+                v.widgets.inactive.weak_bg_fill = egui::Color32::TRANSPARENT;
+                v.widgets.inactive.bg_stroke = egui::Stroke::NONE;
+                v.widgets.hovered.weak_bg_fill = t.accent;
+                v.widgets.hovered.bg_fill = t.accent;
+                v.widgets.hovered.bg_stroke = egui::Stroke::NONE;
+                v.widgets.hovered.fg_stroke = egui::Stroke::new(1.0, egui::Color32::WHITE);
+                v.widgets.hovered.corner_radius = egui::CornerRadius::same(3);
+                ui.spacing_mut().item_spacing.y = 0.0;
+                ui.set_width(170.0);
+                for row in ROWS {
+                    let Some((label, keys, action)) = *row else {
+                        ui.separator();
+                        continue;
+                    };
+                    let mut item = egui::Button::new(tl!(label)).min_size(egui::vec2(170.0, 20.0));
+                    if !keys.is_empty() {
+                        item = item.shortcut_text(crate::shortcuts::pretty(keys));
+                    }
+                    if ui.add_enabled(enabled(open, action), item).clicked() {
+                        chosen = Some(action);
+                    }
                 }
-                if ui.add_enabled(enabled(open, action), item).clicked() {
-                    chosen = Some(action);
-                }
-            }
+            });
         });
-    });
     chosen
 }
 
@@ -255,7 +305,13 @@ fn draw(ctx: &Context, open: &Open) -> Option<Action> {
 /// keyboard, which it handles later in this pass.
 fn apply(ctx: &Context, field: Id, action: Action) {
     ctx.memory_mut(|m| m.request_focus(field));
-    let key = |key, modifiers| Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+    let key = |key, modifiers| Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers,
+    };
     let event = match action {
         Action::Undo => key(Key::Z, Modifiers::COMMAND),
         Action::Cut => Event::Cut,
@@ -286,12 +342,21 @@ mod tests {
     /// Rectangular Marquee, whose canvas has a context menu of its own.
     fn renaming() -> (Harness<'static, PhotocraftApp>, Id) {
         let mut s = photocraft_engine::Session::new();
-        s.execute("file.new", json!({"width": 64, "height": 48})).unwrap();
-        let layer = s.execute("layer.new.layer", json!({"name": "Alpha"})).unwrap()["layer"].as_u64().unwrap();
-        let mut h = Harness::builder().with_size(vec2(1440.0, 900.0)).with_step_dt(1.0 / 60.0).with_max_steps(64).build_eframe(move |cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            PhotocraftApp::new(s, crate::Services::default())
-        });
+        s.execute("file.new", json!({"width": 64, "height": 48}))
+            .unwrap();
+        let layer = s
+            .execute("layer.new.layer", json!({"name": "Alpha"}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let mut h = Harness::builder()
+            .with_size(vec2(1440.0, 900.0))
+            .with_step_dt(1.0 / 60.0)
+            .with_max_steps(64)
+            .build_eframe(move |cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                PhotocraftApp::new(s, crate::Services::default())
+            });
         h.state_mut().ui.tool = crate::state::Tool::RectMarquee;
         h.run_steps(8);
         let ctx = h.ctx.clone();
@@ -304,16 +369,30 @@ mod tests {
         h.hover_at(at);
         h.step();
         for pressed in [true, false] {
-            h.event(Event::PointerButton { pos: at, button, pressed, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: at,
+                button,
+                pressed,
+                modifiers: Modifiers::NONE,
+            });
             h.step();
         }
     }
 
     /// Right-click in the middle of `field`; the menu opens on it.
     fn right_click(h: &mut Harness<'_, PhotocraftApp>, field: Id) {
-        let at = h.ctx.read_response(field).expect("field drawn").rect.center();
+        let at = h
+            .ctx
+            .read_response(field)
+            .expect("field drawn")
+            .rect
+            .center();
         button(h, at, PointerButton::Secondary);
-        assert_eq!(open_on(&h.ctx), Some(field), "a right-click in a text field opens its edit menu");
+        assert_eq!(
+            open_on(&h.ctx),
+            Some(field),
+            "a right-click in a text field opens its edit menu"
+        );
         // A new area is measured in an invisible first pass; it is placed in the next one.
         h.step();
     }
@@ -321,7 +400,9 @@ mod tests {
     /// Where the open menu's `label` item is.
     fn item(h: &Harness<'_, PhotocraftApp>, label: &str) -> Option<Pos2> {
         let menu = h.ctx.memory(|m| m.area_rect(super::menu_id()))?;
-        h.query_all_by_label_contains(label).map(|n| n.rect().center()).find(|p| menu.contains(*p))
+        h.query_all_by_label_contains(label)
+            .map(|n| n.rect().center())
+            .find(|p| menu.contains(*p))
     }
 
     /// Choose `label` in the open menu; returns the text the pass that ran it copied, if any.
@@ -329,14 +410,29 @@ mod tests {
         let at = item(h, label).expect("item in the menu");
         h.hover_at(at);
         h.step();
-        h.event(Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
-        h.step();
-        h.event(Event::PointerButton { pos: at, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
-        h.step();
-        let copied = h.output().platform_output.commands.iter().find_map(|c| match c {
-            OutputCommand::CopyText(t) => Some(t.clone()),
-            _ => None,
+        h.event(Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
         });
+        h.step();
+        h.event(Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
+        h.step();
+        let copied = h
+            .output()
+            .platform_output
+            .commands
+            .iter()
+            .find_map(|c| match c {
+                OutputCommand::CopyText(t) => Some(t.clone()),
+                _ => None,
+            });
         h.run_steps(2);
         copied
     }
@@ -349,17 +445,32 @@ mod tests {
     fn right_click_in_a_text_field_opens_its_edit_menu_not_the_canvas_menu() {
         let (mut h, field) = renaming();
         right_click(&mut h, field);
-        assert!(h.state().ui.canvas_tool_menu.is_none() && h.state().ui.brush_picker.is_none(), "the canvas and tool menus stay shut");
-        assert!(!egui::Popup::is_any_open(&h.ctx), "and so does the layer row's menu under the field");
+        assert!(
+            h.state().ui.canvas_tool_menu.is_none() && h.state().ui.brush_picker.is_none(),
+            "the canvas and tool menus stay shut"
+        );
+        assert!(
+            !egui::Popup::is_any_open(&h.ctx),
+            "and so does the layer row's menu under the field"
+        );
         for label in ["Undo", "Cut", "Copy", "Paste", "Delete", "Select All"] {
             assert!(item(&h, label).is_some(), "{label} is in the menu");
         }
         // Esc closes the menu only: the rename stays open with its text.
-        h.event(Event::Key { key: Key::Escape, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE });
+        h.event(Event::Key {
+            key: Key::Escape,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: Modifiers::NONE,
+        });
         h.run_steps(2);
         assert_eq!(open_on(&h.ctx), None);
         assert_eq!(text(&h), "Alpha");
-        assert!(h.ctx.memory(|m| m.has_focus(field)), "the field keeps its focus");
+        assert!(
+            h.ctx.memory(|m| m.has_focus(field)),
+            "the field keeps its focus"
+        );
     }
 
     #[test]
@@ -373,8 +484,15 @@ mod tests {
         assert_eq!(open_on(&h.ctx), None, "choosing closes the menu");
         // A right-click inside the selection keeps it, so Cut takes the whole name.
         right_click(&mut h, field);
-        assert_eq!(choose(&mut h, "Cut").as_deref(), Some("Alpha"), "Cut copies the selected text");
+        assert_eq!(
+            choose(&mut h, "Cut").as_deref(),
+            Some("Alpha"),
+            "Cut copies the selected text"
+        );
         assert_eq!(text(&h), "", "and removes it from the field");
-        assert!(h.ctx.memory(|m| m.has_focus(field)), "the rename is still being typed");
+        assert!(
+            h.ctx.memory(|m| m.has_focus(field)),
+            "the rename is still being typed"
+        );
     }
 }

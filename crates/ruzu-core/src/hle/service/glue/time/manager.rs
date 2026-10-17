@@ -312,21 +312,20 @@ fn get_time_zone_string(
 
     let mut configured_name = [0u8; 0x24];
     let configured_bytes = configured_zone.as_bytes();
-    let copy_len = configured_bytes
-        .len()
-        .min(configured_name.len());
+    let copy_len = configured_bytes.len().min(configured_name.len());
     configured_name[..copy_len].copy_from_slice(&configured_bytes[..copy_len]);
 
     if !time_zone_binary.is_valid(&configured_name) {
         let fallback_zone = common::time_zone::find_system_time_zone();
         configured_name = [0u8; 0x24];
         let fallback_bytes = fallback_zone.as_bytes();
-        let copy_len = fallback_bytes
-            .len()
-            .min(configured_name.len());
+        let copy_len = fallback_bytes.len().min(configured_name.len());
         configured_name[..copy_len].copy_from_slice(&fallback_bytes[..copy_len]);
     }
-    assert!(time_zone_binary.is_valid(&configured_name), "Invalid time zone");
+    assert!(
+        time_zone_binary.is_valid(&configured_name),
+        "Invalid time zone"
+    );
     configured_name
 }
 

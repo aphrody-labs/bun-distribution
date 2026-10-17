@@ -40,5 +40,8 @@ fn golden_dump_reel() {
     let es = parse_add_content_equip_config(&root);
     assert_eq!(es.len(), 22, "22 équipements AOC");
     assert_eq!(es[0].equip_id, HashId::parse("0xC5A27A3C").unwrap());
-    assert!(es.iter().all(|e| !e.equip_id.is_zero() && !e.aoc_condition.is_empty()));
+    assert!(
+        es.iter()
+            .all(|e| !e.equip_id.is_zero() && !e.aoc_condition.is_empty())
+    );
 }

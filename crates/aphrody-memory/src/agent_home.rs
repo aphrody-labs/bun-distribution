@@ -24,7 +24,9 @@ pub async fn ingest_agent_home(
     for doc in &snapshot.documents {
         let key = format!("agent-home/{}", doc.filename);
         let previous = backend.get(&key).await?;
-        if previous.as_ref().and_then(|record| record.metadata.get("blake3"))
+        if previous
+            .as_ref()
+            .and_then(|record| record.metadata.get("blake3"))
             == Some(&serde_json::Value::String(doc.hash.clone()))
         {
             continue;
@@ -35,13 +37,22 @@ pub async fn ingest_agent_home(
         record.content.clone_from(&doc.content);
         record.embedding = None; // A changed directive invalidates its former vector.
         record.updated_at = chrono::Utc::now();
-        record.metadata.insert("filename".into(), serde_json::Value::String(doc.filename.clone()));
-        record.metadata.insert("blake3".into(), serde_json::Value::String(doc.hash.clone()));
+        record.metadata.insert(
+            "filename".into(),
+            serde_json::Value::String(doc.filename.clone()),
+        );
         record
             .metadata
-            .insert("revision".into(), serde_json::Value::String(snapshot.revision.clone()));
+            .insert("blake3".into(), serde_json::Value::String(doc.hash.clone()));
+        record.metadata.insert(
+            "revision".into(),
+            serde_json::Value::String(snapshot.revision.clone()),
+        );
         backend.put(&key, record).await?;
         changed += 1;
     }
-    Ok(IngestReport { revision: snapshot.revision.clone(), changed })
+    Ok(IngestReport {
+        revision: snapshot.revision.clone(),
+        changed,
+    })
 }

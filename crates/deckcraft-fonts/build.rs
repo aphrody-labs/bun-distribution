@@ -8,7 +8,13 @@ use std::fmt::Write as _;
 use std::path::PathBuf;
 
 /// Families DeckCraft never embeds (AGENTS.md §1: no Adobe-authored visual design).
-const EXCLUDED_FAMILIES: &[&str] = &["Source Sans 3", "Source Serif 4", "Source Han Sans", "Source Han Serif", "Noto Sans CJK SC"];
+const EXCLUDED_FAMILIES: &[&str] = &[
+    "Source Sans 3",
+    "Source Serif 4",
+    "Source Han Sans",
+    "Source Han Serif",
+    "Noto Sans CJK SC",
+];
 
 fn main() {
     println!("cargo::rerun-if-env-changed=CRAFT_FONTS_DIR");
@@ -20,7 +26,10 @@ fn main() {
             Err(e) if std::env::var_os("CRAFT_FONTS_REQUIRED").is_some() => {
                 println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!(
+                "cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}",
+                dir.display()
+            ),
         }
     }
     src.push_str("];\n");
@@ -45,10 +54,15 @@ fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
 
 fn manifest(dir: &std::path::Path, manifest: &std::path::Path) -> Result<String, String> {
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let text = std::fs::read_to_string(manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
+    let text =
+        std::fs::read_to_string(manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
     let mut out = String::new();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
@@ -57,12 +71,23 @@ fn manifest(dir: &std::path::Path, manifest: &std::path::Path) -> Result<String,
         if EXCLUDED_FAMILIES.contains(family) {
             continue;
         }
-        if wasm && !matches!((*family, *style), ("BIZ UDPGothic", "Regular") | ("Inter", "Regular" | "Bold" | "Variable")) {
+        if wasm
+            && !matches!(
+                (*family, *style),
+                ("BIZ UDPGothic", "Regular") | ("Inter", "Regular" | "Bold" | "Variable")
+            )
+        {
             continue;
         }
-        let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
+        let path = dir
+            .join(file)
+            .canonicalize()
+            .map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
-        let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
+        let scripts: Vec<String> = scripts
+            .split(',')
+            .map(|s| format!("{:?}", s.trim()))
+            .collect();
         let _ = writeln!(
             out,
             "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",

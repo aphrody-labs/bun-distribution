@@ -20,7 +20,12 @@ struct TimedAccel {
 
 impl TimedAccel {
     fn new(ms: u64, handle: bool) -> TimedAccel {
-        TimedAccel { delay: std::time::Duration::from_millis(ms), handle, calls: Default::default(), pick: Default::default() }
+        TimedAccel {
+            delay: std::time::Duration::from_millis(ms),
+            handle,
+            calls: Default::default(),
+            pick: Default::default(),
+        }
     }
     fn calls(&self) -> usize {
         self.calls.load(Ordering::SeqCst)
@@ -44,7 +49,12 @@ impl Accelerator for TimedAccel {
     fn supports_effect(&self, _id: &str) -> bool {
         false
     }
-    fn effects(&self, _chain: &[crate::FxStep], _buf: &crate::Buf, _levels: Option<f32>) -> Option<crate::Buf> {
+    fn effects(
+        &self,
+        _chain: &[crate::FxStep],
+        _buf: &crate::Buf,
+        _levels: Option<f32>,
+    ) -> Option<crate::Buf> {
         None
     }
     fn auto_pick(&self) -> Option<&AutoPick> {
@@ -56,8 +66,25 @@ fn project() -> (Project, ItemId) {
     let mut p = Project::default();
     p.settings.gpu_acceleration = true;
     let mut comp = Comp::new(200, 100, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let sid = p.add_item("Solid", Label::Red, None, ItemKind::Solid(Solid { color: [1.0, 0.0, 0.0], width: 50, height: 50, pixel_aspect: 1.0 }));
-    let l = build::layer(&mut p, &comp, "Solid", LayerSource::Solid { item: sid }, (50, 50), None);
+    let sid = p.add_item(
+        "Solid",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [1.0, 0.0, 0.0],
+            width: 50,
+            height: 50,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let l = build::layer(
+        &mut p,
+        &comp,
+        "Solid",
+        LayerSource::Solid { item: sid },
+        (50, 50),
+        None,
+    );
     comp.layers.push(l);
     let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.into()));
     (p, cid)
@@ -67,7 +94,14 @@ fn project() -> (Project, ItemId) {
 fn frames(p: &Project, cid: ItemId, a: &TimedAccel, backend: Backend, n: usize) -> usize {
     let before = a.calls();
     for _ in 0..n {
-        let mut r = Renderer::new(p, &NoFootage, RenderOpts { backend, ..Default::default() });
+        let mut r = Renderer::new(
+            p,
+            &NoFootage,
+            RenderOpts {
+                backend,
+                ..Default::default()
+            },
+        );
         r.accel = Some(a);
         let img = r.comp_frame(cid, Tick::ZERO);
         // Whichever compositor ran, the frame is the same.
@@ -90,7 +124,10 @@ fn auto_backend_moves_light_comps_to_the_cpu() {
     let slow = TimedAccel::new((cpu_ms * 5).max(20), true);
     let n = 6 + 2 * AutoPick::REPROBE as usize;
     let asked = frames(&p, cid, &slow, Backend::Auto, n);
-    assert!((3..=5).contains(&asked), "asked the slow accelerator {asked} times in {n} frames");
+    assert!(
+        (3..=5).contains(&asked),
+        "asked the slow accelerator {asked} times in {n} frames"
+    );
     let s = slow.pick.stats(AutoKey::new(cid, 1.0, false)).unwrap();
     assert!(s.gpu_ms.unwrap() > s.cpu_ms.unwrap(), "{s:?}");
     // Backend::Gpu ignores the history; Software Only never asks.
@@ -117,7 +154,10 @@ fn auto_backend_falls_back_when_the_accelerator_declines() {
     let n = 2 * AutoPick::REPROBE as usize;
     let asked = frames(&p, cid, &declining, Backend::Auto, n);
     // Asked first, then only on the periodic re-probes.
-    assert!((1..=4).contains(&asked), "asked {asked} times in {n} frames");
+    assert!(
+        (1..=4).contains(&asked),
+        "asked {asked} times in {n} frames"
+    );
 }
 
 #[test]

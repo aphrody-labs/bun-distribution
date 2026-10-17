@@ -17,7 +17,10 @@ pub fn logic(app: &mut LightcraftApp) {
     if app.gpu_notice && app.gpu_applied == Some(true) && gpu::ready() {
         app.gpu_notice = false;
         if !gpu::available() {
-            app.notices.extend(gpu_notice(gpu::unavailable_reason().as_deref(), app.ui.settings.gpu));
+            app.notices.extend(gpu_notice(
+                gpu::unavailable_reason().as_deref(),
+                app.ui.settings.gpu,
+            ));
         }
     }
 }
@@ -50,11 +53,22 @@ pub fn may_close(app: &mut LightcraftApp) -> bool {
     // before the library is touched: a Cancel here keeps working with it
     let running = app.session.activity.running_cancellable();
     if !running.is_empty() {
-        let names = running.iter().map(|t| crate::i18n::tr(&t.label)).collect::<Vec<_>>().join(", ");
+        let names = running
+            .iter()
+            .map(|t| crate::i18n::tr(&t.label))
+            .collect::<Vec<_>>()
+            .join(", ");
         app.quit_prompt = Some(QuitPrompt::Tasks(if running.len() == 1 {
-            crate::i18n::tr_format!("1 task is still running: {names}. Quitting stops it.", names = names)
+            crate::i18n::tr_format!(
+                "1 task is still running: {names}. Quitting stops it.",
+                names = names
+            )
         } else {
-            crate::i18n::tr_format!("{n} tasks are still running: {names}. Quitting stops them.", n = running.len(), names = names)
+            crate::i18n::tr_format!(
+                "{n} tasks are still running: {names}. Quitting stops them.",
+                n = running.len(),
+                names = names
+            )
         }));
         return false;
     }
@@ -89,15 +103,26 @@ enum Choice {
     Ok,
 }
 
-fn window(ctx: &egui::Context, id: &str, title: &str, text: &str, buttons: &[(&str, &str, Choice)]) -> Option<usize> {
+fn window(
+    ctx: &egui::Context,
+    id: &str,
+    title: &str,
+    text: &str,
+    buttons: &[(&str, &str, Choice)],
+) -> Option<usize> {
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
-    egui::Area::new(egui::Id::new((id, "dim"))).order(egui::Order::Middle).fixed_pos(screen.min).show(ctx, |ui| {
-        ui.allocate_rect(screen, egui::Sense::click_and_drag());
-        ui.painter().rect_filled(screen, 0.0, egui::Color32::from_black_alpha(140));
-    });
+    egui::Area::new(egui::Id::new((id, "dim")))
+        .order(egui::Order::Middle)
+        .fixed_pos(screen.min)
+        .show(ctx, |ui| {
+            ui.allocate_rect(screen, egui::Sense::click_and_drag());
+            ui.painter()
+                .rect_filled(screen, 0.0, egui::Color32::from_black_alpha(140));
+        });
     let mut chosen = None;
-    let frame = egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(18, 14));
+    let frame =
+        egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(18, 14));
     egui::Window::new(crate::i18n::tr(title))
         .id(egui::Id::new(id))
         .order(egui::Order::Foreground)
@@ -114,7 +139,8 @@ fn window(ctx: &egui::Context, id: &str, title: &str, text: &str, buttons: &[(&s
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 for (i, (bid, label, _)) in buttons.iter().enumerate() {
-                    let r = ui.add(egui::Button::new(crate::i18n::tr(label)).min_size(vec2(0.0, 26.0)));
+                    let r =
+                        ui.add(egui::Button::new(crate::i18n::tr(label)).min_size(vec2(0.0, 26.0)));
                     register(ui.ctx(), format!("button:{bid}"), r.rect);
                     if r.clicked() {
                         chosen = Some(i);
@@ -127,8 +153,19 @@ fn window(ctx: &egui::Context, id: &str, title: &str, text: &str, buttons: &[(&s
 
 pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
     if let Some(QuitPrompt::Tasks(text)) = app.quit_prompt.clone() {
-        let buttons = [("quitAnyway", "Quit Anyway", Choice::QuitAnyway), ("quitCancel", "Cancel", Choice::Cancel)];
-        let Some(i) = window(ctx, "quit-tasks", "Quit while tasks are running?", &text, &buttons) else { return };
+        let buttons = [
+            ("quitAnyway", "Quit Anyway", Choice::QuitAnyway),
+            ("quitCancel", "Cancel", Choice::Cancel),
+        ];
+        let Some(i) = window(
+            ctx,
+            "quit-tasks",
+            "Quit while tasks are running?",
+            &text,
+            &buttons,
+        ) else {
+            return;
+        };
         app.quit_prompt = None;
         if matches!(buttons[i].2, Choice::QuitAnyway) {
             app.session.activity.cancel_all();
@@ -145,7 +182,15 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
             ("quitAnyway", "Quit Anyway", Choice::QuitAnyway),
             ("quitCancel", "Cancel", Choice::Cancel),
         ];
-        let Some(i) = window(ctx, "quit-unsaved", "Quit with unsaved changes?", &text, &buttons) else { return };
+        let Some(i) = window(
+            ctx,
+            "quit-unsaved",
+            "Quit with unsaved changes?",
+            &text,
+            &buttons,
+        ) else {
+            return;
+        };
         match buttons[i].2 {
             Choice::Retry => {
                 app.quit_prompt = None;
@@ -164,7 +209,15 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
     }
     if let Some(text) = app.notices.first().cloned() {
         let buttons = [("noticeOk", "OK", Choice::Ok)];
-        if window(ctx, "settings-notice", "Settings file problem", &text, &buttons).is_some() {
+        if window(
+            ctx,
+            "settings-notice",
+            "Settings file problem",
+            &text,
+            &buttons,
+        )
+        .is_some()
+        {
             app.notices.remove(0);
         }
     }
@@ -176,10 +229,18 @@ mod tests {
 
     #[test]
     fn the_gpu_notice_is_only_for_a_missing_adapter() {
-        let none = "no GPU adapter among Backends(VULKAN | GL) (No suitable graphics adapter found)";
+        let none =
+            "no GPU adapter among Backends(VULKAN | GL) (No suitable graphics adapter found)";
         let text = gpu_notice(Some(none), true).expect("no adapter: say so");
-        assert!(text.starts_with("No graphics processor found") && text.contains("System Info"), "{text}");
-        assert_eq!(text.contains("nix develop"), cfg!(target_os = "linux"), "{text}");
+        assert!(
+            text.starts_with("No graphics processor found") && text.contains("System Info"),
+            "{text}"
+        );
+        assert_eq!(
+            text.contains("nix develop"),
+            cfg!(target_os = "linux"),
+            "{text}"
+        );
         assert_eq!(gpu_notice(Some(none), false), None, "the preference is off");
         for reason in [
             "disabled by LIGHTCRAFT_GPU=0",

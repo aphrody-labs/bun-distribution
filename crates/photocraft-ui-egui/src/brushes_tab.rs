@@ -17,7 +17,10 @@ use egui::{Color32, RichText, Sense, Stroke, pos2, vec2};
 use photocraft_engine::paint::{BrushPreset, MAX_BRUSH_SIZE};
 use serde_json::json;
 
-use crate::brush_panel::{BrushesPanelState, BrushesView, Renaming, UNGROUPED, WIDTH, commit_gesture, full_uv, grouped_presets, run_or_status};
+use crate::brush_panel::{
+    BrushesPanelState, BrushesView, Renaming, UNGROUPED, WIDTH, commit_gesture, full_uv,
+    grouped_presets, run_or_status,
+};
 use crate::brush_preview;
 use crate::theme::{self, Tokens};
 use crate::{PhotocraftApp, icons, widgets};
@@ -96,12 +99,22 @@ pub struct ListLayout {
 }
 
 /// The Brushes tab's list.
-pub const PANEL_LIST: ListLayout = ListLayout { id: "brush-presets", max_height: 400.0, cell: 52.0, indent: 20.0, cards: false };
+pub const PANEL_LIST: ListLayout = ListLayout {
+    id: "brush-presets",
+    max_height: 400.0,
+    cell: 52.0,
+    indent: 20.0,
+    cards: false,
+};
 
 /// The group key (`BrushPreset::group`) behind a panel label: ungrouped presets show as
 /// [`UNGROUPED`].
 pub fn group_key(presets: &[BrushPreset], label: &str) -> String {
-    if label == UNGROUPED && !presets.iter().any(|p| p.group == UNGROUPED) { String::new() } else { label.to_string() }
+    if label == UNGROUPED && !presets.iter().any(|p| p.group == UNGROUPED) {
+        String::new()
+    } else {
+        label.to_string()
+    }
 }
 
 /// Deepest nested folder the panel draws; deeper folders show at this depth.
@@ -110,7 +123,11 @@ pub const MAX_VIEW_DEPTH: usize = photocraft_engine::brush_preset_cmds::MAX_FOLD
 /// The collapse key of a nested folder of the group shown as `label` (`label` itself for the
 /// group).
 pub fn folder_view_key(label: &str, folder: &[String]) -> String {
-    if folder.is_empty() { label.to_string() } else { format!("{label}/{}", folder.join("/")) }
+    if folder.is_empty() {
+        label.to_string()
+    } else {
+        format!("{label}/{}", folder.join("/"))
+    }
 }
 
 /// A group's content in panel order: its presets and nested folders.
@@ -133,7 +150,20 @@ pub struct FolderNode<'a> {
 /// The tree of a group's presets (`items`, in library order): each folder appears where its first
 /// preset is, presets keep their order. Paths deeper than [`MAX_VIEW_DEPTH`] are cut there.
 pub fn folder_tree<'a>(items: &[&'a BrushPreset]) -> Vec<Node<'a>> {
-    level(items.iter().map(|p| (p.folder.get(..p.folder.len().min(MAX_VIEW_DEPTH)).unwrap_or_default(), *p)).collect(), &[])
+    level(
+        items
+            .iter()
+            .map(|p| {
+                (
+                    p.folder
+                        .get(..p.folder.len().min(MAX_VIEW_DEPTH))
+                        .unwrap_or_default(),
+                    *p,
+                )
+            })
+            .collect(),
+        &[],
+    )
 }
 
 /// A preset with its folder path below the level being built.
@@ -164,17 +194,26 @@ fn level<'a>(items: Vec<Entry<'a>>, prefix: &[String]) -> Vec<Node<'a>> {
             },
         }
     }
-    let mut folders: Vec<Option<(&String, Vec<Entry<'a>>)>> = folders.into_iter().map(Some).collect();
+    let mut folders: Vec<Option<(&String, Vec<Entry<'a>>)>> =
+        folders.into_iter().map(Some).collect();
     slots
         .into_iter()
         .filter_map(|s| match s {
             Slot::Preset(i) => items.get(i).map(|(_, p)| Node::Preset(p)),
             Slot::Folder(k) => {
                 let (name, sub) = folders.get_mut(k)?.take()?;
-                let path: Vec<String> = prefix.iter().cloned().chain(std::iter::once(name.clone())).collect();
+                let path: Vec<String> = prefix
+                    .iter()
+                    .cloned()
+                    .chain(std::iter::once(name.clone()))
+                    .collect();
                 let count = sub.len();
                 let children = level(sub, &path);
-                Some(Node::Folder(FolderNode { path, children, count }))
+                Some(Node::Folder(FolderNode {
+                    path,
+                    children,
+                    count,
+                }))
             }
         })
         .collect()
@@ -183,9 +222,18 @@ fn level<'a>(items: Vec<Entry<'a>>, prefix: &[String]) -> Vec<Node<'a>> {
 /// Where a preset dropped onto `target` lands: (group, folder, index in that group after the
 /// dragged preset is taken out). `after` = dropped on the target's lower (list) or right (grid)
 /// half.
-pub fn drop_target(presets: &[BrushPreset], dragged: &str, target: &str, after: bool) -> Option<(String, Vec<String>, usize)> {
+pub fn drop_target(
+    presets: &[BrushPreset],
+    dragged: &str,
+    target: &str,
+    after: bool,
+) -> Option<(String, Vec<String>, usize)> {
     let t = presets.iter().find(|p| p.name == target)?;
-    let members: Vec<&str> = presets.iter().filter(|p| p.group == t.group).map(|p| p.name.as_str()).collect();
+    let members: Vec<&str> = presets
+        .iter()
+        .filter(|p| p.group == t.group)
+        .map(|p| p.name.as_str())
+        .collect();
     let tp = members.iter().position(|n| *n == target)?;
     let mut idx = tp + usize::from(after);
     if let Some(dp) = members.iter().position(|n| *n == dragged)
@@ -229,7 +277,12 @@ pub fn apply(app: &mut PhotocraftApp, acts: Vec<Action>) {
                 }
             }
             Action::ToggleGroup(_) | Action::BeginRename(_) => {}
-            Action::Move { name, group, folder, index } => {
+            Action::Move {
+                name,
+                group,
+                folder,
+                index,
+            } => {
                 let mut p = json!({ "name": name, "group": group });
                 if let Some(f) = folder {
                     p["folder"] = json!(f);
@@ -239,14 +292,23 @@ pub fn apply(app: &mut PhotocraftApp, acts: Vec<Action>) {
                 }
                 run_or_status(app, "brush.presets.move", p);
             }
-            Action::MoveGroup { group, folder, before } => {
+            Action::MoveGroup {
+                group,
+                folder,
+                before,
+            } => {
                 let mut p = json!({ "group": group, "before": before });
                 if !folder.is_empty() {
                     p["folder"] = json!(folder);
                 }
                 run_or_status(app, "brush.presets.moveGroup", p);
             }
-            Action::MoveInto { group, folder, into, before } => {
+            Action::MoveInto {
+                group,
+                folder,
+                into,
+                before,
+            } => {
                 let into = match into {
                     Some((g, f)) => json!({ "group": g, "folder": f }),
                     None => json!({}),
@@ -271,11 +333,17 @@ pub fn apply(app: &mut PhotocraftApp, acts: Vec<Action>) {
                         }
                         run_or_status(app, "brush.presets.renameGroup", p);
                     } else {
-                        run_or_status(app, "brush.presets.rename", json!({ "name": r.name, "newName": text }));
+                        run_or_status(
+                            app,
+                            "brush.presets.rename",
+                            json!({ "name": r.name, "newName": text }),
+                        );
                     }
                 }
             }
-            Action::Delete(name) => run_or_status(app, "brush.presets.delete", json!({ "name": name })),
+            Action::Delete(name) => {
+                run_or_status(app, "brush.presets.delete", json!({ "name": name }))
+            }
             Action::DeleteGroup { group, folder } => {
                 let mut p = json!({ "group": group });
                 if !folder.is_empty() {
@@ -289,11 +357,25 @@ pub fn apply(app: &mut PhotocraftApp, acts: Vec<Action>) {
 
 /// Is the pointer on the second half of `r` (lower in a list, right in a grid)?
 fn second_half(ui: &egui::Ui, r: egui::Rect, grid: bool) -> bool {
-    ui.ctx().pointer_interact_pos().is_some_and(|p| if grid { p.x > r.center().x } else { p.y > r.center().y })
+    ui.ctx().pointer_interact_pos().is_some_and(|p| {
+        if grid {
+            p.x > r.center().x
+        } else {
+            p.y > r.center().y
+        }
+    })
 }
 
 /// Drag, drop and context menu of one preset cell or row.
-fn preset_interactions(ui: &egui::Ui, resp: &egui::Response, r: egui::Rect, p: &BrushPreset, presets: &[BrushPreset], grid: bool, acts: &mut Vec<Action>) {
+fn preset_interactions(
+    ui: &egui::Ui,
+    resp: &egui::Response,
+    r: egui::Rect,
+    p: &BrushPreset,
+    presets: &[BrushPreset],
+    grid: bool,
+    acts: &mut Vec<Action>,
+) {
     let t = Tokens::get(ui.ctx());
     resp.dnd_set_drag_payload(BrushDrag::Preset(p.name.clone()));
     if let Some(d) = resp.dnd_hover_payload::<BrushDrag>()
@@ -304,9 +386,15 @@ fn preset_interactions(ui: &egui::Ui, resp: &egui::Response, r: egui::Rect, p: &
     if let Some(d) = resp.dnd_release_payload::<BrushDrag>()
         && let BrushDrag::Preset(n) = &*d
         && *n != p.name
-        && let Some((group, folder, index)) = drop_target(presets, n, &p.name, second_half(ui, r, grid))
+        && let Some((group, folder, index)) =
+            drop_target(presets, n, &p.name, second_half(ui, r, grid))
     {
-        acts.push(Action::Move { name: n.clone(), group, folder: Some(folder), index: Some(index) });
+        acts.push(Action::Move {
+            name: n.clone(),
+            group,
+            folder: Some(folder),
+            index: Some(index),
+        });
     }
     if resp.double_clicked() {
         acts.push(Action::Choose(p.name.clone()));
@@ -315,7 +403,12 @@ fn preset_interactions(ui: &egui::Ui, resp: &egui::Response, r: egui::Rect, p: &
     }
     resp.context_menu(|ui| {
         if ui.button(tl!("Rename Brush…")).clicked() {
-            acts.push(Action::BeginRename(Renaming { group: false, name: p.name.clone(), folder: Vec::new(), text: String::new() }));
+            acts.push(Action::BeginRename(Renaming {
+                group: false,
+                name: p.name.clone(),
+                folder: Vec::new(),
+                text: String::new(),
+            }));
             ui.close();
         }
         if ui.button(tl!("Delete Brush")).clicked() {
@@ -328,12 +421,25 @@ fn preset_interactions(ui: &egui::Ui, resp: &egui::Response, r: egui::Rect, p: &
 /// Width a list row keeps for the gaps around its stroke preview and the preset name.
 const STROKE_NAME_ROOM: f32 = 140.0;
 
-fn list_row(ui: &mut egui::Ui, p: &BrushPreset, current: bool, presets: &[BrushPreset], indent: f32, acts: &mut Vec<Action>) {
+fn list_row(
+    ui: &mut egui::Ui,
+    p: &BrushPreset,
+    current: bool,
+    presets: &[BrushPreset],
+    indent: f32,
+    acts: &mut Vec<Action>,
+) {
     let t = Tokens::get(ui.ctx());
-    let (full, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::click_and_drag());
+    let (full, resp) =
+        ui.allocate_exact_size(vec2(ui.available_width(), 44.0), Sense::click_and_drag());
     // Rows inside nested folders are indented; the whole width stays the drop target.
-    let r = egui::Rect::from_min_max(full.min + vec2(indent.min(full.width() / 2.0), 0.0), full.max);
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name));
+    let r = egui::Rect::from_min_max(
+        full.min + vec2(indent.min(full.width() / 2.0), 0.0),
+        full.max,
+    );
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name)
+    });
     if !ui.is_rect_visible(r) {
         return;
     }
@@ -343,9 +449,19 @@ fn list_row(ui: &mut egui::Ui, p: &BrushPreset, current: bool, presets: &[BrushP
         ui.painter().rect_filled(r, t.radius_sm, t.hover);
     }
     let pb = &p.brush;
-    let tip = brush_preview::tip_texture(ui.ctx(), &format!("brushes-tip:{}", p.name), &pb.tip, (pb.hardness, pb.angle, pb.roundness), 36, t.text);
+    let tip = brush_preview::tip_texture(
+        ui.ctx(),
+        &format!("brushes-tip:{}", p.name),
+        &pb.tip,
+        (pb.hardness, pb.angle, pb.roundness),
+        36,
+        t.text,
+    );
     let cell = egui::Rect::from_min_size(r.left_top() + vec2(22.0, 2.0), vec2(36.0, 30.0));
-    let tr = egui::Rect::from_center_size(cell.center(), vec2(30.0, 30.0) * crate::brush_sections::thumb_scale(pb.size));
+    let tr = egui::Rect::from_center_size(
+        cell.center(),
+        vec2(30.0, 30.0) * crate::brush_sections::thumb_scale(pb.size),
+    );
     ui.painter().image(tip.id(), tr, full_uv(), Color32::WHITE);
     ui.painter().text(
         pos2(cell.center().x, r.bottom() - 1.0),
@@ -356,11 +472,29 @@ fn list_row(ui: &mut egui::Ui, p: &BrushPreset, current: bool, presets: &[BrushP
     );
     // The stroke preview gives up width so a narrow list (the picker) still shows the name; its
     // texture slot carries the width, so lists of different widths don't re-render each other's.
-    let w = (r.width() - (cell.right() - r.left()) - STROKE_NAME_ROOM).clamp(60.0, 170.0).round();
-    let stroke = brush_preview::stroke_texture(ui.ctx(), &format!("brushes-stroke-{w}:{}", p.name), pb, w as u32, 36, t.text);
+    let w = (r.width() - (cell.right() - r.left()) - STROKE_NAME_ROOM)
+        .clamp(60.0, 170.0)
+        .round();
+    let stroke = brush_preview::stroke_texture(
+        ui.ctx(),
+        &format!("brushes-stroke-{w}:{}", p.name),
+        pb,
+        w as u32,
+        36,
+        t.text,
+    );
     let sr = egui::Rect::from_min_size(pos2(cell.right() + 8.0, r.top() + 4.0), vec2(w, 36.0));
-    ui.painter().image(stroke.id(), sr, full_uv(), Color32::WHITE);
-    crate::layer_row_ui::label(ui.painter(), sr.right() + 12.0, r.center().y, r.right() - 4.0, &p.name, egui::FontId::proportional(12.0), t.text_dim);
+    ui.painter()
+        .image(stroke.id(), sr, full_uv(), Color32::WHITE);
+    crate::layer_row_ui::label(
+        ui.painter(),
+        sr.right() + 12.0,
+        r.center().y,
+        r.right() - 4.0,
+        &p.name,
+        egui::FontId::proportional(12.0),
+        t.text_dim,
+    );
     preset_interactions(ui, &resp, r, p, presets, false, acts);
 }
 
@@ -374,8 +508,16 @@ const CARD_GAP: f32 = 1.0;
 /// `gap` fit past the `indent`, and the left margin that centres them in the room past it. At
 /// least one column.
 pub(crate) fn grid_columns(width: f32, cell: f32, indent: f32, gap: f32) -> (f32, usize) {
-    let room = if width.is_finite() { (width - indent).max(0.0) } else { 0.0 };
-    let cols = if cell.is_finite() && cell > 0.0 { ((room + gap) / (cell + gap)).floor() } else { 1.0 };
+    let room = if width.is_finite() {
+        (width - indent).max(0.0)
+    } else {
+        0.0
+    };
+    let cols = if cell.is_finite() && cell > 0.0 {
+        ((room + gap) / (cell + gap)).floor()
+    } else {
+        1.0
+    };
     // `as` saturates (and NaN becomes 0), so this is a whole number from 1 to a sane bound.
     let cols = (cols as usize).clamp(1, 256);
     let used = cols as f32 * cell + (cols - 1) as f32 * gap;
@@ -384,23 +526,43 @@ pub(crate) fn grid_columns(width: f32, cell: f32, indent: f32, gap: f32) -> (f32
     (if left.is_finite() { left } else { 0.0 }, cols)
 }
 
-fn grid_cell(ui: &mut egui::Ui, p: &BrushPreset, current: bool, presets: &[BrushPreset], cell: f32, acts: &mut Vec<Action>) {
+fn grid_cell(
+    ui: &mut egui::Ui,
+    p: &BrushPreset,
+    current: bool,
+    presets: &[BrushPreset],
+    cell: f32,
+    acts: &mut Vec<Action>,
+) {
     let t = Tokens::get(ui.ctx());
     let (r, resp) = ui.allocate_exact_size(vec2(cell, cell + 6.0), Sense::click_and_drag());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name));
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name)
+    });
     if !ui.is_rect_visible(r) {
         return;
     }
     if current {
         ui.painter().rect_filled(r, 3.0, t.accent_soft);
-        ui.painter().rect_stroke(r, 3.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
+        ui.painter()
+            .rect_stroke(r, 3.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
     } else if resp.hovered() {
         ui.painter().rect_filled(r, 3.0, t.hover);
     }
     let pb = &p.brush;
-    let tip = brush_preview::tip_texture(ui.ctx(), &format!("brushes-tip:{}", p.name), &pb.tip, (pb.hardness, pb.angle, pb.roundness), 36, t.text);
+    let tip = brush_preview::tip_texture(
+        ui.ctx(),
+        &format!("brushes-tip:{}", p.name),
+        &pb.tip,
+        (pb.hardness, pb.angle, pb.roundness),
+        36,
+        t.text,
+    );
     let side = cell - 14.0;
-    let ir = egui::Rect::from_center_size(pos2(r.center().x, r.top() + side / 2.0 + 4.0), vec2(side, side) * crate::brush_sections::thumb_scale(pb.size));
+    let ir = egui::Rect::from_center_size(
+        pos2(r.center().x, r.top() + side / 2.0 + 4.0),
+        vec2(side, side) * crate::brush_sections::thumb_scale(pb.size),
+    );
     ui.painter().image(tip.id(), ir, full_uv(), Color32::WHITE);
     ui.painter().text(
         pos2(r.center().x, r.bottom() - 7.0),
@@ -451,11 +613,22 @@ const CARD_BG_SHADE: f32 = 0.90;
 /// so the widths never reach zero.
 fn card_columns(width: f32, indent: f32, scale: f32) -> (f32, usize) {
     let max_w = CARD_MAX_W * scale;
-    let room = if width.is_finite() { (width - indent).max(0.0) } else { CARD_MAX_W };
+    let room = if width.is_finite() {
+        (width - indent).max(0.0)
+    } else {
+        CARD_MAX_W
+    };
     let cols = ((room / max_w).floor() as usize).clamp(1, 256);
     let share = (room - CARD_GAP * (cols - 1) as f32) / cols as f32;
     let card_w = if cols == 1 { room.min(max_w) } else { share };
-    (if card_w.is_finite() { card_w.max(1.0) } else { CARD_MAX_W }, cols)
+    (
+        if card_w.is_finite() {
+            card_w.max(1.0)
+        } else {
+            CARD_MAX_W
+        },
+        cols,
+    )
 }
 
 /// Is the card showing the tip alone (no name, no stroke)? Then it's a small tip cell in a grid.
@@ -472,7 +645,12 @@ fn tip_and_name(show: (bool, bool, bool)) -> bool {
 /// along with the channels, so it can't darken a fill over its own color.
 fn darker(c: Color32, f: f32) -> Color32 {
     let [r, g, b, a] = c.to_srgba_unmultiplied();
-    Color32::from_rgba_unmultiplied((r as f32 * f).round() as u8, (g as f32 * f).round() as u8, (b as f32 * f).round() as u8, a)
+    Color32::from_rgba_unmultiplied(
+        (r as f32 * f).round() as u8,
+        (g as f32 * f).round() as u8,
+        (b as f32 * f).round() as u8,
+        a,
+    )
 }
 
 /// One preset in the Brush Preset picker: a 2 × 2 grid whose bottom row (the name) spans both
@@ -505,7 +683,11 @@ fn preset_card(
     let scale_h = scale.max(CARD_MIN_H_SCALE);
     let pad = CARD_PAD * scale;
     let pad_y = CARD_PAD * scale_h;
-    let name_h = if show_name && !name_in_top { CARD_NAME_H * scale_h } else { 0.0 };
+    let name_h = if show_name && !name_in_top {
+        CARD_NAME_H * scale_h
+    } else {
+        0.0
+    };
     // The tip/stroke row: the tip-only or tip-and-name card's own height less the padding, else
     // what [`CARD_MAX_H`] leaves past the padding and the name row. A card with no top part at
     // all (the name alone) has no such row.
@@ -518,8 +700,13 @@ fn preset_card(
     } else {
         0.0
     };
-    let (full, resp) = ui.allocate_exact_size(vec2(width, pad_y * 2.0 + top_h + name_h), Sense::click_and_drag());
-    resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name));
+    let (full, resp) = ui.allocate_exact_size(
+        vec2(width, pad_y * 2.0 + top_h + name_h),
+        Sense::click_and_drag(),
+    );
+    resp.widget_info(|| {
+        egui::WidgetInfo::selected(egui::WidgetType::Button, true, current, &p.name)
+    });
     if !ui.is_rect_visible(full) {
         return;
     }
@@ -527,10 +714,16 @@ fn preset_card(
     let card = full.shrink2(vec2((4.0 * scale).min(full.width() * 0.5), 0.0));
     // Every card carries its own background, a touch darker than the popup behind it, so the
     // cards read as tiles; the current and hover fills paint over it.
-    ui.painter().rect_filled(card, 3.0, darker(t.card, CARD_BG_SHADE));
+    ui.painter()
+        .rect_filled(card, 3.0, darker(t.card, CARD_BG_SHADE));
     if current {
         ui.painter().rect_filled(card, 3.0, t.accent_soft);
-        ui.painter().rect_stroke(card, 3.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
+        ui.painter().rect_stroke(
+            card,
+            3.0,
+            Stroke::new(1.0, t.accent),
+            egui::StrokeKind::Inside,
+        );
     } else if resp.hovered() {
         ui.painter().rect_filled(card, 3.0, t.hover);
     }
@@ -542,11 +735,30 @@ fn preset_card(
         // The tip thumbnail with the size under it (like the list row). With the tip alone the
         // cell takes the whole card, so the thumbnail is centred in it (the tip-only grid).
         // Compact cards drop the number — it wouldn't fit — and the tip takes the cell whole.
-        let tip_w = if tip_only { top.width() } else { (CARD_TIP_W * scale).min(top.width() * 0.5) };
+        let tip_w = if tip_only {
+            top.width()
+        } else {
+            (CARD_TIP_W * scale).min(top.width() * 0.5)
+        };
         let cell = egui::Rect::from_min_size(top.left_top(), vec2(tip_w, top_h));
-        let tip = brush_preview::tip_texture(ui.ctx(), &format!("brushes-tip:{}", p.name), &pb.tip, (pb.hardness, pb.angle, pb.roundness), 36, t.text);
-        let side = if compact { (cell.width().min(cell.height()) - 2.0).max(1.0) } else { CARD_TIP_BASE * scale * crate::brush_sections::thumb_scale(pb.size) };
-        let center = if compact { cell.center() } else { pos2(cell.center().x, cell.center().y - 2.0 * scale_h) };
+        let tip = brush_preview::tip_texture(
+            ui.ctx(),
+            &format!("brushes-tip:{}", p.name),
+            &pb.tip,
+            (pb.hardness, pb.angle, pb.roundness),
+            36,
+            t.text,
+        );
+        let side = if compact {
+            (cell.width().min(cell.height()) - 2.0).max(1.0)
+        } else {
+            CARD_TIP_BASE * scale * crate::brush_sections::thumb_scale(pb.size)
+        };
+        let center = if compact {
+            cell.center()
+        } else {
+            pos2(cell.center().x, cell.center().y - 2.0 * scale_h)
+        };
         let tr = egui::Rect::from_center_size(center, vec2(side, side));
         ui.painter().image(tip.id(), tr, full_uv(), Color32::WHITE);
         if !compact {
@@ -564,12 +776,30 @@ fn preset_card(
         // The stroke preview, or the name where it goes when the stroke is hidden.
         let cell = egui::Rect::from_min_max(pos2(x, top.top()), top.right_bottom());
         if show_stroke {
-            let cw = if cell.width().is_finite() { cell.width().max(1.0) } else { 1.0 };
-            let w = ((cw - 16.0 * scale).clamp(24.0 * scale, 260.0 * scale)).min(cw).max(1.0).round();
+            let cw = if cell.width().is_finite() {
+                cell.width().max(1.0)
+            } else {
+                1.0
+            };
+            let w = ((cw - 16.0 * scale).clamp(24.0 * scale, 260.0 * scale))
+                .min(cw)
+                .max(1.0)
+                .round();
             let h = (36.0 * scale_h).round().max(1.0) as u32;
-            let stroke = brush_preview::stroke_texture(ui.ctx(), &format!("brushes-stroke-{w}:{}", p.name), pb, w as u32, h, t.text);
-            let sr = egui::Rect::from_min_size(pos2(cell.left() + 8.0 * scale, cell.center().y - 18.0 * scale_h), vec2(w, 36.0 * scale_h));
-            ui.painter().image(stroke.id(), sr, full_uv(), Color32::WHITE);
+            let stroke = brush_preview::stroke_texture(
+                ui.ctx(),
+                &format!("brushes-stroke-{w}:{}", p.name),
+                pb,
+                w as u32,
+                h,
+                t.text,
+            );
+            let sr = egui::Rect::from_min_size(
+                pos2(cell.left() + 8.0 * scale, cell.center().y - 18.0 * scale_h),
+                vec2(w, 36.0 * scale_h),
+            );
+            ui.painter()
+                .image(stroke.id(), sr, full_uv(), Color32::WHITE);
         } else {
             crate::layer_row_ui::label(
                 ui.painter(),
@@ -584,7 +814,10 @@ fn preset_card(
     }
     if name_h > 0.0 {
         // The merged bottom row: the name across the whole card.
-        let cell = egui::Rect::from_min_size(pos2(inner.left(), top.bottom()), vec2(inner.width(), name_h));
+        let cell = egui::Rect::from_min_size(
+            pos2(inner.left(), top.bottom()),
+            vec2(inner.width(), name_h),
+        );
         crate::layer_row_ui::label(
             ui.painter(),
             cell.left() + 6.0 * scale,
@@ -609,7 +842,13 @@ const FOLDER_INDENT: f32 = 16.0;
 /// header's upper edge (`edge`) it lands before that folder, next to it (reordering when they are
 /// siblings); anywhere else it goes into that folder. `None` when the drop does nothing: onto
 /// itself, into one of its own folders, or into the folder it is already in.
-pub fn folder_drop(src_group: &str, src_folder: &[String], group: &str, folder: &[String], edge: bool) -> Option<Action> {
+pub fn folder_drop(
+    src_group: &str,
+    src_folder: &[String],
+    group: &str,
+    folder: &[String],
+    edge: bool,
+) -> Option<Action> {
     if src_group == group && folder.starts_with(src_folder) {
         return None;
     }
@@ -619,18 +858,42 @@ pub fn folder_drop(src_group: &str, src_folder: &[String], group: &str, folder: 
         if src_group == group && parent == Some(folder) {
             return None;
         }
-        return Some(Action::MoveInto { group: src.0, folder: src.1, into: Some((group.to_string(), folder.to_vec())), before: None });
+        return Some(Action::MoveInto {
+            group: src.0,
+            folder: src.1,
+            into: Some((group.to_string(), folder.to_vec())),
+            before: None,
+        });
     }
     match folder.split_last() {
         // Before a top-level group: groups reorder; a nested folder moves out to the top level.
-        None if src_folder.is_empty() => Some(Action::MoveGroup { group: src.0, folder: src.1, before: Some(group.to_string()) }),
-        None => Some(Action::MoveInto { group: src.0, folder: src.1, into: None, before: Some(group.to_string()) }),
+        None if src_folder.is_empty() => Some(Action::MoveGroup {
+            group: src.0,
+            folder: src.1,
+            before: Some(group.to_string()),
+        }),
+        None => Some(Action::MoveInto {
+            group: src.0,
+            folder: src.1,
+            into: None,
+            before: Some(group.to_string()),
+        }),
         Some((leaf, parent)) => {
-            let sibling = src_group == group && src_folder.split_last().map(|(_, p)| p) == Some(parent);
+            let sibling =
+                src_group == group && src_folder.split_last().map(|(_, p)| p) == Some(parent);
             if sibling {
-                Some(Action::MoveGroup { group: src.0, folder: src.1, before: Some(leaf.clone()) })
+                Some(Action::MoveGroup {
+                    group: src.0,
+                    folder: src.1,
+                    before: Some(leaf.clone()),
+                })
             } else {
-                Some(Action::MoveInto { group: src.0, folder: src.1, into: Some((group.to_string(), parent.to_vec())), before: Some(leaf.clone()) })
+                Some(Action::MoveInto {
+                    group: src.0,
+                    folder: src.1,
+                    into: Some((group.to_string(), parent.to_vec())),
+                    before: Some(leaf.clone()),
+                })
             }
         }
     }
@@ -640,9 +903,18 @@ pub fn folder_drop(src_group: &str, src_folder: &[String], group: &str, folder: 
 /// folder dragged here lands before it (its upper edge) or goes into it ([`folder_drop`]); a
 /// preset dropped here moves to the end of the group or folder. `key` is the group key, `folder` the nested folder's path (empty for the
 /// group), `label` the group's panel label.
-fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], open: bool, count: usize, acts: &mut Vec<Action>) {
+fn group_header(
+    ui: &mut egui::Ui,
+    label: &str,
+    key: &str,
+    folder: &[String],
+    open: bool,
+    count: usize,
+    acts: &mut Vec<Action>,
+) {
     let t = Tokens::get(ui.ctx());
-    let (r, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::click_and_drag());
+    let (r, resp) =
+        ui.allocate_exact_size(vec2(ui.available_width(), 24.0), Sense::click_and_drag());
     if resp.hovered() {
         ui.painter().rect_filled(r, t.radius_sm, t.hover);
     }
@@ -651,7 +923,11 @@ fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], op
     icons::paint(
         ui,
         egui::Rect::from_min_size(pos2(x, r.center().y - 7.0), vec2(14.0, 14.0)),
-        if open { "chevron-down" } else { "chevron-right" },
+        if open {
+            "chevron-down"
+        } else {
+            "chevron-right"
+        },
         12.0,
         t.text_dim,
     );
@@ -662,17 +938,39 @@ fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], op
         14.0,
         t.icon,
     );
-    let font = if folder.is_empty() { theme::semibold(12.0) } else { theme::medium(12.0) };
-    ui.painter().text(pos2(x + 40.0, r.center().y), egui::Align2::LEFT_CENTER, shown, font, t.text);
-    ui.painter().text(pos2(r.right() - 8.0, r.center().y), egui::Align2::RIGHT_CENTER, count.to_string(), theme::medium(11.0), t.text_faint);
+    let font = if folder.is_empty() {
+        theme::semibold(12.0)
+    } else {
+        theme::medium(12.0)
+    };
+    ui.painter().text(
+        pos2(x + 40.0, r.center().y),
+        egui::Align2::LEFT_CENTER,
+        shown,
+        font,
+        t.text,
+    );
+    ui.painter().text(
+        pos2(r.right() - 8.0, r.center().y),
+        egui::Align2::RIGHT_CENTER,
+        count.to_string(),
+        theme::medium(11.0),
+        t.text_faint,
+    );
     resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::CollapsingHeader, true, shown));
     let me = match folder {
         [] => BrushDrag::Group(key.to_string()),
-        f => BrushDrag::Folder { group: key.to_string(), folder: f.to_vec() },
+        f => BrushDrag::Folder {
+            group: key.to_string(),
+            folder: f.to_vec(),
+        },
     };
     resp.dnd_set_drag_payload(me);
     // The upper third of the header places a dragged folder before this one; the rest drops it in.
-    let edge = ui.ctx().pointer_interact_pos().is_some_and(|p| p.y < r.top() + r.height() / 3.0);
+    let edge = ui
+        .ctx()
+        .pointer_interact_pos()
+        .is_some_and(|p| p.y < r.top() + r.height() / 3.0);
     let folder_action = |d: &BrushDrag| match d {
         BrushDrag::Group(g) => folder_drop(g, &[], key, folder, edge),
         BrushDrag::Folder { group, folder: f } => folder_drop(group, f, key, folder, edge),
@@ -681,7 +979,12 @@ fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], op
     if let Some(d) = resp.dnd_hover_payload::<BrushDrag>() {
         match (&*d, folder_action(&d)) {
             (BrushDrag::Preset(_), _) | (_, Some(Action::MoveInto { before: None, .. })) => {
-                ui.painter().rect_stroke(r, t.radius_sm, Stroke::new(1.5, t.accent), egui::StrokeKind::Inside);
+                ui.painter().rect_stroke(
+                    r,
+                    t.radius_sm,
+                    Stroke::new(1.5, t.accent),
+                    egui::StrokeKind::Inside,
+                );
             }
             (_, Some(_)) => widgets::drop_line(ui, r, false, false, &t),
             _ => {}
@@ -689,7 +992,12 @@ fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], op
     }
     if let Some(d) = resp.dnd_release_payload::<BrushDrag>() {
         match &*d {
-            BrushDrag::Preset(n) => acts.push(Action::Move { name: n.clone(), group: key.to_string(), folder: Some(folder.to_vec()), index: None }),
+            BrushDrag::Preset(n) => acts.push(Action::Move {
+                name: n.clone(),
+                group: key.to_string(),
+                folder: Some(folder.to_vec()),
+                index: None,
+            }),
             other => acts.extend(folder_action(other)),
         }
     }
@@ -698,11 +1006,19 @@ fn group_header(ui: &mut egui::Ui, label: &str, key: &str, folder: &[String], op
     }
     resp.context_menu(|ui| {
         if ui.button(tl!("Rename Group…")).clicked() {
-            acts.push(Action::BeginRename(Renaming { group: true, name: key.to_string(), folder: folder.to_vec(), text: String::new() }));
+            acts.push(Action::BeginRename(Renaming {
+                group: true,
+                name: key.to_string(),
+                folder: folder.to_vec(),
+                text: String::new(),
+            }));
             ui.close();
         }
         if ui.button(tl!("Delete Group")).clicked() {
-            acts.push(Action::DeleteGroup { group: key.to_string(), folder: folder.to_vec() });
+            acts.push(Action::DeleteGroup {
+                group: key.to_string(),
+                folder: folder.to_vec(),
+            });
             ui.close();
         }
     });
@@ -757,7 +1073,8 @@ fn draw_nodes(ui: &mut egui::Ui, d: &Draw, nodes: &[Node], depth: usize, acts: &
                 if let Some(cell) = fixed {
                     // Tip-only cells centre their whole columns like a grid; the card-sized
                     // tip-and-name cells start at the indent.
-                    let (mut left, cols) = grid_columns(ui.available_width(), cell, indent, CARD_GAP);
+                    let (mut left, cols) =
+                        grid_columns(ui.available_width(), cell, indent, CARD_GAP);
                     if tip_and_name(d.show) {
                         left = indent;
                     }
@@ -765,7 +1082,16 @@ fn draw_nodes(ui: &mut egui::Ui, d: &Draw, nodes: &[Node], depth: usize, acts: &
                         ui.horizontal(|ui| {
                             ui.add_space(left);
                             for p in row {
-                                preset_card(ui, p, d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)), d.presets, d.show, cell, scale, acts);
+                                preset_card(
+                                    ui,
+                                    p,
+                                    d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)),
+                                    d.presets,
+                                    d.show,
+                                    cell,
+                                    scale,
+                                    acts,
+                                );
                             }
                         });
                     }
@@ -775,7 +1101,16 @@ fn draw_nodes(ui: &mut egui::Ui, d: &Draw, nodes: &[Node], depth: usize, acts: &
                         ui.horizontal(|ui| {
                             ui.add_space(indent);
                             for p in row {
-                                preset_card(ui, p, d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)), d.presets, d.show, card_w, scale, acts);
+                                preset_card(
+                                    ui,
+                                    p,
+                                    d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)),
+                                    d.presets,
+                                    d.show,
+                                    card_w,
+                                    scale,
+                                    acts,
+                                );
                             }
                         });
                     }
@@ -784,21 +1119,40 @@ fn draw_nodes(ui: &mut egui::Ui, d: &Draw, nodes: &[Node], depth: usize, acts: &
         } else if d.grid {
             // Rows of whole columns, each with the same margin: a wrapped row indented only
             // its first line and left the spare width on the right.
-            let (left, cols) = grid_columns(ui.available_width(), d.layout.cell, d.layout.indent + indent, GRID_GAP);
+            let (left, cols) = grid_columns(
+                ui.available_width(),
+                d.layout.cell,
+                d.layout.indent + indent,
+                GRID_GAP,
+            );
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing = vec2(GRID_GAP, GRID_GAP);
                 for row in run.chunks(cols) {
                     ui.horizontal(|ui| {
                         ui.add_space(left);
                         for p in row {
-                            grid_cell(ui, p, d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)), d.presets, d.layout.cell, acts);
+                            grid_cell(
+                                ui,
+                                p,
+                                d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)),
+                                d.presets,
+                                d.layout.cell,
+                                acts,
+                            );
                         }
                     });
                 }
             });
         } else {
             for p in run.iter() {
-                list_row(ui, p, d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)), d.presets, indent, acts);
+                list_row(
+                    ui,
+                    p,
+                    d.current.is_some_and(|n| p.name.eq_ignore_ascii_case(n)),
+                    d.presets,
+                    indent,
+                    acts,
+                );
             }
         }
         run.clear();
@@ -822,15 +1176,28 @@ fn draw_nodes(ui: &mut egui::Ui, d: &Draw, nodes: &[Node], depth: usize, acts: &
 /// The rename bar shown while a preset or group is being renamed. Enter or OK renames, Escape or
 /// Cancel stops.
 fn rename_bar(ui: &mut egui::Ui, st: &mut BrushesPanelState, acts: &mut Vec<Action>) {
-    let Some(r) = st.renaming.as_mut() else { return };
+    let Some(r) = st.renaming.as_mut() else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
     if r.text.is_empty() {
         r.text = r.folder.last().unwrap_or(&r.name).clone();
     }
     let mut done = false;
     ui.horizontal(|ui| {
-        ui.label(RichText::new(if r.group { tl!("Group name") } else { tl!("Brush name") }).color(t.text_dim));
-        let resp = ui.add(egui::TextEdit::singleline(&mut r.text).desired_width((ui.available_width() - 140.0).max(60.0)).id_salt("brush-rename"));
+        ui.label(
+            RichText::new(if r.group {
+                tl!("Group name")
+            } else {
+                tl!("Brush name")
+            })
+            .color(t.text_dim),
+        );
+        let resp = ui.add(
+            egui::TextEdit::singleline(&mut r.text)
+                .desired_width((ui.available_width() - 140.0).max(60.0))
+                .id_salt("brush-rename"),
+        );
         if !resp.has_focus() && !resp.lost_focus() {
             resp.request_focus();
         }
@@ -846,7 +1213,9 @@ fn rename_bar(ui: &mut egui::Ui, st: &mut BrushesPanelState, acts: &mut Vec<Acti
             acts.push(Action::Rename(r.clone()));
             done = true;
         }
-        if clicked == Some(widgets::ButtonRole::Cancel) || ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+        if clicked == Some(widgets::ButtonRole::Cancel)
+            || ui.input(|i| i.key_pressed(egui::Key::Escape))
+        {
             done = true;
         }
     });
@@ -861,35 +1230,61 @@ fn rename_bar(ui: &mut egui::Ui, st: &mut BrushesPanelState, acts: &mut Vec<Acti
 /// above them while a rename is open. `current` is the selected preset's name: selection is by
 /// identity, so it survives edits and tells look-alike duplicates apart. Group toggles and renames
 /// update `st`; the returned actions are commands for [`apply`].
-pub fn preset_list(ui: &mut egui::Ui, presets: &[BrushPreset], current: Option<&str>, st: &mut BrushesPanelState, layout: ListLayout) -> Vec<Action> {
+pub fn preset_list(
+    ui: &mut egui::Ui,
+    presets: &[BrushPreset],
+    current: Option<&str>,
+    st: &mut BrushesPanelState,
+    layout: ListLayout,
+) -> Vec<Action> {
     let mut acts = Vec::new();
     rename_bar(ui, st, &mut acts);
     let filter = st.filter.trim().to_lowercase();
     let grid = st.view == BrushesView::Grid;
     let show = (st.show_name, st.show_stroke, st.show_tip);
     let collapsed = &st.collapsed;
-    egui::ScrollArea::vertical().id_salt(layout.id).max_height(layout.max_height).auto_shrink([false, true]).show(ui, |ui| {
-        ui.spacing_mut().item_spacing.y = 1.0;
-        for (label, items) in grouped_presets(presets) {
-            let items: Vec<&BrushPreset> =
-                items.into_iter().filter_map(|i| presets.get(i)).filter(|p| filter.is_empty() || p.name.to_lowercase().contains(&filter)).collect();
-            if items.is_empty() {
-                continue;
+    egui::ScrollArea::vertical()
+        .id_salt(layout.id)
+        .max_height(layout.max_height)
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            ui.spacing_mut().item_spacing.y = 1.0;
+            for (label, items) in grouped_presets(presets) {
+                let items: Vec<&BrushPreset> = items
+                    .into_iter()
+                    .filter_map(|i| presets.get(i))
+                    .filter(|p| filter.is_empty() || p.name.to_lowercase().contains(&filter))
+                    .collect();
+                if items.is_empty() {
+                    continue;
+                }
+                let key = group_key(presets, &label);
+                let open = !filter.is_empty() || !collapsed.contains(&label);
+                group_header(ui, &label, &key, &[], open, items.len(), &mut acts);
+                if !open {
+                    continue;
+                }
+                let d = Draw {
+                    label: &label,
+                    key: &key,
+                    presets,
+                    current,
+                    collapsed,
+                    filtering: !filter.is_empty(),
+                    grid,
+                    layout,
+                    show,
+                    scale: st.scale,
+                };
+                draw_nodes(ui, &d, &folder_tree(&items), 0, &mut acts);
+                ui.add_space(2.0);
             }
-            let key = group_key(presets, &label);
-            let open = !filter.is_empty() || !collapsed.contains(&label);
-            group_header(ui, &label, &key, &[], open, items.len(), &mut acts);
-            if !open {
-                continue;
+            if presets.is_empty() {
+                ui.label(
+                    RichText::new(tl!("No brush presets")).color(Tokens::get(ui.ctx()).text_faint),
+                );
             }
-            let d = Draw { label: &label, key: &key, presets, current, collapsed, filtering: !filter.is_empty(), grid, layout, show, scale: st.scale };
-            draw_nodes(ui, &d, &folder_tree(&items), 0, &mut acts);
-            ui.add_space(2.0);
-        }
-        if presets.is_empty() {
-            ui.label(RichText::new(tl!("No brush presets")).color(Tokens::get(ui.ctx()).text_faint));
-        }
-    });
+        });
     // The dragged preset or group follows the pointer.
     if let Some(d) = egui::DragAndDrop::payload::<BrushDrag>(ui.ctx())
         && let Some(p) = ui.ctx().pointer_interact_pos()
@@ -906,12 +1301,13 @@ pub fn preset_list(ui: &mut egui::Ui, presets: &[BrushPreset], current: Option<&
             }
             BrushDrag::Folder { folder, .. } => folder.last().cloned().unwrap_or_default(),
         };
-        egui::Area::new(egui::Id::new(("brush-drag-label", layout.id))).order(egui::Order::Tooltip).fixed_pos(p + vec2(12.0, 8.0)).interactable(false).show(
-            ui.ctx(),
-            |ui| {
+        egui::Area::new(egui::Id::new(("brush-drag-label", layout.id)))
+            .order(egui::Order::Tooltip)
+            .fixed_pos(p + vec2(12.0, 8.0))
+            .interactable(false)
+            .show(ui.ctx(), |ui| {
                 egui::Frame::popup(ui.style()).show(ui, |ui| ui.label(name));
-            },
-        );
+            });
     }
     view_actions(st, acts)
 }
@@ -940,41 +1336,101 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
     commit_gesture(app, ui.ctx(), &before, &b);
     ui.add_space(4.0);
     ui.horizontal(|ui| {
-        icons::paint(ui, egui::Rect::from_min_size(ui.cursor().min + vec2(0.0, 3.0), vec2(16.0, 16.0)), "search", 14.0, t.text_faint);
+        icons::paint(
+            ui,
+            egui::Rect::from_min_size(ui.cursor().min + vec2(0.0, 3.0), vec2(16.0, 16.0)),
+            "search",
+            14.0,
+            t.text_faint,
+        );
         ui.add_space(20.0);
-        widgets::text_field(ui, ui.id().with("brush-search"), &mut app.ui.brushes_panel.filter, tl!("Search Brushes"), WIDTH - 120.0, false);
+        widgets::text_field(
+            ui,
+            ui.id().with("brush-search"),
+            &mut app.ui.brushes_panel.filter,
+            tl!("Search Brushes"),
+            WIDTH - 120.0,
+            false,
+        );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let view = &mut app.ui.brushes_panel.view;
             let grid_tip = "Grid view";
             let list_tip = "List view";
-            if icons::button(ui, "grid-2x2", 24.0, *view == BrushesView::Grid, tl!(grid_tip)).clicked() {
+            if icons::button(
+                ui,
+                "grid-2x2",
+                24.0,
+                *view == BrushesView::Grid,
+                tl!(grid_tip),
+            )
+            .clicked()
+            {
                 *view = BrushesView::Grid;
             }
-            if icons::button(ui, "align-justify", 24.0, *view == BrushesView::List, tl!(list_tip)).clicked() {
+            if icons::button(
+                ui,
+                "align-justify",
+                24.0,
+                *view == BrushesView::List,
+                tl!(list_tip),
+            )
+            .clicked()
+            {
                 *view = BrushesView::List;
             }
         });
     });
     ui.add_space(6.0);
-    let acts = preset_list(ui, &app.session.tools.presets, app.session.tools.current_preset.as_deref(), &mut app.ui.brushes_panel, PANEL_LIST);
+    let acts = preset_list(
+        ui,
+        &app.session.tools.presets,
+        app.session.tools.current_preset.as_deref(),
+        &mut app.ui.brushes_panel,
+        PANEL_LIST,
+    );
     apply(app, acts);
     ui.add_space(4.0);
     widgets::hairline(ui);
     ui.add_space(4.0);
     ui.horizontal(|ui| {
         ui.label(
-            RichText::new(crate::i18n::trn(crate::i18n::current(), app.session.tools.presets.len() as u64, "{n} preset", "{n} presets")).color(t.text_faint),
+            RichText::new(crate::i18n::trn(
+                crate::i18n::current(),
+                app.session.tools.presets.len() as u64,
+                "{n} preset",
+                "{n} presets",
+            ))
+            .color(t.text_faint),
         );
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             // The current preset by identity: editing the brush after picking must not deselect it.
-            let current = app.session.tools.current_preset.clone().filter(|n| app.session.tools.presets.iter().any(|p| p.name.eq_ignore_ascii_case(n)));
-            if ui.add_enabled_ui(current.is_some(), |ui| icons::button(ui, "trash", 24.0, false, "Delete brush")).inner.clicked()
+            let current = app.session.tools.current_preset.clone().filter(|n| {
+                app.session
+                    .tools
+                    .presets
+                    .iter()
+                    .any(|p| p.name.eq_ignore_ascii_case(n))
+            });
+            if ui
+                .add_enabled_ui(current.is_some(), |ui| {
+                    icons::button(ui, "trash", 24.0, false, "Delete brush")
+                })
+                .inner
+                .clicked()
                 && let Some(name) = current
             {
                 run_or_status(app, "brush.presets.delete", json!({ "name": name }));
             }
-            let new = icons::button(ui, "square-plus", 24.0, false, "Create new brush from the current settings");
-            if crate::brush_picker::named(new, "Create new brush from the current settings").clicked() {
+            let new = icons::button(
+                ui,
+                "square-plus",
+                24.0,
+                false,
+                "Create new brush from the current settings",
+            );
+            if crate::brush_picker::named(new, "Create new brush from the current settings")
+                .clicked()
+            {
                 crate::brush_preset_dialog::open(app, None);
             }
             if icons::button(ui, "folder-open", 24.0, false, "Import Brushes… (.abr)").clicked() {
@@ -983,7 +1439,13 @@ pub fn show(app: &mut PhotocraftApp, ui: &mut egui::Ui) {
         });
     });
     // Forget previews of presets that no longer exist.
-    let names: std::collections::HashSet<&str> = app.session.tools.presets.iter().map(|p| p.name.as_str()).collect();
+    let names: std::collections::HashSet<&str> = app
+        .session
+        .tools
+        .presets
+        .iter()
+        .map(|p| p.name.as_str())
+        .collect();
     brush_preview::with_cache(ui.ctx(), |c| {
         c.retain(|slot| slot.split_once(':').is_none_or(|(_, n)| names.contains(n)));
     });

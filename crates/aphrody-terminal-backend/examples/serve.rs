@@ -5,6 +5,8 @@ use aphrody_terminal_backend::{PtyConfig, serve};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let addr = std::env::args().nth(1).unwrap_or_else(|| "127.0.0.1:7681".into());
+    let addr = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "127.0.0.1:7681".into());
     serve(addr.parse()?, PtyConfig::default()).await
 }

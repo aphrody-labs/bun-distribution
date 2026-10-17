@@ -36,7 +36,14 @@ fn file(format: u16, division: u16, bodies: &[Vec<u8>]) -> Vec<u8> {
 }
 
 fn note(pitch: u8, start: i64, length: i64) -> Note {
-    Note { pitch, velocity: 100, release_velocity: 64, channel: 0, start, length }
+    Note {
+        pitch,
+        velocity: 100,
+        release_velocity: 64,
+        channel: 0,
+        start,
+        length,
+    }
 }
 
 #[test]
@@ -44,26 +51,77 @@ fn round_trip() {
     let mut seq = Sequence {
         notes: vec![
             note(60, 0, 480),
-            Note { pitch: 64, velocity: 90, release_velocity: 30, channel: 3, start: 480, length: 960 },
+            Note {
+                pitch: 64,
+                velocity: 90,
+                release_velocity: 30,
+                channel: 3,
+                start: 480,
+                length: 960,
+            },
             note(67, 960, 1),
             note(60, 1920, 240),
         ],
         ctrls: vec![
-            CtrlEvent { tick: 0, channel: 0, kind: CtrlKind::Program, value: 5 },
-            CtrlEvent { tick: 10, channel: 0, kind: CtrlKind::Cc(7), value: 100 },
-            CtrlEvent { tick: 20, channel: 1, kind: CtrlKind::PitchBend, value: -8192 },
-            CtrlEvent { tick: 30, channel: 1, kind: CtrlKind::PitchBend, value: 8191 },
-            CtrlEvent { tick: 40, channel: 1, kind: CtrlKind::PitchBend, value: 0 },
-            CtrlEvent { tick: 50, channel: 2, kind: CtrlKind::ChannelPressure, value: 77 },
-            CtrlEvent { tick: 60, channel: 2, kind: CtrlKind::PolyPressure(61), value: 12 },
+            CtrlEvent {
+                tick: 0,
+                channel: 0,
+                kind: CtrlKind::Program,
+                value: 5,
+            },
+            CtrlEvent {
+                tick: 10,
+                channel: 0,
+                kind: CtrlKind::Cc(7),
+                value: 100,
+            },
+            CtrlEvent {
+                tick: 20,
+                channel: 1,
+                kind: CtrlKind::PitchBend,
+                value: -8192,
+            },
+            CtrlEvent {
+                tick: 30,
+                channel: 1,
+                kind: CtrlKind::PitchBend,
+                value: 8191,
+            },
+            CtrlEvent {
+                tick: 40,
+                channel: 1,
+                kind: CtrlKind::PitchBend,
+                value: 0,
+            },
+            CtrlEvent {
+                tick: 50,
+                channel: 2,
+                kind: CtrlKind::ChannelPressure,
+                value: 77,
+            },
+            CtrlEvent {
+                tick: 60,
+                channel: 2,
+                kind: CtrlKind::PolyPressure(61),
+                value: 12,
+            },
         ],
     };
     seq.sort();
     let smf = Smf {
         format: 1,
         tracks: vec![
-            SmfTrack { name: "Piano".into(), sequence: seq.clone() },
-            SmfTrack { name: "Bass ♪".into(), sequence: Sequence { notes: vec![note(36, 100, 50)], ctrls: vec![] } },
+            SmfTrack {
+                name: "Piano".into(),
+                sequence: seq.clone(),
+            },
+            SmfTrack {
+                name: "Bass ♪".into(),
+                sequence: Sequence {
+                    notes: vec![note(36, 100, 50)],
+                    ctrls: vec![],
+                },
+            },
         ],
         tempos: vec![(0, 120.0), (3840, 90.0)],
         meters: vec![(0, 4, 4), (3840, 6, 8)],
@@ -93,7 +151,8 @@ fn round_trip() {
 
 #[test]
 fn first_track_name_wins_and_ignored_meta_preserves_following_notes() {
-    let meta = |kind, data: &[u8]| [vec![0, 0xFF, kind], vlq(data.len() as u32), data.to_vec()].concat();
+    let meta =
+        |kind, data: &[u8]| [vec![0, 0xFF, kind], vlq(data.len() as u32), data.to_vec()].concat();
     for first in [&b"First"[..], &b""[..], &[0xFF][..]] {
         let body = [
             meta(0x03, first),
@@ -111,14 +170,29 @@ fn first_track_name_wins_and_ignored_meta_preserves_following_notes() {
 
 #[test]
 fn write_rejects_bad_values() {
-    let bad_tempo = Smf { tempos: vec![(0, 0.0)], ..Default::default() };
+    let bad_tempo = Smf {
+        tempos: vec![(0, 0.0)],
+        ..Default::default()
+    };
     assert!(write_smf(&bad_tempo).is_err());
-    let nan_tempo = Smf { tempos: vec![(0, f64::NAN)], ..Default::default() };
+    let nan_tempo = Smf {
+        tempos: vec![(0, f64::NAN)],
+        ..Default::default()
+    };
     assert!(write_smf(&nan_tempo).is_err());
-    let bad_meter = Smf { meters: vec![(0, 4, 3)], ..Default::default() };
+    let bad_meter = Smf {
+        meters: vec![(0, 4, 3)],
+        ..Default::default()
+    };
     assert!(write_smf(&bad_meter).is_err());
     let huge_gap = Smf {
-        tracks: vec![SmfTrack { name: String::new(), sequence: Sequence { notes: vec![note(60, 0x1000_0000, 10)], ctrls: vec![] } }],
+        tracks: vec![SmfTrack {
+            name: String::new(),
+            sequence: Sequence {
+                notes: vec![note(60, 0x1000_0000, 10)],
+                ctrls: vec![],
+            },
+        }],
         ..Default::default()
     };
     assert!(write_smf(&huge_gap).is_err());
@@ -127,10 +201,27 @@ fn write_rejects_bad_values() {
 #[test]
 fn division_conversion_480_to_960() {
     // Note at tick 480 (one quarter at 480 PPQ), length 240.
-    let body = [vlq(480), vec![0x90, 60, 100], vlq(240), vec![0x80, 60, 0], vec![0, 0xFF, 0x2F, 0]].concat();
+    let body = [
+        vlq(480),
+        vec![0x90, 60, 100],
+        vlq(240),
+        vec![0x80, 60, 0],
+        vec![0, 0xFF, 0x2F, 0],
+    ]
+    .concat();
     let smf = read_smf(&file(0, 480, &[body])).unwrap();
     assert_eq!(smf.tracks.len(), 1);
-    assert_eq!(smf.tracks[0].sequence.notes, vec![Note { pitch: 60, velocity: 100, release_velocity: 0, channel: 0, start: 960, length: 480 }]);
+    assert_eq!(
+        smf.tracks[0].sequence.notes,
+        vec![Note {
+            pitch: 60,
+            velocity: 100,
+            release_velocity: 0,
+            channel: 0,
+            start: 960,
+            length: 480
+        }]
+    );
 }
 
 #[test]
@@ -166,22 +257,51 @@ fn running_status_and_velocity_zero_note_off() {
     assert_eq!(
         seq.notes,
         vec![
-            Note { pitch: 60, velocity: 100, release_velocity: 64, channel: 1, start: 0, length: 960 },
-            Note { pitch: 64, velocity: 90, release_velocity: 64, channel: 1, start: 0, length: 960 },
+            Note {
+                pitch: 60,
+                velocity: 100,
+                release_velocity: 64,
+                channel: 1,
+                start: 0,
+                length: 960
+            },
+            Note {
+                pitch: 64,
+                velocity: 90,
+                release_velocity: 64,
+                channel: 1,
+                start: 0,
+                length: 960
+            },
         ]
     );
     assert_eq!(
         seq.ctrls,
         vec![
-            CtrlEvent { tick: 960, channel: 1, kind: CtrlKind::Cc(7), value: 100 },
-            CtrlEvent { tick: 976, channel: 1, kind: CtrlKind::Cc(10), value: 64 },
+            CtrlEvent {
+                tick: 960,
+                channel: 1,
+                kind: CtrlKind::Cc(7),
+                value: 100
+            },
+            CtrlEvent {
+                tick: 976,
+                channel: 1,
+                kind: CtrlKind::Cc(10),
+                value: 64
+            },
         ]
     );
 }
 
 #[test]
 fn meta_cancels_running_status() {
-    let body = [vec![0x00, 0x90, 60, 100], vec![0x00, 0xFF, 0x01, 0x01, b'x'], vec![0x00, 60, 0]].concat();
+    let body = [
+        vec![0x00, 0x90, 60, 100],
+        vec![0x00, 0xFF, 0x01, 0x01, b'x'],
+        vec![0x00, 60, 0],
+    ]
+    .concat();
     assert!(read_smf(&file(0, 960, &[body])).is_err());
 }
 
@@ -201,8 +321,28 @@ fn unmatched_note_off_ignored_and_hanging_notes_closed() {
     let smf = read_smf(&file(0, 960, &[body])).unwrap();
     let notes = &smf.tracks[0].sequence.notes;
     assert_eq!(notes.len(), 2);
-    assert_eq!(notes[0], Note { pitch: 60, velocity: 100, release_velocity: 64, channel: 0, start: 0, length: 1000 });
-    assert_eq!(notes[1], Note { pitch: 62, velocity: 100, release_velocity: 10, channel: 0, start: 100, length: 100 });
+    assert_eq!(
+        notes[0],
+        Note {
+            pitch: 60,
+            velocity: 100,
+            release_velocity: 64,
+            channel: 0,
+            start: 0,
+            length: 1000
+        }
+    );
+    assert_eq!(
+        notes[1],
+        Note {
+            pitch: 62,
+            velocity: 100,
+            release_velocity: 10,
+            channel: 0,
+            start: 100,
+            length: 100
+        }
+    );
 }
 
 #[test]
@@ -218,8 +358,14 @@ fn overlapping_same_pitch_fifo_and_zero_length() {
     .concat();
     let smf = read_smf(&file(0, 960, &[body])).unwrap();
     let notes = &smf.tracks[0].sequence.notes;
-    assert_eq!((notes[0].start, notes[0].length, notes[0].velocity), (0, 32, 100));
-    assert_eq!((notes[1].start, notes[1].length, notes[1].velocity), (16, 32, 80));
+    assert_eq!(
+        (notes[0].start, notes[0].length, notes[0].velocity),
+        (0, 32, 100)
+    );
+    assert_eq!(
+        (notes[1].start, notes[1].length, notes[1].velocity),
+        (16, 32, 80)
+    );
     assert_eq!((notes[2].pitch, notes[2].length), (70, 1));
 }
 
@@ -231,7 +377,12 @@ fn format1_conductor_folded_and_unknown_chunks_skipped() {
         vec![0x00, 0xFF, 0x2F, 0x00],
     ]
     .concat();
-    let t1 = [vec![0x00, 0xFF, 0x03, 0x03], b"Org".to_vec(), vec![0x00, 0x90, 60, 100, 0x60, 0x80, 60, 0]].concat();
+    let t1 = [
+        vec![0x00, 0xFF, 0x03, 0x03],
+        b"Org".to_vec(),
+        vec![0x00, 0x90, 60, 100, 0x60, 0x80, 60, 0],
+    ]
+    .concat();
     let mut bytes = header(1, 2, 960);
     bytes.extend(track(&conductor));
     bytes.extend(b"XFIH\x00\x00\x00\x03abc");
@@ -245,7 +396,11 @@ fn format1_conductor_folded_and_unknown_chunks_skipped() {
 
 #[test]
 fn sysex_skipped() {
-    let body = [vec![0x00, 0xF0, 0x03, 0x7E, 0x7F, 0xF7], vec![0x00, 0x90, 60, 100, 0x10, 0x80, 60, 0]].concat();
+    let body = [
+        vec![0x00, 0xF0, 0x03, 0x7E, 0x7F, 0xF7],
+        vec![0x00, 0x90, 60, 100, 0x10, 0x80, 60, 0],
+    ]
+    .concat();
     let smf = read_smf(&file(0, 960, &[body])).unwrap();
     assert_eq!(smf.tracks[0].sequence.notes.len(), 1);
 }
@@ -253,7 +408,10 @@ fn sysex_skipped() {
 #[test]
 fn malformed_inputs_are_errors() {
     assert!(matches!(read_smf(b""), Err(MidiError::NotSmf)));
-    assert!(matches!(read_smf(b"RIFF\x00\x00\x00\x06"), Err(MidiError::NotSmf)));
+    assert!(matches!(
+        read_smf(b"RIFF\x00\x00\x00\x06"),
+        Err(MidiError::NotSmf)
+    ));
     // Header truncated.
     assert!(read_smf(b"MThd\x00\x00\x00\x06\x00\x01").is_err());
     // Header length < 6.
@@ -265,17 +423,26 @@ fn malformed_inputs_are_errors() {
     // Chunk length larger than the data.
     let mut b = header(0, 1, 96);
     b.extend(b"MTrk\xFF\xFF\xFF\xF0\x00\x90");
-    assert!(matches!(read_smf(&b), Err(MidiError::BadChunkLength { .. })));
+    assert!(matches!(
+        read_smf(&b),
+        Err(MidiError::BadChunkLength { .. })
+    ));
     // Truncated chunk header.
     let mut b = header(0, 1, 96);
     b.extend(b"MTr");
     assert!(read_smf(&b).is_err());
     // Huge VLQ (5 continuation bytes).
     let body = vec![0xFF, 0xFF, 0xFF, 0xFF, 0x7F, 0x90, 60, 100];
-    assert!(matches!(read_smf(&file(0, 96, &[body])), Err(MidiError::VlqTooLong(_))));
+    assert!(matches!(
+        read_smf(&file(0, 96, &[body])),
+        Err(MidiError::VlqTooLong(_))
+    ));
     // Meta length past the end of the track.
     let body = vec![0x00, 0xFF, 0x03, 0x7F, b'a'];
-    assert!(matches!(read_smf(&file(0, 96, &[body])), Err(MidiError::Truncated(_))));
+    assert!(matches!(
+        read_smf(&file(0, 96, &[body])),
+        Err(MidiError::Truncated(_))
+    ));
     // Truncated channel message.
     let body = vec![0x00, 0x90, 60];
     assert!(read_smf(&file(0, 96, &[body])).is_err());
@@ -297,7 +464,10 @@ fn event_cap_reached_is_error() {
     for _ in 0..MAX_EVENTS {
         body.extend_from_slice(&[0x00, 0x01]);
     }
-    assert!(matches!(read_smf(&file(0, 96, &[body])), Err(MidiError::TooManyEvents(_))));
+    assert!(matches!(
+        read_smf(&file(0, 96, &[body])),
+        Err(MidiError::TooManyEvents(_))
+    ));
 }
 
 proptest! {

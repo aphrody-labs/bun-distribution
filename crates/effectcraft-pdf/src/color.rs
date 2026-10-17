@@ -55,13 +55,27 @@ impl Cs {
             Cs::Rgb | Cs::Pattern => [g(0), g(1), g(2)],
             Cs::Cmyk => {
                 let k = g(3);
-                [(1.0 - g(0)) * (1.0 - k), (1.0 - g(1)) * (1.0 - k), (1.0 - g(2)) * (1.0 - k)]
+                [
+                    (1.0 - g(0)) * (1.0 - k),
+                    (1.0 - g(1)) * (1.0 - k),
+                    (1.0 - g(2)) * (1.0 - k),
+                ]
             }
-            Cs::Lab => lab_to_rgb(c.first().copied().unwrap_or(0.0), c.get(1).copied().unwrap_or(0.0), c.get(2).copied().unwrap_or(0.0)),
-            Cs::Indexed { base, hival, lookup } => {
+            Cs::Lab => lab_to_rgb(
+                c.first().copied().unwrap_or(0.0),
+                c.get(1).copied().unwrap_or(0.0),
+                c.get(2).copied().unwrap_or(0.0),
+            ),
+            Cs::Indexed {
+                base,
+                hival,
+                lookup,
+            } => {
                 let i = (c.first().copied().unwrap_or(0.0).round().max(0.0) as usize).min(*hival);
                 let n = base.components();
-                let v: Vec<f64> = (0..n).map(|k| lookup.get(i * n + k).copied().unwrap_or(0) as f64 / 255.0).collect();
+                let v: Vec<f64> = (0..n)
+                    .map(|k| lookup.get(i * n + k).copied().unwrap_or(0) as f64 / 255.0)
+                    .collect();
                 base.to_rgb(&v)
             }
             Cs::Tint { alt, func, .. } => alt.to_rgb(&func.eval(c)),
@@ -73,12 +87,26 @@ fn lab_to_rgb(l: f64, a: f64, b: f64) -> [f64; 3] {
     let fy = (l + 16.0) / 116.0;
     let fx = fy + a / 500.0;
     let fz = fy - b / 200.0;
-    let f = |t: f64| if t > 6.0 / 29.0 { t * t * t } else { 3.0 * (6.0f64 / 29.0).powi(2) * (t - 4.0 / 29.0) };
+    let f = |t: f64| {
+        if t > 6.0 / 29.0 {
+            t * t * t
+        } else {
+            3.0 * (6.0f64 / 29.0).powi(2) * (t - 4.0 / 29.0)
+        }
+    };
     let (x, y, z) = (0.9505 * f(fx), f(fy), 1.089 * f(fz));
-    let lin = [3.2406 * x - 1.5372 * y - 0.4986 * z, -0.9689 * x + 1.8758 * y + 0.0415 * z, 0.0557 * x - 0.204 * y + 1.057 * z];
+    let lin = [
+        3.2406 * x - 1.5372 * y - 0.4986 * z,
+        -0.9689 * x + 1.8758 * y + 0.0415 * z,
+        0.0557 * x - 0.204 * y + 1.057 * z,
+    ];
     lin.map(|v| {
         let v = v.clamp(0.0, 1.0);
-        if v <= 0.003_130_8 { 12.92 * v } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+        if v <= 0.003_130_8 {
+            12.92 * v
+        } else {
+            1.055 * v.powf(1.0 / 2.4) - 0.055
+        }
     })
 }
 
@@ -106,13 +134,22 @@ fn color_space_at(file: &File, o: &Obj, res: Option<&Dict>, depth: usize) -> Cs 
             "DeviceRGB" | "RGB" | "CalRGB" => Cs::Rgb,
             "DeviceCMYK" | "CMYK" => Cs::Cmyk,
             "Pattern" => Cs::Pattern,
-            other => match res.and_then(|r| file.get_dict(r, "ColorSpace")).and_then(|cs| file.get(cs, other)) {
-                Some(x) if !matches!(x, Obj::Name(m) if m == other) => color_space_at(file, x, None, depth + 1),
+            other => match res
+                .and_then(|r| file.get_dict(r, "ColorSpace"))
+                .and_then(|cs| file.get(cs, other))
+            {
+                Some(x) if !matches!(x, Obj::Name(m) if m == other) => {
+                    color_space_at(file, x, None, depth + 1)
+                }
                 _ => Cs::Gray,
             },
         },
         Obj::Array(a) => {
-            let head = a.first().map(|h| file.resolve(h)).and_then(Obj::name).unwrap_or("");
+            let head = a
+                .first()
+                .map(|h| file.resolve(h))
+                .and_then(Obj::name)
+                .unwrap_or("");
             match head {
                 "ICCBased" => {
                     let d = a.get(1).map(|s| file.resolve(s)).and_then(Obj::dict);
@@ -133,26 +170,63 @@ fn color_space_at(file: &File, o: &Obj, res: Option<&Dict>, depth: usize) -> Cs 
                 "Lab" => Cs::Lab,
                 "Pattern" => Cs::Pattern,
                 "Indexed" | "I" => {
-                    let base = a.get(1).map(|b| color_space_at(file, b, res, depth + 1)).unwrap_or(Cs::Rgb);
+                    let base = a
+                        .get(1)
+                        .map(|b| color_space_at(file, b, res, depth + 1))
+                        .unwrap_or(Cs::Rgb);
                     // An indexed palette holds at most 256 entries, so hival (its largest index) is
                     // 0 to 255; an image builds its palette from every entry up to hival.
-                    let hival = (a.get(2).and_then(|h| file.resolve(h).num()).unwrap_or(0.0) as usize).min(255);
+                    let hival = (a.get(2).and_then(|h| file.resolve(h).num()).unwrap_or(0.0)
+                        as usize)
+                        .min(255);
                     let lookup = match a.get(3).map(|l| file.resolve(l)) {
                         Some(Obj::Str(s)) => s.clone(),
-                        Some(Obj::Stream(d, raw)) => decode_stream(file, d, raw).unwrap_or_default(),
+                        Some(Obj::Stream(d, raw)) => {
+                            decode_stream(file, d, raw).unwrap_or_default()
+                        }
                         _ => vec![],
                     };
-                    Cs::Indexed { base: Box::new(base), hival, lookup }
+                    Cs::Indexed {
+                        base: Box::new(base),
+                        hival,
+                        lookup,
+                    }
                 }
                 "Separation" | "DeviceN" => {
-                    let n = if head == "Separation" { 1 } else { a.get(1).map(|x| file.resolve(x)).and_then(Obj::array).map_or(1, <[Obj]>::len) };
-                    let alt = a.get(2).map(|b| color_space_at(file, b, res, depth + 1)).unwrap_or(Cs::Gray);
-                    let func = a.get(3).map(|f| Func::read(file, f)).unwrap_or(Func::Unsupported);
+                    let n = if head == "Separation" {
+                        1
+                    } else {
+                        a.get(1)
+                            .map(|x| file.resolve(x))
+                            .and_then(Obj::array)
+                            .map_or(1, <[Obj]>::len)
+                    };
+                    let alt = a
+                        .get(2)
+                        .map(|b| color_space_at(file, b, res, depth + 1))
+                        .unwrap_or(Cs::Gray);
+                    let func = a
+                        .get(3)
+                        .map(|f| Func::read(file, f))
+                        .unwrap_or(Func::Unsupported);
                     // An unreadable tint transform: tint 1 = black, 0 = white.
                     if func == Func::Unsupported {
-                        return Cs::Tint { n, alt: Box::new(Cs::Gray), func: Func::Exp { domain: [0.0, 1.0], c0: vec![1.0], c1: vec![0.0], n: 1.0 } };
+                        return Cs::Tint {
+                            n,
+                            alt: Box::new(Cs::Gray),
+                            func: Func::Exp {
+                                domain: [0.0, 1.0],
+                                c0: vec![1.0],
+                                c1: vec![0.0],
+                                n: 1.0,
+                            },
+                        };
                     }
-                    Cs::Tint { n, alt: Box::new(alt), func }
+                    Cs::Tint {
+                        n,
+                        alt: Box::new(alt),
+                        func,
+                    }
                 }
                 _ => Cs::Rgb,
             }
@@ -297,7 +371,12 @@ fn ps_run(code: &[PsOp], st: &mut Vec<f64>, depth: usize) {
                     }
                     "index" => {
                         let k = pop(st).max(0.0) as usize;
-                        let v = k.checked_add(1).and_then(|k| st.len().checked_sub(k)).and_then(|i| st.get(i)).copied().unwrap_or(0.0);
+                        let v = k
+                            .checked_add(1)
+                            .and_then(|k| st.len().checked_sub(k))
+                            .and_then(|i| st.get(i))
+                            .copied()
+                            .unwrap_or(0.0);
                         ps_push(st, v);
                     }
                     "roll" => {
@@ -374,7 +453,11 @@ fn ps_run(code: &[PsOp], st: &mut Vec<f64>, depth: usize) {
                             "xor" => ((x as i64) ^ (y as i64)) as f64,
                             "bitshift" => {
                                 let (v, s) = (x as i64, y as i64);
-                                (if s >= 0 { v << s.min(62) } else { v >> (-s).min(62) }) as f64
+                                (if s >= 0 {
+                                    v << s.min(62)
+                                } else {
+                                    v >> (-s).min(62)
+                                }) as f64
                             }
                             _ => {
                                 ps_push(st, x);
@@ -428,7 +511,11 @@ struct Budget {
 
 impl Budget {
     fn new() -> Self {
-        Budget { nodes: MAX_NODES, samples: MAX_SAMPLES, overrun: false }
+        Budget {
+            nodes: MAX_NODES,
+            samples: MAX_SAMPLES,
+            overrun: false,
+        }
     }
 
     /// Charge `n` nodes; `false` (and the read is abandoned) once the cap is passed.
@@ -493,16 +580,31 @@ impl Func {
             if a.len() > MAX_IO {
                 return Func::Unsupported;
             }
-            return Func::read_all(file, a, depth + 1, budget).map_or(Func::Unsupported, Func::Array);
+            return Func::read_all(file, a, depth + 1, budget)
+                .map_or(Func::Unsupported, Func::Array);
         }
-        let Some(d) = o.dict() else { return Func::Unsupported };
-        let dom = file.get(d, "Domain").map(|x| file.nums(x)).unwrap_or_default();
-        let domain = [dom.first().copied().unwrap_or(0.0), dom.get(1).copied().unwrap_or(1.0)];
+        let Some(d) = o.dict() else {
+            return Func::Unsupported;
+        };
+        let dom = file
+            .get(d, "Domain")
+            .map(|x| file.nums(x))
+            .unwrap_or_default();
+        let domain = [
+            dom.first().copied().unwrap_or(0.0),
+            dom.get(1).copied().unwrap_or(1.0),
+        ];
         match file.get_num(d, "FunctionType").unwrap_or(-1.0) as i32 {
             2 => Func::Exp {
                 domain,
-                c0: file.get(d, "C0").map(|x| file.nums(x)).unwrap_or_else(|| vec![0.0]),
-                c1: file.get(d, "C1").map(|x| file.nums(x)).unwrap_or_else(|| vec![1.0]),
+                c0: file
+                    .get(d, "C0")
+                    .map(|x| file.nums(x))
+                    .unwrap_or_else(|| vec![0.0]),
+                c1: file
+                    .get(d, "C1")
+                    .map(|x| file.nums(x))
+                    .unwrap_or_else(|| vec![1.0]),
                 n: file.get_num(d, "N").unwrap_or(1.0),
             },
             3 => {
@@ -512,34 +614,77 @@ impl Func {
                     Some(a) => Func::read_all(file, a, depth + 1, budget),
                     None => Some(vec![]),
                 };
-                let Some(funcs) = funcs else { return Func::Unsupported };
+                let Some(funcs) = funcs else {
+                    return Func::Unsupported;
+                };
                 Func::Stitch {
                     domain,
                     funcs,
-                    bounds: file.get(d, "Bounds").map(|x| file.nums(x)).unwrap_or_default(),
-                    encode: file.get(d, "Encode").map(|x| file.nums(x)).unwrap_or_default(),
+                    bounds: file
+                        .get(d, "Bounds")
+                        .map(|x| file.nums(x))
+                        .unwrap_or_default(),
+                    encode: file
+                        .get(d, "Encode")
+                        .map(|x| file.nums(x))
+                        .unwrap_or_default(),
                 }
             }
             0 => {
-                let Obj::Stream(sd, raw) = o else { return Func::Unsupported };
-                let Some(data) = decode_stream(file, sd, raw) else { return Func::Unsupported };
-                let sizes: Vec<usize> = file.get(d, "Size").map(|x| file.nums(x)).unwrap_or_default().iter().map(|v| v.max(0.0) as usize).collect();
+                let Obj::Stream(sd, raw) = o else {
+                    return Func::Unsupported;
+                };
+                let Some(data) = decode_stream(file, sd, raw) else {
+                    return Func::Unsupported;
+                };
+                let sizes: Vec<usize> = file
+                    .get(d, "Size")
+                    .map(|x| file.nums(x))
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|v| v.max(0.0) as usize)
+                    .collect();
                 let size = sizes.first().copied().unwrap_or(0);
                 let bps = file.get_num(d, "BitsPerSample").unwrap_or(8.0) as usize;
-                let range = file.get(d, "Range").map(|x| file.nums(x)).unwrap_or_default();
+                let range = file
+                    .get(d, "Range")
+                    .map(|x| file.nums(x))
+                    .unwrap_or_default();
                 let outputs = range.len() / 2;
-                if size == 0 || outputs == 0 || outputs > MAX_IO || sizes.len() > MAX_IO || !matches!(bps, 1 | 2 | 4 | 8 | 12 | 16 | 24 | 32) {
+                if size == 0
+                    || outputs == 0
+                    || outputs > MAX_IO
+                    || sizes.len() > MAX_IO
+                    || !matches!(bps, 1 | 2 | 4 | 8 | 12 | 16 | 24 | 32)
+                {
                     return Func::Unsupported;
                 }
-                let total = sizes.iter().try_fold(1usize, |a, b| a.checked_mul(*b)).filter(|t| *t > 0 && *t <= 1 << 22);
-                let Some(total) = total else { return Func::Unsupported };
-                let Some(count) = sample_count(total, outputs) else { return Func::Unsupported };
+                let total = sizes
+                    .iter()
+                    .try_fold(1usize, |a, b| a.checked_mul(*b))
+                    .filter(|t| *t > 0 && *t <= 1 << 22);
+                let Some(total) = total else {
+                    return Func::Unsupported;
+                };
+                let Some(count) = sample_count(total, outputs) else {
+                    return Func::Unsupported;
+                };
                 if !budget.take_samples(count) {
                     return Func::Unsupported;
                 }
-                let enc = file.get(d, "Encode").map(|x| file.nums(x)).unwrap_or_default();
-                let encode = [enc.first().copied().unwrap_or(0.0), enc.get(1).copied().unwrap_or(size as f64 - 1.0)];
-                let decode = file.get(d, "Decode").map(|x| file.nums(x)).filter(|v| v.len() >= outputs * 2).unwrap_or_else(|| range.clone());
+                let enc = file
+                    .get(d, "Encode")
+                    .map(|x| file.nums(x))
+                    .unwrap_or_default();
+                let encode = [
+                    enc.first().copied().unwrap_or(0.0),
+                    enc.get(1).copied().unwrap_or(size as f64 - 1.0),
+                ];
+                let decode = file
+                    .get(d, "Decode")
+                    .map(|x| file.nums(x))
+                    .filter(|v| v.len() >= outputs * 2)
+                    .unwrap_or_else(|| range.clone());
                 let max = ((1u64 << bps) - 1) as f64;
                 let mut bit = 0usize;
                 let samples: Arc<[f64]> = (0..count)
@@ -555,23 +700,61 @@ impl Func {
                     .collect();
                 if sizes.len() > 1 {
                     let m = sizes.len();
-                    let encode =
-                        (0..m).flat_map(|i| [enc.get(2 * i).copied().unwrap_or(0.0), enc.get(2 * i + 1).copied().unwrap_or(sizes[i] as f64 - 1.0)]).collect();
-                    let domain = (0..m).flat_map(|i| [dom.get(2 * i).copied().unwrap_or(0.0), dom.get(2 * i + 1).copied().unwrap_or(1.0)]).collect();
-                    return Func::SampledN { domain, size: sizes, outputs, encode, decode, samples };
+                    let encode = (0..m)
+                        .flat_map(|i| {
+                            [
+                                enc.get(2 * i).copied().unwrap_or(0.0),
+                                enc.get(2 * i + 1).copied().unwrap_or(sizes[i] as f64 - 1.0),
+                            ]
+                        })
+                        .collect();
+                    let domain = (0..m)
+                        .flat_map(|i| {
+                            [
+                                dom.get(2 * i).copied().unwrap_or(0.0),
+                                dom.get(2 * i + 1).copied().unwrap_or(1.0),
+                            ]
+                        })
+                        .collect();
+                    return Func::SampledN {
+                        domain,
+                        size: sizes,
+                        outputs,
+                        encode,
+                        decode,
+                        samples,
+                    };
                 }
-                Func::Sampled { domain, size, outputs, encode, decode, samples }
+                Func::Sampled {
+                    domain,
+                    size,
+                    outputs,
+                    encode,
+                    decode,
+                    samples,
+                }
             }
             4 => {
-                let Obj::Stream(sd, raw) = o else { return Func::Unsupported };
-                let Some(data) = decode_stream(file, sd, raw) else { return Func::Unsupported };
+                let Obj::Stream(sd, raw) = o else {
+                    return Func::Unsupported;
+                };
+                let Some(data) = decode_stream(file, sd, raw) else {
+                    return Func::Unsupported;
+                };
                 let mut lx = crate::object::Lexer::new(&data, 0);
                 // The program is one procedure: `{ … }`.
                 let code = match ps_parse(&mut lx, 0).into_iter().next() {
                     Some(PsOp::Proc(p)) => p,
                     _ => return Func::Unsupported,
                 };
-                Func::Calc { domain: dom, range: file.get(d, "Range").map(|x| file.nums(x)).unwrap_or_default(), code }
+                Func::Calc {
+                    domain: dom,
+                    range: file
+                        .get(d, "Range")
+                        .map(|x| file.nums(x))
+                        .unwrap_or_default(),
+                    code,
+                }
             }
             _ => Func::Unsupported,
         }
@@ -615,7 +798,12 @@ impl Func {
     /// Evaluate at the first input (the functions used by shadings and tints take one input
     /// in practice; extra inputs of DeviceN tints are averaged in).
     pub fn eval(&self, input: &[f64]) -> Vec<f64> {
-        if let Func::Calc { domain, range, code } = self {
+        if let Func::Calc {
+            domain,
+            range,
+            code,
+        } = self
+        {
             // The inputs start the operand stack, which holds at most `MAX_STACK` values.
             let mut st: Vec<f64> = input
                 .iter()
@@ -629,10 +817,23 @@ impl Func {
             ps_run(code, &mut st, 0);
             let n = range.len() / 2;
             let k = st.len().saturating_sub(n);
-            return st.get(k..).unwrap_or_default().iter().zip(range.as_chunks::<2>().0).map(|(v, [a, b])| clamp(*v, *a, *b)).collect();
+            return st
+                .get(k..)
+                .unwrap_or_default()
+                .iter()
+                .zip(range.as_chunks::<2>().0)
+                .map(|(v, [a, b])| clamp(*v, *a, *b))
+                .collect();
         }
         match self {
-            Func::SampledN { domain, size, outputs, encode, decode, samples } => {
+            Func::SampledN {
+                domain,
+                size,
+                outputs,
+                encode,
+                decode,
+                samples,
+            } => {
                 let m = size.len();
                 // Each input → a sample-table coordinate, then the 2^m surrounding samples.
                 let mut base = vec![0usize; m];
@@ -641,8 +842,16 @@ impl Func {
                     let x = input.get(i).copied().unwrap_or(0.0);
                     let (d0, d1) = (domain[2 * i], domain[2 * i + 1]);
                     let x = clamp(x, d0, d1);
-                    let e = if d1 != d0 { encode[2 * i] + (x - d0) / (d1 - d0) * (encode[2 * i + 1] - encode[2 * i]) } else { encode[2 * i] };
-                    let e = if e.is_finite() { clamp(e, 0.0, size[i] as f64 - 1.0) } else { 0.0 };
+                    let e = if d1 != d0 {
+                        encode[2 * i] + (x - d0) / (d1 - d0) * (encode[2 * i + 1] - encode[2 * i])
+                    } else {
+                        encode[2 * i]
+                    };
+                    let e = if e.is_finite() {
+                        clamp(e, 0.0, size[i] as f64 - 1.0)
+                    } else {
+                        0.0
+                    };
                     base[i] = e.floor() as usize;
                     frac[i] = e - e.floor();
                 }
@@ -655,7 +864,11 @@ impl Func {
                     for i in 0..m {
                         let up = m <= 6 && (c >> i) & 1 == 1;
                         w *= if up { frac[i] } else { 1.0 - frac[i] };
-                        let k = if up { (base[i] + 1).min(size[i] - 1) } else { base[i] };
+                        let k = if up {
+                            (base[i] + 1).min(size[i] - 1)
+                        } else {
+                            base[i]
+                        };
                         idx += k * stride;
                         stride *= size[i];
                     }
@@ -667,12 +880,18 @@ impl Func {
                     }
                 }
                 for (o, v) in out.iter_mut().enumerate() {
-                    let (d0, d1) = (decode.get(2 * o).copied().unwrap_or(0.0), decode.get(2 * o + 1).copied().unwrap_or(1.0));
+                    let (d0, d1) = (
+                        decode.get(2 * o).copied().unwrap_or(0.0),
+                        decode.get(2 * o + 1).copied().unwrap_or(1.0),
+                    );
                     *v = d0 + *v * (d1 - d0);
                 }
                 out
             }
-            Func::Array(fs) if input.len() > 1 => fs.iter().map(|f| f.eval(input).first().copied().unwrap_or(0.0)).collect(),
+            Func::Array(fs) if input.len() > 1 => fs
+                .iter()
+                .map(|f| f.eval(input).first().copied().unwrap_or(0.0))
+                .collect(),
             _ => self.eval1(input.first().copied().unwrap_or(0.0)),
         }
     }
@@ -683,36 +902,74 @@ impl Func {
                 let t = clamp(t, domain[0], domain[1]);
                 let x = if *n == 1.0 { t } else { t.max(0.0).powf(*n) };
                 (0..c0.len().max(c1.len()))
-                    .map(|i| c0.get(i).copied().unwrap_or(0.0) + x * (c1.get(i).copied().unwrap_or(1.0) - c0.get(i).copied().unwrap_or(0.0)))
+                    .map(|i| {
+                        c0.get(i).copied().unwrap_or(0.0)
+                            + x * (c1.get(i).copied().unwrap_or(1.0)
+                                - c0.get(i).copied().unwrap_or(0.0))
+                    })
                     .collect()
             }
-            Func::Stitch { domain, funcs, bounds, encode } => {
+            Func::Stitch {
+                domain,
+                funcs,
+                bounds,
+                encode,
+            } => {
                 if funcs.is_empty() {
                     return vec![0.0];
                 }
                 let t = clamp(t, domain[0], domain[1]);
-                let k = bounds.iter().take_while(|b| t >= **b).count().min(funcs.len() - 1);
+                let k = bounds
+                    .iter()
+                    .take_while(|b| t >= **b)
+                    .count()
+                    .min(funcs.len() - 1);
                 let lo = if k == 0 { domain[0] } else { bounds[k - 1] };
                 let hi = bounds.get(k).copied().unwrap_or(domain[1]);
-                let (e0, e1) = (encode.get(2 * k).copied().unwrap_or(0.0), encode.get(2 * k + 1).copied().unwrap_or(1.0));
-                let u = if hi > lo { e0 + (t - lo) / (hi - lo) * (e1 - e0) } else { e0 };
+                let (e0, e1) = (
+                    encode.get(2 * k).copied().unwrap_or(0.0),
+                    encode.get(2 * k + 1).copied().unwrap_or(1.0),
+                );
+                let u = if hi > lo {
+                    e0 + (t - lo) / (hi - lo) * (e1 - e0)
+                } else {
+                    e0
+                };
                 funcs[k].eval1(u)
             }
-            Func::Sampled { domain, size, outputs, encode, decode, samples } => {
+            Func::Sampled {
+                domain,
+                size,
+                outputs,
+                encode,
+                decode,
+                samples,
+            } => {
                 let t = clamp(t, domain[0], domain[1]);
-                let e = if domain[1] > domain[0] { encode[0] + (t - domain[0]) / (domain[1] - domain[0]) * (encode[1] - encode[0]) } else { encode[0] };
+                let e = if domain[1] > domain[0] {
+                    encode[0] + (t - domain[0]) / (domain[1] - domain[0]) * (encode[1] - encode[0])
+                } else {
+                    encode[0]
+                };
                 let e = clamp(e, 0.0, *size as f64 - 1.0);
                 let (i0, f) = (e.floor() as usize, e.fract());
                 let i1 = (i0 + 1).min(size - 1);
                 (0..*outputs)
                     .map(|o| {
-                        let s = samples[i0 * outputs + o] * (1.0 - f) + samples[i1 * outputs + o] * f;
-                        let (d0, d1) = (decode.get(2 * o).copied().unwrap_or(0.0), decode.get(2 * o + 1).copied().unwrap_or(1.0));
+                        let s =
+                            samples[i0 * outputs + o] * (1.0 - f) + samples[i1 * outputs + o] * f;
+                        let (d0, d1) = (
+                            decode.get(2 * o).copied().unwrap_or(0.0),
+                            decode.get(2 * o + 1).copied().unwrap_or(1.0),
+                        );
                         d0 + s * (d1 - d0)
                     })
                     .collect()
             }
-            Func::Array(fs) => fs.iter().map(|f| f.eval1(t).first().copied().unwrap_or(0.0)).collect(),
+            Func::Array(fs) => fs
+                .iter()
+                .map(|f| f.eval1(t).first().copied().unwrap_or(0.0))
+                .collect(),
             Func::Calc { .. } | Func::SampledN { .. } => self.eval(&[t]),
             Func::Unsupported => vec![0.5],
         }
@@ -730,7 +987,12 @@ impl Func {
 /// PDF text string → Rust string (UTF-16BE with a byte-order mark, else PDFDocEncoding ≈ Latin-1).
 pub fn text_string(b: &[u8]) -> String {
     if b.starts_with(&[0xFE, 0xFF]) {
-        let u: Vec<u16> = b[2..].as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+        let u: Vec<u16> = b[2..]
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_be_bytes([c[0], c[1]]))
+            .collect();
         return String::from_utf16_lossy(&u);
     }
     if let Some(rest) = b.strip_prefix(&[0xEF, 0xBB, 0xBF]) {
@@ -761,8 +1023,14 @@ mod tests {
         // Two inputs → three outputs: { 2 copy mul 3 1 roll add 2 div  dup 0.5 gt { pop 1 } if  0 }
         let code = b"{ 2 copy mul 3 1 roll add 2 div dup 0.5 gt { pop 1 } { 0.25 mul } ifelse 0 }";
         let mut lx = crate::object::Lexer::new(code, 0);
-        let Some(PsOp::Proc(code)) = ps_parse(&mut lx, 0).into_iter().next() else { panic!() };
-        let f = Func::Calc { domain: vec![0.0, 1.0, 0.0, 1.0], range: vec![0.0, 1.0, 0.0, 1.0, 0.0, 1.0], code };
+        let Some(PsOp::Proc(code)) = ps_parse(&mut lx, 0).into_iter().next() else {
+            panic!()
+        };
+        let f = Func::Calc {
+            domain: vec![0.0, 1.0, 0.0, 1.0],
+            range: vec![0.0, 1.0, 0.0, 1.0, 0.0, 1.0],
+            code,
+        };
         assert_eq!(f.eval(&[0.5, 0.4]), vec![0.2, 0.1125, 0.0]);
         assert_eq!(f.eval(&[1.0, 0.8]), vec![0.8, 1.0, 0.0]);
     }
@@ -771,7 +1039,9 @@ mod tests {
     fn run(src: &str, mut st: Vec<f64>) -> Vec<f64> {
         let src = format!("{{ {src} }}");
         let mut lx = crate::object::Lexer::new(src.as_bytes(), 0);
-        let Some(PsOp::Proc(code)) = ps_parse(&mut lx, 0).into_iter().next() else { panic!() };
+        let Some(PsOp::Proc(code)) = ps_parse(&mut lx, 0).into_iter().next() else {
+            panic!()
+        };
         ps_run(&code, &mut st, 0);
         st
     }
@@ -787,7 +1057,9 @@ mod tests {
         let full = run("50 copy", fifty.clone());
         assert_eq!(full.len(), 100);
         assert_eq!(full[50..], fifty[..]);
-        for op in ["7", "true", "false", "dup", "0 index", "1 copy", "neg", "add", "nonsense"] {
+        for op in [
+            "7", "true", "false", "dup", "0 index", "1 copy", "neg", "add", "nonsense",
+        ] {
             assert!(run(op, full.clone()).len() <= 100, "{op}");
         }
         // Nor does a long program without loops: one push per operator, up to the cap.
@@ -799,15 +1071,24 @@ mod tests {
     #[test]
     fn calculator_index_past_the_stack_pushes_zero() {
         // 10^20 is past usize::MAX: `k + 1` overflowed (a panic), or wrapped to read past the stack.
-        assert_eq!(run("99999999999999999999 index", vec![1.0, 2.0]), vec![1.0, 2.0, 0.0]);
+        assert_eq!(
+            run("99999999999999999999 index", vec![1.0, 2.0]),
+            vec![1.0, 2.0, 0.0]
+        );
         assert_eq!(run("2 index", vec![1.0, 2.0]), vec![1.0, 2.0, 0.0]);
         assert_eq!(run("1 index", vec![1.0, 2.0]), vec![1.0, 2.0, 1.0]);
     }
 
     #[test]
     fn calculator_copy_index_and_roll_below_the_cap() {
-        assert_eq!(run("3 copy 1 index 4 1 roll", vec![1.0, 2.0, 3.0]), vec![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0]);
-        assert_eq!(run("3 -1 roll dup", vec![1.0, 2.0, 3.0]), vec![2.0, 3.0, 1.0, 1.0]);
+        assert_eq!(
+            run("3 copy 1 index 4 1 roll", vec![1.0, 2.0, 3.0]),
+            vec![1.0, 2.0, 3.0, 2.0, 1.0, 2.0, 3.0]
+        );
+        assert_eq!(
+            run("3 -1 roll dup", vec![1.0, 2.0, 3.0]),
+            vec![2.0, 3.0, 1.0, 1.0]
+        );
     }
 
     #[test]

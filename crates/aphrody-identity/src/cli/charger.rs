@@ -19,13 +19,17 @@ APHRODY_SYMBOLS_DIR, sinon packages/m3-fonts/fonts/upstream/material-symbols du 
 
 /// Entry point of `aphrody identity charger`. `args[0]` is the program name.
 pub fn charger_main(args: Vec<OsString>) -> i32 {
-    let args: Vec<String> = args.iter().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
+    let args: Vec<String> = args
+        .iter()
+        .skip(1)
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect();
     match executer(args) {
         Ok(()) => 0,
         Err(e) => {
             eprintln!("charger: {e}");
             1
-        },
+        }
     }
 }
 
@@ -55,10 +59,15 @@ fn executer(mut args: Vec<String>) -> Result<(), String> {
     }
     let mut requete = Request::default();
     if let Some(t) = valeur(&mut args, "--taille")? {
-        requete.size = Some(t.parse().map_err(|_| format!("--taille {t} : entier attendu"))?);
+        requete.size = Some(
+            t.parse()
+                .map_err(|_| format!("--taille {t} : entier attendu"))?,
+        );
     }
     if let Some(e) = valeur(&mut args, "--echelle")? {
-        requete.scale = e.parse().map_err(|_| format!("--echelle {e} : nombre attendu"))?;
+        requete.scale = e
+            .parse()
+            .map_err(|_| format!("--echelle {e} : nombre attendu"))?;
     }
     if let Some(c) = valeur(&mut args, "--teinte")? {
         requete.tint = Some(couleur(&c).ok_or_else(|| format!("--teinte {c} : #RRGGBB attendu"))?);
@@ -73,31 +82,40 @@ fn executer(mut args: Vec<String>) -> Result<(), String> {
     let sortie = valeur(&mut args, "-o")?;
     let json = drapeau(&mut args, "--json");
     let [spec] = args.as_slice() else {
-        return Err(format!("une seule source attendue, reçu {args:?}\n\n{AIDE}"));
+        return Err(format!(
+            "une seule source attendue, reçu {args:?}\n\n{AIDE}"
+        ));
     };
     let source = Source::parse(spec).map_err(|e| e.to_string())?;
 
     let debut = Instant::now();
-    let charge = Loader::from_env().load(&source, &requete).map_err(|e| e.to_string())?;
+    let charge = Loader::from_env()
+        .load(&source, &requete)
+        .map_err(|e| e.to_string())?;
     let ms = debut.elapsed().as_secs_f64() * 1000.0;
 
     let (largeur, hauteur) = match &charge.contenu {
         Contenu::Rgba(img) => {
-            let f = sortie.as_deref().ok_or("une sortie RGBA s'écrit en PNG : -o FICHIER.png")?;
+            let f = sortie
+                .as_deref()
+                .ok_or("une sortie RGBA s'écrit en PNG : -o FICHIER.png")?;
             let png = crate::assets::encoder_png(&img.rgba, img.largeur, img.hauteur)
                 .map_err(|e| e.to_string())?;
             std::fs::write(f, png).map_err(|e| format!("{f} : {e}"))?;
             (img.largeur, img.hauteur)
-        },
+        }
         Contenu::Svg(svg) => {
             match sortie.as_deref() {
                 Some(f) => std::fs::write(f, svg).map_err(|e| format!("{f} : {e}"))?,
                 None => println!("{svg}"),
             }
             (0, 0)
-        },
+        }
     };
-    let empreinte: String = charge.empreinte[..8].iter().map(|b| format!("{b:02x}")).collect();
+    let empreinte: String = charge.empreinte[..8]
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     let resume = serde_json::json!({
         "format": charge.format.as_str(),
         "intrinseque": [charge.intrinseque.0, charge.intrinseque.1],

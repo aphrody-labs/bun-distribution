@@ -2,7 +2,7 @@ pub use bevy_animation_macros::AnimationEvent;
 
 use bevy_ecs::{
     entity::Entity,
-    event::{trigger_entity_internal, Event, Trigger},
+    event::{Event, Trigger, trigger_entity_internal},
     observer::{CachedObservers, TriggerContext},
     world::DeferredWorld,
 };

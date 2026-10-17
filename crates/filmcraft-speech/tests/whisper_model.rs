@@ -17,7 +17,10 @@ fn repo() -> PathBuf {
 
 fn model_dir(id: &str) -> Option<PathBuf> {
     let m = models::find(id)?;
-    let mut roots: Vec<PathBuf> = std::env::var_os("FILMCRAFT_MODELS_DIR").map(PathBuf::from).into_iter().collect();
+    let mut roots: Vec<PathBuf> = std::env::var_os("FILMCRAFT_MODELS_DIR")
+        .map(PathBuf::from)
+        .into_iter()
+        .collect();
     roots.push(repo().join("target/models"));
     // worktrees: the main checkout's target
     if let Ok(main) = std::fs::canonicalize(repo())
@@ -25,7 +28,10 @@ fn model_dir(id: &str) -> Option<PathBuf> {
     {
         roots.push(p.join("target/models"));
     }
-    roots.into_iter().find(|r| models::installed(r, m)).map(|r| models::model_dir(&r, m))
+    roots
+        .into_iter()
+        .find(|r| models::installed(r, m))
+        .map(|r| models::model_dir(&r, m))
 }
 
 fn samples() -> Vec<(PathBuf, String)> {
@@ -37,9 +43,13 @@ fn samples() -> Vec<(PathBuf, String)> {
     }
     let mut out = Vec::new();
     for r in roots {
-        let Ok(dirs) = std::fs::read_dir(&r) else { continue };
+        let Ok(dirs) = std::fs::read_dir(&r) else {
+            continue;
+        };
         for d in dirs.flatten() {
-            let Ok(files) = std::fs::read_dir(d.path()) else { continue };
+            let Ok(files) = std::fs::read_dir(d.path()) else {
+                continue;
+            };
             for f in files.flatten() {
                 let p = f.path();
                 if p.extension().is_some_and(|e| e == "f32")
@@ -58,7 +68,13 @@ fn samples() -> Vec<(PathBuf, String)> {
 }
 
 fn read_f32(p: &Path) -> Vec<f32> {
-    std::fs::read(p).unwrap().as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+    std::fs::read(p)
+        .unwrap()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect()
 }
 
 #[test]
@@ -73,7 +89,11 @@ fn tiny_model_transcribes_public_domain_speech() {
         return;
     }
     let w = filmcraft_speech::whisper::Whisper::load(&dir, "whisper-tiny").unwrap();
-    let opts = Options { language: Some("en".into()), diarize: false, ..Default::default() };
+    let opts = Options {
+        language: Some("en".into()),
+        diarize: false,
+        ..Default::default()
+    };
     let (mut errs, mut words) = (0.0, 0usize);
     for (p, reference) in samples.iter().take(8) {
         let audio = read_f32(p);

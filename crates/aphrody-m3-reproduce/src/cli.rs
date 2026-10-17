@@ -36,7 +36,7 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             let code = err.exit_code();
             let _ = err.print();
             return code;
-        },
+        }
     };
 
     let plan = match run(&cli) {
@@ -44,7 +44,7 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(err) => {
             eprintln!("aphrody-m3-reproduce: {err}");
             return 1;
-        },
+        }
     };
 
     if cli.json {
@@ -53,7 +53,7 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
             Err(err) => {
                 eprintln!("aphrody-m3-reproduce: {err}");
                 return 1;
-            },
+            }
         }
         return 0;
     }

@@ -47,7 +47,11 @@ impl audio::Backend for Capture {
         if out.len() > SAMPLE_RATE as usize * 4 {
             out.clear();
         }
-        out.extend(samples.drain(..).flat_map(|pair| pair.map(|s| (f32::from(s) - 512.0) / 512.0)));
+        out.extend(
+            samples
+                .drain(..)
+                .flat_map(|pair| pair.map(|s| (f32::from(s) - 512.0) / 512.0)),
+        );
     }
 }
 
@@ -88,7 +92,11 @@ impl RendererTx for Tx {
         state: &RenderingState,
     ) {
         let mut shared = self.0.borrow_mut();
-        let Soft3d { data, renderer, output } = &mut *shared;
+        let Soft3d {
+            data,
+            renderer,
+            output,
+        } = &mut *shared;
         data.copy_vram(texture, palette, state);
         renderer.start_frame(data);
         renderer.render_line(0, data);
@@ -109,7 +117,9 @@ impl SoftRendererRx for Rx {
     }
 
     fn read_scanline(&mut self) -> &Scanline<u32> {
-        self.output.0.copy_from_slice(&self.shared.borrow().output[self.line].0);
+        self.output
+            .0
+            .copy_from_slice(&self.shared.borrow().output[self.line].0);
         self.line += 1;
         &self.output
     }
@@ -141,10 +151,12 @@ fn backup(size: usize, save: Option<BoxedByteSlice>) -> Result<Spi> {
     };
     Ok(match size {
         0 => Empty::new().into(),
-        0x200 => Eeprom4k::new(contents, None).map_err(|e| err("eeprom", format!("{e:?}")))?.into(),
-        0x2000 | 0x1_0000 | 0x2_0000 => {
-            EepromFram::new(contents, None).map_err(|e| err("fram", format!("{e:?}")))?.into()
-        }
+        0x200 => Eeprom4k::new(contents, None)
+            .map_err(|e| err("eeprom", format!("{e:?}")))?
+            .into(),
+        0x2000 | 0x1_0000 | 0x2_0000 => EepromFram::new(contents, None)
+            .map_err(|e| err("fram", format!("{e:?}")))?
+            .into(),
         0x4_0000 | 0x8_0000 | 0x10_0000 => {
             let mut id = [0_u8; 20];
             let model = match size {
@@ -153,7 +165,9 @@ fn backup(size: usize, save: Option<BoxedByteSlice>) -> Result<Spi> {
                 _ => 0x14,
             };
             id[..3].copy_from_slice(&[0x20, 0x40, model]);
-            Flash::new(contents, id, false).map_err(|e| err("flash", format!("{e:?}")))?.into()
+            Flash::new(contents, id, false)
+                .map_err(|e| err("flash", format!("{e:?}")))?
+                .into()
         }
         other => return Err(err("save", format!("unsupported backup size {other:#x}"))),
     })
@@ -188,7 +202,11 @@ impl Nds {
             renderer: Renderer::new(),
             output: unsafe { Box::new_zeroed().assume_init() },
         }));
-        let rx = Rx { shared: shared.clone(), line: 0, output: Scanline([0; 256]) };
+        let rx = Rx {
+            shared: shared.clone(),
+            line: 0,
+            output: Scanline([0; 256]),
+        };
         // Cartridge chips are power-of-two sized; dumps and homebrew builds are often trimmed.
         // Pad with 0xFF (erased flash) like a real cartridge reads past the image.
         let padded = rom.len().max(0x200).next_power_of_two();
@@ -225,7 +243,12 @@ impl Nds {
         })?;
         let title = rom
             .get(..12)
-            .map(|t| String::from_utf8_lossy(t).trim_end_matches('\0').trim().to_owned())
+            .map(|t| {
+                String::from_utf8_lossy(t)
+                    .trim_end_matches('\0')
+                    .trim()
+                    .to_owned()
+            })
             .unwrap_or_default();
         let blank = || Image {
             width: WIDTH,
@@ -246,7 +269,10 @@ impl Nds {
     }
 
     fn capture(&mut self) {
-        for (image, fb) in self.images.iter_mut().zip(self.emu.gpu.renderer_2d().framebuffer().iter())
+        for (image, fb) in self
+            .images
+            .iter_mut()
+            .zip(self.emu.gpu.renderer_2d().framebuffer().iter())
         {
             let mut rgba = Vec::with_capacity((WIDTH * HEIGHT * 4) as usize);
             for px in fb.iter().take((WIDTH * HEIGHT) as usize) {
@@ -273,7 +299,9 @@ fn keys_from(buttons: u32) -> Keys {
         (button::X, Keys::X),
         (button::Y, Keys::Y),
     ];
-    MAP.iter().filter(|(bit, _)| buttons & bit != 0).fold(Keys::empty(), |acc, (_, key)| acc | *key)
+    MAP.iter()
+        .filter(|(bit, _)| buttons & bit != 0)
+        .fold(Keys::empty(), |acc, (_, key)| acc | *key)
 }
 
 impl Handheld for Nds {
@@ -287,8 +315,16 @@ impl Handheld for Nds {
 
     fn screens(&self) -> [ScreenSpec; 2] {
         [
-            ScreenSpec { id: ScreenId::Top, width: WIDTH, height: HEIGHT },
-            ScreenSpec { id: ScreenId::Bottom, width: WIDTH, height: HEIGHT },
+            ScreenSpec {
+                id: ScreenId::Top,
+                width: WIDTH,
+                height: HEIGHT,
+            },
+            ScreenSpec {
+                id: ScreenId::Bottom,
+                width: WIDTH,
+                height: HEIGHT,
+            },
         ]
     }
 
@@ -368,13 +404,16 @@ impl Handheld for Nds {
     fn load_state(&mut self, state: &[u8]) -> Result<()> {
         let mut read =
             PersistentReadSavestate::new(state).map_err(|()| err("load state", "too large"))?;
-        read.load_into(&mut self.emu).map_err(|e| err("load state", format!("{e:?}")))?;
+        read.load_into(&mut self.emu)
+            .map_err(|e| err("load state", format!("{e:?}")))?;
         self.capture();
         Ok(())
     }
 
     fn flush_save(&mut self) -> Result<()> {
-        let Some(path) = &self.save_path else { return Ok(()) };
+        let Some(path) = &self.save_path else {
+            return Ok(());
+        };
         let spi = &mut self.emu.ds_slot.spi;
         if !spi.contents_dirty() {
             return Ok(());
@@ -389,8 +428,12 @@ impl Handheld for Nds {
 
     fn registers(&mut self) -> Vec<(String, u32)> {
         let regs = self.emu.arm9.regs();
-        let mut out: Vec<(String, u32)> =
-            regs.gprs.iter().enumerate().map(|(i, v)| (format!("r{i}"), *v)).collect();
+        let mut out: Vec<(String, u32)> = regs
+            .gprs
+            .iter()
+            .enumerate()
+            .map(|(i, v)| (format!("r{i}"), *v))
+            .collect();
         out.push(("cpsr".into(), self.emu.arm9.cpsr().raw()));
         out
     }
@@ -413,7 +456,12 @@ impl Handheld for Nds {
 
     fn status(&mut self) -> String {
         let regs = self.emu.arm9.regs();
-        format!("DS \"{}\" arm9 pc={:08x} sp={:08x}", self.title, self.emu.arm9.r15(), regs.gprs[13])
+        format!(
+            "DS \"{}\" arm9 pc={:08x} sp={:08x}",
+            self.title,
+            self.emu.arm9.r15(),
+            regs.gprs[13]
+        )
     }
 }
 

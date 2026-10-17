@@ -106,7 +106,10 @@ impl RolloutRecorder {
     pub async fn reopen(path: impl AsRef<Path>) -> Result<Self, RolloutError> {
         let path = path.as_ref().to_path_buf();
         let meta = read_session_meta(&path).await?.ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "rollout has no session metadata")
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "rollout has no session metadata",
+            )
         })?;
         let file = OpenOptions::new().append(true).open(&path).await?;
         let (tx, rx) = mpsc::channel::<RolloutCmd>(256);
@@ -137,7 +140,11 @@ impl RolloutRecorder {
         let filename = format!("rollout-{file_ts}-{session_id}.jsonl");
         let path = dir.join(filename);
 
-        let file = OpenOptions::new().create(true).append(true).open(&path).await?;
+        let file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&path)
+            .await?;
 
         let (tx, rx) = mpsc::channel::<RolloutCmd>(256);
         let handle = tokio::spawn(writer_task(file, rx));
@@ -170,7 +177,10 @@ impl RolloutRecorder {
     /// records must use [`record_async`](Self::record_async); a later flush
     /// cannot recover an item dropped by this method.
     pub fn record(&self, item: Value) {
-        let line = RolloutLine { ts: rfc3339_timestamp(SystemTime::now()), item };
+        let line = RolloutLine {
+            ts: rfc3339_timestamp(SystemTime::now()),
+            item,
+        };
         if let Err(err) = self.tx.try_send(RolloutCmd::Append(line)) {
             match err {
                 mpsc::error::TrySendError::Full(_) => {
@@ -178,10 +188,10 @@ impl RolloutRecorder {
                         "rollout channel full; telemetry dropped (use record_async for durable \
                          history)"
                     );
-                },
+                }
                 mpsc::error::TrySendError::Closed(_) => {
                     warn!("rollout writer task gone; line dropped");
-                },
+                }
             }
         }
     }
@@ -192,7 +202,10 @@ impl RolloutRecorder {
     /// not disk durability: [`flush`](Self::flush) reports preceding writer
     /// failures and makes all accepted items durable before returning.
     pub async fn record_async(&self, item: Value) -> Result<(), RolloutError> {
-        let line = RolloutLine { ts: rfc3339_timestamp(SystemTime::now()), item };
+        let line = RolloutLine {
+            ts: rfc3339_timestamp(SystemTime::now()),
+            item,
+        };
         self.tx
             .send(RolloutCmd::Append(line))
             .await
@@ -206,7 +219,9 @@ impl RolloutRecorder {
             .send(RolloutCmd::Flush(ack_tx))
             .await
             .map_err(|_| RolloutError::ChannelClosed("flush"))?;
-        ack_rx.await.map_err(|_| RolloutError::ChannelClosed("flush ack"))??;
+        ack_rx
+            .await
+            .map_err(|_| RolloutError::ChannelClosed("flush ack"))??;
         Ok(())
     }
 
@@ -220,11 +235,16 @@ impl RolloutRecorder {
             .send(RolloutCmd::Shutdown(ack_tx))
             .await
             .map_err(|_| RolloutError::ChannelClosed("shutdown"))?;
-        let result = ack_rx.await.map_err(|_| RolloutError::ChannelClosed("shutdown ack"));
+        let result = ack_rx
+            .await
+            .map_err(|_| RolloutError::ChannelClosed("shutdown ack"));
 
         // Join the task if this clone owns the handle.
         let handle = {
-            let mut guard = self.handle.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut guard = self
+                .handle
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
             guard.take()
         };
         if let Some(handle) = handle
@@ -252,14 +272,14 @@ async fn writer_task(file: File, mut rx: mpsc::Receiver<RolloutCmd>) {
                     warn!("rollout append failed: {err}");
                     failure = Some((err.kind(), err.to_string()));
                 }
-            },
+            }
             RolloutCmd::Flush(ack) => {
                 let _ = ack.send(flush_with_failure(&mut writer, &mut failure).await);
-            },
+            }
             RolloutCmd::Shutdown(ack) => {
                 let _ = ack.send(flush_with_failure(&mut writer, &mut failure).await);
                 return;
-            },
+            }
         }
     }
     if let Err(err) = flush_with_failure(&mut writer, &mut failure).await {
@@ -416,14 +436,20 @@ pub async fn read_session_meta(
 
     let file = File::open(path.as_ref()).await?;
     let mut first = String::new();
-    tokio::io::BufReader::new(file).read_line(&mut first).await?;
+    tokio::io::BufReader::new(file)
+        .read_line(&mut first)
+        .await?;
     let Ok(line) = serde_json::from_str::<RolloutLine>(first.trim()) else {
         return Ok(None);
     };
     if line.item.get("type").and_then(Value::as_str) != Some(SESSION_META_TYPE) {
         return Ok(None);
     }
-    Ok(line.item.get("payload").cloned().and_then(|payload| serde_json::from_value(payload).ok()))
+    Ok(line
+        .item
+        .get("payload")
+        .cloned()
+        .and_then(|payload| serde_json::from_value(payload).ok()))
 }
 
 /// Every session under the sessions root `root`, newest first.
@@ -458,15 +484,18 @@ pub async fn list_sessions(root: impl AsRef<Path>) -> Result<SessionListing, Rol
                 Err(err) => {
                     warn!("skipping unreadable rollout {}: {err}", path.display());
                     listing.skipped += 1;
-                },
+                }
             }
         }
     }
 
     // RFC3339 UTC timestamps sort chronologically as strings.
-    listing
-        .sessions
-        .sort_by(|a, b| b.meta.timestamp.cmp(&a.meta.timestamp).then_with(|| b.path.cmp(&a.path)));
+    listing.sessions.sort_by(|a, b| {
+        b.meta
+            .timestamp
+            .cmp(&a.meta.timestamp)
+            .then_with(|| b.path.cmp(&a.path))
+    });
     Ok(listing)
 }
 
@@ -490,7 +519,9 @@ pub async fn find_session(
     if id.is_empty() {
         return Ok(None);
     }
-    let mut matches = sessions.into_iter().filter(|session| session.meta.id.starts_with(id));
+    let mut matches = sessions
+        .into_iter()
+        .filter(|session| session.meta.id.starts_with(id));
     match (matches.next(), matches.next()) {
         (Some(only), None) => Ok(Some(only)),
         _ => Ok(None),
@@ -515,8 +546,12 @@ pub async fn resume(path: impl AsRef<Path>) -> Result<Vec<RolloutLine>, RolloutE
         match serde_json::from_str::<RolloutLine>(raw) {
             Ok(line) => lines.push(line),
             Err(err) => {
-                warn!("skipping corrupted rollout line {} in {}: {err}", idx + 1, path.display());
-            },
+                warn!(
+                    "skipping corrupted rollout line {} in {}: {err}",
+                    idx + 1,
+                    path.display()
+                );
+            }
         }
     }
     Ok(lines)
@@ -603,7 +638,10 @@ mod tests {
         let dir = tempdir().unwrap();
         let recorder = RolloutRecorder::new(dir.path(), None).await.unwrap();
         for sequence in 0..4096 {
-            recorder.record_async(json!({"sequence": sequence})).await.unwrap();
+            recorder
+                .record_async(json!({"sequence": sequence}))
+                .await
+                .unwrap();
         }
         recorder.flush().await.unwrap();
         let lines = resume(recorder.path()).await.unwrap();
@@ -641,17 +679,25 @@ mod tests {
             session_id: "failed-writer".into(),
             handle: std::sync::Arc::new(std::sync::Mutex::new(Some(handle))),
         };
-        recorder.record_async(json!({"payload": "x".repeat(65_536)})).await.unwrap();
+        recorder
+            .record_async(json!({"payload": "x".repeat(65_536)}))
+            .await
+            .unwrap();
         assert!(matches!(recorder.flush().await, Err(RolloutError::Io(_))));
         // Once a write has failed, no later acknowledgment may claim success.
         assert!(matches!(recorder.flush().await, Err(RolloutError::Io(_))));
-        assert!(matches!(recorder.shutdown().await, Err(RolloutError::Io(_))));
+        assert!(matches!(
+            recorder.shutdown().await,
+            Err(RolloutError::Io(_))
+        ));
     }
 
     #[tokio::test]
     async fn record_flush_produces_valid_jsonl() {
         let dir = tempdir().unwrap();
-        let rec = RolloutRecorder::new(dir.path(), Some("sess-1".to_string())).await.unwrap();
+        let rec = RolloutRecorder::new(dir.path(), Some("sess-1".to_string()))
+            .await
+            .unwrap();
         assert_eq!(rec.session_id(), "sess-1");
         assert!(rec.path().to_string_lossy().contains("sess-1"));
 
@@ -760,9 +806,17 @@ mod tests {
 
         // root/YYYY/MM/DD/rollout-*.jsonl
         let relative = path.strip_prefix(root.path()).unwrap();
-        assert_eq!(relative.components().count(), 4, "unexpected layout: {}", relative.display());
+        assert_eq!(
+            relative.components().count(),
+            4,
+            "unexpected layout: {}",
+            relative.display()
+        );
 
-        let meta = read_session_meta(&path).await.unwrap().expect("session meta");
+        let meta = read_session_meta(&path)
+            .await
+            .unwrap()
+            .expect("session meta");
         assert_eq!(meta.id, id);
         assert_eq!(meta.model.as_deref(), Some("qwen2.5-coder"));
         assert_eq!(meta.cwd, Some(PathBuf::from("/repo")));
@@ -777,8 +831,9 @@ mod tests {
     #[tokio::test]
     async fn list_find_and_latest_sessions() {
         let root = tempdir().unwrap();
-        for (index, stamp) in
-            ["2026-01-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"].iter().enumerate()
+        for (index, stamp) in ["2026-01-01T00:00:00.000Z", "2026-03-01T00:00:00.000Z"]
+            .iter()
+            .enumerate()
         {
             let rec = RolloutRecorder::create(
                 root.path(),
@@ -793,21 +848,38 @@ mod tests {
             rec.shutdown().await.unwrap();
         }
         // A recorder without metadata is reported as skipped, not lost silently.
-        let legacy = RolloutRecorder::new(root.path(), Some("legacy".to_string())).await.unwrap();
+        let legacy = RolloutRecorder::new(root.path(), Some("legacy".to_string()))
+            .await
+            .unwrap();
         legacy.record(json!({ "n": 0 }));
         legacy.shutdown().await.unwrap();
 
         let listing = list_sessions(root.path()).await.unwrap();
         assert_eq!(listing.skipped, 1);
-        let listed: Vec<&str> = listing.sessions.iter().map(|s| s.meta.id.as_str()).collect();
+        let listed: Vec<&str> = listing
+            .sessions
+            .iter()
+            .map(|s| s.meta.id.as_str())
+            .collect();
         assert_eq!(listed, vec!["1aaa-session", "0aaa-session"], "newest first");
 
-        assert_eq!(latest_session(root.path()).await.unwrap().unwrap().meta.id, "1aaa-session");
-        let exact = find_session(root.path(), "0aaa-session").await.unwrap().unwrap();
+        assert_eq!(
+            latest_session(root.path()).await.unwrap().unwrap().meta.id,
+            "1aaa-session"
+        );
+        let exact = find_session(root.path(), "0aaa-session")
+            .await
+            .unwrap()
+            .unwrap();
         assert_eq!(exact.meta.id, "0aaa-session");
         // An unambiguous prefix resolves; an empty or unknown one does not.
         assert_eq!(
-            find_session(root.path(), "1aa").await.unwrap().unwrap().meta.id,
+            find_session(root.path(), "1aa")
+                .await
+                .unwrap()
+                .unwrap()
+                .meta
+                .id,
             "1aaa-session"
         );
         assert!(find_session(root.path(), "").await.unwrap().is_none());
@@ -820,20 +892,33 @@ mod tests {
         for id in ["abc-1", "abc-2"] {
             let rec = RolloutRecorder::create(
                 root.path(),
-                SessionMeta { id: id.to_string(), ..SessionMeta::default() },
+                SessionMeta {
+                    id: id.to_string(),
+                    ..SessionMeta::default()
+                },
             )
             .await
             .unwrap();
             rec.shutdown().await.unwrap();
         }
         assert!(find_session(root.path(), "abc").await.unwrap().is_none());
-        assert_eq!(find_session(root.path(), "abc-2").await.unwrap().unwrap().meta.id, "abc-2");
+        assert_eq!(
+            find_session(root.path(), "abc-2")
+                .await
+                .unwrap()
+                .unwrap()
+                .meta
+                .id,
+            "abc-2"
+        );
     }
 
     #[tokio::test]
     async fn list_sessions_on_missing_root_is_empty() {
         let root = tempdir().unwrap();
-        let listing = list_sessions(root.path().join("never-created")).await.unwrap();
+        let listing = list_sessions(root.path().join("never-created"))
+            .await
+            .unwrap();
         assert_eq!(listing, SessionListing::default());
     }
 

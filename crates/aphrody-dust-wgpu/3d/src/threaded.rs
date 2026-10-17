@@ -54,8 +54,10 @@ pub struct Tx {
 impl Tx {
     fn wait_for_capture_frame_end(&self) {
         while {
-            let processing_scanline =
-                self.shared_data.capture_processing_scanline.load(Ordering::Acquire);
+            let processing_scanline = self
+                .shared_data
+                .capture_processing_scanline
+                .load(Ordering::Acquire);
             processing_scanline == u8::MAX || processing_scanline < SCREEN_HEIGHT as u8
         } {
             hint::spin_loop();
@@ -79,7 +81,9 @@ impl RendererTx for Tx {
         }
         self.capture_enabled = capture_enabled;
         if capture_enabled {
-            self.shared_data.capture_processing_scanline.store(u8::MAX, Ordering::Release);
+            self.shared_data
+                .capture_processing_scanline
+                .store(u8::MAX, Ordering::Release);
         }
     }
 
@@ -118,7 +122,9 @@ impl RendererTx for Tx {
             .copy_vram(texture, tex_pal, state);
 
         if self.capture_enabled {
-            self.shared_data.capture_processing_scanline.store(u8::MAX, Ordering::Release);
+            self.shared_data
+                .capture_processing_scanline
+                .store(u8::MAX, Ordering::Release);
         }
 
         for elem in &mut self.texture_dirty {
@@ -165,8 +171,10 @@ pub struct Rx {
 impl Rx {
     fn wait_for_capture_line(&self, line: u8) {
         while {
-            let processing_scanline =
-                self.shared_data.capture_processing_scanline.load(Ordering::Acquire);
+            let processing_scanline = self
+                .shared_data
+                .capture_processing_scanline
+                .load(Ordering::Acquire);
             processing_scanline == u8::MAX || processing_scanline <= line
         } {
             hint::spin_loop();
@@ -197,7 +205,9 @@ pub struct FrontendChannels {
 
 impl FrontendChannels {
     pub fn set_resolution_scale_shift(&self, value: u8) {
-        self.shared_data.resolution_scale_shift.store(value, Ordering::Relaxed);
+        self.shared_data
+            .resolution_scale_shift
+            .store(value, Ordering::Relaxed);
     }
 }
 
@@ -308,7 +318,9 @@ pub fn init(
                                         renderer.render_frame(&frame.rendering_data);
                                     renderer.queue().submit([command_buffer]);
                                 }
-                                last_submitted_frame.0.store(frame.frame_index, Ordering::Relaxed);
+                                last_submitted_frame
+                                    .0
+                                    .store(frame.frame_index, Ordering::Relaxed);
                                 if let Some(thread) = &*last_submitted_frame.1.read() {
                                     thread.unpark();
                                 }
@@ -320,8 +332,13 @@ pub fn init(
                     .expect("couldn't spawn 3D rendering thread"),
             ),
         },
-        Rx { next_capture_scanline: 0, shared_data: Arc::clone(&shared_data_) },
-        FrontendChannels { shared_data: shared_data_ },
+        Rx {
+            next_capture_scanline: 0,
+            shared_data: Arc::clone(&shared_data_),
+        },
+        FrontendChannels {
+            shared_data: shared_data_,
+        },
         Rx2dData {
             color_output_view,
             color_output_view_rx,

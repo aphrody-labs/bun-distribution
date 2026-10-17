@@ -51,10 +51,24 @@ impl Frame {
     }
 
     /// Like [`Frame::new`], with the source's embedded lens corrections (relative to the EXIF-oriented source).
-    pub fn with_lens(src_w: usize, src_h: usize, s: &DevelopSettings, apply_crop: bool, lens: Option<&EmbeddedLens>) -> Frame {
+    pub fn with_lens(
+        src_w: usize,
+        src_h: usize,
+        s: &DevelopSettings,
+        apply_crop: bool,
+        lens: Option<&EmbeddedLens>,
+    ) -> Frame {
         let orient = s.orientation;
-        let (ow, oh) = if orient.swaps_axes() { (src_h as f64, src_w as f64) } else { (src_w as f64, src_h as f64) };
-        let crop = if apply_crop { s.crop.geometry } else { CropGeometry::default() };
+        let (ow, oh) = if orient.swaps_axes() {
+            (src_h as f64, src_w as f64)
+        } else {
+            (src_w as f64, src_h as f64)
+        };
+        let crop = if apply_crop {
+            s.crop.geometry
+        } else {
+            CropGeometry::default()
+        };
         let lens = lens.map(|l| reorient_lens(l, orient, src_w as f64, src_h as f64));
         let mut warp = Warp::from_settings(ow, oh, s, lens.as_ref());
         let persp = perspective(s, ow, oh);
@@ -85,17 +99,24 @@ impl Frame {
 
     /// "Constrain Crop": shrink the crop about its centre until it contains no area outside the warped source.
     fn constrain_to_image(&mut self) {
-        let Some(wp) = self.warp.as_ref().filter(|w| w.moves_pixels()) else { return };
+        let Some(wp) = self.warp.as_ref().filter(|w| w.moves_pixels()) else {
+            return;
+        };
         let a = self.crop.output_to_source(self.ow, self.oh, 1.0, 1.0);
         let (w, h) = (self.ow, self.oh);
         let fits = |t: f64| {
             (0..=48).all(|i| {
                 let u = i as f64 / 48.0;
-                [(u, 0.0), (u, 1.0), (0.0, u), (1.0, u)].iter().all(|&(x, y)| {
-                    let p = Point::new(0.5 + t * (x - 0.5), 0.5 + t * (y - 0.5));
-                    let s = wp.to_source(a.apply(p), 1);
-                    s.x >= -1e-6 * w && s.y >= -1e-6 * h && s.x <= w * (1.0 + 1e-6) && s.y <= h * (1.0 + 1e-6)
-                })
+                [(u, 0.0), (u, 1.0), (0.0, u), (1.0, u)]
+                    .iter()
+                    .all(|&(x, y)| {
+                        let p = Point::new(0.5 + t * (x - 0.5), 0.5 + t * (y - 0.5));
+                        let s = wp.to_source(a.apply(p), 1);
+                        s.x >= -1e-6 * w
+                            && s.y >= -1e-6 * h
+                            && s.x <= w * (1.0 + 1e-6)
+                            && s.y <= h * (1.0 + 1e-6)
+                    })
             })
         };
         if fits(1.0) {
@@ -115,7 +136,8 @@ impl Frame {
     /// window of a larger one): what size-relative effects (noise reduction, edge refinement)
     /// must scale with, so a window matches the same pixels of the whole render.
     pub fn output_long(&self, w: usize, h: usize) -> usize {
-        self.view.map_or(w.max(h), |v| v.full_w.max(v.full_h) as usize)
+        self.view
+            .map_or(w.max(h), |v| v.full_w.max(v.full_h) as usize)
     }
 
     /// This frame narrowed to `win` of its `full_w × full_h` output: the same mapping, but the
@@ -125,13 +147,31 @@ impl Frame {
         let (x0, x1) = (win.x as f64 / fw, (win.x + win.w) as f64 / fw);
         let (y0, y1) = (win.y as f64 / fh, (win.y + win.h) as f64 / fh);
         // flips happen on the output before it maps onto the crop: undo them for the range
-        let (x0, x1) = if self.flip_h { (1.0 - x1, 1.0 - x0) } else { (x0, x1) };
-        let (y0, y1) = if self.flip_v { (1.0 - y1, 1.0 - y0) } else { (y0, y1) };
+        let (x0, x1) = if self.flip_h {
+            (1.0 - x1, 1.0 - x0)
+        } else {
+            (x0, x1)
+        };
+        let (y0, y1) = if self.flip_v {
+            (1.0 - y1, 1.0 - y0)
+        } else {
+            (y0, y1)
+        };
         let r = self.crop.rect;
         let (rw, rh) = (r.width(), r.height());
         let mut f = self.clone();
-        f.crop.rect = Rect { x0: r.x0 + x0 * rw, y0: r.y0 + y0 * rh, x1: r.x0 + x1 * rw, y1: r.y0 + y1 * rh };
-        f.view = Some(ViewWindow { x: win.x as f64, y: win.y as f64, full_w: fw, full_h: fh });
+        f.crop.rect = Rect {
+            x0: r.x0 + x0 * rw,
+            y0: r.y0 + y0 * rh,
+            x1: r.x0 + x1 * rw,
+            y1: r.y0 + y1 * rh,
+        };
+        f.view = Some(ViewWindow {
+            x: win.x as f64,
+            y: win.y as f64,
+            full_w: fw,
+            full_h: fh,
+        });
         f
     }
 
@@ -140,7 +180,9 @@ impl Frame {
         if ca == [0.0; 2] {
             return;
         }
-        let w = self.warp.get_or_insert_with(|| Warp::identity(self.ow, self.oh));
+        let w = self
+            .warp
+            .get_or_insert_with(|| Warp::identity(self.ow, self.oh));
         w.ca[0] += ca[0];
         w.ca[2] += ca[1];
     }
@@ -187,7 +229,11 @@ impl Frame {
         if (mw - 0.5) / a <= mh + 0.5 && (mw + 0.5) / a >= mh - 0.5 {
             return (max_w.max(1), max_h.max(1));
         }
-        let (w, h) = if mw / mh > a { (mh * a, mh) } else { (mw, mw / a) };
+        let (w, h) = if mw / mh > a {
+            (mh * a, mh)
+        } else {
+            (mw, mw / a)
+        };
         ((w.round() as usize).max(1), (h.round() as usize).max(1))
     }
 
@@ -217,7 +263,9 @@ impl Frame {
 
     /// Normalized oriented coords → output pixel (inverse of `out_to_norm`).
     pub fn norm_to_out(&self, out_w: usize, out_h: usize) -> Affine {
-        self.out_to_norm(out_w, out_h).inverse().unwrap_or(Affine::IDENTITY)
+        self.out_to_norm(out_w, out_h)
+            .inverse()
+            .unwrap_or(Affine::IDENTITY)
     }
 
     /// Convert normalized oriented coordinates to "long-edge units" (isotropic), used by mask shapes.
@@ -228,10 +276,19 @@ impl Frame {
 
     /// How [`Frame::sample`] resamples a (EXIF-oriented) source of `src_w × src_h` into `w × h`.
     pub fn sample_plan(&self, src_w: usize, src_h: usize, w: usize, h: usize) -> SamplePlan {
-        let (ow, oh) = if self.orient.swaps_axes() { (src_h, src_w) } else { (src_w, src_h) };
+        let (ow, oh) = if self.orient.swaps_axes() {
+            (src_h, src_w)
+        } else {
+            (src_w, src_h)
+        };
         let crop_px = self.crop.rect_px(self.ow, self.oh);
         let k = crop_px.width() / w as f64;
-        let prefilter = (k > 1.25).then(|| (((ow as f64 / k).round() as usize).max(1), ((oh as f64 / k).round() as usize).max(1)));
+        let prefilter = (k > 1.25).then(|| {
+            (
+                ((ow as f64 / k).round() as usize).max(1),
+                ((oh as f64 / k).round() as usize).max(1),
+            )
+        });
         let (bw, bh) = prefilter.unwrap_or((ow, oh));
         let (sx, sy) = (bw as f64 / ow as f64, bh as f64 / oh as f64);
         let mode = if self.warp.is_some() {
@@ -241,13 +298,24 @@ impl Frame {
         } else {
             SampleMode::Affine(Affine::scale(sx, sy) * self.out_to_oriented(w, h))
         };
-        SamplePlan { ow, oh, prefilter, sx, sy, mode }
+        SamplePlan {
+            ow,
+            oh,
+            prefilter,
+            sx,
+            sy,
+            mode,
+        }
     }
 
     /// Sample the source into a `w × h` output buffer: orientation, crop, rotation, flips — one
     /// bilinear resample from a pre-filtered (area-downscaled) copy, so minification never aliases.
     pub fn sample(&self, src: &Rgb32f, w: usize, h: usize) -> Rgb32f {
-        let oriented = if self.orient == Orientation::Normal { None } else { Some(src.oriented(self.orient)) };
+        let oriented = if self.orient == Orientation::Normal {
+            None
+        } else {
+            Some(src.oriented(self.orient))
+        };
         let o = oriented.as_ref().unwrap_or(src);
         let plan = self.sample_plan(src.width, src.height, w, h);
         let base = match plan.prefilter {
@@ -266,7 +334,9 @@ impl Frame {
         };
         match (plan.mode, self.warp.as_ref()) {
             (SampleMode::Copy, _) => base.into_owned(),
-            (SampleMode::Warp(o2t), Some(warp)) => sample_warped(&base, plan.sx, plan.sy, warp, o2t, w, h),
+            (SampleMode::Warp(o2t), Some(warp)) => {
+                sample_warped(&base, plan.sx, plan.sy, warp, o2t, w, h)
+            }
             // `sample_plan` plans a warp only when there is one; without it the same mapping is affine
             (SampleMode::Warp(o2t), None) => affine(Affine::scale(plan.sx, plan.sy) * o2t),
             (SampleMode::Affine(xf), _) => affine(xf),
@@ -276,7 +346,10 @@ impl Frame {
     /// The crop rectangle as a quad in normalized oriented coordinates (for overlays).
     pub fn crop_quad_norm(&self) -> [Point; 4] {
         let r = self.crop.rect_px(self.ow, self.oh);
-        let back = Affine::rotate_about(-self.crop.angle.to_radians(), Point::new(self.ow / 2.0, self.oh / 2.0));
+        let back = Affine::rotate_about(
+            -self.crop.angle.to_radians(),
+            Point::new(self.ow / 2.0, self.oh / 2.0),
+        );
         r.corners().map(|p| {
             let q = back.apply(p);
             Point::new(q.x / self.ow, q.y / self.oh)
@@ -319,7 +392,15 @@ pub fn perspective(s: &DevelopSettings, ow: f64, oh: f64) -> Homography {
 
 /// One resample through the warp: `o2t` maps output px → transformed px, the warp maps those to source px
 /// (scaled by `sx, sy` into `base`).
-fn sample_warped(base: &Rgb32f, sx: f64, sy: f64, wp: &Warp, o2t: Affine, w: usize, h: usize) -> Rgb32f {
+fn sample_warped(
+    base: &Rgb32f,
+    sx: f64,
+    sy: f64,
+    wp: &Warp,
+    o2t: Affine,
+    w: usize,
+    h: usize,
+) -> Rgb32f {
     let per_channel = wp.per_channel();
     let gain = wp.has_gain();
     let mut out = Rgb32f::new(w, h);
@@ -366,7 +447,10 @@ mod tests {
 
     #[test]
     fn rotation_swaps_aspect() {
-        let s = DevelopSettings { orientation: Orientation::Rotate90, ..Default::default() };
+        let s = DevelopSettings {
+            orientation: Orientation::Rotate90,
+            ..Default::default()
+        };
         let f = Frame::new(300, 200, &s, true);
         assert_eq!(f.fit(1000, 1000), (667, 1000));
     }
@@ -405,10 +489,21 @@ mod tests {
         let src = Rgb32f::from_fn(4, 2, |x, y| [x as f32, y as f32, 0.0]);
         let f = Frame::new(4, 2, &s, false);
         let out = f.sample(&src, 4, 2);
-        assert!((out.get(0, 0)[0] - 3.0).abs() < 1e-5 && (out.get(0, 0)[1] - 1.0).abs() < 1e-5, "{:?}", out.get(0, 0));
-        assert!((out.get(3, 1)[0] - 0.0).abs() < 1e-5 && (out.get(3, 1)[1] - 0.0).abs() < 1e-5, "{:?}", out.get(3, 1));
+        assert!(
+            (out.get(0, 0)[0] - 3.0).abs() < 1e-5 && (out.get(0, 0)[1] - 1.0).abs() < 1e-5,
+            "{:?}",
+            out.get(0, 0)
+        );
+        assert!(
+            (out.get(3, 1)[0] - 0.0).abs() < 1e-5 && (out.get(3, 1)[1] - 0.0).abs() < 1e-5,
+            "{:?}",
+            out.get(3, 1)
+        );
         // the whole image, mirrored: output top-left is the image's bottom-right
         let p = f.out_to_norm(400, 200).apply(Point::new(0.0, 0.0));
-        assert!((p.x - 1.0).abs() < 1e-9 && (p.y - 1.0).abs() < 1e-9, "{p:?}");
+        assert!(
+            (p.x - 1.0).abs() < 1e-9 && (p.y - 1.0).abs() < 1e-9,
+            "{p:?}"
+        );
     }
 }

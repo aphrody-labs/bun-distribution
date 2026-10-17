@@ -74,7 +74,10 @@ pub fn similarities(left: &[Vec<f64>], right: &[Vec<f64>]) -> Result<Vec<Vec<f64
     if right.is_empty() {
         return Ok(vec![vec![]; left.len()]);
     }
-    Ok(product.chunks_exact(right.len()).map(<[f64]>::to_vec).collect())
+    Ok(product
+        .chunks_exact(right.len())
+        .map(<[f64]>::to_vec)
+        .collect())
 }
 
 /// Contiguous batch product without copying the input into owned matrices.
@@ -98,7 +101,10 @@ pub fn similarities_flat(
         return Ok(vec![0.0; output_size]);
     }
     if left_rows != right_rows || left != right {
-        return Ok(left_matrix.dot(&right_matrix.t()).into_raw_vec_and_offset().0);
+        return Ok(left_matrix
+            .dot(&right_matrix.t())
+            .into_raw_vec_and_offset()
+            .0);
     }
     let mut result = vec![0.0; output_size];
     const TILE: usize = 256;
@@ -129,7 +135,9 @@ pub fn similarities_flat(
 pub fn mean(rows: &[Vec<f64>]) -> Result<Vec<f64>, &'static str> {
     let width = dimensions(rows)?.ok_or("mean requires at least one embedding")?;
     if width == 1 {
-        return Ok(vec![sum_f64(rows.len(), &|index| rows[index][0]) / rows.len() as f64]);
+        return Ok(vec![
+            sum_f64(rows.len(), &|index| rows[index][0]) / rows.len() as f64,
+        ]);
     }
     let mut result = vec![0.0; width];
     for row in rows {
@@ -228,14 +236,20 @@ mod tests {
             vec![vec![0.0, 20.0], vec![5.0, 5.0]]
         );
         // Direct subtraction retains small distances between large values.
-        assert_eq!(squared_distances(&[vec![1e16 + 2.0]], &[vec![1e16]]).unwrap(), vec![vec![4.0]]);
+        assert_eq!(
+            squared_distances(&[vec![1e16 + 2.0]], &[vec![1e16]]).unwrap(),
+            vec![vec![4.0]]
+        );
         assert!(squared_distances(&[vec![f64::NAN]], &[vec![0.0]]).unwrap()[0][0].is_nan());
         assert!(mean(&[vec![f64::NAN], vec![1.0]]).unwrap()[0].is_nan());
     }
 
     #[test]
     fn euclidean_distances_preserve_empty_shapes_and_validate_every_batch() {
-        assert_eq!(squared_distances(&[], &[vec![1.0]]).unwrap(), Vec::<Vec<f64>>::new());
+        assert_eq!(
+            squared_distances(&[], &[vec![1.0]]).unwrap(),
+            Vec::<Vec<f64>>::new()
+        );
         assert_eq!(
             squared_distances(&[vec![1.0], vec![2.0]], &[]).unwrap(),
             vec![Vec::<f64>::new(), Vec::new()]
@@ -255,7 +269,10 @@ mod tests {
             vec![vec![0.6, 0.8], vec![0.0, 0.0], vec![0.01, 0.0]]
         );
         let precise = 1.0 + 1e-10;
-        assert_eq!(similarities(&[vec![precise]], &[vec![1.0]]).unwrap(), vec![vec![precise]]);
+        assert_eq!(
+            similarities(&[vec![precise]], &[vec![1.0]]).unwrap(),
+            vec![vec![precise]]
+        );
         assert!(normalize(&[vec![f64::NAN]]).unwrap()[0][0].is_nan());
     }
     #[test]
@@ -264,7 +281,10 @@ mod tests {
             similarities(&[vec![1.0, 2.0]], &[vec![3.0, 4.0], vec![0.0, 1.0]]).unwrap(),
             vec![vec![11.0, 2.0]]
         );
-        assert_eq!(mean(&[vec![1.0, 2.0], vec![3.0, 4.0]]).unwrap(), vec![2.0, 3.0]);
+        assert_eq!(
+            mean(&[vec![1.0, 2.0], vec![3.0, 4.0]]).unwrap(),
+            vec![2.0, 3.0]
+        );
         assert_eq!(normalize(&[]).unwrap(), Vec::<Vec<f64>>::new());
         assert!(normalize(&[vec![1.0], vec![1.0, 2.0]]).is_err());
         assert!(similarities(&[vec![1.0]], &[vec![1.0, 2.0]]).is_err());

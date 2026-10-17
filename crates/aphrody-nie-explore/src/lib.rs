@@ -84,7 +84,10 @@ fn append_nie_data_t2b(out: &mut Vec<String>, t2b: &cfgbin::CfgBinFile) {
 
     let charas = aphrody_nie_data::chara_base::parse_all_chara_base(&json);
     if !charas.is_empty() {
-        out.push(format!("aphrody-nie-data     chara_base : {} personnage(s)", charas.len()));
+        out.push(format!(
+            "aphrody-nie-data     chara_base : {} personnage(s)",
+            charas.len()
+        ));
         for c in charas.iter().take(8) {
             out.push(format!(
                 "  {:<12} id={} nom_hash={}",
@@ -170,7 +173,11 @@ fn append_nie_data_rdbn(out: &mut Vec<String>, lists: &[cfgbin::RdbnList]) {
 /// Les `n` premiers octets de `data`, formatés en hex majuscule espacé (`"47 34 4D 44"`).
 #[must_use]
 pub fn hex_prefix(data: &[u8], n: usize) -> String {
-    data.iter().take(n).map(|b| format!("{b:02X}")).collect::<Vec<_>>().join(" ")
+    data.iter()
+        .take(n)
+        .map(|b| format!("{b:02X}"))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Résumé lisible d'un conteneur Level-5 générique (en-tête commun 16 octets, cf.
@@ -185,8 +192,14 @@ pub fn describe_l5_container(
 ) -> Vec<String> {
     vec![
         format!("format      {label}"),
-        format!("header_size 0x{:X}  type_id 0x{:02X}", header.header_size, header.type_id),
-        format!("data_size   {} octets (fichier {file_size} octets)", header.data_size),
+        format!(
+            "header_size 0x{:X}  type_id 0x{:02X}",
+            header.header_size, header.type_id
+        ),
+        format!(
+            "data_size   {} octets (fichier {file_size} octets)",
+            header.data_size
+        ),
         format!("cohérent    {consistent}"),
     ]
 }
@@ -216,7 +229,7 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
                     if calls.len() > 40 {
                         out.push(format!("  … {} de plus", calls.len() - 40));
                     }
-                },
+                }
                 Err(e) => out.push(format!("  (échec d'introspection : {e})")),
             }
         }
@@ -228,7 +241,7 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
                     chunk.main.total_instructions(),
                     chunk.main.total_protos()
                 ));
-            },
+            }
             Err(e) => out.push(format!("  (échec du décodage structurel : {e})")),
         }
         return Some(out);
@@ -254,7 +267,7 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
                 if motion.clips.len() > 15 {
                     out.push(format!("  … {} clip(s) de plus", motion.clips.len() - 15));
                 }
-            },
+            }
             None => out.push("  (échec du décodage structurel)".to_string()),
         }
         return Some(out);
@@ -267,10 +280,17 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
             out.push(format!(
                 "os          {} ({})",
                 bones.bones.len(),
-                if bones.heuristic { "heuristique" } else { "table réelle" }
+                if bones.heuristic {
+                    "heuristique"
+                } else {
+                    "table réelle"
+                }
             ));
             for b in bones.bones.iter().take(20) {
-                out.push(format!("  #{:<3} parent={:<4} {}", b.index, b.parent_index, b.name));
+                out.push(format!(
+                    "  #{:<3} parent={:<4} {}",
+                    b.index, b.parent_index, b.name
+                ));
             }
             if bones.bones.len() > 20 {
                 out.push(format!("  … {} os de plus", bones.bones.len() - 20));
@@ -345,7 +365,11 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
                 d.is_size_consistent()
             ));
             for c in &d.chunks {
-                out.push(format!("  {}  {} octets", String::from_utf8_lossy(&c.fourcc), c.size));
+                out.push(format!(
+                    "  {}  {} octets",
+                    String::from_utf8_lossy(&c.fourcc),
+                    c.size
+                ));
             }
         }
         return Some(out);
@@ -356,10 +380,16 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
         match aphrody_nie_formats::g4ra::parse(data) {
             Ok(animation) => {
                 out.push(format!("states      {}", animation.state_hashes.len()));
-                out.push(format!("skeletal    {} bindings", animation.skeletal_bindings.len()));
-                out.push(format!("material    {} bindings", animation.material_bindings.len()));
+                out.push(format!(
+                    "skeletal    {} bindings",
+                    animation.skeletal_bindings.len()
+                ));
+                out.push(format!(
+                    "material    {} bindings",
+                    animation.material_bindings.len()
+                ));
                 out.push("playback    not evaluated by this summary".to_string());
-            },
+            }
             Err(error) => out.push(format!("decode      {error}")),
         }
         return Some(out);
@@ -368,7 +398,11 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
     if g4pk::is_g4pk(data) {
         let mut out = vec!["format      G4PK (archive)".to_string()];
         if let Ok(g) = g4pk::parse(data) {
-            out.push(format!("sous-fichiers {}  variante={:?}", g.files.len(), g.header.kind));
+            out.push(format!(
+                "sous-fichiers {}  variante={:?}",
+                g.files.len(),
+                g.header.kind
+            ));
             for f in g.files.iter().take(20) {
                 out.push(format!("  {:<32} {} octets", f.name, f.size));
             }
@@ -382,8 +416,12 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
     if navm::is_navm(data)
         && let Ok(n) = navm::parse(data)
     {
-        let mut out =
-            describe_l5_container("NAVM (navmesh)", n.header, n.file_size, n.is_size_consistent());
+        let mut out = describe_l5_container(
+            "NAVM (navmesh)",
+            n.header,
+            n.file_size,
+            n.is_size_consistent(),
+        );
         out.push(format!("sections    {:?}", n.section_counts));
         return Some(out);
     }
@@ -399,12 +437,19 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
             data.len(),
             c.header.is_size_consistent(data.len()),
         );
-        out.push(format!("objets      {} ({})", c.objects.len(), c.names.join(", ")));
+        out.push(format!(
+            "objets      {} ({})",
+            c.objects.len(),
+            c.names.join(", ")
+        ));
         out.push(format!("canaux      {}", c.channels.len()));
         if let Some((a, b)) = c.frame_range() {
             out.push(format!("frames      {a} → {b} ({} temps)", c.times.len()));
         }
-        out.push(format!("échantillons décodés {:.0} %", f64::from(c.decoded_ratio()) * 100.0));
+        out.push(format!(
+            "échantillons décodés {:.0} %",
+            f64::from(c.decoded_ratio()) * 100.0
+        ));
         return Some(out);
     }
 
@@ -446,8 +491,16 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
     {
         return Some(vec![
             "format      NXTCH (chunk texture Switch)".to_string(),
-            format!("dimensions  {}x{}  format={:?}", h.width, h.height, h.texture_format()),
-            format!("mipmaps     {}  taille_donnees={}", h.mipmap_count, h.texture_data_size),
+            format!(
+                "dimensions  {}x{}  format={:?}",
+                h.width,
+                h.height,
+                h.texture_format()
+            ),
+            format!(
+                "mipmaps     {}  taille_donnees={}",
+                h.mipmap_count, h.texture_data_size
+            ),
         ]);
     }
 
@@ -457,7 +510,10 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
     if path.to_ascii_lowercase().ends_with(".objbin") && objbin::is_objb(data) {
         let mut out = vec!["format      OBJBIN (objet de menu)".to_string()];
         if let Ok(o) = objbin::parse(data) {
-            out.push(format!("nom         {}  type_moteur={}", o.name, o.engine_type));
+            out.push(format!(
+                "nom         {}  type_moteur={}",
+                o.name, o.engine_type
+            ));
             out.push(format!("composants  {}", o.components.len()));
         }
         return Some(out);
@@ -471,12 +527,18 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
         ]);
     }
     if cri_audio::is_hca(data) {
-        return Some(vec!["format      HCA (audio Criware chiffré, clé par fichier)".to_string()]);
+        return Some(vec![
+            "format      HCA (audio Criware chiffré, clé par fichier)".to_string(),
+        ]);
     }
     if data.starts_with(b"AFS2") {
         let mut out = vec!["format      AWB/AFS2 (banque audio Criware)".to_string()];
         if let Ok(awb) = cri_audio::Awb::parse(data) {
-            out.push(format!("entrées     {}  subkey=0x{:04X}", awb.entries.len(), awb.subkey));
+            out.push(format!(
+                "entrées     {}  subkey=0x{:04X}",
+                awb.entries.len(),
+                awb.subkey
+            ));
         }
         return Some(out);
     }
@@ -525,7 +587,11 @@ pub fn describe_content(path: &str, data: &[u8]) -> Option<Vec<String>> {
                     && let Some(row) = first.rows.first()
                 {
                     let fields: Vec<&str> = row.fields.iter().map(|(n, _)| n.as_str()).collect();
-                    out.push(format!("  champs de « {} » : {}", first.name, fields.join(", ")));
+                    out.push(format!(
+                        "  champs de « {} » : {}",
+                        first.name,
+                        fields.join(", ")
+                    ));
                 }
                 append_nie_data_rdbn(&mut out, &lists);
                 return Some(out);

@@ -43,11 +43,16 @@ pub fn t2b_to_json(cfg: &CfgBinFile) -> Value {
 }
 
 fn json_to_t2b_value(v: &Value) -> Result<T2bValue, String> {
-    let ty = v.get("type").and_then(Value::as_str).ok_or("variable sans champ \"type\"")?;
+    let ty = v
+        .get("type")
+        .and_then(Value::as_str)
+        .ok_or("variable sans champ \"type\"")?;
     // `value` est TOUJOURS une chaîne dans la forme inagle (même convention que
     // `t2b_value_to_json` en sens inverse) — on la re-parse selon `type`.
-    let raw =
-        v.get("value").and_then(Value::as_str).ok_or("variable sans champ \"value\" (chaîne)")?;
+    let raw = v
+        .get("value")
+        .and_then(Value::as_str)
+        .ok_or("variable sans champ \"value\" (chaîne)")?;
     match ty {
         "String" => Ok(T2bValue::String(raw.to_string())),
         "Int" => raw
@@ -58,26 +63,43 @@ fn json_to_t2b_value(v: &Value) -> Result<T2bValue, String> {
             .parse::<f32>()
             .map(T2bValue::Float)
             .map_err(|e| format!("valeur Float invalide {raw:?} : {e}")),
-        other => Err(format!("type de variable inconnu : {other:?} (attendu String/Int/Float)")),
+        other => Err(format!(
+            "type de variable inconnu : {other:?} (attendu String/Int/Float)"
+        )),
     }
 }
 
 fn json_to_t2b_entry(v: &Value) -> Result<CfgEntry, String> {
-    let name =
-        v.get("name").and_then(Value::as_str).ok_or("entrée sans champ \"name\"")?.to_string();
+    let name = v
+        .get("name")
+        .and_then(Value::as_str)
+        .ok_or("entrée sans champ \"name\"")?
+        .to_string();
     let variables = v
         .get("variables")
         .and_then(Value::as_array)
-        .map(|a| a.iter().map(json_to_t2b_value).collect::<Result<Vec<_>, _>>())
+        .map(|a| {
+            a.iter()
+                .map(json_to_t2b_value)
+                .collect::<Result<Vec<_>, _>>()
+        })
         .transpose()?
         .unwrap_or_default();
     let children = v
         .get("children")
         .and_then(Value::as_array)
-        .map(|a| a.iter().map(json_to_t2b_entry).collect::<Result<Vec<_>, _>>())
+        .map(|a| {
+            a.iter()
+                .map(json_to_t2b_entry)
+                .collect::<Result<Vec<_>, _>>()
+        })
         .transpose()?
         .unwrap_or_default();
-    Ok(CfgEntry { name, variables, children })
+    Ok(CfgEntry {
+        name,
+        variables,
+        children,
+    })
 }
 
 /// Inverse de [`t2b_to_json`] : reconstruit l'arbre `CfgEntry` depuis du JSON forme inagle
@@ -160,26 +182,35 @@ fn patch_rdbn_value(
     };
     match original {
         RdbnValue::Bool(_) => edited.as_bool().map(RdbnValue::Bool).ok_or_else(err),
-        RdbnValue::Byte(_) => {
-            edited.as_i64().and_then(|n| u8::try_from(n).ok()).map(RdbnValue::Byte).ok_or_else(err)
-        },
+        RdbnValue::Byte(_) => edited
+            .as_i64()
+            .and_then(|n| u8::try_from(n).ok())
+            .map(RdbnValue::Byte)
+            .ok_or_else(err),
         RdbnValue::Short(_) => edited
             .as_i64()
             .and_then(|n| i16::try_from(n).ok())
             .map(RdbnValue::Short)
             .ok_or_else(err),
-        RdbnValue::Int(_) => {
-            edited.as_i64().and_then(|n| i32::try_from(n).ok()).map(RdbnValue::Int).ok_or_else(err)
-        },
+        RdbnValue::Int(_) => edited
+            .as_i64()
+            .and_then(|n| i32::try_from(n).ok())
+            .map(RdbnValue::Int)
+            .ok_or_else(err),
         RdbnValue::ActType(_) => edited
             .as_i64()
             .and_then(|n| i16::try_from(n).ok())
             .map(RdbnValue::ActType)
             .ok_or_else(err),
-        RdbnValue::Flag(_) => {
-            edited.as_i64().and_then(|n| i32::try_from(n).ok()).map(RdbnValue::Flag).ok_or_else(err)
-        },
-        RdbnValue::Float(_) => edited.as_f64().map(|f| RdbnValue::Float(f as f32)).ok_or_else(err),
+        RdbnValue::Flag(_) => edited
+            .as_i64()
+            .and_then(|n| i32::try_from(n).ok())
+            .map(RdbnValue::Flag)
+            .ok_or_else(err),
+        RdbnValue::Float(_) => edited
+            .as_f64()
+            .map(|f| RdbnValue::Float(f as f32))
+            .ok_or_else(err),
         RdbnValue::Hash(_) => edited
             .as_str()
             .and_then(|s| s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")))
@@ -197,16 +228,23 @@ fn patch_rdbn_value(
             } else {
                 RdbnValue::Position(out)
             })
-        },
-        RdbnValue::Condition(_) => {
-            edited.as_str().map(|s| RdbnValue::Condition(s.to_string())).ok_or_else(err)
-        },
+        }
+        RdbnValue::Condition(_) => edited
+            .as_str()
+            .map(|s| RdbnValue::Condition(s.to_string()))
+            .ok_or_else(err),
         RdbnValue::ShortTuple(_) => {
             let arr = edited.as_array().filter(|a| a.len() == 2).ok_or_else(err)?;
-            let a = arr[0].as_i64().and_then(|n| i16::try_from(n).ok()).ok_or_else(err)?;
-            let b = arr[1].as_i64().and_then(|n| i16::try_from(n).ok()).ok_or_else(err)?;
+            let a = arr[0]
+                .as_i64()
+                .and_then(|n| i16::try_from(n).ok())
+                .ok_or_else(err)?;
+            let b = arr[1]
+                .as_i64()
+                .and_then(|n| i16::try_from(n).ok())
+                .ok_or_else(err)?;
             Ok(RdbnValue::ShortTuple([a, b]))
-        },
+        }
         // `rdbn_value_to_json` sérialise ces deux variantes en JSON `null` (aucune info
         // exploitable — cf. sa doc) : `edited` vaut donc TOUJOURS `null` ici, qu'il y ait eu une
         // tentative d'édition ou non, on ne peut pas faire la différence. Plutôt que de rejeter
@@ -239,15 +277,24 @@ fn patch_rdbn_row(
         let edited_value = map.get(name).ok_or_else(|| {
             format!("liste {list_name:?} ligne {row_index} : champ {name:?} absent du JSON édité")
         })?;
-        fields.push((name.clone(), patch_rdbn_value(orig_value, edited_value, name)?));
+        fields.push((
+            name.clone(),
+            patch_rdbn_value(orig_value, edited_value, name)?,
+        ));
     }
     Ok(RdbnRow { fields })
 }
 
 fn patch_rdbn_list(original: &RdbnList, edited: &Value) -> Result<RdbnList, String> {
-    let rows_json = edited.get("values").and_then(Value::as_array).ok_or_else(|| {
-        format!("liste {:?} : JSON édité sans champ \"values\" (tableau)", original.name)
-    })?;
+    let rows_json = edited
+        .get("values")
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            format!(
+                "liste {:?} : JSON édité sans champ \"values\" (tableau)",
+                original.name
+            )
+        })?;
     if rows_json.len() != original.rows.len() {
         return Err(format!(
             "liste {:?} : {} ligne(s) dans le JSON édité, {} attendue(s) — l'ajout/la suppression de lignes n'est pas supporté pour RDBN (seules les VALEURS sont éditables)",
@@ -263,7 +310,11 @@ fn patch_rdbn_list(original: &RdbnList, edited: &Value) -> Result<RdbnList, Stri
         .enumerate()
         .map(|(i, (orig_row, edited_row))| patch_rdbn_row(orig_row, edited_row, &original.name, i))
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(RdbnList { name: original.name.clone(), type_name: original.type_name.clone(), rows })
+    Ok(RdbnList {
+        name: original.name.clone(),
+        type_name: original.type_name.clone(),
+        rows,
+    })
 }
 
 /// Reconstruit des `RdbnList` depuis du JSON forme inagle ÉDITÉ (`{"lists":[...]}`,
@@ -339,7 +390,9 @@ mod tests {
     /// fidèle, pas seulement `encode_t2b` isolément (déjà testé côté `aphrody-nie-formats`).
     #[test]
     fn json_bridge_round_trip_sur_le_vrai_jeu() {
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip json_bridge_round_trip_sur_le_vrai_jeu : jeu absent");
@@ -375,14 +428,15 @@ mod tests {
                 Err(e) => {
                     failed.push((path.clone(), format!("json_to_t2b_entries : {e}")));
                     continue;
-                },
+                }
             };
             let reencoded = encode_t2b(&rebuilt);
             match parse_t2b(&reencoded) {
                 Ok(roundtripped) if roundtripped.entries == original.entries => n_ok += 1,
-                Ok(_) => {
-                    failed.push((path.clone(), "arbre différent après round-trip JSON".to_string()))
-                },
+                Ok(_) => failed.push((
+                    path.clone(),
+                    "arbre différent après round-trip JSON".to_string(),
+                )),
                 Err(e) => failed.push((path.clone(), format!("redécodage échoué : {e}"))),
             }
         }
@@ -394,8 +448,16 @@ mod tests {
         for (p, e) in failed.iter().take(10) {
             eprintln!("  échec {p} : {e}");
         }
-        assert!(n_t2b > 5, "attendu au moins quelques fichiers T2B réels, obtenu {n_t2b}");
-        assert_eq!(n_ok, n_t2b, "{} échec(s) sur {n_t2b} fichiers T2B réels", failed.len());
+        assert!(
+            n_t2b > 5,
+            "attendu au moins quelques fichiers T2B réels, obtenu {n_t2b}"
+        );
+        assert_eq!(
+            n_ok,
+            n_t2b,
+            "{} échec(s) sur {n_t2b} fichiers T2B réels",
+            failed.len()
+        );
     }
 
     /// Round-trip complet SUR LE VRAI JEU pour RDBN : octets → `RdbnList` (`rdbn_to_json`) → JSON
@@ -407,7 +469,9 @@ mod tests {
     fn json_bridge_rdbn_round_trip_sur_le_vrai_jeu() {
         use aphrody_nie_formats::cfgbin::{encode_rdbn, parse, read_values};
 
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data_dir) {
             eprintln!("skip json_bridge_rdbn_round_trip_sur_le_vrai_jeu : jeu absent");
@@ -442,14 +506,14 @@ mod tests {
                 Err(e) => {
                     failed.push((path.clone(), format!("json_to_rdbn_lists : {e}")));
                     continue;
-                },
+                }
             };
             let reencoded = match encode_rdbn(&rebuilt) {
                 Ok(b) => b,
                 Err(e) => {
                     failed.push((path.clone(), format!("encode_rdbn : {e}")));
                     continue;
-                },
+                }
             };
             match parse(&reencoded) {
                 Ok(rdbn2) => {
@@ -462,7 +526,7 @@ mod tests {
                             "listes différentes après round-trip JSON".to_string(),
                         ));
                     }
-                },
+                }
                 Err(e) => failed.push((path.clone(), format!("redécodage échoué : {e}"))),
             }
         }
@@ -474,7 +538,15 @@ mod tests {
         for (p, e) in failed.iter().take(10) {
             eprintln!("  échec {p} : {e}");
         }
-        assert!(n_rdbn > 5, "attendu au moins quelques fichiers RDBN réels, obtenu {n_rdbn}");
-        assert_eq!(n_ok, n_rdbn, "{} échec(s) sur {n_rdbn} fichiers RDBN réels", failed.len());
+        assert!(
+            n_rdbn > 5,
+            "attendu au moins quelques fichiers RDBN réels, obtenu {n_rdbn}"
+        );
+        assert_eq!(
+            n_ok,
+            n_rdbn,
+            "{} échec(s) sur {n_rdbn} fichiers RDBN réels",
+            failed.len()
+        );
     }
 }

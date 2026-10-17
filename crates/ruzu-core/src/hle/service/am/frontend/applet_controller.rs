@@ -586,7 +586,9 @@ mod tests {
     impl crate::frontend::applets::applet::Applet for DeferredControllerApplet {
         fn close(&self) {
             let callback = self.callback.lock().unwrap().take();
-            if let Some(callback) = callback { callback(true); }
+            if let Some(callback) = callback {
+                callback(true);
+            }
         }
     }
 
@@ -661,64 +663,68 @@ mod tests {
     #[test]
     fn controller_applet_completes_after_deferred_frontend_callback() {
         for close_during_request in [false, true] {
-        let system = System::new();
-        let system_ref = SystemRef::from_ref(&system);
-        let applet = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), false)));
-        let parent = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), true)));
-        applet.lock().unwrap().caller_applet = Arc::downgrade(&parent);
-        parent.lock().unwrap().child_applets.push(Arc::clone(&applet));
-        let broker = Arc::new(AppletDataBroker::new());
-        let callback = Arc::new(Mutex::new(None));
-        let frontend: Arc<dyn ControllerApplet> = Arc::new(DeferredControllerApplet {
-            callback: Arc::clone(&callback),
-        });
+            let system = System::new();
+            let system_ref = SystemRef::from_ref(&system);
+            let applet = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), false)));
+            let parent = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), true)));
+            applet.lock().unwrap().caller_applet = Arc::downgrade(&parent);
+            parent
+                .lock()
+                .unwrap()
+                .child_applets
+                .push(Arc::clone(&applet));
+            let broker = Arc::new(AppletDataBroker::new());
+            let callback = Arc::new(Mutex::new(None));
+            let frontend: Arc<dyn ControllerApplet> = Arc::new(DeferredControllerApplet {
+                callback: Arc::clone(&callback),
+            });
 
-        let mut common = CommonArguments::default();
-        common.library_version = ControllerAppletVersion::Version8 as u32;
-        let private = ControllerSupportArgPrivate {
-            arg_private_size: std::mem::size_of::<ControllerSupportArgPrivate>() as u32,
-            arg_size: std::mem::size_of::<ControllerSupportArgNew>() as u32,
-            mode: ControllerSupportMode::ShowControllerSupport as u8,
-            caller: ControllerSupportCaller::Application as u8,
-            style_set: NpadStyleSet::FULLKEY.bits(),
-            ..ControllerSupportArgPrivate::default()
-        };
-        let mut user = ControllerSupportArgNew::default();
-        user.header.player_count_min = 1;
-        user.header.player_count_max = 4;
+            let mut common = CommonArguments::default();
+            common.library_version = ControllerAppletVersion::Version8 as u32;
+            let private = ControllerSupportArgPrivate {
+                arg_private_size: std::mem::size_of::<ControllerSupportArgPrivate>() as u32,
+                arg_size: std::mem::size_of::<ControllerSupportArgNew>() as u32,
+                mode: ControllerSupportMode::ShowControllerSupport as u8,
+                caller: ControllerSupportCaller::Application as u8,
+                style_set: NpadStyleSet::FULLKEY.bits(),
+                ..ControllerSupportArgPrivate::default()
+            };
+            let mut user = ControllerSupportArgNew::default();
+            user.header.player_count_min = 1;
+            user.header.player_count_max = 4;
 
-        broker.get_in_data().push(bytes_of(&common));
-        broker.get_in_data().push(bytes_of(&private));
-        broker.get_in_data().push(bytes_of(&user));
+            broker.get_in_data().push(bytes_of(&common));
+            broker.get_in_data().push(bytes_of(&private));
+            broker.get_in_data().push(bytes_of(&user));
 
-        let mut controller = Controller::new(
-            system_ref,
-            Arc::downgrade(&applet),
-            Arc::clone(&broker),
-            LibraryAppletMode::AllForeground,
-            frontend,
-        );
-        controller.initialize();
-        controller.execute();
+            let mut controller = Controller::new(
+                system_ref,
+                Arc::downgrade(&applet),
+                Arc::clone(&broker),
+                LibraryAppletMode::AllForeground,
+                frontend,
+            );
+            controller.initialize();
+            controller.execute();
 
-        assert!(!controller.is_complete());
-        assert!(!applet.lock().unwrap().is_completed);
+            assert!(!controller.is_complete());
+            assert!(!applet.lock().unwrap().is_completed);
 
-        if close_during_request {
-            {
-                let guard = applet.lock().unwrap();
-                controller.request_exit();
-                assert!(!guard.is_completed);
+            if close_during_request {
+                {
+                    let guard = applet.lock().unwrap();
+                    controller.request_exit();
+                    assert!(!guard.is_completed);
+                }
+                super::super::applets::exit(system_ref, &Arc::downgrade(&applet));
+            } else {
+                callback.lock().unwrap().take().unwrap()(true);
             }
-            super::super::applets::exit(system_ref, &Arc::downgrade(&applet));
-        } else {
-            callback.lock().unwrap().take().unwrap()(true);
-        }
 
-        assert!(controller.is_complete());
-        assert!(applet.lock().unwrap().is_completed);
-        assert!(parent.lock().unwrap().child_applets.is_empty());
-        assert!(broker.get_out_data().pop().is_ok());
+            assert!(controller.is_complete());
+            assert!(applet.lock().unwrap().is_completed);
+            assert!(parent.lock().unwrap().child_applets.is_empty());
+            assert!(broker.get_out_data().pop().is_ok());
         }
     }
 }

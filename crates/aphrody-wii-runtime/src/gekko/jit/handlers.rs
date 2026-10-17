@@ -15,9 +15,10 @@ unsafe fn parts<'a>(
     builder_ptr: usize,
     emit_ctx_ptr: usize,
 ) -> (&'a mut FunctionBuilder<'a>, &'a mut BlockEmitContext) {
-    (unsafe { &mut *(builder_ptr as *mut FunctionBuilder<'a>) }, unsafe {
-        &mut *(emit_ctx_ptr as *mut BlockEmitContext)
-    })
+    (
+        unsafe { &mut *(builder_ptr as *mut FunctionBuilder<'a>) },
+        unsafe { &mut *(emit_ctx_ptr as *mut BlockEmitContext) },
+    )
 }
 
 fn emit_must_deliver_external_interrupt<const SYSTEM: SystemId>(
@@ -72,7 +73,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
                 ImmLogical::Xor,
                 false,
             );
-        },
+        }
         lut::OP_XORIS => {
             translator::emit_imm_logical::<SYSTEM>(
                 builder,
@@ -81,7 +82,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
                 ImmLogical::Xor,
                 true,
             );
-        },
+        }
         lut::OP_ANDI_DOT => {
             let r = translator::emit_imm_logical::<SYSTEM>(
                 builder,
@@ -91,7 +92,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
                 false,
             );
             translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
-        },
+        }
         lut::OP_ANDIS_DOT => {
             let r = translator::emit_imm_logical::<SYSTEM>(
                 builder,
@@ -101,7 +102,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
                 true,
             );
             translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
-        },
+        }
 
         lut::OP_MULLI => translator::emit_mulli::<SYSTEM>(builder, t.ctx_ptr, instr),
         lut::OP_SUBFIC => translator::emit_subfic::<SYSTEM>(builder, t.ctx_ptr, instr),
@@ -120,7 +121,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_ADDCX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -133,7 +134,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_ADDEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -146,7 +147,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_ADDZEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let r = translator::emit_addze_subfze::<SYSTEM>(
@@ -164,7 +165,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_ADDMEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let r = translator::emit_addme_subfme::<SYSTEM>(
@@ -182,7 +183,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
 
         lut::OP_SUBFX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
@@ -196,7 +197,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_SUBFCX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -209,7 +210,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_SUBFEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -222,7 +223,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_SUBFZEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let r = translator::emit_addze_subfze::<SYSTEM>(
@@ -241,7 +242,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_SUBFMEX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let r = translator::emit_addme_subfme::<SYSTEM>(
@@ -260,21 +261,23 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
 
         lut::OP_NEGX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let r = translator::emit_neg::<SYSTEM>(builder, t.ctx_ptr, instr);
 
             if instr.oe() {
-                let ov_b = builder.ins().icmp_imm(IntCC::Equal, a, 0x8000_0000u32 as i64);
+                let ov_b = builder
+                    .ins()
+                    .icmp_imm(IntCC::Equal, a, 0x8000_0000u32 as i64);
                 let ov = builder.ins().uextend(types::I32, ov_b);
                 translator::write_xer_ov_so::<SYSTEM>(builder, t.ctx_ptr, ov);
             }
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
 
         lut::OP_MULLWX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
@@ -293,21 +296,21 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_MULHWX => {
             let r = translator::emit_mulhw::<SYSTEM>(builder, t.ctx_ptr, instr, true);
 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_MULHWUX => {
             let r = translator::emit_mulhw::<SYSTEM>(builder, t.ctx_ptr, instr, false);
 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
 
         lut::OP_DIVWUX => {
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -321,7 +324,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
         lut::OP_DIVWX => {
             let a = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.ra());
             let b = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rb());
@@ -329,7 +332,9 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
 
             if instr.oe() {
                 let b_zero = builder.ins().icmp_imm(IntCC::Equal, b, 0);
-                let a_min = builder.ins().icmp_imm(IntCC::Equal, a, 0x8000_0000u32 as i64);
+                let a_min = builder
+                    .ins()
+                    .icmp_imm(IntCC::Equal, a, 0x8000_0000u32 as i64);
                 let b_neg1 = builder.ins().icmp_imm(IntCC::Equal, b, -1i64);
                 let signed_min_neg1 = builder.ins().band(a_min, b_neg1);
                 let any = builder.ins().bor(b_zero, signed_min_neg1);
@@ -339,7 +344,7 @@ pub fn alu<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if instr.rc() {
                 translator::emit_update_cr0::<SYSTEM>(builder, t.ctx_ptr, r);
             }
-        },
+        }
 
         _ => return,
     }
@@ -374,13 +379,13 @@ pub fn logical<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, ins
     let r = match OP {
         lut::OP_ANDX => {
             translator::emit_logical_xform::<SYSTEM>(builder, t.ctx_ptr, instr, LogicalOp::And)
-        },
+        }
         lut::OP_ORX => {
             translator::emit_logical_xform::<SYSTEM>(builder, t.ctx_ptr, instr, LogicalOp::Or)
-        },
+        }
         lut::OP_XORX => {
             translator::emit_logical_xform::<SYSTEM>(builder, t.ctx_ptr, instr, LogicalOp::Xor)
-        },
+        }
 
         lut::OP_NORX => translator::emit_logical_xform_full::<SYSTEM>(
             builder,
@@ -415,10 +420,10 @@ pub fn logical<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, ins
 
         lut::OP_SLWX => {
             translator::emit_shift_xform::<SYSTEM>(builder, t.ctx_ptr, instr, ShiftKind::Slw)
-        },
+        }
         lut::OP_SRWX => {
             translator::emit_shift_xform::<SYSTEM>(builder, t.ctx_ptr, instr, ShiftKind::Srw)
-        },
+        }
         lut::OP_SRAWX => translator::emit_sraw::<SYSTEM>(builder, t.ctx_ptr, instr),
         lut::OP_SRAWIX => translator::emit_srawi::<SYSTEM>(builder, t.ctx_ptr, instr),
 
@@ -461,7 +466,7 @@ pub fn cr_ops<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
         lut::OP_MFCR => {
             let cr = translator::cr_load::<SYSTEM>(builder, t.ctx_ptr);
             translator::gpr_store::<SYSTEM>(builder, t.ctx_ptr, instr.rd(), cr);
-        },
+        }
         lut::OP_MTCRF => {
             let s = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rs());
 
@@ -477,7 +482,7 @@ pub fn cr_ops<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
             let new_bits = builder.ins().band_imm(s, mask as i64);
             let merged = builder.ins().bor(kept, new_bits);
             translator::cr_store::<SYSTEM>(builder, t.ctx_ptr, merged);
-        },
+        }
 
         lut::OP_MCRF => translator::emit_mcrf::<SYSTEM>(builder, t.ctx_ptr, instr),
 
@@ -504,14 +509,16 @@ pub fn segment<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, ins
     match OP {
         lut::OP_MFSR => {
             let off = (abi::sr_base_offset::<SYSTEM>() + instr.sr() as usize * 4) as i32;
-            let val = builder.ins().load(types::I32, vmctx_flags(), t.ctx_ptr, off);
+            let val = builder
+                .ins()
+                .load(types::I32, vmctx_flags(), t.ctx_ptr, off);
             translator::gpr_store::<SYSTEM>(builder, t.ctx_ptr, instr.rd(), val);
-        },
+        }
         lut::OP_MTSR => {
             let off = (abi::sr_base_offset::<SYSTEM>() + instr.sr() as usize * 4) as i32;
             let val = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rs());
             builder.ins().store(vmctx_flags(), val, t.ctx_ptr, off);
-        },
+        }
         _ => return,
     }
 
@@ -534,10 +541,15 @@ pub fn msr<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             translator::gpr_store::<SYSTEM>(builder, t.ctx_ptr, instr.rd(), msr);
 
             t.handled_natively = true;
-        },
+        }
         lut::OP_MTMSR => {
             let val = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rs());
-            builder.ins().store(vmctx_flags(), val, t.ctx_ptr, abi::msr_offset::<SYSTEM>() as i32);
+            builder.ins().store(
+                vmctx_flags(),
+                val,
+                t.ctx_ptr,
+                abi::msr_offset::<SYSTEM>() as i32,
+            );
 
             unsafe {
                 (&mut *(t.emit_ctx_ptr as *mut BlockEmitContext)).fp_guard_emitted = false;
@@ -575,7 +587,7 @@ pub fn msr<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
                 }
             }
             t.handled_natively = true;
-        },
+        }
         lut::OP_RFI if t.is_terminator => {
             const RFI_MSR_MASK: i64 = 0x87C0_FFFF;
 
@@ -584,22 +596,40 @@ pub fn msr<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             let srr1_off = abi::spr_field_offset::<SYSTEM>(27).unwrap() as i32;
             let nia_off = abi::nia_offset::<SYSTEM>() as i32;
 
-            let msr_v = builder.ins().load(types::I32, vmctx_flags(), t.ctx_ptr, msr_off);
-            let srr1 = builder.ins().load(types::I32, vmctx_flags(), t.ctx_ptr, srr1_off);
-            let msr_keep = builder.ins().band_imm(msr_v, !RFI_MSR_MASK & 0xFFFF_FFFFi64);
+            let msr_v = builder
+                .ins()
+                .load(types::I32, vmctx_flags(), t.ctx_ptr, msr_off);
+            let srr1 = builder
+                .ins()
+                .load(types::I32, vmctx_flags(), t.ctx_ptr, srr1_off);
+            let msr_keep = builder
+                .ins()
+                .band_imm(msr_v, !RFI_MSR_MASK & 0xFFFF_FFFFi64);
             let srr1_take = builder.ins().band_imm(srr1, RFI_MSR_MASK);
             let new_msr = builder.ins().bor(msr_keep, srr1_take);
-            let new_msr_clr = builder.ins().band_imm(new_msr, !0x0004_0000i64 & 0xFFFF_FFFFi64);
-            builder.ins().store(vmctx_flags(), new_msr_clr, t.ctx_ptr, msr_off);
+            let new_msr_clr = builder
+                .ins()
+                .band_imm(new_msr, !0x0004_0000i64 & 0xFFFF_FFFFi64);
+            builder
+                .ins()
+                .store(vmctx_flags(), new_msr_clr, t.ctx_ptr, msr_off);
 
-            let srr0_raw = builder.ins().load(types::I32, vmctx_flags(), t.ctx_ptr, srr0_off);
+            let srr0_raw = builder
+                .ins()
+                .load(types::I32, vmctx_flags(), t.ctx_ptr, srr0_off);
             let nia = builder.ins().band_imm(srr0_raw, 0xFFFF_FFFCi64);
             builder.ins().store(vmctx_flags(), nia, t.ctx_ptr, nia_off);
 
             let must_deliver =
                 emit_must_deliver_external_interrupt::<SYSTEM>(builder, t.ctx_ptr, new_msr_clr);
             let dispatch_block = builder.create_block();
-            builder.ins().brif(must_deliver, t.exit_block, &[nia.into()], dispatch_block, &[]);
+            builder.ins().brif(
+                must_deliver,
+                t.exit_block,
+                &[nia.into()],
+                dispatch_block,
+                &[],
+            );
             builder.switch_to_block(dispatch_block);
             builder.seal_block(dispatch_block);
 
@@ -614,8 +644,8 @@ pub fn msr<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             );
             t.chained = true;
             t.handled_natively = true;
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -629,17 +659,20 @@ pub fn spr<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
             if translator::emit_mfspr::<SYSTEM>(builder, t.ctx_ptr, instr, local) {
                 t.handled_natively = true;
             }
-        },
+        }
         lut::OP_MTSPR => {
             if translator::emit_mtspr::<SYSTEM>(builder, t.ctx_ptr, instr, local) {
                 if t.is_terminator {
-                    t.last_terminator_nia =
-                        Some(builder.ins().iconst(types::I32, t.pc.wrapping_add(4) as i64));
+                    t.last_terminator_nia = Some(
+                        builder
+                            .ins()
+                            .iconst(types::I32, t.pc.wrapping_add(4) as i64),
+                    );
                 }
                 t.handled_natively = true;
             }
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -702,10 +735,10 @@ pub fn store_load<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_LHA => {
             translator::emit_lha_d_form::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_u16, false)
-        },
+        }
         lut::OP_LHAU => {
             translator::emit_lha_d_form::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_u16, true)
-        },
+        }
 
         lut::OP_STW => translator::emit_store::<SYSTEM>(
             builder,
@@ -815,10 +848,10 @@ pub fn store_load<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_LHAX => {
             translator::emit_lha_xform::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_u16, false)
-        },
+        }
         lut::OP_LHAUX => {
             translator::emit_lha_xform::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_u16, true)
-        },
+        }
 
         lut::OP_STWX => translator::emit_store_xform::<SYSTEM>(
             builder,
@@ -940,11 +973,11 @@ pub fn store_load_fp<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_LFSU => {
             translator::emit_lf_d_form_update::<SYSTEM>(builder, t.ctx_ptr, instr, true, local)
-        },
+        }
         lut::OP_LFD => translator::emit_lfd::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_f64),
         lut::OP_LFDU => {
             translator::emit_lf_d_form_update::<SYSTEM>(builder, t.ctx_ptr, instr, false, local)
-        },
+        }
 
         lut::OP_STFS => translator::emit_stfs::<SYSTEM>(
             builder,
@@ -956,7 +989,7 @@ pub fn store_load_fp<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_STFSU => {
             translator::emit_stf_d_form_update::<SYSTEM>(builder, t.ctx_ptr, instr, true, local)
-        },
+        }
         lut::OP_STFD => translator::emit_stfd::<SYSTEM>(
             builder,
             t.ctx_ptr,
@@ -966,16 +999,16 @@ pub fn store_load_fp<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_STFDU => {
             translator::emit_stf_d_form_update::<SYSTEM>(builder, t.ctx_ptr, instr, false, local)
-        },
+        }
 
         lut::OP_LFSX => translator::emit_lfsx::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_f32),
         lut::OP_LFSUX => {
             translator::emit_lfx_update::<SYSTEM>(builder, t.ctx_ptr, instr, true, local)
-        },
+        }
         lut::OP_LFDX => translator::emit_lfdx::<SYSTEM>(builder, t.ctx_ptr, instr, local.read_f64),
         lut::OP_LFDUX => {
             translator::emit_lfx_update::<SYSTEM>(builder, t.ctx_ptr, instr, false, local)
-        },
+        }
 
         lut::OP_STFSX => translator::emit_stfsx::<SYSTEM>(
             builder,
@@ -986,7 +1019,7 @@ pub fn store_load_fp<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_STFSUX => {
             translator::emit_stfx_update::<SYSTEM>(builder, t.ctx_ptr, instr, true, local)
-        },
+        }
         lut::OP_STFDX => translator::emit_stfdx::<SYSTEM>(
             builder,
             t.ctx_ptr,
@@ -996,7 +1029,7 @@ pub fn store_load_fp<const OP: u32, const SYSTEM: SystemId>(
         ),
         lut::OP_STFDUX => {
             translator::emit_stfx_update::<SYSTEM>(builder, t.ctx_ptr, instr, false, local)
-        },
+        }
 
         lut::OP_STFIWX => translator::emit_stfiwx::<SYSTEM>(
             builder,
@@ -1070,16 +1103,16 @@ pub fn store_load_psq<const OP: u32, const SYSTEM: SystemId>(
 
         lut::OP_PSQ_LX => {
             translator::emit_psq_x::<SYSTEM>(builder, t.ctx_ptr, instr, local, false, false)
-        },
+        }
         lut::OP_PSQ_LUX => {
             translator::emit_psq_x::<SYSTEM>(builder, t.ctx_ptr, instr, local, false, true)
-        },
+        }
         lut::OP_PSQ_STX => {
             translator::emit_psq_x::<SYSTEM>(builder, t.ctx_ptr, instr, local, true, false)
-        },
+        }
         lut::OP_PSQ_STUX => {
             translator::emit_psq_x::<SYSTEM>(builder, t.ctx_ptr, instr, local, true, true)
-        },
+        }
 
         _ => return,
     }
@@ -1096,9 +1129,11 @@ pub fn nop<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
     match OP {
         lut::OP_DCBF | lut::OP_DCBST => {
             let ea = translator::emit_x_form_ea::<SYSTEM>(builder, t.ctx_ptr, instr);
-            builder.ins().call(local.mark_memory_writeback, &[t.ctx_ptr, ea]);
+            builder
+                .ins()
+                .call(local.mark_memory_writeback, &[t.ctx_ptr, ea]);
             t.handled_natively = true;
-        },
+        }
         lut::OP_ISYNC
         | lut::OP_SYNC
         | lut::OP_EIEIO
@@ -1112,8 +1147,8 @@ pub fn nop<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr: 
         | lut::OP_TLBLD
         | lut::OP_TLBLI => {
             t.handled_natively = true;
-        },
-        _ => {},
+        }
+        _ => {}
     }
 
     let _ = (builder, local);
@@ -1151,12 +1186,18 @@ pub fn icbi<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, instr:
     builder.ins().call(local.cause_icbi, &[t.ctx_ptr, ea]);
 
     let dirty_off = abi::jit_dirty_offset::<SYSTEM>() as i32;
-    let dirty = builder.ins().load(types::I8, translator::vmctx_flags(), t.ctx_ptr, dirty_off);
+    let dirty = builder
+        .ins()
+        .load(types::I8, translator::vmctx_flags(), t.ctx_ptr, dirty_off);
     let nz = builder.ins().icmp_imm(IntCC::NotEqual, dirty, 0);
 
     let continue_block = builder.create_block();
-    let nia = builder.ins().iconst(types::I32, t.pc.wrapping_add(4) as i64);
-    builder.ins().brif(nz, t.exit_block, &[nia.into()], continue_block, &[]);
+    let nia = builder
+        .ins()
+        .iconst(types::I32, t.pc.wrapping_add(4) as i64);
+    builder
+        .ins()
+        .brif(nz, t.exit_block, &[nia.into()], continue_block, &[]);
     builder.switch_to_block(continue_block);
     builder.seal_block(continue_block);
 
@@ -1181,7 +1222,9 @@ pub fn branch<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
                 };
 
                 if instr.lk() {
-                    let lr_val = builder.ins().iconst(types::I32, t.pc.wrapping_add(4) as i64);
+                    let lr_val = builder
+                        .ins()
+                        .iconst(types::I32, t.pc.wrapping_add(4) as i64);
                     translator::lr_store::<SYSTEM>(builder, t.ctx_ptr, lr_val);
                 }
 
@@ -1213,11 +1256,12 @@ pub fn branch<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
                 t.chained = true;
                 t.handled_natively = true;
             } else {
-                t.last_terminator_nia =
-                    Some(translator::emit_b::<SYSTEM>(builder, t.ctx_ptr, instr, t.pc));
+                t.last_terminator_nia = Some(translator::emit_b::<SYSTEM>(
+                    builder, t.ctx_ptr, instr, t.pc,
+                ));
                 t.handled_natively = true;
             }
-        },
+        }
 
         lut::OP_BCX => {
             match translator::emit_bc_with_chain::<SYSTEM>(
@@ -1235,14 +1279,14 @@ pub fn branch<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
                 TermEmit::HandledNia(nia) => {
                     t.last_terminator_nia = Some(nia);
                     t.handled_natively = true;
-                },
+                }
                 TermEmit::HandledChained => {
                     t.chained = true;
                     t.handled_natively = true;
-                },
-                TermEmit::NotHandled => {},
+                }
+                TermEmit::NotHandled => {}
             }
-        },
+        }
 
         lut::OP_BCLRX => {
             match translator::emit_bclr_dispatch::<SYSTEM>(
@@ -1259,14 +1303,14 @@ pub fn branch<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
                 TermEmit::HandledNia(nia) => {
                     t.last_terminator_nia = Some(nia);
                     t.handled_natively = true;
-                },
+                }
                 TermEmit::HandledChained => {
                     t.chained = true;
                     t.handled_natively = true;
-                },
-                TermEmit::NotHandled => {},
+                }
+                TermEmit::NotHandled => {}
             }
-        },
+        }
 
         lut::OP_BCCTRX => {
             match translator::emit_bcctr_dispatch::<SYSTEM>(
@@ -1283,16 +1327,16 @@ pub fn branch<const OP: u32, const SYSTEM: SystemId>(t: &mut JitTranslator, inst
                 TermEmit::HandledNia(nia) => {
                     t.last_terminator_nia = Some(nia);
                     t.handled_natively = true;
-                },
+                }
                 TermEmit::HandledChained => {
                     t.chained = true;
                     t.handled_natively = true;
-                },
-                TermEmit::NotHandled => {},
+                }
+                TermEmit::NotHandled => {}
             }
-        },
+        }
 
-        _ => {},
+        _ => {}
     }
 }
 
@@ -1352,9 +1396,13 @@ pub fn sc<const SYSTEM: SystemId>(t: &mut JitTranslator, _instr: Instruction) {
 
     let cia_off = abi::cia_offset::<SYSTEM>() as i32;
     let pc_const = builder.ins().iconst(types::I32, t.pc as i64);
-    builder.ins().store(vmctx_flags(), pc_const, t.ctx_ptr, cia_off);
+    builder
+        .ins()
+        .store(vmctx_flags(), pc_const, t.ctx_ptr, cia_off);
 
-    let srr0_value = builder.ins().iconst(types::I32, t.pc.wrapping_add(4) as i64);
+    let srr0_value = builder
+        .ins()
+        .iconst(types::I32, t.pc.wrapping_add(4) as i64);
     t.last_terminator_nia = Some(translator::emit_exception_dispatch::<SYSTEM>(
         builder,
         t.ctx_ptr,
@@ -1401,7 +1449,11 @@ pub fn lswi<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction) {
     t.op_cycles = crate::gekko::cycles::cycles_for_op(lut::OP_LSWI);
     let (builder, local) = unsafe { parts(t.builder_ptr, t.emit_ctx_ptr) };
 
-    let n = if instr.nb() == 0 { 32 } else { instr.nb() as u32 };
+    let n = if instr.nb() == 0 {
+        32
+    } else {
+        instr.nb() as u32
+    };
     let ea = if instr.ra() == 0 {
         builder.ins().iconst(types::I32, 0)
     } else {
@@ -1410,7 +1462,9 @@ pub fn lswi<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction) {
 
     let rd_v = builder.ins().iconst(types::I32, instr.rd() as i64);
     let n_v = builder.ins().iconst(types::I32, n as i64);
-    builder.ins().call(local.do_lswi, &[t.ctx_ptr, ea, rd_v, n_v]);
+    builder
+        .ins()
+        .call(local.do_lswi, &[t.ctx_ptr, ea, rd_v, n_v]);
 
     t.handled_natively = true;
 }
@@ -1420,7 +1474,11 @@ pub fn stswi<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction) 
     t.op_cycles = crate::gekko::cycles::cycles_for_op(lut::OP_STSWI);
     let (builder, local) = unsafe { parts(t.builder_ptr, t.emit_ctx_ptr) };
 
-    let n = if instr.nb() == 0 { 32 } else { instr.nb() as u32 };
+    let n = if instr.nb() == 0 {
+        32
+    } else {
+        instr.nb() as u32
+    };
     let ea = if instr.ra() == 0 {
         builder.ins().iconst(types::I32, 0)
     } else {
@@ -1429,7 +1487,9 @@ pub fn stswi<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction) 
 
     let rs_v = builder.ins().iconst(types::I32, instr.rs() as i64);
     let n_v = builder.ins().iconst(types::I32, n as i64);
-    builder.ins().call(local.do_stswi, &[t.ctx_ptr, ea, rs_v, n_v]);
+    builder
+        .ins()
+        .call(local.do_stswi, &[t.ctx_ptr, ea, rs_v, n_v]);
 
     t.handled_natively = true;
 }
@@ -1504,7 +1564,9 @@ pub fn mfsrin<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction)
     let byte_off = builder.ins().ishl_imm(idx_masked, 2);
     let byte_off64 = builder.ins().uextend(types::I64, byte_off);
 
-    let base = builder.ins().iadd_imm(t.ctx_ptr, abi::sr_base_offset::<SYSTEM>() as i64);
+    let base = builder
+        .ins()
+        .iadd_imm(t.ctx_ptr, abi::sr_base_offset::<SYSTEM>() as i64);
     let addr = builder.ins().iadd(base, byte_off64);
 
     let val = builder.ins().load(types::I32, vmctx_flags(), addr, 0);
@@ -1524,7 +1586,9 @@ pub fn mtsrin<const SYSTEM: SystemId>(t: &mut JitTranslator, instr: Instruction)
     let byte_off = builder.ins().ishl_imm(idx_masked, 2);
     let byte_off64 = builder.ins().uextend(types::I64, byte_off);
 
-    let base = builder.ins().iadd_imm(t.ctx_ptr, abi::sr_base_offset::<SYSTEM>() as i64);
+    let base = builder
+        .ins()
+        .iadd_imm(t.ctx_ptr, abi::sr_base_offset::<SYSTEM>() as i64);
     let addr = builder.ins().iadd(base, byte_off64);
 
     let val = translator::gpr_load::<SYSTEM>(builder, t.ctx_ptr, instr.rs());

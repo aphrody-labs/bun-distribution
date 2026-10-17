@@ -130,7 +130,11 @@ fn compress(v: &[CharStyle]) -> Vec<StyleRun> {
         }
         match out.last_mut() {
             Some(r) if r.end == i && r.style == *s => r.end = i + 1,
-            _ => out.push(StyleRun { start: i, end: i + 1, style: s.clone() }),
+            _ => out.push(StyleRun {
+                start: i,
+                end: i + 1,
+                style: s.clone(),
+            }),
         }
     }
     out
@@ -142,7 +146,13 @@ pub fn normalize_runs(runs: &[StyleRun], n: usize) -> Vec<StyleRun> {
 }
 
 /// Merge `style` into characters `start..end` of a text of `n` characters.
-pub fn apply_char_style(runs: &[StyleRun], n: usize, start: usize, end: usize, style: &CharStyle) -> Vec<StyleRun> {
+pub fn apply_char_style(
+    runs: &[StyleRun],
+    n: usize,
+    start: usize,
+    end: usize,
+    style: &CharStyle,
+) -> Vec<StyleRun> {
     let mut v = expand(runs, n);
     for c in v.iter_mut().take(end.min(n)).skip(start.min(n)) {
         *c = c.merged(style);
@@ -170,10 +180,20 @@ pub fn adjust_runs(old: &str, new: &str, runs: &[StyleRun]) -> Vec<StyleRun> {
     let b: Vec<char> = new.chars().collect();
     let pre = a.iter().zip(&b).take_while(|(x, y)| x == y).count();
     let max_suf = a.len().min(b.len()) - pre;
-    let suf = a.iter().rev().zip(b.iter().rev()).take(max_suf).take_while(|(x, y)| x == y).count();
+    let suf = a
+        .iter()
+        .rev()
+        .zip(b.iter().rev())
+        .take(max_suf)
+        .take_while(|(x, y)| x == y)
+        .count();
     let v = expand(runs, a.len());
     let inserted = b.len() - pre - suf;
-    let fill = if pre > 0 { v[pre - 1].clone() } else { v.get(a.len() - suf).cloned().unwrap_or_default() };
+    let fill = if pre > 0 {
+        v[pre - 1].clone()
+    } else {
+        v.get(a.len() - suf).cloned().unwrap_or_default()
+    };
     let mut out: Vec<CharStyle> = v[..pre].to_vec();
     out.extend(std::iter::repeat_n(fill, inserted));
     out.extend_from_slice(&v[a.len() - suf..]);
@@ -218,7 +238,12 @@ impl Pin {
             top: edges[1],
             right: edges[2],
             bottom: edges[3],
-            offsets: [own[0] - target[0], own[1] - target[1], own[2] - target[2], own[3] - target[3]],
+            offsets: [
+                own[0] - target[0],
+                own[1] - target[1],
+                own[2] - target[2],
+                own[3] - target[3],
+            ],
         }
     }
 }
@@ -237,7 +262,13 @@ pub struct PinNode {
 /// the layers pinned to them; pins in a cycle, or to a missing layer, are ignored.
 pub fn resolve_pins(nodes: &[PinNode], frame: [f64; 4]) -> Vec<[f64; 4]> {
     let mut out: Vec<Option<[f64; 4]>> = vec![None; nodes.len()];
-    fn solve(i: usize, nodes: &[PinNode], frame: [f64; 4], out: &mut Vec<Option<[f64; 4]>>, visiting: &mut Vec<usize>) -> [f64; 4] {
+    fn solve(
+        i: usize,
+        nodes: &[PinNode],
+        frame: [f64; 4],
+        out: &mut Vec<Option<[f64; 4]>>,
+        visiting: &mut Vec<usize>,
+    ) -> [f64; 4] {
         if let Some(b) = out[i] {
             return b;
         }
@@ -253,7 +284,11 @@ pub fn resolve_pins(nodes: &[PinNode], frame: [f64; 4]) -> Vec<[f64; 4]> {
         visiting.push(i);
         let target = match pin.to {
             PinTarget::Frame => Some(frame),
-            PinTarget::Layer(uid) => nodes.iter().position(|m| m.uid == uid && uid != 0).filter(|&j| j != i).map(|j| solve(j, nodes, frame, out, visiting)),
+            PinTarget::Layer(uid) => nodes
+                .iter()
+                .position(|m| m.uid == uid && uid != 0)
+                .filter(|&j| j != i)
+                .map(|j| solve(j, nodes, frame, out, visiting)),
         };
         visiting.pop();
         let Some(t) = target else {
@@ -276,7 +311,9 @@ pub fn resolve_pins(nodes: &[PinNode], frame: [f64; 4]) -> Vec<[f64; 4]> {
         b
     }
     let mut visiting = Vec::new();
-    (0..nodes.len()).map(|i| solve(i, nodes, frame, &mut out, &mut visiting)).collect()
+    (0..nodes.len())
+        .map(|i| solve(i, nodes, frame, &mut out, &mut visiting))
+        .collect()
 }
 
 /// Roll / crawl direction (Responsive Design – Time ▸ Roll).
@@ -294,7 +331,12 @@ pub enum RollMode {
 }
 
 impl RollMode {
-    pub const ALL: [RollMode; 4] = [RollMode::Off, RollMode::Roll, RollMode::CrawlLeft, RollMode::CrawlRight];
+    pub const ALL: [RollMode; 4] = [
+        RollMode::Off,
+        RollMode::Roll,
+        RollMode::CrawlLeft,
+        RollMode::CrawlRight,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             RollMode::Off => "Off",
@@ -305,7 +347,10 @@ impl RollMode {
     }
     pub fn from_name(s: &str) -> Option<RollMode> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        RollMode::ALL.into_iter().find(|m| m.label().to_ascii_lowercase().replace(' ', "") == n || (n == "none" && *m == RollMode::Off))
+        RollMode::ALL.into_iter().find(|m| {
+            m.label().to_ascii_lowercase().replace(' ', "") == n
+                || (n == "none" && *m == RollMode::Off)
+        })
     }
 }
 
@@ -359,7 +404,13 @@ pub fn roll_progress(r: &Roll, u: Tick, d: Tick) -> f64 {
 /// Offset (canvas px) of the whole graphic for a roll / crawl at clip time `u` of a clip `d`
 /// long. `canvas` is the frame size and `content` the union of the layers' bounds
 /// `[x0, y0, x1, y1]` where they were laid out.
-pub fn roll_offset(r: &Roll, u: Tick, d: Tick, canvas: (u32, u32), content: [f64; 4]) -> (f64, f64) {
+pub fn roll_offset(
+    r: &Roll,
+    u: Tick,
+    d: Tick,
+    canvas: (u32, u32),
+    content: [f64; 4],
+) -> (f64, f64) {
     let (w, h) = (canvas.0 as f64, canvas.1 as f64);
     let [x0, y0, x1, y1] = content;
     let lerp = |a: f64, b: f64| a + (b - a) * roll_progress(r, u, d);
@@ -367,17 +418,29 @@ pub fn roll_offset(r: &Roll, u: Tick, d: Tick, canvas: (u32, u32), content: [f64
         RollMode::Off => (0.0, 0.0),
         RollMode::Roll => {
             let from = if r.start_off_screen { h - y0 } else { 0.0 };
-            let to = if r.end_off_screen { -y1 } else { (h - y1).min(0.0) };
+            let to = if r.end_off_screen {
+                -y1
+            } else {
+                (h - y1).min(0.0)
+            };
             (0.0, lerp(from, to))
         }
         RollMode::CrawlLeft => {
             let from = if r.start_off_screen { w - x0 } else { 0.0 };
-            let to = if r.end_off_screen { -x1 } else { (w - x1).min(0.0) };
+            let to = if r.end_off_screen {
+                -x1
+            } else {
+                (w - x1).min(0.0)
+            };
             (lerp(from, to), 0.0)
         }
         RollMode::CrawlRight => {
             let from = if r.start_off_screen { -x1 } else { 0.0 };
-            let to = if r.end_off_screen { w - x0 } else { (-x0).max(0.0) };
+            let to = if r.end_off_screen {
+                w - x0
+            } else {
+                (-x0).max(0.0)
+            };
             (lerp(from, to), 0.0)
         }
     }
@@ -433,7 +496,11 @@ pub fn remap_time(m: &GraphicMeta, u: Tick, d: Tick) -> Tick {
     } else {
         let (a, b) = (intro as i128, (d - outro) as i128);
         let (aa, bb) = (intro as i128, (dd - outro) as i128);
-        if b <= a { aa as i64 } else { (aa + (u as i128 - a) * (bb - aa) / (b - a)) as i64 }
+        if b <= a {
+            aa as i64
+        } else {
+            (aa + (u as i128 - a) * (bb - aa) / (b - a)) as i64
+        }
     };
     m.design_in + Tick(local)
 }
@@ -460,14 +527,27 @@ mod tests {
         Tick((s * TICKS_PER_SECOND as f64).round() as i64)
     }
     fn bold() -> CharStyle {
-        CharStyle { faux_bold: Some(true), ..Default::default() }
+        CharStyle {
+            faux_bold: Some(true),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn char_styles_merge_split_and_follow_edits() {
         let runs = apply_char_style(&[], 10, 2, 6, &bold());
-        assert_eq!(runs, vec![StyleRun { start: 2, end: 6, style: bold() }]);
-        let red = CharStyle { fill: Some([1.0, 0.0, 0.0, 1.0]), ..Default::default() };
+        assert_eq!(
+            runs,
+            vec![StyleRun {
+                start: 2,
+                end: 6,
+                style: bold()
+            }]
+        );
+        let red = CharStyle {
+            fill: Some([1.0, 0.0, 0.0, 1.0]),
+            ..Default::default()
+        };
         let runs = apply_char_style(&runs, 10, 4, 8, &red);
         assert_eq!(runs.len(), 3);
         assert_eq!((runs[1].start, runs[1].end), (4, 6));
@@ -475,9 +555,16 @@ mod tests {
         assert_eq!((runs[2].start, runs[2].end), (6, 8));
         // clear the middle
         let c = clear_char_style(&runs, 10, 3, 7);
-        assert_eq!(c.iter().map(|r| (r.start, r.end)).collect::<Vec<_>>(), vec![(2, 3), (7, 8)]);
+        assert_eq!(
+            c.iter().map(|r| (r.start, r.end)).collect::<Vec<_>>(),
+            vec![(2, 3), (7, 8)]
+        );
         // typing before the run shifts it; typing inside extends it
-        let r = vec![StyleRun { start: 6, end: 11, style: bold() }];
+        let r = vec![StyleRun {
+            start: 6,
+            end: 11,
+            style: bold(),
+        }];
         let a = adjust_runs("Hello World", "Oh, Hello World", &r);
         assert_eq!((a[0].start, a[0].end), (10, 15));
         let b = adjust_runs("Hello World", "Hello Wonderful World", &r);
@@ -485,8 +572,29 @@ mod tests {
         // deleting the styled word removes the run
         assert!(adjust_runs("Hello World", "Hello ", &r).is_empty());
         // runs normalise and clamp
-        let n = normalize_runs(&[StyleRun { start: 5, end: 50, style: bold() }, StyleRun { start: 0, end: 5, style: bold() }], 8);
-        assert_eq!(n, vec![StyleRun { start: 0, end: 8, style: bold() }]);
+        let n = normalize_runs(
+            &[
+                StyleRun {
+                    start: 5,
+                    end: 50,
+                    style: bold(),
+                },
+                StyleRun {
+                    start: 0,
+                    end: 5,
+                    style: bold(),
+                },
+            ],
+            8,
+        );
+        assert_eq!(
+            n,
+            vec![StyleRun {
+                start: 0,
+                end: 8,
+                style: bold()
+            }]
+        );
     }
 
     #[test]
@@ -498,34 +606,96 @@ mod tests {
         assert_eq!(pin.offsets, [-10.0, -10.0, 10.0, 10.0]);
         // the text grows to 500 px wide: the box follows
         let nodes = vec![
-            PinNode { uid: 2, pin: Some(pin.clone()), bounds: boxb, resizable: true },
-            PinNode { uid: 1, pin: None, bounds: [100.0, 50.0, 600.0, 100.0], resizable: false },
+            PinNode {
+                uid: 2,
+                pin: Some(pin.clone()),
+                bounds: boxb,
+                resizable: true,
+            },
+            PinNode {
+                uid: 1,
+                pin: None,
+                bounds: [100.0, 50.0, 600.0, 100.0],
+                resizable: false,
+            },
         ];
         let out = resolve_pins(&nodes, [0.0, 0.0, 1920.0, 1080.0]);
         assert_eq!(out[0], [90.0, 40.0, 610.0, 110.0]);
         // text layers only move: right edge pinned keeps the distance to the target's right edge
-        let p2 = Pin::new(PinTarget::Layer(1), [false, false, true, false], [320.0, 50.0, 400.0, 90.0], text);
+        let p2 = Pin::new(
+            PinTarget::Layer(1),
+            [false, false, true, false],
+            [320.0, 50.0, 400.0, 90.0],
+            text,
+        );
         let nodes = vec![
-            PinNode { uid: 3, pin: Some(p2), bounds: [320.0, 50.0, 400.0, 90.0], resizable: false },
-            PinNode { uid: 1, pin: None, bounds: [100.0, 50.0, 600.0, 100.0], resizable: false },
+            PinNode {
+                uid: 3,
+                pin: Some(p2),
+                bounds: [320.0, 50.0, 400.0, 90.0],
+                resizable: false,
+            },
+            PinNode {
+                uid: 1,
+                pin: None,
+                bounds: [100.0, 50.0, 600.0, 100.0],
+                resizable: false,
+            },
         ];
-        assert_eq!(resolve_pins(&nodes, [0.0; 4])[0], [620.0, 50.0, 700.0, 90.0]);
+        assert_eq!(
+            resolve_pins(&nodes, [0.0; 4])[0],
+            [620.0, 50.0, 700.0, 90.0]
+        );
         // chains resolve in order; cycles are ignored
-        let a =
-            PinNode { uid: 1, pin: Some(Pin::new(PinTarget::Layer(2), [true, false, false, false], [0.0; 4], [0.0; 4])), bounds: [0.0; 4], resizable: false };
-        let b =
-            PinNode { uid: 2, pin: Some(Pin::new(PinTarget::Layer(1), [true, false, false, false], [0.0; 4], [0.0; 4])), bounds: [0.0; 4], resizable: false };
+        let a = PinNode {
+            uid: 1,
+            pin: Some(Pin::new(
+                PinTarget::Layer(2),
+                [true, false, false, false],
+                [0.0; 4],
+                [0.0; 4],
+            )),
+            bounds: [0.0; 4],
+            resizable: false,
+        };
+        let b = PinNode {
+            uid: 2,
+            pin: Some(Pin::new(
+                PinTarget::Layer(1),
+                [true, false, false, false],
+                [0.0; 4],
+                [0.0; 4],
+            )),
+            bounds: [0.0; 4],
+            resizable: false,
+        };
         let _ = resolve_pins(&[a, b], [0.0; 4]);
         // pinned to the frame: a different frame size moves it
-        let f = Pin::new(PinTarget::Frame, [false, false, true, true], [1700.0, 900.0, 1820.0, 1000.0], [0.0, 0.0, 1920.0, 1080.0]);
-        let n = [PinNode { uid: 1, pin: Some(f), bounds: [1700.0, 900.0, 1820.0, 1000.0], resizable: false }];
-        assert_eq!(resolve_pins(&n, [0.0, 0.0, 1280.0, 720.0])[0], [1060.0, 540.0, 1180.0, 640.0]);
+        let f = Pin::new(
+            PinTarget::Frame,
+            [false, false, true, true],
+            [1700.0, 900.0, 1820.0, 1000.0],
+            [0.0, 0.0, 1920.0, 1080.0],
+        );
+        let n = [PinNode {
+            uid: 1,
+            pin: Some(f),
+            bounds: [1700.0, 900.0, 1820.0, 1000.0],
+            resizable: false,
+        }];
+        assert_eq!(
+            resolve_pins(&n, [0.0, 0.0, 1280.0, 720.0])[0],
+            [1060.0, 540.0, 1180.0, 640.0]
+        );
     }
 
     #[test]
     fn roll_progress_is_exact() {
         let d = sec(10.0);
-        let mut r = Roll { mode: RollMode::Roll, ..Default::default() };
+        let mut r = Roll {
+            mode: RollMode::Roll,
+            ..Default::default()
+        };
         // linear without easing
         assert_eq!(roll_progress(&r, Tick::ZERO, d), 0.0);
         assert!((roll_progress(&r, sec(2.5), d) - 0.25).abs() < 1e-12);
@@ -550,30 +720,70 @@ mod tests {
         let d = sec(4.0);
         let canvas = (1920, 1080);
         let content = [200.0, 100.0, 1700.0, 2500.0];
-        let r = Roll { mode: RollMode::Roll, start_off_screen: true, end_off_screen: true, ..Default::default() };
+        let r = Roll {
+            mode: RollMode::Roll,
+            start_off_screen: true,
+            end_off_screen: true,
+            ..Default::default()
+        };
         // starts with the top at the frame bottom, ends with the bottom at the frame top
-        assert_eq!(roll_offset(&r, Tick::ZERO, d, canvas, content), (0.0, 980.0));
+        assert_eq!(
+            roll_offset(&r, Tick::ZERO, d, canvas, content),
+            (0.0, 980.0)
+        );
         assert_eq!(roll_offset(&r, d, d, canvas, content), (0.0, -2500.0));
-        assert_eq!(roll_offset(&r, sec(2.0), d, canvas, content), (0.0, (980.0 - 2500.0) / 2.0));
+        assert_eq!(
+            roll_offset(&r, sec(2.0), d, canvas, content),
+            (0.0, (980.0 - 2500.0) / 2.0)
+        );
         // not ending off screen: stops when the bottom reaches the frame bottom
-        let r2 = Roll { end_off_screen: false, ..r.clone() };
-        assert_eq!(roll_offset(&r2, d, d, canvas, content), (0.0, 1080.0 - 2500.0));
+        let r2 = Roll {
+            end_off_screen: false,
+            ..r.clone()
+        };
+        assert_eq!(
+            roll_offset(&r2, d, d, canvas, content),
+            (0.0, 1080.0 - 2500.0)
+        );
         // short content without off-screen options does not move
-        let r3 = Roll { mode: RollMode::Roll, ..Default::default() };
-        assert_eq!(roll_offset(&r3, d, d, canvas, [0.0, 100.0, 10.0, 200.0]), (0.0, 0.0));
-        let cl = Roll { mode: RollMode::CrawlLeft, start_off_screen: true, end_off_screen: true, ..Default::default() };
+        let r3 = Roll {
+            mode: RollMode::Roll,
+            ..Default::default()
+        };
+        assert_eq!(
+            roll_offset(&r3, d, d, canvas, [0.0, 100.0, 10.0, 200.0]),
+            (0.0, 0.0)
+        );
+        let cl = Roll {
+            mode: RollMode::CrawlLeft,
+            start_off_screen: true,
+            end_off_screen: true,
+            ..Default::default()
+        };
         let line = [50.0, 900.0, 4050.0, 980.0];
         assert_eq!(roll_offset(&cl, Tick::ZERO, d, canvas, line), (1870.0, 0.0));
         assert_eq!(roll_offset(&cl, d, d, canvas, line), (-4050.0, 0.0));
-        let cr = Roll { mode: RollMode::CrawlRight, ..cl.clone() };
-        assert_eq!(roll_offset(&cr, Tick::ZERO, d, canvas, line), (-4050.0, 0.0));
+        let cr = Roll {
+            mode: RollMode::CrawlRight,
+            ..cl.clone()
+        };
+        assert_eq!(
+            roll_offset(&cr, Tick::ZERO, d, canvas, line),
+            (-4050.0, 0.0)
+        );
         assert_eq!(roll_offset(&cr, d, d, canvas, line), (1870.0, 0.0));
         assert_eq!(RollMode::from_name("crawl left"), Some(RollMode::CrawlLeft));
     }
 
     #[test]
     fn responsive_time_protects_intro_and_outro() {
-        let m = GraphicMeta { intro: sec(1.0), outro: sec(1.0), design_in: Tick::ZERO, design_duration: sec(5.0), ..Default::default() };
+        let m = GraphicMeta {
+            intro: sec(1.0),
+            outro: sec(1.0),
+            design_in: Tick::ZERO,
+            design_duration: sec(5.0),
+            ..Default::default()
+        };
         // design length: identity
         for s in [0.0, 0.5, 1.0, 2.5, 4.0, 4.9] {
             assert_eq!(remap_time(&m, sec(s), sec(5.0)), sec(s));
@@ -587,7 +797,10 @@ mod tests {
         assert_eq!(remap_time(&m, sec(0.75), sec(3.0)), sec(0.75));
         assert_eq!(remap_time(&m, sec(2.25), sec(3.0)), sec(4.25));
         // no responsive time: plain clip time from design_in
-        let plain = GraphicMeta { design_in: sec(1.0), ..Default::default() };
+        let plain = GraphicMeta {
+            design_in: sec(1.0),
+            ..Default::default()
+        };
         assert_eq!(remap_time(&plain, sec(2.0), sec(3.0)), sec(3.0));
     }
 }

@@ -134,7 +134,9 @@ pub fn specs() -> Vec<CommandSpec> {
 fn intent_param(p: &Value, cmd: &str) -> Result<Option<Intent>> {
     match str_param(p, "intent") {
         None => Ok(None),
-        Some(i) => Intent::parse(i).map(Some).ok_or_else(|| bad(cmd, format!("unknown intent `{i}`"))),
+        Some(i) => Intent::parse(i)
+            .map(Some)
+            .ok_or_else(|| bad(cmd, format!("unknown intent `{i}`"))),
     }
 }
 
@@ -188,7 +190,10 @@ fn load_profile(_: &mut Session, p: &Value) -> Result<Value> {
 
 #[cfg(target_arch = "wasm32")]
 fn load_profile(_: &mut Session, _: &Value) -> Result<Value> {
-    Err(bad("color.loadProfile", "loading profiles from disk isn't available in the browser"))
+    Err(bad(
+        "color.loadProfile",
+        "loading profiles from disk isn't available in the browser",
+    ))
 }
 
 /// The document's assigned profiles (`None` = working space).
@@ -215,9 +220,13 @@ fn assign_profile(s: &mut Session, p: &Value) -> Result<Value> {
             Some(_) => Err(bad(C, format!("`{key}` must be a profile name or null"))),
         }
     };
-    let changed = pick("rgb", &mut rgb, cms::ProfileKind::Rgb)? | pick("cmyk", &mut cmyk, cms::ProfileKind::Cmyk)?;
+    let changed = pick("rgb", &mut rgb, cms::ProfileKind::Rgb)?
+        | pick("cmyk", &mut cmyk, cms::ProfileKind::Cmyk)?;
     if changed {
-        let profiles = vectorcraft_doc::ColorProfiles { rgb: rgb.clone(), cmyk: cmyk.clone() };
+        let profiles = vectorcraft_doc::ColorProfiles {
+            rgb: rgb.clone(),
+            cmyk: cmyk.clone(),
+        };
         s.edit("Assign Profile", |d, _| {
             d.color_profiles = profiles;
             Ok(())
@@ -249,10 +258,16 @@ pub enum Grays {
 impl Grays {
     /// The `grays` param of `cmd`: `"profile"` (default) or `"black"`.
     pub(crate) fn param(cmd: &str, p: &Value) -> Result<Self> {
-        match str_param(p, "grays").map(str::to_ascii_lowercase).as_deref() {
+        match str_param(p, "grays")
+            .map(str::to_ascii_lowercase)
+            .as_deref()
+        {
             None | Some("profile") => Ok(Grays::Profile),
             Some("black") => Ok(Grays::Black),
-            Some(g) => Err(bad(cmd, format!("grays must be \"profile\" or \"black\", not `{g}`"))),
+            Some(g) => Err(bad(
+                cmd,
+                format!("grays must be \"profile\" or \"black\", not `{g}`"),
+            )),
         }
     }
 }
@@ -289,19 +304,31 @@ pub(crate) fn convert_mode(s: &mut Session, p: &Value) -> Result<Value> {
 /// CMYK profile, unless `grays` puts them on the black plate. Lab colours (spot colour
 /// definitions) are device independent and fit either mode. Document Color Mode and
 /// `document.open {colorMode}` both convert this way.
-pub(crate) fn set_color_mode(d: &mut vectorcraft_doc::Document, mode: ColorMode, convert: bool, intent: Option<Intent>, grays: Grays) -> usize {
+pub(crate) fn set_color_mode(
+    d: &mut vectorcraft_doc::Document,
+    mode: ColorMode,
+    convert: bool,
+    intent: Option<Intent>,
+    grays: Grays,
+) -> usize {
     d.color_mode = mode;
     if !convert {
         return 0;
     }
     let c = cms::active();
     let intent = intent.unwrap_or(c.settings().intent);
-    let model = if mode == ColorMode::Cmyk { Model::Cmyk } else { Model::Rgb };
+    let model = if mode == ColorMode::Cmyk {
+        Model::Cmyk
+    } else {
+        Model::Rgb
+    };
     let k_only = model == Model::Cmyk && grays == Grays::Black;
     let conv = |col: &Color| match col {
         Color::Gray { .. } | Color::Lab { .. } => *col,
         // Grey ink percentage, then K only (a Gray colour's CMYK).
-        Color::Rgb { .. } if k_only && Neutral::of(col).is_some() => c.convert(&c.convert(col, Model::Gray, intent), Model::Cmyk, intent),
+        Color::Rgb { .. } if k_only && Neutral::of(col).is_some() => {
+            c.convert(&c.convert(col, Model::Gray, intent), Model::Cmyk, intent)
+        }
         _ => c.convert(col, model, intent),
     };
     let mut changed = 0usize;
@@ -328,8 +355,14 @@ pub(crate) fn set_color_mode(d: &mut vectorcraft_doc::Document, mode: ColorMode,
         }
     }
     // Tints are their converted swatch's colour at their tint (exact ink percentages).
-    let bases: Vec<(String, Color)> = d.swatches_iter().filter_map(|w| Some((w.name.clone(), d.global_color(&w.name)?))).collect();
-    d.map_solid_paints(&mut |c, link, tint| match bases.iter().find(|(n, _)| Some(n) == link.as_ref()) {
+    let bases: Vec<(String, Color)> = d
+        .swatches_iter()
+        .filter_map(|w| Some((w.name.clone(), d.global_color(&w.name)?)))
+        .collect();
+    d.map_solid_paints(&mut |c, link, tint| match bases
+        .iter()
+        .find(|(n, _)| Some(n) == link.as_ref())
+    {
         Some((_, base)) if *tint < 1.0 => {
             *c = base.tinted(*tint);
             true
@@ -350,7 +383,10 @@ fn values(c: &Color) -> Vec<f32> {
 
 fn convert_color(_: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "color.convert";
-    let col = p.get("color").and_then(color_value).ok_or_else(|| bad(C, "missing or invalid `color`"))?;
+    let col = p
+        .get("color")
+        .and_then(color_value)
+        .ok_or_else(|| bad(C, "missing or invalid `color`"))?;
     let c = cms::active();
     let intent = intent_param(p, C)?.unwrap_or(c.settings().intent);
     let lab = c.lab(&col);
@@ -427,7 +463,8 @@ fn proof_setup(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "view.proofSetup";
     let mut v = proof::view();
     if let Some(t) = str_param(p, "target") {
-        let t = ProofTarget::parse(t).ok_or_else(|| bad(C, format!("unknown proof target `{t}`")))?;
+        let t =
+            ProofTarget::parse(t).ok_or_else(|| bad(C, format!("unknown proof target `{t}`")))?;
         if let ProofTarget::Cmyk(name) = &t
             && !cms::profile(name).is_some_and(|k| k.kind == cms::ProfileKind::Cmyk)
         {
@@ -447,7 +484,11 @@ fn proof_setup(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(view_json(&v))
 }
 
-fn toggle_view(s: &mut Session, p: &Value, f: impl FnOnce(&mut proof::ProofView, Option<bool>)) -> Result<Value> {
+fn toggle_view(
+    s: &mut Session,
+    p: &Value,
+    f: impl FnOnce(&mut proof::ProofView, Option<bool>),
+) -> Result<Value> {
     let mut v = proof::view();
     f(&mut v, p.get("on").and_then(Value::as_bool));
     proof::set_view(v.clone());
@@ -457,7 +498,10 @@ fn toggle_view(s: &mut Session, p: &Value, f: impl FnOnce(&mut proof::ProofView,
 
 fn plates_json(s: &Session) -> Value {
     let v = proof::view();
-    let plates = s.active().map(|d| proof::plates(&d.doc)).unwrap_or_default();
+    let plates = s
+        .active()
+        .map(|d| proof::plates(&d.doc))
+        .unwrap_or_default();
     json!({
         "on": v.separations.is_some(),
         "plates": plates.iter().map(|pl| json!({
@@ -476,12 +520,27 @@ fn separations(s: &mut Session, p: &Value) -> Result<Value> {
         .active()
         .map(|d| proof::plates(&d.doc).into_iter().map(|p| p.name).collect())
         .unwrap_or_else(|| cms::PROCESS_PLATES.iter().map(|s| s.to_string()).collect());
-    let check = |n: &str| if all.iter().any(|a| a == n) { Ok(n.to_string()) } else { Err(bad(C, format!("unknown plate `{n}`"))) };
+    let check = |n: &str| {
+        if all.iter().any(|a| a == n) {
+            Ok(n.to_string())
+        } else {
+            Err(bad(C, format!("unknown plate `{n}`")))
+        }
+    };
     if let Some(on) = p.get("on").and_then(Value::as_bool) {
-        v.separations = if on { Some(v.separations.take().unwrap_or_else(|| all.clone())) } else { None };
+        v.separations = if on {
+            Some(v.separations.take().unwrap_or_else(|| all.clone()))
+        } else {
+            None
+        };
     }
     if let Some(a) = p.get("plates").and_then(Value::as_array) {
-        v.separations = Some(a.iter().filter_map(Value::as_str).map(check).collect::<Result<Vec<_>>>()?);
+        v.separations = Some(
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(check)
+                .collect::<Result<Vec<_>>>()?,
+        );
     }
     if let Some(n) = str_param(p, "only") {
         v.separations = Some(vec![check(n)?]);
@@ -502,9 +561,15 @@ fn separations(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_spot(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "swatch.setSpot";
-    let name = str_param(p, "name").ok_or_else(|| bad(C, "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad(C, "missing `name`"))?
+        .to_string();
     let spot = bool_or(p, "spot", true);
-    let sw = s.doc()?.doc.swatch(&name).ok_or_else(|| bad(C, format!("no swatch `{name}`")))?;
+    let sw = s
+        .doc()?
+        .doc
+        .swatch(&name)
+        .ok_or_else(|| bad(C, format!("no swatch `{name}`")))?;
     if !matches!(sw.paint, Paint::Solid { .. }) {
         return Err(bad(C, "only solid-colour swatches can be spot colours"));
     }

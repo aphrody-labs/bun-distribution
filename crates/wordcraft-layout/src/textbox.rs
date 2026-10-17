@@ -49,7 +49,13 @@ impl Chains {
 pub(crate) fn shown_story(ctx: &mut Ctx, id: u32) -> u32 {
     ctx.chains.build(ctx.doc);
     match ctx.chains.member.get(&id) {
-        Some((ci, _)) => ctx.chains.chains.get(*ci).and_then(|c| c.first()).copied().unwrap_or(id),
+        Some((ci, _)) => ctx
+            .chains
+            .chains
+            .get(*ci)
+            .and_then(|c| c.first())
+            .copied()
+            .unwrap_or(id),
         None => id,
     }
 }
@@ -70,7 +76,14 @@ fn frame(body: &TextBody, w: f32, h: f32) -> (f32, f32) {
 const STACK_WIDTH: f32 = 12.0;
 
 /// Lay `blocks` of story `id` out in lines `len` long; stacked text one letter to a line.
-fn lay(ctx: &mut Ctx, id: u32, blocks: &Blocks, len: f32, vert: TextVert, depth: usize) -> Vec<Placed> {
+fn lay(
+    ctx: &mut Ctx,
+    id: u32,
+    blocks: &Blocks,
+    len: f32,
+    vert: TextVert,
+    depth: usize,
+) -> Vec<Placed> {
     let story = StoryRef::Part(id);
     if vert == TextVert::Stacked {
         // One letter to a line: words may break anywhere, and each letter takes the narrowest
@@ -90,7 +103,17 @@ fn lay(ctx: &mut Ctx, id: u32, blocks: &Blocks, len: f32, vert: TextVert, depth:
                 _ => b.clone(),
             })
             .collect();
-        return layout_box(ctx, story, &stacked, &[], STACK_WIDTH, None, depth + 1, None).items;
+        return layout_box(
+            ctx,
+            story,
+            &stacked,
+            &[],
+            STACK_WIDTH,
+            None,
+            depth + 1,
+            None,
+        )
+        .items;
     }
     layout_box(ctx, story, blocks, &[], len, None, depth + 1, None).items
 }
@@ -106,12 +129,21 @@ pub(crate) fn box_items(ctx: &mut Ctx, id: u32, rect: Rect, depth: usize) -> Vec
             if !ctx.boxes.enter(id) {
                 return Vec::new();
             }
-            let blocks = ctx.doc.parts.get(&id).map(|p| p.blocks.clone()).unwrap_or_default();
+            let blocks = ctx
+                .doc
+                .parts
+                .get(&id)
+                .map(|p| p.blocks.clone())
+                .unwrap_or_default();
             let inner = lay(ctx, id, &blocks, len, body.vert, depth);
             ctx.boxes.leave();
             // Text that doesn't fit inside the margins is hidden, as in Word; a box that resizes
             // to fit its text shows it all (#743).
-            if body.auto_fit { inner } else { fit_box(inner, across) }
+            if body.auto_fit {
+                inner
+            } else {
+                fit_box(inner, across)
+            }
         }
     };
     place(items, &body, rect, across)
@@ -146,8 +178,15 @@ fn extent(items: &[Placed]) -> f32 {
     for it in items {
         let b = match it {
             _ if it.turned_bounds().is_some() => it.turned_bounds().map_or(0.0, |r| r.bottom()),
-            Placed::Lines { para, l0, l1, y, .. } => {
-                let (Some(first), Some(last)) = (para.lines.get(*l0), l1.checked_sub(1).and_then(|k| para.lines.get(k))) else { continue };
+            Placed::Lines {
+                para, l0, l1, y, ..
+            } => {
+                let (Some(first), Some(last)) = (
+                    para.lines.get(*l0),
+                    l1.checked_sub(1).and_then(|k| para.lines.get(k)),
+                ) else {
+                    continue;
+                };
                 y + last.top + last.height - first.top
             }
             Placed::Rule { y0, y1, .. } => y0.max(*y1),
@@ -175,7 +214,14 @@ fn chain_share(ctx: &mut Ctx, id: u32, depth: usize) -> Option<Vec<Placed>> {
         let flow = flow(ctx, &chain, depth);
         ctx.chains.flows.insert(ci, flow);
     }
-    Some(ctx.chains.flows.get(&ci).and_then(|f| f.get(k)).cloned().unwrap_or_default())
+    Some(
+        ctx.chains
+            .flows
+            .get(&ci)
+            .and_then(|f| f.get(k))
+            .cloned()
+            .unwrap_or_default(),
+    )
 }
 
 /// Where a box's text starts: the line holding byte `byte` of paragraph `path`.
@@ -186,13 +232,20 @@ struct Cut {
 
 /// Split the text of `chain`'s first box over its boxes.
 fn flow(ctx: &mut Ctx, chain: &[u32], depth: usize) -> Vec<Vec<Placed>> {
-    let Some(&head) = chain.first() else { return Vec::new() };
+    let Some(&head) = chain.first() else {
+        return Vec::new();
+    };
     if !ctx.boxes.enter(head) {
         return vec![Vec::new(); chain.len()];
     }
     let ids: BTreeSet<u32> = chain.iter().copied().collect();
     let sizes = ctx.doc.text_box_sizes(&ids);
-    let blocks = ctx.doc.parts.get(&head).map(|p| p.blocks.clone()).unwrap_or_default();
+    let blocks = ctx
+        .doc
+        .parts
+        .get(&head)
+        .map(|p| p.blocks.clone())
+        .unwrap_or_default();
     // Each box lays the whole story out at its own line length (the same list numbers every
     // time), sharing a layout with the boxes before it of the same length.
     let snap = (ctx.counters.clone(), ctx.eq_count);
@@ -244,9 +297,18 @@ fn flow(ctx: &mut Ctx, chain: &[u32], depth: usize) -> Vec<Vec<Placed>> {
 /// Where `cut` is in a layout: the top of the line holding its byte.
 fn cut_y(items: &[Placed], cut: &Cut) -> Option<f32> {
     items.iter().find_map(|it| match it {
-        Placed::Lines { path, para, l0, l1, y, .. } if *path == cut.path => {
+        Placed::Lines {
+            path,
+            para,
+            l0,
+            l1,
+            y,
+            ..
+        } if *path == cut.path => {
             let first = para.lines.get(*l0)?;
-            let k = (*l0..*l1).find(|k| para.lines.get(*k).is_some_and(|l| l.stop > cut.byte)).unwrap_or(l1.saturating_sub(1).max(*l0));
+            let k = (*l0..*l1)
+                .find(|k| para.lines.get(*k).is_some_and(|l| l.stop > cut.byte))
+                .unwrap_or(l1.saturating_sub(1).max(*l0));
             para.lines.get(k).map(|l| y + l.top - first.top)
         }
         _ => None,
@@ -265,15 +327,44 @@ fn from_y(items: Vec<Placed>, top: f32) -> Vec<Placed> {
             continue;
         }
         match it {
-            Placed::Lines { story, path, para, l0, l1, x, y, turn } => {
-                let Some(first) = para.lines.get(l0) else { continue };
-                let Some(k) = (l0..l1).find(|k| para.lines.get(*k).is_some_and(|l| y + l.top - first.top >= lim)) else { continue };
+            Placed::Lines {
+                story,
+                path,
+                para,
+                l0,
+                l1,
+                x,
+                y,
+                turn,
+            } => {
+                let Some(first) = para.lines.get(l0) else {
+                    continue;
+                };
+                let Some(k) = (l0..l1).find(|k| {
+                    para.lines
+                        .get(*k)
+                        .is_some_and(|l| y + l.top - first.top >= lim)
+                }) else {
+                    continue;
+                };
                 let ky = para.lines.get(k).map_or(y, |l| y + l.top - first.top);
-                out.push(Placed::Lines { story, path, para, l0: k, l1, x, y: ky, turn });
+                out.push(Placed::Lines {
+                    story,
+                    path,
+                    para,
+                    l0: k,
+                    l1,
+                    x,
+                    y: ky,
+                    turn,
+                });
             }
             Placed::Fill { rect, color } if rect.bottom() > lim => {
                 let y0 = rect.y.max(top);
-                out.push(Placed::Fill { rect: Rect::new(rect.x, y0, rect.w, rect.bottom() - y0), color });
+                out.push(Placed::Fill {
+                    rect: Rect::new(rect.x, y0, rect.w, rect.bottom() - y0),
+                    color,
+                });
             }
             Placed::Rule { y0, y1, .. } if y0.max(y1) >= lim => out.push(it),
             Placed::Image { rect, .. }
@@ -304,14 +395,32 @@ fn fit_flow(items: Vec<Placed>, across: f32) -> (Vec<Placed>, Option<Cut>) {
         if it.turned_bounds().is_some() {
             continue;
         }
-        let Placed::Lines { path, para, l0, l1, y, .. } = it else { continue };
-        let Some(first) = para.lines.get(*l0) else { continue };
+        let Placed::Lines {
+            path,
+            para,
+            l0,
+            l1,
+            y,
+            ..
+        } = it
+        else {
+            continue;
+        };
+        let Some(first) = para.lines.get(*l0) else {
+            continue;
+        };
         for k in *l0..*l1 {
             let Some(l) = para.lines.get(k) else { break };
             let ly = y + l.top - first.top;
             if ly + l.height > limit && kept_line {
                 if cut.as_ref().is_none_or(|(cy, _)| ly < *cy) {
-                    cut = Some((ly, Cut { path: path.clone(), byte: l.start }));
+                    cut = Some((
+                        ly,
+                        Cut {
+                            path: path.clone(),
+                            byte: l.start,
+                        },
+                    ));
                 }
                 break;
             }

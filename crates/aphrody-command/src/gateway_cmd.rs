@@ -42,15 +42,19 @@ pub(crate) enum GatewayAction {
 
 impl Default for GatewayAction {
     fn default() -> Self {
-        Self::Serve { addr: "127.0.0.1:8786".to_string(), provider: "auto".to_string() }
+        Self::Serve {
+            addr: "127.0.0.1:8786".to_string(),
+            provider: "auto".to_string(),
+        }
     }
 }
 
 pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
     match action {
         GatewayAction::Serve { addr, provider } => {
-            let socket_addr: SocketAddr =
-                addr.parse().map_err(|e| miette::miette!("invalid socket address {addr}: {e}"))?;
+            let socket_addr: SocketAddr = addr
+                .parse()
+                .map_err(|e| miette::miette!("invalid socket address {addr}: {e}"))?;
 
             let (adapter, models) = resolve_adapter(&provider)?;
             println!("aphrody gateway listening on http://{socket_addr} (provider: {provider})");
@@ -62,7 +66,7 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
             serve_gateway(socket_addr, adapter, models)
                 .await
                 .map_err(|e| miette::miette!("gateway server error: {e}"))?;
-        },
+        }
         GatewayAction::Status { addr } => {
             let client = gateway_http_client()?;
             let url = format!("http://{addr}/health");
@@ -71,12 +75,14 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
                     let status = resp.status();
                     let text = resp.text().await.unwrap_or_default();
                     println!("Gateway at http://{addr}: {status}\n{text}");
-                },
+                }
                 Err(err) => {
-                    return Err(miette::miette!("Failed to reach gateway at http://{addr}: {err}"));
-                },
+                    return Err(miette::miette!(
+                        "Failed to reach gateway at http://{addr}: {err}"
+                    ));
+                }
             }
-        },
+        }
         GatewayAction::Models { addr } => {
             let client = gateway_http_client()?;
             let url = format!("http://{addr}/v1/models");
@@ -97,7 +103,7 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
             match gateway_models_request(&client, &url, token.as_deref()).await {
                 Ok(text) => {
                     println!("{text}");
-                },
+                }
                 Err(error) if error.is_connect() => {
                     // Fall back to printing catalog models when server is not running
                     let models = advertised_models("local");
@@ -112,12 +118,12 @@ pub(crate) async fn run(action: GatewayAction) -> miette::Result<()> {
                         )
                         .unwrap_or_default()
                     );
-                },
+                }
                 Err(error) => {
                     return Err(miette::miette!("gateway model discovery failed: {error}"));
-                },
+                }
             }
-        },
+        }
     }
     Ok(())
 }
@@ -204,16 +210,22 @@ fn resolve_adapter(provider: &str) -> miette::Result<(Arc<dyn GatewayAdapter>, V
 }
 
 fn advertised_models(provider: &str) -> Vec<String> {
-    advertised_models_for(provider, aphrody_config::ai_env::CHAT_MODEL.resolve().as_deref())
+    advertised_models_for(
+        provider,
+        aphrody_config::ai_env::CHAT_MODEL.resolve().as_deref(),
+    )
 }
 
 fn advertised_models_for(provider: &str, configured_chat_model: Option<&str>) -> Vec<String> {
     match provider {
-        "google-antigravity" => ANTIGRAVITY_MODEL_IDS.iter().map(|id| (*id).to_owned()).collect(),
+        "google-antigravity" => ANTIGRAVITY_MODEL_IDS
+            .iter()
+            .map(|id| (*id).to_owned())
+            .collect(),
         "local" | "auto" => {
             let catalog = aphrody_models::Catalog::builtin();
             catalog.entries.iter().map(|e| e.id.clone()).collect()
-        },
+        }
         "openai" => configured_chat_model
             .map(str::trim)
             .filter(|model| !model.is_empty())
@@ -234,7 +246,9 @@ mod tests {
     use super::*;
 
     async fn authenticated_models_server() -> (String, tokio::task::JoinHandle<()>) {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let url = format!("http://{}/v1/models", listener.local_addr().expect("addr"));
         let server = tokio::spawn(async move {
             tokio::time::timeout(std::time::Duration::from_secs(5), async move {
@@ -280,7 +294,9 @@ mod tests {
         server.await.expect("server");
 
         let (url, server) = authenticated_models_server().await;
-        let error = gateway_models_request(&client, &url, None).await.expect_err("401 rejected");
+        let error = gateway_models_request(&client, &url, None)
+            .await
+            .expect_err("401 rejected");
         assert_eq!(error.status(), Some(reqwest::StatusCode::UNAUTHORIZED));
         server.await.expect("server");
     }
@@ -289,7 +305,13 @@ mod tests {
     fn local_gateway_refuses_to_fabricate_inference() {
         let result = resolve_adapter("local");
         assert!(result.is_err());
-        assert!(result.err().unwrap().to_string().contains("no response was generated"));
+        assert!(
+            result
+                .err()
+                .unwrap()
+                .to_string()
+                .contains("no response was generated")
+        );
     }
 
     #[test]
@@ -300,8 +322,15 @@ mod tests {
 
     #[test]
     fn advertised_models_are_provider_specific() {
-        assert!(advertised_models("google-antigravity").iter().all(|id| id.starts_with("gemini-")));
-        assert_eq!(advertised_models_for("openai", Some("shenron-chat-v2")), ["shenron-chat-v2"]);
+        assert!(
+            advertised_models("google-antigravity")
+                .iter()
+                .all(|id| id.starts_with("gemini-"))
+        );
+        assert_eq!(
+            advertised_models_for("openai", Some("shenron-chat-v2")),
+            ["shenron-chat-v2"]
+        );
         assert!(advertised_models_for("openai", Some("  ")).is_empty());
         assert!(advertised_models_for("openai", None).is_empty());
         assert!(advertised_models("gemini-cli").is_empty());

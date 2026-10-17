@@ -39,7 +39,10 @@ impl AgentCardProducer for StaticAgentCard {
 /// with CORS headers for public discovery.
 pub fn agent_card_router<P: AgentCardProducer>(producer: Arc<P>) -> axum::Router {
     axum::Router::new()
-        .route(WELL_KNOWN_AGENT_CARD_PATH, axum::routing::get(handle_agent_card::<P>))
+        .route(
+            WELL_KNOWN_AGENT_CARD_PATH,
+            axum::routing::get(handle_agent_card::<P>),
+        )
         .with_state(producer)
 }
 
@@ -51,14 +54,20 @@ async fn handle_agent_card<P: AgentCardProducer>(
     let mut resp_headers = HeaderMap::new();
 
     // CORS headers for public discovery
-    let origin = headers.get(header::ORIGIN).and_then(|v| v.to_str().ok()).unwrap_or("*");
+    let origin = headers
+        .get(header::ORIGIN)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("*");
 
     if origin != "*" {
         resp_headers.insert(
             header::ACCESS_CONTROL_ALLOW_ORIGIN,
             origin.parse().unwrap_or_else(|_| "*".parse().unwrap()),
         );
-        resp_headers.insert(header::ACCESS_CONTROL_ALLOW_CREDENTIALS, "true".parse().unwrap());
+        resp_headers.insert(
+            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+            "true".parse().unwrap(),
+        );
         resp_headers.insert(header::VARY, "Origin".parse().unwrap());
     } else {
         resp_headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*".parse().unwrap());
@@ -112,13 +121,19 @@ mod tests {
         let producer = Arc::new(StaticAgentCard::new(card));
         let app = agent_card_router(producer);
 
-        let req =
-            Request::builder().uri("/.well-known/agent-card.json").body(Body::empty()).unwrap();
+        let req = Request::builder()
+            .uri("/.well-known/agent-card.json")
+            .body(Body::empty())
+            .unwrap();
 
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(
-            resp.headers().get("access-control-allow-origin").unwrap().to_str().unwrap(),
+            resp.headers()
+                .get("access-control-allow-origin")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "*"
         );
     }
@@ -138,11 +153,19 @@ mod tests {
         let resp = app.oneshot(req).await.unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(
-            resp.headers().get("access-control-allow-origin").unwrap().to_str().unwrap(),
+            resp.headers()
+                .get("access-control-allow-origin")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "https://example.com"
         );
         assert_eq!(
-            resp.headers().get("access-control-allow-credentials").unwrap().to_str().unwrap(),
+            resp.headers()
+                .get("access-control-allow-credentials")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "true"
         );
     }

@@ -339,7 +339,9 @@ impl AgentRoots {
 }
 
 fn non_empty_env(key: &str) -> Option<PathBuf> {
-    std::env::var_os(key).filter(|value| !value.is_empty()).map(PathBuf::from)
+    std::env::var_os(key)
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
 }
 
 /// aphrody's sessions directory (`$APHRODY_HOME/sessions`, else
@@ -415,8 +417,9 @@ impl SyncOptions {
     /// Propagates [`AgentRoots::discover`] and [`default_output_dir`].
     pub fn discover() -> Result<Self, SyncError> {
         let mut options = Self::new(AgentRoots::discover()?, default_output_dir()?);
-        if let Some(domain) =
-            std::env::var("APHRODY_AGENT_DOMAIN").ok().filter(|domain| !domain.is_empty())
+        if let Some(domain) = std::env::var("APHRODY_AGENT_DOMAIN")
+            .ok()
+            .filter(|domain| !domain.is_empty())
         {
             options.output_dir = domain_profile_dir(&domain)?.join("sessions");
             options.domain_filter = Some(domain);
@@ -523,7 +526,11 @@ impl SyncIssue {
         path: Option<&Path>,
         message: impl Into<String>,
     ) -> Self {
-        Self { agent, path: path.map(|path| path.display().to_string()), message: message.into() }
+        Self {
+            agent,
+            path: path.map(|path| path.display().to_string()),
+            message: message.into(),
+        }
     }
 }
 

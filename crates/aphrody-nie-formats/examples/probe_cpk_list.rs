@@ -12,11 +12,16 @@ fn count(cfg: &aphrody_nie_formats::cfgbin::CfgBinFile) -> usize {
 }
 
 fn main() {
-    let path = std::env::args().nth(1).expect("usage: probe_cpk_list <fichier>");
+    let path = std::env::args()
+        .nth(1)
+        .expect("usage: probe_cpk_list <fichier>");
     let data = std::fs::read(&path).expect("lecture fichier");
     println!("fichier {path} ({} o)", data.len());
 
-    if let Some(cfg) = decrypt_cpk_list(&data).ok().and_then(|d| cfgbin_parse(&d).ok()) {
+    if let Some(cfg) = decrypt_cpk_list(&data)
+        .ok()
+        .and_then(|d| cfgbin_parse(&d).ok())
+    {
         println!("✓ AES-256-CBC → {} entrées enfants indexables", count(&cfg));
         return;
     }

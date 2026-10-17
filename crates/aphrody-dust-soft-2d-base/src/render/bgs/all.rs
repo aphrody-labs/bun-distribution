@@ -1,9 +1,9 @@
-use super::common::{TextTiles, read_bg_text_tiles};
-use crate::{BgObjPixel, Buffers, RenderingData, Vram, rgb5_to_rgb6_64};
+use super::common::{read_bg_text_tiles, TextTiles};
+use crate::{rgb5_to_rgb6_64, BgObjPixel, Buffers, RenderingData, Vram};
 use aphrody_dust_core::{
     gpu::{
-        SCREEN_WIDTH, Scanline,
         engine_2d::{AffineBgIndex, BgIndex, Role},
+        Scanline, SCREEN_WIDTH,
     },
     utils::mem_prelude::*,
 };
@@ -31,7 +31,8 @@ pub fn render_scanline_bgs_and_objs<
 
     macro_rules! affine_display_area_overflow {
         ($i: literal) => {
-            data.bg_control(BgIndex::new($i)).affine_display_area_overflow()
+            data.bg_control(BgIndex::new($i))
+                .affine_display_area_overflow()
         };
     }
 
@@ -50,7 +51,7 @@ pub fn render_scanline_bgs_and_objs<
             match BG_MODE {
                 0 => {
                     render_scanline_bg_text(buffers, BgIndex::new(3), vcount, data, vram);
-                },
+                }
                 1..=2 => {
                     render_scanline_bg_affine[affine_display_area_overflow!(3) as usize](
                         buffers,
@@ -59,7 +60,7 @@ pub fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(1);
-                },
+                }
                 3..=5 => {
                     render_scanline_bg_extended[affine_display_area_overflow!(3) as usize](
                         buffers,
@@ -68,8 +69,8 @@ pub fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(1);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -77,7 +78,7 @@ pub fn render_scanline_bgs_and_objs<
             match BG_MODE {
                 0..=1 | 3 => {
                     render_scanline_bg_text(buffers, BgIndex::new(2), vcount, data, vram);
-                },
+                }
                 2 | 4 => {
                     render_scanline_bg_affine[affine_display_area_overflow!(2) as usize](
                         buffers,
@@ -86,7 +87,7 @@ pub fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(0);
-                },
+                }
                 5 => {
                     render_scanline_bg_extended[affine_display_area_overflow!(2) as usize](
                         buffers,
@@ -95,7 +96,7 @@ pub fn render_scanline_bgs_and_objs<
                         vram,
                     );
                     incr_affine!(0);
-                },
+                }
                 6 => {
                     [
                         render_scanline_bg_large::<_, _, _, _, BG_VRAM_LEN, OBJ_VRAM_LEN, false>,
@@ -104,8 +105,8 @@ pub fn render_scanline_bgs_and_objs<
                         buffers, data, vram
                     );
                     incr_affine!(0);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
 
@@ -198,7 +199,11 @@ pub fn render_scanline_bg_text<
     if bg_control.use_256_colors() {
         let (palette, pal_base_mask) = if control.bg_ext_pal_enabled() {
             let slot = bg_index.get()
-                | if bg_index.get() < 2 { bg_control.bg01_ext_pal_slot() << 1 } else { 0 };
+                | if bg_index.get() < 2 {
+                    bg_control.bg01_ext_pal_slot() << 1
+                } else {
+                    0
+                };
             (
                 unsafe { vram.bg_ext_palette().as_ptr().add((slot as usize) << 13) as *const u16 },
                 0xF,
@@ -219,7 +224,11 @@ pub fn render_scanline_bg_text<
                 {
                     tile = tile.swap_bytes();
                 }
-                let y_in_tile = if tile & 1 << 11 == 0 { y_in_tile } else { 7 ^ y_in_tile };
+                let y_in_tile = if tile & 1 << 11 == 0 {
+                    y_in_tile
+                } else {
+                    7 ^ y_in_tile
+                };
                 let tile_base = tile_base + ((tile as u32 & 0x3FF) << 6 | y_in_tile << 3);
                 pal_base = ((tile >> 12 & pal_base_mask) << 8) as usize;
                 pixels = unsafe {
@@ -261,7 +270,11 @@ pub fn render_scanline_bg_text<
                 {
                     tile = tile.swap_bytes();
                 }
-                let y_in_tile = if tile & 1 << 11 == 0 { y_in_tile } else { 7 ^ y_in_tile };
+                let y_in_tile = if tile & 1 << 11 == 0 {
+                    y_in_tile
+                } else {
+                    7 ^ y_in_tile
+                };
                 let tile_base = tile_base + ((tile as u32 & 0x3FF) << 5 | y_in_tile << 2);
                 pal_base = tile as usize >> 12 << 5;
                 pixels = unsafe {
@@ -313,8 +326,11 @@ pub fn render_scanline_bg_affine<
     let control = data.control();
     let bg_control = data.bg_control(bg_index.into());
 
-    let map_base =
-        if R::IS_A { control.a_map_base() | bg_control.map_base() } else { bg_control.map_base() };
+    let map_base = if R::IS_A {
+        control.a_map_base() | bg_control.map_base()
+    } else {
+        bg_control.map_base()
+    };
     let tile_base = if R::IS_A {
         control.a_tile_base() + bg_control.tile_base()
     } else {
@@ -555,8 +571,9 @@ pub fn render_scanline_bg_extended<
         let (palette, pal_base_mask) = if control.bg_ext_pal_enabled() {
             (
                 unsafe {
-                    vram.bg_ext_palette().as_ptr().add((bg_index.get() as usize | 2) << 13)
-                        as *const u16
+                    vram.bg_ext_palette()
+                        .as_ptr()
+                        .add((bg_index.get() as usize | 2) << 13) as *const u16
                 },
                 0xF00,
             )

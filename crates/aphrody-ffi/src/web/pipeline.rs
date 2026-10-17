@@ -83,12 +83,12 @@ pub unsafe extern "C" fn aphrody_command_submit(args_json: *const c_char, timeou
                     && args.iter().all(|arg| !arg.contains('\0')) =>
             {
                 args
-            },
+            }
             _ => {
                 return jobs::resolved(error_json_string(
                     "expected 1..256 command arguments without NUL",
                 ));
-            },
+            }
         };
         jobs::submit_captured(timeout_ms, move || async move {
             let argv = std::iter::once("aphrody".to_owned()).chain(args);
@@ -123,12 +123,12 @@ pub unsafe extern "C" fn aphrody_mcp_tool_submit(
                     && !request.tool.is_empty() =>
             {
                 request
-            },
+            }
             _ => {
                 return jobs::resolved(error_json_string(
                     "expected an MCP request with object arguments",
                 ));
-            },
+            }
         };
         jobs::submit(timeout_ms, async move {
             match aphrody_command::run_mcp_tool_http(
@@ -161,7 +161,9 @@ mod tests {
             if !pointer.is_null() {
                 // SAFETY: take returned one owned string, read and freed here
                 // exactly once with its allocator from this same library.
-                let value = unsafe { CStr::from_ptr(pointer) }.to_string_lossy().into_owned();
+                let value = unsafe { CStr::from_ptr(pointer) }
+                    .to_string_lossy()
+                    .into_owned();
                 unsafe { super::super::aphrody_web_free_string(pointer) };
                 return serde_json::from_str(&value).unwrap();
             }
@@ -178,7 +180,9 @@ mod tests {
             // SAFETY: each input is null or a live CString for this call.
             let id = unsafe {
                 aphrody_web_pipeline_submit(
-                    input.as_ref().map_or(std::ptr::null(), |value| value.as_ptr()),
+                    input
+                        .as_ref()
+                        .map_or(std::ptr::null(), |value| value.as_ptr()),
                     1000,
                 )
             };
@@ -212,7 +216,11 @@ mod tests {
     fn direct_mcp_rejects_stdio_before_starting_a_process() {
         let directory = tempfile::tempdir().unwrap();
         let config = directory.path().join("config.toml");
-        std::fs::write(&config, "[mcp_servers.aphrody]\ncommand='must-not-be-started'\n").unwrap();
+        std::fs::write(
+            &config,
+            "[mcp_servers.aphrody]\ncommand='must-not-be-started'\n",
+        )
+        .unwrap();
         let request = CString::new(
             serde_json::json!({
                 "config": config, "server": "aphrody", "tool": "aphrody_job_status", "arguments": {}
@@ -222,12 +230,20 @@ mod tests {
         .unwrap();
         // SAFETY: request is live for submission and copied by deserialization.
         let result = take(unsafe { aphrody_mcp_tool_submit(request.as_ptr(), 1000) });
-        assert!(result["error"].as_str().unwrap().contains("require a configured HTTP transport"));
+        assert!(
+            result["error"]
+                .as_str()
+                .unwrap()
+                .contains("require a configured HTTP transport")
+        );
     }
 
     #[test]
     fn command_adapter_preserves_usage_diagnostics_and_reuses_runtime() {
-        for args in [r#"["--version"]"#, r#"["--definitely-invalid-native-option"]"#] {
+        for args in [
+            r#"["--version"]"#,
+            r#"["--definitely-invalid-native-option"]"#,
+        ] {
             let input = CString::new(args).unwrap();
             // SAFETY: input is a live CString and copied before return.
             let id = unsafe { aphrody_command_submit(input.as_ptr(), 2000) };

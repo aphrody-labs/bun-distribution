@@ -1,7 +1,7 @@
 use crate::{
-    array::DynamicArray, enums::DynamicEnum, list::DynamicList, map::DynamicMap, set::DynamicSet,
-    structs::DynamicStruct, tuple::DynamicTuple, tuple_struct::DynamicTupleStruct, PartialReflect,
-    Reflect, TypeInfo, TypePath,
+    PartialReflect, Reflect, TypeInfo, TypePath, array::DynamicArray, enums::DynamicEnum,
+    list::DynamicList, map::DynamicMap, set::DynamicSet, structs::DynamicStruct,
+    tuple::DynamicTuple, tuple_struct::DynamicTupleStruct,
 };
 
 /// A static accessor to compile-time type information.

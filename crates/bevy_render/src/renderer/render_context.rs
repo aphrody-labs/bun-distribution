@@ -1,7 +1,7 @@
 use crate::diagnostic::internal::DiagnosticsRecorder;
 use crate::render_phase::TrackedRenderPass;
 use crate::render_resource::{CommandEncoder, RenderPassDescriptor};
-use crate::renderer::{wgpu_wrapper, RenderDevice};
+use crate::renderer::{RenderDevice, wgpu_wrapper};
 use alloc::borrow::Cow;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::change_detection::Tick;
@@ -12,8 +12,8 @@ use bevy_ecs::system::{
     Deferred, SystemAccess, SystemBuffer, SystemMeta, SystemName, SystemParam,
     SystemParamValidationError,
 };
-use bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell;
 use bevy_ecs::world::DeferredWorld;
+use bevy_ecs::world::unsafe_world_cell::UnsafeWorldCell;
 #[cfg(feature = "trace")]
 use bevy_log::info_span;
 #[cfg(not(target_arch = "wasm32"))]

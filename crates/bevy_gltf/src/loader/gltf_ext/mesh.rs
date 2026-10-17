@@ -1,8 +1,8 @@
 use bevy_mesh::PrimitiveTopology;
 
 use gltf::{
-    mesh::{Mesh, Mode},
     Material,
+    mesh::{Mesh, Mode},
 };
 
 use crate::GltfError;

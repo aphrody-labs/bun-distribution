@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-use aphrody_proc::NoWindow as _;
 use crate::wsl::{
     Artifact, Config, Error, Result, SourceState, Target, artifact, expected_artifacts, plan,
     sources,
 };
+use aphrody_proc::NoWindow as _;
 use serde::Serialize;
 use std::{
     fs::{self, OpenOptions},
@@ -34,14 +34,20 @@ impl Drop for Lock {
     }
 }
 fn write_report(config: &Config, report: &BuildReport) -> Result<()> {
-    let path = config.output_root.join(format!("{}-report.json", report.target.name()));
+    let path = config
+        .output_root
+        .join(format!("{}-report.json", report.target.name()));
     let tmp = path.with_extension("json.new");
     fs::write(&tmp, serde_json::to_vec_pretty(report)?)?;
     fs::rename(tmp, path)?;
     Ok(())
 }
 fn windows_path(path: &std::path::Path) -> Result<String> {
-    let output = Command::new("wslpath").no_window().arg("-w").arg(path).output()?;
+    let output = Command::new("wslpath")
+        .no_window()
+        .arg("-w")
+        .arg(path)
+        .output()?;
     if !output.status.success() {
         return Err(Error::Invalid("Windows path conversion failed".into()));
     }
@@ -51,12 +57,16 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
     config.validate()?;
     fs::create_dir_all(&config.output_root)?;
     let lock = config.output_root.join(format!(".{}.lock", target.name()));
-    let mut handle = OpenOptions::new().write(true).create_new(true).open(&lock).map_err(|e| {
-        Error::Invalid(format!(
-            "{}: {e}; inspect an existing build lock before removing it",
-            lock.display()
-        ))
-    })?;
+    let mut handle = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&lock)
+        .map_err(|e| {
+            Error::Invalid(format!(
+                "{}: {e}; inspect an existing build lock before removing it",
+                lock.display()
+            ))
+        })?;
     let _guard = Lock(lock);
     writeln!(handle, "{}", std::process::id())?;
     let source_states = sources(config)?;
@@ -68,9 +78,18 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
     let mut steps = plan(config, target)?;
     if target == Target::Wsl {
         let replacements = [
-            ("@WINDOWS_SCRIPT@", windows_path(&config.script("build-native-wsl.ps1"))?),
-            ("@WINDOWS_SOURCE@", windows_path(&config.source_root.join("WSL"))?),
-            ("@WINDOWS_OUTPUT@", windows_path(&config.output_root.join("wsl"))?),
+            (
+                "@WINDOWS_SCRIPT@",
+                windows_path(&config.script("build-native-wsl.ps1"))?,
+            ),
+            (
+                "@WINDOWS_SOURCE@",
+                windows_path(&config.source_root.join("WSL"))?,
+            ),
+            (
+                "@WINDOWS_OUTPUT@",
+                windows_path(&config.output_root.join("wsl"))?,
+            ),
         ];
         for arg in &mut steps[0].args {
             for (key, value) in &replacements {
@@ -93,13 +112,18 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
         steps,
         artifacts: vec![],
         error: None,
-        log: config.output_root.join(format!("{}-build.log", target.name())),
+        log: config
+            .output_root
+            .join(format!("{}-build.log", target.name())),
     };
     write_report(config, &report)?;
     let started = Instant::now();
     let outcome = (|| -> Result<()> {
-        let mut log =
-            OpenOptions::new().create(true).truncate(true).write(true).open(&report.log)?;
+        let mut log = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&report.log)?;
         for step in &report.steps {
             eprintln!("Building {}: log {}", step.name, report.log.display());
             writeln!(log, "{} {:?}", step.program.display(), step.args)?;
@@ -126,7 +150,9 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
                 }
                 if started.elapsed() >= Duration::from_secs(config.timeout_seconds) {
                     child.kill_tree()?;
-                    return Err(Error::Invalid("build timeout; child group terminated".into()));
+                    return Err(Error::Invalid(
+                        "build timeout; child group terminated".into(),
+                    ));
                 }
                 std::thread::sleep(Duration::from_millis(100));
             }
@@ -137,7 +163,12 @@ pub fn build(config: &Config, target: Target) -> Result<BuildReport> {
         Ok(())
     })();
     report.elapsed_seconds = started.elapsed().as_secs_f64();
-    report.state = if outcome.is_ok() { "complete" } else { "failed" }.into();
+    report.state = if outcome.is_ok() {
+        "complete"
+    } else {
+        "failed"
+    }
+    .into();
     report.error = outcome.as_ref().err().map(ToString::to_string);
     write_report(config, &report)?;
     outcome?;

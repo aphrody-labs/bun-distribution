@@ -23,11 +23,15 @@ use std::sync::{Arc, Mutex, OnceLock, PoisonError, TryLockError, mpsc};
 use std::time::Duration;
 use vst3::Steinberg::Vst::{self as sv};
 use vst3::Steinberg::Vst::{
-    IAudioProcessorTrait, IComponentHandlerTrait, IComponentTrait, IConnectionPointTrait, IEditControllerTrait, IEventListTrait,
-    IHostApplicationTrait, IParamValueQueueTrait, IParameterChangesTrait,
+    IAudioProcessorTrait, IComponentHandlerTrait, IComponentTrait, IConnectionPointTrait,
+    IEditControllerTrait, IEventListTrait, IHostApplicationTrait, IParamValueQueueTrait,
+    IParameterChangesTrait,
 };
 use vst3::Steinberg::{self as sb};
-use vst3::Steinberg::{FUnknown, IBStreamTrait, IPlugFrameTrait, IPlugViewTrait, IPluginBaseTrait, IPluginFactory2Trait, IPluginFactoryTrait};
+use vst3::Steinberg::{
+    FUnknown, IBStreamTrait, IPlugFrameTrait, IPlugViewTrait, IPluginBaseTrait,
+    IPluginFactory2Trait, IPluginFactoryTrait,
+};
 use vst3::{Class, ComPtr, ComWrapper, Interface};
 
 /// Most classes one factory may report (hostile-input cap).
@@ -54,7 +58,11 @@ const STATE_MAGIC: &[u8; 4] = b"SCV3";
 
 /// Reads a fixed-size `char8[N]` buffer, stopping at the first NUL or the end of the array.
 fn read_c8(buf: &[c_char]) -> String {
-    let bytes: Vec<u8> = buf.iter().take_while(|c| **c != 0).map(|c| *c as u8).collect();
+    let bytes: Vec<u8> = buf
+        .iter()
+        .take_while(|c| **c != 0)
+        .map(|c| *c as u8)
+        .collect();
     String::from_utf8_lossy(&bytes).trim().to_string()
 }
 
@@ -66,7 +74,9 @@ fn read_c16(buf: &[u16]) -> String {
 
 /// Writes `s` into a UTF-16 buffer, truncated and always NUL-terminated.
 fn write_c16(s: &str, dst: &mut [u16]) {
-    let Some(room) = dst.len().checked_sub(1) else { return };
+    let Some(room) = dst.len().checked_sub(1) else {
+        return;
+    };
     let mut n = 0;
     for (d, u) in dst.iter_mut().zip(s.encode_utf16().take(room)) {
         *d = u;
@@ -169,18 +179,23 @@ fn module_thread() -> Option<&'static mpsc::Sender<Job>> {
     static TX: OnceLock<Option<mpsc::Sender<Job>>> = OnceLock::new();
     TX.get_or_init(|| {
         let (tx, rx) = mpsc::channel::<Job>();
-        let spawned = std::thread::Builder::new().name("vst3-modules".into()).spawn(move || {
-            while let Ok(job) = rx.recv() {
-                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(job));
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("vst3-modules".into())
+            .spawn(move || {
+                while let Ok(job) = rx.recv() {
+                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(job));
+                }
+            });
         spawned.ok().map(|_| tx)
     })
     .as_ref()
 }
 
 /// Runs `f` on the module thread and waits for its result (at most `timeout`, when given).
-fn on_module_thread<R: Send + 'static>(f: impl FnOnce() -> R + Send + 'static, timeout: Option<Duration>) -> Option<R> {
+fn on_module_thread<R: Send + 'static>(
+    f: impl FnOnce() -> R + Send + 'static,
+    timeout: Option<Duration>,
+) -> Option<R> {
     let (rtx, rrx) = mpsc::sync_channel(1);
     module_thread()?
         .send(Box::new(move || {
@@ -203,7 +218,12 @@ mod cf {
     use std::ffi::c_void;
     #[link(name = "CoreFoundation", kind = "framework")]
     unsafe extern "C" {
-        pub fn CFURLCreateFromFileSystemRepresentation(alloc: *const c_void, buf: *const u8, len: isize, is_dir: u8) -> *const c_void;
+        pub fn CFURLCreateFromFileSystemRepresentation(
+            alloc: *const c_void,
+            buf: *const u8,
+            len: isize,
+            is_dir: u8,
+        ) -> *const c_void;
         pub fn CFBundleCreate(alloc: *const c_void, url: *const c_void) -> *mut c_void;
         pub fn CFRelease(cf: *const c_void);
     }
@@ -212,16 +232,22 @@ mod cf {
 /// Opens the shared library and runs the platform module entry (`bundleEntry` with a
 /// `CFBundleRef` on macOS, `InitDll` on Windows, `ModuleEntry` with the `dlopen` handle on Linux).
 /// Also returns the matching module exit, when the entry ran and the module exports one.
-fn open_library(bundle: &Path, exe: &Path) -> Result<(libloading::Library, Option<ModuleExit>), String> {
+fn open_library(
+    bundle: &Path,
+    exe: &Path,
+) -> Result<(libloading::Library, Option<ModuleExit>), String> {
     #[cfg(all(unix, not(target_os = "macos")))]
     {
         use libloading::os::unix::{Library as UnixLib, RTLD_LOCAL, RTLD_NOW};
         // SAFETY: loading a shared library runs its static initialisers. That is inherent to
         // hosting plugins; we only load files found in VST3 plugin folders or named explicitly.
-        let lib = unsafe { UnixLib::open(Some(exe), RTLD_NOW | RTLD_LOCAL) }.map_err(|e| e.to_string())?;
+        let lib = unsafe { UnixLib::open(Some(exe), RTLD_NOW | RTLD_LOCAL) }
+            .map_err(|e| e.to_string())?;
         type ModuleEntry = unsafe extern "C" fn(*mut c_void) -> bool;
         // SAFETY: `ModuleEntry` is the VST3-mandated Linux entry with this signature.
-        let entry = unsafe { lib.get::<ModuleEntry>(b"ModuleEntry\0") }.ok().map(|s| *s);
+        let entry = unsafe { lib.get::<ModuleEntry>(b"ModuleEntry\0") }
+            .ok()
+            .map(|s| *s);
         let raw = lib.into_raw();
         // SAFETY: `raw` is the handle we just took out of `lib`; it is rewrapped right away.
         let lib = unsafe { UnixLib::from_raw(raw) };
@@ -233,7 +259,9 @@ fn open_library(bundle: &Path, exe: &Path) -> Result<(libloading::Library, Optio
             }
             // SAFETY: `ModuleExit` is the VST3-mandated Linux exit with this signature; the
             // pointer stays valid because loaded modules are never unmapped.
-            exit = unsafe { lib.get::<ModuleExit>(b"ModuleExit\0") }.ok().map(|s| *s);
+            exit = unsafe { lib.get::<ModuleExit>(b"ModuleExit\0") }
+                .ok()
+                .map(|s| *s);
         }
         let _ = bundle;
         Ok((lib.into(), exit))
@@ -256,7 +284,9 @@ fn open_library(bundle: &Path, exe: &Path) -> Result<(libloading::Library, Optio
                 }
                 // SAFETY: `ExitDll` is the VST3-mandated Windows exit with this signature; the
                 // pointer stays valid because loaded modules are never unmapped.
-                exit = unsafe { lib.get::<ModuleExit>(b"ExitDll\0") }.ok().map(|s| *s);
+                exit = unsafe { lib.get::<ModuleExit>(b"ExitDll\0") }
+                    .ok()
+                    .map(|s| *s);
             }
         }
         #[cfg(target_os = "macos")]
@@ -278,7 +308,14 @@ fn open_library(bundle: &Path, exe: &Path) -> Result<(libloading::Library, Optio
                 let len = isize::try_from(bytes.len()).map_err(|_| "path too long".to_string())?;
                 // SAFETY: `bytes` is a valid buffer of `len` bytes for the duration of the call;
                 // a null allocator means the default one.
-                let url = unsafe { cf::CFURLCreateFromFileSystemRepresentation(std::ptr::null(), bytes.as_ptr(), len, 1) };
+                let url = unsafe {
+                    cf::CFURLCreateFromFileSystemRepresentation(
+                        std::ptr::null(),
+                        bytes.as_ptr(),
+                        len,
+                        1,
+                    )
+                };
                 if url.is_null() {
                     return Err("cannot make a CFURL for the bundle".into());
                 }
@@ -345,7 +382,10 @@ pub(crate) fn exit_modules() {
     here.into_iter().for_each(Bundle::exit);
     if !there.is_empty() {
         // Bounded: a module thread stuck inside a plugin must not hang the process exit.
-        let _ = on_module_thread(move || there.into_iter().for_each(Bundle::exit), Some(Duration::from_secs(5)));
+        let _ = on_module_thread(
+            move || there.into_iter().for_each(Bundle::exit),
+            Some(Duration::from_secs(5)),
+        );
     }
 }
 
@@ -383,7 +423,8 @@ impl Bundle {
             Bundle::open(path, EntryThread::Main)?
         } else {
             let p = path.to_path_buf();
-            on_module_thread(move || Bundle::open(&p, EntryThread::Modules), None).ok_or_else(|| err("the module thread is not running"))??
+            on_module_thread(move || Bundle::open(&p, EntryThread::Modules), None)
+                .ok_or_else(|| err("the module thread is not running"))??
         };
         let b = Arc::new(b);
         cache.push((path.to_path_buf(), b.clone()));
@@ -413,8 +454,15 @@ impl Bundle {
         let raw = unsafe { get() };
         // SAFETY: a non-null result is a factory pointer with one reference owned by the caller
         // (VST3 contract), which the `ComPtr` takes over.
-        let factory = unsafe { ComPtr::from_raw(raw) }.ok_or_else(|| fail("GetPluginFactory returned null".into()))?;
-        Ok(Bundle { factory, exit, entered_on, leaked: AtomicBool::new(false), _lib: ManuallyDrop::new(lib) })
+        let factory = unsafe { ComPtr::from_raw(raw) }
+            .ok_or_else(|| fail("GetPluginFactory returned null".into()))?;
+        Ok(Bundle {
+            factory,
+            exit,
+            entered_on,
+            leaked: AtomicBool::new(false),
+            _lib: ManuallyDrop::new(lib),
+        })
     }
 
     /// Releases the factory, then runs the module exit, as the VST3 SDK's own host does.
@@ -439,7 +487,11 @@ impl Bundle {
         // SAFETY: `PFactoryInfo` is plain data (char arrays and an int); all-zero is valid.
         let mut info: sb::PFactoryInfo = unsafe { std::mem::zeroed() };
         // SAFETY: valid factory; `info` is a writable struct of the right type.
-        if ok(unsafe { self.factory.getFactoryInfo(&mut info) }) { read_c8(&info.vendor) } else { String::new() }
+        if ok(unsafe { self.factory.getFactoryInfo(&mut info) }) {
+            read_c8(&info.vendor)
+        } else {
+            String::new()
+        }
     }
 
     /// Every class this binary exports.
@@ -492,7 +544,13 @@ impl Bundle {
         let iid = I::IID;
         // SAFETY: valid factory; `cid` and `iid` point to 16 readable bytes each (VST3 passes TUIDs
         // as `FIDString`); `obj` is writable.
-        let r = unsafe { self.factory.createInstance(cid.as_ptr().cast::<c_char>(), iid.as_ptr().cast::<c_char>(), &mut obj) };
+        let r = unsafe {
+            self.factory.createInstance(
+                cid.as_ptr().cast::<c_char>(),
+                iid.as_ptr().cast::<c_char>(),
+                &mut obj,
+            )
+        };
         if !ok(r) {
             return None;
         }
@@ -505,8 +563,14 @@ impl Bundle {
         let name = hex(cid);
         let err = |m: &str| Vst3Error::Instantiate(name.clone(), m.to_string());
         let host = ComWrapper::new(HostContext::default());
-        let host_unknown = host.as_com_ref::<sv::IHostApplication>().ok_or_else(|| err("host context"))?.upcast::<FUnknown>().as_ptr();
-        let component = self.create::<sv::IComponent>(cid).ok_or_else(|| err("factory cannot create the component"))?;
+        let host_unknown = host
+            .as_com_ref::<sv::IHostApplication>()
+            .ok_or_else(|| err("host context"))?
+            .upcast::<FUnknown>()
+            .as_ptr();
+        let component = self
+            .create::<sv::IComponent>(cid)
+            .ok_or_else(|| err("factory cannot create the component"))?;
         // SAFETY: fresh component; the host context outlives it (owned by the returned Instance).
         if !ok(unsafe { component.initialize(host_unknown) }) {
             return Err(err("component initialize failed"));
@@ -533,7 +597,10 @@ impl Bundle {
             host,
             bundle: self.clone(),
         };
-        let processor = inst.component.cast::<sv::IAudioProcessor>().ok_or_else(|| err("no IAudioProcessor"))?;
+        let processor = inst
+            .component
+            .cast::<sv::IAudioProcessor>()
+            .ok_or_else(|| err("no IAudioProcessor"))?;
         inst.processor = Some(processor);
         // Edit controller: the component itself (single-component plugin) or a separate class.
         if let Some(c) = inst.component.cast::<sv::IEditController>() {
@@ -556,7 +623,10 @@ impl Bundle {
         }
         if let Some(c) = &inst.controller {
             if !inst.single
-                && let (Some(a), Some(b)) = (inst.component.cast::<sv::IConnectionPoint>(), c.cast::<sv::IConnectionPoint>())
+                && let (Some(a), Some(b)) = (
+                    inst.component.cast::<sv::IConnectionPoint>(),
+                    c.cast::<sv::IConnectionPoint>(),
+                )
             {
                 // SAFETY: both connection points are valid for as long as `inst` lives; they are
                 // disconnected in `Drop` before either side terminates.
@@ -571,7 +641,12 @@ impl Bundle {
                 // SAFETY: valid controller; the handler (host context) outlives it.
                 unsafe { c.setComponentHandler(h.as_ptr()) };
             }
-            inst.editor = Arc::new(EditorLink { inner: Mutex::new(EditorInner { controller: Some(c.clone()), ..EditorInner::default() }) });
+            inst.editor = Arc::new(EditorLink {
+                inner: Mutex::new(EditorInner {
+                    controller: Some(c.clone()),
+                    ..EditorInner::default()
+                }),
+            });
         }
         Ok(inst)
     }
@@ -639,7 +714,12 @@ impl IHostApplicationTrait for HostContext {
         }
     }
 
-    unsafe fn createInstance(&self, _cid: *mut sb::TUID, _iid: *mut sb::TUID, obj: *mut *mut c_void) -> sb::tresult {
+    unsafe fn createInstance(
+        &self,
+        _cid: *mut sb::TUID,
+        _iid: *mut sb::TUID,
+        obj: *mut *mut c_void,
+    ) -> sb::tresult {
         // IMessage / IAttributeList are not provided yet; plugins must cope with that.
         // SAFETY: `obj` is the plugin's out-pointer (or null, handled).
         if let Some(o) = unsafe { obj.as_mut() } {
@@ -698,7 +778,12 @@ impl IParamValueQueueTrait for ParamQueue {
     unsafe fn getPointCount(&self) -> sb::int32 {
         self.points.load(Ordering::Relaxed)
     }
-    unsafe fn getPoint(&self, index: sb::int32, offset: *mut sb::int32, value: *mut sv::ParamValue) -> sb::tresult {
+    unsafe fn getPoint(
+        &self,
+        index: sb::int32,
+        offset: *mut sb::int32,
+        value: *mut sv::ParamValue,
+    ) -> sb::tresult {
         if index != 0 || self.points.load(Ordering::Relaxed) < 1 {
             return sb::kInvalidArgument;
         }
@@ -711,7 +796,12 @@ impl IParamValueQueueTrait for ParamQueue {
             sb::kInvalidArgument
         }
     }
-    unsafe fn addPoint(&self, offset: sb::int32, value: sv::ParamValue, index: *mut sb::int32) -> sb::tresult {
+    unsafe fn addPoint(
+        &self,
+        offset: sb::int32,
+        value: sv::ParamValue,
+        index: *mut sb::int32,
+    ) -> sb::tresult {
         self.offset.store(offset, Ordering::Relaxed);
         self.value.store(value.to_bits(), Ordering::Relaxed);
         self.points.store(1, Ordering::Relaxed);
@@ -735,7 +825,12 @@ impl Class for ParamChanges {
 
 impl ParamChanges {
     fn new(cap: usize) -> ParamChanges {
-        ParamChanges { queues: (0..cap).map(|_| ComWrapper::new(ParamQueue::default())).collect(), count: AtomicI32::new(0) }
+        ParamChanges {
+            queues: (0..cap)
+                .map(|_| ComWrapper::new(ParamQueue::default()))
+                .collect(),
+            count: AtomicI32::new(0),
+        }
     }
 
     fn clear(&self) {
@@ -767,7 +862,10 @@ impl ParamChanges {
     }
 
     fn queue_ptr(&self, index: usize) -> *mut sv::IParamValueQueue {
-        self.queues.get(index).and_then(|q| q.as_com_ref::<sv::IParamValueQueue>()).map_or(std::ptr::null_mut(), |r| r.as_ptr())
+        self.queues
+            .get(index)
+            .and_then(|q| q.as_com_ref::<sv::IParamValueQueue>())
+            .map_or(std::ptr::null_mut(), |r| r.as_ptr())
     }
 }
 
@@ -781,10 +879,18 @@ impl IParameterChangesTrait for ParamChanges {
         }
         self.queue_ptr(index as usize)
     }
-    unsafe fn addParameterData(&self, id: *const sv::ParamID, index: *mut sb::int32) -> *mut sv::IParamValueQueue {
+    unsafe fn addParameterData(
+        &self,
+        id: *const sv::ParamID,
+        index: *mut sb::int32,
+    ) -> *mut sv::IParamValueQueue {
         // SAFETY: in-pointer from the plugin (or null, handled).
-        let Some(&id) = (unsafe { id.as_ref() }) else { return std::ptr::null_mut() };
-        let Some((i, _)) = self.queue_for(id) else { return std::ptr::null_mut() };
+        let Some(&id) = (unsafe { id.as_ref() }) else {
+            return std::ptr::null_mut();
+        };
+        let Some((i, _)) = self.queue_for(id) else {
+            return std::ptr::null_mut();
+        };
         // SAFETY: out-pointer from the plugin (or null, handled).
         if let Some(out) = unsafe { index.as_mut() } {
             *out = i;
@@ -807,7 +913,10 @@ impl Class for EventList {
 
 impl EventList {
     fn new(cap: usize) -> EventList {
-        EventList { events: Mutex::new(Vec::with_capacity(cap)), cap }
+        EventList {
+            events: Mutex::new(Vec::with_capacity(cap)),
+            cap,
+        }
     }
     fn with<R>(&self, f: impl FnOnce(&mut Vec<sv::Event>) -> R) -> Option<R> {
         match self.events.try_lock() {
@@ -820,12 +929,17 @@ impl EventList {
 
 impl IEventListTrait for EventList {
     unsafe fn getEventCount(&self) -> sb::int32 {
-        self.with(|v| i32::try_from(v.len()).unwrap_or(i32::MAX)).unwrap_or(0)
+        self.with(|v| i32::try_from(v.len()).unwrap_or(i32::MAX))
+            .unwrap_or(0)
     }
     unsafe fn getEvent(&self, index: sb::int32, e: *mut sv::Event) -> sb::tresult {
         // SAFETY: out-pointer from the plugin (or null, handled).
-        let Some(out) = (unsafe { e.as_mut() }) else { return sb::kInvalidArgument };
-        let Ok(i) = usize::try_from(index) else { return sb::kInvalidArgument };
+        let Some(out) = (unsafe { e.as_mut() }) else {
+            return sb::kInvalidArgument;
+        };
+        let Ok(i) = usize::try_from(index) else {
+            return sb::kInvalidArgument;
+        };
         match self.with(|v| v.get(i).copied()).flatten() {
             Some(ev) => {
                 *out = ev;
@@ -836,7 +950,9 @@ impl IEventListTrait for EventList {
     }
     unsafe fn addEvent(&self, e: *mut sv::Event) -> sb::tresult {
         // SAFETY: in-pointer from the plugin (or null, handled).
-        let Some(&ev) = (unsafe { e.as_ref() }) else { return sb::kInvalidArgument };
+        let Some(&ev) = (unsafe { e.as_ref() }) else {
+            return sb::kInvalidArgument;
+        };
         let cap = self.cap;
         // Output events (e.g. MIDI out) are accepted while there is room; SoundCraft ignores them.
         match self.with(|v| {
@@ -864,7 +980,9 @@ impl Class for MemoryStream {
 
 impl MemoryStream {
     fn new(data: Vec<u8>) -> ComWrapper<MemoryStream> {
-        ComWrapper::new(MemoryStream { inner: Mutex::new((data, 0)) })
+        ComWrapper::new(MemoryStream {
+            inner: Mutex::new((data, 0)),
+        })
     }
 
     fn take(&self) -> Vec<u8> {
@@ -877,14 +995,21 @@ impl MemoryStream {
 }
 
 impl IBStreamTrait for MemoryStream {
-    unsafe fn read(&self, buffer: *mut c_void, num_bytes: sb::int32, num_read: *mut sb::int32) -> sb::tresult {
+    unsafe fn read(
+        &self,
+        buffer: *mut c_void,
+        num_bytes: sb::int32,
+        num_read: *mut sb::int32,
+    ) -> sb::tresult {
         let mut g = self.lock();
         let (data, pos) = &mut *g;
         let want = usize::try_from(num_bytes).unwrap_or(0);
         let avail = data.len().saturating_sub(*pos);
         let n = want.min(avail);
         if n > 0 && !buffer.is_null() {
-            let Some(src) = data.get(*pos..*pos + n) else { return sb::kInternalError };
+            let Some(src) = data.get(*pos..*pos + n) else {
+                return sb::kInternalError;
+            };
             // SAFETY: the plugin provides `buffer` with room for `num_bytes` ≥ `n` bytes; `src`
             // is `n` valid bytes; the regions cannot overlap (ours is a private Vec).
             unsafe { std::ptr::copy_nonoverlapping(src.as_ptr(), buffer.cast::<u8>(), n) };
@@ -896,7 +1021,12 @@ impl IBStreamTrait for MemoryStream {
         }
         sb::kResultOk
     }
-    unsafe fn write(&self, buffer: *mut c_void, num_bytes: sb::int32, num_written: *mut sb::int32) -> sb::tresult {
+    unsafe fn write(
+        &self,
+        buffer: *mut c_void,
+        num_bytes: sb::int32,
+        num_written: *mut sb::int32,
+    ) -> sb::tresult {
         let mut g = self.lock();
         let (data, pos) = &mut *g;
         let n = usize::try_from(num_bytes).unwrap_or(0);
@@ -981,11 +1111,24 @@ impl NoteEvent {
         match self {
             NoteEvent::On { key, velocity, .. } => {
                 e.r#type = sv::Event_::EventTypes_::kNoteOnEvent as u16;
-                e.__field0.noteOn = sv::NoteOnEvent { channel: 0, pitch: i16::from(key), tuning: 0.0, velocity, length: 0, noteId: -1 };
+                e.__field0.noteOn = sv::NoteOnEvent {
+                    channel: 0,
+                    pitch: i16::from(key),
+                    tuning: 0.0,
+                    velocity,
+                    length: 0,
+                    noteId: -1,
+                };
             }
             NoteEvent::Off { key, .. } => {
                 e.r#type = sv::Event_::EventTypes_::kNoteOffEvent as u16;
-                e.__field0.noteOff = sv::NoteOffEvent { channel: 0, pitch: i16::from(key), velocity: 0.0, noteId: -1, tuning: 0.0 };
+                e.__field0.noteOff = sv::NoteOffEvent {
+                    channel: 0,
+                    pitch: i16::from(key),
+                    velocity: 0.0,
+                    noteId: -1,
+                    tuning: 0.0,
+                };
             }
         }
         e
@@ -1008,18 +1151,35 @@ unsafe impl Send for BusBuffers {}
 impl BusBuffers {
     /// One buffer set per bus, `channels[b]` channels each (capped), `frames` long.
     pub fn new(channels: &[u32], frames: usize) -> BusBuffers {
-        let data: Vec<Vec<Vec<f32>>> =
-            channels.iter().take(MAX_BUSES as usize).map(|&c| (0..c.min(MAX_BUS_CHANNELS)).map(|_| vec![0.0; frames]).collect()).collect();
-        let ptrs = data.iter().map(|p| vec![std::ptr::null_mut(); p.len()]).collect();
+        let data: Vec<Vec<Vec<f32>>> = channels
+            .iter()
+            .take(MAX_BUSES as usize)
+            .map(|&c| {
+                (0..c.min(MAX_BUS_CHANNELS))
+                    .map(|_| vec![0.0; frames])
+                    .collect()
+            })
+            .collect();
+        let ptrs = data
+            .iter()
+            .map(|p| vec![std::ptr::null_mut(); p.len()])
+            .collect();
         let bufs = data
             .iter()
             .map(|_| sv::AudioBusBuffers {
                 numChannels: 0,
                 silenceFlags: 0,
-                __field0: sv::AudioBusBuffers__type0 { channelBuffers32: std::ptr::null_mut() },
+                __field0: sv::AudioBusBuffers__type0 {
+                    channelBuffers32: std::ptr::null_mut(),
+                },
             })
             .collect();
-        BusBuffers { data, ptrs, bufs, frames }
+        BusBuffers {
+            data,
+            ptrs,
+            bufs,
+            frames,
+        }
     }
 
     pub fn channels(&self, bus: usize) -> usize {
@@ -1027,16 +1187,27 @@ impl BusBuffers {
     }
 
     pub fn channel(&self, bus: usize, ch: usize) -> Option<&[f32]> {
-        self.data.get(bus).and_then(|p| p.get(ch)).map(Vec::as_slice)
+        self.data
+            .get(bus)
+            .and_then(|p| p.get(ch))
+            .map(Vec::as_slice)
     }
 
     pub fn channel_mut(&mut self, bus: usize, ch: usize) -> Option<&mut [f32]> {
-        self.data.get_mut(bus).and_then(|p| p.get_mut(ch)).map(Vec::as_mut_slice)
+        self.data
+            .get_mut(bus)
+            .and_then(|p| p.get_mut(ch))
+            .map(Vec::as_mut_slice)
     }
 
     /// Points the VST3 tables at the current data (no allocation).
     fn refresh(&mut self) {
-        for ((d, p), b) in self.data.iter_mut().zip(self.ptrs.iter_mut()).zip(self.bufs.iter_mut()) {
+        for ((d, p), b) in self
+            .data
+            .iter_mut()
+            .zip(self.ptrs.iter_mut())
+            .zip(self.bufs.iter_mut())
+        {
             for (dc, pc) in d.iter_mut().zip(p.iter_mut()) {
                 *pc = dc.as_mut_ptr();
             }
@@ -1120,7 +1291,9 @@ impl Instance {
 
     /// The editor link shared with editor handles (`None` without an edit controller).
     pub fn editor(&self) -> Option<Arc<EditorLink>> {
-        self.editor.has_controller().then(|| Arc::clone(&self.editor))
+        self.editor
+            .has_controller()
+            .then(|| Arc::clone(&self.editor))
     }
 
     /// Writes one state into a fresh memory stream.
@@ -1153,9 +1326,13 @@ impl Instance {
     /// `setState`, then the controller's `setComponentState` and `setState`. `false` when the
     /// blob is malformed or the component refuses it.
     pub fn load_state(&self, data: &[u8]) -> bool {
-        let Some((comp, ctrl)) = split_state(data) else { return false };
+        let Some((comp, ctrl)) = split_state(data) else {
+            return false;
+        };
         let stream = MemoryStream::new(comp.to_vec());
-        let Some(s) = stream.as_com_ref::<sb::IBStream>() else { return false };
+        let Some(s) = stream.as_com_ref::<sb::IBStream>() else {
+            return false;
+        };
         // SAFETY: valid component; the stream lives on this frame for the call.
         if !ok(unsafe { self.component.setState(s.as_ptr()) }) {
             return false;
@@ -1178,8 +1355,12 @@ impl Instance {
     /// Copies the component's state into the controller (`getState` → `setComponentState`).
     fn sync_controller_state(&self) {
         let Some(c) = &self.controller else { return };
-        let stream = ComWrapper::new(MemoryStream { inner: Mutex::new((Vec::new(), 0)) });
-        let Some(s) = stream.as_com_ref::<sb::IBStream>() else { return };
+        let stream = ComWrapper::new(MemoryStream {
+            inner: Mutex::new((Vec::new(), 0)),
+        });
+        let Some(s) = stream.as_com_ref::<sb::IBStream>() else {
+            return;
+        };
         // SAFETY: valid component; the stream lives on this frame for the whole call.
         if ok(unsafe { self.component.getState(s.as_ptr()) }) {
             stream.lock().1 = 0;
@@ -1189,7 +1370,9 @@ impl Instance {
     }
 
     pub fn params(&self) -> Vec<RawParam> {
-        let Some(c) = &self.controller else { return Vec::new() };
+        let Some(c) = &self.controller else {
+            return Vec::new();
+        };
         // SAFETY: valid controller.
         let n = unsafe { c.getParameterCount() }.clamp(0, MAX_PARAMS);
         let mut out = Vec::new();
@@ -1206,7 +1389,11 @@ impl Instance {
                 title: read_c16(&info.title),
                 units: read_c16(&info.units),
                 step_count: info.stepCount.max(0),
-                default_normalized: if d.is_finite() { d.clamp(0.0, 1.0) } else { 0.0 },
+                default_normalized: if d.is_finite() {
+                    d.clamp(0.0, 1.0)
+                } else {
+                    0.0
+                },
                 flags: info.flags,
             });
         }
@@ -1243,17 +1430,21 @@ impl Instance {
         let c = self.controller.as_ref()?;
         let mut s: sv::String128 = [0; 128];
         // SAFETY: valid controller; `s` is a writable String128.
-        ok(unsafe { c.getParamStringByValue(id, normalized.clamp(0.0, 1.0), &mut s) }).then(|| read_c16(&s)).filter(|t| !t.is_empty())
+        ok(unsafe { c.getParamStringByValue(id, normalized.clamp(0.0, 1.0), &mut s) })
+            .then(|| read_c16(&s))
+            .filter(|t| !t.is_empty())
     }
 
     pub fn latency(&self) -> u32 {
         // SAFETY: valid processor.
-        self.processor().map_or(0, |p| unsafe { p.getLatencySamples() })
+        self.processor()
+            .map_or(0, |p| unsafe { p.getLatencySamples() })
     }
 
     pub fn tail(&self) -> u32 {
         // SAFETY: valid processor.
-        self.processor().map_or(0, |p| unsafe { p.getTailSamples() })
+        self.processor()
+            .map_or(0, |p| unsafe { p.getTailSamples() })
     }
 
     pub fn is_active(&self) -> bool {
@@ -1262,7 +1453,11 @@ impl Instance {
 
     fn bus_count(&self, media: sv::MediaTypes, dir: sv::BusDirections) -> i32 {
         // SAFETY: valid component.
-        unsafe { self.component.getBusCount(media as sv::MediaType, dir as sv::BusDirection) }.clamp(0, MAX_BUSES)
+        unsafe {
+            self.component
+                .getBusCount(media as sv::MediaType, dir as sv::BusDirection)
+        }
+        .clamp(0, MAX_BUSES)
     }
 
     fn arrangement(&self, dir: sv::BusDirections, index: i32) -> Option<sv::SpeakerArrangement> {
@@ -1279,8 +1474,17 @@ impl Instance {
         // SAFETY: plain data; all-zero is valid.
         let mut info: sv::BusInfo = unsafe { std::mem::zeroed() };
         // SAFETY: valid component; index below the bus count; `info` is writable.
-        if ok(unsafe { self.component.getBusInfo(sv::MediaTypes_::kAudio as sv::MediaType, dir as sv::BusDirection, index, &mut info) }) {
-            u32::try_from(info.channelCount).unwrap_or(0).min(MAX_BUS_CHANNELS)
+        if ok(unsafe {
+            self.component.getBusInfo(
+                sv::MediaTypes_::kAudio as sv::MediaType,
+                dir as sv::BusDirection,
+                index,
+                &mut info,
+            )
+        }) {
+            u32::try_from(info.channelCount)
+                .unwrap_or(0)
+                .min(MAX_BUS_CHANNELS)
         } else {
             0
         }
@@ -1289,7 +1493,12 @@ impl Instance {
     /// Stops processing, deactivates, negotiates the bus layout (main buses mono or stereo as
     /// asked, falling back to stereo and then to the plugin's own choice), activates the main
     /// buses, sets up 32-bit processing and activates the component.
-    pub fn configure(&mut self, sample_rate: f64, max_frames: usize, mono: bool) -> Result<Layout, Vst3Error> {
+    pub fn configure(
+        &mut self,
+        sample_rate: f64,
+        max_frames: usize,
+        mono: bool,
+    ) -> Result<Layout, Vst3Error> {
         self.shutdown();
         let audio = sv::MediaTypes_::kAudio;
         let event = sv::MediaTypes_::kEvent;
@@ -1297,10 +1506,19 @@ impl Instance {
         let nin = self.bus_count(audio, din);
         let nout = self.bus_count(audio, dout);
         let current = |s: &Self, dir: sv::BusDirections, n: i32| -> Vec<sv::SpeakerArrangement> {
-            (0..n).map(|i| s.arrangement(dir, i).unwrap_or(sv::SpeakerArr::kStereo)).collect()
+            (0..n)
+                .map(|i| s.arrangement(dir, i).unwrap_or(sv::SpeakerArr::kStereo))
+                .collect()
         };
-        let want = if mono { sv::SpeakerArr::kMono } else { sv::SpeakerArr::kStereo };
-        let p = self.processor().ok_or_else(|| Vst3Error::Process("no audio processor".into()))?.clone();
+        let want = if mono {
+            sv::SpeakerArr::kMono
+        } else {
+            sv::SpeakerArr::kStereo
+        };
+        let p = self
+            .processor()
+            .ok_or_else(|| Vst3Error::Process("no audio processor".into()))?
+            .clone();
         let mut tried_ok = false;
         for main in [want, sv::SpeakerArr::kStereo] {
             let mut ins = current(self, din, nin);
@@ -1333,18 +1551,30 @@ impl Instance {
         for (dir, n) in [(din, nin), (dout, nout)] {
             for i in 0..n {
                 // SAFETY: valid component; index below the bus count.
-                unsafe { self.component.activateBus(audio as sv::MediaType, dir as sv::BusDirection, i, u8::from(i == 0)) };
+                unsafe {
+                    self.component.activateBus(
+                        audio as sv::MediaType,
+                        dir as sv::BusDirection,
+                        i,
+                        u8::from(i == 0),
+                    )
+                };
             }
         }
         if layout.event_input {
             // SAFETY: valid component; event input bus 0 exists.
-            unsafe { self.component.activateBus(event as sv::MediaType, din as sv::BusDirection, 0, 1) };
+            unsafe {
+                self.component
+                    .activateBus(event as sv::MediaType, din as sv::BusDirection, 0, 1)
+            };
         }
         self.event_in = layout.event_input;
         let sample32 = sv::SymbolicSampleSizes_::kSample32 as i32;
         // SAFETY: valid processor.
         if !ok(unsafe { p.canProcessSampleSize(sample32) }) {
-            return Err(Vst3Error::Process("plugin cannot process 32-bit float".into()));
+            return Err(Vst3Error::Process(
+                "plugin cannot process 32-bit float".into(),
+            ));
         }
         let max = i32::try_from(max_frames).unwrap_or(i32::MAX);
         let mut setup = sv::ProcessSetup {
@@ -1369,7 +1599,8 @@ impl Instance {
         self.context.timeSigDenominator = 4;
         // The flag constants are the C default enum type: i32 on Windows, u32 elsewhere.
         #[allow(clippy::unnecessary_cast)]
-        let flags = (sv::ProcessContext_::StatesAndFlags_::kTempoValid | sv::ProcessContext_::StatesAndFlags_::kTimeSigValid) as u32;
+        let flags = (sv::ProcessContext_::StatesAndFlags_::kTempoValid
+            | sv::ProcessContext_::StatesAndFlags_::kTimeSigValid) as u32;
         self.context.state = flags;
         self.host.latency_changed.store(false, Ordering::Relaxed);
         Ok(layout)
@@ -1406,10 +1637,19 @@ impl Instance {
         if !self.active {
             return Err(Vst3Error::Process("not active".into()));
         }
-        if frames == 0 || frames > self.max_frames || frames > inputs.frames || frames > outputs.frames {
-            return Err(Vst3Error::Process("block larger than the configured size".into()));
+        if frames == 0
+            || frames > self.max_frames
+            || frames > inputs.frames
+            || frames > outputs.frames
+        {
+            return Err(Vst3Error::Process(
+                "block larger than the configured size".into(),
+            ));
         }
-        let p = self.processor.clone().ok_or_else(|| Vst3Error::Process("no audio processor".into()))?;
+        let p = self
+            .processor
+            .clone()
+            .ok_or_else(|| Vst3Error::Process("no audio processor".into()))?;
         if !self.processing {
             // Many plugins return kNotImplemented here; that is not an error.
             // SAFETY: valid, active processor.
@@ -1441,12 +1681,32 @@ impl Instance {
             numSamples: i32::try_from(frames).unwrap_or(0),
             numInputs: i32::try_from(inputs.bufs.len()).unwrap_or(0),
             numOutputs: i32::try_from(outputs.bufs.len()).unwrap_or(0),
-            inputs: if inputs.bufs.is_empty() { std::ptr::null_mut() } else { inputs.bufs.as_mut_ptr() },
-            outputs: if outputs.bufs.is_empty() { std::ptr::null_mut() } else { outputs.bufs.as_mut_ptr() },
-            inputParameterChanges: self.in_params.as_com_ref::<sv::IParameterChanges>().map_or(std::ptr::null_mut(), |r| r.as_ptr()),
-            outputParameterChanges: self.out_params.as_com_ref::<sv::IParameterChanges>().map_or(std::ptr::null_mut(), |r| r.as_ptr()),
-            inputEvents: self.in_events.as_com_ref::<sv::IEventList>().map_or(std::ptr::null_mut(), |r| r.as_ptr()),
-            outputEvents: self.out_events.as_com_ref::<sv::IEventList>().map_or(std::ptr::null_mut(), |r| r.as_ptr()),
+            inputs: if inputs.bufs.is_empty() {
+                std::ptr::null_mut()
+            } else {
+                inputs.bufs.as_mut_ptr()
+            },
+            outputs: if outputs.bufs.is_empty() {
+                std::ptr::null_mut()
+            } else {
+                outputs.bufs.as_mut_ptr()
+            },
+            inputParameterChanges: self
+                .in_params
+                .as_com_ref::<sv::IParameterChanges>()
+                .map_or(std::ptr::null_mut(), |r| r.as_ptr()),
+            outputParameterChanges: self
+                .out_params
+                .as_com_ref::<sv::IParameterChanges>()
+                .map_or(std::ptr::null_mut(), |r| r.as_ptr()),
+            inputEvents: self
+                .in_events
+                .as_com_ref::<sv::IEventList>()
+                .map_or(std::ptr::null_mut(), |r| r.as_ptr()),
+            outputEvents: self
+                .out_events
+                .as_com_ref::<sv::IEventList>()
+                .map_or(std::ptr::null_mut(), |r| r.as_ptr()),
             processContext: &mut self.context,
         };
         // SAFETY: valid, active processor. Every channel pointer refers to `frames` (or more) valid
@@ -1454,7 +1714,11 @@ impl Instance {
         // parameter/event objects and the context are owned by `self` and untouched until the
         // call returns.
         let r = unsafe { p.process(&mut data) };
-        if ok(r) { Ok(()) } else { Err(Vst3Error::Process(format!("process returned {r}"))) }
+        if ok(r) {
+            Ok(())
+        } else {
+            Err(Vst3Error::Process(format!("process returned {r}")))
+        }
     }
 }
 
@@ -1495,7 +1759,9 @@ fn split_state(data: &[u8]) -> Option<(&[u8], &[u8])> {
     if data.len() > MAX_STATE_BYTES.saturating_mul(2) {
         return None;
     }
-    let Some(rest) = data.strip_prefix(STATE_MAGIC) else { return (!data.is_empty()).then_some((data, &[][..])) };
+    let Some(rest) = data.strip_prefix(STATE_MAGIC) else {
+        return (!data.is_empty()).then_some((data, &[][..]));
+    };
     let take = |b: &[u8]| -> Option<(usize, usize)> {
         let n = u32::from_le_bytes(b.get(..4)?.try_into().ok()?) as usize;
         (n <= MAX_STATE_BYTES && b.len() >= 4 + n).then_some((4, 4 + n))
@@ -1521,9 +1787,15 @@ impl Class for PlugFrame {
 }
 
 impl IPlugFrameTrait for PlugFrame {
-    unsafe fn resizeView(&self, view: *mut sb::IPlugView, new_size: *mut sb::ViewRect) -> sb::tresult {
+    unsafe fn resizeView(
+        &self,
+        view: *mut sb::IPlugView,
+        new_size: *mut sb::ViewRect,
+    ) -> sb::tresult {
         // SAFETY: in-pointer from the plugin (or null, handled).
-        let Some(r) = (unsafe { new_size.as_mut() }) else { return sb::kInvalidArgument };
+        let Some(r) = (unsafe { new_size.as_mut() }) else {
+            return sb::kInvalidArgument;
+        };
         let (w, h) = rect_size(r);
         window::resize(self.window.load(Ordering::Relaxed), w, h);
         // SAFETY: the plugin passes its own live view (or null, handled).
@@ -1571,7 +1843,10 @@ impl EditorLink {
     }
 
     fn create_view(g: &EditorInner) -> Result<ComPtr<sb::IPlugView>, String> {
-        let c = g.controller.as_ref().ok_or_else(|| "the plugin is gone".to_string())?;
+        let c = g
+            .controller
+            .as_ref()
+            .ok_or_else(|| "the plugin is gone".to_string())?;
         // SAFETY: valid controller; the name is a static NUL-terminated string.
         let raw = unsafe { c.createView(c"editor".as_ptr()) };
         // SAFETY: a non-null view comes with one reference owned by the caller.
@@ -1583,12 +1858,18 @@ impl EditorLink {
     pub fn probe(&self) -> Result<(u32, u32), String> {
         let g = self.lock();
         let view = EditorLink::create_view(&g)?;
-        let platform = window::PLATFORM_TYPE.ok_or_else(|| "plugin editors are not supported on this platform".to_string())?;
+        let platform = window::PLATFORM_TYPE
+            .ok_or_else(|| "plugin editors are not supported on this platform".to_string())?;
         // SAFETY: valid view; `platform` is a static NUL-terminated string.
         if unsafe { view.isPlatformTypeSupported(platform) } != sb::kResultTrue {
             return Err("the editor does not support this platform's windows".into());
         }
-        let mut r = sb::ViewRect { left: 0, top: 0, right: 0, bottom: 0 };
+        let mut r = sb::ViewRect {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+        };
         // SAFETY: valid view; `r` is writable.
         if !ok(unsafe { view.getSize(&mut r) }) {
             return Err("the editor reports no size".into());
@@ -1602,7 +1883,8 @@ impl EditorLink {
         if !window::on_main_thread() {
             return Err("plugin editors must be opened on the main thread".into());
         }
-        let platform = window::PLATFORM_TYPE.ok_or_else(|| "VST3 editors are not hosted on this platform yet".to_string())?;
+        let platform = window::PLATFORM_TYPE
+            .ok_or_else(|| "VST3 editors are not hosted on this platform yet".to_string())?;
         let mut g = self.lock();
         if let Some(w) = &g.window {
             if w.is_visible() {
@@ -1617,12 +1899,19 @@ impl EditorLink {
         if unsafe { view.isPlatformTypeSupported(platform) } != sb::kResultTrue {
             return Err("the editor does not support this platform's windows".into());
         }
-        let mut r = sb::ViewRect { left: 0, top: 0, right: 400, bottom: 300 };
+        let mut r = sb::ViewRect {
+            left: 0,
+            top: 0,
+            right: 400,
+            bottom: 300,
+        };
         // SAFETY: valid view; `r` is writable. On failure the default size stays.
         unsafe { view.getSize(&mut r) };
         let (w, h) = rect_size(&r);
         let win = window::HostWindow::new(title, w, h)?;
-        let frame = ComWrapper::new(PlugFrame { window: std::sync::atomic::AtomicPtr::new(win.raw()) });
+        let frame = ComWrapper::new(PlugFrame {
+            window: std::sync::atomic::AtomicPtr::new(win.raw()),
+        });
         if let Some(f) = frame.as_com_ref::<sb::IPlugFrame>() {
             // SAFETY: valid view; the frame outlives the view's attachment (kept in `g.frame`
             // and detached in `teardown`).
@@ -1727,7 +2016,9 @@ impl EditorLink {
                 EditorLink::teardown(&mut g);
             } else {
                 // Window calls are main-thread only; leak the view and window rather than crash.
-                log::warn!("vst3: editor still open while its plugin is destroyed off the main thread");
+                log::warn!(
+                    "vst3: editor still open while its plugin is destroyed off the main thread"
+                );
                 if let Some(v) = g.view.take() {
                     std::mem::forget(v);
                     leaked = true;
@@ -1749,7 +2040,10 @@ impl EditorLink {
 mod window {
     use objc2::rc::Retained;
     use objc2::{MainThreadMarker, MainThreadOnly};
-    use objc2_app_kit::{NSApplication, NSBackingStoreType, NSFloatingWindowLevel, NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask};
+    use objc2_app_kit::{
+        NSApplication, NSBackingStoreType, NSFloatingWindowLevel, NSWindow,
+        NSWindowCollectionBehavior, NSWindowStyleMask,
+    };
     use objc2_foundation::{NSPoint, NSRect, NSSize, NSString};
     use std::ffi::{c_char, c_void};
 
@@ -1777,7 +2071,8 @@ mod window {
         }
 
         pub fn new(title: &str, w: f64, h: f64) -> Result<HostWindow, String> {
-            let mtm = MainThreadMarker::new().ok_or_else(|| "not on the main thread".to_string())?;
+            let mtm =
+                MainThreadMarker::new().ok_or_else(|| "not on the main thread".to_string())?;
             let _app = NSApplication::sharedApplication(mtm);
             let rect = NSRect::new(NSPoint::new(200.0, 200.0), NSSize::new(w, h));
             // Plugin editors are transient windows. In particular they must not be
@@ -1786,7 +2081,13 @@ mod window {
             let style = NSWindowStyleMask::Titled | NSWindowStyleMask::Closable;
             // SAFETY: a freshly allocated window on the main thread; valid rect and style.
             let window = unsafe {
-                NSWindow::initWithContentRect_styleMask_backing_defer(NSWindow::alloc(mtm), rect, style, NSBackingStoreType::Buffered, false)
+                NSWindow::initWithContentRect_styleMask_backing_defer(
+                    NSWindow::alloc(mtm),
+                    rect,
+                    style,
+                    NSBackingStoreType::Buffered,
+                    false,
+                )
             };
             // SAFETY: we keep our own retain and release it in `close`, so AppKit must not
             // release the window when the user closes it.
@@ -1795,9 +2096,13 @@ mod window {
             window.setLevel(NSFloatingWindowLevel);
             window.setHidesOnDeactivate(true);
             window.setExcludedFromWindowsMenu(true);
-            window.setCollectionBehavior(NSWindowCollectionBehavior::Transient | NSWindowCollectionBehavior::IgnoresCycle);
+            window.setCollectionBehavior(
+                NSWindowCollectionBehavior::Transient | NSWindowCollectionBehavior::IgnoresCycle,
+            );
             window.center();
-            Ok(HostWindow { window: Retained::into_raw(window) })
+            Ok(HostWindow {
+                window: Retained::into_raw(window),
+            })
         }
 
         /// The raw window pointer (for the plug frame's resizes).
@@ -1807,7 +2112,11 @@ mod window {
 
         /// The content view (`NSView*`) the plugin view attaches to; null when unavailable.
         pub fn parent(&self) -> *mut c_void {
-            self.get().and_then(|w| w.contentView()).map_or(std::ptr::null_mut(), |v| Retained::as_ptr(&v).cast_mut().cast())
+            self.get()
+                .and_then(|w| w.contentView())
+                .map_or(std::ptr::null_mut(), |v| {
+                    Retained::as_ptr(&v).cast_mut().cast()
+                })
         }
 
         pub fn raise(&self) {
@@ -1889,7 +2198,11 @@ mod tests {
         blob.extend_from_slice(&2u32.to_le_bytes());
         blob.extend_from_slice(b"xy");
         assert_eq!(split_state(&blob), Some((&b"abc"[..], &b"xy"[..])));
-        assert_eq!(split_state(b"raw component"), Some((&b"raw component"[..], &[][..])), "bare component state");
+        assert_eq!(
+            split_state(b"raw component"),
+            Some((&b"raw component"[..], &[][..])),
+            "bare component state"
+        );
         assert_eq!(split_state(b""), None);
         let mut trailing = blob.clone();
         trailing.push(0);
@@ -1933,7 +2246,12 @@ mod tests {
             assert_ne!(q.getPoint(0, std::ptr::null_mut(), &mut v), sb::kResultOk);
         }
         let el = EventList::new(1);
-        let mut e = NoteEvent::On { time: 5, key: 60, velocity: 1.0 }.to_raw(2);
+        let mut e = NoteEvent::On {
+            time: 5,
+            key: 60,
+            velocity: 1.0,
+        }
+        .to_raw(2);
         // SAFETY: as above.
         unsafe {
             assert_eq!(el.addEvent(&mut e), sb::kResultOk);
@@ -1945,7 +2263,9 @@ mod tests {
             assert_eq!(out.__field0.noteOn.pitch, 60);
             assert_ne!(el.getEvent(1, &mut out), sb::kResultOk);
         }
-        let s = MemoryStream { inner: Mutex::new((Vec::new(), 0)) };
+        let s = MemoryStream {
+            inner: Mutex::new((Vec::new(), 0)),
+        };
         let mut buf = *b"hello";
         // SAFETY: as above; buffers are valid for the given sizes.
         unsafe {
@@ -1953,11 +2273,25 @@ mod tests {
             assert_eq!(s.write(buf.as_mut_ptr().cast(), 5, &mut n), sb::kResultOk);
             assert_eq!(n, 5);
             let mut pos = 0i64;
-            assert_eq!(s.seek(1, sb::IBStream_::IStreamSeekMode_::kIBSeekSet as i32, &mut pos), sb::kResultOk);
+            assert_eq!(
+                s.seek(
+                    1,
+                    sb::IBStream_::IStreamSeekMode_::kIBSeekSet as i32,
+                    &mut pos
+                ),
+                sb::kResultOk
+            );
             let mut out = [0u8; 8];
             assert_eq!(s.read(out.as_mut_ptr().cast(), 8, &mut n), sb::kResultOk);
             assert_eq!((n, &out[..4]), (4, &b"ello"[..]));
-            assert_eq!(s.seek(-100, sb::IBStream_::IStreamSeekMode_::kIBSeekEnd as i32, &mut pos), sb::kResultOk);
+            assert_eq!(
+                s.seek(
+                    -100,
+                    sb::IBStream_::IStreamSeekMode_::kIBSeekEnd as i32,
+                    &mut pos
+                ),
+                sb::kResultOk
+            );
             assert_eq!(pos, 0);
             assert_eq!(s.write(std::ptr::null_mut(), 5, &mut n), sb::kResultFalse);
         }
@@ -1966,7 +2300,10 @@ mod tests {
         // SAFETY: as above.
         unsafe {
             assert_eq!(h.getName(&mut name), sb::kResultOk);
-            assert_eq!(h.restartComponent(sv::RestartFlags_::kLatencyChanged as i32), sb::kResultOk);
+            assert_eq!(
+                h.restartComponent(sv::RestartFlags_::kLatencyChanged as i32),
+                sb::kResultOk
+            );
         }
         assert_eq!(read_c16(&name), "SoundCraft");
         assert!(h.latency_changed.load(Ordering::Relaxed));

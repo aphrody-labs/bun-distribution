@@ -58,11 +58,14 @@ impl PinnedCorpus {
     /// `(sha256, relative path)` pairs from the manifest.
     fn manifest_entries(&self) -> Result<Entries, String> {
         let path = root().join(self.manifest);
-        let text = std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
+        let text =
+            std::fs::read_to_string(&path).map_err(|e| format!("read {}: {e}", path.display()))?;
         text.lines()
             .filter(|l| !l.trim().is_empty())
             .map(|l| {
-                let (hash, file) = l.split_once("  ").ok_or_else(|| format!("{}: bad line {l:?}", self.manifest))?;
+                let (hash, file) = l
+                    .split_once("  ")
+                    .ok_or_else(|| format!("{}: bad line {l:?}", self.manifest))?;
                 if hash.len() != 64 || file.contains("..") || file.starts_with('/') {
                     return Err(format!("{}: bad line {l:?}", self.manifest));
                 }
@@ -72,12 +75,18 @@ impl PinnedCorpus {
     }
 
     fn collect(&self, dir: &Path, base: &Path, out: &mut Vec<PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return;
+        };
         for e in rd.flatten() {
             let p = e.path();
             if p.is_dir() {
                 self.collect(&p, base, out);
-            } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| self.exts.iter().any(|x| e.eq_ignore_ascii_case(x))) {
+            } else if p
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| self.exts.iter().any(|x| e.eq_ignore_ascii_case(x)))
+            {
                 out.push(p.strip_prefix(base).unwrap_or(&p).to_path_buf());
             }
         }
@@ -99,13 +108,22 @@ impl PinnedCorpus {
     fn write_manifest(&self, files: &mut Entries) -> Result<(), String> {
         files.sort_by(|a, b| a.1.cmp(&b.1));
         let lines: String = files.iter().map(|(h, f)| format!("{h}  {f}\n")).collect();
-        std::fs::write(root().join(self.manifest), lines).map_err(|e| format!("write {}: {e}", self.manifest))?;
-        println!("{}: wrote {} entries to {}", self.name, files.len(), self.manifest);
+        std::fs::write(root().join(self.manifest), lines)
+            .map_err(|e| format!("write {}: {e}", self.manifest))?;
+        println!(
+            "{}: wrote {} entries to {}",
+            self.name,
+            files.len(),
+            self.manifest
+        );
         Ok(())
     }
 
     /// Entries of `files` that are missing or wrong when looked up through `locate`.
-    fn mismatches(files: &[(String, String)], locate: impl Fn(&str) -> Option<PathBuf>) -> Vec<String> {
+    fn mismatches(
+        files: &[(String, String)],
+        locate: impl Fn(&str) -> Option<PathBuf>,
+    ) -> Vec<String> {
         files
             .iter()
             .filter_map(|(hash, file)| match locate(file).map(std::fs::read) {
@@ -119,7 +137,10 @@ impl PinnedCorpus {
     /// True when `corpus/<dest>` exists and every manifest entry is present and matches.
     pub fn is_current(&self) -> bool {
         let dest = self.dest_dir();
-        dest.is_dir() && self.manifest_entries().is_ok_and(|files| Self::mismatches(&files, |f| Some(dest.join(f))).is_empty())
+        dest.is_dir()
+            && self
+                .manifest_entries()
+                .is_ok_and(|files| Self::mismatches(&files, |f| Some(dest.join(f))).is_empty())
     }
 
     /// Replaces `dest` with the files (from `locate`) plus extras, moved or copied.
@@ -135,10 +156,13 @@ impl PinnedCorpus {
         let _ = std::fs::remove_dir_all(&dest);
         let place = |from: &Path, to: &Path| -> Result<(), String> {
             if let Some(parent) = to.parent() {
-                std::fs::create_dir_all(parent).map_err(|e| format!("create {}: {e}", parent.display()))?;
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| format!("create {}: {e}", parent.display()))?;
             }
             if copy {
-                std::fs::copy(from, to).map(|_| ()).map_err(|e| format!("copy {}: {e}", from.display()))
+                std::fs::copy(from, to)
+                    .map(|_| ())
+                    .map_err(|e| format!("copy {}: {e}", from.display()))
             } else {
                 std::fs::rename(from, to).map_err(|e| format!("move {}: {e}", from.display()))
             }
@@ -152,35 +176,56 @@ impl PinnedCorpus {
                 place(from, &dest.join(to))?;
             }
         }
-        std::fs::write(dest.join("SOURCES.md"), (self.sources_md)(self)).map_err(|e| format!("write SOURCES.md: {e}"))?;
-        println!("{}: {} files in {} ({note})", self.name, files.len(), dest.display());
+        std::fs::write(dest.join("SOURCES.md"), (self.sources_md)(self))
+            .map_err(|e| format!("write SOURCES.md: {e}"))?;
+        println!(
+            "{}: {} files in {} ({note})",
+            self.name,
+            files.len(),
+            dest.display()
+        );
         Ok(())
     }
 
     /// Downloads the pinned commits and installs the verified files (no-op when already current).
     pub fn fetch(&self, update_manifest: bool) -> Result<(), String> {
         if !update_manifest && self.is_current() {
-            println!("{}: {} already matches {}", self.name, self.dest_dir().display(), self.manifest);
+            println!(
+                "{}: {} already matches {}",
+                self.name,
+                self.dest_dir().display(),
+                self.manifest
+            );
             return Ok(());
         }
         let corpus = root().join("corpus");
         let staging = corpus.join(format!(".{}-download", self.dest));
         let _ = std::fs::remove_dir_all(&staging);
-        std::fs::create_dir_all(&staging).map_err(|e| format!("create {}: {e}", staging.display()))?;
+        std::fs::create_dir_all(&staging)
+            .map_err(|e| format!("create {}: {e}", staging.display()))?;
         // (upstream, extracted corpus dir, extracted repo root)
         let mut roots = Vec::new();
         for (i, up) in self.upstreams.iter().enumerate() {
             let tgz = staging.join(format!("archive{i}.tar.gz"));
-            let url = format!("https://codeload.github.com/{}/tar.gz/{}", up.repo, up.commit);
+            let url = format!(
+                "https://codeload.github.com/{}/tar.gz/{}",
+                up.repo, up.commit
+            );
             let mut curl = Command::new("curl");
-            curl.args(["-fsSL", "--retry", "3", "-A", USER_AGENT, "-o"]).arg(&tgz).arg(&url);
+            curl.args(["-fsSL", "--retry", "3", "-A", USER_AGENT, "-o"])
+                .arg(&tgz)
+                .arg(&url);
             run(curl, &format!("curl {url}"))?;
             let repo_name = up.repo.rsplit('/').next().unwrap_or(up.repo);
             let top = format!("{repo_name}-{}", up.commit);
             let out = staging.join(format!("u{i}"));
             std::fs::create_dir_all(&out).map_err(|e| format!("create {}: {e}", out.display()))?;
             let mut tar = Command::new("tar");
-            tar.arg("-xzf").arg(&tgz).arg("-C").arg(&out).arg(format!("{top}/{}", up.subdir));
+            tar.arg("-xzf")
+                .arg(&tgz)
+                .arg("-C")
+                .arg(&out)
+                .arg(format!("{top}/{}", up.subdir));
             for (from, _) in up.extras {
                 // A root-level corpus selection (`subdir == ""`) already extracts the whole repo
                 // root; adding the same root files as individual tar selectors fails on GNU tar.
@@ -214,7 +259,10 @@ impl PinnedCorpus {
             if self.subset {
                 // Re-hash the selected files at the new pins.
                 for (hash, file) in files.iter_mut() {
-                    let bytes = locate(file).map(std::fs::read).and_then(Result::ok).ok_or_else(|| format!("{file}: missing upstream"))?;
+                    let bytes = locate(file)
+                        .map(std::fs::read)
+                        .and_then(Result::ok)
+                        .ok_or_else(|| format!("{file}: missing upstream"))?;
                     *hash = sha256::hex(&bytes);
                 }
             }
@@ -222,12 +270,34 @@ impl PinnedCorpus {
         }
         let bad = Self::mismatches(&files, locate);
         if !bad.is_empty() {
-            return Err(format!("{} download does not match {} ({} problems): {}", self.name, self.manifest, bad.len(), bad.join(", ")));
+            return Err(format!(
+                "{} download does not match {} ({} problems): {}",
+                self.name,
+                self.manifest,
+                bad.len(),
+                bad.join(", ")
+            ));
         }
-        let extras: Vec<(PathBuf, String)> =
-            roots.iter().flat_map(|(up, _, repo_root)| up.extras.iter().map(move |(from, to)| (repo_root.join(from), (*to).to_string()))).collect();
-        let pins: Vec<String> = self.upstreams.iter().map(|u| format!("{}@{}", u.repo, &u.commit[..12.min(u.commit.len())])).collect();
-        self.install(&files, locate, &extras, false, &format!("verified; {}", pins.join(", ")))?;
+        let extras: Vec<(PathBuf, String)> = roots
+            .iter()
+            .flat_map(|(up, _, repo_root)| {
+                up.extras
+                    .iter()
+                    .map(move |(from, to)| (repo_root.join(from), (*to).to_string()))
+            })
+            .collect();
+        let pins: Vec<String> = self
+            .upstreams
+            .iter()
+            .map(|u| format!("{}@{}", u.repo, &u.commit[..12.min(u.commit.len())]))
+            .collect();
+        self.install(
+            &files,
+            locate,
+            &extras,
+            false,
+            &format!("verified; {}", pins.join(", ")),
+        )?;
         let _ = std::fs::remove_dir_all(&staging);
         Ok(())
     }
@@ -237,16 +307,44 @@ impl PinnedCorpus {
     /// are pushed and pinned. Warns (does not fail) when the clone's HEAD is not the pin or its
     /// files differ from the manifest; `update_manifest` rewrites the manifest from the clone.
     pub fn fetch_local(&self, clone: &Path, update_manifest: bool) -> Result<(), String> {
-        let [up] = self.upstreams else { return Err(format!("{}: local mode needs a single-upstream corpus", self.name)) };
+        let [up] = self.upstreams else {
+            return Err(format!(
+                "{}: local mode needs a single-upstream corpus",
+                self.name
+            ));
+        };
         let src = clone.join(up.subdir);
         if !src.is_dir() {
-            return Err(format!("{}: {} is not a directory", self.name, src.display()));
+            return Err(format!(
+                "{}: {} is not a directory",
+                self.name,
+                src.display()
+            ));
         }
-        let head = Command::new("git").arg("-C").arg(clone).args(["rev-parse", "HEAD"]).output().ok().filter(|o| o.status.success());
+        let head = Command::new("git")
+            .arg("-C")
+            .arg(clone)
+            .args(["rev-parse", "HEAD"])
+            .output()
+            .ok()
+            .filter(|o| o.status.success());
         match head.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string()) {
-            Some(h) if h == up.commit => println!("{}: {} is at the pinned commit {h}", self.name, clone.display()),
-            Some(h) => eprintln!("warning: {}: {} is at {h}, not the pinned commit {}: tests will see unpinned files", self.name, clone.display(), up.commit),
-            None => eprintln!("warning: {}: could not read the git HEAD of {}", self.name, clone.display()),
+            Some(h) if h == up.commit => println!(
+                "{}: {} is at the pinned commit {h}",
+                self.name,
+                clone.display()
+            ),
+            Some(h) => eprintln!(
+                "warning: {}: {} is at {h}, not the pinned commit {}: tests will see unpinned files",
+                self.name,
+                clone.display(),
+                up.commit
+            ),
+            None => eprintln!(
+                "warning: {}: could not read the git HEAD of {}",
+                self.name,
+                clone.display()
+            ),
         }
         let mut found = self.scan(&src, up.prefix)?;
         found.sort_by(|a, b| a.1.cmp(&b.1));
@@ -256,15 +354,28 @@ impl PinnedCorpus {
             let pinned = self.manifest_entries()?;
             if pinned != found {
                 let changed = found.iter().filter(|f| !pinned.contains(f)).count();
-                let gone = pinned.iter().filter(|p| !found.iter().any(|f| f.1 == p.1)).count();
+                let gone = pinned
+                    .iter()
+                    .filter(|p| !found.iter().any(|f| f.1 == p.1))
+                    .count();
                 eprintln!(
                     "warning: {}: the clone differs from {} ({changed} new or changed, {gone} missing); after pushing it, bump the pin and run with --update-manifest",
                     self.name, self.manifest
                 );
             }
         }
-        let extras: Vec<(PathBuf, String)> = up.extras.iter().map(|(from, to)| (clone.join(from), (*to).to_string())).collect();
-        self.install(&found, |f| Some(src.join(&f[up.prefix.len()..])), &extras, true, &format!("copied from the local clone {}", clone.display()))
+        let extras: Vec<(PathBuf, String)> = up
+            .extras
+            .iter()
+            .map(|(from, to)| (clone.join(from), (*to).to_string()))
+            .collect();
+        self.install(
+            &found,
+            |f| Some(src.join(&f[up.prefix.len()..])),
+            &extras,
+            true,
+            &format!("copied from the local clone {}", clone.display()),
+        )
     }
 }
 
@@ -283,21 +394,37 @@ pub fn fetch_pixls(update: bool) -> Result<(), String> {
     std::fs::create_dir_all(&dest).map_err(|e| format!("create {}: {e}", dest.display()))?;
     let manifest = crate::root().join("xtask").join("pixls.sha256");
     if update {
-        let mut names: Vec<&str> = crate::corpus_pins::PIXLS_FILES.iter().map(|(_, n)| *n).collect();
+        let mut names: Vec<&str> = crate::corpus_pins::PIXLS_FILES
+            .iter()
+            .map(|(_, n)| *n)
+            .collect();
         names.sort_unstable();
         let mut out = String::new();
         for name in names {
-            let sum = file_hex(&dest.join(name)).ok_or_else(|| format!("pixls {name}: not downloaded yet"))?;
+            let sum = file_hex(&dest.join(name))
+                .ok_or_else(|| format!("pixls {name}: not downloaded yet"))?;
             out.push_str(&format!("{sum}  {name}\n"));
         }
         std::fs::write(&manifest, out).map_err(|e| format!("write {}: {e}", manifest.display()))?;
-        println!("pixls: re-hashed {} files into {}", crate::corpus_pins::PIXLS_FILES.len(), manifest.display());
+        println!(
+            "pixls: re-hashed {} files into {}",
+            crate::corpus_pins::PIXLS_FILES.len(),
+            manifest.display()
+        );
         return Ok(());
     }
     let want: std::collections::HashMap<String, String> = std::fs::read_to_string(&manifest)
-        .map_err(|e| format!("read {}: {e} (run `cargo xtask corpus --pixls` once)", manifest.display()))?
+        .map_err(|e| {
+            format!(
+                "read {}: {e} (run `cargo xtask corpus --pixls` once)",
+                manifest.display()
+            )
+        })?
         .lines()
-        .filter_map(|l| l.split_once("  ").map(|(s, n)| (n.to_string(), s.to_string())))
+        .filter_map(|l| {
+            l.split_once("  ")
+                .map(|(s, n)| (n.to_string(), s.to_string()))
+        })
         .collect();
     for (path, name) in crate::corpus_pins::PIXLS_FILES {
         let file = dest.join(name);
@@ -306,13 +433,21 @@ pub fn fetch_pixls(update: bool) -> Result<(), String> {
         }
         let url = format!("{}{}", crate::corpus_pins::PIXLS_BASE, path);
         let mut curl = Command::new("curl");
-        curl.args(["-fsSL", "--retry", "3", "-A", USER_AGENT, "-o"]).arg(&file).arg(&url);
+        curl.args(["-fsSL", "--retry", "3", "-A", USER_AGENT, "-o"])
+            .arg(&file)
+            .arg(&url);
         run(curl, &format!("curl {url}"))?;
         let got = file_hex(&file).ok_or_else(|| format!("pixls {name}: unreadable"))?;
         if Some(got.as_str()) != want.get(*name).map(String::as_str) {
-            return Err(format!("pixls {name}: sha256 mismatch (pin the file you meant, then --update-manifest)"));
+            return Err(format!(
+                "pixls {name}: sha256 mismatch (pin the file you meant, then --update-manifest)"
+            ));
         }
     }
-    println!("pixls: {} files verified in {}", crate::corpus_pins::PIXLS_FILES.len(), dest.display());
+    println!(
+        "pixls: {} files verified in {}",
+        crate::corpus_pins::PIXLS_FILES.len(),
+        dest.display()
+    );
     Ok(())
 }

@@ -21,7 +21,10 @@ fn simple_fill(sp: Option<&El>) -> Option<Fill> {
 
 fn simple_line(sp: Option<&El>) -> Option<deckcraft_model::Line> {
     let ln = sp?.child("ln")?;
-    let mut l = deckcraft_model::Line { width: super::dml::pt(ln, "w"), ..Default::default() };
+    let mut l = deckcraft_model::Line {
+        width: super::dml::pt(ln, "w"),
+        ..Default::default()
+    };
     l.fill = simple_fill(Some(ln));
     Some(l)
 }
@@ -29,7 +32,11 @@ fn simple_line(sp: Option<&El>) -> Option<deckcraft_model::Line> {
 fn rich_text(t: &El) -> Option<String> {
     let tx = t.child("tx")?;
     if let Some(r) = tx.child("rich") {
-        let s = r.children_named("p").map(|p| p.text()).collect::<Vec<_>>().join("\n");
+        let s = r
+            .children_named("p")
+            .map(|p| p.text())
+            .collect::<Vec<_>>()
+            .join("\n");
         return Some(s);
     }
     tx.find("v").map(|v| v.text())
@@ -37,9 +44,17 @@ fn rich_text(t: &El) -> Option<String> {
 
 /// String values from `c:cat`/`c:tx` (str or num refs, caches or literals).
 fn strings(e: &El) -> Vec<String> {
-    let cache = e.find("strCache").or_else(|| e.find("numCache")).or_else(|| e.find("strLit")).or_else(|| e.find("numLit"));
+    let cache = e
+        .find("strCache")
+        .or_else(|| e.find("numCache"))
+        .or_else(|| e.find("strLit"))
+        .or_else(|| e.find("numLit"));
     if let Some(c) = cache {
-        let n = c.child("ptCount").and_then(|p| p.u32("val")).unwrap_or(0).min(100_000) as usize;
+        let n = c
+            .child("ptCount")
+            .and_then(|p| p.u32("val"))
+            .unwrap_or(0)
+            .min(100_000) as usize;
         let mut out = vec![String::new(); n];
         for pt in c.children_named("pt").take(100_000) {
             let i = pt.u32("idx").unwrap_or(0) as usize;
@@ -59,7 +74,10 @@ fn strings(e: &El) -> Vec<String> {
     if let Some(ml) = e.find("multiLvlStrCache") {
         // Use the innermost level.
         if let Some(l) = ml.child("lvl") {
-            return l.children_named("pt").map(|p| p.child("v").map(|v| v.text()).unwrap_or_default()).collect();
+            return l
+                .children_named("pt")
+                .map(|p| p.child("v").map(|v| v.text()).unwrap_or_default())
+                .collect();
         }
     }
     if let Some(v) = e.child("v") {
@@ -69,7 +87,10 @@ fn strings(e: &El) -> Vec<String> {
 }
 
 fn numbers(e: &El) -> Vec<Option<f64>> {
-    strings(e).into_iter().map(|s| s.trim().parse::<f64>().ok().filter(|v| v.is_finite())).collect()
+    strings(e)
+        .into_iter()
+        .map(|s| s.trim().parse::<f64>().ok().filter(|v| v.is_finite()))
+        .collect()
 }
 
 /// Parse a chart part. Returns `None` for something that isn't a chart we can read.
@@ -88,15 +109,27 @@ pub fn read_chart_xml(bytes: &[u8]) -> Option<Chart> {
 pub(crate) fn chart_from(root: &El) -> Option<Chart> {
     let ch = root.child("chart")?;
     let pa = ch.child("plotArea")?;
-    let mut c = Chart { categories: vec![], series: vec![], title: None, legend: None, gridlines: false, ..Default::default() };
-    c.style = root.child_val("style").and_then(|v| v.parse().ok()).unwrap_or(2);
+    let mut c = Chart {
+        categories: vec![],
+        series: vec![],
+        title: None,
+        legend: None,
+        gridlines: false,
+        ..Default::default()
+    };
+    c.style = root
+        .child_val("style")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
     if let Some(t) = ch.child("title") {
         c.title = Some(rich_text(t).unwrap_or_else(|| "Chart Title".into()));
     }
     if ch.child("autoTitleDeleted").and_then(|a| a.bool("val")) == Some(true) {
         c.title = None;
     }
-    c.legend = ch.child("legend").map(|l| l.child_val("legendPos").unwrap_or("r").to_string());
+    c.legend = ch
+        .child("legend")
+        .map(|l| l.child_val("legendPos").unwrap_or("r").to_string());
     c.chart_fill = simple_fill(root.child("spPr"));
     c.plot_fill = simple_fill(pa.child("spPr"));
 
@@ -120,8 +153,12 @@ pub(crate) fn chart_from(root: &El) -> Option<Chart> {
                 }
             }
             "lineChart" | "line3DChart" => {
-                let markers = g.child_val("marker").is_some_and(|v| v == "1" || v == "true")
-                    && g.children_named("ser").all(|s| s.path(&["marker", "symbol"]).and_then(|m| m.attr("val")) != Some("none"));
+                let markers = g
+                    .child_val("marker")
+                    .is_some_and(|v| v == "1" || v == "true")
+                    && g.children_named("ser").all(|s| {
+                        s.path(&["marker", "symbol"]).and_then(|m| m.attr("val")) != Some("none")
+                    });
                 match grouping {
                     "stacked" | "percentStacked" => ChartType::StackedLine,
                     _ if markers => ChartType::LineMarkers,
@@ -168,19 +205,37 @@ pub(crate) fn chart_from(root: &El) -> Option<Chart> {
         kinds.push(kind);
         for s in g.children_named("ser").take(1000) {
             let mut ser = Series {
-                name: s.child("tx").map(strings).and_then(|v| v.into_iter().next()).unwrap_or_default(),
+                name: s
+                    .child("tx")
+                    .map(strings)
+                    .and_then(|v| v.into_iter().next())
+                    .unwrap_or_default(),
                 fill: simple_fill(s.child("spPr")),
                 line: simple_line(s.child("spPr")),
-                smooth: s.child("smooth").and_then(|v| v.bool("val")).unwrap_or(false),
-                marker: s.path(&["marker", "symbol"]).and_then(|m| m.attr("val")).filter(|m| *m != "none").map(String::from),
+                smooth: s
+                    .child("smooth")
+                    .and_then(|v| v.bool("val"))
+                    .unwrap_or(false),
+                marker: s
+                    .path(&["marker", "symbol"])
+                    .and_then(|m| m.attr("val"))
+                    .filter(|m| *m != "none")
+                    .map(String::from),
                 kind: Some(kind),
                 ..Default::default()
             };
-            if let Some(d) = s.child("dLbls").and_then(|d| d.child("showVal")).and_then(|v| v.bool("val")) {
+            if let Some(d) = s
+                .child("dLbls")
+                .and_then(|d| d.child("showVal"))
+                .and_then(|v| v.bool("val"))
+            {
                 ser.data_labels = Some(d);
             }
             for dp in s.children_named("dPt") {
-                if let (Some(i), Some(f)) = (dp.child("idx").and_then(|i| i.u32("val")), simple_fill(dp.child("spPr"))) {
+                if let (Some(i), Some(f)) = (
+                    dp.child("idx").and_then(|i| i.u32("val")),
+                    simple_fill(dp.child("spPr")),
+                ) {
                     ser.point_fills.push((i as usize, f));
                 }
             }
@@ -203,7 +258,11 @@ pub(crate) fn chart_from(root: &El) -> Option<Chart> {
         }
     }
     let first = *kinds.first()?;
-    c.kind = if kinds.iter().any(|k| *k != first) { ChartType::Combo } else { first };
+    c.kind = if kinds.iter().any(|k| *k != first) {
+        ChartType::Combo
+    } else {
+        first
+    };
     if c.kind != ChartType::Combo {
         for s in &mut c.series {
             s.kind = None;
@@ -211,17 +270,33 @@ pub(crate) fn chart_from(root: &El) -> Option<Chart> {
     }
     // Axes.
     let vertical = |a: &&El| matches!(a.child_val("axPos"), Some("l" | "r"));
-    let val_ax = pa.children_named("valAx").find(vertical).or_else(|| pa.children_named("valAx").last());
-    let cat_ax = pa.child("catAx").or_else(|| pa.child("dateAx")).or_else(|| pa.children_named("valAx").find(|a| !vertical(a)));
+    let val_ax = pa
+        .children_named("valAx")
+        .find(vertical)
+        .or_else(|| pa.children_named("valAx").last());
+    let cat_ax = pa
+        .child("catAx")
+        .or_else(|| pa.child("dateAx"))
+        .or_else(|| pa.children_named("valAx").find(|a| !vertical(a)));
     if let Some(v) = val_ax {
         c.gridlines = v.child("majorGridlines").is_some();
         let sc = v.child("scaling");
-        c.y_min = sc.and_then(|s| s.child_val("min")).and_then(|v| v.parse().ok()).filter(|v: &f64| v.is_finite());
-        c.y_max = sc.and_then(|s| s.child_val("max")).and_then(|v| v.parse().ok()).filter(|v: &f64| v.is_finite());
-        c.axis_titles.1 = v.child("title").map(|t| rich_text(t).unwrap_or_else(|| "Axis Title".into()));
+        c.y_min = sc
+            .and_then(|s| s.child_val("min"))
+            .and_then(|v| v.parse().ok())
+            .filter(|v: &f64| v.is_finite());
+        c.y_max = sc
+            .and_then(|s| s.child_val("max"))
+            .and_then(|v| v.parse().ok())
+            .filter(|v: &f64| v.is_finite());
+        c.axis_titles.1 = v
+            .child("title")
+            .map(|t| rich_text(t).unwrap_or_else(|| "Axis Title".into()));
     }
     if let Some(a) = cat_ax {
-        c.axis_titles.0 = a.child("title").map(|t| rich_text(t).unwrap_or_else(|| "Axis Title".into()));
+        c.axis_titles.0 = a
+            .child("title")
+            .map(|t| rich_text(t).unwrap_or_else(|| "Axis Title".into()));
     }
     Some(c)
 }

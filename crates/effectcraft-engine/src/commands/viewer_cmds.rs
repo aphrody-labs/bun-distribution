@@ -24,8 +24,13 @@ pub enum FastPreviews {
 }
 
 impl FastPreviews {
-    pub const ALL: [FastPreviews; 5] =
-        [FastPreviews::Off, FastPreviews::AdaptiveResolution, FastPreviews::Draft, FastPreviews::FastDraft, FastPreviews::Wireframe];
+    pub const ALL: [FastPreviews; 5] = [
+        FastPreviews::Off,
+        FastPreviews::AdaptiveResolution,
+        FastPreviews::Draft,
+        FastPreviews::FastDraft,
+        FastPreviews::Wireframe,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             FastPreviews::Off => "off",
@@ -46,7 +51,13 @@ impl FastPreviews {
     }
     pub fn from_name(s: &str) -> Option<FastPreviews> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        FastPreviews::ALL.into_iter().find(|m| m.id().to_ascii_lowercase() == n || m.label().to_ascii_lowercase().replace(' ', "").starts_with(&n))
+        FastPreviews::ALL.into_iter().find(|m| {
+            m.id().to_ascii_lowercase() == n
+                || m.label()
+                    .to_ascii_lowercase()
+                    .replace(' ', "")
+                    .starts_with(&n)
+        })
     }
     /// Render options for the viewer: (draft quality, resolution factor while interacting).
     pub fn render(self, interacting: bool) -> (bool, f64) {
@@ -91,7 +102,10 @@ impl Default for ViewOptions {
             fast_previews: FastPreviews::default(),
             display_color_management: true,
             simulation: Simulation::default(),
-            custom_simulation: Simulation { profile: SimProfile::Linear, preserve_rgb: true },
+            custom_simulation: Simulation {
+                profile: SimProfile::Linear,
+                preserve_rgb: true,
+            },
         }
     }
 }
@@ -113,7 +127,9 @@ fn snapping(s: &mut Session, p: &Value) -> Result<Value> {
 fn snapping_options(s: &mut Session, p: &Value) -> Result<Value> {
     let f = &mut s.state.snap_features;
     if let Some(k) = str_p(p, "toggle") {
-        let v = f.option_mut(k).ok_or_else(|| bad("view.snappingOptions", format!("unknown option `{k}`")))?;
+        let v = f
+            .option_mut(k)
+            .ok_or_else(|| bad("view.snappingOptions", format!("unknown option `{k}`")))?;
         *v = !*v;
     }
     for (k, _) in SnapFeatures::OPTIONS {
@@ -126,9 +142,19 @@ fn snapping_options(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn channel(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "channel").unwrap_or("rgb");
-    let c = Channel::from_name(name).ok_or_else(|| bad("view.channel", format!("unknown channel `{name}` (rgb|red|green|blue|alpha|rgbStraight)")))?;
+    let c = Channel::from_name(name).ok_or_else(|| {
+        bad(
+            "view.channel",
+            format!("unknown channel `{name}` (rgb|red|green|blue|alpha|rgbStraight)"),
+        )
+    })?;
     // Choosing the active single channel again returns to RGB, as in After Effects.
-    let c = if c == s.state.viewer.channel && c != Channel::Rgb && b_p(p, "toggle").unwrap_or(false) { Channel::Rgb } else { c };
+    let c = if c == s.state.viewer.channel && c != Channel::Rgb && b_p(p, "toggle").unwrap_or(false)
+    {
+        Channel::Rgb
+    } else {
+        c
+    };
     s.state.viewer.channel = c;
     if let Some(v) = b_p(p, "colorized") {
         s.state.viewer.colorized = v;
@@ -157,15 +183,35 @@ fn take_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let t = s.time_of(cid);
     let scale = f_p(p, "scale").unwrap_or(1.0).clamp(0.05, 1.0);
-    let img = s.render(cid, t, RenderOpts { scale, guides: true, view: s.view_camera(cid).filter(|_| comp.has_3d()), ..Default::default() });
+    let img = s.render(
+        cid,
+        t,
+        RenderOpts {
+            scale,
+            guides: true,
+            view: s.view_camera(cid).filter(|_| comp.has_3d()),
+            ..Default::default()
+        },
+    );
     let (w, h) = (img.width, img.height);
-    s.snapshot = Some(Snapshot { comp: cid, time: t, scale, image: std::sync::Arc::new(img) });
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.snapshot = Some(Snapshot {
+        comp: cid,
+        time: t,
+        scale,
+        image: std::sync::Arc::new(img),
+    });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     Ok(json!({"width": w, "height": h, "time": t.seconds()}))
 }
 
 fn has_snapshot(s: &Session) -> std::result::Result<(), String> {
-    if s.snapshot.is_some() { Ok(()) } else { Err("take a snapshot first (Shift+F5)".into()) }
+    if s.snapshot.is_some() {
+        Ok(())
+    } else {
+        Err("take a snapshot first (Shift+F5)".into())
+    }
 }
 
 fn show_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
@@ -175,8 +221,12 @@ fn show_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn fast_previews(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "mode").unwrap_or("off");
-    let m =
-        FastPreviews::from_name(name).ok_or_else(|| bad("view.fastPreviewMode", format!("unknown mode `{name}` (off|adaptive|draft|fastDraft|wireframe)")))?;
+    let m = FastPreviews::from_name(name).ok_or_else(|| {
+        bad(
+            "view.fastPreviewMode",
+            format!("unknown mode `{name}` (off|adaptive|draft|fastDraft|wireframe)"),
+        )
+    })?;
     s.state.viewer.fast_previews = m;
     Ok(json!(m.id()))
 }
@@ -184,7 +234,10 @@ fn fast_previews(s: &mut Session, p: &Value) -> Result<Value> {
 fn guide_index(s: &Session, p: &Value, cmd: &str) -> Result<(effectcraft_project::ItemId, usize)> {
     let cid = comp_id(s, p)?;
     let n = s.project.comp(cid).ok_or(EngineError::NoComp)?.guides.len();
-    let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "missing `index`"))? as usize;
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(cmd, "missing `index`"))? as usize;
     if i >= n {
         return Err(bad(cmd, format!("no guide {i} (the comp has {n})")));
     }
@@ -193,7 +246,8 @@ fn guide_index(s: &Session, p: &Value, cmd: &str) -> Result<(effectcraft_project
 
 fn move_guide(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, i) = guide_index(s, p, "view.moveGuide")?;
-    let pos = f_p(p, "position").ok_or_else(|| bad("view.moveGuide", "missing `position` (comp px)"))?;
+    let pos =
+        f_p(p, "position").ok_or_else(|| bad("view.moveGuide", "missing `position` (comp px)"))?;
     s.edit("Move Guide", merge_p(p), |proj, _| {
         proj.comp_mut(cid).ok_or(EngineError::NoComp)?.guides[i].position = pos;
         Ok(())
@@ -204,14 +258,23 @@ fn move_guide(s: &mut Session, p: &Value) -> Result<Value> {
 fn remove_guide(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, i) = guide_index(s, p, "view.removeGuide")?;
     s.edit("Remove Guide", None, |proj, _| {
-        proj.comp_mut(cid).ok_or(EngineError::NoComp)?.guides.remove(i);
+        proj.comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .guides
+            .remove(i);
         Ok(())
     })?;
     Ok(Value::Null)
 }
 
 fn pts(v: Option<&Value>) -> Vec<[f64; 2]> {
-    v.and_then(Value::as_array).map(|a| a.iter().filter_map(|p| Some([p.get(0)?.as_f64()?, p.get(1)?.as_f64()?])).collect()).unwrap_or_default()
+    v.and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|p| Some([p.get(0)?.as_f64()?, p.get(1)?.as_f64()?]))
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 /// Pen tool on a shape layer: a new Shape group ("Shape n" with Path 1 and the Tools bar's
@@ -231,15 +294,23 @@ fn new_path(s: &mut Session, p: &Value) -> Result<Value> {
     ins.resize(n, [0.0; 2]);
     outs.resize(n, [0.0; 2]);
     let target = super::shape_tool::draw_target(s, &comp, p, "shape.newPath")?;
-    let comp_space = str_p(p, "space").map(|s| s == "comp").unwrap_or(target.is_none());
+    let comp_space = str_p(p, "space")
+        .map(|s| s == "comp")
+        .unwrap_or(target.is_none());
     if comp_space {
         // Comp → layer space of the target (a new layer sits at the comp centre, unrotated).
         let inv = match target.and_then(|l| comp.layer(l)) {
             Some(l) => {
                 let ctx = effectcraft_render::EvalCtx::new(&s.project, cid, &comp, s.time_of(cid));
-                ctx.layer_to_comp(l).0.inverse().unwrap_or(effectcraft_geom::Mat3::IDENTITY)
+                ctx.layer_to_comp(l)
+                    .0
+                    .inverse()
+                    .unwrap_or(effectcraft_geom::Mat3::IDENTITY)
             }
-            None => effectcraft_geom::Mat3::translate(effectcraft_geom::vec2(-(comp.width as f64) / 2.0, -(comp.height as f64) / 2.0)),
+            None => effectcraft_geom::Mat3::translate(effectcraft_geom::vec2(
+                -(comp.width as f64) / 2.0,
+                -(comp.height as f64) / 2.0,
+            )),
         };
         for q in &mut v {
             let r = inv.apply(effectcraft_geom::vec2(q[0], q[1]));
@@ -250,17 +321,32 @@ fn new_path(s: &mut Session, p: &Value) -> Result<Value> {
             *t = [r.x, r.y];
         }
     }
-    let path = ShapePath { vertices: v, in_tangents: ins, out_tangents: outs, closed: b_p(p, "closed").unwrap_or(false), feather: Vec::new() };
+    let path = ShapePath {
+        vertices: v,
+        in_tangents: ins,
+        out_tangents: outs,
+        closed: b_p(p, "closed").unwrap_or(false),
+        feather: Vec::new(),
+    };
     let paint = super::shape_tool::paint_p(p, &s.state.shape_tool, "shape.newPath")?;
     // Gradients run across the path's points.
-    let (lo, hi) =
-        path.vertices.iter().fold(([f64::MAX; 2], [f64::MIN; 2]), |(lo, hi), v| ([lo[0].min(v[0]), lo[1].min(v[1])], [hi[0].max(v[0]), hi[1].max(v[1])]));
+    let (lo, hi) = path
+        .vertices
+        .iter()
+        .fold(([f64::MAX; 2], [f64::MIN; 2]), |(lo, hi), v| {
+            (
+                [lo[0].min(v[0]), lo[1].min(v[1])],
+                [hi[0].max(v[0]), hi[1].max(v[1])],
+            )
+        });
     let bounds = [lo[0], lo[1], hi[0] - lo[0], hi[1] - lo[1]];
     let name = str_p(p, "name").map(str::to_string);
     let (lid, group, path_uid) = s.edit("Pen Tool", None, |proj, st| {
         let lid = match target {
             Some(l) => l,
-            None => super::shape_tool::new_shape_layer(proj, st, &comp, cid, name.as_deref(), None)?,
+            None => {
+                super::shape_tool::new_shape_layer(proj, st, &comp, cid, name.as_deref(), None)?
+            }
         };
         let mut next = proj.next_id;
         let mut ids = Ids(&mut next);
@@ -270,9 +356,14 @@ fn new_path(s: &mut Session, p: &Value) -> Result<Value> {
         items.extend(super::shape_tool::paint_items(&mut ids, &paint, bounds));
         let g = build::shape_group(&mut ids, "Shape 1", items);
         proj.next_id = next;
-        let group = super::shape_tool::add_to_contents(proj, cid, lid, g, [0.0, 0.0], "shape.newPath")?;
+        let group =
+            super::shape_tool::add_to_contents(proj, cid, lid, g, [0.0, 0.0], "shape.newPath")?;
         st.selected_layers = vec![lid];
-        st.selected_vertices = vec![VertexRef { layer: lid, mask: path_uid, index: n - 1 }];
+        st.selected_vertices = vec![VertexRef {
+            layer: lid,
+            mask: path_uid,
+            index: n - 1,
+        }];
         Ok((lid, group, path_uid))
     })?;
     Ok(json!({"layer": lid.0, "group": group, "path": path_uid}))
@@ -285,7 +376,13 @@ pub fn snapshot_rgba8(s: &Session) -> Option<(u32, u32, Vec<u8>)> {
     let mut out = Vec::with_capacity(img.data.len() * 4);
     for p in &img.data {
         let a = p[3].clamp(0.0, 1.0);
-        let un = |c: f32| if a > 0.0 { (c / a).clamp(0.0, 1.0) } else { 0.0 };
+        let un = |c: f32| {
+            if a > 0.0 {
+                (c / a).clamp(0.0, 1.0)
+            } else {
+                0.0
+            }
+        };
         out.extend([un(p[0]), un(p[1]), un(p[2]), a].map(|v| (v * 255.0 + 0.5) as u8));
     }
     Some((img.width, img.height, out))
@@ -301,15 +398,23 @@ fn shape_layer_or_none(s: &Session) -> std::result::Result<(), String> {
 fn display_cm(s: &mut Session, p: &Value) -> Result<Value> {
     let v = b_p(p, "value").unwrap_or(!s.state.viewer.display_color_management);
     s.state.viewer.display_color_management = v;
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
-    Ok(json!({"displayColorManagement": v, "workingSpace": s.project.settings.working_space.map(|w| w.id()), "display": s.prefs.previews.display_profile}))
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
+    Ok(
+        json!({"displayColorManagement": v, "workingSpace": s.project.settings.working_space.map(|w| w.id()), "display": s.prefs.previews.display_profile}),
+    )
 }
 
 /// View ▸ Simulate Output ▸ (profile). `custom` uses (and with `space` sets) the Custom profile.
 fn simulate_output(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "view.simulateOutput";
     let name = str_p(p, "profile").unwrap_or("none");
-    let ids = SimProfile::ALL.iter().map(|p| p.id()).collect::<Vec<_>>().join("|");
+    let ids = SimProfile::ALL
+        .iter()
+        .map(|p| p.id())
+        .collect::<Vec<_>>()
+        .join("|");
     let sim = if name.eq_ignore_ascii_case("custom") {
         let mut c = s.state.viewer.custom_simulation;
         if let Some(sp) = str_p(p, "space") {
@@ -321,12 +426,20 @@ fn simulate_output(s: &mut Session, p: &Value) -> Result<Value> {
         s.state.viewer.custom_simulation = c;
         c
     } else {
-        let profile = SimProfile::parse(name).ok_or_else(|| bad(cmd, format!("profile: {ids}|custom")))?;
-        Simulation { profile, preserve_rgb: b_p(p, "preserveRgb").unwrap_or(false) }
+        let profile =
+            SimProfile::parse(name).ok_or_else(|| bad(cmd, format!("profile: {ids}|custom")))?;
+        Simulation {
+            profile,
+            preserve_rgb: b_p(p, "preserveRgb").unwrap_or(false),
+        }
     };
     s.state.viewer.simulation = sim;
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
-    Ok(json!({"profile": sim.profile.id(), "label": sim.profile.label(), "preserveRgb": sim.preserve_rgb}))
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
+    Ok(
+        json!({"profile": sim.profile.id(), "label": sim.profile.label(), "preserveRgb": sim.preserve_rgb}),
+    )
 }
 
 fn custom_rgb_json(c: &CustomRgb) -> Value {
@@ -345,9 +458,14 @@ fn custom_rgb_json(c: &CustomRgb) -> Value {
 /// starts from a built-in profile; `reset` goes back to the default.
 fn custom_rgb(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "view.customRgb";
-    let mut c = if b_p(p, "reset") == Some(true) { CustomRgb::default() } else { s.prefs.custom_rgb.clone() };
+    let mut c = if b_p(p, "reset") == Some(true) {
+        CustomRgb::default()
+    } else {
+        s.prefs.custom_rgb.clone()
+    };
     if let Some(from) = str_p(p, "from") {
-        let prof = SimProfile::parse(from).ok_or_else(|| bad(cmd, format!("from: unknown profile `{from}`")))?;
+        let prof = SimProfile::parse(from)
+            .ok_or_else(|| bad(cmd, format!("from: unknown profile `{from}`")))?;
         if let Some((prims, curve)) = prof.space() {
             [c.red, c.green, c.blue] = prims;
             c.white = [0.3127, 0.3290];
@@ -365,14 +483,25 @@ fn custom_rgb(s: &mut Session, p: &Value) -> Result<Value> {
         match p.get(k) {
             None | Some(Value::Null) => Ok(None),
             Some(v) => {
-                let a = v.as_array().filter(|a| a.len() == 2).ok_or_else(|| bad(cmd, format!("{k}: [x, y]")))?;
-                let g = |i: usize| a[i].as_f64().ok_or_else(|| bad(cmd, format!("{k}: [x, y] numbers")));
+                let a = v
+                    .as_array()
+                    .filter(|a| a.len() == 2)
+                    .ok_or_else(|| bad(cmd, format!("{k}: [x, y]")))?;
+                let g = |i: usize| {
+                    a[i].as_f64()
+                        .ok_or_else(|| bad(cmd, format!("{k}: [x, y] numbers")))
+                };
                 Ok(Some([g(0)?, g(1)?]))
             }
         }
     };
     let mut typed = false;
-    for (k, slot) in [("red", &mut c.red), ("green", &mut c.green), ("blue", &mut c.blue), ("white", &mut c.white)] {
+    for (k, slot) in [
+        ("red", &mut c.red),
+        ("green", &mut c.green),
+        ("blue", &mut c.blue),
+        ("white", &mut c.white),
+    ] {
         if let Some(v) = pt(k)? {
             typed |= *slot != v;
             *slot = v;
@@ -399,9 +528,16 @@ fn custom_rgb(s: &mut Session, p: &Value) -> Result<Value> {
             c.icc_lut = Default::default();
         }
         Some(path) if path != c.icc || b_p(p, "reload") == Some(true) => {
-            let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
-            let mut from = CustomRgb::from_icc(&bytes, path).map_err(|e| bad(cmd, format!("{path}: {e}")))?;
-            if let Some(n) = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty() && *n != s.prefs.custom_rgb.name) {
+            let bytes = s
+                .services
+                .read_file(path)
+                .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+            let mut from =
+                CustomRgb::from_icc(&bytes, path).map_err(|e| bad(cmd, format!("{path}: {e}")))?;
+            if let Some(n) = str_p(p, "name")
+                .map(str::trim)
+                .filter(|n| !n.is_empty() && *n != s.prefs.custom_rgb.name)
+            {
                 from.name = n.to_string();
             }
             c = from;
@@ -414,9 +550,14 @@ fn custom_rgb(s: &mut Session, p: &Value) -> Result<Value> {
     s.save_prefs();
     if b_p(p, "apply") != Some(false) {
         let preserve = b_p(p, "preserveRgb").unwrap_or(false);
-        s.state.viewer.simulation = Simulation { profile: SimProfile::MyCustom, preserve_rgb: preserve };
+        s.state.viewer.simulation = Simulation {
+            profile: SimProfile::MyCustom,
+            preserve_rgb: preserve,
+        };
     }
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     let mut out = custom_rgb_json(&c);
     out["active"] = json!(s.state.viewer.simulation.profile == SimProfile::MyCustom);
     Ok(out)
@@ -427,22 +568,36 @@ fn custom_rgb(s: &mut Session, p: &Value) -> Result<Value> {
 fn split_locked(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let view = match str_p(p, "view") {
-        Some(v) => effectcraft_render::three_d::View3D::from_id(v).ok_or_else(|| bad("view.splitLockedViewer", format!("unknown view `{v}`")))?,
-        None => s.state.views3d.get(&cid).map(|v| v.current).unwrap_or_default(),
+        Some(v) => effectcraft_render::three_d::View3D::from_id(v)
+            .ok_or_else(|| bad("view.splitLockedViewer", format!("unknown view `{v}`")))?,
+        None => s
+            .state
+            .views3d
+            .get(&cid)
+            .map(|v| v.current)
+            .unwrap_or_default(),
     };
     s.state.locked_viewer = Some(LockedViewer { comp: cid, view });
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     Ok(json!({"comp": cid.0, "view": view.id()}))
 }
 
 fn close_locked(s: &mut Session, _: &Value) -> Result<Value> {
     let was = s.state.locked_viewer.take().is_some();
-    s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+    s.events.push(crate::Event::ProjectChanged {
+        revision: s.revision,
+    });
     Ok(json!({"closed": was}))
 }
 
 fn has_locked(s: &Session) -> std::result::Result<(), String> {
-    if s.state.locked_viewer.is_some() { Ok(()) } else { Err("no locked viewer".into()) }
+    if s.state.locked_viewer.is_some() {
+        Ok(())
+    } else {
+        Err("no locked viewer".into())
+    }
 }
 
 /// The viewer's colour settings and what they do.
@@ -461,7 +616,15 @@ fn display_color_state(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("view.snapping", "Snapping", ["View"], None, "{value?}", always, snapping),
+        cmd!(
+            "view.snapping",
+            "Snapping",
+            ["View"],
+            None,
+            "{value?}",
+            always,
+            snapping
+        ),
         cmd!(
             "view.snappingOptions",
             "Snapping Options",
@@ -471,7 +634,15 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             snapping_options
         ),
-        cmd!("view.displayColorManagement", "Use Display Color Management", ["View"], None, "{value?}", always, display_cm),
+        cmd!(
+            "view.displayColorManagement",
+            "Use Display Color Management",
+            ["View"],
+            None,
+            "{value?}",
+            always,
+            display_cm
+        ),
         cmd!(
             "view.simulateOutput",
             "Simulate Output",
@@ -490,22 +661,102 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             custom_rgb
         ),
-        cmd!("view.splitLockedViewer", "Split with New Locked Viewer", ["View"], None, "{comp?, view?: 3D view id}", has_comp, split_locked),
-        cmd!("view.closeLockedViewer", "Close Locked Viewer", [], None, "{}", has_locked, close_locked),
+        cmd!(
+            "view.splitLockedViewer",
+            "Split with New Locked Viewer",
+            ["View"],
+            None,
+            "{comp?, view?: 3D view id}",
+            has_comp,
+            split_locked
+        ),
+        cmd!(
+            "view.closeLockedViewer",
+            "Close Locked Viewer",
+            [],
+            None,
+            "{}",
+            has_locked,
+            close_locked
+        ),
         query!(
             "view.displayColor",
             "Viewer Color State",
             "{} → display colour management, output simulation, display profile, locked viewer",
             display_color_state
         ),
-        cmd!("view.channel", "Show Channel", [], None, "{channel: rgb|red|green|blue|alpha|rgbStraight, colorized?, toggle?}", always, channel),
-        cmd!("view.exposure", "Adjust Exposure", [], None, "{stops? | delta?}", always, exposure),
-        cmd!("view.resetExposure", "Reset Exposure", [], None, "{}", always, reset_exposure),
-        cmd!("view.takeSnapshot", "Take Snapshot", [], Some("Shift+F5"), "{comp?, scale?: 0.05..1}", has_comp, take_snapshot),
-        cmd!("view.showSnapshot", "Show Snapshot", [], None, "{value?}", has_snapshot, show_snapshot),
-        cmd!("view.fastPreviewMode", "Fast Previews", [], None, "{mode: off|adaptive|draft|fastDraft|wireframe}", always, fast_previews),
-        cmd!("view.moveGuide", "Move Guide", [], None, "{comp?, index, position (comp px), merge?}", has_comp, move_guide),
-        cmd!("view.removeGuide", "Remove Guide", [], None, "{comp?, index}", has_comp, remove_guide),
+        cmd!(
+            "view.channel",
+            "Show Channel",
+            [],
+            None,
+            "{channel: rgb|red|green|blue|alpha|rgbStraight, colorized?, toggle?}",
+            always,
+            channel
+        ),
+        cmd!(
+            "view.exposure",
+            "Adjust Exposure",
+            [],
+            None,
+            "{stops? | delta?}",
+            always,
+            exposure
+        ),
+        cmd!(
+            "view.resetExposure",
+            "Reset Exposure",
+            [],
+            None,
+            "{}",
+            always,
+            reset_exposure
+        ),
+        cmd!(
+            "view.takeSnapshot",
+            "Take Snapshot",
+            [],
+            Some("Shift+F5"),
+            "{comp?, scale?: 0.05..1}",
+            has_comp,
+            take_snapshot
+        ),
+        cmd!(
+            "view.showSnapshot",
+            "Show Snapshot",
+            [],
+            None,
+            "{value?}",
+            has_snapshot,
+            show_snapshot
+        ),
+        cmd!(
+            "view.fastPreviewMode",
+            "Fast Previews",
+            [],
+            None,
+            "{mode: off|adaptive|draft|fastDraft|wireframe}",
+            always,
+            fast_previews
+        ),
+        cmd!(
+            "view.moveGuide",
+            "Move Guide",
+            [],
+            None,
+            "{comp?, index, position (comp px), merge?}",
+            has_comp,
+            move_guide
+        ),
+        cmd!(
+            "view.removeGuide",
+            "Remove Guide",
+            [],
+            None,
+            "{comp?, index}",
+            has_comp,
+            remove_guide
+        ),
         cmd!(
             "shape.newPath",
             "Pen Tool (Shape Path)",

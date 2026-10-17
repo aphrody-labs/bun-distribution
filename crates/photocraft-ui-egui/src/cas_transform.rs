@@ -77,11 +77,15 @@ pub fn begin(app: &mut PhotocraftApp, ctx: &egui::Context) -> Result<Value, Stri
     if app.ui.transform.is_some() {
         return Err("Commit or cancel the transform first".into());
     }
-    if let Some(Err(why)) = photocraft_engine::commands::find(COMMAND).map(|c| (c.enabled)(&app.session)) {
+    if let Some(Err(why)) =
+        photocraft_engine::commands::find(COMMAND).map(|c| (c.enabled)(&app.session))
+    {
         return Err(why);
     }
     // The command's own checks and area (the selection's bounds, else the layer's content).
-    let region = ContentAwareScalePreview::new(&app.session, &json!({}), PROXY_SIDE).map_err(|e| e.to_string())?.region();
+    let region = ContentAwareScalePreview::new(&app.session, &json!({}), PROXY_SIDE)
+        .map_err(|e| e.to_string())?
+        .region();
     crate::transform_tool::begin_content_aware(app, ctx, region, Live::default())?;
     Ok(json!({"transform": app.ui.transform}))
 }
@@ -93,13 +97,22 @@ fn box_size(t: &TransformSession) -> [f64; 2] {
 }
 
 fn source_size(t: &TransformSession) -> [f64; 2] {
-    [(t.rect[2] - t.rect[0]).round().max(1.0), (t.rect[3] - t.rect[1]).round().max(1.0)]
+    [
+        (t.rect[2] - t.rect[0]).round().max(1.0),
+        (t.rect[3] - t.rect[1]).round().max(1.0),
+    ]
 }
 
 fn bounds(t: &TransformSession) -> (f64, f64, f64, f64) {
-    t.quad.iter().fold((f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY), |(x0, y0, x1, y1), q| {
-        (x0.min(q[0]), y0.min(q[1]), x1.max(q[0]), y1.max(q[1]))
-    })
+    t.quad.iter().fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(x0, y0, x1, y1), q| (x0.min(q[0]), y0.min(q[1]), x1.max(q[0]), y1.max(q[1])),
+    )
 }
 
 /// `edit.contentAwareScale`'s params for the box: its size and options, and with `place` its
@@ -123,7 +136,14 @@ pub(crate) fn params(t: &TransformSession, o: &ContentAwareOptions, place: bool)
 
 /// ↩: run the command for the box. An untouched box changes nothing and adds no step.
 pub(crate) fn commit(app: &mut PhotocraftApp, t: &TransformSession, o: &ContentAwareOptions) {
-    if t.quad == [[t.rect[0], t.rect[1]], [t.rect[2], t.rect[1]], [t.rect[2], t.rect[3]], [t.rect[0], t.rect[3]]] {
+    if t.quad
+        == [
+            [t.rect[0], t.rect[1]],
+            [t.rect[2], t.rect[1]],
+            [t.rect[2], t.rect[3]],
+            [t.rect[0], t.rect[3]],
+        ]
+    {
         return;
     }
     if let Err(e) = app.run(COMMAND, params(t, o, true)) {
@@ -135,24 +155,44 @@ pub(crate) fn commit(app: &mut PhotocraftApp, t: &TransformSession, o: &ContentA
 /// Once per frame while the box is open: take a finished preview, cancel one gone stale and start
 /// one for the box as it is now.
 pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(t) = app.ui.transform.as_ref() else { return };
-    let Some(o) = t.content_aware.as_ref() else { return };
+    let Some(t) = app.ui.transform.as_ref() else {
+        return;
+    };
+    let Some(o) = t.content_aware.as_ref() else {
+        return;
+    };
     let unscaled = box_size(t) == source_size(t);
     let want = params(t, o, false);
     let now = crate::gpu_canvas::now_ms();
-    let Some(live) = app.transform_preview.as_mut().and_then(|pv| pv.content_aware.as_mut()) else { return };
+    let Some(live) = app
+        .transform_preview
+        .as_mut()
+        .and_then(|pv| pv.content_aware.as_mut())
+    else {
+        return;
+    };
     if let Some(r) = &live.running {
         let finished = match r.rx.try_recv() {
             Ok(result) => Some(result),
             Err(TryRecvError::Empty) => None,
-            Err(TryRecvError::Disconnected) => Some(Err("Content-Aware Scale preview stopped".into())),
+            Err(TryRecvError::Disconnected) => {
+                Some(Err("Content-Aware Scale preview stopped".into()))
+            }
         };
         if let Some(result) = finished {
             let key = live.running.take().map(|r| r.key).unwrap_or_default();
             // A failed or cancelled preview keeps the last one; the commit reports real errors.
             if let Ok(image) = result {
                 live.serial += 1;
-                live.shown = Some((key, PreviewTextures::new(ctx, format!("content-aware-scale-{}", live.serial), image, [1.0, 1.0])));
+                live.shown = Some((
+                    key,
+                    PreviewTextures::new(
+                        ctx,
+                        format!("content-aware-scale-{}", live.serial),
+                        image,
+                        [1.0, 1.0],
+                    ),
+                ));
             }
         } else {
             if r.key != want && now - r.started_ms >= STALE_MS {
@@ -172,7 +212,13 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
             return;
         }
     };
-    let Some(live) = app.transform_preview.as_mut().and_then(|pv| pv.content_aware.as_mut()) else { return };
+    let Some(live) = app
+        .transform_preview
+        .as_mut()
+        .and_then(|pv| pv.content_aware.as_mut())
+    else {
+        return;
+    };
     let (tx, rx) = std::sync::mpsc::sync_channel(1);
     let job = JobCtx::new();
     let work = job.clone();
@@ -181,7 +227,13 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let surf = preview.run(&work).map_err(|e| e.to_string())?;
             let [w, h] = preview.size();
-            Ok(crate::transform_tex::read_surface(&surf, None, photocraft_geom::Rect::from_xywh(0, 0, w, h), usize::MAX).0)
+            Ok(crate::transform_tex::read_surface(
+                &surf,
+                None,
+                photocraft_geom::Rect::from_xywh(0, 0, w, h),
+                usize::MAX,
+            )
+            .0)
         }))
         .unwrap_or_else(|_| Err("Content-Aware Scale preview failed".into()));
         let _ = tx.send(result);
@@ -190,20 +242,29 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
     // No threads (the browser): the reduced copy is small enough to carve inline.
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let spawned = std::thread::Builder::new().name("content-aware-scale-preview".into()).spawn(compute);
+        let spawned = std::thread::Builder::new()
+            .name("content-aware-scale-preview".into())
+            .spawn(compute);
         if spawned.is_err() {
             return;
         }
     }
     #[cfg(target_arch = "wasm32")]
     compute();
-    live.running = Some(Running { key: want, rx, job, started_ms: now });
+    live.running = Some(Running {
+        key: want,
+        rx,
+        job,
+        started_ms: now,
+    });
     ctx.request_repaint();
 }
 
 /// The options bar while the box is open: X/Y, W/H, Amount, Protect and Protect Skin Tones.
 pub fn fields(app: &mut PhotocraftApp, ui: &mut egui::Ui, t: &TransformSession) {
-    let Some(o) = t.content_aware.clone() else { return };
+    let Some(o) = t.content_aware.clone() else {
+        return;
+    };
     let tk = crate::theme::Tokens::get(ui.ctx());
     let lbl = |ui: &mut egui::Ui, s: &str| {
         ui.label(egui::RichText::new(s).color(tk.text_dim).size(12.0));
@@ -215,10 +276,20 @@ pub fn fields(app: &mut PhotocraftApp, ui: &mut egui::Ui, t: &TransformSession) 
     crate::widgets::value_field(ui, &mut next.amount, 0.0..=100.0, "%", 60.0);
     crate::widgets::vline(ui, 22.0);
     lbl(ui, tl!("Protect:"));
-    let channels: Vec<String> = app.session.active().map(|st| st.doc.channels.iter().map(|c| c.name.clone()).collect()).unwrap_or_default();
+    let channels: Vec<String> = app
+        .session
+        .active()
+        .map(|st| st.doc.channels.iter().map(|c| c.name.clone()).collect())
+        .unwrap_or_default();
     let mut options: Vec<(Option<String>, &str)> = vec![(None, tl!("None"))];
     options.extend(channels.iter().map(|n| (Some(n.clone()), n.as_str())));
-    crate::widgets::dropdown(ui, "content-aware-scale-protect", &mut next.protect, &options, 120.0);
+    crate::widgets::dropdown(
+        ui,
+        "content-aware-scale-protect",
+        &mut next.protect,
+        &options,
+        120.0,
+    );
     crate::widgets::checkbox(ui, &mut next.protect_skin_tones, tl!("Protect skin tones"));
     if next != o
         && let Some(s) = app.ui.transform.as_mut()
@@ -234,32 +305,70 @@ mod tests {
 
     #[test]
     fn menu_opens_a_scale_box_and_enter_commits_one_step() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         let ctx = egui::Context::default();
-        app.run("file.new", json!({"width": 64, "height": 48})).unwrap();
+        app.run("file.new", json!({"width": 64, "height": 48}))
+            .unwrap();
         app.run("layer.new.layer", json!({})).unwrap();
-        app.run("select.rect", json!({"x": 8, "y": 8, "width": 40, "height": 24})).unwrap();
+        app.run(
+            "select.rect",
+            json!({"x": 8, "y": 8, "width": 40, "height": 24}),
+        )
+        .unwrap();
         app.run("edit.fill", json!({"color": "#c03020"})).unwrap();
         app.run("select.deselect", json!({})).unwrap();
         app.sync_views();
         let past = app.session.active().unwrap().history.past_len();
         // The menu opens the box, not a dialog.
         let r = crate::menus::invoke(&mut app, &ctx, COMMAND, json!({})).unwrap();
-        assert!(r.get("dialog").is_none() && app.ui.dialogs.is_empty(), "{r}");
+        assert!(
+            r.get("dialog").is_none() && app.ui.dialogs.is_empty(),
+            "{r}"
+        );
         let t = app.ui.transform.clone().unwrap();
         assert_eq!(t.rect, [8.0, 8.0, 48.0, 32.0]);
         assert!(t.content_aware.is_some());
         // Dragging outside the box doesn't rotate it; the right edge narrows it (⇧: that axis only).
-        let shift = egui::Modifiers { shift: true, ..Default::default() };
+        let shift = egui::Modifiers {
+            shift: true,
+            ..Default::default()
+        };
         for (from, to) in [([60.0, 40.0], [62.0, 10.0]), ([48.0, 20.0], [32.0, 20.0])] {
-            assert!(crate::transform_tool::pointer(&mut app, ToolEvent::Down { x: from[0], y: from[1], pressure: 1.0 }, shift));
-            crate::transform_tool::pointer(&mut app, ToolEvent::Move { x: to[0], y: to[1], pressure: 1.0 }, shift);
+            assert!(crate::transform_tool::pointer(
+                &mut app,
+                ToolEvent::Down {
+                    x: from[0],
+                    y: from[1],
+                    pressure: 1.0
+                },
+                shift
+            ));
+            crate::transform_tool::pointer(
+                &mut app,
+                ToolEvent::Move {
+                    x: to[0],
+                    y: to[1],
+                    pressure: 1.0,
+                },
+                shift,
+            );
             crate::transform_tool::pointer(&mut app, ToolEvent::Up { x: to[0], y: to[1] }, shift);
         }
-        assert_eq!(app.ui.transform.as_ref().unwrap().quad, [[8.0, 8.0], [32.0, 8.0], [32.0, 32.0], [8.0, 32.0]]);
+        assert_eq!(
+            app.ui.transform.as_ref().unwrap().quad,
+            [[8.0, 8.0], [32.0, 8.0], [32.0, 32.0], [8.0, 32.0]]
+        );
         // The live preview carves a reduced copy in the background.
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
-        while app.transform_preview.as_ref().and_then(|pv| pv.content_aware.as_ref()).is_none_or(|l| l.shown.is_none()) {
+        while app
+            .transform_preview
+            .as_ref()
+            .and_then(|pv| pv.content_aware.as_ref())
+            .is_none_or(|l| l.shown.is_none())
+        {
             assert!(std::time::Instant::now() < deadline, "no live preview");
             tick(&mut app, &ctx);
             std::thread::sleep(std::time::Duration::from_millis(2));
@@ -270,7 +379,16 @@ mod tests {
         let st = app.session.active().unwrap();
         assert_eq!(st.history.past_len(), past + 1);
         assert_eq!(st.history.undo_label(), Some("Content-Aware Scale"));
-        let b = st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap().content_bounds();
-        assert_eq!([b.x0, b.y0, b.width() as i32, b.height() as i32], [8, 8, 24, 24]);
+        let b = st
+            .doc
+            .layer(st.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .content_bounds();
+        assert_eq!(
+            [b.x0, b.y0, b.width() as i32, b.height() as i32],
+            [8, 8, 24, 24]
+        );
     }
 }

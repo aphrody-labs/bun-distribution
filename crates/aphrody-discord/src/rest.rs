@@ -84,14 +84,19 @@ impl DiscordClient {
         let mut attempts = 0;
         loop {
             attempts += 1;
-            let mut req = self.client.request(method.clone(), &url).headers(headers.clone());
+            let mut req = self
+                .client
+                .request(method.clone(), &url)
+                .headers(headers.clone());
 
             if let Some(ref json_val) = body {
                 req = req.json(json_val);
             }
 
-            let response =
-                req.send().await.with_context(|| format!("Failed to send request to {url}"))?;
+            let response = req
+                .send()
+                .await
+                .with_context(|| format!("Failed to send request to {url}"))?;
             let status = response.status();
 
             if status == StatusCode::TOO_MANY_REQUESTS {
@@ -129,19 +134,32 @@ impl DiscordClient {
 
     pub async fn get_me(&self) -> Result<User> {
         let res = self.request(Method::GET, "users/@me", None).await?;
-        let user = res.json::<User>().await.context("Failed to parse User JSON")?;
+        let user = res
+            .json::<User>()
+            .await
+            .context("Failed to parse User JSON")?;
         Ok(user)
     }
 
     pub async fn get_guild(&self, guild_id: &str) -> Result<Guild> {
-        let res = self.request(Method::GET, &format!("guilds/{guild_id}"), None).await?;
-        let guild = res.json::<Guild>().await.context("Failed to parse Guild JSON")?;
+        let res = self
+            .request(Method::GET, &format!("guilds/{guild_id}"), None)
+            .await?;
+        let guild = res
+            .json::<Guild>()
+            .await
+            .context("Failed to parse Guild JSON")?;
         Ok(guild)
     }
 
     pub async fn get_channel(&self, channel_id: &str) -> Result<Channel> {
-        let res = self.request(Method::GET, &format!("channels/{channel_id}"), None).await?;
-        let channel = res.json::<Channel>().await.context("Failed to parse Channel JSON")?;
+        let res = self
+            .request(Method::GET, &format!("channels/{channel_id}"), None)
+            .await?;
+        let channel = res
+            .json::<Channel>()
+            .await
+            .context("Failed to parse Channel JSON")?;
         Ok(channel)
     }
 
@@ -153,19 +171,37 @@ impl DiscordClient {
         };
         let body = serde_json::to_value(&payload)?;
         let res = self
-            .request(Method::POST, &format!("channels/{channel_id}/messages"), Some(body))
+            .request(
+                Method::POST,
+                &format!("channels/{channel_id}/messages"),
+                Some(body),
+            )
             .await?;
-        let msg = res.json::<DiscordMessage>().await.context("Failed to parse DiscordMessage")?;
+        let msg = res
+            .json::<DiscordMessage>()
+            .await
+            .context("Failed to parse DiscordMessage")?;
         Ok(msg)
     }
 
     pub async fn send_embed(&self, channel_id: &str, embed: Embed) -> Result<DiscordMessage> {
-        let payload = MessagePayload { content: None, embeds: vec![embed], allowed_mentions: None };
+        let payload = MessagePayload {
+            content: None,
+            embeds: vec![embed],
+            allowed_mentions: None,
+        };
         let body = serde_json::to_value(&payload)?;
         let res = self
-            .request(Method::POST, &format!("channels/{channel_id}/messages"), Some(body))
+            .request(
+                Method::POST,
+                &format!("channels/{channel_id}/messages"),
+                Some(body),
+            )
             .await?;
-        let msg = res.json::<DiscordMessage>().await.context("Failed to parse DiscordMessage")?;
+        let msg = res
+            .json::<DiscordMessage>()
+            .await
+            .context("Failed to parse DiscordMessage")?;
         Ok(msg)
     }
 
@@ -217,8 +253,12 @@ impl DiscordClient {
     }
 
     pub async fn delete_message(&self, channel_id: &str, message_id: &str) -> Result<()> {
-        self.request(Method::DELETE, &format!("channels/{channel_id}/messages/{message_id}"), None)
-            .await?;
+        self.request(
+            Method::DELETE,
+            &format!("channels/{channel_id}/messages/{message_id}"),
+            None,
+        )
+        .await?;
         Ok(())
     }
 

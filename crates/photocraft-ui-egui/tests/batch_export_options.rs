@@ -11,19 +11,30 @@ use std::sync::Arc;
 type Harness = egui_kittest::Harness<'static, PhotocraftApp>;
 
 fn harness() -> Harness {
-    let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1100.0, 760.0)).with_max_steps(64).wgpu().build_eframe(|cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.session.prefs.edit(|p| p.interface.language = "en".into());
-        if let Some(rs) = cc.wgpu_render_state.as_ref() {
-            app.set_wgpu(rs.clone());
-        }
-        app.run("file.new", json!({"width": 8, "height": 8, "background": "white"})).unwrap();
-        app.run("actions.record", json!({"name": "Invert"})).unwrap();
-        app.run("image.adjustments.invert", json!({})).unwrap();
-        app.run("actions.stop", json!({})).unwrap();
-        app
-    });
+    let mut h = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1100.0, 760.0))
+        .with_max_steps(64)
+        .wgpu()
+        .build_eframe(|cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+            app.session
+                .prefs
+                .edit(|p| p.interface.language = "en".into());
+            if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                app.set_wgpu(rs.clone());
+            }
+            app.run(
+                "file.new",
+                json!({"width": 8, "height": 8, "background": "white"}),
+            )
+            .unwrap();
+            app.run("actions.record", json!({"name": "Invert"}))
+                .unwrap();
+            app.run("image.adjustments.invert", json!({})).unwrap();
+            app.run("actions.stop", json!({})).unwrap();
+            app
+        });
     h.run_steps(4);
     h
 }
@@ -37,7 +48,10 @@ fn open(h: &mut Harness, command: &str) {
 fn evidence(h: &mut Harness, name: &str) {
     if let Some(dir) = std::env::var_os("PHOTOCRAFT_BATCH_EVIDENCE_DIR") {
         std::fs::create_dir_all(&dir).unwrap();
-        h.render().expect("offscreen UI render").save(Path::new(&dir).join(format!("{name}.png"))).unwrap();
+        h.render()
+            .expect("offscreen UI render")
+            .save(Path::new(&dir).join(format!("{name}.png")))
+            .unwrap();
     }
 }
 
@@ -57,13 +71,28 @@ fn open_format_choices(h: &mut Harness) {
 
 fn choose_webp(h: &mut Harness) {
     open_format_choices(h);
-    h.query_by_label("WebP").or_else(|| h.query_by_label("Webp")).expect("WebP output choice").click();
+    h.query_by_label("WebP")
+        .or_else(|| h.query_by_label("Webp"))
+        .expect("WebP output choice")
+        .click();
     h.run_steps(3);
 }
 
 fn replace_text(h: &mut Harness, value: &str) {
-    h.event(egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND });
-    h.event(egui::Event::Key { key: egui::Key::A, physical_key: None, pressed: false, repeat: false, modifiers: egui::Modifiers::COMMAND });
+    h.event(egui::Event::Key {
+        key: egui::Key::A,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::COMMAND,
+    });
+    h.event(egui::Event::Key {
+        key: egui::Key::A,
+        physical_key: None,
+        pressed: false,
+        repeat: false,
+        modifiers: egui::Modifiers::COMMAND,
+    });
     h.event(egui::Event::Text(value.into()));
     h.run_steps(3);
 }
@@ -105,7 +134,12 @@ fn batch_menu_offers_webp() {
     open(&mut h, "file.automate.batch");
     open_format_choices(&mut h);
     evidence(&mut h, "batch-formats");
-    assert!(h.query_by_label("WebP").or_else(|| h.query_by_label("Webp")).is_some(), "Batch must offer the supported WebP output format");
+    assert!(
+        h.query_by_label("WebP")
+            .or_else(|| h.query_by_label("Webp"))
+            .is_some(),
+        "Batch must offer the supported WebP output format"
+    );
 }
 
 #[test]
@@ -114,7 +148,10 @@ fn batch_menu_offers_quality() {
     let mut h = harness();
     open(&mut h, "file.automate.batch");
     evidence(&mut h, "batch-quality");
-    assert!(h.query_by_label("Quality").is_some(), "Batch must expose its supported output quality");
+    assert!(
+        h.query_by_label("Quality").is_some(),
+        "Batch must expose its supported output quality"
+    );
 }
 
 #[test]
@@ -124,15 +161,26 @@ fn image_processor_menu_offers_webp() {
     open(&mut h, "file.scripts.imageProcessor");
     open_format_choices(&mut h);
     evidence(&mut h, "image-processor-formats");
-    assert!(h.query_by_label("WebP").or_else(|| h.query_by_label("Webp")).is_some(), "Image Processor must offer the supported WebP output format");
+    assert!(
+        h.query_by_label("WebP")
+            .or_else(|| h.query_by_label("Webp"))
+            .is_some(),
+        "Image Processor must offer the supported WebP output format"
+    );
 }
 
 struct Scratch(PathBuf);
 
 impl Scratch {
     fn new() -> Self {
-        let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let path = std::env::temp_dir().join(format!("photocraft-batch-options-{}-{now}", std::process::id()));
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let path = std::env::temp_dir().join(format!(
+            "photocraft-batch-options-{}-{now}",
+            std::process::id()
+        ));
         std::fs::create_dir_all(&path).unwrap();
         Self(path)
     }
@@ -148,7 +196,11 @@ fn pattern() -> Image {
     let mut data = Vec::new();
     for y in 0..48u32 {
         for x in 0..64u32 {
-            data.extend([(x * 13 + y * 3) as u8, (y * 17 + x * 5) as u8, ((x ^ y) * 11) as u8]);
+            data.extend([
+                (x * 13 + y * 3) as u8,
+                (y * 17 + x * 5) as u8,
+                ((x ^ y) * 11) as u8,
+            ]);
         }
     }
     Image::from_u8(64, 48, ChannelLayout::Rgb, data).unwrap()
@@ -159,16 +211,28 @@ fn existing_engine_batch_and_image_processor_support_webp_quality() {
     let dir = Scratch::new();
     let input = dir.0.join("owned-pattern.png");
     let source = pattern();
-    std::fs::write(&input, photocraft_codecs::encode(&source, Format::Png, &EncodeOptions::default()).unwrap()).unwrap();
+    std::fs::write(
+        &input,
+        photocraft_codecs::encode(&source, Format::Png, &EncodeOptions::default()).unwrap(),
+    )
+    .unwrap();
     let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-    app.run("file.new", json!({"width": 8, "height": 8})).unwrap();
+    app.run("file.new", json!({"width": 8, "height": 8}))
+        .unwrap();
     let doc = app.session.active().unwrap().doc.clone();
     let revision = app.session.active().unwrap().revision;
     let history = app.session.active().unwrap().history.entries();
     let prefs = serde_json::to_value(app.session.prefs()).unwrap();
 
-    for (command, prefix) in [("file.automate.batch", "batch"), ("file.scripts.imageProcessor", "processor")] {
-        let expected: Vec<u8> = source.data().iter().map(|v| if prefix == "batch" { 255 - v } else { *v }).collect();
+    for (command, prefix) in [
+        ("file.automate.batch", "batch"),
+        ("file.scripts.imageProcessor", "processor"),
+    ] {
+        let expected: Vec<u8> = source
+            .data()
+            .iter()
+            .map(|v| if prefix == "batch" { 255 - v } else { *v })
+            .collect();
         let mut outputs = Vec::new();
         for quality in [Value::Null, json!(0), json!(12)] {
             let out = dir.0.join(format!("{prefix}-{quality}"));
@@ -184,15 +248,28 @@ fn existing_engine_batch_and_image_processor_support_webp_quality() {
             assert_eq!(decoded.dimensions(), (64, 48));
             assert_eq!(decoded.layout(), ChannelLayout::Rgb);
             if quality.is_null() && prefix == "batch" {
-                assert_eq!(decoded.data(), expected, "default Batch WebP is lossless, and the action was applied");
+                assert_eq!(
+                    decoded.data(),
+                    expected,
+                    "default Batch WebP is lossless, and the action was applied"
+                );
             }
             outputs.push(bytes);
         }
-        assert_ne!(outputs[1], outputs[2], "{command}: low and high quality must affect the encoder");
-        assert!(outputs[1].len() < outputs[2].len(), "{command}: this synthetic pattern grows at higher quality");
+        assert_ne!(
+            outputs[1], outputs[2],
+            "{command}: low and high quality must affect the encoder"
+        );
+        assert!(
+            outputs[1].len() < outputs[2].len(),
+            "{command}: this synthetic pattern grows at higher quality"
+        );
     }
     let active = app.session.active().unwrap();
-    assert!(Arc::ptr_eq(&active.doc, &doc), "batch commands leave the active document untouched");
+    assert!(
+        Arc::ptr_eq(&active.doc, &doc),
+        "batch commands leave the active document untouched"
+    );
     assert_eq!(active.revision, revision);
     assert_eq!(active.history.entries(), history);
     assert_eq!(serde_json::to_value(app.session.prefs()).unwrap(), prefs);
@@ -203,24 +280,40 @@ fn batch_custom_quality_is_bounded_dialog_local_and_reversible() {
     let _gpu = photocraft_testkit::gpu_lock();
     let mut h = harness();
     open(&mut h, "file.automate.batch");
-    assert!(h.state().ui.dialogs.last().unwrap().fields["quality"].is_null(), "default command quality remains unset");
+    assert!(
+        h.state().ui.dialogs.last().unwrap().fields["quality"].is_null(),
+        "default command quality remains unset"
+    );
     h.get_by_label("Custom").click();
     h.run_steps(3);
     edit_quality(&mut h, "-5");
-    assert_eq!(h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(), Some(0.0));
+    assert_eq!(
+        h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(),
+        Some(0.0)
+    );
     edit_quality(&mut h, "99");
-    assert_eq!(h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(), Some(12.0));
+    assert_eq!(
+        h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(),
+        Some(12.0)
+    );
     edit_quality(&mut h, "5");
     h.get_by_label("Custom").click();
     h.run_steps(3);
     assert!(h.state().ui.dialogs.last().unwrap().fields["quality"].is_null());
     h.get_by_label("Custom").click();
     h.run_steps(3);
-    assert_eq!(h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(), Some(5.0), "switching defaults does not lose the dialog's custom value");
+    assert_eq!(
+        h.state().ui.dialogs.last().unwrap().fields["quality"].as_f64(),
+        Some(5.0),
+        "switching defaults does not lose the dialog's custom value"
+    );
     h.get_by_label("Cancel").click();
     h.run_steps(3);
     open(&mut h, "file.automate.batch");
-    assert!(h.state().ui.dialogs.last().unwrap().fields["quality"].is_null(), "reopening returns to the existing default");
+    assert!(
+        h.state().ui.dialogs.last().unwrap().fields["quality"].is_null(),
+        "reopening returns to the existing default"
+    );
 }
 
 #[test]
@@ -230,14 +323,21 @@ fn batch_and_processor_real_controls_write_the_chosen_webp_quality() {
     let input = dir.0.join("input");
     std::fs::create_dir(&input).unwrap();
     let original = pattern();
-    std::fs::write(input.join("owned-pattern.png"), photocraft_codecs::encode(&original, Format::Png, &EncodeOptions::default()).unwrap()).unwrap();
+    std::fs::write(
+        input.join("owned-pattern.png"),
+        photocraft_codecs::encode(&original, Format::Png, &EncodeOptions::default()).unwrap(),
+    )
+    .unwrap();
     let mut h = harness();
     let doc = h.state().session.active().unwrap().doc.clone();
     let revision = h.state().session.active().unwrap().revision;
     let history = h.state().session.active().unwrap().history.entries();
     let prefs = serde_json::to_value(h.state().session.prefs()).unwrap();
     let actions = serde_json::to_value(&h.state().session.actions.list).unwrap();
-    for (command, prefix) in [("file.automate.batch", "batch"), ("file.scripts.imageProcessor", "processor")] {
+    for (command, prefix) in [
+        ("file.automate.batch", "batch"),
+        ("file.scripts.imageProcessor", "processor"),
+    ] {
         let mut outputs = Vec::new();
         for quality in [0, 12] {
             let output = dir.0.join(format!("{prefix}-{quality}"));
@@ -261,24 +361,44 @@ fn batch_and_processor_real_controls_write_the_chosen_webp_quality() {
             h.get_by_label("OK").click();
             h.run_steps(5);
             assert!(h.state().ui.dialogs.is_empty());
-            let bytes = std::fs::read(output.join("owned-pattern.webp")).expect("the actual dialog confirmation writes the selected WebP");
+            let bytes = std::fs::read(output.join("owned-pattern.webp"))
+                .expect("the actual dialog confirmation writes the selected WebP");
             let decoded = photocraft_codecs::decode_as(Format::WebP, &bytes).unwrap();
             assert_eq!(decoded.dimensions(), (64, 48));
             assert_eq!(decoded.layout(), ChannelLayout::Rgb);
             let (_, params) = h.state().session.journal.last().unwrap();
             assert_eq!(params["format"], json!("webp"));
             assert_eq!(params["quality"].as_f64(), Some(f64::from(quality)));
-            assert!(params.as_object().unwrap().keys().all(|k| !k.starts_with("__")), "private shell values never become command params");
+            assert!(
+                params
+                    .as_object()
+                    .unwrap()
+                    .keys()
+                    .all(|k| !k.starts_with("__")),
+                "private shell values never become command params"
+            );
             outputs.push(bytes);
         }
-        assert_ne!(outputs[0], outputs[1], "{command}: actual chosen quality reaches the encoder");
+        assert_ne!(
+            outputs[0], outputs[1],
+            "{command}: actual chosen quality reaches the encoder"
+        );
         assert!(outputs[0].len() < outputs[1].len());
     }
     let active = h.state().session.active().unwrap();
     assert!(Arc::ptr_eq(&active.doc, &doc));
-    assert_eq!((active.revision, active.history.entries()), (revision, history));
-    assert_eq!(serde_json::to_value(h.state().session.prefs()).unwrap(), prefs);
-    assert_eq!(serde_json::to_value(&h.state().session.actions.list).unwrap(), actions);
+    assert_eq!(
+        (active.revision, active.history.entries()),
+        (revision, history)
+    );
+    assert_eq!(
+        serde_json::to_value(h.state().session.prefs()).unwrap(),
+        prefs
+    );
+    assert_eq!(
+        serde_json::to_value(&h.state().session.actions.list).unwrap(),
+        actions
+    );
 }
 
 #[test]
@@ -288,7 +408,11 @@ fn batch_default_quality_keeps_lossless_webp_and_existing_jpeg_bytes() {
     let input = dir.0.join("input");
     std::fs::create_dir(&input).unwrap();
     let original = pattern();
-    std::fs::write(input.join("owned-pattern.png"), photocraft_codecs::encode(&original, Format::Png, &EncodeOptions::default()).unwrap()).unwrap();
+    std::fs::write(
+        input.join("owned-pattern.png"),
+        photocraft_codecs::encode(&original, Format::Png, &EncodeOptions::default()).unwrap(),
+    )
+    .unwrap();
     let mut h = harness();
     for format in ["webp", "jpg"] {
         let output = dir.0.join(format!("ui-default-{format}"));
@@ -321,7 +445,11 @@ fn batch_default_quality_keeps_lossless_webp_and_existing_jpeg_bytes() {
         if format == "webp" {
             let decoded = photocraft_codecs::decode_as(Format::WebP, &result).unwrap();
             let expected: Vec<u8> = original.data().iter().map(|v| 255 - v).collect();
-            assert_eq!(decoded.data(), expected, "default WebP remains lossless after the recorded action");
+            assert_eq!(
+                decoded.data(),
+                expected,
+                "default WebP remains lossless after the recorded action"
+            );
         }
     }
 }

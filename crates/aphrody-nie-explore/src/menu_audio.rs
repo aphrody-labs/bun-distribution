@@ -46,8 +46,9 @@ pub struct StartupAudio {
 /// Decode metadata only; waveform banks are not loaded or decoded during catalogue creation.
 /// Missing, duplicate or unresolvable title cues fail instead of selecting a different sound.
 pub fn from_banks(title_acb: &[u8], system_acb: &[u8]) -> Result<StartupAudio, String> {
-    let mut candidates =
-        bank_cues(TITLE_BANK, title_acb)?.into_iter().filter(|cue| cue.name == TITLE_CUE);
+    let mut candidates = bank_cues(TITLE_BANK, title_acb)?
+        .into_iter()
+        .filter(|cue| cue.name == TITLE_CUE);
     let title = candidates.next().ok_or("Native title cue missing")?;
     if candidates.next().is_some() || title.awb_id.is_none() {
         return Err("Native title cue is ambiguous or has no resolved waveform".into());
@@ -107,8 +108,9 @@ pub fn add_object_commands(
 #[cfg(not(target_arch = "wasm32"))]
 pub fn startup(vfs: &aphrody_nie_formats::vfs::Vfs) -> Result<StartupAudio, String> {
     let read = |path: &str| {
-        let entry =
-            vfs.find(path).ok_or_else(|| format!("Startup audio bank unavailable: {path}"))?;
+        let entry = vfs
+            .find(path)
+            .ok_or_else(|| format!("Startup audio bank unavailable: {path}"))?;
         if u64::from(entry.file_size) > MAX_BANK_BYTES as u64 {
             return Err(format!("Startup audio bank exceeds size limit: {path}"));
         }
@@ -136,7 +138,10 @@ pub fn startup(vfs: &aphrody_nie_formats::vfs::Vfs) -> Result<StartupAudio, Stri
             if cue.bank == bank
                 && !cue.streaming
                 && let Some(id) = cue.awb_id
-                && embedded.as_ref().and_then(|awb| awb.index_of_id(id)).is_none()
+                && embedded
+                    .as_ref()
+                    .and_then(|awb| awb.index_of_id(id))
+                    .is_none()
             {
                 return Err(format!("Native embedded waveform unavailable: {bank} {id}"));
             }
@@ -149,7 +154,10 @@ pub fn startup(vfs: &aphrody_nie_formats::vfs::Vfs) -> Result<StartupAudio, Stri
             && cue.streaming
             && (vfs.find(&cue.waveform_bank).is_none() || !vfs.is_readable(&cue.waveform_bank))
         {
-            return Err(format!("Native waveform bank unavailable: {}", cue.waveform_bank));
+            return Err(format!(
+                "Native waveform bank unavailable: {}",
+                cue.waveform_bank
+            ));
         }
     }
     for path in COMMAND_OBJECTS {
@@ -163,7 +171,10 @@ pub fn startup(vfs: &aphrody_nie_formats::vfs::Vfs) -> Result<StartupAudio, Stri
                 .map_err(|error| error.to_string())?
                 .embedded_awb
         };
-        let id = manifest.title.awb_id.ok_or("Native title waveform is unresolved")?;
+        let id = manifest
+            .title
+            .awb_id
+            .ok_or("Native title waveform is unresolved")?;
         manifest.title.loop_points = crate::native_audio::cue_loop_points(&waveform, id)?;
         if manifest.title.loop_points.is_none() {
             manifest.unresolved.push(

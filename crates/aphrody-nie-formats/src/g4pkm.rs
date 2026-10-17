@@ -178,8 +178,9 @@ impl G4pkmLayout {
 ///   n'est trouvé dans le container.
 pub fn parse(g4pkm_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
     validate_g4pk_magic(g4pkm_data)?;
-    let g4sk = extract_sub_file(g4pkm_data, MAGIC_G4SK)
-        .ok_or(FormatError::Corrupt("g4pkm : aucun sous-fichier G4SK dans le container"))?;
+    let g4sk = extract_sub_file(g4pkm_data, MAGIC_G4SK).ok_or(FormatError::Corrupt(
+        "g4pkm : aucun sous-fichier G4SK dans le container",
+    ))?;
     parse_g4sk(g4sk)
 }
 
@@ -192,7 +193,10 @@ pub fn parse(g4pkm_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
 /// - [`FormatError::Corrupt`] si la structure interne est invalide.
 pub fn parse_g4sk(g4sk_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
     if g4sk_data.len() < 0x40 {
-        return Err(FormatError::TooShort { got: g4sk_data.len(), need: 0x40 });
+        return Err(FormatError::TooShort {
+            got: g4sk_data.len(),
+            need: 0x40,
+        });
     }
     if read_u32(g4sk_data, 0)? != MAGIC_G4SK {
         return Err(FormatError::BadMagic { format: "G4SK" });
@@ -200,7 +204,10 @@ pub fn parse_g4sk(g4sk_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
 
     let bone_count = read_u16(g4sk_data, 0x20)? as usize;
     if bone_count == 0 {
-        return Ok(G4pkmLayout { bones: Vec::new(), world_pose_by_name: BTreeMap::new() });
+        return Ok(G4pkmLayout {
+            bones: Vec::new(),
+            world_pose_by_name: BTreeMap::new(),
+        });
     }
 
     // Offsets des sections : champ u16 @ field_pos → absolu = 0x40 + raw * 4.
@@ -216,7 +223,9 @@ pub fn parse_g4sk(g4sk_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
     let mut world_pose_by_name = BTreeMap::new();
     for i in 0..bone_count {
         // Premier bone en cas de doublon de nom (rare).
-        world_pose_by_name.entry(names[i].clone()).or_insert(world_poses[i]);
+        world_pose_by_name
+            .entry(names[i].clone())
+            .or_insert(world_poses[i]);
         bones.push(G4pkmBone {
             index: i,
             name: names[i].clone(),
@@ -226,7 +235,10 @@ pub fn parse_g4sk(g4sk_data: &[u8]) -> Result<G4pkmLayout, FormatError> {
         });
     }
 
-    Ok(G4pkmLayout { bones, world_pose_by_name })
+    Ok(G4pkmLayout {
+        bones,
+        world_pose_by_name,
+    })
 }
 
 /// Extrait le sous-fichier **G4MD** (géométrie + matériaux) d'un container G4PKM, s'il existe.
@@ -247,7 +259,10 @@ pub fn extract_g4md(g4pkm_data: &[u8]) -> Option<&[u8]> {
 
 fn validate_g4pk_magic(data: &[u8]) -> Result<(), FormatError> {
     if data.len() < G4PK_HEADER_SIZE {
-        return Err(FormatError::TooShort { got: data.len(), need: G4PK_HEADER_SIZE });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: G4PK_HEADER_SIZE,
+        });
     }
     if read_u32(data, 0)? != MAGIC_G4PK {
         return Err(FormatError::BadMagic { format: "G4PK" });
@@ -278,10 +293,16 @@ fn extract_sub_file(pk_data: &[u8], target_magic: u32) -> Option<&[u8]> {
 
     for i in 0..fc {
         let raw_off = i32::from_le_bytes(
-            pk_data.get(offset_table + i * 4..offset_table + i * 4 + 4)?.try_into().ok()?,
+            pk_data
+                .get(offset_table + i * 4..offset_table + i * 4 + 4)?
+                .try_into()
+                .ok()?,
         );
         let sz = i32::from_le_bytes(
-            pk_data.get(size_table + i * 4..size_table + i * 4 + 4)?.try_into().ok()?,
+            pk_data
+                .get(size_table + i * 4..size_table + i * 4 + 4)?
+                .try_into()
+                .ok()?,
         );
 
         if raw_off < 0 || sz <= 0 {
@@ -355,9 +376,13 @@ fn read_parent_indices(sk: &[u8], table_offset: usize, bone_count: usize) -> Vec
             None => {
                 parents.push(-1);
                 continue;
-            },
+            }
         };
-        let p = if raw >= 0 && (raw as usize) < bone_count { raw as i32 } else { -1 };
+        let p = if raw >= 0 && (raw as usize) < bone_count {
+            raw as i32
+        } else {
+            -1
+        };
         parents.push(p);
     }
     parents
@@ -430,13 +455,20 @@ fn read_local_bind_poses(sk: &[u8], bone_count: usize) -> Result<Vec<Transform2D
 /// bones the way a state's clip leaves them — so the world column cannot keep describing the
 /// bind pose it was computed from.
 pub fn recompose_world_poses(layout: &mut G4pkmLayout) {
-    let local: Vec<Transform2D> = layout.bones.iter().map(|bone| bone.local_bind_pose).collect();
+    let local: Vec<Transform2D> = layout
+        .bones
+        .iter()
+        .map(|bone| bone.local_bind_pose)
+        .collect();
     let parents: Vec<i32> = layout.bones.iter().map(|bone| bone.parent_index).collect();
     let world = compute_world_poses(&local, &parents);
     layout.world_pose_by_name.clear();
     for (bone, pose) in layout.bones.iter_mut().zip(world) {
         bone.world_bind_pose = pose;
-        layout.world_pose_by_name.entry(bone.name.clone()).or_insert(pose);
+        layout
+            .world_pose_by_name
+            .entry(bone.name.clone())
+            .or_insert(pose);
     }
 }
 
@@ -591,7 +623,10 @@ mod tests {
 
     #[test]
     fn trop_court_g4pkm_retourne_err() {
-        assert!(parse(&[0u8; 4]).is_err(), "tampon < 0x40 doit retourner Err");
+        assert!(
+            parse(&[0u8; 4]).is_err(),
+            "tampon < 0x40 doit retourner Err"
+        );
     }
 
     #[test]
@@ -601,12 +636,18 @@ mod tests {
         data[1] = b'X';
         data[2] = b'X';
         data[3] = b'X';
-        assert!(parse_g4sk(&data).is_err(), "magic G4SK invalide doit retourner Err");
+        assert!(
+            parse_g4sk(&data).is_err(),
+            "magic G4SK invalide doit retourner Err"
+        );
     }
 
     #[test]
     fn trop_court_g4sk_retourne_err() {
-        assert!(parse_g4sk(&[0u8; 16]).is_err(), "tampon < 0x40 doit retourner Err");
+        assert!(
+            parse_g4sk(&[0u8; 16]).is_err(),
+            "tampon < 0x40 doit retourner Err"
+        );
     }
 
     #[test]
@@ -619,7 +660,10 @@ mod tests {
     #[test]
     fn bord_droit_x960_mappe_en_px1280() {
         // x=960 = bord droit 1920 (depuis centre).
-        let t = Transform2D { x: 960.0, ..Transform2D::ZERO };
+        let t = Transform2D {
+            x: 960.0,
+            ..Transform2D::ZERO
+        };
         let (px, _) = t.to_css_1280x720();
         assert!((px - 1280.0).abs() < 0.01, "px attendu 1280, obtenu {px}");
     }
@@ -627,7 +671,10 @@ mod tests {
     #[test]
     fn bord_haut_y540_mappe_en_py0() {
         // y=540 = bord haut 1080 (depuis centre, Y haut positif).
-        let t = Transform2D { y: 540.0, ..Transform2D::ZERO };
+        let t = Transform2D {
+            y: 540.0,
+            ..Transform2D::ZERO
+        };
         let (_, py) = t.to_css_1280x720();
         assert!((py - 0.0).abs() < 0.01, "py attendu 0, obtenu {py}");
     }
@@ -635,28 +682,44 @@ mod tests {
     #[test]
     fn bord_bas_y_neg540_mappe_en_py720() {
         // y=-540 = bord bas 1080 (depuis centre, Y bas négatif).
-        let t = Transform2D { y: -540.0, ..Transform2D::ZERO };
+        let t = Transform2D {
+            y: -540.0,
+            ..Transform2D::ZERO
+        };
         let (_, py) = t.to_css_1280x720();
         assert!((py - 720.0).abs() < 0.01, "py attendu 720, obtenu {py}");
     }
 
     #[test]
     fn hors_ecran_true_quand_x_depasse_960() {
-        let t = Transform2D { x: 1873.0, y: -39.0, ..Transform2D::ZERO };
+        let t = Transform2D {
+            x: 1873.0,
+            y: -39.0,
+            ..Transform2D::ZERO
+        };
         assert!(t.is_off_screen_1920(), "1873 > 960, doit être hors-écran");
     }
 
     #[test]
     fn hors_ecran_false_quand_dans_zone_visible() {
-        let t = Transform2D { x: -40.0, y: 40.0, ..Transform2D::ZERO };
-        assert!(!t.is_off_screen_1920(), "(-40, 40) est dans le canvas 1920×1080");
+        let t = Transform2D {
+            x: -40.0,
+            y: 40.0,
+            ..Transform2D::ZERO
+        };
+        assert!(
+            !t.is_off_screen_1920(),
+            "(-40, 40) est dans le canvas 1920×1080"
+        );
     }
 
     // ── Tests golden sur fichiers réels (VFS) ─────────────────────────────────
 
     /// Résout le premier chemin VFS dont le basename se termine par `suffix`.
     fn find_vfs_path(vfs: &crate::vfs::Vfs, suffix: &str) -> Option<std::string::String> {
-        vfs.iter().find(|(p, _)| p.ends_with(suffix)).map(|(p, _)| p.to_string())
+        vfs.iter()
+            .find(|(p, _)| p.ends_with(suffix))
+            .map(|(p, _)| p.to_string())
     }
 
     #[test]
@@ -664,7 +727,9 @@ mod tests {
         use crate::vfs::Vfs;
         use std::path::Path;
 
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = Path::new(&dir).join("data");
 
         let mut vfs = Vfs::new();
@@ -713,7 +778,7 @@ mod tests {
                     layout.bones.iter().any(|b| b.name.contains("pos_base")),
                     "option02_02 : aucun bone ne contient 'pos_base'"
                 );
-            },
+            }
         }
 
         // ── win00_04.g4pkm : 5 bones, curseur à (-40, 40) de 80×80 ────────────
@@ -725,7 +790,9 @@ mod tests {
                 eprintln!("win00_04 : {} bones", layout.bone_count());
                 assert_eq!(layout.bone_count(), 5, "win00_04 : bone_count attendu 5");
 
-                let c = layout.world_pose("_cursor01").expect("win00_04 : _cursor01 absent");
+                let c = layout
+                    .world_pose("_cursor01")
+                    .expect("win00_04 : _cursor01 absent");
                 eprintln!(
                     "win00_04 _cursor01 : X={} Y={} ScaleX={} ScaleY={}",
                     c.x, c.y, c.scale_x, c.scale_y
@@ -746,13 +813,22 @@ mod tests {
 
                 // Projection CSS : 640 − 40·(2/3) ≈ 613 ; 360 − 40·(2/3) ≈ 333.
                 let (px, py) = c.to_css_1280x720();
-                assert!((600.0..=625.0).contains(&px), "_cursor01 px hors [600,625] : {px}");
-                assert!((320.0..=345.0).contains(&py), "_cursor01 py hors [320,345] : {py}");
+                assert!(
+                    (600.0..=625.0).contains(&px),
+                    "_cursor01 px hors [600,625] : {px}"
+                );
+                assert!(
+                    (320.0..=345.0).contains(&py),
+                    "_cursor01 py hors [320,345] : {py}"
+                );
 
                 // Hiérarchie : racine `win00`, puis `win00_04_output` accroché dessus.
                 assert_eq!(layout.bones[0].parent_index, -1, "bone 0 = racine");
-                assert_eq!(layout.bones[1].parent_index, 0, "bone 1 accroché à la racine");
-            },
+                assert_eq!(
+                    layout.bones[1].parent_index, 0,
+                    "bone 1 accroché à la racine"
+                );
+            }
         }
 
         // ── title00_09.g4pkm : 20 bones nommés, `_pos_scl_base01` hors écran ──
@@ -762,7 +838,11 @@ mod tests {
                 let data = vfs.read(&path).expect("lecture title00_09.g4pkm");
                 let layout = parse(&data).expect("parse title00_09.g4pkm");
                 eprintln!("title00_09 : {} bones", layout.bone_count());
-                assert_eq!(layout.bone_count(), 20, "title00_09 : bone_count attendu 20");
+                assert_eq!(
+                    layout.bone_count(),
+                    20,
+                    "title00_09 : bone_count attendu 20"
+                );
 
                 // Les 20 noms, dans l'ordre du fichier. `G4pkmLayoutTests.cs` n'en assérait que
                 // neuf ; la table de noms en contient vingt, et c'est elle la vérité terrain.
@@ -808,25 +888,56 @@ mod tests {
                 assert!(racine.world_bind_pose.y.abs() < 1.0, "title00 Y≈0");
 
                 // `_pos_scl_base01` : hors écran à droite, mis à l'échelle 0.65 × 0.9.
-                let p = layout.world_pose("_pos_scl_base01").expect("_pos_scl_base01 absent");
+                let p = layout
+                    .world_pose("_pos_scl_base01")
+                    .expect("_pos_scl_base01 absent");
                 eprintln!(
                     "title00_09 _pos_scl_base01 : X={} Y={} ScaleX={} ScaleY={}",
                     p.x, p.y, p.scale_x, p.scale_y
                 );
-                assert!((p.x - 1873.0).abs() < 1.0, "_pos_scl_base01 X≈1873, obtenu {}", p.x);
-                assert!((p.y - -39.0).abs() < 1.0, "_pos_scl_base01 Y≈-39, obtenu {}", p.y);
-                assert!(p.is_off_screen_1920(), "_pos_scl_base01 est hors du canvas 1920×1080");
-                assert!((0.6..=0.7).contains(&p.scale_x), "ScaleX≈0.65, obtenu {}", p.scale_x);
-                assert!((0.85..=0.95).contains(&p.scale_y), "ScaleY≈0.9, obtenu {}", p.scale_y);
+                assert!(
+                    (p.x - 1873.0).abs() < 1.0,
+                    "_pos_scl_base01 X≈1873, obtenu {}",
+                    p.x
+                );
+                assert!(
+                    (p.y - -39.0).abs() < 1.0,
+                    "_pos_scl_base01 Y≈-39, obtenu {}",
+                    p.y
+                );
+                assert!(
+                    p.is_off_screen_1920(),
+                    "_pos_scl_base01 est hors du canvas 1920×1080"
+                );
+                assert!(
+                    (0.6..=0.7).contains(&p.scale_x),
+                    "ScaleX≈0.65, obtenu {}",
+                    p.scale_x
+                );
+                assert!(
+                    (0.85..=0.95).contains(&p.scale_y),
+                    "ScaleY≈0.9, obtenu {}",
+                    p.scale_y
+                );
 
                 // `_gtxt_ver01` hérite de ces échelles : 0.65×104 ≈ 67.6 et 0.9×32.4 ≈ 29.2.
-                let g = layout.world_pose("_gtxt_ver01").expect("_gtxt_ver01 absent");
-                assert!((50.0..=90.0).contains(&g.scale_x), "_gtxt_ver01 ScaleX {}", g.scale_x);
-                assert!((20.0..=45.0).contains(&g.scale_y), "_gtxt_ver01 ScaleY {}", g.scale_y);
+                let g = layout
+                    .world_pose("_gtxt_ver01")
+                    .expect("_gtxt_ver01 absent");
+                assert!(
+                    (50.0..=90.0).contains(&g.scale_x),
+                    "_gtxt_ver01 ScaleX {}",
+                    g.scale_x
+                );
+                assert!(
+                    (20.0..=45.0).contains(&g.scale_y),
+                    "_gtxt_ver01 ScaleY {}",
+                    g.scale_y
+                );
 
                 // Un nom absent ne doit pas être inventé.
                 assert!(layout.world_pose("_does_not_exist_bone_xyz").is_none());
-            },
+            }
         }
     }
 }

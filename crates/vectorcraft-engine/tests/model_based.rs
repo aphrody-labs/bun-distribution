@@ -6,7 +6,9 @@
 use proptest::prelude::*;
 use serde_json::json;
 use vectorcraft_testkit::fixtures::{self, exec};
-use vectorcraft_testkit::invariants::{self, check_all, check_session, doc_json, first_diff, redo_all, undo_all};
+use vectorcraft_testkit::invariants::{
+    self, check_all, check_session, doc_json, first_diff, redo_all, undo_all,
+};
 use vectorcraft_testkit::strategies::{Op, arb_ops};
 
 fn run_sequence(ops: &[Op], full_checks_every: usize) -> Result<(), TestCaseError> {
@@ -16,9 +18,15 @@ fn run_sequence(ops: &[Op], full_checks_every: usize) -> Result<(), TestCaseErro
         let (id, params) = op.command(&s);
         // Any result is fine; panics are not.
         let _ = s.execute(&id, &params);
-        let check = if i % full_checks_every == 0 || i + 1 == ops.len() { check_all(&mut s) } else { check_session(&s) };
+        let check = if i % full_checks_every == 0 || i + 1 == ops.len() {
+            check_all(&mut s)
+        } else {
+            check_session(&s)
+        };
         if let Err(e) = check {
-            return Err(TestCaseError::fail(format!("after step {i} `{id}` {params}: {e}")));
+            return Err(TestCaseError::fail(format!(
+                "after step {i} `{id}` {params}: {e}"
+            )));
         }
     }
     // Reach the fully redone state first (the sequence may end with undos).
@@ -26,12 +34,20 @@ fn run_sequence(ops: &[Op], full_checks_every: usize) -> Result<(), TestCaseErro
     let fin = doc_json(&s.doc().unwrap().doc);
     let n = undo_all(&mut s);
     let back = doc_json(&s.doc().unwrap().doc);
-    prop_assert!(back == initial, "undo all ({n} steps) != initial: {}", first_diff(&initial, &back, "$"));
+    prop_assert!(
+        back == initial,
+        "undo all ({n} steps) != initial: {}",
+        first_diff(&initial, &back, "$")
+    );
     check_session(&s).map_err(TestCaseError::fail)?;
     let m = redo_all(&mut s);
     prop_assert_eq!(n, m, "redo count differs from undo count");
     let again = doc_json(&s.doc().unwrap().doc);
-    prop_assert!(again == fin, "redo all != final: {}", first_diff(&fin, &again, "$"));
+    prop_assert!(
+        again == fin,
+        "redo all != final: {}",
+        first_diff(&fin, &again, "$")
+    );
     check_all(&mut s).map_err(TestCaseError::fail)?;
     Ok(())
 }
@@ -80,7 +96,12 @@ fn rich_fixture_satisfies_invariants_and_undoes_to_blank() {
     assert!(n >= 10, "expected a real history, got {n} steps");
     let blank = doc_json(&fixtures::session_with(500.0, 400.0).doc().unwrap().doc);
     // Titles differ ("Untitled-1" in both sessions since each has its own counter).
-    assert_eq!(doc_json(&s.doc().unwrap().doc), blank, "{}", first_diff(&blank, &doc_json(&s.doc().unwrap().doc), "$"));
+    assert_eq!(
+        doc_json(&s.doc().unwrap().doc),
+        blank,
+        "{}",
+        first_diff(&blank, &doc_json(&s.doc().unwrap().doc), "$")
+    );
     redo_all(&mut s);
     assert_eq!(doc_json(&s.doc().unwrap().doc), fin);
 }
@@ -114,7 +135,10 @@ fn batch_is_one_undo_step_and_rolls_back_on_error() {
     assert_eq!(doc_json(&s.doc().unwrap().doc), snapshot);
     assert!(!s.in_interaction());
     // Nested batches are rejected, also without leaking an interaction.
-    let r = s.execute("command.batch", &json!({"commands": [{"command": "command.batch", "params": {"commands": []}}]}));
+    let r = s.execute(
+        "command.batch",
+        &json!({"commands": [{"command": "command.batch", "params": {"commands": []}}]}),
+    );
     assert!(r.is_err());
     assert!(!s.in_interaction());
     exec(&mut s, "edit.undo", json!({}));
@@ -136,13 +160,25 @@ fn save_open_via_commands_roundtrips() {
     let mut s = fixtures::rich_session();
     let dir = vectorcraft_testkit::temp_dir("engine-save");
     let path = dir.join("rich.vectorcraft");
-    exec(&mut s, "document.save", json!({"path": path.to_str().unwrap()}));
+    exec(
+        &mut s,
+        "document.save",
+        json!({"path": path.to_str().unwrap()}),
+    );
     let want = doc_json(&s.doc().unwrap().doc);
-    exec(&mut s, "document.open", json!({"path": path.to_str().unwrap()}));
+    exec(
+        &mut s,
+        "document.open",
+        json!({"path": path.to_str().unwrap()}),
+    );
     assert_eq!(s.documents().len(), 2);
     let got = doc_json(&s.doc().unwrap().doc);
     // Numbers to 1e-12 (bit-exactness is a known bug: known_bugs.rs::bug_native_roundtrip_not_bit_exact).
-    assert!(invariants::json_approx_eq(&got, &want, 1e-12), "{}", first_diff(&want, &got, "$"));
+    assert!(
+        invariants::json_approx_eq(&got, &want, 1e-12),
+        "{}",
+        first_diff(&want, &got, "$")
+    );
     check_all(&mut s).unwrap();
 }
 
@@ -155,10 +191,12 @@ fn serialize_all_formats_on_rich_doc() {
     }
     // The SVG re-imports with the same number of visible art objects or more (groups may nest).
     let svg = exec(&mut s, "document.serialize", json!({"format": "svg"}));
-    let text = svg["text"]
-        .as_str()
-        .map(str::to_string)
-        .unwrap_or_else(|| String::from_utf8(vectorcraft_format::base64_decode(svg["dataBase64"].as_str().unwrap()).unwrap()).unwrap());
+    let text = svg["text"].as_str().map(str::to_string).unwrap_or_else(|| {
+        String::from_utf8(
+            vectorcraft_format::base64_decode(svg["dataBase64"].as_str().unwrap()).unwrap(),
+        )
+        .unwrap()
+    });
     let back = vectorcraft_svg::import(&text).unwrap();
     invariants::check_document(&back).unwrap();
     assert!(back.node_count() >= 5);

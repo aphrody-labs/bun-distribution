@@ -1,6 +1,6 @@
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::{parenthesized, token, Expr, Path, Token};
+use syn::{Expr, Path, Token, parenthesized, token};
 
 /// A `TypeData` registration.
 ///

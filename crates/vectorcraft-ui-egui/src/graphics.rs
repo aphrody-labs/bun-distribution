@@ -28,7 +28,10 @@ impl GraphicsLoss {
     pub fn report(&self, ctx: &egui::Context, why: impl Into<String>) {
         let why = why.into();
         log::error!("vectorcraft: the graphics device was lost: {why}");
-        self.0.lock().unwrap_or_else(|e| e.into_inner()).get_or_insert(why);
+        self.0
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get_or_insert(why);
         ctx.request_repaint();
     }
 
@@ -94,10 +97,21 @@ impl VectorcraftApp {
     /// with Data Recovery turned off: they go when the documents are saved or closed) → whether
     /// every modified document has an up-to-date copy (none modified counts).
     pub fn graphics_lost(&mut self, why: &str) -> bool {
-        if let Err(e) = self.session.execute("file.recovery.save", &serde_json::json!({})) {
+        if let Err(e) = self
+            .session
+            .execute("file.recovery.save", &serde_json::json!({}))
+        {
             log::warn!("vectorcraft: no recovery copies after losing the graphics ({why}): {e}");
         }
-        self.session.documents().iter().filter(|st| st.is_dirty()).all(|st| st.recovery.as_ref().is_some_and(|c| Arc::ptr_eq(&c.doc, &st.doc)))
+        self.session
+            .documents()
+            .iter()
+            .filter(|st| st.is_dirty())
+            .all(|st| {
+                st.recovery
+                    .as_ref()
+                    .is_some_and(|c| Arc::ptr_eq(&c.doc, &st.doc))
+            })
     }
 
     /// Textures live in one egui context. When the host hands the app a new one (it started again
@@ -135,7 +149,13 @@ mod tests {
 
     /// One headless frame of the whole window (800×600) in `ctx`.
     fn frame(app: &mut VectorcraftApp, ctx: &egui::Context) {
-        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(800.0, 600.0))), ..Default::default() };
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(800.0, 600.0),
+            )),
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(raw, |ui| {
             app.logic(ui.ctx());
             app.ui(ui);
@@ -150,8 +170,13 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Services::default());
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 20})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 20}),
+        )
+        .unwrap();
         app
     }
 
@@ -165,7 +190,11 @@ mod tests {
         })
         .join()
         .unwrap();
-        assert_eq!(loss.take().as_deref(), Some("Unknown: driver reset"), "the first report wins");
+        assert_eq!(
+            loss.take().as_deref(),
+            Some("Unknown: driver reset"),
+            "the first report wins"
+        );
         assert_eq!(loss.take(), None, "handled once");
     }
 
@@ -177,7 +206,10 @@ mod tests {
         CACHE.with(|c| c.borrow_mut().push(7));
         assert_eq!(CACHE.with(|c| c.borrow().clone()), [7]);
         forget_textures();
-        assert!(CACHE.with(|c| c.borrow().is_empty()), "emptied for the new context");
+        assert!(
+            CACHE.with(|c| c.borrow().is_empty()),
+            "emptied for the new context"
+        );
         CACHE.with(|c| c.borrow_mut().push(8));
         assert_eq!(CACHE.with(|c| c.borrow().clone()), [8], "and filled again");
     }
@@ -190,41 +222,96 @@ mod tests {
         for _ in 0..3 {
             frame(&mut app, &old);
         }
-        let canvas = app.canvas.texture.as_ref().map(egui::TextureHandle::id).expect("the canvas is drawn");
+        let canvas = app
+            .canvas
+            .texture
+            .as_ref()
+            .map(egui::TextureHandle::id)
+            .expect("the canvas is drawn");
         assert_eq!(texture_name(&old, canvas).as_deref(), Some("canvas"));
         let preview = |ctx: &egui::Context| {
             let mut tex = None;
             ctx.run_ui(Default::default(), |ui| {
-                tex = crate::widgets::doc_preview(ui, "loss", egui::vec2(8.0, 8.0), |w, h| Some(vectorcraft_doc::Document::new(w, h)))
+                tex = crate::widgets::doc_preview(ui, "loss", egui::vec2(8.0, 8.0), |w, h| {
+                    Some(vectorcraft_doc::Document::new(w, h))
+                })
             })
             .textures_delta
             .clear();
             tex.expect("a preview").id()
         };
-        assert_eq!(texture_name(&old, preview(&old)).as_deref(), Some("preview-8x8@1:loss"));
+        assert_eq!(
+            texture_name(&old, preview(&old)).as_deref(),
+            Some("preview-8x8@1:loss")
+        );
 
         // The host lost its graphics and started again: same app, new context.
         let new = egui::Context::default();
         for _ in 0..3 {
             frame(&mut app, &new);
         }
-        let canvas = app.canvas.texture.as_ref().map(egui::TextureHandle::id).expect("the canvas is drawn again");
-        assert_eq!(texture_name(&new, canvas).as_deref(), Some("canvas"), "uploaded to the new context");
-        assert_eq!(texture_name(&new, preview(&new)).as_deref(), Some("preview-8x8@1:loss"), "cached previews are made again");
-        assert_eq!(new.global_style().visuals.panel_fill, old.global_style().visuals.panel_fill, "the theme is applied again");
-        assert!(new.fonts(|f| f.definitions().font_data.contains_key("SourceSans3")), "and the fonts installed");
+        let canvas = app
+            .canvas
+            .texture
+            .as_ref()
+            .map(egui::TextureHandle::id)
+            .expect("the canvas is drawn again");
+        assert_eq!(
+            texture_name(&new, canvas).as_deref(),
+            Some("canvas"),
+            "uploaded to the new context"
+        );
+        assert_eq!(
+            texture_name(&new, preview(&new)).as_deref(),
+            Some("preview-8x8@1:loss"),
+            "cached previews are made again"
+        );
+        assert_eq!(
+            new.global_style().visuals.panel_fill,
+            old.global_style().visuals.panel_fill,
+            "the theme is applied again"
+        );
+        assert!(
+            new.fonts(|f| f.definitions().font_data.contains_key("SourceSans3")),
+            "and the fonts installed"
+        );
     }
 
     #[test]
     fn losing_the_graphics_keeps_recovery_copies_at_once() {
         let store = Arc::new(MemoryStore::default());
-        let mut app = VectorcraftApp::new(Session::new(), Services { recovery_store: Some(store.clone()), ..Default::default() });
-        assert!(app.graphics_lost("test"), "nothing modified: nothing to lose");
-        app.run("file.new", json!({"width": 200, "height": 100})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 50, "height": 20})).unwrap();
+        let mut app = VectorcraftApp::new(
+            Session::new(),
+            Services {
+                recovery_store: Some(store.clone()),
+                ..Default::default()
+            },
+        );
+        assert!(
+            app.graphics_lost("test"),
+            "nothing modified: nothing to lose"
+        );
+        app.run("file.new", json!({"width": 200, "height": 100}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 50, "height": 20}),
+        )
+        .unwrap();
         app.session.prefs.autosave_recovery = false;
-        assert!(app.graphics_lost("test"), "copied even with Data Recovery off");
-        assert_eq!(store.list().unwrap().iter().filter(|n| n.ends_with(".vectorcraft")).count(), 1);
+        assert!(
+            app.graphics_lost("test"),
+            "copied even with Data Recovery off"
+        );
+        assert_eq!(
+            store
+                .list()
+                .unwrap()
+                .iter()
+                .filter(|n| n.ends_with(".vectorcraft"))
+                .count(),
+            1
+        );
         // Without a store the work isn't safe.
         assert!(!self::app().graphics_lost("test"));
     }

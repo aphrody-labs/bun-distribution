@@ -18,7 +18,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn game_dir() -> Option<PathBuf> {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let p = PathBuf::from(dir);
     aphrody_nie_formats::vfs::donnees_disponibles(p.join("data")).then_some(p)
 }
@@ -29,7 +31,11 @@ fn crc32(data: &[u8]) -> u32 {
     for &b in data {
         crc ^= u32::from(b);
         for _ in 0..8 {
-            crc = if crc & 1 != 0 { (crc >> 1) ^ 0xEDB8_8320 } else { crc >> 1 };
+            crc = if crc & 1 != 0 {
+                (crc >> 1) ^ 0xEDB8_8320
+            } else {
+                crc >> 1
+            };
         }
     }
     !crc
@@ -55,7 +61,11 @@ fn menu_setting_corpus_layer_id_is_crc32() {
         .filter(|p| p.contains("/menu/cfg/") && p.ends_with("_setting.cfg.bin"))
         .collect();
     paths.sort_unstable();
-    assert!(paths.len() >= 400, "corpus menu_setting trop petit ({})", paths.len());
+    assert!(
+        paths.len() >= 400,
+        "corpus menu_setting trop petit ({})",
+        paths.len()
+    );
 
     let (mut files_ok, mut total_layers, mut total_cmds, mut mismatches) = (0u32, 0u64, 0u64, 0u64);
     for p in &paths {
@@ -77,8 +87,14 @@ fn menu_setting_corpus_layer_id_is_crc32() {
         "menu_setting corpus : {files_ok}/{} fichiers, {total_layers} layers, {total_cmds} commandes, {mismatches} mismatches CRC32",
         paths.len()
     );
-    assert_eq!(mismatches, 0, "layer_id != CRC32(name) sur {mismatches} layers");
-    assert!(total_layers > 1000, "trop peu de layers au total ({total_layers})");
+    assert_eq!(
+        mismatches, 0,
+        "layer_id != CRC32(name) sur {mismatches} layers"
+    );
+    assert!(
+        total_layers > 1000,
+        "trop peu de layers au total ({total_layers})"
+    );
 }
 
 /// Rend un écran de menu via le binaire (chemin déterministe) → PNG, puis décode en RGBA8.
@@ -92,7 +108,10 @@ fn render_screen(game: &Path, screen: &str, out: &Path) -> (u32, u32, Vec<u8>) {
         .env("RUST_LOG", "error")
         .status()
         .expect("lancer aphrody-nie-game");
-    assert!(status.success(), "aphrody-nie-game --menu {screen} a échoué");
+    assert!(
+        status.success(),
+        "aphrody-nie-game --menu {screen} a échoué"
+    );
     decode_png(out)
 }
 
@@ -106,7 +125,12 @@ fn decode_png(path: &Path) -> (u32, u32, Vec<u8>) {
     // Normalise en RGBA8.
     let rgba = match info.color_type {
         png::ColorType::Rgba => buf,
-        png::ColorType::Rgb => buf.as_chunks::<3>().0.iter().flat_map(|p| [p[0], p[1], p[2], 255]).collect(),
+        png::ColorType::Rgb => buf
+            .as_chunks::<3>()
+            .0
+            .iter()
+            .flat_map(|p| [p[0], p[1], p[2], 255])
+            .collect(),
         other => panic!("PNG color type non géré : {other:?}"),
     };
     (info.width, info.height, rgba)
@@ -137,7 +161,11 @@ fn downscale_2x(w: u32, h: u32, rgba: &[u8]) -> (u32, u32, Vec<u8>) {
 fn to_luma(w: u32, h: u32, rgba: &[u8]) -> Vec<f64> {
     (0..(w * h) as usize)
         .map(|i| {
-            let (r, g, b) = (rgba[i * 4] as f64, rgba[i * 4 + 1] as f64, rgba[i * 4 + 2] as f64);
+            let (r, g, b) = (
+                rgba[i * 4] as f64,
+                rgba[i * 4 + 1] as f64,
+                rgba[i * 4 + 2] as f64,
+            );
             0.299 * r + 0.587 * g + 0.114 * b
         })
         .collect()
@@ -197,10 +225,16 @@ fn title02_render_is_deterministic() {
         return;
     };
     let tmp = std::env::temp_dir();
-    let (a, b) = (tmp.join("nie_gate_det_a.png"), tmp.join("nie_gate_det_b.png"));
+    let (a, b) = (
+        tmp.join("nie_gate_det_a.png"),
+        tmp.join("nie_gate_det_b.png"),
+    );
     let (_, _, ra) = render_screen(&game, "title02", &a);
     let (_, _, rb) = render_screen(&game, "title02", &b);
-    assert_eq!(ra, rb, "le rendu title02 doit être déterministe (octet-identique)");
+    assert_eq!(
+        ra, rb,
+        "le rendu title02 doit être déterministe (octet-identique)"
+    );
 }
 
 /// D-fond — le correctif du stride g4mg multi-submesh (DESIGN §6, RE originale > iecode) : la
@@ -239,7 +273,14 @@ fn bg_mesh_geometry_decodes() {
         })
         .expect("objbin title02_00");
     let obj = objbin::parse(&vfs.read(&obj_path).unwrap()).unwrap();
-    let g4pkm_base = obj.g4pkm_path.as_deref().unwrap().rsplit('/').next().unwrap().to_string();
+    let g4pkm_base = obj
+        .g4pkm_path
+        .as_deref()
+        .unwrap()
+        .rsplit('/')
+        .next()
+        .unwrap()
+        .to_string();
     let md =
         g4md::parse(g4pkm::extract_g4md(&vfs.read(&find(&g4pkm_base).unwrap()).unwrap()).unwrap())
             .unwrap();
@@ -247,7 +288,10 @@ fn bg_mesh_geometry_decodes() {
 
     let sm0 = &geom[0];
     assert_eq!(sm0.positions.len(), 4, "submesh[0] = quad (4 verts)");
-    assert!(!sm0.uv0.is_empty(), "uv0 rempli (stride borné par l'extent d'attributs)");
+    assert!(
+        !sm0.uv0.is_empty(),
+        "uv0 rempli (stride borné par l'extent d'attributs)"
+    );
     let expect = [(1.0f32, 0.0f32), (0.0, 0.0), (0.0, -1.0), (1.0, -1.0)];
     for (p, (ex, ey)) in sm0.positions.iter().zip(expect) {
         assert!(
@@ -281,8 +325,14 @@ fn mainmenu_static_text_resolves_in_export() {
     assert!(status.success(), "export-layout mainmenu01 a échoué");
     let txt = std::fs::read_to_string(&out).expect("lire le layout JSON");
     // Libellés statiques réels résolus via menu_text (chaînes stables du jeu fr).
-    assert!(txt.contains("\"Sauvegarder\""), "libellé « Sauvegarder » non résolu dans l'export");
-    assert!(txt.contains("\"Suivant\""), "libellé « Suivant » non résolu dans l'export");
+    assert!(
+        txt.contains("\"Sauvegarder\""),
+        "libellé « Sauvegarder » non résolu dans l'export"
+    );
+    assert!(
+        txt.contains("\"Suivant\""),
+        "libellé « Suivant » non résolu dans l'export"
+    );
 }
 
 /// The first mainmenu01 layers declare numeric dummy meshes and a dynamic character binding, but
@@ -319,7 +369,10 @@ fn mainmenu01_dynamic_geometry_boundary_is_reported_from_real_vfs() {
         .expect("mainmenu01_01_base_info");
     assert_eq!(base_info["primitive"]["g4pkmPathStatus"], "missing");
     assert_eq!(
-        base_info["primitive"]["dummyMeshOverrides"].as_array().expect("dummy mesh bindings").len(),
+        base_info["primitive"]["dummyMeshOverrides"]
+            .as_array()
+            .expect("dummy mesh bindings")
+            .len(),
         4
     );
     assert_eq!(
@@ -332,7 +385,10 @@ fn mainmenu01_dynamic_geometry_boundary_is_reported_from_real_vfs() {
         .iter()
         .find(|object| object["name"] == "mainmenu01_03_chara_status")
         .expect("mainmenu01_03_chara_status");
-    assert_eq!(chara["charModel"]["modelStatus"], "runtime-model-id-required");
+    assert_eq!(
+        chara["charModel"]["modelStatus"],
+        "runtime-model-id-required"
+    );
     assert_eq!(chara["charModel"]["lightObjectDataPath"], "Menu_2dLight");
     assert_eq!(chara["charModel"]["menuCameraNameHash"], "0x1764BF9E");
 
@@ -372,17 +428,30 @@ fn mainmenu_runtime_driver_enumerates_9_header_tabs() {
     let objs = doc["objects"].as_array().expect("champ objects");
     let runtime = &doc["runtimeSummary"];
 
-    let requested = runtime["menuEventsRequested"].as_u64().expect("menuEventsRequested counter");
-    let dispatched =
-        runtime["menuEventsDispatched"].as_u64().expect("menuEventsDispatched counter");
-    let succeeded = runtime["menuEventsSucceeded"].as_u64().expect("menuEventsSucceeded counter");
+    let requested = runtime["menuEventsRequested"]
+        .as_u64()
+        .expect("menuEventsRequested counter");
+    let dispatched = runtime["menuEventsDispatched"]
+        .as_u64()
+        .expect("menuEventsDispatched counter");
+    let succeeded = runtime["menuEventsSucceeded"]
+        .as_u64()
+        .expect("menuEventsSucceeded counter");
     assert!(requested > 0, "the runtime must request menu events");
-    assert!(dispatched > 0, "the real main-menu script must dispatch events");
-    assert!(requested >= dispatched, "missing callbacks may only reduce dispatches");
+    assert!(
+        dispatched > 0,
+        "the real main-menu script must dispatch events"
+    );
+    assert!(
+        requested >= dispatched,
+        "missing callbacks may only reduce dispatches"
+    );
     assert_eq!(dispatched, succeeded, "every dispatched event must succeed");
     for callback in ["OnSetupLayer", "OnOpenLayer", "OnEnter"] {
         assert!(
-            runtime["menuEventInvocations"][callback].as_u64().is_some_and(|count| count > 0),
+            runtime["menuEventInvocations"][callback]
+                .as_u64()
+                .is_some_and(|count| count > 0),
             "typed callback {callback} was not recorded"
         );
     }
@@ -393,8 +462,15 @@ fn mainmenu_runtime_driver_enumerates_9_header_tabs() {
         .filter_map(|o| o["name"].as_str())
         .filter(|n| n.starts_with("mainmenu_header_tab_"))
         .collect();
-    assert_eq!(tabs.len(), 9, "le driver doit énumérer 9 onglets (mode normal), trouvé : {tabs:?}");
-    for object in objs.iter().filter(|object| object["runtime"]["virtual"] == true) {
+    assert_eq!(
+        tabs.len(),
+        9,
+        "le driver doit énumérer 9 onglets (mode normal), trouvé : {tabs:?}"
+    );
+    for object in objs
+        .iter()
+        .filter(|object| object["runtime"]["virtual"] == true)
+    {
         assert!(
             object["transform"].is_null(),
             "unresolved tabs must not acquire invented coordinates"
@@ -405,7 +481,10 @@ fn mainmenu_runtime_driver_enumerates_9_header_tabs() {
     // Les 9 types d'onglets attendus (ordre `GetSortOfTabs`, mode normal).
     for ty in [10, 20, 30, 40, 50, 60, 70, 80, 90] {
         let name = format!("mainmenu_header_tab_{ty}");
-        assert!(tabs.contains(&name.as_str()), "onglet type {ty} manquant ({tabs:?})");
+        assert!(
+            tabs.contains(&name.as_str()),
+            "onglet type {ty} manquant ({tabs:?})"
+        );
     }
 }
 
@@ -434,14 +513,23 @@ fn icon_rarity_atlas_regions_resolve() {
     assert!(output.status.success(), "g4tx-regions icon_rarity a échoué");
     let stdout = String::from_utf8_lossy(&output.stdout);
     // La texture-atlas principale réelle (DDS).
-    assert!(stdout.contains("\"icon_rarity\""), "texte atlas icon_rarity absent :\n{stdout}");
+    assert!(
+        stdout.contains("\"icon_rarity\""),
+        "texte atlas icon_rarity absent :\n{stdout}"
+    );
     // Les 10 niveaux de rareté gtxt_rarity01_01..10 sont des régions nommées de l'atlas.
     for lvl in 1..=10 {
         let name = format!("gtxt_rarity01_{lvl:02}");
-        assert!(stdout.contains(&name), "région {name} absente de l'atlas :\n{stdout}");
+        assert!(
+            stdout.contains(&name),
+            "région {name} absente de l'atlas :\n{stdout}"
+        );
     }
     // 15 régions au total (10 niveaux + 5 variantes de type) — verrouille la complétude du parse.
-    assert!(stdout.contains("total: 15 régions"), "compte de régions inattendu :\n{stdout}");
+    assert!(
+        stdout.contains("total: 15 régions"),
+        "compte de régions inattendu :\n{stdout}"
+    );
 }
 
 /// D1.f render-from-runtime — ABOUTISSEMENT : « données runtime → IMAGE COMPOSÉE ». Chaîne le
@@ -486,7 +574,10 @@ fn shop_runtime_composes_to_image() {
     assert!(s2.success(), "compose-layout shop a échoué");
 
     let bytes = std::fs::read(&png).expect("lire le PNG composé");
-    assert!(bytes.len() > 24 && &bytes[1..4] == b"PNG", "PNG composé invalide");
+    assert!(
+        bytes.len() > 24 && &bytes[1..4] == b"PNG",
+        "PNG composé invalide"
+    );
     let w = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
     let h = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
     assert_eq!((w, h), (1280, 720), "dimensions du canevas inattendues");
@@ -532,7 +623,10 @@ fn shop_runtime_resolves_region_to_g4tx_rect() {
 
     // Au moins un objet a résolu région → g4tx → rect.
     let rects = doc["runtimeSummary"]["regionRects"].as_u64().unwrap_or(0);
-    assert!(rects >= 1, "aucune région résolue en rect (regionRects={rects})");
+    assert!(
+        rects >= 1,
+        "aucune région résolue en rect (regionRects={rects})"
+    );
 
     // L'objet du bandeau de rareté gtxt_rarity01_05 → icon_rarity.g4tx + rect exact (0,264,800,128).
     let objs = doc["objects"].as_array().expect("objects");
@@ -541,7 +635,10 @@ fn shop_runtime_resolves_region_to_g4tx_rect() {
         .find(|o| o["runtime"]["spriteRegion"].as_str() == Some("gtxt_rarity01_05"))
         .expect("objet avec région gtxt_rarity01_05");
     let g4tx = rarity["runtime"]["spriteRegionG4tx"].as_str().unwrap_or("");
-    assert!(g4tx.ends_with("icon_rarity.g4tx"), "g4tx résolu inattendu : {g4tx}");
+    assert!(
+        g4tx.ends_with("icon_rarity.g4tx"),
+        "g4tx résolu inattendu : {g4tx}"
+    );
     let rect = &rarity["runtime"]["spriteRect"];
     assert_eq!(rect["x"].as_i64(), Some(0), "rect.x");
     assert_eq!(rect["y"].as_i64(), Some(264), "rect.y");
@@ -566,16 +663,28 @@ fn icon_rarity_region_crops_to_real_pixels() {
     let status = Command::new(bin)
         .args(["--game-dir"])
         .arg(&game)
-        .args(["--g4tx", "icon_rarity.g4tx", "--g4tx-region", "gtxt_rarity01_05", "--capture"])
+        .args([
+            "--g4tx",
+            "icon_rarity.g4tx",
+            "--g4tx-region",
+            "gtxt_rarity01_05",
+            "--capture",
+        ])
         .arg(&png)
         .env("RUST_LOG", "error")
         .status()
         .expect("lancer aphrody-nie-game --g4tx-region");
-    assert!(status.success(), "crop de la région gtxt_rarity01_05 a échoué");
+    assert!(
+        status.success(),
+        "crop de la région gtxt_rarity01_05 a échoué"
+    );
 
     let bytes = std::fs::read(&png).expect("lire le PNG de la région");
     // En-tête PNG : IHDR width/height en big-endian aux octets 16..24.
-    assert!(bytes.len() > 24 && &bytes[1..4] == b"PNG", "fichier PNG invalide");
+    assert!(
+        bytes.len() > 24 && &bytes[1..4] == b"PNG",
+        "fichier PNG invalide"
+    );
     let w = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
     let h = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
     // Le rect de gtxt_rarity01_05 dans icon_rarity.g4tx (cf. --g4tx-regions) = 800×128.
@@ -691,7 +800,11 @@ fn mainmenu01_ssim_vs_reference() {
     assert_eq!((rw, rh), (1280, 720), "canvas canonique 1280×720");
 
     let (ow, oh, orig) = decode_png(&reference);
-    assert_eq!((ow, oh), (2560, 1440), "référence menu.png 2560×1440 (2× canonique)");
+    assert_eq!(
+        (ow, oh),
+        (2560, 1440),
+        "référence menu.png 2560×1440 (2× canonique)"
+    );
     let (dw, dh, downs) = downscale_2x(ow, oh, &orig);
     assert_eq!((dw, dh), (1280, 720));
 
@@ -745,7 +858,13 @@ fn mainmenu_runtime_compose_ssim() {
     let s1 = Command::new(bin)
         .args(["--game-dir"])
         .arg(&game)
-        .args(["--menu", "main_menu", "--runtime", "--from-setting", "--export-layout"])
+        .args([
+            "--menu",
+            "main_menu",
+            "--runtime",
+            "--from-setting",
+            "--export-layout",
+        ])
         .arg(&layout)
         .env("RUST_LOG", "error")
         .status()
@@ -811,7 +930,10 @@ fn mainmenu_via_setting_ssim_vs_reference() {
         .env("RUST_LOG", "error")
         .status()
         .expect("lancer aphrody-nie-game --from-setting");
-    assert!(status.success(), "aphrody-nie-game --menu main_menu --from-setting a échoué");
+    assert!(
+        status.success(),
+        "aphrody-nie-game --menu main_menu --from-setting a échoué"
+    );
     let (rw, rh, render) = decode_png(&tmp);
     assert_eq!((rw, rh), (1280, 720), "canvas canonique 1280×720");
 
@@ -846,7 +968,10 @@ fn render_text_212_from_real_font_atlas() {
     };
     let bin = env!("CARGO_BIN_EXE_aphrody-nie-game");
     // Couvre chiffres ET un mot Latin réel : les DEUX classes de glyphes (cibles du gate D1.d).
-    for (text, expect) in [("212", "3/3 codepoints"), ("Sauvegarder", "11/11 codepoints")] {
+    for (text, expect) in [
+        ("212", "3/3 codepoints"),
+        ("Sauvegarder", "11/11 codepoints"),
+    ] {
         let out = std::env::temp_dir().join("gate_render_text.png");
         let output = Command::new(bin)
             .args(["--game-dir"])
@@ -865,6 +990,10 @@ fn render_text_212_from_real_font_atlas() {
         );
         // PNG non trivial = des glyphes ont été rendus (pas un canevas vide).
         let png = std::fs::read(&out).expect("PNG render-text");
-        assert!(png.len() > 200, "PNG « {text} » trop petit ({} o) — rien rendu ?", png.len());
+        assert!(
+            png.len() > 200,
+            "PNG « {text} » trop petit ({} o) — rien rendu ?",
+            png.len()
+        );
     }
 }

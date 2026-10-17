@@ -1,5 +1,5 @@
 use crate::{BgObjPixel, Buffers, RenderingData};
-use aphrody_dust_core::gpu::{SCREEN_WIDTH, Scanline};
+use aphrody_dust_core::gpu::{Scanline, SCREEN_WIDTH};
 
 pub fn apply_color_effects<B: Buffers, D: RenderingData, const EFFECT: u8>(buffers: &B, data: &D) {
     #[inline]
@@ -59,7 +59,7 @@ pub fn apply_color_effects<B: Buffers, D: RenderingData, const EFFECT: u8>(buffe
                         } else {
                             pixel.0
                         }
-                    },
+                    }
 
                     2 => {
                         let pixel = pixel.0 as u32;
@@ -70,7 +70,7 @@ pub fn apply_color_effects<B: Buffers, D: RenderingData, const EFFECT: u8>(buffe
                                 >> 4
                         };
                         (pixel + increment) as u64
-                    },
+                    }
 
                     _ => {
                         let pixel = pixel.0 as u32;
@@ -80,7 +80,7 @@ pub fn apply_color_effects<B: Buffers, D: RenderingData, const EFFECT: u8>(buffe
                                 >> 4
                         };
                         (pixel - decrement) as u64
-                    },
+                    }
                 }
             } else {
                 pixel.0
@@ -110,7 +110,7 @@ pub fn apply_brightness<D: RenderingData>(scanline_buffer: &mut Scanline<u32>, d
                 };
                 *pixel = rgb6_to_rgba8(*pixel + increment);
             }
-        },
+        }
 
         2 if brightness_factor != 0 => {
             for pixel in &mut scanline_buffer.0 {
@@ -121,12 +121,12 @@ pub fn apply_brightness<D: RenderingData>(scanline_buffer: &mut Scanline<u32>, d
                 };
                 *pixel = rgb6_to_rgba8(*pixel - decrement);
             }
-        },
+        }
 
         _ => {
             for pixel in &mut scanline_buffer.0 {
                 *pixel = rgb6_to_rgba8(*pixel);
             }
-        },
+        }
     }
 }

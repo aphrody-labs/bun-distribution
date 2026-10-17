@@ -81,7 +81,10 @@ fn sdk_to_model_error(err: SdkError) -> ModelError {
     match err {
         SdkError::Http(e) => ModelError::Http(e),
         SdkError::TokenParse(e) => ModelError::Decode(e),
-        SdkError::OAuthServer { status, body } => ModelError::Api { status, message: body },
+        SdkError::OAuthServer { status, body } => ModelError::Api {
+            status,
+            message: body,
+        },
         SdkError::Stream(s) => ModelError::Stream(s),
         other => ModelError::Stream(other.to_string()),
     }
@@ -146,7 +149,7 @@ impl ModelClient for AntigravityModelClient {
                         });
                     }
                     continue;
-                },
+                }
                 Err(err) => {
                     if err.is_geo_restricted() {
                         return Err(ModelError::Api {
@@ -155,7 +158,7 @@ impl ModelClient for AntigravityModelClient {
                         });
                     }
                     return Err(sdk_to_model_error(err));
-                },
+                }
             }
         };
 
@@ -190,13 +193,16 @@ mod tests {
 
     #[test]
     fn test_sdk_to_model_error_mapping() {
-        let err = SdkError::OAuthServer { status: 403, body: "Forbidden".to_string() };
+        let err = SdkError::OAuthServer {
+            status: 403,
+            body: "Forbidden".to_string(),
+        };
         let mapped = sdk_to_model_error(err);
         match mapped {
             ModelError::Api { status, message } => {
                 assert_eq!(status, 403);
                 assert_eq!(message, "Forbidden");
-            },
+            }
             other => panic!("expected Api error, got {other:?}"),
         }
     }

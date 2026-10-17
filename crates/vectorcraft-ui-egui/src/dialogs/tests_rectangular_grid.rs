@@ -16,7 +16,8 @@ const KIND: &str = "rectangularGrid";
 
 fn app() -> VectorcraftApp {
     let mut app = VectorcraftApp::new(Session::new(), Default::default());
-    app.run("file.new", json!({"width": 800, "height": 600})).unwrap();
+    app.run("file.new", json!({"width": 800, "height": 600}))
+        .unwrap();
     app.select_tool(KIND);
     // Pointer-up persists tool settings even for a click. Seed them so opening/cancelling can
     // be compared with the complete pre-click preferences, including an unchanged store.
@@ -26,11 +27,18 @@ fn app() -> VectorcraftApp {
 
 fn saved_counts(app: &mut VectorcraftApp, rows: u32, columns: u32) {
     let values = json!({"rows": rows, "columns": columns});
-    app.session.set_tool_options(Some(KIND), values.as_object().unwrap());
+    app.session
+        .set_tool_options(Some(KIND), values.as_object().unwrap());
 }
 
 fn view() -> ViewInfo {
-    ViewInfo { smart_guides: false, snap_to_point: false, snap_to_grid: false, snap_to_pixel: false, ..Default::default() }
+    ViewInfo {
+        smart_guides: false,
+        snap_to_point: false,
+        snap_to_grid: false,
+        snap_to_pixel: false,
+        ..Default::default()
+    }
 }
 
 fn pointer(app: &mut VectorcraftApp, kind: PointerKind, p: Point) {
@@ -48,15 +56,32 @@ fn click(app: &mut VectorcraftApp, at: Point) {
 }
 
 fn field(app: &VectorcraftApp, key: &str) -> Value {
-    app.ui.dialog.as_ref().unwrap().fields.get(key).cloned().unwrap_or_default()
+    app.ui
+        .dialog
+        .as_ref()
+        .unwrap()
+        .fields
+        .get(key)
+        .cloned()
+        .unwrap_or_default()
 }
 
 fn set(app: &mut VectorcraftApp, key: &str, value: Value) {
-    app.ui.dialog.as_mut().unwrap().fields.insert(key.into(), value);
+    app.ui
+        .dialog
+        .as_mut()
+        .unwrap()
+        .fields
+        .insert(key.into(), value);
 }
 
 fn values(app: &mut VectorcraftApp, width: Value, height: Value, rows: Value, columns: Value) {
-    for (key, value) in [("width", width), ("height", height), ("rows", rows), ("columns", columns)] {
+    for (key, value) in [
+        ("width", width),
+        ("height", height),
+        ("rows", rows),
+        ("columns", columns),
+    ] {
         set(app, key, value);
     }
 }
@@ -64,14 +89,27 @@ fn values(app: &mut VectorcraftApp, width: Value, height: Value, rows: Value, co
 fn confirm(app: &mut VectorcraftApp) -> NodeId {
     let result = super::confirm(app).unwrap();
     assert!(app.ui.dialog.is_none());
-    NodeId(result["id"].as_u64().expect("confirmation returns the created group"))
+    NodeId(
+        result["id"]
+            .as_u64()
+            .expect("confirmation returns the created group"),
+    )
 }
 
 fn paths(app: &VectorcraftApp, id: NodeId) -> Vec<PathData> {
     let doc = &app.session.doc().unwrap().doc;
     let group = doc.node(id).unwrap();
     assert!(matches!(group.kind, NodeKind::Group { .. }));
-    group.children().unwrap().iter().map(|n| n.path_data().expect("every grid child is an editable path").clone()).collect()
+    group
+        .children()
+        .unwrap()
+        .iter()
+        .map(|n| {
+            n.path_data()
+                .expect("every grid child is an editable path")
+                .clone()
+        })
+        .collect()
 }
 
 fn assert_path(path: &PathData, expected: &[Point], closed: bool) {
@@ -80,8 +118,15 @@ fn assert_path(path: &PathData, expected: &[Point], closed: bool) {
     assert_eq!(subpath.closed, closed);
     assert_eq!(subpath.anchors.len(), expected.len());
     for (anchor, expected) in subpath.anchors.iter().zip(expected) {
-        assert!(anchor.p.distance(*expected) < 1e-7, "{:?} != {expected:?}", anchor.p);
-        assert!(anchor.h_in.distance(anchor.p) < 1e-7 && anchor.h_out.distance(anchor.p) < 1e-7, "grid edges stay straight");
+        assert!(
+            anchor.p.distance(*expected) < 1e-7,
+            "{:?} != {expected:?}",
+            anchor.p
+        );
+        assert!(
+            anchor.h_in.distance(anchor.p) < 1e-7 && anchor.h_out.distance(anchor.p) < 1e-7,
+            "grid edges stay straight"
+        );
     }
 }
 
@@ -93,16 +138,29 @@ fn assert_grid(app: &VectorcraftApp, id: NodeId, bounds: Rect, rows: u32, column
     let mut remaining = paths.iter();
     assert_path(
         remaining.next().unwrap(),
-        &[Point::new(bounds.x0, bounds.y0), Point::new(bounds.x1, bounds.y0), Point::new(bounds.x1, bounds.y1), Point::new(bounds.x0, bounds.y1)],
+        &[
+            Point::new(bounds.x0, bounds.y0),
+            Point::new(bounds.x1, bounds.y0),
+            Point::new(bounds.x1, bounds.y1),
+            Point::new(bounds.x0, bounds.y1),
+        ],
         true,
     );
     for i in 1..=rows {
         let y = bounds.y0 + bounds.height() * f64::from(i) / f64::from(rows + 1);
-        assert_path(remaining.next().unwrap(), &[Point::new(bounds.x0, y), Point::new(bounds.x1, y)], false);
+        assert_path(
+            remaining.next().unwrap(),
+            &[Point::new(bounds.x0, y), Point::new(bounds.x1, y)],
+            false,
+        );
     }
     for i in 1..=columns {
         let x = bounds.x0 + bounds.width() * f64::from(i) / f64::from(columns + 1);
-        assert_path(remaining.next().unwrap(), &[Point::new(x, bounds.y0), Point::new(x, bounds.y1)], false);
+        assert_path(
+            remaining.next().unwrap(),
+            &[Point::new(x, bounds.y0), Point::new(x, bounds.y1)],
+            false,
+        );
     }
     assert!(remaining.next().is_none());
 }
@@ -135,11 +193,17 @@ impl Snapshot {
 
     fn assert_unchanged(&self, app: &VectorcraftApp) {
         let state = app.session.doc().unwrap();
-        assert_eq!(state.doc, self.doc, "the document, including allocated ids, stays unchanged");
+        assert_eq!(
+            state.doc, self.doc,
+            "the document, including allocated ids, stays unchanged"
+        );
         assert_eq!(state.selection.objects, self.selected);
         assert_eq!(app.session.prefs.to_json(), self.prefs);
         assert_eq!(app.session.tool_options_of(KIND), self.options);
-        assert_eq!((state.history.undo.len(), state.history.redo.len()), (self.undo, self.redo));
+        assert_eq!(
+            (state.history.undo.len(), state.history.redo.len()),
+            (self.undo, self.redo)
+        );
         assert_eq!(app.session.journal, self.journal);
         assert_eq!(state.is_dirty(), self.dirty);
         assert!(!app.session.in_interaction());
@@ -150,8 +214,17 @@ fn key_frame(app: &mut VectorcraftApp, key: egui::Key) {
     let ctx = egui::Context::default();
     theme::install_fonts(&ctx);
     theme::apply(&ctx, Default::default());
-    let event = egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() };
-    let input = egui::RawInput { events: vec![event], ..Default::default() };
+    let event = egui::Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Default::default(),
+    };
+    let input = egui::RawInput {
+        events: vec![event],
+        ..Default::default()
+    };
     let mut out = ctx.run_ui(input, |ui| {
         crate::shortcuts::handle(app, ui.ctx());
         super::show(app, ui.ctx());
@@ -163,17 +236,38 @@ fn key_frame(app: &mut VectorcraftApp, key: egui::Key) {
 fn rectangular_grid_canvas_click_opens_registered_dialog_with_saved_counts_and_point_defaults() {
     let mut app = app();
     saved_counts(&mut app, 7, 3);
-    app.run("document.setUnits", json!({"units": "mm"})).unwrap();
+    app.run("document.setUnits", json!({"units": "mm"}))
+        .unwrap();
     let before = Snapshot::take(&app);
     click(&mut app, Point::new(137.25, 86.5));
     before.assert_unchanged(&app);
-    assert!(super::DialogKind::of(KIND).is_some(), "must not fall through to the no-op form spec");
-    assert_eq!((field(&app, "x"), field(&app, "y")), (json!(137.25), json!(86.5)));
-    assert_eq!((field(&app, "width"), field(&app, "height")), (json!("100 pt"), json!("100 pt")));
-    assert_eq!((field(&app, "rows"), field(&app, "columns")), (json!(7), json!(3)));
+    assert!(
+        super::DialogKind::of(KIND).is_some(),
+        "must not fall through to the no-op form spec"
+    );
+    assert_eq!(
+        (field(&app, "x"), field(&app, "y")),
+        (json!(137.25), json!(86.5))
+    );
+    assert_eq!(
+        (field(&app, "width"), field(&app, "height")),
+        (json!("100 pt"), json!("100 pt"))
+    );
+    assert_eq!(
+        (field(&app, "rows"), field(&app, "columns")),
+        (json!(7), json!(3))
+    );
     let text = crate::tests_labels::painted_text(&mut app, |app, ui| super::show(app, ui.ctx()));
-    let labels = ["Width:", "Height:", "Horizontal Dividers:", "Vertical Dividers:"];
-    let positions: Vec<_> = labels.iter().map(|label| text.find(label).expect("a labelled field")).collect();
+    let labels = [
+        "Width:",
+        "Height:",
+        "Horizontal Dividers:",
+        "Vertical Dividers:",
+    ];
+    let positions: Vec<_> = labels
+        .iter()
+        .map(|label| text.find(label).expect("a labelled field"))
+        .collect();
     assert!(positions.windows(2).all(|pair| pair[0] < pair[1]), "{text}");
     let id = confirm(&mut app);
     assert_grid(&app, id, Rect::new(137.25, 86.5, 237.25, 186.5), 7, 3);
@@ -182,27 +276,47 @@ fn rectangular_grid_canvas_click_opens_registered_dialog_with_saved_counts_and_p
 #[test]
 fn rectangular_grid_creates_exact_dividers_as_one_undo_redo_step() {
     let mut app = app();
-    app.run("shape.rectangle", json!({"x": 12, "y": 18, "width": 9, "height": 11})).unwrap();
+    app.run(
+        "shape.rectangle",
+        json!({"x": 12, "y": 18, "width": 9, "height": 11}),
+    )
+    .unwrap();
     let before = Snapshot::take(&app);
     click(&mut app, Point::new(125.0, 75.0));
     values(&mut app, json!(120), json!(60), json!(2), json!(3));
     let id = confirm(&mut app);
     assert_grid(&app, id, Rect::new(125.0, 75.0, 245.0, 135.0), 2, 3);
     assert_eq!(app.session.doc().unwrap().selection.objects, vec![id]);
-    assert_eq!(app.session.doc().unwrap().history.undo.len(), before.undo + 1);
-    assert_eq!(app.session.journal.last().unwrap().0, "shape.rectangularGrid");
+    assert_eq!(
+        app.session.doc().unwrap().history.undo.len(),
+        before.undo + 1
+    );
+    assert_eq!(
+        app.session.journal.last().unwrap().0,
+        "shape.rectangularGrid"
+    );
     assert_eq!(app.session.journal.len(), before.journal.len() + 1);
     let created = app.session.doc().unwrap().doc.clone();
     app.run("edit.undo", json!({})).unwrap();
     assert_eq!(app.session.doc().unwrap().doc, before.doc);
-    assert_eq!(app.session.doc().unwrap().selection.objects, before.selected);
+    assert_eq!(
+        app.session.doc().unwrap().selection.objects,
+        before.selected
+    );
     assert_eq!(app.session.doc().unwrap().history.undo.len(), before.undo);
     let saved = json!({"rows": 2, "columns": 3, "rowSkew": 0.0, "columnSkew": 0.0, "frame": true, "fill": false});
-    assert_eq!(app.session.tool_options_of(KIND), saved, "undo does not undo the saved tool settings");
+    assert_eq!(
+        app.session.tool_options_of(KIND),
+        saved,
+        "undo does not undo the saved tool settings"
+    );
     app.run("edit.redo", json!({})).unwrap();
     assert_eq!(app.session.doc().unwrap().doc, created);
     assert_grid(&app, id, Rect::new(125.0, 75.0, 245.0, 135.0), 2, 3);
-    assert_eq!(app.session.doc().unwrap().history.undo.len(), before.undo + 1);
+    assert_eq!(
+        app.session.doc().unwrap().history.undo.len(),
+        before.undo + 1
+    );
 }
 
 #[test]
@@ -214,11 +328,23 @@ fn rectangular_grid_uses_shared_length_parsing_and_numeric_points() {
         ("mm", json!("1 in + 18 pt"), json!("2p6"), 90.0, 30.0),
     ] {
         let mut app = app();
-        app.run("document.setUnits", json!({"units": unit})).unwrap();
+        app.run("document.setUnits", json!({"units": unit}))
+            .unwrap();
         click(&mut app, Point::new(-13.5, 29.25));
         values(&mut app, width, height, json!("2"), json!("3"));
         let id = confirm(&mut app);
-        assert_grid(&app, id, Rect::new(-13.5, 29.25, -13.5 + expected_width, 29.25 + expected_height), 2, 3);
+        assert_grid(
+            &app,
+            id,
+            Rect::new(
+                -13.5,
+                29.25,
+                -13.5 + expected_width,
+                29.25 + expected_height,
+            ),
+            2,
+            3,
+        );
     }
 }
 
@@ -228,11 +354,21 @@ fn rectangular_grid_cancel_and_escape_discard_edits_and_reopen_from_saved_values
         let mut app = app();
         saved_counts(&mut app, 2, 8);
         // A pending redo must survive opening, editing and cancelling the size dialog.
-        app.run("shape.rectangle", json!({"x": 5, "y": 6, "width": 7, "height": 8})).unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 5, "y": 6, "width": 7, "height": 8}),
+        )
+        .unwrap();
         app.run("edit.undo", json!({})).unwrap();
         let before = Snapshot::take(&app);
         click(&mut app, Point::new(111.0, 147.0));
-        values(&mut app, json!("18 mm"), json!("nonsense"), json!(9), json!(1));
+        values(
+            &mut app,
+            json!("18 mm"),
+            json!("nonsense"),
+            json!(9),
+            json!(1),
+        );
         if escape {
             key_frame(&mut app, egui::Key::Escape);
         } else {
@@ -241,9 +377,18 @@ fn rectangular_grid_cancel_and_escape_discard_edits_and_reopen_from_saved_values
         assert!(app.ui.dialog.is_none());
         before.assert_unchanged(&app);
         click(&mut app, Point::new(209.0, 173.0));
-        assert_eq!((field(&app, "x"), field(&app, "y")), (json!(209.0), json!(173.0)));
-        assert_eq!((field(&app, "width"), field(&app, "height")), (json!("100 pt"), json!("100 pt")));
-        assert_eq!((field(&app, "rows"), field(&app, "columns")), (json!(2), json!(8)));
+        assert_eq!(
+            (field(&app, "x"), field(&app, "y")),
+            (json!(209.0), json!(173.0))
+        );
+        assert_eq!(
+            (field(&app, "width"), field(&app, "height")),
+            (json!("100 pt"), json!("100 pt"))
+        );
+        assert_eq!(
+            (field(&app, "rows"), field(&app, "columns")),
+            (json!(2), json!(8))
+        );
         super::cancel(&mut app);
         before.assert_unchanged(&app);
     }
@@ -258,15 +403,24 @@ fn rectangular_grid_enter_confirms_through_the_shared_modal_frame() {
     assert!(app.ui.dialog.is_none());
     let selected = &app.session.doc().unwrap().selection.objects;
     assert_eq!(selected.len(), 1);
-    assert_grid(&app, selected[0], Rect::new(121.0, 143.0, 205.0, 199.0), 2, 3);
+    assert_grid(
+        &app,
+        selected[0],
+        Rect::new(121.0, 143.0, 205.0, 199.0),
+        2,
+        3,
+    );
 }
 
 #[test]
 fn rectangular_grid_perspective_click_projects_each_anchor_and_is_one_undo_step() {
     let mut app = app();
-    app.run("perspective.grid.preset", json!({"kind": 2})).unwrap();
-    app.run("perspective.grid.set", json!({"snap": false})).unwrap();
-    app.run("perspective.plane.set", json!({"plane": "right"})).unwrap();
+    app.run("perspective.grid.preset", json!({"kind": 2}))
+        .unwrap();
+    app.run("perspective.grid.set", json!({"snap": false}))
+        .unwrap();
+    app.run("perspective.plane.set", json!({"plane": "right"}))
+        .unwrap();
     let grid = PerspectiveGrid::effective(&app.session.doc().unwrap().doc);
     let at = grid.to_page(Plane::Right, Point::new(65.0, 85.0)).unwrap();
     let map = grid.size_homography(Plane::Right, at, false).unwrap();
@@ -275,10 +429,24 @@ fn rectangular_grid_perspective_click_projects_each_anchor_and_is_one_undo_step(
     values(&mut app, json!(96), json!(54), json!(1), json!(2));
     let id = confirm(&mut app);
     let expected = [
-        vec![at, Point::new(at.x + 96.0, at.y), Point::new(at.x + 96.0, at.y + 54.0), Point::new(at.x, at.y + 54.0)],
-        vec![Point::new(at.x, at.y + 27.0), Point::new(at.x + 96.0, at.y + 27.0)],
-        vec![Point::new(at.x + 32.0, at.y), Point::new(at.x + 32.0, at.y + 54.0)],
-        vec![Point::new(at.x + 64.0, at.y), Point::new(at.x + 64.0, at.y + 54.0)],
+        vec![
+            at,
+            Point::new(at.x + 96.0, at.y),
+            Point::new(at.x + 96.0, at.y + 54.0),
+            Point::new(at.x, at.y + 54.0),
+        ],
+        vec![
+            Point::new(at.x, at.y + 27.0),
+            Point::new(at.x + 96.0, at.y + 27.0),
+        ],
+        vec![
+            Point::new(at.x + 32.0, at.y),
+            Point::new(at.x + 32.0, at.y + 54.0),
+        ],
+        vec![
+            Point::new(at.x + 64.0, at.y),
+            Point::new(at.x + 64.0, at.y + 54.0),
+        ],
     ];
     let actual = paths(&app, id);
     assert_eq!(actual.len(), expected.len());
@@ -287,7 +455,10 @@ fn rectangular_grid_perspective_click_projects_each_anchor_and_is_one_undo_step(
         assert_path(path, &projected, index == 0);
     }
     let state = app.session.doc().unwrap();
-    assert_eq!(PerspectiveGrid::effective(&state.doc).attachment_of(&state.doc, id), Some((Plane::Right, 0.0)));
+    assert_eq!(
+        PerspectiveGrid::effective(&state.doc).attachment_of(&state.doc, id),
+        Some((Plane::Right, 0.0))
+    );
     assert_eq!(state.history.undo.len(), before.undo + 1);
     let (command, params) = app.session.journal.last().unwrap();
     assert_eq!(command, "perspective.draw");
@@ -305,7 +476,8 @@ fn rectangular_grid_failed_creation_does_not_save_counts() {
     let mut app = app();
     saved_counts(&mut app, 2, 3);
     let layer = app.session.doc().unwrap().doc.layers[0].id;
-    app.run("layer.setProps", json!({"ids": [layer.0], "locked": true})).unwrap();
+    app.run("layer.setProps", json!({"ids": [layer.0], "locked": true}))
+        .unwrap();
     let before = Snapshot::take(&app);
     click(&mut app, Point::new(30.0, 40.0));
     values(&mut app, json!(120), json!(60), json!(7), json!(8));
@@ -319,11 +491,22 @@ fn rectangular_grid_failed_creation_does_not_save_counts() {
 #[test]
 fn rectangular_grid_dialog_edits_skews_frame_and_fill() {
     let mut app = app();
-    app.run("paint.setFill", json!({"color": "#ff0000"})).unwrap();
-    app.run("tool.setOption", json!({"tool": KIND, "values": {"rowSkew": 100, "frame": false}})).unwrap();
+    app.run("paint.setFill", json!({"color": "#ff0000"}))
+        .unwrap();
+    app.run(
+        "tool.setOption",
+        json!({"tool": KIND, "values": {"rowSkew": 100, "frame": false}}),
+    )
+    .unwrap();
     click(&mut app, Point::new(10.0, 20.0));
-    assert_eq!((field(&app, "rowSkew"), field(&app, "columnSkew")), (json!(100.0), json!(0.0)));
-    assert_eq!((field(&app, "frame"), field(&app, "fill")), (json!(false), json!(false)));
+    assert_eq!(
+        (field(&app, "rowSkew"), field(&app, "columnSkew")),
+        (json!(100.0), json!(0.0))
+    );
+    assert_eq!(
+        (field(&app, "frame"), field(&app, "fill")),
+        (json!(false), json!(false))
+    );
     let text = crate::tests_labels::painted_text(&mut app, |app, ui| super::show(app, ui.ctx()));
     let labels = [
         "Horizontal Dividers:",
@@ -339,9 +522,15 @@ fn rectangular_grid_dialog_edits_skews_frame_and_fill() {
     ];
     let mut from = 0;
     for label in labels {
-        from += text[from..].find(&format!("{label}\n")).unwrap_or_else(|| panic!("no {label:?} in order in {text}")) + label.len();
+        from += text[from..]
+            .find(&format!("{label}\n"))
+            .unwrap_or_else(|| panic!("no {label:?} in order in {text}"))
+            + label.len();
     }
-    assert!(!text.contains("Row Skew") && !text.contains("false"), "the skews and switches aren't plain fields: {text}");
+    assert!(
+        !text.contains("Row Skew") && !text.contains("false"),
+        "the skews and switches aren't plain fields: {text}"
+    );
     values(&mut app, json!(100), json!(100), json!(3), json!(1));
     set(&mut app, "columnSkew", json!("-250"));
     set(&mut app, "fill", json!(true));
@@ -351,7 +540,11 @@ fn rectangular_grid_dialog_edits_skews_frame_and_fill() {
     assert_eq!(paths.len(), 8);
     assert!(paths.iter().all(|p| !p.is_closed()));
     for (path, y) in paths[4..7].iter().zip([6.25, 25.0, 56.25]) {
-        assert_path(path, &[Point::new(10.0, 20.0 + y), Point::new(110.0, 20.0 + y)], false);
+        assert_path(
+            path,
+            &[Point::new(10.0, 20.0 + y), Point::new(110.0, 20.0 + y)],
+            false,
+        );
     }
     let x = paths[7].subpaths[0].anchors[0].p.x;
     assert!(x > 10.0 && x < 30.0, "toward the left: {x}");
@@ -364,12 +557,30 @@ fn rectangular_grid_dialog_edits_skews_frame_and_fill() {
     let dragged = app.session.doc().unwrap().selection.objects[0];
     assert_ne!(dragged, id);
     let doc = &app.session.doc().unwrap().doc;
-    let offset =
-        |id: NodeId| doc.node(id).unwrap().children().unwrap().iter().map(|n| n.path_data().unwrap().subpaths[0].anchors[0].p).collect::<Vec<_>>();
+    let offset = |id: NodeId| {
+        doc.node(id)
+            .unwrap()
+            .children()
+            .unwrap()
+            .iter()
+            .map(|n| n.path_data().unwrap().subpaths[0].anchors[0].p)
+            .collect::<Vec<_>>()
+    };
     for (a, b) in offset(id).iter().zip(offset(dragged)) {
-        assert!((b.x - a.x - 290.0).abs() < 1e-9 && (b.y - a.y - 280.0).abs() < 1e-9, "{a:?} {b:?}");
+        assert!(
+            (b.x - a.x - 290.0).abs() < 1e-9 && (b.y - a.y - 280.0).abs() < 1e-9,
+            "{a:?} {b:?}"
+        );
     }
     assert!(
-        doc.node(dragged).unwrap().children().unwrap().iter().all(|n| n.appearance.fill().is_some_and(|f| f.paint != vectorcraft_color::Paint::None))
+        doc.node(dragged)
+            .unwrap()
+            .children()
+            .unwrap()
+            .iter()
+            .all(|n| n
+                .appearance
+                .fill()
+                .is_some_and(|f| f.paint != vectorcraft_color::Paint::None))
     );
 }

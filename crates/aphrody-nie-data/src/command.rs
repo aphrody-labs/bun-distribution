@@ -155,7 +155,10 @@ impl AllCmdEventInfo {
         if cmd_action_id.is_zero() {
             return None;
         }
-        Some(Self { cmd_action_id, func_hash: node.hash(1) })
+        Some(Self {
+            cmd_action_id,
+            func_hash: node.hash(1),
+        })
     }
 }
 
@@ -184,7 +187,10 @@ impl CharaCmdEventFunc {
         if func_no == 0 {
             return None;
         }
-        Some(Self { func_no, func_hash: node.hash(1) })
+        Some(Self {
+            func_no,
+            func_hash: node.hash(1),
+        })
     }
 }
 
@@ -228,7 +234,9 @@ impl CmdEventConfig {
     /// ```
     #[must_use]
     pub fn find_event(&self, cmd_action_id: HashId) -> Option<&AllCmdEventInfo> {
-        self.all_cmd_events.iter().find(|e| e.cmd_action_id == cmd_action_id)
+        self.all_cmd_events
+            .iter()
+            .find(|e| e.cmd_action_id == cmd_action_id)
     }
 }
 
@@ -285,7 +293,10 @@ pub fn parse_cmd_events(root: &Value) -> CmdEventConfig {
         }
     });
 
-    CmdEventConfig { all_cmd_events, chara_cmd_funcs }
+    CmdEventConfig {
+        all_cmd_events,
+        chara_cmd_funcs,
+    }
 }
 
 /// Parse un `chara_cmd_event_common_*.cfg.bin.json` — liste de `CHARA_ACTION_CMD_DATA_*`.

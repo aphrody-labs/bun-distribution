@@ -252,7 +252,12 @@ impl ExportOptions {
         if DECIMALS.contains(&self.decimals) {
             Ok(())
         } else {
-            Err(format!("decimals must be {}–{} (got {})", DECIMALS.start(), DECIMALS.end(), self.decimals))
+            Err(format!(
+                "decimals must be {}–{} (got {})",
+                DECIMALS.start(),
+                DECIMALS.end(),
+                self.decimals
+            ))
         }
     }
 }
@@ -294,9 +299,15 @@ impl Encoding {
     fn encode_str(self, svg: &str) -> Vec<u8> {
         match self {
             Encoding::Utf8 => svg.as_bytes().to_vec(),
-            Encoding::Utf16 => [0xfe, 0xff].into_iter().chain(svg.encode_utf16().flat_map(u16::to_be_bytes)).collect(),
+            Encoding::Utf16 => [0xfe, 0xff]
+                .into_iter()
+                .chain(svg.encode_utf16().flat_map(u16::to_be_bytes))
+                .collect(),
             // The writer left only Latin-1 characters (the others are character references).
-            Encoding::Latin1 => svg.chars().map(|c| u8::try_from(c).unwrap_or(b'?')).collect(),
+            Encoding::Latin1 => svg
+                .chars()
+                .map(|c| u8::try_from(c).unwrap_or(b'?'))
+                .collect(),
         }
     }
 }
@@ -350,10 +361,19 @@ pub fn editing(svg: &str) -> Option<Editing> {
     if !svg.contains(EDITING_NS) {
         return None;
     }
-    let opts = usvg::roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() };
+    let opts = usvg::roxmltree::ParsingOptions {
+        allow_dtd: true,
+        ..Default::default()
+    };
     let xml = usvg::roxmltree::Document::parse_with_options(svg, opts).ok()?;
-    let el = xml.descendants().find(|n| n.tag_name().namespace() == Some(EDITING_NS) && n.tag_name().name() == "document")?;
-    let data: String = el.children().filter_map(|c| c.text()).flat_map(|t| t.chars().filter(|c| !c.is_whitespace())).collect();
+    let el = xml.descendants().find(|n| {
+        n.tag_name().namespace() == Some(EDITING_NS) && n.tag_name().name() == "document"
+    })?;
+    let data: String = el
+        .children()
+        .filter_map(|c| c.text())
+        .flat_map(|t| t.chars().filter(|c| !c.is_whitespace()))
+        .collect();
     if data.is_empty() {
         return None;
     }
@@ -362,7 +382,10 @@ pub fn editing(svg: &str) -> Option<Editing> {
         (None, _) => true,
         (Some(h), Some(meta)) => {
             let r = meta.range();
-            let (head, tail) = (svg.get(..r.start).unwrap_or(""), svg.get(r.end..).unwrap_or(""));
+            let (head, tail) = (
+                svg.get(..r.start).unwrap_or(""),
+                svg.get(r.end..).unwrap_or(""),
+            );
             body_hash(&[head, tail]) == h
         }
         (Some(_), None) => false,
@@ -411,7 +434,10 @@ pub fn compress(svg: &str) -> Vec<u8> {
 /// Compress an SVG file (in any encoding, see [`Output::bytes`]) as SVGZ (gzip).
 pub fn compress_bytes(svg: &[u8]) -> Vec<u8> {
     use std::io::Write as _;
-    let mut gz = flate2::write::GzEncoder::new(Vec::with_capacity(svg.len() / 4), flate2::Compression::default());
+    let mut gz = flate2::write::GzEncoder::new(
+        Vec::with_capacity(svg.len() / 4),
+        flate2::Compression::default(),
+    );
     // Writing to a Vec cannot fail.
     let _ = gz.write_all(svg);
     gz.finish().unwrap_or_default()
@@ -426,7 +452,9 @@ pub fn text_of(bytes: &[u8]) -> Result<std::borrow::Cow<'_, str>, SvgError> {
     use std::io::Read as _;
     if !is_svgz(bytes) {
         return match decode(bytes)? {
-            Decoded::Utf8(skip) => std::str::from_utf8(bytes.get(skip..).unwrap_or_default()).map(Into::into).map_err(|_| not_utf8()),
+            Decoded::Utf8(skip) => std::str::from_utf8(bytes.get(skip..).unwrap_or_default())
+                .map(Into::into)
+                .map_err(|_| not_utf8()),
             Decoded::Text(t) => Ok(t.into()),
         };
     }
@@ -436,12 +464,17 @@ pub fn text_of(bytes: &[u8]) -> Result<std::borrow::Cow<'_, str>, SvgError> {
         .read_to_end(&mut raw)
         .map_err(|e| SvgError::Parse(format!("not a valid SVGZ file: {e}")))?;
     if raw.len() as u64 > MAX_SVGZ {
-        return Err(SvgError::Parse(format!("the SVGZ file unpacks to more than {} MB", MAX_SVGZ >> 20)));
+        return Err(SvgError::Parse(format!(
+            "the SVGZ file unpacks to more than {} MB",
+            MAX_SVGZ >> 20
+        )));
     }
     match decode(&raw)? {
         Decoded::Utf8(skip) => {
             raw.drain(..skip);
-            String::from_utf8(raw).map(Into::into).map_err(|_| not_utf8())
+            String::from_utf8(raw)
+                .map(Into::into)
+                .map_err(|_| not_utf8())
         }
         Decoded::Text(t) => Ok(t.into()),
     }
@@ -467,13 +500,18 @@ fn decode(bytes: &[u8]) -> Result<Decoded, SvgError> {
         if !odd.is_empty() {
             return Err(not_utf8());
         }
-        char::decode_utf16(units.iter().map(|u| unit(*u))).collect::<Result<String, _>>().map(Decoded::Text).map_err(|_| not_utf8())
+        char::decode_utf16(units.iter().map(|u| unit(*u)))
+            .collect::<Result<String, _>>()
+            .map(Decoded::Text)
+            .map_err(|_| not_utf8())
     };
     match bytes {
         [0xef, 0xbb, 0xbf, ..] => Ok(Decoded::Utf8(3)),
         [0xfe, 0xff, rest @ ..] => utf16(rest, u16::from_be_bytes),
         [0xff, 0xfe, rest @ ..] => utf16(rest, u16::from_le_bytes),
-        _ if declared_latin1(bytes) => Ok(Decoded::Text(bytes.iter().map(|b| char::from(*b)).collect())),
+        _ if declared_latin1(bytes) => Ok(Decoded::Text(
+            bytes.iter().map(|b| char::from(*b)).collect(),
+        )),
         _ => Ok(Decoded::Utf8(0)),
     }
 }
@@ -481,12 +519,31 @@ fn decode(bytes: &[u8]) -> Result<Decoded, SvgError> {
 /// Does the XML declaration at the start of `bytes` name ISO 8859-1?
 fn declared_latin1(bytes: &[u8]) -> bool {
     let head = bytes.get(..bytes.len().min(200)).unwrap_or_default();
-    let Some(decl) = head.strip_prefix(b"<?xml").and_then(|d| d.split(|b| *b == b'>').next()) else { return false };
+    let Some(decl) = head
+        .strip_prefix(b"<?xml")
+        .and_then(|d| d.split(|b| *b == b'>').next())
+    else {
+        return false;
+    };
     let decl = String::from_utf8_lossy(decl).to_ascii_lowercase();
-    let Some(at) = decl.find("encoding") else { return false };
-    let value = decl.get(at + "encoding".len()..).unwrap_or("").trim_start().trim_start_matches('=').trim_start();
-    let name = value.trim_start_matches(['"', '\'']).split(['"', '\'', ' ', '?']).next().unwrap_or("");
-    matches!(name, "iso-8859-1" | "iso8859-1" | "iso_8859-1" | "latin1" | "latin-1" | "l1")
+    let Some(at) = decl.find("encoding") else {
+        return false;
+    };
+    let value = decl
+        .get(at + "encoding".len()..)
+        .unwrap_or("")
+        .trim_start()
+        .trim_start_matches('=')
+        .trim_start();
+    let name = value
+        .trim_start_matches(['"', '\''])
+        .split(['"', '\'', ' ', '?'])
+        .next()
+        .unwrap_or("");
+    matches!(
+        name,
+        "iso-8859-1" | "iso8859-1" | "iso_8859-1" | "latin1" | "latin-1" | "l1"
+    )
 }
 
 /// Import an SVG document.
@@ -531,7 +588,9 @@ const FNV_SEED: u64 = 0xcbf29ce484222325;
 
 /// FNV-1a of `bytes` continued from hash `h`.
 fn fnv1a_from(h: u64, bytes: &[u8]) -> u64 {
-    bytes.iter().fold(h, |h, b| (h ^ *b as u64).wrapping_mul(0x100000001b3))
+    bytes
+        .iter()
+        .fold(h, |h, b| (h ^ *b as u64).wrapping_mul(0x100000001b3))
 }
 
 /// Standard base64 (RFC 4648, with padding).
@@ -543,8 +602,16 @@ pub fn base64_encode(data: &[u8]) -> String {
         let n = (b[0] as u32) << 16 | (b[1] as u32) << 8 | b[2] as u32;
         out.push(T[(n >> 18) as usize & 63] as char);
         out.push(T[(n >> 12) as usize & 63] as char);
-        out.push(if c.len() > 1 { T[(n >> 6) as usize & 63] as char } else { '=' });
-        out.push(if c.len() > 2 { T[n as usize & 63] as char } else { '=' });
+        out.push(if c.len() > 1 {
+            T[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if c.len() > 2 {
+            T[n as usize & 63] as char
+        } else {
+            '='
+        });
     }
     out
 }

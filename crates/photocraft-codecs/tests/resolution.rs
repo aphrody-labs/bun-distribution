@@ -26,10 +26,18 @@ struct Exif {
 
 impl Exif {
     fn u16(&self, v: u16) -> [u8; 2] {
-        if self.big { v.to_be_bytes() } else { v.to_le_bytes() }
+        if self.big {
+            v.to_be_bytes()
+        } else {
+            v.to_le_bytes()
+        }
     }
     fn u32(&self, v: u32) -> [u8; 4] {
-        if self.big { v.to_be_bytes() } else { v.to_le_bytes() }
+        if self.big {
+            v.to_be_bytes()
+        } else {
+            v.to_le_bytes()
+        }
     }
     fn rational(&self, n: u32, d: u32) -> Vec<u8> {
         [self.u32(n), self.u32(d)].concat()
@@ -55,7 +63,11 @@ impl Exif {
 
     /// A TIFF-structured EXIF block: header, IFD0 at 8, then the out-of-line values.
     fn build(&self, entries: &[E]) -> Vec<u8> {
-        let mut v = if self.big { b"MM\0*".to_vec() } else { b"II*\0".to_vec() };
+        let mut v = if self.big {
+            b"MM\0*".to_vec()
+        } else {
+            b"II*\0".to_vec()
+        };
         v.extend_from_slice(&self.u32(8));
         v.extend_from_slice(&self.u16(entries.len() as u16));
         let mut data_at = 8 + 2 + entries.len() * 12 + 4;
@@ -109,7 +121,10 @@ fn exif_app1(exif: &[u8]) -> Vec<u8> {
 }
 
 fn xmp_app1(xmp: &str) -> Vec<u8> {
-    segment(0xE1, &[b"http://ns.adobe.com/xap/1.0/\0".as_slice(), xmp.as_bytes()].concat())
+    segment(
+        0xE1,
+        &[b"http://ns.adobe.com/xap/1.0/\0".as_slice(), xmp.as_bytes()].concat(),
+    )
 }
 
 /// An 8BIM resource block holding ResolutionInfo at `ppi` (display unit inch), after an
@@ -160,7 +175,10 @@ fn dpi_of(bytes: &[u8]) -> Option<(f32, f32)> {
 
 fn near(got: Option<(f32, f32)>, want: f32) {
     let (x, y) = got.unwrap_or_else(|| panic!("no resolution, wanted {want}"));
-    assert!((x - want).abs() < 0.01 && (y - want).abs() < 0.01, "got {x}×{y}, wanted {want}");
+    assert!(
+        (x - want).abs() < 0.01 && (y - want).abs() < 0.01,
+        "got {x}×{y}, wanted {want}"
+    );
 }
 
 /// The APPn payloads of a JPEG: (marker, payload).
@@ -179,12 +197,22 @@ fn app_segments(b: &[u8]) -> Vec<(u8, Vec<u8>)> {
 
 /// (unit, x, y) of a JPEG's JFIF header.
 fn jfif_density(b: &[u8]) -> (u8, u16, u16) {
-    let (_, p) = app_segments(b).into_iter().find(|(m, p)| *m == 0xE0 && p.starts_with(b"JFIF\0")).unwrap();
-    (p[7], u16::from_be_bytes([p[8], p[9]]), u16::from_be_bytes([p[10], p[11]]))
+    let (_, p) = app_segments(b)
+        .into_iter()
+        .find(|(m, p)| *m == 0xE0 && p.starts_with(b"JFIF\0"))
+        .unwrap();
+    (
+        p[7],
+        u16::from_be_bytes([p[8], p[9]]),
+        u16::from_be_bytes([p[10], p[11]]),
+    )
 }
 
 fn exif_of(b: &[u8]) -> Vec<u8> {
-    let (_, p) = app_segments(b).into_iter().find(|(m, p)| *m == 0xE1 && p.starts_with(b"Exif\0\0")).unwrap();
+    let (_, p) = app_segments(b)
+        .into_iter()
+        .find(|(m, p)| *m == 0xE1 && p.starts_with(b"Exif\0\0"))
+        .unwrap();
     p[6..].to_vec()
 }
 
@@ -193,9 +221,21 @@ fn exif_only_camera_jpeg_opens_at_its_exif_resolution() {
     for e in [&LE, &BE] {
         near(dpi_of(&jpeg_with(&[exif_app1(&camera_exif(e))])), 300.0);
         // ResolutionUnit absent: inch, the EXIF default.
-        near(dpi_of(&jpeg_with(&[exif_app1(&e.build(&[e.x(300, 1), e.y(300, 1)]))])), 300.0);
+        near(
+            dpi_of(&jpeg_with(&[exif_app1(
+                &e.build(&[e.x(300, 1), e.y(300, 1)]),
+            )])),
+            300.0,
+        );
         // Non-unit denominators.
-        near(dpi_of(&jpeg_with(&[exif_app1(&e.build(&[e.x(3_000_000, 10_000), e.y(1200, 4), e.unit(2)]))])), 300.0);
+        near(
+            dpi_of(&jpeg_with(&[exif_app1(&e.build(&[
+                e.x(3_000_000, 10_000),
+                e.y(1200, 4),
+                e.unit(2),
+            ]))])),
+            300.0,
+        );
     }
 }
 
@@ -210,13 +250,22 @@ fn exif_resolution_in_centimetres_is_converted() {
 
 #[test]
 fn jfif_aspect_ratio_only_with_exif_uses_exif() {
-    near(dpi_of(&jpeg_with(&[jfif(0, 1, 1), exif_app1(&camera_exif(&LE))])), 300.0);
+    near(
+        dpi_of(&jpeg_with(&[jfif(0, 1, 1), exif_app1(&camera_exif(&LE))])),
+        300.0,
+    );
 }
 
 #[test]
 fn exif_outranks_a_default_jfif_density() {
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&camera_exif(&LE))])), 300.0);
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&camera_exif(&BE))])), 300.0);
+    near(
+        dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&camera_exif(&LE))])),
+        300.0,
+    );
+    near(
+        dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&camera_exif(&BE))])),
+        300.0,
+    );
     // JFIF alone still counts, in either unit.
     near(dpi_of(&jpeg_with(&[jfif(1, 72, 72)])), 72.0);
     near(dpi_of(&jpeg_with(&[jfif(2, 100, 100)])), 254.0);
@@ -227,10 +276,24 @@ fn exif_outranks_a_default_jfif_density() {
 fn photoshop_resolution_info_wins_then_xmp_then_exif() {
     let xmp = r#"<x:xmpmeta><rdf:Description tiff:XResolution="200/1" tiff:YResolution="200/1" tiff:ResolutionUnit="2"/></x:xmpmeta>"#;
     let exif = exif_app1(&camera_exif(&LE));
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif.clone(), xmp_app1(xmp), app13(&irb(240.0))])), 240.0);
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif.clone(), xmp_app1(xmp)])), 200.0);
+    near(
+        dpi_of(&jpeg_with(&[
+            jfif(1, 72, 72),
+            exif.clone(),
+            xmp_app1(xmp),
+            app13(&irb(240.0)),
+        ])),
+        240.0,
+    );
+    near(
+        dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif.clone(), xmp_app1(xmp)])),
+        200.0,
+    );
     // A fractional Photoshop resolution survives the 16.16 fixed point.
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif, app13(&irb(299.5))])), 299.5);
+    near(
+        dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif, app13(&irb(299.5))])),
+        299.5,
+    );
     near(photoshop_resolution(&irb(150.0)), 150.0);
     // Element form, centimetres.
     let elem = "<tiff:XResolution>100/1</tiff:XResolution><tiff:YResolution>100</tiff:YResolution><tiff:ResolutionUnit>3</tiff:ResolutionUnit>";
@@ -245,25 +308,43 @@ fn unusable_exif_falls_back_to_jfif() {
         e.build(&[e.x(300, 1), e.y(300, 1), e.unit(1)]),
         // Unknown unit, malformed unit entry.
         e.build(&[e.x(300, 1), e.y(300, 1), e.unit(9)]),
-        e.build(&[e.x(300, 1), e.y(300, 1), E(UNIT, LONG, 1, e.u32(2).to_vec())]),
+        e.build(&[
+            e.x(300, 1),
+            e.y(300, 1),
+            E(UNIT, LONG, 1, e.u32(2).to_vec()),
+        ]),
         // Zero denominator, zero value, wrong type, wrong count.
         e.build(&[e.x(300, 0), e.y(300, 1)]),
         e.build(&[e.x(0, 1), e.y(300, 1)]),
         e.build(&[E(X, SHORT, 1, e.short(300)), e.y(300, 1)]),
-        e.build(&[E(X, RATIONAL, 2, [e.rational(300, 1), e.rational(300, 1)].concat()), e.y(300, 1)]),
+        e.build(&[
+            E(
+                X,
+                RATIONAL,
+                2,
+                [e.rational(300, 1), e.rational(300, 1)].concat(),
+            ),
+            e.y(300, 1),
+        ]),
         // Only one axis.
         e.build(&[e.x(300, 1)]),
     ];
     for exif in &bad {
         assert_eq!(exif_resolution(exif), None);
-        near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(exif)])), 72.0);
+        near(
+            dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(exif)])),
+            72.0,
+        );
     }
     // A value offset pointing past the end.
     let mut far = camera_exif(e);
     let at = 8 + 2 + 12 + 8; // XResolution entry's value field
     far[at..at + 4].copy_from_slice(&e.u32(60_000));
     assert_eq!(exif_resolution(&far), None);
-    near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&far)])), 72.0);
+    near(
+        dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&far)])),
+        72.0,
+    );
 }
 
 #[test]
@@ -273,14 +354,23 @@ fn truncated_metadata_never_panics_and_falls_back() {
         let _ = exif_resolution(&exif[..n]);
         let _ = exif_with_resolution(&exif[..n], (240.0, 240.0));
         let dpi = dpi_of(&jpeg_with(&[jfif(1, 72, 72), exif_app1(&exif[..n])]));
-        assert!(dpi == Some((72.0, 72.0)) || dpi == Some((300.0, 300.0)), "{n}: {dpi:?}");
+        assert!(
+            dpi == Some((72.0, 72.0)) || dpi == Some((300.0, 300.0)),
+            "{n}: {dpi:?}"
+        );
     }
     let r = irb(300.0);
     for n in 0..r.len() {
         assert_eq!(photoshop_resolution(&r[..n]), None, "{n}");
         near(dpi_of(&jpeg_with(&[jfif(1, 72, 72), app13(&r[..n])])), 72.0);
     }
-    for x in ["tiff:XResolution=", "tiff:XResolution=\"", "tiff:XResolution=\"\" tiff:YResolution=\"5/0\"", "<tiff:XResolution>", "</tiff:XResolution>9<"] {
+    for x in [
+        "tiff:XResolution=",
+        "tiff:XResolution=\"",
+        "tiff:XResolution=\"\" tiff:YResolution=\"5/0\"",
+        "<tiff:XResolution>",
+        "</tiff:XResolution>9<",
+    ] {
         assert_eq!(xmp_resolution(x), None, "{x}");
         let _ = xmp_with_resolution(x, (1.0, 1.0));
     }
@@ -311,21 +401,45 @@ proptest! {
 #[test]
 fn rewriting_keeps_every_other_byte() {
     for e in [&LE, &BE] {
-        let src = e.build(&[e.make(), e.orientation(6), e.x(300, 1), e.y(300, 1), e.unit(3)]);
+        let src = e.build(&[
+            e.make(),
+            e.orientation(6),
+            e.x(300, 1),
+            e.y(300, 1),
+            e.unit(3),
+        ]);
         let out = exif_with_resolution(&src, (240.0, 240.0)).into_owned();
         assert_eq!(out.len(), src.len());
         near(exif_resolution(&out), 240.0);
-        let want = e.build(&[e.make(), e.orientation(6), e.x(240, 1), e.y(240, 1), e.unit(2)]);
+        let want = e.build(&[
+            e.make(),
+            e.orientation(6),
+            e.x(240, 1),
+            e.y(240, 1),
+            e.unit(2),
+        ]);
         assert_eq!(out, want);
         // Fractions keep three decimals.
-        near(exif_resolution(&exif_with_resolution(&src, (299.5, 72.25))).map(|(x, _)| (x, x)), 299.5);
+        near(
+            exif_resolution(&exif_with_resolution(&src, (299.5, 72.25))).map(|(x, _)| (x, x)),
+            299.5,
+        );
         // Nothing to change: borrowed.
-        assert!(matches!(exif_with_resolution(&camera_exif(e), (300.0, 300.0)), Cow::Borrowed(_)));
+        assert!(matches!(
+            exif_with_resolution(&camera_exif(e), (300.0, 300.0)),
+            Cow::Borrowed(_)
+        ));
         let no_res = e.build(&[e.make()]);
-        assert!(matches!(exif_with_resolution(&no_res, (240.0, 240.0)), Cow::Borrowed(_)));
+        assert!(matches!(
+            exif_with_resolution(&no_res, (240.0, 240.0)),
+            Cow::Borrowed(_)
+        ));
         // With the JPEG prefix.
         let prefixed = [b"Exif\0\0".as_slice(), &src].concat();
-        assert_eq!(exif_with_resolution(&prefixed, (240.0, 240.0)).as_ref(), [b"Exif\0\0".as_slice(), &want].concat());
+        assert_eq!(
+            exif_with_resolution(&prefixed, (240.0, 240.0)).as_ref(),
+            [b"Exif\0\0".as_slice(), &want].concat()
+        );
     }
 }
 
@@ -333,10 +447,20 @@ fn rewriting_keeps_every_other_byte() {
 fn entries_that_cannot_be_rewritten_are_removed() {
     for e in [&LE, &BE] {
         // XResolution as a SHORT and a LONG unit: both go, the rest stays readable.
-        let src = e.build(&[e.make(), E(X, SHORT, 1, e.short(300)), e.y(300, 1), E(UNIT, LONG, 1, e.u32(2).to_vec()), e.orientation(6)]);
+        let src = e.build(&[
+            e.make(),
+            E(X, SHORT, 1, e.short(300)),
+            e.y(300, 1),
+            E(UNIT, LONG, 1, e.u32(2).to_vec()),
+            e.orientation(6),
+        ]);
         let out = exif_with_resolution(&src, (240.0, 240.0)).into_owned();
         assert_eq!(out.len(), src.len());
-        let count = if e.big { u16::from_be_bytes([out[8], out[9]]) } else { u16::from_le_bytes([out[8], out[9]]) };
+        let count = if e.big {
+            u16::from_be_bytes([out[8], out[9]])
+        } else {
+            u16::from_le_bytes([out[8], out[9]])
+        };
         assert_eq!(count, 3);
         assert_eq!(exif_orientation(&out), 6);
         // Only YResolution is left (240): no X, so no resolution at all, and no stale 300.
@@ -344,7 +468,11 @@ fn entries_that_cannot_be_rewritten_are_removed() {
         let tags: Vec<u16> = (0..3)
             .map(|k| {
                 let at = 10 + k * 12;
-                if e.big { u16::from_be_bytes([out[at], out[at + 1]]) } else { u16::from_le_bytes([out[at], out[at + 1]]) }
+                if e.big {
+                    u16::from_be_bytes([out[at], out[at + 1]])
+                } else {
+                    u16::from_le_bytes([out[at], out[at + 1]])
+                }
             })
             .collect();
         assert_eq!(tags, vec![0x010F, Y, 0x0112]);
@@ -363,10 +491,17 @@ fn xmp_resolution_is_rewritten() {
         xmp_with_resolution(attr, (240.0, 240.0)),
         r#"<rdf:Description tiff:XResolution="240/1" tiff:YResolution='240/1' tiff:ResolutionUnit="2" tiff:Make="X"/>"#
     );
-    let elem = "<tiff:XResolution>300/1</tiff:XResolution><tiff:YResolution>300/1</tiff:YResolution>";
-    assert_eq!(xmp_with_resolution(elem, (72.5, 72.5)), "<tiff:XResolution>72500/1000</tiff:XResolution><tiff:YResolution>72500/1000</tiff:YResolution>");
+    let elem =
+        "<tiff:XResolution>300/1</tiff:XResolution><tiff:YResolution>300/1</tiff:YResolution>";
+    assert_eq!(
+        xmp_with_resolution(elem, (72.5, 72.5)),
+        "<tiff:XResolution>72500/1000</tiff:XResolution><tiff:YResolution>72500/1000</tiff:YResolution>"
+    );
     for same in [r#"tiff:XResolution="240" tiff:YResolution="240/1""#, "<x/>"] {
-        assert!(matches!(xmp_with_resolution(same, (240.0, 240.0)), Cow::Borrowed(_)), "{same}");
+        assert!(
+            matches!(xmp_with_resolution(same, (240.0, 240.0)), Cow::Borrowed(_)),
+            "{same}"
+        );
     }
 }
 
@@ -381,7 +516,10 @@ fn jpeg_export_writes_one_resolution_everywhere() {
         let out = encode(&img, Format::Jpeg, &EncodeOptions::default()).unwrap();
         assert_eq!(jfif_density(&out), (1, 240, 240));
         near(exif_resolution(&exif_of(&out)), 240.0);
-        let (_, x) = app_segments(&out).into_iter().find(|(m, p)| *m == 0xE1 && p.starts_with(b"http://ns.adobe.com/xap/1.0/\0")).unwrap();
+        let (_, x) = app_segments(&out)
+            .into_iter()
+            .find(|(m, p)| *m == 0xE1 && p.starts_with(b"http://ns.adobe.com/xap/1.0/\0"))
+            .unwrap();
         near(xmp_resolution(std::str::from_utf8(&x).unwrap()), 240.0);
         near(dpi_of(&out), 240.0);
         // The rest of the EXIF came along.
@@ -412,7 +550,11 @@ fn crc32(data: &[u8]) -> u32 {
     for &b in data {
         c ^= u32::from(b);
         for _ in 0..8 {
-            c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+            c = if c & 1 != 0 {
+                0xEDB8_8320 ^ (c >> 1)
+            } else {
+                c >> 1
+            };
         }
     }
     !c
@@ -461,7 +603,11 @@ fn exif_with_thumbnail(e: &Exif) -> Vec<u8> {
 fn next_ifd(e: &Exif, exif: &[u8]) -> u32 {
     let at = 8 + 2 + 4 * 12;
     let b: [u8; 4] = exif[at..at + 4].try_into().unwrap();
-    if e.big { u32::from_be_bytes(b) } else { u32::from_le_bytes(b) }
+    if e.big {
+        u32::from_be_bytes(b)
+    } else {
+        u32::from_le_bytes(b)
+    }
 }
 
 /// #2147 / #2373: an export must not carry the source's EXIF thumbnail (IFD1). Finder, Android
@@ -475,26 +621,41 @@ fn exports_drop_the_source_exif_thumbnail() {
             let out = export_exif(&exif, ppi);
             assert_eq!(next_ifd(e, &out), 0, "IFD1 is unlinked ({ppi:?})");
             assert_eq!(out.len(), exif.len(), "nothing moves");
-            assert!(out.windows(6).any(|w| w == b"NIKON\0"), "the rest of the EXIF is kept");
+            assert!(
+                out.windows(6).any(|w| w == b"NIKON\0"),
+                "the rest of the EXIF is kept"
+            );
             near(exif_resolution(&out), ppi.map_or(300.0, |p| p.0));
         }
         // Only the pointer changes.
         let out = export_exif(&exif, None);
         let differing: Vec<usize> = (0..exif.len()).filter(|&i| exif[i] != out[i]).collect();
-        assert!(differing.iter().all(|&i| (8 + 2 + 4 * 12..8 + 2 + 4 * 12 + 4).contains(&i)), "{differing:?}");
+        assert!(
+            differing
+                .iter()
+                .all(|&i| (8 + 2 + 4 * 12..8 + 2 + 4 * 12 + 4).contains(&i)),
+            "{differing:?}"
+        );
         // With a JPEG-style prefix too.
         let prefixed = [b"Exif\0\0".as_slice(), &exif].concat();
         assert_eq!(next_ifd(e, &export_exif(&prefixed, None)[6..]), 0);
         // An EXIF without a thumbnail comes through untouched.
-        assert!(matches!(export_exif(&camera_exif(e), None), Cow::Borrowed(_)));
+        assert!(matches!(
+            export_exif(&camera_exif(e), None),
+            Cow::Borrowed(_)
+        ));
         // Through every encoder that writes EXIF.
-        let mut img = Image::from_raw(4, 4, ChannelLayout::Rgb, SampleType::U8, vec![90; 48]).unwrap();
+        let mut img =
+            Image::from_raw(4, 4, ChannelLayout::Rgb, SampleType::U8, vec![90; 48]).unwrap();
         img.meta.exif = Some(exif.clone());
         let jpeg = encode(&img, Format::Jpeg, &EncodeOptions::default()).unwrap();
         assert_eq!(next_ifd(e, &exif_of(&jpeg)), 0, "JPEG");
         for format in [Format::Png, Format::WebP] {
             let back = decode(&encode(&img, format, &EncodeOptions::default()).unwrap()).unwrap();
-            let got = back.meta.exif.unwrap_or_else(|| panic!("{format:?} kept no EXIF"));
+            let got = back
+                .meta
+                .exif
+                .unwrap_or_else(|| panic!("{format:?} kept no EXIF"));
             let body = got.strip_prefix(b"Exif\0\0").unwrap_or(&got);
             assert_eq!(next_ifd(e, body), 0, "{format:?}");
         }

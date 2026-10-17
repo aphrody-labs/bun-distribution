@@ -32,8 +32,14 @@ pub enum Command {
 }
 
 impl Command {
-    pub const ALL: [Command; 6] =
-        [Command::AddEditCitation, Command::AddEditBibliography, Command::AddNote, Command::Refresh, Command::RemoveCodes, Command::SetDocPrefs];
+    pub const ALL: [Command; 6] = [
+        Command::AddEditCitation,
+        Command::AddEditBibliography,
+        Command::AddNote,
+        Command::Refresh,
+        Command::RemoveCodes,
+        Command::SetDocPrefs,
+    ];
 
     /// The name on the wire.
     pub fn wire_name(self) -> &'static str {
@@ -49,7 +55,9 @@ impl Command {
 
     /// By wire name (any case).
     pub fn from_name(name: &str) -> Option<Command> {
-        Command::ALL.into_iter().find(|c| c.wire_name().eq_ignore_ascii_case(name))
+        Command::ALL
+            .into_iter()
+            .find(|c| c.wire_name().eq_ignore_ascii_case(name))
     }
 }
 
@@ -87,10 +95,17 @@ pub struct Outcome {
 }
 
 /// Run `command`, answering every call with `answer`.
-pub fn run_command(opts: &Options, command: Command, answer: &mut dyn FnMut(&Call) -> Result<Value, String>) -> Result<Outcome, ZoteroError> {
-    let mut stream = TcpStream::connect_timeout(&opts.addr, opts.connect_timeout).map_err(|e| ZoteroError::NotRunning(e.to_string()))?;
+pub fn run_command(
+    opts: &Options,
+    command: Command,
+    answer: &mut dyn FnMut(&Call) -> Result<Value, String>,
+) -> Result<Outcome, ZoteroError> {
+    let mut stream = TcpStream::connect_timeout(&opts.addr, opts.connect_timeout)
+        .map_err(|e| ZoteroError::NotRunning(e.to_string()))?;
     let _ = stream.set_nodelay(true);
-    stream.set_read_timeout(Some(opts.idle_timeout)).map_err(|e| ZoteroError::Io(e.to_string()))?;
+    stream
+        .set_read_timeout(Some(opts.idle_timeout))
+        .map_err(|e| ZoteroError::Io(e.to_string()))?;
     wire::write_frame(&mut stream, 0, &wire::command_payload(command.wire_name()))?;
     serve(&mut stream, answer)
 }
@@ -136,5 +151,7 @@ pub fn run_on_session(
     session: &mut Session,
     host: &mut dyn Host,
 ) -> Result<Outcome, ZoteroError> {
-    run_command(opts, command, &mut |call| bridge.handle(session, host, call))
+    run_command(opts, command, &mut |call| {
+        bridge.handle(session, host, call)
+    })
 }

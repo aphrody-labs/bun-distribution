@@ -37,8 +37,7 @@ pub fn triage_into(db: &mut Db, binary_id: i64, exe_path: &Path) -> Result<Index
     let bytes =
         std::fs::read(exe_path).with_context(|| format!("lecture {}", exe_path.display()))?;
 
-    let report =
-        crate::triage(&bytes).with_context(|| format!("triage {}", exe_path.display()))?;
+    let report = crate::triage(&bytes).with_context(|| format!("triage {}", exe_path.display()))?;
 
     let format_str: &'static str = match report.format {
         crate::Format::Pe32 => "PE32",
@@ -105,7 +104,12 @@ pub fn triage_into(db: &mut Db, binary_id: i64, exe_path: &Path) -> Result<Index
 
     tx.commit().context("commit triage")?;
 
-    Ok(IndexStats { format: format_str, sections, imports, exports })
+    Ok(IndexStats {
+        format: format_str,
+        sections,
+        imports,
+        exports,
+    })
 }
 
 #[cfg(test)]

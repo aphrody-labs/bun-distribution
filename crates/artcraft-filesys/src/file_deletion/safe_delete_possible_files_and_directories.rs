@@ -27,19 +27,19 @@ use crate::file_deletion::safe_recursively_delete_files::safe_recursively_delete
 /// ]);
 /// ```
 pub fn safe_delete_possible_files_and_directories<P: AsRef<Path>>(possible_paths: &[Option<P>]) {
-  for possible_path in possible_paths {
-    let path = match possible_path {
-      None => continue,
-      Some(path) => path,
-    };
-    let p = path.as_ref();
-    if p.is_file() {
-      safe_delete_file(p);
-    } else if p.is_dir() {
-      safe_recursively_delete_files(p);
-      safe_delete_directory(p);
-    } else {
-      warn!("Path {:?} is neither a file nor a directory", p);
+    for possible_path in possible_paths {
+        let path = match possible_path {
+            None => continue,
+            Some(path) => path,
+        };
+        let p = path.as_ref();
+        if p.is_file() {
+            safe_delete_file(p);
+        } else if p.is_dir() {
+            safe_recursively_delete_files(p);
+            safe_delete_directory(p);
+        } else {
+            warn!("Path {:?} is neither a file nor a directory", p);
+        }
     }
-  }
 }

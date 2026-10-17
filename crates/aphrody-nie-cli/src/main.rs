@@ -59,7 +59,9 @@ const NIE_IMAGE_BASE: i64 = 0x1_4000_0000;
 /// Parse une adresse décimale ou hexadécimale (`0x...`).
 fn parse_addr(s: &str) -> Result<i64, String> {
     match s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
-        Some(hex) => u64::from_str_radix(hex, 16).map(|v| v as i64).map_err(|e| e.to_string()),
+        Some(hex) => u64::from_str_radix(hex, 16)
+            .map(|v| v as i64)
+            .map_err(|e| e.to_string()),
         None => s.parse::<i64>().map_err(|e| e.to_string()),
     }
 }
@@ -1874,8 +1876,12 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
         WikiOp::Card { id, db } => {
             let card = api::execute_wiki(api::WikiCommand::CharacterCard { id, database: db })?;
             println!("{}", serde_json::to_string_pretty(&card)?);
-        },
-        WikiOp::ZukanRank { entry, candidates, max_results } => {
+        }
+        WikiOp::ZukanRank {
+            entry,
+            candidates,
+            max_results,
+        } => {
             fn bounded_json(path: &std::path::Path, limit: usize) -> anyhow::Result<String> {
                 use std::io::Read;
                 let file = std::fs::File::open(path)
@@ -1889,12 +1895,14 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                     .map_err(|_| anyhow::anyhow!("Ranking input must be UTF-8 JSON"))
             }
             let entry = bounded_json(&entry, aphrody_nie_zukan::api::MAX_ZUKAN_ENTRY_JSON_BYTES)?;
-            let candidates =
-                bounded_json(&candidates, aphrody_nie_zukan::api::MAX_ZUKAN_CANDIDATES_JSON_BYTES)?;
+            let candidates = bounded_json(
+                &candidates,
+                aphrody_nie_zukan::api::MAX_ZUKAN_CANDIDATES_JSON_BYTES,
+            )?;
             let output = aphrody_nie_zukan::api::rank_json(&entry, &candidates, max_results)
                 .map_err(anyhow::Error::msg)?;
             println!("{output}");
-        },
+        }
         // ─── Commandes existantes ────────────────────────────────────────────
         WikiOp::Chara { query: q, json, db } => {
             let conn = mirror::open(db.as_deref())?;
@@ -1938,32 +1946,46 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
             } else {
                 println!("{}", render::render_chara_profile(&profile, &conn));
             }
-        },
+        }
 
-        WikiOp::Skill { query: q, json, db: _, data_root } => {
+        WikiOp::Skill {
+            query: q,
+            json,
+            db: _,
+            data_root,
+        } => {
             let data_root = data_root
                 .or_else(|| std::env::var_os("DATA_PATH").map(std::path::PathBuf::from))
                 .unwrap_or_else(default_data_root);
-            let result =
-                api::execute_wiki(api::WikiCommand::SkillLookup { query: q.clone(), data_root })?;
+            let result = api::execute_wiki(api::WikiCommand::SkillLookup {
+                query: q.clone(),
+                data_root,
+            })?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&result)?);
             } else {
                 println!("{}", render::render_skill_value(&result, &q));
             }
-        },
+        }
 
         WikiOp::Item { query: q, json, db } => {
-            let result =
-                api::execute_wiki(api::WikiCommand::ItemLookup { query: q.clone(), database: db })?;
+            let result = api::execute_wiki(api::WikiCommand::ItemLookup {
+                query: q.clone(),
+                database: db,
+            })?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&result)?);
             } else {
                 println!("{}", render::render_item_value(&result, &q));
             }
-        },
+        }
 
-        WikiOp::Team { query: q, json, db, data_root } => {
+        WikiOp::Team {
+            query: q,
+            json,
+            db,
+            data_root,
+        } => {
             let data_root = data_root
                 .or_else(|| std::env::var_os("DATA_PATH").map(std::path::PathBuf::from))
                 .unwrap_or_else(default_data_root);
@@ -1977,10 +1999,17 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
             } else {
                 println!("{}", render::render_team_value(&result, &q));
             }
-        },
+        }
 
         // ─── Nouvelles commandes ─────────────────────────────────────────────
-        WikiOp::Compare { chara1, chara2, level, json, db, data_root } => {
+        WikiOp::Compare {
+            chara1,
+            chara2,
+            level,
+            json,
+            db,
+            data_root,
+        } => {
             anyhow::ensure!(
                 (1..=99).contains(&level),
                 "le niveau doit être compris entre 1 et 99 (reçu: {})",
@@ -2000,11 +2029,19 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                     serde_json::from_value(result)?;
                 println!("{}", render::render_compare(&result));
             }
-        },
+        }
 
-        WikiOp::Search { query: q, limit, json, db } => {
-            let results =
-                api::execute_wiki(api::WikiCommand::Search { query: q, limit, database: db })?;
+        WikiOp::Search {
+            query: q,
+            limit,
+            json,
+            db,
+        } => {
+            let results = api::execute_wiki(api::WikiCommand::Search {
+                query: q,
+                limit,
+                database: db,
+            })?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&results)?);
             } else {
@@ -2012,9 +2049,15 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                     serde_json::from_value(results)?;
                 println!("{}", render::render_search_results(&results));
             }
-        },
+        }
 
-        WikiOp::AuraList { query, type_slug, page, limit, db } => {
+        WikiOp::AuraList {
+            query,
+            type_slug,
+            page,
+            limit,
+            db,
+        } => {
             let value = api::execute_wiki(api::WikiCommand::AuraList {
                 query,
                 type_slug,
@@ -2023,12 +2066,21 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                 database: db,
             })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
+        }
         WikiOp::Aura { id, type_slug, db } => {
-            let value = api::execute_wiki(api::WikiCommand::Aura { id, type_slug, database: db })?;
+            let value = api::execute_wiki(api::WikiCommand::Aura {
+                id,
+                type_slug,
+                database: db,
+            })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
-        WikiOp::TacticList { query, page, limit, db } => {
+        }
+        WikiOp::TacticList {
+            query,
+            page,
+            limit,
+            db,
+        } => {
             let value = api::execute_wiki(api::WikiCommand::TacticList {
                 query,
                 page,
@@ -2036,12 +2088,19 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                 database: db,
             })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
+        }
         WikiOp::Tactic { id, db } => {
             let value = api::execute_wiki(api::WikiCommand::Tactic { id, database: db })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
-        WikiOp::PassiveList { query, category, boost_type, page, limit, db } => {
+        }
+        WikiOp::PassiveList {
+            query,
+            category,
+            boost_type,
+            page,
+            limit,
+            db,
+        } => {
             let value = api::execute_wiki(api::WikiCommand::PassiveList {
                 query,
                 category,
@@ -2051,15 +2110,15 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                 database: db,
             })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
+        }
         WikiOp::Passive { id, db } => {
             let value = api::execute_wiki(api::WikiCommand::Passive { id, database: db })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
+        }
         WikiOp::PassiveScaling { db } => {
             let value = api::execute_wiki(api::WikiCommand::PassiveScaling { database: db })?;
             println!("{}", serde_json::to_string_pretty(&value)?);
-        },
+        }
 
         WikiOp::Db { sql, json, db } => {
             if sql.trim().is_empty() {
@@ -2073,9 +2132,16 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                 println!("Resultats ({} lignes) :", rows.len());
                 println!("{}", render::render_ascii_table(&rows));
             }
-        },
+        }
 
-        WikiOp::RandomTeam { seed, formation, element, playstyle, json, db } => {
+        WikiOp::RandomTeam {
+            seed,
+            formation,
+            element,
+            playstyle,
+            json,
+            db,
+        } => {
             let team = api::execute_wiki(api::WikiCommand::RandomTeam {
                 seed,
                 formation,
@@ -2089,12 +2155,18 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                 let team: aphrody_nie_wiki::model::RandomTeam = serde_json::from_value(team)?;
                 println!("{}", render::render_random_team(&team));
             }
-        },
+        }
 
-        WikiOp::TeamBuilder { action, args, json, db } => match action.as_str() {
+        WikiOp::TeamBuilder {
+            action,
+            args,
+            json,
+            db,
+        } => match action.as_str() {
             "list" => {
-                let entries =
-                    api::execute_wiki(api::WikiCommand::TeamBuilderList { database: db.clone() })?;
+                let entries = api::execute_wiki(api::WikiCommand::TeamBuilderList {
+                    database: db.clone(),
+                })?;
                 if json {
                     println!("{}", serde_json::to_string_pretty(&entries)?);
                 } else {
@@ -2102,7 +2174,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                         serde_json::from_value(entries)?;
                     println!("{}", render::render_team_build_list(&entries));
                 }
-            },
+            }
             "show" | "calc" => {
                 let id = args.first().ok_or_else(|| {
                     anyhow::anyhow!("Usage: nie wiki team-builder {} <id>", action)
@@ -2118,7 +2190,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                         } else {
                             println!("Aucune entree trouvee pour : \"{}\"", id);
                         }
-                    },
+                    }
                     Ok(e) => {
                         if json {
                             println!("{}", serde_json::to_string_pretty(&e)?);
@@ -2127,20 +2199,24 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                                 serde_json::from_value(e)?;
                             println!("{}", render::render_team_build_entry(&e));
                         }
-                    },
+                    }
                     Err(error) => return Err(error),
                 }
-            },
+            }
             other => {
                 anyhow::bail!(
                     "action inconnue : '{}'. Actions supportées depuis le miroir : list / show <id> / calc <id>.\n\
                          Note : add/delete/save opèrent sur PostgreSQL (user_teams) et ne sont pas portés ici.",
                     other
                 );
-            },
+            }
         },
 
-        WikiOp::Status { json, db, redis_url } => {
+        WikiOp::Status {
+            json,
+            db,
+            redis_url,
+        } => {
             let db_path = mirror::resolve(db.as_deref())?;
             let conn = mirror::open(Some(&db_path))?;
             let report = query::status_report(&conn, &db_path, &redis_url)?;
@@ -2149,9 +2225,15 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
             } else {
                 println!("{}", render::render_status(&report));
             }
-        },
+        }
 
-        WikiOp::Redis { cmd, key, val, redis_url, json } => {
+        WikiOp::Redis {
+            cmd,
+            key,
+            val,
+            redis_url,
+            json,
+        } => {
             let result = query::redis_cmd(&redis_url, &cmd, &key, val.as_deref())?;
             if json {
                 let output = if cmd.eq_ignore_ascii_case("get") {
@@ -2168,9 +2250,13 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
                     _ => unreachable!("redis_cmd validates the operation"),
                 }
             }
-        },
+        }
 
-        WikiOp::Audit { json, db, data_root } => {
+        WikiOp::Audit {
+            json,
+            db,
+            data_root,
+        } => {
             let conn = mirror::open(db.as_deref())?;
             let data_root = data_root
                 .or_else(|| std::env::var_os("DATA_PATH").map(std::path::PathBuf::from))
@@ -2182,9 +2268,15 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
             } else {
                 println!("{}", render::render_audit(&report));
             }
-        },
+        }
 
-        WikiOp::Dialogue { query: q, speaker, limit, json, data_root } => {
+        WikiOp::Dialogue {
+            query: q,
+            speaker,
+            limit,
+            json,
+            data_root,
+        } => {
             let data_root = data_root
                 .or_else(|| std::env::var_os("DATA_PATH").map(std::path::PathBuf::from))
                 .unwrap_or_else(default_data_root);
@@ -2195,7 +2287,7 @@ fn wiki_cmd(op: WikiOp) -> anyhow::Result<()> {
             } else {
                 println!("{}", render::render_dialogues(&matches, &q));
             }
-        },
+        }
     }
 
     Ok(())
@@ -2282,12 +2374,16 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
     use bun_steam::{IEVR_STEAM_APP_ID, depot::downloader::SteamDepotDownloader};
 
     let (app_id, out, c) = match &op {
-        SteamOp::List { app_id, commun } => {
-            (app_id.unwrap_or(IEVR_STEAM_APP_ID), PathBuf::from("."), commun)
-        },
-        SteamOp::Download { app_id, out, commun } => {
-            (app_id.unwrap_or(IEVR_STEAM_APP_ID), out.clone(), commun)
-        },
+        SteamOp::List { app_id, commun } => (
+            app_id.unwrap_or(IEVR_STEAM_APP_ID),
+            PathBuf::from("."),
+            commun,
+        ),
+        SteamOp::Download {
+            app_id,
+            out,
+            commun,
+        } => (app_id.unwrap_or(IEVR_STEAM_APP_ID), out.clone(), commun),
         SteamOp::Sync { out, commun } => (IEVR_STEAM_APP_ID, out.clone(), commun),
     };
 
@@ -2306,7 +2402,9 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
         max_downloads: c.max_downloads,
         verify: !c.no_verify,
         token_store_path: Some(
-            c.token_store.clone().unwrap_or_else(bun_steam::depot::token_store::default_path),
+            c.token_store
+                .clone()
+                .unwrap_or_else(bun_steam::depot::token_store::default_path),
         ),
         guard_provider: None,
         // Garde anti-blocage : un depot muet est interrompu au lieu de dormir
@@ -2315,7 +2413,9 @@ fn steam_cmd(op: SteamOp) -> anyhow::Result<()> {
         transfer: Default::default(),
     };
 
-    let rt = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+    let rt = tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()?;
     let dl = SteamDepotDownloader::new();
 
     rt.block_on(async {
@@ -2465,7 +2565,11 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
     /// Le bureau est le DÉFAUT parce que l'affichage nu ne marche pas ici : Xvfb rapporte 0 Hz et
     /// DXVK divise par ce taux. Le refuser est donc une décision, pas une option de confort.
     fn bureau_virtuel(layout: &proton::Layout, no_desktop: bool) -> Option<String> {
-        if no_desktop { None } else { Some(layout.resolution.clone()) }
+        if no_desktop {
+            None
+        } else {
+            Some(layout.resolution.clone())
+        }
     }
 
     fn executable(layout: &proton::Layout, exe: Option<PathBuf>) -> PathBuf {
@@ -2473,7 +2577,11 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
             return e;
         }
         let sans_eac = layout.game_dir.join("nie_eacpatched.exe");
-        if sans_eac.is_file() { sans_eac } else { layout.game_dir.join("nie.exe") }
+        if sans_eac.is_file() {
+            sans_eac
+        } else {
+            layout.game_dir.join("nie.exe")
+        }
     }
 
     match op {
@@ -2519,7 +2627,7 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
                 println!("wine          {}", wine.display());
             }
             Ok(())
-        },
+        }
 
         LiveOp::Doctor { game_dir, json } => {
             let l = disposition(game_dir);
@@ -2539,13 +2647,18 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
                 );
             } else {
                 for c in &checks {
-                    println!("{} {:<24} {}", if c.ok { "ok " } else { "MAN" }, c.name, c.detail);
+                    println!(
+                        "{} {:<24} {}",
+                        if c.ok { "ok " } else { "MAN" },
+                        c.name,
+                        c.detail
+                    );
                 }
                 println!("{manquants} prérequis sur {} manquent", checks.len());
             }
             anyhow::ensure!(manquants == 0, "{manquants} prérequis manquent");
             Ok(())
-        },
+        }
 
         LiveOp::Setup { game_dir, recreate } => {
             let l = disposition(game_dir);
@@ -2553,9 +2666,15 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
             proton::prepare_prefix(&l, &r, recreate)?;
             println!("préfixe prêt : {}", l.prefix.display());
             Ok(())
-        },
+        }
 
-        LiveOp::Run { exe, game_dir, wait, no_desktop, json } => {
+        LiveOp::Run {
+            exe,
+            game_dir,
+            wait,
+            no_desktop,
+            json,
+        } => {
             let l = disposition(game_dir);
             let r = proton::Runtime::locate(&l)?;
             let exe = executable(&l, exe);
@@ -2586,7 +2705,10 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
                 );
             } else {
                 println!("exe           {}", exe.display());
-                println!("bureau        {}", bureau.as_deref().unwrap_or("(aucun — affichage nu)"));
+                println!(
+                    "bureau        {}",
+                    bureau.as_deref().unwrap_or("(aucun — affichage nu)")
+                );
                 println!("launcher_pid  {}", lancement.launcher_pid());
                 match lancement.game_pid {
                     Some(pid) => println!("game_pid      {pid}"),
@@ -2610,7 +2732,7 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
                 lancement.log.display()
             );
             Ok(())
-        },
+        }
 
         LiveOp::Attach { json } => {
             let pid = aphrody_nie_trace::find_pid_by_name(aphrody_nie_trace::proton::GAME_COMM)
@@ -2640,12 +2762,22 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
                     None => println!("module_base   (introuvable)"),
                 }
                 println!("ptrace_scope  {}", aphrody_nie_trace::read_ptrace_scope());
-                println!("lecture       {}", if permis { "permise" } else { "REFUSÉE" });
+                println!(
+                    "lecture       {}",
+                    if permis { "permise" } else { "REFUSÉE" }
+                );
             }
             Ok(())
-        },
+        }
 
-        LiveOp::Probe { rva, len, exe, game_dir, wait, no_desktop } => {
+        LiveOp::Probe {
+            rva,
+            len,
+            exe,
+            game_dir,
+            wait,
+            no_desktop,
+        } => {
             let l = disposition(game_dir);
             let r = proton::Runtime::locate(&l)?;
             let exe = executable(&l, exe);
@@ -2679,13 +2811,16 @@ fn live_cmd(op: LiveOp) -> anyhow::Result<()> {
             #[allow(clippy::cast_sign_loss)]
             let addr = base.wrapping_add(rva as u64);
             let octets = aphrody_nie_trace::read_exact(pid, addr, len)?;
-            println!("pid {pid}  base {base:#x}  addr {addr:#x}  len {}", octets.len());
+            println!(
+                "pid {pid}  base {base:#x}  addr {addr:#x}  len {}",
+                octets.len()
+            );
             for (i, ligne) in octets.chunks(16).enumerate() {
                 let hex: Vec<String> = ligne.iter().map(|b| format!("{b:02x}")).collect();
                 println!("{:016x}  {}", addr as usize + i * 16, hex.join(" "));
             }
             Ok(())
-        },
+        }
     }
 }
 
@@ -2771,17 +2906,28 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.cmd {
         Cmd::Play(args) => play_cmd::run(args),
         Cmd::Net(args) => {
-            let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
             runtime.block_on(net_cmd::exec_net(args))
-        },
+        }
         Cmd::Mcp => {
-            let runtime = tokio::runtime::Builder::new_multi_thread().enable_all().build()?;
+            let runtime = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
             runtime.block_on(mcp::serve_stdio())
-        },
-        Cmd::ComputerUse { surface, executable, ghidra_url } => {
-            println!("{}", aphrody_nie_computer_use::probe_cli(&surface, executable, ghidra_url)?);
+        }
+        Cmd::ComputerUse {
+            surface,
+            executable,
+            ghidra_url,
+        } => {
+            println!(
+                "{}",
+                aphrody_nie_computer_use::probe_cli(&surface, executable, ghidra_url)?
+            );
             Ok(())
-        },
+        }
         Cmd::Mod { op } => mod_cmd::executer(op),
         Cmd::Launcher { op } => launcher_cmd(op),
         Cmd::Viola { op } => viola_cmd(op),
@@ -2793,36 +2939,62 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             } else {
                 decode_cmd::file(&src, out.as_deref(), quiet)
             }
-        },
+        }
         Cmd::RefreshTypedJson { dir, force, quiet } => {
             decode_cmd::refresh_typed(&dir, force, quiet)
-        },
+        }
         Cmd::Steam { op } => steam_cmd(op),
         Cmd::Live { op } => live_cmd(op),
         Cmd::Info { game_dir, json } => info_cmd(game_dir, json),
-        Cmd::Locales { game_dir, samples, json } => locales_cmd(game_dir, samples, json),
-        Cmd::Convert { src, to, out, game_dir, reference, masque, toutes } => {
+        Cmd::Locales {
+            game_dir,
+            samples,
+            json,
+        } => locales_cmd(game_dir, samples, json),
+        Cmd::Convert {
+            src,
+            to,
+            out,
+            game_dir,
+            reference,
+            masque,
+            toutes,
+        } => {
             if toutes {
                 convert_toutes(&src, &to, out.as_deref(), game_dir)
             } else {
-                convert_cmd(&src, &to, out.as_deref(), game_dir, reference.as_deref(), masque)
-            }
-        },
-        Cmd::Render { op } => match op {
-            RenderOp::GlbPng { glb, out, width, height, angle, gpu, backend, hardware_only } => {
-                render_cmd::glb_png(
-                    &glb,
-                    &out,
-                    render_cmd::RenderConfig {
-                        width,
-                        height,
-                        gpu,
-                        backend: &backend,
-                        hardware_only,
-                    },
-                    angle,
+                convert_cmd(
+                    &src,
+                    &to,
+                    out.as_deref(),
+                    game_dir,
+                    reference.as_deref(),
+                    masque,
                 )
-            },
+            }
+        }
+        Cmd::Render { op } => match op {
+            RenderOp::GlbPng {
+                glb,
+                out,
+                width,
+                height,
+                angle,
+                gpu,
+                backend,
+                hardware_only,
+            } => render_cmd::glb_png(
+                &glb,
+                &out,
+                render_cmd::RenderConfig {
+                    width,
+                    height,
+                    gpu,
+                    backend: &backend,
+                    hardware_only,
+                },
+                angle,
+            ),
             RenderOp::GlbGif {
                 glb,
                 out,
@@ -2836,35 +3008,85 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             } => render_cmd::glb_gif(
                 &glb,
                 &out,
-                render_cmd::RenderConfig { width, height, gpu, backend: &backend, hardware_only },
+                render_cmd::RenderConfig {
+                    width,
+                    height,
+                    gpu,
+                    backend: &backend,
+                    hardware_only,
+                },
                 frames,
                 fps,
             ),
         },
-        Cmd::Lua { src, functions, calls, strings, crc32, limit } => {
-            lua_cmd::run(&src, lua_cmd::Detail { functions, calls, strings, crc32, limit })
-        },
-        Cmd::LuaRun { script, game_dir, instruction_limit, menu_host, disassemble } => {
-            lua_run_cmd::run(
-                &script,
-                game_dir.as_deref(),
-                instruction_limit,
-                menu_host,
-                disassemble,
-            )
-        },
-        Cmd::LuaAudit { game_dir, prefix, instruction_limit, menu_host } => {
-            lua_audit_cmd::run(game_dir.as_deref(), prefix.as_deref(), instruction_limit, menu_host)
-        },
+        Cmd::Lua {
+            src,
+            functions,
+            calls,
+            strings,
+            crc32,
+            limit,
+        } => lua_cmd::run(
+            &src,
+            lua_cmd::Detail {
+                functions,
+                calls,
+                strings,
+                crc32,
+                limit,
+            },
+        ),
+        Cmd::LuaRun {
+            script,
+            game_dir,
+            instruction_limit,
+            menu_host,
+            disassemble,
+        } => lua_run_cmd::run(
+            &script,
+            game_dir.as_deref(),
+            instruction_limit,
+            menu_host,
+            disassemble,
+        ),
+        Cmd::LuaAudit {
+            game_dir,
+            prefix,
+            instruction_limit,
+            menu_host,
+        } => lua_audit_cmd::run(
+            game_dir.as_deref(),
+            prefix.as_deref(),
+            instruction_limit,
+            menu_host,
+        ),
         Cmd::Seed { db, json, exe } => seed(&db, &json, exe.as_deref()),
-        Cmd::SeedUi { db, game_dir, textures } => seed_ui_cmd(&db, game_dir, textures),
-        Cmd::Strings { exe, db, min_len, sections, binary_id, no_xrefs, dry_run, sample } => {
-            strings_cmd_run(
-                &db,
-                &exe,
-                &strings_cmd::Options { min_len, sections, binary_id, no_xrefs, dry_run, sample },
-            )
-        },
+        Cmd::SeedUi {
+            db,
+            game_dir,
+            textures,
+        } => seed_ui_cmd(&db, game_dir, textures),
+        Cmd::Strings {
+            exe,
+            db,
+            min_len,
+            sections,
+            binary_id,
+            no_xrefs,
+            dry_run,
+            sample,
+        } => strings_cmd_run(
+            &db,
+            &exe,
+            &strings_cmd::Options {
+                min_len,
+                sections,
+                binary_id,
+                no_xrefs,
+                dry_run,
+                sample,
+            },
+        ),
         Cmd::Find {
             pattern,
             dir,
@@ -2916,11 +3138,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Cmd::Icons { op, game_dir } => {
             let racine = game_dir.unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
             icons_cmd::run(&op, &racine)
-        },
+        }
         Cmd::Avatar { op, game_dir, db } => {
             let racine = game_dir.unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
             avatar_cmd::run(&op, &racine, &db)
-        },
+        }
         Cmd::Ocgen { op } => ocgen_cmd::run(&op),
         Cmd::Mode { op } => match op {
             ModeOp::Index { db, game_dir } => {
@@ -2930,8 +3152,12 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 let (m, s, a, t) = mode_index::index(&database, &vfs)?;
                 println!("mode index : {m} modes, {s} écrans, {a} assets, {t} textes");
                 Ok(())
-            },
-            ModeOp::Coverage { game_dir, out, strict } => {
+            }
+            ModeOp::Coverage {
+                game_dir,
+                out,
+                strict,
+            } => {
                 let vfs = open_vfs(game_dir)?;
                 let json = mode_index::menu_coverage_json(&vfs);
                 let settings = json
@@ -2975,7 +3201,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                             classified,
                             unclassified
                         );
-                    },
+                    }
                     _ => println!("{txt}"),
                 }
                 if strict && (overlapping != 0 || duplicates != 0) {
@@ -2984,7 +3210,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                     );
                 }
                 Ok(())
-            },
+            }
             ModeOp::Export { db, out } => {
                 let database = aphrody_nie_index::Db::open(&db)
                     .with_context(|| format!("ouverture {}", db.display()))?;
@@ -3000,22 +3226,31 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         std::fs::write(&p, txt.as_bytes())
                             .with_context(|| format!("écriture {}", p.display()))?;
                         println!("mode export -> {} ({} octets)", p.display(), txt.len());
-                    },
+                    }
                     _ => println!("{txt}"),
                 }
                 Ok(())
-            },
-            ModeOp::Contenu { slug, out, game_dir, exe } => {
+            }
+            ModeOp::Contenu {
+                slug,
+                out,
+                game_dir,
+                exe,
+            } => {
                 let vfs = open_vfs(game_dir.clone())?;
-                let def = mode_index::MODES.iter().find(|d| d.slug == slug).ok_or_else(|| {
-                    let connus: Vec<&str> = mode_index::MODES.iter().map(|d| d.slug).collect();
-                    anyhow::anyhow!("mode « {slug} » inconnu — modes : {}", connus.join(", "))
-                })?;
+                let def = mode_index::MODES
+                    .iter()
+                    .find(|d| d.slug == slug)
+                    .ok_or_else(|| {
+                        let connus: Vec<&str> = mode_index::MODES.iter().map(|d| d.slug).collect();
+                        anyhow::anyhow!("mode « {slug} » inconnu — modes : {}", connus.join(", "))
+                    })?;
                 // Le binaire vit à la racine du jeu, pas sous `data/` : sans `--exe`, on le
                 // cherche là où `resolve_game_dir` a trouvé le VFS.
                 let exe = exe.or_else(|| {
-                    let racine =
-                        game_dir.clone().unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
+                    let racine = game_dir
+                        .clone()
+                        .unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
                     let p = game_binary_dir(&racine).join("nie.exe");
                     p.exists().then_some(p)
                 });
@@ -3030,49 +3265,122 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                         }
                         std::fs::write(&p, txt.as_bytes())
                             .with_context(|| format!("écriture {}", p.display()))?;
-                        println!("mode contenu {slug} -> {} ({} octets)", p.display(), txt.len());
-                    },
+                        println!(
+                            "mode contenu {slug} -> {} ({} octets)",
+                            p.display(),
+                            txt.len()
+                        );
+                    }
                     _ => println!("{txt}"),
                 }
                 Ok(())
-            },
+            }
         },
         Cmd::Img { op } => img_cmd::run(&match op {
             ImgOp::Info { src } => img_cmd::Op::Info { src },
-            ImgOp::Recolor { src, out, teinte, saturation, valeur, rampe, force, alpha_min } => {
-                img_cmd::Op::Recolor {
-                    src,
-                    out,
-                    filtre: aphrody_nie_formats::recolor::Recolor {
-                        hue_shift: teinte,
-                        saturation,
-                        value: valeur,
-                        ramp: match rampe {
-                            Some(spec) => {
-                                let mut r = aphrody_nie_formats::recolor::Ramp::parse(&spec)
-                                    .map_err(|e| anyhow::anyhow!("--rampe : {e}"))?;
-                                r.strength = force;
-                                Some(r)
-                            },
-                            None => None,
-                        },
-                        alpha_min,
+            ImgOp::Recolor {
+                src,
+                out,
+                teinte,
+                saturation,
+                valeur,
+                rampe,
+                force,
+                alpha_min,
+            } => img_cmd::Op::Recolor {
+                src,
+                out,
+                filtre: aphrody_nie_formats::recolor::Recolor {
+                    hue_shift: teinte,
+                    saturation,
+                    value: valeur,
+                    ramp: match rampe {
+                        Some(spec) => {
+                            let mut r = aphrody_nie_formats::recolor::Ramp::parse(&spec)
+                                .map_err(|e| anyhow::anyhow!("--rampe : {e}"))?;
+                            r.strength = force;
+                            Some(r)
+                        }
+                        None => None,
                     },
-                }
+                    alpha_min,
+                },
             },
-            ImgOp::Resize { src, out, width, height, filter, exact } => {
-                img_cmd::Op::Resize { src, out, width, height, filter, exact }
+            ImgOp::Resize {
+                src,
+                out,
+                width,
+                height,
+                filter,
+                exact,
+            } => img_cmd::Op::Resize {
+                src,
+                out,
+                width,
+                height,
+                filter,
+                exact,
             },
-            ImgOp::Crop { src, out, x, y, w, h } => img_cmd::Op::Crop { src, out, x, y, w, h },
+            ImgOp::Crop {
+                src,
+                out,
+                x,
+                y,
+                w,
+                h,
+            } => img_cmd::Op::Crop {
+                src,
+                out,
+                x,
+                y,
+                w,
+                h,
+            },
             ImgOp::Convert { src, out } => img_cmd::Op::Convert { src, out },
-            ImgOp::Composite { base, overlay, out, x, y } => {
-                img_cmd::Op::Composite { base, overlay, out, x, y }
+            ImgOp::Composite {
+                base,
+                overlay,
+                out,
+                x,
+                y,
+            } => img_cmd::Op::Composite {
+                base,
+                overlay,
+                out,
+                x,
+                y,
             },
-            ImgOp::Planche { srcs, out, manifeste, colonnes, marge, gouttiere, fond } => {
-                img_cmd::Op::Planche { srcs, out, manifeste, colonnes, marge, gouttiere, fond }
+            ImgOp::Planche {
+                srcs,
+                out,
+                manifeste,
+                colonnes,
+                marge,
+                gouttiere,
+                fond,
+            } => img_cmd::Op::Planche {
+                srcs,
+                out,
+                manifeste,
+                colonnes,
+                marge,
+                gouttiere,
+                fond,
             },
-            ImgOp::Diff { rendu, reference, roi, out, downscale_ref, amplification } => {
-                img_cmd::Op::Diff { rendu, reference, roi, out, downscale_ref, amplification }
+            ImgOp::Diff {
+                rendu,
+                reference,
+                roi,
+                out,
+                downscale_ref,
+                amplification,
+            } => img_cmd::Op::Diff {
+                rendu,
+                reference,
+                roi,
+                out,
+                downscale_ref,
+                amplification,
             },
         }),
         Cmd::Atlas { op } => atlas_cmd::run(op),
@@ -3084,28 +3392,42 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Cmd::Disasm { db, exe } => disasm(&db, &exe),
         Cmd::Pdata { db, exe } => pdata(&db, &exe),
         Cmd::Rebuild { db, exe, rounds } => rebuild(&db, &exe, rounds),
-        Cmd::Recover { db, exe, dry_run, ghidra_csv } => {
-            recover_cmd(&db, &exe, dry_run, ghidra_csv.as_deref())
-        },
+        Cmd::Recover {
+            db,
+            exe,
+            dry_run,
+            ghidra_csv,
+        } => recover_cmd(&db, &exe, dry_run, ghidra_csv.as_deref()),
         Cmd::Save { op } => save_cmd(op),
         Cmd::Wiki { op } => wiki_cmd(op),
         Cmd::UniformMap { game_dir, out } => uniform_map(&racine_jeu(game_dir), &out),
-        Cmd::Textures { game_dir, limit, manifest, redis: use_redis, redis_url } => {
-            textures(&racine_jeu(game_dir), limit, &manifest, use_redis, &redis_url)
-        },
+        Cmd::Textures {
+            game_dir,
+            limit,
+            manifest,
+            redis: use_redis,
+            redis_url,
+        } => textures(
+            &racine_jeu(game_dir),
+            limit,
+            &manifest,
+            use_redis,
+            &redis_url,
+        ),
         Cmd::Mem { op } => mem_cmd(op),
-        Cmd::MenuPredecode { game_dir, redis_url } => {
-            menu_predecode_cmd(&racine_jeu(game_dir), &redis_url)
-        },
+        Cmd::MenuPredecode {
+            game_dir,
+            redis_url,
+        } => menu_predecode_cmd(&racine_jeu(game_dir), &redis_url),
         Cmd::Vfs { op } => vfs_cmd(op),
         Cmd::Vn { op, game_dir } => {
             let vfs = open_vfs(game_dir)?;
             vn_cmd::run(&op, &vfs)
-        },
+        }
         Cmd::Video { op, game_dir } => {
             let vfs = open_vfs(game_dir)?;
             video_cmd::run(&op, &vfs)
-        },
+        }
     }
 }
 
@@ -3119,8 +3441,9 @@ pub fn execute_captured(command: String, args: Vec<String>) -> CapturedCommand {
     if args.len() > 128 {
         return CapturedCommand::failed("too many CLI arguments (maximum 128)");
     }
-    if let Some(argument) =
-        args.iter().find(|argument| argument.len() > 16 * 1024 || argument.contains('\0'))
+    if let Some(argument) = args
+        .iter()
+        .find(|argument| argument.len() > 16 * 1024 || argument.contains('\0'))
     {
         return CapturedCommand::failed(format!(
             "invalid CLI argument ({} bytes; maximum 16384 and NUL is forbidden)",
@@ -3136,8 +3459,9 @@ pub fn execute_captured(command: String, args: Vec<String>) -> CapturedCommand {
                     .chain(std::iter::once(command))
                     .chain(args)
                     .collect::<Vec<_>>();
-                let result =
-                    Cli::try_parse_from(argv).map_err(anyhow::Error::from).and_then(dispatch);
+                let result = Cli::try_parse_from(argv)
+                    .map_err(anyhow::Error::from)
+                    .and_then(dispatch);
                 result.map_err(|error| format!("{error:#}"))
             })
         });
@@ -3157,21 +3481,50 @@ fn mem_cmd(op: MemOp) -> anyhow::Result<()> {
     match op {
         MemOp::Maps { pid, module, all } => mem_maps(pid, &module, all),
         MemOp::Base { pid, module } => mem_base(pid, &module),
-        MemOp::Read { addr, len, pid, output } => mem_read(&addr, len, pid, output.as_deref()),
+        MemOp::Read {
+            addr,
+            len,
+            pid,
+            output,
+        } => mem_read(&addr, len, pid, output.as_deref()),
         MemOp::Write { addr, data, pid } => mem_write(&addr, &data, pid),
-        MemOp::Dump { pid, module, all, output } => mem_dump(pid, &module, all, &output),
-        MemOp::Scan { pattern, pid, module, all, limit } => {
-            mem_scan(&pattern, pid, &module, all, limit)
-        },
-        MemOp::LuaField { name, pid, strings, nodes, radius, numeric } => {
-            crate::mem_lua::lua_field(pid, &name, strings, nodes, radius, numeric)
-        },
-        MemOp::Palettes { catalogue, pid, addr, len, output, fusionner } => {
-            mem_palettes(&catalogue, pid, &addr, len, output.as_deref(), fusionner)
-        },
+        MemOp::Dump {
+            pid,
+            module,
+            all,
+            output,
+        } => mem_dump(pid, &module, all, &output),
+        MemOp::Scan {
+            pattern,
+            pid,
+            module,
+            all,
+            limit,
+        } => mem_scan(&pattern, pid, &module, all, limit),
+        MemOp::LuaField {
+            name,
+            pid,
+            strings,
+            nodes,
+            radius,
+            numeric,
+        } => crate::mem_lua::lua_field(pid, &name, strings, nodes, radius, numeric),
+        MemOp::Palettes {
+            catalogue,
+            pid,
+            addr,
+            len,
+            output,
+            fusionner,
+        } => mem_palettes(&catalogue, pid, &addr, len, output.as_deref(), fusionner),
         MemOp::PatchEac { src, dst } => mem_patch_eac(&src, &dst),
         MemOp::Catalog { category, json } => mem_catalog(category.as_deref(), json),
-        MemOp::Recette { file, pid, module, force } => mem_recette(&file, pid, &module, force),
+        MemOp::Recette {
+            file,
+            pid,
+            module,
+            force,
+        } => mem_recette(&file, pid, &module, force),
     }
 }
 
@@ -3190,7 +3543,12 @@ fn mem_palettes(
     let mut attendus: Vec<u32> = Vec::new();
     if let Some(cats) = doc.get("categories").and_then(|c| c.as_array()) {
         for cat in cats {
-            for c in cat.get("couleurs").and_then(|c| c.as_array()).into_iter().flatten() {
+            for c in cat
+                .get("couleurs")
+                .and_then(|c| c.as_array())
+                .into_iter()
+                .flatten()
+            {
                 if let Some(v) = c.as_str().and_then(|h| u32::from_str_radix(h, 16).ok()) {
                     attendus.push(v);
                 }
@@ -3199,7 +3557,10 @@ fn mem_palettes(
     }
     attendus.sort_unstable();
     attendus.dedup();
-    anyhow::ensure!(!attendus.is_empty(), "aucun identifiant de palette dans le catalogue");
+    anyhow::ensure!(
+        !attendus.is_empty(),
+        "aucun identifiant de palette dans le catalogue"
+    );
 
     let debut = u64::from_str_radix(addr.trim_start_matches("0x"), 16)
         .with_context(|| format!("adresse invalide : {addr}"))?;
@@ -3222,7 +3583,10 @@ fn mem_palettes(
     if fusionner {
         let mut catalogue_doc: serde_json::Value = serde_json::from_str(&brut)?;
         if let Some(obj) = catalogue_doc.as_object_mut() {
-            obj.insert("couleursRgb".to_string(), serde_json::Value::Object(json.clone()));
+            obj.insert(
+                "couleursRgb".to_string(),
+                serde_json::Value::Object(json.clone()),
+            );
         }
         std::fs::write(catalogue, serde_json::to_string(&catalogue_doc)?)
             .with_context(|| format!("écriture de {}", catalogue.display()))?;
@@ -3239,8 +3603,13 @@ fn mem_palettes(
     match output {
         Some(p) => {
             std::fs::write(p, serde_json::to_string_pretty(&doc)?)?;
-            println!("  {} / {} palette(s) → {}", table.len(), attendus.len(), p.display());
-        },
+            println!(
+                "  {} / {} palette(s) → {}",
+                table.len(),
+                attendus.len(),
+                p.display()
+            );
+        }
         None => println!("{}", serde_json::to_string_pretty(&doc)?),
     }
     Ok(())
@@ -3306,7 +3675,11 @@ fn mem_maps(pid: i32, module: &str, all: bool) -> anyhow::Result<()> {
             m.path
         );
     }
-    let suffix = if all { String::new() } else { format!(" (module « {module} »)") };
+    let suffix = if all {
+        String::new()
+    } else {
+        format!(" (module « {module} »)")
+    };
     println!("\n  {} plage(s), {total} octets{suffix}", maps.len());
     Ok(())
 }
@@ -3337,7 +3710,7 @@ fn mem_read(
         Some(p) => {
             std::fs::write(p, &buf[..got])?;
             println!("  {got} octets @ 0x{address:x} → {}", p.display());
-        },
+        }
         None => mem_hexdump(&buf[..got], address),
     }
     Ok(())
@@ -3348,7 +3721,10 @@ fn mem_write(addr: &str, data: &str, pid: i32) -> anyhow::Result<()> {
     let address = mem_resolve_addr(addr, pid)?;
     let bytes = mem_parse_write_data(data)?;
     aphrody_nie_trace::write_exact(pid, address, &bytes).context("écriture mémoire live")?;
-    println!("  {} octet(s) écrit(s) @ 0x{address:x} (pid {pid})", bytes.len());
+    println!(
+        "  {} octet(s) écrit(s) @ 0x{address:x} (pid {pid})",
+        bytes.len()
+    );
     Ok(())
 }
 
@@ -3360,8 +3736,10 @@ fn mem_parse_write_data(data: &str) -> anyhow::Result<Vec<u8>> {
     if let Some(s) = trimmed.strip_prefix("wstr:") {
         return Ok(s.encode_utf16().flat_map(|u| u.to_le_bytes()).collect());
     }
-    let cleaned =
-        trimmed.strip_prefix("0x").or_else(|| trimmed.strip_prefix("0X")).unwrap_or(trimmed);
+    let cleaned = trimmed
+        .strip_prefix("0x")
+        .or_else(|| trimmed.strip_prefix("0X"))
+        .unwrap_or(trimmed);
     let hex_clean: String = cleaned.chars().filter(|c| !c.is_whitespace()).collect();
     if hex_clean.len().is_multiple_of(2)
         && !hex_clean.is_empty()
@@ -3398,7 +3776,10 @@ fn mem_dump(pid: i32, module: &str, all: bool, output: &std::path::Path) -> anyh
         "  {} plage(s) dumpée(s), {} octets → {}",
         stats.regions,
         stats.bytes,
-        output.canonicalize().unwrap_or_else(|_| output.to_path_buf()).display()
+        output
+            .canonicalize()
+            .unwrap_or_else(|_| output.to_path_buf())
+            .display()
     );
     Ok(())
 }
@@ -3416,7 +3797,11 @@ fn mem_scan(pattern: &str, pid: i32, module: &str, all: bool, limit: usize) -> a
         };
         println!("  0x{:012x}{rva}  [{}]", h.addr, h.perms);
     }
-    let capped = if hits.len() >= limit { format!(" (limité à {limit})") } else { String::new() };
+    let capped = if hits.len() >= limit {
+        format!(" (limité à {limit})")
+    } else {
+        String::new()
+    };
     println!("\n  {} hit(s) pour {label}{capped}", hits.len());
     Ok(())
 }
@@ -3426,8 +3811,16 @@ fn mem_patch_eac(src: &std::path::Path, dst: &std::path::Path) -> anyhow::Result
     println!(
         "  OK  offset 0x{:X}: {} -> {}  ({} octets)  {}",
         report.offset,
-        report.original.iter().map(|b| format!("{b:02x}")).collect::<String>(),
-        report.patched.iter().map(|b| format!("{b:02x}")).collect::<String>(),
+        report
+            .original
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>(),
+        report
+            .patched
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect::<String>(),
         report.dst_len,
         dst.display()
     );
@@ -3481,7 +3874,11 @@ fn mem_catalog(category: Option<&str>, json: bool) -> anyhow::Result<()> {
             let locator = if let Some(field) = e.field {
                 format!("+0x{field:X}")
             } else if let Some(chain) = e.chain {
-                chain.iter().map(|o| format!("+0x{o:X}")).collect::<Vec<_>>().join(" -> ")
+                chain
+                    .iter()
+                    .map(|o| format!("+0x{o:X}"))
+                    .collect::<Vec<_>>()
+                    .join(" -> ")
             } else {
                 "-".into()
             };
@@ -3506,24 +3903,40 @@ fn mem_recette(file: &std::path::Path, pid: i32, module: &str, force: bool) -> a
     let r = aphrody_nie_trace::recette::parser(&content)
         .map_err(|e| anyhow::anyhow!("erreur syntaxe recette : {e}"))?;
 
-    let name = if r.nom.is_empty() { file.display().to_string() } else { r.nom.clone() };
+    let name = if r.nom.is_empty() {
+        file.display().to_string()
+    } else {
+        r.nom.clone()
+    };
     println!(
         "\n  recette « {} » ({} règle(s)) sur pid {pid} [{}]",
         name,
         r.regles.len(),
-        if force { "ÉCRITURE ACTIVE" } else { "À BLANC / DRY-RUN" }
+        if force {
+            "ÉCRITURE ACTIVE"
+        } else {
+            "À BLANC / DRY-RUN"
+        }
     );
 
     let rapport = aphrody_nie_trace::recette::appliquer(pid, module, &r, !force);
     for res in &rapport.resultats {
-        let statut = if res.erreur.is_none() && res.trouvees > 0 { "OK" } else { "ÉCHEC" };
+        let statut = if res.erreur.is_none() && res.trouvees > 0 {
+            "OK"
+        } else {
+            "ÉCHEC"
+        };
         let msg = res.erreur.as_deref().unwrap_or("");
         println!(
             "  [{statut}] règle {:?} (trouvées={}, écrites={}) : {msg}",
             res.regle, res.trouvees, res.ecrites
         );
     }
-    println!("\n  Bilan : {} écriture(s), {} échec(s)", rapport.total_ecrites(), rapport.echecs());
+    println!(
+        "\n  Bilan : {} écriture(s), {} échec(s)",
+        rapport.total_ecrites(),
+        rapport.echecs()
+    );
     if !force {
         println!("  Note : Mode à blanc par défaut. Passez --force pour appliquer réellement.");
     }
@@ -3546,7 +3959,10 @@ fn mem_resolve_addr(addr: &str, pid: i32) -> anyhow::Result<u64> {
 
 fn parse_u64_hex(s: &str) -> anyhow::Result<u64> {
     let s = s.trim();
-    let s = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")).unwrap_or(s);
+    let s = s
+        .strip_prefix("0x")
+        .or_else(|| s.strip_prefix("0X"))
+        .unwrap_or(s);
     Ok(u64::from_str_radix(s, 16)?)
 }
 
@@ -3561,7 +3977,10 @@ fn mem_parse_pattern(pattern: &str) -> anyhow::Result<(Vec<u8>, String)> {
         anyhow::ensure!(!text.is_empty(), "Motif str: vide");
         return Ok((text.as_bytes().to_vec(), format!("\"{text}\"")));
     }
-    let hex: String = pattern.chars().filter(|c| !c.is_whitespace() && *c != '-').collect();
+    let hex: String = pattern
+        .chars()
+        .filter(|c| !c.is_whitespace() && *c != '-')
+        .collect();
     anyhow::ensure!(
         !hex.is_empty() && hex.len().is_multiple_of(2),
         "Motif hex de longueur impaire/vide"
@@ -3573,8 +3992,14 @@ fn mem_parse_pattern(pattern: &str) -> anyhow::Result<(Vec<u8>, String)> {
                 .with_context(|| format!("Octet hex invalide à {i}"))?,
         );
     }
-    let label =
-        format!("hex {}", bytes.iter().map(|b| format!("{b:02X}")).collect::<Vec<_>>().join("-"));
+    let label = format!(
+        "hex {}",
+        bytes
+            .iter()
+            .map(|b| format!("{b:02X}"))
+            .collect::<Vec<_>>()
+            .join("-")
+    );
     Ok((bytes, label))
 }
 
@@ -3589,8 +4014,16 @@ fn mem_hexdump(data: &[u8], base: u64) {
                 hex.push_str("   ");
             }
         }
-        let ascii: String =
-            line.iter().map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' }).collect();
+        let ascii: String = line
+            .iter()
+            .map(|&b| {
+                if (0x20..0x7f).contains(&b) {
+                    b as char
+                } else {
+                    '.'
+                }
+            })
+            .collect();
         println!("  0x{off:012x}  {hex} {ascii}");
     }
 }
@@ -3610,11 +4043,24 @@ fn seed(
             let bytes = std::fs::read(p).with_context(|| format!("lecture {}", p.display()))?;
             let mut h = Sha256::new();
             h.update(&bytes);
-            (hex::encode(h.finalize()), bytes.len() as i64, p.display().to_string())
-        },
+            (
+                hex::encode(h.finalize()),
+                bytes.len() as i64,
+                p.display().to_string(),
+            )
+        }
         None => ("unknown-nie-index".to_string(), 0, "nie.exe".to_string()),
     };
-    let bin = db.upsert_binary(&path_str, &sha, "x86_64", 64, NIE_IMAGE_BASE, size, None, None)?;
+    let bin = db.upsert_binary(
+        &path_str,
+        &sha,
+        "x86_64",
+        64,
+        NIE_IMAGE_BASE,
+        size,
+        None,
+        None,
+    )?;
 
     let stats = aphrody_nie_seed::nie_index_json::ingest_file(&mut db, bin, json)?;
     let cov = db.snapshot_coverage(bin)?;
@@ -3645,8 +4091,12 @@ fn seed_ui_cmd(
     db.init().context("application du schéma")?;
 
     let stats = seed_ui::run(&db, &vfs, textures)?;
-    let par_kind =
-        stats.par_kind.iter().map(|(k, n)| format!("{k}={n}")).collect::<Vec<_>>().join(" ");
+    let par_kind = stats
+        .par_kind
+        .iter()
+        .map(|(k, n)| format!("{k}={n}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     println!(
         "seed-ui écrans={} objbin={} g4tx={} — {par_kind}",
         stats.screens, stats.objbins, stats.g4tx
@@ -3669,8 +4119,12 @@ fn strings_cmd_run(
     db.init().context("application du schéma")?;
 
     let s = strings_cmd::run(&db, exe, opts)?;
-    let par_sec =
-        s.par_section.iter().map(|(n, a, w)| format!("{n}={a}+{w}")).collect::<Vec<_>>().join(" ");
+    let par_sec = s
+        .par_section
+        .iter()
+        .map(|(n, a, w)| format!("{n}={a}+{w}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     println!(
         "strings binaire={} ({}) — ascii={} utf16={} (trop longues={}) | {par_sec}",
         s.binary_id, s.binary_path, s.ascii, s.utf16, s.oversized
@@ -3721,7 +4175,11 @@ fn coverage(db_path: &std::path::Path) -> anyhow::Result<()> {
     let bin: i64 = analysis_binary(db.conn())?;
     let cov = aphrody_nie_index::query::coverage(db.conn(), bin)?;
     let by_sub = aphrody_nie_index::query::by_subsystem(db.conn(), bin)?;
-    let subs = by_sub.iter().map(|(ns, n)| format!("{ns}={n}")).collect::<Vec<_>>().join(" ");
+    let subs = by_sub
+        .iter()
+        .map(|(ns, n)| format!("{ns}={n}"))
+        .collect::<Vec<_>>()
+        .join(" ");
     println!(
         "cov {}/{} ({:.2}%) named={} | {}",
         cov.classified, cov.total, cov.pct, cov.named, subs
@@ -3735,7 +4193,7 @@ fn queue(op: QueueOp, redis: &str, tag: &str) -> anyhow::Result<()> {
         QueueOp::Push { addr } => {
             let added = f.push(addr)?;
             println!("{}", if added { "ajoutée" } else { "déjà vue" });
-        },
+        }
         QueueOp::Pop => match f.pop()? {
             Some(a) => println!("0x{a:x}"),
             None => println!("(frontière vide)"),
@@ -3744,7 +4202,7 @@ fn queue(op: QueueOp, redis: &str, tag: &str) -> anyhow::Result<()> {
         QueueOp::Reset => {
             f.reset()?;
             println!("frontière réinitialisée");
-        },
+        }
     }
     Ok(())
 }
@@ -3773,7 +4231,9 @@ fn rtti(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Result
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let bin: i64 = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| r.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| {
+            r.get(0)
+        })
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
     let bytes =
@@ -3793,7 +4253,9 @@ fn index(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resul
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let bin: i64 = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| r.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| {
+            r.get(0)
+        })
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
     let stats =
@@ -3810,7 +4272,9 @@ fn disasm(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resu
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let bin: i64 = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| r.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| {
+            r.get(0)
+        })
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
     // A/B : NIE_NO_INDIRECT=1 détecte les LEA (stats) mais ne les insère pas.
@@ -3838,7 +4302,9 @@ fn pdata(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resul
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let bin: i64 = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| r.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |r| {
+            r.get(0)
+        })
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
 
     let stats = aphrody_re::nie::pdata::discover_into(&mut db, bin, exe_path)
@@ -3870,9 +4336,11 @@ fn pdata(db_path: &std::path::Path, exe_path: &std::path::Path) -> anyhow::Resul
 /// Ghidra d'origine.
 fn pdata_binary_id(db: &aphrody_nie_index::Db) -> anyhow::Result<i64> {
     db.conn()
-        .query_row("SELECT id FROM binary WHERE path LIKE '%#pdata' ORDER BY id LIMIT 1", [], |r| {
-            r.get(0)
-        })
+        .query_row(
+            "SELECT id FROM binary WHERE path LIKE '%#pdata' ORDER BY id LIMIT 1",
+            [],
+            |r| r.get(0),
+        )
         .context("binaire #pdata absent — lancer `nie rebuild` d'abord")
 }
 
@@ -3978,7 +4446,9 @@ fn rebuild(
     let mut db = aphrody_nie_index::Db::open(db_path).context("ouverture base")?;
     let source_binary_id = db
         .conn()
-        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |row| row.get(0))
+        .query_row("SELECT id FROM binary ORDER BY id LIMIT 1", [], |row| {
+            row.get(0)
+        })
         .context("aucun binaire indexé — lancer `nie seed` d'abord")?;
     let report = aphrody_re::nie::workflow::rebuild(
         &mut db,
@@ -3996,8 +4466,11 @@ fn rebuild(
     } else {
         0.0
     };
-    let pct_named =
-        if prop.total > 0 { 100.0 * report.named_total as f64 / prop.total as f64 } else { 0.0 };
+    let pct_named = if prop.total > 0 {
+        100.0 * report.named_total as f64 / prop.total as f64
+    } else {
+        0.0
+    };
     println!(
         "rebuild roots={} str={} ce={} rtti={} | vtable methods={} leaf+={} cohesion={} anchored={} named_struct={} | disasm new={} lea_new={} | named={}/{} ({:.2}%) | cov_brut={}/{} ({:.2}%) cov_conf>=0.3={}/{} ({:.2}%)",
         report.pdata.roots,
@@ -4071,7 +4544,8 @@ fn textures(
 
     // Initialiser le VFS depuis cpk_list.cfg.bin
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("init VFS depuis cpk_list.cfg.bin")?;
+    vfs.init(&data_dir)
+        .context("init VFS depuis cpk_list.cfg.bin")?;
 
     // Collecter tous les chemins .g4tx indexés, depuis l'index que le VFS vient
     // de construire.
@@ -4094,7 +4568,12 @@ fn textures(
     let to_process = all_g4tx.len().min(limit);
     let dropped = total_found.saturating_sub(limit);
 
-    tracing::info!(total_found, to_process, dropped, "fichiers .g4tx découverts");
+    tracing::info!(
+        total_found,
+        to_process,
+        dropped,
+        "fichiers .g4tx découverts"
+    );
 
     // Préparer le fichier manifeste
     if let Some(parent) = manifest_path.parent() {
@@ -4109,11 +4588,11 @@ fn textures(
             Ok(conn) => {
                 tracing::info!("Redis connecté : {redis_url}");
                 Some(conn)
-            },
+            }
             Err(e) => {
                 tracing::warn!("Redis indisponible ({e}) — poursuite sans Redis");
                 None
-            },
+            }
         }
     } else {
         None
@@ -4129,7 +4608,7 @@ fn textures(
                 tracing::warn!("échec extraction {internal_path}: {e}");
                 failed += 1;
                 continue;
-            },
+            }
         };
 
         let g = match g4tx::parse(&raw) {
@@ -4138,7 +4617,7 @@ fn textures(
                 tracing::warn!("échec parse g4tx {internal_path}: {e}");
                 failed += 1;
                 continue;
-            },
+            }
         };
 
         // Pour chaque texture dans le conteneur g4tx
@@ -4270,7 +4749,7 @@ fn save_cmd(op: SaveOp) -> anyhow::Result<()> {
                     hexdump_blob_body(blob, hexdump);
                 }
             }
-        },
+        }
         SaveOp::Decrypt { file, out } => {
             // XOR direct sur le fichier brut : le keystream est involutif, donc
             // decrypt = encrypt = XOR(données, keystream).
@@ -4287,7 +4766,7 @@ fn save_cmd(op: SaveOp) -> anyhow::Result<()> {
             std::fs::write(&out, &plain)
                 .with_context(|| format!("écriture plaintext {}", out.display()))?;
             println!("decrypt ok={} bytes={}", out.display(), plain.len());
-        },
+        }
         SaveOp::Encrypt { file, slot, out } => {
             let plain =
                 std::fs::read(&file).with_context(|| format!("lecture {}", file.display()))?;
@@ -4301,8 +4780,14 @@ fn save_cmd(op: SaveOp) -> anyhow::Result<()> {
                 out.display(),
                 enc.len()
             );
-        },
-        SaveOp::Edit { file, blob: blob_name, offset, value, out } => {
+        }
+        SaveOp::Edit {
+            file,
+            blob: blob_name,
+            offset,
+            value,
+            out,
+        } => {
             if !(0..=255).contains(&value) {
                 anyhow::bail!("valeur {value} hors plage [0, 255]");
             }
@@ -4313,7 +4798,11 @@ fn save_cmd(op: SaveOp) -> anyhow::Result<()> {
                 read_save(&file).map_err(|e| anyhow::anyhow!("lecture save : {e}"))?;
             let ok = edit_blob_byte(&mut container, &blob_name, offset as usize, value as u8);
             if !ok {
-                anyhow::bail!("blob '{}' introuvable ou offset {} hors limites", blob_name, offset);
+                anyhow::bail!(
+                    "blob '{}' introuvable ou offset {} hors limites",
+                    blob_name,
+                    offset
+                );
             }
             let out_path = out.as_deref().unwrap_or(&file);
             write_save(&container, out_path).map_err(|e| anyhow::anyhow!("écriture save : {e}"))?;
@@ -4321,16 +4810,22 @@ fn save_cmd(op: SaveOp) -> anyhow::Result<()> {
                 "edit blob={blob_name} offset=0x{offset:X} value=0x{value:02X} out={}",
                 out_path.display()
             );
-        },
-        SaveOp::Park { live_save, mod_save } => {
+        }
+        SaveOp::Park {
+            live_save,
+            mod_save,
+        } => {
             launcher_save_park(&live_save, &mod_save)?;
-        },
-        SaveOp::Restore { live_save, mod_save } => {
+        }
+        SaveOp::Restore {
+            live_save,
+            mod_save,
+        } => {
             launcher_save_restore(&live_save, &mod_save)?;
-        },
+        }
         SaveOp::InjectTeam { save, team, out } => {
             launcher_save_inject_team(&save, &team, out.as_deref())?;
-        },
+        }
     }
     Ok(())
 }
@@ -4340,7 +4835,9 @@ fn launcher_save_park(
     mod_save: &std::path::Path,
 ) -> anyhow::Result<()> {
     let mut session = aphrody_nie_launcher::SaveSession::new(live_save, mod_save);
-    session.park_and_install_mod_save().map_err(|e| anyhow::anyhow!("parking sauvegarde : {e}"))?;
+    session
+        .park_and_install_mod_save()
+        .map_err(|e| anyhow::anyhow!("parking sauvegarde : {e}"))?;
     session.is_active = false;
     println!(
         "park ok: live={} -> .bk, installed mod_save={}",
@@ -4413,7 +4910,11 @@ fn launcher_save_inject_team(
 fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
     match op {
         LauncherOp::Team { cmd } => match cmd {
-            LauncherTeamOp::Decrypt { file, passphrase, out } => {
+            LauncherTeamOp::Decrypt {
+                file,
+                passphrase,
+                out,
+            } => {
                 let content = std::fs::read_to_string(&file)
                     .with_context(|| format!("lecture {}", file.display()))?;
                 let envelope: aphrody_nie_launcher::TeamExportEnvelope =
@@ -4433,8 +4934,12 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                 } else {
                     println!("{json}");
                 }
-            },
-            LauncherTeamOp::Encrypt { file, passphrase, out } => {
+            }
+            LauncherTeamOp::Encrypt {
+                file,
+                passphrase,
+                out,
+            } => {
                 let content = std::fs::read_to_string(&file)
                     .with_context(|| format!("lecture {}", file.display()))?;
                 let lineup: aphrody_nie_launcher::TeamLineup =
@@ -4454,11 +4959,15 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                 if let Some(out_path) = out {
                     std::fs::write(&out_path, &json)
                         .with_context(|| format!("écriture {}", out_path.display()))?;
-                    println!("encrypt team ok={} team='{}'", out_path.display(), lineup.team_name);
+                    println!(
+                        "encrypt team ok={} team='{}'",
+                        out_path.display(),
+                        lineup.team_name
+                    );
                 } else {
                     println!("{json}");
                 }
-            },
+            }
         },
         LauncherOp::Package { cmd } => match cmd {
             LauncherPackageOp::Info { file } => {
@@ -4468,18 +4977,24 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                     .map_err(|e| anyhow::anyhow!("inspection conteneur package : {e}"))?;
                 let json = serde_json::to_string_pretty(&header)?;
                 println!("{json}");
-            },
+            }
         },
         LauncherOp::Save { cmd } => match cmd {
-            LauncherSaveOp::Park { live_save, mod_save } => {
+            LauncherSaveOp::Park {
+                live_save,
+                mod_save,
+            } => {
                 launcher_save_park(&live_save, &mod_save)?;
-            },
-            LauncherSaveOp::Restore { live_save, mod_save } => {
+            }
+            LauncherSaveOp::Restore {
+                live_save,
+                mod_save,
+            } => {
                 launcher_save_restore(&live_save, &mod_save)?;
-            },
+            }
             LauncherSaveOp::InjectTeam { save, team, out } => {
                 launcher_save_inject_team(&save, &team, out.as_deref())?;
-            },
+            }
         },
         LauncherOp::Eac { cmd } => match cmd {
             LauncherEacOp::Scan { file, json } => {
@@ -4508,7 +5023,7 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                         );
                     }
                 }
-            },
+            }
             LauncherEacOp::Patch { file, out } => {
                 let target_out = out.unwrap_or_else(|| {
                     if let Some(stem) = file.file_stem().and_then(|s| s.to_str()) {
@@ -4527,7 +5042,7 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                     report.total_sites_found,
                     report.patched_count
                 );
-            },
+            }
         },
         LauncherOp::Spirit { cmd } => match cmd {
             LauncherSpiritOp::Cards { query, json } => {
@@ -4544,8 +5059,12 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                         println!("  0x{} | {:<30} | {}", c.hex_id, c.name, c.variant);
                     }
                 }
-            },
-            LauncherSpiritOp::Moves { query, category, json } => {
+            }
+            LauncherSpiritOp::Moves {
+                query,
+                category,
+                json,
+            } => {
                 let mut moves: Vec<&aphrody_nie_launcher::SpecialMove> = if let Some(q) = query {
                     aphrody_nie_launcher::search_special_moves(&q)
                 } else {
@@ -4562,7 +5081,7 @@ fn launcher_cmd(op: LauncherOp) -> anyhow::Result<()> {
                         println!("  0x{} | {:<35} | {}", m.hex_id, m.name, m.category);
                     }
                 }
-            },
+            }
         },
         LauncherOp::Ut { cmd } => launcher_ut_cmd(cmd)?,
     }
@@ -4573,8 +5092,11 @@ fn launcher_ut_cmd(op: LauncherUtOp) -> anyhow::Result<()> {
     match op {
         LauncherUtOp::Packs { json } => {
             let db = aphrody_nie_launcher::UtDatabase::open_default().ok();
-            let packs =
-                if let Some(ref d) = db { d.get_packs().unwrap_or_default() } else { vec![] };
+            let packs = if let Some(ref d) = db {
+                d.get_packs().unwrap_or_default()
+            } else {
+                vec![]
+            };
 
             if json {
                 println!("{}", serde_json::to_string_pretty(&packs)?);
@@ -4601,7 +5123,7 @@ fn launcher_ut_cmd(op: LauncherUtOp) -> anyhow::Result<()> {
                     );
                 }
             }
-        },
+        }
         LauncherUtOp::Open { pack, seed, json } => {
             let db = aphrody_nie_launcher::UtDatabase::open_default()
                 .context("ouverture de data/ievr-ut.sqlite")?;
@@ -4636,14 +5158,27 @@ fn launcher_ut_cmd(op: LauncherUtOp) -> anyhow::Result<()> {
                     );
                 }
                 println!("{:-<60}", "");
-                println!("VALEUR VENTE RAPIDE TOTALE: {} pièces", result.total_quicksell_value);
+                println!(
+                    "VALEUR VENTE RAPIDE TOTALE: {} pièces",
+                    result.total_quicksell_value
+                );
             }
-        },
-        LauncherUtOp::Players { query, element, rarity, limit, json } => {
+        }
+        LauncherUtOp::Players {
+            query,
+            element,
+            rarity,
+            limit,
+            json,
+        } => {
             let db = aphrody_nie_launcher::UtDatabase::open_default()
                 .context("ouverture de data/ievr-ut.sqlite")?;
-            let players =
-                db.search_players(query.as_deref(), element.as_deref(), rarity.as_deref(), limit)?;
+            let players = db.search_players(
+                query.as_deref(),
+                element.as_deref(),
+                rarity.as_deref(),
+                limit,
+            )?;
 
             if json {
                 println!("{}", serde_json::to_string_pretty(&players)?);
@@ -4664,27 +5199,43 @@ fn launcher_ut_cmd(op: LauncherUtOp) -> anyhow::Result<()> {
                 }
                 println!("Total: {} joueurs affichés", players.len());
             }
-        },
+        }
         LauncherUtOp::Formation { name, json } => {
             let layout = aphrody_nie_launcher::formation_layout(&name);
             if json {
                 println!("{}", serde_json::to_string_pretty(&layout)?);
             } else {
-                println!("FORMATION: {} ({} slots terrain)", layout.name, layout.slots.len());
-                println!("{:<8} | {:<6} | {:>6} | {:>6}", "Key", "Poste", "X (%)", "Y (%)");
+                println!(
+                    "FORMATION: {} ({} slots terrain)",
+                    layout.name,
+                    layout.slots.len()
+                );
+                println!(
+                    "{:<8} | {:<6} | {:>6} | {:>6}",
+                    "Key", "Poste", "X (%)", "Y (%)"
+                );
                 println!("{:-<8}-+-{:-<6}-+-{:-<6}-+-{:-<6}", "", "", "", "");
                 for s in &layout.slots {
-                    println!("{:<8} | {:<6} | {:>5.1}% | {:>5.1}%", s.key, s.label, s.x, s.y);
+                    println!(
+                        "{:<8} | {:<6} | {:>5.1}% | {:>5.1}%",
+                        s.key, s.label, s.x, s.y
+                    );
                 }
                 println!("\nRépartition par ligne de terrain :");
                 for (bande, slots) in layout.group_by_pitch_third() {
-                    let keys: Vec<_> =
-                        slots.iter().map(|s| format!("{}({:.0}%)", s.label, s.x)).collect();
+                    let keys: Vec<_> = slots
+                        .iter()
+                        .map(|s| format!("{}({:.0}%)", s.label, s.x))
+                        .collect();
                     println!("  {:<15}: {}", bande, keys.join(", "));
                 }
             }
-        },
-        LauncherUtOp::Value { file, passphrase, json } => {
+        }
+        LauncherUtOp::Value {
+            file,
+            passphrase,
+            json,
+        } => {
             let content = std::fs::read_to_string(&file)
                 .with_context(|| format!("lecture {}", file.display()))?;
 
@@ -4715,7 +5266,7 @@ fn launcher_ut_cmd(op: LauncherUtOp) -> anyhow::Result<()> {
                     println!("    - {:<18}: {} cartes", rar, count);
                 }
             }
-        },
+        }
     }
     Ok(())
 }
@@ -4731,9 +5282,14 @@ fn uniform_map(game_dir: &std::path::Path, out: &std::path::Path) -> anyhow::Res
 
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("init VFS depuis cpk_list.cfg.bin")?;
+    vfs.init(&data_dir)
+        .context("init VFS depuis cpk_list.cfg.bin")?;
 
-    tracing::info!(asset_count = vfs.asset_count(), cpk_count = vfs.cpk_count(), "VFS initialisé");
+    tracing::info!(
+        asset_count = vfs.asset_count(),
+        cpk_count = vfs.cpk_count(),
+        "VFS initialisé"
+    );
 
     if let Some(parent) = out.parent() {
         std::fs::create_dir_all(parent).ok();
@@ -4746,7 +5302,11 @@ fn uniform_map(game_dir: &std::path::Path, out: &std::path::Path) -> anyhow::Res
         writeln!(f, "{}", serde_json::to_string(entry)?)?;
     }
 
-    eprintln!("uniform-map: {} fichiers .g4md/.g4mg indexés → {}", entries.len(), out.display());
+    eprintln!(
+        "uniform-map: {} fichiers .g4md/.g4mg indexés → {}",
+        entries.len(),
+        out.display()
+    );
     Ok(())
 }
 
@@ -4761,7 +5321,10 @@ fn menu_predecode_cmd(game_dir: &std::path::Path, redis_url: &str) -> anyhow::Re
 
     let stats = menu_predecode::run(&dump_root, &packs_dir, redis_url, &[], true)?;
 
-    println!("decoded={} skipped={} failed={}", stats.decoded, stats.skipped, stats.failed);
+    println!(
+        "decoded={} skipped={} failed={}",
+        stats.decoded, stats.skipped, stats.failed
+    );
     Ok(())
 }
 
@@ -4778,7 +5341,8 @@ fn lire_source(src: &str, game_dir: Option<PathBuf>) -> anyhow::Result<Vec<u8>> 
         return std::fs::read(p).with_context(|| format!("lecture « {src} »"));
     }
     let vfs = open_vfs(game_dir)?;
-    vfs.read(src).with_context(|| format!("« {src} » introuvable, ni sur le disque ni dans le VFS"))
+    vfs.read(src)
+        .with_context(|| format!("« {src} » introuvable, ni sur le disque ni dans le VFS"))
 }
 
 /// Charge une référence de comparaison : chemin local, ou URL `https://` récupérée par `curl`.
@@ -4837,7 +5401,7 @@ fn info_cmd(game_dir: Option<PathBuf>, json: bool) -> anyhow::Result<()> {
             let mut h = Sha256::new();
             h.update(&octets);
             (Some(octets.len() as u64), Some(hex::encode(h.finalize())))
-        },
+        }
         Err(_) => (None, None),
     };
 
@@ -4847,9 +5411,15 @@ fn info_cmd(game_dir: Option<PathBuf>, json: bool) -> anyhow::Result<()> {
     // composants tiers signes. Les inventorier evite de croire qu'un `nie.exe` identique suffit.
     const CHAINE: [(&str, &str); 5] = [
         ("nie.exe", "binaire du jeu — produit par la forge"),
-        ("EACLauncher.exe", "Easy Anti-Cheat — lance le jeu, tiers non reproductible"),
+        (
+            "EACLauncher.exe",
+            "Easy Anti-Cheat — lance le jeu, tiers non reproductible",
+        ),
         ("EasyAntiCheat/Settings.json", "configuration EAC"),
-        ("EOSSDK-Win64-Shipping.dll", "Epic Online Services — exige par EAC, tiers"),
+        (
+            "EOSSDK-Win64-Shipping.dll",
+            "Epic Online Services — exige par EAC, tiers",
+        ),
         ("steam_api64.dll", "Steamworks — tiers"),
     ];
     let chaine: Vec<(&str, &str, bool, u64)> = CHAINE
@@ -4907,16 +5477,26 @@ fn info_cmd(game_dir: Option<PathBuf>, json: bool) -> anyhow::Result<()> {
         (Some(t), Some(s)) => {
             println!("binaire     nie.exe ({t} octets)");
             println!("sha256      {s}");
-        },
+        }
         _ => println!("binaire     absent ({})", exe.display()),
     }
-    println!("cpk_list    {}", if cpk_list.is_file() { "present" } else { "absent" });
-    println!("vfs         {montage} — {entrees} entrees, {} paquets", paquets.len());
+    println!(
+        "cpk_list    {}",
+        if cpk_list.is_file() {
+            "present"
+        } else {
+            "absent"
+        }
+    );
+    println!(
+        "vfs         {montage} — {entrees} entrees, {} paquets",
+        paquets.len()
+    );
     match &dumps {
         Some(p) => println!("dumps       {}", p.display()),
         None => {
             println!("dumps       absents — les goldens adosses au corpus ne s'executeront pas")
-        },
+        }
     }
 
     println!(
@@ -4924,7 +5504,11 @@ fn info_cmd(game_dir: Option<PathBuf>, json: bool) -> anyhow::Result<()> {
 chaine de lancement"
     );
     for (f, role, present, taille) in &chaine {
-        let etat = if *present { format!("{taille:>10} o") } else { "   ABSENT".to_string() };
+        let etat = if *present {
+            format!("{taille:>10} o")
+        } else {
+            "   ABSENT".to_string()
+        };
         println!("  {etat}  {f:<28} {role}");
     }
     if manquants == 0 {
@@ -4994,7 +5578,10 @@ fn convert_cmd(
 
     let format = ImageOut::depuis_extension(to).ok_or_else(|| {
         let connus: Vec<&str> = ImageOut::TOUS.iter().map(|f| f.extension()).collect();
-        anyhow::anyhow!("format « {to} » inconnu — formats gérés : {}", connus.join(", "))
+        anyhow::anyhow!(
+            "format « {to} » inconnu — formats gérés : {}",
+            connus.join(", ")
+        )
     })?;
 
     let data = lire_source(src, game_dir)?;
@@ -5020,9 +5607,17 @@ fn convert_cmd(
     println!(
         "format      {}{}",
         format.extension(),
-        if format.sans_perte() { "" } else { " (avec perte)" }
+        if format.sans_perte() {
+            ""
+        } else {
+            " (avec perte)"
+        }
     );
-    println!("sortie      {} ({} octets)", destination.display(), produit.len());
+    println!(
+        "sortie      {} ({} octets)",
+        destination.display(),
+        produit.len()
+    );
 
     if let Some(reference) = reference {
         let attendu = lire_reference(reference)?;
@@ -5065,7 +5660,10 @@ fn convert_toutes(
 
     let format = ImageOut::depuis_extension(to).ok_or_else(|| {
         let connus: Vec<&str> = ImageOut::TOUS.iter().map(|f| f.extension()).collect();
-        anyhow::anyhow!("format « {to} » inconnu — formats gérés : {}", connus.join(", "))
+        anyhow::anyhow!(
+            "format « {to} » inconnu — formats gérés : {}",
+            connus.join(", ")
+        )
     })?;
 
     let data = lire_source(src, game_dir)?;
@@ -5079,12 +5677,19 @@ fn convert_toutes(
     let base = src.rsplit('/').next().unwrap_or(src);
     let tronc = base.rsplit_once('.').map_or(base, |(t, _)| t);
 
-    println!("source      {src} ({} octets, {} texture(s))", data.len(), atlas.textures.len());
+    println!(
+        "source      {src} ({} octets, {} texture(s))",
+        data.len(),
+        atlas.textures.len()
+    );
     let mut ecrites = 0usize;
     for tex in &atlas.textures {
         let Some((w, h, rgba)) = aphrody_nie_formats::g4tx_decode::decode_texture_rgba(&data, tex)
         else {
-            println!("  · {:<32} {}x{}  NON DÉCODABLE", tex.name, tex.width, tex.height);
+            println!(
+                "  · {:<32} {}x{}  NON DÉCODABLE",
+                tex.name, tex.width, tex.height
+            );
             continue;
         };
         let produit = match image_out::encoder_rgba(&rgba, w, h, format) {
@@ -5092,14 +5697,20 @@ fn convert_toutes(
             Err(e) => {
                 println!("  · {:<32} {w}x{h}  ÉCHEC ENCODAGE : {e}", tex.name);
                 continue;
-            },
+            }
         };
         // Le nom de texture vient du fichier : il peut porter des séparateurs. On le réduit à ce
         // qui fait un nom de fichier sûr plutôt que d'écrire hors du dossier demandé.
         let nom: String = tex
             .name
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         let cible = dossier.join(format!("{tronc}__{nom}.{}", format.extension()));
         std::fs::write(&cible, &produit)
@@ -5140,11 +5751,16 @@ fn convert_sprites(
 
     let base = src.rsplit('/').next().unwrap_or(src);
     let tronc = base.rsplit_once('.').map_or(base, |(t, _)| t).to_string();
-    let destination =
-        out.map_or_else(|| PathBuf::from(format!("{tronc}.{to}")), std::path::Path::to_path_buf);
+    let destination = out.map_or_else(
+        || PathBuf::from(format!("{tronc}.{to}")),
+        std::path::Path::to_path_buf,
+    );
 
     println!("source      {src} ({} octets)", data.len());
-    println!("atlas       {} — {}×{}", feuille.nom, feuille.largeur, feuille.hauteur);
+    println!(
+        "atlas       {} — {}×{}",
+        feuille.nom, feuille.largeur, feuille.hauteur
+    );
     println!("regions     {}", feuille.len());
     if feuille.is_empty() {
         println!("note        image simple (aucune région d'atlas déclarée)");
@@ -5159,25 +5775,37 @@ fn convert_sprites(
             let image_path = destination.with_extension("webp");
             std::fs::write(&image_path, &image)
                 .with_context(|| format!("écriture « {} »", image_path.display()))?;
-            let nom_image = image_path
-                .file_name()
-                .map_or_else(|| tronc.clone() + ".webp", |n| n.to_string_lossy().into_owned());
-            println!("atlas       {} ({} octets)", image_path.display(), image.len());
-            let mode =
-                if masque { sprite_sheet::ModeCss::Masque } else { sprite_sheet::ModeCss::Image };
+            let nom_image = image_path.file_name().map_or_else(
+                || tronc.clone() + ".webp",
+                |n| n.to_string_lossy().into_owned(),
+            );
+            println!(
+                "atlas       {} ({} octets)",
+                image_path.display(),
+                image.len()
+            );
+            let mode = if masque {
+                sprite_sheet::ModeCss::Masque
+            } else {
+                sprite_sheet::ModeCss::Image
+            };
             feuille.vers_css_mode(&nom_image, mode)
-        },
+        }
         "svg" => {
             let image = aphrody_nie_formats::image_out::g4tx_vers(&data, &tronc, ImageOut::Png)
                 .map_err(|e| anyhow::anyhow!("encodage de l'atlas : {e}"))?;
             feuille.vers_svg(&sprite_sheet::data_uri(&image, "image/png"))
-        },
+        }
         _ => unreachable!("format filtré par l'appelant"),
     };
 
     std::fs::write(&destination, contenu.as_bytes())
         .with_context(|| format!("écriture « {} »", destination.display()))?;
-    println!("sortie      {} ({} octets)", destination.display(), contenu.len());
+    println!(
+        "sortie      {} ({} octets)",
+        destination.display(),
+        contenu.len()
+    );
     Ok(())
 }
 
@@ -5208,7 +5836,7 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
                             aphrody_nie_viola::presets::NOMS.join(", ")
                         )
                     })?)
-                },
+                }
             };
             let vfs = open_vfs(game_dir)?;
             let options = aphrody_nie_viola::DumpOptions {
@@ -5241,12 +5869,19 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
             println!("extraits  {}", r.extraits);
             println!("sautés    {}", r.sautes);
             println!("échecs    {}", r.echecs);
-            println!("octets    {} ({:.2} Gio)", r.octets, r.octets as f64 / 1.073_741_824e9);
+            println!(
+                "octets    {} ({:.2} Gio)",
+                r.octets,
+                r.octets as f64 / 1.073_741_824e9
+            );
             println!("packs repris {}", r.packs_repris);
             // Ce que `Vfs::iter` seul ne voyait pas : le chiffrer rend le gain de couverture
             // vérifiable au lieu de le supposer.
             if r.depuis_extra > 0 {
-                println!("hors cpk_list {} (packs absents de l'index principal)", r.depuis_extra);
+                println!(
+                    "hors cpk_list {} (packs absents de l'index principal)",
+                    r.depuis_extra
+                );
             }
             // Sur NTFS le second de deux chemins homographes écrase le premier, sans erreur :
             // la sortie compte alors moins de fichiers qu'annoncé, et rien ne le disait.
@@ -5262,16 +5897,22 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
                 println!("  {:<20} {n}", raison.nom());
             }
             if r.echecs > 0 && !sans_journal {
-                println!("journal   {}", aphrody_nie_viola::dump::chemin_journal(&out).display());
+                println!(
+                    "journal   {}",
+                    aphrody_nie_viola::dump::chemin_journal(&out).display()
+                );
             }
             if index {
-                println!("index     {}", aphrody_nie_viola::dump::chemin_index(&out).display());
+                println!(
+                    "index     {}",
+                    aphrody_nie_viola::dump::chemin_index(&out).display()
+                );
             }
             if r.annule {
                 println!("annulé    oui");
             }
             Ok(())
-        },
+        }
         ViolaOp::Verify {
             dir,
             filtre,
@@ -5295,11 +5936,18 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
             println!("conformes {} ({:.3} %)", r.conformes, r.couverture());
             println!("manquants {}", r.manquants);
             println!("tailles divergentes {}", r.tailles_divergentes);
-            println!("octets    {} ({:.2} Gio)", r.octets, r.octets as f64 / 1.073_741_824e9);
+            println!(
+                "octets    {} ({:.2} Gio)",
+                r.octets,
+                r.octets as f64 / 1.073_741_824e9
+            );
             // Une taille juste ne prouve pas un contenu juste : un déchiffrement à mauvaise clé
             // rend exactement le bon nombre d'octets. C'est l'échantillon qui le détecte.
             if r.compares > 0 {
-                println!("contenus comparés {} — divergents {}", r.compares, r.contenus_divergents);
+                println!(
+                    "contenus comparés {} — divergents {}",
+                    r.compares, r.contenus_divergents
+                );
             }
             if r.illisibles > 0 {
                 println!("illisibles {}", r.illisibles);
@@ -5326,12 +5974,28 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
             }
             if !sans_rapport {
                 aphrody_nie_viola::verify::ecrire_rapport(&dir, &r)?;
-                println!("rapport   {}", aphrody_nie_viola::verify::chemin_rapport(&dir).display());
+                println!(
+                    "rapport   {}",
+                    aphrody_nie_viola::verify::chemin_rapport(&dir).display()
+                );
             }
-            println!("verdict   {}", if r.conforme() { "conforme" } else { "NON CONFORME" });
+            println!(
+                "verdict   {}",
+                if r.conforme() {
+                    "conforme"
+                } else {
+                    "NON CONFORME"
+                }
+            );
             Ok(())
-        },
-        ViolaOp::Pack { mod_dir, out, cpk_list, switch, game_dir } => {
+        }
+        ViolaOp::Pack {
+            mod_dir,
+            out,
+            cpk_list,
+            switch,
+            game_dir,
+        } => {
             let plateforme = if switch {
                 aphrody_nie_viola::Platform::Switch
             } else {
@@ -5354,10 +6018,19 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
                 );
             }
             Ok(())
-        },
-        ViolaOp::Merge { sources, out, fichier, game_dir } => {
+        }
+        ViolaOp::Merge {
+            sources,
+            out,
+            fichier,
+            game_dir,
+        } => {
             // La fusion au champ a besoin du vanilla ; le VFS le fournit sans exiger un dump.
-            let vfs = if fichier { None } else { Some(open_vfs(game_dir)?) };
+            let vfs = if fichier {
+                None
+            } else {
+                Some(open_vfs(game_dir)?)
+            };
             let rapport = match &vfs {
                 None => aphrody_nie_viola::merge_dirs(
                     &sources,
@@ -5371,7 +6044,7 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
                         &out,
                         &aphrody_nie_viola::MergeStrategy::Semantique(&resoudre),
                     )
-                },
+                }
             }
             .map_err(anyhow::Error::msg)?;
             println!("copiés    {}", rapport.copies);
@@ -5385,14 +6058,22 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
                 );
             }
             Ok(())
-        },
-        ViolaOp::Crypto { src, out, cle, du_nom } => {
+        }
+        ViolaOp::Crypto {
+            src,
+            out,
+            cle,
+            du_nom,
+        } => {
             let cle = match (cle, du_nom) {
                 (Some(hex), _) => {
                     aphrody_nie_viola::CriwareKey::depuis_hex(&hex).map_err(anyhow::Error::msg)?
-                },
+                }
                 (None, true) => aphrody_nie_viola::CriwareKey::DuNom(
-                    src.file_name().unwrap_or_default().to_string_lossy().into_owned(),
+                    src.file_name()
+                        .unwrap_or_default()
+                        .to_string_lossy()
+                        .into_owned(),
                 ),
                 (None, false) => aphrody_nie_viola::CriwareKey::Viola,
             };
@@ -5401,13 +6082,18 @@ fn viola_cmd(op: ViolaOp) -> anyhow::Result<()> {
             println!("clé    {:08X}", cle.valeur());
             println!("octets {octets}");
             Ok(())
-        },
+        }
     }
 }
 
 fn vfs_cmd(op: VfsOp) -> anyhow::Result<()> {
     match op {
-        VfsOp::Locate { game_dir, scan_root, json, benchmark } => {
+        VfsOp::Locate {
+            game_dir,
+            scan_root,
+            json,
+            benchmark,
+        } => {
             anyhow::ensure!(benchmark <= 100_000, "--benchmark must be at most 100000");
             let started = std::time::Instant::now();
             let source = if let Some(root) = scan_root {
@@ -5437,12 +6123,24 @@ fn vfs_cmd(op: VfsOp) -> anyhow::Result<()> {
                 eprintln!("Discovery: {discovery_ms:.3} ms; benchmark: {measurement:?}");
             }
             Ok(())
-        },
-        VfsOp::Bundle { screen, locale, profile, out, manifest_out, split_dir, game_dir } => {
+        }
+        VfsOp::Bundle {
+            screen,
+            locale,
+            profile,
+            out,
+            manifest_out,
+            split_dir,
+            game_dir,
+        } => {
             let vfs = open_vfs(game_dir)?;
             let generated = vfs_bundle::generate(
                 &vfs,
-                &vfs_bundle::InitialBundleOptions { screen, locale, profile },
+                &vfs_bundle::InitialBundleOptions {
+                    screen,
+                    locale,
+                    profile,
+                },
             )?;
             let manifest_out =
                 manifest_out.unwrap_or_else(|| vfs_bundle::default_manifest_path(&out));
@@ -5464,32 +6162,83 @@ fn vfs_cmd(op: VfsOp) -> anyhow::Result<()> {
                 println!("split    {}", directory.display());
             }
             Ok(())
-        },
+        }
         VfsOp::Ls { prefix, game_dir } => vfs_ls(prefix.as_deref().unwrap_or(""), game_dir),
         VfsOp::Stat { path, game_dir } => vfs_stat(&path, game_dir),
-        VfsOp::Cat { path, hex, len, png_out, wav_out, game_dir } => {
-            vfs_cat(&path, hex, len, png_out.as_deref(), wav_out.as_deref(), game_dir)
-        },
-        VfsOp::Extract { path, out, ext, game_dir } => {
-            vfs_extract(&path, &out, ext.as_deref(), game_dir)
-        },
+        VfsOp::Cat {
+            path,
+            hex,
+            len,
+            png_out,
+            wav_out,
+            game_dir,
+        } => vfs_cat(
+            &path,
+            hex,
+            len,
+            png_out.as_deref(),
+            wav_out.as_deref(),
+            game_dir,
+        ),
+        VfsOp::Extract {
+            path,
+            out,
+            ext,
+            game_dir,
+        } => vfs_extract(&path, &out, ext.as_deref(), game_dir),
         VfsOp::Stats { top, game_dir } => vfs_stats(top, game_dir),
-        VfsOp::Formats { parse, prefix, limit, json, game_dir } => {
-            vfs_formats(parse, prefix.as_deref(), limit, json, game_dir)
-        },
-        VfsOp::Find { query, ext, limit, json, game_dir } => {
-            vfs_find(&query, ext.as_deref(), limit, json, game_dir)
-        },
-        VfsOp::Chara { query, no_paths, element, position, json, limit, db, game_dir } => {
-            let opts =
-                SearchOpts { show_paths: !no_paths, json, limit, db: db.as_deref(), game_dir };
+        VfsOp::Formats {
+            parse,
+            prefix,
+            limit,
+            json,
+            game_dir,
+        } => vfs_formats(parse, prefix.as_deref(), limit, json, game_dir),
+        VfsOp::Find {
+            query,
+            ext,
+            limit,
+            json,
+            game_dir,
+        } => vfs_find(&query, ext.as_deref(), limit, json, game_dir),
+        VfsOp::Chara {
+            query,
+            no_paths,
+            element,
+            position,
+            json,
+            limit,
+            db,
+            game_dir,
+        } => {
+            let opts = SearchOpts {
+                show_paths: !no_paths,
+                json,
+                limit,
+                db: db.as_deref(),
+                game_dir,
+            };
             vfs_search_chara(&query, element.as_deref(), position.as_deref(), opts)
-        },
-        VfsOp::Waza { query, no_paths, category, element, json, limit, db, game_dir } => {
-            let opts =
-                SearchOpts { show_paths: !no_paths, json, limit, db: db.as_deref(), game_dir };
+        }
+        VfsOp::Waza {
+            query,
+            no_paths,
+            category,
+            element,
+            json,
+            limit,
+            db,
+            game_dir,
+        } => {
+            let opts = SearchOpts {
+                show_paths: !no_paths,
+                json,
+                limit,
+                db: db.as_deref(),
+                game_dir,
+            };
             vfs_search_waza(&query, category.as_deref(), element.as_deref(), opts)
-        },
+        }
     }
 }
 
@@ -5528,7 +6277,7 @@ fn vfs_ls(prefix: &str, game_dir: Option<PathBuf>) -> anyhow::Result<()> {
         match rest.split_once('/') {
             Some((seg, _)) => {
                 dirs.insert(seg.to_string());
-            },
+            }
             None => files.push((path, entry)),
         }
     }
@@ -5539,11 +6288,18 @@ fn vfs_ls(prefix: &str, game_dir: Option<PathBuf>) -> anyhow::Result<()> {
     files.sort_by_key(|(p, _)| *p);
     for (path, entry) in &files {
         let name = path.rsplit('/').next().unwrap_or(path);
-        let cpk =
-            if entry.cpk_filename.is_empty() { "<loose>" } else { entry.cpk_filename.as_str() };
+        let cpk = if entry.cpk_filename.is_empty() {
+            "<loose>"
+        } else {
+            entry.cpk_filename.as_str()
+        };
         println!("  {:>10}  {name}  [{cpk}]", entry.file_size);
     }
-    println!("\n  {} sous-dossier(s), {} fichier(s)", dirs.len(), files.len());
+    println!(
+        "\n  {} sous-dossier(s), {} fichier(s)",
+        dirs.len(),
+        files.len()
+    );
     Ok(())
 }
 
@@ -5572,7 +6328,11 @@ fn vfs_find(
     let mut hits: Vec<(&str, &aphrody_nie_formats::vfs::VfsEntry)> = vfs
         .iter()
         .filter(|(p, _)| p.to_lowercase().contains(&q))
-        .filter(|(p, _)| ext_dot.as_deref().is_none_or(|e| p.to_lowercase().ends_with(e)))
+        .filter(|(p, _)| {
+            ext_dot
+                .as_deref()
+                .is_none_or(|e| p.to_lowercase().ends_with(e))
+        })
         .collect();
     hits.sort_by_key(|(p, _)| *p);
 
@@ -5596,23 +6356,36 @@ fn vfs_find(
     }
 
     for (path, entry) in hits.iter().take(limit) {
-        let cpk =
-            if entry.cpk_filename.is_empty() { "<loose>" } else { entry.cpk_filename.as_str() };
+        let cpk = if entry.cpk_filename.is_empty() {
+            "<loose>"
+        } else {
+            entry.cpk_filename.as_str()
+        };
         println!("  {:>10}  {path}  [{cpk}]", entry.file_size);
     }
-    let capped = if total > limit { format!(" (limité à {limit})") } else { String::new() };
+    let capped = if total > limit {
+        format!(" (limité à {limit})")
+    } else {
+        String::new()
+    };
     println!("\n  {total} résultat(s){capped}");
     Ok(())
 }
 
 fn vfs_stat(path: &str, game_dir: Option<PathBuf>) -> anyhow::Result<()> {
     let vfs = open_vfs(game_dir)?;
-    let entry = vfs.find(path).ok_or_else(|| anyhow::anyhow!("« {path} » absent du VFS"))?;
+    let entry = vfs
+        .find(path)
+        .ok_or_else(|| anyhow::anyhow!("« {path} » absent du VFS"))?;
     println!("  chemin      {path}");
     println!("  taille      {} octets", entry.file_size);
     println!(
         "  cpk         {}",
-        if entry.cpk_filename.is_empty() { "<loose>" } else { &entry.cpk_filename }
+        if entry.cpk_filename.is_empty() {
+            "<loose>"
+        } else {
+            &entry.cpk_filename
+        }
     );
     match vfs.read(path) {
         Ok(data) => {
@@ -5620,8 +6393,11 @@ fn vfs_stat(path: &str, game_dir: Option<PathBuf>) -> anyhow::Result<()> {
                 .and_then(|lines| lines.into_iter().next())
                 .unwrap_or_else(|| "format      brut / non reconnu".to_string());
             println!("  {label}");
-            println!("  magic       {}", aphrody_nie_explore::hex_prefix(&data, 16));
-        },
+            println!(
+                "  magic       {}",
+                aphrody_nie_explore::hex_prefix(&data, 16)
+            );
+        }
         Err(e) => println!("  lecture     ECHEC ({e})"),
     }
     Ok(())
@@ -5655,7 +6431,9 @@ fn vfs_cat(
     }
 
     let vfs = open_vfs(game_dir)?;
-    let data = vfs.read(path).with_context(|| format!("lecture « {path} »"))?;
+    let data = vfs
+        .read(path)
+        .with_context(|| format!("lecture « {path} »"))?;
     println!("  {path}  ({} octets)", data.len());
 
     if let Some(out) = png_out {
@@ -5666,7 +6444,7 @@ fn vfs_cat(
             Some(png) => {
                 std::fs::write(out, &png)?;
                 println!("  PNG écrit → {}", out.display());
-            },
+            }
             None => println!("  échec décodage PNG (pas une texture reconnue)"),
         }
     }
@@ -5681,7 +6459,10 @@ fn vfs_cat(
         {
             let voisin = alloc_awb(base);
             if let Ok(awb) = vfs.read(&voisin) {
-                println!("  ACB sans données : reprise sur {voisin} ({} octets)", awb.len());
+                println!(
+                    "  ACB sans données : reprise sur {voisin} ({} octets)",
+                    awb.len()
+                );
                 wav = decoder_wav(awb);
             }
         }
@@ -5690,7 +6471,7 @@ fn vfs_cat(
             Some(w) => {
                 std::fs::write(out, &w)?;
                 println!("  WAV écrit → {} ({} octets)", out.display(), w.len());
-            },
+            }
             None => println!("  échec décodage audio (ni ADX, ni HCA, ni AWB/ACB exploitable)"),
         }
     }
@@ -5704,7 +6485,10 @@ fn vfs_cat(
     let n = data.len().min(len);
     mem_hexdump(&data[..n], 0);
     if data.len() > n {
-        println!("  … {} octet(s) de plus (--len pour en voir davantage)", data.len() - n);
+        println!(
+            "  … {} octet(s) de plus (--len pour en voir davantage)",
+            data.len() - n
+        );
     }
     Ok(())
 }
@@ -5726,7 +6510,11 @@ fn vfs_extract(
             std::fs::create_dir_all(parent).ok();
         }
         std::fs::write(out, &data)?;
-        println!("  1 fichier extrait ({} octets) → {}", data.len(), out.display());
+        println!(
+            "  1 fichier extrait ({} octets) → {}",
+            data.len(),
+            out.display()
+        );
         return Ok(());
     }
 
@@ -5736,13 +6524,19 @@ fn vfs_extract(
     let matches: Vec<String> = vfs
         .iter()
         .filter(|(p, _)| *p == prefix || p.starts_with(&sub_prefix))
-        .filter(|(p, _)| ext_dot.as_deref().is_none_or(|e| p.to_lowercase().ends_with(e)))
+        .filter(|(p, _)| {
+            ext_dot
+                .as_deref()
+                .is_none_or(|e| p.to_lowercase().ends_with(e))
+        })
         .map(|(p, _)| p.to_string())
         .collect();
     anyhow::ensure!(
         !matches.is_empty(),
         "« {path} » absent du VFS (ni fichier exact, ni préfixe){}",
-        ext.map_or(String::new(), |e| format!(" — ou aucun fichier en .{e} dessous"))
+        ext.map_or(String::new(), |e| format!(
+            " — ou aucun fichier en .{e} dessous"
+        ))
     );
 
     let mut ok = 0usize;
@@ -5759,11 +6553,14 @@ fn vfs_extract(
                     Ok(()) => ok += 1,
                     Err(_) => failed += 1,
                 }
-            },
+            }
             Err(_) => failed += 1,
         }
     }
-    println!("  {ok} fichier(s) extrait(s) sous {} ({failed} échec(s))", out.display());
+    println!(
+        "  {ok} fichier(s) extrait(s) sous {} ({failed} échec(s))",
+        out.display()
+    );
     Ok(())
 }
 
@@ -5875,7 +6672,7 @@ fn vfs_formats(
             Some(nom) => {
                 reconnus += 1;
                 *par_format.entry(nom).or_default() += 1;
-            },
+            }
             None => match magic {
                 Some(m) => *sans_decodeur.entry(m).or_default() += 1,
                 None => {
@@ -5890,7 +6687,7 @@ fn vfs_formats(
                     if exemples_inconnus.len() < 10 {
                         exemples_inconnus.push(chemin);
                     }
-                },
+                }
             },
         }
     }
@@ -5926,7 +6723,11 @@ fn vfs_formats(
         println!(
             "  magic connu, pas de decodeur autonome : {n_sans_decodeur} ({:.2} %) — {}",
             pct(n_sans_decodeur),
-            sans_decodeur.iter().map(|(f, n)| format!("{f} x{n}")).collect::<Vec<_>>().join(", "),
+            sans_decodeur
+                .iter()
+                .map(|(f, n)| format!("{f} x{n}"))
+                .collect::<Vec<_>>()
+                .join(", "),
         );
     }
     println!("  inconnus   {inconnus:>8}  ({:.2} %)", pct(inconnus));
@@ -6025,7 +6826,9 @@ fn vfs_domain_search(
     let mut result =
         aphrody_nie_app::game_data::query_vfs(&vfs, &request).map_err(anyhow::Error::msg)?;
     if show_paths
-        && let Some(items) = result.get_mut("items").and_then(serde_json::Value::as_array_mut)
+        && let Some(items) = result
+            .get_mut("items")
+            .and_then(serde_json::Value::as_array_mut)
     {
         for item in items {
             let code = item
@@ -6059,7 +6862,13 @@ fn vfs_search_chara(
     opts: SearchOpts<'_>,
 ) -> anyhow::Result<()> {
     use aphrody_nie_wiki::{mirror, query as wiki_query};
-    let SearchOpts { show_paths, json, limit, db, game_dir } = opts;
+    let SearchOpts {
+        show_paths,
+        json,
+        limit,
+        db,
+        game_dir,
+    } = opts;
 
     if db.is_none() {
         return vfs_domain_search(
@@ -6088,7 +6897,11 @@ fn vfs_search_chara(
         return Ok(());
     }
 
-    let vfs = if show_paths || json { Some(open_vfs(game_dir)?) } else { None };
+    let vfs = if show_paths || json {
+        Some(open_vfs(game_dir)?)
+    } else {
+        None
+    };
 
     if json {
         let entries: Vec<SearchJsonEntry> = matches
@@ -6141,7 +6954,13 @@ fn vfs_search_waza(
     opts: SearchOpts<'_>,
 ) -> anyhow::Result<()> {
     use aphrody_nie_wiki::{mirror, query as wiki_query};
-    let SearchOpts { show_paths, json, limit, db, game_dir } = opts;
+    let SearchOpts {
+        show_paths,
+        json,
+        limit,
+        db,
+        game_dir,
+    } = opts;
 
     if db.is_none() {
         return vfs_domain_search(
@@ -6170,7 +6989,11 @@ fn vfs_search_waza(
         return Ok(());
     }
 
-    let vfs = if show_paths || json { Some(open_vfs(game_dir)?) } else { None };
+    let vfs = if show_paths || json {
+        Some(open_vfs(game_dir)?)
+    } else {
+        None
+    };
 
     if json {
         let entries: Vec<SearchJsonEntry> = matches
@@ -6216,14 +7039,21 @@ fn vfs_search_waza(
 
 /// Liste les chemins VFS contenant `needle` (code interne d'un chara/waza), bornés à `limit`.
 fn vfs_print_related(vfs: &aphrody_nie_formats::vfs::Vfs, needle: &str, limit: usize) {
-    let mut hits: Vec<&str> =
-        vfs.iter().filter(|(p, _)| p.contains(needle)).map(|(p, _)| p).collect();
+    let mut hits: Vec<&str> = vfs
+        .iter()
+        .filter(|(p, _)| p.contains(needle))
+        .map(|(p, _)| p)
+        .collect();
     hits.sort_unstable();
     let total = hits.len();
     for p in hits.iter().take(limit) {
         println!("    {p}");
     }
-    let capped = if total > limit { format!(" (limité à {limit})") } else { String::new() };
+    let capped = if total > limit {
+        format!(" (limité à {limit})")
+    } else {
+        String::new()
+    };
     println!("    → {total} fichier(s) VFS contenant « {needle} »{capped}\n");
 }
 

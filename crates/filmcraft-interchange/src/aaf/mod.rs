@@ -58,16 +58,34 @@ pub struct AafOptions {
 /// Export `sequence` as an AAF file.
 pub fn export(project: &Project, sequence: ItemId, opts: &AafOptions) -> Result<(Vec<u8>, Report)> {
     let mut report = Report::default();
-    let name = opts.name.clone().or_else(|| project.item(sequence).map(|i| i.name.clone())).unwrap_or_else(|| "Sequence".into());
-    let doc = comp::from_project(project, sequence, &name, &opts.media, comp::Nests::Compositions, &mut report)?;
-    let version = if opts.small_sectors { filmcraft_cfb::Version::V3 } else { filmcraft_cfb::Version::V4 };
+    let name = opts
+        .name
+        .clone()
+        .or_else(|| project.item(sequence).map(|i| i.name.clone()))
+        .unwrap_or_else(|| "Sequence".into());
+    let doc = comp::from_project(
+        project,
+        sequence,
+        &name,
+        &opts.media,
+        comp::Nests::Compositions,
+        &mut report,
+    )?;
+    let version = if opts.small_sectors {
+        filmcraft_cfb::Version::V3
+    } else {
+        filmcraft_cfb::Version::V4
+    };
     let bytes = write::write(&doc, version, &mut report)?;
     Ok((bytes, report))
 }
 
 /// Import an AAF file: its top-level compositions become sequences. Embedded audio is returned
 /// as WAV files whose paths are the paths of the imported media items.
-pub fn import(bytes: &[u8], opts: &ImportOptions) -> Result<(Imported, Vec<ExtractedMedia>, Report)> {
+pub fn import(
+    bytes: &[u8],
+    opts: &ImportOptions,
+) -> Result<(Imported, Vec<ExtractedMedia>, Report)> {
     let mut report = Report::default();
     let doc = read::read(bytes, &mut report)?;
     let (imported, extracted) = comp::to_project(doc, opts, &mut report)?;

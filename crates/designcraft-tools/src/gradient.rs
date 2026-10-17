@@ -27,44 +27,71 @@ fn constrain(a: Point, b: Point, m: Mods) -> Point {
 
 impl GradientTool {
     pub fn feather() -> Self {
-        GradientTool { feather: true, ..Default::default() }
+        GradientTool {
+            feather: true,
+            ..Default::default()
+        }
     }
 }
 
 impl Tool for GradientTool {
     fn id(&self) -> &'static str {
-        if self.feather { "gradientFeather" } else { "gradientSwatch" }
+        if self.feather {
+            "gradientFeather"
+        } else {
+            "gradientSwatch"
+        }
     }
 
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         match ev.kind {
             PointerKind::Down => {
                 let ids: Vec<u64> = if cx.selection.items.is_empty() {
-                    cx.hit(ev.pos).map(|(_, id)| vec![cx.doc.top_level_of(id).unwrap_or(id).0]).unwrap_or_default()
+                    cx.hit(ev.pos)
+                        .map(|(_, id)| vec![cx.doc.top_level_of(id).unwrap_or(id).0])
+                        .unwrap_or_default()
                 } else {
                     cx.selection.items.iter().map(|i| i.0).collect()
                 };
-                let Some((_, sp)) = cx.layout.spread_at(ev.pos) else { return vec![] };
+                let Some((_, sp)) = cx.layout.spread_at(ev.pos) else {
+                    return vec![];
+                };
                 if ids.is_empty() {
                     return vec![];
                 }
                 self.drag = Some((ev.pos, sp, ids));
                 self.end = None;
-                vec![Action::Begin(if self.feather { "Gradient Feather".into() } else { "Gradient".into() })]
+                vec![Action::Begin(if self.feather {
+                    "Gradient Feather".into()
+                } else {
+                    "Gradient".into()
+                })]
             }
             PointerKind::Drag => {
-                let Some((start, sp, ids)) = &self.drag else { return vec![] };
+                let Some((start, sp, ids)) = &self.drag else {
+                    return vec![];
+                };
                 let end = constrain(*start, ev.pos, ev.mods);
                 self.end = Some(end);
                 if (end - *start).hypot() < cx.tol(2.0) {
                     return vec![];
                 }
                 let to = *sp + (end - *start);
-                let cmd = if self.feather { "object.gradientFeather" } else { "object.gradient" };
-                vec![Action::Preview(cmd.into(), json!({"ids": ids, "from": [sp.x, sp.y], "to": [to.x, to.y]}))]
+                let cmd = if self.feather {
+                    "object.gradientFeather"
+                } else {
+                    "object.gradient"
+                };
+                vec![Action::Preview(
+                    cmd.into(),
+                    json!({"ids": ids, "from": [sp.x, sp.y], "to": [to.x, to.y]}),
+                )]
             }
             PointerKind::Up => {
-                let moved = self.end.zip(self.drag.as_ref()).is_some_and(|(e, (s, _, _))| (e - *s).hypot() >= cx.tol(2.0));
+                let moved = self
+                    .end
+                    .zip(self.drag.as_ref())
+                    .is_some_and(|(e, (s, _, _))| (e - *s).hypot() >= cx.tol(2.0));
                 let was = self.drag.take().is_some();
                 self.end = None;
                 match (was, moved) {
@@ -79,7 +106,12 @@ impl Tool for GradientTool {
 
     fn overlays(&self, _cx: &ToolContext) -> Vec<Overlay> {
         match (&self.drag, self.end) {
-            (Some((a, _, _)), Some(b)) => vec![Overlay::Line { a: *a, b, color: [0, 0, 0], dashed: false }],
+            (Some((a, _, _)), Some(b)) => vec![Overlay::Line {
+                a: *a,
+                b,
+                color: [0, 0, 0],
+                dashed: false,
+            }],
             _ => vec![],
         }
     }

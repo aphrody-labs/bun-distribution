@@ -87,10 +87,22 @@ pub fn selection_mode(tool: Tool, bar: u8, m: egui::Modifiers) -> &'static str {
 /// [`selection_mode`] for the active document: with nothing selected, ⌥ (or ⇧⌥) has nothing to
 /// subtract from or intersect with, so it draws a new selection, as in Photoshop (where ⌥ then
 /// only draws a marquee from its centre). An options-bar Subtract or Intersect is kept (#1106).
-pub fn document_selection_mode(app: &PhotocraftApp, tool: Tool, m: egui::Modifiers) -> &'static str {
+pub fn document_selection_mode(
+    app: &PhotocraftApp,
+    tool: Tool,
+    m: egui::Modifiers,
+) -> &'static str {
     let mode = selection_mode(tool, app.ui.selection_mode, m);
-    let selected = app.session.active().and_then(|st| st.doc.selection.as_ref()).is_some_and(|s| !s.content_bounds().is_empty());
-    if m.alt && !selected && matches!(mode, "subtract" | "intersect") && selection_mode(tool, app.ui.selection_mode, egui::Modifiers::NONE) == "replace" {
+    let selected = app
+        .session
+        .active()
+        .and_then(|st| st.doc.selection.as_ref())
+        .is_some_and(|s| !s.content_bounds().is_empty());
+    if m.alt
+        && !selected
+        && matches!(mode, "subtract" | "intersect")
+        && selection_mode(tool, app.ui.selection_mode, egui::Modifiers::NONE) == "replace"
+    {
         "replace"
     } else {
         mode
@@ -103,11 +115,21 @@ pub fn badge(app: &PhotocraftApp, tool: Tool, m: egui::Modifiers) -> Option<Badg
     // Add / Delete Anchor Point: + or − beside the crosshair, as on Photoshop's pen cursors (⌥
     // swaps them; ⌘ is Direct Selection, which shows none).
     if let Some(t) = crate::anchor_tools::effective(tool, m) {
-        return (!m.command).then_some(if t == Tool::AddAnchorPoint { Badge::Add } else { Badge::Subtract });
+        return (!m.command).then_some(if t == Tool::AddAnchorPoint {
+            Badge::Add
+        } else {
+            Badge::Subtract
+        });
     }
     // The Pen over the active path with Auto Add/Delete on: what a click would do (#4144).
     if let Some(p) = app.hover_doc.filter(|_| tool == Tool::Pen) {
-        return crate::anchor_tools::pen_auto(app, tool, m, p).map(|(t, ..)| if t == Tool::AddAnchorPoint { Badge::Add } else { Badge::Subtract });
+        return crate::anchor_tools::pen_auto(app, tool, m, p).map(|(t, ..)| {
+            if t == Tool::AddAnchorPoint {
+                Badge::Add
+            } else {
+                Badge::Subtract
+            }
+        });
     }
     if !is_selection_tool(tool) {
         return None;
@@ -116,9 +138,19 @@ pub fn badge(app: &PhotocraftApp, tool: Tool, m: egui::Modifiers) -> Option<Badg
     if m.command && app.drag.is_none() {
         return None;
     }
-    let mut m = app.drag.as_ref().filter(|d| d.tool == Tool::Lasso && tool == Tool::Lasso).map_or(m, |d| d.modifiers);
+    let mut m = app
+        .drag
+        .as_ref()
+        .filter(|d| d.tool == Tool::Lasso && tool == Tool::Lasso)
+        .map_or(m, |d| d.modifiers);
     // The Lasso's Alt with nothing selected draws straight segments; it subtracts nothing.
-    if matches!(tool, Tool::Lasso | Tool::PolygonLasso) && app.drag.is_none() && app.session.active().is_none_or(|st| st.doc.selection.is_none()) {
+    if matches!(tool, Tool::Lasso | Tool::PolygonLasso)
+        && app.drag.is_none()
+        && app
+            .session
+            .active()
+            .is_none_or(|st| st.doc.selection.is_none())
+    {
         m.alt = false;
     }
     Badge::from_mode(selection_mode(tool, app.ui.selection_mode, m))
@@ -127,11 +159,17 @@ pub fn badge(app: &PhotocraftApp, tool: Tool, m: egui::Modifiers) -> Option<Badg
 /// The badge's glyph as line segments around `c` (half-size `h`).
 pub fn badge_glyph(b: Badge, c: Pos2, h: f32) -> Vec<[Pos2; 2]> {
     match b {
-        Badge::Add => vec![[c - vec2(h, 0.0), c + vec2(h, 0.0)], [c - vec2(0.0, h), c + vec2(0.0, h)]],
+        Badge::Add => vec![
+            [c - vec2(h, 0.0), c + vec2(h, 0.0)],
+            [c - vec2(0.0, h), c + vec2(0.0, h)],
+        ],
         Badge::Subtract => vec![[c - vec2(h, 0.0), c + vec2(h, 0.0)]],
         Badge::Intersect => {
             let d = h * 0.8;
-            vec![[c + vec2(-d, -d), c + vec2(d, d)], [c + vec2(-d, d), c + vec2(d, -d)]]
+            vec![
+                [c + vec2(-d, -d), c + vec2(d, d)],
+                [c + vec2(-d, d), c + vec2(d, -d)],
+            ]
         }
     }
 }
@@ -155,7 +193,9 @@ pub const DASH: f32 = 4.0;
 /// Marching ants along a polyline: a solid white line under black dashes, the dashes shifted by
 /// `phase` (animate it with time). Visible on any image, like Photoshop's selection edges.
 pub fn ants(points: &[Pos2], closed: bool, phase: f32) -> Vec<Shape> {
-    let Some(&first) = points.first().filter(|_| points.len() >= 2) else { return Vec::new() };
+    let Some(&first) = points.first().filter(|_| points.len() >= 2) else {
+        return Vec::new();
+    };
     let mut pts = points.to_vec();
     if closed {
         pts.push(first);
@@ -213,8 +253,20 @@ pub fn ellipse_points(r: egui::Rect) -> Vec<Pos2> {
 /// A path preview in `color` with a contrasting dark halo, so a blue shape outline still shows
 /// on blue (or any) pixels: the shape tools' drag preview.
 pub fn contrast_path(points: Vec<Pos2>, closed: bool, color: Color32) -> Vec<Shape> {
-    let make = |pts: Vec<Pos2>, s: Stroke| if closed { Shape::closed_line(pts, s) } else { Shape::line(pts, s) };
-    vec![make(points.clone(), Stroke::new(3.0, Color32::from_black_alpha(150))), make(points, Stroke::new(1.0, color))]
+    let make = |pts: Vec<Pos2>, s: Stroke| {
+        if closed {
+            Shape::closed_line(pts, s)
+        } else {
+            Shape::line(pts, s)
+        }
+    };
+    vec![
+        make(
+            points.clone(),
+            Stroke::new(3.0, Color32::from_black_alpha(150)),
+        ),
+        make(points, Stroke::new(1.0, color)),
+    ]
 }
 
 #[cfg(test)]
@@ -240,11 +292,30 @@ mod tests {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         let none = egui::Modifiers::NONE;
         let (shift, alt) = (egui::Modifiers::SHIFT, egui::Modifiers::ALT);
-        let both = egui::Modifiers { shift: true, alt: true, ..Default::default() };
-        app.run("file.new", serde_json::json!({"width": 40, "height": 30})).unwrap();
-        app.run("select.rect", serde_json::json!({"x": 5, "y": 5, "width": 10, "height": 10})).unwrap();
-        for t in [Tool::RectMarquee, Tool::EllipseMarquee, Tool::Lasso, Tool::PolygonLasso, Tool::MagicWand] {
-            assert_eq!(badge(&app, t, none), None, "{t:?}: New selection has no badge");
+        let both = egui::Modifiers {
+            shift: true,
+            alt: true,
+            ..Default::default()
+        };
+        app.run("file.new", serde_json::json!({"width": 40, "height": 30}))
+            .unwrap();
+        app.run(
+            "select.rect",
+            serde_json::json!({"x": 5, "y": 5, "width": 10, "height": 10}),
+        )
+        .unwrap();
+        for t in [
+            Tool::RectMarquee,
+            Tool::EllipseMarquee,
+            Tool::Lasso,
+            Tool::PolygonLasso,
+            Tool::MagicWand,
+        ] {
+            assert_eq!(
+                badge(&app, t, none),
+                None,
+                "{t:?}: New selection has no badge"
+            );
             assert_eq!(badge(&app, t, shift), Some(Badge::Add));
             assert_eq!(badge(&app, t, alt), Some(Badge::Subtract));
             assert_eq!(badge(&app, t, both), Some(Badge::Intersect));
@@ -261,7 +332,10 @@ mod tests {
         assert_eq!(badge(&app, Tool::RectMarquee, none), Some(Badge::Intersect));
         // Smart selection tools.
         assert_eq!(badge(&app, Tool::QuickSelection, none), Some(Badge::Add));
-        assert_eq!(badge(&app, Tool::QuickSelection, alt), Some(Badge::Subtract));
+        assert_eq!(
+            badge(&app, Tool::QuickSelection, alt),
+            Some(Badge::Subtract)
+        );
         assert_eq!(badge(&app, Tool::ObjectSelection, none), None);
         assert_eq!(badge(&app, Tool::ObjectSelection, shift), Some(Badge::Add));
         // Other tools never show one.
@@ -272,7 +346,11 @@ mod tests {
         let c = pos2(10.0, 10.0);
         assert_eq!(badge_glyph(Badge::Add, c, 3.0).len(), 2);
         assert_eq!(badge_glyph(Badge::Subtract, c, 3.0).len(), 1);
-        assert!(badge_glyph(Badge::Intersect, c, 3.0).iter().all(|[a, b]| a.x != b.x && a.y != b.y));
+        assert!(
+            badge_glyph(Badge::Intersect, c, 3.0)
+                .iter()
+                .all(|[a, b]| a.x != b.x && a.y != b.y)
+        );
     }
 
     #[test]
@@ -280,14 +358,19 @@ mod tests {
         let pts = [pos2(0.0, 0.0), pos2(40.0, 0.0), pos2(40.0, 30.0)];
         let a = ants(&pts, true, 0.0);
         let cols = strokes(&a);
-        assert!(cols.contains(&Color32::WHITE) && cols.contains(&Color32::BLACK), "{cols:?}");
+        assert!(
+            cols.contains(&Color32::WHITE) && cols.contains(&Color32::BLACK),
+            "{cols:?}"
+        );
         // Roughly half the length is black dashes: (40 + 30 + 50) / 8 ≈ 15 dashes.
         let dashes = cols.iter().filter(|c| **c == Color32::BLACK).count();
         assert!((13..=18).contains(&dashes), "{dashes}");
         // The phase moves the dashes (the ants march).
         let first = |s: &[Shape]| {
             s.iter().find_map(|s| match s {
-                Shape::LineSegment { points, stroke } if stroke.color == Color32::BLACK => Some(points[0]),
+                Shape::LineSegment { points, stroke } if stroke.color == Color32::BLACK => {
+                    Some(points[0])
+                }
                 _ => None,
             })
         };
@@ -300,6 +383,10 @@ mod tests {
         assert!(cols[0].r() < 10 && cols[0].a() > 100 && cols[1] == Color32::from_rgb(0, 120, 255));
         // Ellipses close smoothly.
         let e = ellipse_points(egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(100.0, 50.0)));
-        assert!(e.len() >= 16 && e.iter().all(|p| p.x >= -0.01 && p.x <= 100.01 && p.y >= -0.01 && p.y <= 50.01));
+        assert!(
+            e.len() >= 16
+                && e.iter()
+                    .all(|p| p.x >= -0.01 && p.x <= 100.01 && p.y >= -0.01 && p.y <= 50.01)
+        );
     }
 }

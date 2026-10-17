@@ -43,7 +43,10 @@ struct Anim {
 impl Anim {
     /// Decoded bytes held by the frames.
     fn bytes(&self) -> usize {
-        self.frames.iter().map(|f| f.width() as usize * f.height() as usize * 4).sum()
+        self.frames
+            .iter()
+            .map(|f| f.width() as usize * f.height() as usize * 4)
+            .sum()
     }
 
     /// The frame showing `t` seconds into the (looping) animation and the seconds until the next.
@@ -53,8 +56,14 @@ impl Anim {
             return (0, 1.0);
         }
         let local = t.max(0.0) % total;
-        let i = self.ends.partition_point(|e| *e <= local).min(self.ends.len().saturating_sub(1));
-        (i, (self.ends.get(i).copied().unwrap_or(total) - local).max(0.001))
+        let i = self
+            .ends
+            .partition_point(|e| *e <= local)
+            .min(self.ends.len().saturating_sub(1));
+        (
+            i,
+            (self.ends.get(i).copied().unwrap_or(total) - local).max(0.001),
+        )
     }
 }
 
@@ -81,7 +90,11 @@ fn adjust_key(a: &PictureAdjust) -> u64 {
     }
     if let Some((d, l)) = duotone_rgb(a) {
         for c in [d, l] {
-            mix(((c.r as u64) << 24) | ((c.g as u64) << 16) | ((c.b as u64) << 8) | c.a as u64 | 1 << 41);
+            mix(((c.r as u64) << 24)
+                | ((c.g as u64) << 16)
+                | ((c.b as u64) << 8)
+                | c.a as u64
+                | 1 << 41);
         }
     }
     h
@@ -96,7 +109,10 @@ fn duotone_rgb(a: &PictureAdjust) -> Option<(deckcraft_color::Rgba, deckcraft_co
         ColorBase::Rgb { rgb } if c.mods.is_empty() => *rgb,
         _ => or,
     };
-    Some((rgb(d, deckcraft_color::Rgba::BLACK), rgb(l, deckcraft_color::Rgba::WHITE)))
+    Some((
+        rgb(d, deckcraft_color::Rgba::BLACK),
+        rgb(l, deckcraft_color::Rgba::WHITE),
+    ))
 }
 
 /// Decode encoded bytes (PNG, JPEG, GIF, WebP, BMP, TIFF; WMF and EMF drawn at
@@ -150,7 +166,10 @@ pub fn decode_for(bytes: &Arc<Vec<u8>>, want: f64, adj: &PictureAdjust) -> Optio
     let (w, h) = img.dimensions();
     if w.max(h) > target.max(16) && w.max(h) > 4096.min(target * 2) {
         let k = target as f64 / w.max(h) as f64;
-        let (nw, nh) = (((w as f64 * k).round() as u32).max(1), ((h as f64 * k).round() as u32).max(1));
+        let (nw, nh) = (
+            ((w as f64 * k).round() as u32).max(1),
+            ((h as f64 * k).round() as u32).max(1),
+        );
         img = image::imageops::resize(&img, nw, nh, image::imageops::FilterType::Triangle);
     }
     apply_adjust(&mut img, adj);
@@ -160,11 +179,22 @@ pub fn decode_for(bytes: &Arc<Vec<u8>>, want: f64, adj: &PictureAdjust) -> Optio
         c.clock += 1;
         let n = w as usize * h as usize * 4;
         c.bytes += n;
-        c.map.insert(key, Entry { _bytes: bytes.clone(), pm: pm.clone(), stamp: c.clock });
+        c.map.insert(
+            key,
+            Entry {
+                _bytes: bytes.clone(),
+                pm: pm.clone(),
+                stamp: c.clock,
+            },
+        );
         while c.bytes > BUDGET && c.map.len() > 1 {
-            let Some(oldest) = c.map.iter().min_by_key(|(_, e)| e.stamp).map(|(k, _)| *k) else { break };
+            let Some(oldest) = c.map.iter().min_by_key(|(_, e)| e.stamp).map(|(k, _)| *k) else {
+                break;
+            };
             if let Some(e) = c.map.remove(&oldest) {
-                c.bytes = c.bytes.saturating_sub(e.pm.width() as usize * e.pm.height() as usize * 4);
+                c.bytes = c
+                    .bytes
+                    .saturating_sub(e.pm.width() as usize * e.pm.height() as usize * 4);
             }
         }
     });
@@ -182,7 +212,12 @@ fn pixmap(img: &image::RgbaImage) -> Option<Arc<Pixmap>> {
         .map(|p| {
             let a = p[3] as u16;
             let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
-            vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] }
+            vello_cpu::color::PremulRgba8 {
+                r: m(p[0]),
+                g: m(p[1]),
+                b: m(p[2]),
+                a: p[3],
+            }
         })
         .collect();
     Some(Arc::new(Pixmap::from_parts(data, w as u16, h as u16)))
@@ -198,7 +233,10 @@ fn decode_anim(bytes: &[u8], adj: &PictureAdjust) -> Option<Anim> {
         return None;
     }
     let k = (GIF_SIDE as f64 / w.max(h) as f64).min(1.0);
-    let (nw, nh) = (((w as f64 * k).round() as u32).max(1), ((h as f64 * k).round() as u32).max(1));
+    let (nw, nh) = (
+        ((w as f64 * k).round() as u32).max(1),
+        ((h as f64 * k).round() as u32).max(1),
+    );
     let size = nw as usize * nh as usize * 4;
     let (mut frames, mut ends, mut t) = (Vec::new(), Vec::new(), 0.0);
     for f in dec.into_frames() {
@@ -233,7 +271,12 @@ fn anim(bytes: &Arc<Vec<u8>>, adj: &PictureAdjust) -> Option<Arc<Anim>> {
     }
     let a = decode_anim(bytes, adj).map(Arc::new);
     with(|c| {
-        let held: usize = c.anims.values().filter_map(|e| e.1.as_ref()).map(|a| a.bytes()).sum();
+        let held: usize = c
+            .anims
+            .values()
+            .filter_map(|e| e.1.as_ref())
+            .map(|a| a.bytes())
+            .sum();
         if held + a.as_ref().map_or(0, |a| a.bytes()) > GIF_CACHE_BUDGET || c.anims.len() >= 64 {
             c.anims.clear();
         }
@@ -256,13 +299,23 @@ pub(crate) fn gif_pixmap(bytes: &Arc<Vec<u8>>, adj: &PictureAdjust, t: f64) -> O
 
 fn apply_adjust(img: &mut image::RgbaImage, a: &PictureAdjust) {
     let sat = a.saturation.unwrap_or(1.0);
-    if a.brightness == 0.0 && a.contrast == 0.0 && sat == 1.0 && !a.grayscale && a.clear_color.is_none() && a.duotone.is_none() {
+    if a.brightness == 0.0
+        && a.contrast == 0.0
+        && sat == 1.0
+        && !a.grayscale
+        && a.clear_color.is_none()
+        && a.duotone.is_none()
+    {
         return;
     }
     let duo = duotone_rgb(a);
     let b = a.brightness.clamp(-1.0, 1.0) * 255.0;
     let c = a.contrast.clamp(-1.0, 1.0);
-    let cf = if c >= 0.0 { 1.0 / (1.0 - c * 0.99) } else { 1.0 + c };
+    let cf = if c >= 0.0 {
+        1.0 / (1.0 - c * 0.99)
+    } else {
+        1.0 + c
+    };
     for p in img.pixels_mut() {
         if let Some(cc) = a.clear_color
             && (p[0] as i32 - cc.r as i32).abs() < 8
@@ -282,8 +335,11 @@ fn apply_adjust(img: &mut image::RgbaImage, a: &PictureAdjust) {
         // Duotone: the pixel's luminance picks a colour between the dark and the light one.
         if let Some((d, l)) = duo {
             let t = ((0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / 255.0).clamp(0.0, 1.0);
-            rgb =
-                [d.r as f64 + (l.r as f64 - d.r as f64) * t, d.g as f64 + (l.g as f64 - d.g as f64) * t, d.b as f64 + (l.b as f64 - d.b as f64) * t];
+            rgb = [
+                d.r as f64 + (l.r as f64 - d.r as f64) * t,
+                d.g as f64 + (l.g as f64 - d.g as f64) * t,
+                d.b as f64 + (l.b as f64 - d.b as f64) * t,
+            ];
         }
         for (i, v) in rgb.iter().enumerate() {
             if let Some(ch) = p.0.get_mut(i) {
@@ -303,17 +359,43 @@ mod tests {
     fn duotone_maps_luminance_between_its_two_colours() {
         use deckcraft_color::Rgba;
         use deckcraft_model::style::ColorRef;
-        let mut img = image::RgbaImage::from_fn(3, 1, |x, _| image::Rgba([[0, 0, 0, 255], [128, 128, 128, 200], [255, 255, 255, 255]][x as usize]));
-        let adj =
-            PictureAdjust { duotone: Some((ColorRef::rgb(Rgba::rgb(100, 40, 0)), ColorRef::rgb(Rgba::rgb(250, 240, 200)))), ..Default::default() };
+        let mut img = image::RgbaImage::from_fn(3, 1, |x, _| {
+            image::Rgba([[0, 0, 0, 255], [128, 128, 128, 200], [255, 255, 255, 255]][x as usize])
+        });
+        let adj = PictureAdjust {
+            duotone: Some((
+                ColorRef::rgb(Rgba::rgb(100, 40, 0)),
+                ColorRef::rgb(Rgba::rgb(250, 240, 200)),
+            )),
+            ..Default::default()
+        };
         apply_adjust(&mut img, &adj);
-        assert_eq!(img.get_pixel(0, 0).0, [100, 40, 0, 255], "black takes the dark colour");
-        assert_eq!(img.get_pixel(2, 0).0, [250, 240, 200, 255], "white takes the light colour");
+        assert_eq!(
+            img.get_pixel(0, 0).0,
+            [100, 40, 0, 255],
+            "black takes the dark colour"
+        );
+        assert_eq!(
+            img.get_pixel(2, 0).0,
+            [250, 240, 200, 255],
+            "white takes the light colour"
+        );
         let mid = img.get_pixel(1, 0).0;
-        assert!((mid[0] as i32 - 175).abs() <= 1 && (mid[1] as i32 - 140).abs() <= 1 && (mid[2] as i32 - 100).abs() <= 1, "{mid:?}");
+        assert!(
+            (mid[0] as i32 - 175).abs() <= 1
+                && (mid[1] as i32 - 140).abs() <= 1
+                && (mid[2] as i32 - 100).abs() <= 1,
+            "{mid:?}"
+        );
         assert_eq!(mid[3], 200, "alpha is kept");
         // Different duotones are cached separately.
-        let other = PictureAdjust { duotone: Some((ColorRef::rgb(Rgba::rgb(0, 0, 0)), ColorRef::rgb(Rgba::rgb(255, 0, 0)))), ..Default::default() };
+        let other = PictureAdjust {
+            duotone: Some((
+                ColorRef::rgb(Rgba::rgb(0, 0, 0)),
+                ColorRef::rgb(Rgba::rgb(255, 0, 0)),
+            )),
+            ..Default::default()
+        };
         assert_ne!(adjust_key(&adj), adjust_key(&other));
         assert_ne!(adjust_key(&adj), adjust_key(&PictureAdjust::default()));
     }
@@ -322,11 +404,22 @@ mod tests {
     fn a_gif_of_many_tiny_frames_keeps_only_the_frame_cap() {
         use image::{Delay, Frame, Rgba, RgbaImage};
         let frames = (0..GIF_MAX_FRAMES + 200).map(|i| {
-            let c = if i % 2 == 0 { [255, 0, 0, 255] } else { [0, 0, 255, 255] };
-            Frame::from_parts(RgbaImage::from_pixel(1, 1, Rgba(c)), 0, 0, Delay::from_numer_denom_ms(20, 1))
+            let c = if i % 2 == 0 {
+                [255, 0, 0, 255]
+            } else {
+                [0, 0, 255, 255]
+            };
+            Frame::from_parts(
+                RgbaImage::from_pixel(1, 1, Rgba(c)),
+                0,
+                0,
+                Delay::from_numer_denom_ms(20, 1),
+            )
         });
         let mut out = Vec::new();
-        image::codecs::gif::GifEncoder::new(&mut out).encode_frames(frames).expect("gif");
+        image::codecs::gif::GifEncoder::new(&mut out)
+            .encode_frames(frames)
+            .expect("gif");
         let a = decode_anim(&out, &PictureAdjust::default()).expect("animated");
         assert_eq!(a.frames.len(), GIF_MAX_FRAMES);
         assert_eq!(a.ends.len(), GIF_MAX_FRAMES);

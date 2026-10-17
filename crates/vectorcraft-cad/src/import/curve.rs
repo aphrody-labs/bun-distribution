@@ -34,7 +34,9 @@ pub(crate) fn polyline(verts: &[Vertex], closed: bool) -> Option<BezPath> {
     let n = verts.len();
     let segs = if closed { n } else { n - 1 };
     for i in 0..segs {
-        let (Some(a), Some(b)) = (verts.get(i), verts.get((i + 1) % n)) else { break };
+        let (Some(a), Some(b)) = (verts.get(i), verts.get((i + 1) % n)) else {
+            break;
+        };
         bulge_to(&mut bp, a.p, b.p, a.bulge);
     }
     if closed {
@@ -57,7 +59,11 @@ fn bulge_to(bp: &mut BezPath, a: Point, b: Point, bulge: f64) {
     let normal = Vec2::new(-chord.y, chord.x) / len;
     let offset = (radius * radius - len * len / 4.0).max(0.0).sqrt();
     // A counter-clockwise arc under a half turn has its centre left of the chord.
-    let side = if (bulge > 0.0) == (bulge.abs() < 1.0) { 1.0 } else { -1.0 };
+    let side = if (bulge > 0.0) == (bulge.abs() < 1.0) {
+        1.0
+    } else {
+        -1.0
+    };
     let centre = a.midpoint(b) + normal * offset * side;
     let start = (a - centre).atan2();
     arc_to(bp, centre, radius, start, sweep);
@@ -121,17 +127,28 @@ struct H {
 
 impl H {
     fn lerp(self, o: Self, t: f64) -> Self {
-        Self { x: self.x + (o.x - self.x) * t, y: self.y + (o.y - self.y) * t, w: self.w + (o.w - self.w) * t }
+        Self {
+            x: self.x + (o.x - self.x) * t,
+            y: self.y + (o.y - self.y) * t,
+            w: self.w + (o.w - self.w) * t,
+        }
     }
     fn point(self) -> Option<Point> {
-        (self.w.abs() > 1e-300).then(|| Point::new(self.x / self.w, self.y / self.w)).filter(|p| p.x.is_finite() && p.y.is_finite())
+        (self.w.abs() > 1e-300)
+            .then(|| Point::new(self.x / self.w, self.y / self.w))
+            .filter(|p| p.x.is_finite() && p.y.is_finite())
     }
 }
 
 /// A NURBS curve of `degree` with `knots`, control points `ctrl` and their `weights` (none:
 /// all 1) as Bézier pieces: exact for polynomial curves up to degree 3, else within
 /// [`SPLINE_TOLERANCE`] of the control polygon's size.
-pub(crate) fn nurbs(degree: usize, knots: &[f64], ctrl: &[Point], weights: Option<&[f64]>) -> Option<BezPath> {
+pub(crate) fn nurbs(
+    degree: usize,
+    knots: &[f64],
+    ctrl: &[Point],
+    weights: Option<&[f64]>,
+) -> Option<BezPath> {
     let n = ctrl.len();
     if !(1..=MAX_DEGREE).contains(&degree) || n <= degree || knots.len() != n + degree + 1 {
         return None;
@@ -139,23 +156,50 @@ pub(crate) fn nurbs(degree: usize, knots: &[f64], ctrl: &[Point], weights: Optio
     if knots.windows(2).any(|w| w[1] < w[0]) {
         return None;
     }
-    let weight = |i: usize| weights.and_then(|w| w.get(i)).copied().filter(|w| *w > 0.0 && w.is_finite()).unwrap_or(1.0);
-    let hs: Vec<H> = ctrl.iter().enumerate().map(|(i, p)| H { x: p.x * weight(i), y: p.y * weight(i), w: weight(i) }).collect();
+    let weight = |i: usize| {
+        weights
+            .and_then(|w| w.get(i))
+            .copied()
+            .filter(|w| *w > 0.0 && w.is_finite())
+            .unwrap_or(1.0)
+    };
+    let hs: Vec<H> = ctrl
+        .iter()
+        .enumerate()
+        .map(|(i, p)| H {
+            x: p.x * weight(i),
+            y: p.y * weight(i),
+            w: weight(i),
+        })
+        .collect();
     let rational = (0..n).any(|i| (weight(i) - weight(0)).abs() > 1e-12);
-    let (lo, hi) = ctrl.iter().fold((Point::new(f64::MAX, f64::MAX), Point::new(f64::MIN, f64::MIN)), |(lo, hi), p| {
-        (Point::new(lo.x.min(p.x), lo.y.min(p.y)), Point::new(hi.x.max(p.x), hi.y.max(p.y)))
-    });
+    let (lo, hi) = ctrl.iter().fold(
+        (
+            Point::new(f64::MAX, f64::MAX),
+            Point::new(f64::MIN, f64::MIN),
+        ),
+        |(lo, hi), p| {
+            (
+                Point::new(lo.x.min(p.x), lo.y.min(p.y)),
+                Point::new(hi.x.max(p.x), hi.y.max(p.y)),
+            )
+        },
+    );
     let tol = ((hi - lo).hypot() * SPLINE_TOLERANCE).max(1e-12);
     let mut bp = BezPath::new();
     // Each knot span of the domain is one polynomial piece: its Bézier points are blossoms.
     for span in degree..n {
-        let (Some(&t0), Some(&t1)) = (knots.get(span), knots.get(span + 1)) else { continue };
+        let (Some(&t0), Some(&t1)) = (knots.get(span), knots.get(span + 1)) else {
+            continue;
+        };
         if t1 - t0 <= 1e-12 * (1.0 + t0.abs()) {
             continue;
         }
         let bez: Vec<H> = (0..=degree)
             .map(|j| {
-                let args: Vec<f64> = (0..degree).map(|k| if k < degree - j { t0 } else { t1 }).collect();
+                let args: Vec<f64> = (0..degree)
+                    .map(|k| if k < degree - j { t0 } else { t1 })
+                    .collect();
                 blossom(degree, knots, &hs, span, &args)
             })
             .collect::<Option<_>>()?;
@@ -163,7 +207,11 @@ pub(crate) fn nurbs(degree: usize, knots: &[f64], ctrl: &[Point], weights: Optio
         if bp.elements().is_empty() {
             bp.move_to(start);
         }
-        let pts: Option<Vec<Point>> = if rational { None } else { bez.iter().map(|h| h.point()).collect() };
+        let pts: Option<Vec<Point>> = if rational {
+            None
+        } else {
+            bez.iter().map(|h| h.point()).collect()
+        };
         match pts.as_deref() {
             Some([_, p]) => bp.line_to(*p),
             Some([_, q, p]) => bp.quad_to(*q, *p),
@@ -182,7 +230,11 @@ fn blossom(degree: usize, knots: &[f64], ctrl: &[H], span: usize, args: &[f64]) 
         for j in (r..=degree).rev() {
             let i = span - degree + j;
             let (a, b) = (*knots.get(i)?, *knots.get(i + degree + 1 - r)?);
-            let alpha = if b - a > 1e-300 { (u - a) / (b - a) } else { 0.0 };
+            let alpha = if b - a > 1e-300 {
+                (u - a) / (b - a)
+            } else {
+                0.0
+            };
             let prev = *d.get(j - 1)?;
             let cur = d.get_mut(j)?;
             *cur = prev.lerp(*cur, alpha);
@@ -228,7 +280,8 @@ fn fit(bp: &mut BezPath, bez: &[H], t0: f64, t1: f64, tol: f64, depth: u32) -> O
     let cubic = kurbo::CubicBez::new(p0, c1, c2, p3);
     let close = (1..8).all(|i| {
         let s = f64::from(i) / 8.0;
-        eval(bez, t0 + (t1 - t0) * s).is_some_and(|(p, _)| kurbo::ParamCurve::eval(&cubic, s).distance(p) <= tol)
+        eval(bez, t0 + (t1 - t0) * s)
+            .is_some_and(|(p, _)| kurbo::ParamCurve::eval(&cubic, s).distance(p) <= tol)
     });
     if close || depth >= MAX_DEPTH || bp.elements().len() >= MAX_ELEMENTS {
         if [c1, c2].iter().all(|p| p.x.is_finite() && p.y.is_finite()) {
@@ -252,7 +305,11 @@ pub(crate) fn through(pts: &[Point], closed: bool) -> Option<BezPath> {
     }
     let at = |i: isize| -> Point {
         let len = n as isize;
-        let j = if closed { i.rem_euclid(len) } else { i.clamp(0, len - 1) };
+        let j = if closed {
+            i.rem_euclid(len)
+        } else {
+            i.clamp(0, len - 1)
+        };
         pts.get(j as usize).copied().unwrap_or(first)
     };
     let mut bp = BezPath::new();
@@ -274,7 +331,10 @@ pub(crate) fn bounds(bp: &BezPath) -> Option<vectorcraft_geom::Rect> {
         return None;
     }
     let r = bp.bounding_box();
-    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite()).then_some(r)
+    [r.x0, r.y0, r.x1, r.y1]
+        .iter()
+        .all(|v| v.is_finite())
+        .then_some(r)
 }
 
 #[cfg(test)]
@@ -297,14 +357,32 @@ mod tests {
 
     #[test]
     fn a_bulge_of_one_is_a_half_circle_on_the_right_of_its_chord() {
-        let verts = [Vertex { p: Point::new(0.0, 0.0), bulge: 1.0 }, Vertex { p: Point::new(10.0, 0.0), bulge: 0.0 }];
+        let verts = [
+            Vertex {
+                p: Point::new(0.0, 0.0),
+                bulge: 1.0,
+            },
+            Vertex {
+                p: Point::new(10.0, 0.0),
+                bulge: 0.0,
+            },
+        ];
         let bp = polyline(&verts, false).unwrap();
         assert!(radial_error(&bp, Point::new(5.0, 0.0), 5.0) < 1e-4);
         // Counter-clockwise from (0, 0) to (10, 0) passes below the chord.
         let b = bp.bounding_box();
         assert!((b.y0 + 5.0).abs() < 1e-3 && b.y1.abs() < 1e-9, "{b:?}");
         // A negative bulge turns the other way; a small one is a shallow arc.
-        let verts = [Vertex { p: Point::new(0.0, 0.0), bulge: -0.25 }, Vertex { p: Point::new(10.0, 0.0), bulge: 0.0 }];
+        let verts = [
+            Vertex {
+                p: Point::new(0.0, 0.0),
+                bulge: -0.25,
+            },
+            Vertex {
+                p: Point::new(10.0, 0.0),
+                bulge: 0.0,
+            },
+        ];
         let bp = polyline(&verts, false).unwrap();
         // Sagitta = bulge · chord / 2; radius = chord (1 + bulge²) / (4 |bulge|).
         let b = bp.bounding_box();
@@ -316,21 +394,43 @@ mod tests {
     #[test]
     fn a_bulge_over_one_is_the_major_arc() {
         let b = (3.0 * std::f64::consts::PI / 8.0).tan(); // a 270° arc
-        let verts = [Vertex { p: Point::new(0.0, 0.0), bulge: b }, Vertex { p: Point::new(10.0, 0.0), bulge: 0.0 }];
+        let verts = [
+            Vertex {
+                p: Point::new(0.0, 0.0),
+                bulge: b,
+            },
+            Vertex {
+                p: Point::new(10.0, 0.0),
+                bulge: 0.0,
+            },
+        ];
         let bp = polyline(&verts, false).unwrap();
         let r = 10.0 / (2.0 * (135f64).to_radians().sin());
         // Counter-clockwise, so the centre and most of the circle lie right of the chord.
         let centre = Point::new(5.0, -5.0);
         assert!(radial_error(&bp, centre, r) < 1e-4);
-        assert!(bp.bounding_box().y0 < -12.0, "most of the circle lies below the chord");
+        assert!(
+            bp.bounding_box().y0 < -12.0,
+            "most of the circle lies below the chord"
+        );
     }
 
     #[test]
     fn a_rational_quadratic_circle_stays_on_the_circle() {
         // A whole circle of radius 100 as nine weighted control points (four quarter arcs).
         let w = std::f64::consts::FRAC_1_SQRT_2;
-        let ctrl = [(1., 0.), (1., 1.), (0., 1.), (-1., 1.), (-1., 0.), (-1., -1.), (0., -1.), (1., -1.), (1., 0.)]
-            .map(|(x, y)| Point::new(x * 100.0, y * 100.0));
+        let ctrl = [
+            (1., 0.),
+            (1., 1.),
+            (0., 1.),
+            (-1., 1.),
+            (-1., 0.),
+            (-1., -1.),
+            (0., -1.),
+            (1., -1.),
+            (1., 0.),
+        ]
+        .map(|(x, y)| Point::new(x * 100.0, y * 100.0));
         let weights = [1.0, w, 1.0, w, 1.0, w, 1.0, w, 1.0];
         let knots = [0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 3.0, 3.0, 4.0, 4.0, 4.0];
         let bp = nurbs(2, &knots, &ctrl, Some(&weights)).unwrap();
@@ -341,10 +441,17 @@ mod tests {
     #[test]
     fn polynomial_splines_become_exact_beziers() {
         // A clamped cubic with one interior knot: two cubic pieces meeting at its blossom.
-        let ctrl = [(0., 0.), (10., 20.), (30., 20.), (40., 0.), (50., -10.)].map(|(x, y)| Point::new(x, y));
+        let ctrl = [(0., 0.), (10., 20.), (30., 20.), (40., 0.), (50., -10.)]
+            .map(|(x, y)| Point::new(x, y));
         let knots = [0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0, 2.0];
         let bp = nurbs(3, &knots, &ctrl, None).unwrap();
-        assert_eq!(bp.elements().iter().filter(|e| matches!(e, PathEl::CurveTo(..))).count(), 2);
+        assert_eq!(
+            bp.elements()
+                .iter()
+                .filter(|e| matches!(e, PathEl::CurveTo(..)))
+                .count(),
+            2
+        );
         assert!(matches!(bp.elements().first(), Some(PathEl::MoveTo(p)) if *p == Point::ZERO));
         let end = match bp.elements().last() {
             Some(PathEl::CurveTo(_, _, p)) => *p,
@@ -353,29 +460,67 @@ mod tests {
         assert_eq!(end, Point::new(50.0, -10.0));
         // Bad knot vectors are refused rather than read.
         assert!(nurbs(3, &knots[1..], &ctrl, None).is_none());
-        assert!(nurbs(3, &[0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 2.0, 2.0, 2.0], &ctrl, None).is_none());
+        assert!(
+            nurbs(
+                3,
+                &[0.0, 0.0, 0.0, 0.0, 2.0, 1.0, 2.0, 2.0, 2.0],
+                &ctrl,
+                None
+            )
+            .is_none()
+        );
         assert!(nurbs(0, &knots, &ctrl, None).is_none());
     }
 
     #[test]
     fn a_high_degree_spline_is_fitted_within_tolerance() {
         // Degree 5 Bézier (one span) of a known polynomial: compare with direct evaluation.
-        let ctrl: Vec<Point> = (0..6).map(|i| Point::new(f64::from(i) * 10.0, if i % 2 == 0 { 0.0 } else { 30.0 })).collect();
+        let ctrl: Vec<Point> = (0..6)
+            .map(|i| Point::new(f64::from(i) * 10.0, if i % 2 == 0 { 0.0 } else { 30.0 }))
+            .collect();
         let knots = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0];
         let bp = nurbs(5, &knots, &ctrl, None).unwrap();
-        let hs: Vec<H> = ctrl.iter().map(|p| H { x: p.x, y: p.y, w: 1.0 }).collect();
+        let hs: Vec<H> = ctrl
+            .iter()
+            .map(|p| H {
+                x: p.x,
+                y: p.y,
+                w: 1.0,
+            })
+            .collect();
         for i in 0..=20 {
             let (p, _) = eval(&hs, f64::from(i) / 20.0).unwrap();
-            let near = bp.segments().map(|s| kurbo::ParamCurveNearest::nearest(&s, p, 1e-9).distance_sq.sqrt()).fold(f64::MAX, f64::min);
+            let near = bp
+                .segments()
+                .map(|s| {
+                    kurbo::ParamCurveNearest::nearest(&s, p, 1e-9)
+                        .distance_sq
+                        .sqrt()
+                })
+                .fold(f64::MAX, f64::min);
             assert!(near < 0.01, "error {near}");
         }
     }
 
     #[test]
     fn fit_points_make_a_smooth_curve_through_them() {
-        let pts = [Point::new(0.0, 0.0), Point::new(10.0, 10.0), Point::new(20.0, 0.0)];
+        let pts = [
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 10.0),
+            Point::new(20.0, 0.0),
+        ];
         let bp = through(&pts, false).unwrap();
-        let ends: Vec<Point> = bp.elements().iter().filter_map(|e| if let PathEl::CurveTo(_, _, p) = e { Some(*p) } else { None }).collect();
+        let ends: Vec<Point> = bp
+            .elements()
+            .iter()
+            .filter_map(|e| {
+                if let PathEl::CurveTo(_, _, p) = e {
+                    Some(*p)
+                } else {
+                    None
+                }
+            })
+            .collect();
         assert_eq!(ends, [Point::new(10.0, 10.0), Point::new(20.0, 0.0)]);
     }
 }

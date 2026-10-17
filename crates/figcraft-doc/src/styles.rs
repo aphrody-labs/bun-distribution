@@ -139,13 +139,19 @@ impl Collection {
 
     /// The mode with id `key`, else the one named `key`.
     pub fn find_mode(&self, key: &str) -> Option<&Mode> {
-        self.modes.iter().find(|m| m.id == key).or_else(|| self.modes.iter().find(|m| m.name == key))
+        self.modes
+            .iter()
+            .find(|m| m.id == key)
+            .or_else(|| self.modes.iter().find(|m| m.name == key))
     }
 
     /// The mode the collection is in under `modes` (collection → chosen mode): the chosen one if it
     /// is one of its modes, else the default.
     pub fn current_mode(&self, modes: &BTreeMap<CollectionId, ModeId>) -> Option<&Mode> {
-        modes.get(&self.id).and_then(|m| self.modes.iter().find(|x| x.id == *m)).or_else(|| self.modes.first())
+        modes
+            .get(&self.id)
+            .and_then(|m| self.modes.iter().find(|x| x.id == *m))
+            .or_else(|| self.modes.first())
     }
 }
 
@@ -166,7 +172,11 @@ pub struct Variable {
     pub scopes: Option<Vec<String>>,
     /// Left out when the file is published as a library (unless a published variable or component
     /// uses it).
-    #[serde(default, rename = "hiddenFromPublishing", skip_serializing_if = "std::ops::Not::not")]
+    #[serde(
+        default,
+        rename = "hiddenFromPublishing",
+        skip_serializing_if = "std::ops::Not::not"
+    )]
     pub hidden_from_publishing: bool,
     /// In an extended collection: the variable it inherits from. Its values follow that variable's
     /// in every mode not in `overrides`.
@@ -177,7 +187,11 @@ pub struct Variable {
     pub overrides: BTreeSet<ModeId>,
     /// The name code uses for the variable per platform ([`CODE_PLATFORMS`]: `WEB`, `iOS`,
     /// `ANDROID`), e.g. `var(--space-xs)`; generated code uses the Web one.
-    #[serde(default, rename = "codeSyntax", skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(
+        default,
+        rename = "codeSyntax",
+        skip_serializing_if = "BTreeMap::is_empty"
+    )]
     pub code_syntax: BTreeMap<String, String>,
 }
 
@@ -187,7 +201,11 @@ pub const CODE_PLATFORMS: [&str; 3] = ["WEB", "iOS", "ANDROID"];
 impl Variable {
     /// Whether pickers offer this variable for properties of `scope`.
     pub fn in_scope(&self, scope: &str) -> bool {
-        self.scopes.as_ref().is_none_or(|list| list.iter().any(|s| s == scope || s == ALL_SCOPES || (s == "ALL_FILLS" && scope.ends_with("_FILL"))))
+        self.scopes.as_ref().is_none_or(|list| {
+            list.iter().any(|s| {
+                s == scope || s == ALL_SCOPES || (s == "ALL_FILLS" && scope.ends_with("_FILL"))
+            })
+        })
     }
 }
 
@@ -219,7 +237,11 @@ pub fn scopes_for(kind: VariableType) -> &'static [(&'static str, &'static str)]
             ("STROKE_COLOR", "Stroke"),
             ("EFFECT_COLOR", "Effects"),
         ],
-        VariableType::String => &[("TEXT_CONTENT", "Text content"), ("FONT_FAMILY", "Font family"), ("FONT_STYLE", "Font style")],
+        VariableType::String => &[
+            ("TEXT_CONTENT", "Text content"),
+            ("FONT_FAMILY", "Font family"),
+            ("FONT_STYLE", "Font style"),
+        ],
         VariableType::Boolean => &[],
     }
 }
@@ -227,12 +249,17 @@ pub fn scopes_for(kind: VariableType) -> &'static [(&'static str, &'static str)]
 /// Whether `scope` is a scope id a variable of `kind` can be limited to (including the "every
 /// property" ids).
 pub fn scope_known(kind: VariableType, scope: &str) -> bool {
-    scope == ALL_SCOPES || (scope == "ALL_FILLS" && kind == VariableType::Color) || scopes_for(kind).iter().any(|(k, _)| *k == scope)
+    scope == ALL_SCOPES
+        || (scope == "ALL_FILLS" && kind == VariableType::Color)
+        || scopes_for(kind).iter().any(|(k, _)| *k == scope)
 }
 
 /// A variable's scope list in canonical form: known scope ids for `kind` only, without repeats, and
 /// None (no limit) when it names every supported property.
-pub fn normalize_scopes<'a>(kind: VariableType, scopes: impl IntoIterator<Item = &'a str>) -> Option<Vec<String>> {
+pub fn normalize_scopes<'a>(
+    kind: VariableType,
+    scopes: impl IntoIterator<Item = &'a str>,
+) -> Option<Vec<String>> {
     let mut list: Vec<String> = Vec::new();
     for s in scopes.into_iter().filter(|s| scope_known(kind, s)) {
         if !list.iter().any(|l| l == s) {
@@ -240,7 +267,8 @@ pub fn normalize_scopes<'a>(kind: VariableType, scopes: impl IntoIterator<Item =
         }
     }
     let allowed = scopes_for(kind);
-    let all = list.iter().any(|l| l == ALL_SCOPES) || (!allowed.is_empty() && allowed.iter().all(|(k, _)| list.iter().any(|l| l == k)));
+    let all = list.iter().any(|l| l == ALL_SCOPES)
+        || (!allowed.is_empty() && allowed.iter().all(|(k, _)| list.iter().any(|l| l == k)));
     if all { None } else { Some(list) }
 }
 
@@ -274,13 +302,24 @@ impl Variables {
 
     /// Resolve `id` in `modes` (collection → chosen mode; default mode otherwise), following aliases
     /// (bounded, cycles return None).
-    pub fn resolve(&self, id: &str, modes: &BTreeMap<CollectionId, ModeId>) -> Option<VariableValue> {
+    pub fn resolve(
+        &self,
+        id: &str,
+        modes: &BTreeMap<CollectionId, ModeId>,
+    ) -> Option<VariableValue> {
         let mut cur = id.to_string();
         for _ in 0..32 {
             let var = self.get(&cur)?;
             let coll = self.collection(&var.collection)?;
-            let mode = modes.get(&coll.id).filter(|m| var.values.contains_key(*m)).or_else(|| coll.default_mode())?;
-            match var.values.get(mode).or_else(|| var.values.values().next())? {
+            let mode = modes
+                .get(&coll.id)
+                .filter(|m| var.values.contains_key(*m))
+                .or_else(|| coll.default_mode())?;
+            match var
+                .values
+                .get(mode)
+                .or_else(|| var.values.values().next())?
+            {
                 VariableValue::Alias(next) => cur = next.clone(),
                 v => return Some(v.clone()),
             }

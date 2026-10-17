@@ -82,7 +82,11 @@ fn layer_json(l: &Layer, idx: usize) -> Value {
 fn comp_info(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     let c = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let name = s.project.item(cid).map(|i| i.name.clone()).unwrap_or_default();
+    let name = s
+        .project
+        .item(cid)
+        .map(|i| i.name.clone())
+        .unwrap_or_default();
     Ok(json!({
         "id": cid.0, "name": name, "width": c.width, "height": c.height, "frameRate": c.frame_rate.as_f64(), "duration": c.duration.seconds(),
         "workArea": [c.work_area.0.seconds(), c.work_area.1.seconds()], "background": c.background,
@@ -101,11 +105,26 @@ fn segment(g: &PropGroup, i: usize) -> String {
     if m.is_empty() || m.contains(['/', '.', '#', '@']) || m.parse::<u64>().is_ok() {
         return format!("#{}", i + 1);
     }
-    let n = g.children[..i].iter().filter(|x| x.match_id() == m || x.name().eq_ignore_ascii_case(m)).count() + 1;
-    if n == 1 { m.to_string() } else { format!("{m}#{n}") }
+    let n = g.children[..i]
+        .iter()
+        .filter(|x| x.match_id() == m || x.name().eq_ignore_ascii_case(m))
+        .count()
+        + 1;
+    if n == 1 {
+        m.to_string()
+    } else {
+        format!("{m}#{n}")
+    }
 }
 
-fn group_json(g: &PropGroup, path: &str, l: &Layer, t: effectcraft_time::Tick, depth: usize, max_depth: usize) -> Value {
+fn group_json(
+    g: &PropGroup,
+    path: &str,
+    l: &Layer,
+    t: effectcraft_time::Tick,
+    depth: usize,
+    max_depth: usize,
+) -> Value {
     let children: Vec<Value> = if depth >= max_depth {
         vec![]
     } else {
@@ -159,7 +178,11 @@ fn layer_tree(s: &mut Session, p: &Value) -> Result<Value> {
     let idx = c.index_of(lid).unwrap_or(0);
     let l = c.layer(lid).ok_or(EngineError::NoComp)?;
     let depth = p.get("depth").and_then(Value::as_u64).unwrap_or(16) as usize;
-    let t = p.get("time").and_then(Value::as_f64).map(effectcraft_time::Tick::from_seconds_f64).unwrap_or_else(|| s.time());
+    let t = p
+        .get("time")
+        .and_then(Value::as_f64)
+        .map(effectcraft_time::Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time());
     let mut o = layer_json(l, idx);
     o["time"] = json!(t.seconds());
     o["properties"] = group_json(&l.props, "", l, t, 0, depth);
@@ -168,7 +191,9 @@ fn layer_tree(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// One command in full, with the JSON Schema of its parameters.
 fn describe(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = str_p(p, "command").or(str_p(p, "id")).ok_or_else(|| super::bad("command.describe", "missing `command`"))?;
+    let id = str_p(p, "command")
+        .or(str_p(p, "id"))
+        .ok_or_else(|| super::bad("command.describe", "missing `command`"))?;
     let c = super::find(id).ok_or_else(|| EngineError::UnknownCommand(id.to_string()))?;
     let en = (c.enabled)(s);
     Ok(json!({
@@ -180,7 +205,16 @@ fn describe(s: &mut Session, p: &Value) -> Result<Value> {
 /// What this build can do: counts agents use to orient themselves, and the parity summary.
 fn capabilities(s: &mut Session, _: &Value) -> Result<Value> {
     let fx = effectcraft_effects::registry();
-    let formats: Vec<Value> = s.exporter.as_ref().map(|e| e.formats().iter().map(|f| json!(format!("{f:?}"))).collect()).unwrap_or_default();
+    let formats: Vec<Value> = s
+        .exporter
+        .as_ref()
+        .map(|e| {
+            e.formats()
+                .iter()
+                .map(|f| json!(format!("{f:?}")))
+                .collect()
+        })
+        .unwrap_or_default();
     Ok(json!({
         "version": env!("CARGO_PKG_VERSION"),
         "commands": super::command_specs().len(),
@@ -207,12 +241,32 @@ fn state(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        query!("command.list", "List Commands", "{filter?, enabledOnly?, schemas? (add each command's params JSON Schema)}", list),
-        query!("command.describe", "Describe Command", "{command} → id, label, menu, shortcut, params doc, JSON `schema`, enabled", describe),
-        query!("app.capabilities", "App Capabilities", "{} → version, command/effect counts, export formats, parity summary", capabilities),
+        query!(
+            "command.list",
+            "List Commands",
+            "{filter?, enabledOnly?, schemas? (add each command's params JSON Schema)}",
+            list
+        ),
+        query!(
+            "command.describe",
+            "Describe Command",
+            "{command} → id, label, menu, shortcut, params doc, JSON `schema`, enabled",
+            describe
+        ),
+        query!(
+            "app.capabilities",
+            "App Capabilities",
+            "{} → version, command/effect counts, export formats, parity summary",
+            capabilities
+        ),
         query!("project.summary", "Project Summary", "{}", summary),
         query!("comp.info", "Composition Info", "{comp?}", comp_info),
-        query!("layer.tree", "Layer Property Tree", "{layer?, comp?, depth?, time? (comp s)} → nodes with `path`", layer_tree),
+        query!(
+            "layer.tree",
+            "Layer Property Tree",
+            "{layer?, comp?, depth?, time? (comp s)} → nodes with `path`",
+            layer_tree
+        ),
         query!("editor.state", "Editor State", "{}", state),
     ]
 }

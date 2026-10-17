@@ -108,8 +108,12 @@ impl Face {
     pub fn width(&self, s: &str) -> f64 {
         match self.family {
             Family::Courier => s.chars().count() as f64 * 0.6 * self.size,
-            Family::Helvetica => pdfcraft_fonts::helvetica_width(s, self.size) * if self.bold { 1.04 } else { 1.0 },
-            Family::Times => pdfcraft_fonts::helvetica_width(s, self.size) * if self.bold { 0.96 } else { 0.92 },
+            Family::Helvetica => {
+                pdfcraft_fonts::helvetica_width(s, self.size) * if self.bold { 1.04 } else { 1.0 }
+            }
+            Family::Times => {
+                pdfcraft_fonts::helvetica_width(s, self.size) * if self.bold { 0.96 } else { 0.92 }
+            }
         }
     }
 }
@@ -155,7 +159,8 @@ fn words(runs: &[Run], base: &Face, embed: &dyn Fn(&str) -> String) -> Vec<Word>
                 .text
                 .chars()
                 .filter_map(|c| match c {
-                    '\r' | '\n' | '\t' | '\u{2028}' | '\u{2029}' | '\u{2009}' | '\u{202F}' | '\u{3000}' => Some(' '),
+                    '\r' | '\n' | '\t' | '\u{2028}' | '\u{2029}' | '\u{2009}' | '\u{202F}'
+                    | '\u{3000}' => Some(' '),
                     '\u{00AD}' | '\u{200B}' | '\u{200C}' | '\u{200D}' | '\u{FEFF}' => None,
                     '\u{2011}' | '\u{2010}' | '\u{2012}' | '\u{2013}' => Some('-'),
                     '\u{2018}' | '\u{2019}' => Some('\''),
@@ -168,12 +173,20 @@ fn words(runs: &[Run], base: &Face, embed: &dyn Fn(&str) -> String) -> Vec<Word>
             cur.push(ch);
             if ch == ' ' {
                 let width = face.width(&cur);
-                out.push(Word { text: std::mem::take(&mut cur), face: face.clone(), width });
+                out.push(Word {
+                    text: std::mem::take(&mut cur),
+                    face: face.clone(),
+                    width,
+                });
             }
         }
         if !cur.is_empty() {
             let width = face.width(&cur);
-            out.push(Word { text: cur, face, width });
+            out.push(Word {
+                text: cur,
+                face,
+                width,
+            });
         }
     }
     out
@@ -181,7 +194,13 @@ fn words(runs: &[Run], base: &Face, embed: &dyn Fn(&str) -> String) -> Vec<Word>
 
 /// Lay `rich` out inside `rect` with `para` and `base` face. `embed` resolves embedded fields to
 /// their text. Returns the spans (absolute coordinates) and the height the text takes.
-pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn Fn(&str) -> String) -> Block {
+pub fn layout(
+    rich: &RichText,
+    rect: Rect,
+    para: &Para,
+    base: &Face,
+    embed: &dyn Fn(&str) -> String,
+) -> Block {
     struct Line {
         words: Vec<Word>,
         width: f64,
@@ -193,13 +212,33 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
     let mut total = 0.0;
     for (pi, p) in rich.paragraphs.iter().enumerate() {
         let ws = words(&p.runs, base, embed);
-        let mut line = Line { words: Vec::new(), width: 0.0, size: base.size, first: true };
+        let mut line = Line {
+            words: Vec::new(),
+            width: 0.0,
+            size: base.size,
+            first: true,
+        };
         let mut first_in_para = true;
-        let indent = |first: bool| if first { para.text_indent.max(0.0) } else { 0.0 };
+        let indent = |first: bool| {
+            if first {
+                para.text_indent.max(0.0)
+            } else {
+                0.0
+            }
+        };
         for w in ws {
-            let fits = line.width + w.width <= avail - indent(line.first) || line.words.is_empty() && w.width <= avail - indent(line.first);
+            let fits = line.width + w.width <= avail - indent(line.first)
+                || line.words.is_empty() && w.width <= avail - indent(line.first);
             if !fits && !line.words.is_empty() {
-                let done = std::mem::replace(&mut line, Line { words: Vec::new(), width: 0.0, size: base.size, first: false });
+                let done = std::mem::replace(
+                    &mut line,
+                    Line {
+                        words: Vec::new(),
+                        width: 0.0,
+                        size: base.size,
+                        first: false,
+                    },
+                );
                 lines.push((done, p.h_align));
             }
             if w.width > avail - indent(line.first) && line.words.is_empty() {
@@ -207,13 +246,27 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
                 let mut piece = String::new();
                 for ch in w.text.chars() {
                     piece.push(ch);
-                    if w.face.width(&piece) > avail - indent(line.first) && piece.chars().count() > 1 {
+                    if w.face.width(&piece) > avail - indent(line.first)
+                        && piece.chars().count() > 1
+                    {
                         piece.pop();
                         let width = w.face.width(&piece);
-                        line.words.push(Word { text: std::mem::take(&mut piece), face: w.face.clone(), width });
+                        line.words.push(Word {
+                            text: std::mem::take(&mut piece),
+                            face: w.face.clone(),
+                            width,
+                        });
                         line.width += width;
                         line.size = line.size.max(w.face.size);
-                        let done = std::mem::replace(&mut line, Line { words: Vec::new(), width: 0.0, size: base.size, first: false });
+                        let done = std::mem::replace(
+                            &mut line,
+                            Line {
+                                words: Vec::new(),
+                                width: 0.0,
+                                size: base.size,
+                                first: false,
+                            },
+                        );
                         lines.push((done, p.h_align));
                         piece.push(ch);
                     }
@@ -222,7 +275,11 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
                     let width = w.face.width(&piece);
                     line.size = line.size.max(w.face.size);
                     line.width += width;
-                    line.words.push(Word { text: piece, face: w.face.clone(), width });
+                    line.words.push(Word {
+                        text: piece,
+                        face: w.face.clone(),
+                        width,
+                    });
                 }
                 first_in_para = false;
                 continue;
@@ -237,7 +294,10 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
         }
         total += para.space_above + para.space_below;
     }
-    let heights: Vec<f64> = lines.iter().map(|(l, _)| para.line_height.unwrap_or_else(|| line_height(l.size))).collect();
+    let heights: Vec<f64> = lines
+        .iter()
+        .map(|(l, _)| para.line_height.unwrap_or_else(|| line_height(l.size)))
+        .collect();
     total += heights.iter().sum::<f64>();
     let start_y = match para.v_align {
         crate::model::VAlign::Top => rect.y,
@@ -247,9 +307,19 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
     let mut spans = Vec::new();
     let mut y = start_y + para.space_above;
     for ((line, align), lh) in lines.into_iter().zip(heights) {
-        let indent = if line.first { para.text_indent.max(0.0) } else { 0.0 };
+        let indent = if line.first {
+            para.text_indent.max(0.0)
+        } else {
+            0.0
+        };
         // Trailing spaces don't count for alignment.
-        let trailing = line.words.last().map_or(0.0, |w| if w.text.ends_with(' ') { w.face.width(" ") } else { 0.0 });
+        let trailing = line.words.last().map_or(0.0, |w| {
+            if w.text.ends_with(' ') {
+                w.face.width(" ")
+            } else {
+                0.0
+            }
+        });
         let used = (line.width - trailing).max(0.0);
         let mut x = rect.x + para.margin_left + indent;
         x += match align.unwrap_or(para.h_align) {
@@ -268,7 +338,12 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
                         x += s.face.width(&s.text);
                         spans.push(s);
                     }
-                    run = Some(Span { x, baseline, text: w.text, face: w.face });
+                    run = Some(Span {
+                        x,
+                        baseline,
+                        text: w.text,
+                        face: w.face,
+                    });
                 }
             }
         }
@@ -277,13 +352,32 @@ pub fn layout(rich: &RichText, rect: Rect, para: &Para, base: &Face, embed: &dyn
         }
         y += lh;
     }
-    Block { spans, height: total }
+    Block {
+        spans,
+        height: total,
+    }
 }
 
 /// Height `rich` needs at `width` (for boxes without an explicit height).
-pub fn measure_height(rich: &RichText, width: f64, para: &Para, base: &Face, embed: &dyn Fn(&str) -> String) -> f64 {
-    let p = Para { v_align: crate::model::VAlign::Top, ..para.clone() };
-    layout(rich, Rect::new(0.0, 0.0, width.max(1.0), 0.0), &p, base, embed).height
+pub fn measure_height(
+    rich: &RichText,
+    width: f64,
+    para: &Para,
+    base: &Face,
+    embed: &dyn Fn(&str) -> String,
+) -> f64 {
+    let p = Para {
+        v_align: crate::model::VAlign::Top,
+        ..para.clone()
+    };
+    layout(
+        rich,
+        Rect::new(0.0, 0.0, width.max(1.0), 0.0),
+        &p,
+        base,
+        embed,
+    )
+    .height
 }
 
 /// Plain text as rich text (paragraphs split on line breaks; a carriage return and line feed
@@ -293,7 +387,13 @@ pub fn plain(text: &str) -> RichText {
         paragraphs: text
             .replace("\r\n", "\n")
             .split(['\n', '\r', '\u{2028}', '\u{2029}'])
-            .map(|l| crate::model::Paragraph { runs: vec![Run { text: l.to_string(), ..Run::default() }], h_align: None })
+            .map(|l| crate::model::Paragraph {
+                runs: vec![Run {
+                    text: l.to_string(),
+                    ..Run::default()
+                }],
+                h_align: None,
+            })
             .collect(),
     }
 }

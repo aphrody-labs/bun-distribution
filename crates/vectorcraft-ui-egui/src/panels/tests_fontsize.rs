@@ -19,13 +19,27 @@ fn shows(t: &Texts, s: &str) -> bool {
 /// [`app_with_rect`] with 12 pt type selected instead; returns its id.
 fn app_with_text() -> (VectorcraftApp, u64) {
     let mut app = app_with_rect();
-    let id = run(&mut app, "text.create", json!({"x": 10, "y": 150, "text": "Hi", "size": 12}))["id"].as_u64().unwrap();
+    let id = run(
+        &mut app,
+        "text.create",
+        json!({"x": 10, "y": 150, "text": "Hi", "size": 12}),
+    )["id"]
+        .as_u64()
+        .unwrap();
     run(&mut app, "select.set", json!({ "ids": [id] }));
     (app, id)
 }
 
 fn style(app: &VectorcraftApp, id: u64) -> CharStyle {
-    match &app.session.active().unwrap().doc.node(vectorcraft_doc::NodeId(id)).unwrap().kind {
+    match &app
+        .session
+        .active()
+        .unwrap()
+        .doc
+        .node(vectorcraft_doc::NodeId(id))
+        .unwrap()
+        .kind
+    {
         NodeKind::Text(t) => t.first_style(),
         _ => panic!("not type"),
     }
@@ -52,11 +66,24 @@ fn a_picked_font_size_preset_applies_in_one_undo_step() {
     let t = frame_events(&ctx, &mut app, vec![], size_combo(&at));
     assert!(shows(&t, "12 pt") && !shows(&t, "24 pt"), "closed: {t:?}");
     // The chevron is the combo's last 20 pt.
-    click(&ctx, &mut app, at.get() + egui::vec2(110.0, 13.0), size_combo(&at));
+    click(
+        &ctx,
+        &mut app,
+        at.get() + egui::vec2(110.0, 13.0),
+        size_combo(&at),
+    );
     let t = frame_events(&ctx, &mut app, vec![], size_combo(&at));
-    assert!(shows(&t, "6 pt") && shows(&t, "24 pt") && shows(&t, "72 pt"), "open: {t:?}");
+    assert!(
+        shows(&t, "6 pt") && shows(&t, "24 pt") && shows(&t, "72 pt"),
+        "open: {t:?}"
+    );
     let undo = undo_len(&app);
-    click(&ctx, &mut app, text_rect(&t, "24 pt").center(), size_combo(&at));
+    click(
+        &ctx,
+        &mut app,
+        text_rect(&t, "24 pt").center(),
+        size_combo(&at),
+    );
     assert_eq!(style(&app, id).size, 24.0);
     assert_eq!(undo_len(&app), undo + 1, "one undo step");
 }
@@ -67,17 +94,36 @@ fn scaled_font_size_fields_and_preset_use_document_points() {
     crate::theme::install_fonts(&ctx);
     let (mut app, id) = app_with_text();
     run(&mut app, "object.scale", json!({"sx": 200}));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], character::show), "24 pt"));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar), "24 pt"));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], character::show),
+        "24 pt"
+    ));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar),
+        "24 pt"
+    ));
     let at = Cell::new(egui::Pos2::ZERO);
     frame_events(&ctx, &mut app, vec![], size_combo(&at));
-    click(&ctx, &mut app, at.get() + egui::vec2(110.0, 13.0), size_combo(&at));
+    click(
+        &ctx,
+        &mut app,
+        at.get() + egui::vec2(110.0, 13.0),
+        size_combo(&at),
+    );
     let t = frame_events(&ctx, &mut app, vec![], size_combo(&at));
     let undo = undo_len(&app);
-    click(&ctx, &mut app, text_rect(&t, "10 pt").center(), size_combo(&at));
+    click(
+        &ctx,
+        &mut app,
+        text_rect(&t, "10 pt").center(),
+        size_combo(&at),
+    );
     assert_eq!(style(&app, id).size * 2.0, 10.0);
     assert_eq!(undo_len(&app), undo + 1);
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], size_combo(&at)), "10 pt"));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], size_combo(&at)),
+        "10 pt"
+    ));
 }
 
 #[test]
@@ -87,10 +133,19 @@ fn scaled_group_shows_character_and_control_bar_size_fields() {
     let (mut app, _) = app_with_text();
     run(&mut app, "object.group", json!({}));
     run(&mut app, "object.scale", json!({"sx": 200}));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], character::show), "24 pt"));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar), "24 pt"));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], character::show),
+        "24 pt"
+    ));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar),
+        "24 pt"
+    ));
     run(&mut app, "text.setStyle", json!({"size": 10}));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], character::show), "10 pt"));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], character::show),
+        "10 pt"
+    ));
 }
 
 #[test]
@@ -98,12 +153,24 @@ fn font_size_presets_show_in_the_type_unit() {
     let ctx = egui::Context::default();
     crate::theme::install_fonts(&ctx);
     let (mut app, _) = app_with_text();
-    app.run("prefs.set", json!({"key": "unitsType", "value": "millimeters"})).unwrap();
+    app.run(
+        "prefs.set",
+        json!({"key": "unitsType", "value": "millimeters"}),
+    )
+    .unwrap();
     let at = Cell::new(egui::Pos2::ZERO);
     frame_events(&ctx, &mut app, vec![], size_combo(&at));
-    click(&ctx, &mut app, at.get() + egui::vec2(110.0, 13.0), size_combo(&at));
+    click(
+        &ctx,
+        &mut app,
+        at.get() + egui::vec2(110.0, 13.0),
+        size_combo(&at),
+    );
     let t = frame_events(&ctx, &mut app, vec![], size_combo(&at));
-    assert!(shows(&t, &Unit::Millimeters.format(24.0)) && !shows(&t, "24 pt"), "{t:?}");
+    assert!(
+        shows(&t, &Unit::Millimeters.format(24.0)) && !shows(&t, "24 pt"),
+        "{t:?}"
+    );
 }
 
 #[test]
@@ -117,9 +184,19 @@ fn leading_lists_auto_first() {
     // and chevron (20) of a 100 pt combo.
     let label = text_rect(&t, "A↕");
     let sp = ctx.global_style().spacing.item_spacing.x;
-    click(&ctx, &mut app, egui::pos2(label.center().x + 11.0 + sp + 90.0, label.center().y), character::show);
+    click(
+        &ctx,
+        &mut app,
+        egui::pos2(label.center().x + 11.0 + sp + 90.0, label.center().y),
+        character::show,
+    );
     let t = frame_events(&ctx, &mut app, vec![], character::show);
-    click(&ctx, &mut app, text_rect(&t, "Auto").center(), character::show);
+    click(
+        &ctx,
+        &mut app,
+        text_rect(&t, "Auto").center(),
+        character::show,
+    );
     assert_eq!(style(&app, id).leading, None);
 }
 
@@ -127,12 +204,21 @@ fn leading_lists_auto_first() {
 fn sizes_that_differ_show_blank() {
     let ctx = egui::Context::default();
     let (mut app, a) = app_with_text();
-    let b = run(&mut app, "text.create", json!({"x": 10, "y": 180, "text": "Ho", "size": 24}))["id"].as_u64().unwrap();
+    let b = run(
+        &mut app,
+        "text.create",
+        json!({"x": 10, "y": 180, "text": "Ho", "size": 24}),
+    )["id"]
+        .as_u64()
+        .unwrap();
     run(&mut app, "select.set", json!({ "ids": [a, b] }));
     let t = frame_events(&ctx, &mut app, vec![], character::show);
     assert!(!shows(&t, "12 pt") && !shows(&t, "24 pt"), "{t:?}");
     run(&mut app, "select.set", json!({ "ids": [b] }));
-    assert!(shows(&frame_events(&ctx, &mut app, vec![], character::show), "24 pt"));
+    assert!(shows(
+        &frame_events(&ctx, &mut app, vec![], character::show),
+        "24 pt"
+    ));
 }
 
 #[test]
@@ -143,5 +229,8 @@ fn the_control_bar_shows_the_font_size_of_selected_type() {
     let t = frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar);
     assert!(shows(&t, "Character:") && shows(&t, "12 pt"), "{t:?}");
     run(&mut app, "select.set", json!({ "ids": [] }));
-    assert!(!shows(&frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar), "Character:"));
+    assert!(!shows(
+        &frame_events(&ctx, &mut app, vec![], crate::chrome::control_bar),
+        "Character:"
+    ));
 }

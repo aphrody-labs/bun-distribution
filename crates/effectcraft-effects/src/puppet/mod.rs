@@ -44,7 +44,13 @@ pub enum PinKind {
 }
 
 impl PinKind {
-    pub const ALL: [PinKind; 5] = [PinKind::Position, PinKind::Advanced, PinKind::Bend, PinKind::Starch, PinKind::Overlap];
+    pub const ALL: [PinKind; 5] = [
+        PinKind::Position,
+        PinKind::Advanced,
+        PinKind::Bend,
+        PinKind::Starch,
+        PinKind::Overlap,
+    ];
     pub fn index(self) -> u32 {
         PinKind::ALL.iter().position(|k| *k == self).unwrap_or(0) as u32
     }
@@ -90,7 +96,12 @@ pub fn specs() -> Vec<EffectSpec> {
         id: ID,
         name: "Puppet",
         category: "Distort",
-        params: vec![p("refinement", "Mesh Rotation Refinement", Value::Scalar(20.0), slider(0.0, 100.0, 0.0, 100.0, 0))],
+        params: vec![p(
+            "refinement",
+            "Mesh Rotation Refinement",
+            Value::Scalar(20.0),
+            slider(0.0, 100.0, 0.0, 100.0, 0),
+        )],
         render,
         gpu: false,
         float: true,
@@ -107,10 +118,23 @@ fn hidden(ids: &mut Ids, m: &str, v: Value) -> Property {
 pub fn mesh_group(ids: &mut Ids, name: &str, seed: [f64; 2], opts: &MeshOpts) -> PropGroup {
     let mut g = ids.group("mesh", name);
     g.kind = GroupKind::Indexed;
-    g.children.push(ids.prop("density", "Density", Value::Scalar(opts.density)).with_ui(slider(0.0, 100.0, 0.0, 100.0, 0)).into());
-    g.children.push(ids.prop("expansion", "Expansion", Value::Scalar(opts.expansion)).with_ui(slider(-100.0, 200.0, -20.0, 50.0, 1)).into());
-    g.children.push(ids.prop("triangles", "Triangles", Value::Scalar(opts.triangles)).with_ui(slider(10.0, 10_000.0, 10.0, 2000.0, 0)).into());
-    g.children.push(hidden(ids, "seed", Value::Vec2(seed)).into());
+    g.children.push(
+        ids.prop("density", "Density", Value::Scalar(opts.density))
+            .with_ui(slider(0.0, 100.0, 0.0, 100.0, 0))
+            .into(),
+    );
+    g.children.push(
+        ids.prop("expansion", "Expansion", Value::Scalar(opts.expansion))
+            .with_ui(slider(-100.0, 200.0, -20.0, 50.0, 1))
+            .into(),
+    );
+    g.children.push(
+        ids.prop("triangles", "Triangles", Value::Scalar(opts.triangles))
+            .with_ui(slider(10.0, 10_000.0, 10.0, 2000.0, 0))
+            .into(),
+    );
+    g.children
+        .push(hidden(ids, "seed", Value::Vec2(seed)).into());
     g.children.push(ids.group("deform", "Deform").into());
     g
 }
@@ -119,23 +143,54 @@ pub fn mesh_group(ids: &mut Ids, name: &str, seed: [f64; 2], opts: &MeshOpts) ->
 pub fn pin_group(ids: &mut Ids, name: &str, kind: PinKind, rest: [f64; 2]) -> PropGroup {
     let mut g = ids.group("pin", name);
     g.kind = GroupKind::Indexed;
-    g.children.push(hidden(ids, "kind", Value::Enum(kind.index())).into());
-    g.children.push(hidden(ids, "rest", Value::Vec2(rest)).into());
+    g.children
+        .push(hidden(ids, "kind", Value::Enum(kind.index())).into());
+    g.children
+        .push(hidden(ids, "rest", Value::Vec2(rest)).into());
     if kind != PinKind::Bend {
-        g.children.push(ids.prop("position", "Position", Value::Vec2(rest)).with_ui(ParamUi::Point).spatial().into());
+        g.children.push(
+            ids.prop("position", "Position", Value::Vec2(rest))
+                .with_ui(ParamUi::Point)
+                .spatial()
+                .into(),
+        );
     }
     match kind {
         PinKind::Advanced | PinKind::Bend => {
-            g.children.push(ids.prop("scale", "Scale", Value::Scalar(100.0)).with_ui(ParamUi::Percent).into());
-            g.children.push(ids.prop("rotation", "Rotation", Value::Scalar(0.0)).with_ui(ParamUi::Angle).into());
+            g.children.push(
+                ids.prop("scale", "Scale", Value::Scalar(100.0))
+                    .with_ui(ParamUi::Percent)
+                    .into(),
+            );
+            g.children.push(
+                ids.prop("rotation", "Rotation", Value::Scalar(0.0))
+                    .with_ui(ParamUi::Angle)
+                    .into(),
+            );
         }
         PinKind::Starch => {
-            g.children.push(ids.prop("amount", "Amount", Value::Scalar(50.0)).with_ui(slider(0.0, 100.0, 0.0, 100.0, 1)).into());
-            g.children.push(ids.prop("extent", "Extent", Value::Scalar(15.0)).with_ui(ParamUi::Pixels).into());
+            g.children.push(
+                ids.prop("amount", "Amount", Value::Scalar(50.0))
+                    .with_ui(slider(0.0, 100.0, 0.0, 100.0, 1))
+                    .into(),
+            );
+            g.children.push(
+                ids.prop("extent", "Extent", Value::Scalar(15.0))
+                    .with_ui(ParamUi::Pixels)
+                    .into(),
+            );
         }
         PinKind::Overlap => {
-            g.children.push(ids.prop("in_front", "In Front", Value::Scalar(50.0)).with_ui(slider(-100.0, 100.0, -100.0, 100.0, 1)).into());
-            g.children.push(ids.prop("extent", "Extent", Value::Scalar(15.0)).with_ui(ParamUi::Pixels).into());
+            g.children.push(
+                ids.prop("in_front", "In Front", Value::Scalar(50.0))
+                    .with_ui(slider(-100.0, 100.0, -100.0, 100.0, 1))
+                    .into(),
+            );
+            g.children.push(
+                ids.prop("extent", "Extent", Value::Scalar(15.0))
+                    .with_ui(ParamUi::Pixels)
+                    .into(),
+            );
         }
         PinKind::Position => {}
     }
@@ -149,12 +204,20 @@ pub fn meshes(fx: &PropGroup) -> impl Iterator<Item = &PropGroup> {
 
 /// Pin groups of a mesh group.
 pub fn pins(mesh: &PropGroup) -> impl Iterator<Item = &PropGroup> {
-    mesh.sub("deform").into_iter().flat_map(|d| d.groups().filter(|g| g.match_id == "pin"))
+    mesh.sub("deform")
+        .into_iter()
+        .flat_map(|d| d.groups().filter(|g| g.match_id == "pin"))
 }
 
 /// Next pin name for a kind, unique across the effect's meshes (`fx` is the Puppet effect).
 pub fn next_pin_name(fx: &PropGroup, kind: PinKind) -> String {
-    let n = meshes(fx).flat_map(pins).filter(|p| PinKind::from_index(p.get("kind").map(|k| k.value.as_enum()).unwrap_or(0)).label() == kind.label()).count();
+    let n = meshes(fx)
+        .flat_map(pins)
+        .filter(|p| {
+            PinKind::from_index(p.get("kind").map(|k| k.value.as_enum()).unwrap_or(0)).label()
+                == kind.label()
+        })
+        .count();
     format!("{} {}", kind.label(), n + 1)
 }
 
@@ -194,23 +257,39 @@ fn fd(p: &Params, k: &str, d: f64) -> f64 {
 pub fn parse(params: &Params) -> Vec<MeshParams> {
     let mut out = vec![];
     for pre in params.groups("") {
-        if params.s(&format!("{pre}@match")) != "mesh" || !params.get(&format!("{pre}@enabled")).is_none_or(Value::as_bool) {
+        if params.s(&format!("{pre}@match")) != "mesh"
+            || !params
+                .get(&format!("{pre}@enabled"))
+                .is_none_or(Value::as_bool)
+        {
             continue;
         }
         let k = |m: &str| format!("{pre}{m}");
         let mut pins = vec![];
         if let Some(d) = params.group(&pre, "deform") {
             for pp in params.groups(&d) {
-                if params.s(&format!("{pp}@match")) != "pin" || !params.get(&format!("{pp}@enabled")).is_none_or(Value::as_bool) {
+                if params.s(&format!("{pp}@match")) != "pin"
+                    || !params
+                        .get(&format!("{pp}@enabled"))
+                        .is_none_or(Value::as_bool)
+                {
                     continue;
                 }
                 let q = |m: &str| format!("{pp}{m}");
-                let rest = params.get(&q("rest")).map(Value::as_vec2).unwrap_or([0.0; 2]);
+                let rest = params
+                    .get(&q("rest"))
+                    .map(Value::as_vec2)
+                    .unwrap_or([0.0; 2]);
                 pins.push(Pin {
-                    kind: PinKind::from_index(params.get(&q("kind")).map(Value::as_enum).unwrap_or(0)),
+                    kind: PinKind::from_index(
+                        params.get(&q("kind")).map(Value::as_enum).unwrap_or(0),
+                    ),
                     uid: fd(params, &q("@uid"), 0.0) as u64,
                     rest,
-                    position: params.get(&q("position")).map(Value::as_vec2).unwrap_or(rest),
+                    position: params
+                        .get(&q("position"))
+                        .map(Value::as_vec2)
+                        .unwrap_or(rest),
                     scale: fd(params, &q("scale"), 100.0) / 100.0,
                     rotation: fd(params, &q("rotation"), 0.0),
                     amount: fd(params, &q("amount"), 50.0),
@@ -221,7 +300,10 @@ pub fn parse(params: &Params) -> Vec<MeshParams> {
         }
         out.push(MeshParams {
             uid: fd(params, &k("@uid"), 0.0) as u64,
-            seed: params.get(&k("seed")).map(Value::as_vec2).unwrap_or([0.0; 2]),
+            seed: params
+                .get(&k("seed"))
+                .map(Value::as_vec2)
+                .unwrap_or([0.0; 2]),
             opts: MeshOpts {
                 density: fd(params, &k("density"), 50.0),
                 expansion: fd(params, &k("expansion"), 3.0),
@@ -240,7 +322,9 @@ struct MeshCache {
     entries: Vec<(u64, Arc<Mesh>)>,
 }
 
-static CACHE: Mutex<MeshCache> = Mutex::new(MeshCache { entries: Vec::new() });
+static CACHE: Mutex<MeshCache> = Mutex::new(MeshCache {
+    entries: Vec::new(),
+});
 
 fn fnv(h: &mut u64, bytes: &[u8]) {
     for b in bytes {
@@ -256,7 +340,16 @@ pub fn mesh_for(buf: &Buf, m: &MeshParams) -> Arc<Mesh> {
     let mut key = 0xcbf2_9ce4_8422_2325u64;
     fnv(&mut key, &(w as u64).to_le_bytes());
     fnv(&mut key, &(h as u64).to_le_bytes());
-    for v in [buf.scale, buf.offset[0], buf.offset[1], m.seed[0], m.seed[1], m.opts.density, m.opts.expansion, m.opts.triangles] {
+    for v in [
+        buf.scale,
+        buf.offset[0],
+        buf.offset[1],
+        m.seed[0],
+        m.seed[1],
+        m.opts.density,
+        m.opts.expansion,
+        m.opts.triangles,
+    ] {
         fnv(&mut key, &v.to_bits().to_le_bytes());
     }
     let mut bits = 0u8;
@@ -272,7 +365,15 @@ pub fn mesh_for(buf: &Buf, m: &MeshParams) -> Arc<Mesh> {
     {
         return mesh.clone();
     }
-    let outline = mesh::outline(&alpha, w, h, buf.scale.max(1e-9), buf.offset, m.seed, m.opts.expansion);
+    let outline = mesh::outline(
+        &alpha,
+        w,
+        h,
+        buf.scale.max(1e-9),
+        buf.offset,
+        m.seed,
+        m.opts.expansion,
+    );
     let mesh = Arc::new(mesh::triangulate(&outline, &m.opts));
     if let Ok(mut c) = CACHE.lock() {
         c.entries.push((key, mesh.clone()));
@@ -311,7 +412,10 @@ pub fn starch_weights(mesh: &Mesh, pins: &[Pin]) -> Vec<f64> {
 
 fn centroid(mesh: &Mesh, t: &[usize; 3]) -> [f64; 2] {
     let v = &mesh.verts;
-    [(v[t[0]][0] + v[t[1]][0] + v[t[2]][0]) / 3.0, (v[t[0]][1] + v[t[1]][1] + v[t[2]][1]) / 3.0]
+    [
+        (v[t[0]][0] + v[t[1]][0] + v[t[2]][0]) / 3.0,
+        (v[t[0]][1] + v[t[1]][1] + v[t[2]][1]) / 3.0,
+    ]
 }
 
 /// Solve the deformation of `mesh` for `pins` (layer space). Returns deformed vertices.
@@ -330,17 +434,33 @@ pub fn solve(mesh: &Mesh, pins: &[Pin], refine: usize) -> Vec<[f64; 2]> {
     }
     let mut used = std::collections::HashSet::new();
     for p in pins {
-        let Some(v) = nearest(&mesh.verts, p.rest) else { continue };
+        let Some(v) = nearest(&mesh.verts, p.rest) else {
+            continue;
+        };
         let r = mesh.verts[v];
         if p.kind.moves() && used.insert(v) {
-            h.fixed.push((v, [p.position[0] + r[0] - p.rest[0], p.position[1] + r[1] - p.rest[1]]));
+            h.fixed.push((
+                v,
+                [
+                    p.position[0] + r[0] - p.rest[0],
+                    p.position[1] + r[1] - p.rest[1],
+                ],
+            ));
         }
         if matches!(p.kind, PinKind::Advanced | PinKind::Bend) {
             let (s, c) = p.rotation.to_radians().sin_cos();
             for &j in &adj[v] {
                 let e = [mesh.verts[j][0] - r[0], mesh.verts[j][1] - r[1]];
-                let vec = [p.scale * (e[0] * c - e[1] * s), p.scale * (e[0] * s + e[1] * c)];
-                h.edges.push(arap::EdgeTarget { i: v, j, vec, weight: 10.0 });
+                let vec = [
+                    p.scale * (e[0] * c - e[1] * s),
+                    p.scale * (e[0] * s + e[1] * c),
+                ];
+                h.edges.push(arap::EdgeTarget {
+                    i: v,
+                    j,
+                    vec,
+                    weight: 10.0,
+                });
             }
         }
     }
@@ -378,21 +498,31 @@ pub fn unmap(mesh: &Mesh, deformed: &[[f64; 2]], p: [f64; 2]) -> [f64; 2] {
             && l.iter().all(|x| *x >= -1e-9)
         {
             let v = &mesh.verts;
-            return [l[0] * v[t[0]][0] + l[1] * v[t[1]][0] + l[2] * v[t[2]][0], l[0] * v[t[0]][1] + l[1] * v[t[1]][1] + l[2] * v[t[2]][1]];
+            return [
+                l[0] * v[t[0]][0] + l[1] * v[t[1]][0] + l[2] * v[t[2]][0],
+                l[0] * v[t[0]][1] + l[1] * v[t[1]][1] + l[2] * v[t[2]][1],
+            ];
         }
     }
     match nearest(deformed, p) {
-        Some(i) => [p[0] - deformed[i][0] + mesh.verts[i][0], p[1] - deformed[i][1] + mesh.verts[i][1]],
+        Some(i) => [
+            p[0] - deformed[i][0] + mesh.verts[i][0],
+            p[1] - deformed[i][1] + mesh.verts[i][1],
+        ],
         None => p,
     }
 }
 
 /// Whether `p` (layer space) is on the mesh as `deformed` places its vertices.
 pub fn contains(mesh: &Mesh, deformed: &[[f64; 2]], p: [f64; 2]) -> bool {
-    mesh.tris.iter().any(|t| match (deformed.get(t[0]), deformed.get(t[1]), deformed.get(t[2])) {
-        (Some(a), Some(b), Some(c)) => bary(*a, *b, *c, p).is_some_and(|l| l.iter().all(|x| *x >= -1e-9)),
-        _ => false,
-    })
+    mesh.tris.iter().any(
+        |t| match (deformed.get(t[0]), deformed.get(t[1]), deformed.get(t[2])) {
+            (Some(a), Some(b), Some(c)) => {
+                bary(*a, *b, *c, p).is_some_and(|l| l.iter().all(|x| *x >= -1e-9))
+            }
+            _ => false,
+        },
+    )
 }
 
 #[inline]
@@ -411,10 +541,22 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
     if meshes.is_empty() {
         return buf;
     }
-    let refine = (ctx.params.get("refinement").map(Value::as_f64).unwrap_or(20.0) / 10.0).round().clamp(0.0, 10.0) as usize;
+    let refine = (ctx
+        .params
+        .get("refinement")
+        .map(Value::as_f64)
+        .unwrap_or(20.0)
+        / 10.0)
+        .round()
+        .clamp(0.0, 10.0) as usize;
     // Triangles of every mesh in pixel space: (rest px, deformed px, depth).
     let mut tris: Vec<([[f64; 2]; 3], [[f64; 2]; 3], f64)> = vec![];
-    let px = |q: [f64; 2]| [q[0] * buf.scale + buf.offset[0], q[1] * buf.scale + buf.offset[1]];
+    let px = |q: [f64; 2]| {
+        [
+            q[0] * buf.scale + buf.offset[0],
+            q[1] * buf.scale + buf.offset[1],
+        ]
+    };
     for m in &meshes {
         let mesh = mesh_for(&buf, m);
         if mesh.tris.is_empty() {
@@ -423,7 +565,11 @@ fn render(ctx: &EffectCtx, buf: Buf) -> Buf {
         let def = solve(&mesh, &m.pins, refine);
         let dep = depths(&mesh, &m.pins);
         for (k, t) in mesh.tris.iter().enumerate() {
-            let r = [px(mesh.verts[t[0]]), px(mesh.verts[t[1]]), px(mesh.verts[t[2]])];
+            let r = [
+                px(mesh.verts[t[0]]),
+                px(mesh.verts[t[1]]),
+                px(mesh.verts[t[2]]),
+            ];
             let d = [px(def[t[0]]), px(def[t[1]]), px(def[t[2]])];
             tris.push((r, d, dep[k]));
         }
@@ -453,7 +599,15 @@ fn rasterize(buf: &Buf, tris: &[([[f64; 2]; 3], [[f64; 2]; 3], f64)]) -> Buf {
     let h = ((y1.ceil() as i64 + 1 - oy).max(1) as u32).min(16384);
     let mut out = Image::new(w, h);
     // Triangle y-ranges for row bucketing.
-    let ranges: Vec<(f64, f64)> = tris.iter().map(|(_, d, _)| (d[0][1].min(d[1][1]).min(d[2][1]), d[0][1].max(d[1][1]).max(d[2][1]))).collect();
+    let ranges: Vec<(f64, f64)> = tris
+        .iter()
+        .map(|(_, d, _)| {
+            (
+                d[0][1].min(d[1][1]).min(d[2][1]),
+                d[0][1].max(d[1][1]).max(d[2][1]),
+            )
+        })
+        .collect();
     const SUB: [[f64; 2]; 4] = [[0.25, 0.25], [0.75, 0.25], [0.25, 0.75], [0.75, 0.75]];
     out.rows_mut().for_each(|(row, line)| {
         let y = (oy + row as i64) as f64;
@@ -467,8 +621,16 @@ fn rasterize(buf: &Buf, tris: &[([[f64; 2]; 3], [[f64; 2]; 3], f64)]) -> Buf {
                 continue;
             }
             let xa = (d[0][0].min(d[1][0]).min(d[2][0]).floor() as i64 - ox).max(0) as usize;
-            let xb = ((d[0][0].max(d[1][0]).max(d[2][0]).ceil() as i64 - ox + 1).max(0) as usize).min(n);
-            for (i, ((cv, ce), an)) in cover.iter_mut().zip(center.iter_mut()).zip(any.iter_mut()).enumerate().take(xb).skip(xa) {
+            let xb =
+                ((d[0][0].max(d[1][0]).max(d[2][0]).ceil() as i64 - ox + 1).max(0) as usize).min(n);
+            for (i, ((cv, ce), an)) in cover
+                .iter_mut()
+                .zip(center.iter_mut())
+                .zip(any.iter_mut())
+                .enumerate()
+                .take(xb)
+                .skip(xa)
+            {
                 let x = (ox + i as i64) as f64;
                 for (s, o) in SUB.iter().enumerate() {
                     if let Some(l) = bary(d[0], d[1], d[2], [x + o[0], y + o[1]])
@@ -487,20 +649,35 @@ fn rasterize(buf: &Buf, tris: &[([[f64; 2]; 3], [[f64; 2]; 3], f64)]) -> Buf {
         }
         for (i, px) in line.iter_mut().enumerate() {
             let c = cover[i].count_ones();
-            let Some(k) = center[i].or(any[i]) else { continue };
+            let Some(k) = center[i].or(any[i]) else {
+                continue;
+            };
             if c == 0 && center[i].is_none() {
                 continue;
             }
             let (r, d, _) = &tris[k];
             let p = [(ox + i as i64) as f64 + 0.5, y + 0.5];
-            let Some(l) = bary(d[0], d[1], d[2], p) else { continue };
-            let src = [l[0] * r[0][0] + l[1] * r[1][0] + l[2] * r[2][0], l[0] * r[0][1] + l[1] * r[1][1] + l[2] * r[2][1]];
+            let Some(l) = bary(d[0], d[1], d[2], p) else {
+                continue;
+            };
+            let src = [
+                l[0] * r[0][0] + l[1] * r[1][0] + l[2] * r[2][0],
+                l[0] * r[0][1] + l[1] * r[1][1] + l[2] * r[2][1],
+            ];
             let s = buf.img.sample_bilinear(src[0], src[1]);
-            let cov = if center[i].is_some() && c == 4 { 1.0 } else { c.max(1) as f32 / 4.0 };
+            let cov = if center[i].is_some() && c == 4 {
+                1.0
+            } else {
+                c.max(1) as f32 / 4.0
+            };
             *px = [s[0] * cov, s[1] * cov, s[2] * cov, s[3] * cov];
         }
     });
-    Buf { img: out, offset: [buf.offset[0] - ox as f64, buf.offset[1] - oy as f64], scale: buf.scale }
+    Buf {
+        img: out,
+        offset: [buf.offset[0] - ox as f64, buf.offset[1] - oy as f64],
+        scale: buf.scale,
+    }
 }
 
 /// Count of nodes in a group tree (for tests and readouts).
@@ -510,7 +687,9 @@ pub fn pin_count(fx: &PropGroup) -> usize {
 
 /// The deformed mesh for overlays: mesh, deformed vertices (layer space) per mesh group uid.
 pub fn overlay(buf: &Buf, params: &Params) -> Vec<(u64, Arc<Mesh>, Vec<[f64; 2]>, Vec<Pin>)> {
-    let refine = (params.get("refinement").map(Value::as_f64).unwrap_or(20.0) / 10.0).round().clamp(0.0, 10.0) as usize;
+    let refine = (params.get("refinement").map(Value::as_f64).unwrap_or(20.0) / 10.0)
+        .round()
+        .clamp(0.0, 10.0) as usize;
     parse(params)
         .into_iter()
         .map(|m| {

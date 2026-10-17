@@ -50,7 +50,9 @@ impl StateDirs {
     }
 
     fn run_file(&self, role: Role, suffix: &str) -> PathBuf {
-        self.root.join("run").join(format!("llama-server-{}{suffix}", role.as_str()))
+        self.root
+            .join("run")
+            .join(format!("llama-server-{}{suffix}", role.as_str()))
     }
 
     /// The [`RunState`] file.
@@ -87,13 +89,16 @@ impl StateDirs {
     /// The server log.
     #[must_use]
     pub fn log_file(&self, role: Role) -> PathBuf {
-        self.root.join("logs").join(format!("llama-server-{}.log", role.as_str()))
+        self.root
+            .join("logs")
+            .join(format!("llama-server-{}.log", role.as_str()))
     }
 
     /// The lock serializing attach-or-spawn for `role`.
     #[must_use]
     pub fn role_lock(&self, role: Role) -> PathBuf {
-        self.locks().join(format!("llama-server-{}.lock", role.as_str()))
+        self.locks()
+            .join(format!("llama-server-{}.lock", role.as_str()))
     }
 }
 
@@ -141,7 +146,9 @@ impl RunState {
 /// Seconds since the Unix epoch.
 #[must_use]
 pub(crate) fn unix_now() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map_or(0, |elapsed| elapsed.as_secs())
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_secs())
 }
 
 /// Write `bytes` to `path` atomically (temp file + rename), creating the
@@ -205,7 +212,11 @@ pub(crate) fn touch(dirs: &StateDirs, role: Role) -> io::Result<()> {
 /// When `role` was last used, in seconds since the Unix epoch.
 #[must_use]
 pub(crate) fn last_touch(dirs: &StateDirs, role: Role) -> Option<u64> {
-    std::fs::read_to_string(dirs.touch_file(role)).ok()?.trim().parse().ok()
+    std::fs::read_to_string(dirs.touch_file(role))
+        .ok()?
+        .trim()
+        .parse()
+        .ok()
 }
 
 /// Best-effort discovery of a currently running managed instance of `role`,
@@ -255,7 +266,11 @@ mod tests {
         };
         write_state(&dirs, &state).expect("write");
         assert_eq!(read_state(&dirs, Role::Chat), Some(state.clone()));
-        assert_eq!(read_state(&dirs, Role::Embed), None, "roles do not share state");
+        assert_eq!(
+            read_state(&dirs, Role::Embed),
+            None,
+            "roles do not share state"
+        );
         assert_eq!(state.base_url(), "http://127.0.0.1:4242/v1");
 
         std::fs::write(dirs.state_file(Role::Chat), "{ truncated").expect("write");
@@ -299,13 +314,25 @@ mod tests {
             ready: true,
         };
         write_state(&dirs, &state).expect("write");
-        assert_eq!(discover_running(Role::Embed), Some(state), "this process is alive");
-        assert_eq!(discover_running(Role::Chat), None, "roles do not share state");
+        assert_eq!(
+            discover_running(Role::Embed),
+            Some(state),
+            "this process is alive"
+        );
+        assert_eq!(
+            discover_running(Role::Chat),
+            None,
+            "roles do not share state"
+        );
 
         let mut dead = read_state(&dirs, Role::Embed).expect("state").clone();
         dead.daemon_pid = 0;
         write_state(&dirs, &dead).expect("write");
-        assert_eq!(discover_running(Role::Embed), None, "pid 0 never counts as alive");
+        assert_eq!(
+            discover_running(Role::Embed),
+            None,
+            "pid 0 never counts as alive"
+        );
 
         // SAFETY: see above.
         unsafe { std::env::remove_var("APHRODY_HOME") };

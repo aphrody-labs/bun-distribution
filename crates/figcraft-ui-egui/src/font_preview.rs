@@ -19,8 +19,21 @@ struct Cache(Arc<Mutex<HashMap<u64, Option<egui::TextureHandle>>>>);
 /// What a preview looks like: the typography that shows plus the text and the screen's scale.
 fn key(style: &TextStyle, text: &str, ppp: f32) -> u64 {
     let mut h = std::collections::hash_map::DefaultHasher::new();
-    (&style.font_family, &style.font_style, style.font_size.to_bits(), text, ppp.to_bits()).hash(&mut h);
-    (style.line_height.label(), style.letter_spacing.label(), style.decoration as u8, style.case as u8).hash(&mut h);
+    (
+        &style.font_family,
+        &style.font_style,
+        style.font_size.to_bits(),
+        text,
+        ppp.to_bits(),
+    )
+        .hash(&mut h);
+    (
+        style.line_height.label(),
+        style.letter_spacing.label(),
+        style.decoration as u8,
+        style.case as u8,
+    )
+        .hash(&mut h);
     for (k, v) in &style.variations {
         (k, v.to_bits()).hash(&mut h);
     }
@@ -29,10 +42,18 @@ fn key(style: &TextStyle, text: &str, ppp: f32) -> u64 {
 
 /// `text` in `style` (one line, at most 400 × 60 points), or None when it can't be drawn: no such
 /// font, or `budget` previews were already rendered this frame (asks for another frame then).
-pub fn texture(ctx: &egui::Context, style: &TextStyle, text: &str, budget: &mut usize) -> Option<egui::TextureHandle> {
+pub fn texture(
+    ctx: &egui::Context,
+    style: &TextStyle,
+    text: &str,
+    budget: &mut usize,
+) -> Option<egui::TextureHandle> {
     let ppp = ctx.pixels_per_point();
     let k = key(style, text, ppp);
-    let cache = ctx.data_mut(|d| d.get_temp_mut_or_default::<Cache>(Id::new("font_previews")).clone());
+    let cache = ctx.data_mut(|d| {
+        d.get_temp_mut_or_default::<Cache>(Id::new("font_previews"))
+            .clone()
+    });
     if let Some(t) = cache.0.lock().ok()?.get(&k) {
         return t.clone();
     }
@@ -52,23 +73,49 @@ pub fn texture(ctx: &egui::Context, style: &TextStyle, text: &str, budget: &mut 
 
 /// A family's name in its own regular style (None when the family doesn't draw itself: symbol
 /// fonts, or it resolves to another family).
-pub fn family(ctx: &egui::Context, family: &str, size: f64, budget: &mut usize) -> Option<egui::TextureHandle> {
+pub fn family(
+    ctx: &egui::Context,
+    family: &str,
+    size: f64,
+    budget: &mut usize,
+) -> Option<egui::TextureHandle> {
     let styles = figcraft_text::family_styles(family);
-    let style = styles.iter().find(|s| s.eq_ignore_ascii_case("Regular")).or(styles.first())?.clone();
+    let style = styles
+        .iter()
+        .find(|s| s.eq_ignore_ascii_case("Regular"))
+        .or(styles.first())?
+        .clone();
     let face = figcraft_text::find_face(family, &style)?;
-    if !face.family.eq_ignore_ascii_case(family) || !family.chars().all(|c| c == ' ' || face.has_char(c)) {
+    if !face.family.eq_ignore_ascii_case(family)
+        || !family.chars().all(|c| c == ' ' || face.has_char(c))
+    {
         return None;
     }
-    let st = TextStyle { font_family: family.to_string(), font_style: style, font_size: size, ..TextStyle::default() };
+    let st = TextStyle {
+        font_family: family.to_string(),
+        font_style: style,
+        font_size: size,
+        ..TextStyle::default()
+    };
     texture(ctx, &st, family, budget)
 }
 
-fn render(ctx: &egui::Context, style: &TextStyle, text: &str, ppp: f64) -> Option<egui::TextureHandle> {
+fn render(
+    ctx: &egui::Context,
+    style: &TextStyle,
+    text: &str,
+    ppp: f64,
+) -> Option<egui::TextureHandle> {
     let mut doc = Document::new("preview");
     let page = doc.first_page()?;
     let id = doc.alloc_id();
     let mut td = TextData::new(text);
-    td.style = TextStyle { fills: None, link: None, style_id: None, ..style.clone() };
+    td.style = TextStyle {
+        fills: None,
+        link: None,
+        style_id: None,
+        ..style.clone()
+    };
     let mut n = Node::new(id, NodeKind::Text(td), "preview", 1.0, 1.0);
     n.fills = vec![Paint::solid(Color::WHITE)];
     let (w, h) = figcraft_text::auto_size(&n)?;
@@ -87,14 +134,27 @@ fn render(ctx: &egui::Context, style: &TextStyle, text: &str, ppp: f64) -> Optio
 
 /// Paint a preview texture with its left edge at `left_center`'s x, centred on its y, clipped to
 /// `max_w` × `max_h` points, tinted `color`; returns the painted width.
-pub fn paint(painter: &egui::Painter, tex: &egui::TextureHandle, left_center: egui::Pos2, max_w: f32, max_h: f32, color: egui::Color32) -> f32 {
+pub fn paint(
+    painter: &egui::Painter,
+    tex: &egui::TextureHandle,
+    left_center: egui::Pos2,
+    max_w: f32,
+    max_h: f32,
+    color: egui::Color32,
+) -> f32 {
     let ppp = painter.ctx().pixels_per_point().max(0.5);
     let size = tex.size_vec2() / ppp;
     let shown = egui::vec2(size.x.min(max_w.max(0.0)), size.y.min(max_h.max(0.0)));
     // Clip from the middle vertically (tall line heights), from the start horizontally.
     let v0 = ((size.y - shown.y) / 2.0 / size.y.max(1.0)).max(0.0);
-    let uv = egui::Rect::from_min_max(egui::pos2(0.0, v0), egui::pos2(shown.x / size.x.max(1.0), v0 + shown.y / size.y.max(1.0)));
-    let r = egui::Rect::from_min_size(egui::pos2(left_center.x, left_center.y - shown.y / 2.0), shown);
+    let uv = egui::Rect::from_min_max(
+        egui::pos2(0.0, v0),
+        egui::pos2(shown.x / size.x.max(1.0), v0 + shown.y / size.y.max(1.0)),
+    );
+    let r = egui::Rect::from_min_size(
+        egui::pos2(left_center.x, left_center.y - shown.y / 2.0),
+        shown,
+    );
     painter.image(tex.id(), r, uv, color);
     shown.x
 }

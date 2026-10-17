@@ -150,13 +150,18 @@ mod tests {
     #[test]
     fn integrated_signatures_parse_with_the_runtime_loader() {
         let signatures = crate::analysis::signature::Signatures::list().unwrap();
-        let names: Vec<_> = signatures.iter().map(|signature| signature.name()).collect();
+        let names: Vec<_> = signatures
+            .iter()
+            .map(|signature| signature.name())
+            .collect();
         assert_eq!(names, ["FS_LoadOverlay", "FS_UnloadOverlay"]);
     }
 
     #[test]
     fn integrated_arm9_template_parses() {
         let mut templates = tinytemplate::TinyTemplate::new();
-        templates.add_template("arm9", super::ARM9_LCF_TEMPLATE).unwrap();
+        templates
+            .add_template("arm9", super::ARM9_LCF_TEMPLATE)
+            .unwrap();
     }
 }

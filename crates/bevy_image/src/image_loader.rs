@@ -1,8 +1,8 @@
 use crate::{
-    image::{Image, ImageFormat, ImageType, TextureError},
     TextureReinterpretationError,
+    image::{Image, ImageFormat, ImageType, TextureError},
 };
-use bevy_asset::{io::Reader, AssetLoader, LoadContext, RenderAssetUsages};
+use bevy_asset::{AssetLoader, LoadContext, RenderAssetUsages, io::Reader};
 use bevy_reflect::TypePath;
 use thiserror::Error;
 

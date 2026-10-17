@@ -74,11 +74,22 @@ fn settings(points: usize) -> DevelopSettings {
     let mut s = DevelopSettings::default();
     if points > 0 {
         let stroke = BrushStroke {
-            points: (0..points).map(|i| lightcraft_geom::Point::new((i % 100) as f64 / 100.0, (i / 100) as f64 / 100.0)).collect(),
+            points: (0..points)
+                .map(|i| {
+                    lightcraft_geom::Point::new((i % 100) as f64 / 100.0, (i / 100) as f64 / 100.0)
+                })
+                .collect(),
             ..Default::default()
         };
         s.masks.push(Mask {
-            components: vec![MaskComponent { name: None, op: Default::default(), invert: false, shape: MaskShape::Brush { strokes: vec![stroke] } }],
+            components: vec![MaskComponent {
+                name: None,
+                op: Default::default(),
+                invert: false,
+                shape: MaskShape::Brush {
+                    strokes: vec![stroke],
+                },
+            }],
             ..Default::default()
         });
     }
@@ -86,10 +97,18 @@ fn settings(points: usize) -> DevelopSettings {
 }
 fn summary(name: &str, mut times: Vec<f64>) {
     times.sort_by(f64::total_cmp);
-    println!("{name},median_ms={:.6},p95_ms={:.6}", times[times.len() / 2], times[times.len() * 95 / 100]);
+    println!(
+        "{name},median_ms={:.6},p95_ms={:.6}",
+        times[times.len() / 2],
+        times[times.len() * 95 / 100]
+    );
 }
 fn frames() -> usize {
-    std::env::var("FRAMES").ok().and_then(|s| s.parse().ok()).unwrap_or(300).max(1)
+    std::env::var("FRAMES")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(300)
+        .max(1)
 }
 
 fn micro(points: usize, pending: bool) {
@@ -97,23 +116,48 @@ fn micro(points: usize, pending: bool) {
     let n = 200;
     let mut session = Session::new();
     for i in 1..=n {
-        let mut p =
-            Photo::new(PhotoId(i), Source::File { path: format!("N:/audit-only/IMG_{i}.jpg") }, "sample.jpg", "JPEG", 6000, 4000, "2026-01-01");
+        let mut p = Photo::new(
+            PhotoId(i),
+            Source::File {
+                path: format!("N:/audit-only/IMG_{i}.jpg"),
+            },
+            "sample.jpg",
+            "JPEG",
+            6000,
+            4000,
+            "2026-01-01",
+        );
         p.develop = Arc::new(settings(points));
         p.content_hash = Some(format!("{i:032x}"));
-        session.catalog.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
+        session
+            .catalog
+            .apply(Op::AddPhoto { photo: Box::new(p) })
+            .unwrap();
     }
     let mut app = LightcraftApp::new(session, Services::default());
     app.renderer.set_offload(Box::new(Blocked));
     let ctx = egui::Context::default();
-    let texture = ctx.load_texture("audit", egui::ColorImage::new([1, 1], vec![egui::Color32::GRAY]), Default::default());
+    let texture = ctx.load_texture(
+        "audit",
+        egui::ColorImage::new([1, 1], vec![egui::Color32::GRAY]),
+        Default::default(),
+    );
     for i in 1..=n {
         let id = PhotoId(i);
         if !pending {
             let key = app.session.thumb_job(id, 384).unwrap().key;
             app.renderer.textures.insert(
                 Slot::Thumb(id),
-                Tex { key, photo: id, tex: texture.clone(), size: [1, 1], histogram: None, ms: 0.0, quick: None, pixels: None },
+                Tex {
+                    key,
+                    photo: id,
+                    tex: texture.clone(),
+                    size: [1, 1],
+                    histogram: None,
+                    ms: 0.0,
+                    quick: None,
+                    pixels: None,
+                },
             );
         }
         request_thumb(&mut app, id, 384, 10);
@@ -128,16 +172,37 @@ fn micro(points: usize, pending: bool) {
         times.push(t.elapsed().as_secs_f64() * 1000.0);
     }
     let (a1, b1) = allocs();
-    println!("micro,points={points},pending={pending},allocs_per_frame={},bytes_per_frame={}", (a1 - a0) / frames as u64, (b1 - b0) / frames as u64);
-    summary(&format!("micro,points={points},pending={pending},cells={n}"), times);
+    println!(
+        "micro,points={points},pending={pending},allocs_per_frame={},bytes_per_frame={}",
+        (a1 - a0) / frames as u64,
+        (b1 - b0) / frames as u64
+    );
+    summary(
+        &format!("micro,points={points},pending={pending},cells={n}"),
+        times,
+    );
     // The draw fast path must notice a develop edit and a size-bucket change.
     let mut edit = settings(points);
     edit.light.exposure = 1.0;
-    app.session.catalog.apply(Op::SetDevelop { id: PhotoId(1), settings: Arc::new(edit), label: "audit edit".into(), edited: None }).unwrap();
+    app.session
+        .catalog
+        .apply(Op::SetDevelop {
+            id: PhotoId(1),
+            settings: Arc::new(edit),
+            label: "audit edit".into(),
+            edited: None,
+        })
+        .unwrap();
     request_thumb(&mut app, PhotoId(1), 384, 10);
-    assert_eq!(app.renderer.wanted(Slot::Thumb(PhotoId(1))), Some(app.session.thumb_job(PhotoId(1), 384).unwrap().key));
+    assert_eq!(
+        app.renderer.wanted(Slot::Thumb(PhotoId(1))),
+        Some(app.session.thumb_job(PhotoId(1), 384).unwrap().key)
+    );
     request_thumb(&mut app, PhotoId(1), 512, 10);
-    assert_eq!(app.renderer.wanted(Slot::Thumb(PhotoId(1))), Some(app.session.thumb_job(PhotoId(1), 512).unwrap().key));
+    assert_eq!(
+        app.renderer.wanted(Slot::Thumb(PhotoId(1))),
+        Some(app.session.thumb_job(PhotoId(1), 512).unwrap().key)
+    );
 }
 fn collect(root: &std::path::Path, ext: &str, paths: &mut Vec<std::path::PathBuf>) {
     for e in std::fs::read_dir(root).unwrap() {
@@ -155,19 +220,42 @@ fn verify_texture(h: &Headless, id: PhotoId) {
     // Justified rows can choose different buckets even with the same slider value.
     // Verify the actual displayed resolution independently of candidate request/hash helpers.
     let edge = tex.size[0].max(tex.size[1]);
-    assert!([128, 256, 384, 512].contains(&edge), "thumbnail must use a supported size bucket");
-    let Source::File { path } = &p.source else { unreachable!() };
+    assert!(
+        [128, 256, 384, 512].contains(&edge),
+        "thumbnail must use a supported size bucket"
+    );
+    let Source::File { path } = &p.source else {
+        unreachable!()
+    };
     let (source, info) = h.app.session.media.file_loader.as_ref().unwrap()(path, 512).unwrap();
-    println!("decode,path={path},raw={},preview_only={:?}", info.raw, p.preview_only);
+    println!(
+        "decode,path={path},raw={},preview_only={:?}",
+        info.raw, p.preview_only
+    );
     if std::env::var_os("REQUIRE_RAW").is_some() {
-        assert!(p.preview_only.is_none(), "embedded-preview fallback does not validate RAW decoding");
+        assert!(
+            p.preview_only.is_none(),
+            "embedded-preview fallback does not validate RAW decoding"
+        );
         assert!(info.raw, "fresh loader must return decoded RAW data");
     }
-    let req = lightcraft_engine::pipeline::RenderRequest { apply_crop: true, ..lightcraft_engine::pipeline::RenderRequest::fit(edge, edge) };
+    let req = lightcraft_engine::pipeline::RenderRequest {
+        apply_crop: true,
+        ..lightcraft_engine::pipeline::RenderRequest::fit(edge, edge)
+    };
     // Fresh direct CPU render: no candidate job/hash/source/preview cache helpers.
     let expected = lightcraft_engine::pipeline::render(&source, &info, &p.develop, &req).image;
     assert_eq!(tex.size, [expected.width, expected.height]);
-    assert_eq!(tex.pixels.as_ref().unwrap().pixels.iter().flat_map(|c| c.to_array()).collect::<Vec<_>>(), expected.as_bytes());
+    assert_eq!(
+        tex.pixels
+            .as_ref()
+            .unwrap()
+            .pixels
+            .iter()
+            .flat_map(|c| c.to_array())
+            .collect::<Vec<_>>(),
+        expected.as_bytes()
+    );
 }
 
 fn real() {
@@ -180,17 +268,34 @@ fn real() {
     };
     collect(std::path::Path::new(&root), &ext, &mut paths);
     paths.sort();
-    let offset = std::env::var("PHOTO_OFFSET").ok().and_then(|s| s.parse::<usize>().ok()).unwrap_or(0);
-    let limit = std::env::var("PHOTO_LIMIT").ok().and_then(|s| s.parse::<usize>().ok()).unwrap_or(4).clamp(1, 4);
+    let offset = std::env::var("PHOTO_OFFSET")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(0);
+    let limit = std::env::var("PHOTO_LIMIT")
+        .ok()
+        .and_then(|s| s.parse::<usize>().ok())
+        .unwrap_or(4)
+        .clamp(1, 4);
     paths = paths.into_iter().skip(offset).take(limit).collect();
     assert!(!paths.is_empty(), "selected photo batch is empty");
-    println!("batch,extension={ext},offset={offset},limit={limit},photos={}", paths.len());
+    println!(
+        "batch,extension={ext},offset={offset},limit={limit},photos={}",
+        paths.len()
+    );
     let mut session = Session::new().with_fs();
     for (i, path) in paths.iter().enumerate() {
         let path = path.to_string_lossy().into_owned();
         let probe = session.media.file_probe.as_ref().unwrap()(&path).unwrap();
-        let mut p =
-            Photo::new(PhotoId(i as u64 + 1), Source::File { path: path.clone() }, "photo", &probe.format, probe.width, probe.height, "2026-01-01");
+        let mut p = Photo::new(
+            PhotoId(i as u64 + 1),
+            Source::File { path: path.clone() },
+            "photo",
+            &probe.format,
+            probe.width,
+            probe.height,
+            "2026-01-01",
+        );
         p.file_size = probe.file_size;
         p.kind = probe.kind;
         p.meta = probe.meta;
@@ -199,9 +304,22 @@ fn real() {
         p.content_hash = probe.content_hash;
         p.preview_only = probe.preview_only;
         lightcraft_engine::import::apply_import_defaults(&session, &mut p);
-        session.catalog.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
+        session
+            .catalog
+            .apply(Op::AddPhoto { photo: Box::new(p) })
+            .unwrap();
     }
-    let mut h = Headless::new(LightcraftApp::new(session, Services { png: None, ..Default::default() }), [1400.0, 900.0], 1.0);
+    let mut h = Headless::new(
+        LightcraftApp::new(
+            session,
+            Services {
+                png: None,
+                ..Default::default()
+            },
+        ),
+        [1400.0, 900.0],
+        1.0,
+    );
     h.app.renderer = lightcraft_ui_egui::render::Renderer::with_worker_threads(1);
     h.app.renderer.keep_pixels = true;
     h.app.ui.view = lightcraft_ui_egui::state::ViewMode::PhotoGrid;
@@ -219,12 +337,20 @@ fn real() {
     summary("loading,frame", loading_frame);
     summary("loading,grid", loading_grid);
     println!("loading,frames_with_pending={busy}");
-    assert!(h.settle(Duration::from_secs(120)), "real library did not settle");
+    assert!(
+        h.settle(Duration::from_secs(120)),
+        "real library did not settle"
+    );
     for i in 1..=paths.len() {
         request_thumb(&mut h.app, PhotoId(i as u64), 256, 20);
     }
     assert!(h.settle(Duration::from_secs(120)));
-    println!("real,photos={},textures={},in_flight={}", paths.len(), h.app.renderer.thumb_textures(), h.app.renderer.in_flight());
+    println!(
+        "real,photos={},textures={},in_flight={}",
+        paths.len(),
+        h.app.renderer.thumb_textures(),
+        h.app.renderer.in_flight()
+    );
     let stats = h.app.caches.grid_stats.clone();
     let mut frame = Vec::with_capacity(frames);
     let mut grid = Vec::with_capacity(frames);
@@ -236,11 +362,21 @@ fn real() {
         grid.push(h.app.caches.grid_stats.last_show.as_secs_f64() * 1000.0);
     }
     let (a1, b1) = allocs();
-    println!("real,allocs_per_frame={},bytes_per_frame={}", (a1 - a0) / frames as u64, (b1 - b0) / frames as u64);
+    println!(
+        "real,allocs_per_frame={},bytes_per_frame={}",
+        (a1 - a0) / frames as u64,
+        (b1 - b0) / frames as u64
+    );
     summary("real,frame", frame);
     summary("real,grid", grid);
-    println!("real,cells_per_frame={}", (h.app.caches.grid_stats.cells_visited - stats.cells_visited) / frames as u64);
-    assert!(h.settle(Duration::from_secs(120)), "grid's displayed thumbnail bucket must settle before verification");
+    println!(
+        "real,cells_per_frame={}",
+        (h.app.caches.grid_stats.cells_visited - stats.cells_visited) / frames as u64
+    );
+    assert!(
+        h.settle(Duration::from_secs(120)),
+        "grid's displayed thumbnail bucket must settle before verification"
+    );
     let mut checks: Vec<_> = h
         .app
         .renderer
@@ -265,8 +401,15 @@ fn real() {
     for b in format!("{checks:?}").bytes() {
         hash = (hash ^ b as u64).wrapping_mul(0x100000001b3);
     }
-    println!("real,verified_textures={},keys_sizes_pixels_checksum={hash:016x}", checks.len());
-    assert_eq!(checks.len(), paths.len(), "every original must render successfully");
+    println!(
+        "real,verified_textures={},keys_sizes_pixels_checksum={hash:016x}",
+        checks.len()
+    );
+    assert_eq!(
+        checks.len(),
+        paths.len(),
+        "every original must render successfully"
+    );
     if std::env::var_os("VERIFY_PIXELS").is_some() {
         for i in 1..=paths.len() {
             verify_texture(&h, PhotoId(i as u64));
@@ -278,7 +421,9 @@ fn real() {
     let start = h.app.grid_scroll;
     let mut max_scroll = 0.0f32;
     for i in 0..frames {
-        h.app.synthetic.push(egui::Event::PointerMoved(egui::pos2(800.0, 400.0)));
+        h.app
+            .synthetic
+            .push(egui::Event::PointerMoved(egui::pos2(800.0, 400.0)));
         h.app.synthetic.push(egui::Event::MouseWheel {
             unit: egui::MouseWheelUnit::Point,
             delta: egui::vec2(0.0, if (i / 45) % 2 == 0 { -12.0 } else { 12.0 }),
@@ -293,19 +438,51 @@ fn real() {
     }
     summary("scroll,frame", scroll_frame);
     summary("scroll,grid", scroll_grid);
-    println!("scroll,start={start:?},end={:?},max={max_scroll}", h.app.grid_scroll);
+    println!(
+        "scroll,start={start:?},end={:?},max={max_scroll}",
+        h.app.grid_scroll
+    );
     if max_scroll == 0.0 {
         println!("scroll,not_applicable=bounded_batch_fits_view");
     }
     let id = PhotoId(1);
-    let old = h.app.renderer.thumb(id).unwrap().pixels.as_ref().unwrap().clone();
+    let old = h
+        .app
+        .renderer
+        .thumb(id)
+        .unwrap()
+        .pixels
+        .as_ref()
+        .unwrap()
+        .clone();
     let mut edit = (*h.app.session.catalog.photo(id).unwrap().develop).clone();
     edit.light.exposure += 0.5;
-    let undo = h.app.session.catalog.apply(Op::SetDevelop { id, settings: Arc::new(edit), label: "audit".into(), edited: None }).unwrap();
+    let undo = h
+        .app
+        .session
+        .catalog
+        .apply(Op::SetDevelop {
+            id,
+            settings: Arc::new(edit),
+            label: "audit".into(),
+            edited: None,
+        })
+        .unwrap();
     request_thumb(&mut h.app, id, 256, 20);
     assert!(h.settle(Duration::from_secs(120)));
-    let edited = h.app.renderer.thumb(id).unwrap().pixels.as_ref().unwrap().clone();
-    assert_ne!(old.pixels, edited.pixels, "edit must change actual rendered pixels");
+    let edited = h
+        .app
+        .renderer
+        .thumb(id)
+        .unwrap()
+        .pixels
+        .as_ref()
+        .unwrap()
+        .clone();
+    assert_ne!(
+        old.pixels, edited.pixels,
+        "edit must change actual rendered pixels"
+    );
     if std::env::var_os("VERIFY_PIXELS").is_some() {
         verify_texture(&h, id);
     }
@@ -319,7 +496,18 @@ fn real() {
     h.app.session.catalog.apply(undo).unwrap();
     request_thumb(&mut h.app, id, 256, 20);
     assert!(h.settle(Duration::from_secs(120)));
-    assert_eq!(old.pixels, h.app.renderer.thumb(id).unwrap().pixels.as_ref().unwrap().pixels, "undo restores pixels");
+    assert_eq!(
+        old.pixels,
+        h.app
+            .renderer
+            .thumb(id)
+            .unwrap()
+            .pixels
+            .as_ref()
+            .unwrap()
+            .pixels,
+        "undo restores pixels"
+    );
     if std::env::var_os("VERIFY_PIXELS").is_some() {
         verify_texture(&h, id);
         println!("oracle,edit_and_undo_match_fresh_pixels=true");
@@ -327,7 +515,10 @@ fn real() {
     println!("undo,pixels_restored=true");
 }
 fn main() {
-    println!("mode={}", std::env::var("THUMB_AUDIT_MODE").unwrap_or_else(|_| "baseline".into()));
+    println!(
+        "mode={}",
+        std::env::var("THUMB_AUDIT_MODE").unwrap_or_else(|_| "baseline".into())
+    );
     if std::env::var_os("SKIP_MICRO").is_none() {
         for points in [0, 200, 1000] {
             for pending in [false, true] {

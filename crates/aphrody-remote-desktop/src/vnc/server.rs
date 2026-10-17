@@ -51,7 +51,13 @@ impl std::fmt::Debug for VncServeOptions {
 impl VncServeOptions {
     #[must_use]
     pub fn new(bind: SocketAddr, password: String) -> Self {
-        Self { bind, password, allow: Vec::new(), fps: 10, desktop_name: "aphrody".into() }
+        Self {
+            bind,
+            password,
+            allow: Vec::new(),
+            fps: 10,
+            desktop_name: "aphrody".into(),
+        }
     }
 }
 
@@ -64,7 +70,9 @@ pub fn parse_allow(entry: &str) -> Result<Vec<IpNet>> {
     if let Ok(net) = entry.parse::<IpNet>() {
         return Ok(vec![net]);
     }
-    let ip: IpAddr = entry.parse().with_context(|| format!("invalid allow entry {entry}"))?;
+    let ip: IpAddr = entry
+        .parse()
+        .with_context(|| format!("invalid allow entry {entry}"))?;
     Ok(vec![IpNet::from(ip)])
 }
 
@@ -130,7 +138,11 @@ fn to_frame(frame: crate::backend::RawFrame) -> Result<Frame> {
         px.swap(0, 2);
         px[3] = 0xFF;
     }
-    Ok(Frame { width, height, rgba })
+    Ok(Frame {
+        width,
+        height,
+        rgba,
+    })
 }
 
 fn capture_loop(shared: &Shared, fps: u32, tx: &mpsc::Sender<Frame>) {
@@ -139,7 +151,7 @@ fn capture_loop(shared: &Shared, fps: u32, tx: &mpsc::Sender<Frame>) {
         Err(e) => {
             eprintln!("vnc: capture backend unavailable: {e:#}");
             return;
-        },
+        }
     };
     let period = Duration::from_micros(1_000_000 / u64::from(fps.clamp(1, 60)));
     while !shared.stop.load(Ordering::Relaxed) {
@@ -157,7 +169,7 @@ fn capture_loop(shared: &Shared, fps: u32, tx: &mpsc::Sender<Frame>) {
                 if tx.blocking_send(frame).is_err() {
                     return;
                 }
-            },
+            }
             // Transient on the lock screen / secure desktop.
             Err(_) => std::thread::sleep(Duration::from_millis(200)),
         }
@@ -173,7 +185,7 @@ fn input_loop(shared: &Shared, rx: &std::sync::mpsc::Receiver<Input>) {
         Err(e) => {
             eprintln!("vnc: input backend unavailable: {e:#}");
             return;
-        },
+        }
     };
     while let Ok(first) = rx.recv() {
         let mut batch = vec![first];
@@ -204,8 +216,10 @@ async fn splice(
     mut outer: TcpStream,
 ) -> Result<()> {
     let srv = Arc::clone(&server);
-    let handshake =
-        tokio::spawn(async move { srv.connect_reverse(Ipv4Addr::LOCALHOST.to_string(), port).await });
+    let handshake = tokio::spawn(async move {
+        srv.connect_reverse(Ipv4Addr::LOCALHOST.to_string(), port)
+            .await
+    });
     let (mut inner, from) = tokio::time::timeout(Duration::from_secs(10), rendezvous.accept())
         .await
         .context("RFB session did not reach the rendezvous")??;
@@ -234,13 +248,22 @@ pub async fn serve(opts: VncServeOptions) -> Result<()> {
         stop: AtomicBool::new(false),
     });
     let first = to_frame(first)?;
-    let (server, mut events) =
-        VncServer::new(first.width, first.height, opts.desktop_name.clone(), Some(opts.password.clone()));
+    let (server, mut events) = VncServer::new(
+        first.width,
+        first.height,
+        opts.desktop_name.clone(),
+        Some(opts.password.clone()),
+    );
     let server = Arc::new(server);
-    server.framebuffer().update_from_slice(&first.rgba).await.map_err(anyhow::Error::msg)?;
+    server
+        .framebuffer()
+        .update_from_slice(&first.rgba)
+        .await
+        .map_err(anyhow::Error::msg)?;
 
-    let listener =
-        TcpListener::bind(opts.bind).await.with_context(|| format!("cannot bind {}", opts.bind))?;
+    let listener = TcpListener::bind(opts.bind)
+        .await
+        .with_context(|| format!("cannot bind {}", opts.bind))?;
     let rendezvous = Arc::new(TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await?);
     let rendezvous_port = rendezvous.local_addr()?.port();
 
@@ -279,17 +302,25 @@ pub async fn serve(opts: VncServeOptions) -> Result<()> {
                     ev_shared.clients.fetch_add(1, Ordering::Relaxed);
                     eprintln!("vnc: session {client_id} opened");
                     continue;
-                },
+                }
                 ServerEvent::ClientDisconnected { client_id } => {
-                    let _ = ev_shared.clients.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
-                        Some(n.saturating_sub(1))
-                    });
+                    let _ =
+                        ev_shared
+                            .clients
+                            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| {
+                                Some(n.saturating_sub(1))
+                            });
                     masks.remove(&client_id);
                     eprintln!("vnc: session {client_id} closed");
                     continue;
-                },
+                }
                 ServerEvent::KeyPress { down, key, .. } => vec![Input::Keysym(key, down)],
-                ServerEvent::PointerMove { client_id, x, y, button_mask } => {
+                ServerEvent::PointerMove {
+                    client_id,
+                    x,
+                    y,
+                    button_mask,
+                } => {
                     let prev = masks.insert(client_id, button_mask).unwrap_or(0);
                     pointer_inputs(
                         prev,
@@ -297,7 +328,7 @@ pub async fn serve(opts: VncServeOptions) -> Result<()> {
                         ev_shared.origin_x.load(Ordering::Relaxed) + i32::from(x),
                         ev_shared.origin_y.load(Ordering::Relaxed) + i32::from(y),
                     )
-                },
+                }
                 _ => continue,
             };
             for input in inputs {
@@ -354,7 +385,10 @@ mod tests {
         assert!(!peer_allowed(&[], "10.200.77.4".parse().unwrap()));
         let net = parse_allow("10.200.77.0/24").unwrap();
         assert!(peer_allowed(&net, "10.200.77.10".parse().unwrap()));
-        assert!(peer_allowed(&parse_allow("any").unwrap(), "8.8.8.8".parse().unwrap()));
+        assert!(peer_allowed(
+            &parse_allow("any").unwrap(),
+            "8.8.8.8".parse().unwrap()
+        ));
         assert!(parse_allow("nope").is_err());
     }
 
@@ -374,7 +408,10 @@ mod tests {
             vec![Input::Move(0, 0), Input::Wheel(0, -120)]
         );
         // Wheel release is not a second notch.
-        assert_eq!(pointer_inputs(buttons::WHEEL_UP, 0, 0, 0), vec![Input::Move(0, 0)]);
+        assert_eq!(
+            pointer_inputs(buttons::WHEEL_UP, 0, 0, 0),
+            vec![Input::Move(0, 0)]
+        );
     }
 
     #[test]
@@ -403,7 +440,9 @@ mod tests {
             let _ = splice(server, rendezvous, port, outer).await;
         });
         assert_eq!(
-            super::super::probe(&addr, Duration::from_secs(5)).await.unwrap(),
+            super::super::probe(&addr, Duration::from_secs(5))
+                .await
+                .unwrap(),
             "RFB 003.008"
         );
     }

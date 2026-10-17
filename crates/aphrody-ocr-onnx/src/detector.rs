@@ -76,7 +76,10 @@ impl DetectionMap {
             if expanded.short_side() < MIN_SIDE + 2.0 {
                 continue;
             }
-            regions.push(DetectedRegion { points: expanded.to_original(self), confidence });
+            regions.push(DetectedRegion {
+                points: expanded.to_original(self),
+                confidence,
+            });
         }
         regions
     }
@@ -96,7 +99,9 @@ impl PpOcrDetector {
     /// Returns an error when the entry is not installed or ONNX Runtime cannot
     /// build the detector session under the supplied provider policy.
     pub fn load(entry_id: &str, config: &aphrody_infer::SessionConfig) -> Result<Self> {
-        Ok(Self { model: aphrody_infer::load_catalog_role(entry_id, "detector", config)? })
+        Ok(Self {
+            model: aphrody_infer::load_catalog_role(entry_id, "detector", config)?,
+        })
     }
 
     /// Run the DB detector and return its raw probability map.
@@ -117,7 +122,10 @@ impl PpOcrDetector {
             .session
             .inputs()
             .first()
-            .ok_or_else(|| OnnxOcrError::MissingTensorSlot { kind: "input", count: 0 })?
+            .ok_or_else(|| OnnxOcrError::MissingTensorSlot {
+                kind: "input",
+                count: 0,
+            })?
             .name()
             .to_owned();
         let outputs = self
@@ -125,17 +133,24 @@ impl PpOcrDetector {
             .session
             .run(ort::inputs![input_name => TensorRef::from_array_view(&input)?])?;
         if outputs.len() == 0 {
-            return Err(OnnxOcrError::MissingTensorSlot { kind: "output", count: 0 });
+            return Err(OnnxOcrError::MissingTensorSlot {
+                kind: "output",
+                count: 0,
+            });
         }
         let output = outputs[0].try_extract_array::<f32>()?;
         let shape = output.shape();
         if shape.len() != 4 || shape[0] != 1 || shape[1] != 1 {
-            return Err(OnnxOcrError::UnexpectedOutputShape { shape: shape.to_vec() });
+            return Err(OnnxOcrError::UnexpectedOutputShape {
+                shape: shape.to_vec(),
+            });
         }
-        let width = u32::try_from(shape[3])
-            .map_err(|_| OnnxOcrError::UnexpectedOutputShape { shape: shape.to_vec() })?;
-        let height = u32::try_from(shape[2])
-            .map_err(|_| OnnxOcrError::UnexpectedOutputShape { shape: shape.to_vec() })?;
+        let width = u32::try_from(shape[3]).map_err(|_| OnnxOcrError::UnexpectedOutputShape {
+            shape: shape.to_vec(),
+        })?;
+        let height = u32::try_from(shape[2]).map_err(|_| OnnxOcrError::UnexpectedOutputShape {
+            shape: shape.to_vec(),
+        })?;
         let scores = output.iter().copied().collect();
         Ok(DetectionMap {
             scores,
@@ -168,7 +183,9 @@ fn preprocess(image: &DynamicImage) -> (Array4<f32>, u32, u32) {
         u32::try_from(u64::from(source_height) * u64::from(RESIZE_LONG) / u64::from(long_side))
             .expect("a resize-long dimension is at most 960"),
     );
-    let pixels = image.resize_exact(input_width, input_height, FilterType::Lanczos3).to_rgb8();
+    let pixels = image
+        .resize_exact(input_width, input_height, FilterType::Lanczos3)
+        .to_rgb8();
     let mut tensor = Array4::zeros((1, 3, input_height as usize, input_width as usize));
     for y in 0..input_height {
         for x in 0..input_width {
@@ -212,7 +229,11 @@ impl OrientedRect {
         let y_axis = unit(sub(self.corners[3], self.corners[0]));
         let width = self.width + 2.0 * distance;
         let height = self.height + 2.0 * distance;
-        Self { corners: rectangle_corners(center, x_axis, y_axis, width, height), width, height }
+        Self {
+            corners: rectangle_corners(center, x_axis, y_axis, width, height),
+            width,
+            height,
+        }
     }
 
     #[allow(clippy::cast_precision_loss)]
@@ -232,9 +253,9 @@ impl OrientedRect {
 
 /// Put an arbitrary rectangle's corners in clockwise, top-left-first order.
 fn normalise_quad(points: &mut [[f32; 2]; 4]) {
-    let center = points
-        .iter_mut()
-        .fold([0.0; 2], |total, point| [total[0] + point[0] / 4.0, total[1] + point[1] / 4.0]);
+    let center = points.iter_mut().fold([0.0; 2], |total, point| {
+        [total[0] + point[0] / 4.0, total[1] + point[1] / 4.0]
+    });
     points.sort_unstable_by(|left, right| {
         (left[1] - center[1])
             .atan2(left[0] - center[0])
@@ -293,14 +314,22 @@ fn minimum_area_rectangle(points: &[[f32; 2]]) -> Option<OrientedRect> {
         return None;
     }
     let mut best: Option<(OrientedRect, f32)> = None;
-    for (first, second) in hull.iter().zip(hull.iter().cycle().skip(1)).take(hull.len()) {
+    for (first, second) in hull
+        .iter()
+        .zip(hull.iter().cycle().skip(1))
+        .take(hull.len())
+    {
         let x_axis = unit(sub(*second, *first));
         if x_axis == [0.0, 0.0] {
             continue;
         }
         let y_axis = [-x_axis[1], x_axis[0]];
-        let (mut min_x, mut max_x, mut min_y, mut max_y) =
-            (f32::INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::NEG_INFINITY);
+        let (mut min_x, mut max_x, mut min_y, mut max_y) = (
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+        );
         for point in &hull {
             let x = dot(*point, x_axis);
             let y = dot(*point, y_axis);
@@ -312,8 +341,10 @@ fn minimum_area_rectangle(points: &[[f32; 2]]) -> Option<OrientedRect> {
         let width = max_x - min_x;
         let height = max_y - min_y;
         let area = width * height;
-        let center =
-            add(scale(x_axis, min_x.midpoint(max_x)), scale(y_axis, min_y.midpoint(max_y)));
+        let center = add(
+            scale(x_axis, min_x.midpoint(max_x)),
+            scale(y_axis, min_y.midpoint(max_y)),
+        );
         let rect = OrientedRect {
             corners: rectangle_corners(center, x_axis, y_axis, width, height),
             width,
@@ -329,7 +360,9 @@ fn minimum_area_rectangle(points: &[[f32; 2]]) -> Option<OrientedRect> {
 fn convex_hull(points: &[[f32; 2]]) -> Vec<[f32; 2]> {
     let mut points = points.to_vec();
     points.sort_unstable_by(|left, right| {
-        left[0].total_cmp(&right[0]).then(left[1].total_cmp(&right[1]))
+        left[0]
+            .total_cmp(&right[0])
+            .then(left[1].total_cmp(&right[1]))
     });
     points.dedup();
     let mut lower = Vec::new();
@@ -356,11 +389,19 @@ fn convex_hull(points: &[[f32; 2]]) -> Vec<[f32; 2]> {
     lower
 }
 
-#[allow(clippy::cast_possible_truncation, clippy::cast_precision_loss, clippy::cast_sign_loss)]
+#[allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss
+)]
 fn mean_score(map: &DetectionMap, rect: &OrientedRect) -> f32 {
-    let min_x =
-        rect.corners.iter().map(|point| point[0]).fold(f32::INFINITY, f32::min).floor().max(0.0)
-            as u32;
+    let min_x = rect
+        .corners
+        .iter()
+        .map(|point| point[0])
+        .fold(f32::INFINITY, f32::min)
+        .floor()
+        .max(0.0) as u32;
     let max_x = rect
         .corners
         .iter()
@@ -368,9 +409,13 @@ fn mean_score(map: &DetectionMap, rect: &OrientedRect) -> f32 {
         .fold(f32::NEG_INFINITY, f32::max)
         .ceil()
         .min(map.width as f32 - 1.0) as u32;
-    let min_y =
-        rect.corners.iter().map(|point| point[1]).fold(f32::INFINITY, f32::min).floor().max(0.0)
-            as u32;
+    let min_y = rect
+        .corners
+        .iter()
+        .map(|point| point[1])
+        .fold(f32::INFINITY, f32::min)
+        .floor()
+        .max(0.0) as u32;
     let max_y = rect
         .corners
         .iter()
@@ -441,7 +486,11 @@ fn scale(point: [f32; 2], factor: f32) -> [f32; 2] {
 }
 fn unit(point: [f32; 2]) -> [f32; 2] {
     let length = dot(point, point).sqrt();
-    if length <= f32::EPSILON { [0.0, 0.0] } else { scale(point, 1.0 / length) }
+    if length <= f32::EPSILON {
+        [0.0, 0.0]
+    } else {
+        scale(point, 1.0 / length)
+    }
 }
 
 #[cfg(test)]
@@ -486,7 +535,13 @@ mod tests {
                 .iter()
                 .all(|[x, y]| *x >= 0.0 && *x <= 200.0 && *y >= 0.0 && *y <= 100.0)
         );
-        assert!(cross(regions[0].points[0], regions[0].points[1], regions[0].points[2]) > 0.0);
+        assert!(
+            cross(
+                regions[0].points[0],
+                regions[0].points[1],
+                regions[0].points[2]
+            ) > 0.0
+        );
     }
 
     #[test]

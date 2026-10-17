@@ -15,15 +15,15 @@ use bevy_ecs::{
         *,
     },
 };
-use bevy_math::{vec2, Affine2, FloatOrd, Vec2};
+use bevy_math::{Affine2, FloatOrd, Vec2, vec2};
 use bevy_mesh::VertexBufferLayout;
 use bevy_render::sync_world::{MainEntity, MainEntityHashMap, MainEntityHashSet};
 use bevy_render::{
+    Extract, ExtractSchedule, Render, RenderSystems,
     render_phase::*,
     render_resource::{binding_types::uniform_buffer, *},
     renderer::{RenderDevice, RenderQueue},
     view::*,
-    Extract, ExtractSchedule, Render, RenderSystems,
 };
 use bevy_render::{GpuResourceAppExt, RenderApp, RenderStartup};
 use bevy_shader::{Shader, ShaderDefVal};
@@ -35,10 +35,10 @@ use bevy_utils::default;
 use bytemuck::{Pod, Zeroable};
 
 use crate::{
-    clipping::clip_polygon, BoxShadowSamples, RenderUiSystems, TransparentUi, UiCameraMap,
+    BoxShadowSamples, RenderUiSystems, TransparentUi, UiCameraMap, clipping::clip_polygon,
 };
 
-use super::{stack_z_offsets, UiCameraView, QUAD_VERTEX_POSITIONS};
+use super::{QUAD_VERTEX_POSITIONS, UiCameraView, stack_z_offsets};
 
 /// A plugin that enables the rendering of box shadows.
 pub struct BoxShadowPlugin;

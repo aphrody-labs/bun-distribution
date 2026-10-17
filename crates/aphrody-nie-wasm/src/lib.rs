@@ -209,15 +209,21 @@ const MAX_ASSEMBLY_OUTPUT_BYTES: usize = 64 * 1024;
 
 fn assemble_x64_impl(source: &str, virtual_address: u64) -> Result<Vec<u8>, String> {
     if source.len() > MAX_ASSEMBLY_SOURCE_BYTES {
-        return Err(format!("assembly source exceeds {MAX_ASSEMBLY_SOURCE_BYTES} bytes"));
+        return Err(format!(
+            "assembly source exceeds {MAX_ASSEMBLY_SOURCE_BYTES} bytes"
+        ));
     }
     let instructions = aphrody_nie_asm::parse_line(source).map_err(|error| error.to_string())?;
     if instructions.len() > MAX_ASSEMBLY_INSTRUCTIONS {
-        return Err(format!("assembly source exceeds {MAX_ASSEMBLY_INSTRUCTIONS} instructions"));
+        return Err(format!(
+            "assembly source exceeds {MAX_ASSEMBLY_INSTRUCTIONS} instructions"
+        ));
     }
     let bytes = aphrody_nie_asm::encode_at(&instructions, virtual_address);
     if bytes.len() > MAX_ASSEMBLY_OUTPUT_BYTES {
-        return Err(format!("assembly output exceeds {MAX_ASSEMBLY_OUTPUT_BYTES} bytes"));
+        return Err(format!(
+            "assembly output exceeds {MAX_ASSEMBLY_OUTPUT_BYTES} bytes"
+        ));
     }
     Ok(bytes)
 }
@@ -293,9 +299,12 @@ const MAX_MINIDUMP_INPUT_BYTES: usize = 128 * 1024 * 1024;
 
 fn minidump_summary_impl(bytes: &[u8]) -> Result<String, String> {
     if bytes.len() > MAX_MINIDUMP_INPUT_BYTES {
-        return Err(format!("minidump input exceeds {MAX_MINIDUMP_INPUT_BYTES} bytes"));
+        return Err(format!(
+            "minidump input exceeds {MAX_MINIDUMP_INPUT_BYTES} bytes"
+        ));
     }
-    let dump = aphrody_re::minidump::Minidump::from_bytes(bytes).map_err(|error| error.to_string())?;
+    let dump =
+        aphrody_re::minidump::Minidump::from_bytes(bytes).map_err(|error| error.to_string())?;
     let summary = dump.summary();
     Ok(serde_json::json!({
         "schemaVersion": 1,
@@ -426,13 +435,17 @@ fn knowledge_search_impl(
     max_results: u32,
 ) -> Result<String, String> {
     if entries_json.len() > MAX_KNOWLEDGE_INDEX_JSON_BYTES {
-        return Err(format!("knowledge index JSON exceeds {MAX_KNOWLEDGE_INDEX_JSON_BYTES} bytes"));
+        return Err(format!(
+            "knowledge index JSON exceeds {MAX_KNOWLEDGE_INDEX_JSON_BYTES} bytes"
+        ));
     }
     let entries: Vec<aphrody_nie_index::memory::KnowledgeEntry> =
         serde_json::from_str(entries_json).map_err(|error| error.to_string())?;
     let index =
         aphrody_nie_index::memory::MemoryIndex::new(entries).map_err(|error| error.to_string())?;
-    let result = index.search(query, max_results as usize).map_err(|error| error.to_string())?;
+    let result = index
+        .search(query, max_results as usize)
+        .map_err(|error| error.to_string())?;
     serde_json::to_string(&result).map_err(|error| error.to_string())
 }
 
@@ -478,8 +491,12 @@ pub fn headless_inspect_json(bytes: &[u8]) -> Result<String, String> {
 fn editor_add_object_impl(project_json: &str, object_json: &str) -> Result<String, String> {
     let mut session = aphrody_nie_editor::EditorSession::from_json(project_json.as_bytes())
         .map_err(|error| error.to_string())?;
-    session.add_object_json(object_json).map_err(|error| error.to_string())?;
-    let bytes = session.to_json_pretty().map_err(|error| error.to_string())?;
+    session
+        .add_object_json(object_json)
+        .map_err(|error| error.to_string())?;
+    let bytes = session
+        .to_json_pretty()
+        .map_err(|error| error.to_string())?;
     String::from_utf8(bytes).map_err(|error| error.to_string())
 }
 
@@ -516,8 +533,10 @@ impl WasmEditorSession {
 
     /// Serializes the current validated scene project.
     pub fn project_json(&self) -> Result<String, JsValue> {
-        let bytes =
-            self.inner.to_json_pretty().map_err(|error| JsValue::from_str(&error.to_string()))?;
+        let bytes = self
+            .inner
+            .to_json_pretty()
+            .map_err(|error| JsValue::from_str(&error.to_string()))?;
         String::from_utf8(bytes).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
@@ -548,8 +567,10 @@ impl WasmEditorSession {
 
     /// Removes the selected object and returns its JSON representation.
     pub fn remove_selected_json(&mut self) -> Result<String, JsValue> {
-        let removed =
-            self.inner.remove_selected().map_err(|error| JsValue::from_str(&error.to_string()))?;
+        let removed = self
+            .inner
+            .remove_selected()
+            .map_err(|error| JsValue::from_str(&error.to_string()))?;
         serde_json::to_string(&removed).map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
@@ -680,7 +701,9 @@ fn steam_select_depots_impl(depots_json: &str, selection_json: &str) -> Result<S
     if depots_json.len() > MAX_STEAM_PLANNING_JSON_BYTES
         || selection_json.len() > MAX_STEAM_PLANNING_JSON_BYTES
     {
-        return Err(format!("Steam planning JSON exceeds {MAX_STEAM_PLANNING_JSON_BYTES} bytes"));
+        return Err(format!(
+            "Steam planning JSON exceeds {MAX_STEAM_PLANNING_JSON_BYTES} bytes"
+        ));
     }
     let depots: Vec<bun_steam::depot::planning::DepotRecord> =
         serde_json::from_str(depots_json).map_err(|error| error.to_string())?;
@@ -735,22 +758,30 @@ impl WasmTaskPlan {
 
     /// Marks the queued task as running.
     pub fn start(&mut self) -> Result<(), JsValue> {
-        self.inner.start().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .start()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Pauses a running task at its next cooperative checkpoint.
     pub fn pause(&mut self) -> Result<(), JsValue> {
-        self.inner.pause().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .pause()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Resumes a paused task.
     pub fn resume(&mut self) -> Result<(), JsValue> {
-        self.inner.resume().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .resume()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Requests cooperative cancellation.
     pub fn request_cancel(&mut self) -> Result<(), JsValue> {
-        self.inner.request_cancel().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .request_cancel()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Records bounded progress.
@@ -767,22 +798,30 @@ impl WasmTaskPlan {
 
     /// Marks the task as completed.
     pub fn complete(&mut self) -> Result<(), JsValue> {
-        self.inner.complete().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .complete()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Confirms that a cancellation request reached a checkpoint.
     pub fn confirm_canceled(&mut self) -> Result<(), JsValue> {
-        self.inner.confirm_canceled().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .confirm_canceled()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Marks the task as failed.
     pub fn fail(&mut self) -> Result<(), JsValue> {
-        self.inner.fail().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .fail()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 
     /// Serializes the current phase, progress and available controls.
     pub fn snapshot_json(&self) -> Result<String, JsValue> {
-        self.inner.snapshot_json().map_err(|error| JsValue::from_str(&error.to_string()))
+        self.inner
+            .snapshot_json()
+            .map_err(|error| JsValue::from_str(&error.to_string()))
     }
 }
 
@@ -805,7 +844,9 @@ impl WasmFrontier {
             max_batch as usize,
         )
         .map_err(|error| JsValue::from_str(&error.to_string()))?;
-        Ok(WasmFrontier { inner: aphrody_nie_queue::MemoryFrontier::new(limits) })
+        Ok(WasmFrontier {
+            inner: aphrody_nie_queue::MemoryFrontier::new(limits),
+        })
     }
 
     /// Pushes one address and returns its stable outcome name.
@@ -826,8 +867,11 @@ impl WasmFrontier {
 
     /// Returns a precision-safe JSON snapshot of the pending addresses and counts.
     pub fn snapshot_json(&self) -> String {
-        let pending: Vec<String> =
-            self.inner.pending().map(|address| address.to_string()).collect();
+        let pending: Vec<String> = self
+            .inner
+            .pending()
+            .map(|address| address.to_string())
+            .collect();
         serde_json::json!({
             "schemaVersion": 1,
             "pending": pending,
@@ -927,8 +971,11 @@ fn serialiser_utf(bytes: &[u8]) -> Result<String, String> {
         })
         .collect();
 
-    let lignes: Vec<Vec<serde_json::Value>> =
-        table.rows.iter().map(|row| row.iter().map(utf_value_to_json).collect()).collect();
+    let lignes: Vec<Vec<serde_json::Value>> = table
+        .rows
+        .iter()
+        .map(|row| row.iter().map(utf_value_to_json).collect())
+        .collect();
 
     let obj = serde_json::json!({
         "nom":     table.name,
@@ -960,7 +1007,7 @@ fn utf_value_to_json(v: &cpk::UtfValue) -> serde_json::Value {
         UtfValue::Bytes(b) => {
             // Les blobs sont encodés en tableau d'entiers pour rester JSON-pur.
             serde_json::json!(b)
-        },
+        }
     }
 }
 
@@ -1002,8 +1049,13 @@ pub fn calculate_stats(
     use aphrody_nie_core::growth::{GrowthParams, GrowthTables, calculate_stats as core_calc};
 
     let tables = GrowthTables::load_embedded();
-    let params =
-        GrowthParams { main_position, sub_position, growth_pattern, chara_rank, play_style };
+    let params = GrowthParams {
+        main_position,
+        sub_position,
+        growth_pattern,
+        chara_rank,
+        play_style,
+    };
     let block = core_calc(&tables, &params, level);
     serde_json::json!({
         "stats": block,
@@ -1074,7 +1126,10 @@ fn match_tick_impl(state: &str, is_training: bool, end_counter: i32) -> Result<S
     use aphrody_nie_core::match_fsm::{MatchContext, tick};
 
     let s = parse_match_state(state).ok_or_else(|| alloc_format_unknown_state(state))?;
-    let ctx = MatchContext { is_training, end_counter };
+    let ctx = MatchContext {
+        is_training,
+        end_counter,
+    };
     let t = tick(s, ctx);
     serde_json::json!({
         "next": t.next,
@@ -1163,7 +1218,9 @@ fn skill_lookup_impl(skill_config_json: &str, skill_text_json: &str) -> Result<S
         })
         .collect();
 
-    serde_json::json!({ "count": out.len(), "skills": out }).to_string().pipe_ok()
+    serde_json::json!({ "count": out.len(), "skills": out })
+        .to_string()
+        .pipe_ok()
 }
 
 /// Parse un `skill_config.cfg.bin.json` (et un `skill_text.cfg.bin.json` optionnel)
@@ -1222,7 +1279,9 @@ fn aura_lookup_impl(aura_config_json: &str, skill_config_json: &str) -> Result<S
         })
         .collect();
 
-    serde_json::json!({ "count": out.len(), "auras": out }).to_string().pipe_ok()
+    serde_json::json!({ "count": out.len(), "auras": out })
+        .to_string()
+        .pipe_ok()
 }
 
 /// Parse un `aura_skill_config.cfg.bin.json` (et un `skill_config.cfg.bin.json`
@@ -1270,7 +1329,9 @@ fn item_lookup_impl(item_config_json: &str) -> Result<String, String> {
         })
         .collect();
 
-    serde_json::json!({ "count": out.len(), "items": out }).to_string().pipe_ok()
+    serde_json::json!({ "count": out.len(), "items": out })
+        .to_string()
+        .pipe_ok()
 }
 
 /// Parse un `item_config.cfg.bin.json` et retourne les objets (catégorie + stats).
@@ -1441,7 +1502,7 @@ fn cfgbin_typed_json_impl(bytes: &[u8], filename: &str) -> Result<String, String
         Some((family, data)) => serde_json::json!({ "family": family, "data": data }),
         None => {
             serde_json::json!({ "family": serde_json::Value::Null, "key": key, "generic": root })
-        },
+        }
     };
     serde_json::to_string(&out).map_err(|e| e.to_string())
 }
@@ -1536,8 +1597,11 @@ pub fn cfgbin_lookup_text(bytes: &[u8], target_hash: u32) -> Option<String> {
 fn lua_bytecode_json_impl(bytes: &[u8]) -> Result<String, String> {
     let chunk = aphrody_nie_lua::bytecode::parse(bytes).map_err(|e| e.to_string())?;
     let proto = &chunk.main;
-    let constantes: Vec<serde_json::Value> =
-        proto.constants.iter().map(|c| serde_json::Value::String(c.display())).collect();
+    let constantes: Vec<serde_json::Value> = proto
+        .constants
+        .iter()
+        .map(|c| serde_json::Value::String(c.display()))
+        .collect();
     let out = serde_json::json!({
         "instructions": proto.total_instructions(),
         "prototypes": proto.total_protos(),
@@ -1689,7 +1753,7 @@ fn avatar_reference_import_json_impl(
                 "referenceOnly": reference_only,
             }))
             .map_err(|error| error.to_string())
-        },
+        }
         other => serde_json::to_string(&other).map_err(|error| error.to_string()),
     }
 }
@@ -2088,7 +2152,9 @@ pub fn cpk_extract_file(
         .map_err(|e| JsValue::from_str(&e.to_string()))?;
     let entry: aphrody_nie_formats::cpk::CpkEntry =
         serde_json::from_str(entry_json).map_err(|e| JsValue::from_str(&e.to_string()))?;
-    reader.extract(cpk_bytes, &entry).map_err(|e| JsValue::from_str(&e.to_string()))
+    reader
+        .extract(cpk_bytes, &entry)
+        .map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 /// Extrait et décompresse un fichier d'un CPK (version native).
@@ -2166,8 +2232,9 @@ fn parse_save_impl(bytes: &[u8], filename: &str) -> Result<String, String> {
         .collect();
 
     // --- Parse HEADERSAVE si présent ---
-    let headersave_json: Option<serde_json::Value> =
-        container.blob_by_subtype(BlobSubtype::Headersave).and_then(|blob| {
+    let headersave_json: Option<serde_json::Value> = container
+        .blob_by_subtype(BlobSubtype::Headersave)
+        .and_then(|blob| {
             parse_headersave(&blob.body).ok().map(|hs| {
                 let ts = &hs.save_timestamp;
                 let slots: Vec<serde_json::Value> = hs
@@ -2216,8 +2283,9 @@ fn parse_save_impl(bytes: &[u8], filename: &str) -> Result<String, String> {
         });
 
     // --- Parse AUTOSAVE (layout + roster + scalaires) si présent ---
-    let autosave_json: Option<serde_json::Value> =
-        container.blob_by_subtype(BlobSubtype::Autosave).and_then(|blob| {
+    let autosave_json: Option<serde_json::Value> = container
+        .blob_by_subtype(BlobSubtype::Autosave)
+        .and_then(|blob| {
             // Layout macroscopique (sections + table CharaParam)
             let layout = parse_autosave_layout(&blob.body).ok()?;
 
@@ -2421,8 +2489,12 @@ fn screen_snapshot(screen: &aphrody_nie_app::flow::Screen) -> Result<String, Str
                     "players": players,
                 },
             })
-        },
-        aphrody_nie_app::flow::Screen::Story { idx, titre, repliques } => serde_json::json!({
+        }
+        aphrody_nie_app::flow::Screen::Story {
+            idx,
+            titre,
+            repliques,
+        } => serde_json::json!({
             "schemaVersion": 1,
             "screen": {
                 "kind": "story",
@@ -2657,7 +2729,9 @@ impl WasmCamera {
 
     /// Serializes camera state, orbit values, and row-major view/projection matrices.
     pub fn state_json(&self, aspect: f32) -> Result<String, JsValue> {
-        self.timeline.state_json(aspect).map_err(|error| JsValue::from_str(&error))
+        self.timeline
+            .state_json(aspect)
+            .map_err(|error| JsValue::from_str(&error))
     }
 }
 
@@ -2685,8 +2759,10 @@ impl WasmBitmapFont {
 
     /// Color is packed RGBA, independent of host endianness.
     pub fn render(&mut self, text: &str, color: u32) -> Result<Vec<u8>, JsValue> {
-        let frame =
-            self.font.render(text, color.to_be_bytes()).map_err(|e| JsValue::from_str(&e))?;
+        let frame = self
+            .font
+            .render(text, color.to_be_bytes())
+            .map_err(|e| JsValue::from_str(&e))?;
         self.width = frame.width;
         self.height = frame.height;
         Ok(frame.rgba)
@@ -2772,7 +2848,9 @@ impl WasmGame {
 
     /// Index of the home player controlled by the browser, or `undefined` outside a match.
     pub fn controlled_player(&self) -> Option<u32> {
-        self.screen.controlled_player().and_then(|index| u32::try_from(index).ok())
+        self.screen
+            .controlled_player()
+            .and_then(|index| u32::try_from(index).ok())
     }
 
     /// Title of a data-backed screen whose rows the browser may now provide.
@@ -2932,7 +3010,9 @@ impl PreloadedVfs {
     }
 
     pub fn index_json(&self) -> Result<String, JsValue> {
-        self.bundle.index_json().map_err(|error| JsValue::from_str(&error))
+        self.bundle
+            .index_json()
+            .map_err(|error| JsValue::from_str(&error))
     }
 
     pub fn has(&self, path: &str) -> bool {
@@ -2957,7 +3037,9 @@ mod tests {
 
     #[cfg(target_arch = "wasm32")]
     fn error_text(error: JsValue) -> String {
-        error.as_string().expect("the binding returns a string diagnostic")
+        error
+            .as_string()
+            .expect("the binding returns a string diagnostic")
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -2981,7 +3063,10 @@ mod tests {
         // layout le nomme, puis son seul nom de fichier. L'hôte sert l'un ou l'autre selon son
         // montage — `nie-site` résout le chemin, un dossier extrait ne porte que le basename —
         // et n'en demander qu'une laisserait l'autre moitié des hôtes sans texture.
-        assert_eq!(compose.required_assets(), ["menu/absent.g4tx", "absent.g4tx"]);
+        assert_eq!(
+            compose.required_assets(),
+            ["menu/absent.g4tx", "absent.g4tx"]
+        );
 
         let assets = AssetsNavigateur::default();
         assert!(assets.g4tx("absent.g4tx").is_none());
@@ -3022,7 +3107,10 @@ mod tests {
         let actual: aphrody_nie_lua::menu_scene::MenuScene = serde_json::from_str(&output).unwrap();
         assert_eq!(actual, expected);
         assert_eq!(actual.layers.len(), 2);
-        assert_eq!(actual.layers[&10].objects[&20].sub_items[&0].params[&15], 25);
+        assert_eq!(
+            actual.layers[&10].objects[&20].sub_items[&0].params[&15],
+            25
+        );
         assert!(actual.layers[&11].objects[&20].visible);
         assert_eq!(serde_json::to_string(&expected).unwrap(), output);
     }
@@ -3047,7 +3135,10 @@ mod tests {
 
     #[test]
     fn detect_format_crilayla() {
-        assert_eq!(detect_format(b"CRILAYLA\x00\x00\x00\x00\x00\x00\x00\x00"), "CRILAYLA");
+        assert_eq!(
+            detect_format(b"CRILAYLA\x00\x00\x00\x00\x00\x00\x00\x00"),
+            "CRILAYLA"
+        );
     }
 
     #[test]
@@ -3079,11 +3170,17 @@ mod tests {
 
         let g4pkm_error = menu_static_layer_json(&objbin, b"invalid", &g4tx, "layer.g4tx")
             .expect_err("invalid G4PKM must never yield a static layer");
-        assert!(!error_text(g4pkm_error).is_empty(), "the G4PKM parser must return a diagnostic");
+        assert!(
+            !error_text(g4pkm_error).is_empty(),
+            "the G4PKM parser must return a diagnostic"
+        );
 
         let g4tx_error = menu_static_layer_json(&objbin, &g4pkm, b"invalid", "layer.g4tx")
             .expect_err("invalid G4TX must never yield a static layer");
-        assert!(!error_text(g4tx_error).is_empty(), "the G4TX parser must return a diagnostic");
+        assert!(
+            !error_text(g4tx_error).is_empty(),
+            "the G4TX parser must return a diagnostic"
+        );
     }
 
     #[test]
@@ -3176,18 +3273,34 @@ mod tests {
             .collect();
         let crc = aphrody_nie_formats::cfgbin::crc32;
         let mut entries = Vec::new();
-        append_entry(&mut entries, crc(b"OBJ_BGN"), &[Value::Text("synthetic_layer")], &offsets);
-        append_entry(&mut entries, crc(b"SETUP_BGN"), &[Value::Text("gmdMenuObj")], &offsets);
         append_entry(
             &mut entries,
-            crc(b"SETUP_PARAM"),
-            &[Value::Text("SkeletonAnime"), Value::Text("data/dx11/menu/layer.g4pkm")],
+            crc(b"OBJ_BGN"),
+            &[Value::Text("synthetic_layer")],
+            &offsets,
+        );
+        append_entry(
+            &mut entries,
+            crc(b"SETUP_BGN"),
+            &[Value::Text("gmdMenuObj")],
             &offsets,
         );
         append_entry(
             &mut entries,
             crc(b"SETUP_PARAM"),
-            &[Value::Text("Texture"), Value::Text("data/dx11/menu/layer.g4tx")],
+            &[
+                Value::Text("SkeletonAnime"),
+                Value::Text("data/dx11/menu/layer.g4pkm"),
+            ],
+            &offsets,
+        );
+        append_entry(
+            &mut entries,
+            crc(b"SETUP_PARAM"),
+            &[
+                Value::Text("Texture"),
+                Value::Text("data/dx11/menu/layer.g4tx"),
+            ],
             &offsets,
         );
         append_entry(&mut entries, crc(b"SETUP_END"), &[], &offsets);
@@ -3270,7 +3383,10 @@ mod tests {
         assert_eq!(json["schemaVersion"], 1);
         assert_eq!(json["path"], "data/sound/voice.awb");
         assert_eq!(json["recognized"], true);
-        assert_eq!(json["lines"][0], "format      AWB/AFS2 (banque audio Criware)");
+        assert_eq!(
+            json["lines"][0],
+            "format      AWB/AFS2 (banque audio Criware)"
+        );
     }
 
     #[test]
@@ -3294,7 +3410,11 @@ mod tests {
         assert_eq!(json["format"], "unknown");
         assert_eq!(json["size"], bytes.len());
         assert_eq!(json["sha256"].as_str().map(str::len), Some(64));
-        assert!(json["strings_sample"].as_array().is_some_and(|rows| rows.len() <= 256));
+        assert!(
+            json["strings_sample"]
+                .as_array()
+                .is_some_and(|rows| rows.len() <= 256)
+        );
     }
 
     #[test]
@@ -3314,7 +3434,10 @@ mod tests {
                 .expect("PE diff should serialize");
         assert_eq!(json["bytesDiffering"], 3);
         assert_eq!(json["identical"], false);
-        assert_eq!(json["ranges"], serde_json::json!([{ "offset": 1, "length": 2 }]));
+        assert_eq!(
+            json["ranges"],
+            serde_json::json!([{ "offset": 1, "length": 2 }])
+        );
     }
 
     #[test]
@@ -3494,9 +3617,14 @@ mod tests {
         // Un projet v1 s'ouvre et se réenregistre en v2 : c'est la migration, pas une perte.
         assert_eq!(json["version"], 2);
         assert_eq!(json["objects"][0]["name"], "mainmenu01-preview");
-        assert_eq!(json["objects"][0]["rotation"], serde_json::json!([0.0, 0.0, 0.0, 1.0]));
+        assert_eq!(
+            json["objects"][0]["rotation"],
+            serde_json::json!([0.0, 0.0, 0.0, 1.0])
+        );
         assert!(
-            json["objects"][0]["id"].as_str().is_some_and(|id| !id.is_empty()),
+            json["objects"][0]["id"]
+                .as_str()
+                .is_some_and(|id| !id.is_empty()),
             "la session frappe un identifiant : {json}"
         );
         assert_eq!(
@@ -3535,7 +3663,10 @@ mod tests {
         .expect("model catalog should be valid JSON");
         assert_eq!(json["source"], "chara_model_0.07.22.cfg.bin");
         assert_eq!(json["bodies"]["7"]["type_idx"], 1);
-        assert_eq!(json["bodies"]["7"]["objbin"], "_common/c000101/c000101.objbin");
+        assert_eq!(
+            json["bodies"]["7"]["objbin"],
+            "_common/c000101/c000101.objbin"
+        );
     }
 
     #[test]
@@ -3643,33 +3774,44 @@ mod tests {
     fn camera_snapshot_exposes_verified_state_orbit_and_matrices() {
         let camera = CameraTimeline::default();
         let json: serde_json::Value = serde_json::from_str(
-            &camera.state_json(16.0 / 9.0).expect("default camera should serialize"),
+            &camera
+                .state_json(16.0 / 9.0)
+                .expect("default camera should serialize"),
         )
         .expect("camera state should be valid JSON");
 
         assert_eq!(json["schemaVersion"], 1);
         assert_eq!(json["active"], false);
         assert_eq!(json["position"], serde_json::json!([0.0, 2.5, 10.0]));
-        assert_eq!(json["referencePosition"], serde_json::json!([0.0, 0.0, 0.0]));
+        assert_eq!(
+            json["referencePosition"],
+            serde_json::json!([0.0, 0.0, 0.0])
+        );
         assert_eq!(json["fovDegrees"], 45.0);
         assert_eq!(json["orbit"]["distance"], camera.state.length());
         let assert_matrix = |actual: &serde_json::Value, expected: [[f32; 4]; 4]| {
             let rows = actual.as_array().expect("matrix should be an array");
             assert_eq!(rows.len(), 4);
             for (actual_row, expected_row) in rows.iter().zip(expected) {
-                let values = actual_row.as_array().expect("matrix row should be an array");
+                let values = actual_row
+                    .as_array()
+                    .expect("matrix row should be an array");
                 assert_eq!(values.len(), 4);
                 for (actual_value, expected_value) in values.iter().zip(expected_row) {
-                    let difference =
-                        (actual_value.as_f64().expect("matrix value should be numeric")
-                            - f64::from(expected_value))
-                        .abs();
+                    let difference = (actual_value
+                        .as_f64()
+                        .expect("matrix value should be numeric")
+                        - f64::from(expected_value))
+                    .abs();
                     assert!(difference < 1e-6, "matrix value differs by {difference}");
                 }
             }
         };
         assert_matrix(&json["viewMatrix"], camera.state.view_matrix());
-        assert_matrix(&json["projectionMatrix"], camera.state.projection_matrix(16.0 / 9.0));
+        assert_matrix(
+            &json["projectionMatrix"],
+            camera.state.projection_matrix(16.0 / 9.0),
+        );
         assert!(camera.state_json(0.0).is_err());
         assert!(camera.state_json(f32::NAN).is_err());
     }
@@ -3685,7 +3827,9 @@ mod tests {
             near: 0.2,
             far: 800.0,
         };
-        camera.transition_to(target, 2.0, 0).expect("valid transition should start");
+        camera
+            .transition_to(target, 2.0, 0)
+            .expect("valid transition should start");
 
         camera.step(f32::NAN);
         camera.step(-1.0);
@@ -3713,21 +3857,38 @@ mod tests {
             pos: [10.0, 2.5, 10.0],
             ..aphrody_nie_camera::CameraState::default()
         };
-        camera.transition_to(target, 4.0, 6).expect("observed fade code should start");
+        camera
+            .transition_to(target, 4.0, 6)
+            .expect("observed fade code should start");
         camera.step(1.0);
         assert_eq!(camera.state.pos[0], 1.5625);
 
-        camera.transition_to(target, 0.0, 0).expect("zero duration should snap");
+        camera
+            .transition_to(target, 0.0, 0)
+            .expect("zero duration should snap");
         assert_eq!(camera.state, target);
         assert!(!camera.active());
 
-        let invalid_fov = aphrody_nie_camera::CameraState { fov_deg: 180.0, ..target };
+        let invalid_fov = aphrody_nie_camera::CameraState {
+            fov_deg: 180.0,
+            ..target
+        };
         assert!(camera.transition_to(invalid_fov, 1.0, 0).is_err());
-        let invalid_clip = aphrody_nie_camera::CameraState { near: 2.0, far: 1.0, ..target };
+        let invalid_clip = aphrody_nie_camera::CameraState {
+            near: 2.0,
+            far: 1.0,
+            ..target
+        };
         assert!(camera.transition_to(invalid_clip, 1.0, 0).is_err());
-        let coincident = aphrody_nie_camera::CameraState { ref_pos: target.pos, ..target };
+        let coincident = aphrody_nie_camera::CameraState {
+            ref_pos: target.pos,
+            ..target
+        };
         assert!(camera.transition_to(coincident, 1.0, 0).is_err());
-        let overflow = aphrody_nie_camera::CameraState { pos: [3.0e38, 3.0e38, 3.0e38], ..target };
+        let overflow = aphrody_nie_camera::CameraState {
+            pos: [3.0e38, 3.0e38, 3.0e38],
+            ..target
+        };
         assert!(camera.transition_to(overflow, 1.0, 0).is_err());
         let vertical = aphrody_nie_camera::CameraState {
             pos: [0.0, 10.0, 0.0],
@@ -3855,9 +4016,17 @@ mod tests {
         assert_eq!(json["world"]["input"]["direction"]["y"], 4.0);
         assert_eq!(json["world"]["input"]["shoot"], true);
         assert!(json["world"]["controlledPlayer"].is_number());
-        let players = json["world"]["players"].as_array().expect("players should be an array");
+        let players = json["world"]["players"]
+            .as_array()
+            .expect("players should be an array");
         assert_eq!(players.len(), 22);
-        assert_eq!(players.iter().filter(|player| player["role"] == "goalkeeper").count(), 2);
+        assert_eq!(
+            players
+                .iter()
+                .filter(|player| player["role"] == "goalkeeper")
+                .count(),
+            2
+        );
         assert!(json["world"]["ball"]["position"]["z"].is_number());
     }
 
@@ -3972,7 +4141,10 @@ mod tests {
 
         // Test cfgbin_lookup_text
         assert_eq!(cfgbin_lookup_text(&bytes, 100_001), Some("Retour".into()));
-        assert_eq!(cfgbin_lookup_text(&bytes, 100_002), Some("Paramètres".into()));
+        assert_eq!(
+            cfgbin_lookup_text(&bytes, 100_002),
+            Some("Paramètres".into())
+        );
         assert_eq!(cfgbin_lookup_text(&bytes, 999_999), None);
     }
 
@@ -4252,7 +4424,10 @@ mod tests {
         let out = aura_lookup(&aura_config_fixture(), &skill_config).expect("ok");
         let json: serde_json::Value = serde_json::from_str(&out).expect("JSON valide");
         let h = &json["auras"][0]["hissatsu"];
-        assert!(!h.is_null(), "skillId1 doit résoudre vers le skill_config fourni");
+        assert!(
+            !h.is_null(),
+            "skillId1 doit résoudre vers le skill_config fourni"
+        );
         // `AuraHissatsu` est sérialisé tel quel par serde → clés snake_case.
         assert_eq!(h["skill_id_str"], "wks00020_hit");
         assert_eq!(h["element"], "Fire");
@@ -4395,7 +4570,10 @@ mod tests {
 
         // Le blob HEADERSAVE body fait 4 octets (trop court pour parse_headersave) →
         // headersave doit être null (pas d'erreur fatale).
-        assert!(json["headersave"].is_null(), "headersave null sur body trop court");
+        assert!(
+            json["headersave"].is_null(),
+            "headersave null sur body trop court"
+        );
         // Pas de blob AUTOSAVE → autosave null.
         assert!(json["autosave"].is_null());
     }
@@ -4435,15 +4613,22 @@ mod tests_sprite_sheet {
     fn feuille_de_sprites_d_un_atlas_reel() {
         use std::path::Path;
 
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data_dir = Path::new(&dir).join("data");
         let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
         if vfs.init(&data_dir).is_err() {
-            eprintln!("skip feuille_de_sprites : jeu absent à {}", data_dir.display());
+            eprintln!(
+                "skip feuille_de_sprites : jeu absent à {}",
+                data_dir.display()
+            );
             return;
         }
-        let Some(chemin) =
-            vfs.iter().map(|(p, _)| p.to_string()).find(|p| p.ends_with("font/gaiji_game.g4tx"))
+        let Some(chemin) = vfs
+            .iter()
+            .map(|(p, _)| p.to_string())
+            .find(|p| p.ends_with("font/gaiji_game.g4tx"))
         else {
             eprintln!("skip feuille_de_sprites : gaiji_game.g4tx absent du VFS");
             return;
@@ -4455,12 +4640,19 @@ mod tests_sprite_sheet {
         let sprites = v["sprites"].as_array().expect("tableau de sprites");
         eprintln!("{chemin} : {} régions", sprites.len());
 
-        assert!(sprites.len() > 100, "atlas d'icônes attendu, {} régions", sprites.len());
+        assert!(
+            sprites.len() > 100,
+            "atlas d'icônes attendu, {} régions",
+            sprites.len()
+        );
         assert!(v["largeur"].as_i64().unwrap_or(0) > 0);
         // Chaque région porte un rectangle exploitable : c'est ce que `g4tx_info_json` ne donne pas.
         for s in sprites {
             assert!(!s["nom"].as_str().unwrap_or("").is_empty());
-            assert!(s["largeur"].as_i64().unwrap_or(0) > 0, "region sans largeur : {s}");
+            assert!(
+                s["largeur"].as_i64().unwrap_or(0) > 0,
+                "region sans largeur : {s}"
+            );
         }
     }
 }
@@ -4718,13 +4910,20 @@ impl MenuScreenBuilder {
     pub fn new(screen_spec_json: &str) -> Result<MenuScreenBuilder, JsValue> {
         let spec: NwScreenSpec = serde_json::from_str(screen_spec_json)
             .map_err(|error| JsValue::from_str(&error.to_string()))?;
-        Ok(MenuScreenBuilder { spec: spec.into(), source: FichiersNavigateur::default() })
+        Ok(MenuScreenBuilder {
+            spec: spec.into(),
+            source: FichiersNavigateur::default(),
+        })
     }
 
     /// Les chemins d'`.objbin` que cet écran déclare, dans l'ordre du fichier.
     #[wasm_bindgen]
     pub fn required_files(&self) -> Vec<String> {
-        self.spec.items.iter().filter_map(|item| item.objbin.clone()).collect()
+        self.spec
+            .items
+            .iter()
+            .filter_map(|item| item.objbin.clone())
+            .collect()
     }
 
     /// Les noms logiques que les `.objbin` FOURNIS désignent — squelettes et textures.
@@ -4735,8 +4934,10 @@ impl MenuScreenBuilder {
     pub fn required_companions(&self) -> Vec<String> {
         let mut logiques = std::collections::BTreeSet::new();
         for item in &self.spec.items {
-            let Some(bytes) =
-                item.objbin.as_deref().and_then(|path| self.source.fichiers.get(path))
+            let Some(bytes) = item
+                .objbin
+                .as_deref()
+                .and_then(|path| self.source.fichiers.get(path))
             else {
                 continue;
             };
@@ -4769,7 +4970,9 @@ impl MenuScreenBuilder {
     /// Où vit un nom logique sur ce montage.
     #[wasm_bindgen]
     pub fn provide_companion(&mut self, logical: &str, path: &str) {
-        self.source.compagnons.insert(logical.to_owned(), path.to_owned());
+        self.source
+            .compagnons
+            .insert(logical.to_owned(), path.to_owned());
     }
 
     /// Le layout, au schéma `nie.menu.layout/v1`.
@@ -4961,7 +5164,10 @@ fn model_replace_texture_png_impl(
     let source = texture_references
         .get(index)
         .ok_or_else(|| {
-            format!("texture index {index} out of range (model has {})", texture_references.len())
+            format!(
+                "texture index {index} out of range (model has {})",
+                texture_references.len()
+            )
         })?
         .source;
     if png.len() > aphrody_nie_render3d::glb::EDITOR_MAX_PNG_BYTES {
@@ -4972,7 +5178,9 @@ fn model_replace_texture_png_impl(
         .iter()
         .enumerate()
         .filter(|(position, _)| *position != source)
-        .try_fold(0usize, |total, (_, texture)| total.checked_add(texture.rgba.len()))
+        .try_fold(0usize, |total, (_, texture)| {
+            total.checked_add(texture.rgba.len())
+        })
         .ok_or_else(|| "texture budget overflow".to_owned())?;
     let remaining = MODEL_TEXTURE_BUDGET
         .checked_sub(retained)
@@ -5004,7 +5212,9 @@ pub fn model_render_rgba(
     height: u32,
 ) -> Result<Vec<u8>, String> {
     let model = model_parse_impl(glb)?;
-    Ok(aphrody_nie_render3d::render::render(&model, angle, width, height))
+    Ok(aphrody_nie_render3d::render::render(
+        &model, angle, width, height,
+    ))
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -5051,7 +5261,9 @@ impl ModelRenderer {
 
     /// Measured glTF texture name, falling back to its image name when present.
     pub fn texture_name(&self, index: usize) -> Option<String> {
-        self.texture_references.get(index).and_then(|texture| texture.name.clone())
+        self.texture_references
+            .get(index)
+            .and_then(|texture| texture.name.clone())
     }
 
     /// Replace one decoded model texture with a bounded PNG for this renderer session.
@@ -5077,7 +5289,12 @@ impl ModelRenderer {
         if !angle.is_finite() {
             return Err(JsValue::from_str("angle non fini"));
         }
-        self.frame.replace(aphrody_nie_render3d::render::render(&self.model, angle, width, height));
+        self.frame.replace(aphrody_nie_render3d::render::render(
+            &self.model,
+            angle,
+            width,
+            height,
+        ));
         self.width = width;
         self.height = height;
         Ok(())
@@ -5121,7 +5338,11 @@ mod tests_model_texture_session {
                 indices: vec![0, 1, 2, 0, 2, 3],
                 texture: Some(0),
             }],
-            textures: vec![Texture { width: 1, height: 1, rgba: color.to_vec() }],
+            textures: vec![Texture {
+                width: 1,
+                height: 1,
+                rgba: color.to_vec(),
+            }],
         }
     }
 
@@ -5133,12 +5354,18 @@ mod tests_model_texture_session {
             aphrody_nie_formats::g4tx_decode::encode_rgba_to_png(&[0, 0, 255, 255], 1, 1)
                 .expect("encode fixture PNG");
 
-        let references = [TextureReference { source: 0, name: Some("albedo".to_owned()) }];
+        let references = [TextureReference {
+            source: 0,
+            name: Some("albedo".to_owned()),
+        }];
         model_replace_texture_png_impl(&mut model, &references, 0, &blue_png)
             .expect("replace texture");
         let after = aphrody_nie_render3d::render::render(&model, 0.0, 96, 96);
 
-        assert_ne!(before, after, "the Rust renderer must consume the replacement");
+        assert_ne!(
+            before, after,
+            "the Rust renderer must consume the replacement"
+        );
         assert!(before.as_chunks::<4>().0.iter().any(|p| p[0] > p[2] + 40));
         assert!(after.as_chunks::<4>().0.iter().any(|p| p[2] > p[0] + 40));
     }
@@ -5146,7 +5373,10 @@ mod tests_model_texture_session {
     #[test]
     fn png_replacement_rejects_bad_indices_and_payloads() {
         let mut model = textured_quad([255, 0, 0, 255]);
-        let references = [TextureReference { source: 0, name: None }];
+        let references = [TextureReference {
+            source: 0,
+            name: None,
+        }];
         assert!(model_replace_texture_png_impl(&mut model, &references, 1, b"png").is_err());
         assert!(model_replace_texture_png_impl(&mut model, &references, 0, b"not png").is_err());
     }
@@ -5203,7 +5433,9 @@ mod tests_screen_spec {
     fn les_champs_facultatifs_tolerent_labsence() {
         let json = r#"{ "screen": "x", "canvas": [1280, 720] }"#;
         let spec: aphrody_nie_formats::menu_screen::ScreenSpec =
-            serde_json::from_str::<NwScreenSpec>(json).expect("relisible").into();
+            serde_json::from_str::<NwScreenSpec>(json)
+                .expect("relisible")
+                .into();
         assert!(spec.items.is_empty());
         assert!(spec.layers_missing.is_empty());
         assert_eq!(spec.cfg, "");

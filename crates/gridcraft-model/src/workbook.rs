@@ -157,14 +157,19 @@ impl Workbook {
         self.sheets.get_mut(i).map(Arc::make_mut)
     }
     pub fn sheet_index(&self, name: &str) -> Option<usize> {
-        self.sheets.iter().position(|s| s.name.eq_ignore_ascii_case(name))
+        self.sheets
+            .iter()
+            .position(|s| s.name.eq_ignore_ascii_case(name))
     }
     pub fn active(&self) -> Option<&Sheet> {
         self.sheet(self.active_sheet)
     }
     /// A fresh sheet name `SheetN` not in use.
     pub fn next_sheet_name(&self) -> String {
-        (1..).map(|n| format!("Sheet{n}")).find(|n| self.sheet_index(n).is_none()).unwrap_or_else(|| "Sheet".into())
+        (1..)
+            .map(|n| format!("Sheet{n}"))
+            .find(|n| self.sheet_index(n).is_none())
+            .unwrap_or_else(|| "Sheet".into())
     }
     /// Validates a sheet name like Excel: 1–31 chars, none of `: \ / ? * [ ]`, not starting or
     /// ending with `'`, unique (case-insensitive) unless it is `except`'s own name.
@@ -176,8 +181,13 @@ impl Workbook {
         if n > 31 {
             return Err("A sheet name can't be longer than 31 characters.".into());
         }
-        if name.chars().any(|c| matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']')) {
-            return Err("A sheet name can't contain any of these characters: : \\ / ? * [ ]".into());
+        if name
+            .chars()
+            .any(|c| matches!(c, ':' | '\\' | '/' | '?' | '*' | '[' | ']'))
+        {
+            return Err(
+                "A sheet name can't contain any of these characters: : \\ / ? * [ ]".into(),
+            );
         }
         if name.starts_with('\'') || name.ends_with('\'') {
             return Err("A sheet name can't begin or end with an apostrophe.".into());
@@ -197,7 +207,11 @@ impl Workbook {
         self.names
             .iter()
             .find(|n| n.scope == Some(sheet) && n.name.eq_ignore_ascii_case(name))
-            .or_else(|| self.names.iter().find(|n| n.scope.is_none() && n.name.eq_ignore_ascii_case(name)))
+            .or_else(|| {
+                self.names
+                    .iter()
+                    .find(|n| n.scope.is_none() && n.name.eq_ignore_ascii_case(name))
+            })
     }
     /// Spells calls of LAMBDA names the way the names are defined (`Double(4)`, where the
     /// parser gives `DOUBLE(4)`: it upper-cases function names, as built-in ones are shown).
@@ -219,7 +233,15 @@ impl Workbook {
                     let f = cell.formula.as_ref()?;
                     let e = f.expr()?;
                     let ne = spell_calls(e.clone(), &lambdas);
-                    (ne != e).then(|| (c, Formula { array: f.array, ..Formula::from_expr(ne) }))
+                    (ne != e).then(|| {
+                        (
+                            c,
+                            Formula {
+                                array: f.array,
+                                ..Formula::from_expr(ne)
+                            },
+                        )
+                    })
                 })
                 .collect();
             if fixed.is_empty() {
@@ -243,13 +265,26 @@ impl Workbook {
     }
     /// Names of the defined names holding a LAMBDA (callable like functions).
     fn lambda_names(&self) -> Vec<String> {
-        let is_lambda = |f: &str| f.trim_start_matches('=').trim_start().get(..7).is_some_and(|p| p.eq_ignore_ascii_case("LAMBDA("));
-        self.names.iter().filter(|n| is_lambda(&n.formula)).map(|n| n.name.clone()).collect()
+        let is_lambda = |f: &str| {
+            f.trim_start_matches('=')
+                .trim_start()
+                .get(..7)
+                .is_some_and(|p| p.eq_ignore_ascii_case("LAMBDA("))
+        };
+        self.names
+            .iter()
+            .filter(|n| is_lambda(&n.formula))
+            .map(|n| n.name.clone())
+            .collect()
     }
     /// Table by name across sheets: (sheet index, table index).
     pub fn table(&self, name: &str) -> Option<(usize, usize)> {
         for (si, s) in self.sheets.iter().enumerate() {
-            if let Some(ti) = s.tables.iter().position(|t| t.name.eq_ignore_ascii_case(name)) {
+            if let Some(ti) = s
+                .tables
+                .iter()
+                .position(|t| t.name.eq_ignore_ascii_case(name))
+            {
                 return Some((si, ti));
             }
         }

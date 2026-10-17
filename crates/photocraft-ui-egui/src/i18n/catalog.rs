@@ -54,7 +54,10 @@ pub fn parse_entries(text: &str) -> (Vec<Entry>, Vec<String>) {
             (Some(ctx), Some(src), Some(tr), None) if !src.is_empty() && !tr.is_empty() => {
                 entries.push((unescape(ctx), unescape(src), unescape(tr)));
             }
-            _ => errors.push(format!("line {}: expected `context<TAB>source<TAB>translation`", n + 1)),
+            _ => errors.push(format!(
+                "line {}: expected `context<TAB>source<TAB>translation`",
+                n + 1
+            )),
         }
     }
     (entries, errors)
@@ -72,7 +75,8 @@ impl Catalog {
                     c.ids.insert(src, tr);
                 }
                 "@plural" => {
-                    c.plurals.insert(src, tr.split('|').map(str::to_string).collect());
+                    c.plurals
+                        .insert(src, tr.split('|').map(str::to_string).collect());
                 }
                 _ => {
                     c.contextual.insert(format!("{ctx}\u{1}{src}"), tr);
@@ -87,7 +91,9 @@ impl Catalog {
     }
 
     pub fn contextual(&self, ctx: &str, s: &str) -> Option<&str> {
-        self.contextual.get(&format!("{ctx}\u{1}{s}")).map(String::as_str)
+        self.contextual
+            .get(&format!("{ctx}\u{1}{s}"))
+            .map(String::as_str)
     }
 
     pub fn id(&self, id: &str) -> Option<&str> {
@@ -97,7 +103,9 @@ impl Catalog {
     /// The plural form `index` of the message whose English forms are `one|other`.
     pub fn plural(&self, one: &str, other: &str, index: usize) -> Option<&str> {
         let forms = self.plurals.get(&format!("{one}|{other}"))?;
-        forms.get(index.min(forms.len().saturating_sub(1))).map(String::as_str)
+        forms
+            .get(index.min(forms.len().saturating_sub(1)))
+            .map(String::as_str)
     }
 }
 

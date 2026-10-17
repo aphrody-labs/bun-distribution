@@ -43,8 +43,11 @@ fn main() {
     }
 
     // ── 1. Dictionnaire CRC-32(nom d'os) → os, construit depuis les squelettes ───────────────
-    let g4pkm_paths: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(".g4pkm")).collect();
+    let g4pkm_paths: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(".g4pkm"))
+        .collect();
 
     // Un même nom d'os (`_pos_base01`…) revient dans des centaines de squelettes : on garde le
     // compte des fichiers porteurs plutôt qu'un seul, sinon le rapport laisserait croire à une
@@ -151,7 +154,11 @@ fn main() {
         let v = vus[slot];
         #[allow(clippy::cast_precision_loss)]
         let pct = |n: usize| {
-            if v == 0 { 0.0 } else { n as f64 * 100.0 / v as f64 }
+            if v == 0 {
+                0.0
+            } else {
+                n as f64 * 100.0 / v as f64
+            }
         };
         println!(
             "  {slot}    {:>6}/{:<6} = {:>6.2} %    {:>6}/{:<6} = {:>6.2} %",
@@ -188,7 +195,11 @@ fn main() {
             continue;
         };
         if let Some(g) = &obj.g4pkm_path {
-            let chemin = if g.starts_with("data/") { g.clone() } else { format!("data/{g}") };
+            let chemin = if g.starts_with("data/") {
+                g.clone()
+            } else {
+                format!("data/{g}")
+            };
             squelette_de_objet.insert(obj.name.clone(), chemin);
         }
     }
@@ -205,8 +216,10 @@ fn main() {
          cache: &mut BTreeMap<String, Option<aphrody_nie_formats::g4pkm::G4pkmLayout>>|
          -> bool {
             cache.contains_key(chemin) || {
-                let v =
-                    vfs.read(chemin).ok().and_then(|b| aphrody_nie_formats::g4pkm::parse(&b).ok());
+                let v = vfs
+                    .read(chemin)
+                    .ok()
+                    .and_then(|b| aphrody_nie_formats::g4pkm::parse(&b).ok());
                 cache.insert(chemin.to_string(), v);
                 true
             }
@@ -217,10 +230,13 @@ fn main() {
         let Ok(obj) = objbin::parse(&bytes) else {
             continue;
         };
-        let sk_porteur = obj
-            .g4pkm_path
-            .as_ref()
-            .map(|g| if g.starts_with("data/") { g.clone() } else { format!("data/{g}") });
+        let sk_porteur = obj.g4pkm_path.as_ref().map(|g| {
+            if g.starts_with("data/") {
+                g.clone()
+            } else {
+                format!("data/{g}")
+            }
+        });
         for c in &obj.components {
             let MenuComponent::AttachLocator(a) = c else {
                 continue;
@@ -249,8 +265,10 @@ fn main() {
                 // Variante B : dans le squelette du LOCATOR porteur.
                 if let Some(sk) = &sk_porteur {
                     charger(sk, &mut cache);
-                    if let Some(t) =
-                        cache.get(sk).and_then(|o| o.as_ref()).and_then(|l| l.world_pose(nom_os))
+                    if let Some(t) = cache
+                        .get(sk)
+                        .and_then(|o| o.as_ref())
+                        .and_then(|l| l.world_pose(nom_os))
                     {
                         dans_porteur += 1;
                         if echantillon.len() < 10 && (t.x != 0.0 || t.y != 0.0) {
@@ -270,7 +288,11 @@ fn main() {
 
     #[allow(clippy::cast_precision_loss)]
     let pct = |n: usize, d: usize| {
-        if d == 0 { 0.0 } else { n as f64 * 100.0 / d as f64 }
+        if d == 0 {
+            0.0
+        } else {
+            n as f64 * 100.0 / d as f64
+        }
     };
     println!("\nvalidation de l'algorithme — quel squelette porte l'os du slot 1 ?");
     println!("  quadruplets                                {couples_vus}");

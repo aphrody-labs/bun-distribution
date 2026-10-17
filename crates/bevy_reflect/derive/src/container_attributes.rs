@@ -14,8 +14,8 @@ use bevy_macro_utils::{
 use proc_macro2::{Ident, Span};
 use quote::quote_spanned;
 use syn::{
-    ext::IdentExt, parenthesized, parse::ParseStream, spanned::Spanned, token, Expr, LitBool,
-    MetaList, MetaNameValue, Path, Token, WhereClause,
+    Expr, LitBool, MetaList, MetaNameValue, Path, Token, WhereClause, ext::IdentExt, parenthesized,
+    parse::ParseStream, spanned::Spanned, token,
 };
 
 mod kw {

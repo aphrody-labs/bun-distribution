@@ -71,11 +71,18 @@ impl RestTransport {
         query: &[(String, String)],
     ) -> reqwest::RequestBuilder {
         let builder = self.build_request(method, path, params);
-        if query.is_empty() { builder } else { builder.query(query) }
+        if query.is_empty() {
+            builder
+        } else {
+            builder.query(query)
+        }
     }
 
     async fn send(&self, builder: reqwest::RequestBuilder) -> Result<reqwest::Response, A2AError> {
-        builder.send().await.map_err(|e| A2AError::internal(format!("HTTP request failed: {e}")))
+        builder
+            .send()
+            .await
+            .map_err(|e| A2AError::internal(format!("HTTP request failed: {e}")))
     }
 
     async fn into_rest_error(resp: reqwest::Response) -> A2AError {
@@ -97,7 +104,10 @@ impl RestTransport {
             A2AError::internal(format!("failed to serialize request as ProtoJSON: {e}"))
         })?;
         let resp = self
-            .send(self.build_request(reqwest::Method::POST, path, params).json(&payload))
+            .send(
+                self.build_request(reqwest::Method::POST, path, params)
+                    .json(&payload),
+            )
             .await?;
 
         if !resp.status().is_success() {
@@ -214,7 +224,9 @@ impl RestTransport {
     }
 
     async fn delete(&self, path: &str, params: &ServiceParams) -> Result<(), A2AError> {
-        let resp = self.send(self.build_request(reqwest::Method::DELETE, path, params)).await?;
+        let resp = self
+            .send(self.build_request(reqwest::Method::DELETE, path, params))
+            .await?;
 
         if !resp.status().is_success() {
             return Err(Self::into_rest_error(resp).await);
@@ -255,7 +267,8 @@ impl Transport for RestTransport {
         params: &ServiceParams,
         req: &SendMessageRequest,
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
-        self.post_streaming(REST_STREAM_MESSAGE_PATH, params, req).await
+        self.post_streaming(REST_STREAM_MESSAGE_PATH, params, req)
+            .await
     }
 
     async fn get_task(
@@ -310,7 +323,8 @@ impl Transport for RestTransport {
         params: &ServiceParams,
         req: &CancelTaskRequest,
     ) -> Result<Task, A2AError> {
-        self.post_json(&format!("/tasks/{}:cancel", req.id), params, req).await
+        self.post_json(&format!("/tasks/{}:cancel", req.id), params, req)
+            .await
     }
 
     async fn subscribe_to_task(
@@ -318,7 +332,8 @@ impl Transport for RestTransport {
         params: &ServiceParams,
         req: &SubscribeToTaskRequest,
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
-        self.get_streaming(&format!("/tasks/{}:subscribe", req.id), params).await
+        self.get_streaming(&format!("/tasks/{}:subscribe", req.id), params)
+            .await
     }
 
     async fn create_push_config(
@@ -327,7 +342,11 @@ impl Transport for RestTransport {
         req: &TaskPushNotificationConfig,
     ) -> Result<TaskPushNotificationConfig, A2AError> {
         let payload = self
-            .post_value(&format!("/tasks/{}/pushNotificationConfigs", req.task_id), params, req)
+            .post_value(
+                &format!("/tasks/{}/pushNotificationConfigs", req.task_id),
+                params,
+                req,
+            )
             .await?;
         deserialize_task_push_notification_config(payload)
     }
@@ -375,8 +394,11 @@ impl Transport for RestTransport {
         params: &ServiceParams,
         req: &DeleteTaskPushNotificationConfigRequest,
     ) -> Result<(), A2AError> {
-        self.delete(&format!("/tasks/{}/pushNotificationConfigs/{}", req.task_id, req.id), params)
-            .await
+        self.delete(
+            &format!("/tasks/{}/pushNotificationConfigs/{}", req.task_id, req.id),
+            params,
+        )
+        .await
     }
 
     async fn get_extended_agent_card(
@@ -384,7 +406,8 @@ impl Transport for RestTransport {
         params: &ServiceParams,
         _req: &GetExtendedAgentCardRequest,
     ) -> Result<AgentCard, A2AError> {
-        self.get_json(REST_EXTENDED_AGENT_CARD_PATH, params, &[]).await
+        self.get_json(REST_EXTENDED_AGENT_CARD_PATH, params, &[])
+            .await
     }
 
     async fn destroy(&self) -> Result<(), A2AError> {
@@ -399,13 +422,20 @@ pub struct RestTransportFactory {
 
 impl RestTransportFactory {
     pub fn new(client: Option<Client>) -> Self {
-        RestTransportFactory { client: client.unwrap_or_default() }
+        RestTransportFactory {
+            client: client.unwrap_or_default(),
+        }
     }
 
     // Custom root certificates require TLS crates not available on wasm32.
-    #[cfg(all(not(target_family = "wasm"), any(feature = "rustls-tls", feature = "native-tls")))]
+    #[cfg(all(
+        not(target_family = "wasm"),
+        any(feature = "rustls-tls", feature = "native-tls")
+    ))]
     pub fn with_root_certificates_pem(pem: &[u8]) -> Result<Self, A2AError> {
-        Ok(Self { client: crate::build_reqwest_client_with_root_pem(pem)? })
+        Ok(Self {
+            client: crate::build_reqwest_client_with_root_pem(pem)?,
+        })
     }
 }
 
@@ -421,7 +451,10 @@ impl TransportFactory for RestTransportFactory {
         _card: &AgentCard,
         iface: &AgentInterface,
     ) -> Result<Box<dyn Transport>, A2AError> {
-        Ok(Box::new(RestTransport::new(self.client.clone(), iface.url.clone())))
+        Ok(Box::new(RestTransport::new(
+            self.client.clone(),
+            iface.url.clone(),
+        )))
     }
 }
 
@@ -529,7 +562,10 @@ mod tests {
         let details = err.details.expect("expected structured details");
         assert_eq!(details.len(), 2);
         assert_eq!(details[0].type_url, errordetails::ERROR_INFO_TYPE);
-        assert_eq!(details[1].value.get("resource"), Some(&Value::String("task".into())));
+        assert_eq!(
+            details[1].value.get("resource"),
+            Some(&Value::String("task".into()))
+        );
     }
 
     #[test]
@@ -579,7 +615,10 @@ mod tests {
 
         let err = parse_rest_error(reqwest::StatusCode::BAD_REQUEST, &body);
         assert_eq!(err.code, error_code::INVALID_PARAMS);
-        assert!(err.message.contains("message.parts: At least one part is required"));
+        assert!(
+            err.message
+                .contains("message.parts: At least one part is required")
+        );
         let details = err.details.expect("expected details");
         assert_eq!(details.len(), 1);
         assert_eq!(details[0].type_url, errordetails::BAD_REQUEST_TYPE);

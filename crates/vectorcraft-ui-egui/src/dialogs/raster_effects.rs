@@ -14,7 +14,11 @@ use crate::{VectorcraftApp, widgets};
 pub(super) const KIND: &str = "rasterEffectsSettings";
 const CMD: &str = "document.rasterEffectsSettings";
 /// The resolution presets: (ppi, label).
-const RESOLUTIONS: [(f64, &str); 3] = [(72.0, "Screen (72 ppi)"), (150.0, "Medium (150 ppi)"), (300.0, "High (300 ppi)")];
+const RESOLUTIONS: [(f64, &str); 3] = [
+    (72.0, "Screen (72 ppi)"),
+    (150.0, "Medium (150 ppi)"),
+    (300.0, "High (300 ppi)"),
+];
 
 pub(super) const SPEC: DialogSpec = DialogSpec {
     heading: |_| tl!("Document Raster Effects Settings").into(),
@@ -27,7 +31,10 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 
 /// Open the dialog on the active document's settings.
 pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
-    let fields = app.session.execute(CMD, &json!({})).map_err(|e| e.to_string())?;
+    let fields = app
+        .session
+        .execute(CMD, &json!({}))
+        .map_err(|e| e.to_string())?;
     app.ui.dialog = Some(Dialog::new(KIND, fields));
     Ok(Value::Null)
 }
@@ -43,16 +50,25 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     // Resolution: a preset, or Other with its own value.
     let ppi = d.f64("resolution", 72.0);
-    let preset = RESOLUTIONS.iter().position(|(p, _)| (*p - ppi).abs() < 1e-9);
+    let preset = RESOLUTIONS
+        .iter()
+        .position(|(p, _)| (*p - ppi).abs() < 1e-9);
     let mut labels: Vec<&str> = RESOLUTIONS.iter().map(|(_, l)| tl!(l)).collect();
     labels.push(tl!("Other"));
     widgets::label_row(ui, tl!("Resolution:"), LABEL, |ui| {
-        if let Some(i) = widgets::dropdown(ui, "raster-resolution", labels[preset.unwrap_or(RESOLUTIONS.len())], &labels, 170.0) {
+        if let Some(i) = widgets::dropdown(
+            ui,
+            "raster-resolution",
+            labels[preset.unwrap_or(RESOLUTIONS.len())],
+            &labels,
+            170.0,
+        ) {
             // Other keeps the current value to edit.
             if let Some((p, _)) = RESOLUTIONS.get(i) {
                 d.fields.insert("resolution".into(), json!(p));
             } else if preset.is_some() {
-                d.fields.insert("resolution".into(), json!(ppi.round() + 1.0));
+                d.fields
+                    .insert("resolution".into(), json!(ppi.round() + 1.0));
             }
         }
         if preset.is_none()
@@ -62,9 +78,26 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
     });
     ui.add_space(4.0);
-    let own =
-        if app.session.active().is_some_and(|s| s.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk) { ("cmyk", "CMYK") } else { ("rgb", "RGB") };
-    choice(ui, d, "colorModel", tl!("Color Model:"), &[own, ("grayscale", tl!("Grayscale")), ("bitmap", tl!("Bitmap"))]);
+    let own = if app
+        .session
+        .active()
+        .is_some_and(|s| s.doc.color_mode == vectorcraft_doc::ColorMode::Cmyk)
+    {
+        ("cmyk", "CMYK")
+    } else {
+        ("rgb", "RGB")
+    };
+    choice(
+        ui,
+        d,
+        "colorModel",
+        tl!("Color Model:"),
+        &[
+            own,
+            ("grayscale", tl!("Grayscale")),
+            ("bitmap", tl!("Bitmap")),
+        ],
+    );
     ui.add_space(6.0);
     widgets::label_row(ui, tl!("Background:"), LABEL, |ui| {
         let cur = d.str("background");
@@ -83,14 +116,25 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = crate::theme::Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!("Add")).color(t.text));
-        if let Some(v) = widgets::num_field(ui, "raster-add-around", Some(d.f64("addAround", 0.0)), unit, 80.0) {
+        if let Some(v) = widgets::num_field(
+            ui,
+            "raster-add-around",
+            Some(d.f64("addAround", 0.0)),
+            unit,
+            80.0,
+        ) {
             d.fields.insert("addAround".into(), json!(v));
         }
         ui.label(egui::RichText::new(tl!("Around Object")).color(t.text));
     });
     check(ui, d, "preserveSpotColors", tl!("Preserve Spot Colors"));
     ui.add_space(8.0);
-    super::form::caption(ui, tl!("Changing these settings changes how raster effects look when exported, flattened or expanded."));
+    super::form::caption(
+        ui,
+        tl!(
+            "Changing these settings changes how raster effects look when exported, flattened or expanded."
+        ),
+    );
     false
 }
 
@@ -105,7 +149,13 @@ mod tests {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
         crate::theme::apply(&ctx, Default::default());
-        let raw = egui::RawInput { screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1200.0, 900.0))), ..Default::default() };
+        let raw = egui::RawInput {
+            screen_rect: Some(egui::Rect::from_min_size(
+                egui::Pos2::ZERO,
+                egui::vec2(1200.0, 900.0),
+            )),
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(raw, |ui| crate::dialogs::show(app, ui.ctx()));
         out.textures_delta.clear();
     }
@@ -113,40 +163,74 @@ mod tests {
     #[test]
     fn raster_effects_settings_draw_and_ok_is_one_undo_step() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 200, "height": 200})).unwrap();
+        app.run("file.new", json!({"width": 200, "height": 200}))
+            .unwrap();
         crate::menus::invoke(&mut app, "document.rasterEffectsSettings", json!({}));
         let d = app.ui.dialog.as_mut().unwrap();
-        assert_eq!((d.kind.as_str(), d.fields["colorModel"].as_str()), (super::KIND, Some("rgb")));
-        for (k, v) in [("resolution", json!(300)), ("background", json!("white")), ("addAround", json!(36)), ("colorModel", json!("grayscale"))] {
+        assert_eq!(
+            (d.kind.as_str(), d.fields["colorModel"].as_str()),
+            (super::KIND, Some("rgb"))
+        );
+        for (k, v) in [
+            ("resolution", json!(300)),
+            ("background", json!("white")),
+            ("addAround", json!(36)),
+            ("colorModel", json!("grayscale")),
+        ] {
             d.fields.insert(k.into(), v);
         }
         frame(&mut app);
         // Other resolutions show their own field.
-        app.ui.dialog.as_mut().unwrap().fields.insert("resolution".into(), json!(200));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("resolution".into(), json!(200));
         frame(&mut app);
         crate::dialogs::confirm(&mut app).unwrap();
         assert!(app.ui.dialog.is_none());
         let st = app.session.active().unwrap();
         let r = &st.doc.raster_effects;
-        assert_eq!((st.doc.raster_effects_ppi, r.add_around, r.background), (200.0, 36.0, vectorcraft_doc::Background::White));
+        assert_eq!(
+            (st.doc.raster_effects_ppi, r.add_around, r.background),
+            (200.0, 36.0, vectorcraft_doc::Background::White)
+        );
         assert_eq!(r.color_model, vectorcraft_doc::RasterColorModel::Grayscale);
         assert_eq!(st.history.undo.len(), 1);
         // A bad value keeps the dialog open.
-        app.run("ui.rasterEffectsSettingsDialog", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("addAround".into(), json!(-5));
+        app.run("ui.rasterEffectsSettingsDialog", json!({}))
+            .unwrap();
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("addAround".into(), json!(-5));
         assert!(crate::dialogs::confirm(&mut app).is_err());
         assert!(app.ui.dialog.is_some());
         crate::dialogs::cancel(&mut app);
         // Rasterize… starts from these settings.
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
         crate::menus::invoke(&mut app, "object.rasterize", json!({}));
         let d = app.ui.dialog.as_ref().unwrap();
         assert_eq!(
-            (d.fields["ppi"].as_f64(), d.fields["background"].as_str(), d.fields["addAround"].as_f64()),
+            (
+                d.fields["ppi"].as_f64(),
+                d.fields["background"].as_str(),
+                d.fields["addAround"].as_f64()
+            ),
             (Some(200.0), Some("white"), Some(36.0))
         );
         crate::dialogs::confirm(&mut app).unwrap();
         let st = app.session.active().unwrap();
-        assert!(st.selection.objects.iter().any(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(vectorcraft_doc::NodeKind::Image(_)))));
+        assert!(st.selection.objects.iter().any(|id| matches!(
+            st.doc.node(*id).map(|n| &n.kind),
+            Some(vectorcraft_doc::NodeKind::Image(_))
+        )));
     }
 }

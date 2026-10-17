@@ -41,11 +41,15 @@ mod tests {
 
     #[test]
     fn test_invalid_signature_length() {
-        assert!(!verify_interaction_signature("aabb", "ccdd", "12345", b"test"));
+        assert!(!verify_interaction_signature(
+            "aabb", "ccdd", "12345", b"test"
+        ));
     }
 
     #[test]
     fn test_invalid_hex() {
-        assert!(!verify_interaction_signature("not_hex", "not_hex", "12345", b"test"));
+        assert!(!verify_interaction_signature(
+            "not_hex", "not_hex", "12345", b"test"
+        ));
     }
 }

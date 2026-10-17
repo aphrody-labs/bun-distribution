@@ -35,7 +35,10 @@ fn resolves_strategy_name_and_description() {
     let t = ai_text();
     let s = strategy(0x0000_1001, 0x0000_1002);
     assert_eq!(resolve_strategy_name(&s, &t), Some("基本戦略"));
-    assert_eq!(resolve_strategy_description(&s, &t), Some("基本戦略説明テキスト"));
+    assert_eq!(
+        resolve_strategy_description(&s, &t),
+        Some("基本戦略説明テキスト")
+    );
 }
 
 #[test]

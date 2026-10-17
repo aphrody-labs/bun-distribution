@@ -42,7 +42,12 @@ impl Document {
         if ids.is_empty() || ids.len() > MAX_SNAPSHOT_NODES {
             return None;
         }
-        Some(DevSnapshot { nodes: ids.iter().filter_map(|i| self.nodes.get(i).cloned()).collect() })
+        Some(DevSnapshot {
+            nodes: ids
+                .iter()
+                .filter_map(|i| self.nodes.get(i).cloned())
+                .collect(),
+        })
     }
 
     /// A copy of this document in which layer `root` is as its snapshot shows it (`None` without a

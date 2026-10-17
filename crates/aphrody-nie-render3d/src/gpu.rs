@@ -105,7 +105,10 @@ pub struct GpuOptions {
 
 impl Default for GpuOptions {
     fn default() -> Self {
-        Self { backend: Backend::default(), allow_software: true }
+        Self {
+            backend: Backend::default(),
+            allow_software: true,
+        }
     }
 }
 
@@ -136,7 +139,11 @@ const VERTEX_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayou
 /// ressortirait presque blanche.
 fn srgb_vers_lineaire(c: u8) -> f32 {
     let x = f32::from(c) / 255.0;
-    if x <= 0.040_45 { x / 12.92 } else { ((x + 0.055) / 1.055).powf(2.4) }
+    if x <= 0.040_45 {
+        x / 12.92
+    } else {
+        ((x + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 /// Les segments téléversés sur le GPU, prêts à être tracés.
@@ -211,7 +218,11 @@ impl Default for Camera {
     fn default() -> Self {
         // Trois-quarts légèrement plongeant : l'angle sous lequel un personnage se lit le mieux,
         // et celui qu'utilise déjà le rendu CPU par défaut (`angle = 0.6`, `tilt = 0.20`).
-        Self { yaw: 0.6, pitch: 0.20, distance: 3.1 }
+        Self {
+            yaw: 0.6,
+            pitch: 0.20,
+            distance: 3.1,
+        }
     }
 }
 
@@ -326,7 +337,10 @@ fn upload_batch_plan(model: &Model, max_buffer_size: u64) -> Result<Vec<UploadBa
             "primitive exceeds the GPU buffer-size limit"
         );
         anyhow::ensure!(
-            primitive.indices.iter().all(|&index| (index as usize) < primitive.positions.len()),
+            primitive
+                .indices
+                .iter()
+                .all(|&index| (index as usize) < primitive.positions.len()),
             "primitive index exceeds its vertex range"
         );
         let max_source_index = primitive.indices.iter().copied().max().unwrap_or(0);
@@ -486,7 +500,7 @@ impl GpuRenderer {
                     },
                 )
                 .await
-            },
+            }
             Err(error) => Err(error),
         }
         .with_context(|| format!("aucun adaptateur disponible pour {:?}", options.backend))?;
@@ -511,7 +525,11 @@ impl GpuRenderer {
         .await
         .context("création du device wgpu")?;
 
-        Ok(Self::from_device(adapter_info, backend_device.device, backend_device.queue))
+        Ok(Self::from_device(
+            adapter_info,
+            backend_device.device,
+            backend_device.queue,
+        ))
     }
 
     /// Partage le device de l'hôte : UI et scène échangent des textures, pas des captures CPU.
@@ -753,7 +771,8 @@ impl GpuRenderer {
     /// Téléverse un [`Model`] en mémoire GPU. À faire une fois par modèle, pas par image.
     #[must_use = "le modèle doit être conservé pour être rendu"]
     pub fn upload(&self, model: &Model) -> GpuModel {
-        self.try_upload(model).expect("model rejected by GPU upload limits")
+        self.try_upload(model)
+            .expect("model rejected by GPU upload limits")
     }
 
     /// Fallible upload for untrusted/browser models. Compatible primitives are merged only while
@@ -787,11 +806,17 @@ impl GpuRenderer {
                 }
                 let base = u32::try_from(vertices.len())
                     .map_err(|_| anyhow::anyhow!("model exceeds u32 vertex indexing"))?;
-                vertices.extend((0..primitive.positions.len()).map(|index| Vertex {
-                    position: primitive.positions[index],
-                    normal: primitive.normals.get(index).copied().unwrap_or([0.0, 1.0, 0.0]),
-                    uv: primitive.uv.get(index).copied().unwrap_or([0.0, 0.0]),
-                    has_texture: f32::from(has_texture),
+                vertices.extend((0..primitive.positions.len()).map(|index| {
+                    Vertex {
+                        position: primitive.positions[index],
+                        normal: primitive
+                            .normals
+                            .get(index)
+                            .copied()
+                            .unwrap_or([0.0, 1.0, 0.0]),
+                        uv: primitive.uv.get(index).copied().unwrap_or([0.0, 0.0]),
+                        has_texture: f32::from(has_texture),
+                    }
                 }));
                 for &index in &primitive.indices {
                     indices.push(base.checked_add(index).context("model index exceeds u32")?);
@@ -802,16 +827,20 @@ impl GpuRenderer {
             triangle_count += (indices.len() / 3) as u32;
             vertex_count += vertices.len() as u32;
 
-            let vbuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("vertices"),
-                contents: bytemuck::cast_slice(&vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-            let ibuf = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("indices"),
-                contents: bytemuck::cast_slice(&indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
+            let vbuf = self
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("vertices"),
+                    contents: bytemuck::cast_slice(&vertices),
+                    usage: wgpu::BufferUsages::VERTEX,
+                });
+            let ibuf = self
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("indices"),
+                    contents: bytemuck::cast_slice(&indices),
+                    usage: wgpu::BufferUsages::INDEX,
+                });
 
             primitives.push(GpuPrimitive {
                 vertices: vbuf,
@@ -821,7 +850,14 @@ impl GpuRenderer {
             });
         }
 
-        Ok(GpuModel { primitives, textures, center, radius, triangle_count, vertex_count })
+        Ok(GpuModel {
+            primitives,
+            textures,
+            center,
+            radius,
+            triangle_count,
+            vertex_count,
+        })
     }
 
     fn create_texture_bind_group(&self, width: u32, height: u32, rgba: &[u8]) -> GpuTexture {
@@ -829,7 +865,11 @@ impl GpuRenderer {
         let height = height.max(1);
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("atlas"),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
@@ -862,7 +902,11 @@ impl GpuRenderer {
                 bytes_per_row: Some(width * 4),
                 rows_per_image: Some(height),
             },
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
 
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -880,7 +924,10 @@ impl GpuRenderer {
                 },
             ],
         });
-        GpuTexture { texture, bind_group }
+        GpuTexture {
+            texture,
+            bind_group,
+        }
     }
 
     /// (Re)crée les cibles de rendu si la taille demandée a changé.
@@ -894,7 +941,11 @@ impl GpuRenderer {
         // Release the old attachments before allocating larger replacements. Keeping both sets
         // resident during a resize can double peak VRAM and turn a recoverable resize into OOM.
         self.targets = None;
-        let size = wgpu::Extent3d { width, height, depth_or_array_layers: 1 };
+        let size = wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        };
         let color = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("color"),
             size,
@@ -950,15 +1001,26 @@ impl GpuRenderer {
                 srgb_vers_lineaire(seg.color[1]),
                 srgb_vers_lineaire(seg.color[2]),
             ];
-            sommets.push(LineVertex { position: seg.a, color: couleur });
-            sommets.push(LineVertex { position: seg.b, color: couleur });
+            sommets.push(LineVertex {
+                position: seg.a,
+                color: couleur,
+            });
+            sommets.push(LineVertex {
+                position: seg.b,
+                color: couleur,
+            });
         }
-        let buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("nie viewport lines"),
-            contents: bytemuck::cast_slice(&sommets),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
-        GpuLines { buffer, vertex_count: u32::try_from(sommets.len()).unwrap_or(u32::MAX) }
+        let buffer = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("nie viewport lines"),
+                contents: bytemuck::cast_slice(&sommets),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        GpuLines {
+            buffer,
+            vertex_count: u32::try_from(sommets.len()).unwrap_or(u32::MAX),
+        }
     }
 
     /// Dessine dans une texture GPU sans lecture CPU ni attente bloquante.
@@ -994,24 +1056,33 @@ impl GpuRenderer {
             "dimensions du viewport supérieures à la limite GPU ({limit})"
         );
         self.ensure_targets(width, height);
-        let targets = self.targets.as_ref().expect("cibles créées juste au-dessus");
+        let targets = self
+            .targets
+            .as_ref()
+            .expect("cibles créées juste au-dessus");
 
         let camera = camera.clamped();
         let view_proj = view_projection(model, camera, width as f32 / height as f32);
         let normal_rot = rotation_normales(camera);
         let light = crate::vecmath::normv([0.35, 0.75, 0.55]);
 
-        let uniform =
-            CameraUniform { view_proj, normal_rot, light: [light[0], light[1], light[2], 0.0] };
+        let uniform = CameraUniform {
+            view_proj,
+            normal_rot,
+            light: [light[0], light[1], light[2], 0.0],
+        };
         let mut encoder = self
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("viewport") });
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("viewport"),
+            });
         let uniform_bytes = bytemuck::bytes_of(&uniform);
         let uniform_size =
             wgpu::BufferSize::new(uniform_bytes.len() as u64).expect("CameraUniform is non-empty");
         {
             let mut staging =
-                self.staging_belt.write_buffer(&mut encoder, &self.camera_buffer, 0, uniform_size);
+                self.staging_belt
+                    .write_buffer(&mut encoder, &self.camera_buffer, 0, uniform_size);
             staging.copy_from_slice(uniform_bytes);
         }
         self.staging_belt.finish();
@@ -1095,7 +1166,10 @@ impl GpuRenderer {
         height: u32,
     ) -> Result<Vec<u8>> {
         self.render_to_texture_with_lines(model, lines, camera, width, height)?;
-        let targets = self.targets.as_mut().expect("cibles créées par render_to_texture");
+        let targets = self
+            .targets
+            .as_mut()
+            .expect("cibles créées par render_to_texture");
         let (width, height) = (targets.width, targets.height);
         // Aucun tampon de capture n'est alloué pour un viewport interactif ni sur le web.
         let readback = targets.readback.get_or_insert_with(|| {
@@ -1107,11 +1181,16 @@ impl GpuRenderer {
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             });
-            Readback { buffer, padded_bytes_per_row }
+            Readback {
+                buffer,
+                padded_bytes_per_row,
+            }
         });
-        let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("capture viewport"),
-        });
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("capture viewport"),
+            });
         encoder.copy_texture_to_buffer(
             wgpu::TexelCopyTextureInfo {
                 texture: &targets.color,
@@ -1127,7 +1206,11 @@ impl GpuRenderer {
                     rows_per_image: Some(height),
                 },
             },
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
 
         self.queue.submit(Some(encoder.finish()));
@@ -1139,10 +1222,16 @@ impl GpuRenderer {
         slice.map_async(wgpu::MapMode::Read, move |r| {
             let _ = tx.send(r);
         });
-        self.device.poll(wgpu::PollType::wait_indefinitely()).context("attente du GPU")?;
-        rx.recv().context("canal de mappage rompu")?.context("mappage du tampon de lecture")?;
+        self.device
+            .poll(wgpu::PollType::wait_indefinitely())
+            .context("attente du GPU")?;
+        rx.recv()
+            .context("canal de mappage rompu")?
+            .context("mappage du tampon de lecture")?;
 
-        let padded = slice.get_mapped_range().context("lecture du tampon mappé")?;
+        let padded = slice
+            .get_mapped_range()
+            .context("lecture du tampon mappé")?;
         let mut out = Vec::with_capacity((width * height * 4) as usize);
         for row in 0..height {
             let start = (row * readback.padded_bytes_per_row) as usize;
@@ -1183,7 +1272,12 @@ fn view_projection(model: &GpuModel, camera: Camera, aspect: f32) -> [[f32; 4]; 
     // choisi indépendamment (1,0 rad ici avant le 2026-08-28, contre 2·atan(1/1,7) ≈ 1,083) rend
     // le modèle sensiblement plus gros : 16 % de pixels couverts en plus sur un personnage, ce
     // qui se lit comme une divergence de rendu alors que ce n'est qu'un réglage de caméra.
-    let proj = perspective(2.0 * (1.0 / crate::render::FOCALE).atan(), aspect, near, far);
+    let proj = perspective(
+        2.0 * (1.0 / crate::render::FOCALE).atan(),
+        aspect,
+        near,
+        far,
+    );
     mat_mul(proj, view_from_basis(&basis))
 }
 
@@ -1277,7 +1371,11 @@ mod tests {
     #[test]
     fn upload_batches_merge_primitives_by_texture() {
         let triangle = |offset: f32, texture| crate::glb::Primitive {
-            positions: vec![[offset, 0.0, 0.0], [offset + 1.0, 0.0, 0.0], [offset, 1.0, 0.0]],
+            positions: vec![
+                [offset, 0.0, 0.0],
+                [offset + 1.0, 0.0, 0.0],
+                [offset, 1.0, 0.0],
+            ],
             normals: vec![[0.0, 0.0, 1.0]; 3],
             uv: vec![[0.0, 0.0]; 3],
             indices: vec![0, 1, 2],
@@ -1290,7 +1388,11 @@ mod tests {
                 triangle(4.0, None),
                 triangle(6.0, Some(99)),
             ],
-            textures: vec![crate::glb::Texture { width: 1, height: 1, rgba: vec![255; 4] }],
+            textures: vec![crate::glb::Texture {
+                width: 1,
+                height: 1,
+                rgba: vec![255; 4],
+            }],
         };
 
         let batches = upload_batch_plan(&model, u64::MAX).expect("valid batches");
@@ -1303,11 +1405,17 @@ mod tests {
         assert_eq!(batches[1].index_count, 6);
 
         let order_sensitive = Model {
-            primitives: vec![triangle(0.0, Some(0)), triangle(2.0, None), triangle(4.0, Some(0))],
+            primitives: vec![
+                triangle(0.0, Some(0)),
+                triangle(2.0, None),
+                triangle(4.0, Some(0)),
+            ],
             textures: model.textures.clone(),
         };
         assert_eq!(
-            upload_batch_plan(&order_sensitive, u64::MAX).expect("valid ordered batches").len(),
+            upload_batch_plan(&order_sensitive, u64::MAX)
+                .expect("valid ordered batches")
+                .len(),
             3,
             "non-adjacent primitives must not be reordered across depth-sensitive draws"
         );
@@ -1316,7 +1424,10 @@ mod tests {
             .expect("each source primitive fits independently");
         assert_eq!(limited.len(), 4);
 
-        let oversized = Model { primitives: vec![triangle(0.0, None)], textures: vec![] };
+        let oversized = Model {
+            primitives: vec![triangle(0.0, None)],
+            textures: vec![],
+        };
         assert!(upload_batch_plan(&oversized, (std::mem::size_of::<Vertex>() * 2) as u64).is_err());
 
         let invalid_index = Model {
@@ -1331,10 +1442,19 @@ mod tests {
 
     #[test]
     fn selection_backend_est_stricte() {
-        assert_eq!("dx12".parse::<Backend>().unwrap().backends(), wgpu::Backends::DX12);
+        assert_eq!(
+            "dx12".parse::<Backend>().unwrap().backends(),
+            wgpu::Backends::DX12
+        );
         assert!("directx11".parse::<Backend>().is_err());
-        assert_eq!("gl".parse::<Backend>().unwrap().backends(), wgpu::Backends::GL);
-        assert_eq!("webgpu".parse::<Backend>().unwrap().backends(), wgpu::Backends::BROWSER_WEBGPU);
+        assert_eq!(
+            "gl".parse::<Backend>().unwrap().backends(),
+            wgpu::Backends::GL
+        );
+        assert_eq!(
+            "webgpu".parse::<Backend>().unwrap().backends(),
+            wgpu::Backends::BROWSER_WEBGPU
+        );
         if cfg!(target_os = "windows") {
             assert_eq!(Backend::default(), Backend::Dx12);
         }
@@ -1367,15 +1487,25 @@ mod tests {
                 indices: vec![0, 1, 2],
                 texture: Some(0),
             }],
-            textures: vec![crate::glb::Texture { width: 1, height: 1, rgba: vec![255, 0, 0, 255] }],
+            textures: vec![crate::glb::Texture {
+                width: 1,
+                height: 1,
+                rgba: vec![255, 0, 0, 255],
+            }],
         };
 
         let gpu_model = renderer.upload(&model);
         assert_eq!(gpu_model.triangle_count, 1);
         assert_eq!(gpu_model.vertex_count, 3);
 
-        let camera = Camera { yaw: 0.0, pitch: 0.0, distance: 3.0 };
-        let pixels = renderer.render(&gpu_model, camera, 64, 64).expect("rendu GPU");
+        let camera = Camera {
+            yaw: 0.0,
+            pitch: 0.0,
+            distance: 3.0,
+        };
+        let pixels = renderer
+            .render(&gpu_model, camera, 64, 64)
+            .expect("rendu GPU");
         assert_eq!(pixels.len(), 64 * 64 * 4);
 
         // Le fond est effacé en transparent : tout pixel opaque vient du triangle. En exiger un
@@ -1387,8 +1517,14 @@ mod tests {
         );
 
         // La texture est rouge pur, modulée par l'éclairage : le canal rouge doit dominer.
-        let sample = pixels.chunks_exact(4).find(|p| p[3] > 200).expect("au moins un pixel opaque");
-        assert!(sample[0] > sample[1] && sample[0] > sample[2], "couleur inattendue : {sample:?}");
+        let sample = pixels
+            .chunks_exact(4)
+            .find(|p| p[3] > 200)
+            .expect("au moins un pixel opaque");
+        assert!(
+            sample[0] > sample[1] && sample[0] > sample[2],
+            "couleur inattendue : {sample:?}"
+        );
     }
 
     /// Le pipeline GPU cadre la **même vue** que le rastériseur CPU de référence.
@@ -1439,13 +1575,25 @@ mod tests {
         let gpu_model = renderer.upload(&model);
         // Conversion de convention, la même que celle du binaire : orbiter de +θ montre ce que
         // montre une rotation du modèle de −θ.
-        let camera = Camera { yaw: -angle, ..Default::default() }.clamped();
+        let camera = Camera {
+            yaw: -angle,
+            ..Default::default()
+        }
+        .clamped();
         let limit = renderer.device().limits().max_texture_dimension_2d;
-        assert!(renderer.render_to_texture(&gpu_model, camera, limit + 1, 128).is_err());
-        renderer.render_to_texture(&gpu_model, camera, 128, 128).expect("rendu sans lecture CPU");
+        assert!(
+            renderer
+                .render_to_texture(&gpu_model, camera, limit + 1, 128)
+                .is_err()
+        );
+        renderer
+            .render_to_texture(&gpu_model, camera, 128, 128)
+            .expect("rendu sans lecture CPU");
 
         for (w, h) in [(128u32, 128u32), (256, 128), (128, 256)] {
-            let gpu_px = renderer.render(&gpu_model, camera, w, h).expect("rendu GPU");
+            let gpu_px = renderer
+                .render(&gpu_model, camera, w, h)
+                .expect("rendu GPU");
             let cpu_px = crate::render::render(&model, angle, w, h);
 
             let (mut inter, mut union) = (0usize, 0usize);
@@ -1494,7 +1642,11 @@ mod tests {
             textures: Vec::new(),
         };
         let gpu_model = renderer.upload(&model);
-        let camera = Camera { yaw: 0.0, pitch: 0.0, distance: 3.0 };
+        let camera = Camera {
+            yaw: 0.0,
+            pitch: 0.0,
+            distance: 3.0,
+        };
 
         let vert = [0, 255, 0];
         let segments = vec![
@@ -1518,7 +1670,10 @@ mod tests {
                 .count()
         };
         let (n_avec, n_sans) = (verts(&avec), verts(&sans));
-        assert!(n_avec > 50, "les segments doivent couvrir des pixels ({n_avec})");
+        assert!(
+            n_avec > 50,
+            "les segments doivent couvrir des pixels ({n_avec})"
+        );
         assert_eq!(n_sans, 0, "aucun pixel vert sans segment ({n_sans})");
     }
 

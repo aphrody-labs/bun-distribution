@@ -33,14 +33,20 @@ fn to_iecode(siblings: &[CfgEntry]) -> Vec<serde_json::Value> {
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
     let path = vfs
         .iter()
         .map(|(p, _)| p.to_string())
         .filter(|p| {
-            p.contains("/fr/") && p.rsplit('/').next().is_some_and(|b| b == "chara_text.cfg.bin")
+            p.contains("/fr/")
+                && p.rsplit('/')
+                    .next()
+                    .is_some_and(|b| b == "chara_text.cfg.bin")
         })
         .min()
         .expect("chara_text fr introuvable");
@@ -54,8 +60,14 @@ fn main() {
     assert!(!nouns.is_empty());
 
     // Aucun nom ne doit contenir de balise résiduelle.
-    let with_tag = nouns.iter().filter(|n| n.name.contains('<') && n.name.contains('>')).count();
-    assert_eq!(with_tag, 0, "sanitize_text doit retirer les balises des noms");
+    let with_tag = nouns
+        .iter()
+        .filter(|n| n.name.contains('<') && n.name.contains('>'))
+        .count();
+    assert_eq!(
+        with_tag, 0,
+        "sanitize_text doit retirer les balises des noms"
+    );
 
     use aphrody_nie_data::chara_text::find_name;
     use aphrody_nie_data::hash::HashId;
@@ -70,12 +82,21 @@ fn main() {
     let last = find_name(&nouns, HashId(0xE565_5F9E));
     eprintln!("Endou c01000010 → nameHash(0xE551FF12)={name:?} lastNameHash(0xE5655F9E)={last:?}");
     // Sémantique last-wins (= buildNameMap) : prénom « Mark », nom de famille « Evans ».
-    assert_eq!(dups, ["Mark Evans", "Evans", "Mark"], "3 formes du hash d'Endou");
+    assert_eq!(
+        dups,
+        ["Mark Evans", "Evans", "Mark"],
+        "3 formes du hash d'Endou"
+    );
     assert_eq!(name, Some("Mark"), "nameHash → prénom (last-wins)");
     assert_eq!(last, Some("Evans"), "lastNameHash → nom de famille");
 
     for n in nouns.iter().take(3) {
-        eprintln!("  {} : name={:?} alt={:?}", n.hash_id.to_hex(), n.name, n.alt_names);
+        eprintln!(
+            "  {} : name={:?} alt={:?}",
+            n.hash_id.to_hex(),
+            n.name,
+            n.alt_names
+        );
     }
     eprintln!(
         "✓ END-TO-END OK : aphrody_nie_data::chara_text résout {} noms du vrai dump",

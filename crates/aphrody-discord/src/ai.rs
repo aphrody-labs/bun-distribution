@@ -25,8 +25,10 @@ pub fn build_ai_embed(question: &str, answer: &str, meta: Option<&AiResponseMeta
     let mut fields = Vec::new();
 
     if let Some(m) = meta {
-        let mut perf_info =
-            format!("⚡ **Model:** `{}` | **Latency:** `{}ms`", m.model, m.latency_ms);
+        let mut perf_info = format!(
+            "⚡ **Model:** `{}` | **Latency:** `{}ms`",
+            m.model, m.latency_ms
+        );
         if let (Some(p), Some(c)) = (m.prompt_tokens, m.completion_tokens) {
             perf_info.push_str(&format!(" | **Tokens:** `p:{p}/c:{c}`"));
         }
@@ -62,10 +64,7 @@ pub fn build_ai_embed(question: &str, answer: &str, meta: Option<&AiResponseMeta
     };
 
     Embed {
-        title: Some(format!(
-            "Q: {}",
-            clip(question, 250)
-        )),
+        title: Some(format!("Q: {}", clip(question, 250))),
         description: Some(description),
         color: Some(0x7C3AED), // Aphrody purple accent
         author: Some(EmbedAuthor {
@@ -98,7 +97,10 @@ pub fn format_code_graph_discord(nodes: &[(&str, &str, &str)]) -> Embed {
         description: Some(format!("Discovered **{}** matching symbols:", nodes.len())),
         color: Some(0x2563EB), // Blue
         fields,
-        footer: Some(EmbedFooter { text: "Aphrody Graph Engine".to_string(), icon_url: None }),
+        footer: Some(EmbedFooter {
+            text: "Aphrody Graph Engine".to_string(),
+            icon_url: None,
+        }),
         ..Default::default()
     }
 }

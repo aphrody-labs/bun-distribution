@@ -8,13 +8,19 @@ use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::corpus_pins::{
-    self, AG_PSD_COMMIT, HEIC_RS_COMMIT, OPENEXR_COMMIT, PHOTOCRAFT_CORPUS_COMMIT, PILLOW_HEIF_COMMIT, PNGSUITE_SHA256, PNGSUITE_URL, PSD_TOOLS_COMMIT,
+    self, AG_PSD_COMMIT, HEIC_RS_COMMIT, OPENEXR_COMMIT, PHOTOCRAFT_CORPUS_COMMIT,
+    PILLOW_HEIF_COMMIT, PNGSUITE_SHA256, PNGSUITE_URL, PSD_TOOLS_COMMIT,
 };
 use crate::pinned::{PinnedCorpus, USER_AGENT};
 use crate::{cargo, root, run};
 
 /// Crates with corpus tests (behind their `corpus` feature).
-pub const CORPUS_CRATES: &[&str] = &["photocraft-psd", "photocraft-codecs", "photocraft-io", "photocraft-engine"];
+pub const CORPUS_CRATES: &[&str] = &[
+    "photocraft-psd",
+    "photocraft-codecs",
+    "photocraft-io",
+    "photocraft-engine",
+];
 /// Opt-in corpus crates: fetched and tested only with `test-corpus --pixls`.
 pub const PIXLS_CRATES: &[&str] = &["photocraft-raw"];
 
@@ -100,21 +106,36 @@ fn local_clone() -> Result<PathBuf, String> {
 pub fn fetch_all(local: bool, update: bool) -> Result<(), String> {
     fetch_pngsuite()?;
     fetch_pinned(local, update, fetch_one)?;
-    println!("all corpora present and verified under {}", root().join("corpus").display());
+    println!(
+        "all corpora present and verified under {}",
+        root().join("corpus").display()
+    );
     Ok(())
 }
 
 /// Calls `fetch(corpus, from_clone, update)` for every pinned corpus; `from_clone` is set for
 /// `corpus/photoshop` when `local`.
-fn fetch_pinned(local: bool, update: bool, mut fetch: impl FnMut(&PinnedCorpus, bool, bool) -> Result<(), String>) -> Result<(), String> {
+fn fetch_pinned(
+    local: bool,
+    update: bool,
+    mut fetch: impl FnMut(&PinnedCorpus, bool, bool) -> Result<(), String>,
+) -> Result<(), String> {
     for c in corpus_pins::ALL {
-        fetch(c, local && std::ptr::eq(*c, &corpus_pins::PHOTOSHOP), update)?;
+        fetch(
+            c,
+            local && std::ptr::eq(*c, &corpus_pins::PHOTOSHOP),
+            update,
+        )?;
     }
     Ok(())
 }
 
 fn fetch_one(c: &PinnedCorpus, from_clone: bool, update: bool) -> Result<(), String> {
-    if from_clone { c.fetch_local(&local_clone()?, update) } else { c.fetch(update) }
+    if from_clone {
+        c.fetch_local(&local_clone()?, update)
+    } else {
+        c.fetch(update)
+    }
 }
 
 fn status(present: bool) -> &'static str {
@@ -176,7 +197,10 @@ static PNGSUITE_STAGE_ID: AtomicU64 = AtomicU64::new(0);
 fn pngsuite_bytes(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
     let meta = std::fs::symlink_metadata(path).map_err(|e| format!("{}: {e}", path.display()))?;
     if !meta.is_file() || meta.len() > limit {
-        return Err(format!("{}: expected a regular file of at most {limit} bytes", path.display()));
+        return Err(format!(
+            "{}: expected a regular file of at most {limit} bytes",
+            path.display()
+        ));
     }
     let mut bytes = Vec::new();
     std::fs::File::open(path)
@@ -193,12 +217,16 @@ fn pngsuite_bytes(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
 fn verify_pngsuite(dir: &Path, manifest: &str) -> Result<(), String> {
     let mut expected = BTreeMap::new();
     for line in manifest.lines() {
-        let Some((hash, name)) = line.split_once("  ") else { return Err("pngsuite: invalid manifest line".into()) };
+        let Some((hash, name)) = line.split_once("  ") else {
+            return Err("pngsuite: invalid manifest line".into());
+        };
         if hash.len() != 64
             || !hash.bytes().all(|c| c.is_ascii_hexdigit())
             || name.is_empty()
             || name.contains("..")
-            || !name.bytes().all(|c| c.is_ascii_alphanumeric() || b"._-".contains(&c))
+            || !name
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || b"._-".contains(&c))
             || expected.insert(name, hash).is_some()
         {
             return Err("pngsuite: invalid manifest entry".into());
@@ -216,15 +244,24 @@ fn verify_pngsuite(dir: &Path, manifest: &str) -> Result<(), String> {
     for entry in entries {
         let entry = entry.map_err(|e| format!("{}: {e}", dir.display()))?;
         let name = entry.file_name();
-        let hash = name.to_str().and_then(|n| expected.get(n)).ok_or_else(|| format!("pngsuite: unexpected file {}", entry.path().display()))?;
+        let hash = name
+            .to_str()
+            .and_then(|n| expected.get(n))
+            .ok_or_else(|| format!("pngsuite: unexpected file {}", entry.path().display()))?;
         let bytes = pngsuite_bytes(&entry.path(), PNGSUITE_MAX_FILE_BYTES)?;
         if crate::sha256::hex(&bytes) != **hash {
-            return Err(format!("pngsuite: {}: sha256 mismatch", entry.path().display()));
+            return Err(format!(
+                "pngsuite: {}: sha256 mismatch",
+                entry.path().display()
+            ));
         }
         seen += 1;
     }
     if seen != expected.len() {
-        return Err(format!("pngsuite: missing files ({seen} of {})", expected.len()));
+        return Err(format!(
+            "pngsuite: missing files ({seen} of {})",
+            expected.len()
+        ));
     }
     Ok(())
 }
@@ -278,7 +315,10 @@ fn install_pngsuite(
     }
     if let Err(e) = rename(files, dest) {
         if had_cache && let Err(restore) = rename(backup, dest) {
-            return Err(format!("pngsuite: install failed ({e}); restore failed ({restore}); old cache retained at {}", backup.display()));
+            return Err(format!(
+                "pngsuite: install failed ({e}); restore failed ({restore}); old cache retained at {}",
+                backup.display()
+            ));
         }
         *backup_retained = false;
         return Err(format!("pngsuite: install failed: {e}"));
@@ -325,18 +365,34 @@ fn copy_pngsuite_download(reader: &mut impl Read, writer: &mut impl Write) -> st
     loop {
         match reader.read(&mut extra) {
             Ok(0) => return Ok(()),
-            Ok(_) => return Err(std::io::Error::other(format!("pngsuite: archive exceeds {PNGSUITE_MAX_ARCHIVE_BYTES} bytes"))),
+            Ok(_) => {
+                return Err(std::io::Error::other(format!(
+                    "pngsuite: archive exceeds {PNGSUITE_MAX_ARCHIVE_BYTES} bytes"
+                )));
+            }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
             Err(e) => return Err(e),
         }
     }
 }
 
-fn finish_pngsuite_download(child: &mut Child, mut reader: impl Read, writer: &mut impl Write) -> Result<(), String> {
-    let result = copy_pngsuite_download(&mut reader, writer).map_err(|e| format!("pngsuite: download: {e}")).and_then(|()| {
-        let status = child.wait().map_err(|e| format!("pngsuite: wait for curl: {e}"))?;
-        if status.success() { Ok(()) } else { Err(format!("pngsuite: curl failed: {status}")) }
-    });
+fn finish_pngsuite_download(
+    child: &mut Child,
+    mut reader: impl Read,
+    writer: &mut impl Write,
+) -> Result<(), String> {
+    let result = copy_pngsuite_download(&mut reader, writer)
+        .map_err(|e| format!("pngsuite: download: {e}"))
+        .and_then(|()| {
+            let status = child
+                .wait()
+                .map_err(|e| format!("pngsuite: wait for curl: {e}"))?;
+            if status.success() {
+                Ok(())
+            } else {
+                Err(format!("pngsuite: curl failed: {status}"))
+            }
+        });
     if result.is_err() {
         let _ = child.kill();
         let _ = child.wait();
@@ -345,8 +401,12 @@ fn finish_pngsuite_download(child: &mut Child, mut reader: impl Read, writer: &m
 }
 
 fn download_pngsuite(mut curl: Command, archive: &Path) -> Result<(), String> {
-    let mut file = std::fs::File::create(archive).map_err(|e| format!("create {}: {e}", archive.display()))?;
-    let mut child = curl.stdout(Stdio::piped()).spawn().map_err(|e| format!("pngsuite: start curl: {e}"))?;
+    let mut file =
+        std::fs::File::create(archive).map_err(|e| format!("create {}: {e}", archive.display()))?;
+    let mut child = curl
+        .stdout(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("pngsuite: start curl: {e}"))?;
     let Some(stdout) = child.stdout.take() else {
         let _ = child.kill();
         let _ = child.wait();
@@ -363,7 +423,18 @@ fn fetch_pngsuite() -> Result<(), String> {
         PNGSUITE_MANIFEST,
         |archive| {
             let mut curl = Command::new("curl");
-            curl.args(["-fsSL", "--retry", "3", "--max-filesize", &PNGSUITE_MAX_ARCHIVE_BYTES.to_string(), "-A", USER_AGENT, "-o", "-", PNGSUITE_URL]);
+            curl.args([
+                "-fsSL",
+                "--retry",
+                "3",
+                "--max-filesize",
+                &PNGSUITE_MAX_ARCHIVE_BYTES.to_string(),
+                "-A",
+                USER_AGENT,
+                "-o",
+                "-",
+                PNGSUITE_URL,
+            ]);
             download_pngsuite(curl, archive)
         },
         |archive, files| {
@@ -377,11 +448,21 @@ fn fetch_pngsuite() -> Result<(), String> {
 
 /// Files changed relative to `origin/main` (committed, staged or not).
 fn changed_files() -> Result<Vec<String>, String> {
-    let out = Command::new("git").current_dir(root()).args(["diff", "--name-only", "origin/main"]).output().map_err(|e| format!("git diff: {e}"))?;
+    let out = Command::new("git")
+        .current_dir(root())
+        .args(["diff", "--name-only", "origin/main"])
+        .output()
+        .map_err(|e| format!("git diff: {e}"))?;
     if !out.status.success() {
-        return Err(format!("git diff origin/main failed: {}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "git diff origin/main failed: {}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
-    Ok(String::from_utf8_lossy(&out.stdout).lines().map(str::to_string).collect())
+    Ok(String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .map(str::to_string)
+        .collect())
 }
 
 /// `cargo xtask test-corpus [-p <crate>]... [--changed] [--local] [-- <test args>]`
@@ -393,12 +474,22 @@ pub fn test_cmd(args: &[&str]) -> Result<(), String> {
     let mut raw_changed = false;
     if ours.contains(&"--changed") {
         let changed = changed_files()?;
-        let hits: Vec<&String> = changed.iter().filter(|f| CRITICAL.iter().any(|c| f.starts_with(c))).collect();
+        let hits: Vec<&String> = changed
+            .iter()
+            .filter(|f| CRITICAL.iter().any(|c| f.starts_with(c)))
+            .collect();
         if hits.is_empty() {
-            println!("test-corpus --changed: nothing under {} changed since origin/main; skipping", CRITICAL.join(", "));
+            println!(
+                "test-corpus --changed: nothing under {} changed since origin/main; skipping",
+                CRITICAL.join(", ")
+            );
             return Ok(());
         }
-        println!("test-corpus --changed: {} critical files changed (e.g. {}); running the corpus tests", hits.len(), hits[0]);
+        println!(
+            "test-corpus --changed: {} critical files changed (e.g. {}); running the corpus tests",
+            hits.len(),
+            hits[0]
+        );
         raw_changed = hits.iter().any(|f| f.starts_with("crates/raw/"));
     }
     let mut crates: Vec<String> = Vec::new();
@@ -407,9 +498,18 @@ pub fn test_cmd(args: &[&str]) -> Result<(), String> {
         match *a {
             "-p" | "--package" => {
                 let name = it.next().ok_or("-p needs a crate name")?;
-                let full = if name.starts_with("photocraft-") { (*name).to_string() } else { format!("photocraft-{name}") };
-                if !CORPUS_CRATES.contains(&full.as_str()) && !PIXLS_CRATES.contains(&full.as_str()) {
-                    return Err(format!("{full} has no corpus tests (crates: {} or the opt-in {})", CORPUS_CRATES.join(", "), PIXLS_CRATES.join(", ")));
+                let full = if name.starts_with("photocraft-") {
+                    (*name).to_string()
+                } else {
+                    format!("photocraft-{name}")
+                };
+                if !CORPUS_CRATES.contains(&full.as_str()) && !PIXLS_CRATES.contains(&full.as_str())
+                {
+                    return Err(format!(
+                        "{full} has no corpus tests (crates: {} or the opt-in {})",
+                        CORPUS_CRATES.join(", "),
+                        PIXLS_CRATES.join(", ")
+                    ));
                 }
                 crates.push(full);
             }
@@ -422,7 +522,9 @@ pub fn test_cmd(args: &[&str]) -> Result<(), String> {
     }
     // `--pixls` opts in (and fetches), and a raw change under --changed does too: the raw
     // corpus tests are not part of the default set until a maintainer decides otherwise.
-    let wants_pixls = ours.contains(&"--pixls") || crates.iter().any(|c| PIXLS_CRATES.contains(&c.as_str())) || raw_changed;
+    let wants_pixls = ours.contains(&"--pixls")
+        || crates.iter().any(|c| PIXLS_CRATES.contains(&c.as_str()))
+        || raw_changed;
     if wants_pixls && !crates.iter().any(|c| c == "photocraft-raw") {
         crates.push("photocraft-raw".to_string());
     }
@@ -436,12 +538,23 @@ pub fn test_cmd(args: &[&str]) -> Result<(), String> {
         c.args(["-p", k]);
     }
     let mut features: Vec<String> = crates.iter().map(|k| format!("{k}/corpus")).collect();
-    features.extend(crates.iter().filter(|k| HEIF_CRATES.contains(&k.as_str())).map(|k| format!("{k}/heif")));
+    features.extend(
+        crates
+            .iter()
+            .filter(|k| HEIF_CRATES.contains(&k.as_str()))
+            .map(|k| format!("{k}/heif")),
+    );
     c.args(["--features", &features.join(",")]);
     if !passthrough.is_empty() {
         c.arg("--").args(passthrough);
     }
-    run(c, &format!("cargo test --release --features corpus,heif ({})", crates.join(", ")))
+    run(
+        c,
+        &format!(
+            "cargo test --release --features corpus,heif ({})",
+            crates.join(", ")
+        ),
+    )
 }
 
 #[cfg(test)]
@@ -464,7 +577,10 @@ mod tests {
         for local in [false, true] {
             let seen = calls(local, true);
             assert_eq!(seen.len(), corpus_pins::ALL.len());
-            assert!(seen.iter().all(|(_, u)| *u), "--all --update-manifest dropped the flag: {seen:?}");
+            assert!(
+                seen.iter().all(|(_, u)| *u),
+                "--all --update-manifest dropped the flag: {seen:?}"
+            );
         }
     }
 
@@ -473,7 +589,11 @@ mod tests {
         assert!(calls(false, false).iter().all(|(_, u)| !*u));
     }
 
-    const FIXTURE_FILES: &[(&str, &[u8])] = &[("a.png", b"alpha"), ("b.png", b"beta"), ("PngSuite.LICENSE", b"fixture licence")];
+    const FIXTURE_FILES: &[(&str, &[u8])] = &[
+        ("a.png", b"alpha"),
+        ("b.png", b"beta"),
+        ("PngSuite.LICENSE", b"fixture licence"),
+    ];
     const FIXTURE_ARCHIVE: &[u8] = b"owned archive fixture";
 
     struct Fixture(PathBuf);
@@ -481,7 +601,10 @@ mod tests {
     impl Fixture {
         fn new() -> Self {
             let id = PNGSUITE_STAGE_ID.fetch_add(1, Ordering::Relaxed);
-            let path = std::env::temp_dir().join(format!("photocraft-pngsuite-test-{}-{id}", std::process::id()));
+            let path = std::env::temp_dir().join(format!(
+                "photocraft-pngsuite-test-{}-{id}",
+                std::process::id()
+            ));
             std::fs::create_dir(&path).unwrap();
             Self(path)
         }
@@ -496,8 +619,15 @@ mod tests {
         }
 
         fn assert_old_cache(&self) {
-            assert_eq!(std::fs::read(self.cache().join("old.png")).unwrap(), b"old cache bytes");
-            assert_eq!(std::fs::read_dir(&self.0).unwrap().count(), 1, "staging was not cleaned");
+            assert_eq!(
+                std::fs::read(self.cache().join("old.png")).unwrap(),
+                b"old cache bytes"
+            );
+            assert_eq!(
+                std::fs::read_dir(&self.0).unwrap().count(),
+                1,
+                "staging was not cleaned"
+            );
         }
     }
 
@@ -508,7 +638,10 @@ mod tests {
     }
 
     fn fixture_manifest() -> String {
-        FIXTURE_FILES.iter().map(|(name, bytes)| format!("{}  {name}\n", crate::sha256::hex(bytes))).collect()
+        FIXTURE_FILES
+            .iter()
+            .map(|(name, bytes)| format!("{}  {name}\n", crate::sha256::hex(bytes)))
+            .collect()
     }
 
     fn fixture_extract(_: &Path, files: &Path) -> Result<(), String> {
@@ -523,9 +656,14 @@ mod tests {
     }
 
     fn fixture_fetch(corpus: &Path) -> Result<(), String> {
-        fetch_pngsuite_in(corpus, &crate::sha256::hex(FIXTURE_ARCHIVE), &fixture_manifest(), fixture_download, fixture_extract, |from, to| {
-            std::fs::rename(from, to)
-        })
+        fetch_pngsuite_in(
+            corpus,
+            &crate::sha256::hex(FIXTURE_ARCHIVE),
+            &fixture_manifest(),
+            fixture_download,
+            fixture_extract,
+            |from, to| std::fs::rename(from, to),
+        )
     }
 
     #[test]
@@ -535,17 +673,33 @@ mod tests {
         fixture_extract(Path::new("unused"), &f.cache()).unwrap();
         assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).is_ok());
         std::fs::write(f.cache().join("a.png"), b"changed").unwrap();
-        assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).unwrap_err().contains("sha256 mismatch"));
+        assert!(
+            verify_pngsuite(&f.cache(), &fixture_manifest())
+                .unwrap_err()
+                .contains("sha256 mismatch")
+        );
         fixture_extract(Path::new("unused"), &f.cache()).unwrap();
         std::fs::remove_file(f.cache().join("a.png")).unwrap();
-        assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).unwrap_err().contains("missing files"));
+        assert!(
+            verify_pngsuite(&f.cache(), &fixture_manifest())
+                .unwrap_err()
+                .contains("missing files")
+        );
         fixture_extract(Path::new("unused"), &f.cache()).unwrap();
         std::fs::write(f.cache().join("extra.png"), b"extra").unwrap();
-        assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).unwrap_err().contains("unexpected file"));
+        assert!(
+            verify_pngsuite(&f.cache(), &fixture_manifest())
+                .unwrap_err()
+                .contains("unexpected file")
+        );
         std::fs::remove_file(f.cache().join("extra.png")).unwrap();
         std::fs::remove_file(f.cache().join("a.png")).unwrap();
         std::fs::create_dir(f.cache().join("a.png")).unwrap();
-        assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).unwrap_err().contains("regular file"));
+        assert!(
+            verify_pngsuite(&f.cache(), &fixture_manifest())
+                .unwrap_err()
+                .contains("regular file")
+        );
     }
 
     #[test]
@@ -572,7 +726,10 @@ mod tests {
         }
         fixture_fetch(&f.0).unwrap();
         assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).is_ok());
-        assert_eq!(std::fs::read_dir(f.cache()).unwrap().count(), FIXTURE_FILES.len());
+        assert_eq!(
+            std::fs::read_dir(f.cache()).unwrap().count(),
+            FIXTURE_FILES.len()
+        );
         assert_eq!(std::fs::read_dir(&f.0).unwrap().count(), 1);
     }
 
@@ -646,7 +803,11 @@ mod tests {
                 |_, _| panic!("unverified extraction installed"),
             )
             .unwrap_err();
-            assert!(e.contains(if extra { "unexpected file" } else { "missing files" }));
+            assert!(e.contains(if extra {
+                "unexpected file"
+            } else {
+                "missing files"
+            }));
             f.assert_old_cache();
         }
     }
@@ -656,13 +817,22 @@ mod tests {
         for fail_backup in [false, true] {
             let f = Fixture::new();
             f.old_cache();
-            let e = fetch_pngsuite_in(&f.0, &crate::sha256::hex(FIXTURE_ARCHIVE), &fixture_manifest(), fixture_download, fixture_extract, |from, to| {
-                if (fail_backup && from == f.cache()) || (!fail_backup && from.file_name().is_some_and(|n| n == "files")) {
-                    Err(std::io::Error::other("injected rename failure"))
-                } else {
-                    std::fs::rename(from, to)
-                }
-            })
+            let e = fetch_pngsuite_in(
+                &f.0,
+                &crate::sha256::hex(FIXTURE_ARCHIVE),
+                &fixture_manifest(),
+                fixture_download,
+                fixture_extract,
+                |from, to| {
+                    if (fail_backup && from == f.cache())
+                        || (!fail_backup && from.file_name().is_some_and(|n| n == "files"))
+                    {
+                        Err(std::io::Error::other("injected rename failure"))
+                    } else {
+                        std::fs::rename(from, to)
+                    }
+                },
+            )
             .unwrap_err();
             assert!(e.contains("injected rename failure"));
             f.assert_old_cache();
@@ -673,14 +843,35 @@ mod tests {
     fn pngsuite_failed_rollback_retains_and_names_the_backup() {
         let f = Fixture::new();
         f.old_cache();
-        let e = fetch_pngsuite_in(&f.0, &crate::sha256::hex(FIXTURE_ARCHIVE), &fixture_manifest(), fixture_download, fixture_extract, |from, to| {
-            if from == f.cache() { std::fs::rename(from, to) } else { Err(std::io::Error::other("injected install and rollback failure")) }
-        })
+        let e = fetch_pngsuite_in(
+            &f.0,
+            &crate::sha256::hex(FIXTURE_ARCHIVE),
+            &fixture_manifest(),
+            fixture_download,
+            fixture_extract,
+            |from, to| {
+                if from == f.cache() {
+                    std::fs::rename(from, to)
+                } else {
+                    Err(std::io::Error::other(
+                        "injected install and rollback failure",
+                    ))
+                }
+            },
+        )
         .unwrap_err();
-        let stage = std::fs::read_dir(&f.0).unwrap().next().unwrap().unwrap().path();
+        let stage = std::fs::read_dir(&f.0)
+            .unwrap()
+            .next()
+            .unwrap()
+            .unwrap()
+            .path();
         let backup = stage.join("previous");
         assert!(e.contains(&backup.display().to_string()), "{e}");
-        assert_eq!(std::fs::read(backup.join("old.png")).unwrap(), b"old cache bytes");
+        assert_eq!(
+            std::fs::read(backup.join("old.png")).unwrap(),
+            b"old cache bytes"
+        );
         std::fs::rename(backup, f.cache()).unwrap();
     }
 
@@ -688,9 +879,21 @@ mod tests {
     fn pngsuite_reads_are_bounded_and_malformed_manifests_are_rejected() {
         let f = Fixture::new();
         let file = f.0.join("large");
-        std::fs::File::create(&file).unwrap().set_len(PNGSUITE_MAX_ARCHIVE_BYTES + 1).unwrap();
-        assert!(pngsuite_bytes(&file, PNGSUITE_MAX_ARCHIVE_BYTES).unwrap_err().contains("regular file"));
-        for malformed in ["", "invalid", "00  a.png", &format!("{}  ../outside\n", crate::sha256::hex(b""))] {
+        std::fs::File::create(&file)
+            .unwrap()
+            .set_len(PNGSUITE_MAX_ARCHIVE_BYTES + 1)
+            .unwrap();
+        assert!(
+            pngsuite_bytes(&file, PNGSUITE_MAX_ARCHIVE_BYTES)
+                .unwrap_err()
+                .contains("regular file")
+        );
+        for malformed in [
+            "",
+            "invalid",
+            "00  a.png",
+            &format!("{}  ../outside\n", crate::sha256::hex(b"")),
+        ] {
             assert!(verify_pngsuite(&f.0, malformed).is_err());
         }
     }
@@ -722,7 +925,11 @@ mod tests {
 
     fn stream_child() -> Child {
         Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", "corpus::tests::pngsuite_stream_fixture", "--nocapture"])
+            .args([
+                "--exact",
+                "corpus::tests::pngsuite_stream_fixture",
+                "--nocapture",
+            ])
             .env("PHOTOCRAFT_PNGSUITE_STREAM_TEST", "1")
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
@@ -750,18 +957,30 @@ mod tests {
         let mut child = stream_child();
         let stdout = child.stdout.take().unwrap();
         let mut out = Vec::new();
-        assert!(finish_pngsuite_download(&mut child, stdout, &mut out).unwrap_err().contains("archive exceeds"));
+        assert!(
+            finish_pngsuite_download(&mut child, stdout, &mut out)
+                .unwrap_err()
+                .contains("archive exceeds")
+        );
         assert_eq!(out.len() as u64, PNGSUITE_MAX_ARCHIVE_BYTES);
         assert!(child.try_wait().unwrap().is_some());
 
         let mut child = stream_child();
         assert!(child.try_wait().unwrap().is_none());
-        assert!(finish_pngsuite_download(&mut child, FailedRead, &mut Vec::new()).unwrap_err().contains("injected read failure"));
+        assert!(
+            finish_pngsuite_download(&mut child, FailedRead, &mut Vec::new())
+                .unwrap_err()
+                .contains("injected read failure")
+        );
         assert!(child.try_wait().unwrap().is_some());
 
         let mut child = stream_child();
         let stdout = child.stdout.take().unwrap();
-        assert!(finish_pngsuite_download(&mut child, stdout, &mut FailedWrite).unwrap_err().contains("injected write failure"));
+        assert!(
+            finish_pngsuite_download(&mut child, stdout, &mut FailedWrite)
+                .unwrap_err()
+                .contains("injected write failure")
+        );
         assert!(child.try_wait().unwrap().is_some());
     }
 
@@ -774,6 +993,10 @@ mod tests {
         std::fs::write(f.0.join("target"), b"alpha").unwrap();
         std::fs::remove_file(f.cache().join("a.png")).unwrap();
         std::os::unix::fs::symlink(f.0.join("target"), f.cache().join("a.png")).unwrap();
-        assert!(verify_pngsuite(&f.cache(), &fixture_manifest()).unwrap_err().contains("regular file"));
+        assert!(
+            verify_pngsuite(&f.cache(), &fixture_manifest())
+                .unwrap_err()
+                .contains("regular file")
+        );
     }
 }

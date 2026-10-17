@@ -5,7 +5,9 @@ use std::cell::RefCell;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 
-use boa_engine::{Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source, js_string};
+use boa_engine::{
+    Context, JsNativeError, JsResult, JsString, JsValue, NativeFunction, Source, js_string,
+};
 use effectcraft_engine::history::History;
 use effectcraft_engine::project::Project;
 use effectcraft_engine::{ScriptRequest, Session};
@@ -15,8 +17,16 @@ const PRELUDE: &str = include_str!("prelude.js");
 
 /// Engine commands that create layers: like After Effects, scripts add new layers at the top of
 /// the stack (the UI inserts above the selection).
-const CREATES_LAYER: &[&str] =
-    &["layer.newSolid", "layer.newNull", "layer.newText", "layer.newShape", "layer.newAdjustment", "layer.newCamera", "layer.newLight", "layer.addItem"];
+const CREATES_LAYER: &[&str] = &[
+    "layer.newSolid",
+    "layer.newNull",
+    "layer.newText",
+    "layer.newShape",
+    "layer.newAdjustment",
+    "layer.newCamera",
+    "layer.newLight",
+    "layer.addItem",
+];
 
 /// What a script run produced.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -80,7 +90,15 @@ pub(crate) struct Active {
 
 impl Active {
     pub(crate) fn new(session: Session, name: &str, host: u32) -> Active {
-        Active { session, output: vec![], groups: vec![], name: name.to_string(), host, link: None, loading: vec![] }
+        Active {
+            session,
+            output: vec![],
+            groups: vec![],
+            name: name.to_string(),
+            host,
+            link: None,
+            loading: vec![],
+        }
     }
 }
 
@@ -91,7 +109,9 @@ thread_local! {
     pub(crate) static CONSOLE: RefCell<Option<ManuallyDrop<Context>>> = const { RefCell::new(None) };
 }
 
-pub(crate) fn with_active<T>(f: impl FnOnce(&mut Active) -> Result<T, String>) -> Result<T, String> {
+pub(crate) fn with_active<T>(
+    f: impl FnOnce(&mut Active) -> Result<T, String>,
+) -> Result<T, String> {
     ACTIVE.with(|a| match a.try_borrow_mut() {
         Ok(mut g) => match g.as_mut() {
             Some(act) => f(act),
@@ -106,7 +126,12 @@ pub(crate) fn throw(msg: impl Into<String>) -> boa_engine::JsError {
 }
 
 pub(crate) fn arg_string(args: &[JsValue], i: usize, ctx: &mut Context) -> JsResult<String> {
-    Ok(args.get(i).cloned().unwrap_or_default().to_string(ctx)?.to_std_string_escaped())
+    Ok(args
+        .get(i)
+        .cloned()
+        .unwrap_or_default()
+        .to_string(ctx)?
+        .to_std_string_escaped())
 }
 
 fn arg_json(args: &[JsValue], i: usize, ctx: &mut Context) -> JsResult<J> {
@@ -146,7 +171,11 @@ fn native_exec(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
 /// the active comp), then the user's active comp comes back.
 pub(crate) fn exec(s: &mut Session, id: &str, params: J) -> Result<J, String> {
     use effectcraft_engine::project::ItemId;
-    let target = params.get("comp").and_then(J::as_u64).map(ItemId).filter(|c| s.project.comp(*c).is_some());
+    let target = params
+        .get("comp")
+        .and_then(J::as_u64)
+        .map(ItemId)
+        .filter(|c| s.project.comp(*c).is_some());
     let prev = s.state.active_comp;
     if let Some(c) = target
         && prev != Some(c)
@@ -181,24 +210,51 @@ pub(crate) fn exec(s: &mut Session, id: &str, params: J) -> Result<J, String> {
 fn exec_on_keys(s: &mut Session, id: &str, params: J, targets: &J) -> Result<J, String> {
     use effectcraft_engine::KeyRef;
     use effectcraft_engine::project::{ItemId, LayerId};
-    let cid = params.get("comp").and_then(J::as_u64).map(ItemId).or(s.state.active_comp).ok_or("no composition is open")?;
-    let comp = s.project.comp(cid).ok_or("the composition no longer exists")?;
+    let cid = params
+        .get("comp")
+        .and_then(J::as_u64)
+        .map(ItemId)
+        .or(s.state.active_comp)
+        .ok_or("no composition is open")?;
+    let comp = s
+        .project
+        .comp(cid)
+        .ok_or("the composition no longer exists")?;
     let mut keys = vec![];
     for t in targets.as_array().into_iter().flatten() {
-        let (Some(layer), Some(prop), Some(index)) = (t["layer"].as_u64(), t["prop"].as_u64(), t["index"].as_u64()) else {
+        let (Some(layer), Some(prop), Some(index)) =
+            (t["layer"].as_u64(), t["prop"].as_u64(), t["index"].as_u64())
+        else {
             return Err(format!("bad keyframe reference {t}"));
         };
-        let l = comp.layer(LayerId(layer)).ok_or("the layer no longer exists")?;
+        let l = comp
+            .layer(LayerId(layer))
+            .ok_or("the layer no longer exists")?;
         if l.switches.locked {
-            return Err(format!("Can not change keyframes of \"{}\": the layer is locked", l.name));
+            return Err(format!(
+                "Can not change keyframes of \"{}\": the layer is locked",
+                l.name
+            ));
         }
-        let key = l.props.find(prop).and_then(|pr| pr.keys.get(usize::try_from(index).ok()?)).ok_or("the keyframe no longer exists")?;
-        keys.push(KeyRef { layer: LayerId(layer), prop, time: key.time });
+        let key = l
+            .props
+            .find(prop)
+            .and_then(|pr| pr.keys.get(usize::try_from(index).ok()?))
+            .ok_or("the keyframe no longer exists")?;
+        keys.push(KeyRef {
+            layer: LayerId(layer),
+            prop,
+            time: key.time,
+        });
     }
     let saved = std::mem::replace(&mut s.state.selected_keys, keys);
     let r = exec(s, id, params);
     let comp = s.active_comp();
-    let exists = |k: &KeyRef| comp.and_then(|c| c.layer(k.layer)).and_then(|l| l.props.find(k.prop)).is_some_and(|pr| pr.keys.iter().any(|x| x.time == k.time));
+    let exists = |k: &KeyRef| {
+        comp.and_then(|c| c.layer(k.layer))
+            .and_then(|l| l.props.find(k.prop))
+            .is_some_and(|pr| pr.keys.iter().any(|x| x.time == k.time))
+    };
     s.state.selected_keys = saved.into_iter().filter(exists).collect();
     r
 }
@@ -243,7 +299,11 @@ fn native_undo(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             "begin" => {
                 let snap = a.session.project.clone();
                 a.groups.push((
-                    if name.is_empty() || name == "undefined" { "Script".into() } else { name },
+                    if name.is_empty() || name == "undefined" {
+                        "Script".into()
+                    } else {
+                        name
+                    },
                     snap,
                     a.session.history.clone(),
                     a.session.saved_project.clone(),
@@ -267,7 +327,13 @@ fn native_undo(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
 
 /// Fold every command in a group into a single bounded-history entry, even if the
 /// oldest intermediate undo state was trimmed before the group ended.
-pub(crate) fn collapse(s: &mut Session, name: &str, snap: &Arc<Project>, prior: &History, saved: &Arc<Project>) {
+pub(crate) fn collapse(
+    s: &mut Session,
+    name: &str,
+    snap: &Arc<Project>,
+    prior: &History,
+    saved: &Arc<Project>,
+) {
     let h = &mut s.history;
     if let Some(start) = h.undo.iter().rposition(|(_, p)| Arc::ptr_eq(p, snap)) {
         // The group is short enough that its opening snapshot is still in history.
@@ -275,12 +341,19 @@ pub(crate) fn collapse(s: &mut Session, name: &str, snap: &Arc<Project>, prior: 
         h.undo.truncate(start);
         h.undo.push((name.to_string(), first));
         h.merge_key = None;
-    } else if !Arc::ptr_eq(&s.project, snap) && Arc::ptr_eq(&s.saved_project, saved) && !h.undo.is_empty() {
+    } else if !Arc::ptr_eq(&s.project, snap)
+        && Arc::ptr_eq(&s.saved_project, saved)
+        && !h.undo.is_empty()
+    {
         // The group exceeded Levels of Undo. Restore the pre-group history (including
         // older steps and redo branches) and record one step for the *whole* group.
         // A New / Open Project changes saved_project; never resurrect the old history.
         *h = prior.clone();
-        h.record(name, snap.clone(), s.prefs.general.undo_levels.max(1) as usize);
+        h.record(
+            name,
+            snap.clone(),
+            s.prefs.general.undo_levels.max(1) as usize,
+        );
     }
 }
 
@@ -303,7 +376,15 @@ fn native_task(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
     let repeat = args.get(3).cloned().unwrap_or_default().to_boolean();
     let now = web_time::Instant::now();
     let id = with_active(|a| {
-        let id = crate::tasks::schedule(a.host, &a.name, a.session.script_ui.project_epoch, code, delay, repeat, now)?;
+        let id = crate::tasks::schedule(
+            a.host,
+            &a.name,
+            a.session.script_ui.project_epoch,
+            code,
+            delay,
+            repeat,
+            now,
+        )?;
         if !a.session.script_ui.task_hosts.contains(&a.host) {
             a.session.script_ui.task_hosts.push(a.host);
         }
@@ -315,14 +396,20 @@ fn native_task(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
 
 pub(crate) fn project_dir(s: &Session) -> Option<String> {
     let p = s.path.as_deref()?;
-    std::path::Path::new(p).parent().map(|d| d.to_string_lossy().to_string())
+    std::path::Path::new(p)
+        .parent()
+        .map(|d| d.to_string_lossy().to_string())
 }
 
 /// Lexically normalized absolute path (`a/./b/../c` → `a/c`).
 pub(crate) fn normalize(p: &str) -> std::path::PathBuf {
     use std::path::{Component, Path, PathBuf};
     let path = Path::new(p);
-    let abs = if path.is_absolute() { path.to_path_buf() } else { std::env::current_dir().unwrap_or_default().join(path) };
+    let abs = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir().unwrap_or_default().join(path)
+    };
     let mut out = PathBuf::new();
     for c in abs.components() {
         match c {
@@ -335,11 +422,17 @@ pub(crate) fn normalize(p: &str) -> std::path::PathBuf {
     }
     // Resolve symlinks where the file (or its folder) exists, so links can't escape the project.
     std::fs::canonicalize(&out)
-        .or_else(|_| out.parent().map(std::fs::canonicalize).unwrap_or(Ok(out.clone())).map(|d| d.join(out.file_name().unwrap_or_default())))
+        .or_else(|_| {
+            out.parent()
+                .map(std::fs::canonicalize)
+                .unwrap_or(Ok(out.clone()))
+                .map(|d| d.join(out.file_name().unwrap_or_default()))
+        })
         .unwrap_or(out)
 }
 
-pub(crate) const GATE: &str = "Preferences ▸ Scripting & Expressions ▸ Allow Scripts to Write Files and Access Network";
+pub(crate) const GATE: &str =
+    "Preferences ▸ Scripting & Expressions ▸ Allow Scripts to Write Files and Access Network";
 
 /// The file-access gate: reads under the project's folder are always allowed; other reads, all
 /// writes and listing other folders need the Allow Scripts to Write Files preference.
@@ -349,7 +442,9 @@ fn check_access(s: &Session, path: &str, write: bool) -> Result<std::path::PathB
         return Ok(p);
     }
     if write {
-        return Err(format!("Unable to write {path}: scripts can't write files unless {GATE} is on"));
+        return Err(format!(
+            "Unable to write {path}: scripts can't write files unless {GATE} is on"
+        ));
     }
     if let Some(dir) = project_dir(s) {
         let d = normalize(&dir);
@@ -357,13 +452,20 @@ fn check_access(s: &Session, path: &str, write: bool) -> Result<std::path::PathB
             return Ok(p);
         }
     }
-    Err(format!("Unable to access {path}: scripts can only read files in the project's folder unless {GATE} is on"))
+    Err(format!(
+        "Unable to access {path}: scripts can only read files in the project's folder unless {GATE} is on"
+    ))
 }
 
 /// Encode a binary script string as bytes, without silently corrupting code points outside
 /// the one-byte range supported by ExtendScript's BINARY encoding.
 fn binary_bytes(data: &str) -> Result<Vec<u8>, String> {
-    data.chars().map(|c| u8::try_from(c as u32).map_err(|_| format!("BINARY encoding cannot represent U+{:04X}", c as u32))).collect()
+    data.chars()
+        .map(|c| {
+            u8::try_from(c as u32)
+                .map_err(|_| format!("BINARY encoding cannot represent U+{:04X}", c as u32))
+        })
+        .collect()
 }
 
 /// `__file(op, path, data)`: text and one-byte-per-character BINARY reads/writes,
@@ -371,24 +473,38 @@ fn binary_bytes(data: &str) -> Result<Vec<u8>, String> {
 fn native_file(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsValue> {
     let op = arg_string(args, 0, ctx)?;
     let path = arg_string(args, 1, ctx)?;
-    let data = if args.len() > 2 { arg_string(args, 2, ctx)? } else { String::new() };
+    let data = if args.len() > 2 {
+        arg_string(args, 2, ctx)?
+    } else {
+        String::new()
+    };
     let r: Result<J, String> = with_active(|a| {
         // File.execute(): opened with its default application through `file.executeFile`
         // (Allow Scripts to Write Files gate, Warn User When Executing Files confirmation).
         if op == "execute" {
-            return exec(&mut a.session, "file.executeFile", json!({"path": path})).map(|v| json!(v.get("opened").is_some()));
+            return exec(&mut a.session, "file.executeFile", json!({"path": path}))
+                .map(|v| json!(v.get("opened").is_some()));
         }
         let s = &a.session;
         match op.as_str() {
             "access" => Ok(json!(check_access(s, &path, false)?.exists())),
             "exists" | "isDir" => {
                 // Unreadable locations report "missing" instead of failing.
-                let Ok(p) = check_access(s, &path, false) else { return Ok(json!(false)) };
-                Ok(json!(if op == "exists" { p.exists() } else { p.is_dir() }))
+                let Ok(p) = check_access(s, &path, false) else {
+                    return Ok(json!(false));
+                };
+                Ok(json!(if op == "exists" {
+                    p.exists()
+                } else {
+                    p.is_dir()
+                }))
             }
             "read" | "readBinary" => {
                 let p = check_access(s, &path, false)?;
-                let bytes = s.services.read_file(&p.to_string_lossy()).map_err(|e| format!("Unable to read {path}: {e}"))?;
+                let bytes = s
+                    .services
+                    .read_file(&p.to_string_lossy())
+                    .map_err(|e| format!("Unable to read {path}: {e}"))?;
                 if op == "readBinary" {
                     // Each byte becomes a single JS character (U+0000..U+00FF).
                     Ok(json!(bytes.into_iter().map(char::from).collect::<String>()))
@@ -399,21 +515,32 @@ fn native_file(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             "write" | "writeBinary" | "append" => {
                 let p = check_access(s, &path, true)?;
                 let ps = p.to_string_lossy().to_string();
-                let mut bytes = if op == "append" { s.services.read_file(&ps).unwrap_or_default() } else { vec![] };
+                let mut bytes = if op == "append" {
+                    s.services.read_file(&ps).unwrap_or_default()
+                } else {
+                    vec![]
+                };
                 if op == "writeBinary" {
                     bytes.extend(binary_bytes(&data)?);
                 } else {
                     bytes.extend_from_slice(data.as_bytes());
                 }
-                s.services.write_file(&ps, &bytes).map_err(|e| format!("Unable to write {path}: {e}"))?;
+                s.services
+                    .write_file(&ps, &bytes)
+                    .map_err(|e| format!("Unable to write {path}: {e}"))?;
                 Ok(json!(bytes.len()))
             }
             "copy" => {
                 let src = check_access(s, &path, false)?;
                 let dst = check_access(s, &data, true)?;
                 // Copy the original bytes, not UTF-8-decoded script text.
-                let bytes = s.services.read_file(&src.to_string_lossy()).map_err(|e| format!("Unable to read {path}: {e}"))?;
-                s.services.write_file(&dst.to_string_lossy(), &bytes).map_err(|e| format!("Unable to write {data}: {e}"))?;
+                let bytes = s
+                    .services
+                    .read_file(&src.to_string_lossy())
+                    .map_err(|e| format!("Unable to read {path}: {e}"))?;
+                s.services
+                    .write_file(&dst.to_string_lossy(), &bytes)
+                    .map_err(|e| format!("Unable to write {data}: {e}"))?;
                 Ok(json!(true))
             }
             "list" => {
@@ -433,7 +560,11 @@ fn native_file(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResult<JsV
             }
             "remove" => {
                 let p = check_access(s, &path, true)?;
-                let r = if p.is_dir() { std::fs::remove_dir(&p) } else { std::fs::remove_file(&p) };
+                let r = if p.is_dir() {
+                    std::fs::remove_dir(&p)
+                } else {
+                    std::fs::remove_file(&p)
+                };
                 Ok(json!(r.is_ok()))
             }
             "network" => Err(if s.prefs.scripting.allow_scripts_write_files {
@@ -463,7 +594,9 @@ fn native_eval_file(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResul
     }
     let (path, text) = with_active(|a| {
         if a.loading.len() >= MAX_DEPTH {
-            return Err(format!("$.evalFile(\"{name}\"): files are nested too deeply (at most {MAX_DEPTH})"));
+            return Err(format!(
+                "$.evalFile(\"{name}\"): files are nested too deeply (at most {MAX_DEPTH})"
+            ));
         }
         let s = &a.session;
         let root = scriptfile::script_dir(s, &a.name);
@@ -473,7 +606,8 @@ fn native_eval_file(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> JsResul
             .and_then(|p| p.parent().map(std::path::Path::to_path_buf))
             .or_else(|| root.clone())
             .or_else(|| project_dir(s).map(|d| normalize(&d)));
-        let path = scriptfile::resolve(s, &name, dir.as_deref(), &[]).map_err(|e| format!("$.evalFile {e}"))?;
+        let path = scriptfile::resolve(s, &name, dir.as_deref(), &[])
+            .map_err(|e| format!("$.evalFile {e}"))?;
         scriptfile::check_read(s, &path, root.as_deref())?;
         let text = scriptfile::read(s, &path)?;
         check_nesting(&text)?;
@@ -494,7 +628,11 @@ pub(crate) fn new_context() -> Result<Context, String> {
     let limits = ctx.runtime_limits_mut();
     limits.set_loop_iteration_limit(200_000_000);
     limits.set_recursion_limit(2000);
-    let natives: [(JsString, usize, fn(&JsValue, &[JsValue], &mut Context) -> JsResult<JsValue>); 11] = [
+    let natives: [(
+        JsString,
+        usize,
+        fn(&JsValue, &[JsValue], &mut Context) -> JsResult<JsValue>,
+    ); 11] = [
         (js_string!("__exec"), 2, native_exec),
         (js_string!("__query"), 2, native_query),
         (js_string!("__print"), 1, native_print),
@@ -508,29 +646,52 @@ pub(crate) fn new_context() -> Result<Context, String> {
         (js_string!("__uiLayoutNative"), 1, crate::ui::native_layout),
     ];
     for (name, len, f) in natives {
-        ctx.register_global_callable(name, len, NativeFunction::from_fn_ptr(f)).map_err(|e| e.to_string())?;
+        ctx.register_global_callable(name, len, NativeFunction::from_fn_ptr(f))
+            .map_err(|e| e.to_string())?;
     }
-    ctx.eval(Source::from_bytes(PRELUDE)).map_err(|e| format!("script prelude: {e}"))?;
-    ctx.eval(Source::from_bytes(crate::ui::SCRIPTUI)).map_err(|e| format!("ScriptUI prelude: {e}"))?;
+    ctx.eval(Source::from_bytes(PRELUDE))
+        .map_err(|e| format!("script prelude: {e}"))?;
+    ctx.eval(Source::from_bytes(crate::ui::SCRIPTUI))
+        .map_err(|e| format!("ScriptUI prelude: {e}"))?;
     Ok(ctx)
 }
 
 /// Turn a boa error into a message with line and column (`code` is the user's script).
-pub(crate) fn script_error(e: &boa_engine::JsError, ctx: &mut Context, file: &str, code: &str) -> ScriptError {
+pub(crate) fn script_error(
+    e: &boa_engine::JsError,
+    ctx: &mut Context,
+    file: &str,
+    code: &str,
+) -> ScriptError {
     // Thrown values: `throw new Error("x")`, `throw "x"`, native errors.
     let display = e.to_string();
     let message = match e.as_opaque() {
         Some(v) => {
             let o = v.as_object();
-            let msg = o.as_ref().and_then(|o| o.get(js_string!("message"), ctx).ok()).filter(|m| !m.is_undefined());
-            let name = o.as_ref().and_then(|o| o.get(js_string!("name"), ctx).ok()).filter(|m| !m.is_undefined());
+            let msg = o
+                .as_ref()
+                .and_then(|o| o.get(js_string!("message"), ctx).ok())
+                .filter(|m| !m.is_undefined());
+            let name = o
+                .as_ref()
+                .and_then(|o| o.get(js_string!("name"), ctx).ok())
+                .filter(|m| !m.is_undefined());
             match (name, msg) {
                 (Some(n), Some(m)) => {
-                    let n = n.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_default();
-                    let m = m.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_default();
+                    let n = n
+                        .to_string(ctx)
+                        .map(|s| s.to_std_string_escaped())
+                        .unwrap_or_default();
+                    let m = m
+                        .to_string(ctx)
+                        .map(|s| s.to_std_string_escaped())
+                        .unwrap_or_default();
                     if n == "Error" { m } else { format!("{n}: {m}") }
                 }
-                _ => v.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_else(|_| display.clone()),
+                _ => v
+                    .to_string(ctx)
+                    .map(|s| s.to_std_string_escaped())
+                    .unwrap_or_else(|_| display.clone()),
             }
         }
         None => {
@@ -544,7 +705,12 @@ pub(crate) fn script_error(e: &boa_engine::JsError, ctx: &mut Context, file: &st
         }
     };
     let (line, column) = position(&display, file, code);
-    ScriptError { message, line, column, file: file.to_string() }
+    ScriptError {
+        message,
+        line,
+        column,
+        file: file.to_string(),
+    }
 }
 
 /// Line and column of an error: `at line N, col M` (syntax errors), else the innermost backtrace
@@ -553,8 +719,14 @@ pub(crate) fn script_error(e: &boa_engine::JsError, ctx: &mut Context, file: &st
 fn position(msg: &str, file: &str, code: &str) -> (Option<u32>, Option<u32>) {
     if let Some(i) = msg.find("at line ") {
         let rest = &msg[i + 8..];
-        let line = rest.split(|c: char| !c.is_ascii_digit()).next().and_then(|n| n.parse().ok());
-        let col = rest.find("col ").and_then(|j| rest[j + 4..].split(|c: char| !c.is_ascii_digit()).next()).and_then(|n| n.parse().ok());
+        let line = rest
+            .split(|c: char| !c.is_ascii_digit())
+            .next()
+            .and_then(|n| n.parse().ok());
+        let col = rest
+            .find("col ")
+            .and_then(|j| rest[j + 4..].split(|c: char| !c.is_ascii_digit()).next())
+            .and_then(|n| n.parse().ok());
         return (line, col);
     }
     // `(file:12:5)`: the digits after the file name.
@@ -564,12 +736,20 @@ fn position(msg: &str, file: &str, code: &str) -> (Option<u32>, Option<u32>) {
         Some((it.next()?.parse().ok()?, it.next()?.parse().ok()?))
     };
     let frames: Vec<&str> = msg.lines().skip(1).collect();
-    if let Some((a, b)) = frames.iter().find_map(|l| pick(l)).or_else(|| msg.lines().next().and_then(pick)) {
+    if let Some((a, b)) = frames
+        .iter()
+        .find_map(|l| pick(l))
+        .or_else(|| msg.lines().next().and_then(pick))
+    {
         return (Some(a), Some(b));
     }
     // `ReferenceError: name is not defined` without a position.
     let first = msg.lines().next().unwrap_or("");
-    if let Some(name) = first.split("ReferenceError: ").nth(1).and_then(|r| r.split(" is not defined").next()) {
+    if let Some(name) = first
+        .split("ReferenceError: ")
+        .nth(1)
+        .and_then(|r| r.split(" is not defined").next())
+    {
         for (n, line) in code.lines().enumerate() {
             let b = line.as_bytes();
             let mut from = 0;
@@ -590,8 +770,11 @@ fn position(msg: &str, file: &str, code: &str) -> (Option<u32>, Option<u32>) {
 /// Evaluate `code` in `ctx` and convert the result.
 pub(crate) fn eval_in(ctx: &mut Context, code: &str, file: &str) -> Result<J, ScriptError> {
     let src = Source::from_bytes(code.as_bytes()).with_path(std::path::Path::new(file));
-    let script = boa_engine::Script::parse(src, None, ctx).map_err(|e| script_error(&e, ctx, file, code))?;
-    let v = script.evaluate(ctx).map_err(|e| script_error(&e, ctx, file, code))?;
+    let script =
+        boa_engine::Script::parse(src, None, ctx).map_err(|e| script_error(&e, ctx, file, code))?;
+    let v = script
+        .evaluate(ctx)
+        .map_err(|e| script_error(&e, ctx, file, code))?;
     Ok(result_json(&v, ctx))
 }
 
@@ -601,10 +784,19 @@ fn result_json(v: &JsValue, ctx: &mut Context) -> J {
         return J::Null;
     }
     let global = ctx.global_object();
-    let Some(f) = global.get(js_string!("__result"), ctx).ok().and_then(|f| f.as_object()) else { return J::Null };
+    let Some(f) = global
+        .get(js_string!("__result"), ctx)
+        .ok()
+        .and_then(|f| f.as_object())
+    else {
+        return J::Null;
+    };
     match f.call(&JsValue::undefined(), std::slice::from_ref(v), ctx) {
         Ok(s) if s.is_string() => {
-            let s = s.to_string(ctx).map(|s| s.to_std_string_escaped()).unwrap_or_default();
+            let s = s
+                .to_string(ctx)
+                .map(|s| s.to_std_string_escaped())
+                .unwrap_or_default();
             serde_json::from_str(&s).unwrap_or(J::String(s))
         }
         _ => J::Null,
@@ -640,7 +832,12 @@ pub(crate) fn settle() -> Vec<String> {
 
 /// Evaluate a script file's code, then the one-shot tasks it scheduled (`app.scheduleTask`;
 /// repeating ones run later, see [`crate::tasks`]).
-pub(crate) fn eval_with_tasks(ctx: &mut Context, code: &str, file: &str, host: u32) -> Result<J, ScriptError> {
+pub(crate) fn eval_with_tasks(
+    ctx: &mut Context,
+    code: &str,
+    file: &str,
+    host: u32,
+) -> Result<J, ScriptError> {
     let mut r = eval_in(ctx, code, file);
     for code in crate::tasks::take_one_shots(host) {
         if let Err(e) = eval_in(ctx, &code, "scheduled task")
@@ -653,7 +850,10 @@ pub(crate) fn eval_with_tasks(ctx: &mut Context, code: &str, file: &str, host: u
 }
 
 pub(crate) fn outcome(output: Vec<String>, result: Result<J, ScriptError>) -> Outcome {
-    let mut out = Outcome { output, ..Default::default() };
+    let mut out = Outcome {
+        output,
+        ..Default::default()
+    };
     match result {
         Ok(v) => out.result = v,
         Err(e) => out.error = Some(e),
@@ -675,10 +875,24 @@ pub(crate) fn outcome(output: Vec<String>, result: Result<J, ScriptError>) -> Ou
 pub fn run(session: &mut Session, req: &ScriptRequest) -> Outcome {
     let expanded = match crate::include::expand(session, req.code, req.name) {
         Ok(x) => x,
-        Err(e) => return Outcome { error: Some(e), ..Default::default() },
+        Err(e) => {
+            return Outcome {
+                error: Some(e),
+                ..Default::default()
+            };
+        }
     };
-    let Some(x) = expanded else { return run_expanded(session, req) };
-    let mut out = run_expanded(session, &ScriptRequest { code: &x.code, name: req.name, console: req.console });
+    let Some(x) = expanded else {
+        return run_expanded(session, req);
+    };
+    let mut out = run_expanded(
+        session,
+        &ScriptRequest {
+            code: &x.code,
+            name: req.name,
+            console: req.console,
+        },
+    );
     if let Some(e) = out.error.as_mut() {
         x.locate(e);
     }
@@ -687,12 +901,23 @@ pub fn run(session: &mut Session, req: &ScriptRequest) -> Outcome {
 
 fn run_expanded(session: &mut Session, req: &ScriptRequest) -> Outcome {
     if let Err(message) = check_nesting(req.code) {
-        return Outcome { error: Some(ScriptError { message, file: req.name.into(), ..Default::default() }), ..Default::default() };
+        return Outcome {
+            error: Some(ScriptError {
+                message,
+                file: req.name.into(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
     }
     let running = ACTIVE.with(|a| a.try_borrow().map(|g| g.is_some()).unwrap_or(true));
     if running {
         return Outcome {
-            error: Some(ScriptError { message: "scripts can't run scripts".into(), file: req.name.into(), ..Default::default() }),
+            error: Some(ScriptError {
+                message: "scripts can't run scripts".into(),
+                file: req.name.into(),
+                ..Default::default()
+            }),
             ..Default::default()
         };
     }
@@ -749,29 +974,55 @@ pub fn check_nesting(code: &str) -> Result<(), String> {
         i += 1;
     }
     if max > MAX_NESTING {
-        return Err(format!("Error: the script is nested too deeply ({max} levels of brackets; at most {MAX_NESTING})"));
+        return Err(format!(
+            "Error: the script is nested too deeply ({max} levels of brackets; at most {MAX_NESTING})"
+        ));
     }
     Ok(())
 }
 
 /// Run on this thread (the Script Console's persistent context, or a fresh one).
 pub(crate) fn run_inline(session: &mut Session, req: &ScriptRequest) -> Outcome {
-    let host = if req.console { crate::ui::CONSOLE_HOST } else { crate::ui::new_host_id() };
+    let host = if req.console {
+        crate::ui::CONSOLE_HOST
+    } else {
+        crate::ui::new_host_id()
+    };
     let s = std::mem::take(session);
     ACTIVE.with(|a| *a.borrow_mut() = Some(Active::new(s, req.name, host)));
     let guard = Restore { target: session };
-    let file = if req.name.is_empty() { "script" } else { req.name };
+    let file = if req.name.is_empty() {
+        "script"
+    } else {
+        req.name
+    };
     let (result, windows) = if req.console {
         CONSOLE.with(|c| {
             let mut c = c.borrow_mut();
             if c.is_none() {
                 match new_context() {
                     Ok(ctx) => *c = Some(ManuallyDrop::new(ctx)),
-                    Err(e) => return (Err(ScriptError { message: e, file: file.into(), ..Default::default() }), vec![]),
+                    Err(e) => {
+                        return (
+                            Err(ScriptError {
+                                message: e,
+                                file: file.into(),
+                                ..Default::default()
+                            }),
+                            vec![],
+                        );
+                    }
                 }
             }
             let Some(ctx) = c.as_mut().map(|m| &mut **m) else {
-                return (Err(ScriptError { message: "the console context is unavailable".into(), file: file.into(), ..Default::default() }), vec![]);
+                return (
+                    Err(ScriptError {
+                        message: "the console context is unavailable".into(),
+                        file: file.into(),
+                        ..Default::default()
+                    }),
+                    vec![],
+                );
             };
             let r = eval_in(ctx, req.code, file);
             (r, crate::ui::snapshot(ctx))
@@ -788,7 +1039,14 @@ pub(crate) fn run_inline(session: &mut Session, req: &ScriptRequest) -> Outcome 
                 }
                 (r, windows)
             }
-            Err(e) => (Err(ScriptError { message: e, file: file.into(), ..Default::default() }), vec![]),
+            Err(e) => (
+                Err(ScriptError {
+                    message: e,
+                    file: file.into(),
+                    ..Default::default()
+                }),
+                vec![],
+            ),
         }
     };
     let output = settle();
@@ -806,14 +1064,40 @@ mod nesting_tests {
     fn deep_nesting_is_an_error_not_a_stack_overflow() {
         // 100 000 nested brackets overflowed the parser's stack and aborted the process.
         let mut s = Session::default();
-        for code in ["(".repeat(100_000) + "1" + &")".repeat(100_000), "[".repeat(100_000), "{".repeat(MAX_NESTING + 1)] {
-            let out = run(&mut s, &ScriptRequest { code: &code, name: "deep", console: true });
-            assert!(out.error.is_some_and(|e| e.message.contains("nested too deeply")));
+        for code in [
+            "(".repeat(100_000) + "1" + &")".repeat(100_000),
+            "[".repeat(100_000),
+            "{".repeat(MAX_NESTING + 1),
+        ] {
+            let out = run(
+                &mut s,
+                &ScriptRequest {
+                    code: &code,
+                    name: "deep",
+                    console: true,
+                },
+            );
+            assert!(
+                out.error
+                    .is_some_and(|e| e.message.contains("nested too deeply"))
+            );
         }
         // Brackets in strings and comments don't count; ordinary nesting runs.
-        let quoted = format!("var s = '{}'; // {}\n/* {} */ 1 + 1", "(".repeat(500), "[".repeat(500), "{".repeat(500));
+        let quoted = format!(
+            "var s = '{}'; // {}\n/* {} */ 1 + 1",
+            "(".repeat(500),
+            "[".repeat(500),
+            "{".repeat(500)
+        );
         assert!(check_nesting(&quoted).is_ok());
-        let out = run(&mut s, &ScriptRequest { code: &quoted, name: "ok", console: true });
+        let out = run(
+            &mut s,
+            &ScriptRequest {
+                code: &quoted,
+                name: "ok",
+                console: true,
+            },
+        );
         assert!(out.error.is_none(), "{:?}", out.error);
         assert_eq!(out.result, serde_json::json!(2));
         assert!(check_nesting(&("(".repeat(MAX_NESTING) + &")".repeat(MAX_NESTING))).is_ok());

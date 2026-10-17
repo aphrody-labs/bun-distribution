@@ -100,7 +100,10 @@ impl NewDiffCmd {
         let num_actions: usize = actions.len();
         log::info!("Found {} diff actions", num_actions);
 
-        let output_path = self.output_path.clone().unwrap_or(PathBuf::from(DEFAULT_OUT_FILE_NAME));
+        let output_path = self
+            .output_path
+            .clone()
+            .unwrap_or(PathBuf::from(DEFAULT_OUT_FILE_NAME));
         let absolute_output_path = PathExt::absolute(output_path.as_path())?;
         let base_path = absolute_output_path.parent().unwrap();
         let diff = DsdDiff {
@@ -130,8 +133,10 @@ struct ProjectInfo {
 
 impl ProjectInfo {
     fn new(config: &Config, config_path: &Path, rom: &Rom) -> Result<Self> {
-        let delinks_map_options =
-            DelinksMapOptions { migrate_sections: false, generate_gap_files: false };
+        let delinks_map_options = DelinksMapOptions {
+            migrate_sections: false,
+            generate_gap_files: false,
+        };
         Ok(ProjectInfo {
             delinks_map: DelinksMap::from_config(config, config_path, delinks_map_options)?,
             program: Program::from_config(config_path, config, rom)?,
@@ -160,9 +165,13 @@ impl ModulesDiff {
                 format!("Delinks not found for {} in first project", module_kind)
             })?;
             let symbols_before =
-                before.program.symbol_maps().get(module_kind).with_context(|| {
-                    format!("Symbol map not found for {} in first project", module_kind)
-                })?;
+                before
+                    .program
+                    .symbol_maps()
+                    .get(module_kind)
+                    .with_context(|| {
+                        format!("Symbol map not found for {} in first project", module_kind)
+                    })?;
 
             let Some(module_after) = after.program.by_module_kind(module_kind) else {
                 removed.push(module_kind);
@@ -172,9 +181,13 @@ impl ModulesDiff {
                 format!("Delinks not found for {} in second project", module_kind)
             })?;
             let symbols_after =
-                after.program.symbol_maps().get(module_kind).with_context(|| {
-                    format!("Symbol map not found for {} in second project", module_kind)
-                })?;
+                after
+                    .program
+                    .symbol_maps()
+                    .get(module_kind)
+                    .with_context(|| {
+                        format!("Symbol map not found for {} in second project", module_kind)
+                    })?;
 
             let Some(diff) = ModuleDiff::new(
                 module_before,
@@ -198,9 +211,15 @@ impl ModulesDiff {
                 let delinks = after.delinks_map.get(module.kind()).with_context(|| {
                     format!("Delinks not found for {} in second project", module.kind())
                 })?;
-                let symbols =
-                    after.program.symbol_maps().get(module.kind()).with_context(|| {
-                        format!("Symbol map not found for {} in second project", module.kind())
+                let symbols = after
+                    .program
+                    .symbol_maps()
+                    .get(module.kind())
+                    .with_context(|| {
+                        format!(
+                            "Symbol map not found for {} in second project",
+                            module.kind()
+                        )
                     })?;
                 added.push(NewModule::new(module, delinks, symbols));
             }
@@ -209,7 +228,11 @@ impl ModulesDiff {
         if added.is_empty() && removed.is_empty() && diffs.is_empty() {
             Ok(None)
         } else {
-            Ok(Some(Self { added, removed, diffs }))
+            Ok(Some(Self {
+                added,
+                removed,
+                diffs,
+            }))
         }
     }
 
@@ -236,22 +259,27 @@ impl ModulesDiff {
                         DiffAction::AddRelocation(new_relocation) => {
                             new_relocation.to == new_symbol.addr
                                 && new_relocation.module.contains(symbol_action.module)
-                        },
+                        }
                         DiffAction::ChangeRelocation(relocation_diff) => match relocation_diff.to {
-                            Diff::Equal(to_after) | Diff::Diff { before: _, after: to_after } => {
-                                match &relocation_diff.module {
-                                    Diff::Equal(module_after)
-                                    | Diff::Diff { before: _, after: module_after } => {
-                                        to_after == new_symbol.addr
-                                            && module_after.contains(symbol_action.module)
-                                    },
+                            Diff::Equal(to_after)
+                            | Diff::Diff {
+                                before: _,
+                                after: to_after,
+                            } => match &relocation_diff.module {
+                                Diff::Equal(module_after)
+                                | Diff::Diff {
+                                    before: _,
+                                    after: module_after,
+                                } => {
+                                    to_after == new_symbol.addr
+                                        && module_after.contains(symbol_action.module)
                                 }
                             },
                         },
                         DiffAction::DeleteRelocation(_) => false,
                         _ => {
                             panic!("Non-relocation action found in actions.relocations")
-                        },
+                        }
                     })
                     .collect(),
                 DiffAction::DeleteSymbol(deleted_symbol) => actions
@@ -260,27 +288,32 @@ impl ModulesDiff {
                         DiffAction::AddRelocation(_) => false,
                         DiffAction::DeleteRelocation(deleted_relocation) => {
                             deleted_relocation.to == deleted_symbol.addr
-                        },
+                        }
                         DiffAction::ChangeRelocation(relocation_diff) => match relocation_diff.to {
-                            Diff::Equal(to_before) | Diff::Diff { before: to_before, after: _ } => {
-                                match &relocation_diff.module {
-                                    Diff::Equal(module_before)
-                                    | Diff::Diff { before: module_before, after: _ } => {
-                                        to_before == deleted_symbol.addr
-                                            && module_before.contains(symbol_action.module)
-                                    },
+                            Diff::Equal(to_before)
+                            | Diff::Diff {
+                                before: to_before,
+                                after: _,
+                            } => match &relocation_diff.module {
+                                Diff::Equal(module_before)
+                                | Diff::Diff {
+                                    before: module_before,
+                                    after: _,
+                                } => {
+                                    to_before == deleted_symbol.addr
+                                        && module_before.contains(symbol_action.module)
                                 }
                             },
                         },
                         _ => {
                             panic!("Non-relocation action found in actions.relocations")
-                        },
+                        }
                     })
                     .collect(),
                 DiffAction::ChangeSymbol(_) => VecDeque::new(),
                 _ => {
                     panic!("Non-symbol action found in actions.symbols")
-                },
+                }
             };
 
             if cmd.skip_zeroed_addends && !related_actions.is_empty() {
@@ -301,8 +334,10 @@ impl ModulesDiff {
             } else {
                 let module = symbol_action.module;
                 related_actions.push_front(symbol_action);
-                symbols_relocs_actions
-                    .push(ModuleDiffAction { module, action: DiffAction::Group(related_actions) });
+                symbols_relocs_actions.push(ModuleDiffAction {
+                    module,
+                    action: DiffAction::Group(related_actions),
+                });
             }
         }
 
@@ -322,10 +357,10 @@ impl ModulesDiff {
                     } else {
                         true
                     }
-                },
+                }
                 _ => {
                     panic!("Non-relocation action found in actions.relocations")
-                },
+                }
             }
         }));
 
@@ -393,7 +428,10 @@ impl ModuleDiff {
     ) -> Option<Self> {
         assert_eq!(module_before.kind(), module_after.kind());
 
-        let name = Diff::new(module_before.name().to_string(), module_after.name().to_string());
+        let name = Diff::new(
+            module_before.name().to_string(),
+            module_after.name().to_string(),
+        );
         let delinks = DelinksDiff::new(delinks_before, delinks_after, cmd);
         let symbols = SymbolsDiff::new(symbols_before, symbols_after, cmd);
         let relocations =
@@ -402,14 +440,23 @@ impl ModuleDiff {
         if name.is_equal() && delinks.is_none() && symbols.is_none() && relocations.is_none() {
             None
         } else {
-            Some(Self { module: module_before.kind(), name, delinks, symbols, relocations })
+            Some(Self {
+                module: module_before.kind(),
+                name,
+                delinks,
+                symbols,
+                relocations,
+            })
         }
     }
 
     fn diff_actions(self) -> ModuleDiffActions {
         let module = self.module;
         ModuleDiffActions {
-            delinks: self.delinks.map(|d| d.diff_actions(module)).unwrap_or_default(),
+            delinks: self
+                .delinks
+                .map(|d| d.diff_actions(module))
+                .unwrap_or_default(),
             symbols: self
                 .symbols
                 .into_iter()
@@ -440,7 +487,9 @@ struct NewRelocations {
 
 impl From<&Relocations> for NewRelocations {
     fn from(relocations: &Relocations) -> Self {
-        Self { relocations: relocations.iter().map(NewRelocation::from).collect() }
+        Self {
+            relocations: relocations.iter().map(NewRelocation::from).collect(),
+        }
     }
 }
 
@@ -485,7 +534,11 @@ impl RelocationsDiff {
         if added.is_empty() && removed.is_empty() && diffs.is_empty() {
             None
         } else {
-            Some(Self { added, removed, diffs })
+            Some(Self {
+                added,
+                removed,
+                diffs,
+            })
         }
     }
 
@@ -525,7 +578,13 @@ impl RelocationDiff {
         if to.is_equal() && addend.is_equal() && kind.is_equal() && module.is_equal() {
             None
         } else {
-            Some(Self { from: Hex(before.from_address()), to, addend, kind, module })
+            Some(Self {
+                from: Hex(before.from_address()),
+                to,
+                addend,
+                kind,
+                module,
+            })
         }
     }
 }
@@ -537,7 +596,9 @@ struct NewSymbols {
 
 impl From<&SymbolMap> for NewSymbols {
     fn from(symbols: &SymbolMap) -> Self {
-        Self { symbols: symbols.iter().filter_map(NewSymbol::new).collect() }
+        Self {
+            symbols: symbols.iter().filter_map(NewSymbol::new).collect(),
+        }
     }
 }
 
@@ -600,7 +661,11 @@ impl SymbolsDiff {
         if added.is_empty() && removed.is_empty() && diffs.is_empty() {
             None
         } else {
-            Some(Self { added, removed, diffs })
+            Some(Self {
+                added,
+                removed,
+                diffs,
+            })
         }
     }
 
@@ -609,7 +674,12 @@ impl SymbolsDiff {
             .into_iter()
             .map(DiffAction::AddSymbol)
             .chain(self.removed.into_iter().map(DiffAction::DeleteSymbol))
-            .chain(self.diffs.into_values().flatten().map(DiffAction::ChangeSymbol))
+            .chain(
+                self.diffs
+                    .into_values()
+                    .flatten()
+                    .map(DiffAction::ChangeSymbol),
+            )
     }
 }
 
@@ -650,10 +720,10 @@ impl SymbolDiff {
         let skip_kind = match (&before.kind, &after.kind) {
             (SymbolKind::Data(_), SymbolKind::Data(data_after)) => {
                 cmd.skip_sizeless_data && data_after.count().is_none()
-            },
+            }
             (SymbolKind::Bss(_), SymbolKind::Bss(bss_after)) => {
                 cmd.skip_sizeless_data && bss_after.size.is_none()
-            },
+            }
             _ => false,
         };
         let kind = if skip_kind {
@@ -675,7 +745,13 @@ impl SymbolDiff {
         if name.is_equal() && kind.is_equal() && ambiguous.is_equal() && scope.is_equal() {
             None
         } else {
-            Some(Self { name, kind, addr: Hex(before.addr), ambiguous, scope })
+            Some(Self {
+                name,
+                kind,
+                addr: Hex(before.addr),
+                ambiguous,
+                scope,
+            })
         }
     }
 }
@@ -721,13 +797,20 @@ struct DelinksDiff {
 impl DelinksDiff {
     fn new(before: &Delinks, after: &Delinks, cmd: &NewDiffCmd) -> Option<Self> {
         let sections = SectionsDiff::new(&before.sections, &after.sections);
-        let files =
-            if cmd.skip_files { None } else { DelinkFilesDiff::new(&before.files, &after.files) };
+        let files = if cmd.skip_files {
+            None
+        } else {
+            DelinkFilesDiff::new(&before.files, &after.files)
+        };
         let categories = CategoriesDiff::new(&before.global_categories, &after.global_categories);
         if sections.is_none() && files.is_none() && categories.is_none() {
             None
         } else {
-            Some(Self { sections, files, categories })
+            Some(Self {
+                sections,
+                files,
+                categories,
+            })
         }
     }
 
@@ -786,14 +869,22 @@ impl CategoriesDiff {
             }
         }
 
-        if added.is_empty() && removed.is_empty() { None } else { Some(Self { added, removed }) }
+        if added.is_empty() && removed.is_empty() {
+            None
+        } else {
+            Some(Self { added, removed })
+        }
     }
 
     fn module_diff_actions(self) -> impl Iterator<Item = DiffAction> {
         self.added
             .into_iter()
             .map(DiffAction::AddGlobalCategory)
-            .chain(self.removed.into_iter().map(DiffAction::RemoveGlobalCategory))
+            .chain(
+                self.removed
+                    .into_iter()
+                    .map(DiffAction::RemoveGlobalCategory),
+            )
     }
 
     fn delink_diff_actions(self, delink_name: String) -> Vec<DiffAction> {
@@ -803,10 +894,14 @@ impl CategoriesDiff {
                 delink_name: delink_name.clone(),
                 category,
             })
-            .chain(self.removed.into_iter().map(|category| DiffAction::RemoveDelinkCategory {
-                delink_name: delink_name.clone(),
-                category,
-            }))
+            .chain(
+                self.removed
+                    .into_iter()
+                    .map(|category| DiffAction::RemoveDelinkCategory {
+                        delink_name: delink_name.clone(),
+                        category,
+                    }),
+            )
             .collect()
     }
 }
@@ -850,7 +945,11 @@ impl DelinkFilesDiff {
         if added.is_empty() && removed.is_empty() && diffs.is_empty() {
             None
         } else {
-            Some(Self { added, removed, diffs })
+            Some(Self {
+                added,
+                removed,
+                diffs,
+            })
         }
     }
 
@@ -859,7 +958,11 @@ impl DelinkFilesDiff {
             .into_iter()
             .map(DiffAction::AddDelink)
             .chain(self.removed.into_iter().map(DiffAction::DeleteDelink))
-            .chain(self.diffs.into_values().flat_map(DelinkFileDiff::diff_actions))
+            .chain(
+                self.diffs
+                    .into_values()
+                    .flat_map(DelinkFileDiff::diff_actions),
+            )
     }
 }
 
@@ -896,7 +999,12 @@ impl DelinkFileDiff {
         if sections.is_none() && complete.is_equal() && categories.is_none() {
             None
         } else {
-            Some(Self { name: before.name.clone(), sections, complete, categories })
+            Some(Self {
+                name: before.name.clone(),
+                sections,
+                complete,
+                categories,
+            })
         }
     }
 
@@ -952,7 +1060,11 @@ impl SectionsDiff {
         if added.is_empty() && removed.is_empty() && diffs.is_empty() {
             None
         } else {
-            Some(Self { added, removed, diffs })
+            Some(Self {
+                added,
+                removed,
+                diffs,
+            })
         }
     }
 }
@@ -985,7 +1097,13 @@ impl SectionDiff {
         {
             None
         } else {
-            Some(SectionDiff { name, kind, start_address, end_address, alignment })
+            Some(SectionDiff {
+                name,
+                kind,
+                start_address,
+                end_address,
+                alignment,
+            })
         }
     }
 }

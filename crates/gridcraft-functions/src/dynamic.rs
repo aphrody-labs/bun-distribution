@@ -27,12 +27,22 @@ fn arr_arg(args: &[Arg], i: usize) -> R<Array> {
 }
 
 fn rows_of(a: &Array) -> Vec<Vec<Value>> {
-    (0..a.rows).map(|r| (0..a.cols).map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()).collect()
+    (0..a.rows)
+        .map(|r| {
+            (0..a.cols)
+                .map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty))
+                .collect()
+        })
+        .collect()
 }
 
 /// `#NUM!` when an `h` x `w` output would exceed the function cell budget.
 fn check_output_size(h: usize, w: usize) -> R<()> {
-    if h.saturating_mul(w) > MAX_CELLS { Err(CellError::Num) } else { Ok(()) }
+    if h.saturating_mul(w) > MAX_CELLS {
+        Err(CellError::Num)
+    } else {
+        Ok(())
+    }
 }
 
 /// Builds an array from rows (all rows padded to the widest with `pad`). Empty → `#CALC!`.
@@ -115,9 +125,21 @@ fn filter(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let flags: Vec<bool> = inc.data.iter().map(truthy).collect::<R<_>>()?;
     let grid = rows_of(&a);
     let out: Vec<Vec<Value>> = if keep_rows {
-        grid.into_iter().zip(flags.iter()).filter(|(_, f)| **f).map(|(r, _)| r).collect()
+        grid.into_iter()
+            .zip(flags.iter())
+            .filter(|(_, f)| **f)
+            .map(|(r, _)| r)
+            .collect()
     } else {
-        grid.into_iter().map(|r| r.into_iter().zip(flags.iter()).filter(|(_, f)| **f).map(|(v, _)| v).collect::<Vec<_>>()).collect()
+        grid.into_iter()
+            .map(|r| {
+                r.into_iter()
+                    .zip(flags.iter())
+                    .filter(|(_, f)| **f)
+                    .map(|(v, _)| v)
+                    .collect::<Vec<_>>()
+            })
+            .collect()
     };
     if out.is_empty() || out.iter().all(Vec::is_empty) {
         if has(args, 2) {
@@ -131,7 +153,9 @@ fn filter(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 /// Compares two key vectors with per-key orders (1 ascending, -1 descending).
 fn cmp_keys(a: &[Value], b: &[Value], orders: &[i64]) -> Ordering {
     for (i, ord) in orders.iter().enumerate() {
-        let (Some(x), Some(y)) = (a.get(i), b.get(i)) else { continue };
+        let (Some(x), Some(y)) = (a.get(i), b.get(i)) else {
+            continue;
+        };
         let o = sort_compare(x, y);
         let o = if *ord < 0 {
             // Blanks stay last even when descending.
@@ -157,7 +181,11 @@ fn int_list(v: &Value) -> R<Vec<i64>> {
         .iter()
         .map(|x| {
             let n = x.to_number()?;
-            if !n.is_finite() || n.abs() > 1e15 { Err(CellError::Value) } else { Ok(n.trunc() as i64) }
+            if !n.is_finite() || n.abs() > 1e15 {
+                Err(CellError::Value)
+            } else {
+                Ok(n.trunc() as i64)
+            }
         })
         .collect()
 }
@@ -166,19 +194,46 @@ fn sort(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let a = arr_arg(args, 0)?;
     let by_col = opt_bool(args, 3, false)?;
     let a = if by_col { a.transpose() } else { a };
-    let idx = if has(args, 1) { int_list(&arg(args, 1)?.value)? } else { vec![1] };
-    let ord = if has(args, 2) { int_list(&arg(args, 2)?.value)? } else { vec![1] };
-    if idx.is_empty() || idx.iter().any(|&i| i < 1 || i as usize > a.cols) || ord.iter().any(|&o| o != 1 && o != -1) {
+    let idx = if has(args, 1) {
+        int_list(&arg(args, 1)?.value)?
+    } else {
+        vec![1]
+    };
+    let ord = if has(args, 2) {
+        int_list(&arg(args, 2)?.value)?
+    } else {
+        vec![1]
+    };
+    if idx.is_empty()
+        || idx.iter().any(|&i| i < 1 || i as usize > a.cols)
+        || ord.iter().any(|&o| o != 1 && o != -1)
+    {
         return Err(CellError::Value);
     }
     if ord.len() > 1 && ord.len() != idx.len() {
         return Err(CellError::Value);
     }
-    let orders: Vec<i64> = (0..idx.len()).map(|i| *ord.get(i).or(ord.first()).unwrap_or(&1)).collect();
-    let mut lines: Vec<(Vec<Value>, Vec<Value>)> =
-        rows_of(&a).into_iter().map(|r| (idx.iter().map(|&i| r.get(i as usize - 1).cloned().unwrap_or(Value::Empty)).collect(), r)).collect();
+    let orders: Vec<i64> = (0..idx.len())
+        .map(|i| *ord.get(i).or(ord.first()).unwrap_or(&1))
+        .collect();
+    let mut lines: Vec<(Vec<Value>, Vec<Value>)> = rows_of(&a)
+        .into_iter()
+        .map(|r| {
+            (
+                idx.iter()
+                    .map(|&i| r.get(i as usize - 1).cloned().unwrap_or(Value::Empty))
+                    .collect(),
+                r,
+            )
+        })
+        .collect();
     lines.sort_by(|x, y| cmp_keys(&x.0, &y.0, &orders));
-    let out = Array::new(a.rows, a.cols, lines.into_iter().flat_map(|(_, r)| r).collect()).ok_or(CellError::Calc)?;
+    let out = Array::new(
+        a.rows,
+        a.cols,
+        lines.into_iter().flat_map(|(_, r)| r).collect(),
+    )
+    .ok_or(CellError::Calc)?;
     Ok(Value::from(if by_col { out.transpose() } else { out }))
 }
 
@@ -189,7 +244,11 @@ fn sortby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let mut i = 1;
     while i < args.len() {
         keys.push(arr_arg(args, i)?);
-        let o = if has(args, i + 1) { num(args, i + 1)?.trunc() as i64 } else { 1 };
+        let o = if has(args, i + 1) {
+            num(args, i + 1)?.trunc() as i64
+        } else {
+            1
+        };
         if o != 1 && o != -1 {
             return Err(CellError::Value);
         }
@@ -203,7 +262,11 @@ fn sortby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         return Err(CellError::Value);
     }
     for k in &keys {
-        let ok = if by_rows { k.cols == 1 && k.rows == a.rows } else { k.rows == 1 && k.cols == a.cols };
+        let ok = if by_rows {
+            k.cols == 1 && k.rows == a.rows
+        } else {
+            k.rows == 1 && k.cols == a.cols
+        };
         if !ok {
             return Err(CellError::Value);
         }
@@ -212,10 +275,22 @@ fn sortby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let mut lines: Vec<(Vec<Value>, Vec<Value>)> = rows_of(&base)
         .into_iter()
         .enumerate()
-        .map(|(r, row)| (keys.iter().map(|k| k.data.get(r).cloned().unwrap_or(Value::Empty)).collect(), row))
+        .map(|(r, row)| {
+            (
+                keys.iter()
+                    .map(|k| k.data.get(r).cloned().unwrap_or(Value::Empty))
+                    .collect(),
+                row,
+            )
+        })
         .collect();
     lines.sort_by(|x, y| cmp_keys(&x.0, &y.0, &orders));
-    let out = Array::new(base.rows, base.cols, lines.into_iter().flat_map(|(_, r)| r).collect()).ok_or(CellError::Calc)?;
+    let out = Array::new(
+        base.rows,
+        base.cols,
+        lines.into_iter().flat_map(|(_, r)| r).collect(),
+    )
+    .ok_or(CellError::Calc)?;
     Ok(Value::from(if by_rows { out } else { out.transpose() }))
 }
 
@@ -256,8 +331,16 @@ fn unique(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 /// Result dimensions for SEQUENCE/RANDARRAY: blank means 1; 0 → `#CALC!`; negative → `#VALUE!`.
 fn dims(args: &[Arg], ri: usize, ci: usize) -> R<(usize, usize)> {
-    let r = if has(args, ri) { num(args, ri)?.trunc() } else { 1.0 };
-    let c = if has(args, ci) { num(args, ci)?.trunc() } else { 1.0 };
+    let r = if has(args, ri) {
+        num(args, ri)?.trunc()
+    } else {
+        1.0
+    };
+    let c = if has(args, ci) {
+        num(args, ci)?.trunc()
+    } else {
+        1.0
+    };
     if r < 0.0 || c < 0.0 || !r.is_finite() || !c.is_finite() {
         return Err(CellError::Value);
     }
@@ -274,7 +357,9 @@ fn sequence(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let (r, c) = dims(args, 0, 1)?;
     let start = if has(args, 2) { num(args, 2)? } else { 1.0 };
     let step = if has(args, 3) { num(args, 3)? } else { 1.0 };
-    let data = (0..r * c).map(|i| Value::number(start + step * i as f64)).collect();
+    let data = (0..r * c)
+        .map(|i| Value::number(start + step * i as f64))
+        .collect();
     array_val(r, c, data)
 }
 
@@ -282,7 +367,11 @@ fn randarray(args: &[Arg], ctx: &mut dyn Ctx) -> R<Value> {
     let (r, c) = dims(args, 0, 1)?;
     let lo = if has(args, 2) { num(args, 2)? } else { 0.0 };
     let hi = if has(args, 3) { num(args, 3)? } else { 1.0 };
-    let whole = if has(args, 4) { opt_bool(args, 4, false)? } else { false };
+    let whole = if has(args, 4) {
+        opt_bool(args, 4, false)?
+    } else {
+        false
+    };
     if lo > hi {
         return Err(CellError::Value);
     }
@@ -352,7 +441,11 @@ fn hstack(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 /// Flattened values for TOROW/TOCOL with the ignore filter applied.
 fn flat_filtered(args: &[Arg]) -> R<Vec<Value>> {
     let a = arr_arg(args, 0)?;
-    let ignore = if has(args, 1) { num(args, 1)?.trunc() as i64 } else { 0 };
+    let ignore = if has(args, 1) {
+        num(args, 1)?.trunc() as i64
+    } else {
+        0
+    };
     if !(0..=3).contains(&ignore) {
         return Err(CellError::Value);
     }
@@ -443,7 +536,13 @@ fn take_drop(args: &[Arg], take: bool) -> R<Value> {
     let a = arr_arg(args, 0)?;
     let (r0, r1) = span(a.rows, opt_count(args, 1)?, take)?;
     let (c0, c1) = span(a.cols, opt_count(args, 2)?, take)?;
-    let rows: Vec<Vec<Value>> = (r0..r1).map(|r| (c0..c1).map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()).collect();
+    let rows: Vec<Vec<Value>> = (r0..r1)
+        .map(|r| {
+            (c0..c1)
+                .map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty))
+                .collect()
+        })
+        .collect();
     from_rows(rows, &Value::Empty)
 }
 
@@ -604,9 +703,21 @@ fn aggregate(f: Agg, vals: &[&Value]) -> Value {
                 Value::number(sum / n)
             }
         }
-        Agg::Max => Value::number(if xs.is_empty() { 0.0 } else { xs.iter().copied().fold(f64::NEG_INFINITY, f64::max) }),
-        Agg::Min => Value::number(if xs.is_empty() { 0.0 } else { xs.iter().copied().fold(f64::INFINITY, f64::min) }),
-        Agg::Product => Value::number(if xs.is_empty() { 0.0 } else { xs.iter().product() }),
+        Agg::Max => Value::number(if xs.is_empty() {
+            0.0
+        } else {
+            xs.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+        }),
+        Agg::Min => Value::number(if xs.is_empty() {
+            0.0
+        } else {
+            xs.iter().copied().fold(f64::INFINITY, f64::min)
+        }),
+        Agg::Product => Value::number(if xs.is_empty() {
+            0.0
+        } else {
+            xs.iter().product()
+        }),
         Agg::Median => {
             if xs.is_empty() {
                 return Value::Error(CellError::Num);
@@ -646,7 +757,12 @@ struct Prepared {
 
 /// field_headers: 0 none, 1 present but hidden, 2 generate, 3 present and shown; missing =
 /// automatic (headers when the first value row is all text and the next is not).
-fn prepare(fields: &[&Array], values: &Array, fh: Option<i64>, filter: Option<&Array>) -> R<Prepared> {
+fn prepare(
+    fields: &[&Array],
+    values: &Array,
+    fh: Option<i64>,
+    filter: Option<&Array>,
+) -> R<Prepared> {
     let n = values.rows;
     for f in fields {
         if f.rows != n {
@@ -654,7 +770,8 @@ fn prepare(fields: &[&Array], values: &Array, fh: Option<i64>, filter: Option<&A
         }
     }
     let first_text = (0..values.cols).all(|c| matches!(values.get(0, c), Some(Value::Text(_))));
-    let second_not = n > 1 && (0..values.cols).any(|c| !matches!(values.get(1, c), Some(Value::Text(_))));
+    let second_not =
+        n > 1 && (0..values.cols).any(|c| !matches!(values.get(1, c), Some(Value::Text(_))));
     let mode = match fh {
         Some(m @ 0..=3) => m,
         Some(_) => return Err(CellError::Value),
@@ -673,11 +790,21 @@ fn prepare(fields: &[&Array], values: &Array, fh: Option<i64>, filter: Option<&A
     for f in fields {
         for c in 0..f.cols {
             k += 1;
-            field_headers.push(if has_hdr { f.get(0, c).cloned().unwrap_or(Value::Empty) } else { Value::from(format!("Field {k}")) });
+            field_headers.push(if has_hdr {
+                f.get(0, c).cloned().unwrap_or(Value::Empty)
+            } else {
+                Value::from(format!("Field {k}"))
+            });
         }
     }
     let value_headers = (0..values.cols)
-        .map(|c| if has_hdr { values.get(0, c).cloned().unwrap_or(Value::Empty) } else { Value::from(format!("Value {}", c + 1)) })
+        .map(|c| {
+            if has_hdr {
+                values.get(0, c).cloned().unwrap_or(Value::Empty)
+            } else {
+                Value::from(format!("Value {}", c + 1))
+            }
+        })
         .collect();
     let start = usize::from(has_hdr);
     let mut rows = Vec::new();
@@ -690,11 +817,18 @@ fn prepare(fields: &[&Array], values: &Array, fh: Option<i64>, filter: Option<&A
         }
         rows.push(r);
     }
-    Ok(Prepared { field_headers, value_headers, show_headers: show, rows })
+    Ok(Prepared {
+        field_headers,
+        value_headers,
+        show_headers: show,
+        rows,
+    })
 }
 
 fn key_row(a: &Array, r: usize) -> Vec<Value> {
-    (0..a.cols).map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()
+    (0..a.cols)
+        .map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty))
+        .collect()
 }
 
 /// Distinct keys in first-seen order, then sorted (by `sort` = ±column index within the key; 0
@@ -729,7 +863,11 @@ fn distinct_keys(keys: &[Vec<Value>], sort: i64) -> Vec<Vec<Value>> {
 }
 
 fn opt_arr(args: &[Arg], i: usize) -> R<Option<Array>> {
-    if has(args, i) { Ok(Some(arr_arg(args, i)?)) } else { Ok(None) }
+    if has(args, i) {
+        Ok(Some(arr_arg(args, i)?))
+    } else {
+        Ok(None)
+    }
 }
 
 fn groupby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -746,7 +884,11 @@ fn groupby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     for (k, &r) in keys.iter().zip(p.rows.iter()) {
         groups.entry(row_key(k)).or_default().push(r);
     }
-    let sort_in_keys = if sort.unsigned_abs() as usize <= rf.cols { sort } else { 0 };
+    let sort_in_keys = if sort.unsigned_abs() as usize <= rf.cols {
+        sort
+    } else {
+        0
+    };
     let mut ordered = distinct_keys(&keys, sort_in_keys);
     let agg_row = |rows: &[usize]| -> Vec<Value> {
         (0..vals.cols)
@@ -768,8 +910,13 @@ fn groupby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     // Sorting by a value column.
     if sort.unsigned_abs() as usize > rf.cols {
         let ci = sort.unsigned_abs() as usize - 1;
-        lines
-            .sort_by(|a, b| cmp_keys(&[a.get(ci).cloned().unwrap_or(Value::Empty)], &[b.get(ci).cloned().unwrap_or(Value::Empty)], &[sort.signum()]));
+        lines.sort_by(|a, b| {
+            cmp_keys(
+                &[a.get(ci).cloned().unwrap_or(Value::Empty)],
+                &[b.get(ci).cloned().unwrap_or(Value::Empty)],
+                &[sort.signum()],
+            )
+        });
     }
     let mut out = Vec::new();
     if p.show_headers {
@@ -794,8 +941,17 @@ fn groupby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 
 /// Height and width of a PIVOTBY grid: `header_rows` (one per column field, plus the value-name row) and
 /// `body_rows` (row keys plus the total row), each `lead` row-field cells wide plus `value_cols` cells per column key.
-fn pivot_dims(header_rows: usize, body_rows: usize, col_keys: usize, value_cols: usize, lead: usize) -> (usize, usize) {
-    (header_rows.saturating_add(body_rows), col_keys.saturating_mul(value_cols).saturating_add(lead))
+fn pivot_dims(
+    header_rows: usize,
+    body_rows: usize,
+    col_keys: usize,
+    value_cols: usize,
+    lead: usize,
+) -> (usize, usize) {
+    (
+        header_rows.saturating_add(body_rows),
+        col_keys.saturating_mul(value_cols).saturating_add(lead),
+    )
 }
 
 fn pivotby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -812,8 +968,22 @@ fn pivotby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let p = prepare(&[&rf, &cf], &vals, fh, filter.as_ref())?;
     let rkeys: Vec<Vec<Value>> = p.rows.iter().map(|&r| key_row(&rf, r)).collect();
     let ckeys: Vec<Vec<Value>> = p.rows.iter().map(|&r| key_row(&cf, r)).collect();
-    let rk = distinct_keys(&rkeys, if row_sort.unsigned_abs() as usize <= rf.cols { row_sort } else { 0 });
-    let ck = distinct_keys(&ckeys, if col_sort.unsigned_abs() as usize <= cf.cols { col_sort } else { 0 });
+    let rk = distinct_keys(
+        &rkeys,
+        if row_sort.unsigned_abs() as usize <= rf.cols {
+            row_sort
+        } else {
+            0
+        },
+    );
+    let ck = distinct_keys(
+        &ckeys,
+        if col_sort.unsigned_abs() as usize <= cf.cols {
+            col_sort
+        } else {
+            0
+        },
+    );
     let mut cell: HashMap<(String, String), Vec<usize>> = HashMap::new();
     for ((r, c), &i) in rkeys.iter().zip(ckeys.iter()).zip(p.rows.iter()) {
         cell.entry((row_key(r), row_key(c))).or_default().push(i);
@@ -831,7 +1001,10 @@ fn pivotby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         p.rows
             .iter()
             .zip(rkeys.iter().zip(ckeys.iter()))
-            .filter(|(_, (a, b))| rkey.as_ref().is_none_or(|k| *k == row_key(a)) && ckey.as_ref().is_none_or(|k| *k == row_key(b)))
+            .filter(|(_, (a, b))| {
+                rkey.as_ref().is_none_or(|k| *k == row_key(a))
+                    && ckey.as_ref().is_none_or(|k| *k == row_key(b))
+            })
             .map(|(&i, _)| i)
             .collect()
     };
@@ -866,7 +1039,11 @@ fn pivotby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         out.push(line);
     }
     if value_row {
-        let mut line: Vec<Value> = if p.show_headers { p.field_headers.iter().take(lead).cloned().collect() } else { vec![Value::Empty; lead] };
+        let mut line: Vec<Value> = if p.show_headers {
+            p.field_headers.iter().take(lead).cloned().collect()
+        } else {
+            vec![Value::Empty; lead]
+        };
         line.resize(lead, Value::Empty);
         for _ in &cols {
             line.extend(p.value_headers.iter().cloned());
@@ -884,7 +1061,10 @@ fn pivotby(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         };
         for c in &cols {
             let rows = match (r, c) {
-                (Some(rk), Some(ck)) => cell.get(&(row_key(rk), row_key(ck))).cloned().unwrap_or_default(),
+                (Some(rk), Some(ck)) => cell
+                    .get(&(row_key(rk), row_key(ck)))
+                    .cloned()
+                    .unwrap_or_default(),
                 _ => rows_for(r, *c),
             };
             for vc in 0..vals.cols {
@@ -937,8 +1117,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Sorts an array by the values of other arrays of matching size.",
             sortby
         ),
-        f!("UNIQUE", 1, 3, Lookup, A, "UNIQUE(array, [by_col], [exactly_once])", "Returns the distinct rows or columns of an array.", unique),
-        f!("SEQUENCE", 1, 4, MathTrig, A, "SEQUENCE(rows, [columns], [start], [step])", "Builds an array of evenly stepped numbers.", sequence),
+        f!(
+            "UNIQUE",
+            1,
+            3,
+            Lookup,
+            A,
+            "UNIQUE(array, [by_col], [exactly_once])",
+            "Returns the distinct rows or columns of an array.",
+            unique
+        ),
+        f!(
+            "SEQUENCE",
+            1,
+            4,
+            MathTrig,
+            A,
+            "SEQUENCE(rows, [columns], [start], [step])",
+            "Builds an array of evenly stepped numbers.",
+            sequence
+        ),
         f!(volatile;
             "RANDARRAY",
             0,
@@ -949,8 +1147,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Builds an array of random numbers in a range.",
             randarray
         ),
-        f!("VSTACK", 1, VAR, Lookup, A, "VSTACK(array1, [array2], ...)", "Stacks arrays on top of each other.", vstack),
-        f!("HSTACK", 1, VAR, Lookup, A, "HSTACK(array1, [array2], ...)", "Places arrays side by side.", hstack),
+        f!(
+            "VSTACK",
+            1,
+            VAR,
+            Lookup,
+            A,
+            "VSTACK(array1, [array2], ...)",
+            "Stacks arrays on top of each other.",
+            vstack
+        ),
+        f!(
+            "HSTACK",
+            1,
+            VAR,
+            Lookup,
+            A,
+            "HSTACK(array1, [array2], ...)",
+            "Places arrays side by side.",
+            hstack
+        ),
         f!(
             "TOROW",
             1,
@@ -991,8 +1207,26 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Breaks a row or column into columns of the given length.",
             wrapcols
         ),
-        f!("TAKE", 2, 3, Lookup, A, "TAKE(array, rows, [columns])", "Keeps rows or columns from the start (or end) of an array.", take_fn),
-        f!("DROP", 2, 3, Lookup, A, "DROP(array, rows, [columns])", "Removes rows or columns from the start (or end) of an array.", drop_fn),
+        f!(
+            "TAKE",
+            2,
+            3,
+            Lookup,
+            A,
+            "TAKE(array, rows, [columns])",
+            "Keeps rows or columns from the start (or end) of an array.",
+            take_fn
+        ),
+        f!(
+            "DROP",
+            2,
+            3,
+            Lookup,
+            A,
+            "DROP(array, rows, [columns])",
+            "Removes rows or columns from the start (or end) of an array.",
+            drop_fn
+        ),
         f!(
             "CHOOSEROWS",
             2,
@@ -1053,71 +1287,199 @@ mod tests {
     use crate::util::testutil::*;
 
     fn grid() -> Value {
-        arr(vec![vec![tv("b"), nv(2.0), nv(20.0)], vec![tv("a"), nv(3.0), nv(10.0)], vec![tv("c"), nv(1.0), nv(30.0)]])
+        arr(vec![
+            vec![tv("b"), nv(2.0), nv(20.0)],
+            vec![tv("a"), nv(3.0), nv(10.0)],
+            vec![tv("c"), nv(1.0), nv(30.0)],
+        ])
     }
 
     #[test]
     fn filter() {
-        let inc = arr(vec![vec![Value::Bool(true)], vec![Value::Bool(false)], vec![Value::Bool(true)]]);
+        let inc = arr(vec![
+            vec![Value::Bool(true)],
+            vec![Value::Bool(false)],
+            vec![Value::Bool(true)],
+        ]);
         let r = ev("FILTER", vec![rf(grid()), av(inc)]);
-        assert_eq!(rows_of(&r), vec![vec![tv("b"), nv(2.0), nv(20.0)], vec![tv("c"), nv(1.0), nv(30.0)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![tv("b"), nv(2.0), nv(20.0)],
+                vec![tv("c"), nv(1.0), nv(30.0)]
+            ]
+        );
         let r = ev("FILTER", vec![rf(grid()), av(col(&[0.0, 1.0, 0.0]))]);
         assert_eq!(rows_of(&r), vec![vec![tv("a"), nv(3.0), nv(10.0)]]);
         let r = ev("FILTER", vec![rf(grid()), av(row(&[1.0, 0.0, 1.0]))]);
         assert_eq!(rows_of(&r).first().unwrap(), &vec![tv("b"), nv(20.0)]);
-        is_err(ev("FILTER", vec![rf(grid()), av(col(&[0.0, 0.0, 0.0]))]), CellError::Calc);
-        is_text(ev("FILTER", vec![rf(grid()), av(col(&[0.0, 0.0, 0.0])), t("none")]), "none");
-        is_err(ev("FILTER", vec![rf(grid()), av(col(&[1.0, 0.0]))]), CellError::Value);
-        let errinc = arr(vec![vec![nv(1.0)], vec![Value::Error(CellError::Div0)], vec![nv(1.0)]]);
+        is_err(
+            ev("FILTER", vec![rf(grid()), av(col(&[0.0, 0.0, 0.0]))]),
+            CellError::Calc,
+        );
+        is_text(
+            ev(
+                "FILTER",
+                vec![rf(grid()), av(col(&[0.0, 0.0, 0.0])), t("none")],
+            ),
+            "none",
+        );
+        is_err(
+            ev("FILTER", vec![rf(grid()), av(col(&[1.0, 0.0]))]),
+            CellError::Value,
+        );
+        let errinc = arr(vec![
+            vec![nv(1.0)],
+            vec![Value::Error(CellError::Div0)],
+            vec![nv(1.0)],
+        ]);
         is_err(ev("FILTER", vec![rf(grid()), av(errinc)]), CellError::Div0);
     }
 
     #[test]
     fn sort() {
         let r = ev("SORT", vec![rf(grid())]);
-        assert_eq!(rows_of(&r).iter().map(|l| l[0].clone()).collect::<Vec<_>>(), vec![tv("a"), tv("b"), tv("c")]);
+        assert_eq!(
+            rows_of(&r).iter().map(|l| l[0].clone()).collect::<Vec<_>>(),
+            vec![tv("a"), tv("b"), tv("c")]
+        );
         let r = ev("SORT", vec![rf(grid()), n(2.0), n(-1.0)]);
-        assert_eq!(rows_of(&r).iter().map(|l| l[1].clone()).collect::<Vec<_>>(), vec![nv(3.0), nv(2.0), nv(1.0)]);
-        let r = ev("SORT", vec![av(row(&[3.0, 1.0, 2.0])), n(1.0), n(1.0), b(true)]);
+        assert_eq!(
+            rows_of(&r).iter().map(|l| l[1].clone()).collect::<Vec<_>>(),
+            vec![nv(3.0), nv(2.0), nv(1.0)]
+        );
+        let r = ev(
+            "SORT",
+            vec![av(row(&[3.0, 1.0, 2.0])), n(1.0), n(1.0), b(true)],
+        );
         assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(2.0), nv(3.0)]]);
         is_err(ev("SORT", vec![rf(grid()), n(4.0)]), CellError::Value);
-        is_err(ev("SORT", vec![rf(grid()), n(1.0), n(2.0)]), CellError::Value);
-        let mixed = arr(vec![vec![tv("x")], vec![nv(5.0)], vec![Value::Bool(true)], vec![nv(-1.0)]]);
-        assert_eq!(rows_of(&ev("SORT", vec![av(mixed)])), vec![vec![nv(-1.0)], vec![nv(5.0)], vec![tv("x")], vec![Value::Bool(true)]]);
+        is_err(
+            ev("SORT", vec![rf(grid()), n(1.0), n(2.0)]),
+            CellError::Value,
+        );
+        let mixed = arr(vec![
+            vec![tv("x")],
+            vec![nv(5.0)],
+            vec![Value::Bool(true)],
+            vec![nv(-1.0)],
+        ]);
+        assert_eq!(
+            rows_of(&ev("SORT", vec![av(mixed)])),
+            vec![
+                vec![nv(-1.0)],
+                vec![nv(5.0)],
+                vec![tv("x")],
+                vec![Value::Bool(true)]
+            ]
+        );
         // Multiple keys.
-        let m = arr(vec![vec![nv(1.0), nv(2.0)], vec![nv(1.0), nv(1.0)], vec![nv(0.0), nv(5.0)]]);
-        let r = ev("SORT", vec![av(m), av(row(&[1.0, 2.0])), av(row(&[1.0, -1.0]))]);
-        assert_eq!(rows_of(&r), vec![vec![nv(0.0), nv(5.0)], vec![nv(1.0), nv(2.0)], vec![nv(1.0), nv(1.0)]]);
+        let m = arr(vec![
+            vec![nv(1.0), nv(2.0)],
+            vec![nv(1.0), nv(1.0)],
+            vec![nv(0.0), nv(5.0)],
+        ]);
+        let r = ev(
+            "SORT",
+            vec![av(m), av(row(&[1.0, 2.0])), av(row(&[1.0, -1.0]))],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![nv(0.0), nv(5.0)],
+                vec![nv(1.0), nv(2.0)],
+                vec![nv(1.0), nv(1.0)]
+            ]
+        );
     }
 
     #[test]
     fn sortby() {
-        let r = ev("SORTBY", vec![av(col(&[1.0, 2.0, 3.0])), av(col(&[30.0, 10.0, 20.0]))]);
-        assert_eq!(rows_of(&r), vec![vec![nv(2.0)], vec![nv(3.0)], vec![nv(1.0)]]);
-        let r = ev("SORTBY", vec![av(col(&[1.0, 2.0, 3.0])), av(col(&[30.0, 10.0, 20.0])), n(-1.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0)], vec![nv(3.0)], vec![nv(2.0)]]);
+        let r = ev(
+            "SORTBY",
+            vec![av(col(&[1.0, 2.0, 3.0])), av(col(&[30.0, 10.0, 20.0]))],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(2.0)], vec![nv(3.0)], vec![nv(1.0)]]
+        );
+        let r = ev(
+            "SORTBY",
+            vec![
+                av(col(&[1.0, 2.0, 3.0])),
+                av(col(&[30.0, 10.0, 20.0])),
+                n(-1.0),
+            ],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(1.0)], vec![nv(3.0)], vec![nv(2.0)]]
+        );
         let r = ev("SORTBY", vec![av(row(&[1.0, 2.0])), av(row(&[2.0, 1.0]))]);
         assert_eq!(rows_of(&r), vec![vec![nv(2.0), nv(1.0)]]);
-        is_err(ev("SORTBY", vec![av(col(&[1.0, 2.0, 3.0])), av(col(&[1.0, 2.0]))]), CellError::Value);
-        is_err(ev("SORTBY", vec![av(col(&[1.0, 2.0])), av(col(&[1.0, 2.0])), n(0.0)]), CellError::Value);
+        is_err(
+            ev(
+                "SORTBY",
+                vec![av(col(&[1.0, 2.0, 3.0])), av(col(&[1.0, 2.0]))],
+            ),
+            CellError::Value,
+        );
+        is_err(
+            ev(
+                "SORTBY",
+                vec![av(col(&[1.0, 2.0])), av(col(&[1.0, 2.0])), n(0.0)],
+            ),
+            CellError::Value,
+        );
     }
 
     #[test]
     fn unique() {
-        let v = arr(vec![vec![tv("a")], vec![tv("B")], vec![tv("A")], vec![tv("c")], vec![tv("b")]]);
-        assert_eq!(rows_of(&ev("UNIQUE", vec![av(v.clone())])), vec![vec![tv("a")], vec![tv("B")], vec![tv("c")]]);
-        assert_eq!(rows_of(&ev("UNIQUE", vec![av(v.clone()), b(false), b(true)])), vec![vec![tv("c")]]);
-        assert_eq!(rows_of(&ev("UNIQUE", vec![av(row(&[1.0, 2.0, 1.0])), b(true)])), vec![vec![nv(1.0), nv(2.0)]]);
-        is_err(ev("UNIQUE", vec![av(col(&[1.0, 1.0])), b(false), b(true)]), CellError::Calc);
-        let m = arr(vec![vec![nv(1.0), nv(2.0)], vec![nv(1.0), nv(2.0)], vec![nv(1.0), nv(3.0)]]);
+        let v = arr(vec![
+            vec![tv("a")],
+            vec![tv("B")],
+            vec![tv("A")],
+            vec![tv("c")],
+            vec![tv("b")],
+        ]);
+        assert_eq!(
+            rows_of(&ev("UNIQUE", vec![av(v.clone())])),
+            vec![vec![tv("a")], vec![tv("B")], vec![tv("c")]]
+        );
+        assert_eq!(
+            rows_of(&ev("UNIQUE", vec![av(v.clone()), b(false), b(true)])),
+            vec![vec![tv("c")]]
+        );
+        assert_eq!(
+            rows_of(&ev("UNIQUE", vec![av(row(&[1.0, 2.0, 1.0])), b(true)])),
+            vec![vec![nv(1.0), nv(2.0)]]
+        );
+        is_err(
+            ev("UNIQUE", vec![av(col(&[1.0, 1.0])), b(false), b(true)]),
+            CellError::Calc,
+        );
+        let m = arr(vec![
+            vec![nv(1.0), nv(2.0)],
+            vec![nv(1.0), nv(2.0)],
+            vec![nv(1.0), nv(3.0)],
+        ]);
         assert_eq!(rows_of(&ev("UNIQUE", vec![av(m)])).len(), 2);
     }
 
     #[test]
     fn sequence_and_rand() {
-        assert_eq!(rows_of(&ev("SEQUENCE", vec![n(3.0)])), vec![vec![nv(1.0)], vec![nv(2.0)], vec![nv(3.0)]]);
-        assert_eq!(rows_of(&ev("SEQUENCE", vec![n(2.0), n(2.0), n(0.0), n(5.0)])), vec![vec![nv(0.0), nv(5.0)], vec![nv(10.0), nv(15.0)]]);
-        assert_eq!(rows_of(&ev("SEQUENCE", vec![empty(), n(3.0)])), vec![vec![nv(1.0), nv(2.0), nv(3.0)]]);
+        assert_eq!(
+            rows_of(&ev("SEQUENCE", vec![n(3.0)])),
+            vec![vec![nv(1.0)], vec![nv(2.0)], vec![nv(3.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("SEQUENCE", vec![n(2.0), n(2.0), n(0.0), n(5.0)])),
+            vec![vec![nv(0.0), nv(5.0)], vec![nv(10.0), nv(15.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("SEQUENCE", vec![empty(), n(3.0)])),
+            vec![vec![nv(1.0), nv(2.0), nv(3.0)]]
+        );
         is_err(ev("SEQUENCE", vec![n(0.0)]), CellError::Calc);
         is_err(ev("SEQUENCE", vec![n(-1.0)]), CellError::Value);
         is_err(ev("SEQUENCE", vec![n(1e6), n(1e6)]), CellError::Num);
@@ -1130,24 +1492,62 @@ mod tests {
             assert!((1.0..=6.0).contains(&x) && x.fract() == 0.0);
         }
         let x = ev("RANDARRAY", vec![]);
-        assert!(x.as_f64().is_some_and(|x| (0.0..1.0).contains(&x)) || matches!(x, Value::Array(_)));
-        is_err(ev("RANDARRAY", vec![n(1.0), n(1.0), n(5.0), n(1.0)]), CellError::Value);
+        assert!(
+            x.as_f64().is_some_and(|x| (0.0..1.0).contains(&x)) || matches!(x, Value::Array(_))
+        );
+        is_err(
+            ev("RANDARRAY", vec![n(1.0), n(1.0), n(5.0), n(1.0)]),
+            CellError::Value,
+        );
         assert!(crate::lookup("RANDARRAY").unwrap().volatile);
     }
 
     #[test]
     fn stacking() {
         let r = ev("VSTACK", vec![av(row(&[1.0, 2.0])), av(row(&[3.0]))]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(2.0)], vec![nv(3.0), Value::Error(CellError::NA)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![nv(1.0), nv(2.0)],
+                vec![nv(3.0), Value::Error(CellError::NA)]
+            ]
+        );
         let r = ev("HSTACK", vec![av(col(&[1.0, 2.0])), n(3.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(3.0)], vec![nv(2.0), Value::Error(CellError::NA)]]);
-        let m = arr(vec![vec![nv(1.0), Value::Empty], vec![Value::Error(CellError::Div0), nv(4.0)]]);
-        assert_eq!(rows_of(&ev("TOROW", vec![av(m.clone())])).first().unwrap().len(), 4);
-        assert_eq!(rows_of(&ev("TOROW", vec![av(m.clone()), n(1.0)])), vec![vec![nv(1.0), Value::Error(CellError::Div0), nv(4.0)]]);
-        assert_eq!(rows_of(&ev("TOCOL", vec![av(m.clone()), n(3.0)])), vec![vec![nv(1.0)], vec![nv(4.0)]]);
-        assert_eq!(rows_of(&ev("TOCOL", vec![av(m.clone()), n(2.0), b(true)])), vec![vec![nv(1.0)], vec![Value::Empty], vec![nv(4.0)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![nv(1.0), nv(3.0)],
+                vec![nv(2.0), Value::Error(CellError::NA)]
+            ]
+        );
+        let m = arr(vec![
+            vec![nv(1.0), Value::Empty],
+            vec![Value::Error(CellError::Div0), nv(4.0)],
+        ]);
+        assert_eq!(
+            rows_of(&ev("TOROW", vec![av(m.clone())]))
+                .first()
+                .unwrap()
+                .len(),
+            4
+        );
+        assert_eq!(
+            rows_of(&ev("TOROW", vec![av(m.clone()), n(1.0)])),
+            vec![vec![nv(1.0), Value::Error(CellError::Div0), nv(4.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("TOCOL", vec![av(m.clone()), n(3.0)])),
+            vec![vec![nv(1.0)], vec![nv(4.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("TOCOL", vec![av(m.clone()), n(2.0), b(true)])),
+            vec![vec![nv(1.0)], vec![Value::Empty], vec![nv(4.0)]]
+        );
         is_err(ev("TOCOL", vec![av(m), n(4.0)]), CellError::Value);
-        is_err(ev("TOROW", vec![av(arr(vec![vec![Value::Empty]])), n(1.0)]), CellError::Calc);
+        is_err(
+            ev("TOROW", vec![av(arr(vec![vec![Value::Empty]])), n(1.0)]),
+            CellError::Calc,
+        );
     }
 
     #[test]
@@ -1163,12 +1563,28 @@ mod tests {
 
     #[test]
     fn wrapping() {
-        let r = ev("WRAPROWS", vec![av(row(&[1.0, 2.0, 3.0, 4.0, 5.0])), n(2.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(2.0)], vec![nv(3.0), nv(4.0)], vec![nv(5.0), Value::Error(CellError::NA)]]);
+        let r = ev(
+            "WRAPROWS",
+            vec![av(row(&[1.0, 2.0, 3.0, 4.0, 5.0])), n(2.0)],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![nv(1.0), nv(2.0)],
+                vec![nv(3.0), nv(4.0)],
+                vec![nv(5.0), Value::Error(CellError::NA)]
+            ]
+        );
         let r = ev("WRAPCOLS", vec![av(row(&[1.0, 2.0, 3.0])), n(2.0), n(0.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(3.0)], vec![nv(2.0), nv(0.0)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(1.0), nv(3.0)], vec![nv(2.0), nv(0.0)]]
+        );
         is_err(ev("WRAPROWS", vec![rf(grid()), n(2.0)]), CellError::Value);
-        is_err(ev("WRAPROWS", vec![av(row(&[1.0])), n(0.0)]), CellError::Num);
+        is_err(
+            ev("WRAPROWS", vec![av(row(&[1.0])), n(0.0)]),
+            CellError::Num,
+        );
     }
 
     #[test]
@@ -1178,7 +1594,10 @@ mod tests {
         let r = ev("TAKE", vec![rf(grid()), n(-1.0), n(1.0)]);
         assert_eq!(rows_of(&r), vec![vec![tv("c")]]);
         let r = ev("TAKE", vec![rf(grid()), empty(), n(-1.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(20.0)], vec![nv(10.0)], vec![nv(30.0)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(20.0)], vec![nv(10.0)], vec![nv(30.0)]]
+        );
         assert_eq!(rows_of(&ev("TAKE", vec![rf(grid()), n(10.0)])).len(), 3);
         is_err(ev("TAKE", vec![rf(grid()), n(0.0)]), CellError::Calc);
         let r = ev("DROP", vec![rf(grid()), n(1.0), n(2.0)]);
@@ -1187,30 +1606,72 @@ mod tests {
         assert_eq!(rows_of(&r), vec![vec![tv("b"), nv(2.0), nv(20.0)]]);
         is_err(ev("DROP", vec![rf(grid()), n(3.0)]), CellError::Calc);
         let r = ev("CHOOSEROWS", vec![rf(grid()), n(3.0), n(-3.0)]);
-        assert_eq!(rows_of(&r), vec![vec![tv("c"), nv(1.0), nv(30.0)], vec![tv("b"), nv(2.0), nv(20.0)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![tv("c"), nv(1.0), nv(30.0)],
+                vec![tv("b"), nv(2.0), nv(20.0)]
+            ]
+        );
         let r = ev("CHOOSECOLS", vec![rf(grid()), av(row(&[1.0, 3.0]))]);
         assert_eq!(rows_of(&r).first().unwrap(), &vec![tv("b"), nv(20.0)]);
         is_err(ev("CHOOSEROWS", vec![rf(grid()), n(4.0)]), CellError::Value);
         is_err(ev("CHOOSECOLS", vec![rf(grid()), n(0.0)]), CellError::Value);
-        let r = ev("EXPAND", vec![av(row(&[1.0, 2.0])), n(2.0), empty(), n(0.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), nv(2.0)], vec![nv(0.0), nv(0.0)]]);
+        let r = ev(
+            "EXPAND",
+            vec![av(row(&[1.0, 2.0])), n(2.0), empty(), n(0.0)],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(1.0), nv(2.0)], vec![nv(0.0), nv(0.0)]]
+        );
         let r = ev("EXPAND", vec![av(row(&[1.0])), n(1.0), n(2.0)]);
-        assert_eq!(rows_of(&r), vec![vec![nv(1.0), Value::Error(CellError::NA)]]);
+        assert_eq!(
+            rows_of(&r),
+            vec![vec![nv(1.0), Value::Error(CellError::NA)]]
+        );
         is_err(ev("EXPAND", vec![rf(grid()), n(2.0)]), CellError::Value);
-        is_err(ev("EXPAND", vec![av(row(&[1.0])), n(1e7), n(1e4)]), CellError::Num);
+        is_err(
+            ev("EXPAND", vec![av(row(&[1.0])), n(1e7), n(1e4)]),
+            CellError::Num,
+        );
     }
 
     fn sales() -> (Value, Value, Value) {
-        let region = arr(vec![vec![tv("Region")], vec![tv("East")], vec![tv("West")], vec![tv("East")], vec![tv("West")], vec![tv("North")]]);
-        let item = arr(vec![vec![tv("Item")], vec![tv("A")], vec![tv("A")], vec![tv("B")], vec![tv("B")], vec![tv("A")]]);
-        let amt = arr(vec![vec![tv("Amount")], vec![nv(10.0)], vec![nv(20.0)], vec![nv(5.0)], vec![nv(7.0)], vec![nv(1.0)]]);
+        let region = arr(vec![
+            vec![tv("Region")],
+            vec![tv("East")],
+            vec![tv("West")],
+            vec![tv("East")],
+            vec![tv("West")],
+            vec![tv("North")],
+        ]);
+        let item = arr(vec![
+            vec![tv("Item")],
+            vec![tv("A")],
+            vec![tv("A")],
+            vec![tv("B")],
+            vec![tv("B")],
+            vec![tv("A")],
+        ]);
+        let amt = arr(vec![
+            vec![tv("Amount")],
+            vec![nv(10.0)],
+            vec![nv(20.0)],
+            vec![nv(5.0)],
+            vec![nv(7.0)],
+            vec![nv(1.0)],
+        ]);
         (region, item, amt)
     }
 
     #[test]
     fn groupby() {
         let (region, _, amt) = sales();
-        let r = ev("GROUPBY", vec![rf(region.clone()), rf(amt.clone()), t("SUM")]);
+        let r = ev(
+            "GROUPBY",
+            vec![rf(region.clone()), rf(amt.clone()), t("SUM")],
+        );
         assert_eq!(
             rows_of(&r),
             vec![
@@ -1221,9 +1682,36 @@ mod tests {
                 vec![tv("Total"), nv(43.0)],
             ]
         );
-        let r = ev("GROUPBY", vec![rf(region.clone()), rf(amt.clone()), n(2.0), n(1.0), n(0.0), n(-1.0)]);
-        assert_eq!(rows_of(&r), vec![vec![tv("West"), nv(2.0)], vec![tv("North"), nv(1.0)], vec![tv("East"), nv(2.0)]]);
-        let r = ev("GROUPBY", vec![rf(region.clone()), rf(amt.clone()), t("max"), n(1.0), n(0.0), n(-2.0)]);
+        let r = ev(
+            "GROUPBY",
+            vec![
+                rf(region.clone()),
+                rf(amt.clone()),
+                n(2.0),
+                n(1.0),
+                n(0.0),
+                n(-1.0),
+            ],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![tv("West"), nv(2.0)],
+                vec![tv("North"), nv(1.0)],
+                vec![tv("East"), nv(2.0)]
+            ]
+        );
+        let r = ev(
+            "GROUPBY",
+            vec![
+                rf(region.clone()),
+                rf(amt.clone()),
+                t("max"),
+                n(1.0),
+                n(0.0),
+                n(-2.0),
+            ],
+        );
         assert_eq!(rows_of(&r).first().unwrap(), &vec![tv("West"), nv(20.0)]);
         let filt = arr(vec![
             vec![Value::Empty],
@@ -1233,16 +1721,46 @@ mod tests {
             vec![Value::Bool(true)],
             vec![Value::Bool(true)],
         ]);
-        let r = ev("GROUPBY", vec![rf(region.clone()), rf(amt.clone()), t("AVERAGE"), n(1.0), n(0.0), n(1.0), av(filt)]);
-        assert_eq!(rows_of(&r), vec![vec![tv("East"), nv(7.5)], vec![tv("North"), nv(1.0)], vec![tv("West"), nv(7.0)]]);
-        is_err(ev("GROUPBY", vec![rf(region.clone()), rf(amt.clone()), t("BOGUS")]), CellError::Value);
-        is_err(ev("GROUPBY", vec![rf(region), av(col(&[1.0])), t("SUM")]), CellError::Value);
+        let r = ev(
+            "GROUPBY",
+            vec![
+                rf(region.clone()),
+                rf(amt.clone()),
+                t("AVERAGE"),
+                n(1.0),
+                n(0.0),
+                n(1.0),
+                av(filt),
+            ],
+        );
+        assert_eq!(
+            rows_of(&r),
+            vec![
+                vec![tv("East"), nv(7.5)],
+                vec![tv("North"), nv(1.0)],
+                vec![tv("West"), nv(7.0)]
+            ]
+        );
+        is_err(
+            ev(
+                "GROUPBY",
+                vec![rf(region.clone()), rf(amt.clone()), t("BOGUS")],
+            ),
+            CellError::Value,
+        );
+        is_err(
+            ev("GROUPBY", vec![rf(region), av(col(&[1.0])), t("SUM")]),
+            CellError::Value,
+        );
     }
 
     #[test]
     fn pivotby() {
         let (region, item, amt) = sales();
-        let r = ev("PIVOTBY", vec![rf(region), rf(item), rf(amt), t("SUM"), n(1.0)]);
+        let r = ev(
+            "PIVOTBY",
+            vec![rf(region), rf(item), rf(amt), t("SUM"), n(1.0)],
+        );
         assert_eq!(
             rows_of(&r),
             vec![
@@ -1261,7 +1779,12 @@ mod tests {
         // each 1 + 2n wide. The size checked up front matches the grid PIVOTBY builds.
         let dims = |k: u32, totals: bool| {
             let fields: Vec<f64> = (0..k).map(f64::from).collect();
-            let mut args = vec![av(row(&[1.0])), av(row(&fields)), av(row(&fields)), t("SUM")];
+            let mut args = vec![
+                av(row(&[1.0])),
+                av(row(&fields)),
+                av(row(&fields)),
+                t("SUM"),
+            ];
             if !totals {
                 args.extend([empty(), n(0.0), empty(), n(0.0)]);
             }
@@ -1277,6 +1800,12 @@ mod tests {
         let (h, w) = super::pivot_dims(2301, 2, 2, 2300, 1);
         assert!(2300 * w > crate::util::MAX_CELLS && h * w > crate::util::MAX_CELLS);
         let wide: Vec<f64> = (0..2300).map(f64::from).collect();
-        is_err(ev("PIVOTBY", vec![av(row(&[1.0])), av(row(&wide)), av(row(&wide)), t("SUM")]), CellError::Num);
+        is_err(
+            ev(
+                "PIVOTBY",
+                vec![av(row(&[1.0])), av(row(&wide)), av(row(&wide)), t("SUM")],
+            ),
+            CellError::Num,
+        );
     }
 }

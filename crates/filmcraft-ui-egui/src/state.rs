@@ -110,11 +110,18 @@ impl Tool {
         }
     }
     pub fn from_name(s: &str) -> Option<Tool> {
-        let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "").replace("tool", "");
-        Tool::ALL
-            .iter()
-            .copied()
-            .find(|t| format!("{t:?}").to_ascii_lowercase() == n || t.label().to_ascii_lowercase().replace([' ', '-'], "").replace("tool", "") == n)
+        let n = s
+            .to_ascii_lowercase()
+            .replace([' ', '_', '-'], "")
+            .replace("tool", "");
+        Tool::ALL.iter().copied().find(|t| {
+            format!("{t:?}").to_ascii_lowercase() == n
+                || t.label()
+                    .to_ascii_lowercase()
+                    .replace([' ', '-'], "")
+                    .replace("tool", "")
+                    == n
+        })
     }
     /// Tools-panel groups (Premiere groups related tools under one button with a flyout).
     pub fn groups() -> Vec<Vec<Tool>> {
@@ -143,7 +150,13 @@ pub enum PlaybackRes {
 }
 
 impl PlaybackRes {
-    pub const ALL: [PlaybackRes; 5] = [PlaybackRes::Full, PlaybackRes::Half, PlaybackRes::Quarter, PlaybackRes::Eighth, PlaybackRes::Sixteenth];
+    pub const ALL: [PlaybackRes; 5] = [
+        PlaybackRes::Full,
+        PlaybackRes::Half,
+        PlaybackRes::Quarter,
+        PlaybackRes::Eighth,
+        PlaybackRes::Sixteenth,
+    ];
     pub fn scale(self) -> f32 {
         match self {
             PlaybackRes::Full => 1.0,
@@ -255,7 +268,11 @@ pub enum ThumbnailMode {
 }
 
 impl ThumbnailMode {
-    pub const ALL: [ThumbnailMode; 3] = [ThumbnailMode::Head, ThumbnailMode::HeadAndTail, ThumbnailMode::Continuous];
+    pub const ALL: [ThumbnailMode; 3] = [
+        ThumbnailMode::Head,
+        ThumbnailMode::HeadAndTail,
+        ThumbnailMode::Continuous,
+    ];
 
     /// The name used by automation ids and `ui.set` (`timeline.thumbnails`).
     pub fn name(self) -> &'static str {
@@ -267,7 +284,9 @@ impl ThumbnailMode {
     }
 
     pub fn from_name(name: &str) -> Option<ThumbnailMode> {
-        Self::ALL.into_iter().find(|m| m.name().eq_ignore_ascii_case(name))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.name().eq_ignore_ascii_case(name))
     }
 }
 
@@ -292,7 +311,10 @@ pub enum DisplayMode {
 impl DisplayMode {
     /// Shows a single colour channel (or alpha) as greyscale.
     pub fn is_channel(self) -> bool {
-        matches!(self, DisplayMode::Alpha | DisplayMode::Red | DisplayMode::Green | DisplayMode::Blue)
+        matches!(
+            self,
+            DisplayMode::Alpha | DisplayMode::Red | DisplayMode::Green | DisplayMode::Blue
+        )
     }
 }
 
@@ -361,7 +383,11 @@ impl MonitorView {
     /// The resolution frames are rendered at: Playback Resolution while playing (or the higher
     /// of it and Paused Resolution with High Quality Playback), Paused Resolution when stopped.
     pub fn effective_res(&self, playing: bool) -> PlaybackRes {
-        if !playing || (self.high_quality && self.paused_res.scale() > self.res.scale()) { self.paused_res } else { self.res }
+        if !playing || (self.high_quality && self.paused_res.scale() > self.res.scale()) {
+            self.paused_res
+        } else {
+            self.res
+        }
     }
     /// The display mode in effect (None = Multi-Camera).
     pub fn display_mode(&self) -> Option<DisplayMode> {
@@ -793,9 +819,16 @@ impl Default for ProjectManagerDraft {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ColorDialog {
     /// `clip.interpretFootage`: the media items and the chosen colour space id ("auto" = metadata).
-    Interpret { items: Vec<u64>, color_space: String },
+    Interpret {
+        items: Vec<u64>,
+        color_space: String,
+    },
     /// `sequence.colorSettings`.
-    Sequence { working_space: String, wide_gamut: bool, auto_tone_map: bool },
+    Sequence {
+        working_space: String,
+        wide_gamut: bool,
+        auto_tone_map: bool,
+    },
 }
 
 /// The Audio Gain dialog (Clip ▸ Audio Gain…, G).
@@ -830,7 +863,16 @@ pub struct AddTracksDraft {
 
 impl Default for AddTracksDraft {
     fn default() -> Self {
-        Self { video: 1, video_after: 0, audio: 1, audio_after: 0, audio_type: "standard".into(), submix: 0, submix_after: 0, submix_type: "stereo".into() }
+        Self {
+            video: 1,
+            video_after: 0,
+            audio: 1,
+            audio_after: 0,
+            audio_type: "standard".into(),
+            submix: 0,
+            submix_after: 0,
+            submix_type: "stereo".into(),
+        }
     }
 }
 
@@ -912,7 +954,14 @@ pub struct DeleteTracksDraft {
 
 impl Default for DeleteTracksDraft {
     fn default() -> Self {
-        Self { video: false, video_target: "empty".into(), audio: false, audio_target: "empty".into(), captions: false, captions_target: "empty".into() }
+        Self {
+            video: false,
+            video_target: "empty".into(),
+            audio: false,
+            audio_target: "empty".into(),
+            captions: false,
+            captions_target: "empty".into(),
+        }
     }
 }
 
@@ -968,7 +1017,10 @@ impl Default for UiState {
             project_search: String::new(),
             effects_search: String::new(),
             expanded_bins: vec![],
-            expanded_fx: vec!["Video Transitions".into(), "Video Transitions/Dissolve".into()],
+            expanded_fx: vec![
+                "Video Transitions".into(),
+                "Video Transitions/Dissolve".into(),
+            ],
             lumetri_grid_folder: None,
             collapsed_fx: vec![],
             effect_controls_split: 0.0,

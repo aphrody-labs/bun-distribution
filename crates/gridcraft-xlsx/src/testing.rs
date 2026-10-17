@@ -9,18 +9,24 @@
 use aes::cipher::{BlockCipherEncrypt, KeyInit};
 
 use crate::crypto::{
-    BLOCK_KEY, BLOCK_VERIFIER_HASH, BLOCK_VERIFIER_INPUT, F_AES, F_CRYPTOAPI, Hash, PASSWORD_ENCRYPTOR, Params, SEGMENT, derive, iterated_hash,
-    standard_key,
+    BLOCK_KEY, BLOCK_VERIFIER_HASH, BLOCK_VERIFIER_INPUT, F_AES, F_CRYPTOAPI, Hash,
+    PASSWORD_ENCRYPTOR, Params, SEGMENT, derive, iterated_hash, standard_key,
 };
 
 /// The spin count `encrypt_workbook` uses: Excel's default.
 pub const SPIN_COUNT: u32 = 100_000;
 
 const PASSWORD_SALT: [u8; 16] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-const KEY_DATA_SALT: [u8; 16] = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31];
-const SECRET_KEY: [u8; 32] =
-    [64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95];
-const VERIFIER: [u8; 16] = [32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47];
+const KEY_DATA_SALT: [u8; 16] = [
+    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+];
+const SECRET_KEY: [u8; 32] = [
+    64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87,
+    88, 89, 90, 91, 92, 93, 94, 95,
+];
+const VERIFIER: [u8; 16] = [
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+];
 
 /// `package` (normally an `.xlsx` zip) as Excel stores it with a password: Agile encryption
 /// (AES-256, SHA-512) inside a compound file.
@@ -59,7 +65,11 @@ pub fn compound_file(streams: &[(&str, &[u8])]) -> Vec<u8> {
         let first = mini_fat.len();
         let n = d.len().div_ceil(MINI);
         for k in 0..n {
-            mini_fat.push(if k + 1 == n { END } else { (first + k + 1) as u32 });
+            mini_fat.push(if k + 1 == n {
+                END
+            } else {
+                (first + k + 1) as u32
+            });
         }
         mini_starts.push(first as u32);
         container.extend_from_slice(d);
@@ -68,8 +78,16 @@ pub fn compound_file(streams: &[(&str, &[u8])]) -> Vec<u8> {
 
     // Regular-sector blobs, in order: directory, mini FAT, mini stream, then each large stream.
     let dir_len = (streams.len() + 1).div_ceil(4) * SECTOR;
-    let mut blobs: Vec<Vec<u8>> = vec![vec![0; dir_len], mini_fat.iter().flat_map(|v| v.to_le_bytes()).collect(), container.clone()];
-    blobs.extend(streams.iter().map(|(_, d)| if is_mini(d) { vec![] } else { d.to_vec() }));
+    let mut blobs: Vec<Vec<u8>> = vec![
+        vec![0; dir_len],
+        mini_fat.iter().flat_map(|v| v.to_le_bytes()).collect(),
+        container.clone(),
+    ];
+    blobs.extend(
+        streams
+            .iter()
+            .map(|(_, d)| if is_mini(d) { vec![] } else { d.to_vec() }),
+    );
     let counts: Vec<usize> = blobs.iter().map(|b| b.len().div_ceil(SECTOR)).collect();
     let body: usize = counts.iter().sum();
     let mut fat_sectors = 1;
@@ -88,7 +106,11 @@ pub fn compound_file(streams: &[(&str, &[u8])]) -> Vec<u8> {
         }
         starts.push(next as u32);
         for k in 0..n {
-            fat[next + k] = if k + 1 == n { END } else { (next + k + 1) as u32 };
+            fat[next + k] = if k + 1 == n {
+                END
+            } else {
+                (next + k + 1) as u32
+            };
         }
         next += n;
     }
@@ -120,7 +142,11 @@ pub fn compound_file(streams: &[(&str, &[u8])]) -> Vec<u8> {
     };
     entry(0, "Root Entry", 5, starts[2], container.len());
     for (k, (name, data)) in streams.iter().enumerate() {
-        let start = if is_mini(data) { mini_starts[k] } else { starts[3 + k] };
+        let start = if is_mini(data) {
+            mini_starts[k]
+        } else {
+            starts[3 + k]
+        };
         entry(k + 1, name, 2, start, data.len());
     }
 
@@ -138,7 +164,11 @@ pub fn compound_file(streams: &[(&str, &[u8])]) -> Vec<u8> {
     put32(&mut out, 64, counts[1] as u32);
     put32(&mut out, 68, END); // no DIFAT sectors
     for i in 0..109 {
-        put32(&mut out, 76 + i * 4, if i < fat_sectors { i as u32 } else { FREE });
+        put32(
+            &mut out,
+            76 + i * 4,
+            if i < fat_sectors { i as u32 } else { FREE },
+        );
     }
     for (i, v) in fat.iter().enumerate() {
         put32(&mut out, SECTOR + i * 4, *v);
@@ -169,7 +199,10 @@ fn pad(data: &[u8]) -> Vec<u8> {
 
 fn encrypt_ecb(key: &[u8], data: &[u8]) -> Vec<u8> {
     let mut v = pad(data);
-    v.as_chunks_mut::<16>().0.iter_mut().for_each(|b| encrypt_block(key, b));
+    v.as_chunks_mut::<16>()
+        .0
+        .iter_mut()
+        .for_each(|b| encrypt_block(key, b));
     v
 }
 
@@ -188,9 +221,15 @@ fn base64_encode(b: &[u8]) -> String {
     const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut s = String::new();
     for c in b.chunks(3) {
-        let n = (u32::from(c[0]) << 16) | (u32::from(*c.get(1).unwrap_or(&0)) << 8) | u32::from(*c.get(2).unwrap_or(&0));
+        let n = (u32::from(c[0]) << 16)
+            | (u32::from(*c.get(1).unwrap_or(&0)) << 8)
+            | u32::from(*c.get(2).unwrap_or(&0));
         for i in 0..4 {
-            s.push(if i <= c.len() { T[(n >> (18 - 6 * i)) as usize & 63] as char } else { '=' });
+            s.push(if i <= c.len() {
+                T[(n >> (18 - 6 * i)) as usize & 63] as char
+            } else {
+                '='
+            });
         }
     }
     s
@@ -204,10 +243,20 @@ fn package(size: usize, body: Vec<u8>) -> Vec<u8> {
 
 /// The Agile XML descriptor: AES-256, SHA-512, a password encryptor salted with 0..16.
 pub(crate) fn agile_info(password: &str, spin: u32) -> String {
-    let key = Params { hash: Hash::Sha512, salt: PASSWORD_SALT.to_vec(), key_len: 32 };
+    let key = Params {
+        hash: Hash::Sha512,
+        salt: PASSWORD_SALT.to_vec(),
+        key_len: 32,
+    };
     let h = iterated_hash(Hash::Sha512, password, &key.salt, spin);
     let iv = key.iv(None);
-    let field = |block_key: &[u8], data: &[u8]| base64_encode(&encrypt_cbc(&derive(Hash::Sha512, &h, block_key, 32), &iv, data));
+    let field = |block_key: &[u8], data: &[u8]| {
+        base64_encode(&encrypt_cbc(
+            &derive(Hash::Sha512, &h, block_key, 32),
+            &iv,
+            data,
+        ))
+    };
     let input = field(&BLOCK_VERIFIER_INPUT, &VERIFIER);
     let value = field(&BLOCK_VERIFIER_HASH, &Hash::Sha512.digest(&[&VERIFIER]));
     let secret = field(&BLOCK_KEY, &SECRET_KEY);
@@ -233,12 +282,23 @@ pub(crate) fn with_agile_header(xml: &str) -> Vec<u8> {
 
 /// `EncryptionInfo` and `EncryptedPackage` for `plain`, Agile (AES-256, SHA-512).
 pub(crate) fn encrypt_agile(plain: &[u8], password: &str, spin: u32) -> (Vec<u8>, Vec<u8>) {
-    let key_data = Params { hash: Hash::Sha512, salt: KEY_DATA_SALT.to_vec(), key_len: 32 };
+    let key_data = Params {
+        hash: Hash::Sha512,
+        salt: KEY_DATA_SALT.to_vec(),
+        key_len: 32,
+    };
     let mut body = vec![];
     for (i, segment) in plain.chunks(SEGMENT).enumerate() {
-        body.extend(encrypt_cbc(&SECRET_KEY, &key_data.iv(Some(&(i as u32).to_le_bytes())), segment));
+        body.extend(encrypt_cbc(
+            &SECRET_KEY,
+            &key_data.iv(Some(&(i as u32).to_le_bytes())),
+            segment,
+        ));
     }
-    (with_agile_header(&agile_info(password, spin)), package(plain.len(), body))
+    (
+        with_agile_header(&agile_info(password, spin)),
+        package(plain.len(), body),
+    )
 }
 
 /// `EncryptionInfo` and `EncryptedPackage` for `plain`, Standard (AES-128, SHA-1).

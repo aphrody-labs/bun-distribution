@@ -71,7 +71,9 @@ fn active_path(cx: &ToolContext) -> Option<(NodeId, Point, Point, Point)> {
     }
     let id = cx.selection.objects[0];
     let n = cx.doc.node(id)?;
-    let NodeKind::Path { path, .. } = &n.kind else { return None };
+    let NodeKind::Path { path, .. } = &n.kind else {
+        return None;
+    };
     let sp = path.subpaths.last()?;
     if sp.closed {
         return None;
@@ -84,13 +86,25 @@ fn active_path(cx: &ToolContext) -> Option<(NodeId, Point, Point, Point)> {
 /// An end of an open path (one subpath, not `except`) under `p`, within `tol`: the path the Pen
 /// continues or joins to, and whether it's the path's first anchor. Only paths that can be edited,
 /// not guides.
-fn open_end_at(cx: &ToolContext, p: Point, tol: f64, except: Option<NodeId>) -> Option<(NodeId, bool)> {
+fn open_end_at(
+    cx: &ToolContext,
+    p: Point,
+    tol: f64,
+    except: Option<NodeId>,
+) -> Option<(NodeId, bool)> {
     let id = vectorcraft_doc::hit::hit_test(cx.doc, p, cx.hit_options())?.leaf;
     if Some(id) == except || !cx.doc.is_editable(id) {
         return None;
     }
-    let NodeKind::Path { path, guide: false, .. } = &cx.doc.node(id)?.kind else { return None };
-    let [sp] = path.subpaths.as_slice() else { return None };
+    let NodeKind::Path {
+        path, guide: false, ..
+    } = &cx.doc.node(id)?.kind
+    else {
+        return None;
+    };
+    let [sp] = path.subpaths.as_slice() else {
+        return None;
+    };
     if sp.closed {
         return None;
     }
@@ -118,7 +132,13 @@ enum Endpoint {
 /// Pick the closest eligible endpoint at `p`. The caller supplies the historical
 /// tie choice: closing prefers the first end, resuming prefers the last. A one-anchor path has
 /// no eligible closing end.
-fn pick_endpoint(first: Option<Point>, last: Point, p: Point, tol: f64, tie: Endpoint) -> Option<Endpoint> {
+fn pick_endpoint(
+    first: Option<Point>,
+    last: Point,
+    p: Point,
+    tol: f64,
+    tie: Endpoint,
+) -> Option<Endpoint> {
     let first_distance = first.map(|a| p.distance(a)).filter(|d| *d <= tol);
     let last_distance = p.distance(last);
     let last_distance = (last_distance <= tol).then_some(last_distance);
@@ -138,7 +158,8 @@ fn alt_converts(cx: &ToolContext, p: Point, m: Mods) -> bool {
     m.alt
         && (hit_handle(cx, p, point).is_some()
             || crate::draw2::anchor_in(cx, crate::draw2::shown_paths(cx), p, point).is_some()
-            || crate::draw2::segment_in(cx, crate::draw2::shown_paths(cx), p, cx.pick_tol()).is_some())
+            || crate::draw2::segment_in(cx, crate::draw2::shown_paths(cx), p, cx.pick_tol())
+                .is_some())
 }
 
 /// Preview the outgoing handle of anchor `ai` of subpath `si` at `h`, the incoming one left alone.
@@ -188,8 +209,15 @@ impl Tool for PenTool {
                     // Pick at the raw pointer before snapping or constraining a new point.
                     // A one-anchor path doesn't close on itself: its anchor is the last one too.
                     if picked == Some(Endpoint::First) {
-                        self.drag = Some(Place { at: first, path: Some(id), closing: true });
-                        return vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))];
+                        self.drag = Some(Place {
+                            at: first,
+                            path: Some(id),
+                            closing: true,
+                        });
+                        return vec![
+                            Action::Begin("Close Path".into()),
+                            Action::Preview("path.close".into(), json!({"id": id.0})),
+                        ];
                     }
                     // Alt uses Anchor Point behavior at the terminal anchor too.
                     if let Some(acts) = self.alt_convert(cx, ev) {
@@ -199,31 +227,59 @@ impl Tool for PenTool {
                         && let Some((si, ai)) = end
                     {
                         self.handle = Some((id, si, ai, last));
-                        return vec![Action::Begin("Convert Anchor Point".into()), set_out_handle(id, si, ai, last)];
+                        return vec![
+                            Action::Begin("Convert Anchor Point".into()),
+                            set_out_handle(id, si, ai, last),
+                        ];
                     }
                     let raw_other = open_end_at(cx, ev.pos, tol, Some(id));
                     if raw_other.is_none() && p != ev.pos {
                         let snapped = pick_endpoint(closing_end, last, p, tol, Endpoint::First);
                         if snapped == Some(Endpoint::First) {
-                            self.drag = Some(Place { at: first, path: Some(id), closing: true });
-                            return vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))];
+                            self.drag = Some(Place {
+                                at: first,
+                                path: Some(id),
+                                closing: true,
+                            });
+                            return vec![
+                                Action::Begin("Close Path".into()),
+                                Action::Preview("path.close".into(), json!({"id": id.0})),
+                            ];
                         }
                         if snapped == Some(Endpoint::Last)
                             && let Some((si, ai)) = end
                         {
                             self.handle = Some((id, si, ai, last));
-                            return vec![Action::Begin("Convert Anchor Point".into()), set_out_handle(id, si, ai, last)];
+                            return vec![
+                                Action::Begin("Convert Anchor Point".into()),
+                                set_out_handle(id, si, ai, last),
+                            ];
                         }
                     }
                     // An end of another open path: the two become one, and the path is finished.
-                    if let Some((other, at_first)) = raw_other.or_else(|| open_end_at(cx, p, tol, Some(id))) {
+                    if let Some((other, at_first)) =
+                        raw_other.or_else(|| open_end_at(cx, p, tol, Some(id)))
+                    {
                         self.stop();
                         let end = if at_first { "first" } else { "last" };
-                        return vec![Action::Exec("path.join".into(), json!({"ids": [id.0, other.0], "ends": ["last", end]}))];
+                        return vec![Action::Exec(
+                            "path.join".into(),
+                            json!({"ids": [id.0, other.0], "ends": ["last", end]}),
+                        )];
                     }
-                    self.drag = Some(Place { at: p, path: Some(id), closing: false });
+                    self.drag = Some(Place {
+                        at: p,
+                        path: Some(id),
+                        closing: false,
+                    });
                     self.in_h = p;
-                    return vec![Action::Begin("Pen".into()), Action::Preview("path.appendAnchor".into(), json!({"id": id.0, "x": p.x, "y": p.y}))];
+                    return vec![
+                        Action::Begin("Pen".into()),
+                        Action::Preview(
+                            "path.appendAnchor".into(),
+                            json!({"id": id.0, "x": p.x, "y": p.y}),
+                        ),
+                    ];
                 }
                 if let Some(acts) = self.alt_convert(cx, ev) {
                     return acts;
@@ -235,7 +291,8 @@ impl Tool for PenTool {
                 for at in std::iter::once(ev.pos).chain((p != ev.pos).then_some(p)) {
                     // Continue a selected open path when clicking on one of its ends.
                     if let Some((id, first, last, _)) = active_path(cx)
-                        && let Some(picked) = pick_endpoint(Some(first), last, at, tol, Endpoint::Last)
+                        && let Some(picked) =
+                            pick_endpoint(Some(first), last, at, tol, Endpoint::Last)
                     {
                         self.drawing = true;
                         self.path = Some(id);
@@ -247,7 +304,8 @@ impl Tool for PenTool {
                     // Continue any other open path from the end clicked, selecting it.
                     if let Some((id, at_first)) = open_end_at(cx, at, tol, None) {
                         (self.drawing, self.path) = (true, Some(id));
-                        let mut out = vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))];
+                        let mut out =
+                            vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))];
                         if at_first {
                             out.push(Action::Exec("path.reverse".into(), json!({"ids": [id.0]})));
                         }
@@ -258,8 +316,18 @@ impl Tool for PenTool {
                     return vec![act];
                 }
                 (self.drawing, self.path) = (true, None);
-                self.drag = Some(Place { at: p, path: None, closing: false });
-                vec![Action::Begin("Pen".into()), Action::Preview("path.create".into(), json!({"anchors": [{"x": p.x, "y": p.y}]}))]
+                self.drag = Some(Place {
+                    at: p,
+                    path: None,
+                    closing: false,
+                });
+                vec![
+                    Action::Begin("Pen".into()),
+                    Action::Preview(
+                        "path.create".into(),
+                        json!({"anchors": [{"x": p.x, "y": p.y}]}),
+                    ),
+                ]
             }
             PointerKind::Drag => {
                 if let Some(t) = &mut self.convert {
@@ -272,13 +340,24 @@ impl Tool for PenTool {
                     }
                     return vec![set_out_handle(id, si, ai, h)];
                 }
-                let Some(Place { at: mut a, path, closing }) = self.drag else { return vec![] };
+                let Some(Place {
+                    at: mut a,
+                    path,
+                    closing,
+                }) = self.drag
+                else {
+                    return vec![];
+                };
                 // Space held moves the anchor being placed, handles and all.
                 if ev.mods.space && !closing {
                     let d = ev.pos - self.last;
                     a += d;
                     self.in_h += d;
-                    self.drag = Some(Place { at: a, path, closing });
+                    self.drag = Some(Place {
+                        at: a,
+                        path,
+                        closing,
+                    });
                 }
                 self.last = ev.pos;
                 let mut out_h = ev.pos;
@@ -317,7 +396,9 @@ impl Tool for PenTool {
                 if self.handle.take().is_some() {
                     return vec![Action::Commit];
                 }
-                let Some(place) = self.drag.take() else { return vec![] };
+                let Some(place) = self.drag.take() else {
+                    return vec![];
+                };
                 if place.closing {
                     self.stop();
                 }
@@ -338,7 +419,11 @@ impl Tool for PenTool {
         let placing = self.drag.take().is_some();
         let handling = self.handle.take().is_some();
         // Finish the preview as it stands; clearing state alone leaves its transaction open.
-        let mut acts = self.convert.take().map(|mut t| t.deactivate(cx)).unwrap_or_default();
+        let mut acts = self
+            .convert
+            .take()
+            .map(|mut t| t.deactivate(cx))
+            .unwrap_or_default();
         if placing || handling {
             acts.push(Action::Commit);
         }
@@ -361,7 +446,12 @@ impl Tool for PenTool {
             } else {
                 bp.line_to(h);
             }
-            o.push(Overlay::Path { path: bp, color: cx.doc.layer_color(id), width: 1.0, dashed: false });
+            o.push(Overlay::Path {
+                path: bp,
+                color: cx.doc.layer_color(id),
+                width: 1.0,
+                dashed: false,
+            });
         }
         o.extend_from_slice(self.snap.guides());
         o
@@ -384,12 +474,15 @@ impl Tool for PenTool {
         }
         if !self.drawing {
             match spine_click(cx, p, tol).as_deref() {
-                Some([Action::Exec(c, _)]) if c == "object.blend.spine.removeAnchor" => return Cursor::PenDelete,
+                Some([Action::Exec(c, _)]) if c == "object.blend.spine.removeAnchor" => {
+                    return Cursor::PenDelete;
+                }
                 Some([_]) => return Cursor::PenAdd,
                 _ => {}
             }
-            if active_path(cx).is_some_and(|(_, first, last, _)| pick_endpoint(Some(first), last, p, tol, Endpoint::Last).is_some())
-                || open_end_at(cx, p, tol, None).is_some()
+            if active_path(cx).is_some_and(|(_, first, last, _)| {
+                pick_endpoint(Some(first), last, p, tol, Endpoint::Last).is_some()
+            }) || open_end_at(cx, p, tol, None).is_some()
             {
                 return Cursor::PenContinue;
             }
@@ -437,24 +530,40 @@ fn auto_add_delete(cx: &ToolContext, p: Point, m: Mods, tol: f64) -> Option<Acti
     if !cx.auto_add_delete || m.shift {
         return None;
     }
-    let anchor = crate::draw2::anchor_in(cx, editable_paths(cx), p, tol).map(crate::draw2::remove_anchor);
-    anchor.or_else(|| crate::draw2::segment_in(cx, editable_paths(cx), p, tol).map(crate::draw2::insert_anchor))
+    let anchor =
+        crate::draw2::anchor_in(cx, editable_paths(cx), p, tol).map(crate::draw2::remove_anchor);
+    anchor.or_else(|| {
+        crate::draw2::segment_in(cx, editable_paths(cx), p, tol).map(crate::draw2::insert_anchor)
+    })
 }
 
 /// A click on a selected blend's spine: delete the point under `p` when no key object sits on it
 /// (a key's point does nothing), else add one where the spine passes within `tol`.
 fn spine_click(cx: &ToolContext, p: Point, tol: f64) -> Option<Vec<Action>> {
-    for (id, path) in crate::direct::spines(cx).into_iter().filter(|(id, _)| cx.selection.contains(*id)) {
-        let Some(NodeKind::Blend { children, spec }) = cx.doc.node(id).map(|n| &n.kind) else { continue };
-        let keys = vectorcraft_doc::live::blend_spine(children, spec).and_then(|(_, a)| a).unwrap_or_default();
+    for (id, path) in crate::direct::spines(cx)
+        .into_iter()
+        .filter(|(id, _)| cx.selection.contains(*id))
+    {
+        let Some(NodeKind::Blend { children, spec }) = cx.doc.node(id).map(|n| &n.kind) else {
+            continue;
+        };
+        let keys = vectorcraft_doc::live::blend_spine(children, spec)
+            .and_then(|(_, a)| a)
+            .unwrap_or_default();
         if let Some((_, ai, _)) = path.anchors().find(|(_, _, a)| a.p.distance(p) <= tol) {
             if keys.contains(&ai) {
                 return Some(vec![]);
             }
-            return Some(vec![Action::Exec("object.blend.spine.removeAnchor".into(), json!({"id": id.0, "anchor": ai}))]);
+            return Some(vec![Action::Exec(
+                "object.blend.spine.removeAnchor".into(),
+                json!({"id": id.0, "anchor": ai}),
+            )]);
         }
         if path.nearest(p).is_some_and(|n| n.4 <= tol) {
-            return Some(vec![Action::Exec("object.blend.spine.addAnchor".into(), json!({"id": id.0, "x": p.x, "y": p.y}))]);
+            return Some(vec![Action::Exec(
+                "object.blend.spine.addAnchor".into(),
+                json!({"id": id.0, "x": p.x, "y": p.y}),
+            )]);
         }
     }
     None
@@ -470,7 +579,10 @@ mod tests {
     fn snapped_last_endpoint_converts_active_path_after_raw_miss() {
         let first = Point::new(100.0, 300.0);
         let last = Point::new(200.0, 400.0);
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[first, Point::new(200.0, 300.0), last], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[first, Point::new(200.0, 300.0), last],
+            false,
+        ));
         d.grid.spacing = 100.0;
         d.grid.subdivisions = 1;
         let paint = paint();
@@ -485,29 +597,49 @@ mod tests {
         };
         let sp = &d.node(id).unwrap().path_data().unwrap().subpaths[0];
         assert!(!sp.closed);
-        assert_eq!(sp.anchors.iter().map(|a| a.p).collect::<Vec<_>>(), vec![first, Point::new(200.0, 300.0), last]);
+        assert_eq!(
+            sp.anchors.iter().map(|a| a.p).collect::<Vec<_>>(),
+            vec![first, Point::new(200.0, 300.0), last]
+        );
         let mut pen = PenTool::default();
         assert!(click(&mut pen, &cx, last.x, last.y, Mods::default()).is_empty());
-        assert_eq!(pen.active(&cx).map(|(id, first, last, _)| (id, first, last)), Some((id, first, last)));
+        assert_eq!(
+            pen.active(&cx)
+                .map(|(id, first, last, _)| (id, first, last)),
+            Some((id, first, last))
+        );
         assert!(!pen.busy());
 
         let raw = Point::new(237.0, 403.0);
         let tol = cx.tol(5.0).max(cx.point_tol());
         assert!(raw.distance(first) > tol && raw.distance(last) > tol);
         let from = Leave::segment(&cx, last, false);
-        assert_eq!(DrawSnap::default().press(&cx, raw, &[id], Some(&from)), last);
+        assert_eq!(
+            DrawSnap::default().press(&cx, raw, &[id], Some(&from)),
+            last
+        );
         assert!(open_end_at(&cx, raw, tol, Some(id)).is_none());
         assert!(open_end_at(&cx, last, tol, Some(id)).is_none());
 
         assert_eq!(
             pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, raw.x, raw.y)),
-            vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 2, last.x, last.y)]
+            vec![
+                Action::Begin("Convert Anchor Point".into()),
+                set_out(id, 2, last.x, last.y)
+            ]
         );
         assert_eq!(pen.handle, Some((id, 0, 2, last)));
         assert!(pen.drag.is_none() && pen.busy());
-        assert_eq!(pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)), vec![Action::Commit]);
+        assert_eq!(
+            pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)),
+            vec![Action::Commit]
+        );
         assert!(pen.handle.is_none() && !pen.busy());
-        assert_eq!(pen.active(&cx).map(|(id, first, last, _)| (id, first, last)), Some((id, first, last)));
+        assert_eq!(
+            pen.active(&cx)
+                .map(|(id, first, last, _)| (id, first, last)),
+            Some((id, first, last))
+        );
     }
 
     #[test]
@@ -515,10 +647,21 @@ mod tests {
         let first = Point::new(100.0, 300.0);
         let last = Point::new(200.0, 400.0);
         let raw = Point::new(237.0, 403.0);
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[first, Point::new(200.0, 300.0), last], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[first, Point::new(200.0, 300.0), last],
+            false,
+        ));
         let other = d.alloc_id();
-        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(&[raw, Point::new(337.0, 403.0)], false));
-        d.insert(Some(d.layers[0].id), 2, vectorcraft_doc::Node::path(other, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(
+            &[raw, Point::new(337.0, 403.0)],
+            false,
+        ));
+        d.insert(
+            Some(d.layers[0].id),
+            2,
+            vectorcraft_doc::Node::path(other, path, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         d.grid.spacing = 100.0;
         d.grid.subdivisions = 1;
         let paint = paint();
@@ -533,27 +676,43 @@ mod tests {
         };
         let mut pen = PenTool::default();
         assert!(click(&mut pen, &cx, last.x, last.y, Mods::default()).is_empty());
-        assert_eq!(pen.active(&cx).map(|(id, first, last, _)| (id, first, last)), Some((id, first, last)));
+        assert_eq!(
+            pen.active(&cx)
+                .map(|(id, first, last, _)| (id, first, last)),
+            Some((id, first, last))
+        );
         assert!(!pen.busy());
         let tol = cx.tol(5.0).max(cx.point_tol());
         assert!(raw.distance(first) > tol && raw.distance(last) > tol);
         assert_eq!(open_end_at(&cx, raw, tol, Some(id)), Some((other, true)));
         let from = Leave::segment(&cx, last, false);
-        assert_eq!(DrawSnap::default().press(&cx, raw, &[id], Some(&from)), last);
+        assert_eq!(
+            DrawSnap::default().press(&cx, raw, &[id], Some(&from)),
+            last
+        );
 
         assert_eq!(
             pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, raw.x, raw.y)),
-            vec![Action::Exec("path.join".into(), json!({"ids": [id.0, other.0], "ends": ["last", "first"]}))]
+            vec![Action::Exec(
+                "path.join".into(),
+                json!({"ids": [id.0, other.0], "ends": ["last", "first"]})
+            )]
         );
         assert!(!pen.busy() && pen.active(&cx).is_none());
-        assert!(pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)).is_empty());
+        assert!(
+            pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y))
+                .is_empty()
+        );
     }
 
     #[test]
     fn snapped_first_endpoint_closes_active_path_after_raw_miss() {
         let first = Point::new(100.0, 300.0);
         let last = Point::new(200.0, 400.0);
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[first, Point::new(200.0, 300.0), last], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[first, Point::new(200.0, 300.0), last],
+            false,
+        ));
         d.grid.spacing = 100.0;
         d.grid.subdivisions = 1;
         let paint = paint();
@@ -568,28 +727,44 @@ mod tests {
         };
         let sp = &d.node(id).unwrap().path_data().unwrap().subpaths[0];
         assert!(!sp.closed);
-        assert_eq!(sp.anchors.iter().map(|a| a.p).collect::<Vec<_>>(), vec![first, Point::new(200.0, 300.0), last]);
+        assert_eq!(
+            sp.anchors.iter().map(|a| a.p).collect::<Vec<_>>(),
+            vec![first, Point::new(200.0, 300.0), last]
+        );
         let mut pen = PenTool::default();
         assert!(click(&mut pen, &cx, last.x, last.y, Mods::default()).is_empty());
-        assert_eq!(pen.active(&cx).map(|(id, first, last, _)| (id, first, last)), Some((id, first, last)));
+        assert_eq!(
+            pen.active(&cx)
+                .map(|(id, first, last, _)| (id, first, last)),
+            Some((id, first, last))
+        );
         assert!(!pen.busy());
 
         let raw = Point::new(63.0, 303.0);
         let tol = cx.tol(5.0).max(cx.point_tol());
         assert!(raw.distance(first) > tol && raw.distance(last) > tol);
         let from = Leave::segment(&cx, last, false);
-        assert_eq!(DrawSnap::default().press(&cx, raw, &[id], Some(&from)), first);
+        assert_eq!(
+            DrawSnap::default().press(&cx, raw, &[id], Some(&from)),
+            first
+        );
         assert!(open_end_at(&cx, raw, tol, Some(id)).is_none());
         assert!(open_end_at(&cx, first, tol, Some(id)).is_none());
 
         assert_eq!(
             pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, raw.x, raw.y)),
-            vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]
+            vec![
+                Action::Begin("Close Path".into()),
+                Action::Preview("path.close".into(), json!({"id": id.0}))
+            ]
         );
         let place = pen.drag.unwrap();
         assert!(place.closing);
         assert_eq!((place.path, place.at), (Some(id), first));
-        assert_eq!(pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)), vec![Action::Commit]);
+        assert_eq!(
+            pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)),
+            vec![Action::Commit]
+        );
         assert!(!pen.busy() && pen.active(&cx).is_none());
     }
 
@@ -598,10 +773,21 @@ mod tests {
         let first = Point::new(100.0, 300.0);
         let last = Point::new(200.0, 400.0);
         let raw = Point::new(63.0, 303.0);
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[first, Point::new(200.0, 300.0), last], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[first, Point::new(200.0, 300.0), last],
+            false,
+        ));
         let other = d.alloc_id();
-        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(&[raw, Point::new(63.0, 403.0)], false));
-        d.insert(Some(d.layers[0].id), 2, vectorcraft_doc::Node::path(other, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(
+            &[raw, Point::new(63.0, 403.0)],
+            false,
+        ));
+        d.insert(
+            Some(d.layers[0].id),
+            2,
+            vectorcraft_doc::Node::path(other, path, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         d.grid.spacing = 100.0;
         d.grid.subdivisions = 1;
         let paint = paint();
@@ -616,20 +802,33 @@ mod tests {
         };
         let mut pen = PenTool::default();
         assert!(click(&mut pen, &cx, last.x, last.y, Mods::default()).is_empty());
-        assert_eq!(pen.active(&cx).map(|(id, first, last, _)| (id, first, last)), Some((id, first, last)));
+        assert_eq!(
+            pen.active(&cx)
+                .map(|(id, first, last, _)| (id, first, last)),
+            Some((id, first, last))
+        );
         assert!(!pen.busy());
         let tol = cx.tol(5.0).max(cx.point_tol());
         assert!(raw.distance(first) > tol && raw.distance(last) > tol);
         assert_eq!(open_end_at(&cx, raw, tol, Some(id)), Some((other, true)));
         let from = Leave::segment(&cx, last, false);
-        assert_eq!(DrawSnap::default().press(&cx, raw, &[id], Some(&from)), first);
+        assert_eq!(
+            DrawSnap::default().press(&cx, raw, &[id], Some(&from)),
+            first
+        );
 
         assert_eq!(
             pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, raw.x, raw.y)),
-            vec![Action::Exec("path.join".into(), json!({"ids": [id.0, other.0], "ends": ["last", "first"]}))]
+            vec![Action::Exec(
+                "path.join".into(),
+                json!({"ids": [id.0, other.0], "ends": ["last", "first"]})
+            )]
         );
         assert!(!pen.busy() && pen.active(&cx).is_none());
-        assert!(pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y)).is_empty());
+        assert!(
+            pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, raw.x, raw.y))
+                .is_empty()
+        );
     }
 
     #[test]
@@ -642,7 +841,10 @@ mod tests {
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0));
         assert_eq!(a[0], Action::Begin("Pen".into()));
         assert!(matches!(&a[1], Action::Preview(c, _) if c == "path.create"));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 10.0, 10.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 10.0, 10.0)),
+            vec![Action::Commit]
+        );
     }
 
     #[test]
@@ -651,36 +853,73 @@ mod tests {
         let l = d.layers[0].id;
         let id = d.alloc_id();
         let line = vectorcraft_geom::shapes::line(Point::new(10.0, 300.0), Point::new(60.0, 300.0));
-        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            1,
+            vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let mut s = Selection::default();
         s.set([id]);
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        let alt = Mods { alt: true, ..Mods::default() };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
         let handles = |acts: Vec<Action>| match acts.as_slice() {
-            [Action::Preview(c, v)] if c == "path.appendAnchor" => (v["in"].clone(), v["out"].clone()),
+            [Action::Preview(c, v)] if c == "path.appendAnchor" => {
+                (v["in"].clone(), v["out"].clone())
+            }
             other => panic!("not an anchor preview: {other:?}"),
         };
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 400.0, 420.0));
         let drag = PointerEvent::new(PointerKind::Drag, 450.0, 420.0);
-        assert_eq!(handles(t.pointer(&cx, &drag)), (json!([350.0, 420.0]), json!([450.0, 420.0])));
+        assert_eq!(
+            handles(t.pointer(&cx, &drag)),
+            (json!([350.0, 420.0]), json!([450.0, 420.0]))
+        );
         // Alt goes down: the curve shaped so far stays, and only the outgoing handle moves on.
         let drag = PointerEvent::new(PointerKind::Drag, 450.0, 470.0).with_mods(alt);
-        assert_eq!(handles(t.pointer(&cx, &drag)), (json!([350.0, 420.0]), json!([450.0, 470.0])));
+        assert_eq!(
+            handles(t.pointer(&cx, &drag)),
+            (json!([350.0, 420.0]), json!([450.0, 470.0]))
+        );
         let drag = PointerEvent::new(PointerKind::Drag, 400.0, 480.0).with_mods(alt);
-        assert_eq!(handles(t.pointer(&cx, &drag)), (json!([350.0, 420.0]), json!([400.0, 480.0])));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 400.0, 480.0).with_mods(alt)), vec![Action::Commit]);
+        assert_eq!(
+            handles(t.pointer(&cx, &drag)),
+            (json!([350.0, 420.0]), json!([400.0, 480.0]))
+        );
+        assert_eq!(
+            t.pointer(
+                &cx,
+                &PointerEvent::new(PointerKind::Up, 400.0, 480.0).with_mods(alt)
+            ),
+            vec![Action::Commit]
+        );
         // Alt held from the start: the new anchor gets an outgoing handle only.
-        t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 300.0, 440.0).with_mods(alt));
+        t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Down, 300.0, 440.0).with_mods(alt),
+        );
         let drag = PointerEvent::new(PointerKind::Drag, 340.0, 440.0).with_mods(alt);
-        assert_eq!(handles(t.pointer(&cx, &drag)), (json!([300.0, 440.0]), json!([340.0, 440.0])));
+        assert_eq!(
+            handles(t.pointer(&cx, &drag)),
+            (json!([300.0, 440.0]), json!([340.0, 440.0]))
+        );
     }
 
     #[test]
     fn space_moves_the_anchor_being_placed() {
         let (mut d, _) = doc_with_rect();
-        let space = Mods { space: true, ..Mods::default() };
+        let space = Mods {
+            space: true,
+            ..Mods::default()
+        };
         // The first anchor of a new path.
         let (s, p) = (Selection::default(), paint());
         let cx0 = cx(&d, &s, &p);
@@ -691,26 +930,54 @@ mod tests {
             [Action::Preview(c, v)] if c == "path.create" => v["anchors"][0].clone(),
             other => panic!("not a create preview: {other:?}"),
         };
-        let a = created(t.pointer(&cx0, &PointerEvent::new(PointerKind::Drag, 450.0, 380.0).with_mods(space)));
-        assert_eq!(a, json!({"x": 400.0, "y": 380.0, "out": [450.0, 380.0], "in": [350.0, 380.0]}), "moved, handles and all");
+        let a = created(t.pointer(
+            &cx0,
+            &PointerEvent::new(PointerKind::Drag, 450.0, 380.0).with_mods(space),
+        ));
+        assert_eq!(
+            a,
+            json!({"x": 400.0, "y": 380.0, "out": [450.0, 380.0], "in": [350.0, 380.0]}),
+            "moved, handles and all"
+        );
         // Space released: the drag shapes the handles round the anchor's new place.
         let a = created(t.pointer(&cx0, &PointerEvent::new(PointerKind::Drag, 460.0, 380.0)));
-        assert_eq!(a, json!({"x": 400.0, "y": 380.0, "out": [460.0, 380.0], "in": [340.0, 380.0]}));
+        assert_eq!(
+            a,
+            json!({"x": 400.0, "y": 380.0, "out": [460.0, 380.0], "in": [340.0, 380.0]})
+        );
         // An anchor added to an open path, its handles broken by Alt: the kept incoming handle
         // moves with it.
         let l = d.layers[0].id;
         let id = d.alloc_id();
         let line = vectorcraft_geom::shapes::line(Point::new(10.0, 300.0), Point::new(60.0, 300.0));
-        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            1,
+            vectorcraft_doc::Node::path(id, line, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let mut s = Selection::default();
         s.set([id]);
         let cx = cx(&d, &s, &p);
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        let alt = Mods { alt: true, ..Mods::default() };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 400.0, 420.0));
         t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 450.0, 420.0));
-        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 450.0, 470.0).with_mods(alt));
-        let acts = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 450.0, 450.0).with_mods(Mods { space: true, ..alt }));
+        t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 450.0, 470.0).with_mods(alt),
+        );
+        let acts = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 450.0, 450.0)
+                .with_mods(Mods { space: true, ..alt }),
+        );
         assert_eq!(
             acts,
             vec![Action::Preview(
@@ -721,88 +988,171 @@ mod tests {
     }
 
     /// A document with an open path of `anchors`, selected, being drawn by a Pen.
-    fn drawing(anchors: vectorcraft_geom::SubPath) -> (vectorcraft_doc::Document, NodeId, Selection) {
+    fn drawing(
+        anchors: vectorcraft_geom::SubPath,
+    ) -> (vectorcraft_doc::Document, NodeId, Selection) {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
         let path = vectorcraft_geom::PathData::single(anchors);
-        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            1,
+            vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let mut s = Selection::default();
         s.set([id]);
         (d, id, s)
     }
 
     fn set_out(id: NodeId, ai: usize, x: f64, y: f64) -> Action {
-        Action::Preview("path.setHandle".into(), json!({"id": id.0, "subpath": 0, "anchor": ai, "which": "out", "x": x, "y": y, "independent": true}))
+        Action::Preview(
+            "path.setHandle".into(),
+            json!({"id": id.0, "subpath": 0, "anchor": ai, "which": "out", "x": x, "y": y, "independent": true}),
+        )
     }
 
     #[test]
     fn clicking_the_last_anchor_retracts_its_handle_and_dragging_pulls_a_new_one() {
         // The last anchor is smooth: handles at 40 and 80 either side of (60, 300).
-        let mut sp = vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false);
+        let mut sp = vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        );
         sp.anchors[1].h_in = Point::new(40.0, 300.0);
         sp.anchors[1].h_out = Point::new(80.0, 300.0);
         let (d, id, s) = drawing(sp);
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        assert_eq!(t.cursor(&cx, Point::new(61.0, 301.0), Mods::default()), Cursor::PenConvert);
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        assert_eq!(
+            t.cursor(&cx, Point::new(61.0, 301.0), Mods::default()),
+            Cursor::PenConvert
+        );
         // A click retracts the outgoing handle and adds no anchor.
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 61.0, 301.0));
-        assert_eq!(a, vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 60.0, 300.0)]);
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 61.0, 301.0)), vec![Action::Commit]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Begin("Convert Anchor Point".into()),
+                set_out(id, 1, 60.0, 300.0)
+            ]
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 61.0, 301.0)),
+            vec![Action::Commit]
+        );
         // A drag pulls a new outgoing handle out.
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 60.0, 300.0));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 70.0, 280.0)), vec![set_out(id, 1, 70.0, 280.0)]);
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 70.0, 280.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 70.0, 280.0)),
+            vec![set_out(id, 1, 70.0, 280.0)]
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 70.0, 280.0)),
+            vec![Action::Commit]
+        );
         // Elsewhere a click still adds an anchor, and the first anchor still closes the path.
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 200.0, 400.0));
-        assert!(matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"), "{a:?}");
+        assert!(
+            matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"),
+            "{a:?}"
+        );
         t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 200.0, 400.0));
-        assert_eq!(t.cursor(&cx, Point::new(10.0, 300.0), Mods::default()), Cursor::PenClose);
+        assert_eq!(
+            t.cursor(&cx, Point::new(10.0, 300.0), Mods::default()),
+            Cursor::PenClose
+        );
     }
 
     /// #544: picking the terminal anchor uses the pointer, even when new points snap elsewhere.
     #[test]
     fn terminal_anchor_conversion_precedes_grid_snapping() {
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(13.0, 303.0), Point::new(63.0, 303.0)], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(13.0, 303.0), Point::new(63.0, 303.0)],
+            false,
+        ));
         d.grid.spacing = 100.0;
         d.grid.subdivisions = 1;
         let p = paint();
-        let cx = ToolContext { snap_to_grid: true, ..cx(&d, &s, &p) };
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        assert_eq!(t.cursor(&cx, Point::new(63.0, 303.0), Mods::default()), Cursor::PenConvert);
+        let cx = ToolContext {
+            snap_to_grid: true,
+            ..cx(&d, &s, &p)
+        };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        assert_eq!(
+            t.cursor(&cx, Point::new(63.0, 303.0), Mods::default()),
+            Cursor::PenConvert
+        );
         assert_eq!(
             t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 63.0, 303.0)),
-            vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 63.0, 303.0)]
+            vec![
+                Action::Begin("Convert Anchor Point".into()),
+                set_out(id, 1, 63.0, 303.0)
+            ]
         );
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 63.0, 303.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 63.0, 303.0)),
+            vec![Action::Commit]
+        );
         // The same raw picking applies when resuming the path and when closing it.
         let mut t = PenTool::default();
-        assert_eq!(t.cursor(&cx, Point::new(63.0, 303.0), Mods::default()), Cursor::PenContinue);
+        assert_eq!(
+            t.cursor(&cx, Point::new(63.0, 303.0), Mods::default()),
+            Cursor::PenContinue
+        );
         assert!(click(&mut t, &cx, 63.0, 303.0, Mods::default()).is_empty());
         assert_eq!(t.active(&cx).map(|a| a.0), Some(id));
         assert_eq!(
             t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 13.0, 303.0)),
-            vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]
+            vec![
+                Action::Begin("Close Path".into()),
+                Action::Preview("path.close".into(), json!({"id": id.0}))
+            ]
         );
     }
 
     #[test]
     fn smart_guides_cannot_steal_a_terminal_anchor_press() {
-        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false));
+        let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        ));
         let other = d.alloc_id();
-        let rect = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(66.0, 300.0, 76.0, 310.0));
-        d.insert(Some(d.layers[0].id), 2, vectorcraft_doc::Node::path(other, rect, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let rect = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(
+            66.0, 300.0, 76.0, 310.0,
+        ));
+        d.insert(
+            Some(d.layers[0].id),
+            2,
+            vectorcraft_doc::Node::path(other, rect, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let p = paint();
         let cx = cx(&d, &s, &p);
         let pos = Point::new(63.0, 300.0);
-        assert_eq!(crate::guides::snap_draw(&cx, pos, &[id]).0, Point::new(66.0, 300.0));
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
+        assert_eq!(
+            crate::guides::snap_draw(&cx, pos, &[id]).0,
+            Point::new(66.0, 300.0)
+        );
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
         assert_eq!(t.cursor(&cx, pos, Mods::default()), Cursor::PenConvert);
         assert_eq!(
             t.pointer(&cx, &PointerEvent::new(PointerKind::Down, pos.x, pos.y)),
-            vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 60.0, 300.0)]
+            vec![
+                Action::Begin("Convert Anchor Point".into()),
+                set_out(id, 1, 60.0, 300.0)
+            ]
         );
     }
 
@@ -814,7 +1164,8 @@ mod tests {
         for zoom in [0.5, 1.0, 2.0] {
             let first = Point::new(100.0, 300.0);
             let last = Point::new(100.0 + 6.0 / zoom, 300.0);
-            let (d, id, selection) = drawing(vectorcraft_geom::SubPath::polyline(&[first, last], false));
+            let (d, id, selection) =
+                drawing(vectorcraft_geom::SubPath::polyline(&[first, last], false));
             for grid in [false, true] {
                 let cx = ToolContext {
                     zoom,
@@ -825,29 +1176,54 @@ mod tests {
                     ..cx(&d, &selection, &paint)
                 };
                 for shift in [false, true] {
-                    let mods = Mods { shift, ..Mods::default() };
+                    let mods = Mods {
+                        shift,
+                        ..Mods::default()
+                    };
                     // Include off-anchor clicks in both halves of the overlap and the midpoint.
                     for offset in [6.0, 0.0, 1.0, 3.0, 5.0] {
                         let at = Point::new(first.x + offset / zoom, first.y);
                         let first_end = offset <= 3.0;
-                        let mut pen = PenTool { drawing: true, ..PenTool::default() };
-                        let cursor = if first_end { Cursor::PenClose } else { Cursor::PenConvert };
+                        let mut pen = PenTool {
+                            drawing: true,
+                            ..PenTool::default()
+                        };
+                        let cursor = if first_end {
+                            Cursor::PenClose
+                        } else {
+                            Cursor::PenConvert
+                        };
                         let actual_cursor = pen.cursor(&cx, at, mods);
                         let expected = if first_end {
-                            vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]
+                            vec![
+                                Action::Begin("Close Path".into()),
+                                Action::Preview("path.close".into(), json!({"id": id.0})),
+                            ]
                         } else {
-                            vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, last.x, last.y)]
+                            vec![
+                                Action::Begin("Convert Anchor Point".into()),
+                                set_out(id, 1, last.x, last.y),
+                            ]
                         };
-                        let actual = pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, at.x, at.y).with_mods(mods));
+                        let actual = pen.pointer(
+                            &cx,
+                            &PointerEvent::new(PointerKind::Down, at.x, at.y).with_mods(mods),
+                        );
                         if actual_cursor != cursor || actual != expected {
                             failures.push((zoom, grid, shift, offset, actual_cursor, actual));
                         }
-                        assert_eq!(pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, at.x, at.y)), vec![Action::Commit]);
+                        assert_eq!(
+                            pen.pointer(&cx, &PointerEvent::new(PointerKind::Up, at.x, at.y)),
+                            vec![Action::Commit]
+                        );
                     }
                 }
             }
         }
-        assert!(failures.is_empty(), "cursor and press must pick the closest eligible endpoint: {failures:?}");
+        assert!(
+            failures.is_empty(),
+            "cursor and press must pick the closest eligible endpoint: {failures:?}"
+        );
     }
 
     #[test]
@@ -857,7 +1233,8 @@ mod tests {
         for zoom in [0.5, 1.0, 2.0] {
             let first = Point::new(100.0, 300.0);
             let last = Point::new(100.0 + 6.0 / zoom, 300.0);
-            let (d, id, selection) = drawing(vectorcraft_geom::SubPath::polyline(&[first, last], false));
+            let (d, id, selection) =
+                drawing(vectorcraft_geom::SubPath::polyline(&[first, last], false));
             for grid in [false, true] {
                 let cx = ToolContext {
                     zoom,
@@ -871,7 +1248,11 @@ mod tests {
                     let at = Point::new(first.x + offset / zoom, first.y);
                     let mut pen = PenTool::default();
                     assert_eq!(pen.cursor(&cx, at, Mods::default()), Cursor::PenContinue);
-                    let expected = if offset < 3.0 { vec![Action::Exec("path.reverse".into(), json!({}))] } else { vec![] };
+                    let expected = if offset < 3.0 {
+                        vec![Action::Exec("path.reverse".into(), json!({}))]
+                    } else {
+                        vec![]
+                    };
                     let actual = click(&mut pen, &cx, at.x, at.y, Mods::default());
                     if actual != expected {
                         failures.push((zoom, grid, offset, actual));
@@ -880,7 +1261,10 @@ mod tests {
                 }
             }
         }
-        assert!(failures.is_empty(), "resuming must reverse only for the closest first endpoint: {failures:?}");
+        assert!(
+            failures.is_empty(),
+            "resuming must reverse only for the closest first endpoint: {failures:?}"
+        );
     }
 
     #[test]
@@ -889,97 +1273,219 @@ mod tests {
         let (d, id, selection) = drawing(vectorcraft_geom::SubPath::polyline(&[at, at], false));
         let paint = paint();
         for zoom in [0.5, 1.0, 2.0] {
-            let cx = ToolContext { zoom, smart_guides: false, snap_to_point: false, ..cx(&d, &selection, &paint) };
-            let mut drawing = PenTool { drawing: true, ..PenTool::default() };
+            let cx = ToolContext {
+                zoom,
+                smart_guides: false,
+                snap_to_point: false,
+                ..cx(&d, &selection, &paint)
+            };
+            let mut drawing = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
             assert_eq!(drawing.cursor(&cx, at, Mods::default()), Cursor::PenClose);
             assert_eq!(
                 click(&mut drawing, &cx, at.x, at.y, Mods::default()),
-                vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]
+                vec![
+                    Action::Begin("Close Path".into()),
+                    Action::Preview("path.close".into(), json!({"id": id.0}))
+                ]
             );
             let mut resuming = PenTool::default();
-            assert_eq!(resuming.cursor(&cx, at, Mods::default()), Cursor::PenContinue);
+            assert_eq!(
+                resuming.cursor(&cx, at, Mods::default()),
+                Cursor::PenContinue
+            );
             assert!(click(&mut resuming, &cx, at.x, at.y, Mods::default()).is_empty());
         }
     }
 
     #[test]
     fn terminal_anchor_uses_the_selection_tolerance_at_each_zoom() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        ));
         let p = paint();
         for zoom in [0.5, 2.0] {
-            let cx = ToolContext { zoom, selection_tolerance: 8.0, smart_guides: false, snap_to_point: false, ..cx(&d, &s, &p) };
+            let cx = ToolContext {
+                zoom,
+                selection_tolerance: 8.0,
+                smart_guides: false,
+                snap_to_point: false,
+                ..cx(&d, &s, &p)
+            };
             let pos = Point::new(60.0, 300.0 + 6.0 / zoom);
-            let mut t = PenTool { drawing: true, ..PenTool::default() };
+            let mut t = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
             assert_eq!(t.cursor(&cx, pos, Mods::default()), Cursor::PenConvert);
             assert_eq!(
                 t.pointer(&cx, &PointerEvent::new(PointerKind::Down, pos.x, pos.y)),
-                vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 60.0, 300.0)]
+                vec![
+                    Action::Begin("Convert Anchor Point".into()),
+                    set_out(id, 1, 60.0, 300.0)
+                ]
             );
-            let narrow = ToolContext { selection_tolerance: 1.0, ..cx };
+            let narrow = ToolContext {
+                selection_tolerance: 1.0,
+                ..cx
+            };
             // The upstream point picker retains a minimum screen radius at low tolerance.
             let near = Point::new(60.0, 300.0 + 4.0 / zoom);
-            let mut narrow_pen = PenTool { drawing: true, ..PenTool::default() };
-            assert_eq!(narrow_pen.cursor(&narrow, near, Mods::default()), Cursor::PenConvert);
+            let mut narrow_pen = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
+            assert_eq!(
+                narrow_pen.cursor(&narrow, near, Mods::default()),
+                Cursor::PenConvert
+            );
             assert_eq!(
                 click(&mut narrow_pen, &narrow, near.x, near.y, Mods::default()),
-                vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 60.0, 300.0)]
+                vec![
+                    Action::Begin("Convert Anchor Point".into()),
+                    set_out(id, 1, 60.0, 300.0)
+                ]
             );
-            assert_eq!(narrow_pen.cursor(&narrow, Point::new(60.0, 300.0 + 6.0 / zoom), Mods::default()), Cursor::Pen);
+            assert_eq!(
+                narrow_pen.cursor(
+                    &narrow,
+                    Point::new(60.0, 300.0 + 6.0 / zoom),
+                    Mods::default()
+                ),
+                Cursor::Pen
+            );
         }
     }
 
     /// Upstream's point radius grows with the drawn anchor; cursor and press keep agreeing.
     #[test]
     fn enlarged_anchor_radius_is_used_for_endpoints_and_alt_conversion() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        ));
         let p = paint();
         for zoom in [0.5, 1.0, 2.0] {
-            let cx = ToolContext { zoom, selection_tolerance: 1.0, anchor_size: 7, smart_guides: false, snap_to_point: false, ..cx(&d, &s, &p) };
+            let cx = ToolContext {
+                zoom,
+                selection_tolerance: 1.0,
+                anchor_size: 7,
+                smart_guides: false,
+                snap_to_point: false,
+                ..cx(&d, &s, &p)
+            };
             let at = Point::new(60.0 + 6.0 / zoom, 300.0);
-            let mut terminal = PenTool { drawing: true, ..PenTool::default() };
-            assert_eq!(terminal.cursor(&cx, at, Mods::default()), Cursor::PenConvert);
+            let mut terminal = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
+            assert_eq!(
+                terminal.cursor(&cx, at, Mods::default()),
+                Cursor::PenConvert
+            );
             assert_eq!(
                 click(&mut terminal, &cx, at.x, at.y, Mods::default()),
-                vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 1, 60.0, 300.0)]
+                vec![
+                    Action::Begin("Convert Anchor Point".into()),
+                    set_out(id, 1, 60.0, 300.0)
+                ]
             );
             let mut continuing = PenTool::default();
-            assert_eq!(continuing.cursor(&cx, at, Mods::default()), Cursor::PenContinue);
+            assert_eq!(
+                continuing.cursor(&cx, at, Mods::default()),
+                Cursor::PenContinue
+            );
             assert!(click(&mut continuing, &cx, at.x, at.y, Mods::default()).is_empty());
             assert_eq!(continuing.active(&cx).map(|a| a.0), Some(id));
-            let mut closing = PenTool { drawing: true, ..PenTool::default() };
+            let mut closing = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
             let first = Point::new(10.0 - 6.0 / zoom, 300.0);
-            assert_eq!(closing.cursor(&cx, first, Mods::default()), Cursor::PenClose);
+            assert_eq!(
+                closing.cursor(&cx, first, Mods::default()),
+                Cursor::PenClose
+            );
             assert_eq!(
                 click(&mut closing, &cx, first.x, first.y, Mods::default()),
-                vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]
+                vec![
+                    Action::Begin("Close Path".into()),
+                    Action::Preview("path.close".into(), json!({"id": id.0}))
+                ]
             );
-            let mut alt_pen = PenTool { drawing: true, ..PenTool::default() };
-            let alt = Mods { alt: true, ..Mods::default() };
-            assert!(alt_pen.pointer(&cx, &PointerEvent::new(PointerKind::Down, at.x, at.y).with_mods(alt)).is_empty());
-            assert!(alt_pen.busy(), "Alt must reach the enlarged terminal-anchor target");
+            let mut alt_pen = PenTool {
+                drawing: true,
+                ..PenTool::default()
+            };
+            let alt = Mods {
+                alt: true,
+                ..Mods::default()
+            };
+            assert!(
+                alt_pen
+                    .pointer(
+                        &cx,
+                        &PointerEvent::new(PointerKind::Down, at.x, at.y).with_mods(alt)
+                    )
+                    .is_empty()
+            );
+            assert!(
+                alt_pen.busy(),
+                "Alt must reach the enlarged terminal-anchor target"
+            );
             assert!(alt_pen.convert.is_some());
             let away_from_segment = Point::new(35.0, 300.0 + 4.0 / zoom);
-            assert!(!alt_converts(&cx, away_from_segment, alt), "segment picking retains the smaller selection radius");
+            assert!(
+                !alt_converts(&cx, away_from_segment, alt),
+                "segment picking retains the smaller selection radius"
+            );
         }
     }
 
     /// #516: Alt on the terminal anchor borrows Anchor Point, just like the other anchors.
     #[test]
     fn alt_on_the_terminal_anchor_pulls_symmetric_handles() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(100.0, 300.0), Point::new(200.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(100.0, 300.0), Point::new(200.0, 300.0)],
+            false,
+        ));
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let alt = Mods { alt: true, ..Mods::default() };
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 200.0, 300.0).with_mods(alt)).is_empty());
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        assert!(
+            t.pointer(
+                &cx,
+                &PointerEvent::new(PointerKind::Down, 200.0, 300.0).with_mods(alt)
+            )
+            .is_empty()
+        );
         assert_eq!(
-            t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 230.0, 330.0).with_mods(alt)),
+            t.pointer(
+                &cx,
+                &PointerEvent::new(PointerKind::Drag, 230.0, 330.0).with_mods(alt)
+            ),
             vec![
                 Action::Begin("Convert Anchor Point".into()),
-                Action::Preview("path.convertAnchor".into(), json!({"id": id.0, "subpath": 0, "anchor": 1, "to": "smooth", "x": 230.0, "y": 330.0}))
+                Action::Preview(
+                    "path.convertAnchor".into(),
+                    json!({"id": id.0, "subpath": 0, "anchor": 1, "to": "smooth", "x": 230.0, "y": 330.0})
+                )
             ]
         );
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 230.0, 330.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 230.0, 330.0)),
+            vec![Action::Commit]
+        );
         assert!(
             matches!(click(&mut t, &cx, 300.0, 400.0, Mods::default()).as_slice(), [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor")
         );
@@ -987,12 +1493,18 @@ mod tests {
 
     #[test]
     fn ending_during_a_pen_gesture_commits_and_clears_it() {
-        let (d, _, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(100.0, 300.0), Point::new(200.0, 300.0)], false));
+        let (d, _, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(100.0, 300.0), Point::new(200.0, 300.0)],
+            false,
+        ));
         let p = paint();
         let cx = cx(&d, &s, &p);
         for terminal in [false, true] {
             for key in [Some(ToolKey::Escape), Some(ToolKey::Enter), None] {
-                let mut t = PenTool { drawing: true, ..PenTool::default() };
+                let mut t = PenTool {
+                    drawing: true,
+                    ..PenTool::default()
+                };
                 let x = if terminal { 200.0 } else { 300.0 };
                 t.pointer(&cx, &PointerEvent::new(PointerKind::Down, x, 300.0));
                 t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, x + 20.0, 330.0));
@@ -1002,8 +1514,14 @@ mod tests {
                 };
                 assert_eq!(acts, vec![Action::Commit]);
                 assert!(!t.busy());
-                assert!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, x + 20.0, 330.0)).is_empty());
-                assert_eq!(t.cursor(&cx, Point::new(400.0, 400.0), Mods::default()), Cursor::Pen);
+                assert!(
+                    t.pointer(&cx, &PointerEvent::new(PointerKind::Up, x + 20.0, 330.0))
+                        .is_empty()
+                );
+                assert_eq!(
+                    t.cursor(&cx, Point::new(400.0, 400.0), Mods::default()),
+                    Cursor::Pen
+                );
             }
         }
     }
@@ -1013,36 +1531,86 @@ mod tests {
     /// previews the close with symmetric handles (Alt breaks them), released as a close.
     #[test]
     fn a_drag_from_the_first_anchor_always_closes() {
-        let pts = [Point::new(100.0, 300.0), Point::new(200.0, 300.0), Point::new(200.0, 400.0)];
+        let pts = [
+            Point::new(100.0, 300.0),
+            Point::new(200.0, 300.0),
+            Point::new(200.0, 400.0),
+        ];
         let (mut d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&pts, false));
         let p = paint();
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        let a = t.pointer(&cx(&d, &s, &p), &PointerEvent::new(PointerKind::Down, 101.0, 301.0));
-        assert_eq!(a, vec![Action::Begin("Close Path".into()), Action::Preview("path.close".into(), json!({"id": id.0}))]);
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        let a = t.pointer(
+            &cx(&d, &s, &p),
+            &PointerEvent::new(PointerKind::Down, 101.0, 301.0),
+        );
+        assert_eq!(
+            a,
+            vec![
+                Action::Begin("Close Path".into()),
+                Action::Preview("path.close".into(), json!({"id": id.0}))
+            ]
+        );
         // What the tool sees once the preview applied: the path closed.
         d.node_mut(id).unwrap().path_data_mut().unwrap().subpaths[0].closed = true;
         let c = cx(&d, &s, &p);
         let close = |x: f64, y: f64, alt: bool| {
-            vec![Action::Preview("path.close".into(), json!({"id": id.0, "in": [200.0 - x, 600.0 - y], "independent": alt}))]
+            vec![Action::Preview(
+                "path.close".into(),
+                json!({"id": id.0, "in": [200.0 - x, 600.0 - y], "independent": alt}),
+            )]
         };
         for (x, y) in [(105.0, 290.0), (130.0, 260.0), (160.0, 240.0)] {
-            assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Drag, x, y)), close(x, y, false), "at ({x}, {y})");
+            assert_eq!(
+                t.pointer(&c, &PointerEvent::new(PointerKind::Drag, x, y)),
+                close(x, y, false),
+                "at ({x}, {y})"
+            );
         }
-        let alt = Mods { alt: true, ..Mods::default() };
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Drag, 170.0, 250.0).with_mods(alt)), close(170.0, 250.0, true));
-        assert_eq!(t.pointer(&c, &PointerEvent::new(PointerKind::Up, 170.0, 250.0)), vec![Action::Commit]);
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
+        assert_eq!(
+            t.pointer(
+                &c,
+                &PointerEvent::new(PointerKind::Drag, 170.0, 250.0).with_mods(alt)
+            ),
+            close(170.0, 250.0, true)
+        );
+        assert_eq!(
+            t.pointer(&c, &PointerEvent::new(PointerKind::Up, 170.0, 250.0)),
+            vec![Action::Commit]
+        );
         assert!(!t.busy() && t.active(&c).is_none(), "the path is done");
     }
 
     #[test]
     fn a_one_anchor_path_does_not_close_on_itself() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0)],
+            false,
+        ));
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        assert_eq!(t.cursor(&cx, Point::new(10.0, 300.0), Mods::default()), Cursor::PenConvert);
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        assert_eq!(
+            t.cursor(&cx, Point::new(10.0, 300.0), Mods::default()),
+            Cursor::PenConvert
+        );
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 300.0));
-        assert_eq!(a, vec![Action::Begin("Convert Anchor Point".into()), set_out(id, 0, 10.0, 300.0)]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Begin("Convert Anchor Point".into()),
+                set_out(id, 0, 10.0, 300.0)
+            ]
+        );
     }
 
     #[test]
@@ -1050,14 +1618,29 @@ mod tests {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let key = |id: NodeId, x: f64| {
-            let r = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(x, 300.0, x + 20.0, 320.0));
-            std::sync::Arc::new(vectorcraft_doc::Node::path(id, r, vectorcraft_doc::Appearance::default_art()))
+            let r = vectorcraft_geom::shapes::rectangle(vectorcraft_geom::Rect::new(
+                x,
+                300.0,
+                x + 20.0,
+                320.0,
+            ));
+            std::sync::Arc::new(vectorcraft_doc::Node::path(
+                id,
+                r,
+                vectorcraft_doc::Appearance::default_art(),
+            ))
         };
         let (g, k1, k2) = (d.alloc_id(), d.alloc_id(), d.alloc_id());
         d.insert(
             Some(l),
             1,
-            vectorcraft_doc::Node::new(g, NodeKind::Blend { children: vec![key(k1, 100.0), key(k2, 200.0)], spec: Default::default() }),
+            vectorcraft_doc::Node::new(
+                g,
+                NodeKind::Blend {
+                    children: vec![key(k1, 100.0), key(k2, 200.0)],
+                    spec: Default::default(),
+                },
+            ),
         )
         .unwrap();
         let mut s = Selection::default();
@@ -1065,11 +1648,23 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = PenTool::default();
-        assert_eq!(t.cursor(&cx, Point::new(160.0, 311.0), Mods::default()), Cursor::PenAdd);
+        assert_eq!(
+            t.cursor(&cx, Point::new(160.0, 311.0), Mods::default()),
+            Cursor::PenAdd
+        );
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 160.0, 311.0));
-        assert_eq!(a, vec![Action::Exec("object.blend.spine.addAnchor".into(), json!({"id": g.0, "x": 160.0, "y": 310.0}))]);
+        assert_eq!(
+            a,
+            vec![Action::Exec(
+                "object.blend.spine.addAnchor".into(),
+                json!({"id": g.0, "x": 160.0, "y": 310.0})
+            )]
+        );
         // A key's own point is left alone (the click snaps to the spine line).
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 110.0, 310.0)), vec![]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 110.0, 310.0)),
+            vec![]
+        );
     }
 
     fn click(t: &mut PenTool, cx: &ToolContext, x: f64, y: f64, m: Mods) -> Vec<Action> {
@@ -1083,48 +1678,97 @@ mod tests {
         let (mut d, _) = doc_with_rect();
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        let pts = [Point::new(300.0, 400.0), Point::new(350.0, 300.0), Point::new(400.0, 400.0)];
-        let path = vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(&pts, false));
-        d.insert(Some(l), 1, vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art())).unwrap();
+        let pts = [
+            Point::new(300.0, 400.0),
+            Point::new(350.0, 300.0),
+            Point::new(400.0, 400.0),
+        ];
+        let path =
+            vectorcraft_geom::PathData::single(vectorcraft_geom::SubPath::polyline(&pts, false));
+        d.insert(
+            Some(l),
+            1,
+            vectorcraft_doc::Node::path(id, path, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let mut s = Selection::default();
         s.set([id]);
         let p = paint();
-        let off = ToolContext { auto_add_delete: false, ..cx(&d, &s, &p) };
+        let off = ToolContext {
+            auto_add_delete: false,
+            ..cx(&d, &s, &p)
+        };
         let cx = cx(&d, &s, &p);
         let none = Mods::default();
         let mut t = PenTool::default();
         // On a segment: add an anchor there.
-        assert_eq!(t.cursor(&cx, Point::new(325.0, 351.0), none), Cursor::PenAdd);
+        assert_eq!(
+            t.cursor(&cx, Point::new(325.0, 351.0), none),
+            Cursor::PenAdd
+        );
         let a = click(&mut t, &cx, 325.0, 351.0, none);
-        assert!(matches!(&a[..], [Action::Exec(c, v)] if c == "path.insertAnchor" && v["id"] == id.0 && v["segment"] == 0), "{a:?}");
+        assert!(
+            matches!(&a[..], [Action::Exec(c, v)] if c == "path.insertAnchor" && v["id"] == id.0 && v["segment"] == 0),
+            "{a:?}"
+        );
         // On an anchor: delete it.
-        assert_eq!(t.cursor(&cx, Point::new(350.0, 302.0), none), Cursor::PenDelete);
+        assert_eq!(
+            t.cursor(&cx, Point::new(350.0, 302.0), none),
+            Cursor::PenDelete
+        );
         let a = click(&mut t, &cx, 350.0, 302.0, none);
-        assert_eq!(a, vec![Action::Exec("path.removeAnchor".into(), json!({"id": id.0, "subpath": 0, "anchor": 1}))]);
+        assert_eq!(
+            a,
+            vec![Action::Exec(
+                "path.removeAnchor".into(),
+                json!({"id": id.0, "subpath": 0, "anchor": 1})
+            )]
+        );
         // An end still continues the path.
-        assert_eq!(t.cursor(&cx, Point::new(400.0, 400.0), none), Cursor::PenContinue);
+        assert_eq!(
+            t.cursor(&cx, Point::new(400.0, 400.0), none),
+            Cursor::PenContinue
+        );
         // Shift, or the preference turned off, starts a new path instead.
-        let shift = Mods { shift: true, ..Mods::default() };
+        let shift = Mods {
+            shift: true,
+            ..Mods::default()
+        };
         assert_eq!(t.cursor(&cx, Point::new(325.0, 351.0), shift), Cursor::Pen);
         assert_eq!(t.cursor(&off, Point::new(350.0, 302.0), none), Cursor::Pen);
         let a = click(&mut t, &off, 350.0, 302.0, none);
-        assert!(matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"), "{a:?}");
+        assert!(
+            matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"),
+            "{a:?}"
+        );
         // While a path is being drawn, a click goes on drawing it.
         let a = click(&mut t, &cx, 325.0, 351.0, none);
-        assert!(matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"), "{a:?}");
+        assert!(
+            matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"),
+            "{a:?}"
+        );
         let mut t = PenTool::default();
         let a = click(&mut t, &cx, 325.0, 351.0, shift);
-        assert!(matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"), "{a:?}");
+        assert!(
+            matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"),
+            "{a:?}"
+        );
     }
 
     /// Each anchor snaps to Smart Guides (#506): hovering shows where it goes (the rubber band ends
     /// there), in line with another object's centre; Shift slides it along its 45° step into line.
     #[test]
     fn anchors_snap_to_smart_guides() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        ));
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
         t.pointer(&cx, &PointerEvent::new(PointerKind::Move, 152.0, 318.0));
         let o = t.overlays(&cx);
         assert!(o.iter().any(|o| matches!(o, Overlay::Label { text, p, .. } if text == "align" && *p == Point::new(150.0, 318.0))), "{o:?}");
@@ -1132,35 +1776,85 @@ mod tests {
             |o| matches!(o, Overlay::Path { path, .. } if path.elements().last().and_then(|e| e.end_point()) == Some(Point::new(150.0, 318.0)))
         ));
         let a = click(&mut t, &cx, 152.0, 318.0, Mods::default());
-        assert_eq!(a[1], Action::Preview("path.appendAnchor".into(), json!({"id": id.0, "x": 150.0, "y": 318.0})));
-        let shift = Mods { shift: true, ..Mods::default() };
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "path.appendAnchor".into(),
+                json!({"id": id.0, "x": 150.0, "y": 318.0})
+            )
+        );
+        let shift = Mods {
+            shift: true,
+            ..Mods::default()
+        };
         let a = click(&mut t, &cx, 152.0, 310.0, shift);
-        assert_eq!(a[1], Action::Preview("path.appendAnchor".into(), json!({"id": id.0, "x": 150.0, "y": 300.0})));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "path.appendAnchor".into(),
+                json!({"id": id.0, "x": 150.0, "y": 300.0})
+            )
+        );
         // The first anchor of a new path lands on the rect's corner.
         let mut t = PenTool::default();
         let a = click(&mut t, &cx, 102.0, 99.0, Mods::default());
-        assert_eq!(a[1], Action::Preview("path.create".into(), json!({"anchors": [{"x": 100.0, "y": 100.0}]})));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "path.create".into(),
+                json!({"anchors": [{"x": 100.0, "y": 100.0}]})
+            )
+        );
     }
 
     #[test]
     fn alt_over_a_shown_handle_or_an_anchor_converts() {
         // The middle anchor is smooth: handles at (150, 100) and (250, 100) round (200, 100).
-        let mut sp = vectorcraft_geom::SubPath::polyline(&[Point::new(100.0, 200.0), Point::new(200.0, 100.0), Point::new(300.0, 200.0)], false);
-        sp.anchors[1] = vectorcraft_geom::Anchor::smooth(Point::new(200.0, 100.0), Point::new(250.0, 100.0));
+        let mut sp = vectorcraft_geom::SubPath::polyline(
+            &[
+                Point::new(100.0, 200.0),
+                Point::new(200.0, 100.0),
+                Point::new(300.0, 200.0),
+            ],
+            false,
+        );
+        sp.anchors[1] =
+            vectorcraft_geom::Anchor::smooth(Point::new(200.0, 100.0), Point::new(250.0, 100.0));
         let (d, id, mut s) = drawing(sp);
         let p = paint();
-        let alt = Mods { alt: true, ..Mods::default() };
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
         let t = PenTool::default();
         let cx0 = cx(&d, &s, &p);
-        assert_eq!(t.cursor(&cx0, Point::new(250.0, 101.0), alt), Cursor::PenConvert);
-        assert_eq!(t.cursor(&cx0, Point::new(200.0, 101.0), alt), Cursor::PenConvert);
-        assert_eq!(t.cursor(&cx0, Point::new(250.0, 101.0), Mods::default()), Cursor::Pen);
+        assert_eq!(
+            t.cursor(&cx0, Point::new(250.0, 101.0), alt),
+            Cursor::PenConvert
+        );
+        assert_eq!(
+            t.cursor(&cx0, Point::new(200.0, 101.0), alt),
+            Cursor::PenConvert
+        );
+        assert_eq!(
+            t.cursor(&cx0, Point::new(250.0, 101.0), Mods::default()),
+            Cursor::Pen
+        );
         assert_eq!(t.cursor(&cx0, Point::new(150.0, 300.0), alt), Cursor::Pen);
         // A drag of the handle moves it alone, as one gesture.
         let mut t = PenTool::default();
-        assert_eq!(t.pointer(&cx0, &PointerEvent::new(PointerKind::Down, 250.0, 101.0).with_mods(alt)), vec![]);
+        assert_eq!(
+            t.pointer(
+                &cx0,
+                &PointerEvent::new(PointerKind::Down, 250.0, 101.0).with_mods(alt)
+            ),
+            vec![]
+        );
         assert!(t.busy());
-        let a = t.pointer(&cx0, &PointerEvent::new(PointerKind::Drag, 260.0, 140.0).with_mods(alt));
+        let a = t.pointer(
+            &cx0,
+            &PointerEvent::new(PointerKind::Drag, 260.0, 140.0).with_mods(alt),
+        );
         assert_eq!(
             a,
             vec![
@@ -1172,10 +1866,14 @@ mod tests {
             ]
         );
         // Alt let go mid-drag: the gesture goes on to its end.
-        assert_eq!(t.pointer(&cx0, &PointerEvent::new(PointerKind::Up, 260.0, 140.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx0, &PointerEvent::new(PointerKind::Up, 260.0, 140.0)),
+            vec![Action::Commit]
+        );
         assert!(!t.busy());
         // With other anchors direct-selected the handles of this one are hidden, and not grabbed.
-        s.anchors.insert(id, std::collections::BTreeSet::from([(0, 0)]));
+        s.anchors
+            .insert(id, std::collections::BTreeSet::from([(0, 0)]));
         let cx1 = cx(&d, &s, &p);
         assert_eq!(t.cursor(&cx1, Point::new(250.0, 101.0), alt), Cursor::Pen);
     }
@@ -1184,48 +1882,103 @@ mod tests {
     /// while drawing too; Alt away from paths still places an anchor.
     #[test]
     fn alt_over_a_segment_reshapes_it() {
-        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(100.0, 300.0), Point::new(200.0, 300.0)], false));
+        let (d, id, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(100.0, 300.0), Point::new(200.0, 300.0)],
+            false,
+        ));
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let alt = Mods { alt: true, ..Mods::default() };
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
-        assert_eq!(t.cursor(&cx, Point::new(150.0, 302.0), alt), Cursor::PenConvert);
-        assert_eq!(t.cursor(&cx, Point::new(150.0, 302.0), Mods::default()), Cursor::Pen);
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 150.0, 302.0).with_mods(alt)), vec![]);
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 262.0).with_mods(alt));
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
+        assert_eq!(
+            t.cursor(&cx, Point::new(150.0, 302.0), alt),
+            Cursor::PenConvert
+        );
+        assert_eq!(
+            t.cursor(&cx, Point::new(150.0, 302.0), Mods::default()),
+            Cursor::Pen
+        );
+        assert_eq!(
+            t.pointer(
+                &cx,
+                &PointerEvent::new(PointerKind::Down, 150.0, 302.0).with_mods(alt)
+            ),
+            vec![]
+        );
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 150.0, 262.0).with_mods(alt),
+        );
         assert_eq!(a[0], Action::Begin("Reshape".into()));
         assert!(
             matches!(&a[1], Action::Preview(c, v) if c == "path.reshapeSegment" && v["id"] == id.0 && v["segment"] == 0 && v["dy"] == -40.0),
             "{a:?}"
         );
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 150.0, 262.0)), vec![Action::Commit]);
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 250.0, 400.0).with_mods(alt));
-        assert!(matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"), "{a:?}");
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 150.0, 262.0)),
+            vec![Action::Commit]
+        );
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Down, 250.0, 400.0).with_mods(alt),
+        );
+        assert!(
+            matches!(&a[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.appendAnchor"),
+            "{a:?}"
+        );
     }
 
     /// #494: the Pen goes on drawing the path it drew while that path stays selected (after a Cmd
     /// drag with Direct Selection), but never another open path selected meanwhile.
     #[test]
     fn the_pen_draws_on_the_path_it_began_only() {
-        let (mut d, a, s) = drawing(vectorcraft_geom::SubPath::polyline(&[Point::new(10.0, 300.0), Point::new(60.0, 300.0)], false));
+        let (mut d, a, s) = drawing(vectorcraft_geom::SubPath::polyline(
+            &[Point::new(10.0, 300.0), Point::new(60.0, 300.0)],
+            false,
+        ));
         let l = d.layers[0].id;
         let b = d.alloc_id();
         let line = vectorcraft_geom::shapes::line(Point::new(10.0, 400.0), Point::new(60.0, 400.0));
-        d.insert(Some(l), 2, vectorcraft_doc::Node::path(b, line, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            2,
+            vectorcraft_doc::Node::path(b, line, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let p = paint();
-        let mut t = PenTool { drawing: true, ..PenTool::default() };
+        let mut t = PenTool {
+            drawing: true,
+            ..PenTool::default()
+        };
         let cx_a = cx(&d, &s, &p);
         let appended = |acts: &[Action]| match acts {
-            [Action::Begin(_), Action::Preview(c, v)] if c == "path.appendAnchor" => v["id"].as_u64(),
+            [Action::Begin(_), Action::Preview(c, v)] if c == "path.appendAnchor" => {
+                v["id"].as_u64()
+            }
             _ => None,
         };
-        assert_eq!(appended(&click(&mut t, &cx_a, 100.0, 320.0, Mods::default())), Some(a.0));
+        assert_eq!(
+            appended(&click(&mut t, &cx_a, 100.0, 320.0, Mods::default())),
+            Some(a.0)
+        );
         // Path B selected instead: the next click starts a new path.
         let mut sb = Selection::default();
         sb.set([b]);
         let cx_b = cx(&d, &sb, &p);
-        assert_eq!(t.cursor(&cx_b, Point::new(150.0, 350.0), Mods::default()), Cursor::Pen);
+        assert_eq!(
+            t.cursor(&cx_b, Point::new(150.0, 350.0), Mods::default()),
+            Cursor::Pen
+        );
         let acts = click(&mut t, &cx_b, 150.0, 350.0, Mods::default());
-        assert!(matches!(&acts[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"), "{acts:?}");
+        assert!(
+            matches!(&acts[..], [Action::Begin(_), Action::Preview(c, _)] if c == "path.create"),
+            "{acts:?}"
+        );
     }
 }

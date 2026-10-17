@@ -18,7 +18,14 @@
 //! transforms, loop filter), so prediction never drifts; [`Vp9Encoder::reconstruction`] returns
 //! it.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod bool;
 mod lf;
@@ -57,7 +64,16 @@ pub struct EncoderConfig {
 
 impl Default for EncoderConfig {
     fn default() -> Self {
-        EncoderConfig { width: 0, height: 0, quality: 80, full_range: false, keyframe_interval: 60, target_kbps: None, frame_rate: 30.0, loop_filter: true }
+        EncoderConfig {
+            width: 0,
+            height: 0,
+            quality: 80,
+            full_range: false,
+            keyframe_interval: 60,
+            target_kbps: None,
+            frame_rate: 30.0,
+            loop_filter: true,
+        }
     }
 }
 
@@ -86,7 +102,15 @@ pub(crate) struct Plane {
 
 impl Plane {
     #[allow(clippy::too_many_arguments)]
-    fn new(data: &[u8], vw: usize, vh: usize, w: usize, h: usize, max_x: usize, max_y: usize) -> Plane {
+    fn new(
+        data: &[u8],
+        vw: usize,
+        vh: usize,
+        w: usize,
+        h: usize,
+        max_x: usize,
+        max_y: usize,
+    ) -> Plane {
         let mut src = vec![0u8; w * h];
         for y in 0..h {
             let sy = y.min(vh.saturating_sub(1));
@@ -95,7 +119,15 @@ impl Plane {
                 src[y * w + x] = data.get(sy * vw + sx).copied().unwrap_or(128);
             }
         }
-        Plane { w, max_x, max_y, vis_w: vw, vis_h: vh, src, rec: vec![0; w * h] }
+        Plane {
+            w,
+            max_x,
+            max_y,
+            vis_w: vw,
+            vis_h: vh,
+            src,
+            rec: vec![0; w * h],
+        }
     }
 }
 
@@ -152,7 +184,12 @@ impl Vp9Encoder {
             since_key: 0,
             reference: None,
             mvs: vec![],
-            rc: RateControl { key_complexity: None, inter_complexity: None, debt: 0.0, last_inter_q: None },
+            rc: RateControl {
+                key_complexity: None,
+                inter_complexity: None,
+                debt: 0.0,
+                last_inter_q: None,
+            },
         }
     }
 
@@ -172,12 +209,17 @@ impl Vp9Encoder {
         let r = self.reference.as_ref()?;
         Some(std::array::from_fn(|i| {
             let p = &r[i];
-            (0..p.vis_h).flat_map(|y| p.rec[y * p.w..y * p.w + p.vis_w].iter().copied()).collect()
+            (0..p.vis_h)
+                .flat_map(|y| p.rec[y * p.w..y * p.w + p.vis_w].iter().copied())
+                .collect()
         }))
     }
 
     fn is_key_due(&self, force: bool) -> bool {
-        force || self.reference.is_none() || self.cfg.keyframe_interval == 1 || (self.cfg.keyframe_interval > 1 && self.since_key >= self.cfg.keyframe_interval)
+        force
+            || self.reference.is_none()
+            || self.cfg.keyframe_interval == 1
+            || (self.cfg.keyframe_interval > 1 && self.since_key >= self.cfg.keyframe_interval)
     }
 
     /// The q index of the next frame.
@@ -185,9 +227,15 @@ impl Vp9Encoder {
         if self.lossless {
             return 0;
         }
-        let Some(kbps) = self.cfg.target_kbps else { return self.base_qidx };
+        let Some(kbps) = self.cfg.target_kbps else {
+            return self.base_qidx;
+        };
         let per_frame = kbps as f64 * 1000.0 / self.cfg.frame_rate.max(1.0);
-        let interval = if self.cfg.keyframe_interval == 0 { 300.0 } else { self.cfg.keyframe_interval as f64 };
+        let interval = if self.cfg.keyframe_interval == 0 {
+            300.0
+        } else {
+            self.cfg.keyframe_interval as f64
+        };
         // Key frames get a larger share of the group's budget.
         let boost = (interval / 6.0).clamp(1.0, 5.0);
         let group = per_frame * interval;
@@ -197,10 +245,20 @@ impl Vp9Encoder {
         // Pay back (or spend) the running difference over about a second.
         let horizon = self.cfg.frame_rate.max(1.0);
         target = (target - self.rc.debt / horizon).max(target * 0.25);
-        let complexity = if key { self.rc.key_complexity } else { self.rc.inter_complexity.or(self.rc.key_complexity.map(|c| c / (boost * 2.0))) };
-        let Some(cx) = complexity else { return self.base_qidx };
+        let complexity = if key {
+            self.rc.key_complexity
+        } else {
+            self.rc
+                .inter_complexity
+                .or(self.rc.key_complexity.map(|c| c / (boost * 2.0)))
+        };
+        let Some(cx) = complexity else {
+            return self.base_qidx;
+        };
         let step = (cx / target).max(4.0);
-        let mut q = (0..=255u8).min_by_key(|&q| ((AC_QLOOKUP[q as usize] as f64 - step).abs() * 16.0) as i64).unwrap_or(self.base_qidx);
+        let mut q = (0..=255u8)
+            .min_by_key(|&q| ((AC_QLOOKUP[q as usize] as f64 - step).abs() * 16.0) as i64)
+            .unwrap_or(self.base_qidx);
         if !key && let Some(last) = self.rc.last_inter_q {
             q = q.clamp(last.saturating_sub(24), last.saturating_add(24));
         }
@@ -208,7 +266,9 @@ impl Vp9Encoder {
     }
 
     fn rc_update(&mut self, key: bool, qidx: u8, bytes: usize) {
-        let Some(kbps) = self.cfg.target_kbps else { return };
+        let Some(kbps) = self.cfg.target_kbps else {
+            return;
+        };
         let bits = bytes as f64 * 8.0;
         let cx = bits * AC_QLOOKUP[qidx as usize] as f64;
         if key {
@@ -226,7 +286,10 @@ impl Vp9Encoder {
 
     /// Encode one frame; `force_key` starts a new key frame.
     pub fn encode_frame(&mut self, y: &[u8], u: &[u8], v: &[u8], force_key: bool) -> EncodedFrame {
-        let (w, h) = (self.cfg.width.max(1) as usize, self.cfg.height.max(1) as usize);
+        let (w, h) = (
+            self.cfg.width.max(1) as usize,
+            self.cfg.height.max(1) as usize,
+        );
         let key = self.is_key_due(force_key);
         let qidx = self.pick_qidx(key);
         let lossless = qidx == 0;
@@ -252,17 +315,40 @@ impl Vp9Encoder {
         }
         max_log2 -= 1;
         let tile_cols = 1usize << min_log2;
-        let quant = Quant { dcq: DC_QLOOKUP[qidx as usize], acq: AC_QLOOKUP[qidx as usize], lossless, round_dc: 0.5, round_ac: 0.38 };
+        let quant = Quant {
+            dcq: DC_QLOOKUP[qidx as usize],
+            acq: AC_QLOOKUP[qidx as usize],
+            lossless,
+            round_dc: 0.5,
+            round_ac: 0.38,
+        };
         let step = AC_QLOOKUP[qidx as usize] as f64 / 8.0;
         let lambda_sse = 0.35 * step * step;
         let refs = if key {
             None
         } else {
-            self.reference.as_ref().map(|r| std::array::from_fn::<_, 3, _>(|i| mc::RefPlane { data: &r[i].rec, stride: r[i].w, w: r[i].vis_w, h: r[i].vis_h }))
+            self.reference.as_ref().map(|r| {
+                std::array::from_fn::<_, 3, _>(|i| mc::RefPlane {
+                    data: &r[i].rec,
+                    stride: r[i].w,
+                    w: r[i].vis_w,
+                    h: r[i].vis_h,
+                })
+            })
         };
         let prev = (!key && self.mvs.len() == mi_cols * mi_rows).then_some(&self.mvs[..]);
         let phases = refs.as_ref().map(|r| mc::PhasePlanes::new(&r[0], 48));
-        let fp = tile::FrameParams { key, quant, mi_cols, mi_rows, refs, phases, prev_mvs: prev, lambda_sad: lambda_sse.sqrt(), lambda_sse };
+        let fp = tile::FrameParams {
+            key,
+            quant,
+            mi_cols,
+            mi_rows,
+            refs,
+            phases,
+            prev_mvs: prev,
+            lambda_sad: lambda_sse.sqrt(),
+            lambda_sse,
+        };
         let mut mi = vec![Mi::default(); mi_cols * mi_rows];
         let mut writers = vec![];
         for t in 0..tile_cols {
@@ -283,7 +369,11 @@ impl Vp9Encoder {
         let tiles: Vec<Vec<u8>> = writers.iter().map(|wr| wr.emit(&used)).collect();
         drop(fp);
         // Loop filter: the level with the least error against the source.
-        let level = if lossless || !self.cfg.loop_filter { 0 } else { choose_level(&mut planes, &mi, mi_rows, mi_cols, qidx, key) };
+        let level = if lossless || !self.cfg.loop_filter {
+            0
+        } else {
+            choose_level(&mut planes, &mi, mi_rows, mi_cols, qidx, key)
+        };
         lf::filter_frame(&mut planes, &mi, mi_rows, mi_cols, level);
         // Uncompressed header.
         let mut bw = BitWriter::default();
@@ -348,18 +438,33 @@ impl Vp9Encoder {
             out.push(0);
         }
         // State for the next frame.
-        self.mvs = mi.iter().map(|m| if m.inter { m.mv } else { Mv::ZERO }).collect();
+        self.mvs = mi
+            .iter()
+            .map(|m| if m.inter { m.mv } else { Mv::ZERO })
+            .collect();
         self.reference = Some(planes);
         self.frames += 1;
         self.since_key = if key { 1 } else { self.since_key + 1 };
         self.rc_update(key, qidx, out.len());
-        EncodedFrame { data: out, key, q_idx: qidx, filter_level: level }
+        EncodedFrame {
+            data: out,
+            key,
+            q_idx: qidx,
+            filter_level: level,
+        }
     }
 }
 
 /// Try a few loop filter levels on the luma reconstruction; the one closest to the source
 /// (squared error over the visible area) wins (0 when filtering doesn't help).
-fn choose_level(planes: &mut [Plane; 3], mi: &[Mi], mi_rows: usize, mi_cols: usize, qidx: u8, key: bool) -> u8 {
+fn choose_level(
+    planes: &mut [Plane; 3],
+    mi: &[Mi],
+    mi_rows: usize,
+    mi_cols: usize,
+    qidx: u8,
+    key: bool,
+) -> u8 {
     let guess = ((qidx as f64 * if key { 0.25 } else { 0.2 }).round() as u8).clamp(1, 63);
     let sse = |p: &Plane| -> u64 {
         let mut s = 0u64;
@@ -417,16 +522,29 @@ impl BitWriter {
 // ---------------------------------------------------------------- colour conversion
 
 /// BT.709 RGB(A) 8-bit → planar YUV 4:2:0 (limited or full range).
-pub fn rgba_to_yuv420(rgba: &[u8], w: u32, h: u32, full_range: bool) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
+pub fn rgba_to_yuv420(
+    rgba: &[u8],
+    w: u32,
+    h: u32,
+    full_range: bool,
+) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     let (w, h) = (w as usize, h as usize);
     let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
     let mut y = vec![0u8; w * h];
     let mut u = vec![0u8; cw * ch];
     let mut v = vec![0u8; cw * ch];
-    let (ys, yo, cs) = if full_range { (255.0, 0.0, 255.0) } else { (219.0, 16.0, 224.0) };
+    let (ys, yo, cs) = if full_range {
+        (255.0, 0.0, 255.0)
+    } else {
+        (219.0, 16.0, 224.0)
+    };
     let px = |x: usize, yy: usize| -> [f32; 3] {
         let i = (yy.min(h - 1) * w + x.min(w - 1)) * 4;
-        [rgba[i] as f32 / 255.0, rgba[i + 1] as f32 / 255.0, rgba[i + 2] as f32 / 255.0]
+        [
+            rgba[i] as f32 / 255.0,
+            rgba[i + 1] as f32 / 255.0,
+            rgba[i + 2] as f32 / 255.0,
+        ]
     };
     let luma = |c: [f32; 3]| 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
     for yy in 0..h {
@@ -458,6 +576,12 @@ pub fn rgba_to_yuv420(rgba: &[u8], w: u32, h: u32, full_range: bool) -> (Vec<u8>
 pub fn alpha_to_yuv420(rgba: &[u8], w: u32, h: u32) -> (Vec<u8>, Vec<u8>, Vec<u8>) {
     let (w, h) = (w as usize, h as usize);
     let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
-    let y: Vec<u8> = rgba.as_chunks::<4>().0.iter().take(w * h).map(|p| p[3]).collect();
+    let y: Vec<u8> = rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .take(w * h)
+        .map(|p| p[3])
+        .collect();
     (y, vec![128; cw * ch], vec![128; cw * ch])
 }

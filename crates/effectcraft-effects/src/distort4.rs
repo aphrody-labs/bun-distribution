@@ -28,14 +28,30 @@ use rayon::prelude::*;
 use crate::util::{hash1, point_in_poly};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Distort", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Distort",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 // ---------------------------------------------------------------- CC Flo Motion
 
 fn flo_motion(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let knots = [(ctx.params.v2("knot1"), ctx.params.f("amount1") / 100.0), (ctx.params.v2("knot2"), ctx.params.f("amount2") / 100.0)];
+    let knots = [
+        (ctx.params.v2("knot1"), ctx.params.f("amount1") / 100.0),
+        (ctx.params.v2("knot2"), ctx.params.f("amount2") / 100.0),
+    ];
     if knots.iter().all(|k| k.1 == 0.0) {
         return b;
     }
@@ -75,7 +91,11 @@ fn flo_motion(ctx: &EffectCtx, mut b: Buf) -> Buf {
                     let px = x as f64 + (sx as f64 + 0.5) / ss as f64;
                     let py = y as f64 + (sy as f64 + 0.5) / ss as f64;
                     let (lx, ly) = map((px - off[0]) / scale, (py - off[1]) / scale);
-                    let (lx, ly) = if tile { (lx.rem_euclid(lw), ly.rem_euclid(lh)) } else { (lx, ly) };
+                    let (lx, ly) = if tile {
+                        (lx.rem_euclid(lw), ly.rem_euclid(lh))
+                    } else {
+                        (lx, ly)
+                    };
                     let q = src.sample_bilinear(lx * scale + off[0], ly * scale + off[1]);
                     for c in 0..4 {
                         acc[c] += q[c];
@@ -139,7 +159,15 @@ pub struct LiquifyStroke {
 impl LiquifyStroke {
     /// Text form: `tool size pressure jitter cloneX cloneY x,y x,y …`.
     pub fn to_line(&self) -> String {
-        let mut s = format!("{} {} {} {} {} {}", LIQUIFY_TOOLS[self.tool], self.size, self.pressure, self.jitter, self.clone_offset[0], self.clone_offset[1]);
+        let mut s = format!(
+            "{} {} {} {} {} {}",
+            LIQUIFY_TOOLS[self.tool],
+            self.size,
+            self.pressure,
+            self.jitter,
+            self.clone_offset[0],
+            self.clone_offset[1]
+        );
         for p in &self.points {
             s.push_str(&format!(" {},{}", p[0], p[1]));
         }
@@ -148,7 +176,9 @@ impl LiquifyStroke {
     pub fn parse(line: &str) -> Option<LiquifyStroke> {
         let mut it = line.split_whitespace();
         let name = it.next()?;
-        let tool = LIQUIFY_TOOLS.iter().position(|t| t.eq_ignore_ascii_case(name))?;
+        let tool = LIQUIFY_TOOLS
+            .iter()
+            .position(|t| t.eq_ignore_ascii_case(name))?;
         let mut f = || -> Option<f64> { it.next()?.parse().ok() };
         let (size, pressure, jitter, cx, cy) = (f()?, f()?, f()?, f()?, f()?);
         let points: Vec<[f64; 2]> = it
@@ -157,7 +187,14 @@ impl LiquifyStroke {
                 Some([a.parse().ok()?, b.parse().ok()?])
             })
             .collect();
-        (!points.is_empty()).then_some(LiquifyStroke { tool, size, pressure, jitter, clone_offset: [cx, cy], points })
+        (!points.is_empty()).then_some(LiquifyStroke {
+            tool,
+            size,
+            pressure,
+            jitter,
+            clone_offset: [cx, cy],
+            points,
+        })
     }
 }
 
@@ -180,7 +217,13 @@ impl Mesh {
     fn new(w: f64, h: f64, cell: f64) -> Mesh {
         let nx = (w / cell).ceil() as usize + 1;
         let ny = (h / cell).ceil() as usize + 1;
-        Mesh { nx, ny, cell, d: vec![[0.0; 2]; nx * ny], freeze: vec![0.0; nx * ny] }
+        Mesh {
+            nx,
+            ny,
+            cell,
+            d: vec![[0.0; 2]; nx * ny],
+            freeze: vec![0.0; nx * ny],
+        }
     }
     /// Bilinear displacement at a layer point (zero outside the mesh).
     pub fn at(&self, x: f64, y: f64) -> [f64; 2] {
@@ -189,18 +232,27 @@ impl Mesh {
         if fx < 0.0 || fy < 0.0 || fx > (self.nx - 1) as f64 || fy > (self.ny - 1) as f64 {
             return [0.0; 2];
         }
-        let (x0, y0) = ((fx.floor() as usize).min(self.nx - 2), (fy.floor() as usize).min(self.ny - 2));
+        let (x0, y0) = (
+            (fx.floor() as usize).min(self.nx - 2),
+            (fy.floor() as usize).min(self.ny - 2),
+        );
         let (x1, y1) = ((x0 + 1).min(self.nx - 1), (y0 + 1).min(self.ny - 1));
         let (tx, ty) = (fx - x0 as f64, fy - y0 as f64);
         let g = |i: usize, j: usize| self.d[j * self.nx + i];
-        let l = |a: [f64; 2], b: [f64; 2], t: f64| [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        let l =
+            |a: [f64; 2], b: [f64; 2], t: f64| [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
         l(l(g(x0, y0), g(x1, y0), tx), l(g(x0, y1), g(x1, y1), tx), ty)
     }
 }
 
 /// Replay strokes into a displacement mesh over a `w`×`h` layer. `frozen(x, y)` reports
 /// mask-frozen points (Freeze Area Mask).
-pub fn build_mesh(strokes: &[LiquifyStroke], w: f64, h: f64, frozen: &(dyn Fn(f64, f64) -> bool + Sync)) -> Mesh {
+pub fn build_mesh(
+    strokes: &[LiquifyStroke],
+    w: f64,
+    h: f64,
+    frozen: &(dyn Fn(f64, f64) -> bool + Sync),
+) -> Mesh {
     let cell = (w.max(h) / 128.0).clamp(2.0, 16.0);
     let mut m = Mesh::new(w, h, cell);
     for (i, f) in m.freeze.iter_mut().enumerate() {
@@ -227,8 +279,14 @@ pub fn build_mesh(strokes: &[LiquifyStroke], w: f64, h: f64, frozen: &(dyn Fn(f6
             }
         }
         for (di, (c, mv)) in dabs.iter().enumerate() {
-            let (gx0, gx1) = (((c[0] - r) / cell).floor().max(0.0) as usize, (((c[0] + r) / cell).ceil() as usize).min(m.nx - 1));
-            let (gy0, gy1) = (((c[1] - r) / cell).floor().max(0.0) as usize, (((c[1] + r) / cell).ceil() as usize).min(m.ny - 1));
+            let (gx0, gx1) = (
+                ((c[0] - r) / cell).floor().max(0.0) as usize,
+                (((c[0] + r) / cell).ceil() as usize).min(m.nx - 1),
+            );
+            let (gy0, gy1) = (
+                ((c[1] - r) / cell).floor().max(0.0) as usize,
+                (((c[1] + r) / cell).ceil() as usize).min(m.ny - 1),
+            );
             let prev = m.d.clone();
             for gy in gy0..=gy1 {
                 for gx in gx0..=gx1 {
@@ -247,7 +305,11 @@ pub fn build_mesh(strokes: &[LiquifyStroke], w: f64, h: f64, frozen: &(dyn Fn(f6
                     let tool = LIQUIFY_TOOLS[s.tool];
                     if tool == "freeze" || tool == "thaw" {
                         let v = pr * fall;
-                        m.freeze[i] = if tool == "freeze" { m.freeze[i].max(v) } else { (m.freeze[i] - v).max(0.0) };
+                        m.freeze[i] = if tool == "freeze" {
+                            m.freeze[i].max(v)
+                        } else {
+                            (m.freeze[i] - v).max(0.0)
+                        };
                         continue;
                     }
                     let w = pr * fall * (1.0 - m.freeze[i]) * 0.5;
@@ -264,7 +326,9 @@ pub fn build_mesh(strokes: &[LiquifyStroke], w: f64, h: f64, frozen: &(dyn Fn(f6
                             let j = s.jitter / 100.0 * r * 0.1;
                             let seed = (si as u32).wrapping_mul(7919) ^ di as u32;
                             d[0] += (hash1(gx as u32, gy as u32, seed) as f64 * 2.0 - 1.0) * j * w;
-                            d[1] += (hash1(gx as u32, gy as u32, seed ^ 0x55) as f64 * 2.0 - 1.0) * j * w;
+                            d[1] += (hash1(gx as u32, gy as u32, seed ^ 0x55) as f64 * 2.0 - 1.0)
+                                * j
+                                * w;
                             d[0] -= mv[0] * w;
                             d[1] -= mv[1] * w;
                         }
@@ -331,7 +395,10 @@ pub fn liquify_mesh(ctx: &EffectCtx) -> Arc<Mesh> {
     use std::hash::{Hash, Hasher};
     let text = ctx.params.s("distortionMesh");
     let mask = ctx.params.f("freezeAreaMask").round() as usize;
-    let poly = mask.checked_sub(1).and_then(|i| ctx.env.masks.get(i)).cloned();
+    let poly = mask
+        .checked_sub(1)
+        .and_then(|i| ctx.env.masks.get(i))
+        .cloned();
     let mut h = std::collections::hash_map::DefaultHasher::new();
     text.hash(&mut h);
     ctx.layer_size[0].to_bits().hash(&mut h);
@@ -354,7 +421,12 @@ pub fn liquify_mesh(ctx: &EffectCtx) -> Arc<Mesh> {
         Some(p) => point_in_poly(&p.points, x, y) != p.inverted,
         None => false,
     };
-    let m = Arc::new(build_mesh(&strokes, ctx.layer_size[0].max(1.0), ctx.layer_size[1].max(1.0), &frozen));
+    let m = Arc::new(build_mesh(
+        &strokes,
+        ctx.layer_size[0].max(1.0),
+        ctx.layer_size[1].max(1.0),
+        &frozen,
+    ));
     if let Ok(mut c) = cache.lock() {
         if c.len() > 32 {
             c.clear();
@@ -383,10 +455,18 @@ fn liquify(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let ly = (y as f64 + 0.5 - o[1]) / scale;
             let d = mesh.at(lx - off[0], ly - off[1]);
             let (sx, sy) = (lx + d[0] * pct, ly + d[1] * pct);
-            let mut c = if d == [0.0; 2] { *px } else { src.sample_bilinear(sx * scale + o[0], sy * scale + o[1]) };
+            let mut c = if d == [0.0; 2] {
+                *px
+            } else {
+                src.sample_bilinear(sx * scale + o[0], sy * scale + o[1])
+            };
             if show_freeze {
-                let fx = ((lx - off[0]) / mesh.cell).round().clamp(0.0, (mesh.nx - 1) as f64) as usize;
-                let fy = ((ly - off[1]) / mesh.cell).round().clamp(0.0, (mesh.ny - 1) as f64) as usize;
+                let fx = ((lx - off[0]) / mesh.cell)
+                    .round()
+                    .clamp(0.0, (mesh.nx - 1) as f64) as usize;
+                let fy = ((ly - off[1]) / mesh.cell)
+                    .round()
+                    .clamp(0.0, (mesh.ny - 1) as f64) as usize;
                 let f = mesh.freeze[fy * mesh.nx + fx] as f32;
                 if f > 0.0 {
                     c[0] = c[0] * (1.0 - 0.5 * f) + 0.5 * f;
@@ -396,7 +476,10 @@ fn liquify(ctx: &EffectCtx, mut b: Buf) -> Buf {
             if show_mesh {
                 // Grid lines every 4 mesh cells, displaced with the mesh.
                 let gs = mesh.cell * 4.0;
-                let (gx, gy) = ((lx + d[0] * pct - off[0]).rem_euclid(gs), (ly + d[1] * pct - off[1]).rem_euclid(gs));
+                let (gx, gy) = (
+                    (lx + d[0] * pct - off[0]).rem_euclid(gs),
+                    (ly + d[1] * pct - off[1]).rem_euclid(gs),
+                );
                 if gx < line_w || gy < line_w {
                     c = [mesh_color[0], mesh_color[1], mesh_color[2], 1.0];
                 }
@@ -425,7 +508,8 @@ impl Flow {
         let (x1, y1) = ((x0 + 1).min(self.nx - 1), (y0 + 1).min(self.ny - 1));
         let (tx, ty) = (fx - x0 as f64, fy - y0 as f64);
         let g = |i: usize, j: usize| self.v[j * self.nx + i];
-        let l = |a: [f64; 2], b: [f64; 2], t: f64| [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+        let l =
+            |a: [f64; 2], b: [f64; 2], t: f64| [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
         l(l(g(x0, y0), g(x1, y0), tx), l(g(x0, y1), g(x1, y1), tx), ty)
     }
 }
@@ -439,26 +523,62 @@ fn median(v: &mut [f64]) -> f64 {
 /// buffer grid). `per_row`: Warp method (one velocity per scanline band).
 /// `detail` (Pixel Motion Detail, 0..1; 0.2 = the standard grid) scales the number of motion
 /// vectors the Pixel Motion method measures: more vectors follow finer local motion.
-fn measure(cur: &Image, prev: Option<&Image>, next: Option<&Image>, scale: f64, detailed: bool, per_row: bool, detail: f64) -> Option<Flow> {
+fn measure(
+    cur: &Image,
+    prev: Option<&Image>,
+    next: Option<&Image>,
+    scale: f64,
+    detailed: bool,
+    per_row: bool,
+    detail: f64,
+) -> Option<Flow> {
     use effectcraft_track::klt::{GrayPyramid, LkOpts, analysis_factor, track};
     let factor = analysis_factor(cur.width, cur.height, if detailed { 640 } else { 320 });
     let pc = GrayPyramid::from_image(cur, [0.0; 2], factor, 4);
     let (w, h) = (pc.width(), pc.height());
     let base = if detailed { 24.0 } else { 12.0 };
-    let n = if per_row { base as usize } else { (base * (0.5 + detail.clamp(0.0, 1.0) * 2.5)).round().clamp(4.0, 96.0) as usize };
+    let n = if per_row {
+        base as usize
+    } else {
+        (base * (0.5 + detail.clamp(0.0, 1.0) * 2.5))
+            .round()
+            .clamp(4.0, 96.0) as usize
+    };
     let cell_w = w as f64 / n as f64;
     let rows = ((n as f64) * h as f64 / w.max(1) as f64).round().max(2.0) as usize;
     let cell_h = h as f64 / rows as f64;
-    let pts: Vec<[f64; 2]> = (0..rows).flat_map(|j| (0..n).map(move |i| [(i as f64 + 0.5) * cell_w, (j as f64 + 0.5) * cell_h])).collect();
-    let o = LkOpts { radius: 4, fb_max: 1.0, ..Default::default() };
-    let go = |other: Option<&Image>| other.map(|img| track(&pc, &GrayPyramid::from_image(img, [0.0; 2], factor, 4), &pts, None, &o));
+    let pts: Vec<[f64; 2]> = (0..rows)
+        .flat_map(|j| (0..n).map(move |i| [(i as f64 + 0.5) * cell_w, (j as f64 + 0.5) * cell_h]))
+        .collect();
+    let o = LkOpts {
+        radius: 4,
+        fb_max: 1.0,
+        ..Default::default()
+    };
+    let go = |other: Option<&Image>| {
+        other.map(|img| {
+            track(
+                &pc,
+                &GrayPyramid::from_image(img, [0.0; 2], factor, 4),
+                &pts,
+                None,
+                &o,
+            )
+        })
+    };
     let (tn, tp) = (go(next), go(prev));
     // Velocity in plane pixels per frame.
     let vel: Vec<Option<[f64; 2]>> = (0..pts.len())
         .map(|i| {
             let p = pts[i];
-            let fw = tn.as_ref().and_then(|t| t[i]).map(|q| [q[0] - p[0], q[1] - p[1]]);
-            let bw = tp.as_ref().and_then(|t| t[i]).map(|q| [p[0] - q[0], p[1] - q[1]]);
+            let fw = tn
+                .as_ref()
+                .and_then(|t| t[i])
+                .map(|q| [q[0] - p[0], q[1] - p[1]]);
+            let bw = tp
+                .as_ref()
+                .and_then(|t| t[i])
+                .map(|q| [p[0] - q[0], p[1] - q[1]]);
             match (fw, bw) {
                 (Some(a), Some(b)) => Some([(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5]),
                 (a, b) => a.or(b),
@@ -489,7 +609,12 @@ fn measure(cur: &Image, prev: Option<&Image>, next: Option<&Image>, scale: f64, 
                 row_med
             } else {
                 match vel[j * n + i] {
-                    Some(q) if (q[0] - row_med[0]).abs() + (q[1] - row_med[1]).abs() < 3.0 + 0.5 * (row_med[0].abs() + row_med[1].abs()) => q,
+                    Some(q)
+                        if (q[0] - row_med[0]).abs() + (q[1] - row_med[1]).abs()
+                            < 3.0 + 0.5 * (row_med[0].abs() + row_med[1].abs()) =>
+                    {
+                        q
+                    }
                     _ => row_med,
                 }
             };
@@ -497,11 +622,20 @@ fn measure(cur: &Image, prev: Option<&Image>, next: Option<&Image>, scale: f64, 
         }
     }
     // Cell size in layer pixels (grid is uniform in plane pixels; assume square plane pixels).
-    Some(Flow { nx: n, ny: rows, cell: cell_w * k, v })
+    Some(Flow {
+        nx: n,
+        ny: rows,
+        cell: cell_w * k,
+        v,
+    })
 }
 
 fn same_grid(nb: Buf, b: &Buf) -> Image {
-    if nb.img.width == b.img.width && nb.img.height == b.img.height && nb.offset == b.offset && nb.scale == b.scale {
+    if nb.img.width == b.img.width
+        && nb.img.height == b.img.height
+        && nb.offset == b.offset
+        && nb.scale == b.scale
+    {
         return nb.img;
     }
     let k = nb.scale / b.scale.max(1e-9);
@@ -519,8 +653,12 @@ fn rolling_shutter(ctx: &EffectCtx, mut b: Buf) -> Buf {
     }
     let Some(host) = ctx.env.host else { return b };
     let fps = ctx.fps();
-    let prev = host.self_at(ctx.time - 1.0 / fps, ctx.env.effect_index).map(|nb| same_grid(nb, &b));
-    let next = host.self_at(ctx.time + 1.0 / fps, ctx.env.effect_index).map(|nb| same_grid(nb, &b));
+    let prev = host
+        .self_at(ctx.time - 1.0 / fps, ctx.env.effect_index)
+        .map(|nb| same_grid(nb, &b));
+    let next = host
+        .self_at(ctx.time + 1.0 / fps, ctx.env.effect_index)
+        .map(|nb| same_grid(nb, &b));
     if prev.is_none() && next.is_none() {
         return b;
     }
@@ -563,12 +701,37 @@ pub fn specs() -> Vec<EffectSpec> {
             "CC Flo Motion",
             vec![
                 p("knot1", "Knot 1", Value::Vec2([0.25, 0.5]), ParamUi::Point),
-                p("amount1", "Amount 1", num(50.0), slider(-400.0, 100.0, -100.0, 100.0, 1)),
+                p(
+                    "amount1",
+                    "Amount 1",
+                    num(50.0),
+                    slider(-400.0, 100.0, -100.0, 100.0, 1),
+                ),
                 p("knot2", "Knot 2", Value::Vec2([0.75, 0.5]), ParamUi::Point),
-                p("amount2", "Amount 2", num(-50.0), slider(-400.0, 100.0, -100.0, 100.0, 1)),
-                p("tileEdges", "Tile Edges", Value::Bool(false), ParamUi::Checkbox),
-                p("antialiasing", "Antialiasing", Value::Enum(1), popup(&["Low", "Medium", "High"])),
-                p("falloff", "Falloff", num(2.0), slider(0.01, 10.0, 0.1, 5.0, 2)),
+                p(
+                    "amount2",
+                    "Amount 2",
+                    num(-50.0),
+                    slider(-400.0, 100.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "tileEdges",
+                    "Tile Edges",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "antialiasing",
+                    "Antialiasing",
+                    Value::Enum(1),
+                    popup(&["Low", "Medium", "High"]),
+                ),
+                p(
+                    "falloff",
+                    "Falloff",
+                    num(2.0),
+                    slider(0.01, 10.0, 0.1, 5.0, 2),
+                ),
             ],
             flo_motion,
         ),
@@ -577,21 +740,91 @@ pub fn specs() -> Vec<EffectSpec> {
             "Liquify",
             vec![
                 p("tool", "Tool", Value::Enum(0), popup(&LIQUIFY_TOOL_LABELS)),
-                p("brushSize", "Brush Size", num(64.0), slider(1.0, 600.0, 1.0, 600.0, 0)),
-                p("brushPressure", "Brush Pressure", num(50.0), slider(1.0, 100.0, 1.0, 100.0, 0)),
-                p("freezeAreaMask", "Freeze Area Mask", num(0.0), ParamUi::Mask),
-                p("turbulentJitter", "Turbulent Jitter", num(70.0), slider(1.0, 100.0, 1.0, 100.0, 0)),
-                p("cloneOffset", "Clone Offset", Value::Vec2([0.0, 0.0]), ParamUi::Hidden),
-                p("reconstructionMode", "Reconstruction Mode", Value::Enum(0), popup(&["Revert", "Displace", "Amplitwist", "Affine"])),
-                p("viewFreezeAreaMask", "View Freeze Area Mask", Value::Bool(false), ParamUi::Checkbox),
-                p("viewMesh", "View Mesh", Value::Bool(false), ParamUi::Checkbox),
-                p("meshSize", "Mesh Size", Value::Enum(1), popup(&["Small", "Medium", "Large"])),
-                p("meshColor", "Mesh Color", col(0.5, 0.5, 0.5), ParamUi::Color),
+                p(
+                    "brushSize",
+                    "Brush Size",
+                    num(64.0),
+                    slider(1.0, 600.0, 1.0, 600.0, 0),
+                ),
+                p(
+                    "brushPressure",
+                    "Brush Pressure",
+                    num(50.0),
+                    slider(1.0, 100.0, 1.0, 100.0, 0),
+                ),
+                p(
+                    "freezeAreaMask",
+                    "Freeze Area Mask",
+                    num(0.0),
+                    ParamUi::Mask,
+                ),
+                p(
+                    "turbulentJitter",
+                    "Turbulent Jitter",
+                    num(70.0),
+                    slider(1.0, 100.0, 1.0, 100.0, 0),
+                ),
+                p(
+                    "cloneOffset",
+                    "Clone Offset",
+                    Value::Vec2([0.0, 0.0]),
+                    ParamUi::Hidden,
+                ),
+                p(
+                    "reconstructionMode",
+                    "Reconstruction Mode",
+                    Value::Enum(0),
+                    popup(&["Revert", "Displace", "Amplitwist", "Affine"]),
+                ),
+                p(
+                    "viewFreezeAreaMask",
+                    "View Freeze Area Mask",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "viewMesh",
+                    "View Mesh",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "meshSize",
+                    "Mesh Size",
+                    Value::Enum(1),
+                    popup(&["Small", "Medium", "Large"]),
+                ),
+                p(
+                    "meshColor",
+                    "Mesh Color",
+                    col(0.5, 0.5, 0.5),
+                    ParamUi::Color,
+                ),
                 // The strokes (see `LiquifyStroke`); written by the `liquify.stroke` command.
-                p("distortionMesh", "Distortion Mesh", Value::Str(String::new()), ParamUi::Hidden),
-                p("distortionMeshOffset", "Distortion Mesh Offset", Value::Vec2([0.0, 0.0]), ParamUi::Hidden),
-                p("distortionPercentage", "Distortion Percentage", num(100.0), slider(0.0, 200.0, 0.0, 200.0, 1)),
-                p("distortionDisplayQuality", "Distortion Display Quality", Value::Enum(1), popup(&["Draft", "Smooth"])),
+                p(
+                    "distortionMesh",
+                    "Distortion Mesh",
+                    Value::Str(String::new()),
+                    ParamUi::Hidden,
+                ),
+                p(
+                    "distortionMeshOffset",
+                    "Distortion Mesh Offset",
+                    Value::Vec2([0.0, 0.0]),
+                    ParamUi::Hidden,
+                ),
+                p(
+                    "distortionPercentage",
+                    "Distortion Percentage",
+                    num(100.0),
+                    slider(0.0, 200.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "distortionDisplayQuality",
+                    "Distortion Display Quality",
+                    Value::Enum(1),
+                    popup(&["Draft", "Smooth"]),
+                ),
             ],
             liquify,
         ),
@@ -599,11 +832,41 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.rollingshutterrepair",
             "Rolling Shutter Repair",
             vec![
-                p("rollingShutterRate", "Rolling Shutter Rate", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("scanDirection", "Scan Direction", Value::Enum(0), popup(&["Top → Bottom", "Bottom → Top", "Left → Right", "Right → Left"])),
-                p("advanced/method", "Method", Value::Enum(0), popup(&["Warp", "Pixel Motion"])),
-                p("advanced/detailedAnalysis", "Detailed Analysis", Value::Bool(false), ParamUi::Checkbox),
-                p("advanced/pixelMotionDetail", "Pixel Motion Detail", num(20.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "rollingShutterRate",
+                    "Rolling Shutter Rate",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "scanDirection",
+                    "Scan Direction",
+                    Value::Enum(0),
+                    popup(&[
+                        "Top → Bottom",
+                        "Bottom → Top",
+                        "Left → Right",
+                        "Right → Left",
+                    ]),
+                ),
+                p(
+                    "advanced/method",
+                    "Method",
+                    Value::Enum(0),
+                    popup(&["Warp", "Pixel Motion"]),
+                ),
+                p(
+                    "advanced/detailedAnalysis",
+                    "Detailed Analysis",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "advanced/pixelMotionDetail",
+                    "Pixel Motion Detail",
+                    num(20.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
             ],
             rolling_shutter,
         ),
@@ -627,7 +890,11 @@ mod tests {
         let img = grid_img(64, 64);
         let out = run_fx(
             "ec.distort.ccflomotion",
-            &[("knot1", Value::Vec2([32.0, 32.0])), ("amount1", num(80.0)), ("amount2", num(0.0))],
+            &[
+                ("knot1", Value::Vec2([32.0, 32.0])),
+                ("amount1", num(80.0)),
+                ("amount2", num(0.0)),
+            ],
             img.clone(),
             0.0,
             EffectEnv::default(),
@@ -636,11 +903,21 @@ mod tests {
         assert!((out.img.get(32, 32)[2] - img.get(32, 32)[2]).abs() < 0.01);
         assert!((out.img.get(40, 32)[2] - img.get(40, 32)[2]).abs() > 0.01);
         assert!(out.img.get(40, 32)[2] < img.get(40, 32)[2]);
-        let none = run_fx("ec.distort.ccflomotion", &[("amount1", num(0.0)), ("amount2", num(0.0))], img.clone(), 0.0, EffectEnv::default());
+        let none = run_fx(
+            "ec.distort.ccflomotion",
+            &[("amount1", num(0.0)), ("amount2", num(0.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(none.img.data, img.data);
         let again = run_fx(
             "ec.distort.ccflomotion",
-            &[("knot1", Value::Vec2([32.0, 32.0])), ("amount1", num(80.0)), ("amount2", num(0.0))],
+            &[
+                ("knot1", Value::Vec2([32.0, 32.0])),
+                ("amount1", num(80.0)),
+                ("amount2", num(0.0)),
+            ],
             img,
             0.0,
             EffectEnv::default(),
@@ -650,11 +927,24 @@ mod tests {
 
     #[test]
     fn liquify_strokes_round_trip_and_warp() {
-        let s = LiquifyStroke { tool: 0, size: 30.0, pressure: 80.0, jitter: 70.0, clone_offset: [0.0, 0.0], points: vec![[20.0, 32.0], [40.0, 32.0]] };
+        let s = LiquifyStroke {
+            tool: 0,
+            size: 30.0,
+            pressure: 80.0,
+            jitter: 70.0,
+            clone_offset: [0.0, 0.0],
+            points: vec![[20.0, 32.0], [40.0, 32.0]],
+        };
         assert_eq!(LiquifyStroke::parse(&s.to_line()), Some(s.clone()));
         assert!(LiquifyStroke::parse("nope 1 2 3 4 5 1,2").is_none());
         let img = grid_img(64, 64);
-        let out = run_fx("ec.distort.liquify", &[("distortionMesh", Value::Str(s.to_line()))], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.distort.liquify",
+            &[("distortionMesh", Value::Str(s.to_line()))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_ne!(out.img.data, img.data);
         // Warping to the right: a pixel right of the start now shows content from its left.
         let at = |i: &Image| i.get(36, 32)[2];
@@ -664,19 +954,34 @@ mod tests {
         // Distortion Percentage 0 = identity; deterministic.
         let zero = run_fx(
             "ec.distort.liquify",
-            &[("distortionMesh", Value::Str(s.to_line())), ("distortionPercentage", num(0.0))],
+            &[
+                ("distortionMesh", Value::Str(s.to_line())),
+                ("distortionPercentage", num(0.0)),
+            ],
             img.clone(),
             0.0,
             EffectEnv::default(),
         );
         assert_eq!(zero.img.data, img.data);
-        let again = run_fx("ec.distort.liquify", &[("distortionMesh", Value::Str(s.to_line()))], img.clone(), 0.0, EffectEnv::default());
+        let again = run_fx(
+            "ec.distort.liquify",
+            &[("distortionMesh", Value::Str(s.to_line()))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(out.img.data, again.img.data);
         // Reconstruction undoes the warp; freeze protects.
         let mut rec = s.clone();
         rec.tool = 9;
         rec.pressure = 100.0;
-        let lines = format!("{}\n{}\n{}\n{}", s.to_line(), rec.to_line(), rec.to_line(), rec.to_line());
+        let lines = format!(
+            "{}\n{}\n{}\n{}",
+            s.to_line(),
+            rec.to_line(),
+            rec.to_line(),
+            rec.to_line()
+        );
         let m1 = build_mesh(&parse_strokes(&s.to_line()), 64.0, 64.0, &|_, _| false);
         let m2 = build_mesh(&parse_strokes(&lines), 64.0, 64.0, &|_, _| false);
         let mag = |m: &Mesh| m.d.iter().map(|d| d[0].abs() + d[1].abs()).sum::<f64>();
@@ -685,9 +990,17 @@ mod tests {
         assert_eq!(mag(&frozen), 0.0);
         // Every tool changes (or deliberately keeps) the mesh without NaNs.
         for t in 0..LIQUIFY_TOOLS.len() {
-            let st = LiquifyStroke { tool: t, clone_offset: [10.0, 0.0], ..s.clone() };
+            let st = LiquifyStroke {
+                tool: t,
+                clone_offset: [10.0, 0.0],
+                ..s.clone()
+            };
             let m = build_mesh(&[s.clone(), st], 64.0, 64.0, &|_, _| false);
-            assert!(m.d.iter().all(|d| d[0].is_finite() && d[1].is_finite()), "{}", LIQUIFY_TOOLS[t]);
+            assert!(
+                m.d.iter().all(|d| d[0].is_finite() && d[1].is_finite()),
+                "{}",
+                LIQUIFY_TOOLS[t]
+            );
         }
     }
 
@@ -700,7 +1013,11 @@ mod tests {
     fn rs_frame(f: f64, shutter: bool) -> Image {
         let (w, h) = (96u32, 64u32);
         crate::util::gen_image(w, h, |x, y| {
-            let tau = if shutter { (y as f64 + 0.5) / h as f64 - 0.5 } else { 0.0 };
+            let tau = if shutter {
+                (y as f64 + 0.5) / h as f64 - 0.5
+            } else {
+                0.0
+            };
             let shift = 3.0 * (f + tau);
             let v = texture(x as f64 + 0.5 - shift, y as f64 + 0.5);
             [v, v, v, 1.0]
@@ -715,14 +1032,22 @@ mod tests {
             None
         }
         fn self_at(&self, t: f64, _: usize) -> Option<Buf> {
-            Some(Buf { img: rs_frame(t * 24.0, true), offset: [0.0; 2], scale: 1.0 })
+            Some(Buf {
+                img: rs_frame(t * 24.0, true),
+                offset: [0.0; 2],
+                scale: 1.0,
+            })
         }
     }
 
     #[test]
     fn rolling_shutter_repair_unskews_a_pan() {
         let host = Pan;
-        let env = EffectEnv { host: Some(&host), frame_rate: 24.0, ..Default::default() };
+        let env = EffectEnv {
+            host: Some(&host),
+            frame_rate: 24.0,
+            ..Default::default()
+        };
         let t = 5.0 / 24.0;
         let skewed = rs_frame(5.0, true);
         let truth = rs_frame(5.0, false);
@@ -740,15 +1065,26 @@ mod tests {
         for method in [0u32, 1] {
             let out = run_fx(
                 "ec.distort.rollingshutterrepair",
-                &[("rollingShutterRate", num(100.0)), ("advanced/method", Value::Enum(method))],
+                &[
+                    ("rollingShutterRate", num(100.0)),
+                    ("advanced/method", Value::Enum(method)),
+                ],
                 skewed.clone(),
                 t,
                 env,
             );
-            assert!(err(&out.img) < err(&skewed) * 0.4, "method {method}: {} vs {}", err(&out.img), err(&skewed));
+            assert!(
+                err(&out.img) < err(&skewed) * 0.4,
+                "method {method}: {} vs {}",
+                err(&out.img),
+                err(&skewed)
+            );
             let again = run_fx(
                 "ec.distort.rollingshutterrepair",
-                &[("rollingShutterRate", num(100.0)), ("advanced/method", Value::Enum(method))],
+                &[
+                    ("rollingShutterRate", num(100.0)),
+                    ("advanced/method", Value::Enum(method)),
+                ],
                 skewed.clone(),
                 t,
                 env,
@@ -759,7 +1095,11 @@ mod tests {
         let detail = |d: f64| {
             run_fx(
                 "ec.distort.rollingshutterrepair",
-                &[("rollingShutterRate", num(100.0)), ("advanced/method", Value::Enum(1)), ("advanced/pixelMotionDetail", num(d))],
+                &[
+                    ("rollingShutterRate", num(100.0)),
+                    ("advanced/method", Value::Enum(1)),
+                    ("advanced/pixelMotionDetail", num(d)),
+                ],
                 skewed.clone(),
                 t,
                 env,
@@ -769,7 +1109,13 @@ mod tests {
         let (fine, coarse) = (detail(100.0), detail(0.0));
         assert_ne!(fine.data, coarse.data);
         assert!(err(&fine) < err(&skewed) * 0.5 && err(&coarse) < err(&skewed) * 0.5);
-        let none = run_fx("ec.distort.rollingshutterrepair", &[], skewed.clone(), t, EffectEnv::default());
+        let none = run_fx(
+            "ec.distort.rollingshutterrepair",
+            &[],
+            skewed.clone(),
+            t,
+            EffectEnv::default(),
+        );
         assert_eq!(none.img.data, skewed.data);
     }
 }

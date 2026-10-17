@@ -33,11 +33,20 @@ impl Pace {
         if self.readings.back().is_some_and(|(_, d)| done < *d) {
             self.readings.clear();
         }
-        if self.readings.back().is_none_or(|(t, _)| now.saturating_duration_since(*t) >= MIN_GAP) {
+        if self
+            .readings
+            .back()
+            .is_none_or(|(t, _)| now.saturating_duration_since(*t) >= MIN_GAP)
+        {
             self.readings.push_back((now, done));
         }
         // keep the newest reading that is a whole window old as the baseline, and nothing before it
-        while self.readings.len() > 2 && self.readings.get(1).is_some_and(|(t, _)| now.saturating_duration_since(*t) >= WINDOW) {
+        while self.readings.len() > 2
+            && self
+                .readings
+                .get(1)
+                .is_some_and(|(t, _)| now.saturating_duration_since(*t) >= WINDOW)
+        {
             self.readings.pop_front();
         }
         // an idle start (a loudness pass, a slow seek) is not the job's speed: measure from the last
@@ -45,7 +54,10 @@ impl Pace {
         if let Some(first) = self.readings.front().map(|r| r.1)
             && let Some(moved) = self.readings.iter().position(|(_, d)| *d != first)
             && moved >= 2
-            && self.readings.get(moved - 1).is_some_and(|(t, _)| t.saturating_duration_since(self.readings[0].0) >= MIN_SPAN)
+            && self
+                .readings
+                .get(moved - 1)
+                .is_some_and(|(t, _)| t.saturating_duration_since(self.readings[0].0) >= MIN_SPAN)
         {
             self.readings.drain(..moved - 1);
         }
@@ -87,7 +99,9 @@ mod tests {
 
     /// A job at `fps` units per second, read every `step` seconds for `secs`.
     fn steady(fps: f64, step: f64, secs: f64) -> Vec<(f64, u64)> {
-        (0..=(secs / step) as u64).map(|i| (i as f64 * step, (i as f64 * step * fps) as u64)).collect()
+        (0..=(secs / step) as u64)
+            .map(|i| (i as f64 * step, (i as f64 * step * fps) as u64))
+            .collect()
     }
 
     #[test]
@@ -104,8 +118,16 @@ mod tests {
     fn nothing_is_promised_before_there_is_progress_to_measure() {
         assert_eq!(eta(&[], 100), None);
         assert_eq!(eta(&[(0.0, 0)], 100), None, "one reading");
-        assert_eq!(eta(&[(0.0, 0), (0.5, 20)], 100), None, "less than a second of readings");
-        assert_eq!(eta(&[(0.0, 5), (2.0, 5)], 100), None, "nothing done in two seconds (a loudness pass, a seek)");
+        assert_eq!(
+            eta(&[(0.0, 0), (0.5, 20)], 100),
+            None,
+            "less than a second of readings"
+        );
+        assert_eq!(
+            eta(&[(0.0, 5), (2.0, 5)], 100),
+            None,
+            "nothing done in two seconds (a loudness pass, a seek)"
+        );
         // then, once frames flow
         assert!(eta(&[(0.0, 0), (2.0, 0), (3.0, 30)], 100).is_some());
     }
@@ -121,7 +143,10 @@ mod tests {
         let e = eta(&r, 10_000).unwrap();
         let slow = (10_000 - done) as f64 / 20.0;
         let fast = (10_000 - done) as f64 / 100.0;
-        assert!((e - slow).abs() < (e - fast).abs(), "estimate {e}, slow {slow}, fast {fast}");
+        assert!(
+            (e - slow).abs() < (e - fast).abs(),
+            "estimate {e}, slow {slow}, fast {fast}"
+        );
     }
 
     #[test]
@@ -135,7 +160,9 @@ mod tests {
         let done = r.last().unwrap().1;
         assert!((e - (1000 - done) as f64 / 50.0).abs() < 1.0, "{e}");
         // the short flat spells between batches of a running job are not an idle start
-        let batches: Vec<(f64, u64)> = (0..=40).map(|i| (i as f64 * 0.15, (i / 2) as u64 * 8)).collect();
+        let batches: Vec<(f64, u64)> = (0..=40)
+            .map(|i| (i as f64 * 0.15, (i / 2) as u64 * 8))
+            .collect();
         assert!(eta(&batches, 1000).is_some());
     }
 
@@ -172,7 +199,11 @@ mod tests {
         for i in 0..24_000u64 {
             p.observe(at(t0, 1.0 + i as f64 * 0.15), 1 + i);
         }
-        assert!(p.readings.len() <= (WINDOW.as_millis() / MIN_GAP.as_millis()) as usize + 3, "{}", p.readings.len());
+        assert!(
+            p.readings.len() <= (WINDOW.as_millis() / MIN_GAP.as_millis()) as usize + 3,
+            "{}",
+            p.readings.len()
+        );
     }
 
     #[test]
@@ -189,7 +220,9 @@ mod tests {
             last = progress.eta_at(at(t0, i as f64 * 0.1));
         }
         // 6 s in, 300 done, 700 left at 50 a second
-        let left = last.expect("a second of readings shows progress").as_secs_f64();
+        let left = last
+            .expect("a second of readings shows progress")
+            .as_secs_f64();
         assert!((left - 14.0).abs() < 0.5, "{left}");
         // done: nothing left to wait for
         progress.done.store(1000, Ordering::Relaxed);

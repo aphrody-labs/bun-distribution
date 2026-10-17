@@ -11,7 +11,8 @@
 use hayro::hayro_interpret::font::Glyph;
 use hayro::hayro_interpret::hayro_syntax::Pdf;
 use hayro::hayro_interpret::{
-    BlendMode, ClipPath, Context, Device, GlyphDrawMode, Image, InterpreterCache, InterpreterSettings, Paint, PathDrawMode, SoftMask, interpret_page,
+    BlendMode, ClipPath, Context, Device, GlyphDrawMode, Image, InterpreterCache,
+    InterpreterSettings, Paint, PathDrawMode, SoftMask, interpret_page,
 };
 use kurbo::{Affine, BezPath, Rect, Shape};
 use std::collections::HashMap;
@@ -96,24 +97,49 @@ impl PageText {
     }
 
     /// Search with Acrobat's find options: case-sensitive, whole words only.
-    pub fn find_opts(&self, needle: &str, case_sensitive: bool, whole_words: bool) -> Vec<std::ops::Range<usize>> {
+    pub fn find_opts(
+        &self,
+        needle: &str,
+        case_sensitive: bool,
+        whole_words: bool,
+    ) -> Vec<std::ops::Range<usize>> {
         self.find_opts_limited(needle, case_sensitive, whole_words, usize::MAX)
     }
 
     /// Search with Acrobat's find options, returning at most `limit` glyph ranges.
-    pub fn find_opts_limited(&self, needle: &str, case_sensitive: bool, whole_words: bool, limit: usize) -> Vec<std::ops::Range<usize>> {
+    pub fn find_opts_limited(
+        &self,
+        needle: &str,
+        case_sensitive: bool,
+        whole_words: bool,
+        limit: usize,
+    ) -> Vec<std::ops::Range<usize>> {
         if limit == 0 {
             return Vec::new();
         }
-        let fold = |s: &str| if case_sensitive { s.to_string() } else { fold_case(s) };
-        let needle: Vec<char> = fold(needle).split_whitespace().collect::<Vec<_>>().join(" ").chars().collect();
+        let fold = |s: &str| {
+            if case_sensitive {
+                s.to_string()
+            } else {
+                fold_case(s)
+            }
+        };
+        let needle: Vec<char> = fold(needle)
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .chars()
+            .collect();
         if needle.is_empty() {
             return Vec::new();
         }
         // Flatten to chars with the glyph index each char came from.
         let mut chars: Vec<(char, usize)> = Vec::new();
         for (i, g) in self.glyphs.iter().enumerate() {
-            if i > 0 && (self.space_before[i] || self.line_of[i] != self.line_of[i - 1]) && chars.last().is_some_and(|c| c.0 != ' ') {
+            if i > 0
+                && (self.space_before[i] || self.line_of[i] != self.line_of[i - 1])
+                && chars.last().is_some_and(|c| c.0 != ' ')
+            {
                 chars.push((' ', i));
             }
             for c in fold(&g.text).chars() {
@@ -129,8 +155,15 @@ impl PageText {
         let mut out = Vec::new();
         let mut i = 0;
         while i + needle.len() <= chars.len() {
-            let bounded = !whole_words || (!word(i.checked_sub(1).and_then(|p| chars.get(p))) && !word(chars.get(i + needle.len())));
-            if bounded && chars[i..i + needle.len()].iter().map(|c| c.0).eq(needle.iter().copied()) {
+            let bounded = !whole_words
+                || (!word(i.checked_sub(1).and_then(|p| chars.get(p)))
+                    && !word(chars.get(i + needle.len())));
+            if bounded
+                && chars[i..i + needle.len()]
+                    .iter()
+                    .map(|c| c.0)
+                    .eq(needle.iter().copied())
+            {
                 let start = chars[i].1;
                 let end = chars[i + needle.len() - 1].1 + 1;
                 out.push(start..end);
@@ -147,13 +180,17 @@ impl PageText {
 
     /// Glyph ranges of the matches a character matcher finds in the page text (words and lines
     /// separated by one space, original case). Used for pattern search (Search & Redact).
-    pub fn find_with(&self, matcher: impl Fn(&[char]) -> Vec<std::ops::Range<usize>>) -> Vec<std::ops::Range<usize>> {
+    pub fn find_with(
+        &self,
+        matcher: impl Fn(&[char]) -> Vec<std::ops::Range<usize>>,
+    ) -> Vec<std::ops::Range<usize>> {
         let mut chars: Vec<char> = Vec::new();
         // `None` is a word or line separator inserted between glyphs. It is not part of either
         // glyph, so a match that starts or ends on it must not take the neighbouring glyph.
         let mut owner: Vec<Option<usize>> = Vec::new();
         for (i, g) in self.glyphs.iter().enumerate() {
-            let gap = self.space_before.get(i).copied().unwrap_or(false) || self.line_of.get(i) != self.line_of.get(i.saturating_sub(1));
+            let gap = self.space_before.get(i).copied().unwrap_or(false)
+                || self.line_of.get(i) != self.line_of.get(i.saturating_sub(1));
             if i > 0 && gap && chars.last().is_some_and(|c| *c != ' ') {
                 chars.push(' ');
                 owner.push(None);
@@ -210,7 +247,10 @@ impl PageText {
         self.glyphs.get(i)?;
         let blank = |k: usize| self.glyphs.get(k).is_none_or(|g| g.text.trim().is_empty());
         // Glyph `k` (≥ 1) follows glyph `k - 1` with no word gap or line break between them.
-        let joined = |k: usize| !self.space_before.get(k).copied().unwrap_or(true) && self.line_of.get(k - 1) == self.line_of.get(k);
+        let joined = |k: usize| {
+            !self.space_before.get(k).copied().unwrap_or(true)
+                && self.line_of.get(k - 1) == self.line_of.get(k)
+        };
         let mut first = i;
         while first > 0 && joined(first) && !blank(first - 1) {
             first -= 1;
@@ -254,7 +294,9 @@ impl PageText {
     fn merged_rects(&self, glyphs: impl IntoIterator<Item = usize>) -> Vec<[f32; 4]> {
         let mut out: Vec<(u32, usize, [f32; 4])> = Vec::new();
         for i in glyphs {
-            let (Some(g), Some(&line)) = (self.glyphs.get(i), self.line_of.get(i)) else { break };
+            let (Some(g), Some(&line)) = (self.glyphs.get(i), self.line_of.get(i)) else {
+                break;
+            };
             match out.last_mut() {
                 Some((l, last, r)) if *l == line && last.checked_add(1) == Some(i) => {
                     *last = i;
@@ -277,7 +319,12 @@ impl PageText {
             let (cx, cy) = ((g.rect[0] + g.rect[2]) / 2.0, (g.rect[1] + g.rect[3]) / 2.0);
             (x0..=x1).contains(&cx) && (y0..=y1).contains(&cy)
         };
-        self.glyphs.iter().enumerate().filter(|(_, g)| inside(g)).map(|(i, _)| i).collect()
+        self.glyphs
+            .iter()
+            .enumerate()
+            .filter(|(_, g)| inside(g))
+            .map(|(i, _)| i)
+            .collect()
     }
 
     /// The text of a column selection ([`Self::glyphs_in`]) as it looks on the page: one row per
@@ -292,7 +339,9 @@ impl PageText {
         let mut lines: Vec<(Vec<usize>, [f32; 4])> = Vec::new();
         let mut line_ids: Vec<u32> = Vec::new();
         for &i in glyphs {
-            let (Some(g), Some(&line)) = (self.glyphs.get(i), self.line_of.get(i)) else { continue };
+            let (Some(g), Some(&line)) = (self.glyphs.get(i), self.line_of.get(i)) else {
+                continue;
+            };
             match (lines.last_mut(), line_ids.last()) {
                 (Some((members, bb)), Some(&l)) if l == line => {
                     members.push(i);
@@ -305,13 +354,20 @@ impl PageText {
             }
         }
         // Within the layout's own tolerance for reading a glyph as unturned.
-        let vertical = glyphs.iter().any(|&i| self.glyphs.get(i).is_some_and(|g| g.direction[1].abs() > WORD_GAP));
+        let vertical = glyphs.iter().any(|&i| {
+            self.glyphs
+                .get(i)
+                .is_some_and(|g| g.direction[1].abs() > WORD_GAP)
+        });
         let piece = |members: &[usize]| {
             let mut s = String::new();
             let mut prev: Option<usize> = None;
             for &i in members {
-                let Some(g) = self.glyphs.get(i) else { continue };
-                let gap = self.space_before.get(i).copied().unwrap_or(false) || prev.and_then(|p| p.checked_add(1)) != Some(i);
+                let Some(g) = self.glyphs.get(i) else {
+                    continue;
+                };
+                let gap = self.space_before.get(i).copied().unwrap_or(false)
+                    || prev.and_then(|p| p.checked_add(1)) != Some(i);
                 if prev.is_some() && gap {
                     s.push(' ');
                 }
@@ -321,7 +377,11 @@ impl PageText {
             s
         };
         if vertical {
-            return lines.iter().map(|(members, _)| piece(members)).collect::<Vec<_>>().join("\n");
+            return lines
+                .iter()
+                .map(|(members, _)| piece(members))
+                .collect::<Vec<_>>()
+                .join("\n");
         }
         // Rows: a line joins the row whose first line its vertical centre falls within.
         let mut order: Vec<usize> = (0..lines.len()).collect();
@@ -331,22 +391,40 @@ impl PageText {
         });
         let mut rows: Vec<(f32, f32, Vec<usize>)> = Vec::new();
         for k in order {
-            let Some((_, bb)) = lines.get(k) else { continue };
+            let Some((_, bb)) = lines.get(k) else {
+                continue;
+            };
             let cy = (bb[1] + bb[3]) / 2.0;
             match rows.last_mut() {
                 Some((top, bottom, members)) if cy >= *top && cy <= *bottom => members.push(k),
                 _ => rows.push((bb[1], bb[3], vec![k])),
             }
         }
-        let rtl = |members: &[usize]| members.iter().any(|&i| self.glyphs.get(i).is_some_and(|g| g.text.chars().any(is_rtl)));
+        let rtl = |members: &[usize]| {
+            members.iter().any(|&i| {
+                self.glyphs
+                    .get(i)
+                    .is_some_and(|g| g.text.chars().any(is_rtl))
+            })
+        };
         let mut out = Vec::with_capacity(rows.len());
         for (_, _, mut members) in rows {
-            let right_to_left = members.iter().all(|&k| lines.get(k).is_some_and(|(m, _)| rtl(m)));
+            let right_to_left = members
+                .iter()
+                .all(|&k| lines.get(k).is_some_and(|(m, _)| rtl(m)));
             members.sort_by(|a, b| {
                 let x = |k: usize| lines.get(k).map_or(0.0, |(_, bb)| bb[0]);
-                if right_to_left { x(*b).total_cmp(&x(*a)) } else { x(*a).total_cmp(&x(*b)) }
+                if right_to_left {
+                    x(*b).total_cmp(&x(*a))
+                } else {
+                    x(*a).total_cmp(&x(*b))
+                }
             });
-            let cells: Vec<String> = members.iter().filter_map(|&k| lines.get(k)).map(|(m, _)| piece(m)).collect();
+            let cells: Vec<String> = members
+                .iter()
+                .filter_map(|&k| lines.get(k))
+                .map(|(m, _)| piece(m))
+                .collect();
             out.push(cells.join("\t"));
         }
         out.join("\n")
@@ -419,7 +497,12 @@ fn merge(drawn: &[Drawn], text: String) -> Option<Drawn> {
     let along = |p: &[f32; 2]| f64::from(p[0]) * u[0] + f64::from(p[1]) * u[1];
     let across = |p: &[f32; 2]| f64::from(p[0]) * n[0] + f64::from(p[1]) * n[1];
     let height = across(&first.2.quad[0]) - across(&first.2.quad[3]);
-    let (mut s0, mut s1, mut t0, mut t1) = (f64::INFINITY, f64::NEG_INFINITY, f64::INFINITY, f64::NEG_INFINITY);
+    let (mut s0, mut s1, mut t0, mut t1) = (
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+    );
     for p in drawn.iter().flat_map(|d| d.2.quad.iter()) {
         (s0, s1) = (s0.min(along(p)), s1.max(along(p)));
         (t0, t1) = (t0.min(across(p)), t1.max(across(p)));
@@ -431,16 +514,48 @@ fn merge(drawn: &[Drawn], text: String) -> Option<Drawn> {
     // The edge towards the next line is the one the first glyph's quad starts on.
     let (near, far) = if height >= 0.0 { (t1, t0) } else { (t0, t1) };
     let point = |s: f64, t: f64| [(s * u[0] + t * n[0]) as f32, (s * u[1] + t * n[1]) as f32];
-    let quad = [point(s0, near), point(s1, near), point(s1, far), point(s0, far)];
-    let rect = quad.iter().fold([f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY], |r, p| {
-        [r[0].min(p[0]), r[1].min(p[1]), r[2].max(p[0]), r[3].max(p[1])]
-    });
-    Some((quarter, u, TextGlyph { text, rect, quad, direction: first.2.direction }))
+    let quad = [
+        point(s0, near),
+        point(s1, near),
+        point(s1, far),
+        point(s0, far),
+    ];
+    let rect = quad.iter().fold(
+        [
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+        ],
+        |r, p| {
+            [
+                r[0].min(p[0]),
+                r[1].min(p[1]),
+                r[2].max(p[0]),
+                r[3].max(p[1]),
+            ]
+        },
+    );
+    Some((
+        quarter,
+        u,
+        TextGlyph {
+            text,
+            rect,
+            quad,
+            direction: first.2.direction,
+        },
+    ))
 }
 
 impl TextDevice {
     fn new() -> Self {
-        TextDevice { glyphs: Vec::new(), depth: 0, actual: None, replaced: Vec::new() }
+        TextDevice {
+            glyphs: Vec::new(),
+            depth: 0,
+            actual: None,
+            replaced: Vec::new(),
+        }
     }
 
     /// Ends the open `/ActualText` replacement (ISO 32000-2 §14.9.4): its glyphs become one glyph
@@ -452,19 +567,33 @@ impl TextDevice {
     /// A replacement spanning several lines or writing directions stays per glyph (each glyph's own
     /// Unicode). An empty one (a soft hyphen at a line break, say) stands for no text at all.
     fn end_actual_text(&mut self) {
-        let Some((_, text, drawn)) = self.actual.take() else { return };
-        let Some(glyph) = merge(&drawn, text.clone()) else {
-            self.glyphs.extend(drawn.into_iter().filter(|d| !d.2.text.chars().all(|c| c.is_control())));
+        let Some((_, text, drawn)) = self.actual.take() else {
             return;
         };
-        let originals = drawn.iter().filter(|d| !d.2.text.chars().all(|c| c.is_control())).map(|d| (d.2.text.clone(), d.2.rect)).collect();
+        let Some(glyph) = merge(&drawn, text.clone()) else {
+            self.glyphs.extend(
+                drawn
+                    .into_iter()
+                    .filter(|d| !d.2.text.chars().all(|c| c.is_control())),
+            );
+            return;
+        };
+        let originals = drawn
+            .iter()
+            .filter(|d| !d.2.text.chars().all(|c| c.is_control()))
+            .map(|d| (d.2.text.clone(), d.2.rect))
+            .collect();
         let at = if text.chars().all(|c| c.is_control()) {
             None
         } else {
             self.glyphs.push(glyph);
             Some(self.glyphs.len() - 1)
         };
-        self.replaced.push(Replaced { at, text, originals });
+        self.replaced.push(Replaced {
+            at,
+            text,
+            originals,
+        });
     }
 
     /// Ends the page. Some producers draw text twice, the copy for an outline, shadow or
@@ -485,33 +614,59 @@ impl TextDevice {
         let mut grid: HashMap<(i64, i64), Vec<usize>> = HashMap::new();
         for (i, g) in self.glyphs.iter().enumerate() {
             if !taken.get(i).copied().unwrap_or(true) {
-                grid.entry((cell(g.2.rect[0]), cell(g.2.rect[1]))).or_default().push(i);
+                grid.entry((cell(g.2.rect[0]), cell(g.2.rect[1])))
+                    .or_default()
+                    .push(i);
             }
         }
         // Redraws found: the glyph range and the replacement standing for it.
         let mut redraws: Vec<(std::ops::Range<usize>, usize)> = Vec::new();
         let mut budget = MAX_REDRAW_WORK;
         'replacements: for (k, r) in self.replaced.iter().enumerate() {
-            let Some((_, rect)) = r.originals.first() else { continue };
+            let Some((_, rect)) = r.originals.first() else {
+                continue;
+            };
             let tol = redraw_tolerance(rect);
-            let (x0, x1, y0, y1) = (cell(rect[0] - tol), cell(rect[0] + tol), cell(rect[1] - tol), cell(rect[1] + tol));
-            if x1.saturating_sub(x0).saturating_add(1).saturating_mul(y1.saturating_sub(y0).saturating_add(1)) > MAX_CELLS {
+            let (x0, x1, y0, y1) = (
+                cell(rect[0] - tol),
+                cell(rect[0] + tol),
+                cell(rect[1] - tol),
+                cell(rect[1] + tol),
+            );
+            if x1
+                .saturating_sub(x0)
+                .saturating_add(1)
+                .saturating_mul(y1.saturating_sub(y0).saturating_add(1))
+                > MAX_CELLS
+            {
                 continue;
             }
             // Checking one candidate walks its run twice (free, then same).
             let candidate_cost = r.originals.len().saturating_mul(2).saturating_add(1);
             for key in (x0..=x1).flat_map(|x| (y0..=y1).map(move |y| (x, y))) {
-                let Some(rest) = budget.checked_sub(1) else { break 'replacements };
+                let Some(rest) = budget.checked_sub(1) else {
+                    break 'replacements;
+                };
                 budget = rest;
                 for &i in grid.get(&key).map_or(&[][..], Vec::as_slice) {
-                    let Some(rest) = budget.checked_sub(candidate_cost) else { break 'replacements };
+                    let Some(rest) = budget.checked_sub(candidate_cost) else {
+                        break 'replacements;
+                    };
                     budget = rest;
-                    let Some(range) = i.checked_add(r.originals.len()).map(|end| i..end) else { continue };
-                    let Some(run) = self.glyphs.get(range.clone()) else { continue };
-                    let free = taken.get(range.clone()).is_some_and(|t| t.iter().all(|t| !t));
+                    let Some(range) = i.checked_add(r.originals.len()).map(|end| i..end) else {
+                        continue;
+                    };
+                    let Some(run) = self.glyphs.get(range.clone()) else {
+                        continue;
+                    };
+                    let free = taken
+                        .get(range.clone())
+                        .is_some_and(|t| t.iter().all(|t| !t));
                     let same = run.iter().zip(&r.originals).all(|(g, (text, o))| {
                         let tol = redraw_tolerance(o);
-                        g.2.text == *text && (g.2.rect[0] - o[0]).abs() < tol && (g.2.rect[1] - o[1]).abs() < tol
+                        g.2.text == *text
+                            && (g.2.rect[0] - o[0]).abs() < tol
+                            && (g.2.rect[1] - o[1]).abs() < tol
                     });
                     if free && same {
                         if let Some(t) = taken.get_mut(range.clone()) {
@@ -536,7 +691,11 @@ impl TextDevice {
                 continue;
             };
             let run = glyphs.get(range.clone()).unwrap_or_default();
-            let text = self.replaced.get(k).map(|r| r.text.clone()).unwrap_or_default();
+            let text = self
+                .replaced
+                .get(k)
+                .map(|r| r.text.clone())
+                .unwrap_or_default();
             if !text.chars().all(|c| c.is_control()) {
                 match merge(run, text) {
                     Some(glyph) => self.glyphs.push(glyph),
@@ -554,7 +713,14 @@ impl<'a> Device<'a> for TextDevice {
     fn draw_path(&mut self, _: &BezPath, _: Affine, _: &Paint<'a>, _: &PathDrawMode) {}
     fn push_clip_path(&mut self, _: &ClipPath) {}
     fn push_transparency_group(&mut self, _: f32, _: Option<SoftMask<'a>>, _: BlendMode) {}
-    fn draw_glyph(&mut self, glyph: &Glyph<'a>, transform: Affine, glyph_transform: Affine, _: &Paint<'a>, _: &GlyphDrawMode) {
+    fn draw_glyph(
+        &mut self,
+        glyph: &Glyph<'a>,
+        transform: Affine,
+        glyph_transform: Affine,
+        _: &Paint<'a>,
+        _: &GlyphDrawMode,
+    ) {
         // Inside an `/ActualText` replacement only the glyph's box matters.
         let replaced = self.actual.is_some();
         let text = match glyph.as_unicode() {
@@ -565,7 +731,11 @@ impl<'a> Device<'a> for TextDevice {
                 if std::env::var_os("PDFCRAFT_TEXT_DEBUG").is_some() {
                     eprintln!(
                         "NOUNICODE {} {:?}",
-                        if matches!(glyph, Glyph::Type3(_)) { "t3" } else { "ol" },
+                        if matches!(glyph, Glyph::Type3(_)) {
+                            "t3"
+                        } else {
+                            "ol"
+                        },
                         (transform * glyph_transform).as_coeffs()
                     );
                 }
@@ -579,14 +749,28 @@ impl<'a> Device<'a> for TextDevice {
         // box spans descender (−200) to ascender (800), the advance gives the width.
         let t = transform * glyph_transform;
         if std::env::var_os("PDFCRAFT_TEXT_DEBUG").is_some() {
-            let kind = if matches!(glyph, Glyph::Type3(_)) { "t3" } else { "ol" };
-            eprintln!("{kind} {text:?} transform={:?} glyph_transform={:?}", transform.as_coeffs(), glyph_transform.as_coeffs());
+            let kind = if matches!(glyph, Glyph::Type3(_)) {
+                "t3"
+            } else {
+                "ol"
+            };
+            eprintln!(
+                "{kind} {text:?} transform={:?} glyph_transform={:?}",
+                transform.as_coeffs(),
+                glyph_transform.as_coeffs()
+            );
         }
         let advance = match glyph {
-            Glyph::Outline(g) => {
-                g.advance_width().filter(|a| *a > 0.0).map(f64::from).unwrap_or_else(|| g.outline().bounding_box().width().max(500.0))
-            }
-            Glyph::Type3(g) => g.advance_width().filter(|a| a.is_finite() && *a > 0.0).map(f64::from).unwrap_or(600.0),
+            Glyph::Outline(g) => g
+                .advance_width()
+                .filter(|a| *a > 0.0)
+                .map(f64::from)
+                .unwrap_or_else(|| g.outline().bounding_box().width().max(500.0)),
+            Glyph::Type3(g) => g
+                .advance_width()
+                .filter(|a| a.is_finite() && *a > 0.0)
+                .map(f64::from)
+                .unwrap_or(600.0),
         };
         // The baseline direction in view space (y down).
         let coefficients = t.as_coeffs();
@@ -606,19 +790,42 @@ impl<'a> Device<'a> for TextDevice {
         };
         let em = Rect::new(0.0, -200.0, advance, 800.0);
         let corners = if matches!(glyph, Glyph::Outline(g) if g.is_vertical()) {
-            [(em.x0, em.y1), (em.x0, em.y0), (em.x1, em.y0), (em.x1, em.y1)]
+            [
+                (em.x0, em.y1),
+                (em.x0, em.y0),
+                (em.x1, em.y0),
+                (em.x1, em.y1),
+            ]
         } else {
-            [(em.x0, em.y0), (em.x1, em.y0), (em.x1, em.y1), (em.x0, em.y1)]
+            [
+                (em.x0, em.y0),
+                (em.x1, em.y0),
+                (em.x1, em.y1),
+                (em.x0, em.y1),
+            ]
         }
         .map(|(x, y)| t * kurbo::Point::new(x, y));
-        let b = corners.iter().fold(Rect::new(f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY), |b, p| {
-            Rect::new(b.x0.min(p.x), b.y0.min(p.y), b.x1.max(p.x), b.y1.max(p.y))
-        });
-        if !(b.x0.is_finite() && b.y0.is_finite() && b.x1.is_finite() && b.y1.is_finite()) || b.width() > 10_000.0 || b.height() > 10_000.0 {
+        let b = corners.iter().fold(
+            Rect::new(
+                f64::INFINITY,
+                f64::INFINITY,
+                f64::NEG_INFINITY,
+                f64::NEG_INFINITY,
+            ),
+            |b, p| Rect::new(b.x0.min(p.x), b.y0.min(p.y), b.x1.max(p.x), b.y1.max(p.y)),
+        );
+        if !(b.x0.is_finite() && b.y0.is_finite() && b.x1.is_finite() && b.y1.is_finite())
+            || b.width() > 10_000.0
+            || b.height() > 10_000.0
+        {
             return;
         }
         let length = dx.hypot(dy);
-        let direction = if length.is_finite() && length > 0.0 { [dx / length, dy / length] } else { [1.0, 0.0] };
+        let direction = if length.is_finite() && length > 0.0 {
+            [dx / length, dy / length]
+        } else {
+            [1.0, 0.0]
+        };
         // A glyph whose Unicode is several characters (a ligature such as "ffi") stays one glyph
         // with its own box: the PDF gives no position for the characters inside it.
         let glyph = TextGlyph {
@@ -641,11 +848,19 @@ impl<'a> Device<'a> for TextDevice {
     fn actual_text(&mut self, text: &[u8]) {
         // A replacement nested in another is already covered by the outer one.
         if self.actual.is_none() {
-            self.actual = Some((self.depth, pdfcraft_cos::PdfString::literal(text).to_text(), Vec::new()));
+            self.actual = Some((
+                self.depth,
+                pdfcraft_cos::PdfString::literal(text).to_text(),
+                Vec::new(),
+            ));
         }
     }
     fn end_marked_content(&mut self) {
-        if self.actual.as_ref().is_some_and(|(depth, _, _)| *depth == self.depth) {
+        if self
+            .actual
+            .as_ref()
+            .is_some_and(|(depth, _, _)| *depth == self.depth)
+        {
             self.end_actual_text();
         }
         self.depth = self.depth.saturating_sub(1);
@@ -653,7 +868,11 @@ impl<'a> Device<'a> for TextDevice {
 }
 
 /// Extract the text of one page. Panics inside the interpreter are the caller's to catch.
-pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSettings) -> Option<PageText> {
+pub(crate) fn extract_page(
+    pdf: &Pdf,
+    page: usize,
+    settings: &InterpreterSettings,
+) -> Option<PageText> {
     let pages = pdf.pages();
     let p = pages.get(page)?;
     let (w, h) = p.render_dimensions();
@@ -662,7 +881,13 @@ pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSetting
     // as in Acrobat, and match what other extractors report.
     let settings = settings.clone();
     let initial = p.initial_transform(true).to_kurbo();
-    let mut ctx = Context::new(initial, Rect::new(0.0, 0.0, w as f64, h as f64), &cache, p.xref(), settings);
+    let mut ctx = Context::new(
+        initial,
+        Rect::new(0.0, 0.0, w as f64, h as f64),
+        &cache,
+        p.xref(),
+        settings,
+    );
     let mut dev = TextDevice::new();
     interpret_page(p, &mut ctx, &mut dev);
     // A replacement the content never closed ends with the page.
@@ -712,7 +937,10 @@ pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSetting
             .enumerate()
             .filter(|(_, ids)| !ids.is_empty())
             .map(|(quarter, ids)| {
-                let rects = ids.iter().map(|&i| to_upright(glyphs[i].2.rect, quarter as u8, w, h)).collect();
+                let rects = ids
+                    .iter()
+                    .map(|&i| to_upright(glyphs[i].2.rect, quarter as u8, w, h))
+                    .collect();
                 arrange_flow(&glyphs, ids, rects, Some(quarter as u8))
             })
             .collect();
@@ -727,7 +955,10 @@ pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSetting
         .map(|(u, ids)| {
             let rects = match u {
                 // Turned text is laid out along its own baseline.
-                Some(u) => ids.iter().map(|&i| along_baseline(&glyphs[i].2.quad, u).map(|c| c as f32)).collect(),
+                Some(u) => ids
+                    .iter()
+                    .map(|&i| along_baseline(&glyphs[i].2.quad, u).map(|c| c as f32))
+                    .collect(),
                 None => unrolled(ids.iter().map(|&i| &glyphs[i])),
             };
             arrange_flow(&glyphs, ids, rects, None)
@@ -748,15 +979,26 @@ pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSetting
             rank[i] = r;
         }
     }
-    let first = |ids: &[usize]| ids.iter().filter_map(|&i| rank.get(i).copied()).min().unwrap_or(usize::MAX);
+    let first = |ids: &[usize]| {
+        ids.iter()
+            .filter_map(|&i| rank.get(i).copied())
+            .min()
+            .unwrap_or(usize::MAX)
+    };
     extra.sort_by_key(|f| first(&f.ids));
     let mut extra = extra.into_iter().peekable();
     let mut slots: Vec<Option<TextGlyph>> = glyphs.into_iter().map(|g| Some(g.2)).collect();
     let mut text = PageText::default();
-    let mut emit = |text: &mut PageText, ids: &[usize], line_of: &[u32], space_before: &[bool], quarter: Option<u8>| {
+    let mut emit = |text: &mut PageText,
+                    ids: &[usize],
+                    line_of: &[u32],
+                    space_before: &[bool],
+                    quarter: Option<u8>| {
         let offset = text.line_of.last().map_or(0, |line| line.saturating_add(1));
         for ((&i, &line), &space) in ids.iter().zip(line_of).zip(space_before) {
-            let Some(mut g) = slots.get_mut(i).and_then(Option::take) else { continue };
+            let Some(mut g) = slots.get_mut(i).and_then(Option::take) else {
+                continue;
+            };
             if let Some(quarter) = quarter {
                 g.rect = from_upright(to_upright(g.rect, quarter, w, h), quarter, w, h);
             }
@@ -769,12 +1011,21 @@ pub(crate) fn extract_page(pdf: &Pdf, page: usize, settings: &InterpreterSetting
         let mut k = 0;
         while k < flow.ids.len() {
             let line = flow.line_of[k];
-            let end = flow.line_of[k..].iter().position(|l| *l != line).map_or(flow.ids.len(), |n| k + n);
+            let end = flow.line_of[k..]
+                .iter()
+                .position(|l| *l != line)
+                .map_or(flow.ids.len(), |n| k + n);
             let before = first(&flow.ids[k..end]);
             while let Some(f) = extra.next_if(|f| first(&f.ids) < before) {
                 emit(&mut text, &f.ids, &f.line_of, &f.space_before, None);
             }
-            emit(&mut text, &flow.ids[k..end], &vec![0; end - k], &flow.space_before[k..end], flow.quarter);
+            emit(
+                &mut text,
+                &flow.ids[k..end],
+                &vec![0; end - k],
+                &flow.space_before[k..end],
+                flow.quarter,
+            );
             k = end;
         }
     }
@@ -796,12 +1047,39 @@ struct Flow {
 }
 
 /// Lay out the page's glyphs `ids`, giving each the box at the same position in `rects`.
-fn arrange_flow(glyphs: &[Drawn], ids: Vec<usize>, rects: Vec<[f32; 4]>, quarter: Option<u8>) -> Flow {
-    let top = ids.iter().filter_map(|&i| glyphs.get(i)).map(|g| g.2.rect[1]).fold(f32::INFINITY, f32::min);
-    let framed: Vec<TextGlyph> = ids.iter().zip(rects).filter_map(|(&i, rect)| glyphs.get(i).map(|g| TextGlyph { rect, ..g.2.clone() })).collect();
+fn arrange_flow(
+    glyphs: &[Drawn],
+    ids: Vec<usize>,
+    rects: Vec<[f32; 4]>,
+    quarter: Option<u8>,
+) -> Flow {
+    let top = ids
+        .iter()
+        .filter_map(|&i| glyphs.get(i))
+        .map(|g| g.2.rect[1])
+        .fold(f32::INFINITY, f32::min);
+    let framed: Vec<TextGlyph> = ids
+        .iter()
+        .zip(rects)
+        .filter_map(|(&i, rect)| {
+            glyphs.get(i).map(|g| TextGlyph {
+                rect,
+                ..g.2.clone()
+            })
+        })
+        .collect();
     let (order, line_of, space_before) = arrange(&framed);
-    let ids = order.into_iter().filter_map(|k| ids.get(k).copied()).collect();
-    Flow { top, quarter, ids, line_of, space_before }
+    let ids = order
+        .into_iter()
+        .filter_map(|k| ids.get(k).copied())
+        .collect();
+    Flow {
+        top,
+        quarter,
+        ids,
+        line_of,
+        space_before,
+    }
 }
 
 /// Boxes for a run of glyphs set along a curve: each glyph's box along its own direction, placed
@@ -813,7 +1091,10 @@ fn unrolled<'g>(run: impl Iterator<Item = &'g Drawn>) -> Vec<[f32; 4]> {
         let b = along_baseline(&g.quad, *u);
         if let Some((pu, pb)) = previous {
             let at = along_baseline(&g.quad, pu);
-            pen = [pen[0] + at[0] - pb[0], pen[1] + (at[1] + at[3] - pb[1] - pb[3]) / 2.0];
+            pen = [
+                pen[0] + at[0] - pb[0],
+                pen[1] + (at[1] + at[3] - pb[1] - pb[3]) / 2.0,
+            ];
         }
         previous = Some((*u, b));
         let half = (b[3] - b[1]) / 2.0;
@@ -847,7 +1128,11 @@ fn continues(p: &Drawn, g: &Drawn) -> bool {
     if (pu[0] * gu[1] - pu[1] * gu[0]).abs() >= pu[0] * gu[0] + pu[1] * gu[1] {
         return false;
     }
-    let (pb, gb, own) = (along_baseline(&p.2.quad, pu), along_baseline(&g.2.quad, pu), along_baseline(&g.2.quad, gu));
+    let (pb, gb, own) = (
+        along_baseline(&p.2.quad, pu),
+        along_baseline(&g.2.quad, pu),
+        along_baseline(&g.2.quad, gu),
+    );
     let h = (pb[3] - pb[1]).min(own[3] - own[1]).max(0.1);
     let cy = |b: [f64; 4]| (b[1] + b[3]) / 2.0;
     (cy(gb) - cy(pb)).abs() < h * 0.5 && gb[0] - pb[2] < h * 3.0 && gb[0] > pb[0] - h * 2.0
@@ -857,9 +1142,18 @@ fn continues(p: &Drawn, g: &Drawn) -> bool {
 /// quarter clockwise runs downwards. Along `u` it spans the middles of the quad's start and end
 /// sides, so a skewed glyph is no wider than its advance; across, it spans every corner.
 fn along_baseline(quad: &[[f32; 2]; 4], u: [f64; 2]) -> [f64; 4] {
-    let p = quad.map(|[x, y]| [f64::from(x) * u[0] + f64::from(y) * u[1], f64::from(y) * u[0] - f64::from(x) * u[1]]);
+    let p = quad.map(|[x, y]| {
+        [
+            f64::from(x) * u[0] + f64::from(y) * u[1],
+            f64::from(y) * u[0] - f64::from(x) * u[1],
+        ]
+    });
     let (a0, a1) = ((p[0][0] + p[3][0]) / 2.0, (p[1][0] + p[2][0]) / 2.0);
-    let (c0, c1) = p.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), q| (lo.min(q[1]), hi.max(q[1])));
+    let (c0, c1) = p
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), q| {
+            (lo.min(q[1]), hi.max(q[1]))
+        });
     [a0.min(a1), c0, a0.max(a1), c1]
 }
 
@@ -928,7 +1222,12 @@ struct SegExtra {
 
 impl Seg {
     fn new(first: Run, bbox: [f32; 4], h: f32) -> Self {
-        Seg { first, extra: None, bbox, h }
+        Seg {
+            first,
+            extra: None,
+            bbox,
+            h,
+        }
     }
 
     fn cy(&self) -> f32 {
@@ -1029,7 +1328,11 @@ fn union_find(parent: &mut [usize], mut r: usize) -> usize {
 fn fingerprint(glyphs: &[&TextGlyph], run: Run) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for g in run.range().filter_map(|i| glyphs.get(i)) {
-        for b in (g.text.len() as u64).to_le_bytes().into_iter().chain(g.text.bytes()) {
+        for b in (g.text.len() as u64)
+            .to_le_bytes()
+            .into_iter()
+            .chain(g.text.bytes())
+        {
             h = (h ^ u64::from(b)).wrapping_mul(0x0000_0100_0000_01b3);
         }
     }
@@ -1040,13 +1343,17 @@ fn fingerprint(glyphs: &[&TextGlyph], run: Run) -> u64 {
 /// height of the same glyph in `a`.
 fn redraws(glyphs: &[&TextGlyph], a: Run, b: Run) -> bool {
     a.len() == b.len()
-        && a.range().zip(b.range()).all(|(i, j)| match (glyphs.get(i), glyphs.get(j)) {
-            (Some(p), Some(g)) => {
-                let tol = REDRAW_POSITION_TOLERANCE * (g.rect[3] - g.rect[1]).max(0.1);
-                p.text == g.text && (p.rect[0] - g.rect[0]).abs() < tol && (p.rect[1] - g.rect[1]).abs() < tol
-            }
-            _ => false,
-        })
+        && a.range()
+            .zip(b.range())
+            .all(|(i, j)| match (glyphs.get(i), glyphs.get(j)) {
+                (Some(p), Some(g)) => {
+                    let tol = REDRAW_POSITION_TOLERANCE * (g.rect[3] - g.rect[1]).max(0.1);
+                    p.text == g.text
+                        && (p.rect[0] - g.rect[0]).abs() < tol
+                        && (p.rect[1] - g.rect[1]).abs() < tol
+                }
+                _ => false,
+            })
 }
 
 fn within_position_tolerance(a: f32, b: f32, tolerance: f32) -> bool {
@@ -1056,7 +1363,9 @@ fn within_position_tolerance(a: f32, b: f32, tolerance: f32) -> bool {
 /// Whether `next` restarts `start` after the run has advanced by a glyph height. The fixed prefix
 /// bounds this check and requires more than a single backward adjustment to split a run.
 fn restarts_run(glyphs: &[&TextGlyph], start: usize, next: usize, progress: f32) -> bool {
-    let (Some(first), Some(candidate)) = (glyphs.get(start), glyphs.get(next)) else { return false };
+    let (Some(first), Some(candidate)) = (glyphs.get(start), glyphs.get(next)) else {
+        return false;
+    };
     let tol = REDRAW_POSITION_TOLERANCE * (candidate.rect[3] - candidate.rect[1]).max(0.1);
     if first.text != candidate.text
         || !within_position_tolerance(first.rect[0], candidate.rect[0], tol)
@@ -1069,11 +1378,17 @@ fn restarts_run(glyphs: &[&TextGlyph], start: usize, next: usize, progress: f32)
         return false;
     }
     for offset in 1..REDRAW_PREFIX_GLYPHS {
-        let (Some(a), Some(b)) = (start.checked_add(offset).and_then(|i| glyphs.get(i)), next.checked_add(offset).and_then(|i| glyphs.get(i))) else {
+        let (Some(a), Some(b)) = (
+            start.checked_add(offset).and_then(|i| glyphs.get(i)),
+            next.checked_add(offset).and_then(|i| glyphs.get(i)),
+        ) else {
             return false;
         };
         let tol = REDRAW_POSITION_TOLERANCE * (b.rect[3] - b.rect[1]).max(0.1);
-        if a.text != b.text || !within_position_tolerance(a.rect[0], b.rect[0], tol) || !within_position_tolerance(a.rect[1], b.rect[1], tol) {
+        if a.text != b.text
+            || !within_position_tolerance(a.rect[0], b.rect[0], tol)
+            || !within_position_tolerance(a.rect[1], b.rect[1], tol)
+        {
             return false;
         }
     }
@@ -1103,7 +1418,8 @@ fn place_glyphs(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, s: &Seg, s
     if sc.text.len() <= 1 {
         // A single run cannot collide with itself: its glyphs only need sorting by x.
         sc.placed.extend(sc.text.iter().flat_map(|run| run.range()));
-        sc.placed.sort_unstable_by(|a, b| x0(*a).total_cmp(&x0(*b)).then(a.cmp(b)));
+        sc.placed
+            .sort_unstable_by(|a, b| x0(*a).total_cmp(&x0(*b)).then(a.cmp(b)));
     } else {
         collide(glyphs, height, s.h, sc);
     }
@@ -1138,7 +1454,8 @@ fn collide(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, h: f32, sc: &mu
     for (r, run) in sc.text.iter().enumerate() {
         sc.owner.extend(run.range().map(|i| (i, r)));
     }
-    sc.owner.sort_unstable_by(|a, b| x0(a.0).total_cmp(&x0(b.0)).then(a.0.cmp(&b.0)));
+    sc.owner
+        .sort_unstable_by(|a, b| x0(a.0).total_cmp(&x0(b.0)).then(a.0.cmp(&b.0)));
     sc.parent.clear();
     sc.parent.extend(0..runs);
     let mut budget = COLLIDE_PAIRS_PER_GLYPH.saturating_mul(sc.owner.len());
@@ -1157,7 +1474,10 @@ fn collide(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, h: f32, sc: &mu
                 break 'sweep;
             }
             budget -= 1;
-            let (ra, rb) = (union_find(&mut sc.parent, ri), union_find(&mut sc.parent, rj));
+            let (ra, rb) = (
+                union_find(&mut sc.parent, ri),
+                union_find(&mut sc.parent, rj),
+            );
             let overlap = x1.min(glyphs[j].rect[2]) - x0(j);
             if ra != rb && overlap > RUN_COLLISION * hi.min(height(j)) {
                 sc.parent[ra] = rb;
@@ -1197,7 +1517,11 @@ fn collide(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, h: f32, sc: &mu
             for i in sc.text[head].range() {
                 let at = sc.flat.len();
                 sc.flat.push(i);
-                sc.units.push(Unit { left: x0(i), first: i, glyphs: at..at + 1 });
+                sc.units.push(Unit {
+                    left: x0(i),
+                    first: i,
+                    glyphs: at..at + 1,
+                });
             }
             continue;
         }
@@ -1209,13 +1533,26 @@ fn collide(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, h: f32, sc: &mu
             let start = sc.group.len();
             sc.group.extend(run.range());
             sc.group[start..].sort_unstable_by(|a, b| x0(*a).total_cmp(&x0(*b)).then(a.cmp(b)));
-            let left = sc.group[start..].iter().map(|&i| x0(i)).fold(f32::INFINITY, f32::min);
-            let right = sc.group[start..].iter().map(|&i| glyphs[i].rect[2]).fold(f32::NEG_INFINITY, f32::max);
+            let left = sc.group[start..]
+                .iter()
+                .map(|&i| x0(i))
+                .fold(f32::INFINITY, f32::min);
+            let right = sc.group[start..]
+                .iter()
+                .map(|&i| glyphs[i].rect[2])
+                .fold(f32::NEG_INFINITY, f32::max);
             let lead = sc.group[start];
-            sc.rows.push(Row { left, right, first: run.start, lead, glyphs: start..sc.group.len() });
+            sc.rows.push(Row {
+                left,
+                right,
+                first: run.start,
+                lead,
+                glyphs: start..sc.group.len(),
+            });
             m = sc.next[m];
         }
-        sc.rows.sort_unstable_by(|a, b| a.left.total_cmp(&b.left).then(a.first.cmp(&b.first)));
+        sc.rows
+            .sort_unstable_by(|a, b| a.left.total_cmp(&b.left).then(a.first.cmp(&b.first)));
         let start = sc.flat.len();
         let mut reach = f32::NEG_INFINITY;
         for row in &sc.rows {
@@ -1227,9 +1564,14 @@ fn collide(glyphs: &[&TextGlyph], height: &dyn Fn(usize) -> f32, h: f32, sc: &mu
         }
         let left = sc.rows.iter().map(|r| r.left).fold(f32::INFINITY, f32::min);
         let first = sc.rows.iter().map(|r| r.first).min().unwrap_or(0);
-        sc.units.push(Unit { left, first, glyphs: start..sc.flat.len() });
+        sc.units.push(Unit {
+            left,
+            first,
+            glyphs: start..sc.flat.len(),
+        });
     }
-    sc.units.sort_unstable_by(|a, b| a.left.total_cmp(&b.left).then(a.first.cmp(&b.first)));
+    sc.units
+        .sort_unstable_by(|a, b| a.left.total_cmp(&b.left).then(a.first.cmp(&b.first)));
     for unit in &sc.units {
         sc.placed.extend_from_slice(&sc.flat[unit.glyphs.clone()]);
     }
@@ -1248,7 +1590,12 @@ fn reverse_rtl(glyphs: &[&TextGlyph], idx: &mut [usize], spaces: &mut [bool]) {
     while k < idx.len() {
         if rtl(idx[k]) {
             let mut e = k;
-            while e + 1 < idx.len() && (rtl(idx[e + 1]) || (glyphs[idx[e + 1]].text.trim().is_empty() && e + 2 < idx.len() && rtl(idx[e + 2]))) {
+            while e + 1 < idx.len()
+                && (rtl(idx[e + 1])
+                    || (glyphs[idx[e + 1]].text.trim().is_empty()
+                        && e + 2 < idx.len()
+                        && rtl(idx[e + 2])))
+            {
                 e += 1;
             }
             idx[k..=e].reverse();
@@ -1284,8 +1631,15 @@ pub fn layout(glyphs: Vec<TextGlyph>) -> PageText {
     let (order, line_of, space_before) = arrange(&glyphs);
     let mut slots: Vec<Option<TextGlyph>> = glyphs.into_iter().map(Some).collect();
     // Each glyph is emitted exactly once.
-    let glyphs = order.iter().filter_map(|i| slots.get_mut(*i).and_then(Option::take)).collect();
-    PageText { glyphs, line_of, space_before }
+    let glyphs = order
+        .iter()
+        .filter_map(|i| slots.get_mut(*i).and_then(Option::take))
+        .collect();
+    PageText {
+        glyphs,
+        line_of,
+        space_before,
+    }
 }
 
 /// [`layout`] as the reading order of indices into `glyphs`, with each one's line and word gap.
@@ -1298,10 +1652,18 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
         let g = &glyphs[i];
         let h = (g.rect[3] - g.rect[1]).max(0.1);
         let w = g.rect[2] - g.rect[0];
-        let dx = if w > 0.05 * h { (h * 0.2).min(w * 0.5) } else { h * 0.2 };
+        let dx = if w > 0.05 * h {
+            (h * 0.2).min(w * 0.5)
+        } else {
+            h * 0.2
+        };
         for j in (i.saturating_sub(4)..i).rev() {
             let p = &glyphs[j];
-            if keep[j] && p.text == g.text && (p.rect[0] - g.rect[0]).abs() < dx && (p.rect[1] - g.rect[1]).abs() < h * 0.2 {
+            if keep[j]
+                && p.text == g.text
+                && (p.rect[0] - g.rect[0]).abs() < dx
+                && (p.rect[1] - g.rect[1]).abs() < h * 0.2
+            {
                 keep[i] = false;
                 break;
             }
@@ -1323,12 +1685,19 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
     for i in 0..n {
         let g = glyphs[i].rect;
         let cont = segs.last().is_some_and(|s| {
-            let Some(p) = s.first.end.checked_sub(1) else { return false };
+            let Some(p) = s.first.end.checked_sub(1) else {
+                return false;
+            };
             let ph = height(p).min(height(i));
             let gap = g[0] - glyphs[p].rect[2];
-            (cy(i) - cy(p)).abs() < ph * 0.5 && gap < ph * 3.0 && g[0] > glyphs[p].rect[0] - ph * 2.0
+            (cy(i) - cy(p)).abs() < ph * 0.5
+                && gap < ph * 3.0
+                && g[0] > glyphs[p].rect[0] - ph * 2.0
         });
-        let reset = cont && segs.last().is_some_and(|s| restarts_run(&glyphs, s.first.start, i, furthest_progress));
+        let reset = cont
+            && segs
+                .last()
+                .is_some_and(|s| restarts_run(&glyphs, s.first.start, i, furthest_progress));
         if cont
             && !reset
             && let Some(s) = segs.last_mut()
@@ -1336,9 +1705,18 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
             s.first.end = i + 1;
             union(&mut s.bbox, &g);
             s.h = s.h.max(height(i));
-            furthest_progress = furthest_progress.max((g[0] - run_start_x).abs()).max((g[2] - run_start_x).abs());
+            furthest_progress = furthest_progress
+                .max((g[0] - run_start_x).abs())
+                .max((g[2] - run_start_x).abs());
         } else {
-            segs.push(Seg::new(Run { start: i, end: i + 1 }, g, height(i)));
+            segs.push(Seg::new(
+                Run {
+                    start: i,
+                    end: i + 1,
+                },
+                g,
+                height(i),
+            ));
             run_start_x = g[0];
             furthest_progress = 0.0;
         }
@@ -1356,12 +1734,17 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
             let run = segs[i].first;
             if run.len() >= 2 {
                 let tol = 0.2 * segs[i].h;
-                let (cx, cy_) = ((glyphs[run.start].rect[0] / tol).floor() as i32, (glyphs[run.start].rect[1] / tol).floor() as i32);
+                let (cx, cy_) = (
+                    (glyphs[run.start].rect[0] / tol).floor() as i32,
+                    (glyphs[run.start].rect[1] / tol).floor() as i32,
+                );
                 let fp = fingerprint(&glyphs, run);
                 let mut checks = REDRAW_CANDIDATES;
                 let twin = (-1..=1i32).any(|dx| {
                     (-1..=1i32).any(|dy| {
-                        let mut link = latest.get(&(fp, cx.saturating_add(dx), cy_.saturating_add(dy))).copied();
+                        let mut link = latest
+                            .get(&(fp, cx.saturating_add(dx), cy_.saturating_add(dy)))
+                            .copied();
                         while let Some(k) = link {
                             let Some(prev) = segs.get(k) else { break };
                             if checks == 0 {
@@ -1399,7 +1782,10 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
                 let (sa, sb) = (&segs[a], &segs[b]);
                 let h = sa.h.min(sb.h);
                 let gap = (sb.bbox[0] - sa.bbox[2]).max(sa.bbox[0] - sb.bbox[2]);
-                if (sa.cy() - sb.cy()).abs() < h * 0.3 && (sa.h / sb.h - 1.0).abs() < 0.35 && gap < h * 1.2 {
+                if (sa.cy() - sb.cy()).abs() < h * 0.3
+                    && (sa.h / sb.h - 1.0).abs() < 0.35
+                    && gap < h * 1.2
+                {
                     let sb = segs.remove(b);
                     let a = if b < a { a - 1 } else { a };
                     segs[a].merge(sb);
@@ -1417,12 +1803,17 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
     for si in by_top {
         let s = &segs[si];
         let target = blocks.iter().position(|(members, bb)| {
-            let Some(&m) = members.last() else { return false };
+            let Some(&m) = members.last() else {
+                return false;
+            };
             let last = &segs[m];
             let vgap = s.bbox[1] - last.bbox[3];
             let overlap = s.bbox[2].min(bb[2]) - s.bbox[0].max(bb[0]);
             let minw = (s.bbox[2] - s.bbox[0]).min(bb[2] - bb[0]).max(1.0);
-            vgap > -last.h * 0.5 && vgap < last.h.max(s.h) * 1.1 && overlap > minw * 0.3 && (last.h / s.h - 1.0).abs() < 0.6
+            vgap > -last.h * 0.5
+                && vgap < last.h.max(s.h) * 1.1
+                && overlap > minw * 0.3
+                && (last.h / s.h - 1.0).abs() < 0.6
         });
         match target {
             Some(b) => {
@@ -1437,7 +1828,10 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
     // 3. Block order.
     let mut remaining: Vec<usize> = (0..blocks.len()).collect();
     let mut block_order = Vec::with_capacity(blocks.len());
-    while let Some(&top) = remaining.iter().min_by(|a, b| blocks[**a].1[1].total_cmp(&blocks[**b].1[1])) {
+    while let Some(&top) = remaining
+        .iter()
+        .min_by(|a, b| blocks[**a].1[1].total_cmp(&blocks[**b].1[1]))
+    {
         let tb = blocks[top].1;
         let pick = remaining
             .iter()
@@ -1469,9 +1863,18 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
             let h = segs[si].h;
             // Word gaps relative to this line's typical letter gap (handles tracking).
             sc.gaps.clear();
-            sc.gaps.extend(sc.placed.windows(2).map(|w| glyphs[w[1]].rect[0] - glyphs[w[0]].rect[2]));
+            sc.gaps.extend(
+                sc.placed
+                    .windows(2)
+                    .map(|w| glyphs[w[1]].rect[0] - glyphs[w[0]].rect[2]),
+            );
             sc.gaps.sort_by(f32::total_cmp);
-            let typical = sc.gaps.get(sc.gaps.len() / 3).copied().unwrap_or(0.0).max(0.0);
+            let typical = sc
+                .gaps
+                .get(sc.gaps.len() / 3)
+                .copied()
+                .unwrap_or(0.0)
+                .max(0.0);
             let threshold = (typical + h * WORD_GAP).max(h * WORD_GAP);
             spaces.clear();
             spaces.resize(sc.placed.len(), false);
@@ -1480,14 +1883,22 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
                 let gap = glyphs[c].rect[0] - glyphs[p].rect[2];
                 let (pt, ct) = (&glyphs[p].text, &glyphs[c].text);
                 let cjk = pt.chars().any(is_cjk) && ct.chars().any(is_cjk) && gap < h * 0.5;
-                let tight_cluster = (pt.chars().any(is_complex) || ct.chars().any(is_complex)) && gap < h * 0.6;
+                let tight_cluster =
+                    (pt.chars().any(is_complex) || ct.chars().any(is_complex)) && gap < h * 0.6;
                 let run_start = sc.breaks.binary_search(&c).is_ok();
                 if let Some(space) = spaces.get_mut(w + 1) {
-                    *space = (gap > threshold || run_start) && !cjk && !tight_cluster && !pt.trim().is_empty() && !ct.trim().is_empty();
+                    *space = (gap > threshold || run_start)
+                        && !cjk
+                        && !tight_cluster
+                        && !pt.trim().is_empty()
+                        && !ct.trim().is_empty();
                 }
             }
             // Right-to-left spans are reversed (visual → logical) with their gaps, and only then is a second copy made.
-            let has_rtl = sc.placed.iter().any(|&i| glyphs[i].text.chars().any(is_rtl));
+            let has_rtl = sc
+                .placed
+                .iter()
+                .any(|&i| glyphs[i].text.chars().any(is_rtl));
             if has_rtl {
                 sc.logical.clear();
                 sc.logical.extend_from_slice(&sc.placed);
@@ -1502,7 +1913,11 @@ fn arrange(glyphs: &[TextGlyph]) -> (Vec<usize>, Vec<u32>, Vec<bool>) {
             line += 1;
         }
     }
-    (order.into_iter().map(|i| kept[i]).collect(), line_of, space_before)
+    (
+        order.into_iter().map(|i| kept[i]).collect(),
+        line_of,
+        space_before,
+    )
 }
 
 #[cfg(test)]
@@ -1519,8 +1934,17 @@ mod tests {
                 cmap.to_vec()
             } else {
                 let mut mapping = String::from_utf8(cmap.to_vec()).unwrap();
-                for (code, unicode) in [("0001", "65E5"), ("0002", "672C"), ("0003", "8A9E"), ("0004", "6587"), ("0005", "7AE0")] {
-                    mapping = mapping.replace(&format!("<{code}> <{unicode}>"), &format!("<{unicode}> <{unicode}>"));
+                for (code, unicode) in [
+                    ("0001", "65E5"),
+                    ("0002", "672C"),
+                    ("0003", "8A9E"),
+                    ("0004", "6587"),
+                    ("0005", "7AE0"),
+                ] {
+                    mapping = mapping.replace(
+                        &format!("<{code}> <{unicode}>"),
+                        &format!("<{unicode}> <{unicode}>"),
+                    );
                 }
                 mapping.into_bytes()
             };
@@ -1532,9 +1956,14 @@ mod tests {
         });
             let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type0", "BaseFont" => "TestVertical", "Encoding" => encoding, "DescendantFonts" => vec![Object::Reference(cid)], "ToUnicode" => unicode });
             let horizontal = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type0", "BaseFont" => "TestVertical", "Encoding" => "Identity-H", "DescendantFonts" => vec![Object::Reference(cid)], "ToUnicode" => unicode });
-            let (first, second) = if encoding == "Identity-V" { ("000100020003", "00040005") } else { ("65E5672C8A9E", "65877AE0") };
-            let operators =
-                format!("BT /H1 20 Tf 1 0 0 1 40 280 Tm <{first}> Tj /F1 20 Tf 1 0 0 1 200 250 Tm <{first}> Tj 1 0 0 1 170 250 Tm <{second}> Tj ET");
+            let (first, second) = if encoding == "Identity-V" {
+                ("000100020003", "00040005")
+            } else {
+                ("65E5672C8A9E", "65877AE0")
+            };
+            let operators = format!(
+                "BT /H1 20 Tf 1 0 0 1 40 280 Tm <{first}> Tj /F1 20 Tf 1 0 0 1 200 250 Tm <{first}> Tj 1 0 0 1 170 250 Tm <{second}> Tj ET"
+            );
             let content = doc.add_object(Stream::new(dictionary! {}, operators.into_bytes()));
             let pages = doc.new_object_id();
             let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![Object::Integer(0), Object::Integer(0), Object::Integer(300), Object::Integer(300)], "Resources" => dictionary! {"Font" => dictionary! {"F1" => font, "H1" => horizontal}}, "Contents" => content });
@@ -1550,8 +1979,14 @@ mod tests {
             assert_eq!(text.find("文章"), vec![6..8]);
             let rects = text.line_rects(3..6);
             assert_eq!(rects.len(), 1);
-            assert!(rects[0][3] - rects[0][1] > rects[0][2] - rects[0][0], "a vertical search highlight: {rects:?}");
-            assert!(text.glyphs[3].rect[0] > text.glyphs[6].rect[0], "columns read right to left in page view coordinates");
+            assert!(
+                rects[0][3] - rects[0][1] > rects[0][2] - rects[0][0],
+                "a vertical search highlight: {rects:?}"
+            );
+            assert!(
+                text.glyphs[3].rect[0] > text.glyphs[6].rect[0],
+                "columns read right to left in page view coordinates"
+            );
         }
     }
 
@@ -1568,12 +2003,18 @@ mod tests {
         let pages = doc.new_object_id();
         let mut kids = Vec::new();
         for m in matrices {
-            let content = doc.add_object(Stream::new(dictionary! {}, format!("BT /F1 20 Tf {m} Tm ({codes}) Tj ET").into_bytes()));
+            let content = doc.add_object(Stream::new(
+                dictionary! {},
+                format!("BT /F1 20 Tf {m} Tm ({codes}) Tj ET").into_bytes(),
+            ));
             let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![Object::Integer(0), Object::Integer(0), Object::Integer(300), Object::Integer(300)], "Resources" => dictionary! {"Font" => dictionary! {"F1" => font}}, "Contents" => content });
             kids.push(Object::Reference(page));
         }
         let count = kids.len() as i64;
-        doc.objects.insert(pages, dictionary! {"Type" => "Pages", "Kids" => kids, "Count" => count}.into());
+        doc.objects.insert(
+            pages,
+            dictionary! {"Type" => "Pages", "Kids" => kids, "Count" => count}.into(),
+        );
         let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages});
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
@@ -1585,18 +2026,41 @@ mod tests {
     fn a_ligature_is_one_glyph_in_every_writing_direction() {
         // "o", one glyph for "ffi", "c", "e": "office", turned 0°, 90°, 180° and 270°. The same
         // codes without the ligature mapping ("oWce") are the control for the glyph box.
-        let turns = ["1 0 0 1 100 150", "0 1 -1 0 150 100", "-1 0 0 -1 200 150", "0 -1 1 0 150 200"];
-        let ligature = ligature_pages("1 beginbfchar <57> <006600660069> endbfchar", "oWce", &turns);
+        let turns = [
+            "1 0 0 1 100 150",
+            "0 1 -1 0 150 100",
+            "-1 0 0 -1 200 150",
+            "0 -1 1 0 150 200",
+        ];
+        let ligature = ligature_pages(
+            "1 beginbfchar <57> <006600660069> endbfchar",
+            "oWce",
+            &turns,
+        );
         let control = ligature_pages("", "oWce", &turns);
         for (page, turn) in turns.iter().enumerate() {
             let text = extract_page(&ligature, page, &InterpreterSettings::default()).unwrap();
             let plain = extract_page(&control, page, &InterpreterSettings::default()).unwrap();
             assert_eq!(plain.plain_text(), "oWce", "Tm {turn}");
             assert_eq!(text.plain_text(), "office", "Tm {turn}");
-            assert_eq!(text.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(), ["o", "ffi", "c", "e"], "Tm {turn}");
-            assert_eq!(text.glyphs[1].rect, plain.glyphs[1].rect, "the painted glyph's box, Tm {turn}");
+            assert_eq!(
+                text.glyphs
+                    .iter()
+                    .map(|g| g.text.as_str())
+                    .collect::<Vec<_>>(),
+                ["o", "ffi", "c", "e"],
+                "Tm {turn}"
+            );
+            assert_eq!(
+                text.glyphs[1].rect, plain.glyphs[1].rect,
+                "the painted glyph's box, Tm {turn}"
+            );
             assert_eq!(text.find("ffi"), vec![1..2], "Tm {turn}");
-            assert_eq!(text.find("of"), vec![0..2], "a match ending inside the ligature covers it, Tm {turn}");
+            assert_eq!(
+                text.find("of"),
+                vec![0..2],
+                "a match ending inside the ligature covers it, Tm {turn}"
+            );
             assert_eq!(text.line_rects(0..4).len(), 1, "one line, Tm {turn}");
         }
     }
@@ -1606,7 +2070,9 @@ mod tests {
     fn marked_pages(contents: &[&str]) -> Pdf {
         use lopdf::{Document, Object, Stream, dictionary};
         let mut doc = Document::with_version("1.7");
-        let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
+        let font = doc.add_object(
+            dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" },
+        );
         let pages = doc.new_object_id();
         let mut kids = Vec::new();
         for c in contents {
@@ -1619,7 +2085,10 @@ mod tests {
             kids.push(Object::Reference(page));
         }
         let count = kids.len() as i64;
-        doc.objects.insert(pages, dictionary! {"Type" => "Pages", "Kids" => kids, "Count" => count}.into());
+        doc.objects.insert(
+            pages,
+            dictionary! {"Type" => "Pages", "Kids" => kids, "Count" => count}.into(),
+        );
         let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages});
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
@@ -1635,10 +2104,18 @@ mod tests {
     fn actual_text_replaces_the_glyphs_it_marks_in_every_writing_direction() {
         // Chrome marks each shaped Thai cluster this way: "น้ำ" (U+0E19 U+0E49 U+0E33) here stands
         // for the two glyphs "xy", between "a" and "b". The same codes unmarked are the control.
-        let turns = ["1 0 0 1 100 150", "0 1 -1 0 150 100", "-1 0 0 -1 200 150", "0 -1 1 0 150 200"];
+        let turns = [
+            "1 0 0 1 100 150",
+            "0 1 -1 0 150 100",
+            "-1 0 0 -1 200 150",
+            "0 -1 1 0 150 200",
+        ];
         let marked: Vec<String> =
             turns.iter().map(|m| format!("BT /F1 20 Tf {m} Tm (a) Tj /Span <</ActualText <FEFF0E190E490E33>>> BDC (xy) Tj EMC (b) Tj ET")).collect();
-        let plain: Vec<String> = turns.iter().map(|m| format!("BT /F1 20 Tf {m} Tm (axyb) Tj ET")).collect();
+        let plain: Vec<String> = turns
+            .iter()
+            .map(|m| format!("BT /F1 20 Tf {m} Tm (axyb) Tj ET"))
+            .collect();
         let marked = marked_pages(&marked.iter().map(String::as_str).collect::<Vec<_>>());
         let plain = marked_pages(&plain.iter().map(String::as_str).collect::<Vec<_>>());
         for (page, turn) in turns.iter().enumerate() {
@@ -1646,16 +2123,35 @@ mod tests {
             let control = marked_text(&plain, page);
             assert_eq!(control.plain_text(), "axyb", "Tm {turn}");
             assert_eq!(text.plain_text(), "aน้ำb", "Tm {turn}");
-            assert_eq!(text.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(), ["a", "น้ำ", "b"], "Tm {turn}");
+            assert_eq!(
+                text.glyphs
+                    .iter()
+                    .map(|g| g.text.as_str())
+                    .collect::<Vec<_>>(),
+                ["a", "น้ำ", "b"],
+                "Tm {turn}"
+            );
             assert_eq!(text.find("น้ำ"), vec![1..2], "Tm {turn}");
             assert_eq!(text.line_rects(0..3).len(), 1, "one line, Tm {turn}");
             // The replacement's box is the union of the boxes of the glyphs it replaces.
             let (x, y) = (&control.glyphs[1].rect, &control.glyphs[2].rect);
-            let union = [x[0].min(y[0]), x[1].min(y[1]), x[2].max(y[2]), x[3].max(y[3])];
+            let union = [
+                x[0].min(y[0]),
+                x[1].min(y[1]),
+                x[2].max(y[2]),
+                x[3].max(y[3]),
+            ];
             for (got, want) in text.glyphs[1].rect.iter().zip(union) {
-                assert!((got - want).abs() < 0.01, "box {:?} ≠ {union:?}, Tm {turn}", text.glyphs[1].rect);
+                assert!(
+                    (got - want).abs() < 0.01,
+                    "box {:?} ≠ {union:?}, Tm {turn}",
+                    text.glyphs[1].rect
+                );
             }
-            assert_eq!(text.glyphs[1].direction, control.glyphs[1].direction, "Tm {turn}");
+            assert_eq!(
+                text.glyphs[1].direction, control.glyphs[1].direction,
+                "Tm {turn}"
+            );
         }
     }
 
@@ -1665,25 +2161,54 @@ mod tests {
         // unbounded, every replacement would compare every glyph (10^10 comparisons).
         const N: usize = 100_000;
         let glyph = |text: &str| {
-            let quad = [[100.0, 110.0], [110.0, 110.0], [110.0, 100.0], [100.0, 100.0]];
-            (0, [1.0, 0.0], TextGlyph { text: text.into(), rect: [100.0, 100.0, 110.0, 110.0], quad, direction: [1.0, 0.0] })
+            let quad = [
+                [100.0, 110.0],
+                [110.0, 110.0],
+                [110.0, 100.0],
+                [100.0, 100.0],
+            ];
+            (
+                0,
+                [1.0, 0.0],
+                TextGlyph {
+                    text: text.into(),
+                    rect: [100.0, 100.0, 110.0, 110.0],
+                    quad,
+                    direction: [1.0, 0.0],
+                },
+            )
         };
         let mut dev = TextDevice::new();
         // A genuine redraw first: it is still deduplicated within the budget.
         dev.glyphs.push(glyph("fi"));
         dev.glyphs.push(glyph("x"));
-        dev.replaced.push(Replaced { at: Some(0), text: "fi".into(), originals: vec![("x".into(), [100.0, 100.0, 110.0, 110.0])] });
+        dev.replaced.push(Replaced {
+            at: Some(0),
+            text: "fi".into(),
+            originals: vec![("x".into(), [100.0, 100.0, 110.0, 110.0])],
+        });
         dev.glyphs.extend((0..N).map(|_| glyph("y")));
         for _ in 0..N {
             dev.glyphs.push(glyph("z"));
             let at = dev.glyphs.len() - 1;
-            dev.replaced.push(Replaced { at: Some(at), text: "z".into(), originals: vec![("q".into(), [100.0, 100.0, 110.0, 110.0])] });
+            dev.replaced.push(Replaced {
+                at: Some(at),
+                text: "z".into(),
+                originals: vec![("q".into(), [100.0, 100.0, 110.0, 110.0])],
+            });
         }
         let started = std::time::Instant::now();
         dev.finish();
-        assert!(started.elapsed() < std::time::Duration::from_secs(30), "took {:?}", started.elapsed());
+        assert!(
+            started.elapsed() < std::time::Duration::from_secs(30),
+            "took {:?}",
+            started.elapsed()
+        );
         assert_eq!(dev.glyphs.len(), 2 * N + 2, "unmatched glyphs are kept");
-        assert_eq!(dev.glyphs[1].2.text, "fi", "the redraw found within the budget takes the replacement");
+        assert_eq!(
+            dev.glyphs[1].2.text, "fi",
+            "the redraw found within the budget takes the replacement"
+        );
     }
 
     #[test]
@@ -1715,9 +2240,16 @@ mod tests {
         let marked = "BT /F1 20 Tf 1 0 0 1 100 150 Tm (a) Tj /Span <</ActualText <FEFF0E190E490E33>>> BDC (xy) Tj EMC (b) Tj ET";
         let copy = "BT /F1 20 Tf 1 0 0 1 100.5 150.5 Tm (axyb) Tj ET";
         let elsewhere = "BT /F1 20 Tf 1 0 0 1 100 50 Tm (axyb) Tj ET";
-        let pdf = marked_pages(&[&format!("{marked} {copy} {elsewhere}"), &format!("{copy} {marked} {elsewhere}")]);
+        let pdf = marked_pages(&[
+            &format!("{marked} {copy} {elsewhere}"),
+            &format!("{copy} {marked} {elsewhere}"),
+        ]);
         for page in 0..2 {
-            assert_eq!(marked_text(&pdf, page).plain_text(), "aน้ำb\naxyb", "page {page}");
+            assert_eq!(
+                marked_text(&pdf, page).plain_text(),
+                "aน้ำb\naxyb",
+                "page {page}"
+            );
         }
     }
 
@@ -1725,7 +2257,11 @@ mod tests {
     fn narrow_ligatures_keep_every_letter() {
         // Split evenly, this "ffi" put its two "f"s so close that the second was dropped as a
         // fake-bold copy of the first.
-        let pdf = ligature_pages("1 beginbfchar <62> <006600660069> endbfchar", "obce", &["1 0 0 1 100 150"]);
+        let pdf = ligature_pages(
+            "1 beginbfchar <62> <006600660069> endbfchar",
+            "obce",
+            &["1 0 0 1 100 150"],
+        );
         let text = extract_page(&pdf, 0, &InterpreterSettings::default()).unwrap();
         assert_eq!(text.plain_text(), "office");
     }
@@ -1733,15 +2269,37 @@ mod tests {
     #[test]
     fn right_to_left_ligatures_keep_their_logical_order() {
         // "سلام" drawn left to right as meem, alef, lam, seen; then with lam-alef as one glyph.
-        let letters = ligature_pages("4 beginbfchar <61> <0645> <62> <0644> <63> <0633> <64> <0627> endbfchar", "adbc", &["1 0 0 1 100 150"]);
-        let ligature = ligature_pages("3 beginbfchar <61> <0645> <62> <06440627> <63> <0633> endbfchar", "abc", &["1 0 0 1 100 150"]);
+        let letters = ligature_pages(
+            "4 beginbfchar <61> <0645> <62> <0644> <63> <0633> <64> <0627> endbfchar",
+            "adbc",
+            &["1 0 0 1 100 150"],
+        );
+        let ligature = ligature_pages(
+            "3 beginbfchar <61> <0645> <62> <06440627> <63> <0633> endbfchar",
+            "abc",
+            &["1 0 0 1 100 150"],
+        );
         for pdf in [letters, ligature] {
-            assert_eq!(extract_page(&pdf, 0, &InterpreterSettings::default()).unwrap().plain_text(), "سلام");
+            assert_eq!(
+                extract_page(&pdf, 0, &InterpreterSettings::default())
+                    .unwrap()
+                    .plain_text(),
+                "سلام"
+            );
         }
         // "بَاب" with beh and its fatha as one glyph, as Add text writes shaped Arabic: the mark
         // stays after its letter.
-        let marked = ligature_pages("3 beginbfchar <61> <0628064E> <62> <0627> <63> <0628> endbfchar", "cba", &["1 0 0 1 100 150"]);
-        assert_eq!(extract_page(&marked, 0, &InterpreterSettings::default()).unwrap().plain_text(), "بَاب");
+        let marked = ligature_pages(
+            "3 beginbfchar <61> <0628064E> <62> <0627> <63> <0628> endbfchar",
+            "cba",
+            &["1 0 0 1 100 150"],
+        );
+        assert_eq!(
+            extract_page(&marked, 0, &InterpreterSettings::default())
+                .unwrap()
+                .plain_text(),
+            "بَاب"
+        );
     }
 
     #[test]
@@ -1757,10 +2315,17 @@ mod tests {
             "DW" => 1000, "DW2" => vec![Object::Integer(880), Object::Integer(-1000)], "CIDToGIDMap" => "Identity"
         });
         let font = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type0", "BaseFont" => "TestVertical", "Encoding" => "Identity-V", "DescendantFonts" => vec![Object::Reference(cid)], "ToUnicode" => unicode });
-        let content = doc.add_object(Stream::new(dictionary! {}, b"BT /F1 20 Tf 1 0 0 1 200 250 Tm <000100020003> Tj ET".to_vec()));
+        let content = doc.add_object(Stream::new(
+            dictionary! {},
+            b"BT /F1 20 Tf 1 0 0 1 200 250 Tm <000100020003> Tj ET".to_vec(),
+        ));
         let pages = doc.new_object_id();
         let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![Object::Integer(0), Object::Integer(0), Object::Integer(300), Object::Integer(300)], "Resources" => dictionary! {"Font" => dictionary! {"F1" => font}}, "Contents" => content });
-        doc.objects.insert(pages, dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}.into());
+        doc.objects.insert(
+            pages,
+            dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}
+                .into(),
+        );
         let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages});
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
@@ -1776,10 +2341,17 @@ mod tests {
     fn upright_mapping_round_trips() {
         let r = [10.0, 20.0, 30.0, 25.0];
         for q in 0..4 {
-            assert_eq!(from_upright(to_upright(r, q, 300.0, 200.0), q, 300.0, 200.0), r, "quarter {q}");
+            assert_eq!(
+                from_upright(to_upright(r, q, 300.0, 200.0), q, 300.0, 200.0),
+                r,
+                "quarter {q}"
+            );
         }
         // A 90° page: the view's top-right corner is the upright top-left.
-        assert_eq!(to_upright([290.0, 0.0, 300.0, 10.0], 1, 300.0, 200.0), [0.0, 0.0, 10.0, 10.0]);
+        assert_eq!(
+            to_upright([290.0, 0.0, 300.0, 10.0], 1, 300.0, 200.0),
+            [0.0, 0.0, 10.0, 10.0]
+        );
     }
 
     #[test]
@@ -1796,9 +2368,20 @@ mod tests {
         assert_eq!(upper.find("İstanbul"), vec![0..8]);
         assert_eq!(upper.find("ırmak"), vec![8..13]);
         assert_eq!(upper.find("kış"), vec![13..16]);
-        assert_eq!(upper.find("istanbul ırmak kış"), vec![0..16], "a phrase across the words");
-        assert_eq!(upper.find_opts("ırmak", false, true), vec![8..13], "whole words");
-        assert!(upper.find_opts("istanbul", true, false).is_empty(), "case-sensitive search stays exact");
+        assert_eq!(
+            upper.find("istanbul ırmak kış"),
+            vec![0..16],
+            "a phrase across the words"
+        );
+        assert_eq!(
+            upper.find_opts("ırmak", false, true),
+            vec![8..13],
+            "whole words"
+        );
+        assert!(
+            upper.find_opts("istanbul", true, false).is_empty(),
+            "case-sensitive search stays exact"
+        );
         assert_eq!(upper.find_opts("İSTANBUL", true, false), vec![0..8]);
 
         let mut v = Vec::new();
@@ -1824,19 +2407,37 @@ mod tests {
             assert_eq!(text.find_opts(query, false, true), vec![0..6, 6..12]);
         }
         for query in ["σ", "ς", "Σ"] {
-            assert_eq!(text.find(query), vec![2..3, 5..6, 8..9, 11..12, 12..13, 13..14, 14..15]);
+            assert_eq!(
+                text.find(query),
+                vec![2..3, 5..6, 8..9, 11..12, 12..13, 13..14, 14..15]
+            );
             assert!(text.find_opts(query, false, true).is_empty());
         }
         assert_eq!(text.find_opts("κόσμος", true, false), vec![0..6]);
         assert_eq!(text.find_opts("ΚΌΣΜΟΣ", true, false), vec![6..12]);
         assert_eq!(text.find_opts("ς", true, false), vec![5..6, 13..14]);
-        assert_eq!(text.find_opts_limited("ς", false, false, 2), vec![2..3, 5..6]);
-        assert_eq!(text.line_rects(text.find("κόσμος")[1].clone()), text.line_rects(6..12));
+        assert_eq!(
+            text.find_opts_limited("ς", false, false, 2),
+            vec![2..3, 5..6]
+        );
+        assert_eq!(
+            text.line_rects(text.find("κόσμος")[1].clone()),
+            text.line_rects(6..12)
+        );
     }
 
     #[test]
     fn case_folding_keeps_one_character_per_character() {
-        for s in ["İSTANBUL", "ırmak", "Hello WORLD", "ÇAĞLAR", "Straße", "ΣΟΦΙΑ", "Σσς", "日本語"] {
+        for s in [
+            "İSTANBUL",
+            "ırmak",
+            "Hello WORLD",
+            "ÇAĞLAR",
+            "Straße",
+            "ΣΟΦΙΑ",
+            "Σσς",
+            "日本語",
+        ] {
             assert_eq!(fold_case(s).chars().count(), s.chars().count(), "{s}");
         }
         assert_eq!(fold_case("Hello WORLD"), "hello world");
@@ -1847,7 +2448,12 @@ mod tests {
 
     fn g(t: &str, x0: f32, y0: f32, x1: f32) -> TextGlyph {
         let rect = [x0, y0, x1, y0 + 10.0];
-        TextGlyph { text: t.into(), rect, quad: [[x0, y0], [x1, y0], [x1, rect[3]], [x0, rect[3]]], direction: [1.0, 0.0] }
+        TextGlyph {
+            text: t.into(),
+            rect,
+            quad: [[x0, y0], [x1, y0], [x1, rect[3]], [x0, rect[3]]],
+            direction: [1.0, 0.0],
+        }
     }
 
     #[test]
@@ -1855,13 +2461,28 @@ mod tests {
         // "Hello world" on line 1, "Next" on line 2.
         let mut v = Vec::new();
         for (i, c) in "Hello".chars().enumerate() {
-            v.push(g(&c.to_string(), 10.0 + i as f32 * 6.0, 10.0, 16.0 + i as f32 * 6.0));
+            v.push(g(
+                &c.to_string(),
+                10.0 + i as f32 * 6.0,
+                10.0,
+                16.0 + i as f32 * 6.0,
+            ));
         }
         for (i, c) in "world".chars().enumerate() {
-            v.push(g(&c.to_string(), 50.0 + i as f32 * 6.0, 10.0, 56.0 + i as f32 * 6.0));
+            v.push(g(
+                &c.to_string(),
+                50.0 + i as f32 * 6.0,
+                10.0,
+                56.0 + i as f32 * 6.0,
+            ));
         }
         for (i, c) in "Next".chars().enumerate() {
-            v.push(g(&c.to_string(), 10.0 + i as f32 * 6.0, 30.0, 16.0 + i as f32 * 6.0));
+            v.push(g(
+                &c.to_string(),
+                10.0 + i as f32 * 6.0,
+                30.0,
+                16.0 + i as f32 * 6.0,
+            ));
         }
         let t = layout(v);
         assert_eq!(t.plain_text(), "Hello world\nNext");
@@ -1887,8 +2508,16 @@ mod tests {
             let mut space_before = vec![false; 10];
             space_before[5] = !line_break;
             let line_of = (0..10).map(|i| u32::from(line_break && i >= 5)).collect();
-            let page = PageText { glyphs: glyphs.clone(), line_of, space_before };
-            let plain = if line_break { "quick\nbrown" } else { "quick brown" };
+            let page = PageText {
+                glyphs: glyphs.clone(),
+                line_of,
+                space_before,
+            };
+            let plain = if line_break {
+                "quick\nbrown"
+            } else {
+                "quick brown"
+            };
             assert_eq!(page.plain_text(), plain);
             assert_eq!(page.find("quick "), vec![0..5]);
             let span = |r: std::ops::Range<usize>| Vec::from([r]);
@@ -1912,10 +2541,18 @@ mod tests {
         v.push(g(" ", 52.0, 10.0, 58.0));
         word(&mut v, "brown", 58.0, 10.0, 6.0);
         let n = v.len();
-        let t = PageText { glyphs: v, line_of: vec![0; n], space_before: vec![false; n] };
+        let t = PageText {
+            glyphs: v,
+            line_of: vec![0; n],
+            space_before: vec![false; n],
+        };
         assert_eq!(t.plain_text(), "quick  brown");
         assert_eq!(t.find("quick brown"), vec![0..12]);
-        assert_eq!(t.find("quick  brown"), vec![0..12], "the query's own run of spaces is collapsed too");
+        assert_eq!(
+            t.find("quick  brown"),
+            vec![0..12],
+            "the query's own run of spaces is collapsed too"
+        );
         assert_eq!(t.find("quick\tbrown"), vec![0..12]);
         assert_eq!(t.find("quick"), vec![0..5]);
         assert_eq!(t.find("brown"), vec![7..12]);
@@ -1928,8 +2565,14 @@ mod tests {
         let mut glyphs = Vec::new();
         word(&mut glyphs, "oooo", 10.0, 10.0, 6.0);
         let text = layout(glyphs);
-        assert_eq!(text.find_opts_limited("o", false, false, 2), vec![0..1, 1..2]);
-        assert_eq!(text.find_opts_limited("o", false, false, 10), vec![0..1, 1..2, 2..3, 3..4]);
+        assert_eq!(
+            text.find_opts_limited("o", false, false, 2),
+            vec![0..1, 1..2]
+        );
+        assert_eq!(
+            text.find_opts_limited("o", false, false, 10),
+            vec![0..1, 1..2, 2..3, 3..4]
+        );
     }
 
     fn word(v: &mut Vec<TextGlyph>, s: &str, x: f32, y: f32, advance: f32) {
@@ -1949,7 +2592,12 @@ mod tests {
         }
         assert_eq!(layout(v).plain_text(), "Bold");
         // A zero-width combining mark redrawn on itself is dropped too.
-        let v = vec![g("e", 10.0, 10.0, 16.0), g("\u{301}", 13.0, 10.0, 13.0), g("e", 10.0, 10.0, 16.0), g("\u{301}", 13.0, 10.0, 13.0)];
+        let v = vec![
+            g("e", 10.0, 10.0, 16.0),
+            g("\u{301}", 13.0, 10.0, 13.0),
+            g("e", 10.0, 10.0, 16.0),
+            g("\u{301}", 13.0, 10.0, 13.0),
+        ];
         assert_eq!(layout(v).plain_text(), "e\u{301}");
     }
 
@@ -1966,10 +2614,26 @@ mod tests {
                 v.push(g(&c.to_string(), x, 10.0, x + w));
                 x += w;
             }
-            assert_eq!(layout(v.clone()).plain_text(), "Alle", "at {scale} horizontal scaling");
+            assert_eq!(
+                layout(v.clone()).plain_text(),
+                "Alle",
+                "at {scale} horizontal scaling"
+            );
             // Each letter redrawn a fifth of a point to the right is still one letter.
-            let bold: Vec<TextGlyph> = v.iter().flat_map(|c| [c.clone(), g(&c.text, c.rect[0] + 0.2, 10.0, c.rect[2] + 0.2)]).collect();
-            assert_eq!(layout(bold).plain_text(), "Alle", "fake bold at {scale} horizontal scaling");
+            let bold: Vec<TextGlyph> = v
+                .iter()
+                .flat_map(|c| {
+                    [
+                        c.clone(),
+                        g(&c.text, c.rect[0] + 0.2, 10.0, c.rect[2] + 0.2),
+                    ]
+                })
+                .collect();
+            assert_eq!(
+                layout(bold).plain_text(),
+                "Alle",
+                "fake bold at {scale} horizontal scaling"
+            );
         }
     }
 
@@ -2048,12 +2712,20 @@ mod tests {
     fn text_page(ops: &str) -> Pdf {
         use lopdf::{Document, Object, Stream, dictionary};
         let mut doc = Document::with_version("1.7");
-        let helvetica = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" });
-        let courier = doc.add_object(dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Courier" });
+        let helvetica = doc.add_object(
+            dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Helvetica" },
+        );
+        let courier = doc.add_object(
+            dictionary! { "Type" => "Font", "Subtype" => "Type1", "BaseFont" => "Courier" },
+        );
         let content = doc.add_object(Stream::new(dictionary! {}, ops.as_bytes().to_vec()));
         let pages = doc.new_object_id();
         let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![Object::Integer(0), Object::Integer(0), Object::Integer(400), Object::Integer(400)], "Resources" => dictionary! {"Font" => dictionary! {"F1" => helvetica, "F2" => courier}}, "Contents" => content });
-        doc.objects.insert(pages, dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}.into());
+        doc.objects.insert(
+            pages,
+            dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}
+                .into(),
+        );
         let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages});
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
@@ -2064,11 +2736,16 @@ mod tests {
     /// `body` shown in /F`font` at `size` with its baseline turned `degrees` counter-clockwise.
     fn turned(degrees: f64, font: u8, size: f64, x: f64, y: f64, body: &str) -> String {
         let (s, c) = degrees.to_radians().sin_cos();
-        format!("BT /F{font} {size} Tf {c:.6} {s:.6} {:.6} {c:.6} {x:.4} {y:.4} Tm {body} ET\n", -s)
+        format!(
+            "BT /F{font} {size} Tf {c:.6} {s:.6} {:.6} {c:.6} {x:.4} {y:.4} Tm {body} ET\n",
+            -s
+        )
     }
 
     fn page_text(ops: &str) -> String {
-        extract_page(&text_page(ops), 0, &InterpreterSettings::default()).unwrap().plain_text()
+        extract_page(&text_page(ops), 0, &InterpreterSettings::default())
+            .unwrap()
+            .plain_text()
     }
 
     #[test]
@@ -2093,7 +2770,13 @@ mod tests {
     fn large_backward_tj_adjustment_stays_in_one_run() {
         let text = page_glyphs("BT /F1 12 Tf 50 Tz 1 0 0 1 100 200 Tm [(wor) 3000 (ld)] TJ ET");
         assert_eq!(text.plain_text(), "ld wor");
-        assert_eq!(text.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(), ["l", "d", "w", "o", "r"]);
+        assert_eq!(
+            text.glyphs
+                .iter()
+                .map(|g| g.text.as_str())
+                .collect::<Vec<_>>(),
+            ["l", "d", "w", "o", "r"]
+        );
         assert!(text.line_of.iter().all(|line| *line == 0));
         assert_eq!(text.space_before, [false, false, true, false, false]);
     }
@@ -2140,9 +2823,27 @@ mod tests {
         // line drawn first. Turned away from the quarter turns, the lines' boxes overlap.
         for degrees in [12.0, 30.0, 37.0, 45.0, 60.0, 135.0, 200.0, 300.0, -45.0] {
             let (s, c) = f64::to_radians(degrees).sin_cos();
-            let second = turned(degrees, 1, 12.0, 200.0 + s * 13.0, 200.0 - c * 13.0, "[(Second) -400 (line) -400 (here)] TJ");
-            let first = turned(degrees, 1, 12.0, 200.0, 200.0, "[(First) -400 (line) -400 (text)] TJ");
-            assert_eq!(page_text(&(second + &first)), "First line text\nSecond line here", "{degrees}°");
+            let second = turned(
+                degrees,
+                1,
+                12.0,
+                200.0 + s * 13.0,
+                200.0 - c * 13.0,
+                "[(Second) -400 (line) -400 (here)] TJ",
+            );
+            let first = turned(
+                degrees,
+                1,
+                12.0,
+                200.0,
+                200.0,
+                "[(First) -400 (line) -400 (text)] TJ",
+            );
+            assert_eq!(
+                page_text(&(second + &first)),
+                "First line text\nSecond line here",
+                "{degrees}°"
+            );
         }
     }
 
@@ -2154,10 +2855,31 @@ mod tests {
         let (s, c) = f64::to_radians(30.0).sin_cos();
         for (k, (a, b)) in up.chars().zip(down.chars()).enumerate() {
             let along = 7.2 * k as f64;
-            ops += &turned(30.0, 2, 12.0, 100.0 + c * along, 150.0 + s * along, &format!("({a}) Tj"));
-            ops += &turned(-30.0, 2, 12.0, 100.0 + c * along, 250.0 - s * along, &format!("({b}) Tj"));
+            ops += &turned(
+                30.0,
+                2,
+                12.0,
+                100.0 + c * along,
+                150.0 + s * along,
+                &format!("({a}) Tj"),
+            );
+            ops += &turned(
+                -30.0,
+                2,
+                12.0,
+                100.0 + c * along,
+                250.0 - s * along,
+                &format!("({b}) Tj"),
+            );
         }
-        ops += &turned(-30.0, 2, 12.0, 100.0 + c * 7.2 * 17.0, 250.0 - s * 7.2 * 17.0, "(w) Tj");
+        ops += &turned(
+            -30.0,
+            2,
+            12.0,
+            100.0 + c * 7.2 * 17.0,
+            250.0 - s * 7.2 * 17.0,
+            "(w) Tj",
+        );
         assert_eq!(page_text(&ops), "Downward words now\nUpward words here");
     }
 
@@ -2171,13 +2893,29 @@ mod tests {
             for (k, ch) in text.chars().enumerate() {
                 let a = from + step * k as f64;
                 let (s, c) = a.to_radians().sin_cos();
-                ops += &turned(if clockwise { a - 90.0 } else { a + 90.0 }, 2, 12.0, 200.0 + radius * c, 200.0 + radius * s, &format!("({ch}) Tj"));
+                ops += &turned(
+                    if clockwise { a - 90.0 } else { a + 90.0 },
+                    2,
+                    12.0,
+                    200.0 + radius * c,
+                    200.0 + radius * s,
+                    &format!("({ch}) Tj"),
+                );
             }
             ops
         };
-        assert_eq!(page_text(&arc("CURVED STAMP TEXT", 150.0, true, 90.0)), "CURVED STAMP TEXT");
-        assert_eq!(page_text(&arc("BOTTOM ARC WORDS", 220.0, false, 90.0)), "BOTTOM ARC WORDS");
-        assert_eq!(page_text(&arc("ROUND SEAL OF THE COMPANY LIMITED", 180.0, true, 50.0)), "ROUND SEAL OF THE COMPANY LIMITED");
+        assert_eq!(
+            page_text(&arc("CURVED STAMP TEXT", 150.0, true, 90.0)),
+            "CURVED STAMP TEXT"
+        );
+        assert_eq!(
+            page_text(&arc("BOTTOM ARC WORDS", 220.0, false, 90.0)),
+            "BOTTOM ARC WORDS"
+        );
+        assert_eq!(
+            page_text(&arc("ROUND SEAL OF THE COMPANY LIMITED", 180.0, true, 50.0)),
+            "ROUND SEAL OF THE COMPANY LIMITED"
+        );
     }
 
     #[test]
@@ -2194,37 +2932,74 @@ mod tests {
         let ops = "BT /F1 14 Tf 1 0 0 1 50 360 Tm (Heading above) Tj ET\n".to_string()
             + &turned(30.0, 1, 12.0, 80.0, 250.0, "(Turned label) Tj")
             + "BT /F1 12 Tf 1 0 0 1 50 150 Tm (Caption below) Tj ET\n";
-        assert_eq!(page_text(&ops), "Heading above\nTurned label\nCaption below");
+        assert_eq!(
+            page_text(&ops),
+            "Heading above\nTurned label\nCaption below"
+        );
     }
 
     #[test]
     fn turned_glyphs_keep_their_shape_and_direction() {
         // 30° counter-clockwise on the page is 30° up from the x axis in view space (y down).
-        let pdf = text_page(&(turned(30.0, 1, 20.0, 100.0, 100.0, "(Ab) Tj") + "BT /F1 20 Tf 1 0 0.5 1 100 300 Tm (Ab) Tj ET"));
+        let pdf = text_page(
+            &(turned(30.0, 1, 20.0, 100.0, 100.0, "(Ab) Tj")
+                + "BT /F1 20 Tf 1 0 0.5 1 100 300 Tm (Ab) Tj ET"),
+        );
         let text = extract_page(&pdf, 0, &InterpreterSettings::default()).unwrap();
         assert_eq!(text.plain_text(), "Ab\nAb");
         for g in &text.glyphs {
-            assert!(g.quad.iter().flatten().chain(&g.direction).chain(&g.rect).all(|c| c.is_finite()), "{g:?}");
-            let bounds = g.quad.iter().fold([f32::INFINITY, f32::INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY], |r, p| {
-                [r[0].min(p[0]), r[1].min(p[1]), r[2].max(p[0]), r[3].max(p[1])]
-            });
+            assert!(
+                g.quad
+                    .iter()
+                    .flatten()
+                    .chain(&g.direction)
+                    .chain(&g.rect)
+                    .all(|c| c.is_finite()),
+                "{g:?}"
+            );
+            let bounds = g.quad.iter().fold(
+                [
+                    f32::INFINITY,
+                    f32::INFINITY,
+                    f32::NEG_INFINITY,
+                    f32::NEG_INFINITY,
+                ],
+                |r, p| {
+                    [
+                        r[0].min(p[0]),
+                        r[1].min(p[1]),
+                        r[2].max(p[0]),
+                        r[3].max(p[1]),
+                    ]
+                },
+            );
             assert_eq!(g.rect, bounds, "the box bounds the quad");
             let [x, y] = [g.quad[1][0] - g.quad[0][0], g.quad[1][1] - g.quad[0][1]];
             assert!(
-                (x * g.direction[1] - y * g.direction[0]).abs() < 1e-3 && x * g.direction[0] + y * g.direction[1] > 0.0,
+                (x * g.direction[1] - y * g.direction[0]).abs() < 1e-3
+                    && x * g.direction[0] + y * g.direction[1] > 0.0,
                 "quad[0] → quad[1] runs along the direction: {g:?}"
             );
         }
         let (skewed, turned) = (&text.glyphs[0], &text.glyphs[2]);
-        assert!((turned.direction[0] - 30f32.to_radians().cos()).abs() < 1e-6 && (turned.direction[1] + 0.5).abs() < 1e-6, "{turned:?}");
+        assert!(
+            (turned.direction[0] - 30f32.to_radians().cos()).abs() < 1e-6
+                && (turned.direction[1] + 0.5).abs() < 1e-6,
+            "{turned:?}"
+        );
         assert_eq!(skewed.direction, [1.0, 0.0]);
         let slant = skewed.quad[3][0] - skewed.quad[0][0];
-        assert!((slant - 10.0).abs() < 1e-3, "the skewed glyph's upright edge leans by half its 20 pt height: {skewed:?}");
+        assert!(
+            (slant - 10.0).abs() < 1e-3,
+            "the skewed glyph's upright edge leans by half its 20 pt height: {skewed:?}"
+        );
     }
 
     /// The operators drawing each `(text, text matrix)` run in Helvetica 12 pt, one text object per run.
     fn run_ops(runs: &[(&str, &str)]) -> String {
-        runs.iter().map(|(text, tm)| format!("BT /F1 12 Tf {tm} Tm ({text}) Tj ET\n")).collect()
+        runs.iter()
+            .map(|(text, tm)| format!("BT /F1 12 Tf {tm} Tm ({text}) Tj ET\n"))
+            .collect()
     }
 
     fn page_glyphs(ops: &str) -> PageText {
@@ -2233,7 +3008,13 @@ mod tests {
 
     fn assert_single_word(text: PageText) {
         assert_eq!(text.plain_text(), "world");
-        assert_eq!(text.glyphs.iter().map(|g| g.text.as_str()).collect::<String>(), "world");
+        assert_eq!(
+            text.glyphs
+                .iter()
+                .map(|g| g.text.as_str())
+                .collect::<String>(),
+            "world"
+        );
         assert_eq!(text.line_of, [0; 5]);
         assert_eq!(text.space_before, [false; 5]);
     }
@@ -2250,7 +3031,10 @@ mod tests {
         let (alpha, delta) = ("Alpha beta gamma", "Delta epsilon zeta");
         for angle in [0.0, 37.0] {
             for (along, down) in [(0.0, 0.0), (40.0, -3.0), (0.0, -14.0)] {
-                let text = page_glyphs(&run_ops(&[(alpha, &tm(angle, 0.0, 0.0)), (delta, &tm(angle, along, down))]));
+                let text = page_glyphs(&run_ops(&[
+                    (alpha, &tm(angle, 0.0, 0.0)),
+                    (delta, &tm(angle, along, down)),
+                ]));
                 for run in [alpha, delta] {
                     assert!(
                         !text.find(run).is_empty(),
@@ -2266,7 +3050,10 @@ mod tests {
     fn a_run_drawn_over_a_line_leaves_the_line_whole() {
         // "XX" is drawn over the middle of "beta" after the line, so it is a run of its own that
         // overlaps the line. The line must still come out as one whole line.
-        let text = page_glyphs(&run_ops(&[("Alpha beta gamma", "1 0 0 1 100 200"), ("XX", "1 0 0 1 136 200")]));
+        let text = page_glyphs(&run_ops(&[
+            ("Alpha beta gamma", "1 0 0 1 100 200"),
+            ("XX", "1 0 0 1 136 200"),
+        ]));
         let flat = text.plain_text();
         assert!(flat.contains("Alpha beta gamma"), "{flat:?}");
         assert!(flat.contains("XX") && !flat.contains('\n'), "{flat:?}");
@@ -2281,7 +3068,10 @@ mod tests {
         v.push(g("Z", 200.0, 10.0, 206.0));
         v.push(g("\u{301}", 16.0, 10.0, 16.0));
         let t = layout(v);
-        assert_eq!(t.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(), ["a", "b", "\u{301}", "Z"]);
+        assert_eq!(
+            t.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(),
+            ["a", "b", "\u{301}", "Z"]
+        );
     }
 
     #[test]
@@ -2299,7 +3089,9 @@ mod tests {
     fn many_combining_marks_stay_with_their_letters() {
         // 400 letters on one line, then a zero-width mark at the start of each one, drawn after the whole line:
         // the marks form one run of their own, and each goes back next to its letter, in order.
-        let letters: Vec<String> = (0..400).map(|i| char::from(b'a' + (i % 26) as u8).to_string()).collect();
+        let letters: Vec<String> = (0..400)
+            .map(|i| char::from(b'a' + (i % 26) as u8).to_string())
+            .collect();
         let mut v = Vec::new();
         for (i, c) in letters.iter().enumerate() {
             let x = 10.0 + i as f32 * 6.0;
@@ -2310,8 +3102,14 @@ mod tests {
             v.push(g("\u{301}", x, 10.0, x));
         }
         let t = layout(v);
-        let expected: Vec<&str> = letters.iter().flat_map(|c| [c.as_str(), "\u{301}"]).collect();
-        assert_eq!(t.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(), expected);
+        let expected: Vec<&str> = letters
+            .iter()
+            .flat_map(|c| [c.as_str(), "\u{301}"])
+            .collect();
+        assert_eq!(
+            t.glyphs.iter().map(|g| g.text.as_str()).collect::<Vec<_>>(),
+            expected
+        );
         assert!(t.line_of.iter().all(|line| *line == 0));
     }
 
@@ -2321,7 +3119,9 @@ mod tests {
     fn overprinted_runs(count: usize, separated: bool) -> Vec<TextGlyph> {
         let mut v = Vec::new();
         for k in 0..count {
-            let text: String = (0..3).map(|i| char::from_u32(0x4E00 + (3 * k + i) as u32).unwrap()).collect();
+            let text: String = (0..3)
+                .map(|i| char::from_u32(0x4E00 + (3 * k + i) as u32).unwrap())
+                .collect();
             word(&mut v, &text, 10.0 + (k * 7 % 31) as f32 * 0.1, 10.0, 6.0);
             if separated {
                 let far = char::from_u32(0x2500 + k as u32).unwrap().to_string();
@@ -2338,16 +3138,38 @@ mod tests {
         let v = overprinted_runs(150, false);
         let refs: Vec<&TextGlyph> = v.iter().collect();
         let height = |i: usize| (refs[i].rect[3] - refs[i].rect[1]).max(0.1);
-        let mut sc = Scratch { text: (0..150).map(|k| Run { start: 3 * k, end: 3 * k + 3 }).collect(), ..Default::default() };
-        assert!(collide(&refs, &height, 10.0, &mut sc), "more pairs than the budget");
+        let mut sc = Scratch {
+            text: (0..150)
+                .map(|k| Run {
+                    start: 3 * k,
+                    end: 3 * k + 3,
+                })
+                .collect(),
+            ..Default::default()
+        };
+        assert!(
+            collide(&refs, &height, 10.0, &mut sc),
+            "more pairs than the budget"
+        );
         assert_eq!(sc.units.len(), 1, "one component");
 
         let v = overprinted_runs(150, true);
-        let runs: Vec<String> = (0..150).map(|k| v[4 * k..4 * k + 3].iter().map(|g| g.text.as_str()).collect()).collect();
+        let runs: Vec<String> = (0..150)
+            .map(|k| {
+                v[4 * k..4 * k + 3]
+                    .iter()
+                    .map(|g| g.text.as_str())
+                    .collect()
+            })
+            .collect();
         let t = layout(v);
         assert_eq!(t.glyphs.len(), 600);
         for run in &runs {
-            assert!(!t.find(run).is_empty(), "{run:?} whole in {:?}", t.plain_text());
+            assert!(
+                !t.find(run).is_empty(),
+                "{run:?} whole in {:?}",
+                t.plain_text()
+            );
         }
     }
 
@@ -2359,14 +3181,25 @@ mod tests {
         let mut v = Vec::new();
         let mut rows = Vec::new();
         for k in 0..60 {
-            let text: String = (0..3).map(|i| char::from_u32(0x0400 + (3 * k + i) as u32).unwrap()).collect();
+            let text: String = (0..3)
+                .map(|i| char::from_u32(0x0400 + (3 * k + i) as u32).unwrap())
+                .collect();
             word(&mut v, &text, 10.0 + 2.0 * k as f32, 10.0, 6.0);
-            v.push(g(&char::from_u32(0x0500 + k as u32).unwrap().to_string(), 500.0, 10.0, 506.0));
+            v.push(g(
+                &char::from_u32(0x0500 + k as u32).unwrap().to_string(),
+                500.0,
+                10.0,
+                506.0,
+            ));
             rows.push(text);
         }
         let t = layout(v);
         let expected: String = rows.join(" ");
-        assert!(t.plain_text().starts_with(&expected), "{:?}", t.plain_text());
+        assert!(
+            t.plain_text().starts_with(&expected),
+            "{:?}",
+            t.plain_text()
+        );
     }
 
     #[test]
@@ -2375,7 +3208,9 @@ mod tests {
         let mut v = Vec::new();
         let mut words = Vec::new();
         for w in 0..1500 {
-            let text: String = (0..5).map(|i| char::from(b'a' + ((w * 7 + i * 3) % 26) as u8)).collect();
+            let text: String = (0..5)
+                .map(|i| char::from(b'a' + ((w * 7 + i * 3) % 26) as u8))
+                .collect();
             word(&mut v, &text, 10.0 + w as f32 * 36.0, 10.0, 6.0);
             words.push(text);
         }
@@ -2407,16 +3242,30 @@ mod tests {
         }
         abc(&mut v, 39);
         far(&mut v);
-        assert_eq!(layout(v.clone()).glyphs.iter().filter(|g| g.text == "a").count(), 40);
+        assert_eq!(
+            layout(v.clone())
+                .glyphs
+                .iter()
+                .filter(|g| g.text == "a")
+                .count(),
+            40
+        );
         abc(&mut v, 0);
-        assert_eq!(layout(v).glyphs.iter().filter(|g| g.text == "a").count(), 41);
+        assert_eq!(
+            layout(v).glyphs.iter().filter(|g| g.text == "a").count(),
+            41
+        );
     }
 
     #[test]
     fn a_run_redrawn_at_the_same_place_is_printed_once() {
         // "Hello world" drawn again 0.1 pt away (doubled text) prints once. The same words far
         // below are a separate line, as they are not a redraw.
-        let ops = run_ops(&[("Hello world", "1 0 0 1 100 200"), ("Hello world", "1 0 0 1 100.1 200.1"), ("Hello world", "1 0 0 1 100 100")]);
+        let ops = run_ops(&[
+            ("Hello world", "1 0 0 1 100 200"),
+            ("Hello world", "1 0 0 1 100.1 200.1"),
+            ("Hello world", "1 0 0 1 100 100"),
+        ]);
         assert_eq!(page_text(&ops), "Hello world\nHello world");
     }
 
@@ -2432,7 +3281,12 @@ mod tests {
         v.push(g("Z", 300.0, 10.0, 306.0));
         word(&mut v, "Hello", 10.6, 10.0, 9.0);
         let t = layout(v);
-        assert_eq!(t.glyphs.iter().filter(|g| g.text == "H").count(), 2, "{:?}", t.plain_text());
+        assert_eq!(
+            t.glyphs.iter().filter(|g| g.text == "H").count(),
+            2,
+            "{:?}",
+            t.plain_text()
+        );
         assert_eq!(t.glyphs.len(), 12);
     }
 
@@ -2458,7 +3312,10 @@ mod tests {
     /// reading order takes one column, then the other.
     fn table() -> PageText {
         let mut v = Vec::new();
-        for (row, (name, qty)) in [("Name", "Qty"), ("Apple", "12"), ("Pear", "7")].into_iter().enumerate() {
+        for (row, (name, qty)) in [("Name", "Qty"), ("Apple", "12"), ("Pear", "7")]
+            .into_iter()
+            .enumerate()
+        {
             let y = 10.0 + row as f32 * 14.0;
             word(&mut v, name, 10.0, y, 6.0);
             word(&mut v, qty, 100.0, y, 6.0);
@@ -2470,7 +3327,11 @@ mod tests {
     #[test]
     fn a_column_selection_takes_one_table_column() {
         let t = table();
-        assert_eq!(t.plain_text(), "Name\nApple\nPear\nQty\n12\n7", "reading order is column by column");
+        assert_eq!(
+            t.plain_text(),
+            "Name\nApple\nPear\nQty\n12\n7",
+            "reading order is column by column"
+        );
         let qty = t.glyphs_in([95.0, 0.0, 130.0, 60.0]);
         assert_eq!(t.column_text(&qty), "Qty\n12\n7");
         assert_eq!(t.glyph_rects(&qty).len(), 3, "one highlight per row");
@@ -2494,13 +3355,21 @@ mod tests {
     #[test]
     fn an_empty_or_degenerate_column_selection_is_empty() {
         let t = table();
-        for r in [[300.0, 300.0, 400.0, 400.0], [f32::NAN, 0.0, 200.0, 60.0], [50.0, 50.0, 50.0, 50.0]] {
+        for r in [
+            [300.0, 300.0, 400.0, 400.0],
+            [f32::NAN, 0.0, 200.0, 60.0],
+            [50.0, 50.0, 50.0, 50.0],
+        ] {
             let none = t.glyphs_in(r);
             assert!(none.is_empty(), "{r:?}");
             assert_eq!(t.column_text(&none), "");
             assert!(t.glyph_rects(&none).is_empty());
         }
-        assert_eq!(PageText::default().column_text(&[0, 7, usize::MAX]), "", "indices past the text are ignored");
+        assert_eq!(
+            PageText::default().column_text(&[0, 7, usize::MAX]),
+            "",
+            "indices past the text are ignored"
+        );
     }
 
     /// Right-to-left rows put their cells right to left.
@@ -2527,7 +3396,12 @@ mod tests {
         };
         let t = PageText {
             // Right column 日本 first, then the left column 語文, each top to bottom.
-            glyphs: vec![cell("日", 40.0, 10.0), cell("本", 40.0, 20.0), cell("語", 20.0, 10.0), cell("文", 20.0, 20.0)],
+            glyphs: vec![
+                cell("日", 40.0, 10.0),
+                cell("本", 40.0, 20.0),
+                cell("語", 20.0, 10.0),
+                cell("文", 20.0, 20.0),
+            ],
             line_of: vec![0, 0, 1, 1],
             space_before: vec![false; 4],
         };
@@ -2540,29 +3414,43 @@ mod tests {
     fn ocr_layer_text(flags: i64, ascii_to_unicode: bool) -> String {
         use lopdf::{Document, Object, Stream, dictionary};
         let mut doc = Document::with_version("1.7");
-        let program = doc.add_object(Stream::new(dictionary! {}, include_bytes!("../../../assets/pdfcraft/fonts/Inter-Regular.ttf").to_vec()));
+        let program = doc.add_object(Stream::new(
+            dictionary! {},
+            include_bytes!("../../../assets/pdfcraft/fonts/Inter-Regular.ttf").to_vec(),
+        ));
         let descriptor =
             doc.add_object(dictionary! { "Type" => "FontDescriptor", "FontName" => "Inter-Regular", "Flags" => flags, "FontFile2" => program });
         let mut font = dictionary! { "Type" => "Font", "Subtype" => "TrueType", "BaseFont" => "Inter-Regular", "FontDescriptor" => descriptor };
         if ascii_to_unicode {
             let cmap = b"/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CMapName /Ascii def /CMapType 2 def 1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfrange <20> <7E> <0020> endbfrange endcmap CMapName currentdict /CMap defineresource pop end end";
-            font.set("ToUnicode", doc.add_object(Stream::new(dictionary! {}, cmap.to_vec())));
+            font.set(
+                "ToUnicode",
+                doc.add_object(Stream::new(dictionary! {}, cmap.to_vec())),
+            );
         }
         let font = doc.add_object(font);
         // WinAnsi bytes: "Rückfragen für Überhitzungsschutz: können, weiß, Café".
         let mut ops = b"BT /F1 14 Tf 1 0 0 1 20 200 Tm (".to_vec();
-        ops.extend_from_slice(b"R\xfcckfragen f\xfcr \xdcberhitzungsschutz: k\xf6nnen, wei\xdf, Caf\xe9");
+        ops.extend_from_slice(
+            b"R\xfcckfragen f\xfcr \xdcberhitzungsschutz: k\xf6nnen, wei\xdf, Caf\xe9",
+        );
         ops.extend_from_slice(b") Tj ET");
         let content = doc.add_object(Stream::new(dictionary! {}, ops));
         let pages = doc.new_object_id();
         let page = doc.add_object(dictionary! { "Type" => "Page", "Parent" => pages, "MediaBox" => vec![Object::Integer(0), Object::Integer(0), Object::Integer(400), Object::Integer(400)], "Resources" => dictionary! {"Font" => dictionary! {"F1" => font}}, "Contents" => content });
-        doc.objects.insert(pages, dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}.into());
+        doc.objects.insert(
+            pages,
+            dictionary! {"Type" => "Pages", "Kids" => vec![Object::Reference(page)], "Count" => 1}
+                .into(),
+        );
         let catalog = doc.add_object(dictionary! {"Type" => "Catalog", "Pages" => pages});
         doc.trailer.set("Root", catalog);
         let mut bytes = Vec::new();
         doc.save_to(&mut bytes).unwrap();
         let pdf = Pdf::new(std::sync::Arc::new(bytes)).unwrap();
-        extract_page(&pdf, 0, &InterpreterSettings::default()).unwrap().plain_text()
+        extract_page(&pdf, 0, &InterpreterSettings::default())
+            .unwrap()
+            .plain_text()
     }
 
     #[test]
@@ -2570,7 +3458,15 @@ mod tests {
         // Café: 0xE9 is /Oslash in StandardEncoding, so reading the codes as Standard first and
         // WinAnsi only for the gaps would still give "CafØ".
         let expected = "Rückfragen für Überhitzungsschutz: können, weiß, Café";
-        assert_eq!(ocr_layer_text(4, false), expected, "symbolic, no /ToUnicode");
-        assert_eq!(ocr_layer_text(32, true), expected, "nonsymbolic, /ToUnicode for ASCII only");
+        assert_eq!(
+            ocr_layer_text(4, false),
+            expected,
+            "symbolic, no /ToUnicode"
+        );
+        assert_eq!(
+            ocr_layer_text(32, true),
+            expected,
+            "nonsymbolic, /ToUnicode for ASCII only"
+        );
     }
 }

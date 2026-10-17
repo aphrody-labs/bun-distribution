@@ -288,7 +288,12 @@ fn extract_electron_version(bytes: &[u8], indicators: &mut Vec<String>) -> Optio
 
 fn extract_chromium_version(bytes: &[u8], indicators: &mut Vec<String>) -> Option<String> {
     // `Chrome/M.m.b.p` (user-agent style).
-    extract_first(bytes, r"Chrome/(\d+\.\d+\.\d+\.\d+)", "Chromium version", indicators)
+    extract_first(
+        bytes,
+        r"Chrome/(\d+\.\d+\.\d+\.\d+)",
+        "Chromium version",
+        indicators,
+    )
 }
 
 fn extract_node_version(bytes: &[u8], indicators: &mut Vec<String>) -> Option<String> {
@@ -306,8 +311,11 @@ fn extract_node_version(bytes: &[u8], indicators: &mut Vec<String>) -> Option<St
 // ---------------------------------------------------------------------------
 
 fn detect_v8_snapshot(bytes: &[u8], indicators: &mut Vec<String>) -> bool {
-    let needles: &[&[u8]] =
-        &[b"browser_v8_context_snapshot", b"v8_context_snapshot", b"snapshot_blob"];
+    let needles: &[&[u8]] = &[
+        b"browser_v8_context_snapshot",
+        b"v8_context_snapshot",
+        b"snapshot_blob",
+    ];
     let mut found = false;
     for needle in needles {
         if memmem::find(bytes, needle).is_some() {
@@ -322,8 +330,12 @@ fn detect_v8_snapshot(bytes: &[u8], indicators: &mut Vec<String>) -> bool {
 }
 
 fn detect_v8_code_cache(bytes: &[u8], indicators: &mut Vec<String>) -> bool {
-    let needles: &[&[u8]] =
-        &[b"v8-compile-cache", b"cachedDataRejected", b"produceCachedData", b"bytenode"];
+    let needles: &[&[u8]] = &[
+        b"v8-compile-cache",
+        b"cachedDataRejected",
+        b"produceCachedData",
+        b"bytenode",
+    ];
     let mut found = false;
     for needle in needles {
         if memmem::find(bytes, needle).is_some() {
@@ -461,7 +473,11 @@ mod tests {
         let r = analyze_electron(buf);
         assert!(r.run_as_node, "literal alone sets run_as_node");
         assert!(!r.fuse_wire_found);
-        assert!(r.indicators.iter().any(|s| s.contains("ELECTRON_RUN_AS_NODE")));
+        assert!(
+            r.indicators
+                .iter()
+                .any(|s| s.contains("ELECTRON_RUN_AS_NODE"))
+        );
     }
 
     #[test]

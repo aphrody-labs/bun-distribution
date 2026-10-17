@@ -39,7 +39,10 @@
 use super::{cfa_from_exif, white_from_data};
 use crate::tiffraw::{Packing, read_image};
 use crate::unpack::unpack_msb;
-use crate::{BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect, Result};
+use crate::{
+    BlackLevel, Cfa, ColorData, Mode, OpcodeLists, RawData, RawError, RawFormat, RawImage, Rect,
+    Result,
+};
 use lightcraft_geom::Orientation;
 use lightcraft_tiff::image::chunk_bytes;
 use lightcraft_tiff::makernote::MakerNote;
@@ -60,7 +63,11 @@ const CROP: [u16; 4] = [0x0612, 0x0613, 0x0614, 0x0615];
 
 /// The Olympus maker note.
 pub(crate) fn maker_note(bytes: &[u8], tiff: &Tiff) -> Option<MakerNote> {
-    let make = tiff.find(t::MAKE).and_then(|e| e.value.as_str()).unwrap_or_default().to_string();
+    let make = tiff
+        .find(t::MAKE)
+        .and_then(|e| e.value.as_str())
+        .unwrap_or_default()
+        .to_string();
     let e = tiff.exif().and_then(|e| e.get(t::MAKER_NOTE))?;
     makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)
 }
@@ -73,8 +80,15 @@ pub(crate) fn sub_ifd(bytes: &[u8], mn: &MakerNote, tag: u16) -> Option<Ifd> {
         Value::Undefined(_) | Value::Byte(_) => e.offset,
         _ => mn.base.checked_add(mn.ifd.u64(tag)?)?,
     };
-    let opts = lightcraft_tiff::ParseOptions { max_ifds: 4, max_depth: 1, follow_children: false, ..Default::default() };
-    lightcraft_tiff::parse_ifd_at(bytes, at, mn.order, mn.base, false, &opts).ok().map(|(i, _)| i)
+    let opts = lightcraft_tiff::ParseOptions {
+        max_ifds: 4,
+        max_depth: 1,
+        follow_children: false,
+        ..Default::default()
+    };
+    lightcraft_tiff::parse_ifd_at(bytes, at, mn.order, mn.base, false, &opts)
+        .ok()
+        .map(|(i, _)| i)
 }
 
 /// Black level of a body without ImageProcessing: the main note's `0x1012` BlackLevel (the mean of its four values)
@@ -83,7 +97,11 @@ pub(crate) fn sub_ifd(bytes: &[u8], mn: &MakerNote, tag: u16) -> Option<Ifd> {
 fn maker_note_black(m: &MakerNote, bits: u32) -> Option<f32> {
     let bits = bits.min(16);
     let v = m.ifd.f64s(MN_BLACK).filter(|v| v.len() == 4)?;
-    let valid = m.ifd.u64(MN_VALID_BITS).and_then(|b| u32::try_from(b).ok()).filter(|b| (8..=bits).contains(b))?;
+    let valid = m
+        .ifd
+        .u64(MN_VALID_BITS)
+        .and_then(|b| u32::try_from(b).ok())
+        .filter(|b| (8..=bits).contains(b))?;
     let level = v.iter().sum::<f64>() / 4.0 * f64::from(1u32 << (bits - valid));
     (level >= 0.0 && level < f64::from(1u32 << bits) / 4.0).then_some(level as f32)
 }
@@ -105,13 +123,19 @@ pub(crate) fn unpack_row_le32_msb(src: &[u8], bits: u32, out: &mut [u16]) {
 /// a pad. `src` must hold exactly `out.len() / 10` blocks (`out.len()` a multiple of 10).
 pub(crate) fn unpack_row_blocks16(src: &[u8], out: &mut [u16]) -> Result<()> {
     if !out.len().is_multiple_of(10) || src.len() != out.len() / 10 * 16 {
-        return Err(RawError::Corrupt("ORF 12-bit block row has the wrong size".into()));
+        return Err(RawError::Corrupt(
+            "ORF 12-bit block row has the wrong size".into(),
+        ));
     }
     let (blocks, _) = src.as_chunks::<16>();
     let (pixels, _) = out.as_chunks_mut::<10>();
     for (block, px) in blocks.iter().zip(pixels) {
         for k in 0..5 {
-            let (b0, b1, b2) = (block[3 * k] as u16, block[3 * k + 1] as u16, block[3 * k + 2] as u16);
+            let (b0, b1, b2) = (
+                block[3 * k] as u16,
+                block[3 * k + 1] as u16,
+                block[3 * k + 2] as u16,
+            );
             px[2 * k] = b0 | (b1 & 15) << 8;
             px[2 * k + 1] = b1 >> 4 | b2 << 4;
         }
@@ -140,9 +164,14 @@ pub(crate) fn cfa_from_data(d: &[u16], w: usize, a: Rect) -> Cfa {
         for bx in (0..across).step_by(4) {
             let mut sums = [0i64; 4];
             for y in 0..BLOCK {
-                let row = (y0 + by * BLOCK + y).checked_mul(w).and_then(|r| r.checked_add(x0 + bx * BLOCK));
+                let row = (y0 + by * BLOCK + y)
+                    .checked_mul(w)
+                    .and_then(|r| r.checked_add(x0 + bx * BLOCK));
                 // rows past the end of the samples: nothing more to read
-                let Some(row) = row.and_then(|start| d.get(start..start.checked_add(BLOCK)?)) else { break };
+                let Some(row) = row.and_then(|start| d.get(start..start.checked_add(BLOCK)?))
+                else {
+                    break;
+                };
                 for (x, &v) in row.iter().enumerate() {
                     sums[(y & 1) * 2 + (x & 1)] += v as i64;
                 }
@@ -175,7 +204,9 @@ fn field_rows(strips: &[(u64, u64)], w: usize, h: usize, file_len: usize) -> Opt
     let mut gaps = 0;
     let mut end = None;
     for &(offset, len) in strips {
-        let next_end = offset.checked_add(len).filter(|e| len > 0 && len % rb as u64 == 0 && *e <= file_len as u64)?;
+        let next_end = offset
+            .checked_add(len)
+            .filter(|e| len > 0 && len % rb as u64 == 0 && *e <= file_len as u64)?;
         match end {
             Some(e) if offset < e => return None,
             // the gap must be the field seam
@@ -204,46 +235,73 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     let ifd0 = &tiff.ifds[0];
     let info = ifd0.image()?;
     let (w, h) = (info.width as usize, info.height as usize);
-    let n = w.checked_mul(h).filter(|n| *n > 0 && *n <= crate::MAX_SAMPLES).ok_or(RawError::Limit("image too large"))?;
+    let n = w
+        .checked_mul(h)
+        .filter(|n| *n > 0 && *n <= crate::MAX_SAMPLES)
+        .ok_or(RawError::Limit("image too large"))?;
     let chunks = info.chunks(bytes.len() as u64);
     let total: u64 = chunks.iter().map(|c| c.len).sum();
     let stated = cfa_from_exif(&tiff);
     let mut two_field = false;
     let (mut data, bits) = if info.compression != 1 {
-        return Err(RawError::Unsupported(format!("ORF compression {}", info.compression)));
+        return Err(RawError::Unsupported(format!(
+            "ORF compression {}",
+            info.compression
+        )));
     } else if total >= (n as u64) * 2 {
         let d = read_image(bytes, &info, tiff.order, Packing::Word16)?;
         (d, 16)
     } else if is_block16(w, n, total, chunks.len()) {
-        let src = chunk_bytes(bytes, &chunks[0]).ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
+        let src = chunk_bytes(bytes, &chunks[0])
+            .ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
         let stride = w / 10 * 16;
         if src.len() as u64 != total || src.len() / stride != h {
             return Err(RawError::Corrupt("ORF strip shorter than its rows".into()));
         }
         let d = if mode == Mode::Full || stated.is_none() {
             let mut d = vec![0u16; n];
-            d.par_chunks_mut(w).enumerate().try_for_each(|(y, row)| unpack_row_blocks16(&src[y * stride..(y + 1) * stride], row))?;
+            d.par_chunks_mut(w).enumerate().try_for_each(|(y, row)| {
+                unpack_row_blocks16(&src[y * stride..(y + 1) * stride], row)
+            })?;
             d
         } else {
             Vec::new()
         };
         (RawData::U16(d), 12)
     } else if total * 8 >= (n as u64) * 12 && total * 8 < (n as u64) * 13 && chunks.len() == 1 {
-        let src = chunk_bytes(bytes, &chunks[0]).ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
+        let src = chunk_bytes(bytes, &chunks[0])
+            .ok_or_else(|| RawError::Corrupt("ORF strip outside file".into()))?;
         // the depth is fixed here, so a header-only probe needs the samples only when the file doesn't state its
         // colour-filter layout
         let d = if mode == Mode::Full || stated.is_none() {
             let stride = src.len() / h;
             let mut d = vec![0u16; n];
-            d.par_chunks_mut(w).enumerate().for_each(|(y, row)| unpack_row_le32_msb(&src[y * stride..(y + 1) * stride], 12, row));
+            d.par_chunks_mut(w).enumerate().for_each(|(y, row)| {
+                unpack_row_le32_msb(&src[y * stride..(y + 1) * stride], 12, row)
+            });
             d
         } else {
             Vec::new()
         };
         (RawData::U16(d), 12)
-    } else if let Some(rows) = (info.bits() == 12 && info.samples_per_pixel == 1 && info.planar != 2 && info.offsets.len() == info.byte_counts.len())
-        .then(|| field_rows(&info.offsets.iter().copied().zip(info.byte_counts.iter().copied()).collect::<Vec<_>>(), w, h, bytes.len()))
-        .flatten()
+    } else if let Some(rows) = (info.bits() == 12
+        && info.samples_per_pixel == 1
+        && info.planar != 2
+        && info.offsets.len() == info.byte_counts.len())
+    .then(|| {
+        field_rows(
+            &info
+                .offsets
+                .iter()
+                .copied()
+                .zip(info.byte_counts.iter().copied())
+                .collect::<Vec<_>>(),
+            w,
+            h,
+            bytes.len(),
+        )
+    })
+    .flatten()
     {
         two_field = true;
         let d = if mode == Mode::Full || stated.is_none() {
@@ -264,38 +322,64 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
     } else {
         return Err(RawError::Unsupported("Olympus compressed ORF".into()));
     };
-    let RawData::U16(ref mut samples) = data else { return Err(RawError::Unsupported("float ORF".into())) };
-    let bits = if bits == 16 && samples.iter().step_by(7).filter(|v| *v & 15 != 0).count() * 700 <= n {
-        // 12-bit values stored in the top bits
-        samples.par_iter_mut().for_each(|v| *v >>= 4);
-        12
-    } else if bits == 16 {
-        let mx = samples.iter().step_by(31).max().copied().unwrap_or(0);
-        if mx < 4096 {
-            12
-        } else if mx < 16384 {
-            14
-        } else {
-            16
-        }
-    } else {
-        bits
+    let RawData::U16(ref mut samples) = data else {
+        return Err(RawError::Unsupported("float ORF".into()));
     };
+    let bits =
+        if bits == 16 && samples.iter().step_by(7).filter(|v| *v & 15 != 0).count() * 700 <= n {
+            // 12-bit values stored in the top bits
+            samples.par_iter_mut().for_each(|v| *v >>= 4);
+            12
+        } else if bits == 16 {
+            let mx = samples.iter().step_by(31).max().copied().unwrap_or(0);
+            if mx < 4096 {
+                12
+            } else if mx < 16384 {
+                14
+            } else {
+                16
+            }
+        } else {
+            bits
+        };
 
     let mn = maker_note(bytes, &tiff);
-    let ip = mn.as_ref().and_then(|m| sub_ifd(bytes, m, IMAGE_PROCESSING));
-    let active = match ip.as_ref().map(|i| CROP.map(|tag| i.u64(tag).map(|v| v as usize))) {
-        Some([Some(x), Some(y), Some(cw), Some(ch)]) if cw > 0 && ch > 0 && x + cw <= w && y + ch <= h => Rect::new(x, y, cw, ch),
+    let ip = mn
+        .as_ref()
+        .and_then(|m| sub_ifd(bytes, m, IMAGE_PROCESSING));
+    let active = match ip
+        .as_ref()
+        .map(|i| CROP.map(|tag| i.u64(tag).map(|v| v as usize)))
+    {
+        Some([Some(x), Some(y), Some(cw), Some(ch)])
+            if cw > 0 && ch > 0 && x + cw <= w && y + ch <= h =>
+        {
+            Rect::new(x, y, cw, ch)
+        }
         _ => Rect::new(0, 0, w, h),
     };
     let cfa = stated.unwrap_or_else(|| cfa_from_data(samples, w, active));
     let black = match ip.as_ref().and_then(|i| i.f64s(BLACK)).as_deref() {
         Some(v @ [_, _, _, _]) => {
             let a = cfa.shifted(active.x, active.y);
-            let values = a.pattern.iter().map(|&c| [v[0], (v[1] + v[2]) / 2.0, v[3]][c as usize] as f32).collect();
-            BlackLevel { repeat_rows: 2, repeat_cols: 2, values, ..Default::default() }
+            let values = a
+                .pattern
+                .iter()
+                .map(|&c| [v[0], (v[1] + v[2]) / 2.0, v[3]][c as usize] as f32)
+                .collect();
+            BlackLevel {
+                repeat_rows: 2,
+                repeat_cols: 2,
+                values,
+                ..Default::default()
+            }
         }
-        _ => BlackLevel::uniform(mn.as_ref().filter(|_| ip.is_none()).and_then(|m| maker_note_black(m, bits)).unwrap_or(0.0)),
+        _ => BlackLevel::uniform(
+            mn.as_ref()
+                .filter(|_| ip.is_none())
+                .and_then(|m| maker_note_black(m, bits))
+                .unwrap_or(0.0),
+        ),
     };
     let wb = ip
         .as_ref()
@@ -306,8 +390,17 @@ pub(crate) fn decode(bytes: &[u8], mode: Mode) -> Result<RawImage> {
             // the red and blue gains lead the main note's entries 0x1017/0x1018 on the two-field compacts and on
             // the E-10 (16-bit words, no ImageProcessing; 384 and 406 on its CC0 file 5424)
             let m = mn.as_ref().filter(|_| two_field || ip.is_none())?;
-            let g = |tag| m.ifd.f64s(tag).and_then(|v| v.first().copied()).filter(|g| *g > 25.6 && *g < 2560.0);
-            Some([(g(MN_WB_RED)? / 256.0) as f32, 1.0, (g(MN_WB_BLUE)? / 256.0) as f32])
+            let g = |tag| {
+                m.ifd
+                    .f64s(tag)
+                    .and_then(|v| v.first().copied())
+                    .filter(|g| *g > 25.6 && *g < 2560.0)
+            };
+            Some([
+                (g(MN_WB_RED)? / 256.0) as f32,
+                1.0,
+                (g(MN_WB_BLUE)? / 256.0) as f32,
+            ])
         });
     let white = white_from_data(samples, bits);
     let mut metadata = lightcraft_meta::from_tiff(&tiff);
@@ -362,7 +455,14 @@ mod tests {
     }
 
     /// [`orf_with`] plus an optional maker note blob in the Exif IFD.
-    fn orf_with_note(w: u32, h: u32, bits: u16, strip: Vec<u8>, cfa_pattern: Option<&[u8]>, note: Option<Vec<u8>>) -> Vec<u8> {
+    fn orf_with_note(
+        w: u32,
+        h: u32,
+        bits: u16,
+        strip: Vec<u8>,
+        cfa_pattern: Option<&[u8]>,
+        note: Option<Vec<u8>>,
+    ) -> Vec<u8> {
         let mut ifd = IfdBuilder::new();
         ifd.set(t::IMAGE_WIDTH, Value::Long(vec![w]));
         ifd.set(t::IMAGE_LENGTH, Value::Long(vec![h]));
@@ -370,7 +470,10 @@ mod tests {
         ifd.set(t::COMPRESSION, Value::Short(vec![1]));
         ifd.set(t::PHOTOMETRIC, Value::Short(vec![1]));
         ifd.set(t::MAKE, Value::Ascii("OLYMPUS IMAGING CORP.".into()));
-        ifd.set_image(ImageData::Strips { rows_per_strip: h, strips: vec![strip] });
+        ifd.set_image(ImageData::Strips {
+            rows_per_strip: h,
+            strips: vec![strip],
+        });
         if cfa_pattern.is_some() || note.is_some() {
             let mut exif = IfdBuilder::new();
             if let Some(p) = cfa_pattern {
@@ -381,7 +484,9 @@ mod tests {
             }
             ifd.set_child(t::EXIF_IFD, exif);
         }
-        let mut b = TiffWriter::new(ByteOrder::Little, false).write(&[ifd]).unwrap();
+        let mut b = TiffWriter::new(ByteOrder::Little, false)
+            .write(&[ifd])
+            .unwrap();
         b[2] = b'R';
         b[3] = b'O';
         b
@@ -397,7 +502,14 @@ mod tests {
         for (tag, typ, value) in entries {
             b.extend_from_slice(&tag.to_le_bytes());
             b.extend_from_slice(&typ.to_le_bytes());
-            b.extend_from_slice(&(if *typ == 3 { value.len() / 2 } else { value.len() } as u32).to_le_bytes());
+            b.extend_from_slice(
+                &(if *typ == 3 {
+                    value.len() / 2
+                } else {
+                    value.len()
+                } as u32)
+                    .to_le_bytes(),
+            );
             if value.len() <= 4 {
                 let mut v = value.clone();
                 v.resize(4, 0);
@@ -420,8 +532,19 @@ mod tests {
     /// A 16 × 4 ORF of 12-bit samples in 16-bit words with an [`olymp_note`] of `entries`, decoded.
     fn decode_noted(entries: &[(u16, u16, Vec<u8>)]) -> RawImage {
         let (w, h) = (16u32, 4u32);
-        let words: Vec<u8> = (0..w * h).flat_map(|i| (((200 + i * 37) % 4096) as u16).to_le_bytes()).collect();
-        let file = |at| orf_with_note(w, h, 16, words.clone(), Some(RGGB), Some(olymp_note(at, entries)));
+        let words: Vec<u8> = (0..w * h)
+            .flat_map(|i| (((200 + i * 37) % 4096) as u16).to_le_bytes())
+            .collect();
+        let file = |at| {
+            orf_with_note(
+                w,
+                h,
+                16,
+                words.clone(),
+                Some(RGGB),
+                Some(olymp_note(at, entries)),
+            )
+        };
         let at = file(0).windows(6).position(|b| b == b"OLYMP\0").unwrap();
         let bytes = file(at);
         assert_eq!(bytes.windows(6).position(|b| b == b"OLYMP\0"), Some(at));
@@ -451,10 +574,17 @@ mod tests {
         assert_eq!(wb(0, Some(406)), None);
         assert_eq!(wb(25, Some(406)), None);
         assert_eq!(wb(384, Some(2560)), None);
-        assert_eq!(wb(27, Some(2559)), Some([27.0 / 256.0, 1.0, 2559.0 / 256.0]));
+        assert_eq!(
+            wb(27, Some(2559)),
+            Some([27.0 / 256.0, 1.0, 2559.0 / 256.0])
+        );
         assert_eq!(decode_noted(&[]).wb_multipliers, None);
         // a body with ImageProcessing but without its levels doesn't fall back to these entries
-        let e = [bare_image_processing(), (MN_WB_RED, 3, shorts(&[384, 64])), (MN_WB_BLUE, 3, shorts(&[406, 64]))];
+        let e = [
+            bare_image_processing(),
+            (MN_WB_RED, 3, shorts(&[384, 64])),
+            (MN_WB_BLUE, 3, shorts(&[406, 64])),
+        ];
         assert_eq!(decode_noted(&e).wb_multipliers, None);
     }
 
@@ -474,20 +604,31 @@ mod tests {
         assert_eq!(black(0, Some(12)), vec![0.0]);
         assert_eq!(black(32, Some(12)), vec![32.0]);
         // the four values are averaged
-        let e = [(MN_BLACK, 3, shorts(&[30, 32, 32, 34])), (MN_VALID_BITS, 3, shorts(&[10, 0]))];
+        let e = [
+            (MN_BLACK, 3, shorts(&[30, 32, 32, 34])),
+            (MN_VALID_BITS, 3, shorts(&[10, 0])),
+        ];
         assert_eq!(decode_noted(&e).black.values, vec![128.0]);
         // no ValidBits, ValidBits above the samples' depth, a level of a quarter of the range or more: no black
         assert_eq!(black(32, None), vec![0.0]);
         assert_eq!(black(32, Some(14)), vec![0.0]);
         assert_eq!(black(256, Some(10)), vec![0.0]);
         // ImageProcessing present (without BlackLevel2): the main note isn't read
-        let e = [bare_image_processing(), (MN_BLACK, 3, shorts(&[32; 4])), (MN_VALID_BITS, 3, shorts(&[10, 0]))];
+        let e = [
+            bare_image_processing(),
+            (MN_BLACK, 3, shorts(&[32; 4])),
+            (MN_VALID_BITS, 3, shorts(&[10, 0])),
+        ];
         assert_eq!(decode_noted(&e).black.values, vec![0.0]);
     }
 
     /// A 12-bit mosaic stored as 16-bit words: `site(cx, cy)` gives the four values of the 2×2 cell at (cx, cy).
     fn mosaic(w: usize, h: usize, site: impl Fn(usize, usize) -> [u16; 4]) -> Vec<u8> {
-        (0..w * h).flat_map(|i| site(i % w / 2, i / w / 2)[((i / w) & 1) * 2 + ((i % w) & 1)].to_le_bytes()).collect()
+        (0..w * h)
+            .flat_map(|i| {
+                site(i % w / 2, i / w / 2)[((i / w) & 1) * 2 + ((i % w) & 1)].to_le_bytes()
+            })
+            .collect()
     }
 
     /// Smooth scene texture shared by the four sites of a cell.
@@ -511,9 +652,19 @@ mod tests {
     fn exif_cfa_pattern_states_the_layout() {
         let (w, h) = (160usize, 144usize);
         // samples whose green diagonal alone would say RGGB
-        let px = mosaic(w, h, |cx, cy| [600, 1000, 1000, 300].map(|v| v + shade(cx, cy)));
-        for (tag, name) in [(BGGR, "BGGR"), (GRBG, "GRBG"), (RGGB, "RGGB"), (GBRG, "GBRG")] {
-            assert_eq!(layout(&orf_with(w as u32, h as u32, 16, px.clone(), Some(tag))), name);
+        let px = mosaic(w, h, |cx, cy| {
+            [600, 1000, 1000, 300].map(|v| v + shade(cx, cy))
+        });
+        for (tag, name) in [
+            (BGGR, "BGGR"),
+            (GRBG, "GRBG"),
+            (RGGB, "RGGB"),
+            (GBRG, "GBRG"),
+        ] {
+            assert_eq!(
+                layout(&orf_with(w as u32, h as u32, 16, px.clone(), Some(tag))),
+                name
+            );
         }
         // not a 2×2 Bayer cell (four greens, greens side by side, a fourth colour), other repeat counts, wrong
         // lengths: the samples decide
@@ -527,11 +678,18 @@ mod tests {
             &[2, 0, 2, 0, 2, 1, 1, 0, 0],
             &[],
         ];
-        for (site, name) in [([600, 1000, 1000, 300], "RGGB"), ([1000, 600, 300, 1000], "GRBG")] {
+        for (site, name) in [
+            ([600, 1000, 1000, 300], "RGGB"),
+            ([1000, 600, 300, 1000], "GRBG"),
+        ] {
             let px = mosaic(w, h, |cx, cy| site.map(|v| v + shade(cx, cy)));
             assert_eq!(layout(&orf(w as u32, h as u32, 16, px.clone())), name);
             for tag in unusable {
-                assert_eq!(layout(&orf_with(w as u32, h as u32, 16, px.clone(), Some(tag))), name, "{tag:?}");
+                assert_eq!(
+                    layout(&orf_with(w as u32, h as u32, 16, px.clone(), Some(tag))),
+                    name,
+                    "{tag:?}"
+                );
             }
         }
     }
@@ -544,7 +702,10 @@ mod tests {
             let bytes = orf_with(w as u32, h as u32, 12, strip.clone(), tag);
             let r = crate::decode(&bytes).unwrap();
             assert_eq!((r.bits, r.data.len()), (12, w * h));
-            assert_eq!(r.cfa.as_ref().unwrap().name(), if tag.is_some() { "BGGR" } else { "RGGB" });
+            assert_eq!(
+                r.cfa.as_ref().unwrap().name(),
+                if tag.is_some() { "BGGR" } else { "RGGB" }
+            );
             assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
         }
     }
@@ -559,7 +720,10 @@ mod tests {
             let (g, d) = (1000 + shade(cx, cy) as i32, detail(cx, cy));
             [(g + d) as u16, 500, 520, (g - d) as u16]
         };
-        assert_eq!(layout(&orf(w as u32, h as u32, 16, mosaic(w, h, site))), "GRBG");
+        assert_eq!(
+            layout(&orf(w as u32, h as u32, 16, mosaic(w, h, site))),
+            "GRBG"
+        );
         // the same scene with the greens on the other diagonal
         let px = mosaic(w, h, |cx, cy| {
             let [g0, r, b, g1] = site(cx, cy);
@@ -611,7 +775,10 @@ mod tests {
         let (w, h) = (8usize, 5usize);
         let h0 = h.div_ceil(2);
         // stored rows: the even output rows, then the odd ones (the last of them is past the picture)
-        let stored: Vec<Vec<u8>> = (0..h0).map(|k| packed_row(w, 2 * k)).chain((0..h0).map(|k| packed_row(w, 2 * k + 1))).collect();
+        let stored: Vec<Vec<u8>> = (0..h0)
+            .map(|k| packed_row(w, 2 * k))
+            .chain((0..h0).map(|k| packed_row(w, 2 * k + 1)))
+            .collect();
         let a1 = stored[..2].concat();
         let a2 = stored[2].clone();
         let gap = vec![0xffu8; 20];
@@ -625,11 +792,16 @@ mod tests {
         ifd.set(t::COMPRESSION, Value::Short(vec![1]));
         ifd.set(t::PHOTOMETRIC, Value::Short(vec![2]));
         ifd.set(t::MAKE, Value::Ascii("OLYMPUS OPTICAL CO.,LTD".into()));
-        ifd.set_image(ImageData::Strips { rows_per_strip: 2, strips: vec![a1, a2, gap, b, b2, last] });
+        ifd.set_image(ImageData::Strips {
+            rows_per_strip: 2,
+            strips: vec![a1, a2, gap, b, b2, last],
+        });
         let mut exif = IfdBuilder::new();
         exif.set(EXIF_CFA_PATTERN, Value::Undefined(BGGR.to_vec()));
         ifd.set_child(t::EXIF_IFD, exif);
-        let mut b = TiffWriter::new(ByteOrder::Little, false).write(&[ifd]).unwrap();
+        let mut b = TiffWriter::new(ByteOrder::Little, false)
+            .write(&[ifd])
+            .unwrap();
         b[2] = b'R';
         b[3] = b'S';
         // keep strips A1, A2, B1 and B2 in the table (drop the gap and the last row): four strips for a grid of three
@@ -643,7 +815,11 @@ mod tests {
             }
             let at = le(&b, e + 8) as usize;
             let all: Vec<u32> = (0..6).map(|i| le(&b, at + 4 * i)).collect();
-            let keep: Vec<u32> = if table_gap { vec![all[0], all[1], all[3], all[4]] } else { vec![all[0], all[1], all[2], all[3]] };
+            let keep: Vec<u32> = if table_gap {
+                vec![all[0], all[1], all[3], all[4]]
+            } else {
+                vec![all[0], all[1], all[2], all[3]]
+            };
             b[e + 4..e + 8].copy_from_slice(&(keep.len() as u32).to_le_bytes());
             for (i, v) in keep.iter().enumerate() {
                 b[at + 4 * i..at + 4 * i + 4].copy_from_slice(&v.to_le_bytes());
@@ -656,8 +832,13 @@ mod tests {
     fn two_field_12_bit_layout() {
         let bytes = two_field(true);
         let r = crate::decode(&bytes).unwrap();
-        let want: Vec<u16> = (0..5).flat_map(|y| (0..8).map(move |x| field_px(x, y))).collect();
-        assert_eq!((r.data.clone(), r.bits, r.width, r.height), (RawData::U16(want), 12, 8, 5));
+        let want: Vec<u16> = (0..5)
+            .flat_map(|y| (0..8).map(move |x| field_px(x, y)))
+            .collect();
+        assert_eq!(
+            (r.data.clone(), r.bits, r.width, r.height),
+            (RawData::U16(want), 12, 8, 5)
+        );
         assert_eq!(r.cfa.as_ref().unwrap().name(), "BGGR");
         assert_eq!(crate::probe_info(&bytes).unwrap(), r.info());
         // the table without the gap: sizes no longer add up
@@ -675,12 +856,57 @@ mod tests {
         // the last row must be inside the file
         assert!(field_rows(&good, 8, 5, 235).is_none());
         // the gap is the field seam: not after two rows, not absent, not twice
-        assert!(field_rows(&[chunk(0, 100, 2), chunk(1, 140, 1), chunk(2, 164, 2)], 8, 5, 300).is_none());
-        assert!(field_rows(&[chunk(0, 100, 2), chunk(1, 124, 1), chunk(2, 136, 2)], 8, 5, 300).is_none());
-        assert!(field_rows(&[chunk(0, 100, 2), chunk(1, 124, 1), chunk(2, 200, 1), chunk(3, 300, 1)], 8, 5, 400).is_none());
+        assert!(
+            field_rows(
+                &[chunk(0, 100, 2), chunk(1, 140, 1), chunk(2, 164, 2)],
+                8,
+                5,
+                300
+            )
+            .is_none()
+        );
+        assert!(
+            field_rows(
+                &[chunk(0, 100, 2), chunk(1, 124, 1), chunk(2, 136, 2)],
+                8,
+                5,
+                300
+            )
+            .is_none()
+        );
+        assert!(
+            field_rows(
+                &[
+                    chunk(0, 100, 2),
+                    chunk(1, 124, 1),
+                    chunk(2, 200, 1),
+                    chunk(3, 300, 1)
+                ],
+                8,
+                5,
+                400
+            )
+            .is_none()
+        );
         // overlapping strips, sizes that don't add up, even height, odd width, a single strip
-        assert!(field_rows(&[chunk(0, 100, 2), chunk(1, 120, 1), chunk(2, 200, 2)], 8, 5, 300).is_none());
-        assert!(field_rows(&[chunk(0, 100, 2), chunk(1, 124, 1), chunk(2, 200, 1)], 8, 5, 300).is_none());
+        assert!(
+            field_rows(
+                &[chunk(0, 100, 2), chunk(1, 120, 1), chunk(2, 200, 2)],
+                8,
+                5,
+                300
+            )
+            .is_none()
+        );
+        assert!(
+            field_rows(
+                &[chunk(0, 100, 2), chunk(1, 124, 1), chunk(2, 200, 1)],
+                8,
+                5,
+                300
+            )
+            .is_none()
+        );
         assert!(field_rows(&good, 8, 4, 300).is_none());
         assert!(field_rows(&good, 7, 5, 300).is_none());
         assert!(field_rows(&good[..1], 8, 5, 300).is_none());
@@ -701,11 +927,17 @@ mod tests {
             let v = (p[0] as u32) << 12 | p[1] as u32;
             be.extend_from_slice(&[(v >> 16) as u8, (v >> 8) as u8, v as u8]);
         }
-        let le: Vec<u8> = be.chunks(4).flat_map(|c| [c[3], c[2], c[1], c[0]]).collect();
+        let le: Vec<u8> = be
+            .chunks(4)
+            .flat_map(|c| [c[3], c[2], c[1], c[0]])
+            .collect();
         let bytes = orf(w as u32, h as u32, 12, le);
         assert_eq!(crate::decode(&bytes).unwrap().data, RawData::U16(px));
         let bytes = orf(w as u32, h as u32, 16, vec![0; 40]);
-        assert!(matches!(crate::decode(&bytes), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            crate::decode(&bytes),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     /// Pack samples into 16-byte blocks: ten little-endian 12-bit fields, then a zero pad byte.

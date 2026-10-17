@@ -141,8 +141,10 @@ impl Bluetooth {
     fn handle_bulk(&mut self, ctx: &mut DeviceContext<'_>, vec_ptr: u32) -> i32 {
         let endpoint = ctx.mmio.phys_read_u8(self::vec_data(ctx.mmio, vec_ptr, 0));
         let len_p = self::vec_data(ctx.mmio, vec_ptr, 1);
-        let w_length =
-            u16::from_le_bytes([ctx.mmio.phys_read_u8(len_p), ctx.mmio.phys_read_u8(len_p + 1)]);
+        let w_length = u16::from_le_bytes([
+            ctx.mmio.phys_read_u8(len_p),
+            ctx.mmio.phys_read_u8(len_p + 1),
+        ]);
         let buf_ptr = self::vec_data(ctx.mmio, vec_ptr, 2);
 
         match endpoint {
@@ -157,14 +159,16 @@ impl Bluetooth {
                 // after 8? ACL packets and it disconnects the wiimote.
                 self.queue_number_of_completed_packets(1);
                 w_length as i32
-            },
+            }
             EP_BULK_IN => {
                 let Some(packet) = self.pending_acl.pop_front() else {
                     return 0;
                 };
 
                 let delivered = packet.len().min(w_length as usize);
-                ctx.mmio.phys_slice_mut(buf_ptr, delivered).copy_from_slice(&packet[..delivered]);
+                ctx.mmio
+                    .phys_slice_mut(buf_ptr, delivered)
+                    .copy_from_slice(&packet[..delivered]);
 
                 tracing::debug!(
                     len = delivered,
@@ -173,7 +177,7 @@ impl Bluetooth {
                 );
 
                 delivered as i32
-            },
+            }
             _ => 0,
         }
     }
@@ -190,7 +194,9 @@ impl Bluetooth {
         };
 
         let buf_ptr = self::vec_data(ctx.mmio, vec_ptr, 2);
-        ctx.mmio.phys_slice_mut(buf_ptr, event.len()).copy_from_slice(&event);
+        ctx.mmio
+            .phys_slice_mut(buf_ptr, event.len())
+            .copy_from_slice(&event);
 
         tracing::debug!(
             event = format!("{:02X?}", &event),
@@ -204,7 +210,10 @@ impl Bluetooth {
         let changed = self.wiimote.set_buttons(buttons);
 
         if changed {
-            tracing::debug!(buttons = format!("{buttons:#06x}"), "Wiimote button state changed");
+            tracing::debug!(
+                buttons = format!("{buttons:#06x}"),
+                "Wiimote button state changed"
+            );
         }
 
         changed
@@ -275,7 +284,7 @@ impl Bluetooth {
             Some(cid) => {
                 w.bool(true);
                 w.u16(cid);
-            },
+            }
             None => w.bool(false),
         }
 
@@ -283,7 +292,7 @@ impl Bluetooth {
             Some(cid) => {
                 w.bool(true);
                 w.u16(cid);
-            },
+            }
             None => w.bool(false),
         }
 

@@ -14,11 +14,26 @@ use effectcraft_project::ParamUi;
 use effectcraft_raster::{Image, Px};
 use rayon::prelude::*;
 
-use crate::util::{Plane, gauss_plane, hash1, layer_or_self, morph_frac, poly_length, premul, smoothstep, unpremul};
+use crate::util::{
+    Plane, gauss_plane, hash1, layer_or_self, morph_frac, poly_length, premul, smoothstep, unpremul,
+};
 use crate::{Buf, EffectCtx, EffectSpec, Params, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Generate", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Generate",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pt(x: f64, y: f64) -> Value {
@@ -73,12 +88,20 @@ pub(crate) fn raster_segs(w: usize, h: usize, segs: &[Seg], hardness: f64) -> Pl
             let outer = s.r + 0.5;
             for (x, o) in row.iter_mut().enumerate().take(x1).skip(x0) {
                 let px = x as f64 + 0.5;
-                let t = if l2 > 1e-12 { (((px - s.a[0]) * dx + (py - s.a[1]) * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+                let t = if l2 > 1e-12 {
+                    (((px - s.a[0]) * dx + (py - s.a[1]) * dy) / l2).clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 let d = ((px - s.a[0] - dx * t).powi(2) + (py - s.a[1] - dy * t).powi(2)).sqrt();
                 if d >= outer {
                     continue;
                 }
-                let c = if d <= inner { 1.0 } else { 1.0 - smoothstep(inner as f32, outer as f32, d as f32) } * s.v;
+                let c = if d <= inner {
+                    1.0
+                } else {
+                    1.0 - smoothstep(inner as f32, outer as f32, d as f32)
+                } * s.v;
                 if c > *o {
                     *o = c;
                 }
@@ -92,14 +115,24 @@ pub(crate) fn raster_segs(w: usize, h: usize, segs: &[Seg], hardness: f64) -> Pl
 pub fn poly_segs(pts: &[[f64; 2]], closed: bool, r: f64, v: f32, out: &mut Vec<Seg>) {
     let n = pts.len();
     if n == 1 {
-        out.push(Seg { a: pts[0], b: pts[0], r, v });
+        out.push(Seg {
+            a: pts[0],
+            b: pts[0],
+            r,
+            v,
+        });
     }
     if n < 2 {
         return;
     }
     let segs = if closed { n } else { n - 1 };
     for i in 0..segs {
-        out.push(Seg { a: pts[i], b: pts[(i + 1) % n], r, v });
+        out.push(Seg {
+            a: pts[i],
+            b: pts[(i + 1) % n],
+            r,
+            v,
+        });
     }
 }
 
@@ -136,15 +169,18 @@ pub(crate) fn trim_poly(pts: &[[f64; 2]], closed: bool, s0: f64, s1: f64) -> Vec
 /// How painted coverage meets the layer: 0 On Original Image, 1 On Transparent, 2 Reveal
 /// Original Image.
 pub(crate) fn paint(img: &mut Image, cov: &Plane, color: [f32; 4], opacity: f32, style: u32) {
-    img.data.par_iter_mut().zip(cov.data.par_iter()).for_each(|(px, &c)| {
-        let a = (c * opacity * color[3]).clamp(0.0, 1.0);
-        let s = [color[0] * a, color[1] * a, color[2] * a, a];
-        *px = match style {
-            1 => s,
-            2 => [px[0] * a, px[1] * a, px[2] * a, px[3] * a],
-            _ => over(*px, s),
-        };
-    });
+    img.data
+        .par_iter_mut()
+        .zip(cov.data.par_iter())
+        .for_each(|(px, &c)| {
+            let a = (c * opacity * color[3]).clamp(0.0, 1.0);
+            let s = [color[0] * a, color[1] * a, color[2] * a, a];
+            *px = match style {
+                1 => s,
+                2 => [px[0] * a, px[1] * a, px[2] * a, px[3] * a],
+                _ => over(*px, s),
+            };
+        });
 }
 
 /// Coverage of a plan-drawn generator: round-capped segments rasterised by [`raster_segs`]
@@ -180,10 +216,14 @@ fn draw_paint(b: &mut Buf, plan: &PaintPlan) {
     let cov = plan.cov.raster(b.img.width as usize, b.img.height as usize);
     if plan.style == 3 {
         let color = plan.color;
-        b.img.data.par_iter_mut().zip(cov.data.par_iter()).for_each(|(px, &c)| {
-            let a = c * color[3];
-            *px = over([color[0] * a, color[1] * a, color[2] * a, a], *px);
-        });
+        b.img
+            .data
+            .par_iter_mut()
+            .zip(cov.data.par_iter())
+            .for_each(|(px, &c)| {
+                let a = c * color[3];
+                *px = over([color[0] * a, color[1] * a, color[2] * a, a], *px);
+            });
     } else {
         paint(&mut b.img, &cov, plan.color, plan.opacity, plan.style);
     }
@@ -225,7 +265,12 @@ pub fn scribble_style(ctx: &EffectCtx) -> u32 {
 #[inline]
 fn over(dst: Px, src: Px) -> Px {
     let k = 1.0 - src[3];
-    [src[0] + dst[0] * k, src[1] + dst[1] * k, src[2] + dst[2] * k, src[3] + dst[3] * k]
+    [
+        src[0] + dst[0] * k,
+        src[1] + dst[1] * k,
+        src[2] + dst[2] * k,
+        src[3] + dst[3] * k,
+    ]
 }
 
 /// Mask `idx` (1-based; 0 = none) mapped to buffer pixels.
@@ -234,12 +279,21 @@ pub(crate) fn mask_px(ctx: &EffectCtx, b: &Buf, idx: usize) -> Option<(Vec<[f64;
     if m.points.is_empty() {
         return None;
     }
-    Some((m.points.iter().map(|&q| [q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1]]).collect(), m.closed, m.inverted))
+    Some((
+        m.points
+            .iter()
+            .map(|&q| [q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1]])
+            .collect(),
+        m.closed,
+        m.inverted,
+    ))
 }
 
 /// All masks mapped to buffer pixels.
 fn all_masks_px(ctx: &EffectCtx, b: &Buf) -> Vec<(Vec<[f64; 2]>, bool, bool)> {
-    (1..=ctx.env.masks.len()).filter_map(|i| mask_px(ctx, b, i)).collect()
+    (1..=ctx.env.masks.len())
+        .filter_map(|i| mask_px(ctx, b, i))
+        .collect()
 }
 
 /// Chaikin corner cutting (open polyline, endpoints kept).
@@ -298,24 +352,44 @@ fn escape(z0: (f64, f64), c: (f64, f64), power: u32, limit: f64, max_iter: u32) 
 }
 
 /// Fractal Set Choice options.
-pub(crate) const FRACTAL_SETS: [&str; 6] =
-    ["Mandelbrot", "Mandelbrot Inverse", "Mandelbrot Over Julia", "Mandelbrot Inverse Over Julia", "Julia", "Julia Inverse"];
+pub(crate) const FRACTAL_SETS: [&str; 6] = [
+    "Mandelbrot",
+    "Mandelbrot Inverse",
+    "Mandelbrot Over Julia",
+    "Mandelbrot Inverse Over Julia",
+    "Julia",
+    "Julia Inverse",
+];
 /// Fractal Palette options.
-pub(crate) const FRACTAL_PALETTES: [&str; 4] = ["Lightness Gradient", "Hue Wheel", "Black And White", "Solid Color"];
+pub(crate) const FRACTAL_PALETTES: [&str; 4] = [
+    "Lightness Gradient",
+    "Hue Wheel",
+    "Black And White",
+    "Solid Color",
+];
 /// Fractal Oversample Method options.
-pub(crate) const FRACTAL_OVERSAMPLE: [&str; 2] = ["Edge Detect-Fast-May Miss Pixels", "Brute Force-Slow-Every Pixel"];
+pub(crate) const FRACTAL_OVERSAMPLE: [&str; 2] = [
+    "Edge Detect-Fast-May Miss Pixels",
+    "Brute Force-Slow-Every Pixel",
+];
 
 fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let pr = ctx.params;
     let set_choice = pr.e("setChoice");
     let power = 2 + pr.e("equation").min(2);
-    let mc = (pr.f("mandelbrot/mandelbrotX"), pr.f("mandelbrot/mandelbrotY"));
+    let mc = (
+        pr.f("mandelbrot/mandelbrotX"),
+        pr.f("mandelbrot/mandelbrotY"),
+    );
     let mmag = pr.f("mandelbrot/mandelbrotMagnification");
     let mlim = pr.f("mandelbrot/mandelbrotEscapeLimit").max(1.01);
     let jc = (pr.f("julia/juliaX"), pr.f("julia/juliaY"));
     let jmag = pr.f("julia/juliaMagnification");
     let jlim = pr.f("julia/juliaEscapeLimit").max(1.01);
-    let post = (pr.f("postInversionOffset/postInversionX"), pr.f("postInversionOffset/postInversionY"));
+    let post = (
+        pr.f("postInversionOffset/postInversionX"),
+        pr.f("postInversionOffset/postInversionY"),
+    );
     let overlay = pr.b("fractalColor/overlay");
     let transparency = pr.b("fractalColor/transparency");
     let transparent_inside = transparency || overlay;
@@ -325,14 +399,21 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let cyc_off = pr.f("fractalColor/cycleOffset") / 360.0;
     let edge = pr.b("fractalColor/edgeHighlight");
     let every = pr.e("highQualitySettings/samplingMethod") == 1;
-    let factor = pr.f("highQualitySettings/samplingFactor").round().clamp(1.0, 9.0) as usize;
+    let factor = pr
+        .f("highQualitySettings/samplingFactor")
+        .round()
+        .clamp(1.0, 9.0) as usize;
     let (w, h) = (b.img.width as usize, b.img.height as usize);
     let lw = ctx.layer_size[0].max(1.0);
     let lh = ctx.layer_size[1].max(1.0);
     let inv = 1.0 / b.scale.max(1e-9);
     let (off_x, off_y) = (b.offset[0], b.offset[1]);
     // FRACTAL_SETS order.
-    let set = |julia, inverse, over_julia| FracSet { over_julia, julia, inverse };
+    let set = |julia, inverse, over_julia| FracSet {
+        over_julia,
+        julia,
+        inverse,
+    };
     let sets: (FracSet, Option<FracSet>) = match set_choice {
         1 => (set(false, true, false), None),
         2 => (set(false, false, true), None),
@@ -343,7 +424,11 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
     };
     let iter_for = |mag: f64| (96.0 + 48.0 * mag.max(0.0)).clamp(64.0, 3000.0) as u32;
     let eval_set = |s: FracSet, lx: f64, ly: f64| -> Option<f64> {
-        let (center, mag, lim) = if s.julia { (jc, jmag, jlim) } else { (mc, mmag, mlim) };
+        let (center, mag, lim) = if s.julia {
+            (jc, jmag, jlim)
+        } else {
+            (mc, mmag, mlim)
+        };
         let span = 3.5 / 2f64.powf(mag);
         let mut u = (lx - lw * 0.5) / lw * span + center.0;
         let mut v = (ly - lh * 0.5) / lw * span + center.1;
@@ -370,10 +455,18 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
         // Solid Color: only the inside of the set is drawn (Transparency flips the sides).
         if palette == 3 {
             let (r, g, bl) = hsl_to_rgb(hue, 1.0, 0.5);
-            return if n.is_none() != transparency { [r, g, bl, 1.0] } else { [0.0; 4] };
+            return if n.is_none() != transparency {
+                [r, g, bl, 1.0]
+            } else {
+                [0.0; 4]
+            };
         }
         let Some(n) = n else {
-            return if transparent_inside { [0.0; 4] } else { [0.0, 0.0, 0.0, 1.0] };
+            return if transparent_inside {
+                [0.0; 4]
+            } else {
+                [0.0, 0.0, 0.0, 1.0]
+            };
         };
         let u = n / steps + cyc_off;
         let band = (u.rem_euclid(1.0)) as f32;
@@ -382,11 +475,19 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
             1 => hsl_to_rgb((hue + band).rem_euclid(1.0), 1.0, 0.5),
             // Black And White: alternating bands.
             2 => {
-                let v = if (u.floor() as i64).rem_euclid(2) == 0 { 0.0 } else { 1.0 };
+                let v = if (u.floor() as i64).rem_euclid(2) == 0 {
+                    0.0
+                } else {
+                    1.0
+                };
                 (v, v, v)
             }
             // Lightness Gradient: black → hue → white, the hue moving 45° each cycle.
-            _ => hsl_to_rgb((hue + u.floor() as f32 * 0.125).rem_euclid(1.0), 0.85, band.clamp(0.0, 1.0)),
+            _ => hsl_to_rgb(
+                (hue + u.floor() as f32 * 0.125).rem_euclid(1.0),
+                0.85,
+                band.clamp(0.0, 1.0),
+            ),
         };
         let mut c = [r, g, bl];
         if edge && n.fract() < 0.12 {
@@ -396,11 +497,17 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
     };
     // First pass: one sample per pixel.
     let mut first: Vec<Option<f64>> = vec![None; w * h];
-    first.par_chunks_mut(w.max(1)).enumerate().for_each(|(y, row)| {
-        for (x, v) in row.iter_mut().enumerate() {
-            *v = eval((x as f64 + 0.5 - off_x) * inv, (y as f64 + 0.5 - off_y) * inv);
-        }
-    });
+    first
+        .par_chunks_mut(w.max(1))
+        .enumerate()
+        .for_each(|(y, row)| {
+            for (x, v) in row.iter_mut().enumerate() {
+                *v = eval(
+                    (x as f64 + 0.5 - off_x) * inv,
+                    (y as f64 + 0.5 - off_y) * inv,
+                );
+            }
+        });
     let src = if overlay { Some(b.img.clone()) } else { None };
     b.img.rows_mut().for_each(|(y, row)| {
         for (x, px) in row.iter_mut().enumerate() {
@@ -455,7 +562,15 @@ fn fractal(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 /// Scan runs (start, end along direction `d`) of the fill region on the line `n·p = s`.
 #[allow(clippy::too_many_arguments)]
-fn scan_runs(polys: &[(Vec<[f64; 2]>, bool, bool)], fill: u32, ew: f64, d: [f64; 2], n: [f64; 2], s: f64, out: &mut Vec<(f64, f64)>) {
+fn scan_runs(
+    polys: &[(Vec<[f64; 2]>, bool, bool)],
+    fill: u32,
+    ew: f64,
+    d: [f64; 2],
+    n: [f64; 2],
+    s: f64,
+    out: &mut Vec<(f64, f64)>,
+) {
     out.clear();
     for (pts, _closed, inverted) in polys {
         let m = pts.len();
@@ -479,7 +594,9 @@ fn scan_runs(polys: &[(Vec<[f64; 2]>, bool, bool)], fill: u32, ew: f64, d: [f64;
         }
         xs.sort_by(|a, b| a.0.total_cmp(&b.0));
         // Signed area decides which side is "left".
-        let area: f64 = (0..m).map(|i| pts[i][0] * pts[(i + 1) % m][1] - pts[(i + 1) % m][0] * pts[i][1]).sum();
+        let area: f64 = (0..m)
+            .map(|i| pts[i][0] * pts[(i + 1) % m][1] - pts[(i + 1) % m][0] * pts[i][1])
+            .sum();
         let left_is_inside = area < 0.0;
         let mode = match fill {
             4 => {
@@ -514,8 +631,16 @@ fn scan_runs(polys: &[(Vec<[f64; 2]>, bool, bool)], fill: u32, ew: f64, d: [f64;
         }
         if mode == 6 {
             // Inverted Inside: outside of the polygon within the bounds.
-            let lo = pts.iter().map(|q| q[0] * d[0] + q[1] * d[1]).fold(f64::INFINITY, f64::min) - ew;
-            let hi = pts.iter().map(|q| q[0] * d[0] + q[1] * d[1]).fold(f64::NEG_INFINITY, f64::max) + ew;
+            let lo = pts
+                .iter()
+                .map(|q| q[0] * d[0] + q[1] * d[1])
+                .fold(f64::INFINITY, f64::min)
+                - ew;
+            let hi = pts
+                .iter()
+                .map(|q| q[0] * d[0] + q[1] * d[1])
+                .fold(f64::NEG_INFINITY, f64::max)
+                + ew;
             let mut cur = lo;
             for pair in xs.chunks(2) {
                 out.push((cur, pair[0].0));
@@ -546,14 +671,25 @@ const JOINS: [&str; 3] = ["Round", "Miter", "Bevel"];
 /// Convex polygons whose union is the stroke of the polylines `lines` with half width `r`:
 /// one quad per segment, plus the joins (Round discs, Miter wedges up to `miter_limit` × the
 /// half width, Bevel triangles) and the caps (Round discs, Butt none, Projecting square ends).
-pub(crate) fn stroke_outline(lines: &[Vec<[f64; 2]>], r: f64, cap: u32, join: u32, miter_limit: f64) -> Vec<Vec<[f64; 2]>> {
+pub(crate) fn stroke_outline(
+    lines: &[Vec<[f64; 2]>],
+    r: f64,
+    cap: u32,
+    join: u32,
+    miter_limit: f64,
+) -> Vec<Vec<[f64; 2]>> {
     let disc = |c: [f64; 2]| -> Vec<[f64; 2]> {
-        (0..16).map(|k| (k as f64 / 16.0 * std::f64::consts::TAU).sin_cos()).map(|(s, co)| [c[0] + co * r, c[1] + s * r]).collect()
+        (0..16)
+            .map(|k| (k as f64 / 16.0 * std::f64::consts::TAU).sin_cos())
+            .map(|(s, co)| [c[0] + co * r, c[1] + s * r])
+            .collect()
     };
     let mut out = Vec::new();
     for l in lines {
         let pts: Vec<[f64; 2]> = l.iter().copied().fold(Vec::new(), |mut v, p| {
-            if v.last().is_none_or(|q: &[f64; 2]| (q[0] - p[0]).hypot(q[1] - p[1]) > 1e-9) {
+            if v.last()
+                .is_none_or(|q: &[f64; 2]| (q[0] - p[0]).hypot(q[1] - p[1]) > 1e-9)
+            {
                 v.push(p);
             }
             v
@@ -581,7 +717,12 @@ pub(crate) fn stroke_outline(lines: &[Vec<[f64; 2]>], r: f64, cap: u32, join: u3
                 b = [b[0] + d[0] * r, b[1] + d[1] * r];
             }
             let nn = [-d[1] * r, d[0] * r];
-            out.push(vec![[a[0] + nn[0], a[1] + nn[1]], [b[0] + nn[0], b[1] + nn[1]], [b[0] - nn[0], b[1] - nn[1]], [a[0] - nn[0], a[1] - nn[1]]]);
+            out.push(vec![
+                [a[0] + nn[0], a[1] + nn[1]],
+                [b[0] + nn[0], b[1] + nn[1]],
+                [b[0] - nn[0], b[1] - nn[1]],
+                [a[0] - nn[0], a[1] - nn[1]],
+            ]);
         }
         // Joins.
         for k in 1..n - 1 {
@@ -603,12 +744,24 @@ pub(crate) fn stroke_outline(lines: &[Vec<[f64; 2]>], r: f64, cap: u32, join: u3
                 // Miter point: where the two offset edges meet.
                 let bis = [d0[0] - d1[0], d0[1] - d1[1]];
                 let bl = bis[0].hypot(bis[1]);
-                let cos_half = ((1.0 + d0[0] * d1[0] + d0[1] * d1[1]) * 0.5).max(0.0).sqrt();
-                let len = if cos_half > 1e-6 { r / cos_half } else { f64::INFINITY };
+                let cos_half = ((1.0 + d0[0] * d1[0] + d0[1] * d1[1]) * 0.5)
+                    .max(0.0)
+                    .sqrt();
+                let len = if cos_half > 1e-6 {
+                    r / cos_half
+                } else {
+                    f64::INFINITY
+                };
                 if bl > 1e-9 && len <= miter_limit * r {
-                    let m = [p[0] + (o0[0] + o1[0] - 2.0 * p[0]) * 0.5, p[1] + (o0[1] + o1[1] - 2.0 * p[1]) * 0.5];
+                    let m = [
+                        p[0] + (o0[0] + o1[0] - 2.0 * p[0]) * 0.5,
+                        p[1] + (o0[1] + o1[1] - 2.0 * p[1]) * 0.5,
+                    ];
                     let ml = (m[0] - p[0]).hypot(m[1] - p[1]).max(1e-12);
-                    let tip = [p[0] + (m[0] - p[0]) / ml * len, p[1] + (m[1] - p[1]) / ml * len];
+                    let tip = [
+                        p[0] + (m[0] - p[0]) / ml * len,
+                        p[1] + (m[1] - p[1]) / ml * len,
+                    ];
                     out.push(vec![p, o0, tip, o1]);
                     continue;
                 }
@@ -647,21 +800,36 @@ pub(crate) fn raster_convex(w: usize, h: usize, polys: &[Vec<[f64; 2]>]) -> Plan
         if poly.len() < 3 {
             continue;
         }
-        let (mut x0, mut y0, mut x1, mut y1) = (f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY);
+        let (mut x0, mut y0, mut x1, mut y1) = (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        );
         for p in poly {
             x0 = x0.min(p[0]);
             y0 = y0.min(p[1]);
             x1 = x1.max(p[0]);
             y1 = y1.max(p[1]);
         }
-        let (xa, xb) = (x0.floor().max(0.0) as usize, (x1.ceil().max(0.0) as usize).min(w));
-        let (ya, yb) = (y0.floor().max(0.0) as usize, (y1.ceil().max(0.0) as usize).min(h));
+        let (xa, xb) = (
+            x0.floor().max(0.0) as usize,
+            (x1.ceil().max(0.0) as usize).min(w),
+        );
+        let (ya, yb) = (
+            y0.floor().max(0.0) as usize,
+            (y1.ceil().max(0.0) as usize).min(h),
+        );
         for y in ya..yb {
             for x in xa..xb {
                 let mut hit = 0;
                 for sy in 0..4 {
                     for sx in 0..4 {
-                        if inside(poly, x as f64 + (sx as f64 + 0.5) / 4.0, y as f64 + (sy as f64 + 0.5) / 4.0) {
+                        if inside(
+                            poly,
+                            x as f64 + (sx as f64 + 0.5) / 4.0,
+                            y as f64 + (sy as f64 + 0.5) / 4.0,
+                        ) {
                             hit += 1;
                         }
                     }
@@ -686,8 +854,18 @@ fn scribble(ctx: &EffectCtx, mut b: Buf) -> Buf {
 fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
     let pr = ctx.params;
     let which = pr.e("scribble");
-    let polys: Vec<_> = if which == 0 { mask_px(ctx, b, pr.f("mask").round().max(1.0) as usize).into_iter().collect() } else { all_masks_px(ctx, b) };
-    let polys: Vec<_> = polys.into_iter().filter(|p| p.0.len() >= 3).map(|(p, c, i)| (p, c, i && which == 2)).collect();
+    let polys: Vec<_> = if which == 0 {
+        mask_px(ctx, b, pr.f("mask").round().max(1.0) as usize)
+            .into_iter()
+            .collect()
+    } else {
+        all_masks_px(ctx, b)
+    };
+    let polys: Vec<_> = polys
+        .into_iter()
+        .filter(|p| p.0.len() >= 3)
+        .map(|(p, c, i)| (p, c, i && which == 2))
+        .collect();
     let style = scribble_style(ctx);
     if polys.is_empty() {
         return None;
@@ -701,7 +879,9 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
     let width = (pr.f("strokeWidth") * sc).max(0.1);
     let curv = pr.f("strokeOptions/curviness") / 100.0;
     let curv_var = pr.f("strokeOptions/curvinessVariation") / 100.0;
-    let spacing = (pr.f("strokeOptions/spacing") * sc).max(0.75).max(width * 0.25);
+    let spacing = (pr.f("strokeOptions/spacing") * sc)
+        .max(0.75)
+        .max(width * 0.25);
     let spacing_var = pr.f("strokeOptions/spacingVariation") / 100.0;
     let overlap = pr.f("strokeOptions/pathOverlap") / 100.0;
     let overlap_var = pr.f("strokeOptions/pathOverlapVariation") / 100.0;
@@ -720,16 +900,30 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
         }
     };
     let rnd = |i: u32, k: u32| {
-        let a = hash1(i, k.wrapping_mul(31).wrapping_add(step.wrapping_mul(7919)), seed) * 2.0 - 1.0;
+        let a = hash1(
+            i,
+            k.wrapping_mul(31).wrapping_add(step.wrapping_mul(7919)),
+            seed,
+        ) * 2.0
+            - 1.0;
         if frac > 0.0 {
-            let c = hash1(i, k.wrapping_mul(31).wrapping_add((step + 1).wrapping_mul(7919)), seed) * 2.0 - 1.0;
+            let c = hash1(
+                i,
+                k.wrapping_mul(31)
+                    .wrapping_add((step + 1).wrapping_mul(7919)),
+                seed,
+            ) * 2.0
+                - 1.0;
             a + (c - a) * frac
         } else {
             a
         }
     };
-    let groups: Vec<Vec<(Vec<[f64; 2]>, bool, bool)>> =
-        if which == 0 || sequential { vec![polys.clone()] } else { polys.iter().map(|p| vec![p.clone()]).collect() };
+    let groups: Vec<Vec<(Vec<[f64; 2]>, bool, bool)>> = if which == 0 || sequential {
+        vec![polys.clone()]
+    } else {
+        polys.iter().map(|p| vec![p.clone()]).collect()
+    };
     // Per group a zig-zag polyline (in buffer px).
     let mut lines: Vec<Vec<Vec<[f64; 2]>>> = Vec::new();
     let mut runs = Vec::new();
@@ -756,14 +950,17 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
             for (ri, &(a, bb)) in runs.iter().enumerate() {
                 let k = (gi as u32) << 20 | ri as u32;
                 let ov = spacing * (overlap + overlap_var * rnd(li, k * 4) as f64 * 0.5).max(-0.45);
-                let ov2 = spacing * (overlap + overlap_var * rnd(li, k * 4 + 1) as f64 * 0.5).max(-0.45);
+                let ov2 =
+                    spacing * (overlap + overlap_var * rnd(li, k * 4 + 1) as f64 * 0.5).max(-0.45);
                 let (a, bb) = (a - ov, bb + ov2);
                 if bb <= a {
                     continue;
                 }
                 let at = |t: f64| [d[0] * t + n[0] * s, d[1] * t + n[1] * s];
                 let (pa, pb) = (at(a), at(bb));
-                let dist = |p: [f64; 2], q: [f64; 2]| ((p[0] - q[0]).powi(2) + (p[1] - q[1]).powi(2)).sqrt();
+                let dist = |p: [f64; 2], q: [f64; 2]| {
+                    ((p[0] - q[0]).powi(2) + (p[1] - q[1]).powi(2)).sqrt()
+                };
                 let best = chains
                     .iter()
                     .enumerate()
@@ -777,10 +974,17 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
                 match best {
                     Some((ci, _)) => {
                         let last = *chains[ci].0.last().unwrap_or(&pa);
-                        let (p0, p1, dir) = if dist(last, pa) <= dist(last, pb) { (pa, pb, -1.0) } else { (pb, pa, 1.0) };
+                        let (p0, p1, dir) = if dist(last, pa) <= dist(last, pb) {
+                            (pa, pb, -1.0)
+                        } else {
+                            (pb, pa, 1.0)
+                        };
                         // Curved turn: an extra point pushed past the edge.
                         let c = (curv + curv_var * rnd(li, k * 4 + 2) as f64 * 0.5).max(0.0);
-                        let mid = [(last[0] + p0[0]) * 0.5 + d[0] * dir * c * spacing, (last[1] + p0[1]) * 0.5 + d[1] * dir * c * spacing];
+                        let mid = [
+                            (last[0] + p0[0]) * 0.5 + d[0] * dir * c * spacing,
+                            (last[1] + p0[1]) * 0.5 + d[1] * dir * c * spacing,
+                        ];
                         let ch = &mut chains[ci];
                         ch.0.extend([mid, p0, p1]);
                         ch.1 = li;
@@ -791,7 +995,12 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
             s += spacing * (1.0 + spacing_var * rnd(li, 3) as f64 * 0.5).max(0.25);
             li += 1;
         }
-        lines.push(chains.into_iter().map(|(z, _)| if curv > 0.0 { chaikin(&z, 2) } else { z }).collect());
+        lines.push(
+            chains
+                .into_iter()
+                .map(|(z, _)| if curv > 0.0 { chaikin(&z, 2) } else { z })
+                .collect(),
+        );
     }
     let r = width * 0.5;
     // Start / End Apply To: all of a mask's strokes as one path, or each stroke on its own.
@@ -803,8 +1012,16 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
         let (g0, g1) = (total * start, total * end);
         let mut acc = 0.0;
         for (l, len) in group.iter().zip(lens) {
-            let part =
-                if each { trim_poly(l, false, len * start, len * end) } else { trim_poly(l, false, (g0 - acc).clamp(0.0, len), (g1 - acc).clamp(0.0, len)) };
+            let part = if each {
+                trim_poly(l, false, len * start, len * end)
+            } else {
+                trim_poly(
+                    l,
+                    false,
+                    (g0 - acc).clamp(0.0, len),
+                    (g1 - acc).clamp(0.0, len),
+                )
+            };
             acc += len;
             parts.push(part);
         }
@@ -816,11 +1033,25 @@ fn scribble_plan(ctx: &EffectCtx, b: &Buf) -> Option<PaintPlan> {
         for part in &parts {
             poly_segs(part, false, r, 1.0, &mut segs);
         }
-        Coverage::Segs { segs, hardness: 0.9 }
+        Coverage::Segs {
+            segs,
+            hardness: 0.9,
+        }
     } else {
-        Coverage::Convex(stroke_outline(&parts, r, cap, join, pr.f("edgeOptions/miterLimit").max(1.0)))
+        Coverage::Convex(stroke_outline(
+            &parts,
+            r,
+            cap,
+            join,
+            pr.f("edgeOptions/miterLimit").max(1.0),
+        ))
     };
-    Some(PaintPlan { cov, color: pr.color("color"), opacity: (pr.f("opacity") / 100.0) as f32, style })
+    Some(PaintPlan {
+        cov,
+        color: pr.color("color"),
+        opacity: (pr.f("opacity") / 100.0) as f32,
+        style,
+    })
 }
 
 // ---------------------------------------------------------------- Stroke
@@ -834,7 +1065,13 @@ fn stroke(ctx: &EffectCtx, mut b: Buf) -> Buf {
 fn stroke_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
     let pr = ctx.params;
     let all = pr.b("allMasks");
-    let polys: Vec<_> = if all { all_masks_px(ctx, b) } else { mask_px(ctx, b, pr.f("path").round() as usize).into_iter().collect() };
+    let polys: Vec<_> = if all {
+        all_masks_px(ctx, b)
+    } else {
+        mask_px(ctx, b, pr.f("path").round() as usize)
+            .into_iter()
+            .collect()
+    };
     let style = pr.e("paintStyle");
     let size = (pr.f("brushSize") * b.scale).max(0.1);
     let r = size * 0.5;
@@ -866,12 +1103,25 @@ fn stroke_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
             let mut s = s0;
             while s <= s1 + 1e-9 && segs.len() < 200_000 {
                 let (q, _) = crate::util::poly_point_at(pts, *closed, s);
-                segs.push(Seg { a: q, b: q, r, v: 1.0 });
+                segs.push(Seg {
+                    a: q,
+                    b: q,
+                    r,
+                    v: 1.0,
+                });
                 s += step;
             }
         }
     }
-    PaintPlan { cov: Coverage::Segs { segs, hardness: hard }, color: pr.color("color"), opacity: (pr.f("opacity") / 100.0) as f32, style }
+    PaintPlan {
+        cov: Coverage::Segs {
+            segs,
+            hardness: hard,
+        },
+        color: pr.color("color"),
+        opacity: (pr.f("opacity") / 100.0) as f32,
+        style,
+    }
 }
 
 // ---------------------------------------------------------------- Vegas
@@ -889,18 +1139,33 @@ fn contours(pl: &Plane, thr: f32) -> Vec<(Vec<[f64; 2]>, bool)> {
     let mut pos: HashMap<u64, [f64; 2]> = HashMap::new();
     let mut adj: HashMap<u64, Vec<u64>> = HashMap::new();
     let v = |x: usize, y: usize| pl.data[y * w + x];
-    let interp = |a: f32, b: f32| if (b - a).abs() > 1e-9 { ((thr - a) / (b - a)).clamp(0.0, 1.0) as f64 } else { 0.5 };
+    let interp = |a: f32, b: f32| {
+        if (b - a).abs() > 1e-9 {
+            ((thr - a) / (b - a)).clamp(0.0, 1.0) as f64
+        } else {
+            0.5
+        }
+    };
     for y in 0..h - 1 {
         for x in 0..w - 1 {
             let (a, bb, c, d) = (v(x, y), v(x + 1, y), v(x + 1, y + 1), v(x, y + 1));
-            let idx = (a > thr) as u8 | ((bb > thr) as u8) << 1 | ((c > thr) as u8) << 2 | ((d > thr) as u8) << 3;
+            let idx = (a > thr) as u8
+                | ((bb > thr) as u8) << 1
+                | ((c > thr) as u8) << 2
+                | ((d > thr) as u8) << 3;
             if idx == 0 || idx == 15 {
                 continue;
             }
             // Edge points (pixel centres at +0.5).
             let top = (hk(x, y), [x as f64 + 0.5 + interp(a, bb), y as f64 + 0.5]);
-            let right = (vk(x + 1, y), [x as f64 + 1.5, y as f64 + 0.5 + interp(bb, c)]);
-            let bottom = (hk(x, y + 1), [x as f64 + 0.5 + interp(d, c), y as f64 + 1.5]);
+            let right = (
+                vk(x + 1, y),
+                [x as f64 + 1.5, y as f64 + 0.5 + interp(bb, c)],
+            );
+            let bottom = (
+                hk(x, y + 1),
+                [x as f64 + 0.5 + interp(d, c), y as f64 + 1.5],
+            );
             let left = (vk(x, y), [x as f64 + 0.5, y as f64 + 0.5 + interp(a, d)]);
             let pairs: &[(usize, usize)] = match idx {
                 1 | 14 => &[(3, 0)],
@@ -944,7 +1209,10 @@ fn contours(pl: &Plane, thr: f32) -> Vec<(Vec<[f64; 2]>, bool)> {
                     chain.pop();
                     break;
                 }
-                let next = adj[&cur].iter().copied().find(|&n| n != prev && !used.contains(&(cur.min(n), cur.max(n))));
+                let next = adj[&cur]
+                    .iter()
+                    .copied()
+                    .find(|&n| n != prev && !used.contains(&(cur.min(n), cur.max(n))));
                 match next {
                     Some(n) => {
                         used.insert((cur.min(n), cur.max(n)));
@@ -973,7 +1241,9 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
     let (w, h) = (b.img.width as usize, b.img.height as usize);
     let sc = b.scale;
     let paths: Vec<(Vec<[f64; 2]>, bool)> = if pr.e("stroke") == 1 {
-        mask_px(ctx, b, pr.f("path").round() as usize).map(|(p, c, _)| vec![(p, c)]).unwrap_or_default()
+        mask_px(ctx, b, pr.f("path").round() as usize)
+            .map(|(p, c, _)| vec![(p, c)])
+            .unwrap_or_default()
     } else {
         let src = layer_or_self(ctx, b, "inputLayer", true, pr.e("ifLayerSizesDiffer") == 1);
         let ch = pr.e("channel");
@@ -1000,7 +1270,9 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
             for (c, _) in cs.iter_mut() {
                 let mut keep: Vec<[f64; 2]> = Vec::with_capacity(c.len());
                 for &q in c.iter() {
-                    if keep.last().is_none_or(|l: &[f64; 2]| ((l[0] - q[0]).powi(2) + (l[1] - q[1]).powi(2)).sqrt() >= tol) {
+                    if keep.last().is_none_or(|l: &[f64; 2]| {
+                        ((l[0] - q[0]).powi(2) + (l[1] - q[1]).powi(2)).sqrt() >= tol
+                    }) {
                         keep.push(q);
                     }
                 }
@@ -1018,7 +1290,10 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
     let nseg = pr.f("segments").round().clamp(1.0, 1000.0) as usize;
     // Shorter Contours Have Fewer Segments: segment count scales with contour length.
     let fewer = pr.e("stroke") == 0 && pr.e("shorterContoursHave") == 1;
-    let longest = paths.iter().map(|(p, c)| poly_length(p, *c)).fold(0.0, f64::max);
+    let longest = paths
+        .iter()
+        .map(|(p, c)| poly_length(p, *c))
+        .fold(0.0, f64::max);
     let seg_len = pr.f("length").clamp(0.0, 1.0);
     let bunched = pr.e("segmentDistribution") == 0;
     let rot = pr.f("rotation") / 360.0;
@@ -1026,18 +1301,36 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
     let seed = pr.f("randomSeed") as i64 as u32 ^ ctx.seed;
     let width = (pr.f("width") * sc).max(0.1);
     let hard = pr.f("hardness").clamp(0.0, 1.0);
-    let (o0, om, o1, mp) = (pr.f("startOpacity") as f32, pr.f("midpointOpacity") as f32, pr.f("endOpacity") as f32, pr.f("midpointPosition").clamp(0.01, 0.99));
+    let (o0, om, o1, mp) = (
+        pr.f("startOpacity") as f32,
+        pr.f("midpointOpacity") as f32,
+        pr.f("endOpacity") as f32,
+        pr.f("midpointPosition").clamp(0.01, 0.99),
+    );
     let mut segs = Vec::new();
     for (ci, (pts, closed)) in paths.iter().enumerate() {
         let len = poly_length(pts, *closed);
         if len <= 0.0 {
             continue;
         }
-        let phase = rot + if random_phase { hash1(ci as u32, 1, seed) as f64 } else { 0.0 };
-        let nseg = if fewer && longest > 0.0 { ((nseg as f64 * len / longest).round() as usize).max(1) } else { nseg };
+        let phase = rot
+            + if random_phase {
+                hash1(ci as u32, 1, seed) as f64
+            } else {
+                0.0
+            };
+        let nseg = if fewer && longest > 0.0 {
+            ((nseg as f64 * len / longest).round() as usize).max(1)
+        } else {
+            nseg
+        };
         let each = len / nseg as f64 * seg_len;
         for i in 0..nseg {
-            let base = if bunched { (i as f64 + (hash1(ci as u32, i as u32 + 7, seed) as f64 - 0.5) * 0.8) / nseg as f64 } else { i as f64 / nseg as f64 };
+            let base = if bunched {
+                (i as f64 + (hash1(ci as u32, i as u32 + 7, seed) as f64 - 0.5) * 0.8) / nseg as f64
+            } else {
+                i as f64 / nseg as f64
+            };
             let s0 = (base + phase).rem_euclid(1.0) * len;
             // Sub-sample the segment so opacity can ramp along it.
             let sub = 12usize;
@@ -1051,11 +1344,21 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
                     break;
                 }
                 let (q, _) = crate::util::poly_point_at(pts, *closed, s);
-                let op = if f < mp { o0 + (om - o0) * (f / mp) as f32 } else { om + (o1 - om) * ((f - mp) / (1.0 - mp)) as f32 };
+                let op = if f < mp {
+                    o0 + (om - o0) * (f / mp) as f32
+                } else {
+                    om + (o1 - om) * ((f - mp) / (1.0 - mp)) as f32
+                };
                 if let Some(pv) = prev
-                    && ((pv[0] - q[0]).powi(2) + (pv[1] - q[1]).powi(2)) < (each * 0.5).powi(2) + 4.0
+                    && ((pv[0] - q[0]).powi(2) + (pv[1] - q[1]).powi(2))
+                        < (each * 0.5).powi(2) + 4.0
                 {
-                    segs.push(Seg { a: pv, b: q, r: width * 0.5, v: op.clamp(0.0, 1.0) });
+                    segs.push(Seg {
+                        a: pv,
+                        b: q,
+                        r: width * 0.5,
+                        v: op.clamp(0.0, 1.0),
+                    });
                 }
                 prev = Some(q);
             }
@@ -1067,7 +1370,15 @@ fn vegas_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
         3 => 2,
         _ => 1,
     };
-    PaintPlan { cov: Coverage::Segs { segs, hardness: hard }, color: pr.color("color"), opacity: 1.0, style }
+    PaintPlan {
+        cov: Coverage::Segs {
+            segs,
+            hardness: hard,
+        },
+        color: pr.color("color"),
+        opacity: 1.0,
+        style,
+    }
 }
 
 // ---------------------------------------------------------------- Write-on / Glue Gun
@@ -1095,7 +1406,11 @@ fn write_on_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
     let radius = |p: &Params| (p.f("brushSize") * b.scale * 0.5).max(0.05);
     let dab = |p: &Params| {
         let q = b.to_px(p.v2("brushPosition"));
-        ([q.0, q.1], radius(if own_size { p } else { pr }), if own_opacity { opacity(p) } else { 1.0 })
+        (
+            [q.0, q.1],
+            radius(if own_size { p } else { pr }),
+            if own_opacity { opacity(p) } else { 1.0 },
+        )
     };
     let mut segs = vec![];
     let t = ctx.time;
@@ -1114,7 +1429,11 @@ fn write_on_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
         let mut k = k0;
         while k <= k1 {
             let tk = k as f64 * spacing;
-            let at = if (tk - t).abs() < 1e-9 { Some(dab(pr)) } else { host.params_at(tk).map(|p| dab(&p)) };
+            let at = if (tk - t).abs() < 1e-9 {
+                Some(dab(pr))
+            } else {
+                host.params_at(tk).map(|p| dab(&p))
+            };
             if let Some((q, r, v)) = at {
                 // Dabs laid further apart than the brush spacing are joined into a line.
                 let a = if stride > 1 { prev.unwrap_or(q) } else { q };
@@ -1129,7 +1448,10 @@ fn write_on_plan(ctx: &EffectCtx, b: &Buf) -> PaintPlan {
         segs.push(Seg { a: q, b: q, r, v });
     }
     PaintPlan {
-        cov: Coverage::Segs { segs, hardness: pr.f("brushHardness") / 100.0 },
+        cov: Coverage::Segs {
+            segs,
+            hardness: pr.f("brushHardness") / 100.0,
+        },
         color: pr.color("color"),
         opacity: if own_opacity { 1.0 } else { opacity(pr) },
         style: pr.e("paintStyle"),
@@ -1151,8 +1473,15 @@ fn glue_gun(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let centers: Vec<([f64; 2], f64)> = (0..beads)
         .map(|i| {
             let a = hash1(i as u32, 1, seed) as f64 * 2.0 * PI;
-            let d = if i == 0 { 0.0 } else { hash1(i as u32, 2, seed) as f64 * rad * 0.35 };
-            ([q.0 + a.cos() * d, q.1 + a.sin() * d], rad * (0.75 + 0.25 * hash1(i as u32, 3, seed) as f64))
+            let d = if i == 0 {
+                0.0
+            } else {
+                hash1(i as u32, 2, seed) as f64 * rad * 0.35
+            };
+            (
+                [q.0 + a.cos() * d, q.1 + a.sin() * d],
+                rad * (0.75 + 0.25 * hash1(i as u32, 3, seed) as f64),
+            )
         })
         .collect();
     b.img.rows_mut().for_each(|(y, row)| {
@@ -1180,11 +1509,24 @@ fn glue_gun(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let ndl = (nrm[0] * light[0] + nrm[1] * light[1] + nrm[2] * light[2]).max(0.0);
             let spec = ndl.powi(24) as f32;
             // Refraction: look through the bead.
-            let s = src.sample_bilinear_clamped(fx - nrm[0] * best.2 * 0.5 * strength as f64, fy - nrm[1] * best.2 * 0.5 * strength as f64);
+            let s = src.sample_bilinear_clamped(
+                fx - nrm[0] * best.2 * 0.5 * strength as f64,
+                fy - nrm[1] * best.2 * 0.5 * strength as f64,
+            );
             let edge = smoothstep(0.0, 0.15, best.0 as f32);
             let shade = 0.65 + 0.35 * ndl as f32;
-            let g = [s[0] * shade + spec, s[1] * shade + spec, s[2] * shade + spec, s[3].max(0.6)];
-            let gp = [g[0].min(g[3] + spec), g[1].min(g[3] + spec), g[2].min(g[3] + spec), g[3].min(1.0)];
+            let g = [
+                s[0] * shade + spec,
+                s[1] * shade + spec,
+                s[2] * shade + spec,
+                s[3].max(0.6),
+            ];
+            let gp = [
+                g[0].min(g[3] + spec),
+                g[1].min(g[3] + spec),
+                g[2].min(g[3] + spec),
+                g[3].min(1.0),
+            ];
             let base = if glue_only { [0.0; 4] } else { *px };
             *px = crate::util::lerp4(base, gp, edge * strength.clamp(0.0, 1.0).max(0.3));
             px[3] = px[3].clamp(0.0, 1.0);
@@ -1261,14 +1603,22 @@ fn paint_bucket(ctx: &EffectCtx, mut b: Buf) -> Buf {
     }
     let region = paint_bucket_region(ctx, &b);
     if pr.b("viewThreshold") {
-        b.img.data.par_iter_mut().zip(region.data.par_iter()).for_each(|(px, &v)| *px = [v, v, v, 1.0]);
+        b.img
+            .data
+            .par_iter_mut()
+            .zip(region.data.par_iter())
+            .for_each(|(px, &v)| *px = [v, v, v, 1.0]);
         return b;
     }
     let sc = b.scale;
     let mut cov = match pr.e("stroke") {
         1 => {
             let s = pr.f("featherSoftness") * sc * 0.5;
-            if s > 0.05 { gauss_plane(&region, s, s) } else { region.clone() }
+            if s > 0.05 {
+                gauss_plane(&region, s, s)
+            } else {
+                region.clone()
+            }
         }
         2 => morph_frac(&region, pr.f("spreadRadius") * sc, true),
         3 => morph_frac(&region, pr.f("spreadRadius") * sc, false),
@@ -1287,46 +1637,54 @@ fn paint_bucket(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let color = pr.color("color");
     let op = (pr.f("opacity") / 100.0) as f32;
     let mode = pr.e("blendingMode");
-    b.img.data.par_iter_mut().zip(cov.data.par_iter()).for_each(|(px, &c)| {
-        let k = (c * op * color[3]).clamp(0.0, 1.0);
-        if k <= 0.0 {
-            if mode == 9 {
-                *px = [0.0; 4];
-            }
-            return;
-        }
-        let (dc, da) = unpremul(*px);
-        let fc = [color[0], color[1], color[2]];
-        let mixed = match mode {
-            1 => [dc[0] + fc[0], dc[1] + fc[1], dc[2] + fc[2]],
-            2 => [dc[0] * fc[0], dc[1] * fc[1], dc[2] * fc[2]],
-            3 => [1.0 - (1.0 - dc[0]) * (1.0 - fc[0]), 1.0 - (1.0 - dc[1]) * (1.0 - fc[1]), 1.0 - (1.0 - dc[2]) * (1.0 - fc[2])],
-            4..=7 => {
-                let (dh, ds, dl) = rgb_to_hsl(dc[0], dc[1], dc[2]);
-                let (fh, fs, fl) = rgb_to_hsl(fc[0], fc[1], fc[2]);
-                let (r, g, bl) = match mode {
-                    4 => hsl_to_rgb(fh, ds, dl),
-                    5 => hsl_to_rgb(dh, fs, dl),
-                    6 => hsl_to_rgb(fh, fs, dl),
-                    _ => hsl_to_rgb(dh, ds, fl),
-                };
-                [r, g, bl]
-            }
-            _ => fc,
-        };
-        *px = match mode {
-            8 => over(premul(fc, k), *px),
-            9 => premul(fc, k),
-            0 => over(*px, premul(fc, k)),
-            _ => {
-                if da <= 1e-6 {
-                    return;
+    b.img
+        .data
+        .par_iter_mut()
+        .zip(cov.data.par_iter())
+        .for_each(|(px, &c)| {
+            let k = (c * op * color[3]).clamp(0.0, 1.0);
+            if k <= 0.0 {
+                if mode == 9 {
+                    *px = [0.0; 4];
                 }
-                let c3 = crate::util::lerp3(dc, mixed, k);
-                premul(c3, da)
+                return;
             }
-        };
-    });
+            let (dc, da) = unpremul(*px);
+            let fc = [color[0], color[1], color[2]];
+            let mixed = match mode {
+                1 => [dc[0] + fc[0], dc[1] + fc[1], dc[2] + fc[2]],
+                2 => [dc[0] * fc[0], dc[1] * fc[1], dc[2] * fc[2]],
+                3 => [
+                    1.0 - (1.0 - dc[0]) * (1.0 - fc[0]),
+                    1.0 - (1.0 - dc[1]) * (1.0 - fc[1]),
+                    1.0 - (1.0 - dc[2]) * (1.0 - fc[2]),
+                ],
+                4..=7 => {
+                    let (dh, ds, dl) = rgb_to_hsl(dc[0], dc[1], dc[2]);
+                    let (fh, fs, fl) = rgb_to_hsl(fc[0], fc[1], fc[2]);
+                    let (r, g, bl) = match mode {
+                        4 => hsl_to_rgb(fh, ds, dl),
+                        5 => hsl_to_rgb(dh, fs, dl),
+                        6 => hsl_to_rgb(fh, fs, dl),
+                        _ => hsl_to_rgb(dh, ds, fl),
+                    };
+                    [r, g, bl]
+                }
+                _ => fc,
+            };
+            *px = match mode {
+                8 => over(premul(fc, k), *px),
+                9 => premul(fc, k),
+                0 => over(*px, premul(fc, k)),
+                _ => {
+                    if da <= 1e-6 {
+                        return;
+                    }
+                    let c3 = crate::util::lerp3(dc, mixed, k);
+                    premul(c3, da)
+                }
+            };
+        });
     b
 }
 
@@ -1401,10 +1759,23 @@ pub fn eyedropper_color(ctx: &EffectCtx, b: &Buf) -> Px {
     if n > 0.0 {
         if mode == 3 {
             let a = (acc[3] / n) as f32;
-            let s = if a > 1e-6 { [(acc[0] / n) as f32 / a, (acc[1] / n) as f32 / a, (acc[2] / n) as f32 / a] } else { [0.0; 3] };
+            let s = if a > 1e-6 {
+                [
+                    (acc[0] / n) as f32 / a,
+                    (acc[1] / n) as f32 / a,
+                    (acc[2] / n) as f32 / a,
+                ]
+            } else {
+                [0.0; 3]
+            };
             [s[0], s[1], s[2], a]
         } else {
-            [(acc[0] / n) as f32, (acc[1] / n) as f32, (acc[2] / n) as f32, 1.0]
+            [
+                (acc[0] / n) as f32,
+                (acc[1] / n) as f32,
+                (acc[2] / n) as f32,
+                1.0,
+            ]
         }
     } else {
         [0.0, 0.0, 0.0, 0.0]
@@ -1451,16 +1822,35 @@ fn threads(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 continue;
             };
             // Thread colour: the source sampled along the thread centre line.
-            let (sx, sy) = if horizontal { to_px(u, (cj as f64 + 0.5) * th) } else { to_px((ci as f64 + 0.5) * tw, v) };
+            let (sx, sy) = if horizontal {
+                to_px(u, (cj as f64 + 0.5) * th)
+            } else {
+                to_px((ci as f64 + 0.5) * tw, v)
+            };
             let s = src.sample_bilinear_clamped(sx, sy);
             // Round profile across the thread + darkening where it dives under its neighbour.
-            let across = if horizontal { (fv - 0.5) / (coverage * 0.5).max(1e-6) } else { (fu - 0.5) / (coverage * 0.5).max(1e-6) };
+            let across = if horizontal {
+                (fv - 0.5) / (coverage * 0.5).max(1e-6)
+            } else {
+                (fu - 0.5) / (coverage * 0.5).max(1e-6)
+            };
             let along = if horizontal { fu } else { fv };
             let profile = (1.0 - across * across).max(0.0).sqrt() as f32;
             let dive = 1.0 - (along - 0.5).abs() as f32 * 2.0;
-            let shade = 1.0 - shadow * (1.0 - profile) * 0.8 - shadow * 0.25 * (1.0 - dive) * if horizontal == h_top { 0.0 } else { 1.0 };
-            let fib =
-                if texture > 0.0 { 1.0 - texture * 0.3 * hash1((along * 64.0) as u32, (across * 8.0 + 8.0) as u32, ci as u32 ^ (cj as u32) << 8) } else { 1.0 };
+            let shade = 1.0
+                - shadow * (1.0 - profile) * 0.8
+                - shadow * 0.25 * (1.0 - dive) * if horizontal == h_top { 0.0 } else { 1.0 };
+            let fib = if texture > 0.0 {
+                1.0 - texture
+                    * 0.3
+                    * hash1(
+                        (along * 64.0) as u32,
+                        (across * 8.0 + 8.0) as u32,
+                        ci as u32 ^ (cj as u32) << 8,
+                    )
+            } else {
+                1.0
+            };
             let k = (shade * fib).max(0.0);
             *px = [s[0] * k, s[1] * k, s[2] * k, s[3]];
         }
@@ -1525,7 +1915,10 @@ fn audio_window(ctx: &EffectCtx, dur_ms: f64, offset_ms: f64, channel: u32) -> O
     Some(
         (0..frames)
             .map(|i| {
-                let (l, r) = (*s.get(2 * i).unwrap_or(&0.0) as f64, *s.get(2 * i + 1).unwrap_or(&0.0) as f64);
+                let (l, r) = (
+                    *s.get(2 * i).unwrap_or(&0.0) as f64,
+                    *s.get(2 * i + 1).unwrap_or(&0.0) as f64,
+                );
                 match channel {
                     1 => l,
                     2 => r,
@@ -1561,14 +1954,31 @@ impl Baseline {
         };
         let len = poly_length(&pts, closed);
         let center = pts[0];
-        let radius = if pts.len() > 1 { ((pts[1][0] - pts[0][0]).powi(2) + (pts[1][1] - pts[0][1]).powi(2)).sqrt() } else { 1.0 };
-        Baseline { pts, closed, len, polar, center, radius }
+        let radius = if pts.len() > 1 {
+            ((pts[1][0] - pts[0][0]).powi(2) + (pts[1][1] - pts[0][1]).powi(2)).sqrt()
+        } else {
+            1.0
+        };
+        Baseline {
+            pts,
+            closed,
+            len,
+            polar,
+            center,
+            radius,
+        }
     }
     fn at(&self, u: f64) -> ([f64; 2], [f64; 2]) {
         if self.polar {
             let a = u * 2.0 * PI - PI * 0.5;
             let (s, c) = a.sin_cos();
-            return ([self.center[0] + c * self.radius * 0.5, self.center[1] + s * self.radius * 0.5], [c, s]);
+            return (
+                [
+                    self.center[0] + c * self.radius * 0.5,
+                    self.center[1] + s * self.radius * 0.5,
+                ],
+                [c, s],
+            );
         }
         let (q, d) = crate::util::poly_point_at(&self.pts, self.closed, u * self.len);
         (q, [d[1], -d[0]])
@@ -1576,11 +1986,29 @@ impl Baseline {
 }
 
 /// Draw line/dot marks with core (inside colour) and soft halo (outside colour).
-fn draw_marks(b: &mut Buf, segs_core: &[Seg], thickness: f64, softness: f64, inside: [f32; 4], outside: [f32; 4], composite: bool) {
+fn draw_marks(
+    b: &mut Buf,
+    segs_core: &[Seg],
+    thickness: f64,
+    softness: f64,
+    inside: [f32; 4],
+    outside: [f32; 4],
+    composite: bool,
+) {
     let (w, h) = (b.img.width as usize, b.img.height as usize);
     let core = raster_segs(w, h, segs_core, 1.0);
-    let halo_segs: Vec<Seg> = segs_core.iter().map(|s| Seg { r: s.r + thickness * softness.max(0.0) + 0.5, ..*s }).collect();
-    let halo = if softness > 0.0 { raster_segs(w, h, &halo_segs, 0.0) } else { core.clone() };
+    let halo_segs: Vec<Seg> = segs_core
+        .iter()
+        .map(|s| Seg {
+            r: s.r + thickness * softness.max(0.0) + 0.5,
+            ..*s
+        })
+        .collect();
+    let halo = if softness > 0.0 {
+        raster_segs(w, h, &halo_segs, 0.0)
+    } else {
+        core.clone()
+    };
     b.img.data.par_iter_mut().enumerate().for_each(|(i, px)| {
         let (c, hl) = (core.data[i], halo.data[i]);
         let a = c.max(hl);
@@ -1590,7 +2018,11 @@ fn draw_marks(b: &mut Buf, segs_core: &[Seg], thickness: f64, softness: f64, ins
             return;
         }
         let t = if a > 0.0 { c / a } else { 0.0 };
-        let col = crate::util::lerp3([outside[0], outside[1], outside[2]], [inside[0], inside[1], inside[2]], t);
+        let col = crate::util::lerp3(
+            [outside[0], outside[1], outside[2]],
+            [inside[0], inside[1], inside[2]],
+            t,
+        );
         *px = over(base, premul(col, a));
     });
 }
@@ -1631,14 +2063,30 @@ fn marks(ctx: &EffectCtx, segs: Vec<Seg>, thick: f64, soft: f64) -> MarksPlan {
 
 fn audio_spectrum(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if let Some(m) = spectrum_plan(ctx, &b) {
-        draw_marks(&mut b, &m.segs, m.thickness, m.softness, m.inside, m.outside, m.composite);
+        draw_marks(
+            &mut b,
+            &m.segs,
+            m.thickness,
+            m.softness,
+            m.inside,
+            m.outside,
+            m.composite,
+        );
     }
     b
 }
 
 fn audio_waveform(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if let Some(m) = waveform_plan(ctx, &b) {
-        draw_marks(&mut b, &m.segs, m.thickness, m.softness, m.inside, m.outside, m.composite);
+        draw_marks(
+            &mut b,
+            &m.segs,
+            m.thickness,
+            m.softness,
+            m.inside,
+            m.outside,
+            m.composite,
+        );
     }
     b
 }
@@ -1701,10 +2149,18 @@ fn spectrum_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
     let mut tops = Vec::with_capacity(bands);
     let mut segs = Vec::new();
     for i in 0..bands {
-        let u = if bands > 1 { i as f64 / (bands - 1) as f64 } else { 0.5 };
+        let u = if bands > 1 {
+            i as f64 / (bands - 1) as f64
+        } else {
+            0.5
+        };
         let fc = f0 + (f1 - f0) * u;
         let v = get_band_mag(fc);
-        let hgt = if (v * max_h).is_finite() { (v * max_h).clamp(0.0, max_h.max(0.0)) } else { 0.0 };
+        let hgt = if (v * max_h).is_finite() {
+            (v * max_h).clamp(0.0, max_h.max(0.0))
+        } else {
+            0.0
+        };
         let (q, nrm) = base.at(u);
         let (ua, ub) = match side {
             0 => (0.0, hgt),
@@ -1714,22 +2170,47 @@ fn spectrum_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
         let pa = [q[0] + nrm[0] * ua, q[1] + nrm[1] * ua];
         let pb = [q[0] + nrm[0] * ub, q[1] + nrm[1] * ub];
         match disp {
-            0 => segs.push(Seg { a: pa, b: pb, r: thick * 0.5, v: 1.0 }),
+            0 => segs.push(Seg {
+                a: pa,
+                b: pb,
+                r: thick * 0.5,
+                v: 1.0,
+            }),
             _ => tops.push((pa, pb)),
         }
     }
     if disp == 1 {
         for w2 in tops.windows(2) {
-            segs.push(Seg { a: w2[0].1, b: w2[1].1, r: thick * 0.5, v: 1.0 });
+            segs.push(Seg {
+                a: w2[0].1,
+                b: w2[1].1,
+                r: thick * 0.5,
+                v: 1.0,
+            });
             if side == 2 {
-                segs.push(Seg { a: w2[0].0, b: w2[1].0, r: thick * 0.5, v: 1.0 });
+                segs.push(Seg {
+                    a: w2[0].0,
+                    b: w2[1].0,
+                    r: thick * 0.5,
+                    v: 1.0,
+                });
             }
         }
     } else if disp == 2 {
         for &(pa, pb) in &tops {
-            segs.push(Seg { a: pb, b: pb, r: thick * 0.5, v: 1.0 });
+            segs.push(Seg {
+                a: pb,
+                b: pb,
+                r: thick * 0.5,
+                v: 1.0,
+            });
             if side == 2 {
-                segs.push(Seg { a: pa, b: pa, r: thick * 0.5, v: 1.0 });
+                segs.push(Seg {
+                    a: pa,
+                    b: pa,
+                    r: thick * 0.5,
+                    v: 1.0,
+                });
             }
         }
     }
@@ -1738,7 +2219,12 @@ fn spectrum_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
 
 fn waveform_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
     let pr = ctx.params;
-    let samples = audio_window(ctx, pr.f("audioDuration"), pr.f("audioOffset"), pr.e("waveformOptions"))?;
+    let samples = audio_window(
+        ctx,
+        pr.f("audioDuration"),
+        pr.f("audioOffset"),
+        pr.e("waveformOptions"),
+    )?;
     let count = pr.f("displayedSamples").round().clamp(2.0, 4096.0) as usize;
     let max_h = pr.f("maximumHeight") * b.scale;
     let thick = (pr.f("thickness") * b.scale).max(0.1);
@@ -1775,7 +2261,12 @@ fn waveform_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
     if disp == 1 {
         poly_segs(&pts, false, thick * 0.5, 1.0, &mut segs);
     } else if disp == 2 {
-        segs.extend(pts.iter().map(|&q| Seg { a: q, b: q, r: thick * 0.5, v: 1.0 }));
+        segs.extend(pts.iter().map(|&q| Seg {
+            a: q,
+            b: q,
+            r: thick * 0.5,
+            v: 1.0,
+        }));
     }
     Some(marks(ctx, segs, thick, soft))
 }
@@ -1784,36 +2275,125 @@ fn waveform_plan(ctx: &EffectCtx, b: &Buf) -> Option<MarksPlan> {
 
 pub fn specs() -> Vec<EffectSpec> {
     let ang = || ParamUi::Angle;
-    let check = |id: &'static str, name: &'static str, v: bool| p(id, name, Value::Bool(v), ParamUi::Checkbox);
-    let paint_style = || popup(&["On Original Image", "On Transparent", "Reveal Original Image"]);
-    let mask_idx = |id: &'static str, name: &'static str, d: f64| p(id, name, num(d), ParamUi::Mask);
+    let check = |id: &'static str, name: &'static str, v: bool| {
+        p(id, name, Value::Bool(v), ParamUi::Checkbox)
+    };
+    let paint_style = || {
+        popup(&[
+            "On Original Image",
+            "On Transparent",
+            "Reveal Original Image",
+        ])
+    };
+    let mask_idx =
+        |id: &'static str, name: &'static str, d: f64| p(id, name, num(d), ParamUi::Mask);
     let display = || popup(&["Digital", "Analog lines", "Analog dots"]);
     vec![
         spec(
             "ec.generate.fractal",
             "Fractal",
             vec![
-                p("setChoice", "Set Choice", Value::Enum(0), popup(&FRACTAL_SETS)),
-                p("equation", "Equation", Value::Enum(0), popup(&["z = z^2 + c", "z = z^3 + c", "z = z^4 + c"])),
-                p("mandelbrot/mandelbrotX", "X (Real)", num(-0.74), slider(-2.0, 2.0, -2.0, 2.0, 4)),
-                p("mandelbrot/mandelbrotY", "Y (Imaginary)", num(0.15), slider(-2.0, 2.0, -2.0, 2.0, 4)),
-                p("mandelbrot/mandelbrotMagnification", "Magnification", num(0.0), slider(-5.0, 30.0, -5.0, 30.0, 2)),
-                p("mandelbrot/mandelbrotEscapeLimit", "Escape Limit", num(4.0), slider(1.0, 1000.0, 1.0, 100.0, 1)),
-                p("julia/juliaX", "X (Real)", num(0.0), slider(-2.0, 2.0, -2.0, 2.0, 4)),
-                p("julia/juliaY", "Y (Imaginary)", num(0.0), slider(-2.0, 2.0, -2.0, 2.0, 4)),
-                p("julia/juliaMagnification", "Magnification", num(0.0), slider(-5.0, 30.0, -5.0, 30.0, 2)),
-                p("julia/juliaEscapeLimit", "Escape Limit", num(4.0), slider(1.0, 1000.0, 1.0, 100.0, 1)),
-                p("postInversionOffset/postInversionX", "X Offset", num(0.0), slider(-2.0, 2.0, -2.0, 2.0, 4)),
-                p("postInversionOffset/postInversionY", "Y Offset", num(0.0), slider(-2.0, 2.0, -2.0, 2.0, 4)),
+                p(
+                    "setChoice",
+                    "Set Choice",
+                    Value::Enum(0),
+                    popup(&FRACTAL_SETS),
+                ),
+                p(
+                    "equation",
+                    "Equation",
+                    Value::Enum(0),
+                    popup(&["z = z^2 + c", "z = z^3 + c", "z = z^4 + c"]),
+                ),
+                p(
+                    "mandelbrot/mandelbrotX",
+                    "X (Real)",
+                    num(-0.74),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
+                p(
+                    "mandelbrot/mandelbrotY",
+                    "Y (Imaginary)",
+                    num(0.15),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
+                p(
+                    "mandelbrot/mandelbrotMagnification",
+                    "Magnification",
+                    num(0.0),
+                    slider(-5.0, 30.0, -5.0, 30.0, 2),
+                ),
+                p(
+                    "mandelbrot/mandelbrotEscapeLimit",
+                    "Escape Limit",
+                    num(4.0),
+                    slider(1.0, 1000.0, 1.0, 100.0, 1),
+                ),
+                p(
+                    "julia/juliaX",
+                    "X (Real)",
+                    num(0.0),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
+                p(
+                    "julia/juliaY",
+                    "Y (Imaginary)",
+                    num(0.0),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
+                p(
+                    "julia/juliaMagnification",
+                    "Magnification",
+                    num(0.0),
+                    slider(-5.0, 30.0, -5.0, 30.0, 2),
+                ),
+                p(
+                    "julia/juliaEscapeLimit",
+                    "Escape Limit",
+                    num(4.0),
+                    slider(1.0, 1000.0, 1.0, 100.0, 1),
+                ),
+                p(
+                    "postInversionOffset/postInversionX",
+                    "X Offset",
+                    num(0.0),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
+                p(
+                    "postInversionOffset/postInversionY",
+                    "Y Offset",
+                    num(0.0),
+                    slider(-2.0, 2.0, -2.0, 2.0, 4),
+                ),
                 check("fractalColor/overlay", "Overlay", false),
                 check("fractalColor/transparency", "Transparency", false),
-                p("fractalColor/palette", "Palette", Value::Enum(0), popup(&FRACTAL_PALETTES)),
+                p(
+                    "fractalColor/palette",
+                    "Palette",
+                    Value::Enum(0),
+                    popup(&FRACTAL_PALETTES),
+                ),
                 p("fractalColor/hue", "Hue", num(0.0), ang()),
-                p("fractalColor/cycleSteps", "Cycle Steps", num(32.0), slider(1.0, 1000.0, 1.0, 256.0, 0)),
+                p(
+                    "fractalColor/cycleSteps",
+                    "Cycle Steps",
+                    num(32.0),
+                    slider(1.0, 1000.0, 1.0, 256.0, 0),
+                ),
                 p("fractalColor/cycleOffset", "Cycle Offset", num(0.0), ang()),
                 check("fractalColor/edgeHighlight", "Edge Highlight", false),
-                p("highQualitySettings/samplingMethod", "Oversample Method", Value::Enum(0), popup(&FRACTAL_OVERSAMPLE)),
-                p("highQualitySettings/samplingFactor", "Oversample Factor", num(2.0), slider(1.0, 9.0, 1.0, 9.0, 0)),
+                p(
+                    "highQualitySettings/samplingMethod",
+                    "Oversample Method",
+                    Value::Enum(0),
+                    popup(&FRACTAL_OVERSAMPLE),
+                ),
+                p(
+                    "highQualitySettings/samplingFactor",
+                    "Oversample Factor",
+                    num(2.0),
+                    slider(1.0, 9.0, 1.0, 9.0, 0),
+                ),
             ],
             fractal,
         ),
@@ -1821,31 +2401,122 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.scribble",
             "Scribble",
             vec![
-                p("scribble", "Scribble", Value::Enum(0), popup(&["Single Mask", "All Masks", "All Masks Using Modes"])),
+                p(
+                    "scribble",
+                    "Scribble",
+                    Value::Enum(0),
+                    popup(&["Single Mask", "All Masks", "All Masks Using Modes"]),
+                ),
                 mask_idx("mask", "Mask", 1.0),
-                p("fillType", "Fill Type", Value::Enum(0), popup(&["Inside", "Centered Edge", "Inside Edge", "Outside Edge", "Left Edge", "Right Edge"])),
-                p("edgeOptions/edgeWidth", "Edge Width", num(10.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("edgeOptions/endCap", "End Cap", Value::Enum(0), popup(&END_CAPS)),
+                p(
+                    "fillType",
+                    "Fill Type",
+                    Value::Enum(0),
+                    popup(&[
+                        "Inside",
+                        "Centered Edge",
+                        "Inside Edge",
+                        "Outside Edge",
+                        "Left Edge",
+                        "Right Edge",
+                    ]),
+                ),
+                p(
+                    "edgeOptions/edgeWidth",
+                    "Edge Width",
+                    num(10.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "edgeOptions/endCap",
+                    "End Cap",
+                    Value::Enum(0),
+                    popup(&END_CAPS),
+                ),
                 p("edgeOptions/join", "Join", Value::Enum(0), popup(&JOINS)),
-                p("edgeOptions/miterLimit", "Miter Limit", num(4.0), slider(1.0, 100.0, 1.0, 20.0, 1)),
+                p(
+                    "edgeOptions/miterLimit",
+                    "Miter Limit",
+                    num(4.0),
+                    slider(1.0, 100.0, 1.0, 20.0, 1),
+                ),
                 p("color", "Color", col(1.0, 0.0, 0.0), ParamUi::Color),
                 p("opacity", "Opacity", num(100.0), pct()),
                 p("angle", "Angle", num(45.0), ang()),
-                p("strokeWidth", "Stroke Width", num(2.0), slider(0.1, 50.0, 0.1, 50.0, 1)),
+                p(
+                    "strokeWidth",
+                    "Stroke Width",
+                    num(2.0),
+                    slider(0.1, 50.0, 0.1, 50.0, 1),
+                ),
                 p("strokeOptions/curviness", "Curviness", num(50.0), pct()),
-                p("strokeOptions/curvinessVariation", "Curviness Variation", num(50.0), pct()),
-                p("strokeOptions/spacing", "Spacing", num(5.0), slider(0.1, 100.0, 0.1, 50.0, 1)),
-                p("strokeOptions/spacingVariation", "Spacing Variation", num(50.0), pct()),
-                p("strokeOptions/pathOverlap", "Path Overlap", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 1)),
-                p("strokeOptions/pathOverlapVariation", "Path Overlap Variation", num(50.0), pct()),
+                p(
+                    "strokeOptions/curvinessVariation",
+                    "Curviness Variation",
+                    num(50.0),
+                    pct(),
+                ),
+                p(
+                    "strokeOptions/spacing",
+                    "Spacing",
+                    num(5.0),
+                    slider(0.1, 100.0, 0.1, 50.0, 1),
+                ),
+                p(
+                    "strokeOptions/spacingVariation",
+                    "Spacing Variation",
+                    num(50.0),
+                    pct(),
+                ),
+                p(
+                    "strokeOptions/pathOverlap",
+                    "Path Overlap",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "strokeOptions/pathOverlapVariation",
+                    "Path Overlap Variation",
+                    num(50.0),
+                    pct(),
+                ),
                 p("start", "Start", num(0.0), pct()),
                 p("end", "End", num(100.0), pct()),
-                p("startEndApplyTo", "Start/End Apply To", Value::Enum(0), popup(&["All Strokes", "Each Stroke"])),
+                p(
+                    "startEndApplyTo",
+                    "Start/End Apply To",
+                    Value::Enum(0),
+                    popup(&["All Strokes", "Each Stroke"]),
+                ),
                 check("fillPathsSequentially", "Fill Paths Sequentially", true),
-                p("wiggleType", "Wiggle Type", Value::Enum(1), popup(&["Static", "Jumpy", "Smooth"])),
-                p("wigglesPerSecond", "Wiggles/Second", num(5.0), slider(0.0, 100.0, 0.0, 30.0, 2)),
-                p("randomSeed", "Random Seed", num(1.0), slider(0.0, 10000.0, 0.0, 100.0, 0)),
-                p("composite", "Composite", Value::Enum(1), popup(&["On Original Image", "On Transparent", "Reveal Original Image"])),
+                p(
+                    "wiggleType",
+                    "Wiggle Type",
+                    Value::Enum(1),
+                    popup(&["Static", "Jumpy", "Smooth"]),
+                ),
+                p(
+                    "wigglesPerSecond",
+                    "Wiggles/Second",
+                    num(5.0),
+                    slider(0.0, 100.0, 0.0, 30.0, 2),
+                ),
+                p(
+                    "randomSeed",
+                    "Random Seed",
+                    num(1.0),
+                    slider(0.0, 10000.0, 0.0, 100.0, 0),
+                ),
+                p(
+                    "composite",
+                    "Composite",
+                    Value::Enum(1),
+                    popup(&[
+                        "On Original Image",
+                        "On Transparent",
+                        "Reveal Original Image",
+                    ]),
+                ),
             ],
             scribble,
         ),
@@ -1857,12 +2528,22 @@ pub fn specs() -> Vec<EffectSpec> {
                 check("allMasks", "All Masks", false),
                 check("strokeSequentially", "Stroke Sequentially", true),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("brushSize", "Brush Size", num(2.0), slider(0.0, 50.0, 0.0, 50.0, 1)),
+                p(
+                    "brushSize",
+                    "Brush Size",
+                    num(2.0),
+                    slider(0.0, 50.0, 0.0, 50.0, 1),
+                ),
                 p("brushHardness", "Brush Hardness", num(75.0), pct()),
                 p("opacity", "Opacity", num(100.0), pct()),
                 p("start", "Start", num(0.0), pct()),
                 p("end", "End", num(100.0), pct()),
-                p("spacing", "Spacing", num(15.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "spacing",
+                    "Spacing",
+                    num(15.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("paintStyle", "Paint Style", Value::Enum(0), paint_style()),
             ],
             stroke,
@@ -1871,32 +2552,137 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.vegas",
             "Vegas",
             vec![
-                p("stroke", "Stroke", Value::Enum(0), popup(&["Image Contours", "Mask/Path"])),
-                p("inputLayer", "Image Contours: Input Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "stroke",
+                    "Stroke",
+                    Value::Enum(0),
+                    popup(&["Image Contours", "Mask/Path"]),
+                ),
+                p(
+                    "inputLayer",
+                    "Image Contours: Input Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 check("invertInput", "Image Contours: Invert Input", false),
-                p("ifLayerSizesDiffer", "Image Contours: If Layer Sizes Differ", Value::Enum(0), popup(&["Center", "Stretch to Fit"])),
-                p("channel", "Image Contours: Channel", Value::Enum(0), popup(&["Intensity", "Red", "Green", "Blue", "Alpha"])),
+                p(
+                    "ifLayerSizesDiffer",
+                    "Image Contours: If Layer Sizes Differ",
+                    Value::Enum(0),
+                    popup(&["Center", "Stretch to Fit"]),
+                ),
+                p(
+                    "channel",
+                    "Image Contours: Channel",
+                    Value::Enum(0),
+                    popup(&["Intensity", "Red", "Green", "Blue", "Alpha"]),
+                ),
                 p("threshold", "Image Contours: Threshold", num(50.0), pct()),
-                p("preBlur", "Image Contours: Pre-Blur", num(1.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-                p("tolerance", "Image Contours: Tolerance", num(0.01), slider(0.0, 1.0, 0.0, 0.1, 3)),
-                p("renderMode", "Image Contours: Render", Value::Enum(0), popup(&["All Contours", "Selected Contour"])),
-                p("selectedContour", "Image Contours: Selected Contour", num(1.0), slider(1.0, 1000.0, 1.0, 20.0, 0)),
-                p("shorterContoursHave", "Image Contours: Shorter Contours Have", Value::Enum(0), popup(&["Same Number of Segments", "Fewer Segments"])),
+                p(
+                    "preBlur",
+                    "Image Contours: Pre-Blur",
+                    num(1.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 1),
+                ),
+                p(
+                    "tolerance",
+                    "Image Contours: Tolerance",
+                    num(0.01),
+                    slider(0.0, 1.0, 0.0, 0.1, 3),
+                ),
+                p(
+                    "renderMode",
+                    "Image Contours: Render",
+                    Value::Enum(0),
+                    popup(&["All Contours", "Selected Contour"]),
+                ),
+                p(
+                    "selectedContour",
+                    "Image Contours: Selected Contour",
+                    num(1.0),
+                    slider(1.0, 1000.0, 1.0, 20.0, 0),
+                ),
+                p(
+                    "shorterContoursHave",
+                    "Image Contours: Shorter Contours Have",
+                    Value::Enum(0),
+                    popup(&["Same Number of Segments", "Fewer Segments"]),
+                ),
                 mask_idx("path", "Mask/Path: Path", 1.0),
-                p("segments", "Segments: Segments", num(32.0), slider(1.0, 1000.0, 1.0, 100.0, 0)),
-                p("length", "Segments: Length", num(0.5), slider(0.0, 1.0, 0.0, 1.0, 3)),
-                p("segmentDistribution", "Segments: Segment Distribution", Value::Enum(0), popup(&["Bunched", "Even"])),
+                p(
+                    "segments",
+                    "Segments: Segments",
+                    num(32.0),
+                    slider(1.0, 1000.0, 1.0, 100.0, 0),
+                ),
+                p(
+                    "length",
+                    "Segments: Length",
+                    num(0.5),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "segmentDistribution",
+                    "Segments: Segment Distribution",
+                    Value::Enum(0),
+                    popup(&["Bunched", "Even"]),
+                ),
                 p("rotation", "Segments: Rotation", num(0.0), ang()),
                 check("randomPhase", "Segments: Random Phase", false),
-                p("randomSeed", "Segments: Random Seed", num(1.0), slider(1.0, 10000.0, 1.0, 100.0, 0)),
-                p("blendMode", "Rendering: Blend Mode", Value::Enum(1), popup(&["Transparent", "Over", "Under", "Stencil"])),
-                p("color", "Rendering: Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("width", "Rendering: Width", num(2.0), slider(0.0, 100.0, 0.0, 20.0, 2)),
-                p("hardness", "Rendering: Hardness", num(0.5), slider(0.0, 1.0, 0.0, 1.0, 3)),
-                p("startOpacity", "Rendering: Start Opacity", num(1.0), slider(0.0, 1.0, 0.0, 1.0, 3)),
-                p("midpointOpacity", "Rendering: Mid-point Opacity", num(0.5), slider(0.0, 1.0, 0.0, 1.0, 3)),
-                p("midpointPosition", "Rendering: Mid-point Position", num(0.5), slider(0.0, 1.0, 0.0, 1.0, 3)),
-                p("endOpacity", "Rendering: End Opacity", num(0.0), slider(0.0, 1.0, 0.0, 1.0, 3)),
+                p(
+                    "randomSeed",
+                    "Segments: Random Seed",
+                    num(1.0),
+                    slider(1.0, 10000.0, 1.0, 100.0, 0),
+                ),
+                p(
+                    "blendMode",
+                    "Rendering: Blend Mode",
+                    Value::Enum(1),
+                    popup(&["Transparent", "Over", "Under", "Stencil"]),
+                ),
+                p(
+                    "color",
+                    "Rendering: Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "width",
+                    "Rendering: Width",
+                    num(2.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 2),
+                ),
+                p(
+                    "hardness",
+                    "Rendering: Hardness",
+                    num(0.5),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "startOpacity",
+                    "Rendering: Start Opacity",
+                    num(1.0),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "midpointOpacity",
+                    "Rendering: Mid-point Opacity",
+                    num(0.5),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "midpointPosition",
+                    "Rendering: Mid-point Position",
+                    num(0.5),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
+                p(
+                    "endOpacity",
+                    "Rendering: End Opacity",
+                    num(0.0),
+                    slider(0.0, 1.0, 0.0, 1.0, 3),
+                ),
             ],
             vegas,
         ),
@@ -1904,15 +2690,45 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.writeon",
             "Write-on",
             vec![
-                p("brushPosition", "Brush Position", pt(0.5, 0.5), ParamUi::Point),
+                p(
+                    "brushPosition",
+                    "Brush Position",
+                    pt(0.5, 0.5),
+                    ParamUi::Point,
+                ),
                 p("color", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("brushSize", "Brush Size", num(6.0), slider(0.0, 50.0, 0.0, 50.0, 1)),
+                p(
+                    "brushSize",
+                    "Brush Size",
+                    num(6.0),
+                    slider(0.0, 50.0, 0.0, 50.0, 1),
+                ),
                 p("brushHardness", "Brush Hardness", num(75.0), pct()),
                 p("brushOpacity", "Brush Opacity", num(100.0), pct()),
-                p("strokeLength", "Stroke Length (secs)", num(0.0), slider(0.0, 30.0, 0.0, 30.0, 1)),
-                p("brushSpacing", "Brush Spacing (secs)", num(0.001), slider(0.001, 5.0, 0.001, 5.0, 3)),
-                p("paintTimeProperties", "Paint Time Properties", Value::Enum(0), popup(&["None", "Opacity", "Color"])),
-                p("brushTimeProperties", "Brush Time Properties", Value::Enum(0), popup(&["None", "Size", "Hardness", "Size & Hardness"])),
+                p(
+                    "strokeLength",
+                    "Stroke Length (secs)",
+                    num(0.0),
+                    slider(0.0, 30.0, 0.0, 30.0, 1),
+                ),
+                p(
+                    "brushSpacing",
+                    "Brush Spacing (secs)",
+                    num(0.001),
+                    slider(0.001, 5.0, 0.001, 5.0, 3),
+                ),
+                p(
+                    "paintTimeProperties",
+                    "Paint Time Properties",
+                    Value::Enum(0),
+                    popup(&["None", "Opacity", "Color"]),
+                ),
+                p(
+                    "brushTimeProperties",
+                    "Brush Time Properties",
+                    Value::Enum(0),
+                    popup(&["None", "Size", "Hardness", "Size & Hardness"]),
+                ),
                 p("paintStyle", "Paint Style", Value::Enum(0), paint_style()),
             ],
             write_on,
@@ -1922,20 +2738,67 @@ pub fn specs() -> Vec<EffectSpec> {
             "Paint Bucket",
             vec![
                 p("fillPoint", "Fill Point", pt(0.5, 0.5), ParamUi::Point),
-                p("fillSelector", "Fill Selector", Value::Enum(0), popup(&["Color & Alpha", "Straight Color", "Transparency", "Opacity", "Alpha Channel"])),
-                p("tolerance", "Tolerance", num(10.0), slider(0.0, 255.0, 0.0, 100.0, 1)),
+                p(
+                    "fillSelector",
+                    "Fill Selector",
+                    Value::Enum(0),
+                    popup(&[
+                        "Color & Alpha",
+                        "Straight Color",
+                        "Transparency",
+                        "Opacity",
+                        "Alpha Channel",
+                    ]),
+                ),
+                p(
+                    "tolerance",
+                    "Tolerance",
+                    num(10.0),
+                    slider(0.0, 255.0, 0.0, 100.0, 1),
+                ),
                 check("viewThreshold", "View Threshold", false),
-                p("stroke", "Stroke", Value::Enum(0), popup(&["Antialias", "Feather", "Spread", "Choke", "Stroke"])),
-                p("featherSoftness", "Feather Softness", num(10.0), slider(0.0, 100.0, 0.0, 50.0, 1)),
-                p("spreadRadius", "Spread Radius", num(3.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
-                p("strokeWidth", "Stroke Width", num(2.0), slider(0.0, 100.0, 0.0, 20.0, 1)),
+                p(
+                    "stroke",
+                    "Stroke",
+                    Value::Enum(0),
+                    popup(&["Antialias", "Feather", "Spread", "Choke", "Stroke"]),
+                ),
+                p(
+                    "featherSoftness",
+                    "Feather Softness",
+                    num(10.0),
+                    slider(0.0, 100.0, 0.0, 50.0, 1),
+                ),
+                p(
+                    "spreadRadius",
+                    "Spread Radius",
+                    num(3.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 1),
+                ),
+                p(
+                    "strokeWidth",
+                    "Stroke Width",
+                    num(2.0),
+                    slider(0.0, 100.0, 0.0, 20.0, 1),
+                ),
                 p("color", "Color", col(1.0, 0.0, 0.0), ParamUi::Color),
                 p("opacity", "Opacity", num(100.0), pct()),
                 p(
                     "blendingMode",
                     "Blending Mode",
                     Value::Enum(0),
-                    popup(&["Normal", "Add", "Multiply", "Screen", "Hue", "Saturation", "Color", "Luminosity", "Behind", "Fill Only"]),
+                    popup(&[
+                        "Normal",
+                        "Add",
+                        "Multiply",
+                        "Screen",
+                        "Hue",
+                        "Saturation",
+                        "Color",
+                        "Luminosity",
+                        "Behind",
+                        "Fill Only",
+                    ]),
                 ),
             ],
             paint_bucket,
@@ -1945,8 +2808,18 @@ pub fn specs() -> Vec<EffectSpec> {
             "Eyedropper Fill",
             vec![
                 p("samplePoint", "Sample Point", pt(0.5, 0.5), ParamUi::Point),
-                p("sampleRadius", "Sample Radius", num(0.0), slider(0.0, 1000.0, 0.0, 100.0, 1)),
-                p("averagePixelColors", "Average Pixel Colors", Value::Enum(0), popup(&["Skip Empty", "All", "All Premultiplied", "Including Alpha"])),
+                p(
+                    "sampleRadius",
+                    "Sample Radius",
+                    num(0.0),
+                    slider(0.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "averagePixelColors",
+                    "Average Pixel Colors",
+                    Value::Enum(0),
+                    popup(&["Skip Empty", "All", "All Premultiplied", "Including Alpha"]),
+                ),
                 check("maintainOriginalAlpha", "Maintain Original Alpha", false),
                 p("blendWithOriginal", "Blend With Original", num(0.0), pct()),
             ],
@@ -1956,13 +2829,38 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.ccgluegun",
             "CC Glue Gun",
             vec![
-                p("brushPosition", "Brush Position", pt(0.5, 0.5), ParamUi::Point),
-                p("strokeWidth", "Stroke Width", num(25.0), slider(0.0, 500.0, 0.0, 100.0, 1)),
-                p("density", "Density", num(5.0), slider(0.0, 32.0, 0.0, 32.0, 1)),
-                p("timeSpan", "Time Span (sec)", num(1.0), slider(0.0, 60.0, 0.0, 10.0, 2)),
+                p(
+                    "brushPosition",
+                    "Brush Position",
+                    pt(0.5, 0.5),
+                    ParamUi::Point,
+                ),
+                p(
+                    "strokeWidth",
+                    "Stroke Width",
+                    num(25.0),
+                    slider(0.0, 500.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "density",
+                    "Density",
+                    num(5.0),
+                    slider(0.0, 32.0, 0.0, 32.0, 1),
+                ),
+                p(
+                    "timeSpan",
+                    "Time Span (sec)",
+                    num(1.0),
+                    slider(0.0, 60.0, 0.0, 10.0, 2),
+                ),
                 p("reflection", "Reflection", num(45.0), ang()),
                 p("strength", "Strength", num(100.0), pct()),
-                p("style", "Style", Value::Enum(0), popup(&["Over Layer", "Glue Only"])),
+                p(
+                    "style",
+                    "Style",
+                    Value::Enum(0),
+                    popup(&["Over Layer", "Glue Only"]),
+                ),
             ],
             glue_gun,
         ),
@@ -1970,9 +2868,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.ccthreads",
             "CC Threads",
             vec![
-                p("width", "Width", num(50.0), slider(1.0, 1000.0, 1.0, 200.0, 1)),
-                p("height", "Height", num(50.0), slider(1.0, 1000.0, 1.0, 200.0, 1)),
-                p("overlaps", "Overlaps", num(1.0), slider(1.0, 20.0, 1.0, 10.0, 0)),
+                p(
+                    "width",
+                    "Width",
+                    num(50.0),
+                    slider(1.0, 1000.0, 1.0, 200.0, 1),
+                ),
+                p(
+                    "height",
+                    "Height",
+                    num(50.0),
+                    slider(1.0, 1000.0, 1.0, 200.0, 1),
+                ),
+                p(
+                    "overlaps",
+                    "Overlaps",
+                    num(1.0),
+                    slider(1.0, 20.0, 1.0, 10.0, 0),
+                ),
                 p("direction", "Direction", num(0.0), ang()),
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
                 p("coverage", "Coverage", num(80.0), pct()),
@@ -1985,27 +2898,87 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.audiospectrum",
             "Audio Spectrum",
             vec![
-                p("audioLayer", "Audio Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "audioLayer",
+                    "Audio Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 p("startPoint", "Start Point", pt(0.1, 0.5), ParamUi::Point),
                 p("endPoint", "End Point", pt(0.9, 0.5), ParamUi::Point),
                 mask_idx("path", "Path", 0.0),
                 check("usePolarPath", "Use Polar Path", false),
-                p("startFrequency", "Start Frequency", num(20.0), slider(1.0, 20000.0, 1.0, 2000.0, 0)),
-                p("endFrequency", "End Frequency", num(2000.0), slider(1.0, 20000.0, 1.0, 10000.0, 0)),
-                p("frequencyBands", "Frequency bands", num(64.0), slider(1.0, 4096.0, 1.0, 256.0, 0)),
-                p("maximumHeight", "Maximum Height", num(50.0), slider(0.0, 10000.0, 0.0, 500.0, 1)),
-                p("audioDuration", "Audio Duration (milliseconds)", num(90.0), slider(1.0, 30000.0, 1.0, 1000.0, 1)),
-                p("audioOffset", "Audio Offset (milliseconds)", num(0.0), slider(-30000.0, 30000.0, -1000.0, 1000.0, 1)),
-                p("thickness", "Thickness", num(3.0), slider(0.0, 1000.0, 0.0, 50.0, 2)),
+                p(
+                    "startFrequency",
+                    "Start Frequency",
+                    num(20.0),
+                    slider(1.0, 20000.0, 1.0, 2000.0, 0),
+                ),
+                p(
+                    "endFrequency",
+                    "End Frequency",
+                    num(2000.0),
+                    slider(1.0, 20000.0, 1.0, 10000.0, 0),
+                ),
+                p(
+                    "frequencyBands",
+                    "Frequency bands",
+                    num(64.0),
+                    slider(1.0, 4096.0, 1.0, 256.0, 0),
+                ),
+                p(
+                    "maximumHeight",
+                    "Maximum Height",
+                    num(50.0),
+                    slider(0.0, 10000.0, 0.0, 500.0, 1),
+                ),
+                p(
+                    "audioDuration",
+                    "Audio Duration (milliseconds)",
+                    num(90.0),
+                    slider(1.0, 30000.0, 1.0, 1000.0, 1),
+                ),
+                p(
+                    "audioOffset",
+                    "Audio Offset (milliseconds)",
+                    num(0.0),
+                    slider(-30000.0, 30000.0, -1000.0, 1000.0, 1),
+                ),
+                p(
+                    "thickness",
+                    "Thickness",
+                    num(3.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 2),
+                ),
                 p("softness", "Softness", num(50.0), pct()),
-                p("insideColor", "Inside Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("outsideColor", "Outside Color", col(0.2, 0.4, 1.0), ParamUi::Color),
+                p(
+                    "insideColor",
+                    "Inside Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "outsideColor",
+                    "Outside Color",
+                    col(0.2, 0.4, 1.0),
+                    ParamUi::Color,
+                ),
                 check("blendOverlappingColors", "Blend Overlapping Colors", true),
                 p("hueInterpolation", "Hue Interpolation", num(0.0), ang()),
                 check("dynamicHuePhase", "Dynamic Hue Phase", false),
                 check("colorSymmetry", "Color Symmetry", false),
-                p("displayOptions", "Display Options", Value::Enum(0), display()),
-                p("sideOptions", "Side Options", Value::Enum(0), popup(&["Side A", "Side B", "Side A & B"])),
+                p(
+                    "displayOptions",
+                    "Display Options",
+                    Value::Enum(0),
+                    display(),
+                ),
+                p(
+                    "sideOptions",
+                    "Side Options",
+                    Value::Enum(0),
+                    popup(&["Side A", "Side B", "Side A & B"]),
+                ),
                 check("durationAveraging", "Duration Averaging", false),
                 check("compositeOnOriginal", "Composite On Original", false),
             ],
@@ -2015,22 +2988,77 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.generate.audiowaveform",
             "Audio Waveform",
             vec![
-                p("audioLayer", "Audio Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "audioLayer",
+                    "Audio Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 p("startPoint", "Start Point", pt(0.1, 0.5), ParamUi::Point),
                 p("endPoint", "End Point", pt(0.9, 0.5), ParamUi::Point),
                 mask_idx("path", "Path", 0.0),
                 check("usePolarPath", "Use Polar Path", false),
-                p("displayedSamples", "Displayed Samples", num(200.0), slider(2.0, 4096.0, 2.0, 1000.0, 0)),
-                p("maximumHeight", "Maximum Height", num(100.0), slider(0.0, 10000.0, 0.0, 500.0, 1)),
-                p("audioDuration", "Audio Duration (milliseconds)", num(200.0), slider(1.0, 30000.0, 1.0, 1000.0, 1)),
-                p("audioOffset", "Audio Offset (milliseconds)", num(0.0), slider(-30000.0, 30000.0, -1000.0, 1000.0, 1)),
-                p("thickness", "Thickness", num(2.0), slider(0.0, 1000.0, 0.0, 50.0, 2)),
+                p(
+                    "displayedSamples",
+                    "Displayed Samples",
+                    num(200.0),
+                    slider(2.0, 4096.0, 2.0, 1000.0, 0),
+                ),
+                p(
+                    "maximumHeight",
+                    "Maximum Height",
+                    num(100.0),
+                    slider(0.0, 10000.0, 0.0, 500.0, 1),
+                ),
+                p(
+                    "audioDuration",
+                    "Audio Duration (milliseconds)",
+                    num(200.0),
+                    slider(1.0, 30000.0, 1.0, 1000.0, 1),
+                ),
+                p(
+                    "audioOffset",
+                    "Audio Offset (milliseconds)",
+                    num(0.0),
+                    slider(-30000.0, 30000.0, -1000.0, 1000.0, 1),
+                ),
+                p(
+                    "thickness",
+                    "Thickness",
+                    num(2.0),
+                    slider(0.0, 1000.0, 0.0, 50.0, 2),
+                ),
                 p("softness", "Softness", num(10.0), pct()),
-                p("randomSeed", "Random Seed (Analog)", num(1.0), slider(1.0, 10000.0, 1.0, 100.0, 0)),
-                p("insideColor", "Inside Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("outsideColor", "Outside Color", col(0.2, 0.4, 1.0), ParamUi::Color),
-                p("waveformOptions", "Waveform Options", Value::Enum(0), popup(&["Mono", "Left", "Right"])),
-                p("displayOptions", "Display Options", Value::Enum(1), display()),
+                p(
+                    "randomSeed",
+                    "Random Seed (Analog)",
+                    num(1.0),
+                    slider(1.0, 10000.0, 1.0, 100.0, 0),
+                ),
+                p(
+                    "insideColor",
+                    "Inside Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "outsideColor",
+                    "Outside Color",
+                    col(0.2, 0.4, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "waveformOptions",
+                    "Waveform Options",
+                    Value::Enum(0),
+                    popup(&["Mono", "Left", "Right"]),
+                ),
+                p(
+                    "displayOptions",
+                    "Display Options",
+                    Value::Enum(1),
+                    display(),
+                ),
                 check("compositeOnOriginal", "Composite On Original", false),
             ],
             audio_waveform,
@@ -2044,21 +3072,50 @@ mod tests {
     use crate::{EffectEnv, EffectHost, LayerPixels, MaskShape, Params};
 
     /// Run with point defaults scaled to the layer size.
-    pub(crate) fn run_env(id: &str, set: &[(&str, Value)], img: Image, time: f64, env: EffectEnv) -> Buf {
+    pub(crate) fn run_env(
+        id: &str,
+        set: &[(&str, Value)],
+        img: Image,
+        time: f64,
+        env: EffectEnv,
+    ) -> Buf {
         let s = crate::find(id).unwrap();
         let ls = [img.width as f64, img.height as f64];
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for p in &s.params {
             if let (ParamUi::Point, Value::Vec2(v)) = (&p.ui, &p.default) {
-                params.values.insert(p.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
+                params
+                    .values
+                    .insert(p.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
             }
         }
         for (k, v) in set {
             assert!(params.values.contains_key(*k), "{id}: unknown {k}");
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx = EffectCtx { params: &params, time, layer_size: ls, seed: 3, adjustment: false, env };
-        crate::apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time,
+            layer_size: ls,
+            seed: 3,
+            adjustment: false,
+            env,
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn run(id: &str, set: &[(&str, Value)], img: Image) -> Buf {
@@ -2066,7 +3123,12 @@ mod tests {
     }
 
     fn square_mask() -> Vec<MaskShape> {
-        vec![MaskShape { name: "Mask 1".into(), points: vec![[16.0, 16.0], [48.0, 16.0], [48.0, 48.0], [16.0, 48.0]], closed: true, inverted: false }]
+        vec![MaskShape {
+            name: "Mask 1".into(),
+            points: vec![[16.0, 16.0], [48.0, 16.0], [48.0, 48.0], [16.0, 48.0]],
+            closed: true,
+            inverted: false,
+        }]
     }
 
     fn alpha_sum(img: &Image, x0: usize, y0: usize, x1: usize, y1: usize) -> f32 {
@@ -2082,7 +3144,11 @@ mod tests {
     #[test]
     fn audio_spectrum_linear_frequency_and_linear_amplitude() {
         let host = Tone; // Tone produces 440 Hz
-        let env = EffectEnv { host: Some(&host), comp_time: 1.0, ..Default::default() };
+        let env = EffectEnv {
+            host: Some(&host),
+            comp_time: 1.0,
+            ..Default::default()
+        };
         let img = Image::new(200, 100);
         let out = run_env(
             "ec.generate.audiospectrum",
@@ -2106,8 +3172,14 @@ mod tests {
         let high_zone = alpha_sum(&out.img, 120, 10, 150, 48);
         let silent_zone = alpha_sum(&out.img, 170, 10, 195, 48);
         assert!(peak_zone > 5.0, "peak zone has energy: {peak_zone}");
-        assert!(peak_zone > high_zone * 2.0, "linear peak is distinctly taller than far frequencies: {peak_zone} vs {high_zone}");
-        assert_eq!(silent_zone, 0.0, "silent end has zero height, not boosted by dB scale");
+        assert!(
+            peak_zone > high_zone * 2.0,
+            "linear peak is distinctly taller than far frequencies: {peak_zone} vs {high_zone}"
+        );
+        assert_eq!(
+            silent_zone, 0.0,
+            "silent end has zero height, not boosted by dB scale"
+        );
     }
 
     #[test]
@@ -2117,9 +3189,18 @@ mod tests {
         let b = run("ec.generate.fractal", &[], img.clone());
         assert_eq!(a.img.data, b.img.data);
         // The default view contains the main cardioid (black, opaque) and escaped (coloured) points.
-        assert!(a.img.data.iter().any(|p| p[3] > 0.99 && p[0] + p[1] + p[2] < 0.01));
+        assert!(
+            a.img
+                .data
+                .iter()
+                .any(|p| p[3] > 0.99 && p[0] + p[1] + p[2] < 0.01)
+        );
         assert!(a.img.data.iter().any(|p| p[0] + p[1] + p[2] > 0.3));
-        let t = run("ec.generate.fractal", &[("fractalColor/transparency", Value::Bool(true))], img);
+        let t = run(
+            "ec.generate.fractal",
+            &[("fractalColor/transparency", Value::Bool(true))],
+            img,
+        );
         assert!(t.img.data.iter().any(|p| p[3] == 0.0));
     }
 
@@ -2127,18 +3208,52 @@ mod tests {
     fn fractal_palettes_and_set_choices() {
         let img = Image::new(64, 48);
         // Solid Color: only the inside of the set is drawn; Transparency flips it.
-        let solid = run("ec.generate.fractal", &[("fractalColor/palette", Value::Enum(3))], img.clone());
-        assert!(solid.img.data.iter().any(|p| p[3] == 0.0) && solid.img.data.iter().any(|p| p[3] > 0.99 && p[0] > 0.9));
-        let flipped = run("ec.generate.fractal", &[("fractalColor/palette", Value::Enum(3)), ("fractalColor/transparency", Value::Bool(true))], img.clone());
+        let solid = run(
+            "ec.generate.fractal",
+            &[("fractalColor/palette", Value::Enum(3))],
+            img.clone(),
+        );
+        assert!(
+            solid.img.data.iter().any(|p| p[3] == 0.0)
+                && solid.img.data.iter().any(|p| p[3] > 0.99 && p[0] > 0.9)
+        );
+        let flipped = run(
+            "ec.generate.fractal",
+            &[
+                ("fractalColor/palette", Value::Enum(3)),
+                ("fractalColor/transparency", Value::Bool(true)),
+            ],
+            img.clone(),
+        );
         for (a, b) in solid.img.data.iter().zip(&flipped.img.data) {
             assert!((a[3] > 0.5) != (b[3] > 0.5) || (a[3] - 0.5).abs() < 0.49);
         }
         // Black And White: escaped pixels are pure black or white (away from supersampled edges).
-        let bw = run("ec.generate.fractal", &[("fractalColor/palette", Value::Enum(2)), ("highQualitySettings/samplingFactor", num(1.0))], img.clone());
-        assert!(bw.img.data.iter().all(|p| p[0] == p[1] && p[1] == p[2] && (p[0] == 0.0 || p[0] == 1.0)));
+        let bw = run(
+            "ec.generate.fractal",
+            &[
+                ("fractalColor/palette", Value::Enum(2)),
+                ("highQualitySettings/samplingFactor", num(1.0)),
+            ],
+            img.clone(),
+        );
+        assert!(
+            bw.img
+                .data
+                .iter()
+                .all(|p| p[0] == p[1] && p[1] == p[2] && (p[0] == 0.0 || p[0] == 1.0))
+        );
         // Mandelbrot Over Julia depends on the Julia centre.
-        let o1 = run("ec.generate.fractal", &[("setChoice", Value::Enum(2)), ("julia/juliaX", num(0.3))], img.clone());
-        let o2 = run("ec.generate.fractal", &[("setChoice", Value::Enum(2)), ("julia/juliaX", num(-0.2))], img.clone());
+        let o1 = run(
+            "ec.generate.fractal",
+            &[("setChoice", Value::Enum(2)), ("julia/juliaX", num(0.3))],
+            img.clone(),
+        );
+        let o2 = run(
+            "ec.generate.fractal",
+            &[("setChoice", Value::Enum(2)), ("julia/juliaX", num(-0.2))],
+            img.clone(),
+        );
         assert_ne!(o1.img.data, o2.img.data);
         let plain = run("ec.generate.fractal", &[("julia/juliaX", num(0.3))], img);
         assert_ne!(o1.img.data, plain.img.data);
@@ -2147,7 +3262,10 @@ mod tests {
     #[test]
     fn scribble_fills_mask_and_animates() {
         let masks = square_mask();
-        let env = EffectEnv { masks: &masks, ..Default::default() };
+        let env = EffectEnv {
+            masks: &masks,
+            ..Default::default()
+        };
         let img = Image::filled(64, 64, [0.0, 0.0, 1.0, 1.0]);
         let a = run_env("ec.generate.scribble", &[], img.clone(), 0.5, env);
         let b = run_env("ec.generate.scribble", &[], img.clone(), 0.5, env);
@@ -2157,8 +3275,20 @@ mod tests {
         assert!(inside > 100.0 && outside < 1.0, "{inside} {outside}");
         let c = run_env("ec.generate.scribble", &[], img.clone(), 1.5, env);
         assert_ne!(a.img.data, c.img.data, "jumpy wiggle changes over time");
-        let s = run_env("ec.generate.scribble", &[("wiggleType", Value::Enum(0))], img.clone(), 0.5, env);
-        let s2 = run_env("ec.generate.scribble", &[("wiggleType", Value::Enum(0))], img.clone(), 3.5, env);
+        let s = run_env(
+            "ec.generate.scribble",
+            &[("wiggleType", Value::Enum(0))],
+            img.clone(),
+            0.5,
+            env,
+        );
+        let s2 = run_env(
+            "ec.generate.scribble",
+            &[("wiggleType", Value::Enum(0))],
+            img.clone(),
+            3.5,
+            env,
+        );
         assert_eq!(s.img.data, s2.img.data, "static wiggle is constant");
         let half = run_env("ec.generate.scribble", &[("end", num(50.0))], img, 0.5, env);
         assert!(alpha_sum(&half.img, 0, 0, 64, 64) < alpha_sum(&a.img, 0, 0, 64, 64));
@@ -2167,9 +3297,21 @@ mod tests {
     #[test]
     fn scribble_edge_types() {
         let masks = square_mask();
-        let env = EffectEnv { masks: &masks, ..Default::default() };
+        let env = EffectEnv {
+            masks: &masks,
+            ..Default::default()
+        };
         let img = Image::new(64, 64);
-        let o = run_env("ec.generate.scribble", &[("fillType", Value::Enum(3)), ("edgeOptions/edgeWidth", num(6.0))], img, 0.5, env);
+        let o = run_env(
+            "ec.generate.scribble",
+            &[
+                ("fillType", Value::Enum(3)),
+                ("edgeOptions/edgeWidth", num(6.0)),
+            ],
+            img,
+            0.5,
+            env,
+        );
         // Outside edge: paint near the border outside, nothing in the centre.
         assert!(alpha_sum(&o.img, 26, 26, 38, 38) < 0.5);
         assert!(alpha_sum(&o.img, 8, 8, 16, 56) > 5.0);
@@ -2178,18 +3320,48 @@ mod tests {
     #[test]
     fn stroke_draws_along_mask() {
         let masks = square_mask();
-        let env = EffectEnv { masks: &masks, ..Default::default() };
+        let env = EffectEnv {
+            masks: &masks,
+            ..Default::default()
+        };
         let img = Image::new(64, 64);
-        let a = run_env("ec.generate.stroke", &[("brushSize", num(4.0)), ("paintStyle", Value::Enum(1))], img.clone(), 0.0, env);
+        let a = run_env(
+            "ec.generate.stroke",
+            &[("brushSize", num(4.0)), ("paintStyle", Value::Enum(1))],
+            img.clone(),
+            0.0,
+            env,
+        );
         assert!(a.img.get(32, 16)[3] > 0.9, "on the top edge");
         assert!(a.img.get(32, 32)[3] < 0.01, "centre empty");
-        let b = run_env("ec.generate.stroke", &[("brushSize", num(4.0)), ("end", num(25.0))], img.clone(), 0.0, env);
-        assert!(b.img.get(32, 16)[3] > 0.9 && b.img.get(48, 32)[3] < 0.01, "first quarter only");
-        let d = run_env("ec.generate.stroke", &[("brushSize", num(4.0)), ("spacing", num(300.0))], img, 0.0, env);
-        assert!(alpha_sum(&d.img, 0, 0, 64, 64) < alpha_sum(&a.img, 0, 0, 64, 64), "spaced dabs");
+        let b = run_env(
+            "ec.generate.stroke",
+            &[("brushSize", num(4.0)), ("end", num(25.0))],
+            img.clone(),
+            0.0,
+            env,
+        );
+        assert!(
+            b.img.get(32, 16)[3] > 0.9 && b.img.get(48, 32)[3] < 0.01,
+            "first quarter only"
+        );
+        let d = run_env(
+            "ec.generate.stroke",
+            &[("brushSize", num(4.0)), ("spacing", num(300.0))],
+            img,
+            0.0,
+            env,
+        );
+        assert!(
+            alpha_sum(&d.img, 0, 0, 64, 64) < alpha_sum(&a.img, 0, 0, 64, 64),
+            "spaced dabs"
+        );
         // No masks: unchanged.
         let src = Image::filled(8, 8, [0.2, 0.3, 0.4, 1.0]);
-        assert_eq!(run("ec.generate.stroke", &[], src.clone()).img.data, src.data);
+        assert_eq!(
+            run("ec.generate.stroke", &[], src.clone()).img.data,
+            src.data
+        );
     }
 
     #[test]
@@ -2202,18 +3374,35 @@ mod tests {
         }
         let a = run(
             "ec.generate.vegas",
-            &[("blendMode", Value::Enum(0)), ("length", num(1.0)), ("midpointOpacity", num(1.0)), ("endOpacity", num(1.0))],
+            &[
+                ("blendMode", Value::Enum(0)),
+                ("length", num(1.0)),
+                ("midpointOpacity", num(1.0)),
+                ("endOpacity", num(1.0)),
+            ],
             img.clone(),
         );
         let b = run(
             "ec.generate.vegas",
-            &[("blendMode", Value::Enum(0)), ("length", num(1.0)), ("midpointOpacity", num(1.0)), ("endOpacity", num(1.0))],
+            &[
+                ("blendMode", Value::Enum(0)),
+                ("length", num(1.0)),
+                ("midpointOpacity", num(1.0)),
+                ("endOpacity", num(1.0)),
+            ],
             img.clone(),
         );
         assert_eq!(a.img.data, b.img.data);
         assert!(alpha_sum(&a.img, 14, 14, 50, 50) > 50.0, "edges drawn");
-        assert!(alpha_sum(&a.img, 26, 26, 38, 38) < 0.5, "interior untouched");
-        let r = run("ec.generate.vegas", &[("blendMode", Value::Enum(0)), ("rotation", num(90.0))], img);
+        assert!(
+            alpha_sum(&a.img, 26, 26, 38, 38) < 0.5,
+            "interior untouched"
+        );
+        let r = run(
+            "ec.generate.vegas",
+            &[("blendMode", Value::Enum(0)), ("rotation", num(90.0))],
+            img,
+        );
         assert_ne!(r.img.data, a.img.data);
     }
 
@@ -2237,10 +3426,16 @@ mod tests {
         let img = Image::new(32, 32);
         let a = run("ec.generate.writeon", &[], img.clone());
         assert!(a.img.get(16, 16)[3] > 0.9 && a.img.get(2, 2)[3] == 0.0);
-        assert_eq!(a.img.data, run("ec.generate.writeon", &[], img.clone()).img.data);
+        assert_eq!(
+            a.img.data,
+            run("ec.generate.writeon", &[], img.clone()).img.data
+        );
         let src = Image::filled(32, 32, [0.5, 0.2, 0.1, 1.0]);
         let g = run("ec.generate.ccgluegun", &[], src.clone());
-        assert_eq!(g.img.data, run("ec.generate.ccgluegun", &[], src.clone()).img.data);
+        assert_eq!(
+            g.img.data,
+            run("ec.generate.ccgluegun", &[], src.clone()).img.data
+        );
         assert_ne!(g.img.get(16, 16), src.get(16, 16));
         assert_eq!(g.img.get(0, 0), src.get(0, 0));
     }
@@ -2254,7 +3449,10 @@ mod tests {
         impl Brush {
             fn at(&self, t: f64) -> Vec<(&'static str, Value)> {
                 let mut v = self.0.clone();
-                v.push(("brushPosition", Value::Vec2([8.0 + 48.0 * t.clamp(0.0, 1.0), 16.0])));
+                v.push((
+                    "brushPosition",
+                    Value::Vec2([8.0 + 48.0 * t.clamp(0.0, 1.0), 16.0]),
+                ));
                 v
             }
         }
@@ -2267,7 +3465,13 @@ mod tests {
             }
             fn params_at(&self, t: f64) -> Option<Params> {
                 let s = crate::find("ec.generate.writeon").unwrap();
-                let mut p = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+                let mut p = Params {
+                    values: s
+                        .params
+                        .iter()
+                        .map(|p| (p.id.to_string(), p.default.clone()))
+                        .collect(),
+                };
                 for (k, v) in self.at(t) {
                     p.values.insert(k.to_string(), v);
                 }
@@ -2275,10 +3479,18 @@ mod tests {
             }
         }
         let render = |extra: &[(&'static str, Value)], t: f64| {
-            let mut set = vec![("color", col(1.0, 0.0, 0.0)), ("brushSize", num(6.0)), ("brushHardness", num(100.0)), ("brushSpacing", num(0.05))];
+            let mut set = vec![
+                ("color", col(1.0, 0.0, 0.0)),
+                ("brushSize", num(6.0)),
+                ("brushHardness", num(100.0)),
+                ("brushSpacing", num(0.05)),
+            ];
             set.extend(extra.iter().cloned());
             let host = Brush(set);
-            let env = EffectEnv { host: Some(&host), ..Default::default() };
+            let env = EffectEnv {
+                host: Some(&host),
+                ..Default::default()
+            };
             let at = host.at(t);
             run_env("ec.generate.writeon", &at, Image::new(64, 32), t, env).img
         };
@@ -2292,7 +3504,13 @@ mod tests {
         assert!(!on(&trail, 8) && !on(&trail, 32) && on(&trail, 48) && on(&trail, 56));
         // Brush Spacing 0.5 s: three separate marks.
         let spaced = render(&[("brushSpacing", num(0.5))], 1.0);
-        assert!(on(&spaced, 8) && on(&spaced, 32) && on(&spaced, 56) && !on(&spaced, 20) && !on(&spaced, 44));
+        assert!(
+            on(&spaced, 8)
+                && on(&spaced, 32)
+                && on(&spaced, 56)
+                && !on(&spaced, 20)
+                && !on(&spaced, 44)
+        );
         // Paint Time Properties ▸ Opacity: each dab keeps the opacity it was laid with.
         struct Fade;
         impl EffectHost for Fade {
@@ -2303,15 +3521,42 @@ mod tests {
                 None
             }
             fn params_at(&self, t: f64) -> Option<Params> {
-                let mut p = Brush(vec![("brushHardness", num(100.0)), ("brushSpacing", num(0.05)), ("paintTimeProperties", Value::Enum(1))]).params_at(t)?;
-                p.values.insert("brushOpacity".into(), num(if t < 0.5 { 100.0 } else { 20.0 }));
+                let mut p = Brush(vec![
+                    ("brushHardness", num(100.0)),
+                    ("brushSpacing", num(0.05)),
+                    ("paintTimeProperties", Value::Enum(1)),
+                ])
+                .params_at(t)?;
+                p.values.insert(
+                    "brushOpacity".into(),
+                    num(if t < 0.5 { 100.0 } else { 20.0 }),
+                );
                 Some(p)
             }
         }
         let p1 = Fade.params_at(1.0).unwrap();
-        let set: Vec<(&str, Value)> = p1.values.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
-        let faded = run_env("ec.generate.writeon", &set, Image::new(64, 32), 1.0, EffectEnv { host: Some(&Fade), ..Default::default() }).img;
-        assert!(faded.get(8, 16)[3] > 0.9 && (faded.get(56, 16)[3] - 0.2).abs() < 0.05, "{:?} {:?}", faded.get(8, 16), faded.get(56, 16));
+        let set: Vec<(&str, Value)> = p1
+            .values
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.clone()))
+            .collect();
+        let faded = run_env(
+            "ec.generate.writeon",
+            &set,
+            Image::new(64, 32),
+            1.0,
+            EffectEnv {
+                host: Some(&Fade),
+                ..Default::default()
+            },
+        )
+        .img;
+        assert!(
+            faded.get(8, 16)[3] > 0.9 && (faded.get(56, 16)[3] - 0.2).abs() < 0.05,
+            "{:?} {:?}",
+            faded.get(8, 16),
+            faded.get(56, 16)
+        );
     }
 
     #[test]
@@ -2327,7 +3572,10 @@ mod tests {
         assert!(inside[0] > 0.99 && inside[1] < 0.01, "{inside:?}");
         assert_eq!(out.img.get(2, 2), [1.0, 1.0, 1.0, 1.0], "outside untouched");
         assert_eq!(out.img.get(8, 16), [0.0, 0.0, 0.0, 1.0], "border untouched");
-        assert_eq!(out.img.data, run("ec.generate.paintbucket", &[], img).img.data);
+        assert_eq!(
+            out.img.data,
+            run("ec.generate.paintbucket", &[], img).img.data
+        );
     }
 
     #[test]
@@ -2336,16 +3584,44 @@ mod tests {
         img.set(8, 8, [1.0, 0.0, 0.0, 1.0]);
         let out = run("ec.generate.eyedropperfill", &[], img.clone());
         assert!(out.img.data.iter().all(|p| *p == [1.0, 0.0, 0.0, 1.0]));
-        let blended = run("ec.generate.eyedropperfill", &[("blendWithOriginal", num(100.0))], img.clone());
+        let blended = run(
+            "ec.generate.eyedropperfill",
+            &[("blendWithOriginal", num(100.0))],
+            img.clone(),
+        );
         assert_eq!(blended.img.data, img.data);
     }
 
     #[test]
     fn threads_weave_is_deterministic_and_gappy() {
         let src = Image::filled(64, 64, [0.4, 0.6, 0.2, 1.0]);
-        let a = run("ec.generate.ccthreads", &[("width", num(16.0)), ("height", num(16.0)), ("coverage", num(50.0))], src.clone());
-        assert_eq!(a.img.data, run("ec.generate.ccthreads", &[("width", num(16.0)), ("height", num(16.0)), ("coverage", num(50.0))], src).img.data);
-        assert!(a.img.data.iter().any(|p| p[3] == 0.0), "gaps between threads");
+        let a = run(
+            "ec.generate.ccthreads",
+            &[
+                ("width", num(16.0)),
+                ("height", num(16.0)),
+                ("coverage", num(50.0)),
+            ],
+            src.clone(),
+        );
+        assert_eq!(
+            a.img.data,
+            run(
+                "ec.generate.ccthreads",
+                &[
+                    ("width", num(16.0)),
+                    ("height", num(16.0)),
+                    ("coverage", num(50.0))
+                ],
+                src
+            )
+            .img
+            .data
+        );
+        assert!(
+            a.img.data.iter().any(|p| p[3] == 0.0),
+            "gaps between threads"
+        );
         assert!(a.img.data.iter().any(|p| p[3] > 0.99), "threads");
     }
 
@@ -2378,11 +3654,27 @@ mod tests {
     #[test]
     fn audio_effects_draw_with_host() {
         let host = Tone;
-        let env = EffectEnv { host: Some(&host), comp_time: 1.0, ..Default::default() };
+        let env = EffectEnv {
+            host: Some(&host),
+            comp_time: 1.0,
+            ..Default::default()
+        };
         let img = Image::new(96, 64);
         for id in ["ec.generate.audiospectrum", "ec.generate.audiowaveform"] {
-            let a = run_env(id, &[("audioLayer", Value::Layer(Some(1)))], img.clone(), 1.0, env);
-            let b = run_env(id, &[("audioLayer", Value::Layer(Some(1)))], img.clone(), 1.0, env);
+            let a = run_env(
+                id,
+                &[("audioLayer", Value::Layer(Some(1)))],
+                img.clone(),
+                1.0,
+                env,
+            );
+            let b = run_env(
+                id,
+                &[("audioLayer", Value::Layer(Some(1)))],
+                img.clone(),
+                1.0,
+                env,
+            );
             assert_eq!(a.img.data, b.img.data, "{id}");
             assert!(alpha_sum(&a.img, 0, 0, 96, 64) > 10.0, "{id} drew nothing");
         }
@@ -2391,11 +3683,20 @@ mod tests {
     #[test]
     fn fft_finds_tone() {
         let n = 256;
-        let mut re: Vec<f64> = (0..n).map(|i| (2.0 * PI * 8.0 * i as f64 / n as f64).cos()).collect();
+        let mut re: Vec<f64> = (0..n)
+            .map(|i| (2.0 * PI * 8.0 * i as f64 / n as f64).cos())
+            .collect();
         let mut im = vec![0.0; n];
         fft(&mut re, &mut im);
-        let mags: Vec<f64> = (0..n / 2).map(|k| (re[k] * re[k] + im[k] * im[k]).sqrt()).collect();
-        let peak = mags.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).unwrap().0;
+        let mags: Vec<f64> = (0..n / 2)
+            .map(|k| (re[k] * re[k] + im[k] * im[k]).sqrt())
+            .collect();
+        let peak = mags
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.total_cmp(b.1))
+            .unwrap()
+            .0;
         assert_eq!(peak, 8);
     }
 
@@ -2406,12 +3707,20 @@ mod tests {
         // Round caps reach 3 px past the ends (on the axis), Butt stops there, Projecting is square.
         let (round, butt, proj) = (cov(0), cov(1), cov(2));
         assert!(round.get(8, 10) > 0.9 && butt.get(8, 10) < 0.1 && proj.get(8, 10) > 0.9);
-        assert!(proj.get(7, 7) > 0.9 && round.get(7, 7) < 0.5, "square corner");
+        assert!(
+            proj.get(7, 7) > 0.9 && round.get(7, 7) < 0.5,
+            "square corner"
+        );
         // A right-angle turn: Miter fills the outer corner, Bevel cuts it.
         let corner = vec![vec![[5.0, 30.0], [30.0, 30.0], [30.0, 5.0]]];
         let j = |join: u32| raster_convex(40, 40, &stroke_outline(&corner, 3.0, 1, join, 4.0));
         let (miter, bevel) = (j(1), j(2));
-        assert!(miter.get(32, 32) > 0.9 && bevel.get(32, 32) < 0.1, "{} {}", miter.get(32, 32), bevel.get(32, 32));
+        assert!(
+            miter.get(32, 32) > 0.9 && bevel.get(32, 32) < 0.1,
+            "{} {}",
+            miter.get(32, 32),
+            bevel.get(32, 32)
+        );
         // A tight miter limit falls back to a bevel.
         let limited = raster_convex(40, 40, &stroke_outline(&corner, 3.0, 1, 1, 1.0));
         assert!(limited.get(32, 32) < 0.1);
@@ -2420,13 +3729,23 @@ mod tests {
     #[test]
     fn scribble_caps_and_start_end_apply_to() {
         let masks = square_mask();
-        let env = EffectEnv { masks: &masks, ..Default::default() };
+        let env = EffectEnv {
+            masks: &masks,
+            ..Default::default()
+        };
         let img = Image::new(64, 64);
         let base = [("wiggleType", Value::Enum(0)), ("strokeWidth", num(3.0))];
         let round = run_env("ec.generate.scribble", &base, img.clone(), 0.0, env);
         let butt = run_env(
             "ec.generate.scribble",
-            &[base.as_slice(), &[("edgeOptions/endCap", Value::Enum(1)), ("edgeOptions/join", Value::Enum(2))]].concat(),
+            &[
+                base.as_slice(),
+                &[
+                    ("edgeOptions/endCap", Value::Enum(1)),
+                    ("edgeOptions/join", Value::Enum(2)),
+                ],
+            ]
+            .concat(),
             img.clone(),
             0.0,
             env,
@@ -2434,13 +3753,43 @@ mod tests {
         assert_ne!(round.img.data, butt.img.data);
         // Each Stroke: every stroke is trimmed on its own, so the half-way image has ink all over.
         let two = vec![
-            crate::MaskShape { name: String::new(), points: vec![[4.0, 4.0], [28.0, 4.0], [28.0, 60.0], [4.0, 60.0]], closed: true, inverted: false },
-            crate::MaskShape { name: String::new(), points: vec![[36.0, 4.0], [60.0, 4.0], [60.0, 60.0], [36.0, 60.0]], closed: true, inverted: false },
+            crate::MaskShape {
+                name: String::new(),
+                points: vec![[4.0, 4.0], [28.0, 4.0], [28.0, 60.0], [4.0, 60.0]],
+                closed: true,
+                inverted: false,
+            },
+            crate::MaskShape {
+                name: String::new(),
+                points: vec![[36.0, 4.0], [60.0, 4.0], [60.0, 60.0], [36.0, 60.0]],
+                closed: true,
+                inverted: false,
+            },
         ];
-        let env2 = EffectEnv { masks: &two, ..Default::default() };
+        let env2 = EffectEnv {
+            masks: &two,
+            ..Default::default()
+        };
         let seq = [("scribble", Value::Enum(1)), ("end", num(50.0))];
-        let all = run_env("ec.generate.scribble", &[base.as_slice(), &seq].concat(), img.clone(), 0.0, env2);
-        let each = run_env("ec.generate.scribble", &[base.as_slice(), &seq, &[("startEndApplyTo", Value::Enum(1))]].concat(), img, 0.0, env2);
+        let all = run_env(
+            "ec.generate.scribble",
+            &[base.as_slice(), &seq].concat(),
+            img.clone(),
+            0.0,
+            env2,
+        );
+        let each = run_env(
+            "ec.generate.scribble",
+            &[
+                base.as_slice(),
+                &seq,
+                &[("startEndApplyTo", Value::Enum(1))],
+            ]
+            .concat(),
+            img,
+            0.0,
+            env2,
+        );
         assert_ne!(all.img.data, each.img.data);
     }
 }

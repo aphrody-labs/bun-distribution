@@ -24,7 +24,15 @@ const SIGNATURE: &[u8; 8] = b"\x89PNG\r\n\x1a\n";
 /// Most image data bytes per `IDAT` chunk.
 const IDAT_MAX: usize = 1 << 20;
 /// Adam7 passes: (x0, y0, dx, dy).
-const ADAM7: [(u32, u32, u32, u32); 7] = [(0, 0, 8, 8), (4, 0, 8, 8), (0, 4, 4, 8), (2, 0, 4, 4), (0, 2, 2, 4), (1, 0, 2, 2), (0, 1, 1, 2)];
+const ADAM7: [(u32, u32, u32, u32); 7] = [
+    (0, 0, 8, 8),
+    (4, 0, 8, 8),
+    (0, 4, 4, 8),
+    (2, 0, 4, 4),
+    (0, 2, 2, 4),
+    (1, 0, 2, 2),
+    (0, 1, 1, 2),
+];
 
 /// Pixels per metre for a resolution in pixels per inch (the unit `pHYs` stores).
 pub fn pixels_per_metre(ppi: f64) -> u32 {
@@ -36,7 +44,11 @@ pub fn phys_chunk(x: f64, y: f64) -> Vec<u8> {
     let [x, y] = [x, y].map(|v| pixels_per_metre(v).to_be_bytes());
     let mut out = Vec::with_capacity(21);
     // x, y, unit 1 = metre.
-    chunk(&mut out, b"pHYs", &[x.as_slice(), y.as_slice(), &[1]].concat());
+    chunk(
+        &mut out,
+        b"pHYs",
+        &[x.as_slice(), y.as_slice(), &[1]].concat(),
+    );
     out
 }
 
@@ -49,15 +61,33 @@ pub fn encode(rgba: &[u8], width: u32, height: u32, o: &PngOptions) -> Result<Ve
     let px = rgba.as_chunks::<4>().0;
     let opaque = px.iter().all(|p| p[3] == 255);
     let (channels, color_type) = if opaque { (3, 2) } else { (4, 6) };
-    let pixels: Cow<[u8]> = if opaque { Cow::Owned(px.iter().flat_map(|p| [p[0], p[1], p[2]]).collect()) } else { Cow::Borrowed(rgba) };
-    write(&pixels, width, height, Layout { channels, bits: 8, color_type }, &[], o)
+    let pixels: Cow<[u8]> = if opaque {
+        Cow::Owned(px.iter().flat_map(|p| [p[0], p[1], p[2]]).collect())
+    } else {
+        Cow::Borrowed(rgba)
+    };
+    write(
+        &pixels,
+        width,
+        height,
+        Layout {
+            channels,
+            bits: 8,
+            color_type,
+        },
+        &[],
+        o,
+    )
 }
 
 /// Encode a palette image as an indexed PNG (colour type 3: `PLTE`, and `tRNS` for its
 /// transparent entry) at 1, 2, 4 or 8 bits per pixel, as few as the palette needs.
 pub fn encode_indexed(img: &Indexed, o: &PngOptions) -> Result<Vec<u8>, String> {
     check_size(img.width, img.height)?;
-    if img.indices.len() as u64 != u64::from(img.width) * u64::from(img.height) || img.palette.is_empty() || img.palette.len() > 256 {
+    if img.indices.len() as u64 != u64::from(img.width) * u64::from(img.height)
+        || img.palette.is_empty()
+        || img.palette.len() > 256
+    {
         return Err("PNG encoding failed: the palette image is malformed".into());
     }
     let bits = match img.palette.len() {
@@ -68,17 +98,33 @@ pub fn encode_indexed(img: &Indexed, o: &PngOptions) -> Result<Vec<u8>, String> 
     };
     let plte = img.palette.concat();
     // Alpha of the entries up to the transparent one (the rest are opaque).
-    let trns: Vec<u8> = img.transparent.map(|t| (0..=t).map(|i| if i == t { 0 } else { 255 }).collect()).unwrap_or_default();
+    let trns: Vec<u8> = img
+        .transparent
+        .map(|t| (0..=t).map(|i| if i == t { 0 } else { 255 }).collect())
+        .unwrap_or_default();
     let mut extra: Vec<(&[u8; 4], &[u8])> = vec![(b"PLTE", &plte)];
     if !trns.is_empty() {
         extra.push((b"tRNS", &trns));
     }
-    write(&img.indices, img.width, img.height, Layout { channels: 1, bits, color_type: 3 }, &extra, o)
+    write(
+        &img.indices,
+        img.width,
+        img.height,
+        Layout {
+            channels: 1,
+            bits,
+            color_type: 3,
+        },
+        &extra,
+        o,
+    )
 }
 
 fn check_size(width: u32, height: u32) -> Result<(), String> {
     if width == 0 || height == 0 || width > i32::MAX as u32 || height > i32::MAX as u32 {
-        return Err(format!("PNG encoding failed: {width} × {height} pixels is not a valid image size"));
+        return Err(format!(
+            "PNG encoding failed: {width} × {height} pixels is not a valid image size"
+        ));
     }
     Ok(())
 }
@@ -94,8 +140,19 @@ struct Layout {
 
 /// Write the file: signature, `IHDR`, `pHYs`, the `extra` chunks, the filtered and compressed
 /// pixels (`layout.channels` bytes each, packed to `layout.bits` in the file) and `IEND`.
-fn write(pixels: &[u8], width: u32, height: u32, layout: Layout, extra: &[(&[u8; 4], &[u8])], o: &PngOptions) -> Result<Vec<u8>, String> {
-    let Layout { channels, bits, color_type } = layout;
+fn write(
+    pixels: &[u8],
+    width: u32,
+    height: u32,
+    layout: Layout,
+    extra: &[(&[u8; 4], &[u8])],
+    o: &PngOptions,
+) -> Result<Vec<u8>, String> {
+    let Layout {
+        channels,
+        bits,
+        color_type,
+    } = layout;
     let mut out = Vec::with_capacity(pixels.len() / 2 + 64);
     out.extend_from_slice(SIGNATURE);
     let mut ihdr = Vec::with_capacity(13);
@@ -112,10 +169,17 @@ fn write(pixels: &[u8], width: u32, height: u32, layout: Layout, extra: &[(&[u8;
     }
     // Filters work on whole bytes: a sub-byte pixel counts as one.
     let bpp = (channels * bits as usize / 8).max(1);
-    let mut raw = Vec::with_capacity(pixels.len() + height as usize * if o.interlaced { 2 } else { 1 });
+    let mut raw =
+        Vec::with_capacity(pixels.len() + height as usize * if o.interlaced { 2 } else { 1 });
     let mut rows = |px: &[u8], w: u32, h: u32| {
         let packed = pack(px, w, h, bits);
-        filter_rows(&packed, (w as usize * channels * bits as usize).div_ceil(8), h, bpp, &mut raw);
+        filter_rows(
+            &packed,
+            (w as usize * channels * bits as usize).div_ceil(8),
+            h,
+            bpp,
+            &mut raw,
+        );
     };
     if o.interlaced {
         for pass in ADAM7 {
@@ -126,8 +190,14 @@ fn write(pixels: &[u8], width: u32, height: u32, layout: Layout, extra: &[(&[u8;
     } else {
         rows(pixels, width, height);
     }
-    let mut z = ZlibEncoder::new(Vec::with_capacity(raw.len() / 2), flate2::Compression::default());
-    let data = z.write_all(&raw).and_then(|()| z.finish()).map_err(|e| format!("PNG encoding failed: {e}"))?;
+    let mut z = ZlibEncoder::new(
+        Vec::with_capacity(raw.len() / 2),
+        flate2::Compression::default(),
+    );
+    let data = z
+        .write_all(&raw)
+        .and_then(|()| z.finish())
+        .map_err(|e| format!("PNG encoding failed: {e}"))?;
     for part in data.chunks(IDAT_MAX) {
         chunk(&mut out, b"IDAT", part);
     }
@@ -144,11 +214,18 @@ const HEADER: usize = 8 + 12 + 13;
 pub fn with_text(png: Vec<u8>, entries: &[(&str, Cow<str>)]) -> Vec<u8> {
     let chunks: Vec<([u8; 4], Vec<u8>)> = entries
         .iter()
-        .filter(|(keyword, _)| !keyword.is_empty() && keyword.len() <= 79 && keyword.bytes().all(|b| (32..=126).contains(&b)))
+        .filter(|(keyword, _)| {
+            !keyword.is_empty()
+                && keyword.len() <= 79
+                && keyword.bytes().all(|b| (32..=126).contains(&b))
+        })
         .map(|(keyword, text)| {
             let mut data = keyword.as_bytes().to_vec();
             data.push(0);
-            let latin1: Option<Vec<u8>> = text.chars().map(|c| u8::try_from(u32::from(c)).ok()).collect();
+            let latin1: Option<Vec<u8>> = text
+                .chars()
+                .map(|c| u8::try_from(u32::from(c)).ok())
+                .collect();
             match latin1 {
                 Some(bytes) => {
                     data.extend(bytes);
@@ -175,10 +252,15 @@ pub fn with_srgb(png: Vec<u8>) -> Vec<u8> {
 /// `png` with `chunks` (type, data) right after its header; chunks too large for a PNG are
 /// skipped. Unchanged when there are none or it doesn't start with a PNG header.
 fn with_chunks(png: Vec<u8>, chunks: &[([u8; 4], Vec<u8>)]) -> Vec<u8> {
-    if chunks.is_empty() || !png.starts_with(SIGNATURE) || png.get(12..16) != Some(b"IHDR".as_slice()) || png.len() < HEADER {
+    if chunks.is_empty()
+        || !png.starts_with(SIGNATURE)
+        || png.get(12..16) != Some(b"IHDR".as_slice())
+        || png.len() < HEADER
+    {
         return png;
     }
-    let mut out = Vec::with_capacity(png.len() + chunks.iter().map(|(_, d)| d.len() + 12).sum::<usize>());
+    let mut out =
+        Vec::with_capacity(png.len() + chunks.iter().map(|(_, d)| d.len() + 12).sum::<usize>());
     out.extend_from_slice(&png[..HEADER]);
     for (ty, data) in chunks {
         if u32::try_from(data.len()).is_ok() {
@@ -199,7 +281,9 @@ pub(super) fn pack(px: &[u8], w: u32, h: u32, bits: u8) -> Cow<'_, [u8]> {
     let mut out = Vec::with_capacity(h as usize * (w as usize).div_ceil(per));
     for row in px.chunks(w.max(1) as usize) {
         for group in row.chunks(per) {
-            let byte = group.iter().enumerate().fold(0u8, |b, (i, v)| b | (v & ((1 << bits) - 1)) << (8 - bits as usize * (i + 1)));
+            let byte = group.iter().enumerate().fold(0u8, |b, (i, v)| {
+                b | (v & ((1 << bits) - 1)) << (8 - bits as usize * (i + 1))
+            });
             out.push(byte);
         }
     }
@@ -218,7 +302,13 @@ fn chunk(out: &mut Vec<u8>, ty: &[u8; 4], data: &[u8]) {
 }
 
 /// The pixels of one Adam7 pass as their own image (`None` when the pass is empty).
-fn sub_image(px: &[u8], width: u32, height: u32, channels: usize, (x0, y0, dx, dy): (u32, u32, u32, u32)) -> Option<(u32, u32, Vec<u8>)> {
+fn sub_image(
+    px: &[u8],
+    width: u32,
+    height: u32,
+    channels: usize,
+    (x0, y0, dx, dy): (u32, u32, u32, u32),
+) -> Option<(u32, u32, Vec<u8>)> {
     let w = width.saturating_sub(x0).div_ceil(dx);
     let h = height.saturating_sub(y0).div_ceil(dy);
     if w == 0 || h == 0 {
@@ -241,7 +331,11 @@ fn filter_rows(px: &[u8], stride: usize, h: u32, bpp: usize, out: &mut Vec<u8>) 
     let mut cand: [Vec<u8>; 5] = std::array::from_fn(|_| vec![0u8; stride]);
     for y in 0..h as usize {
         let cur = &px[y * stride..][..stride];
-        let prev = if y == 0 { &zero[..] } else { &px[(y - 1) * stride..][..stride] };
+        let prev = if y == 0 {
+            &zero[..]
+        } else {
+            &px[(y - 1) * stride..][..stride]
+        };
         // The first pixel has no left neighbour (a = c = 0).
         let (head, tail) = (bpp.min(stride), stride.saturating_sub(bpp));
         let [none, sub, up, avg, pae] = &mut cand;
@@ -261,7 +355,11 @@ fn filter_rows(px: &[u8], stride: usize, h: u32, bpp: usize, out: &mut Vec<u8>) 
             avg[i] = cur[i].wrapping_sub(((a as u16 + b as u16) / 2) as u8);
             pae[i] = cur[i].wrapping_sub(paeth(a, b, c));
         }
-        let cost = |c: &[u8]| c.iter().map(|&v| (v as i8).unsigned_abs() as u64).sum::<u64>();
+        let cost = |c: &[u8]| {
+            c.iter()
+                .map(|&v| (v as i8).unsigned_abs() as u64)
+                .sum::<u64>()
+        };
         let best = (0..5).min_by_key(|&f| cost(&cand[f])).unwrap_or(0);
         out.push(best as u8);
         out.extend_from_slice(&cand[best]);
@@ -270,7 +368,11 @@ fn filter_rows(px: &[u8], stride: usize, h: u32, bpp: usize, out: &mut Vec<u8>) 
 
 fn paeth(a: u8, b: u8, c: u8) -> u8 {
     let p = a as i16 + b as i16 - c as i16;
-    let (pa, pb, pc) = ((p - a as i16).abs(), (p - b as i16).abs(), (p - c as i16).abs());
+    let (pa, pb, pc) = (
+        (p - a as i16).abs(),
+        (p - b as i16).abs(),
+        (p - c as i16).abs(),
+    );
     if pa <= pb && pa <= pc {
         a
     } else if pb <= pc {

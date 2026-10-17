@@ -95,7 +95,9 @@ impl Ranges {
 
     /// Bytes covered.
     pub fn total(&self) -> u64 {
-        self.0.iter().fold(0u64, |n, &(a, b)| n.saturating_add(b - a))
+        self.0
+            .iter()
+            .fold(0u64, |n, &(a, b)| n.saturating_add(b - a))
     }
 
     /// The parts of `[start, end)` not covered.
@@ -167,7 +169,10 @@ fn plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
     } else if bytes.starts_with(b"FUJIFILMCCD-RAW") {
         // (its preview, the embedded JPEG, is read anyway: its metadata are there)
         raf_plan(bytes, loaded)
-    } else if bytes.get(..4).is_some_and(|m| matches!(m, b"IIRO" | b"IIRS" | b"MMOR")) {
+    } else if bytes
+        .get(..4)
+        .is_some_and(|m| matches!(m, b"IIRO" | b"IIRS" | b"MMOR"))
+    {
         HeaderPlan::Whole("an ORF header probe reads samples")
     } else if Tiff::sniff(bytes).is_some() {
         tiff_plan(bytes, loaded, preview)
@@ -185,7 +190,11 @@ struct Want<'a> {
 
 impl<'a> Want<'a> {
     fn new(bytes: &[u8], loaded: &'a Ranges) -> Self {
-        Self { len: bytes.len() as u64, loaded, need: Ranges::new() }
+        Self {
+            len: bytes.len() as u64,
+            loaded,
+            need: Ranges::new(),
+        }
     }
 
     /// Whether `[start, end)` (clipped to the file) is loaded; asks for what isn't.
@@ -208,12 +217,22 @@ impl<'a> Want<'a> {
 
 /// Everything but `holes` is needed. `meta` (IFD tables and out-of-line values) must not lie in a
 /// hole; once all is loaded, `ready` decides.
-fn finish(len: u64, loaded: &Ranges, holes: &Ranges, meta: &Ranges, ready: impl FnOnce() -> HeaderPlan) -> HeaderPlan {
+fn finish(
+    len: u64,
+    loaded: &Ranges,
+    holes: &Ranges,
+    meta: &Ranges,
+    ready: impl FnOnce() -> HeaderPlan,
+) -> HeaderPlan {
     if holes.spans().iter().any(|&(a, b)| meta.overlaps(a, b)) {
         return HeaderPlan::Whole("metadata inside sample data");
     }
     let missing = holes.gaps(0, len).minus(loaded);
-    if missing.is_empty() { ready() } else { HeaderPlan::Need(missing) }
+    if missing.is_empty() {
+        ready()
+    } else {
+        HeaderPlan::Need(missing)
+    }
 }
 
 fn tiff_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
@@ -227,19 +246,34 @@ fn tiff_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
         return plan;
     }
     // (the Make is usually in the first kilobytes: a NEF, PEF or ORF is known before the rest is read)
-    if matches!(crate::probe(bytes), Some(RawFormat::Nef | RawFormat::Nrw | RawFormat::Orf | RawFormat::Pef)) {
+    if matches!(
+        crate::probe(bytes),
+        Some(RawFormat::Nef | RawFormat::Nrw | RawFormat::Orf | RawFormat::Pef)
+    ) {
         return HeaderPlan::Whole("its header probe reads samples");
     }
-    let Ok(tiff) = Tiff::parse(bytes) else { return HeaderPlan::Whole("TIFF structure") };
+    let Ok(tiff) = Tiff::parse(bytes) else {
+        return HeaderPlan::Whole("TIFF structure");
+    };
     let mut holes = Ranges::new();
     for ifd in tiff.all_ifds() {
         let chunks: Vec<(u64, u64)> = match ifd.image() {
             // a preview's strips are read when the preview is wanted: only the raw image is skipped
-            Ok(info) if preview && !matches!(info.photometric, t::photometric::CFA | t::photometric::LINEAR_RAW) => continue,
+            Ok(info)
+                if preview
+                    && !matches!(
+                        info.photometric,
+                        t::photometric::CFA | t::photometric::LINEAR_RAW
+                    ) =>
+            {
+                continue;
+            }
             Ok(info) => info.chunks(len).iter().map(|c| (c.offset, c.len)).collect(),
             // a raw IFD without the tags a TIFF image needs (an older CR2's) still lists its strips
             Err(_) => match (ifd.u64s(t::STRIP_OFFSETS), ifd.u64s(t::STRIP_BYTE_COUNTS)) {
-                (Some(offsets), Some(counts)) if offsets.len() == counts.len() => offsets.into_iter().zip(counts).collect(),
+                (Some(offsets), Some(counts)) if offsets.len() == counts.len() => {
+                    offsets.into_iter().zip(counts).collect()
+                }
                 _ => continue,
             },
         };
@@ -248,19 +282,28 @@ fn tiff_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
             continue;
         }
         for (i, &(offset, size)) in chunks.iter().enumerate() {
-            let start = if i == 0 { offset.saturating_add(HEAD) } else { offset };
+            let start = if i == 0 {
+                offset.saturating_add(HEAD)
+            } else {
+                offset
+            };
             holes.insert(start, offset.saturating_add(size).min(len));
         }
     }
     // A Panasonic RW2 keeps its raw data from `RawDataOffset` to the end, outside any TIFF image.
     if holes.is_empty()
         && bytes.starts_with(b"IIU\0")
-        && let Some(off) = tiff.ifds.first().and_then(|i| i.u64(crate::vendor::rw2::RAW_OFFSET))
+        && let Some(off) = tiff
+            .ifds
+            .first()
+            .and_then(|i| i.u64(crate::vendor::rw2::RAW_OFFSET))
     {
         holes.insert(off.saturating_add(HEAD), len);
     }
     finish(len, loaded, &holes, &meta, || match crate::probe(bytes) {
-        Some(RawFormat::Nef | RawFormat::Nrw | RawFormat::Orf | RawFormat::Pef) => HeaderPlan::Whole("its header probe reads samples"),
+        Some(RawFormat::Nef | RawFormat::Nrw | RawFormat::Orf | RawFormat::Pef) => {
+            HeaderPlan::Whole("its header probe reads samples")
+        }
         Some(f) if f.is_supported() => HeaderPlan::Ready,
         _ => HeaderPlan::Whole("not a supported raw"),
     })
@@ -270,7 +313,12 @@ fn tiff_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
 /// reader does — the chain, `SubIFDs`, Exif, GPS and Interop, plus the `extra` pointer tags —
 /// asking for every IFD table and for the values that locate IFDs and image chunks. Returns the IFD
 /// tables and out-of-line values found (absolute ranges); incomplete while `w` needs more.
-fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ranges, &'static str> {
+fn walk_tiff(
+    w: &mut Want,
+    origin: u64,
+    data: &[u8],
+    extra: &[u16],
+) -> Result<Ranges, &'static str> {
     let len = data.len() as u64;
     let at = |rel: u64| origin.saturating_add(rel);
     let mut meta = Ranges::new();
@@ -278,12 +326,21 @@ fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ra
         return Ok(meta);
     }
     let (order, big) = Tiff::sniff(data).ok_or("not a TIFF")?;
-    let first = if big { order.read_u64(data, 8) } else { order.read_u32(data, 4).map(u64::from) }.ok_or("truncated TIFF header")?;
+    let first = if big {
+        order.read_u64(data, 8)
+    } else {
+        order.read_u32(data, 4).map(u64::from)
+    }
+    .ok_or("truncated TIFF header")?;
     meta.insert(origin, at(len.min(if big { 16 } else { 8 })));
     let (head, entry, inline) = if big { (8u64, 20u64, 8u64) } else { (2, 12, 4) };
     let offset_at = |pos: u64| -> Option<u64> {
         let pos = usize::try_from(pos).ok()?;
-        if big { order.read_u64(data, pos) } else { order.read_u32(data, pos).map(u64::from) }
+        if big {
+            order.read_u64(data, pos)
+        } else {
+            order.read_u32(data, pos).map(u64::from)
+        }
     };
     let mut stack = vec![first];
     let mut seen = HashSet::new();
@@ -294,8 +351,15 @@ fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ra
         if !w.want(at(off), at(off.saturating_add(head))) {
             continue;
         }
-        let Ok(pos) = usize::try_from(off) else { continue };
-        let n = if big { order.read_u64(data, pos) } else { order.read_u16(data, pos).map(u64::from) }.unwrap_or(0);
+        let Ok(pos) = usize::try_from(off) else {
+            continue;
+        };
+        let n = if big {
+            order.read_u64(data, pos)
+        } else {
+            order.read_u16(data, pos).map(u64::from)
+        }
+        .unwrap_or(0);
         let table = off.saturating_add(head);
         let n_read = n.min(len.saturating_sub(table) / entry).min(MAX_ENTRIES);
         if n_read == 0 {
@@ -304,7 +368,11 @@ fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ra
         let table_end = table.saturating_add(n_read * entry);
         // the reader reads the next-IFD pointer only when every entry fits
         let complete = n_read == n;
-        let end = if complete { table_end.saturating_add(inline).min(len) } else { table_end };
+        let end = if complete {
+            table_end.saturating_add(inline).min(len)
+        } else {
+            table_end
+        };
         if !w.want(at(off), at(end)) {
             continue;
         }
@@ -312,11 +380,22 @@ fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ra
         for i in 0..n_read {
             let p = table + i * entry;
             let Ok(pu) = usize::try_from(p) else { continue };
-            let (Some(tag), Some(typ)) = (order.read_u16(data, pu), order.read_u16(data, pu + 2).and_then(FieldType::from_u16)) else { continue };
-            let count = if big { order.read_u64(data, pu + 4) } else { order.read_u32(data, pu + 4).map(u64::from) };
+            let (Some(tag), Some(typ)) = (
+                order.read_u16(data, pu),
+                order.read_u16(data, pu + 2).and_then(FieldType::from_u16),
+            ) else {
+                continue;
+            };
+            let count = if big {
+                order.read_u64(data, pu + 4)
+            } else {
+                order.read_u32(data, pu + 4).map(u64::from)
+            };
             let Some(count) = count else { continue };
             let field = p + if big { 12 } else { 8 };
-            let Some(total) = count.checked_mul(typ.size() as u64) else { continue };
+            let Some(total) = count.checked_mul(typ.size() as u64) else {
+                continue;
+            };
             let start = if total <= inline {
                 field
             } else {
@@ -325,17 +404,28 @@ fn walk_tiff(w: &mut Want, origin: u64, data: &[u8], extra: &[u16]) -> Result<Ra
                     None => continue,
                 }
             };
-            let Some(value_end) = start.checked_add(total).filter(|&e| e <= len) else { continue };
+            let Some(value_end) = start.checked_add(total).filter(|&e| e <= len) else {
+                continue;
+            };
             if total > inline {
                 meta.insert(at(start), at(value_end));
             }
-            let child = matches!(tag, t::SUB_IFDS | t::EXIF_IFD | t::GPS_IFD | t::INTEROP_IFD) || extra.contains(&tag);
-            let locates = child || matches!(tag, t::STRIP_OFFSETS | t::STRIP_BYTE_COUNTS | t::TILE_OFFSETS | t::TILE_BYTE_COUNTS);
+            let child = matches!(tag, t::SUB_IFDS | t::EXIF_IFD | t::GPS_IFD | t::INTEROP_IFD)
+                || extra.contains(&tag);
+            let locates = child
+                || matches!(
+                    tag,
+                    t::STRIP_OFFSETS | t::STRIP_BYTE_COUNTS | t::TILE_OFFSETS | t::TILE_BYTE_COUNTS
+                );
             if !locates || !w.want(at(start), at(value_end)) || !child {
                 continue;
             }
             // the reader follows every `SubIFDs` value and the first value of the other pointers
-            let take = if tag == t::SUB_IFDS { count.min(MAX_CHILDREN) } else { count.min(1) };
+            let take = if tag == t::SUB_IFDS {
+                count.min(MAX_CHILDREN)
+            } else {
+                count.min(1)
+            };
             for k in 0..take {
                 if let Some(v) = unsigned(data, order, typ, start + k * typ.size() as u64) {
                     stack.push(v);
@@ -362,12 +452,16 @@ fn unsigned(data: &[u8], order: ByteOrder, typ: FieldType, pos: u64) -> Option<u
 
 fn be32(bytes: &[u8], at: u64) -> Option<u64> {
     let at = usize::try_from(at).ok()?;
-    bytes.get(at..at.checked_add(4)?).map(|s| u64::from(u32::from_be_bytes([s[0], s[1], s[2], s[3]])))
+    bytes
+        .get(at..at.checked_add(4)?)
+        .map(|s| u64::from(u32::from_be_bytes([s[0], s[1], s[2], s[3]])))
 }
 
 fn be64(bytes: &[u8], at: u64) -> Option<u64> {
     let at = usize::try_from(at).ok()?;
-    bytes.get(at..at.checked_add(8)?).map(|s| u64::from_be_bytes([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
+    bytes
+        .get(at..at.checked_add(8)?)
+        .map(|s| u64::from_be_bytes([s[0], s[1], s[2], s[3], s[4], s[5], s[6], s[7]]))
 }
 
 /// A CR3 is read where `lightcraft_meta::cr3::parse_cr3` and the CR3 decoder look: the file type,
@@ -395,12 +489,21 @@ fn cr3_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
             },
             n => (n, 8),
         };
-        let Some(end) = at.checked_add(box_len).filter(|&e| e <= len && box_len >= hdr) else { break };
+        let Some(end) = at
+            .checked_add(box_len)
+            .filter(|&e| e <= len && box_len >= hdr)
+        else {
+            break;
+        };
         let kind = bytes.get(at as usize + 4..at as usize + 8);
         let needed = match kind {
             Some(b"mdat") => false,
             Some(b"moov") => true,
-            Some(b"uuid") => preview || bytes.get((at + hdr) as usize..(at + hdr + 16) as usize) == Some(XMP_UUID.as_slice()),
+            Some(b"uuid") => {
+                preview
+                    || bytes.get((at + hdr) as usize..(at + hdr + 16) as usize)
+                        == Some(XMP_UUID.as_slice())
+            }
             _ => preview,
         };
         if needed {
@@ -412,9 +515,12 @@ fn cr3_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
         return plan;
     }
     let mut w = Want::new(bytes, loaded);
-    let Some(cr3) = parse_cr3(bytes) else { return HeaderPlan::Whole("CR3 structure") };
+    let Some(cr3) = parse_cr3(bytes) else {
+        return HeaderPlan::Whole("CR3 structure");
+    };
     for track in &cr3.tracks {
-        if (track.kind == Cr3TrackKind::Other(*b"CTMD") || preview && track.kind == Cr3TrackKind::Jpeg)
+        if (track.kind == Cr3TrackKind::Other(*b"CTMD")
+            || preview && track.kind == Cr3TrackKind::Jpeg)
             && let Some((offset, size)) = track.data
         {
             w.want(offset as u64, offset.saturating_add(size) as u64);
@@ -430,7 +536,10 @@ fn cr3_plan(bytes: &[u8], loaded: &Ranges, preview: bool) -> HeaderPlan {
             && let Ok(ranges) = crate::vendor::crx::header_ranges(sample, &coding)
         {
             for r in ranges {
-                w.want(o.saturating_add(r.start as u64), o.saturating_add(r.end as u64));
+                w.want(
+                    o.saturating_add(r.start as u64),
+                    o.saturating_add(r.end as u64),
+                );
             }
         }
     }
@@ -445,9 +554,18 @@ fn raf_plan(bytes: &[u8], loaded: &Ranges) -> HeaderPlan {
     if !w.want(0, 160) {
         return w.into_plan().unwrap_or(HeaderPlan::Whole("RAF header"));
     }
-    let (Some(start), Some(size)) = (be32(bytes, 100), be32(bytes, 104)) else { return HeaderPlan::Whole("RAF header") };
-    let Some(end) = start.checked_add(size).filter(|&e| start > 0 && size > 0 && e <= len) else { return HeaderPlan::Whole("RAF raw container") };
-    let Some(container) = bytes.get(start as usize..end as usize) else { return HeaderPlan::Whole("RAF raw container") };
+    let (Some(start), Some(size)) = (be32(bytes, 100), be32(bytes, 104)) else {
+        return HeaderPlan::Whole("RAF header");
+    };
+    let Some(end) = start
+        .checked_add(size)
+        .filter(|&e| start > 0 && size > 0 && e <= len)
+    else {
+        return HeaderPlan::Whole("RAF raw container");
+    };
+    let Some(container) = bytes.get(start as usize..end as usize) else {
+        return HeaderPlan::Whole("RAF raw container");
+    };
     let meta = match walk_tiff(&mut w, start, container, &[RAF_RAW_IFD]) {
         Ok(meta) => meta,
         Err(why) => return HeaderPlan::Whole(why),
@@ -455,8 +573,12 @@ fn raf_plan(bytes: &[u8], loaded: &Ranges) -> HeaderPlan {
     if let Some(plan) = w.into_plan() {
         return plan;
     }
-    let Ok(ifd) = crate::vendor::raf::raw_ifd(container) else { return HeaderPlan::Whole("RAF raw IFD") };
-    let (Some(off), Some(strip)) = (ifd.u64(0xf007), ifd.u64(0xf008)) else { return HeaderPlan::Whole("RAF raw strip") };
+    let Ok(ifd) = crate::vendor::raf::raw_ifd(container) else {
+        return HeaderPlan::Whole("RAF raw IFD");
+    };
+    let (Some(off), Some(strip)) = (ifd.u64(0xf007), ifd.u64(0xf008)) else {
+        return HeaderPlan::Whole("RAF raw strip");
+    };
     let mut holes = Ranges::new();
     if strip >= BULK {
         let s = start.saturating_add(off);
@@ -542,7 +664,10 @@ mod tests {
         let (plan, buf, loaded) = run(&cr3, 16, 0);
         assert_eq!(plan, HeaderPlan::Ready);
         assert_eq!(loaded.total(), 24 + 32, "only the two box headers are read");
-        assert_eq!(format!("{:?}", crate::probe_info(&buf)), format!("{:?}", crate::probe_info(&cr3)));
+        assert_eq!(
+            format!("{:?}", crate::probe_info(&buf)),
+            format!("{:?}", crate::probe_info(&cr3))
+        );
         // a RAF whose container lies outside the file
         let mut raf = b"FUJIFILMCCD-RAW 0201FF383501".to_vec();
         raf.resize(160, 0);

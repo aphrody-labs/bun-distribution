@@ -146,9 +146,21 @@ pub enum TokenAction {
 /// Addresses granted the `vnc-*` service served at `listen` (the default RFB allowlist); every
 /// `vnc-*` service when none is declared at that address (loopback bind).
 pub(crate) fn vnc_grantees(inventory: &Inventory, listen: &str) -> Vec<String> {
-    let all = || inventory.services.iter().filter(|s| s.id == "vnc" || s.id.starts_with("vnc-"));
-    let own: Vec<&str> = all().filter(|s| s.address == listen).map(|s| s.id.as_str()).collect();
-    let vnc = if own.is_empty() { all().map(|s| s.id.as_str()).collect() } else { own };
+    let all = || {
+        inventory
+            .services
+            .iter()
+            .filter(|s| s.id == "vnc" || s.id.starts_with("vnc-"))
+    };
+    let own: Vec<&str> = all()
+        .filter(|s| s.address == listen)
+        .map(|s| s.id.as_str())
+        .collect();
+    let vnc = if own.is_empty() {
+        all().map(|s| s.id.as_str()).collect()
+    } else {
+        own
+    };
     inventory
         .grants
         .iter()
@@ -192,7 +204,11 @@ fn declared_targets(inventory: &Inventory) -> Vec<RemoteTarget> {
         .iter()
         .filter_map(|s| {
             let kind = kind_of_service(&s.id)?;
-            let spec = format!("{}:{}", s.address, s.port.unwrap_or_else(|| kind.default_port()));
+            let spec = format!(
+                "{}:{}",
+                s.address,
+                s.port.unwrap_or_else(|| kind.default_port())
+            );
             RemoteTarget::resolve(&spec, kind, inventory).ok()
         })
         .collect()
@@ -220,13 +236,13 @@ async fn probe(target: &RemoteTarget, timeout: Duration) -> Value {
                 Ok(format!("/healthz {status}"))
             }
             .await
-        },
+        }
         TargetKind::Shell | TargetKind::Local => {
             tokio::time::timeout(timeout, tokio::net::TcpStream::connect(&addr))
                 .await
                 .context("timeout")
                 .and_then(|r| r.map(|_| "tcp open".to_owned()).map_err(Into::into))
-        },
+        }
     };
     let credential = target.credential().map(|s| s.describe());
     let mut v = json!({
@@ -240,11 +256,11 @@ async fn probe(target: &RemoteTarget, timeout: Duration) -> Value {
         Ok(detail) => {
             v["reachable"] = json!(true);
             v["detail"] = json!(detail);
-        },
+        }
         Err(e) => {
             v["reachable"] = json!(false);
             v["error"] = json!(format!("{e:#}"));
-        },
+        }
     }
     v
 }
@@ -255,12 +271,18 @@ fn tunnel_status(root: &Path, inventory: &Inventory) -> Value {
         Ok(s) => s,
         Err(e) => return json!({ "name": name, "up": false, "error": e.to_string() }),
     };
-    let now = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).map_or(0, |d| d.as_secs());
+    let now = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
     let member_of = |key: &str| {
         if inventory.hub.public_key == key {
             return Some(inventory.hub.peer.clone());
         }
-        inventory.peers.iter().find(|p| p.public_key == key).map(|p| p.id.clone())
+        inventory
+            .peers
+            .iter()
+            .find(|p| p.public_key == key)
+            .map(|p| p.id.clone())
     };
     let peers: Vec<Value> = status
         .peers
@@ -289,7 +311,16 @@ fn parse_point(s: &str) -> Result<(i32, i32)> {
 
 pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
     let out = match cmd {
-        RemoteCommand::Serve { bind, token, vnc, no_vnc, vnc_allow, fps, quality, scale } => {
+        RemoteCommand::Serve {
+            bind,
+            token,
+            vnc,
+            no_vnc,
+            vnc_allow,
+            fps,
+            quality,
+            scale,
+        } => {
             let token = serve_token(token.as_ref());
             let ws = rd::serve(rd::ServeOptions {
                 bind: *bind,
@@ -318,21 +349,27 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                     Some(s) => {
                         eprintln!("mot de passe VNC: {}", s.describe());
                         s.expose().to_owned()
-                    },
+                    }
                     None => {
                         eprintln!("mot de passe VNC: dérivé du jeton du bureau à distance");
                         tokens::derive_vnc_password(&token)
-                    },
+                    }
                 };
                 let mut opts = rd::vnc::server::VncServeOptions::new(vnc_bind, password);
                 opts.allow = allow;
                 opts.fps = (*fps).min(30);
-                println!("VNC: vnc://{vnc_bind} (pairs admis: loopback, {})", entries.join(", "));
+                println!(
+                    "VNC: vnc://{vnc_bind} (pairs admis: loopback, {})",
+                    entries.join(", ")
+                );
                 tokio::try_join!(ws, rd::vnc::server::serve(opts))?;
                 json!({ "served": bind.to_string(), "vnc": vnc_bind.to_string(), "vncAllow": entries })
             }
-        },
-        RemoteCommand::Status { targets, timeout_ms } => {
+        }
+        RemoteCommand::Status {
+            targets,
+            timeout_ms,
+        } => {
             let inventory = rd::target::inventory(Some(root))?;
             let timeout = Duration::from_millis(*timeout_ms);
             let resolved = if targets.is_empty() {
@@ -350,13 +387,17 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                 "tunnel": tunnel_status(root, &inventory),
                 "services": probes,
             })
-        },
-        RemoteCommand::Snapshot { out, quality, scale } => {
+        }
+        RemoteCommand::Snapshot {
+            out,
+            quality,
+            scale,
+        } => {
             let (q, s) = (*quality, *scale);
             let jpeg = tokio::task::spawn_blocking(move || rd::snapshot_jpeg(q, s)).await??;
             std::fs::write(out, &jpeg)?;
             json!({ "written": out, "bytes": jpeg.len() })
-        },
+        }
         RemoteCommand::Open { target, token } => {
             let t = rd::target::resolve(target, TargetKind::Ws, Some(root))?;
             if t.kind != TargetKind::Ws {
@@ -368,13 +409,24 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             };
             let scheme = if t.secure { "https" } else { "http" };
             let base = format!("{scheme}://{}/", t.addr());
-            std::process::Command::new(if cfg!(windows) { "explorer" } else { "xdg-open" })
-                .no_window()
-                .arg(format!("{base}#token={token}"))
-                .spawn()?;
+            std::process::Command::new(if cfg!(windows) {
+                "explorer"
+            } else {
+                "xdg-open"
+            })
+            .no_window()
+            .arg(format!("{base}#token={token}"))
+            .spawn()?;
             json!({ "opened": base })
-        },
-        RemoteCommand::Connect { target, password, screenshot, click, text, key } => {
+        }
+        RemoteCommand::Connect {
+            target,
+            password,
+            screenshot,
+            click,
+            text,
+            key,
+        } => {
             let t = rd::target::resolve(target, TargetKind::Vnc, Some(root))?;
             if t.kind != TargetKind::Vnc {
                 bail!("{target}: not a VNC target (use vnc://host:port)");
@@ -388,7 +440,9 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             let mut done = Vec::new();
             if let Some(p) = click {
                 let (x, y) = parse_point(p)?;
-                session.click(x, y, rd::backend::MouseButton::Left, 1).await?;
+                session
+                    .click(x, y, rd::backend::MouseButton::Left, 1)
+                    .await?;
                 done.push(json!({ "click": [x, y] }));
             }
             if let Some(s) = text {
@@ -406,7 +460,7 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             }
             session.close().await;
             json!({ "target": t.url(), "member": t.id, "width": width, "height": height, "actions": done })
-        },
+        }
         RemoteCommand::Token { action } => match action {
             TokenAction::Status { target } => {
                 let rows: Vec<Value> = TokenKind::ALL
@@ -420,8 +474,12 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                     })
                     .collect();
                 json!({ "dir": tokens::private_dir(), "target": target, "credentials": rows })
-            },
-            TokenAction::Set { kind, target, generate } => {
+            }
+            TokenAction::Set {
+                kind,
+                target,
+                generate,
+            } => {
                 let kind = TokenKind::parse(kind)?;
                 let value = if *generate {
                     let v = rd::generate_token();
@@ -434,7 +492,7 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
                 };
                 let path = tokens::store(kind, target.as_deref(), &value)?;
                 json!({ "kind": kind.as_str(), "stored": path })
-            },
+            }
         },
         RemoteCommand::AlwaysOnline {
             member,
@@ -455,7 +513,7 @@ pub async fn execute_remote(root: &Path, cmd: &RemoteCommand) -> Result<Value> {
             };
             let paths = crate::always_online::Paths::detect(aphrody.clone(), identity_file.clone());
             crate::always_online::execute(root, &options, &paths, *dry_run)?
-        },
+        }
     };
     println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(out)
@@ -469,7 +527,10 @@ async fn futures_probe(targets: &[RemoteTarget], timeout: Duration) -> Vec<Value
         .collect();
     let mut out = Vec::with_capacity(handles.len());
     for h in handles {
-        out.push(h.await.unwrap_or_else(|e| json!({ "error": e.to_string() })));
+        out.push(
+            h.await
+                .unwrap_or_else(|e| json!({ "error": e.to_string() })),
+        );
     }
     out
 }
@@ -481,12 +542,30 @@ mod tests {
     #[test]
     fn inventory_drives_vnc_allowlist_and_declared_targets() {
         let inv = Inventory::embedded().unwrap();
-        assert_eq!(vnc_grantees(&inv, "10.200.77.10"), vec!["10.200.77.4".to_owned()]);
-        assert_eq!(vnc_grantees(&inv, "10.200.77.4"), vec!["10.200.77.10".to_owned()]);
-        let urls: Vec<String> = declared_targets(&inv).iter().map(RemoteTarget::url).collect();
-        assert!(urls.contains(&"vnc://10.200.77.10:5900".to_owned()), "{urls:?}");
-        assert!(urls.contains(&"ws://10.200.77.10:8795".to_owned()), "{urls:?}");
-        assert!(urls.contains(&"http://10.200.77.1:8793/mcp".to_owned()), "{urls:?}");
+        assert_eq!(
+            vnc_grantees(&inv, "10.200.77.10"),
+            vec!["10.200.77.4".to_owned()]
+        );
+        assert_eq!(
+            vnc_grantees(&inv, "10.200.77.4"),
+            vec!["10.200.77.10".to_owned()]
+        );
+        let urls: Vec<String> = declared_targets(&inv)
+            .iter()
+            .map(RemoteTarget::url)
+            .collect();
+        assert!(
+            urls.contains(&"vnc://10.200.77.10:5900".to_owned()),
+            "{urls:?}"
+        );
+        assert!(
+            urls.contains(&"ws://10.200.77.10:8795".to_owned()),
+            "{urls:?}"
+        );
+        assert!(
+            urls.contains(&"http://10.200.77.1:8793/mcp".to_owned()),
+            "{urls:?}"
+        );
         assert_eq!(parse_point("3, 4").unwrap(), (3, 4));
         assert!(parse_point("3").is_err());
     }

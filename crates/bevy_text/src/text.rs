@@ -479,9 +479,11 @@ impl FontSource {
                         }
                         FontSource::Generic(generic_family) => {
                             #[cfg(not(feature = "system_font_discovery"))]
-                            bevy_log::error_once!( "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
+                            bevy_log::error_once!(
+                                "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
                             feature is not enabled. Text may not render. Enable the feature to allow Bevy \
-                            to discover system fonts.");
+                            to discover system fonts."
+                            );
                             FontFamily::Single(parley::FontFamilyName::Generic(
                                 (*generic_family).into(),
                             ))
@@ -519,9 +521,11 @@ impl FontSource {
                                 }
                                 FontSource::Generic(generic_family) => {
                                     #[cfg(not(feature = "system_font_discovery"))]
-                                    bevy_log::error_once!( "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
+                                    bevy_log::error_once!(
+                                        "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
                                     feature is not enabled. Text may not render. Enable the feature to allow Bevy \
-                                    to discover system fonts.");
+                                    to discover system fonts."
+                                    );
                                     families.push(parley::FontFamilyName::Generic(
                                         (*generic_family).into(),
                                     ));
@@ -534,9 +538,11 @@ impl FontSource {
             }
             FontSource::Generic(generic_family) => {
                 #[cfg(not(feature = "system_font_discovery"))]
-                bevy_log::error_once!( "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
+                bevy_log::error_once!(
+                    "A generic FontSource ({generic_family:?}) was used, but the `system_font_discovery` \
                 feature is not enabled. Text may not render. Enable the feature to allow Bevy \
-                to discover system fonts.");
+                to discover system fonts."
+                );
                 FontFamily::Single(parley::FontFamilyName::Generic((*generic_family).into()))
             }
         })
@@ -1603,8 +1609,11 @@ pub fn detect_text_needs_rerender(
     // - Root children changed (can include additions and removals).
     for root in changed_roots.iter() {
         let Ok((_, Some(mut computed), _)) = computed.get_mut(root) else {
-            once!(warn!("found entity {} with a root text component but no ComputedTextBlock; this warning only \
-                prints once", root));
+            once!(warn!(
+                "found entity {} with a root text component but no ComputedTextBlock; this warning only \
+                prints once",
+                root
+            ));
             continue;
         };
         computed.needs_rerender = true;
@@ -1616,9 +1625,11 @@ pub fn detect_text_needs_rerender(
     // - Span children changed (can include additions and removals).
     for (entity, maybe_span_child_of, has_text_block) in changed_spans.iter() {
         if has_text_block {
-            once!(warn!("found entity {} with a TextSpan or InlineBox that has a TextLayout, which should only be on root \
+            once!(warn!(
+                "found entity {} with a TextSpan or InlineBox that has a TextLayout, which should only be on root \
                 text entities; this warning only prints once",
-                entity));
+                entity
+            ));
         }
 
         let Some(span_child_of) = maybe_span_child_of else {
@@ -1636,9 +1647,11 @@ pub fn detect_text_needs_rerender(
         // is outweighed by the expense of tracking visited spans.
         loop {
             let Ok((maybe_child_of, maybe_computed, has_span)) = computed.get_mut(parent) else {
-                once!(warn!("found entity {} with a TextSpan or InlineBox that is part of a broken hierarchy with a ChildOf \
+                once!(warn!(
+                    "found entity {} with a TextSpan or InlineBox that is part of a broken hierarchy with a ChildOf \
                     component that points at non-existent entity {}; this warning only prints once",
-                    entity, parent));
+                    entity, parent
+                ));
                 break;
             };
             if let Some(mut computed) = maybe_computed {
@@ -1646,9 +1659,11 @@ pub fn detect_text_needs_rerender(
                 break;
             }
             if !has_span {
-                once!(warn!("found entity {} with a TextSpan or InlineBox that has an ancestor ({}) that does not have a text \
+                once!(warn!(
+                    "found entity {} with a TextSpan or InlineBox that has an ancestor ({}) that does not have a text \
                 span component or a ComputedTextBlock component; this warning only prints once",
-                    entity, parent));
+                    entity, parent
+                ));
                 break;
             }
             let Some(next_child_of) = maybe_child_of else {

@@ -17,7 +17,10 @@ pub(crate) struct Sessions<T> {
 
 impl<T> Sessions<T> {
     pub(crate) fn new(wake: Waker) -> Self {
-        Self { wake, running: BTreeMap::new() }
+        Self {
+            wake,
+            running: BTreeMap::new(),
+        }
     }
 
     /// A mailbox for a session about to start.
@@ -28,7 +31,9 @@ impl<T> Sessions<T> {
     /// Session `id` started, with the mailbox its threads fill. Returns the session that had
     /// the id, to be ended.
     pub(crate) fn insert(&mut self, id: SessionId, session: T, inbox: Inbox) -> Option<T> {
-        self.running.insert(id, (session, inbox)).map(|(old, _)| old)
+        self.running
+            .insert(id, (session, inbox))
+            .map(|(old, _)| old)
     }
 
     /// Session `id` is over: it comes back to be ended, and its mailbox is dropped.
@@ -47,6 +52,9 @@ impl<T> Sessions<T> {
 
     /// What happened in each session since the last call, with its id.
     pub(crate) fn poll(&self) -> Vec<(SessionId, Event)> {
-        self.running.iter().flat_map(|(id, (_, inbox))| inbox.drain().into_iter().map(|e| (*id, e))).collect()
+        self.running
+            .iter()
+            .flat_map(|(id, (_, inbox))| inbox.drain().into_iter().map(|e| (*id, e)))
+            .collect()
     }
 }

@@ -34,21 +34,37 @@ impl Default for TextCache {
 
 impl TextCache {
     pub(super) fn new(budget: usize) -> Self {
-        Self { pages: HashMap::new(), order: BTreeMap::new(), clock: 0, bytes: 0, budget }
+        Self {
+            pages: HashMap::new(),
+            order: BTreeMap::new(),
+            clock: 0,
+            bytes: 0,
+            budget,
+        }
     }
 
     pub(super) fn prepare(&mut self, id: DocId, bytes: &Arc<Vec<u8>>) {
         let version = Arc::downgrade(bytes);
         // At most PAGE_BUDGET entries, independent of the document's page count. Weak pointers
         // distinguish revisions without keeping an obsolete PDF byte buffer alive.
-        let stale: Vec<_> = self.pages.iter().filter(|(key, page)| key.0 == id && !page.version.ptr_eq(&version)).map(|(key, _)| *key).collect();
+        let stale: Vec<_> = self
+            .pages
+            .iter()
+            .filter(|(key, page)| key.0 == id && !page.version.ptr_eq(&version))
+            .map(|(key, _)| *key)
+            .collect();
         for key in stale {
             self.remove_page(key);
         }
     }
 
     pub(super) fn remove(&mut self, id: &DocId) {
-        let keys: Vec<_> = self.pages.keys().filter(|key| key.0 == *id).copied().collect();
+        let keys: Vec<_> = self
+            .pages
+            .keys()
+            .filter(|key| key.0 == *id)
+            .copied()
+            .collect();
         for key in keys {
             self.remove_page(key);
         }
@@ -81,7 +97,13 @@ impl TextCache {
         Some(entry.text.clone())
     }
 
-    pub(super) fn insert(&mut self, id: DocId, page: usize, version: &Arc<Vec<u8>>, text: Arc<PageText>) {
+    pub(super) fn insert(
+        &mut self,
+        id: DocId,
+        page: usize,
+        version: &Arc<Vec<u8>>,
+        text: Arc<PageText>,
+    ) {
         let bytes = retained_bytes(&text);
         self.remove_page((id, page));
         // An oversized page is usable by this call, but never retained by the cache.
@@ -89,11 +111,21 @@ impl TextCache {
             return;
         }
         while self.bytes > self.budget - bytes || self.pages.len() >= PAGE_BUDGET {
-            let Some((_, key)) = self.order.first_key_value() else { break };
+            let Some((_, key)) = self.order.first_key_value() else {
+                break;
+            };
             self.remove_page(*key);
         }
         let stamp = self.stamp();
-        self.pages.insert((id, page), Cached { version: Arc::downgrade(version), text, bytes, stamp });
+        self.pages.insert(
+            (id, page),
+            Cached {
+                version: Arc::downgrade(version),
+                text,
+                bytes,
+                stamp,
+            },
+        );
         self.order.insert(stamp, (id, page));
         self.bytes += bytes;
     }
@@ -113,10 +145,24 @@ impl TextCache {
 fn retained_bytes(text: &PageText) -> usize {
     let arrays = std::mem::size_of::<PageText>()
         .saturating_add(2 * std::mem::size_of::<usize>())
-        .saturating_add(text.glyphs.capacity().saturating_mul(std::mem::size_of::<TextGlyph>()))
-        .saturating_add(text.line_of.capacity().saturating_mul(std::mem::size_of::<u32>()))
-        .saturating_add(text.space_before.capacity().saturating_mul(std::mem::size_of::<bool>()));
-    text.glyphs.iter().fold(arrays, |sum, glyph| sum.saturating_add(glyph.text.capacity()))
+        .saturating_add(
+            text.glyphs
+                .capacity()
+                .saturating_mul(std::mem::size_of::<TextGlyph>()),
+        )
+        .saturating_add(
+            text.line_of
+                .capacity()
+                .saturating_mul(std::mem::size_of::<u32>()),
+        )
+        .saturating_add(
+            text.space_before
+                .capacity()
+                .saturating_mul(std::mem::size_of::<bool>()),
+        );
+    text.glyphs.iter().fold(arrays, |sum, glyph| {
+        sum.saturating_add(glyph.text.capacity())
+    })
 }
 
 #[cfg(test)]
@@ -131,7 +177,12 @@ mod tests {
         text.space_before.reserve(64);
         let mut word = String::with_capacity(1000);
         word.push('a');
-        text.glyphs.push(TextGlyph { text: word, rect: [0.0; 4], quad: [[0.0; 2]; 4], direction: [1.0, 0.0] });
+        text.glyphs.push(TextGlyph {
+            text: word,
+            rect: [0.0; 4],
+            quad: [[0.0; 2]; 4],
+            direction: [1.0, 0.0],
+        });
         let cost = retained_bytes(&text);
         assert!(cost >= 32 * std::mem::size_of::<TextGlyph>() + 48 * 4 + 64 + 1000);
         let text = Arc::new(text);
@@ -141,17 +192,27 @@ mod tests {
         cache.insert(DocId(2), 0, &version, text.clone());
         assert!(Arc::ptr_eq(&cache.get(DocId(1), 0).unwrap(), &text));
         cache.insert(DocId(3), 0, &version, text.clone());
-        assert!(cache.get(DocId(2), 0).is_none(), "least recently used page in another document is evicted");
+        assert!(
+            cache.get(DocId(2), 0).is_none(),
+            "least recently used page in another document is evicted"
+        );
         assert_eq!(cache.bytes, 2 * cost);
         cache.insert(DocId(1), 0, &version, text.clone());
         assert_eq!(cache.bytes, 2 * cost, "replacement does not double-count");
         let next_version = Arc::new(vec![1]);
         cache.prepare(DocId(1), &next_version);
-        assert!(cache.get(DocId(1), 0).is_none(), "equal bytes in a new Arc are a new version");
+        assert!(
+            cache.get(DocId(1), 0).is_none(),
+            "equal bytes in a new Arc are a new version"
+        );
         assert_eq!(cache.bytes, cost);
         cache.remove(&DocId(3));
         assert_eq!((cache.bytes, cache.len(), cache.order.len()), (0, 0, 0));
-        assert_eq!(Arc::strong_count(&version), 1, "the cache never retains a PDF byte buffer");
+        assert_eq!(
+            Arc::strong_count(&version),
+            1,
+            "the cache never retains a PDF byte buffer"
+        );
     }
 
     #[test]
@@ -172,6 +233,10 @@ mod tests {
         assert_eq!(cache.bytes, PAGE_BUDGET * cost);
         cache.clock = u64::MAX;
         cache.insert(DocId(2), 0, &version, text);
-        assert_eq!((cache.bytes, cache.len()), (cost, 1), "recency counter rollover safely clears old state");
+        assert_eq!(
+            (cache.bytes, cache.len()),
+            (cost, 1),
+            "recency counter rollover safely clears old state"
+        );
     }
 }

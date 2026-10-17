@@ -24,25 +24,41 @@ pub fn import_rag(
     let legacy = open_legacy(legacy_path)?;
     let mut report = ImportReport::new("rag", !apply);
     if !table_exists(&legacy, "docs")? || !table_exists(&legacy, "chunks")? {
-        report.notes.push("legacy database has no docs/chunks tables".into());
+        report
+            .notes
+            .push("legacy database has no docs/chunks tables".into());
         return Ok(report);
     }
     report.add("docs_read", count(&legacy, "SELECT count(*) FROM docs")?);
-    report.add("chunks_read", count(&legacy, "SELECT count(*) FROM chunks")?);
+    report.add(
+        "chunks_read",
+        count(&legacy, "SELECT count(*) FROM chunks")?,
+    );
     let has_vectors = table_exists(&legacy, "vectors")?;
     if has_vectors {
-        report.add("vectors_read", count(&legacy, "SELECT count(*) FROM vectors")?);
+        report.add(
+            "vectors_read",
+            count(&legacy, "SELECT count(*) FROM vectors")?,
+        );
     }
     let legacy_model: Option<String> = if table_exists(&legacy, "meta")? {
         legacy
-            .query_row("SELECT value FROM meta WHERE key = 'embedding_model'", [], |r| r.get(0))
+            .query_row(
+                "SELECT value FROM meta WHERE key = 'embedding_model'",
+                [],
+                |r| r.get(0),
+            )
             .optional()?
     } else {
         None
     };
     let target_model: Option<String> = db
         .conn
-        .query_row("SELECT value FROM meta WHERE key = 'embedding_model'", [], |r| r.get(0))
+        .query_row(
+            "SELECT value FROM meta WHERE key = 'embedding_model'",
+            [],
+            |r| r.get(0),
+        )
         .optional()?;
     let vectors_compatible = has_vectors
         && match (&legacy_model, &target_model) {
@@ -50,7 +66,9 @@ pub fn import_rag(
             (Some(_), None) | (None, _) => true,
         };
     if has_vectors && !vectors_compatible {
-        report.notes.push("embedding models differ: vectors are not imported".into());
+        report
+            .notes
+            .push("embedding models differ: vectors are not imported".into());
     }
 
     let source_id = db.upsert_source("legacy-rag", label, Some(&legacy_path.to_string_lossy()))?;
@@ -95,7 +113,9 @@ pub fn import_rag(
         )?;
         let mut rows = chunks.query([])?;
         while let Some(r) = rows.next()? {
-            let Some(&doc) = doc_map.get(&r.get::<_, i64>(1)?) else { continue };
+            let Some(&doc) = doc_map.get(&r.get::<_, i64>(1)?) else {
+                continue;
+            };
             insert.execute(params![
                 doc,
                 r.get::<_, i64>(2)?,
@@ -119,7 +139,9 @@ pub fn import_rag(
         )?;
         let mut rows = vectors.query([])?;
         while let Some(r) = rows.next()? {
-            let Some(&chunk) = chunk_map.get(&r.get::<_, i64>(0)?) else { continue };
+            let Some(&chunk) = chunk_map.get(&r.get::<_, i64>(0)?) else {
+                continue;
+            };
             insert.execute(params![
                 chunk,
                 r.get::<_, String>(1)?,
@@ -132,7 +154,10 @@ pub fn import_rag(
         if let (Some(model), None) = (&legacy_model, &target_model)
             && report.counts.get("vectors_inserted").copied().unwrap_or(0) > 0
         {
-            tx.execute("INSERT OR IGNORE INTO meta (key, value) VALUES ('embedding_model', ?1)", [model])?;
+            tx.execute(
+                "INSERT OR IGNORE INTO meta (key, value) VALUES ('embedding_model', ?1)",
+                [model],
+            )?;
         }
     }
     if apply {
@@ -176,14 +201,23 @@ mod tests {
         let mut db = HomeDb::open_in_memory().unwrap();
         let dry = import_rag(&mut db, &path, "legacy-rag:test", false).unwrap();
         assert_eq!(dry.counts["docs_inserted"], 1);
-        assert_eq!(db.conn().query_row::<i64, _, _>("SELECT count(*) FROM docs", [], |r| r.get(0)).unwrap(), 0);
+        assert_eq!(
+            db.conn()
+                .query_row::<i64, _, _>("SELECT count(*) FROM docs", [], |r| r.get(0))
+                .unwrap(),
+            0
+        );
 
         let first = import_rag(&mut db, &path, "legacy-rag:test", true).unwrap();
         assert_eq!(first.counts["chunks_inserted"], 1);
         assert_eq!(first.counts["vectors_inserted"], 1);
         let hits: i64 = db
             .conn()
-            .query_row("SELECT count(*) FROM chunks_fts WHERE chunks_fts MATCH 'retrieval'", [], |r| r.get(0))
+            .query_row(
+                "SELECT count(*) FROM chunks_fts WHERE chunks_fts MATCH 'retrieval'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(hits, 1);
         let again = import_rag(&mut db, &path, "legacy-rag:test", true).unwrap();
@@ -196,10 +230,17 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = legacy(dir.path(), "m2");
         let mut db = HomeDb::open_in_memory().unwrap();
-        db.conn().execute("INSERT INTO meta VALUES ('embedding_model', 'm1')", []).unwrap();
+        db.conn()
+            .execute("INSERT INTO meta VALUES ('embedding_model', 'm1')", [])
+            .unwrap();
         let report = import_rag(&mut db, &path, "legacy-rag:test", true).unwrap();
         assert!(!report.counts.contains_key("vectors_inserted"));
         assert_eq!(report.counts["chunks_inserted"], 1);
-        assert!(report.notes.iter().any(|n| n.contains("embedding models differ")));
+        assert!(
+            report
+                .notes
+                .iter()
+                .any(|n| n.contains("embedding models differ"))
+        );
     }
 }

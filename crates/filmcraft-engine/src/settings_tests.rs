@@ -19,18 +19,37 @@ fn demo() -> Session {
 }
 
 fn set(s: &mut Session, key: &str, value: Value) {
-    s.execute("prefs.set", json!({"key": key, "value": value})).unwrap_or_else(|e| panic!("{key}: {e}"));
+    s.execute("prefs.set", json!({"key": key, "value": value}))
+        .unwrap_or_else(|e| panic!("{key}: {e}"));
 }
 
 #[test]
 fn interface_language_persists_and_rejects_hostile_values() {
     let dir = tmp_dir("interface-language");
     let path = dir.join("preferences.json");
-    let mut s = Session { prefs_path: Some(path.clone()), ..Session::default() };
+    let mut s = Session {
+        prefs_path: Some(path.clone()),
+        ..Session::default()
+    };
     set(&mut s, "general.interfaceLanguage", json!("es"));
     assert_eq!(Preferences::load(&path).general.interface_language, "es");
-    for value in [json!("xx"), json!("es-MX"), json!("de-DE"), json!("fr-FR"), json!(null), json!(-1), json!({}), json!("x".repeat(4096))] {
-        assert!(s.execute("prefs.set", json!({"key": "general.interfaceLanguage", "value": value})).is_err());
+    for value in [
+        json!("xx"),
+        json!("es-MX"),
+        json!("de-DE"),
+        json!("fr-FR"),
+        json!(null),
+        json!(-1),
+        json!({}),
+        json!("x".repeat(4096)),
+    ] {
+        assert!(
+            s.execute(
+                "prefs.set",
+                json!({"key": "general.interfaceLanguage", "value": value})
+            )
+            .is_err()
+        );
         assert_eq!(s.prefs.general.interface_language, "es");
     }
     assert_eq!(Preferences::load(&path).general.interface_language, "es");
@@ -40,19 +59,34 @@ fn interface_language_persists_and_rejects_hostile_values() {
     assert_eq!(Preferences::load(&path).general.interface_language, "fr");
     // Indonesian is stored as `id`, not a locale tag or the legacy `in` code
     for value in [json!("id-ID"), json!("in"), json!("ID")] {
-        assert!(s.execute("prefs.set", json!({"key": "general.interfaceLanguage", "value": value})).is_err());
+        assert!(
+            s.execute(
+                "prefs.set",
+                json!({"key": "general.interfaceLanguage", "value": value})
+            )
+            .is_err()
+        );
     }
     set(&mut s, "general.interfaceLanguage", json!("id"));
     assert_eq!(Preferences::load(&path).general.interface_language, "id");
     // Italian is stored as `it`, not a locale tag
     for value in [json!("it-IT"), json!("IT")] {
-        assert!(s.execute("prefs.set", json!({"key": "general.interfaceLanguage", "value": value})).is_err());
+        assert!(
+            s.execute(
+                "prefs.set",
+                json!({"key": "general.interfaceLanguage", "value": value})
+            )
+            .is_err()
+        );
     }
     set(&mut s, "general.interfaceLanguage", json!("it"));
     assert_eq!(Preferences::load(&path).general.interface_language, "it");
     // back to following the operating system (#218)
     set(&mut s, "general.interfaceLanguage", json!("system"));
-    assert_eq!(Preferences::load(&path).general.interface_language, "system");
+    assert_eq!(
+        Preferences::load(&path).general.interface_language,
+        "system"
+    );
     std::fs::remove_dir_all(dir).unwrap();
 }
 
@@ -62,21 +96,29 @@ fn interface_language_defaults_to_the_system_language() {
     assert_eq!(Preferences::default().general.interface_language, "system");
     let dir = tmp_dir("interface-language-default");
     let path = dir.join("preferences.json");
-    assert_eq!(Preferences::load(&path).general.interface_language, "system", "no preferences file yet");
+    assert_eq!(
+        Preferences::load(&path).general.interface_language,
+        "system",
+        "no preferences file yet"
+    );
     std::fs::write(&path, r#"{"general":{"interfaceLanguage":"en"}}"#).unwrap();
     assert_eq!(Preferences::load(&path).general.interface_language, "en");
     std::fs::remove_dir_all(dir).unwrap();
 }
 
 fn write_png(path: &Path, w: u32, h: u32) {
-    image::RgbaImage::from_pixel(w, h, image::Rgba([200, 40, 40, 255])).save(path).unwrap();
+    image::RgbaImage::from_pixel(w, h, image::Rgba([200, 40, 40, 255]))
+        .save(path)
+        .unwrap();
 }
 
 /// Import a `w`×`h` PNG; returns its item.
 fn import_png(s: &mut Session, dir: &Path, name: &str, w: u32, h: u32) -> ItemId {
     let p = dir.join(name);
     write_png(&p, w, h);
-    let r = s.execute("file.import", json!({"paths": [p.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute("file.import", json!({"paths": [p.to_string_lossy()]}))
+        .unwrap();
     ItemId(r["items"][0].as_u64().unwrap_or_else(|| panic!("{r}")))
 }
 
@@ -115,18 +157,30 @@ fn every_schema_key_exists_with_a_valid_default() {
     let mut seen = std::collections::HashSet::new();
     for (cat, f) in fields {
         assert!(seen.insert(f.key), "duplicate {}", f.key);
-        assert!(f.key.starts_with(&format!("{cat}.")), "{} is not under {cat}", f.key);
-        let v = p.get(f.key).unwrap_or_else(|| panic!("no preference {}", f.key));
+        assert!(
+            f.key.starts_with(&format!("{cat}.")),
+            "{} is not under {cat}",
+            f.key
+        );
+        let v = p
+            .get(f.key)
+            .unwrap_or_else(|| panic!("no preference {}", f.key));
         assert!(keys.iter().any(|k| k == f.key), "{} not a leaf key", f.key);
         settings::validate(f.key, &v).unwrap_or_else(|e| panic!("default of {}: {e}", f.key));
         match f.kind {
             Kind::Bool => assert!(v.is_boolean(), "{}", f.key),
             Kind::Int { .. } | Kind::Float { .. } => assert!(v.is_number(), "{}", f.key),
-            Kind::Duration { unit_key } => assert!(v.is_number() && p.get(unit_key).is_some(), "{}", f.key),
+            Kind::Duration { unit_key } => {
+                assert!(v.is_number() && p.get(unit_key).is_some(), "{}", f.key)
+            }
             _ => {}
         }
         if let Some(by) = f.enabled_by {
-            assert!(p.get(by).is_some_and(|v| v.is_boolean()), "{} enabled by {by}", f.key);
+            assert!(
+                p.get(by).is_some_and(|v| v.is_boolean()),
+                "{} enabled by {by}",
+                f.key
+            );
         }
     }
     // Premiere's factory defaults
@@ -145,24 +199,29 @@ fn every_schema_key_exists_with_a_valid_default() {
 fn prefs_persist_through_the_data_directory() {
     let dir = tmp_dir("prefs-persist");
     let mut s = Session::default();
-    s.start_autosave(crate::autosave::AutosaveConfig::new(&dir)).unwrap();
+    s.start_autosave(crate::autosave::AutosaveConfig::new(&dir))
+        .unwrap();
     s.execute(
         "prefs.set",
         json!({"values": {"timeline.stillImageDuration": 3, "appearance.colorTheme": "light", "labels.colors.rose.name": "Hero", "audioHardware.sampleRate": "96000"}}),
     )
     .unwrap();
     s.shutdown();
-    let file: Value = serde_json::from_slice(&std::fs::read(dir.join("preferences.json")).unwrap()).unwrap();
+    let file: Value =
+        serde_json::from_slice(&std::fs::read(dir.join("preferences.json")).unwrap()).unwrap();
     assert_eq!(file["version"], settings::PREFS_VERSION);
     assert_eq!(file["timeline"]["stillImageDuration"], 3.0);
 
     let mut s2 = Session::default();
-    s2.start_autosave(crate::autosave::AutosaveConfig::new(&dir)).unwrap();
+    s2.start_autosave(crate::autosave::AutosaveConfig::new(&dir))
+        .unwrap();
     assert_eq!(s2.prefs.timeline.still_image_duration, 3.0);
     assert_eq!(s2.prefs.appearance.color_theme, "light");
     assert_eq!(s2.prefs.labels.name(Label::Rose), "Hero");
     assert_eq!(s2.prefs.audio_hardware.sample_rate, 96_000);
-    let got = s2.execute("prefs.get", json!({"key": "labels.colors.rose.name"})).unwrap();
+    let got = s2
+        .execute("prefs.get", json!({"key": "labels.colors.rose.name"}))
+        .unwrap();
     assert_eq!(got, "Hero");
     s2.shutdown();
     let _ = std::fs::remove_dir_all(&dir);
@@ -184,10 +243,19 @@ fn v1_preferences_migrate_and_bad_values_are_repaired() {
     let p = Preferences::load(&path);
     assert_eq!(p.version, settings::PREFS_VERSION);
     assert!(!p.auto_save.enabled);
-    assert_eq!((p.auto_save.interval_minutes, p.auto_save.max_versions), (9, 3));
-    assert_eq!((p.playback.preroll_seconds, p.playback.postroll_seconds), (4.0, 1.0));
+    assert_eq!(
+        (p.auto_save.interval_minutes, p.auto_save.max_versions),
+        (9, 3)
+    );
+    assert_eq!(
+        (p.playback.preroll_seconds, p.playback.postroll_seconds),
+        (4.0, 1.0)
+    );
     assert_eq!(p.playback.step_many_frames, 5, "new key gets its default");
-    assert_eq!((p.trim.large_trim_offset, p.trim.playhead_determines_loop), (12, true));
+    assert_eq!(
+        (p.trim.large_trim_offset, p.trim.playhead_determines_loop),
+        (12, true)
+    );
     assert!(p.media.enable_proxies);
     assert_eq!(p.media.default_media_scaling, "none");
     assert_eq!(p.guides.templates[0].name, "T");
@@ -223,18 +291,51 @@ fn v1_preferences_migrate_and_bad_values_are_repaired() {
 #[test]
 fn prefs_set_validates_and_reset_works_per_category() {
     let mut s = Session::default();
-    let e = s.execute("prefs.set", json!({"key": "timeline.autoScroll", "value": "sideways"})).unwrap_err().to_string();
+    let e = s
+        .execute(
+            "prefs.set",
+            json!({"key": "timeline.autoScroll", "value": "sideways"}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("noScroll"), "{e}");
-    assert!(s.execute("prefs.set", json!({"key": "appearance.highlightColor", "value": "blue"})).is_err());
-    assert!(s.execute("prefs.set", json!({"key": "timeline.stillImageUnit", "value": "weeks"})).is_err());
-    assert!(s.execute("prefs.set", json!({"key": "labels.defaults.movie", "value": "Chartreuse"})).is_err());
-    assert!(s.execute("prefs.set", json!({"key": "nope.key", "value": 1})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "appearance.highlightColor", "value": "blue"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "timeline.stillImageUnit", "value": "weeks"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "labels.defaults.movie", "value": "Chartreuse"})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute("prefs.set", json!({"key": "nope.key", "value": 1}))
+            .is_err()
+    );
     // numeric choices accept numbers and strings; ints accept floats; ranges clamp
     set(&mut s, "audioHardware.bufferSize", json!("1024"));
     assert_eq!(s.prefs.audio_hardware.buffer_size, 1024);
     set(&mut s, "audioHardware.bufferSize", json!(256));
     assert_eq!(s.prefs.audio_hardware.buffer_size, 256);
-    assert!(s.execute("prefs.set", json!({"key": "audioHardware.bufferSize", "value": 300})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "audioHardware.bufferSize", "value": 300})
+        )
+        .is_err()
+    );
     set(&mut s, "playback.stepManyFrames", json!(12.0));
     assert_eq!(s.prefs.playback.step_many_frames, 12);
     set(&mut s, "memory.frameCacheMb", json!(10_000_000));
@@ -244,13 +345,26 @@ fn prefs_set_validates_and_reset_works_per_category() {
     set(&mut s, "general.showToolTips", json!(false));
     s.prefs.general.recent_projects = vec!["/a.fcproj".into()];
     // reset one category
-    s.execute("prefs.reset", json!({"category": "timeline"})).unwrap();
+    s.execute("prefs.reset", json!({"category": "timeline"}))
+        .unwrap();
     assert_eq!(s.prefs.timeline.auto_scroll, "pageScroll");
-    assert_eq!(s.prefs.labels.defaults.movie, Label::Rose, "other categories keep their values");
-    s.execute("prefs.reset", json!({"category": "general"})).unwrap();
+    assert_eq!(
+        s.prefs.labels.defaults.movie,
+        Label::Rose,
+        "other categories keep their values"
+    );
+    s.execute("prefs.reset", json!({"category": "general"}))
+        .unwrap();
     assert!(s.prefs.general.show_tool_tips);
-    assert_eq!(s.prefs.general.recent_projects, ["/a.fcproj"], "recent projects survive a reset");
-    assert!(s.execute("prefs.reset", json!({"category": "nope"})).is_err());
+    assert_eq!(
+        s.prefs.general.recent_projects,
+        ["/a.fcproj"],
+        "recent projects survive a reset"
+    );
+    assert!(
+        s.execute("prefs.reset", json!({"category": "nope"}))
+            .is_err()
+    );
     s.execute("prefs.reset", json!({})).unwrap();
     assert_eq!(s.prefs, Preferences::default());
 }
@@ -263,29 +377,65 @@ fn schema_command_describes_every_category() {
     assert_eq!(cats.len(), settings::categories().len());
     let tl = cats.iter().find(|c| c["id"] == "timeline").unwrap();
     assert_eq!(tl["command"], "app.settings.timeline");
-    let auto = tl["fields"].as_array().unwrap().iter().find(|f| f["key"] == "timeline.autoScroll").unwrap();
+    let auto = tl["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["key"] == "timeline.autoScroll")
+        .unwrap();
     assert_eq!(auto["value"], "pageScroll");
     assert_eq!(auto["wired"], true);
-    assert!(auto["kind"]["choices"].as_array().unwrap().iter().any(|c| c["value"] == "smoothScroll"));
+    assert!(
+        auto["kind"]["choices"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|c| c["value"] == "smoothScroll")
+    );
 
     // `file.open` restores the saved tabs and views with this on (#928)
-    let restore = tl["fields"].as_array().unwrap().iter().find(|f| f["key"] == "timeline.restoreOpenSequences").unwrap();
-    assert_eq!((restore["wired"].clone(), restore["value"].clone()), (json!(true), json!(true)));
+    let restore = tl["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["key"] == "timeline.restoreOpenSequences")
+        .unwrap();
+    assert_eq!(
+        (restore["wired"].clone(), restore["value"].clone()),
+        (json!(true), json!(true))
+    );
 
     // This option is stored, but Insert/Overwrite does not yet implement focus transfer.
-    let focus = tl["fields"].as_array().unwrap().iter().find(|f| f["key"] == "timeline.focusTimelineOnEdit").unwrap();
+    let focus = tl["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["key"] == "timeline.focusTimelineOnEdit")
+        .unwrap();
     assert_eq!(focus["kind"], json!({"type": "bool"}));
     assert_eq!(focus["wired"], false);
     assert_eq!(focus["value"], false);
     set(&mut s, "timeline.focusTimelineOnEdit", json!(true));
-    let updated = s.execute("prefs.schema", json!({"category": "timeline"})).unwrap();
-    let focus = updated["categories"][0]["fields"].as_array().unwrap().iter().find(|f| f["key"] == "timeline.focusTimelineOnEdit").unwrap();
+    let updated = s
+        .execute("prefs.schema", json!({"category": "timeline"}))
+        .unwrap();
+    let focus = updated["categories"][0]["fields"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["key"] == "timeline.focusTimelineOnEdit")
+        .unwrap();
     assert_eq!(focus["value"], true);
     assert_eq!(focus["wired"], false);
 
-    let one = s.execute("prefs.schema", json!({"category": "trim"})).unwrap();
+    let one = s
+        .execute("prefs.schema", json!({"category": "trim"}))
+        .unwrap();
     assert_eq!(one["categories"].as_array().unwrap().len(), 1);
-    assert!(s.execute("prefs.schema", json!({"category": "nope"})).is_err());
+    assert!(
+        s.execute("prefs.schema", json!({"category": "nope"}))
+            .is_err()
+    );
 }
 
 #[test]
@@ -296,19 +446,51 @@ fn still_image_default_duration_and_indeterminate_timebase() {
     set(&mut s, "media.indeterminateTimebase", json!("25"));
     let still = import_png(&mut s, &dir, "a.png", 64, 36);
     let m = s.project.item(still).unwrap().as_media().unwrap();
-    assert_eq!(m.info.frame_rate(), FrameRate::FPS_25, "stills take the indeterminate media timebase");
+    assert_eq!(
+        m.info.frame_rate(),
+        FrameRate::FPS_25,
+        "stills take the indeterminate media timebase"
+    );
     set(&mut s, "timeline.stillImageDuration", json!(3));
     let end = s.active_sequence().unwrap().duration();
-    let r = s.execute("timeline.place", json!({"item": still.0, "track": "V1", "time": end.0})).unwrap();
+    let r = s
+        .execute(
+            "timeline.place",
+            json!({"item": still.0, "track": "V1", "time": end.0}),
+        )
+        .unwrap();
     let clip = filmcraft_project::ClipId(r["clips"][0].as_u64().unwrap());
-    let dur = s.active_sequence().unwrap().find_item(clip).unwrap().1.duration;
+    let dur = s
+        .active_sequence()
+        .unwrap()
+        .find_item(clip)
+        .unwrap()
+        .1
+        .duration;
     assert_eq!(dur, rate.snap_nearest(Tick::from_seconds_f64(3.0)));
     // in frames
-    s.execute("prefs.set", json!({"values": {"timeline.stillImageUnit": "frames", "timeline.stillImageDuration": 10}})).unwrap();
+    s.execute(
+        "prefs.set",
+        json!({"values": {"timeline.stillImageUnit": "frames", "timeline.stillImageDuration": 10}}),
+    )
+    .unwrap();
     let end = s.active_sequence().unwrap().duration();
-    let r = s.execute("timeline.place", json!({"item": still.0, "track": "V1", "time": end.0})).unwrap();
+    let r = s
+        .execute(
+            "timeline.place",
+            json!({"item": still.0, "track": "V1", "time": end.0}),
+        )
+        .unwrap();
     let clip = filmcraft_project::ClipId(r["clips"][0].as_u64().unwrap());
-    assert_eq!(s.active_sequence().unwrap().find_item(clip).unwrap().1.duration, rate.tick_of(10));
+    assert_eq!(
+        s.active_sequence()
+            .unwrap()
+            .find_item(clip)
+            .unwrap()
+            .1
+            .duration,
+        rate.tick_of(10)
+    );
     // Source monitor insert of a still uses it too
     s.execute("source.open", json!({"item": still.0})).unwrap();
     let (_, range) = crate::commands::source_range(&s).unwrap();
@@ -319,7 +501,11 @@ fn still_image_default_duration_and_indeterminate_timebase() {
 fn transition_duration(s: &Session, r: &Value) -> Tick {
     let id = r["transition"].as_u64().unwrap_or_else(|| panic!("{r}"));
     let q = s.active_sequence().unwrap();
-    q.all_tracks().flat_map(|t| t.transitions.iter()).find(|t| t.id.0 == id).unwrap().duration
+    q.all_tracks()
+        .flat_map(|t| t.transitions.iter())
+        .find(|t| t.id.0 == id)
+        .unwrap()
+        .duration
 }
 
 #[test]
@@ -331,16 +517,25 @@ fn default_transition_durations() {
     let aclip = q.audio_tracks[0].items[1].id.0;
     set(&mut s, "timeline.videoTransitionDuration", json!(10));
     s.execute("playhead.set", json!({"time": cut.0})).unwrap();
-    let r = s.execute("sequence.applyVideoTransition", json!({})).unwrap();
+    let r = s
+        .execute("sequence.applyVideoTransition", json!({}))
+        .unwrap();
     assert_eq!(transition_duration(&s, &r), rate.tick_of(10));
     // audio: 0.5 seconds, snapped to frames
     s.execute("prefs.set", json!({"values": {"timeline.audioTransitionDuration": 0.5, "timeline.audioTransitionUnit": "seconds"}})).unwrap();
-    let r = s.execute("sequence.applyAudioTransition", json!({"clip": aclip})).unwrap();
-    assert_eq!(transition_duration(&s, &r), rate.snap_nearest(Tick::from_seconds_f64(0.5)));
+    let r = s
+        .execute("sequence.applyAudioTransition", json!({"clip": aclip}))
+        .unwrap();
+    assert_eq!(
+        transition_duration(&s, &r),
+        rate.snap_nearest(Tick::from_seconds_f64(0.5))
+    );
     // explicit frames still win
     let cut2 = s.active_sequence().unwrap().video_tracks[0].items[3].start;
     s.execute("playhead.set", json!({"time": cut2.0})).unwrap();
-    let r = s.execute("sequence.applyVideoTransition", json!({"frames": 4})).unwrap();
+    let r = s
+        .execute("sequence.applyVideoTransition", json!({"frames": 4}))
+        .unwrap();
     assert_eq!(transition_duration(&s, &r), rate.tick_of(4));
 }
 
@@ -382,7 +577,13 @@ fn label_defaults_names_and_colours() {
     s.execute("prefs.set", json!({"values": {"labels.colors.teal.name": "B-roll", "labels.colors.teal.color": "#00ff80"}})).unwrap();
     assert_eq!(s.prefs.labels.name(Label::Teal), "B-roll");
     assert_eq!(s.prefs.labels.rgb(Label::Teal), [0, 255, 128]);
-    assert!(s.execute("prefs.set", json!({"key": "labels.colors.teal.color", "value": "green"})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "labels.colors.teal.color", "value": "green"})
+        )
+        .is_err()
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -390,30 +591,56 @@ fn label_defaults_names_and_colours() {
 fn default_media_scaling() {
     let dir = tmp_dir("prefs-scaling");
     let mut s = demo();
-    let (w, h) = s.active_sequence().map(|q| (q.settings.width, q.settings.height)).unwrap();
+    let (w, h) = s
+        .active_sequence()
+        .map(|q| (q.settings.width, q.settings.height))
+        .unwrap();
     let big = import_png(&mut s, &dir, "big.png", w * 2, h * 2);
     let place = |s: &mut Session| {
         let end = s.active_sequence().unwrap().duration();
-        let r = s.execute("timeline.place", json!({"item": big.0, "track": "V1", "time": end.0})).unwrap();
+        let r = s
+            .execute(
+                "timeline.place",
+                json!({"item": big.0, "track": "V1", "time": end.0}),
+            )
+            .unwrap();
         let c = filmcraft_project::ClipId(r["clips"][0].as_u64().unwrap());
         s.active_sequence().unwrap().find_item(c).unwrap().1.clone()
     };
     let none = place(&mut s);
     assert!(!none.scale_to_frame);
-    assert_eq!(none.effect("motion").unwrap().params["scale"].value, ParamValue::Float(100.0));
-    set(&mut s, "media.defaultMediaScaling", json!("scaleToFrameSize"));
+    assert_eq!(
+        none.effect("motion").unwrap().params["scale"].value,
+        ParamValue::Float(100.0)
+    );
+    set(
+        &mut s,
+        "media.defaultMediaScaling",
+        json!("scaleToFrameSize"),
+    );
     assert!(place(&mut s).scale_to_frame);
     set(&mut s, "media.defaultMediaScaling", json!("setToFrameSize"));
     let set_to = place(&mut s);
     assert!(!set_to.scale_to_frame);
-    assert_eq!(set_to.effect("motion").unwrap().params["scale"].value, ParamValue::Float(50.0));
+    assert_eq!(
+        set_to.effect("motion").unwrap().params["scale"].value,
+        ParamValue::Float(50.0)
+    );
     // media already at frame size is left alone
     let fit = import_png(&mut s, &dir, "fit.png", w, h);
     let end = s.active_sequence().unwrap().duration();
-    let r = s.execute("timeline.place", json!({"item": fit.0, "track": "V1", "time": end.0})).unwrap();
+    let r = s
+        .execute(
+            "timeline.place",
+            json!({"item": fit.0, "track": "V1", "time": end.0}),
+        )
+        .unwrap();
     let c = filmcraft_project::ClipId(r["clips"][0].as_u64().unwrap());
     let it = s.active_sequence().unwrap().find_item(c).unwrap().1.clone();
-    assert_eq!(it.effect("motion").unwrap().params["scale"].value, ParamValue::Float(100.0));
+    assert_eq!(
+        it.effect("motion").unwrap().params["scale"].value,
+        ParamValue::Float(100.0)
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -434,33 +661,69 @@ fn recent_projects_are_remembered() {
 fn media_cache_location_policy_and_clean() {
     let dir = tmp_dir("prefs-cache");
     let mut s = Session::default();
-    s.start_autosave(crate::autosave::AutosaveConfig::new(dir.join("data"))).unwrap();
+    s.start_autosave(crate::autosave::AutosaveConfig::new(dir.join("data")))
+        .unwrap();
     let cache = s.media_cache_dir().unwrap();
     assert_eq!(cache, dir.join("data").join("Media Cache"));
     // unsaved projects keep their previews in the media cache
-    assert!(s.previews.dir().unwrap().starts_with(cache.join("Previews")), "{:?}", s.previews.dir());
+    assert!(
+        s.previews
+            .dir()
+            .unwrap()
+            .starts_with(cache.join("Previews")),
+        "{:?}",
+        s.previews.dir()
+    );
     // a custom location moves them
     let custom = dir.join("cache2");
-    set(&mut s, "mediaCache.location", json!(custom.to_string_lossy()));
+    set(
+        &mut s,
+        "mediaCache.location",
+        json!(custom.to_string_lossy()),
+    );
     assert_eq!(s.media_cache_dir().unwrap(), custom);
-    assert!(s.previews.dir().unwrap().starts_with(custom.join("Previews")));
+    assert!(
+        s.previews
+            .dir()
+            .unwrap()
+            .starts_with(custom.join("Previews"))
+    );
     // stale files from earlier sessions
     let stale = custom.join("Previews").join("untitled-1-old");
     std::fs::create_dir_all(&stale).unwrap();
     let old = stale.join("0123456789abcdef0123456789abcdef.mov");
     std::fs::write(&old, vec![0u8; 1000]).unwrap();
     let ten_days = std::time::Duration::from_secs(10 * 86_400);
-    std::fs::File::options().write(true).open(&old).unwrap().set_modified(std::time::SystemTime::now() - ten_days).unwrap();
+    std::fs::File::options()
+        .write(true)
+        .open(&old)
+        .unwrap()
+        .set_modified(std::time::SystemTime::now() - ten_days)
+        .unwrap();
     let fresh = stale.join("fedcba9876543210fedcba9876543210.wav");
     std::fs::write(&fresh, vec![0u8; 500]).unwrap();
     let mine = s.previews.dir().unwrap();
     std::fs::create_dir_all(&mine).unwrap();
-    std::fs::write(mine.join("00000000000000000000000000000000.mov"), vec![0u8; 100]).unwrap();
+    std::fs::write(
+        mine.join("00000000000000000000000000000000.mov"),
+        vec![0u8; 100],
+    )
+    .unwrap();
     let info = s.execute("mediaCache.info", json!({})).unwrap();
-    assert_eq!((info["files"].as_u64(), info["bytes"].as_u64()), (Some(3), Some(1600)));
+    assert_eq!(
+        (info["files"].as_u64(), info["bytes"].as_u64()),
+        (Some(3), Some(1600))
+    );
     // "older than 5 days" removes only the old file
-    let mut p = settings::MediaCachePrefs { management: "olderThan".into(), older_than_days: 5, ..Default::default() };
-    assert_eq!(settings::enforce_policy(&custom, &p, Some(&mine), std::time::SystemTime::now()), (1, 1000));
+    let mut p = settings::MediaCachePrefs {
+        management: "olderThan".into(),
+        older_than_days: 5,
+        ..Default::default()
+    };
+    assert_eq!(
+        settings::enforce_policy(&custom, &p, Some(&mine), std::time::SystemTime::now()),
+        (1, 1000)
+    );
     assert!(!old.exists() && fresh.exists());
     // "exceeds size" with a 0 GB limit removes everything but the open project's previews
     p.management = "exceedsSize".into();
@@ -487,31 +750,51 @@ fn output_mapping_and_smart_quotes() {
     settings::map_output(&l, &r, &mut st, 2, [1, 0]);
     assert_eq!(st, [-0.5, 0.5, 1.0, 0.25], "swapped");
     settings::map_output(&l, &r, &mut st, 2, [7, 9]);
-    assert_eq!(st, [0.5, -0.5, 0.25, 1.0], "out-of-range mapping falls back to 1:1");
+    assert_eq!(
+        st,
+        [0.5, -0.5, 0.25, 1.0],
+        "out-of-range mapping falls back to 1:1"
+    );
     let mut mono = [0.0f32; 2];
     settings::map_output(&l, &r, &mut mono, 1, [0, 1]);
     assert_eq!(mono, [0.0, 0.875]);
-    assert_eq!(settings::smart_quotes(r#"He said "it's 'fine'" (ok)"#), "He said “it’s ‘fine’” (ok)");
+    assert_eq!(
+        settings::smart_quotes(r#"He said "it's 'fine'" (ok)"#),
+        "He said “it’s ‘fine’” (ok)"
+    );
 }
 
 #[test]
 fn graphics_text_uses_the_text_settings() {
     let mut s = demo();
-    s.execute("graphics.newText", json!({"text": "\"Hi\""})).unwrap();
+    s.execute("graphics.newText", json!({"text": "\"Hi\""}))
+        .unwrap();
     let layer = |s: &Session| {
         let c = s.state.selection[0];
         let it = s.active_sequence().unwrap().find_item(c).unwrap().1.clone();
-        it.effects.iter().rev().find(|e| e.effect.contains("text")).cloned().unwrap()
+        it.effects
+            .iter()
+            .rev()
+            .find(|e| e.effect.contains("text"))
+            .cloned()
+            .unwrap()
     };
     let l = layer(&s);
     assert_eq!(l.params["text"].value, ParamValue::Text("“Hi”".into()));
     assert_eq!(l.params["ligatures"].value, ParamValue::Bool(true));
     s.execute("prefs.set", json!({"values": {"graphics.smartQuotes": false, "graphics.ligatures": false, "graphics.defaultFont": "JetBrains Mono"}})).unwrap();
-    s.execute("graphics.newText", json!({"text": "\"Hi\"", "newClip": true})).unwrap();
+    s.execute(
+        "graphics.newText",
+        json!({"text": "\"Hi\"", "newClip": true}),
+    )
+    .unwrap();
     let l = layer(&s);
     assert_eq!(l.params["text"].value, ParamValue::Text("\"Hi\"".into()));
     assert_eq!(l.params["ligatures"].value, ParamValue::Bool(false));
-    assert_eq!(l.params["font"].value, ParamValue::Text("JetBrains Mono".into()));
+    assert_eq!(
+        l.params["font"].value,
+        ParamValue::Text("JetBrains Mono".into())
+    );
 }
 
 #[test]
@@ -521,24 +804,54 @@ fn auto_transcribe_on_import_and_transcription_defaults() {
     let mov = dir.join("talk.mov");
     crate::media_test_util::make_movie(&mov, filmcraft_media::DemoScene::OceanSunset, 64, 36, 24);
     let mut s = Session::default();
-    let mut t = Transcript { language: "en".into(), ..Default::default() };
-    t.words.push(Word::new("hello", Tick::ZERO, Tick::from_seconds_f64(0.4)));
-    s.transcriber = Some(std::sync::Arc::new(filmcraft_speech::FixedTranscriber { transcript: t, id: "fixed".into() }));
+    let mut t = Transcript {
+        language: "en".into(),
+        ..Default::default()
+    };
+    t.words
+        .push(Word::new("hello", Tick::ZERO, Tick::from_seconds_f64(0.4)));
+    s.transcriber = Some(std::sync::Arc::new(filmcraft_speech::FixedTranscriber {
+        transcript: t,
+        id: "fixed".into(),
+    }));
     // off by default
-    let r = s.execute("file.import", json!({"paths": [mov.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute("file.import", json!({"paths": [mov.to_string_lossy()]}))
+        .unwrap();
     let a = ItemId(r["items"][0].as_u64().unwrap());
     assert!(!s.project.transcripts.contains_key(&a));
     // on, but only for clips in sequences (Premiere's default scope): still nothing on import
     set(&mut s, "mediaAnalysis.autoTranscribe", json!(true));
-    let r = s.execute("file.import", json!({"paths": [mov.to_string_lossy()]})).unwrap();
-    assert!(!s.project.transcripts.contains_key(&ItemId(r["items"][0].as_u64().unwrap())));
-    set(&mut s, "mediaAnalysis.autoTranscribeScope", json!("allImported"));
-    let r = s.execute("file.import", json!({"paths": [mov.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute("file.import", json!({"paths": [mov.to_string_lossy()]}))
+        .unwrap();
+    assert!(
+        !s.project
+            .transcripts
+            .contains_key(&ItemId(r["items"][0].as_u64().unwrap()))
+    );
+    set(
+        &mut s,
+        "mediaAnalysis.autoTranscribeScope",
+        json!("allImported"),
+    );
+    let r = s
+        .execute("file.import", json!({"paths": [mov.to_string_lossy()]}))
+        .unwrap();
     let c = ItemId(r["items"][0].as_u64().unwrap());
     assert_eq!(s.project.transcripts[&c].words[0].text, "hello");
-    assert!(matches!(s.project.item(c).unwrap().kind, ItemKind::Media(_)));
+    assert!(matches!(
+        s.project.item(c).unwrap().kind,
+        ItemKind::Media(_)
+    ));
     // the model setting is validated against the catalogue
-    assert!(s.execute("prefs.set", json!({"key": "mediaAnalysis.whisperModel", "value": "whisper-huge"})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "mediaAnalysis.whisperModel", "value": "whisper-huge"})
+        )
+        .is_err()
+    );
     set(&mut s, "mediaAnalysis.whisperModel", json!("whisper-tiny"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -549,8 +862,14 @@ fn auto_transcribe_on_import_and_transcription_defaults() {
 #[test]
 fn transcription_without_speech_to_text_says_so() {
     let mut s = Session::default();
-    assert_eq!(s.is_enabled("transcript.generate"), crate::transcript::speech_available());
-    assert_eq!(s.is_enabled("transcript.downloadModel"), cfg!(feature = "speech-download"));
+    assert_eq!(
+        s.is_enabled("transcript.generate"),
+        crate::transcript::speech_available()
+    );
+    assert_eq!(
+        s.is_enabled("transcript.downloadModel"),
+        cfg!(feature = "speech-download")
+    );
     if crate::transcript::speech_available() {
         return;
     }
@@ -558,16 +877,36 @@ fn transcription_without_speech_to_text_says_so() {
     let mov = dir.join("talk.mov");
     crate::media_test_util::make_movie(&mov, filmcraft_media::DemoScene::OceanSunset, 64, 36, 24);
     // off: an import reports nothing
-    let r = s.execute("file.import", json!({"paths": [mov.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute("file.import", json!({"paths": [mov.to_string_lossy()]}))
+        .unwrap();
     assert_eq!(r["errors"], json!([]));
     set(&mut s, "mediaAnalysis.autoTranscribe", json!(true));
-    set(&mut s, "mediaAnalysis.autoTranscribeScope", json!("allImported"));
-    let r = s.execute("file.import", json!({"paths": [mov.to_string_lossy()]})).unwrap();
+    set(
+        &mut s,
+        "mediaAnalysis.autoTranscribeScope",
+        json!("allImported"),
+    );
+    let r = s
+        .execute("file.import", json!({"paths": [mov.to_string_lossy()]}))
+        .unwrap();
     let errors = r["errors"].as_array().unwrap();
-    assert!(errors.iter().any(|e| e.as_str().is_some_and(|e| e.starts_with("transcription:") && e.contains("not available in this build"))), "{errors:?}");
-    assert!(!s.project.transcripts.contains_key(&ItemId(r["items"][0].as_u64().unwrap())));
+    assert!(
+        errors.iter().any(|e| e.as_str().is_some_and(
+            |e| e.starts_with("transcription:") && e.contains("not available in this build")
+        )),
+        "{errors:?}"
+    );
+    assert!(
+        !s.project
+            .transcripts
+            .contains_key(&ItemId(r["items"][0].as_u64().unwrap()))
+    );
     // with a transcriber installed (a host's), the command is enabled again
-    s.transcriber = Some(std::sync::Arc::new(filmcraft_speech::FixedTranscriber { transcript: Default::default(), id: "fixed".into() }));
+    s.transcriber = Some(std::sync::Arc::new(filmcraft_speech::FixedTranscriber {
+        transcript: Default::default(),
+        id: "fixed".into(),
+    }));
     assert!(s.is_enabled("transcript.generate"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -575,13 +914,28 @@ fn transcription_without_speech_to_text_says_so() {
 #[test]
 fn hardware_decoding_setting_drives_the_decoder_switch() {
     let mut s = Session::default();
-    assert_eq!(s.prefs.playback.hardware_decoding, "auto", "Auto by default");
+    assert_eq!(
+        s.prefs.playback.hardware_decoding, "auto",
+        "Auto by default"
+    );
     set(&mut s, "playback.hardwareDecoding", json!("off"));
-    assert!(!filmcraft_codecs::hw::hardware_decoding(), "Off reaches the decoder registry");
-    assert!(s.execute("prefs.set", json!({"key": "playback.hardwareDecoding", "value": "gpu"})).is_err());
+    assert!(
+        !filmcraft_codecs::hw::hardware_decoding(),
+        "Off reaches the decoder registry"
+    );
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "playback.hardwareDecoding", "value": "gpu"})
+        )
+        .is_err()
+    );
     set(&mut s, "playback.hardwareDecoding", json!("auto"));
     assert!(filmcraft_codecs::hw::hardware_decoding());
-    assert!(settings::field("playback.hardwareDecoding").is_some_and(|f| f.wired && matches!(f.kind, Kind::Choice(_))));
+    assert!(
+        settings::field("playback.hardwareDecoding")
+            .is_some_and(|f| f.wired && matches!(f.kind, Kind::Choice(_)))
+    );
 }
 
 /// Settings ▸ Timeline ▸ "Place files dropped onto the Timeline directly on the Timeline": on by default.
@@ -596,13 +950,26 @@ fn drop_import_to_timeline_defaults_to_on() {
 fn drop_import_to_timeline_round_trips_through_prefs() {
     let dir = tmp_dir("drop-import-to-timeline");
     let path = dir.join("preferences.json");
-    let mut s = Session { prefs_path: Some(path.clone()), ..Session::default() };
+    let mut s = Session {
+        prefs_path: Some(path.clone()),
+        ..Session::default()
+    };
     set(&mut s, "timeline.dropImportToTimeline", json!(false));
     assert!(!s.prefs.timeline.drop_import_to_timeline);
-    assert_eq!(s.execute("prefs.get", json!({"key": "timeline.dropImportToTimeline"})).unwrap(), json!(false));
+    assert_eq!(
+        s.execute("prefs.get", json!({"key": "timeline.dropImportToTimeline"}))
+            .unwrap(),
+        json!(false)
+    );
     assert!(!Preferences::load(&path).timeline.drop_import_to_timeline);
     // a non-boolean is rejected and the stored value is kept
-    assert!(s.execute("prefs.set", json!({"key": "timeline.dropImportToTimeline", "value": "no"})).is_err());
+    assert!(
+        s.execute(
+            "prefs.set",
+            json!({"key": "timeline.dropImportToTimeline", "value": "no"})
+        )
+        .is_err()
+    );
     assert!(!s.prefs.timeline.drop_import_to_timeline);
     std::fs::remove_dir_all(dir).unwrap();
 }
@@ -610,7 +977,11 @@ fn drop_import_to_timeline_round_trips_through_prefs() {
 /// Preferences files written before the key existed load it as on.
 #[test]
 fn drop_import_to_timeline_defaults_to_on_for_older_prefs() {
-    assert!(serde_json::from_value::<settings::TimelinePrefs>(json!({})).unwrap().drop_import_to_timeline);
+    assert!(
+        serde_json::from_value::<settings::TimelinePrefs>(json!({}))
+            .unwrap()
+            .drop_import_to_timeline
+    );
     let old = Preferences::from_value(json!({"version": 2, "timeline": {"stillImageDuration": 3}}));
     assert!(old.timeline.drop_import_to_timeline);
     assert_eq!(old.timeline.still_image_duration, 3.0);
@@ -619,10 +990,16 @@ fn drop_import_to_timeline_defaults_to_on_for_older_prefs() {
 /// The key is a Boolean field of the Timeline category in the settings registry.
 #[test]
 fn drop_import_to_timeline_is_in_the_settings_registry() {
-    let (cat, f) = settings::fields().into_iter().find(|(_, f)| f.key == "timeline.dropImportToTimeline").expect("registry field");
+    let (cat, f) = settings::fields()
+        .into_iter()
+        .find(|(_, f)| f.key == "timeline.dropImportToTimeline")
+        .expect("registry field");
     assert_eq!(cat, "timeline");
     assert!(matches!(f.kind, Kind::Bool));
-    assert_eq!(settings::field("timeline.dropImportToTimeline").map(|f| f.key), Some("timeline.dropImportToTimeline"));
+    assert_eq!(
+        settings::field("timeline.dropImportToTimeline").map(|f| f.key),
+        Some("timeline.dropImportToTimeline")
+    );
 }
 
 /// New users keep the dark Darkest theme (following the system is opt-in); a file saved before
@@ -630,47 +1007,121 @@ fn drop_import_to_timeline_is_in_the_settings_registry() {
 #[test]
 fn appearance_defaults_and_legacy_theme_migrate() {
     let a = Preferences::default().appearance;
-    assert_eq!((a.appearance_mode.as_str(), a.dark_theme.as_str(), a.light_theme.as_str()), ("dark", "darkest", "light"));
-    assert_eq!(a.shown_theme(Some(true)), "darkest", "Dark mode ignores a light system");
+    assert_eq!(
+        (
+            a.appearance_mode.as_str(),
+            a.dark_theme.as_str(),
+            a.light_theme.as_str()
+        ),
+        ("dark", "darkest", "light")
+    );
+    assert_eq!(
+        a.shown_theme(Some(true)),
+        "darkest",
+        "Dark mode ignores a light system"
+    );
     let dir = tmp_dir("prefs-appearance-migrate");
     let path = dir.join("preferences.json");
-    for (theme, mode, dark, light) in [("darkest", "dark", "darkest", "light"), ("dark", "dark", "dark", "light"), ("light", "light", "darkest", "light")] {
-        std::fs::write(&path, json!({"version": 2, "appearance": {"colorTheme": theme}}).to_string()).unwrap();
+    for (theme, mode, dark, light) in [
+        ("darkest", "dark", "darkest", "light"),
+        ("dark", "dark", "dark", "light"),
+        ("light", "light", "darkest", "light"),
+    ] {
+        std::fs::write(
+            &path,
+            json!({"version": 2, "appearance": {"colorTheme": theme}}).to_string(),
+        )
+        .unwrap();
         let a = Preferences::load(&path).appearance;
-        assert_eq!((a.appearance_mode.as_str(), a.dark_theme.as_str(), a.light_theme.as_str()), (mode, dark, light), "{theme}");
+        assert_eq!(
+            (
+                a.appearance_mode.as_str(),
+                a.dark_theme.as_str(),
+                a.light_theme.as_str()
+            ),
+            (mode, dark, light),
+            "{theme}"
+        );
         assert_eq!(a.shown_theme(None), theme);
     }
     // a v1 file without an appearance section, and a hostile theme, get the defaults
     std::fs::write(&path, r#"{"autoSave":{"enabled":true}}"#).unwrap();
-    assert_eq!(Preferences::load(&path).appearance, settings::AppearancePrefs::default());
-    std::fs::write(&path, r#"{"appearance":{"colorTheme":"neon","appearanceMode":7,"darkTheme":"light"}}"#).unwrap();
-    assert_eq!(Preferences::load(&path).appearance, settings::AppearancePrefs::default());
+    assert_eq!(
+        Preferences::load(&path).appearance,
+        settings::AppearancePrefs::default()
+    );
+    std::fs::write(
+        &path,
+        r#"{"appearance":{"colorTheme":"neon","appearanceMode":7,"darkTheme":"light"}}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        Preferences::load(&path).appearance,
+        settings::AppearancePrefs::default()
+    );
     // a file with a mode keeps it
     std::fs::write(&path, r#"{"appearance":{"colorTheme":"darkest","appearanceMode":"auto","lightTheme":"light","darkTheme":"dark"}}"#).unwrap();
     let a = Preferences::load(&path).appearance;
-    assert_eq!((a.appearance_mode.as_str(), a.shown_theme(Some(true)), a.shown_theme(Some(false)), a.shown_theme(None)), ("auto", "light", "dark", "dark"));
+    assert_eq!(
+        (
+            a.appearance_mode.as_str(),
+            a.shown_theme(Some(true)),
+            a.shown_theme(Some(false)),
+            a.shown_theme(None)
+        ),
+        ("auto", "light", "dark", "dark")
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]
 fn appearance_choices_validate_and_legacy_theme_still_selects() {
     let mut s = Session::default();
-    s.execute("prefs.set", json!({"values": {"appearance.appearanceMode": "auto", "appearance.darkTheme": "dark"}})).unwrap();
-    assert_eq!((s.prefs.appearance.appearance_mode.as_str(), s.prefs.appearance.dark_theme.as_str()), ("auto", "dark"));
+    s.execute(
+        "prefs.set",
+        json!({"values": {"appearance.appearanceMode": "auto", "appearance.darkTheme": "dark"}}),
+    )
+    .unwrap();
+    assert_eq!(
+        (
+            s.prefs.appearance.appearance_mode.as_str(),
+            s.prefs.appearance.dark_theme.as_str()
+        ),
+        ("auto", "dark")
+    );
     for (key, value) in [
         ("appearance.darkTheme", json!("light")),
         ("appearance.lightTheme", json!("darkest")),
         ("appearance.appearanceMode", json!("system")),
         ("appearance.appearanceMode", json!(1)),
     ] {
-        assert!(s.execute("prefs.set", json!({"key": key, "value": value})).is_err(), "{key} {value}");
+        assert!(
+            s.execute("prefs.set", json!({"key": key, "value": value}))
+                .is_err(),
+            "{key} {value}"
+        );
     }
     // the single Color Theme of older clients selects that theme and fixes the mode to its family
     set(&mut s, "appearance.colorTheme", json!("light"));
-    assert_eq!((s.prefs.appearance.appearance_mode.as_str(), s.prefs.appearance.light_theme.as_str()), ("light", "light"));
-    assert_eq!(s.prefs.appearance.dark_theme, "dark", "the dark choice is kept");
+    assert_eq!(
+        (
+            s.prefs.appearance.appearance_mode.as_str(),
+            s.prefs.appearance.light_theme.as_str()
+        ),
+        ("light", "light")
+    );
+    assert_eq!(
+        s.prefs.appearance.dark_theme, "dark",
+        "the dark choice is kept"
+    );
     set(&mut s, "appearance.colorTheme", json!("darkest"));
-    assert_eq!((s.prefs.appearance.appearance_mode.as_str(), s.prefs.appearance.dark_theme.as_str()), ("dark", "darkest"));
+    assert_eq!(
+        (
+            s.prefs.appearance.appearance_mode.as_str(),
+            s.prefs.appearance.dark_theme.as_str()
+        ),
+        ("dark", "darkest")
+    );
     // the legacy Color Theme follows the mode and theme choices, so clients reading it aren't stale
     assert_eq!(s.prefs.appearance.color_theme, "darkest");
     set(&mut s, "appearance.appearanceMode", json!("light"));
@@ -679,9 +1130,18 @@ fn appearance_choices_validate_and_legacy_theme_still_selects() {
     set(&mut s, "appearance.darkTheme", json!("dark"));
     assert_eq!(s.prefs.appearance.color_theme, "dark");
     set(&mut s, "appearance.appearanceMode", json!("auto"));
-    assert_eq!(s.prefs.appearance.color_theme, "dark", "Auto: the dark theme");
+    assert_eq!(
+        s.prefs.appearance.color_theme, "dark",
+        "Auto: the dark theme"
+    );
     set(&mut s, "appearance.colorTheme", json!("light"));
-    assert_eq!((s.prefs.appearance.appearance_mode.as_str(), s.prefs.appearance.color_theme.as_str()), ("light", "light"));
+    assert_eq!(
+        (
+            s.prefs.appearance.appearance_mode.as_str(),
+            s.prefs.appearance.color_theme.as_str()
+        ),
+        ("light", "light")
+    );
     // the header button's cycle
     let mut a = settings::AppearancePrefs::default();
     let mut seen = Vec::new();
@@ -696,22 +1156,49 @@ fn appearance_choices_validate_and_legacy_theme_still_selects() {
 fn favorite_themes_validate_and_persist_without_changing_other_settings() {
     let dir = tmp_dir("theme-favorites");
     let path = dir.join("preferences.json");
-    let mut s = Session { prefs_path: Some(path.clone()), ..Session::default() };
-    set(&mut s, "appearance.favoriteThemes", json!(["dark", "light"]));
-    assert_eq!(Preferences::load(&path).appearance.favorite_themes, vec!["dark", "light"]);
-    for value in [json!("light"), json!(["unknown"]), json!(["dark", "dark"]), json!([3]), json!(null)] {
-        assert!(s.execute("prefs.set", json!({"key": "appearance.favoriteThemes", "value": value})).is_err());
+    let mut s = Session {
+        prefs_path: Some(path.clone()),
+        ..Session::default()
+    };
+    set(
+        &mut s,
+        "appearance.favoriteThemes",
+        json!(["dark", "light"]),
+    );
+    assert_eq!(
+        Preferences::load(&path).appearance.favorite_themes,
+        vec!["dark", "light"]
+    );
+    for value in [
+        json!("light"),
+        json!(["unknown"]),
+        json!(["dark", "dark"]),
+        json!([3]),
+        json!(null),
+    ] {
+        assert!(
+            s.execute(
+                "prefs.set",
+                json!({"key": "appearance.favoriteThemes", "value": value})
+            )
+            .is_err()
+        );
         assert_eq!(s.prefs.appearance.favorite_themes, vec!["dark", "light"]);
     }
     let mut corrupt = s.prefs.to_value();
     corrupt["appearance"]["favoriteThemes"] = json!(["invalid", "invalid"]);
     let repaired = Preferences::from_value(corrupt);
     assert!(repaired.appearance.favorite_themes.is_empty());
-    assert_eq!(repaired.appearance.dark_theme, s.prefs.appearance.dark_theme);
+    assert_eq!(
+        repaired.appearance.dark_theme,
+        s.prefs.appearance.dark_theme
+    );
 }
 
 fn preset_json(name: &str, n: usize, color: &str) -> Vec<u8> {
-    let labels: Vec<Value> = (0..n).map(|i| json!({"name": format!(" Label {i} "), "color": color})).collect();
+    let labels: Vec<Value> = (0..n)
+        .map(|i| json!({"name": format!(" Label {i} "), "color": color}))
+        .collect();
     serde_json::to_vec(&json!({"name": name, "labels": labels})).unwrap()
 }
 
@@ -722,12 +1209,21 @@ fn label_presets_reject_bad_files() {
     use settings::LabelPreset;
     let p = LabelPreset::parse(&preset_json("  Team  ", 16, "#A0B0C0")).unwrap();
     assert_eq!(p.name, "Team");
-    assert_eq!((p.labels[0].name.as_str(), p.labels[0].color.as_str()), ("Label 0", "#a0b0c0"));
+    assert_eq!(
+        (p.labels[0].name.as_str(), p.labels[0].color.as_str()),
+        ("Label 0", "#a0b0c0")
+    );
     let builtin = LabelPreset::builtin();
     assert_eq!(builtin.name, "Default");
     assert_eq!(builtin.labels.len(), 16);
-    assert!(builtin.matches(&settings::LabelPrefs::default()), "the built-in preset is today's labels");
-    assert_eq!(LabelPreset::parse(&serde_json::to_vec(&builtin).unwrap()).unwrap(), builtin);
+    assert!(
+        builtin.matches(&settings::LabelPrefs::default()),
+        "the built-in preset is today's labels"
+    );
+    assert_eq!(
+        LabelPreset::parse(&serde_json::to_vec(&builtin).unwrap()).unwrap(),
+        builtin
+    );
 
     let long = "x".repeat(65);
     let mut too_big = preset_json("Big", 16, "#000000");
@@ -764,15 +1260,28 @@ fn label_presets_reject_bad_files() {
 #[test]
 fn label_presets_import_export_and_delete() {
     let dir = tmp_dir("label-presets");
-    let mut s = Session { prefs_path: Some(dir.join("preferences.json")), ..Session::default() };
+    let mut s = Session {
+        prefs_path: Some(dir.join("preferences.json")),
+        ..Session::default()
+    };
     let names = |s: &mut Session| -> Vec<String> {
         let v = s.execute("labels.presets", json!({})).unwrap();
-        v["presets"].as_array().unwrap().iter().map(|p| p["name"].as_str().unwrap().to_string()).collect()
+        v["presets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|p| p["name"].as_str().unwrap().to_string())
+            .collect()
     };
     assert_eq!(names(&mut s), ["Default", "Bright", "Roles"]);
     let src = dir.join("from someone.json");
     std::fs::write(&src, preset_json("Team", 16, "#102030")).unwrap();
-    let r = s.execute("labels.importPreset", json!({"path": src.to_string_lossy()})).unwrap();
+    let r = s
+        .execute(
+            "labels.importPreset",
+            json!({"path": src.to_string_lossy()}),
+        )
+        .unwrap();
     assert_eq!(r["name"], "Team");
     assert!(dir.join("Label Presets").join("Team.json").is_file());
     assert_eq!(names(&mut s), ["Default", "Bright", "Roles", "Team"]);
@@ -780,29 +1289,77 @@ fn label_presets_import_export_and_delete() {
     // a bad file: an error, and the folder is as it was
     let bad = dir.join("bad.json");
     std::fs::write(&bad, preset_json("Bad", 3, "#102030")).unwrap();
-    assert!(s.execute("labels.importPreset", json!({"path": bad.to_string_lossy()})).is_err());
+    assert!(
+        s.execute(
+            "labels.importPreset",
+            json!({"path": bad.to_string_lossy()})
+        )
+        .is_err()
+    );
     std::fs::write(dir.join("Label Presets").join("junk.json"), b"{not json").unwrap();
-    assert_eq!(names(&mut s), ["Default", "Bright", "Roles", "Team"], "unreadable files in the folder are skipped");
+    assert_eq!(
+        names(&mut s),
+        ["Default", "Bright", "Roles", "Team"],
+        "unreadable files in the folder are skipped"
+    );
 
     // a preset named like a built-in one keeps both
     std::fs::write(&src, preset_json("default", 16, "#405060")).unwrap();
-    assert_eq!(s.execute("labels.importPreset", json!({"path": src.to_string_lossy()})).unwrap()["name"], "default (imported)");
+    assert_eq!(
+        s.execute(
+            "labels.importPreset",
+            json!({"path": src.to_string_lossy()})
+        )
+        .unwrap()["name"],
+        "default (imported)"
+    );
     std::fs::write(&src, preset_json("ROLES", 16, "#405060")).unwrap();
-    assert_eq!(s.execute("labels.importPreset", json!({"path": src.to_string_lossy()})).unwrap()["name"], "ROLES (imported)");
+    assert_eq!(
+        s.execute(
+            "labels.importPreset",
+            json!({"path": src.to_string_lossy()})
+        )
+        .unwrap()["name"],
+        "ROLES (imported)"
+    );
 
     // export writes the applied labels, named after the file, and imports back
     set(&mut s, "labels.colors.rose.color", json!("#123456"));
     let out = dir.join("Our Labels.json");
-    assert_eq!(s.execute("labels.exportPreset", json!({"path": out.to_string_lossy()})).unwrap()["name"], "Our Labels");
+    assert_eq!(
+        s.execute(
+            "labels.exportPreset",
+            json!({"path": out.to_string_lossy()})
+        )
+        .unwrap()["name"],
+        "Our Labels"
+    );
     let back = settings::LabelPreset::read(&out).unwrap();
     assert!(back.matches(&s.prefs.labels));
 
     for builtin in ["Default", "Bright", "Roles"] {
-        assert!(s.execute("labels.deletePreset", json!({"name": builtin})).is_err(), "{builtin} stays");
+        assert!(
+            s.execute("labels.deletePreset", json!({"name": builtin}))
+                .is_err(),
+            "{builtin} stays"
+        );
     }
-    s.execute("labels.deletePreset", json!({"name": "Team"})).unwrap();
-    assert_eq!(names(&mut s), ["Default", "Bright", "Roles", "default (imported)", "ROLES (imported)"]);
-    assert!(s.execute("labels.deletePreset", json!({"name": "Team"})).is_err());
+    s.execute("labels.deletePreset", json!({"name": "Team"}))
+        .unwrap();
+    assert_eq!(
+        names(&mut s),
+        [
+            "Default",
+            "Bright",
+            "Roles",
+            "default (imported)",
+            "ROLES (imported)"
+        ]
+    );
+    assert!(
+        s.execute("labels.deletePreset", json!({"name": "Team"}))
+            .is_err()
+    );
 }
 
 /// The built-in presets: Default (the labels as shipped), Bright and Roles, each with 16 distinct
@@ -812,21 +1369,38 @@ fn label_presets_import_export_and_delete() {
 fn builtin_label_presets_are_complete_and_distinct() {
     use settings::LabelPreset;
     let all = LabelPreset::builtins();
-    assert_eq!(all.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(), ["Default", "Bright", "Roles"]);
+    assert_eq!(
+        all.iter().map(|p| p.name.as_str()).collect::<Vec<_>>(),
+        ["Default", "Bright", "Roles"]
+    );
     for p in &all {
         assert!(settings::is_builtin_label_preset(&p.name));
-        assert_eq!(&LabelPreset::parse(&serde_json::to_vec(p).unwrap()).unwrap(), p, "{} is a valid preset file", p.name);
+        assert_eq!(
+            &LabelPreset::parse(&serde_json::to_vec(p).unwrap()).unwrap(),
+            p,
+            "{} is a valid preset file",
+            p.name
+        );
         let mut names: Vec<&str> = p.labels.iter().map(|l| l.name.as_str()).collect();
         names.sort();
         names.dedup();
         assert_eq!(names.len(), 16, "{}: names are unique", p.name);
-        let rgb: Vec<[u8; 3]> = p.labels.iter().map(|l| settings::parse_hex(&l.color).unwrap()).collect();
+        let rgb: Vec<[u8; 3]> = p
+            .labels
+            .iter()
+            .map(|l| settings::parse_hex(&l.color).unwrap())
+            .collect();
         if p.name == "Default" {
             continue; // the colours labels have always had
         }
         for (i, a) in rgb.iter().enumerate() {
             for b in &rgb[i + 1..] {
-                let d: f32 = a.iter().zip(b).map(|(x, y)| (f32::from(*x) - f32::from(*y)).powi(2)).sum::<f32>().sqrt();
+                let d: f32 = a
+                    .iter()
+                    .zip(b)
+                    .map(|(x, y)| (f32::from(*x) - f32::from(*y)).powi(2))
+                    .sum::<f32>()
+                    .sqrt();
                 assert!(d > 30.0, "{}: {a:?} and {b:?} are too close", p.name);
             }
         }

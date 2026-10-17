@@ -8,7 +8,10 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::math::{Arg, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, ScriptKind, has_number_mark, merge_runs, to_linear};
+use crate::math::{
+    Arg, LimLoc, MAX_DEPTH, MNode, MRun, MScr, MSty, ScriptKind, has_number_mark, merge_runs,
+    to_linear,
+};
 
 /// A caret position inside an equation.
 #[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -56,7 +59,12 @@ pub fn child_count(n: &MNode) -> usize {
         MNode::Delim { elems, .. } => elems.len(),
         MNode::EqArr { rows } => rows.len(),
         MNode::Matrix { rows, .. } => rows.iter().map(|r| r.len()).sum(),
-        MNode::Acc { .. } | MNode::Bar { .. } | MNode::BorderBox { .. } | MNode::Boxed { .. } | MNode::GroupChr { .. } | MNode::Phant { .. } => 1,
+        MNode::Acc { .. }
+        | MNode::Bar { .. }
+        | MNode::BorderBox { .. }
+        | MNode::Boxed { .. }
+        | MNode::GroupChr { .. }
+        | MNode::Phant { .. } => 1,
     }
 }
 
@@ -144,7 +152,12 @@ pub fn nav_children(n: &MNode) -> Vec<usize> {
                 vec![0, 1]
             }
         }
-        MNode::Nary { sub_hide, sup_hide, lim_loc, .. } => {
+        MNode::Nary {
+            sub_hide,
+            sup_hide,
+            lim_loc,
+            ..
+        } => {
             let mut v = Vec::new();
             // Under/over limits read top to bottom as Word does: upper first only for sub/sup.
             let _ = lim_loc;
@@ -195,7 +208,10 @@ pub fn clamp(root: &Arg, pos: &MathPos) -> MathPos {
             }
         }
     }
-    MathPos { off: pos.off.min(units(a)), path }
+    MathPos {
+        off: pos.off.min(units(a)),
+        path,
+    }
 }
 
 /// Units before node `i`.
@@ -235,7 +251,9 @@ fn split_at(a: &mut Arg, off: usize) -> usize {
     match locate(a, off) {
         Loc::Before(i) => i,
         Loc::Inside(i, k) => {
-            let Some(MNode::Run(r)) = a.get_mut(i) else { return i };
+            let Some(MNode::Run(r)) = a.get_mut(i) else {
+                return i;
+            };
             let b = byte_at(&r.text, k);
             let tail = r.text.split_off(b);
             let mut right = r.clone();
@@ -257,7 +275,9 @@ pub fn insert_text(root: &mut Arg, pos: &MathPos, text: &str, style: TypeStyle) 
     if n == 0 {
         return pos;
     }
-    let Some(a) = arg_at_mut(root, &pos.path) else { return pos };
+    let Some(a) = arg_at_mut(root, &pos.path) else {
+        return pos;
+    };
     match locate(a, pos.off) {
         Loc::Inside(i, k) => {
             if let Some(MNode::Run(r)) = a.get_mut(i)
@@ -271,7 +291,8 @@ pub fn insert_text(root: &mut Arg, pos: &MathPos, text: &str, style: TypeStyle) 
             }
         }
         Loc::Before(i) => {
-            let prev_ok = i > 0 && matches!(a.get(i - 1), Some(MNode::Run(r)) if compatible(r, style));
+            let prev_ok =
+                i > 0 && matches!(a.get(i - 1), Some(MNode::Run(r)) if compatible(r, style));
             let next_ok = matches!(a.get(i), Some(MNode::Run(r)) if compatible(r, style));
             if prev_ok {
                 if let Some(MNode::Run(r)) = a.get_mut(i - 1) {
@@ -286,11 +307,23 @@ pub fn insert_text(root: &mut Arg, pos: &MathPos, text: &str, style: TypeStyle) 
             }
         }
     }
-    MathPos { path: pos.path, off: pos.off + n }
+    MathPos {
+        path: pos.path,
+        off: pos.off + n,
+    }
 }
 
 fn new_run(text: &str, style: TypeStyle) -> MRun {
-    if style.nor { MRun { text: text.to_string(), nor: true, sty: Some(MSty::Plain), ..Default::default() } } else { MRun::new(text) }
+    if style.nor {
+        MRun {
+            text: text.to_string(),
+            nor: true,
+            sty: Some(MSty::Plain),
+            ..Default::default()
+        }
+    } else {
+        MRun::new(text)
+    }
 }
 
 /// Insert structures at `pos`. The caret goes to the first empty argument inside them, or after
@@ -299,7 +332,9 @@ pub fn insert_nodes(root: &mut Arg, pos: &MathPos, nodes: Arg) -> MathPos {
     let pos = clamp(root, pos);
     let count = nodes.len();
     let total = units(&nodes);
-    let Some(a) = arg_at_mut(root, &pos.path) else { return pos };
+    let Some(a) = arg_at_mut(root, &pos.path) else {
+        return pos;
+    };
     let at = split_at(a, pos.off).min(a.len());
     for (k, n) in nodes.into_iter().enumerate() {
         a.insert(at + k, n);
@@ -317,7 +352,13 @@ pub fn insert_nodes(root: &mut Arg, pos: &MathPos, nodes: Arg) -> MathPos {
     }
     let off = node_start(a, at) + total;
     tidy(root);
-    clamp(root, &MathPos { path: pos.path, off })
+    clamp(
+        root,
+        &MathPos {
+            path: pos.path,
+            off,
+        },
+    )
 }
 
 /// Path (relative, starting with this node as index 0) to the first empty visible argument.
@@ -385,7 +426,9 @@ fn merge_shallow(a: Arg) -> Arg {
 
 /// Every visible argument of the node is empty.
 fn all_empty(n: &MNode) -> bool {
-    nav_children(n).iter().all(|c| child(n, *c).is_none_or(|a| a.is_empty()))
+    nav_children(n)
+        .iter()
+        .all(|c| child(n, *c).is_none_or(|a| a.is_empty()))
 }
 
 /// The children's contents in reading order, one after another (dissolving a structure).
@@ -405,7 +448,9 @@ fn dissolve(n: MNode) -> Arg {
 pub fn delete_back(root: &mut Arg, pos: &MathPos) -> MathPos {
     let pos = clamp(root, pos);
     if pos.off > 0 {
-        let Some(a) = arg_at_mut(root, &pos.path) else { return pos };
+        let Some(a) = arg_at_mut(root, &pos.path) else {
+            return pos;
+        };
         let (i, k) = match locate(a, pos.off - 1) {
             Loc::Before(i) => (i, 0),
             Loc::Inside(i, k) => (i, k),
@@ -415,14 +460,20 @@ pub fn delete_back(root: &mut Arg, pos: &MathPos) -> MathPos {
                 let b = byte_at(&r.text, k);
                 let e = byte_at(&r.text, k + 1);
                 r.text.replace_range(b..e, "");
-                let out = MathPos { path: pos.path.clone(), off: pos.off - 1 };
+                let out = MathPos {
+                    path: pos.path.clone(),
+                    off: pos.off - 1,
+                };
                 tidy(root);
                 return clamp(root, &out);
             }
             Some(n) => {
                 if all_empty(n) {
                     a.remove(i);
-                    let out = MathPos { path: pos.path.clone(), off: pos.off - 1 };
+                    let out = MathPos {
+                        path: pos.path.clone(),
+                        off: pos.off - 1,
+                    };
                     tidy(root);
                     return clamp(root, &out);
                 }
@@ -440,24 +491,45 @@ pub fn delete_back(root: &mut Arg, pos: &MathPos) -> MathPos {
     }
     // At the start of an argument: remove an empty structure, or dissolve it from its first
     // argument, or move to the previous argument.
-    let Some(((j, c), parent_path)) = pos.path.split_last() else { return pos };
+    let Some(((j, c), parent_path)) = pos.path.split_last() else {
+        return pos;
+    };
     let parent_path = parent_path.to_vec();
     let (j, c) = (*j, *c);
-    let Some(parent) = arg_at_mut(root, &parent_path) else { return pos };
+    let Some(parent) = arg_at_mut(root, &parent_path) else {
+        return pos;
+    };
     let start = node_start(parent, j);
-    let Some(node) = parent.get(j) else { return pos };
+    let Some(node) = parent.get(j) else {
+        return pos;
+    };
     let order = nav_children(node);
     let first = order.first() == Some(&c);
     if all_empty(node) || first {
         let n = parent.remove(j);
-        let contents = if all_empty(&n) { Vec::new() } else { dissolve(n) };
+        let contents = if all_empty(&n) {
+            Vec::new()
+        } else {
+            dissolve(n)
+        };
         for (k, x) in contents.into_iter().enumerate() {
             parent.insert(j + k, x);
         }
         tidy(root);
-        return clamp(root, &MathPos { path: parent_path, off: start });
+        return clamp(
+            root,
+            &MathPos {
+                path: parent_path,
+                off: start,
+            },
+        );
     }
-    let prev = order.iter().position(|x| *x == c).and_then(|p| p.checked_sub(1)).and_then(|p| order.get(p)).copied();
+    let prev = order
+        .iter()
+        .position(|x| *x == c)
+        .and_then(|p| p.checked_sub(1))
+        .and_then(|p| order.get(p))
+        .copied();
     match prev {
         Some(pc) => {
             let len = child(node, pc).map(|a| units(a)).unwrap_or(0);
@@ -465,7 +537,10 @@ pub fn delete_back(root: &mut Arg, pos: &MathPos) -> MathPos {
             path.push((j, pc));
             MathPos { path, off: len }
         }
-        None => MathPos { path: parent_path, off: start },
+        None => MathPos {
+            path: parent_path,
+            off: start,
+        },
     }
 }
 
@@ -474,7 +549,9 @@ pub fn delete_forward(root: &mut Arg, pos: &MathPos) -> MathPos {
     let pos = clamp(root, pos);
     let len = arg_at(root, &pos.path).map(|a| units(a)).unwrap_or(0);
     if pos.off < len {
-        let Some(a) = arg_at_mut(root, &pos.path) else { return pos };
+        let Some(a) = arg_at_mut(root, &pos.path) else {
+            return pos;
+        };
         let (i, k) = match locate(a, pos.off) {
             Loc::Before(i) => (i, 0),
             Loc::Inside(i, k) => (i, k),
@@ -500,26 +577,45 @@ pub fn delete_forward(root: &mut Arg, pos: &MathPos) -> MathPos {
         return clamp(root, &pos);
     }
     // At the end of an argument: remove an empty structure, else move on.
-    let Some(((j, c), parent_path)) = pos.path.split_last() else { return pos };
+    let Some(((j, c), parent_path)) = pos.path.split_last() else {
+        return pos;
+    };
     let parent_path = parent_path.to_vec();
     let (j, c) = (*j, *c);
-    let Some(parent) = arg_at_mut(root, &parent_path) else { return pos };
+    let Some(parent) = arg_at_mut(root, &parent_path) else {
+        return pos;
+    };
     let start = node_start(parent, j);
-    let Some(node) = parent.get(j) else { return pos };
+    let Some(node) = parent.get(j) else {
+        return pos;
+    };
     if all_empty(node) {
         parent.remove(j);
         tidy(root);
-        return clamp(root, &MathPos { path: parent_path, off: start });
+        return clamp(
+            root,
+            &MathPos {
+                path: parent_path,
+                off: start,
+            },
+        );
     }
     let order = nav_children(node);
-    let next = order.iter().position(|x| *x == c).and_then(|p| order.get(p + 1)).copied();
+    let next = order
+        .iter()
+        .position(|x| *x == c)
+        .and_then(|p| order.get(p + 1))
+        .copied();
     match next {
         Some(nc) => {
             let mut path = parent_path;
             path.push((j, nc));
             MathPos { path, off: 0 }
         }
-        None => MathPos { path: parent_path, off: start + 1 },
+        None => MathPos {
+            path: parent_path,
+            off: start + 1,
+        },
     }
 }
 
@@ -529,18 +625,29 @@ pub fn move_right(root: &Arg, pos: &MathPos) -> Option<MathPos> {
     let a = arg_at(root, &pos.path)?;
     if pos.off < units(a) {
         match locate(a, pos.off) {
-            Loc::Inside(..) => return Some(MathPos { path: pos.path, off: pos.off + 1 }),
+            Loc::Inside(..) => {
+                return Some(MathPos {
+                    path: pos.path,
+                    off: pos.off + 1,
+                });
+            }
             Loc::Before(i) => {
                 let n = a.get(i)?;
                 if let MNode::Run(_) = n {
-                    return Some(MathPos { path: pos.path, off: pos.off + 1 });
+                    return Some(MathPos {
+                        path: pos.path,
+                        off: pos.off + 1,
+                    });
                 }
                 if let Some(c) = nav_children(n).first().copied() {
                     let mut path = pos.path;
                     path.push((i, c));
                     return Some(MathPos { path, off: 0 });
                 }
-                return Some(MathPos { path: pos.path, off: pos.off + 1 });
+                return Some(MathPos {
+                    path: pos.path,
+                    off: pos.off + 1,
+                });
             }
         }
     }
@@ -548,14 +655,21 @@ pub fn move_right(root: &Arg, pos: &MathPos) -> Option<MathPos> {
     let parent = arg_at(root, parent_path)?;
     let node = parent.get(*j)?;
     let order = nav_children(node);
-    let next = order.iter().position(|x| x == c).and_then(|p| order.get(p + 1)).copied();
+    let next = order
+        .iter()
+        .position(|x| x == c)
+        .and_then(|p| order.get(p + 1))
+        .copied();
     let mut path = parent_path.to_vec();
     Some(match next {
         Some(nc) => {
             path.push((*j, nc));
             MathPos { path, off: 0 }
         }
-        None => MathPos { off: node_start(parent, *j) + 1, path },
+        None => MathPos {
+            off: node_start(parent, *j) + 1,
+            path,
+        },
     })
 }
 
@@ -570,7 +684,10 @@ pub fn move_left(root: &Arg, pos: &MathPos) -> Option<MathPos> {
         };
         let n = a.get(i)?;
         if inside || matches!(n, MNode::Run(_)) {
-            return Some(MathPos { path: pos.path, off: pos.off - 1 });
+            return Some(MathPos {
+                path: pos.path,
+                off: pos.off - 1,
+            });
         }
         if let Some(c) = nav_children(n).last().copied() {
             let len = child(n, c).map(|x| units(x)).unwrap_or(0);
@@ -578,13 +695,21 @@ pub fn move_left(root: &Arg, pos: &MathPos) -> Option<MathPos> {
             path.push((i, c));
             return Some(MathPos { path, off: len });
         }
-        return Some(MathPos { path: pos.path, off: pos.off - 1 });
+        return Some(MathPos {
+            path: pos.path,
+            off: pos.off - 1,
+        });
     }
     let ((j, c), parent_path) = pos.path.split_last()?;
     let parent = arg_at(root, parent_path)?;
     let node = parent.get(*j)?;
     let order = nav_children(node);
-    let prev = order.iter().position(|x| x == c).and_then(|p| p.checked_sub(1)).and_then(|p| order.get(p)).copied();
+    let prev = order
+        .iter()
+        .position(|x| x == c)
+        .and_then(|p| p.checked_sub(1))
+        .and_then(|p| order.get(p))
+        .copied();
     let mut path = parent_path.to_vec();
     Some(match prev {
         Some(pc) => {
@@ -592,7 +717,10 @@ pub fn move_left(root: &Arg, pos: &MathPos) -> Option<MathPos> {
             path.push((*j, pc));
             MathPos { path, off: len }
         }
-        None => MathPos { off: node_start(parent, *j), path },
+        None => MathPos {
+            off: node_start(parent, *j),
+            path,
+        },
     })
 }
 
@@ -615,7 +743,9 @@ fn vertical_target(n: &MNode, c: usize, up: bool) -> Option<usize> {
                 _ => None,
             }
         }
-        MNode::Nary { sub_hide, sup_hide, .. } => match (c, up) {
+        MNode::Nary {
+            sub_hide, sup_hide, ..
+        } => match (c, up) {
             (0, true) if !sup_hide => Some(1),
             (1, false) if !sub_hide => Some(0),
             _ => None,
@@ -667,7 +797,11 @@ pub fn move_vertical(root: &Arg, pos: &MathPos, up: bool) -> Option<MathPos> {
             let target = child(node, t)?;
             let mut path = pos.path.get(..level)?.to_vec();
             path.push((j, t));
-            let off = if level + 1 == pos.path.len() { pos.off.min(units(target)) } else { units(target) };
+            let off = if level + 1 == pos.path.len() {
+                pos.off.min(units(target))
+            } else {
+                units(target)
+            };
             return Some(MathPos { path, off });
         }
     }
@@ -680,13 +814,24 @@ pub fn home_end(root: &Arg, pos: &MathPos, end: bool) -> MathPos {
     let len = arg_at(root, &pos.path).map(|a| units(a)).unwrap_or(0);
     let target = if end { len } else { 0 };
     if pos.off != target || pos.path.is_empty() {
-        return MathPos { path: pos.path, off: target };
+        return MathPos {
+            path: pos.path,
+            off: target,
+        };
     }
-    MathPos { path: Vec::new(), off: if end { units(root) } else { 0 } }
+    MathPos {
+        path: Vec::new(),
+        off: if end { units(root) } else { 0 },
+    }
 }
 
 /// All argument paths in reading order (for Tab between placeholders).
-fn arg_paths(a: &[MNode], prefix: &mut Vec<(usize, usize)>, out: &mut Vec<Vec<(usize, usize)>>, depth: usize) {
+fn arg_paths(
+    a: &[MNode],
+    prefix: &mut Vec<(usize, usize)>,
+    out: &mut Vec<Vec<(usize, usize)>>,
+    depth: usize,
+) {
     if depth > MAX_DEPTH || out.len() > 10_000 {
         return;
     }
@@ -706,18 +851,31 @@ fn arg_paths(a: &[MNode], prefix: &mut Vec<(usize, usize)>, out: &mut Vec<Vec<(u
 pub fn next_placeholder(root: &Arg, pos: &MathPos, back: bool) -> Option<MathPos> {
     let mut paths = Vec::new();
     arg_paths(root, &mut Vec::new(), &mut paths, 0);
-    let empties: Vec<&Vec<(usize, usize)>> = paths.iter().filter(|p| !p.is_empty() && arg_at(root, p).is_some_and(|a| a.is_empty())).collect();
+    let empties: Vec<&Vec<(usize, usize)>> = paths
+        .iter()
+        .filter(|p| !p.is_empty() && arg_at(root, p).is_some_and(|a| a.is_empty()))
+        .collect();
     if empties.is_empty() {
         return None;
     }
     let cur = paths.iter().position(|p| *p == pos.path).unwrap_or(0);
     let idx = |p: &Vec<(usize, usize)>| paths.iter().position(|q| q == p).unwrap_or(0);
     let pick = if back {
-        empties.iter().rev().find(|p| idx(p) < cur).or_else(|| empties.last())
+        empties
+            .iter()
+            .rev()
+            .find(|p| idx(p) < cur)
+            .or_else(|| empties.last())
     } else {
-        empties.iter().find(|p| idx(p) > cur).or_else(|| empties.first())
+        empties
+            .iter()
+            .find(|p| idx(p) > cur)
+            .or_else(|| empties.first())
     };
-    pick.map(|p| MathPos { path: (*p).clone(), off: 0 })
+    pick.map(|p| MathPos {
+        path: (*p).clone(),
+        off: 0,
+    })
 }
 
 /// Math AutoCorrect: replace `\name` just before the caret with its character. Returns the new
@@ -732,7 +890,9 @@ pub fn autocorrect(root: &mut Arg, pos: &MathPos) -> Option<MathPos> {
             (i, node_units(a.get(i)?))
         }
     };
-    let MNode::Run(r) = a.get_mut(i)? else { return None };
+    let MNode::Run(r) = a.get_mut(i)? else {
+        return None;
+    };
     if r.nor || r.lit {
         return None;
     }
@@ -746,7 +906,10 @@ pub fn autocorrect(root: &mut Arg, pos: &MathPos) -> Option<MathPos> {
     let b0 = byte_at(&r.text, slash);
     let b1 = byte_at(&r.text, k);
     r.text.replace_range(b0..b1, &c.to_string());
-    Some(MathPos { path: pos.path, off: pos.off - name.chars().count() })
+    Some(MathPos {
+        path: pos.path,
+        off: pos.off - name.chars().count(),
+    })
 }
 
 /// Characters that make typed linear text build up into structures.
@@ -787,13 +950,22 @@ fn builds(s: &str) -> bool {
                 | '\u{2061}'
         ) || crate::math_linear::is_combining(c)
             || crate::math::is_nary_char(c)
-    }) || crate::math_linear::FUNCTION_NAMES.iter().any(|f| s.contains(f))
+    }) || crate::math_linear::FUNCTION_NAMES
+        .iter()
+        .any(|f| s.contains(f))
 }
 
 /// A run is plain math text that build-up may rewrite.
 fn plain(n: &MNode) -> bool {
     match n {
-        MNode::Run(r) => !r.nor && !r.lit && r.scr == MScr::Roman && r.color.is_none() && r.size.is_none() && r.font.is_none(),
+        MNode::Run(r) => {
+            !r.nor
+                && !r.lit
+                && r.scr == MScr::Roman
+                && r.color.is_none()
+                && r.size.is_none()
+                && r.font.is_none()
+        }
         // Arrays and matrices are finished pieces; typing after them builds up on its own.
         MNode::EqArr { .. } | MNode::Matrix { .. } => false,
         _ => true,
@@ -806,9 +978,14 @@ fn unbalanced(nodes: &[MNode], depth: usize) -> bool {
         return false;
     }
     nodes.iter().any(|n| match n {
-        MNode::Delim { beg: Some(_), end: None, .. } => true,
+        MNode::Delim {
+            beg: Some(_),
+            end: None,
+            ..
+        } => true,
         MNode::Run(r) => r.text.contains('\\'),
-        other => (0..child_count(other)).any(|c| child(other, c).is_some_and(|a| unbalanced(a, depth + 1))),
+        other => (0..child_count(other))
+            .any(|c| child(other, c).is_some_and(|a| unbalanced(a, depth + 1))),
     })
 }
 
@@ -819,7 +996,12 @@ pub fn build_up(root: &mut Arg, pos: &MathPos, latex: bool) -> Option<MathPos> {
     let a = arg_at_mut(root, &pos.path)?;
     let at = split_at(a, pos.off);
     // Rewrite from after the last formatted run (its formatting would be lost) to the caret.
-    let start = a.get(..at)?.iter().rposition(|n| !plain(n)).map(|k| k + 1).unwrap_or(0);
+    let start = a
+        .get(..at)?
+        .iter()
+        .rposition(|n| !plain(n))
+        .map(|k| k + 1)
+        .unwrap_or(0);
     let region: Arg = a.get(start..at)?.to_vec();
     if region.is_empty() {
         tidy(root);
@@ -830,7 +1012,11 @@ pub fn build_up(root: &mut Arg, pos: &MathPos, latex: bool) -> Option<MathPos> {
         tidy(root);
         return None;
     }
-    let mut built = if latex { crate::math_latex::parse_latex(&text) } else { crate::math_linear::parse(&text) };
+    let mut built = if latex {
+        crate::math_latex::parse_latex(&text)
+    } else {
+        crate::math_linear::parse(&text)
+    };
     // `#` numbering wraps the whole equation, not a piece of it.
     if let [MNode::EqArr { rows }] = built.as_slice()
         && rows.len() == 1
@@ -840,14 +1026,20 @@ pub fn build_up(root: &mut Arg, pos: &MathPos, latex: bool) -> Option<MathPos> {
     }
     let built = merge_runs(built);
     let unchanged = merge_runs(region.clone()) == built;
-    if unchanged || (!latex && unbalanced(&built, 0)) || (latex && text.matches('{').count() != text.matches('}').count()) {
+    if unchanged
+        || (!latex && unbalanced(&built, 0))
+        || (latex && text.matches('{').count() != text.matches('}').count())
+    {
         tidy(root);
         return None;
     }
     let new_units = units(&built);
     let before = node_start(a, start);
     a.splice(start..at, built);
-    let out = MathPos { path: pos.path, off: before + new_units };
+    let out = MathPos {
+        path: pos.path,
+        off: before + new_units,
+    };
     tidy(root);
     Some(clamp(root, &out))
 }
@@ -868,8 +1060,17 @@ pub fn structure_actions(root: &Arg, pos: &MathPos) -> Vec<(usize, &'static str,
     let pos = clamp(root, pos);
     let mut out = Vec::new();
     for level in (0..pos.path.len()).rev() {
-        let Some(&(j, _)) = pos.path.get(level) else { continue };
-        let Some(node) = pos.path.get(..level).and_then(|p| arg_at(root, p)).and_then(|a| a.get(j)) else { continue };
+        let Some(&(j, _)) = pos.path.get(level) else {
+            continue;
+        };
+        let Some(node) = pos
+            .path
+            .get(..level)
+            .and_then(|p| arg_at(root, p))
+            .and_then(|a| a.get(j))
+        else {
+            continue;
+        };
         let mut add = |a: &'static str, l: &'static str| out.push((level, a, l));
         match node {
             MNode::Frac { kind, .. } => {
@@ -885,30 +1086,93 @@ pub fn structure_actions(root: &Arg, pos: &MathPos) -> Vec<(usize, &'static str,
                     }
                 }
             }
-            MNode::Rad { deg_hide, .. } => add("rad.toggleDegree", if *deg_hide { "Show Degree" } else { "Hide Degree" }),
-            MNode::Nary { lim_loc, sub_hide, sup_hide, grow, chr, .. } => {
-                let under = lim_loc.unwrap_or(if crate::math::is_integral(*chr) { LimLoc::SubSup } else { LimLoc::UndOvr }) == LimLoc::UndOvr;
+            MNode::Rad { deg_hide, .. } => add(
+                "rad.toggleDegree",
+                if *deg_hide {
+                    "Show Degree"
+                } else {
+                    "Hide Degree"
+                },
+            ),
+            MNode::Nary {
+                lim_loc,
+                sub_hide,
+                sup_hide,
+                grow,
+                chr,
+                ..
+            } => {
+                let under = lim_loc.unwrap_or(if crate::math::is_integral(*chr) {
+                    LimLoc::SubSup
+                } else {
+                    LimLoc::UndOvr
+                }) == LimLoc::UndOvr;
                 add(
-                    if under { "nary.limitsSide" } else { "nary.limitsUnder" },
-                    if under { "Change Limit Location to Subscript-Superscript" } else { "Change Limit Location to Under-Over" },
+                    if under {
+                        "nary.limitsSide"
+                    } else {
+                        "nary.limitsUnder"
+                    },
+                    if under {
+                        "Change Limit Location to Subscript-Superscript"
+                    } else {
+                        "Change Limit Location to Under-Over"
+                    },
                 );
-                add("nary.toggleLower", if *sub_hide { "Show Lower Limit" } else { "Hide Lower Limit" });
-                add("nary.toggleUpper", if *sup_hide { "Show Upper Limit" } else { "Hide Upper Limit" });
-                add("nary.toggleGrow", if *grow { "Don't Grow with Argument" } else { "Grow with Argument" });
+                add(
+                    "nary.toggleLower",
+                    if *sub_hide {
+                        "Show Lower Limit"
+                    } else {
+                        "Hide Lower Limit"
+                    },
+                );
+                add(
+                    "nary.toggleUpper",
+                    if *sup_hide {
+                        "Show Upper Limit"
+                    } else {
+                        "Hide Upper Limit"
+                    },
+                );
+                add(
+                    "nary.toggleGrow",
+                    if *grow {
+                        "Don't Grow with Argument"
+                    } else {
+                        "Grow with Argument"
+                    },
+                );
             }
             MNode::Delim { grow, elems, .. } => {
                 add("delim.addSeparator", "Insert Argument After");
                 if elems.len() > 1 {
                     add("delim.deleteArgument", "Delete Argument");
                 }
-                add("delim.toggleGrow", if *grow { "Don't Stretch Brackets" } else { "Stretch Brackets" });
+                add(
+                    "delim.toggleGrow",
+                    if *grow {
+                        "Don't Stretch Brackets"
+                    } else {
+                        "Stretch Brackets"
+                    },
+                );
             }
-            MNode::Script { kind: ScriptKind::SubSup, .. } => {
+            MNode::Script {
+                kind: ScriptKind::SubSup,
+                ..
+            } => {
                 add("script.removeSub", "Remove Subscript");
                 add("script.removeSup", "Remove Superscript");
             }
-            MNode::Script { kind: ScriptKind::Sub, .. } => add("script.addSup", "Add Superscript"),
-            MNode::Script { kind: ScriptKind::Sup, .. } => add("script.addSub", "Add Subscript"),
+            MNode::Script {
+                kind: ScriptKind::Sub,
+                ..
+            } => add("script.addSup", "Add Superscript"),
+            MNode::Script {
+                kind: ScriptKind::Sup,
+                ..
+            } => add("script.addSub", "Add Subscript"),
             MNode::Matrix { .. } => {
                 add("matrix.rowAbove", "Insert Row Above");
                 add("matrix.rowBelow", "Insert Row Below");
@@ -922,8 +1186,22 @@ pub fn structure_actions(root: &Arg, pos: &MathPos) -> Vec<(usize, &'static str,
                 add("eqarr.rowBelow", "Insert Equation After");
                 add("eqarr.deleteRow", "Delete Equation");
             }
-            MNode::GroupChr { top, .. } => add("group.flip", if *top { "Move Character Below" } else { "Move Character Above" }),
-            MNode::Bar { top, .. } => add("bar.flip", if *top { "Change to Underbar" } else { "Change to Overbar" }),
+            MNode::GroupChr { top, .. } => add(
+                "group.flip",
+                if *top {
+                    "Move Character Below"
+                } else {
+                    "Move Character Above"
+                },
+            ),
+            MNode::Bar { top, .. } => add(
+                "bar.flip",
+                if *top {
+                    "Change to Underbar"
+                } else {
+                    "Change to Overbar"
+                },
+            ),
             _ => {}
         }
         add(
@@ -944,11 +1222,19 @@ pub fn structure_actions(root: &Arg, pos: &MathPos) -> Vec<(usize, &'static str,
 }
 
 /// Apply a structure action (from [`structure_actions`]) at `level`. Returns the new caret.
-pub fn apply_structure(root: &mut Arg, pos: &MathPos, level: usize, action: &str) -> Option<MathPos> {
+pub fn apply_structure(
+    root: &mut Arg,
+    pos: &MathPos,
+    level: usize,
+    action: &str,
+) -> Option<MathPos> {
     let pos = clamp(root, pos);
     let &(j, c) = pos.path.get(level)?;
     let parent_path = pos.path.get(..level)?.to_vec();
-    let inner = MathPos { path: pos.path.clone(), off: pos.off };
+    let inner = MathPos {
+        path: pos.path.clone(),
+        off: pos.off,
+    };
     let parent = arg_at_mut(root, &parent_path)?;
     let start = node_start(parent, j);
     let node = parent.get_mut(j)?;
@@ -963,7 +1249,10 @@ pub fn apply_structure(root: &mut Arg, pos: &MathPos, level: usize, action: &str
             for (k, x) in dissolve(n).into_iter().enumerate() {
                 parent.insert(j + k, x);
             }
-            MathPos { path: parent_path.clone(), off: start }
+            MathPos {
+                path: parent_path.clone(),
+                off: start,
+            }
         }
         (MNode::Frac { kind, .. }, a) if a.starts_with("frac.") => {
             use crate::math::FracKind::*;
@@ -1010,7 +1299,8 @@ pub fn apply_structure(root: &mut Arg, pos: &MathPos, level: usize, action: &str
                 here(1)
             }
         }
-        (MNode::Nary { grow, .. }, "nary.toggleGrow") | (MNode::Delim { grow, .. }, "delim.toggleGrow") => {
+        (MNode::Nary { grow, .. }, "nary.toggleGrow")
+        | (MNode::Delim { grow, .. }, "delim.toggleGrow") => {
             *grow = !*grow;
             inner
         }
@@ -1037,7 +1327,8 @@ pub fn apply_structure(root: &mut Arg, pos: &MathPos, level: usize, action: &str
             sup.clear();
             here(1)
         }
-        (MNode::Script { kind, .. }, "script.addSup") | (MNode::Script { kind, .. }, "script.addSub") => {
+        (MNode::Script { kind, .. }, "script.addSup")
+        | (MNode::Script { kind, .. }, "script.addSub") => {
             *kind = ScriptKind::SubSup;
             here(if action == "script.addSup" { 2 } else { 1 })
         }
@@ -1062,7 +1353,11 @@ pub fn apply_structure(root: &mut Arg, pos: &MathPos, level: usize, action: &str
                     tr = at;
                 }
                 "matrix.colBefore" | "matrix.colAfter" if ncols < 64 => {
-                    let at = if a == "matrix.colBefore" { col } else { col + 1 };
+                    let at = if a == "matrix.colBefore" {
+                        col
+                    } else {
+                        col + 1
+                    };
                     for row in rows.iter_mut() {
                         row.insert(at.min(row.len()), Vec::new());
                     }
@@ -1162,11 +1457,25 @@ mod tests {
     #[test]
     fn build_up_and_autocorrect() {
         let mut eq: Arg = Vec::new();
-        let p = insert_text(&mut eq, &MathPos::default(), "x^2+\\alpha", TypeStyle::default());
+        let p = insert_text(
+            &mut eq,
+            &MathPos::default(),
+            "x^2+\\alpha",
+            TypeStyle::default(),
+        );
         let p = autocorrect(&mut eq, &p).unwrap();
         assert_eq!(lin(&eq), "x^2+α");
         let p = build_up(&mut eq, &p, false).unwrap();
-        assert!(matches!(eq[0], MNode::Script { kind: ScriptKind::Sup, .. }), "{eq:#?}");
+        assert!(
+            matches!(
+                eq[0],
+                MNode::Script {
+                    kind: ScriptKind::Sup,
+                    ..
+                }
+            ),
+            "{eq:#?}"
+        );
         assert_eq!(p.off, units(&eq));
         // An unclosed bracket waits.
         let mut eq: Arg = Vec::new();
@@ -1174,7 +1483,12 @@ mod tests {
         assert!(build_up(&mut eq, &p, false).is_none());
         // LaTeX input.
         let mut eq: Arg = Vec::new();
-        let p = insert_text(&mut eq, &MathPos::default(), "\\frac{a}{b}", TypeStyle::default());
+        let p = insert_text(
+            &mut eq,
+            &MathPos::default(),
+            "\\frac{a}{b}",
+            TypeStyle::default(),
+        );
         assert!(build_up(&mut eq, &p, true).is_some());
         assert!(matches!(eq[0], MNode::Frac { .. }));
     }
@@ -1219,13 +1533,21 @@ mod tests {
         assert_eq!(lin(&eq), "■(a&b&@c&d&@&&)");
         let _ = apply_structure(&mut eq, &p, 0, "matrix.deleteRow").unwrap();
         let mut eq = parse_linear("√x");
-        let p = apply_structure(&mut eq, &MathPos::new(vec![(0, 1)], 1), 0, "rad.toggleDegree").unwrap();
+        let p = apply_structure(
+            &mut eq,
+            &MathPos::new(vec![(0, 1)], 1),
+            0,
+            "rad.toggleDegree",
+        )
+        .unwrap();
         assert_eq!(p.path, vec![(0, 0)], "caret into the degree");
         let mut eq = parse_linear("a+(b)");
         apply_structure(&mut eq, &MathPos::new(vec![(1, 0)], 0), 0, "remove").unwrap();
         assert_eq!(lin(&eq), "a+b");
         // Every action on every structure, at hostile positions, never panics.
-        let all = parse_linear("x=(-b±√(3&b^2-4ac))/2a+∑_(i=1)^n▒i+■(a&b@c&d)+█(x@y)+⏞(a)+¯(b)+x_1^2+(a│b)");
+        let all = parse_linear(
+            "x=(-b±√(3&b^2-4ac))/2a+∑_(i=1)^n▒i+■(a&b@c&d)+█(x@y)+⏞(a)+¯(b)+x_1^2+(a│b)",
+        );
         let mut paths = Vec::new();
         arg_paths(&all, &mut Vec::new(), &mut paths, 0);
         for path in paths {
@@ -1241,7 +1563,12 @@ mod tests {
     #[test]
     fn hostile_positions_never_panic() {
         let mut eq = parse_linear("x=(-b±√(b^2-4ac))/2a+■(a&b@c&d)");
-        let bad = [MathPos::new(vec![(99, 99)], 5), MathPos::new(vec![(1, 9)], 999), MathPos::new(vec![(0, 0); 300], 0), MathPos::default()];
+        let bad = [
+            MathPos::new(vec![(99, 99)], 5),
+            MathPos::new(vec![(1, 9)], 999),
+            MathPos::new(vec![(0, 0); 300], 0),
+            MathPos::default(),
+        ];
         for p in &bad {
             let _ = move_left(&eq, p);
             let _ = move_right(&eq, p);

@@ -60,8 +60,11 @@ pub fn parse_credentials_text(content: &str) -> Option<OvhCredentials> {
         // 1. Check export VAR="VAL" or VAR=VAL
         let stripped = trimmed.strip_prefix("export ").unwrap_or(trimmed);
         if let Some((k, v)) = stripped.split_once('=') {
-            let key =
-                k.trim().trim_start_matches("dns_ovh_").trim_start_matches("OVH_").to_lowercase();
+            let key = k
+                .trim()
+                .trim_start_matches("dns_ovh_")
+                .trim_start_matches("OVH_")
+                .to_lowercase();
             let val = v.trim().trim_matches('"').trim_matches('\'').trim();
             vars.insert(key, val.to_string());
         }
@@ -69,7 +72,9 @@ pub fn parse_credentials_text(content: &str) -> Option<OvhCredentials> {
 
     let text = |key: &str| vars.get(key).filter(|v| !v.is_empty()).cloned();
     let creds = OvhCredentials {
-        application_key: text("application_key").or_else(|| text("app_key")).unwrap_or_default(),
+        application_key: text("application_key")
+            .or_else(|| text("app_key"))
+            .unwrap_or_default(),
         application_secret: text("application_secret")
             .or_else(|| text("app_secret"))
             .unwrap_or_default(),
@@ -201,8 +206,9 @@ pub fn resolve_credentials(
     let parsed = parse_candidates(&candidates);
 
     // 2. OAuth2 pair of a profile file.
-    if let Some((path, creds)) =
-        parsed.iter().find(|(_, c)| c.auth_mode() == Some(AuthMode::OAuth2))
+    if let Some((path, creds)) = parsed
+        .iter()
+        .find(|(_, c)| c.auth_mode() == Some(AuthMode::OAuth2))
     {
         return Ok((creds.clone(), CredentialSource::File(path.clone())));
     }
@@ -262,8 +268,10 @@ mod tests {
     }
 
     fn env_of(pairs: &[(&str, &str)]) -> impl Fn(&str) -> Option<String> {
-        let map: HashMap<String, String> =
-            pairs.iter().map(|(k, v)| ((*k).to_string(), (*v).to_string())).collect();
+        let map: HashMap<String, String> = pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), (*v).to_string()))
+            .collect();
         move |key| map.get(key).cloned()
     }
 
@@ -311,7 +319,10 @@ mod tests {
     fn environment_oauth_never_serves_another_account() {
         let home = tempfile::tempdir().unwrap();
         write(home.path(), ".ovh.conf", TRIPLET_FILE);
-        let env = env_of(&[("OVH_CLIENT_ID", "env-id"), ("OVH_CLIENT_SECRET", "env-secret")]);
+        let env = env_of(&[
+            ("OVH_CLIENT_ID", "env-id"),
+            ("OVH_CLIENT_SECRET", "env-secret"),
+        ]);
         let (creds, _) = resolve_credentials(&env, home.path(), Some("rosegriffon.fr")).unwrap();
         assert_eq!(creds.auth_mode(), Some(AuthMode::ApplicationKey));
     }
@@ -323,7 +334,10 @@ mod tests {
         write(home.path(), ".config/ovh/aphrody.conf", OAUTH_INI);
         let (creds, source) = resolve_credentials(&no_env, home.path(), None).unwrap();
         assert_eq!(creds.auth_mode(), Some(AuthMode::OAuth2));
-        assert_eq!(source, CredentialSource::File(home.path().join(".config/ovh/aphrody.conf")));
+        assert_eq!(
+            source,
+            CredentialSource::File(home.path().join(".config/ovh/aphrody.conf"))
+        );
     }
 
     #[test]
@@ -336,7 +350,10 @@ mod tests {
         );
         let (creds, source) = resolve_credentials(&no_env, home.path(), None).unwrap();
         assert_eq!(creds.client_id.as_deref(), Some("file-id"));
-        assert_eq!(source, CredentialSource::File(home.path().join(SERVICE_ACCOUNT_ENV_FILE)));
+        assert_eq!(
+            source,
+            CredentialSource::File(home.path().join(SERVICE_ACCOUNT_ENV_FILE))
+        );
     }
 
     #[test]
@@ -372,7 +389,9 @@ mod tests {
     fn resolution_errors_carry_no_secret() {
         let home = tempfile::tempdir().unwrap();
         let env = env_of(&[("OVH_CLIENT_ID", "only-id")]);
-        let error = resolve_credentials(&env, home.path(), None).unwrap_err().to_string();
+        let error = resolve_credentials(&env, home.path(), None)
+            .unwrap_err()
+            .to_string();
         assert!(!error.contains("only-id"));
     }
 }

@@ -16,17 +16,25 @@ pub fn gemm(a: &[f32], m: usize, k: usize, b: &[f32], n: usize, out: &mut [f32])
     if m == 0 || n == 0 || a.len() < m * k || b.len() < k * n || out.len() < m * n {
         return;
     }
-    let Ok(bv) = ArrayView2::from_shape((k, n), &b[..k * n]) else { return };
+    let Ok(bv) = ArrayView2::from_shape((k, n), &b[..k * n]) else {
+        return;
+    };
     let block = |r0: usize, oc: &mut [f32]| {
         let rows = oc.len() / n;
-        if let (Ok(av), Ok(mut cv)) = (ArrayView2::from_shape((rows, k), &a[r0 * k..(r0 + rows) * k]), ArrayViewMut2::from_shape((rows, n), oc)) {
+        if let (Ok(av), Ok(mut cv)) = (
+            ArrayView2::from_shape((rows, k), &a[r0 * k..(r0 + rows) * k]),
+            ArrayViewMut2::from_shape((rows, n), oc),
+        ) {
             general_mat_mul(1.0, &av, &bv, 1.0, &mut cv);
         }
     };
     if m <= ROW_BLOCK {
         block(0, &mut out[..m * n]);
     } else {
-        out[..m * n].par_chunks_mut(ROW_BLOCK * n).enumerate().for_each(|(i, oc)| block(i * ROW_BLOCK, oc));
+        out[..m * n]
+            .par_chunks_mut(ROW_BLOCK * n)
+            .enumerate()
+            .for_each(|(i, oc)| block(i * ROW_BLOCK, oc));
     }
 }
 
@@ -52,7 +60,12 @@ impl Linear {
                 wt[i * out + o] = w[o * inp + i];
             }
         }
-        Some(Linear { wt, b: b.map_or_else(|| vec![0.0; out], <[f32]>::to_vec), inp, out })
+        Some(Linear {
+            wt,
+            b: b.map_or_else(|| vec![0.0; out], <[f32]>::to_vec),
+            inp,
+            out,
+        })
     }
 
     /// `rows` tokens of `inp` channels → `rows × out`.
@@ -79,7 +92,15 @@ pub struct Conv {
 
 impl Conv {
     /// From PyTorch's `[out × inp × ks × ks]`.
-    pub fn new(w: &[f32], b: Option<&[f32]>, out: usize, inp: usize, ks: usize, stride: usize, pad: usize) -> Option<Conv> {
+    pub fn new(
+        w: &[f32],
+        b: Option<&[f32]>,
+        out: usize,
+        inp: usize,
+        ks: usize,
+        stride: usize,
+        pad: usize,
+    ) -> Option<Conv> {
         if w.len() != out * inp * ks * ks || b.is_some_and(|b| b.len() != out) || stride == 0 {
             return None;
         }
@@ -92,7 +113,15 @@ impl Conv {
                 }
             }
         }
-        Some(Conv { wt, b: b.map_or_else(|| vec![0.0; out], <[f32]>::to_vec), inp, out, ks, stride, pad })
+        Some(Conv {
+            wt,
+            b: b.map_or_else(|| vec![0.0; out], <[f32]>::to_vec),
+            inp,
+            out,
+            ks,
+            stride,
+            pad,
+        })
     }
 
     pub fn out_size(&self, n: usize) -> usize {
@@ -106,40 +135,50 @@ impl Conv {
 
     /// An `oh×ow` output with `pad` (top, left) zero rows and columns before the input; what
     /// falls past the input's far edges is zero too (so asymmetric "same" padding works).
-    pub fn forward_sized(&self, x: &[f32], h: usize, w: usize, oh: usize, ow: usize, pad: [usize; 2]) -> Vec<f32> {
+    pub fn forward_sized(
+        &self,
+        x: &[f32],
+        h: usize,
+        w: usize,
+        oh: usize,
+        ow: usize,
+        pad: [usize; 2],
+    ) -> Vec<f32> {
         let kk = self.ks * self.ks * self.inp;
         let mut y: Vec<f32> = (0..oh * ow).flat_map(|_| self.b.iter().copied()).collect();
         if x.len() < h * w * self.inp || self.wt.len() < kk * self.out {
             return y;
         }
-        y.par_chunks_mut(ow * self.out).enumerate().for_each(|(oy, row)| {
-            // This output row's patches.
-            let mut patch = vec![0.0f32; ow * kk];
-            for ox in 0..ow {
-                for ky in 0..self.ks {
-                    let iy = (oy * self.stride + ky) as isize - pad[0] as isize;
-                    if iy < 0 || iy >= h as isize {
-                        continue;
-                    }
-                    for kx in 0..self.ks {
-                        let ix = (ox * self.stride + kx) as isize - pad[1] as isize;
-                        if ix < 0 || ix >= w as isize {
+        y.par_chunks_mut(ow * self.out)
+            .enumerate()
+            .for_each(|(oy, row)| {
+                // This output row's patches.
+                let mut patch = vec![0.0f32; ow * kk];
+                for ox in 0..ow {
+                    for ky in 0..self.ks {
+                        let iy = (oy * self.stride + ky) as isize - pad[0] as isize;
+                        if iy < 0 || iy >= h as isize {
                             continue;
                         }
-                        let src = (iy as usize * w + ix as usize) * self.inp;
-                        let dst = ox * kk + (ky * self.ks + kx) * self.inp;
-                        patch[dst..dst + self.inp].copy_from_slice(&x[src..src + self.inp]);
+                        for kx in 0..self.ks {
+                            let ix = (ox * self.stride + kx) as isize - pad[1] as isize;
+                            if ix < 0 || ix >= w as isize {
+                                continue;
+                            }
+                            let src = (iy as usize * w + ix as usize) * self.inp;
+                            let dst = ox * kk + (ky * self.ks + kx) * self.inp;
+                            patch[dst..dst + self.inp].copy_from_slice(&x[src..src + self.inp]);
+                        }
                     }
                 }
-            }
-            if let (Ok(av), Ok(bv), Ok(mut cv)) = (
-                ArrayView2::from_shape((ow, kk), &patch[..]),
-                ArrayView2::from_shape((kk, self.out), &self.wt[..]),
-                ArrayViewMut2::from_shape((ow, self.out), row),
-            ) {
-                general_mat_mul(1.0, &av, &bv, 1.0, &mut cv);
-            }
-        });
+                if let (Ok(av), Ok(bv), Ok(mut cv)) = (
+                    ArrayView2::from_shape((ow, kk), &patch[..]),
+                    ArrayView2::from_shape((kk, self.out), &self.wt[..]),
+                    ArrayViewMut2::from_shape((ow, self.out), row),
+                ) {
+                    general_mat_mul(1.0, &av, &bv, 1.0, &mut cv);
+                }
+            });
         y
     }
 }
@@ -167,7 +206,13 @@ impl Depthwise {
                 wt[t * c + ch] = w[ch * 9 + t];
             }
         }
-        Some(Depthwise { w: wt, b: b.map_or_else(|| vec![0.0; c], <[f32]>::to_vec), c, ks: 3, stride })
+        Some(Depthwise {
+            w: wt,
+            b: b.map_or_else(|| vec![0.0; c], <[f32]>::to_vec),
+            c,
+            ks: 3,
+            stride,
+        })
     }
 
     /// 3×3 with padding 1.
@@ -177,7 +222,15 @@ impl Depthwise {
     }
 
     /// An `oh×ow` output with `pad` (top, left) before the input, as [`Conv::forward_sized`].
-    pub fn forward_sized(&self, x: &[f32], h: usize, w: usize, oh: usize, ow: usize, pad: [usize; 2]) -> Vec<f32> {
+    pub fn forward_sized(
+        &self,
+        x: &[f32],
+        h: usize,
+        w: usize,
+        oh: usize,
+        ow: usize,
+        pad: [usize; 2],
+    ) -> Vec<f32> {
         let (c, ks) = (self.c, self.ks);
         let mut y = vec![0.0f32; oh * ow * c];
         if x.len() < h * w * c || self.w.len() < ks * ks * c || self.b.len() < c {
@@ -233,7 +286,12 @@ impl Upconv {
                         wt[i * out + o] = w[(i * out + o) * 4 + t];
                     }
                 }
-                Linear { wt, b: b.to_vec(), inp, out }
+                Linear {
+                    wt,
+                    b: b.to_vec(),
+                    inp,
+                    out,
+                }
             })
             .collect();
         Some(Upconv { taps, out })
@@ -248,7 +306,8 @@ impl Upconv {
             for p in 0..h * w {
                 let (py, px) = (p / w, p % w);
                 let dst = ((2 * py + dy) * ow + 2 * px + dx) * c;
-                if let (Some(d), Some(s)) = (y.get_mut(dst..dst + c), part.get(p * c..(p + 1) * c)) {
+                if let (Some(d), Some(s)) = (y.get_mut(dst..dst + c), part.get(p * c..(p + 1) * c))
+                {
                     d.copy_from_slice(s);
                 }
             }
@@ -287,7 +346,11 @@ fn erf(x: f32) -> f32 {
     let s = x.signum();
     let x = x.abs() as f64;
     let t = 1.0 / (1.0 + 0.327_591_1 * x);
-    let y = 1.0 - (((((1.061_405_429 * t - 1.453_152_027) * t) + 1.421_413_741) * t - 0.284_496_736) * t + 0.254_829_592) * t * (-x * x).exp();
+    let y = 1.0
+        - (((((1.061_405_429 * t - 1.453_152_027) * t) + 1.421_413_741) * t - 0.284_496_736) * t
+            + 0.254_829_592)
+            * t
+            * (-x * x).exp();
     s * y as f32
 }
 
@@ -308,11 +371,13 @@ pub fn relu(x: &mut [f32]) {
 
 /// `a += b`.
 pub fn add(a: &mut [f32], b: &[f32]) {
-    a.par_chunks_mut(4096).zip(b.par_chunks(4096)).for_each(|(a, b)| {
-        for (x, y) in a.iter_mut().zip(b) {
-            *x += y;
-        }
-    });
+    a.par_chunks_mut(4096)
+        .zip(b.par_chunks(4096))
+        .for_each(|(a, b)| {
+            for (x, y) in a.iter_mut().zip(b) {
+                *x += y;
+            }
+        });
 }
 
 /// Softmax of each row of `n` values, in place.
@@ -336,7 +401,16 @@ pub fn softmax_rows(x: &mut [f32], n: usize) {
 
 /// Multi-head scaled dot-product attention of `nq` queries over `nk` keys/values, each `heads ×
 /// hd` wide (token-major, heads side by side), plus an optional per-head bias `[heads × nq × nk]`.
-pub fn attention(q: &[f32], k: &[f32], v: &[f32], nq: usize, nk: usize, heads: usize, hd: usize, bias: Option<&[f32]>) -> Vec<f32> {
+pub fn attention(
+    q: &[f32],
+    k: &[f32],
+    v: &[f32],
+    nq: usize,
+    nk: usize,
+    heads: usize,
+    hd: usize,
+    bias: Option<&[f32]>,
+) -> Vec<f32> {
     let dim = heads * hd;
     let mut out = vec![0.0f32; nq * dim];
     if q.len() < nq * dim || k.len() < nk * dim || v.len() < nk * dim {
@@ -345,14 +419,18 @@ pub fn attention(q: &[f32], k: &[f32], v: &[f32], nq: usize, nk: usize, heads: u
     let scale = 1.0 / (hd as f32).sqrt();
     for h in 0..heads {
         // This head's q, kᵀ and v as contiguous matrices.
-        let qh: Vec<f32> = (0..nq).flat_map(|i| q[i * dim + h * hd..][..hd].iter().map(|x| x * scale)).collect();
+        let qh: Vec<f32> = (0..nq)
+            .flat_map(|i| q[i * dim + h * hd..][..hd].iter().map(|x| x * scale))
+            .collect();
         let mut kt = vec![0.0f32; hd * nk];
         for j in 0..nk {
             for d in 0..hd {
                 kt[d * nk + j] = k[j * dim + h * hd + d];
             }
         }
-        let vh: Vec<f32> = (0..nk).flat_map(|j| v[j * dim + h * hd..][..hd].iter().copied()).collect();
+        let vh: Vec<f32> = (0..nk)
+            .flat_map(|j| v[j * dim + h * hd..][..hd].iter().copied())
+            .collect();
         let mut s = match bias.and_then(|b| b.get(h * nq * nk..(h + 1) * nq * nk)) {
             Some(b) => b.to_vec(),
             None => vec![0.0; nq * nk],
@@ -392,7 +470,9 @@ mod tests {
         // 3×3 stride-2 conv on a 5×4×2 input vs. the definition.
         let (h, w, inp, out) = (5, 4, 2, 3);
         let x: Vec<f32> = (0..h * w * inp).map(|i| (i % 7) as f32 * 0.5).collect();
-        let wt: Vec<f32> = (0..out * inp * 9).map(|i| ((i % 5) as f32 - 2.0) * 0.25).collect();
+        let wt: Vec<f32> = (0..out * inp * 9)
+            .map(|i| ((i % 5) as f32 - 2.0) * 0.25)
+            .collect();
         let b = [0.1, -0.2, 0.3];
         let conv = Conv::new(&wt, Some(&b), out, inp, 3, 2, 1).unwrap();
         let (y, oh, ow) = conv.forward(&x, h, w);
@@ -404,9 +484,11 @@ mod tests {
                     for ci in 0..inp {
                         for ky in 0..3 {
                             for kx in 0..3 {
-                                let (iy, ix) = ((oy * 2 + ky) as isize - 1, (ox * 2 + kx) as isize - 1);
+                                let (iy, ix) =
+                                    ((oy * 2 + ky) as isize - 1, (ox * 2 + kx) as isize - 1);
                                 if iy >= 0 && ix >= 0 && iy < h as isize && ix < w as isize {
-                                    s += x[(iy as usize * w + ix as usize) * inp + ci] * wt[((o * inp + ci) * 3 + ky) * 3 + kx];
+                                    s += x[(iy as usize * w + ix as usize) * inp + ci]
+                                        * wt[((o * inp + ci) * 3 + ky) * 3 + kx];
                                 }
                             }
                         }

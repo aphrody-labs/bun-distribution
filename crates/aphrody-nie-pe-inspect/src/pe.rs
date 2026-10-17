@@ -242,7 +242,10 @@ struct BoundedJsonWriter {
 
 impl BoundedJsonWriter {
     fn new(limit: usize) -> Self {
-        Self { bytes: Vec::with_capacity(limit.min(64 * 1024)), limit }
+        Self {
+            bytes: Vec::with_capacity(limit.min(64 * 1024)),
+            limit,
+        }
     }
 
     fn into_bytes(self) -> Vec<u8> {
@@ -282,7 +285,7 @@ fn report_from_pe(pe: &PE<'_>) -> PeReport {
             // PE32+ magic = 0x20b; PE32 = 0x10b
             let is64 = opt.standard_fields.magic == 0x020b;
             (sub, is64)
-        },
+        }
         None => (String::from("(no optional header)"), pe.is_64),
     };
 
@@ -294,8 +297,10 @@ fn report_from_pe(pe: &PE<'_>) -> PeReport {
         .iter()
         .map(|s| {
             // The COFF name field is exactly 8 bytes; strip trailing NULs/spaces.
-            let raw_name =
-                std::str::from_utf8(&s.name).unwrap_or("").trim_end_matches('\0').trim_end();
+            let raw_name = std::str::from_utf8(&s.name)
+                .unwrap_or("")
+                .trim_end_matches('\0')
+                .trim_end();
             // If goblin resolved a long name via the string table, prefer that.
             let name = s.real_name.as_deref().unwrap_or(raw_name).to_owned();
             SectionInfo {
@@ -324,7 +329,9 @@ fn report_from_pe(pe: &PE<'_>) -> PeReport {
         // Ordinal-only imports have a synthesised name like "#NNN" in goblin's
         // Cow<str> — we just store it verbatim; it clearly signals no symbol name.
         let func_name = imp.name.as_ref().to_owned();
-        let funcs = dll_funcs.get_mut(&dll_key).expect("just inserted above; invariant holds");
+        let funcs = dll_funcs
+            .get_mut(&dll_key)
+            .expect("just inserted above; invariant holds");
         if !funcs.contains(&func_name) {
             funcs.push(func_name);
         }
@@ -335,7 +342,10 @@ fn report_from_pe(pe: &PE<'_>) -> PeReport {
         .filter_map(|dll| {
             dll_funcs.remove(&dll).map(|mut funcs| {
                 funcs.sort_unstable();
-                ImportInfo { dll, functions: funcs }
+                ImportInfo {
+                    dll,
+                    functions: funcs,
+                }
             })
         })
         .collect();
@@ -343,17 +353,29 @@ fn report_from_pe(pe: &PE<'_>) -> PeReport {
     // ── exports ──────────────────────────────────────────────────────────────
     // Only include exports that have a real symbol name; skip forwarders that
     // happen to be unnamed.
-    let mut exports: Vec<String> =
-        pe.exports.iter().filter_map(|e| e.name.map(str::to_owned)).collect();
+    let mut exports: Vec<String> = pe
+        .exports
+        .iter()
+        .filter_map(|e| e.name.map(str::to_owned))
+        .collect();
     exports.sort_unstable();
     exports.dedup();
 
-    PeReport { machine, subsystem, timestamp, sections, imports, exports, is_64bit }
+    PeReport {
+        machine,
+        subsystem,
+        timestamp,
+        sections,
+        imports,
+        exports,
+        is_64bit,
+    }
 }
 
 fn parse_bounded_pe(bytes: &[u8]) -> anyhow::Result<PE<'_>> {
-    let mut options =
-        ParseOptions::default().with_parse_resources(false).with_parse_tls_data(false);
+    let mut options = ParseOptions::default()
+        .with_parse_resources(false)
+        .with_parse_tls_data(false);
     // These structures are not part of PeReport. Skipping them avoids work
     // and allocations driven by untrusted directory-table metadata.
     options.parse_attribute_certificates = false;
@@ -369,17 +391,40 @@ fn validate_limits(limits: PeInspectionLimits) -> anyhow::Result<()> {
     const MAX_STRING_BYTES: usize = 4_096;
 
     let values = [
-        ("max_input_bytes", limits.max_input_bytes, MAX_BOUNDED_PE_INPUT_BYTES),
+        (
+            "max_input_bytes",
+            limits.max_input_bytes,
+            MAX_BOUNDED_PE_INPUT_BYTES,
+        ),
         ("max_sections", limits.max_sections, MAX_SECTIONS),
-        ("max_import_libraries", limits.max_import_libraries, MAX_IMPORT_LIBRARIES),
-        ("max_import_symbols", limits.max_import_symbols, MAX_IMPORT_SYMBOLS),
+        (
+            "max_import_libraries",
+            limits.max_import_libraries,
+            MAX_IMPORT_LIBRARIES,
+        ),
+        (
+            "max_import_symbols",
+            limits.max_import_symbols,
+            MAX_IMPORT_SYMBOLS,
+        ),
         ("max_exports", limits.max_exports, MAX_EXPORTS),
-        ("max_string_bytes", limits.max_string_bytes, MAX_STRING_BYTES),
-        ("max_json_bytes", limits.max_json_bytes, MAX_BOUNDED_PE_JSON_BYTES),
+        (
+            "max_string_bytes",
+            limits.max_string_bytes,
+            MAX_STRING_BYTES,
+        ),
+        (
+            "max_json_bytes",
+            limits.max_json_bytes,
+            MAX_BOUNDED_PE_JSON_BYTES,
+        ),
     ];
     for (name, value, hard_maximum) in values {
         anyhow::ensure!(value > 0, "{name} must be greater than zero");
-        anyhow::ensure!(value <= hard_maximum, "{name} is {value}; hard maximum is {hard_maximum}");
+        anyhow::ensure!(
+            value <= hard_maximum,
+            "{name} is {value}; hard maximum is {hard_maximum}"
+        );
     }
     Ok(())
 }
@@ -396,7 +441,11 @@ fn validate_parsed_pe(pe: &PE<'_>, limits: PeInspectionLimits) -> anyhow::Result
     for import in &pe.imports {
         libraries.insert(import.dll);
         validate_name("import library", import.dll, limits.max_string_bytes)?;
-        validate_name("import symbol", import.name.as_ref(), limits.max_string_bytes)?;
+        validate_name(
+            "import symbol",
+            import.name.as_ref(),
+            limits.max_string_bytes,
+        )?;
     }
     anyhow::ensure!(
         libraries.len() <= limits.max_import_libraries,
@@ -411,7 +460,11 @@ fn validate_parsed_pe(pe: &PE<'_>, limits: PeInspectionLimits) -> anyhow::Result
         limits.max_import_symbols
     );
 
-    let named_exports = pe.exports.iter().filter(|export| export.name.is_some()).count();
+    let named_exports = pe
+        .exports
+        .iter()
+        .filter(|export| export.name.is_some())
+        .count();
     anyhow::ensure!(
         named_exports <= limits.max_exports,
         "PE exports {named_exports} named symbols; limit is {}",
@@ -424,7 +477,10 @@ fn validate_parsed_pe(pe: &PE<'_>, limits: PeInspectionLimits) -> anyhow::Result
     }
     for section in &pe.sections {
         let name = section.real_name.as_deref().unwrap_or_else(|| {
-            std::str::from_utf8(&section.name).unwrap_or("").trim_end_matches('\0').trim_end()
+            std::str::from_utf8(&section.name)
+                .unwrap_or("")
+                .trim_end_matches('\0')
+                .trim_end()
         });
         validate_name("section", name, limits.max_string_bytes)?;
     }
@@ -458,9 +514,17 @@ impl PeReport {
         writeln!(
             out,
             "  Bitness   : {}",
-            if self.is_64bit { "64-bit (PE32+)" } else { "32-bit (PE32)" }
+            if self.is_64bit {
+                "64-bit (PE32+)"
+            } else {
+                "32-bit (PE32)"
+            }
         )?;
-        writeln!(out, "  Timestamp : {} (0x{:08x})", self.timestamp, self.timestamp)?;
+        writeln!(
+            out,
+            "  Timestamp : {} (0x{:08x})",
+            self.timestamp, self.timestamp
+        )?;
 
         writeln!(out)?;
         writeln!(out, "--- Sections ({}) ---", self.sections.len())?;
@@ -629,14 +693,22 @@ mod tests {
 
         let report = inspect(path).expect("inspect should succeed on nie.exe");
 
-        assert!(!report.sections.is_empty(), "expected at least one section, got 0");
-        assert!(!report.imports.is_empty(), "expected at least one import DLL, got 0");
+        assert!(
+            !report.sections.is_empty(),
+            "expected at least one section, got 0"
+        );
+        assert!(
+            !report.imports.is_empty(),
+            "expected at least one import DLL, got 0"
+        );
         assert_eq!(report.machine, "AMD64", "nie.exe should be AMD64");
         assert!(report.is_64bit, "nie.exe should be PE32+");
 
         // Print summary to stderr so it shows up with `cargo test -- --nocapture`.
         let mut buf = Vec::<u8>::new();
-        report.print_summary(&mut buf).expect("print_summary should not fail");
+        report
+            .print_summary(&mut buf)
+            .expect("print_summary should not fail");
         eprintln!("{}", String::from_utf8_lossy(&buf));
     }
 
@@ -646,8 +718,11 @@ mod tests {
     fn section_name_trim() {
         // Simulate a `.text\0\0\0` COFF section name.
         let raw: [u8; 8] = *b".text\x00\x00\x00";
-        let trimmed =
-            std::str::from_utf8(&raw).unwrap_or("").trim_end_matches('\0').trim_end().to_owned();
+        let trimmed = std::str::from_utf8(&raw)
+            .unwrap_or("")
+            .trim_end_matches('\0')
+            .trim_end()
+            .to_owned();
         assert_eq!(trimmed, ".text");
     }
 
@@ -705,8 +780,10 @@ mod tests {
             .to_string();
         assert!(input_error.contains("PE input is"));
 
-        let short_name =
-            PeInspectionLimits { max_string_bytes: 4, ..PeInspectionLimits::default() };
+        let short_name = PeInspectionLimits {
+            max_string_bytes: 4,
+            ..PeInspectionLimits::default()
+        };
         let name_error = inspect_bytes_bounded_with_limits(&bytes, short_name)
             .expect_err("name limit must be enforced")
             .to_string();
@@ -715,7 +792,10 @@ mod tests {
 
     #[test]
     fn bounded_json_rejects_output_limit_violation() {
-        let limits = PeInspectionLimits { max_json_bytes: 1, ..PeInspectionLimits::default() };
+        let limits = PeInspectionLimits {
+            max_json_bytes: 1,
+            ..PeInspectionLimits::default()
+        };
         let error = inspect_bytes_json_with_limits(&synthetic_pe(), limits)
             .expect_err("JSON limit must be enforced")
             .to_string();

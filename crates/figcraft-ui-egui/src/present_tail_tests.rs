@@ -17,11 +17,16 @@ use crate::Services;
 use crate::present_tests::{Ui as Harness, id};
 
 fn ex(s: &mut Session, cmd: &str, p: Value) -> Value {
-    s.execute(cmd, &p).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
+    s.execute(cmd, &p)
+        .unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
 }
 
 fn frame(s: &mut Session, name: &str, x: f64) -> NodeId {
-    id(&ex(s, "frame.create", json!({"x": x, "y": 0, "width": 300, "height": 400, "name": name})))
+    id(&ex(
+        s,
+        "frame.create",
+        json!({"x": x, "y": 0, "width": 300, "height": 400, "name": name}),
+    ))
 }
 
 fn key_trigger(s: &mut Session, layer: NodeId, key: &str, action: Value) {
@@ -33,7 +38,10 @@ fn key_trigger(s: &mut Session, layer: NodeId, key: &str, action: Value) {
 }
 
 fn screen(u: &Harness) -> String {
-    u.app.inspect()["presenter"]["name"].as_str().unwrap_or_default().to_string()
+    u.app.inspect()["presenter"]["name"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string()
 }
 
 /// Controllers as the system reports them: the buttons held (bit i: standard index i), and how
@@ -56,13 +64,29 @@ fn pads_setup() -> (Harness, Arc<AtomicU32>, Arc<AtomicUsize>) {
     let mut s = Session::new();
     let a = frame(&mut s, "A", 0.0);
     let b = frame(&mut s, "B", 400.0);
-    let on_a = id(&ex(&mut s, "shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 30, "parent": a})));
-    let on_b = id(&ex(&mut s, "shape.rectangle", json!({"x": 410, "y": 10, "width": 30, "height": 30, "parent": b})));
-    key_trigger(&mut s, on_a, "Gamepad A", json!({"type": "navigate", "dest": b}));
+    let on_a = id(&ex(
+        &mut s,
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 30, "height": 30, "parent": a}),
+    ));
+    let on_b = id(&ex(
+        &mut s,
+        "shape.rectangle",
+        json!({"x": 410, "y": 10, "width": 30, "height": 30, "parent": b}),
+    ));
+    key_trigger(
+        &mut s,
+        on_a,
+        "Gamepad A",
+        json!({"type": "navigate", "dest": b}),
+    );
     key_trigger(&mut s, on_b, "Gamepad B", json!({"type": "back"}));
     let (held, polls) = (Arc::new(AtomicU32::new(0)), Arc::new(AtomicUsize::new(0)));
     let mut u = Harness::new(s);
-    u.app.services = Box::new(FakePads { held: held.clone(), polls: polls.clone() });
+    u.app.services = Box::new(FakePads {
+        held: held.clone(),
+        polls: polls.clone(),
+    });
     u.run("proto.present", json!({"start": a}));
     (u, held, polls)
 }
@@ -74,9 +98,21 @@ fn controller_buttons_play_key_gamepad_triggers() {
     assert_eq!(screen(&u), "A");
     // (buttons held, screen after, derivation)
     let steps = [
-        (0b01, "B", "pressing the trigger's button anywhere on the screen plays it, like its key"),
-        (0b01, "B", "a button held down plays once, not again every frame"),
-        (0b11, "A", "another button while one is held: B's trigger goes back"),
+        (
+            0b01,
+            "B",
+            "pressing the trigger's button anywhere on the screen plays it, like its key",
+        ),
+        (
+            0b01,
+            "B",
+            "a button held down plays once, not again every frame",
+        ),
+        (
+            0b11,
+            "A",
+            "another button while one is held: B's trigger goes back",
+        ),
         (0b00, "A", "releasing does nothing (the trigger is a press)"),
         (1 << 2, "A", "a button no trigger names does nothing"),
         (0b01, "B", "pressed again after letting go: plays again"),
@@ -86,17 +122,36 @@ fn controller_buttons_play_key_gamepad_triggers() {
         u.frames(2, Vec::new);
         assert_eq!(screen(&u), want, "held {bits:#b}: {why}");
     }
-    assert!(polls.load(Ordering::Relaxed) >= steps.len() * 2, "polled every frame while presenting");
+    assert!(
+        polls.load(Ordering::Relaxed) >= steps.len() * 2,
+        "polled every frame while presenting"
+    );
     // The control channel presses buttons too: by short name, trigger name or index.
     let ctx = u.ctx.clone();
     held.store(0, Ordering::Relaxed);
-    for (button, want) in [(json!("B"), "A"), (json!("gamepad a"), "B"), (json!(1), "A")] {
-        crate::control::handle(&mut u.app, &ctx, "ui.input", &json!({"events": [{"gamepad": button}]})).unwrap();
+    for (button, want) in [
+        (json!("B"), "A"),
+        (json!("gamepad a"), "B"),
+        (json!(1), "A"),
+    ] {
+        crate::control::handle(
+            &mut u.app,
+            &ctx,
+            "ui.input",
+            &json!({"events": [{"gamepad": button}]}),
+        )
+        .unwrap();
         u.frames(2, Vec::new);
         assert_eq!(screen(&u), want, "{button}");
     }
     for junk in [json!("Z"), json!(17), json!(-1), json!(null), json!([0])] {
-        let e = crate::control::handle(&mut u.app, &ctx, "ui.input", &json!({"events": [{"gamepad": junk}]})).unwrap_err();
+        let e = crate::control::handle(
+            &mut u.app,
+            &ctx,
+            "ui.input",
+            &json!({"events": [{"gamepad": junk}]}),
+        )
+        .unwrap_err();
         assert!(e.contains("unknown controller button"), "{junk}: {e}");
     }
 }
@@ -108,15 +163,28 @@ fn prototypes_without_gamepad_triggers_dont_poll() {
     let held = Arc::new(AtomicU32::new(1));
     let polls = Arc::new(AtomicUsize::new(0));
     let mut u = Harness::new(s);
-    u.app.services = Box::new(FakePads { held, polls: polls.clone() });
+    u.app.services = Box::new(FakePads {
+        held,
+        polls: polls.clone(),
+    });
     let ctx = u.ctx.clone();
     // Nothing plays: a controller button needs a prototype to go to.
-    let e = crate::control::handle(&mut u.app, &ctx, "ui.input", &json!({"events": [{"gamepad": "A"}]})).unwrap_err();
+    let e = crate::control::handle(
+        &mut u.app,
+        &ctx,
+        "ui.input",
+        &json!({"events": [{"gamepad": "A"}]}),
+    )
+    .unwrap_err();
     assert!(e.contains("prototype that is playing"), "{e}");
     u.run("proto.present", json!({"start": a}));
     u.frames(5, Vec::new);
     assert_eq!(u.app.inspect()["presenter"]["gamepad"], json!(false));
-    assert_eq!(polls.load(Ordering::Relaxed), 0, "no gamepad triggers: the controllers are left alone");
+    assert_eq!(
+        polls.load(Ordering::Relaxed),
+        0,
+        "no gamepad triggers: the controllers are left alone"
+    );
 }
 
 /// A widget plugin: inserted it shows "one" (state n: 1) with a clickable square `inc`; clicked,
@@ -157,12 +225,27 @@ fn widget_module() -> Vec<u8> {
 fn widget_setup() -> (Harness, NodeId, NodeId) {
     let mut s = Session::new();
     let manifest = json!({"id": "org.test.tally", "name": "Tally", "version": "1.0.0", "main": "w.wasm", "api": 3, "widget": true, "permissions": {"access": "read"}});
-    ex(&mut s, "plugin.import", json!({"manifest": manifest, "wasm": base64::engine::general_purpose::STANDARD.encode(widget_module())}));
+    ex(
+        &mut s,
+        "plugin.import",
+        json!({"manifest": manifest, "wasm": base64::engine::general_purpose::STANDARD.encode(widget_module())}),
+    );
     let a = frame(&mut s, "A", 0.0);
-    let w = id(&ex(&mut s, "widget.insert", json!({"plugin": "org.test.tally", "x": 40, "y": 40})));
+    let w = id(&ex(
+        &mut s,
+        "widget.insert",
+        json!({"plugin": "org.test.tally", "x": 40, "y": 40}),
+    ));
     ex(&mut s, "node.reparent", json!({"ids": [w], "parent": a}));
     let doc = s.doc().unwrap();
-    let square = doc.subtree(w).into_iter().find(|i| doc.node(*i).is_some_and(|n| n.plugin_data.contains_key("figcraft.widget.target"))).unwrap();
+    let square = doc
+        .subtree(w)
+        .into_iter()
+        .find(|i| {
+            doc.node(*i)
+                .is_some_and(|n| n.plugin_data.contains_key("figcraft.widget.target"))
+        })
+        .unwrap();
     let mut u = Harness::new(s);
     u.run("proto.present", json!({"start": a}));
     u.frames(2, Vec::new);
@@ -170,7 +253,9 @@ fn widget_setup() -> (Harness, NodeId, NodeId) {
 }
 
 fn state(doc: &figcraft_doc::Document, w: NodeId) -> String {
-    doc.node(w).and_then(|n| n.plugin_data.get("figcraft.widget.state").cloned()).unwrap_or_default()
+    doc.node(w)
+        .and_then(|n| n.plugin_data.get("figcraft.widget.state").cloned())
+        .unwrap_or_default()
 }
 
 /// Where layer `id` shows in the presenter.
@@ -185,7 +270,12 @@ fn toast(u: &Harness) -> Option<String> {
 }
 
 fn click(u: &mut Harness, at: egui::Pos2) {
-    let b = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Default::default() };
+    let b = |pressed| Event::PointerButton {
+        pos: at,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Default::default(),
+    };
     u.frame(vec![Event::PointerMoved(at)]);
     u.frame(vec![b(true)]);
     u.frame(vec![b(false)]);
@@ -201,13 +291,23 @@ fn widgets_react_to_clicks_in_the_presented_prototype() {
     // A click on a clickable part calls the plugin back, which redraws the widget in the prototype.
     let r = on_screen(&u, square);
     click(&mut u, r.center());
-    assert_eq!(player(&u), r#"{"n":2}"#, "the widget reacted in the prototype");
+    assert_eq!(
+        player(&u),
+        r#"{"n":2}"#,
+        "the widget reacted in the prototype"
+    );
     // Docs silent (pinned): the state is the prototype's; the file, its history and the canvas
     // keep theirs, and restarting starts over.
     assert_eq!(state(u.app.session.doc().unwrap(), w), r#"{"n":1}"#);
     assert_eq!(u.app.session.ds().unwrap().history.undo.len(), undo);
     assert_eq!(toast(&u), None, "no error");
-    let r_key = |pressed| Event::Key { key: egui::Key::R, physical_key: None, pressed, repeat: false, modifiers: Default::default() };
+    let r_key = |pressed| Event::Key {
+        key: egui::Key::R,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers: Default::default(),
+    };
     u.frame(vec![r_key(true), r_key(false)]);
     u.frames(2, Vec::new);
     assert_eq!(player(&u), r#"{"n":1}"#, "restarted");
@@ -221,19 +321,30 @@ fn widgets_react_to_clicks_in_the_presented_prototype() {
 #[test]
 fn a_widget_without_its_plugin_says_so_and_stays() {
     let (mut u, w, square) = widget_setup();
-    u.app.session.execute("plugin.remove", &json!({"id": "org.test.tally"})).unwrap();
+    u.app
+        .session
+        .execute("plugin.remove", &json!({"id": "org.test.tally"}))
+        .unwrap();
     let r = on_screen(&u, square);
     click(&mut u, r.center());
     let p = u.app.ui.present.as_ref().unwrap();
     assert_eq!(state(p.doc.as_ref().unwrap(), w), r#"{"n":1}"#);
-    assert!(toast(&u).is_some_and(|t| t.contains("no plugin")), "{:?}", toast(&u));
+    assert!(
+        toast(&u).is_some_and(|t| t.contains("no plugin")),
+        "{:?}",
+        toast(&u)
+    );
 }
 
 #[test]
 fn the_interaction_editor_picks_a_controller_button() {
     let mut s = Session::new();
     let a = frame(&mut s, "A", 0.0);
-    let layer = id(&ex(&mut s, "shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 30, "parent": a})));
+    let layer = id(&ex(
+        &mut s,
+        "shape.rectangle",
+        json!({"x": 10, "y": 10, "width": 30, "height": 30, "parent": a}),
+    ));
     key_trigger(&mut s, layer, "K", json!({"type": "back"}));
     ex(&mut s, "select.set", json!({"ids": [layer]}));
     let mut u = crate::layers_drag_tests::Ui::new(s);
@@ -242,8 +353,17 @@ fn the_interaction_editor_picks_a_controller_button() {
     u.ctx.enable_accesskit();
     u.frame(vec![]);
     let at = |u: &mut crate::layers_drag_tests::Ui, name: &str| {
-        let nodes = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
-        let b = nodes.iter().map(|(_, n)| n).find(|n| n.label() == Some(name) || n.value() == Some(name)).and_then(|n| n.bounds());
+        let nodes = u
+            .frame_output(vec![])
+            .platform_output
+            .accesskit_update
+            .unwrap()
+            .nodes;
+        let b = nodes
+            .iter()
+            .map(|(_, n)| n)
+            .find(|n| n.label() == Some(name) || n.value() == Some(name))
+            .and_then(|n| n.bounds());
         let b = b.unwrap_or_else(|| panic!("no control {name:?}"));
         let p = egui::Pos2::new(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32);
         u.button(p, true);
@@ -252,6 +372,20 @@ fn the_interaction_editor_picks_a_controller_button() {
     // The key field keeps recording keys; the menu beside it names the controller's buttons.
     at(&mut u, "Controller");
     at(&mut u, "Gamepad Menu");
-    let trigger = u.app.session.doc().unwrap().node(layer).unwrap().interactions[0].trigger.clone();
-    assert_eq!(trigger, figcraft_doc::proto::Trigger::KeyPress { key: "Gamepad Menu".into() });
+    let trigger = u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(layer)
+        .unwrap()
+        .interactions[0]
+        .trigger
+        .clone();
+    assert_eq!(
+        trigger,
+        figcraft_doc::proto::Trigger::KeyPress {
+            key: "Gamepad Menu".into()
+        }
+    );
 }

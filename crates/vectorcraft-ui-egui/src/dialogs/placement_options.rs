@@ -23,16 +23,35 @@ const PRESERVE: [(&str, &str); 5] = [
     ("fill", "Bounds (Fill Proportionally)"),
 ];
 /// The alignment points, row by row from the top left (the reference point widget's order).
-const ALIGN: [&str; 9] = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight"];
+const ALIGN: [&str; 9] = [
+    "topLeft",
+    "top",
+    "topRight",
+    "left",
+    "center",
+    "right",
+    "bottomLeft",
+    "bottom",
+    "bottomRight",
+];
 const LABEL: f32 = 90.0;
 
-pub(super) const SPEC: DialogSpec =
-    DialogSpec { heading: |_| tl!("Placement Options").into(), body, confirm, min_width: 400.0, max_width: Some(420.0), ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Placement Options").into(),
+    body,
+    confirm,
+    min_width: 400.0,
+    max_width: Some(420.0),
+    ..DialogSpec::FORM
+};
 
 /// Open the dialog on the placement options of images `ids` (default: the selected ones).
 pub fn open(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
     let ids = p.get("ids").cloned().unwrap_or(Value::Null);
-    let r = app.session.execute(CMD, &json!({ "ids": ids })).map_err(|e| e.to_string())?;
+    let r = app
+        .session
+        .execute(CMD, &json!({ "ids": ids }))
+        .map_err(|e| e.to_string())?;
     let mut fields = r["placement"].clone();
     fields["ids"] = ids;
     app.ui.dialog = Some(Dialog::new(KIND, fields));
@@ -48,7 +67,14 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
 }
 
 fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    form::choice(ui, d, "preserve", tl!("Preserve:"), (LABEL, 240.0), &PRESERVE);
+    form::choice(
+        ui,
+        d,
+        "preserve",
+        tl!("Preserve:"),
+        (LABEL, 240.0),
+        &PRESERVE,
+    );
     ui.add_space(8.0);
     // Bounds stretches the art into the old bounds: nothing to align or clip.
     let free = d.str("preserve") != "bounds";
@@ -70,6 +96,9 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         });
     });
     ui.add_space(6.0);
-    widgets::dim_label(ui, tl!("Applies when the linked file is relinked or updated."));
+    widgets::dim_label(
+        ui,
+        tl!("Applies when the linked file is relinked or updated."),
+    );
     false
 }

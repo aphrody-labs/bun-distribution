@@ -8,7 +8,10 @@
 use crate::{Category, Report, Status, Words};
 
 fn esc(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// The page's own words, in the order it says them: its heading, what it calls the file and the
@@ -32,7 +35,13 @@ pub const REPORT_WORDS: &[&str] = &[
 
 /// The report for `file_name`, dated `date` (as the caller formats it), written in the language
 /// `words` translates into and marked `lang` (`"en"` and `&|s: &str| s.to_owned()` for English).
-pub fn report_html(report: &Report, file_name: &str, date: &str, lang: &str, words: Words) -> String {
+pub fn report_html(
+    report: &Report,
+    file_name: &str,
+    date: &str,
+    lang: &str,
+    words: Words,
+) -> String {
     let title = esc(&words("Accessibility Report"));
     let mut h = String::new();
     h.push_str(&format!("<!doctype html>\n<html lang=\"{}\"><head><meta charset=\"utf-8\"><title>{title}</title>\n<style>\n", esc(lang)));
@@ -42,7 +51,13 @@ pub fn report_html(report: &Report, file_name: &str, date: &str, lang: &str, wor
          th{background:#f2f2f2}.Failed{color:#b3261e;font-weight:600}.Passed{color:#1e7b34}ul{margin:4px 0 0;padding-left:18px}\n",
     );
     h.push_str(&format!("</style></head><body>\n<h1>{title}</h1>\n"));
-    h.push_str(&format!("<p>{}: <b>{}</b><br>{}: {}</p>\n", esc(&words("Filename")), esc(file_name), esc(&words("Report created")), esc(date)));
+    h.push_str(&format!(
+        "<p>{}: <b>{}</b><br>{}: {}</p>\n",
+        esc(&words("Filename")),
+        esc(file_name),
+        esc(&words("Report created")),
+        esc(date)
+    ));
     h.push_str(&format!("<h2>{}</h2>\n<p>", esc(&words("Summary"))));
     // Each outcome is a whole sentence, and each is handed over on its own, so the list in
     // `REPORT_WORDS` can be read off this file.
@@ -56,13 +71,32 @@ pub fn report_html(report: &Report, file_name: &str, date: &str, lang: &str, wor
         esc(&words("The checker found no problems in this document."))
     });
     h.push_str("</p>\n<ul>\n");
-    for s in [Status::Manual, Status::Skipped, Status::Passed, Status::Failed] {
-        h.push_str(&format!("<li>{}: {}</li>\n", esc(&words(s.label())), report.count(s)));
+    for s in [
+        Status::Manual,
+        Status::Skipped,
+        Status::Passed,
+        Status::Failed,
+    ] {
+        h.push_str(&format!(
+            "<li>{}: {}</li>\n",
+            esc(&words(s.label())),
+            report.count(s)
+        ));
     }
-    h.push_str(&format!("</ul>\n<h2>{}</h2>\n", esc(&words("Detailed Report"))));
-    let (name, status, description) = (esc(&words("Rule Name")), esc(&words("Status")), esc(&words("Description")));
+    h.push_str(&format!(
+        "</ul>\n<h2>{}</h2>\n",
+        esc(&words("Detailed Report"))
+    ));
+    let (name, status, description) = (
+        esc(&words("Rule Name")),
+        esc(&words("Status")),
+        esc(&words("Description")),
+    );
     for c in Category::ALL {
-        h.push_str(&format!("<h3>{}</h3>\n<table><tr><th>{name}</th><th>{status}</th><th>{description}</th></tr>\n", esc(&words(c.label()))));
+        h.push_str(&format!(
+            "<h3>{}</h3>\n<table><tr><th>{name}</th><th>{status}</th><th>{description}</th></tr>\n",
+            esc(&words(c.label()))
+        ));
         for r in report.in_category(c) {
             h.push_str(&format!(
                 "<tr><td>{}</td><td class=\"{:?}\">{}</td><td>{}",

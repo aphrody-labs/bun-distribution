@@ -47,8 +47,16 @@ impl IDebugFunctions {
                 (1, None, "OpenMainApplication"),
                 (10, None, "PerformSystemButtonPressing"),
                 (20, None, "InvalidateTransitionLayer"),
-                (30, None, "RequestLaunchApplicationWithUserAndArgumentForDebug"),
-                (31, None, "RequestLaunchApplicationByApplicationLaunchInfoForDebug"),
+                (
+                    30,
+                    None,
+                    "RequestLaunchApplicationWithUserAndArgumentForDebug",
+                ),
+                (
+                    31,
+                    None,
+                    "RequestLaunchApplicationByApplicationLaunchInfoForDebug",
+                ),
                 (40, None, "GetAppletResourceUsageInfo"),
                 (50, None, "AddSystemProgramIdAndAppletIdForDebug"),
                 (51, None, "AddOperationConfirmedLibraryAppletIdForDebug"),
@@ -62,7 +70,11 @@ impl IDebugFunctions {
                 (130, None, "FriendInvitationSetApplicationParameter"),
                 (131, None, "FriendInvitationClearApplicationParameter"),
                 (132, None, "FriendInvitationPushApplicationParameter"),
-                (140, None, "RestrictPowerOperationForSecureLaunchModeForDebug"),
+                (
+                    140,
+                    None,
+                    "RestrictPowerOperationForSecureLaunchModeForDebug",
+                ),
                 (200, None, "CreateFloatingLibraryAppletAccepterForDebug"),
                 (300, None, "TerminateAllRunningApplicationsForDebug"),
                 (900, None, "GetGrcProcessLaunchedSystemEvent"),
@@ -86,9 +98,17 @@ mod tests {
     fn debug_commands_are_explicitly_unimplemented_not_success_stubs() {
         let service = IDebugFunctions::new();
         let ids: Vec<_> = service.handlers().keys().copied().collect();
-        assert_eq!(ids, [0, 1, 10, 20, 30, 31, 40, 50, 51, 100, 101, 110,
-            111, 120, 121, 122, 130, 131, 132, 140, 200, 300, 900]);
-        assert!(service.handlers().values().all(|entry| entry.handler_callback.is_none()));
+        assert_eq!(
+            ids,
+            [
+                0, 1, 10, 20, 30, 31, 40, 50, 51, 100, 101, 110, 111, 120, 121, 122, 130, 131, 132,
+                140, 200, 300, 900
+            ]
+        );
+        assert!(service
+            .handlers()
+            .values()
+            .all(|entry| entry.handler_callback.is_none()));
     }
 }
 

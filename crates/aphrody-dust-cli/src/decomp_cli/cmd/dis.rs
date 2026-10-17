@@ -145,7 +145,9 @@ impl Disassemble {
                 relocations: Some(module.relocations()),
             };
 
-            let mut symbol_iter = symbol_map.iter_by_address(section.address_range()).peekable();
+            let mut symbol_iter = symbol_map
+                .iter_by_address(section.address_range())
+                .peekable();
             while let Some((_, symbol)) = symbol_iter.next() {
                 debug_assert!(
                     symbol.addr >= section.start_address() && symbol.addr < section.end_address()
@@ -181,10 +183,10 @@ impl Disassemble {
                             match sym_function.mode {
                                 InstructionMode::Arm => {
                                     writeln!(writer, "    arm_func_start {}", symbol.name)?
-                                },
+                                }
                                 InstructionMode::Thumb => {
                                     writeln!(writer, "    thumb_func_start {}", symbol.name)?
-                                },
+                                }
                             }
                             writeln!(writer, "{}: ; {:#010x}", symbol.name, symbol.addr)?;
                         } else {
@@ -210,7 +212,7 @@ impl Disassemble {
                             )?;
                             offset = function.end_address() - section.start_address();
                         }
-                    },
+                    }
                     SymbolKind::Data(data) => {
                         let start = (symbol.addr - section.start_address()) as usize;
 
@@ -233,7 +235,7 @@ impl Disassemble {
 
                         data.write_assembly(writer, symbol, bytes, &symbol_lookup)?;
                         offset = end as u32;
-                    },
+                    }
                     SymbolKind::Bss(bss) => {
                         let size = bss.size.unwrap_or_else(|| {
                             Self::size_to_next_symbol(
@@ -244,8 +246,8 @@ impl Disassemble {
                         });
                         writeln!(writer, "{}: .space {:#x}", symbol.name, size)?;
                         offset += size;
-                    },
-                    _ => {},
+                    }
+                    _ => {}
                 }
             }
 

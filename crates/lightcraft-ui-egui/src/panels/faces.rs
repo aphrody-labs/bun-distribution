@@ -21,16 +21,40 @@ use crate::widgets::register;
 /// machine once they have been idle for a few seconds, or while another app has the keyboard but this window is still
 /// on screen; most of it while they are looking at the scan's progress.
 fn scan_pace(app: &LightcraftApp, ctx: &egui::Context, now: f64) -> (&'static str, bool) {
-    let (focused, minimized) = ctx.input(|i| (i.focused, i.raw.viewports.get(&i.raw.viewport_id).and_then(|v| v.minimized).unwrap_or(false)));
-    let watching =
-        matches!(&app.ui.dialog, Some(crate::state::Dialog::Settings { tab }) if tab == "faces") || app.ui.view == crate::state::ViewMode::People;
-    (pace_for(focused, minimized, now - app.caches.last_input, now - app.caches.last_move, watching), focused && !minimized)
+    let (focused, minimized) = ctx.input(|i| {
+        (
+            i.focused,
+            i.raw
+                .viewports
+                .get(&i.raw.viewport_id)
+                .and_then(|v| v.minimized)
+                .unwrap_or(false),
+        )
+    });
+    let watching = matches!(&app.ui.dialog, Some(crate::state::Dialog::Settings { tab }) if tab == "faces")
+        || app.ui.view == crate::state::ViewMode::People;
+    (
+        pace_for(
+            focused,
+            minimized,
+            now - app.caches.last_input,
+            now - app.caches.last_move,
+            watching,
+        ),
+        focused && !minimized,
+    )
 }
 
 /// The pace for a window that has the keyboard (or not) and is minimized (or not), `worked` seconds after the user last
 /// dragged, typed or scrolled and `moved` seconds after they last moved the pointer, while they are (or are not) looking
 /// at the scan's progress.
-fn pace_for(focused: bool, minimized: bool, worked: f64, moved: f64, watching: bool) -> &'static str {
+fn pace_for(
+    focused: bool,
+    minimized: bool,
+    worked: f64,
+    moved: f64,
+    watching: bool,
+) -> &'static str {
     if minimized {
         "light"
     } else if !focused {
@@ -64,7 +88,9 @@ fn models(app: &mut LightcraftApp, ctx: &egui::Context) -> Value {
     {
         return v;
     }
-    let v = app.run("faces.models.list", json!({})).unwrap_or(Value::Null);
+    let v = app
+        .run("faces.models.list", json!({}))
+        .unwrap_or(Value::Null);
     ctx.data_mut(|d| d.insert_temp(list_id(), (epoch, now, v.clone())));
     v
 }
@@ -93,7 +119,13 @@ pub fn setup(app: &mut LightcraftApp, ctx: &egui::Context) -> Setup {
         return Setup::Unavailable;
     }
     let chosen = list["embedder"].as_str();
-    let usable = chosen.is_some_and(|id| list["models"].as_array().into_iter().flatten().any(|m| m["id"] == id && m["installed"] == true));
+    let usable = chosen.is_some_and(|id| {
+        list["models"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|m| m["id"] == id && m["installed"] == true)
+    });
     match (usable, list["enabled"].as_bool() == Some(true)) {
         (true, true) => Setup::Running,
         (true, false) => Setup::TurnOn,
@@ -105,10 +137,14 @@ impl Setup {
     /// The sentence and the button label that offer the next step; none when there is nothing to do.
     pub fn prompt(self) -> Option<(&'static str, &'static str)> {
         match self {
-            Setup::TurnOn => Some(("Face recognition is off. Turn it on to get name suggestions and see look-alike faces together.", "Turn on")),
-            Setup::GetModel => {
-                Some(("Face recognition needs a model to suggest names: a one-time download, in Settings.", "Set up face recognition"))
-            }
+            Setup::TurnOn => Some((
+                "Face recognition is off. Turn it on to get name suggestions and see look-alike faces together.",
+                "Turn on",
+            )),
+            Setup::GetModel => Some((
+                "Face recognition needs a model to suggest names: a one-time download, in Settings.",
+                "Set up face recognition",
+            )),
             Setup::Running | Setup::Unavailable => None,
         }
     }
@@ -143,18 +179,22 @@ pub fn take_step(app: &mut LightcraftApp, ctx: &egui::Context, step: Setup) {
 /// A slim line under a view's heading offering to set recognition up, shown only while it is not set up.
 pub fn setup_banner(app: &mut LightcraftApp, ui: &mut egui::Ui) {
     let step = setup(app, ui.ctx());
-    let Some((message, button)) = step.prompt() else { return };
+    let Some((message, button)) = step.prompt() else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
-    egui::Frame::NONE.inner_margin(egui::Margin::symmetric(12, 6)).show(ui, |ui| {
-        ui.horizontal_wrapped(|ui| {
-            ui.label(RichText::new(message).font(t.font(12.5)).color(t.text_dim));
-            let r = ui.button(button);
-            register(ui.ctx(), "faces:setup", r.rect);
-            if r.clicked() {
-                take_step(app, ui.ctx(), step);
-            }
+    egui::Frame::NONE
+        .inner_margin(egui::Margin::symmetric(12, 6))
+        .show(ui, |ui| {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(message).font(t.font(12.5)).color(t.text_dim));
+                let r = ui.button(button);
+                register(ui.ctx(), "faces:setup", r.rect);
+                if r.clicked() {
+                    take_step(app, ui.ctx(), step);
+                }
+            });
         });
-    });
 }
 
 /// A download-style size: decimal megabytes, as file managers and model pages show them.
@@ -171,7 +211,10 @@ fn mb(bytes: Option<u64>) -> String {
 fn sentence(s: &str) -> String {
     let s = s.trim();
     let mut c = s.chars();
-    let mut out: String = c.next().map(|f| f.to_uppercase().collect()).unwrap_or_default();
+    let mut out: String = c
+        .next()
+        .map(|f| f.to_uppercase().collect())
+        .unwrap_or_default();
     out.push_str(c.as_str());
     if !out.is_empty() && !out.ends_with(['.', '!', '?']) {
         out.push('.');
@@ -181,7 +224,10 @@ fn sentence(s: &str) -> String {
 
 /// "Apache-2.0 · commercial use allowed"
 fn licence_line(m: &Value) -> String {
-    let name = m["licence"]["name"].as_str().filter(|s| !s.is_empty()).unwrap_or("Unknown licence");
+    let name = m["licence"]["name"]
+        .as_str()
+        .filter(|s| !s.is_empty())
+        .unwrap_or("Unknown licence");
     let terms = match m["licence"]["commercial"].as_str() {
         Some("yes") => "commercial use allowed",
         Some("no") => "non-commercial use only",
@@ -201,17 +247,29 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
     let list = models(app, ui.ctx());
     heading(ui, t, "Face recognition");
     if list["dir"].is_null() {
-        hint(ui, t, "This build has nowhere to keep face models, so the model list is not available. (The desktop app has.)");
+        hint(
+            ui,
+            t,
+            "This build has nowhere to keep face models, so the model list is not available. (The desktop app has.)",
+        );
         return;
     }
     let mut on = list["enabled"].as_bool().unwrap_or(false);
     let runtime = list["runtime"].as_bool() == Some(true);
     // a chosen recognition model that is installed: without one the switch has nothing to run
     // (issue #678), so it can only be switched off, with the hint below saying what to do first
-    let usable =
-        list["embedder"].as_str().is_some_and(|id| list["models"].as_array().into_iter().flatten().any(|m| m["id"] == id && m["installed"] == true));
+    let usable = list["embedder"].as_str().is_some_and(|id| {
+        list["models"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .any(|m| m["id"] == id && m["installed"] == true)
+    });
     let r = ui
-        .add_enabled(on || (runtime && usable), egui::Checkbox::new(&mut on, crate::i18n::tr("Recognise faces (experimental)")))
+        .add_enabled(
+            on || (runtime && usable),
+            egui::Checkbox::new(&mut on, crate::i18n::tr("Recognise faces (experimental)")),
+        )
         .on_disabled_hover_text(crate::i18n::tr("Choose a model below (Use) to start."));
     register(ui.ctx(), "check:settings.facesEnabled", r.rect);
     if r.changed() {
@@ -220,27 +278,59 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
             Err(e) => app.toast(ui.ctx(), e),
         }
     }
-    hint(ui, t, "Suggests who is in a photo from the faces you have named. Everything stays on your computer.");
+    hint(
+        ui,
+        t,
+        "Suggests who is in a photo from the faces you have named. Everything stays on your computer.",
+    );
     if !runtime {
-        hint(ui, t, "This build cannot run recognition models: they can be added and chosen, not used.");
+        hint(
+            ui,
+            t,
+            "This build cannot run recognition models: they can be added and chosen, not used.",
+        );
     } else if !usable {
         hint(ui, t, "Choose a model below (Use) to start.");
     } else if on && app.caches.faces_active {
         scan_progress(app, ui, t);
     }
     let all: Vec<Value> = list["models"].as_array().cloned().unwrap_or_default();
-    let downloads =
-        app.session.execute("faces.models.downloads", &json!({})).map(|v| v["downloads"].as_array().cloned().unwrap_or_default()).unwrap_or_default();
+    let downloads = app
+        .session
+        .execute("faces.models.downloads", &json!({}))
+        .map(|v| v["downloads"].as_array().cloned().unwrap_or_default())
+        .unwrap_or_default();
     heading(ui, t, "Face detector");
     for m in all.iter().filter(|m| m["role"] == "detector") {
-        model_row(app, ui, t, m, downloads.iter().find(|d| d["id"] == m["id"]), runtime);
+        model_row(
+            app,
+            ui,
+            t,
+            m,
+            downloads.iter().find(|d| d["id"] == m["id"]),
+            runtime,
+        );
     }
-    if !all.iter().any(|m| m["role"] == "detector" && m["installed"] == true) {
-        hint(ui, t, "Detect Faces (Photo menu) needs it: a small one-time download.");
+    if !all
+        .iter()
+        .any(|m| m["role"] == "detector" && m["installed"] == true)
+    {
+        hint(
+            ui,
+            t,
+            "Detect Faces (Photo menu) needs it: a small one-time download.",
+        );
     }
     heading(ui, t, "Recognition models");
     for m in all.iter().filter(|m| m["role"] == "embedder") {
-        model_row(app, ui, t, m, downloads.iter().find(|d| d["id"] == m["id"]), runtime);
+        model_row(
+            app,
+            ui,
+            t,
+            m,
+            downloads.iter().find(|d| d["id"] == m["id"]),
+            runtime,
+        );
     }
     ui.add_space(6.0);
     ui.horizontal(|ui| {
@@ -253,36 +343,81 @@ pub fn settings_tab(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
         ui.label(RichText::new("or drop a .onnx file on the window").color(t.text_dim));
     });
     // what is wrong with the user's own catalog (catalog.json in the models folder), if anything
-    for e in list["catalog"]["errors"].as_array().into_iter().flatten().filter_map(Value::as_str).take(3) {
-        ui.add(egui::Label::new(RichText::new(format!("catalog.json: {e}")).font(t.font(11.5)).color(t.caution)).wrap());
+    for e in list["catalog"]["errors"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .take(3)
+    {
+        ui.add(
+            egui::Label::new(
+                RichText::new(format!("catalog.json: {e}"))
+                    .font(t.font(11.5))
+                    .color(t.caution),
+            )
+            .wrap(),
+        );
     }
     if let Some(d) = all.iter().find(|m| m["role"] == "detector") {
         ui.add_space(4.0);
-        hint(ui, t, &format!("Faces are found by {} ({}, included).", d["name"].as_str().unwrap_or("the detector"), mb(d["sizeBytes"].as_u64())));
+        hint(
+            ui,
+            t,
+            &format!(
+                "Faces are found by {} ({}, included).",
+                d["name"].as_str().unwrap_or("the detector"),
+                mb(d["sizeBytes"].as_u64())
+            ),
+        );
     }
 }
 
 /// How the scan is going: a bar while photos are left, then how many faces it learned.
 fn scan_progress(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens) {
-    let (left, peak, faces) = (app.caches.faces_pending, app.caches.faces_peak.max(1), app.caches.faces_indexed);
+    let (left, peak, faces) = (
+        app.caches.faces_pending,
+        app.caches.faces_peak.max(1),
+        app.caches.faces_indexed,
+    );
     if left == 0 {
         hint(ui, t, &format!("{faces} faces learned."));
         return;
     }
     let text = format!("Scanning photos for faces: {left} left · {faces} faces so far");
     let bar = ui.add(
-        egui::ProgressBar::new((1.0 - left as f32 / peak as f32).clamp(0.0, 1.0)).desired_width(380.0).text(RichText::new(text).font(t.font(11.5))),
+        egui::ProgressBar::new((1.0 - left as f32 / peak as f32).clamp(0.0, 1.0))
+            .desired_width(380.0)
+            .text(RichText::new(text).font(t.font(11.5))),
     );
     register(ui.ctx(), "faces:scanProgress", bar.rect);
 }
 
-fn model_row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, m: &Value, dl: Option<&Value>, can_run: bool) {
+fn model_row(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    m: &Value,
+    dl: Option<&Value>,
+    can_run: bool,
+) {
     let id = m["id"].as_str().unwrap_or("").to_string();
     let detector = m["role"] == "detector";
-    let (installed, selected) = (m["installed"].as_bool() == Some(true), m["selected"].as_bool() == Some(true));
-    let dl_state = if installed { None } else { dl.and_then(|d| d["state"].as_str()) };
+    let (installed, selected) = (
+        m["installed"].as_bool() == Some(true),
+        m["selected"].as_bool() == Some(true),
+    );
+    let dl_state = if installed {
+        None
+    } else {
+        dl.and_then(|d| d["state"].as_str())
+    };
     // a build that cannot run recognition models has no use for a download
-    let host = if can_run { m["downloadHost"].as_str().unwrap_or("").to_string() } else { String::new() };
+    let host = if can_run {
+        m["downloadHost"].as_str().unwrap_or("").to_string()
+    } else {
+        String::new()
+    };
     egui::Frame::NONE.inner_margin(egui::Margin::symmetric(0, 3)).show(ui, |ui| {
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
@@ -399,28 +534,48 @@ fn model_row(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, m: &Value, 
 
 /// The body of the "Add Face Model" dialog: what the file is, its terms, and the accept box.
 /// `info` is the engine's `faces.models.inspect` answer.
-pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info: &Value, accepted: &mut bool) {
+pub fn model_dialog(
+    app: &mut LightcraftApp,
+    ui: &mut egui::Ui,
+    t: &Tokens,
+    info: &Value,
+    accepted: &mut bool,
+) {
     let kind = info["kind"].as_str().unwrap_or("unsupported");
     let file = info["fileName"].as_str().unwrap_or("");
     if kind == "unsupported" {
-        ui.label(RichText::new("This file cannot be used yet").font(t.semibold(13.5)).color(t.caution));
+        ui.label(
+            RichText::new("This file cannot be used yet")
+                .font(t.semibold(13.5))
+                .color(t.caution),
+        );
         ui.add(
             egui::Label::new(
-                RichText::new(sentence(info["reason"].as_str().unwrap_or("It is not a face recognition model LightCraft understands")))
-                    .color(t.text_label),
+                RichText::new(sentence(info["reason"].as_str().unwrap_or(
+                    "It is not a face recognition model LightCraft understands",
+                )))
+                .color(t.text_label),
             )
             .wrap(),
         );
-        ui.label(RichText::new(format!("{file} · {}", mb(info["sizeBytes"].as_u64()))).color(t.text_dim));
+        ui.label(
+            RichText::new(format!("{file} · {}", mb(info["sizeBytes"].as_u64()))).color(t.text_dim),
+        );
         return;
     }
     let m = &info["model"];
     ui.horizontal(|ui| {
-        ui.label(RichText::new(m["name"].as_str().unwrap_or(file)).font(t.semibold(14.0)).color(t.text));
+        ui.label(
+            RichText::new(m["name"].as_str().unwrap_or(file))
+                .font(t.semibold(14.0))
+                .color(t.text),
+        );
         ui.label(RichText::new(mb(info["sizeBytes"].as_u64())).color(t.text_dim));
     });
     if info["alreadyInstalled"] == true {
-        ui.label(RichText::new("Already installed. Installing again is harmless.").color(t.text_dim));
+        ui.label(
+            RichText::new("Already installed. Installing again is harmless.").color(t.text_dim),
+        );
     }
     let download = info["download"].is_string();
     let detector = m["role"] == "detector";
@@ -438,20 +593,46 @@ pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info
         );
     }
     let commercial = m["licence"]["commercial"].as_str().unwrap_or("unknown");
-    ui.label(RichText::new(licence_line(m)).font(t.semibold(12.5)).color(if commercial == "yes" { t.text } else { t.caution }));
+    ui.label(
+        RichText::new(licence_line(m))
+            .font(t.semibold(12.5))
+            .color(if commercial == "yes" {
+                t.text
+            } else {
+                t.caution
+            }),
+    );
     let notice = m["licence"]["notice"].as_str().unwrap_or("");
     if !notice.is_empty() {
         ui.add(egui::Label::new(RichText::new(notice).color(t.text_label)).wrap());
     }
     let provenance = m["provenance"].as_str().unwrap_or("");
     if !provenance.is_empty() {
-        ui.add(egui::Label::new(RichText::new(format!("Trained on: {provenance}")).color(t.text_dim)).wrap());
+        ui.add(
+            egui::Label::new(RichText::new(format!("Trained on: {provenance}")).color(t.text_dim))
+                .wrap(),
+        );
     }
     if kind == "draft" {
         ui.add_space(2.0);
-        ui.label(RichText::new("LightCraft does not know this model, so it assumed:").color(t.text_label));
-        for a in info["assumptions"].as_array().into_iter().flatten().filter_map(Value::as_str) {
-            ui.add(egui::Label::new(RichText::new(format!("•  {a}")).font(t.font(12.0)).color(t.text_dim)).wrap());
+        ui.label(
+            RichText::new("LightCraft does not know this model, so it assumed:")
+                .color(t.text_label),
+        );
+        for a in info["assumptions"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+        {
+            ui.add(
+                egui::Label::new(
+                    RichText::new(format!("•  {a}"))
+                        .font(t.font(12.0))
+                        .color(t.text_dim),
+                )
+                .wrap(),
+            );
         }
     }
     if let Some(url) = m["source"].as_str().or(m["licence"]["url"].as_str()) {
@@ -462,7 +643,12 @@ pub fn model_dialog(app: &mut LightcraftApp, ui: &mut egui::Ui, t: &Tokens, info
         }
     }
     ui.add_space(4.0);
-    check(ui, "faceModel.accept", accepted, "I have read these terms and accept them for my own use");
+    check(
+        ui,
+        "faceModel.accept",
+        accepted,
+        "I have read these terms and accept them for my own use",
+    );
     let closing = if download {
         "Nothing is fetched until you accept. The model is kept on this computer only; LightCraft never uploads or shares it."
     } else {
@@ -485,13 +671,23 @@ pub fn open_download_dialog(app: &mut LightcraftApp, m: &Value) {
         "assumptions": [],
         "reason": null,
     });
-    app.ui.dialog = Some(crate::state::Dialog::FaceModel { path: String::new(), info, accepted: false });
+    app.ui.dialog = Some(crate::state::Dialog::FaceModel {
+        path: String::new(),
+        info,
+        accepted: false,
+    });
 }
 
 /// Photo ▸ Detect Faces without the detector: offer to download it (its terms first), the same as in Settings.
 pub fn offer_detector(app: &mut LightcraftApp) {
-    let list = app.session.execute("faces.models.list", &json!({})).unwrap_or(Value::Null);
-    if let Some(m) = list["models"].as_array().and_then(|a| a.iter().find(|m| m["role"] == "detector" && m["installed"] != true)) {
+    let list = app
+        .session
+        .execute("faces.models.list", &json!({}))
+        .unwrap_or(Value::Null);
+    if let Some(m) = list["models"].as_array().and_then(|a| {
+        a.iter()
+            .find(|m| m["role"] == "detector" && m["installed"] != true)
+    }) {
         open_download_dialog(app, m);
     }
 }
@@ -499,20 +695,36 @@ pub fn offer_detector(app: &mut LightcraftApp) {
 /// Inspect `path` and open the dialog for it (also what dropping a `.onnx` file on the window does).
 pub fn open_dialog(app: &mut LightcraftApp, path: &str) -> Result<Value, String> {
     let info = app.run("faces.models.inspect", json!({"path": path}))?;
-    app.ui.dialog = Some(crate::state::Dialog::FaceModel { path: path.to_string(), info, accepted: false });
+    app.ui.dialog = Some(crate::state::Dialog::FaceModel {
+        path: path.to_string(),
+        info,
+        accepted: false,
+    });
     Ok(Value::Null)
 }
 
 /// The dialog's OK (the engine refuses without the acceptance): for a download, start it and watch it; for a file,
 /// install it. Either way the model ends up installed, in use, with recognition on.
-pub fn install(app: &mut LightcraftApp, path: &str, info: &Value, accepted: bool) -> Result<Value, String> {
+pub fn install(
+    app: &mut LightcraftApp,
+    path: &str,
+    info: &Value,
+    accepted: bool,
+) -> Result<Value, String> {
     if !accepted {
         return Err("Tick the box to accept the model's terms first".into());
     }
     app.caches.faces_epoch += 1;
-    let back_to_settings = |app: &mut LightcraftApp| app.ui.dialog = Some(crate::state::Dialog::Settings { tab: "faces".into() });
+    let back_to_settings = |app: &mut LightcraftApp| {
+        app.ui.dialog = Some(crate::state::Dialog::Settings {
+            tab: "faces".into(),
+        })
+    };
     if let Some(id) = info["download"].as_str() {
-        let r = app.run("faces.models.download", json!({"id": id, "acknowledged": true}));
+        let r = app.run(
+            "faces.models.download",
+            json!({"id": id, "acknowledged": true}),
+        );
         if r.is_ok() {
             app.caches.faces_dl_watch.push(id.to_string());
             // the progress is in Settings: stay there
@@ -520,7 +732,10 @@ pub fn install(app: &mut LightcraftApp, path: &str, info: &Value, accepted: bool
         }
         return r;
     }
-    let r = app.run("faces.models.install", json!({"path": path, "acknowledged": true}));
+    let r = app.run(
+        "faces.models.install",
+        json!({"path": path, "acknowledged": true}),
+    );
     if let Ok(v) = &r {
         let name = v["installed"]["name"].as_str().unwrap_or("The model");
         app.ui.status = if v["installed"]["role"] == "detector" {
@@ -561,14 +776,31 @@ pub fn hints_for(app: &mut LightcraftApp, photo: u64) -> Option<std::sync::Arc<H
     {
         return Some(h.clone());
     }
-    let answer = app.session.execute("faces.suggest", &json!({"ids": [photo], "budgetMs": 0})).ok()?;
+    let answer = app
+        .session
+        .execute("faces.suggest", &json!({"ids": [photo], "budgetMs": 0}))
+        .ok()?;
     let pair = |v: &Value| Some((v["name"].as_str()?.to_string(), v["score"].as_f64()? as f32));
     let mut hints = Hints::default();
-    for f in answer["photos"][0]["faces"].as_array().into_iter().flatten() {
-        let Some(index) = f["index"].as_u64().and_then(|i| usize::try_from(i).ok()) else { continue };
+    for f in answer["photos"][0]["faces"]
+        .as_array()
+        .into_iter()
+        .flatten()
+    {
+        let Some(index) = f["index"].as_u64().and_then(|i| usize::try_from(i).ok()) else {
+            continue;
+        };
         hints.by_index.insert(
             index,
-            Hint { suggestion: pair(&f["suggestion"]), candidates: f["candidates"].as_array().into_iter().flatten().filter_map(pair).collect() },
+            Hint {
+                suggestion: pair(&f["suggestion"]),
+                candidates: f["candidates"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(pair)
+                    .collect(),
+            },
         );
     }
     let hints = std::sync::Arc::new(hints);
@@ -598,56 +830,86 @@ pub fn name_editor(
     let t = Tokens::get(ctx);
     let mut outcome = Editor::Open;
     let opening = edit.fresh;
-    let shown = egui::Area::new(egui::Id::new("face-name-editor")).order(egui::Order::Foreground).fixed_pos(at).constrain(true).show(ctx, |ui| {
-        egui::Frame::popup(ui.style()).show(ui, |ui| {
-            ui.set_min_width(230.0);
-            let r = ui.add(egui::TextEdit::singleline(&mut edit.text).hint_text("Name").desired_width(220.0));
-            register(ui.ctx(), "field:faceName", r.rect);
-            if edit.fresh {
-                r.request_focus();
-                edit.fresh = false;
-            }
-            if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
-                outcome = Editor::Submit(edit.text.trim().to_string());
-            }
-            let typed = edit.text.trim().to_lowercase();
-            let mut offered: Vec<(String, Option<f32>)> = candidates.iter().take(3).map(|(n, s)| (n.clone(), Some(*s))).collect();
-            if !typed.is_empty() {
-                for p in people.iter().filter(|p| p.to_lowercase().starts_with(&typed)) {
-                    if offered.len() >= 7 {
-                        break;
+    let shown = egui::Area::new(egui::Id::new("face-name-editor"))
+        .order(egui::Order::Foreground)
+        .fixed_pos(at)
+        .constrain(true)
+        .show(ctx, |ui| {
+            egui::Frame::popup(ui.style()).show(ui, |ui| {
+                ui.set_min_width(230.0);
+                let r = ui.add(
+                    egui::TextEdit::singleline(&mut edit.text)
+                        .hint_text("Name")
+                        .desired_width(220.0),
+                );
+                register(ui.ctx(), "field:faceName", r.rect);
+                if edit.fresh {
+                    r.request_focus();
+                    edit.fresh = false;
+                }
+                if r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                    outcome = Editor::Submit(edit.text.trim().to_string());
+                }
+                let typed = edit.text.trim().to_lowercase();
+                let mut offered: Vec<(String, Option<f32>)> = candidates
+                    .iter()
+                    .take(3)
+                    .map(|(n, s)| (n.clone(), Some(*s)))
+                    .collect();
+                if !typed.is_empty() {
+                    for p in people
+                        .iter()
+                        .filter(|p| p.to_lowercase().starts_with(&typed))
+                    {
+                        if offered.len() >= 7 {
+                            break;
+                        }
+                        if !offered.iter().any(|(n, _)| n.eq_ignore_ascii_case(p)) {
+                            offered.push((p.clone(), None));
+                        }
                     }
-                    if !offered.iter().any(|(n, _)| n.eq_ignore_ascii_case(p)) {
-                        offered.push((p.clone(), None));
+                }
+                for (name, score) in offered {
+                    let label = match score {
+                        Some(s) => format!("{name}   {:.0}%", (s * 100.0).max(0.0)),
+                        None => name.clone(),
+                    };
+                    let b = ui.add(
+                        egui::Button::new(RichText::new(label).color(t.text_label))
+                            .frame(false)
+                            .min_size(egui::vec2(220.0, 0.0)),
+                    );
+                    register(ui.ctx(), format!("faceName:pick:{name}"), b.rect);
+                    if b.clicked() {
+                        outcome = Editor::Submit(name);
                     }
                 }
-            }
-            for (name, score) in offered {
-                let label = match score {
-                    Some(s) => format!("{name}   {:.0}%", (s * 100.0).max(0.0)),
-                    None => name.clone(),
-                };
-                let b = ui.add(egui::Button::new(RichText::new(label).color(t.text_label)).frame(false).min_size(egui::vec2(220.0, 0.0)));
-                register(ui.ctx(), format!("faceName:pick:{name}"), b.rect);
-                if b.clicked() {
-                    outcome = Editor::Submit(name);
+                if let Some(label) = setup.short() {
+                    let b = ui.add(
+                        egui::Button::new(RichText::new(label).font(t.font(12.0)).color(t.accent))
+                            .frame(false),
+                    );
+                    register(ui.ctx(), "faces:setup", b.rect);
+                    if b.clicked() {
+                        outcome = Editor::Setup;
+                    }
                 }
-            }
-            if let Some(label) = setup.short() {
-                let b = ui.add(egui::Button::new(RichText::new(label).font(t.font(12.0)).color(t.accent)).frame(false));
-                register(ui.ctx(), "faces:setup", b.rect);
-                if b.clicked() {
-                    outcome = Editor::Setup;
-                }
-            }
-            ui.label(RichText::new("Enter to confirm, Esc to cancel").font(t.font(11.0)).color(t.text_dim));
+                ui.label(
+                    RichText::new("Enter to confirm, Esc to cancel")
+                        .font(t.font(11.0))
+                        .color(t.text_dim),
+                );
+            });
         });
-    });
     if ctx.input(|i| i.key_pressed(egui::Key::Escape)) {
         outcome = Editor::Cancel;
     }
     // a click anywhere else closes it (not on the frame it opened, which is the click that opened it)
-    if !opening && ctx.input(|i| i.pointer.any_pressed()) && ctx.input(|i| i.pointer.interact_pos()).is_some_and(|p| !shown.response.rect.contains(p))
+    if !opening
+        && ctx.input(|i| i.pointer.any_pressed())
+        && ctx
+            .input(|i| i.pointer.interact_pos())
+            .is_some_and(|p| !shown.response.rect.contains(p))
     {
         outcome = Editor::Cancel;
     }
@@ -660,7 +922,12 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     watch_downloads(app, ctx);
     let now = ctx.input(|i| i.time);
     let (working, moving) = ctx.input(|i| {
-        let key_or_scroll = i.events.iter().any(|e| matches!(e, egui::Event::Key { .. } | egui::Event::Text(_) | egui::Event::MouseWheel { .. }));
+        let key_or_scroll = i.events.iter().any(|e| {
+            matches!(
+                e,
+                egui::Event::Key { .. } | egui::Event::Text(_) | egui::Event::MouseWheel { .. }
+            )
+        });
         (i.pointer.any_down() || key_or_scroll, i.pointer.is_moving())
     });
     if working {
@@ -675,7 +942,9 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     let (pace, in_front) = scan_pace(app, ctx, now);
     app.caches.faces_pace = pace;
     app.caches.faces_in_front = in_front;
-    let Ok(v) = app.session.execute("faces.pump", &json!({"pace": pace})) else { return };
+    let Ok(v) = app.session.execute("faces.pump", &json!({"pace": pace})) else {
+        return;
+    };
     app.caches.faces_active = v["active"] == true;
     app.caches.faces_indexed = v["indexedFaces"].as_u64().unwrap_or(0);
     app.caches.faces_pending = v["pendingPhotos"].as_u64().unwrap_or(0);
@@ -686,7 +955,8 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
     // asks to be called again in 50 ms (the progress in Settings, the next photos for the workers); with recognition on and
     // nothing to do it looks again every few seconds (a few wake-ups a minute); with recognition off it asks for nothing
     // (and is called on every frame, which is cheap: whatever makes a frame, such as switching recognition on, is seen at once).
-    let busy = app.caches.faces_active && (app.caches.faces_pending > 0 || v["inFlight"].as_u64().unwrap_or(0) > 0);
+    let busy = app.caches.faces_active
+        && (app.caches.faces_pending > 0 || v["inFlight"].as_u64().unwrap_or(0) > 0);
     let wait = match (busy, app.caches.faces_active) {
         (true, _) => Some(0.05),
         (false, true) => Some(5.0),
@@ -710,7 +980,11 @@ pub fn pump(app: &mut LightcraftApp, ctx: &egui::Context) {
 fn due(rows: &[Value], watched: Vec<String>) -> (Vec<String>, Vec<String>) {
     let (mut installed, mut keep) = (Vec::new(), Vec::new());
     for id in watched {
-        match rows.iter().find(|r| r["id"] == id.as_str()).and_then(|r| r["state"].as_str()) {
+        match rows
+            .iter()
+            .find(|r| r["id"] == id.as_str())
+            .and_then(|r| r["state"].as_str())
+        {
             Some("running" | "done") => keep.push(id),
             Some("installed") => installed.push(id),
             _ => {}
@@ -738,17 +1012,32 @@ fn watch_downloads(app: &mut LightcraftApp, ctx: &egui::Context) {
             .execute("faces.models.list", &json!({}))
             .ok()
             .and_then(|l| {
-                l["models"].as_array().and_then(|a| a.iter().find(|m| m["id"] == id.as_str()).and_then(|m| m["name"].as_str().map(str::to_string)))
+                l["models"].as_array().and_then(|a| {
+                    a.iter()
+                        .find(|m| m["id"] == id.as_str())
+                        .and_then(|m| m["name"].as_str().map(str::to_string))
+                })
             })
             .unwrap_or_else(|| id.clone());
-        let _ = app.session.execute("faces.models.downloadCancel", &json!({"id": id}));
+        let _ = app
+            .session
+            .execute("faces.models.downloadCancel", &json!({"id": id}));
         app.caches.faces_epoch += 1;
         let detector = app
             .session
             .execute("faces.models.list", &json!({}))
             .ok()
-            .is_some_and(|l| l["models"].as_array().is_some_and(|a| a.iter().any(|m| m["id"] == id.as_str() && m["role"] == "detector")));
-        let text = if detector { format!("{name} is installed") } else { format!("{name} is installed and in use: face recognition is on") };
+            .is_some_and(|l| {
+                l["models"].as_array().is_some_and(|a| {
+                    a.iter()
+                        .any(|m| m["id"] == id.as_str() && m["role"] == "detector")
+                })
+            });
+        let text = if detector {
+            format!("{name} is installed")
+        } else {
+            format!("{name} is installed and in use: face recognition is on")
+        };
         app.ui.status = text.clone();
         app.toast(ctx, text);
     }
@@ -762,15 +1051,43 @@ mod tests {
     #[test]
     fn the_scan_works_hard_only_when_nobody_is_in_the_way() {
         // (focused, minimized, seconds since a drag/key/scroll, seconds since the pointer moved, watching the progress)
-        assert_eq!(pace_for(true, false, 0.1, 0.1, true), "pause", "dragging a slider: nothing new, even if watching");
-        assert_eq!(pace_for(true, false, 2.0, 0.2, false), "light", "the pointer is moving: one photo at a time");
+        assert_eq!(
+            pace_for(true, false, 0.1, 0.1, true),
+            "pause",
+            "dragging a slider: nothing new, even if watching"
+        );
+        assert_eq!(
+            pace_for(true, false, 2.0, 0.2, false),
+            "light",
+            "the pointer is moving: one photo at a time"
+        );
         assert_eq!(pace_for(true, false, 5.0, 2.9, true), "light");
-        assert_eq!(pace_for(true, false, 5.0, 4.0, false), "normal", "idle for a few seconds: half the machine");
-        assert_eq!(pace_for(true, false, 60.0, 60.0, true), "full", "idle and looking at the progress: most of it");
+        assert_eq!(
+            pace_for(true, false, 5.0, 4.0, false),
+            "normal",
+            "idle for a few seconds: half the machine"
+        );
+        assert_eq!(
+            pace_for(true, false, 60.0, 60.0, true),
+            "full",
+            "idle and looking at the progress: most of it"
+        );
         // minimized: gentle, whatever the user did last
-        assert_eq!([pace_for(true, true, 0.0, 0.0, true), pace_for(false, true, 99.0, 99.0, true)], ["light", "light"]);
+        assert_eq!(
+            [
+                pace_for(true, true, 0.0, 0.0, true),
+                pace_for(false, true, 99.0, 99.0, true)
+            ],
+            ["light", "light"]
+        );
         // on screen behind another app: the user is elsewhere, so the scan gets on with it, however recent the last input
-        assert_eq!([pace_for(false, false, 0.0, 0.0, true), pace_for(false, false, 99.0, 99.0, false)], ["normal", "normal"]);
+        assert_eq!(
+            [
+                pace_for(false, false, 0.0, 0.0, true),
+                pace_for(false, false, 99.0, 99.0, false)
+            ],
+            ["normal", "normal"]
+        );
     }
 
     fn row(id: &str, state: &str) -> Value {
@@ -779,7 +1096,13 @@ mod tests {
 
     #[test]
     fn an_installed_download_is_announced_once_and_the_rest_are_followed() {
-        let rows = vec![row("a", "running"), row("b", "done"), row("c", "installed"), row("d", "failed"), row("e", "cancelled")];
+        let rows = vec![
+            row("a", "running"),
+            row("b", "done"),
+            row("c", "installed"),
+            row("d", "failed"),
+            row("e", "cancelled"),
+        ];
         let watched = ["a", "b", "c", "d", "e", "gone"].map(String::from).to_vec();
         let (installed, keep) = due(&rows, watched);
         assert_eq!(installed, ["c"]);

@@ -43,7 +43,10 @@ pub(crate) trait Rules {
 
 /// Parses `svg` without DTD support (no entity expansion) and checks the root is `<svg>`.
 pub(crate) fn parse(svg: &str) -> Result<Document<'_>> {
-    let options = ParsingOptions { allow_dtd: false, ..ParsingOptions::default() };
+    let options = ParsingOptions {
+        allow_dtd: false,
+        ..ParsingOptions::default()
+    };
     let doc = Document::parse_with_options(svg, options).map_err(|e| Error::Xml(e.to_string()))?;
     let root = doc.root_element();
     if root.tag_name().name() != "svg" || root.tag_name().namespace().is_some_and(|ns| ns != SVG_NS)
@@ -68,8 +71,10 @@ pub(crate) fn write_children(
     inherited: &[(Option<&str>, &str)],
 ) -> String {
     let mut out = String::new();
-    let owned: Vec<(Option<String>, String)> =
-        inherited.iter().map(|(p, u)| (p.map(str::to_owned), (*u).to_owned())).collect();
+    let owned: Vec<(Option<String>, String)> = inherited
+        .iter()
+        .map(|(p, u)| (p.map(str::to_owned), (*u).to_owned()))
+        .collect();
     for child in node.children() {
         write_node(&mut out, child, rules, &owned);
     }
@@ -83,8 +88,10 @@ fn write_node(
     inherited: &[(Option<String>, String)],
 ) {
     if node.is_element() {
-        let inherited: Vec<(Option<&str>, &str)> =
-            inherited.iter().map(|(p, u)| (p.as_deref(), u.as_str())).collect();
+        let inherited: Vec<(Option<&str>, &str)> = inherited
+            .iter()
+            .map(|(p, u)| (p.as_deref(), u.as_str()))
+            .collect();
         write_element(out, node, rules, &inherited);
     } else if node.is_text() {
         let parent = node.parent().unwrap_or(node);
@@ -131,8 +138,10 @@ fn write_element(
     out.push('<');
     out.push_str(&name);
 
-    let mut scope: Vec<(Option<String>, String)> =
-        inherited.iter().map(|(p, u)| (p.map(str::to_owned), (*u).to_owned())).collect();
+    let mut scope: Vec<(Option<String>, String)> = inherited
+        .iter()
+        .map(|(p, u)| (p.map(str::to_owned), (*u).to_owned()))
+        .collect();
     for ns in node.namespaces() {
         let (prefix, uri) = (ns.name(), ns.uri());
         if uri == XML_NS || !rules.keep_namespace(uri) {
@@ -148,11 +157,18 @@ fn write_element(
         scope.push((prefix.map(str::to_owned), uri.to_owned()));
     }
     for attr in node.attributes() {
-        if attr.namespace().is_some_and(|uri| uri != XML_NS && !rules.keep_namespace(uri)) {
+        if attr
+            .namespace()
+            .is_some_and(|uri| uri != XML_NS && !rules.keep_namespace(uri))
+        {
             continue;
         }
         if let Some(value) = rules.attribute(node, attr.name(), attr.namespace(), attr.value()) {
-            push_attr(out, &qualified(node, attr.namespace(), attr.name(), true), &value);
+            push_attr(
+                out,
+                &qualified(node, attr.namespace(), attr.name(), true),
+                &value,
+            );
         }
     }
     for (key, value) in rules.extra_attributes(node) {

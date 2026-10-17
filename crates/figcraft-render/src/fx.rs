@@ -12,7 +12,8 @@ fn box_sizes(sigma: f64) -> [usize; 3] {
         wl -= 1;
     }
     let wu = wl + 2;
-    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f64 - 4.0 * n * wl as f64 - 3.0 * n) / (-4.0 * wl as f64 - 4.0);
+    let m_ideal = (12.0 * sigma * sigma - n * (wl * wl) as f64 - 4.0 * n * wl as f64 - 3.0 * n)
+        / (-4.0 * wl as f64 - 4.0);
     let m = m_ideal.round() as i64;
     let r = |i: i64| -> usize {
         let w = if i < m { wl } else { wu };
@@ -51,7 +52,9 @@ fn box_blur_h(src: &[u8], dst: &mut [u8], w: usize, h: usize, r: usize) {
             if x >= r {
                 let sub = x - r;
                 for c in 0..4 {
-                    acc[c] = acc[c].saturating_sub(u32::from(src.get(row + sub * 4 + c).copied().unwrap_or(0)));
+                    acc[c] = acc[c].saturating_sub(u32::from(
+                        src.get(row + sub * 4 + c).copied().unwrap_or(0),
+                    ));
                 }
             }
         }
@@ -106,7 +109,13 @@ pub fn morph(p: &mut Pixmap, r: i32) {
     let grow = r > 0;
     let r = r.unsigned_abs().min(400) as usize;
     let (w, h) = (p.width() as usize, p.height() as usize);
-    let alpha: Vec<u8> = p.data().as_chunks::<4>().0.iter().map(|c| c.get(3).copied().unwrap_or(0)).collect();
+    let alpha: Vec<u8> = p
+        .data()
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|c| c.get(3).copied().unwrap_or(0))
+        .collect();
     let pass = |src: &[u8], w: usize, h: usize, horizontal: bool| -> Vec<u8> {
         let mut out = vec![0u8; src.len()];
         for y in 0..h {
@@ -160,7 +169,12 @@ pub fn tint(p: &mut Pixmap, color: [f32; 4]) {
     for px in p.data_mut().as_chunks_mut::<4>().0 {
         let alpha = f32::from(px.get(3).copied().unwrap_or(0)) / 255.0 * a;
         let q = |c: f32| (c * alpha * 255.0).round().clamp(0.0, 255.0) as u8;
-        px.copy_from_slice(&[q(r), q(g), q(b), (alpha * 255.0).round().clamp(0.0, 255.0) as u8]);
+        px.copy_from_slice(&[
+            q(r),
+            q(g),
+            q(b),
+            (alpha * 255.0).round().clamp(0.0, 255.0) as u8,
+        ]);
     }
 }
 
@@ -174,7 +188,13 @@ pub fn invert_alpha(p: &mut Pixmap) {
 
 /// Multiply every pixel of `p` by the alpha of `m` (same size); `invert` uses 1-alpha.
 pub fn mask_by(p: &mut Pixmap, m: &Pixmap, invert: bool) {
-    for (px, mp) in p.data_mut().as_chunks_mut::<4>().0.iter_mut().zip(m.data().chunks_exact(4)) {
+    for (px, mp) in p
+        .data_mut()
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
+        .zip(m.data().chunks_exact(4))
+    {
         let ma = u32::from(mp.get(3).copied().unwrap_or(0));
         let ma = if invert { 255 - ma } else { ma };
         for c in px.iter_mut() {
@@ -186,7 +206,12 @@ pub fn mask_by(p: &mut Pixmap, m: &Pixmap, invert: bool) {
 /// Call `f(dst_row, src_row, row, first_col)` for each row where `src`, with its top-left at `at`
 /// on `dst`, overlaps it (premultiplied RGBA bytes of the overlapping columns; `row` and
 /// `first_col` in `src`'s pixels). Nothing past either edge is visited.
-pub(crate) fn overlap_rows(dst: &mut Pixmap, at: (i32, i32), src: &Pixmap, mut f: impl FnMut(&mut [u8], &[u8], i64, i64)) {
+pub(crate) fn overlap_rows(
+    dst: &mut Pixmap,
+    at: (i32, i32),
+    src: &Pixmap,
+    mut f: impl FnMut(&mut [u8], &[u8], i64, i64),
+) {
     let (dw, dh) = (i64::from(dst.width()), i64::from(dst.height()));
     let (sw, sh) = (i64::from(src.width()), i64::from(src.height()));
     let (ax, ay) = (i64::from(at.0), i64::from(at.1));
@@ -199,7 +224,10 @@ pub(crate) fn overlap_rows(dst: &mut Pixmap, at: (i32, i32), src: &Pixmap, mut f
     let s = src.data();
     let d = dst.data_mut();
     for r in r0..r1 {
-        let (si, di) = ((r * sw + c0) as usize * 4, ((r + ay) * dw + ax + c0) as usize * 4);
+        let (si, di) = (
+            (r * sw + c0) as usize * 4,
+            ((r + ay) * dw + ax + c0) as usize * 4,
+        );
         if let (Some(sp), Some(dp)) = (s.get(si..si + len), d.get_mut(di..di + len)) {
             f(dp, sp, r, c0);
         }
@@ -210,7 +238,11 @@ pub(crate) fn overlap_rows(dst: &mut Pixmap, at: (i32, i32), src: &Pixmap, mut f
 /// `max(0, backdrop + source - 1)`, through the W3C general compositing formula), which
 /// tiny-skia lacks.
 pub fn plus_darker(dst: &mut Pixmap, at: (i32, i32), src: &Pixmap, opacity: f32) {
-    let o = if opacity.is_finite() { opacity.clamp(0.0, 1.0) } else { 0.0 };
+    let o = if opacity.is_finite() {
+        opacity.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     overlap_rows(dst, at, src, |dp, sp, _, _| {
         for (d, s) in dp.chunks_exact_mut(4).zip(sp.chunks_exact(4)) {
             let f = |v: u8| f32::from(v) / 255.0;
@@ -252,10 +284,22 @@ mod tests {
         let i = (10 * 20 + 10) * 4;
         p.data_mut()[i..i + 4].copy_from_slice(&[255, 255, 255, 255]);
         morph(&mut p, 2);
-        let count = p.data().as_chunks::<4>().0.iter().filter(|c| c[3] == 255).count();
+        let count = p
+            .data()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|c| c[3] == 255)
+            .count();
         assert_eq!(count, 25);
         morph(&mut p, -2);
-        let count = p.data().as_chunks::<4>().0.iter().filter(|c| c[3] == 255).count();
+        let count = p
+            .data()
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|c| c[3] == 255)
+            .count();
         assert_eq!(count, 1);
     }
 

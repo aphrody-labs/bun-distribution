@@ -70,7 +70,11 @@ fn printed(n: &Node, f: &mut impl FnMut(Rect)) {
     }
     match &n.kind {
         NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. } => {}
-        NodeKind::Layer { children, .. } | NodeKind::Group { children, clip: false } => {
+        NodeKind::Layer { children, .. }
+        | NodeKind::Group {
+            children,
+            clip: false,
+        } => {
             for c in children {
                 printed(c, f);
             }
@@ -87,7 +91,9 @@ fn printed(n: &Node, f: &mut impl FnMut(Rect)) {
 fn has_art(doc: &Document, r: Rect) -> bool {
     let mut any = false;
     for l in &doc.layers {
-        printed(l, &mut |b| any |= b.intersect(r).area() > 0.0 || r.contains_rect(b));
+        printed(l, &mut |b| {
+            any |= b.intersect(r).area() > 0.0 || r.contains_rect(b)
+        });
     }
     any
 }
@@ -102,22 +108,32 @@ fn art_bounds(doc: &Document) -> Option<Rect> {
 }
 
 /// The regions that print: `(artboard, rect)`.
-pub(crate) fn regions(doc: &Document, set: &PrintSettings) -> Result<Vec<(Option<usize>, Rect)>, PdfError> {
+pub(crate) fn regions(
+    doc: &Document,
+    set: &PrintSettings,
+) -> Result<Vec<(Option<usize>, Rect)>, PdfError> {
     let count = doc.artboards.len();
     let picked: Vec<usize> = match set.artboards {
         PrintArtboards::Ignore => {
-            let r = art_bounds(doc).ok_or_else(|| PdfError::BadSetting("nothing to print: the document has no art that prints".into()))?;
+            let r = art_bounds(doc).ok_or_else(|| {
+                PdfError::BadSetting("nothing to print: the document has no art that prints".into())
+            })?;
             return Ok(vec![(None, r)]);
         }
         _ if count == 0 => return Err(PdfError::NoArtboards),
         PrintArtboards::All => (0..count).collect(),
         PrintArtboards::Range => parse_range(&set.range, count).map_err(PdfError::BadSetting)?,
     };
-    let mut out: Vec<(Option<usize>, Rect)> = picked.into_iter().filter_map(|i| Some((Some(i), doc.artboards.get(i)?.rect))).collect();
+    let mut out: Vec<(Option<usize>, Rect)> = picked
+        .into_iter()
+        .filter_map(|i| Some((Some(i), doc.artboards.get(i)?.rect)))
+        .collect();
     if set.skip_blank {
         out.retain(|(_, r)| has_art(doc, *r));
         if out.is_empty() {
-            return Err(PdfError::BadSetting("nothing to print: every artboard picked is blank".into()));
+            return Err(PdfError::BadSetting(
+                "nothing to print: every artboard picked is blank".into(),
+            ));
         }
     }
     Ok(out)
@@ -163,14 +179,22 @@ fn turns(set: &PrintSettings, (w, h): (f64, f64), flipped: bool) -> (Affine, (f6
 
 /// The pages of `doc` (whose layers are those that print) as `set` lays them out, the tiles of
 /// each artboard when tiling, and warnings (art that doesn't fit the imageable area).
-pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<String>) -> Result<(Vec<Layout>, Vec<TileGrid>), PdfError> {
+pub(crate) fn layout(
+    doc: &Document,
+    set: &PrintSettings,
+    warnings: &mut Vec<String>,
+) -> Result<(Vec<Layout>, Vec<TileGrid>), PdfError> {
     let marks = set.marks.printer_marks();
     let bleed = set.bleed.of(doc);
     let (pw, ph) = set.paper();
-    let origin = set.tile_origin.placed.then_some((set.tile_origin.x, set.tile_origin.y));
+    let origin = set
+        .tile_origin
+        .placed
+        .then_some((set.tile_origin.x, set.tile_origin.y));
     let (mut pages, mut grids) = (vec![], vec![]);
     for (artboard, r) in regions(doc, set)? {
-        let what = artboard.map_or_else(|| "The art".to_string(), |i| format!("Artboard {}", i + 1));
+        let what =
+            artboard.map_or_else(|| "The art".to_string(), |i| format!("Artboard {}", i + 1));
         if !(r.width() > 0.0 && r.height() > 0.0) {
             warnings.push(format!("{what} has no area and was left out"));
             continue;
@@ -180,11 +204,17 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
             true => Orientation::Portrait,
             false => set.orientation,
         };
-        let paper = if orientation.landscape() { (ph, pw) } else { (pw, ph) };
+        let paper = if orientation.landscape() {
+            (ph, pw)
+        } else {
+            (pw, ph)
+        };
         let m = set.margin;
         let imageable = Rect::new(m, m, paper.0 - m, paper.1 - m);
         if imageable.width() < 1.0 || imageable.height() < 1.0 {
-            return Err(PdfError::BadSetting(format!("margin: a {m} pt margin leaves no imageable area on the paper")));
+            return Err(PdfError::BadSetting(format!(
+                "margin: a {m} pt margin leaves no imageable area on the paper"
+            )));
         }
         // How far the bleed and marks reach around the artboard at scale `s`, `[top, bottom, left, right]`.
         let around = |s: (f64, f64)| {
@@ -199,12 +229,15 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
                 // further when a larger scale grows the bleed.
                 let fit = |s: f64| {
                     let (_, most) = around((s, s));
-                    ((imageable.width() - most[2] - most[3]) / r.width()).min((imageable.height() - most[0] - most[1]) / r.height())
+                    ((imageable.width() - most[2] - most[3]) / r.width())
+                        .min((imageable.height() - most[0] - most[1]) / r.height())
                 };
                 let first = fit(1.0);
                 let s = if first <= 1.0 { first } else { fit(first) };
                 if !(s.is_finite() && s > 0.0) {
-                    return Err(PdfError::BadSetting(format!("{what} doesn't fit the paper with its bleed and marks")));
+                    return Err(PdfError::BadSetting(format!(
+                        "{what} doesn't fit the paper with its bleed and marks"
+                    )));
                 }
                 (s, s)
             }
@@ -218,11 +251,15 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
         let page = Rect::new(0.0, 0.0, page_size.0, page_size.1);
         let bleed_box = outset(r, bleed);
         let place_at = |trim: Rect| {
-            Affine::translate(trim.origin().to_vec2()) * Affine::scale_non_uniform(scale.0, scale.1) * Affine::translate(-r.origin().to_vec2())
+            Affine::translate(trim.origin().to_vec2())
+                * Affine::scale_non_uniform(scale.0, scale.1)
+                * Affine::translate(-r.origin().to_vec2())
         };
         // The page's boxes: the trim box within the bleed box within the page.
         let boxes = |view: Affine, trim: Rect| {
-            let b = view.transform_rect_bbox(outset(trim, bleed_s)).intersect(page);
+            let b = view
+                .transform_rect_bbox(outset(trim, bleed_s))
+                .intersect(page);
             let t = view.transform_rect_bbox(trim).intersect(b);
             if t.area() > 0.0 { (t, b) } else { (page, page) }
         };
@@ -244,7 +281,10 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
         if !set.scaling.tiles() {
             // The printed area's top-left corner: where the tile origin puts it, else the placement.
             let (x, y) = match origin {
-                Some((ox, oy)) => (imageable.x0 - ox * scale.0 - most[2], imageable.y0 - oy * scale.1 - most[0]),
+                Some((ox, oy)) => (
+                    imageable.x0 - ox * scale.0 - most[2],
+                    imageable.y0 - oy * scale.1 - most[0],
+                ),
                 None => {
                     let (fx, fy) = set.placement.origin.factors();
                     (
@@ -253,41 +293,84 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
                     )
                 }
             };
-            let trim = Rect::new(x + most[2], y + most[0], x + most[2] + size.0, y + most[0] + size.1);
-            if !imageable.inflate(0.01, 0.01).contains_rect(Rect::new(x, y, x + extent.0, y + extent.1)) {
+            let trim = Rect::new(
+                x + most[2],
+                y + most[0],
+                x + most[2] + size.0,
+                y + most[0] + size.1,
+            );
+            if !imageable.inflate(0.01, 0.01).contains_rect(Rect::new(
+                x,
+                y,
+                x + extent.0,
+                y + extent.1,
+            )) {
                 warnings.push(format!("{what} with its bleed and marks is larger than the imageable area: part of it doesn't print"));
             }
-            pages.push(base(turn, None, place_at(trim), bleed_box, trim, boxes(turn, trim), None));
+            pages.push(base(
+                turn,
+                None,
+                place_at(trim),
+                bleed_box,
+                trim,
+                boxes(turn, trim),
+                None,
+            ));
             continue;
         }
         // Tiles across then down over the printed area, overlapping by `overlap`.
-        let tile = if set.scaling == PrintScaling::TileFull { paper } else { (imageable.width(), imageable.height()) };
+        let tile = if set.scaling == PrintScaling::TileFull {
+            paper
+        } else {
+            (imageable.width(), imageable.height())
+        };
         let o = set.overlap;
         if o * 2.0 >= tile.0.min(tile.1) {
-            return Err(PdfError::BadSetting(format!("overlap: {o} pt is half a tile or more")));
+            return Err(PdfError::BadSetting(format!(
+                "overlap: {o} pt is half a tile or more"
+            )));
         }
         let step = (tile.0 - o, tile.1 - o);
         // The tile origin's page starts the grid: its imageable area's corner is the origin's point
         // (a full page's imageable area is inside the margin).
-        let inside = if set.scaling == PrintScaling::TileFull { m } else { 0.0 };
-        let start = origin.map(|(ox, oy)| (most[2] + ox * scale.0 - inside, most[0] + oy * scale.1 - inside));
+        let inside = if set.scaling == PrintScaling::TileFull {
+            m
+        } else {
+            0.0
+        };
+        let start = origin.map(|(ox, oy)| {
+            (
+                most[2] + ox * scale.0 - inside,
+                most[0] + oy * scale.1 - inside,
+            )
+        });
         let (first_x, cols) = span(start.map(|s| s.0), extent.0, tile.0, step.0, o);
         let (first_y, rows) = span(start.map(|s| s.1), extent.1, tile.1, step.1, o);
-        let grid = (start.map_or(0.0, |s| s.0) + first_x * step.0, start.map_or(0.0, |s| s.1) + first_y * step.1);
+        let grid = (
+            start.map_or(0.0, |s| s.0) + first_x * step.0,
+            start.map_or(0.0, |s| s.1) + first_y * step.1,
+        );
         if cols * rows > MAX_TILES as f64 {
-            return Err(PdfError::BadSetting(format!("{what} would print on more than {MAX_TILES} tiles: scale it down")));
+            return Err(PdfError::BadSetting(format!(
+                "{what} would print on more than {MAX_TILES} tiles: scale it down"
+            )));
         }
         let (cols, rows) = (cols as usize, rows as usize);
         let count = cols * rows;
         let pick = if set.tile_range.trim().is_empty() {
             (0..count).collect()
         } else {
-            parse_range(&set.tile_range, count).map_err(|e| PdfError::BadSetting(format!("tileRange of {what}: {e}")))?
+            parse_range(&set.tile_range, count)
+                .map_err(|e| PdfError::BadSetting(format!("tileRange of {what}: {e}")))?
         };
         let trim = Rect::new(most[2], most[0], most[2] + size.0, most[0] + size.1);
         let place = place_at(trim);
         let from_doc = place.inverse();
-        let at = if set.scaling == PrintScaling::TileFull { (0.0, 0.0) } else { (imageable.x0, imageable.y0) };
+        let at = if set.scaling == PrintScaling::TileFull {
+            (0.0, 0.0)
+        } else {
+            (imageable.x0, imageable.y0)
+        };
         let window = |t: usize| {
             let (c, rw) = ((t % cols) as f64, (t / cols) as f64);
             let (x, y) = (grid.0 + c * step.0, grid.1 + rw * step.1);
@@ -297,10 +380,27 @@ pub(crate) fn layout(doc: &Document, set: &PrintSettings, warnings: &mut Vec<Str
             let w = window(t);
             let view = turn * Affine::translate((at.0 - w.x0, at.1 - w.y0));
             let area = from_doc.transform_rect_bbox(w).intersect(bleed_box);
-            pages.push(base(view, Some(w), place, area, trim, boxes(view, trim), Some((t, count))));
+            pages.push(base(
+                view,
+                Some(w),
+                place,
+                area,
+                trim,
+                boxes(view, trim),
+                Some((t, count)),
+            ));
         }
-        let tiles = (0..count).map(|t| from_doc.transform_rect_bbox(window(t))).map(|b| [b.x0, b.y0, b.x1, b.y1]).collect();
-        grids.push(TileGrid { artboard, columns: cols, rows, printed: pick.iter().map(|t| t + 1).collect(), tiles });
+        let tiles = (0..count)
+            .map(|t| from_doc.transform_rect_bbox(window(t)))
+            .map(|b| [b.x0, b.y0, b.x1, b.y1])
+            .collect();
+        grids.push(TileGrid {
+            artboard,
+            columns: cols,
+            rows,
+            printed: pick.iter().map(|t| t + 1).collect(),
+            tiles,
+        });
     }
     if pages.is_empty() {
         return Err(PdfError::BadSetting("nothing to print".into()));

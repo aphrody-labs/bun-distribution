@@ -42,7 +42,11 @@ impl HdrBins {
             let e = lightcraft_color::transfer::linear_to_srgb(v);
             return ((e * (from - 1) as f32 + 0.5) as usize).min(from - 1);
         }
-        let stops = if self.stops.is_finite() { self.stops.max(1e-3) } else { 1e-3 };
+        let stops = if self.stops.is_finite() {
+            self.stops.max(1e-3)
+        } else {
+            1e-3
+        };
         let t = (v.log2() / stops).clamp(0.0, 1.0);
         (from + (t * (last - from) as f32 + 0.5) as usize).min(last)
     }
@@ -54,13 +58,23 @@ impl Histogram {
     pub const HDR_FROM: usize = Self::BINS / 2;
 
     fn empty(hdr: Option<HdrBins>) -> Histogram {
-        Histogram { r: vec![0; 256], g: vec![0; 256], b: vec![0; 256], luma: vec![0; 256], total: 0, hdr }
+        Histogram {
+            r: vec![0; 256],
+            g: vec![0; 256],
+            b: vec![0; 256],
+            luma: vec![0; 256],
+            total: 0,
+            hdr,
+        }
     }
 
     /// Histogram of linear RGB samples (1 = SDR white) reaching `stops` stops above SDR white.
     /// `samples` are visited at most ~1 MP of them (evenly strided).
     pub fn of_hdr(samples: &[[f32; 3]], stops: f32) -> Histogram {
-        let bins = HdrBins { from: Self::HDR_FROM, stops };
+        let bins = HdrBins {
+            from: Self::HDR_FROM,
+            stops,
+        };
         let mut h = Self::empty(Some(bins));
         let step = (samples.len() / 1_000_000).max(1);
         for c in samples.iter().step_by(step) {
@@ -93,7 +107,12 @@ impl Histogram {
     pub fn to_words(&self) -> Vec<u32> {
         let mut w = Vec::with_capacity(4 * Self::BINS + 3);
         for ch in [&self.r, &self.g, &self.b, &self.luma] {
-            w.extend(ch.iter().copied().chain(std::iter::repeat(0)).take(Self::BINS));
+            w.extend(
+                ch.iter()
+                    .copied()
+                    .chain(std::iter::repeat(0))
+                    .take(Self::BINS),
+            );
         }
         w.push(self.total);
         let (from, stops) = self.hdr.map_or((0, 0.0), |b| (b.from as u32, b.stops));
@@ -112,11 +131,25 @@ impl Histogram {
         let hdr = match (w.get(4 * n + 1), w.get(4 * n + 2)) {
             (Some(&from), Some(&bits)) if from > 1 && (from as usize) < n => {
                 let stops = f32::from_bits(bits);
-                Some(HdrBins { from: from as usize, stops: if stops.is_finite() && stops > 0.0 { stops } else { 1.0 } })
+                Some(HdrBins {
+                    from: from as usize,
+                    stops: if stops.is_finite() && stops > 0.0 {
+                        stops
+                    } else {
+                        1.0
+                    },
+                })
             }
             _ => None,
         };
-        Some(Histogram { r: ch(0)?, g: ch(1)?, b: ch(2)?, luma: ch(3)?, total: *w.get(4 * n)?, hdr })
+        Some(Histogram {
+            r: ch(0)?,
+            g: ch(1)?,
+            b: ch(2)?,
+            luma: ch(3)?,
+            total: *w.get(4 * n)?,
+            hdr,
+        })
     }
 
     /// Fraction of pixels above SDR white in any channel (0 for SDR histograms).
@@ -163,7 +196,12 @@ impl Histogram {
         if self.total == 0 {
             return 0.0;
         }
-        self.luma.iter().enumerate().map(|(i, &c)| i as f32 * c as f32).sum::<f32>() / (255.0 * self.total as f32)
+        self.luma
+            .iter()
+            .enumerate()
+            .map(|(i, &c)| i as f32 * c as f32)
+            .sum::<f32>()
+            / (255.0 * self.total as f32)
     }
 
     /// Luma value (0..1) below which `q` of the pixels fall.
@@ -186,7 +224,13 @@ mod tests {
 
     #[test]
     fn counts_and_stats() {
-        let img = Rgba8::from_fn(10, 10, |x, _| if x < 5 { [0, 0, 0, 255] } else { [255, 255, 255, 255] });
+        let img = Rgba8::from_fn(10, 10, |x, _| {
+            if x < 5 {
+                [0, 0, 0, 255]
+            } else {
+                [255, 255, 255, 255]
+            }
+        });
         let h = Histogram::of_srgb8(&img);
         assert_eq!(h.total, 100);
         assert_eq!(h.r[0], 50);
@@ -201,7 +245,13 @@ mod tests {
 
     #[test]
     fn hdr_bins_split_sdr_and_stops() {
-        let px = [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [4.0, 4.0, 4.0], [16.0, 16.0, 16.0], [f32::NAN, -1.0, f32::INFINITY]];
+        let px = [
+            [0.0, 0.0, 0.0],
+            [1.0, 1.0, 1.0],
+            [4.0, 4.0, 4.0],
+            [16.0, 16.0, 16.0],
+            [f32::NAN, -1.0, f32::INFINITY],
+        ];
         let h = Histogram::of_hdr(&px, 4.0);
         let b = h.hdr.unwrap();
         assert_eq!(h.total, 5);
@@ -224,7 +274,10 @@ mod tests {
         let hdr = Histogram::of_hdr(&[[0.5, 2.0, 9.0]], 4.0);
         assert_eq!(Histogram::from_words(&hdr.to_words()), Some(hdr));
         // the older layout (no HDR words) is an SDR histogram
-        assert_eq!(Histogram::from_words(&sdr.to_words()[..1025]), Some(sdr.clone()));
+        assert_eq!(
+            Histogram::from_words(&sdr.to_words()[..1025]),
+            Some(sdr.clone())
+        );
         assert_eq!(Histogram::from_words(&[1, 2, 3]), None);
         let mut bad = sdr.to_words();
         bad[1025] = 9999; // first HDR bin out of range: SDR

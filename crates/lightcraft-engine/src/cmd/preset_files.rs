@@ -8,12 +8,22 @@ use crate::presets::{LCPRESET_EXT, expand_preset_paths, to_lcpreset};
 use crate::{Result, Session};
 
 fn strings(p: &Value, key: &str) -> Option<Vec<String>> {
-    p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect())
+    p.get(key).and_then(Value::as_array).map(|a| {
+        a.iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect()
+    })
 }
 
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
-    let paths = strings(p, "paths").filter(|v| !v.is_empty()).ok_or_else(|| bad("preset.import", "no paths"))?;
-    let group = str_param(p, "group").map(str::trim).filter(|g| !g.is_empty()).map(str::to_string);
+    let paths = strings(p, "paths")
+        .filter(|v| !v.is_empty())
+        .ok_or_else(|| bad("preset.import", "no paths"))?;
+    let group = str_param(p, "group")
+        .map(str::trim)
+        .filter(|g| !g.is_empty())
+        .map(str::to_string);
     let dry = p.get("dryRun").and_then(Value::as_bool).unwrap_or(false);
     let mut imported = Vec::new();
     let mut failed = Vec::new();
@@ -23,10 +33,17 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         for f in expand_preset_paths(std::slice::from_ref(top)) {
             // presets in a folder go to a group named after it (unless the file names its own)
             // the path from the imported folder (inclusive) to the file's folder
-            let base = std::path::Path::new(top).parent().unwrap_or(std::path::Path::new(""));
-            let rel = std::path::Path::new(&f).parent().and_then(|d| d.strip_prefix(base).ok()).map(|d| d.to_string_lossy().to_string());
+            let base = std::path::Path::new(top)
+                .parent()
+                .unwrap_or(std::path::Path::new(""));
+            let rel = std::path::Path::new(&f)
+                .parent()
+                .and_then(|d| d.strip_prefix(base).ok())
+                .map(|d| d.to_string_lossy().to_string());
             let dir_group = rel.filter(|_| from_dir).and_then(|d| group_from_dir(&d));
-            let parsed = std::fs::read(&f).map_err(|e| e.to_string()).and_then(|b| read_presets(&f, &b, dir_group));
+            let parsed = std::fs::read(&f)
+                .map_err(|e| e.to_string())
+                .and_then(|b| read_presets(&f, &b, dir_group));
             match parsed {
                 Ok(list) => {
                     for mut it in list {
@@ -34,7 +51,11 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
                             it.preset.group = g.clone();
                         }
                         let (name, grp) = (it.preset.name.clone(), it.preset.group.clone());
-                        let id = if dry { Some(it.preset.id.clone()) } else { s.add_presets(vec![it.preset]).pop() };
+                        let id = if dry {
+                            Some(it.preset.id.clone())
+                        } else {
+                            s.add_presets(vec![it.preset]).pop()
+                        };
                         match id {
                             Some(id) => imported.push(json!({"id": id, "name": name, "group": grp, "file": f, "unmapped": it.unmapped})),
                             None => skipped += 1,
@@ -49,7 +70,9 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn export(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_param(p, "path").filter(|x| !x.trim().is_empty()).ok_or_else(|| bad("preset.export", "missing path"))?;
+    let path = str_param(p, "path")
+        .filter(|x| !x.trim().is_empty())
+        .ok_or_else(|| bad("preset.export", "missing path"))?;
     let mut path = std::path::PathBuf::from(path);
     if path.extension().is_none() {
         path.set_extension(LCPRESET_EXT);
@@ -67,12 +90,17 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         .cloned()
         .collect();
     if chosen.is_empty() {
-        return Err(bad("preset.export", "no presets to export (create one first, or pass ids/group)"));
+        return Err(bad(
+            "preset.export",
+            "no presets to export (create one first, or pass ids/group)",
+        ));
     }
     if let Some(dir) = path.parent().filter(|d| !d.as_os_str().is_empty()) {
-        std::fs::create_dir_all(dir).map_err(|e| crate::EngineError::Other(format!("{}: {e}", dir.display())))?;
+        std::fs::create_dir_all(dir)
+            .map_err(|e| crate::EngineError::Other(format!("{}: {e}", dir.display())))?;
     }
-    std::fs::write(&path, to_lcpreset(&chosen)).map_err(|e| crate::EngineError::Other(format!("{}: {e}", path.display())))?;
+    std::fs::write(&path, to_lcpreset(&chosen))
+        .map_err(|e| crate::EngineError::Other(format!("{}: {e}", path.display())))?;
     Ok(json!({"path": path.display().to_string(), "count": chosen.len()}))
 }
 

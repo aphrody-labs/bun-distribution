@@ -86,7 +86,11 @@ pub struct RagSearcher {
 impl RagSearcher {
     /// Create a searcher wrapping a RAG store.
     pub fn new(store: Arc<RagStore>) -> Self {
-        Self { store, embedder: None, reranker: None }
+        Self {
+            store,
+            embedder: None,
+            reranker: None,
+        }
     }
 
     /// Attach an embedding model.
@@ -117,7 +121,7 @@ impl RagSearcher {
                         Some("No embedder configured; fell back to lexical search".to_string()),
                     )
                 }
-            },
+            }
             SearchMode::Hybrid => {
                 if self.embedder.is_some() {
                     (SearchMode::Hybrid, None)
@@ -130,7 +134,7 @@ impl RagSearcher {
                         ),
                     )
                 }
-            },
+            }
         };
 
         // 2. Fetch candidates according to effective mode.
@@ -141,16 +145,22 @@ impl RagSearcher {
                 let filtered = self.filter_path_prefix(raw, opts.path_prefix.as_deref());
                 let total = filtered.len();
                 (filtered, total)
-            },
+            }
             SearchMode::Vector => {
-                let emb = self.embedder.as_ref().expect("embedder verified in effective_mode");
+                let emb = self
+                    .embedder
+                    .as_ref()
+                    .expect("embedder verified in effective_mode");
                 let q_vec = emb.embed_query(query).await?;
                 let fetch_limit = (opts.limit * 3).max(opts.rerank_top_n);
-                let raw = self.store.search_vector(&q_vec, emb.model_id(), fetch_limit).await?;
+                let raw = self
+                    .store
+                    .search_vector(&q_vec, emb.model_id(), fetch_limit)
+                    .await?;
                 let filtered = self.filter_path_prefix(raw, opts.path_prefix.as_deref());
                 let total = filtered.len();
                 (filtered, total)
-            },
+            }
             SearchMode::Hybrid => {
                 let fetch_limit = (opts.limit * 3).max(opts.rerank_top_n);
 
@@ -159,15 +169,21 @@ impl RagSearcher {
                 let lex_hits = self.filter_path_prefix(lex_raw, opts.path_prefix.as_deref());
 
                 // Fetch vector branch
-                let emb = self.embedder.as_ref().expect("embedder verified in effective_mode");
+                let emb = self
+                    .embedder
+                    .as_ref()
+                    .expect("embedder verified in effective_mode");
                 let q_vec = emb.embed_query(query).await?;
-                let vec_raw = self.store.search_vector(&q_vec, emb.model_id(), fetch_limit).await?;
+                let vec_raw = self
+                    .store
+                    .search_vector(&q_vec, emb.model_id(), fetch_limit)
+                    .await?;
                 let vec_hits = self.filter_path_prefix(vec_raw, opts.path_prefix.as_deref());
 
                 let total = lex_hits.len() + vec_hits.len();
                 let fused = self.fuse_rrf(lex_hits, vec_hits, opts.rrf_k);
                 (fused, total)
-            },
+            }
         };
 
         // 3. Optional cross-encoder reranking on top candidates
@@ -185,7 +201,7 @@ impl RagSearcher {
                     }
                     // Replace reranked slice in hits
                     hits.splice(..rerank_count, top_slice);
-                },
+                }
                 Err(error) => {
                     let reason = format!(
                         "Reranker `{}` failed; kept retrieval order: {error}",
@@ -195,7 +211,7 @@ impl RagSearcher {
                         Some(existing) => format!("{existing}; {reason}"),
                         None => reason,
                     });
-                },
+                }
             }
         }
 
@@ -224,7 +240,10 @@ impl RagSearcher {
         let Some(p) = prefix else {
             return chunks;
         };
-        chunks.into_iter().filter(|c| c.chunk.path.starts_with(p)).collect()
+        chunks
+            .into_iter()
+            .filter(|c| c.chunk.path.starts_with(p))
+            .collect()
     }
 
     fn fuse_rrf(

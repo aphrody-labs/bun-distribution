@@ -5,7 +5,14 @@
 //! handle positions. Rendering and algorithms convert to [`kurbo::BezPath`].
 //!
 //! Coordinates are document points (1/72 in), y pointing down.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod corners;
@@ -24,7 +31,9 @@ pub mod units;
 pub mod warp;
 
 pub use kurbo;
-pub use kurbo::{Affine, BezPath, CubicBez, Line, ParamCurve, PathEl, PathSeg, Point, Rect, Shape, Size, Vec2};
+pub use kurbo::{
+    Affine, BezPath, CubicBez, Line, ParamCurve, PathEl, PathSeg, Point, Rect, Shape, Size, Vec2,
+};
 pub use path::{Anchor, AnchorKind, FillRule, PathData, SubPath};
 pub use units::{Unit, format_measure, parse_measure};
 
@@ -106,7 +115,10 @@ mod tests {
     fn union_options() {
         let a = Rect::new(0.0, 0.0, 1.0, 1.0);
         let b = Rect::new(2.0, 2.0, 3.0, 3.0);
-        assert_eq!(union_opt(Some(a), Some(b)), Some(Rect::new(0.0, 0.0, 3.0, 3.0)));
+        assert_eq!(
+            union_opt(Some(a), Some(b)),
+            Some(Rect::new(0.0, 0.0, 3.0, 3.0))
+        );
         assert_eq!(union_opt(None, Some(b)), Some(b));
         assert_eq!(union_opt(None, None), None);
     }

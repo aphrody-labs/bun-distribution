@@ -5,7 +5,14 @@
 //! - This module turns a layer's [`TextDoc`] into per-character glyph outlines (Bezier paths) with
 //!   character / word / line indices, which is what text animators and selectors work on.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 #[cfg(all(unix, not(target_os = "macos"), not(target_arch = "wasm32")))]
 mod font_dirs;
@@ -21,10 +28,15 @@ pub use kurbo;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
 
-use effectcraft_keyframe::{BaselineOption, CharStyle, Composer, Direction, Justify, Kerning, ParaStyle, TextDoc};
+use effectcraft_keyframe::{
+    BaselineOption, CharStyle, Composer, Direction, Justify, Kerning, ParaStyle, TextDoc,
+};
 pub use fonts::{FaceId, Resolved, families, resolve};
 use kurbo::{Affine, BezPath, Point};
-pub use layout::{Align, Caps, Glyph, Layout, Line, ParagraphStyle, Script, TextStyle, layout as layout_text, layout_rich, measure};
+pub use layout::{
+    Align, Caps, Glyph, Layout, Line, ParagraphStyle, Script, TextStyle, layout as layout_text,
+    layout_rich, measure,
+};
 use skrifa::instance::{LocationRef, Size};
 use skrifa::outline::{DrawSettings, OutlinePen};
 use skrifa::{GlyphId, MetadataProvider};
@@ -39,10 +51,15 @@ impl OutlinePen for Pen {
         self.0.line_to((x as f64, y as f64));
     }
     fn quad_to(&mut self, cx0: f32, cy0: f32, x: f32, y: f32) {
-        self.0.quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
+        self.0
+            .quad_to((cx0 as f64, cy0 as f64), (x as f64, y as f64));
     }
     fn curve_to(&mut self, cx0: f32, cy0: f32, cx1: f32, cy1: f32, x: f32, y: f32) {
-        self.0.curve_to((cx0 as f64, cy0 as f64), (cx1 as f64, cy1 as f64), (x as f64, y as f64));
+        self.0.curve_to(
+            (cx0 as f64, cy0 as f64),
+            (cx1 as f64, cy1 as f64),
+            (x as f64, y as f64),
+        );
     }
     fn close(&mut self) {
         self.0.close_path();
@@ -53,14 +70,22 @@ impl OutlinePen for Pen {
 pub(crate) fn outline_units(face: FaceId, gid: u32) -> Option<Arc<BezPath>> {
     static C: OnceLock<Mutex<HashMap<(FaceId, u32), Option<Arc<BezPath>>>>> = OnceLock::new();
     let c = C.get_or_init(Default::default);
-    if let Some(v) = c.lock().unwrap_or_else(|e| e.into_inner()).get(&(face, gid)) {
+    if let Some(v) = c
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .get(&(face, gid))
+    {
         return v.clone();
     }
     let f = fonts::face(face);
     let v = f.font().and_then(|font| {
         let g = font.outline_glyphs().get(GlyphId::new(gid))?;
         let mut pen = Pen(BezPath::new());
-        g.draw(DrawSettings::unhinted(Size::unscaled(), LocationRef::default()), &mut pen).ok()?;
+        g.draw(
+            DrawSettings::unhinted(Size::unscaled(), LocationRef::default()),
+            &mut pen,
+        )
+        .ok()?;
         Some(Arc::new(pen.0))
     });
     let mut m = c.lock().unwrap_or_else(|e| e.into_inner());
@@ -74,8 +99,14 @@ pub(crate) fn outline_units(face: FaceId, gid: u32) -> Option<Arc<BezPath>> {
 /// The outline of a laid-out glyph in pixels, origin on its baseline (y down), with its
 /// horizontal / vertical scale and faux italic.
 pub fn glyph_outline(g: &Glyph) -> BezPath {
-    let units = if g.variations == 0 { outline_units(g.face, g.id) } else { variable::outline_units_at(g.face, g.id, &variable::coords(g.variations)) };
-    let Some(units) = units else { return BezPath::new() };
+    let units = if g.variations == 0 {
+        outline_units(g.face, g.id)
+    } else {
+        variable::outline_units_at(g.face, g.id, &variable::coords(g.variations))
+    };
+    let Some(units) = units else {
+        return BezPath::new();
+    };
     glyph_affine(g) * (*units).clone()
 }
 
@@ -146,7 +177,11 @@ pub fn text_style(s: &CharStyle) -> TextStyle {
         tracking: s.tracking as f32,
         kerning: true,
         optical: s.kerning == Kerning::Optical,
-        manual_kern: if let Kerning::Manual(v) = s.kerning { Some(v as f32) } else { None },
+        manual_kern: if let Kerning::Manual(v) = s.kerning {
+            Some(v as f32)
+        } else {
+            None
+        },
         ligatures: s.ligatures,
         baseline_shift: s.baseline_shift as f32,
         faux_bold: s.faux_bold,
@@ -221,7 +256,11 @@ const ROT90: Affine = Affine::new([0.0, 1.0, -1.0, 0.0, 0.0, 0.0]);
 /// `box_pos`. Vertical text runs down from the origin (point) or the box's top-right corner.
 pub fn layout_doc(doc: &TextDoc) -> TextLayout {
     let text = doc.text.as_str();
-    let byte_of_char: Vec<usize> = text.char_indices().map(|(b, _)| b).chain(std::iter::once(text.len())).collect();
+    let byte_of_char: Vec<usize> = text
+        .char_indices()
+        .map(|(b, _)| b)
+        .chain(std::iter::once(text.len()))
+        .collect();
     let nchars = byte_of_char.len() - 1;
     let mut runs = Vec::new();
     let mut styles = Vec::new();
@@ -235,8 +274,14 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
         runs.push((a..b, runtime_style));
         styles.push(r.style);
     }
-    let width = doc.box_size.map(|b| if doc.vertical { b[1] } else { b[0] } as f32);
-    let paras: Vec<ParagraphStyle> = doc.paras().iter().map(|p| paragraph_style(p, width)).collect();
+    let width = doc
+        .box_size
+        .map(|b| if doc.vertical { b[1] } else { b[0] } as f32);
+    let paras: Vec<ParagraphStyle> = doc
+        .paras()
+        .iter()
+        .map(|p| paragraph_style(p, width))
+        .collect();
     let lay = layout::layout_rich(text, &runs, &paras);
     let to_layer = match (doc.vertical, doc.box_size) {
         (false, Some(_)) => Affine::translate((doc.box_pos[0], doc.box_pos[1])),
@@ -244,7 +289,12 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
         (true, Some(b)) => Affine::translate((doc.box_pos[0] + b[0], doc.box_pos[1])) * ROT90,
         (true, None) => ROT90,
     };
-    let mut out = TextLayout { lines: lay.lines.len(), to_layer, vertical: doc.vertical, ..Default::default() };
+    let mut out = TextLayout {
+        lines: lay.lines.len(),
+        to_layer,
+        vertical: doc.vertical,
+        ..Default::default()
+    };
     // Map byte clusters → char/word indices.
     let mut char_of_byte = vec![0usize; text.len() + 1];
     let mut word_of_char = Vec::new();
@@ -271,13 +321,28 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
     out.chars = nchars;
     out.chars_no_space = nospace;
     out.words = words;
-    let mut b = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+    let mut b = [
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    ];
     for (li, line) in lay.lines.iter().enumerate() {
         let o = to_layer * Point::new(line.x as f64, line.baseline as f64);
-        out.line_boxes.push([o.x, o.y, line.width as f64, (line.ascent + line.descent) as f64]);
+        out.line_boxes.push([
+            o.x,
+            o.y,
+            line.width as f64,
+            (line.ascent + line.descent) as f64,
+        ]);
         // Vertical type: Tate-Chu-Yoko groups (consecutive glyphs of tcy runs) take one em of
         // the column; everything after them moves up by the rest of their width.
-        let tcy = |gi: usize| doc.vertical && styles.get(lay.glyphs[gi].run).is_some_and(|s| s.tate_chu_yoko);
+        let tcy = |gi: usize| {
+            doc.vertical
+                && styles
+                    .get(lay.glyphs[gi].run)
+                    .is_some_and(|s| s.tate_chu_yoko)
+        };
         let mut shift = 0.0f64;
         let mut group: Option<(f64, f64, f64)> = None; // (start x, width, em) in layout space
         let line_glyphs: Vec<usize> = line.glyphs.clone().collect();
@@ -286,10 +351,19 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
             let ci = char_of_byte.get(g.cluster).copied().unwrap_or(0);
             let src = text[g.cluster..].chars().next().unwrap_or(' ');
             let st = styles.get(g.run);
-            let ch = if st.is_some_and(|s| s.all_caps) { src.to_uppercase().next().unwrap_or(src) } else { src };
+            let ch = if st.is_some_and(|s| s.all_caps) {
+                src.to_uppercase().next().unwrap_or(src)
+            } else {
+                src
+            };
             let mut path = glyph_outline(g);
             let mut outline_xf = glyph_affine(g);
-            let next_x = lay.glyphs.get(gi + 1).filter(|_| line.glyphs.contains(&(gi + 1))).map(|n| n.x).unwrap_or(line.x + line.width);
+            let next_x = lay
+                .glyphs
+                .get(gi + 1)
+                .filter(|_| line.glyphs.contains(&(gi + 1)))
+                .map(|n| n.x)
+                .unwrap_or(line.x + line.width);
             let advance = (next_x - g.x) as f64;
             let mut origin = to_layer * Point::new(g.x as f64 - shift, g.y as f64);
             if doc.vertical && tcy(gi) {
@@ -297,7 +371,12 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
                 if group.is_none() {
                     let mut w = 0.0;
                     for &gj in line_glyphs[k..].iter().take_while(|&&gj| tcy(gj)) {
-                        let nx = lay.glyphs.get(gj + 1).filter(|_| line.glyphs.contains(&(gj + 1))).map(|n| n.x).unwrap_or(line.x + line.width);
+                        let nx = lay
+                            .glyphs
+                            .get(gj + 1)
+                            .filter(|_| line.glyphs.contains(&(gj + 1)))
+                            .map(|n| n.x)
+                            .unwrap_or(line.x + line.width);
                         w += (nx - lay.glyphs[gj].x) as f64;
                     }
                     group = Some((g.x as f64, w, g.size as f64));
@@ -316,9 +395,14 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
                     // Anchor vertical forms using their own vertical origin and horizontal
                     // advance, not the next glyph's pen (which includes tracking/justification).
                     let font = fonts::face(g.face);
-                    let metrics = is_cjk(src).then(|| font.vertical_origin(g.id, g.size)).flatten();
+                    let metrics = is_cjk(src)
+                        .then(|| font.vertical_origin(g.id, g.size))
+                        .flatten();
                     let t = if let Some((width, top)) = metrics {
-                        Affine::translate((0.35 * g.size as f64 - width * g.h_scale as f64 / 2.0, top * g.v_scale as f64))
+                        Affine::translate((
+                            0.35 * g.size as f64 - width * g.h_scale as f64 / 2.0,
+                            top * g.v_scale as f64,
+                        ))
                     } else {
                         let c = Point::new(advance / 2.0, -0.35 * g.size as f64);
                         let rc = ROT90 * c;
@@ -332,7 +416,9 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
                     outline_xf = ROT90 * outline_xf;
                 }
             }
-            if let Some(r) = (!path.elements().is_empty()).then(|| kurbo::Shape::bounding_box(&path)) {
+            if let Some(r) =
+                (!path.elements().is_empty()).then(|| kurbo::Shape::bounding_box(&path))
+            {
                 b[0] = b[0].min(origin.x + r.x0);
                 b[1] = b[1].min(origin.y + r.y0);
                 b[2] = b[2].max(origin.x + r.x1);
@@ -370,10 +456,15 @@ pub fn layout_doc(doc: &TextDoc) -> TextLayout {
 impl TextLayout {
     /// Character index of byte offset `b`.
     pub fn char_of_byte(&self, b: usize) -> usize {
-        self.byte_of_char.partition_point(|x| *x < b).min(self.chars)
+        self.byte_of_char
+            .partition_point(|x| *x < b)
+            .min(self.chars)
     }
     fn byte(&self, ci: usize) -> usize {
-        self.byte_of_char.get(ci.min(self.chars)).copied().unwrap_or(0)
+        self.byte_of_char
+            .get(ci.min(self.chars))
+            .copied()
+            .unwrap_or(0)
     }
     /// Layout line holding caret `ci`.
     pub fn line_of_char(&self, ci: usize) -> usize {
@@ -382,8 +473,15 @@ impl TextLayout {
     /// The caret at character boundary `ci` as a segment (top, bottom) in layer space.
     pub fn caret(&self, ci: usize) -> (Point, Point) {
         let (x, base, li) = self.layout.caret(self.byte(ci));
-        let (asc, desc) = self.layout.lines.get(li).map_or((10.0, 3.0), |l| (l.ascent, l.descent));
-        (self.to_layer * Point::new(x as f64, (base - asc) as f64), self.to_layer * Point::new(x as f64, (base + desc) as f64))
+        let (asc, desc) = self
+            .layout
+            .lines
+            .get(li)
+            .map_or((10.0, 3.0), |l| (l.ascent, l.descent));
+        (
+            self.to_layer * Point::new(x as f64, (base - asc) as f64),
+            self.to_layer * Point::new(x as f64, (base + desc) as f64),
+        )
     }
     /// The caret's position along its line (layout space), for up / down movement.
     pub fn caret_x(&self, ci: usize) -> f64 {
@@ -403,7 +501,10 @@ impl TextLayout {
             return (0, goal);
         }
         match self.layout.lines.get(li as usize) {
-            Some(l) => (self.char_of_byte(self.layout.hit_line(l, goal as f32)), goal),
+            Some(l) => (
+                self.char_of_byte(self.layout.hit_line(l, goal as f32)),
+                goal,
+            ),
             None => (self.chars, goal),
         }
     }
@@ -411,7 +512,10 @@ impl TextLayout {
     pub fn line_span(&self, ci: usize) -> (usize, usize) {
         let li = self.line_of_char(ci);
         match self.layout.lines.get(li) {
-            Some(l) => (self.char_of_byte(l.range.start), self.char_of_byte(self.layout.line_end(l))),
+            Some(l) => (
+                self.char_of_byte(l.range.start),
+                self.char_of_byte(self.layout.line_end(l)),
+            ),
             None => (0, self.chars),
         }
     }
@@ -433,9 +537,14 @@ impl TextLayout {
 pub fn char_glyph_style(s: &CharStyle, ch: char) -> (BezPath, f64) {
     let style = text_style(s);
     let lay = layout_text(&ch.to_string(), &style, &ParagraphStyle::default());
-    let Some(g) = lay.glyphs.first() else { return (BezPath::new(), 0.0) };
+    let Some(g) = lay.glyphs.first() else {
+        return (BezPath::new(), 0.0);
+    };
     let adv = lay.lines.first().map(|l| l.width as f64).unwrap_or(0.0);
-    (Affine::translate((-(g.x as f64), 0.0)) * glyph_outline(g), adv)
+    (
+        Affine::translate((-(g.x as f64), 0.0)) * glyph_outline(g),
+        adv,
+    )
 }
 
 /// [`char_glyph_style`] in a Source Text's base style.
@@ -449,7 +558,11 @@ mod tests {
 
     #[test]
     fn layout_counts_and_bounds() {
-        let doc = TextDoc { text: "Hello big world".into(), size: 100.0, ..Default::default() };
+        let doc = TextDoc {
+            text: "Hello big world".into(),
+            size: 100.0,
+            ..Default::default()
+        };
         let l = layout_doc(&doc);
         assert_eq!(l.chars, 15);
         assert_eq!(l.words, 3);
@@ -457,12 +570,21 @@ mod tests {
         assert!(l.bounds[2] > 500.0, "{:?}", l.bounds);
         // Baseline at y = 0: caps rise above it.
         assert!(l.bounds[1] < -60.0 && l.bounds[3] < 30.0, "{:?}", l.bounds);
-        assert!(l.glyphs.iter().filter(|g| !g.is_space).all(|g| !g.path.elements().is_empty()));
+        assert!(
+            l.glyphs
+                .iter()
+                .filter(|g| !g.is_space)
+                .all(|g| !g.path.elements().is_empty())
+        );
     }
 
     #[test]
     fn styled_runs_carets_and_hit_testing() {
-        let mut doc = TextDoc { text: "Hello big\nworld".into(), size: 40.0, ..Default::default() };
+        let mut doc = TextDoc {
+            text: "Hello big\nworld".into(),
+            size: 40.0,
+            ..Default::default()
+        };
         doc.apply_style(6..9, |s| {
             s.size = 80.0;
             s.fill = [1.0, 0.0, 0.0, 1.0];
@@ -500,16 +622,38 @@ mod tests {
 
     #[test]
     fn paragraph_box_offset_and_vertical_type() {
-        let doc = TextDoc { text: "ab cd".into(), size: 20.0, box_size: Some([200.0, 100.0]), box_pos: [-100.0, -50.0], ..Default::default() };
+        let doc = TextDoc {
+            text: "ab cd".into(),
+            size: 20.0,
+            box_size: Some([200.0, 100.0]),
+            box_pos: [-100.0, -50.0],
+            ..Default::default()
+        };
         let l = layout_doc(&doc);
         let (a, _) = l.caret(0);
-        assert!((a.x + 100.0).abs() < 1e-6 && (a.y + 50.0).abs() < 1.0, "{a:?}");
+        assert!(
+            (a.x + 100.0).abs() < 1e-6 && (a.y + 50.0).abs() < 1.0,
+            "{a:?}"
+        );
         // Vertical: characters run down a column, carets are horizontal.
-        let v = layout_doc(&TextDoc { text: "abc\nde".into(), size: 20.0, vertical: true, ..Default::default() });
-        let ys: Vec<f64> = v.glyphs.iter().filter(|g| g.line_index == 0).map(|g| g.origin.y).collect();
+        let v = layout_doc(&TextDoc {
+            text: "abc\nde".into(),
+            size: 20.0,
+            vertical: true,
+            ..Default::default()
+        });
+        let ys: Vec<f64> = v
+            .glyphs
+            .iter()
+            .filter(|g| g.line_index == 0)
+            .map(|g| g.origin.y)
+            .collect();
         assert!(ys.windows(2).all(|w| w[1] > w[0]), "{ys:?}");
         let col2 = v.glyphs.iter().find(|g| g.line_index == 1).unwrap();
-        assert!(col2.origin.x < v.glyphs[0].origin.x - 10.0, "next column to the left");
+        assert!(
+            col2.origin.x < v.glyphs[0].origin.x - 10.0,
+            "next column to the left"
+        );
         let (p0, p1) = v.caret(1);
         assert!((p0.y - p1.y).abs() < 1e-6 && (p0.x - p1.x).abs() > 5.0);
         assert_eq!(v.hit(p0.midpoint(p1)), 1);
@@ -522,7 +666,12 @@ mod tests {
             (r.width(), r.height())
         };
         // "H" sideways in a vertical column: wider than tall (it is taller than wide upright).
-        let doc = TextDoc { text: "HI".into(), size: 40.0, vertical: true, ..Default::default() };
+        let doc = TextDoc {
+            text: "HI".into(),
+            size: 40.0,
+            vertical: true,
+            ..Default::default()
+        };
         let v = layout_doc(&doc);
         let (w, h) = wide(&v.glyphs[0]);
         assert!(w > h, "rotated: {w}×{h}");
@@ -532,47 +681,97 @@ mod tests {
         let (w, h) = wide(&layout_doc(&up).glyphs[0]);
         assert!(h > w, "upright: {w}×{h}");
         // CJK stays upright.
-        let cjk = layout_doc(&TextDoc { text: "日本".into(), size: 40.0, vertical: true, ..Default::default() });
+        let cjk = layout_doc(&TextDoc {
+            text: "日本".into(),
+            size: 40.0,
+            vertical: true,
+            ..Default::default()
+        });
         assert!(cjk.glyphs.iter().all(|g| g.origin.x.is_finite()));
         // Tate-Chu-Yoko on "12" in "A12B": the digits sit side by side on one row of the column
         // (same y, increasing x) and the group takes one em of the column.
-        let mut t = TextDoc { text: "A12B".into(), size: 40.0, vertical: true, ..Default::default() };
+        let mut t = TextDoc {
+            text: "A12B".into(),
+            size: 40.0,
+            vertical: true,
+            ..Default::default()
+        };
         let plain = layout_doc(&t);
         t.apply_style(1..3, |s| s.tate_chu_yoko = true);
         let tcy = layout_doc(&t);
         let (one, two) = (&tcy.glyphs[1], &tcy.glyphs[2]);
-        assert!((one.origin.y - two.origin.y).abs() < 1e-6, "{:?} {:?}", one.origin, two.origin);
+        assert!(
+            (one.origin.y - two.origin.y).abs() < 1e-6,
+            "{:?} {:?}",
+            one.origin,
+            two.origin
+        );
         assert!(two.origin.x > one.origin.x + 5.0);
         let (w, h) = wide(one);
         assert!(h > w, "digits upright");
         let w = one.advance + two.advance;
         let moved = tcy.glyphs[3].origin.y - plain.glyphs[3].origin.y;
         // (Within kerning, which no longer applies across the run boundaries.)
-        assert!((moved - (40.0 - w)).abs() < 2.5, "the group takes one em: moved {moved}, width {w}");
+        assert!(
+            (moved - (40.0 - w)).abs() < 2.5,
+            "the group takes one em: moved {moved}, width {w}"
+        );
         // The group is centred across the column (x of the column centre line).
         let mid = (one.origin.x + two.origin.x + two.advance) / 2.0;
-        assert!((mid - plain.glyphs[0].origin.x - 0.35 * 40.0).abs() < 3.0, "{mid}");
+        assert!(
+            (mid - plain.glyphs[0].origin.x - 0.35 * 40.0).abs() < 3.0,
+            "{mid}"
+        );
     }
 
     #[test]
     fn ltr_paragraph_direction_is_forced() {
         // Arabic first: Left-to-Right keeps a left-to-right base (the Latin word stays left).
         let text = "\u{0645}\u{0631}\u{062D}\u{0628}\u{0627} abc";
-        let ltr = layout_doc(&TextDoc { text: text.into(), size: 30.0, ..Default::default() });
-        let mut r = TextDoc { text: text.into(), size: 30.0, ..Default::default() };
+        let ltr = layout_doc(&TextDoc {
+            text: text.into(),
+            size: 30.0,
+            ..Default::default()
+        });
+        let mut r = TextDoc {
+            text: text.into(),
+            size: 30.0,
+            ..Default::default()
+        };
         r.direction = effectcraft_keyframe::text_doc::Direction::Rtl;
         let rtl = layout_doc(&r);
-        let x_of = |l: &TextLayout, c: char| l.glyphs.iter().find(|g| g.ch == c).map(|g| g.origin.x).unwrap();
+        let x_of = |l: &TextLayout, c: char| {
+            l.glyphs
+                .iter()
+                .find(|g| g.ch == c)
+                .map(|g| g.origin.x)
+                .unwrap()
+        };
         let first_ar = '\u{0645}';
-        assert!(x_of(&ltr, 'a') > x_of(&ltr, first_ar), "LTR: Arabic run first, then abc");
-        assert!(x_of(&rtl, 'a') < x_of(&rtl, first_ar), "RTL: abc on the left");
+        assert!(
+            x_of(&ltr, 'a') > x_of(&ltr, first_ar),
+            "LTR: Arabic run first, then abc"
+        );
+        assert!(
+            x_of(&rtl, 'a') < x_of(&rtl, first_ar),
+            "RTL: abc on the left"
+        );
     }
 
     #[test]
     fn centered_point_text_straddles_origin() {
-        let doc = TextDoc { text: "CENTER".into(), size: 80.0, justify: Justify::Center, ..Default::default() };
+        let doc = TextDoc {
+            text: "CENTER".into(),
+            size: 80.0,
+            justify: Justify::Center,
+            ..Default::default()
+        };
         let l = layout_doc(&doc);
-        assert!(l.bounds[0] < -100.0 && l.bounds[2] > 100.0, "{:?}", l.bounds);
+        assert!(
+            l.bounds[0] < -100.0 && l.bounds[2] > 100.0,
+            "{:?}",
+            l.bounds
+        );
         assert!((l.bounds[0] + l.bounds[2]).abs() < 20.0);
     }
 }

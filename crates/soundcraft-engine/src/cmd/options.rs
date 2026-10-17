@@ -18,23 +18,107 @@ macro_rules! toggle {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        toggle!("options.loop_record", "Loop Record", ["Options"], Some("Alt+L"), loop_record),
-        toggle!("options.quickpunch", "QuickPunch", ["Options"], Some("Cmd+Shift+P"), quickpunch),
-        toggle!("options.pre_post_roll", "Pre/Post-Roll", ["Options"], Some("Cmd+K"), pre_post_roll),
-        toggle!("options.loop_playback", "Loop Playback", ["Options"], Some("Cmd+Shift+L"), loop_playback),
-        toggle!("options.link_timeline_edit", "Link Timeline and Edit Selection", ["Options"], Some("Shift+/"), link_timeline_edit),
-        toggle!("options.link_track_edit", "Link Track and Edit Selection", ["Options"], None, link_track_edit),
-        toggle!("options.insertion_follows_playback", "Insertion Follows Playback", ["Options"], None, insertion_follows_playback),
-        toggle!("options.tab_to_transient", "Tab to Transient", ["Options"], Some("Cmd+Alt+Tab"), tab_to_transient),
-        toggle!("options.mirrored_midi", "Mirrored MIDI Editing", ["Options"], None, mirrored_midi),
-        toggle!("options.automation_follows_edit", "Automation Follows Edit", ["Options"], None, automation_follows_edit),
-        toggle!("options.markers_follow_edit", "Markers Follow Edit", ["Options"], None, markers_follow_edit),
-        toggle!("options.layered_editing", "Layered Editing", ["Options"], None, layered_editing),
+        toggle!(
+            "options.loop_record",
+            "Loop Record",
+            ["Options"],
+            Some("Alt+L"),
+            loop_record
+        ),
+        toggle!(
+            "options.quickpunch",
+            "QuickPunch",
+            ["Options"],
+            Some("Cmd+Shift+P"),
+            quickpunch
+        ),
+        toggle!(
+            "options.pre_post_roll",
+            "Pre/Post-Roll",
+            ["Options"],
+            Some("Cmd+K"),
+            pre_post_roll
+        ),
+        toggle!(
+            "options.loop_playback",
+            "Loop Playback",
+            ["Options"],
+            Some("Cmd+Shift+L"),
+            loop_playback
+        ),
+        toggle!(
+            "options.link_timeline_edit",
+            "Link Timeline and Edit Selection",
+            ["Options"],
+            Some("Shift+/"),
+            link_timeline_edit
+        ),
+        toggle!(
+            "options.link_track_edit",
+            "Link Track and Edit Selection",
+            ["Options"],
+            None,
+            link_track_edit
+        ),
+        toggle!(
+            "options.insertion_follows_playback",
+            "Insertion Follows Playback",
+            ["Options"],
+            None,
+            insertion_follows_playback
+        ),
+        toggle!(
+            "options.tab_to_transient",
+            "Tab to Transient",
+            ["Options"],
+            Some("Cmd+Alt+Tab"),
+            tab_to_transient
+        ),
+        toggle!(
+            "options.mirrored_midi",
+            "Mirrored MIDI Editing",
+            ["Options"],
+            None,
+            mirrored_midi
+        ),
+        toggle!(
+            "options.automation_follows_edit",
+            "Automation Follows Edit",
+            ["Options"],
+            None,
+            automation_follows_edit
+        ),
+        toggle!(
+            "options.markers_follow_edit",
+            "Markers Follow Edit",
+            ["Options"],
+            None,
+            markers_follow_edit
+        ),
+        toggle!(
+            "options.layered_editing",
+            "Layered Editing",
+            ["Options"],
+            None,
+            layered_editing
+        ),
         toggle!("options.click", "Click", ["Options"], None, click),
         toggle!("options.countoff", "Count Off", [], None, countoff),
         toggle!("options.midi_merge", "MIDI Merge", [], None, midi_merge),
-        toggle!("options.pre_fader_metering", "Pre-Fader Metering", ["Options"], None, pre_fader_metering),
-        toggle!("options.delay_compensation", "Delay Compensation", ["Options"], None, delay_compensation),
+        toggle!(
+            "options.pre_fader_metering",
+            "Pre-Fader Metering",
+            ["Options"],
+            None,
+            pre_fader_metering
+        ),
+        toggle!(
+            "options.delay_compensation",
+            "Delay Compensation",
+            ["Options"],
+            None,
+            delay_compensation
+        ),
         cmd!(noundo "options.destructive_record", "Destructive Record", ["Options"], None, "{value?: bool}", always, |e, p| record_mode(e, p, "destructive")),
         cmd!(noundo "options.trackpunch", "TrackPunch", ["Options"], Some("Cmd+Shift+T"), "{value?: bool}", always, |e, p| record_mode(e, p, "trackpunch")),
         cmd!(noundo "options.scrolling", "Edit Window Scrolling", ["Options", "Edit Window Scrolling"], None, "{mode: none|after_playback|page|continuous|center}", always, |e, p| {
@@ -92,19 +176,32 @@ pub fn specs() -> Vec<CommandSpec> {
 
 fn record_mode(e: &mut Engine, p: &Value, mode: &str) -> Result<Value> {
     let s = e.session_mut();
-    let on = p.get("value").and_then(Value::as_bool).unwrap_or(s.edit.record_mode != mode);
-    s.edit.record_mode = if on { mode.to_string() } else { "normal".into() };
+    let on = p
+        .get("value")
+        .and_then(Value::as_bool)
+        .unwrap_or(s.edit.record_mode != mode);
+    s.edit.record_mode = if on {
+        mode.to_string()
+    } else {
+        "normal".into()
+    };
     Ok(json!({"record_mode": s.edit.record_mode}))
 }
 
 fn session_setup(e: &mut Engine, p: &Value) -> Result<Value> {
     let fr = match str_param(p, "frame_rate") {
-        Some(f) => {
-            Some(FrameRate::ALL.into_iter().find(|r| r.label().eq_ignore_ascii_case(f)).ok_or_else(|| bad("setup.session", "unknown frame rate"))?)
-        }
+        Some(f) => Some(
+            FrameRate::ALL
+                .into_iter()
+                .find(|r| r.label().eq_ignore_ascii_case(f))
+                .ok_or_else(|| bad("setup.session", "unknown frame rate"))?,
+        ),
         None => None,
     };
-    let bd = match p.get("bit_depth").map(|v| v.to_string().trim_matches('"').to_ascii_lowercase()) {
+    let bd = match p
+        .get("bit_depth")
+        .map(|v| v.to_string().trim_matches('"').to_ascii_lowercase())
+    {
         Some(b) if b == "16" => Some(BitDepthSetting::Int16),
         Some(b) if b == "24" => Some(BitDepthSetting::Int24),
         Some(b) if b.starts_with("32") => Some(BitDepthSetting::Float32),
@@ -125,5 +222,7 @@ fn session_setup(e: &mut Engine, p: &Value) -> Result<Value> {
     if let Some(n) = p.get("name").and_then(Value::as_str) {
         s.name = n.to_string();
     }
-    Ok(json!({"frame_rate": s.frame_rate.label(), "bit_depth": s.bit_depth, "sample_rate": s.sample_rate.hz()}))
+    Ok(
+        json!({"frame_rate": s.frame_rate.label(), "bit_depth": s.bit_depth, "sample_rate": s.sample_rate.hz()}),
+    )
 }

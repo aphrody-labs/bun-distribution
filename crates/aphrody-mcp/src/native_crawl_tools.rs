@@ -7,7 +7,7 @@ use std::{
 };
 
 use aphrody_web_crawl::{
-    AddRequest, CrawlOptions, Frontier, FrontierOptions, BunBrowserTransport, crawl_bounded,
+    AddRequest, BunBrowserTransport, CrawlOptions, Frontier, FrontierOptions, crawl_bounded,
 };
 use rmcp::model::{CallToolRequestParams, CallToolResult, ContentBlock, Tool};
 use serde_json::{Value, json};
@@ -40,7 +40,11 @@ static TOOL: LazyLock<Tool> = LazyLock::new(|| {
 });
 
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    if taken(TOOL.name.as_ref()) { Vec::new() } else { vec![TOOL.clone()] }
+    if taken(TOOL.name.as_ref()) {
+        Vec::new()
+    } else {
+        vec![TOOL.clone()]
+    }
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -52,7 +56,9 @@ pub(crate) fn owns(name: &str) -> bool {
 }
 
 fn count(args: &Value, name: &str, default: u64, min: u64, max: u64) -> Result<u64, String> {
-    let Some(value) = args.get(name) else { return Ok(default) };
+    let Some(value) = args.get(name) else {
+        return Ok(default);
+    };
     value
         .as_u64()
         .filter(|value| (min..=max).contains(value))
@@ -61,12 +67,17 @@ fn count(args: &Value, name: &str, default: u64, min: u64, max: u64) -> Result<u
 
 fn flag(args: &Value, name: &str, default: bool) -> Result<bool, String> {
     args.get(name).map_or(Ok(default), |value| {
-        value.as_bool().ok_or_else(|| format!("{name} must be a boolean"))
+        value
+            .as_bool()
+            .ok_or_else(|| format!("{name} must be a boolean"))
     })
 }
 
 fn parse_urls(args: &Value) -> Result<Vec<String>, String> {
-    let entries = args.get("urls").and_then(Value::as_array).ok_or("urls must be an array")?;
+    let entries = args
+        .get("urls")
+        .and_then(Value::as_array)
+        .ok_or("urls must be an array")?;
     if entries.is_empty() || entries.len() > 100 {
         return Err("urls must contain 1 to 100 entries".into());
     }
@@ -131,7 +142,9 @@ async fn run(args: &Value) -> Result<Value, String> {
     }
     .map_err(|error| error.to_string())?;
     for url in &urls {
-        frontier.enqueue(AddRequest::seed(url), now_ms).map_err(|error| error.to_string())?;
+        frontier
+            .enqueue(AddRequest::seed(url), now_ms)
+            .map_err(|error| error.to_string())?;
     }
     let options = CrawlOptions {
         max_depth: count(args, "maxDepth", 2, 0, 20)? as u32,
@@ -148,7 +161,12 @@ async fn run(args: &Value) -> Result<Value, String> {
         crawl_bounded(&mut frontier, &BunBrowserTransport::default(), &options),
     )
     .await
-    .map_err(|_| format!("crawl exceeded the {} second tool budget", CRAWL_TIMEOUT.as_secs()))?
+    .map_err(|_| {
+        format!(
+            "crawl exceeded the {} second tool budget",
+            CRAWL_TIMEOUT.as_secs()
+        )
+    })?
     .map_err(|error| error.to_string())?;
     let page_count = report.pages.len();
     let error_count = report.errors.len();
@@ -179,17 +197,19 @@ async fn run(args: &Value) -> Result<Value, String> {
 }
 
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     match run(&args).await {
         Ok(value) => {
             let mut result = CallToolResult::success(vec![ContentBlock::text(value.to_string())]);
             result.structured_content = Some(value);
             result
-        },
-        Err(error) => {
-            CallToolResult::error(vec![ContentBlock::text(format!("aphrody_web_crawl: {error}"))])
-        },
+        }
+        Err(error) => CallToolResult::error(vec![ContentBlock::text(format!(
+            "aphrody_web_crawl: {error}"
+        ))]),
     }
 }
 
@@ -200,12 +220,24 @@ mod tests {
     #[test]
     fn validates_bounds_and_protocol_without_network() {
         assert!(owns("aphrody_web_crawl"));
-        assert_eq!(parse_urls(&json!({"urls": ["https://example.com/"]})).unwrap().len(), 1);
+        assert_eq!(
+            parse_urls(&json!({"urls": ["https://example.com/"]}))
+                .unwrap()
+                .len(),
+            1
+        );
         assert!(parse_urls(&json!({"urls": ["file:///tmp/a"]})).is_err());
         assert!(parse_urls(&json!({"urls": []})).is_err());
         assert!(count(&json!({"maxRequests": 1001}), "maxRequests", 25, 1, 1000).is_err());
         assert!(
-            count(&json!({"resultLimit": 101}), "resultLimit", 50, 1, MAX_PAGE_RESULTS).is_err()
+            count(
+                &json!({"resultLimit": 101}),
+                "resultLimit",
+                50,
+                1,
+                MAX_PAGE_RESULTS
+            )
+            .is_err()
         );
         assert!(flag(&json!({"obeyRobots": "yes"}), "obeyRobots", true).is_err());
     }

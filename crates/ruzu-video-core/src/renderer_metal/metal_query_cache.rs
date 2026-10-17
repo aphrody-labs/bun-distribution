@@ -29,7 +29,9 @@ use crate::buffer_cache::buffer_cache_base::{
 use crate::host1x::gpu_device_memory_manager::MaxwellDeviceMemoryManager;
 use crate::memory_manager::MemoryManager;
 use crate::query_cache::query_base::{GuestQuery, QueryBase, QueryFlagBits};
-use crate::query_cache::query_cache::{DeviceMemoryWriter, GpuAddressTranslator, RenderConditionState, SyncValuesStruct};
+use crate::query_cache::query_cache::{
+    DeviceMemoryWriter, GpuAddressTranslator, RenderConditionState, SyncValuesStruct,
+};
 use crate::query_cache::query_cache_base::{QueryCacheBase, QueryLocation};
 use crate::query_cache::query_stream::{SimpleStreamer, StreamerInterface, StreamerInterfaceBase};
 use crate::query_cache::types::{ComparisonMode, QueryPropertiesFlags, QueryType};
@@ -951,7 +953,8 @@ impl MetalQueryCache {
                 return Ok(false);
             }
         }
-        if compare_to_zero && first.is_none()
+        if compare_to_zero
+            && first.is_none()
             && !buffer_cache.is_region_gpu_modified(address, size as usize)
         {
             // Metal must otherwise mask indirect arguments in compute before
@@ -1347,8 +1350,10 @@ mod tests {
         assert!(!cache
             .accelerate_host_conditional_rendering(&mut f.runtime, &mut f.cache, &memory, state,)
             .unwrap());
-        assert!(f.runtime.active_conditional_rendering().is_none(),
-            "CPU-owned condition must not retain old GPU value 13");
+        assert!(
+            f.runtime.active_conditional_rendering().is_none(),
+            "CPU-owned condition must not retain old GPU value 13"
+        );
         for bad in [
             RenderConditionState {
                 override_mode: 1,
@@ -1440,7 +1445,9 @@ mod tests {
     fn common_gpu_write_notifications_advance_native_generation_within_one_tick() {
         let mut f = QuerySyncFixture::new();
         let (id, _) = f.cache.obtain_cpu_buffer(
-            0x8100, 24, ObtainBufferSynchronize::NoSynchronize,
+            0x8100,
+            24,
+            ObtainBufferSynchronize::NoSynchronize,
             ObtainBufferOperation::DoNothing,
         );
         let buffer = f.cache.backend_buffer(id).unwrap().handle();
@@ -1448,7 +1455,9 @@ mod tests {
         let tick = f.scheduler.current_tick();
         for expected in 1..=2 {
             let (written_id, _) = f.cache.obtain_cpu_buffer(
-                0x8100, 24, ObtainBufferSynchronize::NoSynchronize,
+                0x8100,
+                24,
+                ObtainBufferSynchronize::NoSynchronize,
                 ObtainBufferOperation::MarkAsWritten,
             );
             assert_eq!(written_id, id);
@@ -1521,7 +1530,9 @@ mod tests {
         let cache = MetalQueryCache::new(&f.device).unwrap();
         let memory = conditional_channel_memory();
         // Exercise replacement of a previously active GPU conditional region.
-        f.runtime.host_conditional_rendering_compare_value_impl(&mut f.cache, 0x8100, true).unwrap();
+        f.runtime
+            .host_conditional_rendering_compare_value_impl(&mut f.cache, 0x8100, true)
+            .unwrap();
         f.runtime.resume_host_conditional_rendering();
         assert!(f.runtime.active_conditional_rendering().is_some());
         f.scheduler.finish_all().unwrap();
@@ -1532,7 +1543,9 @@ mod tests {
             address: 0x20100,
         };
         assert!(!f.cache.is_region_gpu_modified(0x8100, 8));
-        assert!(!cache.accelerate_host_conditional_rendering(&mut f.runtime, &mut f.cache, &memory, state).unwrap());
+        assert!(!cache
+            .accelerate_host_conditional_rendering(&mut f.runtime, &mut f.cache, &memory, state)
+            .unwrap());
         f.runtime.resume_host_conditional_rendering();
         assert!(f.runtime.active_conditional_rendering().is_none());
         assert!(!f.scheduler.has_active_work());
@@ -1552,17 +1565,39 @@ mod tests {
         // Guest RAM contains 0xa5 in both words throughout. Only the GPU copy
         // is authoritative; a CPU fallback would incorrectly render all cases.
         for (value, expected) in [(0, 0), (1, 0), (0x1_0000_0000, 0), (0x1_0000_0001, 1)] {
-            f.runtime.sync_values(&mut f.cache,
-                &[SyncValuesStruct { address: 0x8100, value, size: 8 }], None).unwrap();
-            f.cache.obtain_cpu_buffer(0x8100, 8, ObtainBufferSynchronize::NoSynchronize,
-                ObtainBufferOperation::MarkAsWritten);
+            f.runtime
+                .sync_values(
+                    &mut f.cache,
+                    &[SyncValuesStruct {
+                        address: 0x8100,
+                        value,
+                        size: 8,
+                    }],
+                    None,
+                )
+                .unwrap();
+            f.cache.obtain_cpu_buffer(
+                0x8100,
+                8,
+                ObtainBufferSynchronize::NoSynchronize,
+                ObtainBufferOperation::MarkAsWritten,
+            );
             let tick = f.scheduler.current_tick();
-            assert!(cache.accelerate_host_conditional_rendering(&mut f.runtime, &mut f.cache, &memory, state).unwrap());
+            assert!(cache
+                .accelerate_host_conditional_rendering(&mut f.runtime, &mut f.cache, &memory, state)
+                .unwrap());
             f.runtime.resume_host_conditional_rendering();
             let predicate = f.runtime.active_conditional_rendering().unwrap();
-            assert_eq!(f.scheduler.current_tick(), tick, "no CPU wait/readback in production");
+            assert_eq!(
+                f.scheduler.current_tick(),
+                tick,
+                "no CPU wait/readback in production"
+            );
             let readback = MetalBuffer::new(&f.device, 4).unwrap();
-            predicate.buffer.encode_copy(&mut f.scheduler, &readback, predicate.offset, 0, 4).unwrap();
+            predicate
+                .buffer
+                .encode_copy(&mut f.scheduler, &readback, predicate.offset, 0, 4)
+                .unwrap();
             f.scheduler.finish_all().unwrap();
             let mut bytes = [0; 4];
             readback.read(0, &mut bytes).unwrap();
@@ -1933,15 +1968,22 @@ mod tests {
         );
         assert_eq!(f.runtime.little_cache, [(0x8000, 0xa000), (0xa000, 0xb000)]);
         assert_eq!(f.runtime.redirect_cache, [0, 1, 0, 0]);
-        let generations: Vec<_> = f.runtime.buffers_to_upload_to.iter()
-            .map(|(buffer, _)| (Arc::clone(buffer), buffer.content_generation())).collect();
+        let generations: Vec<_> = f
+            .runtime
+            .buffers_to_upload_to
+            .iter()
+            .map(|(buffer, _)| (Arc::clone(buffer), buffer.content_generation()))
+            .collect();
         f.runtime.sync_values(&mut f.cache, &values, None).unwrap();
         assert_eq!(f.scheduler.current_tick(), tick);
-        for ((old, generation), (current, _)) in generations.iter()
-            .zip(&f.runtime.buffers_to_upload_to) {
+        for ((old, generation), (current, _)) in
+            generations.iter().zip(&f.runtime.buffers_to_upload_to)
+        {
             assert!(Arc::ptr_eq(old, current));
-            assert!(current.content_generation() > *generation,
-                "query blits must invalidate converted indices even in one scheduler tick");
+            assert!(
+                current.content_generation() > *generation,
+                "query blits must invalidate converted indices even in one scheduler tick"
+            );
         }
         for value in values {
             let bytes = f.read_gpu(value.address - 4, 20);

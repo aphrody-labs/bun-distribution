@@ -19,11 +19,18 @@ fn sid(v: Value) -> String {
 }
 
 fn rect(s: &mut Session, x: f64) -> NodeId {
-    id(s.execute("shape.rectangle", &json!({"x": x, "y": 0, "width": 40, "height": 40, "props": {"fill": "#FF0000"}})).unwrap())
+    id(s.execute(
+        "shape.rectangle",
+        &json!({"x": x, "y": 0, "width": 40, "height": 40, "props": {"fill": "#FF0000"}}),
+    )
+    .unwrap())
 }
 
 fn text(s: &mut Session, x: f64) -> NodeId {
-    id(s.execute("text.create", &json!({"text": "Hello", "x": x, "y": 100})).unwrap())
+    id(
+        s.execute("text.create", &json!({"text": "Hello", "x": x, "y": 100}))
+            .unwrap(),
+    )
 }
 
 fn node(s: &Session, n: NodeId) -> Node {
@@ -31,7 +38,12 @@ fn node(s: &Session, n: NodeId) -> Node {
 }
 
 fn hex(s: &Session, n: NodeId) -> Vec<String> {
-    node(s, n).fills.iter().filter_map(|p| p.solid_color()).map(|c| c.to_hex()).collect()
+    node(s, n)
+        .fills
+        .iter()
+        .filter_map(|p| p.solid_color())
+        .map(|c| c.to_hex())
+        .collect()
 }
 
 fn font_size(s: &Session, n: NodeId) -> f64 {
@@ -39,7 +51,8 @@ fn font_size(s: &Session, n: NodeId) -> f64 {
 }
 
 fn run(s: &mut Session, cmd: &str, p: Value) -> Value {
-    s.execute(cmd, &p).unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
+    s.execute(cmd, &p)
+        .unwrap_or_else(|e| panic!("{cmd} {p}: {e}"))
 }
 
 /// One layer of each style type linked to a style made from it: (layer, style id, kind).
@@ -47,11 +60,25 @@ fn styled(s: &mut Session) -> Vec<(NodeId, String, &'static str)> {
     let r = rect(s, 0.0);
     run(s, "effect.add", json!({"ids": [r], "type": "dropShadow"}));
     run(s, "grid.add", json!({"ids": [r]}));
-    run(s, "node.set", json!({"id": r, "props": {"strokes": ["#00FF00"]}}));
+    run(
+        s,
+        "node.set",
+        json!({"id": r, "props": {"strokes": ["#00FF00"]}}),
+    );
     let t = text(s, 0.0);
     let mut out = Vec::new();
-    for (ty, layer) in [("paint", r), ("stroke", r), ("effect", r), ("grid", r), ("text", t)] {
-        let st = sid(run(s, "style.create", json!({"type": ty, "name": format!("S/{ty}"), "from": layer})));
+    for (ty, layer) in [
+        ("paint", r),
+        ("stroke", r),
+        ("effect", r),
+        ("grid", r),
+        ("text", t),
+    ] {
+        let st = sid(run(
+            s,
+            "style.create",
+            json!({"type": ty, "name": format!("S/{ty}"), "from": layer}),
+        ));
         out.push((layer, st, ty));
     }
     out
@@ -86,24 +113,54 @@ fn a_style_holds_the_whole_property_and_links_its_source() {
     // several effects; creating a style from a selection uses (and links) its properties.
     let mut s = Session::new();
     let r = rect(&mut s, 0.0);
-    run(&mut s, "node.set", json!({"id": r, "props": {"fills": ["#FF0000", "#0000FF80"]}}));
-    run(&mut s, "effect.add", json!({"ids": [r], "type": "dropShadow"}));
-    run(&mut s, "effect.add", json!({"ids": [r], "type": "layerBlur"}));
-    let paint = sid(run(&mut s, "style.create", json!({"type": "paint", "name": "Brand/Duo", "from": r})));
-    let fx = sid(run(&mut s, "style.create", json!({"type": "effect", "name": "Depth", "from": r})));
+    run(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"fills": ["#FF0000", "#0000FF80"]}}),
+    );
+    run(
+        &mut s,
+        "effect.add",
+        json!({"ids": [r], "type": "dropShadow"}),
+    );
+    run(
+        &mut s,
+        "effect.add",
+        json!({"ids": [r], "type": "layerBlur"}),
+    );
+    let paint = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "paint", "name": "Brand/Duo", "from": r}),
+    ));
+    let fx = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "effect", "name": "Depth", "from": r}),
+    ));
     let b = rect(&mut s, 100.0);
     run(&mut s, "style.apply", json!({"ids": [b], "style": paint}));
     run(&mut s, "style.apply", json!({"ids": [b], "style": fx}));
-    let cases: [(&str, usize, usize); 2] =
-        [("two fills in one colour style", node(&s, b).fills.len(), 2), ("two effects", node(&s, b).effects.len(), 2)];
+    let cases: [(&str, usize, usize); 2] = [
+        ("two fills in one colour style", node(&s, b).fills.len(), 2),
+        ("two effects", node(&s, b).effects.len(), 2),
+    ];
     for (what, got, want) in cases {
         assert_eq!(got, want, "{what}");
     }
     assert_eq!(hex(&s, b), ["FF0000", "0000FF"]);
-    assert_eq!(node(&s, r).styles.fill.as_deref(), Some(paint.as_str()), "the source layer is linked");
+    assert_eq!(
+        node(&s, r).styles.fill.as_deref(),
+        Some(paint.as_str()),
+        "the source layer is linked"
+    );
     assert_eq!(node(&s, r).styles.effect.as_deref(), Some(fx.as_str()));
     // A paint style applies to strokes too (documented: colour styles for fills and strokes).
-    run(&mut s, "style.apply", json!({"ids": [b], "style": paint, "target": "stroke"}));
+    run(
+        &mut s,
+        "style.apply",
+        json!({"ids": [b], "style": paint, "target": "stroke"}),
+    );
     assert_eq!(node(&s, b).strokes.len(), 2);
     assert_eq!(node(&s, b).styles.stroke.as_deref(), Some(paint.as_str()));
 }
@@ -117,10 +174,26 @@ fn editing_a_style_updates_every_layer_using_it() {
     let other_rect = rect(&mut s, 300.0);
     let other_text = text(&mut s, 300.0);
     for (_, st, kind) in &rows {
-        let user = if *kind == "text" { other_text } else { other_rect };
-        let target = if *kind == "stroke" { json!("stroke") } else { Value::Null };
-        run(&mut s, "style.apply", json!({"ids": [user], "style": st, "target": target}));
-        assert_eq!(link(&s, user, kind).as_deref(), Some(st.as_str()), "{kind}: linked");
+        let user = if *kind == "text" {
+            other_text
+        } else {
+            other_rect
+        };
+        let target = if *kind == "stroke" {
+            json!("stroke")
+        } else {
+            Value::Null
+        };
+        run(
+            &mut s,
+            "style.apply",
+            json!({"ids": [user], "style": st, "target": target}),
+        );
+        assert_eq!(
+            link(&s, user, kind).as_deref(),
+            Some(st.as_str()),
+            "{kind}: linked"
+        );
     }
     // New definitions.
     let edits: [(&str, Value); 5] = [
@@ -135,13 +208,26 @@ fn editing_a_style_updates_every_layer_using_it() {
         run(&mut s, "style.update", json!({"style": st, "value": value}));
     }
     assert_eq!(hex(&s, other_rect), ["123456"], "paint: fills follow");
-    assert_eq!(node(&s, other_rect).strokes.first().and_then(|p| p.solid_color()).map(|c| c.to_hex()).as_deref(), Some("654321"), "stroke");
+    assert_eq!(
+        node(&s, other_rect)
+            .strokes
+            .first()
+            .and_then(|p| p.solid_color())
+            .map(|c| c.to_hex())
+            .as_deref(),
+        Some("654321"),
+        "stroke"
+    );
     assert!(node(&s, other_rect).effects.is_empty(), "effect");
     assert!(node(&s, other_rect).grids.is_empty(), "grid");
     assert_eq!(font_size(&s, other_text), 31.0, "text");
     // The source layers follow too, and stay linked.
     for (layer, st, kind) in &rows {
-        assert_eq!(link(&s, *layer, kind).as_deref(), Some(st.as_str()), "{kind}: source still linked");
+        assert_eq!(
+            link(&s, *layer, kind).as_deref(),
+            Some(st.as_str()),
+            "{kind}: source still linked"
+        );
     }
     assert_eq!(font_size(&s, rows[4].0), 31.0);
     // One undo step puts the style and its users back.
@@ -158,7 +244,11 @@ fn detaching_keeps_the_current_values() {
     for (layer, st, kind) in &rows {
         let before = shown(&s, *layer, kind);
         let which = if *kind == "paint" { "fill" } else { kind };
-        run(&mut s, "style.detach", json!({"ids": [layer], "which": which}));
+        run(
+            &mut s,
+            "style.detach",
+            json!({"ids": [layer], "which": which}),
+        );
         assert_eq!(link(&s, *layer, kind), None, "{kind}: unlinked");
         assert_eq!(shown(&s, *layer, kind), before, "{kind}: values kept");
         let value = match *kind {
@@ -167,7 +257,11 @@ fn detaching_keeps_the_current_values() {
             _ => json!([]),
         };
         run(&mut s, "style.update", json!({"style": st, "value": value}));
-        assert_eq!(shown(&s, *layer, kind), before, "{kind}: style edits no longer reach it");
+        assert_eq!(
+            shown(&s, *layer, kind),
+            before,
+            "{kind}: style edits no longer reach it"
+        );
     }
 }
 
@@ -185,7 +279,10 @@ fn deleting_a_used_style_keeps_the_values() {
     assert!(s.doc().unwrap().styles.is_empty());
     // Undo brings the style and the link back.
     s.undo().unwrap();
-    assert_eq!(link(&s, rows[4].0, "text").as_deref(), Some(rows[4].1.as_str()));
+    assert_eq!(
+        link(&s, rows[4].0, "text").as_deref(),
+        Some(rows[4].1.as_str())
+    );
 }
 
 #[test]
@@ -198,9 +295,17 @@ fn editing_a_styled_property_detaches_that_style_only() {
     let rows = styled(&mut s);
     let r = rows[0].0;
     // Moving or renaming the layer keeps every link.
-    run(&mut s, "node.set", json!({"id": r, "props": {"x": 25, "name": "Moved"}}));
+    run(
+        &mut s,
+        "node.set",
+        json!({"id": r, "props": {"x": 25, "name": "Moved"}}),
+    );
     for (layer, st, kind) in &rows {
-        assert_eq!(link(&s, *layer, kind).as_deref(), Some(st.as_str()), "{kind}: unrelated edit keeps the link");
+        assert_eq!(
+            link(&s, *layer, kind).as_deref(),
+            Some(st.as_str()),
+            "{kind}: unrelated edit keeps the link"
+        );
     }
     let edits: [(&str, Value); 5] = [
         ("paint", json!({"fills": ["#00FFFF"]})),
@@ -212,7 +317,11 @@ fn editing_a_styled_property_detaches_that_style_only() {
     for (kind, props) in edits {
         let (layer, st, _) = rows.iter().find(|x| x.2 == kind).unwrap().clone();
         run(&mut s, "node.set", json!({"id": layer, "props": props}));
-        assert_eq!(link(&s, layer, kind), None, "{kind}: the edited property's link goes");
+        assert_eq!(
+            link(&s, layer, kind),
+            None,
+            "{kind}: the edited property's link goes"
+        );
         let after = shown(&s, layer, kind);
         let value = if kind == "text" {
             json!({"fontSize": 9})
@@ -223,13 +332,25 @@ fn editing_a_styled_property_detaches_that_style_only() {
         };
         if !value.is_null() {
             run(&mut s, "style.update", json!({"style": st, "value": value}));
-            assert_eq!(shown(&s, layer, kind), after, "{kind}: the edit isn't overwritten by the style");
+            assert_eq!(
+                shown(&s, layer, kind),
+                after,
+                "{kind}: the edit isn't overwritten by the style"
+            );
         }
     }
     // Editing one paint's colour through its row detaches the fill style too (it did already).
     let b = rect(&mut s, 200.0);
-    let st = sid(run(&mut s, "style.create", json!({"type": "paint", "name": "P", "from": b})));
-    run(&mut s, "fill.set", json!({"ids": [b], "index": 0, "color": "#222222"}));
+    let st = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "paint", "name": "P", "from": b}),
+    ));
+    run(
+        &mut s,
+        "fill.set",
+        json!({"ids": [b], "index": 0, "color": "#222222"}),
+    );
     assert_eq!(node(&s, b).styles.fill, None);
     let _ = st;
 }
@@ -241,25 +362,53 @@ fn applying_a_style_replaces_variables_bound_to_that_property() {
     // the next edit), and binding a variable to a styled paint is an edit (the style detaches).
     let mut s = Session::new();
     run(&mut s, "variable.createCollection", json!({"name": "C"}));
-    run(&mut s, "variable.create", json!({"collection": "C", "name": "brand", "type": "color", "value": "#0D99FF"}));
+    run(
+        &mut s,
+        "variable.create",
+        json!({"collection": "C", "name": "brand", "type": "color", "value": "#0D99FF"}),
+    );
     let r = rect(&mut s, 0.0);
-    let st = sid(run(&mut s, "style.create", json!({"type": "paint", "name": "Red", "value": ["#FF0000"]})));
-    run(&mut s, "variable.bind", json!({"ids": [r], "field": "fill", "variable": "brand"}));
+    let st = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "paint", "name": "Red", "value": ["#FF0000"]}),
+    ));
+    run(
+        &mut s,
+        "variable.bind",
+        json!({"ids": [r], "field": "fill", "variable": "brand"}),
+    );
     assert_eq!(hex(&s, r), ["0D99FF"]);
     run(&mut s, "style.apply", json!({"ids": [r], "style": st}));
     assert_eq!(hex(&s, r), ["FF0000"], "the style's paint shows");
     assert!(node(&s, r).bound.is_empty(), "the fill binding went");
     assert_eq!(node(&s, r).styles.fill.as_deref(), Some(st.as_str()));
     // A later variable edit doesn't reach it.
-    run(&mut s, "variable.set", json!({"variable": "brand", "value": "#00FF00"}));
+    run(
+        &mut s,
+        "variable.set",
+        json!({"variable": "brand", "value": "#00FF00"}),
+    );
     assert_eq!(hex(&s, r), ["FF0000"]);
     // Binding the variable to the styled fill: the variable's colour shows and the style detaches.
-    run(&mut s, "variable.bind", json!({"ids": [r], "field": "fill", "variable": "brand"}));
+    run(
+        &mut s,
+        "variable.bind",
+        json!({"ids": [r], "field": "fill", "variable": "brand"}),
+    );
     assert_eq!(hex(&s, r), ["00FF00"]);
     assert_eq!(node(&s, r).styles.fill, None);
     // Bindings of other properties stay when a paint style is applied.
-    run(&mut s, "variable.create", json!({"collection": "C", "name": "w", "type": "number", "value": 64}));
-    run(&mut s, "variable.bind", json!({"ids": [r], "field": "width", "variable": "w"}));
+    run(
+        &mut s,
+        "variable.create",
+        json!({"collection": "C", "name": "w", "type": "number", "value": 64}),
+    );
+    run(
+        &mut s,
+        "variable.bind",
+        json!({"ids": [r], "field": "width", "variable": "w"}),
+    );
     run(&mut s, "style.apply", json!({"ids": [r], "style": st}));
     assert!(node(&s, r).bound.contains_key("width"));
     assert_eq!(node(&s, r).width, 64.0);
@@ -272,20 +421,39 @@ fn text_styles_go_on_text_layers_and_chars() {
     let mut s = Session::new();
     let t = text(&mut s, 0.0);
     let r = rect(&mut s, 200.0);
-    let st = sid(run(&mut s, "style.create", json!({"type": "text", "name": "Body", "value": {"fontSize": 22}})));
+    let st = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "text", "name": "Body", "value": {"fontSize": 22}}),
+    ));
     run(&mut s, "style.apply", json!({"ids": [t, r], "style": st}));
     assert_eq!(font_size(&s, t), 22.0);
     assert_eq!(node(&s, t).styles.text.as_deref(), Some(st.as_str()));
-    assert_eq!(node(&s, r).styles.text, None, "a rectangle takes no text style");
-    assert!(s.execute("style.apply", &json!({"ids": [r], "style": st})).is_err(), "no text layer to take it");
+    assert_eq!(
+        node(&s, r).styles.text,
+        None,
+        "a rectangle takes no text style"
+    );
+    assert!(
+        s.execute("style.apply", &json!({"ids": [r], "style": st}))
+            .is_err(),
+        "no text layer to take it"
+    );
     // On some chars (#72): only those take it, and the layer shows no single link.
     let t2 = text(&mut s, 300.0);
-    run(&mut s, "style.apply", json!({"ids": [t2], "style": st, "start": 0, "end": 2}));
+    run(
+        &mut s,
+        "style.apply",
+        json!({"ids": [t2], "style": st, "start": 0, "end": 2}),
+    );
     let tx = node(&s, t2);
     let td = tx.kind.text().unwrap();
     assert_eq!(td.style_at(0).font_size, 22.0);
     assert_ne!(td.style_at(4).font_size, 22.0);
-    assert_eq!(tx.styles.text, None, "mixed: the layer isn't linked as a whole");
+    assert_eq!(
+        tx.styles.text, None,
+        "mixed: the layer isn't linked as a whole"
+    );
 }
 
 #[test]
@@ -296,13 +464,30 @@ fn styles_are_organised_by_slash_names_order_and_duplicates() {
     // (the folder is part of each name). Docs silent on the duplicate's name: "<name> copy", as
     // for variables.
     let mut s = Session::new();
-    let mk = |s: &mut Session, name: &str| sid(run(s, "style.create", json!({"type": "paint", "name": name, "value": ["#FF00FF"]})));
+    let mk = |s: &mut Session, name: &str| {
+        sid(run(
+            s,
+            "style.create",
+            json!({"type": "paint", "name": name, "value": ["#FF00FF"]}),
+        ))
+    };
     let a = mk(&mut s, "Brand/Teal");
     let b = mk(&mut s, "Brand/Site/Ink");
     let c = mk(&mut s, "Gray/100");
-    let names = |s: &Session| s.doc().unwrap().styles.iter().map(|x| x.name.clone()).collect::<Vec<_>>();
+    let names = |s: &Session| {
+        s.doc()
+            .unwrap()
+            .styles
+            .iter()
+            .map(|x| x.name.clone())
+            .collect::<Vec<_>>()
+    };
     // Into a folder: renamed, placed where dropped (before `c`).
-    run(&mut s, "style.move", json!({"styles": [a], "folder": "Brand/Site", "before": c}));
+    run(
+        &mut s,
+        "style.move",
+        json!({"styles": [a], "folder": "Brand/Site", "before": c}),
+    );
     assert_eq!(names(&s), ["Brand/Site/Ink", "Brand/Site/Teal", "Gray/100"]);
     // Reorder only (no folder given): to the top.
     run(&mut s, "style.move", json!({"styles": [c], "before": b}));
@@ -312,21 +497,54 @@ fn styles_are_organised_by_slash_names_order_and_duplicates() {
     assert_eq!(names(&s), ["Gray/100", "Brand/Site/Teal", "Ink"]);
     // Renaming a folder renames what's in it (and only that: "Brand/Siteplan" isn't inside).
     mk(&mut s, "Brand/Siteplan/X");
-    run(&mut s, "style.renameFolder", json!({"folder": "Brand/Site", "name": "Brand/News"}));
-    assert_eq!(names(&s), ["Gray/100", "Brand/News/Teal", "Ink", "Brand/Siteplan/X"]);
+    run(
+        &mut s,
+        "style.renameFolder",
+        json!({"folder": "Brand/Site", "name": "Brand/News"}),
+    );
+    assert_eq!(
+        names(&s),
+        ["Gray/100", "Brand/News/Teal", "Ink", "Brand/Siteplan/X"]
+    );
     // A duplicate sits right below its original, with the same definition and description.
-    run(&mut s, "style.update", json!({"style": c, "description": "Lightest"}));
+    run(
+        &mut s,
+        "style.update",
+        json!({"style": c, "description": "Lightest"}),
+    );
     let d = sid(run(&mut s, "style.duplicate", json!({"style": c})));
-    assert_eq!(names(&s)[..2], ["Gray/100".to_string(), "Gray/100 copy".to_string()]);
+    assert_eq!(
+        names(&s)[..2],
+        ["Gray/100".to_string(), "Gray/100 copy".to_string()]
+    );
     let doc = s.doc().unwrap();
     let (orig, copy) = (doc.style(&c).unwrap(), doc.style(&d).unwrap());
-    assert_eq!((copy.kind.clone(), copy.description.as_str()), (orig.kind.clone(), "Lightest"));
+    assert_eq!(
+        (copy.kind.clone(), copy.description.as_str()),
+        (orig.kind.clone(), "Lightest")
+    );
     // Names are trimmed per folder part; empty names are refused; each move is one undo step.
-    run(&mut s, "style.update", json!({"style": d, "name": " Gray / 200 "}));
+    run(
+        &mut s,
+        "style.update",
+        json!({"style": d, "name": " Gray / 200 "}),
+    );
     assert_eq!(s.doc().unwrap().style(&d).unwrap().name, "Gray/200");
-    assert!(s.execute("style.update", &json!({"style": d, "name": " / "})).is_err());
-    assert!(s.execute("style.create", &json!({"type": "paint", "name": "", "value": ["#000000"]})).is_err());
-    assert!(s.execute("style.move", &json!({"styles": ["nope"]})).is_err());
+    assert!(
+        s.execute("style.update", &json!({"style": d, "name": " / "}))
+            .is_err()
+    );
+    assert!(
+        s.execute(
+            "style.create",
+            &json!({"type": "paint", "name": "", "value": ["#000000"]})
+        )
+        .is_err()
+    );
+    assert!(
+        s.execute("style.move", &json!({"styles": ["nope"]}))
+            .is_err()
+    );
     let before = names(&s);
     run(&mut s, "style.move", json!({"styles": [d], "before": c}));
     s.undo().unwrap();
@@ -338,8 +556,22 @@ fn descriptions_and_library_styles() {
     // Documented: styles have descriptions (shown in the picker). Library styles are read-only in
     // files using them (edits happen in the library file; covered by `library_tests`).
     let mut s = Session::new();
-    let st = sid(run(&mut s, "style.create", json!({"type": "paint", "name": "A", "value": ["#000000"], "description": "Primary text"})));
-    assert_eq!(s.doc().unwrap().style(&st).unwrap().description, "Primary text");
-    run(&mut s, "style.update", json!({"style": st, "description": "Body text"}));
-    assert_eq!(s.doc().unwrap().style(&st).unwrap().description, "Body text");
+    let st = sid(run(
+        &mut s,
+        "style.create",
+        json!({"type": "paint", "name": "A", "value": ["#000000"], "description": "Primary text"}),
+    ));
+    assert_eq!(
+        s.doc().unwrap().style(&st).unwrap().description,
+        "Primary text"
+    );
+    run(
+        &mut s,
+        "style.update",
+        json!({"style": st, "description": "Body text"}),
+    );
+    assert_eq!(
+        s.doc().unwrap().style(&st).unwrap().description,
+        "Body text"
+    );
 }

@@ -19,8 +19,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_slide,
             select
         ),
-        cmd!("selection.showAll", "Show All", ["Selection Pane"], None, "{} shows every object on the slide, inside groups too", has_slide, show_all),
-        cmd!("selection.hideAll", "Hide All", ["Selection Pane"], None, "{} hides every top-level object on the slide", has_slide, hide_all),
+        cmd!(
+            "selection.showAll",
+            "Show All",
+            ["Selection Pane"],
+            None,
+            "{} shows every object on the slide, inside groups too",
+            has_slide,
+            show_all
+        ),
+        cmd!(
+            "selection.hideAll",
+            "Hide All",
+            ["Selection Pane"],
+            None,
+            "{} hides every top-level object on the slide",
+            has_slide,
+            hide_all
+        ),
     ]
 }
 
@@ -28,11 +44,17 @@ pub fn specs() -> Vec<CommandSpec> {
 /// together (Ctrl+click on the other kind is ignored, as in PowerPoint), and picking a hidden
 /// object from the list shows it again.
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
-    let ids = ids_param(p, "ids").or_else(|| id_param(p, "id").map(|i| vec![i])).unwrap_or_default();
+    let ids = ids_param(p, "ids")
+        .or_else(|| id_param(p, "id").map(|i| vec![i]))
+        .unwrap_or_default();
     let (toggle, add) = (bool_or(p, "toggle", false), bool_or(p, "add", false));
     let st = s.doc()?;
     let in_group = |id: &ShapeId| deckcraft_model::parent_of(st.shapes(), *id).map(|p| p.is_some());
-    let mut valid: Vec<ShapeId> = ids.iter().copied().filter(|i| in_group(i).is_some()).collect();
+    let mut valid: Vec<ShapeId> = ids
+        .iter()
+        .copied()
+        .filter(|i| in_group(i).is_some())
+        .collect();
     if valid.is_empty() {
         return Err(bad("selection.select", "no such shape"));
     }
@@ -58,7 +80,11 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
             None => next.push(*i),
         }
     }
-    let reveal: Vec<ShapeId> = next.iter().copied().filter(|i| valid.contains(i) && st.shape(*i).is_some_and(|x| x.hidden)).collect();
+    let reveal: Vec<ShapeId> = next
+        .iter()
+        .copied()
+        .filter(|i| valid.contains(i) && st.shape(*i).is_some_and(|x| x.hidden))
+        .collect();
     if reveal.is_empty() {
         s.select(|_, sel| {
             sel.text = None;
@@ -67,7 +93,8 @@ fn select(s: &mut Session, p: &Value) -> Result<Value> {
         })?;
     } else {
         s.edit(|doc, sel| {
-            let shapes = crate::shapes_mut(doc, sel).ok_or_else(|| bad("selection.select", "no slide"))?;
+            let shapes =
+                crate::shapes_mut(doc, sel).ok_or_else(|| bad("selection.select", "no slide"))?;
             for id in &reveal {
                 if let Some(sh) = deckcraft_model::find_shape_mut(shapes, *id) {
                     sh.hidden = false;
@@ -102,7 +129,10 @@ fn show_all(s: &mut Session, _p: &Value) -> Result<Value> {
                 }
             }
         }
-        rec(crate::shapes_mut(doc, sel).ok_or_else(|| bad("selection.showAll", "no slide"))?, 0);
+        rec(
+            crate::shapes_mut(doc, sel).ok_or_else(|| bad("selection.showAll", "no slide"))?,
+            0,
+        );
         Ok(())
     })?;
     ok()

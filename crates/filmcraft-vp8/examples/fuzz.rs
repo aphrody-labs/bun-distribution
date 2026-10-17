@@ -6,7 +6,8 @@ fn frames(data: &[u8]) -> Vec<Vec<u8>> {
     let Some(h) = data.get(6..8) else { return out };
     let mut pos = usize::from(u16::from_le_bytes([h[0], h[1]]));
     while pos + 12 <= data.len() {
-        let size = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let size =
+            u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 12;
         out.push(data[pos..(pos + size).min(data.len())].to_vec());
         pos += size;
@@ -90,7 +91,11 @@ fn main() {
                 Ok(n) => decoded += n,
                 Err(e) => {
                     panics += 1;
-                    let msg = e.downcast_ref::<String>().cloned().or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string())).unwrap_or_default();
+                    let msg = e
+                        .downcast_ref::<String>()
+                        .cloned()
+                        .or_else(|| e.downcast_ref::<&str>().map(|s| s.to_string()))
+                        .unwrap_or_default();
                     eprintln!("PANIC {path} iteration {it} mode {mode}: {msg}");
                 }
             }

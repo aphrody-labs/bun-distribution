@@ -8,7 +8,9 @@ use std::cmp::Ordering;
 use gridcraft_core::{Array, CellError, Value, col_to_letters, compare};
 
 use crate::criteria::{has_wildcards, lookup_equal};
-use crate::util::{R, arg, array_val, as_array, has, int, num, opt_bool, opt_int, opt_num, text, text_val};
+use crate::util::{
+    R, arg, array_val, as_array, has, int, num, opt_bool, opt_int, opt_num, text, text_val,
+};
 use crate::{Arg, Ctx, FnSpec};
 
 // ---------------------------------------------------------------------------------------------
@@ -24,13 +26,22 @@ fn needle(args: &[Arg], i: usize) -> R<Value> {
 }
 
 fn same_type(a: &Value, b: &Value) -> bool {
-    matches!((a, b), (Value::Number(_), Value::Number(_)) | (Value::Text(_), Value::Text(_)) | (Value::Bool(_), Value::Bool(_)))
+    matches!(
+        (a, b),
+        (Value::Number(_), Value::Number(_))
+            | (Value::Text(_), Value::Text(_))
+            | (Value::Bool(_), Value::Bool(_))
+    )
 }
 
 /// Exact search (first match, or last when `reverse`). Text needles match wildcards when `wild`.
 fn find_exact(x: &Value, hay: &[Value], wild: bool, reverse: bool) -> Option<usize> {
     let wild = wild && matches!(x, Value::Text(t) if has_wildcards(t));
-    if reverse { hay.iter().rposition(|v| lookup_equal(x, v, wild)) } else { hay.iter().position(|v| lookup_equal(x, v, wild)) }
+    if reverse {
+        hay.iter().rposition(|v| lookup_equal(x, v, wild))
+    } else {
+        hay.iter().position(|v| lookup_equal(x, v, wild))
+    }
 }
 
 /// Approximate match of VLOOKUP, HLOOKUP, LOOKUP and MATCH: the position of the largest entry
@@ -54,7 +65,10 @@ fn bsearch_last(x: &Value, hay: &[Value], desc: bool) -> Option<usize> {
     let mut best = None;
     while lo <= hi {
         let mid = lo + (hi - lo) / 2;
-        let Some(j) = (lo..=mid).rev().find(|&j| hay.get(j).is_some_and(|v| same_type(x, v))) else {
+        let Some(j) = (lo..=mid)
+            .rev()
+            .find(|&j| hay.get(j).is_some_and(|v| same_type(x, v)))
+        else {
             lo = mid + 1;
             continue;
         };
@@ -62,12 +76,19 @@ fn bsearch_last(x: &Value, hay: &[Value], desc: bool) -> Option<usize> {
         let o = compare(v, x);
         if o == Ordering::Equal {
             let mut k = j;
-            while hay.get(k + 1).is_some_and(|w| same_type(x, w) && compare(w, x) == Ordering::Equal) {
+            while hay
+                .get(k + 1)
+                .is_some_and(|w| same_type(x, w) && compare(w, x) == Ordering::Equal)
+            {
                 k += 1;
             }
             return Some(k);
         }
-        let before = if desc { o == Ordering::Greater } else { o == Ordering::Less };
+        let before = if desc {
+            o == Ordering::Greater
+        } else {
+            o == Ordering::Less
+        };
         if before {
             best = Some(j);
             lo = mid + 1;
@@ -103,25 +124,38 @@ fn bsearch_first(x: &Value, hay: &[Value], desc: bool) -> Option<usize> {
 /// Binary search for the last entry not ordered after the needle (`<= x` ascending, `>= x`
 /// descending).
 fn bsearch_upto(x: &Value, hay: &[Value], desc: bool) -> Option<usize> {
-    hay.partition_point(|v| binary_order(v, x, desc) != Ordering::Greater).checked_sub(1)
+    hay.partition_point(|v| binary_order(v, x, desc) != Ordering::Greater)
+        .checked_sub(1)
 }
 
 /// A 1-D view of an array (row or column), `None` when it is 2-D.
 fn vector(a: &Array) -> Option<Vec<Value>> {
-    if a.rows == 1 || a.cols == 1 { Some(a.data.clone()) } else { None }
+    if a.rows == 1 || a.cols == 1 {
+        Some(a.data.clone())
+    } else {
+        None
+    }
 }
 
 fn column(a: &Array, c: usize) -> Vec<Value> {
-    (0..a.rows).map(|r| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()
+    (0..a.rows)
+        .map(|r| a.get(r, c).cloned().unwrap_or(Value::Empty))
+        .collect()
 }
 
 fn row(a: &Array, r: usize) -> Vec<Value> {
-    (0..a.cols).map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty)).collect()
+    (0..a.cols)
+        .map(|c| a.get(r, c).cloned().unwrap_or(Value::Empty))
+        .collect()
 }
 
 /// A looked-up cell value: blanks read as 0 like a reference to an empty cell.
 fn cell_result(v: Value) -> Value {
-    if matches!(v, Value::Empty) { Value::Number(0.0) } else { v }
+    if matches!(v, Value::Empty) {
+        Value::Number(0.0)
+    } else {
+        v
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -139,13 +173,25 @@ fn vh_lookup(args: &[Arg], vertical: bool) -> R<Value> {
     }
     let idx = idx.trunc() as usize - 1;
     let approx = opt_bool(args, 3, true)?;
-    let (keys, len) = if vertical { (column(&table, 0), table.cols) } else { (row(&table, 0), table.rows) };
+    let (keys, len) = if vertical {
+        (column(&table, 0), table.cols)
+    } else {
+        (row(&table, 0), table.rows)
+    };
     if idx >= len {
         return Err(CellError::Ref);
     }
-    let pos = if approx { bsearch_last(&x, &keys, false) } else { find_exact(&x, &keys, true, false) };
+    let pos = if approx {
+        bsearch_last(&x, &keys, false)
+    } else {
+        find_exact(&x, &keys, true, false)
+    };
     let pos = pos.ok_or(CellError::NA)?;
-    let v = if vertical { table.get(pos, idx) } else { table.get(idx, pos) };
+    let v = if vertical {
+        table.get(pos, idx)
+    } else {
+        table.get(idx, pos)
+    };
     Ok(cell_result(v.cloned().unwrap_or(Value::Empty)))
 }
 
@@ -165,7 +211,11 @@ fn lookup(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     }
     let la = as_array(lv);
     if args.len() >= 3 {
-        let keys = if la.rows == 1 || la.cols == 1 { la.data.clone() } else { column(&la, 0) };
+        let keys = if la.rows == 1 || la.cols == 1 {
+            la.data.clone()
+        } else {
+            column(&la, 0)
+        };
         let pos = bsearch_last(&x, &keys, false).ok_or(CellError::NA)?;
         let rv = &arg(args, 2)?.value;
         if let Value::Error(e) = rv {
@@ -186,11 +236,15 @@ fn lookup(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     if la.cols > la.rows {
         let keys = row(&la, 0);
         let pos = bsearch_last(&x, &keys, false).ok_or(CellError::NA)?;
-        Ok(cell_result(la.get(la.rows - 1, pos).cloned().unwrap_or(Value::Empty)))
+        Ok(cell_result(
+            la.get(la.rows - 1, pos).cloned().unwrap_or(Value::Empty),
+        ))
     } else {
         let keys = column(&la, 0);
         let pos = bsearch_last(&x, &keys, false).ok_or(CellError::NA)?;
-        Ok(cell_result(la.get(pos, la.cols - 1).cloned().unwrap_or(Value::Empty)))
+        Ok(cell_result(
+            la.get(pos, la.cols - 1).cloned().unwrap_or(Value::Empty),
+        ))
     }
 }
 
@@ -209,7 +263,8 @@ fn match_fn(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     } else {
         bsearch_last(&x, &hay, true)
     };
-    pos.map(|p| Value::Number((p + 1) as f64)).ok_or(CellError::NA)
+    pos.map(|p| Value::Number((p + 1) as f64))
+        .ok_or(CellError::NA)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -254,7 +309,11 @@ fn xsearch(x: &Value, hay: &[Value], match_mode: i64, search_mode: i64) -> R<Opt
         return Ok(None);
     }
     // Best candidate: the largest value below (mode -1) or smallest above (mode 1).
-    let order: Box<dyn Iterator<Item = usize>> = if reverse { Box::new((0..hay.len()).rev()) } else { Box::new(0..hay.len()) };
+    let order: Box<dyn Iterator<Item = usize>> = if reverse {
+        Box::new((0..hay.len()).rev())
+    } else {
+        Box::new(0..hay.len())
+    };
     let mut best: Option<usize> = None;
     for i in order {
         let Some(v) = hay.get(i) else { continue };
@@ -262,7 +321,11 @@ fn xsearch(x: &Value, hay: &[Value], match_mode: i64, search_mode: i64) -> R<Opt
             continue;
         }
         let o = compare(v, x);
-        let candidate = if match_mode == -1 { o == Ordering::Less } else { o == Ordering::Greater };
+        let candidate = if match_mode == -1 {
+            o == Ordering::Less
+        } else {
+            o == Ordering::Greater
+        };
         if !candidate {
             continue;
         }
@@ -270,7 +333,11 @@ fn xsearch(x: &Value, hay: &[Value], match_mode: i64, search_mode: i64) -> R<Opt
             None => true,
             Some(bv) => {
                 let c = compare(v, bv);
-                if match_mode == -1 { c == Ordering::Greater } else { c == Ordering::Less }
+                if match_mode == -1 {
+                    c == Ordering::Greater
+                } else {
+                    c == Ordering::Less
+                }
             }
         };
         if better {
@@ -283,7 +350,11 @@ fn xsearch(x: &Value, hay: &[Value], match_mode: i64, search_mode: i64) -> R<Opt
 fn bsearch_exact(x: &Value, hay: &[Value], desc: bool) -> Option<usize> {
     let p = bsearch_first(x, hay, desc)?;
     let v = hay.get(p)?;
-    if binary_order(v, x, desc) == Ordering::Equal { Some(p) } else { None }
+    if binary_order(v, x, desc) == Ordering::Equal {
+        Some(p)
+    } else {
+        None
+    }
 }
 
 fn xlookup(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
@@ -300,12 +371,24 @@ fn xlookup(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let ra = as_array(rv);
     let hay = vector(&la).ok_or(CellError::Value)?;
     // Orientation: a column lookup returns rows of the return array; a row lookup returns columns.
-    let vertical = if la.rows == 1 && la.cols == 1 { ra.rows == 1 || ra.cols != 1 } else { la.cols == 1 };
+    let vertical = if la.rows == 1 && la.cols == 1 {
+        ra.rows == 1 || ra.cols != 1
+    } else {
+        la.cols == 1
+    };
     if vertical && ra.rows != la.rows || !vertical && ra.cols != la.cols {
         return Err(CellError::Value);
     }
-    let mm = if has(args, 4) { opt_int(args, 4, 0)? } else { 0 };
-    let sm = if has(args, 5) { opt_int(args, 5, 1)? } else { 1 };
+    let mm = if has(args, 4) {
+        opt_int(args, 4, 0)?
+    } else {
+        0
+    };
+    let sm = if has(args, 5) {
+        opt_int(args, 5, 1)?
+    } else {
+        1
+    };
     match xsearch(&x, &hay, mm, sm)? {
         Some(p) => {
             if vertical {
@@ -341,7 +424,9 @@ fn xmatch(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let hay = vector(&as_array(lv)).ok_or(CellError::Value)?;
     let mm = if has(args, 2) { int(args, 2)? } else { 0 };
     let sm = if has(args, 3) { int(args, 3)? } else { 1 };
-    xsearch(&x, &hay, mm, sm)?.map(|p| Value::Number((p + 1) as f64)).ok_or(CellError::NA)
+    xsearch(&x, &hay, mm, sm)?
+        .map(|p| Value::Number((p + 1) as f64))
+        .ok_or(CellError::NA)
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -417,21 +502,36 @@ fn transpose(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
 /// parts (Microsoft's ADDRESS examples: `"[Book1]Sheet1"` stays bare, `"EXCEL SHEET"` becomes
 /// `'EXCEL SHEET'`).
 fn quote_sheet(s: &str) -> String {
-    let word = |p: &str| p.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '.');
-    let bare_sheet = |p: &str| !p.is_empty() && word(p) && !p.chars().next().is_some_and(|c| c.is_ascii_digit());
+    let word = |p: &str| {
+        p.chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '.')
+    };
+    let bare_sheet =
+        |p: &str| !p.is_empty() && word(p) && !p.chars().next().is_some_and(|c| c.is_ascii_digit());
     let plain = match s.strip_prefix('[').and_then(|r| r.split_once(']')) {
         Some((book, sheet)) => !book.is_empty() && word(book) && bare_sheet(sheet),
         None => bare_sheet(s),
     };
-    if plain { s.to_string() } else { format!("'{}'", s.replace('\'', "''")) }
+    if plain {
+        s.to_string()
+    } else {
+        format!("'{}'", s.replace('\'', "''"))
+    }
 }
 
 fn address(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
     let r = num(args, 0)?.trunc();
     let c = num(args, 1)?.trunc();
     let abs = if has(args, 2) { int(args, 2)? } else { 1 };
-    let a1 = if has(args, 3) { opt_bool(args, 3, true)? } else { true };
-    if !(1.0..=1_048_576.0).contains(&r) || !(1.0..=16_384.0).contains(&c) || !(1..=4).contains(&abs) {
+    let a1 = if has(args, 3) {
+        opt_bool(args, 3, true)?
+    } else {
+        true
+    };
+    if !(1.0..=1_048_576.0).contains(&r)
+        || !(1.0..=16_384.0).contains(&c)
+        || !(1..=4).contains(&abs)
+    {
         return Err(CellError::Value);
     }
     let (ri, ci) = (r as u32, c as u32);
@@ -442,10 +542,24 @@ fn address(args: &[Arg], _c: &mut dyn Ctx) -> R<Value> {
         _ => (false, false),
     };
     let cell = if a1 {
-        format!("{}{}{}{}", if col_abs { "$" } else { "" }, col_to_letters(ci - 1), if row_abs { "$" } else { "" }, ri)
+        format!(
+            "{}{}{}{}",
+            if col_abs { "$" } else { "" },
+            col_to_letters(ci - 1),
+            if row_abs { "$" } else { "" },
+            ri
+        )
     } else {
-        let rp = if row_abs { format!("R{ri}") } else { format!("R[{ri}]") };
-        let cp = if col_abs { format!("C{ci}") } else { format!("C[{ci}]") };
+        let rp = if row_abs {
+            format!("R{ri}")
+        } else {
+            format!("R[{ri}]")
+        };
+        let cp = if col_abs {
+            format!("C{ci}")
+        } else {
+            format!("C[{ci}]")
+        };
         format!("{rp}{cp}")
     };
     if has(args, 4) {
@@ -536,9 +650,36 @@ pub(crate) fn specs() -> Vec<FnSpec> {
             "Returns the element, row or column of an array at the given position.",
             index
         ),
-        f!("ROWS", 1, 1, Lookup, A, "ROWS(array)", "Counts the rows in an array or range.", rows_fn),
-        f!("COLUMNS", 1, 1, Lookup, A, "COLUMNS(array)", "Counts the columns in an array or range.", columns_fn),
-        f!("TRANSPOSE", 1, 1, Lookup, A, "TRANSPOSE(array)", "Swaps the rows and columns of an array.", transpose),
+        f!(
+            "ROWS",
+            1,
+            1,
+            Lookup,
+            A,
+            "ROWS(array)",
+            "Counts the rows in an array or range.",
+            rows_fn
+        ),
+        f!(
+            "COLUMNS",
+            1,
+            1,
+            Lookup,
+            A,
+            "COLUMNS(array)",
+            "Counts the columns in an array or range.",
+            columns_fn
+        ),
+        f!(
+            "TRANSPOSE",
+            1,
+            1,
+            Lookup,
+            A,
+            "TRANSPOSE(array)",
+            "Swaps the rows and columns of an array.",
+            transpose
+        ),
         f!(
             "ADDRESS",
             2,
@@ -568,52 +709,139 @@ mod tests {
     }
 
     fn names() -> Value {
-        arr(vec![vec![tv("Apple"), nv(1.0)], vec![tv("Banana"), nv(2.0)], vec![tv("Cherry"), nv(3.0)]])
+        arr(vec![
+            vec![tv("Apple"), nv(1.0)],
+            vec![tv("Banana"), nv(2.0)],
+            vec![tv("Cherry"), nv(3.0)],
+        ])
     }
 
     #[test]
     fn vlookup() {
         is_text(ev("VLOOKUP", vec![n(2.0), rf(table()), n(2.0)]), "two");
         is_text(ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0)]), "three");
-        is_text(ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), b(true)]), "three");
+        is_text(
+            ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), b(true)]),
+            "three",
+        );
         is_text(ev("VLOOKUP", vec![n(99.0), rf(table()), n(2.0)]), "five");
-        is_err(ev("VLOOKUP", vec![n(0.5), rf(table()), n(2.0)]), CellError::NA);
-        is_err(ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), b(false)]), CellError::NA);
-        is_err(ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), empty()]), CellError::NA);
-        close(ev("VLOOKUP", vec![n(3.0), rf(table()), n(3.0), b(false)]), 30.0);
-        close(ev("VLOOKUP", vec![n(5.0), rf(table()), n(3.0), b(false)]), 0.0);
-        is_err(ev("VLOOKUP", vec![n(3.0), rf(table()), n(4.0)]), CellError::Ref);
-        is_err(ev("VLOOKUP", vec![n(3.0), rf(table()), n(0.0)]), CellError::Value);
-        close(ev("VLOOKUP", vec![t("b*"), rf(names()), n(2.0), b(false)]), 2.0);
-        close(ev("VLOOKUP", vec![t("cherry"), rf(names()), n(2.0), b(false)]), 3.0);
-        close(ev("VLOOKUP", vec![t("?pple"), rf(names()), n(2.0), b(false)]), 1.0);
+        is_err(
+            ev("VLOOKUP", vec![n(0.5), rf(table()), n(2.0)]),
+            CellError::NA,
+        );
+        is_err(
+            ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), b(false)]),
+            CellError::NA,
+        );
+        is_err(
+            ev("VLOOKUP", vec![n(4.0), rf(table()), n(2.0), empty()]),
+            CellError::NA,
+        );
+        close(
+            ev("VLOOKUP", vec![n(3.0), rf(table()), n(3.0), b(false)]),
+            30.0,
+        );
+        close(
+            ev("VLOOKUP", vec![n(5.0), rf(table()), n(3.0), b(false)]),
+            0.0,
+        );
+        is_err(
+            ev("VLOOKUP", vec![n(3.0), rf(table()), n(4.0)]),
+            CellError::Ref,
+        );
+        is_err(
+            ev("VLOOKUP", vec![n(3.0), rf(table()), n(0.0)]),
+            CellError::Value,
+        );
+        close(
+            ev("VLOOKUP", vec![t("b*"), rf(names()), n(2.0), b(false)]),
+            2.0,
+        );
+        close(
+            ev("VLOOKUP", vec![t("cherry"), rf(names()), n(2.0), b(false)]),
+            3.0,
+        );
+        close(
+            ev("VLOOKUP", vec![t("?pple"), rf(names()), n(2.0), b(false)]),
+            1.0,
+        );
         close(ev("VLOOKUP", vec![t("Bz"), rf(names()), n(2.0)]), 2.0);
-        is_err(ev("VLOOKUP", vec![e(CellError::Div0), rf(names()), n(2.0)]), CellError::Div0);
+        is_err(
+            ev("VLOOKUP", vec![e(CellError::Div0), rf(names()), n(2.0)]),
+            CellError::Div0,
+        );
         // Lifting over the lookup value.
-        let r = ev("VLOOKUP", vec![av(col(&[1.0, 3.0])), rf(table()), n(3.0), b(false)]);
+        let r = ev(
+            "VLOOKUP",
+            vec![av(col(&[1.0, 3.0])), rf(table()), n(3.0), b(false)],
+        );
         assert_eq!(rows_of(&r), vec![vec![nv(10.0)], vec![nv(30.0)]]);
     }
 
     #[test]
     fn hlookup() {
-        let t2 = arr(vec![vec![nv(1.0), nv(2.0), nv(3.0)], vec![tv("a"), tv("b"), tv("c")]]);
-        is_text(ev("HLOOKUP", vec![n(2.0), rf(t2.clone()), n(2.0), b(false)]), "b");
+        let t2 = arr(vec![
+            vec![nv(1.0), nv(2.0), nv(3.0)],
+            vec![tv("a"), tv("b"), tv("c")],
+        ]);
+        is_text(
+            ev("HLOOKUP", vec![n(2.0), rf(t2.clone()), n(2.0), b(false)]),
+            "b",
+        );
         is_text(ev("HLOOKUP", vec![n(2.5), rf(t2.clone()), n(2.0)]), "b");
         is_err(ev("HLOOKUP", vec![n(2.0), rf(t2), n(3.0)]), CellError::Ref);
     }
 
     #[test]
     fn lookup_fn() {
-        close(ev("LOOKUP", vec![n(4.0), av(row(&[1.0, 3.0, 5.0])), av(row(&[10.0, 30.0, 50.0]))]), 30.0);
-        close(ev("LOOKUP", vec![n(5.0), av(row(&[1.0, 3.0, 5.0])), av(col(&[10.0, 30.0, 50.0]))]), 50.0);
-        is_err(ev("LOOKUP", vec![n(0.0), av(row(&[1.0, 3.0, 5.0]))]), CellError::NA);
+        close(
+            ev(
+                "LOOKUP",
+                vec![
+                    n(4.0),
+                    av(row(&[1.0, 3.0, 5.0])),
+                    av(row(&[10.0, 30.0, 50.0])),
+                ],
+            ),
+            30.0,
+        );
+        close(
+            ev(
+                "LOOKUP",
+                vec![
+                    n(5.0),
+                    av(row(&[1.0, 3.0, 5.0])),
+                    av(col(&[10.0, 30.0, 50.0])),
+                ],
+            ),
+            50.0,
+        );
+        is_err(
+            ev("LOOKUP", vec![n(0.0), av(row(&[1.0, 3.0, 5.0]))]),
+            CellError::NA,
+        );
         close(ev("LOOKUP", vec![n(2.5), rf(table())]), 20.0);
-        let wide = arr(vec![vec![nv(1.0), nv(2.0), nv(3.0)], vec![tv("a"), tv("b"), tv("c")]]);
+        let wide = arr(vec![
+            vec![nv(1.0), nv(2.0), nv(3.0)],
+            vec![tv("a"), tv("b"), tv("c")],
+        ]);
         is_text(ev("LOOKUP", vec![n(2.0), av(wide)]), "b");
         // Text mixed in is skipped.
         let mixed = arr(vec![vec![nv(1.0), tv("x"), nv(3.0), tv("y")]]);
-        close(ev("LOOKUP", vec![n(9.0), av(mixed.clone()), av(row(&[1.0, 2.0, 3.0, 4.0]))]), 3.0);
-        close(ev("LOOKUP", vec![t("zz"), av(mixed), av(row(&[1.0, 2.0, 3.0, 4.0]))]), 4.0);
+        close(
+            ev(
+                "LOOKUP",
+                vec![n(9.0), av(mixed.clone()), av(row(&[1.0, 2.0, 3.0, 4.0]))],
+            ),
+            3.0,
+        );
+        close(
+            ev(
+                "LOOKUP",
+                vec![t("zz"), av(mixed), av(row(&[1.0, 2.0, 3.0, 4.0]))],
+            ),
+            4.0,
+        );
     }
 
     /// Approximate matches over unsorted, mixed-type data as observed in Excel
@@ -623,32 +851,164 @@ mod tests {
     fn approximate_match_follows_bisection() {
         // B6:H12 of the test data: header row, then one row per data kind.
         let data = arr(vec![
-            vec![tv("INTEGRAL"), tv("DOUBLE"), tv("BLANK"), tv("STRING"), tv("REF"), tv("AREA (rows)"), Value::Empty],
-            vec![nv(0.0), nv(0.0), Value::Empty, tv(""), nv(0.0), nv(1.0), nv(2.0)],
-            vec![nv(1.0), nv(0.00001), Value::Empty, tv("nospaces"), nv(1.0), nv(1.001), nv(2.999)],
-            vec![nv(2.0), nv(1.1), Value::Empty, tv("sp ace s"), nv(9999999999.0), nv(2.3456), nv(3.4567)],
-            vec![nv(534.0), nv(1.00001), Value::Empty, tv("endsWithSpace "), nv(0.00001), tv("alphanum"), nv(3.0)],
-            vec![nv(9999999999.0), nv(2.99999), Value::Empty, tv(" beginsWithSpace"), nv(0.0), tv("blanksIncl"), Value::Empty],
-            vec![nv(-9999999999.0), nv(999999.99999), Value::Empty, tv("non-numeric"), tv("sp ace s"), tv("E8"), nv(545.0)],
+            vec![
+                tv("INTEGRAL"),
+                tv("DOUBLE"),
+                tv("BLANK"),
+                tv("STRING"),
+                tv("REF"),
+                tv("AREA (rows)"),
+                Value::Empty,
+            ],
+            vec![
+                nv(0.0),
+                nv(0.0),
+                Value::Empty,
+                tv(""),
+                nv(0.0),
+                nv(1.0),
+                nv(2.0),
+            ],
+            vec![
+                nv(1.0),
+                nv(0.00001),
+                Value::Empty,
+                tv("nospaces"),
+                nv(1.0),
+                nv(1.001),
+                nv(2.999),
+            ],
+            vec![
+                nv(2.0),
+                nv(1.1),
+                Value::Empty,
+                tv("sp ace s"),
+                nv(9999999999.0),
+                nv(2.3456),
+                nv(3.4567),
+            ],
+            vec![
+                nv(534.0),
+                nv(1.00001),
+                Value::Empty,
+                tv("endsWithSpace "),
+                nv(0.00001),
+                tv("alphanum"),
+                nv(3.0),
+            ],
+            vec![
+                nv(9999999999.0),
+                nv(2.99999),
+                Value::Empty,
+                tv(" beginsWithSpace"),
+                nv(0.0),
+                tv("blanksIncl"),
+                Value::Empty,
+            ],
+            vec![
+                nv(-9999999999.0),
+                nv(999999.99999),
+                Value::Empty,
+                tv("non-numeric"),
+                tv("sp ace s"),
+                tv("E8"),
+                nv(545.0),
+            ],
         ]);
-        close(ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(2.0)]), 1.00001);
-        is_text(ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(4.0)]), "endsWithSpace ");
-        is_text(ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(4.0), b(true)]), "endsWithSpace ");
-        is_text(ev("HLOOKUP", vec![t("STRING"), rf(data.clone()), n(6.0), b(true)]), " beginsWithSpace");
-        let keys = arr(vec![vec![tv("DOUBLE"), tv("BLANK"), tv("STRING"), tv("REF"), tv("AREA (rows)")]]);
-        let results = arr(vec![vec![nv(1.1), Value::Empty, tv("sp ace s"), nv(9999999999.0), nv(2.3456)]]);
+        close(
+            ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(2.0)]),
+            1.00001,
+        );
+        is_text(
+            ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(4.0)]),
+            "endsWithSpace ",
+        );
+        is_text(
+            ev("VLOOKUP", vec![n(534.0), rf(data.clone()), n(4.0), b(true)]),
+            "endsWithSpace ",
+        );
+        is_text(
+            ev(
+                "HLOOKUP",
+                vec![t("STRING"), rf(data.clone()), n(6.0), b(true)],
+            ),
+            " beginsWithSpace",
+        );
+        let keys = arr(vec![vec![
+            tv("DOUBLE"),
+            tv("BLANK"),
+            tv("STRING"),
+            tv("REF"),
+            tv("AREA (rows)"),
+        ]]);
+        let results = arr(vec![vec![
+            nv(1.1),
+            Value::Empty,
+            tv("sp ace s"),
+            nv(9999999999.0),
+            nv(2.3456),
+        ]]);
         close(ev("LOOKUP", vec![t("DOUBLE"), rf(keys), rf(results)]), 1.1);
-        let b6_b15 = col(&[0.0, 1.0, 2.0, 534.0, 9999999999.0, -9999999999.0, -534.0, -2.0, -1.0]);
+        let b6_b15 = col(&[
+            0.0,
+            1.0,
+            2.0,
+            534.0,
+            9999999999.0,
+            -9999999999.0,
+            -534.0,
+            -2.0,
+            -1.0,
+        ]);
         let mut keys = vec![tv("INTEGRAL")];
         keys.extend(rows_of(&b6_b15).into_iter().flatten());
-        let words = ["STRING", "", "nospaces", "sp ace s", "endsWithSpace ", " beginsWithSpace", "non-numeric", "0", "0.000001", "1"];
+        let words = [
+            "STRING",
+            "",
+            "nospaces",
+            "sp ace s",
+            "endsWithSpace ",
+            " beginsWithSpace",
+            "non-numeric",
+            "0",
+            "0.000001",
+            "1",
+        ];
         let e_col = arr(words.iter().map(|w| vec![tv(w)]).collect());
-        is_text(ev("LOOKUP", vec![n(534.0), rf(arr(keys.into_iter().map(|k| vec![k]).collect())), rf(e_col)]), "endsWithSpace ");
+        is_text(
+            ev(
+                "LOOKUP",
+                vec![
+                    n(534.0),
+                    rf(arr(keys.into_iter().map(|k| vec![k]).collect())),
+                    rf(e_col),
+                ],
+            ),
+            "endsWithSpace ",
+        );
         // Sorted duplicates give the last one; descending data with MATCH -1 too.
-        close(ev("MATCH", vec![n(2.0), av(row(&[1.0, 2.0, 2.0, 2.0, 3.0])), n(1.0)]), 4.0);
-        close(ev("MATCH", vec![n(20.0), av(row(&[40.0, 20.0, 20.0, 10.0])), n(-1.0)]), 3.0);
+        close(
+            ev(
+                "MATCH",
+                vec![n(2.0), av(row(&[1.0, 2.0, 2.0, 2.0, 3.0])), n(1.0)],
+            ),
+            4.0,
+        );
+        close(
+            ev(
+                "MATCH",
+                vec![n(20.0), av(row(&[40.0, 20.0, 20.0, 10.0])), n(-1.0)],
+            ),
+            3.0,
+        );
         // Only text and blanks: no number to find.
-        is_err(ev("MATCH", vec![n(5.0), av(arr(vec![vec![tv("a"), Value::Empty, tv("b")]]))]), CellError::NA);
+        is_err(
+            ev(
+                "MATCH",
+                vec![n(5.0), av(arr(vec![vec![tv("a"), Value::Empty, tv("b")]]))],
+            ),
+            CellError::NA,
+        );
         // A long run of trailing blanks (whole-column lookups) still finds the last number.
         let mut tall = vec![vec![nv(1.0)], vec![nv(2.0)], vec![nv(3.0)]];
         tall.extend((0..10_000).map(|_| vec![Value::Empty]));
@@ -673,44 +1033,194 @@ mod tests {
         close(ev("MATCH", vec![t("CHERRY"), av(s.clone()), n(0.0)]), 3.0);
         close(ev("MATCH", vec![t("c"), av(s.clone())]), 2.0);
         is_err(ev("MATCH", vec![n(1.0), rf(table())]), CellError::NA);
-        close(ev("MATCH", vec![b(true), av(arr(vec![vec![nv(1.0), Value::Bool(true)]])), n(0.0)]), 2.0);
+        close(
+            ev(
+                "MATCH",
+                vec![
+                    b(true),
+                    av(arr(vec![vec![nv(1.0), Value::Bool(true)]])),
+                    n(0.0),
+                ],
+            ),
+            2.0,
+        );
     }
 
     #[test]
     fn xlookup() {
         let keys = col(&[1.0, 2.0, 3.0, 5.0]);
         let vals = col(&[10.0, 20.0, 30.0, 50.0]);
-        close(ev("XLOOKUP", vec![n(3.0), rf(keys.clone()), rf(vals.clone())]), 30.0);
-        is_err(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone())]), CellError::NA);
-        is_text(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone()), t("none")]), "none");
-        close(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(-1.0)]), 30.0);
-        close(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(1.0)]), 50.0);
-        is_err(ev("XLOOKUP", vec![n(6.0), rf(keys.clone()), rf(vals.clone()), empty(), n(1.0)]), CellError::NA);
-        close(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(-1.0), n(2.0)]), 30.0);
-        close(ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(1.0), n(2.0)]), 50.0);
-        close(ev("XLOOKUP", vec![n(5.0), rf(keys.clone()), rf(vals.clone()), empty(), n(0.0), n(2.0)]), 50.0);
+        close(
+            ev("XLOOKUP", vec![n(3.0), rf(keys.clone()), rf(vals.clone())]),
+            30.0,
+        );
+        is_err(
+            ev("XLOOKUP", vec![n(4.0), rf(keys.clone()), rf(vals.clone())]),
+            CellError::NA,
+        );
+        is_text(
+            ev(
+                "XLOOKUP",
+                vec![n(4.0), rf(keys.clone()), rf(vals.clone()), t("none")],
+            ),
+            "none",
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(-1.0)],
+            ),
+            30.0,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![n(4.0), rf(keys.clone()), rf(vals.clone()), empty(), n(1.0)],
+            ),
+            50.0,
+        );
+        is_err(
+            ev(
+                "XLOOKUP",
+                vec![n(6.0), rf(keys.clone()), rf(vals.clone()), empty(), n(1.0)],
+            ),
+            CellError::NA,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(4.0),
+                    rf(keys.clone()),
+                    rf(vals.clone()),
+                    empty(),
+                    n(-1.0),
+                    n(2.0),
+                ],
+            ),
+            30.0,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(4.0),
+                    rf(keys.clone()),
+                    rf(vals.clone()),
+                    empty(),
+                    n(1.0),
+                    n(2.0),
+                ],
+            ),
+            50.0,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(5.0),
+                    rf(keys.clone()),
+                    rf(vals.clone()),
+                    empty(),
+                    n(0.0),
+                    n(2.0),
+                ],
+            ),
+            50.0,
+        );
         let dup = col(&[1.0, 2.0, 1.0]);
         let dv = col(&[10.0, 20.0, 30.0]);
-        close(ev("XLOOKUP", vec![n(1.0), rf(dup.clone()), rf(dv.clone())]), 10.0);
-        close(ev("XLOOKUP", vec![n(1.0), rf(dup), rf(dv), empty(), n(0.0), n(-1.0)]), 30.0);
+        close(
+            ev("XLOOKUP", vec![n(1.0), rf(dup.clone()), rf(dv.clone())]),
+            10.0,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![n(1.0), rf(dup), rf(dv), empty(), n(0.0), n(-1.0)],
+            ),
+            30.0,
+        );
         // Descending binary search.
         let desc = col(&[50.0, 30.0, 20.0, 10.0]);
-        close(ev("XLOOKUP", vec![n(25.0), rf(desc.clone()), rf(col(&[1.0, 2.0, 3.0, 4.0])), empty(), n(-1.0), n(-2.0)]), 3.0);
-        close(ev("XLOOKUP", vec![n(25.0), rf(desc), rf(col(&[1.0, 2.0, 3.0, 4.0])), empty(), n(1.0), n(-2.0)]), 2.0);
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(25.0),
+                    rf(desc.clone()),
+                    rf(col(&[1.0, 2.0, 3.0, 4.0])),
+                    empty(),
+                    n(-1.0),
+                    n(-2.0),
+                ],
+            ),
+            3.0,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(25.0),
+                    rf(desc),
+                    rf(col(&[1.0, 2.0, 3.0, 4.0])),
+                    empty(),
+                    n(1.0),
+                    n(-2.0),
+                ],
+            ),
+            2.0,
+        );
         // Wildcards only in mode 2.
         let names_col = arr(vec![vec![tv("Apple")], vec![tv("Banana")]]);
-        is_err(ev("XLOOKUP", vec![t("b*"), rf(names_col.clone()), rf(col(&[1.0, 2.0]))]), CellError::NA);
-        close(ev("XLOOKUP", vec![t("b*"), rf(names_col), rf(col(&[1.0, 2.0])), empty(), n(2.0)]), 2.0);
+        is_err(
+            ev(
+                "XLOOKUP",
+                vec![t("b*"), rf(names_col.clone()), rf(col(&[1.0, 2.0]))],
+            ),
+            CellError::NA,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    t("b*"),
+                    rf(names_col),
+                    rf(col(&[1.0, 2.0])),
+                    empty(),
+                    n(2.0),
+                ],
+            ),
+            2.0,
+        );
         // Returning a whole row.
-        let r = ev("XLOOKUP", vec![n(2.0), rf(col(&[1.0, 2.0, 3.0])), rf(table_rows3())]);
+        let r = ev(
+            "XLOOKUP",
+            vec![n(2.0), rf(col(&[1.0, 2.0, 3.0])), rf(table_rows3())],
+        );
         assert_eq!(rows_of(&r), vec![vec![nv(2.0), tv("two"), nv(20.0)]]);
         // Horizontal lookup returning a column.
         let hk = row(&[1.0, 2.0]);
         let hv = arr(vec![vec![tv("a"), tv("b")], vec![tv("c"), tv("d")]]);
-        assert_eq!(rows_of(&ev("XLOOKUP", vec![n(2.0), av(hk.clone()), av(hv)])), vec![vec![tv("b")], vec![tv("d")]]);
-        is_err(ev("XLOOKUP", vec![n(2.0), av(hk), av(col(&[1.0, 2.0, 3.0]))]), CellError::Value);
-        is_err(ev("XLOOKUP", vec![n(2.0), rf(keys.clone()), rf(vals.clone()), empty(), n(3.0)]), CellError::Value);
-        is_err(ev("XLOOKUP", vec![n(2.0), rf(table()), rf(vals)]), CellError::Value);
+        assert_eq!(
+            rows_of(&ev("XLOOKUP", vec![n(2.0), av(hk.clone()), av(hv)])),
+            vec![vec![tv("b")], vec![tv("d")]]
+        );
+        is_err(
+            ev("XLOOKUP", vec![n(2.0), av(hk), av(col(&[1.0, 2.0, 3.0]))]),
+            CellError::Value,
+        );
+        is_err(
+            ev(
+                "XLOOKUP",
+                vec![n(2.0), rf(keys.clone()), rf(vals.clone()), empty(), n(3.0)],
+            ),
+            CellError::Value,
+        );
+        is_err(
+            ev("XLOOKUP", vec![n(2.0), rf(table()), rf(vals)]),
+            CellError::Value,
+        );
     }
 
     /// XLOOKUP binary search (search mode ±2). Observed in Excel (xlookup.xlsx, Sheet2): next
@@ -720,18 +1230,87 @@ mod tests {
     #[test]
     fn xlookup_binary_search_observed() {
         let rates = col(&[0.1, 0.22, 0.24, 0.32, 0.35, 0.37]);
-        let incomes = arr(vec![vec![nv(9700.0)], vec![tv("xyz")], vec![tv("xyz")], vec![nv(160726.0)], vec![nv(204100.0)], vec![nv(510300.0)]]);
-        close(ev("XLOOKUP", vec![n(46523.0), rf(incomes.clone()), rf(rates.clone()), n(0.0), n(1.0), n(2.0)]), 0.22);
-        close(ev("XLOOKUP", vec![n(46523.0), rf(incomes), rf(rates), n(0.0), n(-1.0), n(2.0)]), 0.1);
+        let incomes = arr(vec![
+            vec![nv(9700.0)],
+            vec![tv("xyz")],
+            vec![tv("xyz")],
+            vec![nv(160726.0)],
+            vec![nv(204100.0)],
+            vec![nv(510300.0)],
+        ]);
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(46523.0),
+                    rf(incomes.clone()),
+                    rf(rates.clone()),
+                    n(0.0),
+                    n(1.0),
+                    n(2.0),
+                ],
+            ),
+            0.22,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![n(46523.0), rf(incomes), rf(rates), n(0.0), n(-1.0), n(2.0)],
+            ),
+            0.1,
+        );
         let desc_incomes = col(&[510300.0, 204100.0, 160726.0, 84200.0, 39475.0, 9700.0]);
         let desc_rates = col(&[0.37, 0.35, 0.32, 0.24, 0.22, 0.1]);
-        close(ev("XLOOKUP", vec![n(46523.0), rf(desc_incomes.clone()), rf(desc_rates.clone()), n(0.0), n(1.0), n(-2.0)]), 0.24);
-        close(ev("XLOOKUP", vec![n(46523.0), rf(desc_incomes.clone()), rf(desc_rates.clone()), n(0.0), n(-1.0), n(-2.0)]), 0.22);
-        close(ev("XLOOKUP", vec![n(84200.0), rf(desc_incomes), rf(desc_rates), n(0.0), n(0.0), n(-2.0)]), 0.24);
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(46523.0),
+                    rf(desc_incomes.clone()),
+                    rf(desc_rates.clone()),
+                    n(0.0),
+                    n(1.0),
+                    n(-2.0),
+                ],
+            ),
+            0.24,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(46523.0),
+                    rf(desc_incomes.clone()),
+                    rf(desc_rates.clone()),
+                    n(0.0),
+                    n(-1.0),
+                    n(-2.0),
+                ],
+            ),
+            0.22,
+        );
+        close(
+            ev(
+                "XLOOKUP",
+                vec![
+                    n(84200.0),
+                    rf(desc_incomes),
+                    rf(desc_rates),
+                    n(0.0),
+                    n(0.0),
+                    n(-2.0),
+                ],
+            ),
+            0.24,
+        );
     }
 
     fn table_rows3() -> Value {
-        arr(vec![vec![nv(1.0), tv("one"), nv(10.0)], vec![nv(2.0), tv("two"), nv(20.0)], vec![nv(3.0), tv("three"), nv(30.0)]])
+        arr(vec![
+            vec![nv(1.0), tv("one"), nv(10.0)],
+            vec![nv(2.0), tv("two"), nv(20.0)],
+            vec![nv(3.0), tv("three"), nv(30.0)],
+        ])
     }
 
     #[test]
@@ -741,8 +1320,17 @@ mod tests {
         is_err(ev("XMATCH", vec![n(25.0), rf(v.clone())]), CellError::NA);
         close(ev("XMATCH", vec![n(25.0), rf(v.clone()), n(1.0)]), 3.0);
         close(ev("XMATCH", vec![n(25.0), rf(v.clone()), n(-1.0)]), 2.0);
-        close(ev("XMATCH", vec![n(30.0), rf(v.clone()), n(0.0), n(2.0)]), 3.0);
-        close(ev("XMATCH", vec![t("a?c"), av(arr(vec![vec![tv("xyz"), tv("abc")]])), n(2.0)]), 2.0);
+        close(
+            ev("XMATCH", vec![n(30.0), rf(v.clone()), n(0.0), n(2.0)]),
+            3.0,
+        );
+        close(
+            ev(
+                "XMATCH",
+                vec![t("a?c"), av(arr(vec![vec![tv("xyz"), tv("abc")]])), n(2.0)],
+            ),
+            2.0,
+        );
         let r = ev("XMATCH", vec![av(row(&[30.0, 10.0])), rf(v)]);
         assert_eq!(rows_of(&r), vec![vec![nv(3.0), nv(1.0)]]);
     }
@@ -752,16 +1340,34 @@ mod tests {
         let t3 = table_rows3();
         is_text(ev("INDEX", vec![rf(t3.clone()), n(2.0), n(2.0)]), "two");
         close(ev("INDEX", vec![rf(t3.clone()), n(3.0), n(3.0)]), 30.0);
-        assert_eq!(rows_of(&ev("INDEX", vec![rf(t3.clone()), n(0.0), n(3.0)])), vec![vec![nv(10.0)], vec![nv(20.0)], vec![nv(30.0)]]);
-        assert_eq!(rows_of(&ev("INDEX", vec![rf(t3.clone()), n(1.0), n(0.0)])), vec![vec![nv(1.0), tv("one"), nv(10.0)]]);
-        assert_eq!(rows_of(&ev("INDEX", vec![rf(t3.clone()), n(1.0)])), vec![vec![nv(1.0), tv("one"), nv(10.0)]]);
-        is_err(ev("INDEX", vec![rf(t3.clone()), n(4.0), n(1.0)]), CellError::Ref);
-        is_err(ev("INDEX", vec![rf(t3.clone()), n(1.0), n(4.0)]), CellError::Ref);
+        assert_eq!(
+            rows_of(&ev("INDEX", vec![rf(t3.clone()), n(0.0), n(3.0)])),
+            vec![vec![nv(10.0)], vec![nv(20.0)], vec![nv(30.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("INDEX", vec![rf(t3.clone()), n(1.0), n(0.0)])),
+            vec![vec![nv(1.0), tv("one"), nv(10.0)]]
+        );
+        assert_eq!(
+            rows_of(&ev("INDEX", vec![rf(t3.clone()), n(1.0)])),
+            vec![vec![nv(1.0), tv("one"), nv(10.0)]]
+        );
+        is_err(
+            ev("INDEX", vec![rf(t3.clone()), n(4.0), n(1.0)]),
+            CellError::Ref,
+        );
+        is_err(
+            ev("INDEX", vec![rf(t3.clone()), n(1.0), n(4.0)]),
+            CellError::Ref,
+        );
         is_err(ev("INDEX", vec![rf(t3), n(-1.0), n(1.0)]), CellError::Value);
         close(ev("INDEX", vec![av(row(&[5.0, 6.0, 7.0])), n(2.0)]), 6.0);
         close(ev("INDEX", vec![av(col(&[5.0, 6.0, 7.0])), n(3.0)]), 7.0);
         close(ev("INDEX", vec![n(9.0), n(1.0), n(1.0)]), 9.0);
-        let r = ev("INDEX", vec![av(col(&[5.0, 6.0, 7.0])), av(row(&[3.0, 1.0]))]);
+        let r = ev(
+            "INDEX",
+            vec![av(col(&[5.0, 6.0, 7.0])), av(row(&[3.0, 1.0]))],
+        );
         assert_eq!(rows_of(&r), vec![vec![nv(7.0), nv(5.0)]]);
     }
 
@@ -771,29 +1377,66 @@ mod tests {
         close(ev("COLUMNS", vec![rf(table())]), 3.0);
         close(ev("ROWS", vec![n(1.0)]), 1.0);
         let tr = ev("TRANSPOSE", vec![av(row(&[1.0, 2.0, 3.0]))]);
-        assert_eq!(rows_of(&tr), vec![vec![nv(1.0)], vec![nv(2.0)], vec![nv(3.0)]]);
+        assert_eq!(
+            rows_of(&tr),
+            vec![vec![nv(1.0)], vec![nv(2.0)], vec![nv(3.0)]]
+        );
         is_text(ev("ADDRESS", vec![n(1.0), n(1.0)]), "$A$1");
         is_text(ev("ADDRESS", vec![n(2.0), n(3.0), n(2.0)]), "C$2");
         is_text(ev("ADDRESS", vec![n(2.0), n(3.0), n(3.0)]), "$C2");
         is_text(ev("ADDRESS", vec![n(2.0), n(28.0), n(4.0)]), "AB2");
-        is_text(ev("ADDRESS", vec![n(2.0), n(3.0), n(1.0), b(false)]), "R2C3");
-        is_text(ev("ADDRESS", vec![n(2.0), n(3.0), n(4.0), b(false)]), "R[2]C[3]");
-        is_text(ev("ADDRESS", vec![n(1.0), n(1.0), n(1.0), b(true), t("Sheet1")]), "Sheet1!$A$1");
-        is_text(ev("ADDRESS", vec![n(1.0), n(1.0), n(1.0), b(true), t("My Sheet")]), "'My Sheet'!$A$1");
+        is_text(
+            ev("ADDRESS", vec![n(2.0), n(3.0), n(1.0), b(false)]),
+            "R2C3",
+        );
+        is_text(
+            ev("ADDRESS", vec![n(2.0), n(3.0), n(4.0), b(false)]),
+            "R[2]C[3]",
+        );
+        is_text(
+            ev(
+                "ADDRESS",
+                vec![n(1.0), n(1.0), n(1.0), b(true), t("Sheet1")],
+            ),
+            "Sheet1!$A$1",
+        );
+        is_text(
+            ev(
+                "ADDRESS",
+                vec![n(1.0), n(1.0), n(1.0), b(true), t("My Sheet")],
+            ),
+            "'My Sheet'!$A$1",
+        );
         // Observed in Excel (FormulaEvalTestData) and Microsoft's ADDRESS examples; the last
         // case follows from the quoting rule for sheet names.
         let cases: [(f64, f64, f64, bool, &str, &str); 4] = [
             (2.0, 3.0, 3.0, true, "[Book1]Sheet1", "[Book1]Sheet1!$C2"),
             (2.0, 3.0, 1.0, false, "[Book1]Sheet1", "[Book1]Sheet1!R2C3"),
             (2.0, 3.0, 1.0, false, "EXCEL SHEET", "'EXCEL SHEET'!R2C3"),
-            (1.0, 1.0, 1.0, true, "[My Book]Sheet1", "'[My Book]Sheet1'!$A$1"),
+            (
+                1.0,
+                1.0,
+                1.0,
+                true,
+                "[My Book]Sheet1",
+                "'[My Book]Sheet1'!$A$1",
+            ),
         ];
         for (r, c, abs, a1, sheet, want) in cases {
-            is_text(ev("ADDRESS", vec![n(r), n(c), n(abs), b(a1), t(sheet)]), want);
+            is_text(
+                ev("ADDRESS", vec![n(r), n(c), n(abs), b(a1), t(sheet)]),
+                want,
+            );
         }
-        is_text(ev("ADDRESS", vec![n(1048576.0), n(16384.0)]), "$XFD$1048576");
+        is_text(
+            ev("ADDRESS", vec![n(1048576.0), n(16384.0)]),
+            "$XFD$1048576",
+        );
         is_err(ev("ADDRESS", vec![n(0.0), n(1.0)]), CellError::Value);
         is_err(ev("ADDRESS", vec![n(1.0), n(16385.0)]), CellError::Value);
-        is_err(ev("ADDRESS", vec![n(1.0), n(1.0), n(5.0)]), CellError::Value);
+        is_err(
+            ev("ADDRESS", vec![n(1.0), n(1.0), n(5.0)]),
+            CellError::Value,
+        );
     }
 }

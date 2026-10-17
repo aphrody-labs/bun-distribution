@@ -88,58 +88,70 @@ pub struct FindArgs {
 /// Cherche des fichiers par chemin. Renvoie le nombre de correspondances.
 pub fn find(args: &FindArgs) -> Result<usize> {
     let set = build_globset(&args.globs, &args.exts)?;
-    let needle =
-        if args.case_sensitive { args.pattern.clone() } else { args.pattern.to_lowercase() };
+    let needle = if args.case_sensitive {
+        args.pattern.clone()
+    } else {
+        args.pattern.to_lowercase()
+    };
     let only_files = args.kind.as_deref() == Some("f");
     let only_dirs = args.kind.as_deref() == Some("d");
 
     let hits: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
     let seen = Arc::new(AtomicUsize::new(0));
 
-    walker(&args.dir, args.hidden, args.no_ignore, args.depth).build_parallel().run(|| {
-        let hits = Arc::clone(&hits);
-        let seen = Arc::clone(&seen);
-        let needle = needle.clone();
-        let set = set.clone();
-        Box::new(move |entry| {
-            let Ok(e) = entry else {
-                return WalkState::Continue;
-            };
-            let is_dir = e.file_type().is_some_and(|t| t.is_dir());
-            if (only_files && is_dir) || (only_dirs && !is_dir) {
-                return WalkState::Continue;
-            }
-            let path = e.path();
-            // Un filtre de motif porte sur des FICHIERS. Un répertoire ne « match » jamais
-            // `**/*.rs` : le rejeter d'un `is_match` couperait la descente, mais le laisser
-            // passer le ferait LISTER — `--ext rs` rendait alors 717 entrées là où il y a
-            // 608 fichiers. On le saute donc à l'émission, sans couper le parcours.
-            if set.is_some() && is_dir {
-                return WalkState::Continue;
-            }
-            if let Some(s) = &set
-                && !s.is_match(path)
-            {
-                return WalkState::Continue;
-            }
-            if !needle.is_empty() {
-                let hay = path.to_string_lossy();
-                let hay = if args_case(&needle) { hay.to_string() } else { hay.to_lowercase() };
-                if !hay.contains(&needle) {
+    walker(&args.dir, args.hidden, args.no_ignore, args.depth)
+        .build_parallel()
+        .run(|| {
+            let hits = Arc::clone(&hits);
+            let seen = Arc::clone(&seen);
+            let needle = needle.clone();
+            let set = set.clone();
+            Box::new(move |entry| {
+                let Ok(e) = entry else {
+                    return WalkState::Continue;
+                };
+                let is_dir = e.file_type().is_some_and(|t| t.is_dir());
+                if (only_files && is_dir) || (only_dirs && !is_dir) {
                     return WalkState::Continue;
                 }
-            }
-            if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit {
-                return WalkState::Quit;
-            }
-            if let Ok(mut v) = hits.lock() {
-                v.push(path.display().to_string());
-            }
-            WalkState::Continue
-        })
-    });
+                let path = e.path();
+                // Un filtre de motif porte sur des FICHIERS. Un répertoire ne « match » jamais
+                // `**/*.rs` : le rejeter d'un `is_match` couperait la descente, mais le laisser
+                // passer le ferait LISTER — `--ext rs` rendait alors 717 entrées là où il y a
+                // 608 fichiers. On le saute donc à l'émission, sans couper le parcours.
+                if set.is_some() && is_dir {
+                    return WalkState::Continue;
+                }
+                if let Some(s) = &set
+                    && !s.is_match(path)
+                {
+                    return WalkState::Continue;
+                }
+                if !needle.is_empty() {
+                    let hay = path.to_string_lossy();
+                    let hay = if args_case(&needle) {
+                        hay.to_string()
+                    } else {
+                        hay.to_lowercase()
+                    };
+                    if !hay.contains(&needle) {
+                        return WalkState::Continue;
+                    }
+                }
+                if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit {
+                    return WalkState::Quit;
+                }
+                if let Ok(mut v) = hits.lock() {
+                    v.push(path.display().to_string());
+                }
+                WalkState::Continue
+            })
+        });
 
-    let mut v = hits.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let mut v = hits
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
     v.sort_unstable();
     let n = v.len();
     if args.count {
@@ -193,61 +205,67 @@ pub fn grep(args: &GrepArgs) -> Result<usize> {
     let out: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
     let seen = Arc::new(AtomicUsize::new(0));
 
-    walker(&args.dir, args.hidden, args.no_ignore, None).build_parallel().run(|| {
-        let out = Arc::clone(&out);
-        let seen = Arc::clone(&seen);
-        let matcher = matcher.clone();
-        let set = set.clone();
-        // `BinaryDetection::quit` évite de déverser des octets d'un CPK ou d'un .exe.
-        let mut searcher = SearcherBuilder::new()
-            .binary_detection(BinaryDetection::quit(0))
-            .line_number(true)
-            .build();
-        Box::new(move |entry| {
-            let Ok(e) = entry else {
-                return WalkState::Continue;
-            };
-            if !e.file_type().is_some_and(|t| t.is_file()) {
-                return WalkState::Continue;
-            }
-            let path = e.path();
-            if let Some(s) = &set
-                && !s.is_match(path)
-            {
-                return WalkState::Continue;
-            }
-            let mut file_hits = 0usize;
-            let display = path.display().to_string();
-            let res = searcher.search_path(
-                &matcher,
-                path,
-                UTF8(|lineno, line| {
-                    file_hits += 1;
-                    if !args.files_with_matches {
-                        if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit {
-                            return Ok(false);
+    walker(&args.dir, args.hidden, args.no_ignore, None)
+        .build_parallel()
+        .run(|| {
+            let out = Arc::clone(&out);
+            let seen = Arc::clone(&seen);
+            let matcher = matcher.clone();
+            let set = set.clone();
+            // `BinaryDetection::quit` évite de déverser des octets d'un CPK ou d'un .exe.
+            let mut searcher = SearcherBuilder::new()
+                .binary_detection(BinaryDetection::quit(0))
+                .line_number(true)
+                .build();
+            Box::new(move |entry| {
+                let Ok(e) = entry else {
+                    return WalkState::Continue;
+                };
+                if !e.file_type().is_some_and(|t| t.is_file()) {
+                    return WalkState::Continue;
+                }
+                let path = e.path();
+                if let Some(s) = &set
+                    && !s.is_match(path)
+                {
+                    return WalkState::Continue;
+                }
+                let mut file_hits = 0usize;
+                let display = path.display().to_string();
+                let res = searcher.search_path(
+                    &matcher,
+                    path,
+                    UTF8(|lineno, line| {
+                        file_hits += 1;
+                        if !args.files_with_matches {
+                            if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit
+                            {
+                                return Ok(false);
+                            }
+                            if let Ok(mut v) = out.lock() {
+                                v.push(format!("{display}:{lineno}:{}", line.trim_end()));
+                            }
                         }
-                        if let Ok(mut v) = out.lock() {
-                            v.push(format!("{display}:{lineno}:{}", line.trim_end()));
-                        }
+                        Ok(true)
+                    }),
+                );
+                // Un fichier illisible (permission, lien cassé) ne doit pas arrêter la recherche.
+                if res.is_ok() && args.files_with_matches && file_hits > 0 {
+                    if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit {
+                        return WalkState::Quit;
                     }
-                    Ok(true)
-                }),
-            );
-            // Un fichier illisible (permission, lien cassé) ne doit pas arrêter la recherche.
-            if res.is_ok() && args.files_with_matches && file_hits > 0 {
-                if args.limit > 0 && seen.fetch_add(1, Ordering::Relaxed) >= args.limit {
-                    return WalkState::Quit;
+                    if let Ok(mut v) = out.lock() {
+                        v.push(display);
+                    }
                 }
-                if let Ok(mut v) = out.lock() {
-                    v.push(display);
-                }
-            }
-            WalkState::Continue
-        })
-    });
+                WalkState::Continue
+            })
+        });
 
-    let mut v = out.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let mut v = out
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .clone();
     v.sort_unstable();
     let n = v.len();
     for line in &v {

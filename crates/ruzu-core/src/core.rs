@@ -51,7 +51,11 @@ fn refresh_system_clocks(
     network: &crate::hle::service::psc::time::system_clock::SystemClock,
     new_time: i64,
 ) {
-    settings.inner.lock().unwrap().set_user_system_clock_context([0; 0x20]);
+    settings
+        .inner
+        .lock()
+        .unwrap()
+        .set_user_system_clock_context([0; 0x20]);
     let _ = user.set_current_time(new_time);
     let _ = local.set_current_time(new_time);
     let context = network.get_system_clock_context().unwrap_or_default();
@@ -61,7 +65,11 @@ fn refresh_system_clocks(
     bytes[..8].copy_from_slice(&context.offset.to_le_bytes());
     bytes[8..16].copy_from_slice(&context.steady_time_point.time_point.to_le_bytes());
     bytes[16..].copy_from_slice(&context.steady_time_point.clock_source_id);
-    settings.inner.lock().unwrap().set_network_system_clock_context(bytes);
+    settings
+        .inner
+        .lock()
+        .unwrap()
+        .set_network_system_clock_context(bytes);
     let _ = network.set_current_time(new_time);
 }
 
@@ -1639,8 +1647,10 @@ impl System {
         self.exit_locked.store(false, Ordering::Release);
         self.exit_requested.store(false, Ordering::Release);
 
-        self.renderdoc_api = (*common::settings::values().enable_renderdoc_hotkey.get_value())
-            .then(crate::tools::renderdoc::RenderdocApi::new);
+        self.renderdoc_api = (*common::settings::values()
+            .enable_renderdoc_hotkey
+            .get_value())
+        .then(crate::tools::renderdoc::RenderdocApi::new);
 
         log::info!("System: application process setup complete (services created)");
         Ok(())
@@ -2223,7 +2233,11 @@ impl System {
         // System::run. Blocking here from Load/ApplySettings deadlocks.
         let (settings_handler, admin_handler, static_handler) = {
             let sm = manager.lock().unwrap();
-            (sm.get_service("set:sys"), sm.get_service("time:a"), sm.get_service("time:s"))
+            (
+                sm.get_service("set:sys"),
+                sm.get_service("time:a"),
+                sm.get_service("time:s"),
+            )
         };
         let (Some(settings_handler), Some(admin_handler), Some(static_handler)) =
             (settings_handler, admin_handler, static_handler)
@@ -2231,21 +2245,35 @@ impl System {
             log::debug!("System::RefreshTime: time services not registered yet");
             return;
         };
-        let settings = settings_handler.as_any().downcast_ref::<SystemSettingsService>()
+        let settings = settings_handler
+            .as_any()
+            .downcast_ref::<SystemSettingsService>()
             .expect("set:sys is a settings service");
-        let admin = admin_handler.as_any().downcast_ref::<GlueStatic>()
+        let admin = admin_handler
+            .as_any()
+            .downcast_ref::<GlueStatic>()
             .expect("time:a is a Glue time service");
-        let static_service = static_handler.as_any().downcast_ref::<PscStatic>()
+        let static_service = static_handler
+            .as_any()
+            .downcast_ref::<PscStatic>()
             .expect("time:s is a PSC time service");
         let user = admin.get_standard_user_system_clock();
         let local = admin.get_standard_local_system_clock();
         let network = static_service.get_standard_network_system_clock();
-        let timezone = admin.get_time_zone_service().expect("time:a exposes timezone service");
+        let timezone = admin
+            .get_time_zone_service()
+            .expect("time:a exposes timezone service");
 
         let (zone, offset) = {
             let values = common::settings::values();
-            (*values.time_zone_index.get_value(),
-             if *values.custom_rtc_enabled.get_value() { *values.custom_rtc_offset.get_value() } else { 0 })
+            (
+                *values.time_zone_index.get_value(),
+                if *values.custom_rtc_enabled.get_value() {
+                    *values.custom_rtc_offset.get_value()
+                } else {
+                    0
+                },
+            )
         };
         let zone = common::settings::get_time_zone_string(zone);
         let mut name = [0u8; 0x24];
@@ -2550,11 +2578,7 @@ impl System {
                 log::error!("exit_callback must be initialized by the frontend");
             }))
         });
-        let debugger = crate::debugger::debugger::Debugger::new(
-            process,
-            port,
-            exit_callback,
-        );
+        let debugger = crate::debugger::debugger::Debugger::new(process, port, exit_callback);
         if debugger.is_initialized() {
             *self.debugger.lock() = Some(debugger);
         }
@@ -3269,7 +3293,7 @@ mod exit_state_tests {
     #[test]
     fn refresh_time_preserves_clock_order_context_bytes_and_releases_settings_lock() {
         use crate::hle::result::{ResultCode, RESULT_SUCCESS};
-        use crate::hle::service::psc::time::common::{SystemClockContext, SteadyClockTimePoint};
+        use crate::hle::service::psc::time::common::{SteadyClockTimePoint, SystemClockContext};
         use crate::hle::service::psc::time::system_clock::{SystemClock, SystemClockBackend};
         use crate::hle::service::set::system_settings_server::SystemSettingsService;
 
@@ -3279,18 +3303,29 @@ mod exit_state_tests {
             events: Arc<StdMutex<Vec<(u8, i64)>>>,
         }
         impl SystemClockBackend for Clock {
-            fn is_initialized(&self) -> bool { true }
-            fn get_current_time(&self) -> Result<i64, ResultCode> { Ok(0) }
+            fn is_initialized(&self) -> bool {
+                true
+            }
+            fn get_current_time(&self) -> Result<i64, ResultCode> {
+                Ok(0)
+            }
             fn get_context(&self) -> Result<SystemClockContext, ResultCode> {
                 assert!(self.settings.inner.try_lock().is_ok());
                 self.events.lock().unwrap().push((self.id, 0));
                 Ok(SystemClockContext {
                     offset: -19,
-                    steady_time_point: SteadyClockTimePoint { time_point: 42, clock_source_id: [0xA5; 16] },
+                    steady_time_point: SteadyClockTimePoint {
+                        time_point: 42,
+                        clock_source_id: [0xA5; 16],
+                    },
                 })
             }
             fn set_current_time(&self, time: i64) -> ResultCode {
-                let settings = self.settings.inner.try_lock().expect("caller must release settings lock");
+                let settings = self
+                    .settings
+                    .inner
+                    .try_lock()
+                    .expect("caller must release settings lock");
                 assert_eq!(settings.get_user_system_clock_context(), [0; 0x20]);
                 if self.id == 2 {
                     let stored = settings.get_network_system_clock_context();
@@ -3307,13 +3342,26 @@ mod exit_state_tests {
         }
         let settings = Arc::new(SystemSettingsService::new_for_test());
         let events = Arc::new(StdMutex::new(Vec::new()));
-        let clocks: Vec<_> = (0..3).map(|id| SystemClock::with_backend(true, false, Arc::new(Clock {
-            id, settings: Arc::clone(&settings), events: Arc::clone(&events),
-        }))).collect();
+        let clocks: Vec<_> = (0..3)
+            .map(|id| {
+                SystemClock::with_backend(
+                    true,
+                    false,
+                    Arc::new(Clock {
+                        id,
+                        settings: Arc::clone(&settings),
+                        events: Arc::clone(&events),
+                    }),
+                )
+            })
+            .collect();
         for time in [1234, -1, i64::MIN] {
             events.lock().unwrap().clear();
             refresh_system_clocks(&settings, &clocks[0], &clocks[1], &clocks[2], time);
-            assert_eq!(*events.lock().unwrap(), [(0, time), (1, time), (2, 0), (2, time)]);
+            assert_eq!(
+                *events.lock().unwrap(),
+                [(0, time), (1, time), (2, 0), (2, time)]
+            );
         }
         // Must not try to discover services before System is powered on.
         System::new().refresh_time();
@@ -3325,14 +3373,21 @@ mod exit_state_tests {
         const CHILD: &str = "RUZU_TEST_MEMORY_KERNEL_LIFECYCLE";
         if std::env::var_os(CHILD).is_none() {
             let status = std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "core::exit_state_tests::memory_layout_changes_survive_kernel_start_and_stop"])
-                .env(CHILD, "1").status().unwrap();
+                .args([
+                    "--exact",
+                    "core::exit_state_tests::memory_layout_changes_survive_kernel_start_and_stop",
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap();
             assert!(status.success());
             return;
         }
-        for mode in [common::settings::MemoryLayout::Memory4Gb,
+        for mode in [
+            common::settings::MemoryLayout::Memory4Gb,
             common::settings::MemoryLayout::Memory12Gb,
-            common::settings::MemoryLayout::Memory4Gb] {
+            common::settings::MemoryLayout::Memory4Gb,
+        ] {
             {
                 let mut settings = common::settings::values_mut();
                 settings.memory_layout_mode.set_global(true);
@@ -3341,10 +3396,17 @@ mod exit_state_tests {
             let mut system = Box::new(System::new());
             system.initialize();
             system.initialize_kernel();
-            let expected = crate::hle::kernel::board::k_system_control::init::get_intended_memory_size();
-            assert_eq!(system.device_memory.as_ref().unwrap().buffer.backing_size(), expected);
+            let expected =
+                crate::hle::kernel::board::k_system_control::init::get_intended_memory_size();
+            assert_eq!(
+                system.device_memory.as_ref().unwrap().buffer.backing_size(),
+                expected
+            );
             let layout = system.kernel.as_ref().unwrap().get_memory_layout().unwrap();
-            assert_eq!(layout.lock().unwrap().get_total_and_kernel_memory_sizes().0, expected);
+            assert_eq!(
+                layout.lock().unwrap().get_total_and_kernel_memory_sizes().0,
+                expected
+            );
             system.shutdown_main_process();
         }
     }

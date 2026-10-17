@@ -8,7 +8,10 @@ use std::sync::Arc;
 use serde_json::{Value, json};
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::marks::{MarkStyle, TrimMarks};
-use vectorcraft_doc::{Appearance, ImageObject, LiveShape, Node, NodeId, NodeKind, RasterColorModel, RasterEffectsSettings, Scaling};
+use vectorcraft_doc::{
+    Appearance, ImageObject, LiveShape, Node, NodeId, NodeKind, RasterColorModel,
+    RasterEffectsSettings, Scaling,
+};
 use vectorcraft_geom::{Affine, Anchor, PathData, Point, Rect, Vec2};
 use vectorcraft_render::AntiAlias;
 use vectorcraft_render::encode::{RasterExportOptions, RasterFormat};
@@ -191,7 +194,10 @@ pub(crate) fn squash(s: &mut Session, from: usize, label: &str) {
 fn reset_bounding_box(s: &mut Session, _: &Value) -> Result<Value> {
     let ids = selected_roots(s)?;
     let d = &s.doc()?.doc;
-    let turned: Vec<NodeId> = ids.into_iter().filter(|id| d.node(*id).is_some_and(|n| n.bbox_angle != 0.0)).collect();
+    let turned: Vec<NodeId> = ids
+        .into_iter()
+        .filter(|id| d.node(*id).is_some_and(|n| n.bbox_angle != 0.0))
+        .collect();
     if !turned.is_empty() {
         s.edit("Reset Bounding Box", |d, _| {
             for id in &turned {
@@ -214,13 +220,21 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
     // ancestor directly inside the layer.
     let mut selected: BTreeMap<NodeId, Vec<(usize, Rect)>> = BTreeMap::new();
     for id in &roots {
-        let Some(layer) = d.layer_of(*id) else { continue };
+        let Some(layer) = d.layer_of(*id) else {
+            continue;
+        };
         // The selected object's ancestor directly inside the layer.
         let anc = d.ancestry(*id).unwrap_or_default();
-        let Some(pos) = anc.iter().position(|a| *a == layer) else { continue };
+        let Some(pos) = anc.iter().position(|a| *a == layer) else {
+            continue;
+        };
         let top = anc.get(pos + 1).copied().unwrap_or(*id);
-        let Some(b) = d.node(*id).and_then(|n| n.visual_bounds()) else { continue };
-        let Some((_, idx, _)) = d.position(top) else { continue };
+        let Some(b) = d.node(*id).and_then(|n| n.visual_bounds()) else {
+            continue;
+        };
+        let Some((_, idx, _)) = d.position(top) else {
+            continue;
+        };
         selected.entry(layer).or_default().push((idx, b));
     }
     // The loop walks up each layer once. Each object that is not selected and overlaps a selected
@@ -239,7 +253,11 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
             if under.is_empty() || roots.contains(&n.id) {
                 continue;
             }
-            if n.visual_bounds().is_some_and(|nb| under.iter().any(|b| nb.intersect(*b).area() > 0.0 || nb.contains(b.center()))) {
+            if n.visual_bounds().is_some_and(|nb| {
+                under
+                    .iter()
+                    .any(|b| nb.intersect(*b).area() > 0.0 || nb.contains(b.center()))
+            }) {
                 hits.insert(n.id);
             }
         }
@@ -247,7 +265,10 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
     // When there is no object above, or every one is locked (Lock) or hidden (Hide) already, the
     // document and its undo history stay as they are, and selected objects that are hidden or
     // locked are deselected.
-    if hits.iter().all(|id| d.node(*id).is_none_or(|n| if lock { n.locked } else { !n.visible })) {
+    if hits.iter().all(|id| {
+        d.node(*id)
+            .is_none_or(|n| if lock { n.locked } else { !n.visible })
+    }) {
         s.select(|d, sel| sel.deselect_uneditable(d))?;
         return Ok(json!({ "count": hits.len() }));
     }
@@ -271,12 +292,28 @@ fn above(s: &mut Session, lock: bool) -> Result<Value> {
 
 fn other_layers(s: &mut Session, lock: bool) -> Result<Value> {
     let st = s.doc()?;
-    let keep: Vec<NodeId> = st.selection.objects.iter().filter_map(|id| st.doc.ancestry(*id)).flatten().collect();
-    let others: Vec<NodeId> = st.doc.layers.iter().map(|l| l.id).filter(|l| !keep.contains(l)).collect();
+    let keep: Vec<NodeId> = st
+        .selection
+        .objects
+        .iter()
+        .filter_map(|id| st.doc.ancestry(*id))
+        .flatten()
+        .collect();
+    let others: Vec<NodeId> = st
+        .doc
+        .layers
+        .iter()
+        .map(|l| l.id)
+        .filter(|l| !keep.contains(l))
+        .collect();
     let n = others.len();
     // When there is no other layer, or every one is locked (Lock) or hidden (Hide) already, the
     // document and its undo history stay as they are.
-    if others.iter().all(|id| st.doc.node(*id).is_none_or(|l| if lock { l.locked } else { !l.visible })) {
+    if others.iter().all(|id| {
+        st.doc
+            .node(*id)
+            .is_none_or(|l| if lock { l.locked } else { !l.visible })
+    }) {
         return Ok(json!({ "count": n }));
     }
     s.edit(if lock { "Lock Others" } else { "Hide Others" }, |d, _| {
@@ -322,25 +359,52 @@ fn transform_each(s: &mut Session, p: &Value) -> Result<Value> {
     let rx = bool_or(p, "reflectX", false);
     let ry = bool_or(p, "reflectY", false);
     let random = bool_or(p, "random", false);
-    let refi = p.get("reference").and_then(Value::as_u64).unwrap_or(4).min(8) as usize;
+    let refi = p
+        .get("reference")
+        .and_then(Value::as_u64)
+        .unwrap_or(4)
+        .min(8) as usize;
     let copy = bool_or(p, "copy", false);
     let objects = super::object::transforms_objects(p);
     if sh == 0.0 || sv == 0.0 {
         return Err(bad("object.transformEach", "scale must be non-zero"));
     }
-    let mut rng = Rng(p.get("seed").and_then(Value::as_u64).unwrap_or(0x9E37_79B9_7F4A_7C15).max(1));
-    let mut sc = if sh != 100.0 || sv != 100.0 { super::object::scaling(s, p) } else { Default::default() };
+    let mut rng = Rng(p
+        .get("seed")
+        .and_then(Value::as_u64)
+        .unwrap_or(0x9E37_79B9_7F4A_7C15)
+        .max(1));
+    let mut sc = if sh != 100.0 || sv != 100.0 {
+        super::object::scaling(s, p)
+    } else {
+        Default::default()
+    };
     sc.patterns = super::object::transform_patterns(s, p, &roots)?;
     // With no object to transform, or without a copy when both scales are 100% and there is no
     // move, rotation or reflection (with or without Random), the document and its undo history
     // stay as they are.
-    if roots.is_empty() || (!copy && sh == 100.0 && sv == 100.0 && mh == 0.0 && mv == 0.0 && rot == 0.0 && !rx && !ry) {
+    if roots.is_empty()
+        || (!copy
+            && sh == 100.0
+            && sv == 100.0
+            && mh == 0.0
+            && mv == 0.0
+            && rot == 0.0
+            && !rx
+            && !ry)
+    {
         return Ok(ids_json(&roots));
     }
     let ids = s.edit("Transform Each", |d, sel| {
-        let targets = if copy { duplicate_in(d, sel, &roots, Affine::IDENTITY)? } else { roots.clone() };
+        let targets = if copy {
+            duplicate_in(d, sel, &roots, Affine::IDENTITY)?
+        } else {
+            roots.clone()
+        };
         for id in &targets {
-            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else { continue };
+            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else {
+                continue;
+            };
             let (mut k_sh, mut k_sv, mut k_mh, mut k_mv, mut k_rot) = (sh, sv, mh, mv, rot);
             if random {
                 k_sh = 100.0 + (sh - 100.0) * rng.next();
@@ -350,9 +414,15 @@ fn transform_each(s: &mut Session, p: &Value) -> Result<Value> {
                 k_rot = rot * (rng.next() * 2.0 - 1.0);
             }
             let o = vectorcraft_geom::reference_point(b, refi);
-            let refl = Affine::scale_non_uniform(if ry { -1.0 } else { 1.0 }, if rx { -1.0 } else { 1.0 });
+            let refl =
+                Affine::scale_non_uniform(if ry { -1.0 } else { 1.0 }, if rx { -1.0 } else { 1.0 });
             let m = Affine::translate((k_mh, k_mv))
-                * about(o, Affine::rotate(-k_rot.to_radians()) * refl * Affine::scale_non_uniform(k_sh / 100.0, k_sv / 100.0));
+                * about(
+                    o,
+                    Affine::rotate(-k_rot.to_radians())
+                        * refl
+                        * Affine::scale_non_uniform(k_sh / 100.0, k_sv / 100.0),
+                );
             if let Some(n) = d.node_mut(*id) {
                 super::object::transform_node(n, m, sc, objects);
             }
@@ -367,9 +437,16 @@ fn transform_each(s: &mut Session, p: &Value) -> Result<Value> {
 pub(crate) const MAX_PIXELS: f64 = 64.0e6;
 
 /// A copy of `doc` whose only content is `nodes` (paint order), for offscreen rendering.
-pub(crate) fn isolated_doc(doc: &vectorcraft_doc::Document, nodes: Vec<Node>) -> vectorcraft_doc::Document {
+pub(crate) fn isolated_doc(
+    doc: &vectorcraft_doc::Document,
+    nodes: Vec<Node>,
+) -> vectorcraft_doc::Document {
     let mut tmp = doc.clone();
-    let mut layer = Node::layer(NodeId(u64::MAX), "raster", vectorcraft_doc::LayerColor::Preset(0));
+    let mut layer = Node::layer(
+        NodeId(u64::MAX),
+        "raster",
+        vectorcraft_doc::LayerColor::Preset(0),
+    );
     if let Some(ch) = layer.children_mut() {
         *ch = nodes.into_iter().map(Arc::new).collect();
     }
@@ -396,13 +473,26 @@ fn render_png(
     opts: &vectorcraft_render::RenderOptions,
     color: RasterColorModel,
 ) -> Result<(Vec<u8>, u32, u32)> {
-    if region.width() * region.height() * scale * scale > MAX_PIXELS || region.width() * scale > 65535.0 || region.height() * scale > 65535.0 {
-        return Err(EngineError::Other("image would be too large; lower the resolution".into()));
+    if region.width() * region.height() * scale * scale > MAX_PIXELS
+        || region.width() * scale > 65535.0
+        || region.height() * scale > 65535.0
+    {
+        return Err(EngineError::Other(
+            "image would be too large; lower the resolution".into(),
+        ));
     }
     let mut r = vectorcraft_render::Renderer::new();
     let mut img = r.render_region_with(doc, region, scale, opts);
-    RasterEffectsSettings { color_model: color, ..Default::default() }.finish_pixels(&mut img.pixels);
-    Ok((img.to_png().map_err(EngineError::Other)?, img.width, img.height))
+    RasterEffectsSettings {
+        color_model: color,
+        ..Default::default()
+    }
+    .finish_pixels(&mut img.pixels);
+    Ok((
+        img.to_png().map_err(EngineError::Other)?,
+        img.width,
+        img.height,
+    ))
 }
 
 fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
@@ -415,9 +505,19 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
     }
     // The document's raster effects settings, changed by the params.
     let mut look = st.doc.raster_effects.clone();
-    let mut background = (look.background == vectorcraft_doc::Background::White).then_some([255; 3]);
-    let mut anti_alias = if look.anti_alias { AntiAlias::Art } else { AntiAlias::None };
-    for (k, v) in p.as_object().into_iter().flatten().filter(|(_, v)| !v.is_null()) {
+    let mut background =
+        (look.background == vectorcraft_doc::Background::White).then_some([255; 3]);
+    let mut anti_alias = if look.anti_alias {
+        AntiAlias::Art
+    } else {
+        AntiAlias::None
+    };
+    for (k, v) in p
+        .as_object()
+        .into_iter()
+        .flatten()
+        .filter(|(_, v)| !v.is_null())
+    {
         match k.as_str() {
             "background" => background = fileio::background(v).map_err(|e| bad(C, e))?,
             "antiAlias" => {
@@ -429,21 +529,43 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
                             AntiAlias::None
                         }
                     }
-                    v => fileio::anti_alias(v.as_str().unwrap_or_default()).map_err(|e| bad(C, e))?,
+                    v => {
+                        fileio::anti_alias(v.as_str().unwrap_or_default()).map_err(|e| bad(C, e))?
+                    }
                 }
             }
             "padding" | "addAround" => look.add_around = super::rasterfx::add_around(v, C, k)?,
-            "colorModel" => look.color_model = super::rasterfx::color_model(v, st.doc.color_mode, C)?,
-            "clippingMask" => look.clipping_mask = v.as_bool().ok_or_else(|| bad(C, "clippingMask must be true or false"))?,
+            "colorModel" => {
+                look.color_model = super::rasterfx::color_model(v, st.doc.color_mode, C)?
+            }
+            "clippingMask" => {
+                look.clipping_mask = v
+                    .as_bool()
+                    .ok_or_else(|| bad(C, "clippingMask must be true or false"))?
+            }
             _ => {}
         }
     }
-    let raster = RasterExportOptions { ppi, background, anti_alias, ..Default::default() };
+    let raster = RasterExportOptions {
+        ppi,
+        background,
+        anti_alias,
+        ..Default::default()
+    };
     let pad = look.add_around;
-    let b = st.doc.bounds_of(&roots, true).ok_or_else(|| bad(C, "selection has no bounds"))?.inflate(pad, pad);
+    let b = st
+        .doc
+        .bounds_of(&roots, true)
+        .ok_or_else(|| bad(C, "selection has no bounds"))?
+        .inflate(pad, pad);
     let scale = ppi / 72.0;
     // Snap to whole pixels.
-    let region = Rect::new(b.x0, b.y0, b.x0 + (b.width() * scale).ceil().max(1.0) / scale, b.y0 + (b.height() * scale).ceil().max(1.0) / scale);
+    let region = Rect::new(
+        b.x0,
+        b.y0,
+        b.x0 + (b.width() * scale).ceil().max(1.0) / scale,
+        b.y0 + (b.height() * scale).ceil().max(1.0) / scale,
+    );
     let nodes: Vec<Node> = roots
         .iter()
         .filter_map(|id| st.doc.node(*id).cloned())
@@ -455,21 +577,44 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
     // Create Clipping Mask: the image is clipped to the art's outline.
     let clip = look
         .clipping_mask
-        .then(|| vectorcraft_render::effects::clip_outline(&Node::group(NodeId(u64::MAX), nodes.iter().cloned().map(Arc::new).collect())))
+        .then(|| {
+            vectorcraft_render::effects::clip_outline(&Node::group(
+                NodeId(u64::MAX),
+                nodes.iter().cloned().map(Arc::new).collect(),
+            ))
+        })
         .flatten()
         .map(|(bp, rule)| (PathData::from_bezpath(&bp), rule));
     let tmp = isolated_doc(&st.doc, nodes);
-    let (png, w, h) = render_png(&tmp, region, scale, &raster.render_options(RasterFormat::Png), look.color_model)?;
+    let (png, w, h) = render_png(
+        &tmp,
+        region,
+        scale,
+        &raster.render_options(RasterFormat::Png),
+        look.color_model,
+    )?;
     if roots.is_empty() {
         return Err(bad(C, "nothing selected"));
     }
     let id = s.edit("Rasterize", |d, sel| {
         let key = unique_key(d, "raster");
-        d.images.insert(key.clone(), vectorcraft_doc::ImageBlob::new("image/png", png));
+        d.images.insert(
+            key.clone(),
+            vectorcraft_doc::ImageBlob::new("image/png", png),
+        );
         let id = d.alloc_id();
         let xf = Affine::translate(region.origin().to_vec2()) * Affine::scale(1.0 / scale);
-        let mut node =
-            Node::new(id, NodeKind::Image(Box::new(ImageObject { key, width: w, height: h, xf, link: None, placement: Default::default() })));
+        let mut node = Node::new(
+            id,
+            NodeKind::Image(Box::new(ImageObject {
+                key,
+                width: w,
+                height: h,
+                xf,
+                link: None,
+                placement: Default::default(),
+            })),
+        );
         if let Some((path, rule)) = clip {
             node = super::rasterfx::clip_group(d, path, rule, node);
         }
@@ -483,7 +628,12 @@ fn rasterize(s: &mut Session, p: &Value) -> Result<Value> {
 fn has_image(s: &Session) -> std::result::Result<(), String> {
     has_selection(s)?;
     let st = s.active().ok_or("no document open")?;
-    if st.selection.objects.iter().any(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_)))) {
+    if st
+        .selection
+        .objects
+        .iter()
+        .any(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_))))
+    {
         Ok(())
     } else {
         Err("select an image".into())
@@ -501,25 +651,56 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
         .find(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_))))
         .ok_or_else(|| bad(C, "select an image"))?;
     let node = st.doc.node(id).cloned().ok_or(EngineError::NoNode(id))?;
-    let NodeKind::Image(im) = &node.kind else { return Err(bad(C, "select an image")) };
-    let blob = st.doc.images.get(&im.key).filter(|b| !b.bytes.is_empty()).ok_or_else(|| bad(C, "the image has no embedded pixels"))?;
-    let raster = vectorcraft_trace::Raster::decode(&blob.bytes).map_err(|e| bad(C, e.to_string()))?;
-    let cols = p.get("columns").and_then(Value::as_u64).unwrap_or(10).clamp(1, 1000) as u32;
-    let rows = p.get("rows").and_then(Value::as_u64).unwrap_or(10).clamp(1, 1000) as u32;
+    let NodeKind::Image(im) = &node.kind else {
+        return Err(bad(C, "select an image"));
+    };
+    let blob = st
+        .doc
+        .images
+        .get(&im.key)
+        .filter(|b| !b.bytes.is_empty())
+        .ok_or_else(|| bad(C, "the image has no embedded pixels"))?;
+    let raster =
+        vectorcraft_trace::Raster::decode(&blob.bytes).map_err(|e| bad(C, e.to_string()))?;
+    let cols = p
+        .get("columns")
+        .and_then(Value::as_u64)
+        .unwrap_or(10)
+        .clamp(1, 1000) as u32;
+    let rows = p
+        .get("rows")
+        .and_then(Value::as_u64)
+        .unwrap_or(10)
+        .clamp(1, 1000) as u32;
     let gray = bool_or(p, "gray", false);
     let colors = vectorcraft_trace::mosaic(&raster, cols, rows);
     // Tiles in image space, placed by the image transform (scaled to a new size if asked).
-    let b = node.geometric_bounds().ok_or_else(|| bad(C, "image has no bounds"))?;
-    let (nw, nh) = (f64_or(p, "width", b.width()).max(0.1), f64_or(p, "height", b.height()).max(0.1));
+    let b = node
+        .geometric_bounds()
+        .ok_or_else(|| bad(C, "image has no bounds"))?;
+    let (nw, nh) = (
+        f64_or(p, "width", b.width()).max(0.1),
+        f64_or(p, "height", b.height()).max(0.1),
+    );
     let resize = Affine::translate(b.origin().to_vec2())
         * Affine::scale_non_uniform(nw / b.width().max(1e-9), nh / b.height().max(1e-9))
         * Affine::translate(-b.origin().to_vec2());
     let xf = resize * im.xf;
-    let (tw, th) = (im.width as f64 / cols as f64, im.height as f64 / rows as f64);
+    let (tw, th) = (
+        im.width as f64 / cols as f64,
+        im.height as f64 / rows as f64,
+    );
     // Spacing is in points; convert to image pixels along each axis.
-    let ppx = (xf * Point::new(1.0, 0.0) - xf * Point::ZERO).hypot().max(1e-9);
-    let ppy = (xf * Point::new(0.0, 1.0) - xf * Point::ZERO).hypot().max(1e-9);
-    let (gx, gy) = ((f64_or(p, "spacingX", 0.0).max(0.0) / ppx).min(tw * 0.9), (f64_or(p, "spacingY", 0.0).max(0.0) / ppy).min(th * 0.9));
+    let ppx = (xf * Point::new(1.0, 0.0) - xf * Point::ZERO)
+        .hypot()
+        .max(1e-9);
+    let ppy = (xf * Point::new(0.0, 1.0) - xf * Point::ZERO)
+        .hypot()
+        .max(1e-9);
+    let (gx, gy) = (
+        (f64_or(p, "spacingX", 0.0).max(0.0) / ppx).min(tw * 0.9),
+        (f64_or(p, "spacingY", 0.0).max(0.0) / ppy).min(th * 0.9),
+    );
     let delete = bool_or(p, "deleteRaster", false);
     let (gid, n) = s.edit("Create Object Mosaic", |d, sel| {
         let mut tiles = vec![];
@@ -531,15 +712,24 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
                 }
                 let x0 = c as f64 * tw + gx / 2.0;
                 let y0 = r as f64 * th + gy / 2.0;
-                let quad = [Point::new(x0, y0), Point::new(x0 + tw - gx, y0), Point::new(x0 + tw - gx, y0 + th - gy), Point::new(x0, y0 + th - gy)]
-                    .map(|q| xf * q);
+                let quad = [
+                    Point::new(x0, y0),
+                    Point::new(x0 + tw - gx, y0),
+                    Point::new(x0 + tw - gx, y0 + th - gy),
+                    Point::new(x0, y0 + th - gy),
+                ]
+                .map(|q| xf * q);
                 let color = if gray {
                     let l = (0.299 * cr as f32 + 0.587 * cg as f32 + 0.114 * cb as f32) / 255.0;
                     Color::rgb(l, l, l)
                 } else {
                     Color::rgb(cr as f32 / 255.0, cg as f32 / 255.0, cb as f32 / 255.0)
                 };
-                let mut tile = Node::path(d.alloc_id(), polygon_path(&quad), Appearance::basic(Paint::solid(color), Paint::None, 0.0));
+                let mut tile = Node::path(
+                    d.alloc_id(),
+                    polygon_path(&quad),
+                    Appearance::basic(Paint::solid(color), Paint::None, 0.0),
+                );
                 if ca < 255 {
                     tile.opacity = ca as f32 / 255.0;
                 }
@@ -562,7 +752,10 @@ fn object_mosaic(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn polygon_path(pts: &[Point]) -> PathData {
-    PathData::single(vectorcraft_geom::SubPath::new(pts.iter().map(|p| Anchor::corner(*p)).collect(), true))
+    PathData::single(vectorcraft_geom::SubPath::new(
+        pts.iter().map(|p| Anchor::corner(*p)).collect(),
+        true,
+    ))
 }
 
 fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
@@ -576,11 +769,15 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
         .find(|id| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_))))
         .ok_or_else(|| bad(C, "select an image"))?;
     let node = st.doc.node(id).cloned().ok_or(EngineError::NoNode(id))?;
-    let NodeKind::Image(im) = &node.kind else { return Err(bad(C, "select an image")) };
+    let NodeKind::Image(im) = &node.kind else {
+        return Err(bad(C, "select an image"));
+    };
     if p.get("trim").and_then(Value::as_bool) == Some(true) {
         return trim_image(s, id, (**im).clone());
     }
-    let ib = node.geometric_bounds().ok_or_else(|| bad(C, "image has no bounds"))?;
+    let ib = node
+        .geometric_bounds()
+        .ok_or_else(|| bad(C, "image has no bounds"))?;
     let rect = match p.get("rect").and_then(Value::as_array) {
         Some(a) if a.len() == 4 => {
             let v: Vec<f64> = a.iter().filter_map(Value::as_f64).collect();
@@ -591,7 +788,11 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Some(_) => return Err(bad(C, "rect must be [x, y, width, height]")),
         None => {
-            let ab = st.doc.artboard_at(ib.center()).and_then(|i| st.doc.artboards.get(i)).map(|a| a.rect);
+            let ab = st
+                .doc
+                .artboard_at(ib.center())
+                .and_then(|i| st.doc.artboards.get(i))
+                .map(|a| a.rect);
             match ab {
                 Some(r) => r,
                 None => return Err(bad(C, "the image is not on an artboard; pass rect")),
@@ -602,22 +803,41 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
     if r.width() <= 0.0 || r.height() <= 0.0 {
         return Err(bad(C, "crop rectangle doesn't overlap the image"));
     }
-    if (r.x0 - ib.x0).abs() < 1e-6 && (r.y0 - ib.y0).abs() < 1e-6 && (r.x1 - ib.x1).abs() < 1e-6 && (r.y1 - ib.y1).abs() < 1e-6 {
+    if (r.x0 - ib.x0).abs() < 1e-6
+        && (r.y0 - ib.y0).abs() < 1e-6
+        && (r.x1 - ib.x1).abs() < 1e-6
+        && (r.y1 - ib.y1).abs() < 1e-6
+    {
         return Err(bad(C, "nothing to crop"));
     }
     // Keep the image's pixel density.
-    let scale = (im.width as f64 / ib.width().max(1e-9)).max(im.height as f64 / ib.height().max(1e-9));
+    let scale =
+        (im.width as f64 / ib.width().max(1e-9)).max(im.height as f64 / ib.height().max(1e-9));
     let mut bare = node.clone();
     bare.opacity = 1.0;
     bare.blend = Default::default();
     bare.appearance = Appearance::default().into();
     bare.visible = true;
     let tmp = isolated_doc(&st.doc, vec![bare]);
-    let region = Rect::new(r.x0, r.y0, r.x0 + (r.width() * scale).round().max(1.0) / scale, r.y0 + (r.height() * scale).round().max(1.0) / scale);
-    let (png, w, h) = render_png(&tmp, region, scale, &RasterExportOptions::default().render_options(RasterFormat::Png), RasterColorModel::Document)?;
+    let region = Rect::new(
+        r.x0,
+        r.y0,
+        r.x0 + (r.width() * scale).round().max(1.0) / scale,
+        r.y0 + (r.height() * scale).round().max(1.0) / scale,
+    );
+    let (png, w, h) = render_png(
+        &tmp,
+        region,
+        scale,
+        &RasterExportOptions::default().render_options(RasterFormat::Png),
+        RasterColorModel::Document,
+    )?;
     s.edit("Crop Image", |d, _| {
         let key = unique_key(d, "crop");
-        d.images.insert(key.clone(), vectorcraft_doc::ImageBlob::new("image/png", png));
+        d.images.insert(
+            key.clone(),
+            vectorcraft_doc::ImageBlob::new("image/png", png),
+        );
         if let Some(n) = d.node_mut(id) {
             n.kind = NodeKind::Image(Box::new(ImageObject {
                 key,
@@ -638,7 +858,11 @@ fn crop_image(s: &mut Session, p: &Value) -> Result<Value> {
 fn trim_image(s: &mut Session, id: NodeId, im: ImageObject) -> Result<Value> {
     const C: &str = "object.cropImage";
     let st = s.doc()?;
-    let blob = st.doc.images.get(&im.key).ok_or_else(|| bad(C, "the image's pixels are missing"))?;
+    let blob = st
+        .doc
+        .images
+        .get(&im.key)
+        .ok_or_else(|| bad(C, "the image's pixels are missing"))?;
     // A CMYK image (kept as its ink amounts) has no alpha: nothing to cut.
     if blob.is_cmyk() {
         return Ok(json!({ "id": id.0, "width": im.width, "height": im.height, "trimmed": false }));
@@ -650,7 +874,10 @@ fn trim_image(s: &mut Session, id: NodeId, im: ImageObject) -> Result<Value> {
     let mut limits = image::Limits::default();
     limits.max_alloc = Some(crate::cmd::fileio::MAX_RASTER_ALLOC);
     reader.limits(limits);
-    let px = reader.decode().map_err(|e| bad(C, format!("the image's pixels can't be read: {e}")))?.to_rgba8();
+    let px = reader
+        .decode()
+        .map_err(|e| bad(C, format!("the image's pixels can't be read: {e}")))?
+        .to_rgba8();
     let (w, h) = px.dimensions();
     let (mut x0, mut y0, mut x1, mut y1) = (w, h, 0, 0);
     for (x, y, p) in px.enumerate_pixels() {
@@ -667,11 +894,15 @@ fn trim_image(s: &mut Session, id: NodeId, im: ImageObject) -> Result<Value> {
     }
     let cut = image::imageops::crop_imm(&px, x0, y0, x1 - x0, y1 - y0).to_image();
     let mut png = Vec::new();
-    cut.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).map_err(|e| bad(C, e.to_string()))?;
+    cut.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .map_err(|e| bad(C, e.to_string()))?;
     let (cw, ch) = (x1 - x0, y1 - y0);
     s.edit("Crop Image", |d, _| {
         let key = unique_key(d, "crop");
-        d.images.insert(key.clone(), vectorcraft_doc::ImageBlob::new("image/png", png));
+        d.images.insert(
+            key.clone(),
+            vectorcraft_doc::ImageBlob::new("image/png", png),
+        );
         if let Some(n) = d.node_mut(id) {
             n.kind = NodeKind::Image(Box::new(ImageObject {
                 key,
@@ -696,9 +927,16 @@ fn mask_image(s: &mut Session, _: &Value) -> Result<Value> {
         .objects
         .iter()
         .find_map(|id| match st.doc.node(*id).map(|n| &n.kind) {
-            Some(NodeKind::Image(im)) => {
-                Some((*id, vectorcraft_geom::shapes::rectangle(Rect::new(0.0, 0.0, im.width as f64, im.height as f64)).transformed(im.xf)))
-            }
+            Some(NodeKind::Image(im)) => Some((
+                *id,
+                vectorcraft_geom::shapes::rectangle(Rect::new(
+                    0.0,
+                    0.0,
+                    im.width as f64,
+                    im.height as f64,
+                ))
+                .transformed(im.xf),
+            )),
             _ => None,
         })
         .ok_or_else(|| bad("object.maskImage", "select an image"))?;
@@ -708,7 +946,17 @@ fn mask_image(s: &mut Session, _: &Value) -> Result<Value> {
         let pid = clip.id;
         let (par, idx, _) = d.position(id).ok_or(EngineError::NoNode(id))?;
         let gid = d.alloc_id();
-        d.insert(par, idx + 1, Node::new(gid, NodeKind::Group { children: vec![], clip: true }))?;
+        d.insert(
+            par,
+            idx + 1,
+            Node::new(
+                gid,
+                NodeKind::Group {
+                    children: vec![],
+                    clip: true,
+                },
+            ),
+        )?;
         d.insert(Some(gid), 0, clip)?;
         d.move_node(id, Some(gid), usize::MAX)?;
         sel.set([pid]);
@@ -722,14 +970,20 @@ fn mask_image(s: &mut Session, _: &Value) -> Result<Value> {
 impl Session {
     /// The trim mark style the preferences ask for (General → Use Japanese Crop Marks).
     pub fn crop_mark_style(&self) -> MarkStyle {
-        if self.prefs.japanese_crop_marks { MarkStyle::Japanese } else { MarkStyle::Roman }
+        if self.prefs.japanese_crop_marks {
+            MarkStyle::Japanese
+        } else {
+            MarkStyle::Roman
+        }
     }
 }
 
 fn trim_marks(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "object.createTrimMarks";
     let style = match str_param(p, "style") {
-        Some(v) => MarkStyle::parse(v).ok_or_else(|| bad(C, "`style` must be roman or japanese"))?,
+        Some(v) => {
+            MarkStyle::parse(v).ok_or_else(|| bad(C, "`style` must be roman or japanese"))?
+        }
         None => s.crop_mark_style(),
     };
     let d = TrimMarks::default();
@@ -744,7 +998,10 @@ fn trim_marks(s: &mut Session, p: &Value) -> Result<Value> {
     let rects: Vec<Rect> = if bool_or(p, "allArtboards", st.selection.is_empty()) {
         st.doc.artboards.iter().map(|a| a.rect).collect()
     } else {
-        st.doc.bounds_of(&selected_roots(s)?, true).into_iter().collect()
+        st.doc
+            .bounds_of(&selected_roots(s)?, true)
+            .into_iter()
+            .collect()
     };
     if rects.is_empty() {
         return Err(bad(C, "nothing to mark"));
@@ -771,7 +1028,9 @@ fn no_handles(a: &Anchor) -> bool {
 
 /// Recognise a rectangle (any rotation) or an axis-aligned ellipse.
 pub(crate) fn detect_shape(path: &PathData) -> Option<LiveShape> {
-    let [sp] = path.subpaths.as_slice() else { return None };
+    let [sp] = path.subpaths.as_slice() else {
+        return None;
+    };
     if !sp.closed || sp.anchors.len() != 4 {
         return None;
     }
@@ -790,12 +1049,27 @@ pub(crate) fn detect_shape(path: &PathData) -> Option<LiveShape> {
             return None;
         }
         let rot = Affine::rotate(e0.y.atan2(e0.x));
-        let flip = if e0.cross(e1) < 0.0 { Affine::scale_non_uniform(1.0, -1.0) } else { Affine::IDENTITY };
-        return Some(LiveShape::Rectangle { w, h, radii: [0.0; 4], kinds: Default::default(), xf: Affine::translate(a[0].p.to_vec2()) * rot * flip });
+        let flip = if e0.cross(e1) < 0.0 {
+            Affine::scale_non_uniform(1.0, -1.0)
+        } else {
+            Affine::IDENTITY
+        };
+        return Some(LiveShape::Rectangle {
+            w,
+            h,
+            radii: [0.0; 4],
+            kinds: Default::default(),
+            xf: Affine::translate(a[0].p.to_vec2()) * rot * flip,
+        });
     }
     let b = path.bounds()?;
     let c = b.center();
-    let mids = [Point::new(c.x, b.y0), Point::new(b.x1, c.y), Point::new(c.x, b.y1), Point::new(b.x0, c.y)];
+    let mids = [
+        Point::new(c.x, b.y0),
+        Point::new(b.x1, c.y),
+        Point::new(c.x, b.y1),
+        Point::new(b.x0, c.y),
+    ];
     let k = 0.5523;
     for an in a {
         if !mids.iter().any(|m| (an.p - *m).hypot() < tol) {
@@ -803,16 +1077,29 @@ pub(crate) fn detect_shape(path: &PathData) -> Option<LiveShape> {
         }
         // Handles tangent to the bounds and ~κ·radius long.
         let horizontal = (an.p.y - b.y0).abs() < tol || (an.p.y - b.y1).abs() < tol;
-        let want = if horizontal { k * b.width() / 2.0 } else { k * b.height() / 2.0 };
+        let want = if horizontal {
+            k * b.width() / 2.0
+        } else {
+            k * b.height() / 2.0
+        };
         for hnd in [an.h_in, an.h_out] {
             let v = hnd - an.p;
-            let (along, across) = if horizontal { (v.x.abs(), v.y.abs()) } else { (v.y.abs(), v.x.abs()) };
+            let (along, across) = if horizontal {
+                (v.x.abs(), v.y.abs())
+            } else {
+                (v.y.abs(), v.x.abs())
+            };
             if across > tol * 10.0 || (along - want).abs() > want * 0.05 + tol {
                 return None;
             }
         }
     }
-    Some(LiveShape::Ellipse { w: b.width(), h: b.height(), pie: (0.0, 360.0), xf: Affine::translate(b.origin().to_vec2()) })
+    Some(LiveShape::Ellipse {
+        w: b.width(),
+        h: b.height(),
+        pie: (0.0, 360.0),
+        xf: Affine::translate(b.origin().to_vec2()),
+    })
 }
 
 fn convert_to_shape(s: &mut Session, _: &Value) -> Result<Value> {
@@ -820,7 +1107,10 @@ fn convert_to_shape(s: &mut Session, _: &Value) -> Result<Value> {
     let n = s.edit("Convert to Shape", |d, _| {
         let mut n = 0;
         for id in &roots {
-            let Some(NodeKind::Path { path, live, .. }) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Path { path, live, .. }) = d.node_mut(*id).map(|n| &mut n.kind)
+            else {
+                continue;
+            };
             if live.is_some() {
                 continue;
             }
@@ -831,7 +1121,9 @@ fn convert_to_shape(s: &mut Session, _: &Value) -> Result<Value> {
             }
         }
         if n == 0 {
-            return Err(EngineError::Other("Convert to Shape: no rectangles or ellipses selected".into()));
+            return Err(EngineError::Other(
+                "Convert to Shape: no rectangles or ellipses selected".into(),
+            ));
         }
         Ok(n)
     })?;
@@ -845,7 +1137,9 @@ fn convert_to_artboards(s: &mut Session, _: &Value) -> Result<Value> {
     let n = s.edit("Convert to Artboards", |d, sel| {
         let mut converted = vec![];
         for id in &roots {
-            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else { continue };
+            let Some(b) = d.node(*id).and_then(|n| n.geometric_bounds()) else {
+                continue;
+            };
             if b.width() <= 0.0 || b.height() <= 0.0 {
                 continue;
             }
@@ -860,7 +1154,9 @@ fn convert_to_artboards(s: &mut Session, _: &Value) -> Result<Value> {
             converted.push(*id);
         }
         if converted.is_empty() {
-            return Err(EngineError::Other("Convert to Artboards: selection has no area".into()));
+            return Err(EngineError::Other(
+                "Convert to Artboards: selection has no area".into(),
+            ));
         }
         d.remove_many(&converted)?;
         sel.clear();
@@ -873,9 +1169,14 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "artboard.rearrange";
     use super::newdoc::ArtboardLayout as L;
     // A value given (not null) must be one of the names.
-    let named = |key: &str| p.get(key).filter(|v| !v.is_null()).map(|v| v.as_str().unwrap_or_default());
+    let named = |key: &str| {
+        p.get(key)
+            .filter(|v| !v.is_null())
+            .map(|v| v.as_str().unwrap_or_default())
+    };
     let layout = match named("layout") {
-        Some(l) => L::parse(l).ok_or_else(|| bad(CMD, "layout must be gridByRow, gridByColumn, row or column"))?,
+        Some(l) => L::parse(l)
+            .ok_or_else(|| bad(CMD, "layout must be gridByRow, gridByColumn, row or column"))?,
         None if bool_or(p, "byColumn", false) => L::GridByColumn,
         None => L::GridByRow,
     };
@@ -902,11 +1203,25 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
     let rects: Vec<Rect> = d.artboards.iter().map(|a| a.rect).collect();
     let sizes: Vec<(f64, f64)> = rects.iter().map(|r| (r.width(), r.height())).collect();
     let first = rects.first().map_or(Point::ZERO, |r| r.origin());
-    let origins = super::newdoc::grid_origins_rc(&sizes, first, (rows, cols), spacing, layout == L::GridByColumn, rtl);
-    let deltas: Vec<Vec2> = rects.iter().zip(origins).map(|(r, o)| o - r.origin()).collect();
+    let origins = super::newdoc::grid_origins_rc(
+        &sizes,
+        first,
+        (rows, cols),
+        spacing,
+        layout == L::GridByColumn,
+        rtl,
+    );
+    let deltas: Vec<Vec2> = rects
+        .iter()
+        .zip(origins)
+        .map(|(r, o)| o - r.origin())
+        .collect();
     // When no artboard moves more than 1e-9 pt on either axis, or there is none, the document and
     // its undo history stay as they are.
-    if deltas.iter().all(|dl| dl.x.abs() <= 1e-9 && dl.y.abs() <= 1e-9) {
+    if deltas
+        .iter()
+        .all(|dl| dl.x.abs() <= 1e-9 && dl.y.abs() <= 1e-9)
+    {
         return Ok(json!({ "artboards": count, "rows": rows, "columns": cols }));
     }
     // With moveArtwork, each top-level object moves with the artboard its center is on; locked and
@@ -919,7 +1234,10 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
             .filter(|n| n.rides_with_artboard(locked_and_hidden))
             .filter_map(|n| {
                 let c = n.geometric_bounds()?.center();
-                let dl = *rects.iter().position(|r| r.contains(c)).and_then(|i| deltas.get(i))?;
+                let dl = *rects
+                    .iter()
+                    .position(|r| r.contains(c))
+                    .and_then(|i| deltas.get(i))?;
                 (dl != Vec2::ZERO).then_some((n.id, dl))
             })
             .collect()
@@ -927,7 +1245,10 @@ fn rearrange_artboards(s: &mut Session, p: &Value) -> Result<Value> {
         vec![]
     };
     let ids: Vec<NodeId> = art.iter().map(|(id, _)| *id).collect();
-    let sc = Scaling { patterns: super::object::transform_patterns(s, p, &ids)?, ..Scaling::default() };
+    let sc = Scaling {
+        patterns: super::object::transform_patterns(s, p, &ids)?,
+        ..Scaling::default()
+    };
     s.edit("Rearrange Artboards", |d, _| {
         for (id, dl) in &art {
             if let Some(n) = d.node_mut(*id) {

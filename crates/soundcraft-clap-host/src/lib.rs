@@ -25,7 +25,14 @@
 //! Parameter changes made in the plugin's GUI arrive as output events while the plugin processes
 //! and are reported by the editor's `idle`.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod scan;
 
@@ -48,7 +55,8 @@ pub const ID_PREFIX: &str = "clap:";
 
 /// The CLAP plugin id inside a `clap:<id>` SoundCraft id (`None` for other ids or an empty id).
 pub fn parse_id(id: &str) -> Option<&str> {
-    id.strip_prefix(ID_PREFIX).filter(|s| !s.is_empty() && !s.contains('\0'))
+    id.strip_prefix(ID_PREFIX)
+        .filter(|s| !s.is_empty() && !s.contains('\0'))
 }
 
 /// One plugin found by a scan.
@@ -211,12 +219,21 @@ mod tests {
 
     #[test]
     fn garbage_files_are_errors_not_crashes() {
-        let d = std::env::temp_dir().join(format!("soundcraft-clap-garbage-{}", std::process::id()));
+        let d =
+            std::env::temp_dir().join(format!("soundcraft-clap-garbage-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(d.join("Bundle.clap/Contents/MacOS")).unwrap();
-        std::fs::write(d.join("garbage.clap"), b"\x7fELF this is not a plugin \x00\x01\x02").unwrap();
+        std::fs::write(
+            d.join("garbage.clap"),
+            b"\x7fELF this is not a plugin \x00\x01\x02",
+        )
+        .unwrap();
         std::fs::write(d.join("empty.clap"), b"").unwrap();
-        std::fs::write(d.join("Bundle.clap/Contents/MacOS/Bundle"), [0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3]).unwrap();
+        std::fs::write(
+            d.join("Bundle.clap/Contents/MacOS/Bundle"),
+            [0xcf, 0xfa, 0xed, 0xfe, 1, 2, 3],
+        )
+        .unwrap();
         for f in ["garbage.clap", "empty.clap", "Bundle.clap", "missing.clap"] {
             assert!(load_bundle(&d.join(f)).is_err(), "{f}");
         }

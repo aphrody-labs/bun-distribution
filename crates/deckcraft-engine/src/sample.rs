@@ -17,21 +17,62 @@ fn last_id(v: &Value) -> u64 {
 pub fn open_sample(s: &mut Session) -> Result<()> {
     run(s, "file.new", json!({"theme": "DeckCraft"}))?;
     let st = s.doc()?;
-    let title = st.current_slide().and_then(|x| x.shapes.first()).map(|x| x.id.0).unwrap_or(0);
-    let sub = st.current_slide().and_then(|x| x.shapes.get(1)).map(|x| x.id.0).unwrap_or(0);
-    run(s, "text.set", json!({"id": title, "text": "Northern Lights"}))?;
-    run(s, "text.set", json!({"id": sub, "text": "A short tour of the aurora — where it comes from, when to look, and how to photograph it"}))?;
-    run(s, "slide.notes", json!({"text": "Welcome everyone. This deck was made in DeckCraft."}))?;
+    let title = st
+        .current_slide()
+        .and_then(|x| x.shapes.first())
+        .map(|x| x.id.0)
+        .unwrap_or(0);
+    let sub = st
+        .current_slide()
+        .and_then(|x| x.shapes.get(1))
+        .map(|x| x.id.0)
+        .unwrap_or(0);
+    run(
+        s,
+        "text.set",
+        json!({"id": title, "text": "Northern Lights"}),
+    )?;
+    run(
+        s,
+        "text.set",
+        json!({"id": sub, "text": "A short tour of the aurora — where it comes from, when to look, and how to photograph it"}),
+    )?;
+    run(
+        s,
+        "slide.notes",
+        json!({"text": "Welcome everyone. This deck was made in DeckCraft."}),
+    )?;
     // Decorative bands on the title slide.
-    let b = run(s, "shape.insert", json!({"preset": "rect", "rect": [0, 470, 960, 70]}))?;
-    run(s, "shape.fill", json!({"id": last_id(&b), "gradient": {"stops": [[0, "accent1"], [0.5, "accent4"], [1, "accent2"]], "angle": 0}}))?;
+    let b = run(
+        s,
+        "shape.insert",
+        json!({"preset": "rect", "rect": [0, 470, 960, 70]}),
+    )?;
+    run(
+        s,
+        "shape.fill",
+        json!({"id": last_id(&b), "gradient": {"stops": [[0, "accent1"], [0.5, "accent4"], [1, "accent2"]], "angle": 0}}),
+    )?;
     run(s, "shape.line", json!({"id": last_id(&b), "none": true}))?;
-    run(s, "shape.rename", json!({"id": last_id(&b), "name": "Aurora Band"}))?;
+    run(
+        s,
+        "shape.rename",
+        json!({"id": last_id(&b), "name": "Aurora Band"}),
+    )?;
     run(s, "transition.set", json!({"kind": "fade"}))?;
 
     // Agenda.
-    run(s, "slide.new", json!({"layout": "titleAndContent", "title": "What we'll cover"}))?;
-    let body = s.doc()?.current_slide().and_then(|x| x.shapes.get(1)).map(|x| x.id.0).unwrap_or(0);
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "titleAndContent", "title": "What we'll cover"}),
+    )?;
+    let body = s
+        .doc()?
+        .current_slide()
+        .and_then(|x| x.shapes.get(1))
+        .map(|x| x.id.0)
+        .unwrap_or(0);
     run(
         s,
         "text.set",
@@ -39,25 +80,49 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     )?;
     run(s, "transition.set", json!({"kind": "push", "option": "u"}))?;
     run(s, "edit.select", json!({"ids": [body]}))?;
-    run(s, "animation.set", json!({"effect": "fade", "class": "entrance"}))?;
+    run(
+        s,
+        "animation.set",
+        json!({"effect": "fade", "class": "entrance"}),
+    )?;
     run(s, "animation.options", json!({"textBuild": "byParagraph"}))?;
 
     // Section header.
-    run(s, "slide.new", json!({"layout": "sectionHeader", "title": "The Science", "body": "Charged particles, magnetic fields and glowing gases"}))?;
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "sectionHeader", "title": "The Science", "body": "Charged particles, magnetic fields and glowing gases"}),
+    )?;
     run(s, "design.background", json!({"color": "dk2"}))?;
     let st = s.doc()?;
-    let ids: Vec<u64> = st.current_slide().map(|x| x.shapes.iter().map(|s| s.id.0 as u64).collect()).unwrap_or_default();
+    let ids: Vec<u64> = st
+        .current_slide()
+        .map(|x| x.shapes.iter().map(|s| s.id.0 as u64).collect())
+        .unwrap_or_default();
     run(s, "edit.select", json!({"ids": ids}))?;
     run(s, "format.color", json!({"color": "#FFFFFF"}))?;
     run(s, "transition.set", json!({"kind": "wipe", "option": "r"}))?;
 
     // Process diagram from shapes.
-    run(s, "slide.new", json!({"layout": "titleOnly", "title": "From the Sun to your sky"}))?;
-    let steps = [("Solar wind", "accent2"), ("Magnetosphere", "accent1"), ("Particles collide", "accent4"), ("Light!", "accent3")];
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "titleOnly", "title": "From the Sun to your sky"}),
+    )?;
+    let steps = [
+        ("Solar wind", "accent2"),
+        ("Magnetosphere", "accent1"),
+        ("Particles collide", "accent4"),
+        ("Light!", "accent3"),
+    ];
     let mut prev: Option<u64> = None;
     for (i, (label, color)) in steps.iter().enumerate() {
         let x = 60.0 + i as f64 * 220.0;
-        let v = run(s, "shape.insert", json!({"preset": if i == 3 { "star5" } else { "roundRect" }, "rect": [x, 210, 190, 120], "text": label}))?;
+        let v = run(
+            s,
+            "shape.insert",
+            json!({"preset": if i == 3 { "star5" } else { "roundRect" }, "rect": [x, 210, 190, 120], "text": label}),
+        )?;
         let id = last_id(&v);
         run(s, "shape.fill", json!({"id": id, "color": color}))?;
         run(s, "shape.line", json!({"id": id, "none": true}))?;
@@ -65,17 +130,28 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
         run(s, "edit.select", json!({"ids": [id]}))?;
         run(s, "format.size", json!({"size": 17}))?;
         run(s, "format.bold", json!({"on": true}))?;
-        run(s, "animation.add", json!({"effect": "zoom", "class": "entrance", "start": if i == 0 { "onClick" } else { "afterPrevious" }}))?;
+        run(
+            s,
+            "animation.add",
+            json!({"effect": "zoom", "class": "entrance", "start": if i == 0 { "onClick" } else { "afterPrevious" }}),
+        )?;
         if let Some(p) = prev {
             let _ = p;
-            let a = run(s, "shape.insert", json!({"preset": "rightArrow", "rect": [x - 36.0, 255, 32, 30]}))?;
+            let a = run(
+                s,
+                "shape.insert",
+                json!({"preset": "rightArrow", "rect": [x - 36.0, 255, 32, 30]}),
+            )?;
             run(s, "shape.fill", json!({"id": last_id(&a), "color": "tx2"}))?;
             run(s, "shape.line", json!({"id": last_id(&a), "none": true}))?;
         }
         prev = Some(id);
     }
-    let cap =
-        run(s, "insert.textBox", json!({"rect": [60, 380, 840, 60], "text": "Oxygen glows green and red; nitrogen adds blue and purple fringes."}))?;
+    let cap = run(
+        s,
+        "insert.textBox",
+        json!({"rect": [60, 380, 840, 60], "text": "Oxygen glows green and red; nitrogen adds blue and purple fringes."}),
+    )?;
     run(s, "edit.select", json!({"ids": [last_id(&cap)]}))?;
     run(s, "format.alignCenter", json!({}))?;
     run(s, "format.size", json!({"size": 20}))?;
@@ -83,7 +159,11 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     run(s, "transition.set", json!({"kind": "morph"}))?;
 
     // Chart.
-    run(s, "slide.new", json!({"layout": "titleOnly", "title": "Best months to look (clear nights)"}))?;
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "titleOnly", "title": "Best months to look (clear nights)"}),
+    )?;
     run(
         s,
         "insert.chart",
@@ -92,7 +172,11 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     run(s, "transition.set", json!({"kind": "fade"}))?;
 
     // Table.
-    run(s, "slide.new", json!({"layout": "titleOnly", "title": "Camera settings that work"}))?;
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "titleOnly", "title": "Camera settings that work"}),
+    )?;
     run(
         s,
         "insert.table",
@@ -101,11 +185,26 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     run(s, "transition.set", json!({"kind": "cover", "option": "l"}))?;
 
     // Two content: comparison with shapes.
-    run(s, "slide.new", json!({"layout": "twoContent", "title": "Field checklist"}))?;
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "twoContent", "title": "Field checklist"}),
+    )?;
     let st = s.doc()?;
-    let (l, r) =
-        st.current_slide().map(|x| (x.shapes.get(1).map(|s| s.id.0).unwrap_or(0), x.shapes.get(2).map(|s| s.id.0).unwrap_or(0))).unwrap_or((0, 0));
-    run(s, "text.set", json!({"id": l, "text": "Bring\n\tTripod and spare batteries\n\tHeadlamp with a red mode\n\tWarm layers and a thermos"}))?;
+    let (l, r) = st
+        .current_slide()
+        .map(|x| {
+            (
+                x.shapes.get(1).map(|s| s.id.0).unwrap_or(0),
+                x.shapes.get(2).map(|s| s.id.0).unwrap_or(0),
+            )
+        })
+        .unwrap_or((0, 0));
+    run(
+        s,
+        "text.set",
+        json!({"id": l, "text": "Bring\n\tTripod and spare batteries\n\tHeadlamp with a red mode\n\tWarm layers and a thermos"}),
+    )?;
     run(
         s,
         "text.set",
@@ -114,11 +213,27 @@ pub fn open_sample(s: &mut Session) -> Result<()> {
     run(s, "transition.set", json!({"kind": "split"}))?;
 
     // Closing.
-    run(s, "slide.new", json!({"layout": "title", "title": "Clear skies!", "body": "Made with DeckCraft — free and open source"}))?;
-    let moon = run(s, "shape.insert", json!({"preset": "moon", "rect": [820, 40, 80, 120]}))?;
-    run(s, "shape.fill", json!({"id": last_id(&moon), "color": "accent6"}))?;
+    run(
+        s,
+        "slide.new",
+        json!({"layout": "title", "title": "Clear skies!", "body": "Made with DeckCraft — free and open source"}),
+    )?;
+    let moon = run(
+        s,
+        "shape.insert",
+        json!({"preset": "moon", "rect": [820, 40, 80, 120]}),
+    )?;
+    run(
+        s,
+        "shape.fill",
+        json!({"id": last_id(&moon), "color": "accent6"}),
+    )?;
     run(s, "shape.line", json!({"id": last_id(&moon), "none": true}))?;
-    run(s, "shape.effects", json!({"id": last_id(&moon), "glow": {"color": "accent6", "radius": 10}}))?;
+    run(
+        s,
+        "shape.effects",
+        json!({"id": last_id(&moon), "glow": {"color": "accent6", "radius": 10}}),
+    )?;
     run(s, "transition.set", json!({"kind": "fade"}))?;
 
     run(s, "section.add", json!({"name": "Introduction", "at": 0}))?;

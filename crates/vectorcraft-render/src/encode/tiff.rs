@@ -46,7 +46,9 @@ impl ByteOrder {
         match s.as_str() {
             "ii" | "ibm" | "pc" | "intel" => Some(ByteOrder::Little),
             "mm" | "mac" | "motorola" => Some(ByteOrder::Big),
-            _ => Self::ALL.into_iter().find(|o| o.id() == s || o.label().eq_ignore_ascii_case(&s)),
+            _ => Self::ALL
+                .into_iter()
+                .find(|o| o.id() == s || o.label().eq_ignore_ascii_case(&s)),
         }
     }
 
@@ -179,10 +181,16 @@ impl Values {
 /// Write `img` as a TIFF file: header, the image file directory, the values too long for it, then
 /// the strips.
 pub fn write(img: &Image, l: &Layout) -> Result<Vec<u8>, String> {
-    let too_large = || "the image is too large for TIFF (at most 4 GB): lower the resolution".to_string();
+    let too_large =
+        || "the image is too large for TIFF (at most 4 GB): lower the resolution".to_string();
     let (w, h) = (img.width as usize, img.height as usize);
     let row = (w * usize::from(img.samples) * usize::from(img.bits)).div_ceil(8);
-    if w == 0 || h == 0 || !matches!(img.bits, 1 | 8) || img.samples == 0 || row.checked_mul(h) != Some(img.data.len()) {
+    if w == 0
+        || h == 0
+        || !matches!(img.bits, 1 | 8)
+        || img.samples == 0
+        || row.checked_mul(h) != Some(img.data.len())
+    {
         return Err("TIFF encoding failed: the pixel buffer doesn't match the image size".into());
     }
     let rows_per_strip = (STRIP_BYTES / row).clamp(1, h);
@@ -205,7 +213,11 @@ pub fn write(img: &Image, l: &Layout) -> Result<Vec<u8>, String> {
             strips.push(0);
         }
     }
-    let counts: Vec<usize> = offsets.iter().zip(offsets.iter().skip(1).chain([&strips.len()])).map(|(a, b)| b - a).collect();
+    let counts: Vec<usize> = offsets
+        .iter()
+        .zip(offsets.iter().skip(1).chain([&strips.len()]))
+        .map(|(a, b)| b - a)
+        .collect();
     let mut fields: Vec<(u16, Values)> = vec![
         (256, Values::Long(vec![img.width])),
         (257, Values::Long(vec![img.height])),
@@ -216,7 +228,15 @@ pub fn write(img: &Image, l: &Layout) -> Result<Vec<u8>, String> {
         (273, Values::Long(vec![0; offsets.len()])),
         (277, Values::Short(vec![img.samples])),
         (278, Values::Long(vec![rows_per_strip as u32])),
-        (279, Values::Long(counts.iter().map(|c| u32::try_from(*c).unwrap_or(u32::MAX)).collect())),
+        (
+            279,
+            Values::Long(
+                counts
+                    .iter()
+                    .map(|c| u32::try_from(*c).unwrap_or(u32::MAX))
+                    .collect(),
+            ),
+        ),
         (282, resolution(l.ppi)),
         (283, resolution(l.ppi)),
         // Chunky: the samples of a pixel together.
@@ -238,9 +258,17 @@ pub fn write(img: &Image, l: &Layout) -> Result<Vec<u8>, String> {
     }
     // Header, directory (count, 12-byte entries, next directory), longer values, strips.
     let dir_len = 2 + fields.len() * 12 + 4;
-    let extra_len: usize = fields.iter().map(|(_, v)| v.len()).filter(|n| *n > 4).map(|n| n.next_multiple_of(2)).sum();
+    let extra_len: usize = fields
+        .iter()
+        .map(|(_, v)| v.len())
+        .filter(|n| *n > 4)
+        .map(|n| n.next_multiple_of(2))
+        .sum();
     let strip_at = 8 + dir_len + extra_len;
-    let end = strip_at.checked_add(strips.len()).filter(|n| u32::try_from(*n).is_ok()).ok_or_else(too_large)?;
+    let end = strip_at
+        .checked_add(strips.len())
+        .filter(|n| u32::try_from(*n).is_ok())
+        .ok_or_else(too_large)?;
     if let Some((_, Values::Long(v))) = fields.iter_mut().find(|(tag, _)| *tag == 273) {
         *v = offsets.iter().map(|o| (strip_at + o) as u32).collect();
     }
@@ -277,11 +305,18 @@ pub fn write(img: &Image, l: &Layout) -> Result<Vec<u8>, String> {
 
 /// A resolution as a rational, to a hundredth of a pixel per inch.
 fn resolution(ppi: f64) -> Values {
-    let ppi = if ppi.is_finite() && ppi > 0.0 { ppi } else { 72.0 };
+    let ppi = if ppi.is_finite() && ppi > 0.0 {
+        ppi
+    } else {
+        72.0
+    };
     if ppi.fract() == 0.0 && ppi <= u32::MAX as f64 {
         return Values::Rational(ppi as u32, 1);
     }
-    Values::Rational((ppi * 100.0).round().clamp(1.0, u32::MAX as f64) as u32, 100)
+    Values::Rational(
+        (ppi * 100.0).round().clamp(1.0, u32::MAX as f64) as u32,
+        100,
+    )
 }
 
 /// `data` run-length encoded (PackBits: what TIFF's compression 32773 and PostScript's
@@ -290,7 +325,9 @@ pub fn packbits(data: &[u8], out: &mut Vec<u8>) {
     let mut i = 0;
     while i < data.len() {
         let Some(&b) = data.get(i) else { break };
-        let run = data.get(i..).map_or(1, |rest| rest.iter().take(128).take_while(|x| **x == b).count());
+        let run = data.get(i..).map_or(1, |rest| {
+            rest.iter().take(128).take_while(|x| **x == b).count()
+        });
         if run >= 3 {
             out.push((257 - run) as u8);
             out.push(b);
@@ -300,7 +337,9 @@ pub fn packbits(data: &[u8], out: &mut Vec<u8>) {
         // Literal bytes up to the next run of three.
         let mut j = i;
         while j < data.len() && j - i < 128 {
-            let three = data.get(j..j + 3).is_some_and(|w| w[0] == w[1] && w[1] == w[2]);
+            let three = data
+                .get(j..j + 3)
+                .is_some_and(|w| w[0] == w[1] && w[1] == w[2]);
             if three {
                 break;
             }
@@ -325,7 +364,12 @@ pub struct TiffOptions {
 
 impl Default for TiffOptions {
     fn default() -> Self {
-        Self { color_model: ColorModel::Rgb, lzw: true, byte_order: ByteOrder::Little, embed_icc: true }
+        Self {
+            color_model: ColorModel::Rgb,
+            lzw: true,
+            byte_order: ByteOrder::Little,
+            embed_icc: true,
+        }
     }
 }
 
@@ -342,24 +386,66 @@ pub fn encode(img: &Rendered, ppi: f64, o: &TiffOptions) -> Result<Vec<u8>, Stri
 
 /// Pixels as a TIFF in `o.color_model` (see [`encode`]): straight RGBA for RGB and grey, ink
 /// amounts for CMYK.
-pub(crate) fn encode_samples(px: &[u8], width: u32, height: u32, ppi: f64, o: &TiffOptions) -> Result<Vec<u8>, String> {
+pub(crate) fn encode_samples(
+    px: &[u8],
+    width: u32,
+    height: u32,
+    ppi: f64,
+    o: &TiffOptions,
+) -> Result<Vec<u8>, String> {
     let model = o.color_model;
     let (data, photometric, alpha) = match model {
         ColorModel::Cmyk => (Cow::Borrowed(px), Photometric::Separated, false),
         ColorModel::Rgb => {
             let rgba = px.as_chunks::<4>().0;
             let alpha = rgba.iter().any(|p| p[3] < 255);
-            let data = if alpha { Cow::Borrowed(px) } else { rgba.iter().flat_map(|p| [p[0], p[1], p[2]]).collect() };
+            let data = if alpha {
+                Cow::Borrowed(px)
+            } else {
+                rgba.iter().flat_map(|p| [p[0], p[1], p[2]]).collect()
+            };
             (data, Photometric::Rgb, alpha)
         }
         ColorModel::Gray => {
             let gray = jpeg::to_gray();
-            (px.as_chunks::<4>().0.iter().map(|p| gray(on_white(p))).collect(), Photometric::BlackIsZero, false)
+            (
+                px.as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|p| gray(on_white(p)))
+                    .collect(),
+                Photometric::BlackIsZero,
+                false,
+            )
         }
     };
-    let icc = if o.embed_icc { Some(cms::icc_bytes(&model.profile()).map_err(|e| format!("TIFF colour profile: {e}"))?) } else { None };
+    let icc = if o.embed_icc {
+        Some(cms::icc_bytes(&model.profile()).map_err(|e| format!("TIFF colour profile: {e}"))?)
+    } else {
+        None
+    };
     let samples = (model.channels() + usize::from(alpha)) as u16;
-    let image = Image { width, height, data: &data, photometric, samples, bits: 8, alpha };
-    let compression = if o.lzw { Compression::Lzw } else { Compression::None };
-    write(&image, &Layout { byte_order: o.byte_order, compression, ppi, icc: icc.as_deref() })
+    let image = Image {
+        width,
+        height,
+        data: &data,
+        photometric,
+        samples,
+        bits: 8,
+        alpha,
+    };
+    let compression = if o.lzw {
+        Compression::Lzw
+    } else {
+        Compression::None
+    };
+    write(
+        &image,
+        &Layout {
+            byte_order: o.byte_order,
+            compression,
+            ppi,
+            icc: icc.as_deref(),
+        },
+    )
 }

@@ -36,12 +36,20 @@ impl CellStore {
         self.len == 0
     }
     pub fn get(&self, c: CellRef) -> Option<&Cell> {
-        self.bands.get(&(c.row / BAND))?.rows.get(&c.row)?.get(&c.col)
+        self.bands
+            .get(&(c.row / BAND))?
+            .rows
+            .get(&c.row)?
+            .get(&c.col)
     }
     /// Mutable access (copies the band if shared).
     pub fn get_mut(&mut self, c: CellRef) -> Option<&mut Cell> {
         let band = self.bands.get_mut(&(c.row / BAND))?;
-        if !band.rows.get(&c.row).is_some_and(|r| r.contains_key(&c.col)) {
+        if !band
+            .rows
+            .get(&c.row)
+            .is_some_and(|r| r.contains_key(&c.col))
+        {
             return None;
         }
         Arc::make_mut(band).rows.get_mut(&c.row)?.get_mut(&c.col)
@@ -53,14 +61,24 @@ impl CellStore {
             return;
         }
         let band = Arc::make_mut(self.bands.entry(c.row / BAND).or_default());
-        if band.rows.entry(c.row).or_default().insert(c.col, cell).is_none() {
+        if band
+            .rows
+            .entry(c.row)
+            .or_default()
+            .insert(c.col, cell)
+            .is_none()
+        {
             self.len += 1;
         }
     }
     pub fn remove(&mut self, c: CellRef) -> Option<Cell> {
         let key = c.row / BAND;
         let band = self.bands.get_mut(&key)?;
-        if !band.rows.get(&c.row).is_some_and(|r| r.contains_key(&c.col)) {
+        if !band
+            .rows
+            .get(&c.row)
+            .is_some_and(|r| r.contains_key(&c.col))
+        {
             return None;
         }
         let b = Arc::make_mut(band);
@@ -83,17 +101,27 @@ impl CellStore {
         self.bands.range(b0..=b1).flat_map(move |(_, band)| {
             band.rows
                 .range(r.start.row..=r.end.row)
-                .flat_map(move |(row, cols)| cols.range(r.start.col..=r.end.col).map(move |(col, cell)| (CellRef::new(*row, *col), cell)))
+                .flat_map(move |(row, cols)| {
+                    cols.range(r.start.col..=r.end.col)
+                        .map(move |(col, cell)| (CellRef::new(*row, *col), cell))
+                })
         })
     }
     pub fn iter(&self) -> impl Iterator<Item = (CellRef, &Cell)> + '_ {
-        self.bands
-            .values()
-            .flat_map(|band| band.rows.iter().flat_map(|(row, cols)| cols.iter().map(move |(col, cell)| (CellRef::new(*row, *col), cell))))
+        self.bands.values().flat_map(|band| {
+            band.rows.iter().flat_map(|(row, cols)| {
+                cols.iter()
+                    .map(move |(col, cell)| (CellRef::new(*row, *col), cell))
+            })
+        })
     }
     /// Cells of one row in `c0..=c1`.
     pub fn row(&self, row: u32, c0: u32, c1: u32) -> impl Iterator<Item = (u32, &Cell)> + '_ {
-        self.bands.get(&(row / BAND)).and_then(|b| b.rows.get(&row)).into_iter().flat_map(move |cols| cols.range(c0..=c1).map(|(c, cell)| (*c, cell)))
+        self.bands
+            .get(&(row / BAND))
+            .and_then(|b| b.rows.get(&row))
+            .into_iter()
+            .flat_map(move |cols| cols.range(c0..=c1).map(|(c, cell)| (*c, cell)))
     }
     /// Smallest range containing every stored cell, `None` when empty.
     pub fn used_range(&self) -> Option<RangeRef> {
@@ -118,14 +146,20 @@ impl CellStore {
     }
     /// Last stored row in column `col` at or above `below_or_at` (for Ctrl+arrow navigation).
     pub fn has(&self, c: CellRef) -> bool {
-        self.get(c).is_some_and(|cell| !cell.value.is_empty() || cell.formula.is_some())
+        self.get(c)
+            .is_some_and(|cell| !cell.value.is_empty() || cell.formula.is_some())
     }
     /// Positions whose cells differ between `self` and `other` (stored on one side only, or not
     /// equal). Bands both stores share are skipped, so comparing an edited copy with the store
     /// it was cloned from only visits the bands the edit touched.
     pub fn diff(&self, other: &CellStore) -> Vec<CellRef> {
         let empty = Band::default();
-        let mut keys: Vec<u32> = self.bands.keys().chain(other.bands.keys()).copied().collect();
+        let mut keys: Vec<u32> = self
+            .bands
+            .keys()
+            .chain(other.bands.keys())
+            .copied()
+            .collect();
         keys.sort_unstable();
         keys.dedup();
         let mut out = Vec::new();
@@ -157,14 +191,22 @@ impl CellStore {
     /// Removes every cell in `r` and returns them.
     pub fn take_range(&mut self, r: RangeRef) -> Vec<(CellRef, Cell)> {
         let keys: Vec<CellRef> = self.iter_range(r).map(|(c, _)| c).collect();
-        keys.into_iter().filter_map(|c| self.remove(c).map(|cell| (c, cell))).collect()
+        keys.into_iter()
+            .filter_map(|c| self.remove(c).map(|cell| (c, cell)))
+            .collect()
     }
     /// Rows strictly greater than or equal to `from` moved by `delta` (positive = down). Rows that
     /// would land before `from`... callers delete the vacated block first.
     pub fn shift_rows(&mut self, from: u32, delta: i64) {
         let moved: Vec<(CellRef, Cell)> = {
-            let keys: Vec<CellRef> = self.iter().filter(|(c, _)| c.row >= from).map(|(c, _)| c).collect();
-            keys.into_iter().filter_map(|c| self.remove(c).map(|cell| (c, cell))).collect()
+            let keys: Vec<CellRef> = self
+                .iter()
+                .filter(|(c, _)| c.row >= from)
+                .map(|(c, _)| c)
+                .collect();
+            keys.into_iter()
+                .filter_map(|c| self.remove(c).map(|cell| (c, cell)))
+                .collect()
         };
         for (c, cell) in moved {
             let nr = c.row as i64 + delta;
@@ -174,8 +216,15 @@ impl CellStore {
         }
     }
     pub fn shift_cols(&mut self, from: u32, delta: i64) {
-        let keys: Vec<CellRef> = self.iter().filter(|(c, _)| c.col >= from).map(|(c, _)| c).collect();
-        let moved: Vec<(CellRef, Cell)> = keys.into_iter().filter_map(|c| self.remove(c).map(|cell| (c, cell))).collect();
+        let keys: Vec<CellRef> = self
+            .iter()
+            .filter(|(c, _)| c.col >= from)
+            .map(|(c, _)| c)
+            .collect();
+        let moved: Vec<(CellRef, Cell)> = keys
+            .into_iter()
+            .filter_map(|c| self.remove(c).map(|cell| (c, cell)))
+            .collect();
         for (c, cell) in moved {
             let nc = c.col as i64 + delta;
             if (0..gridcraft_core::MAX_COLS as i64).contains(&nc) {
@@ -186,7 +235,10 @@ impl CellStore {
     /// Shifts cells within rows `r0..=r1` and columns `>= from` horizontally (Insert/Delete Cells
     /// with shift right/left).
     pub fn shift_cols_in_rows(&mut self, r0: u32, r1: u32, from: u32, delta: i64) {
-        let range = RangeRef::new(CellRef::new(r0, from), CellRef::new(r1, gridcraft_core::MAX_COLS - 1));
+        let range = RangeRef::new(
+            CellRef::new(r0, from),
+            CellRef::new(r1, gridcraft_core::MAX_COLS - 1),
+        );
         let moved = self.take_range(range);
         for (c, cell) in moved {
             let nc = c.col as i64 + delta;
@@ -197,7 +249,10 @@ impl CellStore {
     }
     /// Shifts cells within columns `c0..=c1` and rows `>= from` vertically.
     pub fn shift_rows_in_cols(&mut self, c0: u32, c1: u32, from: u32, delta: i64) {
-        let range = RangeRef::new(CellRef::new(from, c0), CellRef::new(gridcraft_core::MAX_ROWS - 1, c1));
+        let range = RangeRef::new(
+            CellRef::new(from, c0),
+            CellRef::new(gridcraft_core::MAX_ROWS - 1, c1),
+        );
         let moved = self.take_range(range);
         for (c, cell) in moved {
             let nr = c.row as i64 + delta;
@@ -223,7 +278,10 @@ mod tests {
         s.set(c(0, 0), Cell::value(1.0.into()));
         s.set(c(100, 5), Cell::value("x".into()));
         assert_eq!(s.len(), 2);
-        assert_eq!(s.get(c(100, 5)).map(|x| x.value.clone()), Some(Value::from("x")));
+        assert_eq!(
+            s.get(c(100, 5)).map(|x| x.value.clone()),
+            Some(Value::from("x"))
+        );
         assert_eq!(s.used_range().unwrap().a1(), "A1:F101");
         s.set(c(0, 0), Cell::default());
         assert_eq!(s.len(), 1);
@@ -265,7 +323,10 @@ mod tests {
         s.set(c(1, 1), Cell::value(1.0.into()));
         s.set(c(1, 3), Cell::value(2.0.into()));
         s.set(c(500, 0), Cell::value(4.0.into()));
-        let v: Vec<f64> = s.iter_range(RangeRef::parse("A1:D100").unwrap()).map(|(_, x)| x.value.as_f64().unwrap()).collect();
+        let v: Vec<f64> = s
+            .iter_range(RangeRef::parse("A1:D100").unwrap())
+            .map(|(_, x)| x.value.as_f64().unwrap())
+            .collect();
         assert_eq!(v, [1.0, 2.0, 3.0]);
     }
 

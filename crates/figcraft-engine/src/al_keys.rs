@@ -38,10 +38,16 @@ impl Dir {
     pub fn from_units(ux: f64, uy: f64) -> Vec<Dir> {
         let mut out = Vec::new();
         if ux.is_finite() && ux != 0.0 {
-            out.push(Dir { horizontal: true, forward: ux > 0.0 });
+            out.push(Dir {
+                horizontal: true,
+                forward: ux > 0.0,
+            });
         }
         if uy.is_finite() && uy != 0.0 {
-            out.push(Dir { horizontal: false, forward: uy > 0.0 });
+            out.push(Dir {
+                horizontal: false,
+                forward: uy > 0.0,
+            });
         }
         out
     }
@@ -53,15 +59,27 @@ pub fn flowing_parent(doc: &Document, id: NodeId) -> Option<NodeId> {
     let n = doc.node(id)?;
     let parent = n.parent?;
     let pn = doc.node(parent)?;
-    (pn.layout.is_some() && pn.kind.is_frame_like() && n.visible && !n.child_layout.absolute).then_some(parent)
+    (pn.layout.is_some() && pn.kind.is_frame_like() && n.visible && !n.child_layout.absolute)
+        .then_some(parent)
 }
 
 /// Move the `selected` children of auto layout frame `parent` one place in `dir`. Returns whether
 /// anything moved.
-pub fn arrow_move(doc: &mut Document, parent: NodeId, selected: &[NodeId], dir: Dir) -> Result<bool> {
-    let Some(layout) = doc.node(parent).and_then(|n| n.layout.clone()) else { return Ok(false) };
+pub fn arrow_move(
+    doc: &mut Document,
+    parent: NodeId,
+    selected: &[NodeId],
+    dir: Dir,
+) -> Result<bool> {
+    let Some(layout) = doc.node(parent).and_then(|n| n.layout.clone()) else {
+        return Ok(false);
+    };
     let flow = flow_children(doc, parent);
-    let block: Vec<NodeId> = flow.iter().copied().filter(|c| selected.contains(c)).collect();
+    let block: Vec<NodeId> = flow
+        .iter()
+        .copied()
+        .filter(|c| selected.contains(c))
+        .collect();
     if block.is_empty() {
         return Ok(false);
     }
@@ -72,7 +90,14 @@ pub fn arrow_move(doc: &mut Document, parent: NodeId, selected: &[NodeId], dir: 
             if along {
                 step_in_flow(doc, parent, &flow, &block, dir.forward)?
             } else if layout.wrap {
-                wrap_row_move(doc, parent, &flow, &block, dir.forward, mode == LayoutMode::Vertical)?
+                wrap_row_move(
+                    doc,
+                    parent,
+                    &flow,
+                    &block,
+                    dir.forward,
+                    mode == LayoutMode::Vertical,
+                )?
             } else {
                 false
             }
@@ -102,12 +127,30 @@ fn write_flow(doc: &mut Document, parent: NodeId, flow: &[NodeId]) -> Result<()>
 
 /// Swap each selected child with the next unselected placed sibling that way (selected neighbours
 /// move as a block). Returns whether anything moved.
-fn step_in_flow(doc: &mut Document, parent: NodeId, flow: &[NodeId], block: &[NodeId], forward: bool) -> Result<bool> {
+fn step_in_flow(
+    doc: &mut Document,
+    parent: NodeId,
+    flow: &[NodeId],
+    block: &[NodeId],
+    forward: bool,
+) -> Result<bool> {
     let mut order = flow.to_vec();
-    let idx: Vec<usize> = if forward { (0..order.len()).rev().collect() } else { (0..order.len()).collect() };
+    let idx: Vec<usize> = if forward {
+        (0..order.len()).rev().collect()
+    } else {
+        (0..order.len()).collect()
+    };
     for i in idx {
-        let Some(j) = (if forward { i.checked_add(1) } else { i.checked_sub(1) }) else { continue };
-        let (Some(a), Some(b)) = (order.get(i).copied(), order.get(j).copied()) else { continue };
+        let Some(j) = (if forward {
+            i.checked_add(1)
+        } else {
+            i.checked_sub(1)
+        }) else {
+            continue;
+        };
+        let (Some(a), Some(b)) = (order.get(i).copied(), order.get(j).copied()) else {
+            continue;
+        };
         if block.contains(&a) && !block.contains(&b) {
             order.swap(i, j);
         }
@@ -123,22 +166,56 @@ fn step_in_flow(doc: &mut Document, parent: NodeId, flow: &[NodeId], block: &[No
 /// previous/next visual row, next to the child nearest the selection's centre (before it going
 /// back, after it going forward, so the selection lands beside where it was once the rows reflow).
 /// Returns whether anything moved.
-fn wrap_row_move(doc: &mut Document, parent: NodeId, flow: &[NodeId], block: &[NodeId], forward: bool, vertical: bool) -> Result<bool> {
+fn wrap_row_move(
+    doc: &mut Document,
+    parent: NodeId,
+    flow: &[NodeId],
+    block: &[NodeId],
+    forward: bool,
+    vertical: bool,
+) -> Result<bool> {
     let rows = wrap_rows(doc, flow, vertical);
     let lead = if forward { block.last() } else { block.first() };
-    let Some(lead_i) = lead.and_then(|l| flow.iter().position(|c| c == l)) else { return Ok(false) };
-    let Some(row) = rows.iter().position(|r| r.iter().any(|(i, _)| *i == lead_i)) else { return Ok(false) };
-    let target_row = if forward { row.checked_add(1) } else { row.checked_sub(1) };
-    let Some(target) = target_row.and_then(|r| rows.get(r)) else { return Ok(false) };
-    let Some(centre) = doc.bounds_of(block).map(|b| flip(b, vertical).center().x) else { return Ok(false) };
+    let Some(lead_i) = lead.and_then(|l| flow.iter().position(|c| c == l)) else {
+        return Ok(false);
+    };
+    let Some(row) = rows
+        .iter()
+        .position(|r| r.iter().any(|(i, _)| *i == lead_i))
+    else {
+        return Ok(false);
+    };
+    let target_row = if forward {
+        row.checked_add(1)
+    } else {
+        row.checked_sub(1)
+    };
+    let Some(target) = target_row.and_then(|r| rows.get(r)) else {
+        return Ok(false);
+    };
+    let Some(centre) = doc.bounds_of(block).map(|b| flip(b, vertical).center().x) else {
+        return Ok(false);
+    };
     let nearest = target
         .iter()
         .filter(|(i, _)| flow.get(*i).is_some_and(|c| !block.contains(c)))
-        .min_by(|a, b| (a.1.center().x - centre).abs().total_cmp(&(b.1.center().x - centre).abs()))
+        .min_by(|a, b| {
+            (a.1.center().x - centre)
+                .abs()
+                .total_cmp(&(b.1.center().x - centre).abs())
+        })
         .and_then(|(i, _)| flow.get(*i).copied());
-    let Some(nearest) = nearest else { return Ok(false) };
-    let mut order: Vec<NodeId> = flow.iter().copied().filter(|c| !block.contains(c)).collect();
-    let Some(at) = order.iter().position(|c| *c == nearest) else { return Ok(false) };
+    let Some(nearest) = nearest else {
+        return Ok(false);
+    };
+    let mut order: Vec<NodeId> = flow
+        .iter()
+        .copied()
+        .filter(|c| !block.contains(c))
+        .collect();
+    let Some(at) = order.iter().position(|c| *c == nearest) else {
+        return Ok(false);
+    };
     let at = if forward { at + 1 } else { at };
     for (k, c) in block.iter().enumerate() {
         order.insert((at + k).min(order.len()), *c);
@@ -149,40 +226,73 @@ fn wrap_row_move(doc: &mut Document, parent: NodeId, flow: &[NodeId], block: &[N
 
 /// Whether grid cell `c` covers column `col`, row `row`.
 fn covers(c: &GridCell, col: usize, row: usize) -> bool {
-    (c.column..c.column + c.column_span).contains(&col) && (c.row..c.row + c.row_span).contains(&row)
+    (c.column..c.column + c.column_span).contains(&col)
+        && (c.row..c.row + c.row_span).contains(&row)
 }
 
 /// An arrow in a grid: each selected child moves to the neighbouring cell. Returns whether anything
 /// moved (`false` at the grid's edge).
-fn grid_move(doc: &mut Document, parent: NodeId, layout: &AutoLayout, block: &[NodeId], dir: Dir) -> Result<bool> {
+fn grid_move(
+    doc: &mut Document,
+    parent: NodeId,
+    layout: &AutoLayout,
+    block: &[NodeId],
+    dir: Dir,
+) -> Result<bool> {
     let cols = (layout.grid_columns as usize).max(1);
     let mut moved = false;
     // The leading child first, so the ones behind it follow into the cells it frees.
-    let order: Vec<NodeId> = if dir.forward { block.iter().rev().copied().collect() } else { block.to_vec() };
+    let order: Vec<NodeId> = if dir.forward {
+        block.iter().rev().copied().collect()
+    } else {
+        block.to_vec()
+    };
     for id in order {
         let flow = flow_children(doc, parent);
         let (cells, rows) = grid_place(doc, layout, &flow);
-        let Some(cell) = cells.iter().find(|c| c.id == id).copied() else { continue };
+        let Some(cell) = cells.iter().find(|c| c.id == id).copied() else {
+            continue;
+        };
         let (dc, dr): (isize, isize) = match (dir.horizontal, dir.forward) {
             (true, true) => (1, 0),
             (true, false) => (-1, 0),
             (false, true) => (0, 1),
             (false, false) => (0, -1),
         };
-        let (Some(tc), Some(tr)) = (cell.column.checked_add_signed(dc), cell.row.checked_add_signed(dr)) else { continue };
+        let (Some(tc), Some(tr)) = (
+            cell.column.checked_add_signed(dc),
+            cell.row.checked_add_signed(dr),
+        ) else {
+            continue;
+        };
         if tc + cell.column_span > cols || tr + cell.row_span > rows {
             continue;
         }
         // The cell the child moves into first.
-        let lead = (if dc > 0 { tc + cell.column_span - 1 } else { tc }, if dr > 0 { tr + cell.row_span - 1 } else { tr });
-        let occupant = cells.iter().find(|c| c.id != id && covers(c, lead.0, lead.1)).copied();
-        let anchored =
-            |doc: &Document, i: NodeId| doc.node(i).is_some_and(|n| n.child_layout.grid_column.is_some() || n.child_layout.grid_row.is_some());
+        let lead = (
+            if dc > 0 {
+                tc + cell.column_span - 1
+            } else {
+                tc
+            },
+            if dr > 0 { tr + cell.row_span - 1 } else { tr },
+        );
+        let occupant = cells
+            .iter()
+            .find(|c| c.id != id && covers(c, lead.0, lead.1))
+            .copied();
+        let anchored = |doc: &Document, i: NodeId| {
+            doc.node(i).is_some_and(|n| {
+                n.child_layout.grid_column.is_some() || n.child_layout.grid_row.is_some()
+            })
+        };
         match occupant {
             Some(o) if !anchored(doc, id) && !anchored(doc, o.id) => {
                 // Both flow automatically: swap places in the flow.
                 let mut order: Vec<NodeId> = flow.iter().copied().filter(|c| *c != id).collect();
-                let Some(at) = order.iter().position(|c| *c == o.id) else { continue };
+                let Some(at) = order.iter().position(|c| *c == o.id) else {
+                    continue;
+                };
                 order.insert(if dir.forward { at + 1 } else { at }, id);
                 write_flow(doc, parent, &order)?;
             }
@@ -205,9 +315,18 @@ fn grid_move(doc: &mut Document, parent: NodeId, layout: &AutoLayout, block: &[N
 
 /// Move `block` (children of `parent`) into the auto layout frame next to `parent` in `dir`, when
 /// `parent` is placed by an auto layout frame flowing that way. Returns whether anything moved.
-fn move_into_neighbour(doc: &mut Document, parent: NodeId, block: &[NodeId], dir: Dir) -> Result<bool> {
-    let Some(outer) = flowing_parent(doc, parent) else { return Ok(false) };
-    let Some(outer_layout) = doc.node(outer).and_then(|n| n.layout.clone()) else { return Ok(false) };
+fn move_into_neighbour(
+    doc: &mut Document,
+    parent: NodeId,
+    block: &[NodeId],
+    dir: Dir,
+) -> Result<bool> {
+    let Some(outer) = flowing_parent(doc, parent) else {
+        return Ok(false);
+    };
+    let Some(outer_layout) = doc.node(outer).and_then(|n| n.layout.clone()) else {
+        return Ok(false);
+    };
     let flows_that_way = match outer_layout.mode {
         LayoutMode::Horizontal => dir.horizontal,
         LayoutMode::Vertical => !dir.horizontal,
@@ -217,26 +336,48 @@ fn move_into_neighbour(doc: &mut Document, parent: NodeId, block: &[NodeId], dir
         return Ok(false);
     }
     let siblings = flow_children(doc, outer);
-    let Some(i) = siblings.iter().position(|c| *c == parent) else { return Ok(false) };
-    let next = if dir.forward { i.checked_add(1) } else { i.checked_sub(1) };
-    let Some(dest) = next.and_then(|j| siblings.get(j)).copied() else { return Ok(false) };
-    let accepts =
-        doc.node(dest).is_some_and(|n| n.kind.is_frame_like() && !n.locked && n.layout.as_ref().is_some_and(|l| l.mode != LayoutMode::Grid))
-            && !structure_locked(doc, dest);
+    let Some(i) = siblings.iter().position(|c| *c == parent) else {
+        return Ok(false);
+    };
+    let next = if dir.forward {
+        i.checked_add(1)
+    } else {
+        i.checked_sub(1)
+    };
+    let Some(dest) = next.and_then(|j| siblings.get(j)).copied() else {
+        return Ok(false);
+    };
+    let accepts = doc.node(dest).is_some_and(|n| {
+        n.kind.is_frame_like()
+            && !n.locked
+            && n.layout
+                .as_ref()
+                .is_some_and(|l| l.mode != LayoutMode::Grid)
+    }) && !structure_locked(doc, dest);
     if !accepts {
         return Ok(false);
     }
-    let (Some(b), Some(sel)) = (doc.world_bounds(dest), doc.bounds_of(block)) else { return Ok(false) };
+    let (Some(b), Some(sel)) = (doc.world_bounds(dest), doc.bounds_of(block)) else {
+        return Ok(false);
+    };
     // Enter at the near edge, level with the selection on the other axis (just before its centre,
     // so a child level with it is displaced and the selection keeps its place).
-    let edge = |lo: f64, hi: f64| if dir.forward { lo + (hi - lo).min(0.5) } else { hi - (hi - lo).min(0.5) };
+    let edge = |lo: f64, hi: f64| {
+        if dir.forward {
+            lo + (hi - lo).min(0.5)
+        } else {
+            hi - (hi - lo).min(0.5)
+        }
+    };
     let level = |c: f64, lo: f64, hi: f64| (c - 0.5).clamp(lo, hi.max(lo));
     let probe = if dir.horizontal {
         Point::new(edge(b.x0, b.x1), level(sel.center().y, b.y0, b.y1))
     } else {
         Point::new(level(sel.center().x, b.x0, b.x1), edge(b.y0, b.y1))
     };
-    let Some((index, _)) = auto_layout_slot(doc, dest, probe, block) else { return Ok(false) };
+    let Some((index, _)) = auto_layout_slot(doc, dest, probe, block) else {
+        return Ok(false);
+    };
     for (k, c) in block.iter().enumerate() {
         doc.reparent(*c, dest, Some(index + k))?;
     }

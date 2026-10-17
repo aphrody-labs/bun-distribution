@@ -10,12 +10,12 @@ use bevy_ecs::{
 };
 use bevy_input_focus::tab_navigation::TabIndex;
 use bevy_math::Rot2;
-use bevy_picking::{cursor::EntityCursor, PickingSystems};
-use bevy_reflect::std_traits::ReflectDefault;
+use bevy_picking::{PickingSystems, cursor::EntityCursor};
 use bevy_reflect::Reflect;
-use bevy_scene::{bsn, Scene, SceneComponent};
+use bevy_reflect::std_traits::ReflectDefault;
+use bevy_scene::{Scene, SceneComponent, bsn};
 use bevy_ui::{
-    px, AlignItems, Checked, Display, InteractionDisabled, JustifyContent, Node, UiTransform,
+    AlignItems, Checked, Display, InteractionDisabled, JustifyContent, Node, UiTransform, px,
 };
 use bevy_ui_widgets::Checkbox;
 use bevy_window::SystemCursorIcon;

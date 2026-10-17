@@ -52,7 +52,11 @@ pub fn utf8_to_base64(text: &str) -> String {
         } else {
             '='
         });
-        output.push(if chunk.len() > 2 { ALPHABET[(c & 0x3f) as usize] as char } else { '=' });
+        output.push(if chunk.len() > 2 {
+            ALPHABET[(c & 0x3f) as usize] as char
+        } else {
+            '='
+        });
     }
     output
 }
@@ -60,7 +64,10 @@ pub fn utf8_to_base64(text: &str) -> String {
 /// Decodes standard base64 into UTF-8 text, replacing malformed UTF-8 like
 /// the browser `TextDecoder` used by the TypeScript implementation.
 pub fn base64_to_utf8(encoded: &str) -> Result<String, TeamCodeError> {
-    let compact: Vec<u8> = encoded.bytes().filter(|byte| !byte.is_ascii_whitespace()).collect();
+    let compact: Vec<u8> = encoded
+        .bytes()
+        .filter(|byte| !byte.is_ascii_whitespace())
+        .collect();
     if compact.len() % 4 == 1 {
         return Err(TeamCodeError::InvalidBase64);
     }
@@ -145,11 +152,16 @@ pub fn decode_team_code(encoded: &str) -> Result<DecodedTeamCode, TeamCodeError>
             let mut fields = part.split(':');
             let slot = fields.next().unwrap_or_default();
             let chara_id = fields.next().unwrap_or_default();
-            (!slot.is_empty() && !chara_id.is_empty())
-                .then(|| TeamCodeSlot { slot: slot.to_owned(), chara_id: chara_id.to_owned() })
+            (!slot.is_empty() && !chara_id.is_empty()).then(|| TeamCodeSlot {
+                slot: slot.to_owned(),
+                chara_id: chara_id.to_owned(),
+            })
         })
         .collect();
-    Ok(DecodedTeamCode { formation_id, slots })
+    Ok(DecodedTeamCode {
+        formation_id,
+        slots,
+    })
 }
 
 #[cfg(test)]
@@ -159,13 +171,22 @@ mod tests {
     #[test]
     fn round_trips_utf8_and_preserves_slots() {
         let slots = [
-            TeamCodeSlot { slot: "field-0".into(), chara_id: "円堂".into() },
-            TeamCodeSlot { slot: "reserve-2".into(), chara_id: "whs01230".into() },
+            TeamCodeSlot {
+                slot: "field-0".into(),
+                chara_id: "円堂".into(),
+            },
+            TeamCodeSlot {
+                slot: "reserve-2".into(),
+                chara_id: "whs01230".into(),
+            },
         ];
         let encoded = encode_team_code("diamond442", &slots);
         assert_eq!(
             decode_team_code(&encoded).unwrap(),
-            DecodedTeamCode { formation_id: "diamond442".into(), slots: slots.to_vec() }
+            DecodedTeamCode {
+                formation_id: "diamond442".into(),
+                slots: slots.to_vec()
+            }
         );
     }
 
@@ -181,9 +202,18 @@ mod tests {
     #[test]
     fn base64_decode_matches_browser_bom_and_ascii_whitespace_behavior() {
         assert_eq!(base64_to_utf8("77u/Zg==").unwrap(), "f");
-        assert_eq!(base64_to_utf8(&utf8_to_base64("\u{feff}\u{feff}f")).unwrap(), "\u{feff}f");
-        assert_eq!(base64_to_utf8(&utf8_to_base64("f\u{feff}")).unwrap(), "f\u{feff}");
+        assert_eq!(
+            base64_to_utf8(&utf8_to_base64("\u{feff}\u{feff}f")).unwrap(),
+            "\u{feff}f"
+        );
+        assert_eq!(
+            base64_to_utf8(&utf8_to_base64("f\u{feff}")).unwrap(),
+            "f\u{feff}"
+        );
         assert_eq!(base64_to_utf8(" Z\tg\n==\r\u{000c}").unwrap(), "f");
-        assert_eq!(base64_to_utf8("Z\u{000b}g=="), Err(TeamCodeError::InvalidBase64));
+        assert_eq!(
+            base64_to_utf8("Z\u{000b}g=="),
+            Err(TeamCodeError::InvalidBase64)
+        );
     }
 }

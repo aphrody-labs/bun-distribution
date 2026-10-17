@@ -16,8 +16,16 @@ fn book(names: &[&str]) -> Workbook {
 fn unrepresentable_sheet_names_are_refused() {
     let long_a = format!("{}X", "A".repeat(31));
     let long_b = format!("{}Y", "A".repeat(31));
-    for names in [vec!["Data", "a/b"], vec![long_a.as_str(), long_b.as_str()], vec!["Data", "data"], vec!["Data", ""]] {
-        assert!(matches!(write_xlsx(&book(&names)), Err(IoError::Format(_))), "{names:?}");
+    for names in [
+        vec!["Data", "a/b"],
+        vec![long_a.as_str(), long_b.as_str()],
+        vec!["Data", "data"],
+        vec!["Data", ""],
+    ] {
+        assert!(
+            matches!(write_xlsx(&book(&names)), Err(IoError::Format(_))),
+            "{names:?}"
+        );
     }
     assert!(write_xlsx(&book(&["Data", "Other"])).is_ok());
 }

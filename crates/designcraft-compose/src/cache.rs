@@ -61,7 +61,12 @@ impl Cache {
     /// `None` for a story's own frames. Pages are identified by index, not name: names repeat when
     /// sections restart their numbering.
     pub fn get(&self, doc: &Document, sid: StoryId, page: Option<usize>) -> Arc<ComposedStory> {
-        let Some(story) = doc.stories.get(&sid) else { return Arc::new(ComposedStory { story: sid, ..Default::default() }) };
+        let Some(story) = doc.stories.get(&sid) else {
+            return Arc::new(ComposedStory {
+                story: sid,
+                ..Default::default()
+            });
+        };
         let (mut sig, keep_items) = signature(doc, story);
         let key = (sid, page);
         // The key holds the page's index, which a renumbering doesn't change: its name (section
@@ -120,7 +125,15 @@ impl Cache {
         }
         // Advanced Type sizes super/subscripts.
         let a = doc.settings.advanced_type;
-        sig.extend([a.superscript_size, a.superscript_position, a.subscript_size, a.subscript_position].map(|v| v.to_bits() as usize));
+        sig.extend(
+            [
+                a.superscript_size,
+                a.superscript_position,
+                a.subscript_size,
+                a.subscript_position,
+            ]
+            .map(|v| v.to_bits() as usize),
+        );
         // Missing glyphs: fallback fonts or the font's box.
         sig.push(usize::from(doc.settings.glyph_fallback));
         // Named lists continue from earlier stories.
@@ -144,19 +157,36 @@ impl Cache {
         let out = Arc::new(crate::compose_story(
             doc,
             sid,
-            &ComposeOptions { page_name, page, running, label: None, xrefs: with_xrefs.then(|| self.xref_index(doc)) },
+            &ComposeOptions {
+                page_name,
+                page,
+                running,
+                label: None,
+                xrefs: with_xrefs.then(|| self.xref_index(doc)),
+            },
         ));
         let mut g = self.map.lock().unwrap_or_else(|e| e.into_inner());
         let stamp = g.1;
         if g.0.len() > 4096 {
             g.0.retain(|_, e| stamp - e.stamp < 64);
         }
-        let replaced = g.0.insert(key, Entry { sig, _keep: (story.clone(), doc.styles.clone(), keep_items), out: out.clone(), stamp });
+        let replaced = g.0.insert(
+            key,
+            Entry {
+                sig,
+                _keep: (story.clone(), doc.styles.clone(), keep_items),
+                out: out.clone(),
+                stamp,
+            },
+        );
         drop(g);
         if key.1.is_none()
             && let Some(old) = replaced
         {
-            self.previous.lock().unwrap_or_else(|e| e.into_inner()).insert(sid, (old.sig, old.out));
+            self.previous
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .insert(sid, (old.sig, old.out));
         }
         out
     }
@@ -177,7 +207,9 @@ impl Cache {
             }
         }
         let g = self.previous.lock().unwrap_or_else(|e| e.into_inner());
-        g.get(&sid).filter(|(s, _)| matches(s)).map(|(_, c)| c.clone())
+        g.get(&sid)
+            .filter(|(s, _)| matches(s))
+            .map(|(_, c)| c.clone())
     }
 
     /// Frames whose composed content differs between two compositions of a story.
@@ -188,10 +220,12 @@ impl Cache {
                 && (x.x0 - y.x0).abs() < 1e-9
                 && (x.end_x - y.end_x).abs() < 1e-9
                 && x.glyphs.len() == y.glyphs.len()
-                && x.glyphs
-                    .iter()
-                    .zip(&y.glyphs)
-                    .all(|(g, h)| g.gid == h.gid && g.style == h.style && (g.x - h.x).abs() < 1e-9 && (g.y - h.y).abs() < 1e-9)
+                && x.glyphs.iter().zip(&y.glyphs).all(|(g, h)| {
+                    g.gid == h.gid
+                        && g.style == h.style
+                        && (g.x - h.x).abs() < 1e-9
+                        && (g.y - h.y).abs() < 1e-9
+                })
         };
         let mut out = Vec::new();
         for fb in &b.frames {
@@ -232,7 +266,9 @@ impl Cache {
         {
             return r.clone();
         }
-        let r = Arc::new(crate::xref::XrefIndex::build(doc, &|sid| self.get(doc, sid, None)));
+        let r = Arc::new(crate::xref::XrefIndex::build(doc, &|sid| {
+            self.get(doc, sid, None)
+        }));
         *self.xrefs.lock().unwrap_or_else(|e| e.into_inner()) = Some((sig, r.clone()));
         r
     }
@@ -253,8 +289,13 @@ impl Cache {
 
 fn signature(doc: &Document, story: &Arc<Story>) -> (Vec<usize>, Vec<Arc<Item>>) {
     // The document's font scope: another document's fonts of the same name set it differently.
-    let mut sig =
-        vec![Arc::as_ptr(story) as usize, story.rev as usize, Arc::as_ptr(&doc.styles) as usize, doc.sections.len(), doc.font_scope as usize];
+    let mut sig = vec![
+        Arc::as_ptr(story) as usize,
+        story.rev as usize,
+        Arc::as_ptr(&doc.styles) as usize,
+        doc.sections.len(),
+        doc.font_scope as usize,
+    ];
     let mut keep = Vec::new();
     let mut spreads = Vec::new();
     for f in &story.frames {

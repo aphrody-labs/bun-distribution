@@ -50,7 +50,10 @@ pub struct Asset {
 
 /// SHA-256 of `bytes`, lowercase hex.
 pub fn sha256_hex(bytes: &[u8]) -> String {
-    Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect()
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
 }
 
 /// A directory version: 1–4 whole numbers separated by dots (`1.2.0`).
@@ -58,8 +61,16 @@ pub fn parse_version(s: &str) -> Option<Vec<u64>> {
     if s.is_empty() || s.len() > MAX_VERSION {
         return None;
     }
-    let parts: Vec<u64> =
-        s.split('.').map(|p| if p.is_empty() || !p.bytes().all(|b| b.is_ascii_digit()) { None } else { p.parse().ok() }).collect::<Option<_>>()?;
+    let parts: Vec<u64> = s
+        .split('.')
+        .map(|p| {
+            if p.is_empty() || !p.bytes().all(|b| b.is_ascii_digit()) {
+                None
+            } else {
+                p.parse().ok()
+            }
+        })
+        .collect::<Option<_>>()?;
     (parts.len() <= MAX_VERSION_PARTS).then_some(parts)
 }
 
@@ -69,7 +80,12 @@ pub fn compare_versions(a: &str, b: &str) -> Option<Ordering> {
     let (a, b) = (parse_version(a)?, parse_version(b)?);
     let n = a.len().max(b.len());
     let at = |v: &[u64], i: usize| v.get(i).copied().unwrap_or(0);
-    Some((0..n).map(|i| at(&a, i).cmp(&at(&b, i))).find(|o| o.is_ne()).unwrap_or(Ordering::Equal))
+    Some(
+        (0..n)
+            .map(|i| at(&a, i).cmp(&at(&b, i)))
+            .find(|o| o.is_ne())
+            .unwrap_or(Ordering::Equal),
+    )
 }
 
 /// Version `candidate` is newer than `installed` (false when either isn't a directory version).
@@ -84,10 +100,18 @@ pub fn check_asset_name(name: &str) -> Result<(), String> {
         && name.len() <= MAX_ASSET_NAME
         && !name.starts_with('.')
         && !name.ends_with('.')
-        && name.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'));
-    let stem = name.split('.').next().unwrap_or_default().to_ascii_lowercase();
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'-' | b'_'));
+    let stem = name
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_lowercase();
     let device = matches!(stem.as_str(), "con" | "prn" | "aux" | "nul")
-        || ((stem.starts_with("com") || stem.starts_with("lpt")) && stem.len() == 4 && stem.as_bytes().get(3).is_some_and(u8::is_ascii_digit));
+        || ((stem.starts_with("com") || stem.starts_with("lpt"))
+            && stem.len() == 4
+            && stem.as_bytes().get(3).is_some_and(u8::is_ascii_digit));
     if !plain || device {
         return Err(format!(
             "asset `{}` must be a plain file name: 1–{MAX_ASSET_NAME} letters, digits, `.`, `-` or `_`",
@@ -111,7 +135,10 @@ impl<'a> Reader<'a> {
     }
 
     fn u32(&mut self) -> Result<usize, String> {
-        let b: [u8; 4] = self.take(4)?.try_into().map_err(|_| "the bundle is cut short".to_string())?;
+        let b: [u8; 4] = self
+            .take(4)?
+            .try_into()
+            .map_err(|_| "the bundle is cut short".to_string())?;
         usize::try_from(u32::from_le_bytes(b)).map_err(|_| "the bundle is damaged".to_string())
     }
 
@@ -123,7 +150,8 @@ impl<'a> Reader<'a> {
     }
 
     fn text(&mut self, what: &str) -> Result<String, String> {
-        String::from_utf8(self.part()?.to_vec()).map_err(|_| format!("the bundle's {what} isn't UTF-8 text"))
+        String::from_utf8(self.part()?.to_vec())
+            .map_err(|_| format!("the bundle's {what} isn't UTF-8 text"))
     }
 }
 
@@ -136,13 +164,24 @@ fn push_part(out: &mut Vec<u8>, bytes: &[u8]) {
 impl Bundle {
     /// Its binary form (see the module docs).
     pub fn encode(&self) -> Vec<u8> {
-        let size =
-            MAGIC.len() + 12 + self.manifest.len() + self.wasm.len() + self.assets.iter().map(|a| 8 + a.name.len() + a.data.len()).sum::<usize>();
+        let size = MAGIC.len()
+            + 12
+            + self.manifest.len()
+            + self.wasm.len()
+            + self
+                .assets
+                .iter()
+                .map(|a| 8 + a.name.len() + a.data.len())
+                .sum::<usize>();
         let mut out = Vec::with_capacity(size);
         out.extend(MAGIC);
         push_part(&mut out, self.manifest.as_bytes());
         push_part(&mut out, &self.wasm);
-        out.extend(u32::try_from(self.assets.len()).unwrap_or(u32::MAX).to_le_bytes());
+        out.extend(
+            u32::try_from(self.assets.len())
+                .unwrap_or(u32::MAX)
+                .to_le_bytes(),
+        );
         for a in &self.assets {
             push_part(&mut out, a.name.as_bytes());
             push_part(&mut out, &a.data);
@@ -154,7 +193,11 @@ impl Bundle {
     /// size, refuses trailing bytes).
     pub fn decode(bytes: &[u8], max: usize) -> Result<Bundle, String> {
         if bytes.len() > max {
-            return Err(format!("the bundle is {} KB, over the {} KB limit", bytes.len() / 1024, max / 1024));
+            return Err(format!(
+                "the bundle is {} KB, over the {} KB limit",
+                bytes.len() / 1024,
+                max / 1024
+            ));
         }
         let mut r = Reader(bytes);
         if r.take(MAGIC.len()).ok() != Some(MAGIC.as_slice()) {
@@ -175,7 +218,11 @@ impl Bundle {
         if !r.0.is_empty() {
             return Err(format!("{} bytes after the bundle", r.0.len()));
         }
-        Ok(Bundle { manifest, wasm, assets })
+        Ok(Bundle {
+            manifest,
+            wasm,
+            assets,
+        })
     }
 
     /// Validate everything before the bundle is kept or installed: the manifest (with the plugin

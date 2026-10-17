@@ -123,7 +123,9 @@ pub unsafe extern "C" fn aphrody_toolcall_validate_json(
     catch_unwind(AssertUnwindSafe(|| {
         // SAFETY: pointer contract documented above.
         let (Some(args_text), Some(schema_text)) =
-            (unsafe { borrow_utf8(args, args_len) }, unsafe { borrow_utf8(schema, schema_len) })
+            (unsafe { borrow_utf8(args, args_len) }, unsafe {
+                borrow_utf8(schema, schema_len)
+            })
         else {
             return i64::from(ZC_INVALID);
         };
@@ -139,7 +141,7 @@ pub unsafe extern "C" fn aphrody_toolcall_validate_json(
                         .map(|v| json!({ "pointer": v.pointer, "message": v.message }))
                         .collect::<Vec<_>>(),
                 })
-            },
+            }
             (Err(error), _) => json!({ "error": format!("args: {error}") }),
             (_, Err(error)) => json!({ "error": format!("schema: {error}") }),
         };
@@ -193,8 +195,13 @@ pub unsafe extern "C" fn aphrody_raster_fill_triangle(
         // SAFETY: pointer contract documented above; `verts`, `uv` and `base_rgb`
         // are read unaligned element by element.
         let read = |p: *const f32, i: usize| unsafe { p.add(i).read_unaligned() };
-        let vertex =
-            |i: usize| (read(verts, i * 3), read(verts, i * 3 + 1), read(verts, i * 3 + 2));
+        let vertex = |i: usize| {
+            (
+                read(verts, i * 3),
+                read(verts, i * 3 + 1),
+                read(verts, i * 3 + 2),
+            )
+        };
         let mut uvs = [[0.0_f32; 2]; 3];
         if !uv.is_null() {
             for (i, pair) in uvs.iter_mut().enumerate() {
@@ -209,8 +216,9 @@ pub unsafe extern "C" fn aphrody_raster_fill_triangle(
         let texture = if tex.is_null() {
             None
         } else {
-            let Some(tex_len) =
-                (tex_w as usize).checked_mul(tex_h as usize).and_then(|n| n.checked_mul(4))
+            let Some(tex_len) = (tex_w as usize)
+                .checked_mul(tex_h as usize)
+                .and_then(|n| n.checked_mul(4))
             else {
                 return ZC_INVALID;
             };
@@ -224,7 +232,10 @@ pub unsafe extern "C" fn aphrody_raster_fill_triangle(
         // SAFETY: `px`/`zbuf` are valid, non-overlapping and exclusively borrowed
         // for the duration of this call by the contract above.
         let (px, zbuf) = unsafe {
-            (slice::from_raw_parts_mut(px, px_len), slice::from_raw_parts_mut(zbuf, pixels))
+            (
+                slice::from_raw_parts_mut(px, px_len),
+                slice::from_raw_parts_mut(zbuf, pixels),
+            )
         };
         aphrody_softraster::fill_triangle(
             px,

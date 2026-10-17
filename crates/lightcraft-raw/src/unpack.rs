@@ -106,7 +106,8 @@ pub fn f24_to_f32(v: u32) -> f32 {
 
 /// Inflate a zlib stream, refusing to produce more than `limit` bytes.
 pub fn inflate(src: &[u8], limit: usize) -> Result<Vec<u8>> {
-    miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(src, limit).map_err(|e| RawError::Corrupt(format!("deflate: {e:?}")))
+    miniz_oxide::inflate::decompress_to_vec_zlib_with_limit(src, limit)
+        .map_err(|e| RawError::Corrupt(format!("deflate: {e:?}")))
 }
 
 /// Undo horizontal differencing on one row of integer samples with a sample `stride` (cpp × factor).
@@ -145,7 +146,9 @@ mod tests {
     fn words32_are_read_as_numbers_then_msb_first() {
         // eight 12-bit samples occupy 96 bits = three 32-bit words, filled from the top
         let samples: [u16; 8] = [0x123, 0x456, 0x789, 0xabc, 0xdef, 0x012, 0x345, 0x678];
-        let stream = samples.iter().fold(0u128, |acc, &v| (acc << 12) | v as u128);
+        let stream = samples
+            .iter()
+            .fold(0u128, |acc, &v| (acc << 12) | v as u128);
         let words = [(stream >> 64) as u32, (stream >> 32) as u32, stream as u32];
         let le: Vec<u8> = words.iter().flat_map(|w| w.to_le_bytes()).collect();
         let be: Vec<u8> = words.iter().flat_map(|w| w.to_be_bytes()).collect();

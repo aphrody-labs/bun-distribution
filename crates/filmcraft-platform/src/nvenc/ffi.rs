@@ -50,12 +50,20 @@ pub struct Guid {
 
 impl Guid {
     pub const fn from_values(data1: u32, data2: u16, data3: u16, data4: [u8; 8]) -> Self {
-        Self { data1, data2, data3, data4 }
+        Self {
+            data1,
+            data2,
+            data3,
+            data4,
+        }
     }
 
     #[cfg(test)]
     pub const fn to_u128(self) -> u128 {
-        ((self.data1 as u128) << 96) | ((self.data2 as u128) << 80) | ((self.data3 as u128) << 64) | u64::from_be_bytes(self.data4) as u128
+        ((self.data1 as u128) << 96)
+            | ((self.data2 as u128) << 80)
+            | ((self.data3 as u128) << 64)
+            | u64::from_be_bytes(self.data4) as u128
     }
 }
 
@@ -141,15 +149,60 @@ pub const NV_ENC_CAPS_HEIGHT_MAX: u32 = 17;
 pub const NV_ENC_CAPS_WIDTH_MIN: u32 = 45;
 pub const NV_ENC_CAPS_HEIGHT_MIN: u32 = 46;
 
-pub const NV_ENC_CODEC_H264_GUID: Guid = Guid::from_values(0x6bc82762, 0x4e63, 0x4ca4, [0xaa, 0x85, 0x1e, 0x50, 0xf3, 0x21, 0xf6, 0xbf]);
-pub const NV_ENC_CODEC_HEVC_GUID: Guid = Guid::from_values(0x790cdc88, 0x4522, 0x4d7b, [0x94, 0x25, 0xbd, 0xa9, 0x97, 0x5f, 0x76, 0x03]);
-pub const NV_ENC_H264_PROFILE_BASELINE_GUID: Guid = Guid::from_values(0x0727bcaa, 0x78c4, 0x4c83, [0x8c, 0x2f, 0xef, 0x3d, 0xff, 0x26, 0x7c, 0x6a]);
-pub const NV_ENC_H264_PROFILE_MAIN_GUID: Guid = Guid::from_values(0x60b5c1d4, 0x67fe, 0x4790, [0x94, 0xd5, 0xc4, 0x72, 0x6d, 0x7b, 0x6e, 0x6d]);
-pub const NV_ENC_H264_PROFILE_HIGH_GUID: Guid = Guid::from_values(0xe7cbc309, 0x4f7a, 0x4b89, [0xaf, 0x2a, 0xd5, 0x37, 0xc9, 0x2b, 0xe3, 0x10]);
-pub const NV_ENC_HEVC_PROFILE_MAIN_GUID: Guid = Guid::from_values(0xb514c39a, 0xb55b, 0x40fa, [0x87, 0x8f, 0xf1, 0x25, 0x3b, 0x4d, 0xfd, 0xec]);
-pub const NV_ENC_HEVC_PROFILE_MAIN10_GUID: Guid = Guid::from_values(0xfa4d2b6c, 0x3a5b, 0x411a, [0x80, 0x18, 0x0a, 0x3f, 0x5e, 0x3c, 0x9b, 0xe5]);
-pub const NV_ENC_PRESET_P4_GUID: Guid = Guid::from_values(0x90a7b826, 0xdf06, 0x4862, [0xb9, 0xd2, 0xcd, 0x6d, 0x73, 0xa0, 0x86, 0x81]);
-pub const NV_ENC_PRESET_P5_GUID: Guid = Guid::from_values(0x21c6e6b4, 0x297a, 0x4cba, [0x99, 0x8f, 0xb6, 0xcb, 0xde, 0x72, 0xad, 0xe3]);
+pub const NV_ENC_CODEC_H264_GUID: Guid = Guid::from_values(
+    0x6bc82762,
+    0x4e63,
+    0x4ca4,
+    [0xaa, 0x85, 0x1e, 0x50, 0xf3, 0x21, 0xf6, 0xbf],
+);
+pub const NV_ENC_CODEC_HEVC_GUID: Guid = Guid::from_values(
+    0x790cdc88,
+    0x4522,
+    0x4d7b,
+    [0x94, 0x25, 0xbd, 0xa9, 0x97, 0x5f, 0x76, 0x03],
+);
+pub const NV_ENC_H264_PROFILE_BASELINE_GUID: Guid = Guid::from_values(
+    0x0727bcaa,
+    0x78c4,
+    0x4c83,
+    [0x8c, 0x2f, 0xef, 0x3d, 0xff, 0x26, 0x7c, 0x6a],
+);
+pub const NV_ENC_H264_PROFILE_MAIN_GUID: Guid = Guid::from_values(
+    0x60b5c1d4,
+    0x67fe,
+    0x4790,
+    [0x94, 0xd5, 0xc4, 0x72, 0x6d, 0x7b, 0x6e, 0x6d],
+);
+pub const NV_ENC_H264_PROFILE_HIGH_GUID: Guid = Guid::from_values(
+    0xe7cbc309,
+    0x4f7a,
+    0x4b89,
+    [0xaf, 0x2a, 0xd5, 0x37, 0xc9, 0x2b, 0xe3, 0x10],
+);
+pub const NV_ENC_HEVC_PROFILE_MAIN_GUID: Guid = Guid::from_values(
+    0xb514c39a,
+    0xb55b,
+    0x40fa,
+    [0x87, 0x8f, 0xf1, 0x25, 0x3b, 0x4d, 0xfd, 0xec],
+);
+pub const NV_ENC_HEVC_PROFILE_MAIN10_GUID: Guid = Guid::from_values(
+    0xfa4d2b6c,
+    0x3a5b,
+    0x411a,
+    [0x80, 0x18, 0x0a, 0x3f, 0x5e, 0x3c, 0x9b, 0xe5],
+);
+pub const NV_ENC_PRESET_P4_GUID: Guid = Guid::from_values(
+    0x90a7b826,
+    0xdf06,
+    0x4862,
+    [0xb9, 0xd2, 0xcd, 0x6d, 0x73, 0xa0, 0x86, 0x81],
+);
+pub const NV_ENC_PRESET_P5_GUID: Guid = Guid::from_values(
+    0x21c6e6b4,
+    0x297a,
+    0x4cba,
+    [0x99, 0x8f, 0xb6, 0xcb, 0xde, 0x72, 0xad, 0xe3],
+);
 
 pub type Handle = *mut c_void;
 
@@ -604,29 +657,44 @@ pub struct NV_ENCODE_API_FUNCTION_LIST {
     pub nvEncGetEncodeGUIDs: Unused,
     pub nvEncGetInputFormatCount: Unused,
     pub nvEncGetInputFormats: Unused,
-    pub nvEncGetEncodeCaps: Option<unsafe extern "system" fn(Handle, Guid, *mut NV_ENC_CAPS_PARAM, *mut c_int) -> NvStatus>,
+    pub nvEncGetEncodeCaps: Option<
+        unsafe extern "system" fn(Handle, Guid, *mut NV_ENC_CAPS_PARAM, *mut c_int) -> NvStatus,
+    >,
     pub nvEncGetEncodePresetCount: Unused,
     pub nvEncGetEncodePresetGUIDs: Unused,
     pub nvEncGetEncodePresetConfig: Unused,
-    pub nvEncInitializeEncoder: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_INITIALIZE_PARAMS) -> NvStatus>,
-    pub nvEncCreateInputBuffer: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_CREATE_INPUT_BUFFER) -> NvStatus>,
+    pub nvEncInitializeEncoder:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_INITIALIZE_PARAMS) -> NvStatus>,
+    pub nvEncCreateInputBuffer:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_CREATE_INPUT_BUFFER) -> NvStatus>,
     pub nvEncDestroyInputBuffer: Option<unsafe extern "system" fn(Handle, *mut c_void) -> NvStatus>,
-    pub nvEncCreateBitstreamBuffer: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_CREATE_BITSTREAM_BUFFER) -> NvStatus>,
-    pub nvEncDestroyBitstreamBuffer: Option<unsafe extern "system" fn(Handle, *mut c_void) -> NvStatus>,
-    pub nvEncEncodePicture: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_PIC_PARAMS) -> NvStatus>,
-    pub nvEncLockBitstream: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_LOCK_BITSTREAM) -> NvStatus>,
+    pub nvEncCreateBitstreamBuffer:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_CREATE_BITSTREAM_BUFFER) -> NvStatus>,
+    pub nvEncDestroyBitstreamBuffer:
+        Option<unsafe extern "system" fn(Handle, *mut c_void) -> NvStatus>,
+    pub nvEncEncodePicture:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_PIC_PARAMS) -> NvStatus>,
+    pub nvEncLockBitstream:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_LOCK_BITSTREAM) -> NvStatus>,
     pub nvEncUnlockBitstream: Option<unsafe extern "system" fn(Handle, *mut c_void) -> NvStatus>,
-    pub nvEncLockInputBuffer: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_LOCK_INPUT_BUFFER) -> NvStatus>,
+    pub nvEncLockInputBuffer:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_LOCK_INPUT_BUFFER) -> NvStatus>,
     pub nvEncUnlockInputBuffer: Option<unsafe extern "system" fn(Handle, *mut c_void) -> NvStatus>,
     pub nvEncGetEncodeStats: Unused,
-    pub nvEncGetSequenceParams: Option<unsafe extern "system" fn(Handle, *mut NV_ENC_SEQUENCE_PARAM_PAYLOAD) -> NvStatus>,
+    pub nvEncGetSequenceParams:
+        Option<unsafe extern "system" fn(Handle, *mut NV_ENC_SEQUENCE_PARAM_PAYLOAD) -> NvStatus>,
     pub nvEncRegisterAsyncEvent: Unused,
     pub nvEncUnregisterAsyncEvent: Unused,
     pub nvEncMapInputResource: Unused,
     pub nvEncUnmapInputResource: Unused,
     pub nvEncDestroyEncoder: Option<unsafe extern "system" fn(Handle) -> NvStatus>,
     pub nvEncInvalidateRefFrames: Unused,
-    pub nvEncOpenEncodeSessionEx: Option<unsafe extern "system" fn(*mut NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS, *mut Handle) -> NvStatus>,
+    pub nvEncOpenEncodeSessionEx: Option<
+        unsafe extern "system" fn(
+            *mut NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS,
+            *mut Handle,
+        ) -> NvStatus,
+    >,
     pub nvEncRegisterResource: Unused,
     pub nvEncUnregisterResource: Unused,
     pub nvEncReconfigureEncoder: Unused,
@@ -636,7 +704,9 @@ pub struct NV_ENCODE_API_FUNCTION_LIST {
     pub nvEncRunMotionEstimationOnly: Unused,
     pub nvEncGetLastErrorString: Option<unsafe extern "system" fn(Handle) -> *const c_char>,
     pub nvEncSetIOCudaStreams: Unused,
-    pub nvEncGetEncodePresetConfigEx: Option<unsafe extern "system" fn(Handle, Guid, Guid, u32, *mut NV_ENC_PRESET_CONFIG) -> NvStatus>,
+    pub nvEncGetEncodePresetConfigEx: Option<
+        unsafe extern "system" fn(Handle, Guid, Guid, u32, *mut NV_ENC_PRESET_CONFIG) -> NvStatus,
+    >,
     pub nvEncGetSequenceParamEx: Unused,
     pub nvEncRestoreEncoderState: Unused,
     pub nvEncLookaheadPicture: Unused,

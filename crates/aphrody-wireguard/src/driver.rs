@@ -38,8 +38,9 @@ pub fn aphrody_home() -> PathBuf {
     if let Some(h) = std::env::var_os("APHRODY_HOME") {
         return PathBuf::from(h);
     }
-    let home =
-        std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")).unwrap_or_default();
+    let home = std::env::var_os("USERPROFILE")
+        .or_else(|| std::env::var_os("HOME"))
+        .unwrap_or_default();
     PathBuf::from(home).join(".aphrody")
 }
 
@@ -54,7 +55,10 @@ pub fn state_dir() -> PathBuf {
 pub fn dll_candidates() -> Vec<PathBuf> {
     let name = format!("wireguard-{}.dll", arch());
     let mut v = Vec::new();
-    if let Some(dir) = std::env::current_exe().ok().and_then(|p| p.parent().map(PathBuf::from)) {
+    if let Some(dir) = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(PathBuf::from))
+    {
         v.push(dir.join(&name));
         v.push(dir.join("wireguard.dll"));
     }
@@ -78,7 +82,12 @@ pub struct DriverStatus {
 
 #[must_use]
 pub fn status() -> DriverStatus {
-    DriverStatus { version: NT_VERSION, arch: arch(), dll: dll_path(), searched: dll_candidates() }
+    DriverStatus {
+        version: NT_VERSION,
+        arch: arch(),
+        dll: dll_path(),
+        searched: dll_candidates(),
+    }
 }
 
 /// Download, verify and extract the DLL (plus its licence) into [`state_dir`].
@@ -92,9 +101,14 @@ pub fn install() -> Result<PathBuf> {
 
 /// Verify and extract an already downloaded archive.
 pub fn install_from_archive(bytes: &[u8]) -> Result<PathBuf> {
-    let digest: String = Sha256::digest(bytes).iter().map(|b| format!("{b:02x}")).collect();
+    let digest: String = Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
     if digest != NT_SHA256 {
-        return Err(Error::Driver(format!("sha256 {digest} ≠ attendu {NT_SHA256}")));
+        return Err(Error::Driver(format!(
+            "sha256 {digest} ≠ attendu {NT_SHA256}"
+        )));
     }
     let mut zip = zip::ZipArchive::new(std::io::Cursor::new(bytes))
         .map_err(|e| Error::Driver(format!("archive: {e}")))?;
@@ -102,12 +116,21 @@ pub fn install_from_archive(bytes: &[u8]) -> Result<PathBuf> {
     std::fs::create_dir_all(&dir).map_err(|e| Error::Driver(format!("{}: {e}", dir.display())))?;
     let target = dir.join(format!("wireguard-{}.dll", arch()));
     for (entry, out) in [
-        (format!("wireguard-nt/bin/{}/wireguard.dll", arch()), target.clone()),
-        ("wireguard-nt/LICENSE.txt".to_owned(), dir.join("wireguard-nt-LICENSE.txt")),
+        (
+            format!("wireguard-nt/bin/{}/wireguard.dll", arch()),
+            target.clone(),
+        ),
+        (
+            "wireguard-nt/LICENSE.txt".to_owned(),
+            dir.join("wireguard-nt-LICENSE.txt"),
+        ),
     ] {
-        let mut f = zip.by_name(&entry).map_err(|e| Error::Driver(format!("{entry}: {e}")))?;
+        let mut f = zip
+            .by_name(&entry)
+            .map_err(|e| Error::Driver(format!("{entry}: {e}")))?;
         let mut buf = Vec::new();
-        f.read_to_end(&mut buf).map_err(|e| Error::Driver(format!("{entry}: {e}")))?;
+        f.read_to_end(&mut buf)
+            .map_err(|e| Error::Driver(format!("{entry}: {e}")))?;
         std::fs::write(&out, buf).map_err(|e| Error::Driver(format!("{}: {e}", out.display())))?;
     }
     Ok(target)
@@ -120,6 +143,11 @@ mod tests {
     #[test]
     fn rejects_unpinned_archive() {
         assert!(install_from_archive(b"not a zip").is_err());
-        assert!(status().searched.iter().any(|p| p.ends_with(format!("wireguard-{}.dll", arch()))));
+        assert!(
+            status()
+                .searched
+                .iter()
+                .any(|p| p.ends_with(format!("wireguard-{}.dll", arch())))
+        );
     }
 }

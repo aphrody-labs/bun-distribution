@@ -5,7 +5,9 @@ use kurbo::{CubicBez, ParamCurveArclen, Point, Rect, Vec2};
 use vectorcraft_geom::{Anchor, PathData, SubPath};
 
 use crate::boolean::{Seg, segs_to_subpath};
-use crate::fit::{end_tangent, fit_cubics, fit_single, fit_single_from, is_straight, sample, start_tangent};
+use crate::fit::{
+    end_tangent, fit_cubics, fit_single, fit_single_from, is_straight, sample, start_tangent,
+};
 
 /// Options for [`simplify_with`].
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -20,22 +22,41 @@ pub struct SimplifyOptions {
 
 impl Default for SimplifyOptions {
     fn default() -> Self {
-        Self { tolerance: 0.5, corner_angle_deg: 30.0, straight_lines: false }
+        Self {
+            tolerance: 0.5,
+            corner_angle_deg: 30.0,
+            straight_lines: false,
+        }
     }
 }
 
 /// Simplify with the default corner threshold (30°).
 pub fn simplify(path: &PathData, tolerance: f64) -> PathData {
-    simplify_with(path, &SimplifyOptions { tolerance, ..Default::default() })
+    simplify_with(
+        path,
+        &SimplifyOptions {
+            tolerance,
+            ..Default::default()
+        },
+    )
 }
 
 /// Simplify never adds anchors: keep whichever subpath is smaller.
 fn no_worse(original: &SubPath, fitted: SubPath) -> SubPath {
-    if fitted.anchors.len() > original.anchors.len() { original.clone() } else { fitted }
+    if fitted.anchors.len() > original.anchors.len() {
+        original.clone()
+    } else {
+        fitted
+    }
 }
 
 fn subpath_segs(sp: &SubPath) -> Vec<Seg> {
-    (0..sp.segment_count()).map(|i| Seg { c: sp.segment(i), line: sp.segment_is_line(i) }).collect()
+    (0..sp.segment_count())
+        .map(|i| Seg {
+            c: sp.segment(i),
+            line: sp.segment_is_line(i),
+        })
+        .collect()
 }
 
 fn turn_deg(a: &Seg, b: &Seg) -> f64 {
@@ -93,11 +114,19 @@ pub fn simplify_with(path: &PathData, opts: &SimplifyOptions) -> PathData {
             let t1 = end_tangent(&run[run.len() - 1].c);
             for c in fit_cubics(&pts, t0, t1, tol) {
                 let line = is_straight(&c, tol * 0.02);
-                result.push(if line { Seg::line(c.p0, c.p3) } else { Seg { c, line } });
+                result.push(if line {
+                    Seg::line(c.p0, c.p3)
+                } else {
+                    Seg { c, line }
+                });
             }
         }
         if let Some(s) = segs_to_subpath(&result, sp.closed) {
-            out.push(if opts.straight_lines { s } else { no_worse(sp, s) });
+            out.push(if opts.straight_lines {
+                s
+            } else {
+                no_worse(sp, s)
+            });
         }
     }
     PathData::new(out)
@@ -118,7 +147,11 @@ fn rdp(pts: &[Point], tol: f64) -> Vec<Point> {
         let len = chord.hypot();
         let mut best = (0.0, a);
         for (i, &p) in pts.iter().enumerate().take(b).skip(a + 1) {
-            let d = if len < 1e-12 { p.distance(pa) } else { (p - pa).cross(chord).abs() / len };
+            let d = if len < 1e-12 {
+                p.distance(pa)
+            } else {
+                (p - pa).cross(chord).abs() / len
+            };
             if d > best.0 {
                 best = (d, i);
             }
@@ -129,7 +162,11 @@ fn rdp(pts: &[Point], tol: f64) -> Vec<Point> {
             stack.push((best.1, b));
         }
     }
-    pts.iter().zip(keep).filter(|(_, k)| *k).map(|(p, _)| *p).collect()
+    pts.iter()
+        .zip(keep)
+        .filter(|(_, k)| *k)
+        .map(|(p, _)| *p)
+        .collect()
 }
 
 /// Object → Path → Smooth: pull handles towards Catmull-Rom-like tangents. `amount` ∈ [0, 1]
@@ -150,7 +187,9 @@ pub fn smooth(path: &PathData, amount: f64) -> PathData {
             let prev = orig[(i + n - 1) % n].p;
             let next = orig[(i + 1) % n].p;
             let p = orig[i].p;
-            let Some(dir) = crate::fit::unit(next - prev) else { continue };
+            let Some(dir) = crate::fit::unit(next - prev) else {
+                continue;
+            };
             let tin = p - dir * (p.distance(prev) / 3.0);
             let tout = p + dir * (p.distance(next) / 3.0);
             let a = &orig[i];
@@ -174,7 +213,11 @@ pub fn remove_redundant_points(path: &PathData, tolerance: f64) -> PathData {
             continue;
         }
         // Drop zero-length segments.
-        segs.retain(|s| !(s.c.p0.distance(s.c.p3) < 1e-9 && s.c.p1.distance(s.c.p0) < 1e-9 && s.c.p2.distance(s.c.p0) < 1e-9));
+        segs.retain(|s| {
+            !(s.c.p0.distance(s.c.p3) < 1e-9
+                && s.c.p1.distance(s.c.p0) < 1e-9
+                && s.c.p2.distance(s.c.p0) < 1e-9)
+        });
         let min_segs = if sp.closed { 2 } else { 1 };
         let mut changed = true;
         while changed && segs.len() > min_segs {
@@ -182,7 +225,11 @@ pub fn remove_redundant_points(path: &PathData, tolerance: f64) -> PathData {
             let n = segs.len();
             let joints = if sp.closed { n } else { n - 1 };
             for j in 0..joints {
-                let (i0, i1) = if sp.closed { ((j + n - 1) % n, j) } else { (j, j + 1) };
+                let (i0, i1) = if sp.closed {
+                    ((j + n - 1) % n, j)
+                } else {
+                    (j, j + 1)
+                };
                 if let Some(m) = merge_pair(&segs[i0], &segs[i1], tol) {
                     segs[i0] = m;
                     segs.remove(i1);
@@ -213,7 +260,8 @@ fn merge_pair(a: &Seg, b: &Seg, tol: f64) -> Option<Seg> {
         }
         let mid = a.c.p3 - a.c.p0;
         let along = mid.dot(chord) / len;
-        return ((mid.cross(chord) / len).abs() <= tol && along >= 0.0 && along <= len).then(|| Seg::line(a.c.p0, b.c.p3));
+        return ((mid.cross(chord) / len).abs() <= tol && along >= 0.0 && along <= len)
+            .then(|| Seg::line(a.c.p0, b.c.p3));
     }
     // Only merge across (near-)smooth joints.
     if end_tangent(&a.c).dot(start_tangent(&b.c)) < 0.99 {
@@ -248,7 +296,10 @@ pub fn remove_anchor(sp: &mut SubPath, index: usize) -> bool {
             // The new curve passes the removed point at some parameter k: the left samples sit
             // at k·i/N, the right ones at k + (1 − k)·i/N. Search k for the closest fit.
             let fit = |k: f64| {
-                let u = (0..=N).map(|i| k * i as f64 / N as f64).chain((1..=N).map(|i| k + (1.0 - k) * i as f64 / N as f64)).collect();
+                let u = (0..=N)
+                    .map(|i| k * i as f64 / N as f64)
+                    .chain((1..=N).map(|i| k + (1.0 - k) * i as f64 / N as f64))
+                    .collect();
                 fit_single_from(&pts, u, t0, t1)
             };
             let (c, _, _) = golden_min(fit, 0.0, 1.0);
@@ -269,14 +320,20 @@ pub fn remove_anchor(sp: &mut SubPath, index: usize) -> bool {
         }
     }
     if sp.anchors.len() < 3 {
-        sp.closed = sp.closed && sp.anchors.len() == 2 && sp.anchors.iter().any(|a| a.has_in() || a.has_out());
+        sp.closed = sp.closed
+            && sp.anchors.len() == 2
+            && sp.anchors.iter().any(|a| a.has_in() || a.has_out());
     }
     true
 }
 
 /// The fit `f` (curve, error, worst point) with the least error for an argument in `[a, b]`, by a
 /// golden-section search (a bounded number of steps).
-fn golden_min(f: impl Fn(f64) -> (CubicBez, f64, usize), mut a: f64, mut b: f64) -> (CubicBez, f64, usize) {
+fn golden_min(
+    f: impl Fn(f64) -> (CubicBez, f64, usize),
+    mut a: f64,
+    mut b: f64,
+) -> (CubicBez, f64, usize) {
     const R: f64 = 0.618_033_988_749_895;
     let (mut x1, mut x2) = (b - R * (b - a), a + R * (b - a));
     let (mut f1, mut f2) = (f(x1), f(x2));
@@ -321,7 +378,15 @@ pub enum AverageAxis {
 /// to their average position along `axis`.
 pub fn average(path: &PathData, selection: &[(usize, usize)], axis: AverageAxis) -> PathData {
     let mut out = path.clone();
-    let pts: Vec<Point> = selection.iter().filter_map(|&(s, a)| path.subpaths.get(s).and_then(|sp| sp.anchors.get(a)).map(|a| a.p)).collect();
+    let pts: Vec<Point> = selection
+        .iter()
+        .filter_map(|&(s, a)| {
+            path.subpaths
+                .get(s)
+                .and_then(|sp| sp.anchors.get(a))
+                .map(|a| a.p)
+        })
+        .collect();
     if pts.is_empty() {
         return out;
     }
@@ -360,7 +425,10 @@ pub fn join(paths: &[PathData], tolerance: f64) -> PathData {
     if open.len() == 1
         && let Some(mut sp) = open.pop()
     {
-        let ends_meet = sp.anchors.len() > 2 && end_point(&sp, false).zip(end_point(&sp, true)).is_some_and(|(a, b)| a.distance(b) <= tolerance);
+        let ends_meet = sp.anchors.len() > 2
+            && end_point(&sp, false)
+                .zip(end_point(&sp, true))
+                .is_some_and(|(a, b)| a.distance(b) <= tolerance);
         if ends_meet
             && let Some(last) = sp.anchors.pop()
             && let Some(f) = sp.anchors.first_mut()
@@ -385,7 +453,11 @@ pub fn join(paths: &[PathData], tolerance: f64) -> PathData {
             for j in (i + 1)..open.len() {
                 for ei in [false, true] {
                     for ej in [false, true] {
-                        let (Some(pi), Some(pj)) = (end_point(&open[i], ei), end_point(&open[j], ej)) else { continue };
+                        let (Some(pi), Some(pj)) =
+                            (end_point(&open[i], ei), end_point(&open[j], ej))
+                        else {
+                            continue;
+                        };
                         let d = pi.distance(pj);
                         if d < best.0 {
                             best = (d, i, j, ei, ej);
@@ -425,7 +497,12 @@ pub fn join(paths: &[PathData], tolerance: f64) -> PathData {
 /// Object → Path → Split Into Grid: `rows × cols` rectangles filling `rect` with a gutter between
 /// the rows and one between the columns (row-major, top-left first). No cells when they would have
 /// no size.
-pub fn split_into_grid(rect: Rect, rows: usize, cols: usize, (row_gutter, col_gutter): (f64, f64)) -> Vec<PathData> {
+pub fn split_into_grid(
+    rect: Rect,
+    rows: usize,
+    cols: usize,
+    (row_gutter, col_gutter): (f64, f64),
+) -> Vec<PathData> {
     if rows == 0 || cols == 0 {
         return Vec::new();
     }
@@ -441,7 +518,12 @@ pub fn split_into_grid(rect: Rect, rows: usize, cols: usize, (row_gutter, col_gu
             let x = rect.x0 + c as f64 * (w + col_gutter);
             let y = rect.y0 + r as f64 * (h + row_gutter);
             out.push(PathData::single(SubPath::polyline(
-                &[Point::new(x, y), Point::new(x + w, y), Point::new(x + w, y + h), Point::new(x, y + h)],
+                &[
+                    Point::new(x, y),
+                    Point::new(x + w, y),
+                    Point::new(x + w, y + h),
+                    Point::new(x, y + h),
+                ],
                 true,
             )));
         }
@@ -451,5 +533,10 @@ pub fn split_into_grid(rect: Rect, rows: usize, cols: usize, (row_gutter, col_gu
 
 /// The first (`last == false`) or last anchor point of a subpath.
 fn end_point(sp: &SubPath, last: bool) -> Option<Point> {
-    if last { sp.anchors.last() } else { sp.anchors.first() }.map(|a| a.p)
+    if last {
+        sp.anchors.last()
+    } else {
+        sp.anchors.first()
+    }
+    .map(|a| a.p)
 }

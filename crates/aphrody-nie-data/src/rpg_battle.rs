@@ -209,7 +209,11 @@ impl RpgBattleStatusPatternInfo {
 /// Renvoie les 28 [`RpgBattleStatusPatternInfo`] valides (id non-nul).
 #[must_use]
 pub fn parse_status_pattern_config(root: &Value) -> Vec<RpgBattleStatusPatternInfo> {
-    map_list(root, "m_statusPatternInfoList", RpgBattleStatusPatternInfo::from_value)
+    map_list(
+        root,
+        "m_statusPatternInfoList",
+        RpgBattleStatusPatternInfo::from_value,
+    )
 }
 
 // ─── rpg_battle_chara_swap_motion_config ──────────────────────────────────────
@@ -237,7 +241,10 @@ impl SwapMotionData {
         if motion_id.is_zero() {
             return None;
         }
-        Some(Self { body_type: field_i64(v, "bodyType").unwrap_or(0), motion_id })
+        Some(Self {
+            body_type: field_i64(v, "bodyType").unwrap_or(0),
+            motion_id,
+        })
     }
 }
 
@@ -334,7 +341,10 @@ impl RpgBtlPartyDisableActionUniqueInfo {
         if action_id.is_zero() {
             return None;
         }
-        Some(Self { action_id, var1: node.int(1) })
+        Some(Self {
+            action_id,
+            var1: node.int(1),
+        })
     }
 }
 
@@ -426,20 +436,32 @@ pub fn parse_party_config(root: &Value) -> RpgBattlePartyConfig {
     });
 
     let mut party_refs: Vec<(i64, i64)> = Vec::new();
-    walk_named(root, "RPG_BTL_PARTY_INFO_REF_DISABLE_ACTION_UNIQUE_INFO_", |node| {
-        party_refs.push((node.int(0), node.int(1)));
-    });
+    walk_named(
+        root,
+        "RPG_BTL_PARTY_INFO_REF_DISABLE_ACTION_UNIQUE_INFO_",
+        |node| {
+            party_refs.push((node.int(0), node.int(1)));
+        },
+    );
 
     let parties: Vec<RpgBtlPartyInfo> = party_ids
         .into_iter()
         .enumerate()
         .map(|(i, (party_id, secondary_id))| {
             let (disable_offset, disable_count) = party_refs.get(i).copied().unwrap_or((0, 0));
-            RpgBtlPartyInfo { party_id, secondary_id, disable_offset, disable_count }
+            RpgBtlPartyInfo {
+                party_id,
+                secondary_id,
+                disable_offset,
+                disable_count,
+            }
         })
         .collect();
 
-    RpgBattlePartyConfig { disable_actions, parties }
+    RpgBattlePartyConfig {
+        disable_actions,
+        parties,
+    }
 }
 
 // ─── rpg_battle_cmd_event_config ──────────────────────────────────────────────
@@ -582,7 +604,11 @@ pub fn parse_cmd_set_config(root: &Value) -> RpgBattleCmdSetConfig {
         .enumerate()
         .map(|(i, set_id)| {
             let (cmd_offset, cmd_count) = set_refs.get(i).copied().unwrap_or((0, 0));
-            RpgBtlCmdSetInfo { set_id, cmd_offset, cmd_count }
+            RpgBtlCmdSetInfo {
+                set_id,
+                cmd_offset,
+                cmd_count,
+            }
         })
         .collect();
 
@@ -612,7 +638,13 @@ impl RpgBtlAddStatusTypeInfo {
     fn from_node(node: crate::cfgbin::Node<'_>) -> Self {
         Self {
             type_id: node.int(0),
-            params: [node.int(1), node.int(2), node.int(3), node.int(4), node.int(5)],
+            params: [
+                node.int(1),
+                node.int(2),
+                node.int(3),
+                node.int(4),
+                node.int(5),
+            ],
         }
     }
 }
@@ -805,5 +837,9 @@ pub fn parse_add_status_config(root: &Value) -> RpgBattleAddStatusConfig {
         attr = Some(RpgBtlAddStatusInfoAttr::from_node(node));
     });
 
-    RpgBattleAddStatusConfig { type_infos, status_infos, attr }
+    RpgBattleAddStatusConfig {
+        type_infos,
+        status_infos,
+        attr,
+    }
 }

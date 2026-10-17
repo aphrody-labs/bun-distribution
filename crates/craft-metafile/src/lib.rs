@@ -10,7 +10,14 @@
 //! never a panic.
 //!
 //! Records follow MS-WMF and MS-EMF. Records outside the supported set are skipped silently.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod bytes;
@@ -68,10 +75,19 @@ pub enum Item {
         even_odd: bool,
     },
     /// A bitmap stretched into `rect` = `[x, y, w, h]` (picture units), RGBA8 rows top-down.
-    Bitmap { rect: [f32; 4], width: u32, height: u32, rgba: Vec<u8> },
+    Bitmap {
+        rect: [f32; 4],
+        width: u32,
+        height: u32,
+        rgba: Vec<u8>,
+    },
     /// A path filled with a repeating tile (pattern and hatch brushes). Items filled with the same
     /// brush share its tile.
-    Pattern { segs: Vec<Seg>, even_odd: bool, tile: Arc<Tile> },
+    Pattern {
+        segs: Vec<Seg>,
+        even_odd: bool,
+        tile: Arc<Tile>,
+    },
     /// A text string.
     Text(Box<Text>),
 }
@@ -136,12 +152,19 @@ pub fn is_metafile(bytes: &[u8]) -> bool {
 /// Maps device-space output into the picture frame. Without a usable frame the frame is the bounding
 /// box of the drawing, so the origin is still the top-left of what was drawn.
 fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
-    let frame = frame.filter(|f| f.rect.iter().all(|v| v.is_finite()) && f.rect[2] > 0.0 && f.rect[3] > 0.0);
+    let frame = frame
+        .filter(|f| f.rect.iter().all(|v| v.is_finite()) && f.rect[2] > 0.0 && f.rect[3] > 0.0);
     let (rect, size) = match frame {
         Some(f) => (f.rect, f.size.unwrap_or((f.rect[2], f.rect[3]))),
         None => match bbox(&raw) {
             Some([x0, y0, x1, y1]) => ([x0, y0, x1 - x0, y1 - y0], (x1 - x0, y1 - y0)),
-            None => return Picture { width: 0.0, height: 0.0, items: Vec::new() },
+            None => {
+                return Picture {
+                    width: 0.0,
+                    height: 0.0,
+                    items: Vec::new(),
+                };
+            }
         },
     };
     let sx = if rect[2] > 0.0 { size.0 / rect[2] } else { 1.0 };
@@ -151,23 +174,49 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
     // No stroke is wider than the picture's diagonal: anything wider is a mapping artefact.
     let diag = size.0.hypot(size.1);
     // Tiles shared by several fills stay shared.
-    let mut tiles: HashMap<*const canvas::RawTile, (Arc<canvas::RawTile>, Arc<Tile>)> = HashMap::new();
+    let mut tiles: HashMap<*const canvas::RawTile, (Arc<canvas::RawTile>, Arc<Tile>)> =
+        HashMap::new();
     let items = raw.into_iter().filter_map(|r| match r {
-        Raw::Path { ops, fill, stroke, even_odd } => {
-            let segs = ops.iter().map(|op| seg(op, tf)).collect::<Option<Vec<Seg>>>()?;
+        Raw::Path {
+            ops,
+            fill,
+            stroke,
+            even_odd,
+        } => {
+            let segs = ops
+                .iter()
+                .map(|op| seg(op, tf))
+                .collect::<Option<Vec<Seg>>>()?;
             if segs.len() < 2 {
                 return None;
             }
             let stroke = stroke.and_then(|(c, w)| Some((c, f((w * stroke_scale).min(diag))?)));
-            Some(Item::Path { segs, fill, stroke, even_odd })
+            Some(Item::Path {
+                segs,
+                fill,
+                stroke,
+                even_odd,
+            })
         }
         Raw::Bitmap { rect: r, img } => {
             let (x, y) = tf((r[0], r[1]));
             let rect = [f(x)?, f(y)?, f(r[2] * sx)?, f(r[3] * sy)?];
-            Some(Item::Bitmap { rect, width: img.w as u32, height: img.h as u32, rgba: img.px })
+            Some(Item::Bitmap {
+                rect,
+                width: img.w as u32,
+                height: img.h as u32,
+                rgba: img.px,
+            })
         }
-        Raw::Pattern { ops, even_odd, tile } => {
-            let segs = ops.iter().map(|op| seg(op, tf)).collect::<Option<Vec<Seg>>>()?;
+        Raw::Pattern {
+            ops,
+            even_odd,
+            tile,
+        } => {
+            let segs = ops
+                .iter()
+                .map(|op| seg(op, tf))
+                .collect::<Option<Vec<Seg>>>()?;
             if segs.len() < 2 {
                 return None;
             }
@@ -188,7 +237,11 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
                     t
                 }
             };
-            Some(Item::Pattern { segs, even_odd, tile })
+            Some(Item::Pattern {
+                segs,
+                even_odd,
+                tile,
+            })
         }
         Raw::Text(mut t) => {
             // Device to picture: scale by (sx, sy) after moving the frame's corner to the origin.
@@ -199,14 +252,26 @@ fn build(raw: Vec<Raw>, frame: Option<Frame>) -> Picture {
                 return None;
             }
             if let Some([x0, y0, x1, y1]) = t.clip {
-                let (p, q) = (tf((f64::from(x0), f64::from(y0))), tf((f64::from(x1), f64::from(y1))));
-                t.clip = Some([f(p.0.min(q.0))?, f(p.1.min(q.1))?, f(p.0.max(q.0))?, f(p.1.max(q.1))?]);
+                let (p, q) = (
+                    tf((f64::from(x0), f64::from(y0))),
+                    tf((f64::from(x1), f64::from(y1))),
+                );
+                t.clip = Some([
+                    f(p.0.min(q.0))?,
+                    f(p.1.min(q.1))?,
+                    f(p.0.max(q.0))?,
+                    f(p.1.max(q.1))?,
+                ]);
             }
             Some(Item::Text(t))
         }
     });
     let items = items.collect();
-    Picture { width: f(size.0).unwrap_or(0.0), height: f(size.1).unwrap_or(0.0), items }
+    Picture {
+        width: f(size.0).unwrap_or(0.0),
+        height: f(size.1).unwrap_or(0.0),
+        items,
+    }
 }
 
 fn f(v: f64) -> Option<f32> {

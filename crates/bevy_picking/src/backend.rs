@@ -42,10 +42,10 @@ use bevy_reflect::Reflect;
 ///
 /// This includes the most common types in this module, re-exported for your convenience.
 pub mod prelude {
-    pub use super::{ray::RayMap, HitData, HitDataExtra, PointerHits};
+    pub use super::{HitData, HitDataExtra, PointerHits, ray::RayMap};
     pub use crate::{
-        pointer::{PointerId, PointerLocation},
         Pickable, PickingSystems,
+        pointer::{PointerId, PointerLocation},
     };
 }
 
@@ -234,8 +234,8 @@ pub mod ray {
     use crate::backend::prelude::{PointerId, PointerLocation};
     use bevy_camera::{Camera, RenderTarget};
     use bevy_ecs::prelude::*;
-    use bevy_platform::collections::{hash_map::Iter, HashMap};
-    use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+    use bevy_platform::collections::{HashMap, hash_map::Iter};
+    use bevy_reflect::{Reflect, std_traits::ReflectDefault};
     use bevy_shape::Ray3d;
     use bevy_transform::prelude::GlobalTransform;
     use bevy_window::PrimaryWindow;

@@ -32,7 +32,13 @@ pub enum PreviewShortcut {
 }
 
 impl PreviewShortcut {
-    pub const ALL: [PreviewShortcut; 5] = [Self::Spacebar, Self::ShiftSpacebar, Self::Numpad0, Self::ShiftNumpad0, Self::AltNumpad0];
+    pub const ALL: [PreviewShortcut; 5] = [
+        Self::Spacebar,
+        Self::ShiftSpacebar,
+        Self::Numpad0,
+        Self::ShiftNumpad0,
+        Self::AltNumpad0,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Self::Spacebar => "Spacebar",
@@ -54,7 +60,10 @@ impl PreviewShortcut {
     /// From an id (`shiftSpacebar`) or a label (`Shift+Spacebar`).
     pub fn parse(s: &str) -> Option<Self> {
         let k = s.to_ascii_lowercase().replace([' ', '+', '-', '_'], "");
-        Self::ALL.into_iter().find(|x| x.id().to_ascii_lowercase() == k || x.label().to_ascii_lowercase().replace([' ', '+'], "") == k)
+        Self::ALL.into_iter().find(|x| {
+            x.id().to_ascii_lowercase() == k
+                || x.label().to_ascii_lowercase().replace([' ', '+'], "") == k
+        })
     }
 }
 
@@ -71,7 +80,12 @@ pub enum PreviewRange {
 }
 
 impl PreviewRange {
-    pub const ALL: [PreviewRange; 4] = [Self::WorkArea, Self::WorkAreaExtended, Self::EntireDuration, Self::AroundCurrentTime];
+    pub const ALL: [PreviewRange; 4] = [
+        Self::WorkArea,
+        Self::WorkAreaExtended,
+        Self::EntireDuration,
+        Self::AroundCurrentTime,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Self::WorkArea => "Work Area",
@@ -116,7 +130,14 @@ pub enum PreviewResolution {
 }
 
 impl PreviewResolution {
-    pub const ALL: [PreviewResolution; 6] = [Self::Auto, Self::Full, Self::Half, Self::Third, Self::Quarter, Self::Custom];
+    pub const ALL: [PreviewResolution; 6] = [
+        Self::Auto,
+        Self::Full,
+        Self::Half,
+        Self::Third,
+        Self::Quarter,
+        Self::Custom,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Self::Auto => "Auto",
@@ -208,19 +229,43 @@ impl PreviewPreset {
             PreviewShortcut::Spacebar => d,
             // A lighter preview: every other frame.
             PreviewShortcut::ShiftSpacebar => PreviewPreset { skip: 1, ..d },
-            PreviewShortcut::Numpad0 => PreviewPreset { range: PreviewRange::WorkArea, play_from: PlayFrom::RangeStart, ..d },
-            PreviewShortcut::ShiftNumpad0 => {
-                PreviewPreset { range: PreviewRange::WorkArea, play_from: PlayFrom::RangeStart, skip: 1, resolution: PreviewResolution::Half, ..d }
-            }
+            PreviewShortcut::Numpad0 => PreviewPreset {
+                range: PreviewRange::WorkArea,
+                play_from: PlayFrom::RangeStart,
+                ..d
+            },
+            PreviewShortcut::ShiftNumpad0 => PreviewPreset {
+                range: PreviewRange::WorkArea,
+                play_from: PlayFrom::RangeStart,
+                skip: 1,
+                resolution: PreviewResolution::Half,
+                ..d
+            },
             // Audio only.
-            PreviewShortcut::AltNumpad0 => PreviewPreset { include_video: false, range: PreviewRange::WorkArea, play_from: PlayFrom::RangeStart, ..d },
+            PreviewShortcut::AltNumpad0 => PreviewPreset {
+                include_video: false,
+                range: PreviewRange::WorkArea,
+                play_from: PlayFrom::RangeStart,
+                ..d
+            },
         }
     }
 
     fn normalize(&mut self) {
-        self.pre_roll = if self.pre_roll.is_finite() { self.pre_roll.clamp(0.0, 3600.0) } else { 2.0 };
-        self.post_roll = if self.post_roll.is_finite() { self.post_roll.clamp(0.0, 3600.0) } else { 2.0 };
-        self.frame_rate = self.frame_rate.filter(|r| r.is_finite() && *r > 0.0).map(|r| r.clamp(0.01, 999.0));
+        self.pre_roll = if self.pre_roll.is_finite() {
+            self.pre_roll.clamp(0.0, 3600.0)
+        } else {
+            2.0
+        };
+        self.post_roll = if self.post_roll.is_finite() {
+            self.post_roll.clamp(0.0, 3600.0)
+        } else {
+            2.0
+        };
+        self.frame_rate = self
+            .frame_rate
+            .filter(|r| r.is_finite() && *r > 0.0)
+            .map(|r| r.clamp(0.01, 999.0));
         self.skip = self.skip.min(99);
         self.custom_resolution = self.custom_resolution.clamp(1, 40);
         if !self.include_video && !self.include_audio {
@@ -333,7 +378,10 @@ pub fn plan(p: &PreviewPreset, comp: &Comp, now: Tick) -> PreviewPlan {
     let fr = comp.frame_rate;
     let last = fr.frame_at(comp.duration - comp.frame_duration()).max(0);
     let cur = fr.frame_at(now).clamp(0, last);
-    let (wa, wb) = (fr.frame_at(comp.work_area.0), fr.frame_at(comp.work_area.1 - comp.frame_duration()));
+    let (wa, wb) = (
+        fr.frame_at(comp.work_area.0),
+        fr.frame_at(comp.work_area.1 - comp.frame_duration()),
+    );
     let (wa, wb) = (wa.clamp(0, last), wb.clamp(0, last).max(wa.clamp(0, last)));
     let (start, end) = match p.range {
         PreviewRange::WorkArea => (wa, wb),
@@ -377,7 +425,8 @@ fn shortcut_p(s: &Session, p: &Value, cmd: &str) -> Result<PreviewShortcut> {
 
 fn get(s: &mut Session, p: &Value) -> Result<Value> {
     let sc = shortcut_p(s, p, "playback.settings.get")?;
-    let mut out = serde_json::to_value(s.prefs.preview.get(sc)).map_err(|e| bad("playback.settings.get", e.to_string()))?;
+    let mut out = serde_json::to_value(s.prefs.preview.get(sc))
+        .map_err(|e| bad("playback.settings.get", e.to_string()))?;
     out["shortcut"] = json!(sc.id());
     out["current"] = json!(s.prefs.preview.current.id());
     if let Some(c) = s.active_comp() {
@@ -411,14 +460,21 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
             return Err(bad(c, format!("unknown preview setting `{k}`")));
         }
         // Frame rate: a number, or "auto"/null.
-        let v = if k == "frameRate" && (v.is_null() || v.as_str().is_some_and(|x| x.eq_ignore_ascii_case("auto"))) { Value::Null } else { v };
+        let v = if k == "frameRate"
+            && (v.is_null() || v.as_str().is_some_and(|x| x.eq_ignore_ascii_case("auto")))
+        {
+            Value::Null
+        } else {
+            v
+        };
         cur[k.as_str()] = v;
     }
     let mut pr: PreviewPreset = serde_json::from_value(cur).map_err(|e| bad(c, e.to_string()))?;
     pr.normalize();
     *next.get_mut(sc) = pr;
     if let Some(k) = str_p(p, "current") {
-        next.current = PreviewShortcut::parse(k).ok_or_else(|| bad(c, format!("unknown shortcut `{k}`")))?;
+        next.current =
+            PreviewShortcut::parse(k).ok_or_else(|| bad(c, format!("unknown shortcut `{k}`")))?;
     } else if p.get("shortcut").is_some() && p.as_object().is_some_and(|m| m.len() == 1) {
         // `{shortcut}` alone shows that shortcut in the panel.
         next.current = sc;
@@ -455,7 +511,11 @@ mod tests {
 
     fn comp_session() -> Session {
         let mut s = Session::default();
-        s.execute("comp.new", json!({"name": "C", "width": 320, "height": 180, "frameRate": 24, "duration": 10})).unwrap();
+        s.execute(
+            "comp.new",
+            json!({"name": "C", "width": 320, "height": 180, "frameRate": 24, "duration": 10}),
+        )
+        .unwrap();
         s
     }
 
@@ -465,7 +525,11 @@ mod tests {
         let mut c = s.active_comp().unwrap().clone();
         c.work_area = (Tick::from_seconds_f64(2.0), Tick::from_seconds_f64(4.0));
         let at = |sec: f64| Tick::from_seconds_f64(sec);
-        let mut p = PreviewPreset { range: PreviewRange::WorkArea, play_from: PlayFrom::RangeStart, ..Default::default() };
+        let mut p = PreviewPreset {
+            range: PreviewRange::WorkArea,
+            play_from: PlayFrom::RangeStart,
+            ..Default::default()
+        };
         let pl = plan(&p, &c, at(1.0));
         assert_eq!((pl.start, pl.end, pl.first), (48, 95, 48));
         // Extended by the current time (before the work area).
@@ -487,14 +551,21 @@ mod tests {
         // Pre-roll clamps at the comp start.
         let pl = plan(&p, &c, at(0.25));
         assert_eq!(pl.start, 0);
-        s.execute("playback.settings.set", json!({"range": "workArea"})).unwrap();
+        s.execute("playback.settings.set", json!({"range": "workArea"}))
+            .unwrap();
     }
 
     #[test]
     fn skip_rate_and_loop() {
         let s = comp_session();
         let c = s.active_comp().unwrap().clone();
-        let p = PreviewPreset { range: PreviewRange::EntireDuration, play_from: PlayFrom::RangeStart, skip: 2, frame_rate: Some(12.0), ..Default::default() };
+        let p = PreviewPreset {
+            range: PreviewRange::EntireDuration,
+            play_from: PlayFrom::RangeStart,
+            skip: 2,
+            frame_rate: Some(12.0),
+            ..Default::default()
+        };
         let pl = plan(&p, &c, Tick::ZERO);
         assert_eq!(pl.step, 3);
         assert_eq!(pl.fps, 12.0);
@@ -505,7 +576,10 @@ mod tests {
         assert!(pl.frames().all(|f| f % 3 == 0));
         // Loop wraps onto the skip grid; no loop ends.
         assert_eq!(pl.frame_after(237, 1), Some(0));
-        let pl = PreviewPlan { looping: false, ..pl };
+        let pl = PreviewPlan {
+            looping: false,
+            ..pl
+        };
         assert_eq!(pl.frame_after(237, 1), None);
     }
 
@@ -522,17 +596,36 @@ mod tests {
         assert_eq!(r["skip"], 3);
         assert_eq!(r["frameRate"], 15.0);
         assert_eq!(r["plan"]["step"], 4);
-        let sp = s.execute("playback.settings.get", json!({"shortcut": "Spacebar"})).unwrap();
+        let sp = s
+            .execute("playback.settings.get", json!({"shortcut": "Spacebar"}))
+            .unwrap();
         assert_eq!(sp["skip"], 0);
         assert_eq!(sp["frameRate"], Value::Null);
         // Auto rate, panel shortcut, reset.
-        s.execute("playback.settings.set", json!({"shortcut": "shiftNumpad0", "frameRate": "auto", "current": "shiftNumpad0"})).unwrap();
+        s.execute(
+            "playback.settings.set",
+            json!({"shortcut": "shiftNumpad0", "frameRate": "auto", "current": "shiftNumpad0"}),
+        )
+        .unwrap();
         assert_eq!(s.prefs.preview.current, PreviewShortcut::ShiftNumpad0);
         assert_eq!(s.prefs.preview.shift_numpad0.frame_rate, None);
-        assert!(s.execute("playback.settings.set", json!({"bogus": 1})).is_err());
-        assert!(s.execute("playback.settings.set", json!({"shortcut": "f13"})).is_err());
-        s.execute("playback.settings.set", json!({"shortcut": "shiftNumpad0", "reset": true})).unwrap();
-        assert_eq!(s.prefs.preview.shift_numpad0, PreviewPreset::default_for(PreviewShortcut::ShiftNumpad0));
+        assert!(
+            s.execute("playback.settings.set", json!({"bogus": 1}))
+                .is_err()
+        );
+        assert!(
+            s.execute("playback.settings.set", json!({"shortcut": "f13"}))
+                .is_err()
+        );
+        s.execute(
+            "playback.settings.set",
+            json!({"shortcut": "shiftNumpad0", "reset": true}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.prefs.preview.shift_numpad0,
+            PreviewPreset::default_for(PreviewShortcut::ShiftNumpad0)
+        );
         // Persisted with the settings.
         let v: Value = serde_json::from_str(&s.prefs.to_json()).unwrap();
         assert_eq!(v["preview"]["current"], "shiftNumpad0");

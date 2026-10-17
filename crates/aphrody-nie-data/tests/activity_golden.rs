@@ -57,7 +57,11 @@ fn fixture() -> serde_json::Value {
 #[test]
 fn fixture_arbre_storymode() {
     let acts = parse_activity_config(&fixture());
-    assert_eq!(acts.len(), 2, "le LIST_BEG (1 var) doit être filtré, 2 vraies entrées");
+    assert_eq!(
+        acts.len(),
+        2,
+        "le LIST_BEG (1 var) doit être filtré, 2 vraies entrées"
+    );
     let root = &acts[0];
     assert_eq!(root.name, "StoryMode");
     assert_eq!(root.kind, 1);
@@ -67,7 +71,10 @@ fn fixture_arbre_storymode() {
     assert_eq!(sub.kind, 5);
     assert!(!sub.is_root());
     // La sous-tâche pointe vers l'id de la racine.
-    assert_eq!(sub.parent_id, root.id, "parent_id de la sous-tâche = id de StoryMode");
+    assert_eq!(
+        sub.parent_id, root.id,
+        "parent_id de la sous-tâche = id de StoryMode"
+    );
     assert!(!root.data.is_empty(), "le blob base64 est conservé brut");
 }
 

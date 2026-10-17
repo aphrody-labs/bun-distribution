@@ -9,7 +9,10 @@ use std::sync::Arc;
 use photocraft_algo::resample::{Resample, resize_surface, translate_surface};
 use photocraft_doc::text::{ParagraphRun, TextRun};
 use photocraft_doc::variables::Value as VarValue;
-use photocraft_doc::{DataSet, DataValue, Document, LayerContent, LayerId, PixelAlign, PixelMethod, VarKind, VariableDef, Variables};
+use photocraft_doc::{
+    DataSet, DataValue, Document, LayerContent, LayerId, PixelAlign, PixelMethod, VarKind,
+    VariableDef, Variables,
+};
 use serde_json::{Value, json};
 
 use crate::commands::CommandSpec;
@@ -20,7 +23,10 @@ fn has_doc(s: &Session) -> std::result::Result<(), String> {
 }
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 // --------------------------------------------------------------------------- parse helpers
@@ -48,7 +54,11 @@ fn parse_kind(v: &Value) -> Option<VarKind> {
                 _ => PixelAlign::Center,
             };
             let clip = v.get("clip").and_then(Value::as_bool).unwrap_or(false);
-            Some(VarKind::PixelReplacement { method, align, clip })
+            Some(VarKind::PixelReplacement {
+                method,
+                align,
+                clip,
+            })
         }
         _ => None,
     }
@@ -58,7 +68,11 @@ fn kind_json(k: &VarKind) -> Value {
     match k {
         VarKind::Visibility => json!({"type": "visibility"}),
         VarKind::TextReplacement => json!({"type": "textReplacement"}),
-        VarKind::PixelReplacement { method, align, clip } => {
+        VarKind::PixelReplacement {
+            method,
+            align,
+            clip,
+        } => {
             let a = format!("{align:?}");
             let align = a[..1].to_lowercase() + &a[1..];
             json!({
@@ -91,9 +105,15 @@ fn parse_value(v: &Value) -> Option<VarValue> {
     let var = v.get("variable").and_then(Value::as_str)?.to_string();
     let _ = var; // the caller keeps the name
     match v.get("kind").and_then(Value::as_str) {
-        Some("visibility") => Some(VarValue::Visibility(v.get("value").and_then(Value::as_bool)?)),
-        Some("text") => Some(VarValue::Text(v.get("value").and_then(Value::as_str)?.to_string())),
-        Some("pixels") => Some(VarValue::Pixels(v.get("value").and_then(Value::as_str)?.to_string())),
+        Some("visibility") => Some(VarValue::Visibility(
+            v.get("value").and_then(Value::as_bool)?,
+        )),
+        Some("text") => Some(VarValue::Text(
+            v.get("value").and_then(Value::as_str)?.to_string(),
+        )),
+        Some("pixels") => Some(VarValue::Pixels(
+            v.get("value").and_then(Value::as_str)?.to_string(),
+        )),
         _ => None,
     }
 }
@@ -111,37 +131,80 @@ fn set_vars(s: &mut Session, f: impl FnOnce(&mut Variables)) -> Result<()> {
 // --------------------------------------------------------------------------- commands
 
 fn define(s: &mut Session, p: &Value) -> Result<Value> {
-    let defs_in = p.get("defs").and_then(Value::as_array).ok_or_else(|| bad("image.variables.define", "need `defs`"))?;
+    let defs_in = p
+        .get("defs")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("image.variables.define", "need `defs`"))?;
     let doc = s.active().ok_or(EngineError::NoDocument)?.doc.clone();
     let mut defs = Vec::with_capacity(defs_in.len());
     for d in defs_in {
-        let name = d.get("name").and_then(Value::as_str).ok_or_else(|| bad("image.variables.define", "a def needs `name`"))?;
-        let layer = LayerId(d.get("layer").and_then(Value::as_u64).ok_or_else(|| bad("image.variables.define", "a def needs `layer`"))?);
+        let name = d
+            .get("name")
+            .and_then(Value::as_str)
+            .ok_or_else(|| bad("image.variables.define", "a def needs `name`"))?;
+        let layer = LayerId(
+            d.get("layer")
+                .and_then(Value::as_u64)
+                .ok_or_else(|| bad("image.variables.define", "a def needs `layer`"))?,
+        );
         if doc.layer(layer).is_none() {
             return Err(EngineError::NoLayer(layer));
         }
-        let kind = parse_kind(d).ok_or_else(|| bad("image.variables.define", "a def needs a valid `type`"))?;
+        let kind = parse_kind(d)
+            .ok_or_else(|| bad("image.variables.define", "a def needs a valid `type`"))?;
         if defs.iter().any(|e: &VariableDef| e.name == name) {
-            return Err(bad("image.variables.define", format!("duplicate variable `{name}`")));
+            return Err(bad(
+                "image.variables.define",
+                format!("duplicate variable `{name}`"),
+            ));
         }
-        defs.push(VariableDef { name: name.to_string(), layer, kind });
+        defs.push(VariableDef {
+            name: name.to_string(),
+            layer,
+            kind,
+        });
     }
     set_vars(s, |v| v.defs = defs)?;
     list(s)
 }
 
 fn data_sets(s: &mut Session, p: &Value) -> Result<Value> {
-    let rows = p.get("dataSets").and_then(Value::as_array).ok_or_else(|| bad("image.variables.dataSets", "need `dataSets`"))?;
+    let rows = p
+        .get("dataSets")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("image.variables.dataSets", "need `dataSets`"))?;
     let mut sets = Vec::with_capacity(rows.len());
     for r in rows {
-        let name = r.get("name").and_then(Value::as_str).ok_or_else(|| bad("image.variables.dataSets", "a data set needs `name`"))?;
+        let name = r
+            .get("name")
+            .and_then(Value::as_str)
+            .ok_or_else(|| bad("image.variables.dataSets", "a data set needs `name`"))?;
         let mut values = Vec::new();
-        for v in r.get("values").and_then(Value::as_array).into_iter().flatten() {
-            let variable = v.get("variable").and_then(Value::as_str).ok_or_else(|| bad("image.variables.dataSets", "a value needs `variable`"))?;
-            let value = parse_value(v).ok_or_else(|| bad("image.variables.dataSets", "a value needs `kind` and `value`"))?;
-            values.push(DataValue { variable: variable.to_string(), value });
+        for v in r
+            .get("values")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            let variable = v
+                .get("variable")
+                .and_then(Value::as_str)
+                .ok_or_else(|| bad("image.variables.dataSets", "a value needs `variable`"))?;
+            let value = parse_value(v).ok_or_else(|| {
+                bad(
+                    "image.variables.dataSets",
+                    "a value needs `kind` and `value`",
+                )
+            })?;
+            values.push(DataValue {
+                variable: variable.to_string(),
+                value,
+            });
         }
-        sets.push(DataSet { name: name.to_string(), values });
+        sets.push(DataSet {
+            name: name.to_string(),
+            values,
+        });
     }
     let append = p.get("append").and_then(Value::as_bool).unwrap_or(false);
     set_vars(s, |v| {
@@ -157,7 +220,9 @@ fn data_sets(s: &mut Session, p: &Value) -> Result<Value> {
 /// Apply one data set's values to the document (visibility, text, pixels). A history step.
 fn apply_to_doc(doc: &mut Document, vars: &Variables, set: &DataSet) -> Result<()> {
     for dv in &set.values {
-        let Some(def) = vars.def(&dv.variable) else { continue };
+        let Some(def) = vars.def(&dv.variable) else {
+            continue;
+        };
         match (&def.kind, &dv.value) {
             (VarKind::Visibility, VarValue::Visibility(show)) => {
                 if let Some(l) = doc.layer_mut(def.layer) {
@@ -172,18 +237,41 @@ fn apply_to_doc(doc: &mut Document, vars: &Variables, set: &DataSet) -> Result<(
                     // As in Photoshop, the new text takes the style of the first character it
                     // replaces (and its paragraph's settings): clearing the runs fell back to the
                     // summary style and lost weight, italic, tracking, caps… (#2742).
-                    let style = t.char_runs().into_iter().next().map(|r| r.style).unwrap_or_default();
-                    let para = t.paragraph_runs().into_iter().next().map(|r| r.style).unwrap_or_default();
+                    let style = t
+                        .char_runs()
+                        .into_iter()
+                        .next()
+                        .map(|r| r.style)
+                        .unwrap_or_default();
+                    let para = t
+                        .paragraph_runs()
+                        .into_iter()
+                        .next()
+                        .map(|r| r.style)
+                        .unwrap_or_default();
                     t.text = text.clone();
-                    t.runs = vec![TextRun { len: t.text.len(), style }];
-                    t.paragraphs = vec![ParagraphRun { len: t.text.len(), style: para }];
+                    t.runs = vec![TextRun {
+                        len: t.text.len(),
+                        style,
+                    }];
+                    t.paragraphs = vec![ParagraphRun {
+                        len: t.text.len(),
+                        style: para,
+                    }];
                     t.sync_summary();
                     // The compositor draws a type layer from its cache: clearing it left the
                     // layer blank until some other edit re-rendered it (#990).
                     crate::type_cmds::refresh(&snapshot, t);
                 }
             }
-            (VarKind::PixelReplacement { method, align, clip }, VarValue::Pixels(path)) => {
+            (
+                VarKind::PixelReplacement {
+                    method,
+                    align,
+                    clip,
+                },
+                VarValue::Pixels(path),
+            ) => {
                 replace_pixels(doc, def.layer, path, *method, *align, *clip)?;
             }
             _ => {} // value type doesn't match the variable kind: skip
@@ -193,13 +281,26 @@ fn apply_to_doc(doc: &mut Document, vars: &Variables, set: &DataSet) -> Result<(
 }
 
 /// Replace a pixel layer's content with an image file, scaled (method) and aligned.
-fn replace_pixels(doc: &mut Document, layer: LayerId, path: &str, method: PixelMethod, align: PixelAlign, clip: bool) -> Result<()> {
-    let target = doc.layer(layer).and_then(|l| l.surface()).map(|s| s.content_bounds()).filter(|r| !r.is_empty()).unwrap_or_else(|| doc.bounds());
+fn replace_pixels(
+    doc: &mut Document,
+    layer: LayerId,
+    path: &str,
+    method: PixelMethod,
+    align: PixelAlign,
+    clip: bool,
+) -> Result<()> {
+    let target = doc
+        .layer(layer)
+        .and_then(|l| l.surface())
+        .map(|s| s.content_bounds())
+        .filter(|r| !r.is_empty())
+        .unwrap_or_else(|| doc.bounds());
     if target.is_empty() {
         return Ok(());
     }
     let fmt = doc.pixel_format();
-    let bytes = std::fs::read(path).map_err(|e| EngineError::Other(format!("read `{path}`: {e}")))?;
+    let bytes =
+        std::fs::read(path).map_err(|e| EngineError::Other(format!("read `{path}`: {e}")))?;
     let src = crate::file_cmds::import(path, &bytes)?;
     let img = crate::file_cmds::flattened(&src, fmt);
     let (iw, ih) = (src.size.width.max(1) as f64, src.size.height.max(1) as f64);
@@ -216,7 +317,11 @@ fn replace_pixels(doc: &mut Document, layer: LayerId, path: &str, method: PixelM
         PixelMethod::Conform => (tw / iw, th / ih),
         PixelMethod::AsIs => (1.0, 1.0),
     };
-    let scaled = if (sx - 1.0).abs() > 1e-9 || (sy - 1.0).abs() > 1e-9 { resize_surface(&img, sx, sy, Resample::Bicubic) } else { img };
+    let scaled = if (sx - 1.0).abs() > 1e-9 || (sy - 1.0).abs() > 1e-9 {
+        resize_surface(&img, sx, sy, Resample::Bicubic)
+    } else {
+        img
+    };
     let (sw, sh) = (iw * sx, ih * sy);
     // Aligned placement within the target rect.
     let fx = match align {
@@ -232,7 +337,11 @@ fn replace_pixels(doc: &mut Document, layer: LayerId, path: &str, method: PixelM
     let dx = (target.x0 as f64 + (tw - sw) * fx).round() as i32;
     let dy = (target.y0 as f64 + (th - sh) * fy).round() as i32;
     let placed = translate_surface(&scaled, dx, dy);
-    let placed = if clip { photocraft_algo::resample::crop_surface(&placed, target) } else { placed };
+    let placed = if clip {
+        photocraft_algo::resample::crop_surface(&placed, target)
+    } else {
+        placed
+    };
     if let Some(l) = doc.layer_mut(layer)
         && let LayerContent::Raster(sfc) = &mut l.content
     {
@@ -243,7 +352,12 @@ fn replace_pixels(doc: &mut Document, layer: LayerId, path: &str, method: PixelM
 
 fn apply_data_set(s: &mut Session, p: &Value) -> Result<Value> {
     let (set, idx) = resolve_set(s, p, "image.applyDataSet")?;
-    let vars = s.active().ok_or(EngineError::NoDocument)?.doc.variables.clone();
+    let vars = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .variables
+        .clone();
     // Pixel Replacement reads image files, so an untrusted session's gate judges each path.
     if let Some(auth) = s.authorize {
         for dv in &set.values {
@@ -252,7 +366,9 @@ fn apply_data_set(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
-    s.edit(&format!("Apply Data Set \"{}\"", set.name), |doc, _| apply_to_doc(doc, &vars, &set))?;
+    s.edit(&format!("Apply Data Set \"{}\"", set.name), |doc, _| {
+        apply_to_doc(doc, &vars, &set)
+    })?;
     set_vars(s, |v| v.active = Some(idx))?;
     Ok(json!({"applied": set.name, "index": idx}))
 }
@@ -261,11 +377,16 @@ fn apply_data_set(s: &mut Session, p: &Value) -> Result<Value> {
 fn resolve_set(s: &Session, p: &Value, cmd: &str) -> Result<(DataSet, usize)> {
     let vars = &s.active().ok_or(EngineError::NoDocument)?.doc.variables;
     if let Some(name) = p.get("name").and_then(Value::as_str) {
-        let i = vars.data_set_index(name).ok_or_else(|| bad(cmd, format!("no data set `{name}`")))?;
+        let i = vars
+            .data_set_index(name)
+            .ok_or_else(|| bad(cmd, format!("no data set `{name}`")))?;
         Ok((vars.data_sets[i].clone(), i))
     } else if let Some(i) = p.get("index").and_then(Value::as_u64) {
         let i = i as usize;
-        vars.data_sets.get(i).map(|d| (d.clone(), i)).ok_or_else(|| bad(cmd, format!("no data set at index {i}")))
+        vars.data_sets
+            .get(i)
+            .map(|d| (d.clone(), i))
+            .ok_or_else(|| bad(cmd, format!("no data set at index {i}")))
     } else {
         Err(bad(cmd, "need `name` or `index`"))
     }
@@ -275,18 +396,34 @@ fn resolve_set(s: &Session, p: &Value, cmd: &str) -> Result<(DataSet, usize)> {
 /// A value is a boolean (true/false) for a Visibility variable, a path for a Pixel Replacement
 /// variable, else text. The first column may be a data-set name (header empty or `DataSet`).
 fn import_data_sets(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = p.get("path").and_then(Value::as_str).ok_or_else(|| bad("file.import.variableDataSets", "need `path`"))?;
-    let text = std::fs::read_to_string(path).map_err(|e| EngineError::Other(format!("read `{path}`: {e}")))?;
+    let path = p
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("file.import.variableDataSets", "need `path`"))?;
+    let text = std::fs::read_to_string(path)
+        .map_err(|e| EngineError::Other(format!("read `{path}`: {e}")))?;
     import_data_sets_text(s, &text, p)
 }
 
 /// The body of `file.import.variableDataSets` over CSV text already read: automation reads the
 /// file beneath its read root and hands the text over (#3216).
 pub fn import_data_sets_text(s: &mut Session, text: &str, p: &Value) -> Result<Value> {
-    let delim = p.get("delimiter").and_then(Value::as_str).and_then(|d| d.bytes().next()).unwrap_or(b',');
-    let vars = s.active().ok_or(EngineError::NoDocument)?.doc.variables.clone();
+    let delim = p
+        .get("delimiter")
+        .and_then(Value::as_str)
+        .and_then(|d| d.bytes().next())
+        .unwrap_or(b',');
+    let vars = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .variables
+        .clone();
     let mut records = csv_records(text).filter(|r| !r.trim().is_empty());
-    let header: Vec<String> = records.next().map(|h| split_csv(h, delim)).unwrap_or_default();
+    let header: Vec<String> = records
+        .next()
+        .map(|h| split_csv(h, delim))
+        .unwrap_or_default();
     if header.is_empty() {
         return Err(bad("file.import.variableDataSets", "empty CSV"));
     }
@@ -295,7 +432,11 @@ pub fn import_data_sets_text(s: &mut Session, text: &str, p: &Value) -> Result<V
     for (row, record) in records.enumerate() {
         let cells = split_csv(record, delim);
         let name = if named {
-            cells.first().cloned().filter(|c| !c.trim().is_empty()).unwrap_or_else(|| format!("Data Set {}", row + 1))
+            cells
+                .first()
+                .cloned()
+                .filter(|c| !c.trim().is_empty())
+                .unwrap_or_else(|| format!("Data Set {}", row + 1))
         } else {
             format!("Data Set {}", row + 1)
         };
@@ -305,11 +446,17 @@ pub fn import_data_sets_text(s: &mut Session, text: &str, p: &Value) -> Result<V
             let Some(cell) = cells.get(ci) else { continue };
             let Some(def) = vars.def(var) else { continue };
             let value = match def.kind {
-                VarKind::Visibility => VarValue::Visibility(matches!(cell.trim().to_ascii_lowercase().as_str(), "true" | "1" | "yes" | "visible" | "on")),
+                VarKind::Visibility => VarValue::Visibility(matches!(
+                    cell.trim().to_ascii_lowercase().as_str(),
+                    "true" | "1" | "yes" | "visible" | "on"
+                )),
                 VarKind::PixelReplacement { .. } => VarValue::Pixels(cell.clone()),
                 VarKind::TextReplacement => VarValue::Text(cell.clone()),
             };
-            values.push(DataValue { variable: var.clone(), value });
+            values.push(DataValue {
+                variable: var.clone(),
+                value,
+            });
         }
         sets.push(DataSet { name, values });
     }
@@ -374,13 +521,18 @@ fn split_csv(line: &str, delim: u8) -> Vec<String> {
 /// Apply each data set in turn and export the flattened document, restoring the original after.
 /// `{dir, format?("png"), dataSets?[names]}` → `{files:[…],count}`.
 fn export_as_files(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = p.get("dir").and_then(Value::as_str).ok_or_else(|| bad("file.export.dataSetsAsFiles", "need `dir`"))?.to_string();
+    let dir = p
+        .get("dir")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad("file.export.dataSetsAsFiles", "need `dir`"))?
+        .to_string();
     // The directory appears only once the batch has been planned, as it always did, so a batch
     // rejected for colliding names still leaves no directory behind.
     let mut made_dir = false;
     let names = export_data_sets_with(s, p, |name, bytes| {
         if !made_dir {
-            std::fs::create_dir_all(&dir).map_err(|e| EngineError::Other(format!("mkdir `{dir}`: {e}")))?;
+            std::fs::create_dir_all(&dir)
+                .map_err(|e| EngineError::Other(format!("mkdir `{dir}`: {e}")))?;
             made_dir = true;
         }
         crate::file_cmds::write_file(&format!("{dir}/{name}"), bytes)
@@ -395,31 +547,64 @@ fn export_as_files(s: &mut Session, p: &Value) -> Result<Value> {
 /// so colliding names are rejected before any file is written, and automation writes exactly
 /// these bytes beneath its write root (#3216) — the two paths cannot drift. Returns the
 /// filenames written, in order.
-pub fn export_data_sets_with(s: &Session, p: &Value, mut write: impl FnMut(&str, &[u8]) -> Result<()>) -> Result<Vec<String>> {
+pub fn export_data_sets_with(
+    s: &Session,
+    p: &Value,
+    mut write: impl FnMut(&str, &[u8]) -> Result<()>,
+) -> Result<Vec<String>> {
     let format = p.get("format").and_then(Value::as_str).unwrap_or("png");
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let original = st.doc.clone();
     let vars = original.variables.clone();
-    let wanted: Option<Vec<String>> = p.get("dataSets").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect());
-    let sets: Vec<DataSet> = vars.data_sets.iter().filter(|d| wanted.as_ref().is_none_or(|w| w.contains(&d.name))).cloned().collect();
+    let wanted: Option<Vec<String>> = p.get("dataSets").and_then(Value::as_array).map(|a| {
+        a.iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect()
+    });
+    let sets: Vec<DataSet> = vars
+        .data_sets
+        .iter()
+        .filter(|d| wanted.as_ref().is_none_or(|w| w.contains(&d.name)))
+        .cloned()
+        .collect();
     if sets.is_empty() {
         return Err(bad("file.export.dataSetsAsFiles", "no data sets to export"));
     }
     // Filename template: `{name}` (sanitised data-set name), `{index}` (1-based). Default `{name}`.
     let template = p.get("naming").and_then(Value::as_str).unwrap_or("{name}");
-    let doc_stem = original.name.rsplit_once('.').map_or(original.name.as_str(), |(a, _)| a).to_string();
+    let doc_stem = original
+        .name
+        .rsplit_once('.')
+        .map_or(original.name.as_str(), |(a, _)| a)
+        .to_string();
     // Plan the whole batch before writing: sanitised names or a constant template may collide.
     // Match the case-insensitive comparison used by the other batch exporters.
     let mut claimed = std::collections::HashMap::new();
     let mut names = Vec::new();
     for (n, set) in sets.iter().enumerate() {
-        let safe: String = set.name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
-        let stem = template.replace("{name}", &safe).replace("{index}", &format!("{:03}", n + 1)).replace("{document}", &doc_stem);
+        let safe: String = set
+            .name
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        let stem = template
+            .replace("{name}", &safe)
+            .replace("{index}", &format!("{:03}", n + 1))
+            .replace("{document}", &doc_stem);
         let name = format!("{stem}.{format}");
         if let Some(first) = claimed.insert(name.to_lowercase(), &set.name) {
             return Err(bad(
                 "file.export.dataSetsAsFiles",
-                format!("data sets `{first}` and `{}` resolve to the same output `{name}`; include {{index}} in `naming` to use distinct filenames", set.name),
+                format!(
+                    "data sets `{first}` and `{}` resolve to the same output `{name}`; include {{index}} in `naming` to use distinct filenames",
+                    set.name
+                ),
             ));
         }
         names.push(name);
@@ -429,7 +614,9 @@ pub fn export_data_sets_with(s: &Session, p: &Value, mut write: impl FnMut(&str,
         let mut doc = (*original).clone();
         apply_to_doc(&mut doc, &vars, set)?;
         let opts = photocraft_io::ExportOptions::default();
-        let bytes = photocraft_io::export(&doc, format, &opts).map(|r| r.bytes).map_err(|e| EngineError::Other(format!("export `{}`: {e}", set.name)))?;
+        let bytes = photocraft_io::export(&doc, format, &opts)
+            .map(|r| r.bytes)
+            .map_err(|e| EngineError::Other(format!("export `{}`: {e}", set.name)))?;
         write(name, &bytes)?;
         written.push(name.clone());
     }
@@ -454,7 +641,16 @@ fn list(s: &mut Session) -> Result<Value> {
 
 macro_rules! spec {
     ($id:expr, $label:expr, $menu:expr, $params:expr, $run:expr) => {
-        CommandSpec { id: $id, label: $label, menu: $menu, shortcut: None, params: $params, enabled: has_doc, journal: true, run: $run }
+        CommandSpec {
+            id: $id,
+            label: $label,
+            menu: $menu,
+            shortcut: None,
+            params: $params,
+            enabled: has_doc,
+            journal: true,
+            run: $run,
+        }
     };
 }
 

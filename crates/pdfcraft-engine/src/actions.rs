@@ -89,14 +89,22 @@ impl Step {
     /// The step's text argument, if it takes one.
     pub fn arg(&self) -> Option<&str> {
         match self {
-            Step::AddWatermark(s) | Step::AddHeader(s) | Step::AddFooter(s) | Step::SetTitle(s) | Step::RunJavaScript(s) => Some(s),
+            Step::AddWatermark(s)
+            | Step::AddHeader(s)
+            | Step::AddFooter(s)
+            | Step::SetTitle(s)
+            | Step::RunJavaScript(s) => Some(s),
             _ => None,
         }
     }
 
     pub fn arg_mut(&mut self) -> Option<&mut String> {
         match self {
-            Step::AddWatermark(s) | Step::AddHeader(s) | Step::AddFooter(s) | Step::SetTitle(s) | Step::RunJavaScript(s) => Some(s),
+            Step::AddWatermark(s)
+            | Step::AddHeader(s)
+            | Step::AddFooter(s)
+            | Step::SetTitle(s)
+            | Step::RunJavaScript(s) => Some(s),
             _ => None,
         }
     }
@@ -123,17 +131,42 @@ pub struct Action {
 
 /// The built-in actions.
 pub fn builtin() -> Vec<Action> {
-    let a = |name: &str, description: &str, steps: Vec<Step>| Action { name: name.into(), description: description.into(), steps, builtin: true };
+    let a = |name: &str, description: &str, steps: Vec<Step>| Action {
+        name: name.into(),
+        description: description.into(),
+        steps,
+        builtin: true,
+    };
     vec![
         a(
             "Prepare for Distribution",
             "Remove hidden information and flatten comments and form fields, so recipients see only the pages.",
-            vec![Step::RemoveHiddenInformation, Step::FlattenComments, Step::FlattenFields],
+            vec![
+                Step::RemoveHiddenInformation,
+                Step::FlattenComments,
+                Step::FlattenFields,
+            ],
         ),
-        a("Optimize Scanned Documents", "Make scans searchable, then make them smaller.", vec![Step::RecognizeText, Step::ReduceFileSize]),
-        a("Add Page Numbers", "Number every page in the footer.", vec![Step::AddFooter("Page <<1>> of <<n>>".into())]),
-        a("Mark as Confidential", "A diagonal CONFIDENTIAL watermark on every page.", vec![Step::AddWatermark("CONFIDENTIAL".into())]),
-        a("Sanitize Documents", "Remove hidden information, metadata, scripts and embedded content, and rewrite the files.", vec![Step::Sanitize]),
+        a(
+            "Optimize Scanned Documents",
+            "Make scans searchable, then make them smaller.",
+            vec![Step::RecognizeText, Step::ReduceFileSize],
+        ),
+        a(
+            "Add Page Numbers",
+            "Number every page in the footer.",
+            vec![Step::AddFooter("Page <<1>> of <<n>>".into())],
+        ),
+        a(
+            "Mark as Confidential",
+            "A diagonal CONFIDENTIAL watermark on every page.",
+            vec![Step::AddWatermark("CONFIDENTIAL".into())],
+        ),
+        a(
+            "Sanitize Documents",
+            "Remove hidden information, metadata, scripts and embedded content, and rewrite the files.",
+            vec![Step::Sanitize],
+        ),
     ]
 }
 
@@ -146,37 +179,78 @@ pub struct FileResult {
     pub log: Vec<String>,
 }
 
-fn apply_step(s: &mut Session, id: DocId, step: &Step, log: &mut Vec<String>) -> Result<Option<DocId>, EditError> {
+fn apply_step(
+    s: &mut Session,
+    id: DocId,
+    step: &Step,
+    log: &mut Vec<String>,
+) -> Result<Option<DocId>, EditError> {
     let pages = s.get(id).map_or(0, |d| d.info.pages.len());
     let all: Vec<usize> = (0..pages).collect();
     let edit = match step {
         Step::RecognizeText => {
-            let found = s.recognize_text(id, &[], crate::ocr::OcrSettings::default()).map_err(EditError::Invalid)?;
-            log.push(format!("Recognize text: {} words", found.iter().map(|p| p.words.len()).sum::<usize>()));
+            let found = s
+                .recognize_text(id, &[], crate::ocr::OcrSettings::default())
+                .map_err(EditError::Invalid)?;
+            log.push(format!(
+                "Recognize text: {} words",
+                found.iter().map(|p| p.words.len()).sum::<usize>()
+            ));
             return Ok(None);
         }
         Step::ReduceFileSize => {
             let (bytes, _) = s.optimized_bytes(id, &crate::optimize::Settings::default(), &[])?;
             let before = s.get(id).map_or(0, |d| d.bytes.len());
-            log.push(format!("Reduce file size: {} → {} bytes", before, bytes.len()));
+            log.push(format!(
+                "Reduce file size: {} → {} bytes",
+                before,
+                bytes.len()
+            ));
             let name = s.get(id).map(|d| d.name.clone()).unwrap_or_default();
             s.close(id);
-            let new = s.open(name, None, bytes, None).map_err(|e| EditError::Reopen(e.to_string()))?;
+            let new = s
+                .open(name, None, bytes, None)
+                .map_err(|e| EditError::Reopen(e.to_string()))?;
             return Ok(Some(new));
         }
-        Step::RemoveHiddenInformation => Edit::RemoveHidden { which: crate::HIDDEN.to_vec() },
+        Step::RemoveHiddenInformation => Edit::RemoveHidden {
+            which: crate::HIDDEN.to_vec(),
+        },
         Step::Sanitize => Edit::Sanitize,
-        Step::FlattenComments => Edit::Flatten { comments: true, fields: false },
-        Step::FlattenFields => Edit::Flatten { comments: false, fields: true },
-        Step::AddWatermark(t) => {
-            Edit::AddWatermark { pages: all, settings: crate::Watermark { text: t.clone(), ..Default::default() }, replace: false, file: None }
-        }
+        Step::FlattenComments => Edit::Flatten {
+            comments: true,
+            fields: false,
+        },
+        Step::FlattenFields => Edit::Flatten {
+            comments: false,
+            fields: true,
+        },
+        Step::AddWatermark(t) => Edit::AddWatermark {
+            pages: all,
+            settings: crate::Watermark {
+                text: t.clone(),
+                ..Default::default()
+            },
+            replace: false,
+            file: None,
+        },
         Step::AddHeader(t) | Step::AddFooter(t) => {
             let mut settings = crate::HeaderFooter::default();
-            settings.text[if matches!(step, Step::AddHeader(_)) { 1 } else { 4 }] = t.clone();
-            Edit::AddHeaderFooter { pages: all, settings, replace: false }
+            settings.text[if matches!(step, Step::AddHeader(_)) {
+                1
+            } else {
+                4
+            }] = t.clone();
+            Edit::AddHeaderFooter {
+                pages: all,
+                settings,
+                replace: false,
+            }
         }
-        Step::SetTitle(t) => Edit::SetInfo { key: "Title".into(), value: t.clone() },
+        Step::SetTitle(t) => Edit::SetInfo {
+            key: "Title".into(),
+            value: t.clone(),
+        },
         Step::DetectFormFields => {
             let n = s.auto_detect_fields(id, &[])?.len();
             log.push(format!("Detect form fields: {n}"));
@@ -200,7 +274,12 @@ fn apply_step(s: &mut Session, id: DocId, step: &Step, log: &mut Vec<String>) ->
 }
 
 /// Run `action` on one file. `progress(step, steps)` is called before each step.
-pub fn run_on(action: &Action, name: &str, bytes: Arc<Vec<u8>>, mut progress: impl FnMut(usize, usize)) -> Result<FileResult, String> {
+pub fn run_on(
+    action: &Action,
+    name: &str,
+    bytes: Arc<Vec<u8>>,
+    mut progress: impl FnMut(usize, usize),
+) -> Result<FileResult, String> {
     let mut s = Session::new();
     let mut id = s.open(name, None, bytes, None).map_err(|e| e.to_string())?;
     if let Some(why) = s.get(id).and_then(|d| d.read_only_reason.clone()) {
@@ -209,12 +288,23 @@ pub fn run_on(action: &Action, name: &str, bytes: Arc<Vec<u8>>, mut progress: im
     let mut log = Vec::new();
     for (i, step) in action.steps.iter().enumerate() {
         progress(i, action.steps.len());
-        if let Some(new) = apply_step(&mut s, id, step, &mut log).map_err(|e| format!("{}: {e}", step.label()))? {
+        if let Some(new) =
+            apply_step(&mut s, id, step, &mut log).map_err(|e| format!("{}: {e}", step.label()))?
+        {
             id = new;
         }
     }
     let d = s.get(id).ok_or("the document was lost")?;
     // A signed file keeps its signatures: incremental. Otherwise a clean full rewrite.
-    let bytes = if d.is_signed() { s.save_bytes(id) } else { s.save_full_bytes(id) }.map_err(|e| e.to_string())?;
-    Ok(FileResult { name: name.to_string(), bytes, log })
+    let bytes = if d.is_signed() {
+        s.save_bytes(id)
+    } else {
+        s.save_full_bytes(id)
+    }
+    .map_err(|e| e.to_string())?;
+    Ok(FileResult {
+        name: name.to_string(),
+        bytes,
+        log,
+    })
 }

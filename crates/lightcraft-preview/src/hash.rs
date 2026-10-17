@@ -18,7 +18,9 @@ impl fmt::Display for Hash128 {
 
 impl Hash128 {
     pub fn parse(s: &str) -> Option<Hash128> {
-        (s.len() == 32).then(|| u128::from_str_radix(s, 16).ok().map(Hash128)).flatten()
+        (s.len() == 32)
+            .then(|| u128::from_str_radix(s, 16).ok().map(Hash128))
+            .flatten()
     }
 }
 
@@ -28,7 +30,10 @@ pub struct Hasher128(SipHasher13);
 
 impl Default for Hasher128 {
     fn default() -> Self {
-        Hasher128(SipHasher13::new_with_keys(0x4c69_6768_7443_7261, 0x6674_2043_6f6e_7465))
+        Hasher128(SipHasher13::new_with_keys(
+            0x4c69_6768_7443_7261,
+            0x6674_2043_6f6e_7465,
+        ))
     }
 }
 

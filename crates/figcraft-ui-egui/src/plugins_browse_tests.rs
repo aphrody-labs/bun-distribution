@@ -9,7 +9,9 @@ use std::sync::{Arc, Mutex};
 use egui::Pos2;
 use figcraft_engine::Session;
 use figcraft_engine::figcraft_collab::message::{ClientMsg, PluginEntry, PluginReply, PluginReq};
-use figcraft_engine::live::{Event, HostOptions, LiveLink, NetReply, NetRequest, Presence, SessionInfo};
+use figcraft_engine::live::{
+    Event, HostOptions, LiveLink, NetReply, NetRequest, Presence, SessionInfo,
+};
 use figcraft_engine::plugin_directory::bundle::{Bundle, sha256_hex};
 use serde_json::json;
 
@@ -35,8 +37,13 @@ fn reply(bytes: &[u8], req: PluginReq) -> PluginReply {
     };
     match req {
         PluginReq::List { .. } => PluginReply::List(vec![entry]),
-        PluginReq::Fetch { .. } => PluginReply::Bundle { entry, bundle: bytes.to_vec() },
-        _ => PluginReply::Failed { reason: "no".into() },
+        PluginReq::Fetch { .. } => PluginReply::Bundle {
+            entry,
+            bundle: bytes.to_vec(),
+        },
+        _ => PluginReply::Failed {
+            reason: "no".into(),
+        },
     }
 }
 
@@ -81,7 +88,10 @@ impl LiveLink for Later {
     fn presence(&mut self, _: u64, _: &Presence) {}
     fn send(&mut self, _: u64, _: ClientMsg) {}
     fn poll(&mut self) -> Vec<(u64, Event)> {
-        std::mem::take(&mut self.0.lock().unwrap().answers).into_iter().map(|e| (0, e)).collect()
+        std::mem::take(&mut self.0.lock().unwrap().answers)
+            .into_iter()
+            .map(|e| (0, e))
+            .collect()
     }
     fn plugins(&mut self, _: &str, _: PluginReq) -> Result<PluginReply, String> {
         Err("the window waited for the directory".into())
@@ -99,7 +109,10 @@ fn deliver(wire: &Arc<Mutex<Wire>>, bytes: &[u8]) -> usize {
     let mut w = wire.lock().unwrap();
     let out = std::mem::take(&mut w.out);
     for (job, req) in &out {
-        w.answers.push(Event::Net { job: *job, reply: Box::new(NetReply::Plugins(Ok(reply(bytes, req.clone())))) });
+        w.answers.push(Event::Net {
+            job: *job,
+            reply: Box::new(NetReply::Plugins(Ok(reply(bytes, req.clone())))),
+        });
     }
     out.len()
 }
@@ -120,14 +133,28 @@ fn centre(n: &egui::accesskit::Node) -> Pos2 {
 
 /// Every node labelled `label`, in tree order.
 fn named(u: &mut Ui, label: &str) -> Vec<egui::accesskit::Node> {
-    let tree = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
-    tree.into_iter().map(|(_, n)| n).filter(|n| n.label() == Some(label)).collect()
+    let tree = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes;
+    tree.into_iter()
+        .map(|(_, n)| n)
+        .filter(|n| n.label() == Some(label))
+        .collect()
 }
 
 /// Some node's label (a text's value) holds `text`.
 fn shows(u: &mut Ui, text: &str) -> bool {
-    let tree = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
-    tree.iter().any(|(_, n)| n.label().or(n.value()).is_some_and(|l| l.contains(text)))
+    let tree = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes;
+    tree.iter()
+        .any(|(_, n)| n.label().or(n.value()).is_some_and(|l| l.contains(text)))
 }
 
 fn click(u: &mut Ui, at: Pos2) {
@@ -139,12 +166,21 @@ fn bundle() -> Vec<u8> {
     let wasm =
         wat::parse_str(r#"(module (memory (export "memory") 1) (func (export "figcraft_run") (param i32) (result i32) i32.const 0))"#).unwrap();
     let manifest = json!({"id": ID, "name": "Grid maker", "version": "1.0.0", "main": "g.wasm", "permissions": {"access": "write", "commands": ["shape.rectangle"]}});
-    Bundle { manifest: manifest.to_string(), wasm, assets: Vec::new() }.encode()
+    Bundle {
+        manifest: manifest.to_string(),
+        wasm,
+        assets: Vec::new(),
+    }
+    .encode()
 }
 
 /// The Browse button: the lower of the two "Browse" (the tab is above it).
 fn browse_button(u: &mut Ui) -> Pos2 {
-    named(u, "Browse").iter().map(centre).max_by(|a, b| a.y.total_cmp(&b.y)).unwrap()
+    named(u, "Browse")
+        .iter()
+        .map(centre)
+        .max_by(|a, b| a.y.total_cmp(&b.y))
+        .unwrap()
 }
 
 #[test]
@@ -153,7 +189,11 @@ fn install_asks_first_and_then_installs() {
     let fetched = Arc::new(Mutex::new(0));
     let mut s = Session::new();
     s.live.install(Box::new(Link(fetched.clone(), bytes)));
-    s.execute("plugin.directory.list", &json!({"server": "ws://127.0.0.1:9/"})).unwrap();
+    s.execute(
+        "plugin.directory.list",
+        &json!({"server": "ws://127.0.0.1:9/"}),
+    )
+    .unwrap();
     let mut u = Ui::new(s);
     u.app.ui.plugins_window = true;
     u.app.ui.plugins_manage.tab = PluginsTab::Browse;
@@ -163,20 +203,39 @@ fn install_asks_first_and_then_installs() {
     assert_eq!(row.len(), 1, "the plugin's row offers Install");
     let row_at = centre(&row[0]);
     click(&mut u, row_at);
-    assert_eq!(u.app.ui.plugins_manage.confirm.as_deref(), Some(ID), "Install asks first");
+    assert_eq!(
+        u.app.ui.plugins_manage.confirm.as_deref(),
+        Some(ID),
+        "Install asks first"
+    );
     assert!(u.app.session.prefs.plugins.is_empty());
-    assert_eq!(*fetched.lock().unwrap(), 0, "nothing is downloaded before the user confirms");
+    assert_eq!(
+        *fetched.lock().unwrap(),
+        0,
+        "nothing is downloaded before the user confirms"
+    );
     u.frame(vec![]);
-    for shown in ["read and edit the document", "call only: shape.rectangle", "From ws://127.0.0.1:9/"] {
+    for shown in [
+        "read and edit the document",
+        "call only: shape.rectangle",
+        "From ws://127.0.0.1:9/",
+    ] {
         assert!(shows(&mut u, shown), "the confirmation shows {shown:?}");
     }
-    let confirm = named(&mut u, "Install").into_iter().map(|n| centre(&n)).find(|p| p.distance(row_at) > 4.0).unwrap();
+    let confirm = named(&mut u, "Install")
+        .into_iter()
+        .map(|n| centre(&n))
+        .find(|p| p.distance(row_at) > 4.0)
+        .unwrap();
     click(&mut u, confirm);
     assert_eq!(*fetched.lock().unwrap(), 1);
     assert_eq!(u.app.session.prefs.plugins.len(), 1, "installed");
     assert_eq!(u.app.ui.plugins_manage.confirm, None);
     u.frame(vec![]);
-    assert!(named(&mut u, "Install").is_empty() && !named(&mut u, "Remove").is_empty(), "the row now offers Remove");
+    assert!(
+        named(&mut u, "Install").is_empty() && !named(&mut u, "Remove").is_empty(),
+        "the row now offers Remove"
+    );
 }
 
 #[test]
@@ -195,13 +254,19 @@ fn browsing_and_installing_show_progress_and_never_wait() {
     let browse = browse_button(&mut u);
     click(&mut u, browse);
     assert!(u.app.session.waiting_for("plugin.directory.list"));
-    assert!(shows(&mut u, "Fetching from the server…") && !named(&mut u, "Cancel").is_empty(), "Browse shows it's on its way");
+    assert!(
+        shows(&mut u, "Fetching from the server…") && !named(&mut u, "Cancel").is_empty(),
+        "Browse shows it's on its way"
+    );
     // Cancel stops waiting: the late answer is dropped.
     let cancel = centre(&named(&mut u, "Cancel")[0]);
     click(&mut u, cancel);
     assert_eq!(deliver(&wire, &bytes), 1);
     u.frame(vec![]);
-    assert!(u.app.session.plugins.directory.is_none() && !u.app.session.waiting_for("plugin.directory.list"));
+    assert!(
+        u.app.session.plugins.directory.is_none()
+            && !u.app.session.waiting_for("plugin.directory.list")
+    );
     // Browse again; the answer arrives and the listing shows.
     let browse = browse_button(&mut u);
     click(&mut u, browse);
@@ -212,17 +277,40 @@ fn browsing_and_installing_show_progress_and_never_wait() {
     let row_at = centre(&row[0]);
     click(&mut u, row_at);
     u.frame(vec![]);
-    let confirm = named(&mut u, "Install").into_iter().map(|n| centre(&n)).find(|p| p.distance(row_at) > 4.0).unwrap();
+    let confirm = named(&mut u, "Install")
+        .into_iter()
+        .map(|n| centre(&n))
+        .find(|p| p.distance(row_at) > 4.0)
+        .unwrap();
     click(&mut u, confirm);
     assert!(u.app.session.waiting_for("plugin.directory.install"));
-    assert!(shows(&mut u, "Installing…"), "the confirmation shows the install on its way");
+    assert!(
+        shows(&mut u, "Installing…"),
+        "the confirmation shows the install on its way"
+    );
     assert!(u.app.ui.plugins_manage.confirm.is_some() && u.app.session.prefs.plugins.is_empty());
     assert!(saved.lock().unwrap().is_empty());
     assert_eq!(deliver(&wire, &bytes), 1);
     u.frame(vec![]);
-    assert_eq!(u.app.session.prefs.plugins.len(), 1, "installed when the download arrived");
+    assert_eq!(
+        u.app.session.prefs.plugins.len(),
+        1,
+        "installed when the download arrived"
+    );
     assert_eq!(u.app.ui.plugins_manage.confirm, None);
-    assert!(u.app.ui.toast.as_ref().is_some_and(|(t, _)| t.contains("Installed Grid maker")), "{:?}", u.app.ui.toast);
+    assert!(
+        u.app
+            .ui
+            .toast
+            .as_ref()
+            .is_some_and(|(t, _)| t.contains("Installed Grid maker")),
+        "{:?}",
+        u.app.ui.toast
+    );
     let kept = saved.lock().unwrap();
-    assert_eq!(kept.last().map(|p| p.plugins.len()), Some(1), "the plugin list was saved at once, not at quit");
+    assert_eq!(
+        kept.last().map(|p| p.plugins.len()),
+        Some(1),
+        "the plugin list was saved at once, not at quit"
+    );
 }

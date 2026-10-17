@@ -40,11 +40,22 @@ pub struct OmfOptions {
 /// Export the audio of `sequence` as an OMF 2.0 file.
 pub fn export(project: &Project, sequence: ItemId, opts: &OmfOptions) -> Result<(Vec<u8>, Report)> {
     let mut report = Report::default();
-    let name = opts.name.clone().or_else(|| project.item(sequence).map(|i| i.name.clone())).unwrap_or_else(|| "Sequence".into());
+    let name = opts
+        .name
+        .clone()
+        .or_else(|| project.item(sequence).map(|i| i.name.clone()))
+        .unwrap_or_else(|| "Sequence".into());
     let mut media = opts.media.clone();
     media.audio_only = true;
     media.mixdown_video = None;
-    let doc = comp::from_project(project, sequence, &name, &media, comp::Nests::Rendered, &mut report)?;
+    let doc = comp::from_project(
+        project,
+        sequence,
+        &name,
+        &media,
+        comp::Nests::Rendered,
+        &mut report,
+    )?;
     if !doc.compositions[0].markers.is_empty() {
         report.info("sequence markers are not written to OMF");
     }
@@ -54,7 +65,10 @@ pub fn export(project: &Project, sequence: ItemId, opts: &OmfOptions) -> Result<
 
 /// Import an OMF 2.0 file (as written by [`export`] and by applications using the same
 /// structures). Embedded audio is returned as WAV files.
-pub fn import(bytes: &[u8], opts: &ImportOptions) -> Result<(Imported, Vec<ExtractedMedia>, Report)> {
+pub fn import(
+    bytes: &[u8],
+    opts: &ImportOptions,
+) -> Result<(Imported, Vec<ExtractedMedia>, Report)> {
     let mut report = Report::default();
     let doc = read::read(bytes, &mut report)?;
     let (imported, extracted) = comp::to_project(doc, opts, &mut report)?;

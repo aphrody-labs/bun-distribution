@@ -309,7 +309,9 @@ impl Alarms {
     }
 
     pub fn get_event(&self) -> Arc<Event> {
-        self.ctx.get_event(self.event).expect("closest alarm event must exist")
+        self.ctx
+            .get_event(self.event)
+            .expect("closest alarm event must exist")
     }
 }
 

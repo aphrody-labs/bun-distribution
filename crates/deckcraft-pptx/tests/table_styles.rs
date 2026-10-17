@@ -45,7 +45,9 @@ fn table_deck() -> Vec<u8> {
             d = style_xml().into_bytes();
         } else if name.starts_with("ppt/slides/slide") && name.ends_with(".xml") {
             let s = String::from_utf8(d).expect("utf8");
-            let start = s.find("<a:tableStyleId>").map(|i| i + "<a:tableStyleId>".len());
+            let start = s
+                .find("<a:tableStyleId>")
+                .map(|i| i + "<a:tableStyleId>".len());
             let end = s.find("</a:tableStyleId>");
             d = match (start, end) {
                 (Some(a), Some(b)) => format!("{}{}{}", &s[..a], STYLE_GUID, &s[b..]).into_bytes(),
@@ -62,23 +64,44 @@ fn table_deck() -> Vec<u8> {
 fn table_styles_the_file_defines_are_read_used_and_kept() {
     use deckcraft_model::table::{TableBorder, TablePart};
     let p = deckcraft_pptx::import(&table_deck()).expect("import");
-    let def = p.table_styles.iter().find(|d| d.id == STYLE_GUID).expect("the probe style is read");
+    let def = p
+        .table_styles
+        .iter()
+        .find(|d| d.id == STYLE_GUID)
+        .expect("the probe style is read");
     assert_eq!(def.name, "Probe Style");
     let bg = def.background.as_ref().expect("table background");
     assert!(matches!(bg.fill_ref, Some((1, _))));
     let whole = def.part(TablePart::WholeTbl).expect("whole table");
     assert_eq!(whole.bold, Some(true));
     assert!(whole.text_color.is_some());
-    assert!(matches!(&whole.borders[0], Some(TableBorder::Line { line }) if line.width == Some(2.0)));
-    assert!(matches!(&whole.borders[4], Some(TableBorder::Line { line }) if matches!(line.fill, Some(Fill::None))));
-    assert!(matches!(def.part(TablePart::Band1H).and_then(|b| b.fill.clone()), Some(Fill::Solid { .. })));
+    assert!(
+        matches!(&whole.borders[0], Some(TableBorder::Line { line }) if line.width == Some(2.0))
+    );
+    assert!(
+        matches!(&whole.borders[4], Some(TableBorder::Line { line }) if matches!(line.fill, Some(Fill::None)))
+    );
+    assert!(matches!(
+        def.part(TablePart::Band1H).and_then(|b| b.fill.clone()),
+        Some(Fill::Solid { .. })
+    ));
     // The table keeps the style's GUID, so it's drawn from the definition.
-    let s = p.slides[0].shapes.iter().find(|s| s.name == "Styled").expect("table");
-    let deckcraft_model::ShapeKind::Table(t) = &s.kind else { panic!("table") };
+    let s = p.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Styled")
+        .expect("table");
+    let deckcraft_model::ShapeKind::Table(t) = &s.kind else {
+        panic!("table")
+    };
     assert_eq!(t.style, STYLE_GUID);
     // Saving writes the definition back, unchanged.
     let again = deckcraft_pptx::export(&p).expect("export");
     let q = deckcraft_pptx::import(&again).expect("reimport");
-    let def2 = q.table_styles.iter().find(|d| d.id == STYLE_GUID).expect("kept on save");
+    let def2 = q
+        .table_styles
+        .iter()
+        .find(|d| d.id == STYLE_GUID)
+        .expect("kept on save");
     assert_eq!(def2.parts, def.parts);
 }

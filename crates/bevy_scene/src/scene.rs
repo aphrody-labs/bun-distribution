@@ -157,13 +157,17 @@ pub struct SceneDependency {
 #[derive(Error, Debug)]
 pub enum ResolveSceneError {
     /// Caused when a dependency listed in [`Scene::register_dependencies`] is not available when calling [`Scene::resolve`]
-    #[error("Cannot resolve scene because the asset dependency {0} is not present. This could be because it isn't loaded yet, or because the asset does not exist. Consider using `queue_spawn_scene()` if you would like to wait for scene dependencies before spawning.")]
+    #[error(
+        "Cannot resolve scene because the asset dependency {0} is not present. This could be because it isn't loaded yet, or because the asset does not exist. Consider using `queue_spawn_scene()` if you would like to wait for scene dependencies before spawning."
+    )]
     MissingSceneDependency(AssetPath<'static>),
     /// Caused when including a cached scene during [`Scene::resolve`] fails.
     #[error(transparent)]
     CachedSceneError(#[from] CachedSceneError),
     /// Caused when a [`Scene`]/[`SceneList`] is not present on the scene asset.
-    #[error("The Scene/SceneList is not present on the scene asset. This is likely because the scene has already been resolved, which consumed the source scene")]
+    #[error(
+        "The Scene/SceneList is not present on the scene asset. This is likely because the scene has already been resolved, which consumed the source scene"
+    )]
     MissingScene,
 }
 
@@ -324,7 +328,7 @@ impl<G: FromTemplate> PatchFromTemplate for G {
 pub trait PatchTemplate: Sized {
     /// Takes a "patch function" `func` that patches this [`Template`], and turns it into a [`TemplatePatch`].
     fn patch_template<F: FnOnce(&mut Self, &mut ResolveContext)>(func: F)
-        -> TemplatePatch<F, Self>;
+    -> TemplatePatch<F, Self>;
 }
 
 impl<T: Template> PatchTemplate for T {
@@ -336,9 +340,9 @@ impl<T: Template> PatchTemplate for T {
 }
 
 impl<
-        F: FnOnce(&mut T, &mut ResolveContext) + Send + Sync + 'static,
-        T: Template<Output: Component> + Send + Sync + Default + 'static,
-    > Scene for TemplatePatch<F, T>
+    F: FnOnce(&mut T, &mut ResolveContext) + Send + Sync + 'static,
+    T: Template<Output: Component> + Send + Sync + Default + 'static,
+> Scene for TemplatePatch<F, T>
 {
     fn resolve(
         self,

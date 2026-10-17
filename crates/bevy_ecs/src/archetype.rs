@@ -29,7 +29,7 @@ use crate::{
     storage::{ImmutableSparseSet, SparseArray, SparseSet, TableId, TableRow},
 };
 use alloc::{boxed::Box, vec::Vec};
-use bevy_platform::collections::{hash_map::Entry, HashMap};
+use bevy_platform::collections::{HashMap, hash_map::Entry};
 use core::{
     hash::Hash,
     ops::{Index, IndexMut, RangeFrom},

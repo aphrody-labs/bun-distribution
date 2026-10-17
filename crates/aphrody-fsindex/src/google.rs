@@ -84,7 +84,10 @@ impl GoogleFilesDb {
     #[must_use]
     pub fn default_path() -> Option<PathBuf> {
         let local_app_data = std::env::var_os("LOCALAPPDATA")?;
-        let p = PathBuf::from(local_app_data).join("Google").join("Google").join("local_files.db");
+        let p = PathBuf::from(local_app_data)
+            .join("Google")
+            .join("Google")
+            .join("local_files.db");
         if p.exists() { Some(p) } else { None }
     }
 
@@ -103,8 +106,9 @@ impl GoogleFilesDb {
         if let Ok(n) = seq {
             return Ok(usize::try_from(n).unwrap_or(0));
         }
-        let count: i64 =
-            self.conn.query_row("SELECT count(*) FROM local_files", [], |r| r.get(0))?;
+        let count: i64 = self
+            .conn
+            .query_row("SELECT count(*) FROM local_files", [], |r| r.get(0))?;
         Ok(usize::try_from(count).unwrap_or(0))
     }
 
@@ -222,7 +226,10 @@ mod tests {
         assert_eq!(hits_md.len(), 1);
         assert_eq!(hits_md[0].filename, "readme.md");
 
-        assert!(matches!(db.search("   ", 10), Err(FsIndexError::EmptyQuery)));
+        assert!(matches!(
+            db.search("   ", 10),
+            Err(FsIndexError::EmptyQuery)
+        ));
     }
 
     #[test]

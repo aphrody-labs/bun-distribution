@@ -35,7 +35,11 @@ pub type LinkScan = Arc<Mutex<Option<(u64, Vec<(String, Vec<u64>, Option<Stamp>)
 #[cfg(not(target_arch = "wasm32"))]
 fn stamp(path: &str) -> Option<Stamp> {
     let meta = std::fs::metadata(path).ok()?;
-    let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let modified = meta
+        .modified()
+        .ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?;
     Some((meta.len(), modified.as_nanos()))
 }
 
@@ -62,7 +66,10 @@ pub fn linked_files(d: &Document) -> Vec<(String, Vec<u64>)> {
 pub(crate) fn update_changed(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let (doc, files) = (st.doc.id.0, linked_files(&st.doc));
-    let now = files.into_iter().map(|(p, ids)| (p.clone(), ids, stamp(&p))).collect();
+    let now = files
+        .into_iter()
+        .map(|(p, ids)| (p.clone(), ids, stamp(&p)))
+        .collect();
     s.apply_link_stamps(doc, now)
 }
 
@@ -80,10 +87,15 @@ impl Session {
         }
         let slot: LinkScan = Arc::default();
         let out = slot.clone();
-        let spawned = std::thread::Builder::new().name("link-watch".into()).spawn(move || {
-            let stamps = files.into_iter().map(|(p, ids)| (p.clone(), ids, stamp(&p))).collect();
-            *out.lock().unwrap_or_else(PoisonError::into_inner) = Some((doc, stamps));
-        });
+        let spawned = std::thread::Builder::new()
+            .name("link-watch".into())
+            .spawn(move || {
+                let stamps = files
+                    .into_iter()
+                    .map(|(p, ids)| (p.clone(), ids, stamp(&p)))
+                    .collect();
+                *out.lock().unwrap_or_else(PoisonError::into_inner) = Some((doc, stamps));
+            });
         if spawned.is_ok() {
             self.link_scan = Some(slot);
         }
@@ -91,14 +103,23 @@ impl Session {
 
     /// Apply a finished look (`None` while there is none, or it is still running).
     pub fn poll_link_scan(&mut self) -> Option<Result<Value>> {
-        let (doc, stamps) = self.link_scan.as_ref()?.lock().unwrap_or_else(PoisonError::into_inner).take()?;
+        let (doc, stamps) = self
+            .link_scan
+            .as_ref()?
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()?;
         self.link_scan = None;
         Some(self.apply_link_stamps(doc, stamps))
     }
 
     /// Compare the stamps of document `doc`'s linked files with the ones last seen and update the
     /// layers of the changed ones. Returns `{updated: [layer ids]}`.
-    fn apply_link_stamps(&mut self, doc: u64, now: Vec<(String, Vec<u64>, Option<Stamp>)>) -> Result<Value> {
+    fn apply_link_stamps(
+        &mut self,
+        doc: u64,
+        now: Vec<(String, Vec<u64>, Option<Stamp>)>,
+    ) -> Result<Value> {
         // The document went to the back meanwhile: it's looked at when it's in front again.
         if self.active().map(|d| d.doc.id.0) != Some(doc) {
             return Ok(json!({"updated": []}));
@@ -158,7 +179,10 @@ mod tests {
     use crate::Session;
 
     fn dir(name: &str) -> std::path::PathBuf {
-        let d = std::env::temp_dir().join(format!("photocraft-link-watch-{name}-{}", std::process::id()));
+        let d = std::env::temp_dir().join(format!(
+            "photocraft-link-watch-{name}-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         d
@@ -172,8 +196,13 @@ mod tests {
         let d = dir(&format!("png-{}-{n}", color.trim_start_matches('#')));
         let path = d.join("x.png").to_string_lossy().into_owned();
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": w, "height": h, "background": color})).unwrap();
-        s.execute("file.saveACopy", json!({"path": path, "layers": false})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": w, "height": h, "background": color}),
+        )
+        .unwrap();
+        s.execute("file.saveACopy", json!({"path": path, "layers": false}))
+            .unwrap();
         std::fs::read(&path).unwrap()
     }
 
@@ -186,14 +215,17 @@ mod tests {
     /// A 40×40 white document with the file at `path` placed linked → (session, layer id).
     fn placed(path: &std::path::Path) -> (Session, u64) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 40, "height": 40})).unwrap();
-        s.execute("file.placeLinked", json!({"path": path.to_string_lossy()})).unwrap();
+        s.execute("file.new", json!({"width": 40, "height": 40}))
+            .unwrap();
+        s.execute("file.placeLinked", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         let id = s.active().unwrap().active_layer.unwrap().0;
         (s, id)
     }
 
     fn centre(s: &Session) -> [f32; 3] {
-        let p = photocraft_compose::render(&s.active().unwrap().doc, Rect::new(20, 20, 21, 21)).px[0];
+        let p =
+            photocraft_compose::render(&s.active().unwrap().doc, Rect::new(20, 20, 21, 21)).px[0];
         [p[0], p[1], p[2]]
     }
 
@@ -212,14 +244,26 @@ mod tests {
         let (mut s, id) = placed(&path);
         assert!(is(centre(&s), RED));
         // First look: remembered, nothing to update.
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": []}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": []})
+        );
         save(&path, &png(10, 10, "#0000ff"));
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": [id]}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": [id]})
+        );
         assert!(is(centre(&s), BLUE), "{:?}", centre(&s));
         // An Update Modified Content step: undoing it is respected until the file changes again.
         assert!(s.undo());
         assert!(is(centre(&s), RED));
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": []}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": []})
+        );
         assert!(is(centre(&s), RED));
     }
 
@@ -229,16 +273,29 @@ mod tests {
         let path = d.join("art.png");
         std::fs::write(&path, png(10, 10, "#ff0000")).unwrap();
         let (mut s, id) = placed(&path);
-        s.execute("layer.smartObjects.updateChanged", json!({})).unwrap();
+        s.execute("layer.smartObjects.updateChanged", json!({}))
+            .unwrap();
         let undo = s.active().unwrap().history.past_len();
         // Another app has only written the start of the file so far.
         let full = png(10, 10, "#0000ff");
         save(&path, &full[..16]);
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": []}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": []})
+        );
         assert!(is(centre(&s), RED), "the last good pixels stay");
-        assert_eq!(s.active().unwrap().history.past_len(), undo, "no step for a failed update");
+        assert_eq!(
+            s.active().unwrap().history.past_len(),
+            undo,
+            "no step for a failed update"
+        );
         save(&path, &full);
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": [id]}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": [id]})
+        );
         assert!(is(centre(&s), BLUE));
     }
 
@@ -248,12 +305,22 @@ mod tests {
         let path = d.join("art.png");
         std::fs::write(&path, png(10, 10, "#ff0000")).unwrap();
         let (mut s, id) = placed(&path);
-        s.execute("layer.smartObjects.updateChanged", json!({})).unwrap();
-        s.execute("file.new", json!({"width": 10, "height": 10})).unwrap();
+        s.execute("layer.smartObjects.updateChanged", json!({}))
+            .unwrap();
+        s.execute("file.new", json!({"width": 10, "height": 10}))
+            .unwrap();
         save(&path, &png(10, 10, "#0000ff"));
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": []}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": []})
+        );
         s.set_active(0);
-        assert_eq!(s.execute("layer.smartObjects.updateChanged", json!({})).unwrap(), json!({"updated": [id]}));
+        assert_eq!(
+            s.execute("layer.smartObjects.updateChanged", json!({}))
+                .unwrap(),
+            json!({"updated": [id]})
+        );
         assert!(is(centre(&s), BLUE));
     }
 

@@ -19,7 +19,11 @@ fn hz_to_mel(f: f64) -> f64 {
     let min_log_hz = 1000.0;
     let min_log_mel = min_log_hz / f_sp;
     let logstep = (6.4f64).ln() / 27.0;
-    if f >= min_log_hz { min_log_mel + (f / min_log_hz).ln() / logstep } else { f / f_sp }
+    if f >= min_log_hz {
+        min_log_mel + (f / min_log_hz).ln() / logstep
+    } else {
+        f / f_sp
+    }
 }
 
 fn mel_to_hz(m: f64) -> f64 {
@@ -27,7 +31,11 @@ fn mel_to_hz(m: f64) -> f64 {
     let min_log_hz = 1000.0;
     let min_log_mel = min_log_hz / f_sp;
     let logstep = (6.4f64).ln() / 27.0;
-    if m >= min_log_mel { min_log_hz * (logstep * (m - min_log_mel)).exp() } else { f_sp * m }
+    if m >= min_log_mel {
+        min_log_hz * (logstep * (m - min_log_mel)).exp()
+    } else {
+        f_sp * m
+    }
 }
 
 /// Mel filterbank, `n_mels × N_BINS` row-major, for 16 kHz audio and a 400-point FFT.
@@ -35,7 +43,9 @@ pub fn mel_filters(n_mels: usize) -> Vec<f32> {
     let sr = 16_000.0;
     let fftfreqs: Vec<f64> = (0..N_BINS).map(|i| i as f64 * sr / N_FFT as f64).collect();
     let (lo, hi) = (hz_to_mel(0.0), hz_to_mel(sr / 2.0));
-    let mel_f: Vec<f64> = (0..n_mels + 2).map(|i| mel_to_hz(lo + (hi - lo) * i as f64 / (n_mels + 1) as f64)).collect();
+    let mel_f: Vec<f64> = (0..n_mels + 2)
+        .map(|i| mel_to_hz(lo + (hi - lo) * i as f64 / (n_mels + 1) as f64))
+        .collect();
     let mut w = vec![0f32; n_mels * N_BINS];
     for m in 0..n_mels {
         let enorm = 2.0 / (mel_f[m + 2] - mel_f[m]);
@@ -68,7 +78,9 @@ pub fn power_spectrum(audio: &[f32]) -> (usize, Vec<f32>) {
         audio[j as usize]
     };
     let frames = n / HOP; // the last centred frame (n / HOP + 1) is dropped
-    let window: Vec<f32> = (0..N_FFT).map(|i| (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / N_FFT as f64).cos()) as f32).collect();
+    let window: Vec<f32> = (0..N_FFT)
+        .map(|i| (0.5 - 0.5 * (2.0 * std::f64::consts::PI * i as f64 / N_FFT as f64).cos()) as f32)
+        .collect();
     let (cos, sin) = twiddles();
     let mut out = vec![0f32; frames * N_BINS];
     let work = |f: usize, row: &mut [f32]| {
@@ -79,7 +91,10 @@ pub fn power_spectrum(audio: &[f32]) -> (usize, Vec<f32>) {
         }
         for (k, r) in row.iter_mut().enumerate() {
             let (mut re, mut im) = (0f32, 0f32);
-            let (c, s) = (&cos[k * N_FFT..(k + 1) * N_FFT], &sin[k * N_FFT..(k + 1) * N_FFT]);
+            let (c, s) = (
+                &cos[k * N_FFT..(k + 1) * N_FFT],
+                &sin[k * N_FFT..(k + 1) * N_FFT],
+            );
             for i in 0..N_FFT {
                 re += x[i] * c[i];
                 im += x[i] * s[i];
@@ -89,7 +104,9 @@ pub fn power_spectrum(audio: &[f32]) -> (usize, Vec<f32>) {
     };
     {
         use rayon::prelude::*;
-        out.par_chunks_mut(N_BINS).enumerate().for_each(|(f, row)| work(f, row));
+        out.par_chunks_mut(N_BINS)
+            .enumerate()
+            .for_each(|(f, row)| work(f, row));
     }
     (frames, out)
 }
@@ -157,15 +174,24 @@ mod tests {
 
     #[test]
     fn a_tone_lands_in_its_band() {
-        let audio: Vec<f32> = (0..16_000).map(|i| (2.0 * std::f32::consts::PI * 1000.0 * i as f32 / 16_000.0).sin()).collect();
+        let audio: Vec<f32> = (0..16_000)
+            .map(|i| (2.0 * std::f32::consts::PI * 1000.0 * i as f32 / 16_000.0).sin())
+            .collect();
         let (frames, m) = log_mel(&audio, 80);
         assert_eq!(frames, 100);
         let f = 50;
         let col: Vec<f32> = (0..80).map(|b| m[b * frames + f]).collect();
-        let peak = col.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)).unwrap().0;
+        let peak = col
+            .iter()
+            .enumerate()
+            .max_by(|a, b| a.1.total_cmp(b.1))
+            .unwrap()
+            .0;
         let w = mel_filters(80);
         let k = 1000 * N_FFT / 16_000; // bin 25
-        let best = (0..80).max_by(|a, b| w[a * N_BINS + k].total_cmp(&w[b * N_BINS + k])).unwrap();
+        let best = (0..80)
+            .max_by(|a, b| w[a * N_BINS + k].total_cmp(&w[b * N_BINS + k]))
+            .unwrap();
         assert_eq!(peak, best);
     }
 }

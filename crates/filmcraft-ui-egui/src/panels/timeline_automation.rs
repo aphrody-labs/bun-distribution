@@ -12,7 +12,9 @@
 //! `timeline.track.A1.lane.kf.<n>` (the diamonds).
 
 use egui::{Align2, Color32, CursorIcon, Rect, Sense, Stroke, pos2, vec2};
-use filmcraft_project::mixer::{LANE_MUTE, LANE_PAN, LANE_VOLUME, lane_info, parse_fx_lane, send_lane};
+use filmcraft_project::mixer::{
+    LANE_MUTE, LANE_PAN, LANE_VOLUME, lane_info, parse_fx_lane, send_lane,
+};
 use filmcraft_project::{ParamKind, Sequence, Track, TrackKind};
 use filmcraft_time::Tick;
 use serde_json::json;
@@ -38,8 +40,15 @@ pub fn lane_options(tr: &Track) -> Vec<(String, String)> {
     }
     for (slot, e) in tr.effects.iter().enumerate() {
         let Some(def) = e.def() else { continue };
-        for p in def.params.iter().filter(|p| matches!(p.kind, ParamKind::Float { .. }) && p.animatable) {
-            v.push((filmcraft_project::mixer::fx_lane(slot, p.id), format!("{}: {}", crate::i18n::t(def.name), crate::i18n::t(p.label))));
+        for p in def
+            .params
+            .iter()
+            .filter(|p| matches!(p.kind, ParamKind::Float { .. }) && p.animatable)
+        {
+            v.push((
+                filmcraft_project::mixer::fx_lane(slot, p.id),
+                format!("{}: {}", crate::i18n::t(def.name), crate::i18n::t(p.label)),
+            ));
         }
     }
     v
@@ -51,7 +60,14 @@ fn range(tr: &Track, key: &str) -> (f64, f64, bool) {
         return (i.min, i.max, i.hold);
     }
     if let Some((slot, pid)) = parse_fx_lane(key)
-        && let Some(ParamKind::Float { soft_min, soft_max, .. }) = tr.effects.get(slot).and_then(|e| e.def()).and_then(|d| d.param(pid)).map(|p| p.kind.clone())
+        && let Some(ParamKind::Float {
+            soft_min, soft_max, ..
+        }) = tr
+            .effects
+            .get(slot)
+            .and_then(|e| e.def())
+            .and_then(|d| d.param(pid))
+            .map(|p| p.kind.clone())
     {
         return (soft_min, soft_max, false);
     }
@@ -81,7 +97,10 @@ fn lane_at(tr: &Track, key: &str, t: Tick) -> f64 {
     match tr.lane(key).filter(|p| p.is_animated()) {
         Some(p) if range(tr, key).2 => {
             let i = p.keyframes.partition_point(|k| k.time <= t);
-            p.keyframes[i.saturating_sub(1)].value.as_f64().unwrap_or(0.0)
+            p.keyframes[i.saturating_sub(1)]
+                .value
+                .as_f64()
+                .unwrap_or(0.0)
         }
         Some(p) => p.scalar_at(t),
         None => tr.lane_static(key).unwrap_or(0.0),
@@ -89,23 +108,50 @@ fn lane_at(tr: &Track, key: &str, t: Tick) -> f64 {
 }
 
 fn band(r: &Row) -> Rect {
-    Rect::from_min_max(pos2(r.rect.min.x, r.rect.min.y + 17.0), pos2(r.rect.max.x, r.rect.max.y - 4.0))
+    Rect::from_min_max(
+        pos2(r.rect.min.x, r.rect.min.y + 17.0),
+        pos2(r.rect.max.x, r.rect.max.y - 4.0),
+    )
 }
 
 /// Header button (diamond) choosing clip keyframes or a track lane.
 #[allow(clippy::too_many_arguments)]
-pub fn header_button(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, r: &Row, rect: Rect, visible: Rect, label: &str, t: &Tokens) {
+pub fn header_button(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    seq: &Sequence,
+    r: &Row,
+    rect: Rect,
+    visible: Rect,
+    label: &str,
+    t: &Tokens,
+) {
     let Some(tr) = seq.track(r.track) else { return };
     let showing = app.ui.timeline.track_lanes.get(&r.track.0).cloned();
-    let resp =
-        crate::widgets::icon_toggle(ui, rect.intersect(visible), Icon::Keyframe, showing.is_some(), t, egui::Id::new(("lanebtn", r.track.0)), Some(LANE_COL))
-            .on_hover_text(tl!("Show Keyframes"));
-    app.auto.add(&format!("timeline.track.{label}.keyframes"), rect, "Show Keyframes");
+    let resp = crate::widgets::icon_toggle(
+        ui,
+        rect.intersect(visible),
+        Icon::Keyframe,
+        showing.is_some(),
+        t,
+        egui::Id::new(("lanebtn", r.track.0)),
+        Some(LANE_COL),
+    )
+    .on_hover_text(tl!("Show Keyframes"));
+    app.auto.add(
+        &format!("timeline.track.{label}.keyframes"),
+        rect,
+        "Show Keyframes",
+    );
     let opts = lane_options(tr);
     egui::Popup::menu(&resp).show(|ui| {
         ui.set_min_width(170.0);
         let c = ui.selectable_label(showing.is_none(), tl!("Clip Keyframes"));
-        app.auto.add(&format!("timeline.track.{label}.keyframes.clip"), c.rect, "Clip Keyframes");
+        app.auto.add(
+            &format!("timeline.track.{label}.keyframes.clip"),
+            c.rect,
+            "Clip Keyframes",
+        );
         if c.clicked() {
             app.ui.timeline.track_lanes.remove(&r.track.0);
         }
@@ -113,7 +159,8 @@ pub fn header_button(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, 
         ui.label(egui::RichText::new(tl!("Track Keyframes")).small());
         for (k, l) in &opts {
             let e = ui.selectable_label(showing.as_deref() == Some(k.as_str()), l);
-            app.auto.add(&format!("timeline.track.{label}.keyframes.{k}"), e.rect, l);
+            app.auto
+                .add(&format!("timeline.track.{label}.keyframes.{k}"), e.rect, l);
             if e.clicked() {
                 app.ui.timeline.track_lanes.insert(r.track.0, k.clone());
             }
@@ -136,17 +183,32 @@ fn drag_id() -> egui::Id {
 
 /// Draw the shown lanes (after clips) and handle their editing (after the timeline's own interaction,
 /// so keyframes sit on top).
-pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &Layout, aclip: Rect) {
+pub fn show(
+    app: &mut FilmcraftApp,
+    ui: &mut egui::Ui,
+    seq: &Sequence,
+    layout: &Layout,
+    aclip: Rect,
+) {
     if app.ui.timeline.track_lanes.is_empty() {
         return;
     }
-    let rows: Vec<Row> = layout.rows.iter().filter(|r| r.kind == TrackKind::Audio).cloned().collect();
+    let rows: Vec<Row> = layout
+        .rows
+        .iter()
+        .filter(|r| r.kind == TrackKind::Audio)
+        .cloned()
+        .collect();
     let drag: Option<KfDrag> = ui.data(|d| d.get_temp(drag_id()));
     let pointer = ui.input(|i| i.pointer.interact_pos());
     let mut acts: Vec<(&str, serde_json::Value)> = Vec::new();
     for r in &rows {
-        let Some(key) = app.ui.timeline.track_lanes.get(&r.track.0).cloned() else { continue };
-        let Some(tr) = seq.track(r.track) else { continue };
+        let Some(key) = app.ui.timeline.track_lanes.get(&r.track.0).cloned() else {
+            continue;
+        };
+        let Some(tr) = seq.track(r.track) else {
+            continue;
+        };
         if !lane_options(tr).iter().any(|(k, _)| *k == key) {
             continue;
         }
@@ -156,7 +218,9 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         if vis.height() <= 2.0 {
             continue;
         }
-        let p = ui.painter().with_clip_rect(vis.expand2(vec2(0.0, 5.0)).intersect(aclip));
+        let p = ui
+            .painter()
+            .with_clip_rect(vis.expand2(vec2(0.0, 5.0)).intersect(aclip));
         let y_of = |v: f64| b.max.y - norm(tr, &key, v) * b.height();
         // the curve
         let mut pts = Vec::new();
@@ -165,11 +229,28 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             pts.push(pos2(x, y_of(lane_at(tr, &key, layout.tick_at(x)))));
             x += 2.0;
         }
-        p.add(egui::Shape::line(pts.iter().map(|q| *q + vec2(0.0, 1.0)).collect(), Stroke::new(1.0, Color32::BLACK)));
+        p.add(egui::Shape::line(
+            pts.iter().map(|q| *q + vec2(0.0, 1.0)).collect(),
+            Stroke::new(1.0, Color32::BLACK),
+        ));
         p.add(egui::Shape::line(pts, Stroke::new(1.5, LANE_COL)));
-        let name = lane_options(tr).into_iter().find(|(k, _)| *k == key).map(|(_, l)| l).unwrap_or_default();
-        p.text(pos2(vis.max.x - 4.0, b.min.y + 1.0), Align2::RIGHT_TOP, &name, Tokens::ui(9.5), LANE_COL.gamma_multiply(0.85));
-        app.auto.add(&format!("timeline.track.{label}.lane"), vis, &format!("{name} track keyframes"));
+        let name = lane_options(tr)
+            .into_iter()
+            .find(|(k, _)| *k == key)
+            .map(|(_, l)| l)
+            .unwrap_or_default();
+        p.text(
+            pos2(vis.max.x - 4.0, b.min.y + 1.0),
+            Align2::RIGHT_TOP,
+            &name,
+            Tokens::ui(9.5),
+            LANE_COL.gamma_multiply(0.85),
+        );
+        app.auto.add(
+            &format!("timeline.track.{label}.lane"),
+            vis,
+            &format!("{name} track keyframes"),
+        );
         // add keyframes: Pen tool, or ⌘-click with any tool
         let adding = app.ui.tool == Tool::Pen || ui.input(|i| i.modifiers.command);
         if adding {
@@ -199,14 +280,37 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 continue;
             }
             let hr = Rect::from_center_size(c, vec2(11.0, 11.0));
-            let resp = ui.interact(hr, egui::Id::new(("lane-kf", r.track.0, i)), Sense::click_and_drag());
+            let resp = ui.interact(
+                hr,
+                egui::Id::new(("lane-kf", r.track.0, i)),
+                Sense::click_and_drag(),
+            );
             let hot = resp.hovered() || dragging.is_some();
-            icons::paint(&p, Rect::from_center_size(c, vec2(9.0, 9.0)), Icon::Keyframe, if hot { Color32::WHITE } else { LANE_COL });
-            app.auto.add(&format!("timeline.track.{label}.lane.kf.{i}"), hr, &format!("{name} keyframe {v:.1}"));
+            icons::paint(
+                &p,
+                Rect::from_center_size(c, vec2(9.0, 9.0)),
+                Icon::Keyframe,
+                if hot { Color32::WHITE } else { LANE_COL },
+            );
+            app.auto.add(
+                &format!("timeline.track.{label}.lane.kf.{i}"),
+                hr,
+                &format!("{name} keyframe {v:.1}"),
+            );
             if resp.drag_started()
                 && let Some(pp) = pointer
             {
-                ui.data_mut(|d| d.insert_temp(drag_id(), KfDrag { track: r.track.0, index: i, orig: k.time, grab: pp - c }));
+                ui.data_mut(|d| {
+                    d.insert_temp(
+                        drag_id(),
+                        KfDrag {
+                            track: r.track.0,
+                            index: i,
+                            orig: k.time,
+                            grab: pp - c,
+                        },
+                    )
+                });
             }
             if resp.drag_stopped()
                 && let Some(d) = dragging
@@ -221,15 +325,28 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             }
             if dragging.is_some() {
                 let nv = denorm(tr, &key, ((b.max.y - c.y) / b.height()).clamp(0.0, 1.0));
-                egui::Tooltip::always_open(ui.ctx().clone(), ui.layer_id(), egui::Id::new("lane-kf-tip"), egui::PopupAnchor::Pointer).show(|ui| {
-                    ui.label(if key == LANE_VOLUME { format!("{nv:.2} dB") } else { format!("{nv:.2}") });
+                egui::Tooltip::always_open(
+                    ui.ctx().clone(),
+                    ui.layer_id(),
+                    egui::Id::new("lane-kf-tip"),
+                    egui::PopupAnchor::Pointer,
+                )
+                .show(|ui| {
+                    ui.label(if key == LANE_VOLUME {
+                        format!("{nv:.2} dB")
+                    } else {
+                        format!("{nv:.2}")
+                    });
                 });
             }
             let time = k.time;
             let key2 = key.clone();
             resp.context_menu(|ui| {
                 if ui.button(tl!("Delete")).clicked() {
-                    acts.push(("mixer.deleteKeyframe", json!({"strip": r.track.0, "lane": key2, "time": time.0})));
+                    acts.push((
+                        "mixer.deleteKeyframe",
+                        json!({"strip": r.track.0, "lane": key2, "time": time.0}),
+                    ));
                     ui.close();
                 }
             });

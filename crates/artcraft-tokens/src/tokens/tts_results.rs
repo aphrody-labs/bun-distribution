@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct TtsResultToken(pub String);
 
 impl_string_token!(TtsResultToken);
-impl_crockford_generator!(TtsResultToken, 32usize, LegacyTokenPrefix::TtsResult, CrockfordLower);
+impl_crockford_generator!(
+    TtsResultToken,
+    32usize,
+    LegacyTokenPrefix::TtsResult,
+    CrockfordLower
+);

@@ -92,7 +92,10 @@ impl RequestHandler for TestHandler {
         req: SendMessageRequest,
     ) -> Result<SendMessageResponse, A2AError> {
         let task_id = req.message.task_id.unwrap_or_else(|| "task-1".to_string());
-        Ok(SendMessageResponse::Task(sample_task(&task_id, TaskState::Completed)))
+        Ok(SendMessageResponse::Task(sample_task(
+            &task_id,
+            TaskState::Completed,
+        )))
     }
 
     async fn send_streaming_message(
@@ -104,10 +107,17 @@ impl RequestHandler for TestHandler {
             Ok(StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: "task-1".to_string(),
                 context_id: "ctx-1".to_string(),
-                status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Working,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             })),
-            Ok(StreamResponse::Task(sample_task("task-1", TaskState::Completed))),
+            Ok(StreamResponse::Task(sample_task(
+                "task-1",
+                TaskState::Completed,
+            ))),
         ])))
     }
 
@@ -158,7 +168,11 @@ impl RequestHandler for TestHandler {
             Ok(StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: req.id,
                 context_id: "ctx-1".to_string(),
-                status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Working,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             }))
         })))
@@ -265,7 +279,11 @@ impl aphrody_a2a_server::AgentExecutor for StoredTaskExecutor {
         let response = StreamResponse::Task(Task {
             id: ctx.task_id.clone(),
             context_id: ctx.context_id.clone(),
-            status: TaskStatus { state: TaskState::Canceled, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Canceled,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
@@ -282,21 +300,31 @@ async fn spawn_grpc_server() -> (String, tokio::task::JoinHandle<()>) {
     let addr = listener.local_addr().unwrap();
     let incoming = TcpListenerStream::new(listener);
     let handle = tokio::spawn(async move {
-        Server::builder().add_service(service).serve_with_incoming(incoming).await.unwrap();
+        Server::builder()
+            .add_service(service)
+            .serve_with_incoming(incoming)
+            .await
+            .unwrap();
     });
     tokio::time::sleep(Duration::from_millis(20)).await;
     (format!("http://{addr}"), handle)
 }
 
 async fn spawn_default_handler_grpc_server() -> (String, tokio::task::JoinHandle<()>) {
-    let handler =
-        Arc::new(DefaultRequestHandler::new(StoredTaskExecutor, InMemoryTaskStore::new()));
+    let handler = Arc::new(DefaultRequestHandler::new(
+        StoredTaskExecutor,
+        InMemoryTaskStore::new(),
+    ));
     let service = A2aServiceServer::new(GrpcHandler::new(handler));
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
     let incoming = TcpListenerStream::new(listener);
     let handle = tokio::spawn(async move {
-        Server::builder().add_service(service).serve_with_incoming(incoming).await.unwrap();
+        Server::builder()
+            .add_service(service)
+            .serve_with_incoming(incoming)
+            .await
+            .unwrap();
     });
     tokio::time::sleep(Duration::from_millis(20)).await;
     (format!("http://{addr}"), handle)
@@ -323,13 +351,19 @@ async fn grpc_transport_end_to_end() {
     let (endpoint, handle) = spawn_grpc_server().await;
     let transport = GrpcTransport::connect(endpoint).await.unwrap();
 
-    let send_resp = transport.send_message(&ServiceParams::new(), &send_message_request()).await;
+    let send_resp = transport
+        .send_message(&ServiceParams::new(), &send_message_request())
+        .await;
     assert!(matches!(send_resp.unwrap(), SendMessageResponse::Task(_)));
 
     let task = transport
         .get_task(
             &ServiceParams::new(),
-            &GetTaskRequest { id: "task-1".to_string(), history_length: Some(1), tenant: None },
+            &GetTaskRequest {
+                id: "task-1".to_string(),
+                history_length: Some(1),
+                tenant: None,
+            },
         )
         .await
         .unwrap();
@@ -356,7 +390,11 @@ async fn grpc_transport_end_to_end() {
     let canceled = transport
         .cancel_task(
             &ServiceParams::new(),
-            &CancelTaskRequest { id: "task-1".to_string(), metadata: None, tenant: None },
+            &CancelTaskRequest {
+                id: "task-1".to_string(),
+                metadata: None,
+                tenant: None,
+            },
         )
         .await
         .unwrap();
@@ -431,12 +469,18 @@ async fn grpc_transport_streaming_and_error_paths() {
         .unwrap();
     let events: Vec<_> = stream.collect().await;
     assert_eq!(events.len(), 2);
-    assert!(matches!(events[0].as_ref().unwrap(), StreamResponse::StatusUpdate(_)));
+    assert!(matches!(
+        events[0].as_ref().unwrap(),
+        StreamResponse::StatusUpdate(_)
+    ));
 
     let subscribe_stream = transport
         .subscribe_to_task(
             &ServiceParams::new(),
-            &SubscribeToTaskRequest { id: "task-1".to_string(), tenant: None },
+            &SubscribeToTaskRequest {
+                id: "task-1".to_string(),
+                tenant: None,
+            },
         )
         .await
         .unwrap();
@@ -446,7 +490,11 @@ async fn grpc_transport_streaming_and_error_paths() {
     let err = transport
         .get_task(
             &ServiceParams::new(),
-            &GetTaskRequest { id: "missing".to_string(), history_length: None, tenant: None },
+            &GetTaskRequest {
+                id: "missing".to_string(),
+                history_length: None,
+                tenant: None,
+            },
         )
         .await
         .unwrap_err();
@@ -488,7 +536,11 @@ async fn grpc_transport_accepts_bare_host_port_endpoints() {
     let task = transport
         .get_task(
             &ServiceParams::new(),
-            &GetTaskRequest { id: "task-1".to_string(), history_length: Some(1), tenant: None },
+            &GetTaskRequest {
+                id: "task-1".to_string(),
+                history_length: Some(1),
+                tenant: None,
+            },
         )
         .await
         .unwrap();
@@ -496,11 +548,16 @@ async fn grpc_transport_accepts_bare_host_port_endpoints() {
 
     let factory = GrpcTransportFactory::new();
     let transport = factory
-        .create(&sample_agent_card(), &AgentInterface::new(bare_endpoint, TRANSPORT_PROTOCOL_GRPC))
+        .create(
+            &sample_agent_card(),
+            &AgentInterface::new(bare_endpoint, TRANSPORT_PROTOCOL_GRPC),
+        )
         .await
         .unwrap();
-    let response =
-        transport.send_message(&ServiceParams::new(), &send_message_request()).await.unwrap();
+    let response = transport
+        .send_message(&ServiceParams::new(), &send_message_request())
+        .await
+        .unwrap();
     assert!(matches!(response, SendMessageResponse::Task(_)));
 
     transport.destroy().await.unwrap();

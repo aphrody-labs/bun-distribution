@@ -24,16 +24,34 @@ pub enum Graphic {
     /// Closed outlines, y up, filled even-odd: a typed signature in the script font.
     Outlines(Vec<Vec<[f64; 2]>>),
     /// Straight (not premultiplied) RGBA pixels, rows from the top.
-    Image { width: u32, height: u32, rgba: Arc<Vec<u8>> },
+    Image {
+        width: u32,
+        height: u32,
+        rgba: Arc<Vec<u8>>,
+    },
 }
 
 /// Sizes only: a graphic can hold megabytes of pixels or points.
 impl std::fmt::Debug for Graphic {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Graphic::Strokes(s) => write!(f, "Strokes({} strokes, {} points)", s.len(), s.iter().map(Vec::len).sum::<usize>()),
-            Graphic::Outlines(c) => write!(f, "Outlines({} contours, {} points)", c.len(), c.iter().map(Vec::len).sum::<usize>()),
-            Graphic::Image { width, height, rgba } => write!(f, "Image({width}x{height}, {} bytes)", rgba.len()),
+            Graphic::Strokes(s) => write!(
+                f,
+                "Strokes({} strokes, {} points)",
+                s.len(),
+                s.iter().map(Vec::len).sum::<usize>()
+            ),
+            Graphic::Outlines(c) => write!(
+                f,
+                "Outlines({} contours, {} points)",
+                c.len(),
+                c.iter().map(Vec::len).sum::<usize>()
+            ),
+            Graphic::Image {
+                width,
+                height,
+                rgba,
+            } => write!(f, "Image({width}x{height}, {} bytes)", rgba.len()),
         }
     }
 }
@@ -44,12 +62,22 @@ fn bad(why: &str) -> SignError {
 
 /// The drawing's bounds `[x0, y0, x1, y1]` over `points`, refusing non-finite or unbounded ones.
 fn bounds<'a>(points: impl Iterator<Item = &'a [f64; 2]>) -> Result<[f64; 4], SignError> {
-    let mut b = [f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+    let mut b = [
+        f64::INFINITY,
+        f64::INFINITY,
+        f64::NEG_INFINITY,
+        f64::NEG_INFINITY,
+    ];
     for p in points {
         if !p.iter().all(|v| v.is_finite()) {
             return Err(bad("has a point that isn't a number"));
         }
-        b = [b[0].min(p[0]), b[1].min(p[1]), b[2].max(p[0]), b[3].max(p[1])];
+        b = [
+            b[0].min(p[0]),
+            b[1].min(p[1]),
+            b[2].max(p[0]),
+            b[3].max(p[1]),
+        ];
     }
     if !b.iter().all(|v| v.is_finite()) {
         return Err(bad("is empty"));
@@ -65,7 +93,11 @@ fn fit(b: [f64; 4], area: [f64; 4]) -> (f64, f64, f64) {
     // A dot or a straight line has no extent on an axis; it is placed by the other one.
     let (bw, bh) = ((b[2] - b[0]).max(1e-9), (b[3] - b[1]).max(1e-9));
     let k = (area[2] / bw).min(area[3] / bh);
-    (k, area[0] + (area[2] - (b[2] - b[0]) * k) / 2.0, area[1] + (area[3] - (b[3] - b[1]) * k) / 2.0)
+    (
+        k,
+        area[0] + (area[2] - (b[2] - b[0]) * k) / 2.0,
+        area[1] + (area[3] - (b[3] - b[1]) * k) / 2.0,
+    )
 }
 
 impl Graphic {
@@ -78,11 +110,24 @@ impl Graphic {
                 }
                 c.iter().map(Vec::len).sum()
             }
-            Graphic::Image { width, height, rgba } => {
-                if *width == 0 || *height == 0 || *width > MAX_SIDE || *height > MAX_SIDE || u64::from(*width) * u64::from(*height) > MAX_PIXELS {
-                    return Err(bad(&format!("image is {width} x {height} pixels; at most {MAX_SIDE} per side and 16 megapixels")));
+            Graphic::Image {
+                width,
+                height,
+                rgba,
+            } => {
+                if *width == 0
+                    || *height == 0
+                    || *width > MAX_SIDE
+                    || *height > MAX_SIDE
+                    || u64::from(*width) * u64::from(*height) > MAX_PIXELS
+                {
+                    return Err(bad(&format!(
+                        "image is {width} x {height} pixels; at most {MAX_SIDE} per side and 16 megapixels"
+                    )));
                 }
-                let expected = (*width as usize).checked_mul(*height as usize).and_then(|n| n.checked_mul(4));
+                let expected = (*width as usize)
+                    .checked_mul(*height as usize)
+                    .and_then(|n| n.checked_mul(4));
                 if expected != Some(rgba.len()) {
                     return Err(bad("image's pixels don't match its size"));
                 }
@@ -97,22 +142,39 @@ impl Graphic {
 
     /// Check the graphic and draw it into `area` (`[x, y, w, h]` in the appearance's space):
     /// content operators, and the image XObject added to `doc` that they name `/Im1`.
-    pub(crate) fn draw(&self, doc: &mut Document, area: [f64; 4]) -> Result<(String, Option<ObjRef>), SignError> {
+    pub(crate) fn draw(
+        &self,
+        doc: &mut Document,
+        area: [f64; 4],
+    ) -> Result<(String, Option<ObjRef>), SignError> {
         self.check()?;
         let n = crate::pdf::fmt;
         match self {
             Graphic::Strokes(strokes) => {
-                let curves: Vec<Vec<[(f64, f64); 3]>> =
-                    strokes.iter().map(|s| smooth_segments(&s.iter().map(|p| (p[0], p[1])).collect::<Vec<_>>())).collect();
+                let curves: Vec<Vec<[(f64, f64); 3]>> = strokes
+                    .iter()
+                    .map(|s| smooth_segments(&s.iter().map(|p| (p[0], p[1])).collect::<Vec<_>>()))
+                    .collect();
                 // Curves stay within their points and control points.
-                let controls: Vec<[f64; 2]> = curves.iter().flatten().flat_map(|[a, b, _]| [[a.0, a.1], [b.0, b.1]]).collect();
+                let controls: Vec<[f64; 2]> = curves
+                    .iter()
+                    .flatten()
+                    .flat_map(|[a, b, _]| [[a.0, a.1], [b.0, b.1]])
+                    .collect();
                 let b = bounds(strokes.iter().flatten().chain(&controls))?;
                 // Fill & Sign draws 1.5 pt ink on a 150 pt wide pad: 1% of the pad's width.
                 let probe = fit(b, area).0;
                 let width = (probe * 0.01).clamp(0.3, 4.0);
-                let inset = [area[0] + width / 2.0, area[1] + width / 2.0, (area[2] - width).max(0.0), (area[3] - width).max(0.0)];
+                let inset = [
+                    area[0] + width / 2.0,
+                    area[1] + width / 2.0,
+                    (area[2] - width).max(0.0),
+                    (area[3] - width).max(0.0),
+                ];
                 let (k, x, y) = fit(b, inset);
-                let at = |p: (f64, f64)| format!("{} {}", n(x + (p.0 - b[0]) * k), n(y + (p.1 - b[1]) * k));
+                let at = |p: (f64, f64)| {
+                    format!("{} {}", n(x + (p.0 - b[0]) * k), n(y + (p.1 - b[1]) * k))
+                };
                 let mut c = format!("q 0 G {} w 1 J 1 j\n", n(width));
                 for (s, segments) in strokes.iter().zip(&curves) {
                     let Some(first) = s.first() else { continue };
@@ -137,18 +199,36 @@ impl Graphic {
                 let mut c = String::from("q 0 g\n");
                 for contour in closed {
                     for (i, p) in contour.iter().enumerate() {
-                        c.push_str(&format!("{} {} {}\n", n(x + (p[0] - b[0]) * k), n(y + (p[1] - b[1]) * k), if i == 0 { "m" } else { "l" }));
+                        c.push_str(&format!(
+                            "{} {} {}\n",
+                            n(x + (p[0] - b[0]) * k),
+                            n(y + (p[1] - b[1]) * k),
+                            if i == 0 { "m" } else { "l" }
+                        ));
                     }
                     c.push_str("h\n");
                 }
                 c.push_str("f*\nQ\n");
                 Ok((c, None))
             }
-            Graphic::Image { width, height, rgba } => {
+            Graphic::Image {
+                width,
+                height,
+                rgba,
+            } => {
                 let (w, h) = (f64::from(*width), f64::from(*height));
                 let (k, x, y) = fit([0.0, 0.0, w, h], area);
                 let image = image_xobject(doc, *width, *height, rgba);
-                Ok((format!("q {} 0 0 {} {} {} cm /Im1 Do Q\n", n(w * k), n(h * k), n(x), n(y)), Some(image)))
+                Ok((
+                    format!(
+                        "q {} 0 0 {} {} {} cm /Im1 Do Q\n",
+                        n(w * k),
+                        n(h * k),
+                        n(x),
+                        n(y)
+                    ),
+                    Some(image),
+                ))
             }
         }
     }

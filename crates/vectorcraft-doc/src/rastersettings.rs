@@ -20,7 +20,11 @@ pub enum RasterColorModel {
 }
 
 impl RasterColorModel {
-    pub const ALL: [RasterColorModel; 3] = [RasterColorModel::Document, RasterColorModel::Grayscale, RasterColorModel::Bitmap];
+    pub const ALL: [RasterColorModel; 3] = [
+        RasterColorModel::Document,
+        RasterColorModel::Grayscale,
+        RasterColorModel::Bitmap,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             RasterColorModel::Document => "document",
@@ -114,15 +118,34 @@ mod tests {
     #[test]
     fn pixels_follow_the_settings() {
         let d = RasterEffectsSettings::default();
-        assert_eq!(finish(d.clone(), [100, 0, 0, 100]), [100, 0, 0, 100], "the defaults change nothing");
-        let white = RasterEffectsSettings { background: Background::White, ..d.clone() };
+        assert_eq!(
+            finish(d.clone(), [100, 0, 0, 100]),
+            [100, 0, 0, 100],
+            "the defaults change nothing"
+        );
+        let white = RasterEffectsSettings {
+            background: Background::White,
+            ..d.clone()
+        };
         assert_eq!(finish(white.clone(), [0, 0, 0, 0]), [255, 255, 255, 255]);
-        assert_eq!(finish(white.clone(), [100, 0, 0, 100]), [255, 155, 155, 255]);
-        let masked = RasterEffectsSettings { clipping_mask: true, ..white };
+        assert_eq!(
+            finish(white.clone(), [100, 0, 0, 100]),
+            [255, 155, 155, 255]
+        );
+        let masked = RasterEffectsSettings {
+            clipping_mask: true,
+            ..white
+        };
         assert_eq!(finish(masked, [0, 0, 0, 0]), [0, 0, 0, 0]);
-        let gray = RasterEffectsSettings { color_model: RasterColorModel::Grayscale, ..d.clone() };
+        let gray = RasterEffectsSettings {
+            color_model: RasterColorModel::Grayscale,
+            ..d.clone()
+        };
         assert_eq!(finish(gray, [255, 0, 0, 255]), [54, 54, 54, 255]);
-        let bitmap = RasterEffectsSettings { color_model: RasterColorModel::Bitmap, ..d };
+        let bitmap = RasterEffectsSettings {
+            color_model: RasterColorModel::Bitmap,
+            ..d
+        };
         assert_eq!(finish(bitmap.clone(), [255, 0, 0, 255]), [0, 0, 0, 255]);
         assert_eq!(finish(bitmap, [0, 255, 0, 255]), [255, 255, 255, 255]);
     }
@@ -130,6 +153,12 @@ mod tests {
     #[test]
     fn partial_settings_fill_in_the_rest() {
         let s: RasterEffectsSettings = serde_json::from_str(r#"{"background":"white"}"#).unwrap();
-        assert_eq!(s, RasterEffectsSettings { background: Background::White, ..Default::default() });
+        assert_eq!(
+            s,
+            RasterEffectsSettings {
+                background: Background::White,
+                ..Default::default()
+            }
+        );
     }
 }

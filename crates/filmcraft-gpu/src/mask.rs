@@ -14,7 +14,11 @@ fn storage(binding: u32, read_only: bool) -> wgpu::BindGroupLayoutEntry {
     wgpu::BindGroupLayoutEntry {
         binding,
         visibility: wgpu::ShaderStages::COMPUTE,
-        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Storage { read_only }, has_dynamic_offset: false, min_binding_size: None },
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Storage { read_only },
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
         count: None,
     }
 }
@@ -35,7 +39,11 @@ impl GpuMask {
                 wgpu::BindGroupLayoutEntry {
                     binding: 0,
                     visibility: wgpu::ShaderStages::COMPUTE,
-                    ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: None },
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
                     count: None,
                 },
                 storage(1, true),
@@ -46,7 +54,11 @@ impl GpuMask {
                 storage(6, false),
             ],
         });
-        let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("mask"), bind_group_layouts: &[Some(&bgl)], immediate_size: 0 });
+        let pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("mask"),
+            bind_group_layouts: &[Some(&bgl)],
+            immediate_size: 0,
+        });
         let pipeline = device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
             label: Some("mask"),
             layout: Some(&pl),
@@ -55,7 +67,12 @@ impl GpuMask {
             compilation_options: Default::default(),
             cache: None,
         });
-        GpuMask { device: device.clone(), queue: queue.clone(), pipeline, bgl }
+        GpuMask {
+            device: device.clone(),
+            queue: queue.clone(),
+            pipeline,
+            bgl,
+        }
     }
 
     /// Combined coverage of `masks` over `w`×`h` pixels (`None` without active masks).
@@ -64,11 +81,25 @@ impl GpuMask {
     }
 
     /// `lerp(original, effected, coverage)` on premultiplied RGBA f32 pixels (a masked effect).
-    pub fn mix(&self, masks: &[FlatMask], w: usize, h: usize, original: &[f32], effected: &[f32]) -> Option<Vec<f32>> {
-        self.run(masks, w, h, Some((original, effected))).map(|(_, px)| px)
+    pub fn mix(
+        &self,
+        masks: &[FlatMask],
+        w: usize,
+        h: usize,
+        original: &[f32],
+        effected: &[f32],
+    ) -> Option<Vec<f32>> {
+        self.run(masks, w, h, Some((original, effected)))
+            .map(|(_, px)| px)
     }
 
-    fn run(&self, masks: &[FlatMask], w: usize, h: usize, mix: Option<(&[f32], &[f32])>) -> Option<(Vec<f32>, Vec<f32>)> {
+    fn run(
+        &self,
+        masks: &[FlatMask],
+        w: usize,
+        h: usize,
+        mix: Option<(&[f32], &[f32])>,
+    ) -> Option<(Vec<f32>, Vec<f32>)> {
         use wgpu::util::DeviceExt;
         let active: Vec<&FlatMask> = masks.iter().filter(|m| m.mode.index() != 0).collect();
         if active.is_empty() || w == 0 || h == 0 {
@@ -81,7 +112,12 @@ impl GpuMask {
             return None;
         }
         let mut params = Vec::with_capacity(16);
-        for v in [w as u32, h as u32, active.len() as u32, u32::from(mix.is_some())] {
+        for v in [
+            w as u32,
+            h as u32,
+            active.len() as u32,
+            u32::from(mix.is_some()),
+        ] {
             params.extend_from_slice(&v.to_le_bytes());
         }
         let mut infos = Vec::new();
@@ -89,7 +125,12 @@ impl GpuMask {
         for m in &active {
             let start = (pts.len() / 2) as u32;
             pts.extend(m.pts.iter().flatten());
-            for v in [start, m.pts.len() as u32, m.mode.index(), u32::from(m.inverted)] {
+            for v in [
+                start,
+                m.pts.len() as u32,
+                m.mode.index(),
+                u32::from(m.inverted),
+            ] {
                 infos.extend_from_slice(&v.to_le_bytes());
             }
             for v in [m.feather, m.expansion, m.opacity, 0.0] {
@@ -100,7 +141,13 @@ impl GpuMask {
             pts.extend([0.0, 0.0]);
         }
         let d = &self.device;
-        let init = |label: &str, contents: &[u8], usage| d.create_buffer_init(&wgpu::util::BufferInitDescriptor { label: Some(label), contents, usage });
+        let init = |label: &str, contents: &[u8], usage| {
+            d.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some(label),
+                contents,
+                usage,
+            })
+        };
         let ub = init("mask-params", &params, wgpu::BufferUsages::UNIFORM);
         let mb = init("mask-infos", &infos, wgpu::BufferUsages::STORAGE);
         let pb = init("mask-pts", &f32_bytes(&pts), wgpu::BufferUsages::STORAGE);
@@ -124,13 +171,34 @@ impl GpuMask {
             label: Some("mask"),
             layout: &self.bgl,
             entries: &[
-                wgpu::BindGroupEntry { binding: 0, resource: ub.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 1, resource: mb.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 2, resource: pb.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 3, resource: ob.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 4, resource: eb.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 5, resource: px_b.as_entire_binding() },
-                wgpu::BindGroupEntry { binding: 6, resource: cov_b.as_entire_binding() },
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: ub.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: mb.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: pb.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 3,
+                    resource: ob.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
+                    resource: eb.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: px_b.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 6,
+                    resource: cov_b.as_entire_binding(),
+                },
             ],
         });
         let read = |size: u64| {
@@ -143,9 +211,14 @@ impl GpuMask {
         };
         let rc = read(cov_size);
         let rp = read(px_size);
-        let mut enc = d.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("mask") });
+        let mut enc = d.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("mask"),
+        });
         {
-            let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor { label: Some("mask"), timestamp_writes: None });
+            let mut pass = enc.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                label: Some("mask"),
+                timestamp_writes: None,
+            });
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &bg, &[]);
             pass.dispatch_workgroups((w as u32).div_ceil(8), (h as u32).div_ceil(8), 1);
@@ -159,16 +232,29 @@ impl GpuMask {
             slice.map_async(wgpu::MapMode::Read, move |r| {
                 let _ = tx.send(r);
             });
-            d.poll(wgpu::PollType::Wait { submission_index: None, timeout: Some(std::time::Duration::from_secs(8)) }).ok()?;
+            d.poll(wgpu::PollType::Wait {
+                submission_index: None,
+                timeout: Some(std::time::Duration::from_secs(8)),
+            })
+            .ok()?;
             rx.recv().ok()?.ok()?;
             let data = slice.get_mapped_range().ok()?;
-            let v = data.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+            let v = data
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+                .collect();
             drop(data);
             b.unmap();
             Some(v)
         };
         let cov = fetch(&rc)?;
-        let px = if mix.is_some() { fetch(&rp)? } else { Vec::new() };
+        let px = if mix.is_some() {
+            fetch(&rp)?
+        } else {
+            Vec::new()
+        };
         Some((cov, px))
     }
 }

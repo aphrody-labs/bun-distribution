@@ -19,7 +19,9 @@ const MARGIN: usize = 6;
 
 pub(crate) fn ahd(m: &Mosaic) -> Rgb32f {
     let (w, h) = (m.w, m.h);
-    let tiles: Vec<(usize, usize)> = (0..h.div_ceil(TILE)).flat_map(|ty| (0..w.div_ceil(TILE)).map(move |tx| (tx * TILE, ty * TILE))).collect();
+    let tiles: Vec<(usize, usize)> = (0..h.div_ceil(TILE))
+        .flat_map(|ty| (0..w.div_ceil(TILE)).map(move |tx| (tx * TILE, ty * TILE)))
+        .collect();
     let results: Vec<(usize, usize, usize, usize, Vec<[f32; 3]>)> = tiles
         .par_iter()
         .map(|&(x0, y0)| {
@@ -30,7 +32,8 @@ pub(crate) fn ahd(m: &Mosaic) -> Rgb32f {
     let mut out = Rgb32f::new(w, h);
     for (x0, y0, tw, th, px) in results {
         for y in 0..th {
-            out.data[(y0 + y) * w + x0..(y0 + y) * w + x0 + tw].copy_from_slice(&px[y * tw..(y + 1) * tw]);
+            out.data[(y0 + y) * w + x0..(y0 + y) * w + x0 + tw]
+                .copy_from_slice(&px[y * tw..(y + 1) * tw]);
         }
     }
     out
@@ -44,7 +47,11 @@ fn lab(p: [f32; 3]) -> [f32; 3] {
     let z = (0.0193 * p[0] + 0.1192 * p[1] + 0.9505 * p[2]) / 1.08883;
     #[inline]
     fn f(t: f32) -> f32 {
-        if t > 0.008856 { t.cbrt() } else { 7.787 * t + 16.0 / 116.0 }
+        if t > 0.008856 {
+            t.cbrt()
+        } else {
+            7.787 * t + 16.0 / 116.0
+        }
     }
     let (fx, fy, fz) = (f(x), f(y), f(z));
     [116.0 * fy - 16.0, 500.0 * (fx - fy), 200.0 * (fy - fz)]
@@ -62,7 +69,9 @@ fn tile(m: &Mosaic, x0: usize, y0: usize, tw: usize, th: usize) -> Vec<[f32; 3]>
             col[y * bw + x] = m.color(ox + x as isize, oy + y as isize);
         }
     }
-    let cl = |x: isize, y: isize| -> usize { y.clamp(0, bh as isize - 1) as usize * bw + x.clamp(0, bw as isize - 1) as usize };
+    let cl = |x: isize, y: isize| -> usize {
+        y.clamp(0, bh as isize - 1) as usize * bw + x.clamp(0, bw as isize - 1) as usize
+    };
     // 1. directional greens
     let mut gh = vec![0f32; n];
     let mut gv = vec![0f32; n];
@@ -123,8 +132,12 @@ fn tile(m: &Mosaic, x0: usize, y0: usize, tw: usize, th: usize) -> Vec<[f32; 3]>
         for x in 1..bw as isize - 1 {
             let i = cl(x, y);
             let (l, r, u, d) = (cl(x - 1, y), cl(x + 1, y), cl(x, y - 1), cl(x, y + 1));
-            let eps_l = dl(&lh[i], &lh[l]).max(dl(&lh[i], &lh[r])).min(dl(&lv[i], &lv[u]).max(dl(&lv[i], &lv[d])));
-            let eps_c = dc(&lh[i], &lh[l]).max(dc(&lh[i], &lh[r])).min(dc(&lv[i], &lv[u]).max(dc(&lv[i], &lv[d])));
+            let eps_l = dl(&lh[i], &lh[l])
+                .max(dl(&lh[i], &lh[r]))
+                .min(dl(&lv[i], &lv[u]).max(dl(&lv[i], &lv[d])));
+            let eps_c = dc(&lh[i], &lh[l])
+                .max(dc(&lh[i], &lh[r]))
+                .min(dc(&lv[i], &lv[u]).max(dc(&lv[i], &lv[d])));
             let mut ch = 0;
             let mut cv = 0;
             for j in [l, r, u, d] {
@@ -157,7 +170,11 @@ fn tile(m: &Mosaic, x0: usize, y0: usize, tw: usize, th: usize) -> Vec<[f32; 3]>
             } else if sv > sh {
                 rv[i]
             } else {
-                [(rh[i][0] + rv[i][0]) * 0.5, (rh[i][1] + rv[i][1]) * 0.5, (rh[i][2] + rv[i][2]) * 0.5]
+                [
+                    (rh[i][0] + rv[i][0]) * 0.5,
+                    (rh[i][1] + rv[i][1]) * 0.5,
+                    (rh[i][2] + rv[i][2]) * 0.5,
+                ]
             });
         }
     }

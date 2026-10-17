@@ -6,7 +6,14 @@
 //!
 //! Everything here is pure data plus queries and structural edits; commands, history and rendering
 //! live in higher crates.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod colors;
 pub mod comments;
@@ -80,7 +87,10 @@ pub type DocResult<T> = Result<T, DocError>;
 /// after a change: hit testing skips its mask checks without one). Never part of equality or
 /// serialisation.
 #[derive(Clone, Debug, Default)]
-pub struct Dirty(pub std::collections::BTreeSet<NodeId>, std::sync::OnceLock<bool>);
+pub struct Dirty(
+    pub std::collections::BTreeSet<NodeId>,
+    std::sync::OnceLock<bool>,
+);
 
 impl Dirty {
     /// Record node `id` as touched (edited, added or removed).
@@ -250,7 +260,10 @@ impl Document {
 
     /// Whether any layer of the document is a mask.
     pub fn has_masks(&self) -> bool {
-        *self.dirty.1.get_or_init(|| self.nodes.values().any(|n| n.is_mask))
+        *self
+            .dirty
+            .1
+            .get_or_init(|| self.nodes.values().any(|n| n.is_mask))
     }
 
     /// Node ids touched so far (without clearing).
@@ -278,12 +291,34 @@ impl Document {
     /// already in the document, so participants of a live session never make the same id. 0 goes
     /// back to single-user allocation (after the highest id of any space).
     pub fn set_client_id(&mut self, client: u32) {
-        let (lo, hi) = if client == 0 { (0, u64::MAX) } else { (u64::from(client) << 32, (u64::from(client) << 32) | u64::from(u32::MAX)) };
-        let highest = self.nodes.range(NodeId(lo)..=NodeId(hi)).next_back().map(|(k, _)| *k);
+        let (lo, hi) = if client == 0 {
+            (0, u64::MAX)
+        } else {
+            (
+                u64::from(client) << 32,
+                (u64::from(client) << 32) | u64::from(u32::MAX),
+            )
+        };
+        let highest = self
+            .nodes
+            .range(NodeId(lo)..=NodeId(hi))
+            .next_back()
+            .map(|(k, _)| *k);
         // Re-setting the same client keeps its counter (ids handed out stay handed out).
-        let keep = if self.next_id.client == client { self.next_id.next } else { 0 };
-        let start = if client == 0 { keep.max(1) } else { keep.max(lo | 1) };
-        self.next_id = IdAlloc { next: start, client };
+        let keep = if self.next_id.client == client {
+            self.next_id.next
+        } else {
+            0
+        };
+        let start = if client == 0 {
+            keep.max(1)
+        } else {
+            keep.max(lo | 1)
+        };
+        self.next_id = IdAlloc {
+            next: start,
+            client,
+        };
         if let Some(h) = highest {
             self.next_id.reserve(h);
         }
@@ -311,7 +346,10 @@ impl Document {
     /// leaves the dirty set. Returns whether it did.
     pub fn keep_if_unchanged(&mut self, old: Arc<Node>, was_dirty: bool) -> bool {
         let id = old.id;
-        let same = self.nodes.get(&id).is_some_and(|n| Arc::ptr_eq(n, &old) || **n == *old);
+        let same = self
+            .nodes
+            .get(&id)
+            .is_some_and(|n| Arc::ptr_eq(n, &old) || **n == *old);
         if same {
             self.nodes.insert(id, old);
             if !was_dirty {
@@ -368,7 +406,12 @@ impl Document {
         let id = self.alloc_id();
         let node = Node::new(
             id,
-            NodeKind::Page { background: Color::DEFAULT_PAGE, flows: Vec::new(), prototype: Default::default(), guides: Vec::new() },
+            NodeKind::Page {
+                background: Color::DEFAULT_PAGE,
+                flows: Vec::new(),
+                prototype: Default::default(),
+                guides: Vec::new(),
+            },
             name,
             0.0,
             0.0,
@@ -399,7 +442,8 @@ impl Document {
     /// Whether page `id` is a divider in the pages list: an empty page whose name starts with a
     /// hyphen. Dividers separate pages; they aren't opened.
     pub fn is_divider(&self, id: NodeId) -> bool {
-        self.node(id).is_some_and(|n| n.is_page() && n.children.is_empty() && n.name.starts_with('-'))
+        self.node(id)
+            .is_some_and(|n| n.is_page() && n.children.is_empty() && n.name.starts_with('-'))
     }
 
     /// The first page that isn't a divider.
@@ -409,7 +453,12 @@ impl Document {
 
     /// Insert `node` (its id must come from [`alloc_id`](Self::alloc_id)) as a child of `parent` at
     /// `index` (None = on top).
-    pub fn insert(&mut self, mut node: Node, parent: NodeId, index: Option<usize>) -> DocResult<NodeId> {
+    pub fn insert(
+        &mut self,
+        mut node: Node,
+        parent: NodeId,
+        index: Option<usize>,
+    ) -> DocResult<NodeId> {
         let p = self.get(parent)?;
         if !p.kind.is_container() {
             return Err(DocError::NotContainer(parent));
@@ -429,7 +478,16 @@ impl Document {
     }
 
     /// Create a node of `kind` under `parent`, positioned at `(x, y)` in the parent's space.
-    pub fn create(&mut self, parent: NodeId, kind: NodeKind, name: &str, x: f64, y: f64, w: f64, h: f64) -> DocResult<NodeId> {
+    pub fn create(
+        &mut self,
+        parent: NodeId,
+        kind: NodeKind,
+        name: &str,
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+    ) -> DocResult<NodeId> {
         let id = self.alloc_id();
         let mut node = Node::new(id, kind, name, w, h);
         node.transform = Affine::translate((x, y));
@@ -509,16 +567,22 @@ impl Document {
 
     /// Whether sections may go in `parent`: a page or another section (never a frame or a group).
     pub fn takes_sections(&self, parent: NodeId) -> bool {
-        self.node(parent).is_some_and(|p| p.is_page() || matches!(p.kind, NodeKind::Section { .. }))
+        self.node(parent)
+            .is_some_and(|p| p.is_page() || matches!(p.kind, NodeKind::Section { .. }))
     }
 
     /// `id`'s transform in the space of the frame it is in (or of the page): groups and boolean
     /// groups have no coordinate space of their own, so theirs fold in. X and Y are measured there.
     pub fn frame_relative(&self, id: NodeId) -> Affine {
-        let Some(n) = self.node(id) else { return Affine::IDENTITY };
+        let Some(n) = self.node(id) else {
+            return Affine::IDENTITY;
+        };
         let mut t = n.transform;
         let mut parent = n.parent;
-        while let Some(p) = parent.and_then(|p| self.node(p)).filter(|p| p.kind.bounds_follow_children()) {
+        while let Some(p) = parent
+            .and_then(|p| self.node(p))
+            .filter(|p| p.kind.bounds_follow_children())
+        {
             t = p.transform * t;
             parent = p.parent;
         }
@@ -527,15 +591,21 @@ impl Document {
 
     /// The children of `n` that make up its box (a group's bounds, an export's area): all of them,
     /// except layers a visible mask below them masks, whose part is the mask's.
-    pub fn box_children<'a>(&'a self, n: &'a Node) -> impl Iterator<Item = (NodeId, &'a Node)> + 'a {
+    pub fn box_children<'a>(
+        &'a self,
+        n: &'a Node,
+    ) -> impl Iterator<Item = (NodeId, &'a Node)> + 'a {
         let mut masked = false;
-        n.children.iter().filter_map(|c| self.node(*c).map(|k| (*c, k))).filter(move |(_, k)| {
-            if k.is_mask {
-                masked = k.visible;
-                return true;
-            }
-            !masked
-        })
+        n.children
+            .iter()
+            .filter_map(|c| self.node(*c).map(|k| (*c, k)))
+            .filter(move |(_, k)| {
+                if k.is_mask {
+                    masked = k.visible;
+                    return true;
+                }
+                !masked
+            })
     }
 
     /// Index of `id` among its siblings.
@@ -545,7 +615,12 @@ impl Document {
     }
 
     /// Move `id` under `new_parent` at `index` (None = top), keeping its world position.
-    pub fn reparent(&mut self, id: NodeId, new_parent: NodeId, index: Option<usize>) -> DocResult<()> {
+    pub fn reparent(
+        &mut self,
+        id: NodeId,
+        new_parent: NodeId,
+        index: Option<usize>,
+    ) -> DocResult<()> {
         if self.is_ancestor(id, new_parent) {
             return Err(DocError::Cycle(id, new_parent));
         }
@@ -558,7 +633,9 @@ impl Document {
             return Err(DocError::Invalid("pages can't be moved into nodes".into()));
         }
         if matches!(node.kind, NodeKind::Section { .. }) && !self.takes_sections(new_parent) {
-            return Err(DocError::Invalid("sections go on the page or in other sections, not in frames or groups".into()));
+            return Err(DocError::Invalid(
+                "sections go on the page or in other sections, not in frames or groups".into(),
+            ));
         }
         let world = self.world_transform(id);
         let old_parent = node.parent;
@@ -630,7 +707,10 @@ impl Document {
 
     /// Reorder `id` within its parent to `index`.
     pub fn reorder(&mut self, id: NodeId, index: usize) -> DocResult<()> {
-        let parent = self.get(id)?.parent.ok_or(DocError::Invalid("page".into()))?;
+        let parent = self
+            .get(id)?
+            .parent
+            .ok_or(DocError::Invalid("page".into()))?;
         let p = self.get_mut(parent)?;
         p.children.retain(|c| *c != id);
         let at = index.min(p.children.len());
@@ -661,7 +741,9 @@ impl Document {
     /// Set `id`'s transform so that its world transform becomes `world`.
     pub fn set_world_transform(&mut self, id: NodeId, world: Affine) -> DocResult<()> {
         let parent = self.get(id)?.parent;
-        let pw = parent.map(|p| self.world_transform(p)).unwrap_or(Affine::IDENTITY);
+        let pw = parent
+            .map(|p| self.world_transform(p))
+            .unwrap_or(Affine::IDENTITY);
         self.get_mut(id)?.transform = pw.inverse() * world;
         Ok(())
     }
@@ -672,7 +754,10 @@ impl Document {
         if n.is_page() {
             return self.page_content_bounds(id);
         }
-        Some(figcraft_geom::transform_rect_bbox(self.world_transform(id), n.local_rect()))
+        Some(figcraft_geom::transform_rect_bbox(
+            self.world_transform(id),
+            n.local_rect(),
+        ))
     }
 
     /// Bounds of everything painted by a node, effects and strokes included (page coordinates):
@@ -697,10 +782,20 @@ impl Document {
         let mut out: Option<Rect> = None;
         for run in self.paint_runs(n) {
             let ids = n.children.get(run).unwrap_or(&[]);
-            let mask = ids.first().copied().filter(|m| self.node(*m).is_some_and(|c| c.is_mask && c.visible));
-            let r = ids.iter().filter(|i| shown(i)).filter_map(|i| self.world_render_bounds(*i)).reduce(|a, b| a.union(b));
+            let mask = ids
+                .first()
+                .copied()
+                .filter(|m| self.node(*m).is_some_and(|c| c.is_mask && c.visible));
+            let r = ids
+                .iter()
+                .filter(|i| shown(i))
+                .filter_map(|i| self.world_render_bounds(*i))
+                .reduce(|a, b| a.union(b));
             let r = match mask {
-                Some(m) => r.zip(self.world_render_bounds(m)).map(|(a, b)| a.intersect(b)).filter(|x| x.width() > 0.0 && x.height() > 0.0),
+                Some(m) => r
+                    .zip(self.world_render_bounds(m))
+                    .map(|(a, b)| a.intersect(b))
+                    .filter(|x| x.width() > 0.0 && x.height() > 0.0),
                 None => r,
             };
             out = match (out, r) {
@@ -714,12 +809,17 @@ impl Document {
     /// Union of the top-level nodes' bounds on a page.
     pub fn page_content_bounds(&self, page: NodeId) -> Option<Rect> {
         let p = self.node(page)?;
-        p.children.iter().filter_map(|c| self.world_bounds(*c)).reduce(|a, b| a.union(b))
+        p.children
+            .iter()
+            .filter_map(|c| self.world_bounds(*c))
+            .reduce(|a, b| a.union(b))
     }
 
     /// Union of several nodes' world bounds.
     pub fn bounds_of(&self, ids: &[NodeId]) -> Option<Rect> {
-        ids.iter().filter_map(|i| self.world_bounds(*i)).reduce(|a, b| a.union(b))
+        ids.iter()
+            .filter_map(|i| self.world_bounds(*i))
+            .reduce(|a, b| a.union(b))
     }
 
     /// Resize a group/boolean so its box tightly wraps its children (children keep world position).
@@ -733,12 +833,16 @@ impl Document {
         // Children bounds in the group's current local space (a mask stands for what it masks).
         let mut local: Option<Rect> = None;
         for (c, cn) in self.box_children(n) {
-            let r = figcraft_geom::transform_rect_bbox(inv * self.world_transform(c), cn.local_rect());
+            let r =
+                figcraft_geom::transform_rect_bbox(inv * self.world_transform(c), cn.local_rect());
             local = Some(local.map_or(r, |l| l.union(r)));
         }
         let Some(local) = local else { return Ok(()) };
         let children = n.children.clone();
-        let child_worlds: Vec<(NodeId, Affine)> = children.iter().map(|c| (*c, self.world_transform(*c))).collect();
+        let child_worlds: Vec<(NodeId, Affine)> = children
+            .iter()
+            .map(|c| (*c, self.world_transform(*c)))
+            .collect();
         let shift = Affine::translate((local.x0, local.y0));
         let nw = world * shift;
         {
@@ -759,7 +863,9 @@ impl Document {
     /// Fit every group/boolean ancestor of `id` (innermost first).
     pub fn fit_ancestors(&mut self, id: NodeId) {
         for a in self.ancestors(id) {
-            let follows = self.node(a).is_some_and(|n| n.kind.bounds_follow_children());
+            let follows = self
+                .node(a)
+                .is_some_and(|n| n.kind.bounds_follow_children());
             if follows {
                 let _ = self.fit_to_children(a);
             } else {
@@ -770,9 +876,18 @@ impl Document {
 
     /// Deep-copy `id`'s subtree under `parent` (at `index`), returning the new root id. The copy
     /// keeps the original's local transform; ids are fresh.
-    pub fn duplicate_into(&mut self, id: NodeId, parent: NodeId, index: Option<usize>) -> DocResult<NodeId> {
+    pub fn duplicate_into(
+        &mut self,
+        id: NodeId,
+        parent: NodeId,
+        index: Option<usize>,
+    ) -> DocResult<NodeId> {
         let mut map = BTreeMap::new();
-        let src_nodes: Vec<Node> = self.subtree(id).into_iter().filter_map(|i| self.node(i).cloned()).collect();
+        let src_nodes: Vec<Node> = self
+            .subtree(id)
+            .into_iter()
+            .filter_map(|i| self.node(i).cloned())
+            .collect();
         for n in &src_nodes {
             let nid = self.alloc_id();
             map.insert(n.id, nid);
@@ -797,11 +912,21 @@ impl Document {
         }
         let new_root = *map.get(&root).ok_or(DocError::NoNode(root))?;
         for n in nodes {
-            let Some(new_id) = map.get(&n.id) else { continue };
+            let Some(new_id) = map.get(&n.id) else {
+                continue;
+            };
             let mut c = n.clone();
             c.id = *new_id;
-            c.children = n.children.iter().filter_map(|k| map.get(k).copied()).collect();
-            c.parent = if n.id == root { Some(parent) } else { n.parent.and_then(|p| map.get(&p).copied()) };
+            c.children = n
+                .children
+                .iter()
+                .filter_map(|k| map.get(k).copied())
+                .collect();
+            c.parent = if n.id == root {
+                Some(parent)
+            } else {
+                n.parent.and_then(|p| map.get(&p).copied())
+            };
             for it in &mut c.interactions {
                 proto::walk_mut(&mut it.actions, &mut |a| remap_action(a, map));
             }
@@ -835,13 +960,20 @@ impl Document {
         roots
             .into_iter()
             .flat_map(|r| self.subtree(r))
-            .filter(|i| self.node(*i).is_some_and(|n| !n.is_page() && n.name.to_lowercase().contains(&q)))
+            .filter(|i| {
+                self.node(*i)
+                    .is_some_and(|n| !n.is_page() && n.name.to_lowercase().contains(&q))
+            })
             .collect()
     }
 
     /// The nearest frame-like ancestor (excluding `id` itself).
     pub fn containing_frame(&self, id: NodeId) -> Option<NodeId> {
-        self.ancestors(id).into_iter().find(|a| self.node(*a).is_some_and(|n| n.kind.is_frame_like() || matches!(n.kind, NodeKind::Section { .. })))
+        self.ancestors(id).into_iter().find(|a| {
+            self.node(*a).is_some_and(|n| {
+                n.kind.is_frame_like() || matches!(n.kind, NodeKind::Section { .. })
+            })
+        })
     }
 
     /// The top-level frame containing `id` (or `id` if it is one): the outermost frame, on the
@@ -850,9 +982,17 @@ impl Document {
         let mut chain = vec![id];
         chain.extend(self.ancestors(id));
         // chain ends with the page; below it, past any sections, is the top-level node.
-        let page_pos = chain.iter().position(|c| self.node(*c).is_some_and(Node::is_page))?;
-        let top = chain.iter().take(page_pos).rev().copied().find(|c| !self.node(*c).is_some_and(|n| matches!(n.kind, NodeKind::Section { .. })))?;
-        self.node(top).filter(|n| n.kind.is_frame_like()).map(|_| top)
+        let page_pos = chain
+            .iter()
+            .position(|c| self.node(*c).is_some_and(Node::is_page))?;
+        let top = chain.iter().take(page_pos).rev().copied().find(|c| {
+            !self
+                .node(*c)
+                .is_some_and(|n| matches!(n.kind, NodeKind::Section { .. }))
+        })?;
+        self.node(top)
+            .filter(|n| n.kind.is_frame_like())
+            .map(|_| top)
     }
 
     /// Top-level frames of a page (also those in sections) in reading order (rows top to bottom,
@@ -888,7 +1028,11 @@ impl Document {
         fn walk(doc: &Document, id: NodeId, depth: usize, out: &mut Vec<NodeId>) {
             let Some(n) = doc.node(id) else { return };
             for c in &n.children {
-                if doc.node(*c).is_some_and(|cn| matches!(cn.kind, NodeKind::Section { .. })) && depth < 64 {
+                if doc
+                    .node(*c)
+                    .is_some_and(|cn| matches!(cn.kind, NodeKind::Section { .. }))
+                    && depth < 64
+                {
                     out.push(*c);
                     walk(doc, *c, depth + 1, out);
                 }
@@ -952,7 +1096,8 @@ impl Document {
                 issues.push(format!("{id} not listed in parent {p}"));
             }
             // The library store's root is a page that is never listed.
-            let listed = self.pages.contains(id) || (n.is_page() && self.libraries.store == Some(*id));
+            let listed =
+                self.pages.contains(id) || (n.is_page() && self.libraries.store == Some(*id));
             if n.is_page() != listed {
                 issues.push(format!("page list mismatch for {id}"));
             }
@@ -970,10 +1115,18 @@ impl Document {
             }
         }
         // Drop dangling children and children claimed by another parent.
-        let parents: BTreeMap<NodeId, Option<NodeId>> = self.nodes.iter().map(|(k, n)| (*k, n.parent)).collect();
+        let parents: BTreeMap<NodeId, Option<NodeId>> =
+            self.nodes.iter().map(|(k, n)| (*k, n.parent)).collect();
         for id in &ids {
-            let Some(n) = self.nodes.get(id) else { continue };
-            let keep: Vec<NodeId> = n.children.iter().copied().filter(|c| parents.get(c).copied().flatten() == Some(*id)).collect();
+            let Some(n) = self.nodes.get(id) else {
+                continue;
+            };
+            let keep: Vec<NodeId> = n
+                .children
+                .iter()
+                .copied()
+                .filter(|c| parents.get(c).copied().flatten() == Some(*id))
+                .collect();
             if keep != n.children
                 && let Some(n) = self.nodes.get_mut(id)
             {
@@ -999,14 +1152,20 @@ impl Document {
         // Snapshots of layers that are gone or no longer changed since marked ready for dev, or that
         // don't start with their layer, are dropped.
         self.dev_snapshots.retain(|k, snap| {
-            self.nodes.get(k).is_some_and(|n| n.dev_status == DevStatus::ReadyForDev && n.dev_changed)
+            self.nodes
+                .get(k)
+                .is_some_and(|n| n.dev_status == DevStatus::ReadyForDev && n.dev_changed)
                 && snap.nodes.first().is_some_and(|n| n.id == *k)
         });
-        let store = self.libraries.store.filter(|s| self.nodes.get(s).is_some_and(|n| n.is_page()));
+        let store = self
+            .libraries
+            .store
+            .filter(|s| self.nodes.get(s).is_some_and(|n| n.is_page()));
         if store != self.libraries.store {
             Arc::make_mut(&mut self.libraries).store = store;
         }
-        self.pages.retain(|p| self.nodes.get(p).is_some_and(|n| n.is_page()) && Some(*p) != store);
+        self.pages
+            .retain(|p| self.nodes.get(p).is_some_and(|n| n.is_page()) && Some(*p) != store);
         for (k, n) in self.nodes.iter() {
             if n.is_page() && !self.pages.contains(k) && Some(*k) != store {
                 self.pages.push(*k);
@@ -1037,12 +1196,21 @@ impl Document {
             })
             .collect();
         let legacy = |n: &Node| match &n.kind {
-            NodeKind::Text(t) => n.styles.text.is_some() && t.spans().iter().all(|(_, _, s)| s.style_id.is_none()),
+            NodeKind::Text(t) => {
+                n.styles.text.is_some() && t.spans().iter().all(|(_, _, s)| s.style_id.is_none())
+            }
             _ => false,
         };
-        let ids: Vec<NodeId> = self.nodes.iter().filter(|(_, n)| legacy(n)).map(|(k, _)| *k).collect();
+        let ids: Vec<NodeId> = self
+            .nodes
+            .iter()
+            .filter(|(_, n)| legacy(n))
+            .map(|(k, _)| *k)
+            .collect();
         for id in ids {
-            let Some(n) = self.nodes.get_mut(&id) else { continue };
+            let Some(n) = self.nodes.get_mut(&id) else {
+                continue;
+            };
             let n = Arc::make_mut(n);
             let sid = n.styles.text.clone().unwrap_or_default();
             if let NodeKind::Text(t) = &mut n.kind {
@@ -1062,7 +1230,13 @@ impl Document {
     /// `deep` selects the innermost leaf (Cmd-click); otherwise top-level children of frames
     /// resolve like Figma's click-through rules (see [`geometry::select_target`]). Boolean groups
     /// are hit where their `result` is (see [`geometry::BoolResult`]).
-    pub fn hit_test(&self, page: NodeId, pt: Point, tolerance: f64, result: geometry::BoolResult) -> Option<NodeId> {
+    pub fn hit_test(
+        &self,
+        page: NodeId,
+        pt: Point,
+        tolerance: f64,
+        result: geometry::BoolResult,
+    ) -> Option<NodeId> {
         geometry::hit_leaf(self, page, pt, tolerance, result)
     }
 
@@ -1094,7 +1268,11 @@ impl Document {
 fn remap_action(a: &mut proto::Action, map: &BTreeMap<NodeId, NodeId>) {
     use proto::Action::*;
     match a {
-        Navigate { dest, .. } | ScrollTo { dest, .. } | OpenOverlay { dest, .. } | SwapOverlay { dest } | ChangeTo { dest } => {
+        Navigate { dest, .. }
+        | ScrollTo { dest, .. }
+        | OpenOverlay { dest, .. }
+        | SwapOverlay { dest }
+        | ChangeTo { dest } => {
             if let Some(m) = map.get(dest) {
                 *dest = *m;
             }

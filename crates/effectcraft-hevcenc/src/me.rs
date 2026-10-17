@@ -68,7 +68,13 @@ impl MeRef {
         let hp = filt_h(&pad);
         let vp = filt_v(&pad);
         let dp = filt_v(&hp);
-        MeRef { planes: [pad, hp, vp, dp], stride, rows, w: w as i32, h: h as i32 }
+        MeRef {
+            planes: [pad, hp, vp, dp],
+            stride,
+            rows,
+            w: w as i32,
+            h: h as i32,
+        }
     }
 
     /// Integer motion vector range keeping an n x n block (plus filter margin) inside the padding.
@@ -89,7 +95,11 @@ impl MeRef {
         for r in 0..n {
             let a = &src[r * ss..r * ss + n];
             let b = &p[base + r * self.stride..base + r * self.stride + n];
-            s += a.iter().zip(b).map(|(&x, &y)| (x as i32 - y as i32).unsigned_abs()).sum::<u32>();
+            s += a
+                .iter()
+                .zip(b)
+                .map(|(&x, &y)| (x as i32 - y as i32).unsigned_abs())
+                .sum::<u32>();
         }
         s
     }
@@ -116,7 +126,10 @@ impl MeRef {
         for &((fx, ox), (fy, oy)) in taps.iter().take(ntaps) {
             let plane = &self.planes[fx + 2 * fy];
             let (bx, by) = (x + ox + MARGIN, y + oy + MARGIN);
-            let inside = bx >= 0 && by >= 0 && bx as usize + n <= self.stride && by as usize + n <= self.rows;
+            let inside = bx >= 0
+                && by >= 0
+                && bx as usize + n <= self.stride
+                && by as usize + n <= self.rows;
             for r in 0..n {
                 let dst = &mut out[r * n..r * n + n];
                 if inside {
@@ -134,7 +147,11 @@ impl MeRef {
                     for (c, d) in dst.iter_mut().enumerate() {
                         let xx = (bx + c as i32).clamp(0, self.stride as i32 - 1) as usize;
                         let s = plane[yy * self.stride + xx];
-                        *d = if first { s } else { ((*d as u32 + s as u32 + 1) >> 1) as u16 };
+                        *d = if first {
+                            s
+                        } else {
+                            ((*d as u32 + s as u32 + 1) >> 1) as u16
+                        };
                     }
                 }
             }

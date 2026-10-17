@@ -102,8 +102,12 @@ pub struct EntreeInstallation {
 /// Vérifie qu'un paquet respecte la spécification Codex Pet.
 #[must_use]
 pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformite {
-    let (l, h, c, r) =
-        (manifest.atlas.width, manifest.atlas.height, manifest.atlas.columns, manifest.atlas.rows);
+    let (l, h, c, r) = (
+        manifest.atlas.width,
+        manifest.atlas.height,
+        manifest.atlas.columns,
+        manifest.atlas.rows,
+    );
     let mut ecarts = Vec::new();
 
     let version = if (l, h, c, r) == V2 {
@@ -121,12 +125,16 @@ pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformit
     // lit avant de décoder l'atlas : si elle ment, il découpe la grille au mauvais pas.
     match (version, pet.sprite_version_number) {
         (Some(Version::V2), n) if n != 2 => {
-            ecarts.push(format!("atlas v2 mais spriteVersionNumber = {n} (attendu 2)"));
-        },
+            ecarts.push(format!(
+                "atlas v2 mais spriteVersionNumber = {n} (attendu 2)"
+            ));
+        }
         (Some(Version::V1), n) if n != 1 => {
-            ecarts.push(format!("atlas v1 mais spriteVersionNumber = {n} (attendu 1)"));
-        },
-        _ => {},
+            ecarts.push(format!(
+                "atlas v1 mais spriteVersionNumber = {n} (attendu 1)"
+            ));
+        }
+        _ => {}
     }
 
     if version == Some(Version::V2) {
@@ -136,7 +144,7 @@ pub fn conformite(pet: &PetManifest, manifest: &AnimationsManifest) -> Conformit
                 a.frames.len()
             )),
             None => ecarts.push("un pet v2 doit porter l'animation look-directions".into()),
-            Some(_) => {},
+            Some(_) => {}
         }
     }
 
@@ -190,11 +198,15 @@ pub fn entree_installation(
 /// Si les octets ne sont pas un conteneur `RIFF…WEBP` lisible.
 pub fn dimensions_webp(octets: &[u8]) -> Result<(u32, u32), Error> {
     if octets.len() < 12 || &octets[0..4] != b"RIFF" || &octets[8..12] != b"WEBP" {
-        return Err(Error::Invalid("spritesheet.webp n'est pas une image WebP".into()));
+        return Err(Error::Invalid(
+            "spritesheet.webp n'est pas une image WebP".into(),
+        ));
     }
     let lecteur =
         image::ImageReader::with_format(std::io::Cursor::new(octets), image::ImageFormat::WebP);
-    lecteur.into_dimensions().map_err(|e| Error::Invalid(format!("en-tête WebP illisible : {e}")))
+    lecteur
+        .into_dimensions()
+        .map_err(|e| Error::Invalid(format!("en-tête WebP illisible : {e}")))
 }
 
 /// Reproduit le chargement d'un pet personnalisé par le **TUI** de Codex
@@ -233,20 +245,31 @@ pub fn valider_tui(pet_json: &[u8], atlas: &[u8], repli_id: &str) -> Result<PetC
 /// Au premier contrôle qui échoue.
 pub fn valider_galerie(pet_json: &[u8], atlas: &[u8], id_attendu: &str) -> Result<Version, Error> {
     if pet_json.len() > MAX_PET_JSON {
-        return Err(Error::Invalid("pet.json dépasse la limite de 64 Kio".into()));
+        return Err(Error::Invalid(
+            "pet.json dépasse la limite de 64 Kio".into(),
+        ));
     }
     let v: serde_json::Value = serde_json::from_slice(pet_json)?;
     if v.get("id").and_then(serde_json::Value::as_str) != Some(id_attendu) {
-        return Err(Error::Invalid(format!("l'id de pet.json doit valoir « {id_attendu} »")));
+        return Err(Error::Invalid(format!(
+            "l'id de pet.json doit valoir « {id_attendu} »"
+        )));
     }
     if v.get("spritesheetPath").and_then(serde_json::Value::as_str) != Some("spritesheet.webp") {
-        return Err(Error::Invalid("spritesheetPath doit valoir spritesheet.webp".into()));
+        return Err(Error::Invalid(
+            "spritesheetPath doit valoir spritesheet.webp".into(),
+        ));
     }
     if atlas.len() > MAX_ATLAS {
-        return Err(Error::Invalid("spritesheet.webp dépasse la limite de 5 Mo".into()));
+        return Err(Error::Invalid(
+            "spritesheet.webp dépasse la limite de 5 Mo".into(),
+        ));
     }
     let (l, h) = dimensions_webp(atlas)?;
-    let declare = v.get("spriteVersionNumber").and_then(serde_json::Value::as_u64).unwrap_or(1);
+    let declare = v
+        .get("spriteVersionNumber")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(1);
     match ((l, h), declare) {
         ((1536, 1872), 1) => Ok(Version::V1),
         ((1536, 2288), 2) => Ok(Version::V2),
@@ -329,7 +352,9 @@ fn pet_json(pet: &Pet, version: u32, grille: Grille) -> Result<Vec<u8>, Error> {
 pub fn artefact_v1(pet: &Pet) -> Result<Artefact, Error> {
     let atlas = &pet.manifest.atlas;
     if (atlas.width, atlas.columns) != (V1.0, V1.2) || atlas.rows < V1.3 {
-        return Err(Error::Invalid("l'atlas source ne contient pas le gabarit 8 x 9".into()));
+        return Err(Error::Invalid(
+            "l'atlas source ne contient pas le gabarit 8 x 9".into(),
+        ));
     }
     let octets = (V1.0 as usize) * (V1.1 as usize) * 4;
     let rgba = pet
@@ -356,9 +381,15 @@ pub fn artefact_v1(pet: &Pet) -> Result<Artefact, Error> {
 pub fn artefact_v2(pet: &Pet, atlas_webp: &[u8]) -> Result<Artefact, Error> {
     let c = conformite(&pet.pet, &pet.manifest);
     if c.version != Some(Version::V2) || !c.ok() {
-        return Err(Error::Invalid(format!("paquet non conforme v2 : {}", c.ecarts.join(" ; "))));
+        return Err(Error::Invalid(format!(
+            "paquet non conforme v2 : {}",
+            c.ecarts.join(" ; ")
+        )));
     }
-    let grille = Grille { rows: V2.3, ..Grille::default() };
+    let grille = Grille {
+        rows: V2.3,
+        ..Grille::default()
+    };
     Ok(Artefact {
         version: Version::V2,
         id: pet.pet.id.clone(),
@@ -414,8 +445,14 @@ pub fn installer(
         valider_tui(&artefact.pet_json, &artefact.atlas, &artefact.id)?;
     }
     let id = &artefact.id;
-    if id.is_empty() || !id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_') {
-        return Err(Error::Invalid(format!("identifiant de pet invalide : « {id} »")));
+    if id.is_empty()
+        || !id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+    {
+        return Err(Error::Invalid(format!(
+            "identifiant de pet invalide : « {id} »"
+        )));
     }
 
     let racine = codex_home.join("pets");

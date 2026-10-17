@@ -13,7 +13,13 @@ struct Pic {
 
 impl Pic {
     fn frame(&self) -> Frame<'_> {
-        Frame { y: &self.y, u: &self.u, v: &self.v, y_stride: self.w, uv_stride: self.w / 2 }
+        Frame {
+            y: &self.y,
+            u: &self.u,
+            v: &self.v,
+            y_stride: self.w,
+            uv_stride: self.w / 2,
+        }
     }
 }
 
@@ -46,7 +52,14 @@ fn synth(w: usize, h: usize, bd: u32, dx: i32, dy: i32) -> Pic {
         for x in 0..w / 2 {
             let (fx, fy) = ((2 * x) as i32 - dx, (2 * yy) as i32 - dy);
             let cu = 0.5 + 0.2 * ((fx as f64) / 53.0).sin();
-            let cv = 0.5 + 0.2 * ((fy as f64) / 37.0).cos() * if (fx / 16 + fy / 16) % 2 == 0 { 1.0 } else { -0.5 };
+            let cv = 0.5
+                + 0.2
+                    * ((fy as f64) / 37.0).cos()
+                    * if (fx / 16 + fy / 16) % 2 == 0 {
+                        1.0
+                    } else {
+                        -0.5
+                    };
             u[yy * w / 2 + x] = (cu * max).round() as u16;
             v[yy * w / 2 + x] = (cv * max).round() as u16;
         }
@@ -56,8 +69,17 @@ fn synth(w: usize, h: usize, bd: u32, dx: i32, dy: i32) -> Pic {
 
 fn psnr(a: &[u16], b: &[u16], bd: u32) -> f64 {
     let max = ((1u32 << bd) - 1) as f64;
-    let mse = a.iter().zip(b).map(|(&x, &y)| (x as f64 - y as f64).powi(2)).sum::<f64>() / a.len() as f64;
-    if mse == 0.0 { 99.0 } else { 10.0 * (max * max / mse).log10() }
+    let mse = a
+        .iter()
+        .zip(b)
+        .map(|(&x, &y)| (x as f64 - y as f64).powi(2))
+        .sum::<f64>()
+        / a.len() as f64;
+    if mse == 0.0 {
+        99.0
+    } else {
+        10.0 * (max * max / mse).log10()
+    }
 }
 
 struct Run {
@@ -72,7 +94,14 @@ struct Run {
 fn encode(cfg: EncoderConfig, pics: &[Pic]) -> Run {
     let bd = cfg.profile.bit_depth() as u32;
     let mut enc = Encoder::new(cfg).unwrap();
-    let mut run = Run { packets: vec![], keys: vec![], recons: vec![], hvcc: enc.hvcc(), sets: enc.parameter_sets(), psnr_y: vec![] };
+    let mut run = Run {
+        packets: vec![],
+        keys: vec![],
+        recons: vec![],
+        hvcc: enc.hvcc(),
+        sets: enc.parameter_sets(),
+        psnr_y: vec![],
+    };
     for p in pics {
         let pkt = enc.encode(&p.frame());
         let rec = enc.last_reconstruction().unwrap().clone();
@@ -98,7 +127,11 @@ fn check_filmcraft(run: &Run, w: usize, h: usize) {
         assert_eq!(pic.pts, i as i64);
         let rec = &run.recons[i];
         for (c, plane) in [&pic.y, &pic.u, &pic.v].into_iter().enumerate() {
-            let (pw, ph, stride) = if c == 0 { (w, h, pic.y_stride) } else { (w / 2, h / 2, pic.uv_stride) };
+            let (pw, ph, stride) = if c == 0 {
+                (w, h, pic.y_stride)
+            } else {
+                (w / 2, h / 2, pic.uv_stride)
+            };
             for yy in 0..ph {
                 for x in 0..pw {
                     let got = plane.get(yy * stride + x);
@@ -129,7 +162,11 @@ fn annexb(run: &Run) -> Vec<u8> {
 }
 
 fn ffmpeg_available() -> bool {
-    Command::new("ffmpeg").arg("-version").output().map(|o| o.status.success()).unwrap_or(false)
+    Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
 }
 
 /// Decode the Annex-B stream with ffmpeg and require bit-exact equality and an empty stderr.
@@ -139,7 +176,15 @@ fn check_ffmpeg(run: &Run, w: usize, h: usize, bd: u32, tag: &str) {
         return;
     }
     let dir = std::env::temp_dir();
-    let uniq = format!("{}-{}-{}", tag, std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+    let uniq = format!(
+        "{}-{}-{}",
+        tag,
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    );
     let inp = dir.join(format!("hevcenc-{uniq}.hevc"));
     let out = dir.join(format!("hevcenc-{uniq}.yuv"));
     std::fs::write(&inp, annexb(run)).unwrap();
@@ -155,17 +200,34 @@ fn check_ffmpeg(run: &Run, w: usize, h: usize, bd: u32, tag: &str) {
     let data = std::fs::read(&out).unwrap_or_default();
     let _ = std::fs::remove_file(&inp);
     let _ = std::fs::remove_file(&out);
-    assert!(o.status.success() && stderr.trim().is_empty(), "ffmpeg failed: {stderr}");
+    assert!(
+        o.status.success() && stderr.trim().is_empty(),
+        "ffmpeg failed: {stderr}"
+    );
     let bps = if bd == 8 { 1 } else { 2 };
     let frame_bytes = (w * h + 2 * (w / 2) * (h / 2)) * bps;
-    assert_eq!(data.len(), frame_bytes * run.packets.len(), "ffmpeg output size");
+    assert_eq!(
+        data.len(),
+        frame_bytes * run.packets.len(),
+        "ffmpeg output size"
+    );
     for (i, rec) in run.recons.iter().enumerate() {
         let mut off = i * frame_bytes;
         for (c, plane) in rec.iter().enumerate() {
             let pw = if c == 0 { w } else { w / 2 };
             for (k, &want) in plane.iter().enumerate() {
-                let got = if bd == 8 { data[off] as u16 } else { u16::from_le_bytes([data[off], data[off + 1]]) };
-                assert_eq!(got, want, "ffmpeg: picture {i} plane {c} at ({}, {})", k % pw, k / pw);
+                let got = if bd == 8 {
+                    data[off] as u16
+                } else {
+                    u16::from_le_bytes([data[off], data[off + 1]])
+                };
+                assert_eq!(
+                    got,
+                    want,
+                    "ffmpeg: picture {i} plane {c} at ({}, {})",
+                    k % pw,
+                    k / pw
+                );
                 off += bps;
             }
         }
@@ -185,7 +247,11 @@ fn intra_8bit_quality_and_decoders() {
     let (w, h) = (192, 128);
     let pics = vec![synth(w, h, 8, 0, 0)];
     let run = encode(cfg(w as u32, h as u32, 22, 1, Profile::Main), &pics);
-    eprintln!("intra QP22: {} bytes, PSNR-Y {:.2}", run.packets[0].len(), run.psnr_y[0]);
+    eprintln!(
+        "intra QP22: {} bytes, PSNR-Y {:.2}",
+        run.packets[0].len(),
+        run.psnr_y[0]
+    );
     assert!(run.psnr_y[0] > 35.0, "PSNR {}", run.psnr_y[0]);
     check_filmcraft(&run, w, h);
     check_ffmpeg(&run, w, h, 8, "intra8");
@@ -206,7 +272,11 @@ fn ffprobe_stream_info() {
     let run = encode(c, &pics);
     let path = std::env::temp_dir().join(format!("hevcenc-probe-{}.hevc", std::process::id()));
     std::fs::write(&path, annexb(&run)).unwrap();
-    let o = Command::new("ffprobe").args(["-v", "error", "-show_streams", "-of", "flat"]).arg(&path).output().unwrap();
+    let o = Command::new("ffprobe")
+        .args(["-v", "error", "-show_streams", "-of", "flat"])
+        .arg(&path)
+        .output()
+        .unwrap();
     let _ = std::fs::remove_file(&path);
     let s = String::from_utf8_lossy(&o.stdout).to_string();
     for want in [
@@ -237,7 +307,11 @@ fn inter_8bit_moving_pattern() {
     eprintln!("inter sizes {sizes:?} psnr {:?}", run.psnr_y);
     assert_eq!(run.keys, vec![true, false, false, false, false, false]);
     let p_avg = sizes[1..].iter().sum::<usize>() as f64 / 5.0;
-    assert!(p_avg < sizes[0] as f64 * 0.6, "P frames {p_avg} vs I {}", sizes[0]);
+    assert!(
+        p_avg < sizes[0] as f64 * 0.6,
+        "P frames {p_avg} vs I {}",
+        sizes[0]
+    );
     assert!(run.psnr_y.iter().all(|&p| p > 33.0));
     check_filmcraft(&run, w, h);
     check_ffmpeg(&run, w, h, 8, "inter8");
@@ -245,7 +319,15 @@ fn inter_8bit_moving_pattern() {
 
 #[test]
 fn odd_multiple_sizes_and_cropping() {
-    for (w, h) in [(34usize, 18usize), (66, 38), (8, 8), (130, 72), (2, 2), (2, 70), (264, 6)] {
+    for (w, h) in [
+        (34usize, 18usize),
+        (66, 38),
+        (8, 8),
+        (130, 72),
+        (2, 2),
+        (2, 70),
+        (264, 6),
+    ] {
         let pics: Vec<Pic> = (0..3).map(|i| synth(w, h, 8, i, 2 * i)).collect();
         let run = encode(cfg(w as u32, h as u32, 30, 2, Profile::Main), &pics);
         check_filmcraft(&run, w, h);
@@ -286,7 +368,11 @@ fn noise_low_qp() {
 #[test]
 fn high_qp_deblocking() {
     let (w, h) = (200, 136);
-    for (qp, profile, bd) in [(38u8, Profile::Main, 8u32), (44, Profile::Main, 8), (37, Profile::Main10, 10)] {
+    for (qp, profile, bd) in [
+        (38u8, Profile::Main, 8u32),
+        (44, Profile::Main, 8),
+        (37, Profile::Main10, 10),
+    ] {
         let pics: Vec<Pic> = (0..5).map(|i| synth(w, h, bd, 2 * i, i)).collect();
         let run = encode(cfg(w as u32, h as u32, qp, 4, profile), &pics);
         check_filmcraft(&run, w, h);
@@ -374,10 +460,25 @@ fn bench_1080p() {
         return;
     }
     let (w, h, n) = (1920usize, 1080usize, 8usize);
-    let src = std::env::var("HEVCENC_BENCH_SRC").unwrap_or_else(|_| "testsrc2=size=1920x1080:rate=30".into());
+    let src = std::env::var("HEVCENC_BENCH_SRC")
+        .unwrap_or_else(|_| "testsrc2=size=1920x1080:rate=30".into());
     let out = std::env::temp_dir().join(format!("hevcenc-bench-{}.yuv", std::process::id()));
     let st = Command::new("ffmpeg")
-        .args(["-v", "error", "-y", "-f", "lavfi", "-i", &src, "-frames:v", &n.to_string(), "-pix_fmt", "yuv420p", "-f", "rawvideo"])
+        .args([
+            "-v",
+            "error",
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            &src,
+            "-frames:v",
+            &n.to_string(),
+            "-pix_fmt",
+            "yuv420p",
+            "-f",
+            "rawvideo",
+        ])
         .arg(&out)
         .status()
         .unwrap();
@@ -389,7 +490,12 @@ fn bench_1080p() {
     let pics: Vec<Pic> = (0..n)
         .map(|i| {
             let f = &raw[i * fsz..(i + 1) * fsz];
-            Pic { w, y: to16(&f[..w * h]), u: to16(&f[w * h..w * h * 5 / 4]), v: to16(&f[w * h * 5 / 4..]) }
+            Pic {
+                w,
+                y: to16(&f[..w * h]),
+                u: to16(&f[w * h..w * h * 5 / 4]),
+                v: to16(&f[w * h * 5 / 4..]),
+            }
         })
         .collect();
     for qp in [22u8, 32] {

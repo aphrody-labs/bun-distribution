@@ -21,7 +21,8 @@ pub(crate) fn rename_preview(
     start: usize,
 ) -> (Option<Vec<lightcraft_engine::rename::RenamePlan>>, usize) {
     use std::hash::{Hash, Hasher};
-    type Rows = std::sync::Arc<std::sync::Mutex<Option<Vec<lightcraft_engine::rename::RenamePlan>>>>;
+    type Rows =
+        std::sync::Arc<std::sync::Mutex<Option<Vec<lightcraft_engine::rename::RenamePlan>>>>;
     let ids = app.session.targets(&json!({}));
     let photos = lightcraft_engine::rename::rename_photos(&app.session.catalog, &ids);
     let total = photos.len();
@@ -29,7 +30,11 @@ pub(crate) fn rename_preview(
     (template, start, app.session.catalog.revision, &ids).hash(&mut h);
     let key = h.finish();
     let id = egui::Id::new("rename-preview-rows");
-    let read = |rows: &Rows| rows.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
+    let read = |rows: &Rows| {
+        rows.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    };
     if let Some((k, rows)) = ctx.data(|d| d.get_temp::<(u64, Rows)>(id))
         && k == key
     {
@@ -40,12 +45,17 @@ pub(crate) fn rename_preview(
     let (out, template, repaint) = (rows.clone(), template.to_string(), ctx.clone());
     let exists = app.session.media.availability.probe();
     let work = move || {
-        let plans = lightcraft_engine::rename::plan_rename_photos(&first, &template, start, &|f| exists(f));
-        *out.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(plans);
+        let plans =
+            lightcraft_engine::rename::plan_rename_photos(&first, &template, start, &|f| exists(f));
+        *out.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(plans);
         repaint.request_repaint();
     };
     #[cfg(not(target_arch = "wasm32"))]
-    if let Err(e) = std::thread::Builder::new().name("lc-rename-preview".into()).spawn(work) {
+    if let Err(e) = std::thread::Builder::new()
+        .name("lc-rename-preview".into())
+        .spawn(work)
+    {
         log::warn!("rename preview: {e}");
     }
     #[cfg(target_arch = "wasm32")]
@@ -68,39 +78,71 @@ fn watermark_preview(
 ) {
     use std::hash::{Hash, Hasher};
     // (pictures received so far: 1 the thumbnail, 2 the sharp render; the latest, or why none came)
-    type Base = std::sync::Arc<std::sync::Mutex<(u8, Option<Result<lightcraft_raster::Rgba8, String>>)>>;
-    type Shown = (u64, u8, lightcraft_engine::export::Watermark, usize, egui::TextureHandle);
+    type Base =
+        std::sync::Arc<std::sync::Mutex<(u8, Option<Result<lightcraft_raster::Rgba8, String>>)>>;
+    type Shown = (
+        u64,
+        u8,
+        lightcraft_engine::export::Watermark,
+        usize,
+        egui::TextureHandle,
+    );
     let t = Tokens::get(ui.ctx());
-    let Some(&id) = app.session.targets(&json!({})).first() else { return };
-    let Some(photo) = app.session.catalog.photo(id).cloned() else { return };
-    let (out_w, out_h) = lightcraft_engine::export::output_size(&photo, &lightcraft_engine::export::ExportOptions { resize, ..Default::default() });
+    let Some(&id) = app.session.targets(&json!({})).first() else {
+        return;
+    };
+    let Some(photo) = app.session.catalog.photo(id).cloned() else {
+        return;
+    };
+    let (out_w, out_h) = lightcraft_engine::export::output_size(
+        &photo,
+        &lightcraft_engine::export::ExportOptions {
+            resize,
+            ..Default::default()
+        },
+    );
     let export_short = out_w.min(out_h);
     // pixels across the dialog, in steps so a scroll bar or a point of layout doesn't re-render
     let step = 128.0;
-    let px = ((ui.available_width() * ui.ctx().pixels_per_point() / step).ceil() * step).clamp(step, 2048.0) as usize;
+    let px = ((ui.available_width() * ui.ctx().pixels_per_point() / step).ceil() * step)
+        .clamp(step, 2048.0) as usize;
     let mut h = std::collections::hash_map::DefaultHasher::new();
     (id, app.session.catalog.revision, px).hash(&mut h);
     let key = h.finish();
     let ctx = ui.ctx().clone();
-    let (base_id, shown_id) = (egui::Id::new("export-wm-preview-base"), egui::Id::new("export-wm-preview-shown"));
+    let (base_id, shown_id) = (
+        egui::Id::new("export-wm-preview-base"),
+        egui::Id::new("export-wm-preview-shown"),
+    );
     let base = match ctx.data(|d| d.get_temp::<(u64, Base)>(base_id)) {
         Some((k, base)) if k == key => base,
         _ => {
             let base: Base = Default::default();
             // the thumbnail, then as wide as the dialog (a tall photo up to three times that high)
-            let jobs: Vec<_> = [app.session.thumb_job(id, 512), app.session.render_job(id, px, px * 3, false, true)].into_iter().flatten().collect();
+            let jobs: Vec<_> = [
+                app.session.thumb_job(id, 512),
+                app.session.render_job(id, px, px * 3, false, true),
+            ]
+            .into_iter()
+            .flatten()
+            .collect();
             // the web build has no worker thread: a full render there would hold up the page
             #[cfg(target_arch = "wasm32")]
             let jobs: Vec<_> = jobs.into_iter().take(1).collect();
             if jobs.is_empty() {
-                *base.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = (1, Some(Err("no such photo".into())));
+                *base
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) =
+                    (1, Some(Err("no such photo".into())));
             } else {
                 let (out, repaint) = (base.clone(), ctx.clone());
                 let work = move || {
                     for job in jobs {
                         // (a panic in the render is its failure: `RenderJob::run`)
                         let r = job.run().rendered.map(|r| r.image);
-                        let mut got = out.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+                        let mut got = out
+                            .lock()
+                            .unwrap_or_else(std::sync::PoisonError::into_inner);
                         // a failed sharp render keeps the thumbnail
                         if r.is_ok() || !matches!(got.1, Some(Ok(_))) {
                             *got = (got.0.saturating_add(1), Some(r));
@@ -109,7 +151,10 @@ fn watermark_preview(
                     }
                 };
                 #[cfg(not(target_arch = "wasm32"))]
-                if let Err(e) = std::thread::Builder::new().name("lc-watermark-preview".into()).spawn(work) {
+                if let Err(e) = std::thread::Builder::new()
+                    .name("lc-watermark-preview".into())
+                    .spawn(work)
+                {
                     log::warn!("watermark preview: {e}");
                 }
                 #[cfg(target_arch = "wasm32")]
@@ -120,11 +165,18 @@ fn watermark_preview(
         }
     };
     let shown = ctx.data(|d| d.get_temp::<Shown>(shown_id));
-    let stage = base.lock().unwrap_or_else(std::sync::PoisonError::into_inner).0;
+    let stage = base
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .0;
     let tex = match shown {
         Some((k, g, w, s, tex)) if k == key && g == stage && &w == wm && s == export_short => tex,
         _ => {
-            let photo_px = match &base.lock().unwrap_or_else(std::sync::PoisonError::into_inner).1 {
+            let photo_px = match &base
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .1
+            {
                 Some(Ok(img)) => Ok(img.clone()),
                 Some(Err(e)) => Err(Some(e.clone())),
                 None => Err(None),
@@ -132,7 +184,11 @@ fn watermark_preview(
             let mut img = match photo_px {
                 Ok(img) => img,
                 Err(e) => {
-                    let note = if e.is_some() { "Preview unavailable" } else { "Loading preview…" };
+                    let note = if e.is_some() {
+                        "Preview unavailable"
+                    } else {
+                        "Loading preview…"
+                    };
                     let r = ui.label(egui::RichText::new(crate::i18n::tr(note)).color(t.text_dim));
                     if let Some(e) = e {
                         r.on_hover_text(e);
@@ -147,7 +203,10 @@ fn watermark_preview(
             {
                 log::warn!("display profile: {e}");
             }
-            let color = std::sync::Arc::new(egui::ColorImage::from_rgba_unmultiplied([img.width, img.height], &img.as_bytes()));
+            let color = std::sync::Arc::new(egui::ColorImage::from_rgba_unmultiplied(
+                [img.width, img.height],
+                &img.as_bytes(),
+            ));
             let tex = match shown {
                 Some((.., mut tex)) => {
                     tex.set(color, egui::TextureOptions::LINEAR);
@@ -155,18 +214,29 @@ fn watermark_preview(
                 }
                 None => ctx.load_texture("export-wm-preview", color, egui::TextureOptions::LINEAR),
             };
-            ctx.data_mut(|d| d.insert_temp(shown_id, (key, stage, wm.clone(), export_short, tex.clone())));
+            ctx.data_mut(|d| {
+                d.insert_temp(
+                    shown_id,
+                    (key, stage, wm.clone(), export_short, tex.clone()),
+                )
+            });
             tex
         }
     };
     let size = tex.size_vec2();
     let scale = ui.available_width() / size.x.max(1.0);
-    let r = ui.vertical_centered(|ui| ui.add(egui::Image::new((tex.id(), size * scale)))).inner;
+    let r = ui
+        .vertical_centered(|ui| ui.add(egui::Image::new((tex.id(), size * scale))))
+        .inner;
     crate::widgets::register(ui.ctx(), "image:exportWatermarkPreview", r.rect);
 }
 
 /// About dialog tabs: (widget id suffix, label). The credits come from `crate::credits`.
-pub const ABOUT_TABS: &[(&str, &str)] = &[("about", "About"), ("contributors", "Contributors"), ("models", "Models")];
+pub const ABOUT_TABS: &[(&str, &str)] = &[
+    ("about", "About"),
+    ("contributors", "Contributors"),
+    ("models", "Models"),
+];
 
 /// Help ▸ What's New (docs/whats-new.md).
 pub const WHATS_NEW: &str = include_str!("../../../../docs/libraries/lightcraft/whats-new.md");
@@ -193,7 +263,9 @@ pub(crate) fn prepare(app: &LightcraftApp, ui: &mut egui::Ui) {
 }
 
 pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
-    let Some(mut dlg) = app.ui.dialog.clone() else { return };
+    let Some(mut dlg) = app.ui.dialog.clone() else {
+        return;
+    };
     let at_start = dlg.clone();
     // Esc with a popup open in the dialog (a dropdown, a date picker's calendar) closes the popup
     // only: claimed before the dialog is drawn, since the popup is gone once it has handled the key
@@ -204,9 +276,14 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
     let screen = ctx.content_rect();
     // The backdrop is an area below the dialog window (a bare `Middle` layer painter would be
     // painted after every area — i.e. over the dialog too).
-    egui::Area::new(egui::Id::new("dialog-dim")).order(egui::Order::Middle).fixed_pos(screen.min).interactable(false).show(ctx, |ui| {
-        ui.painter().rect_filled(screen, 0.0, egui::Color32::from_black_alpha(140));
-    });
+    egui::Area::new(egui::Id::new("dialog-dim"))
+        .order(egui::Order::Middle)
+        .fixed_pos(screen.min)
+        .interactable(false)
+        .show(ctx, |ui| {
+            ui.painter()
+                .rect_filled(screen, 0.0, egui::Color32::from_black_alpha(140));
+        });
     let mut close = false;
     let mut confirm = false;
     // Return presses OK in a dialog without a text field of its own (Lightroom's default button);
@@ -265,7 +342,8 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
         Dialog::Shortcuts => "Keyboard Shortcuts",
     }
     .to_string();
-    let frame = egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(16, 12));
+    let frame =
+        egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(16, 12));
     // The import review can be resized (its photo grid takes the room); it keeps a window id of its
     // own so the size it is given doesn't carry over to the other dialogs. Its content scrolls
     // rather than growing the window when the options below the grid get taller (e.g. Copy).
@@ -275,7 +353,9 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
     // bar and the button row stay outside the scroll area. The room they take is measured on the
     // previous frame (a guess on the first one).
     let chrome_id = window_id.with("chrome");
-    let chrome = ctx.data(|d| d.get_temp::<f32>(chrome_id)).unwrap_or(DIALOG_CHROME_GUESS);
+    let chrome = ctx
+        .data(|d| d.get_temp::<f32>(chrome_id))
+        .unwrap_or(DIALOG_CHROME_GUESS);
     let body_max = (screen.height() - 2.0 * DIALOG_SCREEN_MARGIN - chrome).max(DIALOG_MIN_BODY);
     let mut body_h = None;
     let shown = egui::Window::new(crate::i18n::tr(&title)).id(window_id)
@@ -1317,7 +1397,12 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
                     *error = Some(e);
                 }
             }
-            Ok(r) if matches!(dlg, Dialog::NewAlbum { .. }) && r.get("skipped").and_then(serde_json::Value::as_u64).is_some_and(|n| n > 0) => {
+            Ok(r)
+                if matches!(dlg, Dialog::NewAlbum { .. })
+                    && r.get("skipped")
+                        .and_then(serde_json::Value::as_u64)
+                        .is_some_and(|n| n > 0) =>
+            {
                 // albums hold library photos (issue #684): say which part of the selection stayed out
                 crate::panels::grid::toast_skipped(app, ctx, &r);
                 close = true;
@@ -1359,7 +1444,9 @@ fn list_applied_id() -> egui::Id {
 /// shortcuts, smart-album rules): `preferred`, less what the dialog needs to fit the window, so
 /// on a short window the list gets shorter rather than scrolling inside a scrolling dialog.
 pub fn list_height(ui: &egui::Ui, preferred: f32) -> f32 {
-    let shrink = ui.data(|d| d.get_temp::<f32>(list_shrink_id())).unwrap_or(0.0);
+    let shrink = ui
+        .data(|d| d.get_temp::<f32>(list_shrink_id()))
+        .unwrap_or(0.0);
     let height = (preferred - shrink).max(preferred.min(DIALOG_MIN_LIST));
     ui.data_mut(|d| *d.get_temp_mut_or_default::<f32>(list_applied_id()) += preferred - height);
     height
@@ -1369,7 +1456,12 @@ pub fn list_height(ui: &egui::Ui, preferred: f32) -> f32 {
 /// the dialog (it shrinks to its content, so a dialog that fits looks as it would without it;
 /// each dialog keeps a scroll position of its own), drawn directly otherwise. Returns the height
 /// they took when scrolled.
-fn dialog_body(ui: &mut egui::Ui, scroll: Option<&str>, max_height: f32, body: impl FnOnce(&mut egui::Ui)) -> Option<f32> {
+fn dialog_body(
+    ui: &mut egui::Ui,
+    scroll: Option<&str>,
+    max_height: f32,
+    body: impl FnOnce(&mut egui::Ui),
+) -> Option<f32> {
     let Some(name) = scroll else {
         ui.data_mut(|d| d.remove_temp::<f32>(list_shrink_id()));
         body(ui);
@@ -1386,8 +1478,12 @@ fn dialog_body(ui: &mut egui::Ui, scroll: Option<&str>, max_height: f32, body: i
         .auto_shrink([true, true])
         .show(ui, body);
     // what the lists that scroll on their own gave up this frame, and what they should next frame
-    let applied = ui.data(|d| d.get_temp::<f32>(list_applied_id())).unwrap_or(0.0);
-    let was = ui.data(|d| d.get_temp::<f32>(list_shrink_id())).unwrap_or(0.0);
+    let applied = ui
+        .data(|d| d.get_temp::<f32>(list_applied_id()))
+        .unwrap_or(0.0);
+    let was = ui
+        .data(|d| d.get_temp::<f32>(list_shrink_id()))
+        .unwrap_or(0.0);
     let shrink = (out.content_size.y + applied - max_height).max(0.0);
     if (shrink - was).abs() > 0.5 {
         ui.data_mut(|d| d.insert_temp(list_shrink_id(), shrink));
@@ -1424,7 +1520,8 @@ fn sam_by_hand(sam: &lightcraft_engine::segment::Segmenter) -> bool {
 }
 
 /// The model installation guide.
-const SAM_HELP: &str = "https://github.com/storytold/lightcraft/blob/main/docs/ai-masks.md#getting-the-model";
+const SAM_HELP: &str =
+    "https://github.com/storytold/lightcraft/blob/main/docs/ai-masks.md#getting-the-model";
 
 /// Show the SAM 3 model folder in the file manager (created first, so there is something to show).
 fn show_model_folder(app: &mut LightcraftApp, dir: &std::path::Path) -> Result<(), String> {
@@ -1440,15 +1537,26 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
     let seg = &app.session.segmenter;
     let d = seg.download_status();
     if seg.installed() {
-        ui.label(crate::i18n::tr("The SAM 3 model is installed: Object and Describe masks are ready."));
+        ui.label(crate::i18n::tr(
+            "The SAM 3 model is installed: Object and Describe masks are ready.",
+        ));
         return;
     }
     let gb = |b: u64| b as f64 / 1e9;
     ui.label(crate::i18n::tr(
         "Object and Describe masks use SAM 3, Meta's segmentation model. It isn't part of LightCraft, and everything else works without it.",
     ));
-    let dir = seg.dir.as_ref().map(|d| d.display().to_string()).unwrap_or_default();
-    ui.label(format!("{} {:.1} GB, {} {dir}", crate::i18n::tr("A one-time download of about"), gb(MODEL_BYTES), crate::i18n::tr("saved in")));
+    let dir = seg
+        .dir
+        .as_ref()
+        .map(|d| d.display().to_string())
+        .unwrap_or_default();
+    ui.label(format!(
+        "{} {:.1} GB, {} {dir}",
+        crate::i18n::tr("A one-time download of about"),
+        gb(MODEL_BYTES),
+        crate::i18n::tr("saved in")
+    ));
     ui.label(
         egui::RichText::new(format!(
             "{} {LICENSE_NAME} — {}",
@@ -1457,7 +1565,9 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
         ))
         .color(t.text_label),
     );
-    let r = ui.link(crate::i18n::tr("Read the SAM License")).on_hover_text(LICENSE_URL);
+    let r = ui
+        .link(crate::i18n::tr("Read the SAM License"))
+        .on_hover_text(LICENSE_URL);
     crate::widgets::register(ui.ctx(), "link:samLicense", r.rect);
     if r.clicked() {
         let _ = crate::links::open(app, LICENSE_URL);
@@ -1465,7 +1575,11 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
     let seg = &app.session.segmenter;
     if d.running {
         ui.add_space(4.0);
-        let frac = if d.total > 0 { d.done as f64 / d.total as f64 } else { 0.0 };
+        let frac = if d.total > 0 {
+            d.done as f64 / d.total as f64
+        } else {
+            0.0
+        };
         let text = format!("{:.2} / {:.2} GB · {}", gb(d.done), gb(d.total), d.file);
         let r = ui.add(egui::ProgressBar::new(frac as f32).text(text));
         crate::widgets::register(ui.ctx(), "progress:samDownload", r.rect);
@@ -1474,8 +1588,14 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
         if r.clicked() {
             app.session.segmenter.cancel_download();
         }
-        ui.label(egui::RichText::new(crate::i18n::tr("You can close this: the download continues, and resumes if interrupted.")).color(t.text_dim));
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(250));
+        ui.label(
+            egui::RichText::new(crate::i18n::tr(
+                "You can close this: the download continues, and resumes if interrupted.",
+            ))
+            .color(t.text_dim),
+        );
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(250));
         return;
     }
     if seg.mirrors().is_empty() {
@@ -1497,7 +1617,9 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
                     app.toast(ui.ctx(), e);
                 }
             }
-            let r = ui.link(crate::i18n::tr("How to install the model")).on_hover_text(SAM_HELP);
+            let r = ui
+                .link(crate::i18n::tr("How to install the model"))
+                .on_hover_text(SAM_HELP);
             crate::widgets::register(ui.ctx(), "link:samHelp", r.rect);
             if r.clicked()
                 && let Err(e) = crate::links::open(app, SAM_HELP)
@@ -1507,12 +1629,22 @@ fn sam_model_body(app: &mut LightcraftApp, ui: &mut egui::Ui, error: Option<&str
         });
     }
     if let Some(e) = error.map(str::to_string).or(d.error) {
-        ui.label(egui::RichText::new(format!("{} {e}", crate::i18n::tr("The download didn't work:"))).color(egui::Color32::from_rgb(230, 90, 80)));
+        ui.label(
+            egui::RichText::new(format!(
+                "{} {e}",
+                crate::i18n::tr("The download didn't work:")
+            ))
+            .color(egui::Color32::from_rgb(230, 90, 80)),
+        );
     }
 }
 
 /// Runs a command that creates an album and asks the Albums tree to open the folders down to it.
-fn created_in(app: &mut LightcraftApp, command: &str, params: serde_json::Value) -> Result<serde_json::Value, String> {
+fn created_in(
+    app: &mut LightcraftApp,
+    command: &str,
+    params: serde_json::Value,
+) -> Result<serde_json::Value, String> {
     let r = app.run(command, params)?;
     app.ui.reveal_album = r.get("id").and_then(serde_json::Value::as_u64);
     Ok(r)
@@ -1520,11 +1652,18 @@ fn created_in(app: &mut LightcraftApp, command: &str, params: serde_json::Value)
 
 /// The albums an Album rule in smart album `editing` picks from, in the sidebar's order: the album
 /// itself and any smart album that tests it (testing it back would loop) are blocked, with why.
-pub(crate) fn album_entries(cat: &lightcraft_catalog::Catalog, editing: Option<u64>) -> Vec<crate::album_picker::AlbumEntry> {
+pub(crate) fn album_entries(
+    cat: &lightcraft_catalog::Catalog,
+    editing: Option<u64>,
+) -> Vec<crate::album_picker::AlbumEntry> {
     let editing = editing.map(lightcraft_catalog::AlbumId);
     crate::album_picker::entries_from(cat, |a| match editing {
-        Some(e) if a.id == e => Some(crate::i18n::tr("This is the album you're editing").to_string()),
-        Some(e) if cat.album_reaches(a.id, e) => Some(crate::i18n::tr("It tests this album, so testing it back would loop").to_string()),
+        Some(e) if a.id == e => {
+            Some(crate::i18n::tr("This is the album you're editing").to_string())
+        }
+        Some(e) if cat.album_reaches(a.id, e) => {
+            Some(crate::i18n::tr("It tests this album, so testing it back would loop").to_string())
+        }
         _ => None,
     })
 }
@@ -1712,9 +1851,23 @@ pub fn confirm_dialog(app: &mut LightcraftApp, dlg: &Dialog) -> Result<serde_jso
 }
 
 /// Open a one-field dialog that runs `command` with `params` + `{key: typed value}`.
-pub fn prompt(app: &mut LightcraftApp, title: &str, hint: &str, value: &str, command: &str, params: serde_json::Value, key: &str) {
-    app.ui.dialog =
-        Some(Dialog::TextPrompt { title: title.into(), hint: hint.into(), value: value.into(), command: command.into(), params, key: key.into() });
+pub fn prompt(
+    app: &mut LightcraftApp,
+    title: &str,
+    hint: &str,
+    value: &str,
+    command: &str,
+    params: serde_json::Value,
+    key: &str,
+) {
+    app.ui.dialog = Some(Dialog::TextPrompt {
+        title: title.into(),
+        hint: hint.into(),
+        value: value.into(),
+        command: command.into(),
+        params,
+        key: key.into(),
+    });
 }
 
 /// The Export dialog's choices as `app.export` params (without the folder).
@@ -1736,7 +1889,12 @@ fn export_dialog_params(
 
 /// Two columns of settings-group checkboxes (Copy Settings, Create Preset) plus All / None.
 fn group_checklist(ui: &mut egui::Ui, tag: &str, groups: &mut Vec<String>) {
-    let key_of = |g: &SettingsGroup| serde_json::to_value(g).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
+    let key_of = |g: &SettingsGroup| {
+        serde_json::to_value(g)
+            .ok()
+            .and_then(|v| v.as_str().map(str::to_string))
+            .unwrap_or_default()
+    };
     ui.columns(2, |cols| {
         for (i, g) in SettingsGroup::ALL.iter().enumerate() {
             let key = key_of(g);
@@ -1769,21 +1927,53 @@ fn group_checklist(ui: &mut egui::Ui, tag: &str, groups: &mut Vec<String>) {
 /// Width of the label column in dialogs.
 const LABEL_W: f32 = 78.0;
 
-const fn spec(id: &'static str, label: &'static str, min: f64, max: f64, default: f64, step: f64) -> ControlSpec {
-    ControlSpec { id, label, section: Section::Light, min, max, default, step, decimals: 0, track: Track::Plain }
+const fn spec(
+    id: &'static str,
+    label: &'static str,
+    min: f64,
+    max: f64,
+    default: f64,
+    step: f64,
+) -> ControlSpec {
+    ControlSpec {
+        id,
+        label,
+        section: Section::Light,
+        min,
+        max,
+        default,
+        step,
+        decimals: 0,
+        track: Track::Plain,
+    }
 }
 const QUALITY: ControlSpec = spec("export.quality", "Quality", 1.0, 100.0, 90.0, 1.0);
-const LIMIT_KB: ControlSpec = spec("export.limitKb", "Limit file size (KB, 0 = off)", 0.0, 20_000.0, 0.0, 10.0);
+const LIMIT_KB: ControlSpec = spec(
+    "export.limitKb",
+    "Limit file size (KB, 0 = off)",
+    0.0,
+    20_000.0,
+    0.0,
+    10.0,
+);
 const SIZE_PX: ControlSpec = spec("export.sizePx", "Pixels", 16.0, 20_000.0, 2048.0, 16.0);
 const SIZE_W: ControlSpec = spec("export.sizeW", "Width (px)", 16.0, 20_000.0, 2048.0, 16.0);
 const SIZE_H: ControlSpec = spec("export.sizeH", "Height (px)", 16.0, 20_000.0, 2048.0, 16.0);
-const SIZE_MP: ControlSpec = ControlSpec { decimals: 1, ..spec("export.sizeMp", "Megapixels", 0.1, 100.0, 12.0, 0.1) };
+const SIZE_MP: ControlSpec = ControlSpec {
+    decimals: 1,
+    ..spec("export.sizeMp", "Megapixels", 0.1, 100.0, 12.0, 0.1)
+};
 const SIZE_PCT: ControlSpec = spec("export.sizePercent", "Percent", 1.0, 400.0, 50.0, 1.0);
 const START_NUMBER: ControlSpec = spec("export.startNumber", "Start number", 1.0, 9999.0, 1.0, 1.0);
 const PPI: ControlSpec = spec("export.ppi", "Resolution (ppi)", 1.0, 1200.0, 240.0, 1.0);
 
 /// Image Sizing: full size, or a resize mode and its value(s), don't enlarge, ppi.
-fn export_size(ui: &mut egui::Ui, full: &mut bool, r: &mut lightcraft_engine::export::Resize, ppi: &mut u16) {
+fn export_size(
+    ui: &mut egui::Ui,
+    full: &mut bool,
+    r: &mut lightcraft_engine::export::Resize,
+    ppi: &mut u16,
+) {
     use lightcraft_engine::export::ResizeMode as R;
     const MODES: [(R, &str); 7] = [
         (R::LongEdge, "Long Edge"),
@@ -1798,13 +1988,19 @@ fn export_size(ui: &mut egui::Ui, full: &mut bool, r: &mut lightcraft_engine::ex
     crate::widgets::register(ui.ctx(), "check:exportFullSize", r_full.rect);
     if !*full {
         field(ui, "Resize to", |ui| {
-            let cur = MODES.iter().find(|m| m.0 == r.mode).map_or("Long Edge", |m| m.1);
+            let cur = MODES
+                .iter()
+                .find(|m| m.0 == r.mode)
+                .map_or("Long Edge", |m| m.1);
             let before = r.mode;
-            let c = egui::ComboBox::from_id_salt("exportResizeMode").width(150.0).selected_text(crate::i18n::tr(cur)).show_ui(ui, |ui| {
-                for (m, l) in MODES {
-                    ui.selectable_value(&mut r.mode, m, crate::i18n::tr(l));
-                }
-            });
+            let c = egui::ComboBox::from_id_salt("exportResizeMode")
+                .width(150.0)
+                .selected_text(crate::i18n::tr(cur))
+                .show_ui(ui, |ui| {
+                    for (m, l) in MODES {
+                        ui.selectable_value(&mut r.mode, m, crate::i18n::tr(l));
+                    }
+                });
             crate::widgets::register(ui.ctx(), "combo:exportResizeMode", c.response.rect);
             if r.mode != before {
                 // a sensible value for the new unit
@@ -1847,16 +2043,65 @@ fn export_size(ui: &mut egui::Ui, full: &mut bool, r: &mut lightcraft_engine::ex
 /// Keep them in grid order so bottom-centre and edge-centre anchors are available in Export.
 const WM_POSITIONS: [(lightcraft_engine::export::Anchor, &str); 9] = {
     use lightcraft_engine::export::Anchor::*;
-    [(TopLeft, "↖"), (Top, "↑"), (TopRight, "↗"), (Left, "←"), (Center, "•"), (Right, "→"), (BottomLeft, "↙"), (Bottom, "↓"), (BottomRight, "↘")]
+    [
+        (TopLeft, "↖"),
+        (Top, "↑"),
+        (TopRight, "↗"),
+        (Left, "←"),
+        (Center, "•"),
+        (Right, "→"),
+        (BottomLeft, "↙"),
+        (Bottom, "↓"),
+        (BottomRight, "↘"),
+    ]
 };
 
-const WM_IMAGE_WIDTH: ControlSpec = spec("export.watermarkImageWidth", "Width (% of photo)", 2.0, 100.0, 20.0, 1.0);
-const WM_SIZE: ControlSpec = spec("export.watermarkSize", "Size (% of short edge)", 1.0, 15.0, 3.5, 0.5);
-const WM_OPACITY: ControlSpec = spec("export.watermarkOpacity", "Opacity (%)", 5.0, 100.0, 70.0, 1.0);
-const WM_INSET_X: ControlSpec =
-    ControlSpec { decimals: 1, ..spec("export.watermarkInsetX", "Horizontal inset (% of short edge)", 0.0, 40.0, 2.5, 0.5) };
-const WM_INSET_Y: ControlSpec =
-    ControlSpec { decimals: 1, ..spec("export.watermarkInsetY", "Vertical inset (% of short edge)", 0.0, 40.0, 2.5, 0.5) };
+const WM_IMAGE_WIDTH: ControlSpec = spec(
+    "export.watermarkImageWidth",
+    "Width (% of photo)",
+    2.0,
+    100.0,
+    20.0,
+    1.0,
+);
+const WM_SIZE: ControlSpec = spec(
+    "export.watermarkSize",
+    "Size (% of short edge)",
+    1.0,
+    15.0,
+    3.5,
+    0.5,
+);
+const WM_OPACITY: ControlSpec = spec(
+    "export.watermarkOpacity",
+    "Opacity (%)",
+    5.0,
+    100.0,
+    70.0,
+    1.0,
+);
+const WM_INSET_X: ControlSpec = ControlSpec {
+    decimals: 1,
+    ..spec(
+        "export.watermarkInsetX",
+        "Horizontal inset (% of short edge)",
+        0.0,
+        40.0,
+        2.5,
+        0.5,
+    )
+};
+const WM_INSET_Y: ControlSpec = ControlSpec {
+    decimals: 1,
+    ..spec(
+        "export.watermarkInsetY",
+        "Vertical inset (% of short edge)",
+        0.0,
+        40.0,
+        2.5,
+        0.5,
+    )
+};
 
 /// A themed slider row editing `v`; true when it changed.
 fn num(ui: &mut egui::Ui, spec: &ControlSpec, v: &mut f64) -> bool {
@@ -1873,10 +2118,14 @@ fn num(ui: &mut egui::Ui, spec: &ControlSpec, v: &mut f64) -> bool {
 fn field<R>(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui::Ui) -> R) -> R {
     let t = Tokens::get(ui.ctx());
     ui.horizontal(|ui| {
-        ui.allocate_ui_with_layout(egui::vec2(LABEL_W, 24.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-            ui.set_min_width(LABEL_W);
-            ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label));
-        });
+        ui.allocate_ui_with_layout(
+            egui::vec2(LABEL_W, 24.0),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.set_min_width(LABEL_W);
+                ui.label(egui::RichText::new(crate::i18n::tr(label)).color(t.text_label));
+            },
+        );
         add(ui)
     })
     .inner
@@ -1887,11 +2136,21 @@ fn field<R>(ui: &mut egui::Ui, label: &str, add: impl FnOnce(&mut egui::Ui) -> R
 /// instead made the auto-sized dialog grow every frame when the real button was wider, #8.)
 fn trailing_button_row(ui: &mut egui::Ui, add: impl FnOnce(&mut egui::Ui)) {
     let h = ui.spacing().interact_size.y.max(24.0);
-    ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), h), egui::Layout::right_to_left(egui::Align::Center), add);
+    ui.allocate_ui_with_layout(
+        egui::vec2(ui.available_width(), h),
+        egui::Layout::right_to_left(egui::Align::Center),
+        add,
+    );
 }
 
 /// A labelled row of mutually exclusive choice buttons (ids `button:{id}-{index}`).
-fn choices<V: PartialEq + Copy>(ui: &mut egui::Ui, label: &str, id: &str, options: &[(V, &str)], value: &mut V) {
+fn choices<V: PartialEq + Copy>(
+    ui: &mut egui::Ui,
+    label: &str,
+    id: &str,
+    options: &[(V, &str)],
+    value: &mut V,
+) {
     field(ui, label, |ui| {
         ui.spacing_mut().item_spacing.x = 4.0;
         for (i, (v, l)) in options.iter().enumerate() {
@@ -1905,7 +2164,10 @@ fn choices<V: PartialEq + Copy>(ui: &mut egui::Ui, label: &str, id: &str, option
 /// Dialogs that Return confirms with nothing focused (those with text fields confirm from the
 /// field: `dialog_field`).
 fn return_confirms(dlg: &Dialog) -> bool {
-    matches!(dlg, Dialog::CopySettings { .. } | Dialog::PasteSettings { .. })
+    matches!(
+        dlg,
+        Dialog::CopySettings { .. } | Dialog::PasteSettings { .. }
+    )
 }
 
 /// A dialog's one text field: it keeps the focus (except while its own menu has it) and opens
@@ -1913,7 +2175,11 @@ fn return_confirms(dlg: &Dialog) -> bool {
 /// cancels the dialog (`show`). Taking the focus back with a bare `TextEdit` every frame hid the
 /// focus Return gives up, and Return did nothing.
 fn dialog_field(ui: &mut egui::Ui, widget: &str, text: &mut String, hint: &str) -> bool {
-    let r = crate::text_field::TextField::singleline(widget, text).hint(crate::i18n::tr(hint)).width(f32::INFINITY).select_on_focus(true).show(ui);
+    let r = crate::text_field::TextField::singleline(widget, text)
+        .hint(crate::i18n::tr(hint))
+        .width(f32::INFINITY)
+        .select_on_focus(true)
+        .show(ui);
     if !r.editing {
         r.response.request_focus();
     }
@@ -1950,7 +2216,13 @@ mod watermark_position_tests {
         ];
         assert_eq!(WM_POSITIONS.len(), anchors.len());
         for anchor in anchors {
-            assert_eq!(WM_POSITIONS.iter().filter(|(position, _)| *position == anchor).count(), 1);
+            assert_eq!(
+                WM_POSITIONS
+                    .iter()
+                    .filter(|(position, _)| *position == anchor)
+                    .count(),
+                1
+            );
         }
     }
 }

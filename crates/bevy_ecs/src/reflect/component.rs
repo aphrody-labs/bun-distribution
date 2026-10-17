@@ -65,8 +65,8 @@ use crate::{
     prelude::Component,
     relationship::RelationshipHookMode,
     world::{
-        unsafe_world_cell::UnsafeEntityCell, EntityMut, EntityWorldMut, FilteredEntityMut,
-        FilteredEntityRef, World,
+        EntityMut, EntityWorldMut, FilteredEntityMut, FilteredEntityRef, World,
+        unsafe_world_cell::UnsafeEntityCell,
     },
 };
 use alloc::boxed::Box;
@@ -321,7 +321,9 @@ impl<C: Component + Reflect + TypePath> CreateTypeData<C> for ReflectComponent {
                 if !C::Mutability::MUTABLE {
                     let name = DebugName::type_name::<C>();
                     let name = name.shortname();
-                    panic!("Cannot call `ReflectComponent::apply` on component {name}. It is immutable, and cannot modified through reflection");
+                    panic!(
+                        "Cannot call `ReflectComponent::apply` on component {name}. It is immutable, and cannot modified through reflection"
+                    );
                 }
 
                 // SAFETY: guard ensures `C` is a mutable component
@@ -376,7 +378,9 @@ impl<C: Component + Reflect + TypePath> CreateTypeData<C> for ReflectComponent {
                 if !C::Mutability::MUTABLE {
                     let name = DebugName::type_name::<C>();
                     let name = name.shortname();
-                    panic!("Cannot call `ReflectComponent::reflect_mut` on component {name}. It is immutable, and cannot modified through reflection");
+                    panic!(
+                        "Cannot call `ReflectComponent::reflect_mut` on component {name}. It is immutable, and cannot modified through reflection"
+                    );
                 }
 
                 // SAFETY: guard ensures `C` is a mutable component
@@ -390,7 +394,9 @@ impl<C: Component + Reflect + TypePath> CreateTypeData<C> for ReflectComponent {
                 if !C::Mutability::MUTABLE {
                     let name = DebugName::type_name::<C>();
                     let name = name.shortname();
-                    panic!("Cannot call `ReflectComponent::reflect_unchecked_mut` on component {name}. It is immutable, and cannot modified through reflection");
+                    panic!(
+                        "Cannot call `ReflectComponent::reflect_unchecked_mut` on component {name}. It is immutable, and cannot modified through reflection"
+                    );
                 }
 
                 // SAFETY: reflect_unchecked_mut is an unsafe function pointer used by

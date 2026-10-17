@@ -17,7 +17,9 @@ pub fn compare<const OP: u32, const SYSTEM: SystemId>(
             (ctx.gekko.read_gpr(instr.ra()) as i32).cmp(&instr.simm()),
         ),
         OP_CMPL => ConditionRegister::field_from_ord(
-            ctx.gekko.read_gpr(instr.ra()).cmp(&ctx.gekko.read_gpr(instr.rb())),
+            ctx.gekko
+                .read_gpr(instr.ra())
+                .cmp(&ctx.gekko.read_gpr(instr.rb())),
         ),
         OP_CMPLI => ConditionRegister::field_from_ord(
             ctx.gekko.read_gpr(instr.ra()).cmp(&(instr.uimm() as u32)),

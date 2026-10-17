@@ -5,7 +5,7 @@
 use crate::Interaction;
 use crate::{FocusPolicy, Node};
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 
 #[expect(
     deprecated,

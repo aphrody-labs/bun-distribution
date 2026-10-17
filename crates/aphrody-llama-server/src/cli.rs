@@ -30,7 +30,7 @@ fn parse_args(mut args: impl Iterator<Item = String>) -> Result<Args, String> {
             "--role" => {
                 let name = value()?;
                 role = Some(Role::parse(&name).ok_or_else(|| format!("unknown role `{name}`"))?);
-            },
+            }
             other => return Err(format!("unknown argument `{other}`")),
         }
     }
@@ -48,35 +48,44 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
     // reqwest is built with `rustls-no-provider`: install the process-wide rustls
     // crypto provider before any HTTP client exists (building one without it panics).
     let _ = rustls::crypto::ring::default_provider().install_default();
-    let args = match parse_args(args.into_iter().skip(1).map(|a| a.to_string_lossy().into_owned()))
-    {
+    let args = match parse_args(
+        args.into_iter()
+            .skip(1)
+            .map(|a| a.to_string_lossy().into_owned()),
+    ) {
         Ok(args) => args,
         Err(message) => {
             eprintln!("aphrody-llama-daemon: {message}");
             eprintln!("usage: aphrody-llama-daemon --state-root <dir> --role <chat|embed|rerank>");
             return 2;
-        },
+        }
     };
 
     // Current-thread runtime: the server is spawned from this very thread,
     // which the Linux parent-death signal is bound to.
-    let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("aphrody-llama-daemon: cannot start the runtime: {error}");
             return 1;
-        },
+        }
     };
 
     let dirs = StateDirs::new(args.state_root);
     match runtime.block_on(daemon::run(&dirs, args.role)) {
         Ok(reason) => {
-            eprintln!("aphrody-llama-daemon[{}]: exiting ({reason:?})", args.role.as_str());
+            eprintln!(
+                "aphrody-llama-daemon[{}]: exiting ({reason:?})",
+                args.role.as_str()
+            );
             0
-        },
+        }
         Err(error) => {
             eprintln!("aphrody-llama-daemon[{}]: {error}", args.role.as_str());
             1
-        },
+        }
     }
 }

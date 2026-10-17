@@ -32,7 +32,11 @@ pub struct ImportReport {
 
 impl ImportReport {
     pub(crate) fn new(importer: &str, dry_run: bool) -> Self {
-        Self { importer: importer.to_owned(), dry_run, ..Self::default() }
+        Self {
+            importer: importer.to_owned(),
+            dry_run,
+            ..Self::default()
+        }
     }
 
     pub(crate) fn add(&mut self, key: &str, amount: u64) {

@@ -101,7 +101,9 @@ pub enum SpawnSceneError {
     /// Calling [`Scene::resolve`] failed.
     ResolveSceneError(#[from] ResolveSceneError),
     /// Attempted to spawn a scene that has not been resolved yet.
-    #[error("This scene has not been resolved yet and cannot be spawned. It is likely waiting for dependencies to load")]
+    #[error(
+        "This scene has not been resolved yet and cannot be spawned. It is likely waiting for dependencies to load"
+    )]
     UnresolvedSceneError,
 }
 

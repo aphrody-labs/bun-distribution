@@ -19,7 +19,17 @@
 //! - [`Y4mSource`]: uncompressed YUV4MPEG2 (`.y4m`) video, frames read on demand.
 //! - [`openers`]: the openers to register with the engine's media pool.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod apv;
 pub mod audio;
@@ -105,7 +115,11 @@ pub fn register_video_decoder(f: VideoDecoderFactory) {
 
 /// Whether `f` is among the registered video decoder factories (startup diagnostics, tests).
 pub fn video_decoder_registered(f: VideoDecoderFactory) -> bool {
-    factories().read().unwrap_or_else(|e| e.into_inner()).iter().any(|x| std::ptr::fn_addr_eq(*x, f))
+    factories()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .any(|x| std::ptr::fn_addr_eq(*x, f))
 }
 
 /// Create a decoder for a sample entry.
@@ -116,28 +130,47 @@ pub fn make_video_decoder(entry: &filmcraft_isobmff::SampleEntry) -> Result<Box<
             return r;
         }
     }
-    Err(CodecError::Unsupported(format!("no decoder for {} video", entry.codec.name())))
+    Err(CodecError::Unsupported(format!(
+        "no decoder for {} video",
+        entry.codec.name()
+    )))
 }
 
 /// Create one of our own (software) decoders for a sample entry, skipping registered factories:
 /// what a hardware decoder falls back to when it fails mid-stream.
-pub fn software_video_decoder(entry: &filmcraft_isobmff::SampleEntry) -> Result<Box<dyn VideoDecoder>> {
+pub fn software_video_decoder(
+    entry: &filmcraft_isobmff::SampleEntry,
+) -> Result<Box<dyn VideoDecoder>> {
     for f in BUILTIN_FACTORIES {
         if let Some(r) = f(entry) {
             return r;
         }
     }
-    Err(CodecError::Unsupported(format!("no decoder for {} video", entry.codec.name())))
+    Err(CodecError::Unsupported(format!(
+        "no decoder for {} video",
+        entry.codec.name()
+    )))
 }
 
 /// Openers for the engine's media pool (MP4/MOV, Matroska/WebM, MXF, Ogg Opus/Vorbis, MPEG TS/PS and
 /// MPEG-1/2 video elementary streams, APV raw bitstreams, YUV4MPEG2, standalone audio).
 pub fn openers() -> Vec<filmcraft_media::Opener> {
-    vec![mp4::opener, mkv::opener, mxf::opener, ogg::opener, mpeg::opener, apv::opener, avi::opener, y4m::opener, audio::opener]
+    vec![
+        mp4::opener,
+        mkv::opener,
+        mxf::opener,
+        ogg::opener,
+        mpeg::opener,
+        apv::opener,
+        avi::opener,
+        y4m::opener,
+        audio::opener,
+    ]
 }
 
 fn reader_registry() -> &'static RwLock<Vec<filmcraft_media::ReaderOpener>> {
-    static R: std::sync::OnceLock<RwLock<Vec<filmcraft_media::ReaderOpener>>> = std::sync::OnceLock::new();
+    static R: std::sync::OnceLock<RwLock<Vec<filmcraft_media::ReaderOpener>>> =
+        std::sync::OnceLock::new();
     R.get_or_init(|| {
         RwLock::new(vec![
             mp4::reader_opener,
@@ -155,7 +188,10 @@ fn reader_registry() -> &'static RwLock<Vec<filmcraft_media::ReaderOpener>> {
 /// Openers that read containers through a [`filmcraft_media::ByteReader`] (index now, samples on
 /// demand) instead of the whole file, in the order they are tried.
 pub fn reader_openers() -> Vec<filmcraft_media::ReaderOpener> {
-    reader_registry().read().unwrap_or_else(|e| e.into_inner()).clone()
+    reader_registry()
+        .read()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone()
 }
 
 /// Register a reader opener tried before the built-in ones (platform media sources such as the
@@ -199,7 +235,10 @@ impl filmcraft_matroska::ByteSource for Src {
 }
 
 /// Convenience: an `Arc` media source from bytes (tries MP4/MOV then audio files).
-pub fn open_bytes(name: &str, bytes: Arc<[u8]>) -> std::result::Result<filmcraft_media::SharedSource, filmcraft_media::MediaError> {
+pub fn open_bytes(
+    name: &str,
+    bytes: Arc<[u8]>,
+) -> std::result::Result<filmcraft_media::SharedSource, filmcraft_media::MediaError> {
     filmcraft_media::open_bytes(name, bytes, &openers())
 }
 

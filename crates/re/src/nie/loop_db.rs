@@ -62,23 +62,24 @@ pub fn propagate_db(db: &mut Db, binary_id: i64, rounds: usize) -> Result<Stats>
 
     // --- Étape 1 : ancrage par chaînes ------------------------------------------
     let anchored_str = {
-        let n =
-            crate::nie::anchors::anchor_by_strings(db.conn(), binary_id).context("ancrage strings")?;
+        let n = crate::nie::anchors::anchor_by_strings(db.conn(), binary_id)
+            .context("ancrage strings")?;
         info!("ancrage strings: {} fonctions ancrées", n);
         n
     };
 
     // --- Étape 2 : ancrage par RTTI ---------------------------------------------
     let anchored_rtti = {
-        let n = crate::nie::anchors::anchor_by_rtti(db.conn(), binary_id).context("ancrage RTTI")?;
+        let n =
+            crate::nie::anchors::anchor_by_rtti(db.conn(), binary_id).context("ancrage RTTI")?;
         info!("ancrage RTTI: {} fonctions ancrées", n);
         n
     };
 
     // --- Étape 3 : ancrage par constante magique --------------------------------
     let anchored_const = {
-        let n =
-            crate::nie::anchors::anchor_by_const(db.conn(), binary_id).context("ancrage const-magic")?;
+        let n = crate::nie::anchors::anchor_by_const(db.conn(), binary_id)
+            .context("ancrage const-magic")?;
         info!("ancrage const-magic: {} fonctions ancrées", n);
         n
     };
@@ -131,13 +132,17 @@ pub fn propagate_db(db: &mut Db, binary_id: i64, rounds: usize) -> Result<Stats>
             Some(sub) if sub != "standalone" => {
                 // Nœud ancre : label connu, verrouillé.
                 let lbl = get_or_insert_label(sub);
-                Node { label: Some(lbl), confidence: *confidence as f32, locked: true }
-            },
+                Node {
+                    label: Some(lbl),
+                    confidence: *confidence as f32,
+                    locked: true,
+                }
+            }
             _ if is_named => {
                 // Fonction nommée sans sous-système : laissée libre pour
                 // recevoir un label par propagation depuis ses voisins.
                 Node::unknown()
-            },
+            }
             _ => Node::unknown(),
         };
         let idx = graph.add_node(node);
@@ -145,7 +150,11 @@ pub fn propagate_db(db: &mut Db, binary_id: i64, rounds: usize) -> Result<Stats>
         node_to_fid.push(*fid);
     }
 
-    debug!("graphe: {} nœuds, {} labels distincts", graph.nodes.len(), u32_to_label.len());
+    debug!(
+        "graphe: {} nœuds, {} labels distincts",
+        graph.nodes.len(),
+        u32_to_label.len()
+    );
 
     // --- Étape 5 : arêtes (xref kind='call') ------------------------------------
     // Arêtes typées : appel direct (réel) = 1.0, cohésion de vtable = 0.5,
@@ -195,7 +204,10 @@ pub fn propagate_db(db: &mut Db, binary_id: i64, rounds: usize) -> Result<Stats>
             continue;
         }
         let Some(lbl_u32) = node.label else { continue };
-        let label_str = u32_to_label.get(lbl_u32 as usize).map(|s| s.as_str()).unwrap_or("?");
+        let label_str = u32_to_label
+            .get(lbl_u32 as usize)
+            .map(|s| s.as_str())
+            .unwrap_or("?");
 
         if label_str == "standalone" || label_str == "?" {
             continue;
@@ -270,8 +282,16 @@ mod tests {
     #[test]
     fn propagate_db_classifie_voisin_inconnu() -> anyhow::Result<()> {
         let mut db = Db::open_in_memory()?;
-        let bin =
-            db.upsert_binary("test.exe", "abc123", "x86_64", 64, 0x1_4000_0000, 0, None, None)?;
+        let bin = db.upsert_binary(
+            "test.exe",
+            "abc123",
+            "x86_64",
+            64,
+            0x1_4000_0000,
+            0,
+            None,
+            None,
+        )?;
 
         {
             let tx = db.conn_mut().transaction()?;
@@ -287,7 +307,16 @@ mod tests {
                 0.9,
             )?;
             // Fonction 2 : inconnue à vaddr 0x2000.
-            ingest::function(&tx, bin, 0x2000, None, Some("re"), "standalone", "leaf", 0.0)?;
+            ingest::function(
+                &tx,
+                bin,
+                0x2000,
+                None,
+                Some("re"),
+                "standalone",
+                "leaf",
+                0.0,
+            )?;
             // Fonction 3 : ancre "gameplay" à vaddr 0x3000.
             ingest::function(
                 &tx,
@@ -302,8 +331,9 @@ mod tests {
             // Appel : 0x1000 → 0x2000 (audio vers inconnu).
             ingest::xref(&tx, bin, 0x1000, 0x2000, "call")?;
             // Str-ref sur la fonction inconnue pour tester l'ancrage.
-            let fid2 =
-                tx.query_row("SELECT id FROM function WHERE vaddr=0x2000", [], |r| r.get(0))?;
+            let fid2 = tx.query_row("SELECT id FROM function WHERE vaddr=0x2000", [], |r| {
+                r.get(0)
+            })?;
             ingest::str_ref(&tx, bin, fid2, "criAtom_OpenWithId")?;
             tx.commit()?;
         }
@@ -333,15 +363,33 @@ mod tests {
     #[test]
     fn propagate_db_ancres_rtti_comptees() -> anyhow::Result<()> {
         let mut db = Db::open_in_memory()?;
-        let bin =
-            db.upsert_binary("test.exe", "abc456", "x86_64", 64, 0x1_4000_0000, 0, None, None)?;
+        let bin = db.upsert_binary(
+            "test.exe",
+            "abc456",
+            "x86_64",
+            64,
+            0x1_4000_0000,
+            0,
+            None,
+            None,
+        )?;
 
         {
             let tx = db.conn_mut().transaction()?;
             // Fonction standalone qui référence un nom de classe RTTI game::
-            ingest::function(&tx, bin, 0x5000, None, Some("re"), "standalone", "leaf", 0.0)?;
-            let fid =
-                tx.query_row("SELECT id FROM function WHERE vaddr=0x5000", [], |r| r.get(0))?;
+            ingest::function(
+                &tx,
+                bin,
+                0x5000,
+                None,
+                Some("re"),
+                "standalone",
+                "leaf",
+                0.0,
+            )?;
+            let fid = tx.query_row("SELECT id FROM function WHERE vaddr=0x5000", [], |r| {
+                r.get(0)
+            })?;
             ingest::str_ref(&tx, bin, fid, "BallMoveBezier")?;
             // Classe RTTI correspondante dans game:: namespace
             ingest::rtti_class(
@@ -363,7 +411,10 @@ mod tests {
             stats.anchored_str,
             stats.anchored_rtti
         );
-        assert!(stats.classified_after > stats.classified_before, "la couverture doit augmenter");
+        assert!(
+            stats.classified_after > stats.classified_before,
+            "la couverture doit augmenter"
+        );
 
         Ok(())
     }
@@ -371,8 +422,9 @@ mod tests {
     #[test]
     fn count_classified_helper() {
         let db = Db::open_in_memory().unwrap();
-        let bin =
-            db.upsert_binary("t.exe", "sha1", "x86_64", 64, 0x140000000, 0, None, None).unwrap();
+        let bin = db
+            .upsert_binary("t.exe", "sha1", "x86_64", 64, 0x140000000, 0, None, None)
+            .unwrap();
         assert_eq!(count_classified(db.conn(), bin), 0);
     }
 }

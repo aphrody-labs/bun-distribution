@@ -28,7 +28,11 @@ fn push(elems: &mut Elems, id: impl Into<String>, r: &egui::Response, label: imp
 }
 
 fn mb(b: u64) -> String {
-    if b >= 1 << 30 { format!("{:.2} GB", b as f64 / (1u64 << 30) as f64) } else { format!("{:.1} MB", b as f64 / (1u64 << 20) as f64) }
+    if b >= 1 << 30 {
+        format!("{:.2} GB", b as f64 / (1u64 << 30) as f64)
+    } else {
+        format!("{:.1} MB", b as f64 / (1u64 << 20) as f64)
+    }
 }
 
 /// Draw whichever media dialogs are open; open Link Media when a project needs it.
@@ -56,10 +60,15 @@ pub fn route(app: &mut FilmcraftApp, id: &str, params: &Value) -> Option<Result<
     if !empty {
         return None;
     }
-    let enabled = |app: &FilmcraftApp, id: &str| filmcraft_engine::find_command(id).map_or(Ok(()), |c| (c.enabled)(&app.session));
+    let enabled = |app: &FilmcraftApp, id: &str| {
+        filmcraft_engine::find_command(id).map_or(Ok(()), |c| (c.enabled)(&app.session))
+    };
     match id {
         "media.linkMedia" => {
-            let r = app.session.execute("media.linkMedia", json!({})).map_err(|e| e.to_string());
+            let r = app
+                .session
+                .execute("media.linkMedia", json!({}))
+                .map_err(|e| e.to_string());
             if let Ok(v) = &r
                 && v["missing"].as_array().is_some_and(|a| a.is_empty())
             {
@@ -74,31 +83,69 @@ pub fn route(app: &mut FilmcraftApp, id: &str, params: &Value) -> Option<Result<
             json!({"dialog": "makeOffline"})
         })),
         "media.createProxies" => Some(enabled(app, id).map(|_| {
-            let items = app.session.state.project_selection.iter().map(|i| i.0).collect();
-            app.ui.create_proxies = Some(ProxyDraft { items, preset: filmcraft_engine::proxies::DEFAULT_PROXY_PRESET.into(), destination: String::new() });
+            let items = app
+                .session
+                .state
+                .project_selection
+                .iter()
+                .map(|i| i.0)
+                .collect();
+            app.ui.create_proxies = Some(ProxyDraft {
+                items,
+                preset: filmcraft_engine::proxies::DEFAULT_PROXY_PRESET.into(),
+                destination: String::new(),
+            });
             json!({"dialog": "createProxies"})
         })),
         "media.attachProxies" | "media.reconnectFullRes" => {
             let item = app.session.state.project_selection.first().copied();
-            let Some(item) = item else { return Some(Err("select a clip in the Project panel".into())) };
+            let Some(item) = item else {
+                return Some(Err("select a clip in the Project panel".into()));
+            };
             let exts: Vec<&str> = filmcraft_media::VIDEO_EXTENSIONS.to_vec();
-            let hint = RelinkHint { command: id.to_string(), params: json!({"item": item.0}) };
+            let hint = RelinkHint {
+                command: id.to_string(),
+                params: json!({"item": item.0}),
+            };
             let id = id.to_string();
-            Some(app.pick(FileDialog::Relink { exts: exts.iter().map(|e| e.to_string()).collect(), hint }, move |app, paths| {
-                let Some(picked) = paths.into_iter().next() else { return Ok(Value::Null) };
-                app.session.execute(&id, json!({"item": item.0, "path": picked})).map_err(|e| e.to_string())
-            }))
+            Some(app.pick(
+                FileDialog::Relink {
+                    exts: exts.iter().map(|e| e.to_string()).collect(),
+                    hint,
+                },
+                move |app, paths| {
+                    let Some(picked) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    app.session
+                        .execute(&id, json!({"item": item.0, "path": picked}))
+                        .map_err(|e| e.to_string())
+                },
+            ))
         }
         "file.projectManager" => Some(enabled(app, id).map(|_| {
-            let seqs = app.session.state.active_sequence.map(|s| vec![s.0]).unwrap_or_default();
+            let seqs = app
+                .session
+                .state
+                .active_sequence
+                .map(|s| vec![s.0])
+                .unwrap_or_default();
             let dest = app
                 .session
                 .path
                 .as_deref()
                 .and_then(|p| std::path::Path::new(p).parent())
-                .map(|d| d.join(tlf!("{name} (copy)", name = app.session.project.name)).to_string_lossy().into_owned())
+                .map(|d| {
+                    d.join(tlf!("{name} (copy)", name = app.session.project.name))
+                        .to_string_lossy()
+                        .into_owned()
+                })
                 .unwrap_or_default();
-            app.ui.project_manager = Some(ProjectManagerDraft { sequences: seqs, destination: dest, ..Default::default() });
+            app.ui.project_manager = Some(ProjectManagerDraft {
+                sequences: seqs,
+                destination: dest,
+                ..Default::default()
+            });
             json!({"dialog": "projectManager"})
         })),
         _ => None,
@@ -113,9 +160,21 @@ fn missing_list(app: &FilmcraftApp) -> Vec<(u64, String, String, String, &'stati
         .filter_map(|id| {
             let it = app.session.project.item(*id)?;
             let m = it.as_media()?;
-            let filmcraft_project::MediaRef::File { path } = &m.media else { return None };
+            let filmcraft_project::MediaRef::File { path } = &m.media else {
+                return None;
+            };
             let fname = path.rsplit(['/', '\\']).next().unwrap_or(path).to_string();
-            Some((id.0, it.name.clone(), fname, path.clone(), if m.offline { tl!("Offline") } else { tl!("Missing") }))
+            Some((
+                id.0,
+                it.name.clone(),
+                fname,
+                path.clone(),
+                if m.offline {
+                    tl!("Offline")
+                } else {
+                    tl!("Missing")
+                },
+            ))
         })
         .collect()
 }
@@ -128,24 +187,50 @@ fn match_params(d: &LinkMediaDraft) -> Value {
     })
 }
 
-fn preview_texture(app: &FilmcraftApp, ctx: &egui::Context, path: &str) -> Option<egui::TextureHandle> {
+fn preview_texture(
+    app: &FilmcraftApp,
+    ctx: &egui::Context,
+    path: &str,
+) -> Option<egui::TextureHandle> {
     let key = egui::Id::new(("link-preview", path));
     if let Some(t) = ctx.data(|d| d.get_temp::<Option<egui::TextureHandle>>(key)) {
         return t;
     }
-    let tex = app.session.media.open_file(path, &*app.session.services).ok().and_then(|src| {
-        let t = filmcraft_time::Tick(src.info().duration.0 / 3);
-        let f = src.video_frame(filmcraft_media::FrameRequest { time: t, scale: 0.25 }).ok()?;
-        let img = egui::ColorImage::from_rgba_unmultiplied([f.width as usize, f.height as usize], &f.to_rgba8());
-        Some(ctx.load_texture(format!("link-preview-{path}"), img, egui::TextureOptions::LINEAR))
-    });
+    let tex = app
+        .session
+        .media
+        .open_file(path, &*app.session.services)
+        .ok()
+        .and_then(|src| {
+            let t = filmcraft_time::Tick(src.info().duration.0 / 3);
+            let f = src
+                .video_frame(filmcraft_media::FrameRequest {
+                    time: t,
+                    scale: 0.25,
+                })
+                .ok()?;
+            let img = egui::ColorImage::from_rgba_unmultiplied(
+                [f.width as usize, f.height as usize],
+                &f.to_rgba8(),
+            );
+            Some(ctx.load_texture(
+                format!("link-preview-{path}"),
+                img,
+                egui::TextureOptions::LINEAR,
+            ))
+        });
     ctx.data_mut(|d| d.insert_temp(key, tex.clone()));
     tex
 }
 
 fn link_media(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.link_media.clone() else { return };
-    let rows: Vec<_> = missing_list(app).into_iter().filter(|r| !d.skipped.contains(&r.0)).collect();
+    let Some(mut d) = app.ui.link_media.clone() else {
+        return;
+    };
+    let rows: Vec<_> = missing_list(app)
+        .into_iter()
+        .filter(|r| !d.skipped.contains(&r.0))
+        .collect();
     if rows.is_empty() {
         app.ui.link_media = None;
         app.session.offline.prompt = false;
@@ -156,8 +241,13 @@ fn link_media(app: &mut FilmcraftApp, ctx: &egui::Context) {
     let mut keep = true;
     let mut action: Option<&str> = None;
     let accent = app.tokens.accent;
-    let sel_path = d.candidate.and_then(|c| d.candidates.get(c)).map(|c| c.0.clone());
-    let preview = sel_path.as_deref().and_then(|p| preview_texture(app, ctx, p));
+    let sel_path = d
+        .candidate
+        .and_then(|c| d.candidates.get(c))
+        .map(|c| c.0.clone());
+    let preview = sel_path
+        .as_deref()
+        .and_then(|p| preview_texture(app, ctx, p));
     let rows_max_h = (ctx.content_rect().height() * 0.3).clamp(90.0, 320.0);
     let width = (ctx.content_rect().width() - 40.0).clamp(1.0, 760.0);
     egui::Window::new(tl!("Link Media"))
@@ -300,7 +390,9 @@ fn link_media(app: &mut FilmcraftApp, ctx: &egui::Context) {
         action = Some("cancel");
     }
     let (item, ..) = rows[d.row].clone();
-    let relink = |app: &mut FilmcraftApp, d: &mut LinkMediaDraft, path: String| relink_to(app, d, &json!(item), path);
+    let relink = |app: &mut FilmcraftApp, d: &mut LinkMediaDraft, path: String| {
+        relink_to(app, d, &json!(item), path)
+    };
     match action {
         Some("browse") => app.pick_ui(FileDialog::Folder { at: None }, |app, paths| {
             if let (Some(f), Some(d)) = (paths.into_iter().next(), app.ui.link_media.as_mut()) {
@@ -319,34 +411,71 @@ fn link_media(app: &mut FilmcraftApp, ctx: &egui::Context) {
                         .map(|a| {
                             a.iter()
                                 .map(|c| {
-                                    let probs =
-                                        c["problems"].as_array().map(|p| p.iter().filter_map(Value::as_str).collect::<Vec<_>>().join("; ")).unwrap_or_default();
-                                    (c["path"].as_str().unwrap_or_default().to_string(), c["ok"] == json!(true), c["identityMatch"].as_bool(), probs)
+                                    let probs = c["problems"]
+                                        .as_array()
+                                        .map(|p| {
+                                            p.iter()
+                                                .filter_map(Value::as_str)
+                                                .collect::<Vec<_>>()
+                                                .join("; ")
+                                        })
+                                        .unwrap_or_default();
+                                    (
+                                        c["path"].as_str().unwrap_or_default().to_string(),
+                                        c["ok"] == json!(true),
+                                        c["identityMatch"].as_bool(),
+                                        probs,
+                                    )
                                 })
                                 .collect()
                         })
                         .unwrap_or_default();
                     d.candidate = d.candidates.iter().position(|c| c.1);
-                    d.message = if d.candidates.is_empty() { tl!("Nothing found with that name.").into() } else { String::new() };
+                    d.message = if d.candidates.is_empty() {
+                        tl!("Nothing found with that name.").into()
+                    } else {
+                        String::new()
+                    };
                 }
                 Err(e) => d.message = e.to_string(),
             }
         }
         Some("locate") => {
-            let exts: Vec<&str> =
-                filmcraft_media::VIDEO_EXTENSIONS.iter().chain(filmcraft_media::AUDIO_EXTENSIONS).chain(filmcraft_media::STILL_EXTENSIONS).copied().collect();
+            let exts: Vec<&str> = filmcraft_media::VIDEO_EXTENSIONS
+                .iter()
+                .chain(filmcraft_media::AUDIO_EXTENSIONS)
+                .chain(filmcraft_media::STILL_EXTENSIONS)
+                .copied()
+                .collect();
             let mut params = match_params(&d);
             params["item"] = json!(item);
-            let hint = RelinkHint { command: "media.relink".into(), params };
+            let hint = RelinkHint {
+                command: "media.relink".into(),
+                params,
+            };
             let item = json!(item);
-            app.pick_ui(FileDialog::Relink { exts: exts.iter().map(|e| e.to_string()).collect(), hint }, move |app, paths| {
-                let (Some(path), Some(mut d)) = (paths.into_iter().next(), app.ui.link_media.clone()) else { return };
-                relink_to(app, &mut d, &item, path);
-                app.ui.link_media = Some(d);
-            });
+            app.pick_ui(
+                FileDialog::Relink {
+                    exts: exts.iter().map(|e| e.to_string()).collect(),
+                    hint,
+                },
+                move |app, paths| {
+                    let (Some(path), Some(mut d)) =
+                        (paths.into_iter().next(), app.ui.link_media.clone())
+                    else {
+                        return;
+                    };
+                    relink_to(app, &mut d, &item, path);
+                    app.ui.link_media = Some(d);
+                },
+            );
         }
         Some("link") => {
-            if let Some(path) = d.candidate.and_then(|c| d.candidates.get(c)).map(|c| c.0.clone()) {
+            if let Some(path) = d
+                .candidate
+                .and_then(|c| d.candidates.get(c))
+                .map(|c| c.0.clone())
+            {
                 relink(app, &mut d, path);
             }
         }
@@ -365,7 +494,9 @@ fn link_media(app: &mut FilmcraftApp, ctx: &egui::Context) {
 }
 
 fn make_offline(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut delete) = app.ui.make_offline else { return };
+    let Some(mut delete) = app.ui.make_offline else {
+        return;
+    };
     let mut elems: Elems = Vec::new();
     let mut keep = true;
     let mut ok = false;
@@ -401,7 +532,10 @@ fn make_offline(app: &mut FilmcraftApp, ctx: &egui::Context) {
         app.auto.add(&id, r, &l);
     }
     if ok {
-        if let Err(e) = app.session.execute("media.makeOffline", json!({"deleteFiles": delete})) {
+        if let Err(e) = app
+            .session
+            .execute("media.makeOffline", json!({"deleteFiles": delete}))
+        {
             app.ui.status = e.to_string();
         }
         keep = false;
@@ -410,7 +544,9 @@ fn make_offline(app: &mut FilmcraftApp, ctx: &egui::Context) {
 }
 
 fn create_proxies(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.create_proxies.clone() else { return };
+    let Some(mut d) = app.ui.create_proxies.clone() else {
+        return;
+    };
     let mut elems: Elems = Vec::new();
     let mut keep = true;
     let mut ok = false;
@@ -465,7 +601,12 @@ fn create_proxies(app: &mut FilmcraftApp, ctx: &egui::Context) {
     if ok {
         let p = json!({"items": d.items, "preset": d.preset, "destination": if d.destination.is_empty() { Value::Null } else { json!(d.destination) }});
         match app.session.execute("media.createProxies", p) {
-            Ok(v) => app.ui.status = tlf!("Creating {n} proxy file(s)…", n = v["outputs"].as_array().map_or(0, Vec::len)),
+            Ok(v) => {
+                app.ui.status = tlf!(
+                    "Creating {n} proxy file(s)…",
+                    n = v["outputs"].as_array().map_or(0, Vec::len)
+                )
+            }
             Err(e) => app.ui.status = e.to_string(),
         }
         keep = false;
@@ -488,13 +629,24 @@ fn pm_params(d: &ProjectManagerDraft, dry: bool) -> Value {
 }
 
 fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.project_manager.clone() else { return };
-    crate::widgets::revert_drag_on_escape(ctx, egui::Id::new("project-manager-before-drag"), &mut d);
+    let Some(mut d) = app.ui.project_manager.clone() else {
+        return;
+    };
+    crate::widgets::revert_drag_on_escape(
+        ctx,
+        egui::Id::new("project-manager-before-drag"),
+        &mut d,
+    );
     let before = d.clone();
     let mut elems: Elems = Vec::new();
     let mut keep = true;
     let (mut ok, mut calc, mut browse) = (false, false, false);
-    let seqs: Vec<(u64, String)> = app.session.project.sequences().map(|i| (i.id.0, i.name.clone())).collect();
+    let seqs: Vec<(u64, String)> = app
+        .session
+        .project
+        .sequences()
+        .map(|i| (i.id.0, i.name.clone()))
+        .collect();
     egui::Window::new(tl!("Project Manager"))
         .id(egui::Id::new("Project Manager"))
         .collapsible(false)
@@ -517,7 +669,10 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
             }
             ui.separator();
             ui.label(RichText::new(tl!("Resulting Project")).strong());
-            for (id, label) in [("collect", tl!("Collect Files and Copy to New Location")), ("consolidate", tl!("Consolidate and Transcode"))] {
+            for (id, label) in [
+                ("collect", tl!("Collect Files and Copy to New Location")),
+                ("consolidate", tl!("Consolidate and Transcode")),
+            ] {
                 let r = ui.radio(d.mode == id, label);
                 push(&mut elems, format!("pm.mode.{id}"), &r, label);
                 if r.clicked() {
@@ -526,7 +681,10 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
             }
             if d.mode == "consolidate" {
                 ui.indent("pm-presets", |ui| {
-                    for p in filmcraft_engine::proxies::PRESETS.iter().filter(|p| !p.proxy) {
+                    for p in filmcraft_engine::proxies::PRESETS
+                        .iter()
+                        .filter(|p| !p.proxy)
+                    {
                         let r = ui.radio(d.preset == p.id, p.label);
                         push(&mut elems, format!("pm.preset.{}", p.id), &r, p.label);
                         if r.clicked() {
@@ -542,8 +700,17 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
             ui.horizontal(|ui| {
                 ui.add_enabled_ui(d.mode == "consolidate", |ui| {
                     ui.label(tl!("Include Handles:"));
-                    let r = ui.add(crate::widgets::number_drag(&mut d.handles).range(0..=600).suffix(tl!(" frames")));
-                    push(&mut elems, "pm.handles", &r, format!("{} frames", d.handles));
+                    let r = ui.add(
+                        crate::widgets::number_drag(&mut d.handles)
+                            .range(0..=600)
+                            .suffix(tl!(" frames")),
+                    );
+                    push(
+                        &mut elems,
+                        "pm.handles",
+                        &r,
+                        format!("{} frames", d.handles),
+                    );
                 });
             });
             ui.add_enabled_ui(d.mode == "collect", |ui| {
@@ -551,7 +718,12 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
                 push(&mut elems, "pm.includeProxies", &r, "Include Proxies");
             });
             let r = ui.checkbox(&mut d.include_previews, tl!("Include Preview Files"));
-            push(&mut elems, "pm.includePreviews", &r, "Include Preview Files");
+            push(
+                &mut elems,
+                "pm.includePreviews",
+                &r,
+                "Include Preview Files",
+            );
             ui.separator();
             ui.label(RichText::new(tl!("Destination Path")).strong());
             ui.horizontal(|ui| {
@@ -563,7 +735,12 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
             });
             ui.horizontal(|ui| {
                 let text = match d.estimate {
-                    Some((a, b, n)) => tlf!("Disk space: original {original} · resulting {result} ({n} files)", original = mb(a), result = mb(b), n),
+                    Some((a, b, n)) => tlf!(
+                        "Disk space: original {original} · resulting {result} ({n} files)",
+                        original = mb(a),
+                        result = mb(b),
+                        n
+                    ),
                     None => tl!("Disk space: —").into(),
                 };
                 let r = ui.label(&text);
@@ -581,7 +758,8 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
                 keep &= !r.clicked();
                 let r = ui.add_enabled(
                     !d.destination.is_empty() && !d.sequences.is_empty(),
-                    egui::Button::new(RichText::new(tl!("OK")).color(Color32::WHITE)).fill(app.tokens.accent),
+                    egui::Button::new(RichText::new(tl!("OK")).color(Color32::WHITE))
+                        .fill(app.tokens.accent),
                 );
                 push(&mut elems, "pm.ok", &r, "OK");
                 ok = r.clicked();
@@ -592,7 +770,8 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
     }
     if browse {
         app.pick_ui(FileDialog::Folder { at: None }, |app, paths| {
-            if let (Some(f), Some(d)) = (paths.into_iter().next(), app.ui.project_manager.as_mut()) {
+            if let (Some(f), Some(d)) = (paths.into_iter().next(), app.ui.project_manager.as_mut())
+            {
                 d.destination = f;
             }
         });
@@ -608,19 +787,31 @@ fn project_manager(app: &mut FilmcraftApp, ctx: &egui::Context) {
         d.estimate = None;
     }
     if calc {
-        match app.session.execute("file.projectManager", pm_params(&d, true)) {
+        match app
+            .session
+            .execute("file.projectManager", pm_params(&d, true))
+        {
             Ok(v) => {
-                d.estimate =
-                    Some((v["originalBytes"].as_u64().unwrap_or(0), v["resultBytes"].as_u64().unwrap_or(0), v["files"].as_array().map_or(0, Vec::len)));
+                d.estimate = Some((
+                    v["originalBytes"].as_u64().unwrap_or(0),
+                    v["resultBytes"].as_u64().unwrap_or(0),
+                    v["files"].as_array().map_or(0, Vec::len),
+                ));
                 d.message.clear();
             }
             Err(e) => d.message = e.to_string(),
         }
     }
     if ok {
-        match app.session.execute("file.projectManager", pm_params(&d, false)) {
+        match app
+            .session
+            .execute("file.projectManager", pm_params(&d, false))
+        {
             Ok(v) => {
-                app.ui.status = tlf!("Project Manager: writing {path}", path = v["project"].as_str().unwrap_or_default());
+                app.ui.status = tlf!(
+                    "Project Manager: writing {path}",
+                    path = v["project"].as_str().unwrap_or_default()
+                );
                 keep = false;
             }
             Err(e) => d.message = e.to_string(),
@@ -639,7 +830,10 @@ fn relink_to(app: &mut FilmcraftApp, d: &mut LinkMediaDraft, item: &Value, path:
             d.message.clear();
             d.candidates.clear();
             d.candidate = None;
-            app.ui.status = tlf!("Linked {n} clip(s)", n = v["relinked"].as_array().map_or(0, Vec::len));
+            app.ui.status = tlf!(
+                "Linked {n} clip(s)",
+                n = v["relinked"].as_array().map_or(0, Vec::len)
+            );
         }
         Err(e) => d.message = e.to_string(),
     }

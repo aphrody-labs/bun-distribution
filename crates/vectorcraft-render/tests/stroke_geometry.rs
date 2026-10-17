@@ -4,7 +4,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use vectorcraft_color::{Color, Gradient, GradientKind, GradientPaint, GradientStop, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, ArrowAlign, Arrowhead, Dash, Document, LineCap, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, ArrowAlign, Arrowhead, Dash, Document, LineCap, StrokeLayer,
+};
 use vectorcraft_geom::{Point, Rect, Shape, shapes};
 use vectorcraft_render::{Renderer, effects};
 use vectorcraft_testkit::fixtures::DocBuilder;
@@ -17,13 +19,20 @@ const S: f64 = 4.0;
 fn stroked(width: f64, f: impl FnOnce(&mut StrokeLayer)) -> Appearance {
     let mut st = StrokeLayer::new(Paint::solid(Color::BLACK), width);
     f(&mut st);
-    Appearance { items: vec![AppearanceItem::Stroke(st)], ..Default::default() }
+    Appearance {
+        items: vec![AppearanceItem::Stroke(st)],
+        ..Default::default()
+    }
 }
 
 /// A horizontal line from x0 to x1 at y = 50 on a 100 × 100 artboard.
 fn line_doc(x0: f64, x1: f64, app: Appearance, opacity: f32) -> Document {
     let mut b = DocBuilder::new(100.0, 100.0);
-    b.path(shapes::line(Point::new(x0, 50.0), Point::new(x1, 50.0)), app, |n| n.opacity = opacity);
+    b.path(
+        shapes::line(Point::new(x0, 50.0), Point::new(x1, 50.0)),
+        app,
+        |n| n.opacity = opacity,
+    );
     b.build()
 }
 
@@ -42,7 +51,11 @@ fn dotted(cap: LineCap) -> Document {
         80.0,
         stroked(4.0, |s| {
             s.cap = cap;
-            s.dash = Some(Dash { pattern: vec![0.0, 6.0], offset: 0.0, align_corners: false });
+            s.dash = Some(Dash {
+                pattern: vec![0.0, 6.0],
+                offset: 0.0,
+                align_corners: false,
+            });
         }),
         1.0,
     )
@@ -52,7 +65,9 @@ fn dotted(cap: LineCap) -> Document {
 fn zero_length_dashes_draw_dots_with_a_round_cap_and_squares_with_a_projecting_cap() {
     let round = render(&dotted(LineCap::Round));
     // 60 pt with a dot every 6 pt: 11 separate dots along the centre line.
-    let row: Vec<bool> = (0..round.width).map(|x| round.over_white(x, (50.0 * S) as u32)[0] < 128).collect();
+    let row: Vec<bool> = (0..round.width)
+        .map(|x| round.over_white(x, (50.0 * S) as u32)[0] < 128)
+        .collect();
     let runs = row.windows(2).filter(|w| !w[0] && w[1]).count();
     assert_eq!(runs, 11, "dots along the line");
     for k in 0..=10 {
@@ -79,7 +94,12 @@ fn dotted_lines_survive_svg_export_and_render_the_same() {
     }
 }
 
-fn arrow_doc(kind: Arrowhead, align: ArrowAlign, opacity: f32, f: impl FnOnce(&mut StrokeLayer)) -> Document {
+fn arrow_doc(
+    kind: Arrowhead,
+    align: ArrowAlign,
+    opacity: f32,
+    f: impl FnOnce(&mut StrokeLayer),
+) -> Document {
     line_doc(
         20.0,
         80.0,
@@ -96,7 +116,9 @@ fn arrow_doc(kind: Arrowhead, align: ArrowAlign, opacity: f32, f: impl FnOnce(&m
 fn head_of(d: &Document) -> effects::stroke::Arrow {
     let n = d.layers[0].children().unwrap()[0].clone();
     let bp = n.path_data().unwrap().to_bezpath();
-    effects::stroke::stroke_pieces(&bp, n.appearance.stroke().unwrap()).heads.remove(0)
+    effects::stroke::stroke_pieces(&bp, n.appearance.stroke().unwrap())
+        .heads
+        .remove(0)
 }
 
 #[test]
@@ -105,10 +127,18 @@ fn a_hollow_circle_head_is_empty_inside() {
     let h = head_of(&d);
     let centre = h.tip - h.dir * 8.0;
     let img = render(&d);
-    assert!(!dark(&img, centre.x, centre.y), "the centre of an open circle is empty");
+    assert!(
+        !dark(&img, centre.x, centre.y),
+        "the centre of an open circle is empty"
+    );
     assert!(dark(&img, h.tip.x - 1.0, 50.0), "its wall is painted");
     // The filled circle is solid.
-    let solid = render(&arrow_doc(Arrowhead::Circle, ArrowAlign::Extend, 1.0, |_| {}));
+    let solid = render(&arrow_doc(
+        Arrowhead::Circle,
+        ArrowAlign::Extend,
+        1.0,
+        |_| {},
+    ));
     assert!(dark(&solid, centre.x, centre.y));
 }
 
@@ -125,10 +155,21 @@ fn heads_are_drawn_where_the_shared_geometry_puts_them_and_never_past_the_tip() 
             }
             let img = render(&d);
             // The rightmost ink is the tip (allowing for antialiasing).
-            let right = (0..img.width).rev().find(|&x| (0..img.height).any(|y| img.over_white(x, y)[0] < 250)).unwrap();
+            let right = (0..img.width)
+                .rev()
+                .find(|&x| (0..img.height).any(|y| img.over_white(x, y)[0] < 250))
+                .unwrap();
             let bb = h.outline.bounding_box();
-            assert!((right as f64 / S - bb.x1).abs() <= 0.5, "{kind:?} {align:?}: ink ends at {} vs head {}", right as f64 / S, bb.x1);
-            assert!(!dark(&img, h.tip.x + 0.5, 50.0), "{kind:?} {align:?}: nothing past the tip");
+            assert!(
+                (right as f64 / S - bb.x1).abs() <= 0.5,
+                "{kind:?} {align:?}: ink ends at {} vs head {}",
+                right as f64 / S,
+                bb.x1
+            );
+            assert!(
+                !dark(&img, h.tip.x + 0.5, 50.0),
+                "{kind:?} {align:?}: nothing past the tip"
+            );
         }
     }
 }
@@ -142,29 +183,46 @@ fn alpha_at(d: &Document, x: f64, y: f64) -> u8 {
 #[test]
 fn line_and_head_take_the_opacity_once() {
     for (node, stroke) in [(0.5, 1.0), (1.0, 0.5)] {
-        let d = arrow_doc(Arrowhead::Triangle, ArrowAlign::Extend, node, |s| s.opacity = stroke);
+        let d = arrow_doc(Arrowhead::Triangle, ArrowAlign::Extend, node, |s| {
+            s.opacity = stroke
+        });
         let h = head_of(&d);
         let line = alpha_at(&d, 40.0, 50.0);
         assert!((120..=135).contains(&line), "half-opaque line: {line}");
         // Where the line runs under the head, and in the head beside it.
         let overlap = alpha_at(&d, h.tip.x - h.inset - 1.0, 50.0);
         let beside = alpha_at(&d, h.tip.x - 12.0, 50.0 + 4.5);
-        assert_eq!(overlap, line, "no double darkening where line and head overlap");
+        assert_eq!(
+            overlap, line,
+            "no double darkening where line and head overlap"
+        );
         assert_eq!(beside, line, "the head has the line's opacity");
     }
 }
 
 #[test]
 fn a_gradient_runs_on_into_the_head() {
-    let stops = vec![GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)), GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0))];
-    let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient { kind: GradientKind::Linear, stops })));
+    let stops = vec![
+        GradientStop::new(0.0, Color::rgb(1.0, 0.0, 0.0)),
+        GradientStop::new(1.0, Color::rgb(0.0, 0.0, 1.0)),
+    ];
+    let paint = Paint::Gradient(Box::new(GradientPaint::new(Gradient {
+        kind: GradientKind::Linear,
+        stops,
+    })));
     let d = arrow_doc(Arrowhead::Square, ArrowAlign::Tip, 1.0, |s| s.paint = paint);
     let h = head_of(&d);
     let img = render(&d);
     // Just behind the head's back edge (line) and just inside it (head): nearly the same colour.
     let back = h.tip.x - 16.0;
-    let (a, b) = (img.over_white(((back - 0.5) * S) as u32, (50.0 * S) as u32), img.over_white(((back + 0.5) * S) as u32, (50.0 * S) as u32));
-    assert!(a[0].abs_diff(b[0]) < 12 && a[2].abs_diff(b[2]) < 12, "{a:?} vs {b:?}");
+    let (a, b) = (
+        img.over_white(((back - 0.5) * S) as u32, (50.0 * S) as u32),
+        img.over_white(((back + 0.5) * S) as u32, (50.0 * S) as u32),
+    );
+    assert!(
+        a[0].abs_diff(b[0]) < 12 && a[2].abs_diff(b[2]) < 12,
+        "{a:?} vs {b:?}"
+    );
     // The head is part of the same gradient: bluer than the line's start.
     let start = img.over_white((22.0 * S) as u32, (50.0 * S) as u32);
     assert!(b[2] > start[2] + 100, "{b:?} vs {start:?}");
@@ -172,7 +230,9 @@ fn a_gradient_runs_on_into_the_head() {
 
 #[test]
 fn a_head_past_the_end_counts_in_the_visual_bounds_and_is_never_culled() {
-    let d = arrow_doc(Arrowhead::Triangle, ArrowAlign::Extend, 1.0, |s| s.join = vectorcraft_doc::LineJoin::Round);
+    let d = arrow_doc(Arrowhead::Triangle, ArrowAlign::Extend, 1.0, |s| {
+        s.join = vectorcraft_doc::LineJoin::Round
+    });
     let h = head_of(&d);
     let vb = d.layers[0].children().unwrap()[0].visual_bounds().unwrap();
     let head = h.outline.bounding_box();
@@ -193,18 +253,42 @@ fn shapes_far_beyond_the_page_are_left_undrawn_without_crashing() {
     far.move_to((13607718712.4, 13.2));
     far.curve_to((-0.03, 720.96), (-3.08e17, -8.36e20), (-3.35e20, -1.0));
     far.close_path();
-    let black =
-        || Appearance { items: vec![AppearanceItem::Fill(vectorcraft_doc::FillLayer::new(Paint::solid(Color::BLACK)))], ..Default::default() };
+    let black = || Appearance {
+        items: vec![AppearanceItem::Fill(vectorcraft_doc::FillLayer::new(
+            Paint::solid(Color::BLACK),
+        ))],
+        ..Default::default()
+    };
     for (path, app) in [
         (vectorcraft_geom::PathData::from_bezpath(&far), black()),
-        (shapes::rectangle(Rect::new(10.0, 10.0, 30.0, 30.0)), black()),
-        (shapes::rectangle(Rect::new(50.0, 50.0, 60.0, 60.0)), stroked(1e30, |_| {})),
+        (
+            shapes::rectangle(Rect::new(10.0, 10.0, 30.0, 30.0)),
+            black(),
+        ),
+        (
+            shapes::rectangle(Rect::new(50.0, 50.0, 60.0, 60.0)),
+            stroked(1e30, |_| {}),
+        ),
     ] {
         let id = d.alloc_id();
-        d.insert(Some(layer), usize::MAX, vectorcraft_doc::Node::path(id, path, app)).unwrap();
+        d.insert(
+            Some(layer),
+            usize::MAX,
+            vectorcraft_doc::Node::path(id, path, app),
+        )
+        .unwrap();
     }
     let img = Renderer::new().render_region(&d, Rect::new(0.0, 0.0, 100.0, 100.0), 1.0, true);
-    let px = |x: usize, y: usize| img.pixels.get((y * img.width as usize + x) * 4).copied().unwrap();
+    let px = |x: usize, y: usize| {
+        img.pixels
+            .get((y * img.width as usize + x) * 4)
+            .copied()
+            .unwrap()
+    };
     assert_eq!(px(20, 20), 0, "the rectangle next to them draws");
-    assert_eq!(px(90, 5), 255, "nothing of the far shape or the huge stroke");
+    assert_eq!(
+        px(90, 5),
+        255,
+        "nothing of the far shape or the huge stroke"
+    );
 }

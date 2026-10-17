@@ -12,10 +12,17 @@ pub struct Client {
 impl Client {
     /// A headless server, initialized.
     pub fn new() -> Self {
-        let mut c = Self { server: Server::headless(), next: 1 };
+        let mut c = Self {
+            server: Server::headless(),
+            next: 1,
+        };
         let r = c.rpc("initialize", json!({"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "test", "version": "0"}}));
         assert!(r.get("result").is_some(), "initialize failed: {r}");
-        assert!(c.server.handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#).is_none());
+        assert!(
+            c.server
+                .handle_line(r#"{"jsonrpc":"2.0","method":"notifications/initialized"}"#)
+                .is_none()
+        );
         c
     }
 
@@ -23,8 +30,12 @@ impl Client {
     pub fn rpc(&mut self, method: &str, params: Value) -> Value {
         let id = self.next;
         self.next += 1;
-        let line = json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}).to_string();
-        let reply = self.server.handle_line(&line).expect("a request gets a reply");
+        let line =
+            json!({"jsonrpc": "2.0", "id": id, "method": method, "params": params}).to_string();
+        let reply = self
+            .server
+            .handle_line(&line)
+            .expect("a request gets a reply");
         let v: Value = serde_json::from_str(&reply).expect("reply is JSON");
         assert_eq!(v["jsonrpc"], "2.0");
         assert_eq!(v["id"], json!(id));
@@ -34,14 +45,25 @@ impl Client {
     /// tools/call; returns the result ({content, isError}).
     pub fn call(&mut self, tool: &str, args: Value) -> Value {
         let r = self.rpc("tools/call", json!({"name": tool, "arguments": args}));
-        r.get("result").cloned().unwrap_or_else(|| panic!("tools/call {tool} protocol error: {r}"))
+        r.get("result")
+            .cloned()
+            .unwrap_or_else(|| panic!("tools/call {tool} protocol error: {r}"))
     }
 
     /// tools/call that must succeed; returns the first text block parsed as JSON (or a string).
     pub fn ok(&mut self, tool: &str, args: Value) -> Value {
         let r = self.call(tool, args.clone());
-        assert_eq!(r["isError"], false, "{tool} {args} failed: {}", r["content"][0]["text"]);
-        let text = r["content"].as_array().unwrap().iter().find_map(|c| c.get("text").and_then(Value::as_str)).unwrap_or("");
+        assert_eq!(
+            r["isError"], false,
+            "{tool} {args} failed: {}",
+            r["content"][0]["text"]
+        );
+        let text = r["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find_map(|c| c.get("text").and_then(Value::as_str))
+            .unwrap_or("");
         serde_json::from_str(text).unwrap_or_else(|_| Value::String(text.to_string()))
     }
 
@@ -72,7 +94,13 @@ impl Client {
     pub fn page_children(&mut self) -> Vec<Value> {
         let d = self.doc();
         let cur = d["currentPage"].clone();
-        let page = d["pages"].as_array().unwrap().iter().find(|p| p["id"] == cur).unwrap().clone();
+        let page = d["pages"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["id"] == cur)
+            .unwrap()
+            .clone();
         page["children"].as_array().cloned().unwrap_or_default()
     }
 }
@@ -83,6 +111,8 @@ pub fn approx(v: &Value, want: f64) -> bool {
 
 pub fn png_dims(b64: &str) -> (u32, u32) {
     use base64::Engine as _;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(b64).unwrap();
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(b64)
+        .unwrap();
     figcraft_mcp::png_size(&bytes).unwrap()
 }

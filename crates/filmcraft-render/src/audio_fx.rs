@@ -31,7 +31,11 @@ fn f(e: &EffectInstance, id: &str, mt: Tick) -> f32 {
 
 pub(crate) fn mapping(id: &str) -> Option<Mapping> {
     Some(match id {
-        "amplify" => Mapping { dsp: "amplify", preroll: |_, _| 0.0, apply: |d, e, t| ignore(d.set_param("gain", f(e, "gain", t))) },
+        "amplify" => Mapping {
+            dsp: "amplify",
+            preroll: |_, _| 0.0,
+            apply: |d, e, t| ignore(d.set_param("gain", f(e, "gain", t))),
+        },
         "dynamics" => Mapping {
             dsp: "compressor",
             preroll: |e, t| (f(e, "release", t) as f64 / 1000.0 * 5.0).clamp(0.05, 3.0),
@@ -57,7 +61,11 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
                 // enough echoes to decay by ~80 dB
                 let time = f(e, "delay", t).max(0.001) as f64;
                 let fb = (f(e, "feedback", t) as f64 / 100.0).clamp(0.0, 0.95);
-                let repeats = if fb > 0.001 { (-4.0 / fb.log10()).clamp(1.0, 60.0) } else { 1.0 };
+                let repeats = if fb > 0.001 {
+                    (-4.0 / fb.log10()).clamp(1.0, 60.0)
+                } else {
+                    1.0
+                };
                 (time * repeats).min(8.0)
             },
             apply: |d, e, t| {
@@ -67,18 +75,42 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
             },
         },
         // Single-band filters via band 1 of the parametric EQ (types: see FILTER_TYPE_NAMES).
-        "highpass" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.05, apply: |d, e, t| band(d, 4.0, f(e, "cutoff", t), 0.707) },
-        "lowpass" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.05, apply: |d, e, t| band(d, 3.0, f(e, "cutoff", t), 0.707) },
-        "bandpass" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.05, apply: |d, e, t| band(d, 6.0, f(e, "center", t), f(e, "q", t)) },
+        "highpass" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.05,
+            apply: |d, e, t| band(d, 4.0, f(e, "cutoff", t), 0.707),
+        },
+        "lowpass" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.05,
+            apply: |d, e, t| band(d, 3.0, f(e, "cutoff", t), 0.707),
+        },
+        "bandpass" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.05,
+            apply: |d, e, t| band(d, 6.0, f(e, "center", t), f(e, "q", t)),
+        },
         // Amount 0…100 % → 0…40 dB of reduction.
-        "denoise" => Mapping { dsp: "denoise", preroll: |_, _| 1.0, apply: |d, e, t| ignore(d.set_param("reduction", f(e, "amount", t) * 0.4)) },
+        "denoise" => Mapping {
+            dsp: "denoise",
+            preroll: |_, _| 1.0,
+            apply: |d, e, t| ignore(d.set_param("reduction", f(e, "amount", t) * 0.4)),
+        },
         // Gain is the notch depth: the wet/dry amount that leaves 10^(gain/20) of the hum.
         "dehummer" => Mapping {
             dsp: "dehum",
             preroll: |_, _| 0.2,
             apply: |d, e, t| {
-                d.set_param("frequency", e.param("freq").and_then(|p| p.value_at(t).as_f64()).unwrap_or(1.0) as f32);
-                d.set_param("amount", (1.0 - 10f32.powf(f(e, "gain", t).min(0.0) / 20.0)) * 100.0);
+                d.set_param(
+                    "frequency",
+                    e.param("freq")
+                        .and_then(|p| p.value_at(t).as_f64())
+                        .unwrap_or(1.0) as f32,
+                );
+                d.set_param(
+                    "amount",
+                    (1.0 - 10f32.powf(f(e, "gain", t).min(0.0) / 20.0)) * 100.0,
+                );
                 set_if_changed(d, "harmonics", f(e, "harmonics", t));
                 set_if_changed(d, "q", f(e, "q", t));
             },
@@ -105,26 +137,54 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
             preroll: |_, _| 0.3,
             apply: |d, e, t| {
                 d.set_param("mix", f(e, "mix", t));
-                d.set_param("tone", e.param("tone").and_then(|p| p.value_at(t).as_f64()).unwrap_or(0.0) as f32);
+                d.set_param(
+                    "tone",
+                    e.param("tone")
+                        .and_then(|p| p.value_at(t).as_f64())
+                        .unwrap_or(0.0) as f32,
+                );
             },
         },
-        "stereo_width" => Mapping { dsp: "stereo_width", preroll: |_, _| 0.0, apply: |d, e, t| ignore(d.set_param("width", f(e, "width", t))) },
+        "stereo_width" => Mapping {
+            dsp: "stereo_width",
+            preroll: |_, _| 0.0,
+            apply: |d, e, t| ignore(d.set_param("width", f(e, "width", t))),
+        },
         "studio_reverb" => Mapping {
             dsp: "reverb",
             preroll: |e, t| 0.3 * 30f64.powf(f(e, "decay", t) as f64 / 100.0).min(8.0),
             apply: |d, e, t| {
                 d.set_param("size", f(e, "room", t));
-                d.set_param("decay", (0.3 * 30f32.powf(f(e, "decay", t) / 100.0)).clamp(0.1, 20.0));
+                d.set_param(
+                    "decay",
+                    (0.3 * 30f32.powf(f(e, "decay", t) / 100.0)).clamp(0.1, 20.0),
+                );
                 d.set_param("damping", f(e, "damping", t));
                 let (dry, wet) = (f(e, "dry", t).max(0.0), f(e, "wet", t).max(0.0));
-                d.set_param("mix", if dry + wet > 0.0 { wet / (dry + wet) * 100.0 } else { 0.0 });
+                d.set_param(
+                    "mix",
+                    if dry + wet > 0.0 {
+                        wet / (dry + wet) * 100.0
+                    } else {
+                        0.0
+                    },
+                );
             },
         },
-        "invert_a" => Mapping { dsp: "invert", preroll: |_, _| 0.0, apply: |_, _, _| {} },
+        "invert_a" => Mapping {
+            dsp: "invert",
+            preroll: |_, _| 0.0,
+            apply: |_, _, _| {},
+        },
         "pitch_shifter" => Mapping {
             dsp: "pitch_shifter",
             preroll: |_, _| 0.1,
-            apply: |d, e, t| ignore(d.set_param("semitones", (f(e, "semitones", t) + f(e, "cents", t) / 100.0).clamp(-12.0, 12.0))),
+            apply: |d, e, t| {
+                ignore(d.set_param(
+                    "semitones",
+                    (f(e, "semitones", t) + f(e, "cents", t) / 100.0).clamp(-12.0, 12.0),
+                ))
+            },
         },
         "single_band_compressor" => Mapping {
             dsp: "compressor",
@@ -137,9 +197,21 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
                 set_if_changed(d, "makeup", f(e, "output", t));
             },
         },
-        "bass" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.05, apply: |d, e, t| shelf(d, 1.0, 200.0, f(e, "boost", t)) },
-        "treble" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.05, apply: |d, e, t| shelf(d, 2.0, 4000.0, f(e, "boost", t)) },
-        "simple_notch" => Mapping { dsp: "parametric_eq", preroll: |_, _| 0.1, apply: |d, e, t| band(d, 5.0, f(e, "center", t), f(e, "q", t)) },
+        "bass" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.05,
+            apply: |d, e, t| shelf(d, 1.0, 200.0, f(e, "boost", t)),
+        },
+        "treble" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.05,
+            apply: |d, e, t| shelf(d, 2.0, 4000.0, f(e, "boost", t)),
+        },
+        "simple_notch" => Mapping {
+            dsp: "parametric_eq",
+            preroll: |_, _| 0.1,
+            apply: |d, e, t| band(d, 5.0, f(e, "center", t), f(e, "q", t)),
+        },
         "simple_eq" => Mapping {
             dsp: "parametric_eq",
             preroll: |_, _| 0.05,
@@ -153,7 +225,15 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
             preroll: |_, _| 0.0,
             apply: |d, e, t| {
                 let bypass = e.f64_at("bypass", t) >= 0.5;
-                set_if_changed(d, "gain", if bypass { 0.0 } else { f(e, "level", t).clamp(-96.0, 24.0) });
+                set_if_changed(
+                    d,
+                    "gain",
+                    if bypass {
+                        0.0
+                    } else {
+                        f(e, "level", t).clamp(-96.0, 24.0)
+                    },
+                );
             },
         },
         "analog_delay" => Mapping {
@@ -161,7 +241,11 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
             preroll: |e, t| {
                 let time = f(e, "delay", t).max(1.0) as f64 / 1000.0;
                 let fb = (f(e, "feedback", t) as f64 / 100.0).clamp(0.0, 0.95);
-                let repeats = if fb > 0.001 { (-4.0 / fb.log10()).clamp(1.0, 60.0) } else { 1.0 };
+                let repeats = if fb > 0.001 {
+                    (-4.0 / fb.log10()).clamp(1.0, 60.0)
+                } else {
+                    1.0
+                };
                 (time * repeats).clamp(0.12, 8.0)
             },
             apply: direct,
@@ -171,9 +255,20 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
             preroll: |e, t| {
                 let mut worst = 0.0f64;
                 for k in 1..=4 {
-                    let time = e.f64_at(["delay1", "delay2", "delay3", "delay4"][k - 1], t).max(1.0) / 1000.0;
-                    let fb = (e.f64_at(["feedback1", "feedback2", "feedback3", "feedback4"][k - 1], t) / 100.0).clamp(0.0, 0.95);
-                    let repeats = if fb > 0.001 { (-4.0 / fb.log10()).clamp(1.0, 60.0) } else { 1.0 };
+                    let time = e
+                        .f64_at(["delay1", "delay2", "delay3", "delay4"][k - 1], t)
+                        .max(1.0)
+                        / 1000.0;
+                    let fb = (e.f64_at(
+                        ["feedback1", "feedback2", "feedback3", "feedback4"][k - 1],
+                        t,
+                    ) / 100.0)
+                        .clamp(0.0, 0.95);
+                    let repeats = if fb > 0.001 {
+                        (-4.0 / fb.log10()).clamp(1.0, 60.0)
+                    } else {
+                        1.0
+                    };
                     worst = worst.max(time * repeats);
                 }
                 worst.clamp(0.12, 8.0)
@@ -183,17 +278,27 @@ pub(crate) fn mapping(id: &str) -> Option<Mapping> {
         "convolution_reverb" => Mapping {
             dsp: "convolution_reverb",
             preroll: |e, t| {
-                let rt = [0.45, 0.8, 1.9, 3.2, 1.6, 0.3, 0.2][(e.f64_at("impulse", t) as usize).min(6)];
-                (rt * 1.1 * e.f64_at("room_size", t) / 100.0 + e.f64_at("predelay", t) / 1000.0).clamp(0.12, 4.0)
+                let rt =
+                    [0.45, 0.8, 1.9, 3.2, 1.6, 0.3, 0.2][(e.f64_at("impulse", t) as usize).min(6)];
+                (rt * 1.1 * e.f64_at("room_size", t) / 100.0 + e.f64_at("predelay", t) / 1000.0)
+                    .clamp(0.12, 4.0)
             },
             apply: direct,
         },
-        "surround_reverb" => {
-            Mapping { dsp: "surround_reverb", preroll: |e, t| (e.f64_at("decay", t) + e.f64_at("predelay", t) / 1000.0).clamp(0.12, 8.0), apply: direct }
-        }
+        "surround_reverb" => Mapping {
+            dsp: "surround_reverb",
+            preroll: |e, t| {
+                (e.f64_at("decay", t) + e.f64_at("predelay", t) / 1000.0).clamp(0.12, 8.0)
+            },
+            apply: direct,
+        },
         _ => {
             let &(_, dsp, _) = DIRECT.iter().find(|(p, _, _)| *p == id)?;
-            Mapping { dsp, preroll: |e, _| direct_preroll(&e.effect), apply: direct }
+            Mapping {
+                dsp,
+                preroll: |e, _| direct_preroll(&e.effect),
+                apply: direct,
+            }
         }
     })
 }
@@ -239,7 +344,11 @@ pub const DIRECT: &[(&str, &str, f64)] = &[
 /// Pre-roll of a direct mapping: its own tail, and at least long enough for the DSP's
 /// parameter smoothing (≤ 100 ms) to settle from the defaults to the clip's settings.
 fn direct_preroll(id: &str) -> f64 {
-    DIRECT.iter().find(|(p, _, _)| *p == id).map_or(0.0, |d| d.2).max(0.12)
+    DIRECT
+        .iter()
+        .find(|(p, _, _)| *p == id)
+        .map_or(0.0, |d| d.2)
+        .max(0.12)
 }
 
 /// Set a DSP parameter only when it changed (keeps parameter-dependent rebuilds — impulse
@@ -255,9 +364,16 @@ fn set_if_changed(d: &mut dyn AudioEffect, id: &str, v: f32) {
 fn direct(d: &mut dyn AudioEffect, e: &EffectInstance, t: Tick) {
     let Some(def) = e.def() else { return };
     for p in &def.params {
-        let v = e.params.get(p.id).map_or_else(|| p.default.as_f64().unwrap_or(0.0), |q| q.scalar_at(t));
+        let v = e
+            .params
+            .get(p.id)
+            .map_or_else(|| p.default.as_f64().unwrap_or(0.0), |q| q.scalar_at(t));
         // sanitise like the DSP would, so unchanged values compare equal
-        let v = d.params().iter().find(|s| s.id == p.id).map_or(v as f32, |s| s.sanitize(v as f32));
+        let v = d
+            .params()
+            .iter()
+            .find(|s| s.id == p.id)
+            .map_or(v as f32, |s| s.sanitize(v as f32));
         set_if_changed(d, p.id, v);
     }
 }
@@ -273,7 +389,9 @@ pub fn configured(e: &EffectInstance, t: Tick, sample_rate: u32) -> Option<Box<d
 
 /// Processing latency (samples) of a project audio effect at `sample_rate`.
 pub fn latency(effect_id: &str, sample_rate: u32) -> usize {
-    mapping(effect_id).and_then(|m| filmcraft_audio_dsp::create_effect(m.dsp, sample_rate as f32, 2)).map_or(0, |d| d.latency())
+    mapping(effect_id)
+        .and_then(|m| filmcraft_audio_dsp::create_effect(m.dsp, sample_rate as f32, 2))
+        .map_or(0, |d| d.latency())
 }
 
 fn shelf(d: &mut dyn AudioEffect, kind: f32, freq: f32, gain: f32) {
@@ -295,7 +413,11 @@ fn band(d: &mut dyn AudioEffect, kind: f32, freq: f32, q: f32) {
 
 /// The item's enabled, DSP-backed audio effects in rack order.
 fn active(item: &TrackItem) -> Vec<(&EffectInstance, Mapping)> {
-    item.effects.iter().filter(|e| e.enabled && !e.def().is_some_and(|d| d.intrinsic)).filter_map(|e| mapping(&e.effect).map(|m| (e, m))).collect()
+    item.effects
+        .iter()
+        .filter(|e| e.enabled && !e.def().is_some_and(|d| d.intrinsic))
+        .filter_map(|e| mapping(&e.effect).map(|m| (e, m)))
+        .collect()
 }
 
 /// Whether the item has audio effects that change its signal.
@@ -339,7 +461,10 @@ fn run(chain: &mut Chain, item: &TrackItem, in0: i64, input: &mut [Vec<f32>], sr
         // absolute block grid: parameters update at the same samples however requests are cut
         let pos = in0 + i as i64;
         let end = (((pos.div_euclid(BLOCK as i64) + 1) * BLOCK as i64 - in0) as usize).min(n);
-        let mt = item.source_time_at(Tick::from_units(pos.div_euclid(BLOCK as i64) * BLOCK as i64, sr as i64));
+        let mt = item.source_time_at(Tick::from_units(
+            pos.div_euclid(BLOCK as i64) * BLOCK as i64,
+            sr as i64,
+        ));
         for ((e, m), d) in act.iter().zip(chain.fx.iter_mut()) {
             (m.apply)(d.as_mut(), e, mt);
         }
@@ -354,12 +479,22 @@ fn run(chain: &mut Chain, item: &TrackItem, in0: i64, input: &mut [Vec<f32>], sr
 /// Process the item's audio for timeline samples `[a0, a0 + n)`. `read(x0, len)` returns the clip's
 /// raw planar audio (2 channels, or 6 on a 5.1 track) for timeline samples `[x0, x0 + len)`
 /// (silence outside the clip).
-pub fn process(item: &TrackItem, a0: i64, n: usize, sr: u32, read: &dyn Fn(i64, usize) -> Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+pub fn process(
+    item: &TrackItem,
+    a0: i64,
+    n: usize,
+    sr: u32,
+    read: &dyn Fn(i64, usize) -> Vec<Vec<f32>>,
+) -> Vec<Vec<f32>> {
     let width = read(a0, 0).len().max(1);
     let key = (item.id.0, structure_hash(item), sr, width);
     let taken = {
         let mut c = cache().lock().unwrap_or_else(|e| e.into_inner());
-        c.get_mut(&key).and_then(|v| v.iter().position(|ch| ch.next_out == a0).map(|i| v.swap_remove(i)))
+        c.get_mut(&key).and_then(|v| {
+            v.iter()
+                .position(|ch| ch.next_out == a0)
+                .map(|i| v.swap_remove(i))
+        })
     };
     let (mut chain, mut input, skip) = match taken {
         Some(chain) => {
@@ -369,7 +504,10 @@ pub fn process(item: &TrackItem, a0: i64, n: usize, sr: u32, read: &dyn Fn(i64, 
         None => {
             let act = active(item);
             let mt = item.source_time_at(Tick::from_units(a0, sr as i64));
-            let pre_s = act.iter().map(|(e, m)| (m.preroll)(e, mt)).fold(0.0, f64::max);
+            let pre_s = act
+                .iter()
+                .map(|(e, m)| (m.preroll)(e, mt))
+                .fold(0.0, f64::max);
             let pre = (pre_s * sr as f64).ceil() as usize;
             let mut fx: Vec<Box<dyn AudioEffect>> = Vec::new();
             for (_, m) in &act {
@@ -378,7 +516,11 @@ pub fn process(item: &TrackItem, a0: i64, n: usize, sr: u32, read: &dyn Fn(i64, 
                 }
             }
             let latency = fx.iter().map(|d| d.latency()).sum::<usize>();
-            let chain = Chain { fx, latency, next_out: a0 - pre as i64 };
+            let chain = Chain {
+                fx,
+                latency,
+                next_out: a0 - pre as i64,
+            };
             let x0 = a0 - pre as i64;
             (chain, read(x0 + latency as i64, pre + n), pre)
         }
@@ -407,12 +549,22 @@ mod tests {
 
     #[test]
     fn every_audio_effect_has_dsp() {
-        for d in effect_defs().iter().filter(|d| d.kind == EffectKind::Audio && !d.intrinsic) {
+        for d in effect_defs()
+            .iter()
+            .filter(|d| d.kind == EffectKind::Audio && !d.intrinsic)
+        {
             let m = mapping(d.id).unwrap_or_else(|| panic!("{} has no DSP mapping", d.id));
-            assert!(filmcraft_audio_dsp::effect_info(m.dsp).is_some(), "{} → unknown DSP {}", d.id, m.dsp);
+            assert!(
+                filmcraft_audio_dsp::effect_info(m.dsp).is_some(),
+                "{} → unknown DSP {}",
+                d.id,
+                m.dsp
+            );
             let inst = d.instance();
             let mut fx = configured(&inst, Tick::ZERO, 48000).unwrap();
-            let mut l: Vec<f32> = (0..4800).map(|i| ((i * 7919 % 1000) as f32 / 1000.0 - 0.5) * 0.5).collect();
+            let mut l: Vec<f32> = (0..4800)
+                .map(|i| ((i * 7919 % 1000) as f32 / 1000.0 - 0.5) * 0.5)
+                .collect();
             let mut r = l.clone();
             fx.process(&mut [&mut l, &mut r]);
             assert!(l.iter().chain(&r).all(|v| v.is_finite()), "{}", d.id);
@@ -426,21 +578,46 @@ mod tests {
             let def = filmcraft_project::find_effect(pid).unwrap_or_else(|| panic!("{pid}"));
             let info = filmcraft_audio_dsp::effect_info(dsp).unwrap_or_else(|| panic!("{dsp}"));
             for p in &def.params {
-                let s = info.params.iter().find(|s| s.id == p.id).unwrap_or_else(|| panic!("{pid}.{} missing in {dsp}", p.id));
+                let s = info
+                    .params
+                    .iter()
+                    .find(|s| s.id == p.id)
+                    .unwrap_or_else(|| panic!("{pid}.{} missing in {dsp}", p.id));
                 match &p.kind {
                     ParamKind::Float { min, max, .. } => {
-                        assert!(*min >= s.min as f64 - 1e-3 && *max <= s.max as f64 + 1e-3, "{pid}.{}: range {min}..{max} vs {}..{}", p.id, s.min, s.max);
+                        assert!(
+                            *min >= s.min as f64 - 1e-3 && *max <= s.max as f64 + 1e-3,
+                            "{pid}.{}: range {min}..{max} vs {}..{}",
+                            p.id,
+                            s.min,
+                            s.max
+                        );
                         let dv = p.default.as_f64().unwrap();
-                        assert!((dv - s.default as f64).abs() < 0.02, "{pid}.{}: default {dv} vs {}", p.id, s.default);
+                        assert!(
+                            (dv - s.default as f64).abs() < 0.02,
+                            "{pid}.{}: default {dv} vs {}",
+                            p.id,
+                            s.default
+                        );
                     }
                     ParamKind::Choice(opts) => {
                         assert_eq!(s.unit, Unit::Choice, "{pid}.{}", p.id);
                         assert_eq!(opts.len(), s.choices.len(), "{pid}.{}", p.id);
-                        assert_eq!(p.default.as_f64().unwrap(), s.default as f64, "{pid}.{}", p.id);
+                        assert_eq!(
+                            p.default.as_f64().unwrap(),
+                            s.default as f64,
+                            "{pid}.{}",
+                            p.id
+                        );
                     }
                     ParamKind::Bool => {
                         assert_eq!(s.unit, Unit::Toggle, "{pid}.{}", p.id);
-                        assert_eq!(p.default.as_f64().unwrap(), s.default as f64, "{pid}.{}", p.id);
+                        assert_eq!(
+                            p.default.as_f64().unwrap(),
+                            s.default as f64,
+                            "{pid}.{}",
+                            p.id
+                        );
                     }
                     k => panic!("{pid}.{}: unsupported kind {k:?}", p.id),
                 }
@@ -457,7 +634,10 @@ mod tests {
         assert!((fx.response_db(1000.0).unwrap() - 9.0).abs() < 1.0);
         let def = filmcraft_project::find_effect("dynamics_rack").unwrap();
         let fx = configured(&def.instance(), Tick::ZERO, 48000).unwrap();
-        assert!((fx.transfer_db(0, 0.0).unwrap() + 10.0).abs() < 1e-3, "−20 dB threshold, 2:1");
+        assert!(
+            (fx.transfer_db(0, 0.0).unwrap() + 10.0).abs() < 1e-3,
+            "−20 dB threshold, 2:1"
+        );
         assert_eq!(latency("fft_filter", 48000), 2048);
         assert_eq!(latency("amplify", 48000), 0);
     }
@@ -465,18 +645,27 @@ mod tests {
     #[test]
     fn parametric_eq_applies_every_control() {
         let def = filmcraft_project::find_effect("parametric_eq").unwrap();
-        let resp = |id: &str, v: filmcraft_project::ParamValue, extra: Option<(&str, filmcraft_project::ParamValue)>| {
+        let resp = |id: &str,
+                    v: filmcraft_project::ParamValue,
+                    extra: Option<(&str, filmcraft_project::ParamValue)>| {
             let mut inst = def.instance();
             inst.param_mut(id).unwrap().value = v;
             if let Some((k, x)) = extra {
                 inst.param_mut(k).unwrap().value = x;
             }
-            configured(&inst, Tick::ZERO, 48000).unwrap().response_db(1000.0).unwrap()
+            configured(&inst, Tick::ZERO, 48000)
+                .unwrap()
+                .response_db(1000.0)
+                .unwrap()
         };
         use filmcraft_project::ParamValue::{Bool, Float};
         assert!((resp("master_gain", Float(-30.0), None) + 30.0).abs() < 1.0);
         for b in ["b1", "b2", "b4", "b5"] {
-            let g = resp(&format!("{b}_gain"), Float(-24.0), Some((&format!("{b}_freq"), Float(1000.0))));
+            let g = resp(
+                &format!("{b}_gain"),
+                Float(-24.0),
+                Some((&format!("{b}_freq"), Float(1000.0))),
+            );
             assert!((g + 24.0).abs() < 1.0, "{b}: {g}");
         }
         assert!(resp("hp_on", Bool(true), Some(("hp_freq", Float(10000.0)))) < -20.0);

@@ -95,7 +95,13 @@ pub fn trace_mask(mask: &[bool], w: usize, h: usize) -> Vec<Component> {
     let (comp, sizes) = label(mask, w, h);
     let vw = w + 1;
     let mut dirs = vec![0u8; vw * (h + 1)];
-    let inside = |x: isize, y: isize| x >= 0 && y >= 0 && (x as usize) < w && (y as usize) < h && mask[y as usize * w + x as usize];
+    let inside = |x: isize, y: isize| {
+        x >= 0
+            && y >= 0
+            && (x as usize) < w
+            && (y as usize) < h
+            && mask[y as usize * w + x as usize]
+    };
     for y in 0..h {
         for x in 0..w {
             if !mask[y * w + x] {
@@ -180,7 +186,11 @@ pub fn trace_mask(mask: &[bool], w: usize, h: usize) -> Vec<Component> {
     let mut out = Vec::with_capacity(sizes.len());
     for (i, o) in outers.into_iter().enumerate() {
         if let Some(outer) = o {
-            out.push(Component { outer, holes: std::mem::take(&mut holes[i]), pixels: sizes[i] });
+            out.push(Component {
+                outer,
+                holes: std::mem::take(&mut holes[i]),
+                pixels: sizes[i],
+            });
         }
     }
     out

@@ -28,9 +28,15 @@ pub fn zlib(src: &[u8], expected: usize) -> Result<Vec<u8>, Error> {
 
 /// Inflate raw DEFLATE data, producing at most `limit` bytes (more is an error).
 pub fn inflate(src: &[u8], limit: usize) -> Result<Vec<u8>, Error> {
-    let mut bits = Bits { src, pos: 0, buf: 0, cnt: 0 };
+    let mut bits = Bits {
+        src,
+        pos: 0,
+        buf: 0,
+        cnt: 0,
+    };
     let mut out = Vec::new();
-    out.try_reserve_exact(limit).map_err(|_| "output too large to allocate")?;
+    out.try_reserve_exact(limit)
+        .map_err(|_| "output too large to allocate")?;
     let mut fixed: Option<(Huffman, Huffman)> = None;
     loop {
         let last = bits.take(1)? == 1;
@@ -66,7 +72,9 @@ struct Bits<'a> {
 impl Bits<'_> {
     fn refill(&mut self) {
         while self.cnt <= 56 {
-            let Some(&b) = self.src.get(self.pos) else { return };
+            let Some(&b) = self.src.get(self.pos) else {
+                return;
+            };
             self.buf |= u64::from(b) << self.cnt;
             self.pos += 1;
             self.cnt += 8;
@@ -173,12 +181,20 @@ impl Huffman {
                 }
             }
         }
-        Ok(Self { fast, count, symbols })
+        Ok(Self {
+            fast,
+            count,
+            symbols,
+        })
     }
 
     fn decode(&self, bits: &mut Bits) -> Result<u16, Error> {
         let peek = bits.peek(MAX_BITS as u32);
-        let e = self.fast.get((peek & ((1 << FAST_BITS) - 1)) as usize).copied().unwrap_or(0);
+        let e = self
+            .fast
+            .get((peek & ((1 << FAST_BITS) - 1)) as usize)
+            .copied()
+            .unwrap_or(0);
         if e != 0 {
             bits.consume(u32::from(e & 15))?;
             return Ok(e >> 4);
@@ -190,7 +206,11 @@ impl Huffman {
             let count = i32::from(self.count[len]);
             if code - first < count {
                 bits.consume(len as u32)?;
-                return self.symbols.get((index + code - first) as usize).copied().ok_or("invalid Huffman code");
+                return self
+                    .symbols
+                    .get((index + code - first) as usize)
+                    .copied()
+                    .ok_or("invalid Huffman code");
             }
             index += count;
             first = (first + count) << 1;
@@ -208,7 +228,9 @@ fn fixed_tables() -> Result<(Huffman, Huffman), Error> {
 }
 
 /// Order in which code-length code lengths are sent.
-const CL_ORDER: [usize; 19] = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+const CL_ORDER: [usize; 19] = [
+    16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+];
 
 fn dynamic_tables(bits: &mut Bits) -> Result<(Huffman, Huffman), Error> {
     let nlit = bits.take(5)? as usize + 257;
@@ -229,14 +251,18 @@ fn dynamic_tables(bits: &mut Bits) -> Result<(Huffman, Huffman), Error> {
         let (value, repeat) = match sym {
             0..=15 => (sym as u8, 1),
             16 => {
-                let prev = *lengths.get(i.wrapping_sub(1)).ok_or("repeat with no previous length")?;
+                let prev = *lengths
+                    .get(i.wrapping_sub(1))
+                    .ok_or("repeat with no previous length")?;
                 (prev, 3 + bits.take(2)? as usize)
             }
             17 => (0, 3 + bits.take(3)? as usize),
             18 => (0, 11 + bits.take(7)? as usize),
             _ => return Err("invalid code length symbol"),
         };
-        let run = lengths.get_mut(i..i + repeat).ok_or("code lengths overflow")?;
+        let run = lengths
+            .get_mut(i..i + repeat)
+            .ok_or("code lengths overflow")?;
         run.fill(value);
         i += repeat;
     }
@@ -247,14 +273,30 @@ fn dynamic_tables(bits: &mut Bits) -> Result<(Huffman, Huffman), Error> {
     Ok((Huffman::new(lit)?, Huffman::new(dist)?))
 }
 
-const LEN_BASE: [u16; 29] = [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258];
-const LEN_EXTRA: [u8; 29] = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
-const DIST_BASE: [u16; 30] =
-    [1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577];
-const DIST_EXTRA: [u8; 30] = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+const LEN_BASE: [u16; 29] = [
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131,
+    163, 195, 227, 258,
+];
+const LEN_EXTRA: [u8; 29] = [
+    0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0,
+];
+const DIST_BASE: [u16; 30] = [
+    1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537,
+    2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+];
+const DIST_EXTRA: [u8; 30] = [
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
+    13,
+];
 
 /// The literal / length and distance codes of one compressed block.
-fn codes(bits: &mut Bits, out: &mut Vec<u8>, limit: usize, lit: &Huffman, dist: &Huffman) -> Result<(), Error> {
+fn codes(
+    bits: &mut Bits,
+    out: &mut Vec<u8>,
+    limit: usize,
+    lit: &Huffman,
+    dist: &Huffman,
+) -> Result<(), Error> {
     loop {
         let sym = lit.decode(bits)?;
         if sym < 256 {
@@ -268,10 +310,16 @@ fn codes(bits: &mut Bits, out: &mut Vec<u8>, limit: usize, lit: &Huffman, dist: 
             return Ok(());
         }
         let k = usize::from(sym - 257);
-        let (&base, &extra) = LEN_BASE.get(k).zip(LEN_EXTRA.get(k)).ok_or("invalid length code")?;
+        let (&base, &extra) = LEN_BASE
+            .get(k)
+            .zip(LEN_EXTRA.get(k))
+            .ok_or("invalid length code")?;
         let len = usize::from(base) + bits.take(u32::from(extra))? as usize;
         let d = usize::from(dist.decode(bits)?);
-        let (&base, &extra) = DIST_BASE.get(d).zip(DIST_EXTRA.get(d)).ok_or("invalid distance code")?;
+        let (&base, &extra) = DIST_BASE
+            .get(d)
+            .zip(DIST_EXTRA.get(d))
+            .ok_or("invalid distance code")?;
         let distance = usize::from(base) + bits.take(u32::from(extra))? as usize;
         if distance > out.len() {
             return Err("distance before the start of the output");
@@ -298,7 +346,10 @@ mod tests {
 
     // Vectors made with Python's zlib (an external tool; the bytes are data).
     /// `zlib.compress(b"hello hello hello hello", 9)`: one fixed-Huffman block with a back reference.
-    const FIXED: &[u8] = &[0x78, 0xda, 0xcb, 0x48, 0xcd, 0xc9, 0xc9, 0x57, 0xc8, 0x40, 0x27, 0x01, 0x68, 0x03, 0x08, 0xb1];
+    const FIXED: &[u8] = &[
+        0x78, 0xda, 0xcb, 0x48, 0xcd, 0xc9, 0xc9, 0x57, 0xc8, 0x40, 0x27, 0x01, 0x68, 0x03, 0x08,
+        0xb1,
+    ];
 
     #[test]
     fn fixed_block() {
@@ -308,20 +359,26 @@ mod tests {
     #[test]
     fn stored_block() {
         // zlib header, one final stored block of 3 bytes, Adler-32
-        let s = [0x78, 0x01, 0x01, 0x03, 0x00, 0xfc, 0xff, b'a', b'b', b'c', 0x02, 0x4d, 0x01, 0x27];
+        let s = [
+            0x78, 0x01, 0x01, 0x03, 0x00, 0xfc, 0xff, b'a', b'b', b'c', 0x02, 0x4d, 0x01, 0x27,
+        ];
         assert_eq!(zlib(&s, 3).unwrap(), b"abc");
     }
 
     /// `zlib.compressobj(9)` of the 300 bytes `(i*i*7 + i/3) % 23 + 65`: one dynamic-Huffman block.
     const DYNAMIC: &[u8] = &[
-        0x78, 0xda, 0xe5, 0xcc, 0x01, 0x11, 0xc0, 0x20, 0x08, 0x00, 0xc0, 0x6c, 0x6c, 0x22, 0x70, 0x0a, 0xe2, 0xa1, 0xd0, 0xbf, 0xc9, 0x82, 0xec, 0x03, 0x3c,
-        0x70, 0x8f, 0xf4, 0x07, 0x2c, 0xac, 0x60, 0x9d, 0xdd, 0xf0, 0x36, 0xd0, 0xc5, 0x6e, 0x2f, 0x81, 0x48, 0xbe, 0xc9, 0x5c, 0x08, 0x53, 0x71, 0xca, 0x29,
-        0xaf, 0x1c, 0x26, 0xdb, 0x69, 0x74, 0x77, 0x52, 0x89, 0xab, 0xb1, 0x91, 0xe0, 0x1f, 0xc9, 0x07, 0x4a, 0xb8, 0x58, 0xfe,
+        0x78, 0xda, 0xe5, 0xcc, 0x01, 0x11, 0xc0, 0x20, 0x08, 0x00, 0xc0, 0x6c, 0x6c, 0x22, 0x70,
+        0x0a, 0xe2, 0xa1, 0xd0, 0xbf, 0xc9, 0x82, 0xec, 0x03, 0x3c, 0x70, 0x8f, 0xf4, 0x07, 0x2c,
+        0xac, 0x60, 0x9d, 0xdd, 0xf0, 0x36, 0xd0, 0xc5, 0x6e, 0x2f, 0x81, 0x48, 0xbe, 0xc9, 0x5c,
+        0x08, 0x53, 0x71, 0xca, 0x29, 0xaf, 0x1c, 0x26, 0xdb, 0x69, 0x74, 0x77, 0x52, 0x89, 0xab,
+        0xb1, 0x91, 0xe0, 0x1f, 0xc9, 0x07, 0x4a, 0xb8, 0x58, 0xfe,
     ];
 
     #[test]
     fn dynamic_block() {
-        let want: Vec<u8> = (0..300usize).map(|i| ((i * i * 7 + i / 3) % 23 + 65) as u8).collect();
+        let want: Vec<u8> = (0..300usize)
+            .map(|i| ((i * i * 7 + i / 3) % 23 + 65) as u8)
+            .collect();
         assert_eq!(zlib(DYNAMIC, 300).unwrap(), want);
     }
 

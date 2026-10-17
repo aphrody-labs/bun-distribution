@@ -82,12 +82,20 @@ impl LibraryFile for StyleLibrary {
 pub type Libraries = super::swatchlib::Libraries<StyleLibrary>;
 
 fn builtin_info(b: &style_libs::BuiltinStyleLibrary) -> LibraryInfo {
-    LibraryInfo { id: b.id.into(), name: b.name.into(), category: "builtIn" }
+    LibraryInfo {
+        id: b.id.into(),
+        name: b.name.into(),
+        category: "builtIn",
+    }
 }
 
 /// Every graphic style library, in menu order: built-in, User Defined, loaded.
 pub fn libraries(s: &Session) -> Vec<LibraryInfo> {
-    STYLE_LIBRARIES.iter().map(builtin_info).chain(s.style_libraries.infos().cloned()).collect()
+    STYLE_LIBRARIES
+        .iter()
+        .map(builtin_info)
+        .chain(s.style_libraries.infos().cloned())
+        .collect()
 }
 
 /// Library `key` (an id, or a name in any case) with its info.
@@ -98,13 +106,22 @@ pub fn library(s: &Session, key: &str) -> Option<(LibraryInfo, Arc<StyleLibrary>
     if let Some(b) = STYLE_LIBRARIES.iter().find(|b| b.id == key) {
         return Some((builtin_info(b), builtin_style_library(key)?));
     }
-    let id = libraries(s).into_iter().find(|l| l.name.eq_ignore_ascii_case(key))?.id;
+    let id = libraries(s)
+        .into_iter()
+        .find(|l| l.name.eq_ignore_ascii_case(key))?
+        .id;
     library(s, &id)
 }
 
 fn library_param(s: &Session, p: &Value, cmd: &str) -> Result<(LibraryInfo, Arc<StyleLibrary>)> {
-    let key = str_param(p, "library").ok_or_else(|| bad(cmd, "missing `library` (see graphicStyle.libraries)"))?;
-    library(s, key).ok_or_else(|| bad(cmd, format!("no graphic style library `{key}` (see graphicStyle.libraries)")))
+    let key = str_param(p, "library")
+        .ok_or_else(|| bad(cmd, "missing `library` (see graphicStyle.libraries)"))?;
+    library(s, key).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("no graphic style library `{key}` (see graphicStyle.libraries)"),
+        )
+    })
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
@@ -128,22 +145,43 @@ fn get(s: &mut Session, p: &Value) -> Result<Value> {
 /// Pattern `name` of `lib` in `d`: the document's own when it has the same pattern (under any
 /// name), else the library's added (under a free name). Returns the name it has in `d`.
 fn bring_pattern(d: &mut Document, lib: &StyleLibrary, name: &str) -> String {
-    let Some(def) = lib.patterns.iter().find(|p| p.name == name) else { return name.to_string() };
-    if let Some(same) = d.patterns.iter().find(|p| PatternDef { name: def.name.clone(), ..(*p).clone() } == *def) {
+    let Some(def) = lib.patterns.iter().find(|p| p.name == name) else {
+        return name.to_string();
+    };
+    if let Some(same) = d.patterns.iter().find(|p| {
+        PatternDef {
+            name: def.name.clone(),
+            ..(*p).clone()
+        } == *def
+    }) {
         return same.name.clone();
     }
     let new = unique_name(name, |n| d.pattern(n).is_some() || d.swatch_name_taken(n));
-    super::patterncmds::add_pattern(d, PatternDef { name: new.clone(), ..def.clone() });
+    super::patterncmds::add_pattern(
+        d,
+        PatternDef {
+            name: new.clone(),
+            ..def.clone()
+        },
+    );
     new
 }
 
 /// Library style `g` as a document style: its patterns brought along (`renamed`: library pattern
 /// name → its name in `d`, filled in as they come) and a free name and id.
-fn adopt(d: &mut Document, lib: &StyleLibrary, g: &GraphicStyle, renamed: &mut HashMap<String, String>) -> GraphicStyle {
+fn adopt(
+    d: &mut Document,
+    lib: &StyleLibrary,
+    g: &GraphicStyle,
+    renamed: &mut HashMap<String, String>,
+) -> GraphicStyle {
     let mut g = g.clone();
     for it in &mut g.appearance.items {
         if let Paint::Pattern { pattern, .. } = it.paint_mut() {
-            *pattern = renamed.entry(pattern.clone()).or_insert_with_key(|n| bring_pattern(d, lib, n)).clone();
+            *pattern = renamed
+                .entry(pattern.clone())
+                .or_insert_with_key(|n| bring_pattern(d, lib, n))
+                .clone();
         }
     }
     g.name = unique_name(&g.name, |n| d.graphic_style(n).is_some());
@@ -159,15 +197,19 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(n) = names.iter().find(|n| lib.style(n).is_none()) {
         return Err(bad(C, format!("no graphic style `{n}` in `{}`", lib.name)));
     }
-    let mut picked: Vec<&GraphicStyle> =
-        if names.is_empty() { lib.styles.iter().collect() } else { names.iter().filter_map(|n| lib.style(n)).collect() };
+    let mut picked: Vec<&GraphicStyle> = if names.is_empty() {
+        lib.styles.iter().collect()
+    } else {
+        names.iter().filter_map(|n| lib.style(n)).collect()
+    };
     // Each once, in the order asked for.
     let mut seen = HashSet::new();
     picked.retain(|g| seen.insert(g.name.as_str()));
     // Styles the document already has (same name and look) are reused, not added again.
     let d = &s.doc()?.doc;
-    let (existing, fresh): (Vec<&GraphicStyle>, Vec<&GraphicStyle>) =
-        picked.iter().partition(|g| d.graphic_style(&g.name).is_some_and(|x| x.same_look(g)));
+    let (existing, fresh): (Vec<&GraphicStyle>, Vec<&GraphicStyle>) = picked
+        .iter()
+        .partition(|g| d.graphic_style(&g.name).is_some_and(|x| x.same_look(g)));
     let undo_before = s.doc()?.history.undo.len();
     // Library name → the name it got in the document.
     let added: Vec<(String, String)> = if fresh.is_empty() {
@@ -184,14 +226,20 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
             Ok(out)
         })?
     };
-    let doc_name = |lib_name: &str| added.iter().find(|(l, _)| l == lib_name).map_or_else(|| lib_name.to_string(), |(_, n)| n.clone());
+    let doc_name = |lib_name: &str| {
+        added
+            .iter()
+            .find(|(l, _)| l == lib_name)
+            .map_or_else(|| lib_name.to_string(), |(_, n)| n.clone())
+    };
     let mut out = json!({
         "library": info.id,
         "added": added.iter().map(|(_, n)| n).collect::<Vec<_>>(),
         "existing": existing.iter().map(|g| &g.name).collect::<Vec<_>>(),
     });
     let first = picked.first().map(|g| doc_name(&g.name));
-    let targets = p.get("ids").is_some() || !super::appearance::appearance_targets(s, &json!({}))?.is_empty();
+    let targets =
+        p.get("ids").is_some() || !super::appearance::appearance_targets(s, &json!({}))?.is_empty();
     if let Some(name) = first.filter(|_| bool_or(p, "apply", false) && targets) {
         let mut params = json!({"name": name, "add": bool_or(p, "add", false)});
         if let Some(ids) = p.get("ids") {
@@ -208,10 +256,21 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "graphicStyle.saveLibrary";
     let st = s.doc()?;
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).map_or_else(|| stem(&st.title()).to_string(), str::to_string);
-    let lib = StyleLibrary::from_document(&st.doc, &str_list(p, "names"), name).map_err(|e| bad(C, e))?;
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map_or_else(|| stem(&st.title()).to_string(), str::to_string);
+    let lib =
+        StyleLibrary::from_document(&st.doc, &str_list(p, "names"), name).map_err(|e| bad(C, e))?;
     let mut out = json!({ "count": lib.len() });
-    s.style_libraries.write(p, &lib.name, STYLES_EXT, FileData::Text(style_libs::write(&lib)), &mut out, C)?;
+    s.style_libraries.write(
+        p,
+        &lib.name,
+        STYLES_EXT,
+        FileData::Text(style_libs::write(&lib)),
+        &mut out,
+        C,
+    )?;
     Ok(out)
 }
 

@@ -4,8 +4,8 @@
 //! Provides inspection of Xenoverse 2 save containers, player Create-a-Character (CaC)
 //! rosters, level, attribute allocations, Zeni, and TP Medals.
 
-use serde::{Deserialize, Serialize};
 use crate::game::error::{ReError, Result};
+use serde::{Deserialize, Serialize};
 
 /// Encrypted container magic: `0x4C018948`.
 pub const ENCRYPTED_SAV_SIGNATURE: u32 = 0x4C018948;
@@ -126,7 +126,9 @@ fn parse_cac_slot(slot: usize, buf: &[u8]) -> Option<Dxbv2Cac> {
     // Name is 64 bytes UTF-8 null-terminated at offset 0x44
     let name_bytes = &buf[0x44..0x44 + 64];
     let null_pos = name_bytes.iter().position(|&b| b == 0).unwrap_or(64);
-    let name = String::from_utf8_lossy(&name_bytes[..null_pos]).trim().to_string();
+    let name = String::from_utf8_lossy(&name_bytes[..null_pos])
+        .trim()
+        .to_string();
 
     if name.is_empty() {
         return None;

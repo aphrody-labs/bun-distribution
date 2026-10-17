@@ -26,7 +26,7 @@ pub mod ui_transform;
 use bevy_derive::{Deref, DerefMut};
 #[cfg(feature = "bevy_picking")]
 use bevy_picking::PickingSystems;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 mod accessibility;
 pub use accessibility::AccessibilityUiSystems;
 // This module is not re-exported, but is instead made public.
@@ -38,7 +38,7 @@ mod layout;
 mod stack;
 mod ui_node;
 
-use bevy_text::{detect_text_needs_rerender, EditableTextSystems};
+use bevy_text::{EditableTextSystems, detect_text_needs_rerender};
 pub use focus::*;
 pub use geometry::*;
 pub use gradients::*;
@@ -66,16 +66,16 @@ pub mod prelude {
         reason = "Should be removed after 0.20 is released when Button & Interaction are removed."
     )]
     #[doc(hidden)]
-    pub use crate::{widget::Button, Interaction};
+    pub use crate::{Interaction, widget::Button};
     #[doc(hidden)]
     pub use {
         crate::{
+            UiScale,
             geometry::*,
             gradients::*,
             ui_node::*,
             ui_transform::*,
             widget::{ImageNode, InlineImage, Label, NodeImageMode, ViewportNode},
-            UiScale,
         },
         // `bevy_sprite` re-exports for texture slicing
         bevy_sprite::{BorderRect, SliceScaleMode, SpriteImageMode, TextureSlicer},
@@ -83,7 +83,7 @@ pub mod prelude {
     };
 }
 
-use bevy_app::{prelude::*, AnimationSystems, HierarchyPropagatePlugin, PropagateSet};
+use bevy_app::{AnimationSystems, HierarchyPropagatePlugin, PropagateSet, prelude::*};
 use bevy_camera::CameraUpdateSystems;
 use bevy_ecs::prelude::*;
 use bevy_input::InputSystems;

@@ -30,10 +30,14 @@ impl Driver {
     /// `render`: with a wgpu renderer so `Harness::render` can take screenshots (needs a GPU).
     fn demo_with(render: bool) -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if render {
             b = b.wgpu();
         }
@@ -75,7 +79,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn sequence(&mut self) -> Value {
@@ -88,23 +95,42 @@ impl Driver {
 
     fn element_ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 }
 
 /// Clips on a video track in `sequence.inspect` JSON.
 fn track_clips(seq: &Value, track: usize) -> Vec<Value> {
-    seq["video"][track]["items"].as_array().cloned().unwrap_or_default()
+    seq["video"][track]["items"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
 }
 
 #[test]
 fn demo_project_opens_headless_and_registers_widgets() {
     let mut d = Driver::demo();
     let ui = d.inspect();
-    assert!(ui["activeSequence"].is_u64(), "demo sequence is active: {ui}");
-    assert!(ui["elements"].as_u64().unwrap() > 50, "widgets registered: {}", ui["elements"]);
+    assert!(
+        ui["activeSequence"].is_u64(),
+        "demo sequence is active: {ui}"
+    );
+    assert!(
+        ui["elements"].as_u64().unwrap() > 50,
+        "widgets registered: {}",
+        ui["elements"]
+    );
     let panels = d.element_ids("panel.");
-    for p in ["panel.Timeline", "panel.Program", "panel.Project", "panel.tab.Timeline"] {
+    for p in [
+        "panel.Timeline",
+        "panel.Program",
+        "panel.Project",
+        "panel.tab.Timeline",
+    ] {
         assert!(panels.iter().any(|x| x == p), "{p} missing from {panels:?}");
     }
     let tools = d.element_ids("tools.");
@@ -144,11 +170,17 @@ fn insert_from_source_ripples_the_sequence() {
     let rate = &d.sequence()["settings"]["frame_rate"];
     let (num, den) = (rate["num"].as_i64().unwrap(), rate["den"].as_i64().unwrap());
     let tick = |f: i64| f * 254_016_000_000 * den / num;
-    d.exec("project.setMarks", json!({"item": item, "in": tick(24), "out": tick(47)}));
+    d.exec(
+        "project.setMarks",
+        json!({"item": item, "in": tick(24), "out": tick(47)}),
+    );
     d.exec("playhead.set", json!({"frame": 0}));
     d.exec("source.insert", json!({}));
     let dur1 = d.sequence()["duration"].as_i64().unwrap();
-    assert!(dur1 > dur0, "insert lengthens the sequence: {dur0} → {dur1}");
+    assert!(
+        dur1 > dur0,
+        "insert lengthens the sequence: {dur0} → {dur1}"
+    );
     d.frames(2);
 }
 
@@ -157,7 +189,9 @@ fn first_media_item(v: &Value) -> Option<u64> {
     match v {
         Value::Object(m) => {
             if let Some(id) = m.get("item").and_then(Value::as_u64)
-                && m.get("type").and_then(Value::as_str).is_some_and(|t| t == "Movie")
+                && m.get("type")
+                    .and_then(Value::as_str)
+                    .is_some_and(|t| t == "Movie")
             {
                 return Some(id);
             }
@@ -175,15 +209,28 @@ fn apply_effect_appears_in_effect_controls() {
     d.exec("timeline.select", json!({"clips": [clip]}));
     d.exec("effects.apply", json!({"effect": "Gaussian Blur"}));
     let seq = d.sequence();
-    let fx: Vec<String> = track_clips(&seq, 0)[0]["effects"].as_array().unwrap().iter().filter_map(|e| e["effect"].as_str().map(str::to_string)).collect();
+    let fx: Vec<String> = track_clips(&seq, 0)[0]["effects"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|e| e["effect"].as_str().map(str::to_string))
+        .collect();
     assert!(fx.iter().any(|e| e == "gaussian_blur"), "{fx:?}");
     d.ok("ui.panel.show", json!({"panel": "Effect Controls"}));
     d.frames(3);
     let ids = d.element_ids("effectControls.effect.");
-    assert!(ids.iter().any(|i| i == "effectControls.effect.gaussian_blur"), "{ids:?}");
+    assert!(
+        ids.iter()
+            .any(|i| i == "effectControls.effect.gaussian_blur"),
+        "{ids:?}"
+    );
     d.ok("ui.menu.invoke", json!({"id": "edit.undo"}));
     d.frames(2);
-    assert!(!d.element_ids("effectControls.effect.").iter().any(|i| i == "effectControls.effect.gaussian_blur"));
+    assert!(
+        !d.element_ids("effectControls.effect.")
+            .iter()
+            .any(|i| i == "effectControls.effect.gaussian_blur")
+    );
 }
 
 #[test]
@@ -193,16 +240,25 @@ fn spanish_search_finds_effects_and_presets_with_stable_automation_ids() {
     d.ok("ui.panel.show", json!({"panel": "Effects"}));
     d.ok("ui.set", json!({"effectsSearch": "DESENFOQUE"}));
     d.frames(3);
-    assert!(d.element_ids("effects.item.").contains(&"effects.item.gaussian_blur".to_string()));
+    assert!(
+        d.element_ids("effects.item.")
+            .contains(&"effects.item.gaussian_blur".to_string())
+    );
     d.ok("ui.set", json!({"effectsSearch": "ENTRADA CON DESENFOQUE"}));
     d.frames(3);
-    assert!(d.element_ids("effects.preset.").contains(&"effects.preset.Blur In".to_string()));
+    assert!(
+        d.element_ids("effects.preset.")
+            .contains(&"effects.preset.Blur In".to_string())
+    );
     let clip = track_clips(&d.sequence(), 0)[0]["clip"].as_u64().unwrap();
     d.exec("timeline.select", json!({"clips": [clip]}));
     d.exec("effects.apply", json!({"effect": "gaussian_blur"}));
     d.ok("ui.panel.show", json!({"panel": "Effect Controls"}));
     d.frames(3);
-    assert!(d.element_ids("effectControls.effect.").contains(&"effectControls.effect.gaussian_blur".to_string()));
+    assert!(
+        d.element_ids("effectControls.effect.")
+            .contains(&"effectControls.effect.gaussian_blur".to_string())
+    );
     d.ok("ui.menu.invoke", json!({"id": "app.language.english"}));
 }
 
@@ -213,29 +269,63 @@ fn effects_panel_lists_the_premiere_transition_folders() {
     d.frames(3);
     let folders = d.element_ids("effects.folder.");
     for f in filmcraft_project::vtransition::VIDEO_TRANSITION_FOLDERS {
-        assert!(folders.contains(&format!("effects.folder.Video Transitions/{f}")), "{f}: {folders:?}");
+        assert!(
+            folders.contains(&format!("effects.folder.Video Transitions/{f}")),
+            "{f}: {folders:?}"
+        );
     }
-    assert!(folders.iter().any(|f| f == "effects.folder.Legacy"), "{folders:?}");
+    assert!(
+        folders.iter().any(|f| f == "effects.folder.Legacy"),
+        "{folders:?}"
+    );
     // search opens the matching folders: every modern wipe, and the legacy ones
     d.ok("ui.set", json!({"effectsSearch": "wipe"}));
     d.frames(3);
     let items = d.element_ids("effects.item.");
-    for id in
-        ["clock_wipe", "linear_wipe", "neon_wipe", "panel_wipe", "plateau_wipe", "radial_wipe", "soft_wipe", "star_wipe", "stretch_wipe", "vr_gradient_wipe"]
-    {
-        assert!(items.iter().any(|i| i == &format!("effects.item.{id}")), "{id}: {items:?}");
+    for id in [
+        "clock_wipe",
+        "linear_wipe",
+        "neon_wipe",
+        "panel_wipe",
+        "plateau_wipe",
+        "radial_wipe",
+        "soft_wipe",
+        "star_wipe",
+        "stretch_wipe",
+        "vr_gradient_wipe",
+    ] {
+        assert!(
+            items.iter().any(|i| i == &format!("effects.item.{id}")),
+            "{id}: {items:?}"
+        );
     }
     d.ok("ui.set", json!({"effectsSearch": "legacy"}));
     d.frames(3);
     let items = d.element_ids("effects.item.");
-    for id in ["additive_dissolve_legacy", "clock_wipe_legacy", "cross_dissolve_legacy", "push_legacy", "whip_legacy"] {
-        assert!(items.iter().any(|i| i == &format!("effects.item.{id}")), "{id}: {items:?}");
+    for id in [
+        "additive_dissolve_legacy",
+        "clock_wipe_legacy",
+        "cross_dissolve_legacy",
+        "push_legacy",
+        "whip_legacy",
+    ] {
+        assert!(
+            items.iter().any(|i| i == &format!("effects.item.{id}")),
+            "{id}: {items:?}"
+        );
     }
     // a folder whose own name has a slash keeps all of it (Noise Reduction/Restoration, not Restoration)
     d.ok("ui.set", json!({"effectsSearch": "denoise"}));
     d.frames(3);
-    let noise = d.ok("ui.elements", json!({"prefix": "effects.folder.Audio Effects/Noise Reduction/Restoration"}));
-    assert_eq!(noise[0]["label"], json!("Noise Reduction/Restoration"), "{noise}");
+    let noise = d.ok(
+        "ui.elements",
+        json!({"prefix": "effects.folder.Audio Effects/Noise Reduction/Restoration"}),
+    );
+    assert_eq!(
+        noise[0]["label"],
+        json!("Noise Reduction/Restoration"),
+        "{noise}"
+    );
     // obsolete transitions stay out of the panel
     d.ok("ui.set", json!({"effectsSearch": "venetian"}));
     d.frames(3);
@@ -243,15 +333,32 @@ fn effects_panel_lists_the_premiere_transition_folders() {
     // clicking a sub-folder toggles it
     d.ok("ui.set", json!({"effectsSearch": ""}));
     d.frames(2);
-    d.ok("ui.click", json!({"id": "effects.folder.Video Transitions/Dissolve"}));
+    d.ok(
+        "ui.click",
+        json!({"id": "effects.folder.Video Transitions/Dissolve"}),
+    );
     d.frames(2);
-    assert!(!d.element_ids("effects.item.").iter().any(|i| i == "effects.item.cross_dissolve"));
+    assert!(
+        !d.element_ids("effects.item.")
+            .iter()
+            .any(|i| i == "effects.item.cross_dissolve")
+    );
     // applying from the panel's command path works for a legacy transition
     let cut = track_clips(&d.sequence(), 0)[1]["start"].as_i64().unwrap();
     d.exec("playhead.set", json!({"time": cut}));
-    d.exec("sequence.applyVideoTransition", json!({"effect": "Iris Round"}));
+    d.exec(
+        "sequence.applyVideoTransition",
+        json!({"effect": "Iris Round"}),
+    );
     let seq = d.sequence();
-    assert!(seq["video"][0]["transitions"].as_array().unwrap().iter().any(|t| t["effect"] == "iris_round"), "{seq}");
+    assert!(
+        seq["video"][0]["transitions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["effect"] == "iris_round"),
+        "{seq}"
+    );
 }
 
 #[test]
@@ -266,7 +373,14 @@ fn cmd_d_applies_the_default_transition_to_the_selected_clip() {
     d.ok("ui.key", json!({"key": "Cmd+D"}));
     d.frames(2);
     let seq = d.sequence();
-    assert!(seq["video"][0]["transitions"].as_array().unwrap().iter().any(|t| t["to"] == id && t["effect"] == "cross_dissolve"), "{seq}");
+    assert!(
+        seq["video"][0]["transitions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|t| t["to"] == id && t["effect"] == "cross_dissolve"),
+        "{seq}"
+    );
 }
 
 #[test]
@@ -306,7 +420,10 @@ fn unknown_methods_and_commands_fail_cleanly() {
 /// End of the first V1 clip (ticks).
 fn first_cut(d: &mut Driver) -> (u64, i64) {
     let c = &track_clips(&d.sequence(), 0)[0];
-    (c["clip"].as_u64().unwrap(), c["start"].as_i64().unwrap() + c["duration"].as_i64().unwrap())
+    (
+        c["clip"].as_u64().unwrap(),
+        c["start"].as_i64().unwrap() + c["duration"].as_i64().unwrap(),
+    )
 }
 
 #[test]
@@ -322,7 +439,10 @@ fn trim_monitor_buttons_and_dynamic_jkl_trimming() {
     };
     // Selecting an edit point turns the Program monitor into the Trim Monitor.
     assert!(d.element_ids("trimMonitor.").is_empty());
-    d.exec("trim.selectEditPoint", json!({"clip": clip, "edge": "out", "kind": "roll"}));
+    d.exec(
+        "trim.selectEditPoint",
+        json!({"clip": clip, "edge": "out", "kind": "roll"}),
+    );
     d.frames(3);
     let ids = d.element_ids("trimMonitor.");
     for id in [
@@ -342,14 +462,27 @@ fn trim_monitor_buttons_and_dynamic_jkl_trimming() {
     assert_eq!(first_cut(&mut d).1, cut + fd);
     let info = d.exec("trim.monitor", json!({}));
     assert_eq!(info["outShift"], json!(1), "{info}");
-    let undo0 = d.exec("history.list", json!({}))["undo"].as_array().unwrap().len();
+    let undo0 = d.exec("history.list", json!({}))["undo"]
+        .as_array()
+        .unwrap()
+        .len();
 
     // L starts a dynamic trim; the edit moves while frames run; K commits one undo step.
     d.ok("ui.key", json!({"key": "L"}));
     d.frames(4);
     let live = d.exec("trim.monitor", json!({}));
-    assert!(live["dynamic"]["offsetFrames"].as_i64().unwrap() > 0, "trimming live: {live}");
-    assert_eq!(d.exec("history.list", json!({}))["undo"].as_array().unwrap().len(), undo0, "no undo steps while trimming");
+    assert!(
+        live["dynamic"]["offsetFrames"].as_i64().unwrap() > 0,
+        "trimming live: {live}"
+    );
+    assert_eq!(
+        d.exec("history.list", json!({}))["undo"]
+            .as_array()
+            .unwrap()
+            .len(),
+        undo0,
+        "no undo steps while trimming"
+    );
     d.ok("ui.key", json!({"key": "K"}));
     d.frames(2);
     let after = first_cut(&mut d).1;
@@ -379,7 +512,11 @@ fn trim_monitor_buttons_and_dynamic_jkl_trimming() {
     d.ok("ui.click", json!({"id": "trimMonitor.exit"}));
     d.frames(2);
     assert!(d.element_ids("trimMonitor.").is_empty());
-    assert!(d.element_ids("program.").iter().any(|x| x == "program.picture"));
+    assert!(
+        d.element_ids("program.")
+            .iter()
+            .any(|x| x == "program.picture")
+    );
 }
 
 impl Driver {
@@ -390,7 +527,8 @@ impl Driver {
             self.frames(1);
         }
         let img = self.harness.render().expect("render");
-        let png = filmcraft_ui_egui::control::encode_png(img.as_raw(), img.width(), img.height()).expect("png");
+        let png = filmcraft_ui_egui::control::encode_png(img.as_raw(), img.width(), img.height())
+            .expect("png");
         let dir = std::path::PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join("ui-screenshots");
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join(format!("{name}.png"));
@@ -442,10 +580,19 @@ fn keyboard_shortcuts_dialog_assigns_live_and_cancel_restores() {
     let mut d = Driver::demo();
     let menu_shortcut = |d: &mut Driver, id: &str| -> Value {
         let items = d.ok("ui.menu.list", json!({}));
-        items.as_array().unwrap().iter().find(|i| i["id"] == id).map(|i| i["shortcut"].clone()).unwrap_or(Value::Null)
+        items
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|i| i["id"] == id)
+            .map(|i| i["shortcut"].clone())
+            .unwrap_or(Value::Null)
     };
     assert_eq!(menu_shortcut(&mut d, "sequence.addEdit"), json!("Cmd+K"));
-    assert_eq!(menu_shortcut(&mut d, "app.keyboardShortcuts"), json!("Cmd+Alt+K"));
+    assert_eq!(
+        menu_shortcut(&mut d, "app.keyboardShortcuts"),
+        json!("Cmd+Alt+K")
+    );
     // Edit ▸ Keyboard Shortcuts… by its shortcut
     d.ok("ui.key", json!({"key": "Cmd+Alt+K"}));
     d.frames(2);
@@ -456,37 +603,70 @@ fn keyboard_shortcuts_dialog_assigns_live_and_cancel_restores() {
     d.ok("ui.click", json!({"id": "shortcuts.search"}));
     d.ok("ui.type", json!({"text": "add edit"}));
     d.frames(2);
-    assert!(d.element_ids("shortcuts.row.").iter().any(|x| x == "shortcuts.row.sequence.addEdit"));
+    assert!(
+        d.element_ids("shortcuts.row.")
+            .iter()
+            .any(|x| x == "shortcuts.row.sequence.addEdit")
+    );
     d.ok("ui.click", json!({"id": "shortcuts.cell.sequence.addEdit"}));
     d.frames(1);
     d.ok("ui.key", json!({"key": "Cmd+Shift+J"}));
     d.frames(2);
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEdit"), json!("Cmd+Shift+J"), "the menu shows the new key live");
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEdit"),
+        json!("Cmd+Shift+J"),
+        "the menu shows the new key live"
+    );
     let cmds = d.ok("engine.commands", json!({}));
-    let ae = cmds.as_array().unwrap().iter().find(|c| c["id"] == "sequence.addEdit").unwrap().clone();
-    assert_eq!(ae["shortcut"], json!("Cmd+Shift+J"), "command list too: {ae}");
+    let ae = cmds
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == "sequence.addEdit")
+        .unwrap()
+        .clone();
+    assert_eq!(
+        ae["shortcut"],
+        json!("Cmd+Shift+J"),
+        "command list too: {ae}"
+    );
     // reassigning a used key takes it from the other command (and says so)
     d.ok("ui.click", json!({"id": "shortcuts.cell.sequence.addEdit"}));
     d.frames(1);
     d.ok("ui.key", json!({"key": "Cmd+Shift+K"}));
     d.frames(2);
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEditAllTracks"), Value::Null);
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEditAllTracks"),
+        Value::Null
+    );
     let msg = d.element_ids("shortcuts.message");
     assert_eq!(msg.len(), 1);
     // Undo / Redo inside the dialog
     d.ok("ui.click", json!({"id": "shortcuts.undo"}));
     d.frames(1);
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEditAllTracks"), json!("Cmd+Shift+K"));
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEdit"), json!("Cmd+Shift+J"));
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEditAllTracks"),
+        json!("Cmd+Shift+K")
+    );
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEdit"),
+        json!("Cmd+Shift+J")
+    );
     d.ok("ui.click", json!({"id": "shortcuts.redo"}));
     d.frames(1);
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEdit"), json!("Cmd+Shift+K"));
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEdit"),
+        json!("Cmd+Shift+K")
+    );
     // Cancel restores everything
     d.ok("ui.click", json!({"id": "shortcuts.cancel"}));
     d.frames(2);
     assert!(d.inspect()["dialog"].is_null());
     assert_eq!(menu_shortcut(&mut d, "sequence.addEdit"), json!("Cmd+K"));
-    assert_eq!(menu_shortcut(&mut d, "sequence.addEditAllTracks"), json!("Cmd+Shift+K"));
+    assert_eq!(
+        menu_shortcut(&mut d, "sequence.addEditAllTracks"),
+        json!("Cmd+Shift+K")
+    );
 
     // Assign + OK, then the new key really runs the command
     d.ok("ui.menu.invoke", json!({"id": "app.keyboardShortcuts"}));
@@ -505,24 +685,39 @@ fn keyboard_shortcuts_dialog_assigns_live_and_cancel_restores() {
     d.ok("ui.set", json!({"focused": "Timeline"}));
     d.ok("ui.key", json!({"key": "Cmd+Shift+J"}));
     d.frames(2);
-    assert_eq!(track_clips(&d.sequence(), 0).len(), n0 + 1, "Cmd+Shift+J adds an edit");
+    assert_eq!(
+        track_clips(&d.sequence(), 0).len(),
+        n0 + 1,
+        "Cmd+Shift+J adds an edit"
+    );
     d.ok("ui.key", json!({"key": "Cmd+K"}));
     d.frames(2);
     d.exec("playhead.set", json!({"seconds": 3.0}));
     d.ok("ui.key", json!({"key": "Cmd+K"}));
     d.frames(2);
-    assert_eq!(track_clips(&d.sequence(), 0).len(), n0 + 2, "the original Cmd+K was kept (added, not replaced)");
+    assert_eq!(
+        track_clips(&d.sequence(), 0).len(),
+        n0 + 2,
+        "the original Cmd+K was kept (added, not replaced)"
+    );
 
     // Panel-specific: Left in the History panel is Undo; in the Timeline it steps back
     d.ok("ui.set", json!({"focused": "History"}));
     d.ok("ui.key", json!({"key": "Left"}));
     d.frames(2);
-    assert_eq!(track_clips(&d.sequence(), 0).len(), n0 + 1, "History ▸ Left = Step Backward (undo)");
+    assert_eq!(
+        track_clips(&d.sequence(), 0).len(),
+        n0 + 1,
+        "History ▸ Left = Step Backward (undo)"
+    );
     d.ok("ui.set", json!({"focused": "Timeline"}));
     let ph = d.sequence()["playhead"].as_i64().unwrap();
     d.ok("ui.key", json!({"key": "Left"}));
     d.frames(2);
-    assert!(d.sequence()["playhead"].as_i64().unwrap() < ph, "Timeline ▸ Left steps back");
+    assert!(
+        d.sequence()["playhead"].as_i64().unwrap() < ph,
+        "Timeline ▸ Left steps back"
+    );
     assert_eq!(track_clips(&d.sequence(), 0).len(), n0 + 1);
 }
 
@@ -534,7 +729,16 @@ fn waveform_peaks_do_not_survive_opening_another_project() {
     let mut first = None;
     for _ in 0..2000 {
         d.frames(1);
-        let peaks = d.harness.state().tl.peaks.lock().unwrap().iter().map(|(k, v)| (*k, v.clone())).next();
+        let peaks = d
+            .harness
+            .state()
+            .tl
+            .peaks
+            .lock()
+            .unwrap()
+            .iter()
+            .map(|(k, v)| (*k, v.clone()))
+            .next();
         if peaks.is_some() {
             first = peaks;
             break;
@@ -549,8 +753,19 @@ fn waveform_peaks_do_not_survive_opening_another_project() {
     d.exec("file.open", json!({"path": path}));
     d.frames(2);
     let _ = std::fs::remove_file(&path);
-    let now = d.harness.state().tl.peaks.lock().unwrap().get(&item).cloned();
-    assert!(now.is_none_or(|p| !std::sync::Arc::ptr_eq(&p, &old)), "peaks from the previous project were reused");
+    let now = d
+        .harness
+        .state()
+        .tl
+        .peaks
+        .lock()
+        .unwrap()
+        .get(&item)
+        .cloned();
+    assert!(
+        now.is_none_or(|p| !std::sync::Arc::ptr_eq(&p, &old)),
+        "peaks from the previous project were reused"
+    );
 }
 
 /// #164: on a real keyboard, pressing Alt+Shift+J sends each modifier key on its own first (egui
@@ -567,9 +782,22 @@ fn recording_a_shortcut_skips_the_modifier_key_presses() {
     d.ok("ui.click", json!({"id": "shortcuts.add.sequence.addEdit"}));
     d.frames(1);
     // what a real keyboard sends for Alt+Shift+J: Alt, then Shift, then J
-    let alt = egui::Modifiers { alt: true, ..Default::default() };
-    let alt_shift = egui::Modifiers { alt: true, shift: true, ..Default::default() };
-    let key = |key, modifiers| egui::Event::Key { key, physical_key: Some(key), pressed: true, repeat: false, modifiers };
+    let alt = egui::Modifiers {
+        alt: true,
+        ..Default::default()
+    };
+    let alt_shift = egui::Modifiers {
+        alt: true,
+        shift: true,
+        ..Default::default()
+    };
+    let key = |key, modifiers| egui::Event::Key {
+        key,
+        physical_key: Some(key),
+        pressed: true,
+        repeat: false,
+        modifiers,
+    };
     let events = &mut d.harness.input_mut().events;
     events.push(key(egui::Key::AltLeft, alt));
     events.push(key(egui::Key::ShiftLeft, alt_shift));
@@ -578,7 +806,12 @@ fn recording_a_shortcut_skips_the_modifier_key_presses() {
     d.ok("ui.click", json!({"id": "shortcuts.ok"}));
     d.frames(2);
     // added next to Cmd+K (`shortcuts.get` lists every chord of the command)
-    let got = d.ok("engine.execute", json!({"command": "shortcuts.get", "params": {"command": "sequence.addEdit"}})).to_string();
+    let got = d
+        .ok(
+            "engine.execute",
+            json!({"command": "shortcuts.get", "params": {"command": "sequence.addEdit"}}),
+        )
+        .to_string();
     assert!(got.contains("Alt+Shift+J"), "{got}");
     assert!(got.contains("Cmd+K"), "{got}");
 }
@@ -592,9 +825,14 @@ fn eyedropper_picks_a_key_color_on_a_selected_clip() {
     d.exec("effects.apply", json!({"effect": "Color Key"}));
     d.ok("ui.panel.show", json!({"panel": "EffectControls"}));
     d.frames(4);
-    let color = |d: &mut Driver| d.sequence()["video"][0]["items"][0]["effects"][0]["params"]["color"]["value"].clone();
+    let color = |d: &mut Driver| {
+        d.sequence()["video"][0]["items"][0]["effects"][0]["params"]["color"]["value"].clone()
+    };
     let before = color(&mut d);
-    d.ok("ui.click", json!({"id": "effectControls.color_key.color.eyedropper"}));
+    d.ok(
+        "ui.click",
+        json!({"id": "effectControls.color_key.color.eyedropper"}),
+    );
     d.frames(2);
     d.ok("ui.click", json!({"id": "program.picture"}));
     for _ in 0..200 {
@@ -603,5 +841,9 @@ fn eyedropper_picks_a_key_color_on_a_selected_clip() {
         }
         d.frames(1);
     }
-    assert_ne!(color(&mut d), before, "the eyedropper filled Key Color from the Program picture");
+    assert_ne!(
+        color(&mut d),
+        before,
+        "the eyedropper filled Key Color from the Program picture"
+    );
 }

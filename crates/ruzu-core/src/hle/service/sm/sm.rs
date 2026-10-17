@@ -695,7 +695,10 @@ impl Sm {
                             panic!("created server session must be registered");
                         });
                     drop(port_guard);
-                    let enqueue_result = crate::hle::kernel::k_port::KPort::enqueue_session_arc(&port, session_object_id);
+                    let enqueue_result = crate::hle::kernel::k_port::KPort::enqueue_session_arc(
+                        &port,
+                        session_object_id,
+                    );
                     if enqueue_result.is_error() {
                         process.unregister_client_session_object_by_object_id(
                             client_session_object_id,

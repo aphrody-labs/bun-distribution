@@ -29,14 +29,24 @@
 //! This crate is L3 and does no file I/O: media files are probed through a callback, pre-rendered
 //! media come in as paths, and documents are bytes.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod export;
 mod import;
 #[cfg(test)]
 mod tests;
 
-pub use export::{ExportOptions, ExportOutput, PrecompMode, PrerenderMode, Prerendered, export, plan_prerender, prerender_reason};
+pub use export::{
+    ExportOptions, ExportOutput, PrecompMode, PrerenderMode, Prerendered, export, plan_prerender,
+    prerender_reason,
+};
 pub use import::{ImportOptions, ImportResult, import};
 
 pub use filmcraft_geom as fc_geom;
@@ -68,8 +78,14 @@ pub enum TimelineFormat {
 }
 
 impl TimelineFormat {
-    pub const ALL: [TimelineFormat; 6] =
-        [TimelineFormat::Fcp7Xml, TimelineFormat::Fcpxml, TimelineFormat::Otio, TimelineFormat::Edl, TimelineFormat::Aaf, TimelineFormat::Omf];
+    pub const ALL: [TimelineFormat; 6] = [
+        TimelineFormat::Fcp7Xml,
+        TimelineFormat::Fcpxml,
+        TimelineFormat::Otio,
+        TimelineFormat::Edl,
+        TimelineFormat::Aaf,
+        TimelineFormat::Omf,
+    ];
 
     /// Id used by commands (`xml`, `fcpxml`, `otio`, `edl`).
     pub fn id(self) -> &'static str {
@@ -101,8 +117,15 @@ impl TimelineFormat {
 
     /// Parse a command parameter: a format id, a name or an extension.
     pub fn parse(s: &str) -> Option<TimelineFormat> {
-        match s.trim().trim_start_matches('.').to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
-            "xml" | "fcp7" | "fcp7xml" | "xmeml" | "finalcutproxml" | "premiere" | "premierepro" | "prproj" => Some(TimelineFormat::Fcp7Xml),
+        match s
+            .trim()
+            .trim_start_matches('.')
+            .to_ascii_lowercase()
+            .replace([' ', '_', '-'], "")
+            .as_str()
+        {
+            "xml" | "fcp7" | "fcp7xml" | "xmeml" | "finalcutproxml" | "premiere"
+            | "premierepro" | "prproj" => Some(TimelineFormat::Fcp7Xml),
             "fcpxml" | "fcpxmld" | "fcpx" => Some(TimelineFormat::Fcpxml),
             "otio" | "opentimelineio" => Some(TimelineFormat::Otio),
             "edl" | "cmx3600" | "cmx" => Some(TimelineFormat::Edl),
@@ -167,11 +190,18 @@ pub type Result<T> = std::result::Result<T, Error>;
 // ---------------------------------------------------------------- shared conversions
 
 pub(crate) fn rate_in(r: filmcraft_time::FrameRate) -> effectcraft_time::FrameRate {
-    if r.num <= 0 || r.den <= 0 { effectcraft_time::FrameRate::new(30, 1) } else { effectcraft_time::FrameRate::new(r.num, r.den) }
+    if r.num <= 0 || r.den <= 0 {
+        effectcraft_time::FrameRate::new(30, 1)
+    } else {
+        effectcraft_time::FrameRate::new(r.num, r.den)
+    }
 }
 
 pub(crate) fn rate_out(r: effectcraft_time::FrameRate) -> filmcraft_time::FrameRate {
-    filmcraft_time::FrameRate { num: r.num, den: r.den }
+    filmcraft_time::FrameRate {
+        num: r.num,
+        den: r.den,
+    }
 }
 
 // Both projects count time in the same ticks (254 016 000 000 per second).

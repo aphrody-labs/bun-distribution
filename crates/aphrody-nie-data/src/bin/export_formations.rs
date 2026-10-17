@@ -45,7 +45,7 @@ fn formation_label(placements: &[SoccerFormPlacementInfo]) -> String {
             "DF" => df += 1,
             "MF" => mf += 1,
             "FW" => fw += 1,
-            _ => {},
+            _ => {}
         }
     }
     format!("{df}-{mf}-{fw}")
@@ -68,8 +68,10 @@ fn default_data_root() -> String {
 }
 
 fn main() {
-    let data_root =
-        std::env::args().skip_while(|a| a != "--data").nth(1).unwrap_or_else(default_data_root);
+    let data_root = std::env::args()
+        .skip_while(|a| a != "--data")
+        .nth(1)
+        .unwrap_or_else(default_data_root);
     let out_path = std::env::args()
         .skip_while(|a| a != "--out")
         .nth(1)
@@ -123,7 +125,11 @@ fn main() {
         })
         .collect();
 
-    let valid_count = cfg.formations.iter().filter(|f| is_valid(cfg.placements_of(f))).count();
+    let valid_count = cfg
+        .formations
+        .iter()
+        .filter(|f| is_valid(cfg.placements_of(f)))
+        .count();
 
     let out = json!({
         "meta": {
@@ -144,8 +150,14 @@ fn main() {
     fs::write(&out_path, &json_bytes).expect("impossible d'écrire le fichier JSON");
 
     let kb = json_bytes.len() / 1024;
-    eprintln!("[export_formations] OK — {} formations, {kb}Ko → {out_path}", cfg.formations.len());
-    println!("formation_count={} size_kb={kb} out={out_path}", cfg.formations.len());
+    eprintln!(
+        "[export_formations] OK — {} formations, {kb}Ko → {out_path}",
+        cfg.formations.len()
+    );
+    println!(
+        "formation_count={} size_kb={kb} out={out_path}",
+        cfg.formations.len()
+    );
 }
 
 /// Trouve le `*.cfg.bin.json` le plus récent de `subdir` commençant par `prefix`.

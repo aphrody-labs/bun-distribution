@@ -6,8 +6,8 @@ use crate::render_resource::{
 use crate::renderer::wgpu_wrapper;
 use bevy_ecs::resource::Resource;
 use wgpu::{
-    util::DeviceExt, BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry, BufferAsyncError, BufferBindingType, PollError, PollStatus,
+    BindGroupDescriptor, BindGroupEntry, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
+    BufferAsyncError, BufferBindingType, PollError, PollStatus, util::DeviceExt,
 };
 
 wgpu_wrapper! {
@@ -110,7 +110,9 @@ impl RenderDevice {
     ) -> wgpu::ShaderModule {
         #[cfg(feature = "spirv_shader_passthrough")]
         match &desc.source {
-            wgpu::ShaderSource::SpirV(_source) => panic!("no safety checks are performed for spirv shaders. use `create_shader_module` instead"),
+            wgpu::ShaderSource::SpirV(_source) => panic!(
+                "no safety checks are performed for spirv shaders. use `create_shader_module` instead"
+            ),
             _ => self.device.create_shader_module(desc),
         }
         #[cfg(not(feature = "spirv_shader_passthrough"))]

@@ -23,7 +23,10 @@ pub struct CmsFile {
 impl CmsFile {
     pub fn parse(buffer: &[u8]) -> Result<Self> {
         if buffer.len() < 16 {
-            return Err(ReError::BufferTooSmall { required: 16, available: buffer.len() });
+            return Err(ReError::BufferTooSmall {
+                required: 16,
+                available: buffer.len(),
+            });
         }
 
         if &buffer[0..4] != CMS_MAGIC {
@@ -48,12 +51,20 @@ impl CmsFile {
 
             let id = u32::from_le_bytes(slice[0..4].try_into().unwrap());
             let raw_name = &slice[4..8];
-            let short_name = String::from_utf8_lossy(raw_name).trim_matches('\0').to_string();
+            let short_name = String::from_utf8_lossy(raw_name)
+                .trim_matches('\0')
+                .to_string();
             let model_path_id = u32::from_le_bytes(slice[8..12].try_into().unwrap());
             let voice_id = u32::from_le_bytes(slice[12..16].try_into().unwrap());
             let skeleton_id = u32::from_le_bytes(slice[16..20].try_into().unwrap());
 
-            entries.push(CmsEntry { id, short_name, model_path_id, voice_id, skeleton_id });
+            entries.push(CmsEntry {
+                id,
+                short_name,
+                model_path_id,
+                voice_id,
+                skeleton_id,
+            });
         }
 
         Ok(Self { entries })

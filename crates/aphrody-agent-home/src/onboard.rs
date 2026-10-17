@@ -57,7 +57,11 @@ impl OnboardOptions {
     /// Construct with default flags (no skip, no force).
     #[must_use]
     pub fn new(workspace: impl Into<PathBuf>) -> Self {
-        Self { workspace: workspace.into(), skip_bootstrap: false, force: false }
+        Self {
+            workspace: workspace.into(),
+            skip_bootstrap: false,
+            force: false,
+        }
     }
 }
 
@@ -150,7 +154,13 @@ pub fn seed_workspace(opts: &OnboardOptions) -> Result<SeedReport, HomeError> {
         let Some(template) = template_for(file) else {
             continue;
         };
-        write_seed(ws, file.filename(), strip_frontmatter(template), opts.force, &mut report)?;
+        write_seed(
+            ws,
+            file.filename(),
+            strip_frontmatter(template),
+            opts.force,
+            &mut report,
+        )?;
     }
 
     // Load (or default) the workspace state and seed the one-shot ritual only
@@ -253,7 +263,11 @@ impl UpgradeOptions {
     /// Construct with default options (backup = true, force = false).
     #[must_use]
     pub fn new(workspace: impl Into<PathBuf>) -> Self {
-        Self { workspace: workspace.into(), backup: true, force: false }
+        Self {
+            workspace: workspace.into(),
+            backup: true,
+            force: false,
+        }
     }
 }
 
@@ -390,7 +404,10 @@ mod tests {
         let soul = std::fs::read_to_string(ws.join(SOUL_FILENAME)).unwrap();
         // The body should NOT start with the YAML frontmatter delimiter; the
         // frontmatter is stripped at seed time.
-        assert!(!soul.trim_start().starts_with("---"), "frontmatter not stripped:\n{soul}");
+        assert!(
+            !soul.trim_start().starts_with("---"),
+            "frontmatter not stripped:\n{soul}"
+        );
         assert!(soul.contains("agent d'ingénierie souverain"));
     }
 
@@ -398,7 +415,11 @@ mod tests {
     fn skip_bootstrap_omits_optional_files() {
         let td = tempdir().unwrap();
         let ws = td.path().join("workspace");
-        let opts = OnboardOptions { workspace: ws.clone(), skip_bootstrap: true, force: false };
+        let opts = OnboardOptions {
+            workspace: ws.clone(),
+            skip_bootstrap: true,
+            force: false,
+        };
         seed_workspace(&opts).unwrap();
         // Required files present.
         assert!(ws.join(AGENTS_FILENAME).exists());
@@ -416,7 +437,10 @@ mod tests {
         std::fs::create_dir_all(&ws).unwrap();
         std::fs::write(ws.join(SOUL_FILENAME), "MY CUSTOM SOUL").unwrap();
         let report = seed_workspace(&OnboardOptions::new(&ws)).unwrap();
-        assert_eq!(std::fs::read_to_string(ws.join(SOUL_FILENAME)).unwrap(), "MY CUSTOM SOUL");
+        assert_eq!(
+            std::fs::read_to_string(ws.join(SOUL_FILENAME)).unwrap(),
+            "MY CUSTOM SOUL"
+        );
         assert!(report.kept.contains(&SOUL_FILENAME.to_string()));
     }
 
@@ -426,9 +450,16 @@ mod tests {
         let ws = td.path().join("workspace");
         std::fs::create_dir_all(&ws).unwrap();
         std::fs::write(ws.join(SOUL_FILENAME), "OLD").unwrap();
-        let opts = OnboardOptions { workspace: ws.clone(), skip_bootstrap: false, force: true };
+        let opts = OnboardOptions {
+            workspace: ws.clone(),
+            skip_bootstrap: false,
+            force: true,
+        };
         let report = seed_workspace(&opts).unwrap();
-        assert_ne!(std::fs::read_to_string(ws.join(SOUL_FILENAME)).unwrap(), "OLD");
+        assert_ne!(
+            std::fs::read_to_string(ws.join(SOUL_FILENAME)).unwrap(),
+            "OLD"
+        );
         assert!(report.overwritten.contains(&SOUL_FILENAME.to_string()));
     }
 
@@ -487,7 +518,10 @@ mod tests {
 
         // USER.md was preserved without force
         assert!(report.kept.contains(&USER_FILENAME.to_string()));
-        assert_eq!(std::fs::read_to_string(ws.join(USER_FILENAME)).unwrap(), custom_user);
+        assert_eq!(
+            std::fs::read_to_string(ws.join(USER_FILENAME)).unwrap(),
+            custom_user
+        );
 
         // Second run is idempotent: everything kept, no new backups or upgrades
         let second_report = upgrade_workspace(&opts).unwrap();

@@ -68,7 +68,10 @@ impl<const LEVEL_3: bool> KeyBuffer<LEVEL_3> {
 
 impl KeyBuffer<false> {
     pub fn level_3<const MODULO: usize>(&self) -> KeyBuffer<true> {
-        let mut result = KeyBuffer { key_buf: self.key_buf, key_code: self.key_code };
+        let mut result = KeyBuffer {
+            key_buf: self.key_buf,
+            key_code: self.key_code,
+        };
         result.key_code[1] <<= 1;
         result.key_code[2] >>= 1;
         result.apply_key_code::<MODULO>();

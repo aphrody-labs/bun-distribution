@@ -59,7 +59,8 @@ pub struct AssetEntry {
 impl SharedAssets {
     pub fn for_workspace(workspace: &Path) -> io::Result<Self> {
         let public = std::env::var_os("APHRODY_PUBLIC_ASSET_ROOT")
-            .filter(|value| !value.is_empty()).map(PathBuf::from);
+            .filter(|value| !value.is_empty())
+            .map(PathBuf::from);
         Self::for_roots(workspace, public.as_deref())
     }
 
@@ -70,20 +71,30 @@ impl SharedAssets {
         let roots = SOURCE_ROOTS
             .iter()
             .filter_map(|(name, relative)| {
-                let root = boundary.join(if public.is_some() { name } else { relative }).canonicalize().ok()?;
+                let root = boundary
+                    .join(if public.is_some() { name } else { relative })
+                    .canonicalize()
+                    .ok()?;
                 (root.is_dir() && root.starts_with(boundary)).then_some((*name, root))
             })
             .collect();
-        let cache = std::env::var_os("APHRODY_ASSET_CACHE").filter(|v| !v.is_empty()).map_or_else(
-            || {
-                std::env::temp_dir()
-                    .join("aphrody-site-assets")
-                    .join(hex::encode(Sha256::digest(workspace.to_string_lossy().as_bytes())))
-            },
-            PathBuf::from,
-        );
+        let cache = std::env::var_os("APHRODY_ASSET_CACHE")
+            .filter(|v| !v.is_empty())
+            .map_or_else(
+                || {
+                    std::env::temp_dir()
+                        .join("aphrody-site-assets")
+                        .join(hex::encode(Sha256::digest(
+                            workspace.to_string_lossy().as_bytes(),
+                        )))
+                },
+                PathBuf::from,
+            );
         std::fs::create_dir_all(&cache)?;
-        Ok(Self { roots, cache: cache.canonicalize()? })
+        Ok(Self {
+            roots,
+            cache: cache.canonicalize()?,
+        })
     }
 
     pub fn router(self) -> Router {
@@ -100,16 +111,23 @@ impl SharedAssets {
             && !relative.contains(['\\', '%', ':'])
             && !relative.chars().any(char::is_control)
             && !relative.split('/').any(str::is_empty)
-            && Path::new(relative).components().all(|c| matches!(c, Component::Normal(_)))
+            && Path::new(relative)
+                .components()
+                .all(|c| matches!(c, Component::Normal(_)))
             && media_type(namespace, relative).is_some()
     }
 
     fn source(&self, namespace: &str, relative: &str) -> io::Result<PathBuf> {
         if !self.allowed(namespace, relative) {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput, "invalid public asset"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "invalid public asset",
+            ));
         }
-        let root =
-            self.roots.get(namespace).ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
+        let root = self
+            .roots
+            .get(namespace)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::NotFound))?;
         let path = root.join(relative).canonicalize()?;
         if !path.starts_with(root) || !path.is_file() {
             return Err(io::Error::new(
@@ -139,7 +157,9 @@ impl SharedAssets {
         let target = self.cache.join(&sha256);
         if self.cached(&sha256).await.is_none() {
             let id = SNAPSHOT_ID.fetch_add(1, Ordering::Relaxed);
-            let temporary = self.cache.join(format!("{sha256}.{}.{}.tmp", std::process::id(), id));
+            let temporary = self
+                .cache
+                .join(format!("{sha256}.{}.{}.tmp", std::process::id(), id));
             tokio::fs::write(&temporary, &bytes).await?;
             if let Err(error) = tokio::fs::rename(&temporary, &target).await {
                 let _ = tokio::fs::remove_file(&temporary).await;
@@ -161,7 +181,9 @@ impl SharedAssets {
 
     async fn cached(&self, digest: &str) -> Option<PathBuf> {
         if digest.len() != 64
-            || !digest.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+            || !digest
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
         {
             return None;
         }
@@ -202,20 +224,21 @@ impl SharedAssets {
                 Ok(entry) => {
                     let path = self.cache.join(&entry.sha256);
                     (entry.sha256, path)
-                },
+                }
                 Err(_) => return StatusCode::NOT_FOUND.into_response(),
             }
         };
         let etag = format!("\"{digest}\"");
-        let unchanged =
-            request.headers().get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()).is_some_and(
-                |values| {
-                    values.split(',').any(|v| {
-                        let v = v.trim();
-                        v == "*" || v.strip_prefix("W/").unwrap_or(v) == etag
-                    })
-                },
-            );
+        let unchanged = request
+            .headers()
+            .get(header::IF_NONE_MATCH)
+            .and_then(|v| v.to_str().ok())
+            .is_some_and(|values| {
+                values.split(',').any(|v| {
+                    let v = v.trim();
+                    v == "*" || v.strip_prefix("W/").unwrap_or(v) == etag
+                })
+            });
         let mut response = if unchanged {
             StatusCode::NOT_MODIFIED.into_response()
         } else {
@@ -226,7 +249,10 @@ impl SharedAssets {
         };
         let headers = response.headers_mut();
         headers.insert(header::CONTENT_TYPE, HeaderValue::from_static(content_type));
-        headers.insert(header::ETAG, HeaderValue::from_str(&etag).expect("SHA256 ETag is ASCII"));
+        headers.insert(
+            header::ETAG,
+            HeaderValue::from_str(&etag).expect("SHA256 ETag is ASCII"),
+        );
         headers.insert(
             header::CACHE_CONTROL,
             HeaderValue::from_static(if expected.is_some() {
@@ -235,8 +261,14 @@ impl SharedAssets {
                 "public, no-cache"
             }),
         );
-        headers.insert(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"));
-        headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_static("*"));
+        headers.insert(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        );
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_ORIGIN,
+            HeaderValue::from_static("*"),
+        );
         response
     }
 
@@ -273,15 +305,18 @@ fn media_type(namespace: &str, relative: &str) -> Option<&'static str> {
     let extension = Path::new(relative).extension()?.to_str()?;
     let allowed = match namespace {
         "icons" | "images" => {
-            matches!(extension, "svg" | "png" | "webp" | "jpg" | "jpeg" | "gif" | "avif" | "ico")
-        },
+            matches!(
+                extension,
+                "svg" | "png" | "webp" | "jpg" | "jpeg" | "gif" | "avif" | "ico"
+            )
+        }
         "svgs" => extension == "svg",
         "brand" => matches!(extension, "png" | "svg" | "ico"),
         "logo" => matches!(extension, "webp" | "png" | "svg"),
         "pet" => {
             matches!(extension, "png" | "webp")
                 || matches!(relative, "pet.json" | "animations.json")
-        },
+        }
         "fonts" => matches!(extension, "woff" | "woff2" | "ttf" | "otf"),
         "shaders" => extension == "wgsl",
         "models" => matches!(extension, "glb" | "gltf"),
@@ -320,7 +355,7 @@ fn media_type(namespace: &str, relative: &str) -> Option<&'static str> {
                 || (namespace == "pet" && matches!(relative, "pet.json" | "animations.json")) =>
         {
             Some("application/json")
-        },
+        }
         _ => None,
     }
 }
@@ -337,7 +372,9 @@ async fn versioned(
     RoutePath((digest, namespace, path)): RoutePath<(String, String, String)>,
     request: Request<Body>,
 ) -> Response {
-    assets.response(&namespace, &path, Some(&digest), request).await
+    assets
+        .response(&namespace, &path, Some(&digest), request)
+        .await
 }
 async fn manifest(State(assets): State<Arc<SharedAssets>>) -> Response {
     match assets.entries().await {
@@ -410,9 +447,17 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_MODIFIED);
-        assert!(to_bytes(response.into_body(), 1024).await.unwrap().is_empty());
-        std::fs::write(root.path().join("m3/packages/assets/icons/sample.png"), b"new bytes")
-            .unwrap();
+        assert!(
+            to_bytes(response.into_body(), 1024)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+        std::fs::write(
+            root.path().join("m3/packages/assets/icons/sample.png"),
+            b"new bytes",
+        )
+        .unwrap();
         let response = app
             .clone()
             .oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap())
@@ -425,12 +470,21 @@ mod tests {
         let response = app
             .clone()
             .oneshot(
-                Request::builder().uri("/assets/icons/sample.png").body(Body::empty()).unwrap(),
+                Request::builder()
+                    .uri("/assets/icons/sample.png")
+                    .body(Body::empty())
+                    .unwrap(),
             )
             .await
             .unwrap();
-        assert_eq!(response.headers()[header::CACHE_CONTROL], "public, no-cache");
-        assert_eq!(to_bytes(response.into_body(), 1024).await.unwrap().as_ref(), b"new bytes");
+        assert_eq!(
+            response.headers()[header::CACHE_CONTROL],
+            "public, no-cache"
+        );
+        assert_eq!(
+            to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
+            b"new bytes"
+        );
         std::fs::remove_file(root.path().join("m3/packages/assets/icons/sample.png")).unwrap();
         let response = app
             .clone()
@@ -453,10 +507,15 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
-        std::fs::write(root.path().join("cache").join(&entries[1].sha256), b"corrupt snapshot")
+        std::fs::write(
+            root.path().join("cache").join(&entries[1].sha256),
+            b"corrupt snapshot",
+        )
+        .unwrap();
+        let response = app
+            .oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap())
+            .await
             .unwrap();
-        let response =
-            app.oneshot(Request::builder().uri(&url).body(Body::empty()).unwrap()).await.unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
@@ -474,15 +533,21 @@ mod tests {
         assert_eq!(media_type("wasm", "runtime.wasm"), Some("application/wasm"));
         assert_eq!(media_type("models", "scene.glb"), Some("model/gltf-binary"));
         assert_eq!(media_type("fonts", "font.woff2"), Some("font/woff2"));
-        std::fs::write(root.path().join("m3/packages/assets/models/scene.glb"), b"glTF12345678")
-            .unwrap();
+        std::fs::write(
+            root.path().join("m3/packages/assets/models/scene.glb"),
+            b"glTF12345678",
+        )
+        .unwrap();
         std::fs::write(
             root.path().join("m3/packages/assets/wasm/runtime.wasm"),
             [0, 97, 115, 109, 1, 0, 0, 0],
         )
         .unwrap();
-        std::fs::write(root.path().join("m3/packages/m3-fonts/fonts/font.woff2"), b"wOF2data")
-            .unwrap();
+        std::fs::write(
+            root.path().join("m3/packages/m3-fonts/fonts/font.woff2"),
+            b"wOF2data",
+        )
+        .unwrap();
         let app = assets.router();
         let response = app
             .clone()
@@ -497,7 +562,12 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(response.headers()[header::CONTENT_LENGTH], "16");
-        assert!(to_bytes(response.into_body(), 1024).await.unwrap().is_empty());
+        assert!(
+            to_bytes(response.into_body(), 1024)
+                .await
+                .unwrap()
+                .is_empty()
+        );
         let response = app
             .clone()
             .oneshot(
@@ -510,12 +580,21 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(response.status(), StatusCode::PARTIAL_CONTENT);
-        assert_eq!(response.headers()[header::CONTENT_TYPE], "model/gltf-binary");
-        assert_eq!(to_bytes(response.into_body(), 1024).await.unwrap().as_ref(), b"glTF");
+        assert_eq!(
+            response.headers()[header::CONTENT_TYPE],
+            "model/gltf-binary"
+        );
+        assert_eq!(
+            to_bytes(response.into_body(), 1024).await.unwrap().as_ref(),
+            b"glTF"
+        );
         let response = app
             .clone()
             .oneshot(
-                Request::builder().uri("/assets/wasm/runtime.wasm").body(Body::empty()).unwrap(),
+                Request::builder()
+                    .uri("/assets/wasm/runtime.wasm")
+                    .body(Body::empty())
+                    .unwrap(),
             )
             .await
             .unwrap();
@@ -538,7 +617,12 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(response.headers()[header::CONTENT_TYPE], "font/woff2");
         assert_eq!(response.headers()[header::CONTENT_LENGTH], "8");
-        assert!(to_bytes(response.into_body(), 1024).await.unwrap().is_empty());
+        assert!(
+            to_bytes(response.into_body(), 1024)
+                .await
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[cfg(unix)]

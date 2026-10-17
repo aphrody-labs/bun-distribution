@@ -11,13 +11,17 @@ pub const VAR_MAX: usize = 256;
 
 /// The story character for variable index `i`.
 pub fn var_char(i: usize) -> Option<char> {
-    (i < VAR_MAX).then(|| char::from_u32(VAR_BASE + i as u32)).flatten()
+    (i < VAR_MAX)
+        .then(|| char::from_u32(VAR_BASE + i as u32))
+        .flatten()
 }
 
 /// The variable index of a story character, if it is a variable instance.
 pub fn var_index(c: char) -> Option<usize> {
     let u = c as u32;
-    (VAR_BASE..VAR_BASE + VAR_MAX as u32).contains(&u).then(|| (u - VAR_BASE) as usize)
+    (VAR_BASE..VAR_BASE + VAR_MAX as u32)
+        .contains(&u)
+        .then(|| (u - VAR_BASE) as usize)
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -81,7 +85,12 @@ pub struct TextVariable {
 
 impl TextVariable {
     pub fn new(name: &str, kind: VarKind) -> TextVariable {
-        TextVariable { name: name.into(), kind, before: String::new(), after: String::new() }
+        TextVariable {
+            name: name.into(),
+            kind,
+            before: String::new(),
+            after: String::new(),
+        }
     }
 }
 
@@ -89,14 +98,36 @@ impl TextVariable {
 pub fn defaults() -> Vec<TextVariable> {
     vec![
         TextVariable::new("Chapter Number", VarKind::ChapterNumber),
-        TextVariable::new("Creation Date", VarKind::CreationDate { format: "MM/dd/yy".into() }),
+        TextVariable::new(
+            "Creation Date",
+            VarKind::CreationDate {
+                format: "MM/dd/yy".into(),
+            },
+        ),
         TextVariable::new("File Name", VarKind::FileName { extension: false }),
-        TextVariable::new("Last Page Number", VarKind::LastPageNumber { section: false }),
-        TextVariable::new("Modification Date", VarKind::ModificationDate { format: "MMMM d, yyyy h:mm aa".into() }),
-        TextVariable::new("Output Date", VarKind::OutputDate { format: "MM/dd/yy".into() }),
+        TextVariable::new(
+            "Last Page Number",
+            VarKind::LastPageNumber { section: false },
+        ),
+        TextVariable::new(
+            "Modification Date",
+            VarKind::ModificationDate {
+                format: "MMMM d, yyyy h:mm aa".into(),
+            },
+        ),
+        TextVariable::new(
+            "Output Date",
+            VarKind::OutputDate {
+                format: "MM/dd/yy".into(),
+            },
+        ),
         TextVariable::new(
             "Running Header",
-            VarKind::RunningHeader { style: crate::story::BASIC_PARAGRAPH.into(), use_: Use::FirstOnPage, character: false },
+            VarKind::RunningHeader {
+                style: crate::story::BASIC_PARAGRAPH.into(),
+                use_: Use::FirstOnPage,
+                character: false,
+            },
         ),
     ]
 }
@@ -105,7 +136,10 @@ pub fn defaults() -> Vec<TextVariable> {
 pub fn now() -> i64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -126,7 +160,20 @@ fn civil(days: i64) -> (i64, u32, u32) {
     (yoe + era * 400 + i64::from(m <= 2), m, d)
 }
 
-const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
 
 /// Format Unix seconds (UTC) with an InDesign-style pattern.
 pub fn format_date(secs: i64, fmt: &str) -> String {
@@ -179,7 +226,13 @@ impl Document {
                 }
                 let last = if *section {
                     let p = page.unwrap_or(0);
-                    let next = self.sections.iter().map(|s| s.start).filter(|s| *s > p).min().unwrap_or(n);
+                    let next = self
+                        .sections
+                        .iter()
+                        .map(|s| s.start)
+                        .filter(|s| *s > p)
+                        .min()
+                        .unwrap_or(n);
                     next.saturating_sub(1)
                 } else {
                     n - 1
@@ -195,7 +248,14 @@ impl Document {
                 }
             }
             VarKind::CreationDate { format } => format_date(self.created, format),
-            VarKind::ModificationDate { format } => format_date(if self.modified > 0 { self.modified } else { self.created }, format),
+            VarKind::ModificationDate { format } => format_date(
+                if self.modified > 0 {
+                    self.modified
+                } else {
+                    self.created
+                },
+                format,
+            ),
             VarKind::OutputDate { format } => format_date(now(), format),
             VarKind::RunningHeader { .. } => return None,
         };
@@ -216,7 +276,10 @@ mod tests {
         // 2026-10-01 14:05 UTC
         let t = 1_790_863_500;
         assert_eq!(format_date(t, "yyyy-MM-dd HH:mm"), "2026-10-01 14:05");
-        assert_eq!(format_date(t, "MMMM d, yyyy h:mm aa"), "October 1, 2026 2:05 PM");
+        assert_eq!(
+            format_date(t, "MMMM d, yyyy h:mm aa"),
+            "October 1, 2026 2:05 PM"
+        );
         assert_eq!(format_date(0, "MM/dd/yy"), "01/01/70");
         assert_eq!(format_date(951_782_400, "yyyy-MM-dd"), "2000-02-29");
     }

@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct DebugLogEventToken(pub String);
 
 impl_string_token!(DebugLogEventToken);
-impl_crockford_generator!(DebugLogEventToken, 32usize, TokenPrefix::DebugLogEvent, CrockfordLower);
+impl_crockford_generator!(
+    DebugLogEventToken,
+    32usize,
+    TokenPrefix::DebugLogEvent,
+    CrockfordLower
+);

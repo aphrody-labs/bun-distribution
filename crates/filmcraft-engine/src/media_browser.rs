@@ -69,9 +69,20 @@ pub const FILE_TYPES: [(&str, &str); 6] = [
 ];
 
 /// Columns the list view can show (Edit Columns…), in default order.
-pub const ALL_COLUMNS: [&str; 10] =
-    ["Name", "Media Type", "Size", "Date Modified", "Frame Rate", "Media Duration", "Video Info", "Audio Info", "Video Codec", "Audio Codec"];
-pub const DEFAULT_COLUMNS: [&str; 5] = ["Name", "Frame Rate", "Media Duration", "Video Info", "Size"];
+pub const ALL_COLUMNS: [&str; 10] = [
+    "Name",
+    "Media Type",
+    "Size",
+    "Date Modified",
+    "Frame Rate",
+    "Media Duration",
+    "Video Info",
+    "Audio Info",
+    "Video Codec",
+    "Audio Codec",
+];
+pub const DEFAULT_COLUMNS: [&str; 5] =
+    ["Name", "Frame Rate", "Media Duration", "Video Info", "Size"];
 
 /// Project and interchange files the browser can import. Avid Log Exchange (`.ale`) is left out:
 /// FilmCraft writes it (File ▸ Export) but, like Premiere, does not read it (#1292).
@@ -144,7 +155,10 @@ pub struct Entry {
 }
 
 fn ext_of(name: &str) -> String {
-    std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
+    std::path::Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default()
 }
 
 /// The kind of file a name is, or None when the browser doesn't show it.
@@ -224,30 +238,57 @@ pub fn parent(dir: &str) -> Option<String> {
 pub fn base_name(path: &str) -> String {
     let sep = if windows_style(path) { '\\' } else { '/' };
     let t = path.trim_end_matches(sep);
-    t.rsplit(sep).next().filter(|n| !n.is_empty()).unwrap_or(path).to_string()
+    t.rsplit(sep)
+        .next()
+        .filter(|n| !n.is_empty())
+        .unwrap_or(path)
+        .to_string()
 }
 
 /// List a directory: sub-directories first, then files the browser shows (hidden files left out),
 /// each group by name (case-insensitive).
 pub fn list(services: &dyn Services, dir: &str, filter: &str) -> std::io::Result<Vec<Entry>> {
-    let raw = services.list_entries(dir).unwrap_or_else(|| Err(std::io::Error::other("this host cannot list directories")))?;
+    let raw = services
+        .list_entries(dir)
+        .unwrap_or_else(|| Err(std::io::Error::other("this host cannot list directories")))?;
     let mut out: Vec<Entry> = raw
         .into_iter()
         .filter(|e| !e.name.starts_with('.'))
         .filter_map(|e| {
             let path = join(dir, &e.name);
             if e.is_dir {
-                return Some(Entry { numbered: false, name: e.name, path, is_dir: true, kind: "folder", size: None, modified: e.modified });
+                return Some(Entry {
+                    numbered: false,
+                    name: e.name,
+                    path,
+                    is_dir: true,
+                    kind: "folder",
+                    size: None,
+                    modified: e.modified,
+                });
             }
             let kind = kind_of(&e.name)?;
             if !passes(filter, kind, &e.name) {
                 return None;
             }
-            let numbered = kind == "image" && filmcraft_media::sequence::Numbered::parse(&path).is_some();
-            Some(Entry { numbered, name: e.name, path, is_dir: false, kind, size: e.size, modified: e.modified })
+            let numbered =
+                kind == "image" && filmcraft_media::sequence::Numbered::parse(&path).is_some();
+            Some(Entry {
+                numbered,
+                name: e.name,
+                path,
+                is_dir: false,
+                kind,
+                size: e.size,
+                modified: e.modified,
+            })
         })
         .collect();
-    out.sort_by(|a, b| b.is_dir.cmp(&a.is_dir).then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase())));
+    out.sort_by(|a, b| {
+        b.is_dir
+            .cmp(&a.is_dir)
+            .then_with(|| a.name.to_lowercase().cmp(&b.name.to_lowercase()))
+    });
     Ok(out)
 }
 
@@ -260,12 +301,16 @@ pub fn current_dir(s: &Session) -> String {
     if !last.is_empty() {
         return last.clone();
     }
-    s.services.home_dir().or_else(|| s.services.volumes().first().map(|v| v.path.clone())).unwrap_or_else(|| "/".into())
+    s.services
+        .home_dir()
+        .or_else(|| s.services.volumes().first().map(|v| v.path.clone()))
+        .unwrap_or_else(|| "/".into())
 }
 
 fn save_prefs(s: &mut Session, prefs: crate::autosave::Preferences) -> Result<()> {
     if prefs != s.prefs {
-        s.set_prefs(prefs).map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
+        s.set_prefs(prefs)
+            .map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
     }
     Ok(())
 }
@@ -283,9 +328,14 @@ fn state_json(s: &Session) -> Value {
 
 fn roots(s: &mut Session, _: &Value) -> Result<Value> {
     let vols = s.services.volumes();
-    let (local, network): (Vec<Volume>, Vec<Volume>) = vols.into_iter().partition(|v| v.kind == VolumeKind::Local);
+    let (local, network): (Vec<Volume>, Vec<Volume>) =
+        vols.into_iter().partition(|v| v.kind == VolumeKind::Local);
     let mb = &s.prefs.media_browser;
-    let named = |v: &Vec<String>| v.iter().map(|p| json!({"name": base_name(p), "path": p})).collect::<Vec<_>>();
+    let named = |v: &Vec<String>| {
+        v.iter()
+            .map(|p| json!({"name": base_name(p), "path": p}))
+            .collect::<Vec<_>>()
+    };
     Ok(json!({
         "favorites": named(&mb.favorites),
         "localDrives": local,
@@ -296,9 +346,14 @@ fn roots(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn list_cmd(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = str_p(p, "path").map(str::to_string).unwrap_or_else(|| current_dir(s));
-    let filter = str_p(p, "fileTypes").map(str::to_string).unwrap_or_else(|| s.prefs.media_browser.file_types.clone());
-    let entries = list(&*s.services, &dir, &filter).map_err(|e| bad("mediaBrowser.list", format!("{dir}: {e}")))?;
+    let dir = str_p(p, "path")
+        .map(str::to_string)
+        .unwrap_or_else(|| current_dir(s));
+    let filter = str_p(p, "fileTypes")
+        .map(str::to_string)
+        .unwrap_or_else(|| s.prefs.media_browser.file_types.clone());
+    let entries = list(&*s.services, &dir, &filter)
+        .map_err(|e| bad("mediaBrowser.list", format!("{dir}: {e}")))?;
     let mut out = state_json(s);
     out["dir"] = json!(dir);
     out["fileTypes"] = json!(filter);
@@ -308,7 +363,8 @@ fn list_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn go(s: &mut Session, dir: String, history: bool) -> Result<()> {
     // the directory must be listable
-    list(&*s.services, &dir, "all").map_err(|e| bad("mediaBrowser.navigate", format!("{dir}: {e}")))?;
+    list(&*s.services, &dir, "all")
+        .map_err(|e| bad("mediaBrowser.navigate", format!("{dir}: {e}")))?;
     let cur = current_dir(s);
     if history && cur != dir {
         s.browser.back.push(cur);
@@ -327,7 +383,11 @@ fn go(s: &mut Session, dir: String, history: bool) -> Result<()> {
 
 fn navigate(s: &mut Session, p: &Value) -> Result<Value> {
     if bool_p(p, "back") == Some(true) {
-        let to = s.browser.back.pop().ok_or_else(|| bad("mediaBrowser.navigate", "nothing to go back to"))?;
+        let to = s
+            .browser
+            .back
+            .pop()
+            .ok_or_else(|| bad("mediaBrowser.navigate", "nothing to go back to"))?;
         let cur = current_dir(s);
         if let Err(e) = go(s, to.clone(), false) {
             s.browser.back.push(to);
@@ -335,7 +395,11 @@ fn navigate(s: &mut Session, p: &Value) -> Result<Value> {
         }
         s.browser.forward.push(cur);
     } else if bool_p(p, "forward") == Some(true) {
-        let to = s.browser.forward.pop().ok_or_else(|| bad("mediaBrowser.navigate", "nothing to go forward to"))?;
+        let to = s
+            .browser
+            .forward
+            .pop()
+            .ok_or_else(|| bad("mediaBrowser.navigate", "nothing to go forward to"))?;
         let cur = current_dir(s);
         if let Err(e) = go(s, to.clone(), false) {
             s.browser.forward.push(to);
@@ -343,30 +407,48 @@ fn navigate(s: &mut Session, p: &Value) -> Result<Value> {
         }
         s.browser.back.push(cur);
     } else if bool_p(p, "up") == Some(true) {
-        let to = parent(&current_dir(s)).ok_or_else(|| bad("mediaBrowser.navigate", "already at the top"))?;
+        let to = parent(&current_dir(s))
+            .ok_or_else(|| bad("mediaBrowser.navigate", "already at the top"))?;
         go(s, to, true)?;
     } else {
-        let path = str_p(p, "path").ok_or_else(|| bad("mediaBrowser.navigate", "need `path`, or `back` / `forward` / `up`"))?;
+        let path = str_p(p, "path").ok_or_else(|| {
+            bad(
+                "mediaBrowser.navigate",
+                "need `path`, or `back` / `forward` / `up`",
+            )
+        })?;
         go(s, path.to_string(), true)?;
     }
     list_cmd(s, &json!({}))
 }
 
 fn select(s: &mut Session, p: &Value) -> Result<Value> {
-    let paths: Vec<String> =
-        p.get("paths").and_then(Value::as_array).map(|a| a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect()).unwrap_or_default();
+    let paths: Vec<String> = p
+        .get("paths")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
     s.browser.selection = paths;
     Ok(state_json(s))
 }
 
 fn favorite(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").map(str::to_string).unwrap_or_else(|| current_dir(s));
+    let path = str_p(p, "path")
+        .map(str::to_string)
+        .unwrap_or_else(|| current_dir(s));
     let remove = bool_p(p, "remove").unwrap_or(false);
     let mut prefs = s.prefs.clone();
     let fav = &mut prefs.media_browser.favorites;
     if remove {
         if !fav.contains(&path) {
-            return Err(bad("mediaBrowser.favorite", format!("{path} is not a favorite")));
+            return Err(bad(
+                "mediaBrowser.favorite",
+                format!("{path} is not a favorite"),
+            ));
         }
         fav.retain(|f| *f != path);
     } else if !fav.contains(&path) {
@@ -382,7 +464,10 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(v) = str_p(p, "fileTypes") {
         let v = v.trim().trim_start_matches('.').to_ascii_lowercase();
         if !FILE_TYPES.iter().any(|f| f.0 == v) && !extensions().contains(&v.as_str()) {
-            return Err(bad("mediaBrowser.settings", format!("unknown file type `{v}`")));
+            return Err(bad(
+                "mediaBrowser.settings",
+                format!("unknown file type `{v}`"),
+            ));
         }
         mb.file_types = v;
     }
@@ -390,13 +475,21 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
         mb.view = match v.to_ascii_lowercase().as_str() {
             "list" => "list".into(),
             "thumbnails" | "thumbnail" | "icon" => "thumbnails".into(),
-            _ => return Err(bad("mediaBrowser.settings", "view is `list` or `thumbnails`")),
+            _ => {
+                return Err(bad(
+                    "mediaBrowser.settings",
+                    "view is `list` or `thumbnails`",
+                ));
+            }
         };
     }
     if let Some(a) = p.get("columns").and_then(Value::as_array) {
         let mut cols = vec!["Name".to_string()];
         for c in a.iter().filter_map(Value::as_str) {
-            let c = ALL_COLUMNS.iter().find(|x| x.eq_ignore_ascii_case(c)).ok_or_else(|| bad("mediaBrowser.settings", format!("unknown column `{c}`")))?;
+            let c = ALL_COLUMNS
+                .iter()
+                .find(|x| x.eq_ignore_ascii_case(c))
+                .ok_or_else(|| bad("mediaBrowser.settings", format!("unknown column `{c}`")))?;
             if !cols.iter().any(|x| x == c) {
                 cols.push(c.to_string());
             }
@@ -418,8 +511,13 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn paths_p(s: &Session, p: &Value) -> Vec<String> {
     match p.get("paths").and_then(Value::as_array) {
-        Some(a) => a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect(),
-        None => str_p(p, "path").map(|x| vec![x.to_string()]).unwrap_or_else(|| s.browser.selection.clone()),
+        Some(a) => a
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect(),
+        None => str_p(p, "path")
+            .map(|x| vec![x.to_string()])
+            .unwrap_or_else(|| s.browser.selection.clone()),
     }
 }
 
@@ -437,10 +535,19 @@ struct Folder {
 
 /// The files the browser shows in `dir` and its sub-folders, as a tree; `None` when the tree
 /// holds none (or `budget` folders were walked already).
-fn walk_folder(services: &dyn Services, dir: &str, depth: usize, budget: &mut usize) -> Option<Folder> {
+fn walk_folder(
+    services: &dyn Services,
+    dir: &str,
+    depth: usize,
+    budget: &mut usize,
+) -> Option<Folder> {
     *budget = budget.checked_sub(1)?;
     let entries = list(services, dir, "all").ok()?;
-    let mut folder = Folder { name: base_name(dir), files: Vec::new(), subs: Vec::new() };
+    let mut folder = Folder {
+        name: base_name(dir),
+        files: Vec::new(),
+        subs: Vec::new(),
+    };
     for e in entries {
         if !e.is_dir {
             folder.files.push(e.path);
@@ -469,7 +576,12 @@ fn merge_import(out: &mut serde_json::Map<String, Value>, r: Value) {
 }
 
 /// Run `file.import` and merge its result; a failure becomes an error of the merged result.
-fn import_into(s: &mut Session, files: &[String], bin: Option<u64>, out: &mut serde_json::Map<String, Value>) {
+fn import_into(
+    s: &mut Session,
+    files: &[String],
+    bin: Option<u64>,
+    out: &mut serde_json::Map<String, Value>,
+) {
     let mut q = json!({"paths": files, "imageSequence": false});
     if let Some(b) = bin {
         q["bin"] = json!(b);
@@ -482,9 +594,16 @@ fn import_into(s: &mut Session, files: &[String], bin: Option<u64>, out: &mut se
 
 /// Import a folder as a bin named after it, in `parent`: its files go into the bin, each
 /// sub-folder becomes a bin inside it (Premiere's Media Browser keeps the folder structure).
-fn import_folder(s: &mut Session, folder: &Folder, parent: Option<u64>, out: &mut serde_json::Map<String, Value>) -> Result<()> {
+fn import_folder(
+    s: &mut Session,
+    folder: &Folder,
+    parent: Option<u64>,
+    out: &mut serde_json::Map<String, Value>,
+) -> Result<()> {
     let name = folder.name.clone();
-    let bin = s.edit("New Bin", |pr, _| Ok(pr.add_bin(&name, parent.map(filmcraft_project::BinId))))?;
+    let bin = s.edit("New Bin", |pr, _| {
+        Ok(pr.add_bin(&name, parent.map(filmcraft_project::BinId)))
+    })?;
     merge_import(out, json!({"bins": [bin.0]}));
     if !folder.files.is_empty() {
         import_into(s, &folder.files, Some(bin.0), out);
@@ -503,7 +622,10 @@ fn import_folder(s: &mut Session, folder: &Folder, parent: Option<u64>, out: &mu
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let paths = paths_p(s, p);
     if paths.is_empty() {
-        return Err(bad("mediaBrowser.import", "select files in the Media Browser"));
+        return Err(bad(
+            "mediaBrowser.import",
+            "select files in the Media Browser",
+        ));
     }
     let seq = bool_p(p, "imageSequence").unwrap_or(s.prefs.media_browser.import_as_image_sequence);
     let bin = u64_p(p, "bin");
@@ -512,13 +634,16 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let mut empty = Vec::new();
     let mut budget = FOLDER_IMPORT_MAX_FOLDERS;
     for path in paths {
-        let is_dir = matches!(s.services.list_entries(&path), Some(Ok(_))) && kind_of(&path).is_none();
+        let is_dir =
+            matches!(s.services.list_entries(&path), Some(Ok(_))) && kind_of(&path).is_none();
         if !is_dir {
             files.push(path);
         } else if seq {
             // an image sequence: the folder's frames
             match list(&*s.services, &path, "all") {
-                Ok(entries) => files.extend(entries.into_iter().filter(|e| !e.is_dir).map(|e| e.path)),
+                Ok(entries) => {
+                    files.extend(entries.into_iter().filter(|e| !e.is_dir).map(|e| e.path))
+                }
                 Err(_) => files.push(path),
             }
         } else {
@@ -534,7 +659,10 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if folders.is_empty() {
         if files.is_empty() && !empty.is_empty() {
-            return Err(bad("mediaBrowser.import", format!("no media files in {}", empty.join(", "))));
+            return Err(bad(
+                "mediaBrowser.import",
+                format!("no media files in {}", empty.join(", ")),
+            ));
         }
         let mut q = json!({"paths": files, "imageSequence": seq});
         if let Some(b) = bin {
@@ -543,7 +671,10 @@ fn import(s: &mut Session, p: &Value) -> Result<Value> {
         return s.execute("file.import", q);
     }
     let mut out = serde_json::Map::new();
-    merge_import(&mut out, json!({"items": [], "errors": empty.iter().map(|e| format!("{e}: no media files")).collect::<Vec<_>>(), "bins": []}));
+    merge_import(
+        &mut out,
+        json!({"items": [], "errors": empty.iter().map(|e| format!("{e}: no media files")).collect::<Vec<_>>(), "bins": []}),
+    );
     if !files.is_empty() {
         import_into(s, &files, bin, &mut out);
     }
@@ -558,12 +689,21 @@ pub fn item_for_path(s: &Session, path: &str) -> Option<ItemId> {
     s.project
         .items
         .values()
-        .find(|i| i.as_media().is_some_and(|m| matches!(&m.media, filmcraft_project::MediaRef::File { path: p } if p == path)))
+        .find(|i| {
+            i.as_media().is_some_and(
+                |m| matches!(&m.media, filmcraft_project::MediaRef::File { path: p } if p == path),
+            )
+        })
         .map(|i| i.id)
 }
 
 fn open_in_source(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = paths_p(s, p).into_iter().next().ok_or_else(|| bad("mediaBrowser.openInSource", "select a file in the Media Browser"))?;
+    let path = paths_p(s, p).into_iter().next().ok_or_else(|| {
+        bad(
+            "mediaBrowser.openInSource",
+            "select a file in the Media Browser",
+        )
+    })?;
     let item = match item_for_path(s, &path) {
         Some(i) => i,
         None => {
@@ -573,7 +713,12 @@ fn open_in_source(s: &mut Session, p: &Value) -> Result<Value> {
                 .and_then(|a| a.first())
                 .and_then(Value::as_u64)
                 .map(ItemId)
-                .ok_or_else(|| bad("mediaBrowser.openInSource", "the file could not be imported"))?
+                .ok_or_else(|| {
+                    bad(
+                        "mediaBrowser.openInSource",
+                        "the file could not be imported",
+                    )
+                })?
         }
     };
     s.execute("source.open", json!({"item": item.0}))?;
@@ -590,7 +735,10 @@ pub fn probe(s: &mut Session, path: &str) -> Option<MediaInfo> {
         return v.clone();
     }
     let info = if kind_of(path).is_some_and(|k| matches!(k, "video" | "audio" | "image")) {
-        s.media.probe_file(path, &*s.services).ok().map(|src| src.info().clone())
+        s.media
+            .probe_file(path, &*s.services)
+            .ok()
+            .map(|src| src.info().clone())
     } else {
         None
     };
@@ -611,18 +759,40 @@ pub fn column_text(e: &Entry, column: &str, probe: Option<&MediaInfo>) -> String
         }
         "Size" => e.size.map(format_size).unwrap_or_default(),
         "Date Modified" => e.modified.map(format_date).unwrap_or_default(),
-        "Frame Rate" => probe.and_then(|i| i.video.as_ref()).filter(|_| e.kind == "video").map(|v| format!("{} fps", v.frame_rate.label())).unwrap_or_default(),
+        "Frame Rate" => probe
+            .and_then(|i| i.video.as_ref())
+            .filter(|_| e.kind == "video")
+            .map(|v| format!("{} fps", v.frame_rate.label()))
+            .unwrap_or_default(),
         "Media Duration" => probe
             .filter(|_| e.kind != "image")
             .map(|i| {
                 let rate = i.video.as_ref().map(|v| v.frame_rate).unwrap_or_default();
-                filmcraft_time::format_time(i.duration, rate, false, filmcraft_time::TimeDisplay::Timecode, 48000)
+                filmcraft_time::format_time(
+                    i.duration,
+                    rate,
+                    false,
+                    filmcraft_time::TimeDisplay::Timecode,
+                    48000,
+                )
             })
             .unwrap_or_default(),
-        "Video Info" => probe.and_then(|i| i.video.as_ref()).map(|v| format!("{} x {}", v.width, v.height)).unwrap_or_default(),
-        "Audio Info" => probe.and_then(|i| i.audio()).map(|a| format!("{} Hz - {} ch", a.sample_rate, a.channels)).unwrap_or_default(),
-        "Video Codec" => probe.and_then(|i| i.video.as_ref()).map(|v| v.codec.clone()).unwrap_or_default(),
-        "Audio Codec" => probe.and_then(|i| i.audio()).map(|a| a.codec.clone()).unwrap_or_default(),
+        "Video Info" => probe
+            .and_then(|i| i.video.as_ref())
+            .map(|v| format!("{} x {}", v.width, v.height))
+            .unwrap_or_default(),
+        "Audio Info" => probe
+            .and_then(|i| i.audio())
+            .map(|a| format!("{} Hz - {} ch", a.sample_rate, a.channels))
+            .unwrap_or_default(),
+        "Video Codec" => probe
+            .and_then(|i| i.video.as_ref())
+            .map(|v| v.codec.clone())
+            .unwrap_or_default(),
+        "Audio Codec" => probe
+            .and_then(|i| i.audio())
+            .map(|a| a.codec.clone())
+            .unwrap_or_default(),
         _ => String::new(),
     }
 }
@@ -651,37 +821,91 @@ pub fn format_date(secs: u64) -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
-    format!("{y:04}-{m:02}-{d:02} {:02}:{:02}", rem / 3600, (rem / 60) % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02} {:02}:{:02}",
+        rem / 3600,
+        (rem / 60) % 60
+    )
 }
 
 fn probe_cmd(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("mediaBrowser.probe", "need `path`"))?.to_string();
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("mediaBrowser.probe", "need `path`"))?
+        .to_string();
     let info = probe(s, &path);
     Ok(json!({"path": path, "media": info.is_some(), "info": info}))
 }
 
 pub(crate) fn commands() -> Vec<CommandSpec> {
-    let c = |id, label, params, run| CommandSpec { id, label, menu: &[], shortcut: None, params, enabled: always, run, journal: true };
-    let q = |id, label, params, run| CommandSpec { id, label, menu: &[], shortcut: None, params, enabled: always, run, journal: false };
+    let c = |id, label, params, run| CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled: always,
+        run,
+        journal: true,
+    };
+    let q = |id, label, params, run| CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled: always,
+        run,
+        journal: false,
+    };
     vec![
         q("mediaBrowser.roots", "Media Browser Locations", "{}", roots),
-        q("mediaBrowser.list", "List Directory", r#"{"path":str?,"fileTypes":str?}"#, list_cmd),
-        c("mediaBrowser.navigate", "Go to Directory", r#"{"path":str} | {"back":true} | {"forward":true} | {"up":true}"#, navigate),
-        c("mediaBrowser.select", "Select Files", r#"{"paths":[str]}"#, select),
-        c("mediaBrowser.favorite", "Add to Favorites", r#"{"path":str?,"remove":bool?}"#, favorite),
-        c("mediaBrowser.clearRecent", "Clear Recent Directories", "{}", |s, _| {
-            let mut prefs = s.prefs.clone();
-            prefs.media_browser.recent.clear();
-            save_prefs(s, prefs)?;
-            Ok(Value::Null)
-        }),
+        q(
+            "mediaBrowser.list",
+            "List Directory",
+            r#"{"path":str?,"fileTypes":str?}"#,
+            list_cmd,
+        ),
+        c(
+            "mediaBrowser.navigate",
+            "Go to Directory",
+            r#"{"path":str} | {"back":true} | {"forward":true} | {"up":true}"#,
+            navigate,
+        ),
+        c(
+            "mediaBrowser.select",
+            "Select Files",
+            r#"{"paths":[str]}"#,
+            select,
+        ),
+        c(
+            "mediaBrowser.favorite",
+            "Add to Favorites",
+            r#"{"path":str?,"remove":bool?}"#,
+            favorite,
+        ),
+        c(
+            "mediaBrowser.clearRecent",
+            "Clear Recent Directories",
+            "{}",
+            |s, _| {
+                let mut prefs = s.prefs.clone();
+                prefs.media_browser.recent.clear();
+                save_prefs(s, prefs)?;
+                Ok(Value::Null)
+            },
+        ),
         c(
             "mediaBrowser.settings",
             "Media Browser Settings",
             r#"{"fileTypes":"all|video|audio|image|project|caption|<ext>"?,"view":"list|thumbnails"?,"columns":[str]?,"importAsImageSequence":bool?,"hoverScrub":bool?,"thumbnailSize":f32?}"#,
             settings,
         ),
-        c("mediaBrowser.import", "Import", r#"{"paths":[str]?,"bin":binId?,"imageSequence":bool?}"#, import),
+        c(
+            "mediaBrowser.import",
+            "Import",
+            r#"{"paths":[str]?,"bin":binId?,"imageSequence":bool?}"#,
+            import,
+        ),
         CommandSpec {
             id: "mediaBrowser.openInSource",
             label: "Open In Source Monitor",
@@ -692,7 +916,12 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             run: open_in_source,
             journal: true,
         },
-        q("mediaBrowser.probe", "Media File Properties", r#"{"path":str}"#, probe_cmd),
+        q(
+            "mediaBrowser.probe",
+            "Media File Properties",
+            r#"{"path":str}"#,
+            probe_cmd,
+        ),
     ]
 }
 
@@ -712,7 +941,10 @@ pub fn std_list_entries(dir: &str) -> std::io::Result<Vec<DirEntry>> {
                 name: e.file_name().to_string_lossy().to_string(),
                 is_dir,
                 size: md.as_ref().filter(|m| m.is_file()).map(|m| m.len()),
-                modified: md.and_then(|m| m.modified().ok()).and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs()),
+                modified: md
+                    .and_then(|m| m.modified().ok())
+                    .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                    .map(|d| d.as_secs()),
             }
         })
         .collect())
@@ -723,14 +955,23 @@ pub fn std_volumes() -> Vec<Volume> {
     let mut v = Vec::new();
     let dir_names = |d: &str| -> Vec<String> {
         std::fs::read_dir(d)
-            .map(|rd| rd.flatten().filter(|e| e.path().is_dir()).map(|e| e.file_name().to_string_lossy().to_string()).collect())
+            .map(|rd| {
+                rd.flatten()
+                    .filter(|e| e.path().is_dir())
+                    .map(|e| e.file_name().to_string_lossy().to_string())
+                    .collect()
+            })
             .unwrap_or_default()
     };
     if cfg!(windows) {
         for l in 'A'..='Z' {
             let p = format!("{l}:\\");
             if std::path::Path::new(&p).exists() {
-                v.push(Volume { name: format!("({l}:)"), path: p, kind: VolumeKind::Local });
+                v.push(Volume {
+                    name: format!("({l}:)"),
+                    path: p,
+                    kind: VolumeKind::Local,
+                });
             }
         }
         return v;
@@ -739,17 +980,33 @@ pub fn std_volumes() -> Vec<Volume> {
         let mut names = dir_names("/Volumes");
         names.sort();
         for n in names {
-            v.push(Volume { path: format!("/Volumes/{n}"), name: n, kind: VolumeKind::Local });
+            v.push(Volume {
+                path: format!("/Volumes/{n}"),
+                name: n,
+                kind: VolumeKind::Local,
+            });
         }
         if v.is_empty() {
-            v.push(Volume { name: "/".into(), path: "/".into(), kind: VolumeKind::Local });
+            v.push(Volume {
+                name: "/".into(),
+                path: "/".into(),
+                kind: VolumeKind::Local,
+            });
         }
         if std::path::Path::new("/Network").is_dir() {
-            v.push(Volume { name: "Network".into(), path: "/Network".into(), kind: VolumeKind::Network });
+            v.push(Volume {
+                name: "Network".into(),
+                path: "/Network".into(),
+                kind: VolumeKind::Network,
+            });
         }
         return v;
     }
-    v.push(Volume { name: "/".into(), path: "/".into(), kind: VolumeKind::Local });
+    v.push(Volume {
+        name: "/".into(),
+        path: "/".into(),
+        kind: VolumeKind::Local,
+    });
     for base in ["/media", "/mnt", "/run/media"] {
         for n in dir_names(base) {
             let p = format!("{base}/{n}");
@@ -757,10 +1014,18 @@ pub fn std_volumes() -> Vec<Volume> {
             let inner = dir_names(&p);
             if base != "/mnt" && !inner.is_empty() {
                 for m in inner {
-                    v.push(Volume { path: format!("{p}/{m}"), name: m, kind: VolumeKind::Local });
+                    v.push(Volume {
+                        path: format!("{p}/{m}"),
+                        name: m,
+                        kind: VolumeKind::Local,
+                    });
                 }
             } else {
-                v.push(Volume { name: n, path: p, kind: VolumeKind::Local });
+                v.push(Volume {
+                    name: n,
+                    path: p,
+                    kind: VolumeKind::Local,
+                });
             }
         }
     }
@@ -770,6 +1035,11 @@ pub fn std_volumes() -> Vec<Volume> {
 /// The desktop user's home directory. Windows prefers `USERPROFILE`: shells like Git Bash set
 /// `HOME` to a Unix-style path (`/c/Users/…`) that native file APIs cannot open.
 pub fn std_home_dir() -> Option<String> {
-    let vars = if cfg!(windows) { ["USERPROFILE", "HOME"] } else { ["HOME", "USERPROFILE"] };
-    vars.iter().find_map(|v| std::env::var(v).ok().filter(|h| !h.is_empty()))
+    let vars = if cfg!(windows) {
+        ["USERPROFILE", "HOME"]
+    } else {
+        ["HOME", "USERPROFILE"]
+    };
+    vars.iter()
+        .find_map(|v| std::env::var(v).ok().filter(|h| !h.is_empty()))
 }

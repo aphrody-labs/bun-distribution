@@ -264,7 +264,10 @@ mod tests {
         assert_eq!(ocr_dir().unwrap(), root.join("ocr"));
         assert_eq!(cache_dir().unwrap(), root.join("cache"));
         assert_eq!(memory_dir().unwrap(), root.join("memory"));
-        assert_eq!(memory_sqlite_path().unwrap(), root.join("memory").join("memory.sqlite"));
+        assert_eq!(
+            memory_sqlite_path().unwrap(),
+            root.join("memory").join("memory.sqlite")
+        );
         assert_eq!(vector_dir().unwrap(), root.join("vector"));
         assert_eq!(lancedb_dir().unwrap(), root.join("vector").join("lancedb"));
         assert_eq!(data_dir().unwrap(), root.join("data"));
@@ -286,7 +289,10 @@ mod tests {
         let explicit = PathBuf::from("/data/aph");
         let home = std::path::Path::new("/home/u");
         assert_eq!(compose_state_dir(Some(explicit.clone()), home), explicit);
-        assert_ne!(compose_state_dir(Some(explicit.clone()), home), explicit.join(".aphrody"));
+        assert_ne!(
+            compose_state_dir(Some(explicit.clone()), home),
+            explicit.join(".aphrody")
+        );
     }
 
     /// With no override, the state directory is `.aphrody` under the home.

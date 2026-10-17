@@ -17,7 +17,13 @@ const CSW: u16 = 0x000E;
 /// `cslw` (count of 32-bit values in `FibRgLw97`) — fixed by the spec.
 const CSLW: u16 = 0x0016;
 /// `cbRgFcLcb` for each known `nFib` ([MS-DOC] Fib.cbRgFcLcb table).
-const CB_RG_FCLCB: &[(u16, u16)] = &[(0x00C1, 0x005D), (0x00D9, 0x006C), (0x0101, 0x0088), (0x010C, 0x00A4), (0x0112, 0x00B7)];
+const CB_RG_FCLCB: &[(u16, u16)] = &[
+    (0x00C1, 0x005D),
+    (0x00D9, 0x006C),
+    (0x0101, 0x0088),
+    (0x010C, 0x00A4),
+    (0x0112, 0x00B7),
+];
 
 /// Indices of `fc`/`lcb` pairs inside `FibRgFcLcb97` (each pair is 8 bytes: fc then lcb).
 pub(crate) mod pair {
@@ -74,7 +80,9 @@ impl SubDocs {
         // Word's own documents stay far below this; a larger total means a corrupt FIB
         // (the ccp fields are signed and "MUST be 0, 1, or greater").
         if t > 100_000_000 {
-            return Err(DocbinError::Limit(format!("document claims {t} characters")));
+            return Err(DocbinError::Limit(format!(
+                "document claims {t} characters"
+            )));
         }
         Ok(t)
     }
@@ -101,7 +109,12 @@ impl Fib {
 
     /// Parse the FIB from the head of the WordDocument stream.
     pub(crate) fn parse(word: &[u8]) -> Result<Fib, DocbinError> {
-        let u16le = |at: usize| -> u16 { u16::from_le_bytes([word.get(at).copied().unwrap_or(0), word.get(at + 1).copied().unwrap_or(0)]) };
+        let u16le = |at: usize| -> u16 {
+            u16::from_le_bytes([
+                word.get(at).copied().unwrap_or(0),
+                word.get(at + 1).copied().unwrap_or(0),
+            ])
+        };
         let u32le = |at: usize| -> u32 {
             u32::from_le_bytes([
                 word.get(at).copied().unwrap_or(0),
@@ -111,29 +124,50 @@ impl Fib {
             ])
         };
         if word.len() < OFF_RGLW + 88 {
-            return Err(DocbinError::NotWord(format!("WordDocument stream is {} bytes", word.len())));
+            return Err(DocbinError::NotWord(format!(
+                "WordDocument stream is {} bytes",
+                word.len()
+            )));
         }
         let w_ident = u16le(0);
         if w_ident == 0xA5DC {
-            return Err(DocbinError::NotWord("Word 6.0/95 format, only Word 97-2003 is supported".into()));
+            return Err(DocbinError::NotWord(
+                "Word 6.0/95 format, only Word 97-2003 is supported".into(),
+            ));
         }
         if w_ident != W_IDENT {
-            return Err(DocbinError::NotWord(format!("magic 0x{w_ident:04X}, expected 0x{W_IDENT:04X}")));
+            return Err(DocbinError::NotWord(format!(
+                "magic 0x{w_ident:04X}, expected 0x{W_IDENT:04X}"
+            )));
         }
         let flags = u16le(OFF_FLAGS);
         let nfib = u16le(2);
         if u16le(OFF_CSW) != CSW {
-            return Err(DocbinError::NotWord(format!("csw is 0x{:04X}", u16le(OFF_CSW))));
+            return Err(DocbinError::NotWord(format!(
+                "csw is 0x{:04X}",
+                u16le(OFF_CSW)
+            )));
         }
         if u16le(OFF_CSLW) != CSLW {
-            return Err(DocbinError::NotWord(format!("cslw is 0x{:04X}", u16le(OFF_CSLW))));
+            return Err(DocbinError::NotWord(format!(
+                "cslw is 0x{:04X}",
+                u16le(OFF_CSLW)
+            )));
         }
         // rglw u32 indices per FibRgLw97: cbMac, r1, r2, ccpText, ccpFtn, ccpHdd, r3, ccpAtn,
         // ccpEdn, ccpTxbx, ccpHdrTxbx, …
         let lw = |i: usize| -> u32 { u32le(OFF_RGLW + i * 4) };
         // The ccp fields are signed in the spec; negative values are corrupt input, clamped.
         let ccp = |i: usize| -> u32 { (lw(i) as i32).max(0) as u32 };
-        let sub = SubDocs { text: ccp(3), ftn: ccp(4), hdd: ccp(5), atn: ccp(7), edn: ccp(8), txbx: ccp(9), hdr_txbx: ccp(10) };
+        let sub = SubDocs {
+            text: ccp(3),
+            ftn: ccp(4),
+            hdd: ccp(5),
+            atn: ccp(7),
+            edn: ccp(8),
+            txbx: ccp(9),
+            hdr_txbx: ccp(10),
+        };
         sub.total()?;
 
         let cb_rg_fclcb = u16le(OFF_CB_RG_FCLCB) as usize;
@@ -145,7 +179,9 @@ impl Fib {
         {
             // Word itself always writes the full blob for its version; anything smaller is
             // corrupt, but a *larger* blob (newer writer) is fine — we just read what's there.
-            return Err(DocbinError::NotWord(format!("cbRgFcLcb is 0x{cb_rg_fclcb:04X} for nFib 0x{nfib:04X}")));
+            return Err(DocbinError::NotWord(format!(
+                "cbRgFcLcb is 0x{cb_rg_fclcb:04X} for nFib 0x{nfib:04X}"
+            )));
         }
         let blob_off = OFF_CB_RG_FCLCB + 2;
         let blob_len = cb_rg_fclcb.saturating_mul(8);
@@ -157,6 +193,11 @@ impl Fib {
             pairs.push(u32le(blob_off + i * 4));
         }
 
-        Ok(Fib { encrypted: flags & 0x0100 != 0, which_tbl_stm: flags & 0x0200 != 0, ccp: sub, pairs })
+        Ok(Fib {
+            encrypted: flags & 0x0100 != 0,
+            which_tbl_stm: flags & 0x0200 != 0,
+            ccp: sub,
+            pairs,
+        })
     }
 }

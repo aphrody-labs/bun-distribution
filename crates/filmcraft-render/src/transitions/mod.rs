@@ -47,7 +47,11 @@ pub fn apply(e: &EffectInstance, a: &Image, b: &Image, p: f32) -> Image {
 /// Render transition `e` at progress `p`; `scale` converts pixel parameters (border width, blur
 /// length, centre) from sequence pixels to working-image pixels (½ for half-resolution playback).
 pub fn apply_scaled(e: &EffectInstance, a: &Image, b: &Image, p: f32, scale: f32) -> Image {
-    let p = if p.is_finite() { p.clamp(0.0, 1.0) } else { 0.0 };
+    let p = if p.is_finite() {
+        p.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     if a.w == 0 || a.h == 0 || (a.w, a.h) != (b.w, b.h) {
         return if p < 0.5 { a.clone() } else { b.clone() };
     }
@@ -60,7 +64,21 @@ pub fn apply_scaled(e: &EffectInstance, a: &Image, b: &Image, p: f32, scale: f32
     if let Some(img) = legacy::apply(e, a, b, p) {
         return img;
     }
-    let t = Tx { e, a, b, p, w: a.w, h: a.h, wf: a.w as f32, hf: a.h as f32, scale: if scale.is_finite() && scale > 0.0 { scale } else { 1.0 } };
+    let t = Tx {
+        e,
+        a,
+        b,
+        p,
+        w: a.w,
+        h: a.h,
+        wf: a.w as f32,
+        hf: a.h as f32,
+        scale: if scale.is_finite() && scale > 0.0 {
+            scale
+        } else {
+            1.0
+        },
+    };
     let id = e.effect.as_str();
     dissolve::apply(id, &t)
         .or_else(|| wipe::apply(id, &t))
@@ -76,7 +94,10 @@ pub fn audio_gains(kind: &str, p: f32) -> (f32, f32) {
     match kind {
         "constant_gain" => (1.0 - p, p),
         "exponential_fade" => ((1.0 - p).powi(3), 1.0 - (1.0 - p).powi(3)),
-        _ => ((p * std::f32::consts::FRAC_PI_2).cos(), (p * std::f32::consts::FRAC_PI_2).sin()),
+        _ => (
+            (p * std::f32::consts::FRAC_PI_2).cos(),
+            (p * std::f32::consts::FRAC_PI_2).sin(),
+        ),
     }
 }
 
@@ -98,7 +119,12 @@ pub(crate) struct Tx<'a> {
 
 impl Tx<'_> {
     fn value(&self, id: &str) -> Option<ParamValue> {
-        self.e.param(id).map(|p| p.value.clone()).or_else(|| self.e.def().and_then(|d| d.param(id)).map(|p| p.default.clone()))
+        self.e.param(id).map(|p| p.value.clone()).or_else(|| {
+            self.e
+                .def()
+                .and_then(|d| d.param(id))
+                .map(|p| p.default.clone())
+        })
     }
     /// A float parameter (definition default if the instance lacks it).
     pub fn num(&self, id: &str) -> f32 {
@@ -137,8 +163,16 @@ impl Tx<'_> {
             Some(ParamValue::Vec2(v)) => v,
             _ => filmcraft_geom::Vec2::new(f64::NAN, f64::NAN),
         };
-        let x = if v.x.is_finite() { v.x as f32 * self.scale } else { self.wf / 2.0 };
-        let y = if v.y.is_finite() { v.y as f32 * self.scale } else { self.hf / 2.0 };
+        let x = if v.x.is_finite() {
+            v.x as f32 * self.scale
+        } else {
+            self.wf / 2.0
+        };
+        let y = if v.y.is_finite() {
+            v.y as f32 * self.scale
+        } else {
+            self.hf / 2.0
+        };
         (x, y)
     }
     pub fn seed(&self) -> u32 {
@@ -196,25 +230,38 @@ impl Tx<'_> {
 /// Evaluate `f(x, y)` at every pixel centre (x, y in pixels, +0.5 centres), in parallel.
 pub(crate) fn paint(w: usize, h: usize, f: impl Fn(f32, f32) -> [f32; 4] + Sync) -> Image {
     let mut out = Image::new(w, h);
-    out.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        let fy = y as f32 + 0.5;
-        for x in 0..w {
-            let c = f(x as f32 + 0.5, fy);
-            row[x * 4..x * 4 + 4].copy_from_slice(&c);
-        }
-    });
+    out.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            let fy = y as f32 + 0.5;
+            for x in 0..w {
+                let c = f(x as f32 + 0.5, fy);
+                row[x * 4..x * 4 + 4].copy_from_slice(&c);
+            }
+        });
     out
 }
 
 #[inline]
 pub(crate) fn mix(a: [f32; 4], b: [f32; 4], k: f32) -> [f32; 4] {
-    [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k]
+    [
+        a[0] + (b[0] - a[0]) * k,
+        a[1] + (b[1] - a[1]) * k,
+        a[2] + (b[2] - a[2]) * k,
+        a[3] + (b[3] - a[3]) * k,
+    ]
 }
 /// Premultiplied `src` over `dst`.
 #[inline]
 pub(crate) fn over(dst: [f32; 4], src: [f32; 4]) -> [f32; 4] {
     let k = 1.0 - src[3];
-    [src[0] + dst[0] * k, src[1] + dst[1] * k, src[2] + dst[2] * k, src[3] + dst[3] * k]
+    [
+        src[0] + dst[0] * k,
+        src[1] + dst[1] * k,
+        src[2] + dst[2] * k,
+        src[3] + dst[3] * k,
+    ]
 }
 #[inline]
 pub(crate) fn scale4(c: [f32; 4], k: f32) -> [f32; 4] {
@@ -223,7 +270,12 @@ pub(crate) fn scale4(c: [f32; 4], k: f32) -> [f32; 4] {
 /// Add light `rgb × k` (keeps alpha at least as opaque as the light).
 #[inline]
 pub(crate) fn add_light(c: [f32; 4], rgb: [f32; 4], k: f32) -> [f32; 4] {
-    [c[0] + rgb[0] * k, c[1] + rgb[1] * k, c[2] + rgb[2] * k, (c[3] + k.max(0.0)).min(1.0)]
+    [
+        c[0] + rgb[0] * k,
+        c[1] + rgb[1] * k,
+        c[2] + rgb[2] * k,
+        (c[3] + k.max(0.0)).min(1.0),
+    ]
 }
 #[inline]
 pub(crate) fn luma(c: [f32; 4]) -> f32 {
@@ -251,7 +303,11 @@ pub(crate) fn mid_mix(p: f32) -> f32 {
 #[inline]
 pub(crate) fn ease_in_out(t: f32) -> f32 {
     let t = t.clamp(0.0, 1.0);
-    if t < 0.5 { 4.0 * t * t * t } else { 1.0 - (-2.0 * t + 2.0).powi(3) / 2.0 }
+    if t < 0.5 {
+        4.0 * t * t * t
+    } else {
+        1.0 - (-2.0 * t + 2.0).powi(3) / 2.0
+    }
 }
 #[inline]
 pub(crate) fn ease_out(t: f32) -> f32 {
@@ -265,7 +321,10 @@ pub(crate) fn ease_in(t: f32) -> f32 {
 /// Integer hash → [0, 1).
 #[inline]
 pub(crate) fn hash(x: i32, y: i32, s: u32) -> f32 {
-    let mut h = (x as u32).wrapping_mul(0x8DA6_B343) ^ (y as u32).wrapping_mul(0xD816_3841) ^ s.wrapping_mul(0xCB1A_B31F) ^ 0x9E37_79B9;
+    let mut h = (x as u32).wrapping_mul(0x8DA6_B343)
+        ^ (y as u32).wrapping_mul(0xD816_3841)
+        ^ s.wrapping_mul(0xCB1A_B31F)
+        ^ 0x9E37_79B9;
     h ^= h >> 15;
     h = h.wrapping_mul(0x2C1B_3C6D);
     h ^= h >> 12;
@@ -316,12 +375,28 @@ pub(crate) fn line_blur(img: &Image, x: f32, y: f32, dx: f32, dy: f32, n: usize)
 }
 /// Zoom (radial streak) blur towards (cx, cy): samples between the pixel and `k` of the way to
 /// the centre.
-pub(crate) fn zoom_blur(img: &Image, x: f32, y: f32, cx: f32, cy: f32, k: f32, n: usize) -> [f32; 4] {
+pub(crate) fn zoom_blur(
+    img: &Image,
+    x: f32,
+    y: f32,
+    cx: f32,
+    cy: f32,
+    k: f32,
+    n: usize,
+) -> [f32; 4] {
     let (dx, dy) = ((x - cx) * k * 0.5, (y - cy) * k * 0.5);
     line_blur(img, x - dx, y - dy, dx, dy, n)
 }
 /// Spin blur about (cx, cy) over `ang` radians (centred on the pixel).
-pub(crate) fn spin_blur(img: &Image, x: f32, y: f32, cx: f32, cy: f32, ang: f32, n: usize) -> [f32; 4] {
+pub(crate) fn spin_blur(
+    img: &Image,
+    x: f32,
+    y: f32,
+    cx: f32,
+    cy: f32,
+    ang: f32,
+    n: usize,
+) -> [f32; 4] {
     if n <= 1 || ang.abs() < 1e-4 {
         return img.sample_bilinear_clamped(x, y);
     }
@@ -378,7 +453,12 @@ pub(crate) fn sample_wrap(img: &Image, x: f32, y: f32) -> [f32; 4] {
     let y0 = fy.floor() as usize;
     let y1 = (y0 + 1).min(img.h - 1);
     let ty = fy - y0 as f32;
-    let (a, b, c, d) = (img.get(x0, y0), img.get(x1, y0), img.get(x0, y1), img.get(x1, y1));
+    let (a, b, c, d) = (
+        img.get(x0, y0),
+        img.get(x1, y0),
+        img.get(x0, y1),
+        img.get(x1, y1),
+    );
     let mut o = [0.0; 4];
     for k in 0..4 {
         let top = a[k] + (b[k] - a[k]) * tx;
@@ -390,7 +470,14 @@ pub(crate) fn sample_wrap(img: &Image, x: f32, y: f32) -> [f32; 4] {
 
 /// Average a per-pixel scene over `n` time samples spread over `shutter` (in progress units)
 /// around `p` (motion blur). `n = 1` or `shutter = 0` evaluates once at `p`.
-pub(crate) fn temporal(x: f32, y: f32, p: f32, shutter: f32, n: usize, f: &(impl Fn(f32, f32, f32) -> [f32; 4] + Sync)) -> [f32; 4] {
+pub(crate) fn temporal(
+    x: f32,
+    y: f32,
+    p: f32,
+    shutter: f32,
+    n: usize,
+    f: &(impl Fn(f32, f32, f32) -> [f32; 4] + Sync),
+) -> [f32; 4] {
     if n <= 1 || shutter <= 1e-5 {
         return f(x, y, p);
     }
@@ -407,5 +494,9 @@ pub(crate) fn temporal(x: f32, y: f32, p: f32, shutter: f32, n: usize, f: &(impl
 /// Motion-blur settings from the `motion_blur` param: (shutter in progress units, samples).
 pub(crate) fn shutter(t: &Tx, max: f32) -> (f32, usize) {
     let mb = t.frac("motion_blur").clamp(0.0, 1.0);
-    if mb <= 0.0 { (0.0, 1) } else { (max * mb, ((mb * 12.0).ceil() as usize).clamp(2, 12)) }
+    if mb <= 0.0 {
+        (0.0, 1)
+    } else {
+        (max * mb, ((mb * 12.0).ceil() as usize).clamp(2, 12))
+    }
 }

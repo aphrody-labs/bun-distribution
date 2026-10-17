@@ -44,23 +44,54 @@ pub async fn detect_dotnet() -> DotnetRuntimeInfo {
         };
     };
 
-    let version_out = tokio::process::Command::new(bin).no_window().arg("--version").output().await.ok();
+    let version_out = tokio::process::Command::new(bin)
+        .no_window()
+        .arg("--version")
+        .output()
+        .await
+        .ok();
 
     let version = version_out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_owned());
 
-    let sdks_out = tokio::process::Command::new(bin).no_window().arg("--list-sdks").output().await.ok();
+    let sdks_out = tokio::process::Command::new(bin)
+        .no_window()
+        .arg("--list-sdks")
+        .output()
+        .await
+        .ok();
 
     let sdks = sdks_out
-        .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(ToString::to_string).collect())
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .lines()
+                .map(ToString::to_string)
+                .collect()
+        })
         .unwrap_or_default();
 
-    let runtimes_out = tokio::process::Command::new(bin).no_window().arg("--list-runtimes").output().await.ok();
+    let runtimes_out = tokio::process::Command::new(bin)
+        .no_window()
+        .arg("--list-runtimes")
+        .output()
+        .await
+        .ok();
 
     let runtimes = runtimes_out
-        .map(|o| String::from_utf8_lossy(&o.stdout).lines().map(ToString::to_string).collect())
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .lines()
+                .map(ToString::to_string)
+                .collect()
+        })
         .unwrap_or_default();
 
-    DotnetRuntimeInfo { available: true, cli_path: Some(bin.clone()), version, sdks, runtimes }
+    DotnetRuntimeInfo {
+        available: true,
+        cli_path: Some(bin.clone()),
+        version,
+        sdks,
+        runtimes,
+    }
 }
 
 pub async fn execute_assembly(assembly_path: &str, args: &[String]) -> Result<ExecResult, String> {
@@ -72,7 +103,10 @@ pub async fn execute_assembly(assembly_path: &str, args: &[String]) -> Result<Ex
     let mut cmd = tokio::process::Command::new(bin).no_window();
     cmd.arg("exec").arg(assembly_path).args(args);
 
-    let output = cmd.output().await.map_err(|e| format!("dotnet exec error: {e}"))?;
+    let output = cmd
+        .output()
+        .await
+        .map_err(|e| format!("dotnet exec error: {e}"))?;
 
     Ok(ExecResult {
         exit_code: output.status.code().unwrap_or(-1),
@@ -85,7 +119,11 @@ fn which_dotnet() -> Option<std::path::PathBuf> {
     let path_var = env::var("PATH").ok()?;
     let separator = if cfg!(windows) { ';' } else { ':' };
     for part in path_var.split(separator) {
-        let name = if cfg!(windows) { "dotnet.exe" } else { "dotnet" };
+        let name = if cfg!(windows) {
+            "dotnet.exe"
+        } else {
+            "dotnet"
+        };
         let candidate = Path::new(part).join(name);
         if candidate.is_file() {
             return Some(candidate);

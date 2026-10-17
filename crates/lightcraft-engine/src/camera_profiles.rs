@@ -25,10 +25,22 @@ const MAX_FILE: u64 = 4 << 20;
 /// Profiles built into LightCraft (`assets/camera-profiles/`, see `assets/ATTRIBUTION.md`):
 /// `(model, JSON)`.
 pub const BUNDLED: &[(&str, &str)] = &[
-    ("ILCE-7CR", include_str!("../../../assets/lightcraft/camera-profiles/ILCE-7CR.json")),
-    ("ILCE-7M4", include_str!("../../../assets/lightcraft/camera-profiles/ILCE-7M4.json")),
-    ("X-H2S", include_str!("../../../assets/lightcraft/camera-profiles/X-H2S.json")),
-    ("X-T4", include_str!("../../../assets/lightcraft/camera-profiles/X-T4.json")),
+    (
+        "ILCE-7CR",
+        include_str!("../../../assets/lightcraft/camera-profiles/ILCE-7CR.json"),
+    ),
+    (
+        "ILCE-7M4",
+        include_str!("../../../assets/lightcraft/camera-profiles/ILCE-7M4.json"),
+    ),
+    (
+        "X-H2S",
+        include_str!("../../../assets/lightcraft/camera-profiles/X-H2S.json"),
+    ),
+    (
+        "X-T4",
+        include_str!("../../../assets/lightcraft/camera-profiles/X-T4.json"),
+    ),
 ];
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -46,8 +58,21 @@ pub struct CameraProfile {
 }
 
 impl CameraProfile {
-    pub fn new(model: &str, files: usize, samples: usize, matrix: Mat3, hue_sat: Option<HsvTable>) -> CameraProfile {
-        CameraProfile { version: VERSION, model: model.to_owned(), files, samples, matrix: matrix.0, hue_sat }
+    pub fn new(
+        model: &str,
+        files: usize,
+        samples: usize,
+        matrix: Mat3,
+        hue_sat: Option<HsvTable>,
+    ) -> CameraProfile {
+        CameraProfile {
+            version: VERSION,
+            model: model.to_owned(),
+            files,
+            samples,
+            matrix: matrix.0,
+            hue_sat,
+        }
     }
 
     pub fn matrix(&self) -> Mat3 {
@@ -56,11 +81,23 @@ impl CameraProfile {
 
     /// Whether the data is usable (bounded matrix, table shape matching its data).
     fn valid(&self) -> bool {
-        let matrix = self.matrix.iter().flatten().all(|v| v.is_finite() && v.abs() < 8.0) && Mat3(self.matrix).inverse().is_some();
+        let matrix = self
+            .matrix
+            .iter()
+            .flatten()
+            .all(|v| v.is_finite() && v.abs() < 8.0)
+            && Mat3(self.matrix).inverse().is_some();
         let table = self.hue_sat.as_ref().is_none_or(|t| {
-            let dims = (1..=4096).contains(&t.hue_divisions) && (2..=4096).contains(&t.sat_divisions) && (1..=4096).contains(&t.val_divisions);
-            let len = t.hue_divisions.checked_mul(t.sat_divisions).and_then(|n| n.checked_mul(t.val_divisions));
-            dims && len == Some(t.data.len()) && t.data.iter().flatten().all(|v| v.is_finite()) && t.data.iter().all(|e| e[1] >= 0.0 && e[2] >= 0.0)
+            let dims = (1..=4096).contains(&t.hue_divisions)
+                && (2..=4096).contains(&t.sat_divisions)
+                && (1..=4096).contains(&t.val_divisions);
+            let len = t
+                .hue_divisions
+                .checked_mul(t.sat_divisions)
+                .and_then(|n| n.checked_mul(t.val_divisions));
+            dims && len == Some(t.data.len())
+                && t.data.iter().flatten().all(|v| v.is_finite())
+                && t.data.iter().all(|e| e[1] >= 0.0 && e[2] >= 0.0)
         });
         self.version == VERSION && !self.model.is_empty() && matrix && table
     }
@@ -71,20 +108,37 @@ pub use crate::config::config_dir;
 
 /// Where camera profiles are read from and written to.
 pub fn dir() -> Option<PathBuf> {
-    std::env::var_os("LIGHTCRAFT_CAMERA_PROFILES").map(PathBuf::from).or_else(|| config_dir().map(|d| d.join("camera-profiles")))
+    std::env::var_os("LIGHTCRAFT_CAMERA_PROFILES")
+        .map(PathBuf::from)
+        .or_else(|| config_dir().map(|d| d.join("camera-profiles")))
 }
 
 /// File name of `model`'s profile: letters, digits, `-` and `_` kept, anything else `_`.
 pub fn file_name(model: &str) -> String {
-    let name: String = model.trim().chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let name: String = model
+        .trim()
+        .chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     format!("{name}.json")
 }
 
 /// Read and validate a profile file.
 pub fn load(path: &Path) -> Result<CameraProfile, String> {
-    let size = std::fs::metadata(path).map_err(|e| format!("{}: {e}", path.display()))?.len();
+    let size = std::fs::metadata(path)
+        .map_err(|e| format!("{}: {e}", path.display()))?
+        .len();
     if size > MAX_FILE {
-        return Err(format!("{}: {size} bytes is too large for a camera profile", path.display()));
+        return Err(format!(
+            "{}: {size} bytes is too large for a camera profile",
+            path.display()
+        ));
     }
     let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     parse(&bytes, &path.display().to_string())
@@ -92,9 +146,13 @@ pub fn load(path: &Path) -> Result<CameraProfile, String> {
 
 /// Parse and validate a profile's JSON (`origin` names it in errors).
 fn parse(json: &[u8], origin: &str) -> Result<CameraProfile, String> {
-    let profile: CameraProfile = serde_json::from_slice(json).map_err(|e| format!("{origin}: {e}"))?;
+    let profile: CameraProfile =
+        serde_json::from_slice(json).map_err(|e| format!("{origin}: {e}"))?;
     if !profile.valid() {
-        return Err(format!("{origin}: not a usable camera profile (version {}, model {:?})", profile.version, profile.model));
+        return Err(format!(
+            "{origin}: not a usable camera profile (version {}, model {:?})",
+            profile.version, profile.model
+        ));
     }
     Ok(profile)
 }
@@ -102,7 +160,9 @@ fn parse(json: &[u8], origin: &str) -> Result<CameraProfile, String> {
 /// The built-in profile for `model`, if any.
 fn bundled(model: &str) -> Option<CameraProfile> {
     let (_, json) = BUNDLED.iter().find(|(m, _)| *m == model)?;
-    parse(json.as_bytes(), &format!("built-in profile {model}")).inspect_err(|e| eprintln!("lightcraft: ignoring camera profile {e}")).ok()
+    parse(json.as_bytes(), &format!("built-in profile {model}"))
+        .inspect_err(|e| eprintln!("lightcraft: ignoring camera profile {e}"))
+        .ok()
 }
 
 /// Write `profile` to `dir` (created if needed) as `<model>.json`; returns the path.
@@ -136,7 +196,11 @@ pub fn get(model: &str) -> Option<Arc<CameraProfile>> {
         Some(path) if path.is_file() => match load(&path) {
             Ok(p) if p.model.trim() == model => Some(Arc::new(p)),
             Ok(p) => {
-                eprintln!("lightcraft: ignoring camera profile {}: it is for {:?}, not {model:?}", path.display(), p.model);
+                eprintln!(
+                    "lightcraft: ignoring camera profile {}: it is for {:?}, not {model:?}",
+                    path.display(),
+                    p.model
+                );
                 None
             }
             Err(e) => {
@@ -164,8 +228,17 @@ pub fn cache_key() -> u64 {
             .filter(|e| e.path().extension().is_some_and(|x| x == "json"))
             .filter_map(|e| {
                 let meta = e.metadata().ok()?;
-                let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?.as_secs();
-                Some((e.file_name().to_string_lossy().into_owned(), meta.len(), modified))
+                let modified = meta
+                    .modified()
+                    .ok()?
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .ok()?
+                    .as_secs();
+                Some((
+                    e.file_name().to_string_lossy().into_owned(),
+                    meta.len(),
+                    modified,
+                ))
             })
             .collect();
         files.sort();
@@ -196,8 +269,18 @@ impl Pool {
         let mut raw = lightcraft_raw::decode(bytes).map_err(|e| e.to_string())?;
         // colour only: geometric lens corrections would stop the sensor proxy from binning
         raw.opcodes.list3.retain(|op| !op.is_lens_correction());
-        let Some(model) = raw.metadata.model.as_deref().map(str::trim).filter(|m| !m.is_empty()) else { return Ok(None) };
-        let Some(pairs) = crate::camera_preview::profile_pairs(&raw, bytes) else { return Ok(None) };
+        let Some(model) = raw
+            .metadata
+            .model
+            .as_deref()
+            .map(str::trim)
+            .filter(|m| !m.is_empty())
+        else {
+            return Ok(None);
+        };
+        let Some(pairs) = crate::camera_preview::profile_pairs(&raw, bytes) else {
+            return Ok(None);
+        };
         let step = pairs.len().div_ceil(PAIRS_PER_FILE).max(1);
         let entry = self.models.entry(model.to_owned()).or_default();
         entry.0 += 1;
@@ -213,8 +296,15 @@ impl Pool {
             .into_iter()
             .filter(|(_, (files, _))| *files >= min_files)
             .map(|(model, (files, pairs))| {
-                let (matrix, hue_sat) = crate::camera_preview::fit_profile(pairs).ok_or_else(|| format!("{model}: no usable colour fit"))?;
-                Ok(CameraProfile::new(model, *files, pairs.len(), matrix, hue_sat))
+                let (matrix, hue_sat) = crate::camera_preview::fit_profile(pairs)
+                    .ok_or_else(|| format!("{model}: no usable colour fit"))?;
+                Ok(CameraProfile::new(
+                    model,
+                    *files,
+                    pairs.len(),
+                    matrix,
+                    hue_sat,
+                ))
             })
             .collect()
     }
@@ -230,7 +320,11 @@ impl Pool {
 
     /// Photos read per model.
     pub fn files(&self) -> Vec<(String, usize)> {
-        let mut v: Vec<_> = self.models.iter().map(|(m, (n, _))| (m.clone(), *n)).collect();
+        let mut v: Vec<_> = self
+            .models
+            .iter()
+            .map(|(m, (n, _))| (m.clone(), *n))
+            .collect();
         v.sort();
         v
     }
@@ -241,8 +335,20 @@ mod tests {
     use super::*;
 
     fn profile() -> CameraProfile {
-        let table = HsvTable { hue_divisions: 4, sat_divisions: 2, val_divisions: 1, data: vec![[5.0, 1.2, 1.0]; 8], srgb_value: false };
-        CameraProfile::new("ILCE-7M4", 12, 3456, Mat3([[1.6, -0.5, -0.1], [-0.2, 1.3, -0.1], [-0.1, -0.2, 1.3]]), Some(table))
+        let table = HsvTable {
+            hue_divisions: 4,
+            sat_divisions: 2,
+            val_divisions: 1,
+            data: vec![[5.0, 1.2, 1.0]; 8],
+            srgb_value: false,
+        };
+        CameraProfile::new(
+            "ILCE-7M4",
+            12,
+            3456,
+            Mat3([[1.6, -0.5, -0.1], [-0.2, 1.3, -0.1], [-0.1, -0.2, 1.3]]),
+            Some(table),
+        )
     }
 
     #[test]
@@ -282,7 +388,11 @@ mod tests {
         for (model, json) in BUNDLED {
             let p = parse(json.as_bytes(), model).unwrap();
             assert_eq!(p.model, *model);
-            assert!(p.files >= 5 && p.hue_sat.is_some(), "{model}: {} photos", p.files);
+            assert!(
+                p.files >= 5 && p.hue_sat.is_some(),
+                "{model}: {} photos",
+                p.files
+            );
             assert_eq!(bundled(model), Some(p));
         }
         assert!(bundled("No Such Camera").is_none());

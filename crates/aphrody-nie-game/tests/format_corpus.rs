@@ -11,7 +11,9 @@
 use std::path::PathBuf;
 
 fn game_dir() -> Option<PathBuf> {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let p = PathBuf::from(dir);
     aphrody_nie_formats::vfs::donnees_disponibles(p.join("data")).then_some(p)
 }
@@ -23,8 +25,11 @@ fn parse_all<T>(
     ext: &str,
     parse: impl Fn(&[u8]) -> Option<T>,
 ) -> (usize, usize) {
-    let mut paths: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(ext)).collect();
+    let mut paths: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(ext))
+        .collect();
     paths.sort_unstable();
     let total = paths.len();
     let mut ok = 0usize;
@@ -75,12 +80,23 @@ fn objbin_and_g4pkm_parsers_robust_on_full_corpus() {
     }
 
     // Le corpus doit être substantiel (sinon le VFS n'est monté que partiellement).
-    assert!(obj_total >= 10_000, "objbin corpus trop petit ({obj_total})");
+    assert!(
+        obj_total >= 10_000,
+        "objbin corpus trop petit ({obj_total})"
+    );
     assert!(pkm_total >= 5_000, "g4pkm corpus trop petit ({pkm_total})");
     // Plancher de non-régression : la quasi-totalité des fichiers réels doit parser. À RELEVER si
     // le taux observé est plus haut (mesuré 2026-06-16).
-    assert!(obj_rate >= 0.99, "taux de parse objbin {:.4} < 0.99", obj_rate);
-    assert!(pkm_rate >= 0.99, "taux de parse g4pkm {:.4} < 0.99", pkm_rate);
+    assert!(
+        obj_rate >= 0.99,
+        "taux de parse objbin {:.4} < 0.99",
+        obj_rate
+    );
+    assert!(
+        pkm_rate >= 0.99,
+        "taux de parse g4pkm {:.4} < 0.99",
+        pkm_rate
+    );
 }
 
 /// Robustesse du parseur **cfg.bin** (cœur du format de données) : parse TOUS les `gamedata/*.cfg.bin`
@@ -104,7 +120,10 @@ fn cfgbin_parser_never_panics_on_gamedata_corpus() {
         .collect();
     paths.sort_unstable();
     let total = paths.len();
-    assert!(total >= 1000, "corpus gamedata cfg.bin trop petit ({total})");
+    assert!(
+        total >= 1000,
+        "corpus gamedata cfg.bin trop petit ({total})"
+    );
 
     // Silence le hook de panic pendant la mesure (on COMPTE les panics, on ne veut pas le bruit).
     // Route par magic : RDBN → `cfgbin::parse`, sinon → `parse_t2b`. Les DEUX chemins du format
@@ -127,17 +146,17 @@ fn cfgbin_parser_never_panics_on_gamedata_corpus() {
             (false, Ok(ok)) => {
                 t2b_n += 1;
                 t2b_ok += usize::from(ok);
-            },
+            }
             (true, Ok(ok)) => {
                 rdbn_n += 1;
                 rdbn_ok += usize::from(ok);
-            },
+            }
             (_, Err(_)) => {
                 panics += 1;
                 if panic_paths.len() < 10 {
                     panic_paths.push(p.clone());
                 }
-            },
+            }
         }
     }
     std::panic::set_hook(prev);
@@ -154,7 +173,10 @@ fn cfgbin_parser_never_panics_on_gamedata_corpus() {
     }
     eprintln!();
     // Robustesse : AUCUN panic sur l'un OU l'autre chemin du format cœur.
-    assert_eq!(panics, 0, "cfgbin PANIQUE sur {panics} fichiers réels (robustesse insuffisante)");
+    assert_eq!(
+        panics, 0,
+        "cfgbin PANIQUE sur {panics} fichiers réels (robustesse insuffisante)"
+    );
     // Les deux formats parsent proprement (RDBN = format distinct, doit réussir aussi).
     assert!(rdbn_n >= 100, "trop peu de fichiers RDBN ({rdbn_n})");
     assert!(t2b_rate >= 0.99, "taux T2B {t2b_rate:.4} < 0.99");

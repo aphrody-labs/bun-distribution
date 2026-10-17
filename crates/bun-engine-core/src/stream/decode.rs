@@ -45,14 +45,14 @@ use windows::{
             IMFTransform, MF_E_NOTACCEPTING, MF_E_TRANSFORM_NEED_MORE_INPUT,
             MF_E_TRANSFORM_STREAM_CHANGE, MF_LOW_LATENCY, MF_MT_DEFAULT_STRIDE, MF_MT_FRAME_RATE,
             MF_MT_FRAME_SIZE, MF_MT_INTERLACE_MODE, MF_MT_MAJOR_TYPE, MF_MT_SUBTYPE,
-            MF_SA_D3D11_AWARE, MFCreateDXGIDeviceManager, MFCreateMediaType,
-            MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video, MFSTARTUP_NOSOCKET,
-            MFStartup, MFT_CATEGORY_VIDEO_DECODER, MFT_ENUM_FLAG_SORTANDFILTER,
-            MFT_ENUM_FLAG_SYNCMFT, MFT_FRIENDLY_NAME_Attribute, MFT_MESSAGE_NOTIFY_BEGIN_STREAMING,
+            MF_SA_D3D11_AWARE, MF_VERSION, MFCreateDXGIDeviceManager, MFCreateMediaType,
+            MFCreateMemoryBuffer, MFCreateSample, MFMediaType_Video, MFSTARTUP_NOSOCKET, MFStartup,
+            MFT_CATEGORY_VIDEO_DECODER, MFT_ENUM_FLAG_SORTANDFILTER, MFT_ENUM_FLAG_SYNCMFT,
+            MFT_FRIENDLY_NAME_Attribute, MFT_MESSAGE_NOTIFY_BEGIN_STREAMING,
             MFT_MESSAGE_NOTIFY_START_OF_STREAM, MFT_MESSAGE_SET_D3D_MANAGER,
             MFT_OUTPUT_DATA_BUFFER, MFT_OUTPUT_STREAM_PROVIDES_SAMPLES, MFT_REGISTER_TYPE_INFO,
             MFTEnumEx, MFVideoFormat_AV1, MFVideoFormat_H264, MFVideoFormat_HEVC,
-            MFVideoFormat_NV12, MFVideoInterlace_Progressive, MF_VERSION,
+            MFVideoFormat_NV12, MFVideoInterlace_Progressive,
         },
         System::Com::{COINIT_MULTITHREADED, CoInitializeEx, CoTaskMemFree},
     },
@@ -90,9 +90,18 @@ pub struct SharedSet {
 /// One decoded picture, either resident in a shared ring slot or read back to the CPU.
 #[derive(Debug)]
 pub enum Picture {
-    Shared { generation: u32, slot: usize, fence_value: u64 },
+    Shared {
+        generation: u32,
+        slot: usize,
+        fence_value: u64,
+    },
     /// NV12 rows (`pitch` bytes each): `height` luma rows then `height / 2` chroma rows.
-    Cpu { width: u32, height: u32, pitch: u32, nv12: Vec<u8> },
+    Cpu {
+        width: u32,
+        height: u32,
+        pitch: u32,
+        nv12: Vec<u8>,
+    },
 }
 
 /// Timing and identity of a decoded frame.
@@ -150,7 +159,10 @@ pub struct DecodeClock {
 
 impl Default for DecodeClock {
     fn default() -> Self {
-        Self { epoch: Instant::now(), done: (0..DECODE_SLOTS).map(|_| Default::default()).collect() }
+        Self {
+            epoch: Instant::now(),
+            done: (0..DECODE_SLOTS).map(|_| Default::default()).collect(),
+        }
     }
 }
 
@@ -158,12 +170,17 @@ impl DecodeClock {
     fn record(&self, value: u64, at: Instant) {
         let ns = at.duration_since(self.epoch).as_nanos() as u64;
         // Low bits carry the slot; the stored word tags the value so stale slots are ignored.
-        self.done[value as usize % DECODE_SLOTS].store((ns << 8) | (value & 0xff), std::sync::atomic::Ordering::Release);
+        self.done[value as usize % DECODE_SLOTS].store(
+            (ns << 8) | (value & 0xff),
+            std::sync::atomic::Ordering::Release,
+        );
     }
 
     pub fn done(&self, value: u64) -> Option<Instant> {
-        let word = self.done[value as usize % DECODE_SLOTS].load(std::sync::atomic::Ordering::Acquire);
-        (word != 0 && word & 0xff == value & 0xff).then(|| self.epoch + std::time::Duration::from_nanos(word >> 8))
+        let word =
+            self.done[value as usize % DECODE_SLOTS].load(std::sync::atomic::Ordering::Acquire);
+        (word != 0 && word & 0xff == value & 0xff)
+            .then(|| self.epoch + std::time::Duration::from_nanos(word >> 8))
     }
 }
 
@@ -181,7 +198,10 @@ impl Mailbox {
                 _ => 0,
             };
             let busy = state.pinned | waiting;
-            if let Some(slot) = (1..=RING).map(|d| (after + d) % RING).find(|s| busy & (1 << s) == 0) {
+            if let Some(slot) = (1..=RING)
+                .map(|d| (after + d) % RING)
+                .find(|s| busy & (1 << s) == 0)
+            {
                 return slot;
             }
             state = self.freed.wait(state).unwrap();
@@ -212,7 +232,11 @@ impl Mailbox {
         let mut state = self.state.lock().unwrap();
         let announce = state.announce.take();
         let frame = state.frame.take();
-        if let Some(Decoded { picture: Picture::Shared { slot, .. }, .. }) = frame.as_ref() {
+        if let Some(Decoded {
+            picture: Picture::Shared { slot, .. },
+            ..
+        }) = frame.as_ref()
+        {
             state.pinned |= 1 << slot;
         }
         (announce, frame)
@@ -254,7 +278,9 @@ pub fn d3d11_device(luid: LUID) -> Result<(ID3D11Device, ID3D11DeviceContext), S
     // SAFETY: COM calls with valid out pointers; returned interfaces are reference counted.
     unsafe {
         let factory: IDXGIFactory4 = CreateDXGIFactory1().map_err(hr("CreateDXGIFactory1"))?;
-        let adapter: IDXGIAdapter = factory.EnumAdapterByLuid(luid).map_err(hr("EnumAdapterByLuid"))?;
+        let adapter: IDXGIAdapter = factory
+            .EnumAdapterByLuid(luid)
+            .map_err(hr("EnumAdapterByLuid"))?;
         let mut device = None;
         let mut context = None;
         D3D11CreateDevice(
@@ -281,7 +307,9 @@ pub fn d3d11_device(luid: LUID) -> Result<(ID3D11Device, ID3D11DeviceContext), S
 pub fn wgpu_adapter_luid(device: &wgpu::Device) -> Result<LUID, String> {
     // SAFETY: the HAL device is only borrowed for the duration of the call.
     unsafe {
-        let hal = device.as_hal::<wgpu::hal::api::Dx12>().ok_or("the wgpu device is not DX12")?;
+        let hal = device
+            .as_hal::<wgpu::hal::api::Dx12>()
+            .ok_or("the wgpu device is not DX12")?;
         Ok(hal.raw_device().GetAdapterLuid())
     }
 }
@@ -290,8 +318,10 @@ pub(crate) fn media_type(major: GUID, subtype: GUID) -> Result<IMFMediaType, Str
     // SAFETY: attribute setters on a freshly created media type.
     unsafe {
         let t = MFCreateMediaType().map_err(hr("MFCreateMediaType"))?;
-        t.SetGUID(&MF_MT_MAJOR_TYPE, &major).map_err(hr("MF_MT_MAJOR_TYPE"))?;
-        t.SetGUID(&MF_MT_SUBTYPE, &subtype).map_err(hr("MF_MT_SUBTYPE"))?;
+        t.SetGUID(&MF_MT_MAJOR_TYPE, &major)
+            .map_err(hr("MF_MT_MAJOR_TYPE"))?;
+        t.SetGUID(&MF_MT_SUBTYPE, &subtype)
+            .map_err(hr("MF_MT_SUBTYPE"))?;
         Ok(t)
     }
 }
@@ -301,9 +331,19 @@ pub fn pack(hi: u32, lo: u32) -> u64 {
 }
 
 /// Every registered decoder MFT for `codec`, best first (activation objects).
-fn enumerate(category: GUID, input: Option<GUID>, output: Option<GUID>) -> Result<Vec<IMFActivate>, String> {
-    let input = input.map(|subtype| MFT_REGISTER_TYPE_INFO { guidMajorType: MFMediaType_Video, guidSubtype: subtype });
-    let output = output.map(|subtype| MFT_REGISTER_TYPE_INFO { guidMajorType: MFMediaType_Video, guidSubtype: subtype });
+fn enumerate(
+    category: GUID,
+    input: Option<GUID>,
+    output: Option<GUID>,
+) -> Result<Vec<IMFActivate>, String> {
+    let input = input.map(|subtype| MFT_REGISTER_TYPE_INFO {
+        guidMajorType: MFMediaType_Video,
+        guidSubtype: subtype,
+    });
+    let output = output.map(|subtype| MFT_REGISTER_TYPE_INFO {
+        guidMajorType: MFMediaType_Video,
+        guidSubtype: subtype,
+    });
     let mut list: *mut Option<IMFActivate> = null_mut();
     let mut count = 0u32;
     // SAFETY: MFTEnumEx allocates `list` with CoTaskMemAlloc; every element is taken (released by
@@ -321,7 +361,10 @@ fn enumerate(category: GUID, input: Option<GUID>, output: Option<GUID>) -> Resul
         let items = if list.is_null() {
             Vec::new()
         } else {
-            std::slice::from_raw_parts_mut(list, count as usize).iter_mut().filter_map(Option::take).collect()
+            std::slice::from_raw_parts_mut(list, count as usize)
+                .iter_mut()
+                .filter_map(Option::take)
+                .collect()
         };
         if !list.is_null() {
             CoTaskMemFree(Some(list as *const c_void));
@@ -335,7 +378,11 @@ pub fn friendly_name(activate: &IMFActivate) -> String {
     let mut len = 0u32;
     // SAFETY: GetAllocatedString returns a CoTaskMemAlloc string we free after copying.
     unsafe {
-        if activate.GetAllocatedString(&MFT_FRIENDLY_NAME_Attribute, &mut name, &mut len).is_ok() && !name.is_null() {
+        if activate
+            .GetAllocatedString(&MFT_FRIENDLY_NAME_Attribute, &mut name, &mut len)
+            .is_ok()
+            && !name.is_null()
+        {
             let s = name.to_string().unwrap_or_default();
             CoTaskMemFree(Some(name.0 as *const c_void));
             return s;
@@ -344,7 +391,11 @@ pub fn friendly_name(activate: &IMFActivate) -> String {
     "unnamed MFT".into()
 }
 
-pub(crate) fn activate_mfts(category: GUID, input: Option<GUID>, output: Option<GUID>) -> Result<Vec<(String, IMFTransform)>, String> {
+pub(crate) fn activate_mfts(
+    category: GUID,
+    input: Option<GUID>,
+    output: Option<GUID>,
+) -> Result<Vec<(String, IMFTransform)>, String> {
     let mut out = Vec::new();
     for activate in enumerate(category, input, output)? {
         // SAFETY: activation of a registered MFT.
@@ -408,9 +459,13 @@ fn watch_decode(fence: ID3D11Fence, mailbox: Arc<Mailbox>) -> Option<std::sync::
             let fence = fence;
             // SAFETY: an auto-reset event owned by this thread, waited on with our fence.
             unsafe {
-                let Ok(event) = CreateEventW(None, false, false, None) else { return };
+                let Ok(event) = CreateEventW(None, false, false, None) else {
+                    return;
+                };
                 for value in rx {
-                    if fence.0.GetCompletedValue() < value && fence.0.SetEventOnCompletion(value, event).is_ok() {
+                    if fence.0.GetCompletedValue() < value
+                        && fence.0.SetEventOnCompletion(value, event).is_ok()
+                    {
                         WaitForSingleObject(event, 2000);
                     }
                     mailbox.decode_clock.record(value, Instant::now());
@@ -426,7 +481,14 @@ fn watch_decode(fence: ID3D11Fence, mailbox: Arc<Mailbox>) -> Option<std::sync::
 unsafe impl Send for Decoder {}
 
 impl Decoder {
-    pub fn new(codec: Codec, luid: LUID, width: u32, height: u32, fps: u32, mailbox: Arc<Mailbox>) -> Result<Self, String> {
+    pub fn new(
+        codec: Codec,
+        luid: LUID,
+        width: u32,
+        height: u32,
+        fps: u32,
+        mailbox: Arc<Mailbox>,
+    ) -> Result<Self, String> {
         media_foundation_startup()?;
         let (device, context) = d3d11_device(luid)?;
         let context: ID3D11DeviceContext4 = context.cast().map_err(hr("ID3D11DeviceContext4"))?;
@@ -434,31 +496,46 @@ impl Decoder {
         unsafe {
             let mut token = 0u32;
             let mut manager = None;
-            MFCreateDXGIDeviceManager(&mut token, &mut manager).map_err(hr("MFCreateDXGIDeviceManager"))?;
+            MFCreateDXGIDeviceManager(&mut token, &mut manager)
+                .map_err(hr("MFCreateDXGIDeviceManager"))?;
             let manager: IMFDXGIDeviceManager = manager.ok_or("no DXGI device manager")?;
-            manager.ResetDevice(&device, token).map_err(hr("ResetDevice"))?;
+            manager
+                .ResetDevice(&device, token)
+                .map_err(hr("ResetDevice"))?;
 
             let candidates = activate_mfts(MFT_CATEGORY_VIDEO_DECODER, Some(subtype(codec)), None)?;
             if candidates.is_empty() {
-                return Err(format!("no Media Foundation {} decoder is installed", codec.name()));
+                return Err(format!(
+                    "no Media Foundation {} decoder is installed",
+                    codec.name()
+                ));
             }
             let mut last_error = String::new();
             for (name, transform) in candidates {
                 let attrs = transform.GetAttributes().ok();
-                let aware = attrs.as_ref().is_some_and(|a| a.GetUINT32(&MF_SA_D3D11_AWARE).unwrap_or(0) != 0);
+                let aware = attrs
+                    .as_ref()
+                    .is_some_and(|a| a.GetUINT32(&MF_SA_D3D11_AWARE).unwrap_or(0) != 0);
                 if let Some(a) = attrs.as_ref() {
                     let _ = a.SetUINT32(&MF_LOW_LATENCY, 1);
                 }
                 if aware
-                    && let Err(e) = transform.ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, manager.as_raw() as usize)
+                    && let Err(e) = transform
+                        .ProcessMessage(MFT_MESSAGE_SET_D3D_MANAGER, manager.as_raw() as usize)
                 {
                     last_error = format!("{name}: D3D manager: {e}");
                     continue;
                 }
                 let input = media_type(MFMediaType_Video, subtype(codec))?;
-                input.SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height)).map_err(hr("frame size"))?;
-                input.SetUINT64(&MF_MT_FRAME_RATE, pack(fps.max(1), 1)).map_err(hr("frame rate"))?;
-                input.SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32).map_err(hr("interlace"))?;
+                input
+                    .SetUINT64(&MF_MT_FRAME_SIZE, pack(width, height))
+                    .map_err(hr("frame size"))?;
+                input
+                    .SetUINT64(&MF_MT_FRAME_RATE, pack(fps.max(1), 1))
+                    .map_err(hr("frame rate"))?;
+                input
+                    .SetUINT32(&MF_MT_INTERLACE_MODE, MFVideoInterlace_Progressive.0 as u32)
+                    .map_err(hr("interlace"))?;
                 if let Err(e) = transform.SetInputType(0, &input, 0) {
                     last_error = format!("{name}: input type: {e}");
                     continue;
@@ -466,10 +543,14 @@ impl Decoder {
                 let fence: ID3D11Fence = {
                     let device5: ID3D11Device5 = device.cast().map_err(hr("ID3D11Device5"))?;
                     let mut fence: Option<ID3D11Fence> = None;
-                    device5.CreateFence(0, D3D11_FENCE_FLAG_SHARED, &mut fence).map_err(hr("CreateFence"))?;
+                    device5
+                        .CreateFence(0, D3D11_FENCE_FLAG_SHARED, &mut fence)
+                        .map_err(hr("CreateFence"))?;
                     fence.ok_or("CreateFence returned nothing")?
                 };
-                let fence_handle = fence.CreateSharedHandle(None, GENERIC_ALL.0, None).map_err(hr("fence handle"))?;
+                let fence_handle = fence
+                    .CreateSharedHandle(None, GENERIC_ALL.0, None)
+                    .map_err(hr("fence handle"))?;
                 let mut options = D3D11_FEATURE_DATA_D3D11_OPTIONS4::default();
                 let shared_nv12 = device
                     .CheckFeatureSupport(
@@ -510,8 +591,12 @@ impl Decoder {
                     last_error = format!("{}: {e}", decoder.name);
                     continue;
                 }
-                let _ = decoder.transform.ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
-                let _ = decoder.transform.ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, 0);
+                let _ = decoder
+                    .transform
+                    .ProcessMessage(MFT_MESSAGE_NOTIFY_BEGIN_STREAMING, 0);
+                let _ = decoder
+                    .transform
+                    .ProcessMessage(MFT_MESSAGE_NOTIFY_START_OF_STREAM, 0);
                 return Ok(decoder);
             }
             Err(format!("no usable {} decoder: {last_error}", codec.name()))
@@ -524,19 +609,29 @@ impl Decoder {
         unsafe {
             let mut index = 0;
             loop {
-                let t = self.transform.GetOutputAvailableType(0, index).map_err(hr("no NV12 output type"))?;
+                let t = self
+                    .transform
+                    .GetOutputAvailableType(0, index)
+                    .map_err(hr("no NV12 output type"))?;
                 if t.GetGUID(&MF_MT_SUBTYPE).ok() == Some(MFVideoFormat_NV12) {
-                    self.transform.SetOutputType(0, &t, 0).map_err(hr("SetOutputType"))?;
+                    self.transform
+                        .SetOutputType(0, &t, 0)
+                        .map_err(hr("SetOutputType"))?;
                     if let Ok(size) = t.GetUINT64(&MF_MT_FRAME_SIZE) {
                         self.width = (size >> 32) as u32;
                         self.height = size as u32;
                     }
-                    self.stride = t.GetUINT32(&MF_MT_DEFAULT_STRIDE).map_or(self.width, |s| s as i32 as u32);
+                    self.stride = t
+                        .GetUINT32(&MF_MT_DEFAULT_STRIDE)
+                        .map_or(self.width, |s| s as i32 as u32);
                     break;
                 }
                 index += 1;
             }
-            let info = self.transform.GetOutputStreamInfo(0).map_err(hr("GetOutputStreamInfo"))?;
+            let info = self
+                .transform
+                .GetOutputStreamInfo(0)
+                .map_err(hr("GetOutputStreamInfo"))?;
             self.provides_samples = info.dwFlags & MFT_OUTPUT_STREAM_PROVIDES_SAMPLES.0 as u32 != 0;
             self.output_bytes = info.cbSize;
         }
@@ -560,22 +655,32 @@ impl Decoder {
             MipLevels: 1,
             ArraySize: 1,
             Format: DXGI_FORMAT_NV12,
-            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+            SampleDesc: DXGI_SAMPLE_DESC {
+                Count: 1,
+                Quality: 0,
+            },
             Usage: D3D11_USAGE_DEFAULT,
             BindFlags: D3D11_BIND_SHADER_RESOURCE.0 as u32,
             CPUAccessFlags: 0,
-            MiscFlags: (D3D11_RESOURCE_MISC_SHARED_NTHANDLE.0 | D3D11_RESOURCE_MISC_SHARED.0) as u32,
+            MiscFlags: (D3D11_RESOURCE_MISC_SHARED_NTHANDLE.0 | D3D11_RESOURCE_MISC_SHARED.0)
+                as u32,
         };
         let mut slots = Vec::with_capacity(RING);
         for _ in 0..RING {
             // SAFETY: texture creation with a valid descriptor, then an NT handle for D3D12.
             unsafe {
                 let mut texture = None;
-                self.device.CreateTexture2D(&desc, None, Some(&mut texture)).map_err(hr("shared NV12 texture"))?;
+                self.device
+                    .CreateTexture2D(&desc, None, Some(&mut texture))
+                    .map_err(hr("shared NV12 texture"))?;
                 let texture: ID3D11Texture2D = texture.ok_or("no texture")?;
                 let resource: IDXGIResource1 = texture.cast().map_err(hr("IDXGIResource1"))?;
                 let handle = resource
-                    .CreateSharedHandle(None, DXGI_SHARED_RESOURCE_READ.0 | DXGI_SHARED_RESOURCE_WRITE.0, None)
+                    .CreateSharedHandle(
+                        None,
+                        DXGI_SHARED_RESOURCE_READ.0 | DXGI_SHARED_RESOURCE_WRITE.0,
+                        None,
+                    )
                     .map_err(hr("CreateSharedHandle"))?;
                 slots.push(Slot { texture, handle });
             }
@@ -607,14 +712,19 @@ impl Decoder {
         // buffer pointer is valid for `au.len()` bytes until Unlock.
         unsafe {
             let sample = MFCreateSample().map_err(hr("MFCreateSample"))?;
-            let buffer = MFCreateMemoryBuffer(au.len() as u32).map_err(hr("MFCreateMemoryBuffer"))?;
+            let buffer =
+                MFCreateMemoryBuffer(au.len() as u32).map_err(hr("MFCreateMemoryBuffer"))?;
             let mut ptr = null_mut();
             buffer.Lock(&mut ptr, None, None).map_err(hr("Lock"))?;
             std::ptr::copy_nonoverlapping(au.as_ptr(), ptr, au.len());
             buffer.Unlock().map_err(hr("Unlock"))?;
-            buffer.SetCurrentLength(au.len() as u32).map_err(hr("SetCurrentLength"))?;
+            buffer
+                .SetCurrentLength(au.len() as u32)
+                .map_err(hr("SetCurrentLength"))?;
             sample.AddBuffer(&buffer).map_err(hr("AddBuffer"))?;
-            sample.SetSampleTime(i64::from(meta.index) * 10_000).map_err(hr("SetSampleTime"))?;
+            sample
+                .SetSampleTime(i64::from(meta.index) * 10_000)
+                .map_err(hr("SetSampleTime"))?;
             let mut produced = 0;
             for _ in 0..4 {
                 match self.transform.ProcessInput(0, &sample, 0) {
@@ -637,8 +747,10 @@ impl Decoder {
                 // SAFETY: MF allocation calls.
                 unsafe {
                     let s = MFCreateSample().map_err(hr("MFCreateSample"))?;
-                    let b = MFCreateMemoryBuffer(self.output_bytes.max(self.width * self.height * 3 / 2))
-                        .map_err(hr("MFCreateMemoryBuffer"))?;
+                    let b = MFCreateMemoryBuffer(
+                        self.output_bytes.max(self.width * self.height * 3 / 2),
+                    )
+                    .map_err(hr("MFCreateMemoryBuffer"))?;
                     s.AddBuffer(&b).map_err(hr("AddBuffer"))?;
                     Some(s)
                 }
@@ -676,53 +788,112 @@ impl Decoder {
             let buffer = sample.GetBufferByIndex(0).map_err(hr("GetBufferByIndex"))?;
             if let Ok(dxgi) = buffer.cast::<IMFDXGIBuffer>() {
                 let mut texture: Option<ID3D11Texture2D> = None;
-                dxgi.GetResource(&ID3D11Texture2D::IID, &mut texture as *mut _ as *mut *mut c_void)
-                    .map_err(hr("IMFDXGIBuffer::GetResource"))?;
+                dxgi.GetResource(
+                    &ID3D11Texture2D::IID,
+                    &mut texture as *mut _ as *mut *mut c_void,
+                )
+                .map_err(hr("IMFDXGIBuffer::GetResource"))?;
                 let texture = texture.ok_or("decoder sample has no texture")?;
-                let subresource = dxgi.GetSubresourceIndex().map_err(hr("GetSubresourceIndex"))?;
-                let region = D3D11_BOX { left: 0, top: 0, front: 0, right: width, bottom: height, back: 1 };
+                let subresource = dxgi
+                    .GetSubresourceIndex()
+                    .map_err(hr("GetSubresourceIndex"))?;
+                let region = D3D11_BOX {
+                    left: 0,
+                    top: 0,
+                    front: 0,
+                    right: width,
+                    bottom: height,
+                    back: 1,
+                };
                 if self.shared_nv12 {
                     self.ensure_ring(width, height)?;
                     let slot = self.mailbox.free_slot(self.last_slot);
                     self.last_slot = slot;
-                    self.context.CopySubresourceRegion(&self.slots[slot].texture, 0, 0, 0, 0, &texture, subresource, Some(&region));
+                    self.context.CopySubresourceRegion(
+                        &self.slots[slot].texture,
+                        0,
+                        0,
+                        0,
+                        0,
+                        &texture,
+                        subresource,
+                        Some(&region),
+                    );
                     self.fence_value += 1;
-                    self.context.Signal(&self.fence, self.fence_value).map_err(hr("Signal"))?;
+                    self.context
+                        .Signal(&self.fence, self.fence_value)
+                        .map_err(hr("Signal"))?;
                     self.context.Flush();
                     if let Some(watch) = self.watch.as_ref() {
                         let _ = watch.send(self.fence_value);
                     }
-                    Picture::Shared { generation: self.generation, slot, fence_value: self.fence_value }
+                    Picture::Shared {
+                        generation: self.generation,
+                        slot,
+                        fence_value: self.fence_value,
+                    }
                 } else {
                     let staging = self.staging_texture(width, height)?;
-                    self.context.CopySubresourceRegion(&staging, 0, 0, 0, 0, &texture, subresource, Some(&region));
+                    self.context.CopySubresourceRegion(
+                        &staging,
+                        0,
+                        0,
+                        0,
+                        0,
+                        &texture,
+                        subresource,
+                        Some(&region),
+                    );
                     let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
-                    self.context.Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped)).map_err(hr("Map"))?;
+                    self.context
+                        .Map(&staging, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+                        .map_err(hr("Map"))?;
                     let pitch = mapped.RowPitch;
                     let len = (pitch * height * 3 / 2) as usize;
                     let nv12 = std::slice::from_raw_parts(mapped.pData as *const u8, len).to_vec();
                     self.context.Unmap(&staging, 0);
-                    Picture::Cpu { width, height, pitch, nv12 }
+                    Picture::Cpu {
+                        width,
+                        height,
+                        pitch,
+                        nv12,
+                    }
                 }
             } else {
-                let contiguous = sample.ConvertToContiguousBuffer().map_err(hr("ConvertToContiguousBuffer"))?;
+                let contiguous = sample
+                    .ConvertToContiguousBuffer()
+                    .map_err(hr("ConvertToContiguousBuffer"))?;
                 let mut ptr = null_mut();
                 let mut len = 0u32;
-                contiguous.Lock(&mut ptr, None, Some(&mut len)).map_err(hr("Lock"))?;
+                contiguous
+                    .Lock(&mut ptr, None, Some(&mut len))
+                    .map_err(hr("Lock"))?;
                 let nv12 = std::slice::from_raw_parts(ptr, len as usize).to_vec();
                 let _ = contiguous.Unlock();
                 let pitch = self.stride.max(width);
                 if nv12.len() < (pitch * height * 3 / 2) as usize {
                     return Err("short software NV12 buffer".into());
                 }
-                Picture::Cpu { width, height, pitch, nv12 }
+                Picture::Cpu {
+                    width,
+                    height,
+                    pitch,
+                    nv12,
+                }
             }
         };
         let fence_value = match &picture {
             Picture::Shared { fence_value, .. } => *fence_value,
             Picture::Cpu { .. } => 0,
         };
-        self.mailbox.publish(Decoded { picture, meta: FrameMeta { decoded: Instant::now(), fence_value, ..meta } });
+        self.mailbox.publish(Decoded {
+            picture,
+            meta: FrameMeta {
+                decoded: Instant::now(),
+                fence_value,
+                ..meta
+            },
+        });
         Ok(())
     }
 
@@ -739,7 +910,10 @@ impl Decoder {
             MipLevels: 1,
             ArraySize: 1,
             Format: DXGI_FORMAT_NV12,
-            SampleDesc: DXGI_SAMPLE_DESC { Count: 1, Quality: 0 },
+            SampleDesc: DXGI_SAMPLE_DESC {
+                Count: 1,
+                Quality: 0,
+            },
             Usage: D3D11_USAGE_STAGING,
             BindFlags: 0,
             CPUAccessFlags: D3D11_CPU_ACCESS_READ.0 as u32,
@@ -747,7 +921,8 @@ impl Decoder {
         };
         let mut texture = None;
         // SAFETY: texture creation with a valid descriptor.
-        unsafe { self.device.CreateTexture2D(&desc, None, Some(&mut texture)) }.map_err(hr("staging texture"))?;
+        unsafe { self.device.CreateTexture2D(&desc, None, Some(&mut texture)) }
+            .map_err(hr("staging texture"))?;
         let texture: ID3D11Texture2D = texture.ok_or("no staging texture")?;
         self.staging = Some((texture.clone(), width, height));
         Ok(texture)
@@ -789,19 +964,27 @@ impl ImportedRing {
         // SAFETY: the handles are valid NT handles from CreateSharedHandle (the decoder keeps them
         // open until the next announce); D3D12 takes its own references.
         unsafe {
-            let hal = device.as_hal::<wgpu::hal::api::Dx12>().ok_or("the wgpu device is not DX12")?;
+            let hal = device
+                .as_hal::<wgpu::hal::api::Dx12>()
+                .ok_or("the wgpu device is not DX12")?;
             let raw: &ID3D12Device = hal.raw_device();
             let mut fence: Option<ID3D12Fence> = None;
-            raw.OpenSharedHandle(set.fence.0, &mut fence).map_err(hr("OpenSharedHandle(fence)"))?;
+            raw.OpenSharedHandle(set.fence.0, &mut fence)
+                .map_err(hr("OpenSharedHandle(fence)"))?;
             let fence = fence.ok_or("no fence")?;
             let mut resources = Vec::new();
             for handle in &set.textures {
                 let mut resource: Option<ID3D12Resource> = None;
-                raw.OpenSharedHandle(handle.0, &mut resource).map_err(hr("OpenSharedHandle(texture)"))?;
+                raw.OpenSharedHandle(handle.0, &mut resource)
+                    .map_err(hr("OpenSharedHandle(texture)"))?;
                 resources.push(resource.ok_or("no resource")?);
             }
             drop(hal);
-            let size = wgpu::Extent3d { width: set.width, height: set.height, depth_or_array_layers: 1 };
+            let size = wgpu::Extent3d {
+                width: set.width,
+                height: set.height,
+                depth_or_array_layers: 1,
+            };
             let textures = resources
                 .into_iter()
                 .map(|resource| {
@@ -831,7 +1014,13 @@ impl ImportedRing {
                     )
                 })
                 .collect();
-            Ok(Self { generation: set.generation, width: set.width, height: set.height, textures, fence })
+            Ok(Self {
+                generation: set.generation,
+                width: set.width,
+                height: set.height,
+                textures,
+                fence,
+            })
         }
     }
 
@@ -839,8 +1028,12 @@ impl ImportedRing {
     pub fn gpu_wait(&self, queue: &wgpu::Queue, value: u64) -> Result<(), String> {
         // SAFETY: the queue is borrowed only for the Wait call; the fence outlives it.
         unsafe {
-            let hal = queue.as_hal::<wgpu::hal::api::Dx12>().ok_or("the wgpu queue is not DX12")?;
-            hal.as_raw().Wait(&self.fence, value).map_err(hr("ID3D12CommandQueue::Wait"))
+            let hal = queue
+                .as_hal::<wgpu::hal::api::Dx12>()
+                .ok_or("the wgpu queue is not DX12")?;
+            hal.as_raw()
+                .Wait(&self.fence, value)
+                .map_err(hr("ID3D12CommandQueue::Wait"))
         }
     }
 
@@ -873,8 +1066,12 @@ impl GpuClock {
         };
         // SAFETY: fence creation on the live wgpu D3D12 device.
         let fence: ID3D12Fence = unsafe {
-            let hal = device.as_hal::<wgpu::hal::api::Dx12>().ok_or("the wgpu device is not DX12")?;
-            hal.raw_device().CreateFence(0, D3D12_FENCE_FLAG_NONE).map_err(hr("CreateFence"))?
+            let hal = device
+                .as_hal::<wgpu::hal::api::Dx12>()
+                .ok_or("the wgpu device is not DX12")?;
+            hal.raw_device()
+                .CreateFence(0, D3D12_FENCE_FLAG_NONE)
+                .map_err(hr("CreateFence"))?
         };
         let (tx, rx) = std::sync::mpsc::channel::<(u64, GpuDone)>();
         let watched = FenceRef(fence.clone());
@@ -883,11 +1080,15 @@ impl GpuClock {
             .spawn(move || {
                 let watched = watched;
                 // SAFETY: an auto-reset event owned by this thread.
-                let Ok(event) = (unsafe { CreateEventW(None, false, false, None) }) else { return };
+                let Ok(event) = (unsafe { CreateEventW(None, false, false, None) }) else {
+                    return;
+                };
                 for (value, done) in rx {
                     // SAFETY: waiting on our fence with our event.
                     unsafe {
-                        if watched.0.GetCompletedValue() < value && watched.0.SetEventOnCompletion(value, event).is_ok() {
+                        if watched.0.GetCompletedValue() < value
+                            && watched.0.SetEventOnCompletion(value, event).is_ok()
+                        {
                             WaitForSingleObject(event, 2000);
                         }
                     }
@@ -899,7 +1100,11 @@ impl GpuClock {
                 }
             })
             .map_err(|e| e.to_string())?;
-        Ok(Self { fence: FenceRef(fence), value: 0, tx })
+        Ok(Self {
+            fence: FenceRef(fence),
+            value: 0,
+            tx,
+        })
     }
 
     /// Signal after the last `queue.submit`; `done` runs once the GPU passed that point.

@@ -15,34 +15,47 @@ trailer << /Root 1 0 R >>
 %%EOF";
 
 fn harness() -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("pages.pdf", None, PAGES.to_vec()).expect("opens");
-        app.set_option("left", "closed").unwrap();
-        app.set_option("panel", "bookmarks").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("pages.pdf", None, PAGES.to_vec())
+                .expect("opens");
+            app.set_option("left", "closed").unwrap();
+            app.set_option("panel", "bookmarks").unwrap();
+            app
+        });
     h.run_steps(6);
     h
 }
 
 fn outline(h: &Harness<'static, PdfCraftApp>) -> Vec<(String, Option<usize>, usize)> {
     let id = h.state().views[0].id;
-    fn flat(items: &[pdfcraft_render::OutlineItem], depth: usize, out: &mut Vec<(String, Option<usize>, usize)>) {
+    fn flat(
+        items: &[pdfcraft_render::OutlineItem],
+        depth: usize,
+        out: &mut Vec<(String, Option<usize>, usize)>,
+    ) {
         for i in items {
             out.push((i.title.clone(), i.page, depth));
             flat(&i.children, depth + 1, out);
         }
     }
     let mut out = Vec::new();
-    flat(&h.state().session.get(id).unwrap().info.outline, 0, &mut out);
+    flat(
+        &h.state().session.get(id).unwrap().info.outline,
+        0,
+        &mut out,
+    );
     out
 }
 
 /// The inline rename editor (the text field, not its inner text run).
 fn field<'a>(h: &'a Harness<'static, PdfCraftApp>, value: &'a str) -> egui_kittest::Node<'a> {
-    h.query_all_by_value(value).next().unwrap_or_else(|| panic!("no editor showing {value:?}"))
+    h.query_all_by_value(value)
+        .next()
+        .unwrap_or_else(|| panic!("no editor showing {value:?}"))
 }
 
 /// Add a bookmark with ⌘B at the current page and name it by typing.
@@ -73,10 +86,16 @@ fn new_rename_reorder_indent_delete_and_undo() {
     h.state_mut().set_option("page", "3").unwrap();
     h.run_steps(3);
     add(&mut h, "Results");
-    assert_eq!(outline(&h), [("Intro".into(), Some(0), 0), ("Results".into(), Some(2), 0)]);
+    assert_eq!(
+        outline(&h),
+        [("Intro".into(), Some(0), 0), ("Results".into(), Some(2), 0)]
+    );
 
     menu(&mut h, "Results", "Indent");
-    assert_eq!(outline(&h), [("Intro".into(), Some(0), 0), ("Results".into(), Some(2), 1)]);
+    assert_eq!(
+        outline(&h),
+        [("Intro".into(), Some(0), 0), ("Results".into(), Some(2), 1)]
+    );
     menu(&mut h, "Results", "Outdent");
     menu(&mut h, "Results", "Move up");
     assert_eq!(outline(&h)[0].0, "Results");
@@ -100,7 +119,10 @@ fn new_rename_reorder_indent_delete_and_undo() {
 
 /// The side panel's width as egui keeps it from one frame to the next.
 fn panel_width(h: &Harness<'static, PdfCraftApp>) -> f32 {
-    h.ctx.data(|data| data.get_temp::<egui::Rect>(egui::Id::new("pdfcraft-inspector-body"))).expect("the inspector body is shown").width()
+    h.ctx
+        .data(|data| data.get_temp::<egui::Rect>(egui::Id::new("pdfcraft-inspector-body")))
+        .expect("the inspector body is shown")
+        .width()
 }
 
 #[test]
@@ -144,19 +166,39 @@ fn number_pages_dialog_labels_the_selected_pages() {
     h.get_by_label("OK").click();
     h.run_steps(3);
     let id = h.state().views[0].id;
-    let labels: Vec<String> = h.state().session.get(id).unwrap().info.pages.iter().map(|p| p.label.clone()).collect();
+    let labels: Vec<String> = h
+        .state()
+        .session
+        .get(id)
+        .unwrap()
+        .info
+        .pages
+        .iter()
+        .map(|p| p.label.clone())
+        .collect();
     assert_eq!(labels, ["i", "ii", "3"]);
-    assert_eq!(h.state().session.get(id).unwrap().can_undo(), Some("Number pages"));
+    assert_eq!(
+        h.state().session.get(id).unwrap().can_undo(),
+        Some("Number pages")
+    );
 }
 
 #[test]
 fn search_finds_collapsed_bookmarks_and_keeps_original_paths() {
     use pdfcraft_engine::Edit;
     let mut h = harness();
-    for (parent, index, title, page) in
-        [(vec![], 0, "Unrelated", 0), (vec![], 1, "Reports", 0), (vec![1], 0, "Other chapter", 1), (vec![1], 1, "Résumé results", 2)]
-    {
-        h.state_mut().apply_edit(Edit::AddBookmark { parent, index, title: title.into(), page });
+    for (parent, index, title, page) in [
+        (vec![], 0, "Unrelated", 0),
+        (vec![], 1, "Reports", 0),
+        (vec![1], 0, "Other chapter", 1),
+        (vec![1], 1, "Résumé results", 2),
+    ] {
+        h.state_mut().apply_edit(Edit::AddBookmark {
+            parent,
+            index,
+            title: title.into(),
+            page,
+        });
     }
     h.run_steps(3);
     h.get_by_label("Bookmark options").click();
@@ -179,21 +221,34 @@ fn search_finds_collapsed_bookmarks_and_keeps_original_paths() {
     assert_eq!(h.state().views[0].current, 2);
     assert!(h.query_by_label("Unrelated").is_none());
     assert!(h.query_by_label("Other chapter").is_none());
-    assert_eq!(h.state().session.save_full_bytes(id).unwrap(), before, "search doesn't edit the PDF");
+    assert_eq!(
+        h.state().session.save_full_bytes(id).unwrap(),
+        before,
+        "search doesn't edit the PDF"
+    );
     if let Ok(dir) = std::env::var("PDFCRAFT_BOOKMARK_SHOTS") {
-        h.render().unwrap().save(std::path::Path::new(&dir).join("filtered-bookmarks.png")).unwrap();
+        h.render()
+            .unwrap()
+            .save(std::path::Path::new(&dir).join("filtered-bookmarks.png"))
+            .unwrap();
     }
     menu(&mut h, "Résumé results", "Delete");
     assert_eq!(outline(&h).len(), 3);
     assert!(outline(&h).iter().any(|b| b.0 == "Other chapter"));
     h.get_by_label("No matches.");
     add(&mut h, "New section");
-    assert!(outline(&h).iter().any(|b| b.0 == "New section"), "new bookmarks remain nameable while searching");
+    assert!(
+        outline(&h).iter().any(|b| b.0 == "New section"),
+        "new bookmarks remain nameable while searching"
+    );
     h.get_by_label("No matches.");
     h.get_by_label("Clear").click();
     h.run_steps(3);
     h.get_by_label("Unrelated");
-    assert!(h.query_by_label("Other chapter").is_none(), "search did not change saved expansion state");
+    assert!(
+        h.query_by_label("Other chapter").is_none(),
+        "search did not change saved expansion state"
+    );
 }
 
 #[test]
@@ -205,7 +260,9 @@ fn bookmark_search_is_per_document() {
     h.get_by_label("Search").type_text("not found");
     h.run_steps(3);
     h.get_by_label("No matches.");
-    h.state_mut().open_bytes("second.pdf", None, PAGES.to_vec()).unwrap();
+    h.state_mut()
+        .open_bytes("second.pdf", None, PAGES.to_vec())
+        .unwrap();
     h.run_steps(3);
     add(&mut h, "Second document");
     h.get_by_label("Second document");
@@ -230,20 +287,42 @@ fn new_bookmarks_from_structure_nest_the_tagged_headings() {
 trailer << /Root 1 0 R >>
 %%EOF";
     let mut h = harness();
-    h.state_mut().open_bytes("tagged.pdf", None, TAGGED.to_vec()).unwrap();
+    h.state_mut()
+        .open_bytes("tagged.pdf", None, TAGGED.to_vec())
+        .unwrap();
     h.run_steps(3);
     h.get_by_label("Bookmark options").click();
     h.run_steps(2);
     h.get_by_label("New bookmarks from structure").click();
     h.run_steps(3);
-    let id = h.state().active.and_then(|i| h.state().views.get(i)).unwrap().id;
-    let titles: Vec<String> = h.state().session.get(id).unwrap().info.outline.iter().map(|o| o.title.clone()).collect();
+    let id = h
+        .state()
+        .active
+        .and_then(|i| h.state().views.get(i))
+        .unwrap()
+        .id;
+    let titles: Vec<String> = h
+        .state()
+        .session
+        .get(id)
+        .unwrap()
+        .info
+        .outline
+        .iter()
+        .map(|o| o.title.clone())
+        .collect();
     assert_eq!(titles, ["Untitled"]);
     h.get_by_label("Overview");
     h.get_by_label("Method");
-    assert_eq!(h.state().session.get(id).unwrap().can_undo(), Some("New bookmarks from structure"));
+    assert_eq!(
+        h.state().session.get(id).unwrap().can_undo(),
+        Some("New bookmarks from structure")
+    );
     if let Ok(dir) = std::env::var("PDFCRAFT_BOOKMARK_SHOTS") {
-        h.render().unwrap().save(std::path::Path::new(&dir).join("bookmarks-from-structure.png")).unwrap();
+        h.render()
+            .unwrap()
+            .save(std::path::Path::new(&dir).join("bookmarks-from-structure.png"))
+            .unwrap();
     }
 }
 
@@ -251,8 +330,17 @@ trailer << /Root 1 0 R >>
 fn expanding_and_collapsing_all_bookmarks() {
     use pdfcraft_engine::Edit;
     let mut h = harness();
-    for (parent, title) in [(vec![], "Part"), (vec![0], "Chapter"), (vec![0, 0], "Section")] {
-        h.state_mut().apply_edit(Edit::AddBookmark { parent, index: 0, title: title.into(), page: 0 });
+    for (parent, title) in [
+        (vec![], "Part"),
+        (vec![0], "Chapter"),
+        (vec![0, 0], "Section"),
+    ] {
+        h.state_mut().apply_edit(Edit::AddBookmark {
+            parent,
+            index: 0,
+            title: title.into(),
+            page: 0,
+        });
     }
     h.run_steps(3);
     let shown = |h: &Harness<'static, PdfCraftApp>, t: &str| h.query_by_label(t).is_some();

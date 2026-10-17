@@ -155,7 +155,12 @@ impl GraphicsProcessor {
             }
 
             let mut indirect_matrices = [[0i32; 4]; 6];
-            for (m, rows) in indirect_matrices.as_chunks_mut::<2>().0.iter_mut().enumerate() {
+            for (m, rows) in indirect_matrices
+                .as_chunks_mut::<2>()
+                .0
+                .iter_mut()
+                .enumerate()
+            {
                 let mtx = &self.cur_indirect_matrices[m];
                 let exp = mtx.scale_exponent();
                 let r0 = mtx.row0();
@@ -205,7 +210,11 @@ impl GraphicsProcessor {
                     .min(8),
                 ztex_bias: TevZtex1::from_raw(self.bp_regs[BP_TEV_ZTEX1]).bias(),
                 ztex_type: ztex2.tex_type(),
-                ztex_op: if self.cur_pe_control.early_ztest() { 0 } else { ztex2.op() },
+                ztex_op: if self.cur_pe_control.early_ztest() {
+                    0
+                } else {
+                    ztex2.op()
+                },
             }
         });
         self.frame_state_dirty = false;
@@ -457,7 +466,10 @@ impl GraphicsProcessor {
         } else {
             let pos_index = read_index(cur, vf.pos_attr);
             let pos_addr = vf.pos_base + pos_index * vf.pos_stride;
-            decode_position(fetch(ram, pos_addr, vf.pos_data_size, &mut scratch), &vf.vat_a)
+            decode_position(
+                fetch(ram, pos_addr, vf.pos_data_size, &mut scratch),
+                &vf.vat_a,
+            )
         };
 
         // Read normal
@@ -468,11 +480,18 @@ impl GraphicsProcessor {
         } else if vf.nrm_attr != AttributeType::None {
             let nrm_index = read_index(cur, vf.nrm_attr);
             if vf.vat_a.nrm_index3() && vf.vat_a.nrm_cnt() == regs::NrmCount::Nbt {
-                let idx_size = if vf.nrm_attr == AttributeType::Index8 { 1 } else { 2 };
+                let idx_size = if vf.nrm_attr == AttributeType::Index8 {
+                    1
+                } else {
+                    2
+                };
                 cur.set_position(cur.position() + (2 * idx_size) as u64);
             }
             let nrm_addr = vf.nrm_base_addr + nrm_index * vf.nrm_stride;
-            decode_normal(fetch(ram, nrm_addr, vf.nrm_data_size, &mut scratch), &vf.vat_a)
+            decode_normal(
+                fetch(ram, nrm_addr, vf.nrm_data_size, &mut scratch),
+                &vf.vat_a,
+            )
         } else {
             [0.0, 0.0, 1.0]
         };
@@ -553,7 +572,13 @@ impl GraphicsProcessor {
         let pos_view = self.xf_transform_3x4(pos_mtx_base, position);
 
         let mut texcoords: [[f32; 3]; 8] = [[0.0, 0.0, 1.0]; 8];
-        self.apply_all_texgens(position, normal, &raw_texcoords, &tex_mtx_idx, &mut texcoords);
+        self.apply_all_texgens(
+            position,
+            normal,
+            &raw_texcoords,
+            &tex_mtx_idx,
+            &mut texcoords,
+        );
 
         DrawVertex {
             position,
@@ -666,20 +691,50 @@ fn record_draw_arrays(
             );
         };
 
-    scan(offset, vf.pos_attr, vf.pos_base, vf.pos_stride, vf.pos_data_size);
+    scan(
+        offset,
+        vf.pos_attr,
+        vf.pos_base,
+        vf.pos_stride,
+        vf.pos_data_size,
+    );
     offset += attr_stream_size(vf.pos_attr, vf.pos_data_size);
 
-    scan(offset, vf.nrm_attr, vf.nrm_base_addr, vf.nrm_stride, vf.nrm_data_size);
+    scan(
+        offset,
+        vf.nrm_attr,
+        vf.nrm_base_addr,
+        vf.nrm_stride,
+        vf.nrm_data_size,
+    );
     offset += vf.vat_a.nrm_stream_size(vf.nrm_attr);
 
-    scan(offset, vf.clr0_attr, vf.clr0_base, vf.clr0_stride, vf.clr0_data_size);
+    scan(
+        offset,
+        vf.clr0_attr,
+        vf.clr0_base,
+        vf.clr0_stride,
+        vf.clr0_data_size,
+    );
     offset += attr_stream_size(vf.clr0_attr, vf.clr0_data_size);
 
-    scan(offset, vf.clr1_attr, vf.clr1_base, vf.clr1_stride, vf.clr1_data_size);
+    scan(
+        offset,
+        vf.clr1_attr,
+        vf.clr1_base,
+        vf.clr1_stride,
+        vf.clr1_data_size,
+    );
     offset += attr_stream_size(vf.clr1_attr, vf.clr1_data_size);
 
     for tc in 0..8 {
-        scan(offset, vf.tex_attrs[tc], vf.tex_bases[tc], vf.tex_strides[tc], vf.tex_data_sizes[tc]);
+        scan(
+            offset,
+            vf.tex_attrs[tc],
+            vf.tex_bases[tc],
+            vf.tex_strides[tc],
+            vf.tex_data_sizes[tc],
+        );
         offset += attr_stream_size(vf.tex_attrs[tc], vf.tex_data_sizes[tc]);
     }
 }
@@ -728,7 +783,12 @@ fn scan_indexed_component(
 
     if let Some(max) = max_index {
         let len = stride * max + data_size;
-        rec.use_memory(ram, base as u32, len, super::recorder::MemoryUpdateType::VertexStream);
+        rec.use_memory(
+            ram,
+            base as u32,
+            len,
+            super::recorder::MemoryUpdateType::VertexStream,
+        );
     }
 }
 
@@ -738,12 +798,12 @@ fn read_index(cur: &mut Cursor<&[u8]>, attr: AttributeType) -> usize {
             let mut buf = [0u8; 1];
             cur.read_exact(&mut buf).unwrap();
             buf[0] as usize
-        },
+        }
         AttributeType::Index16 => {
             let mut buf = [0u8; 2];
             cur.read_exact(&mut buf).unwrap();
             u16::from_be_bytes(buf) as usize
-        },
+        }
         _ => 0,
     }
 }
@@ -789,24 +849,24 @@ fn decode_components<const N: usize>(
             for i in 0..num {
                 result[i] = data[i] as f32 * recip;
             }
-        },
+        }
         ComponentFormat::S8 => {
             for i in 0..num {
                 result[i] = (data[i] as i8) as f32 * recip;
             }
-        },
+        }
         ComponentFormat::U16 => {
             for (i, component) in result[..num].iter_mut().enumerate() {
                 let off = i * 2;
                 *component = u16::from_be_bytes([data[off], data[off + 1]]) as f32 * recip;
             }
-        },
+        }
         ComponentFormat::S16 => {
             for (i, component) in result[..num].iter_mut().enumerate() {
                 let off = i * 2;
                 *component = i16::from_be_bytes([data[off], data[off + 1]]) as f32 * recip;
             }
-        },
+        }
         ComponentFormat::F32 => {
             for (i, component) in result[..num].iter_mut().enumerate() {
                 let off = i * 4;
@@ -817,7 +877,7 @@ fn decode_components<const N: usize>(
                     data[off + 3],
                 ]));
             }
-        },
+        }
     }
 
     result
@@ -832,36 +892,54 @@ fn decode_color(data: &[u8], fmt: regs::ColorFormat, cnt: regs::ColorCount) -> [
             let g = ((raw >> 5) & 0x3F) as f32 / 63.0;
             let b = (raw & 0x1F) as f32 / 31.0;
             [r, g, b, 1.0]
-        },
-        regs::ColorFormat::Rgb8 => {
-            [data[0] as f32 / 255.0, data[1] as f32 / 255.0, data[2] as f32 / 255.0, 1.0]
-        },
-        regs::ColorFormat::Rgbx8 => {
-            [data[0] as f32 / 255.0, data[1] as f32 / 255.0, data[2] as f32 / 255.0, 1.0]
-        },
+        }
+        regs::ColorFormat::Rgb8 => [
+            data[0] as f32 / 255.0,
+            data[1] as f32 / 255.0,
+            data[2] as f32 / 255.0,
+            1.0,
+        ],
+        regs::ColorFormat::Rgbx8 => [
+            data[0] as f32 / 255.0,
+            data[1] as f32 / 255.0,
+            data[2] as f32 / 255.0,
+            1.0,
+        ],
         regs::ColorFormat::Rgba4 => {
             let raw = u16::from_be_bytes([data[0], data[1]]);
             let r = ((raw >> 12) & 0xF) as f32 / 15.0;
             let g = ((raw >> 8) & 0xF) as f32 / 15.0;
             let b = ((raw >> 4) & 0xF) as f32 / 15.0;
-            let a = if has_alpha { (raw & 0xF) as f32 / 15.0 } else { 1.0 };
+            let a = if has_alpha {
+                (raw & 0xF) as f32 / 15.0
+            } else {
+                1.0
+            };
             [r, g, b, a]
-        },
+        }
         regs::ColorFormat::Rgba6 => {
             let raw = u32::from_be_bytes([0, data[0], data[1], data[2]]);
             let r = ((raw >> 18) & 0x3F) as f32 / 63.0;
             let g = ((raw >> 12) & 0x3F) as f32 / 63.0;
             let b = ((raw >> 6) & 0x3F) as f32 / 63.0;
-            let a = if has_alpha { (raw & 0x3F) as f32 / 63.0 } else { 1.0 };
+            let a = if has_alpha {
+                (raw & 0x3F) as f32 / 63.0
+            } else {
+                1.0
+            };
             [r, g, b, a]
-        },
+        }
         regs::ColorFormat::Rgba8 => {
             let r = data[0] as f32 / 255.0;
             let g = data[1] as f32 / 255.0;
             let b = data[2] as f32 / 255.0;
-            let a = if has_alpha { data[3] as f32 / 255.0 } else { 1.0 };
+            let a = if has_alpha {
+                data[3] as f32 / 255.0
+            } else {
+                1.0
+            };
             [r, g, b, a]
-        },
+        }
     }
 }
 
@@ -893,7 +971,11 @@ fn dispatch_decode<const SYSTEM: SystemId>(
             gp.jit_vtx_arrays_ok = ok;
             ok
         };
-        let parser = if arrays_ok { gp.jit_vtx.lookup_or_compile(key) } else { None };
+        let parser = if arrays_ok {
+            gp.jit_vtx.lookup_or_compile(key)
+        } else {
+            None
+        };
 
         if let Some(parser) = parser {
             let xf_mem_ptr = gp.xf_mem.as_ptr();
@@ -902,7 +984,13 @@ fn dispatch_decode<const SYSTEM: SystemId>(
             let out_ptr = unsafe { verts.as_mut_ptr().add(base) };
 
             unsafe {
-                parser(xf_mem_ptr, arrays_ptr, data.as_ptr(), out_ptr, vertex_count as u32);
+                parser(
+                    xf_mem_ptr,
+                    arrays_ptr,
+                    data.as_ptr(),
+                    out_ptr,
+                    vertex_count as u32,
+                );
                 verts.set_len(base + vertex_count);
             }
 
@@ -965,7 +1053,11 @@ fn run_validator<const SYSTEM: SystemId>(
 
     self::decode_vertices(gp, mmio, data, vertex_count, vf, &mut interp_buf);
 
-    let ctx = jit::validate::CompareCtx { key, draw_cmd: cmd, vertex_count: vertex_count as u32 };
+    let ctx = jit::validate::CompareCtx {
+        key,
+        draw_cmd: cmd,
+        vertex_count: vertex_count as u32,
+    };
     let jit_slice = &verts[base..base + vertex_count];
     let mismatches = jit::validate::compare_draw_vertices(jit_slice, &interp_buf, &ctx);
     gp.jit_vtx_validator.record(&ctx, &mismatches);

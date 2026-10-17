@@ -45,7 +45,13 @@ pub struct PanoOptions {
 
 impl Default for PanoOptions {
     fn default() -> Self {
-        PanoOptions { projection: Projection::Auto, boundary_warp: 0.0, auto_crop: false, fill_edges: false, max_megapixels: 40.0 }
+        PanoOptions {
+            projection: Projection::Auto,
+            boundary_warp: 0.0,
+            auto_crop: false,
+            fill_edges: false,
+            max_megapixels: 40.0,
+        }
     }
 }
 
@@ -110,7 +116,12 @@ fn border(w: usize, h: usize, per_edge: usize) -> Vec<(f64, f64)> {
 }
 
 /// Surface bounding box of every used image in `proj` (output focal `f`).
-fn bounds(frames: &[Frame], cams: &[Option<Camera>], proj: Projection, f: f64) -> Option<(f64, f64, f64, f64)> {
+fn bounds(
+    frames: &[Frame],
+    cams: &[Option<Camera>],
+    proj: Projection,
+    f: f64,
+) -> Option<(f64, f64, f64, f64)> {
     let (mut x0, mut y0, mut x1, mut y1) = (f64::MAX, f64::MAX, f64::MIN, f64::MIN);
     for (fr, c) in frames.iter().zip(cams) {
         let Some(c) = c else { continue };
@@ -129,7 +140,12 @@ fn bounds(frames: &[Frame], cams: &[Option<Camera>], proj: Projection, f: f64) -
 /// stays compact; cylindrical for wide but not tall panoramas; spherical otherwise.
 pub fn choose_projection(frames: &[Frame], cams: &[Option<Camera>]) -> Projection {
     let (h, v) = fov(frames, cams);
-    let area: f64 = frames.iter().zip(cams).filter(|(_, c)| c.is_some()).map(|(f, _)| (f.width() * f.height()) as f64).sum();
+    let area: f64 = frames
+        .iter()
+        .zip(cams)
+        .filter(|(_, c)| c.is_some())
+        .map(|(f, _)| (f.width() * f.height()) as f64)
+        .sum();
     let fmed = median(cams.iter().flatten().map(|c| c.f).collect());
     if h < 110.0
         && v < 110.0
@@ -138,7 +154,11 @@ pub fn choose_projection(frames: &[Frame], cams: &[Option<Camera>]) -> Projectio
     {
         return Projection::Perspective;
     }
-    if v < 90.0 { Projection::Cylindrical } else { Projection::Spherical }
+    if v < 90.0 {
+        Projection::Cylindrical
+    } else {
+        Projection::Spherical
+    }
 }
 
 fn median(mut v: Vec<f64>) -> f64 {
@@ -177,7 +197,9 @@ pub fn register(frames: &[Frame], progress: &Progress) -> Result<(Vec<Option<Cam
     let pairs = camera::match_pairs(&feats, &scales);
     let ids = camera::largest_component(n, &pairs);
     if ids.len() < 2 {
-        return Err(MergeError::NoOverlap("the photos don't overlap enough to be stitched".into()));
+        return Err(MergeError::NoOverlap(
+            "the photos don't overlap enough to be stitched".into(),
+        ));
     }
     check(progress, 0.3, "Aligning")?;
     // focal length: EXIF 35 mm equivalent, else the homographies, else ~50° horizontal
@@ -197,11 +219,21 @@ pub fn register(frames: &[Frame], progress: &Progress) -> Result<(Vec<Option<Cam
         }
     }
     let long = sizes[ids[0]].0.max(sizes[ids[0]].1) as f64;
-    let exif_f = frames[ids[0]].metadata.focal_length_35mm.filter(|v| *v > 1.0).map(|f35| f35 / 36.0 * long);
-    let hom_f = (!fs.is_empty()).then(|| median(fs.clone())).filter(|f| *f > 0.1 * long && *f < 20.0 * long);
+    let exif_f = frames[ids[0]]
+        .metadata
+        .focal_length_35mm
+        .filter(|v| *v > 1.0)
+        .map(|f35| f35 / 36.0 * long);
+    let hom_f = (!fs.is_empty())
+        .then(|| median(fs.clone()))
+        .filter(|f| *f > 0.1 * long && *f < 20.0 * long);
     let f0 = exif_f.or(hom_f).unwrap_or(long * 1.07);
     let cams = camera::initial_cameras(&ids, &sizes, &pairs, f0);
-    let anchor = ids.iter().copied().find(|&i| cams[i].is_some()).unwrap_or(ids[0]);
+    let anchor = ids
+        .iter()
+        .copied()
+        .find(|&i| cams[i].is_some())
+        .unwrap_or(ids[0]);
     check(progress, 0.35, "Aligning")?;
     let adj = camera::bundle_adjust(&cams, &pairs, anchor, 60);
     let mut cams = adj.cameras;
@@ -225,18 +257,30 @@ pub fn stitch(frames: Vec<Frame>, opts: &PanoOptions, progress: &Progress) -> Re
     };
     let fmed = median(used.iter().filter_map(|&i| cams[i].map(|c| c.f)).collect());
     let Some((bx0, by0, bx1, by1)) = bounds(&frames, &cams, projection, fmed) else {
-        return Err(MergeError::NoOverlap(format!("the field of view ({:.0}°) is too wide for a perspective projection", fov.0)));
+        return Err(MergeError::NoOverlap(format!(
+            "the field of view ({:.0}°) is too wide for a perspective projection",
+            fov.0
+        )));
     };
-    let area: f64 = used.iter().map(|&i| (frames[i].width() * frames[i].height()) as f64).sum();
+    let area: f64 = used
+        .iter()
+        .map(|&i| (frames[i].width() * frames[i].height()) as f64)
+        .sum();
     if projection == Projection::Perspective && (bx1 - bx0) * (by1 - by0) > 12.0 * area {
-        return Err(MergeError::NoOverlap(format!("the field of view ({:.0}°) is too wide for a perspective projection", fov.0)));
+        return Err(MergeError::NoOverlap(format!(
+            "the field of view ({:.0}°) is too wide for a perspective projection",
+            fov.0
+        )));
     }
     // output scale: native resolution, limited to max_megapixels
     let max_px = (opts.max_megapixels.max(0.1) * 1e6).min(400e6);
     let s = (max_px / ((bx1 - bx0) * (by1 - by0))).sqrt().min(1.0);
     let f_out = fmed * s;
     let (ox, oy) = (bx0 * s, by0 * s);
-    let (cw, ch) = (((bx1 - bx0) * s).ceil() as usize + 1, ((by1 - by0) * s).ceil() as usize + 1);
+    let (cw, ch) = (
+        ((bx1 - bx0) * s).ceil() as usize + 1,
+        ((by1 - by0) * s).ceil() as usize + 1,
+    );
     let levels = ((cw.min(ch) as f64).log2() - 3.0).floor().clamp(1.0, 7.0) as usize;
     let unit = 1usize << levels;
     let (pw, ph) = (cw.div_ceil(unit) * unit, ch.div_ceil(unit) * unit);
@@ -270,30 +314,45 @@ pub fn stitch(frames: Vec<Frame>, opts: &PanoOptions, progress: &Progress) -> Re
             let ty0 = (((y0 - pad).max(0.0) as usize) / unit) * unit;
             let tx1 = (((x1 + pad).max(0.0) as usize).min(pw)).div_ceil(unit) * unit;
             let ty1 = (((y1 + pad).max(0.0) as usize).min(ph)).div_ceil(unit) * unit;
-            let (tw, th) = (tx1.min(pw).saturating_sub(tx0), ty1.min(ph).saturating_sub(ty0));
+            let (tw, th) = (
+                tx1.min(pw).saturating_sub(tx0),
+                ty1.min(ph).saturating_sub(ty0),
+            );
             if tw == 0 || th == 0 {
                 return None;
             }
             let (fw, fh) = (fr.width() as f64, fr.height() as f64);
             let mut rgb = vec![[0f32; 3]; tw * th];
             let mut wgt = vec![0f32; tw * th];
-            rgb.par_chunks_mut(tw).zip(wgt.par_chunks_mut(tw)).enumerate().for_each(|(ty, (row, wrow))| {
-                let v = (ty0 + ty) as f64 + 0.5 + oy;
-                for tx in 0..tw {
-                    let u = (tx0 + tx) as f64 + 0.5 + ox;
-                    let d = projection.inverse(u, v, f_out);
-                    let Some((px, py)) = c.project(d) else { continue };
-                    if px < 0.0 || py < 0.0 || px > fw || py > fh {
-                        continue;
+            rgb.par_chunks_mut(tw)
+                .zip(wgt.par_chunks_mut(tw))
+                .enumerate()
+                .for_each(|(ty, (row, wrow))| {
+                    let v = (ty0 + ty) as f64 + 0.5 + oy;
+                    for tx in 0..tw {
+                        let u = (tx0 + tx) as f64 + 0.5 + ox;
+                        let d = projection.inverse(u, v, f_out);
+                        let Some((px, py)) = c.project(d) else {
+                            continue;
+                        };
+                        if px < 0.0 || py < 0.0 || px > fw || py > fh {
+                            continue;
+                        }
+                        let wx = 1.0 - (2.0 * px / fw - 1.0).abs();
+                        let wy = 1.0 - (2.0 * py / fh - 1.0).abs();
+                        let w = (wx * wy).max(1e-6) as f32;
+                        row[tx] = fr.image.sample_bilinear(px as f32, py as f32);
+                        wrow[tx] = w;
                     }
-                    let wx = 1.0 - (2.0 * px / fw - 1.0).abs();
-                    let wy = 1.0 - (2.0 * py / fh - 1.0).abs();
-                    let w = (wx * wy).max(1e-6) as f32;
-                    row[tx] = fr.image.sample_bilinear(px as f32, py as f32);
-                    wrow[tx] = w;
-                }
-            });
-            Some(Tile { x0: tx0, y0: ty0, w: tw, h: th, rgb, wgt })
+                });
+            Some(Tile {
+                x0: tx0,
+                y0: ty0,
+                w: tw,
+                h: th,
+                rgb,
+                wgt,
+            })
         })
         .collect();
     check(progress, 0.6, "Exposure compensation")?;
@@ -354,7 +413,14 @@ pub fn stitch(frames: Vec<Frame>, opts: &PanoOptions, progress: &Progress) -> Re
     check(progress, 0.92, "Finishing")?;
     let (mut image, alpha) = finish::boundary_warp(&image, &alpha, opts.boundary_warp / 100.0);
     let crop = if opts.auto_crop {
-        finish::auto_crop(&alpha).map(|(x, y, w, h)| [x as f64 / cw as f64, y as f64 / ch as f64, w as f64 / cw as f64, h as f64 / ch as f64])
+        finish::auto_crop(&alpha).map(|(x, y, w, h)| {
+            [
+                x as f64 / cw as f64,
+                y as f64 / ch as f64,
+                w as f64 / cw as f64,
+                h as f64 / ch as f64,
+            ]
+        })
     } else {
         None
     };
@@ -394,7 +460,9 @@ fn compensate_gains(tiles: &[Option<Tile>], gains: &mut [f64], frames: &[Frame])
     for i in 0..n {
         let Some(a) = &tiles[i] else { continue };
         for j in 0..n {
-            let Some(b) = tiles[j].as_ref().filter(|_| i != j) else { continue };
+            let Some(b) = tiles[j].as_ref().filter(|_| i != j) else {
+                continue;
+            };
             let (x0, y0) = (a.x0.max(b.x0), a.y0.max(b.y0));
             let (x1, y1) = ((a.x0 + a.w).min(b.x0 + b.w), (a.y0 + a.h).min(b.y0 + b.h));
             let (mut cnt, mut sum) = (0usize, 0f64);
@@ -404,7 +472,9 @@ fn compensate_gains(tiles: &[Option<Tile>], gains: &mut [f64], frames: &[Frame])
                     let kb = (y - b.y0) * b.w + x - b.x0;
                     if a.wgt[ka] > 0.0 && b.wgt[kb] > 0.0 {
                         let pa = a.rgb[ka];
-                        if pa.iter().any(|v| *v >= frames[i].clip * 0.95) || b.rgb[kb].iter().any(|v| *v >= frames[j].clip * 0.95) {
+                        if pa.iter().any(|v| *v >= frames[i].clip * 0.95)
+                            || b.rgb[kb].iter().any(|v| *v >= frames[j].clip * 0.95)
+                        {
                             continue;
                         }
                         cnt += 1;
@@ -422,7 +492,10 @@ fn compensate_gains(tiles: &[Option<Tile>], gains: &mut [f64], frames: &[Frame])
     if total <= 0.0 {
         return;
     }
-    let mean = (0..n * n).map(|k| nij[k] * iij[k] * gains[k / n]).sum::<f64>() / total;
+    let mean = (0..n * n)
+        .map(|k| nij[k] * iij[k] * gains[k / n])
+        .sum::<f64>()
+        / total;
     if mean <= 0.0 {
         return;
     }

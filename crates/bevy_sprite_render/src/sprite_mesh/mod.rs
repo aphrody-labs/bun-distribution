@@ -11,16 +11,16 @@ use bevy_ecs::{
 };
 
 use bevy_image::{Image, TextureAtlasLayout};
-use bevy_math::{vec2, FloatOrd};
+use bevy_math::{FloatOrd, vec2};
 use bevy_mesh::{
-    mark_2d_meshes_as_changed_if_their_assets_changed, Mesh, Mesh2d, MeshBuilder,
-    MeshCompressionArgs, Meshable,
+    Mesh, Mesh2d, MeshBuilder, MeshCompressionArgs, Meshable,
+    mark_2d_meshes_as_changed_if_their_assets_changed,
 };
 use bevy_shape::Rectangle;
 
 use bevy_platform::collections::HashMap;
 use bevy_shader::load_shader_library;
-use bevy_sprite::{prelude::Sprite, Anchor, SpriteAlphaMode};
+use bevy_sprite::{Anchor, SpriteAlphaMode, prelude::Sprite};
 
 mod sprite_extended_material;
 pub use sprite_extended_material::*;
@@ -29,8 +29,8 @@ mod sprite_mesh_material;
 pub use sprite_mesh_material::*;
 
 use crate::{
-    check_entities_needing_specialization, mark_2d_meshes_as_changed_if_their_materials_changed,
-    MeshMaterial2d,
+    MeshMaterial2d, check_entities_needing_specialization,
+    mark_2d_meshes_as_changed_if_their_materials_changed,
 };
 
 /// Plugin used to render a Sprite using a [`Mesh2d`] and a [`SpriteMaterial`]

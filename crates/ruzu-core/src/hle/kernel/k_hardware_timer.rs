@@ -183,7 +183,12 @@ impl KHardwareTimer {
     /// # Safety
     /// The scheduler lock must be held and thread_ptr must identify thread_id
     /// and remain alive until cancellation or timer delivery.
-    pub(crate) unsafe fn register_absolute_task_by_id(&self, thread_id: u64, thread_ptr: usize, task_time: i64) {
+    pub(crate) unsafe fn register_absolute_task_by_id(
+        &self,
+        thread_id: u64,
+        thread_ptr: usize,
+        task_time: i64,
+    ) {
         static TRACE_WAIT_SYNC: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
         if *TRACE_WAIT_SYNC.get_or_init(|| std::env::var_os("RUZU_TRACE_WAIT_SYNC").is_some()) {
             log::info!(
@@ -533,7 +538,9 @@ mod tests {
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().thread_id = 23;
         // Isolated fixture: neither the thread nor timer has another user.
-        unsafe { timer.register_absolute_task_by_id(23, thread.as_ptr() as usize, 500); }
+        unsafe {
+            timer.register_absolute_task_by_id(23, thread.as_ptr() as usize, 500);
+        }
         assert_eq!(thread.lock().unwrap().get_timer_task_time(), 500);
         timer.cancel_task(&thread);
         assert_eq!(thread.lock().unwrap().get_timer_task_time(), 0);

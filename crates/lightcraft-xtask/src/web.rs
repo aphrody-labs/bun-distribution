@@ -27,14 +27,24 @@ const CHINESE_FONT_LICENSE_FILE: &str = "OFL-noto-sans-cjk-sc.txt";
 const STATIC_FILES: [&str; 2] = ["index.html", "worker.js"];
 
 /// Bundle files that get precompressed copies.
-const COMPRESSED: [&str; 4] = ["index.html", "worker.js", "lightcraft_web.js", "lightcraft_web_bg.wasm"];
+const COMPRESSED: [&str; 4] = [
+    "index.html",
+    "worker.js",
+    "lightcraft_web.js",
+    "lightcraft_web_bg.wasm",
+];
 
 /// The Noto face is shipped beside the WASM rather than embedded in it: hosts such as Cloudflare
 /// Pages cap individual files at 25 MiB, while the complete site can contain larger assets.
 fn chinese_font_in_manifest(manifest: &str) -> Option<(&str, &str)> {
     manifest.lines().find_map(|line| {
         let fields: Vec<_> = line.split('|').map(str::trim).collect();
-        if fields.len() >= 6 && fields[0] == "Noto Sans CJK SC" && fields[1] == "Regular" && !fields[2].is_empty() && !fields[5].is_empty() {
+        if fields.len() >= 6
+            && fields[0] == "Noto Sans CJK SC"
+            && fields[1] == "Regular"
+            && !fields[2].is_empty()
+            && !fields[5].is_empty()
+        {
             Some((fields[2], fields[5]))
         } else {
             None
@@ -44,7 +54,12 @@ fn chinese_font_in_manifest(manifest: &str) -> Option<(&str, &str)> {
 
 fn copy_chinese_font(out: &Path) -> Result<bool, String> {
     // A previous font-enabled build must not leave an unlicensed/stale asset in a font-free one.
-    for name in [CHINESE_FONT_FILE, CHINESE_FONT_LICENSE_FILE, "lightcraft_zh_hans.otf.gz", "lightcraft_zh_hans.otf.br"] {
+    for name in [
+        CHINESE_FONT_FILE,
+        CHINESE_FONT_LICENSE_FILE,
+        "lightcraft_zh_hans.otf.gz",
+        "lightcraft_zh_hans.otf.br",
+    ] {
         let path = out.join(name);
         match std::fs::remove_file(&path) {
             Ok(()) => (),
@@ -59,28 +74,46 @@ fn copy_chinese_font(out: &Path) -> Result<bool, String> {
         return Ok(false);
     };
     let dir = PathBuf::from(dir);
-    let dir = if dir.is_absolute() { dir } else { root().join(dir) };
+    let dir = if dir.is_absolute() {
+        dir
+    } else {
+        root().join(dir)
+    };
     let manifest_path = dir.join("fonts/manifest.txt");
-    let manifest = std::fs::read_to_string(&manifest_path).map_err(|e| format!("{}: {e}", manifest_path.display()))?;
-    let (font, licence) =
-        chinese_font_in_manifest(&manifest).ok_or_else(|| format!("{}: Noto Sans CJK SC Regular is missing", manifest_path.display()))?;
+    let manifest = std::fs::read_to_string(&manifest_path)
+        .map_err(|e| format!("{}: {e}", manifest_path.display()))?;
+    let (font, licence) = chinese_font_in_manifest(&manifest).ok_or_else(|| {
+        format!(
+            "{}: Noto Sans CJK SC Regular is missing",
+            manifest_path.display()
+        )
+    })?;
     let licence = dir.join(licence);
     let licence_target = out.join(CHINESE_FONT_LICENSE_FILE);
-    std::fs::copy(&licence, &licence_target).map_err(|e| format!("{} → {}: {e}", licence.display(), licence_target.display()))?;
+    std::fs::copy(&licence, &licence_target)
+        .map_err(|e| format!("{} → {}: {e}", licence.display(), licence_target.display()))?;
     let source = dir.join(font);
     let target = out.join(CHINESE_FONT_FILE);
-    std::fs::copy(&source, &target).map_err(|e| format!("{} → {}: {e}", source.display(), target.display()))?;
-    println!("web Chinese font: {} → {}", source.display(), target.display());
+    std::fs::copy(&source, &target)
+        .map_err(|e| format!("{} → {}: {e}", source.display(), target.display()))?;
+    println!(
+        "web Chinese font: {} → {}",
+        source.display(),
+        target.display()
+    );
     Ok(true)
 }
 
 /// The `wasm-bindgen` version pinned in Cargo.lock (the CLI must match it exactly).
 fn locked_bindgen_version() -> Result<String, String> {
-    let lock = std::fs::read_to_string(root().join("Cargo.lock")).map_err(|e| format!("Cargo.lock: {e}"))?;
+    let lock = std::fs::read_to_string(root().join("Cargo.lock"))
+        .map_err(|e| format!("Cargo.lock: {e}"))?;
     let mut lines = lock.lines();
     while let Some(l) = lines.next() {
         if l.trim() == "name = \"wasm-bindgen\""
-            && let Some(v) = lines.next().and_then(|v| v.trim().strip_prefix("version = \""))
+            && let Some(v) = lines
+                .next()
+                .and_then(|v| v.trim().strip_prefix("version = \""))
         {
             return Ok(v.trim_end_matches('"').to_string());
         }
@@ -89,60 +122,114 @@ fn locked_bindgen_version() -> Result<String, String> {
 }
 
 fn check_bindgen(want: &str) -> Result<(), String> {
-    let hint = format!("install it with:\n    cargo install wasm-bindgen-cli --version {want} --locked");
-    let out = Command::new("wasm-bindgen").arg("--version").output().map_err(|_| format!("`wasm-bindgen` CLI not found; {hint}"))?;
+    let hint =
+        format!("install it with:\n    cargo install wasm-bindgen-cli --version {want} --locked");
+    let out = Command::new("wasm-bindgen")
+        .arg("--version")
+        .output()
+        .map_err(|_| format!("`wasm-bindgen` CLI not found; {hint}"))?;
     let have = String::from_utf8_lossy(&out.stdout);
     let have = have.split_whitespace().nth(1).unwrap_or("?");
     if have != want {
-        return Err(format!("wasm-bindgen CLI is {have} but Cargo.lock has {want}; {hint}"));
+        return Err(format!(
+            "wasm-bindgen CLI is {have} but Cargo.lock has {want}; {hint}"
+        ));
     }
     Ok(())
 }
 
 pub fn run(args: &[&str]) -> Result<(), String> {
     let dev = args.contains(&"--dev");
-    let serve = args.iter().position(|a| *a == "--serve").map(|i| args.get(i + 1).and_then(|p| p.parse::<u16>().ok()).unwrap_or(8080));
+    let serve = args.iter().position(|a| *a == "--serve").map(|i| {
+        args.get(i + 1)
+            .and_then(|p| p.parse::<u16>().ok())
+            .unwrap_or(8080)
+    });
 
     let want = locked_bindgen_version()?;
     check_bindgen(&want)?;
     let meta = metadata()?;
-    let target_dir = PathBuf::from(meta["target_directory"].as_str().ok_or("cargo metadata: no target_directory")?);
+    let target_dir = PathBuf::from(
+        meta["target_directory"]
+            .as_str()
+            .ok_or("cargo metadata: no target_directory")?,
+    );
     let profile = if dev { "dev" } else { WEB_PROFILE };
 
     let mut c = cargo();
-    c.args(["build", "-p", "lightcraft-web", "--lib", "--target", TARGET, "--profile", profile]);
-    step(c, &format!("cargo build -p lightcraft-web --target {TARGET} --profile {profile}"))?;
+    c.args([
+        "build",
+        "-p",
+        "lightcraft-web",
+        "--lib",
+        "--target",
+        TARGET,
+        "--profile",
+        profile,
+    ]);
+    step(
+        c,
+        &format!("cargo build -p lightcraft-web --target {TARGET} --profile {profile}"),
+    )?;
 
-    let wasm = target_dir.join(TARGET).join(if dev { "debug" } else { profile }).join("lightcraft_web.wasm");
+    let wasm = target_dir
+        .join(TARGET)
+        .join(if dev { "debug" } else { profile })
+        .join("lightcraft_web.wasm");
     let out = target_dir.join(SITE_DIR);
     std::fs::create_dir_all(&out).map_err(|e| format!("{}: {e}", out.display()))?;
     let mut b = Command::new("wasm-bindgen");
-    b.arg(&wasm).args(["--target", "web", "--no-typescript", "--out-name", "lightcraft_web", "--out-dir"]).arg(&out);
+    b.arg(&wasm)
+        .args([
+            "--target",
+            "web",
+            "--no-typescript",
+            "--out-name",
+            "lightcraft_web",
+            "--out-dir",
+        ])
+        .arg(&out);
     if dev {
         b.arg("--debug");
     }
-    step(b, &format!("wasm-bindgen {} → {}", wasm.display(), out.display()))?;
+    step(
+        b,
+        &format!("wasm-bindgen {} → {}", wasm.display(), out.display()),
+    )?;
 
     // optional size pass when binaryen is installed
     let bg = out.join("lightcraft_web_bg.wasm");
     if !dev && Command::new("wasm-opt").arg("--version").output().is_ok() {
         let mut o = Command::new("wasm-opt");
-        o.args(["-O2", "--enable-bulk-memory", "--enable-nontrapping-float-to-int", "--enable-sign-ext", "--enable-mutable-globals"])
-            .arg(&bg)
-            .arg("-o")
-            .arg(&bg);
+        o.args([
+            "-O2",
+            "--enable-bulk-memory",
+            "--enable-nontrapping-float-to-int",
+            "--enable-sign-ext",
+            "--enable-mutable-globals",
+        ])
+        .arg(&bg)
+        .arg("-o")
+        .arg(&bg);
         if step(o, "wasm-opt -O2").is_err() {
             eprintln!("(wasm-opt failed; keeping the unoptimized module)");
         }
     }
     for f in STATIC_FILES {
-        std::fs::copy(root().join("apps/lightcraft-web").join(f), out.join(f)).map_err(|e| format!("copy {f}: {e}"))?;
+        std::fs::copy(root().join("apps/lightcraft-web").join(f), out.join(f))
+            .map_err(|e| format!("copy {f}: {e}"))?;
     }
     let chinese_font = copy_chinese_font(&out)?;
 
     // precompressed copies (skipped for --dev: they'd only slow the edit loop down)
-    println!("\n{:<26} {:>12} {:>12} {:>12}", "file", "bytes", "gzip -9", "brotli -11");
-    for f in COMPRESSED.into_iter().chain(chinese_font.then_some(CHINESE_FONT_FILE)) {
+    println!(
+        "\n{:<26} {:>12} {:>12} {:>12}",
+        "file", "bytes", "gzip -9", "brotli -11"
+    );
+    for f in COMPRESSED
+        .into_iter()
+        .chain(chinese_font.then_some(CHINESE_FONT_FILE))
+    {
         let p = out.join(f);
         let raw = std::fs::read(&p).map_err(|e| format!("{}: {e}", p.display()))?;
         let (gz, br) = if dev {
@@ -158,15 +245,26 @@ pub fn run(args: &[&str]) -> Result<(), String> {
             (Some(gz.len()), Some(br.len()))
         };
         let show = |n: Option<usize>| n.map_or("-".to_string(), |n| n.to_string());
-        println!("{f:<26} {:>12} {:>12} {:>12}", raw.len(), show(gz), show(br));
+        println!(
+            "{f:<26} {:>12} {:>12} {:>12}",
+            raw.len(),
+            show(gz),
+            show(br)
+        );
     }
     let size = std::fs::metadata(&bg).map(|m| m.len()).unwrap_or(0);
-    println!("\nweb build ready: {} ({:.1} MB wasm)", out.display(), size as f64 / 1e6);
+    println!(
+        "\nweb build ready: {} ({:.1} MB wasm)",
+        out.display(),
+        size as f64 / 1e6
+    );
 
     match serve {
         Some(port) => serve_dir(&out, port),
         None => {
-            println!("serve it with `cargo xtask web --serve` (or any static HTTP server; see docs/web.md) and open http://127.0.0.1:8080/");
+            println!(
+                "serve it with `cargo xtask web --serve` (or any static HTTP server; see docs/web.md) and open http://127.0.0.1:8080/"
+            );
             Ok(())
         }
     }
@@ -174,13 +272,20 @@ pub fn run(args: &[&str]) -> Result<(), String> {
 
 fn gzip(data: &[u8]) -> Result<Vec<u8>, String> {
     let mut e = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
-    e.write_all(data).and_then(|_| e.finish()).map_err(|e| format!("gzip: {e}"))
+    e.write_all(data)
+        .and_then(|_| e.finish())
+        .map_err(|e| format!("gzip: {e}"))
 }
 
 fn brotli(data: &[u8]) -> Result<Vec<u8>, String> {
     let mut out = Vec::new();
-    let params = ::brotli::enc::BrotliEncoderParams { quality: 11, lgwin: 24, ..Default::default() };
-    ::brotli::BrotliCompress(&mut &data[..], &mut out, &params).map_err(|e| format!("brotli: {e}"))?;
+    let params = ::brotli::enc::BrotliEncoderParams {
+        quality: 11,
+        lgwin: 24,
+        ..Default::default()
+    };
+    ::brotli::BrotliCompress(&mut &data[..], &mut out, &params)
+        .map_err(|e| format!("brotli: {e}"))?;
     Ok(out)
 }
 
@@ -212,15 +317,30 @@ pub const ISOLATION_HEADERS: [(&str, &str); 3] = [
 ];
 
 /// Pick the precompressed variant to send: (`Content-Encoding`, file suffix).
-fn negotiate(accept_encoding: &str, has: impl Fn(&str) -> bool) -> Option<(&'static str, &'static str)> {
-    let accepts = |enc: &str| accept_encoding.split(',').any(|e| e.split(';').next().is_some_and(|n| n.trim().eq_ignore_ascii_case(enc)));
-    [("br", ".br"), ("gzip", ".gz")].into_iter().find(|(enc, suffix)| accepts(enc) && has(suffix))
+fn negotiate(
+    accept_encoding: &str,
+    has: impl Fn(&str) -> bool,
+) -> Option<(&'static str, &'static str)> {
+    let accepts = |enc: &str| {
+        accept_encoding.split(',').any(|e| {
+            e.split(';')
+                .next()
+                .is_some_and(|n| n.trim().eq_ignore_ascii_case(enc))
+        })
+    };
+    [("br", ".br"), ("gzip", ".gz")]
+        .into_iter()
+        .find(|(enc, suffix)| accepts(enc) && has(suffix))
 }
 
 /// Serve `dir` on 127.0.0.1:`port` (GET/HEAD only, no directory listing). Blocks.
 fn serve_dir(dir: &Path, port: u16) -> Result<(), String> {
-    let listener = TcpListener::bind(("127.0.0.1", port)).map_err(|e| format!("bind 127.0.0.1:{port}: {e}"))?;
-    println!("serving {} at http://127.0.0.1:{port}/  (Ctrl+C to stop)", dir.display());
+    let listener = TcpListener::bind(("127.0.0.1", port))
+        .map_err(|e| format!("bind 127.0.0.1:{port}: {e}"))?;
+    println!(
+        "serving {} at http://127.0.0.1:{port}/  (Ctrl+C to stop)",
+        dir.display()
+    );
     for stream in listener.incoming().flatten() {
         let dir = dir.to_path_buf();
         std::thread::spawn(move || {
@@ -254,7 +374,13 @@ fn handle(mut stream: TcpStream, dir: &Path) -> std::io::Result<()> {
     let rel = if rel.is_empty() { "index.html" } else { rel };
     let file = dir.join(rel);
     let safe = !rel.split('/').any(|c| c == ".." || c.contains('\\'));
-    let encoding = if safe { negotiate(&accept_encoding, |suffix| dir.join(format!("{rel}{suffix}")).is_file()) } else { None };
+    let encoding = if safe {
+        negotiate(&accept_encoding, |suffix| {
+            dir.join(format!("{rel}{suffix}")).is_file()
+        })
+    } else {
+        None
+    };
     let read = match encoding {
         Some((_, suffix)) => std::fs::read(dir.join(format!("{rel}{suffix}"))),
         None => std::fs::read(&file),
@@ -305,15 +431,27 @@ mod tests {
             let header = format!("[profile.{name}]");
             manifest.lines().any(|l| l.trim() == header)
         };
-        assert!(is_profile(WEB_PROFILE), "`{WEB_PROFILE}` is no longer a profile in Cargo.toml");
-        assert!(!is_profile(SITE_DIR), "`{SITE_DIR}` is a Cargo profile name; pick a different bundle directory");
+        assert!(
+            is_profile(WEB_PROFILE),
+            "`{WEB_PROFILE}` is no longer a profile in Cargo.toml"
+        );
+        assert!(
+            !is_profile(SITE_DIR),
+            "`{SITE_DIR}` is a Cargo profile name; pick a different bundle directory"
+        );
     }
 
     #[test]
     fn wasm_mime() {
-        assert_eq!(mime(Path::new("a/lightcraft_web_bg.wasm")), "application/wasm");
+        assert_eq!(
+            mime(Path::new("a/lightcraft_web_bg.wasm")),
+            "application/wasm"
+        );
         assert_eq!(mime(Path::new("index.html")), "text/html; charset=utf-8");
-        assert_eq!(mime(Path::new("worker.js")), "text/javascript; charset=utf-8");
+        assert_eq!(
+            mime(Path::new("worker.js")),
+            "text/javascript; charset=utf-8"
+        );
         assert_eq!(mime(Path::new(CHINESE_FONT_FILE)), "font/otf");
     }
 
@@ -322,14 +460,25 @@ mod tests {
         let manifest = "# family | style | path | scripts | licence | licence file\n\
             BIZ UDPGothic | Regular | fonts/biz.ttf | Jpan,Latn | OFL-1.1 | fonts/biz/OFL.txt\n\
             Noto Sans CJK SC | Regular | fonts/noto/NotoSansCJKsc-Regular.otf | Hans,Latn | OFL-1.1 | fonts/noto/OFL.txt\n";
-        assert_eq!(chinese_font_in_manifest(manifest), Some(("fonts/noto/NotoSansCJKsc-Regular.otf", "fonts/noto/OFL.txt")));
-        assert_eq!(chinese_font_in_manifest("BIZ UDPGothic | Regular | fonts/biz.ttf | Jpan,Latn | OFL-1.1 | fonts/biz/OFL.txt"), None);
+        assert_eq!(
+            chinese_font_in_manifest(manifest),
+            Some(("fonts/noto/NotoSansCJKsc-Regular.otf", "fonts/noto/OFL.txt"))
+        );
+        assert_eq!(
+            chinese_font_in_manifest(
+                "BIZ UDPGothic | Regular | fonts/biz.ttf | Jpan,Latn | OFL-1.1 | fonts/biz/OFL.txt"
+            ),
+            None
+        );
     }
 
     #[test]
     fn encoding_negotiation() {
         let all = |_: &str| true;
-        assert_eq!(negotiate("gzip, deflate, br, zstd", all), Some(("br", ".br")));
+        assert_eq!(
+            negotiate("gzip, deflate, br, zstd", all),
+            Some(("br", ".br"))
+        );
         assert_eq!(negotiate("gzip;q=1.0", all), Some(("gzip", ".gz")));
         assert_eq!(negotiate("gzip, br", |s| s == ".gz"), Some(("gzip", ".gz")));
         assert_eq!(negotiate("", all), None);
@@ -338,10 +487,18 @@ mod tests {
 
     #[test]
     fn compressors_round_trip_sizes() {
-        let data: Vec<u8> = (0..20_000u32).flat_map(|i| (i % 97).to_le_bytes()).collect();
+        let data: Vec<u8> = (0..20_000u32)
+            .flat_map(|i| (i % 97).to_le_bytes())
+            .collect();
         let gz = gzip(&data).unwrap();
         let br = brotli(&data).unwrap();
-        assert!(gz.len() < data.len() / 4 && br.len() < data.len() / 4, "{} {} {}", data.len(), gz.len(), br.len());
+        assert!(
+            gz.len() < data.len() / 4 && br.len() < data.len() / 4,
+            "{} {} {}",
+            data.len(),
+            gz.len(),
+            br.len()
+        );
         assert_eq!(&gz[..2], &[0x1f, 0x8b], "gzip magic");
         let mut back = Vec::new();
         std::io::Read::read_to_end(&mut flate2::read::GzDecoder::new(&gz[..]), &mut back).unwrap();

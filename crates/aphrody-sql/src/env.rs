@@ -100,10 +100,10 @@ pub fn redact_url(raw: &str) -> String {
                         Some(colon) => format!("{scheme}{}:***{}", &userinfo[..colon], &rest[at..]),
                         None => raw.to_owned(),
                     }
-                },
+                }
                 None => raw.to_owned(),
             }
-        },
+        }
         None => raw.to_owned(),
     };
     redact_key_values(&userinfo_redacted)
@@ -130,7 +130,7 @@ fn redact_key_values(input: &str) -> String {
                         b'\'' => {
                             i += 1;
                             break;
-                        },
+                        }
                         _ => i += 1,
                     }
                 }
@@ -183,14 +183,21 @@ impl DatabaseEnv {
     /// `_DATABASE_URL` suffix in `prefix` is accepted and stripped.
     #[must_use]
     pub fn new(prefix: impl AsRef<str>) -> Self {
-        let mut prefix = prefix.as_ref().trim().trim_end_matches('_').to_ascii_uppercase();
+        let mut prefix = prefix
+            .as_ref()
+            .trim()
+            .trim_end_matches('_')
+            .to_ascii_uppercase();
         for suffix in ["_DATABASE_URL_POOLED", "_DATABASE_URL"] {
             if let Some(stripped) = prefix.strip_suffix(suffix) {
                 prefix = stripped.to_owned();
                 break;
             }
         }
-        Self { prefix, legacy: Vec::new() }
+        Self {
+            prefix,
+            legacy: Vec::new(),
+        }
     }
 
     /// Declare a pre-convention variable that is still honoured (never renamed,
@@ -216,7 +223,10 @@ impl DatabaseEnv {
     fn candidates(&self, runtime: bool) -> Vec<(String, UrlSource)> {
         let direct = (self.direct_var(), UrlSource::Direct);
         let pooled = (self.pooled_var(), UrlSource::Pooled);
-        let legacy = self.legacy.iter().map(|var| (var.clone(), UrlSource::Legacy));
+        let legacy = self
+            .legacy
+            .iter()
+            .map(|var| (var.clone(), UrlSource::Legacy));
         if runtime {
             [pooled].into_iter().chain([direct]).chain(legacy).collect()
         } else {
@@ -229,11 +239,17 @@ impl DatabaseEnv {
         runtime: bool,
         mut get: impl FnMut(&str) -> Option<String>,
     ) -> Option<ResolvedUrl> {
-        self.candidates(runtime).into_iter().find_map(|(var, source)| {
-            let value = get(&var)?;
-            let value = value.trim();
-            (!value.is_empty()).then(|| ResolvedUrl { url: DatabaseUrl::new(value), var, source })
-        })
+        self.candidates(runtime)
+            .into_iter()
+            .find_map(|(var, source)| {
+                let value = get(&var)?;
+                let value = value.trim();
+                (!value.is_empty()).then(|| ResolvedUrl {
+                    url: DatabaseUrl::new(value),
+                    var,
+                    source,
+                })
+            })
     }
 
     /// Runtime URL (pooled first) through a custom lookup, for tests.
@@ -277,7 +293,12 @@ impl DatabaseEnv {
     }
 
     fn missing(&self, runtime: bool) -> SqlError {
-        SqlError::MissingEnv(self.candidates(runtime).into_iter().map(|(var, _)| var).collect())
+        SqlError::MissingEnv(
+            self.candidates(runtime)
+                .into_iter()
+                .map(|(var, _)| var)
+                .collect(),
+        )
     }
 }
 
@@ -337,16 +358,25 @@ mod tests {
             ("APHRODY_TRAINING_DATABASE_URL", "postgres://direct"),
             ("APHRODY_TRAINING_DATABASE_URL_POOLED", "postgres://pooled"),
         ]);
-        assert_eq!(env.migration_with(lookup(&vars)).unwrap().source, UrlSource::Direct);
+        assert_eq!(
+            env.migration_with(lookup(&vars)).unwrap().source,
+            UrlSource::Direct
+        );
 
         let vars = HashMap::from([
             ("APHRODY_TRAINING_DATABASE_URL_POOLED", "postgres://pooled"),
             ("TRAINING_DB", "postgres://legacy"),
         ]);
-        assert_eq!(env.migration_with(lookup(&vars)).unwrap().source, UrlSource::Legacy);
+        assert_eq!(
+            env.migration_with(lookup(&vars)).unwrap().source,
+            UrlSource::Legacy
+        );
 
         let vars = HashMap::from([("APHRODY_TRAINING_DATABASE_URL_POOLED", "postgres://pooled")]);
-        assert_eq!(env.migration_with(lookup(&vars)).unwrap().source, UrlSource::Pooled);
+        assert_eq!(
+            env.migration_with(lookup(&vars)).unwrap().source,
+            UrlSource::Pooled
+        );
     }
 
     #[test]
@@ -365,8 +395,13 @@ mod tests {
     #[test]
     fn missing_error_lists_candidates_in_order() {
         let env = DatabaseEnv::new("RG").legacy("DATABASE_URL");
-        let SqlError::MissingEnv(vars) = env.missing(true) else { panic!("wrong variant") };
-        assert_eq!(vars, ["RG_DATABASE_URL_POOLED", "RG_DATABASE_URL", "DATABASE_URL"]);
+        let SqlError::MissingEnv(vars) = env.missing(true) else {
+            panic!("wrong variant")
+        };
+        assert_eq!(
+            vars,
+            ["RG_DATABASE_URL_POOLED", "RG_DATABASE_URL", "DATABASE_URL"]
+        );
     }
 
     #[test]
@@ -409,7 +444,11 @@ mod tests {
         assert!(!url.to_string().contains("example-secret"));
         assert!(!format!("{url:?}").contains("example-secret"));
         assert_eq!(url.expose(), "postgres://u:example-secret@h/db");
-        let resolved = ResolvedUrl { url, var: "X".into(), source: UrlSource::Direct };
+        let resolved = ResolvedUrl {
+            url,
+            var: "X".into(),
+            source: UrlSource::Direct,
+        };
         assert!(!format!("{resolved:?}").contains("example-secret"));
     }
 }

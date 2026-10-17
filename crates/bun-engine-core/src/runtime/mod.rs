@@ -18,9 +18,9 @@ pub mod steam;
 use std::time::Duration;
 
 use crate::bevy::{
+    MinimalPlugins,
     app::{App, AppExit, Plugin, PluginGroup, PreUpdate, ScheduleRunnerPlugin, Update},
     ecs::prelude::*,
-    MinimalPlugins,
 };
 
 pub use input::{EngineInput, ExternalPads, KeyMap};
@@ -104,7 +104,12 @@ impl BunEnginePlugin {
     }
 
     pub fn headless() -> Self {
-        Self { headless: true, escape_exits: false, camera: false, ..Self::windowed("Bun Engine") }
+        Self {
+            headless: true,
+            escape_exits: false,
+            camera: false,
+            ..Self::windowed("Bun Engine")
+        }
     }
 }
 
@@ -124,7 +129,11 @@ impl Plugin for BunEnginePlugin {
             .init_resource::<KeyMap>()
             .init_resource::<ExternalPads>()
             .init_resource::<EngineExit>()
-            .insert_resource(if self.headless { EngineMode::Headless } else { EngineMode::Windowed })
+            .insert_resource(if self.headless {
+                EngineMode::Headless
+            } else {
+                EngineMode::Windowed
+            })
             .configure_sets(PreUpdate, EngineSystems::Input)
             .add_systems(PreUpdate, input::gather.in_set(EngineSystems::Input));
         if self.headless {
@@ -170,15 +179,21 @@ impl BunEnginePlugin {
                 settings.backends = Some(backends);
             }
             let plugins = DefaultPlugins
-                .set(WindowPlugin { primary_window: Some(window), ..Default::default() })
+                .set(WindowPlugin {
+                    primary_window: Some(window),
+                    ..Default::default()
+                })
                 .set(ImagePlugin::default_nearest())
                 .set(crate::bevy::render::RenderPlugin {
-                    render_creation: crate::bevy::render::settings::RenderCreation::Automatic(Box::new(settings)),
+                    render_creation: crate::bevy::render::settings::RenderCreation::Automatic(
+                        Box::new(settings),
+                    ),
                     ..Default::default()
                 });
             #[cfg(not(target_arch = "wasm32"))]
             let plugins = if self.low_latency {
-                plugins.disable::<crate::bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
+                plugins
+                    .disable::<crate::bevy::render::pipelined_rendering::PipelinedRenderingPlugin>()
             } else {
                 plugins
             };
@@ -188,13 +203,20 @@ impl BunEnginePlugin {
             use crate::bevy::winit::{UpdateMode, WinitSettings};
             // Redraw when a producer wakes the loop (decoded frame) or input arrives.
             let reactive = UpdateMode::reactive(Duration::from_millis(250));
-            app.insert_resource(WinitSettings { focused_mode: reactive, unfocused_mode: reactive });
+            app.insert_resource(WinitSettings {
+                focused_mode: reactive,
+                unfocused_mode: reactive,
+            });
         }
         if self.camera {
-            app.insert_resource(crate::bevy::camera::ClearColor(crate::bevy::color::Color::BLACK))
-                .add_systems(crate::bevy::app::Startup, spawn_camera);
+            app.insert_resource(crate::bevy::camera::ClearColor(
+                crate::bevy::color::Color::BLACK,
+            ))
+            .add_systems(crate::bevy::app::Startup, spawn_camera);
         }
-        app.insert_resource(EngineWindowSize { explicit: self.size.is_some() });
+        app.insert_resource(EngineWindowSize {
+            explicit: self.size.is_some(),
+        });
         if self.escape_exits {
             app.add_systems(Update, exit_on_escape);
         }

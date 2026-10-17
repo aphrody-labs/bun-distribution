@@ -52,9 +52,16 @@ fn main() {
         };
         let seaux = par_arbre.entry(subtree(g4mg_path)).or_default();
         for sg in g4mg::extract_geometry(&mg, &md) {
-            let max =
-                sg.positions.iter().flat_map(|v| [v.x, v.y, v.z]).fold(0.0f32, |a, c| {
-                    if c.is_finite() { a.max(c.abs()) } else { f32::INFINITY }
+            let max = sg
+                .positions
+                .iter()
+                .flat_map(|v| [v.x, v.y, v.z])
+                .fold(0.0f32, |a, c| {
+                    if c.is_finite() {
+                        a.max(c.abs())
+                    } else {
+                        f32::INFINITY
+                    }
                 });
             let seau = match max {
                 m if !m.is_finite() => 5,
@@ -69,7 +76,11 @@ fn main() {
         }
     }
 
-    println!("{:<28}{}", "sous-arbre", LABELS.map(|l| format!("{l:>9}")).join(""));
+    println!(
+        "{:<28}{}",
+        "sous-arbre",
+        LABELS.map(|l| format!("{l:>9}")).join("")
+    );
     for (arbre, seaux) in &par_arbre {
         println!("{arbre:<28}{}", seaux.map(|n| format!("{n:>9}")).join(""));
     }

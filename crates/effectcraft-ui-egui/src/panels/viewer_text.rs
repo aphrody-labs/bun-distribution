@@ -37,7 +37,11 @@ enum Drag {
     /// Type tool: a click (point text) or a drag (paragraph box) from `start` (comp space).
     Create { start: [f64; 2], vertical: bool },
     /// Resizing a paragraph box by one of its 8 handles.
-    Resize { layer: LayerId, handle: usize, start_box: [f64; 4] },
+    Resize {
+        layer: LayerId,
+        handle: usize,
+        start_box: [f64; 4],
+    },
 }
 
 fn drag_id() -> egui::Id {
@@ -72,10 +76,16 @@ impl Edited {
     /// The text's region in layer space: the box, or the laid-out lines.
     fn region(&self) -> [f64; 4] {
         if let Some(b) = self.doc.box_size {
-            return [self.doc.box_pos[0], self.doc.box_pos[1], self.doc.box_pos[0] + b[0], self.doc.box_pos[1] + b[1]];
+            return [
+                self.doc.box_pos[0],
+                self.doc.box_pos[1],
+                self.doc.box_pos[0] + b[0],
+                self.doc.box_pos[1] + b[1],
+            ];
         }
         let b = self.lay.layout.bounds;
-        let corners = [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])].map(|(x, y)| self.lay.to_layer * Point::new(x as f64, y as f64));
+        let corners = [(b[0], b[1]), (b[2], b[1]), (b[2], b[3]), (b[0], b[3])]
+            .map(|(x, y)| self.lay.to_layer * Point::new(x as f64, y as f64));
         let xs = corners.iter().map(|p| p.x);
         let ys = corners.iter().map(|p| p.y);
         let pad = 6.0;
@@ -97,11 +107,22 @@ impl Edited {
     }
     /// Box handle positions (layer space): corners and edge midpoints, clockwise from top-left.
     fn handles(&self) -> Vec<(f64, f64)> {
-        let Some(b) = self.doc.box_size else { return vec![] };
+        let Some(b) = self.doc.box_size else {
+            return vec![];
+        };
         let (x0, y0) = (self.doc.box_pos[0], self.doc.box_pos[1]);
         let (x1, y1) = (x0 + b[0], y0 + b[1]);
         let (mx, my) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
-        vec![(x0, y0), (mx, y0), (x1, y0), (x1, my), (x1, y1), (mx, y1), (x0, y1), (x0, my)]
+        vec![
+            (x0, y0),
+            (mx, y0),
+            (x1, y0),
+            (x1, my),
+            (x1, y1),
+            (mx, y1),
+            (x0, y1),
+            (x0, my),
+        ]
     }
 }
 
@@ -115,7 +136,14 @@ fn edited(app: &EffectcraftApp, ectx: &EvalCtx, lid: LayerId) -> Option<Edited> 
     let m = super::viewer::l2c(ectx, &layer).0;
     let inv = m.inverse()?;
     let carets = effectcraft_engine::render::text::caret_maps(ectx, &layer, lay.chars);
-    Some(Edited { layer, doc, lay, m, inv, carets })
+    Some(Edited {
+        layer,
+        doc,
+        lay,
+        m,
+        inv,
+        carets,
+    })
 }
 
 /// The topmost text layer whose text is under screen point `s`.
@@ -139,7 +167,11 @@ fn exec(app: &mut EffectcraftApp, id: &str, p: Value) -> Option<Value> {
 /// The panels a text edit stays open across: the viewers, and Character, Paragraph and
 /// Properties, which format the selected characters.
 fn keeps_text_edit(p: PanelKind) -> bool {
-    super::viewers::id_of(p).is_some() || matches!(p, PanelKind::Character | PanelKind::Paragraph | PanelKind::Properties)
+    super::viewers::id_of(p).is_some()
+        || matches!(
+            p,
+            PanelKind::Character | PanelKind::Paragraph | PanelKind::Properties
+        )
 }
 
 /// A click in panel `p`. Any other panel (the Timeline, the Project panel, …) ends the edit, as a
@@ -178,7 +210,9 @@ pub fn hook(
     let last_tool_id = egui::Id::new("viewer-text-last-tool");
     let last_tool = ui.data(|d| d.get_temp::<Tool>(last_tool_id));
     ui.data_mut(|d| d.insert_temp(last_tool_id, tool));
-    if last_tool.is_some_and(|previous| matches!(previous, Tool::Type | Tool::TypeVertical) && !type_tool) {
+    if last_tool
+        .is_some_and(|previous| matches!(previous, Tool::Type | Tool::TypeVertical) && !type_tool)
+    {
         exec(app, "text.endEdit", json!({}));
         ui.data_mut(|d| d.remove::<Drag>(drag_id()));
     }
@@ -192,10 +226,21 @@ pub fn hook(
     let cur = editing.as_ref().and_then(|e| edited(app, ectx, e.layer));
     let mut owns = false;
     let mut drag: Option<Drag> = ui.data(|d| d.get_temp(drag_id()));
-    let (pressed, down, released, mods) = ui.input(|i| (i.pointer.primary_pressed(), i.pointer.primary_down(), i.pointer.primary_released(), i.modifiers));
+    let (pressed, down, released, mods) = ui.input(|i| {
+        (
+            i.pointer.primary_pressed(),
+            i.pointer.primary_down(),
+            i.pointer.primary_released(),
+            i.modifiers,
+        )
+    });
     let press = ui.input(|i| i.pointer.press_origin());
     let pointer = ui.input(|i| i.pointer.interact_pos());
-    let handle_hit = |e: &Edited, s: Pos2| e.handles().iter().position(|h| e.to_screen(map, *h).distance(s) < 7.0);
+    let handle_hit = |e: &Edited, s: Pos2| {
+        e.handles()
+            .iter()
+            .position(|h| e.to_screen(map, *h).distance(s) < 7.0)
+    };
 
     // ---- press
     if pressed
@@ -208,12 +253,24 @@ pub fn hook(
         if let Some(e) = &cur {
             if let Some(h) = handle_hit(e, pos) {
                 let b = e.doc.box_size.unwrap_or([0.0; 2]);
-                drag = Some(Drag::Resize { layer: e.layer.id, handle: h, start_box: [e.doc.box_pos[0], e.doc.box_pos[1], b[0], b[1]] });
+                drag = Some(Drag::Resize {
+                    layer: e.layer.id,
+                    handle: h,
+                    start_box: [e.doc.box_pos[0], e.doc.box_pos[1], b[0], b[1]],
+                });
                 handled = true;
             } else if e.contains(map, pos) {
                 let ci = e.hit(map, pos);
-                let anchor = if mods.shift { editing.as_ref().map_or(ci, |sel| sel.anchor) } else { ci };
-                exec(app, "text.setSelection", json!({"anchor": anchor, "caret": ci}));
+                let anchor = if mods.shift {
+                    editing.as_ref().map_or(ci, |sel| sel.anchor)
+                } else {
+                    ci
+                };
+                exec(
+                    app,
+                    "text.setSelection",
+                    json!({"anchor": anchor, "caret": ci}),
+                );
                 typing_key(ui, true);
                 drag = Some(Drag::Select { layer: e.layer.id });
                 handled = true;
@@ -225,10 +282,17 @@ pub fn hook(
         if !handled && type_tool {
             if let Some(e) = text_layer_at(app, ectx, map, pos) {
                 let ci = e.hit(map, pos);
-                exec(app, "text.edit", json!({"layer": e.layer.id.0, "caret": ci}));
+                exec(
+                    app,
+                    "text.edit",
+                    json!({"layer": e.layer.id.0, "caret": ci}),
+                );
                 drag = Some(Drag::Select { layer: e.layer.id });
             } else {
-                drag = Some(Drag::Create { start: map.to_comp(pos), vertical: tool == Tool::TypeVertical });
+                drag = Some(Drag::Create {
+                    start: map.to_comp(pos),
+                    vertical: tool == Tool::TypeVertical,
+                });
             }
             handled = true;
         }
@@ -248,9 +312,24 @@ pub fn hook(
                 && press.is_some_and(|q| q.distance(p) > 2.0)
             {
                 let ci = e.hit(map, p);
-                if app.session.state.text_edit.as_ref().is_some_and(|s| s.caret != ci) {
-                    let anchor = app.session.state.text_edit.as_ref().map_or(ci, |s| s.anchor);
-                    exec(app, "text.setSelection", json!({"anchor": anchor, "caret": ci}));
+                if app
+                    .session
+                    .state
+                    .text_edit
+                    .as_ref()
+                    .is_some_and(|s| s.caret != ci)
+                {
+                    let anchor = app
+                        .session
+                        .state
+                        .text_edit
+                        .as_ref()
+                        .map_or(ci, |s| s.anchor);
+                    exec(
+                        app,
+                        "text.setSelection",
+                        json!({"anchor": anchor, "caret": ci}),
+                    );
                 }
             }
         }
@@ -261,13 +340,19 @@ pub fn hook(
             let b = map.to_screen(end);
             let is_box = a.distance(b) > 6.0;
             if is_box && down {
-                painter.rect_stroke(Rect::from_two_pos(a, b), 0.0, Stroke::new(1.0, app.tokens.accent), StrokeKind::Middle);
+                painter.rect_stroke(
+                    Rect::from_two_pos(a, b),
+                    0.0,
+                    Stroke::new(1.0, app.tokens.accent),
+                    StrokeKind::Middle,
+                );
             }
             if released {
                 let mut p = json!({"text": "", "edit": true, "size": 72, "fill": [1.0, 1.0, 1.0], "vertical": vertical});
                 if is_box {
                     let (x0, y0) = (start[0].min(end[0]), start[1].min(end[1]));
-                    p["box"] = json!([x0, y0, (end[0] - start[0]).abs(), (end[1] - start[1]).abs()]);
+                    p["box"] =
+                        json!([x0, y0, (end[0] - start[0]).abs(), (end[1] - start[1]).abs()]);
                 } else {
                     p["position"] = json!([start[0], start[1]]);
                     p["justify"] = json!("left");
@@ -276,7 +361,11 @@ pub fn hook(
                 ui.memory_mut(|m| m.request_focus(focus_id()));
             }
         }
-        Some(Drag::Resize { layer, handle, start_box }) => {
+        Some(Drag::Resize {
+            layer,
+            handle,
+            start_box,
+        }) => {
             owns = true;
             if down
                 && let (Some(p), Some(q)) = (pointer, press)
@@ -299,8 +388,17 @@ pub fn hook(
                 if matches!(handle, 4..=6) {
                     y1 += dy;
                 }
-                let bx = [x0.min(x1), y0.min(y1), (x1 - x0).abs().max(4.0), (y1 - y0).abs().max(4.0)];
-                exec(app, "layer.setText", json!({"layer": layer.0, "box": bx, "merge": format!("text-box-{}", layer.0)}));
+                let bx = [
+                    x0.min(x1),
+                    y0.min(y1),
+                    (x1 - x0).abs().max(4.0),
+                    (y1 - y0).abs().max(4.0),
+                ];
+                exec(
+                    app,
+                    "layer.setText",
+                    json!({"layer": layer.0, "box": bx, "merge": format!("text-box-{}", layer.0)}),
+                );
             }
         }
         None => {}
@@ -308,7 +406,12 @@ pub fn hook(
     // Double / triple click: word / line; double-click a text layer to edit it.
     if resp.triple_clicked()
         && let Some(p) = pointer
-        && let Some(e) = app.session.state.text_edit.clone().and_then(|s| edited(app, ectx, s.layer))
+        && let Some(e) = app
+            .session
+            .state
+            .text_edit
+            .clone()
+            .and_then(|s| edited(app, ectx, s.layer))
         && e.contains(map, p)
     {
         let (a, b) = e.lay.line_span(e.hit(map, p));
@@ -317,11 +420,20 @@ pub fn hook(
     } else if resp.double_clicked()
         && let Some(p) = pointer
     {
-        let cur2 = app.session.state.text_edit.clone().and_then(|s| edited(app, ectx, s.layer));
+        let cur2 = app
+            .session
+            .state
+            .text_edit
+            .clone()
+            .and_then(|s| edited(app, ectx, s.layer));
         match cur2 {
             Some(e) if e.contains(map, p) => {
                 let r = effectcraft_engine::keyframe::text_doc::word_at(&e.doc.text, e.hit(map, p));
-                exec(app, "text.setSelection", json!({"anchor": r.start, "caret": r.end}));
+                exec(
+                    app,
+                    "text.setSelection",
+                    json!({"anchor": r.start, "caret": r.end}),
+                );
                 owns = true;
             }
             _ if !matches!(tool, Tool::Hand | Tool::Zoom) && !tool.is_pen() && !type_tool => {
@@ -344,9 +456,21 @@ pub fn hook(
     if app.session.state.text_edit.is_some() && app.dialog.is_none() && ui.is_enabled() {
         // Register after pointer handling so new edits take focus in this frame. An inactive
         // editor must not take Tab focus and immediately surrender it before viewer controls.
-        ui.interact(Rect::from_min_size(resp.rect.min, vec2(1.0, 1.0)), focus_id(), egui::Sense::focusable_noninteractive());
+        ui.interact(
+            Rect::from_min_size(resp.rect.min, vec2(1.0, 1.0)),
+            focus_id(),
+            egui::Sense::focusable_noninteractive(),
+        );
         ui.memory_mut(|m| {
-            m.set_focus_lock_filter(focus_id(), egui::EventFilter { tab: true, horizontal_arrows: true, vertical_arrows: true, escape: true });
+            m.set_focus_lock_filter(
+                focus_id(),
+                egui::EventFilter {
+                    tab: true,
+                    horizontal_arrows: true,
+                    vertical_arrows: true,
+                    escape: true,
+                },
+            );
         });
         // A session started elsewhere (menu, agent, Properties) takes the keyboard once…
         let seen = egui::Id::new("viewer-text-seen");
@@ -384,9 +508,13 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
     let events = ui.input(|i| i.events.clone());
     let ctx = ui.ctx().clone();
     for ev in events {
-        let Some(sel) = app.session.state.text_edit.clone() else { return };
+        let Some(sel) = app.session.state.text_edit.clone() else {
+            return;
+        };
         match ev {
-            egui::Event::PointerButton { pos, pressed: true, .. } if !viewer.contains(pos) => return,
+            egui::Event::PointerButton {
+                pos, pressed: true, ..
+            } if !viewer.contains(pos) => return,
             egui::Event::Text(t) if !t.chars().any(char::is_control) => {
                 let k = typing_key(ui, false);
                 exec(app, "text.insert", json!({"text": t, "merge": k}));
@@ -418,7 +546,12 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
                 exec(app, "edit.paste", json!({"text": t}));
                 typing_key(ui, true);
             }
-            egui::Event::Key { key, pressed: true, modifiers: m, .. } => {
+            egui::Event::Key {
+                key,
+                pressed: true,
+                modifiers: m,
+                ..
+            } => {
                 use egui::Key;
                 let cmd = m.command;
                 let mv = |app: &mut EffectcraftApp, to: &str| {
@@ -427,7 +560,8 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
                 match key {
                     Key::ArrowLeft | Key::ArrowRight if m.alt => {
                         // Kerning at the caret, tracking over a selection.
-                        let step = if cmd { 100.0 } else { 20.0 } * if key == Key::ArrowLeft { -1.0 } else { 1.0 };
+                        let step = if cmd { 100.0 } else { 20.0 }
+                            * if key == Key::ArrowLeft { -1.0 } else { 1.0 };
                         let doc = layer_doc(&app.session, sel.layer).unwrap_or_default();
                         if sel.is_empty() {
                             if sel.caret < doc.char_len() {
@@ -444,7 +578,11 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
                         } else {
                             let r = sel.range();
                             let cur = doc.style_at(r.start).tracking;
-                            exec(app, "layer.setText", json!({"layer": sel.layer.0, "range": [r.start, r.end], "tracking": cur + step, "merge": "text-track"}));
+                            exec(
+                                app,
+                                "layer.setText",
+                                json!({"layer": sel.layer.0, "range": [r.start, r.end], "tracking": cur + step, "merge": "text-track"}),
+                            );
                         }
                     }
                     Key::ArrowLeft => mv(app, if cmd { "wordLeft" } else { "left" }),
@@ -455,11 +593,19 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
                     Key::End => mv(app, if cmd { "end" } else { "lineEnd" }),
                     Key::Backspace => {
                         let k = typing_key(ui, false);
-                        exec(app, "text.delete", json!({"word": cmd || m.alt, "merge": k}));
+                        exec(
+                            app,
+                            "text.delete",
+                            json!({"word": cmd || m.alt, "merge": k}),
+                        );
                     }
                     Key::Delete => {
                         let k = typing_key(ui, false);
-                        exec(app, "text.delete", json!({"direction": "forward", "word": cmd || m.alt, "merge": k}));
+                        exec(
+                            app,
+                            "text.delete",
+                            json!({"direction": "forward", "word": cmd || m.alt, "merge": k}),
+                        );
                     }
                     Key::Enter if cmd => {
                         exec(app, "text.endEdit", json!({}));
@@ -479,14 +625,26 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
                         exec(app, "text.setSelection", json!({"select": "all"}));
                     }
                     Key::Z if cmd => {
-                        let _ = crate::menus::invoke(app, &ctx, if m.shift { "edit.redo" } else { "edit.undo" }, json!({}));
+                        let _ = crate::menus::invoke(
+                            app,
+                            &ctx,
+                            if m.shift { "edit.redo" } else { "edit.undo" },
+                            json!({}),
+                        );
                     }
                     Key::Comma | Key::Period if cmd && m.shift => {
                         let doc = layer_doc(&app.session, sel.layer).unwrap_or_default();
                         let r = sel.range();
-                        let size = sel.pending.as_ref().map_or_else(|| doc.style_at(r.start).size, |p| p.size);
+                        let size = sel
+                            .pending
+                            .as_ref()
+                            .map_or_else(|| doc.style_at(r.start).size, |p| p.size);
                         let ns = (size + if key == Key::Period { 2.0 } else { -2.0 }).max(1.0);
-                        exec(app, "layer.setText", json!({"layer": sel.layer.0, "range": [r.start, r.end], "size": ns}));
+                        exec(
+                            app,
+                            "layer.setText",
+                            json!({"layer": sel.layer.0, "range": [r.start, r.end], "size": ns}),
+                        );
                     }
                     _ => {}
                 }
@@ -499,7 +657,15 @@ fn keyboard(app: &mut EffectcraftApp, ui: &mut egui::Ui, viewer: Rect) {
     }
 }
 
-fn draw(app: &mut EffectcraftApp, ui: &mut egui::Ui, painter: &egui::Painter, map: &ViewerMap, e: &Edited, sel: std::ops::Range<usize>, caret: usize) {
+fn draw(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    painter: &egui::Painter,
+    map: &ViewerMap,
+    e: &Edited,
+    sel: std::ops::Range<usize>,
+    caret: usize,
+) {
     let t = app.tokens;
     let to_s = |p: Point| e.to_screen(map, (p.x, p.y));
     // Paragraph box and its handles.
@@ -507,20 +673,28 @@ fn draw(app: &mut EffectcraftApp, ui: &mut egui::Ui, painter: &egui::Painter, ma
         let hs: Vec<Pos2> = e.handles().iter().map(|h| e.to_screen(map, *h)).collect();
         let corners = [hs[0], hs[2], hs[4], hs[6], hs[0]];
         for w in corners.windows(2) {
-            painter.line_segment([w[0], w[1]], Stroke::new(1.0, Color32::from_white_alpha(170)));
+            painter.line_segment(
+                [w[0], w[1]],
+                Stroke::new(1.0, Color32::from_white_alpha(170)),
+            );
         }
         for (i, h) in hs.iter().enumerate() {
             let r = Rect::from_center_size(*h, vec2(7.0, 7.0));
             painter.rect_filled(r, 0.0, Color32::WHITE);
             painter.rect_stroke(r, 0.0, Stroke::new(1.0, Color32::BLACK), StrokeKind::Middle);
-            app.auto.add(&format!("viewer.textBox.handle.{i}"), r, "Text box handle");
+            app.auto
+                .add(&format!("viewer.textBox.handle.{i}"), r, "Text box handle");
         }
     }
     // Selection highlight.
     if !sel.is_empty() {
         for q in e.lay.selection_quads(sel.start, sel.end) {
             let pts: Vec<Pos2> = q.iter().map(|p| to_s(*p)).collect();
-            painter.add(egui::Shape::convex_polygon(pts, t.accent.gamma_multiply(0.38), Stroke::NONE));
+            painter.add(egui::Shape::convex_polygon(
+                pts,
+                t.accent.gamma_multiply(0.38),
+                Stroke::NONE,
+            ));
         }
     }
     // Caret (blinking) and IME composition.
@@ -541,19 +715,33 @@ fn draw(app: &mut EffectcraftApp, ui: &mut egui::Ui, painter: &egui::Painter, ma
         let r = Rect::from_min_size(sa, g.size());
         painter.rect_filled(r.expand(2.0), 2.0, Color32::from_black_alpha(160));
         painter.galley(sa, g, Color32::WHITE);
-        painter.line_segment([r.left_bottom(), r.right_bottom()], Stroke::new(1.0, Color32::WHITE));
+        painter.line_segment(
+            [r.left_bottom(), r.right_bottom()],
+            Stroke::new(1.0, Color32::WHITE),
+        );
     } else if (now * 2.0) as i64 % 2 == 0 || !sel.is_empty() {
         painter.line_segment([sa, sb], Stroke::new(3.0, Color32::from_black_alpha(160)));
         painter.line_segment([sa, sb], Stroke::new(1.5, Color32::WHITE));
     }
-    ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
+    ui.ctx()
+        .request_repaint_after(std::time::Duration::from_millis(500));
     // The text region for automation, and the IME candidate window position.
     let r = e.region();
-    let quad = [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])].map(|p| e.to_screen(map, p));
+    let quad =
+        [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])].map(|p| e.to_screen(map, p));
     let rect = Rect::from_points(&quad);
-    app.auto.add("viewer.textEdit", rect, &format!("Editing {}", e.layer.name));
+    app.auto.add(
+        "viewer.textEdit",
+        rect,
+        &format!("Editing {}", e.layer.name),
+    );
     let cursor_rect = Rect::from_two_pos(sa, sb).expand2(vec2(1.0, 0.0));
     ui.ctx().output_mut(|o| {
-        o.ime = Some(egui::output::IMEOutput { purpose: egui::IMEPurpose::Normal, rect, cursor_rect, should_interrupt_composition: false });
+        o.ime = Some(egui::output::IMEOutput {
+            purpose: egui::IMEPurpose::Normal,
+            rect,
+            cursor_rect,
+            should_interrupt_composition: false,
+        });
     });
 }

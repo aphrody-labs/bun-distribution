@@ -16,7 +16,7 @@ use bevy_ecs::{
 };
 use bevy_image::Image;
 use bevy_math::{AspectRatio, UVec2, UVec3, Vec3A, Vec3Swizzles as _};
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_transform::components::Transform;
 use tracing::warn;
 

@@ -1,10 +1,10 @@
 use crate::{Anchor, Sprite};
 use bevy_asset::Assets;
+use bevy_camera::Camera;
 use bevy_camera::primitives::Aabb;
 use bevy_camera::visibility::{
     self, NoFrustumCulling, RenderLayers, Visibility, VisibilityClass, VisibleEntities,
 };
-use bevy_camera::Camera;
 use bevy_color::Color;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::entity::EntityHashSet;
@@ -20,7 +20,7 @@ use bevy_ecs::{
 };
 use bevy_image::prelude::*;
 use bevy_math::{FloatOrd, Vec2, Vec3};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_text::{
     ComputedTextBlock, Font, FontAtlasSet, FontCx, FontHinting, LayoutCx, LetterSpacing, LineBreak,
     LineHeight, RemSize, ScaleCx, TextBounds, TextColor, TextError, TextFont, TextLayout,
@@ -382,14 +382,14 @@ pub fn calculate_bounds_text2d(
 mod tests {
 
     use bevy_app::{App, Update};
-    use bevy_asset::{load_internal_binary_asset, Handle};
+    use bevy_asset::{Handle, load_internal_binary_asset};
     use bevy_camera::{ComputedCameraValues, RenderTargetInfo};
     use bevy_ecs::schedule::IntoScheduleConfigs;
     use bevy_ecs::{hierarchy::ChildOf, system::RunSystemOnce, world::World};
     use bevy_math::UVec2;
     use bevy_text::{
-        detect_text_needs_rerender, InlineBox, InlineBoxKind, TextElement, TextIterScratch,
-        TextSpan,
+        InlineBox, InlineBoxKind, TextElement, TextIterScratch, TextSpan,
+        detect_text_needs_rerender,
     };
 
     use super::*;
@@ -510,11 +510,12 @@ mod tests {
     fn calculate_bounds_text2d_create_aabb() {
         let (mut app, entity) = setup();
 
-        assert!(!app
-            .world()
-            .get_entity(entity)
-            .expect("Could not find entity")
-            .contains::<Aabb>());
+        assert!(
+            !app.world()
+                .get_entity(entity)
+                .expect("Could not find entity")
+                .contains::<Aabb>()
+        );
 
         // Creates the AABB after text layouting.
         app.update();

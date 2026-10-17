@@ -18,7 +18,12 @@ pub enum PasswordHash {
     /// The legacy 16-bit hash.
     Legacy(u16),
     /// An iterated, salted hash as stored in the file: algorithm name, base64 hash and salt.
-    Iterated { algorithm: String, hash: String, salt: String, spin_count: u32 },
+    Iterated {
+        algorithm: String,
+        hash: String,
+        salt: String,
+        spin_count: u32,
+    },
 }
 
 impl PasswordHash {
@@ -38,21 +43,33 @@ impl PasswordHash {
     pub fn verify(&self, password: &str) -> Result<bool, String> {
         match self {
             PasswordHash::Legacy(h) => Ok(legacy_hash(password) == *h),
-            PasswordHash::Iterated { algorithm, hash, salt, spin_count } => {
+            PasswordHash::Iterated {
+                algorithm,
+                hash,
+                salt,
+                spin_count,
+            } => {
                 if algorithm.is_empty() {
                     return Err("the stored password hash is damaged".into());
                 }
                 if *spin_count > MAX_SPIN_COUNT {
-                    return Err(format!("the password uses a spin count of {spin_count}, more than the {MAX_SPIN_COUNT} allowed"));
+                    return Err(format!(
+                        "the password uses a spin count of {spin_count}, more than the {MAX_SPIN_COUNT} allowed"
+                    ));
                 }
-                let (Some(want), Some(salt)) = (crate::b64::decode(hash), crate::b64::decode(salt)) else {
+                let (Some(want), Some(salt)) = (crate::b64::decode(hash), crate::b64::decode(salt))
+                else {
                     return Err("the stored password hash is damaged".into());
                 };
                 let got = match algorithm.to_ascii_uppercase().replace('_', "-").as_str() {
                     "SHA-512" => iterated::<sha2::Sha512>(password, &salt, *spin_count),
                     "SHA-384" => iterated::<sha2::Sha384>(password, &salt, *spin_count),
                     "SHA-256" => iterated::<sha2::Sha256>(password, &salt, *spin_count),
-                    _ => return Err(format!("passwords hashed with {algorithm} aren't supported")),
+                    _ => {
+                        return Err(format!(
+                            "passwords hashed with {algorithm} aren't supported"
+                        ));
+                    }
                 };
                 Ok(got == want)
             }
@@ -74,7 +91,10 @@ pub fn salt_from(seed: &[u8]) -> [u8; 16] {
 /// when the low one is zero), folded in from the last character with a 15-bit rotation, then
 /// the length and the constant `0xCE4B`.
 pub fn legacy_hash(password: &str) -> u16 {
-    let bytes: Vec<u16> = password.encode_utf16().map(|u| if u & 0xFF != 0 { u & 0xFF } else { u >> 8 }).collect();
+    let bytes: Vec<u16> = password
+        .encode_utf16()
+        .map(|u| if u & 0xFF != 0 { u & 0xFF } else { u >> 8 })
+        .collect();
     let rotate = |v: u16| ((v >> 14) & 1) | ((v << 1) & 0x7FFF);
     let mut h: u16 = 0;
     for b in bytes.iter().rev() {
@@ -119,15 +139,32 @@ mod tests {
         let h = PasswordHash::new_sha512("s3cret", b"0123456789abcdef");
         assert!(h.verify("s3cret").unwrap());
         assert!(!h.verify("s3cret ").unwrap());
-        assert!(matches!(&h, PasswordHash::Iterated { algorithm, spin_count: DEFAULT_SPIN_COUNT, .. } if algorithm == "SHA-512"));
-        let PasswordHash::Iterated { hash, salt, .. } = h else { return };
-        let other =
-            |algorithm: &str, spin_count| PasswordHash::Iterated { algorithm: algorithm.into(), hash: hash.clone(), salt: salt.clone(), spin_count };
+        assert!(
+            matches!(&h, PasswordHash::Iterated { algorithm, spin_count: DEFAULT_SPIN_COUNT, .. } if algorithm == "SHA-512")
+        );
+        let PasswordHash::Iterated { hash, salt, .. } = h else {
+            return;
+        };
+        let other = |algorithm: &str, spin_count| PasswordHash::Iterated {
+            algorithm: algorithm.into(),
+            hash: hash.clone(),
+            salt: salt.clone(),
+            spin_count,
+        };
         assert!(other("SHA-1", 10).verify("s3cret").is_err());
         assert!(other("MD5", 10).verify("s3cret").is_err());
-        assert!(other("SHA-512", MAX_SPIN_COUNT + 1).verify("s3cret").is_err());
+        assert!(
+            other("SHA-512", MAX_SPIN_COUNT + 1)
+                .verify("s3cret")
+                .is_err()
+        );
         assert!(!other("SHA-256", 2).verify("s3cret").unwrap());
-        let broken = PasswordHash::Iterated { algorithm: "SHA-512".into(), hash: "!!".into(), salt: salt.clone(), spin_count: 1 };
+        let broken = PasswordHash::Iterated {
+            algorithm: "SHA-512".into(),
+            hash: "!!".into(),
+            salt: salt.clone(),
+            spin_count: 1,
+        };
         assert!(broken.verify("s3cret").is_err());
     }
 }

@@ -1,8 +1,8 @@
 use crate::{
+    DynamicTypePath, DynamicTyped, OpaqueInfo, ReflectCloneError, ReflectKind,
+    ReflectKindMismatchError, ReflectMut, ReflectOwned, ReflectRef, TypeInfo, TypePath, Typed,
     array::array_debug, enums::enum_debug, list::list_debug, map::map_debug, set::set_debug,
-    structs::struct_debug, tuple::tuple_debug, tuple_struct::tuple_struct_debug, DynamicTypePath,
-    DynamicTyped, OpaqueInfo, ReflectCloneError, ReflectKind, ReflectKindMismatchError, ReflectMut,
-    ReflectOwned, ReflectRef, TypeInfo, TypePath, Typed,
+    structs::struct_debug, tuple::tuple_debug, tuple_struct::tuple_struct_debug,
 };
 use alloc::borrow::Cow;
 use alloc::boxed::Box;

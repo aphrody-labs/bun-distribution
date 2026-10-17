@@ -94,7 +94,11 @@ impl CheckModules {
         };
         let code_hash = fxhash::hash64(&code);
 
-        if code_hash == base_hash { Ok(CheckResult::Ok) } else { Ok(CheckResult::ChecksumFailed) }
+        if code_hash == base_hash {
+            Ok(CheckResult::Ok)
+        } else {
+            Ok(CheckResult::ChecksumFailed)
+        }
     }
 }
 

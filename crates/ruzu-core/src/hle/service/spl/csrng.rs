@@ -105,7 +105,8 @@ mod tests {
             assert!(status.success());
             return;
         }
-        for (global, seed) in [true, false].into_iter()
+        for (global, seed) in [true, false]
+            .into_iter()
             .flat_map(|global| [0, 1, u32::MAX].map(|seed| (global, seed)))
         {
             {

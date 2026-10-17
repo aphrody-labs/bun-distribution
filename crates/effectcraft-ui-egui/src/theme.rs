@@ -123,7 +123,11 @@ impl Tokens {
     /// The gradient top colour for a fill (a little lighter), or the fill itself when gradients
     /// are off.
     pub fn grad_top(&self, c: Color32) -> Color32 {
-        if self.gradients { c.lerp_to_gamma(Color32::WHITE, 0.06) } else { c }
+        if self.gradients {
+            c.lerp_to_gamma(Color32::WHITE, 0.06)
+        } else {
+            c
+        }
     }
 }
 
@@ -253,7 +257,10 @@ impl Tokens {
     }
     /// sRGB colour of an item/layer label (Settings ▸ Labels).
     pub fn label(&self, l: effectcraft_color::Label) -> Color32 {
-        let i = effectcraft_color::Label::ALL.iter().position(|x| *x == l).unwrap_or(0);
+        let i = effectcraft_color::Label::ALL
+            .iter()
+            .position(|x| *x == l)
+            .unwrap_or(0);
         self.labels[i]
     }
 
@@ -280,7 +287,13 @@ impl Tokens {
         let adj = |c: &mut Color32| {
             let f = |v: u8| -> u8 {
                 let v = v as f32;
-                (if b > 0.0 { v + (110.0 - v).max(0.0) * b * 0.8 + 10.0 * b } else { v * (1.0 + b * 0.6) }).round().clamp(0.0, 255.0) as u8
+                (if b > 0.0 {
+                    v + (110.0 - v).max(0.0) * b * 0.8 + 10.0 * b
+                } else {
+                    v * (1.0 + b * 0.6)
+                })
+                .round()
+                .clamp(0.0, 255.0) as u8
             };
             *c = Color32::from_rgb(f(c.r()), f(c.g()), f(c.b()));
         };
@@ -320,8 +333,10 @@ fn default_labels() -> [Color32; 17] {
 
 static INTER_REGULAR: &[u8] = include_bytes!("../../../assets/effectcraft/fonts/Inter-Regular.ttf");
 static INTER_MEDIUM: &[u8] = include_bytes!("../../../assets/effectcraft/fonts/Inter-Medium.ttf");
-static INTER_SEMIBOLD: &[u8] = include_bytes!("../../../assets/effectcraft/fonts/Inter-SemiBold.ttf");
-static JETBRAINS_MONO: &[u8] = include_bytes!("../../../assets/effectcraft/fonts/JetBrainsMono-Regular.ttf");
+static INTER_SEMIBOLD: &[u8] =
+    include_bytes!("../../../assets/effectcraft/fonts/Inter-SemiBold.ttf");
+static JETBRAINS_MONO: &[u8] =
+    include_bytes!("../../../assets/effectcraft/fonts/JetBrainsMono-Regular.ttf");
 
 /// Install fonts (Inter, Inter Medium/SemiBold, JetBrains Mono) and egui visuals. `language` is the
 /// resolved interface language from [`crate::i18n::language`] (`en`, `ja`, `zh-hans` or `zh-hant`),
@@ -332,14 +347,40 @@ static JETBRAINS_MONO: &[u8] = include_bytes!("../../../assets/effectcraft/fonts
 /// frame loop), so the fonts do not need a restart.
 pub fn install(ctx: &egui::Context, t: &Tokens, language: &str) {
     let mut fonts = FontDefinitions::default();
-    fonts.font_data.insert("inter".into(), Arc::new(FontData::from_static(INTER_REGULAR)));
-    fonts.font_data.insert("inter-medium".into(), Arc::new(FontData::from_static(INTER_MEDIUM)));
-    fonts.font_data.insert("inter-semibold".into(), Arc::new(FontData::from_static(INTER_SEMIBOLD)));
-    fonts.font_data.insert("jbmono".into(), Arc::new(FontData::from_static(JETBRAINS_MONO)));
-    fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "inter".into());
-    fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "jbmono".into());
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["inter-semibold".into(), "inter".into()]);
-    fonts.families.insert(FontFamily::Name("medium".into()), vec!["inter-medium".into(), "inter".into()]);
+    fonts.font_data.insert(
+        "inter".into(),
+        Arc::new(FontData::from_static(INTER_REGULAR)),
+    );
+    fonts.font_data.insert(
+        "inter-medium".into(),
+        Arc::new(FontData::from_static(INTER_MEDIUM)),
+    );
+    fonts.font_data.insert(
+        "inter-semibold".into(),
+        Arc::new(FontData::from_static(INTER_SEMIBOLD)),
+    );
+    fonts.font_data.insert(
+        "jbmono".into(),
+        Arc::new(FontData::from_static(JETBRAINS_MONO)),
+    );
+    fonts
+        .families
+        .entry(FontFamily::Proportional)
+        .or_default()
+        .insert(0, "inter".into());
+    fonts
+        .families
+        .entry(FontFamily::Monospace)
+        .or_default()
+        .insert(0, "jbmono".into());
+    fonts.families.insert(
+        FontFamily::Name("semibold".into()),
+        vec!["inter-semibold".into(), "inter".into()],
+    );
+    fonts.families.insert(
+        FontFamily::Name("medium".into()),
+        vec!["inter-medium".into(), "inter".into()],
+    );
     // Inter and egui's own fallbacks have no small triangles (the `▸` of "File ▸ Import"), which
     // would draw as missing-glyph boxes: JetBrains Mono fills in the symbols the others lack.
     for (family, stack) in &mut fonts.families {
@@ -405,10 +446,18 @@ fn install_script_fallbacks(family_fonts: &mut FontDefinitions, language: &str) 
         // Han text follows the interface language, not the operating system's locale.
         fonts::set_cjk_locale(cjk_locale(language));
         let base = fonts::resolve("Inter", "Regular").face;
-        let cjk = if is_chinese(language) { [HAN, KANA] } else { [KANA, HAN] };
+        let cjk = if is_chinese(language) {
+            [HAN, KANA]
+        } else {
+            [KANA, HAN]
+        };
         let mut names = Vec::new();
         let mut seen = Vec::new();
-        for &(probe, name) in cjk.iter().chain(SCRIPT_PROBES).chain(std::iter::once(&HANGUL)) {
+        for &(probe, name) in cjk
+            .iter()
+            .chain(SCRIPT_PROBES)
+            .chain(std::iter::once(&HANGUL))
+        {
             let id = fonts::fallback_for(probe, base);
             if seen.contains(&id) {
                 continue;
@@ -422,7 +471,9 @@ fn install_script_fallbacks(family_fonts: &mut FontDefinitions, language: &str) 
             // Use the already-read, parsed bytes rather than reading a font file twice.
             let mut data = FontData::from_owned(font.data().as_bytes().to_vec());
             data.index = face.info.index;
-            family_fonts.font_data.insert(name.to_string(), Arc::new(data));
+            family_fonts
+                .font_data
+                .insert(name.to_string(), Arc::new(data));
             for family in family_fonts.families.values_mut() {
                 family.push(name.to_string());
             }
@@ -462,7 +513,11 @@ pub fn theme_preference(appearance_mode: &str, light: bool) -> egui::ThemePrefer
 
 pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
     let light = t.kind.is_light();
-    let mut v = if light { Visuals::light() } else { Visuals::dark() };
+    let mut v = if light {
+        Visuals::light()
+    } else {
+        Visuals::dark()
+    };
     v.panel_fill = t.panel_bg;
     v.window_fill = t.panel_bg;
     v.extreme_bg_color = t.field_bg;
@@ -474,9 +529,25 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
     v.window_stroke = Stroke::new(1.0, t.field_border);
     v.window_corner_radius = egui::CornerRadius::same(8);
     v.menu_corner_radius = egui::CornerRadius::same(6);
-    v.popup_shadow = egui::epaint::Shadow { offset: [0, 6], blur: 20, spread: 0, color: Color32::from_black_alpha(150) };
-    v.window_shadow = egui::epaint::Shadow { offset: [0, 10], blur: 36, spread: 0, color: Color32::from_black_alpha(170) };
-    for w in [&mut v.widgets.noninteractive, &mut v.widgets.inactive, &mut v.widgets.hovered, &mut v.widgets.active, &mut v.widgets.open] {
+    v.popup_shadow = egui::epaint::Shadow {
+        offset: [0, 6],
+        blur: 20,
+        spread: 0,
+        color: Color32::from_black_alpha(150),
+    };
+    v.window_shadow = egui::epaint::Shadow {
+        offset: [0, 10],
+        blur: 36,
+        spread: 0,
+        color: Color32::from_black_alpha(170),
+    };
+    for w in [
+        &mut v.widgets.noninteractive,
+        &mut v.widgets.inactive,
+        &mut v.widgets.hovered,
+        &mut v.widgets.active,
+        &mut v.widgets.open,
+    ] {
         w.corner_radius = egui::CornerRadius::same(t.radius_sm as u8);
     }
     v.widgets.noninteractive.bg_fill = t.panel_bg;
@@ -507,11 +578,24 @@ pub fn apply_visuals(ctx: &egui::Context, t: &Tokens) {
         // Scroll bars always show (egui's float in only over the list), so long menus and lists
         // can be dragged without a mouse wheel or touchpad (#269).
         s.spacing.scroll = egui::style::ScrollStyle::solid();
-        s.text_styles.insert(TextStyle::Body, FontId::new(12.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Button, FontId::new(12.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Small, FontId::new(11.0, FontFamily::Proportional));
-        s.text_styles.insert(TextStyle::Heading, FontId::new(15.0, FontFamily::Name("semibold".into())));
-        s.text_styles.insert(TextStyle::Monospace, FontId::new(12.0, FontFamily::Monospace));
+        s.text_styles
+            .insert(TextStyle::Body, FontId::new(12.0, FontFamily::Proportional));
+        s.text_styles.insert(
+            TextStyle::Button,
+            FontId::new(12.0, FontFamily::Proportional),
+        );
+        s.text_styles.insert(
+            TextStyle::Small,
+            FontId::new(11.0, FontFamily::Proportional),
+        );
+        s.text_styles.insert(
+            TextStyle::Heading,
+            FontId::new(15.0, FontFamily::Name("semibold".into())),
+        );
+        s.text_styles.insert(
+            TextStyle::Monospace,
+            FontId::new(12.0, FontFamily::Monospace),
+        );
         s.animation_time = 0.1;
     });
 }
@@ -530,7 +614,11 @@ mod script_font_tests {
     /// interface's fonts installed.
     fn assert_drawn(language: &str, text: &str) {
         let ctx = egui::Context::default();
-        super::install(&ctx, &super::Tokens::for_kind(super::ThemeKind::Dark), language);
+        super::install(
+            &ctx,
+            &super::Tokens::for_kind(super::ThemeKind::Dark),
+            language,
+        );
         let mut out = ctx.run_ui(egui::RawInput::default(), |_| {});
         // No renderer here: drop the frame's texture uploads (egui asserts on unhandled ones in debug).
         out.textures_delta.clear();
@@ -545,13 +633,19 @@ mod script_font_tests {
                 // epaint 0.36's has_glyph compares face keys, so it reports a false
                 // negative when a real glyph shares the replacement face.
                 // Check the rendered atlas glyph instead of that face-level predicate.
-                let missing = fonts.layout_no_wrap("\u{10ffff}".into(), font.clone(), egui::Color32::WHITE);
+                let missing =
+                    fonts.layout_no_wrap("\u{10ffff}".into(), font.clone(), egui::Color32::WHITE);
                 let missing_uv = missing.rows[0].glyphs[0].uv_rect;
                 for ch in text.chars() {
-                    let rendered = fonts.layout_no_wrap(ch.to_string(), font.clone(), egui::Color32::WHITE);
+                    let rendered =
+                        fonts.layout_no_wrap(ch.to_string(), font.clone(), egui::Color32::WHITE);
                     let uv = rendered.rows[0].glyphs[0].uv_rect;
                     assert!(uv.size.x > 0.0 && uv.size.y > 0.0, "empty {ch} in {font:?}");
-                    assert_ne!((uv.min, uv.max), (missing_uv.min, missing_uv.max), "replacement glyph for {ch} in {font:?}");
+                    assert_ne!(
+                        (uv.min, uv.max),
+                        (missing_uv.min, missing_uv.max),
+                        "replacement glyph for {ch} in {font:?}"
+                    );
                 }
             }
         });
@@ -572,9 +666,22 @@ mod script_font_tests {
     #[test]
     fn installed_script_fallbacks_draw_arabic_hebrew_indic_and_thai_names() {
         // Letters only: a vowel sign or virama on its own is drawn on a dotted circle.
-        for text in ["طبقةمرحبا", "שכבה", "परत", "কলম", "ਕਲਮ", "કલમ", "கடல", "కలమ", "ಕಲಮ", "കലമ", "กขค"]
-        {
-            let Some(probe) = text.chars().next() else { continue };
+        for text in [
+            "طبقةمرحبا",
+            "שכבה",
+            "परत",
+            "কলম",
+            "ਕਲਮ",
+            "કલમ",
+            "கடல",
+            "కలమ",
+            "ಕಲಮ",
+            "കലമ",
+            "กขค",
+        ] {
+            let Some(probe) = text.chars().next() else {
+                continue;
+            };
             if !installed(probe) {
                 eprintln!("no system font covers {text}; skipping its glyph coverage");
                 continue;
@@ -597,18 +704,41 @@ mod script_font_tests {
         out.textures_delta.clear();
         ctx.fonts_mut(|fonts| {
             let font = egui::FontId::new(13.0, egui::FontFamily::Proportional);
-            let missing = fonts.layout_no_wrap("\u{10ffff}".into(), font.clone(), egui::Color32::WHITE).rows[0].glyphs[0].uv_rect;
+            let missing = fonts
+                .layout_no_wrap("\u{10ffff}".into(), font.clone(), egui::Color32::WHITE)
+                .rows[0]
+                .glyphs[0]
+                .uv_rect;
             let alone = fonts.layout_no_wrap("م".into(), font.clone(), egui::Color32::WHITE);
             let word = fonts.layout_no_wrap("مرحبا".into(), font, egui::Color32::WHITE);
             let glyphs = &word.rows[0].glyphs;
-            let meem = glyphs.iter().find(|g| g.chr == 'م').expect("the meem is laid out");
-            let alif = glyphs.iter().find(|g| g.chr == 'ا').expect("the alif is laid out");
-            assert!(meem.pos.x > alif.pos.x, "the first letter is drawn rightmost: {} vs {}", meem.pos.x, alif.pos.x);
+            let meem = glyphs
+                .iter()
+                .find(|g| g.chr == 'م')
+                .expect("the meem is laid out");
+            let alif = glyphs
+                .iter()
+                .find(|g| g.chr == 'ا')
+                .expect("the alif is laid out");
+            assert!(
+                meem.pos.x > alif.pos.x,
+                "the first letter is drawn rightmost: {} vs {}",
+                meem.pos.x,
+                alif.pos.x
+            );
             let isolated = alone.rows[0].glyphs[0].uv_rect;
             for uv in [meem.uv_rect, isolated] {
-                assert_ne!((uv.min, uv.max), (missing.min, missing.max), "a real glyph, not the replacement");
+                assert_ne!(
+                    (uv.min, uv.max),
+                    (missing.min, missing.max),
+                    "a real glyph, not the replacement"
+                );
             }
-            assert_ne!((meem.uv_rect.min, meem.uv_rect.max), (isolated.min, isolated.max), "the meem takes its initial form");
+            assert_ne!(
+                (meem.uv_rect.min, meem.uv_rect.max),
+                (isolated.min, isolated.max),
+                "the meem takes its initial form"
+            );
         });
     }
 }
@@ -619,7 +749,13 @@ mod tests {
 
     /// The last `n` font names of `family`, in order.
     fn tail(family: &[String], n: usize) -> Vec<&str> {
-        family.iter().rev().take(n).rev().map(String::as_str).collect()
+        family
+            .iter()
+            .rev()
+            .take(n)
+            .rev()
+            .map(String::as_str)
+            .collect()
     }
 
     #[test]
@@ -633,11 +769,21 @@ mod tests {
         assert_eq!(cjk_locale("system"), "");
         let mut chinese = FontDefinitions::default();
         let installed = install_script_fallbacks(&mut chinese, "zh-hans");
-        let cjk = |names: &[String]| names.iter().filter(|n| matches!(n.as_str(), "chinese-system" | "japanese-system")).cloned().collect::<Vec<_>>();
+        let cjk = |names: &[String]| {
+            names
+                .iter()
+                .filter(|n| matches!(n.as_str(), "chinese-system" | "japanese-system"))
+                .cloned()
+                .collect::<Vec<_>>()
+        };
         if cjk(&installed).is_empty() {
             eprintln!("no CJK font is installed: only the language plumbing can be checked here");
         } else {
-            assert_eq!(installed.first().map(String::as_str), Some("chinese-system"), "the Han probe comes first");
+            assert_eq!(
+                installed.first().map(String::as_str),
+                Some("chinese-system"),
+                "the Han probe comes first"
+            );
             assert!(chinese.font_data.contains_key("chinese-system"));
         }
         let expected: Vec<&str> = installed.iter().map(String::as_str).collect();
@@ -660,11 +806,21 @@ mod tests {
     fn interface_symbols_have_a_glyph_in_every_family() {
         let ctx = egui::Context::default();
         install(&ctx, &Tokens::for_kind(Default::default()), "en");
-        ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
-        for family in [FontFamily::Proportional, FontFamily::Monospace, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {
+        ctx.run_ui(Default::default(), |_| {})
+            .textures_delta
+            .clear();
+        for family in [
+            FontFamily::Proportional,
+            FontFamily::Monospace,
+            FontFamily::Name("medium".into()),
+            FontFamily::Name("semibold".into()),
+        ] {
             let id = FontId::new(12.0, family);
             for c in "▸•›·▶◀●○⚠…×".chars() {
-                assert!(ctx.fonts_mut(|f| f.has_glyph(&id, c)), "{c} has no glyph in {id:?}");
+                assert!(
+                    ctx.fonts_mut(|f| f.has_glyph(&id, c)),
+                    "{c} has no glyph in {id:?}"
+                );
             }
         }
     }
@@ -683,8 +839,14 @@ mod tests {
         }
         let Some(font) = face.font() else { return };
         let bytes = font.data().as_bytes();
-        let covered = fonts_def.font_data.values().any(|d| d.font.as_ref() == bytes && d.index == face.info.index);
-        assert!(covered, "a face covering Hangul must be registered with egui");
+        let covered = fonts_def
+            .font_data
+            .values()
+            .any(|d| d.font.as_ref() == bytes && d.index == face.info.index);
+        assert!(
+            covered,
+            "a face covering Hangul must be registered with egui"
+        );
     }
 
     #[test]
@@ -694,16 +856,27 @@ mod tests {
         let mut unique = installed.clone();
         unique.sort();
         unique.dedup();
-        assert_eq!(unique.len(), installed.len(), "no name may be registered twice: {installed:?}");
+        assert_eq!(
+            unique.len(),
+            installed.len(),
+            "no name may be registered twice: {installed:?}"
+        );
         let faces: Vec<_> = installed
             .iter()
             .map(|name| {
-                let data = fonts.font_data.get(name).unwrap_or_else(|| panic!("{name} is missing its font data"));
+                let data = fonts
+                    .font_data
+                    .get(name)
+                    .unwrap_or_else(|| panic!("{name} is missing its font data"));
                 (data.font.as_ref(), data.index)
             })
             .collect();
         for (i, a) in faces.iter().enumerate() {
-            assert!(!faces[i + 1..].contains(a), "{} shares its face with a later fallback: {installed:?}", installed[i]);
+            assert!(
+                !faces[i + 1..].contains(a),
+                "{} shares its face with a later fallback: {installed:?}",
+                installed[i]
+            );
         }
         // Leave the operating system's locale behind for whatever runs next.
         install_script_fallbacks(&mut fonts, "system");

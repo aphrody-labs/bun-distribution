@@ -56,8 +56,8 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
-use clap::Parser;
 use aphrody_nie_sql::Value as SqlValue;
+use clap::Parser;
 use mirror::Mirror;
 use serde_json::Value;
 use tracing::{debug, error, info, warn};
@@ -265,7 +265,8 @@ impl GlbMemoryCache {
         }
         if let Some(previous) = self.entries.remove(&key) {
             self.used_bytes = self.used_bytes.saturating_sub(previous.len());
-            self.least_recent_first.retain(|candidate| candidate != &key);
+            self.least_recent_first
+                .retain(|candidate| candidate != &key);
         }
         while self.used_bytes.saturating_add(size) > self.max_bytes {
             let Some(oldest) = self.least_recent_first.pop_front() else {
@@ -385,7 +386,10 @@ impl State {
     /// Charge le manifeste uniforme CRC→G4MD+G4TX depuis le fichier NDJSON.
     fn load_uniform_map(path: &Path) -> HashMap<u32, UniformMapEntry> {
         if !path.exists() {
-            warn!("manifeste uniforme absent : {} (uniforme non disponible)", path.display());
+            warn!(
+                "manifeste uniforme absent : {} (uniforme non disponible)",
+                path.display()
+            );
             return HashMap::new();
         }
         let Ok(content) = fs::read_to_string(path) else {
@@ -437,7 +441,7 @@ impl State {
             Err(error) => {
                 warn!("chara_parts rejeté par les limites de catalogue : {error}");
                 return CharacterPartsCatalog::default();
-            },
+            }
         };
         info!(
             "chara_parts : {} tenues, {} chaussures, {} gants ({path})",
@@ -464,7 +468,7 @@ impl State {
             Err(error) => {
                 warn!("chara_model rejeté par les limites de catalogue : {error}");
                 return CharaModelCatalog::default();
-            },
+            }
         };
         info!(
             "chara_model : {} fiches, {} corps ({path})",
@@ -502,7 +506,10 @@ impl State {
     /// Format : `{"code":"c01000010","body_type_idx":0}` (une ligne par code).
     fn load_body_map(path: &Path) -> HashMap<String, u8> {
         if !path.exists() {
-            debug!("manifeste body_type absent : {} (fallback type_idx=0)", path.display());
+            debug!(
+                "manifeste body_type absent : {} (fallback type_idx=0)",
+                path.display()
+            );
             return HashMap::new();
         }
         let Ok(content) = fs::read_to_string(path) else {
@@ -545,7 +552,10 @@ impl State {
             return HashMap::new();
         }
         let Ok(content) = fs::read_to_string(path) else {
-            warn!("impossible de lire asset-cross-reference : {}", path.display());
+            warn!(
+                "impossible de lire asset-cross-reference : {}",
+                path.display()
+            );
             return HashMap::new();
         };
         #[derive(serde::Deserialize)]
@@ -573,7 +583,10 @@ impl State {
             }
             map.entry(base.to_string()).or_default().extend(a.sources);
         }
-        info!("asset-cross-reference : {} noms de texture indexés", map.len());
+        info!(
+            "asset-cross-reference : {} noms de texture indexés",
+            map.len()
+        );
         map
     }
 
@@ -626,12 +639,14 @@ fn resolve_uniform_crcs(db: &Mirror, internal_code: &str) -> Option<UniformCrcs>
     let row = result.rows.into_iter().next()?;
     let series_str = mirror::text(&row.values[0]);
     let data_raw = mirror::text(&row.values[1]);
-    let team_id = serde_json::from_str::<Value>(&data_raw).ok().and_then(|v| {
-        v["teams"]
-            .as_array()
-            .and_then(|arr| arr.first())
-            .and_then(|t| t["id"].as_str().map(str::to_string))
-    })?;
+    let team_id = serde_json::from_str::<Value>(&data_raw)
+        .ok()
+        .and_then(|v| {
+            v["teams"]
+                .as_array()
+                .and_then(|arr| arr.first())
+                .and_then(|t| t["id"].as_str().map(str::to_string))
+        })?;
     let season = SeasonKey::from_series(&series_str);
 
     // 2. Récupère le kit_id depuis inagle_teams.
@@ -653,7 +668,10 @@ fn resolve_uniform_crcs(db: &Mirror, internal_code: &str) -> Option<UniformCrcs>
     )?;
     let models: Value = serde_json::from_str(&models_raw).ok()?;
     let arr = models.as_array()?;
-    let entry = arr.iter().find(|e| e["typeId"].as_u64() == Some(0)).or_else(|| arr.first())?;
+    let entry = arr
+        .iter()
+        .find(|e| e["typeId"].as_u64() == Some(0))
+        .or_else(|| arr.first())?;
     let crc_field = |name: &str| -> u32 {
         entry[name]
             .as_str()
@@ -701,8 +719,11 @@ fn menu_screen_entry(path: &Path, stem: &str) -> Option<serde_json::Value> {
         .iter()
         .map(|c| json!({ "layerHash": c.layer_id.0, "commandHash": c.command_hash.0, "name": c.name }))
         .collect();
-    let resources: Vec<serde_json::Value> =
-        ms.resources.iter().map(|r| json!({ "path": r.logical_path, "kind": r.kind })).collect();
+    let resources: Vec<serde_json::Value> = ms
+        .resources
+        .iter()
+        .map(|r| json!({ "path": r.logical_path, "kind": r.kind }))
+        .collect();
     Some(json!({
         "screen": stem,
         "crc32": nav,
@@ -917,7 +938,11 @@ fn render_text_png(font_cfg: &[u8], font_g4tx: &[u8], texte: &str, fg: [u8; 4]) 
     let tx = g4tx::parse(font_g4tx).ok()?;
     let t = tx.textures.first()?;
     let dds = font_g4tx.get(t.data_offset..)?;
-    let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" { 148 } else { 128 };
+    let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" {
+        148
+    } else {
+        128
+    };
     let atlas = dds.get(px_off..)?;
     let (aw, ah) = (t.width as usize, t.height as usize);
     let cell_h = metrics.dims.cell_height;
@@ -950,7 +975,11 @@ fn compose_story_png(
     let tx = g4tx::parse(font_g4tx).ok()?;
     let t = tx.textures.first()?;
     let dds = font_g4tx.get(t.data_offset..)?;
-    let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" { 148 } else { 128 };
+    let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" {
+        148
+    } else {
+        128
+    };
     let atlas = dds.get(px_off..)?;
     let (aw, ah) = (t.width as usize, t.height as usize);
     let cell_h = metrics.dims.cell_height;
@@ -960,8 +989,11 @@ fn compose_story_png(
     let mut buf = vec![0u8; W * H * 4];
     for y in 0..H {
         let tt = y as f32 / H as f32;
-        let (r, g, b) =
-            ((18.0 + 30.0 * tt) as u8, (24.0 + 36.0 * tt) as u8, (44.0 + 60.0 * (1.0 - tt)) as u8);
+        let (r, g, b) = (
+            (18.0 + 30.0 * tt) as u8,
+            (24.0 + 36.0 * tt) as u8,
+            (44.0 + 60.0 * (1.0 - tt)) as u8,
+        );
         for x in 0..W {
             let o = (y * W + x) * 4;
             buf[o..o + 4].copy_from_slice(&[r, g, b, 255]);
@@ -988,7 +1020,11 @@ fn compose_story_png(
     for para in text.split('\n').flat_map(|p| p.split("\\n")) {
         let mut cur = String::new();
         for word in para.split_whitespace() {
-            let trial = if cur.is_empty() { word.to_string() } else { format!("{cur} {word}") };
+            let trial = if cur.is_empty() {
+                word.to_string()
+            } else {
+                format!("{cur} {word}")
+            };
             if la.measure(&trial) <= max_w {
                 cur = trial;
             } else {
@@ -1009,9 +1045,32 @@ fn compose_story_png(
     fill(&mut buf, bx0, by0, bx1, by1, [10, 14, 28, 220]);
     fill(&mut buf, bx0, by0, bx1, by0 + 3, [90, 200, 255, 255]);
     let name_w = (la.measure(speaker) as i32 + 40).min(440);
-    fill(&mut buf, bx0 + 20, by0 - 40, bx0 + 20 + name_w, by0 + 2, [30, 60, 110, 235]);
-    fill(&mut buf, bx0 + 20, by0 - 40, bx0 + 20 + name_w, by0 - 37, [120, 220, 255, 255]);
-    la.blit_line(atlas, aw, &mut buf, W, bx0 + 38, by0 - 32, speaker, [200, 235, 255, 255]);
+    fill(
+        &mut buf,
+        bx0 + 20,
+        by0 - 40,
+        bx0 + 20 + name_w,
+        by0 + 2,
+        [30, 60, 110, 235],
+    );
+    fill(
+        &mut buf,
+        bx0 + 20,
+        by0 - 40,
+        bx0 + 20 + name_w,
+        by0 - 37,
+        [120, 220, 255, 255],
+    );
+    la.blit_line(
+        atlas,
+        aw,
+        &mut buf,
+        W,
+        bx0 + 38,
+        by0 - 32,
+        speaker,
+        [200, 235, 255, 255],
+    );
     for (i, line) in lines.iter().enumerate() {
         la.blit_line(
             atlas,
@@ -1024,7 +1083,14 @@ fn compose_story_png(
             [240, 244, 250, 255],
         );
     }
-    fill(&mut buf, bx1 - 36, by1 - 24, bx1 - 20, by1 - 8, [120, 220, 255, 255]);
+    fill(
+        &mut buf,
+        bx1 - 36,
+        by1 - 24,
+        bx1 - 20,
+        by1 - 8,
+        [120, 220, 255, 255],
+    );
 
     g4tx_decode::encode_rgba_to_png(&buf, W, H)
 }
@@ -1112,7 +1178,7 @@ fn load_armed_texture_png(state: &State, code: &str) -> Option<Vec<u8>> {
             let path_fallback = format!("data/dx11/chr/_armd/{dir_name}/{code}.g4tx");
             let vfs = &state.vfs;
             vfs.read(&path_fallback).ok()
-        },
+        }
     }?;
 
     // Le conteneur d'armure s'appelle `<code>_10.g4tx` ou `<code>.g4tx` selon le repli
@@ -1139,9 +1205,20 @@ struct Assembled {
 /// Lit une paire G4MD/G4MG du VFS.
 fn read_raw_piece(state: &State, name: &str, g4md_vfs: &str) -> Result<RawPiece> {
     let g4mg_vfs = g4md_to_g4mg_path(g4md_vfs);
-    let g4md = state.vfs.read(g4md_vfs).with_context(|| format!("lecture G4MD {g4md_vfs}"))?;
-    let g4mg = state.vfs.read(&g4mg_vfs).with_context(|| format!("lecture G4MG {g4mg_vfs}"))?;
-    Ok(RawPiece { name: name.to_string(), g4md_path: g4md_vfs.to_string(), g4md, g4mg })
+    let g4md = state
+        .vfs
+        .read(g4md_vfs)
+        .with_context(|| format!("lecture G4MD {g4md_vfs}"))?;
+    let g4mg = state
+        .vfs
+        .read(&g4mg_vfs)
+        .with_context(|| format!("lecture G4MG {g4mg_vfs}"))?;
+    Ok(RawPiece {
+        name: name.to_string(),
+        g4md_path: g4md_vfs.to_string(),
+        g4md,
+        g4mg,
+    })
 }
 
 /// Chemins VFS candidats pour le squelette d'un corps, par ordre de préférence : le dossier
@@ -1159,7 +1236,8 @@ fn objbin_skeleton_param(state: &State, objbin_rel: &str) -> Option<String> {
     let path = format!("data/common/chr/{objbin_rel}");
     let bytes = state.vfs.read(&path).ok()?;
     let obj = aphrody_nie_formats::objbin::parse(&bytes).ok()?;
-    obj.skeleton_path.map(|p| format!("data/{}", p.replace('\\', "/").trim_start_matches('/')))
+    obj.skeleton_path
+        .map(|p| format!("data/{}", p.replace('\\', "/").trim_start_matches('/')))
 }
 
 /// Extrait un sous-fichier d'un `.g4pkm` par extension (`.g4sk`, `.g4md`).
@@ -1175,7 +1253,11 @@ fn g4pkm_sub_file(pkm: &[u8], ext: &str) -> Option<Vec<u8>> {
 fn load_skeleton(state: &State, objbin_rel: &str, stem: &str) -> Option<Skeleton> {
     if let Some(declared) = objbin_skeleton_param(state, objbin_rel) {
         let bytes = if declared.ends_with(".g4pkm") {
-            state.vfs.read(&declared).ok().and_then(|pkm| g4pkm_sub_file(&pkm, ".g4sk"))
+            state
+                .vfs
+                .read(&declared)
+                .ok()
+                .and_then(|pkm| g4pkm_sub_file(&pkm, ".g4sk"))
         } else {
             state.vfs.read(&declared).ok()
         };
@@ -1186,7 +1268,7 @@ fn load_skeleton(state: &State, objbin_rel: &str, stem: &str) -> Option<Skeleton
                     sk.bones.len()
                 );
                 return Some(sk);
-            },
+            }
             Some(Err(e)) => warn!("squelette déclaré {declared} rejeté : {e}"),
             None => warn!("squelette déclaré {declared} introuvable dans le VFS"),
         }
@@ -1200,7 +1282,7 @@ fn load_skeleton(state: &State, objbin_rel: &str, stem: &str) -> Option<Skeleton
                 Ok(sk) => {
                     debug!("squelette {stem} : {path} ({} os)", sk.bones.len());
                     return Some(sk);
-                },
+                }
                 Err(e) => warn!("squelette {path} rejeté : {e}"),
             },
             Err(e) => warn!("squelette {path} illisible : {e}"),
@@ -1246,7 +1328,10 @@ fn bind_piece_textures(
         .into_iter()
         .collect();
     let Ok(g4tx_data) = state.vfs.read(&src.container) else {
-        warn!("conteneur G4TX absent : {} (pièce {})", src.container, src.piece);
+        warn!(
+            "conteneur G4TX absent : {} (pièce {})",
+            src.container, src.piece
+        );
         return json!({
             "piece": src.piece, "container": src.container, "error": "conteneur absent",
             "materials": materials.iter().map(|m| json!({"material": m, "texture": null})).collect::<Vec<_>>()
@@ -1257,9 +1342,16 @@ fn bind_piece_textures(
         return json!({ "piece": src.piece, "container": src.container, "error": "conteneur illisible" });
     };
     let names: Vec<String> = parsed.textures.iter().map(|t| t.name.clone()).collect();
-    let bases: Vec<&String> =
-        names.iter().filter(|n| texture_role_from_name(n).1 == "base").collect();
-    let find = |wanted: &str| names.iter().find(|n| n.eq_ignore_ascii_case(wanted)).cloned();
+    let bases: Vec<&String> = names
+        .iter()
+        .filter(|n| texture_role_from_name(n).1 == "base")
+        .collect();
+    let find = |wanted: &str| {
+        names
+            .iter()
+            .find(|n| n.eq_ignore_ascii_case(wanted))
+            .cloned()
+    };
 
     let mut entries = Vec::new();
     for material_orig in &materials {
@@ -1280,13 +1372,18 @@ fn bind_piece_textures(
         let material = &material;
         let base = avatar_texture_name(material_orig);
         let base_lower = base.to_ascii_lowercase();
-        let partage =
-            ["eye_10", "mouth_10", "hair", "mant_"].iter().any(|p| base_lower.starts_with(p));
+        let partage = ["eye_10", "mouth_10", "hair", "mant_"]
+            .iter()
+            .any(|p| base_lower.starts_with(p));
         // Planche déclarée par la recette : le conteneur `n000201_10.g4tx` porte `n000201_10`,
         // et la variante de profil `n000205` (matériau `n000205_10`) l'utilise telle quelle —
         // même suffixe de planche (`_10`), famille commune.
-        let container_stem =
-            src.container.rsplit('/').next().and_then(|f| f.strip_suffix(".g4tx")).unwrap_or("");
+        let container_stem = src
+            .container
+            .rsplit('/')
+            .next()
+            .and_then(|f| f.strip_suffix(".g4tx"))
+            .unwrap_or("");
         let same_suffix = |a: &str, b: &str| a.rsplit('_').next() == b.rsplit('_').next();
         let (chosen, rule) = if let Some(n) = find(base) {
             (Some(n), "exact")
@@ -1400,7 +1497,10 @@ fn apply_viewer_pose(
             let Some(motion) = g4mt::Motion::parse(data) else {
                 continue;
             };
-            let Some(clip) = motion.clips.iter().find(|c| c.name == "立ち1L" && !c.is_additive())
+            let Some(clip) = motion
+                .clips
+                .iter()
+                .find(|c| c.name == "立ち1L" && !c.is_additive())
             else {
                 continue;
             };
@@ -1517,16 +1617,16 @@ impl Tenue {
                 "captain" => {
                     tenue.capitaine = matches!(valeur, "1" | "true");
                     vue = true;
-                },
+                }
                 "gloves" => {
                     tenue.gants_du_kit = matches!(valeur, "1" | "true");
                     vue = true;
-                },
+                }
                 "number" => {
                     tenue.numero = valeur.parse::<u8>().ok().filter(|n| *n < 100);
                     vue = true;
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         vue.then_some(tenue)
@@ -1540,7 +1640,10 @@ impl Tenue {
         let preset = presentations().get(code)?;
         Some(Self {
             capitaine: preset["captain"] == true,
-            numero: preset["jersey_number"].as_u64().filter(|n| *n < 100).map(|n| n as u8),
+            numero: preset["jersey_number"]
+                .as_u64()
+                .filter(|n| *n < 100)
+                .map(|n| n as u8),
             gants_du_kit: preset["gloves"] == true,
         })
     }
@@ -1569,7 +1672,9 @@ impl Tenue {
 /// Tenue effective d'une requête : ce que la requête demande, sinon ce que l'attestation
 /// externe établit pour ce code, sinon la tenue par défaut — qui n'affirme rien.
 fn tenue_demandee(code: &str, query: &str) -> Tenue {
-    Tenue::depuis_query(query).or_else(|| Tenue::attestee(code)).unwrap_or_default()
+    Tenue::depuis_query(query)
+        .or_else(|| Tenue::attestee(code))
+        .unwrap_or_default()
 }
 
 /// Presets attestés par une référence externe (frames officiels du zukan), chargés une fois.
@@ -1625,9 +1730,13 @@ fn appliquer_tenue(
                 model.primitives.retain(|p| !nameplates.contains(&p.piece));
                 plaques_retirees = avant - model.primitives.len();
             }
-        },
+        }
         Some(numero) => {
-            for primitive in model.primitives.iter_mut().filter(|p| nameplates.contains(&p.piece)) {
+            for primitive in model
+                .primitives
+                .iter_mut()
+                .filter(|p| nameplates.contains(&p.piece))
+            {
                 // Seule une plaque encore sur la case 0 est décalée : une planche déjà
                 // positionnée ailleurs n'est pas une grille de dossards, et la décaler
                 // déplacerait une texture quelconque.
@@ -1644,7 +1753,7 @@ fn appliquer_tenue(
                     plaques_numerotees += 1;
                 }
             }
-        },
+        }
     }
 
     // L'expression de bouche reste attestée uniquement : aucune requête ne la choisit encore,
@@ -1746,16 +1855,25 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         );
     }
 
-    let body_type_idx =
-        body.map_or_else(|| state.body_type_idx(code), |b| u8::try_from(b.type_idx).unwrap_or(0));
+    let body_type_idx = body.map_or_else(
+        || state.body_type_idx(code),
+        |b| u8::try_from(b.type_idx).unwrap_or(0),
+    );
     let profile = body.map_or(0, |b| b.type_idx);
     let base_name = type_idx_to_glb_name(body_type_idx)
         .ok_or_else(|| anyhow::anyhow!("type corporel {body_type_idx} sans tête de base"))?;
 
     // ── Tenue : CRC du haut, des chaussures, des gants ─────────────────────────
-    let db = state.db_path.as_ref().and_then(|db| resolve_uniform_crcs(db, code));
+    let db = state
+        .db_path
+        .as_ref()
+        .and_then(|db| resolve_uniform_crcs(db, code));
     let model_default = fiche.map_or(0, |r| r.uniform_crc);
-    let uniform_crc = db.as_ref().map(|d| d.fielder).filter(|&c| c != 0).unwrap_or(model_default);
+    let uniform_crc = db
+        .as_ref()
+        .map(|d| d.fielder)
+        .filter(|&c| c != 0)
+        .unwrap_or(model_default);
     let uniform_source = match (&db, uniform_crc) {
         (Some(d), c) if c == d.fielder && c != 0 => format!("inagle_uniforms kit {}", d.kit_id),
         (_, c) if c == model_default && c != 0 => "CHARA_MODEL_INFO.var[5]".to_string(),
@@ -1767,21 +1885,32 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         match db_val.filter(|&c| c != 0) {
             Some(c) => (c, format!("{role} : kit d'équipe")),
             None if model_val != 0 => (model_val, format!("{role} : défaut du modèle")),
-            None => (0, format!("{role} : aucun CRC (ni kit, ni défaut du modèle)")),
+            None => (
+                0,
+                format!("{role} : aucun CRC (ni kit, ni défaut du modèle)"),
+            ),
         }
     };
-    let (shoes_crc, shoes_note) =
-        pick(db.as_ref().map(|d| d.shoes), fiche.map_or(0, |r| r.shoes_crc), "shoes");
+    let (shoes_crc, shoes_note) = pick(
+        db.as_ref().map(|d| d.shoes),
+        fiche.map_or(0, |r| r.shoes_crc),
+        "shoes",
+    );
     // Les gants ne suivent PAS `pick` : `gloveModelIdCrc` est le créneau ganté du kit, sans
     // qualificatif de rôle là où le maillot et les crampons en portent un (`…Fielder…`). Le
     // laisser gagner mettait les gants du gardien à toute l'équipe. La fiche du personnage
     // décide, et le kit ne complète que si la requête le demande.
     let (glove_crc, glove_note) = match (
         fiche.map_or(0, |r| r.glove_crc),
-        tenue.gants_du_kit.then(|| db.as_ref().map_or(0, |d| d.glove)),
+        tenue
+            .gants_du_kit
+            .then(|| db.as_ref().map_or(0, |d| d.glove)),
     ) {
         (0, Some(kit)) if kit != 0 => (kit, "gloves : créneau ganté du kit, sur demande".into()),
-        (0, _) => (0, "gloves : la fiche du personnage n'en déclare pas".to_string()),
+        (0, _) => (
+            0,
+            "gloves : la fiche du personnage n'en déclare pas".to_string(),
+        ),
         (propre, _) => (propre, "gloves : défaut du modèle".to_string()),
     };
     notes.push(shoes_note);
@@ -1807,12 +1936,16 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
             let conv = format!("data/common/chr/_face/{series}/{code}/{code}.g4pkm");
             state.vfs.find(&conv).map(|_| conv)
         });
-    let face_pack: Option<Vec<u8>> = face_pack_path.as_deref().and_then(|p| state.vfs.read(p).ok());
+    let face_pack: Option<Vec<u8>> = face_pack_path
+        .as_deref()
+        .and_then(|p| state.vfs.read(p).ok());
     let face_raw = match read_raw_piece(state, code, &face_g4md) {
         Ok(p) => Some(p),
         Err(e) => {
-            let packed =
-                face_pack.as_deref().zip(face_pack_path.as_deref()).and_then(|(pkm, pkm_path)| {
+            let packed = face_pack
+                .as_deref()
+                .zip(face_pack_path.as_deref())
+                .and_then(|(pkm, pkm_path)| {
                     let g4md = g4pkm_sub_file(pkm, ".g4md")?;
                     let g4mg_path = pkm_path.replace(".g4pkm", ".g4mg");
                     let g4mg = state.vfs.read(&g4mg_path).ok()?;
@@ -1827,7 +1960,7 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
                 notes.push(format!("visage brut absent ({e}) : repli GLB pré-converti"));
             }
             packed
-        },
+        }
     };
 
     // ── Squelette ──────────────────────────────────────────────────────────────
@@ -1843,7 +1976,7 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
                 Err(e) => {
                     warn!("squelette empaqueté {path} rejeté : {e}");
                     None
-                },
+                }
             }
         })
         .or_else(|| body.and_then(|b| load_skeleton(state, &b.objbin, b.skeleton_stem())));
@@ -1867,9 +2000,11 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         match read_raw_piece(state, base_name, &body_g4md) {
             Ok(p) => Some(p),
             Err(e) => {
-                notes.push(format!("tête de base brute absente ({e}) : repli GLB pré-converti"));
+                notes.push(format!(
+                    "tête de base brute absente ({e}) : repli GLB pré-converti"
+                ));
                 None
-            },
+            }
         }
     };
 
@@ -1919,12 +2054,15 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
                     "profile_requested": part.profile_requested, "profile_used": part.profile_used,
                     "g4md": g4md_vfs, "g4tx": part.g4tx.as_ref().map(|t| format!("data/dx11/chr/{t}")),
                 }));
-                uniform_parts.push(CharacterUniformPart { role: part.role.to_string(), raw });
-            },
+                uniform_parts.push(CharacterUniformPart {
+                    role: part.role.to_string(),
+                    raw,
+                });
+            }
             Err(e) => {
                 warn!("pièce {} ({}) absente du VFS : {e}", part.role, part.name());
                 notes.push(format!("{} {} : {e}", part.role, part.name()));
-            },
+            }
         }
     }
 
@@ -1944,11 +2082,11 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
                     });
                 }
                 (Some(ud.g4md), Some(ud.g4mg))
-            },
+            }
             Err(e) => {
                 notes.push(format!("uniforme {uniform_crc:#010x} : {e}"));
                 (None, None)
-            },
+            }
         }
     } else {
         (None, None)
@@ -1983,8 +2121,9 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
             },
         );
     }
-    let face_container =
-        face_g4md.replacen("data/common/chr/", "data/dx11/chr/", 1).replace(".g4md", ".g4tx");
+    let face_container = face_g4md
+        .replacen("data/common/chr/", "data/dx11/chr/", 1)
+        .replace(".g4md", ".g4tx");
     texture_sources.insert(
         usize::from(input.body_raw.is_some()),
         PieceTextures {
@@ -2000,7 +2139,9 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         .and_then(|data| g4tx_decode::decode_named_to_rgba(&data, &format!("{code}_10")))
         .and_then(|(_, _, rgba)| expression_skin_color(&rgba));
     for src in &texture_sources {
-        textures_report.push(bind_piece_textures(state, &mut model, src, &mut bound, skin_rgb));
+        textures_report.push(bind_piece_textures(
+            state, &mut model, src, &mut bound, skin_rgb,
+        ));
     }
     model.report["skin_color"] = json!({
         "rgb": skin_rgb,
@@ -2057,7 +2198,10 @@ fn assemble_chara(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> 
         json!(model.primitives.iter().filter(|p| p.skin.is_some()).count());
     model.report["presentation_pose"] = apply_viewer_pose(state, &mut model);
     let report = std::mem::take(&mut model.report);
-    Ok(Assembled { glb: model.to_glb_embedded().into(), report })
+    Ok(Assembled {
+        glb: model.to_glb_embedded().into(),
+        report,
+    })
 }
 
 /// Résultat du chargement d'un uniforme depuis le VFS.
@@ -2085,8 +2229,9 @@ fn load_uniform_from_vfs(state: &State, crc: u32) -> Result<UniformData> {
         let g4md = vfs
             .read(g4md_path.as_str())
             .with_context(|| format!("lecture G4MD uniforme {g4md_path}"))?;
-        let g4mg =
-            vfs.read(&g4mg_path).with_context(|| format!("lecture G4MG uniforme {g4mg_path}"))?;
+        let g4mg = vfs
+            .read(&g4mg_path)
+            .with_context(|| format!("lecture G4MG uniforme {g4mg_path}"))?;
 
         return Ok(UniformData {
             code: Some(entry.code.clone()),
@@ -2102,10 +2247,19 @@ fn load_uniform_from_vfs(state: &State, crc: u32) -> Result<UniformData> {
     let g4mg_path = g4md_to_g4mg_path(g4md_path);
 
     let vfs = &state.vfs;
-    let g4md = vfs.read(g4md_path).with_context(|| format!("lecture G4MD {g4md_path}"))?;
-    let g4mg = vfs.read(&g4mg_path).with_context(|| format!("lecture G4MG {g4mg_path}"))?;
+    let g4md = vfs
+        .read(g4md_path)
+        .with_context(|| format!("lecture G4MD {g4md_path}"))?;
+    let g4mg = vfs
+        .read(&g4mg_path)
+        .with_context(|| format!("lecture G4MG {g4mg_path}"))?;
 
-    Ok(UniformData { code: None, g4md, g4mg, g4tx_path: None })
+    Ok(UniformData {
+        code: None,
+        g4md,
+        g4mg,
+        g4tx_path: None,
+    })
 }
 
 /// Assemble un keshin (code `kXXXXXX`).
@@ -2115,8 +2269,12 @@ fn assemble_keshin_code(state: &State, code: &str) -> Result<GlbBytes> {
 
     let (g4md, g4mg) = {
         let vfs = &state.vfs;
-        let g4md = vfs.read(&g4md_path).with_context(|| format!("G4MD keshin {g4md_path}"))?;
-        let g4mg = vfs.read(&g4mg_path).with_context(|| format!("G4MG keshin {g4mg_path}"))?;
+        let g4md = vfs
+            .read(&g4md_path)
+            .with_context(|| format!("G4MD keshin {g4md_path}"))?;
+        let g4mg = vfs
+            .read(&g4mg_path)
+            .with_context(|| format!("G4MG keshin {g4mg_path}"))?;
         (g4md, g4mg)
     };
 
@@ -2124,7 +2282,11 @@ fn assemble_keshin_code(state: &State, code: &str) -> Result<GlbBytes> {
         assemble_keshin(code, g4md, g4mg).with_context(|| format!("assemblage keshin {code}"))?;
 
     if let Some(png_bytes) = load_keshin_texture_png(state, code) {
-        info!("texture keshin embarquée : {} ({} B PNG)", code, png_bytes.len());
+        info!(
+            "texture keshin embarquée : {} ({} B PNG)",
+            code,
+            png_bytes.len()
+        );
         model.embedded_textures.push(EmbeddedTexture {
             component: MeshComponent::Keshin,
             name: format!("{code}_keshin"),
@@ -2144,8 +2306,12 @@ fn assemble_armed_code(state: &State, code: &str) -> Result<GlbBytes> {
 
     let (g4md, g4mg) = {
         let vfs = &state.vfs;
-        let g4md = vfs.read(&g4md_path).with_context(|| format!("G4MD armd {g4md_path}"))?;
-        let g4mg = vfs.read(&g4mg_path).with_context(|| format!("G4MG armd {g4mg_path}"))?;
+        let g4md = vfs
+            .read(&g4md_path)
+            .with_context(|| format!("G4MD armd {g4md_path}"))?;
+        let g4mg = vfs
+            .read(&g4mg_path)
+            .with_context(|| format!("G4MG armd {g4mg_path}"))?;
         (g4md, g4mg)
     };
 
@@ -2153,7 +2319,11 @@ fn assemble_armed_code(state: &State, code: &str) -> Result<GlbBytes> {
         assemble_armed(code, g4md, g4mg).with_context(|| format!("assemblage armure {code}"))?;
 
     if let Some(png_bytes) = load_armed_texture_png(state, code) {
-        info!("texture armure embarquée : {} ({} B PNG)", code, png_bytes.len());
+        info!(
+            "texture armure embarquée : {} ({} B PNG)",
+            code,
+            png_bytes.len()
+        );
         model.embedded_textures.push(EmbeddedTexture {
             component: MeshComponent::Armed,
             name: format!("{code}_armed"),
@@ -2167,9 +2337,15 @@ fn assemble_armed_code(state: &State, code: &str) -> Result<GlbBytes> {
 /// Point d'entrée d'assemblage : dispatch selon le code.
 fn assemble_code(state: &State, code: &str, tenue: Tenue) -> Result<Assembled> {
     if code.starts_with("ka") {
-        assemble_armed_code(state, code).map(|glb| Assembled { glb, report: Value::Null })
+        assemble_armed_code(state, code).map(|glb| Assembled {
+            glb,
+            report: Value::Null,
+        })
     } else if code.starts_with('k') {
-        assemble_keshin_code(state, code).map(|glb| Assembled { glb, report: Value::Null })
+        assemble_keshin_code(state, code).map(|glb| Assembled {
+            glb,
+            report: Value::Null,
+        })
     } else if code.starts_with('c') {
         assemble_chara(state, code, tenue)
     } else {
@@ -2199,7 +2375,9 @@ fn assemble_chr_generic(state: &State, sub: &str, code: &str) -> Result<GlbBytes
 
     let (g4md, g4mg) = {
         let vfs = &state.vfs;
-        let g4mg = vfs.read(&g4mg_path).with_context(|| format!("G4MG {g4mg_path}"))?;
+        let g4mg = vfs
+            .read(&g4mg_path)
+            .with_context(|| format!("G4MG {g4mg_path}"))?;
         // La précédence « embarqué d'abord, libre en repli » vit dans
         // `aphrody_nie_formats::assemble::g4md_canonical` — elle y est documentée avec ce qu'elle
         // débloque (la famille `_waza`, sans aucun `.g4md` libre) et ce qui l'infirme (les maps,
@@ -2219,9 +2397,13 @@ fn assemble_chr_generic(state: &State, sub: &str, code: &str) -> Result<GlbBytes
         _ => MeshComponent::Generic,
     };
 
-    let mut model =
-        assemble_generic_model(GenericModelInput { code: code.to_string(), g4md, g4mg, component })
-            .with_context(|| format!("assemblage {sub}/{code}"))?;
+    let mut model = assemble_generic_model(GenericModelInput {
+        code: code.to_string(),
+        g4md,
+        g4mg,
+        component,
+    })
+    .with_context(|| format!("assemblage {sub}/{code}"))?;
 
     // Texture du cut-in (dx11/chr/_<sub>/<code>/<code>.g4tx ou <code>_10.g4tx) → embarquée.
     let g4tx_path = format!("data/dx11/chr/_{sub}/{code}/{code}.g4tx");
@@ -2232,7 +2414,9 @@ fn assemble_chr_generic(state: &State, sub: &str, code: &str) -> Result<GlbBytes
             .or_else(|_| vfs.read(&format!("data/dx11/chr/_{sub}/{code}/{code}_00.g4tx")))
             .ok()
     };
-    if let Some(png_bytes) = g4tx.as_deref().and_then(|d| g4tx_decode::decode_best_to_png(d, code))
+    if let Some(png_bytes) = g4tx
+        .as_deref()
+        .and_then(|d| g4tx_decode::decode_best_to_png(d, code))
     {
         model.embedded_textures.push(EmbeddedTexture {
             component,
@@ -2276,7 +2460,9 @@ fn assemble_tree(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
 
     let (g4md, g4mg) = {
         let vfs = &state.vfs;
-        let g4mg = vfs.read(&g4mg_path).with_context(|| format!("G4MG {g4mg_path}"))?;
+        let g4mg = vfs
+            .read(&g4mg_path)
+            .with_context(|| format!("G4MG {g4mg_path}"))?;
         let g4md = match vfs.read(&g4md_path) {
             Ok(b) => b,
             Err(_) => {
@@ -2285,7 +2471,7 @@ fn assemble_tree(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
                     .with_context(|| format!("ni G4MD libre ni g4pkm pour map {rel}"))?;
                 extract_g4md_from_g4pkm(&pkm)
                     .with_context(|| format!("G4MD absent du g4pkm {g4pkm_path}"))?
-            },
+            }
         };
         (g4md, g4mg)
     };
@@ -2333,9 +2519,11 @@ fn assemble_tree(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
         if racine == "map" {
             let stage_dir = rel.rsplit_once('/').map_or(rel, |(d, _)| d);
             let group = base.trim_end_matches(|c: char| c.is_ascii_digit());
-            vfs.read(&format!("data/dx11/map/{stage_dir}/{group}.g4tx")).ok()
+            vfs.read(&format!("data/dx11/map/{stage_dir}/{group}.g4tx"))
+                .ok()
         } else {
-            vfs.read(&format!("data/dx11/{racine}/{rel}/{base}.g4tx")).ok()
+            vfs.read(&format!("data/dx11/{racine}/{rel}/{base}.g4tx"))
+                .ok()
         }
     };
     if let Some(bytes) = &stage_g4tx
@@ -2343,10 +2531,17 @@ fn assemble_tree(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
     {
         // Base color `.1` d'une texture : nom sans le suffixe `.N`.
         let tex_base = |t: &aphrody_nie_formats::g4tx::G4txTexture| -> String {
-            t.name.rsplit_once('.').map_or(t.name.clone(), |(b, _)| b.to_string())
+            t.name
+                .rsplit_once('.')
+                .map_or(t.name.clone(), |(b, _)| b.to_string())
         };
         let mut seen = std::collections::HashSet::new();
-        for core in model.primitives.iter().map(|p| p.material_name.clone()).collect::<Vec<_>>() {
+        for core in model
+            .primitives
+            .iter()
+            .map(|p| p.material_name.clone())
+            .collect::<Vec<_>>()
+        {
             if core.is_empty() || !seen.insert(core.clone()) {
                 continue;
             }
@@ -2404,7 +2599,9 @@ fn assemble_tree(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
 /// `menu/battle/common/ega0001` donneraient sinon la même entrée, et le second servirait le
 /// premier sans qu'aucune réponse ne le dise.
 fn get_or_build_tree_glb(state: &State, racine: &str, rel: &str) -> Result<GlbBytes> {
-    let cache_path = state.cache_dir.join(format!("{racine}_{}.glb", rel.replace('/', "_")));
+    let cache_path = state
+        .cache_dir
+        .join(format!("{racine}_{}.glb", rel.replace('/', "_")));
     state.get_or_build_cached_glb(format!("{racine}:{rel}"), &cache_path, || {
         info!("assemblage live : {racine} {rel}");
         let glb = assemble_tree(state, racine, rel)?;
@@ -2418,8 +2615,11 @@ fn get_or_build_tree_glb(state: &State, racine: &str, rel: &str) -> Result<GlbBy
 /// Extrait les octets du premier fichier `.g4md` d'une archive `.g4pkm` (paquet de modèle waza).
 fn extract_g4md_from_g4pkm(pkm: &[u8]) -> Result<Vec<u8>> {
     let pk = aphrody_nie_formats::g4pk::parse(pkm).context("parse g4pkm")?;
-    let f =
-        pk.files.iter().find(|f| f.name.ends_with(".g4md")).context("aucun .g4md dans le g4pkm")?;
+    let f = pk
+        .files
+        .iter()
+        .find(|f| f.name.ends_with(".g4md"))
+        .context("aucun .g4md dans le g4pkm")?;
     let end = f.offset + f.size;
     if end > pkm.len() {
         bail!("entrée g4md hors limites du g4pkm");
@@ -2455,9 +2655,12 @@ fn decode_selected_waveform(
             let index = entry_index.ok_or("Missing waveform selector")?;
             let awb = aphrody_nie_formats::cri_audio::Awb::parse(bytes)
                 .map_err(|error| error.to_string())?;
-            let entry = awb.entries.get(index).ok_or("Waveform index is absent from the AWB")?;
+            let entry = awb
+                .entries
+                .get(index)
+                .ok_or("Waveform index is absent from the AWB")?;
             u16::try_from(entry.cue_id).map_err(|_| "Waveform ID exceeds supported range")?
-        },
+        }
     };
     aphrody_nie_explore::native_audio::cue_to_wav(bytes, id)
 }
@@ -2478,12 +2681,16 @@ fn variante_jumelle(vfs_path: &str) -> Option<String> {
     if let Some(reste) = vfs_path.strip_prefix("data/dx11/movie/") {
         return Some(format!("data/common/movie/{reste}"));
     }
-    vfs_path.strip_prefix("data/common/movie/").map(|reste| format!("data/dx11/movie/{reste}"))
+    vfs_path
+        .strip_prefix("data/common/movie/")
+        .map(|reste| format!("data/dx11/movie/{reste}"))
 }
 
 /// Chemin du AWB frère d'un ACB : même chemin, extension `.awb`.
 fn awb_frere(vfs_path: &str) -> Option<String> {
-    vfs_path.strip_suffix(".acb").map(|base| format!("{base}.awb"))
+    vfs_path
+        .strip_suffix(".acb")
+        .map(|base| format!("{base}.awb"))
 }
 
 /// Résout les octets AWB d'un conteneur audio : embarqué dans l'ACB, ou fichier `.awb` frère.
@@ -2522,16 +2729,28 @@ fn nom_de_cue(acb: &[u8], vfs_path: &str, awb_id: Option<u16>, rang: Option<usiz
         (!c.name.is_empty()).then_some(c.name)
     });
     let base = nomme.unwrap_or_else(|| {
-        let radical =
-            vfs_path.rsplit('/').next().and_then(|n| n.split('.').next()).unwrap_or("audio");
-        let n = awb_id.map(u32::from).or(rang.map(|r| r as u32)).unwrap_or(0);
+        let radical = vfs_path
+            .rsplit('/')
+            .next()
+            .and_then(|n| n.split('.').next())
+            .unwrap_or("audio");
+        let n = awb_id
+            .map(u32::from)
+            .or(rang.map(|r| r as u32))
+            .unwrap_or(0);
         format!("{radical}_{n}")
     });
     // Un nom de cue vient du jeu, pas de l'utilisateur ; il est tout de même restreint à ce qui
     // traverse sans dommage un en-tête HTTP et un système de fichiers.
     let sain: String = base
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     format!("{sain}.wav")
 }
@@ -2675,11 +2894,15 @@ fn write_video_cache(destination: &Path, bytes: &[u8]) -> std::io::Result<()> {
     for _ in 0..32 {
         let id = NEXT_FILE.fetch_add(1, Ordering::Relaxed);
         temporary.set_extension(format!("{}-{id}.partial", std::process::id()));
-        match fs::OpenOptions::new().write(true).create_new(true).open(&temporary) {
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+        {
             Ok(opened) => {
                 file = Some(opened);
                 break;
-            },
+            }
             Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(error) => return Err(error),
         }
@@ -2786,7 +3009,10 @@ fn catalogue_video(state: &State) -> Result<String, String> {
     let attendue = cinema::empreinte(&state.vfs, cinema::DOSSIER_FILMS);
     let lue = serde_json::from_str::<serde_json::Value>(&texte)
         .ok()
-        .and_then(|v| v.get("empreinte").and_then(|e| e.as_str().map(str::to_string)));
+        .and_then(|v| {
+            v.get("empreinte")
+                .and_then(|e| e.as_str().map(str::to_string))
+        });
     match lue {
         Some(e) if e == attendue => Ok(texte),
         Some(e) => Err(format!(
@@ -2808,7 +3034,9 @@ fn get_or_build_glb(state: &State, code: &str, tenue: Tenue) -> Result<GlbBytes>
 /// Rapport d'assemblage d'un modèle : lu dans le cache (`<code>.report.json`), sinon produit
 /// avec le GLB. Les keshin et armures n'ont pas de rapport détaillé (`null`).
 fn get_or_build_report(state: &State, code: &str, tenue: Tenue) -> Result<Value> {
-    let report_path = state.cache_dir.join(format!("{code}{}.report.json", tenue.suffixe_cache()));
+    let report_path = state
+        .cache_dir
+        .join(format!("{code}{}.report.json", tenue.suffixe_cache()));
     if let Ok(text) = fs::read_to_string(&report_path)
         && let Ok(v) = serde_json::from_str::<Value>(&text)
     {
@@ -2932,10 +3160,12 @@ fn get_or_build_edit_glb(state: &State, dossier: &str, nom: &str) -> Result<GlbB
         let base = format!("data/common/chr/_face/20_EDIT/{dossier}/{nom}");
         let (g4md, g4mg, g4tx) = {
             let vfs = &state.vfs;
-            let g4md =
-                vfs.read(&format!("{base}.g4md")).with_context(|| format!("G4MD {base}.g4md"))?;
-            let g4mg =
-                vfs.read(&format!("{base}.g4mg")).with_context(|| format!("G4MG {base}.g4mg"))?;
+            let g4md = vfs
+                .read(&format!("{base}.g4md"))
+                .with_context(|| format!("G4MD {base}.g4md"))?;
+            let g4mg = vfs
+                .read(&format!("{base}.g4mg"))
+                .with_context(|| format!("G4MG {base}.g4mg"))?;
             let tex_base = format!("data/dx11/chr/_face/20_EDIT/{dossier}/{nom}");
             let g4tx = vfs
                 .read(&format!("{tex_base}.g4tx"))
@@ -2952,18 +3182,20 @@ fn get_or_build_edit_glb(state: &State, dossier: &str, nom: &str) -> Result<GlbB
         })
         .with_context(|| format!("assemblage {dossier}/{nom}"))?;
 
-        let glb: GlbBytes =
-            match g4tx.as_deref().and_then(|d| g4tx_decode::decode_best_to_png(d, nom)) {
-                Some(png_bytes) => {
-                    model.embedded_textures.push(EmbeddedTexture {
-                        component: MeshComponent::Generic,
-                        name: format!("{nom}_{dossier}"),
-                        png_bytes,
-                    });
-                    model.to_glb_embedded().into()
-                },
-                None => model.to_glb().into(),
-            };
+        let glb: GlbBytes = match g4tx
+            .as_deref()
+            .and_then(|d| g4tx_decode::decode_best_to_png(d, nom))
+        {
+            Some(png_bytes) => {
+                model.embedded_textures.push(EmbeddedTexture {
+                    component: MeshComponent::Generic,
+                    name: format!("{nom}_{dossier}"),
+                    png_bytes,
+                });
+                model.to_glb_embedded().into()
+            }
+            None => model.to_glb().into(),
+        };
 
         if let Err(e) = atomic_write(&cache_path, &glb) {
             warn!("écriture cache edit_{dossier}_{nom} échouée : {e}");
@@ -3013,7 +3245,10 @@ fn couleurs_teinte(query: &str) -> [aphrody_nie_formats::image_out::TeinteCanal;
     // des deux iris donnent 106,81,81 / 73,51,51 / 77,56,56 / 88,61,61, de médiane 83,59,59.
     const DEFAUTS: [[u8; 3]; 3] = [[243, 202, 193], [83, 59, 59], [255, 255, 255]];
     let demande = param(query, "tint").unwrap_or_default();
-    let mut sortie = [aphrody_nie_formats::image_out::TeinteCanal { rgb: [0; 3], actif: true }; 3];
+    let mut sortie = [aphrody_nie_formats::image_out::TeinteCanal {
+        rgb: [0; 3],
+        actif: true,
+    }; 3];
     for (i, defaut) in DEFAUTS.iter().enumerate() {
         let rgb = demande
             .split(',')
@@ -3084,7 +3319,11 @@ const AVATAR_CACHE_VERSION: u32 = 112;
 /// Un avatar complet cite une quinzaine de pièces et de couches : la clé littérale dépasse la
 /// longueur de nom de fichier admise. Le condensat garde l'unicité sans la longueur.
 fn cle_courte(cle: &str) -> String {
-    format!("{:08x}_{}", aphrody_nie_formats::cfgbin::crc32(cle.as_bytes()), cle.len())
+    format!(
+        "{:08x}_{}",
+        aphrody_nie_formats::cfgbin::crc32(cle.as_bytes()),
+        cle.len()
+    )
 }
 
 /// Vrai si ce dossier de pièce **ressemble à** un identifiant d'uniforme.
@@ -3138,21 +3377,34 @@ fn get_or_build_avatar_glb(
     let morpho_cle = morphologie.as_deref().unwrap_or("");
     // La couleur de chevelure change la texture posée : elle appartient donc à l'identité du
     // rendu au même titre que la carnation.
-    let cheveux_cle =
-        cheveux.map(|c| format!("{:02x}{:02x}{:02x}", c[0], c[1], c[2])).unwrap_or_default();
+    let cheveux_cle = cheveux
+        .map(|c| format!("{:02x}{:02x}{:02x}", c[0], c[1], c[2]))
+        .unwrap_or_default();
     let taille_cle = taille.map(|t| t.to_string()).unwrap_or_default();
     let forme_cle = forme.map(|f| f.to_string()).unwrap_or_default();
-    let habits_cle = habits.map(|(c, m, o)| format!("{c}{m}{o}")).unwrap_or_default();
+    let habits_cle = habits
+        .map(|(c, m, o)| format!("{c}{m}{o}"))
+        .unwrap_or_default();
     // Les deux familles sont séparées par un marqueur : sans lui, une pièce `d/n` et une couche
     // de visage `d/n` produisent le même fragment `d-n`, si bien que deux requêtes de sens
     // différent partagent un fichier de cache et que la seconde reçoit le GLB de la première.
     let cle: String = format!(
         "{}|{}|{teinte_cle}|{morpho_cle}|{cheveux_cle}|{taille_cle}|{forme_cle}|{habits_cle}",
-        specs.iter().map(|(d, n)| format!("{d}-{n}")).collect::<Vec<_>>().join("_"),
-        couches_visage.iter().map(|c| c.replace('/', "-")).collect::<Vec<_>>().join("_")
+        specs
+            .iter()
+            .map(|(d, n)| format!("{d}-{n}"))
+            .collect::<Vec<_>>()
+            .join("_"),
+        couches_visage
+            .iter()
+            .map(|c| c.replace('/', "-"))
+            .collect::<Vec<_>>()
+            .join("_")
     );
-    let cache_path =
-        state.cache_dir.join(format!("avatar_v{AVATAR_CACHE_VERSION}_{}.glb", cle_courte(&cle)));
+    let cache_path = state.cache_dir.join(format!(
+        "avatar_v{AVATAR_CACHE_VERSION}_{}.glb",
+        cle_courte(&cle)
+    ));
     let memory_key = format!("avatar:{cle}");
     if let Ok(mut cache) = state.glb_memory.lock()
         && let Some(glb) = cache.get(&memory_key)
@@ -3182,7 +3434,10 @@ fn get_or_build_avatar_glb(
         // Le squelette d'attache, s'il est demandé. Une pièce `_bodySK/<code>` n'apporte aucune
         // maille — son objbin n'en référence d'ailleurs aucune, ses 15 slots `Mesh` sont vides —
         // mais elle fixe le repère dans lequel les pièces de `20_EDIT` doivent être replacées.
-        let squelette = specs.iter().find(|(d, _)| d == "_bodySK").map(|(_, n)| n.clone());
+        let squelette = specs
+            .iter()
+            .find(|(d, _)| d == "_bodySK")
+            .map(|(_, n)| n.clone());
         let attache = specs
             .iter()
             .find(|(d, _)| d == "_bodySK")
@@ -3214,8 +3469,10 @@ fn get_or_build_avatar_glb(
                 warn!("famille de visage inconnue, ignorée : {rel}");
                 continue;
             };
-            let chemin =
-                format!("{}/_facetex/{rel}.g4tx", aphrody_nie_formats::assemble::AVATAR_TEX_ROOT);
+            let chemin = format!(
+                "{}/_facetex/{rel}.g4tx",
+                aphrody_nie_formats::assemble::AVATAR_TEX_ROOT
+            );
             let Ok(brut) = vfs.read(&chemin) else {
                 warn!("couche de visage illisible, ignorée : {chemin}");
                 continue;
@@ -3307,7 +3564,7 @@ fn get_or_build_avatar_glb(
                                     w, h, &teintee, &m,
                                 );
                                 Some((w, h, decoupee.unwrap_or(teintee)))
-                            },
+                            }
 
                             // La planche porte DÉJÀ son dessin — les quatre bouches de `mouth_01`.
                             // Elle se découpe au lieu de se teindre : la teinte par canaux effaçait
@@ -3335,7 +3592,7 @@ fn get_or_build_avatar_glb(
                                     return Some((w, h, d));
                                 }
                                 Some((w, h, t))
-                            },
+                            }
 
                             // Les pupilles désignent leur zone en bleu, et ce bleu n'est pas un tracé
                             // mais un ovale plein qui occupe tout le carré. On ne le découpe PAS : une
@@ -3406,8 +3663,9 @@ fn get_or_build_avatar_glb(
         // l'appelant fournit lui-même une pièce d'uniforme, on ne touche à rien.
         let mut effectifs: Vec<(String, String)> = specs.to_vec();
         let mut skin_textures = BTreeMap::new();
-        if let Some(sk) =
-            squelette.as_deref().filter(|_| !specs.iter().any(|(d, _)| est_uniforme(d)))
+        if let Some(sk) = squelette
+            .as_deref()
+            .filter(|_| !specs.iter().any(|(d, _)| est_uniforme(d)))
         {
             // La morphologie, si elle est donnée, désigne le corps exact ; sinon on retombe sur
             // le premier corps du squelette, qui a au moins la bonne stature.
@@ -3415,7 +3673,9 @@ fn get_or_build_avatar_glb(
                 .as_deref()
                 .and_then(aphrody_nie_formats::assemble::avatar_body_for_morphology)
                 .or_else(|| {
-                    aphrody_nie_formats::assemble::avatar_bodies_for_skeleton(sk).first().copied()
+                    aphrody_nie_formats::assemble::avatar_bodies_for_skeleton(sk)
+                        .first()
+                        .copied()
                 });
             if let Some(corps) = choisi {
                 effectifs.push((
@@ -3488,8 +3748,14 @@ fn get_or_build_avatar_glb(
             let candidats = if let Some(texture) = native_skin {
                 vec![texture.clone()]
             } else if uniforme {
-                let tenue = if dossier.starts_with('s') { TENUE_CHAUSSURES } else { TENUE_HAUT };
-                vec![aphrody_nie_formats::assemble::uniform_texture_vfs_path(dossier, tenue)]
+                let tenue = if dossier.starts_with('s') {
+                    TENUE_CHAUSSURES
+                } else {
+                    TENUE_HAUT
+                };
+                vec![aphrody_nie_formats::assemble::uniform_texture_vfs_path(
+                    dossier, tenue,
+                )]
             } else {
                 aphrody_nie_formats::assemble::avatar_texture_candidates(dossier, nom)
             };
@@ -3569,8 +3835,10 @@ fn get_or_build_avatar_glb(
                     // nomment d'après elle. Sans ce nom, le chemin avatar ne pouvait pas les
                     // embarquer — et c'est là que vit le dessin des mèches, la planche de base
                     // d'une chevelure n'étant qu'un aplat d'une à trois couleurs.
-                    let resolu = [Some(vise), repli.as_deref()].into_iter().flatten().find_map(
-                        |nom_planche| {
+                    let resolu = [Some(vise), repli.as_deref()]
+                        .into_iter()
+                        .flatten()
+                        .find_map(|nom_planche| {
                             let png = (|| {
                                 if native_skin.is_some() {
                                     let (w, h, mut rgba) =
@@ -3602,7 +3870,7 @@ fn get_or_build_avatar_glb(
                                                 rgb,
                                             )
                                             .ok()
-                                        },
+                                        }
                                         None => {
                                             aphrody_nie_formats::image_out::g4tx_vignette_nommee(
                                                 tx,
@@ -3611,13 +3879,12 @@ fn get_or_build_avatar_glb(
                                                 aphrody_nie_formats::image_out::ImageOut::Png,
                                             )
                                             .ok()
-                                        },
+                                        }
                                     }
                                 }
                             })()?;
                             Some((nom_planche.to_string(), png))
-                        },
-                    );
+                        });
                     let planche_retenue = resolu.as_ref().map(|(n, _)| n.clone());
                     let png = resolu.map(|(_, p)| p);
                     if native_skin.is_some() && png.is_none() {
@@ -3645,7 +3912,11 @@ fn get_or_build_avatar_glb(
                         png
                     };
                     if let Some(png_bytes) = png {
-                        textures.push(EmbeddedTexture { component, name: mat.clone(), png_bytes });
+                        textures.push(EmbeddedTexture {
+                            component,
+                            name: mat.clone(),
+                            png_bytes,
+                        });
                         // Les cartes auxiliaires suivent le même chemin que sur les personnages
                         // (`resolve_part`) : embarquées telles quelles, déclarées dans
                         // `materials[].extras.nie`, jamais teintées — la teinte est un choix de
@@ -3681,7 +3952,11 @@ fn get_or_build_avatar_glb(
             // `_base` est dans ce second cas malgré son emplacement : ses mailles d'œil et de
             // bouche sortent déjà à hauteur de tête, `y ∈ [1,291 ; 1,599]`. Les attacher les
             // portait à 2,66, soit une tête entière trop haut.
-            let attach = if uniforme || dossier == "_base" { None } else { attache };
+            let attach = if uniforme || dossier == "_base" {
+                None
+            } else {
+                attache
+            };
             pieces.push(aphrody_nie_formats::assemble::AvatarPiece {
                 component,
                 g4md,
@@ -3738,8 +4013,15 @@ fn get_or_build_avatar_glb(
     }
 
     let nb_tex = model.embedded_textures.len();
-    let glb = if nb_tex > 0 { model.to_glb_embedded() } else { model.to_glb() };
-    debug!("avatar {cle} : {} pièce(s), {nb_tex} texture(s)", pieces.len());
+    let glb = if nb_tex > 0 {
+        model.to_glb_embedded()
+    } else {
+        model.to_glb()
+    };
+    debug!(
+        "avatar {cle} : {} pièce(s), {nb_tex} texture(s)",
+        pieces.len()
+    );
 
     if let Err(e) = atomic_write(&cache_path, &glb) {
         warn!("écriture cache avatar_{cle} échouée : {e}");
@@ -3801,7 +4083,10 @@ fn enumerate_servable_codes(vfs: &Vfs) -> Vec<WarmJob> {
         // Armures : common/chr/_armd/<dir>/<code>.g4md (dossier ≠ code → pas de paire stricte).
         if path.contains("/_armd/")
             && path.ends_with(".g4md")
-            && let Some(code) = path.rsplit('/').next().and_then(|f| f.strip_suffix(".g4md"))
+            && let Some(code) = path
+                .rsplit('/')
+                .next()
+                .and_then(|f| f.strip_suffix(".g4md"))
             && code.starts_with("ka")
         {
             full.insert(code.to_string());
@@ -3832,7 +4117,12 @@ fn free_bytes(path: &Path) -> Option<u64> {
         .arg(path)
         .output()
         .ok()?;
-    String::from_utf8_lossy(&out.stdout).lines().nth(1)?.trim().parse::<u64>().ok()
+    String::from_utf8_lossy(&out.stdout)
+        .lines()
+        .nth(1)?
+        .trim()
+        .parse::<u64>()
+        .ok()
 }
 
 /// Seuil d'arrêt du préchargement : on stoppe si l'espace libre passe sous 3 Gio.
@@ -3856,8 +4146,13 @@ fn spawn_preload(state: Arc<State>, workers: usize) {
         let stop = Arc::new(AtomicBool::new(false));
         let mut handles = Vec::new();
         for _ in 0..workers.max(1) {
-            let (jobs, next, done, stop, state) =
-                (jobs.clone(), next.clone(), done.clone(), stop.clone(), state.clone());
+            let (jobs, next, done, stop, state) = (
+                jobs.clone(),
+                next.clone(),
+                done.clone(),
+                stop.clone(),
+                state.clone(),
+            );
             handles.push(thread::spawn(move || {
                 loop {
                     if stop.load(Relaxed) {
@@ -3870,10 +4165,10 @@ fn spawn_preload(state: Arc<State>, workers: usize) {
                     let res = match &jobs[i] {
                         WarmJob::Full(code) => {
                             get_or_build_glb(&state, code, tenue_demandee(code, "")).map(|_| ())
-                        },
+                        }
                         WarmJob::Chr(sub, code) => {
                             get_or_build_chr_glb(&state, sub, code).map(|_| ())
-                        },
+                        }
                     };
                     if let Err(e) = res {
                         debug!("préchargement : entrée {i} non assemblable : {e}");
@@ -3894,7 +4189,10 @@ fn spawn_preload(state: Arc<State>, workers: usize) {
         for h in handles {
             let _ = h.join();
         }
-        info!("préchargement terminé : {}/{total} modèles dans le cache", done.load(Relaxed));
+        info!(
+            "préchargement terminé : {}/{total} modèles dans le cache",
+            done.load(Relaxed)
+        );
     });
 }
 
@@ -3947,7 +4245,8 @@ fn cache_control() -> &'static str {
 /// that SSR forwards the token.
 fn private_route(path: &str, query: &str) -> bool {
     let under = |prefix: &str| {
-        path.strip_prefix(prefix).is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
+        path.strip_prefix(prefix)
+            .is_some_and(|rest| rest.is_empty() || rest.starts_with('/'))
     };
     if under("/raw") || under("/depot") {
         return true;
@@ -3956,8 +4255,11 @@ fn private_route(path: &str, query: &str) -> bool {
         return false;
     };
     // Same path and format resolution as the `/export/` handler below.
-    let vfs_path =
-        if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+    let vfs_path = if rest.starts_with("data/") {
+        rest.to_string()
+    } else {
+        format!("data/{rest}")
+    };
     let format = param(query, "format").unwrap_or_else(|| "raw".to_string());
     aphrody_nie_explore::raw_access::is_raw_export(&vfs_path, &format)
 }
@@ -3999,7 +4301,13 @@ fn respond_options(stream: &mut TcpStream) {
 }
 
 fn respond_text(stream: &mut TcpStream, status: u16, reason: &str, body: &str) {
-    respond(stream, status, reason, "text/plain; charset=utf-8", body.as_bytes());
+    respond(
+        stream,
+        status,
+        reason,
+        "text/plain; charset=utf-8",
+        body.as_bytes(),
+    );
 }
 
 // ── Query string (routes `/vfs/…`) ────────────────────────────────────────────
@@ -4019,24 +4327,24 @@ fn percent_decode(s: &str) -> String {
             b'+' => {
                 out.push(b' ');
                 i += 1;
-            },
+            }
             b'%' if i + 2 < src.len() => {
                 let hex = std::str::from_utf8(&src[i + 1..i + 3]).ok();
                 match hex.and_then(|h| u8::from_str_radix(h, 16).ok()) {
                     Some(b) => {
                         out.push(b);
                         i += 3;
-                    },
+                    }
                     None => {
                         out.push(b'%');
                         i += 1;
-                    },
+                    }
                 }
-            },
+            }
             b => {
                 out.push(b);
                 i += 1;
-            },
+            }
         }
     }
     String::from_utf8_lossy(&out).into_owned()
@@ -4055,7 +4363,9 @@ fn param(query: &str, key: &str) -> Option<String> {
 
 /// Paramètre entier de query, `defaut` si absent ou illisible.
 fn param_usize(query: &str, key: &str, defaut: usize) -> usize {
-    param(query, key).and_then(|v| v.parse().ok()).unwrap_or(defaut)
+    param(query, key)
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(defaut)
 }
 
 /// Sérialise une entrée de listing.
@@ -4081,8 +4391,16 @@ fn entree_json(e: &aphrody_nie_explore::listing::FileEntry) -> serde_json::Value
 fn respond_download(stream: &mut TcpStream, content_type: &str, nom: &str, body: &[u8]) {
     // Le nom est contraint à l'ASCII sûr : il vient d'un chemin du VFS, mais un en-tête HTTP ne
     // tolère ni guillemet ni saut de ligne.
-    let nom: String =
-        nom.chars().map(|c| if c.is_ascii_graphic() && c != '"' { c } else { '_' }).collect();
+    let nom: String = nom
+        .chars()
+        .map(|c| {
+            if c.is_ascii_graphic() && c != '"' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
     let headers = format!(
         "HTTP/1.1 200 OK\r\n\
          Content-Type: {content_type}\r\n\
@@ -4141,7 +4459,11 @@ fn parse_range(header: &str, total: usize) -> Option<(usize, usize)> {
         (total.saturating_sub(n), last)
     } else {
         let start: usize = a.trim().parse().ok()?;
-        let end = if b.is_empty() { last } else { b.trim().parse::<usize>().ok()?.min(last) };
+        let end = if b.is_empty() {
+            last
+        } else {
+            b.trim().parse::<usize>().ok()?.min(last)
+        };
         (start, end)
     };
     if start > end || start > last {
@@ -4315,7 +4637,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             let mut line = String::new();
             match reader.read_line(&mut line) {
                 Ok(0) | Err(_) => break,
-                _ => {},
+                _ => {}
             }
             if line == "\r\n" || line == "\n" {
                 break;
@@ -4348,7 +4670,12 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     }
 
     if method != "GET" && method != "HEAD" {
-        respond_text(&mut stream, 405, "Method Not Allowed", "GET, HEAD, OPTIONS uniquement");
+        respond_text(
+            &mut stream,
+            405,
+            "Method Not Allowed",
+            "GET, HEAD, OPTIONS uniquement",
+        );
         return;
     }
     IS_HEAD.with(|h| h.set(method == "HEAD"));
@@ -4407,7 +4734,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "fileOffset": l.file_offset,
                     "role": l.role.map(|r| serde_json::json!({ "role": r.role, "status": r.status })),
                 })
-            },
+            }
             "find" => {
                 let q = param(query, "q").unwrap_or_default();
                 let ext = param(query, "ext").filter(|e| !e.is_empty());
@@ -4432,14 +4759,14 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "offset": r.offset,
                     "files": r.files.iter().map(entree_json).collect::<Vec<_>>(),
                 })
-            },
+            }
             "stat" => {
                 let p = param(query, "path").unwrap_or_default();
                 match aphrody_nie_explore::listing::stat(vfs, &p) {
                     None => {
                         respond_text(&mut stream, 404, "Not Found", "chemin absent du VFS");
                         return;
-                    },
+                    }
                     Some(e) => {
                         // La description lit réellement les octets : réservée à `stat`, jamais
                         // au listing, qui parcourt des milliers d'entrées.
@@ -4466,9 +4793,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                         );
                         j["describe"] = serde_json::json!(describe);
                         j
-                    },
+                    }
                 }
-            },
+            }
             "stats" => serde_json::json!({
                 "total": vfs.asset_count(),
                 "cpkCount": vfs.cpk_count(),
@@ -4478,7 +4805,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             _ => {
                 respond_text(&mut stream, 404, "Not Found", "route /vfs inconnue");
                 return;
-            },
+            }
         };
         let bytes = serde_json::to_vec(&body).unwrap_or_default();
         respond(&mut stream, 200, "OK", "application/json", &bytes);
@@ -4554,13 +4881,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             _ => {
                 respond_text(&mut stream, 404, "Not Found", "route /depot inconnue");
                 return;
-            },
+            }
         };
         match resultat {
             Ok(body) => {
                 let bytes = serde_json::to_vec(&body).unwrap_or_default();
                 respond(&mut stream, 200, "OK", "application/json", &bytes);
-            },
+            }
             Err(e) => respond_text(&mut stream, 400, "Bad Request", &e.to_string()),
         }
         return;
@@ -4576,8 +4903,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // Les deux formats « à contexte » (cf. `necessite_contexte`) sont traités ici, comme le fait
     // le backend Tauri : `glb` passe par l'assemblage de ce service, `mp4` par le démux + ffmpeg.
     if let Some(rest) = path.strip_prefix("/export/") {
-        let vfs_path =
-            if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+        let vfs_path = if rest.starts_with("data/") {
+            rest.to_string()
+        } else {
+            format!("data/{rest}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -4594,7 +4924,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 "Bad Request",
                 &format!(
                     "format « {format} » indisponible pour ce fichier (proposés : {})",
-                    table.iter().map(|f| f.id.as_str()).collect::<Vec<_>>().join(", ")
+                    table
+                        .iter()
+                        .map(|f| f.id.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 ),
             );
             return;
@@ -4609,7 +4943,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             return;
         };
 
-        let ext = vfs_path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
+        let ext = vfs_path
+            .rsplit('.')
+            .next()
+            .unwrap_or("")
+            .to_ascii_lowercase();
         // Nom imposé au téléchargement quand le fichier produit ne désigne PAS le fichier
         // source — un cue d'une banque, par exemple. `None` laisse la règle de nommage
         // commune (`nom_propose`) s'appliquer.
@@ -4618,7 +4956,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             "mp4" => {
                 let nom = vfs_path.rsplit('/').next().unwrap_or(&vfs_path);
                 mux_h264_to_mp4(&data, nom)
-            },
+            }
             "glb" => {
                 // Le code d'assemblage est le radical du fichier — même convention que
                 // `/model-full/<code>.glb`.
@@ -4631,7 +4969,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 get_or_build_glb(&state, &code, tenue_demandee(&code, ""))
                     .map(|glb| glb.to_vec())
                     .map_err(|e| e.to_string())
-            },
+            }
             // `wav` demande le VFS autant que `glb` : une banque ACB porte souvent son AWB
             // DEHORS, et `aphrody_nie_explore::export::produire` ne voit que les octets du fichier
             // demandé — il échoue alors sur « ACB sans AWB embarqué ». `?id=`/`?cue=` exportent
@@ -4659,7 +4997,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                         Some((awb, _)) => decode_selected_waveform(&awb, awb_id, cue),
                     }
                 }
-            },
+            }
             autre => aphrody_nie_explore::export::produire(&vfs_path, data, autre),
         };
 
@@ -4680,7 +5018,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Internal Server Error",
                     &format!("conversion échouée : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -4734,7 +5072,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                         aphrody_nie_formats::sprite_sheet::ModeCss::Image
                     };
                     let css = feuille.vers_css_mode(&format!("/tex/{rel}.png"), mode);
-                    respond(&mut stream, 200, "OK", "text/css; charset=utf-8", css.as_bytes());
+                    respond(
+                        &mut stream,
+                        200,
+                        "OK",
+                        "text/css; charset=utf-8",
+                        css.as_bytes(),
+                    );
                     return;
                 }
                 let textures: Vec<serde_json::Value> = g4tx
@@ -4785,7 +5129,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 });
                 let body = serde_json::to_vec(&j).unwrap_or_default();
                 respond(&mut stream, 200, "OK", "application/json", &body);
-            },
+            }
         }
         return;
     }
@@ -4811,19 +5155,29 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             Some((conteneur, nom)) => {
                 let nom = nom.strip_suffix(".png").unwrap_or(nom);
                 (format!("{conteneur}.g4tx"), Some(nom.to_string()))
-            },
+            }
             None => (
-                rest.strip_suffix(".png").map_or_else(|| rest.to_string(), |s| format!("{s}.g4tx")),
+                rest.strip_suffix(".png")
+                    .map_or_else(|| rest.to_string(), |s| format!("{s}.g4tx")),
                 None,
             ),
         };
-        let vfs_path = if rel.starts_with("data/") { rel } else { format!("data/{rel}") };
+        let vfs_path = if rel.starts_with("data/") {
+            rel
+        } else {
+            format!("data/{rel}")
+        };
 
         let nom_invalide = nom_texture
             .as_deref()
             .is_some_and(|n| n.is_empty() || n.contains('/') || n.contains(".."));
         if vfs_path.contains("..") || !vfs_path.ends_with(".g4tx") || nom_invalide {
-            respond_text(&mut stream, 400, "Bad Request", "chemin invalide (.g4tx/.png attendu)");
+            respond_text(
+                &mut stream,
+                400,
+                "Bad Request",
+                "chemin invalide (.g4tx/.png attendu)",
+            );
             return;
         }
         let g4tx = {
@@ -4833,7 +5187,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let png = match nom_texture.as_deref() {
             // Texture nommée : jamais de repli sur « la plus grande » — un nom qui n'existe pas
             // doit donner 404, pas une image arbitraire qui passerait pour la bonne.
-            Some(nom) => g4tx.as_deref().and_then(|d| g4tx_decode::decode_named_to_png(d, nom)),
+            Some(nom) => g4tx
+                .as_deref()
+                .and_then(|d| g4tx_decode::decode_named_to_png(d, nom)),
             None => g4tx.as_deref().and_then(|d| {
                 g4tx_decode::decode_best_to_png(d, g4tx_decode::basename_of(&vfs_path))
             }),
@@ -4882,7 +5238,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             "polices": polices,
         });
         match serde_json::to_vec(&body) {
-            Ok(bytes) => respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &bytes),
+            Ok(bytes) => respond(
+                &mut stream,
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                &bytes,
+            ),
             Err(e) => respond_text(&mut stream, 500, "Internal Server Error", &e.to_string()),
         }
         return;
@@ -4896,13 +5258,23 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     if path == "/ui/text.png" {
         let texte = param(query, "t").unwrap_or_default();
         if texte.is_empty() || texte.chars().count() > 120 {
-            respond_text(&mut stream, 400, "Bad Request", "paramètre `t` vide ou trop long");
+            respond_text(
+                &mut stream,
+                400,
+                "Bad Request",
+                "paramètre `t` vide ou trop long",
+            );
             return;
         }
         let fg = param(query, "fg")
             .and_then(|s| u32::from_str_radix(s.trim_start_matches('#'), 16).ok())
             .map_or([255, 255, 255, 255], |v| {
-                [((v >> 16) & 0xFF) as u8, ((v >> 8) & 0xFF) as u8, (v & 0xFF) as u8, 255]
+                [
+                    ((v >> 16) & 0xFF) as u8,
+                    ((v >> 8) & 0xFF) as u8,
+                    (v & 0xFF) as u8,
+                    255,
+                ]
             });
         let (cfg, g4tx) = {
             let vfs = &state.vfs;
@@ -4912,7 +5284,12 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             )
         };
         let (Some(cfg), Some(g4tx)) = (cfg, g4tx) else {
-            respond_text(&mut stream, 500, "Internal Server Error", "police absente du VFS");
+            respond_text(
+                &mut stream,
+                500,
+                "Internal Server Error",
+                "police absente du VFS",
+            );
             return;
         };
         match render_text_png(&cfg, &g4tx, &texte, fg) {
@@ -4931,7 +5308,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let chemin = std::env::var("NIE_ICONS_INDEX")
             .unwrap_or_else(|_| String::from("var/icons-index.json"));
         match std::fs::read(&chemin) {
-            Ok(bytes) => respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &bytes),
+            Ok(bytes) => respond(
+                &mut stream,
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                &bytes,
+            ),
             Err(e) => respond_text(
                 &mut stream,
                 404,
@@ -4947,15 +5330,19 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         use std::io::Read as _;
         let Some(avatar_state) = param(query, "state").filter(|value| value.len() <= 64 * 1024)
         else {
-            let _ = stream
-                .write_all(&avatar_json_response(400, br#"{"error":"Invalid avatar selection"}"#));
+            let _ = stream.write_all(&avatar_json_response(
+                400,
+                br#"{"error":"Invalid avatar selection"}"#,
+            ));
             return;
         };
         let catalog_path = std::env::var("NIE_AVATAR_CATALOG")
             .unwrap_or_else(|_| "var/avatar-resolved.json".to_string());
         let catalog = fs::File::open(catalog_path).and_then(|file| {
             let mut bytes = Vec::new();
-            file.take(2 * 1024 * 1024 + 1).read_to_end(&mut bytes).map(|_| bytes)
+            file.take(2 * 1024 * 1024 + 1)
+                .read_to_end(&mut bytes)
+                .map(|_| bytes)
         });
         let response = match catalog {
             Ok(bytes) => match resolve_avatar_payload(&bytes, &avatar_state) {
@@ -4963,7 +5350,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 Err(error) => {
                     debug!("avatar composition rejected: {error}");
                     avatar_json_response(400, br#"{"error":"Invalid avatar selection"}"#)
-                },
+                }
             },
             Err(_) => avatar_json_response(
                 503,
@@ -4983,7 +5370,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let chemin = std::env::var("NIE_AVATAR_CATALOG")
             .unwrap_or_else(|_| String::from("var/avatar-resolved.json"));
         match std::fs::read(&chemin) {
-            Ok(bytes) => respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &bytes),
+            Ok(bytes) => respond(
+                &mut stream,
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                &bytes,
+            ),
             Err(e) => respond_text(
                 &mut stream,
                 404,
@@ -5006,7 +5399,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let ecran = rest.strip_suffix(".json").unwrap_or(rest);
         let invalide = ecran.is_empty()
             || ecran.len() > 64
-            || !ecran.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_');
+            || !ecran
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'_');
         if invalide {
             respond_text(&mut stream, 400, "Bad Request", "nom d'écran invalide");
             return;
@@ -5015,7 +5410,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             .unwrap_or_else(|_| String::from("var/avatar-ui/layouts"));
         let chemin = std::path::Path::new(&base).join(format!("{ecran}.json"));
         match std::fs::read(&chemin) {
-            Ok(bytes) => respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &bytes),
+            Ok(bytes) => respond(
+                &mut stream,
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                &bytes,
+            ),
             Err(e) => respond_text(
                 &mut stream,
                 404,
@@ -5080,8 +5481,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // `/cfg/<vfs-path>.json` — décode un cfg.bin/objbin/fxbin/mevbin RDBN en JSON natif.
     if let Some(rest) = path.strip_prefix("/cfg/") {
         let rel = rest.strip_suffix(".json").unwrap_or(rest);
-        let vfs_path =
-            if rel.starts_with("data/") { rel.to_string() } else { format!("data/{rel}") };
+        let vfs_path = if rel.starts_with("data/") {
+            rel.to_string()
+        } else {
+            format!("data/{rel}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5093,8 +5497,14 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         match bytes.as_deref().and_then(cfgbin_to_json) {
             Some(json) => {
                 let body = serde_json::to_vec(&json).unwrap_or_default();
-                respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &body);
-            },
+                respond(
+                    &mut stream,
+                    200,
+                    "OK",
+                    "application/json; charset=utf-8",
+                    &body,
+                );
+            }
             None => respond_text(&mut stream, 404, "Not Found", "cfg.bin absent ou non-RDBN"),
         }
         return;
@@ -5105,8 +5515,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // `{family:null, key, generic:<rdbn iecode>}` si la famille n'a pas de parseur typé.
     if let Some(rest) = path.strip_prefix("/typed/") {
         let rel = rest.strip_suffix(".json").unwrap_or(rest);
-        let vfs_path =
-            if rel.starts_with("data/") { rel.to_string() } else { format!("data/{rel}") };
+        let vfs_path = if rel.starts_with("data/") {
+            rel.to_string()
+        } else {
+            format!("data/{rel}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5122,14 +5535,23 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     Some((family, data)) => serde_json::json!({ "family": family, "data": data }),
                     None => {
                         serde_json::json!({ "family": serde_json::Value::Null, "key": key, "generic": root })
-                    },
+                    }
                 };
                 let body = serde_json::to_vec(&out).unwrap_or_default();
-                respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &body);
-            },
-            None => {
-                respond_text(&mut stream, 404, "Not Found", "cfg.bin absent ou non-RDBN a listes")
-            },
+                respond(
+                    &mut stream,
+                    200,
+                    "OK",
+                    "application/json; charset=utf-8",
+                    &body,
+                );
+            }
+            None => respond_text(
+                &mut stream,
+                404,
+                "Not Found",
+                "cfg.bin absent ou non-RDBN a listes",
+            ),
         }
         return;
     }
@@ -5138,8 +5560,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // (`{duration_s, frames:[{time_s, viseme, channel, param}]}`) à jouer en synchro voix.
     if let Some(rest) = path.strip_prefix("/lip/") {
         let rel = rest.strip_suffix(".json").unwrap_or(rest);
-        let vfs_path =
-            if rel.starts_with("data/") { rel.to_string() } else { format!("data/{rel}") };
+        let vfs_path = if rel.starts_with("data/") {
+            rel.to_string()
+        } else {
+            format!("data/{rel}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5151,8 +5576,14 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         match bytes.as_deref().map(aphrody_nie_formats::lip::parse) {
             Some(Ok(lip)) => {
                 let body = serde_json::to_vec(&lip).unwrap_or_default();
-                respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &body);
-            },
+                respond(
+                    &mut stream,
+                    200,
+                    "OK",
+                    "application/json; charset=utf-8",
+                    &body,
+                );
+            }
             Some(Err(e)) => {
                 respond_text(
                     &mut stream,
@@ -5160,7 +5591,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Unprocessable Entity",
                     &format!("p3lip invalide : {e}"),
                 );
-            },
+            }
             None => respond_text(&mut stream, 404, "Not Found", "fichier absent du VFS"),
         }
         return;
@@ -5168,8 +5599,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
 
     // `/raw/<vfs-path>` — bytes décompressés/déchiffrés bruts du CPK (texte, download).
     if let Some(rest) = path.strip_prefix("/raw/") {
-        let vfs_path =
-            if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+        let vfs_path = if rest.starts_with("data/") {
+            rest.to_string()
+        } else {
+            format!("data/{rest}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5186,7 +5620,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "application/octet-stream"
                 };
                 respond(&mut stream, 200, "OK", ct, &b);
-            },
+            }
             None => respond_text(&mut stream, 404, "Not Found", "fichier absent du VFS"),
         }
         return;
@@ -5198,7 +5632,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let screen = rest.strip_suffix(".png").unwrap_or(rest);
         if screen.is_empty()
             || screen.len() > 64
-            || !screen.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || !screen
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         {
             respond_text(&mut stream, 400, "Bad Request", "écran invalide");
             return;
@@ -5212,9 +5648,14 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             Ok(l) => l,
             Err(e) => {
                 warn!("layout {screen} invalide : {e}");
-                respond_text(&mut stream, 500, "Internal Server Error", "layout illisible");
+                respond_text(
+                    &mut stream,
+                    500,
+                    "Internal Server Error",
+                    "layout illisible",
+                );
                 return;
-            },
+            }
         };
         let png = menu::render_menu(&layout, |logical_path| {
             let vfs_path = if logical_path.starts_with("data/") {
@@ -5243,7 +5684,12 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     if let Some(rest) = path.strip_prefix("/menu-tree")
         && (rest.is_empty() || rest == ".json" || rest.starts_with('/'))
     {
-        let sel = rest.strip_prefix('/').unwrap_or(rest).strip_suffix(".json").unwrap_or("").trim();
+        let sel = rest
+            .strip_prefix('/')
+            .unwrap_or(rest)
+            .strip_suffix(".json")
+            .unwrap_or("")
+            .trim();
         let dir = &state.menu_cfg_dir;
         if sel.is_empty() {
             let mut paths: Vec<PathBuf> = match fs::read_dir(dir) {
@@ -5264,7 +5710,12 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 }
             }
             if screens.is_empty() {
-                respond_text(&mut stream, 404, "Not Found", "aucun menu_setting (dump absent ?)");
+                respond_text(
+                    &mut stream,
+                    404,
+                    "Not Found",
+                    "aucun menu_setting (dump absent ?)",
+                );
                 return;
             }
             let body = serde_json::json!({ "count": screens.len(), "screens": screens });
@@ -5272,7 +5723,10 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             respond(&mut stream, 200, "OK", "application/json", &bytes);
             return;
         }
-        if sel.len() > 64 || !sel.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        if sel.len() > 64
+            || !sel
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         {
             respond_text(&mut stream, 400, "Bad Request", "écran invalide");
             return;
@@ -5282,7 +5736,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             Some(v) => {
                 let bytes = serde_json::to_vec(&v).unwrap_or_default();
                 respond(&mut stream, 200, "OK", "application/json", &bytes);
-            },
+            }
             None => respond_text(&mut stream, 404, "Not Found", "écran introuvable"),
         }
         return;
@@ -5292,10 +5746,19 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // (`inagle_event_subtitles`) rendu dans la VRAIE police + boîte + onglet locuteur. `<n>` =
     // offset de ligne déterministe (défaut 0). Sert le mode histoire à azalee, sans dump.
     if let Some(rest) = path.strip_prefix("/story-scene") {
-        let sel = rest.trim_start_matches('/').strip_suffix(".png").unwrap_or("").trim();
+        let sel = rest
+            .trim_start_matches('/')
+            .strip_suffix(".png")
+            .unwrap_or("")
+            .trim();
         let offset: i64 = sel.parse().unwrap_or(0).max(0);
         let Some(db) = state.db_path.clone() else {
-            respond_text(&mut stream, 503, "Service Unavailable", "miroir SQLite absent");
+            respond_text(
+                &mut stream,
+                503,
+                "Service Unavailable",
+                "miroir SQLite absent",
+            );
             return;
         };
         let filter = "text_en IS NOT NULL AND length(text_en)>5";
@@ -5333,12 +5796,22 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             )
         };
         let (Some(cfg), Some(g4tx)) = (cfg, g4tx) else {
-            respond_text(&mut stream, 500, "Internal Server Error", "police absente du VFS");
+            respond_text(
+                &mut stream,
+                500,
+                "Internal Server Error",
+                "police absente du VFS",
+            );
             return;
         };
         match compose_story_png(&cfg, &g4tx, &speaker, &text) {
             Some(png) => respond(&mut stream, 200, "OK", "image/png", &png),
-            None => respond_text(&mut stream, 500, "Internal Server Error", "composition échouée"),
+            None => respond_text(
+                &mut stream,
+                500,
+                "Internal Server Error",
+                "composition échouée",
+            ),
         }
         return;
     }
@@ -5357,7 +5830,12 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
         };
         if !valid(sub) || !valid(code) {
-            respond_text(&mut stream, 400, "Bad Request", "sous-domaine/code invalide");
+            respond_text(
+                &mut stream,
+                400,
+                "Bad Request",
+                "sous-domaine/code invalide",
+            );
             return;
         }
         match get_or_build_chr_glb(&state, sub, code) {
@@ -5370,7 +5848,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Not Found",
                     &format!("modèle {sub}/{code} non disponible : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -5414,7 +5892,8 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             .filter(|c| {
                 !c.is_empty()
                     && c.len() <= 40
-                    && c.chars().all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '/')
+                    && c.chars()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '/')
             })
             .take(MAX_COUCHES_VISAGE)
             .map(str::to_string)
@@ -5438,8 +5917,13 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             Ok(glb) => respond(&mut stream, 200, "OK", "model/gltf-binary", &glb),
             Err(e) => {
                 debug!("assemblage avatar échoué : {e}");
-                respond_text(&mut stream, 500, "Internal Server Error", "assemblage échoué");
-            },
+                respond_text(
+                    &mut stream,
+                    500,
+                    "Internal Server Error",
+                    "assemblage échoué",
+                );
+            }
         }
         return;
     }
@@ -5479,7 +5963,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Not Found",
                     &format!("modèle {dossier}/{nom} non disponible : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -5489,11 +5973,16 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // `/model-tree/<racine>/<rel>.glb` — la même route pour les quatre arbres de
     // `data/common/` qui portent des modèles autonomes. `/model-map/<rel>.glb` en est l'alias
     // historique et reste servi : il est câblé dans `nie-site` et dans des signets.
-    if let Some((racine, rest)) =
-        path.strip_prefix("/model-map/").map(|rest| ("map", rest)).or_else(|| {
+    if let Some((racine, rest)) = path
+        .strip_prefix("/model-map/")
+        .map(|rest| ("map", rest))
+        .or_else(|| {
             let rest = path.strip_prefix("/model-tree/")?;
             let (racine, rel) = rest.split_once('/')?;
-            RACINES_ARBRE.iter().find(|r| **r == racine).map(|r| (*r, rel))
+            RACINES_ARBRE
+                .iter()
+                .find(|r| **r == racine)
+                .map(|r| (*r, rel))
         })
     {
         let rel = rest.strip_suffix(".glb").unwrap_or(rest);
@@ -5518,7 +6007,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Not Found",
                     &format!("{racine} {rel} non disponible : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -5529,7 +6018,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         let code = rest.strip_suffix(".json").unwrap_or(rest);
         if code.is_empty()
             || code.len() > 32
-            || !code.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || !code
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         {
             respond_text(&mut stream, 400, "Bad Request", "code invalide");
             return;
@@ -5550,7 +6041,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Not Found",
                     &format!("rapport {code} non disponible : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -5561,7 +6052,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         // Validation minimale : alphanumérique + _-
         if code.is_empty()
             || code.len() > 32
-            || !code.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || !code
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         {
             respond_text(&mut stream, 400, "Bad Request", "code invalide");
             return;
@@ -5570,7 +6063,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         match get_or_build_glb(&state, code, tenue_demandee(code, query)) {
             Ok(glb) => {
                 respond(&mut stream, 200, "OK", "model/gltf-binary", &glb);
-            },
+            }
             Err(e) => {
                 warn!("assemblage {code} échoué : {e:#}");
                 respond_text(
@@ -5579,7 +6072,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                     "Not Found",
                     &format!("modèle {code} non disponible : {e}"),
                 );
-            },
+            }
         }
         return;
     }
@@ -5591,8 +6084,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // taille, codec, nom quand la CueNameTable le donne) ; chacune se joue ensuite par
     // `/audio/<chemin>?cue=<index>`. C'est le socle de la galerie audio.
     if let Some(rest) = path.strip_prefix("/audio-info/") {
-        let vfs_path =
-            if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+        let vfs_path = if rest.starts_with("data/") {
+            rest.to_string()
+        } else {
+            format!("data/{rest}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5607,7 +6103,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 let j = audio_info_json(&vfs_path, &raw);
                 let body = serde_json::to_vec(&j).unwrap_or_default();
                 respond(&mut stream, 200, "OK", "application/json", &body);
-            },
+            }
         }
         return;
     }
@@ -5622,8 +6118,11 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     // « la plus volumineuse ». Le paramètre était documenté mais MORT : la query string était
     // strippée avant le routage, donc jamais lue.
     if let Some(rest) = path.strip_prefix("/audio/") {
-        let vfs_path =
-            if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+        let vfs_path = if rest.starts_with("data/") {
+            rest.to_string()
+        } else {
+            format!("data/{rest}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5645,7 +6144,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         match bytes {
             None => {
                 respond_text(&mut stream, 404, "Not Found", "fichier audio absent du VFS");
-            },
+            }
             Some(raw) => {
                 // Avec `?cue=`/`?id=`, on passe obligatoirement par la banque : `decode_to_wav`
                 // ne sait choisir que le défaut. Sans eux, le comportement est INCHANGÉ.
@@ -5688,9 +6187,9 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                             "Internal Server Error",
                             &format!("décodage audio échoué : {e}"),
                         );
-                    },
+                    }
                 }
-            },
+            }
         }
         return;
     }
@@ -5703,21 +6202,30 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
     if path == "/video/catalog.json" || path == "/video/catalog" {
         match catalogue_video(&state) {
             Ok(json) => {
-                respond(&mut stream, 200, "OK", "application/json; charset=utf-8", json.as_bytes());
-            },
+                respond(
+                    &mut stream,
+                    200,
+                    "OK",
+                    "application/json; charset=utf-8",
+                    json.as_bytes(),
+                );
+            }
             Err(e) => {
                 // Le construire ICI tiendrait la connexion une minute et ferait redémarrer le
                 // service par pression mémoire (cf. `catalogue_video`). On dit ce qui manque.
                 warn!("catalogue vidéo : {e}");
                 respond_text(&mut stream, 503, "Service Unavailable", &e);
-            },
+            }
         }
         return;
     }
 
     if let Some(rest) = path.strip_prefix("/video/") {
-        let vfs_path =
-            if rest.starts_with("data/") { rest.to_string() } else { format!("data/{rest}") };
+        let vfs_path = if rest.starts_with("data/") {
+            rest.to_string()
+        } else {
+            format!("data/{rest}")
+        };
         if vfs_path.contains("..") {
             respond_text(&mut stream, 400, "Bad Request", "chemin invalide");
             return;
@@ -5726,7 +6234,10 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
         // (`common/movie` ↔ `dx11/movie`) avant d'abandonner. L'erreur rapportée reste celle du
         // chemin DEMANDÉ : c'est celui que l'appelant connaît.
         let lire = |chemin: &str| -> Result<Vec<u8>, String> {
-            state.vfs.read(chemin).map_err(|_| "absent du VFS".to_string())
+            state
+                .vfs
+                .read(chemin)
+                .map_err(|_| "absent du VFS".to_string())
         };
         let (chemin_reel, brut) = match lire(&vfs_path) {
             Ok(b) => (vfs_path.clone(), b),
@@ -5737,18 +6248,24 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 Some((j, b)) => {
                     info!("{vfs_path} absente — servie depuis {j}");
                     (j, b)
-                },
+                }
                 None => {
                     respond_text(&mut stream, 404, "Not Found", &format!("vidéo {origine}"));
                     return;
-                },
+                }
             },
         };
         // `?info=1` — la fiche du film : métadonnées, bande-son, et ce que coûte le remux.
         if param(query, "info").is_some() {
             let json = fiche_video(&state, &chemin_reel);
             let bytes = serde_json::to_vec(&json).unwrap_or_default();
-            respond(&mut stream, 200, "OK", "application/json; charset=utf-8", &bytes);
+            respond(
+                &mut stream,
+                200,
+                "OK",
+                "application/json; charset=utf-8",
+                &bytes,
+            );
             return;
         }
 
@@ -5766,7 +6283,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
                 Err(e) if film.a_du_son() => {
                     warn!("décodage bande-son {chemin_reel} échoué : {e}");
                     respond_text(&mut stream, 500, "Internal Server Error", &e);
-                },
+                }
                 Err(e) => respond_text(&mut stream, 404, "Not Found", &e),
             }
             return;
@@ -5778,7 +6295,7 @@ fn handle_connection(mut stream: TcpStream, state: Arc<State>) {
             Err(e) => {
                 warn!("video {chemin_reel}: {e}");
                 let _ = stream.write_all(&video_unavailable_response());
-            },
+            }
         }
         return;
     }
@@ -5916,19 +6433,36 @@ fn main() -> Result<()> {
     // Tous les chemins dérivent de la racine du jeu, résolue à l'exécution : le même binaire
     // sert un serveur Linux et un poste Windows sans qu'aucun chemin de machine ne soit compilé
     // dedans. `var/` vit à côté du jeu, comme le reste des artefacts régénérables.
-    let racine = cli.game_dir.clone().unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
+    let racine = cli
+        .game_dir
+        .clone()
+        .unwrap_or_else(aphrody_nie_formats::vfs::resolve_game_dir);
     info!("racine du jeu : {}", racine.display());
     let var = racine.join("var");
-    let glb_dir = cli.glb_dir.clone().unwrap_or_else(|| racine.join("data/dx11/model"));
-    let cache_dir = cli.cache_dir.clone().unwrap_or_else(|| var.join("model-cache"));
-    let crc_manifest =
-        cli.crc_manifest.clone().unwrap_or_else(|| var.join("model-crc-manifest.ndjson"));
-    let uniform_map_path =
-        cli.uniform_map.clone().unwrap_or_else(|| var.join("uniform-model-map.ndjson"));
-    let body_manifest =
-        cli.body_manifest.clone().unwrap_or_else(|| var.join("body-type-manifest.ndjson"));
-    let menu_cfg_dir =
-        cli.menu_cfg_dir.clone().unwrap_or_else(|| racine.join("data/common/gamedata/menu/cfg"));
+    let glb_dir = cli
+        .glb_dir
+        .clone()
+        .unwrap_or_else(|| racine.join("data/dx11/model"));
+    let cache_dir = cli
+        .cache_dir
+        .clone()
+        .unwrap_or_else(|| var.join("model-cache"));
+    let crc_manifest = cli
+        .crc_manifest
+        .clone()
+        .unwrap_or_else(|| var.join("model-crc-manifest.ndjson"));
+    let uniform_map_path = cli
+        .uniform_map
+        .clone()
+        .unwrap_or_else(|| var.join("uniform-model-map.ndjson"));
+    let body_manifest = cli
+        .body_manifest
+        .clone()
+        .unwrap_or_else(|| var.join("body-type-manifest.ndjson"));
+    let menu_cfg_dir = cli
+        .menu_cfg_dir
+        .clone()
+        .unwrap_or_else(|| racine.join("data/common/gamedata/menu/cfg"));
     let asset_cross_ref = cli
         .asset_cross_ref
         .clone()
@@ -5945,7 +6479,8 @@ fn main() -> Result<()> {
     // Initialise le VFS.
     let mut vfs = Vfs::new();
     let game_data = racine.join("data");
-    vfs.init(&game_data).with_context(|| format!("init VFS depuis {}", game_data.display()))?;
+    vfs.init(&game_data)
+        .with_context(|| format!("init VFS depuis {}", game_data.display()))?;
     info!("VFS initialisé ({} fichiers indexés)", vfs.asset_count());
 
     // Index supplémentaire : rend lisibles les fichiers des CPK hors cpk_list.cfg.bin
@@ -5954,9 +6489,12 @@ fn main() -> Result<()> {
         Ok(entries) if !entries.is_empty() => {
             let added = vfs.add_extra_index(entries);
             info!("index VFS supplémentaire : +{added} fichiers (CPK hors cpk_list)");
-        },
-        Ok(_) => {},
-        Err(e) => warn!("index VFS supplémentaire ignoré ({}): {e}", cpk_file_index.display()),
+        }
+        Ok(_) => {}
+        Err(e) => warn!(
+            "index VFS supplémentaire ignoré ({}): {e}",
+            cpk_file_index.display()
+        ),
     }
 
     // Charge les manifestes.
@@ -5984,7 +6522,10 @@ fn main() -> Result<()> {
         };
         let d = aphrody_nie_explore::depot::Depot::ouvrir(&racine)
             .with_context(|| format!("--depot-code : racine {}", racine.display()))?;
-        info!("code du dépôt exposé sous /depot/ — racine {}", d.racine().display());
+        info!(
+            "code du dépôt exposé sous /depot/ — racine {}",
+            d.racine().display()
+        );
         Some(d)
     } else {
         None
@@ -5996,15 +6537,15 @@ fn main() -> Result<()> {
         Ok(Some(token)) => {
             info!("/raw, /depot, raw /export: bearer token configured");
             Some(token)
-        },
+        }
         Ok(None) => {
             info!("/raw, /depot, raw /export: closed (no NIE_RAW_VFS_TOKEN)");
             None
-        },
+        }
         Err(e) => {
             warn!("{e}");
             None
-        },
+        }
     };
 
     let state = Arc::new(State {
@@ -6030,7 +6571,10 @@ fn main() -> Result<()> {
     // Audit hors ligne : pas de serveur (donc pas de port à prendre — un serveur peut tourner à
     // côté), un rapport par personnage, puis sortie.
     if cli.audit {
-        let out = cli.audit_out.clone().unwrap_or_else(|| var.join("model-audit.ndjson"));
+        let out = cli
+            .audit_out
+            .clone()
+            .unwrap_or_else(|| var.join("model-audit.ndjson"));
         let failures = audit_models(
             &state,
             cli.threads.max(1),
@@ -6084,7 +6628,7 @@ fn main() -> Result<()> {
                 // un cœur entier à journaliser son propre échec.
                 error!("connexion entrante échouée : {e}");
                 thread::sleep(Duration::from_millis(50));
-            },
+            }
         }
     }
 
@@ -6143,7 +6687,7 @@ fn audit_one(state: &State, code: &str) -> (serde_json::Map<String, Value>, Valu
                 crit.insert((*c).to_string(), Value::Bool(false));
             }
             return (crit, json!({ "erreur": format!("{e:#}") }));
-        },
+        }
     };
     let mut set = |name: &str, ok: bool| {
         crit.insert(name.to_string(), Value::Bool(ok));
@@ -6160,44 +6704,77 @@ fn audit_one(state: &State, code: &str) -> (serde_json::Map<String, Value>, Valu
     set("visage_brut", face.is_some_and(|p| p["origin"] == "vfs"));
 
     let sk_err = r["skeleton"]["bind_consistency_error"].as_f64();
-    set("squelette", sk_err.is_some_and(|e| e.is_finite() && e < 1e-4));
+    set(
+        "squelette",
+        sk_err.is_some_and(|e| e.is_finite() && e < 1e-4),
+    );
 
     let prims = r["primitives"].as_u64().unwrap_or(0);
     let skinned = r["skinned_primitives"].as_u64().unwrap_or(0);
-    set("skinnee", r["mode"] == "skinned" && prims > 0 && skinned == prims);
+    set(
+        "skinnee",
+        r["mode"] == "skinned" && prims > 0 && skinned == prims,
+    );
 
-    let unresolved: usize =
-        pieces.iter().map(|p| p["skin"]["unresolved_hashes"].as_array().map_or(0, Vec::len)).sum();
-    let sans_os: u64 =
-        pieces.iter().map(|p| p["skin"]["vertices_without_bone"].as_u64().unwrap_or(0)).sum();
+    let unresolved: usize = pieces
+        .iter()
+        .map(|p| {
+            p["skin"]["unresolved_hashes"]
+                .as_array()
+                .map_or(0, Vec::len)
+        })
+        .sum();
+    let sans_os: u64 = pieces
+        .iter()
+        .map(|p| p["skin"]["vertices_without_bone"].as_u64().unwrap_or(0))
+        .sum();
     set("os_resolus", unresolved == 0 && sans_os == 0);
 
-    let parts = r["uniform"]["parts"].as_array().cloned().unwrap_or_default();
+    let parts = r["uniform"]["parts"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     set("tenue", parts.iter().any(|p| p["role"] == "uniform"));
-    let loaded_roles: Vec<String> =
-        pieces.iter().filter_map(|p| p["role"].as_str().map(str::to_string)).collect();
-    let recipe_roles: Vec<String> =
-        parts.iter().filter_map(|p| p["role"].as_str().map(str::to_string)).collect();
-    let missing: Vec<&String> =
-        recipe_roles.iter().filter(|role| !loaded_roles.contains(role)).collect();
+    let loaded_roles: Vec<String> = pieces
+        .iter()
+        .filter_map(|p| p["role"].as_str().map(str::to_string))
+        .collect();
+    let recipe_roles: Vec<String> = parts
+        .iter()
+        .filter_map(|p| p["role"].as_str().map(str::to_string))
+        .collect();
+    let missing: Vec<&String> = recipe_roles
+        .iter()
+        .filter(|role| !loaded_roles.contains(role))
+        .collect();
     // Les notes « <rôle> <pièce> : lecture G4M… » signalent une pièce résolue mais absente du VFS.
     let notes: Vec<String> = r["notes"]
         .as_array()
-        .map(|a| a.iter().filter_map(|n| n.as_str().map(str::to_string)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(|n| n.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
     let vfs_missing = notes.iter().filter(|n| n.contains("lecture G4M")).count();
     set("pieces_chargees", missing.is_empty() && vfs_missing == 0);
     set("chaussures", parts.iter().any(|p| p["role"] == "shoes"));
 
-    let unbound = r["materials_without_texture"].as_array().map_or(0, Vec::len);
+    let unbound = r["materials_without_texture"]
+        .as_array()
+        .map_or(0, Vec::len);
     let materials_tex: Vec<Value> = r["textures"]
         .as_array()
         .map(|ts| {
-            ts.iter().flat_map(|t| t["materials"].as_array().cloned().unwrap_or_default()).collect()
+            ts.iter()
+                .flat_map(|t| t["materials"].as_array().cloned().unwrap_or_default())
+                .collect()
         })
         .unwrap_or_default();
-    let undecoded =
-        materials_tex.iter().filter(|m| m["texture"].is_null() || m["decoded"] == false).count();
+    let undecoded = materials_tex
+        .iter()
+        .filter(|m| m["texture"].is_null() || m["decoded"] == false)
+        .count();
     let non_exact: Vec<String> = materials_tex
         .iter()
         .filter(|m| m["rule"].as_str().is_some_and(|r| r != "exact"))
@@ -6295,7 +6872,11 @@ fn audit_models(
     if limit > 0 {
         codes.truncate(limit);
     }
-    info!("audit : {} personnage(s), {threads} thread(s), sortie {}", codes.len(), out.display());
+    info!(
+        "audit : {} personnage(s), {threads} thread(s), sortie {}",
+        codes.len(),
+        out.display()
+    );
 
     let next = AtomicUsize::new(0);
     let done = AtomicUsize::new(0);
@@ -6311,16 +6892,17 @@ fn audit_models(
                     if n.is_multiple_of(100) {
                         info!("audit : {n}/{}", codes.len());
                     }
-                    results.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push((
-                        code.clone(),
-                        crit,
-                        details,
-                    ));
+                    results
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner)
+                        .push((code.clone(), crit, details));
                 }
             });
         }
     });
-    let mut results = results.into_inner().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut results = results
+        .into_inner()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     results.sort_by(|a, b| a.0.cmp(&b.0));
 
     let mut ndjson = String::new();
@@ -6349,7 +6931,9 @@ fn audit_models(
     fs::write(out, &ndjson).with_context(|| format!("écriture {}", out.display()))?;
     let summary_path = out.with_file_name(format!(
         "{}-summary.json",
-        out.file_stem().and_then(|s| s.to_str()).unwrap_or("model-audit")
+        out.file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("model-audit")
     ));
     let summary = json!({
         "assembler_version": ASSEMBLER_VERSION,
@@ -6433,10 +7017,16 @@ mod tests {
     fn the_gate_needs_the_configured_bearer_token() {
         use aphrody_nie_explore::raw_access::{Token, allows};
         let token = Token::new("0123456789abcdef0123456789abcdef").unwrap();
-        assert!(!allows(None, Some("Bearer 0123456789abcdef0123456789abcdef")));
+        assert!(!allows(
+            None,
+            Some("Bearer 0123456789abcdef0123456789abcdef")
+        ));
         assert!(!allows(Some(&token), None));
         assert!(!allows(Some(&token), Some("Bearer nope")));
-        assert!(allows(Some(&token), Some("Bearer 0123456789abcdef0123456789abcdef")));
+        assert!(allows(
+            Some(&token),
+            Some("Bearer 0123456789abcdef0123456789abcdef")
+        ));
     }
 
     /// La tenue par défaut n'affirme rien, et c'est elle qui garde le nom de cache historique.
@@ -6458,7 +7048,11 @@ mod tests {
         assert_eq!(Tenue::depuis_query("captain=0"), Some(Tenue::default()));
         assert_eq!(
             Tenue::depuis_query("captain=1&number=9&gloves=1"),
-            Some(Tenue { capitaine: true, numero: Some(9), gants_du_kit: true })
+            Some(Tenue {
+                capitaine: true,
+                numero: Some(9),
+                gants_du_kit: true
+            })
         );
     }
 
@@ -6466,10 +7060,22 @@ mod tests {
     /// plutôt que de décaler les UV hors de la grille.
     #[test]
     fn un_numero_hors_planche_vaut_aucun_numero() {
-        assert_eq!(Tenue::depuis_query("number=100").and_then(|t| t.numero), None);
-        assert_eq!(Tenue::depuis_query("number=abc").and_then(|t| t.numero), None);
-        assert_eq!(Tenue::depuis_query("number=99").and_then(|t| t.numero), Some(99));
-        assert_eq!(Tenue::depuis_query("number=0").and_then(|t| t.numero), Some(0));
+        assert_eq!(
+            Tenue::depuis_query("number=100").and_then(|t| t.numero),
+            None
+        );
+        assert_eq!(
+            Tenue::depuis_query("number=abc").and_then(|t| t.numero),
+            None
+        );
+        assert_eq!(
+            Tenue::depuis_query("number=99").and_then(|t| t.numero),
+            Some(99)
+        );
+        assert_eq!(
+            Tenue::depuis_query("number=0").and_then(|t| t.numero),
+            Some(0)
+        );
     }
 
     /// Deux tenues différentes ne doivent jamais partager un fichier de cache — sans quoi le
@@ -6478,11 +7084,27 @@ mod tests {
     fn chaque_tenue_a_sa_propre_cle_de_cache() {
         let tenues = [
             Tenue::default(),
-            Tenue { capitaine: true, ..Tenue::default() },
-            Tenue { numero: Some(0), ..Tenue::default() },
-            Tenue { numero: Some(9), ..Tenue::default() },
-            Tenue { gants_du_kit: true, ..Tenue::default() },
-            Tenue { capitaine: true, numero: Some(10), gants_du_kit: true },
+            Tenue {
+                capitaine: true,
+                ..Tenue::default()
+            },
+            Tenue {
+                numero: Some(0),
+                ..Tenue::default()
+            },
+            Tenue {
+                numero: Some(9),
+                ..Tenue::default()
+            },
+            Tenue {
+                gants_du_kit: true,
+                ..Tenue::default()
+            },
+            Tenue {
+                capitaine: true,
+                numero: Some(10),
+                gants_du_kit: true,
+            },
         ];
         let cles: std::collections::BTreeSet<String> =
             tenues.iter().map(|t| t.suffixe_cache()).collect();
@@ -6494,9 +7116,20 @@ mod tests {
     #[test]
     fn l_attestation_externe_se_lit_telle_quelle() {
         let t = Tenue::attestee("c05024700").expect("c05024700 est attesté");
-        assert_eq!(t.numero, Some(9), "frames officiels r0..r7 : numéro 9 au dos");
-        assert!(!t.capitaine, "frames officiels : sans brassard de capitaine");
-        assert_eq!(Tenue::attestee("c01001900"), None, "non relevé = non attesté");
+        assert_eq!(
+            t.numero,
+            Some(9),
+            "frames officiels r0..r7 : numéro 9 au dos"
+        );
+        assert!(
+            !t.capitaine,
+            "frames officiels : sans brassard de capitaine"
+        );
+        assert_eq!(
+            Tenue::attestee("c01001900"),
+            None,
+            "non relevé = non attesté"
+        );
     }
 
     /// La requête gagne toujours sur l'attestation : c'est l'utilisateur qui porte la tenue.
@@ -6550,7 +7183,10 @@ mod tests {
         let variant = super::video_cache_key("data/dx11/movie/intro.usm", b"first");
         assert_ne!(first, second);
         assert_ne!(first, variant);
-        assert_eq!(first, super::video_cache_key("data/common/movie/intro.usm", b"first"));
+        assert_eq!(
+            first,
+            super::video_cache_key("data/common/movie/intro.usm", b"first")
+        );
         assert!(!first.contains("intro"));
     }
 
@@ -6568,7 +7204,12 @@ mod tests {
         let temporary_count = std::fs::read_dir(&directory)
             .unwrap()
             .filter(|entry| {
-                entry.as_ref().unwrap().path().extension().is_some_and(|ext| ext == "partial")
+                entry
+                    .as_ref()
+                    .unwrap()
+                    .path()
+                    .extension()
+                    .is_some_and(|ext| ext == "partial")
             })
             .count();
         assert_eq!(temporary_count, 0);
@@ -6589,8 +7230,9 @@ mod tests {
 
     #[test]
     fn skin_mask_preserves_cloth_and_alpha_at_different_resolutions() {
-        let mut rgba =
-            vec![255, 255, 255, 99, 255, 255, 255, 255, 100, 100, 100, 255, 100, 100, 100, 255];
+        let mut rgba = vec![
+            255, 255, 255, 99, 255, 255, 255, 255, 100, 100, 100, 255, 100, 100, 100, 255,
+        ];
         assert!(super::tint_skin_mask(
             &mut rgba,
             4,
@@ -6611,7 +7253,10 @@ mod tests {
             super::expression_skin_color(&[241, 209, 177, 255, 241, 209, 177, 255, 0, 0, 0, 255]),
             Some([241, 209, 177])
         );
-        assert_eq!(super::expression_skin_color(&[241, 209, 177, 255, 0, 0, 0, 255]), None);
+        assert_eq!(
+            super::expression_skin_color(&[241, 209, 177, 255, 0, 0, 0, 255]),
+            None
+        );
         assert_eq!(super::expression_skin_color(&[241, 209, 177, 0]), None);
     }
     use super::*;
@@ -6649,9 +7294,15 @@ mod tests {
         fs::write(dir.join("c01001900.report.json"), b"{}").unwrap();
         fs::write(dir.join("VERSION"), "0000-00-00.rien").unwrap();
         purge_stale_cache(&dir);
-        assert!(!dir.join("c01001900.glb").exists(), "l'ancien GLB doit disparaître");
+        assert!(
+            !dir.join("c01001900.glb").exists(),
+            "l'ancien GLB doit disparaître"
+        );
         assert!(!dir.join("c01001900.report.json").exists());
-        assert_eq!(fs::read_to_string(dir.join("VERSION")).unwrap(), ASSEMBLER_VERSION);
+        assert_eq!(
+            fs::read_to_string(dir.join("VERSION")).unwrap(),
+            ASSEMBLER_VERSION
+        );
         // Même version : rien n'est touché.
         fs::write(dir.join("c01001900.glb"), b"courant").unwrap();
         purge_stale_cache(&dir);
@@ -6732,7 +7383,11 @@ mod tests {
                 "haptic_feedback",
                 format!("{g}/input/haptic_feedback_def_0.00.00.cfg.bin.json"),
             ),
-            ("vibration_def", "vibration", format!("{g}/input/vibration_def_0.00.09.cfg.bin.json")),
+            (
+                "vibration_def",
+                "vibration",
+                format!("{g}/input/vibration_def_0.00.09.cfg.bin.json"),
+            ),
             // Échantillon de la 3e vague (workflow d'analyse 31 familles).
             (
                 "basara_chara_config",
@@ -6754,8 +7409,16 @@ mod tests {
                 "chara_base",
                 format!("{g}/character/chara_base_1.03.98.00.cfg.bin.json"),
             ),
-            ("shop_config", "shop", format!("{g}/shop/shop_config_3.00.22.cfg.bin.json")),
-            ("quest_config", "quest", format!("{g}/quest/quest_config_1.04.11.00.cfg.bin.json")),
+            (
+                "shop_config",
+                "shop",
+                format!("{g}/shop/shop_config_3.00.22.cfg.bin.json"),
+            ),
+            (
+                "quest_config",
+                "quest",
+                format!("{g}/quest/quest_config_1.04.11.00.cfg.bin.json"),
+            ),
             (
                 "real_skill_config",
                 "real_skill",
@@ -6796,8 +7459,12 @@ mod tests {
         );
         // Keshin.
         assert_eq!(
-            code_of_dir_pair("data/common/chr/_keshin/k000010/k000010.g4md", "/_keshin/", ".g4md")
-                .as_deref(),
+            code_of_dir_pair(
+                "data/common/chr/_keshin/k000010/k000010.g4md",
+                "/_keshin/",
+                ".g4md"
+            )
+            .as_deref(),
             Some("k000010")
         );
         // Dossier ≠ fichier (texture de partie, pas un modèle) → rejeté.
@@ -6810,7 +7477,10 @@ mod tests {
             None
         );
         // Marqueur absent → rejeté.
-        assert_eq!(code_of_dir_pair("data/x/y/z.g4tx", "/_face/", ".g4tx"), None);
+        assert_eq!(
+            code_of_dir_pair("data/x/y/z.g4tx", "/_face/", ".g4tx"),
+            None
+        );
     }
 
     /// Valide le déchiffrement HCA réel depuis le premier AWB IEVR.
@@ -6851,7 +7521,10 @@ mod tests {
 
         assert_eq!(sample_rate, 48_000, "sample_rate attendu : 48000 Hz");
         assert_eq!(channels, 1, "canal attendu : mono (1)");
-        assert!(!samples.is_empty(), "aucun sample décodé — encoder_delay absorbe tout ?");
+        assert!(
+            !samples.is_empty(),
+            "aucun sample décodé — encoder_delay absorbe tout ?"
+        );
 
         // Signal non silencieux : avec la bonne clé, les samples doivent être non nuls.
         // Sans la clé (keycode=0), le déchiffrement est l'identité → bruit bas/nul.
@@ -6920,7 +7593,11 @@ mod tests {
             })
             .collect();
         awb_paths.sort_unstable();
-        assert!(awb_paths.len() >= 3, "moins de 3 AWB dans le VFS ({})", awb_paths.len());
+        assert!(
+            awb_paths.len() >= 3,
+            "moins de 3 AWB dans le VFS ({})",
+            awb_paths.len()
+        );
 
         const TARGET: usize = 3;
         let mut ok: Vec<(String, u32, u32, usize)> = Vec::new(); // (path, sr, ch, samples)
@@ -6957,7 +7634,10 @@ mod tests {
                 (8_000..=48_000).contains(&sample_rate),
                 "{path} : sample_rate {sample_rate} hors plage plausible"
             );
-            assert!((1..=2).contains(&channels), "{path} : channels {channels} inattendu");
+            assert!(
+                (1..=2).contains(&channels),
+                "{path} : channels {channels} inattendu"
+            );
             ok.push((path.clone(), sample_rate, channels, samples.len()));
         }
 

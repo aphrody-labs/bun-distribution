@@ -47,22 +47,40 @@ fn stacking(d: &Document, r: SpreadRef) -> Vec<ItemId> {
         if !layer.visible || layer.locked {
             continue;
         }
-        v.extend(sp.items.iter().filter(|it| it.layer == layer.id && !it.hidden && !it.locked).map(|it| it.id));
+        v.extend(
+            sp.items
+                .iter()
+                .filter(|it| it.layer == layer.id && !it.hidden && !it.locked)
+                .map(|it| it.id),
+        );
     }
     v
 }
 
 fn select_stacked(s: &mut Session, how: Step) -> Result<Value> {
     let st = s.doc_mut()?;
-    let cur = st.selection.items.first().and_then(|id| st.doc.find(*id).map(|l| (*id, l)));
-    let r = cur.as_ref().map(|(_, l)| l.spread).or_else(|| st.doc.spread_refs().next()).ok_or_else(|| bad("select", "no spread"))?;
+    let cur = st
+        .selection
+        .items
+        .first()
+        .and_then(|id| st.doc.find(*id).map(|l| (*id, l)));
+    let r = cur
+        .as_ref()
+        .map(|(_, l)| l.spread)
+        .or_else(|| st.doc.spread_refs().next())
+        .ok_or_else(|| bad("select", "no spread"))?;
     let order = stacking(&st.doc, r);
     if order.is_empty() {
         return ok();
     }
     // Nested selections step from their top-level object.
     let at = cur
-        .and_then(|(_, l)| st.doc.spread(l.spread).and_then(|sp| sp.items.get(l.top())).map(|it| it.id))
+        .and_then(|(_, l)| {
+            st.doc
+                .spread(l.spread)
+                .and_then(|sp| sp.items.get(l.top()))
+                .map(|it| it.id)
+        })
         .and_then(|id| order.iter().position(|x| *x == id));
     let n = order.len();
     let i = match (how, at) {
@@ -77,15 +95,25 @@ fn select_stacked(s: &mut Session, how: Step) -> Result<Value> {
 }
 
 fn parent_loc(l: &ItemLoc) -> Option<ItemLoc> {
-    (l.path.len() > 1).then(|| ItemLoc { spread: l.spread, path: l.path[..l.path.len() - 1].to_vec() })
+    (l.path.len() > 1).then(|| ItemLoc {
+        spread: l.spread,
+        path: l.path[..l.path.len() - 1].to_vec(),
+    })
 }
 
 fn select_container(s: &mut Session) -> Result<Value> {
     let st = s.doc_mut()?;
-    let Some(id) = st.selection.items.first().copied() else { return ok() };
+    let Some(id) = st.selection.items.first().copied() else {
+        return ok();
+    };
     if st.selection.content {
         st.selection = Selection::items(vec![id]);
-    } else if let Some(p) = st.doc.find(id).and_then(|l| parent_loc(&l)).and_then(|l| st.doc.item_at(&l).map(|it| it.id)) {
+    } else if let Some(p) = st
+        .doc
+        .find(id)
+        .and_then(|l| parent_loc(&l))
+        .and_then(|l| st.doc.item_at(&l).map(|it| it.id))
+    {
         st.selection = Selection::items(vec![p]);
     } else {
         return ok();
@@ -96,12 +124,19 @@ fn select_container(s: &mut Session) -> Result<Value> {
 
 fn select_content(s: &mut Session) -> Result<Value> {
     let st = s.doc_mut()?;
-    let Some(id) = st.selection.items.first().copied() else { return ok() };
-    let Some(it) = st.doc.item(id) else { return ok() };
+    let Some(id) = st.selection.items.first().copied() else {
+        return ok();
+    };
+    let Some(it) = st.doc.item(id) else {
+        return ok();
+    };
     if let Some(c) = it.children().first() {
         st.selection = Selection::items(vec![c.id]);
     } else if matches!(it.content, Content::Graphic(_)) {
-        st.selection = Selection { content: true, ..Selection::items(vec![id]) };
+        st.selection = Selection {
+            content: true,
+            ..Selection::items(vec![id])
+        };
     } else {
         return ok();
     }
@@ -111,10 +146,18 @@ fn select_content(s: &mut Session) -> Result<Value> {
 
 fn select_sibling(s: &mut Session, dir: isize) -> Result<Value> {
     let st = s.doc_mut()?;
-    let Some(id) = st.selection.items.first().copied() else { return ok() };
-    let Some(l) = st.doc.find(id) else { return ok() };
-    let Some(pl) = parent_loc(&l) else { return ok() };
-    let Some(parent) = st.doc.item_at(&pl) else { return ok() };
+    let Some(id) = st.selection.items.first().copied() else {
+        return ok();
+    };
+    let Some(l) = st.doc.find(id) else {
+        return ok();
+    };
+    let Some(pl) = parent_loc(&l) else {
+        return ok();
+    };
+    let Some(parent) = st.doc.item_at(&pl) else {
+        return ok();
+    };
     let kids = parent.children();
     let n = kids.len() as isize;
     let Some(&i) = l.path.last() else { return ok() };
@@ -123,7 +166,9 @@ fn select_sibling(s: &mut Session, dir: isize) -> Result<Value> {
     }
     // InDesign's "next" goes down the stack (towards the back), wrapping.
     let j = (i as isize - dir).rem_euclid(n) as usize;
-    let Some(next) = kids.get(j).map(|k| k.id) else { return ok() };
+    let Some(next) = kids.get(j).map(|k| k.id) else {
+        return ok();
+    };
     st.selection = Selection::items(vec![next]);
     st.revision += 1;
     Ok(json!({"id": next.0}))
@@ -131,7 +176,9 @@ fn select_sibling(s: &mut Session, dir: isize) -> Result<Value> {
 
 fn convert_shape(s: &mut Session, p: &Value) -> Result<Value> {
     const ID: &str = "object.convertShape";
-    let to = str_param(p, "to").ok_or_else(|| bad(ID, "`to` required"))?.to_string();
+    let to = str_param(p, "to")
+        .ok_or_else(|| bad(ID, "`to` required"))?
+        .to_string();
     let ids = targets(s, p)?;
     let sides = s.prefs.polygon_sides;
     let inset = s.prefs.star_inset;
@@ -152,22 +199,59 @@ fn convert_shape(s: &mut Session, p: &Value) -> Result<Value> {
 fn convert(it: &mut Item, to: &str, sides: u32, inset: f64) -> std::result::Result<(), String> {
     let r: Rect = it.path.bounds().unwrap_or(Rect::ZERO);
     let text = matches!(it.content, Content::Text(_));
-    let corners = |shape: CornerShape| CornerOptions::uniform(shape, (r.width().min(r.height()) / 6.0).clamp(1.0, 12.0));
+    let corners = |shape: CornerShape| {
+        CornerOptions::uniform(shape, (r.width().min(r.height()) / 6.0).clamp(1.0, 12.0))
+    };
     let (path, shape, c) = match to {
-        "rectangle" => (shapes::rectangle(r), Shape::Rectangle, CornerOptions::default()),
-        "roundedRectangle" => (shapes::rectangle(r), Shape::Rectangle, corners(CornerShape::Rounded)),
-        "beveledRectangle" => (shapes::rectangle(r), Shape::Rectangle, corners(CornerShape::Bevel)),
-        "inverseRoundedRectangle" => (shapes::rectangle(r), Shape::Rectangle, corners(CornerShape::InverseRounded)),
+        "rectangle" => (
+            shapes::rectangle(r),
+            Shape::Rectangle,
+            CornerOptions::default(),
+        ),
+        "roundedRectangle" => (
+            shapes::rectangle(r),
+            Shape::Rectangle,
+            corners(CornerShape::Rounded),
+        ),
+        "beveledRectangle" => (
+            shapes::rectangle(r),
+            Shape::Rectangle,
+            corners(CornerShape::Bevel),
+        ),
+        "inverseRoundedRectangle" => (
+            shapes::rectangle(r),
+            Shape::Rectangle,
+            corners(CornerShape::InverseRounded),
+        ),
         "ellipse" => (shapes::ellipse(r), Shape::Oval, CornerOptions::default()),
-        "triangle" => (super::object::polygon_in(r, 3, 0.0), Shape::Polygon, CornerOptions::default()),
-        "polygon" => (super::object::polygon_in(r, sides, inset), Shape::Polygon, CornerOptions::default()),
+        "triangle" => (
+            super::object::polygon_in(r, 3, 0.0),
+            Shape::Polygon,
+            CornerOptions::default(),
+        ),
+        "polygon" => (
+            super::object::polygon_in(r, sides, inset),
+            Shape::Polygon,
+            CornerOptions::default(),
+        ),
         "line" | "orthogonalLine" if text => return Err("a text frame can't become a line".into()),
-        "line" => (shapes::line(Point::new(r.x0, r.y0), Point::new(r.x1, r.y1)), Shape::GraphicLine, CornerOptions::default()),
+        "line" => (
+            shapes::line(Point::new(r.x0, r.y0), Point::new(r.x1, r.y1)),
+            Shape::GraphicLine,
+            CornerOptions::default(),
+        ),
         "orthogonalLine" => {
             let c = r.center();
-            let (a, b) =
-                if r.width() >= r.height() { (Point::new(r.x0, c.y), Point::new(r.x1, c.y)) } else { (Point::new(c.x, r.y0), Point::new(c.x, r.y1)) };
-            (shapes::line(a, b), Shape::GraphicLine, CornerOptions::default())
+            let (a, b) = if r.width() >= r.height() {
+                (Point::new(r.x0, c.y), Point::new(r.x1, c.y))
+            } else {
+                (Point::new(c.x, r.y0), Point::new(c.x, r.y1))
+            };
+            (
+                shapes::line(a, b),
+                Shape::GraphicLine,
+                CornerOptions::default(),
+            )
         }
         "openPath" | "closedPath" => {
             let closed = to == "closedPath";
@@ -195,14 +279,28 @@ mod tests {
     use crate::Session;
 
     fn ids(s: &Session) -> Vec<u64> {
-        s.doc().unwrap().selection.items.iter().map(|i| i.0).collect()
+        s.doc()
+            .unwrap()
+            .selection
+            .items
+            .iter()
+            .map(|i| i.0)
+            .collect()
     }
 
     #[test]
     fn select_by_stacking_order_and_groups() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let mk = |s: &mut Session, x: f64| s.execute("frame.create", &json!({"rect": [x, 100.0, x + 50.0, 150.0]})).unwrap()["id"].as_u64().unwrap();
+        let mk = |s: &mut Session, x: f64| {
+            s.execute(
+                "frame.create",
+                &json!({"rect": [x, 100.0, x + 50.0, 150.0]}),
+            )
+            .unwrap()["id"]
+                .as_u64()
+                .unwrap()
+        };
         let (a, b, c) = (mk(&mut s, 0.0), mk(&mut s, 60.0), mk(&mut s, 120.0));
         s.execute("select.lastBelow", &json!({})).unwrap();
         assert_eq!(ids(&s), [a]);
@@ -214,9 +312,12 @@ mod tests {
         assert_eq!(ids(&s), [c], "already on top");
         s.execute("select.nextBelow", &json!({})).unwrap();
         assert_eq!(ids(&s), [b]);
-        let g = s.execute("object.group", &json!({"ids": [a, b]})).unwrap()["id"].as_u64().unwrap();
+        let g = s.execute("object.group", &json!({"ids": [a, b]})).unwrap()["id"]
+            .as_u64()
+            .unwrap();
         s.execute("edit.deselectAll", &json!({})).unwrap();
-        s.doc_mut().unwrap().selection = designcraft_doc::Selection::items(vec![designcraft_doc::ItemId(g)]);
+        s.doc_mut().unwrap().selection =
+            designcraft_doc::Selection::items(vec![designcraft_doc::ItemId(g)]);
         s.execute("select.content", &json!({})).unwrap();
         let first = ids(&s)[0];
         assert!(first == a || first == b);
@@ -232,21 +333,57 @@ mod tests {
     fn convert_shape_keeps_bounds() {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        let a = s.execute("frame.create", &json!({"rect": [100, 100, 200, 160]})).unwrap()["id"].as_u64().unwrap();
-        let item = |s: &Session| s.doc().unwrap().doc.item(designcraft_doc::ItemId(a)).unwrap().clone();
-        for to in ["ellipse", "triangle", "polygon", "roundedRectangle", "rectangle"] {
-            s.execute("object.convertShape", &json!({"to": to})).unwrap();
+        let a = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 160]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        let item = |s: &Session| {
+            s.doc()
+                .unwrap()
+                .doc
+                .item(designcraft_doc::ItemId(a))
+                .unwrap()
+                .clone()
+        };
+        for to in [
+            "ellipse",
+            "triangle",
+            "polygon",
+            "roundedRectangle",
+            "rectangle",
+        ] {
+            s.execute("object.convertShape", &json!({"to": to}))
+                .unwrap();
             let b = item(&s).bounds();
-            assert!((b.width() - 100.0).abs() < 1e-6 && (b.height() - 60.0).abs() < 1e-6, "{to}: {b:?}");
+            assert!(
+                (b.width() - 100.0).abs() < 1e-6 && (b.height() - 60.0).abs() < 1e-6,
+                "{to}: {b:?}"
+            );
         }
-        s.execute("object.convertShape", &json!({"to": "orthogonalLine"})).unwrap();
+        s.execute("object.convertShape", &json!({"to": "orthogonalLine"}))
+            .unwrap();
         let it = item(&s);
         assert_eq!(it.shape, designcraft_doc::Shape::GraphicLine);
         assert_eq!(it.bounds().height(), 0.0);
-        s.execute("object.convertShape", &json!({"to": "closedPath"})).unwrap();
+        s.execute("object.convertShape", &json!({"to": "closedPath"}))
+            .unwrap();
         assert!(item(&s).path.subpaths[0].closed);
-        let t = s.execute("frame.create", &json!({"rect": [0, 0, 50, 50], "content": "text"})).unwrap()["id"].as_u64().unwrap();
-        assert!(s.execute("object.convertShape", &json!({"to": "line", "ids": [t]})).is_err());
-        assert!(s.execute("object.convertShape", &json!({"to": "blob", "ids": [a]})).is_err());
+        let t = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [0, 0, 50, 50], "content": "text"}),
+            )
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
+        assert!(
+            s.execute("object.convertShape", &json!({"to": "line", "ids": [t]}))
+                .is_err()
+        );
+        assert!(
+            s.execute("object.convertShape", &json!({"to": "blob", "ids": [a]}))
+                .is_err()
+        );
     }
 }

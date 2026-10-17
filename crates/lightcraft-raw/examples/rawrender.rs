@@ -28,7 +28,11 @@ fn main() {
         // simple highlight roll-off so clipped areas are not harsh
         q.map(|v| {
             let v = (v * gain).max(0.0);
-            if v < 0.8 { v } else { 0.8 + 0.2 * (1.0 - (-(v - 0.8) / 0.2).exp()) }
+            if v < 0.8 {
+                v
+            } else {
+                0.8 + 0.2 * (1.0 - (-(v - 0.8) / 0.2).exp())
+            }
         })
     });
     let img = img.oriented(raw.orientation);
@@ -58,7 +62,13 @@ fn main() {
     ifd.set(tags::SAMPLES_PER_PIXEL, Value::Short(vec![3]));
     ifd.set(tags::PHOTOMETRIC, Value::Short(vec![2]));
     ifd.set(tags::COMPRESSION, Value::Short(vec![1]));
-    ifd.set_image(ImageData::Strips { rows_per_strip: h as u32, strips: vec![px] });
+    ifd.set_image(ImageData::Strips {
+        rows_per_strip: h as u32,
+        strips: vec![px],
+    });
     std::fs::write(&a[1], TiffWriter::default().write(&[ifd]).unwrap()).expect("write");
-    println!("{}x{} wb {:?} xy ({:.4},{:.4}) fallback {}", w, h, wb, xy.x, xy.y, t.matrix_is_fallback);
+    println!(
+        "{}x{} wb {:?} xy ({:.4},{:.4}) fallback {}",
+        w, h, wb, xy.x, xy.y, t.matrix_is_fallback
+    );
 }

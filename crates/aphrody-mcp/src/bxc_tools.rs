@@ -12,7 +12,10 @@ use serde_json::Value;
 use std::sync::LazyLock;
 
 pub(crate) fn enabled() -> bool {
-    !matches!(std::env::var("APHRODY_MCP_NO_WEB").as_deref(), Ok("1" | "true" | "yes"))
+    !matches!(
+        std::env::var("APHRODY_MCP_NO_WEB").as_deref(),
+        Ok("1" | "true" | "yes")
+    )
 }
 
 static TOOLS: LazyLock<Vec<Tool>> =
@@ -53,7 +56,11 @@ pub(crate) fn internal_name(public: &str) -> Option<String> {
 /// `aphrody_` (without doubling an existing `aphrody_`), other names gain it.
 pub(crate) fn public_name(internal: &str) -> String {
     let rest = internal.strip_prefix("bxc_").unwrap_or(internal);
-    if rest.starts_with("aphrody_") { rest.to_owned() } else { format!("aphrody_{rest}") }
+    if rest.starts_with("aphrody_") {
+        rest.to_owned()
+    } else {
+        format!("aphrody_{rest}")
+    }
 }
 
 /// Rewrites the internal code name out of a tool description.
@@ -87,9 +94,9 @@ fn public_schema(value: &mut serde_json::Value) {
                     public_schema(child);
                 }
             }
-        },
+        }
         serde_json::Value::Array(items) => items.iter_mut().for_each(public_schema),
-        _ => {},
+        _ => {}
     }
 }
 
@@ -119,7 +126,11 @@ pub(crate) async fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
     if !enabled() {
         return Vec::new();
     }
-    TOOLS.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    TOOLS
+        .iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -204,21 +215,27 @@ pub(crate) async fn call_raw(name: &str, arguments: Value) -> Result<Value, Stri
     if let Some(result) = call_direct_raw(name, arguments).await {
         return result;
     }
-    Err(format!("{} is not available in this native Aphrody Web build", public_name(name)))
+    Err(format!(
+        "{} is not available in this native Aphrody Web build",
+        public_name(name)
+    ))
 }
 
 /// Runs a historical Web alias through its native owner and returns its `CallToolResult` verbatim.
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let arguments = request
-        .arguments
-        .as_ref()
-        .map_or_else(|| serde_json::json!({}), |map| serde_json::Value::Object(map.clone()));
+    let arguments = request.arguments.as_ref().map_or_else(
+        || serde_json::json!({}),
+        |map| serde_json::Value::Object(map.clone()),
+    );
     let backend = internal_name(name).unwrap_or_else(|| name.to_owned());
     match call_raw(&backend, arguments).await {
         // Error messages name the backend tool; data results are returned untouched.
         Ok(mut raw) if raw.get("isError").and_then(serde_json::Value::as_bool) == Some(true) => {
-            if let Some(parts) = raw.get_mut("content").and_then(serde_json::Value::as_array_mut) {
+            if let Some(parts) = raw
+                .get_mut("content")
+                .and_then(serde_json::Value::as_array_mut)
+            {
                 for part in parts {
                     if let Some(serde_json::Value::String(text)) = part.get_mut("text") {
                         *text = public_text(text);
@@ -228,7 +245,7 @@ pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
             serde_json::from_value::<CallToolResult>(raw).unwrap_or_else(|error| {
                 CallToolResult::error(vec![ContentBlock::text(format!("{name}: {error}"))])
             })
-        },
+        }
         Ok(raw) => serde_json::from_value::<CallToolResult>(raw.clone()).unwrap_or_else(|error| {
             CallToolResult::error(vec![ContentBlock::text(format!(
                 "{name}: undecodable web backend result ({error}): {raw}"
@@ -254,13 +271,22 @@ mod tests {
             ("bxc_x_algorithm_rank", DirectTool::X),
             ("aphrody_x_client", DirectTool::X),
         ] {
-            assert_eq!(direct_tool(source).map(|(_, route)| route), Some(owner), "{source}");
+            assert_eq!(
+                direct_tool(source).map(|(_, route)| route),
+                Some(owner),
+                "{source}"
+            );
         }
         #[cfg(not(target_arch = "wasm32"))]
-        for (source, owner) in
-            [("bxc_search", DirectTool::Search), ("bxc_gemini_rust", DirectTool::Gemini)]
-        {
-            assert_eq!(direct_tool(source).map(|(_, route)| route), Some(owner), "{source}");
+        for (source, owner) in [
+            ("bxc_search", DirectTool::Search),
+            ("bxc_gemini_rust", DirectTool::Gemini),
+        ] {
+            assert_eq!(
+                direct_tool(source).map(|(_, route)| route),
+                Some(owner),
+                "{source}"
+            );
         }
         #[cfg(all(feature = "native-browser", not(target_arch = "wasm32")))]
         assert_eq!(
@@ -278,28 +304,40 @@ mod tests {
         assert_ne!(languages["isError"], true, "{languages}");
         assert!(languages.to_string().contains("languages"), "{languages}");
 
-        let rank = call_raw("bxc_x_algorithm_rank", serde_json::json!({ "candidates": [] }))
-            .await
-            .expect("native local ranking");
+        let rank = call_raw(
+            "bxc_x_algorithm_rank",
+            serde_json::json!({ "candidates": [] }),
+        )
+        .await
+        .expect("native local ranking");
         assert_ne!(rank["isError"], true, "{rank}");
 
-        let detect =
-            call_raw("bxc_detect_frameworks", serde_json::json!({ "url": "file:///tmp/a" }))
-                .await
-                .expect("native detection dispatch");
+        let detect = call_raw(
+            "bxc_detect_frameworks",
+            serde_json::json!({ "url": "file:///tmp/a" }),
+        )
+        .await
+        .expect("native detection dispatch");
         assert_eq!(detect["isError"], true, "{detect}");
 
-        let crawl = call_raw("aphrody_web_crawl", serde_json::json!({ "urls": ["file:///tmp/a"] }))
-            .await
-            .expect("native crawl dispatch");
+        let crawl = call_raw(
+            "aphrody_web_crawl",
+            serde_json::json!({ "urls": ["file:///tmp/a"] }),
+        )
+        .await
+        .expect("native crawl dispatch");
         assert_eq!(crawl["isError"], true, "{crawl}");
 
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let search =
-                call_raw("bxc_search", serde_json::json!({})).await.expect("native search");
+            let search = call_raw("bxc_search", serde_json::json!({}))
+                .await
+                .expect("native search");
             assert_eq!(search["isError"], true, "{search}");
-            assert!(search.to_string().contains("query must be a string"), "{search}");
+            assert!(
+                search.to_string().contains("query must be a string"),
+                "{search}"
+            );
         }
     }
 
@@ -317,10 +355,16 @@ mod tests {
 
     #[test]
     fn public_names_and_text_hide_the_code_name() {
-        assert_eq!(public_name("bxc_google_translate"), "aphrody_google_translate");
+        assert_eq!(
+            public_name("bxc_google_translate"),
+            "aphrody_google_translate"
+        );
         assert_eq!(public_name("bxc_aphrody_status"), "aphrody_status");
         assert_eq!(public_name("browser_click"), "aphrody_browser_click");
-        assert_eq!(public_name("tune_memory_sqlite"), "aphrody_tune_memory_sqlite");
+        assert_eq!(
+            public_name("tune_memory_sqlite"),
+            "aphrody_tune_memory_sqlite"
+        );
         assert_eq!(
             public_text("Use BXC first; run bxc doctor."),
             "Use Aphrody first; run Aphrody doctor."
@@ -342,9 +386,15 @@ mod tests {
             }
         });
         public_schema(&mut schema);
-        assert!(!schema.to_string().to_ascii_lowercase().contains("bxc"), "{schema}");
+        assert!(
+            !schema.to_string().to_ascii_lowercase().contains("bxc"),
+            "{schema}"
+        );
         assert_eq!(schema["properties"]["keep"]["default"], "web");
-        assert_eq!(schema["properties"]["corpus"]["description"], "Written by Aphrody.");
+        assert_eq!(
+            schema["properties"]["corpus"]["description"],
+            "Written by Aphrody."
+        );
     }
 
     #[test]
@@ -355,7 +405,10 @@ mod tests {
             input_schema: serde_json::Value::Null,
         };
         let converted = to_tool(&tool).expect("converts");
-        assert_eq!(converted.input_schema.get("type"), Some(&serde_json::json!("object")));
+        assert_eq!(
+            converted.input_schema.get("type"),
+            Some(&serde_json::json!("object"))
+        );
     }
 
     #[tokio::test]
@@ -381,13 +434,18 @@ mod tests {
         }
         assert!(owns("aphrody_capabilities").await);
         assert!(get("aphrody_capabilities").is_some());
-        let capabilities = call_raw("bxc_capabilities", serde_json::json!({})).await.unwrap();
+        let capabilities = call_raw("bxc_capabilities", serde_json::json!({}))
+            .await
+            .unwrap();
         assert_ne!(capabilities["isError"], true);
-        let languages =
-            call_raw("bxc_google_supported_languages", serde_json::json!({})).await.unwrap();
+        let languages = call_raw("bxc_google_supported_languages", serde_json::json!({}))
+            .await
+            .unwrap();
         assert_ne!(languages["isError"], true);
         assert!(languages.to_string().contains("languages"));
-        let unknown = call_raw("bxc_unported_tool", serde_json::json!({})).await.unwrap_err();
+        let unknown = call_raw("bxc_unported_tool", serde_json::json!({}))
+            .await
+            .unwrap_err();
         assert!(unknown.contains("not available in this native Aphrody Web build"));
     }
 }

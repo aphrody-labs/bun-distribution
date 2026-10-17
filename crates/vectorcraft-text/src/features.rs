@@ -50,8 +50,9 @@ pub struct OtFeatures {
 /// stylistic sets `ss01`–`ss20`, stylistic alternates `salt`, titling `titl`, proportional `pnum`
 /// and lining `lnum` figures, superscript `sups` and subscript `subs`.
 pub const EXTRA_FEATURES: [&str; 26] = [
-    "ss01", "ss02", "ss03", "ss04", "ss05", "ss06", "ss07", "ss08", "ss09", "ss10", "ss11", "ss12", "ss13", "ss14", "ss15", "ss16", "ss17", "ss18",
-    "ss19", "ss20", "salt", "titl", "pnum", "lnum", "sups", "subs",
+    "ss01", "ss02", "ss03", "ss04", "ss05", "ss06", "ss07", "ss08", "ss09", "ss10", "ss11", "ss12",
+    "ss13", "ss14", "ss15", "ss16", "ss17", "ss18", "ss19", "ss20", "salt", "titl", "pnum", "lnum",
+    "sups", "subs",
 ];
 
 impl Default for OtFeatures {
@@ -89,7 +90,11 @@ impl OtFeatures {
         for (on, def, tag) in [
             (self.ligatures, d.ligatures, "liga"),
             (self.contextual, d.contextual, "calt"),
-            (self.discretionary_ligatures, d.discretionary_ligatures, "dlig"),
+            (
+                self.discretionary_ligatures,
+                d.discretionary_ligatures,
+                "dlig",
+            ),
             (self.small_caps, d.small_caps, "smcp"),
             (self.fractions, d.fractions, "frac"),
             (self.oldstyle_figures, d.oldstyle_figures, "onum"),
@@ -98,17 +103,30 @@ impl OtFeatures {
             (self.swash, d.swash, "swsh"),
         ] {
             if on != def {
-                v.push(if on { tag.to_string() } else { format!("-{tag}") });
+                v.push(if on {
+                    tag.to_string()
+                } else {
+                    format!("-{tag}")
+                });
             }
         }
-        v.extend(EXTRA_FEATURES.iter().enumerate().filter(|(i, _)| self.extra & (1 << i) != 0).map(|(_, t)| t.to_string()));
+        v.extend(
+            EXTRA_FEATURES
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| self.extra & (1 << i) != 0)
+                .map(|(_, t)| t.to_string()),
+        );
         v
     }
 
     /// Is `tag` (optionally prefixed with `-` or `+`) one this set understands?
     pub fn known_tag(tag: &str) -> bool {
         let t = tag.trim_start_matches(['-', '+']);
-        matches!(t, "liga" | "calt" | "dlig" | "smcp" | "frac" | "onum" | "tnum" | "ordn" | "swsh") || EXTRA_FEATURES.contains(&t)
+        matches!(
+            t,
+            "liga" | "calt" | "dlig" | "smcp" | "frac" | "onum" | "tnum" | "ordn" | "swsh"
+        ) || EXTRA_FEATURES.contains(&t)
     }
 
     /// This set with `tags` applied on top.
@@ -152,7 +170,8 @@ impl OtFeatures {
         if st.kerning.is_some() {
             v.push(f(b"kern", false));
         }
-        let liga = s.ligatures && (!ligatures_suppressed_by(st.tracking) || explicit_ligatures(&st.features));
+        let liga = s.ligatures
+            && (!ligatures_suppressed_by(st.tracking) || explicit_ligatures(&st.features));
         if !liga {
             v.push(f(b"liga", false));
             v.push(f(b"clig", false));
@@ -211,7 +230,12 @@ impl OtFeatures {
     /// The harfrust features for vertical text in style `st` shaped top to bottom: [`Self::resolve`],
     /// with `vpal` when `proportional`, and vertical kerning (`vkrn`, and `vapk` for the glyphs
     /// `vpal` makes proportional) when `kerning` and the style's kerning is automatic.
-    pub(crate) fn resolve_vertical(&self, st: &CharStyle, proportional: bool, kerning: bool) -> Vec<Feature> {
+    pub(crate) fn resolve_vertical(
+        &self,
+        st: &CharStyle,
+        proportional: bool,
+        kerning: bool,
+    ) -> Vec<Feature> {
         let mut v = self.resolve(st);
         if proportional {
             v.push(f(b"vpal", true));
@@ -261,32 +285,61 @@ mod tests {
     /// known, round-trip through the stored tags and reach the shaper.
     #[test]
     fn extra_features_are_kept_and_shaped() {
-        for t in ["ss01", "ss20", "-ss07", "salt", "titl", "pnum", "lnum", "sups", "subs"] {
+        for t in [
+            "ss01", "ss20", "-ss07", "salt", "titl", "pnum", "lnum", "sups", "subs",
+        ] {
             assert!(OtFeatures::known_tag(t), "{t}");
         }
         assert!(!OtFeatures::known_tag("ss21"));
         let o = OtFeatures::from_tags(["ss03", "pnum", "sups", "-liga"]);
         assert_eq!(o.to_tags(), vec!["-liga", "ss03", "pnum", "sups"]);
-        assert_eq!(OtFeatures::from_tags(["ss03", "-ss03"]).to_tags(), Vec::<String>::new(), "turned off again");
-        let st = CharStyle { features: vec!["ss05".into(), "titl".into()], ..CharStyle::default() };
-        let tags: Vec<String> = OtFeatures::default().resolve(&st).iter().filter(|f| f.value == 1).map(|f| f.tag.to_string()).collect();
-        assert!(tags.contains(&"ss05".to_string()) && tags.contains(&"titl".to_string()), "{tags:?}");
+        assert_eq!(
+            OtFeatures::from_tags(["ss03", "-ss03"]).to_tags(),
+            Vec::<String>::new(),
+            "turned off again"
+        );
+        let st = CharStyle {
+            features: vec!["ss05".into(), "titl".into()],
+            ..CharStyle::default()
+        };
+        let tags: Vec<String> = OtFeatures::default()
+            .resolve(&st)
+            .iter()
+            .filter(|f| f.value == 1)
+            .map(|f| f.tag.to_string())
+            .collect();
+        assert!(
+            tags.contains(&"ss05".to_string()) && tags.contains(&"titl".to_string()),
+            "{tags:?}"
+        );
     }
     use crate::{FontDb, layout};
     use vectorcraft_doc::TextObject;
     use vectorcraft_geom::Point;
 
     fn glyphs(features: &[&str]) -> usize {
-        let st = CharStyle { font_family: "Source Serif 4".into(), features: features.iter().map(|s| s.to_string()).collect(), ..Default::default() };
-        layout(FontDb::global(), &TextObject::point(Point::ZERO, "fi", st)).glyphs.len()
+        let st = CharStyle {
+            font_family: "Source Serif 4".into(),
+            features: features.iter().map(|s| s.to_string()).collect(),
+            ..Default::default()
+        };
+        layout(FontDb::global(), &TextObject::point(Point::ZERO, "fi", st))
+            .glyphs
+            .len()
     }
 
     #[test]
     fn per_character_features_drive_shaping() {
         let with = glyphs(&[]);
         let without = glyphs(&["-liga"]);
-        assert!(with < without, "the default ligature merges f+i ({with} vs {without})");
-        assert_eq!(OtFeatures::from_tags(["-liga", "dlig"]).to_tags(), ["-liga", "dlig"]);
+        assert!(
+            with < without,
+            "the default ligature merges f+i ({with} vs {without})"
+        );
+        assert_eq!(
+            OtFeatures::from_tags(["-liga", "dlig"]).to_tags(),
+            ["-liga", "dlig"]
+        );
         assert!(OtFeatures::default().to_tags().is_empty());
         assert!(OtFeatures::known_tag("-onum") && !OtFeatures::known_tag("zzzz"));
     }

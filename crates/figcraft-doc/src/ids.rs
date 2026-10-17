@@ -74,7 +74,11 @@ impl Document {
 
     /// A new style id.
     pub fn new_style_id(&mut self) -> StyleId {
-        let taken: Vec<u64> = self.styles.iter().filter_map(|s| id_number(&s.id, STYLE_ID_PREFIX)).collect();
+        let taken: Vec<u64> = self
+            .styles
+            .iter()
+            .filter_map(|s| id_number(&s.id, STYLE_ID_PREFIX))
+            .collect();
         if let Some(n) = self.session_number(taken) {
             return format!("{STYLE_ID_PREFIX}{n}");
         }
@@ -86,13 +90,23 @@ impl Document {
 
     /// A new variable id.
     pub fn new_variable_id(&mut self) -> VariableId {
-        let taken: Vec<u64> = self.variables.variables.iter().filter_map(|v| id_number(&v.id, VARIABLE_ID_PREFIX)).collect();
+        let taken: Vec<u64> = self
+            .variables
+            .variables
+            .iter()
+            .filter_map(|v| id_number(&v.id, VARIABLE_ID_PREFIX))
+            .collect();
         self.new_numbered_id(VARIABLE_ID_PREFIX, taken)
     }
 
     /// A new variable collection id.
     pub fn new_collection_id(&mut self) -> CollectionId {
-        let taken: Vec<u64> = self.variables.collections.iter().filter_map(|c| id_number(&c.id, COLLECTION_ID_PREFIX)).collect();
+        let taken: Vec<u64> = self
+            .variables
+            .collections
+            .iter()
+            .filter_map(|c| id_number(&c.id, COLLECTION_ID_PREFIX))
+            .collect();
         self.new_numbered_id(COLLECTION_ID_PREFIX, taken)
     }
 
@@ -107,23 +121,41 @@ impl Document {
 
     /// A new id for a mode of collection `collection` (`None`: no such collection).
     pub fn new_mode_id(&mut self, collection: &str) -> Option<ModeId> {
-        let modes = &self.variables.collections.iter().find(|c| c.id == collection)?.modes;
+        let modes = &self
+            .variables
+            .collections
+            .iter()
+            .find(|c| c.id == collection)?
+            .modes;
         let count = modes.len();
-        let free = |doc: &Document, id: &str| doc.variables.collections.iter().any(|c| c.id == collection && c.modes.iter().all(|m| m.id != id));
-        let taken: Vec<u64> = self.variables.collections.iter().flat_map(|c| c.modes.iter().filter_map(|m| mode_number(&m.id))).collect();
+        let free = |doc: &Document, id: &str| {
+            doc.variables
+                .collections
+                .iter()
+                .any(|c| c.id == collection && c.modes.iter().all(|m| m.id != id))
+        };
+        let taken: Vec<u64> = self
+            .variables
+            .collections
+            .iter()
+            .flat_map(|c| c.modes.iter().filter_map(|m| mode_number(&m.id)))
+            .collect();
         if let Some(n) = self.session_number(taken) {
             let id = format!("{collection}{MODE_ID_INFIX}{n}");
             if free(self, &id) {
                 return Some(id);
             }
         }
-        (count + 1..).map(|k| format!("{collection}{MODE_ID_INFIX}{k}")).find(|id| free(self, id))
+        (count + 1..)
+            .map(|k| format!("{collection}{MODE_ID_INFIX}{k}"))
+            .find(|id| free(self, id))
     }
 
     /// A new comment thread id.
     pub fn new_comment_id(&mut self) -> u64 {
         let taken: Vec<u64> = self.comments.iter().map(|c| c.id).collect();
-        self.session_number(taken).unwrap_or_else(|| self.next_comment_id())
+        self.session_number(taken)
+            .unwrap_or_else(|| self.next_comment_id())
     }
 
     /// The highest client id space any id in the document lies in (layers, comments, styles,
@@ -132,10 +164,33 @@ impl Document {
     pub fn highest_id_space(&self) -> u32 {
         let nodes = self.ids().map(|id| id.0);
         let comments = self.comments.iter().map(|c| c.id);
-        let styles = self.styles.iter().filter_map(|s| id_number(&s.id, STYLE_ID_PREFIX));
-        let vars = self.variables.variables.iter().filter_map(|v| id_number(&v.id, VARIABLE_ID_PREFIX));
-        let colls = self.variables.collections.iter().filter_map(|c| id_number(&c.id, COLLECTION_ID_PREFIX));
-        let modes = self.variables.collections.iter().flat_map(|c| c.modes.iter().filter_map(|m| mode_number(&m.id)));
-        nodes.chain(comments).chain(styles).chain(vars).chain(colls).chain(modes).map(space_of).max().unwrap_or(0)
+        let styles = self
+            .styles
+            .iter()
+            .filter_map(|s| id_number(&s.id, STYLE_ID_PREFIX));
+        let vars = self
+            .variables
+            .variables
+            .iter()
+            .filter_map(|v| id_number(&v.id, VARIABLE_ID_PREFIX));
+        let colls = self
+            .variables
+            .collections
+            .iter()
+            .filter_map(|c| id_number(&c.id, COLLECTION_ID_PREFIX));
+        let modes = self
+            .variables
+            .collections
+            .iter()
+            .flat_map(|c| c.modes.iter().filter_map(|m| mode_number(&m.id)));
+        nodes
+            .chain(comments)
+            .chain(styles)
+            .chain(vars)
+            .chain(colls)
+            .chain(modes)
+            .map(space_of)
+            .max()
+            .unwrap_or(0)
     }
 }

@@ -74,24 +74,24 @@ use bevy_reflect::Reflect;
 use gestures::*;
 
 #[cfg(feature = "keyboard")]
-use keyboard::{keyboard_input_system, Key, KeyCode, KeyboardFocusLost, KeyboardInput};
+use keyboard::{Key, KeyCode, KeyboardFocusLost, KeyboardInput, keyboard_input_system};
 
 #[cfg(feature = "mouse")]
 use mouse::{
-    accumulate_mouse_motion_system, accumulate_mouse_scroll_system, mouse_button_input_system,
     AccumulatedMouseMotion, AccumulatedMouseScroll, MouseButton, MouseButtonInput, MouseMotion,
-    MouseScrollPixelsPerLine, MouseWheel,
+    MouseScrollPixelsPerLine, MouseWheel, accumulate_mouse_motion_system,
+    accumulate_mouse_scroll_system, mouse_button_input_system,
 };
 
 #[cfg(feature = "touch")]
-use touch::{touch_screen_input_system, TouchInput, Touches};
+use touch::{TouchInput, Touches, touch_screen_input_system};
 
 #[cfg(feature = "gamepad")]
 use gamepad::{
-    gamepad_connection_system, gamepad_event_processing_system, GamepadAxisChangedEvent,
-    GamepadButtonChangedEvent, GamepadButtonStateChangedEvent, GamepadConnectionEvent,
-    GamepadEvent, GamepadRumbleRequest, RawGamepadAxisChangedEvent, RawGamepadButtonChangedEvent,
-    RawGamepadEvent,
+    GamepadAxisChangedEvent, GamepadButtonChangedEvent, GamepadButtonStateChangedEvent,
+    GamepadConnectionEvent, GamepadEvent, GamepadRumbleRequest, RawGamepadAxisChangedEvent,
+    RawGamepadButtonChangedEvent, RawGamepadEvent, gamepad_connection_system,
+    gamepad_event_processing_system,
 };
 
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]

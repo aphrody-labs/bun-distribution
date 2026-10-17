@@ -24,7 +24,10 @@ pub(crate) struct TrendFit {
 /// Polynomial degree in the transformed variable; `None` for moving averages.
 fn degree(k: TrendlineKind) -> Option<usize> {
     match k {
-        TrendlineKind::Linear | TrendlineKind::Exponential | TrendlineKind::Logarithmic | TrendlineKind::Power => Some(1),
+        TrendlineKind::Linear
+        | TrendlineKind::Exponential
+        | TrendlineKind::Logarithmic
+        | TrendlineKind::Power => Some(1),
         TrendlineKind::Polynomial(o) => Some(usize::from(o.clamp(2, 6))),
         TrendlineKind::MovingAverage(_) => None,
     }
@@ -45,8 +48,18 @@ pub(crate) fn fit_trendline(t: &Trendline, pts: &[(f64, f64)]) -> Option<TrendFi
     let d = degree(kind)?;
     let data: Vec<(f64, f64)> = pts
         .iter()
-        .filter(|(x, y)| x.is_finite() && y.is_finite() && (!log_x(kind) || *x > 0.0) && (!log_y(kind) || *y > 0.0))
-        .map(|&(x, y)| (if log_x(kind) { x.ln() } else { x }, if log_y(kind) { y.ln() } else { y }))
+        .filter(|(x, y)| {
+            x.is_finite()
+                && y.is_finite()
+                && (!log_x(kind) || *x > 0.0)
+                && (!log_y(kind) || *y > 0.0)
+        })
+        .map(|&(x, y)| {
+            (
+                if log_x(kind) { x.ln() } else { x },
+                if log_y(kind) { y.ln() } else { y },
+            )
+        })
         .collect();
     if data.len() < 2 || data.len() <= d {
         return None;
@@ -59,8 +72,15 @@ pub(crate) fn fit_trendline(t: &Trendline, pts: &[(f64, f64)]) -> Option<TrendFi
     }
     .filter(|b| b.is_finite());
     let n = data.len() as f64;
-    let center = if fixed.is_some() { 0.0 } else { data.iter().map(|p| p.0).sum::<f64>() / n };
-    let scale = data.iter().map(|p| (p.0 - center).abs()).fold(0.0f64, f64::max);
+    let center = if fixed.is_some() {
+        0.0
+    } else {
+        data.iter().map(|p| p.0).sum::<f64>() / n
+    };
+    let scale = data
+        .iter()
+        .map(|p| (p.0 - center).abs())
+        .fold(0.0f64, f64::max);
     if !(scale.is_finite() && scale > 0.0) {
         return None;
     }
@@ -92,15 +112,27 @@ pub(crate) fn fit_trendline(t: &Trendline, pts: &[(f64, f64)]) -> Option<TrendFi
         }
     }
     let coef = expand(&a, center, scale)?;
-    let fit = TrendFit { kind, coef, center, scale, a, r2: None };
+    let fit = TrendFit {
+        kind,
+        coef,
+        center,
+        scale,
+        a,
+        r2: None,
+    };
     let mean = data.iter().map(|p| p.1).sum::<f64>() / n;
     let (mut ss_res, mut ss_tot) = (0.0f64, 0.0f64);
     for &(x, y) in &data {
         ss_res += (y - fit.poly(x)).powi(2);
         // A set intercept is LINEST(y - b, x, FALSE): the total sum of squares is not centred.
-        ss_tot += if fixed.is_some() { (y - b0).powi(2) } else { (y - mean).powi(2) };
+        ss_tot += if fixed.is_some() {
+            (y - b0).powi(2)
+        } else {
+            (y - mean).powi(2)
+        };
     }
-    let r2 = (ss_tot > 0.0 && ss_tot.is_finite() && ss_res.is_finite()).then(|| 1.0 - ss_res / ss_tot);
+    let r2 =
+        (ss_tot > 0.0 && ss_tot.is_finite() && ss_res.is_finite()).then(|| 1.0 - ss_res / ss_tot);
     Some(TrendFit { r2, ..fit })
 }
 
@@ -137,7 +169,9 @@ fn solve(mut a: Vec<Vec<f64>>, mut b: Vec<f64>) -> Option<Vec<f64>> {
     let mut x = vec![0.0f64; n];
     for r in (0..n).rev() {
         let row = a.get(r)?;
-        let s: f64 = (r + 1..n).map(|c| row.get(c).copied().unwrap_or(0.0) * x.get(c).copied().unwrap_or(0.0)).sum();
+        let s: f64 = (r + 1..n)
+            .map(|c| row.get(c).copied().unwrap_or(0.0) * x.get(c).copied().unwrap_or(0.0))
+            .sum();
         let v = (b.get(r)? - s) / row.get(r)?;
         *x.get_mut(r)? = v;
     }
@@ -170,7 +204,11 @@ impl TrendFit {
 
     /// The trendline's y at `x`; `None` outside its domain (x ≤ 0 for log/power) or when not finite.
     pub(crate) fn eval(&self, x: f64) -> Option<f64> {
-        let xx = if log_x(self.kind) { if x > 0.0 { x.ln() } else { return None } } else { x };
+        let xx = if log_x(self.kind) {
+            if x > 0.0 { x.ln() } else { return None }
+        } else {
+            x
+        };
         let p = self.poly(xx);
         let y = if log_y(self.kind) { p.exp() } else { p };
         y.is_finite().then_some(y)
@@ -181,11 +219,19 @@ impl TrendFit {
         let c0 = self.coef.first().copied().unwrap_or(0.0);
         let c1 = self.coef.get(1).copied().unwrap_or(0.0);
         match self.kind {
-            TrendlineKind::Exponential => format!("y = {}e^({}x)", num_text(c0.exp()), num_text(c1)),
+            TrendlineKind::Exponential => {
+                format!("y = {}e^({}x)", num_text(c0.exp()), num_text(c1))
+            }
             TrendlineKind::Power => format!("y = {}x^{}", num_text(c0.exp()), num_text(c1)),
             TrendlineKind::Logarithmic => terms(&[(c1, "ln(x)"), (c0, "")]),
             _ => {
-                let parts: Vec<(f64, &str)> = self.coef.iter().enumerate().rev().map(|(k, c)| (*c, POWERS.get(k).copied().unwrap_or("x"))).collect();
+                let parts: Vec<(f64, &str)> = self
+                    .coef
+                    .iter()
+                    .enumerate()
+                    .rev()
+                    .map(|(k, c)| (*c, POWERS.get(k).copied().unwrap_or("x")))
+                    .collect();
                 terms(&parts)
             }
         }
@@ -246,22 +292,39 @@ pub(crate) fn num_text(v: f64) -> String {
         let (mant, exp) = s.split_once('E').unwrap_or((s.as_str(), "0"));
         let mant = trim_zeros(mant);
         let e: i32 = exp.parse().unwrap_or(0);
-        return format!("{mant}E{}{:02}", if e < 0 { '-' } else { '+' }, e.unsigned_abs());
+        return format!(
+            "{mant}E{}{:02}",
+            if e < 0 { '-' } else { '+' },
+            e.unsigned_abs()
+        );
     }
     let s = trim_zeros(&format!("{v:.4}"));
     if s == "-0" { "0".into() } else { s }
 }
 
 fn trim_zeros(s: &str) -> String {
-    if s.contains('.') { s.trim_end_matches('0').trim_end_matches('.').to_string() } else { s.to_string() }
+    if s.contains('.') {
+        s.trim_end_matches('0').trim_end_matches('.').to_string()
+    } else {
+        s.to_string()
+    }
 }
 
 /// Moving average of `period` consecutive points in plotted order: point `i` (from
 /// `period - 1`) is `(xᵢ, mean(yᵢ₋ₚ₊₁..=yᵢ))`. Empty when there are fewer points than `period`.
 pub(crate) fn moving_average(pts: &[(f64, f64)], period: u32) -> Vec<(f64, f64)> {
     let p = period.clamp(2, 255) as usize;
-    let pts: Vec<(f64, f64)> = pts.iter().copied().filter(|(x, y)| x.is_finite() && y.is_finite()).collect();
-    pts.windows(p).filter_map(|w| w.last().map(|(x, _)| (*x, w.iter().map(|q| q.1).sum::<f64>() / p as f64))).collect()
+    let pts: Vec<(f64, f64)> = pts
+        .iter()
+        .copied()
+        .filter(|(x, y)| x.is_finite() && y.is_finite())
+        .collect();
+    pts.windows(p)
+        .filter_map(|w| {
+            w.last()
+                .map(|(x, _)| (*x, w.iter().map(|q| q.1).sum::<f64>() / p as f64))
+        })
+        .collect()
 }
 
 /// Excel's automatic trendline name for the legend, e.g. `Linear (Sales)`.

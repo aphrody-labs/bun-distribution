@@ -23,7 +23,9 @@ pub fn cross_with_inagle(zukan_charas: &[ZukanChara], mirror_path: &Path) -> Res
         let mut stmt = conn.prepare(
             "SELECT DISTINCT internal_code FROM inagle_characters WHERE internal_code IS NOT NULL",
         )?;
-        stmt.query_map([], |row| row.get(0))?.filter_map(std::result::Result::ok).collect()
+        stmt.query_map([], |row| row.get(0))?
+            .filter_map(std::result::Result::ok)
+            .collect()
     };
 
     info!(inagle_total = inagle_ids.len(), "IDs inagle chargés");
@@ -80,8 +82,11 @@ pub fn cross_with_inagle(zukan_charas: &[ZukanChara], mirror_path: &Path) -> Res
     let mut enrichment_examples = Vec::new();
 
     // On prend les 20 premiers matchés pour les exemples
-    let sample: Vec<&ZukanChara> =
-        zukan_charas.iter().filter(|c| matched_ids.contains(&c.game_id)).take(20).collect();
+    let sample: Vec<&ZukanChara> = zukan_charas
+        .iter()
+        .filter(|c| matched_ids.contains(&c.game_id))
+        .take(20)
+        .collect();
 
     for chara in sample {
         let Some(inagle) = inagle_stats.get(&chara.game_id) else {
@@ -140,9 +145,19 @@ pub fn cross_with_inagle(zukan_charas: &[ZukanChara], mirror_path: &Path) -> Res
         }
     }
 
-    let result = CrossResult { zukan_total, matched, absent_from_inagle, enrichment_examples };
+    let result = CrossResult {
+        zukan_total,
+        matched,
+        absent_from_inagle,
+        enrichment_examples,
+    };
 
-    info!(zukan_total, matched, absent = result.absent_from_inagle.len(), "croisement terminé");
+    info!(
+        zukan_total,
+        matched,
+        absent = result.absent_from_inagle.len(),
+        "croisement terminé"
+    );
 
     Ok(result)
 }
@@ -185,7 +200,7 @@ pub fn load_zukan_charas_from_ndjson(path: &Path) -> Result<Vec<ZukanChara>> {
             Ok(c) => results.push(c),
             Err(e) => {
                 tracing::warn!(error = %e, line = &line[..line.len().min(80)], "parse ZukanChara échoué");
-            },
+            }
         }
     }
     Ok(results)

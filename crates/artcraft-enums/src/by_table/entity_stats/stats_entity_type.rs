@@ -15,7 +15,7 @@ pub enum StatsEntityType {
     /// Comment
     #[serde(rename = "comment")]
     Comment,
-    
+
     /// MediaFile
     #[serde(rename = "media_file")]
     MediaFile,
@@ -52,23 +52,19 @@ impl StatsEntityType {
     pub fn all_variants() -> BTreeSet<Self> {
         // NB: BTreeSet is sorted
         // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
-        BTreeSet::from([
-            Self::Comment,
-            Self::MediaFile,
-            Self::ModelWeight,
-        ])
+        BTreeSet::from([Self::Comment, Self::MediaFile, Self::ModelWeight])
     }
 }
 
 #[cfg(test)]
 mod tests {
-  use crate::by_table::entity_stats::stats_entity_type::StatsEntityType;
-  use crate::test_helpers::assert_serialization;
+    use crate::by_table::entity_stats::stats_entity_type::StatsEntityType;
+    use crate::test_helpers::assert_serialization;
 
-  mod explicit_checks {
-    use super::*;
+    mod explicit_checks {
+        use super::*;
 
-    #[test]
+        #[test]
         fn test_serialization() {
             assert_serialization(StatsEntityType::Comment, "comment");
             assert_serialization(StatsEntityType::MediaFile, "media_file");
@@ -84,9 +80,18 @@ mod tests {
 
         #[test]
         fn test_from_str() {
-            assert_eq!(StatsEntityType::from_str("comment").unwrap(), StatsEntityType::Comment);
-            assert_eq!(StatsEntityType::from_str("media_file").unwrap(), StatsEntityType::MediaFile);
-            assert_eq!(StatsEntityType::from_str("model_weight").unwrap(), StatsEntityType::ModelWeight);
+            assert_eq!(
+                StatsEntityType::from_str("comment").unwrap(),
+                StatsEntityType::Comment
+            );
+            assert_eq!(
+                StatsEntityType::from_str("media_file").unwrap(),
+                StatsEntityType::MediaFile
+            );
+            assert_eq!(
+                StatsEntityType::from_str("model_weight").unwrap(),
+                StatsEntityType::ModelWeight
+            );
             assert!(StatsEntityType::from_str("foo").is_err());
         }
 
@@ -102,20 +107,32 @@ mod tests {
     }
 
     mod mechanical_checks {
-      use super::*;
+        use super::*;
 
-      #[test]
+        #[test]
         fn variant_length() {
             use strum::IntoEnumIterator;
-            assert_eq!(StatsEntityType::all_variants().len(), StatsEntityType::iter().len());
+            assert_eq!(
+                StatsEntityType::all_variants().len(),
+                StatsEntityType::iter().len()
+            );
         }
 
         #[test]
         fn round_trip() {
             for variant in StatsEntityType::all_variants() {
-                assert_eq!(variant, StatsEntityType::from_str(variant.to_str()).unwrap());
-                assert_eq!(variant, StatsEntityType::from_str(&format!("{}", variant)).unwrap());
-                assert_eq!(variant, StatsEntityType::from_str(&format!("{:?}", variant)).unwrap());
+                assert_eq!(
+                    variant,
+                    StatsEntityType::from_str(variant.to_str()).unwrap()
+                );
+                assert_eq!(
+                    variant,
+                    StatsEntityType::from_str(&format!("{}", variant)).unwrap()
+                );
+                assert_eq!(
+                    variant,
+                    StatsEntityType::from_str(&format!("{:?}", variant)).unwrap()
+                );
             }
         }
     }

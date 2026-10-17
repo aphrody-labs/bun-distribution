@@ -96,7 +96,11 @@ fn line_index0_ligne_vide() {
 
     // m_friendMapLineInfo[0] du dump réel : lineNo=0, lineElemAry=0x00000000
     assert_eq!(l.line_no, 0);
-    assert_eq!(l.line_elem_ary, HashId(0x0000_0000), "ligne vide = hash nul");
+    assert_eq!(
+        l.line_elem_ary,
+        HashId(0x0000_0000),
+        "ligne vide = hash nul"
+    );
     assert!(l.line_elem_ary.is_zero(), "is_zero() doit être vrai");
 }
 
@@ -283,7 +287,10 @@ fn real_file_line0_vide() {
     // m_friendMapLineInfo[0] du dump réel : lineNo=0, ligne vide
     let l0 = &cfg.lines[0];
     assert_eq!(l0.line_no, 0);
-    assert!(l0.line_elem_ary.is_zero(), "m_friendMapLineInfo[0] doit être vide");
+    assert!(
+        l0.line_elem_ary.is_zero(),
+        "m_friendMapLineInfo[0] doit être vide"
+    );
 }
 
 #[test]
@@ -340,5 +347,9 @@ fn real_file_offsets_coherents() {
 
     // La somme des line_count doit égaler le nombre total de lignes
     let total: i64 = cfg.maps.iter().map(|m| m.line_count).sum();
-    assert_eq!(total as usize, cfg.lines.len(), "somme des line_count = total des lignes");
+    assert_eq!(
+        total as usize,
+        cfg.lines.len(),
+        "somme des line_count = total des lignes"
+    );
 }

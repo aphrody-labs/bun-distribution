@@ -126,7 +126,10 @@ fn check_system_path(path: &str) -> Result<()> {
     let Some(rest) = path.strip_prefix('/') else {
         bail!("chemin système refusé (relatif): {path}");
     };
-    if rest.split('/').any(|part| part == ".." || part == "." || part.is_empty()) {
+    if rest
+        .split('/')
+        .any(|part| part == ".." || part == "." || part.is_empty())
+    {
         bail!("chemin système refusé (vide ou '..'): {path}");
     }
     if !safe_token(path) || path.contains('*') {
@@ -135,7 +138,10 @@ fn check_system_path(path: &str) -> Result<()> {
     if PROTECTED.contains(&path) || path.matches('/').count() < 2 {
         bail!("chemin système refusé (racine protégée): {path}");
     }
-    if PROTECTED_TREES.iter().any(|tree| path.starts_with(&format!("{tree}/"))) {
+    if PROTECTED_TREES
+        .iter()
+        .any(|tree| path.starts_with(&format!("{tree}/")))
+    {
         bail!("chemin système refusé (arbre de données ou de configuration): {path}");
     }
     Ok(())
@@ -158,7 +164,9 @@ const SUM: &str = "awk '{s+=$1} END {print s+0}'";
 
 fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
     const S: &str = "sudo -n";
-    out.push_str(&format!("{S} true || {{ echo 'sudo -n indisponible' >&2; exit 3; }}\n"));
+    out.push_str(&format!(
+        "{S} true || {{ echo 'sudo -n indisponible' >&2; exit 3; }}\n"
+    ));
     if system.docker {
         let estimate = format!(
             "{S} docker system df --format '{{{{.Type}}}}|{{{{.Reclaimable}}}}' | awk -F'|' '$1==\"Images\" || $1==\"Build Cache\" {{v=$2; n=v+0; if (v ~ /GB/) n*=1e9; else if (v ~ /MB/) n*=1e6; else if (v ~ /kB/) n*=1e3; s+=n}} END {{printf \"%d\", s}}'"
@@ -185,7 +193,13 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
         let command = format!(
             "{S} apt-get clean; {S} env DEBIAN_FRONTEND=noninteractive apt-get autoremove --purge -y"
         );
-        system_step(out, "apt", &format!("{S} du -sb /var/cache/apt | cut -f1"), &command, apply);
+        system_step(
+            out,
+            "apt",
+            &format!("{S} du -sb /var/cache/apt | cut -f1"),
+            &command,
+            apply,
+        );
     }
     if system.snap {
         let estimate = "snap list --all | awk '/disabled/{print \"/var/lib/snapd/snaps/\" $1 \"_\" $3 \".snap\"}' | xargs -r du -cb | tail -1 | cut -f1";
@@ -197,12 +211,24 @@ fn system_script(system: &System, apply: bool, out: &mut String) -> Result<()> {
     if system.rotated_logs {
         let logs = "/var/log -type f -regextype posix-extended -regex '.*[.](gz|[0-9]|old)$'";
         let estimate = format!("{S} find {logs} -printf '%s\\n' | {SUM}");
-        system_step(out, "rotated-logs", &estimate, &format!("{S} find {logs} -delete"), apply);
+        system_step(
+            out,
+            "rotated-logs",
+            &estimate,
+            &format!("{S} find {logs} -delete"),
+            apply,
+        );
     }
     if system.core_dumps {
         let dirs = "/var/crash /var/lib/systemd/coredump -mindepth 1 -type f";
         let estimate = format!("{S} find {dirs} -printf '%s\\n' | {SUM}");
-        system_step(out, "core-dumps", &estimate, &format!("{S} find {dirs} -delete"), apply);
+        system_step(
+            out,
+            "core-dumps",
+            &estimate,
+            &format!("{S} find {dirs} -delete"),
+            apply,
+        );
     }
     if let Some(days) = system.var_tmp_older_than_days {
         let filter = format!(
@@ -246,8 +272,10 @@ pub fn script(target: &Target, apply: bool) -> Result<String> {
         out.push_str(" fi\n");
     }
     if let Some(tmp) = &target.tmp {
-        let mut filter =
-            format!("-mindepth 1 -maxdepth 1 -user \"$(id -u)\" -mmin +{}", tmp.older_than_minutes);
+        let mut filter = format!(
+            "-mindepth 1 -maxdepth 1 -user \"$(id -u)\" -mmin +{}",
+            tmp.older_than_minutes
+        );
         for pattern in &tmp.keep_name_patterns {
             if !safe_token(pattern) || pattern.contains('/') {
                 bail!("motif /tmp refusé: {pattern}");
@@ -276,7 +304,10 @@ mod tests {
     fn target(path: &str) -> Target {
         Target {
             ssh_alias: "t".into(),
-            paths: vec![Entry { path: path.into(), reason: "r".into() }],
+            paths: vec![Entry {
+                path: path.into(),
+                reason: "r".into(),
+            }],
             tmp: Some(Tmp {
                 older_than_minutes: 60,
                 keep_name_patterns: vec!["systemd-private-*".into()],
@@ -313,7 +344,10 @@ mod tests {
         t.system = Some(System {
             docker: true,
             journal_max_size: Some("200M".into()),
-            paths: vec![Entry { path: "/var/cache/old".into(), reason: "r".into() }],
+            paths: vec![Entry {
+                path: "/var/cache/old".into(),
+                reason: "r".into(),
+            }],
             ..System::default()
         });
         let plan = script(&t, false).unwrap();
@@ -342,7 +376,10 @@ mod tests {
             "/x;y",
             "/var/*",
         ] {
-            t.system.as_mut().unwrap().paths = vec![Entry { path: bad.into(), reason: "r".into() }];
+            t.system.as_mut().unwrap().paths = vec![Entry {
+                path: bad.into(),
+                reason: "r".into(),
+            }];
             assert!(script(&t, true).is_err(), "{bad}");
         }
     }

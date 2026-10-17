@@ -25,7 +25,9 @@ pub struct DeviceMemory {
 impl DeviceMemory {
     /// Creates a new DeviceMemory with the default intended memory size.
     pub fn new() -> Self {
-        Self::with_size(crate::hle::kernel::board::k_system_control::init::get_intended_memory_size())
+        Self::with_size(
+            crate::hle::kernel::board::k_system_control::init::get_intended_memory_size(),
+        )
     }
 
     /// Creates a new DeviceMemory with a specific backing size.

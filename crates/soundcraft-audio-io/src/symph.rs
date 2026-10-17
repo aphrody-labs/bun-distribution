@@ -5,10 +5,12 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 
 use symphonia::core::audio::SampleBuffer;
 use symphonia::core::codecs::{
-    CODEC_TYPE_AAC, CODEC_TYPE_ADPCM_G722, CODEC_TYPE_ADPCM_G726, CODEC_TYPE_ADPCM_G726LE, CODEC_TYPE_ADPCM_IMA_QT, CODEC_TYPE_ADPCM_IMA_WAV,
-    CODEC_TYPE_ADPCM_MS, CODEC_TYPE_ALAC, CODEC_TYPE_FLAC, CODEC_TYPE_MP1, CODEC_TYPE_MP2, CODEC_TYPE_MP3, CODEC_TYPE_NULL, CODEC_TYPE_OPUS,
-    CODEC_TYPE_PCM_ALAW, CODEC_TYPE_PCM_F32BE, CODEC_TYPE_PCM_F32LE, CODEC_TYPE_PCM_F64BE, CODEC_TYPE_PCM_F64LE, CODEC_TYPE_PCM_MULAW,
-    CODEC_TYPE_VORBIS, CodecParameters, CodecType, DecoderOptions,
+    CODEC_TYPE_AAC, CODEC_TYPE_ADPCM_G722, CODEC_TYPE_ADPCM_G726, CODEC_TYPE_ADPCM_G726LE,
+    CODEC_TYPE_ADPCM_IMA_QT, CODEC_TYPE_ADPCM_IMA_WAV, CODEC_TYPE_ADPCM_MS, CODEC_TYPE_ALAC,
+    CODEC_TYPE_FLAC, CODEC_TYPE_MP1, CODEC_TYPE_MP2, CODEC_TYPE_MP3, CODEC_TYPE_NULL,
+    CODEC_TYPE_OPUS, CODEC_TYPE_PCM_ALAW, CODEC_TYPE_PCM_F32BE, CODEC_TYPE_PCM_F32LE,
+    CODEC_TYPE_PCM_F64BE, CODEC_TYPE_PCM_F64LE, CODEC_TYPE_PCM_MULAW, CODEC_TYPE_VORBIS,
+    CodecParameters, CodecType, DecoderOptions,
 };
 use symphonia::core::errors::Error as SymError;
 use symphonia::core::formats::{FormatOptions, FormatReader};
@@ -29,17 +31,29 @@ fn map_err(e: SymError) -> AudioError {
 
 /// Run `f`, turning a panic inside the third-party decoder into an error.
 fn guarded<T>(f: impl FnOnce() -> Result<T>) -> Result<T> {
-    catch_unwind(AssertUnwindSafe(f)).unwrap_or_else(|_| Err(AudioError::Malformed("decoder failed on malformed input".into())))
+    catch_unwind(AssertUnwindSafe(f)).unwrap_or_else(|_| {
+        Err(AudioError::Malformed(
+            "decoder failed on malformed input".into(),
+        ))
+    })
 }
 
 fn open(bytes: &[u8], ext_hint: Option<&str>) -> Result<Box<dyn FormatReader>> {
-    let mss = MediaSourceStream::new(Box::new(Cursor::new(bytes.to_vec())), MediaSourceStreamOptions::default());
+    let mss = MediaSourceStream::new(
+        Box::new(Cursor::new(bytes.to_vec())),
+        MediaSourceStreamOptions::default(),
+    );
     let mut hint = Hint::new();
     if let Some(ext) = ext_hint {
         hint.with_extension(ext.trim_start_matches('.'));
     }
-    let fmt_opts = FormatOptions { enable_gapless: true, ..FormatOptions::default() };
-    let probed = symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &MetadataOptions::default()).map_err(map_err)?;
+    let fmt_opts = FormatOptions {
+        enable_gapless: true,
+        ..FormatOptions::default()
+    };
+    let probed = symphonia::default::get_probe()
+        .format(&hint, mss, &fmt_opts, &MetadataOptions::default())
+        .map_err(map_err)?;
     Ok(probed.format)
 }
 
@@ -98,9 +112,13 @@ fn info_of(reader: &dyn FormatReader, detected: FileFormat) -> Result<(u32, Audi
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
         .ok_or_else(|| AudioError::Unsupported("no decodable audio track".into()))?;
     let p = &track.codec_params;
-    let sample_rate = p.sample_rate.filter(|&r| r > 0).ok_or_else(|| AudioError::Malformed("unknown sample rate".into()))?;
+    let sample_rate = p
+        .sample_rate
+        .filter(|&r| r > 0)
+        .ok_or_else(|| AudioError::Malformed("unknown sample rate".into()))?;
     let channels = p.channels.map(|c| c.count()).unwrap_or(0);
-    let channels = u16::try_from(channels).map_err(|_| AudioError::Unsupported("too many channels".into()))?;
+    let channels =
+        u16::try_from(channels).map_err(|_| AudioError::Unsupported("too many channels".into()))?;
     Ok((
         track.id,
         AudioInfo {
@@ -115,13 +133,25 @@ fn info_of(reader: &dyn FormatReader, detected: FileFormat) -> Result<(u32, Audi
 }
 
 /// Decode the whole first audio track. When `count_only`, samples are counted but not stored.
-fn run(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat, count_only: bool) -> Result<(AudioInfo, AudioBuffer)> {
+fn run(
+    bytes: &[u8],
+    ext_hint: Option<&str>,
+    detected: FileFormat,
+    count_only: bool,
+) -> Result<(AudioInfo, AudioBuffer)> {
     let mut reader = open(bytes, ext_hint)?;
     let (track_id, mut info) = info_of(reader.as_ref(), detected)?;
-    if let Some(n) = reader.tracks().iter().find(|t| t.id == track_id).and_then(|t| t.codec_params.n_frames) {
+    if let Some(n) = reader
+        .tracks()
+        .iter()
+        .find(|t| t.id == track_id)
+        .and_then(|t| t.codec_params.n_frames)
+    {
         let total = n.saturating_mul(u64::from(info.channels.max(1)));
         if !count_only && total > MAX_DECODE_SAMPLES {
-            return Err(AudioError::TooLarge(format!("{total} samples exceeds the decode limit")));
+            return Err(AudioError::TooLarge(format!(
+                "{total} samples exceeds the decode limit"
+            )));
         }
     }
     let params = reader
@@ -130,7 +160,9 @@ fn run(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat, count_only: b
         .find(|t| t.id == track_id)
         .map(|t| t.codec_params.clone())
         .ok_or_else(|| AudioError::Malformed("track vanished".into()))?;
-    let mut decoder = symphonia::default::get_codecs().make(&params, &DecoderOptions::default()).map_err(map_err)?;
+    let mut decoder = symphonia::default::get_codecs()
+        .make(&params, &DecoderOptions::default())
+        .map_err(map_err)?;
 
     let mut planar: Vec<Vec<f32>> = Vec::new();
     let mut frames: u64 = 0;
@@ -172,13 +204,16 @@ fn run(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat, count_only: b
         }
         if planar.is_empty() {
             // The decoded stream is authoritative for the channel count.
-            info.channels = u16::try_from(ch).map_err(|_| AudioError::Unsupported("too many channels".into()))?;
+            info.channels = u16::try_from(ch)
+                .map_err(|_| AudioError::Unsupported("too many channels".into()))?;
             planar = (0..ch).map(|_| Vec::new()).collect();
         }
         let n = decoded.frames() as u64;
         frames = frames.saturating_add(n);
         if frames.saturating_mul(ch as u64) > MAX_DECODE_SAMPLES {
-            return Err(AudioError::TooLarge("decoded audio exceeds the 4 GiB limit".into()));
+            return Err(AudioError::TooLarge(
+                "decoded audio exceeds the 4 GiB limit".into(),
+            ));
         }
         if count_only {
             continue;
@@ -199,14 +234,30 @@ fn run(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat, count_only: b
         return Err(AudioError::Malformed("stream contains no audio".into()));
     }
     if planar.is_empty() {
-        planar = (0..usize::from(info.channels)).map(|_| Vec::new()).collect();
+        planar = (0..usize::from(info.channels))
+            .map(|_| Vec::new())
+            .collect();
     }
-    info.frames = if count_only { frames } else { planar.iter().map(Vec::len).min().unwrap_or(0) as u64 };
+    info.frames = if count_only {
+        frames
+    } else {
+        planar.iter().map(Vec::len).min().unwrap_or(0) as u64
+    };
     let sample_rate = info.sample_rate;
-    Ok((info, AudioBuffer { sample_rate, channels: planar }))
+    Ok((
+        info,
+        AudioBuffer {
+            sample_rate,
+            channels: planar,
+        },
+    ))
 }
 
-pub(crate) fn probe(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat) -> Result<AudioInfo> {
+pub(crate) fn probe(
+    bytes: &[u8],
+    ext_hint: Option<&str>,
+    detected: FileFormat,
+) -> Result<AudioInfo> {
     guarded(|| {
         let reader = open(bytes, ext_hint)?;
         let (_, info) = info_of(reader.as_ref(), detected)?;
@@ -218,6 +269,10 @@ pub(crate) fn probe(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat) 
     })
 }
 
-pub(crate) fn decode(bytes: &[u8], ext_hint: Option<&str>, detected: FileFormat) -> Result<(AudioInfo, AudioBuffer)> {
+pub(crate) fn decode(
+    bytes: &[u8],
+    ext_hint: Option<&str>,
+    detected: FileFormat,
+) -> Result<(AudioInfo, AudioBuffer)> {
     guarded(|| run(bytes, ext_hint, detected, false))
 }

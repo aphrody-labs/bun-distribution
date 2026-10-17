@@ -36,7 +36,12 @@ pub fn parse_public_key(hex_key: &str) -> Option<VerifyingKey> {
 }
 
 /// Verifies `X-Signature-Ed25519` over `X-Signature-Timestamp || body`.
-pub fn verify_signature(key: &VerifyingKey, signature_hex: &str, timestamp: &str, body: &[u8]) -> bool {
+pub fn verify_signature(
+    key: &VerifyingKey,
+    signature_hex: &str,
+    timestamp: &str,
+    body: &[u8],
+) -> bool {
     let Ok(raw) = hex::decode(signature_hex.trim()) else {
         return false;
     };
@@ -61,7 +66,9 @@ pub fn interaction_kind(payload: &Value) -> Option<u64> {
 pub fn deferred_response(kind: u64) -> Value {
     match kind {
         interaction_type::PING => json!({ "type": callback_type::PONG }),
-        interaction_type::MESSAGE_COMPONENT => json!({ "type": callback_type::DEFERRED_UPDATE_MESSAGE }),
+        interaction_type::MESSAGE_COMPONENT => {
+            json!({ "type": callback_type::DEFERRED_UPDATE_MESSAGE })
+        }
         interaction_type::APPLICATION_COMMAND_AUTOCOMPLETE => json!({
             "type": callback_type::APPLICATION_COMMAND_AUTOCOMPLETE_RESULT,
             "data": { "choices": [] },

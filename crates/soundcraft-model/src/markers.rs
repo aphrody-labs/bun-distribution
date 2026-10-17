@@ -3,7 +3,9 @@
 use crate::{GroupId, MarkerId, TrackId};
 use soundcraft_time::Samples;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum MarkerKind {
     /// A point marker on a ruler.
     #[default]

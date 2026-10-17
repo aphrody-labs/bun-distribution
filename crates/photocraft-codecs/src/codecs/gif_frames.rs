@@ -62,18 +62,29 @@ pub fn decode(bytes: &[u8], opts: &DecodeOptions) -> Result<Vec<AnimationFrame>,
             }
         };
         if out.len() >= MAX_GIF_FRAMES {
-            return Err(CodecError::LimitExceeded(format!("more than {MAX_GIF_FRAMES} frames")));
+            return Err(CodecError::LimitExceeded(format!(
+                "more than {MAX_GIF_FRAMES} frames"
+            )));
         }
         if frame_bytes.saturating_mul(out.len() as u64 + 1) > limits.max_alloc {
-            return Err(CodecError::LimitExceeded(format!("{} frames of {w}x{h} exceed max_alloc {}", out.len() + 1, limits.max_alloc)));
+            return Err(CodecError::LimitExceeded(format!(
+                "{} frames of {w}x{h} exceed max_alloc {}",
+                out.len() + 1,
+                limits.max_alloc
+            )));
         }
         let (numer, denom) = frame.delay().numer_denom_ms();
         let delay_ms = numer.checked_div(denom).unwrap_or(0);
         let rgba = frame.into_buffer();
-        out.push(AnimationFrame { image: Image::from_u8(w, h, ChannelLayout::Rgba, rgba.into_raw())?, delay_ms });
+        out.push(AnimationFrame {
+            image: Image::from_u8(w, h, ChannelLayout::Rgba, rgba.into_raw())?,
+            delay_ms,
+        });
     }
     if damaged && let Some(first) = out.first_mut() {
-        first.image.warnings.push(DecodeWarning::Truncated { format: Format::Gif });
+        first.image.warnings.push(DecodeWarning::Truncated {
+            format: Format::Gif,
+        });
     }
     Ok(out)
 }

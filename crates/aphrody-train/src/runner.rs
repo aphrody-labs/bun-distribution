@@ -136,7 +136,11 @@ async fn run_training_job_unrecorded(
 
     // 2. Acquire exclusive GPU lease (will stop/preempt inference if needed)
     let _lease = if requires_gpu {
-        Some(acquire_training_lease(locks_dir, &job.id, Duration::from_secs(30))?)
+        Some(acquire_training_lease(
+            locks_dir,
+            &job.id,
+            Duration::from_secs(30),
+        )?)
     } else {
         None
     };
@@ -144,12 +148,17 @@ async fn run_training_job_unrecorded(
     // 3. Prepare directories
     std::fs::create_dir_all(&job.output_dir)?;
     let events_path = job.output_dir.join("events.jsonl");
-    let mut events_file = OpenOptions::new().create(true).append(true).open(&events_path)?;
+    let mut events_file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&events_path)?;
 
     // 4. Build command
     let py_project = find_python_train_project(repo_root);
     let mut cmd = Command::new(aphrody_toolchains::Toolchain::Uv.executable()).no_window();
-    cmd.args(["run", "--project"]).arg(&py_project).args(["--package", "aphrody-train"]);
+    cmd.args(["run", "--project"])
+        .arg(&py_project)
+        .args(["--package", "aphrody-train"]);
     if matches!(
         job.kind,
         crate::job::TrainKind::Embed | crate::job::TrainKind::Rerank | crate::job::TrainKind::Lora
@@ -160,11 +169,11 @@ async fn run_training_job_unrecorded(
     match job.kind {
         crate::job::TrainKind::DatasetRollouts => {
             cmd.arg("rollouts");
-        },
+        }
         crate::job::TrainKind::DatasetDpo => {
             cmd.arg("dpo");
-        },
-        _ => {},
+        }
+        _ => {}
     }
     cmd.arg("--job-id")
         .arg(&job.id)
@@ -180,18 +189,19 @@ async fn run_training_job_unrecorded(
         match job.kind {
             crate::job::TrainKind::Triples => {
                 cmd.arg("--input-chunks").arg(input);
-                cmd.arg("--output-triples").arg(job.output_dir.join("triples.jsonl"));
-            },
+                cmd.arg("--output-triples")
+                    .arg(job.output_dir.join("triples.jsonl"));
+            }
             crate::job::TrainKind::Embed | crate::job::TrainKind::Rerank => {
                 cmd.arg("--triples-file").arg(input);
-            },
+            }
             crate::job::TrainKind::Lora => {
                 cmd.arg("--rollout-dir").arg(input);
-            },
+            }
             crate::job::TrainKind::DatasetRollouts | crate::job::TrainKind::DatasetDpo => {
                 cmd.arg("--rollout-dir").arg(input);
-            },
-            crate::job::TrainKind::DryRun => {},
+            }
+            crate::job::TrainKind::DryRun => {}
         }
     }
     if let Some(ref gold) = job.gold_path {
@@ -234,16 +244,22 @@ async fn run_training_job_unrecorded(
                 });
             }
             match event {
-                TrainEvent::Artifact { role, path, sha256, bytes, .. } => {
+                TrainEvent::Artifact {
+                    role,
+                    path,
+                    sha256,
+                    bytes,
+                    ..
+                } => {
                     artifacts.push((role, PathBuf::from(path), sha256, bytes));
-                },
+                }
                 TrainEvent::Eval { metrics, .. } => {
                     last_metrics = metrics;
-                },
+                }
                 TrainEvent::Done { duration_secs, .. } => {
                     total_duration = duration_secs;
                     completed = true;
-                },
+                }
                 TrainEvent::Error { message, code, .. } => {
                     let _ = child.kill().await;
                     let _ = child.wait().await;
@@ -251,8 +267,8 @@ async fn run_training_job_unrecorded(
                         job_id: job.id.clone(),
                         message: format!("code {code}: {message}"),
                     });
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
     }
@@ -326,13 +342,22 @@ mod tests {
     #[tokio::test]
     async fn lora_requires_gold_and_local_model_before_launch() {
         let temp = tempfile::tempdir().unwrap();
-        let mut job =
-            TrainingJob::new("lora-guard", crate::job::TrainKind::Lora, temp.path().join("out"));
+        let mut job = TrainingJob::new(
+            "lora-guard",
+            crate::job::TrainKind::Lora,
+            temp.path().join("out"),
+        );
         job.input_path = Some(temp.path().join("prepared"));
-        let error = run_training_job(&job, temp.path(), temp.path()).await.err().unwrap();
+        let error = run_training_job(&job, temp.path(), temp.path())
+            .await
+            .err()
+            .unwrap();
         assert!(matches!(error, TrainError::MissingInput("--gold")));
         job.gold_path = Some(temp.path().join("gold.jsonl"));
-        let error = run_training_job(&job, temp.path(), temp.path()).await.err().unwrap();
+        let error = run_training_job(&job, temp.path(), temp.path())
+            .await
+            .err()
+            .unwrap();
         assert!(matches!(error, TrainError::MissingInput("--base-model")));
         assert!(!job.output_dir.exists());
     }

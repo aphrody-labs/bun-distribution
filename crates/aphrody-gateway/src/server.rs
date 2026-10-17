@@ -61,7 +61,7 @@ pub fn is_allowed_origin(origin: &str) -> bool {
                 || host == "[::1]"
                 || host == "::1"
                 || host == "tauri.localhost"
-        },
+        }
         None => false,
     }
 }
@@ -74,7 +74,10 @@ pub fn add_cors_headers(headers: &mut HeaderMap, origin: Option<&HeaderValue>) {
         && is_allowed_origin(origin_str)
     {
         headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin_val.clone());
-        headers.insert(header::ACCESS_CONTROL_ALLOW_CREDENTIALS, HeaderValue::from_static("true"));
+        headers.insert(
+            header::ACCESS_CONTROL_ALLOW_CREDENTIALS,
+            HeaderValue::from_static("true"),
+        );
     }
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_METHODS,
@@ -102,7 +105,9 @@ fn gateway_token() -> Result<Option<String>, GatewayError> {
             .map_err(|error| GatewayError::Config(error.to_string()));
     }
     Ok(aphrody_config::ai_env::HTTP_TOKEN.resolve().or_else(|| {
-        std::env::var("APHRODY_OS_AUTH_TOKEN").ok().filter(|token| !token.trim().is_empty())
+        std::env::var("APHRODY_OS_AUTH_TOKEN")
+            .ok()
+            .filter(|token| !token.trim().is_empty())
     }))
 }
 
@@ -133,8 +138,10 @@ async fn auth_middleware(
     if let Some(expected_token) = token {
         let expected_token = expected_token.trim();
         if !expected_token.is_empty() {
-            let auth_header =
-                req.headers().get(header::AUTHORIZATION).and_then(|val| val.to_str().ok());
+            let auth_header = req
+                .headers()
+                .get(header::AUTHORIZATION)
+                .and_then(|val| val.to_str().ok());
 
             let authorized = match auth_header {
                 Some(header_val) => {
@@ -146,7 +153,7 @@ async fn auth_middleware(
                     } else {
                         false
                     }
-                },
+                }
                 None => false,
             };
 
@@ -176,7 +183,10 @@ pub fn router(state: GatewayState) -> Router {
         .route("/health", get(health_handler).options(cors_preflight))
         .route("/healthz", get(health_handler).options(cors_preflight))
         .route("/v1/models", get(models_handler).options(cors_preflight))
-        .route("/v1/chat/completions", post(chat_completions_handler).options(cors_preflight))
+        .route(
+            "/v1/chat/completions",
+            post(chat_completions_handler).options(cors_preflight),
+        )
         .layer(middleware::from_fn_with_state(token, auth_middleware))
         .layer(middleware::from_fn(cors_middleware))
         .with_state(state)
@@ -282,7 +292,7 @@ async fn chat_completions_handler(
                             }]
                         });
                         Ok::<Event, Infallible>(Event::default().data(data.to_string()))
-                    },
+                    }
                     // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
                     Err(err) => {
                         let err_data = json!({
@@ -292,12 +302,12 @@ async fn chat_completions_handler(
                             }
                         });
                         Ok::<Event, Infallible>(Event::default().data(err_data.to_string()))
-                    },
+                    }
                 });
 
                 let sse = Sse::new(sse_stream).keep_alive(KeepAlive::default());
                 sse.into_response()
-            },
+            }
             // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
             Err(err) => (
                 StatusCode::BAD_GATEWAY,
@@ -333,7 +343,7 @@ async fn chat_completions_handler(
                     }
                 });
                 (StatusCode::OK, Json(body)).into_response()
-            },
+            }
             // Intentionally NOT unified with aphrody-http-error - mimics OpenAI's own error wire shape for client drop-in compatibility; see docs/apis/contracts/API.md section 6.8.
             Err(err) => (
                 StatusCode::BAD_GATEWAY,
@@ -362,7 +372,10 @@ mod tests {
         let _ = rustls::crypto::ring::default_provider().install_default();
         for (token, expected) in [
             (Err(()), StatusCode::SERVICE_UNAVAILABLE),
-            (Ok(Some("fixture-token".to_owned())), StatusCode::UNAUTHORIZED),
+            (
+                Ok(Some("fixture-token".to_owned())),
+                StatusCode::UNAUTHORIZED,
+            ),
         ] {
             let app = Router::new()
                 .route("/v1/models", get(|| async { "fixture" }))
@@ -373,7 +386,12 @@ mod tests {
             let client = reqwest::Client::builder().no_proxy().build().unwrap();
             let url = format!("http://{address}/v1/models");
             assert_eq!(client.get(&url).send().await.unwrap().status(), expected);
-            let authenticated = client.get(&url).bearer_auth("fixture-token").send().await.unwrap();
+            let authenticated = client
+                .get(&url)
+                .bearer_auth("fixture-token")
+                .send()
+                .await
+                .unwrap();
             assert_eq!(
                 authenticated.status(),
                 if expected == StatusCode::UNAUTHORIZED {
@@ -469,6 +487,11 @@ mod tests {
             headers.get(header::ACCESS_CONTROL_ALLOW_ORIGIN).unwrap(),
             "http://localhost:8083"
         );
-        assert_eq!(headers.get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS).unwrap(), "true");
+        assert_eq!(
+            headers
+                .get(header::ACCESS_CONTROL_ALLOW_CREDENTIALS)
+                .unwrap(),
+            "true"
+        );
     }
 }

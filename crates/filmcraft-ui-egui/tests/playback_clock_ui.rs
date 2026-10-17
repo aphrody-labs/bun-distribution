@@ -32,7 +32,8 @@ impl AudioOut for FakeOut {
         48_000
     }
     fn played_frames(&self) -> Option<u64> {
-        self.started.then(|| self.played.fetch_add(self.per_poll, Ordering::SeqCst) + self.per_poll)
+        self.started
+            .then(|| self.played.fetch_add(self.per_poll, Ordering::SeqCst) + self.per_poll)
     }
     fn note(&self) -> Option<String> {
         self.note.clone()
@@ -45,8 +46,16 @@ fn play_with(per_poll: u64, steps: usize) -> (f64, bool) {
     s.execute("file.openDemoProject", json!({})).unwrap();
     s.set_playhead(Tick::ZERO);
     let mut app = FilmcraftApp::new(s);
-    app.audio = Some(Box::new(FakeOut { played: Arc::new(AtomicU64::new(0)), per_poll, started: false, note: None }));
-    let mut h = Harness::builder().with_size(egui::vec2(1280.0, 800.0)).with_step_dt(0.25).build_eframe(move |_cc| app);
+    app.audio = Some(Box::new(FakeOut {
+        played: Arc::new(AtomicU64::new(0)),
+        per_poll,
+        started: false,
+        note: None,
+    }));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1280.0, 800.0))
+        .with_step_dt(0.25)
+        .build_eframe(move |_cc| app);
     h.step();
     h.state_mut().play(1.0);
     for _ in 0..steps {
@@ -61,8 +70,14 @@ fn play_with(per_poll: u64, steps: usize) -> (f64, bool) {
 #[test]
 fn a_stalled_audio_device_does_not_freeze_playback() {
     let (t, audio_clock) = play_with(0, 16);
-    assert!(t > 1.5, "the playhead should move with the wall clock, it is at {t:.2} s");
-    assert!(!audio_clock, "the stalled device no longer drives the clock");
+    assert!(
+        t > 1.5,
+        "the playhead should move with the wall clock, it is at {t:.2} s"
+    );
+    assert!(
+        !audio_clock,
+        "the stalled device no longer drives the clock"
+    );
 }
 
 /// Control: a device that plays keeps driving the clock (0.1 s of audio per poll).
@@ -80,15 +95,32 @@ fn a_fallback_note_from_the_audio_device_reaches_the_status_bar() {
     let mut s = Session::default();
     s.execute("file.openDemoProject", json!({})).unwrap();
     s.set_playhead(Tick::ZERO);
-    let note = "Audio hardware: the default output device cannot be opened; using 'sofhdadsp'".to_string();
+    let note =
+        "Audio hardware: the default output device cannot be opened; using 'sofhdadsp'".to_string();
     let mut app = FilmcraftApp::new(s);
-    app.audio = Some(Box::new(FakeOut { played: Arc::new(AtomicU64::new(0)), per_poll: 4_800, started: false, note: Some(note.clone()) }));
-    let mut h = Harness::builder().with_size(egui::vec2(1280.0, 800.0)).with_step_dt(0.25).build_eframe(move |_cc| app);
+    app.audio = Some(Box::new(FakeOut {
+        played: Arc::new(AtomicU64::new(0)),
+        per_poll: 4_800,
+        started: false,
+        note: Some(note.clone()),
+    }));
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1280.0, 800.0))
+        .with_step_dt(0.25)
+        .build_eframe(move |_cc| app);
     h.step();
-    assert_eq!(h.state_mut().ui.status, note, "the note surfaces on the first frame (apply_prefs)");
+    assert_eq!(
+        h.state_mut().ui.status,
+        note,
+        "the note surfaces on the first frame (apply_prefs)"
+    );
     h.state_mut().play(1.0);
     for _ in 0..16 {
         h.step();
     }
-    assert_eq!(h.state_mut().ui.status, note, "the note survives while playback runs");
+    assert_eq!(
+        h.state_mut().ui.status,
+        note,
+        "the note survives while playback runs"
+    );
 }

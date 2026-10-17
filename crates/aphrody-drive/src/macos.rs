@@ -40,7 +40,9 @@ pub unsafe extern "C" fn rust_drag_ended_callback(
     was_dropped: Bool,
 ) {
     // SAFETY: guaranteed by the caller (Swift passes `withCString`).
-    let session_id = unsafe { std::ffi::CStr::from_ptr(session_id) }.to_string_lossy().into_owned();
+    let session_id = unsafe { std::ffi::CStr::from_ptr(session_id) }
+        .to_string_lossy()
+        .into_owned();
     if let Some(callback) = DRAG_ENDED_CALLBACK.get() {
         callback(&session_id, was_dropped);
     }

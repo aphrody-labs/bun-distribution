@@ -21,7 +21,10 @@ impl Driver {
         s.execute("file.openDemoProject", json!({})).unwrap();
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(s).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -57,7 +60,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -78,7 +84,10 @@ impl Driver {
 #[test]
 fn the_nest_button_toggles_how_sequences_are_edited_in() {
     let mut d = Driver::new();
-    assert!(!d.app().session.state.sequences_as_clips, "on by default: sequences nest");
+    assert!(
+        !d.app().session.state.sequences_as_clips,
+        "on by default: sequences nest"
+    );
     d.click("timeline.toggle.nest");
     assert!(d.app().session.state.sequences_as_clips);
     d.click("timeline.toggle.nest");
@@ -95,7 +104,14 @@ fn reveal_in_project_shows_the_clips_item_in_the_project_panel() {
             let it = &d.app().session.active_sequence().unwrap().video_tracks[0].items[2];
             (it.id.0, it.item)
         };
-        let bin = d.app().session.project.root.parent_of(item).expect("the demo keeps its footage in a bin").0;
+        let bin = d
+            .app()
+            .session
+            .project
+            .root
+            .parent_of(item)
+            .expect("the demo keeps its footage in a bin")
+            .0;
         // the Project panel is closed, its bins are collapsed and a search hides everything
         d.app().ui.dock.close(PanelKind::Project);
         d.app().ui.expanded_bins.clear();
@@ -115,7 +131,10 @@ fn reveal_in_project_shows_the_clips_item_in_the_project_panel() {
             // icons show one bin at a time: the panel is inside the item's bin
             assert_eq!(d.app().ui.project_panel.bin, Some(bin));
         }
-        assert!(d.has(&format!("project.item.{}", item.0)), "{mode:?}: the item is on show");
+        assert!(
+            d.has(&format!("project.item.{}", item.0)),
+            "{mode:?}: the item is on show"
+        );
     }
 }
 
@@ -126,7 +145,10 @@ fn the_clip_menu_offers_multi_camera_and_reveal_in_project() {
         let it = &d.app().session.active_sequence().unwrap().video_tracks[0].items[0];
         (it.id.0, it.item)
     };
-    d.ok("ui.click", json!({"id": format!("timeline.clip.{clip}"), "button": "right"}));
+    d.ok(
+        "ui.click",
+        json!({"id": format!("timeline.clip.{clip}"), "button": "right"}),
+    );
     d.frames(3);
     assert!(d.has("timeline.clipMenu.clip.multicam"));
     assert!(d.has("timeline.clipMenu.clip.revealInProject"));

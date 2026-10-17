@@ -58,7 +58,10 @@ pub(super) struct Links {
 }
 
 pub(super) fn function(iftab: u16) -> Option<(&'static str, i8)> {
-    FTAB.binary_search_by_key(&iftab, |(i, _, _)| *i).ok().and_then(|i| FTAB.get(i)).map(|(_, n, a)| (*n, *a))
+    FTAB.binary_search_by_key(&iftab, |(i, _, _)| *i)
+        .ok()
+        .and_then(|i| FTAB.get(i))
+        .map(|(_, n, a)| (*n, *a))
 }
 
 fn error_code(code: u8) -> Option<CellError> {
@@ -88,7 +91,10 @@ const TRUNC: Unsupported = Unsupported("truncated formula");
 
 impl Bytes<'_> {
     fn take(&mut self, n: usize) -> Result<&[u8], Unsupported> {
-        let s = self.b.get(self.pos..self.pos.checked_add(n).ok_or(TRUNC)?).ok_or(TRUNC)?;
+        let s = self
+            .b
+            .get(self.pos..self.pos.checked_add(n).ok_or(TRUNC)?)
+            .ok_or(TRUNC)?;
         self.pos += n;
         Ok(s)
     }
@@ -97,7 +103,10 @@ impl Bytes<'_> {
     }
     fn u16(&mut self) -> Result<u16, Unsupported> {
         let s = self.take(2)?;
-        Ok(u16::from_le_bytes([*s.first().ok_or(TRUNC)?, *s.get(1).ok_or(TRUNC)?]))
+        Ok(u16::from_le_bytes([
+            *s.first().ok_or(TRUNC)?,
+            *s.get(1).ok_or(TRUNC)?,
+        ]))
     }
     fn u32(&mut self) -> Result<u32, Unsupported> {
         Ok(u32::from(self.u16()?) | (u32::from(self.u16()?) << 16))
@@ -108,7 +117,12 @@ impl Bytes<'_> {
     }
     fn chars(&mut self, cch: usize, high: bool) -> Result<String, Unsupported> {
         let units: Vec<u16> = if high {
-            self.take(cch.checked_mul(2).ok_or(TRUNC)?)?.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).collect()
+            self.take(cch.checked_mul(2).ok_or(TRUNC)?)?
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| u16::from_le_bytes(*c))
+                .collect()
         } else {
             self.take(cch)?.iter().map(|&b| u16::from(b)).collect()
         };
@@ -126,14 +140,27 @@ fn col_field(v: u16) -> (u16, bool, bool) {
 fn anchor(row: u16, col: u16, base: CellRef, relative: bool) -> Anchor {
     let (c, col_rel, row_rel) = col_field(col);
     let (r, c) = if relative {
-        let r = if row_rel { (u32::from(row).wrapping_add(base.row)) & 0xFFFF } else { u32::from(row) };
+        let r = if row_rel {
+            (u32::from(row).wrapping_add(base.row)) & 0xFFFF
+        } else {
+            u32::from(row)
+        };
         // A 14-bit signed offset; adding modulo 256 gives the same column either way.
-        let c = if col_rel { (u32::from(c).wrapping_add(base.col)) & 0xFF } else { u32::from(c) & 0xFF };
+        let c = if col_rel {
+            (u32::from(c).wrapping_add(base.col)) & 0xFF
+        } else {
+            u32::from(c) & 0xFF
+        };
         (r, c)
     } else {
         (u32::from(row), u32::from(c) & 0xFF)
     };
-    Anchor { row: r, col: c, row_abs: !row_rel, col_abs: !col_rel }
+    Anchor {
+        row: r,
+        col: c,
+        row_abs: !row_rel,
+        col_abs: !col_rel,
+    }
 }
 
 /// An area; a range spanning every BIFF8 row (or column) becomes a whole-column (row) ref.
@@ -151,12 +178,25 @@ fn area(r0: u16, r1: u16, c0: u16, c1: u16, base: CellRef, relative: bool) -> Re
 
 impl Links {
     fn sheet_sel(&self, ixti: u16) -> Result<Option<SheetSel>, Unsupported> {
-        let x = self.xti.get(usize::from(ixti)).ok_or(Unsupported("reference to a missing sheet link"))?;
-        let book = self.books.get(usize::from(x.book)).ok_or(Unsupported("reference to a missing workbook link"))?;
+        let x = self
+            .xti
+            .get(usize::from(ixti))
+            .ok_or(Unsupported("reference to a missing sheet link"))?;
+        let book = self
+            .books
+            .get(usize::from(x.book))
+            .ok_or(Unsupported("reference to a missing workbook link"))?;
         if !book.internal {
-            return Err(Unsupported("references to other workbooks (external links)"));
+            return Err(Unsupported(
+                "references to other workbooks (external links)",
+            ));
         }
-        let name = |i: i16| usize::try_from(i).ok().and_then(|i| self.sheets.get(i)).cloned();
+        let name = |i: i16| {
+            usize::try_from(i)
+                .ok()
+                .and_then(|i| self.sheets.get(i))
+                .cloned()
+        };
         Ok(match (name(x.first), name(x.last)) {
             (Some(a), Some(_)) if x.first == x.last => Some(SheetSel::Named(a)),
             (Some(a), Some(b)) => Some(SheetSel::Span(a, b)),
@@ -166,19 +206,34 @@ impl Links {
     }
 
     fn extern_name(&self, ixti: u16, index: u32) -> Result<String, Unsupported> {
-        let x = self.xti.get(usize::from(ixti)).ok_or(Unsupported("reference to a missing name link"))?;
-        let book = self.books.get(usize::from(x.book)).ok_or(Unsupported("reference to a missing workbook link"))?;
+        let x = self
+            .xti
+            .get(usize::from(ixti))
+            .ok_or(Unsupported("reference to a missing name link"))?;
+        let book = self
+            .books
+            .get(usize::from(x.book))
+            .ok_or(Unsupported("reference to a missing workbook link"))?;
         if !book.internal && !book.addin {
             return Err(Unsupported("names in other workbooks (external links)"));
         }
-        let i = usize::try_from(index).ok().and_then(|i| i.checked_sub(1)).ok_or(Unsupported("invalid name index"))?;
-        book.names.get(i).cloned().ok_or(Unsupported("reference to a missing name"))
+        let i = usize::try_from(index)
+            .ok()
+            .and_then(|i| i.checked_sub(1))
+            .ok_or(Unsupported("invalid name index"))?;
+        book.names
+            .get(i)
+            .cloned()
+            .ok_or(Unsupported("reference to a missing name"))
     }
 }
 
 /// Strips the prefixes newer functions carry in files (`_xlfn.IFERROR`).
 fn function_name(name: &str) -> String {
-    let n = name.strip_prefix("_xlfn.").or_else(|| name.strip_prefix("_xlws.")).unwrap_or(name);
+    let n = name
+        .strip_prefix("_xlfn.")
+        .or_else(|| name.strip_prefix("_xlws."))
+        .unwrap_or(name);
     n.to_ascii_uppercase()
 }
 
@@ -191,13 +246,18 @@ type Stack = Vec<(Expr, usize)>;
 
 /// Pops an operand, recording its depth in `kids` (the deepest operand this token consumed).
 fn pop(stack: &mut Stack, kids: &mut usize) -> Result<Expr, Unsupported> {
-    let (e, d) = stack.pop().ok_or(Unsupported("malformed formula (operand missing)"))?;
+    let (e, d) = stack
+        .pop()
+        .ok_or(Unsupported("malformed formula (operand missing)"))?;
     *kids = (*kids).max(d);
     Ok(e)
 }
 
 fn pop_n(stack: &mut Stack, n: usize, kids: &mut usize) -> Result<Vec<Expr>, Unsupported> {
-    let at = stack.len().checked_sub(n).ok_or(Unsupported("malformed formula (argument missing)"))?;
+    let at = stack
+        .len()
+        .checked_sub(n)
+        .ok_or(Unsupported("malformed formula (argument missing)"))?;
     let popped = stack.split_off(at);
     *kids = popped.iter().map(|(_, d)| *d).fold(*kids, usize::max);
     Ok(popped.into_iter().map(|(e, _)| e).collect())
@@ -215,7 +275,13 @@ fn push(stack: &mut Stack, kids: usize, e: Expr) -> Result<(), Unsupported> {
 
 /// Decodes `rgce` (tokens) with `rgcb` (the extra data for array constants) evaluated at
 /// `base`. Returns the expression or why it can't be represented.
-pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links: &Links) -> Result<Expr, Unsupported> {
+pub(super) fn decode(
+    rgce: &[u8],
+    rgcb: &[u8],
+    base: CellRef,
+    mode: Mode,
+    links: &Links,
+) -> Result<Expr, Unsupported> {
     if rgce.len() > MAX_RGCE {
         return Err(Unsupported("formula too long"));
     }
@@ -226,7 +292,11 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
         let ptg = t.u8()?;
         let mut kids = 0usize;
         // Operand classes (reference / value / array) share one token number.
-        let id = if ptg & 0x60 != 0 { 0x20 | (ptg & 0x1F) } else { ptg };
+        let id = if ptg & 0x60 != 0 {
+            0x20 | (ptg & 0x1F)
+        } else {
+            ptg
+        };
         match id {
             0x03..=0x11 => {
                 let op = match id {
@@ -287,7 +357,11 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
             }
             0x1C => {
                 let e = t.u8()?;
-                push(&mut stack, kids, Expr::Error(error_code(e).ok_or(Unsupported("unknown error constant"))?))?;
+                push(
+                    &mut stack,
+                    kids,
+                    Expr::Error(error_code(e).ok_or(Unsupported("unknown error constant"))?),
+                )?;
             }
             0x1D => push(&mut stack, kids, Expr::Bool(t.u8()? != 0))?,
             0x1E => push(&mut stack, kids, Expr::Number(f64::from(t.u16()?)))?,
@@ -305,7 +379,8 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
             0x21 => {
                 let iftab = t.u16()?;
                 let (name, args) = function(iftab).ok_or(Unsupported("unknown function"))?;
-                let n = usize::try_from(args).map_err(|_| Unsupported("unknown function argument count"))?;
+                let n = usize::try_from(args)
+                    .map_err(|_| Unsupported("unknown function argument count"))?;
                 let args = pop_n(&mut stack, n, &mut kids)?;
                 push(&mut stack, kids, Expr::Call(name.to_string(), args))?;
             }
@@ -327,13 +402,19 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
                     };
                     push(&mut stack, kids, Expr::Call(name, args))?;
                 } else {
-                    let (name, _) = function(tab & 0x7FFF).ok_or(Unsupported("unknown function"))?;
+                    let (name, _) =
+                        function(tab & 0x7FFF).ok_or(Unsupported("unknown function"))?;
                     push(&mut stack, kids, Expr::Call(name.to_string(), args))?;
                 }
             }
             0x23 => {
-                let i = usize::try_from(t.u32()?).ok().and_then(|i| i.checked_sub(1));
-                let name = i.and_then(|i| links.names.get(i)).filter(|n| !n.is_empty()).ok_or(Unsupported("reference to a missing defined name"))?;
+                let i = usize::try_from(t.u32()?)
+                    .ok()
+                    .and_then(|i| i.checked_sub(1));
+                let name = i
+                    .and_then(|i| links.names.get(i))
+                    .filter(|n| !n.is_empty())
+                    .ok_or(Unsupported("reference to a missing defined name"))?;
                 // A cell using a name the import drops would calculate to #NAME?: keep its
                 // saved result instead, as for references to other workbooks.
                 if mode != Mode::Name && i.and_then(|i| links.skipped.get(i)) == Some(&true) {
@@ -344,12 +425,26 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
             0x24 | 0x2C => {
                 let (r, c) = (t.u16()?, t.u16()?);
                 let a = anchor(r, c, base, id == 0x2C);
-                push(&mut stack, kids, Expr::Ref(Reference { sheet: SheetSel::Current, kind: RefKind::Cell(a) }))?;
+                push(
+                    &mut stack,
+                    kids,
+                    Expr::Ref(Reference {
+                        sheet: SheetSel::Current,
+                        kind: RefKind::Cell(a),
+                    }),
+                )?;
             }
             0x25 | 0x2D => {
                 let (r0, r1, c0, c1) = (t.u16()?, t.u16()?, t.u16()?, t.u16()?);
                 let kind = area(r0, r1, c0, c1, base, id == 0x2D);
-                push(&mut stack, kids, Expr::Ref(Reference { sheet: SheetSel::Current, kind }))?;
+                push(
+                    &mut stack,
+                    kids,
+                    Expr::Ref(Reference {
+                        sheet: SheetSel::Current,
+                        kind,
+                    }),
+                )?;
             }
             0x26 => {
                 // PtgMemArea: a cache of the sub-expression that follows; skip its extra data.
@@ -384,7 +479,10 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
                     &mut stack,
                     kids,
                     match links.sheet_sel(ixti)? {
-                        Some(sheet) => Expr::Ref(Reference { sheet, kind: RefKind::Cell(a) }),
+                        Some(sheet) => Expr::Ref(Reference {
+                            sheet,
+                            kind: RefKind::Cell(a),
+                        }),
                         None => Expr::Error(CellError::Ref),
                     },
                 )?;
@@ -419,7 +517,9 @@ pub(super) fn decode(rgce: &[u8], rgcb: &[u8], base: CellRef, mode: Mode, links:
             return Err(Unsupported("formula too complex"));
         }
     }
-    let (e, _) = stack.pop().ok_or(Unsupported("malformed formula (operand missing)"))?;
+    let (e, _) = stack
+        .pop()
+        .ok_or(Unsupported("malformed formula (operand missing)"))?;
     if !stack.is_empty() {
         return Err(Unsupported("malformed formula (unused operands)"));
     }
@@ -483,40 +583,88 @@ mod tests {
             names: vec!["Rate".into()],
             skipped: vec![false],
             books: vec![
-                SupBook { internal: true, addin: false, names: vec![] },
-                SupBook { internal: false, addin: true, names: vec!["_xlfn.IFERROR".into()] },
+                SupBook {
+                    internal: true,
+                    addin: false,
+                    names: vec![],
+                },
+                SupBook {
+                    internal: false,
+                    addin: true,
+                    names: vec!["_xlfn.IFERROR".into()],
+                },
                 SupBook::default(),
             ],
             xti: vec![
-                Xti { book: 0, first: 0, last: 1 },
-                Xti { book: 1, first: -2, last: -2 },
-                Xti { book: 2, first: 0, last: 0 },
-                Xti { book: 0, first: -1, last: -1 },
+                Xti {
+                    book: 0,
+                    first: 0,
+                    last: 1,
+                },
+                Xti {
+                    book: 1,
+                    first: -2,
+                    last: -2,
+                },
+                Xti {
+                    book: 2,
+                    first: 0,
+                    last: 0,
+                },
+                Xti {
+                    book: 0,
+                    first: -1,
+                    last: -1,
+                },
             ],
         }
     }
 
     fn text(rgce: &[u8], rgcb: &[u8]) -> Result<String, Unsupported> {
-        decode(rgce, rgcb, CellRef::new(0, 0), Mode::Cell, &links()).map(|e| gridcraft_formula::print(&e))
+        decode(rgce, rgcb, CellRef::new(0, 0), Mode::Cell, &links())
+            .map(|e| gridcraft_formula::print(&e))
     }
 
     #[test]
     fn decodes_common_tokens() {
         // {1,"a";TRUE,#N/A} via PtgArray + PtgExtraArray.
-        let extra =
-            [&[1u8, 1, 0][..], &[1], &1f64.to_le_bytes(), &[2, 1, 0, 0, b'a'], &[4, 1, 0, 0, 0, 0, 0, 0, 0], &[0x10, 0x2A, 0, 0, 0, 0, 0, 0, 0]]
-                .concat();
-        assert_eq!(text(&[0x60, 0, 0, 0, 0, 0, 0, 0], &extra).unwrap(), "{1,\"a\";TRUE,#N/A}");
+        let extra = [
+            &[1u8, 1, 0][..],
+            &[1],
+            &1f64.to_le_bytes(),
+            &[2, 1, 0, 0, b'a'],
+            &[4, 1, 0, 0, 0, 0, 0, 0, 0],
+            &[0x10, 0x2A, 0, 0, 0, 0, 0, 0, 0],
+        ]
+        .concat();
+        assert_eq!(
+            text(&[0x60, 0, 0, 0, 0, 0, 0, 0], &extra).unwrap(),
+            "{1,\"a\";TRUE,#N/A}"
+        );
         // SUM via PtgAttrSum over a 3-D span, whole column.
-        let area3d = [&[0x3Bu8][..], &0u16.to_le_bytes(), &[0, 0, 0xFF, 0xFF, 1, 0, 1, 0]].concat();
-        assert_eq!(text(&[area3d.as_slice(), &[0x19, 0x10, 0, 0]].concat(), &[]).unwrap(), "SUM('Sheet1:My Data'!$B:$B)");
+        let area3d = [
+            &[0x3Bu8][..],
+            &0u16.to_le_bytes(),
+            &[0, 0, 0xFF, 0xFF, 1, 0, 1, 0],
+        ]
+        .concat();
+        assert_eq!(
+            text(&[area3d.as_slice(), &[0x19, 0x10, 0, 0]].concat(), &[]).unwrap(),
+            "SUM('Sheet1:My Data'!$B:$B)"
+        );
         // IFERROR (a newer function) called by name through PtgNameX, with a missing argument.
         let namex = [&[0x39u8][..], &1u16.to_le_bytes(), &1u32.to_le_bytes()].concat();
         let call = [namex.as_slice(), &[0x1E, 5, 0, 0x16, 0x22, 3, 0xFF, 0]].concat();
         assert_eq!(text(&call, &[]).unwrap(), "IFERROR(5,)");
         // A deleted sheet becomes #REF!; the CHOOSE jump table is skipped.
         let ref_deleted = [&[0x3Au8][..], &3u16.to_le_bytes(), &[0, 0, 0, 0]].concat();
-        let choose = [&[0x1Eu8, 1, 0][..], &[0x19, 0x04, 1, 0, 0, 0, 0, 0], ref_deleted.as_slice(), &[0x1E, 2, 0, 0x22, 3, 100, 0]].concat();
+        let choose = [
+            &[0x1Eu8, 1, 0][..],
+            &[0x19, 0x04, 1, 0, 0, 0, 0, 0],
+            ref_deleted.as_slice(),
+            &[0x1E, 2, 0, 0x22, 3, 100, 0],
+        ]
+        .concat();
         assert_eq!(text(&choose, &[]).unwrap(), "CHOOSE(1,#REF!,2)");
         // External links, data tables and unbalanced stacks are refused, never guessed.
         let external = [&[0x3Au8][..], &2u16.to_le_bytes(), &[0, 0, 0, 0]].concat();
@@ -535,7 +683,10 @@ mod tests {
         for op in [0x15u8, 0x13] {
             let mut rgce = vec![0x1E, 1, 0];
             rgce.resize(MAX_RGCE, op);
-            assert_eq!(text(&rgce, &[]), Err(Unsupported("formula nested too deeply")));
+            assert_eq!(
+                text(&rgce, &[]),
+                Err(Unsupported("formula nested too deeply"))
+            );
         }
         // Binary chains nest too: 1+1+1+... left-associated.
         let mut chain = vec![0x1E, 1, 0];

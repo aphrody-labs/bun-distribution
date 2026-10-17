@@ -1,8 +1,8 @@
 use crate::generics::generate_generics;
 use crate::{
+    ReflectMeta,
     impls::{common_partial_reflect_methods, impl_full_reflect, impl_type_path, impl_typed},
     where_clause_options::WhereClauseOptions,
-    ReflectMeta,
 };
 use bevy_macro_utils::fq_std::{FQClone, FQInto, FQOption, FQResult};
 use quote::quote;

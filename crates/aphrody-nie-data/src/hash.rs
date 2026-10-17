@@ -70,7 +70,10 @@ impl HashId {
     #[must_use]
     pub fn parse_hex(s: &str) -> Option<Self> {
         let t = s.trim();
-        let hex = t.strip_prefix("0x").or_else(|| t.strip_prefix("0X")).unwrap_or(t);
+        let hex = t
+            .strip_prefix("0x")
+            .or_else(|| t.strip_prefix("0X"))
+            .unwrap_or(t);
         if hex.is_empty() || hex.len() > 8 {
             return None;
         }
@@ -155,7 +158,11 @@ mod tests {
         let attendu = Some(HashId(0xCB18_9152));
         assert_eq!(HashId::parse_hex("0xCB189152"), attendu);
         assert_eq!(HashId::parse_hex("CB189152"), attendu);
-        assert_eq!(HashId::parse_hex("0xcb189152"), attendu, "préfixe insensible à la casse");
+        assert_eq!(
+            HashId::parse_hex("0xcb189152"),
+            attendu,
+            "préfixe insensible à la casse"
+        );
         assert_eq!(HashId::parse_hex("  CB189152  "), attendu, "trim");
     }
 
@@ -164,7 +171,11 @@ mod tests {
         assert_eq!(HashId::parse_hex("ZZZZ"), None);
         assert_eq!(HashId::parse_hex(""), None);
         assert_eq!(HashId::parse_hex("0x"), None);
-        assert_eq!(HashId::parse_hex("CB1891520"), None, "9 chiffres : hors u32");
+        assert_eq!(
+            HashId::parse_hex("CB1891520"),
+            None,
+            "9 chiffres : hors u32"
+        );
         // Contraste avec `parse`, qui lui accepte le décimal signé.
         assert_eq!(HashId::parse_hex("-357386801"), None);
         assert!(HashId::parse("-357386801").is_some());

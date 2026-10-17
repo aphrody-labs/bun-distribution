@@ -23,7 +23,17 @@
 //! This crate is L2: it does no file I/O. Media references are strings (absolute paths, or paths
 //! resolved against the `base_dir` passed to the importer); the engine probes/relinks them.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod aaf;
 pub mod ale;
@@ -41,7 +51,9 @@ mod xml;
 
 use std::collections::{BTreeMap, HashMap};
 
-use filmcraft_project::{BinEntry, BinId, ClipId, ItemId, ItemKind, MarkerId, Project, TrackId, TransitionId};
+use filmcraft_project::{
+    BinEntry, BinId, ClipId, ItemId, ItemKind, MarkerId, Project, TrackId, TransitionId,
+};
 use filmcraft_time::{FrameRate, Tick};
 use serde::{Deserialize, Serialize};
 
@@ -66,7 +78,14 @@ pub enum Format {
 }
 
 impl Format {
-    pub const ALL: [Format; 6] = [Format::Edl, Format::Fcp7Xml, Format::Fcpxml, Format::Otio, Format::Aaf, Format::Omf];
+    pub const ALL: [Format; 6] = [
+        Format::Edl,
+        Format::Fcp7Xml,
+        Format::Fcpxml,
+        Format::Otio,
+        Format::Aaf,
+        Format::Omf,
+    ];
 
     pub fn name(self) -> &'static str {
         match self {
@@ -111,7 +130,9 @@ pub fn detect(bytes: &[u8], extension: Option<&str>) -> Option<Format> {
     if aaf::sniff(bytes) {
         return Some(Format::Aaf);
     }
-    if omf::sniff(bytes) && extension.is_none_or(|e| matches!(Format::from_extension(e), None | Some(Format::Omf))) {
+    if omf::sniff(bytes)
+        && extension.is_none_or(|e| matches!(Format::from_extension(e), None | Some(Format::Omf)))
+    {
         return Some(Format::Omf);
     }
     let head = String::from_utf8_lossy(&bytes[..bytes.len().min(4096)]);
@@ -123,25 +144,34 @@ pub fn detect(bytes: &[u8], extension: Option<&str>) -> Option<Format> {
         if head.contains("<fcpxml") {
             return Some(Format::Fcpxml);
         }
-        return extension.and_then(Format::from_extension).filter(|f| matches!(f, Format::Fcp7Xml | Format::Fcpxml));
+        return extension
+            .and_then(Format::from_extension)
+            .filter(|f| matches!(f, Format::Fcp7Xml | Format::Fcpxml));
     }
     if head.starts_with('{') {
         if head.contains("\"OTIO_SCHEMA\"") {
             return Some(Format::Otio);
         }
-        return extension.and_then(Format::from_extension).filter(|f| *f == Format::Otio);
+        return extension
+            .and_then(Format::from_extension)
+            .filter(|f| *f == Format::Otio);
     }
     if edl::looks_like_edl(head) {
         return Some(Format::Edl);
     }
-    extension.and_then(Format::from_extension).filter(|f| *f == Format::Edl)
+    extension
+        .and_then(Format::from_extension)
+        .filter(|f| *f == Format::Edl)
 }
 
 /// Error from an importer or exporter. Unsupported *features* never error; they go in the [`Report`].
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum Error {
     #[error("{format} parse error: {message}")]
-    Parse { format: &'static str, message: String },
+    Parse {
+        format: &'static str,
+        message: String,
+    },
     #[error("the document contains no timeline")]
     Empty,
     #[error("no sequence {0:?} in the project")]
@@ -152,7 +182,10 @@ pub enum Error {
 
 impl Error {
     pub(crate) fn parse(format: Format, message: impl Into<String>) -> Error {
-        Error::Parse { format: format.name(), message: message.into() }
+        Error::Parse {
+            format: format.name(),
+            message: message.into(),
+        }
     }
 }
 
@@ -184,10 +217,18 @@ pub struct Report {
 impl Report {
     pub fn push(&mut self, level: Level, message: impl Into<String>) {
         let message = message.into();
-        if let Some(e) = self.entries.iter_mut().find(|e| e.level == level && e.message == message) {
+        if let Some(e) = self
+            .entries
+            .iter_mut()
+            .find(|e| e.level == level && e.message == message)
+        {
             e.count += 1;
         } else {
-            self.entries.push(ReportEntry { level, message, count: 1 });
+            self.entries.push(ReportEntry {
+                level,
+                message,
+                count: 1,
+            });
         }
     }
     pub fn warn(&mut self, message: impl Into<String>) {
@@ -208,7 +249,9 @@ impl Report {
     /// Whether any entry contains `needle` (case-insensitive).
     pub fn mentions(&self, needle: &str) -> bool {
         let n = needle.to_ascii_lowercase();
-        self.entries.iter().any(|e| e.message.to_ascii_lowercase().contains(&n))
+        self.entries
+            .iter()
+            .any(|e| e.message.to_ascii_lowercase().contains(&n))
     }
 }
 
@@ -252,17 +295,35 @@ pub struct ImportOptions {
 
 /// Import a document. `base_dir` resolves relative media paths.
 pub fn import(bytes: &[u8], format: Format, base_dir: Option<&str>) -> Result<(Imported, Report)> {
-    import_with(bytes, format, &ImportOptions { base_dir: base_dir.map(str::to_string), ..Default::default() })
+    import_with(
+        bytes,
+        format,
+        &ImportOptions {
+            base_dir: base_dir.map(str::to_string),
+            ..Default::default()
+        },
+    )
 }
 
 /// Import a document with explicit options.
 ///
 /// AAF and OMF documents may embed audio: [`aaf::import`] / [`omf::import`] also return it.
-pub fn import_with(bytes: &[u8], format: Format, opts: &ImportOptions) -> Result<(Imported, Report)> {
+pub fn import_with(
+    bytes: &[u8],
+    format: Format,
+    opts: &ImportOptions,
+) -> Result<(Imported, Report)> {
     if matches!(format, Format::Aaf | Format::Omf) {
-        let (imported, extracted, mut report) = if format == Format::Aaf { aaf::import(bytes, opts)? } else { omf::import(bytes, opts)? };
+        let (imported, extracted, mut report) = if format == Format::Aaf {
+            aaf::import(bytes, opts)?
+        } else {
+            omf::import(bytes, opts)?
+        };
         if !extracted.is_empty() {
-            report.warn(format!("{} embedded audio file(s) were not extracted", extracted.len()));
+            report.warn(format!(
+                "{} embedded audio file(s) were not extracted",
+                extracted.len()
+            ));
         }
         return Ok((imported, report));
     }
@@ -273,7 +334,9 @@ pub fn import_with(bytes: &[u8], format: Format, opts: &ImportOptions) -> Result
         Format::Fcp7Xml => fcp7::import(&text, opts, &mut report)?,
         Format::Fcpxml => fcpxml::import(&text, opts, &mut report)?,
         Format::Otio => otio::import(&text, opts, &mut report)?,
-        Format::Aaf | Format::Omf => return Err(Error::Other("AAF / OMF are binary documents".into())),
+        Format::Aaf | Format::Omf => {
+            return Err(Error::Other("AAF / OMF are binary documents".into()));
+        }
     };
     Ok((imported, report))
 }
@@ -369,20 +432,45 @@ pub struct ExportOptions {
 
 impl Default for ExportOptions {
     fn default() -> Self {
-        Self { relative_to: None, name: None, edl: EdlOptions::default(), xmeml_version: 4, fcpxml_version: FcpxmlVersion::default() }
+        Self {
+            relative_to: None,
+            name: None,
+            edl: EdlOptions::default(),
+            xmeml_version: 4,
+            fcpxml_version: FcpxmlVersion::default(),
+        }
     }
 }
 
 /// Export `sequence` of `project` (and the media/nested sequences it uses).
-pub fn export(project: &Project, sequence: ItemId, format: Format, opts: &ExportOptions) -> Result<(Vec<u8>, Report)> {
+pub fn export(
+    project: &Project,
+    sequence: ItemId,
+    format: Format,
+    opts: &ExportOptions,
+) -> Result<(Vec<u8>, Report)> {
     if project.sequence(sequence).is_none() {
         return Err(Error::NoSequence(sequence));
     }
     if format == Format::Aaf {
-        return aaf::export(project, sequence, &aaf::AafOptions { name: opts.name.clone(), ..Default::default() });
+        return aaf::export(
+            project,
+            sequence,
+            &aaf::AafOptions {
+                name: opts.name.clone(),
+                ..Default::default()
+            },
+        );
     }
     if format == Format::Omf {
-        return omf::export(project, sequence, &omf::OmfOptions { name: opts.name.clone(), ..Default::default() });
+        return omf::export(
+            project,
+            sequence,
+            &omf::OmfOptions {
+                name: opts.name.clone(),
+                ..Default::default()
+            },
+        );
     }
     let mut report = Report::default();
     let text = match format {
@@ -390,15 +478,23 @@ pub fn export(project: &Project, sequence: ItemId, format: Format, opts: &Export
         Format::Fcp7Xml => fcp7::export(project, sequence, opts, &mut report)?,
         Format::Fcpxml => fcpxml::export(project, sequence, opts, &mut report)?,
         Format::Otio => otio::export(project, sequence, opts, &mut report)?,
-        Format::Aaf | Format::Omf => return Err(Error::Other("AAF / OMF are binary documents".into())),
+        Format::Aaf | Format::Omf => {
+            return Err(Error::Other("AAF / OMF are binary documents".into()));
+        }
     };
     Ok((text.into_bytes(), report))
 }
 
 /// Premiere's "Export ▸ EDL" with one list per video track: returns `(suggested suffix, document)`
 /// for every non-empty video track (`"V1"`, `"V2"`, …). Audio tracks go in the V1 list.
-pub fn export_edl_per_track(project: &Project, sequence: ItemId, opts: &ExportOptions) -> Result<(Vec<(String, Vec<u8>)>, Report)> {
-    let seq = project.sequence(sequence).ok_or(Error::NoSequence(sequence))?;
+pub fn export_edl_per_track(
+    project: &Project,
+    sequence: ItemId,
+    opts: &ExportOptions,
+) -> Result<(Vec<(String, Vec<u8>)>, Report)> {
+    let seq = project
+        .sequence(sequence)
+        .ok_or(Error::NoSequence(sequence))?;
     let mut report = Report::default();
     let mut out = Vec::new();
     for (i, t) in seq.video_tracks.iter().enumerate() {
@@ -424,13 +520,17 @@ pub fn export_edl_per_track(project: &Project, sequence: ItemId, opts: &ExportOp
 /// fragment's root children go into `bin` (or the root). Returns the new ids of the fragment's
 /// top-level sequences.
 pub fn merge_into(target: &mut Project, fragment: Imported, bin: Option<BinId>) -> Vec<ItemId> {
-    let Imported { project: frag, sequences } = fragment;
+    let Imported {
+        project: frag,
+        sequences,
+    } = fragment;
     let mut items: HashMap<ItemId, ItemId> = HashMap::new();
     for id in frag.items.keys() {
         items.insert(*id, ItemId(target.alloc_id()));
     }
     let mut map_u64: HashMap<u64, u64> = HashMap::new();
-    let mut fresh = |target: &mut Project, old: u64| *map_u64.entry(old).or_insert_with(|| target.alloc_id());
+    let mut fresh =
+        |target: &mut Project, old: u64| *map_u64.entry(old).or_insert_with(|| target.alloc_id());
 
     let mut new_items: BTreeMap<ItemId, filmcraft_project::ProjectItem> = BTreeMap::new();
     for (old, mut it) in frag.items {
@@ -479,7 +579,11 @@ pub fn merge_into(target: &mut Project, fragment: Imported, bin: Option<BinId>) 
         }
         new_items.insert(it.id, it);
     }
-    fn remap_bin(b: &mut filmcraft_project::Bin, items: &HashMap<ItemId, ItemId>, target: &mut Project) {
+    fn remap_bin(
+        b: &mut filmcraft_project::Bin,
+        items: &HashMap<ItemId, ItemId>,
+        target: &mut Project,
+    ) {
         for c in &mut b.children {
             match c {
                 BinEntry::Item(i) => *i = items[i],
@@ -498,13 +602,21 @@ pub fn merge_into(target: &mut Project, fragment: Imported, bin: Option<BinId>) 
         None => &mut target.root,
     };
     dest.children.extend(root.children);
-    sequences.iter().filter_map(|s| items.get(s).copied()).collect()
+    sequences
+        .iter()
+        .filter_map(|s| items.get(s).copied())
+        .collect()
 }
 
 /// After probing a media file imported from an EDL (whose source times are absolute timecode),
 /// shift every use of `item` so source times become media-relative: subtracts the media's start
 /// timecode (`start_tc_frames` at `rate`) from `source_in`, frame holds and keyframes.
-pub fn rebase_source_timecode(project: &mut Project, item: ItemId, start_tc_frames: i64, rate: FrameRate) {
+pub fn rebase_source_timecode(
+    project: &mut Project,
+    item: ItemId,
+    start_tc_frames: i64,
+    rate: FrameRate,
+) {
     let off = rate.tick_of(start_tc_frames);
     if off == Tick::ZERO {
         return;

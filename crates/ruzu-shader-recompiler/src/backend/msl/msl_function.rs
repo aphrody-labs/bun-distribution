@@ -191,7 +191,11 @@ mod tests {
         ir.prologue();
         let value = ir.get_cbuf_f32(Value::ImmU32(1), Value::ImmU32(0));
         ir.set_attribute(Attribute::POSITION_X, value, Value::ImmU32(0));
-        ir.set_attribute(Attribute::LAYER, Value::ImmF32(f32::from_bits(2)), Value::ImmU32(0));
+        ir.set_attribute(
+            Attribute::LAYER,
+            Value::ImmF32(f32::from_bits(2)),
+            Value::ImmU32(0),
+        );
         ir.emit_vertex(Value::ImmU32(0));
         ir.end_primitive(Value::ImmU32(0));
         ir.epilogue();
@@ -200,25 +204,57 @@ mod tests {
             language_version: crate::backend::msl::MslVersion::V3_0,
             ..Default::default()
         };
-        let native = emit_msl_with_options_and_bindings(&program, &Profile::default(),
-            &RuntimeInfo::default(), &options, &mut Bindings::default()).unwrap();
-        let callable = emit_msl_geometry_function(&program, &Profile::default(),
-            &RuntimeInfo::default(), &options, &mut Bindings::default()).unwrap();
+        let native = emit_msl_with_options_and_bindings(
+            &program,
+            &Profile::default(),
+            &RuntimeInfo::default(),
+            &options,
+            &mut Bindings::default(),
+        )
+        .unwrap();
+        let callable = emit_msl_geometry_function(
+            &program,
+            &Profile::default(),
+            &RuntimeInfo::default(),
+            &options,
+            &mut Bindings::default(),
+        )
+        .unwrap();
         assert_eq!(native.bindings, callable.bindings);
         assert_eq!(callable.entry_point, "ruzu_geometry");
-        assert_eq!(callable.interface.as_ref().unwrap().kind, MslFunctionKind::GeometryFunction);
-        assert!(callable.source.source.contains("template<typename GeometryOutput>\ninline void ruzu_geometry("));
-        assert!(callable.source.source.contains("const thread MslGeometryPayload& geometry_input"));
-        assert!(callable.source.source.contains("thread GeometryOutput& geometry_mesh"));
+        assert_eq!(
+            callable.interface.as_ref().unwrap().kind,
+            MslFunctionKind::GeometryFunction
+        );
+        assert!(callable
+            .source
+            .source
+            .contains("template<typename GeometryOutput>\ninline void ruzu_geometry("));
+        assert!(callable
+            .source
+            .source
+            .contains("const thread MslGeometryPayload& geometry_input"));
+        assert!(callable
+            .source
+            .source
+            .contains("thread GeometryOutput& geometry_mesh"));
         assert!(!callable.source.source.contains("[[payload]]"));
         assert!(!callable.source.source.contains("[[buffer("));
         assert!(!callable.source.source.contains("metal::mesh<"));
         let body = "    uint geometry_vertex = 0u;";
-        assert_eq!(native.source.source.split_once(body).unwrap().1,
-            callable.source.source.split_once(body).unwrap().1);
+        assert_eq!(
+            native.source.source.split_once(body).unwrap().1,
+            callable.source.source.split_once(body).unwrap().1
+        );
         for stage in [Stage::VertexB, Stage::Fragment, Stage::Compute] {
-            assert!(emit_msl_geometry_function(&Program::new(stage), &Profile::default(),
-                &RuntimeInfo::default(), &options, &mut Bindings::default()).is_err());
+            assert!(emit_msl_geometry_function(
+                &Program::new(stage),
+                &Profile::default(),
+                &RuntimeInfo::default(),
+                &options,
+                &mut Bindings::default()
+            )
+            .is_err());
         }
     }
 

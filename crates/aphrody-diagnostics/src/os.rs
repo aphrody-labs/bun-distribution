@@ -40,7 +40,11 @@ pub async fn os_client() -> miette::Result<Client> {
 /// Fails when the kernel answers with an unexpected shape.
 pub async fn os_snapshot(client: &Client) -> miette::Result<Value> {
     let subsystems = client
-        .request("system/subsystems", serde_json::json!({}), Duration::from_secs(5))
+        .request(
+            "system/subsystems",
+            serde_json::json!({}),
+            Duration::from_secs(5),
+        )
         .await
         .into_diagnostic()?;
     let names: Vec<_> = subsystems["subsystems"]
@@ -85,4 +89,3 @@ fn unavailable_os_snapshot(state: &str, reason: &str) -> Value {
         "policy_enforcement": "not_enforced_by_kernel"
     })
 }
-

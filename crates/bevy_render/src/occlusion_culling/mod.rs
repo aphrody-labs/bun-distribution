@@ -5,10 +5,10 @@
 
 use bevy_app::{App, Plugin};
 use bevy_ecs::{component::Component, entity::Entity, prelude::ReflectComponent};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_shader::load_shader_library;
 
-use crate::{extract_component::ExtractComponent, render_resource::TextureView, RenderApp};
+use crate::{RenderApp, extract_component::ExtractComponent, render_resource::TextureView};
 
 /// Enables GPU occlusion culling.
 ///

@@ -76,7 +76,9 @@ fn expected_dirs(role: &str) -> Vec<String> {
         "accessory" => &["_accessory"],
         _ => &[],
     };
-    dirs.iter().map(|dir| format!("{EDIT_ROOT}/{dir}")).collect()
+    dirs.iter()
+        .map(|dir| format!("{EDIT_ROOT}/{dir}"))
+        .collect()
 }
 
 /// Files in the checkout whose stem is `resource`, under any of `dirs`.
@@ -124,7 +126,10 @@ pub fn plan(slug: &str, generated: &Generated, dump_root: &Path) -> AssemblyPlan
             .cmp(&(right.role.as_str(), right.resource.as_str()))
     });
 
-    let present = requirements.iter().filter(|req| !req.found.is_empty()).count();
+    let present = requirements
+        .iter()
+        .filter(|req| !req.found.is_empty())
+        .count();
     let absent = requirements.len() - present;
 
     let mut gates = Vec::new();
@@ -134,7 +139,12 @@ pub fn plan(slug: &str, generated: &Generated, dump_root: &Path) -> AssemblyPlan
              (NIE_GAME_DIR) ou extraire {EDIT_ROOT} avant tout assemblage"
         ));
     }
-    if generated.document.mdl_parts.iter().any(|part| part.resource_hash == 0) {
+    if generated
+        .document
+        .mdl_parts
+        .iter()
+        .any(|part| part.resource_hash == 0)
+    {
         gates.push(
             "au moins une part porte un hash de nom de ressource à 0 : la fonction de hachage des \
              noms de l'éditeur n'est pas mesurée, la valeur reste à établir avant écriture cfg.bin"
@@ -142,7 +152,10 @@ pub fn plan(slug: &str, generated: &Generated, dump_root: &Path) -> AssemblyPlan
         );
     }
     if !generated.warnings.is_empty() {
-        gates.push(format!("{} avertissements de génération à lever", generated.warnings.len()));
+        gates.push(format!(
+            "{} avertissements de génération à lever",
+            generated.warnings.len()
+        ));
     }
     if !generated.unbound_roles.is_empty() {
         gates.push(format!(

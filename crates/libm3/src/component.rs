@@ -235,7 +235,12 @@ impl Component {
     /// Style of a component that can be selected (chips, tabs, switches, list rows) and is in
     /// `interaction` at the same time: the selected container with the interaction's state layer
     /// on top, as M3 composites them. `Disabled` and `Error` take precedence over selection.
-    pub fn style_with(self, theme: Theme, selected: bool, interaction: Interaction) -> ComponentStyle {
+    pub fn style_with(
+        self,
+        theme: Theme,
+        selected: bool,
+        interaction: Interaction,
+    ) -> ComponentStyle {
         if !selected || matches!(interaction, Interaction::Disabled | Interaction::Error) {
             return self.style(theme, interaction);
         }

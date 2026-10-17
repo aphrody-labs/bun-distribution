@@ -19,7 +19,9 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_geom::{Affine, Anchor, BezPath, CubicBez, ParamCurve, PathData, Point, Rect, Shape, SubPath, Vec2};
+use vectorcraft_geom::{
+    Affine, Anchor, BezPath, CubicBez, ParamCurve, PathData, Point, Rect, Shape, SubPath, Vec2,
+};
 
 use crate::appearance::{Appearance, AppearanceItem, FillLayer};
 use crate::node::{ImageObject, Node, NodeId, NodeKind};
@@ -266,8 +268,8 @@ pub fn default_fidelity() -> f64 {
 // =====================================================================================
 
 pub use crate::blend::{
-    Spine, blend_expand, blend_spine, blend_step_count, lerp_appearance, lerp_color, lerp_node, lerp_paint, lerp_path, pin_spine,
-    steps_knockout_shows,
+    Spine, blend_expand, blend_spine, blend_step_count, lerp_appearance, lerp_color, lerp_node,
+    lerp_paint, lerp_path, pin_spine, steps_knockout_shows,
 };
 
 // =====================================================================================
@@ -321,7 +323,15 @@ impl WarpStyle {
 /// The warp map on normalised coordinates: `b` = bend (-1..1), `dh`/`dv` = distortion (-1..1);
 /// `aspect` is the box's half-height over its half-width along the warp (Arc bends in real
 /// proportions).
-pub fn warp_point(style: WarpStyle, b: f64, dh: f64, dv: f64, aspect: f64, x: f64, y: f64) -> (f64, f64) {
+pub fn warp_point(
+    style: WarpStyle,
+    b: f64,
+    dh: f64,
+    dv: f64,
+    aspect: f64,
+    x: f64,
+    y: f64,
+) -> (f64, f64) {
     use WarpStyle::*;
     let t = (y + 1.0) / 2.0; // 0 at top, 1 at bottom
     let par = 1.0 - x * x; // parabola: 1 at centre, 0 at sides
@@ -334,7 +344,11 @@ pub fn warp_point(style: WarpStyle, b: f64, dh: f64, dv: f64, aspect: f64, x: f6
                 // the box's real proportions (lengths in half-widths, so y counts `aspect` each):
                 // the edges are concentric arcs, and one that would pass the centre stops there
                 // instead of folding over (#1578).
-                let k = if aspect.is_finite() && aspect > 0.0 { aspect } else { 1.0 };
+                let k = if aspect.is_finite() && aspect > 0.0 {
+                    aspect
+                } else {
+                    1.0
+                };
                 let sweep = b.abs() * PI;
                 let r0 = 2.0 / sweep;
                 let yy = if b > 0.0 { y } else { -y } * k;
@@ -352,16 +366,29 @@ pub fn warp_point(style: WarpStyle, b: f64, dh: f64, dv: f64, aspect: f64, x: f6
         ShellLower => (x * (1.0 - 0.5 * b * (1.0 - t)), y + b * par * t),
         ShellUpper => (x * (1.0 - 0.5 * b * t), y - b * par * (1.0 - t)),
         Flag => (x, y + 0.5 * b * (PI * x).sin()),
-        Wave => (x + 0.1 * b * (PI * y).sin(), y + 0.3 * b * (2.0 * PI * x).sin() * (0.5 + 0.5 * t)),
+        Wave => (
+            x + 0.1 * b * (PI * y).sin(),
+            y + 0.3 * b * (2.0 * PI * x).sin() * (0.5 + 0.5 * t),
+        ),
         Fish => (x, y * (1.0 + 0.5 * b * (0.75 * PI * (x + 1.0)).sin())),
         Rise => (x, y - b * ((x + 1.0) / 2.0).powi(2) * 2.0 + b),
         Fisheye => {
             let r2 = x * x + y * y;
-            let s = if r2 < 1.0 { 1.0 + 0.5 * b * (1.0 - r2) } else { 1.0 };
+            let s = if r2 < 1.0 {
+                1.0 + 0.5 * b * (1.0 - r2)
+            } else {
+                1.0
+            };
             (x * s, y * s)
         }
-        Inflate => (x * (1.0 + 0.5 * b * (1.0 - y * y)), y * (1.0 + 0.5 * b * par)),
-        Squeeze => (x * (1.0 - 0.5 * b * (1.0 - y * y)), y * (1.0 + 0.3 * b * par)),
+        Inflate => (
+            x * (1.0 + 0.5 * b * (1.0 - y * y)),
+            y * (1.0 + 0.5 * b * par),
+        ),
+        Squeeze => (
+            x * (1.0 - 0.5 * b * (1.0 - y * y)),
+            y * (1.0 + 0.3 * b * par),
+        ),
         Twist => {
             let r = (x * x + y * y).sqrt();
             let a = -b * PI * 0.5 * (1.0 - r / std::f64::consts::SQRT_2).max(0.0);
@@ -382,7 +409,16 @@ pub fn warp_point(style: WarpStyle, b: f64, dh: f64, dv: f64, aspect: f64, x: f6
 /// Segment as a cubic; straight lines get handles at 1/3 and 2/3 so a non-linear map bends them.
 fn seg_cubic(sp: &SubPath, i: usize) -> CubicBez {
     let c = sp.segment(i);
-    if sp.segment_is_line(i) { CubicBez::new(c.p0, c.p0.lerp(c.p3, 1.0 / 3.0), c.p0.lerp(c.p3, 2.0 / 3.0), c.p3) } else { c }
+    if sp.segment_is_line(i) {
+        CubicBez::new(
+            c.p0,
+            c.p0.lerp(c.p3, 1.0 / 3.0),
+            c.p0.lerp(c.p3, 2.0 / 3.0),
+            c.p3,
+        )
+    } else {
+        c
+    }
 }
 
 fn poly_len(c: &CubicBez) -> f64 {
@@ -418,7 +454,12 @@ pub fn map_nonlinear(path: &PathData, max_piece: f64, f: impl Fn(Point) -> Point
         for i in 0..n {
             let a = &sp.anchors[i];
             let h_in = pending_in.take().unwrap_or_else(|| f(a.h_in));
-            res.push(Anchor { p: f(a.p), h_in, h_out: f(a.h_out), kind: a.kind });
+            res.push(Anchor {
+                p: f(a.p),
+                h_in,
+                h_out: f(a.h_out),
+                kind: a.kind,
+            });
             if i < segs {
                 let c = seg_cubic(sp, i);
                 let k = ((poly_len(&c) / max_piece).ceil() as usize).clamp(1, 64);
@@ -428,7 +469,12 @@ pub fn map_nonlinear(path: &PathData, max_piece: f64, f: impl Fn(Point) -> Point
                         last.h_out = f(sub.p1);
                     }
                     if j + 1 < k {
-                        res.push(Anchor { p: f(sub.p3), h_in: f(sub.p2), h_out: f(sub.p3), kind: Default::default() });
+                        res.push(Anchor {
+                            p: f(sub.p3),
+                            h_in: f(sub.p2),
+                            h_out: f(sub.p3),
+                            kind: Default::default(),
+                        });
                     } else {
                         pending_in = Some(f(sub.p2));
                     }
@@ -441,7 +487,10 @@ pub fn map_nonlinear(path: &PathData, max_piece: f64, f: impl Fn(Point) -> Point
         {
             first.h_in = h;
         }
-        let anchors = res.into_iter().map(|a| Anchor::with_handles(a.p, a.h_in, a.h_out)).collect();
+        let anchors = res
+            .into_iter()
+            .map(|a| Anchor::with_handles(a.p, a.h_in, a.h_out))
+            .collect();
         subs.push(SubPath::new(anchors, sp.closed));
     }
     PathData::new(subs)
@@ -456,7 +505,11 @@ fn flatten_subpath(sp: &SubPath, tol: f64) -> Vec<Point> {
     sp.to_bezpath_into(&mut bp);
     let mut pts: Vec<Point> = Vec::new();
     vectorcraft_geom::kurbo::flatten(bp.iter(), tol, |el| match el {
-        vectorcraft_geom::PathEl::MoveTo(p) | vectorcraft_geom::PathEl::LineTo(p) if pts.last().is_none_or(|q| q.distance(p) > 1e-9) => pts.push(p),
+        vectorcraft_geom::PathEl::MoveTo(p) | vectorcraft_geom::PathEl::LineTo(p)
+            if pts.last().is_none_or(|q| q.distance(p) > 1e-9) =>
+        {
+            pts.push(p)
+        }
         _ => {}
     });
     pts
@@ -474,7 +527,11 @@ fn resample(poly: &[Point], m: usize) -> Vec<Point> {
     let mut out = Vec::with_capacity(m);
     let mut i = 0;
     for k in 0..m {
-        let s = if m > 1 { total * k as f64 / (m - 1) as f64 } else { 0.0 };
+        let s = if m > 1 {
+            total * k as f64 / (m - 1) as f64
+        } else {
+            0.0
+        };
         while i + 2 < cum.len() && cum[i + 1] < s {
             i += 1;
         }
@@ -500,14 +557,32 @@ pub struct Coons {
 impl Coons {
     /// A rectangle.
     pub fn rect(r: Rect) -> Self {
-        let line = |a: Point, b: Point| (0..SIDE).map(|i| a.lerp(b, i as f64 / (SIDE - 1) as f64)).collect::<Vec<_>>();
-        let (tl, tr, br, bl) = (Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1));
-        Self { top: line(tl, tr), right: line(tr, br), bottom: line(bl, br), left: line(tl, bl) }
+        let line = |a: Point, b: Point| {
+            (0..SIDE)
+                .map(|i| a.lerp(b, i as f64 / (SIDE - 1) as f64))
+                .collect::<Vec<_>>()
+        };
+        let (tl, tr, br, bl) = (
+            Point::new(r.x0, r.y0),
+            Point::new(r.x1, r.y0),
+            Point::new(r.x1, r.y1),
+            Point::new(r.x0, r.y1),
+        );
+        Self {
+            top: line(tl, tr),
+            right: line(tr, br),
+            bottom: line(bl, br),
+            left: line(tl, bl),
+        }
     }
 
     pub fn from_path(path: &PathData) -> Option<Self> {
         // The largest subpath is the outline.
-        let sp = path.subpaths.iter().filter(|s| s.anchors.len() >= 2).max_by(|a, b| a.area().abs().total_cmp(&b.area().abs()))?;
+        let sp = path
+            .subpaths
+            .iter()
+            .filter(|s| s.anchors.len() >= 2)
+            .max_by(|a, b| a.area().abs().total_cmp(&b.area().abs()))?;
         let r = path.bounds()?;
         let tol = (r.width() + r.height()).max(1e-6) / 2000.0;
         let mut poly = flatten_subpath(sp, tol);
@@ -530,7 +605,15 @@ impl Coons {
         if area < 0.0 {
             poly.reverse();
         }
-        let nearest = |c: Point| (0..poly.len()).min_by(|i, j| poly[*i].distance_squared(c).total_cmp(&poly[*j].distance_squared(c))).unwrap_or(0);
+        let nearest = |c: Point| {
+            (0..poly.len())
+                .min_by(|i, j| {
+                    poly[*i]
+                        .distance_squared(c)
+                        .total_cmp(&poly[*j].distance_squared(c))
+                })
+                .unwrap_or(0)
+        };
         let tl = nearest(Point::new(r.x0, r.y0));
         let tr = nearest(Point::new(r.x1, r.y0));
         let br = nearest(Point::new(r.x1, r.y1));
@@ -551,7 +634,12 @@ impl Coons {
         bottom.reverse();
         let mut left = resample(&arc(bl, tl), SIDE);
         left.reverse();
-        Some(Self { top, right, bottom, left })
+        Some(Self {
+            top,
+            right,
+            bottom,
+            left,
+        })
     }
 
     /// The point at `u` along a side; past its ends the end segments go on straight (art an
@@ -564,16 +652,35 @@ impl Coons {
 
     /// The surface point at (u, v) ∈ [0,1]².
     pub fn eval(&self, u: f64, v: f64) -> Point {
-        let (t, b, l, r) = (Self::sample(&self.top, u), Self::sample(&self.bottom, u), Self::sample(&self.left, v), Self::sample(&self.right, v));
-        let (p00, p10, p01, p11) = (self.top[0], self.top[SIDE - 1], self.bottom[0], self.bottom[SIDE - 1]);
-        let c = (1.0 - v) * t.to_vec2() + v * b.to_vec2() + (1.0 - u) * l.to_vec2() + u * r.to_vec2()
-            - ((1.0 - u) * (1.0 - v) * p00.to_vec2() + u * (1.0 - v) * p10.to_vec2() + (1.0 - u) * v * p01.to_vec2() + u * v * p11.to_vec2());
+        let (t, b, l, r) = (
+            Self::sample(&self.top, u),
+            Self::sample(&self.bottom, u),
+            Self::sample(&self.left, v),
+            Self::sample(&self.right, v),
+        );
+        let (p00, p10, p01, p11) = (
+            self.top[0],
+            self.top[SIDE - 1],
+            self.bottom[0],
+            self.bottom[SIDE - 1],
+        );
+        let c =
+            (1.0 - v) * t.to_vec2() + v * b.to_vec2() + (1.0 - u) * l.to_vec2() + u * r.to_vec2()
+                - ((1.0 - u) * (1.0 - v) * p00.to_vec2()
+                    + u * (1.0 - v) * p10.to_vec2()
+                    + (1.0 - u) * v * p01.to_vec2()
+                    + u * v * p11.to_vec2());
         c.to_point()
     }
 
     /// The four corners TL, TR, BR, BL.
     pub fn corners(&self) -> [Point; 4] {
-        [self.top[0], self.top[SIDE - 1], self.bottom[SIDE - 1], self.bottom[0]]
+        [
+            self.top[0],
+            self.top[SIDE - 1],
+            self.bottom[SIDE - 1],
+            self.bottom[0],
+        ]
     }
 }
 
@@ -592,15 +699,26 @@ impl GradientMesh {
         r * (self.cols as usize + 1) + c
     }
     pub fn is_valid(&self) -> bool {
-        self.rows >= 1 && self.cols >= 1 && self.points.len() == (self.rows as usize + 1) * (self.cols as usize + 1)
+        self.rows >= 1
+            && self.cols >= 1
+            && self.points.len() == (self.rows as usize + 1) * (self.cols as usize + 1)
     }
 
     /// A 1×1 mesh from its four corners (bottom-left, top-left, top-right, bottom-right in u/v
     /// order: row 0 is v = 0, columns follow u), each with its handles ([`H_RIGHT`] …).
     fn patch(corners: [(Point, [Vec2; 4], Color); 4]) -> Self {
-        let point = |(p, handles, color): (Point, [Vec2; 4], Color)| MeshPoint { p, color, opacity: 1.0, handles };
+        let point = |(p, handles, color): (Point, [Vec2; 4], Color)| MeshPoint {
+            p,
+            color,
+            opacity: 1.0,
+            handles,
+        };
         let [a, b, c, d] = corners;
-        Self { rows: 1, cols: 1, points: vec![point(a), point(d), point(b), point(c)] }
+        Self {
+            rows: 1,
+            cols: 1,
+            points: vec![point(a), point(d), point(b), point(c)],
+        }
     }
 
     /// A 1×1 mesh from a Coons patch's twelve boundary points (in the order PDF and PostScript
@@ -618,10 +736,18 @@ impl GradientMesh {
         };
         let [c0, c1, c2, c3] = colors;
         Some(Self::patch([
-            (cp[0], handles(h(0, 11), Vec2::ZERO, h(0, 1), Vec2::ZERO), c0),
+            (
+                cp[0],
+                handles(h(0, 11), Vec2::ZERO, h(0, 1), Vec2::ZERO),
+                c0,
+            ),
             (cp[3], handles(h(3, 4), Vec2::ZERO, Vec2::ZERO, h(3, 2)), c1),
             (cp[6], handles(Vec2::ZERO, h(6, 5), Vec2::ZERO, h(6, 7)), c2),
-            (cp[9], handles(Vec2::ZERO, h(9, 10), h(9, 8), Vec2::ZERO), c3),
+            (
+                cp[9],
+                handles(Vec2::ZERO, h(9, 10), h(9, 8), Vec2::ZERO),
+                c3,
+            ),
         ]))
     }
 
@@ -636,7 +762,12 @@ impl GradientMesh {
     }
 
     /// A mesh over surface `s` (u, v ∈ [0,1]) with handles from its partial derivatives.
-    pub fn from_surface(rows: u32, cols: u32, s: &dyn Fn(f64, f64) -> Point, color: &dyn Fn(f64, f64) -> Color) -> Self {
+    pub fn from_surface(
+        rows: u32,
+        cols: u32,
+        s: &dyn Fn(f64, f64) -> Point,
+        color: &dyn Fn(f64, f64) -> Color,
+    ) -> Self {
         let (us, vs) = (even_steps(cols), even_steps(rows));
         Self::from_grid(&us, &vs, s, &|r, c, _| (color(us[c], vs[r]), 1.0))
     }
@@ -645,18 +776,27 @@ impl GradientMesh {
     /// (ascending, at least two each; equal neighbours make a patch of no width, a sharp colour
     /// change), with handles from its partial derivatives. `color(row, col, point)` gives each
     /// point its colour and opacity.
-    pub fn from_grid(us: &[f64], vs: &[f64], s: &dyn Fn(f64, f64) -> Point, color: &dyn Fn(usize, usize, Point) -> (Color, f32)) -> Self {
+    pub fn from_grid(
+        us: &[f64],
+        vs: &[f64],
+        s: &dyn Fn(f64, f64) -> Point,
+        color: &dyn Fn(usize, usize, Point) -> (Color, f32),
+    ) -> Self {
         let (rows, cols) = (vs.len().saturating_sub(1), us.len().saturating_sub(1));
         let eps = 1e-3;
         let mut points = Vec::with_capacity(us.len() * vs.len());
         for (r, &v) in vs.iter().enumerate() {
             for (c, &u) in us.iter().enumerate() {
                 let p = s(u, v);
-                let d_u = (s((u + eps).min(1.0), v) - s((u - eps).max(0.0), v)) / ((u + eps).min(1.0) - (u - eps).max(0.0));
-                let d_v = (s(u, (v + eps).min(1.0)) - s(u, (v - eps).max(0.0))) / ((v + eps).min(1.0) - (v - eps).max(0.0));
+                let d_u = (s((u + eps).min(1.0), v) - s((u - eps).max(0.0), v))
+                    / ((u + eps).min(1.0) - (u - eps).max(0.0));
+                let d_v = (s(u, (v + eps).min(1.0)) - s(u, (v - eps).max(0.0)))
+                    / ((v + eps).min(1.0) - (v - eps).max(0.0));
                 // A third of the way to the neighbouring line along the tangent; outward handles on
                 // the border are unused, so they stay at the point.
-                let h = |d: Vec2, from: f64, to: Option<&f64>| to.map_or(Vec2::ZERO, |to| d * ((to - from) / 3.0));
+                let h = |d: Vec2, from: f64, to: Option<&f64>| {
+                    to.map_or(Vec2::ZERO, |to| d * ((to - from) / 3.0))
+                };
                 let handles = [
                     h(d_u, u, us.get(c + 1)),
                     h(d_u, u, c.checked_sub(1).map(|i| &us[i])),
@@ -664,14 +804,30 @@ impl GradientMesh {
                     h(d_v, v, r.checked_sub(1).map(|i| &vs[i])),
                 ];
                 let (color, opacity) = color(r, c, p);
-                points.push(MeshPoint { p, color, opacity, handles });
+                points.push(MeshPoint {
+                    p,
+                    color,
+                    opacity,
+                    handles,
+                });
             }
         }
-        Self { rows: rows as u32, cols: cols as u32, points }
+        Self {
+            rows: rows as u32,
+            cols: cols as u32,
+            points,
+        }
     }
 
     /// Create Gradient Mesh for a path: the outline split at its corners, coloured per `appearance`.
-    pub fn for_path(path: &PathData, rows: u32, cols: u32, base: Color, appearance: MeshAppearance, highlight: f64) -> Option<Self> {
+    pub fn for_path(
+        path: &PathData,
+        rows: u32,
+        cols: u32,
+        base: Color,
+        appearance: MeshAppearance,
+        highlight: f64,
+    ) -> Option<Self> {
         let mut m = Self::for_path_with(path, rows, cols, &|_| (base, 1.0))?;
         m.highlight(appearance, highlight);
         Some(m)
@@ -679,9 +835,19 @@ impl GradientMesh {
 
     /// Create Gradient Mesh for a path: the outline split at its corners, each point taking the
     /// colour and opacity `color_at` gives at its position (a gradient fill's, say).
-    pub fn for_path_with(path: &PathData, rows: u32, cols: u32, color_at: &dyn Fn(Point) -> (Color, f32)) -> Option<Self> {
+    pub fn for_path_with(
+        path: &PathData,
+        rows: u32,
+        cols: u32,
+        color_at: &dyn Fn(Point) -> (Color, f32),
+    ) -> Option<Self> {
         let coons = Coons::from_path(path)?;
-        Some(Self::from_grid(&even_steps(cols), &even_steps(rows), &|u, v| coons.eval(u, v), &|_, _, p| color_at(p)))
+        Some(Self::from_grid(
+            &even_steps(cols),
+            &even_steps(rows),
+            &|u, v| coons.eval(u, v),
+            &|_, _, p| color_at(p),
+        ))
     }
 
     /// Create Gradient Mesh → Appearance: lighten the points towards white, to the centre or to
@@ -708,12 +874,18 @@ impl GradientMesh {
 
     /// Horizontal edge from (r, c) to (r, c+1).
     pub fn edge_u(&self, r: usize, c: usize) -> CubicBez {
-        let (a, b) = (&self.points[self.idx(r, c)], &self.points[self.idx(r, c + 1)]);
+        let (a, b) = (
+            &self.points[self.idx(r, c)],
+            &self.points[self.idx(r, c + 1)],
+        );
         CubicBez::new(a.p, a.p + a.handles[H_RIGHT], b.p + b.handles[H_LEFT], b.p)
     }
     /// Vertical edge from (r, c) to (r+1, c).
     pub fn edge_v(&self, r: usize, c: usize) -> CubicBez {
-        let (a, b) = (&self.points[self.idx(r, c)], &self.points[self.idx(r + 1, c)]);
+        let (a, b) = (
+            &self.points[self.idx(r, c)],
+            &self.points[self.idx(r + 1, c)],
+        );
         CubicBez::new(a.p, a.p + a.handles[H_DOWN], b.p + b.handles[H_UP], b.p)
     }
 
@@ -726,14 +898,21 @@ impl GradientMesh {
         let p01 = self.points[self.idx(r + 1, c)].p.to_vec2();
         let p11 = self.points[self.idx(r + 1, c + 1)].p.to_vec2();
         ((1.0 - v) * t.to_vec2() + v * b.to_vec2() + (1.0 - u) * l.to_vec2() + u * rr.to_vec2()
-            - ((1.0 - u) * (1.0 - v) * p00 + u * (1.0 - v) * p10 + (1.0 - u) * v * p01 + u * v * p11))
+            - ((1.0 - u) * (1.0 - v) * p00
+                + u * (1.0 - v) * p10
+                + (1.0 - u) * v * p01
+                + u * v * p11))
             .to_point()
     }
 
     /// Bilinear colour and opacity of patch (r, c) at local (u, v).
     pub fn color_at(&self, r: usize, c: usize, u: f64, v: f64) -> (Color, f32) {
-        let q =
-            [&self.points[self.idx(r, c)], &self.points[self.idx(r, c + 1)], &self.points[self.idx(r + 1, c)], &self.points[self.idx(r + 1, c + 1)]];
+        let q = [
+            &self.points[self.idx(r, c)],
+            &self.points[self.idx(r, c + 1)],
+            &self.points[self.idx(r + 1, c)],
+            &self.points[self.idx(r + 1, c + 1)],
+        ];
         let w = [(1.0 - u) * (1.0 - v), u * (1.0 - v), (1.0 - u) * v, u * v];
         let mut rgb = [0.0f32; 3];
         let mut op = 0.0f32;
@@ -759,14 +938,24 @@ impl GradientMesh {
             for c in 0..self.cols as usize {
                 for j in 0..=n {
                     for i in 0..=n {
-                        grid[j * (n + 1) + i] = self.eval(r, c, i as f64 / n as f64, j as f64 / n as f64);
+                        grid[j * (n + 1) + i] =
+                            self.eval(r, c, i as f64 / n as f64, j as f64 / n as f64);
                     }
                 }
                 for j in 0..n {
                     for i in 0..n {
-                        let (color, opacity) = self.color_at(r, c, (i as f64 + 0.5) / n as f64, (j as f64 + 0.5) / n as f64);
+                        let (color, opacity) = self.color_at(
+                            r,
+                            c,
+                            (i as f64 + 0.5) / n as f64,
+                            (j as f64 + 0.5) / n as f64,
+                        );
                         let g = |a: usize, b: usize| grid[b * (n + 1) + a];
-                        out.push(MeshQuad { pts: [g(i, j), g(i + 1, j), g(i + 1, j + 1), g(i, j + 1)], color, opacity });
+                        out.push(MeshQuad {
+                            pts: [g(i, j), g(i + 1, j), g(i + 1, j + 1), g(i, j + 1)],
+                            color,
+                            opacity,
+                        });
                     }
                 }
             }
@@ -810,7 +999,15 @@ impl GradientMesh {
         }
         let (rows, cols) = (self.rows as usize, self.cols as usize);
         let mut subs = vec![];
-        let cub = |e: CubicBez| SubPath::new(vec![Anchor::with_handles(e.p0, e.p0, e.p1), Anchor::with_handles(e.p3, e.p2, e.p3)], false);
+        let cub = |e: CubicBez| {
+            SubPath::new(
+                vec![
+                    Anchor::with_handles(e.p0, e.p0, e.p1),
+                    Anchor::with_handles(e.p3, e.p2, e.p3),
+                ],
+                false,
+            )
+        };
         for r in 0..=rows {
             for c in 0..cols {
                 subs.push(cub(self.edge_u(r, c)));
@@ -826,7 +1023,10 @@ impl GradientMesh {
 
     /// Control bounds (points and handles).
     pub fn bounds(&self) -> Option<Rect> {
-        let mut it = self.points.iter().flat_map(|p| std::iter::once(p.p).chain(p.handles.iter().map(move |h| p.p + *h)));
+        let mut it = self
+            .points
+            .iter()
+            .flat_map(|p| std::iter::once(p.p).chain(p.handles.iter().map(move |h| p.p + *h)));
         let first = it.next()?;
         Some(it.fold(Rect::from_points(first, first), |r, q| r.union_pt(q)))
     }
@@ -886,7 +1086,9 @@ impl GradientMesh {
             let mut improved = false;
             for (du, dv) in [(step, 0.0), (-step, 0.0), (0.0, step), (0.0, -step)] {
                 let (nu, nv) = ((u + du).clamp(0.0, 1.0), (v + dv).clamp(0.0, 1.0));
-                if self.eval(r, c, nu, nv).distance_squared(p) < self.eval(r, c, u, v).distance_squared(p) {
+                if self.eval(r, c, nu, nv).distance_squared(p)
+                    < self.eval(r, c, u, v).distance_squared(p)
+                {
                     u = nu;
                     v = nv;
                     improved = true;
@@ -935,9 +1137,22 @@ impl GradientMesh {
             let u = if c == cols { 1.0 } else { 0.0 };
             let (color, opacity) = self.color_at(r, pc, u, v);
             // Horizontal handles: isocurve derivatives on either side.
-            let right = if c < cols { self.surface_du(r, c, 0.0, v) / (3.0) } else { Vec2::ZERO };
-            let left = if c > 0 { -self.surface_du(r, c - 1, 1.0, v) / 3.0 } else { Vec2::ZERO };
-            row.push(MeshPoint { p: l.p3, color, opacity, handles: [right, left, rr.p1 - rr.p0, l.p2 - l.p3] });
+            let right = if c < cols {
+                self.surface_du(r, c, 0.0, v) / (3.0)
+            } else {
+                Vec2::ZERO
+            };
+            let left = if c > 0 {
+                -self.surface_du(r, c - 1, 1.0, v) / 3.0
+            } else {
+                Vec2::ZERO
+            };
+            row.push(MeshPoint {
+                p: l.p3,
+                color,
+                opacity,
+                handles: [right, left, rr.p1 - rr.p0, l.p2 - l.p3],
+            });
         }
         for (c, (down, up)) in ups.into_iter().enumerate() {
             let i0 = self.idx(r, c);
@@ -961,9 +1176,26 @@ impl GradientMesh {
             let pr = r.min(rows - 1);
             let v = if r == rows { 1.0 } else { 0.0 };
             let (color, opacity) = self.color_at(pr, c, u, v);
-            let down = if r < rows { self.surface_dv(r, c, u, 0.0) / 3.0 } else { Vec2::ZERO };
-            let up = if r > 0 { -self.surface_dv(r - 1, c, u, 1.0) / 3.0 } else { Vec2::ZERO };
-            col.push((MeshPoint { p: l.p3, color, opacity, handles: [rr.p1 - rr.p0, l.p2 - l.p3, down, up] }, l.p1 - l.p0, rr.p2 - rr.p3));
+            let down = if r < rows {
+                self.surface_dv(r, c, u, 0.0) / 3.0
+            } else {
+                Vec2::ZERO
+            };
+            let up = if r > 0 {
+                -self.surface_dv(r - 1, c, u, 1.0) / 3.0
+            } else {
+                Vec2::ZERO
+            };
+            col.push((
+                MeshPoint {
+                    p: l.p3,
+                    color,
+                    opacity,
+                    handles: [rr.p1 - rr.p0, l.p2 - l.p3, down, up],
+                },
+                l.p1 - l.p0,
+                rr.p2 - rr.p3,
+            ));
         }
         let cols = self.cols as usize;
         let mut pts = Vec::with_capacity((rows + 1) * (cols + 2));
@@ -1022,7 +1254,11 @@ impl GradientMesh {
                 let above = self.idx(r - 1, cc);
                 let below = self.idx(r + 1, cc);
                 let mid = self.idx(r, cc);
-                let (pa, pm, pb) = (self.points[above].p, self.points[mid].p, self.points[below].p);
+                let (pa, pm, pb) = (
+                    self.points[above].p,
+                    self.points[mid].p,
+                    self.points[below].p,
+                );
                 let _ = pm;
                 self.points[above].handles[H_DOWN] = (pb - pa) / 3.0;
                 self.points[below].handles[H_UP] = (pa - pb) / 3.0;
@@ -1059,7 +1295,9 @@ impl GradientMesh {
 
 /// Union of the geometric bounds of `nodes`.
 pub fn nodes_bounds(nodes: &[Arc<Node>]) -> Option<Rect> {
-    nodes.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.geometric_bounds()))
+    nodes.iter().fold(None, |acc, c| {
+        vectorcraft_geom::union_opt(acc, c.geometric_bounds())
+    })
 }
 
 /// A `(rows+1)×(cols+1)` grid over `r` (row-major).
@@ -1067,7 +1305,10 @@ pub fn grid_points(r: Rect, rows: u32, cols: u32) -> Vec<Point> {
     let mut v = Vec::with_capacity(((rows + 1) * (cols + 1)) as usize);
     for i in 0..=rows {
         for j in 0..=cols {
-            v.push(Point::new(r.x0 + r.width() * j as f64 / cols.max(1) as f64, r.y0 + r.height() * i as f64 / rows.max(1) as f64));
+            v.push(Point::new(
+                r.x0 + r.width() * j as f64 / cols.max(1) as f64,
+                r.y0 + r.height() * i as f64 / rows.max(1) as f64,
+            ));
         }
     }
     v
@@ -1076,7 +1317,10 @@ pub fn grid_points(r: Rect, rows: u32, cols: u32) -> Vec<Point> {
 fn catmull(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2, t: f64) -> Vec2 {
     let t2 = t * t;
     let t3 = t2 * t;
-    0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2 + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3)
+    0.5 * (2.0 * p1
+        + (p2 - p0) * t
+        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+        + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3)
 }
 
 /// Point map from the unit square onto a point grid (tensor-product Catmull-Rom; linear
@@ -1092,17 +1336,22 @@ fn grid_eval(rows: usize, cols: usize, pts: &[Point], u: f64, v: f64) -> Point {
         let mut p = base;
         if er != 0 && rows >= 1 {
             let inner = (rr - er.signum()).clamp(0, rows as i64);
-            p += (base - pts[inner as usize * (cols + 1) + cc as usize].to_vec2()) * er.abs() as f64;
+            p +=
+                (base - pts[inner as usize * (cols + 1) + cc as usize].to_vec2()) * er.abs() as f64;
         }
         if ec != 0 && cols >= 1 {
             let inner = (cc - ec.signum()).clamp(0, cols as i64);
-            p += (base - pts[rr as usize * (cols + 1) + inner as usize].to_vec2()) * ec.abs() as f64;
+            p +=
+                (base - pts[rr as usize * (cols + 1) + inner as usize].to_vec2()) * ec.abs() as f64;
         }
         p
     };
     // Past the grid's edges the outer patches go on (art can reach past the content's box).
     let (su, sv) = (u * cols as f64, v * rows as f64);
-    let (ci, ri) = ((su.floor() as i64).clamp(0, cols as i64 - 1), (sv.floor() as i64).clamp(0, rows as i64 - 1));
+    let (ci, ri) = (
+        (su.floor() as i64).clamp(0, cols as i64 - 1),
+        (sv.floor() as i64).clamp(0, rows as i64 - 1),
+    );
     let (fu, fv) = (su - ci as f64, sv - ri as f64);
     let mut rowsv = [Vec2::ZERO; 4];
     for (k, rv) in rowsv.iter_mut().enumerate() {
@@ -1115,13 +1364,28 @@ fn grid_eval(rows: usize, cols: usize, pts: &[Point], u: f64, v: f64) -> Point {
 /// The surface (u, v ∈ [0,1]) an envelope of `kind` maps content onto, for content whose bounds in
 /// the envelope's own `frame` (its axes → the document) are `src`: a warp bends along the frame's
 /// axes; a mesh's points and a top object's path are in the document already.
-fn surface_of<'a>(kind: &'a EnvelopeKind, src: Rect, frame: Affine) -> Box<dyn Fn(f64, f64) -> Point + 'a> {
-    let flat = move |u: f64, v: f64| frame * Point::new(src.x0 + u * src.width(), src.y0 + v * src.height());
+fn surface_of<'a>(
+    kind: &'a EnvelopeKind,
+    src: Rect,
+    frame: Affine,
+) -> Box<dyn Fn(f64, f64) -> Point + 'a> {
+    let flat = move |u: f64, v: f64| {
+        frame * Point::new(src.x0 + u * src.width(), src.y0 + v * src.height())
+    };
     match kind {
-        EnvelopeKind::Warp { style, bend, h: dh, v: dv, horizontal } => {
+        EnvelopeKind::Warp {
+            style,
+            bend,
+            h: dh,
+            v: dv,
+            horizontal,
+        } => {
             let st = WarpStyle::from_id(style).unwrap_or(WarpStyle::Arc);
             let b = bend.clamp(-100.0, 100.0) / 100.0;
-            let (dh, dv) = (dh.clamp(-100.0, 100.0) / 100.0, dv.clamp(-100.0, 100.0) / 100.0);
+            let (dh, dv) = (
+                dh.clamp(-100.0, 100.0) / 100.0,
+                dv.clamp(-100.0, 100.0) / 100.0,
+            );
             let c = src.center();
             let (hw, hh) = (src.width() / 2.0, src.height() / 2.0);
             let horizontal = *horizontal;
@@ -1136,13 +1400,21 @@ fn surface_of<'a>(kind: &'a EnvelopeKind, src: Rect, frame: Affine) -> Box<dyn F
                 frame * Point::new(c.x + x2 * hw, c.y + y2 * hh)
             })
         }
-        EnvelopeKind::Mesh { rows, cols, points, handles } => {
+        EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points,
+            handles,
+        } => {
             if !handles.is_empty()
                 && let Some(m) = envelope_grid(*rows, *cols, points, handles)
             {
                 return Box::new(move |u: f64, v: f64| mesh_at(&m, u, v));
             }
-            if *rows == 0 || *cols == 0 || points.len() as u64 != (u64::from(*rows) + 1) * (u64::from(*cols) + 1) {
+            if *rows == 0
+                || *cols == 0
+                || points.len() as u64 != (u64::from(*rows) + 1) * (u64::from(*cols) + 1)
+            {
                 return Box::new(flat);
             }
             let (rows, cols) = (*rows as usize, *cols as usize);
@@ -1178,12 +1450,25 @@ pub fn smooth_handles(rows: u32, cols: u32, points: &[Point]) -> Vec<[Vec2; 4]> 
     for r in 0..=rows {
         for c in 0..=cols {
             let p = at(r, c);
-            let du = tangent(c.checked_sub(1).map(|c| at(r, c)), p, (c < cols).then(|| at(r, c + 1))) / 3.0;
-            let dv = tangent(r.checked_sub(1).map(|r| at(r, c)), p, (r < rows).then(|| at(r + 1, c))) / 3.0;
+            let du = tangent(
+                c.checked_sub(1).map(|c| at(r, c)),
+                p,
+                (c < cols).then(|| at(r, c + 1)),
+            ) / 3.0;
+            let dv = tangent(
+                r.checked_sub(1).map(|r| at(r, c)),
+                p,
+                (r < rows).then(|| at(r + 1, c)),
+            ) / 3.0;
             // Handles pointing out of the grid are unused: they stay at the point.
             let keep = |inside: bool, d: Vec2| if inside { d } else { Vec2::ZERO };
             let mut h = [Vec2::ZERO; 4];
-            (h[H_RIGHT], h[H_LEFT], h[H_DOWN], h[H_UP]) = (keep(c < cols, du), keep(c > 0, -du), keep(r < rows, dv), keep(r > 0, -dv));
+            (h[H_RIGHT], h[H_LEFT], h[H_DOWN], h[H_UP]) = (
+                keep(c < cols, du),
+                keep(c > 0, -du),
+                keep(r < rows, dv),
+                keep(r > 0, -dv),
+            );
             out.push(h);
         }
     }
@@ -1193,9 +1478,17 @@ pub fn smooth_handles(rows: u32, cols: u32, points: &[Point]) -> Vec<[Vec2; 4]> 
 /// A mesh envelope's grid (`rows`×`cols` patches, `points` and their `handles`; without handles
 /// the smooth ones, see [`smooth_handles`]) as a gradient mesh with black points: what the
 /// canvas draws and the Mesh tool and Direct Selection edit. `None` for a malformed grid.
-pub fn envelope_grid(rows: u32, cols: u32, points: &[Point], handles: &[[Vec2; 4]]) -> Option<GradientMesh> {
+pub fn envelope_grid(
+    rows: u32,
+    cols: u32,
+    points: &[Point],
+    handles: &[[Vec2; 4]],
+) -> Option<GradientMesh> {
     // (Counts come from files: no overflow on 32-bit targets.)
-    if rows == 0 || cols == 0 || points.len() as u64 != (u64::from(rows) + 1) * (u64::from(cols) + 1) {
+    if rows == 0
+        || cols == 0
+        || points.len() as u64 != (u64::from(rows) + 1) * (u64::from(cols) + 1)
+    {
         return None;
     }
     let smooth;
@@ -1205,7 +1498,16 @@ pub fn envelope_grid(rows: u32, cols: u32, points: &[Point], handles: &[[Vec2; 4
         smooth = smooth_handles(rows, cols, points);
         &smooth
     };
-    let points = points.iter().zip(handles).map(|(p, h)| MeshPoint { p: *p, color: Color::BLACK, opacity: 1.0, handles: *h }).collect();
+    let points = points
+        .iter()
+        .zip(handles)
+        .map(|(p, h)| MeshPoint {
+            p: *p,
+            color: Color::BLACK,
+            opacity: 1.0,
+            handles: *h,
+        })
+        .collect();
     Some(GradientMesh { rows, cols, points })
 }
 
@@ -1214,26 +1516,42 @@ pub fn envelope_grid(rows: u32, cols: u32, points: &[Point], handles: &[[Vec2; 4
 fn mesh_at(m: &GradientMesh, u: f64, v: f64) -> Point {
     let (rows, cols) = (m.rows.max(1) as i64, m.cols.max(1) as i64);
     let (su, sv) = (u * cols as f64, v * rows as f64);
-    let (c, r) = ((su.floor() as i64).clamp(0, cols - 1), (sv.floor() as i64).clamp(0, rows - 1));
+    let (c, r) = (
+        (su.floor() as i64).clamp(0, cols - 1),
+        (sv.floor() as i64).clamp(0, rows - 1),
+    );
     m.eval(r as usize, c as usize, su - c as f64, sv - r as f64)
 }
 
 /// The envelope `id` is, or the innermost one it sits in.
 pub fn envelope_of(doc: &crate::Document, id: NodeId) -> Option<&Node> {
-    doc.ancestry(id)?.into_iter().rev().find_map(|a| doc.node(a).filter(|n| matches!(n.kind, NodeKind::Envelope { .. })))
+    doc.ancestry(id)?.into_iter().rev().find_map(|a| {
+        doc.node(a)
+            .filter(|n| matches!(n.kind, NodeKind::Envelope { .. }))
+    })
 }
 
 /// What a selected envelope shows on the canvas: its mesh lines (a warp's surface on a 4×4 grid,
 /// a mesh envelope's own grid) or its top object's outline, and for a mesh envelope the grid to
 /// edit (its points and handles).
 pub fn envelope_overlay(n: &Node) -> Option<(PathData, Option<GradientMesh>)> {
-    let NodeKind::Envelope { kind, .. } = &n.kind else { return None };
+    let NodeKind::Envelope { kind, .. } = &n.kind else {
+        return None;
+    };
     match &**kind {
-        EnvelopeKind::Mesh { rows, cols, points, handles } => {
+        EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points,
+            handles,
+        } => {
             let grid = envelope_grid(*rows, *cols, points, handles)?;
             Some((grid.lines(), Some(grid)))
         }
-        EnvelopeKind::Warp { .. } => Some((EnvelopeMap::of(n)?.surface_mesh(4, 4, Color::BLACK).lines(), None)),
+        EnvelopeKind::Warp { .. } => Some((
+            EnvelopeMap::of(n)?.surface_mesh(4, 4, Color::BLACK).lines(),
+            None,
+        )),
         EnvelopeKind::TopObject { path } => Some((path.clone(), None)),
     }
 }
@@ -1243,7 +1561,11 @@ pub fn envelope_overlay(n: &Node) -> Option<(PathData, Option<GradientMesh>)> {
 /// the page axes gives the same result then.
 pub fn envelope_frame(m: Affine) -> Affine {
     let [a, b, c, d, _, _] = m.as_coeffs();
-    if b.abs() < 1e-12 && c.abs() < 1e-12 && a > 0.0 && d > 0.0 { Affine::IDENTITY } else { m }
+    if b.abs() < 1e-12 && c.abs() < 1e-12 && a > 0.0 && d > 0.0 {
+        Affine::IDENTITY
+    } else {
+        m
+    }
 }
 
 /// An envelope's point map: content placed in the envelope's own frame maps, by its bounds there,
@@ -1259,7 +1581,11 @@ impl<'a> EnvelopeMap<'a> {
     /// The map of an envelope of `kind` around `content` with `frame`. `None` when the content
     /// has no bounds.
     pub fn new(content: &[Arc<Node>], kind: &'a EnvelopeKind, frame: Affine) -> Option<Self> {
-        let frame = if frame.is_finite() && frame.determinant().abs() > 1e-12 { frame } else { Affine::IDENTITY };
+        let frame = if frame.is_finite() && frame.determinant().abs() > 1e-12 {
+            frame
+        } else {
+            Affine::IDENTITY
+        };
         let to_frame = frame.inverse();
         let src = if frame == Affine::IDENTITY {
             nodes_bounds(content)?
@@ -1270,13 +1596,23 @@ impl<'a> EnvelopeMap<'a> {
                 Some(vectorcraft_geom::union_opt(acc, m.geometric_bounds()))
             })??
         };
-        Some(Self { src, frame, to_frame, surface: surface_of(kind, src, frame) })
+        Some(Self {
+            src,
+            frame,
+            to_frame,
+            surface: surface_of(kind, src, frame),
+        })
     }
 
     /// The map of envelope node `n` (`None` for other nodes).
     pub fn of(n: &'a Node) -> Option<Self> {
         match &n.kind {
-            NodeKind::Envelope { content, kind, frame, .. } => Self::new(content, kind, **frame),
+            NodeKind::Envelope {
+                content,
+                kind,
+                frame,
+                ..
+            } => Self::new(content, kind, **frame),
             _ => None,
         }
     }
@@ -1300,7 +1636,10 @@ impl<'a> EnvelopeMap<'a> {
 
     /// A flat `(rows+1)×(cols+1)` grid over the content, in the envelope's frame (row-major).
     pub fn grid(&self, rows: u32, cols: u32) -> Vec<Point> {
-        grid_points(self.src, rows, cols).into_iter().map(|p| self.frame * p).collect()
+        grid_points(self.src, rows, cols)
+            .into_iter()
+            .map(|p| self.frame * p)
+            .collect()
     }
 
     /// The surface sampled on a `rows`×`cols` grid as a mesh whose handles follow it and whose
@@ -1345,7 +1684,10 @@ pub struct Hooks<'a> {
 
 impl<'a> From<Outliner<'a>> for Hooks<'a> {
     fn from(outline: Outliner<'a>) -> Self {
-        Self { outline, ..Default::default() }
+        Self {
+            outline,
+            ..Default::default()
+        }
     }
 }
 
@@ -1381,7 +1723,10 @@ struct Warper<'a> {
 impl Warper<'_> {
     /// This warper one hook deeper (`None` past [`MAX_HOOK_DEPTH`]).
     fn deeper(&self) -> Option<Self> {
-        (self.depth < MAX_HOOK_DEPTH).then_some(Self { depth: self.depth + 1, ..*self })
+        (self.depth < MAX_HOOK_DEPTH).then_some(Self {
+            depth: self.depth + 1,
+            ..*self
+        })
     }
 }
 
@@ -1413,7 +1758,13 @@ fn map_node(n: &Node, w: &Warper) -> Node {
         && let Some(d) = &deeper
         && let Some(o) = w.hooks.pattern.and_then(|p| pattern_art(n, p))
     {
-        let inner = Warper { options: EnvelopeOptions { distort_pattern_fills: false, ..d.options }, ..*d };
+        let inner = Warper {
+            options: EnvelopeOptions {
+                distort_pattern_fills: false,
+                ..d.options
+            },
+            ..*d
+        };
         return map_node(&o, &inner);
     }
     let mut out = n.clone();
@@ -1421,7 +1772,8 @@ fn map_node(n: &Node, w: &Warper) -> Node {
     if w.options.gradients()
         && let Some(b) = n.geometric_bounds()
     {
-        out.appearance.warp_linear_gradients(b, &|p| affine_near(w.f, p, w.eps));
+        out.appearance
+            .warp_linear_gradients(b, &|p| affine_near(w.f, p, w.eps));
     }
     if let Some(m) = out.extras_if_any().and_then(|e| e.mask.as_mut()) {
         m.art = Arc::new(map_node(&m.art, w));
@@ -1431,7 +1783,9 @@ fn map_node(n: &Node, w: &Warper) -> Node {
             *path = map_nonlinear(path, w.piece, w.f);
             *live = None;
         }
-        NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
+        NodeKind::Layer { children, .. }
+        | NodeKind::Group { children, .. }
+        | NodeKind::Compound { children, .. } => {
             for c in children.iter_mut() {
                 *c = Arc::new(map_node(c, w));
             }
@@ -1461,7 +1815,16 @@ fn map_node(n: &Node, w: &Warper) -> Node {
 
 /// The affine map taking triangle `s` to triangle `d` (`None` when `s` is degenerate).
 fn affine_between(s: [Point; 3], d: [Point; 3]) -> Option<Affine> {
-    let basis = |p: [Point; 3]| Affine::new([p[1].x - p[0].x, p[1].y - p[0].y, p[2].x - p[0].x, p[2].y - p[0].y, p[0].x, p[0].y]);
+    let basis = |p: [Point; 3]| {
+        Affine::new([
+            p[1].x - p[0].x,
+            p[1].y - p[0].y,
+            p[2].x - p[0].x,
+            p[2].y - p[0].y,
+            p[0].x,
+            p[0].y,
+        ])
+    };
     let bs = basis(s);
     if bs.determinant().abs() < 1e-12 {
         return None;
@@ -1485,28 +1848,53 @@ fn warp_image(n: &Node, im: &ImageObject, w: &Warper) -> Node {
             let d = s.map(|p| (w.f)(im.xf * p));
             for t in [[0, 1, 2], [0, 2, 3]] {
                 let (st, dt) = (t.map(|v| s[v]), t.map(|v| d[v]));
-                let Some(xf) = affine_between(st, dt) else { continue };
-                let c = Point::new((dt[0].x + dt[1].x + dt[2].x) / 3.0, (dt[0].y + dt[1].y + dt[2].y) / 3.0);
+                let Some(xf) = affine_between(st, dt) else {
+                    continue;
+                };
+                let c = Point::new(
+                    (dt[0].x + dt[1].x + dt[2].x) / 3.0,
+                    (dt[0].y + dt[1].y + dt[2].y) / 3.0,
+                );
                 let grow = (dt[0].distance(dt[1]).max(dt[1].distance(dt[2])) * 0.02).min(0.5);
                 let tri: Vec<Point> = dt
                     .iter()
                     .map(|p| {
                         let v = *p - c;
                         let len = v.hypot();
-                        if len > 1e-12 { *p + v * (grow / len) } else { *p }
+                        if len > 1e-12 {
+                            *p + v * (grow / len)
+                        } else {
+                            *p
+                        }
                     })
                     .collect();
-                let mut clip = Node::path(n.id, PathData::single(SubPath::polyline(&tri, true)), Appearance::default());
+                let mut clip = Node::path(
+                    n.id,
+                    PathData::single(SubPath::polyline(&tri, true)),
+                    Appearance::default(),
+                );
                 if let NodeKind::Path { clipping, .. } = &mut clip.kind {
                     *clipping = true;
                 }
-                let image = Node::new(n.id, NodeKind::Image(Box::new(ImageObject { xf, ..im.clone() })));
-                pieces.push(Arc::new(Node::new(n.id, NodeKind::Group { children: vec![Arc::new(clip), Arc::new(image)], clip: true })));
+                let image = Node::new(
+                    n.id,
+                    NodeKind::Image(Box::new(ImageObject { xf, ..im.clone() })),
+                );
+                pieces.push(Arc::new(Node::new(
+                    n.id,
+                    NodeKind::Group {
+                        children: vec![Arc::new(clip), Arc::new(image)],
+                        clip: true,
+                    },
+                )));
             }
         }
     }
     let mut g = n.clone();
-    g.kind = NodeKind::Group { children: pieces, clip: false };
+    g.kind = NodeKind::Group {
+        children: pieces,
+        clip: false,
+    };
     g
 }
 
@@ -1523,14 +1911,20 @@ fn pattern_art(n: &Node, tiles: PatternTiles) -> Option<Node> {
     let bounds = path.bounds()?;
     let def = |i: &AppearanceItem| match i {
         AppearanceItem::Fill(f) if f.visible => match &f.paint {
-            Paint::Pattern { pattern: name, xf } => tiles(name, *xf, bounds).map(|t| (t, f.opacity, f.blend)),
+            Paint::Pattern { pattern: name, xf } => {
+                tiles(name, *xf, bounds).map(|t| (t, f.opacity, f.blend))
+            }
             _ => None,
         },
         _ => None,
     };
     let plain = |items: Vec<AppearanceItem>| {
         let mut p = Node {
-            appearance: Appearance { items, ..Default::default() }.into(),
+            appearance: Appearance {
+                items,
+                ..Default::default()
+            }
+            .into(),
             opacity: 1.0,
             blend: Default::default(),
             isolate: false,
@@ -1553,11 +1947,20 @@ fn pattern_art(n: &Node, tiles: PatternTiles) -> Option<Node> {
             pieces.push(plain(std::mem::take(&mut rest)));
         }
         let mut clip = Node::path(n.id, path.clone(), Appearance::default());
-        if let NodeKind::Path { clipping, rule: r, .. } = &mut clip.kind {
+        if let NodeKind::Path {
+            clipping, rule: r, ..
+        } = &mut clip.kind
+        {
             (*clipping, *r) = (true, rule);
         }
         let children = std::iter::once(clip).chain(tiles).map(Arc::new).collect();
-        let mut g = Node::new(n.id, NodeKind::Group { children, clip: true });
+        let mut g = Node::new(
+            n.id,
+            NodeKind::Group {
+                children,
+                clip: true,
+            },
+        );
         g.opacity = opacity;
         g.blend = blend;
         pieces.push(Arc::new(g));
@@ -1566,24 +1969,56 @@ fn pattern_art(n: &Node, tiles: PatternTiles) -> Option<Node> {
         pieces.push(plain(rest));
     }
     Some(Node {
-        kind: NodeKind::Group { children: pieces, clip: false },
-        appearance: Appearance { effects: n.appearance.effects.clone(), ..Default::default() }.into(),
+        kind: NodeKind::Group {
+            children: pieces,
+            clip: false,
+        },
+        appearance: Appearance {
+            effects: n.appearance.effects.clone(),
+            ..Default::default()
+        }
+        .into(),
         ..n.clone()
     })
 }
 
 /// Evaluate an envelope of `kind` around `content` on the page axes with the options envelopes
 /// had before Envelope Options (see [`expand_live_hooks`] for an envelope node).
-pub fn envelope_expand(content: &[Arc<Node>], kind: &EnvelopeKind, fidelity: f64, outline: Outliner) -> Vec<Node> {
-    expand_envelope(content, kind, fidelity, EnvelopeOptions::default(), Affine::IDENTITY, outline.into())
+pub fn envelope_expand(
+    content: &[Arc<Node>],
+    kind: &EnvelopeKind,
+    fidelity: f64,
+    outline: Outliner,
+) -> Vec<Node> {
+    expand_envelope(
+        content,
+        kind,
+        fidelity,
+        EnvelopeOptions::default(),
+        Affine::IDENTITY,
+        outline.into(),
+    )
 }
 
 /// An envelope's content pushed through its map: Fidelity sets how finely curves are cut (and
 /// into how many pieces images are), the options what bends with the art.
-fn expand_envelope(content: &[Arc<Node>], kind: &EnvelopeKind, fidelity: f64, options: EnvelopeOptions, frame: Affine, hooks: Hooks) -> Vec<Node> {
-    let Some(map) = EnvelopeMap::new(content, kind, frame) else { return content.iter().map(|c| (**c).clone()).collect() };
+fn expand_envelope(
+    content: &[Arc<Node>],
+    kind: &EnvelopeKind,
+    fidelity: f64,
+    options: EnvelopeOptions,
+    frame: Affine,
+    hooks: Hooks,
+) -> Vec<Node> {
+    let Some(map) = EnvelopeMap::new(content, kind, frame) else {
+        return content.iter().map(|c| (**c).clone()).collect();
+    };
     let src = map.src();
-    let fid = if fidelity.is_finite() { fidelity.clamp(0.0, 100.0) / 100.0 } else { 0.5 };
+    let fid = if fidelity.is_finite() {
+        fidelity.clamp(0.0, 100.0) / 100.0
+    } else {
+        0.5
+    };
     let f = |p: Point| map.map(p);
     let w = Warper {
         f: &f,
@@ -1600,10 +2035,21 @@ fn expand_envelope(content: &[Arc<Node>], kind: &EnvelopeKind, fidelity: f64, op
 /// Envelope bounds: a mesh's points, a top object's path, the warp's surface (sampled).
 pub fn envelope_bounds(content: &[Arc<Node>], kind: &EnvelopeKind, frame: Affine) -> Option<Rect> {
     match kind {
-        EnvelopeKind::Mesh { rows, cols, points, handles } if !handles.is_empty() => envelope_grid(*rows, *cols, points, handles)?.outline().bounds(),
+        EnvelopeKind::Mesh {
+            rows,
+            cols,
+            points,
+            handles,
+        } if !handles.is_empty() => envelope_grid(*rows, *cols, points, handles)?
+            .outline()
+            .bounds(),
         EnvelopeKind::Mesh { points, .. } => {
             let first = *points.first()?;
-            Some(points.iter().fold(Rect::from_points(first, first), |r, p| r.union_pt(*p)))
+            Some(
+                points
+                    .iter()
+                    .fold(Rect::from_points(first, first), |r, p| r.union_pt(*p)),
+            )
         }
         EnvelopeKind::TopObject { path } => path.bounds(),
         EnvelopeKind::Warp { .. } => EnvelopeMap::new(content, kind, frame)?.bounds(),
@@ -1616,7 +2062,14 @@ pub fn envelope_bounds(content: &[Arc<Node>], kind: &EnvelopeKind, frame: Affine
 
 /// Is this one of the live kinds?
 pub fn is_live(n: &Node) -> bool {
-    matches!(n.kind, NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) | NodeKind::PlacedDocument(_))
+    matches!(
+        n.kind,
+        NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_)
+            | NodeKind::PlacedDocument(_)
+    )
 }
 
 /// Mesh tessellation as filled quad paths (no stroke), `n`×`n` per patch.
@@ -1628,7 +2081,11 @@ pub fn mesh_quad_nodes(m: &GradientMesh, n: usize) -> Vec<Node> {
             let mut fl = FillLayer::new(Paint::solid(q.color));
             fl.opacity = q.opacity;
             ap.items.push(AppearanceItem::Fill(fl));
-            Node::path(NodeId(0), PathData::single(SubPath::polyline(&q.pts, true)), ap)
+            Node::path(
+                NodeId(0),
+                PathData::single(SubPath::polyline(&q.pts, true)),
+                ap,
+            )
         })
         .collect()
 }
@@ -1647,7 +2104,14 @@ pub fn expand_live_with(n: &Node, outline: Outliner) -> Vec<Node> {
 pub fn expand_live_hooks(n: &Node, hooks: Hooks) -> Vec<Node> {
     match &n.kind {
         NodeKind::Blend { children, spec } => blend_expand(children, spec),
-        NodeKind::Envelope { content, kind, fidelity, options, frame, .. } => expand_envelope(content, kind, *fidelity, *options, **frame, hooks),
+        NodeKind::Envelope {
+            content,
+            kind,
+            fidelity,
+            options,
+            frame,
+            ..
+        } => expand_envelope(content, kind, *fidelity, *options, **frame, hooks),
         NodeKind::Mesh(m) => mesh_quad_nodes(m, 8),
         NodeKind::Repeat(r) => r.expand(),
         NodeKind::PlacedDocument(p) => p.art(n),
@@ -1662,8 +2126,17 @@ pub fn expanded_group(n: &Node, outline: Outliner) -> Node {
 
 /// [`expanded_group`] with [`Hooks`].
 pub fn expanded_group_hooks(n: &Node, hooks: Hooks) -> Node {
-    let children = expand_live_hooks(n, hooks).into_iter().map(Arc::new).collect();
-    let mut g = Node::new(n.id, NodeKind::Group { children, clip: false });
+    let children = expand_live_hooks(n, hooks)
+        .into_iter()
+        .map(Arc::new)
+        .collect();
+    let mut g = Node::new(
+        n.id,
+        NodeKind::Group {
+            children,
+            clip: false,
+        },
+    );
     g.name = n.name.clone();
     g.visible = n.visible;
     g.locked = n.locked;
@@ -1672,7 +2145,10 @@ pub fn expanded_group_hooks(n: &Node, hooks: Hooks) -> Node {
     g.isolate = n.isolate;
     g.knockout = n.knockout;
     // Knocking out opaque blend steps changes nothing: don't make the outputs work for it.
-    if matches!(n.kind, NodeKind::Blend { .. }) && g.knockout == crate::Knockout::On && !crate::blend::knockout_shows(&g) {
+    if matches!(n.kind, NodeKind::Blend { .. })
+        && g.knockout == crate::Knockout::On
+        && !crate::blend::knockout_shows(&g)
+    {
         g.knockout = crate::Knockout::Off;
     }
     g.knockout_shape = n.knockout_shape;
@@ -1687,7 +2163,11 @@ pub fn expand_deep(n: &Node, outline: Outliner) -> Node {
 
 /// [`expand_deep`] with [`Hooks`].
 pub fn expand_deep_hooks(n: &Node, hooks: Hooks) -> Node {
-    let mut out = if is_live(n) { expanded_group_hooks(n, hooks) } else { n.clone() };
+    let mut out = if is_live(n) {
+        expanded_group_hooks(n, hooks)
+    } else {
+        n.clone()
+    };
     if let Some(ch) = out.children_mut() {
         for c in ch.iter_mut() {
             if subtree_has_live(c) {
@@ -1723,14 +2203,23 @@ mod tests {
     /// real distance from the centre line; an inner edge that would pass the centre stops there.
     #[test]
     fn arc_warp_is_round_in_real_proportions() {
-        for (aspect, b) in [(0.25, 0.1), (0.25, 0.5), (0.25, 1.0), (1.0, 0.5), (2.0, 0.3)] {
+        for (aspect, b) in [
+            (0.25, 0.1),
+            (0.25, 0.5),
+            (0.25, 1.0),
+            (1.0, 0.5),
+            (2.0, 0.3),
+        ] {
             let r0 = 2.0 / (b * PI);
             for (y, r) in [(-1.0, r0 + aspect), (1.0, (r0 - aspect).max(0.0))] {
                 for i in 0..=10 {
                     let x = -1.0 + 0.2 * f64::from(i);
                     let (nx, ny) = warp_point(WarpStyle::Arc, b, 0.0, 0.0, aspect, x, y);
                     let d = nx.hypot(ny * aspect - r0);
-                    assert!((d - r).abs() < 1e-9, "aspect {aspect}, bend {b}, y {y}, x {x}: {d} vs {r}");
+                    assert!(
+                        (d - r).abs() < 1e-9,
+                        "aspect {aspect}, bend {b}, y {y}, x {x}: {d} vs {r}"
+                    );
                 }
             }
         }
@@ -1740,12 +2229,19 @@ mod tests {
         // A square bent less than that is what it always was.
         let (nx, ny) = warp_point(WarpStyle::Arc, 0.5, 0.0, 0.0, 1.0, 0.5, 0.25);
         let (r0, a) = (4.0 / PI, 0.5 / (4.0 / PI));
-        assert!((nx - (r0 - 0.25) * a.sin()).abs() < 1e-12 && (ny - (r0 - (r0 - 0.25) * a.cos())).abs() < 1e-12);
+        assert!(
+            (nx - (r0 - 0.25) * a.sin()).abs() < 1e-12
+                && (ny - (r0 - (r0 - 0.25) * a.cos())).abs() < 1e-12
+        );
     }
     use vectorcraft_geom::shapes;
 
     fn rect_node(x: f64, y: f64, w: f64, h: f64, c: Color) -> Arc<Node> {
-        Arc::new(Node::path(NodeId(1), shapes::rectangle(Rect::new(x, y, x + w, y + h)), Appearance::basic(Paint::solid(c), Paint::None, 0.0)))
+        Arc::new(Node::path(
+            NodeId(1),
+            shapes::rectangle(Rect::new(x, y, x + w, y + h)),
+            Appearance::basic(Paint::solid(c), Paint::None, 0.0),
+        ))
     }
 
     #[test]
@@ -1760,8 +2256,17 @@ mod tests {
 
     #[test]
     fn blend_steps_and_colours() {
-        let keys = vec![rect_node(0.0, 0.0, 10.0, 10.0, Color::BLACK), rect_node(100.0, 0.0, 10.0, 10.0, Color::WHITE)];
-        let out = blend_expand(&keys, &BlendSpec { spacing: BlendSpacing::Steps(3), ..Default::default() });
+        let keys = vec![
+            rect_node(0.0, 0.0, 10.0, 10.0, Color::BLACK),
+            rect_node(100.0, 0.0, 10.0, 10.0, Color::WHITE),
+        ];
+        let out = blend_expand(
+            &keys,
+            &BlendSpec {
+                spacing: BlendSpacing::Steps(3),
+                ..Default::default()
+            },
+        );
         assert_eq!(out.len(), 5);
         let mid = out[2].appearance.fill_paint().color().unwrap().to_rgb()[0];
         assert!((mid - 0.5).abs() < 1e-3);
@@ -1771,7 +2276,10 @@ mod tests {
     fn coons_rect_is_identity() {
         let c = Coons::from_path(&shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0))).unwrap();
         let p = c.eval(0.25, 0.5);
-        assert!((p.x - 25.0).abs() < 1e-6 && (p.y - 25.0).abs() < 1e-6, "{p:?}");
+        assert!(
+            (p.x - 25.0).abs() < 1e-6 && (p.y - 25.0).abs() < 1e-6,
+            "{p:?}"
+        );
     }
 
     #[test]
@@ -1779,9 +2287,17 @@ mod tests {
         // A stroke outline reaches past the box: a flat mesh and a rectangle stay the identity there.
         let r = Rect::new(0.0, 0.0, 100.0, 100.0);
         let p = grid_eval(2, 2, &grid_points(r, 2, 2), -0.05, 1.1);
-        assert!((p.x + 5.0).abs() < 1e-6 && (p.y - 110.0).abs() < 1e-6, "{p:?}");
-        let c = Coons::from_path(&shapes::rectangle(r)).unwrap().eval(1.05, -0.1);
-        assert!((c.x - 105.0).abs() < 1e-6 && (c.y + 10.0).abs() < 1e-6, "{c:?}");
+        assert!(
+            (p.x + 5.0).abs() < 1e-6 && (p.y - 110.0).abs() < 1e-6,
+            "{p:?}"
+        );
+        let c = Coons::from_path(&shapes::rectangle(r))
+            .unwrap()
+            .eval(1.05, -0.1);
+        assert!(
+            (c.x - 105.0).abs() < 1e-6 && (c.y + 10.0).abs() < 1e-6,
+            "{c:?}"
+        );
     }
 
     #[test]
@@ -1789,16 +2305,30 @@ mod tests {
         let r = Rect::new(0.0, 0.0, 100.0, 100.0);
         let pts = grid_points(r, 3, 4);
         let p = grid_eval(3, 4, &pts, 0.37, 0.81);
-        assert!((p.x - 37.0).abs() < 1e-6 && (p.y - 81.0).abs() < 1e-6, "{p:?}");
+        assert!(
+            (p.x - 37.0).abs() < 1e-6 && (p.y - 81.0).abs() < 1e-6,
+            "{p:?}"
+        );
     }
 
     #[test]
     fn mesh_insert_and_remove_lines() {
-        let mut m =
-            GradientMesh::for_path(&shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)), 1, 1, Color::BLACK, MeshAppearance::Flat, 0.0).unwrap();
+        let mut m = GradientMesh::for_path(
+            &shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 100.0)),
+            1,
+            1,
+            Color::BLACK,
+            MeshAppearance::Flat,
+            0.0,
+        )
+        .unwrap();
         let i = m.add_lines_at(Point::new(30.0, 60.0)).unwrap();
         assert_eq!((m.rows, m.cols), (2, 2));
-        assert!(m.points[i].p.distance(Point::new(30.0, 60.0)) < 0.5, "{:?}", m.points[i].p);
+        assert!(
+            m.points[i].p.distance(Point::new(30.0, 60.0)) < 0.5,
+            "{:?}",
+            m.points[i].p
+        );
         assert!(m.remove_point_lines(i));
         assert_eq!((m.rows, m.cols), (1, 1));
     }

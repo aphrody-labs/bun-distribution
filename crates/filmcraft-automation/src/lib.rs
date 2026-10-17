@@ -8,7 +8,17 @@
 //!   (`filmcraft --control <port>`), so agents can also inspect, screenshot, click, drag, scroll
 //!   and type in the live UI — every menu, panel, timeline gesture and keystroke.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod bridge;
 pub mod long_job;
@@ -33,12 +43,19 @@ pub enum AutomationError {
 
 /// Encode RGBA8 as PNG, downscaled so the longest side is at most `max_side` (0 = no limit).
 pub fn png_rgba(w: u32, h: u32, rgba: Vec<u8>, max_side: u32) -> Result<Vec<u8>, AutomationError> {
-    let mut img = image::RgbaImage::from_raw(w, h, rgba).ok_or_else(|| AutomationError::Other("bad image".into()))?;
+    let mut img = image::RgbaImage::from_raw(w, h, rgba)
+        .ok_or_else(|| AutomationError::Other("bad image".into()))?;
     if max_side > 0 && w.max(h) > max_side {
         let s = max_side as f32 / w.max(h) as f32;
-        img = image::imageops::resize(&img, ((w as f32 * s) as u32).max(1), ((h as f32 * s) as u32).max(1), image::imageops::FilterType::Triangle);
+        img = image::imageops::resize(
+            &img,
+            ((w as f32 * s) as u32).max(1),
+            ((h as f32 * s) as u32).max(1),
+            image::imageops::FilterType::Triangle,
+        );
     }
     let mut out = std::io::Cursor::new(Vec::new());
-    img.write_to(&mut out, image::ImageFormat::Png).map_err(|e| AutomationError::Other(e.to_string()))?;
+    img.write_to(&mut out, image::ImageFormat::Png)
+        .map_err(|e| AutomationError::Other(e.to_string()))?;
     Ok(out.into_inner())
 }

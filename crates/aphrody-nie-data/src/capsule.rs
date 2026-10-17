@@ -231,25 +231,39 @@ pub fn parse_capsule_database(root: &Value) -> CapsuleDatabase {
                     .filter_map(|r| {
                         let rv = int_vars(*r);
                         // inagle : `if (vars.length >= 2)`.
-                        (rv.len() >= 2)
-                            .then_some(WeaponColorRate { color_type: rv[0], weight: rv[1] })
+                        (rv.len() >= 2).then_some(WeaponColorRate {
+                            color_type: rv[0],
+                            weight: rv[1],
+                        })
                     })
                     .collect();
-                db.weapon_color_tables
-                    .push(WeaponColorTable { table_id: id_from_vars(&vars), colors });
+                db.weapon_color_tables.push(WeaponColorTable {
+                    table_id: id_from_vars(&vars),
+                    colors,
+                });
             }
         } else if name.starts_with(PRIZE_TABLE_LIST) {
             // NB : tester PRIZE_TABLE avant PRIZE pour éviter tout recouvrement de préfixe.
             for (header, rows) in paired_children(entry) {
                 let vars = int_vars(header);
-                let data = rows.iter().map(|r| PrizeTableData { vars: int_vars(*r) }).collect();
-                db.prize_tables.push(PrizeTable { id: id_from_vars(&vars), vars, data });
+                let data = rows
+                    .iter()
+                    .map(|r| PrizeTableData { vars: int_vars(*r) })
+                    .collect();
+                db.prize_tables.push(PrizeTable {
+                    id: id_from_vars(&vars),
+                    vars,
+                    data,
+                });
             }
         } else if name.starts_with(PRIZE_LIST) {
             // Pas de sous-liste : chaque enfant est un prix à vars plates.
             for child in entry.children() {
                 let vars = int_vars(child);
-                db.prizes.push(PrizeInfo { id: id_from_vars(&vars), vars });
+                db.prizes.push(PrizeInfo {
+                    id: id_from_vars(&vars),
+                    vars,
+                });
             }
         } else if name.starts_with(LOT_RANK_RATE_LIST) {
             for (header, rows) in paired_children(entry) {
@@ -258,15 +272,25 @@ pub fn parse_capsule_database(root: &Value) -> CapsuleDatabase {
                     .iter()
                     .filter_map(|r| {
                         let rv = int_vars(*r);
-                        (rv.len() >= 2).then_some(RankRate { rank: rv[0], rate: rv[1] })
+                        (rv.len() >= 2).then_some(RankRate {
+                            rank: rv[0],
+                            rate: rv[1],
+                        })
                     })
                     .collect();
-                db.lot_rank_rates.push(LotRankRate { id: id_from_vars(&vars), vars, rates });
+                db.lot_rank_rates.push(LotRankRate {
+                    id: id_from_vars(&vars),
+                    vars,
+                    rates,
+                });
             }
         } else if name.starts_with(CONFIG_LIST) {
             for (header, rows) in paired_children(entry) {
                 let vars = int_vars(header);
-                let data = rows.iter().map(|r| ConfigData { vars: int_vars(*r) }).collect();
+                let data = rows
+                    .iter()
+                    .map(|r| ConfigData { vars: int_vars(*r) })
+                    .collect();
                 db.configs.push(ConfigInfo { vars, data });
             }
         }

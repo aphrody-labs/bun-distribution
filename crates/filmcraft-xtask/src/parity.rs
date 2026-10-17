@@ -40,7 +40,14 @@ const MAX_DEPTH: usize = 16;
 const MAX_ITEMS: usize = 20_000;
 /// Keys holding a node's label, and its children.
 const LABEL_KEYS: [&str; 3] = ["name", "title", "label"];
-const CHILD_KEYS: [&str; 6] = ["children", "items", "submenu", "menu", "menuItems", "menu_items"];
+const CHILD_KEYS: [&str; 6] = [
+    "children",
+    "items",
+    "submenu",
+    "menu",
+    "menuItems",
+    "menu_items",
+];
 /// Keys of a wrapper object around the whole menu bar, or the whole effect list.
 const MENU_WRAPPER_KEYS: [&str; 5] = ["menus", "menuBar", "menu_bar", "menubar", "items"];
 const EFFECT_WRAPPER_KEYS: [&str; 4] = ["effects", "transitions", "folders", "items"];
@@ -59,7 +66,9 @@ impl Area {
             "menus" => Ok(Area::Menus),
             "effects" => Ok(Area::Effects),
             "transitions" => Ok(Area::Transitions),
-            other => Err(format!("--area {other}: expected menus, effects or transitions")),
+            other => Err(format!(
+                "--area {other}: expected menus, effects or transitions"
+            )),
         }
     }
 
@@ -141,10 +150,20 @@ struct Args {
 }
 
 fn parse_args(args: &[&str]) -> Result<Args, String> {
-    let mut a = Args { area: Area::Menus, reference: None, ours: None, out: None, min: None };
+    let mut a = Args {
+        area: Area::Menus,
+        reference: None,
+        ours: None,
+        out: None,
+        min: None,
+    };
     let mut it = args.iter();
     while let Some(flag) = it.next() {
-        let mut value = || it.next().map(|v| v.to_string()).ok_or_else(|| format!("{flag} needs a value"));
+        let mut value = || {
+            it.next()
+                .map(|v| v.to_string())
+                .ok_or_else(|| format!("{flag} needs a value"))
+        };
         match *flag {
             "--area" => a.area = Area::parse(&value()?)?,
             "--reference" => a.reference = Some(value()?.into()),
@@ -175,7 +194,8 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
         Some(p) => std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?,
         None => dump_ours(area)?,
     };
-    let ours_value: Value = serde_json::from_str(&ours_json).map_err(|e| format!("our {} dump: {e}", area.name()))?;
+    let ours_value: Value =
+        serde_json::from_str(&ours_json).map_err(|e| format!("our {} dump: {e}", area.name()))?;
     let ours = match area {
         Area::Menus => our_items(&ours_value)?,
         Area::Effects | Area::Transitions => our_catalog(&ours_value, area)?,
@@ -188,26 +208,40 @@ pub fn run(root: &Path, args: &[&str]) -> Result<(), String> {
     let Some(reference) = reference else {
         print!("{}", inventory(area, &ours));
         let a = area.name();
-        println!("\nno reference list (plan/premiere/{a}.json, or --reference FILE): {a} parity not measured");
+        println!(
+            "\nno reference list (plan/premiere/{a}.json, or --reference FILE): {a} parity not measured"
+        );
         return match args.min {
             Some(_) => Err("--min needs a reference list".into()),
             None => Ok(()),
         };
     };
-    let text = std::fs::read_to_string(&reference).map_err(|e| format!("{}: {e}", reference.display()))?;
-    let value: Value = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", reference.display()))?;
+    let text =
+        std::fs::read_to_string(&reference).map_err(|e| format!("{}: {e}", reference.display()))?;
+    let value: Value =
+        serde_json::from_str(&text).map_err(|e| format!("{}: {e}", reference.display()))?;
     let paths = reference_paths(&value, area)?;
-    let name = reference.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = reference
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let report = compare(area, &paths, &ours);
-    let out = args.out.unwrap_or_else(|| crate::target_dir().join("parity").join(area.out_file()));
+    let out = args
+        .out
+        .unwrap_or_else(|| crate::target_dir().join("parity").join(area.out_file()));
     if let Some(dir) = out.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     }
-    std::fs::write(&out, report.markdown(&name, ours.len())).map_err(|e| format!("{}: {e}", out.display()))?;
+    std::fs::write(&out, report.markdown(&name, ours.len()))
+        .map_err(|e| format!("{}: {e}", out.display()))?;
     println!("{}", report.summary());
     println!("report: {}", out.display());
     match args.min {
-        Some(min) if report.presence() < min => Err(format!("{} presence {:.1}% is below --min {min}%", area.name(), report.presence())),
+        Some(min) if report.presence() < min => Err(format!(
+            "{} presence {:.1}% is below --min {min}%",
+            area.name(),
+            report.presence()
+        )),
         _ => Ok(()),
     }
 }
@@ -220,7 +254,8 @@ fn dump_ours(area: Area) -> Result<String, String> {
         Area::Effects | Area::Transitions => ("filmcraft-project", "effect_catalog"),
     };
     let mut cmd = Command::new(env!("CARGO"));
-    cmd.args(["run", "-q", "-p", package, "--example", example]).stderr(Stdio::inherit());
+    cmd.args(["run", "-q", "-p", package, "--example", example])
+        .stderr(Stdio::inherit());
     let out = cmd.output().map_err(|e| format!("{example}: {e}"))?;
     if !out.status.success() {
         return Err(format!("{example} failed: {}", out.status));
@@ -235,7 +270,12 @@ fn our_items(v: &Value) -> Result<Vec<Vec<String>>, String> {
         .iter()
         .filter_map(|it| {
             let label = it.get("label")?.as_str()?;
-            let mut path: Vec<String> = it.get("path")?.as_array()?.iter().filter_map(|p| p.as_str().map(str::to_string)).collect();
+            let mut path: Vec<String> = it
+                .get("path")?
+                .as_array()?
+                .iter()
+                .filter_map(|p| p.as_str().map(str::to_string))
+                .collect();
             path.push(label.to_string());
             (path.len() >= 2).then_some(path)
         })
@@ -245,13 +285,24 @@ fn our_items(v: &Value) -> Result<Vec<Vec<String>>, String> {
 /// Full paths (Effects-panel folders + name) of the catalog items of `area`, from the
 /// `effect_catalog` dump.
 fn our_catalog(v: &Value, area: Area) -> Result<Vec<Vec<String>>, String> {
-    let items = v.as_array().ok_or("our effect catalog dump is not an array")?;
+    let items = v
+        .as_array()
+        .ok_or("our effect catalog dump is not an array")?;
     Ok(items
         .iter()
-        .filter(|it| it.get("kind").and_then(Value::as_str).is_some_and(|k| area.kinds().contains(&k)))
+        .filter(|it| {
+            it.get("kind")
+                .and_then(Value::as_str)
+                .is_some_and(|k| area.kinds().contains(&k))
+        })
         .filter_map(|it| {
             let name = it.get("name")?.as_str()?;
-            let mut path: Vec<String> = it.get("path")?.as_array()?.iter().filter_map(|p| p.as_str().map(str::to_string)).collect();
+            let mut path: Vec<String> = it
+                .get("path")?
+                .as_array()?
+                .iter()
+                .filter_map(|p| p.as_str().map(str::to_string))
+                .collect();
             path.push(name.to_string());
             Some(path)
         })
@@ -265,7 +316,12 @@ fn inventory(area: Area, ours: &[Vec<String>]) -> String {
         *per.entry(area.group(p)).or_default() += 1;
     }
     let mut s = format!("FilmCraft {}: {} items\n", area.ours(), ours.len());
-    let width = per.keys().map(|g| g.chars().count()).max().unwrap_or(0).max(22);
+    let width = per
+        .keys()
+        .map(|g| g.chars().count())
+        .max()
+        .unwrap_or(0)
+        .max(22);
     for (group, n) in per {
         s.push_str(&format!("  {group:<width$} {n}\n"));
     }
@@ -277,7 +333,10 @@ fn reference_paths(v: &Value, area: Area) -> Result<Vec<Vec<String>>, String> {
     let mut root = v;
     if let Value::Object(o) = v
         && label_of(o).is_none()
-        && let Some(inner) = area.wrapper_keys().iter().find_map(|k| o.get(*k).filter(|c| c.is_array() || c.is_object()))
+        && let Some(inner) = area
+            .wrapper_keys()
+            .iter()
+            .find_map(|k| o.get(*k).filter(|c| c.is_array() || c.is_object()))
     {
         root = inner;
     }
@@ -293,10 +352,18 @@ fn label_of(o: &serde_json::Map<String, Value>) -> Option<&str> {
 /// A separator or placeholder rather than a menu item.
 fn is_separator(label: &str) -> bool {
     let l = label.trim();
-    l.is_empty() || l.chars().all(|c| matches!(c, '-' | '—' | '–' | '_')) || l.eq_ignore_ascii_case("missing value") || l.eq_ignore_ascii_case("separator")
+    l.is_empty()
+        || l.chars().all(|c| matches!(c, '-' | '—' | '–' | '_'))
+        || l.eq_ignore_ascii_case("missing value")
+        || l.eq_ignore_ascii_case("separator")
 }
 
-fn push_leaf(prefix: &[String], label: &str, min: usize, out: &mut Vec<Vec<String>>) -> Result<(), String> {
+fn push_leaf(
+    prefix: &[String],
+    label: &str,
+    min: usize,
+    out: &mut Vec<Vec<String>>,
+) -> Result<(), String> {
     if is_separator(label) || prefix.iter().any(|p| is_separator(p)) {
         return Ok(());
     }
@@ -312,13 +379,25 @@ fn push_leaf(prefix: &[String], label: &str, min: usize, out: &mut Vec<Vec<Strin
 }
 
 fn split_path(s: &str) -> Option<Vec<String>> {
-    let parts: Vec<String> = s.replace('\u{a0}', " ").split(['>', '▸']).map(|p| p.trim().to_string()).collect();
+    let parts: Vec<String> = s
+        .replace('\u{a0}', " ")
+        .split(['>', '▸'])
+        .map(|p| p.trim().to_string())
+        .collect();
     (parts.len() >= 2 && parts.iter().all(|p| !p.is_empty())).then_some(parts)
 }
 
-fn walk(v: &Value, prefix: &[String], depth: usize, min: usize, out: &mut Vec<Vec<String>>) -> Result<(), String> {
+fn walk(
+    v: &Value,
+    prefix: &[String],
+    depth: usize,
+    min: usize,
+    out: &mut Vec<Vec<String>>,
+) -> Result<(), String> {
     if depth > MAX_DEPTH {
-        return Err(format!("reference is nested deeper than {MAX_DEPTH} levels"));
+        return Err(format!(
+            "reference is nested deeper than {MAX_DEPTH} levels"
+        ));
     }
     let with = |label: &str| {
         let mut p = prefix.to_vec();
@@ -337,7 +416,11 @@ fn walk(v: &Value, prefix: &[String], depth: usize, min: usize, out: &mut Vec<Ve
             for el in a {
                 match el {
                     Value::Array(path) if !path.is_empty() && path.iter().all(Value::is_string) => {
-                        let parts: Vec<String> = prefix.iter().cloned().chain(path.iter().filter_map(|p| p.as_str().map(str::to_string))).collect();
+                        let parts: Vec<String> = prefix
+                            .iter()
+                            .cloned()
+                            .chain(path.iter().filter_map(|p| p.as_str().map(str::to_string)))
+                            .collect();
                         if let Some((label, menus)) = parts.split_last() {
                             push_leaf(menus, label, min, out)?;
                         }
@@ -349,7 +432,9 @@ fn walk(v: &Value, prefix: &[String], depth: usize, min: usize, out: &mut Vec<Ve
         }
         Value::Object(o) => match label_of(o) {
             Some(label) => {
-                let children = CHILD_KEYS.iter().find_map(|k| o.get(*k).filter(|c| has_entries(c)));
+                let children = CHILD_KEYS
+                    .iter()
+                    .find_map(|k| o.get(*k).filter(|c| has_entries(c)));
                 match children {
                     Some(c) if !is_separator(label) => walk(c, &with(label), depth + 1, min, out),
                     Some(_) => Ok(()),
@@ -381,7 +466,12 @@ fn has_entries(v: &Value) -> bool {
 
 /// A label compared case-insensitively, without ellipsis, with `&` as "and" and one space.
 fn norm(label: &str) -> String {
-    let l = label.to_lowercase().replace('…', "").replace("...", "").replace(['’', '‘'], "'").replace('&', " and ");
+    let l = label
+        .to_lowercase()
+        .replace('…', "")
+        .replace("...", "")
+        .replace(['’', '‘'], "'")
+        .replace('&', " and ");
     l.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
@@ -398,7 +488,9 @@ fn out_of_scope(area: Area, path: &[String]) -> Option<&'static str> {
             let transition = folders.iter().any(|f| norm(f).ends_with("transitions"));
             match area {
                 Area::Effects if transition => Some("transitions (--area transitions)"),
-                Area::Transitions if !folders.is_empty() && !transition => Some("effects (--area effects)"),
+                Area::Transitions if !folders.is_empty() && !transition => {
+                    Some("effects (--area effects)")
+                }
                 _ => None,
             }
         }
@@ -411,13 +503,36 @@ fn menu_out_of_scope(path: &[String]) -> Option<&'static str> {
         return Some("app, Apple and Help menus");
     }
     let parents = path.get(..path.len().saturating_sub(1)).unwrap_or_default();
-    if parents.iter().skip(1).any(|p| norm(p).starts_with("open recent") || norm(p).starts_with("recent")) {
+    if parents
+        .iter()
+        .skip(1)
+        .any(|p| norm(p).starts_with("open recent") || norm(p).starts_with("recent"))
+    {
         return Some("recent-file lists");
     }
-    if ["adobe", "creative cloud", "sign in", "sign out", "log in", "log out"].iter().any(|w| label.contains(w)) {
+    if [
+        "adobe",
+        "creative cloud",
+        "sign in",
+        "sign out",
+        "log in",
+        "log out",
+    ]
+    .iter()
+    .any(|w| label.contains(w))
+    {
         return Some("account and cloud items");
     }
-    if ["autofill", "start dictation", "emoji and symbols", "writing tools", "services"].iter().any(|w| label.starts_with(w)) {
+    if [
+        "autofill",
+        "start dictation",
+        "emoji and symbols",
+        "writing tools",
+        "services",
+    ]
+    .iter()
+    .any(|w| label.starts_with(w))
+    {
         return Some("macOS system items");
     }
     None
@@ -446,7 +561,12 @@ fn compare(area: Area, reference: &[Vec<String>], ours: &[Vec<String>]) -> Repor
             by_label.entry(norm(l)).or_insert(p);
         }
     }
-    let mut report = Report { area, items: Vec::new(), out_of_scope: BTreeMap::new(), ours_only: Vec::new() };
+    let mut report = Report {
+        area,
+        items: Vec::new(),
+        out_of_scope: BTreeMap::new(),
+        ours_only: Vec::new(),
+    };
     let mut seen = HashSet::new();
     for p in reference {
         if !seen.insert(key(p)) {
@@ -458,22 +578,34 @@ fn compare(area: Area, reference: &[Vec<String>], ours: &[Vec<String>]) -> Repor
         }
         let label = p.last().map(|l| norm(l)).unwrap_or_default();
         // a bare name (no folder) has no place to compare: found is all it can be
-        let placement = if our_paths.contains(&key(p)) || (p.len() == 1 && by_label.contains_key(&label)) {
-            Placement::Same
-        } else if let Some(at) = by_label.get(&label) {
-            Placement::Elsewhere((*at).clone())
-        } else {
-            Placement::Missing
-        };
+        let placement =
+            if our_paths.contains(&key(p)) || (p.len() == 1 && by_label.contains_key(&label)) {
+                Placement::Same
+            } else if let Some(at) = by_label.get(&label) {
+                Placement::Elsewhere((*at).clone())
+            } else {
+                Placement::Missing
+            };
         report.items.push((p.clone(), placement));
     }
-    let ref_labels: HashSet<String> = reference.iter().filter_map(|p| p.last().map(|l| norm(l))).collect();
-    report.ours_only = ours.iter().filter(|p| p.last().is_some_and(|l| !ref_labels.contains(&norm(l)))).cloned().collect();
+    let ref_labels: HashSet<String> = reference
+        .iter()
+        .filter_map(|p| p.last().map(|l| norm(l)))
+        .collect();
+    report.ours_only = ours
+        .iter()
+        .filter(|p| p.last().is_some_and(|l| !ref_labels.contains(&norm(l))))
+        .cloned()
+        .collect();
     report
 }
 
 fn pct(n: usize, of: usize) -> f64 {
-    if of == 0 { 0.0 } else { n as f64 * 100.0 / of as f64 }
+    if of == 0 {
+        0.0
+    } else {
+        n as f64 * 100.0 / of as f64
+    }
 }
 
 fn show(p: &[String]) -> String {
@@ -482,9 +614,21 @@ fn show(p: &[String]) -> String {
 
 impl Report {
     fn counts(&self) -> (usize, usize, usize) {
-        let same = self.items.iter().filter(|(_, pl)| matches!(pl, Placement::Same)).count();
-        let elsewhere = self.items.iter().filter(|(_, pl)| matches!(pl, Placement::Elsewhere(_))).count();
-        (same, elsewhere, self.items.len().saturating_sub(same + elsewhere))
+        let same = self
+            .items
+            .iter()
+            .filter(|(_, pl)| matches!(pl, Placement::Same))
+            .count();
+        let elsewhere = self
+            .items
+            .iter()
+            .filter(|(_, pl)| matches!(pl, Placement::Elsewhere(_)))
+            .count();
+        (
+            same,
+            elsewhere,
+            self.items.len().saturating_sub(same + elsewhere),
+        )
     }
 
     /// Reference items whose label we have anywhere, in percent of the items in scope.
@@ -551,11 +695,21 @@ impl Report {
         }
         for (top, [a, b, c]) in &per {
             let total = a + b + c;
-            s.push_str(&format!("| {top} | {total} | {a} | {b} | {c} | {:.1}% |\n", pct(a + b, total)));
+            s.push_str(&format!(
+                "| {top} | {total} | {a} | {b} | {c} | {:.1}% |\n",
+                pct(a + b, total)
+            ));
         }
-        s.push_str(&format!("| **Total** | **{n}** | **{same}** | **{elsewhere}** | **{missing}** | **{:.1}%** |\n", self.presence()));
+        s.push_str(&format!(
+            "| **Total** | **{n}** | **{same}** | **{elsewhere}** | **{missing}** | **{:.1}%** |\n",
+            self.presence()
+        ));
         s.push_str(&format!("\n## Missing ({missing})\n\n"));
-        for (p, _) in self.items.iter().filter(|(_, pl)| matches!(pl, Placement::Missing)) {
+        for (p, _) in self
+            .items
+            .iter()
+            .filter(|(_, pl)| matches!(pl, Placement::Missing))
+        {
             s.push_str(&format!("- [ ] {}\n", show(p)));
         }
         s.push_str(&format!("\n## Elsewhere in FilmCraft ({elsewhere})\n\n"));
@@ -568,7 +722,10 @@ impl Report {
         for (why, k) in &self.out_of_scope {
             s.push_str(&format!("- {why}: {k}\n"));
         }
-        s.push_str(&format!("\n## FilmCraft only ({})\n\n", self.ours_only.len()));
+        s.push_str(&format!(
+            "\n## FilmCraft only ({})\n\n",
+            self.ours_only.len()
+        ));
         for p in &self.ours_only {
             s.push_str(&format!("- {}\n", show(p)));
         }
@@ -582,14 +739,24 @@ mod tests {
     use serde_json::json;
 
     fn paths(v: &[&[&str]]) -> Vec<Vec<String>> {
-        v.iter().map(|p| p.iter().map(|s| s.to_string()).collect()).collect()
+        v.iter()
+            .map(|p| p.iter().map(|s| s.to_string()).collect())
+            .collect()
     }
 
     #[test]
     fn reference_formats_give_the_same_paths() {
-        let want = paths(&[&["File", "New", "Sequence…"], &["File", "Save"], &["Edit", "Undo"]]);
+        let want = paths(&[
+            &["File", "New", "Sequence…"],
+            &["File", "Save"],
+            &["Edit", "Undo"],
+        ]);
         let forms = [
-            json!([["File", "New", "Sequence…"], ["File", "Save"], ["Edit", "Undo"]]),
+            json!([
+                ["File", "New", "Sequence…"],
+                ["File", "Save"],
+                ["Edit", "Undo"]
+            ]),
             json!(["File > New > Sequence…", "File ▸ Save", "Edit > Undo"]),
             json!({"menus": [
                 {"name": "File", "children": [
@@ -617,14 +784,32 @@ mod tests {
             v = json!({ "name": "m", "children": [v] });
         }
         for area in [Area::Menus, Area::Effects] {
-            assert!(reference_paths(&v, area).unwrap_err().contains("nested deeper"));
-            let many: Vec<String> = (0..MAX_ITEMS + 1).map(|i| format!("File > Item {i}")).collect();
-            assert!(reference_paths(&json!(many), area).unwrap_err().contains("more than"));
+            assert!(
+                reference_paths(&v, area)
+                    .unwrap_err()
+                    .contains("nested deeper")
+            );
+            let many: Vec<String> = (0..MAX_ITEMS + 1)
+                .map(|i| format!("File > Item {i}"))
+                .collect();
+            assert!(
+                reference_paths(&json!(many), area)
+                    .unwrap_err()
+                    .contains("more than")
+            );
             let bare: Vec<String> = (0..MAX_ITEMS + 1).map(|i| format!("Effect {i}")).collect();
-            assert!(area == Area::Menus || reference_paths(&json!(bare), area).unwrap_err().contains("more than"));
+            assert!(
+                area == Area::Menus
+                    || reference_paths(&json!(bare), area)
+                        .unwrap_err()
+                        .contains("more than")
+            );
         }
         // odd values are skipped, not trusted
-        assert_eq!(reference_paths(&json!([1, null, true, {"name": 5}, ["File"]]), Area::Menus).unwrap(), Vec::<Vec<String>>::new());
+        assert_eq!(
+            reference_paths(&json!([1, null, true, {"name": 5}, ["File"]]), Area::Menus).unwrap(),
+            Vec::<Vec<String>>::new()
+        );
     }
 
     #[test]
@@ -639,17 +824,32 @@ mod tests {
             &["Edit", "AutoFill"],
             &["Edit", "Spelling"],
         ]);
-        let ours = paths(&[&["File", "New", "Sequence…"], &["File", "Export", "Export Frame"], &["Edit", "Find and Replace…"], &["Clip", "Nest…"]]);
+        let ours = paths(&[
+            &["File", "New", "Sequence…"],
+            &["File", "Export", "Export Frame"],
+            &["Edit", "Find and Replace…"],
+            &["Clip", "Nest…"],
+        ]);
         let r = compare(Area::Menus, &reference, &ours);
-        assert_eq!(r.counts(), (2, 1, 1), "duplicates count once; out-of-scope items are not counted");
+        assert_eq!(
+            r.counts(),
+            (2, 1, 1),
+            "duplicates count once; out-of-scope items are not counted"
+        );
         assert!((r.presence() - 75.0).abs() < 1e-9);
         assert_eq!(r.out_of_scope.values().sum::<usize>(), 3);
         assert_eq!(r.ours_only, paths(&[&["Clip", "Nest…"]]));
         let md = r.markdown("menus.json", ours.len());
-        assert!(md.contains("| **Total** | **4** | **2** | **1** | **1** | **75.0%** |"), "{md}");
+        assert!(
+            md.contains("| **Total** | **4** | **2** | **1** | **1** | **75.0%** |"),
+            "{md}"
+        );
         assert!(md.contains("- [ ] Edit ▸ Spelling"));
         assert!(md.contains("- File ▸ Export Frame → File ▸ Export ▸ Export Frame"));
-        assert!(r.summary().contains("presence 3/4 (75.0%), same place 2/4 (50.0%)"));
+        assert!(
+            r.summary()
+                .contains("presence 3/4 (75.0%), same place 2/4 (50.0%)")
+        );
     }
 
     #[test]
@@ -668,7 +868,12 @@ mod tests {
         assert!(parse_args(&["--min", "x"]).is_err());
         assert!(parse_args(&["--out"]).is_err());
         assert!(parse_args(&["--bogus"]).is_err());
-        assert!(parse_args(&["--min", "90", "--reference", "r.json"]).is_ok_and(|a| a.min == Some(90.0) && a.reference.is_some() && a.area == Area::Menus));
+        assert!(
+            parse_args(&["--min", "90", "--reference", "r.json"])
+                .is_ok_and(|a| a.min == Some(90.0)
+                    && a.reference.is_some()
+                    && a.area == Area::Menus)
+        );
         assert!(parse_args(&["--area", "transitions"]).is_ok_and(|a| a.area == Area::Transitions));
         assert!(parse_args(&["--area", "panels"]).is_err());
         assert!(parse_args(&["--area"]).is_err());
@@ -703,7 +908,10 @@ mod tests {
         assert!(tr.contains(&paths(&[&["Legacy", "Video Transitions", "Push (Legacy)"]])[0]));
         assert!(our_catalog(&json!({"effects": []}), Area::Effects).is_err());
         let inv = inventory(Area::Effects, &fx);
-        assert!(inv.starts_with("FilmCraft Effects panel effects: 3 items"), "{inv}");
+        assert!(
+            inv.starts_with("FilmCraft Effects panel effects: 3 items"),
+            "{inv}"
+        );
         assert!(inv.contains("Video Effects ▸ Stylize"), "{inv}");
     }
 
@@ -727,20 +935,43 @@ mod tests {
         // Gaussian Blur same; Mosaic elsewhere (Stylize); Hard Limiter by bare name; Camera Blur, Echo missing
         assert_eq!(r.counts(), (2, 1, 2), "{:?}", r.summary());
         assert_eq!(r.out_of_scope.get("presets"), Some(&1));
-        assert_eq!(r.out_of_scope.get("transitions (--area transitions)"), Some(&3));
+        assert_eq!(
+            r.out_of_scope.get("transitions (--area transitions)"),
+            Some(&3)
+        );
         let md = r.markdown("effects.json", ours.len());
         assert!(md.starts_with("# Effect parity checklist"), "{md}");
         assert!(md.contains("| Folder | Items |"), "{md}");
-        assert!(md.contains("| Video Effects ▸ Blur & Sharpen | 2 | 1 | 0 | 1 | 50.0% |"), "{md}");
-        assert!(md.contains("| (no folder) | 2 | 1 | 0 | 1 | 50.0% |"), "{md}");
-        assert!(md.contains("- Video Effects ▸ Distort ▸ Mosaic → Video Effects ▸ Stylize ▸ Mosaic"), "{md}");
+        assert!(
+            md.contains("| Video Effects ▸ Blur & Sharpen | 2 | 1 | 0 | 1 | 50.0% |"),
+            "{md}"
+        );
+        assert!(
+            md.contains("| (no folder) | 2 | 1 | 0 | 1 | 50.0% |"),
+            "{md}"
+        );
+        assert!(
+            md.contains("- Video Effects ▸ Distort ▸ Mosaic → Video Effects ▸ Stylize ▸ Mosaic"),
+            "{md}"
+        );
         assert!(md.contains("- [ ] Echo"), "{md}");
-        assert!(r.summary().starts_with("effects: presence 3/5 (60.0%)"), "{}", r.summary());
+        assert!(
+            r.summary().starts_with("effects: presence 3/5 (60.0%)"),
+            "{}",
+            r.summary()
+        );
 
         let tr_ref = reference_paths(&reference, Area::Transitions).unwrap();
-        let tr = compare(Area::Transitions, &tr_ref, &our_catalog(&catalog(), Area::Transitions).unwrap());
+        let tr = compare(
+            Area::Transitions,
+            &tr_ref,
+            &our_catalog(&catalog(), Area::Transitions).unwrap(),
+        );
         assert_eq!(tr.counts(), (2, 0, 1), "{}", tr.summary());
         assert_eq!(tr.out_of_scope.get("effects (--area effects)"), Some(&3));
-        assert!(tr.markdown("effects.json", 3).contains("- [ ] Video Transitions ▸ Dissolve ▸ Film Dissolve"));
+        assert!(
+            tr.markdown("effects.json", 3)
+                .contains("- [ ] Video Transitions ▸ Dissolve ▸ Film Dissolve")
+        );
     }
 }

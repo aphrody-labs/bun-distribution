@@ -1,7 +1,7 @@
 use crate::{
+    PartialReflect, ReflectRef,
     enums::{Enum, VariantType},
     utility::reflect_hasher,
-    PartialReflect, ReflectRef,
 };
 use core::{
     fmt::Debug,

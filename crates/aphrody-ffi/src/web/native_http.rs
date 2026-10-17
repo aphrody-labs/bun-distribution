@@ -63,7 +63,9 @@ async fn fetch_json(url: Url, stealth: u8, timeout_ms: u32) -> String {
     } else {
         match tokio::time::timeout(Duration::from_millis(u64::from(timeout_ms)), request).await {
             Ok(response) => response,
-            Err(_) => Err(obscura_net::ObscuraNetError::Network("request timeout".into())),
+            Err(_) => Err(obscura_net::ObscuraNetError::Network(
+                "request timeout".into(),
+            )),
         }
     };
     match response {
@@ -186,7 +188,12 @@ async fn request_json(request: HttpRequest) -> String {
             }
         }
         plain_client()
-            .send_single(&request.method, &url, &request.headers, request.body.as_bytes())
+            .send_single(
+                &request.method,
+                &url,
+                &request.headers,
+                request.body.as_bytes(),
+            )
             .await
     };
     let result =
@@ -235,12 +242,20 @@ mod tests {
         assert!(request_json(request).await.contains("only http and https"));
         request =
             serde_json::from_value(json!({"url":"https://example.org", "method":"TRACE"})).unwrap();
-        assert!(request_json(request).await.contains("unsupported HTTP method"));
+        assert!(
+            request_json(request)
+                .await
+                .contains("unsupported HTTP method")
+        );
         request = serde_json::from_value(
             json!({"url":"https://example.org", "method":"GET", "body":"payload"}),
         )
         .unwrap();
-        assert!(request_json(request).await.contains("GET and HEAD cannot carry"));
+        assert!(
+            request_json(request)
+                .await
+                .contains("GET and HEAD cannot carry")
+        );
         assert!(
             serde_json::from_value::<HttpRequest>(
                 json!({"url":"https://example.org", "redirect":"follow"})
@@ -254,7 +269,11 @@ mod tests {
     async fn authenticated_request_never_falls_back_from_missing_stealth() {
         let request: HttpRequest =
             serde_json::from_value(json!({"url":"https://example.org", "stealth":true})).unwrap();
-        assert!(request_json(request).await.contains("native-stealth feature is not installed"));
+        assert!(
+            request_json(request)
+                .await
+                .contains("native-stealth feature is not installed")
+        );
     }
 
     #[test]

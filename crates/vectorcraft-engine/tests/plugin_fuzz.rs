@@ -16,11 +16,15 @@ use vectorcraft_plugins::wat as tpl;
 use vectorcraft_testkit::catch_quiet;
 use vectorcraft_testkit::fixtures::rich_session;
 
-const DESATURATE: &[u8] = include_bytes!("../../vectorcraft-plugins/tests/fixtures/desaturate.wasm");
+const DESATURATE: &[u8] =
+    include_bytes!("../../vectorcraft-plugins/tests/fixtures/desaturate.wasm");
 
 /// 64 cases each, unless `PROPTEST_CASES` asks for more.
 fn config() -> ProptestConfig {
-    let mut c = ProptestConfig { failure_persistence: None, ..ProptestConfig::default() };
+    let mut c = ProptestConfig {
+        failure_persistence: None,
+        ..ProptestConfig::default()
+    };
     if std::env::var_os("PROPTEST_CASES").is_none() {
         c.cases = 64;
     }
@@ -28,7 +32,11 @@ fn config() -> ProptestConfig {
 }
 
 fn install(s: &mut Session, wasm: &[u8]) -> Result<Value, String> {
-    s.execute("plugin.install", &json!({"dataBase64": vectorcraft_format::base64_encode(wasm)})).map_err(|e| e.to_string())
+    s.execute(
+        "plugin.install",
+        &json!({"dataBase64": vectorcraft_format::base64_encode(wasm)}),
+    )
+    .map_err(|e| e.to_string())
 }
 
 /// The document renders and exports without panicking.
@@ -58,7 +66,8 @@ fn arb_junk() -> impl Strategy<Value = Value> {
     leaf.prop_recursive(2, 12, 3, |inner| {
         prop_oneof![
             prop::collection::vec(inner.clone(), 0..3).prop_map(Value::Array),
-            prop::collection::btree_map("[a-z]{1,5}", inner, 0..3).prop_map(|m| Value::Object(m.into_iter().collect())),
+            prop::collection::btree_map("[a-z]{1,5}", inner, 0..3)
+                .prop_map(|m| Value::Object(m.into_iter().collect())),
         ]
     })
 }
@@ -108,22 +117,27 @@ fn arb_path() -> impl Strategy<Value = Value> {
             }
             a
         });
-    let sub = (prop::collection::vec(anchor, 0..6), any::<bool>()).prop_map(|(anchors, closed)| json!({"anchors": anchors, "closed": closed}));
+    let sub = (prop::collection::vec(anchor, 0..6), any::<bool>())
+        .prop_map(|(anchors, closed)| json!({"anchors": anchors, "closed": closed}));
     prop_oneof![9 => prop::collection::vec(sub, 0..3).prop_map(|s| json!({"subpaths": s})), 1 => arb_junk()]
 }
 
 fn arb_color() -> impl Strategy<Value = Value> {
     prop_oneof![
-        (arb_num(), arb_num(), arb_num()).prop_map(|(r, g, b)| json!({"model": "rgb", "r": r, "g": g, "b": b})),
-        (arb_num(), arb_num(), arb_num(), arb_num()).prop_map(|(c, m, y, k)| json!({"model": "cmyk", "c": c, "m": m, "y": y, "k": k})),
+        (arb_num(), arb_num(), arb_num())
+            .prop_map(|(r, g, b)| json!({"model": "rgb", "r": r, "g": g, "b": b})),
+        (arb_num(), arb_num(), arb_num(), arb_num())
+            .prop_map(|(c, m, y, k)| json!({"model": "cmyk", "c": c, "m": m, "y": y, "k": k})),
         arb_num().prop_map(|k| json!({"model": "gray", "k": k})),
-        (arb_num(), arb_num(), arb_num()).prop_map(|(l, a, b)| json!({"model": "lab", "l": l, "a": a, "b": b})),
+        (arb_num(), arb_num(), arb_num())
+            .prop_map(|(l, a, b)| json!({"model": "lab", "l": l, "a": a, "b": b})),
         arb_junk(),
     ]
 }
 
 fn arb_paint() -> impl Strategy<Value = Value> {
-    let stop = (arb_num(), arb_color(), arb_num(), arb_num()).prop_map(|(o, c, a, m)| json!({"offset": o, "color": c, "opacity": a, "midpoint": m}));
+    let stop = (arb_num(), arb_color(), arb_num(), arb_num())
+        .prop_map(|(o, c, a, m)| json!({"offset": o, "color": c, "opacity": a, "midpoint": m}));
     let freeform = (
         prop::collection::vec((arb_point(), arb_color(), arb_num()).prop_map(|(at, c, s)| json!({"at": at, "color": c, "spread": s})), 0..3),
         arb_junk(),
@@ -160,12 +174,21 @@ fn arb_paint() -> impl Strategy<Value = Value> {
 /// An output object: an input object's id (by index into the inputs) or a random one, and any of
 /// the object keys.
 fn arb_object() -> impl Strategy<Value = (Option<usize>, Value)> {
-    let stroke = (arb_paint(), prop::option::of(arb_num())).prop_map(|(p, w)| json!({"paint": p, "width": w}));
+    let stroke = (arb_paint(), prop::option::of(arb_num()))
+        .prop_map(|(p, w)| json!({"paint": p, "width": w}));
     (
         prop::option::of(0usize..8),
-        prop::option::of(prop_oneof![Just(json!("path")), Just(json!("compound")), arb_junk()]),
+        prop::option::of(prop_oneof![
+            Just(json!("path")),
+            Just(json!("compound")),
+            arb_junk()
+        ]),
         prop::option::of(arb_path()),
-        prop::option::of(prop_oneof![Just(json!("evenodd")), Just(json!("nonzero")), arb_junk()]),
+        prop::option::of(prop_oneof![
+            Just(json!("evenodd")),
+            Just(json!("nonzero")),
+            arb_junk()
+        ]),
         prop::option::of(prop::collection::vec(arb_paint(), 0..3)),
         prop::option::of(prop::collection::vec(stroke, 0..3)),
         prop::option::of(arb_num()),

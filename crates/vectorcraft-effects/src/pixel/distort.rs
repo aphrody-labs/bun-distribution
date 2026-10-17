@@ -18,7 +18,12 @@ const SALT_FROST: u64 = 128;
 const SALT_RIPPLE: u64 = 136;
 
 /// Glass's surfaces, in its Texture menu's order: (label, parameter value).
-pub const GLASS_TEXTURES: [(&str, &str); 4] = [("Blocks", "blocks"), ("Canvas", "canvas"), ("Frosted", "frosted"), ("Tiny Lens", "tinyLens")];
+pub const GLASS_TEXTURES: [(&str, &str); 4] = [
+    ("Blocks", "blocks"),
+    ("Canvas", "canvas"),
+    ("Frosted", "frosted"),
+    ("Tiny Lens", "tinyLens"),
+];
 
 /// A Glass surface.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,7 +35,12 @@ pub enum GlassTexture {
 }
 
 impl GlassTexture {
-    const ALL: [GlassTexture; 4] = [GlassTexture::Blocks, GlassTexture::Canvas, GlassTexture::Frosted, GlassTexture::TinyLens];
+    const ALL: [GlassTexture; 4] = [
+        GlassTexture::Blocks,
+        GlassTexture::Canvas,
+        GlassTexture::Frosted,
+        GlassTexture::TinyLens,
+    ];
 
     /// The surface of `value` (a [`GLASS_TEXTURES`] value, any case); Frosted otherwise.
     pub fn parse(value: &str) -> Self {
@@ -61,7 +71,8 @@ fn blocks(p: Point) -> f64 {
 
 /// Frosted glass: two octaves of fine smooth noise (1.2 and 0.5 points).
 fn frosted(p: Point) -> f64 {
-    0.8 * value_noise(SALT_FROST, p.x / 1.2, p.y / 1.2) + 0.2 * value_noise(SALT_FROST + 1, p.x / 0.5, p.y / 0.5)
+    0.8 * value_noise(SALT_FROST, p.x / 1.2, p.y / 1.2)
+        + 0.2 * value_noise(SALT_FROST + 1, p.x / 0.5, p.y / 0.5)
 }
 
 /// Tiny lenses 4 points across in rows and columns, each a shallow dome.
@@ -107,7 +118,9 @@ pub(super) fn glass(
     scaling: f64,
     invert: bool,
 ) {
-    let Some(place) = Place::new(space, w, h) else { return };
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     if !(scaling.is_finite() && scaling > 0.0 && smoothness.is_finite()) {
         return;
     }
@@ -118,17 +131,31 @@ pub(super) fn glass(
     displace(px, w, h, &place, glass_shift(distortion), |q| {
         let t = Point::new(q.x / scaling, q.y / scaling);
         let at = |dx: f64, dy: f64| texture.height(Point::new(t.x + dx, t.y + dy));
-        Vec2::new(at(step, 0.0) - at(-step, 0.0), at(0.0, step) - at(0.0, -step)) * (gain / (2.0 * step))
+        Vec2::new(
+            at(step, 0.0) - at(-step, 0.0),
+            at(0.0, step) - at(0.0, -step),
+        ) * (gain / (2.0 * step))
     });
 }
 
 /// Ocean Ripple: the object as if under rippling water, ripples about `size` (1..15) points plus
 /// two across, shifting it by up to [`ripple_shift`].
-pub(super) fn ocean_ripple(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, size: f64, magnitude: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn ocean_ripple(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    size: f64,
+    magnitude: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let (wave, most) = (ripple_wave(size), ripple_shift(size, magnitude));
     displace(px, w, h, &place, most, |q| {
-        let n = |salt: u64| 0.7 * smooth_noise(salt, q, wave) + 0.3 * smooth_noise(salt + 2, q, 0.5 * wave);
+        let n = |salt: u64| {
+            0.7 * smooth_noise(salt, q, wave) + 0.3 * smooth_noise(salt + 2, q, 0.5 * wave)
+        };
         Vec2::new(n(SALT_RIPPLE), n(SALT_RIPPLE + 1)) * most
     });
 }
@@ -137,9 +164,22 @@ pub(super) fn ocean_ripple(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
 /// [`GLOW_SPREAD`], glow white as strongly as `glow` (0..20) says, from the brightness that
 /// `clear` (0..20) leaves clear of glow; white grain as dense as `graininess` (0..10) says is
 /// sprinkled over it, thicker in the glow.
-pub(super) fn diffuse_glow(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, graininess: f64, glow: f64, clear: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
-    let mut light: Vec<f32> = px.iter().map(|p| luma(straight(*p)) * f32::from(p[3]) / 255.0).collect();
+pub(super) fn diffuse_glow(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    graininess: f64,
+    glow: f64,
+    clear: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
+    let mut light: Vec<f32> = px
+        .iter()
+        .map(|p| luma(straight(*p)) * f32::from(p[3]) / 255.0)
+        .collect();
     blur_plane(&mut light, w, h, GLOW_SPREAD / place.px);
     let amount = (glow / 20.0).clamp(0.0, 1.0) as f32;
     let from = (0.9 * clear / 20.0).clamp(0.0, 0.9) as f32;
@@ -148,18 +188,33 @@ pub(super) fn diffuse_glow(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
         if p[3] == 0 {
             return;
         }
-        let g = ((light.get(y * w + x).copied().unwrap_or(0.0) - from) / (1.0 - from)).clamp(0.0, 1.0);
+        let g =
+            ((light.get(y * w + x).copied().unwrap_or(0.0) - from) / (1.0 - from)).clamp(0.0, 1.0);
         let chance = 0.5 * (cell_noise(SALT_GLOW, place.at(x, y), 1.0, 0) + 1.0);
-        let dot = if chance < grain * (0.08 + 0.32 * f64::from(g)) { 0.55 } else { 0.0 };
+        let dot = if chance < grain * (0.08 + 0.32 * f64::from(g)) {
+            0.55
+        } else {
+            0.0
+        };
         let white = (amount * g + dot).min(1.0);
-        *p = premultiply(straight(*p).map(|v| v + (1.0 - v) * white), f32::from(p[3]) / 255.0);
+        *p = premultiply(
+            straight(*p).map(|v| v + (1.0 - v) * white),
+            f32::from(p[3]) / 255.0,
+        );
     });
 }
 
 /// Move the object's content by `shift(q)` (document units; `q` a pixel's centre relative to the
 /// object's centre, its length capped at `most`): each pixel takes the colour `shift` away from it,
 /// interpolated between pixels, transparent beyond the raster.
-pub(super) fn displace(px: &mut [[u8; 4]], w: usize, h: usize, place: &Place, most: f64, shift: impl Fn(Point) -> Vec2) {
+pub(super) fn displace(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    place: &Place,
+    most: f64,
+    shift: impl Fn(Point) -> Vec2,
+) {
     if !(most.is_finite() && most > 0.0) {
         return;
     }
@@ -189,9 +244,15 @@ fn sample(src: &[[u8; 4]], w: usize, h: usize, x: f64, y: f64) -> [u8; 4] {
         if i < 0.0 || j < 0.0 || i >= w as f64 || j >= h as f64 {
             return [0.0; 4];
         }
-        src.get(j as usize * w + i as usize).map_or([0.0; 4], |p| p.map(f64::from))
+        src.get(j as usize * w + i as usize)
+            .map_or([0.0; 4], |p| p.map(f64::from))
     };
-    let (a, b, c, d) = (at(x0, y0), at(x0 + 1.0, y0), at(x0, y0 + 1.0), at(x0 + 1.0, y0 + 1.0));
+    let (a, b, c, d) = (
+        at(x0, y0),
+        at(x0 + 1.0, y0),
+        at(x0, y0 + 1.0),
+        at(x0 + 1.0, y0 + 1.0),
+    );
     std::array::from_fn(|k| {
         let top = a[k] + (b[k] - a[k]) * fx;
         let bottom = c[k] + (d[k] - c[k]) * fx;

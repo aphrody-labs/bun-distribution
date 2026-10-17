@@ -5,7 +5,9 @@ use soundcraft_midi::Sequence;
 use soundcraft_time::{Range, Samples};
 
 /// Fade curve shapes (Pro Tools offers standard, equal-power, S-curve and custom presets).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum FadeShape {
     Linear,
     #[default]
@@ -16,7 +18,13 @@ pub enum FadeShape {
 }
 
 impl FadeShape {
-    pub const ALL: [FadeShape; 5] = [FadeShape::Linear, FadeShape::EqualPower, FadeShape::SCurve, FadeShape::Exponential, FadeShape::Logarithmic];
+    pub const ALL: [FadeShape; 5] = [
+        FadeShape::Linear,
+        FadeShape::EqualPower,
+        FadeShape::SCurve,
+        FadeShape::Exponential,
+        FadeShape::Logarithmic,
+    ];
 
     /// Fade-in gain at `t` ∈ [0,1] (fade-outs use `gain(1 - t)`).
     pub fn gain(self, t: f32) -> f32 {
@@ -42,7 +50,9 @@ impl FadeShape {
 
     pub fn from_id(s: &str) -> Option<FadeShape> {
         let s = s.to_ascii_lowercase().replace(['-', '_', ' '], "");
-        FadeShape::ALL.into_iter().find(|f| f.label().to_ascii_lowercase().replace(['-', ' '], "") == s)
+        FadeShape::ALL
+            .into_iter()
+            .find(|f| f.label().to_ascii_lowercase().replace(['-', ' '], "") == s)
     }
 }
 
@@ -112,7 +122,14 @@ fn one() -> f64 {
 }
 
 impl Clip {
-    pub fn audio(id: ClipId, name: impl Into<String>, source: SourceId, offset: Samples, start: Samples, length: Samples) -> Clip {
+    pub fn audio(
+        id: ClipId,
+        name: impl Into<String>,
+        source: SourceId,
+        offset: Samples,
+        start: Samples,
+        length: Samples,
+    ) -> Clip {
         Clip {
             id,
             name: name.into(),
@@ -134,14 +151,27 @@ impl Clip {
         }
     }
 
-    pub fn midi(id: ClipId, name: impl Into<String>, start: Samples, length: Samples, sequence: Sequence) -> Clip {
+    pub fn midi(
+        id: ClipId,
+        name: impl Into<String>,
+        start: Samples,
+        length: Samples,
+        sequence: Sequence,
+    ) -> Clip {
         let mut c = Clip::audio(id, name, SourceId(0), 0, start, length);
         c.content = ClipContent::Midi { sequence };
         c
     }
 
     /// A clip showing the movie `source` from `offset` samples into it.
-    pub fn video(id: ClipId, name: impl Into<String>, source: SourceId, offset: Samples, start: Samples, length: Samples) -> Clip {
+    pub fn video(
+        id: ClipId,
+        name: impl Into<String>,
+        source: SourceId,
+        offset: Samples,
+        start: Samples,
+        length: Samples,
+    ) -> Clip {
         let mut c = Clip::audio(id, name, SourceId(0), 0, start, length);
         c.content = ClipContent::Video { source, offset };
         c
@@ -152,7 +182,10 @@ impl Clip {
     }
 
     pub fn range(&self) -> Range {
-        Range { start: self.start, end: self.end() }
+        Range {
+            start: self.start,
+            end: self.end(),
+        }
     }
 
     pub fn is_audio(&self) -> bool {
@@ -195,11 +228,17 @@ impl Clip {
         }
         let mut g = db_to_gain(db);
         if self.fade_in.len > 0 && rel < self.fade_in.len {
-            g *= self.fade_in.shape.gain(rel as f32 / self.fade_in.len as f32);
+            g *= self
+                .fade_in
+                .shape
+                .gain(rel as f32 / self.fade_in.len as f32);
         }
         let from_end = self.length - rel;
         if self.fade_out.len > 0 && from_end <= self.fade_out.len {
-            g *= self.fade_out.shape.gain(from_end as f32 / self.fade_out.len as f32);
+            g *= self
+                .fade_out
+                .shape
+                .gain(from_end as f32 / self.fade_out.len as f32);
         }
         g
     }
@@ -208,14 +247,20 @@ impl Clip {
     pub fn trim_start_to(&mut self, new_start: Samples) {
         let new_start = new_start.min(self.end() - 1);
         let delta = new_start - self.start;
-        if let ClipContent::Audio { offset, .. } | ClipContent::Video { offset, .. } = &mut self.content {
+        if let ClipContent::Audio { offset, .. } | ClipContent::Video { offset, .. } =
+            &mut self.content
+        {
             *offset = offset.saturating_add(delta);
         }
         // MIDI note ticks are re-anchored by the engine, which knows the tempo map.
         self.length -= delta;
         self.start = new_start;
         self.clamp_fades();
-        self.gain_env = self.gain_env.iter().filter_map(|&(t, v)| (t - delta >= 0).then_some((t - delta, v))).collect();
+        self.gain_env = self
+            .gain_env
+            .iter()
+            .filter_map(|&(t, v)| (t - delta >= 0).then_some((t - delta, v)))
+            .collect();
     }
 
     /// Move the end edge to `new_end`.
@@ -247,7 +292,11 @@ fn env_value(env: &[(Samples, f32)], at: Samples) -> f32 {
 }
 
 pub(crate) fn db_to_gain(db: f32) -> f32 {
-    if db.is_nan() || db <= -144.0 { 0.0 } else { 10f32.powf(db.min(48.0) / 20.0) }
+    if db.is_nan() || db <= -144.0 {
+        0.0
+    } else {
+        10f32.powf(db.min(48.0) / 20.0)
+    }
 }
 
 #[cfg(test)]
@@ -267,8 +316,14 @@ mod tests {
     #[test]
     fn gain_with_fades() {
         let mut c = Clip::audio(ClipId(1), "a", SourceId(1), 0, 100, 1000);
-        c.fade_in = Fade { len: 100, shape: FadeShape::Linear };
-        c.fade_out = Fade { len: 100, shape: FadeShape::Linear };
+        c.fade_in = Fade {
+            len: 100,
+            shape: FadeShape::Linear,
+        };
+        c.fade_out = Fade {
+            len: 100,
+            shape: FadeShape::Linear,
+        };
         assert!(c.gain_at(0).abs() < 1e-6);
         assert!((c.gain_at(50) - 0.5).abs() < 1e-6);
         assert!((c.gain_at(500) - 1.0).abs() < 1e-6);
@@ -293,7 +348,10 @@ mod tests {
         assert_eq!(c.length, 1);
         // Regression: trimming the start must not leave a fade-out longer than the clip.
         let mut c = Clip::audio(ClipId(2), "b", SourceId(1), 0, 0, 1000);
-        c.fade_out = Fade { len: 800, shape: FadeShape::Linear };
+        c.fade_out = Fade {
+            len: 800,
+            shape: FadeShape::Linear,
+        };
         c.trim_start_to(900);
         assert!(c.fade_out.len <= c.length);
     }

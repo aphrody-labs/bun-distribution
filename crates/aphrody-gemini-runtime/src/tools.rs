@@ -159,12 +159,13 @@ impl Tool for WebSearchTool {
     }
 
     async fn invoke(&self, args: serde_json::Value) -> Result<serde_json::Value, ToolError> {
-        let query = args.get("query").and_then(serde_json::Value::as_str).ok_or_else(|| {
-            ToolError::BadArgs {
+        let query = args
+            .get("query")
+            .and_then(serde_json::Value::as_str)
+            .ok_or_else(|| ToolError::BadArgs {
                 name: "web_search".to_owned(),
                 reason: "missing required field `query` (string)".to_owned(),
-            }
-        })?;
+            })?;
         let result = web_search(&self.client, &self.cfg, query).await?;
         serde_json::to_value(&result).map_err(|e| ToolError::Other(e.to_string()))
     }
@@ -266,7 +267,9 @@ impl ToolRegistry {
         name: &str,
         args: serde_json::Value,
     ) -> Result<serde_json::Value, ToolError> {
-        let tool = self.get(name).ok_or_else(|| ToolError::NotFound(name.to_owned()))?;
+        let tool = self
+            .get(name)
+            .ok_or_else(|| ToolError::NotFound(name.to_owned()))?;
         tool.invoke(args).await
     }
 }
@@ -315,14 +318,20 @@ mod tests {
     async fn registry_invokes_registered_tool() {
         let mut reg = ToolRegistry::new();
         reg.register(Arc::new(EchoTool));
-        let v = reg.invoke("echo", serde_json::json!({"x": 1})).await.expect("ok");
+        let v = reg
+            .invoke("echo", serde_json::json!({"x": 1}))
+            .await
+            .expect("ok");
         assert_eq!(v["x"], 1);
     }
 
     #[tokio::test]
     async fn registry_not_found_returns_error() {
         let reg = ToolRegistry::new();
-        let err = reg.invoke("missing", serde_json::Value::Null).await.unwrap_err();
+        let err = reg
+            .invoke("missing", serde_json::Value::Null)
+            .await
+            .unwrap_err();
         assert!(matches!(err, ToolError::NotFound(_)));
     }
 
@@ -339,14 +348,16 @@ mod tests {
     #[tokio::test]
     async fn web_search_tool_bad_args_missing_query() {
         let _ = rustls::crypto::ring::default_provider().install_default();
-        let tool =
-            WebSearchTool::new(reqwest::Client::new(), WebSearchConfig::with_api_key("AIza-test"));
+        let tool = WebSearchTool::new(
+            reqwest::Client::new(),
+            WebSearchConfig::with_api_key("AIza-test"),
+        );
         let err = tool.invoke(serde_json::json!({})).await.unwrap_err();
         match err {
             ToolError::BadArgs { name, reason } => {
                 assert_eq!(name, "web_search");
                 assert!(reason.contains("query"));
-            },
+            }
             other => panic!("expected BadArgs, got {other:?}"),
         }
     }

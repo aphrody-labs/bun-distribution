@@ -621,11 +621,7 @@ impl ResourceManager {
                 left: sticks.left,
                 right: sticks.right,
             };
-            dp.on_update(
-                &mut shared_memory.debug_pad,
-                &button_state,
-                &stick_state,
-            );
+            dp.on_update(&mut shared_memory.debug_pad, &button_state, &stick_state);
         }
 
         // digitizer->OnUpdate(core_timing)
@@ -862,7 +858,11 @@ impl ResourceManager {
         self.digitizer = Some(Arc::new(Mutex::new(Digitizer::new())));
         self.palma = Some(Arc::new(Mutex::new(Palma::new())));
         self.six_axis = Some(Arc::new(Mutex::new(SixAxis::new(
-            &self.hid_core.as_ref().expect("ResourceManager requires HIDCore").lock(),
+            &self
+                .hid_core
+                .as_ref()
+                .expect("ResourceManager requires HIDCore")
+                .lock(),
         ))));
 
         // Wire SetAppletResource for each controller that needs it.

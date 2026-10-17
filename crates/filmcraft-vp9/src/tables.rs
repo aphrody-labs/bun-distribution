@@ -102,8 +102,10 @@ pub const SS_SIZE_LOOKUP: [[[u8; 2]; 2]; 13] = [
 ];
 
 /// mode2txfm_map (10.2).
-pub const MODE2TXFM: [u8; 14] =
-    [DCT_DCT, ADST_DCT, DCT_ADST, DCT_DCT, ADST_ADST, ADST_DCT, DCT_ADST, DCT_ADST, ADST_DCT, ADST_ADST, DCT_DCT, DCT_DCT, DCT_DCT, DCT_DCT];
+pub const MODE2TXFM: [u8; 14] = [
+    DCT_DCT, ADST_DCT, DCT_ADST, DCT_DCT, ADST_ADST, ADST_DCT, DCT_ADST, DCT_ADST, ADST_DCT,
+    ADST_ADST, DCT_DCT, DCT_DCT, DCT_DCT, DCT_DCT,
+];
 
 /// counter_to_context (6.5.1); INVALID_CASE entries are 9.
 pub const COUNTER_TO_CONTEXT: [u8; 19] = [2, 3, 4, 1, 3, 9, 0, 9, 9, 5, 5, 9, 5, 9, 9, 9, 9, 9, 6];
@@ -118,8 +120,19 @@ pub const SEGMENTATION_FEATURE_BITS: [u32; 4] = [8, 6, 2, 0];
 pub const SEGMENTATION_FEATURE_SIGNED: [bool; 4] = [true, true, false, false];
 
 /// extra_bits[token] = (cat, numExtra, base) (6.4.26).
-pub const EXTRA_BITS: [(u8, u8, u16); 11] =
-    [(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (1, 1, 5), (2, 2, 7), (3, 3, 11), (4, 4, 19), (5, 5, 35), (6, 14, 67)];
+pub const EXTRA_BITS: [(u8, u8, u16); 11] = [
+    (0, 0, 0),
+    (0, 0, 1),
+    (0, 0, 2),
+    (0, 0, 3),
+    (0, 0, 4),
+    (1, 1, 5),
+    (2, 2, 7),
+    (3, 3, 11),
+    (4, 4, 19),
+    (5, 5, 35),
+    (6, 14, 67),
+];
 
 /// cat_probs (6.4.26).
 pub const CAT_PROBS: [&[u8]; 7] = [
@@ -129,7 +142,9 @@ pub const CAT_PROBS: [&[u8]; 7] = [
     &[173, 148, 140],
     &[176, 155, 140, 135],
     &[180, 157, 141, 134, 130],
-    &[254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129],
+    &[
+        254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129,
+    ],
 ];
 
 // Decode trees (9.3.1); leaves are stored negated.
@@ -162,7 +177,9 @@ pub const TX_SIZE_8_TREE: [i8; 2] = [0, -1];
 pub const INTER_MODE_TREE: [i8; 6] = [-2, 2, 0, 4, -1, -3];
 pub const INTERP_FILTER_TREE: [i8; 4] = [0, 2, -1, -2];
 pub const MV_JOINT_TREE: [i8; 6] = [0, 2, -1, 4, -2, -3];
-pub const MV_CLASS_TREE: [i8; 20] = [0, 2, -1, 4, 6, 8, -2, -3, 10, 12, -4, -5, -6, 14, 16, 18, -7, -8, -9, -10];
+pub const MV_CLASS_TREE: [i8; 20] = [
+    0, 2, -1, 4, 6, 8, -2, -3, 10, 12, -4, -5, -6, 14, 16, 18, -7, -8, -9, -10,
+];
 pub const MV_FR_TREE: [i8; 6] = [0, 2, -1, 4, -2, -3];
 /// small_token_tree used by coefficient probability adaptation (8.4.3).
 pub const SMALL_TOKEN_TREE: [i8; 6] = [0, 0, 0, 4, -1, -2];
@@ -178,8 +195,12 @@ pub fn pareto_full() -> &'static [[u8; 8]; 255] {
         for p in 1..=255usize {
             let x = (p - 1) / 2;
             for n in 0..8 {
-                t[p - 1][n] =
-                    if p & 1 == 1 { PARETO_TABLE[x * 8 + n] } else { ((PARETO_TABLE[x * 8 + n] as u32 + PARETO_TABLE[(x + 1) * 8 + n] as u32) >> 1) as u8 };
+                t[p - 1][n] = if p & 1 == 1 {
+                    PARETO_TABLE[x * 8 + n]
+                } else {
+                    ((PARETO_TABLE[x * 8 + n] as u32 + PARETO_TABLE[(x + 1) * 8 + n] as u32) >> 1)
+                        as u8
+                };
             }
         }
         t
@@ -251,8 +272,12 @@ mod tests {
     fn trees_are_consistent() {
         // Every leaf value appears exactly once.
         fn leaves(t: &[i8]) -> Vec<i8> {
-            let mut v: Vec<i8> =
-                t.iter().enumerate().filter(|(i, x)| **x <= 0 && !(*i == 0 && t.len() > 2 && t[0] == 0 && t[1] == 0)).map(|(_, x)| -x).collect();
+            let mut v: Vec<i8> = t
+                .iter()
+                .enumerate()
+                .filter(|(i, x)| **x <= 0 && !(*i == 0 && t.len() > 2 && t[0] == 0 && t[1] == 0))
+                .map(|(_, x)| -x)
+                .collect();
             v.sort();
             v
         }

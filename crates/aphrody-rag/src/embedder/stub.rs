@@ -21,7 +21,10 @@ pub struct StubEmbedder {
 
 impl Default for StubEmbedder {
     fn default() -> Self {
-        Self { model_name: "stub-384".to_string(), dimension: 384 }
+        Self {
+            model_name: "stub-384".to_string(),
+            dimension: 384,
+        }
     }
 }
 
@@ -35,13 +38,19 @@ impl StubEmbedder {
     /// Create with a custom model name.
     #[must_use]
     pub fn with_model(model_name: impl Into<String>) -> Self {
-        Self { model_name: model_name.into(), dimension: 384 }
+        Self {
+            model_name: model_name.into(),
+            dimension: 384,
+        }
     }
 
     /// Create with a custom model name and dimension (e.g. 512, 1024).
     #[must_use]
     pub fn with_model_and_dim(model_name: impl Into<String>, dimension: usize) -> Self {
-        Self { model_name: model_name.into(), dimension }
+        Self {
+            model_name: model_name.into(),
+            dimension,
+        }
     }
 
     /// Deterministically hash a single string into a unit vector of specified dimension.
@@ -107,7 +116,10 @@ mod tests {
     #[tokio::test]
     async fn test_stub_embedder_deterministic_and_normalized() {
         let embedder = StubEmbedder::new();
-        let texts = vec!["Hello world".to_string(), "Aphrody autonomous agent".to_string()];
+        let texts = vec![
+            "Hello world".to_string(),
+            "Aphrody autonomous agent".to_string(),
+        ];
 
         let res = embedder.embed(&texts, false).await.expect("embed ok");
         assert_eq!(res.len(), 2);

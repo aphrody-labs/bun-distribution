@@ -4,7 +4,14 @@
 //! (views, panels, zoom — see [`menus::ui_commands`]) and forwards everything else to the engine.
 //! The same entry point serves menus, shortcuts, buttons and the control channel ([`control`]).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod album_picker;
 pub mod brush_live;
@@ -512,7 +519,11 @@ impl LightcraftApp {
         let params = if id == "crop.aspect"
             && params.get("aspect").and_then(Value::as_str) == Some("toggle")
             && self.crop_tool_aspect().is_some()
-            && self.session.active().and_then(|id| self.session.develop_of(id)).is_some_and(|d| d.crop == lightcraft_develop::Crop::default())
+            && self
+                .session
+                .active()
+                .and_then(|id| self.session.develop_of(id))
+                .is_some_and(|d| d.crop == lightcraft_develop::Crop::default())
         {
             serde_json::json!({"aspect": "free"})
         } else {
@@ -520,13 +531,19 @@ impl LightcraftApp {
         };
         let r = self.session.execute(id, &params).map_err(|e| e.to_string());
         if r.is_ok() && matches!(id, "crop.aspect" | "crop.rotateAspect") {
-            self.ui.crop_default_aspect = if id == "crop.aspect" && params.get("aspect").and_then(Value::as_str) == Some("original") {
+            self.ui.crop_default_aspect = if id == "crop.aspect"
+                && params.get("aspect").and_then(Value::as_str) == Some("original")
+            {
                 Some(serde_json::json!("original"))
             } else {
                 self.session
                     .active()
                     .and_then(|photo| self.session.develop_of(photo))
-                    .map(|d| d.crop.aspect.map_or(serde_json::json!("free"), |(w, h)| serde_json::json!([w as f64 / 100.0, h as f64 / 100.0])))
+                    .map(|d| {
+                        d.crop.aspect.map_or(serde_json::json!("free"), |(w, h)| {
+                            serde_json::json!([w as f64 / 100.0, h as f64 / 100.0])
+                        })
+                    })
             };
         }
         if r.is_ok() && id == "mask.adjust" {
@@ -540,27 +557,48 @@ impl LightcraftApp {
             let completed = match id {
                 "library.compact" => Some(format!("✓ {}", i18n::tr("Optimize Library"))),
                 "library.clearPreviews" => Some(format!("✓ {}", i18n::tr("Clear Preview Cache"))),
-                "develop.autoSync" => Some(format!("{}: {}", i18n::tr("Auto Sync"), i18n::tr(if self.session.auto_sync { "On" } else { "Off" }))),
+                "develop.autoSync" => Some(format!(
+                    "{}: {}",
+                    i18n::tr("Auto Sync"),
+                    i18n::tr(if self.session.auto_sync { "On" } else { "Off" })
+                )),
                 _ => None,
             };
             if let Some(message) = completed {
                 // Menu clicks can arrive before the next frame updates last_time.
-                let now = self.tasks.repaint.as_ref().map(|ctx| ctx.input(|i| i.time)).unwrap_or(self.last_time);
+                let now = self
+                    .tasks
+                    .repaint
+                    .as_ref()
+                    .map(|ctx| ctx.input(|i| i.time))
+                    .unwrap_or(self.last_time);
                 self.ui.toast = Some((message, now + TOAST_SECONDS, None));
             }
         }
         if r.is_ok() && id == "photo.label" {
-            let label = params.get("label").and_then(Value::as_str).and_then(lightcraft_catalog::ColorLabel::parse);
+            let label = params
+                .get("label")
+                .and_then(Value::as_str)
+                .and_then(lightcraft_catalog::ColorLabel::parse);
             let text = match label {
                 Some(label) => {
-                    let name =
-                        self.session.catalog.custom_label_name(label).map(str::to_owned).unwrap_or_else(|| i18n::tr(&format!("{label:?}")).into());
+                    let name = self
+                        .session
+                        .catalog
+                        .custom_label_name(label)
+                        .map(str::to_owned)
+                        .unwrap_or_else(|| i18n::tr(&format!("{label:?}")).into());
                     i18n::tr_format!("{name} Label", name = name)
                 }
                 None => i18n::tr("Color label cleared").into(),
             };
             // Native menu clicks can arrive before logic() updates last_time after an idle gap.
-            let now = self.tasks.repaint.as_ref().map(|ctx| ctx.input(|i| i.time)).unwrap_or(self.last_time);
+            let now = self
+                .tasks
+                .repaint
+                .as_ref()
+                .map(|ctx| ctx.input(|i| i.time))
+                .unwrap_or(self.last_time);
             self.ui.toast = Some((text, now + TOAST_SECONDS, label));
         }
         match &r {
@@ -588,13 +626,21 @@ impl LightcraftApp {
         match self.ui.crop_default_aspect.as_ref()? {
             Value::String(s) if s == "original" => {
                 let p = self.session.catalog.photo(photo)?;
-                let (w, h) = (p.width.max(1).saturating_mul(100), p.height.max(1).saturating_mul(100));
-                Some(if d.orientation.swaps_axes() { (h, w) } else { (w, h) })
+                let (w, h) = (
+                    p.width.max(1).saturating_mul(100),
+                    p.height.max(1).saturating_mul(100),
+                );
+                Some(if d.orientation.swaps_axes() {
+                    (h, w)
+                } else {
+                    (w, h)
+                })
             }
             Value::Array(a) => {
                 let number = |i: usize| {
                     let v = a.get(i)?.as_f64()? * 100.0;
-                    (v.is_finite() && v >= 1.0 && v <= f64::from(u32::MAX)).then_some(v.round() as u32)
+                    (v.is_finite() && v >= 1.0 && v <= f64::from(u32::MAX))
+                        .then_some(v.round() as u32)
                 };
                 Some((number(0)?, number(1)?))
             }
@@ -605,10 +651,16 @@ impl LightcraftApp {
     /// Called only after a crop gesture begins, inside its undo transaction.
     pub(crate) fn begin_crop(&mut self) -> Result<(), String> {
         if self.session.interaction.is_some()
-            && self.session.active().and_then(|id| self.session.develop_of(id)).is_some_and(|d| d.crop == lightcraft_develop::Crop::default())
+            && self
+                .session
+                .active()
+                .and_then(|id| self.session.develop_of(id))
+                .is_some_and(|d| d.crop == lightcraft_develop::Crop::default())
             && let Some(aspect) = self.ui.crop_default_aspect.clone()
             && aspect != serde_json::json!("free")
-            && let Err(e) = self.session.execute("crop.aspect", &serde_json::json!({"aspect": aspect}))
+            && let Err(e) = self
+                .session
+                .execute("crop.aspect", &serde_json::json!({"aspect": aspect}))
         {
             // A remembered value the command refuses (a hand-edited settings file) would refuse
             // every crop drag on an untouched photo: forget it and let this drag go ahead.
@@ -621,7 +673,9 @@ impl LightcraftApp {
     /// Show a transient toast at the bottom of the canvas (like the reference app's HUD).
     /// Advance a running slideshow (wrapping around at the end).
     fn slideshow_tick(&mut self, ctx: &egui::Context) {
-        let Some((interval, due, paused)) = self.ui.slideshow else { return };
+        let Some((interval, due, paused)) = self.ui.slideshow else {
+            return;
+        };
         if !self.ui.fullscreen {
             self.ui.slideshow = None;
             return;
@@ -635,33 +689,57 @@ impl LightcraftApp {
             if let Some(cur) = self.session.active()
                 && !vis.is_empty()
             {
-                let i = vis.iter().position(|x| *x == cur).map_or(0, |i| (i + 1) % vis.len());
+                let i = vis
+                    .iter()
+                    .position(|x| *x == cur)
+                    .map_or(0, |i| (i + 1) % vis.len());
                 let _ = self.run("library.select", serde_json::json!({"ids": [vis[i].0]}));
             }
             self.ui.slideshow = Some((interval, now + interval, false));
         }
-        ctx.request_repaint_after(std::time::Duration::from_secs_f64((due - now).clamp(0.05, interval)));
+        ctx.request_repaint_after(std::time::Duration::from_secs_f64(
+            (due - now).clamp(0.05, interval),
+        ));
     }
 
     /// Announce the end of a Build Previews run.
     fn preview_build_status(&mut self, ctx: &egui::Context) {
         use std::sync::atomic::Ordering;
-        let Some(b) = self.session.preview_build.clone() else { return };
+        let Some(b) = self.session.preview_build.clone() else {
+            return;
+        };
         let key = std::sync::Arc::as_ptr(&b) as usize;
         if b.finished.load(Ordering::Relaxed) {
             if self.ui.preview_build_seen != Some((key, true)) {
                 self.ui.preview_build_seen = Some((key, true));
-                let (done, failed) = (b.done.load(Ordering::Relaxed), b.failed.load(Ordering::Relaxed));
+                let (done, failed) = (
+                    b.done.load(Ordering::Relaxed),
+                    b.failed.load(Ordering::Relaxed),
+                );
                 let plural = if done == 1 { "" } else { "s" };
                 let mut msg = match (b.error(), b.what) {
-                    (Some(e), what) => format!("{}: {e}", if what.is_empty() { "previews" } else { what }),
-                    (None, "") => crate::i18n::tr_format!("Previews ready for {done} photo{plural}", done = done, plural = plural),
+                    (Some(e), what) => {
+                        format!("{}: {e}", if what.is_empty() { "previews" } else { what })
+                    }
+                    (None, "") => crate::i18n::tr_format!(
+                        "Previews ready for {done} photo{plural}",
+                        done = done,
+                        plural = plural
+                    ),
                     (None, what) => {
-                        crate::i18n::tr_format!("Done ({what}): {done} photo{plural}", done = done, plural = plural, what = crate::i18n::tr(what))
+                        crate::i18n::tr_format!(
+                            "Done ({what}): {done} photo{plural}",
+                            done = done,
+                            plural = plural,
+                            what = crate::i18n::tr(what)
+                        )
                     }
                 };
                 if failed > 0 {
-                    msg.push_str(&crate::i18n::tr_format!(" · {failed} couldn't be rendered", failed = failed));
+                    msg.push_str(&crate::i18n::tr_format!(
+                        " · {failed} couldn't be rendered",
+                        failed = failed
+                    ));
                 }
                 self.toast(ctx, msg);
             }
@@ -713,10 +791,16 @@ impl LightcraftApp {
     fn place_names_outcome(&mut self, ctx: &egui::Context) {
         use lightcraft_engine::cmd::geocode::DownloadOutcome;
         match self.session.place_names.take_outcome() {
-            Some(DownloadOutcome::Done(_)) => self.toast(ctx, crate::i18n::tr("Place names downloaded")),
-            Some(DownloadOutcome::Cancelled) => self.toast(ctx, crate::i18n::tr("Place names download cancelled")),
+            Some(DownloadOutcome::Done(_)) => {
+                self.toast(ctx, crate::i18n::tr("Place names downloaded"))
+            }
+            Some(DownloadOutcome::Cancelled) => {
+                self.toast(ctx, crate::i18n::tr("Place names download cancelled"))
+            }
             Some(DownloadOutcome::Failed(e)) => self.toast_error(ctx, e),
-            None if self.session.place_names.downloading() => ctx.request_repaint_after(std::time::Duration::from_millis(500)),
+            None if self.session.place_names.downloading() => {
+                ctx.request_repaint_after(std::time::Duration::from_millis(500))
+            }
             None => {}
         }
     }
@@ -750,18 +834,28 @@ impl LightcraftApp {
             let open = matches!(self.ui.dialog, Some(state::Dialog::SamModel { .. }));
             match (&download.error, open) {
                 (_, true) => {}
-                (Some(e), false) if e.contains("cancelled") => {
-                    self.toast(ctx, crate::i18n::tr("SAM 3 download stopped: it resumes where it left off next time."))
-                }
-                (Some(e), false) => self.toast_error(ctx, crate::i18n::tr_format!("The SAM 3 download failed: {e}", e = e)),
-                (None, false) if download.finished => {
-                    self.toast_error(ctx, crate::i18n::tr("The SAM 3 model is installed: Object and Describe masks are ready."))
-                }
+                (Some(e), false) if e.contains("cancelled") => self.toast(
+                    ctx,
+                    crate::i18n::tr(
+                        "SAM 3 download stopped: it resumes where it left off next time.",
+                    ),
+                ),
+                (Some(e), false) => self.toast_error(
+                    ctx,
+                    crate::i18n::tr_format!("The SAM 3 download failed: {e}", e = e),
+                ),
+                (None, false) if download.finished => self.toast_error(
+                    ctx,
+                    crate::i18n::tr(
+                        "The SAM 3 model is installed: Object and Describe masks are ready.",
+                    ),
+                ),
                 (None, false) => {}
             }
         }
         if let Some((due, mask)) = self.ui.detail_due {
-            if now >= due && !self.session.segmenter.busy() && !self.session.segmenter.detail_busy() {
+            if now >= due && !self.session.segmenter.busy() && !self.session.segmenter.detail_busy()
+            {
                 self.ui.detail_due = None;
                 if let Err(e) = self.run("mask.refineDetail", serde_json::json!({"id": mask})) {
                     log::warn!("detail pass: {e}");
@@ -777,9 +871,16 @@ impl LightcraftApp {
 
     /// An AI mask error: when the model isn't installed, the dialog that offers to download it
     /// (`then`: the AI mask to start afterwards); otherwise a toast.
-    pub fn ai_error(&mut self, ctx: &egui::Context, e: impl Into<String>, then: Option<(&str, &str)>) {
+    pub fn ai_error(
+        &mut self,
+        ctx: &egui::Context,
+        e: impl Into<String>,
+        then: Option<(&str, &str)>,
+    ) {
         let e = e.into();
-        if lightcraft_engine::segment::Segmenter::AVAILABLE && e.starts_with(lightcraft_engine::segment::NOT_INSTALLED) {
+        if lightcraft_engine::segment::Segmenter::AVAILABLE
+            && e.starts_with(lightcraft_engine::segment::NOT_INSTALLED)
+        {
             self.offer_sam_download(then);
         } else {
             self.toast_error(ctx, e);
@@ -788,8 +889,13 @@ impl LightcraftApp {
 
     /// Open the dialog offering the SAM 3 download (never downloads by itself).
     pub fn offer_sam_download(&mut self, then: Option<(&str, &str)>) {
-        if self.ui.dialog.is_none() || matches!(self.ui.dialog, Some(state::Dialog::SamModel { .. })) {
-            self.ui.dialog = Some(state::Dialog::SamModel { then: then.map(|(k, o)| (k.to_string(), o.to_string())), error: None });
+        if self.ui.dialog.is_none()
+            || matches!(self.ui.dialog, Some(state::Dialog::SamModel { .. }))
+        {
+            self.ui.dialog = Some(state::Dialog::SamModel {
+                then: then.map(|(k, o)| (k.to_string(), o.to_string())),
+                error: None,
+            });
         }
     }
 
@@ -800,7 +906,9 @@ impl LightcraftApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             // a request its sender gave up on (the window drew nothing for a while) is not run
             // late: it would happen twice once the sender retries (issue #718)
@@ -881,7 +989,11 @@ impl LightcraftApp {
 
     /// The system's appearance: the host's answer first, then egui's (none: unknown).
     pub fn system_theme(&self, ctx: &egui::Context) -> Option<egui::Theme> {
-        self.services.system_theme.as_ref().and_then(|read| read(ctx)).or_else(|| ctx.system_theme())
+        self.services
+            .system_theme
+            .as_ref()
+            .and_then(|read| read(ctx))
+            .or_else(|| ctx.system_theme())
     }
 
     /// Restyle `ctx` when the theme the settings select (Appearance Mode, the dark and light
@@ -895,10 +1007,18 @@ impl LightcraftApp {
 
     /// Draw the UI into an offscreen context at the window's size; with `capture`, rasterize it
     /// on the CPU (photo textures come from the renderer's CPU copies).
-    pub fn headless_screenshot(&mut self, main: &egui::Context, capture: bool) -> Option<egui::ColorImage> {
+    pub fn headless_screenshot(
+        &mut self,
+        main: &egui::Context,
+        capture: bool,
+    ) -> Option<egui::ColorImage> {
         let mut view = self.shadow.take().unwrap_or_default();
         let size = main.input(|i| i.content_rect()).size();
-        let size = if size.x >= 1.0 && size.y >= 1.0 { size } else { egui::vec2(1600.0, 1000.0) };
+        let size = if size.x >= 1.0 && size.y >= 1.0 {
+            size
+        } else {
+            egui::vec2(1600.0, 1000.0)
+        };
         // Feed native viewport points; the shadow context applies the copied UI zoom.
         let zoom = main.zoom_factor();
         let size = size * zoom;
@@ -907,12 +1027,18 @@ impl LightcraftApp {
         if view.frames() == 0 {
             // warm-up pass: activates our fonts (pending font definitions live in `Memory`, which
             // is replaced below)
-            view.run(headless::HeadlessView::raw_input(size, ppp, time, vec![]), |_| {});
+            view.run(
+                headless::HeadlessView::raw_input(size, ppp, time, vec![]),
+                |_| {},
+            );
         }
         // same scroll offsets, open sections, style… as the window
         let memory = main.memory(|m| m.clone());
         view.ctx.memory_mut(|m| *m = memory);
-        view.run(headless::HeadlessView::raw_input(size, ppp, time, vec![]), |ui| self.ui(ui));
+        view.run(
+            headless::HeadlessView::raw_input(size, ppp, time, vec![]),
+            |ui| self.ui(ui),
+        );
         let img = capture.then(|| {
             let mut tex = self.renderer.cpu_textures();
             if let (Some((t, ..)), Some(px)) = (&self.merge.preview, &self.merge.preview_pixels) {
@@ -933,8 +1059,14 @@ impl LightcraftApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -942,9 +1074,15 @@ impl LightcraftApp {
                 .collect()
         });
         for (token, image) in events {
-            if let Some(i) = self.pending_screenshots.iter().position(|s| s.token == token) {
+            if let Some(i) = self
+                .pending_screenshots
+                .iter()
+                .position(|s| s.token == token)
+            {
                 let s = self.pending_screenshots.remove(i);
-                let _ = s.reply.send(control::save_screenshot(self, &image, s.path.as_deref()));
+                let _ = s
+                    .reply
+                    .send(control::save_screenshot(self, &image, s.path.as_deref()));
             }
         }
     }
@@ -985,7 +1123,10 @@ impl LightcraftApp {
             // "is the original there?" (grid, Info panel, Missing Photos) answers from a cache a
             // worker fills: a sleeping NAS or a dropped share never stalls a frame
             let repaint = ctx.clone();
-            self.session.media.availability.run_in_background(std::sync::Arc::new(move || repaint.request_repaint()));
+            self.session
+                .media
+                .availability
+                .run_in_background(std::sync::Arc::new(move || repaint.request_repaint()));
             self.styled = true;
             self.font_language = self.ui.language;
         } else if self.font_language != self.ui.language {
@@ -1029,7 +1170,9 @@ impl LightcraftApp {
         let focused = ctx.input(|i| i.focused);
         if focused && !self.ui.was_focused && !self.ui.external_edits.is_empty() {
             let ids = self.ui.external_edits.clone();
-            if let Ok(r) = self.session.execute("photo.reload", &serde_json::json!({"ids": ids}))
+            if let Ok(r) = self
+                .session
+                .execute("photo.reload", &serde_json::json!({"ids": ids}))
                 && r["reloaded"].as_array().is_some_and(|a| !a.is_empty())
             {
                 self.toast(ctx, "Updated the edits saved in the external editor");
@@ -1049,23 +1192,38 @@ impl LightcraftApp {
                 && !self.tasks.is_running(LABEL)
             {
                 self.ui.auto_import_at = now;
-                let work = move || lightcraft_engine::cmd::library::list_auto_import_folder(&folder);
-                let done = |app: &mut LightcraftApp, _ctx: &egui::Context, listing: Result<Vec<(String, u64)>, String>| {
-                    let listing = match listing {
-                        Ok(l) => l,
-                        Err(e) => return log::debug!("auto import: {e}"),
+                let work =
+                    move || lightcraft_engine::cmd::library::list_auto_import_folder(&folder);
+                let done =
+                    |app: &mut LightcraftApp,
+                     _ctx: &egui::Context,
+                     listing: Result<Vec<(String, u64)>, String>| {
+                        let listing = match listing {
+                            Ok(l) => l,
+                            Err(e) => return log::debug!("auto import: {e}"),
+                        };
+                        let p = serde_json::json!({"listing": listing, "start": false});
+                        let Ok(r) = app.session.execute("library.autoImportScan", &p) else {
+                            return;
+                        };
+                        let Some(mut params) =
+                            r.get("import").cloned().filter(|_| app.import.is_none())
+                        else {
+                            return;
+                        };
+                        let paths: Vec<String> = params["paths"]
+                            .as_array()
+                            .into_iter()
+                            .flatten()
+                            .filter_map(|v| v.as_str().map(str::to_string))
+                            .collect();
+                        if let Some(o) = params.as_object_mut() {
+                            o.remove("paths");
+                        }
+                        let undo0 = app.session.undo.len();
+                        app.import =
+                            Some(import::ImportTask::new(paths, params, undo0, false).auto());
                     };
-                    let p = serde_json::json!({"listing": listing, "start": false});
-                    let Ok(r) = app.session.execute("library.autoImportScan", &p) else { return };
-                    let Some(mut params) = r.get("import").cloned().filter(|_| app.import.is_none()) else { return };
-                    let paths: Vec<String> =
-                        params["paths"].as_array().into_iter().flatten().filter_map(|v| v.as_str().map(str::to_string)).collect();
-                    if let Some(o) = params.as_object_mut() {
-                        o.remove("paths");
-                    }
-                    let undo0 = app.session.undo.len();
-                    app.import = Some(import::ImportTask::new(paths, params, undo0, false).auto());
-                };
                 // listed every few seconds: quiet, no row in the activity stack
                 if let Err(e) = tasks::spawn(self, LABEL, None, work, done) {
                     log::warn!("{e}");
@@ -1084,11 +1242,18 @@ impl LightcraftApp {
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let dropped: Vec<String> =
-                ctx.input(|i| i.raw.dropped_files.iter().map(|f| f.path().to_string_lossy().to_string()).filter(|p| !p.is_empty()).collect());
+            let dropped: Vec<String> = ctx.input(|i| {
+                i.raw
+                    .dropped_files
+                    .iter()
+                    .map(|f| f.path().to_string_lossy().to_string())
+                    .filter(|p| !p.is_empty())
+                    .collect()
+            });
             // preset files import as presets, everything else as photos
             // a dropped face model opens its licence dialog; presets and photos as before
-            let (models, dropped): (Vec<String>, Vec<String>) = dropped.into_iter().partition(|p| is_model_file(p));
+            let (models, dropped): (Vec<String>, Vec<String>) =
+                dropped.into_iter().partition(|p| is_model_file(p));
             if let Some(model) = models.first()
                 && let Err(e) = panels::faces::open_dialog(self, model)
             {
@@ -1113,7 +1278,10 @@ impl LightcraftApp {
     fn apply_settings(&mut self, ctx: &egui::Context) {
         if self.gpu_applied != Some(self.ui.settings.gpu) {
             self.gpu_applied = Some(self.ui.settings.gpu);
-            let _ = self.session.execute("app.gpu", &serde_json::json!({"enabled": self.ui.settings.gpu}));
+            let _ = self.session.execute(
+                "app.gpu",
+                &serde_json::json!({"enabled": self.ui.settings.gpu}),
+            );
             // GPU device + kernels off the UI thread, once the window is up and only when GPU
             // rendering is on: a broken driver must not keep the window from appearing (issue #136)
             if self.ui.settings.gpu {
@@ -1123,8 +1291,14 @@ impl LightcraftApp {
         let mb = self.ui.settings.memory_mb;
         // automatic at startup: leave the engine's default alone
         if self.memory_applied != Some(mb) && (mb > 0 || self.memory_applied.is_some()) {
-            let mb = if mb == 0 { (lightcraft_engine::memory::default_budget() >> 20) as u32 } else { mb };
-            let _ = self.session.execute("app.memoryBudget", &serde_json::json!({"mb": mb}));
+            let mb = if mb == 0 {
+                (lightcraft_engine::memory::default_budget() >> 20) as u32
+            } else {
+                mb
+            };
+            let _ = self
+                .session
+                .execute("app.memoryBudget", &serde_json::json!({"mb": mb}));
         }
         self.memory_applied = Some(mb);
         // the monitor profile (Settings ▸ Display): previews follow it from the next frame
@@ -1139,7 +1313,10 @@ impl LightcraftApp {
                     // a profile that can't be used: previews are sRGB, the setting is kept
                     self.renderer.set_display(None);
                     log::warn!("display profile: {msg}");
-                    self.toast_error(ctx, format!("{}: {msg}", crate::i18n::tr("Display profile not used")));
+                    self.toast_error(
+                        ctx,
+                        format!("{}: {msg}", crate::i18n::tr("Display profile not used")),
+                    );
                     self.display_error = Some(msg);
                 }
             }
@@ -1165,7 +1342,11 @@ impl LightcraftApp {
     /// another screen is followed. Without the service (or a profile) the display is sRGB.
     fn follow_screen_profile(&mut self, ctx: &egui::Context) {
         let now = ctx.input(|i| i.time);
-        if self.services.screen_profile.is_none() || self.screen_profile_read.is_some_and(|t| (0.0..1.0).contains(&(now - t))) {
+        if self.services.screen_profile.is_none()
+            || self
+                .screen_profile_read
+                .is_some_and(|t| (0.0..1.0).contains(&(now - t)))
+        {
             return;
         }
         self.screen_profile_read = Some(now);
@@ -1174,19 +1355,25 @@ impl LightcraftApp {
 
     /// Read the screen's profile now and show previews through it (sRGB without one).
     pub(crate) fn apply_screen_profile(&mut self) {
-        let Some(read) = self.services.screen_profile.as_mut() else { return };
+        let Some(read) = self.services.screen_profile.as_mut() else {
+            return;
+        };
         let icc = read();
         if icc == self.screen_profile {
             return;
         }
-        let display = icc.as_deref().and_then(|bytes| match lightcraft_engine::display::Display::from_bytes(SCREEN_PROFILE, bytes) {
-            Ok(d) => Some(std::sync::Arc::new(d)),
-            Err(msg) => {
-                // a profile we can't use: previews stay sRGB, as before #787
-                log::warn!("screen profile: {msg}");
-                None
-            }
-        });
+        let display =
+            icc.as_deref().and_then(
+                |bytes| match lightcraft_engine::display::Display::from_bytes(SCREEN_PROFILE, bytes)
+                {
+                    Ok(d) => Some(std::sync::Arc::new(d)),
+                    Err(msg) => {
+                        // a profile we can't use: previews stay sRGB, as before #787
+                        log::warn!("screen profile: {msg}");
+                        None
+                    }
+                },
+            );
         self.renderer.set_display(display);
         self.screen_profile = icc;
     }
@@ -1194,25 +1381,38 @@ impl LightcraftApp {
     /// Inject synthetic events (pointer events one per frame; key sequences up to the release).
     pub fn raw_input_hook(&mut self, raw: &mut egui::RawInput) {
         // the frame after a synthetic release / key: modifiers back up
-        if std::mem::take(&mut self.synthetic_mods_release) && self.synthetic_mods != egui::Modifiers::NONE {
+        if std::mem::take(&mut self.synthetic_mods_release)
+            && self.synthetic_mods != egui::Modifiers::NONE
+        {
             self.synthetic_mods = egui::Modifiers::NONE;
-            raw.events.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            raw.events
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
         }
         if self.synthetic.is_empty() {
             return;
         }
         let n = match self.synthetic[0] {
-            egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. } | egui::Event::MouseWheel { .. } => 1,
-            _ => self.synthetic.iter().position(|e| matches!(e, egui::Event::Key { pressed: false, .. })).map_or(self.synthetic.len(), |i| i + 1),
+            egui::Event::PointerMoved(_)
+            | egui::Event::PointerButton { .. }
+            | egui::Event::MouseWheel { .. } => 1,
+            _ => self
+                .synthetic
+                .iter()
+                .position(|e| matches!(e, egui::Event::Key { pressed: false, .. }))
+                .map_or(self.synthetic.len(), |i| i + 1),
         };
-        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) = self.synthetic.first() {
+        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) =
+            self.synthetic.first()
+        {
             raw.events.push(egui::Event::PointerMoved(*p));
         }
         // egui's `input.modifiers` follow `ModifiersChanged` events, not the modifiers carried by
         // pointer/key events: announce the injected events' modifiers (held from button down to
         // the frame after up), so ⌥-drag, ⇧-click … work through the control channel
         let carried = self.synthetic[..n].iter().find_map(|e| match e {
-            egui::Event::PointerButton { pressed, modifiers, .. } => Some((*modifiers, !pressed)),
+            egui::Event::PointerButton {
+                pressed, modifiers, ..
+            } => Some((*modifiers, !pressed)),
             egui::Event::Key { modifiers, .. } => Some((*modifiers, true)),
             _ => None,
         });
@@ -1234,9 +1434,16 @@ impl LightcraftApp {
             return;
         }
         let screen = ctx.content_rect();
-        let keep = if self.ui.view == state::ViewMode::Detail { self.image_rect.or(self.canvas_rect) } else { self.canvas_rect };
+        let keep = if self.ui.view == state::ViewMode::Detail {
+            self.image_rect.or(self.canvas_rect)
+        } else {
+            self.canvas_rect
+        };
         let veil = egui::Color32::from_black_alpha((a.clamp(0.0, 1.0) * 255.0).round() as u8);
-        let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Middle, egui::Id::new("lights-out")));
+        let p = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Middle,
+            egui::Id::new("lights-out"),
+        ));
         let k = keep.unwrap_or(egui::Rect::NOTHING).intersect(screen);
         if !k.is_positive() {
             p.rect_filled(screen, 0.0, veil);
@@ -1244,10 +1451,26 @@ impl LightcraftApp {
         }
         // four bands around the photo
         use egui::{Rect, pos2};
-        p.rect_filled(Rect::from_min_max(screen.min, pos2(screen.right(), k.top())), 0.0, veil);
-        p.rect_filled(Rect::from_min_max(pos2(screen.left(), k.bottom()), screen.max), 0.0, veil);
-        p.rect_filled(Rect::from_min_max(pos2(screen.left(), k.top()), pos2(k.left(), k.bottom())), 0.0, veil);
-        p.rect_filled(Rect::from_min_max(pos2(k.right(), k.top()), pos2(screen.right(), k.bottom())), 0.0, veil);
+        p.rect_filled(
+            Rect::from_min_max(screen.min, pos2(screen.right(), k.top())),
+            0.0,
+            veil,
+        );
+        p.rect_filled(
+            Rect::from_min_max(pos2(screen.left(), k.bottom()), screen.max),
+            0.0,
+            veil,
+        );
+        p.rect_filled(
+            Rect::from_min_max(pos2(screen.left(), k.top()), pos2(k.left(), k.bottom())),
+            0.0,
+            veil,
+        );
+        p.rect_filled(
+            Rect::from_min_max(pos2(k.right(), k.top()), pos2(screen.right(), k.bottom())),
+            0.0,
+            veil,
+        );
     }
 
     /// Frame timings once layout is done (`t0`: when layout started).
@@ -1307,7 +1530,9 @@ impl LightcraftApp {
         self.place_names_outcome(&ctx);
         if self.ui.fullscreen {
             // full-screen preview: the photo alone on black
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(egui::Color32::BLACK)).show(ui, |ui| panels::detail::show(self, ui));
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(egui::Color32::BLACK))
+                .show(ui, |ui| panels::detail::show(self, ui));
             panels::second::show(self, &ctx);
             panels::notices::show(self, &ctx);
             panels::dialogs::show(self, &ctx);
@@ -1322,7 +1547,9 @@ impl LightcraftApp {
         panels::topbar::show(self, ui);
         panels::library_problem::banner(self, ui);
         panels::strip::show(self, ui);
-        egui::CentralPanel::default().frame(egui::Frame::NONE).show(ui, |ui| docking::show(self, ui));
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE)
+            .show(ui, |ui| docking::show(self, ui));
         self.lights_out(&ctx);
         panels::second::show(self, &ctx);
         panels::notices::show(self, &ctx);
@@ -1364,7 +1591,10 @@ struct PendingShot {
 /// Wall-clock milliseconds since the Unix epoch (`web-time` maps to `Date.now()` on the web).
 pub fn now_ms() -> f64 {
     use web_time::{SystemTime, UNIX_EPOCH};
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs_f64() * 1000.0)
+        .unwrap_or(0.0)
 }
 
 /// Whether the settings render in black & white.
@@ -1378,14 +1608,25 @@ pub struct HoverPreview {
 }
 
 pub fn is_bw(d: &lightcraft_develop::DevelopSettings) -> bool {
-    d.treatment == lightcraft_develop::Treatment::Bw || d.profile.id == "lc.mono" || d.profile.id.starts_with("lc.bw.")
+    d.treatment == lightcraft_develop::Treatment::Bw
+        || d.profile.id == "lc.mono"
+        || d.profile.id.starts_with("lc.bw.")
 }
 
 /// "Found 3 faces in 2 photos" for a `faces.detect` result.
 fn detect_summary(v: &Value) -> String {
-    let photos = v["photos"].as_array().map(Vec::as_slice).unwrap_or_default();
-    let counts: Vec<usize> = photos.iter().map(|p| p["faces"].as_array().map_or(0, Vec::len)).collect();
-    let (faces, with) = (counts.iter().sum::<usize>(), counts.iter().filter(|n| **n > 0).count());
+    let photos = v["photos"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or_default();
+    let counts: Vec<usize> = photos
+        .iter()
+        .map(|p| p["faces"].as_array().map_or(0, Vec::len))
+        .collect();
+    let (faces, with) = (
+        counts.iter().sum::<usize>(),
+        counts.iter().filter(|n| **n > 0).count(),
+    );
     let plural = |n: usize, w: &str| format!("{n} {w}{}", if n == 1 { "" } else { "s" });
     match (faces, photos.len()) {
         (0, 1) => "No faces found".into(),
@@ -1397,24 +1638,60 @@ fn detect_summary(v: &Value) -> String {
 
 /// A dropped face model file (`.onnx`).
 pub fn is_model_file(path: &str) -> bool {
-    std::path::Path::new(path).extension().is_some_and(|e| e.eq_ignore_ascii_case("onnx"))
+    std::path::Path::new(path)
+        .extension()
+        .is_some_and(|e| e.eq_ignore_ascii_case("onnx"))
 }
 
 /// Files dropped on the window that are presets rather than photos.
 pub fn is_preset_file(path: &str) -> bool {
-    let ext = std::path::Path::new(path).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    ["lcpreset", "lrtemplate", "xmp", "zip", "cube", "lmp", "mplumpack"].contains(&ext.as_str())
+    let ext = std::path::Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    [
+        "lcpreset",
+        "lrtemplate",
+        "xmp",
+        "zip",
+        "cube",
+        "lmp",
+        "mplumpack",
+    ]
+    .contains(&ext.as_str())
 }
 
 /// Splits dropped files into presets and everything else. An `.xmp` dropped next to a photo with the same
 /// name (`IMG_1.xmp` or `IMG_1.CR2.xmp` beside `IMG_1.CR2`) is that photo's sidecar, not a preset, and is left out.
 pub fn split_presets(dropped: Vec<String>) -> (Vec<String>, Vec<String>) {
-    let dir_of = |p: &str| std::path::Path::new(p).parent().map(|d| d.to_string_lossy().to_lowercase()).unwrap_or_default();
-    let stem_of = |p: &str| std::path::Path::new(p).file_stem().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
-    let name_of = |p: &str| std::path::Path::new(p).file_name().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
-    let is_xmp = |p: &str| std::path::Path::new(p).extension().is_some_and(|e| e.eq_ignore_ascii_case("xmp"));
-    let photo_names: Vec<(String, String)> =
-        dropped.iter().filter(|p| !is_preset_file(p)).flat_map(|p| [(dir_of(p), stem_of(p)), (dir_of(p), name_of(p))]).collect();
+    let dir_of = |p: &str| {
+        std::path::Path::new(p)
+            .parent()
+            .map(|d| d.to_string_lossy().to_lowercase())
+            .unwrap_or_default()
+    };
+    let stem_of = |p: &str| {
+        std::path::Path::new(p)
+            .file_stem()
+            .map(|n| n.to_string_lossy().to_lowercase())
+            .unwrap_or_default()
+    };
+    let name_of = |p: &str| {
+        std::path::Path::new(p)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_lowercase())
+            .unwrap_or_default()
+    };
+    let is_xmp = |p: &str| {
+        std::path::Path::new(p)
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("xmp"))
+    };
+    let photo_names: Vec<(String, String)> = dropped
+        .iter()
+        .filter(|p| !is_preset_file(p))
+        .flat_map(|p| [(dir_of(p), stem_of(p)), (dir_of(p), name_of(p))])
+        .collect();
     let (mut presets, mut photos) = (Vec::new(), Vec::new());
     for p in dropped {
         if !is_preset_file(&p) {
@@ -1433,7 +1710,14 @@ mod drop_tests {
     #[test]
     fn photo_sidecars_are_not_presets() {
         let v = |a: &[&str]| a.iter().map(|s| s.to_string()).collect::<Vec<_>>();
-        let dropped = v(&["/a/IMG_1.CR2", "/a/IMG_1.xmp", "/a/IMG_2.jpg", "/a/IMG_2.jpg.XMP", "/a/Look.xmp", "/b/IMG_1.xmp"]);
+        let dropped = v(&[
+            "/a/IMG_1.CR2",
+            "/a/IMG_1.xmp",
+            "/a/IMG_2.jpg",
+            "/a/IMG_2.jpg.XMP",
+            "/a/Look.xmp",
+            "/b/IMG_1.xmp",
+        ]);
         let (presets, photos) = super::split_presets(dropped);
         assert_eq!(photos, v(&["/a/IMG_1.CR2", "/a/IMG_2.jpg"]));
         assert_eq!(presets, v(&["/a/Look.xmp", "/b/IMG_1.xmp"]));
@@ -1441,14 +1725,22 @@ mod drop_tests {
 
     #[test]
     fn detection_results_are_summarised_in_words() {
-        let r =
-            |counts: &[usize]| serde_json::json!({"photos": counts.iter().map(|n| serde_json::json!({"faces": vec![0; *n]})).collect::<Vec<_>>()});
+        let r = |counts: &[usize]| serde_json::json!({"photos": counts.iter().map(|n| serde_json::json!({"faces": vec![0; *n]})).collect::<Vec<_>>()});
         assert_eq!(super::detect_summary(&r(&[0])), "No faces found");
         assert_eq!(super::detect_summary(&r(&[1])), "Found 1 face");
         assert_eq!(super::detect_summary(&r(&[3])), "Found 3 faces");
-        assert_eq!(super::detect_summary(&r(&[0, 0])), "No faces found in 2 photos");
-        assert_eq!(super::detect_summary(&r(&[2, 0, 1])), "Found 3 faces in 2 photos");
-        assert_eq!(super::detect_summary(&serde_json::json!({})), "No faces found in 0 photos");
+        assert_eq!(
+            super::detect_summary(&r(&[0, 0])),
+            "No faces found in 2 photos"
+        );
+        assert_eq!(
+            super::detect_summary(&r(&[2, 0, 1])),
+            "Found 3 faces in 2 photos"
+        );
+        assert_eq!(
+            super::detect_summary(&serde_json::json!({})),
+            "No faces found in 0 photos"
+        );
     }
 
     #[test]
@@ -1463,7 +1755,15 @@ mod drop_tests {
 
     #[test]
     fn dropped_presets_are_told_apart_from_photos() {
-        for p in ["/a/Look.lrtemplate", "/a/b.XMP", "/a/pack.zip", "/a/x.lcpreset", "/a/Magic Hour.mplumpack", "/a/Pop.lmp", "/a/Bundle.LMP"] {
+        for p in [
+            "/a/Look.lrtemplate",
+            "/a/b.XMP",
+            "/a/pack.zip",
+            "/a/x.lcpreset",
+            "/a/Magic Hour.mplumpack",
+            "/a/Pop.lmp",
+            "/a/Bundle.LMP",
+        ] {
             assert!(super::is_preset_file(p), "{p}");
         }
         for p in ["/a/IMG_1.CR2", "/a/b.dng", "/a/c.jpg", "/a/folder"] {
@@ -1484,19 +1784,34 @@ pub struct Caches {
     /// The Keyword List's tick boxes, by library revision and selection.
     keyword_ticks: Option<(u64, u64, std::sync::Arc<panels::keyword_list::Ticks>)>,
     folder_tree: Option<(u64, std::sync::Arc<Vec<lightcraft_catalog::FolderNode>>)>,
-    people: Option<(u64, lightcraft_catalog::Filter, std::sync::Arc<Vec<lightcraft_catalog::Person>>)>,
+    people: Option<(
+        u64,
+        lightcraft_catalog::Filter,
+        std::sync::Arc<Vec<lightcraft_catalog::Person>>,
+    )>,
     suggestions: Option<(u64, std::sync::Arc<Vec<String>>)>,
     counts: Option<(u64, LibraryCounts)>,
     date_groups: Option<(u64, std::sync::Arc<Vec<lightcraft_catalog::DateGroup>>)>,
     filter_values: Option<(u64, std::sync::Arc<FilterValues>)>,
-    album_counts: Option<(u64, std::sync::Arc<std::collections::HashMap<lightcraft_catalog::AlbumId, usize>>)>,
+    album_counts: Option<(
+        u64,
+        std::sync::Arc<std::collections::HashMap<lightcraft_catalog::AlbumId, usize>>,
+    )>,
     /// How often the album counts were recomputed (tests check that unchanged frames don't).
     pub album_count_scans: usize,
     /// What the open smart-album rule dialog shows besides the rules ([`Caches::rules_view`]).
     rules_view: Option<(u64, std::sync::Arc<RulesView>)>,
     pub rules_view_scans: usize,
     /// The problems of every saved smart album that has some ([`Caches::smart_album_problems`]).
-    smart_problems: Option<(u64, std::sync::Arc<std::collections::HashMap<lightcraft_catalog::AlbumId, Vec<lightcraft_catalog::rules::Problem>>>)>,
+    smart_problems: Option<(
+        u64,
+        std::sync::Arc<
+            std::collections::HashMap<
+                lightcraft_catalog::AlbumId,
+                Vec<lightcraft_catalog::rules::Problem>,
+            >,
+        >,
+    )>,
     pub smart_problem_scans: usize,
     /// AI denoise: what the pump last saw, the model list and the downloads being watched.
     pub denoise: panels::denoise::Ui,
@@ -1519,7 +1834,13 @@ pub struct Caches {
     /// Name suggestions for the photo in the loupe: (photo, catalog revision, faces indexed, suggestions by region).
     pub face_hints: Option<(u64, u64, u64, std::sync::Arc<panels::faces::Hints>)>,
     /// The open person page: (name, catalog revision, faces indexed, when it was asked for, the page).
-    pub person_page: Option<(String, u64, u64, f64, std::sync::Arc<panels::person::PersonPage>)>,
+    pub person_page: Option<(
+        String,
+        u64,
+        u64,
+        f64,
+        std::sync::Arc<panels::person::PersonPage>,
+    )>,
     /// The unnamed faces: (catalog revision, faces indexed, when it was asked for, the list).
     pub unnamed: Option<(u64, u64, f64, std::sync::Arc<panels::unnamed::Unnamed>)>,
     /// The most photos the face scan has had left at once since it last finished (the progress bar's whole).
@@ -1562,7 +1883,10 @@ pub(crate) fn key_of(parts: impl std::hash::Hash) -> u64 {
 
 impl Caches {
     /// The folders the library's photos were imported from.
-    pub fn folder_tree(&mut self, cat: &lightcraft_catalog::Catalog) -> std::sync::Arc<Vec<lightcraft_catalog::FolderNode>> {
+    pub fn folder_tree(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+    ) -> std::sync::Arc<Vec<lightcraft_catalog::FolderNode>> {
         match &self.folder_tree {
             Some((r, t)) if *r == cat.revision => t.clone(),
             _ => {
@@ -1573,7 +1897,10 @@ impl Caches {
         }
     }
     /// The library's keyword tree.
-    pub fn keyword_tree(&mut self, cat: &lightcraft_catalog::Catalog) -> std::sync::Arc<Vec<lightcraft_catalog::KeywordNode>> {
+    pub fn keyword_tree(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+    ) -> std::sync::Arc<Vec<lightcraft_catalog::KeywordNode>> {
         match &self.keyword_tree {
             Some((r, t)) if *r == cat.revision => t.clone(),
             _ => {
@@ -1644,7 +1971,10 @@ impl Caches {
         cat: &lightcraft_catalog::Catalog,
         filter: &lightcraft_catalog::Filter,
     ) -> std::sync::Arc<Vec<lightcraft_catalog::Person>> {
-        let key = lightcraft_catalog::Filter { person: None, ..filter.clone() };
+        let key = lightcraft_catalog::Filter {
+            person: None,
+            ..filter.clone()
+        };
         match &self.people {
             Some((r, f, t)) if *r == cat.revision && *f == key => t.clone(),
             _ => {
@@ -1676,18 +2006,26 @@ impl Caches {
         c
     }
     /// Everyone named on a face in the library (for completing a name as it is typed).
-    pub fn person_names(&mut self, cat: &lightcraft_catalog::Catalog) -> std::sync::Arc<Vec<String>> {
+    pub fn person_names(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+    ) -> std::sync::Arc<Vec<String>> {
         match &self.person_names {
             Some((r, v)) if *r == cat.revision => v.clone(),
             _ => {
-                let v = std::sync::Arc::new(cat.people().into_iter().map(|p| p.name).collect::<Vec<_>>());
+                let v = std::sync::Arc::new(
+                    cat.people().into_iter().map(|p| p.name).collect::<Vec<_>>(),
+                );
                 self.person_names = Some((cat.revision, v.clone()));
                 v
             }
         }
     }
     /// The By Date tree.
-    pub fn date_groups(&mut self, cat: &lightcraft_catalog::Catalog) -> std::sync::Arc<Vec<lightcraft_catalog::DateGroup>> {
+    pub fn date_groups(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+    ) -> std::sync::Arc<Vec<lightcraft_catalog::DateGroup>> {
         match &self.date_groups {
             Some((r, g)) if *r == cat.revision => g.clone(),
             _ => {
@@ -1698,7 +2036,10 @@ impl Caches {
         }
     }
     /// Cameras, lenses and keywords in the library (filter bar pickers).
-    pub fn filter_values(&mut self, cat: &lightcraft_catalog::Catalog) -> std::sync::Arc<FilterValues> {
+    pub fn filter_values(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+    ) -> std::sync::Arc<FilterValues> {
         match &self.filter_values {
             Some((r, v)) if *r == cat.revision => v.clone(),
             _ => {
@@ -1720,7 +2061,13 @@ impl Caches {
         }
     }
     /// Keyword suggestions for a photo with `current` keywords and the typed `prefix`.
-    pub fn suggestions(&mut self, cat: &lightcraft_catalog::Catalog, current: &[String], prefix: &str, n: usize) -> std::sync::Arc<Vec<String>> {
+    pub fn suggestions(
+        &mut self,
+        cat: &lightcraft_catalog::Catalog,
+        current: &[String],
+        prefix: &str,
+        n: usize,
+    ) -> std::sync::Arc<Vec<String>> {
         let k = key_of((cat.revision, current, prefix, n));
         match &self.suggestions {
             Some((h, v)) if *h == k => v.clone(),
@@ -1748,8 +2095,19 @@ impl Caches {
         now: &str,
     ) -> std::sync::Arc<RulesView> {
         let relative = rules.depends_on_now();
-        let minute = if relative { now.get(..16).unwrap_or(now) } else { "" };
-        let k = key_of((cat.revision, serde_json::to_string(rules).unwrap_or_default(), editing, &folder, minute, i18n::language().code()));
+        let minute = if relative {
+            now.get(..16).unwrap_or(now)
+        } else {
+            ""
+        };
+        let k = key_of((
+            cat.revision,
+            serde_json::to_string(rules).unwrap_or_default(),
+            editing,
+            &folder,
+            minute,
+            i18n::language().code(),
+        ));
         if let Some((key, v)) = &self.rules_view
             && *key == k
         {
@@ -1759,9 +2117,21 @@ impl Caches {
             lightcraft_catalog::rules::set_now(Some(now.to_string()));
         }
         let problems = rules.check_for(cat, editing.map(lightcraft_catalog::AlbumId));
-        let filter = lightcraft_catalog::Filter { rule_set: Some(rules.clone()), library_folder: folder, ..Default::default() };
-        let count = if problems.is_empty() { cat.query(&filter, &Default::default()).len() } else { 0 };
-        let v = std::sync::Arc::new(RulesView { problems, count, albums: panels::dialogs::album_entries(cat, editing) });
+        let filter = lightcraft_catalog::Filter {
+            rule_set: Some(rules.clone()),
+            library_folder: folder,
+            ..Default::default()
+        };
+        let count = if problems.is_empty() {
+            cat.query(&filter, &Default::default()).len()
+        } else {
+            0
+        };
+        let v = std::sync::Arc::new(RulesView {
+            problems,
+            count,
+            albums: panels::dialogs::album_entries(cat, editing),
+        });
         self.rules_view_scans += 1;
         self.rules_view = Some((k, v.clone()));
         v
@@ -1772,14 +2142,23 @@ impl Caches {
     pub fn smart_album_problems(
         &mut self,
         cat: &lightcraft_catalog::Catalog,
-    ) -> std::sync::Arc<std::collections::HashMap<lightcraft_catalog::AlbumId, Vec<lightcraft_catalog::rules::Problem>>> {
+    ) -> std::sync::Arc<
+        std::collections::HashMap<
+            lightcraft_catalog::AlbumId,
+            Vec<lightcraft_catalog::rules::Problem>,
+        >,
+    > {
         if let Some((rev, v)) = &self.smart_problems
             && *rev == cat.revision
         {
             return v.clone();
         }
         let v: std::sync::Arc<std::collections::HashMap<_, _>> = std::sync::Arc::new(
-            cat.albums().filter(|a| a.is_smart()).map(|a| (a.id, cat.smart_album_problems(a.id))).filter(|(_, p)| !p.is_empty()).collect(),
+            cat.albums()
+                .filter(|a| a.is_smart())
+                .map(|a| (a.id, cat.smart_album_problems(a.id)))
+                .filter(|(_, p)| !p.is_empty())
+                .collect(),
         );
         self.smart_problem_scans += 1;
         self.smart_problems = Some((cat.revision, v.clone()));
@@ -1791,8 +2170,14 @@ impl Caches {
         cat: &lightcraft_catalog::Catalog,
         now: &str,
     ) -> std::sync::Arc<std::collections::HashMap<lightcraft_catalog::AlbumId, usize>> {
-        let relative = cat.albums().any(|a| a.smart.as_ref().is_some_and(|f| f.depends_on_now()));
-        let minute = if relative { now.get(..16).unwrap_or(now) } else { "" };
+        let relative = cat
+            .albums()
+            .any(|a| a.smart.as_ref().is_some_and(|f| f.depends_on_now()));
+        let minute = if relative {
+            now.get(..16).unwrap_or(now)
+        } else {
+            ""
+        };
         let k = key_of((cat.revision, minute));
         match &self.album_counts {
             Some((h, v)) if *h == k => v.clone(),
@@ -1801,8 +2186,11 @@ impl Caches {
                     // "in the last N days" counts back from the session clock, as in the grid
                     lightcraft_catalog::rules::set_now(Some(now.to_string()));
                 }
-                let v: std::sync::Arc<std::collections::HashMap<_, _>> =
-                    std::sync::Arc::new(cat.albums().map(|a| (a.id, cat.album_count(a.id))).collect());
+                let v: std::sync::Arc<std::collections::HashMap<_, _>> = std::sync::Arc::new(
+                    cat.albums()
+                        .map(|a| (a.id, cat.album_count(a.id)))
+                        .collect(),
+                );
                 self.album_count_scans += 1;
                 self.album_counts = Some((k, v.clone()));
                 v
@@ -1813,10 +2201,20 @@ impl Caches {
 
 #[cfg(test)]
 mod cache_tests {
-    use lightcraft_catalog::{Album, AlbumId, Catalog, Filter, Op, Photo, PhotoId, RuleSet, Source};
+    use lightcraft_catalog::{
+        Album, AlbumId, Catalog, Filter, Op, Photo, PhotoId, RuleSet, Source,
+    };
 
     fn photo(id: u64, captured: &str, rating: u8) -> Op {
-        let mut p = Photo::new(PhotoId(id), Source::Demo { scene: 0 }, &format!("p{id}.jpg"), "JPEG", 60, 40, "2026-01-01T00:00:00");
+        let mut p = Photo::new(
+            PhotoId(id),
+            Source::Demo { scene: 0 },
+            &format!("p{id}.jpg"),
+            "JPEG",
+            60,
+            40,
+            "2026-01-01T00:00:00",
+        );
         p.captured = Some(captured.into());
         p.rating = rating;
         Op::AddPhoto { photo: Box::new(p) }
@@ -1825,7 +2223,10 @@ mod cache_tests {
     fn smart(id: u64, rules: serde_json::Value) -> Op {
         let mut a = Album::new(AlbumId(id), format!("smart {id}"));
         let rules: RuleSet = serde_json::from_value(rules).unwrap();
-        a.smart = Some(Box::new(Filter { rule_set: Some(rules), ..Default::default() }));
+        a.smart = Some(Box::new(Filter {
+            rule_set: Some(rules),
+            ..Default::default()
+        }));
         Op::AddAlbum { album: a }
     }
 
@@ -1835,10 +2236,22 @@ mod cache_tests {
     fn smart_album_counts_are_cached_until_something_changes() {
         let mut cat = Catalog::default();
         let mut c = super::Caches::default();
-        for (i, d) in ["2026-09-30T11:59:30", "2026-09-29T08:00:00", "2026-01-01T08:00:00"].iter().enumerate() {
-            cat.apply(photo(i as u64 + 1, d, if i == 0 { 5 } else { 1 })).unwrap();
+        for (i, d) in [
+            "2026-09-30T11:59:30",
+            "2026-09-29T08:00:00",
+            "2026-01-01T08:00:00",
+        ]
+        .iter()
+        .enumerate()
+        {
+            cat.apply(photo(i as u64 + 1, d, if i == 0 { 5 } else { 1 }))
+                .unwrap();
         }
-        cat.apply(smart(10, serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 3}]}))).unwrap();
+        cat.apply(smart(
+            10,
+            serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 3}]}),
+        ))
+        .unwrap();
         cat.apply(smart(11, serde_json::json!({"rules": [{"field": "captureDate", "op": "inLast", "value": {"n": 1, "unit": "hours"}}]}))).unwrap();
         let now = "2026-09-30T12:00:00";
         let n = c.album_counts(&cat, now);
@@ -1847,13 +2260,30 @@ mod cache_tests {
         for _ in 0..10 {
             c.album_counts(&cat, "2026-09-30T12:00:40");
         }
-        assert_eq!(c.album_count_scans, 1, "unchanged frames in the same minute don't rescan");
+        assert_eq!(
+            c.album_count_scans, 1,
+            "unchanged frames in the same minute don't rescan"
+        );
         // metadata change
-        cat.apply(Op::SetRating { id: PhotoId(2), rating: 4 }).unwrap();
+        cat.apply(Op::SetRating {
+            id: PhotoId(2),
+            rating: 4,
+        })
+        .unwrap();
         assert_eq!(c.album_counts(&cat, now)[&AlbumId(10)], 2);
         // rule change
-        let rs: RuleSet = serde_json::from_value(serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 5}]})).unwrap();
-        cat.apply(Op::SetAlbumRules { id: AlbumId(10), rules: Box::new(Filter { rule_set: Some(rs), ..Default::default() }) }).unwrap();
+        let rs: RuleSet = serde_json::from_value(
+            serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 5}]}),
+        )
+        .unwrap();
+        cat.apply(Op::SetAlbumRules {
+            id: AlbumId(10),
+            rules: Box::new(Filter {
+                rule_set: Some(rs),
+                ..Default::default()
+            }),
+        })
+        .unwrap();
         assert_eq!(c.album_counts(&cat, now)[&AlbumId(10)], 1);
         // an hour later the 11:59:30 photo has left "in the last hour", with no catalog change
         assert_eq!(c.album_counts(&cat, "2026-09-30T13:00:10")[&AlbumId(11)], 0);
@@ -1868,10 +2298,19 @@ mod cache_tests {
         let mut cat = Catalog::default();
         let mut c = super::Caches::default();
         for i in 0..3u64 {
-            cat.apply(photo(i + 1, "2026-09-30T11:00:00", if i == 0 { 5 } else { 1 })).unwrap();
+            cat.apply(photo(
+                i + 1,
+                "2026-09-30T11:00:00",
+                if i == 0 { 5 } else { 1 },
+            ))
+            .unwrap();
         }
-        let rules =
-            |v: u64| -> RuleSet { serde_json::from_value(serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": v}]})).unwrap() };
+        let rules = |v: u64| -> RuleSet {
+            serde_json::from_value(
+                serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": v}]}),
+            )
+            .unwrap()
+        };
         let now = "2026-09-30T12:00:00";
         let view = c.rules_view(&cat, &rules(3), None, None, now);
         assert_eq!((view.count, view.problems.len()), (1, 0));
@@ -1879,21 +2318,54 @@ mod cache_tests {
             c.rules_view(&cat, &rules(3), None, None, now);
         }
         assert_eq!(c.rules_view_scans, 1, "unchanged frames reuse it");
-        assert_eq!(c.rules_view(&cat, &rules(1), None, None, now).count, 3, "a rule change");
-        assert_eq!(c.rules_view(&cat, &rules(9), None, None, now).problems.len(), 1);
-        cat.apply(Op::SetRating { id: PhotoId(2), rating: 4 }).unwrap();
-        assert_eq!(c.rules_view(&cat, &rules(3), None, None, now).count, 2, "a catalog change");
+        assert_eq!(
+            c.rules_view(&cat, &rules(1), None, None, now).count,
+            3,
+            "a rule change"
+        );
+        assert_eq!(
+            c.rules_view(&cat, &rules(9), None, None, now)
+                .problems
+                .len(),
+            1
+        );
+        cat.apply(Op::SetRating {
+            id: PhotoId(2),
+            rating: 4,
+        })
+        .unwrap();
+        assert_eq!(
+            c.rules_view(&cat, &rules(3), None, None, now).count,
+            2,
+            "a catalog change"
+        );
         assert_eq!(c.rules_view_scans, 4);
         // the sidebar's problems
-        cat.apply(Op::AddAlbum { album: lightcraft_catalog::Album::new(AlbumId(20), "Trip") }).unwrap();
-        cat.apply(smart(21, serde_json::json!({"rules": [{"field": "album", "op": "is", "value": 20}]}))).unwrap();
-        assert!(c.smart_album_problems(&cat).get(&AlbumId(21)).is_none_or(Vec::is_empty));
+        cat.apply(Op::AddAlbum {
+            album: lightcraft_catalog::Album::new(AlbumId(20), "Trip"),
+        })
+        .unwrap();
+        cat.apply(smart(
+            21,
+            serde_json::json!({"rules": [{"field": "album", "op": "is", "value": 20}]}),
+        ))
+        .unwrap();
+        assert!(
+            c.smart_album_problems(&cat)
+                .get(&AlbumId(21))
+                .is_none_or(Vec::is_empty)
+        );
         for _ in 0..10 {
             c.smart_album_problems(&cat);
         }
         assert_eq!(c.smart_problem_scans, 1);
         cat.apply(Op::RemoveAlbum { id: AlbumId(20) }).unwrap();
-        assert!(c.smart_album_problems(&cat).get(&AlbumId(21)).is_some_and(|p| !p.is_empty()), "its album is gone");
+        assert!(
+            c.smart_album_problems(&cat)
+                .get(&AlbumId(21))
+                .is_some_and(|p| !p.is_empty()),
+            "its album is gone"
+        );
         assert_eq!(c.smart_problem_scans, 2);
     }
 
@@ -1903,7 +2375,11 @@ mod cache_tests {
         let mut cat = Catalog::default();
         let mut c = super::Caches::default();
         cat.apply(photo(1, "2026-09-30T11:59:30", 5)).unwrap();
-        cat.apply(smart(10, serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 3}]}))).unwrap();
+        cat.apply(smart(
+            10,
+            serde_json::json!({"rules": [{"field": "rating", "op": "gte", "value": 3}]}),
+        ))
+        .unwrap();
         c.album_counts(&cat, "2026-09-30T12:00:00");
         c.album_counts(&cat, "2027-01-01T00:00:00");
         assert_eq!(c.album_count_scans, 1);

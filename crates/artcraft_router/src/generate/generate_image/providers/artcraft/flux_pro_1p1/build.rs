@@ -8,10 +8,10 @@ use crate::generate::generate_image::providers::artcraft::build_common::build_ar
 use crate::generate::generate_image::providers::artcraft::flux_pro_1p1::request::ArtcraftFluxPro1p1RequestState;
 
 pub fn build_artcraft_flux_pro_1p1(
-  builder: GenerateImageRequestBuilder,
+    builder: GenerateImageRequestBuilder,
 ) -> Result<ImageGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::FluxPro11)?;
-  Ok(ImageGenerationDraftOrRequest::Request(
-    ImageGenerationRequest::ArtcraftFluxPro1p1(ArtcraftFluxPro1p1RequestState { request }),
-  ))
+    let request = build_artcraft_omni_image_request(builder, CommonImageModelEnum::FluxPro11)?;
+    Ok(ImageGenerationDraftOrRequest::Request(
+        ImageGenerationRequest::ArtcraftFluxPro1p1(ArtcraftFluxPro1p1RequestState { request }),
+    ))
 }

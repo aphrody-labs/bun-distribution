@@ -28,9 +28,19 @@ fn footage_item(s: &Session, p: &Value, cmd: &str) -> Result<ItemId> {
     let id = match p.get("item") {
         Some(Value::Number(n)) => n.as_u64().map(ItemId),
         Some(Value::String(name)) => s.project.find_by_name(name).map(|i| i.id),
-        _ => s.state.footage_panel.as_ref().map(|f| f.item).or_else(|| s.state.project_selection.first().copied()),
+        _ => s
+            .state
+            .footage_panel
+            .as_ref()
+            .map(|f| f.item)
+            .or_else(|| s.state.project_selection.first().copied()),
     }
-    .ok_or_else(|| bad(cmd, "no footage: pass `item` or open one in the Footage panel"))?;
+    .ok_or_else(|| {
+        bad(
+            cmd,
+            "no footage: pass `item` or open one in the Footage panel",
+        )
+    })?;
     match s.project.item(id).map(|i| &i.kind) {
         Some(ItemKind::Footage(f)) if f.kind != effectcraft_project::FootageKind::Data => Ok(id),
         Some(ItemKind::Solid(_)) => Ok(id),
@@ -41,15 +51,28 @@ fn footage_item(s: &Session, p: &Value, cmd: &str) -> Result<ItemId> {
 /// Source duration and frame rate of a footage / solid item (stills: `None`).
 fn source_timing(s: &Session, item: ItemId) -> (Option<Tick>, effectcraft_time::FrameRate) {
     match s.project.item(item).map(|i| &i.kind) {
-        Some(ItemKind::Footage(f)) if f.kind != effectcraft_project::FootageKind::Still && f.duration > Tick::ZERO => (Some(f.duration), f.frame_rate),
+        Some(ItemKind::Footage(f))
+            if f.kind != effectcraft_project::FootageKind::Still && f.duration > Tick::ZERO =>
+        {
+            (Some(f.duration), f.frame_rate)
+        }
         Some(ItemKind::Footage(f)) => (None, f.frame_rate),
-        _ => (None, s.active_comp().map(|c| c.frame_rate).unwrap_or(effectcraft_time::FrameRate::FPS_30)),
+        _ => (
+            None,
+            s.active_comp()
+                .map(|c| c.frame_rate)
+                .unwrap_or(effectcraft_time::FrameRate::FPS_30),
+        ),
     }
 }
 
 /// The Footage panel's current time: footage shows its timecode (Start Timecode), anything else
 /// time from 0.
-pub fn timecode(item: Option<&effectcraft_project::Item>, fr: effectcraft_time::FrameRate, frame: i64) -> String {
+pub fn timecode(
+    item: Option<&effectcraft_project::Item>,
+    fr: effectcraft_time::FrameRate,
+    frame: i64,
+) -> String {
     match item.map(|i| &i.kind) {
         Some(ItemKind::Footage(f)) => f.timecode(frame),
         _ => effectcraft_time::format_timecode_ae(frame, fr, false),
@@ -61,20 +84,37 @@ fn source_time(s: &Session, p: &Value, item: ItemId) -> Option<Tick> {
     if let Some(t) = f_p(p, "time") {
         return Some(fr.snap_nearest(Tick::from_seconds_f64(t.max(0.0))));
     }
-    p.get("frame").and_then(Value::as_i64).map(|f| fr.tick_of(f.max(0)))
+    p.get("frame")
+        .and_then(Value::as_i64)
+        .map(|f| fr.tick_of(f.max(0)))
 }
 
 fn open(s: &mut Session, p: &Value) -> Result<Value> {
     let item = footage_item(s, p, "footage.open")?;
-    if s.state.footage_panel.as_ref().is_none_or(|f| f.item != item) {
-        s.state.footage_panel = Some(FootageView { item, time: Tick::ZERO, in_point: None, out_point: None });
+    if s.state
+        .footage_panel
+        .as_ref()
+        .is_none_or(|f| f.item != item)
+    {
+        s.state.footage_panel = Some(FootageView {
+            item,
+            time: Tick::ZERO,
+            in_point: None,
+            out_point: None,
+        });
     }
-    s.events.push(crate::Event::Frontend { command: "window.panel".into(), params: json!({"panel": "footage"}) });
+    s.events.push(crate::Event::Frontend {
+        command: "window.panel".into(),
+        params: json!({"panel": "footage"}),
+    });
     Ok(json!(s.state.footage_panel))
 }
 
 fn view_mut<'a>(s: &'a mut Session, cmd: &str) -> Result<&'a mut FootageView> {
-    s.state.footage_panel.as_mut().ok_or_else(|| bad(cmd, "the Footage panel shows no footage (footage.open)"))
+    s.state
+        .footage_panel
+        .as_mut()
+        .ok_or_else(|| bad(cmd, "the Footage panel shows no footage (footage.open)"))
 }
 
 fn clamp_time(s: &Session, item: ItemId, t: Tick) -> Tick {
@@ -87,14 +127,19 @@ fn clamp_time(s: &Session, item: ItemId, t: Tick) -> Tick {
 
 fn set_time(s: &mut Session, p: &Value) -> Result<Value> {
     let item = view_mut(s, "footage.setTime")?.item;
-    let t = source_time(s, p, item).ok_or_else(|| bad("footage.setTime", "missing `time` or `frame`"))?;
+    let t = source_time(s, p, item)
+        .ok_or_else(|| bad("footage.setTime", "missing `time` or `frame`"))?;
     let t = clamp_time(s, item, t);
     view_mut(s, "footage.setTime")?.time = t;
     Ok(json!(t.seconds()))
 }
 
 fn set_mark(s: &mut Session, p: &Value, out: bool) -> Result<Value> {
-    let c = if out { "footage.setOut" } else { "footage.setIn" };
+    let c = if out {
+        "footage.setOut"
+    } else {
+        "footage.setIn"
+    };
     let v = view_mut(s, c)?.clone();
     let t = source_time(s, p, v.item).unwrap_or(v.time);
     let t = clamp_time(s, v.item, t);
@@ -125,30 +170,58 @@ fn clear_marks(s: &mut Session, _: &Value) -> Result<Value> {
 
 /// Overlay / Ripple Insert Edit of the marked range at the comp's current time.
 fn edit_into_comp(s: &mut Session, p: &Value, ripple: bool) -> Result<Value> {
-    let c = if ripple { "footage.rippleInsertEdit" } else { "footage.overlayEdit" };
+    let c = if ripple {
+        "footage.rippleInsertEdit"
+    } else {
+        "footage.overlayEdit"
+    };
     let item = footage_item(s, p, c)?;
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?.clone();
     let view = s.state.footage_panel.clone().filter(|v| v.item == item);
     let (dur, _) = source_timing(s, item);
-    let src_in = f_p(p, "in").map(Tick::from_seconds_f64).or(view.as_ref().and_then(|v| v.in_point)).unwrap_or(Tick::ZERO);
+    let src_in = f_p(p, "in")
+        .map(Tick::from_seconds_f64)
+        .or(view.as_ref().and_then(|v| v.in_point))
+        .unwrap_or(Tick::ZERO);
     let fr = comp.frame_rate;
-    let at = fr.snap_nearest(f_p(p, "at").map(Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid))).max(Tick::ZERO);
-    let src_out = f_p(p, "out").map(Tick::from_seconds_f64).or(view.as_ref().and_then(|v| v.out_point)).or(dur).unwrap_or(src_in + (comp.duration - at));
+    let at = fr
+        .snap_nearest(
+            f_p(p, "at")
+                .map(Tick::from_seconds_f64)
+                .unwrap_or_else(|| s.time_of(cid)),
+        )
+        .max(Tick::ZERO);
+    let src_out = f_p(p, "out")
+        .map(Tick::from_seconds_f64)
+        .or(view.as_ref().and_then(|v| v.out_point))
+        .or(dur)
+        .unwrap_or(src_in + (comp.duration - at));
     if src_out <= src_in {
         return Err(bad(c, "the Out point must be after the In point"));
     }
     let len = fr.snap_nearest(src_out - src_in).max(fr.frame_duration());
     if at >= comp.duration {
-        return Err(bad(c, "the current time is past the end of the composition"));
+        return Err(bad(
+            c,
+            "the current time is past the end of the composition",
+        ));
     }
-    let it = s.project.item(item).cloned().ok_or_else(|| bad(c, "no such item"))?;
+    let it = s
+        .project
+        .item(item)
+        .cloned()
+        .ok_or_else(|| bad(c, "no such item"))?;
     let (src, size) = match &it.kind {
         ItemKind::Footage(f) => (LayerSource::Footage { item }, (f.width, f.height)),
         ItemKind::Solid(so) => (LayerSource::Solid { item }, (so.width, so.height)),
         _ => return Err(bad(c, "not footage")),
     };
-    let label = if ripple { "Ripple Insert Edit" } else { "Overlay Edit" };
+    let label = if ripple {
+        "Ripple Insert Edit"
+    } else {
+        "Overlay Edit"
+    };
     let id = s.edit(label, None, |proj, st| {
         let mut next = proj.next_id;
         let cm = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
@@ -193,7 +266,11 @@ fn edit_into_comp(s: &mut Session, p: &Value, ripple: bool) -> Result<Value> {
 }
 
 fn has_view_or_footage(s: &Session) -> std::result::Result<(), String> {
-    if s.state.footage_panel.is_some() { Ok(()) } else { Err("open footage in the Footage panel first".into()) }
+    if s.state.footage_panel.is_some() {
+        Ok(())
+    } else {
+        Err("open footage in the Footage panel first".into())
+    }
 }
 
 fn can_edit(s: &Session) -> std::result::Result<(), String> {
@@ -202,7 +279,9 @@ fn can_edit(s: &Session) -> std::result::Result<(), String> {
 }
 
 fn info(s: &mut Session, _: &Value) -> Result<Value> {
-    let Some(v) = &s.state.footage_panel else { return Ok(Value::Null) };
+    let Some(v) = &s.state.footage_panel else {
+        return Ok(Value::Null);
+    };
     let (dur, fr) = source_timing(s, v.item);
     let item = s.project.item(v.item);
     let name = item.map(|i| i.name.clone()).unwrap_or_default();
@@ -218,15 +297,61 @@ fn info(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("footage.open", "Open in Footage Panel", [], None, "{item: id|name}", always, open),
+        cmd!(
+            "footage.open",
+            "Open in Footage Panel",
+            [],
+            None,
+            "{item: id|name}",
+            always,
+            open
+        ),
         crate::query!("footage.info", "Footage Panel State", "{}", info),
-        cmd!("footage.setTime", "Footage Panel Time", [], None, "{time? (s, source) | frame?}", has_view_or_footage, set_time),
-        cmd!("footage.setIn", "Set In Point", [], None, "{time? | frame? (default: the panel's time)}", has_view_or_footage, |s, p| set_mark(s, p, false)),
-        cmd!("footage.setOut", "Set Out Point", [], None, "{time? | frame? (default: the panel's time)}", has_view_or_footage, |s, p| set_mark(s, p, true)),
-        cmd!("footage.clearInOut", "Clear In and Out", [], None, "{}", has_view_or_footage, clear_marks),
-        cmd!("footage.overlayEdit", "Overlay Edit", [], None, "{item?, comp?, in? (s), out? (s), at? (comp s; default the current time)}", can_edit, |s, p| {
-            edit_into_comp(s, p, false)
-        }),
+        cmd!(
+            "footage.setTime",
+            "Footage Panel Time",
+            [],
+            None,
+            "{time? (s, source) | frame?}",
+            has_view_or_footage,
+            set_time
+        ),
+        cmd!(
+            "footage.setIn",
+            "Set In Point",
+            [],
+            None,
+            "{time? | frame? (default: the panel's time)}",
+            has_view_or_footage,
+            |s, p| set_mark(s, p, false)
+        ),
+        cmd!(
+            "footage.setOut",
+            "Set Out Point",
+            [],
+            None,
+            "{time? | frame? (default: the panel's time)}",
+            has_view_or_footage,
+            |s, p| set_mark(s, p, true)
+        ),
+        cmd!(
+            "footage.clearInOut",
+            "Clear In and Out",
+            [],
+            None,
+            "{}",
+            has_view_or_footage,
+            clear_marks
+        ),
+        cmd!(
+            "footage.overlayEdit",
+            "Overlay Edit",
+            [],
+            None,
+            "{item?, comp?, in? (s), out? (s), at? (comp s; default the current time)}",
+            can_edit,
+            |s, p| { edit_into_comp(s, p, false) }
+        ),
         cmd!(
             "footage.rippleInsertEdit",
             "Ripple Insert Edit",

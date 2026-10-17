@@ -258,7 +258,13 @@ pub struct ImageCompression {
 
 impl Default for ImageCompression {
     fn default() -> Self {
-        Self { downsample: Downsample::None, ppi: 300.0, above_ppi: 450.0, compression: ImageCodec::Auto, quality: JpegQuality::Maximum }
+        Self {
+            downsample: Downsample::None,
+            ppi: 300.0,
+            above_ppi: 450.0,
+            compression: ImageCodec::Auto,
+            quality: JpegQuality::Maximum,
+        }
     }
 }
 
@@ -274,7 +280,12 @@ pub struct MonoCompression {
 
 impl Default for MonoCompression {
     fn default() -> Self {
-        Self { downsample: Downsample::None, ppi: 1200.0, above_ppi: 1800.0, compression: MonoCodec::Zip }
+        Self {
+            downsample: Downsample::None,
+            ppi: 1200.0,
+            above_ppi: 1800.0,
+            compression: MonoCodec::Zip,
+        }
     }
 }
 
@@ -291,7 +302,12 @@ pub struct CompressionSettings {
 
 impl Default for CompressionSettings {
     fn default() -> Self {
-        Self { color: ImageCompression::default(), gray: ImageCompression::default(), mono: MonoCompression::default(), compress_text: true }
+        Self {
+            color: ImageCompression::default(),
+            gray: ImageCompression::default(),
+            mono: MonoCompression::default(),
+            compress_text: true,
+        }
     }
 }
 
@@ -312,7 +328,15 @@ pub struct MarkSettings {
 
 impl Default for MarkSettings {
     fn default() -> Self {
-        Self { trim: false, registration: false, color_bars: false, page_info: false, kind: MarkKind::Roman, weight: 0.25, offset: 6.0 }
+        Self {
+            trim: false,
+            registration: false,
+            color_bars: false,
+            page_info: false,
+            kind: MarkKind::Roman,
+            weight: 0.25,
+            offset: 6.0,
+        }
     }
 }
 
@@ -373,7 +397,11 @@ pub struct AdvancedSettings {
 
 impl Default for AdvancedSettings {
     fn default() -> Self {
-        Self { font_subset_percent: 100.0, outline_text: false, overprint: Overprint::Preserve }
+        Self {
+            font_subset_percent: 100.0,
+            outline_text: false,
+            overprint: Overprint::Preserve,
+        }
     }
 }
 
@@ -411,7 +439,13 @@ impl Default for SecuritySettings {
 
 /// `v` lies in `lo..=hi` (and is a number).
 pub(crate) fn within(name: &str, v: f64, lo: f64, hi: f64, unit: &str) -> Result<(), PdfError> {
-    if (lo..=hi).contains(&v) { Ok(()) } else { Err(PdfError::BadSetting(format!("{name} must be {lo}–{hi}{unit} (got {v})"))) }
+    if (lo..=hi).contains(&v) {
+        Ok(())
+    } else {
+        Err(PdfError::BadSetting(format!(
+            "{name} must be {lo}–{hi}{unit} (got {v})"
+        )))
+    }
 }
 
 impl PdfSettings {
@@ -429,24 +463,54 @@ impl PdfSettings {
     pub fn check_values(&self) -> Result<(), PdfError> {
         self.security.check(self.standard, self.compatibility)?;
         if !self.standard.allows(self.compatibility) {
-            return Err(PdfError::BadSetting(format!("{} files can't be {}", self.standard.label(), self.compatibility.label())));
+            return Err(PdfError::BadSetting(format!(
+                "{} files can't be {}",
+                self.standard.label(),
+                self.compatibility.label()
+            )));
         }
         if self.preserve_editing && self.standard != Standard::None {
-            return Err(PdfError::BadSetting(format!("{} files can't carry editing data: turn off preserveEditing", self.standard.label())));
+            return Err(PdfError::BadSetting(format!(
+                "{} files can't carry editing data: turn off preserveEditing",
+                self.standard.label()
+            )));
         }
         if self.create_layers && !self.standard.allows_layers() {
-            return Err(PdfError::BadSetting(format!("{} files can't have PDF layers: turn off createLayers", self.standard.label())));
+            return Err(PdfError::BadSetting(format!(
+                "{} files can't have PDF layers: turn off createLayers",
+                self.standard.label()
+            )));
         }
         let c = &self.compression;
-        for (name, img) in
-            [("color", (c.color.ppi, c.color.above_ppi)), ("gray", (c.gray.ppi, c.gray.above_ppi)), ("mono", (c.mono.ppi, c.mono.above_ppi))]
-        {
-            within(&format!("compression.{name}.ppi"), img.0, 9.0, 2400.0, " ppi")?;
-            within(&format!("compression.{name}.abovePpi"), img.1, 9.0, 2400.0, " ppi")?;
+        for (name, img) in [
+            ("color", (c.color.ppi, c.color.above_ppi)),
+            ("gray", (c.gray.ppi, c.gray.above_ppi)),
+            ("mono", (c.mono.ppi, c.mono.above_ppi)),
+        ] {
+            within(
+                &format!("compression.{name}.ppi"),
+                img.0,
+                9.0,
+                2400.0,
+                " ppi",
+            )?;
+            within(
+                &format!("compression.{name}.abovePpi"),
+                img.1,
+                9.0,
+                2400.0,
+                " ppi",
+            )?;
         }
         self.marks.check()?;
         self.bleed.check()?;
-        within("advanced.fontSubsetPercent", self.advanced.font_subset_percent, 0.0, 100.0, "%")
+        within(
+            "advanced.fontSubsetPercent",
+            self.advanced.font_subset_percent,
+            0.0,
+            100.0,
+            "%",
+        )
     }
 
     /// Layers and sublayers are written as PDF layers: asked for, at a version that has them.

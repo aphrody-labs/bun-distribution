@@ -92,7 +92,9 @@ impl<'a> Tlv<'a> {
         if tag & 0x1F == 0x1F {
             return Err(bad("multi-byte DER tags are not supported"));
         }
-        let (&first, rest) = rest.split_first().ok_or_else(|| bad("truncated DER length"))?;
+        let (&first, rest) = rest
+            .split_first()
+            .ok_or_else(|| bad("truncated DER length"))?;
         // `trailer` is the two end-of-contents octets, which belong to the element but not to its
         // contents.
         let (len, rest, trailer) = if first < 0x80 {
@@ -110,16 +112,28 @@ impl<'a> Tlv<'a> {
             if n > 4 || rest.len() < n {
                 return Err(bad("unsupported DER length"));
             }
-            let len = rest[..n].iter().fold(0usize, |acc, b| (acc << 8) | *b as usize);
+            let len = rest[..n]
+                .iter()
+                .fold(0usize, |acc, b| (acc << 8) | *b as usize);
             (len, &rest[n..], 0)
         };
-        let end = len.checked_add(trailer).ok_or_else(|| bad("DER length overflows"))?;
+        let end = len
+            .checked_add(trailer)
+            .ok_or_else(|| bad("DER length overflows"))?;
         if rest.len() < end {
             return Err(bad("DER element runs past the end"));
         }
         // `end <= rest.len()`, so neither sum below can overflow.
         let header = input.len() - rest.len();
-        Ok((Tlv { tag, value: &rest[..len], raw: &input[..header + end], form }, &rest[end..]))
+        Ok((
+            Tlv {
+                tag,
+                value: &rest[..len],
+                raw: &input[..header + end],
+                form,
+            },
+            &rest[end..],
+        ))
     }
 
     /// Parse `input` as exactly one DER element.
@@ -160,7 +174,14 @@ impl<'a> Tlv<'a> {
 
     /// Check the tag, for a clear error.
     pub fn expect(self, tag: u8, what: &str) -> Result<Tlv<'a>, SignError> {
-        if self.tag == tag { Ok(self) } else { Err(bad(&format!("{what}: expected tag {tag:#04x}, found {:#04x}", self.tag))) }
+        if self.tag == tag {
+            Ok(self)
+        } else {
+            Err(bad(&format!(
+                "{what}: expected tag {tag:#04x}, found {:#04x}",
+                self.tag
+            )))
+        }
     }
 
     /// The element inside an EXPLICIT tag.
@@ -181,7 +202,9 @@ impl<'a> Tlv<'a> {
             tag::OCTET_STRING => Ok(Cow::Borrowed(self.value)),
             tag::OCTET_STRING_SEGMENTS if self.form == Form::Ber => {
                 if depth >= MAX_DEPTH {
-                    return Err(bad(&format!("{what}: OCTET STRING segments nested too deeply")));
+                    return Err(bad(&format!(
+                        "{what}: OCTET STRING segments nested too deeply"
+                    )));
                 }
                 // The join is never larger than the segments it is made of, so this is bounded by
                 // the input.
@@ -191,7 +214,9 @@ impl<'a> Tlv<'a> {
                 }
                 Ok(Cow::Owned(out))
             }
-            found => Err(bad(&format!("{what}: expected an OCTET STRING, found tag {found:#04x}"))),
+            found => Err(bad(&format!(
+                "{what}: expected an OCTET STRING, found tag {found:#04x}"
+            ))),
         }
     }
 
@@ -205,10 +230,17 @@ impl<'a> Tlv<'a> {
 
     /// A non-negative INTEGER that fits in a u64.
     pub fn u64(&self) -> Result<u64, SignError> {
-        if self.tag != tag::INTEGER || self.value.is_empty() || self.value.len() > 9 || self.value[0] & 0x80 != 0 {
+        if self.tag != tag::INTEGER
+            || self.value.is_empty()
+            || self.value.len() > 9
+            || self.value[0] & 0x80 != 0
+        {
             return Err(bad("expected a small non-negative INTEGER"));
         }
-        Ok(self.value.iter().fold(0u64, |acc, b| (acc << 8) | *b as u64))
+        Ok(self
+            .value
+            .iter()
+            .fold(0u64, |acc, b| (acc << 8) | *b as u64))
     }
 
     /// The magnitude of an INTEGER (leading zero dropped).
@@ -230,10 +262,18 @@ impl<'a> Tlv<'a> {
     /// A string type as text (UTF-8, Printable, IA5, T61 as Latin-1, BMP).
     pub fn text(&self) -> Option<String> {
         match self.tag {
-            tag::UTF8_STRING | tag::PRINTABLE_STRING | tag::IA5_STRING => Some(String::from_utf8_lossy(self.value).into_owned()),
+            tag::UTF8_STRING | tag::PRINTABLE_STRING | tag::IA5_STRING => {
+                Some(String::from_utf8_lossy(self.value).into_owned())
+            }
             tag::T61_STRING => Some(self.value.iter().map(|b| *b as char).collect()),
             tag::BMP_STRING => {
-                let units: Vec<u16> = self.value.as_chunks::<2>().0.iter().map(|c| u16::from_be_bytes([c[0], c[1]])).collect();
+                let units: Vec<u16> = self
+                    .value
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_be_bytes([c[0], c[1]]))
+                    .collect();
                 Some(String::from_utf16_lossy(&units))
             }
             _ => None,
@@ -243,8 +283,14 @@ impl<'a> Tlv<'a> {
     /// UTCTime / GeneralizedTime as (year, month, day, hour, minute, second) in UTC.
     pub fn time(&self) -> Result<Time, SignError> {
         let s = std::str::from_utf8(self.value).map_err(|_| bad("time"))?;
-        let s = s.strip_suffix('Z').ok_or_else(|| bad("times must be in UTC (Z)"))?;
-        let num = |r: std::ops::Range<usize>| s.get(r).and_then(|x| x.parse::<u32>().ok()).ok_or_else(|| bad("time"));
+        let s = s
+            .strip_suffix('Z')
+            .ok_or_else(|| bad("times must be in UTC (Z)"))?;
+        let num = |r: std::ops::Range<usize>| {
+            s.get(r)
+                .and_then(|x| x.parse::<u32>().ok())
+                .ok_or_else(|| bad("time"))
+        };
         let (year, rest) = match self.tag {
             tag::UTC_TIME => {
                 let y = num(0..2)?;
@@ -259,7 +305,11 @@ impl<'a> Tlv<'a> {
             day: num(rest + 2..rest + 4)?,
             hour: num(rest + 4..rest + 6)?,
             minute: num(rest + 6..rest + 8)?,
-            second: if s.len() >= rest + 10 { num(rest + 8..rest + 10)? } else { 0 },
+            second: if s.len() >= rest + 10 {
+                num(rest + 8..rest + 10)?
+            } else {
+                0
+            },
         };
         Ok(t)
     }
@@ -300,9 +350,17 @@ impl Time {
     /// From a PDF date (`D:YYYYMMDDHHmmSS±HH'mm'`), converted to UTC.
     pub fn from_pdf(s: &str) -> Option<Time> {
         let s = s.strip_prefix("D:").unwrap_or(s);
-        let d = |r: std::ops::Range<usize>, default: u32| s.get(r).map_or(Some(default), |x| x.parse::<u32>().ok());
-        let mut t =
-            Time { year: d(0..4, 0)?, month: d(4..6, 1)?, day: d(6..8, 1)?, hour: d(8..10, 0)?, minute: d(10..12, 0)?, second: d(12..14, 0)? };
+        let d = |r: std::ops::Range<usize>, default: u32| {
+            s.get(r).map_or(Some(default), |x| x.parse::<u32>().ok())
+        };
+        let mut t = Time {
+            year: d(0..4, 0)?,
+            month: d(4..6, 1)?,
+            day: d(6..8, 1)?,
+            hour: d(8..10, 0)?,
+            minute: d(10..12, 0)?,
+            second: d(12..14, 0)?,
+        };
         if t.year == 0 {
             return None;
         }
@@ -313,8 +371,14 @@ impl Time {
             _ => 0,
         };
         if sign != 0 {
-            let h = tz.get(1..3).and_then(|x| x.parse::<i64>().ok()).unwrap_or(0);
-            let m = tz.get(4..6).and_then(|x| x.parse::<i64>().ok()).unwrap_or(0);
+            let h = tz
+                .get(1..3)
+                .and_then(|x| x.parse::<i64>().ok())
+                .unwrap_or(0);
+            let m = tz
+                .get(4..6)
+                .and_then(|x| x.parse::<i64>().ok())
+                .unwrap_or(0);
             t = t.add_seconds(sign * (h * 3600 + m * 60));
         }
         Some(t)
@@ -322,12 +386,19 @@ impl Time {
 
     /// As a PDF date in UTC (`D:YYYYMMDDHHmmSSZ`).
     pub fn to_pdf(&self) -> String {
-        format!("D:{:04}{:02}{:02}{:02}{:02}{:02}Z", self.year, self.month, self.day, self.hour, self.minute, self.second)
+        format!(
+            "D:{:04}{:02}{:02}{:02}{:02}{:02}Z",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        )
     }
 
     /// Seconds since 1970-01-01 (proleptic Gregorian).
     pub fn unix(&self) -> i64 {
-        let (y, m) = if self.month <= 2 { (self.year as i64 - 1, self.month as i64 + 9) } else { (self.year as i64, self.month as i64 - 3) };
+        let (y, m) = if self.month <= 2 {
+            (self.year as i64 - 1, self.month as i64 + 9)
+        } else {
+            (self.year as i64, self.month as i64 - 3)
+        };
         let era = y.div_euclid(400);
         let yoe = y - era * 400;
         let doy = (153 * m + 2) / 5 + self.day as i64 - 1;
@@ -348,7 +419,14 @@ impl Time {
         let day = (doy - (153 * mp + 2) / 5 + 1) as u32;
         let month = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
         let year = (yoe + era * 400 + if month <= 2 { 1 } else { 0 }) as u32;
-        Time { year, month, day, hour: (secs / 3600) as u32, minute: (secs % 3600 / 60) as u32, second: (secs % 60) as u32 }
+        Time {
+            year,
+            month,
+            day,
+            hour: (secs / 3600) as u32,
+            minute: (secs % 3600 / 60) as u32,
+            second: (secs % 60) as u32,
+        }
     }
 
     pub fn add_seconds(&self, s: i64) -> Time {
@@ -358,10 +436,21 @@ impl Time {
     /// UTCTime before 2050, GeneralizedTime from then on (RFC 5280 §4.1.2.5).
     pub fn encode(&self) -> Vec<u8> {
         if (1950..2050).contains(&self.year) {
-            let s = format!("{:02}{:02}{:02}{:02}{:02}{:02}Z", self.year % 100, self.month, self.day, self.hour, self.minute, self.second);
+            let s = format!(
+                "{:02}{:02}{:02}{:02}{:02}{:02}Z",
+                self.year % 100,
+                self.month,
+                self.day,
+                self.hour,
+                self.minute,
+                self.second
+            );
             tlv(tag::UTC_TIME, s.as_bytes())
         } else {
-            let s = format!("{:04}{:02}{:02}{:02}{:02}{:02}Z", self.year, self.month, self.day, self.hour, self.minute, self.second);
+            let s = format!(
+                "{:04}{:02}{:02}{:02}{:02}{:02}Z",
+                self.year, self.month, self.day, self.hour, self.minute, self.second
+            );
             tlv(tag::GENERALIZED_TIME, s.as_bytes())
         }
     }
@@ -369,7 +458,11 @@ impl Time {
 
 impl std::fmt::Display for Time {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:04}.{:02}.{:02} {:02}:{:02}:{:02} UTC", self.year, self.month, self.day, self.hour, self.minute, self.second)
+        write!(
+            f,
+            "{:04}.{:02}.{:02} {:02}:{:02}:{:02} UTC",
+            self.year, self.month, self.day, self.hour, self.minute, self.second
+        )
     }
 }
 
@@ -377,7 +470,10 @@ fn oid_to_string(v: &[u8]) -> Result<String, SignError> {
     let mut arcs: Vec<u64> = Vec::new();
     let mut acc = 0u64;
     for (i, b) in v.iter().enumerate() {
-        acc = acc.checked_mul(128).ok_or_else(|| bad("OID arc too large"))? | (b & 0x7F) as u64;
+        acc = acc
+            .checked_mul(128)
+            .ok_or_else(|| bad("OID arc too large"))?
+            | (b & 0x7F) as u64;
         if b & 0x80 == 0 {
             if arcs.is_empty() {
                 let first = (acc / 40).min(2);
@@ -391,7 +487,11 @@ fn oid_to_string(v: &[u8]) -> Result<String, SignError> {
             return Err(bad("truncated OID"));
         }
     }
-    Ok(arcs.iter().map(u64::to_string).collect::<Vec<_>>().join("."))
+    Ok(arcs
+        .iter()
+        .map(u64::to_string)
+        .collect::<Vec<_>>()
+        .join("."))
 }
 
 // ── writing ─────────────────────────────────────────────────────────────────────────────────
@@ -403,7 +503,12 @@ pub fn tlv(tag: u8, value: &[u8]) -> Vec<u8> {
     if n < 0x80 {
         out.push(n as u8);
     } else {
-        let bytes: Vec<u8> = n.to_be_bytes().iter().copied().skip_while(|b| *b == 0).collect();
+        let bytes: Vec<u8> = n
+            .to_be_bytes()
+            .iter()
+            .copied()
+            .skip_while(|b| *b == 0)
+            .collect();
         out.push(0x80 | bytes.len() as u8);
         out.extend(bytes);
     }
@@ -430,7 +535,10 @@ pub fn explicit(n: u8, inner: &[u8]) -> Vec<u8> {
 // The documented never-crash exception: every caller passes a literal that always parses.
 #[allow(clippy::expect_used)]
 pub fn oid(dotted: &str) -> Vec<u8> {
-    let arcs: Vec<u64> = dotted.split('.').map(|a| a.parse().expect("valid OID constant")).collect();
+    let arcs: Vec<u64> = dotted
+        .split('.')
+        .map(|a| a.parse().expect("valid OID constant"))
+        .collect();
     let mut body = Vec::new();
     let mut push = |mut v: u64| {
         let mut tmp = vec![(v & 0x7F) as u8];
@@ -452,7 +560,9 @@ pub fn oid(dotted: &str) -> Vec<u8> {
 /// Encode a dotted OID supplied by a caller. Unlike [`oid`], this validates every arc and
 /// never panics on malformed input.
 pub fn try_oid(dotted: &str) -> Result<Vec<u8>, SignError> {
-    let mut arcs = dotted.split('.').map(|a| a.parse::<u64>().map_err(|_| bad("invalid OID arc")));
+    let mut arcs = dotted
+        .split('.')
+        .map(|a| a.parse::<u64>().map_err(|_| bad("invalid OID arc")));
     let first = arcs.next().ok_or_else(|| bad("empty OID"))??;
     let second = arcs.next().ok_or_else(|| bad("OID needs two arcs"))??;
     if first > 2 || (first < 2 && second >= 40) {
@@ -469,7 +579,10 @@ pub fn try_oid(dotted: &str) -> Result<Vec<u8>, SignError> {
         tmp.reverse();
         body.extend(tmp);
     };
-    let base = first.checked_mul(40).and_then(|b| b.checked_add(second)).ok_or_else(|| bad("invalid OID prefix"))?;
+    let base = first
+        .checked_mul(40)
+        .and_then(|b| b.checked_add(second))
+        .ok_or_else(|| bad("invalid OID prefix"))?;
     push(base);
     for arc in arcs {
         push(arc?);
@@ -556,23 +669,51 @@ mod tests {
     fn reads_ber_indefinite_lengths_and_segmented_strings() {
         // SEQUENCE { INTEGER 3, OCTET STRING { "hi", "!" } }, every wrapper in the indefinite form:
         // the shape Windows gives a .p12 file.
-        let ber: &[u8] = &[0x30, 0x80, 0x02, 0x01, 0x03, 0x24, 0x80, 0x04, 0x02, b'h', b'i', 0x04, 0x01, b'!', 0, 0, 0, 0];
+        let ber: &[u8] = &[
+            0x30, 0x80, 0x02, 0x01, 0x03, 0x24, 0x80, 0x04, 0x02, b'h', b'i', 0x04, 0x01, b'!', 0,
+            0, 0, 0,
+        ];
         let e = Tlv::parse_all(ber).unwrap_err().to_string();
-        assert!(e.contains("indefinite lengths are not allowed in DER"), "{e}");
+        assert!(
+            e.contains("indefinite lengths are not allowed in DER"),
+            "{e}"
+        );
 
         let t = Tlv::parse_all_ber(ber).unwrap();
         assert_eq!(t.tag, tag::SEQUENCE);
-        assert_eq!(t.raw, ber, "the end-of-contents octets belong to the element");
+        assert_eq!(
+            t.raw, ber,
+            "the end-of-contents octets belong to the element"
+        );
         assert_eq!(t.value, &ber[2..ber.len() - 2], "but not to its contents");
         let c = t.children().unwrap();
         assert_eq!(c[0].u64().unwrap(), 3);
-        assert_eq!(c[1].octets("segments").unwrap().as_ref(), b"hi!", "the segments are joined");
+        assert_eq!(
+            c[1].octets("segments").unwrap().as_ref(),
+            b"hi!",
+            "the segments are joined"
+        );
         assert!(c[0].octets("not a string").is_err());
 
         // Definite lengths read the same either way, and a segmented string stays a DER error.
-        assert_eq!(Tlv::parse_all_ber(&int(65537)).unwrap().u64().unwrap(), 65537);
-        assert_eq!(Tlv::parse_all_ber(&octets(b"hi!")).unwrap().octets("plain").unwrap().as_ref(), b"hi!");
-        assert!(Tlv::parse_all(&[0x24, 2, 0x04, 0]).unwrap().octets("segments").is_err());
+        assert_eq!(
+            Tlv::parse_all_ber(&int(65537)).unwrap().u64().unwrap(),
+            65537
+        );
+        assert_eq!(
+            Tlv::parse_all_ber(&octets(b"hi!"))
+                .unwrap()
+                .octets("plain")
+                .unwrap()
+                .as_ref(),
+            b"hi!"
+        );
+        assert!(
+            Tlv::parse_all(&[0x24, 2, 0x04, 0])
+                .unwrap()
+                .octets("segments")
+                .is_err()
+        );
 
         // Malformed: no end-of-contents, and an indefinite length on a primitive element.
         assert!(Tlv::parse_all_ber(&ber[..ber.len() - 2]).is_err());
@@ -584,12 +725,42 @@ mod tests {
 
     #[test]
     fn times() {
-        let t = Time { year: 2026, month: 10, day: 2, hour: 9, minute: 30, second: 5 };
+        let t = Time {
+            year: 2026,
+            month: 10,
+            day: 2,
+            hour: 9,
+            minute: 30,
+            second: 5,
+        };
         assert_eq!(Time::from_unix(t.unix()), t);
         assert_eq!(Tlv::parse_all(&t.encode()).unwrap().time().unwrap(), t);
         let far = Time { year: 2051, ..t };
-        assert_eq!(Tlv::parse_all(&far.encode()).unwrap().tag, tag::GENERALIZED_TIME);
-        assert_eq!(Time::from_pdf("D:20261002113005+02'00'"), Some(Time { year: 2026, month: 10, day: 2, hour: 9, minute: 30, second: 5 }));
-        assert_eq!(Time::from_unix(0), Time { year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0 });
+        assert_eq!(
+            Tlv::parse_all(&far.encode()).unwrap().tag,
+            tag::GENERALIZED_TIME
+        );
+        assert_eq!(
+            Time::from_pdf("D:20261002113005+02'00'"),
+            Some(Time {
+                year: 2026,
+                month: 10,
+                day: 2,
+                hour: 9,
+                minute: 30,
+                second: 5
+            })
+        );
+        assert_eq!(
+            Time::from_unix(0),
+            Time {
+                year: 1970,
+                month: 1,
+                day: 1,
+                hour: 0,
+                minute: 0,
+                second: 0
+            }
+        );
     }
 }

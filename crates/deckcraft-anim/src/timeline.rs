@@ -2,7 +2,9 @@
 
 use deckcraft_model::anim::TextBuild;
 use deckcraft_model::style::Fill;
-use deckcraft_model::{AnimClass, AnimStart, Animation, ColorScheme, Rgba, SchemeSlot, ShapeId, Slide, Xfrm};
+use deckcraft_model::{
+    AnimClass, AnimStart, Animation, ColorScheme, Rgba, SchemeSlot, ShapeId, Slide, Xfrm,
+};
 
 use crate::AnimState;
 use crate::effects::{EffectSpec, exit_base, motion_path};
@@ -116,7 +118,9 @@ fn sanitize_xfrm(x: Xfrm, sw: f64, sh: f64) -> Xfrm {
 }
 
 fn default_scheme() -> Option<ColorScheme> {
-    deckcraft_model::theme::builtin_color_schemes().into_iter().next()
+    deckcraft_model::theme::builtin_color_schemes()
+        .into_iter()
+        .next()
 }
 
 impl Timeline {
@@ -128,7 +132,13 @@ impl Timeline {
 
     /// Build with a colour scheme for theme colours and a lookup for shape boxes (placeholders
     /// inherit their box from the layout; the lookup wins over `shape.xfrm`).
-    pub fn with(slide: &Slide, slide_w: f64, slide_h: f64, scheme: Option<&ColorScheme>, xfrm_of: &dyn Fn(ShapeId) -> Option<Xfrm>) -> Timeline {
+    pub fn with(
+        slide: &Slide,
+        slide_w: f64,
+        slide_h: f64,
+        scheme: Option<&ColorScheme>,
+        xfrm_of: &dyn Fn(ShapeId) -> Option<Xfrm>,
+    ) -> Timeline {
         let sw = finite_or(slide_w, 960.0).clamp(1.0, 1.0e7);
         let sh = finite_or(slide_h, 540.0).clamp(1.0, 1.0e7);
         let owned;
@@ -148,7 +158,9 @@ impl Timeline {
                 },
             }
         };
-        let accent = scheme.map(|s| s.get(SchemeSlot::Accent1)).unwrap_or(Rgba::rgb(0x15, 0x60, 0x82));
+        let accent = scheme
+            .map(|s| s.get(SchemeSlot::Accent1))
+            .unwrap_or(Rgba::rgb(0x15, 0x60, 0x82));
 
         let mut tl = Timeline::default();
         // Sequences in order of first appearance: main first.
@@ -180,8 +192,16 @@ impl Timeline {
                     (None, TextBuild::ByParagraph) => {
                         let mut v: Vec<Option<usize>> = vec![];
                         if let Some(t) = shape.and_then(|s| s.text.as_ref()) {
-                            let filled = |p: &deckcraft_model::text::Paragraph| p.runs.iter().any(|r| !r.text.trim().is_empty());
-                            let top = t.paragraphs.iter().filter(|p| filled(p)).map(|p| p.level).min().unwrap_or(0);
+                            let filled = |p: &deckcraft_model::text::Paragraph| {
+                                p.runs.iter().any(|r| !r.text.trim().is_empty())
+                            };
+                            let top = t
+                                .paragraphs
+                                .iter()
+                                .filter(|p| filled(p))
+                                .map(|p| p.level)
+                                .min()
+                                .unwrap_or(0);
                             let mut owner: Option<usize> = None;
                             for (i, p) in t.paragraphs.iter().enumerate() {
                                 if p.level <= top && filled(p) && v.len() < MAX_PARAGRAPHS {
@@ -198,13 +218,19 @@ impl Timeline {
                     }
                     _ => vec![None],
                 };
-                let xf = xfrm_of(a.shape).or_else(|| shape.and_then(|s| s.xfrm)).unwrap_or(Xfrm::new(sw / 4.0, sh / 4.0, sw / 2.0, sh / 2.0));
+                let xf = xfrm_of(a.shape)
+                    .or_else(|| shape.and_then(|s| s.xfrm))
+                    .unwrap_or(Xfrm::new(sw / 4.0, sh / 4.0, sw / 2.0, sh / 2.0));
                 let xf = sanitize_xfrm(xf, sw, sh);
                 let spec = build_spec(a, xf, sw, sh, &resolve);
                 let dur = secs(a.duration_ms);
                 let delay = secs(a.delay_ms);
                 let until_next_click = a.repeat == u32::MAX;
-                let iterations = if until_next_click || a.repeat <= 1 { 1.0 } else { (a.repeat as f64).min(MAX_ITERATIONS) };
+                let iterations = if until_next_click || a.repeat <= 1 {
+                    1.0
+                } else {
+                    (a.repeat as f64).min(MAX_ITERATIONS)
+                };
                 let span = dur * if a.auto_reverse { 2.0 } else { 1.0 } * iterations;
                 let after = match a.after.as_deref() {
                     Some("hide") => After::Hide,
@@ -222,26 +248,43 @@ impl Timeline {
                         AnimStart::WithPrevious
                     };
                     let first_of_seq = steps.is_empty();
-                    let mode = if first_of_seq && matches!(seq, Sequence::Trigger(_)) { AnimStart::OnClick } else { mode };
+                    let mode = if first_of_seq && matches!(seq, Sequence::Trigger(_)) {
+                        AnimStart::OnClick
+                    } else {
+                        mode
+                    };
                     match mode {
                         AnimStart::OnClick => {
-                            steps.push(StepInfo { auto: false, duration: 0.0 });
+                            steps.push(StepInfo {
+                                auto: false,
+                                duration: 0.0,
+                            });
                             group_begin = 0.0;
                             max_end = 0.0;
                         }
                         AnimStart::WithPrevious => {
                             if first_of_seq {
-                                steps.push(StepInfo { auto: true, duration: 0.0 });
+                                steps.push(StepInfo {
+                                    auto: true,
+                                    duration: 0.0,
+                                });
                             }
                         }
                         AnimStart::AfterPrevious => {
                             if first_of_seq {
-                                steps.push(StepInfo { auto: true, duration: 0.0 });
+                                steps.push(StepInfo {
+                                    auto: true,
+                                    duration: 0.0,
+                                });
                             }
                             group_begin = max_end;
                         }
                     }
-                    let start = if k > 0 && a.start != AnimStart::OnClick { first_start + k as f64 * PARAGRAPH_STAGGER } else { group_begin + delay };
+                    let start = if k > 0 && a.start != AnimStart::OnClick {
+                        first_start + k as f64 * PARAGRAPH_STAGGER
+                    } else {
+                        group_begin + delay
+                    };
                     if k == 0 {
                         first_start = start;
                     }
@@ -332,11 +375,20 @@ impl Timeline {
 
     /// Steps (clicks on the trigger) of a triggered sequence.
     pub fn trigger_steps(&self, trigger: ShapeId) -> usize {
-        self.triggers.iter().find(|(s, _)| *s == trigger).map(|(_, v)| v.len()).unwrap_or(0)
+        self.triggers
+            .iter()
+            .find(|(s, _)| *s == trigger)
+            .map(|(_, v)| v.len())
+            .unwrap_or(0)
     }
 
     pub fn trigger_step_duration(&self, trigger: ShapeId, i: usize) -> f64 {
-        self.triggers.iter().find(|(s, _)| *s == trigger).and_then(|(_, v)| v.get(i)).map(|s| s.duration).unwrap_or(0.0)
+        self.triggers
+            .iter()
+            .find(|(s, _)| *s == trigger)
+            .and_then(|(_, v)| v.get(i))
+            .map(|s| s.duration)
+            .unwrap_or(0.0)
     }
 
     /// All effect timings in sequence order.
@@ -351,8 +403,19 @@ impl Timeline {
 
     /// Paragraph indices of `shape` animated separately (by-paragraph builds).
     pub fn paragraph_targets(&self, shape: ShapeId) -> Vec<usize> {
-        let mut v: Vec<usize> = self.effects.iter().filter(|e| e.timing.shape == shape).filter_map(|e| e.timing.paragraph).collect();
-        v.extend(self.groups.iter().filter(|g| g.0 == shape && v.contains(&g.2)).map(|g| g.1).collect::<Vec<_>>());
+        let mut v: Vec<usize> = self
+            .effects
+            .iter()
+            .filter(|e| e.timing.shape == shape)
+            .filter_map(|e| e.timing.paragraph)
+            .collect();
+        v.extend(
+            self.groups
+                .iter()
+                .filter(|g| g.0 == shape && v.contains(&g.2))
+                .map(|g| g.1)
+                .collect::<Vec<_>>(),
+        );
         v.sort_unstable();
         v.dedup();
         v
@@ -378,10 +441,31 @@ impl Timeline {
     }
 
     /// [`Timeline::state`] with the playheads of triggered sequences.
-    pub fn state_with(&self, shape: ShapeId, para: Option<usize>, step: usize, t: f64, triggers: &[TriggerPlay]) -> AnimState {
-        let para = para.map(|p| self.groups.iter().find(|g| g.0 == shape && g.1 == p).map(|g| g.2).unwrap_or(p));
-        let mine = self.effects.iter().filter(|e| e.timing.shape == shape && e.timing.paragraph == para);
-        let base_color = self.colors.iter().find(|(s, _)| *s == shape).map(|(_, c)| *c).unwrap_or(Rgba::rgb(0x15, 0x60, 0x82));
+    pub fn state_with(
+        &self,
+        shape: ShapeId,
+        para: Option<usize>,
+        step: usize,
+        t: f64,
+        triggers: &[TriggerPlay],
+    ) -> AnimState {
+        let para = para.map(|p| {
+            self.groups
+                .iter()
+                .find(|g| g.0 == shape && g.1 == p)
+                .map(|g| g.2)
+                .unwrap_or(p)
+        });
+        let mine = self
+            .effects
+            .iter()
+            .filter(|e| e.timing.shape == shape && e.timing.paragraph == para);
+        let base_color = self
+            .colors
+            .iter()
+            .find(|(s, _)| *s == shape)
+            .map(|(_, c)| *c)
+            .unwrap_or(Rgba::rgb(0x15, 0x60, 0x82));
         let mut st = AnimState::default();
         // Initial visibility comes from the first effect in the Animation Pane order.
         let mut ordered: Vec<&Effect> = mine.collect();
@@ -395,7 +479,11 @@ impl Timeline {
         for e in &ordered {
             let (pstep, pt) = match e.timing.sequence {
                 Sequence::Main => (step, t),
-                Sequence::Trigger(tr) => triggers.iter().find(|p| p.trigger == tr).map(|p| (p.step, p.t)).unwrap_or((0, 0.0)),
+                Sequence::Trigger(tr) => triggers
+                    .iter()
+                    .find(|p| p.trigger == tr)
+                    .map(|p| (p.step, p.t))
+                    .unwrap_or((0, 0.0)),
             };
             let cur = st.tint.unwrap_or(base_color);
             let revert = e.timing.rewind || e.timing.auto_reverse;
@@ -465,9 +553,23 @@ fn status(e: &EffectTiming, step: usize, t: f64) -> Status {
     Status::Active(p.clamp(0.0, 1.0))
 }
 
-fn build_spec(a: &Animation, xf: Xfrm, sw: f64, sh: f64, resolve: &dyn Fn(&deckcraft_model::ColorRef) -> Rgba) -> EffectSpec {
-    let effect = if a.class == AnimClass::Exit { exit_base(&a.effect).to_string() } else { a.effect.clone() };
-    let path = if a.class == AnimClass::Path { Some(motion_path(&a.effect, &a.option, a.path.as_deref())) } else { None };
+fn build_spec(
+    a: &Animation,
+    xf: Xfrm,
+    sw: f64,
+    sh: f64,
+    resolve: &dyn Fn(&deckcraft_model::ColorRef) -> Rgba,
+) -> EffectSpec {
+    let effect = if a.class == AnimClass::Exit {
+        exit_base(&a.effect).to_string()
+    } else {
+        a.effect.clone()
+    };
+    let path = if a.class == AnimClass::Path {
+        Some(motion_path(&a.effect, &a.option, a.path.as_deref()))
+    } else {
+        None
+    };
     EffectSpec {
         class: a.class,
         effect,

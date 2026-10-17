@@ -112,20 +112,26 @@ impl Studio {
     fn checkpoint(&mut self, before: SceneDocumentV2) {
         match self.session.commit(before) {
             Ok(true) => self.dirty = true,
-            Ok(false) => {},
+            Ok(false) => {}
             Err(error) => self.status = error.to_string(),
         }
     }
 
     fn import(&mut self, path: &std::path::Path) -> Result<()> {
-        let path = path.canonicalize().with_context(|| format!("asset {}", path.display()))?;
+        let path = path
+            .canonicalize()
+            .with_context(|| format!("asset {}", path.display()))?;
         let key = path.to_string_lossy().into_owned();
         let model = glb::parse(&std::fs::read(&path)?)?;
         self.session.add_object(SceneObjectV2 {
             // Vide : la session frappe l'identifiant, qui est une donnée du document.
             id: String::new(),
             parent: None,
-            name: path.file_stem().unwrap_or_default().to_string_lossy().into_owned(),
+            name: path
+                .file_stem()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned(),
             asset: key.clone(),
             position: [0.; 3],
             rotation: [0., 0., 0., 1.],
@@ -144,7 +150,10 @@ impl Studio {
         let session = EditorSession::from_json(&bytes)?;
         let mut assets = HashMap::new();
         for object in &session.document().objects {
-            let asset = path.parent().unwrap_or(std::path::Path::new(".")).join(&object.asset);
+            let asset = path
+                .parent()
+                .unwrap_or(std::path::Path::new("."))
+                .join(&object.asset);
             assets.insert(object.asset.clone(), glb::parse(&std::fs::read(asset)?)?);
         }
         self.session = session;
@@ -158,14 +167,21 @@ impl Studio {
 
     fn rebuild(&mut self) -> Result<()> {
         let (model, owners) = self.session.document().compose_indexed(|path| {
-            self.assets.get(path).cloned().with_context(|| format!("asset manquant : {path}"))
+            self.assets
+                .get(path)
+                .cloned()
+                .with_context(|| format!("asset manquant : {path}"))
         })?;
         let mut gpu_model = self.renderer.upload(&model);
-        let (center, radius) =
-            *self.framing.get_or_insert_with(|| aphrody_nie_render3d::render::bounds(&model));
+        let (center, radius) = *self
+            .framing
+            .get_or_insert_with(|| aphrody_nie_render3d::render::bounds(&model));
         gpu_model.set_framing(center, radius.max(0.001))?;
         self.gpu_model = Some(gpu_model);
-        self.pickable = Some(glb::Model { primitives: model.primitives, textures: Vec::new() });
+        self.pickable = Some(glb::Model {
+            primitives: model.primitives,
+            textures: Vec::new(),
+        });
         self.owners = owners;
         self.dirty = false;
         Ok(())
@@ -212,10 +228,16 @@ impl Studio {
             if ui.button("Importer").clicked() {
                 result = self.import(&PathBuf::from(&self.asset_path));
             }
-            if ui.add_enabled(self.session.can_undo(), egui::Button::new("Annuler")).clicked() {
+            if ui
+                .add_enabled(self.session.can_undo(), egui::Button::new("Annuler"))
+                .clicked()
+            {
                 self.dirty = self.session.undo();
             }
-            if ui.add_enabled(self.session.can_redo(), egui::Button::new("Rétablir")).clicked() {
+            if ui
+                .add_enabled(self.session.can_redo(), egui::Button::new("Rétablir"))
+                .clicked()
+            {
                 self.dirty = self.session.redo();
             }
         });
@@ -242,56 +264,60 @@ impl Studio {
         let before = self.session.document().clone();
         let mut duplicate_requested = false;
         let mut remove_requested = false;
-        egui::Panel::left("hierarchie").default_size(280.).show(ui, |pane| {
-            pane.heading("Scène");
-            let mut requested_selection = None;
-            for (index, object) in self.session.document().objects.iter().enumerate() {
-                if pane
-                    .selectable_label(self.session.selected() == Some(index), &object.name)
-                    .clicked()
-                {
-                    requested_selection = Some(index);
+        egui::Panel::left("hierarchie")
+            .default_size(280.)
+            .show(ui, |pane| {
+                pane.heading("Scène");
+                let mut requested_selection = None;
+                for (index, object) in self.session.document().objects.iter().enumerate() {
+                    if pane
+                        .selectable_label(self.session.selected() == Some(index), &object.name)
+                        .clicked()
+                    {
+                        requested_selection = Some(index);
+                    }
                 }
-            }
-            if let Some(index) = requested_selection {
-                self.session.select(Some(index)).expect("listed object exists");
-            }
-            if let Some(index) = self.session.selected() {
-                let object = &mut self.session.document_mut().objects[index];
-                pane.separator();
-                pane.heading("Inspecteur");
-                pane.text_edit_singleline(&mut object.name);
-                pane.checkbox(&mut object.visible, "Visible");
-                for axis in 0..3 {
-                    pane.horizontal(|ui| {
-                        ui.label(["X", "Y", "Z"][axis]);
-                        ui.add(
-                            egui::DragValue::new(&mut object.position[axis])
-                                .speed(0.01)
-                                .range(-1e6..=1e6),
+                if let Some(index) = requested_selection {
+                    self.session
+                        .select(Some(index))
+                        .expect("listed object exists");
+                }
+                if let Some(index) = self.session.selected() {
+                    let object = &mut self.session.document_mut().objects[index];
+                    pane.separator();
+                    pane.heading("Inspecteur");
+                    pane.text_edit_singleline(&mut object.name);
+                    pane.checkbox(&mut object.visible, "Visible");
+                    for axis in 0..3 {
+                        pane.horizontal(|ui| {
+                            ui.label(["X", "Y", "Z"][axis]);
+                            ui.add(
+                                egui::DragValue::new(&mut object.position[axis])
+                                    .speed(0.01)
+                                    .range(-1e6..=1e6),
+                            );
+                        });
+                    }
+                    // Le document porte un quaternion complet ; cet éditeur n'expose que le
+                    // lacet, donc il le lit et ne le réécrit qu'une fois déplacé — sinon il
+                    // écraserait à chaque image une inclinaison posée ailleurs.
+                    let mut yaw = object.yaw_degrees();
+                    if pane
+                        .add(egui::Slider::new(&mut yaw, -180.0..=180.0).text("Rotation Y"))
+                        .changed()
+                    {
+                        object.set_yaw_degrees(yaw);
+                    }
+                    for axis in 0..3 {
+                        pane.add(
+                            egui::Slider::new(&mut object.scale[axis], 0.01..=10.)
+                                .text(format!("Échelle {}", ["X", "Y", "Z"][axis])),
                         );
-                    });
+                    }
+                    duplicate_requested = pane.button("Dupliquer").clicked();
+                    remove_requested = pane.button("Supprimer").clicked();
                 }
-                // Le document porte un quaternion complet ; cet éditeur n'expose que le
-                // lacet, donc il le lit et ne le réécrit qu'une fois déplacé — sinon il
-                // écraserait à chaque image une inclinaison posée ailleurs.
-                let mut yaw = object.yaw_degrees();
-                if pane
-                    .add(egui::Slider::new(&mut yaw, -180.0..=180.0).text("Rotation Y"))
-                    .changed()
-                {
-                    object.set_yaw_degrees(yaw);
-                }
-                for axis in 0..3 {
-                    pane.add(
-                        egui::Slider::new(&mut object.scale[axis], 0.01..=10.)
-                            .text(format!("Échelle {}", ["X", "Y", "Z"][axis])),
-                    );
-                }
-                duplicate_requested = pane.button("Dupliquer").clicked();
-                remove_requested = pane.button("Supprimer").clicked();
-            }
-        });
+            });
         if before != *self.session.document() && ui.input(|input| input.pointer.primary_down()) {
             self.pending_edit.get_or_insert(before);
             self.dirty = true;
@@ -379,7 +405,7 @@ impl Studio {
                                 pane.ctx().request_repaint();
                             }
                         }
-                    },
+                    }
                     Err(error) => self.status = error.to_string(),
                 }
             }

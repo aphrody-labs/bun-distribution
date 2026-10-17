@@ -12,12 +12,25 @@ use crate::present_tests::{Ui, id};
 
 fn setup() -> (Ui, figcraft_doc::NodeId, figcraft_doc::NodeId) {
     let mut s = Session::new();
-    let f = id(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 300, "height": 400, "name": "Login"})).unwrap());
+    let f = id(&s
+        .execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 300, "height": 400, "name": "Login"}),
+        )
+        .unwrap());
     let r = id(&s
         .execute("shape.rectangle", &json!({"x": 20, "y": 300, "width": 120, "height": 40, "parent": f, "props": {"fill": "#FF0000"}}))
         .unwrap());
-    s.execute("node.set", &json!({"id": f, "props": {"devStatus": "readyForDev"}})).unwrap();
-    s.execute("node.set", &json!({"id": r, "props": {"fill": "#00AA00", "width": 160}})).unwrap();
+    s.execute(
+        "node.set",
+        &json!({"id": f, "props": {"devStatus": "readyForDev"}}),
+    )
+    .unwrap();
+    s.execute(
+        "node.set",
+        &json!({"id": r, "props": {"fill": "#00AA00", "width": 160}}),
+    )
+    .unwrap();
     let mut u = Ui::new(s);
     u.app.ui.right_tab = crate::RightTab::Inspect;
     u.frame(vec![]);
@@ -61,22 +74,38 @@ fn compare_view_follows_edits_and_resolving() {
     assert!(u.app.ui.dev.compare.is_some());
     u.run("edit.delete", json!({"ids": [f]}));
     u.frames(2, Vec::new);
-    assert!(u.app.ui.dev.compare.is_none(), "closes when its frame is gone");
+    assert!(
+        u.app.ui.dev.compare.is_none(),
+        "closes when its frame is gone"
+    );
 }
 
 #[test]
 fn annotation_filter_and_categories_panel() {
     let (mut u, _, r) = setup();
-    u.run("annotation.add", json!({"id": r, "label": "Tap target", "category": "Accessibility"}));
+    u.run(
+        "annotation.add",
+        json!({"id": r, "label": "Tap target", "category": "Accessibility"}),
+    );
     u.run("annotation.add", json!({"id": r, "label": "Plain"}));
     u.run("select.set", json!({"ids": []}));
-    for f in [CategoryFilter::All, CategoryFilter::Uncategorized, CategoryFilter::Only("accessibility".into())] {
+    for f in [
+        CategoryFilter::All,
+        CategoryFilter::Uncategorized,
+        CategoryFilter::Only("accessibility".into()),
+    ] {
         u.app.ui.dev.categories = f.clone();
         u.frames(2, Vec::new);
         assert_eq!(u.app.inspect()["annotationFilter"], json!(f.id()));
     }
     let doc = u.app.session.doc().unwrap().clone();
-    assert_eq!(CategoryFilter::parse(&doc, "Accessibility"), Some(CategoryFilter::Only("accessibility".into())));
-    assert_eq!(CategoryFilter::parse(&doc, "none"), Some(CategoryFilter::Uncategorized));
+    assert_eq!(
+        CategoryFilter::parse(&doc, "Accessibility"),
+        Some(CategoryFilter::Only("accessibility".into()))
+    );
+    assert_eq!(
+        CategoryFilter::parse(&doc, "none"),
+        Some(CategoryFilter::Uncategorized)
+    );
     assert_eq!(CategoryFilter::parse(&doc, "nope"), None);
 }

@@ -25,9 +25,16 @@ pub fn ffmpeg_libaom() -> Option<PathBuf> {
 fn ffmpeg_with(needs: &[(&str, &str)]) -> Option<PathBuf> {
     let ff = filmcraft_testkit::ffmpeg_or_skip("av1 oracle")?;
     for &(list, lib) in needs {
-        let out = Command::new(&ff).args(["-hide_banner", list]).output().map(|o| String::from_utf8_lossy(&o.stdout).into_owned()).unwrap_or_default();
+        let out = Command::new(&ff)
+            .args(["-hide_banner", list])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+            .unwrap_or_default();
         if !out.contains(lib) {
-            filmcraft_testkit::skip("av1 oracle", &format!("ffmpeg has no {lib} (see `ffmpeg {list}`)"));
+            filmcraft_testkit::skip(
+                "av1 oracle",
+                &format!("ffmpeg has no {lib} (see `ffmpeg {list}`)"),
+            );
             return None;
         }
     }
@@ -39,8 +46,17 @@ pub fn fixture_dir() -> PathBuf {
 }
 
 pub fn run(ff: &Path, args: &[&str]) {
-    let out = Command::new(ff).args(["-hide_banner", "-loglevel", "error", "-y"]).args(args).output().expect("run ffmpeg");
-    assert!(out.status.success(), "ffmpeg {:?} failed: {}", args, String::from_utf8_lossy(&out.stderr));
+    let out = Command::new(ff)
+        .args(["-hide_banner", "-loglevel", "error", "-y"])
+        .args(args)
+        .output()
+        .expect("run ffmpeg");
+    assert!(
+        out.status.success(),
+        "ffmpeg {:?} failed: {}",
+        args,
+        String::from_utf8_lossy(&out.stderr)
+    );
 }
 
 /// An AV1 fixture: a lavfi source encoded by ffmpeg (libsvtav1 unless [`Spec::encoder`] says
@@ -56,8 +72,21 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn new(name: &'static str, lavfi: impl Into<String>, frames: u32, pix_fmt: &'static str, enc: &[&str]) -> Spec {
-        Spec { name, encoder: "libsvtav1", lavfi: lavfi.into(), frames, pix_fmt, enc: enc.iter().map(|s| s.to_string()).collect() }
+    pub fn new(
+        name: &'static str,
+        lavfi: impl Into<String>,
+        frames: u32,
+        pix_fmt: &'static str,
+        enc: &[&str],
+    ) -> Spec {
+        Spec {
+            name,
+            encoder: "libsvtav1",
+            lavfi: lavfi.into(),
+            frames,
+            pix_fmt,
+            enc: enc.iter().map(|s| s.to_string()).collect(),
+        }
     }
 
     pub fn encoder(mut self, encoder: &'static str) -> Spec {
@@ -72,7 +101,18 @@ pub fn make(ff: &Path, spec: &Spec) -> PathBuf {
         let tmp = filmcraft_testkit::temp_path(&path);
         let frames = spec.frames.to_string();
         let t = tmp.to_str().unwrap().to_string();
-        let mut args: Vec<&str> = vec!["-f", "lavfi", "-i", spec.lavfi.as_str(), "-frames:v", frames.as_str(), "-pix_fmt", spec.pix_fmt, "-c:v", spec.encoder];
+        let mut args: Vec<&str> = vec![
+            "-f",
+            "lavfi",
+            "-i",
+            spec.lavfi.as_str(),
+            "-frames:v",
+            frames.as_str(),
+            "-pix_fmt",
+            spec.pix_fmt,
+            "-c:v",
+            spec.encoder,
+        ];
         args.extend(spec.enc.iter().map(String::as_str));
         args.extend(["-f", "ivf", t.as_str()]);
         run(ff, &args);
@@ -100,14 +140,30 @@ pub fn ivf_frames(path: &Path) -> Vec<Vec<u8>> {
 /// Reference decode with ffmpeg's libdav1d (8-bit formats widened to u16).
 pub fn reference(ff: &Path, path: &Path, pix_fmt: &str) -> Vec<u16> {
     let out = Command::new(ff)
-        .args(["-hide_banner", "-loglevel", "error", "-c:v", "libdav1d", "-i"])
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-c:v",
+            "libdav1d",
+            "-i",
+        ])
         .arg(path)
         .args(["-f", "rawvideo", "-pix_fmt", pix_fmt, "-"])
         .output()
         .expect("run ffmpeg");
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     if pix_fmt.ends_with("le") {
-        out.stdout.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes([c[0], c[1]])).collect()
+        out.stdout
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .collect()
     } else {
         out.stdout.iter().map(|&b| b as u16).collect()
     }
@@ -115,7 +171,12 @@ pub fn reference(ff: &Path, path: &Path, pix_fmt: &str) -> Vec<u16> {
 
 /// Decode every frame of an IVF file with our decoder (all cores).
 pub fn decode_all(path: &Path) -> Result<Vec<Picture>, String> {
-    decode_all_threads(path, std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1))
+    decode_all_threads(
+        path,
+        std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1),
+    )
 }
 
 /// Decode every frame of an IVF file with a decoder using `threads` threads.
@@ -129,7 +190,9 @@ pub fn decode_all_opts(path: &Path, threads: usize, draft: bool) -> Result<Vec<P
     dec.set_draft(draft);
     let mut pics = Vec::new();
     for (i, f) in ivf_frames(path).iter().enumerate() {
-        let p = dec.decode_pts(f, i as i64).map_err(|e| format!("frame {i}: {e}"))?;
+        let p = dec
+            .decode_pts(f, i as i64)
+            .map_err(|e| format!("frame {i}: {e}"))?;
         pics.extend(p);
     }
     pics.extend(dec.flush_result().map_err(|e| format!("flush: {e}"))?);
@@ -204,24 +267,49 @@ pub fn check_bit_exact(ff: &Path, spec: &Spec) {
 pub fn check_file(ff: &Path, name: &str, path: &Path) {
     let pics = decode_all_threads(path, 1).unwrap_or_else(|e| panic!("{name}: {e}"));
     // Tile, post-filter and frame threading must give the same pictures.
-    let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1).max(4);
-    let mt = decode_all_threads(path, threads).unwrap_or_else(|e| panic!("{name} ({threads} threads): {e}"));
-    assert_eq!(mt.len(), pics.len(), "{name}: frame count with {threads} threads");
+    let threads = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
+        .max(4);
+    let mt = decode_all_threads(path, threads)
+        .unwrap_or_else(|e| panic!("{name} ({threads} threads): {e}"));
+    assert_eq!(
+        mt.len(),
+        pics.len(),
+        "{name}: frame count with {threads} threads"
+    );
     for (i, (a, b)) in pics.iter().zip(&mt).enumerate() {
         assert!(a == b, "{name}: frame {i} differs with {threads} threads");
     }
     assert!(!pics.is_empty(), "{name}: no frames");
-    assert!(pics.iter().all(|p| !p.draft), "{name}: picture flagged draft without draft mode");
+    assert!(
+        pics.iter().all(|p| !p.draft),
+        "{name}: picture flagged draft without draft mode"
+    );
     let raw = reference(ff, path, pix_fmt_for(&pics[0]));
     let per = picture_samples(&pics[0]);
-    assert_eq!(raw.len(), per * pics.len(), "{name}: frame count/size ({} pictures)", pics.len());
+    assert_eq!(
+        raw.len(),
+        per * pics.len(),
+        "{name}: frame count/size ({} pictures)",
+        pics.len()
+    );
     for (i, p) in pics.iter().enumerate() {
         let (first, count) = compare(p, &raw[i * per..(i + 1) * per]);
         if let Some((plane, x, y, a, b)) = first {
-            panic!("{name}: frame {i} differs in {count} samples; first at plane {plane} ({x},{y}): ours {a}, reference {b}");
+            panic!(
+                "{name}: frame {i} differs in {count} samples; first at plane {plane} ({x},{y}): ours {a}, reference {b}"
+            );
         }
     }
-    println!("{:<34} {:>3} frames {}x{} {}-bit bit-exact", name, pics.len(), pics[0].width, pics[0].height, pics[0].bit_depth);
+    println!(
+        "{:<34} {:>3} frames {}x{} {}-bit bit-exact",
+        name,
+        pics.len(),
+        pics[0].width,
+        pics[0].height,
+        pics[0].bit_depth
+    );
 }
 
 /// An AV1 conformance test vector (libaom test data), downloaded on first use with curl into
@@ -235,7 +323,13 @@ pub fn test_vector(name: &str) -> Option<PathBuf> {
     }
     let tmp = filmcraft_testkit::temp_path(&path);
     let url = format!("https://storage.googleapis.com/aom-test-data/{name}");
-    let ok = Command::new("curl").args(["-sfL", "--max-time", "120", "-o"]).arg(&tmp).arg(&url).status().map(|s| s.success()).unwrap_or(false);
+    let ok = Command::new("curl")
+        .args(["-sfL", "--max-time", "120", "-o"])
+        .arg(&tmp)
+        .arg(&url)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
     if !ok {
         let _ = std::fs::remove_file(&tmp);
         filmcraft_testkit::skip("av1 conformance", &format!("could not download {url}"));

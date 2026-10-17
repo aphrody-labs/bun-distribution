@@ -7,7 +7,14 @@
 //! - [`rasterize`] turns primitives into RGBA pixels for PNG export and tests.
 //!
 //! The look (palette, greys, spacing) is GridCraft's own design.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod axis;

@@ -16,7 +16,8 @@ use serde_json::Value;
 use crate::paths::Paths;
 
 pub const SCHEMA: &str = "bun-os-theme/1";
-const EMBEDDED_BASELINE: &str = include_str!("../../../packages/bun-os-platform/themes/baseline.json");
+const EMBEDDED_BASELINE: &str =
+    include_str!("../../../packages/bun-os-platform/themes/baseline.json");
 
 /// A theme file; every field is optional and layers over the baseline.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -115,19 +116,40 @@ fn from_css(text: &str) -> Value {
             }
         }
     };
-    let num = |v: &str| v.trim_end_matches("px").trim_end_matches("ms").trim().parse::<f64>().ok();
+    let num = |v: &str| {
+        v.trim_end_matches("px")
+            .trim_end_matches("ms")
+            .trim()
+            .parse::<f64>()
+            .ok()
+    };
     for decl in text.split(';') {
-        let Some((name, value)) = decl.split_once(':') else { continue };
-        let name = name.trim().rsplit(['{', '}', '\n']).next().unwrap_or("").trim();
+        let Some((name, value)) = decl.split_once(':') else {
+            continue;
+        };
+        let name = name
+            .trim()
+            .rsplit(['{', '}', '\n'])
+            .next()
+            .unwrap_or("")
+            .trim();
         let value = value.trim();
-        let Some(var) = name.strip_prefix("--") else { continue };
+        let Some(var) = name.strip_prefix("--") else {
+            continue;
+        };
         if let Some(k) = var.strip_prefix("bun-os-theme-") {
             match k {
                 "seed" | "variant" | "mode" | "dynamic" => set(&["color", k], value.into()),
-                "contrast" => set(&["color", "contrast"], num(value).map_or(Value::Null, Into::into)),
+                "contrast" => set(
+                    &["color", "contrast"],
+                    num(value).map_or(Value::Null, Into::into),
+                ),
                 "id" | "name" => set(&[k], value.trim_matches('"').into()),
                 "font" => set(&["type", "font"], value.trim_matches('"').into()),
-                "type-scale" => set(&["type", "scale"], num(value).map_or(Value::Null, Into::into)),
+                "type-scale" => set(
+                    &["type", "scale"],
+                    num(value).map_or(Value::Null, Into::into),
+                ),
                 _ => {}
             }
         } else if let Some(role) = var.strip_prefix("md-sys-color-") {
@@ -141,8 +163,14 @@ fn from_css(text: &str) -> Value {
                 set(&["motion", "durations", n], v.into());
             }
         } else if let Some(n) = var.strip_prefix("md-sys-motion-easing-") {
-            let inner = value.trim_start_matches("cubic-bezier(").trim_end_matches(')');
-            let p: Vec<Value> = inner.split(',').filter_map(|x| x.trim().parse::<f64>().ok()).map(Into::into).collect();
+            let inner = value
+                .trim_start_matches("cubic-bezier(")
+                .trim_end_matches(')');
+            let p: Vec<Value> = inner
+                .split(',')
+                .filter_map(|x| x.trim().parse::<f64>().ok())
+                .map(Into::into)
+                .collect();
             if p.len() == 4 {
                 set(&["motion", "easings", n], Value::Array(p));
             }
@@ -151,7 +179,12 @@ fn from_css(text: &str) -> Value {
                 set(&["state", n], v.into());
             }
         } else if let Some(rest) = var.strip_prefix("md-sys-typescale-") {
-            for (suffix, key) in [("-size", "size"), ("-line-height", "lineHeight"), ("-weight", "weight"), ("-tracking", "tracking")] {
+            for (suffix, key) in [
+                ("-size", "size"),
+                ("-line-height", "lineHeight"),
+                ("-weight", "weight"),
+                ("-tracking", "tracking"),
+            ] {
                 if let (Some(style), Some(v)) = (rest.strip_suffix(suffix), num(value)) {
                     set(&["type", "styles", style, key], v.into());
                 }
@@ -272,15 +305,29 @@ impl Tokens {
             .or_else(|| file.color.seed.as_deref().and_then(parse_hex))
             .unwrap_or(0xFF67_50A4)
             | 0xFF00_0000;
-        let variant = file.color.variant.as_deref().and_then(Variant::from_name).unwrap_or(Variant::TonalSpot);
+        let variant = file
+            .color
+            .variant
+            .as_deref()
+            .and_then(Variant::from_name)
+            .unwrap_or(Variant::TonalSpot);
         let mut contrast = file.color.contrast.unwrap_or(0.0).clamp(-1.0, 1.0);
         if opts.high_contrast {
             contrast = file.high_contrast.contrast.unwrap_or(1.0).clamp(-1.0, 1.0);
         }
-        let dark = opts.dark.unwrap_or(file.color.mode.as_deref() != Some("light"));
+        let dark = opts
+            .dark
+            .unwrap_or(file.color.mode.as_deref() != Some("light"));
         let scheme = DynamicScheme::from_argb(seed, variant, dark, contrast);
-        let mut argb: BTreeMap<String, u32> = Role::ALL.iter().map(|r| (r.name().to_string(), scheme.argb(*r))).collect();
-        let mode_roles = if dark { &file.color.dark } else { &file.color.light };
+        let mut argb: BTreeMap<String, u32> = Role::ALL
+            .iter()
+            .map(|r| (r.name().to_string(), scheme.argb(*r)))
+            .collect();
+        let mode_roles = if dark {
+            &file.color.dark
+        } else {
+            &file.color.light
+        };
         for (role, hex) in file.color.roles.iter().chain(mode_roles) {
             if let Some(v) = parse_hex(hex) {
                 argb.insert(role.clone(), v);
@@ -293,7 +340,10 @@ impl Tokens {
                 }
             }
         }
-        let color = argb.iter().map(|(k, v)| (k.clone(), hex_from_argb(*v))).collect();
+        let color = argb
+            .iter()
+            .map(|(k, v)| (k.clone(), hex_from_argb(*v)))
+            .collect();
 
         let tables = export_token_tables();
         let scale = file.typescale.scale.unwrap_or(1.0);
@@ -301,8 +351,16 @@ impl Tokens {
             .typography
             .iter()
             .map(|s| {
-                let o = file.typescale.styles.get(s.name).cloned().unwrap_or_default();
-                let font = o.font.or_else(|| file.typescale.font.clone()).unwrap_or_else(|| s.font.to_string());
+                let o = file
+                    .typescale
+                    .styles
+                    .get(s.name)
+                    .cloned()
+                    .unwrap_or_default();
+                let font = o
+                    .font
+                    .or_else(|| file.typescale.font.clone())
+                    .unwrap_or_else(|| s.font.to_string());
                 (
                     s.name.to_string(),
                     TypeToken {
@@ -315,9 +373,18 @@ impl Tokens {
                 )
             })
             .collect();
-        let mut shape: BTreeMap<String, f32> = tables.shape.iter().map(|s| (s.name.to_string(), f32::from(s.dp))).collect();
+        let mut shape: BTreeMap<String, f32> = tables
+            .shape
+            .iter()
+            .map(|s| (s.name.to_string(), f32::from(s.dp)))
+            .collect();
         shape.extend(file.shape.clone());
-        let mut duration: BTreeMap<String, f32> = tables.motion.durations.iter().map(|d| (d.name.to_string(), f32::from(d.ms))).collect();
+        let mut duration: BTreeMap<String, f32> = tables
+            .motion
+            .durations
+            .iter()
+            .map(|d| (d.name.to_string(), f32::from(d.ms)))
+            .collect();
         duration.extend(file.motion.durations.clone());
         let reduced_motion = opts.reduced_motion || file.motion.reduced.unwrap_or(false);
         if reduced_motion {
@@ -339,8 +406,11 @@ impl Tokens {
             })
             .collect();
         easing.extend(file.motion.easings.clone());
-        let mut elevation: BTreeMap<String, f32> =
-            tables.elevation.iter().map(|e| (format!("level{}", e.level), f32::from(e.dp))).collect();
+        let mut elevation: BTreeMap<String, f32> = tables
+            .elevation
+            .iter()
+            .map(|e| (format!("level{}", e.level), f32::from(e.dp)))
+            .collect();
         elevation.extend(file.elevation.clone());
         let mut state: BTreeMap<String, f32> = aphrody_m3_tokens::state::NAMES
             .iter()
@@ -400,7 +470,10 @@ impl Tokens {
     }
 
     pub fn easing(&self, name: &str) -> [f32; 4] {
-        self.easing.get(name).copied().unwrap_or([0.0, 0.0, 1.0, 1.0])
+        self.easing
+            .get(name)
+            .copied()
+            .unwrap_or([0.0, 0.0, 1.0, 1.0])
     }
 }
 

@@ -18,7 +18,11 @@ fn with_grid(text: &str, kind: DocGridType, char_space: i32) -> Document {
             p.props.line_spacing = Some(LineSpacing::Multiple(1.0));
         }
     }
-    d.last_section.doc_grid = Some(DocGrid { kind, line_pitch: 18.0, char_space });
+    d.last_section.doc_grid = Some(DocGrid {
+        kind,
+        line_pitch: 18.0,
+        char_space,
+    });
     d
 }
 
@@ -46,7 +50,10 @@ fn line_grid_snaps_line_heights_and_fixes_lines_per_page() {
     let (first, hs) = lines(&lay(&d));
     for h in &hs {
         let cells = h / 18.0;
-        assert!((cells - cells.round()).abs() < 1e-3 && cells >= 1.0, "line height {h} is not a multiple of the pitch");
+        assert!(
+            (cells - cells.round()).abs() < 1e-3 && cells >= 1.0,
+            "line height {h} is not a multiple of the pitch"
+        );
     }
     // Text at the default size fits one pitch: 648 pt of text height holds 36 lines.
     let h = hs[0];
@@ -66,7 +73,13 @@ fn line_grid_snaps_line_heights_and_fixes_lines_per_page() {
 fn character_grid_places_east_asian_text_on_the_pitch() {
     let text = "日本語の文書abc";
     // The default font size plus 2.5 pt: a pitch unlike any font's advance.
-    let lines = wordcraft_doc::SectionProps { doc_grid: Some(DocGrid { kind: DocGridType::Lines, ..Default::default() }), ..Default::default() };
+    let lines = wordcraft_doc::SectionProps {
+        doc_grid: Some(DocGrid {
+            kind: DocGridType::Lines,
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
     let size = para::Grid::of(&Document::from_text(""), &lines).font_size;
     let cs = DocGrid::char_space_for(size + 2.5, size);
     let d = with_grid(text, DocGridType::LinesAndChars, cs);
@@ -74,8 +87,19 @@ fn character_grid_places_east_asian_text_on_the_pitch() {
     assert!((pitch - (size + 2.5)).abs() < 0.01);
     let l = lay(&d);
     let plain = lay(&with_grid(text, DocGridType::Lines, cs));
-    let first =
-        |l: &DocLayout| l.pages[0].items.iter().find_map(|it| if let Placed::Lines { para, .. } = it { Some(para.clone()) } else { None }).unwrap();
+    let first = |l: &DocLayout| {
+        l.pages[0]
+            .items
+            .iter()
+            .find_map(|it| {
+                if let Placed::Lines { para, .. } = it {
+                    Some(para.clone())
+                } else {
+                    None
+                }
+            })
+            .unwrap()
+    };
     let (g, p) = (first(&l), first(&plain));
     let line = &g.lines[0];
     let latin = text.find('a').unwrap();
@@ -83,11 +107,17 @@ fn character_grid_places_east_asian_text_on_the_pitch() {
         let x = line.xs[k] - line.xs[0];
         if c.start < latin {
             // Ideographs and kana sit on the pitch, one cell each.
-            assert!((x - pitch * k as f32).abs() < 0.01, "cluster {k} at {x}, pitch {pitch}");
+            assert!(
+                (x - pitch * k as f32).abs() < 0.01,
+                "cluster {k} at {x}, pitch {pitch}"
+            );
             assert!((c.adv - pitch).abs() < 0.01);
         } else {
             // Latin text keeps its own advances.
-            assert!((c.adv - p.clusters[k].adv).abs() < 0.01, "latin cluster {k}");
+            assert!(
+                (c.adv - p.clusters[k].adv).abs() < 0.01,
+                "latin cluster {k}"
+            );
         }
     }
 }

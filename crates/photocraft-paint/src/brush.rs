@@ -55,16 +55,31 @@ pub struct Dynamic {
 
 impl Default for Dynamic {
     fn default() -> Self {
-        Self { jitter: 0.0, control: Control::Off, fade_steps: 25, minimum: 0.0 }
+        Self {
+            jitter: 0.0,
+            control: Control::Off,
+            fade_steps: 25,
+            minimum: 0.0,
+        }
     }
 }
 
 impl Dynamic {
     pub const fn controlled(control: Control) -> Self {
-        Self { jitter: 0.0, control, fade_steps: 25, minimum: 0.0 }
+        Self {
+            jitter: 0.0,
+            control,
+            fade_steps: 25,
+            minimum: 0.0,
+        }
     }
     pub const fn jitter(jitter: f32) -> Self {
-        Self { jitter, control: Control::Off, fade_steps: 25, minimum: 0.0 }
+        Self {
+            jitter,
+            control: Control::Off,
+            fade_steps: 25,
+            minimum: 0.0,
+        }
     }
     pub fn is_active(&self) -> bool {
         self.jitter > 0.0 || self.control != Control::Off
@@ -168,7 +183,13 @@ pub struct Scattering {
 
 impl Default for Scattering {
     fn default() -> Self {
-        Self { enabled: false, scatter: Dynamic::default(), both_axes: false, count: 1, count_jitter: Dynamic::default() }
+        Self {
+            enabled: false,
+            scatter: Dynamic::default(),
+            both_axes: false,
+            count: 1,
+            count_jitter: Dynamic::default(),
+        }
     }
 }
 
@@ -222,7 +243,11 @@ pub enum Pattern {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 enum PatternOut<'a> {
-    Procedural { style: PatternStyle, size: u32, seed: u32 },
+    Procedural {
+        style: PatternStyle,
+        size: u32,
+        seed: u32,
+    },
     Tile(&'a GrayTile),
     Stored(&'a StoredTile),
 }
@@ -230,7 +255,11 @@ enum PatternOut<'a> {
 impl Serialize for Pattern {
     fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
         match self {
-            Pattern::Procedural { style, size, seed } => PatternOut::Procedural { style: *style, size: *size, seed: *seed },
+            Pattern::Procedural { style, size, seed } => PatternOut::Procedural {
+                style: *style,
+                size: *size,
+                seed: *seed,
+            },
             Pattern::Tile(g) => PatternOut::Tile(g),
             Pattern::Stored(r) => match r.full.as_deref() {
                 Some(g) => PatternOut::Tile(g),
@@ -255,7 +284,11 @@ impl Pattern {
 
 impl Default for Pattern {
     fn default() -> Self {
-        Pattern::Procedural { style: PatternStyle::Paper, size: 128, seed: 1 }
+        Pattern::Procedural {
+            style: PatternStyle::Paper,
+            size: 128,
+            seed: 1,
+        }
     }
 }
 
@@ -288,10 +321,26 @@ impl Texture {
     /// positive Contrast steepens it around mid-grey by `1 / (1 − c/100)` after the shift (100 is
     /// a threshold), negative Contrast flattens it by `1 + c/100` before the shift; Invert is last.
     pub fn level(&self, v: f32) -> f32 {
-        let b = if self.brightness.is_finite() { self.brightness.clamp(-1.0, 1.0) * (150.0 / 255.0) } else { 0.0 };
-        let c = if self.contrast.is_finite() { self.contrast.clamp(-1.0, 1.0) } else { 0.0 };
-        let x = if c >= 0.0 { (v + b - 0.5) / (1.0 - c).max(1e-4) + 0.5 } else { (v - 0.5) * (1.0 + c / 2.0) + 0.5 + b };
-        let x = if x.is_finite() { x.clamp(0.0, 1.0) } else { 0.5 };
+        let b = if self.brightness.is_finite() {
+            self.brightness.clamp(-1.0, 1.0) * (150.0 / 255.0)
+        } else {
+            0.0
+        };
+        let c = if self.contrast.is_finite() {
+            self.contrast.clamp(-1.0, 1.0)
+        } else {
+            0.0
+        };
+        let x = if c >= 0.0 {
+            (v + b - 0.5) / (1.0 - c).max(1e-4) + 0.5
+        } else {
+            (v - 0.5) * (1.0 + c / 2.0) + 0.5 + b
+        };
+        let x = if x.is_finite() {
+            x.clamp(0.0, 1.0)
+        } else {
+            0.5
+        };
         if self.invert { 1.0 - x } else { x }
     }
 }
@@ -369,7 +418,15 @@ pub struct ColorDynamics {
 
 impl Default for ColorDynamics {
     fn default() -> Self {
-        Self { enabled: false, per_tip: true, fg_bg: Dynamic::default(), hue_jitter: 0.0, saturation_jitter: 0.0, brightness_jitter: 0.0, purity: 0.0 }
+        Self {
+            enabled: false,
+            per_tip: true,
+            fg_bg: Dynamic::default(),
+            hue_jitter: 0.0,
+            saturation_jitter: 0.0,
+            brightness_jitter: 0.0,
+            purity: 0.0,
+        }
     }
 }
 
@@ -457,7 +514,14 @@ pub struct Smoothing {
 
 impl Default for Smoothing {
     fn default() -> Self {
-        Self { enabled: true, amount: 0.0, pulled_string: false, catch_up: true, catch_up_on_end: true, adjust_for_zoom: true }
+        Self {
+            enabled: true,
+            amount: 0.0,
+            pulled_string: false,
+            catch_up: true,
+            catch_up_on_end: true,
+            adjust_for_zoom: true,
+        }
     }
 }
 
@@ -590,10 +654,20 @@ impl BrushSettings {
     /// nor a huge Scatter amount into non-finite dab centres (#977).
     pub fn bounded_for_render(&self) -> Self {
         let safe_size = |size: f32| {
-            if size.is_finite() { size.clamp(0.5, MAX_BRUSH_SIZE) } else { 0.5 }
+            if size.is_finite() {
+                size.clamp(0.5, MAX_BRUSH_SIZE)
+            } else {
+                0.5
+            }
         };
         // NaN scatters nothing (as before: it never passed the `> 0` check); infinity is the maximum.
-        let safe_scatter = |amount: f32| if amount.is_nan() { 0.0 } else { amount.clamp(0.0, MAX_SCATTER) };
+        let safe_scatter = |amount: f32| {
+            if amount.is_nan() {
+                0.0
+            } else {
+                amount.clamp(0.0, MAX_SCATTER)
+            }
+        };
         let mut brush = self.clone();
         brush.size = safe_size(brush.size);
         brush.dual_brush.size = safe_size(brush.dual_brush.size);
@@ -697,7 +771,11 @@ pub struct PresetCaptures {
 
 impl Default for PresetCaptures {
     fn default() -> Self {
-        Self { size: true, tool_settings: true, color: false }
+        Self {
+            size: true,
+            tool_settings: true,
+            color: false,
+        }
     }
 }
 

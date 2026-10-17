@@ -89,10 +89,24 @@ impl SteamDepotDownloader {
 
         let start = Instant::now();
 
-        emit(&progress, SteamDownloadPhase::Connecting, "Connexion à Steam…", 0, 0);
-        let mut session = SteamSession::connect(opts).await.context("connexion Steam")?;
+        emit(
+            &progress,
+            SteamDownloadPhase::Connecting,
+            "Connexion à Steam…",
+            0,
+            0,
+        );
+        let mut session = SteamSession::connect(opts)
+            .await
+            .context("connexion Steam")?;
 
-        emit(&progress, SteamDownloadPhase::FetchingAppInfo, "Récupération app info…", 0, 0);
+        emit(
+            &progress,
+            SteamDownloadPhase::FetchingAppInfo,
+            "Récupération app info…",
+            0,
+            0,
+        );
         session.request_app_info(opts.app_id, false).await?;
 
         let app_kv = session.app_kv(opts.app_id).ok_or_else(|| {
@@ -107,7 +121,13 @@ impl SteamDepotDownloader {
             .ok_or_else(|| anyhow::anyhow!("app info {} : section 'depots' absente", opts.app_id))?
             .clone();
 
-        emit(&progress, SteamDownloadPhase::FetchingManifests, "Résolution des depots…", 0, 0);
+        emit(
+            &progress,
+            SteamDownloadPhase::FetchingManifests,
+            "Résolution des depots…",
+            0,
+            0,
+        );
 
         // Résout les depots éligibles via le resolver (logique pure, identique C#).
         let depot_ids = depot_resolver::select_depot_ids(
@@ -136,7 +156,10 @@ impl SteamDepotDownloader {
         }
 
         // CDN servers.
-        let cdn_servers = session.cdn_servers(0, Some(opts.transfer.cdn_pool_size.clamp(1, 200) as _)).await.context("CDN servers")?;
+        let cdn_servers = session
+            .cdn_servers(0, Some(opts.transfer.cdn_pool_size.clamp(1, 200) as _))
+            .await
+            .context("CDN servers")?;
         if cdn_servers.is_empty() {
             anyhow::bail!("Aucun serveur CDN Steam disponible.");
         }
@@ -152,17 +175,27 @@ impl SteamDepotDownloader {
         let mut total_files: u64 = 0;
         let mut completed_depots: Vec<u32> = Vec::new();
 
-        emit(&progress, SteamDownloadPhase::Downloading, "Téléchargement en cours…", 0, 0);
+        emit(
+            &progress,
+            SteamDownloadPhase::Downloading,
+            "Téléchargement en cours…",
+            0,
+            0,
+        );
 
         let tstats = Arc::new(TransferStats::default());
         let tstats_report = tstats.clone();
         let limiter = RateLimiter::new(opts.transfer.max_rate_bytes_per_sec);
-        let depot_sem = Arc::new(tokio::sync::Semaphore::new(opts.transfer.max_depot_parallel.max(1)));
-        let mut depot_set: tokio::task::JoinSet<Result<(u32, u64, u64)>> = tokio::task::JoinSet::new();
+        let depot_sem = Arc::new(tokio::sync::Semaphore::new(
+            opts.transfer.max_depot_parallel.max(1),
+        ));
+        let mut depot_set: tokio::task::JoinSet<Result<(u32, u64, u64)>> =
+            tokio::task::JoinSet::new();
 
         for plan in &plans {
-            let cdn_auth_token =
-                session.cdn_auth_token(plan.app_id, plan.depot_id, &cdn_host).await;
+            let cdn_auth_token = session
+                .cdn_auth_token(plan.app_id, plan.depot_id, &cdn_host)
+                .await;
 
             let request_code = session
                 .manifest_request_code(plan.app_id, plan.depot_id, plan.manifest_id, &plan.branch)
@@ -193,7 +226,11 @@ impl SteamDepotDownloader {
             // retire, ne laissant que de vrais fichiers au DepotJob.
             let dir_count = {
                 let before = manifest.files.len();
-                for f in manifest.files.iter().filter(|f| is_manifest_directory(f.flags)) {
+                for f in manifest
+                    .files
+                    .iter()
+                    .filter(|f| is_manifest_directory(f.flags))
+                {
                     let path = opts.install_dir.join(f.normalized_path());
                     std::fs::create_dir_all(&path)
                         .with_context(|| format!("créer le répertoire {}", path.display()))?;
@@ -272,7 +309,7 @@ impl SteamDepotDownloader {
                         match &evt {
                             DownloadEvent::DownloadStarted { total_bytes, .. } => {
                                 depot_total = *total_bytes;
-                            },
+                            }
                             DownloadEvent::FileSkipped { .. } => skipped += 1,
                             DownloadEvent::ChunkFailed { error } => {
                                 failed_chunks += 1;
@@ -285,7 +322,7 @@ impl SteamDepotDownloader {
                                         "chunk en échec : {error}"
                                     );
                                 }
-                            },
+                            }
                             DownloadEvent::ChunkCompleted { bytes } => {
                                 depot_completed += bytes;
                                 emit(
@@ -295,8 +332,8 @@ impl SteamDepotDownloader {
                                     depot_completed,
                                     depot_total,
                                 );
-                            },
-                            _ => {},
+                            }
+                            _ => {}
                         }
                         // Battement régulier : sans lui le journal reste vide toute
                         // la synchro, et un gel est indiscernable d'un travail long.
@@ -320,7 +357,7 @@ impl SteamDepotDownloader {
                 });
 
                 // Chien de garde : convertit un blocage silencieux en erreur nommée.
-                
+
                 let stall_secs = stall_timeout.map_or(0.0, |d| d.as_secs_f64());
                 let last_progress_wd = last_progress.clone();
                 let watchdog = async move {
@@ -377,31 +414,31 @@ impl SteamDepotDownloader {
                              comptage partiel, téléchargement néanmoins terminé"
                         );
                         (0, 0)
-                    },
+                    }
                 };
-            info!(
-                "depot {} : {} fichiers, {} octets",
-                depot_id, stats.files_completed, stats.bytes_downloaded
-            );
-            Ok::<(u32, u64, u64), anyhow::Error>((depot_id, d, stats.files_completed))
-        });
-    }
+                info!(
+                    "depot {} : {} fichiers, {} octets",
+                    depot_id, stats.files_completed, stats.bytes_downloaded
+                );
+                Ok::<(u32, u64, u64), anyhow::Error>((depot_id, d, stats.files_completed))
+            });
+        }
 
-    // Collecte : un depot en échec interrompt (abort au drop du JoinSet) les autres.
-    while let Some(joined) = depot_set.join_next().await {
-        let (id, d, files) = joined.context("tâche de depot interrompue")??;
-        total_downloaded += d;
-        total_files += files;
-        completed_depots.push(id);
-    }
-    {
-        let (hits, hit_bytes, net_chunks, net_bytes) = tstats_report.snapshot();
-        info!(
-            "transfert : {net_chunks} chunks réseau ({:.2} Gio), {hits} chunks du cache ({:.2} Gio)",
-            net_bytes as f64 / 1_073_741_824.0,
-            hit_bytes as f64 / 1_073_741_824.0
-        );
-    }
+        // Collecte : un depot en échec interrompt (abort au drop du JoinSet) les autres.
+        while let Some(joined) = depot_set.join_next().await {
+            let (id, d, files) = joined.context("tâche de depot interrompue")??;
+            total_downloaded += d;
+            total_files += files;
+            completed_depots.push(id);
+        }
+        {
+            let (hits, hit_bytes, net_chunks, net_bytes) = tstats_report.snapshot();
+            info!(
+                "transfert : {net_chunks} chunks réseau ({:.2} Gio), {hits} chunks du cache ({:.2} Gio)",
+                net_bytes as f64 / 1_073_741_824.0,
+                hit_bytes as f64 / 1_073_741_824.0
+            );
+        }
 
         let duration = start.elapsed();
         emit(
@@ -440,7 +477,10 @@ impl SteamDepotDownloader {
             .get("depots")
             .ok_or_else(|| anyhow::anyhow!("section 'depots' absente dans app info"))?;
 
-        Ok(depot_resolver::read_branch_build_id(depots_kv, &opts.branch))
+        Ok(depot_resolver::read_branch_build_id(
+            depots_kv,
+            &opts.branch,
+        ))
     }
 
     /// Inspecte les depots sans télécharger : retourne taille + fichiers par depot.
@@ -472,14 +512,17 @@ impl SteamDepotDownloader {
         let plans = build_depot_plans(&mut session, opts, &depot_ids, &depots_kv).await?;
 
         let cdn_servers = session.cdn_servers(0, Some(5)).await?;
-        let cdn_server = cdn_servers.first().ok_or_else(|| anyhow::anyhow!("aucun serveur CDN"))?;
+        let cdn_server = cdn_servers
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("aucun serveur CDN"))?;
         let cdn = CdnClient::new().context("CdnClient")?;
         let manifest_cache = ManifestCache::new(ManifestCache::default_path());
 
         let mut infos = Vec::new();
         for plan in &plans {
-            let cdn_auth_token =
-                session.cdn_auth_token(plan.app_id, plan.depot_id, &cdn_server.host).await;
+            let cdn_auth_token = session
+                .cdn_auth_token(plan.app_id, plan.depot_id, &cdn_server.host)
+                .await;
             let request_code = session
                 .manifest_request_code(plan.app_id, plan.depot_id, plan.manifest_id, &plan.branch)
                 .await;
@@ -571,14 +614,17 @@ impl SteamDepotDownloader {
         let plans = build_depot_plans(&mut session, opts, &depot_ids, &depots_kv).await?;
 
         let cdn_servers = session.cdn_servers(0, Some(5)).await?;
-        let cdn_server = cdn_servers.first().ok_or_else(|| anyhow::anyhow!("aucun serveur CDN"))?;
+        let cdn_server = cdn_servers
+            .first()
+            .ok_or_else(|| anyhow::anyhow!("aucun serveur CDN"))?;
         let cdn = CdnClient::new().context("CdnClient")?;
         let manifest_cache = ManifestCache::new(ManifestCache::default_path());
 
         let mut collisions = Vec::new();
         for plan in &plans {
-            let cdn_auth_token =
-                session.cdn_auth_token(plan.app_id, plan.depot_id, &cdn_server.host).await;
+            let cdn_auth_token = session
+                .cdn_auth_token(plan.app_id, plan.depot_id, &cdn_server.host)
+                .await;
             let request_code = session
                 .manifest_request_code(plan.app_id, plan.depot_id, plan.manifest_id, &plan.branch)
                 .await;
@@ -618,16 +664,16 @@ impl SteamDepotDownloader {
                     if relative.is_empty() {
                         return None;
                     }
-                    std::fs::symlink_metadata(opts.install_dir.join(&entry.path)).ok().map(
-                        |metadata| ExistingPath {
+                    std::fs::symlink_metadata(opts.install_dir.join(&entry.path))
+                        .ok()
+                        .map(|metadata| ExistingPath {
                             path: entry.path.clone(),
                             kind: if metadata.is_dir() {
                                 ExistingPathKind::Directory
                             } else {
                                 ExistingPathKind::File
                             },
-                        },
-                    )
+                        })
                 })
                 .collect();
             let limits = PlanningLimits {
@@ -704,7 +750,10 @@ async fn build_depot_plans(
     for &depot_id in depot_ids {
         let manifest_id = resolve_manifest(session, opts, depot_id, depots_kv).await?;
         if manifest_id == INVALID_MANIFEST {
-            warn!("depot {depot_id} : pas de manifest pour la branche '{}' — ignoré", opts.branch);
+            warn!(
+                "depot {depot_id} : pas de manifest pour la branche '{}' — ignoré",
+                opts.branch
+            );
             continue;
         }
 
@@ -760,7 +809,9 @@ fn resolve_manifest_from_depots(
     branch: &str,
 ) -> Result<u64> {
     let child = depots.get(&depot_id.to_string());
-    Ok(child.map_or(INVALID_MANIFEST, |d| depot_resolver::read_manifest_gid(d, branch)))
+    Ok(child.map_or(INVALID_MANIFEST, |d| {
+        depot_resolver::read_manifest_gid(d, branch)
+    }))
 }
 
 /// Charge un manifest depuis le cache local, ou le télécharge depuis le CDN.
@@ -783,7 +834,10 @@ async fn load_or_fetch_manifest(
         .download_manifest(server, depot_id, manifest_id, request_code, cdn_auth_token)
         .await
         .with_context(|| {
-            format!("download manifest {} depot {}", plan.manifest_id, plan.depot_id)
+            format!(
+                "download manifest {} depot {}",
+                plan.manifest_id, plan.depot_id
+            )
         })?;
 
     // Décompresse si zippé.
@@ -849,7 +903,9 @@ mod tests {
     #[test]
     fn bit_2_is_not_a_directory() {
         assert!(!is_manifest_directory(2));
-        assert!(!is_manifest_directory(steamroom::enums::DepotFileFlags::DIRECTORY.0));
+        assert!(!is_manifest_directory(
+            steamroom::enums::DepotFileFlags::DIRECTORY.0
+        ));
     }
 
     #[test]

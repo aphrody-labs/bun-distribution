@@ -4,7 +4,14 @@
 //! This crate converts those positions to and from the five Pro Tools-style timebases
 //! (Bars|Beats, Min:Secs, Timecode, Feet+Frames, Samples) through a [`TempoMap`], and computes
 //! grid lines and snapping for the Grid / Nudge values.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod format;
 mod grid;
@@ -39,10 +46,16 @@ pub struct SampleRate(u32);
 impl SampleRate {
     pub const HZ_44100: SampleRate = SampleRate(44_100);
     pub const HZ_48000: SampleRate = SampleRate(48_000);
-    pub const COMMON: [u32; 8] = [44_100, 48_000, 88_200, 96_000, 176_400, 192_000, 352_800, 384_000];
+    pub const COMMON: [u32; 8] = [
+        44_100, 48_000, 88_200, 96_000, 176_400, 192_000, 352_800, 384_000,
+    ];
 
     pub fn new(hz: u32) -> Result<Self, TimeError> {
-        if (8_000..=768_000).contains(&hz) { Ok(SampleRate(hz)) } else { Err(TimeError::SampleRate(hz)) }
+        if (8_000..=768_000).contains(&hz) {
+            Ok(SampleRate(hz))
+        } else {
+            Err(TimeError::SampleRate(hz))
+        }
     }
     pub fn hz(self) -> u32 {
         self.0
@@ -80,7 +93,9 @@ pub fn to_samples(v: f64) -> Samples {
 }
 
 /// A half-open sample range `[start, end)`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub struct Range {
     pub start: Samples,
     pub end: Samples,
@@ -88,7 +103,11 @@ pub struct Range {
 
 impl Range {
     pub fn new(a: Samples, b: Samples) -> Self {
-        if a <= b { Range { start: a, end: b } } else { Range { start: b, end: a } }
+        if a <= b {
+            Range { start: a, end: b }
+        } else {
+            Range { start: b, end: a }
+        }
     }
     pub fn point(at: Samples) -> Self {
         Range { start: at, end: at }
@@ -111,7 +130,10 @@ impl Range {
         (s < e).then_some(Range { start: s, end: e })
     }
     pub fn shifted(&self, by: Samples) -> Range {
-        Range { start: self.start.saturating_add(by), end: self.end.saturating_add(by) }
+        Range {
+            start: self.start.saturating_add(by),
+            end: self.end.saturating_add(by),
+        }
     }
 }
 

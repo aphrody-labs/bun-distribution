@@ -28,7 +28,9 @@ use photocraft_geom::warp::{Warp, WarpStyle};
 use photocraft_geom::{Affine, Rect as GeomRect};
 use photocraft_psd::Compression;
 use photocraft_psd::Rect as PsdRect;
-use photocraft_psd::descriptor::{Class, Descriptor, Id, ObjectArray, ReferenceItem, UnicodeString, Value, VersionedDescriptor};
+use photocraft_psd::descriptor::{
+    Class, Descriptor, Id, ObjectArray, ReferenceItem, UnicodeString, Value, VersionedDescriptor,
+};
 use photocraft_psd::filter_effects::{EffectsPlane, FilterEffectsItem};
 use photocraft_raster::Surface;
 use serde_json::{Map, Value as J, json};
@@ -60,7 +62,12 @@ pub struct FilterStack {
 
 impl Default for FilterStack {
     fn default() -> Self {
-        FilterStack { enabled: true, filters: Vec::new(), mask_enabled: true, mask_linked: false }
+        FilterStack {
+            enabled: true,
+            filters: Vec::new(),
+            mask_enabled: true,
+            mask_linked: false,
+        }
     }
 }
 
@@ -106,7 +113,13 @@ pub fn parse_sold(data: &[u8]) -> Option<Placed> {
     let (idnt, transform) = crate::blocks::parse_smart(b"SoLd", data);
     let placed = text_of(&d, "placed").unwrap_or_default();
     let stack = get_desc(&d, "filterFX").map(filter_stack);
-    Some(Placed { descriptor: d, idnt, placed, transform, stack })
+    Some(Placed {
+        descriptor: d,
+        idnt,
+        placed,
+        transform,
+        stack,
+    })
 }
 
 /// Reads a `filterFX` object.
@@ -145,21 +158,91 @@ const fn code(c: &[u8; 4]) -> i32 {
 }
 
 const KNOWN: [Known; 14] = [
-    Known { class: "GsnB", filter_id: code(b"GsnB"), name: "Gaussian Blur...", command: "filter.blur.gaussianBlur" },
-    Known { class: "boxblur", filter_id: 840, name: "Box Blur...", command: "filter.blur.boxBlur" },
-    Known { class: "MtnB", filter_id: code(b"MtnB"), name: "Motion Blur...", command: "filter.blur.motionBlur" },
-    Known { class: "UnsM", filter_id: code(b"UnsM"), name: "Unsharp Mask...", command: "filter.sharpen.unsharpMask" },
-    Known { class: "AdNs", filter_id: code(b"AdNs"), name: "Add Noise...", command: "filter.noise.addNoise" },
-    Known { class: "Mdn ", filter_id: code(b"Mdn "), name: "Median...", command: "filter.noise.median" },
-    Known { class: "HghP", filter_id: code(b"HghP"), name: "High Pass...", command: "filter.other.highPass" },
-    Known { class: "Mxm ", filter_id: code(b"Mxm "), name: "Maximum...", command: "filter.other.maximum" },
-    Known { class: "Mnm ", filter_id: code(b"Mnm "), name: "Minimum...", command: "filter.other.minimum" },
-    Known { class: "Msc ", filter_id: code(b"Msc "), name: "Mosaic...", command: "filter.pixelate.mosaic" },
-    Known { class: "Embs", filter_id: code(b"Embs"), name: "Emboss...", command: "filter.stylize.emboss" },
-    Known { class: "Lvls", filter_id: code(b"Lvls"), name: "Levels...", command: "image.adjustments.levels" },
-    Known { class: "Crvs", filter_id: code(b"Crvs"), name: "Curves...", command: "image.adjustments.curves" },
+    Known {
+        class: "GsnB",
+        filter_id: code(b"GsnB"),
+        name: "Gaussian Blur...",
+        command: "filter.blur.gaussianBlur",
+    },
+    Known {
+        class: "boxblur",
+        filter_id: 840,
+        name: "Box Blur...",
+        command: "filter.blur.boxBlur",
+    },
+    Known {
+        class: "MtnB",
+        filter_id: code(b"MtnB"),
+        name: "Motion Blur...",
+        command: "filter.blur.motionBlur",
+    },
+    Known {
+        class: "UnsM",
+        filter_id: code(b"UnsM"),
+        name: "Unsharp Mask...",
+        command: "filter.sharpen.unsharpMask",
+    },
+    Known {
+        class: "AdNs",
+        filter_id: code(b"AdNs"),
+        name: "Add Noise...",
+        command: "filter.noise.addNoise",
+    },
+    Known {
+        class: "Mdn ",
+        filter_id: code(b"Mdn "),
+        name: "Median...",
+        command: "filter.noise.median",
+    },
+    Known {
+        class: "HghP",
+        filter_id: code(b"HghP"),
+        name: "High Pass...",
+        command: "filter.other.highPass",
+    },
+    Known {
+        class: "Mxm ",
+        filter_id: code(b"Mxm "),
+        name: "Maximum...",
+        command: "filter.other.maximum",
+    },
+    Known {
+        class: "Mnm ",
+        filter_id: code(b"Mnm "),
+        name: "Minimum...",
+        command: "filter.other.minimum",
+    },
+    Known {
+        class: "Msc ",
+        filter_id: code(b"Msc "),
+        name: "Mosaic...",
+        command: "filter.pixelate.mosaic",
+    },
+    Known {
+        class: "Embs",
+        filter_id: code(b"Embs"),
+        name: "Emboss...",
+        command: "filter.stylize.emboss",
+    },
+    Known {
+        class: "Lvls",
+        filter_id: code(b"Lvls"),
+        name: "Levels...",
+        command: "image.adjustments.levels",
+    },
+    Known {
+        class: "Crvs",
+        filter_id: code(b"Crvs"),
+        name: "Curves...",
+        command: "image.adjustments.curves",
+    },
     // Shadows/Highlights at its defaults stores no `Fltr` (`hasoptions` false).
-    Known { class: "adaptCorrect", filter_id: 781, name: "Shado&ws/Highlights...", command: "image.adjustments.shadowsHighlights" },
+    Known {
+        class: "adaptCorrect",
+        filter_id: 781,
+        name: "Shado&ws/Highlights...",
+        command: "image.adjustments.shadowsHighlights",
+    },
 ];
 
 fn known_by_command(command: &str) -> Option<&'static Known> {
@@ -168,7 +251,12 @@ fn known_by_command(command: &str) -> Option<&'static Known> {
 
 /// RGB channel references in Levels/Curves (`Chnl` enum) and their parameter keys ("" = the
 /// composite: top-level keys).
-const CHANNELS: [(&[u8; 4], &str); 4] = [(b"Cmps", ""), (b"Rd  ", "red"), (b"Grn ", "green"), (b"Bl  ", "blue")];
+const CHANNELS: [(&[u8; 4], &str); 4] = [
+    (b"Cmps", ""),
+    (b"Rd  ", "red"),
+    (b"Grn ", "green"),
+    (b"Bl  ", "blue"),
+];
 
 fn px(d: &Descriptor, key: &str) -> Option<f64> {
     num(d.get(key)).filter(|v| v.is_finite())
@@ -182,13 +270,22 @@ fn int(d: &Descriptor, key: &str) -> Option<i32> {
 }
 
 fn channel_key(d: &Descriptor) -> Option<&'static str> {
-    let Some(Value::Reference(items)) = d.get("Chnl") else { return None };
-    let Some(ReferenceItem::Enumerated { value, .. }) = items.first() else { return None };
-    CHANNELS.iter().find(|(c, _)| value.as_bytes() == &c[..]).map(|(_, k)| *k)
+    let Some(Value::Reference(items)) = d.get("Chnl") else {
+        return None;
+    };
+    let Some(ReferenceItem::Enumerated { value, .. }) = items.first() else {
+        return None;
+    };
+    CHANNELS
+        .iter()
+        .find(|(c, _)| value.as_bytes() == &c[..])
+        .map(|(_, k)| *k)
 }
 
 fn adjustment_list(d: &Descriptor) -> Option<Vec<&Descriptor>> {
-    let Some(Value::List(items)) = d.get("Adjs") else { return None };
+    let Some(Value::List(items)) = d.get("Adjs") else {
+        return None;
+    };
     items
         .iter()
         .map(|v| match v {
@@ -240,12 +337,24 @@ fn curves_params(f: &Descriptor) -> Option<J> {
         let key = channel_key(a)?;
         // A pencil-drawn curve is a mapping of 256 output levels (`Mpng`) instead of points.
         if let Some(Value::List(map)) = a.get("Mpng") {
-            let map: Option<Vec<J>> = map.iter().map(|v| int_value(v).map(|o| json!(o.clamp(0, 255)))).collect();
-            out.insert(if key.is_empty() { "points".into() } else { key.into() }, J::Array(map.filter(|m| m.len() == 256)?));
+            let map: Option<Vec<J>> = map
+                .iter()
+                .map(|v| int_value(v).map(|o| json!(o.clamp(0, 255))))
+                .collect();
+            out.insert(
+                if key.is_empty() {
+                    "points".into()
+                } else {
+                    key.into()
+                },
+                J::Array(map.filter(|m| m.len() == 256)?),
+            );
             out.insert("pencil".into(), J::Bool(true));
             continue;
         }
-        let Some(Value::List(pts)) = a.get("Crv ") else { return None };
+        let Some(Value::List(pts)) = a.get("Crv ") else {
+            return None;
+        };
         let pts: Option<Vec<J>> = pts
             .iter()
             .map(|p| match p {
@@ -253,7 +362,14 @@ fn curves_params(f: &Descriptor) -> Option<J> {
                 _ => None,
             })
             .collect();
-        out.insert(if key.is_empty() { "points".into() } else { key.into() }, J::Array(pts?));
+        out.insert(
+            if key.is_empty() {
+                "points".into()
+            } else {
+                key.into()
+            },
+            J::Array(pts?),
+        );
     }
     Some(J::Object(out))
 }
@@ -265,9 +381,13 @@ fn known_params(class: &str, f: Option<&Descriptor>) -> Option<(&'static str, J)
     let params = match (class, f) {
         ("adaptCorrect", None) => json!({}),
         (_, None) => return None,
-        ("GsnB" | "boxblur" | "Mdn " | "HghP" | "Mxm " | "Mnm ", Some(f)) => json!({"radius": px(f, "Rds ")?}),
+        ("GsnB" | "boxblur" | "Mdn " | "HghP" | "Mxm " | "Mnm ", Some(f)) => {
+            json!({"radius": px(f, "Rds ")?})
+        }
         ("MtnB", Some(f)) => json!({"angle": int(f, "Angl")?, "distance": px(f, "Dstn")?}),
-        ("UnsM", Some(f)) => json!({"amount": px(f, "Amnt")?, "radius": px(f, "Rds ")?, "threshold": int(f, "Thsh")?}),
+        ("UnsM", Some(f)) => {
+            json!({"amount": px(f, "Amnt")?, "radius": px(f, "Rds ")?, "threshold": int(f, "Thsh")?})
+        }
         ("AdNs", Some(f)) => {
             let dist = match enum_of(f, "Dstr")? {
                 b"Unfr" => "uniform",
@@ -281,7 +401,9 @@ fn known_params(class: &str, f: Option<&Descriptor>) -> Option<(&'static str, J)
             json!({"amount": px(f, "Nose")?, "distribution": dist, "monochromatic": mono, "seed": int(f, "FlRs").unwrap_or(0)})
         }
         ("Msc ", Some(f)) => json!({"cellSize": px(f, "ClSz")?}),
-        ("Embs", Some(f)) => json!({"angle": int(f, "Angl")?, "height": int(f, "Hght")?, "amount": int(f, "Amnt")?}),
+        ("Embs", Some(f)) => {
+            json!({"angle": int(f, "Angl")?, "height": int(f, "Hght")?, "amount": int(f, "Amnt")?})
+        }
         ("Lvls", Some(f)) => levels_params(f)?,
         ("Crvs", Some(f)) => curves_params(f)?,
         _ => return None,
@@ -306,21 +428,37 @@ fn from_hex(s: &str) -> Option<Vec<u8>> {
     if !b.len().is_multiple_of(2) {
         return None;
     }
-    b.as_chunks::<2>().0.iter().map(|c| Some(d(c[0])? << 4 | d(c[1])?)).collect()
+    b.as_chunks::<2>()
+        .0
+        .iter()
+        .map(|c| Some(d(c[0])? << 4 | d(c[1])?))
+        .collect()
 }
 
 /// One `filterFXList` item → [`SmartFilter`] (an [`UNSUPPORTED_FILTER`] when not modelled).
 pub fn filter_from_item(item: &Descriptor) -> SmartFilter {
     let opts = get_desc(item, "blendOptions");
-    let opacity = opts.and_then(|o| px(o, "Opct")).map_or(1.0, |v| (v / 100.0).clamp(0.0, 1.0) as f32);
-    let blend = opts.and_then(|o| enum_of(o, "Md  ")).and_then(crate::effects_map::blend_from_id).unwrap_or(BlendMode::Normal);
+    let opacity = opts
+        .and_then(|o| px(o, "Opct"))
+        .map_or(1.0, |v| (v / 100.0).clamp(0.0, 1.0) as f32);
+    let blend = opts
+        .and_then(|o| enum_of(o, "Md  "))
+        .and_then(crate::effects_map::blend_from_id)
+        .unwrap_or(BlendMode::Normal);
     let visible = bool_or(item, "enab", true);
     let fltr = get_desc(item, "Fltr");
     let class = fltr.map(|f| String::from_utf8_lossy(f.class_id.as_bytes()).into_owned());
     let filter_id = int(item, "filterID").unwrap_or(0);
-    let class = class.or_else(|| KNOWN.iter().find(|k| k.filter_id == filter_id).map(|k| k.class.to_string()));
+    let class = class.or_else(|| {
+        KNOWN
+            .iter()
+            .find(|k| k.filter_id == filter_id)
+            .map(|k| k.class.to_string())
+    });
     let known = match class.as_deref() {
-        Some(camera_raw::CLASS) => camera_raw::import_params(item).map(|p| (camera_raw::COMMAND, p)),
+        Some(camera_raw::CLASS) => {
+            camera_raw::import_params(item).map(|p| (camera_raw::COMMAND, p))
+        }
         Some(displace::CLASS) => displace::import_params(item).map(|p| (displace::COMMAND, p)),
         c => c.and_then(|c| known_params(c, fltr)),
     };
@@ -333,15 +471,30 @@ pub fn filter_from_item(item: &Descriptor) -> SmartFilter {
             let mut neutral = item.clone();
             for (k, v) in &mut neutral.items {
                 if k.is("blendOptions") {
-                    *v = blend_options(&SmartFilter { command: String::new(), params: J::Null, blend: BlendMode::Normal, opacity: 1.0, visible: true });
+                    *v = blend_options(&SmartFilter {
+                        command: String::new(),
+                        params: J::Null,
+                        blend: BlendMode::Normal,
+                        opacity: 1.0,
+                        visible: true,
+                    });
                 } else if k.is("enab") {
                     *v = Value::Boolean(true);
                 }
             }
-            (UNSUPPORTED_FILTER.to_string(), json!({"name": name.replace('&', ""), "filterID": filter_id, "psd": to_hex(&neutral.to_bytes())}))
+            (
+                UNSUPPORTED_FILTER.to_string(),
+                json!({"name": name.replace('&', ""), "filterID": filter_id, "psd": to_hex(&neutral.to_bytes())}),
+            )
         }
     };
-    SmartFilter { command, params, blend, opacity, visible }
+    SmartFilter {
+        command,
+        params,
+        blend,
+        opacity,
+        visible,
+    }
 }
 
 // ---------- writing ----------
@@ -351,12 +504,25 @@ fn unit(u: &[u8; 4], v: f64) -> Value {
 }
 
 fn rgbc(v: f64) -> Value {
-    Value::Descriptor(Descriptor::new("RGBC").with("Rd  ", Value::Double(v)).with("Grn ", Value::Double(v)).with("Bl  ", Value::Double(v)))
+    Value::Descriptor(
+        Descriptor::new("RGBC")
+            .with("Rd  ", Value::Double(v))
+            .with("Grn ", Value::Double(v))
+            .with("Bl  ", Value::Double(v)),
+    )
 }
 
 fn blend_options(f: &SmartFilter) -> Value {
-    let opacity = if f.opacity.is_finite() { f64::from(f.opacity.clamp(0.0, 1.0)) * 100.0 } else { 100.0 };
-    Value::Descriptor(Descriptor::new("blendOptions").with("Opct", unit(b"#Prc", opacity)).with("Md  ", crate::effects_map::blend_long_value(f.blend)))
+    let opacity = if f.opacity.is_finite() {
+        f64::from(f.opacity.clamp(0.0, 1.0)) * 100.0
+    } else {
+        100.0
+    };
+    Value::Descriptor(
+        Descriptor::new("blendOptions")
+            .with("Opct", unit(b"#Prc", opacity))
+            .with("Md  ", crate::effects_map::blend_long_value(f.blend)),
+    )
 }
 
 /// Parameter keys that are bookkeeping, not filter settings.
@@ -365,16 +531,26 @@ fn is_meta(k: &str) -> bool {
 }
 
 fn pf(p: &J, key: &str, default: f64) -> f64 {
-    p.get(key).and_then(J::as_f64).filter(|v| v.is_finite()).unwrap_or(default)
+    p.get(key)
+        .and_then(J::as_f64)
+        .filter(|v| v.is_finite())
+        .unwrap_or(default)
 }
 
 fn pi(p: &J, key: &str, default: f64) -> Value {
-    Value::Integer(pf(p, key, default).round().clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32)
+    Value::Integer(
+        pf(p, key, default)
+            .round()
+            .clamp(f64::from(i32::MIN), f64::from(i32::MAX)) as i32,
+    )
 }
 
 fn channel_ref(code: &[u8; 4]) -> Value {
     Value::Reference(vec![ReferenceItem::Enumerated {
-        class: Class { name: UnicodeString::new_nul(""), class_id: Id::new("Chnl") },
+        class: Class {
+            name: UnicodeString::new_nul(""),
+            class_id: Id::new("Chnl"),
+        },
         type_id: Id::new("Chnl"),
         value: Id::Code(*code),
     }])
@@ -383,23 +559,50 @@ fn channel_ref(code: &[u8; 4]) -> Value {
 /// The `Adjs` entries of a Levels or Curves filter: the composite first, then red, green, blue.
 fn adjustments(p: &J, curves: bool) -> Result<Value, String> {
     let obj = p.as_object().ok_or("parameters are not an object")?;
-    let allowed: &[&str] =
-        if curves { &["points", "red", "green", "blue", "pencil"] } else { &["inBlack", "inWhite", "gamma", "outBlack", "outWhite", "red", "green", "blue"] };
-    if let Some(k) = obj.keys().find(|k| !is_meta(k) && !allowed.contains(&k.as_str())) {
+    let allowed: &[&str] = if curves {
+        &["points", "red", "green", "blue", "pencil"]
+    } else {
+        &[
+            "inBlack", "inWhite", "gamma", "outBlack", "outWhite", "red", "green", "blue",
+        ]
+    };
+    if let Some(k) = obj
+        .keys()
+        .find(|k| !is_meta(k) && !allowed.contains(&k.as_str()))
+    {
         return Err(format!("setting `{k}` has no PSD equivalent"));
     }
     let mut list = Vec::new();
     for (code, key) in CHANNELS {
         let o = if key.is_empty() { Some(p) } else { p.get(key) };
         let Some(o) = o else { continue };
-        let mut a = Descriptor::new(if curves { "CrvA" } else { "LvlA" }).with("Chnl", channel_ref(code));
+        let mut a =
+            Descriptor::new(if curves { "CrvA" } else { "LvlA" }).with("Chnl", channel_ref(code));
         if curves {
-            let src = if key.is_empty() { p.get("points") } else { Some(o) };
-            let Some(pts) = src.and_then(J::as_array) else { continue };
+            let src = if key.is_empty() {
+                p.get("points")
+            } else {
+                Some(o)
+            };
+            let Some(pts) = src.and_then(J::as_array) else {
+                continue;
+            };
             if p.get("pencil").and_then(J::as_bool) == Some(true) {
-                let map: Option<Vec<Value>> =
-                    pts.iter().map(|o| o.as_f64().filter(|o| o.is_finite()).map(|o| Value::Integer(o.round().clamp(0.0, 255.0) as i32))).collect();
-                a = a.with("Mpng", Value::List(map.filter(|m| m.len() == 256).ok_or("a pencil-drawn curve is not 256 output levels")?));
+                let map: Option<Vec<Value>> = pts
+                    .iter()
+                    .map(|o| {
+                        o.as_f64()
+                            .filter(|o| o.is_finite())
+                            .map(|o| Value::Integer(o.round().clamp(0.0, 255.0) as i32))
+                    })
+                    .collect();
+                a = a.with(
+                    "Mpng",
+                    Value::List(
+                        map.filter(|m| m.len() == 256)
+                            .ok_or("a pencil-drawn curve is not 256 output levels")?,
+                    ),
+                );
                 list.push(Value::Descriptor(a));
                 continue;
             }
@@ -408,17 +611,36 @@ fn adjustments(p: &J, curves: bool) -> Result<Value, String> {
                 .map(|q| {
                     let x = q.get(0)?.as_f64().filter(|v| v.is_finite())?;
                     let y = q.get(1)?.as_f64().filter(|v| v.is_finite())?;
-                    Some(Value::Descriptor(Descriptor::new("Pnt ").with("Hrzn", Value::Double(x)).with("Vrtc", Value::Double(y))))
+                    Some(Value::Descriptor(
+                        Descriptor::new("Pnt ")
+                            .with("Hrzn", Value::Double(x))
+                            .with("Vrtc", Value::Double(y)),
+                    ))
                 })
                 .collect();
-            a = a.with("Crv ", Value::List(pts.ok_or("a curve point is not [input, output]")?));
+            a = a.with(
+                "Crv ",
+                Value::List(pts.ok_or("a curve point is not [input, output]")?),
+            );
         } else {
-            if key.is_empty() && !["inBlack", "inWhite", "gamma", "outBlack", "outWhite"].iter().any(|k| o.get(k).is_some()) {
+            if key.is_empty()
+                && !["inBlack", "inWhite", "gamma", "outBlack", "outWhite"]
+                    .iter()
+                    .any(|k| o.get(k).is_some())
+            {
                 continue;
             }
-            a = a.with("Inpt", Value::List(vec![pi(o, "inBlack", 0.0), pi(o, "inWhite", 255.0)])).with("Gmm ", Value::Double(pf(o, "gamma", 1.0)));
+            a = a
+                .with(
+                    "Inpt",
+                    Value::List(vec![pi(o, "inBlack", 0.0), pi(o, "inWhite", 255.0)]),
+                )
+                .with("Gmm ", Value::Double(pf(o, "gamma", 1.0)));
             if o.get("outBlack").is_some() || o.get("outWhite").is_some() {
-                a = a.with("Otpt", Value::List(vec![pi(o, "outBlack", 0.0), pi(o, "outWhite", 255.0)]));
+                a = a.with(
+                    "Otpt",
+                    Value::List(vec![pi(o, "outBlack", 0.0), pi(o, "outWhite", 255.0)]),
+                );
             }
         }
         list.push(Value::Descriptor(a));
@@ -431,22 +653,42 @@ fn fltr_for(k: &Known, p: &J) -> Result<Option<Descriptor>, String> {
     let d = Descriptor::new(k.class);
     Ok(Some(match k.class {
         "GsnB" | "boxblur" | "Mdn " | "HghP" | "Mxm " | "Mnm " => {
-            if p.get("preserve").and_then(J::as_str).is_some_and(|s| s == "roundness") {
+            if p.get("preserve")
+                .and_then(J::as_str)
+                .is_some_and(|s| s == "roundness")
+            {
                 return Err("“preserve roundness” has no PSD equivalent".into());
             }
             d.with("Rds ", unit(b"#Pxl", pf(p, "radius", 1.0)))
         }
-        "MtnB" => d.with("Angl", pi(p, "angle", 0.0)).with("Dstn", unit(b"#Pxl", pf(p, "distance", 10.0))),
-        "UnsM" => d.with("Amnt", unit(b"#Prc", pf(p, "amount", 50.0))).with("Rds ", unit(b"#Pxl", pf(p, "radius", 1.0))).with("Thsh", pi(p, "threshold", 0.0)),
+        "MtnB" => d
+            .with("Angl", pi(p, "angle", 0.0))
+            .with("Dstn", unit(b"#Pxl", pf(p, "distance", 10.0))),
+        "UnsM" => d
+            .with("Amnt", unit(b"#Prc", pf(p, "amount", 50.0)))
+            .with("Rds ", unit(b"#Pxl", pf(p, "radius", 1.0)))
+            .with("Thsh", pi(p, "threshold", 0.0)),
         "AdNs" => {
             let gauss = p.get("distribution").and_then(J::as_str) == Some("gaussian");
-            d.with("Dstr", Value::Enumerated { type_id: Id::new("Dstr"), value: Id::new(if gauss { "Gsn " } else { "Unfr" }) })
-                .with("Nose", unit(b"#Prc", pf(p, "amount", 12.5)))
-                .with("Mnch", Value::Boolean(p.get("monochromatic").and_then(J::as_bool).unwrap_or(false)))
-                .with("FlRs", pi(p, "seed", 0.0))
+            d.with(
+                "Dstr",
+                Value::Enumerated {
+                    type_id: Id::new("Dstr"),
+                    value: Id::new(if gauss { "Gsn " } else { "Unfr" }),
+                },
+            )
+            .with("Nose", unit(b"#Prc", pf(p, "amount", 12.5)))
+            .with(
+                "Mnch",
+                Value::Boolean(p.get("monochromatic").and_then(J::as_bool).unwrap_or(false)),
+            )
+            .with("FlRs", pi(p, "seed", 0.0))
         }
         "Msc " => d.with("ClSz", unit(b"#Pxl", pf(p, "cellSize", 10.0))),
-        "Embs" => d.with("Angl", pi(p, "angle", 135.0)).with("Hght", pi(p, "height", 3.0)).with("Amnt", pi(p, "amount", 100.0)),
+        "Embs" => d
+            .with("Angl", pi(p, "angle", 135.0))
+            .with("Hght", pi(p, "height", 3.0))
+            .with("Amnt", pi(p, "amount", 100.0)),
         "Lvls" => d.with("Adjs", adjustments(p, false)?),
         "Crvs" => d.with("Adjs", adjustments(p, true)?),
         "adaptCorrect" => {
@@ -474,8 +716,14 @@ pub fn item_for_filter(f: &SmartFilter) -> Result<Descriptor, String> {
         return Ok(d);
     }
     if f.command == UNSUPPORTED_FILTER {
-        let raw = f.params.get("psd").and_then(J::as_str).and_then(from_hex).ok_or("its filter data is missing")?;
-        let mut d = Descriptor::from_bytes(&raw).map_err(|e| format!("its filter data is unreadable ({e})"))?;
+        let raw = f
+            .params
+            .get("psd")
+            .and_then(J::as_str)
+            .and_then(from_hex)
+            .ok_or("its filter data is missing")?;
+        let mut d = Descriptor::from_bytes(&raw)
+            .map_err(|e| format!("its filter data is unreadable ({e})"))?;
         set(&mut d, "blendOptions", blend_options(f));
         set(&mut d, "enab", Value::Boolean(f.visible));
         return Ok(d);
@@ -501,7 +749,10 @@ pub fn filter_fx(stack: &FilterStack, layer: &str, warnings: &mut Vec<String>) -
     for f in &stack.filters {
         match item_for_filter(f) {
             Ok(d) => list.push(Value::Descriptor(d)),
-            Err(e) => warnings.push(format!("layer \"{layer}\": smart filter {} was not written to PSD: {e}", f.command)),
+            Err(e) => warnings.push(format!(
+                "layer \"{layer}\": smart filter {} was not written to PSD: {e}",
+                f.command
+            )),
         }
     }
     Descriptor::new("filterFXStyle")
@@ -549,9 +800,16 @@ fn quad_points(s: &PlacedSpec<'_>) -> [f64; 8] {
         Some(p) => photocraft_algo::transform::Homography(*p).apply(x, y),
         None => (a * x + c * y + e, b * x + d * y + f),
     };
-    let [x0, y0, x1, y1] = if s.perspective.is_some() { [0.0, 0.0, w, h] } else { crate::blocks::placed_frame(s.warp, w, h) };
+    let [x0, y0, x1, y1] = if s.perspective.is_some() {
+        [0.0, 0.0, w, h]
+    } else {
+        crate::blocks::placed_frame(s.warp, w, h)
+    };
     let mut out = [0.0; 8];
-    for (i, (x, y)) in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)].into_iter().enumerate() {
+    for (i, (x, y)) in [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+        .into_iter()
+        .enumerate()
+    {
         (out[2 * i], out[2 * i + 1]) = map(x, y);
     }
     out
@@ -564,14 +822,26 @@ fn quad(s: &PlacedSpec<'_>) -> Value {
 
 /// Has the placement moved from the quad a template descriptor stores (`Trnf`)?
 fn quad_moved(template: &Descriptor, s: &PlacedSpec<'_>) -> bool {
-    let Some(Value::List(pts)) = template.get("Trnf") else { return true };
-    let old: Vec<f64> = pts.iter().filter_map(|v| crate::blocks::num(Some(v))).collect();
+    let Some(Value::List(pts)) = template.get("Trnf") else {
+        return true;
+    };
+    let old: Vec<f64> = pts
+        .iter()
+        .filter_map(|v| crate::blocks::num(Some(v)))
+        .collect();
     let new = quad_points(s);
-    old.len() != 8 || old.iter().zip(new).any(|(a, b)| (a - b).abs() > 1e-6 * (1.0 + a.abs()))
+    old.len() != 8
+        || old
+            .iter()
+            .zip(new)
+            .any(|(a, b)| (a - b).abs() > 1e-6 * (1.0 + a.abs()))
 }
 
 fn enumv(t: &str, v: &str) -> Value {
-    Value::Enumerated { type_id: Id::new(t), value: Id::new(v) }
+    Value::Enumerated {
+        type_id: Id::new(t),
+        value: Id::new(v),
+    }
 }
 
 /// The `warp` descriptor (also the `PlLd` warp). Multi-patch meshes have no 1 × 1 envelope and
@@ -582,7 +852,9 @@ fn warp_desc(w: Option<&Warp>, size: (f64, f64), warnings: &mut Vec<String>) -> 
     let mesh = match (&w.style, &w.mesh) {
         (WarpStyle::Custom, Some(m)) if m.points.len() == 16 => Some(m.clone()),
         (WarpStyle::Custom, _) => {
-            warnings.push("a custom warp with more than one patch was written to PSD without its warp".into());
+            warnings.push(
+                "a custom warp with more than one patch was written to PSD without its warp".into(),
+            );
             w = none.clone();
             None
         }
@@ -599,24 +871,46 @@ fn warp_desc(w: Option<&Warp>, size: (f64, f64), warnings: &mut Vec<String>) -> 
         .with("warpValue", Value::Double(w.bend))
         .with("warpPerspective", Value::Double(w.h_distort))
         .with("warpPerspectiveOther", Value::Double(w.v_distort))
-        .with("warpRotate", enumv("Ornt", if w.vertical { "Vrtc" } else { "Hrzn" }))
+        .with(
+            "warpRotate",
+            enumv("Ornt", if w.vertical { "Vrtc" } else { "Hrzn" }),
+        )
         .with("bounds", Value::Descriptor(bounds))
         .with("uOrder", Value::Integer(4))
         .with("vOrder", Value::Integer(4));
     if let Some(m) = mesh {
         let body = Descriptor::new("rationalPoint")
-            .with("Hrzn", Value::UnitFloats { unit: *b"#Pxl", values: m.points.iter().map(|p| p[0]).collect() })
-            .with("Vrtc", Value::UnitFloats { unit: *b"#Pxl", values: m.points.iter().map(|p| p[1]).collect() });
+            .with(
+                "Hrzn",
+                Value::UnitFloats {
+                    unit: *b"#Pxl",
+                    values: m.points.iter().map(|p| p[0]).collect(),
+                },
+            )
+            .with(
+                "Vrtc",
+                Value::UnitFloats {
+                    unit: *b"#Pxl",
+                    values: m.points.iter().map(|p| p[1]).collect(),
+                },
+            );
         d = d.with(
             "customEnvelopeWarp",
-            Value::Descriptor(Descriptor::new("customEnvelopeWarp").with("meshPoints", Value::ObjectArray(ObjectArray { prefix: 16, body }))),
+            Value::Descriptor(Descriptor::new("customEnvelopeWarp").with(
+                "meshPoints",
+                Value::ObjectArray(ObjectArray { prefix: 16, body }),
+            )),
         );
     }
     Value::Descriptor(d)
 }
 
 fn ratio(n: i32, d: i32) -> Value {
-    Value::Descriptor(Descriptor::new("null").with("numerator", Value::Integer(n)).with("denominator", Value::Integer(d)))
+    Value::Descriptor(
+        Descriptor::new("null")
+            .with("numerator", Value::Integer(n))
+            .with("denominator", Value::Integer(d)),
+    )
 }
 
 fn pad4(mut v: Vec<u8>) -> Vec<u8> {
@@ -629,13 +923,21 @@ fn pad4(mut v: Vec<u8>) -> Vec<u8> {
 /// `SoLd` block data. With `template` (the imported descriptor) every key it has is kept and only
 /// the placed id (for a duplicate), transform (when it moved), warp and filter stack are rewritten;
 /// otherwise a fresh descriptor in Photoshop's key order.
-pub fn sold_bytes(template: Option<&Descriptor>, s: &PlacedSpec<'_>, warnings: &mut Vec<String>) -> Vec<u8> {
+pub fn sold_bytes(
+    template: Option<&Descriptor>,
+    s: &PlacedSpec<'_>,
+    warnings: &mut Vec<String>,
+) -> Vec<u8> {
     let warp = warp_desc(s.warp, s.size, warnings);
     let d = match template {
         Some(t) => {
             let mut d = t.clone();
             if text_of(t, "placed").as_deref() != Some(s.placed) {
-                set(&mut d, "placed", Value::Text(UnicodeString::new_nul(s.placed)));
+                set(
+                    &mut d,
+                    "placed",
+                    Value::Text(UnicodeString::new_nul(s.placed)),
+                );
             }
             if quad_moved(t, s) {
                 set(&mut d, "Trnf", quad(s));
@@ -663,13 +965,26 @@ pub fn sold_bytes(template: Option<&Descriptor>, s: &PlacedSpec<'_>, warnings: &
                 .with("Trnf", quad(s))
                 .with("nonAffineTransform", quad(s))
                 .with("warp", warp)
-                .with("Sz  ", Value::Descriptor(Descriptor::new("Pnt ").with("Wdth", Value::Double(s.size.0)).with("Hght", Value::Double(s.size.1))))
+                .with(
+                    "Sz  ",
+                    Value::Descriptor(
+                        Descriptor::new("Pnt ")
+                            .with("Wdth", Value::Double(s.size.0))
+                            .with("Hght", Value::Double(s.size.1)),
+                    ),
+                )
                 .with("Rslt", unit(b"#Rsl", s.dpi));
             if let Some(fx) = &s.filter_fx {
                 d = d.with("filterFX", Value::Descriptor(fx.clone()));
             }
-            d.with("comp", Value::Integer(-1))
-                .with("compInfo", Value::Descriptor(Descriptor::new("null").with("compID", Value::Integer(-1)).with("originalCompID", Value::Integer(-1))))
+            d.with("comp", Value::Integer(-1)).with(
+                "compInfo",
+                Value::Descriptor(
+                    Descriptor::new("null")
+                        .with("compID", Value::Integer(-1))
+                        .with("originalCompID", Value::Integer(-1)),
+                ),
+            )
         }
     };
     let mut out = b"soLD".to_vec();
@@ -698,7 +1013,9 @@ pub fn plld_bytes(s: &PlacedSpec<'_>, warnings: &mut Vec<String>) -> Vec<u8> {
         }
     }
     out.extend_from_slice(&0u32.to_be_bytes());
-    let Value::Descriptor(w) = warp_desc(s.warp, s.size, warnings) else { return pad4(out) };
+    let Value::Descriptor(w) = warp_desc(s.warp, s.size, warnings) else {
+        return pad4(out);
+    };
     out.extend(VersionedDescriptor::new(w).to_bytes());
     pad4(out)
 }
@@ -714,25 +1031,51 @@ pub fn stored_size(d: &Descriptor) -> Option<(f64, f64)> {
 /// The filter mask stored in an `FEid` item, in document coordinates and white beyond its bounds
 /// (`filterMaskExtendWithWhite`), as a grayscale mask of `sample` depth. `Ok(None)` when the
 /// item has no mask or it is all white (no mask); `Err` when it can't be decoded.
-pub fn mask_from_item(item: &FilterEffectsItem, sample: SampleType, stack: &FilterStack) -> Result<Option<LayerMask>, String> {
+pub fn mask_from_item(
+    item: &FilterEffectsItem,
+    sample: SampleType,
+    stack: &FilterStack,
+) -> Result<Option<LayerMask>, String> {
     if item.mask.is_none() {
         return Ok(None);
     }
-    let (rect, plane) = item.decoded_mask().ok_or("the smart filter mask could not be decoded")?;
+    let (rect, plane) = item
+        .decoded_mask()
+        .ok_or("the smart filter mask could not be decoded")?;
     if item.depth != u32::from(crate::pixels::psd_depth(sample)) {
-        return Err(format!("the smart filter mask is {}-bit in a {:?} document", item.depth, sample));
+        return Err(format!(
+            "the smart filter mask is {}-bit in a {:?} document",
+            item.depth, sample
+        ));
     }
     let (w, h) = rect.size().map_err(|e| e.to_string())?;
     let fmt = PixelFormat::new(ColorMode::Grayscale, sample, false);
     let mut surface = Surface::with_default(fmt, &[1.0]);
-    let n = w.checked_mul(h).ok_or("the smart filter mask is too large")?;
-    let bytes = crate::pixels::interleave(&[Some(&plane)], &[crate::pixels::zero_sample(sample)], n, sample, &[false]);
-    surface.write_interleaved(GeomRect::new(rect.left, rect.top, rect.right, rect.bottom), &bytes);
+    let n = w
+        .checked_mul(h)
+        .ok_or("the smart filter mask is too large")?;
+    let bytes = crate::pixels::interleave(
+        &[Some(&plane)],
+        &[crate::pixels::zero_sample(sample)],
+        n,
+        sample,
+        &[false],
+    );
+    surface.write_interleaved(
+        GeomRect::new(rect.left, rect.top, rect.right, rect.bottom),
+        &bytes,
+    );
     surface.prune();
     if surface.content_bounds().is_empty() {
         return Ok(None);
     }
-    Ok(Some(LayerMask { surface, enabled: stack.mask_enabled, linked: stack.mask_linked, density: 1.0, feather: 0.0 }))
+    Ok(Some(LayerMask {
+        surface,
+        enabled: stack.mask_enabled,
+        linked: stack.mask_linked,
+        density: 1.0,
+        feather: 0.0,
+    }))
 }
 
 /// An `FEid` item for a smart object with filters: the unfiltered placed pixels Photoshop
@@ -740,9 +1083,19 @@ pub fn mask_from_item(item: &FilterEffectsItem, sample: SampleType, stack: &Filt
 /// pixel format, CMYK inverted as in layer channels) and the filter mask over `bounds` (white
 /// when `mask` is `None`). Photoshop needs the planes: re-rendering the filters of an item
 /// without them crashes it. `None` when there are no unfiltered pixels.
-pub fn feid_item(placed: &str, unfiltered: &Surface, mask: Option<&LayerMask>, bounds: GeomRect, doc_fmt: PixelFormat) -> Option<FilterEffectsItem> {
+pub fn feid_item(
+    placed: &str,
+    unfiltered: &Surface,
+    mask: Option<&LayerMask>,
+    bounds: GeomRect,
+    doc_fmt: PixelFormat,
+) -> Option<FilterEffectsItem> {
     let sample = doc_fmt.sample;
-    let px = if unfiltered.format() == doc_fmt { unfiltered.clone() } else { unfiltered.convert(doc_fmt) };
+    let px = if unfiltered.format() == doc_fmt {
+        unfiltered.clone()
+    } else {
+        unfiltered.convert(doc_fmt)
+    };
     let content = px.content_bounds();
     if content.is_empty() {
         return None;
@@ -752,11 +1105,18 @@ pub fn feid_item(placed: &str, unfiltered: &Surface, mask: Option<&LayerMask>, b
     let r = content.union(&bounds);
     let cc = doc_fmt.mode.color_channels();
     let depth = crate::pixels::psd_depth(sample);
-    let compression = if sample == SampleType::F32 { Compression::ZipPrediction } else { Compression::Rle };
+    let compression = if sample == SampleType::F32 {
+        Compression::ZipPrediction
+    } else {
+        Compression::Rle
+    };
     let encode = |plane: &[u8], w: usize, h: usize| {
         EffectsPlane::encode(compression, plane, w, h, depth)
             .or_else(|_| EffectsPlane::encode(Compression::Raw, plane, w, h, depth))
-            .unwrap_or(EffectsPlane { compression: Compression::Raw, data: plane.to_vec() })
+            .unwrap_or(EffectsPlane {
+                compression: Compression::Raw,
+                data: plane.to_vec(),
+            })
     };
     let mut invert = vec![doc_fmt.mode == ColorMode::Cmyk; cc];
     invert.push(false);
@@ -787,24 +1147,50 @@ pub fn feid_item(placed: &str, unfiltered: &Surface, mask: Option<&LayerMask>, b
         }
     }
     let mut item = filter_mask_item(placed, mask, bounds, sample);
-    item.rect = PsdRect { top: r.y0, left: r.x0, bottom: r.y1, right: r.x1 };
+    item.rect = PsdRect {
+        top: r.y0,
+        left: r.x0,
+        bottom: r.y1,
+        right: r.x1,
+    };
     item.slots = slots;
     Some(item)
 }
 
-fn filter_mask_item(placed: &str, mask: Option<&LayerMask>, bounds: GeomRect, sample: SampleType) -> FilterEffectsItem {
+fn filter_mask_item(
+    placed: &str,
+    mask: Option<&LayerMask>,
+    bounds: GeomRect,
+    sample: SampleType,
+) -> FilterEffectsItem {
     let fmt = PixelFormat::new(ColorMode::Grayscale, sample, false);
     let area = match mask {
         Some(m) => m.surface.content_bounds().union(&bounds),
         None => bounds,
     };
-    let area = if area.is_empty() { GeomRect::new(0, 0, 1, 1) } else { area };
-    let rect = PsdRect { top: area.y0, left: area.x0, bottom: area.y1, right: area.x1 };
+    let area = if area.is_empty() {
+        GeomRect::new(0, 0, 1, 1)
+    } else {
+        area
+    };
+    let rect = PsdRect {
+        top: area.y0,
+        left: area.x0,
+        bottom: area.y1,
+        right: area.x1,
+    };
     let (w, h) = (area.width() as usize, area.height() as usize);
     let plane = match mask {
         Some(m) => {
-            let s = if m.surface.format() == fmt { m.surface.clone() } else { m.surface.convert(fmt) };
-            crate::pixels::deinterleave(&s.to_interleaved(area), 1, sample, &[false]).into_iter().next().unwrap_or_default()
+            let s = if m.surface.format() == fmt {
+                m.surface.clone()
+            } else {
+                m.surface.convert(fmt)
+            };
+            crate::pixels::deinterleave(&s.to_interleaved(area), 1, sample, &[false])
+                .into_iter()
+                .next()
+                .unwrap_or_default()
         }
         None => {
             let mut white = Vec::with_capacity(w * h * sample.bytes());
@@ -815,18 +1201,40 @@ fn filter_mask_item(placed: &str, mask: Option<&LayerMask>, bounds: GeomRect, sa
         }
     };
     let depth = crate::pixels::psd_depth(sample);
-    let compression = if sample == SampleType::F32 { Compression::ZipPrediction } else { Compression::Rle };
+    let compression = if sample == SampleType::F32 {
+        Compression::ZipPrediction
+    } else {
+        Compression::Rle
+    };
     let plane = EffectsPlane::encode(compression, &plane, w, h, depth)
         .or_else(|_| EffectsPlane::encode(Compression::Raw, &plane, w, h, depth))
-        .unwrap_or(EffectsPlane { compression: Compression::Raw, data: plane });
-    FilterEffectsItem { id: placed.to_string(), version: 1, rect, depth: u32::from(depth), max_channels: 24, slots: vec![None; 26], mask: Some((rect, plane)) }
+        .unwrap_or(EffectsPlane {
+            compression: Compression::Raw,
+            data: plane,
+        });
+    FilterEffectsItem {
+        id: placed.to_string(),
+        version: 1,
+        rect,
+        depth: u32::from(depth),
+        max_channels: 24,
+        slots: vec![None; 26],
+        mask: Some((rect, plane)),
+    }
 }
 
 /// A deterministic uuid-shaped id (8-4-4-4-12 hex digits) derived from `seed`.
 pub fn uuid_from(seed: &[u8]) -> String {
     let h = blake3::hash(seed);
     let x = to_hex(&h.as_bytes()[..16]);
-    format!("{}-{}-{}-{}-{}", &x[..8], &x[8..12], &x[12..16], &x[16..20], &x[20..32])
+    format!(
+        "{}-{}-{}-{}-{}",
+        &x[..8],
+        &x[8..12],
+        &x[12..16],
+        &x[16..20],
+        &x[20..32]
+    )
 }
 
 #[cfg(test)]
@@ -841,8 +1249,16 @@ mod tests {
     /// Photoshop does; the code form is a different key to Photoshop.
     #[test]
     fn fresh_placed_warp_is_a_string_id() {
-        let spec =
-            PlacedSpec { idnt: "id", placed: "id", transform: Affine::IDENTITY, perspective: None, size: (10.0, 10.0), dpi: 72.0, warp: None, filter_fx: None };
+        let spec = PlacedSpec {
+            idnt: "id",
+            placed: "id",
+            transform: Affine::IDENTITY,
+            perspective: None,
+            size: (10.0, 10.0),
+            dpi: 72.0,
+            warp: None,
+            filter_fx: None,
+        };
         let mut warnings = Vec::new();
         let sold = sold_bytes(None, &spec, &mut warnings);
         let plld = plld_bytes(&spec, &mut warnings);
@@ -852,11 +1268,19 @@ mod tests {
             assert_eq!(count(bytes, b"\0\0\0\0warp"), 0);
         }
         let d = sold_descriptor(&sold).unwrap();
-        assert!(matches!(d.get("warp"), Some(Value::Descriptor(w)) if w.class_id == Id::Str(b"warp".to_vec())));
+        assert!(
+            matches!(d.get("warp"), Some(Value::Descriptor(w)) if w.class_id == Id::Str(b"warp".to_vec()))
+        );
     }
 
     fn sf(command: &str, params: J) -> SmartFilter {
-        SmartFilter { command: command.into(), params, blend: BlendMode::Normal, opacity: 1.0, visible: true }
+        SmartFilter {
+            command: command.into(),
+            params,
+            blend: BlendMode::Normal,
+            opacity: 1.0,
+            visible: true,
+        }
     }
 
     #[test]
@@ -864,20 +1288,41 @@ mod tests {
         let filters = vec![
             sf("filter.blur.gaussianBlur", json!({"radius": 4.0})),
             sf("filter.blur.boxBlur", json!({"radius": 5.0})),
-            sf("filter.blur.motionBlur", json!({"angle": -20, "distance": 10.0})),
-            sf("filter.sharpen.unsharpMask", json!({"amount": 150.0, "radius": 2.0, "threshold": 0})),
-            sf("filter.noise.addNoise", json!({"amount": 12.0, "distribution": "uniform", "monochromatic": false, "seed": 1234})),
+            sf(
+                "filter.blur.motionBlur",
+                json!({"angle": -20, "distance": 10.0}),
+            ),
+            sf(
+                "filter.sharpen.unsharpMask",
+                json!({"amount": 150.0, "radius": 2.0, "threshold": 0}),
+            ),
+            sf(
+                "filter.noise.addNoise",
+                json!({"amount": 12.0, "distribution": "uniform", "monochromatic": false, "seed": 1234}),
+            ),
             sf("filter.noise.median", json!({"radius": 3.0})),
             sf("filter.other.highPass", json!({"radius": 3.0})),
             sf("filter.other.maximum", json!({"radius": 2.0})),
             sf("filter.other.minimum", json!({"radius": 2.0})),
             sf("filter.pixelate.mosaic", json!({"cellSize": 8.0})),
-            sf("filter.stylize.emboss", json!({"angle": 135, "height": 3, "amount": 100})),
-            sf("image.adjustments.levels", json!({"inBlack": 20, "inWhite": 220, "gamma": 1.4, "red": {"inBlack": 0, "inWhite": 255, "gamma": 0.8}})),
-            sf("image.adjustments.curves", json!({"points": [[0.0, 0.0], [64.0, 40.0], [255.0, 255.0]], "blue": [[0.0, 20.0], [255.0, 235.0]]})),
+            sf(
+                "filter.stylize.emboss",
+                json!({"angle": 135, "height": 3, "amount": 100}),
+            ),
+            sf(
+                "image.adjustments.levels",
+                json!({"inBlack": 20, "inWhite": 220, "gamma": 1.4, "red": {"inBlack": 0, "inWhite": 255, "gamma": 0.8}}),
+            ),
+            sf(
+                "image.adjustments.curves",
+                json!({"points": [[0.0, 0.0], [64.0, 40.0], [255.0, 255.0]], "blue": [[0.0, 20.0], [255.0, 235.0]]}),
+            ),
             sf("image.adjustments.shadowsHighlights", json!({})),
             // A pencil-drawn curve: 256 output levels (`Mpng`).
-            sf("image.adjustments.curves", json!({"pencil": true, "points": (0..256).rev().collect::<Vec<i32>>()})),
+            sf(
+                "image.adjustments.curves",
+                json!({"pencil": true, "points": (0..256).rev().collect::<Vec<i32>>()}),
+            ),
         ];
         for mut f in filters {
             f.blend = BlendMode::Overlay;
@@ -894,9 +1339,19 @@ mod tests {
     fn unknown_filters_keep_their_descriptor() {
         let item = Descriptor::new("filterFX")
             .with("Nm  ", Value::Text(UnicodeString::new_nul("Twirl...")))
-            .with("blendOptions", Value::Descriptor(Descriptor::new("blendOptions").with("Opct", unit(b"#Prc", 100.0)).with("Md  ", enumv("BlnM", "normal"))))
+            .with(
+                "blendOptions",
+                Value::Descriptor(
+                    Descriptor::new("blendOptions")
+                        .with("Opct", unit(b"#Prc", 100.0))
+                        .with("Md  ", enumv("BlnM", "normal")),
+                ),
+            )
             .with("enab", Value::Boolean(true))
-            .with("Fltr", Value::Descriptor(Descriptor::new("Twrl").with("Angl", Value::Integer(50))))
+            .with(
+                "Fltr",
+                Value::Descriptor(Descriptor::new("Twrl").with("Angl", Value::Integer(50))),
+            )
             .with("filterID", Value::Integer(code(b"Twrl")));
         let f = filter_from_item(&item);
         assert_eq!(f.command, UNSUPPORTED_FILTER);
@@ -907,9 +1362,14 @@ mod tests {
         g.visible = false;
         g.blend = BlendMode::Screen;
         let back = filter_from_item(&item_for_filter(&g).unwrap());
-        assert_eq!((back.visible, back.blend, &back.params), (false, BlendMode::Screen, &f.params));
+        assert_eq!(
+            (back.visible, back.blend, &back.params),
+            (false, BlendMode::Screen, &f.params)
+        );
         // A known filter with a setting we don't model is kept verbatim too.
-        let odd = Descriptor::new("filterFX").with("Fltr", Value::Descriptor(Descriptor::new("GsnB"))).with("filterID", Value::Integer(code(b"GsnB")));
+        let odd = Descriptor::new("filterFX")
+            .with("Fltr", Value::Descriptor(Descriptor::new("GsnB")))
+            .with("filterID", Value::Integer(code(b"GsnB")));
         assert_eq!(filter_from_item(&odd).command, UNSUPPORTED_FILTER);
     }
 
@@ -921,7 +1381,10 @@ mod tests {
                 sf("filter.blur.gaussianBlur", json!({"radius": 2.0})),
                 sf(UNSUPPORTED_FILTER, json!({"psd": "zz"})),
                 sf("image.adjustments.levels", json!({"cyan": {"gamma": 2.0}})),
-                sf("image.adjustments.shadowsHighlights", json!({"shadowAmount": 50})),
+                sf(
+                    "image.adjustments.shadowsHighlights",
+                    json!({"shadowAmount": 50}),
+                ),
             ],
             ..Default::default()
         };
@@ -934,9 +1397,15 @@ mod tests {
 
     #[test]
     fn placed_blocks_parse_back() {
-        let t = Affine { m: [0.5, 0.1, -0.1, 0.5, 10.0, 20.0] };
-        let stack =
-            FilterStack { enabled: false, filters: vec![sf("filter.blur.gaussianBlur", json!({"radius": 3.0}))], mask_enabled: false, mask_linked: true };
+        let t = Affine {
+            m: [0.5, 0.1, -0.1, 0.5, 10.0, 20.0],
+        };
+        let stack = FilterStack {
+            enabled: false,
+            filters: vec![sf("filter.blur.gaussianBlur", json!({"radius": 3.0}))],
+            mask_enabled: false,
+            mask_linked: true,
+        };
         let mut w = Vec::new();
         let spec = PlacedSpec {
             idnt: "id-1",
@@ -964,7 +1433,14 @@ mod tests {
         // A template keeps its other keys; an unmoved transform keeps its exact quad.
         let mut tmpl = sold_descriptor(&sold).unwrap();
         tmpl.items.push((Id::new("extraKey"), Value::Integer(7)));
-        let again = sold_bytes(Some(&tmpl), &PlacedSpec { filter_fx: None, ..spec }, &mut w);
+        let again = sold_bytes(
+            Some(&tmpl),
+            &PlacedSpec {
+                filter_fx: None,
+                ..spec
+            },
+            &mut w,
+        );
         let d = sold_descriptor(&again).unwrap();
         assert_eq!(d.get("extraKey"), Some(&Value::Integer(7)));
         assert!(d.get("filterFX").is_none());
@@ -975,7 +1451,11 @@ mod tests {
     /// and comes back as the same projective map; an affine one reads back as no perspective.
     #[test]
     fn perspective_placement_round_trips_through_sold() {
-        let h = photocraft_algo::transform::Homography::rect_to_quad([0.0, 0.0, 64.0, 32.0], [[10.0, 5.0], [80.0, 8.0], [70.0, 50.0], [12.0, 40.0]]).unwrap();
+        let h = photocraft_algo::transform::Homography::rect_to_quad(
+            [0.0, 0.0, 64.0, 32.0],
+            [[10.0, 5.0], [80.0, 8.0], [70.0, 50.0], [12.0, 40.0]],
+        )
+        .unwrap();
         let mut w = Vec::new();
         let mut spec = PlacedSpec {
             idnt: "id",
@@ -988,14 +1468,21 @@ mod tests {
             filter_fx: None,
         };
         let sold = sold_bytes(None, &spec, &mut w);
-        let back = crate::blocks::parse_smart_perspective(b"SoLd", &sold).expect("a projective placement");
+        let back =
+            crate::blocks::parse_smart_perspective(b"SoLd", &sold).expect("a projective placement");
         let n = |m: [f64; 9]| m.map(|v| v / m[8]);
         for (a, b) in n(back).iter().zip(n(h.0)) {
-            assert!((a - b).abs() < 1e-9 * (1.0 + b.abs()), "{back:?} vs {:?}", h.0);
+            assert!(
+                (a - b).abs() < 1e-9 * (1.0 + b.abs()),
+                "{back:?} vs {:?}",
+                h.0
+            );
         }
         // Affine placements carry no perspective.
         spec.perspective = None;
-        spec.transform = Affine { m: [2.0, 0.0, 0.0, 2.0, 5.0, 7.0] };
+        spec.transform = Affine {
+            m: [2.0, 0.0, 0.0, 2.0, 5.0, 7.0],
+        };
         let sold = sold_bytes(None, &spec, &mut w);
         assert_eq!(crate::blocks::parse_smart_perspective(b"SoLd", &sold), None);
         assert_eq!(crate::blocks::parse_smart_perspective(b"PlLd", &sold), None);
@@ -1005,18 +1492,39 @@ mod tests {
     /// the template's quad, a moved corner (affine or projective) or a missing quad rewrites it.
     #[test]
     fn quad_moved_detects_corner_changes() {
-        let t = Affine { m: [1.0, 0.0, 0.0, 1.0, 3.0, 4.0] };
+        let t = Affine {
+            m: [1.0, 0.0, 0.0, 1.0, 3.0, 4.0],
+        };
         let mut w = Vec::new();
-        let mut spec = PlacedSpec { idnt: "id", placed: "pl", transform: t, perspective: None, size: (20.0, 10.0), dpi: 72.0, warp: None, filter_fx: None };
-        let template = parse_sold(&sold_bytes(None, &spec, &mut w)).expect("parses").descriptor;
+        let mut spec = PlacedSpec {
+            idnt: "id",
+            placed: "pl",
+            transform: t,
+            perspective: None,
+            size: (20.0, 10.0),
+            dpi: 72.0,
+            warp: None,
+            filter_fx: None,
+        };
+        let template = parse_sold(&sold_bytes(None, &spec, &mut w))
+            .expect("parses")
+            .descriptor;
         assert!(!quad_moved(&template, &spec), "same placement");
-        spec.transform = Affine { m: [1.0, 0.0, 0.0, 1.0, 3.5, 4.0] };
+        spec.transform = Affine {
+            m: [1.0, 0.0, 0.0, 1.0, 3.5, 4.0],
+        };
         assert!(quad_moved(&template, &spec), "moved half a pixel");
         spec.transform = t;
-        spec.perspective =
-            photocraft_algo::transform::Homography::rect_to_quad([0.0, 0.0, 20.0, 10.0], [[3.0, 4.0], [23.0, 4.0], [20.0, 12.0], [3.0, 14.0]]).map(|h| h.0);
+        spec.perspective = photocraft_algo::transform::Homography::rect_to_quad(
+            [0.0, 0.0, 20.0, 10.0],
+            [[3.0, 4.0], [23.0, 4.0], [20.0, 12.0], [3.0, 14.0]],
+        )
+        .map(|h| h.0);
         assert!(quad_moved(&template, &spec), "one corner moved (Distort)");
-        assert!(quad_moved(&Descriptor::new("null"), &spec), "no stored quad");
+        assert!(
+            quad_moved(&Descriptor::new("null"), &spec),
+            "no stored quad"
+        );
     }
 
     /// Corrupted placed-layer data and filter descriptors never panic: they parse to something
@@ -1026,8 +1534,14 @@ mod tests {
         let stack = FilterStack {
             filters: vec![
                 sf("filter.blur.gaussianBlur", json!({"radius": 3.0})),
-                sf("image.adjustments.curves", json!({"points": [[0.0, 0.0], [255.0, 255.0]]})),
-                sf("image.adjustments.levels", json!({"inBlack": 3, "inWhite": 250, "gamma": 1.1})),
+                sf(
+                    "image.adjustments.curves",
+                    json!({"points": [[0.0, 0.0], [255.0, 255.0]]}),
+                ),
+                sf(
+                    "image.adjustments.levels",
+                    json!({"inBlack": 3, "inWhite": 250, "gamma": 1.1}),
+                ),
             ],
             ..Default::default()
         };
@@ -1078,7 +1592,12 @@ mod tests {
         arc.h_distort = 10.0;
         let mut c = Warp::preset(WarpStyle::Custom, 0.0, bounds);
         c.mesh = Some(custom);
-        for (w, back) in [(Some(arc.clone()), Some(arc)), (Some(c.clone()), Some(c)), (Some(multi), None), (None, None)] {
+        for (w, back) in [
+            (Some(arc.clone()), Some(arc)),
+            (Some(c.clone()), Some(c)),
+            (Some(multi), None),
+            (None, None),
+        ] {
             let mut warnings = Vec::new();
             let spec = PlacedSpec {
                 idnt: "i",
@@ -1106,11 +1625,24 @@ mod tests {
         mesh.points[15] = [60.0, 25.0];
         let mut warp = Warp::preset(WarpStyle::Custom, 0.0, [0.0, 0.0, 50.0, 25.0]);
         warp.mesh = Some(mesh);
-        let transform = Affine { m: [2.0, 0.0, 0.0, 2.0, 120.0, 210.0] };
-        let spec = PlacedSpec { idnt: "i", placed: "p", transform, perspective: None, size: (50.0, 25.0), dpi: 72.0, warp: Some(&warp), filter_fx: None };
+        let transform = Affine {
+            m: [2.0, 0.0, 0.0, 2.0, 120.0, 210.0],
+        };
+        let spec = PlacedSpec {
+            idnt: "i",
+            placed: "p",
+            transform,
+            perspective: None,
+            size: (50.0, 25.0),
+            dpi: 72.0,
+            warp: Some(&warp),
+            filter_fx: None,
+        };
         let sold = sold_bytes(None, &spec, &mut Vec::new());
         let p = parse_sold(&sold).expect("parses");
-        let Some(Value::List(q)) = p.descriptor.get("Trnf") else { panic!("no Trnf") };
+        let Some(Value::List(q)) = p.descriptor.get("Trnf") else {
+            panic!("no Trnf")
+        };
         let q: Vec<f64> = q.iter().filter_map(|v| num(Some(v))).collect();
         assert_eq!(q, [100.0, 200.0, 240.0, 200.0, 240.0, 260.0, 100.0, 260.0]);
         assert_eq!(p.transform, transform);
@@ -1120,7 +1652,10 @@ mod tests {
 
     #[test]
     fn hex_and_uuid() {
-        assert_eq!(from_hex(&to_hex(&[0, 1, 0xab, 0xff])), Some(vec![0, 1, 0xab, 0xff]));
+        assert_eq!(
+            from_hex(&to_hex(&[0, 1, 0xab, 0xff])),
+            Some(vec![0, 1, 0xab, 0xff])
+        );
         assert_eq!(from_hex("abc"), None);
         assert_eq!(from_hex("zz"), None);
         let u = uuid_from(b"x");

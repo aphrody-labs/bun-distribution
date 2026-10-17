@@ -29,7 +29,10 @@ pub struct Inbox {
 
 impl Inbox {
     pub fn new(wake: Waker) -> Self {
-        Self { state: Arc::default(), wake }
+        Self {
+            state: Arc::default(),
+            wake,
+        }
     }
 
     fn with<R>(&self, f: impl FnOnce(&mut State) -> R) -> R {
@@ -63,7 +66,11 @@ impl Inbox {
     pub fn drain(&self) -> Vec<figcraft_engine::live::Event> {
         let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         let mut out: Vec<Event> = s.events.drain(..).collect();
-        out.extend(std::mem::take(&mut s.presence).into_iter().map(|(id, p)| Event::Presence(id, p)));
+        out.extend(
+            std::mem::take(&mut s.presence)
+                .into_iter()
+                .map(|(id, p)| Event::Presence(id, p)),
+        );
         out
     }
 }

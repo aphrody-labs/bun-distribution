@@ -47,10 +47,17 @@ pub struct CpkExtraction {
 }
 
 fn format_error(context: &'static str, error: FormatError) -> ReError {
-    ReError::ParseError { context, details: error.to_string() }
+    ReError::ParseError {
+        context,
+        details: error.to_string(),
+    }
 }
 
-fn read_range(file: &mut File, offset: u64, size: usize) -> std::result::Result<Vec<u8>, FormatError> {
+fn read_range(
+    file: &mut File,
+    offset: u64,
+    size: usize,
+) -> std::result::Result<Vec<u8>, FormatError> {
     let mut buffer = vec![0u8; size];
     file.seek(SeekFrom::Start(offset))
         .and_then(|_| file.read_exact(&mut buffer))
@@ -61,7 +68,10 @@ fn read_range(file: &mut File, offset: u64, size: usize) -> std::result::Result<
 /// Parse only the header and TOC of a CPK file.
 pub fn open_cpk(path: &Path) -> Result<CpkReader> {
     let mut file = File::open(path)?;
-    let name = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+    let name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .unwrap_or_default();
     CpkReader::from_reader(&name, |offset, size| read_range(&mut file, offset, size))
         .map_err(|error| format_error("cpk_open", error))
 }
@@ -77,7 +87,11 @@ fn is_safe_component(component: &str) -> bool {
 /// Relative output path of an entry (`DirName/FileName`), rejecting traversal and drive syntax.
 pub fn entry_output_path(entry: &CpkEntry) -> Option<PathBuf> {
     let mut output = PathBuf::new();
-    for component in entry.directory.split(['/', '\\']).filter(|value| !value.is_empty()) {
+    for component in entry
+        .directory
+        .split(['/', '\\'])
+        .filter(|value| !value.is_empty())
+    {
         if !is_safe_component(component) {
             return None;
         }
@@ -109,7 +123,10 @@ pub fn extract_cpk(
             context: "cpk_extract",
             details: format!("unsafe CPK path: {}/{}", entry.directory, entry.filename),
         })?;
-        let key = path.to_string_lossy().replace('\\', "/").to_ascii_lowercase();
+        let key = path
+            .to_string_lossy()
+            .replace('\\', "/")
+            .to_ascii_lowercase();
         if !unique.insert(key) {
             return Err(ReError::ParseError {
                 context: "cpk_extract",
@@ -131,7 +148,7 @@ pub fn extract_cpk(
                     Err(error) => {
                         failure.lock().expect("lock").get_or_insert(error.into());
                         return;
-                    },
+                    }
                 };
                 loop {
                     let index = next.fetch_add(1, Ordering::Relaxed);
@@ -140,12 +157,12 @@ pub fn extract_cpk(
                     }
                     let entry = &reader.entries[index];
                     let result = reader
-                        .extract_from_reader(entry, |offset, size| read_range(&mut file, offset, size))
-                        .map_err(|error| {
-                            ReError::ParseError {
-                                context: "cpk_extract",
-                                details: format!("{}/{}: {error}", entry.directory, entry.filename),
-                            }
+                        .extract_from_reader(entry, |offset, size| {
+                            read_range(&mut file, offset, size)
+                        })
+                        .map_err(|error| ReError::ParseError {
+                            context: "cpk_extract",
+                            details: format!("{}/{}: {error}", entry.directory, entry.filename),
                         })
                         .and_then(|bytes| {
                             let output = destination.join(&paths[index]);
@@ -183,11 +200,18 @@ pub fn extract_cpk(
         .map(|(id, (path, size))| {
             let size_bytes = size.load(Ordering::Relaxed) as u64;
             total_bytes += size_bytes;
-            CpkFileRecord { id, file: path.to_string_lossy().replace('\\', "/"), size_bytes }
+            CpkFileRecord {
+                id,
+                file: path.to_string_lossy().replace('\\', "/"),
+                size_bytes,
+            }
         })
         .collect();
     Ok(CpkExtraction {
-        archive: archive.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default(),
+        archive: archive
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default(),
         entry_count: files.len(),
         total_bytes,
         files,
@@ -214,7 +238,7 @@ fn tree_file_count(directory: &Path) -> usize {
             match entry.file_type() {
                 Ok(kind) if kind.is_dir() => pending.push(entry.path()),
                 Ok(kind) if kind.is_file() && entry.file_name() != "_cripak.log" => count += 1,
-                _ => {},
+                _ => {}
             }
         }
     }
@@ -223,11 +247,18 @@ fn tree_file_count(directory: &Path) -> usize {
 
 /// `extract`: select the install's CPKs (smallest first) and extract each one to
 /// `<out>/cpk/<stem>/`, then write `<out>/reports/extract_manifest.json`.
-pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Result<serde_json::Value> {
+pub fn extract_install(
+    game: &Path,
+    out: &Path,
+    options: &ExtractOptions,
+) -> Result<serde_json::Value> {
     let mut archives: Vec<(PathBuf, u64)> = fs::read_dir(game.join("cpk"))?
         .flatten()
         .map(|entry| entry.path())
-        .filter(|path| path.extension().is_some_and(|value| value.eq_ignore_ascii_case("cpk")))
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|value| value.eq_ignore_ascii_case("cpk"))
+        })
         .filter_map(|path| fs::metadata(&path).ok().map(|meta| (path, meta.len())))
         .collect();
     archives.sort_by(|left, right| left.1.cmp(&right.1).then_with(|| left.0.cmp(&right.0)));
@@ -235,7 +266,10 @@ pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Res
     let mut selected = Vec::new();
     let mut skipped = Vec::new();
     for (path, size) in archives {
-        let name = path.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
         if !options.names.is_empty() {
             if options.names.contains(&name) {
                 selected.push(path);
@@ -247,7 +281,10 @@ pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Res
             continue;
         }
         if !options.all && size as f64 / 1_073_741_824.0 > options.max_gib {
-            skipped.push(serde_json::json!([name, format!(">{}GiB", options.max_gib)]));
+            skipped.push(serde_json::json!([
+                name,
+                format!(">{}GiB", options.max_gib)
+            ]));
             continue;
         }
         selected.push(path);
@@ -257,13 +294,21 @@ pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Res
     fs::create_dir_all(&destination_root)?;
     let mut results = Vec::with_capacity(selected.len());
     for archive in &selected {
-        let name = archive.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
-        let stem = archive.file_stem().map(|stem| stem.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = archive
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let stem = archive
+            .file_stem()
+            .map(|stem| stem.to_string_lossy().into_owned())
+            .unwrap_or_default();
         let destination = destination_root.join(&stem);
         if options.skip_existing && destination.exists() {
             let count = tree_file_count(&destination);
             if count > 0 {
-                results.push(serde_json::json!({ "cpk": name, "status": "skip-existing", "files": count }));
+                results.push(
+                    serde_json::json!({ "cpk": name, "status": "skip-existing", "files": count }),
+                );
                 continue;
             }
         }
@@ -273,10 +318,12 @@ pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Res
             Err(error) => {
                 eprintln!("bunre dbxv2: extract {name} failed: {error}");
                 ("err", 0)
-            },
+            }
         };
         let seconds = (start.elapsed().as_secs_f64() * 10.0).round() / 10.0;
-        results.push(serde_json::json!({ "cpk": name, "status": status, "files": files, "sec": seconds }));
+        results.push(
+            serde_json::json!({ "cpk": name, "status": status, "files": files, "sec": seconds }),
+        );
     }
     let manifest = serde_json::json!({
         "selected": selected.len(),
@@ -285,7 +332,10 @@ pub fn extract_install(game: &Path, out: &Path, options: &ExtractOptions) -> Res
     });
     let reports = out.join("reports");
     fs::create_dir_all(&reports)?;
-    fs::write(reports.join("extract_manifest.json"), serde_json::to_vec_pretty(&manifest)?)?;
+    fs::write(
+        reports.join("extract_manifest.json"),
+        serde_json::to_vec_pretty(&manifest)?,
+    )?;
     Ok(manifest)
 }
 

@@ -20,7 +20,14 @@
 //! Exit status: non-zero when an enforced budget breaks (full mode), a scenario's p50 regresses
 //! more than the threshold against a baseline from the same machine class and mode, or a bench
 //! fails. Runs from different machine classes are never compared.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -58,7 +65,10 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { regression_pct: 15.0, regression_min_ms: 1.0 }
+        Self {
+            regression_pct: 15.0,
+            regression_min_ms: 1.0,
+        }
     }
 }
 
@@ -155,14 +165,25 @@ pub fn parse_budgets(text: &str) -> Result<Budgets, String> {
         match (&s.bench, &s.row, &s.not_measurable) {
             (Some(bench), Some(_), None) => {
                 if !b.bench.iter().any(|x| &x.name == bench) {
-                    return Err(format!("{BUDGETS}: scenario {} uses undefined bench `{bench}`", s.id));
+                    return Err(format!(
+                        "{BUDGETS}: scenario {} uses undefined bench `{bench}`",
+                        s.id
+                    ));
                 }
             }
             (None, None, Some(_)) => {}
-            _ => return Err(format!("{BUDGETS}: scenario {} needs either bench + row, or not_measurable", s.id)),
+            _ => {
+                return Err(format!(
+                    "{BUDGETS}: scenario {} needs either bench + row, or not_measurable",
+                    s.id
+                ));
+            }
         }
         if s.budget_ms.is_some_and(|v| !(v.is_finite() && v > 0.0)) {
-            return Err(format!("{BUDGETS}: scenario {} has an invalid budget_ms", s.id));
+            return Err(format!(
+                "{BUDGETS}: scenario {} has an invalid budget_ms",
+                s.id
+            ));
         }
     }
     if !(b.settings.regression_pct.is_finite() && b.settings.regression_pct > 0.0) {
@@ -223,8 +244,16 @@ fn rank(v: &[f64], q: f64) -> Option<f64> {
 /// or `p50_ms`/`p95_ms`/`max_ms`, or the older `median_ms`/`max_ms`. A p95 is never invented:
 /// with neither samples nor a reported p95 it stays empty.
 pub fn row_stats(row: &Value) -> Stats {
-    let mut samples: Vec<f64> =
-        row.get("samples_ms").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_f64).filter(|x| x.is_finite()).collect()).unwrap_or_default();
+    let mut samples: Vec<f64> = row
+        .get("samples_ms")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_f64)
+                .filter(|x| x.is_finite())
+                .collect()
+        })
+        .unwrap_or_default();
     samples.sort_by(f64::total_cmp);
     let f = |k: &str| row.get(k).and_then(Value::as_f64);
     let mut s = Stats {
@@ -247,7 +276,11 @@ pub fn row_stats(row: &Value) -> Stats {
 
 /// The row named `name` in a bench report (`{"rows": [{"name": …}, …]}`).
 pub fn find_row<'a>(report: &'a Value, name: &str) -> Option<&'a Value> {
-    report.get("rows")?.as_array()?.iter().find(|r| r.get("name").and_then(Value::as_str) == Some(name))
+    report
+        .get("rows")?
+        .as_array()?
+        .iter()
+        .find(|r| r.get("name").and_then(Value::as_str) == Some(name))
 }
 
 /// `cur` regressed against `base` by more than `pct` % and more than `min_ms`.
@@ -289,7 +322,10 @@ impl Status {
         }
     }
     pub fn fails(&self) -> bool {
-        matches!(self, Status::Broken | Status::Regressed | Status::Missing(_))
+        matches!(
+            self,
+            Status::Broken | Status::Regressed | Status::Missing(_)
+        )
     }
 }
 
@@ -307,7 +343,14 @@ pub struct Outcome {
 }
 
 /// Budget and regression verdict for one scenario. `budgets_apply` is false in quick mode.
-pub fn verdict(sc: &Scenario, stats: &Stats, base: Option<&Stats>, settings: &Settings, threshold: f64, budgets_apply: bool) -> Status {
+pub fn verdict(
+    sc: &Scenario,
+    stats: &Stats,
+    base: Option<&Stats>,
+    settings: &Settings,
+    threshold: f64,
+    budgets_apply: bool,
+) -> Status {
     if let (Some(cur), Some(b)) = (stats.p50, base.and_then(|b| b.p50))
         && regressed(cur, b, threshold, settings.regression_min_ms)
     {
@@ -322,7 +365,9 @@ pub fn verdict(sc: &Scenario, stats: &Stats, base: Option<&Stats>, settings: &Se
             }
         }
         (true, Some(_), Some(_)) => Status::Pass,
-        (true, Some(_), None) => Status::Missing(format!("no {} in the bench row", sc.metric.label())),
+        (true, Some(_), None) => {
+            Status::Missing(format!("no {} in the bench row", sc.metric.label()))
+        }
         _ => Status::Tracked,
     }
 }
@@ -355,7 +400,9 @@ pub fn evaluate(
                 o.status = Status::NotMeasurable(why.clone());
                 return o;
             }
-            let (Some(bench), Some(row)) = (&sc.bench, &sc.row) else { return o };
+            let (Some(bench), Some(row)) = (&sc.bench, &sc.row) else {
+                return o;
+            };
             match reports.get(bench) {
                 None => {}
                 Some(Err(e)) => o.status = Status::Missing(format!("bench `{bench}` failed: {e}")),
@@ -365,16 +412,27 @@ pub fn evaluate(
                             .get("context")
                             .and_then(|c| c.get("errors"))
                             .and_then(Value::as_array)
-                            .and_then(|a| a.iter().find(|e| e.get("name").and_then(Value::as_str) == Some(row.as_str())))
+                            .and_then(|a| {
+                                a.iter().find(|e| {
+                                    e.get("name").and_then(Value::as_str) == Some(row.as_str())
+                                })
+                            })
                             .and_then(|e| e.get("error"))
                             .and_then(Value::as_str)
-                            .map_or_else(|| format!("row `{row}` not in `{bench}`"), str::to_string);
+                            .map_or_else(
+                                || format!("row `{row}` not in `{bench}`"),
+                                str::to_string,
+                            );
                         o.status = Status::Missing(err);
                     }
                     Some(r) => {
                         let st = row_stats(r);
-                        o.change_pct = st.p50.zip(o.baseline_p50).and_then(|(c, b)| change_pct(c, b));
-                        o.status = verdict(sc, &st, base, &budgets.settings, threshold, budgets_apply);
+                        o.change_pct = st
+                            .p50
+                            .zip(o.baseline_p50)
+                            .and_then(|(c, b)| change_pct(c, b));
+                        o.status =
+                            verdict(sc, &st, base, &budgets.settings, threshold, budgets_apply);
                         o.stats = Some(st);
                     }
                 },
@@ -409,7 +467,9 @@ pub fn fmt_bytes(v: Option<u64>) -> String {
 }
 
 pub fn issue_link(n: Option<u32>) -> String {
-    n.map_or_else(String::new, |n| format!("[#{n}](https://github.com/storytold/photocraft/issues/{n})"))
+    n.map_or_else(String::new, |n| {
+        format!("[#{n}](https://github.com/storytold/photocraft/issues/{n})")
+    })
 }
 
 /// The scenario table (Markdown); `with_baseline` adds the change against the baseline.
@@ -424,9 +484,20 @@ pub fn render_table(outcomes: &[Outcome], with_baseline: bool) -> String {
             "| Id | Scenario | Target | p50 ms | p95 ms | max ms | Peak RSS | GPU | Status | Issue |\n|---|---|---|---:|---:|---:|---:|---:|---|---|\n",
         )
     };
-    for o in outcomes.iter().filter(|o| !matches!(o.status, Status::NotMeasurable(_))) {
+    for o in outcomes
+        .iter()
+        .filter(|o| !matches!(o.status, Status::NotMeasurable(_)))
+    {
         let st = o.stats.clone().unwrap_or_default();
-        let vs = if with_baseline { format!(" {} |", o.change_pct.map_or_else(|| "–".into(), |c| format!("{c:+.0} %"))) } else { String::new() };
+        let vs = if with_baseline {
+            format!(
+                " {} |",
+                o.change_pct
+                    .map_or_else(|| "–".into(), |c| format!("{c:+.0} %"))
+            )
+        } else {
+            String::new()
+        };
         s.push_str(&format!(
             "| {} | {} | {} | {} | {} | {} | {} | {} |{} {} | {} |\n",
             o.id,
@@ -442,7 +513,10 @@ pub fn render_table(outcomes: &[Outcome], with_baseline: bool) -> String {
             issue_link(o.issue),
         ));
     }
-    let nm: Vec<&Outcome> = outcomes.iter().filter(|o| matches!(o.status, Status::NotMeasurable(_))).collect();
+    let nm: Vec<&Outcome> = outcomes
+        .iter()
+        .filter(|o| matches!(o.status, Status::NotMeasurable(_)))
+        .collect();
     if !nm.is_empty() {
         s.push_str(
             "\n**Not measurable yet** (the code can't do it yet; no number is recorded):\n\n| Id | Scenario | Target | Why | Issue |\n|---|---|---|---|---|\n",
@@ -452,7 +526,14 @@ pub fn render_table(outcomes: &[Outcome], with_baseline: bool) -> String {
                 Status::NotMeasurable(w) => w.as_str(),
                 _ => "",
             };
-            s.push_str(&format!("| {} | {} | {} | {} | {} |\n", o.id, o.title, o.target, why, issue_link(o.issue)));
+            s.push_str(&format!(
+                "| {} | {} | {} | {} | {} |\n",
+                o.id,
+                o.title,
+                o.target,
+                why,
+                issue_link(o.issue)
+            ));
         }
     }
     s
@@ -491,18 +572,30 @@ pub fn slug(s: &str) -> String {
 
 /// Runs are compared only within one class: OS, architecture, CPU model and GPU adapter.
 pub fn machine_class(os: &str, arch: &str, cpu: &str, gpu: &str) -> String {
-    [os, arch, cpu, gpu].iter().map(|p| slug(p)).filter(|p| !p.is_empty()).collect::<Vec<_>>().join("-")
+    [os, arch, cpu, gpu]
+        .iter()
+        .map(|p| slug(p))
+        .filter(|p| !p.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 /// The first three numbers in `/proc/loadavg` or `sysctl -n vm.loadavg` output.
 pub fn parse_loadavg(s: &str) -> Option<[f64; 3]> {
-    let v: Vec<f64> = s.split_whitespace().filter_map(|t| t.trim_matches(|c| c == '{' || c == '}').parse().ok()).take(3).collect();
+    let v: Vec<f64> = s
+        .split_whitespace()
+        .filter_map(|t| t.trim_matches(|c| c == '{' || c == '}').parse().ok())
+        .take(3)
+        .collect();
     Some([*v.first()?, *v.get(1)?, *v.get(2)?])
 }
 
 fn output(cmd: &str, args: &[&str]) -> Option<String> {
     let o = Command::new(cmd).args(args).output().ok()?;
-    o.status.success().then(|| String::from_utf8_lossy(&o.stdout).trim().to_string()).filter(|s| !s.is_empty())
+    o.status
+        .success()
+        .then(|| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .filter(|s| !s.is_empty())
 }
 
 pub fn load_avg() -> Option<[f64; 3]> {
@@ -514,7 +607,10 @@ pub fn load_avg() -> Option<[f64; 3]> {
 
 fn proc_field(file: &str, key: &str) -> Option<String> {
     let s = std::fs::read_to_string(file).ok()?;
-    s.lines().find(|l| l.starts_with(key)).and_then(|l| l.split_once(':').or_else(|| l.split_once('='))).map(|(_, v)| v.trim().trim_matches('"').to_string())
+    s.lines()
+        .find(|l| l.starts_with(key))
+        .and_then(|l| l.split_once(':').or_else(|| l.split_once('=')))
+        .map(|(_, v)| v.trim().trim_matches('"').to_string())
 }
 
 pub fn machine() -> Value {
@@ -527,13 +623,23 @@ pub fn machine() -> Value {
             output("sw_vers", &["-productVersion"]).map(|v| format!("macOS {v}")),
         ),
         "linux" => (
-            proc_field("/proc/cpuinfo", "model name").or_else(|| proc_field("/proc/cpuinfo", "CPU part").map(|p| format!("ARM part {p}"))),
+            proc_field("/proc/cpuinfo", "model name").or_else(|| {
+                proc_field("/proc/cpuinfo", "CPU part").map(|p| format!("ARM part {p}"))
+            }),
             proc_field("/proc/meminfo", "MemTotal")
-                .and_then(|v| v.split_whitespace().next().and_then(|k| k.parse::<u64>().ok()))
+                .and_then(|v| {
+                    v.split_whitespace()
+                        .next()
+                        .and_then(|k| k.parse::<u64>().ok())
+                })
                 .and_then(|k| k.checked_mul(1024)),
             proc_field("/etc/os-release", "PRETTY_NAME"),
         ),
-        _ => (std::env::var("PROCESSOR_IDENTIFIER").ok(), None, output("cmd", &["/c", "ver"])),
+        _ => (
+            std::env::var("PROCESSOR_IDENTIFIER").ok(),
+            None,
+            output("cmd", &["/c", "ver"]),
+        ),
     };
     json!({"os": os, "os_version": os_version, "arch": arch, "cpu": cpu, "cores": cores, "ram_bytes": ram})
 }
@@ -551,25 +657,50 @@ pub fn iso_utc(secs: u64) -> String {
     let d = doy - (153 * mp + 2) / 5 + 1;
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = yoe + era * 400 + i64::from(m <= 2);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", rem / 3600, rem % 3600 / 60, rem % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
 }
 
 fn now_iso() -> String {
-    iso_utc(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0))
+    iso_utc(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0),
+    )
 }
 
 fn git(root: &Path, args: &[&str]) -> Option<String> {
-    let o = Command::new("git").current_dir(root).args(args).output().ok()?;
-    o.status.success().then(|| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    let o = Command::new("git")
+        .current_dir(root)
+        .args(args)
+        .output()
+        .ok()?;
+    o.status
+        .success()
+        .then(|| String::from_utf8_lossy(&o.stdout).trim().to_string())
 }
 
 // ---- baseline --------------------------------------------------------------------------------
 
 /// The baseline's scenarios for `mode`, if it was recorded on `class`. `Err` explains a skip.
-pub fn baseline_for(baseline: &Value, class: &str, mode: &str) -> Result<BTreeMap<String, Stats>, String> {
-    let bc = baseline.get("machine_class").and_then(Value::as_str).unwrap_or("");
+pub fn baseline_for(
+    baseline: &Value,
+    class: &str,
+    mode: &str,
+) -> Result<BTreeMap<String, Stats>, String> {
+    let bc = baseline
+        .get("machine_class")
+        .and_then(Value::as_str)
+        .unwrap_or("");
     if bc != class {
-        return Err(format!("baseline is from machine class `{bc}`, this is `{class}`: regression check skipped"));
+        return Err(format!(
+            "baseline is from machine class `{bc}`, this is `{class}`: regression check skipped"
+        ));
     }
     let sc = baseline
         .get("modes")
@@ -577,24 +708,54 @@ pub fn baseline_for(baseline: &Value, class: &str, mode: &str) -> Result<BTreeMa
         .and_then(|m| m.get("scenarios"))
         .and_then(Value::as_object)
         .ok_or_else(|| format!("baseline has no `{mode}` run: regression check skipped"))?;
-    Ok(sc.iter().map(|(k, v)| (k.clone(), Stats::from_json(v))).collect())
+    Ok(sc
+        .iter()
+        .map(|(k, v)| (k.clone(), Stats::from_json(v)))
+        .collect())
 }
 
 /// `old` with this run's mode replaced (or a fresh baseline when the machine class changed).
 pub fn updated_baseline(old: Option<&Value>, results: &Value) -> Value {
-    let class = results.get("machine").and_then(|m| m.get("class")).cloned().unwrap_or(Value::Null);
-    let mode = results.get("mode").and_then(Value::as_str).unwrap_or("full").to_string();
-    let mut modes = old.filter(|o| o.get("machine_class") == Some(&class)).and_then(|o| o.get("modes")).and_then(Value::as_object).cloned().unwrap_or_default();
+    let class = results
+        .get("machine")
+        .and_then(|m| m.get("class"))
+        .cloned()
+        .unwrap_or(Value::Null);
+    let mode = results
+        .get("mode")
+        .and_then(Value::as_str)
+        .unwrap_or("full")
+        .to_string();
+    let mut modes = old
+        .filter(|o| o.get("machine_class") == Some(&class))
+        .and_then(|o| o.get("modes"))
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default();
     let scenarios: serde_json::Map<String, Value> = results
         .get("scenarios")
         .and_then(Value::as_object)
-        .map(|m| m.iter().filter(|(_, v)| v.get("p50_ms").is_some_and(|x| !x.is_null())).map(|(k, v)| (k.clone(), Stats::from_json(v).to_json())).collect())
+        .map(|m| {
+            m.iter()
+                .filter(|(_, v)| v.get("p50_ms").is_some_and(|x| !x.is_null()))
+                .map(|(k, v)| (k.clone(), Stats::from_json(v).to_json()))
+                .collect()
+        })
         .unwrap_or_default();
     // Scenarios whose bench row failed (a crash the bench found): kept so the scorecard says so.
     let failed: serde_json::Map<String, Value> = results
         .get("scenarios")
         .and_then(Value::as_object)
-        .map(|m| m.iter().filter_map(|(k, v)| v.get("status")?.as_str()?.strip_prefix(MISSING_PREFIX).map(|e| (k.clone(), json!(e)))).collect())
+        .map(|m| {
+            m.iter()
+                .filter_map(|(k, v)| {
+                    v.get("status")?
+                        .as_str()?
+                        .strip_prefix(MISSING_PREFIX)
+                        .map(|e| (k.clone(), json!(e)))
+                })
+                .collect()
+        })
         .unwrap_or_default();
     modes.insert(
         mode,
@@ -622,7 +783,14 @@ struct Opts {
 }
 
 fn parse_opts(rest: &[&str]) -> Result<Opts, String> {
-    let mut o = Opts { quick: false, update_baseline: false, threshold: None, benches: Vec::new(), skip_build: false, reuse: false };
+    let mut o = Opts {
+        quick: false,
+        update_baseline: false,
+        threshold: None,
+        benches: Vec::new(),
+        skip_build: false,
+        reuse: false,
+    };
     let mut it = rest.iter();
     while let Some(a) = it.next() {
         match *a {
@@ -634,10 +802,16 @@ fn parse_opts(rest: &[&str]) -> Result<Opts, String> {
                 o.skip_build = true;
             }
             "--threshold" => {
-                let v = it.next().and_then(|v| v.parse::<f64>().ok()).filter(|v| v.is_finite() && *v > 0.0).ok_or("--threshold needs a percentage > 0")?;
+                let v = it
+                    .next()
+                    .and_then(|v| v.parse::<f64>().ok())
+                    .filter(|v| v.is_finite() && *v > 0.0)
+                    .ok_or("--threshold needs a percentage > 0")?;
                 o.threshold = Some(v);
             }
-            "--bench" => o.benches.push(it.next().ok_or("--bench needs a name")?.to_string()),
+            "--bench" => o
+                .benches
+                .push(it.next().ok_or("--bench needs a name")?.to_string()),
             other => return Err(format!("perf: unknown option `{other}`")),
         }
     }
@@ -646,7 +820,10 @@ fn parse_opts(rest: &[&str]) -> Result<Opts, String> {
 
 fn target_dir() -> Result<PathBuf, String> {
     let m = crate::metadata()?;
-    m.get("target_directory").and_then(Value::as_str).map(PathBuf::from).ok_or_else(|| "cargo metadata: no target_directory".into())
+    m.get("target_directory")
+        .and_then(Value::as_str)
+        .map(PathBuf::from)
+        .ok_or_else(|| "cargo metadata: no target_directory".into())
 }
 
 fn write(path: &Path, text: &str) -> Result<(), String> {
@@ -658,7 +835,8 @@ fn write(path: &Path, text: &str) -> Result<(), String> {
 
 pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
     let o = parse_opts(rest)?;
-    let text = std::fs::read_to_string(root.join(BUDGETS)).map_err(|e| format!("read {BUDGETS}: {e}"))?;
+    let text =
+        std::fs::read_to_string(root.join(BUDGETS)).map_err(|e| format!("read {BUDGETS}: {e}"))?;
     let budgets = parse_budgets(&text)?;
     let mode = if o.quick { "quick" } else { "full" };
     let threshold = o.threshold.unwrap_or(budgets.settings.regression_pct);
@@ -692,7 +870,10 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
     if !o.skip_build {
         let mut by_pkg: BTreeMap<&str, Vec<&str>> = BTreeMap::new();
         for (b, _) in &plan {
-            by_pkg.entry(b.package.as_str()).or_default().push(b.example());
+            by_pkg
+                .entry(b.package.as_str())
+                .or_default()
+                .push(b.example());
         }
         for (pkg, examples) in by_pkg {
             let mut c = crate::cargo();
@@ -700,7 +881,13 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
             for e in &examples {
                 c.args(["--example", e]);
             }
-            crate::run(c, &format!("cargo build --release -p {pkg} --example {}", examples.join(" --example ")))?;
+            crate::run(
+                c,
+                &format!(
+                    "cargo build --release -p {pkg} --example {}",
+                    examples.join(" --example ")
+                ),
+            )?;
         }
     }
 
@@ -712,19 +899,35 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
         let before = load_avg();
         let t = Instant::now();
         let result = if o.reuse {
-            std::fs::read_to_string(&json_path).map_err(|e| format!("--reuse: {}: {e}", json_path.display()))
+            std::fs::read_to_string(&json_path)
+                .map_err(|e| format!("--reuse: {}: {e}", json_path.display()))
         } else {
             let _ = std::fs::remove_file(&json_path);
             if let Some(dir) = json_path.parent() {
-                std::fs::create_dir_all(dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
+                std::fs::create_dir_all(dir)
+                    .map_err(|e| format!("create {}: {e}", dir.display()))?;
             }
-            let exe = target.join("release").join("examples").join(format!("{}{}", b.example(), std::env::consts::EXE_SUFFIX));
+            let exe = target.join("release").join("examples").join(format!(
+                "{}{}",
+                b.example(),
+                std::env::consts::EXE_SUFFIX
+            ));
             let mut c = Command::new(&exe);
             c.current_dir(root).args(args).arg("--json").arg(&json_path);
-            let shown = format!("{} {} --json {}", b.example(), args.join(" "), json_path.display());
-            crate::run(c, &shown).and_then(|()| std::fs::read_to_string(&json_path).map_err(|e| format!("{}: no JSON report ({e})", b.name)))
+            let shown = format!(
+                "{} {} --json {}",
+                b.example(),
+                args.join(" "),
+                json_path.display()
+            );
+            crate::run(c, &shown).and_then(|()| {
+                std::fs::read_to_string(&json_path)
+                    .map_err(|e| format!("{}: no JSON report ({e})", b.name))
+            })
         };
-        let parsed = result.and_then(|t| serde_json::from_str::<Value>(&t).map_err(|e| format!("{}: bad JSON: {e}", b.name)));
+        let parsed = result.and_then(|t| {
+            serde_json::from_str::<Value>(&t).map_err(|e| format!("{}: bad JSON: {e}", b.name))
+        });
         let after = load_avg();
         bench_meta.insert(
             b.name.clone(),
@@ -763,7 +966,12 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
     let gpu = reports
         .values()
         .filter_map(|r| r.as_ref().ok())
-        .find_map(|r| r.get("context").and_then(|c| c.get("gpu_adapter")).and_then(Value::as_str).map(str::to_string));
+        .find_map(|r| {
+            r.get("context")
+                .and_then(|c| c.get("gpu_adapter"))
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        });
     let gpu_name = gpu.clone().unwrap_or_else(|| "cpu-canvas".into());
     let class = machine_class(
         m.get("os").and_then(Value::as_str).unwrap_or(""),
@@ -776,11 +984,19 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
         obj.insert("class".into(), json!(class));
     }
 
-    let baseline_value: Option<Value> = std::fs::read_to_string(root.join(BASELINE)).ok().and_then(|t| serde_json::from_str(&t).ok());
-    let (baseline, baseline_note) = match baseline_value.as_ref().map(|b| baseline_for(b, &class, mode)) {
+    let baseline_value: Option<Value> = std::fs::read_to_string(root.join(BASELINE))
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok());
+    let (baseline, baseline_note) = match baseline_value
+        .as_ref()
+        .map(|b| baseline_for(b, &class, mode))
+    {
         Some(Ok(b)) => (Some(b), None),
         Some(Err(e)) => (None, Some(e)),
-        None => (None, Some(format!("no {BASELINE}: regression check skipped"))),
+        None => (
+            None,
+            Some(format!("no {BASELINE}: regression check skipped")),
+        ),
     };
     let outcomes = evaluate(&budgets, &reports, baseline.as_ref(), threshold, !o.quick);
 
@@ -789,7 +1005,11 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
         .iter()
         .zip(&outcomes)
         .map(|(sc, oc)| {
-            let mut v = oc.stats.as_ref().map(Stats::to_json).unwrap_or_else(|| json!({}));
+            let mut v = oc
+                .stats
+                .as_ref()
+                .map(Stats::to_json)
+                .unwrap_or_else(|| json!({}));
             if let Some(obj) = v.as_object_mut() {
                 obj.insert("title".into(), json!(sc.title));
                 obj.insert("issue".into(), json!(sc.issue));
@@ -809,8 +1029,15 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
             (sc.id.clone(), v)
         })
         .collect();
-    let failures: Vec<String> = outcomes.iter().filter(|o| o.status.fails()).map(|o| format!("{} {}: {}", o.id, o.title, o.status.label())).collect();
-    let bench_failures: Vec<String> = reports.iter().filter_map(|(n, r)| r.as_ref().err().map(|e| format!("bench {n}: {e}"))).collect();
+    let failures: Vec<String> = outcomes
+        .iter()
+        .filter(|o| o.status.fails())
+        .map(|o| format!("{} {}: {}", o.id, o.title, o.status.label()))
+        .collect();
+    let bench_failures: Vec<String> = reports
+        .iter()
+        .filter_map(|(n, r)| r.as_ref().err().map(|e| format!("bench {n}: {e}")))
+        .collect();
     let commit = git(root, &["rev-parse", "HEAD"]);
     let dirty = git(root, &["status", "--porcelain"]).is_some_and(|s| !s.is_empty());
     let results = json!({
@@ -828,7 +1055,8 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
         "scenarios": scenarios,
         "failures": failures.iter().chain(&bench_failures).collect::<Vec<_>>(),
     });
-    let text = serde_json::to_string_pretty(&results).map_err(|e| format!("encode results: {e}"))?;
+    let text =
+        serde_json::to_string_pretty(&results).map_err(|e| format!("encode results: {e}"))?;
     write(&out_dir.join("results.json"), &text)?;
 
     let summary = render_summary(&results, &outcomes, baseline_note.as_deref());
@@ -838,21 +1066,41 @@ pub fn run(root: &Path, rest: &[&str]) -> Result<(), String> {
 
     if o.update_baseline {
         let nb = updated_baseline(baseline_value.as_ref(), &results);
-        let text = serde_json::to_string_pretty(&nb).map_err(|e| format!("encode baseline: {e}"))?;
+        let text =
+            serde_json::to_string_pretty(&nb).map_err(|e| format!("encode baseline: {e}"))?;
         write(&root.join(BASELINE), &format!("{text}\n"))?;
         println!("updated {BASELINE} ({mode}, machine class {class})");
     }
     let all: Vec<&String> = failures.iter().chain(&bench_failures).collect();
-    if all.is_empty() { Ok(()) } else { Err(format!("{} perf failure(s):\n  {}", all.len(), all.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n  "))) }
+    if all.is_empty() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{} perf failure(s):\n  {}",
+            all.len(),
+            all.iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join("\n  ")
+        ))
+    }
 }
 
 /// The committed baseline's full-mode numbers judged against the budgets (what the scorecard
 /// shows: deterministic, no run needed). Scenarios without a baseline number are "not run".
 pub fn outcomes_from_baseline(budgets: &Budgets, baseline: Option<&Value>) -> Vec<Outcome> {
     let mode = baseline.and_then(|b| b.get("modes")?.get("full"));
-    let full: Option<BTreeMap<String, Stats>> =
-        mode.and_then(|m| m.get("scenarios")?.as_object().cloned()).map(|m| m.iter().map(|(k, v)| (k.clone(), Stats::from_json(v))).collect());
-    let failed = |id: &str| mode.and_then(|m| m.get("failed")?.get(id)?.as_str()).map(str::to_string);
+    let full: Option<BTreeMap<String, Stats>> = mode
+        .and_then(|m| m.get("scenarios")?.as_object().cloned())
+        .map(|m| {
+            m.iter()
+                .map(|(k, v)| (k.clone(), Stats::from_json(v)))
+                .collect()
+        });
+    let failed = |id: &str| {
+        mode.and_then(|m| m.get("failed")?.get(id)?.as_str())
+            .map(str::to_string)
+    };
     budgets
         .scenario
         .iter()
@@ -860,7 +1108,14 @@ pub fn outcomes_from_baseline(budgets: &Budgets, baseline: Option<&Value>) -> Ve
             let stats = full.as_ref().and_then(|f| f.get(&sc.id)).cloned();
             let status = match (&sc.not_measurable, &stats) {
                 (Some(w), _) => Status::NotMeasurable(w.clone()),
-                (None, Some(st)) => verdict(sc, st, None, &budgets.settings, budgets.settings.regression_pct, true),
+                (None, Some(st)) => verdict(
+                    sc,
+                    st,
+                    None,
+                    &budgets.settings,
+                    budgets.settings.regression_pct,
+                    true,
+                ),
                 (None, None) => failed(&sc.id).map_or(Status::NotRun, Status::Missing),
             };
             Outcome {
@@ -878,14 +1133,30 @@ pub fn outcomes_from_baseline(budgets: &Budgets, baseline: Option<&Value>) -> Ve
 }
 
 pub fn fmt_load(v: Option<&Value>) -> String {
-    v.and_then(Value::as_array).map_or_else(|| "n/a".into(), |a| a.iter().filter_map(Value::as_f64).map(|x| format!("{x:.2}")).collect::<Vec<_>>().join(" / "))
+    v.and_then(Value::as_array).map_or_else(
+        || "n/a".into(),
+        |a| {
+            a.iter()
+                .filter_map(Value::as_f64)
+                .map(|x| format!("{x:.2}"))
+                .collect::<Vec<_>>()
+                .join(" / ")
+        },
+    )
 }
 
 /// The Markdown summary of one run: context lines and the scenario table.
-pub fn render_summary(results: &Value, outcomes: &[Outcome], baseline_note: Option<&str>) -> String {
+pub fn render_summary(
+    results: &Value,
+    outcomes: &[Outcome],
+    baseline_note: Option<&str>,
+) -> String {
     let m = results.get("machine").cloned().unwrap_or(Value::Null);
     let s = |v: Option<&Value>| v.and_then(Value::as_str).unwrap_or("unknown").to_string();
-    let ram = m.get("ram_bytes").and_then(Value::as_u64).map_or_else(|| "?".into(), |b| format!("{} GB", b >> 30));
+    let ram = m
+        .get("ram_bytes")
+        .and_then(Value::as_u64)
+        .map_or_else(|| "?".into(), |b| format!("{} GB", b >> 30));
     let mut out = format!(
         "## Performance ({} run)\n\n- Machine: {} ({} cores, {ram}), GPU {}, {} {}; class `{}`\n- Commit {}{}, {}\n- Load average (1/5/15 min): {} at start, {} at end\n",
         s(results.get("mode")),
@@ -896,7 +1167,11 @@ pub fn render_summary(results: &Value, outcomes: &[Outcome], baseline_note: Opti
         s(m.get("arch")),
         s(m.get("class")),
         s(results.get("commit")),
-        if results.get("dirty").and_then(Value::as_bool) == Some(true) { " (dirty)" } else { "" },
+        if results.get("dirty").and_then(Value::as_bool) == Some(true) {
+            " (dirty)"
+        } else {
+            ""
+        },
         s(results.get("date")),
         fmt_load(results.get("load_avg_start")),
         fmt_load(results.get("load_avg_end")),
@@ -910,9 +1185,18 @@ pub fn render_summary(results: &Value, outcomes: &[Outcome], baseline_note: Opti
     if let Some(b) = results.get("benches").and_then(Value::as_object) {
         for (name, v) in b {
             let st = v.get("status").and_then(Value::as_str).unwrap_or("?");
-            let secs = v.get("seconds").and_then(Value::as_f64).map_or_else(String::new, |x| format!(", {x:.0} s"));
-            let err = v.get("error").and_then(Value::as_str).map_or_else(String::new, |e| format!(": {e}"));
-            out.push_str(&format!("- Bench `{name}`: {st}{secs}, load {}{err}\n", fmt_load(v.get("load_avg_before"))));
+            let secs = v
+                .get("seconds")
+                .and_then(Value::as_f64)
+                .map_or_else(String::new, |x| format!(", {x:.0} s"));
+            let err = v
+                .get("error")
+                .and_then(Value::as_str)
+                .map_or_else(String::new, |e| format!(": {e}"));
+            out.push_str(&format!(
+                "- Bench `{name}`: {st}{secs}, load {}{err}\n",
+                fmt_load(v.get("load_avg_before"))
+            ));
         }
     }
     out.push('\n');
@@ -972,8 +1256,18 @@ not_measurable = "needs a frame harness"
         assert_eq!(b.scenario[2].target_text(), "≤ 16 ms per frame");
         assert_eq!(b.settings.regression_min_ms, 0.5);
         // Duplicate ids, undefined benches, half-specified rows and bad budgets are rejected.
-        assert!(parse_budgets(&format!("{TOML}\n[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nnot_measurable = \"y\"\n")).is_err());
-        assert!(parse_budgets("[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nbench = \"nope\"\nrow = \"r\"\n").is_err());
+        assert!(
+            parse_budgets(&format!(
+                "{TOML}\n[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nnot_measurable = \"y\"\n"
+            ))
+            .is_err()
+        );
+        assert!(
+            parse_budgets(
+                "[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nbench = \"nope\"\nrow = \"r\"\n"
+            )
+            .is_err()
+        );
         assert!(parse_budgets("[[bench]]\nname = \"b\"\npackage = \"p\"\n[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nbench = \"b\"\n").is_err());
         assert!(
             parse_budgets("[[bench]]\nname = \"b\"\npackage = \"p\"\n[[scenario]]\nid = \"P1\"\ntitle = \"x\"\nbench = \"b\"\nrow = \"r\"\nbudget_ms = -1\n")
@@ -986,8 +1280,13 @@ not_measurable = "needs a frame harness"
 
     #[test]
     fn row_stats_prefers_samples_and_never_invents_p95() {
-        let s = row_stats(&json!({"name": "x", "samples_ms": [5.0, 1.0, 3.0, 2.0, 4.0], "p50_ms": 99.0}));
-        assert_eq!((s.n, s.p50, s.p95, s.max), (5, Some(3.0), Some(5.0), Some(5.0)));
+        let s = row_stats(
+            &json!({"name": "x", "samples_ms": [5.0, 1.0, 3.0, 2.0, 4.0], "p50_ms": 99.0}),
+        );
+        assert_eq!(
+            (s.n, s.p50, s.p95, s.max),
+            (5, Some(3.0), Some(5.0), Some(5.0))
+        );
         // Older rows: median + max only. p95 stays empty.
         let s = row_stats(&json!({"name": "x", "median_ms": 4.0, "min_ms": 1.0, "max_ms": 9.0}));
         assert_eq!((s.p50, s.p95, s.max), (Some(4.0), None, Some(9.0)));
@@ -1017,14 +1316,30 @@ not_measurable = "needs a frame harness"
         );
         let out = evaluate(&b, &reports, None, 15.0, true);
         assert_eq!(out[0].status, Status::Broken, "p95 30 > 25 and enforced");
-        assert_eq!(out[1].status, Status::Over, "not enforced: reported, doesn't fail");
+        assert_eq!(
+            out[1].status,
+            Status::Over,
+            "not enforced: reported, doesn't fail"
+        );
         assert!(matches!(out[2].status, Status::NotMeasurable(_)));
         assert!(out[0].status.fails() && !out[1].status.fails() && !out[2].status.fails());
 
         // Quick mode: no budgets, only regressions.
         let mut base = BTreeMap::new();
-        base.insert("P1".to_string(), Stats { p50: Some(10.0), ..Default::default() });
-        base.insert("P2".to_string(), Stats { p50: Some(30.0), ..Default::default() });
+        base.insert(
+            "P1".to_string(),
+            Stats {
+                p50: Some(10.0),
+                ..Default::default()
+            },
+        );
+        base.insert(
+            "P2".to_string(),
+            Stats {
+                p50: Some(30.0),
+                ..Default::default()
+            },
+        );
         let out = evaluate(&b, &reports, Some(&base), 15.0, false);
         assert_eq!(out[0].status, Status::Regressed, "p50 12 vs 10 is +20 %");
         assert_eq!(out[1].status, Status::Regressed, "p50 40 vs 30");
@@ -1033,7 +1348,10 @@ not_measurable = "needs a frame harness"
 
         // A row the bench didn't produce fails, with the bench's own error when it has one.
         let mut reports = BTreeMap::new();
-        reports.insert("b".to_string(), Ok(json!({"rows": [], "context": {"errors": [{"name": "move row", "error": "boom"}]}})));
+        reports.insert(
+            "b".to_string(),
+            Ok(json!({"rows": [], "context": {"errors": [{"name": "move row", "error": "boom"}]}})),
+        );
         let out = evaluate(&b, &reports, None, 15.0, true);
         assert_eq!(out[0].status, Status::Missing("boom".into()));
         assert!(matches!(&out[1].status, Status::Missing(e) if e.contains("not in")));
@@ -1041,7 +1359,11 @@ not_measurable = "needs a frame harness"
         let out = evaluate(&b, &BTreeMap::new(), None, 15.0, true);
         assert_eq!(out[0].status, Status::NotRun);
         assert!(!out[0].status.fails());
-        assert_eq!(counts(&out), (0, 0, 0, 1), "not-run scenarios are not tracked; the scorecard counts them separately");
+        assert_eq!(
+            counts(&out),
+            (0, 0, 0, 1),
+            "not-run scenarios are not tracked; the scorecard counts them separately"
+        );
     }
 
     #[test]
@@ -1050,7 +1372,10 @@ not_measurable = "needs a frame harness"
         let b = updated_baseline(None, &results);
         let got = baseline_for(&b, "macos-aarch64-m4", "full").unwrap();
         assert_eq!(got.get("P1").and_then(|s| s.p50), Some(3.0));
-        assert!(!got.contains_key("P3"), "rows without numbers are not baselined");
+        assert!(
+            !got.contains_key("P3"),
+            "rows without numbers are not baselined"
+        );
         assert!(baseline_for(&b, "linux-x86-64-epyc", "full").is_err());
         assert!(baseline_for(&b, "macos-aarch64-m4", "quick").is_err());
         // Same class: the other mode is kept. New class: replaced.
@@ -1073,9 +1398,15 @@ not_measurable = "needs a frame harness"
     #[test]
     fn machine_helpers() {
         assert_eq!(slug("Apple M4 Pro (Metal)"), "apple-m4-pro-metal");
-        assert_eq!(machine_class("macos", "aarch64", "Apple M4 Pro", "Apple M4 Pro"), "macos-aarch64-apple-m4-pro-apple-m4-pro");
+        assert_eq!(
+            machine_class("macos", "aarch64", "Apple M4 Pro", "Apple M4 Pro"),
+            "macos-aarch64-apple-m4-pro-apple-m4-pro"
+        );
         assert_eq!(parse_loadavg("{ 2.10 1.50 0.75 }"), Some([2.1, 1.5, 0.75]));
-        assert_eq!(parse_loadavg("0.52 0.58 0.59 1/467 12345\n"), Some([0.52, 0.58, 0.59]));
+        assert_eq!(
+            parse_loadavg("0.52 0.58 0.59 1/467 12345\n"),
+            Some([0.52, 0.58, 0.59])
+        );
         assert_eq!(parse_loadavg("garbage"), None);
         assert_eq!(iso_utc(0), "1970-01-01T00:00:00Z");
         assert_eq!(iso_utc(1_791_158_400), "2026-10-05T00:00:00Z");
@@ -1086,12 +1417,21 @@ not_measurable = "needs a frame harness"
     fn table_lists_not_measurable_rows_separately() {
         let b = parse_budgets(TOML).unwrap();
         let mut reports = BTreeMap::new();
-        reports.insert("b".to_string(), Ok(report(json!([{"name": "move row", "samples_ms": [10.0], "peak_rss_bytes": 3u64 << 30}]))));
+        reports.insert(
+            "b".to_string(),
+            Ok(report(
+                json!([{"name": "move row", "samples_ms": [10.0], "peak_rss_bytes": 3u64 << 30}]),
+            )),
+        );
         let t = render_table(&evaluate(&b, &reports, None, 15.0, true), true);
         assert!(t.contains("| P1 | move | ≤ 25 ms p95 | 10.0 | 10.0 | 10.0 | 3.0 GB |"));
         assert!(t.contains("**Not measurable yet**"));
         assert!(t.contains("| P3 | zoom | ≤ 16 ms per frame | needs a frame harness |  |"));
-        assert_eq!(counts(&evaluate(&b, &reports, None, 15.0, true)), (1, 1, 0, 1), "the row the bench lacks counts as failing");
+        assert_eq!(
+            counts(&evaluate(&b, &reports, None, 15.0, true)),
+            (1, 1, 0, 1),
+            "the row the bench lacks counts as failing"
+        );
     }
 
     #[test]

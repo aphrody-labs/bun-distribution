@@ -15,8 +15,13 @@ use clap::ValueEnum;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-const COMPLETE_PLAYER_CODES: [&str; 5] =
-    ["c01001900", "c01000010", "c02023290", "c02023370", "c02023380"];
+const COMPLETE_PLAYER_CODES: [&str; 5] = [
+    "c01001900",
+    "c01000010",
+    "c02023290",
+    "c02023370",
+    "c02023380",
+];
 const APHRODY_PLAYER_CODE: &str = "c01001900";
 const GOD_KNOWS_ID: &str = "whs00340";
 const GOD_KNOWS_HASH: u32 = 0x1C8C_E2B8;
@@ -54,7 +59,9 @@ const BEST_ITEMS: [BestItemDef; 4] = [
         additive_bonus: 70,
     },
 ];
-const SHIPPED_LOCALES: [&str; 9] = ["de", "en", "es", "fr", "it", "ja", "pt", "zh_hans", "zh_hant"];
+const SHIPPED_LOCALES: [&str; 9] = [
+    "de", "en", "es", "fr", "it", "ja", "pt", "zh_hans", "zh_hant",
+];
 
 /// Read-only VFS surface needed by the generator and by synthetic tests.
 pub trait BundleSource {
@@ -196,11 +203,23 @@ pub fn split_archives(bundle: &GeneratedBundle) -> anyhow::Result<BTreeMap<Strin
         .files
         .iter()
         .map(|file| {
-            let group = if file.categories.iter().any(|category| category.starts_with("startup.")) {
+            let group = if file
+                .categories
+                .iter()
+                .any(|category| category.starts_with("startup."))
+            {
                 "menu"
-            } else if file.categories.iter().any(|category| category == "cold.item_atlas") {
+            } else if file
+                .categories
+                .iter()
+                .any(|category| category == "cold.item_atlas")
+            {
                 "item_atlas"
-            } else if file.categories.iter().any(|category| category == "cold.native_table") {
+            } else if file
+                .categories
+                .iter()
+                .any(|category| category == "cold.native_table")
+            {
                 "native_tables"
             } else {
                 "profile"
@@ -246,13 +265,19 @@ pub fn write_split_archives(bundle: &GeneratedBundle, directory: &Path) -> anyho
         "sourceSha256": bundle.report.sha256,
         "archives": references,
     });
-    write_atomic(&directory.join("manifest.json"), &serde_json::to_vec_pretty(&manifest)?)
+    write_atomic(
+        &directory.join("manifest.json"),
+        &serde_json::to_vec_pretty(&manifest)?,
+    )
 }
 
 fn validate_options(options: &InitialBundleOptions) -> anyhow::Result<()> {
     if options.screen.is_empty()
         || options.screen.len() > 96
-        || !options.screen.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        || !options
+            .screen
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
     {
         bail!("invalid menu screen: {}", options.screen);
     }
@@ -271,16 +296,24 @@ fn is_locale_tag(value: &str) -> bool {
 }
 
 fn parent_directory_name(path: &str) -> &str {
-    path.rsplit_once('/').and_then(|(directory, _)| directory.rsplit('/').next()).unwrap_or("")
+    path.rsplit_once('/')
+        .and_then(|(directory, _)| directory.rsplit('/').next())
+        .unwrap_or("")
 }
 
 fn companion_path(paths: &[String], logical: &str, locale: &str) -> Option<String> {
-    let logical = logical.trim().trim_start_matches('#').trim_start_matches('/');
+    let logical = logical
+        .trim()
+        .trim_start_matches('#')
+        .trim_start_matches('/');
     if logical.is_empty() {
         return None;
     }
-    let direct =
-        if logical.starts_with("data/") { logical.to_owned() } else { format!("data/{logical}") };
+    let direct = if logical.starts_with("data/") {
+        logical.to_owned()
+    } else {
+        format!("data/{logical}")
+    };
     if paths.binary_search(&direct).is_ok() {
         return Some(direct);
     }
@@ -297,15 +330,29 @@ fn companion_path(paths: &[String], logical: &str, locale: &str) -> Option<Strin
     let candidates: Vec<&String> = paths
         .iter()
         .filter(|path| {
-            path.rsplit('/').next().is_some_and(|name| name.eq_ignore_ascii_case(basename))
+            path.rsplit('/')
+                .next()
+                .is_some_and(|name| name.eq_ignore_ascii_case(basename))
         })
         .collect();
     candidates
         .iter()
         .find(|path| parent_directory_name(path) == locale)
-        .or_else(|| candidates.iter().find(|path| !is_locale_tag(parent_directory_name(path))))
-        .or_else(|| candidates.iter().find(|path| parent_directory_name(path) == "common"))
-        .or_else(|| candidates.iter().find(|path| parent_directory_name(path) == "en"))
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|path| !is_locale_tag(parent_directory_name(path)))
+        })
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|path| parent_directory_name(path) == "common")
+        })
+        .or_else(|| {
+            candidates
+                .iter()
+                .find(|path| parent_directory_name(path) == "en")
+        })
         .or_else(|| candidates.first())
         .map(|path| (*path).clone())
 }
@@ -315,7 +362,10 @@ fn add_reason(
     path: impl Into<String>,
     reason: impl Into<String>,
 ) {
-    selected.entry(path.into()).or_default().insert(reason.into());
+    selected
+        .entry(path.into())
+        .or_default()
+        .insert(reason.into());
 }
 
 fn category_for_reason(reason: &str) -> String {
@@ -347,8 +397,9 @@ fn category_for_reason(reason: &str) -> String {
         "profile.change_mode".to_owned()
     } else if reason.starts_with("aphrodyLean:awakening:") {
         "profile.awakening".to_owned()
-    } else if let Some(category) =
-        reason.strip_prefix("aphrodyLean:bestItem:").and_then(|rest| rest.split(':').next())
+    } else if let Some(category) = reason
+        .strip_prefix("aphrodyLean:bestItem:")
+        .and_then(|rest| rest.split(':').next())
     {
         format!("profile.item.{category}")
     } else {
@@ -371,7 +422,10 @@ fn require_path(
     path: &str,
     reason: &str,
 ) -> anyhow::Result<()> {
-    if paths.binary_search_by(|candidate| candidate.as_str().cmp(path)).is_err() {
+    if paths
+        .binary_search_by(|candidate| candidate.as_str().cmp(path))
+        .is_err()
+    {
         bail!("required VFS path is absent: {path} ({reason})");
     }
     add_reason(selected, path, reason);
@@ -557,8 +611,10 @@ fn find_item_atlases<S: BundleSource>(
     paths: &[String],
     codes: &BTreeSet<String>,
 ) -> anyhow::Result<BTreeMap<String, Vec<String>>> {
-    let mut by_code =
-        codes.iter().map(|code| (code.clone(), Vec::new())).collect::<BTreeMap<_, _>>();
+    let mut by_code = codes
+        .iter()
+        .map(|code| (code.clone(), Vec::new()))
+        .collect::<BTreeMap<_, _>>();
     for path in paths.iter().filter(|path| {
         path.starts_with("data/dx11/menu/200_icon/02_icon_item/") && path.ends_with(".g4tx")
     }) {
@@ -577,7 +633,10 @@ fn find_item_atlases<S: BundleSource>(
         .map(|(code, _)| code.clone())
         .collect();
     if !missing.is_empty() {
-        bail!("native item icon atlas is absent for asset codes: {}", missing.join(", "));
+        bail!(
+            "native item icon atlas is absent for asset codes: {}",
+            missing.join(", ")
+        );
     }
     Ok(by_code)
 }
@@ -641,10 +700,14 @@ fn enrich_aphrody_profile<S: BundleSource>(
     let aura_config = latest_config_path(paths, "data/common/gamedata/skill", "aura_skill_config")?;
     let item_config = latest_config_path(paths, "data/common/gamedata/item", "item_config")?;
     let chara_config = latest_config_path(paths, "data/common/gamedata/character", "chara_param")?;
-    let skill_text =
-        deferred_existing_path(paths, format!("data/common/text/{locale}/skill_text.cfg.bin"))?;
-    let item_text =
-        deferred_existing_path(paths, format!("data/common/text/{locale}/item_text.cfg.bin"))?;
+    let skill_text = deferred_existing_path(
+        paths,
+        format!("data/common/text/{locale}/skill_text.cfg.bin"),
+    )?;
+    let item_text = deferred_existing_path(
+        paths,
+        format!("data/common/text/{locale}/item_text.cfg.bin"),
+    )?;
 
     let skills =
         aphrody_nie_data::skill::parse_skill_config(&read_cfg_json(source, &skill_config)?);
@@ -653,7 +716,10 @@ fn enrich_aphrody_profile<S: BundleSource>(
         .find(|skill| skill.skill_id_str == GOD_KNOWS_ID)
         .ok_or_else(|| anyhow!("God Knows is absent from {skill_config}"))?;
     if god_knows.skill_id.get() != GOD_KNOWS_HASH {
-        bail!("God Knows ID drift: expected 0x{GOD_KNOWS_HASH:08X}, got {}", god_knows.skill_id);
+        bail!(
+            "God Knows ID drift: expected 0x{GOD_KNOWS_HASH:08X}, got {}",
+            god_knows.skill_id
+        );
     }
     for path in [&skill_config, &skill_text] {
         add_reason(selected, path, descriptors[1].reason);
@@ -663,9 +729,15 @@ fn enrich_aphrody_profile<S: BundleSource>(
     let auras = aphrody_nie_data::aura::parse_all_aura_cmds(&read_cfg_json(source, &aura_config)?);
     for descriptor in &descriptors[2..] {
         let aura_id = raw_profile_hash(descriptor.id)?;
-        let aura = auras.iter().find(|aura| aura.aura_id == aura_id).ok_or_else(|| {
-            anyhow!("measured aura is absent from {aura_config}: {}", descriptor.id)
-        })?;
+        let aura = auras
+            .iter()
+            .find(|aura| aura.aura_id == aura_id)
+            .ok_or_else(|| {
+                anyhow!(
+                    "measured aura is absent from {aura_config}: {}",
+                    descriptor.id
+                )
+            })?;
         if descriptor.asset_code != Some(aura.asset_code.as_str()) {
             bail!(
                 "measured aura asset drift for {}: expected {:?}, got {}",
@@ -680,12 +752,18 @@ fn enrich_aphrody_profile<S: BundleSource>(
         }
     }
     add_reason(selected, &chara_config, "aphrodyLean:playerIndex:c01001900");
-    add_reason(selected, &chara_config, "aphrodyLean:cold:nativeTable:chara");
+    add_reason(
+        selected,
+        &chara_config,
+        "aphrodyLean:cold:nativeTable:chara",
+    );
 
     let items = aphrody_nie_data::item::parse_all_items(&read_cfg_json(source, &item_config)?);
     let (winners, unranked_categories) = measured_best_items(&items)?;
-    let winner_codes: BTreeSet<String> =
-        winners.iter().map(|winner| winner.definition.asset_code.to_owned()).collect();
+    let winner_codes: BTreeSet<String> = winners
+        .iter()
+        .map(|winner| winner.definition.asset_code.to_owned())
+        .collect();
     let item_atlases = find_item_atlases(source, paths, &winner_codes)?;
     let mut selections = profile_selections(selected, descriptors);
     let player = selections
@@ -707,7 +785,11 @@ fn enrich_aphrody_profile<S: BundleSource>(
         for path in &bundled_paths {
             add_reason(selected, path, &reason);
             if path.contains("/200_icon/02_icon_item/") {
-                add_reason(selected, path, format!("aphrodyLean:cold:itemAtlas:{asset_code}"));
+                add_reason(
+                    selected,
+                    path,
+                    format!("aphrodyLean:cold:itemAtlas:{asset_code}"),
+                );
             } else {
                 add_reason(selected, path, "aphrodyLean:cold:nativeTable:item");
             }
@@ -723,7 +805,9 @@ fn enrich_aphrody_profile<S: BundleSource>(
         });
     }
     selections.sort_by(|left, right| {
-        left.category.cmp(&right.category).then_with(|| left.id.cmp(&right.id))
+        left.category
+            .cmp(&right.category)
+            .then_with(|| left.id.cmp(&right.id))
     });
     Ok((selections, unranked_categories))
 }
@@ -742,8 +826,10 @@ fn initial_plan_exact_paths(
         .as_str()
         .ok_or_else(|| anyhow!("shared initial VFS plan has no startup screen"))?;
     let planned_setting = format!("data/common/gamedata/menu/cfg/{planned_screen}_setting.cfg.bin");
-    let requested_setting =
-        format!("data/common/gamedata/menu/cfg/{}_setting.cfg.bin", options.screen);
+    let requested_setting = format!(
+        "data/common/gamedata/menu/cfg/{}_setting.cfg.bin",
+        options.screen
+    );
     plan["exactPaths"]
         .as_array()
         .ok_or_else(|| anyhow!("shared initial VFS plan has no exact paths"))?
@@ -790,7 +876,10 @@ fn select_menu_companions<S: BundleSource>(
 
     for resource in setting.resources {
         let resolved = companion_path(paths, &resource.logical_path, locale).ok_or_else(|| {
-            anyhow!("menu resource companion is absent: {}", resource.logical_path)
+            anyhow!(
+                "menu resource companion is absent: {}",
+                resource.logical_path
+            )
         })?;
         companions.insert(resolved);
     }
@@ -801,8 +890,9 @@ fn select_menu_companions<S: BundleSource>(
         let object = aphrody_nie_formats::objbin::parse(&objbin_bytes)
             .map_err(|error| anyhow!("invalid menu objbin {objbin_path}: {error}"))?;
         companions.insert(objbin_path);
-        for logical in
-            [object.g4pkm_path.as_deref(), object.g4tx_path.as_deref()].into_iter().flatten()
+        for logical in [object.g4pkm_path.as_deref(), object.g4tx_path.as_deref()]
+            .into_iter()
+            .flatten()
         {
             let resolved = companion_path(paths, logical, locale)
                 .ok_or_else(|| anyhow!("menu object companion is absent: {logical}"))?;
@@ -904,10 +994,16 @@ fn select_player_assets(
             count += 1;
         }
     }
-    let missing: Vec<_> =
-        player_codes.iter().filter(|code| !matched_codes.contains(**code)).copied().collect();
+    let missing: Vec<_> = player_codes
+        .iter()
+        .filter(|code| !matched_codes.contains(**code))
+        .copied()
+        .collect();
     if !missing.is_empty() {
-        bail!("featured player assets are absent for: {}", missing.join(", "));
+        bail!(
+            "featured player assets are absent for: {}",
+            missing.join(", ")
+        );
     }
     if include_native_table {
         for path in paths.iter().filter(|path| {
@@ -931,12 +1027,20 @@ pub fn generate<S: BundleSource>(
     paths.sort_unstable();
     paths.dedup();
     let mut selected = BTreeMap::<String, BTreeSet<String>>::new();
-    let setting_path = format!("data/common/gamedata/menu/cfg/{}_setting.cfg.bin", options.screen);
+    let setting_path = format!(
+        "data/common/gamedata/menu/cfg/{}_setting.cfg.bin",
+        options.screen
+    );
     for (path, reason) in initial_plan_exact_paths(options)? {
         require_path(&paths, &mut selected, &path, &reason)?;
     }
-    let menu_companions =
-        select_menu_companions(source, &paths, &mut selected, &setting_path, &options.locale)?;
+    let menu_companions = select_menu_companions(
+        source,
+        &paths,
+        &mut selected,
+        &setting_path,
+        &options.locale,
+    )?;
     let script_selection = select_scripts(source, &paths, &mut selected, &options.screen)?;
     if !script_selection.missing_include_names.is_empty() {
         bail!(
@@ -945,7 +1049,11 @@ pub fn generate<S: BundleSource>(
         );
     }
     let lean_descriptors = if options.profile == InitialBundleProfile::AphrodyLean {
-        Some(select_aphrody_lean_profile(&paths, &mut selected, &options.locale)?)
+        Some(select_aphrody_lean_profile(
+            &paths,
+            &mut selected,
+            &options.locale,
+        )?)
     } else {
         None
     };
@@ -1024,7 +1132,10 @@ pub fn generate<S: BundleSource>(
         },
         files: manifest_files,
     };
-    Ok(GeneratedBundle { bytes: bundle, report })
+    Ok(GeneratedBundle {
+        bytes: bundle,
+        report,
+    })
 }
 
 /// Write one artifact through a unique sibling temporary file and an atomic rename.
@@ -1052,7 +1163,11 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> anyhow::Result<()> {
         file.sync_all()
             .with_context(|| format!("sync temporary output {}", temporary.display()))?;
         fs::rename(&temporary, path).with_context(|| {
-            format!("atomically publish {} as {}", temporary.display(), path.display())
+            format!(
+                "atomically publish {} as {}",
+                temporary.display(),
+                path.display()
+            )
         })
     })();
     if result.is_err() {
@@ -1062,8 +1177,10 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> anyhow::Result<()> {
 }
 
 pub fn default_manifest_path(bundle_path: &Path) -> PathBuf {
-    let name =
-        bundle_path.file_name().and_then(|name| name.to_str()).unwrap_or("initial-vfs.bundle");
+    let name = bundle_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("initial-vfs.bundle");
     bundle_path.with_file_name(format!("{name}.manifest.json"))
 }
 
@@ -1088,7 +1205,10 @@ mod tests {
                 bytes: 1,
                 crc32: aphrody_nie_formats::cfgbin::crc32(&[index as u8]),
                 reasons: Vec::new(),
-                categories: categories.iter().map(|category| (*category).to_owned()).collect(),
+                categories: categories
+                    .iter()
+                    .map(|category| (*category).to_owned())
+                    .collect(),
             })
             .collect();
         let bytes = aphrody_nie_formats::preloaded_vfs::pack(
@@ -1176,7 +1296,10 @@ mod tests {
         }
 
         fn read(&self, path: &str) -> Result<Vec<u8>, String> {
-            self.0.get(path).cloned().ok_or_else(|| format!("missing: {path}"))
+            self.0
+                .get(path)
+                .cloned()
+                .ok_or_else(|| format!("missing: {path}"))
         }
     }
 
@@ -1230,7 +1353,10 @@ mod tests {
         let paths = source.paths();
         let mut selected = BTreeMap::new();
         let selection = select_scripts(&source, &paths, &mut selected, "main_menu").unwrap();
-        assert_eq!(selection.main_script, "data/common/script/lua/menu/main_menu_1.00.00.lua.bin");
+        assert_eq!(
+            selection.main_script,
+            "data/common/script/lua/menu/main_menu_1.00.00.lua.bin"
+        );
         assert_eq!(selection.loaded_include_names, ["LUA_SHARED_INC"]);
         assert!(selection.missing_include_names.is_empty());
         assert!(selection.execution_error.is_none());
@@ -1242,7 +1368,9 @@ mod tests {
         let mut paths = Vec::new();
         for code in COMPLETE_PLAYER_CODES {
             paths.push(format!("data/dx11/chr/_face/test/{code}/{code}.g4tx"));
-            paths.push(format!("data/dx11/menu/200_icon/10_icon_chr/face/{code}_l.g4tx"));
+            paths.push(format!(
+                "data/dx11/menu/200_icon/10_icon_chr/face/{code}_l.g4tx"
+            ));
         }
         paths.push("data/dx11/chr/_face/test/c01000010/c01000010_13.g4tx".to_owned());
         paths.sort_unstable();
@@ -1270,18 +1398,45 @@ mod tests {
     #[test]
     fn measured_best_items_keep_the_accessory_tie_and_reject_drift() {
         let items = vec![
-            item(0x68D5_15E4, ItemCategory::Shoes, "eq_sh1106101", Some((30, 31))),
-            item(0xD0A5_B1F0, ItemCategory::Misanga, "eq_mi0107901", Some((40, 32))),
-            item(0xAF89_CD7F, ItemCategory::Accessory, "eq_ac0107401", Some((50, 33))),
-            item(0xB426_9BF5, ItemCategory::Accessory, "eq_ac0104801", Some((50, 33))),
+            item(
+                0x68D5_15E4,
+                ItemCategory::Shoes,
+                "eq_sh1106101",
+                Some((30, 31)),
+            ),
+            item(
+                0xD0A5_B1F0,
+                ItemCategory::Misanga,
+                "eq_mi0107901",
+                Some((40, 32)),
+            ),
+            item(
+                0xAF89_CD7F,
+                ItemCategory::Accessory,
+                "eq_ac0107401",
+                Some((50, 33)),
+            ),
+            item(
+                0xB426_9BF5,
+                ItemCategory::Accessory,
+                "eq_ac0104801",
+                Some((50, 33)),
+            ),
             item(6, ItemCategory::Consume, "consume", None),
         ];
         let (winners, unranked) = measured_best_items(&items).unwrap();
         assert_eq!(
-            winners.iter().map(|winner| winner.item.item_id.get()).collect::<Vec<_>>(),
+            winners
+                .iter()
+                .map(|winner| winner.item.item_id.get())
+                .collect::<Vec<_>>(),
             [0x68D5_15E4, 0xD0A5_B1F0, 0xAF89_CD7F, 0xB426_9BF5]
         );
-        assert!(winners.iter().all(|winner| winner.definition.additive_bonus == 70));
+        assert!(
+            winners
+                .iter()
+                .all(|winner| winner.definition.additive_bonus == 70)
+        );
         assert_eq!(unranked, ["consume"]);
 
         let mut drifted = items;
@@ -1296,7 +1451,10 @@ mod tests {
             ("aphrodyLean:skill:whs00340", "profile.skill"),
             ("aphrodyLean:soul:soul_0xF5FFD1E5", "profile.soul"),
             ("aphrodyLean:keshin:keshin_0x62256EE2", "profile.keshin"),
-            ("aphrodyLean:changeMode:modechange_0x03D98821", "profile.change_mode"),
+            (
+                "aphrodyLean:changeMode:modechange_0x03D98821",
+                "profile.change_mode",
+            ),
             ("aphrodyLean:awakening:aura_0xA17C3D72", "profile.awakening"),
         ] {
             assert_eq!(category_for_reason(reason), category);
@@ -1308,7 +1466,10 @@ mod tests {
         let root = std::env::temp_dir().join(format!(
             "nie-vfs-bundle-test-{}-{}",
             std::process::id(),
-            std::thread::current().name().unwrap_or("worker").replace("::", "-")
+            std::thread::current()
+                .name()
+                .unwrap_or("worker")
+                .replace("::", "-")
         ));
         fs::create_dir_all(&root).unwrap();
         let output = root.join("initial.vfs");

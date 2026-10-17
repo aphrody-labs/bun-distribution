@@ -9,8 +9,8 @@
 //! can replace the inner `reqwest::Client` without touching this surface.
 
 use std::sync::{
-    Arc,
     atomic::{AtomicU64, Ordering},
+    Arc,
 };
 #[cfg(not(target_arch = "wasm32"))]
 use std::time::Duration;
@@ -118,12 +118,18 @@ impl HttpTransport {
             HeaderValue::from_str(&content_length.to_string())
                 .map_err(|e| GeminiError::Network(format!("invalid content-length: {e}")))?,
         );
-        headers.insert(HeaderName::from_static("origin"), HeaderValue::from_static(URL_ORIGIN));
+        headers.insert(
+            HeaderName::from_static("origin"),
+            HeaderValue::from_static(URL_ORIGIN),
+        );
         headers.insert(
             HeaderName::from_static("referer"),
             HeaderValue::from_static("https://gemini.google.com/"),
         );
-        headers.insert(HeaderName::from_static("x-same-domain"), HeaderValue::from_static("1"));
+        headers.insert(
+            HeaderName::from_static("x-same-domain"),
+            HeaderValue::from_static("1"),
+        );
         if let Some(model_token) = model {
             headers.insert(
                 HeaderName::from_static(MODEL_HEADER),
@@ -183,11 +189,19 @@ impl HttpTransport {
         }
         let _ = source_path; // StreamGenerate carries the thread via inner metadata, not the URL.
         let headers = self.build_headers(body.len(), model)?;
-        let response = self.client.post(url).headers(headers).body(body).send().await?;
+        let response = self
+            .client
+            .post(url)
+            .headers(headers)
+            .body(body)
+            .send()
+            .await?;
         let status = response.status();
         let text = response.text().await?;
         if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
-            return Err(GeminiError::Auth(format!("{status}: StreamGenerate rejected")));
+            return Err(GeminiError::Auth(format!(
+                "{status}: StreamGenerate rejected"
+            )));
         }
         if !status.is_success() {
             return Err(GeminiError::Rpc {
@@ -215,7 +229,11 @@ impl HttpTransport {
         model: Option<&str>,
     ) -> Result<String> {
         let body_form = encode_f_req(rpc_id, payload)?;
-        let body = format!("f.req={}&at={}", urlencoded(&body_form), urlencoded(&self.tokens.at));
+        let body = format!(
+            "f.req={}&at={}",
+            urlencoded(&body_form),
+            urlencoded(&self.tokens.at)
+        );
         let req_id = self.next_req_id();
         let mut url = url::Url::parse(URL_BATCH_EXECUTE)
             .map_err(|e| GeminiError::Network(format!("invalid batch URL: {e}")))?;
@@ -232,11 +250,19 @@ impl HttpTransport {
             }
         }
         let headers = self.build_headers(body.len(), model)?;
-        let response = self.client.post(url).headers(headers).body(body).send().await?;
+        let response = self
+            .client
+            .post(url)
+            .headers(headers)
+            .body(body)
+            .send()
+            .await?;
         let status = response.status();
         let text = response.text().await?;
         if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
-            return Err(GeminiError::Auth(format!("{status}: rejected by batchexecute")));
+            return Err(GeminiError::Auth(format!(
+                "{status}: rejected by batchexecute"
+            )));
         }
         if !status.is_success() {
             return Err(GeminiError::Rpc {
@@ -267,7 +293,11 @@ impl HttpTransport {
         model: Option<&str>,
     ) -> Result<Value> {
         let body_form = encode_f_req(rpc_id, payload)?;
-        let body = format!("f.req={}&at={}", urlencoded(&body_form), urlencoded(&self.tokens.at));
+        let body = format!(
+            "f.req={}&at={}",
+            urlencoded(&body_form),
+            urlencoded(&self.tokens.at)
+        );
         let req_id = self.next_req_id();
         let mut url = url::Url::parse(URL_BATCH_EXECUTE)
             .map_err(|e| GeminiError::Network(format!("invalid batch URL: {e}")))?;
@@ -284,7 +314,13 @@ impl HttpTransport {
             }
         }
         let headers = self.build_headers(body.len(), model)?;
-        let response = self.client.post(url).headers(headers).body(body).send().await?;
+        let response = self
+            .client
+            .post(url)
+            .headers(headers)
+            .body(body)
+            .send()
+            .await?;
         let status = response.status();
         let text = response.text().await?;
 
@@ -327,8 +363,10 @@ impl HttpTransport {
             HeaderValue::from_static("content-push.googleapis.com"),
         );
         base_headers.insert(reqwest::header::ACCEPT, HeaderValue::from_static("*/*"));
-        base_headers
-            .insert(reqwest::header::ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.7"));
+        base_headers.insert(
+            reqwest::header::ACCEPT_LANGUAGE,
+            HeaderValue::from_static("en-US,en;q=0.7"),
+        );
         base_headers.insert(
             reqwest::header::AUTHORIZATION,
             HeaderValue::from_static("Basic c2F2ZXM6cyNMdGhlNmxzd2F2b0RsN3J1d1U="),
@@ -341,8 +379,10 @@ impl HttpTransport {
             HeaderName::from_static("x-tenant-id"),
             HeaderValue::from_static("bard-storage"),
         );
-        base_headers
-            .insert(HeaderName::from_static("origin"), HeaderValue::from_static(URL_ORIGIN));
+        base_headers.insert(
+            HeaderName::from_static("origin"),
+            HeaderValue::from_static(URL_ORIGIN),
+        );
         base_headers.insert(
             HeaderName::from_static("referer"),
             HeaderValue::from_static("https://gemini.google.com/"),
@@ -451,8 +491,10 @@ impl HttpTransport {
             HeaderName::from_static("x-goog-upload-command"),
             HeaderValue::from_static("upload, finalize"),
         );
-        upload_headers
-            .insert(HeaderName::from_static("x-goog-upload-offset"), HeaderValue::from_static("0"));
+        upload_headers.insert(
+            HeaderName::from_static("x-goog-upload-offset"),
+            HeaderValue::from_static("0"),
+        );
         upload_headers.insert(
             HeaderName::from_static("size"),
             HeaderValue::from_str(&data.len().to_string())
@@ -491,13 +533,13 @@ fn urlencoded(input: &str) -> String {
         match byte {
             b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'*' => {
                 out.push(byte as char);
-            },
+            }
             b' ' => out.push('+'),
             _ => {
                 out.push('%');
                 out.push(HEX[(byte >> 4) as usize] as char);
                 out.push(HEX[(byte & 0x0f) as usize] as char);
-            },
+            }
         }
     }
     out

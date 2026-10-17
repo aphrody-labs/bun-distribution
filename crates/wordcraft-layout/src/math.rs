@@ -11,8 +11,8 @@
 use std::sync::Arc;
 
 use wordcraft_doc::math::{
-    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MClass, MNode, MRun, MScr, MSty, MathProps, ScriptKind, is_integral, math_alnum,
-    parse_linear,
+    Arg, BrkBin, BrkBinSub, ColJc, FracKind, LimLoc, MAX_DEPTH, MClass, MNode, MRun, MScr, MSty,
+    MathProps, ScriptKind, is_integral, math_alnum, parse_linear,
 };
 use wordcraft_doc::props::{Rgb, TextColor};
 use wordcraft_doc::resolve::ResolvedChar;
@@ -107,11 +107,18 @@ impl MathLayout {
         self.slots
             .iter()
             .find(|s| s.path == path && s.off == off)
-            .or_else(|| self.slots.iter().filter(|s| s.path == path).min_by_key(|s| s.off.abs_diff(off)))
+            .or_else(|| {
+                self.slots
+                    .iter()
+                    .filter(|s| s.path == path)
+                    .min_by_key(|s| s.off.abs_diff(off))
+            })
     }
     /// The caret position nearest to (`x`, `y`) (y up from the baseline).
     pub fn hit(&self, x: f32, y: f32) -> Option<&Slot> {
-        self.slots.iter().min_by(|a, b| slot_dist(a, x, y).total_cmp(&slot_dist(b, x, y)))
+        self.slots
+            .iter()
+            .min_by(|a, b| slot_dist(a, x, y).total_cmp(&slot_dist(b, x, y)))
     }
 }
 
@@ -211,11 +218,22 @@ pub fn layout_equation(
         path: Vec::new(),
         node_stack: Vec::new(),
     };
-    let st = St { level: 0, display, cramped: false, upright: false };
-    let avail = if avail.is_finite() { avail.clamp(0.0, 1e5) } else { 0.0 };
+    let st = St {
+        level: 0,
+        display,
+        cramped: false,
+        upright: false,
+    };
+    let avail = if avail.is_finite() {
+        avail.clamp(0.0, 1e5)
+    } else {
+        0.0
+    };
     let b = match nodes.as_slice() {
         [] => cx.hint(st),
-        [MNode::EqArr { rows }] if display && rows.iter().any(|r| split_number(r).is_some()) => cx.numbered(rows, st, avail, counter),
+        [MNode::EqArr { rows }] if display && rows.iter().any(|r| split_number(r).is_some()) => {
+            cx.numbered(rows, st, avail, counter)
+        }
         _ if display => cx.wrapped(nodes, st, avail, props),
         _ => cx.arg(nodes, st, 0),
     };
@@ -227,7 +245,13 @@ pub fn layout_equation(
             s.d = em * 0.25;
         }
     }
-    MathLayout { width: b.w.max(0.0), ascent: b.a.max(0.0), descent: b.d.max(0.0), items: b.items, slots }
+    MathLayout {
+        width: b.w.max(0.0),
+        ascent: b.a.max(0.0),
+        descent: b.d.max(0.0),
+        items: b.items,
+        slots,
+    }
 }
 
 /// Layout style: script level (0 = text size, 1 = script, 2 = script-script), display or inline,
@@ -243,14 +267,28 @@ struct St {
 
 impl St {
     fn script(self) -> St {
-        St { level: (self.level + 1).min(2), display: false, ..self }
+        St {
+            level: (self.level + 1).min(2),
+            display: false,
+            ..self
+        }
     }
     fn cramp(self) -> St {
-        St { cramped: true, ..self }
+        St {
+            cramped: true,
+            ..self
+        }
     }
     /// Numerator / denominator style.
     fn frac(self) -> St {
-        if self.display { St { display: false, ..self } } else { self.script() }
+        if self.display {
+            St {
+                display: false,
+                ..self
+            }
+        } else {
+            self.script()
+        }
     }
 }
 
@@ -288,8 +326,16 @@ const SPACING: [[i8; 8]; 8] = [
 ];
 
 fn spacing_mu(l: Cls, r: Cls, st: St) -> f32 {
-    let v = SPACING.get(l.idx()).and_then(|row| row.get(r.idx())).copied().unwrap_or(0);
-    if v < 0 && st.level > 0 { 0.0 } else { v.unsigned_abs() as f32 }
+    let v = SPACING
+        .get(l.idx())
+        .and_then(|row| row.get(r.idx()))
+        .copied()
+        .unwrap_or(0);
+    if v < 0 && st.level > 0 {
+        0.0
+    } else {
+        v.unsigned_abs() as f32
+    }
 }
 
 /// A box under construction.
@@ -336,7 +382,14 @@ impl Bx {
         }
     }
     fn slot(&mut self, path: &[(usize, usize)], off: usize, x: f32) {
-        self.slots.push(Slot { path: path.to_vec(), off, x, y: 0.0, a: 0.0, d: 0.0 });
+        self.slots.push(Slot {
+            path: path.to_vec(),
+            off,
+            x,
+            y: 0.0,
+            a: 0.0,
+            d: 0.0,
+        });
     }
     fn rect(&mut self, x: f32, y: f32, w: f32, h: f32, color: Rgb) {
         if w > 0.0 && h > 0.0 {
@@ -462,8 +515,16 @@ impl Ctx {
             Some(t) => (t.script_percent, t.script_script_percent),
             None => (70.0, 50.0),
         };
-        let s1 = if (30.0..=100.0).contains(&s1) { s1 } else { 70.0 };
-        let s2 = if (20.0..=100.0).contains(&s2) { s2 } else { 50.0 };
+        let s1 = if (30.0..=100.0).contains(&s1) {
+            s1
+        } else {
+            70.0
+        };
+        let s2 = if (20.0..=100.0).contains(&s2) {
+            s2
+        } else {
+            50.0
+        };
         match level {
             0 => 1.0,
             1 => s1 / 100.0,
@@ -500,7 +561,11 @@ impl Ctx {
     fn sub(&mut self, c: usize, a: &[MNode], st: St, depth: usize) -> Bx {
         let me = self.node_stack.last().copied().unwrap_or(0);
         self.path.push((me, c));
-        let b = if a.is_empty() { self.placeholder(st) } else { self.arg(a, st, depth) };
+        let b = if a.is_empty() {
+            self.placeholder(st)
+        } else {
+            self.arg(a, st, depth)
+        };
         self.path.pop();
         b
     }
@@ -509,11 +574,29 @@ impl Ctx {
     fn placeholder(&mut self, st: St) -> Bx {
         let em = self.em(st);
         let (w, a, d, pad) = (em * 0.56, em * 0.7, em * 0.06, em * 0.05);
-        let mut b = Bx { w: w + 2.0 * pad, a, d, ..Default::default() };
+        let mut b = Bx {
+            w: w + 2.0 * pad,
+            a,
+            d,
+            ..Default::default()
+        };
         let (x0, x1, y0, y1) = (pad, pad + w, -d, a);
         let width = (em * 0.035).max(0.4);
-        for ((ax, ay), (bx, by)) in [((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))] {
-            let line = MItem::Line { x0: ax, y0: ay, x1: bx, y1: by, width, color: Rgb(0x60, 0x60, 0x60), dotted: true };
+        for ((ax, ay), (bx, by)) in [
+            ((x0, y0), (x1, y0)),
+            ((x1, y0), (x1, y1)),
+            ((x1, y1), (x0, y1)),
+            ((x0, y1), (x0, y0)),
+        ] {
+            let line = MItem::Line {
+                x0: ax,
+                y0: ay,
+                x1: bx,
+                y1: by,
+                width,
+                color: Rgb(0x60, 0x60, 0x60),
+                dotted: true,
+            };
             b.items.push(MItem::ScreenOnly(Box::new(line)));
         }
         let path = self.path.clone();
@@ -526,8 +609,18 @@ impl Ctx {
     fn hint(&mut self, st: St) -> Bx {
         let size = self.size(st);
         let rs = wordcraft_fonts::word::resolve(&self.text_font, false, false);
-        let mut g = self.glyphs(rs.face, "Type an equation", size, 0, Rgb(0x80, 0x80, 0x80), (rs.synth_bold, rs.synth_italic));
-        g.items = std::mem::take(&mut g.items).into_iter().map(|i| MItem::ScreenOnly(Box::new(i))).collect();
+        let mut g = self.glyphs(
+            rs.face,
+            "Type an equation",
+            size,
+            0,
+            Rgb(0x80, 0x80, 0x80),
+            (rs.synth_bold, rs.synth_italic),
+        );
+        g.items = std::mem::take(&mut g.items)
+            .into_iter()
+            .map(|i| MItem::ScreenOnly(Box::new(i)))
+            .collect();
         g.glyph = None;
         g.cuts.clear();
         g.slots.clear();
@@ -600,8 +693,20 @@ impl Ctx {
     }
 
     /// Glyph run for `text` in `face` at `size`: a box with ink extents.
-    fn glyphs(&self, face: FaceRef, text: &str, size: f32, level: u8, color: Rgb, synth: (bool, bool)) -> Bx {
-        let feats = if level > 0 { vec![wordcraft_fonts::feature_value(b"ssty", level as u32)] } else { Vec::new() };
+    fn glyphs(
+        &self,
+        face: FaceRef,
+        text: &str,
+        size: f32,
+        level: u8,
+        color: Rgb,
+        synth: (bool, bool),
+    ) -> Bx {
+        let feats = if level > 0 {
+            vec![wordcraft_fonts::feature_value(b"ssty", level as u32)]
+        } else {
+            Vec::new()
+        };
         let shaped = wordcraft_fonts::shape(&face, text, &feats, |c| c);
         let k = size / face.upem.max(1.0) as f32;
         let mut x = 0.0f32;
@@ -646,14 +751,24 @@ impl Ctx {
             && let Some(g) = last_gid
         {
             let attach = match (&self.t, glyph_bounds(&face, g)) {
-                (Some(t), _) if face.id() == self.face.id() && t.top_accent.contains_key(&g) => t.top_accent.get(&g).copied().unwrap_or(0.0) * k,
+                (Some(t), _) if face.id() == self.face.id() && t.top_accent.contains_key(&g) => {
+                    t.top_accent.get(&g).copied().unwrap_or(0.0) * k
+                }
                 (_, Some((x0, _, x1, _))) => (x0 + x1) / 2.0 * k,
                 _ => b.w / 2.0,
             };
             b.glyph = Some((face, g, attach));
         }
         if !glyphs.is_empty() {
-            b.items.push(MItem::Glyphs { face, size, color, synth_bold: synth.0, synth_italic: synth.1, glyphs, text: text.to_string() });
+            b.items.push(MItem::Glyphs {
+                face,
+                size,
+                color,
+                synth_bold: synth.0,
+                synth_italic: synth.1,
+                glyphs,
+                text: text.to_string(),
+            });
         }
         b
     }
@@ -662,7 +777,10 @@ impl Ctx {
     fn glyph_id(&self, gid: u32, size: f32, color: Rgb) -> Bx {
         let face = self.face;
         let k = size / face.upem.max(1.0) as f32;
-        let mut b = Bx { w: face.advance(gid) as f32 * k, ..Default::default() };
+        let mut b = Bx {
+            w: face.advance(gid) as f32 * k,
+            ..Default::default()
+        };
         if let Some((_, y0, _, y1)) = glyph_bounds(&face, gid) {
             b.a = y1 * k;
             b.d = -y0 * k;
@@ -670,13 +788,31 @@ impl Ctx {
         if let Some(t) = &self.t {
             b.ic = t.italics.get(&gid).copied().unwrap_or(0.0) * k;
         }
-        b.items.push(MItem::Glyphs { face, size, color, synth_bold: false, synth_italic: false, glyphs: vec![(gid, 0.0, 0.0)], text: String::new() });
+        b.items.push(MItem::Glyphs {
+            face,
+            size,
+            color,
+            synth_bold: false,
+            synth_italic: false,
+            glyphs: vec![(gid, 0.0, 0.0)],
+            text: String::new(),
+        });
         b
     }
 
     /// A text atom with caret slots at its character boundaries (`k0`: the unit offset of its
     /// first character).
-    fn text_atom(&self, face: FaceRef, text: &str, size: f32, level: u8, color: Rgb, synth: (bool, bool), path: &[(usize, usize)], k0: usize) -> Bx {
+    fn text_atom(
+        &self,
+        face: FaceRef,
+        text: &str,
+        size: f32,
+        level: u8,
+        color: Rgb,
+        synth: (bool, bool),
+        path: &[(usize, usize)],
+        k0: usize,
+    ) -> Bx {
         let mut b = self.glyphs(face, text, size, level, color, synth);
         let cuts = std::mem::take(&mut b.cuts);
         for (j, x) in cuts.iter().enumerate() {
@@ -687,11 +823,20 @@ impl Ctx {
 
     fn run_atoms(&self, r: &MRun, st: St, u0: usize, path: &[(usize, usize)]) -> Vec<RunPart> {
         let mut out = Vec::new();
-        let size = r.size.filter(|s| s.is_finite()).unwrap_or(self.base).clamp(1.0, 1638.0) * self.scale(st.level);
+        let size = r
+            .size
+            .filter(|s| s.is_finite())
+            .unwrap_or(self.base)
+            .clamp(1.0, 1638.0)
+            * self.scale(st.level);
         let color = r.color.unwrap_or(self.color);
         if r.nor {
             // Normal text: the text font, upright unless asked.
-            let fam = r.font.clone().filter(|f| !f.eq_ignore_ascii_case("Cambria Math")).unwrap_or_else(|| self.text_font.clone());
+            let fam = r
+                .font
+                .clone()
+                .filter(|f| !f.eq_ignore_ascii_case("Cambria Math"))
+                .unwrap_or_else(|| self.text_font.clone());
             let (bold, italic) = match r.sty {
                 Some(MSty::Bold) => (true, false),
                 Some(MSty::Italic) => (false, true),
@@ -699,7 +844,16 @@ impl Ctx {
                 _ => (false, false),
             };
             let rs = wordcraft_fonts::word::resolve(&fam, bold, italic);
-            let mut b = self.text_atom(rs.face, &r.text, size, 0, color, (rs.synth_bold, rs.synth_italic), path, u0);
+            let mut b = self.text_atom(
+                rs.face,
+                &r.text,
+                size,
+                0,
+                color,
+                (rs.synth_bold, rs.synth_italic),
+                path,
+                u0,
+            );
             b.glyph = None;
             out.push(RunPart::Atom(b.cls(Cls::Ord)));
             return out;
@@ -709,17 +863,34 @@ impl Ctx {
         let mut cur_k0 = 0usize;
         let mut cur_face: Option<FaceRef> = None;
         let mut synth_italic = false;
-        let flush = |cur: &mut String, k0: usize, face: Option<FaceRef>, synth_italic: bool, out: &mut Vec<RunPart>| {
+        let flush = |cur: &mut String,
+                     k0: usize,
+                     face: Option<FaceRef>,
+                     synth_italic: bool,
+                     out: &mut Vec<RunPart>| {
             if !cur.is_empty() {
                 let f = face.unwrap_or(self.face);
-                let b = self.text_atom(f, cur, size, st.level, color, (false, synth_italic), path, u0 + k0);
+                let b = self.text_atom(
+                    f,
+                    cur,
+                    size,
+                    st.level,
+                    color,
+                    (false, synth_italic),
+                    path,
+                    u0 + k0,
+                );
                 out.push(RunPart::Atom(b.cls(Cls::Ord)));
                 cur.clear();
             }
         };
         // A zero-width (or space) atom that takes no part in spacing, with its two slots.
         let blank = |w: f32, k: usize| {
-            let mut b = Bx { w, transparent: true, ..Default::default() };
+            let mut b = Bx {
+                w,
+                transparent: true,
+                ..Default::default()
+            };
             b.slot(path, u0 + k, 0.0);
             b.slot(path, u0 + k + 1, w);
             b
@@ -747,21 +918,38 @@ impl Ctx {
                 Some(MSty::Bold) => (true, false),
                 Some(MSty::Italic) => (false, true),
                 Some(MSty::BoldItalic) => (true, true),
-                None => (false, is_letter && !greek_cap && !st.upright && r.scr == MScr::Roman && !r.lit),
+                None => (
+                    false,
+                    is_letter && !greek_cap && !st.upright && r.scr == MScr::Roman && !r.lit,
+                ),
             };
             let mapped = math_alnum(c, bold, italic, r.scr);
             // Fall back to the plain letter (slanted) when the face lacks the math alphabet.
-            let (ch, slant) = if mapped != c && !self.face.covers(mapped) { (c, italic) } else { (mapped, false) };
+            let (ch, slant) = if mapped != c && !self.face.covers(mapped) {
+                (c, italic)
+            } else {
+                (mapped, false)
+            };
             let face = if self.face.covers(ch) || ch.is_whitespace() {
                 None
             } else {
-                FontDb::global().fallback_for(ch, self.face.id()).map(|f| FaceRef::of(&f))
+                FontDb::global()
+                    .fallback_for(ch, self.face.id())
+                    .map(|f| FaceRef::of(&f))
             };
             let cls = if r.lit { Cls::Ord } else { class_of(ch) };
-            if ch == ' ' || ch == '\u{2061}' || ch == '\u{2062}' || ch == '\u{2063}' || ch == '\u{200B}' {
+            if ch == ' '
+                || ch == '\u{2061}'
+                || ch == '\u{2062}'
+                || ch == '\u{2063}'
+                || ch == '\u{200B}'
+            {
                 flush(&mut cur, cur_k0, cur_face, synth_italic, &mut out);
                 // Word sets a typed space in an equation about 0.4 em wide.
-                out.push(RunPart::Atom(blank(if ch == ' ' { size * 0.4 } else { 0.0 }, k)));
+                out.push(RunPart::Atom(blank(
+                    if ch == ' ' { size * 0.4 } else { 0.0 },
+                    k,
+                )));
                 continue;
             }
             let same_face = cur_face.map(|f| f.id()) == face.map(|f| f.id());
@@ -770,7 +958,16 @@ impl Ctx {
             }
             if cls != Cls::Ord {
                 let f = face.unwrap_or(self.face);
-                let b = self.text_atom(f, &ch.to_string(), size, st.level, color, (false, slant), path, u0 + k);
+                let b = self.text_atom(
+                    f,
+                    &ch.to_string(),
+                    size,
+                    st.level,
+                    color,
+                    (false, slant),
+                    path,
+                    u0 + k,
+                );
                 out.push(RunPart::Atom(b.cls(cls)));
                 continue;
             }
@@ -788,9 +985,22 @@ impl Ctx {
     /// N-ary operators and functions: the operator atom (class Op) then the operand.
     fn op_atoms(&mut self, n: &MNode, st: St, depth: usize) -> Vec<Bx> {
         match n {
-            MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub, sup, e } => {
+            MNode::Nary {
+                chr,
+                lim_loc,
+                grow,
+                sub_hide,
+                sup_hide,
+                sub,
+                sup,
+                e,
+            } => {
                 let e = self.sub(2, e, st, depth);
-                let loc = lim_loc.unwrap_or(if is_integral(*chr) { LimLoc::SubSup } else { LimLoc::UndOvr });
+                let loc = lim_loc.unwrap_or(if is_integral(*chr) {
+                    LimLoc::SubSup
+                } else {
+                    LimLoc::UndOvr
+                });
                 let loc = if st.display { loc } else { LimLoc::SubSup };
                 let size = self.size(st);
                 let base_gid = self.face.glyph_for(*chr);
@@ -805,7 +1015,8 @@ impl Ctx {
                     target = target.max(e.a + e.d);
                 }
                 let op = if *grow && target > 0.0 && self.t.is_some() {
-                    self.stretch_v(base_gid, target, size).unwrap_or_else(|| self.glyph_id(base_gid, size, self.color))
+                    self.stretch_v(base_gid, target, size)
+                        .unwrap_or_else(|| self.glyph_id(base_gid, size, self.color))
                 } else if target > 0.0 && self.t.is_some() {
                     // Word sets display operators about 1.2 em tall: the size variant nearest that.
                     let want = target.min(size * 1.2) * self.upem / size;
@@ -813,26 +1024,52 @@ impl Ctx {
                         .t
                         .as_ref()
                         .and_then(|t| t.vert.get(&base_gid))
-                        .and_then(|c| c.variants.iter().min_by(|a, b| (a.1 - want).abs().total_cmp(&(b.1 - want).abs())))
+                        .and_then(|c| {
+                            c.variants
+                                .iter()
+                                .min_by(|a, b| (a.1 - want).abs().total_cmp(&(b.1 - want).abs()))
+                        })
                         .copied()
                         .unwrap_or((base_gid, want));
                     // A font without a variant near that size: scale the nearest one.
-                    let f = if adv > 0.0 { (want / adv).clamp(0.6, 1.5) } else { 1.0 };
+                    let f = if adv > 0.0 {
+                        (want / adv).clamp(0.6, 1.5)
+                    } else {
+                        1.0
+                    };
                     let f = if (0.9..=1.1).contains(&f) { 1.0 } else { f };
                     self.glyph_id(g, size * f, self.color)
                 } else if base_gid != 0 {
                     self.glyph_id(base_gid, size, self.color)
                 } else {
                     let s = if st.display { size * 1.4 } else { size };
-                    self.glyphs(self.face, &chr.to_string(), s, 0, self.color, (false, false))
+                    self.glyphs(
+                        self.face,
+                        &chr.to_string(),
+                        s,
+                        0,
+                        self.color,
+                        (false, false),
+                    )
                 };
                 // Centre the operator on the math axis.
                 let dy = self.axis(st) - (op.a - op.d) / 2.0;
-                let mut ob = Bx { w: op.w, ..Default::default() };
+                let mut ob = Bx {
+                    w: op.w,
+                    ..Default::default()
+                };
                 let ic = op.ic;
                 ob.put(op, 0.0, dy);
-                let sub = if *sub_hide { None } else { Some(self.sub(0, sub, st.script().cramp(), depth)) };
-                let sup = if *sup_hide { None } else { Some(self.sub(1, sup, st.script(), depth)) };
+                let sub = if *sub_hide {
+                    None
+                } else {
+                    Some(self.sub(0, sub, st.script().cramp(), depth))
+                };
+                let sup = if *sup_hide {
+                    None
+                } else {
+                    Some(self.sub(1, sup, st.script(), depth))
+                };
                 let opb = match loc {
                     LimLoc::UndOvr => self.limits(ob, sub, sup, ic, st, true),
                     LimLoc::SubSup => {
@@ -843,8 +1080,24 @@ impl Ctx {
                 vec![opb.cls(Cls::Op), e]
             }
             MNode::Func { name, e } => {
-                let name = self.sub(0, name, St { upright: true, ..st }, depth);
-                let e = self.sub(1, e, St { upright: false, ..st }, depth);
+                let name = self.sub(
+                    0,
+                    name,
+                    St {
+                        upright: true,
+                        ..st
+                    },
+                    depth,
+                );
+                let e = self.sub(
+                    1,
+                    e,
+                    St {
+                        upright: false,
+                        ..st
+                    },
+                    depth,
+                );
                 vec![name.cls(Cls::Op), e]
             }
             _ => Vec::new(),
@@ -853,15 +1106,30 @@ impl Ctx {
 
     /// Limits under and over `base` (centred), spaced as for big operators (`big`) or as
     /// accents-like limits.
-    fn limits(&self, base: Bx, under: Option<Bx>, over: Option<Bx>, ic: f32, st: St, big: bool) -> Bx {
-        let w = base.w.max(under.as_ref().map_or(0.0, |b| b.w)).max(over.as_ref().map_or(0.0, |b| b.w));
-        let mut out = Bx { w, ..Default::default() };
+    fn limits(
+        &self,
+        base: Bx,
+        under: Option<Bx>,
+        over: Option<Bx>,
+        ic: f32,
+        st: St,
+        big: bool,
+    ) -> Bx {
+        let w = base
+            .w
+            .max(under.as_ref().map_or(0.0, |b| b.w))
+            .max(over.as_ref().map_or(0.0, |b| b.w));
+        let mut out = Bx {
+            w,
+            ..Default::default()
+        };
         let (ba, bd) = (base.a, base.d);
         let bw = base.w;
         out.put(base, (w - bw) / 2.0, 0.0);
         if let Some(o) = over {
             let rise = if big {
-                self.k(C::UpperLimitBaselineRiseMin, st).max(self.k(C::UpperLimitGapMin, st) + o.d)
+                self.k(C::UpperLimitBaselineRiseMin, st)
+                    .max(self.k(C::UpperLimitGapMin, st) + o.d)
             } else {
                 self.k(C::UpperLimitGapMin, st) + o.d
             };
@@ -870,7 +1138,8 @@ impl Ctx {
         }
         if let Some(u) = under {
             let drop = if big {
-                self.k(C::LowerLimitBaselineDropMin, st).max(self.k(C::LowerLimitGapMin, st) + u.a)
+                self.k(C::LowerLimitBaselineDropMin, st)
+                    .max(self.k(C::LowerLimitGapMin, st) + u.a)
             } else {
                 self.k(C::LowerLimitGapMin, st) + u.a
             };
@@ -889,7 +1158,10 @@ impl Ctx {
         let (bw, bd) = (b.w, b.d);
         let mut out = self.attach(b, None, sup, st, false);
         if let Some(s) = sub {
-            let v = self.k(C::SubscriptShiftDown, st).max(s.a - self.k(C::SubscriptTopMax, st)).max(bd + self.k(C::SubscriptBaselineDropMin, st));
+            let v = self
+                .k(C::SubscriptShiftDown, st)
+                .max(s.a - self.k(C::SubscriptTopMax, st))
+                .max(bd + self.k(C::SubscriptBaselineDropMin, st));
             let x = (bw - ic).max(0.0);
             let sw = s.w;
             out.put(s, x, -v);
@@ -902,19 +1174,28 @@ impl Ctx {
     fn attach(&self, base: Bx, sub: Option<Bx>, sup: Option<Bx>, st: St, char_base: bool) -> Bx {
         let (bw, ba, bd, ic) = (base.w, base.a, base.d, base.ic);
         let (first, last) = (base.first, base.last);
-        let mut out = Bx { w: bw, ..Default::default() };
+        let mut out = Bx {
+            w: bw,
+            ..Default::default()
+        };
         out.put(base, 0.0, 0.0);
         let mut u = 0.0f32;
         let mut v = 0.0f32;
         if let Some(p) = &sup {
-            let shift = if st.cramped { self.k(C::SuperscriptShiftUpCramped, st) } else { self.k(C::SuperscriptShiftUp, st) };
+            let shift = if st.cramped {
+                self.k(C::SuperscriptShiftUpCramped, st)
+            } else {
+                self.k(C::SuperscriptShiftUp, st)
+            };
             u = shift.max(p.d + self.k(C::SuperscriptBottomMin, st));
             if !char_base {
                 u = u.max(ba - self.k(C::SuperscriptBaselineDropMax, st));
             }
         }
         if let Some(b) = &sub {
-            v = self.k(C::SubscriptShiftDown, st).max(b.a - self.k(C::SubscriptTopMax, st));
+            v = self
+                .k(C::SubscriptShiftDown, st)
+                .max(b.a - self.k(C::SubscriptTopMax, st));
             if !char_base {
                 v = v.max(bd + self.k(C::SubscriptBaselineDropMin, st));
             }
@@ -963,7 +1244,14 @@ impl Ctx {
         self.stretch(con, t, target, size, false)
     }
 
-    fn stretch(&self, con: &Construction, t: &MathTable, target: f32, size: f32, vertical: bool) -> Option<Bx> {
+    fn stretch(
+        &self,
+        con: &Construction,
+        t: &MathTable,
+        target: f32,
+        size: f32,
+        vertical: bool,
+    ) -> Option<Bx> {
         let k = size / self.upem;
         let target_fu = target / k;
         // The first variant big enough.
@@ -971,12 +1259,25 @@ impl Ctx {
             return Some(self.glyph_id(*g, size, self.color));
         }
         if con.parts.is_empty() {
-            return con.variants.last().map(|(g, _)| self.glyph_id(*g, size, self.color));
+            return con
+                .variants
+                .last()
+                .map(|(g, _)| self.glyph_id(*g, size, self.color));
         }
         // Assembly: repeat extenders until the parts span the target.
         let o = t.min_connector_overlap;
-        let fixed: f32 = con.parts.iter().filter(|p| !p.extender).map(|p| p.full_advance).sum();
-        let ext: f32 = con.parts.iter().filter(|p| p.extender).map(|p| p.full_advance).sum();
+        let fixed: f32 = con
+            .parts
+            .iter()
+            .filter(|p| !p.extender)
+            .map(|p| p.full_advance)
+            .sum();
+        let ext: f32 = con
+            .parts
+            .iter()
+            .filter(|p| p.extender)
+            .map(|p| p.full_advance)
+            .sum();
         let n_fixed = con.parts.iter().filter(|p| !p.extender).count();
         let n_ext = con.parts.len() - n_fixed;
         let mut reps = 0usize;
@@ -990,7 +1291,11 @@ impl Ctx {
                 reps += 1;
             }
         }
-        let seq: Vec<_> = con.parts.iter().flat_map(|p| std::iter::repeat_n(*p, if p.extender { reps } else { 1 })).collect();
+        let seq: Vec<_> = con
+            .parts
+            .iter()
+            .flat_map(|p| std::iter::repeat_n(*p, if p.extender { reps } else { 1 }))
+            .collect();
         if seq.is_empty() {
             return None;
         }
@@ -998,13 +1303,19 @@ impl Ctx {
         let max_len: f32 = seq.iter().map(|p| p.full_advance).sum::<f32>() - o * joints as f32;
         // Spread the excess over the joints as extra overlap (within each connector's length).
         let excess = (max_len - target_fu).max(0.0);
-        let per = if joints > 0 { excess / joints as f32 } else { 0.0 };
+        let per = if joints > 0 {
+            excess / joints as f32
+        } else {
+            0.0
+        };
         let mut b = Bx::default();
         let mut pos = 0.0f32;
         let mut glyphs = Vec::with_capacity(seq.len());
         for (i, p) in seq.iter().enumerate() {
             if vertical {
-                let y0 = glyph_bounds(&self.face, p.gid).map(|bb| bb.1).unwrap_or(0.0);
+                let y0 = glyph_bounds(&self.face, p.gid)
+                    .map(|bb| bb.1)
+                    .unwrap_or(0.0);
                 glyphs.push((p.gid, 0.0, (pos - y0) * k));
                 b.w = b.w.max(self.face.advance(p.gid) as f32 * k);
             } else {
@@ -1028,7 +1339,15 @@ impl Ctx {
         } else {
             b.w = pos * k;
         }
-        b.items.push(MItem::Glyphs { face: self.face, size, color: self.color, synth_bold: false, synth_italic: false, glyphs, text: String::new() });
+        b.items.push(MItem::Glyphs {
+            face: self.face,
+            size,
+            color: self.color,
+            synth_bold: false,
+            synth_italic: false,
+            glyphs,
+            text: String::new(),
+        });
         Some(b)
     }
 
@@ -1037,20 +1356,44 @@ impl Ctx {
     fn delimiter(&self, c: char, a: f32, d: f32, st: St, grow: bool, exact: bool) -> Bx {
         let size = self.size(st);
         let axis = self.axis(st);
-        let mut glyph = self.glyphs(self.face, &c.to_string(), size, 0, self.color, (false, false));
+        let mut glyph = self.glyphs(
+            self.face,
+            &c.to_string(),
+            size,
+            0,
+            self.color,
+            (false, false),
+        );
         glyph.glyph = None;
         if !grow {
             return glyph;
         }
-        let target = if exact { a + d } else { 2.0 * (a - axis).max(d + axis) };
+        let target = if exact {
+            a + d
+        } else {
+            2.0 * (a - axis).max(d + axis)
+        };
         // Small content keeps the plain glyph where it sits.
         if glyph.a + glyph.d >= target - size * 0.02 {
             return glyph;
         }
         let gid = self.face.glyph_for(c);
-        let Some(big) = (if gid != 0 { self.stretch_v(gid, target, size) } else { None }) else { return glyph };
-        let dy = if exact { (a - d) / 2.0 - (big.a - big.d) / 2.0 } else { axis - (big.a - big.d) / 2.0 };
-        let mut out = Bx { w: big.w, ..Default::default() };
+        let Some(big) = (if gid != 0 {
+            self.stretch_v(gid, target, size)
+        } else {
+            None
+        }) else {
+            return glyph;
+        };
+        let dy = if exact {
+            (a - d) / 2.0 - (big.a - big.d) / 2.0
+        } else {
+            axis - (big.a - big.d) / 2.0
+        };
+        let mut out = Bx {
+            w: big.w,
+            ..Default::default()
+        };
         out.put(big, 0.0, dy);
         out
     }
@@ -1073,19 +1416,26 @@ impl Ctx {
                 compose(atoms, st, em)
             }
             MNode::Frac { kind, num, den } => self.frac(*kind, num, den, st, d),
-            MNode::Script { kind, base, sub, sup } => {
+            MNode::Script {
+                kind,
+                base,
+                sub,
+                sup,
+            } => {
                 let b = self.sub(0, base, st, d);
                 let char_base = b.glyph.is_some();
-                let sub_b = if matches!(kind, ScriptKind::Sub | ScriptKind::SubSup | ScriptKind::Pre) {
-                    Some(self.sub(1, sub, st.script().cramp(), d))
-                } else {
-                    None
-                };
-                let sup_b = if matches!(kind, ScriptKind::Sup | ScriptKind::SubSup | ScriptKind::Pre) {
-                    Some(self.sub(2, sup, st.script(), d))
-                } else {
-                    None
-                };
+                let sub_b =
+                    if matches!(kind, ScriptKind::Sub | ScriptKind::SubSup | ScriptKind::Pre) {
+                        Some(self.sub(1, sub, st.script().cramp(), d))
+                    } else {
+                        None
+                    };
+                let sup_b =
+                    if matches!(kind, ScriptKind::Sup | ScriptKind::SubSup | ScriptKind::Pre) {
+                        Some(self.sub(2, sup, st.script(), d))
+                    } else {
+                        None
+                    };
                 if *kind == ScriptKind::Pre {
                     // Pre-scripts: attach to an empty base, then put the base after them.
                     let empty = Bx::default();
@@ -1105,13 +1455,27 @@ impl Ctx {
                 let atoms = self.op_atoms(n, st, d);
                 compose(atoms, st, em)
             }
-            MNode::Delim { beg, end, sep, grow, shp_match, elems } => {
-                let parts: Vec<Bx> = elems.iter().enumerate().map(|(k, e)| self.sub(k, e, st, d)).collect();
+            MNode::Delim {
+                beg,
+                end,
+                sep,
+                grow,
+                shp_match,
+                elems,
+            } => {
+                let parts: Vec<Bx> = elems
+                    .iter()
+                    .enumerate()
+                    .map(|(k, e)| self.sub(k, e, st, d))
+                    .collect();
                 let a = parts.iter().map(|b| b.a).fold(0.0f32, f32::max);
                 let dd = parts.iter().map(|b| b.d).fold(0.0f32, f32::max);
                 let mut row: Vec<Bx> = Vec::new();
                 if let Some(c) = beg {
-                    row.push(self.delimiter(*c, a, dd, st, *grow, *shp_match).cls(Cls::Open));
+                    row.push(
+                        self.delimiter(*c, a, dd, st, *grow, *shp_match)
+                            .cls(Cls::Open),
+                    );
                 }
                 let n = parts.len();
                 for (i, p) in parts.into_iter().enumerate() {
@@ -1119,25 +1483,41 @@ impl Ctx {
                     if i + 1 < n
                         && let Some(c) = sep
                     {
-                        row.push(self.delimiter(*c, a, dd, st, *grow, *shp_match).cls(Cls::Ord));
+                        row.push(
+                            self.delimiter(*c, a, dd, st, *grow, *shp_match)
+                                .cls(Cls::Ord),
+                        );
                     }
                 }
                 if let Some(c) = end {
-                    row.push(self.delimiter(*c, a, dd, st, *grow, *shp_match).cls(Cls::Close));
+                    row.push(
+                        self.delimiter(*c, a, dd, st, *grow, *shp_match)
+                            .cls(Cls::Close),
+                    );
                 }
                 // No spacing inside the brackets.
                 let mut out = hcat(row);
                 out.first = if beg.is_some() { Cls::Open } else { Cls::Inner };
-                out.last = if end.is_some() { Cls::Close } else { Cls::Inner };
+                out.last = if end.is_some() {
+                    Cls::Close
+                } else {
+                    Cls::Inner
+                };
                 out
             }
             MNode::Lim { upper, e, lim } => {
                 let base = self.sub(0, e, st, d);
-                let ls = St { upright: false, ..st.script() };
+                let ls = St {
+                    upright: false,
+                    ..st.script()
+                };
                 let l = self.sub(1, lim, if *upper { ls } else { ls.cramp() }, d);
                 let (f, la) = (base.first, base.last);
-                let mut out =
-                    if *upper { self.limits(base, None, Some(l), 0.0, st, false) } else { self.limits(base, Some(l), None, 0.0, st, false) };
+                let mut out = if *upper {
+                    self.limits(base, None, Some(l), 0.0, st, false)
+                } else {
+                    self.limits(base, Some(l), None, 0.0, st, false)
+                };
                 out.first = f;
                 out.last = la;
                 out
@@ -1146,7 +1526,10 @@ impl Ctx {
             MNode::Bar { top, e } => {
                 let b = self.sub(0, e, st, d);
                 let (w, a, dd) = (b.w, b.a, b.d);
-                let mut out = Bx { w, ..Default::default() };
+                let mut out = Bx {
+                    w,
+                    ..Default::default()
+                };
                 out.put(b, 0.0, 0.0);
                 let color = self.color;
                 if *top {
@@ -1167,7 +1550,10 @@ impl Ctx {
                 let t = self.k(C::FractionRuleThickness, st).max(0.4);
                 let pad = em * 0.12;
                 let (w, a, dd) = (b.w + 2.0 * pad, b.a + pad, b.d + pad);
-                let mut out = Bx { w: w + 2.0 * t, ..Default::default() };
+                let mut out = Bx {
+                    w: w + 2.0 * t,
+                    ..Default::default()
+                };
                 out.put(b, pad + t, 0.0);
                 let color = self.color;
                 let [ht, hb, hl, hr] = *hide;
@@ -1187,7 +1573,15 @@ impl Ctx {
                 let [sh, sv, bltr, tlbr] = *strike;
                 let mid = (a - dd) / 2.0;
                 let line = |out: &mut Bx, p: (f32, f32, f32, f32)| {
-                    out.items.push(MItem::Line { x0: p.0, y0: p.1, x1: p.2, y1: p.3, width: t, color, dotted: false })
+                    out.items.push(MItem::Line {
+                        x0: p.0,
+                        y0: p.1,
+                        x1: p.2,
+                        y1: p.3,
+                        width: t,
+                        color,
+                        dotted: false,
+                    })
                 };
                 if sh {
                     line(&mut out, (x0, mid, x1, mid));
@@ -1210,12 +1604,23 @@ impl Ctx {
                 let b = self.sub(0, e, st, d);
                 let size = self.size(st);
                 let gid = self.face.glyph_for(*chr);
-                let g =
-                    self.stretch_h(gid, b.w, size).unwrap_or_else(|| self.glyphs(self.face, &chr.to_string(), size, 0, self.color, (false, false)));
+                let g = self.stretch_h(gid, b.w, size).unwrap_or_else(|| {
+                    self.glyphs(
+                        self.face,
+                        &chr.to_string(),
+                        size,
+                        0,
+                        self.color,
+                        (false, false),
+                    )
+                });
                 let w = b.w.max(g.w);
                 let (ba, bd, bw) = (b.a, b.d, b.w);
                 let (ga, gd, gw) = (g.a, g.d, g.w);
-                let mut out = Bx { w, ..Default::default() };
+                let mut out = Bx {
+                    w,
+                    ..Default::default()
+                };
                 out.put(b, (w - bw) / 2.0, 0.0);
                 if *top {
                     let y = ba + self.k(C::StretchStackGapAboveMin, st) + gd;
@@ -1228,7 +1633,13 @@ impl Ctx {
             }
             MNode::EqArr { rows } => self.eq_arr(rows, st, d),
             MNode::Matrix { rows, col_jc } => self.matrix(rows, col_jc, st, d),
-            MNode::Phant { show, zero_wid, zero_asc, zero_desc, e } => {
+            MNode::Phant {
+                show,
+                zero_wid,
+                zero_asc,
+                zero_desc,
+                e,
+            } => {
                 let mut b = self.sub(0, e, st, d);
                 if !show {
                     b.items.clear();
@@ -1254,7 +1665,16 @@ impl Ctx {
             FracKind::Linear => {
                 let n = self.sub(0, num, st, d);
                 let dn = self.sub(1, den, st, d);
-                let slash = self.glyphs(self.face, "/", self.size(st), st.level, self.color, (false, false)).cls(Cls::Ord);
+                let slash = self
+                    .glyphs(
+                        self.face,
+                        "/",
+                        self.size(st),
+                        st.level,
+                        self.color,
+                        (false, false),
+                    )
+                    .cls(Cls::Ord);
                 hcat(vec![n, slash, dn])
             }
             FracKind::Skewed => {
@@ -1264,16 +1684,31 @@ impl Ctx {
                 let slash = self.glyphs(self.face, "\u{2044}", size, 0, self.color, (false, false));
                 let gap = self.k(C::SkewedFractionHorizontalGap, st) / 2.0;
                 let (nw, sw) = (n.w, slash.w);
-                let mut out = Bx { w: n.w + gap + slash.w + gap + dn.w, ..Default::default() };
+                let mut out = Bx {
+                    w: n.w + gap + slash.w + gap + dn.w,
+                    ..Default::default()
+                };
                 let up = self.axis(st) + self.k(C::SkewedFractionVerticalGap, st) / 2.0;
                 out.put(n, 0.0, up.max(0.0));
                 out.put(slash, nw + gap, 0.0);
-                out.put(dn, nw + gap + sw + gap, -self.k(C::SkewedFractionVerticalGap, st) / 2.0);
+                out.put(
+                    dn,
+                    nw + gap + sw + gap,
+                    -self.k(C::SkewedFractionVerticalGap, st) / 2.0,
+                );
                 out
             }
             FracKind::Bar | FracKind::NoBar => {
                 let cs = st.frac();
-                let n = self.sub(0, num, St { cramped: st.cramped, ..cs }, d);
+                let n = self.sub(
+                    0,
+                    num,
+                    St {
+                        cramped: st.cramped,
+                        ..cs
+                    },
+                    d,
+                );
                 let dn = self.sub(1, den, cs.cramp(), d);
                 let axis = self.axis(st);
                 let (u, v) = if kind == FracKind::Bar {
@@ -1293,7 +1728,10 @@ impl Ctx {
                             self.k(C::FractionDenominatorGapMin, st),
                         )
                     };
-                    (su.max(gn + t / 2.0 + axis + n.d), sd.max(gd + t / 2.0 - axis + dn.a))
+                    (
+                        su.max(gn + t / 2.0 + axis + n.d),
+                        sd.max(gd + t / 2.0 - axis + dn.a),
+                    )
                 } else {
                     let (mut su, mut sd, gap) = if st.display {
                         (
@@ -1302,7 +1740,11 @@ impl Ctx {
                             self.k(C::StackDisplayStyleGapMin, st),
                         )
                     } else {
-                        (self.k(C::StackTopShiftUp, st), self.k(C::StackBottomShiftDown, st), self.k(C::StackGapMin, st))
+                        (
+                            self.k(C::StackTopShiftUp, st),
+                            self.k(C::StackBottomShiftDown, st),
+                            self.k(C::StackGapMin, st),
+                        )
                     };
                     let g = (su - n.d) - (dn.a - sd);
                     if g < gap {
@@ -1314,7 +1756,10 @@ impl Ctx {
                 let pad = em * 0.08;
                 let w = n.w.max(dn.w) + 2.0 * pad;
                 let (nw, dw) = (n.w, dn.w);
-                let mut out = Bx { w, ..Default::default() };
+                let mut out = Bx {
+                    w,
+                    ..Default::default()
+                };
                 out.put(n, (w - nw) / 2.0, u);
                 out.put(dn, (w - dw) / 2.0, -v);
                 if kind == FracKind::Bar {
@@ -1330,7 +1775,11 @@ impl Ctx {
         let b = self.sub(1, e, st.cramp(), d);
         let size = self.size(st);
         let t = self.k(C::RadicalRuleThickness, st).max(0.4);
-        let mut gap = if st.display { self.k(C::RadicalDisplayStyleVerticalGap, st) } else { self.k(C::RadicalVerticalGap, st) };
+        let mut gap = if st.display {
+            self.k(C::RadicalDisplayStyleVerticalGap, st)
+        } else {
+            self.k(C::RadicalVerticalGap, st)
+        };
         let target = b.a + b.d + gap + t;
         let gid = self.face.glyph_for('√');
         let g = self.stretch_v(gid, target, size).unwrap_or_else(|| {
@@ -1346,16 +1795,34 @@ impl Ctx {
         let top = b.a + gap + t;
         let dy = top - g.a;
         let (ga, gd, gw) = (g.a, g.d, g.w);
-        let mut sign = Bx { w: gw, ..Default::default() };
+        let mut sign = Bx {
+            w: gw,
+            ..Default::default()
+        };
         sign.put(g, 0.0, dy);
         // Degree.
         let mut x0 = 0.0f32;
         let mut out = Bx::default();
         if !deg_hide {
-            let db = self.sub(0, deg, St { level: (st.level + 2).min(2), display: false, cramped: true, upright: st.upright }, d);
+            let db = self.sub(
+                0,
+                deg,
+                St {
+                    level: (st.level + 2).min(2),
+                    display: false,
+                    cramped: true,
+                    upright: st.upright,
+                },
+                d,
+            );
             let kb = self.k(C::RadicalKernBeforeDegree, st);
             let ka = self.k(C::RadicalKernAfterDegree, st);
-            let raise = self.t.as_ref().map_or(60.0, |t| t.radical_degree_bottom_raise_percent) / 100.0 * (ga + gd);
+            let raise = self
+                .t
+                .as_ref()
+                .map_or(60.0, |t| t.radical_degree_bottom_raise_percent)
+                / 100.0
+                * (ga + gd);
             let y = (dy - gd) + raise;
             let dw = db.w;
             out.put(db, kb, y);
@@ -1377,7 +1844,10 @@ impl Ctx {
         // Overline-style accents are rules.
         if matches!(chr, '\u{305}' | '\u{AF}' | '\u{304}' | '\u{203E}') {
             let (w, a) = (b.w, b.a);
-            let mut out = Bx { w, ..Default::default() };
+            let mut out = Bx {
+                w,
+                ..Default::default()
+            };
             let (f, l) = (b.first, b.last);
             out.put(b, 0.0, 0.0);
             let t = self.k(C::OverbarRuleThickness, st).max(0.4);
@@ -1389,10 +1859,13 @@ impl Ctx {
         }
         let gid = self.face.glyph_for(chr);
         // Combining marks have no advance: compare the base with the accent's ink.
-        let ink = glyph_bounds(&self.face, gid).map(|(x0, _, x1, _)| (x1 - x0) * size / self.upem).unwrap_or(0.0);
+        let ink = glyph_bounds(&self.face, gid)
+            .map(|(x0, _, x1, _)| (x1 - x0) * size / self.upem)
+            .unwrap_or(0.0);
         let narrow = gid != 0 && b.w <= ink * 1.2;
         let mut acc = if wide_accent(chr) && gid != 0 && !narrow {
-            self.stretch_h(gid, b.w, size).unwrap_or_else(|| self.glyph_id(gid, size, color))
+            self.stretch_h(gid, b.w, size)
+                .unwrap_or_else(|| self.glyph_id(gid, size, color))
         } else if gid != 0 {
             self.glyph_id(gid, size, color)
         } else {
@@ -1410,7 +1883,9 @@ impl Ctx {
             match single {
                 Some(g) => match self.t.as_ref().and_then(|t| t.top_accent.get(&g).copied()) {
                     Some(v) => v * k,
-                    None => glyph_bounds(&self.face, g).map(|(x0, _, x1, _)| (x0 + x1) / 2.0 * k).unwrap_or(acc.w / 2.0),
+                    None => glyph_bounds(&self.face, g)
+                        .map(|(x0, _, x1, _)| (x0 + x1) / 2.0 * k)
+                        .unwrap_or(acc.w / 2.0),
                 },
                 None => acc.w / 2.0,
             }
@@ -1420,7 +1895,10 @@ impl Ctx {
         let raise = (b.a - abh).max(0.0);
         let (f, l, w, ic) = (b.first, b.last, b.w, b.ic);
         let glyph = b.glyph;
-        let mut out = Bx { w, ..Default::default() };
+        let mut out = Bx {
+            w,
+            ..Default::default()
+        };
         out.put(b, 0.0, 0.0);
         let mut x = base_x - acc_x;
         if x < 0.0 && acc.w > w {
@@ -1476,7 +1954,11 @@ impl Ctx {
         for (ri, r) in rows.iter().take(1000).enumerate() {
             self.path.push((me, ri));
             row_paths.push(self.path.clone());
-            let atoms = if r.is_empty() { vec![(self.placeholder(st), 0)] } else { self.row(r, st, d, 0) };
+            let atoms = if r.is_empty() {
+                vec![(self.placeholder(st), 0)]
+            } else {
+                self.row(r, st, d, 0)
+            };
             self.path.pop();
             let n = atoms.iter().map(|(_, s)| *s + 1).max().unwrap_or(1).min(64);
             let all: Vec<Bx> = atoms.iter().map(|(b, _)| b.clone()).collect();
@@ -1486,7 +1968,14 @@ impl Ctx {
                 // Keep the spacing before an atom with the atom.
                 let g = gaps.get(i).copied().unwrap_or(0.0);
                 if g > 0.0 {
-                    let mut wrapped = Bx { w: g + b.w, a: b.a, d: b.d, first: b.first, last: b.last, ..Default::default() };
+                    let mut wrapped = Bx {
+                        w: g + b.w,
+                        a: b.a,
+                        d: b.d,
+                        first: b.first,
+                        last: b.last,
+                        ..Default::default()
+                    };
                     wrapped.put(b, g, 0.0);
                     b = wrapped;
                 }
@@ -1528,7 +2017,11 @@ impl Ctx {
                 x += cw;
                 row.w = row.w.max(x);
             }
-            let rx = if ncols == 1 { (total - row.w) / 2.0 } else { 0.0 };
+            let rx = if ncols == 1 {
+                (total - row.w) / 2.0
+            } else {
+                0.0
+            };
             finalize(&mut row, &path, em);
             placed.push((row, rx.max(0.0)));
         }
@@ -1541,8 +2034,11 @@ impl Ctx {
     /// number at the right margin. Automatic numbers (`#` alone) count up from `counter`.
     fn numbered(&mut self, rows: &[Arg], st: St, avail: f32, counter: &mut u32) -> Bx {
         let em = self.em(st);
-        let parts: Vec<(Arg, Arg, usize)> =
-            rows.iter().take(1000).map(|r| split_number(r).unwrap_or_else(|| (r.clone(), Vec::new(), usize::MAX))).collect();
+        let parts: Vec<(Arg, Arg, usize)> = rows
+            .iter()
+            .take(1000)
+            .map(|r| split_number(r).unwrap_or_else(|| (r.clone(), Vec::new(), usize::MAX)))
+            .collect();
         self.node_stack.push(0);
         let eq_rows: Vec<Arg> = parts.iter().map(|(e, _, _)| e.clone()).collect();
         let (eq, bases) = self.eq_rows(&eq_rows, st, 1);
@@ -1558,14 +2054,26 @@ impl Ctx {
             // Every numbered equation counts; `#` alone shows the count.
             *counter = counter.saturating_add(1);
             let b = if num.is_empty() {
-                let r = MRun { text: format!("({counter})"), sty: Some(MSty::Plain), ..Default::default() };
+                let r = MRun {
+                    text: format!("({counter})"),
+                    sty: Some(MSty::Plain),
+                    ..Default::default()
+                };
                 let mut b = compose(
-                    self.run_atoms(&r, St { upright: true, ..st }, 0, &path)
-                        .into_iter()
-                        .map(|p| match p {
-                            RunPart::Atom(b) | RunPart::Align(b) => b,
-                        })
-                        .collect(),
+                    self.run_atoms(
+                        &r,
+                        St {
+                            upright: true,
+                            ..st
+                        },
+                        0,
+                        &path,
+                    )
+                    .into_iter()
+                    .map(|p| match p {
+                        RunPart::Atom(b) | RunPart::Align(b) => b,
+                    })
+                    .collect(),
                     st,
                     em,
                 );
@@ -1591,7 +2099,10 @@ impl Ctx {
             x_eq = (avail - num_w - gap - eq.w).max(0.0);
         }
         let width = avail.max(x_eq + eq.w + gap + num_w);
-        let mut out = Bx { w: width, ..Default::default() };
+        let mut out = Bx {
+            w: width,
+            ..Default::default()
+        };
         out.put(eq, x_eq, 0.0);
         for (b, y) in nums.into_iter().zip(bases) {
             if let Some(b) = b {
@@ -1622,15 +2133,24 @@ impl Ctx {
         let cls = classes(&atoms);
         let n = atoms.len();
         let is_op = |i: usize| -> bool {
-            atoms.get(i).is_some_and(|b| b.glyph.is_some() && !b.transparent)
-                && cls.get(i).is_some_and(|c| matches!(c.0, Cls::Bin | Cls::Rel) && c.0 == c.1)
+            atoms
+                .get(i)
+                .is_some_and(|b| b.glyph.is_some() && !b.transparent)
+                && cls
+                    .get(i)
+                    .is_some_and(|c| matches!(c.0, Cls::Bin | Cls::Rel) && c.0 == c.1)
         };
         // Chunk starts (after the first): the atom index → forced (`Some(alnAt)`) and the
         // operator repeated at the start of the line it begins.
-        let mut starts: std::collections::BTreeMap<usize, (Option<u8>, Option<usize>)> = std::collections::BTreeMap::new();
+        let mut starts: std::collections::BTreeMap<usize, (Option<u8>, Option<usize>)> =
+            std::collections::BTreeMap::new();
         for i in 1..n {
             let op = is_op(i);
-            let at = if op && mp.brk_bin != BrkBin::Before { i + 1 } else { i };
+            let at = if op && mp.brk_bin != BrkBin::Before {
+                i + 1
+            } else {
+                i
+            };
             if at == 0 || at >= n {
                 continue;
             }
@@ -1651,7 +2171,16 @@ impl Ctx {
         bounds.extend(starts.keys().copied());
         bounds.push(n);
         let width_of = |s: usize, e: usize| -> f32 {
-            (s..e).map(|i| atoms.get(i).map_or(0.0, |b| b.w) + if i > s { gaps.get(i).copied().unwrap_or(0.0) } else { 0.0 }).sum()
+            (s..e)
+                .map(|i| {
+                    atoms.get(i).map_or(0.0, |b| b.w)
+                        + if i > s {
+                            gaps.get(i).copied().unwrap_or(0.0)
+                        } else {
+                            0.0
+                        }
+                })
+                .sum()
         };
         // The operator glyphs a repeated operator shows at the end of one line and the start of
         // the next.
@@ -1669,24 +2198,44 @@ impl Ctx {
                     Some(c) => (c, c),
                     None => return None,
                 };
-                let end = (Some(end) != op_char(b)).then(|| self.op_glyph(b, end, st)).flatten();
+                let end = (Some(end) != op_char(b))
+                    .then(|| self.op_glyph(b, end, st))
+                    .flatten();
                 Some((i, (end, self.op_glyph(b, start, st)?)))
             })
             .collect();
-        let indent = if mp.wrap_indent.is_finite() { mp.wrap_indent.clamp(0.0, 1584.0) } else { 0.0 }.min(avail * 0.5);
+        let indent = if mp.wrap_indent.is_finite() {
+            mp.wrap_indent.clamp(0.0, 1584.0)
+        } else {
+            0.0
+        }
+        .min(avail * 0.5);
         // Greedy fill: lines as lists of chunks (index into `bounds`).
         let mut lines: Vec<(usize, usize)> = Vec::new();
         let mut cur_w = 0.0f32;
         let mut auto = false;
         for c in 0..bounds.len().saturating_sub(1) {
-            let (s, e) = (bounds.get(c).copied().unwrap_or(0), bounds.get(c + 1).copied().unwrap_or(n));
+            let (s, e) = (
+                bounds.get(c).copied().unwrap_or(0),
+                bounds.get(c + 1).copied().unwrap_or(n),
+            );
             let w = width_of(s, e);
             let lead = gaps.get(s).copied().unwrap_or(0.0);
             let info = starts.get(&s).copied();
-            let copy_w = info.and_then(|v| v.1).and_then(|i| repeats.get(&i)).map_or(0.0, |r| r.1.w + lead);
-            let line_avail = if lines.len() <= 1 || mp.wrap_right { avail } else { avail - indent };
+            let copy_w = info
+                .and_then(|v| v.1)
+                .and_then(|i| repeats.get(&i))
+                .map_or(0.0, |r| r.1.w + lead);
+            let line_avail = if lines.len() <= 1 || mp.wrap_right {
+                avail
+            } else {
+                avail - indent
+            };
             match lines.last_mut() {
-                Some(l) if info.is_some_and(|v| v.0.is_none()) && cur_w + lead + w <= line_avail + 0.01 => {
+                Some(l)
+                    if info.is_some_and(|v| v.0.is_none())
+                        && cur_w + lead + w <= line_avail + 0.01 =>
+                {
                     l.1 = c + 1;
                     cur_w += lead + w;
                 }
@@ -1708,12 +2257,22 @@ impl Ctx {
         let mut boxes: Vec<(Bx, Option<u8>)> = Vec::with_capacity(lines.len());
         let mut ops_x: Vec<f32> = Vec::new();
         for (li, &(c0, c1)) in lines.iter().enumerate() {
-            let (s, e) = (bounds.get(c0).copied().unwrap_or(0), bounds.get(c1).copied().unwrap_or(n));
+            let (s, e) = (
+                bounds.get(c0).copied().unwrap_or(0),
+                bounds.get(c1).copied().unwrap_or(n),
+            );
             let info = starts.get(&s).copied();
-            let next = lines.get(li + 1).and_then(|l| bounds.get(l.0)).and_then(|s| starts.get(s)).and_then(|v| v.1);
+            let next = lines
+                .get(li + 1)
+                .and_then(|l| bounds.get(l.0))
+                .and_then(|s| starts.get(s))
+                .and_then(|v| v.1);
             let mut row = Bx::default();
             let mut x = 0.0f32;
-            let copy = info.and_then(|v| v.1).and_then(|i| repeats.get(&i)).map(|r| r.1.clone());
+            let copy = info
+                .and_then(|v| v.1)
+                .and_then(|i| repeats.get(&i))
+                .map(|r| r.1.clone());
             let has_copy = copy.is_some();
             if let Some(cb) = copy {
                 let w = cb.w;
@@ -1721,7 +2280,9 @@ impl Ctx {
                 x = w;
             }
             for i in s..e {
-                let Some(mut b) = atoms.get_mut(i).and_then(Option::take) else { continue };
+                let Some(mut b) = atoms.get_mut(i).and_then(Option::take) else {
+                    continue;
+                };
                 if i > s || has_copy {
                     x += gaps.get(i).copied().unwrap_or(0.0);
                 }
@@ -1756,7 +2317,10 @@ impl Ctx {
         for (li, (b, aln)) in boxes.into_iter().enumerate() {
             let x = if li == 0 {
                 0.0
-            } else if let Some(ax) = aln.filter(|a| *a > 0).and_then(|a| ops_x.get(a as usize - 1)) {
+            } else if let Some(ax) = aln
+                .filter(|a| *a > 0)
+                .and_then(|a| ops_x.get(a as usize - 1))
+            {
                 *ax
             } else if mp.wrap_right {
                 (right - b.w).max(0.0)
@@ -1785,11 +2349,29 @@ impl Ctx {
     /// Operator `c` drawn like the operator atom `like` (its face, size and colour), without
     /// caret slots.
     fn op_glyph(&self, like: &Bx, c: char, st: St) -> Option<Bx> {
-        let MItem::Glyphs { face, size, color, synth_bold, synth_italic, .. } = like.items.iter().find(|i| matches!(i, MItem::Glyphs { .. }))? else {
+        let MItem::Glyphs {
+            face,
+            size,
+            color,
+            synth_bold,
+            synth_italic,
+            ..
+        } = like
+            .items
+            .iter()
+            .find(|i| matches!(i, MItem::Glyphs { .. }))?
+        else {
             return None;
         };
         let face = if face.covers(c) { *face } else { self.face };
-        let mut b = self.glyphs(face, &c.to_string(), *size, st.level, *color, (*synth_bold, *synth_italic));
+        let mut b = self.glyphs(
+            face,
+            &c.to_string(),
+            *size,
+            st.level,
+            *color,
+            (*synth_bold, *synth_italic),
+        );
         b.cuts.clear();
         Some(b.cls(like.first))
     }
@@ -1876,11 +2458,17 @@ fn finalize(b: &mut Bx, path: &[(usize, usize)], em: f32) {
 /// closing bracket or punctuation).
 fn gaps_between(atoms: &[Bx], st: St, em: f32) -> Vec<f32> {
     let cls = classes(atoms);
-    let solid: Vec<usize> = (0..atoms.len()).filter(|i| atoms.get(*i).is_some_and(|b| !b.transparent)).collect();
+    let solid: Vec<usize> = (0..atoms.len())
+        .filter(|i| atoms.get(*i).is_some_and(|b| !b.transparent))
+        .collect();
     let mut gaps = vec![0.0f32; atoms.len()];
     for k in 1..solid.len() {
-        let (Some(&p), Some(&i)) = (solid.get(k - 1), solid.get(k)) else { continue };
-        let (Some(l), Some(r)) = (cls.get(p), cls.get(i)) else { continue };
+        let (Some(&p), Some(&i)) = (solid.get(k - 1), solid.get(k)) else {
+            continue;
+        };
+        let (Some(l), Some(r)) = (cls.get(p), cls.get(i)) else {
+            continue;
+        };
         if let Some(g) = gaps.get_mut(i) {
             *g = spacing_mu(l.1, r.0, st) * em / 18.0;
         }
@@ -1892,12 +2480,23 @@ fn gaps_between(atoms: &[Bx], st: St, em: f32) -> Vec<f32> {
 /// (a unary minus) becomes ordinary.
 fn classes(atoms: &[Bx]) -> Vec<(Cls, Cls)> {
     let mut cls: Vec<(Cls, Cls)> = atoms.iter().map(|b| (b.first, b.last)).collect();
-    let solid: Vec<usize> = (0..atoms.len()).filter(|i| atoms.get(*i).is_some_and(|b| !b.transparent)).collect();
+    let solid: Vec<usize> = (0..atoms.len())
+        .filter(|i| atoms.get(*i).is_some_and(|b| !b.transparent))
+        .collect();
     for (k, &i) in solid.iter().enumerate() {
-        let prev = k.checked_sub(1).and_then(|p| solid.get(p)).and_then(|p| cls.get(*p)).map(|c| c.1);
+        let prev = k
+            .checked_sub(1)
+            .and_then(|p| solid.get(p))
+            .and_then(|p| cls.get(*p))
+            .map(|c| c.1);
         let next = solid.get(k + 1).and_then(|n| cls.get(*n)).map(|c| c.0);
         if let Some(c) = cls.get_mut(i) {
-            if c.0 == Cls::Bin && matches!(prev, None | Some(Cls::Bin | Cls::Op | Cls::Rel | Cls::Open | Cls::Punct)) {
+            if c.0 == Cls::Bin
+                && matches!(
+                    prev,
+                    None | Some(Cls::Bin | Cls::Op | Cls::Rel | Cls::Open | Cls::Punct)
+                )
+            {
                 c.0 = Cls::Ord;
                 if c.1 == Cls::Bin {
                     c.1 = Cls::Ord;
@@ -1922,8 +2521,17 @@ fn compose(mut atoms: Vec<Bx>, st: St, em: f32) -> Bx {
         return b;
     }
     let gaps = gaps_between(&atoms, st, em);
-    let first = atoms.iter().find(|b| !b.transparent).map(|b| b.first).unwrap_or_default();
-    let last = atoms.iter().rev().find(|b| !b.transparent).map(|b| b.last).unwrap_or_default();
+    let first = atoms
+        .iter()
+        .find(|b| !b.transparent)
+        .map(|b| b.first)
+        .unwrap_or_default();
+    let last = atoms
+        .iter()
+        .rev()
+        .find(|b| !b.transparent)
+        .map(|b| b.last)
+        .unwrap_or_default();
     let ic = atoms.last().map(|b| b.ic).unwrap_or(0.0);
     let mut out = Bx::default();
     let mut x = 0.0f32;
@@ -1967,7 +2575,15 @@ mod tests {
     }
 
     fn lay(lin: &str, display: bool) -> MathLayout {
-        layout_equation(&Math::default(), lin, &rc(), display, 400.0, &MathProps::default(), &mut 0)
+        layout_equation(
+            &Math::default(),
+            lin,
+            &rc(),
+            display,
+            400.0,
+            &MathProps::default(),
+            &mut 0,
+        )
     }
 
     /// The glyphs of a laid-out equation by line: (baseline, [(x, text)]), top line first.
@@ -2005,7 +2621,11 @@ mod tests {
         let m = lay_in(&Math::default(), sum, true, avail, &mp);
         let ls = lines(&m);
         assert!(ls.len() >= 2, "{ls:?}");
-        assert!((m.width - avail).abs() < 0.01, "the wrapped equation fills the line: {} vs {avail}", m.width);
+        assert!(
+            (m.width - avail).abs() < 0.01,
+            "the wrapped equation fills the line: {} vs {avail}",
+            m.width
+        );
         for (k, (_, gs)) in ls.iter().enumerate() {
             let (x0, first) = gs.first().cloned().unwrap();
             if k == 0 {
@@ -2013,39 +2633,104 @@ mod tests {
                 assert!(x0.abs() < 0.01 && (first == "𝑦" || first == "y"), "{gs:?}");
             } else {
                 // Continuation lines start with the operator, one wrap indent in.
-                assert!((x0 - mp.wrap_indent).abs() < 0.01 && first == "+", "line {k}: {gs:?}");
+                assert!(
+                    (x0 - mp.wrap_indent).abs() < 0.01 && first == "+",
+                    "line {k}: {gs:?}"
+                );
             }
             for (x, t) in gs {
                 assert!(*x < avail, "line {k}: {t} at {x} past {avail}");
             }
         }
         // Breaks after the operator, and the operator repeated, as the settings say.
-        let after = MathProps { brk_bin: BrkBin::After, ..Default::default() };
+        let after = MathProps {
+            brk_bin: BrkBin::After,
+            ..Default::default()
+        };
         let ls = lines(&lay_in(&Math::default(), sum, true, avail, &after));
-        assert!(ls.len() >= 2 && ls[0].1.last().is_some_and(|g| g.1 == "+") && ls[1].1[0].1 != "+", "{ls:?}");
-        let repeat = MathProps { brk_bin: BrkBin::Repeat, wrap_right: true, ..Default::default() };
+        assert!(
+            ls.len() >= 2 && ls[0].1.last().is_some_and(|g| g.1 == "+") && ls[1].1[0].1 != "+",
+            "{ls:?}"
+        );
+        let repeat = MathProps {
+            brk_bin: BrkBin::Repeat,
+            wrap_right: true,
+            ..Default::default()
+        };
         let m = lay_in(&Math::default(), sum, true, avail, &repeat);
         let ls = lines(&m);
-        assert!(ls.len() >= 2 && ls[0].1.last().is_some_and(|g| g.1 == "+") && ls[1].1[0].1 == "+", "{ls:?}");
+        assert!(
+            ls.len() >= 2 && ls[0].1.last().is_some_and(|g| g.1 == "+") && ls[1].1[0].1 == "+",
+            "{ls:?}"
+        );
         // Inline equations never wrap.
-        assert_eq!(lines(&lay_in(&Math::default(), sum, false, avail, &mp)).len(), 1);
+        assert_eq!(
+            lines(&lay_in(&Math::default(), sum, false, avail, &mp)).len(),
+            1
+        );
         // A term wider than the line overflows it rather than breaking inside.
-        let frac = lay_in(&Math::default(), "y=(a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s+t+u+v+w)/2", true, avail, &mp);
-        assert!(frac.width > avail && frac.items.iter().any(|i| matches!(i, MItem::Rect { .. })), "{}", frac.width);
+        let frac = lay_in(
+            &Math::default(),
+            "y=(a+b+c+d+e+f+g+h+i+j+k+l+m+n+o+p+q+r+s+t+u+v+w)/2",
+            true,
+            avail,
+            &mp,
+        );
+        assert!(
+            frac.width > avail && frac.items.iter().any(|i| matches!(i, MItem::Rect { .. })),
+            "{}",
+            frac.width
+        );
     }
 
     #[test]
     fn manual_breaks_start_new_lines() {
         let mp = MathProps::default();
-        let nodes = vec![MNode::Run(MRun::new("a=b")), MNode::Run(MRun { brk: Some(0), ..MRun::new("+c") })];
-        let m = lay_in(&Math { nodes, ..Default::default() }, "", true, 400.0, &mp);
+        let nodes = vec![
+            MNode::Run(MRun::new("a=b")),
+            MNode::Run(MRun {
+                brk: Some(0),
+                ..MRun::new("+c")
+            }),
+        ];
+        let m = lay_in(
+            &Math {
+                nodes,
+                ..Default::default()
+            },
+            "",
+            true,
+            400.0,
+            &mp,
+        );
         let ls = lines(&m);
         assert_eq!(ls.len(), 2, "{ls:?}");
-        assert!((ls[1].1[0].0 - mp.wrap_indent).abs() < 0.01 && ls[1].1[0].1 == "+", "{ls:?}");
-        assert!(m.width < 400.0, "a manually broken equation is as wide as its lines");
+        assert!(
+            (ls[1].1[0].0 - mp.wrap_indent).abs() < 0.01 && ls[1].1[0].1 == "+",
+            "{ls:?}"
+        );
+        assert!(
+            m.width < 400.0,
+            "a manually broken equation is as wide as its lines"
+        );
         // `m:alnAt`: the new line's operator sits under the first line's first operator.
-        let nodes = vec![MNode::Run(MRun::new("a=b")), MNode::Run(MRun { brk: Some(1), ..MRun::new("+c") })];
-        let ls = lines(&lay_in(&Math { nodes, ..Default::default() }, "", true, 400.0, &mp));
+        let nodes = vec![
+            MNode::Run(MRun::new("a=b")),
+            MNode::Run(MRun {
+                brk: Some(1),
+                ..MRun::new("+c")
+            }),
+        ];
+        let ls = lines(&lay_in(
+            &Math {
+                nodes,
+                ..Default::default()
+            },
+            "",
+            true,
+            400.0,
+            &mp,
+        ));
         let eq_x = ls[0].1.iter().find(|g| g.1 == "=").unwrap().0;
         assert!((ls[1].1[0].0 - eq_x).abs() < 0.01, "{ls:?}");
     }
@@ -2056,15 +2741,26 @@ mod tests {
         let one = lay_in(&Math::default(), "a+b=c", true, 400.0, &mp);
         assert_eq!(lines(&one).len(), 1);
         let plain = lay_in(&Math::default(), "a+b=c", false, 400.0, &mp);
-        assert!(one.width < 400.0 && (one.width - plain.width).abs() < 0.01, "{} vs {}", one.width, plain.width);
+        assert!(
+            one.width < 400.0 && (one.width - plain.width).abs() < 0.01,
+            "{} vs {}",
+            one.width,
+            plain.width
+        );
     }
 
     #[test]
     fn fraction_is_stacked_with_a_rule() {
         let flat = lay("ab", true);
         let f = lay("a/b", true);
-        assert!(f.ascent > flat.ascent + 2.0 && f.descent > flat.descent + 2.0, "{f:?}");
-        assert!(f.items.iter().any(|i| matches!(i, MItem::Rect { .. })), "fraction rule");
+        assert!(
+            f.ascent > flat.ascent + 2.0 && f.descent > flat.descent + 2.0,
+            "{f:?}"
+        );
+        assert!(
+            f.items.iter().any(|i| matches!(i, MItem::Rect { .. })),
+            "fraction rule"
+        );
         assert!(f.width < flat.width * 1.2, "stacked, not side by side");
     }
 
@@ -2089,15 +2785,24 @@ mod tests {
         let spaced = lay("a+b", false);
         let unary = lay("−b", false);
         let plus_w = lay("+", false).width;
-        assert!(spaced.width > tight.width + plus_w + 2.0, "medium spaces around +");
-        assert!(unary.width < lay("b", false).width + plus_w + 1.0, "no space after a unary minus");
+        assert!(
+            spaced.width > tight.width + plus_w + 2.0,
+            "medium spaces around +"
+        );
+        assert!(
+            unary.width < lay("b", false).width + plus_w + 1.0,
+            "no space after a unary minus"
+        );
     }
 
     #[test]
     fn display_operators_are_big_with_limits_over_and_under() {
         let d = lay("∑_(i=1)^n▒i", true);
         let t = lay("∑_(i=1)^n▒i", false);
-        assert!(d.ascent + d.descent > t.ascent + t.descent, "display sum taller");
+        assert!(
+            d.ascent + d.descent > t.ascent + t.descent,
+            "display sum taller"
+        );
         assert!(d.width < t.width + 4.0, "limits stacked in display");
     }
 
@@ -2114,27 +2819,106 @@ mod tests {
         use wordcraft_doc::math::*;
         let x = || vec![MNode::Run(MRun::new("x"))];
         let nodes = vec![
-            MNode::Acc { chr: '\u{302}', e: x() },
-            MNode::Acc { chr: '\u{305}', e: x() },
+            MNode::Acc {
+                chr: '\u{302}',
+                e: x(),
+            },
+            MNode::Acc {
+                chr: '\u{305}',
+                e: x(),
+            },
             MNode::Bar { top: false, e: x() },
-            MNode::BorderBox { hide: [false; 4], strike: [true; 4], e: x() },
+            MNode::BorderBox {
+                hide: [false; 4],
+                strike: [true; 4],
+                e: x(),
+            },
             MNode::Boxed { e: x() },
-            MNode::GroupChr { chr: '⏟', top: false, e: x() },
-            MNode::EqArr { rows: vec![vec![MNode::Run(MRun::new("x&=1"))], vec![MNode::Run(MRun::new("y&=22"))]] },
-            MNode::Matrix { rows: vec![vec![x(), x()], vec![x(), Vec::new()]], col_jc: vec![] },
-            MNode::Phant { show: false, zero_wid: false, zero_asc: false, zero_desc: true, e: x() },
-            MNode::Lim { upper: false, e: vec![MNode::Run(MRun::plain("lim"))], lim: x() },
-            MNode::Rad { deg: x(), deg_hide: false, e: x() },
-            MNode::Script { kind: ScriptKind::Pre, base: x(), sub: x(), sup: x() },
-            MNode::Frac { kind: FracKind::Skewed, num: x(), den: x() },
-            MNode::Frac { kind: FracKind::Linear, num: x(), den: x() },
-            MNode::Frac { kind: FracKind::NoBar, num: x(), den: x() },
-            MNode::Delim { beg: None, end: Some('|'), sep: Some('|'), grow: true, shp_match: true, elems: vec![x(), x()] },
-            MNode::Run(MRun { text: "text".into(), nor: true, ..Default::default() }),
-            MNode::Run(MRun { text: "R".into(), scr: MScr::DoubleStruck, ..Default::default() }),
+            MNode::GroupChr {
+                chr: '⏟',
+                top: false,
+                e: x(),
+            },
+            MNode::EqArr {
+                rows: vec![
+                    vec![MNode::Run(MRun::new("x&=1"))],
+                    vec![MNode::Run(MRun::new("y&=22"))],
+                ],
+            },
+            MNode::Matrix {
+                rows: vec![vec![x(), x()], vec![x(), Vec::new()]],
+                col_jc: vec![],
+            },
+            MNode::Phant {
+                show: false,
+                zero_wid: false,
+                zero_asc: false,
+                zero_desc: true,
+                e: x(),
+            },
+            MNode::Lim {
+                upper: false,
+                e: vec![MNode::Run(MRun::plain("lim"))],
+                lim: x(),
+            },
+            MNode::Rad {
+                deg: x(),
+                deg_hide: false,
+                e: x(),
+            },
+            MNode::Script {
+                kind: ScriptKind::Pre,
+                base: x(),
+                sub: x(),
+                sup: x(),
+            },
+            MNode::Frac {
+                kind: FracKind::Skewed,
+                num: x(),
+                den: x(),
+            },
+            MNode::Frac {
+                kind: FracKind::Linear,
+                num: x(),
+                den: x(),
+            },
+            MNode::Frac {
+                kind: FracKind::NoBar,
+                num: x(),
+                den: x(),
+            },
+            MNode::Delim {
+                beg: None,
+                end: Some('|'),
+                sep: Some('|'),
+                grow: true,
+                shp_match: true,
+                elems: vec![x(), x()],
+            },
+            MNode::Run(MRun {
+                text: "text".into(),
+                nor: true,
+                ..Default::default()
+            }),
+            MNode::Run(MRun {
+                text: "R".into(),
+                scr: MScr::DoubleStruck,
+                ..Default::default()
+            }),
         ];
         for n in nodes {
-            let m = layout_equation(&Math { nodes: vec![n.clone()], ..Default::default() }, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
+            let m = layout_equation(
+                &Math {
+                    nodes: vec![n.clone()],
+                    ..Default::default()
+                },
+                "",
+                &rc(),
+                true,
+                400.0,
+                &MathProps::default(),
+                &mut 0,
+            );
             assert!(m.width > 0.0 && m.ascent + m.descent > 0.0, "{n:?} → {m:?}");
             for it in &m.items {
                 if let MItem::Glyphs { glyphs, .. } = it {
@@ -2147,7 +2931,10 @@ mod tests {
     #[test]
     fn caret_slots_cover_every_position() {
         use wordcraft_doc::math_edit::{MathPos, move_right, units};
-        let math = Math { nodes: wordcraft_doc::math::parse_linear("x=(-b±√(b^2-4ac))/2a+■(a&b@c&d)"), ..Default::default() };
+        let math = Math {
+            nodes: wordcraft_doc::math::parse_linear("x=(-b±√(b^2-4ac))/2a+■(a&b@c&d)"),
+            ..Default::default()
+        };
         let m = layout_equation(&math, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
         // Walking the caret through the equation, every position has a slot.
         let mut p = MathPos::default();
@@ -2171,27 +2958,65 @@ mod tests {
 
     #[test]
     fn empty_slots_show_placeholders_on_screen_only() {
-        let math = Math { nodes: wordcraft_doc::math::parse_linear("⬚/⬚"), ..Default::default() };
+        let math = Math {
+            nodes: wordcraft_doc::math::parse_linear("⬚/⬚"),
+            ..Default::default()
+        };
         let m = layout_equation(&math, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
-        assert!(m.items.iter().all(|i| matches!(i, MItem::ScreenOnly(_) | MItem::Rect { .. })), "{:?}", m.items);
+        assert!(
+            m.items
+                .iter()
+                .all(|i| matches!(i, MItem::ScreenOnly(_) | MItem::Rect { .. })),
+            "{:?}",
+            m.items
+        );
         assert!(m.slots.iter().any(|s| s.path == vec![(0, 0)] && s.off == 0));
-        let empty = layout_equation(&Math::default(), "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
-        assert!(empty.width > 10.0 && empty.items.iter().all(|i| matches!(i, MItem::ScreenOnly(_))));
+        let empty = layout_equation(
+            &Math::default(),
+            "",
+            &rc(),
+            true,
+            400.0,
+            &MathProps::default(),
+            &mut 0,
+        );
+        assert!(
+            empty.width > 10.0
+                && empty
+                    .items
+                    .iter()
+                    .all(|i| matches!(i, MItem::ScreenOnly(_)))
+        );
     }
 
     #[test]
     fn numbered_equations_fill_the_line_with_the_number_at_the_right() {
-        let math = Math { nodes: wordcraft_doc::math::parse_linear("E=mc^2#(1)"), ..Default::default() };
+        let math = Math {
+            nodes: wordcraft_doc::math::parse_linear("E=mc^2#(1)"),
+            ..Default::default()
+        };
         let m = layout_equation(&math, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
         assert!((m.width - 400.0).abs() < 0.01, "{}", m.width);
-        let xs: Vec<f32> =
-            m.items.iter().filter_map(|i| if let MItem::Glyphs { glyphs, .. } = i { glyphs.first().map(|g| g.1) } else { None }).collect();
+        let xs: Vec<f32> = m
+            .items
+            .iter()
+            .filter_map(|i| {
+                if let MItem::Glyphs { glyphs, .. } = i {
+                    glyphs.first().map(|g| g.1)
+                } else {
+                    None
+                }
+            })
+            .collect();
         let max = xs.iter().cloned().fold(0.0f32, f32::max);
         assert!(max > 350.0, "number at the right margin: {xs:?}");
         let min = xs.iter().cloned().fold(f32::MAX, f32::min);
         assert!(min > 120.0 && min < 220.0, "equation centred: {xs:?}");
         // Automatic numbers count.
-        let auto = Math { nodes: wordcraft_doc::math::parse_linear("a=b#"), ..Default::default() };
+        let auto = Math {
+            nodes: wordcraft_doc::math::parse_linear("a=b#"),
+            ..Default::default()
+        };
         let mut n = 4;
         let _ = layout_equation(&auto, "", &rc(), true, 400.0, &MathProps::default(), &mut n);
         assert_eq!(n, 5);
@@ -2214,25 +3039,97 @@ mod tests {
         // Deep nesting.
         let mut n = vec![MNode::Run(MRun::new("x"))];
         for _ in 0..500 {
-            n = vec![MNode::Frac { kind: FracKind::Bar, num: n.clone(), den: Vec::new() }];
+            n = vec![MNode::Frac {
+                kind: FracKind::Bar,
+                num: n.clone(),
+                den: Vec::new(),
+            }];
         }
-        let _ = layout_equation(&Math { nodes: n, ..Default::default() }, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
+        let _ = layout_equation(
+            &Math {
+                nodes: n,
+                ..Default::default()
+            },
+            "",
+            &rc(),
+            true,
+            400.0,
+            &MathProps::default(),
+            &mut 0,
+        );
         // Empty everything.
         let empty = vec![
-            MNode::Nary { chr: '\0', lim_loc: None, grow: true, sub_hide: false, sup_hide: false, sub: vec![], sup: vec![], e: vec![] },
-            MNode::Delim { beg: Some('\u{10FFFF}'), end: None, sep: None, grow: true, shp_match: false, elems: vec![] },
-            MNode::Matrix { rows: vec![vec![]], col_jc: vec![] },
+            MNode::Nary {
+                chr: '\0',
+                lim_loc: None,
+                grow: true,
+                sub_hide: false,
+                sup_hide: false,
+                sub: vec![],
+                sup: vec![],
+                e: vec![],
+            },
+            MNode::Delim {
+                beg: Some('\u{10FFFF}'),
+                end: None,
+                sep: None,
+                grow: true,
+                shp_match: false,
+                elems: vec![],
+            },
+            MNode::Matrix {
+                rows: vec![vec![]],
+                col_jc: vec![],
+            },
             MNode::EqArr { rows: vec![] },
-            MNode::Run(MRun { text: String::new(), size: Some(f32::NAN), ..Default::default() }),
+            MNode::Run(MRun {
+                text: String::new(),
+                size: Some(f32::NAN),
+                ..Default::default()
+            }),
         ];
-        let m = layout_equation(&Math { nodes: empty, ..Default::default() }, "", &rc(), true, 400.0, &MathProps::default(), &mut 0);
+        let m = layout_equation(
+            &Math {
+                nodes: empty,
+                ..Default::default()
+            },
+            "",
+            &rc(),
+            true,
+            400.0,
+            &MathProps::default(),
+            &mut 0,
+        );
         assert!(m.width.is_finite() && m.ascent.is_finite());
         // Breaks everywhere, odd wrap settings, no room at all.
-        let runs: Vec<MNode> = (0..2000).map(|i| MNode::Run(MRun { brk: (i % 3 == 0).then_some((i % 256) as u8), ..MRun::new("−+=") })).collect();
+        let runs: Vec<MNode> = (0..2000)
+            .map(|i| {
+                MNode::Run(MRun {
+                    brk: (i % 3 == 0).then_some((i % 256) as u8),
+                    ..MRun::new("−+=")
+                })
+            })
+            .collect();
         for avail in [0.0, f32::NAN, 1e9] {
             for brk_bin in [BrkBin::Before, BrkBin::After, BrkBin::Repeat] {
-                let mp = MathProps { brk_bin, brk_bin_sub: BrkBinSub::PlusMinus, wrap_indent: f32::INFINITY, wrap_right: avail == 0.0 };
-                let m = layout_equation(&Math { nodes: runs.clone(), ..Default::default() }, "", &rc(), true, avail, &mp, &mut 0);
+                let mp = MathProps {
+                    brk_bin,
+                    brk_bin_sub: BrkBinSub::PlusMinus,
+                    wrap_indent: f32::INFINITY,
+                    wrap_right: avail == 0.0,
+                };
+                let m = layout_equation(
+                    &Math {
+                        nodes: runs.clone(),
+                        ..Default::default()
+                    },
+                    "",
+                    &rc(),
+                    true,
+                    avail,
+                    &mp,
+                    &mut 0,
+                );
                 assert!(m.width.is_finite() && m.descent.is_finite());
             }
         }

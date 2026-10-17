@@ -280,18 +280,18 @@ impl AnyMemoryRecord {
             Some(2) => {
                 let v2: MemoryRecordV2 = serde_json::from_value(value)?;
                 Ok(Self::V2(v2))
-            },
+            }
             Some(1) => {
                 let v1: MemoryRecordV1 = serde_json::from_value(value)?;
                 Ok(Self::V1(v1))
-            },
-            Some(other) => {
-                Err(MemoryError::InvalidArgument(format!("unsupported schema_version: {other}")))
-            },
+            }
+            Some(other) => Err(MemoryError::InvalidArgument(format!(
+                "unsupported schema_version: {other}"
+            ))),
             None => {
                 let v1: MemoryRecordV1 = serde_json::from_value(value)?;
                 Ok(Self::V1(v1))
-            },
+            }
         }
     }
 
@@ -369,7 +369,7 @@ pub async fn upgrade_jsonl(
             name.push(".tmp");
             p.push(name);
             p
-        },
+        }
         _ => {
             let mut p = std::path::PathBuf::from(output);
             let mut name = p.file_name().map_or_else(
@@ -379,7 +379,7 @@ pub async fn upgrade_jsonl(
             name.push(".tmp");
             p.set_file_name(name);
             p
-        },
+        }
     };
 
     let mut tmp_file = fs::File::create(&tmp).await?;
@@ -403,14 +403,14 @@ pub async fn upgrade_jsonl(
                 } else {
                     report.upgraded += 1;
                 }
-            },
+            }
             Err(_) => {
                 // Preserve the original line verbatim — operators can grep
                 // the output for malformed payloads after the fact.
                 tmp_file.write_all(line.as_bytes()).await?;
                 tmp_file.write_all(b"\n").await?;
                 report.skipped += 1;
-            },
+            }
         }
     }
 
@@ -498,7 +498,10 @@ mod tests {
     #[test]
     fn schema_version_rejects_unknown() {
         let r: Result<SchemaVersion, _> = serde_json::from_str("99");
-        assert!(r.is_err(), "unknown version must be rejected at the type boundary");
+        assert!(
+            r.is_err(),
+            "unknown version must be rejected at the type boundary"
+        );
     }
 
     #[test]
@@ -530,7 +533,10 @@ mod tests {
     fn schema_v2_serialises_with_version_tag() {
         let v2 = sample_v1().upgrade();
         let json = serde_json::to_string(&v2).unwrap();
-        assert!(json.contains("\"schema_version\":2"), "version tag must be present: {json}");
+        assert!(
+            json.contains("\"schema_version\":2"),
+            "version tag must be present: {json}"
+        );
         assert!(json.contains("\"updated_at_unix_ms\":1000"));
     }
 
@@ -587,8 +593,10 @@ mod tests {
         assert_eq!(back.content, live.content);
         assert_eq!(back.created_at_unix_ms, created);
         // updated_at is stashed inside metadata for forward compatibility
-        let extracted =
-            back.metadata.get("_updated_at_unix_ms").and_then(serde_json::Value::as_u64);
+        let extracted = back
+            .metadata
+            .get("_updated_at_unix_ms")
+            .and_then(serde_json::Value::as_u64);
         assert_eq!(extracted, Some(created));
     }
 
@@ -619,16 +627,28 @@ mod tests {
 
         // First line — V1 upgraded → must now carry schema_version: 2.
         let first: serde_json::Value = serde_json::from_str(lines[0]).unwrap();
-        assert_eq!(first.get("schema_version").and_then(serde_json::Value::as_u64), Some(2));
         assert_eq!(
-            first.get("updated_at_unix_ms").and_then(serde_json::Value::as_u64),
+            first
+                .get("schema_version")
+                .and_then(serde_json::Value::as_u64),
+            Some(2)
+        );
+        assert_eq!(
+            first
+                .get("updated_at_unix_ms")
+                .and_then(serde_json::Value::as_u64),
             Some(10),
             "upgraded V1 must collapse updated_at onto created_at"
         );
 
         // Second line — already V2 → version preserved, updated_at intact.
         let second: serde_json::Value = serde_json::from_str(lines[1]).unwrap();
-        assert_eq!(second.get("updated_at_unix_ms").and_then(serde_json::Value::as_u64), Some(25));
+        assert_eq!(
+            second
+                .get("updated_at_unix_ms")
+                .and_then(serde_json::Value::as_u64),
+            Some(25)
+        );
 
         // Third line — garbage → echoed verbatim (operator can grep).
         assert_eq!(lines[2], garbage);
@@ -642,6 +662,9 @@ mod tests {
         let report = upgrade_jsonl(&path, &path).await.unwrap();
         assert_eq!(report, MigrationReport::default());
         let after = fs::read_to_string(&path).await.unwrap();
-        assert!(after.is_empty(), "empty input must produce empty output, not delete the file");
+        assert!(
+            after.is_empty(),
+            "empty input must produce empty output, not delete the file"
+        );
     }
 }

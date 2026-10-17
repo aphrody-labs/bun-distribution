@@ -178,9 +178,15 @@ pub async fn pull_spec(
 
     let mut outcomes = Vec::new();
     for ((reference, expected_sha256), role) in resolved.artifacts().into_iter().zip(roles) {
-        let options = PullOptions { expected_sha256, force, catalog_id: catalog_id.clone() };
+        let options = PullOptions {
+            expected_sha256,
+            force,
+            catalog_id: catalog_id.clone(),
+        };
         let outcome = downloader
-            .pull(store, &reference, &options, |progress| on_progress(&role, progress))
+            .pull(store, &reference, &options, |progress| {
+                on_progress(&role, progress)
+            })
             .await?;
         outcomes.push(outcome);
     }

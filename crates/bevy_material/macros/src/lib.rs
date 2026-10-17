@@ -1,10 +1,10 @@
 #![expect(missing_docs, reason = "Not all docs are written yet, see #3492.")]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
-use bevy_macro_utils::{derive_label, BevyManifest};
+use bevy_macro_utils::{BevyManifest, derive_label};
 use proc_macro::TokenStream;
 use quote::format_ident;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 pub(crate) fn bevy_material_path() -> syn::Path {
     BevyManifest::shared(|manifest| manifest.get_path("bevy_material"))

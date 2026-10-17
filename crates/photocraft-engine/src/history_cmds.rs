@@ -31,7 +31,10 @@ pub struct Snapshot {
 }
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 /// The `state` param as an index into the active document's history entries, defaulting to the
@@ -43,7 +46,10 @@ fn state_index(s: &Session, cmd: &str, p: &Value) -> Result<(usize, usize)> {
         None | Some(Value::Null) => current,
         Some(_) => {
             let v = int(p, "state").ok_or_else(|| bad(cmd, "`state` must be a number"))?;
-            usize::try_from(v).ok().filter(|i| *i <= current).ok_or_else(|| bad(cmd, format!("`state` = {v} is not a state (0..={current})")))?
+            usize::try_from(v)
+                .ok()
+                .filter(|i| *i <= current)
+                .ok_or_else(|| bad(cmd, format!("`state` = {v} is not a state (0..={current})")))?
         }
     };
     Ok((i, current))
@@ -61,7 +67,9 @@ fn delete_state(s: &mut Session, p: &Value) -> Result<Value> {
     // Step back to the state before `i`; the steps from `i` on are then redo states.
     for _ in i..=current {
         if !s.undo() {
-            return Err(EngineError::Other("the history can't step back right now".into()));
+            return Err(EngineError::Other(
+                "the history can't step back right now".into(),
+            ));
         }
     }
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
@@ -76,7 +84,11 @@ fn new_document(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "history.newDocument";
     let (i, current) = state_index(s, CMD, p)?;
     let st = s.active().ok_or(EngineError::NoDocument)?;
-    let src = if i == current { Some(st.doc.clone()) } else { st.history.state(i) };
+    let src = if i == current {
+        Some(st.doc.clone())
+    } else {
+        st.history.state(i)
+    };
     let src = src.ok_or_else(|| bad(CMD, format!("state {i} is not held")))?;
     let label = st.history.entries().get(i).cloned().unwrap_or_default();
     let mut doc = (*src).clone();
@@ -95,8 +107,14 @@ fn new_document(s: &mut Session, p: &Value) -> Result<Value> {
 /// The `snapshot` param: the index of the active document's snapshot with that id.
 fn snapshot_index(s: &Session, cmd: &str, p: &Value) -> Result<usize> {
     let st = s.active().ok_or(EngineError::NoDocument)?;
-    let id = p.get("snapshot").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "`snapshot` must be a snapshot id"))?;
-    st.snapshots.iter().position(|snap| snap.id == id).ok_or_else(|| bad(cmd, format!("no snapshot {id}")))
+    let id = p
+        .get("snapshot")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(cmd, "`snapshot` must be a snapshot id"))?;
+    st.snapshots
+        .iter()
+        .position(|snap| snap.id == id)
+        .ok_or_else(|| bad(cmd, format!("no snapshot {id}")))
 }
 
 /// A non-blank `name` param, trimmed; `None` when absent.
@@ -116,23 +134,47 @@ fn new_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
     let name = name_param(CMD, p)?;
     let from = match p.get("from") {
         None | Some(Value::Null) => "fullDocument",
-        Some(Value::String(f)) if matches!(f.as_str(), "fullDocument" | "mergedLayers" | "currentLayer") => f.as_str(),
-        Some(_) => return Err(bad(CMD, "`from` must be \"fullDocument\", \"mergedLayers\" or \"currentLayer\"")),
+        Some(Value::String(f))
+            if matches!(f.as_str(), "fullDocument" | "mergedLayers" | "currentLayer") =>
+        {
+            f.as_str()
+        }
+        Some(_) => {
+            return Err(bad(
+                CMD,
+                "`from` must be \"fullDocument\", \"mergedLayers\" or \"currentLayer\"",
+            ));
+        }
     };
     let st = s.active().ok_or(EngineError::NoDocument)?;
     let one_layer = |doc: &Document, layer: Layer| {
         let mut doc = doc.clone();
         let id = layer.id;
         doc.layers = vec![layer];
-        (Arc::new(doc), LayerTarget { active: Some(id), selected: vec![id] })
+        (
+            Arc::new(doc),
+            LayerTarget {
+                active: Some(id),
+                selected: vec![id],
+            },
+        )
     };
     let (doc, layers) = match from {
         "mergedLayers" => {
             let fmt = st.doc.pixel_format();
-            one_layer(&st.doc, Layer::new("Merged Layers", LayerContent::Raster(crate::file_cmds::flattened(&st.doc, fmt))))
+            one_layer(
+                &st.doc,
+                Layer::new(
+                    "Merged Layers",
+                    LayerContent::Raster(crate::file_cmds::flattened(&st.doc, fmt)),
+                ),
+            )
         }
         "currentLayer" => {
-            let layer = st.active_layer.and_then(|id| st.doc.layer(id)).ok_or_else(|| bad(CMD, "no active layer"))?;
+            let layer = st
+                .active_layer
+                .and_then(|id| st.doc.layer(id))
+                .ok_or_else(|| bad(CMD, "no active layer"))?;
             one_layer(&st.doc, layer.clone())
         }
         _ => (st.doc.clone(), st.layer_target()),
@@ -141,7 +183,12 @@ fn new_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
     let id = st.next_snapshot;
     st.next_snapshot = id.saturating_add(1);
     let name = name.unwrap_or_else(|| format!("Snapshot {id}"));
-    st.snapshots.push(Snapshot { id, name: name.clone(), doc, layers });
+    st.snapshots.push(Snapshot {
+        id,
+        name: name.clone(),
+        doc,
+        layers,
+    });
     Ok(json!({ "snapshot": id, "name": name }))
 }
 
@@ -151,16 +198,25 @@ fn select_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
     let i = snapshot_index(s, CMD, p)?;
     // A background job is computing from the current state: it must not move under it.
     if s.active_job().is_some() {
-        return Err(EngineError::Other("the document is busy with a background job".into()));
+        return Err(EngineError::Other(
+            "the document is busy with a background job".into(),
+        ));
     }
-    let snap = s.active().and_then(|st| st.snapshots.get(i).cloned()).ok_or(EngineError::NoDocument)?;
+    let snap = s
+        .active()
+        .and_then(|st| st.snapshots.get(i).cloned())
+        .ok_or(EngineError::NoDocument)?;
     s.edit(&snap.name, |doc, active| {
         // Keep the identity (colour state, views and caches are keyed by it) and the tab name.
         let (id, name) = (doc.id, doc.name.clone());
         *doc = (*snap.doc).clone();
         doc.id = id;
         doc.name = name;
-        *active = snap.layers.active.filter(|l| doc.layer(*l).is_some()).or_else(|| doc.top_layer());
+        *active = snap
+            .layers
+            .active
+            .filter(|l| doc.layer(*l).is_some())
+            .or_else(|| doc.top_layer());
         Ok(())
     })?;
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
@@ -177,7 +233,10 @@ fn rename_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
     let i = snapshot_index(s, CMD, p)?;
     let name = name_param(CMD, p)?.ok_or_else(|| bad(CMD, "`name` is required"))?;
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
-    let snap = st.snapshots.get_mut(i).ok_or_else(|| bad(CMD, "no such snapshot"))?;
+    let snap = st
+        .snapshots
+        .get_mut(i)
+        .ok_or_else(|| bad(CMD, "no such snapshot"))?;
     snap.name.clone_from(&name);
     Ok(json!({ "snapshot": snap.id, "name": name }))
 }
@@ -192,20 +251,31 @@ fn delete_snapshot(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn can_delete(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.history.can_undo()).map(|_| ()).ok_or_else(|| "the oldest state can't be deleted".into())
+    s.active()
+        .filter(|d| d.history.can_undo())
+        .map(|_| ())
+        .ok_or_else(|| "the oldest state can't be deleted".into())
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 /// `history.undo` / `history.redo` enable predicates, matching `edit.undo` / `edit.redo`.
 fn can_undo(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.history.can_undo()).map(|_| ()).ok_or_else(|| "nothing to undo".into())
+    s.active()
+        .filter(|d| d.history.can_undo())
+        .map(|_| ())
+        .ok_or_else(|| "nothing to undo".into())
 }
 
 fn can_redo(s: &Session) -> std::result::Result<(), String> {
-    s.active().filter(|d| d.history.can_redo()).map(|_| ()).ok_or_else(|| "nothing to redo".into())
+    s.active()
+        .filter(|d| d.history.can_redo())
+        .map(|_| ())
+        .ok_or_else(|| "nothing to redo".into())
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -302,7 +372,8 @@ mod tests {
     /// A document with three steps after Open: entries Open, New Layer, Fill, Fill.
     fn session() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 20, "height": 10})).unwrap();
+        s.execute("file.new", json!({"width": 20, "height": 10}))
+            .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("edit.fill", json!({"color": "#ff0000"})).unwrap();
         s.execute("edit.fill", json!({"color": "#00ff00"})).unwrap();
@@ -318,9 +389,17 @@ mod tests {
         let mut s = session();
         let n = s.active().unwrap().history.past_len();
         s.execute("history.undo", json!({})).unwrap();
-        assert_eq!(s.active().unwrap().history.past_len(), n - 1, "history.undo steps back like edit.undo");
+        assert_eq!(
+            s.active().unwrap().history.past_len(),
+            n - 1,
+            "history.undo steps back like edit.undo"
+        );
         s.execute("history.redo", json!({})).unwrap();
-        assert_eq!(s.active().unwrap().history.past_len(), n, "history.redo steps forward like edit.redo");
+        assert_eq!(
+            s.active().unwrap().history.past_len(),
+            n,
+            "history.redo steps forward like edit.redo"
+        );
     }
 
     #[test]
@@ -331,8 +410,14 @@ mod tests {
         let r = s.execute("history.deleteState", json!({})).unwrap();
         assert_eq!(r["states"], json!(before.len() - 1));
         assert_eq!(entries(&s), before[..before.len() - 1].to_vec());
-        assert!(std::sync::Arc::ptr_eq(&s.active().unwrap().doc, &prev_doc), "the document is the state before");
-        assert!(!s.active().unwrap().history.can_redo(), "the deleted state can't be redone");
+        assert!(
+            std::sync::Arc::ptr_eq(&s.active().unwrap().doc, &prev_doc),
+            "the document is the state before"
+        );
+        assert!(
+            !s.active().unwrap().history.can_redo(),
+            "the deleted state can't be redone"
+        );
         assert!(s.execute("edit.redo", json!({})).is_err());
     }
 
@@ -340,7 +425,8 @@ mod tests {
     fn delete_an_earlier_state_drops_it_and_every_later_one() {
         let mut s = session();
         let first = s.active().unwrap().history.state(0).unwrap();
-        s.execute("history.deleteState", json!({"state": 1})).unwrap();
+        s.execute("history.deleteState", json!({"state": 1}))
+            .unwrap();
         assert_eq!(entries(&s), vec!["Open".to_string()]);
         assert!(std::sync::Arc::ptr_eq(&s.active().unwrap().doc, &first));
         assert!(!s.active().unwrap().history.can_redo());
@@ -355,13 +441,27 @@ mod tests {
     #[test]
     fn delete_state_refuses_the_oldest_state_and_bad_params() {
         let mut s = Session::new();
-        assert!(s.execute("history.deleteState", json!({})).is_err(), "no document");
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        assert!(!s.is_enabled("history.deleteState"), "only the opening state");
+        assert!(
+            s.execute("history.deleteState", json!({})).is_err(),
+            "no document"
+        );
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        assert!(
+            !s.is_enabled("history.deleteState"),
+            "only the opening state"
+        );
         assert!(s.execute("history.deleteState", json!({})).is_err());
         let mut s = session();
         let before = entries(&s);
-        for p in [json!({"state": 0}), json!({"state": -1}), json!({"state": 99}), json!({"state": "x"}), json!({"state": f64::MAX}), json!({"state": [1]})] {
+        for p in [
+            json!({"state": 0}),
+            json!({"state": -1}),
+            json!({"state": 99}),
+            json!({"state": "x"}),
+            json!({"state": f64::MAX}),
+            json!({"state": [1]}),
+        ] {
             assert!(s.execute("history.deleteState", p.clone()).is_err(), "{p}");
             assert_eq!(entries(&s), before, "{p} changed nothing");
         }
@@ -385,7 +485,8 @@ mod tests {
         s.set_active(0);
         let before = entries(&s);
         let open = s.active().unwrap().history.state(0).unwrap();
-        s.execute("history.newDocument", json!({"state": 0, "name": "Start"})).unwrap();
+        s.execute("history.newDocument", json!({"state": 0, "name": "Start"}))
+            .unwrap();
         let new = s.active().unwrap();
         assert_eq!(new.doc.name, "Start");
         assert_eq!(new.doc.layers.len(), open.layers.len());
@@ -395,7 +496,15 @@ mod tests {
 
     /// The top layer's pixel at (1, 1).
     fn top_pixel(s: &Session) -> [f32; 4] {
-        s.active().unwrap().doc.layers.last().unwrap().surface().unwrap().rgba(1, 1)
+        s.active()
+            .unwrap()
+            .doc
+            .layers
+            .last()
+            .unwrap()
+            .surface()
+            .unwrap()
+            .rgba(1, 1)
     }
 
     fn snapshots(s: &Session) -> Value {
@@ -409,9 +518,14 @@ mod tests {
         let r = s.execute("history.newSnapshot", json!({})).unwrap();
         assert_eq!(r, json!({"snapshot": 1, "name": "Snapshot 1"}));
         assert_eq!(entries(&s), before, "taking a snapshot is not a step");
-        let r = s.execute("history.newSnapshot", json!({"name": "Before green"})).unwrap();
+        let r = s
+            .execute("history.newSnapshot", json!({"name": "Before green"}))
+            .unwrap();
         assert_eq!(r, json!({"snapshot": 2, "name": "Before green"}));
-        assert_eq!(snapshots(&s), json!([{"id": 1, "name": "Snapshot 1"}, {"id": 2, "name": "Before green"}]));
+        assert_eq!(
+            snapshots(&s),
+            json!([{"id": 1, "name": "Snapshot 1"}, {"id": 2, "name": "Before green"}])
+        );
     }
 
     #[test]
@@ -423,7 +537,8 @@ mod tests {
         s.execute("edit.fill", json!({"color": "#0000ff"})).unwrap();
         let blue = top_pixel(&s);
         let before = entries(&s);
-        s.execute("history.selectSnapshot", json!({"snapshot": 1})).unwrap();
+        s.execute("history.selectSnapshot", json!({"snapshot": 1}))
+            .unwrap();
         assert_eq!(top_pixel(&s), green);
         assert_eq!(entries(&s).len(), before.len() + 1, "one new state");
         assert_eq!(entries(&s).last().map(String::as_str), Some("Snapshot 1"));
@@ -431,23 +546,41 @@ mod tests {
         assert!(s.active().unwrap().active_layer.is_some());
         s.execute("edit.undo", json!({})).unwrap();
         assert_eq!(top_pixel(&s), blue, "undo leaves the snapshot");
-        assert_eq!(snapshots(&s).as_array().unwrap().len(), 1, "snapshots are not history");
+        assert_eq!(
+            snapshots(&s).as_array().unwrap().len(),
+            1,
+            "snapshots are not history"
+        );
     }
 
     #[test]
     fn snapshots_from_merged_layers_or_the_current_layer() {
         let mut s = session();
         assert_eq!(s.active().unwrap().doc.layers.len(), 2);
-        s.execute("history.newSnapshot", json!({"from": "mergedLayers"})).unwrap();
-        s.execute("history.newSnapshot", json!({"from": "currentLayer"})).unwrap();
-        s.execute("history.newSnapshot", json!({"from": "fullDocument"})).unwrap();
-        s.execute("history.selectSnapshot", json!({"snapshot": 1})).unwrap();
+        s.execute("history.newSnapshot", json!({"from": "mergedLayers"}))
+            .unwrap();
+        s.execute("history.newSnapshot", json!({"from": "currentLayer"}))
+            .unwrap();
+        s.execute("history.newSnapshot", json!({"from": "fullDocument"}))
+            .unwrap();
+        s.execute("history.selectSnapshot", json!({"snapshot": 1}))
+            .unwrap();
         let doc = s.active().unwrap().doc.clone();
         assert_eq!(doc.layers.len(), 1, "merged into one layer");
-        assert_eq!(doc.layers[0].surface().unwrap().rgba(1, 1), [0.0, 1.0, 0.0, 1.0], "the visible result");
-        s.execute("history.selectSnapshot", json!({"snapshot": 2})).unwrap();
-        assert_eq!(s.active().unwrap().doc.layers.len(), 1, "only the active layer");
-        s.execute("history.selectSnapshot", json!({"snapshot": 3})).unwrap();
+        assert_eq!(
+            doc.layers[0].surface().unwrap().rgba(1, 1),
+            [0.0, 1.0, 0.0, 1.0],
+            "the visible result"
+        );
+        s.execute("history.selectSnapshot", json!({"snapshot": 2}))
+            .unwrap();
+        assert_eq!(
+            s.active().unwrap().doc.layers.len(),
+            1,
+            "only the active layer"
+        );
+        s.execute("history.selectSnapshot", json!({"snapshot": 3}))
+            .unwrap();
         assert_eq!(s.active().unwrap().doc.layers.len(), 2);
     }
 
@@ -457,9 +590,17 @@ mod tests {
         for _ in 0..3 {
             s.execute("history.newSnapshot", json!({})).unwrap();
         }
-        s.execute("history.renameSnapshot", json!({"snapshot": 2, "name": "Lesson start"})).unwrap();
-        s.execute("history.deleteSnapshot", json!({"snapshot": 1})).unwrap();
-        assert_eq!(snapshots(&s), json!([{"id": 2, "name": "Lesson start"}, {"id": 3, "name": "Snapshot 3"}]));
+        s.execute(
+            "history.renameSnapshot",
+            json!({"snapshot": 2, "name": "Lesson start"}),
+        )
+        .unwrap();
+        s.execute("history.deleteSnapshot", json!({"snapshot": 1}))
+            .unwrap();
+        assert_eq!(
+            snapshots(&s),
+            json!([{"id": 2, "name": "Lesson start"}, {"id": 3, "name": "Snapshot 3"}])
+        );
         let r = s.execute("history.newSnapshot", json!({})).unwrap();
         assert_eq!(r["snapshot"], json!(4), "ids are never reused");
     }
@@ -470,7 +611,10 @@ mod tests {
         for (cmd, p) in [
             ("history.newSnapshot", json!({})),
             ("history.selectSnapshot", json!({"snapshot": 1})),
-            ("history.renameSnapshot", json!({"snapshot": 1, "name": "x"})),
+            (
+                "history.renameSnapshot",
+                json!({"snapshot": 1, "name": "x"}),
+            ),
             ("history.deleteSnapshot", json!({"snapshot": 1})),
         ] {
             assert!(s.execute(cmd, p).is_err(), "{cmd}: no document");
@@ -488,25 +632,46 @@ mod tests {
             ("history.selectSnapshot", json!({"snapshot": "1"})),
             ("history.selectSnapshot", json!({"snapshot": f64::MAX})),
             ("history.renameSnapshot", json!({"snapshot": 1})),
-            ("history.renameSnapshot", json!({"snapshot": 1, "name": "  "})),
-            ("history.renameSnapshot", json!({"snapshot": 99, "name": "x"})),
+            (
+                "history.renameSnapshot",
+                json!({"snapshot": 1, "name": "  "}),
+            ),
+            (
+                "history.renameSnapshot",
+                json!({"snapshot": 99, "name": "x"}),
+            ),
             ("history.deleteSnapshot", json!({"snapshot": 99})),
             ("history.deleteSnapshot", json!({"snapshot": [1]})),
         ] {
             assert!(s.execute(cmd, p.clone()).is_err(), "{cmd} {p}");
-            assert_eq!((entries(&s), snapshots(&s)), (before.clone(), snaps.clone()), "{cmd} {p} changed nothing");
+            assert_eq!(
+                (entries(&s), snapshots(&s)),
+                (before.clone(), snaps.clone()),
+                "{cmd} {p} changed nothing"
+            );
         }
         // Current Layer needs an active layer.
         s.execute("select.deselectLayers", json!({})).unwrap();
-        assert!(s.execute("history.newSnapshot", json!({"from": "currentLayer"})).is_err());
+        assert!(
+            s.execute("history.newSnapshot", json!({"from": "currentLayer"}))
+                .is_err()
+        );
     }
 
     #[test]
     fn new_document_refuses_bad_params() {
         let mut s = Session::new();
-        assert!(s.execute("history.newDocument", json!({})).is_err(), "no document");
+        assert!(
+            s.execute("history.newDocument", json!({})).is_err(),
+            "no document"
+        );
         let mut s = session();
-        for p in [json!({"state": -1}), json!({"state": 99}), json!({"state": "x"}), json!({"state": f64::NAN.to_string()})] {
+        for p in [
+            json!({"state": -1}),
+            json!({"state": 99}),
+            json!({"state": "x"}),
+            json!({"state": f64::NAN.to_string()}),
+        ] {
             assert!(s.execute("history.newDocument", p.clone()).is_err(), "{p}");
         }
         assert_eq!(s.documents().len(), 1);

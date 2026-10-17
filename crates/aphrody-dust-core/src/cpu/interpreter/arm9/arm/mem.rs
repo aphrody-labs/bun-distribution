@@ -378,7 +378,11 @@ pub fn ldrd<const OFF_IMM: bool, const UPWARDS: bool, const ADDRESSING: MiscAddr
             apply_reg_interlocks_2::<0, false>(emu, base_reg, off_reg);
             reg!(emu.arm9, off_reg)
         } as i32;
-        if UPWARDS { abs_off } else { abs_off.wrapping_neg() }
+        if UPWARDS {
+            abs_off
+        } else {
+            abs_off.wrapping_neg()
+        }
     };
     add_bus_cycles(emu, 2);
 
@@ -475,7 +479,11 @@ pub fn strd<const OFF_IMM: bool, const UPWARDS: bool, const ADDRESSING: MiscAddr
             apply_reg_interlocks_2::<0, false>(emu, base_reg, off_reg);
             reg!(emu.arm9, off_reg)
         } as i32;
-        if UPWARDS { abs_off } else { abs_off.wrapping_neg() }
+        if UPWARDS {
+            abs_off
+        } else {
+            abs_off.wrapping_neg()
+        }
     };
 
     let start_addr = if ADDRESSING.preincrement() {
@@ -637,7 +645,11 @@ macro_rules! swp_handler {
             let $addr = reg!($emu.arm9, addr_reg);
             prefetch_arm::<false, true>($emu);
             // can_write implies can_read
-            if unlikely(!can_write($emu, $addr, $emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_write(
+                $emu,
+                $addr,
+                $emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 $emu.arm9.engine_data.data_cycles = 1;
                 add_cycles($emu, 1);
                 return handle_data_abort::<false>($emu, $addr);
@@ -716,14 +728,20 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
     if unlikely(instr as u16 == 0) {
         add_cycles(emu, 1);
         if WRITEBACK {
-            reg!(emu.arm9, base_reg) =
-                if UPWARDS { base.wrapping_add(0x40) } else { base.wrapping_sub(0x40) };
+            reg!(emu.arm9, base_reg) = if UPWARDS {
+                base.wrapping_add(0x40)
+            } else {
+                base.wrapping_sub(0x40)
+            };
         }
         emu.arm9.engine_data.data_cycles = 1;
         return;
     }
-    let start_addr =
-        if UPWARDS { base } else { base.wrapping_sub((instr as u16).count_ones() << 2) };
+    let start_addr = if UPWARDS {
+        base
+    } else {
+        base.wrapping_sub((instr as u16).count_ones() << 2)
+    };
     let mut cur_addr = start_addr;
     if S_BIT && instr & 1 << 15 == 0 {
         emu.arm9
@@ -744,7 +762,11 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
             if not_first {
                 add_cycles(emu, data_cycles as RawTimestamp);
             }
-            if unlikely(!can_read(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_read(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle)
@@ -755,7 +777,10 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
                         .regs
                         .update_mode::<true>(Mode::USER, emu.arm9.engine_data.regs.cpsr.mode());
                 }
-                add_cycles(emu, (instr as u16 & !((1 << reg) - 1)).count_ones() as RawTimestamp);
+                add_cycles(
+                    emu,
+                    (instr as u16 & !((1 << reg) - 1)).count_ones() as RawTimestamp,
+                );
                 return handle_data_abort::<false>(emu, cur_addr);
             }
             reg!(emu.arm9, reg) = bus::read_32::<CpuAccess, _, false>(emu, cur_addr);
@@ -799,7 +824,11 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
             add_cycles(emu, data_cycles as RawTimestamp);
         }
         emu.arm9.engine_data.data_cycles = 1;
-        if unlikely(!can_read(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+        if unlikely(!can_read(
+            emu,
+            cur_addr,
+            emu.arm9.engine_data.regs.is_in_priv_mode(),
+        )) {
             add_cycles(emu, 1);
             return handle_data_abort::<false>(emu, cur_addr);
         }
@@ -822,8 +851,11 @@ pub fn ldm<const UPWARDS: bool, const PREINC: bool, const WRITEBACK: bool, const
                 || (instr & !((2 << base_reg) - 1)) as u16 != 0,
         )
     {
-        reg!(emu.arm9, base_reg) =
-            if UPWARDS { cur_addr.wrapping_sub((PREINC as u32) << 2) } else { start_addr };
+        reg!(emu.arm9, base_reg) = if UPWARDS {
+            cur_addr.wrapping_sub((PREINC as u32) << 2)
+        } else {
+            start_addr
+        };
     }
 }
 
@@ -848,14 +880,20 @@ pub fn stm<
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
         if WRITEBACK {
-            reg!(emu.arm9, base_reg) =
-                if UPWARDS { base.wrapping_add(0x40) } else { base.wrapping_sub(0x40) };
+            reg!(emu.arm9, base_reg) = if UPWARDS {
+                base.wrapping_add(0x40)
+            } else {
+                base.wrapping_sub(0x40)
+            };
         }
         emu.arm9.engine_data.data_cycles = 1;
         return;
     }
-    let start_addr =
-        if UPWARDS { base } else { base.wrapping_sub((instr as u16).count_ones() << 2) };
+    let start_addr = if UPWARDS {
+        base
+    } else {
+        base.wrapping_sub((instr as u16).count_ones() << 2)
+    };
     let mut cur_addr = start_addr;
     if BANK_SWITCH {
         emu.arm9
@@ -878,7 +916,11 @@ pub fn stm<
             } else if !BANK_SWITCH {
                 apply_reg_interlock_1::<true>(emu, reg);
             }
-            if unlikely(!can_write(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_write(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle).
@@ -891,7 +933,10 @@ pub fn stm<
                 }
                 add_bus_cycles(emu, 2);
                 #[cfg(feature = "interp-timing-details")]
-                add_cycles(emu, (instr as u16 & !((1 << reg) - 1)).count_ones() as RawTimestamp);
+                add_cycles(
+                    emu,
+                    (instr as u16 & !((1 << reg) - 1)).count_ones() as RawTimestamp,
+                );
                 return handle_data_abort::<false>(emu, cur_addr);
             }
             bus::write_32::<CpuAccess, _>(emu, cur_addr, reg!(emu.arm9, reg));
@@ -926,8 +971,11 @@ pub fn stm<
         emu.arm9.engine_data.data_cycles = 1;
     }
     if WRITEBACK {
-        reg!(emu.arm9, base_reg) =
-            if UPWARDS { cur_addr.wrapping_sub((PREINC as u32) << 2) } else { start_addr };
+        reg!(emu.arm9, base_reg) = if UPWARDS {
+            cur_addr.wrapping_sub((PREINC as u32) << 2)
+        } else {
+            start_addr
+        };
     }
 }
 

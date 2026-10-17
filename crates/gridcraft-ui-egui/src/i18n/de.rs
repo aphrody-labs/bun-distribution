@@ -12,7 +12,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Paste Special…" => "Inhalte einfügen…",
         "Cut (⌘X)" => "Ausschneiden (⌘X)",
         "Copy (⌘C)" => "Kopieren (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Format übertragen (Doppelklick zum Beibehalten)",
+        "Format Painter (double-click to keep it on)" => {
+            "Format übertragen (Doppelklick zum Beibehalten)"
+        }
         "Bold (⌘B)" => "Fett (⌘B)",
         "Italic (⌘I)" => "Kursiv (⌘I)",
         "Underline (⌘U)" => "Unterstrichen (⌘U)",
@@ -235,7 +237,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Show All Notes" => "Alle Notizen anzeigen",
         "Convert to Comments" => "In Kommentare konvertieren",
         "Checkbox" => "Kontrollkästchen",
-        "Insert checkboxes in the selected cells" => "Kontrollkästchen in die ausgewählten Zellen einfügen",
+        "Insert checkboxes in the selected cells" => {
+            "Kontrollkästchen in die ausgewählten Zellen einfügen"
+        }
         "Sheet\nRight-to-Left" => "Blatt von rechts\nnach links",
         "Sheet Right-to-Left" => "Blatt von rechts nach links",
         "Data\nAnalysis" => "Daten-\nanalyse",
@@ -310,20 +314,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Vorherige Seite",
         "Next page" => "Nächste Seite",
         "Create PDF" => "PDF erstellen",
-        "Save the sheet as a PDF document that keeps its page layout." => "Speichert das Blatt als PDF-Dokument mit unverändertem Seitenlayout.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Speichert das Blatt als PDF-Dokument mit unverändertem Seitenlayout."
+        }
         "Change File Type" => "Dateityp ändern",
         "CSV (Comma delimited)" => "CSV (Trennzeichen-getrennt)",
-        "Save the active sheet as comma-separated text." => "Speichert das aktive Blatt als durch Kommas getrennten Text.",
+        "Save the active sheet as comma-separated text." => {
+            "Speichert das aktive Blatt als durch Kommas getrennten Text."
+        }
         "Web Page (.html)" => "Webseite (.html)",
         "Save the workbook as a web page." => "Speichert die Arbeitsmappe als Webseite.",
         "Options|General" => "Allgemein",
         "Options|Save" => "Speichern",
         "Show formula bar" => "Bearbeitungsleiste anzeigen",
         "Enable AutoComplete for cell values" => "AutoVervollständigen für Zellwerte aktivieren",
-        "Save .xlsx workbooks automatically after every change" => ".xlsx-Arbeitsmappen nach jeder Änderung automatisch speichern",
+        "Save .xlsx workbooks automatically after every change" => {
+            ".xlsx-Arbeitsmappen nach jeder Änderung automatisch speichern"
+        }
         "Workbook calculation" => "Arbeitsmappenberechnung",
         "Enable iterative calculation" => "Iterative Berechnung aktivieren",
-        "Calculation settings are saved with the workbook." => "Berechnungseinstellungen werden mit der Arbeitsmappe gespeichert.",
+        "Calculation settings are saved with the workbook." => {
+            "Berechnungseinstellungen werden mit der Arbeitsmappe gespeichert."
+        }
         "Interface size" => "Größe der Benutzeroberfläche",
         "Auto" => "Automatisch",
         "100%" => "100%",
@@ -382,7 +394,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Bearbeiten",
         "Point" => "Zeigen",
         "Calculate" => "Berechnen",
-        "Select destination and press Enter or choose Paste" => "Ziel auswählen und die Eingabetaste drücken oder „Einfügen“ wählen",
+        "Select destination and press Enter or choose Paste" => {
+            "Ziel auswählen und die Eingabetaste drücken oder „Einfügen“ wählen"
+        }
         "General" => "Standard",
         "Number" => "Zahl",
         "Currency" => "Währung",

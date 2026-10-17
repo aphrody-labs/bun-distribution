@@ -98,7 +98,10 @@ impl ChartType {
         )
     }
     pub fn horizontal(self) -> bool {
-        matches!(self, ChartType::Bar | ChartType::StackedBar | ChartType::PercentBar | ChartType::Funnel)
+        matches!(
+            self,
+            ChartType::Bar | ChartType::StackedBar | ChartType::PercentBar | ChartType::Funnel
+        )
     }
     pub fn stacked(self) -> bool {
         matches!(
@@ -195,15 +198,38 @@ impl Chart {
     /// The sample data a new chart starts with (our own numbers).
     pub fn sample(kind: ChartType) -> Self {
         let cats = ["Q1", "Q2", "Q3", "Q4"];
-        let data = [[4.2, 2.6, 2.1], [2.8, 4.1, 2.4], [3.6, 1.9, 3.3], [4.7, 3.0, 5.1]];
-        let mut c = Chart { kind, categories: cats.iter().map(|s| s.to_string()).collect(), ..Default::default() };
-        let n_series =
-            if matches!(kind, ChartType::Pie | ChartType::Doughnut | ChartType::Funnel | ChartType::Waterfall | ChartType::Treemap) { 1 } else { 3 };
+        let data = [
+            [4.2, 2.6, 2.1],
+            [2.8, 4.1, 2.4],
+            [3.6, 1.9, 3.3],
+            [4.7, 3.0, 5.1],
+        ];
+        let mut c = Chart {
+            kind,
+            categories: cats.iter().map(|s| s.to_string()).collect(),
+            ..Default::default()
+        };
+        let n_series = if matches!(
+            kind,
+            ChartType::Pie
+                | ChartType::Doughnut
+                | ChartType::Funnel
+                | ChartType::Waterfall
+                | ChartType::Treemap
+        ) {
+            1
+        } else {
+            3
+        };
         for s in 0..n_series {
             c.series.push(Series {
                 name: format!("Series {}", s + 1),
                 values: data.iter().map(|row| row.get(s).copied()).collect(),
-                x_values: if kind == ChartType::Scatter { (1..=4).map(|x| Some(x as f64)).collect() } else { vec![] },
+                x_values: if kind == ChartType::Scatter {
+                    (1..=4).map(|x| Some(x as f64)).collect()
+                } else {
+                    vec![]
+                },
                 ..Default::default()
             });
         }
@@ -214,7 +240,13 @@ impl Chart {
     pub fn value_range(&self) -> (f64, f64) {
         let mut lo: f64 = 0.0;
         let mut hi: f64 = 0.0;
-        let n = self.categories.len().max(self.series.iter().map(|s| s.values.len()).max().unwrap_or(0));
+        let n = self.categories.len().max(
+            self.series
+                .iter()
+                .map(|s| s.values.len())
+                .max()
+                .unwrap_or(0),
+        );
         if self.kind.stacked() {
             for i in 0..n {
                 let (mut p, mut m) = (0.0, 0.0);
@@ -244,8 +276,16 @@ impl Chart {
 
 /// "Nice" axis scale: (min, max, major step) covering [lo, hi].
 pub fn nice_scale(lo: f64, hi: f64) -> (f64, f64, f64) {
-    let (lo, hi) = if lo.is_finite() && hi.is_finite() { (lo.min(hi), lo.max(hi)) } else { (0.0, 1.0) };
-    let span = if hi - lo < 1e-12 { hi.abs().max(1.0) } else { hi - lo };
+    let (lo, hi) = if lo.is_finite() && hi.is_finite() {
+        (lo.min(hi), lo.max(hi))
+    } else {
+        (0.0, 1.0)
+    };
+    let span = if hi - lo < 1e-12 {
+        hi.abs().max(1.0)
+    } else {
+        hi - lo
+    };
     let raw = span / 5.0;
     let mag = 10f64.powf(raw.log10().floor());
     let norm = raw / mag;
@@ -262,7 +302,11 @@ pub fn nice_scale(lo: f64, hi: f64) -> (f64, f64, f64) {
     } * mag;
     let min = (lo / step).floor() * step;
     let max = (hi / step).ceil() * step;
-    let max = if (max - min).abs() < 1e-12 { min + step } else { max };
+    let max = if (max - min).abs() < 1e-12 {
+        min + step
+    } else {
+        max
+    };
     (min, max, step)
 }
 

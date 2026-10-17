@@ -65,8 +65,14 @@ pub struct TextureReference {
 }
 
 fn ensure_editor_input_sizes(glb_len: usize, png_len: usize) -> Result<()> {
-    anyhow::ensure!(glb_len <= EDITOR_MAX_GLB_BYTES, "GLB exceeds the 64 MiB editor limit");
-    anyhow::ensure!(png_len <= EDITOR_MAX_PNG_BYTES, "PNG exceeds the 32 MiB editor limit");
+    anyhow::ensure!(
+        glb_len <= EDITOR_MAX_GLB_BYTES,
+        "GLB exceeds the 64 MiB editor limit"
+    );
+    anyhow::ensure!(
+        png_len <= EDITOR_MAX_PNG_BYTES,
+        "PNG exceeds the 32 MiB editor limit"
+    );
     Ok(())
 }
 
@@ -144,12 +150,19 @@ pub fn decode_png(bytes: &[u8], max_rgba_bytes: usize) -> Result<Texture> {
     let rgba_len = usize::try_from(header.width)
         .ok()
         .and_then(|width| {
-            usize::try_from(header.height).ok().and_then(|height| width.checked_mul(height))
+            usize::try_from(header.height)
+                .ok()
+                .and_then(|height| width.checked_mul(height))
         })
         .and_then(|pixels| pixels.checked_mul(4))
         .context("png RGBA size overflow")?;
-    anyhow::ensure!(rgba_len <= max_rgba_bytes, "decoded PNG exceeds the remaining texture budget");
-    let bufsz = reader.output_buffer_size().context("png output_buffer_size (overflow)")?;
+    anyhow::ensure!(
+        rgba_len <= max_rgba_bytes,
+        "decoded PNG exceeds the remaining texture budget"
+    );
+    let bufsz = reader
+        .output_buffer_size()
+        .context("png output_buffer_size (overflow)")?;
     anyhow::ensure!(
         bufsz <= max_rgba_bytes,
         "decoded PNG buffer exceeds the remaining texture budget"
@@ -168,7 +181,7 @@ pub fn decode_png(bytes: &[u8], max_rgba_bytes: usize) -> Result<Texture> {
                 rgba[i * 4 + 2] = buf[i * 3 + 2];
                 rgba[i * 4 + 3] = 255;
             }
-        },
+        }
         png::ColorType::Grayscale => {
             for i in 0..n {
                 let g = buf[i];
@@ -177,7 +190,7 @@ pub fn decode_png(bytes: &[u8], max_rgba_bytes: usize) -> Result<Texture> {
                 rgba[i * 4 + 2] = g;
                 rgba[i * 4 + 3] = 255;
             }
-        },
+        }
         png::ColorType::GrayscaleAlpha => {
             for i in 0..n {
                 let g = buf[i * 2];
@@ -186,10 +199,14 @@ pub fn decode_png(bytes: &[u8], max_rgba_bytes: usize) -> Result<Texture> {
                 rgba[i * 4 + 2] = g;
                 rgba[i * 4 + 3] = buf[i * 2 + 1];
             }
-        },
+        }
         png::ColorType::Indexed => bail!("PNG indexé non normalisé"),
     }
-    Ok(Texture { width: w, height: h, rgba })
+    Ok(Texture {
+        width: w,
+        height: h,
+        rgba,
+    })
 }
 
 /// Decode and validate a standalone PNG admitted by the public editor.
@@ -197,7 +214,10 @@ pub fn decode_png(bytes: &[u8], max_rgba_bytes: usize) -> Result<Texture> {
 /// This checks compressed size, decoded RGBA allocation and dimensions in Rust before a browser
 /// creates an object URL for the reference image.
 pub fn validate_editor_png(bytes: &[u8]) -> Result<(u32, u32)> {
-    anyhow::ensure!(bytes.len() <= EDITOR_MAX_PNG_BYTES, "PNG exceeds the 32 MiB editor limit");
+    anyhow::ensure!(
+        bytes.len() <= EDITOR_MAX_PNG_BYTES,
+        "PNG exceeds the 32 MiB editor limit"
+    );
     let texture = decode_png(bytes, EDITOR_PNG_RGBA_BUDGET)?;
     anyhow::ensure!(
         texture.width <= EDITOR_PNG_MAX_DIMENSION && texture.height <= EDITOR_PNG_MAX_DIMENSION,
@@ -212,7 +232,10 @@ pub fn validate_editor_png(bytes: &[u8]) -> Result<(u32, u32)> {
 /// several texture slots may share that source. Names come from the texture first and fall back
 /// to the referenced image name.
 pub fn texture_references(data: &[u8]) -> Result<Vec<TextureReference>> {
-    anyhow::ensure!(data.len() <= EDITOR_MAX_GLB_BYTES, "GLB exceeds the 64 MiB editor limit");
+    anyhow::ensure!(
+        data.len() <= EDITOR_MAX_GLB_BYTES,
+        "GLB exceeds the 64 MiB editor limit"
+    );
     let source_chunks = chunks(data)?;
     let json_bytes = source_chunks
         .iter()
@@ -237,8 +260,10 @@ pub fn texture_references(data: &[u8]) -> Result<Vec<TextureReference>> {
             let image = images
                 .get(source)
                 .with_context(|| format!("texture {index}: image source {source} hors limites"))?;
-            let name =
-                texture["name"].as_str().or_else(|| image["name"].as_str()).map(str::to_owned);
+            let name = texture["name"]
+                .as_str()
+                .or_else(|| image["name"].as_str())
+                .map(str::to_owned);
             Ok(TextureReference { source, name })
         })
         .collect()
@@ -276,17 +301,22 @@ pub fn replace_texture_png(
         .context("chunk BIN absent")?;
     let mut root: Value = serde_json::from_slice(json_bytes).context("JSON glTF invalide")?;
     let references = texture_references(data)?;
-    let source =
-        references.get(index).with_context(|| format!("texture {index} hors limites"))?.source;
+    let source = references
+        .get(index)
+        .with_context(|| format!("texture {index} hors limites"))?
+        .source;
     let buffers = root["buffers"].as_array().context("buffers absents")?;
     let buffer = buffers.first().context("buffer 0 absent")?;
     if buffer.get("uri").is_some() {
         bail!("buffer 0 doit être le BIN embarqué (uri interdite)")
     }
-    let views = root["bufferViews"].as_array_mut().context("bufferViews absents")?;
+    let views = root["bufferViews"]
+        .as_array_mut()
+        .context("bufferViews absents")?;
     let image_offset = source_bin.len();
-    let buffer_length =
-        image_offset.checked_add(png.len()).context("taille BIN remplacée déborde")?;
+    let buffer_length = image_offset
+        .checked_add(png.len())
+        .context("taille BIN remplacée déborde")?;
     let padded_bin_length = buffer_length
         .checked_add(3)
         .map(|length| length & !3)
@@ -439,7 +469,8 @@ pub fn pose_skin_matrices(mesh: &CpuSkinnedMesh, pose: &PoseFrame) -> Result<Vec
         .joints
         .iter()
         .map(|joint| {
-            pose.bone(joint.bone).map_or(joint.bind_local, |bone| matrix_from_bone_pose(&bone))
+            pose.bone(joint.bone)
+                .map_or(joint.bind_local, |bone| matrix_from_bone_pose(&bone))
         })
         .collect();
 
@@ -470,7 +501,7 @@ pub fn pose_skin_matrices(mesh: &CpuSkinnedMesh, pose: &PoseFrame) -> Result<Vec
                         continue;
                     };
                     mat_mul(parent_world, &locals[i])
-                },
+                }
             };
             worlds[i] = Some(world);
             resolved += 1;
@@ -481,7 +512,10 @@ pub fn pose_skin_matrices(mesh: &CpuSkinnedMesh, pose: &PoseFrame) -> Result<Vec
         }
     }
     if resolved != mesh.joints.len() {
-        bail!("hiérarchie de jointures cyclique : {resolved} résolues sur {}", mesh.joints.len());
+        bail!(
+            "hiérarchie de jointures cyclique : {resolved} résolues sur {}",
+            mesh.joints.len()
+        );
     }
 
     Ok(mesh
@@ -515,7 +549,11 @@ pub fn pose_skin_matrices(mesh: &CpuSkinnedMesh, pose: &PoseFrame) -> Result<Vec
 /// Les mêmes que [`pose_skin_matrices`].
 pub fn apply_pose_cpu(mesh: &CpuSkinnedMesh, pose: &PoseFrame) -> Result<Vec<SkinnedVertex>> {
     let skins = pose_skin_matrices(mesh, pose)?;
-    Ok(mesh.vertices.iter().map(|vertex| skin_one_vertex(vertex, &skins)).collect())
+    Ok(mesh
+        .vertices
+        .iter()
+        .map(|vertex| skin_one_vertex(vertex, &skins))
+        .collect())
 }
 
 /// Mélange les influences d'un sommet. Un sommet sans poids utile garde sa position de liaison.
@@ -539,10 +577,17 @@ fn skin_one_vertex(vertex: &SkinVertex, skins: &[SkinMatrix]) -> SkinnedVertex {
         total += weight;
     }
     if total <= 1e-6 {
-        return SkinnedVertex { position: vertex.position, normal: vertex.normal };
+        return SkinnedVertex {
+            position: vertex.position,
+            normal: vertex.normal,
+        };
     }
     SkinnedVertex {
-        position: [position[0] / total, position[1] / total, position[2] / total],
+        position: [
+            position[0] / total,
+            position[1] / total,
+            position[2] / total,
+        ],
         normal: normalize([normal[0] / total, normal[1] / total, normal[2] / total]),
     }
 }
@@ -570,7 +615,12 @@ fn matrix_from_bone_pose(bone: &BonePose) -> Mat4 {
 }
 
 fn identity() -> Mat4 {
-    [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
+    [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]
 }
 
 /// Produit `a·b`, délégué à `glam` (`scalar-math`).
@@ -601,7 +651,11 @@ fn transform_direction(m: &Mat4, p: [f32; 3]) -> [f32; 3] {
 
 fn normalize(v: [f32; 3]) -> [f32; 3] {
     let l = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-    if l > 1e-8 { [v[0] / l, v[1] / l, v[2] / l] } else { v }
+    if l > 1e-8 {
+        [v[0] / l, v[1] / l, v[2] / l]
+    } else {
+        v
+    }
 }
 
 /// glTF stores matrices column-major, while the renderer uses row-major affine matrices.
@@ -675,7 +729,10 @@ fn node_local(node: &Value) -> Mat4 {
 }
 
 fn resolve_node_worlds(nodes: &[Value]) -> Result<Vec<Mat4>> {
-    anyhow::ensure!(nodes.len() <= MODEL_MAX_NODES, "node count exceeds the explicit model limit");
+    anyhow::ensure!(
+        nodes.len() <= MODEL_MAX_NODES,
+        "node count exceeds the explicit model limit"
+    );
 
     // Build the parent table once. This also rejects DAGs that glTF cannot represent as a node
     // tree, instead of silently choosing whichever parent happens to be scanned first.
@@ -689,7 +746,9 @@ fn resolve_node_worlds(nodes: &[Value]) -> Result<Vec<Mat4>> {
                 .as_u64()
                 .and_then(|child| usize::try_from(child).ok())
                 .context("indice enfant absent ou trop grand")?;
-            let slot = parents.get_mut(child).context("indice enfant hors limites")?;
+            let slot = parents
+                .get_mut(child)
+                .context("indice enfant hors limites")?;
             if let Some(existing) = *slot {
                 bail!("nœud {child} a plusieurs parents ({existing} et {parent})")
             }
@@ -720,13 +779,14 @@ fn resolve_node_worlds(nodes: &[Value]) -> Result<Vec<Mat4>> {
                         "node depth exceeds the explicit model limit"
                     );
                     cursor = parents[index];
-                },
+                }
             }
         }
         while let Some(index) = chain.pop() {
             let local = node_local(&nodes[index]);
-            worlds[index] =
-                parents[index].map(|parent| mat_mul(&worlds[parent], &local)).unwrap_or(local);
+            worlds[index] = parents[index]
+                .map(|parent| mat_mul(&worlds[parent], &local))
+                .unwrap_or(local);
             state[index] = 2;
         }
     }
@@ -734,8 +794,13 @@ fn resolve_node_worlds(nodes: &[Value]) -> Result<Vec<Mat4>> {
 }
 
 fn charge_geometry(total: &mut usize, bytes: usize, budget: usize) -> Result<()> {
-    *total = total.checked_add(bytes).context("geometry allocation budget overflow")?;
-    anyhow::ensure!(*total <= budget, "decoded geometry exceeds the aggregate budget");
+    *total = total
+        .checked_add(bytes)
+        .context("geometry allocation budget overflow")?;
+    anyhow::ensure!(
+        *total <= budget,
+        "decoded geometry exceeds the aggregate budget"
+    );
     Ok(())
 }
 
@@ -769,7 +834,9 @@ fn preflight_geometry(
     let mut total = initial_bytes;
     let meshes = root["meshes"].as_array().context("meshes absents")?;
     for (mesh_index, _, skin_index) in mesh_instances {
-        let mesh = meshes.get(*mesh_index).context("mesh de nœud hors limites")?;
+        let mesh = meshes
+            .get(*mesh_index)
+            .context("mesh de nœud hors limites")?;
         let Some(primitives) = mesh["primitives"].as_array() else {
             continue;
         };
@@ -913,7 +980,9 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
     let root: Value = serde_json::from_slice(json).context("JSON glTF invalide")?;
 
     let accessors = root["accessors"].as_array().context("accessors absents")?;
-    let views = root["bufferViews"].as_array().context("bufferViews absents")?;
+    let views = root["bufferViews"]
+        .as_array()
+        .context("bufferViews absents")?;
 
     // Lit un accessor scalaire/vecteur en f32 (composantes consécutives).
     let read_floats = |acc_idx: usize, ncomp: usize| -> Result<Vec<f32>> {
@@ -937,7 +1006,10 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
             5121 => 1,
             other => bail!("componentType {other} non géré"),
         };
-        let stride = bv["byteStride"].as_u64().map(|s| s as usize).unwrap_or(ncomp * comp_sz);
+        let stride = bv["byteStride"]
+            .as_u64()
+            .map(|s| s as usize)
+            .unwrap_or(ncomp * comp_sz);
         let element_size = ncomp * comp_sz;
         let end = if count == 0 {
             base
@@ -982,8 +1054,10 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
             let remaining = max_texture_bytes
                 .checked_sub(decoded_texture_bytes)
                 .context("decoded textures exceed the aggregate budget")?;
-            let texture =
-                decode_png(bin.get(bo..end).context("image hors du chunk BIN")?, remaining)?;
+            let texture = decode_png(
+                bin.get(bo..end).context("image hors du chunk BIN")?,
+                remaining,
+            )?;
             decoded_texture_bytes = decoded_texture_bytes
                 .checked_add(texture.rgba.len())
                 .context("decoded texture byte count overflow")?;
@@ -994,7 +1068,10 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
     // Résout les transforms de nœuds une fois. Un mesh sans nœud reste une instance identité,
     // ce qui conserve le comportement des GLB historiques produits par `assemble`.
     let no_nodes: &[Value] = &[];
-    let nodes = root["nodes"].as_array().map(Vec::as_slice).unwrap_or(no_nodes);
+    let nodes = root["nodes"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or(no_nodes);
     let node_working_bytes = nodes
         .len()
         .checked_mul(
@@ -1025,20 +1102,37 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
     for (ni, node) in nodes.iter().enumerate() {
         if let Some(mesh) = node["mesh"].as_u64() {
             let world = node_worlds[ni];
-            mesh_instances.push((mesh as usize, world, node["skin"].as_u64().map(|s| s as usize)));
+            mesh_instances.push((
+                mesh as usize,
+                world,
+                node["skin"].as_u64().map(|s| s as usize),
+            ));
         }
     }
     if mesh_instances.is_empty() {
         mesh_instances.extend((0..mesh_count).map(|i| (i, identity(), None)));
     }
-    preflight_geometry(&root, accessors, &mesh_instances, structural_bytes, MODEL_GEOMETRY_BUDGET)?;
+    preflight_geometry(
+        &root,
+        accessors,
+        &mesh_instances,
+        structural_bytes,
+        MODEL_GEOMETRY_BUDGET,
+    )?;
 
     // Matrices de skin de la pose de liaison : jointWorld * inverseBind. Elles ne sont
     // calculées que si le GLB contient réellement un skin exploitable.
     let mut skin_matrices: Vec<Vec<Mat4>> = Vec::new();
     let no_skins: &[Value] = &[];
-    for skin in root["skins"].as_array().map(Vec::as_slice).unwrap_or(no_skins) {
-        let joints = skin["joints"].as_array().map(Vec::as_slice).unwrap_or(no_nodes);
+    for skin in root["skins"]
+        .as_array()
+        .map(Vec::as_slice)
+        .unwrap_or(no_skins)
+    {
+        let joints = skin["joints"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or(no_nodes);
         let ibm = skin["inverseBindMatrices"]
             .as_u64()
             .map(|a| read_floats(a as usize, 16))
@@ -1060,7 +1154,10 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
     let mut primitives = Vec::new();
     let empty = Vec::new();
     for (mesh_idx, node_transform, skin_idx) in mesh_instances {
-        let Some(mesh) = root["meshes"].as_array().and_then(|meshes| meshes.get(mesh_idx)) else {
+        let Some(mesh) = root["meshes"]
+            .as_array()
+            .and_then(|meshes| meshes.get(mesh_idx))
+        else {
             bail!("mesh de nœud hors limites")
         };
         for prim in mesh["primitives"].as_array().unwrap_or(&empty) {
@@ -1069,8 +1166,12 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
                 continue;
             };
             let pf = read_floats(pos_acc as usize, 3)?;
-            let mut positions: Vec<[f32; 3]> =
-                pf.as_chunks::<3>().0.iter().map(|c| [c[0], c[1], c[2]]).collect();
+            let mut positions: Vec<[f32; 3]> = pf
+                .as_chunks::<3>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1], c[2]])
+                .collect();
             let mut normals: Vec<[f32; 3]> = match attrs["NORMAL"].as_u64() {
                 Some(a) => read_floats(a as usize, 3)?
                     .as_chunks::<3>()
@@ -1158,7 +1259,10 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
                 None => Vec::new(),
             };
             let indices: Vec<u32> = match prim["indices"].as_u64() {
-                Some(a) => read_floats(a as usize, 1)?.iter().map(|&f| f as u32).collect(),
+                Some(a) => read_floats(a as usize, 1)?
+                    .iter()
+                    .map(|&f| f as u32)
+                    .collect(),
                 None => (0..positions.len() as u32).collect(),
             };
             let texture = prim["material"]
@@ -1168,13 +1272,22 @@ pub fn parse_with_texture_budget(data: &[u8], max_texture_bytes: usize) -> Resul
             if indices.iter().any(|&i| i as usize >= positions.len()) {
                 bail!("indice de sommet hors limites");
             }
-            primitives.push(Primitive { positions, normals, uv, indices, texture });
+            primitives.push(Primitive {
+                positions,
+                normals,
+                uv,
+                indices,
+                texture,
+            });
         }
     }
     if primitives.is_empty() {
         bail!("aucune primitive de mesh dans le GLB");
     }
-    Ok(Model { primitives, textures })
+    Ok(Model {
+        primitives,
+        textures,
+    })
 }
 
 #[cfg(test)]
@@ -1203,21 +1316,24 @@ mod tests {
             Err(error) => {
                 eprintln!("SKIP: k000010 G4MD unavailable: {error}");
                 return;
-            },
+            }
         };
         let g4mg = match vfs.read("data/common/chr/_keshin/k000010/k000010.g4mg") {
             Ok(bytes) => bytes,
             Err(error) => {
                 eprintln!("SKIP: k000010 G4MG unavailable: {error}");
                 return;
-            },
+            }
         };
 
         let assembled = assemble_keshin("k000010", g4md, g4mg).expect("assemble k000010");
         assert!(!assembled.primitives.is_empty(), "k000010 has primitives");
         for primitive in &assembled.primitives {
             assert!(
-                primitive.indices.iter().all(|&index| (index as usize) < primitive.positions.len()),
+                primitive
+                    .indices
+                    .iter()
+                    .all(|&index| (index as usize) < primitive.positions.len()),
                 "assembled primitive {} contains a non-local vertex index",
                 primitive.source_index
             );
@@ -1225,7 +1341,10 @@ mod tests {
 
         let glb = assembled.to_glb_embedded();
         let parsed = parse(&glb).expect("canonical renderer parses assembled k000010 GLB");
-        assert!(!parsed.primitives.is_empty(), "parsed k000010 has primitives");
+        assert!(
+            !parsed.primitives.is_empty(),
+            "parsed k000010 has primitives"
+        );
         assert!(
             parsed.primitives.iter().all(|primitive| primitive
                 .indices
@@ -1234,7 +1353,11 @@ mod tests {
             "parsed k000010 primitives keep local indices"
         );
         assert!(
-            parsed.primitives.iter().map(|primitive| primitive.indices.len() / 3).sum::<usize>()
+            parsed
+                .primitives
+                .iter()
+                .map(|primitive| primitive.indices.len() / 3)
+                .sum::<usize>()
                 > 0,
             "parsed k000010 has renderable triangles"
         );
@@ -1265,7 +1388,11 @@ mod tests {
     }
 
     fn raw_glb(parts: &[(u32, Vec<u8>)]) -> Vec<u8> {
-        let total = 12 + parts.iter().map(|(_, bytes)| 8 + bytes.len()).sum::<usize>();
+        let total = 12
+            + parts
+                .iter()
+                .map(|(_, bytes)| 8 + bytes.len())
+                .sum::<usize>();
         let mut data = b"glTF".to_vec();
         data.extend_from_slice(&2u32.to_le_bytes());
         data.extend_from_slice(&(total as u32).to_le_bytes());
@@ -1295,8 +1422,16 @@ mod tests {
 
     #[test]
     fn node_graph_rejects_cycles_multiple_parents_and_excessive_depth() {
-        let cycle = [serde_json::json!({"children": [1]}), serde_json::json!({"children": [0]})];
-        assert!(resolve_node_worlds(&cycle).unwrap_err().to_string().contains("cycle"));
+        let cycle = [
+            serde_json::json!({"children": [1]}),
+            serde_json::json!({"children": [0]}),
+        ];
+        assert!(
+            resolve_node_worlds(&cycle)
+                .unwrap_err()
+                .to_string()
+                .contains("cycle")
+        );
 
         let multiple = [
             serde_json::json!({"children": [2]}),
@@ -1304,7 +1439,10 @@ mod tests {
             serde_json::json!({}),
         ];
         assert!(
-            resolve_node_worlds(&multiple).unwrap_err().to_string().contains("plusieurs parents")
+            resolve_node_worlds(&multiple)
+                .unwrap_err()
+                .to_string()
+                .contains("plusieurs parents")
         );
 
         let count = MODEL_MAX_NODE_DEPTH + 1;
@@ -1316,7 +1454,12 @@ mod tests {
             }
             too_deep.push(node);
         }
-        assert!(resolve_node_worlds(&too_deep).unwrap_err().to_string().contains("depth"));
+        assert!(
+            resolve_node_worlds(&too_deep)
+                .unwrap_err()
+                .to_string()
+                .contains("depth")
+        );
     }
 
     #[test]
@@ -1342,7 +1485,11 @@ mod tests {
             let mut encoder = png::Encoder::new(&mut bytes, 1, 1);
             encoder.set_color(png::ColorType::Rgba);
             encoder.set_depth(png::BitDepth::Eight);
-            encoder.write_header().unwrap().write_image_data(&[1, 2, 3, 4]).unwrap();
+            encoder
+                .write_header()
+                .unwrap()
+                .write_image_data(&[1, 2, 3, 4])
+                .unwrap();
             bytes
         };
         for bytes in malformed {
@@ -1416,7 +1563,11 @@ mod tests {
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
         let row = vec![0; (EDITOR_PNG_MAX_DIMENSION as usize + 1) * 4];
-        encoder.write_header().unwrap().write_image_data(&row).unwrap();
+        encoder
+            .write_header()
+            .unwrap()
+            .write_image_data(&row)
+            .unwrap();
         assert!(validate_editor_png(&oversized_side).is_err());
     }
 
@@ -1427,7 +1578,11 @@ mod tests {
             let mut encoder = png::Encoder::new(&mut png_bytes, 1, 1);
             encoder.set_color(png::ColorType::Rgba);
             encoder.set_depth(png::BitDepth::Eight);
-            encoder.write_header().unwrap().write_image_data(&[1, 2, 3, 4]).unwrap();
+            encoder
+                .write_header()
+                .unwrap()
+                .write_image_data(&[1, 2, 3, 4])
+                .unwrap();
         }
         let root = serde_json::json!({
             "accessors": [{"bufferView": 0, "componentType": 5126, "count": 1, "type": "VEC3"}],
@@ -1455,7 +1610,11 @@ mod tests {
             let mut encoder = png::Encoder::new(&mut bytes, 1, 1);
             encoder.set_color(png::ColorType::Rgba);
             encoder.set_depth(png::BitDepth::Eight);
-            encoder.write_header().unwrap().write_image_data(&color).unwrap();
+            encoder
+                .write_header()
+                .unwrap()
+                .write_image_data(&color)
+                .unwrap();
             bytes
         }
 
@@ -1498,10 +1657,18 @@ mod tests {
         let original = fixture_bin(root.clone(), bin.clone());
         let original_chunks = chunks(&original).unwrap();
         let original_json: Value = serde_json::from_slice(
-            original_chunks.iter().find(|(kind, _)| *kind == JSON_CHUNK).unwrap().1,
+            original_chunks
+                .iter()
+                .find(|(kind, _)| *kind == JSON_CHUNK)
+                .unwrap()
+                .1,
         )
         .unwrap();
-        let original_bin = original_chunks.iter().find(|(kind, _)| *kind == BIN_CHUNK).unwrap().1;
+        let original_bin = original_chunks
+            .iter()
+            .find(|(kind, _)| *kind == BIN_CHUNK)
+            .unwrap()
+            .1;
 
         let replaced = replace_texture_png(&original, 0, &blue, 1024).expect("replace GLB PNG");
         let model = parse_with_texture_budget(&replaced, 1024).expect("reparse replaced GLB");
@@ -1511,10 +1678,18 @@ mod tests {
 
         let replaced_chunks = chunks(&replaced).unwrap();
         let replaced_json: Value = serde_json::from_slice(
-            replaced_chunks.iter().find(|(kind, _)| *kind == JSON_CHUNK).unwrap().1,
+            replaced_chunks
+                .iter()
+                .find(|(kind, _)| *kind == JSON_CHUNK)
+                .unwrap()
+                .1,
         )
         .unwrap();
-        let replaced_bin = replaced_chunks.iter().find(|(kind, _)| *kind == BIN_CHUNK).unwrap().1;
+        let replaced_bin = replaced_chunks
+            .iter()
+            .find(|(kind, _)| *kind == BIN_CHUNK)
+            .unwrap()
+            .1;
         let replaced_views = replaced_json["bufferViews"].as_array().unwrap();
         let original_views = original_json["bufferViews"].as_array().unwrap();
         assert_eq!(&replaced_views[..3], original_views.as_slice());
@@ -1621,9 +1796,9 @@ mod tests {
         bin.extend_from_slice(&[0, 0, 0, 0]);
         bin.extend_from_slice(&1.0_f32.to_le_bytes());
         bin.extend_from_slice(&[0; 12]);
-        for value in
-            [1.0_f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-        {
+        for value in [
+            1.0_f32, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ] {
             bin.extend_from_slice(&value.to_le_bytes());
         }
         let model = parse(&fixture_bin(root, bin)).unwrap();
@@ -1683,7 +1858,11 @@ mod tests {
     }
 
     fn pose(bones: Vec<(BoneId, BonePose)>) -> PoseFrame {
-        PoseFrame { skeleton: SQUELETTE, time_seconds: 0.0, bones }
+        PoseFrame {
+            skeleton: SQUELETTE,
+            time_seconds: 0.0,
+            bones,
+        }
     }
 
     /// Une pose VIDE laisse la géométrie au repos, elle ne l'écrase pas.
@@ -1735,8 +1914,10 @@ mod tests {
         let mesh = chaine();
         let demi = core::f32::consts::FRAC_1_SQRT_2;
         // +90° autour de Z
-        let racine =
-            BonePose { rotation: Rotation::new(0.0, 0.0, demi, demi), ..Default::default() };
+        let racine = BonePose {
+            rotation: Rotation::new(0.0, 0.0, demi, demi),
+            ..Default::default()
+        };
         let rendu = apply_pose_cpu(&mesh, &pose(vec![(RACINE, racine)])).expect("pose applicable");
 
         // (1,0,0) → (0,1,0) et (2,0,0) → (0,2,0)
@@ -1750,7 +1931,11 @@ mod tests {
             }
         }
         // La normale +Y part sur -X, et reste unitaire.
-        assert!((rendu[0].normal[0] + 1.0).abs() < 1e-4, "{:?}", rendu[0].normal);
+        assert!(
+            (rendu[0].normal[0] + 1.0).abs() < 1e-4,
+            "{:?}",
+            rendu[0].normal
+        );
         assert!((rendu[0].normal[1]).abs() < 1e-4, "{:?}", rendu[0].normal);
     }
 
@@ -1761,8 +1946,11 @@ mod tests {
     #[test]
     fn une_pose_dun_autre_squelette_est_refusee() {
         let mesh = chaine();
-        let etrangere =
-            PoseFrame { skeleton: SkeletonId::new(99), time_seconds: 0.0, bones: Vec::new() };
+        let etrangere = PoseFrame {
+            skeleton: SkeletonId::new(99),
+            time_seconds: 0.0,
+            bones: Vec::new(),
+        };
         let erreur = apply_pose_cpu(&mesh, &etrangere).expect_err("squelettes différents");
         assert!(
             format!("{erreur}").contains("squelette"),
@@ -1909,8 +2097,9 @@ mod tests {
         let mut poses_mod = poses.clone();
         poses_mod[tourne].local.quat = quat_tourne;
         let mondes = g4sk::rest_world_matrices(&poses_mod, &parents);
-        let reference: Vec<[[f32; 4]; 4]> =
-            (0..poses.len()).map(|i| g4sk::mat_mul(&mondes[i], &poses[i].inverse_bind)).collect();
+        let reference: Vec<[[f32; 4]; 4]> = (0..poses.len())
+            .map(|i| g4sk::mat_mul(&mondes[i], &poses[i].inverse_bind))
+            .collect();
 
         // Le même calcul par la bibliothèque, entrées transposées en ligne-majeure.
         let transposer = |m: &[[f32; 4]; 4]| -> SkinMatrix {
@@ -1973,6 +2162,9 @@ mod tests {
                 }
             }
         }
-        eprintln!("{} os comparés sur {CHEMIN}, écart maximal {ecart_max:.2e}", obtenu.len());
+        eprintln!(
+            "{} os comparés sur {CHEMIN}, écart maximal {ecart_max:.2e}",
+            obtenu.len()
+        );
     }
 }

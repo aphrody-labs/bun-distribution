@@ -94,6 +94,9 @@ pub mod google;
 /// [`headers::HeaderProbe::from_bytes`].
 pub mod headers;
 
+/// In-process decompilation of PE, ELF and Mach-O through the Rust Ghidra decompiler.
+#[cfg(feature = "decompile")]
+pub mod decompile;
 /// Windows minidump reader: modules, memory regions, reads by virtual address, AOB scans,
 /// MSVC RTTI names and vtable census (pure Rust, no `unsafe`).
 ///
@@ -105,9 +108,6 @@ pub mod pdata;
 /// C and Rust emission, rebuild and verify. Entry point: [`pipeline::run`].
 #[cfg(feature = "pipeline")]
 pub mod pipeline;
-/// In-process decompilation of PE, ELF and Mach-O through the Rust Ghidra decompiler.
-#[cfg(feature = "decompile")]
-pub mod decompile;
 /// Semi-supervised label propagation over a call graph.
 pub mod propagate;
 /// WebAssembly bindings (feature `wasm`).
@@ -371,7 +371,13 @@ pub fn disasm(bytes: &[u8], rip: u64, limit: usize) -> Vec<DisasmInsn> {
             .map_or(text_buf.as_str(), |(m, _)| m)
             .to_owned();
 
-        out.push(DisasmInsn { offset, address, bytes_hex, mnemonic, text: text_buf.clone() });
+        out.push(DisasmInsn {
+            offset,
+            address,
+            bytes_hex,
+            mnemonic,
+            text: text_buf.clone(),
+        });
     }
 
     out
@@ -482,8 +488,10 @@ fn triage_pe(
     let arch = Some(pe_machine_name(pe.header.coff_header.machine));
     let entry_point = Some(pe.entry as u64);
     let libraries = pe.libraries.iter().map(|l| (*l).to_owned()).collect();
-    let subsystem =
-        pe.header.optional_header.map(|oh| pe_subsystem_name(oh.windows_fields.subsystem));
+    let subsystem = pe
+        .header
+        .optional_header
+        .map(|oh| pe_subsystem_name(oh.windows_fields.subsystem));
 
     let sections = pe
         .sections
@@ -497,7 +505,11 @@ fn triage_pe(
         .collect();
 
     let imports = pe.imports.iter().map(|i| i.name.to_string()).collect();
-    let exports = pe.exports.iter().filter_map(|e| e.name.map(|n| n.to_owned())).collect();
+    let exports = pe
+        .exports
+        .iter()
+        .filter_map(|e| e.name.map(|n| n.to_owned()))
+        .collect();
 
     TriageReport {
         format,
@@ -550,7 +562,11 @@ fn triage_elf(
     sha256: String,
     strings_sample: Vec<String>,
 ) -> TriageReport {
-    let format = if elf.is_64 { Format::Elf64 } else { Format::Elf32 };
+    let format = if elf.is_64 {
+        Format::Elf64
+    } else {
+        Format::Elf32
+    };
     let arch = Some(elf_arch_name(elf.header.e_machine));
     let entry_point = Some(elf.entry);
 
@@ -558,14 +574,23 @@ fn triage_elf(
         .section_headers
         .iter()
         .map(|sh| {
-            let name = elf.shdr_strtab.get_at(sh.sh_name).unwrap_or("<bad-strtab>").to_owned();
+            let name = elf
+                .shdr_strtab
+                .get_at(sh.sh_name)
+                .unwrap_or("<bad-strtab>")
+                .to_owned();
             let offset = sh.sh_offset as usize;
             let len = sh.sh_size as usize;
             let entropy = bytes
                 .get(offset..offset.saturating_add(len))
                 .filter(|s| !s.is_empty())
                 .map(shannon_entropy);
-            Section { name, vaddr: sh.sh_addr, size: sh.sh_size, entropy }
+            Section {
+                name,
+                vaddr: sh.sh_addr,
+                size: sh.sh_size,
+                entropy,
+            }
         })
         .collect();
 
@@ -573,14 +598,22 @@ fn triage_elf(
         .dynsyms
         .iter()
         .filter(|s| s.is_import())
-        .filter_map(|s| elf.dynstrtab.get_at(s.st_name).map(std::borrow::ToOwned::to_owned))
+        .filter_map(|s| {
+            elf.dynstrtab
+                .get_at(s.st_name)
+                .map(std::borrow::ToOwned::to_owned)
+        })
         .collect();
 
     let exports = elf
         .dynsyms
         .iter()
         .filter(|s| !s.is_import() && s.st_name != 0)
-        .filter_map(|s| elf.dynstrtab.get_at(s.st_name).map(std::borrow::ToOwned::to_owned))
+        .filter_map(|s| {
+            elf.dynstrtab
+                .get_at(s.st_name)
+                .map(std::borrow::ToOwned::to_owned)
+        })
         .collect();
     let libraries = elf.libraries.iter().map(|l| (*l).to_owned()).collect();
 
@@ -823,7 +856,10 @@ pub fn xor_file(
 
     let clean: String = key_hex.chars().filter(|c| *c != ' ' && *c != '-').collect();
     if clean.is_empty() || !clean.len().is_multiple_of(2) {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid keyHex."));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid keyHex.",
+        ));
     }
     let mut key = Vec::with_capacity(clean.len() / 2);
     for pair in clean.as_bytes().as_chunks::<2>().0 {
@@ -896,7 +932,10 @@ pub fn aes_ctr_file(
     fn parse_hex(value: &str) -> std::io::Result<Vec<u8>> {
         let clean: String = value.chars().filter(|c| *c != ' ' && *c != '-').collect();
         if clean.is_empty() || !clean.len().is_multiple_of(2) {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid hex."));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "invalid hex.",
+            ));
         }
         clean
             .as_bytes()
@@ -923,7 +962,10 @@ pub fn aes_ctr_file(
     }
     let iv = parse_hex(iv_hex)?;
     if iv.len() != 16 {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "iv must be 16 bytes."));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "iv must be 16 bytes.",
+        ));
     }
     if let Some(parent) = output.parent() {
         std::fs::create_dir_all(parent)?;
@@ -1008,24 +1050,32 @@ pub fn section_dump_file(
     {
         return Err(invalid());
     }
-    let sections =
-        u16::from_le_bytes(bytes[pe_offset + 6..pe_offset + 8].try_into().expect("two bytes"))
-            as usize;
-    let optional_size =
-        u16::from_le_bytes(bytes[pe_offset + 20..pe_offset + 22].try_into().expect("two bytes"))
-            as usize;
+    let sections = u16::from_le_bytes(
+        bytes[pe_offset + 6..pe_offset + 8]
+            .try_into()
+            .expect("two bytes"),
+    ) as usize;
+    let optional_size = u16::from_le_bytes(
+        bytes[pe_offset + 20..pe_offset + 22]
+            .try_into()
+            .expect("two bytes"),
+    ) as usize;
     let table = pe_offset
         .checked_add(24)
         .and_then(|value| value.checked_add(optional_size))
         .ok_or_else(invalid)?;
     let mut found = None;
     for index in 0..sections {
-        let base =
-            table.checked_add(index.checked_mul(40).ok_or_else(invalid)?).ok_or_else(invalid)?;
+        let base = table
+            .checked_add(index.checked_mul(40).ok_or_else(invalid)?)
+            .ok_or_else(invalid)?;
         if base + 40 > bytes.len() {
             return Err(invalid());
         }
-        let name_end = bytes[base..base + 8].iter().position(|byte| *byte == 0).unwrap_or(8);
+        let name_end = bytes[base..base + 8]
+            .iter()
+            .position(|byte| *byte == 0)
+            .unwrap_or(8);
         let name = String::from_utf8_lossy(&bytes[base..base + name_end]);
         if name == section_name {
             let raw_size =
@@ -1042,17 +1092,24 @@ pub fn section_dump_file(
             format!("section '{section_name}' not found."),
         )
     })?;
-    let end = (raw_offset as u64).checked_add(raw_size as u64).ok_or_else(invalid)?;
+    let end = (raw_offset as u64)
+        .checked_add(raw_size as u64)
+        .ok_or_else(invalid)?;
     if end > bytes.len() as u64 {
         return Err(invalid());
     }
-    let destination = output_path.map(std::path::Path::to_path_buf).unwrap_or_else(|| {
-        std::env::temp_dir().join(format!(
-            "{}_{}.bin",
-            input.file_stem().and_then(|value| value.to_str()).unwrap_or("section"),
-            section.trim_start_matches('.')
-        ))
-    });
+    let destination = output_path
+        .map(std::path::Path::to_path_buf)
+        .unwrap_or_else(|| {
+            std::env::temp_dir().join(format!(
+                "{}_{}.bin",
+                input
+                    .file_stem()
+                    .and_then(|value| value.to_str())
+                    .unwrap_or("section"),
+                section.trim_start_matches('.')
+            ))
+        });
     if let Some(parent) = destination.parent() {
         std::fs::create_dir_all(parent)?;
     }
@@ -1130,8 +1187,9 @@ pub fn parse_pe_header_file(path: &std::path::Path) -> std::io::Result<PeHeader>
     let table = optional.checked_add(optional_size).ok_or_else(invalid)?;
     let mut sections = Vec::with_capacity(section_count.min(96) as usize);
     for index in 0..section_count.min(96) as usize {
-        let base =
-            table.checked_add(index.checked_mul(40).ok_or_else(invalid)?).ok_or_else(invalid)?;
+        let base = table
+            .checked_add(index.checked_mul(40).ok_or_else(invalid)?)
+            .ok_or_else(invalid)?;
         let row = get(base, 40)?;
         let name_end = row[..8].iter().position(|byte| *byte == 0).unwrap_or(8);
         let name = String::from_utf8_lossy(&row[..name_end]).into_owned();
@@ -1266,14 +1324,20 @@ pub fn analyze_pe_file(path: &std::path::Path) -> std::io::Result<PeAnalysis> {
 
     let mut imports = std::collections::BTreeMap::<String, Vec<String>>::new();
     for import in &pe.imports {
-        imports.entry(import.dll.to_owned()).or_default().push(import.name.to_string());
+        imports
+            .entry(import.dll.to_owned())
+            .or_default()
+            .push(import.name.to_string());
     }
     let imports = imports
         .into_iter()
         .map(|(dll_name, mut functions)| {
             functions.sort_unstable();
             functions.dedup();
-            PeAnalysisImport { dll_name, functions }
+            PeAnalysisImport {
+                dll_name,
+                functions,
+            }
         })
         .collect();
 
@@ -1291,7 +1355,11 @@ pub fn analyze_pe_file(path: &std::path::Path) -> std::io::Result<PeAnalysis> {
 
     Ok(PeAnalysis {
         success: true,
-        file_name: path.file_name().and_then(|name| name.to_str()).unwrap_or_default().to_owned(),
+        file_name: path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_owned(),
         is_64bit: header.is64bit,
         is_dll: u16::from_str_radix(header.characteristics.trim_start_matches("0x"), 16)
             .map(|value| value & 0x2000 != 0)
@@ -1335,8 +1403,12 @@ pub fn list_cpk_file(
     let read = file.read(&mut header)?;
     header.truncate(read);
     let has_cpk_magic = header.starts_with(b"CPK ");
-    let count =
-        |magic: &[u8; 4]| header.windows(4).filter(|window| *window == magic.as_slice()).count();
+    let count = |magic: &[u8; 4]| {
+        header
+            .windows(4)
+            .filter(|window| *window == magic.as_slice())
+            .count()
+    };
     Ok(CpkListSummary {
         success: true,
         path: path.display().to_string(),
@@ -1381,7 +1453,10 @@ pub fn aob_scan_file(
         }
     }
     if values.is_empty() {
-        return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "pattern has no bytes"));
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "pattern has no bytes",
+        ));
     }
     let data = std::fs::read(path)?;
     let limit = max_matches.unwrap_or(50).clamp(1, 1000);
@@ -1466,7 +1541,11 @@ pub fn entropy_map_file(
     let samples = entropy.len();
     let max = entropy.iter().copied().reduce(f64::max).unwrap_or(0.0);
     let min = entropy.iter().copied().reduce(f64::min).unwrap_or(0.0);
-    let avg = if samples == 0 { 0.0 } else { entropy.iter().sum::<f64>() / samples as f64 };
+    let avg = if samples == 0 {
+        0.0
+    } else {
+        entropy.iter().sum::<f64>() / samples as f64
+    };
     Ok(EntropyMap {
         path: path.display().to_string(),
         size,
@@ -1506,8 +1585,8 @@ pub fn extract_strings(bytes: &[u8], min_len: usize, limit: usize) -> Vec<String
                     }
                 }
                 start = None;
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     if let Some(s) = start {
@@ -1637,12 +1716,21 @@ mod tests {
         let bytes = b"\x00\x00hello world\x00\x01\x02foobar\xffmidstream short\x00THIS_IS_AN_API";
         let s = extract_strings(bytes, 6, 16);
         // `contains` iterates &String elements; use predicate to compare via as_str().
-        expect_that!(s, contains(predicate(|x: &String| x.as_str() == "hello world")));
+        expect_that!(
+            s,
+            contains(predicate(|x: &String| x.as_str() == "hello world"))
+        );
         expect_that!(s, contains(predicate(|x: &String| x.as_str() == "foobar")));
         // 'short' is 5 chars, below min_len=6 → excluded.
-        expect_that!(s, not(contains(predicate(|x: &String| x.as_str() == "short"))));
+        expect_that!(
+            s,
+            not(contains(predicate(|x: &String| x.as_str() == "short")))
+        );
         // THIS_IS_AN_API is 14 chars >= 6 → included.
-        assert!(s.iter().any(|x| x.contains("THIS_IS_AN_API")), "missing THIS_IS_AN_API in {s:?}");
+        assert!(
+            s.iter().any(|x| x.contains("THIS_IS_AN_API")),
+            "missing THIS_IS_AN_API in {s:?}"
+        );
     }
 
     #[gtest]
@@ -1706,7 +1794,9 @@ mod tests {
         let exe = std::env::current_exe().expect("test exe path");
         let r = triage(&std::fs::read(exe).expect("read test exe")).expect("triage");
         assert!(
-            r.libraries.iter().any(|l| l.eq_ignore_ascii_case("kernel32.dll")),
+            r.libraries
+                .iter()
+                .any(|l| l.eq_ignore_ascii_case("kernel32.dll")),
             "kernel32.dll missing from {:?}",
             r.libraries
         );

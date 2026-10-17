@@ -64,7 +64,12 @@ impl Place {
             Some(v) => Self::ALL
                 .into_iter()
                 .find(|place| v.as_str() == Some(place.name()))
-                .ok_or_else(|| format!("`{key}` must be one of {}", Self::ALL.map(Self::name).join(", "))),
+                .ok_or_else(|| {
+                    format!(
+                        "`{key}` must be one of {}",
+                        Self::ALL.map(Self::name).join(", ")
+                    )
+                }),
         }
     }
 
@@ -83,35 +88,57 @@ impl Place {
 fn shipped(advanced: bool) -> Vec<ToolbarCategory> {
     let strings = |s: &[&str]| s.iter().map(|id| id.to_string()).collect::<Vec<_>>();
     if advanced {
-        let slots = TOOL_GROUPS.iter().map(|g| g.iter().map(|t| t.id.to_string()).collect()).collect();
+        let slots = TOOL_GROUPS
+            .iter()
+            .map(|g| g.iter().map(|t| t.id.to_string()).collect())
+            .collect();
         vec![ToolbarCategory { name: None, slots }]
     } else {
         crate::toolbar::BASIC
             .iter()
-            .map(|(cat, slots)| ToolbarCategory { name: Some(cat.to_string()), slots: slots.iter().map(|s| strings(s)).collect() })
+            .map(|(cat, slots)| ToolbarCategory {
+                name: Some(cat.to_string()),
+                slots: slots.iter().map(|s| strings(s)).collect(),
+            })
             .collect()
     }
 }
 
 fn current(edits: &mut ToolbarEdits, advanced: bool) -> &mut Option<Vec<ToolbarCategory>> {
-    if advanced { &mut edits.advanced } else { &mut edits.basic }
+    if advanced {
+        &mut edits.advanced
+    } else {
+        &mut edits.basic
+    }
 }
 
 /// The Basic toolbar category named `name`.
 fn category(name: &str) -> Option<&'static str> {
-    crate::toolbar::BASIC.iter().map(|(c, _)| *c).find(|c| *c == name)
+    crate::toolbar::BASIC
+        .iter()
+        .map(|(c, _)| *c)
+        .find(|c| *c == name)
 }
 
 /// The current toolbar's slots as Edit Toolbar left them, laid out as `toolbar::slots` lays them
 /// out (the category name on each category's first slot); `None` while it is as it ships.
-pub(crate) fn edited_slots(app: &VectorcraftApp) -> Option<Vec<(Option<&'static str>, Vec<&'static str>)>> {
+pub(crate) fn edited_slots(
+    app: &VectorcraftApp,
+) -> Option<Vec<(Option<&'static str>, Vec<&'static str>)>> {
     let edits = &app.ui.toolbar_edits;
-    let cats = if app.ui.toolbar_advanced { &edits.advanced } else { &edits.basic };
+    let cats = if app.ui.toolbar_advanced {
+        &edits.advanced
+    } else {
+        &edits.basic
+    };
     let mut out = vec![];
     for c in cats.as_ref()? {
         let mut name = c.name.as_deref().and_then(category);
         for s in &c.slots {
-            let tools: Vec<&'static str> = s.iter().filter_map(|id| tool_info(id).map(|t| t.id)).collect();
+            let tools: Vec<&'static str> = s
+                .iter()
+                .filter_map(|id| tool_info(id).map(|t| t.id))
+                .collect();
             if !tools.is_empty() {
                 out.push((name.take(), tools));
             }
@@ -130,7 +157,10 @@ fn prune(cats: &mut Vec<ToolbarCategory>) {
 
 /// Keep known tools, each once, and known category names (a hand-edited preferences file).
 pub(crate) fn sanitize(edits: &mut ToolbarEdits) {
-    for cats in [&mut edits.basic, &mut edits.advanced].into_iter().flatten() {
+    for cats in [&mut edits.basic, &mut edits.advanced]
+        .into_iter()
+        .flatten()
+    {
         let mut seen = BTreeSet::new();
         for c in cats.iter_mut() {
             c.name = c.name.as_deref().and_then(category).map(str::to_string);
@@ -144,7 +174,10 @@ pub(crate) fn sanitize(edits: &mut ToolbarEdits) {
 
 /// Change the current toolbar with `f`: an edit that gives back the toolbar as it ships forgets
 /// the edits. Returns the toolbar's slots.
-fn edit(app: &mut VectorcraftApp, f: impl FnOnce(&mut Vec<ToolbarCategory>) -> Result<(), String>) -> Result<Value, String> {
+fn edit(
+    app: &mut VectorcraftApp,
+    f: impl FnOnce(&mut Vec<ToolbarCategory>) -> Result<(), String>,
+) -> Result<Value, String> {
     let advanced = app.ui.toolbar_advanced;
     let slot = current(&mut app.ui.toolbar_edits, advanced);
     let mut cats = slot.clone().unwrap_or_else(|| shipped(advanced));
@@ -156,24 +189,52 @@ fn edit(app: &mut VectorcraftApp, f: impl FnOnce(&mut Vec<ToolbarCategory>) -> R
 
 /// The current toolbar's slots, each a list of tool ids (`toolbar.*` commands return it).
 fn slots_json(app: &VectorcraftApp) -> Value {
-    json!(crate::toolbar::slots(app).into_iter().map(|(_, s)| s).collect::<Vec<_>>())
+    json!(
+        crate::toolbar::slots(app)
+            .into_iter()
+            .map(|(_, s)| s)
+            .collect::<Vec<_>>()
+    )
 }
 
 /// Put `tool` by the slot numbered `slot` (over the toolbar's slots, 0 = the first; none or null:
 /// at the end), moving it if it is in the toolbar already. A tool appended to a toolbar left without
 /// categories starts one (`named`: under its own heading).
-fn add(cats: &mut Vec<ToolbarCategory>, tool: &str, slot: Option<&Value>, place: Place, named: bool) -> Result<(), String> {
-    let at: Vec<(usize, usize)> = cats.iter().enumerate().flat_map(|(c, cat)| (0..cat.slots.len()).map(move |s| (c, s))).collect();
+fn add(
+    cats: &mut Vec<ToolbarCategory>,
+    tool: &str,
+    slot: Option<&Value>,
+    place: Place,
+    named: bool,
+) -> Result<(), String> {
+    let at: Vec<(usize, usize)> = cats
+        .iter()
+        .enumerate()
+        .flat_map(|(c, cat)| (0..cat.slots.len()).map(move |s| (c, s)))
+        .collect();
     let bad_slot = || {
-        let (key, min, max, x) = ("slot", 0, at.len().saturating_sub(1), slot.unwrap_or(&Value::Null));
+        let (key, min, max, x) = (
+            "slot",
+            0,
+            at.len().saturating_sub(1),
+            slot.unwrap_or(&Value::Null),
+        );
         format!("`{key}` must be a whole number between {min} and {max} (got {x})")
     };
     let target = match slot {
         None | Some(Value::Null) => None,
-        Some(v) => Some(*v.as_u64().and_then(|k| usize::try_from(k).ok()).and_then(|k| at.get(k)).ok_or_else(bad_slot)?),
+        Some(v) => Some(
+            *v.as_u64()
+                .and_then(|k| usize::try_from(k).ok())
+                .and_then(|k| at.get(k))
+                .ok_or_else(bad_slot)?,
+        ),
     };
-    let holds =
-        |cats: &[ToolbarCategory], (c, s): (usize, usize)| cats.get(c).and_then(|cat| cat.slots.get(s)).is_some_and(|s| s.iter().any(|t| t == tool));
+    let holds = |cats: &[ToolbarCategory], (c, s): (usize, usize)| {
+        cats.get(c)
+            .and_then(|cat| cat.slots.get(s))
+            .is_some_and(|s| s.iter().any(|t| t == tool))
+    };
     if place == Place::Group && target.is_some_and(|t| holds(cats, t)) {
         // Onto its own group: nothing to do.
         return Ok(());
@@ -188,13 +249,23 @@ fn add(cats: &mut Vec<ToolbarCategory>, tool: &str, slot: Option<&Value>, place:
     let Some((c, s)) = target else {
         match cats.last_mut() {
             Some(cat) => cat.slots.push(new),
-            None => cats.push(ToolbarCategory { name: named.then(|| heading(tool)).and_then(category).map(str::to_string), slots: vec![new] }),
+            None => cats.push(ToolbarCategory {
+                name: named
+                    .then(|| heading(tool))
+                    .and_then(category)
+                    .map(str::to_string),
+                slots: vec![new],
+            }),
         }
         return Ok(());
     };
     let cat = cats.get_mut(c).ok_or_else(bad_slot)?;
     match place {
-        Place::Group => cat.slots.get_mut(s).ok_or_else(bad_slot)?.push(tool.to_string()),
+        Place::Group => cat
+            .slots
+            .get_mut(s)
+            .ok_or_else(bad_slot)?
+            .push(tool.to_string()),
         Place::Before => cat.slots.insert(s.min(cat.slots.len()), new),
         Place::After => cat.slots.insert((s + 1).min(cat.slots.len()), new),
     }
@@ -204,7 +275,11 @@ fn add(cats: &mut Vec<ToolbarCategory>, tool: &str, slot: Option<&Value>, place:
 /// Take `tool` out of the toolbar (`group`: with the rest of its group); one that isn't in it
 /// stays out.
 fn remove(cats: &mut [ToolbarCategory], tool: &str, group: bool) {
-    if let Some(slot) = cats.iter_mut().flat_map(|c| c.slots.iter_mut()).find(|s| s.iter().any(|t| t == tool)) {
+    if let Some(slot) = cats
+        .iter_mut()
+        .flat_map(|c| c.slots.iter_mut())
+        .find(|s| s.iter().any(|t| t == tool))
+    {
         if group {
             slot.clear();
         } else {
@@ -215,12 +290,21 @@ fn remove(cats: &mut [ToolbarCategory], tool: &str, group: bool) {
 
 /// A known tool's id from the `tool` param.
 fn tool_param(p: &Value) -> Result<&'static str, String> {
-    let tool = p.get("tool").and_then(Value::as_str).ok_or("tool (a tool id) is required")?;
-    tool_info(tool).map(|t| t.id).ok_or_else(|| format!("unknown tool `{tool}`"))
+    let tool = p
+        .get("tool")
+        .and_then(Value::as_str)
+        .ok_or("tool (a tool id) is required")?;
+    tool_info(tool)
+        .map(|t| t.id)
+        .ok_or_else(|| format!("unknown tool `{tool}`"))
 }
 
 /// The Edit Toolbar commands; `None` for other ids.
-pub(crate) fn command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<Result<Value, String>> {
+pub(crate) fn command(
+    app: &mut VectorcraftApp,
+    id: &str,
+    p: &Value,
+) -> Option<Result<Value, String>> {
     Some(match id {
         "window.editToolbar" => crate::menus::opt_bool(p, "open").map(|open| {
             let open = open.unwrap_or(!app.ui.tools_drawer);
@@ -258,12 +342,23 @@ pub(crate) fn command(app: &mut VectorcraftApp, id: &str, p: &Value) -> Option<R
 /// toolbar `cols` columns wide: onto a button's middle joins its group, onto its edge (top or
 /// bottom; left or right in two columns) goes beside it; elsewhere it goes beside the nearest
 /// button. `(None, _)`: at the end (no buttons).
-pub(crate) fn drop_target(slots: &[(usize, Rect)], at: Pos2, cols: usize) -> (Option<usize>, Place) {
-    let Some(&(k, r)) = slots.iter().min_by(|a, b| a.1.distance_sq_to_pos(at).total_cmp(&b.1.distance_sq_to_pos(at))) else {
+pub(crate) fn drop_target(
+    slots: &[(usize, Rect)],
+    at: Pos2,
+    cols: usize,
+) -> (Option<usize>, Place) {
+    let Some(&(k, r)) = slots.iter().min_by(|a, b| {
+        a.1.distance_sq_to_pos(at)
+            .total_cmp(&b.1.distance_sq_to_pos(at))
+    }) else {
         return (None, Place::Before);
     };
     if r.contains(at) {
-        let f = if cols == 1 { (at.y - r.top()) / r.height().max(1.0) } else { (at.x - r.left()) / r.width().max(1.0) };
+        let f = if cols == 1 {
+            (at.y - r.top()) / r.height().max(1.0)
+        } else {
+            (at.x - r.left()) / r.width().max(1.0)
+        };
         let place = if f < 0.3 {
             Place::Before
         } else if f > 0.7 {
@@ -279,16 +374,34 @@ pub(crate) fn drop_target(slots: &[(usize, Rect)], at: Pos2, cols: usize) -> (Op
 
 /// While a tool is dragged over the toolbar (`bounds`): mark where it would go, and on the release
 /// put it there (`toolbar.addTool`).
-pub(crate) fn toolbar_drop(app: &mut VectorcraftApp, ui: &Ui, slots: &[(usize, Rect)], cols: usize, bounds: Rect) {
-    let Some(drag) = DragAndDrop::payload::<ToolDrag>(ui.ctx()) else { return };
-    let Some(at) = ui.ctx().pointer_interact_pos().filter(|p| bounds.contains(*p)) else { return };
+pub(crate) fn toolbar_drop(
+    app: &mut VectorcraftApp,
+    ui: &Ui,
+    slots: &[(usize, Rect)],
+    cols: usize,
+    bounds: Rect,
+) {
+    let Some(drag) = DragAndDrop::payload::<ToolDrag>(ui.ctx()) else {
+        return;
+    };
+    let Some(at) = ui
+        .ctx()
+        .pointer_interact_pos()
+        .filter(|p| bounds.contains(*p))
+    else {
+        return;
+    };
     let t = Tokens::get(ui.ctx());
     let (slot, place) = drop_target(slots, at, cols);
-    if let Some(r) = slot.and_then(|k| slots.iter().find(|s| s.0 == k)).map(|s| s.1) {
+    if let Some(r) = slot
+        .and_then(|k| slots.iter().find(|s| s.0 == k))
+        .map(|s| s.1)
+    {
         let line = Stroke::new(2.0, t.accent);
         match (place, cols == 1) {
             (Place::Group, _) => {
-                ui.painter().rect_stroke(r.shrink(1.0), 2.0, line, StrokeKind::Inside);
+                ui.painter()
+                    .rect_stroke(r.shrink(1.0), 2.0, line, StrokeKind::Inside);
             }
             (Place::Before, true) => {
                 ui.painter().hline(r.x_range(), r.top(), line);
@@ -332,7 +445,10 @@ pub(crate) fn drawer_id() -> egui::Id {
 /// The heading a tool is listed under: its Basic toolbar group, else one for the tools only the
 /// Advanced toolbar shows.
 fn heading(id: &str) -> &'static str {
-    if let Some((cat, _)) = crate::toolbar::BASIC.iter().find(|(_, slots)| slots.iter().any(|s| s.contains(&id))) {
+    if let Some((cat, _)) = crate::toolbar::BASIC
+        .iter()
+        .find(|(_, slots)| slots.iter().any(|s| s.contains(&id)))
+    {
         return cat;
     }
     match id {
@@ -349,7 +465,10 @@ fn heading(id: &str) -> &'static str {
 fn sections() -> &'static [(&'static str, Vec<&'static ToolInfo>)] {
     static SECTIONS: OnceLock<Vec<(&'static str, Vec<&'static ToolInfo>)>> = OnceLock::new();
     SECTIONS.get_or_init(|| {
-        let mut out: Vec<(&'static str, Vec<&'static ToolInfo>)> = crate::toolbar::BASIC.iter().map(|(cat, _)| (*cat, vec![])).collect();
+        let mut out: Vec<(&'static str, Vec<&'static ToolInfo>)> = crate::toolbar::BASIC
+            .iter()
+            .map(|(cat, _)| (*cat, vec![]))
+            .collect();
         for tool in TOOL_GROUPS.iter().flat_map(|g| g.iter()) {
             let h = heading(tool.id);
             match out.iter_mut().find(|(c, _)| *c == h) {
@@ -368,48 +487,87 @@ pub(crate) fn drawer(app: &mut VectorcraftApp, ctx: &egui::Context) {
     if !app.ui.tools_drawer {
         return;
     }
-    let (Some(button), Some(bar)) = ctx.data(|d| (d.get_temp::<Rect>(button_id()), d.get_temp::<Rect>(toolbar_id()))) else { return };
+    let (Some(button), Some(bar)) = ctx.data(|d| {
+        (
+            d.get_temp::<Rect>(button_id()),
+            d.get_temp::<Rect>(toolbar_id()),
+        )
+    }) else {
+        return;
+    };
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
     let id = drawer_id();
-    let size = ctx.memory(|m| m.area_rect(id)).map_or(vec2(WIDTH, 200.0), |r| r.size());
-    let x = (bar.right() + GAP).min(screen.right() - size.x - GAP).max(screen.left());
-    let y = button.top().min(screen.bottom() - size.y - GAP).max(screen.top() + GAP);
-    let in_toolbar: BTreeSet<&str> = crate::toolbar::slots(app).into_iter().flat_map(|(_, s)| s).collect();
+    let size = ctx
+        .memory(|m| m.area_rect(id))
+        .map_or(vec2(WIDTH, 200.0), |r| r.size());
+    let x = (bar.right() + GAP)
+        .min(screen.right() - size.x - GAP)
+        .max(screen.left());
+    let y = button
+        .top()
+        .min(screen.bottom() - size.y - GAP)
+        .max(screen.top() + GAP);
+    let in_toolbar: BTreeSet<&str> = crate::toolbar::slots(app)
+        .into_iter()
+        .flat_map(|(_, s)| s)
+        .collect();
     let active = app.session.tool_id();
     let dragged = DragAndDrop::payload::<ToolDrag>(ctx).map(|d| *d);
     let pointer = ctx.pointer_interact_pos();
     let over = |r: Rect| pointer.is_some_and(|p| r.contains(p));
-    let removing = dragged.is_some_and(|d| d.from_toolbar) && ctx.memory(|m| m.area_rect(id)).is_some_and(over);
+    let removing = dragged.is_some_and(|d| d.from_toolbar)
+        && ctx.memory(|m| m.area_rect(id)).is_some_and(over);
     let mut picked = None;
     let mut reset = false;
-    let resp = egui::Area::new(id).order(egui::Order::Foreground).fixed_pos(pos2(x, y)).show(ctx, |ui| {
-        crate::toolbar::flyout_frame(&t, removing).inner_margin(egui::Margin::same(8)).show(ui, |ui| {
-            ui.set_width(WIDTH.min(screen.width() - 2.0 * GAP - 16.0).max(CELL.x));
-            ui.horizontal(|ui| {
-                ui.label(egui::RichText::new(tl!("All Tools")).size(13.0).color(t.text_strong));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| reset = widgets::flat_button(ui, "Reset", 64.0).clicked());
-            });
-            ui.add_space(4.0);
-            // As tall as its tools, up to the window's height (it scrolls then); the Area's size
-            // from the last frame mustn't cap it.
-            let room = (screen.height() - 2.0 * GAP - 68.0).max(120.0);
-            egui::ScrollArea::vertical().max_height(room).min_scrolled_height(room).auto_shrink([false, true]).show(ui, |ui| {
-                for (cat, tools) in sections() {
-                    widgets::subheader(ui, tl!(cat));
-                    ui.horizontal_wrapped(|ui| {
-                        ui.spacing_mut().item_spacing = vec2(4.0, 2.0);
-                        for tool in tools {
-                            if cell(ui, &t, tool, tool.id == active, in_toolbar.contains(tool.id)) {
-                                picked = Some(tool.id);
-                            }
-                        }
+    let resp = egui::Area::new(id)
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos2(x, y))
+        .show(ctx, |ui| {
+            crate::toolbar::flyout_frame(&t, removing)
+                .inner_margin(egui::Margin::same(8))
+                .show(ui, |ui| {
+                    ui.set_width(WIDTH.min(screen.width() - 2.0 * GAP - 16.0).max(CELL.x));
+                    ui.horizontal(|ui| {
+                        ui.label(
+                            egui::RichText::new(tl!("All Tools"))
+                                .size(13.0)
+                                .color(t.text_strong),
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            reset = widgets::flat_button(ui, "Reset", 64.0).clicked()
+                        });
                     });
-                    ui.add_space(6.0);
-                }
-            });
+                    ui.add_space(4.0);
+                    // As tall as its tools, up to the window's height (it scrolls then); the Area's size
+                    // from the last frame mustn't cap it.
+                    let room = (screen.height() - 2.0 * GAP - 68.0).max(120.0);
+                    egui::ScrollArea::vertical()
+                        .max_height(room)
+                        .min_scrolled_height(room)
+                        .auto_shrink([false, true])
+                        .show(ui, |ui| {
+                            for (cat, tools) in sections() {
+                                widgets::subheader(ui, tl!(cat));
+                                ui.horizontal_wrapped(|ui| {
+                                    ui.spacing_mut().item_spacing = vec2(4.0, 2.0);
+                                    for tool in tools {
+                                        if cell(
+                                            ui,
+                                            &t,
+                                            tool,
+                                            tool.id == active,
+                                            in_toolbar.contains(tool.id),
+                                        ) {
+                                            picked = Some(tool.id);
+                                        }
+                                    }
+                                });
+                                ui.add_space(6.0);
+                            }
+                        });
+                });
         });
-    });
     let rect = resp.response.rect;
     // A tool dragged from the toolbar and dropped in the drawer leaves the toolbar.
     if let Some(d) = dragged.filter(|d| d.from_toolbar && over(rect))
@@ -437,9 +595,19 @@ pub(crate) fn drawer(app: &mut VectorcraftApp, ctx: &egui::Context) {
 /// A tool's cell in the drawer: icon and name, dimmed when the tool is in the toolbar already (it
 /// can't be dragged in again). Returns whether it was clicked.
 fn cell(ui: &mut Ui, t: &Tokens, tool: &'static ToolInfo, on: bool, dimmed: bool) -> bool {
-    let (rect, resp) = ui.allocate_exact_size(CELL, if dimmed { Sense::click() } else { Sense::click_and_drag() });
+    let (rect, resp) = ui.allocate_exact_size(
+        CELL,
+        if dimmed {
+            Sense::click()
+        } else {
+            Sense::click_and_drag()
+        },
+    );
     if !dimmed {
-        resp.dnd_set_drag_payload(ToolDrag { tool: tool.id, from_toolbar: false });
+        resp.dnd_set_drag_payload(ToolDrag {
+            tool: tool.id,
+            from_toolbar: false,
+        });
     }
     if on {
         ui.painter().rect_filled(rect, 3.0, t.selection);
@@ -454,25 +622,62 @@ fn cell(ui: &mut Ui, t: &Tokens, tool: &'static ToolInfo, on: bool, dimmed: bool
     } else {
         t.text
     };
-    let icon = Rect::from_center_size(rect.left_center() + vec2(6.0 + ICON / 2.0, 0.0), vec2(ICON, ICON));
-    icons::paint(ui, icons::tool_icon(tool.icon), icon, if dimmed || on { color } else { t.icon });
+    let icon = Rect::from_center_size(
+        rect.left_center() + vec2(6.0 + ICON / 2.0, 0.0),
+        vec2(ICON, ICON),
+    );
+    icons::paint(
+        ui,
+        icons::tool_icon(tool.icon),
+        icon,
+        if dimmed || on { color } else { t.icon },
+    );
     let name = tl!(tool.label);
-    let name = if crate::i18n::current() == crate::i18n::Lang::EN { name.trim_end_matches(" Tool") } else { name };
+    let name = if crate::i18n::current() == crate::i18n::Lang::EN {
+        name.trim_end_matches(" Tool")
+    } else {
+        name
+    };
     let text_at = pos2(icon.right() + 8.0, rect.center().y);
-    ui.painter().with_clip_rect(rect).text(text_at, egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(12.0), color);
+    ui.painter().with_clip_rect(rect).text(
+        text_at,
+        egui::Align2::LEFT_CENTER,
+        name,
+        egui::FontId::proportional(12.0),
+        color,
+    );
     resp.on_hover_text(crate::toolbar::tip(tool)).clicked()
 }
 
 /// The tool being dragged, by the pointer (below and right of it, clear of the drop marker).
 fn ghost(ctx: &egui::Context, t: &Tokens) {
-    let Some(d) = DragAndDrop::payload::<ToolDrag>(ctx) else { return };
-    let (Some(at), Some(tool)) = (ctx.pointer_interact_pos(), tool_info(d.tool)) else { return };
+    let Some(d) = DragAndDrop::payload::<ToolDrag>(ctx) else {
+        return;
+    };
+    let (Some(at), Some(tool)) = (ctx.pointer_interact_pos(), tool_info(d.tool)) else {
+        return;
+    };
     let r = Rect::from_min_size(at + vec2(8.0, 8.0), vec2(GHOST, GHOST));
-    egui::Area::new(egui::Id::new("tool-drag-ghost")).order(egui::Order::Tooltip).fixed_pos(r.min).interactable(false).show(ctx, |ui| {
-        let (r, _) = ui.allocate_exact_size(r.size(), Sense::hover());
-        ui.painter().rect(r, 3.0, t.panel, Stroke::new(1.0, t.accent), StrokeKind::Inside);
-        icons::paint(ui, icons::tool_icon(tool.icon), Rect::from_center_size(r.center(), vec2(18.0, 18.0)), t.text_strong);
-    });
+    egui::Area::new(egui::Id::new("tool-drag-ghost"))
+        .order(egui::Order::Tooltip)
+        .fixed_pos(r.min)
+        .interactable(false)
+        .show(ctx, |ui| {
+            let (r, _) = ui.allocate_exact_size(r.size(), Sense::hover());
+            ui.painter().rect(
+                r,
+                3.0,
+                t.panel,
+                Stroke::new(1.0, t.accent),
+                StrokeKind::Inside,
+            );
+            icons::paint(
+                ui,
+                icons::tool_icon(tool.icon),
+                Rect::from_center_size(r.center(), vec2(18.0, 18.0)),
+                t.text_strong,
+            );
+        });
 }
 
 #[cfg(test)]
@@ -489,12 +694,16 @@ mod tests {
 
     fn app() -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("file.new", json!({"width": 300, "height": 300})).unwrap();
+        app.run("file.new", json!({"width": 300, "height": 300}))
+            .unwrap();
         app
     }
 
     fn slots(app: &VectorcraftApp) -> Vec<Vec<&'static str>> {
-        crate::toolbar::slots(app).into_iter().map(|(_, s)| s).collect()
+        crate::toolbar::slots(app)
+            .into_iter()
+            .map(|(_, s)| s)
+            .collect()
     }
 
     /// The slot holding `tool`.
@@ -504,18 +713,37 @@ mod tests {
 
     /// One headless frame of the toolbar, its keys handled first as in the app; returns the texts
     /// painted: (text, a point inside it, colour).
-    fn frame(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, events: Vec<Event>) -> Vec<(String, Pos2, Color32)> {
+    fn frame(
+        app: &mut VectorcraftApp,
+        ctx: &egui::Context,
+        time: f64,
+        events: Vec<Event>,
+    ) -> Vec<(String, Pos2, Color32)> {
         fn texts(s: &egui::Shape, out: &mut Vec<(String, Pos2, Color32)>) {
             match s {
                 egui::Shape::Text(t) => {
-                    let color = t.galley.job.sections.first().map_or(t.fallback_color, |s| s.format.color);
-                    out.push((t.galley.text().to_string(), t.pos + vec2(4.0, t.galley.size().y / 2.0), color));
+                    let color = t
+                        .galley
+                        .job
+                        .sections
+                        .first()
+                        .map_or(t.fallback_color, |s| s.format.color);
+                    out.push((
+                        t.galley.text().to_string(),
+                        t.pos + vec2(4.0, t.galley.size().y / 2.0),
+                        color,
+                    ));
                 }
                 egui::Shape::Vec(v) => v.iter().for_each(|s| texts(s, out)),
                 _ => {}
             }
         }
-        let input = RawInput { time: Some(time), events, screen_rect: Some(Rect::from_min_size(Pos2::ZERO, SCREEN)), ..Default::default() };
+        let input = RawInput {
+            time: Some(time),
+            events,
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, SCREEN)),
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(input, |ui| {
             crate::shortcuts::handle(app, ui.ctx());
             crate::toolbar::show(app, ui);
@@ -534,20 +762,40 @@ mod tests {
     }
 
     fn button(pos: Pos2, pressed: bool) -> Event {
-        Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Default::default() }
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        }
     }
 
     fn click(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, at: Pos2) {
-        frame(app, ctx, time, vec![Event::PointerMoved(at), button(at, true)]);
+        frame(
+            app,
+            ctx,
+            time,
+            vec![Event::PointerMoved(at), button(at, true)],
+        );
         frame(app, ctx, time + 0.05, vec![button(at, false)]);
         frame(app, ctx, time + 0.1, vec![]);
     }
 
     /// A press at `from` dragged to `to` in steps, one frame each, then released there.
     fn drag(app: &mut VectorcraftApp, ctx: &egui::Context, time: f64, from: Pos2, to: Pos2) {
-        frame(app, ctx, time, vec![Event::PointerMoved(from), button(from, true)]);
+        frame(
+            app,
+            ctx,
+            time,
+            vec![Event::PointerMoved(from), button(from, true)],
+        );
         for k in 1..=6 {
-            frame(app, ctx, time + 0.05 * f64::from(k), vec![Event::PointerMoved(from + (to - from) * (k as f32 / 6.0))]);
+            frame(
+                app,
+                ctx,
+                time + 0.05 * f64::from(k),
+                vec![Event::PointerMoved(from + (to - from) * (k as f32 / 6.0))],
+            );
         }
         frame(app, ctx, time + 0.4, vec![button(to, false)]);
         frame(app, ctx, time + 0.45, vec![]);
@@ -558,7 +806,10 @@ mod tests {
     }
 
     fn drawer_shown(ctx: &egui::Context) -> bool {
-        ctx.memory(|m| m.areas().visible_last_frame(&egui::LayerId::new(egui::Order::Foreground, drawer_id())))
+        ctx.memory(|m| {
+            m.areas()
+                .visible_last_frame(&egui::LayerId::new(egui::Order::Foreground, drawer_id()))
+        })
     }
 
     /// A point inside the drawer's cell of the tool named `name` (as the drawer shows it), and the
@@ -575,14 +826,26 @@ mod tests {
     #[test]
     fn every_tool_is_listed_once_under_a_heading() {
         let s = sections();
-        let listed: Vec<&str> = s.iter().flat_map(|(_, tools)| tools.iter().map(|t| t.id)).collect();
-        let all: Vec<&str> = TOOL_GROUPS.iter().flat_map(|g| g.iter().map(|t| t.id)).collect();
+        let listed: Vec<&str> = s
+            .iter()
+            .flat_map(|(_, tools)| tools.iter().map(|t| t.id))
+            .collect();
+        let all: Vec<&str> = TOOL_GROUPS
+            .iter()
+            .flat_map(|g| g.iter().map(|t| t.id))
+            .collect();
         assert_eq!(listed.len(), all.len());
         assert!(all.iter().all(|id| listed.contains(id)));
         let heads: Vec<&str> = s.iter().map(|(c, _)| *c).collect();
         assert_eq!(&heads[..3], ["Select", "Shapes", "Draw"]);
-        assert!(heads.contains(&"Symbols") && heads.contains(&"Graph"), "{heads:?}");
-        assert!(!heads.contains(&"More"), "every tool has a named heading: {heads:?}");
+        assert!(
+            heads.contains(&"Symbols") && heads.contains(&"Graph"),
+            "{heads:?}"
+        );
+        assert!(
+            !heads.contains(&"More"),
+            "every tool has a named heading: {heads:?}"
+        );
     }
 
     #[test]
@@ -590,30 +853,57 @@ mod tests {
         let mut app = app();
         let shipped = slots(&app);
         // At the end; the toolbar's slots come back.
-        let r = app.run("toolbar.addTool", json!({"tool": "artboard"})).unwrap();
+        let r = app
+            .run("toolbar.addTool", json!({"tool": "artboard"}))
+            .unwrap();
         assert_eq!(r, json!(slots(&app)));
         assert_eq!(slots(&app).last().unwrap(), &["artboard"]);
         // Before the first slot, moved out of its group.
-        app.run("toolbar.addTool", json!({"tool": "magicWand", "slot": 0})).unwrap();
-        assert_eq!(&slots(&app)[..3], [&["magicWand"][..], &["selection"], &["directSelection", "groupSelection"]]);
+        app.run("toolbar.addTool", json!({"tool": "magicWand", "slot": 0}))
+            .unwrap();
+        assert_eq!(
+            &slots(&app)[..3],
+            [
+                &["magicWand"][..],
+                &["selection"],
+                &["directSelection", "groupSelection"]
+            ]
+        );
         assert_eq!(slots(&app)[3], ["lasso"]);
         // After a slot, and into a group (last), moved out of the Rectangle group.
-        app.run("toolbar.addTool", json!({"tool": "slice", "slot": 1, "place": "after"})).unwrap();
+        app.run(
+            "toolbar.addTool",
+            json!({"tool": "slice", "slot": 1, "place": "after"}),
+        )
+        .unwrap();
         assert_eq!(slots(&app)[2], ["slice"]);
         let ellipse = slot_of(&app, "ellipse").unwrap();
-        app.run("toolbar.addTool", json!({"tool": "star", "slot": ellipse, "place": "group"})).unwrap();
+        app.run(
+            "toolbar.addTool",
+            json!({"tool": "star", "slot": ellipse, "place": "group"}),
+        )
+        .unwrap();
         assert_eq!(slots(&app)[ellipse], ["ellipse", "star"]);
         assert!(!slots(&app)[slot_of(&app, "rectangle").unwrap()].contains(&"star"));
         // Onto its own group: nothing changes.
         let before = slots(&app);
-        app.run("toolbar.addTool", json!({"tool": "ellipse", "slot": ellipse, "place": "group"})).unwrap();
+        app.run(
+            "toolbar.addTool",
+            json!({"tool": "ellipse", "slot": ellipse, "place": "group"}),
+        )
+        .unwrap();
         assert_eq!(slots(&app), before);
         // The category label still names the first slot of its category.
         assert_eq!(crate::toolbar::slots(&app)[0].0, Some("Select"));
         // Out: one tool, or its whole group; an emptied slot goes.
-        app.run("toolbar.removeTool", json!({"tool": "ellipse"})).unwrap();
+        app.run("toolbar.removeTool", json!({"tool": "ellipse"}))
+            .unwrap();
         assert_eq!(slots(&app)[ellipse], ["star"]);
-        app.run("toolbar.removeTool", json!({"tool": "addAnchor", "group": true})).unwrap();
+        app.run(
+            "toolbar.removeTool",
+            json!({"tool": "addAnchor", "group": true}),
+        )
+        .unwrap();
         assert!(slot_of(&app, "pen").is_none() && slot_of(&app, "addAnchor").is_none());
         // Bad params change nothing.
         let before = slots(&app);
@@ -626,14 +916,30 @@ mod tests {
         ] {
             assert!(app.run("toolbar.addTool", p.clone()).is_err(), "{p}");
         }
-        assert_eq!(app.run("toolbar.removeTool", json!({"tool": "pen"})).unwrap(), json!(before), "not in the toolbar: stays out");
-        assert!(app.run("toolbar.addTool", json!({"tool": "pen", "slot": "first"})).unwrap_err().contains("between 0 and"));
-        assert!(app.run("toolbar.removeTool", json!({"tool": "star", "group": "yes"})).is_err());
+        assert_eq!(
+            app.run("toolbar.removeTool", json!({"tool": "pen"}))
+                .unwrap(),
+            json!(before),
+            "not in the toolbar: stays out"
+        );
+        assert!(
+            app.run("toolbar.addTool", json!({"tool": "pen", "slot": "first"}))
+                .unwrap_err()
+                .contains("between 0 and")
+        );
+        assert!(
+            app.run(
+                "toolbar.removeTool",
+                json!({"tool": "star", "group": "yes"})
+            )
+            .is_err()
+        );
         assert_eq!(slots(&app), before);
         // The Advanced toolbar keeps its own edits.
         app.run("window.toolbarAdvanced", json!({})).unwrap();
         assert_eq!(slots(&app).len(), TOOL_GROUPS.len());
-        app.run("toolbar.removeTool", json!({"tool": "selection"})).unwrap();
+        app.run("toolbar.removeTool", json!({"tool": "selection"}))
+            .unwrap();
         assert!(app.ui.toolbar_edits.advanced.is_some() && slot_of(&app, "selection").is_none());
         app.run("window.toolbarAdvanced", json!({})).unwrap();
         assert_eq!(slots(&app)[0], ["magicWand"]);
@@ -641,12 +947,15 @@ mod tests {
         assert_eq!(app.run("toolbar.reset", json!({})).unwrap(), json!(shipped));
         assert!(app.ui.toolbar_edits.basic.is_none() && app.ui.toolbar_edits.advanced.is_some());
         // An edit that gives back the shipped toolbar forgets the edits.
-        app.run("toolbar.addTool", json!({"tool": "artboard"})).unwrap();
-        app.run("toolbar.removeTool", json!({"tool": "artboard"})).unwrap();
+        app.run("toolbar.addTool", json!({"tool": "artboard"}))
+            .unwrap();
+        app.run("toolbar.removeTool", json!({"tool": "artboard"}))
+            .unwrap();
         assert!(app.ui.toolbar_edits.basic.is_none());
         // Everything out, then a tool back: it starts its own category.
         for tool in shipped.iter().flatten() {
-            app.run("toolbar.removeTool", json!({"tool": tool})).unwrap();
+            app.run("toolbar.removeTool", json!({"tool": tool}))
+                .unwrap();
         }
         assert!(slots(&app).is_empty());
         app.run("toolbar.addTool", json!({"tool": "pen"})).unwrap();
@@ -656,22 +965,34 @@ mod tests {
     #[test]
     fn the_edited_toolbar_is_saved_and_loads_sanitized() {
         let mut app = app();
-        app.run("toolbar.addTool", json!({"tool": "artboard", "slot": 0})).unwrap();
+        app.run("toolbar.addTool", json!({"tool": "artboard", "slot": 0}))
+            .unwrap();
         let saved = serde_json::to_value(&app.ui).unwrap();
         let back: crate::state::UiState = serde_json::from_value(saved.clone()).unwrap();
         assert_eq!(back.toolbar_edits, app.ui.toolbar_edits);
         // Preferences saved before Edit Toolbar load the shipped toolbars.
         let mut old = saved;
         old.as_object_mut().unwrap().remove("toolbar_edits");
-        assert_eq!(serde_json::from_value::<crate::state::UiState>(old).unwrap().toolbar_edits, ToolbarEdits::default());
+        assert_eq!(
+            serde_json::from_value::<crate::state::UiState>(old)
+                .unwrap()
+                .toolbar_edits,
+            ToolbarEdits::default()
+        );
         // A hand-edited file: unknown tools and names go, each tool once, emptied slots go.
         let cat = |name: Option<&str>, slots: &[&[&str]]| ToolbarCategory {
             name: name.map(str::to_string),
-            slots: slots.iter().map(|s| s.iter().map(|id| id.to_string()).collect()).collect(),
+            slots: slots
+                .iter()
+                .map(|s| s.iter().map(|id| id.to_string()).collect())
+                .collect(),
         };
         let ui = crate::state::UiState {
             toolbar_edits: ToolbarEdits {
-                basic: Some(vec![cat(Some("Nope"), &[&["pen", "nope"], &["pen"], &["nope"]]), cat(Some("Draw"), &[&[]])]),
+                basic: Some(vec![
+                    cat(Some("Nope"), &[&["pen", "nope"], &["pen"], &["nope"]]),
+                    cat(Some("Draw"), &[&[]]),
+                ]),
                 advanced: None,
             },
             tools_drawer: true,
@@ -689,16 +1010,31 @@ mod tests {
         let mut app = app();
         let ctx = ctx();
         frame(&mut app, &ctx, 0.0, vec![]);
-        let edit = crate::toolbar::tests::widget_rects(&ctx, vec2(26.0, 26.0)).last().copied().unwrap();
+        let edit = crate::toolbar::tests::widget_rects(&ctx, vec2(26.0, 26.0))
+            .last()
+            .copied()
+            .unwrap();
         click(&mut app, &ctx, 1.0, edit.center());
         frame(&mut app, &ctx, 1.2, vec![]);
         assert!(app.ui.tools_drawer && app.ui.dialog.is_none());
-        assert_eq!(crate::menus::checked(&app, "window.editToolbar", &json!({})), Some(true));
+        assert_eq!(
+            crate::menus::checked(&app, "window.editToolbar", &json!({})),
+            Some(true)
+        );
         let drawer = drawer_rect(&ctx).expect("the drawer is shown");
         let bar = ctx.data(|d| d.get_temp::<Rect>(toolbar_id())).unwrap();
-        assert!((drawer.left() - bar.right() - GAP).abs() < 1.0, "beside the toolbar: {drawer:?} {bar:?}");
-        assert!((drawer.top() - edit.top()).abs() < 1.0 || drawer.bottom() >= SCREEN.y - GAP - 1.0, "by the button: {drawer:?} {edit:?}");
-        assert!(drawer.y_range().contains(edit.center().y), "by the button: {drawer:?} {edit:?}");
+        assert!(
+            (drawer.left() - bar.right() - GAP).abs() < 1.0,
+            "beside the toolbar: {drawer:?} {bar:?}"
+        );
+        assert!(
+            (drawer.top() - edit.top()).abs() < 1.0 || drawer.bottom() >= SCREEN.y - GAP - 1.0,
+            "by the button: {drawer:?} {edit:?}"
+        );
+        assert!(
+            drawer.y_range().contains(edit.center().y),
+            "by the button: {drawer:?} {edit:?}"
+        );
         assert!(drawer.width() < 3.0 * CELL.x, "two tools wide: {drawer:?}");
         // A click on a toolbar tool picks it and leaves the drawer open.
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
@@ -706,13 +1042,20 @@ mod tests {
         click(&mut app, &ctx, 2.0, ellipse);
         assert!(app.ui.tools_drawer && app.session.tool_id() == "ellipse");
         // Escape closes it.
-        let esc = |pressed| Event::Key { key: egui::Key::Escape, physical_key: None, pressed, repeat: false, modifiers: Default::default() };
+        let esc = |pressed| Event::Key {
+            key: egui::Key::Escape,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: Default::default(),
+        };
         frame(&mut app, &ctx, 3.0, vec![esc(true), esc(false)]);
         assert!(!app.ui.tools_drawer);
         frame(&mut app, &ctx, 3.1, vec![]);
         assert!(!drawer_shown(&ctx));
         // A click outside closes it, and so does the ••• button.
-        app.run("window.editToolbar", json!({"open": true})).unwrap();
+        app.run("window.editToolbar", json!({"open": true}))
+            .unwrap();
         frame(&mut app, &ctx, 4.0, vec![]);
         click(&mut app, &ctx, 4.5, pos2(SCREEN.x - 20.0, 300.0));
         assert!(!app.ui.tools_drawer);
@@ -734,15 +1077,18 @@ mod tests {
     fn tools_in_the_toolbar_are_dimmed_in_the_drawer() {
         let mut app = app();
         let ctx = ctx();
-        app.run("window.editToolbar", json!({"open": true})).unwrap();
+        app.run("window.editToolbar", json!({"open": true}))
+            .unwrap();
         frame(&mut app, &ctx, 0.0, vec![]);
         let shown = frame(&mut app, &ctx, 0.1, vec![]);
         let drawer = drawer_rect(&ctx).unwrap();
         let dim = Tokens::get(&ctx).text_disabled;
         assert_eq!(cell_at(&shown, drawer, "Ellipse").1, dim);
         assert_ne!(cell_at(&shown, drawer, "Artboard").1, dim);
-        app.run("toolbar.addTool", json!({"tool": "artboard"})).unwrap();
-        app.run("toolbar.removeTool", json!({"tool": "ellipse"})).unwrap();
+        app.run("toolbar.addTool", json!({"tool": "artboard"}))
+            .unwrap();
+        app.run("toolbar.removeTool", json!({"tool": "ellipse"}))
+            .unwrap();
         let shown = frame(&mut app, &ctx, 0.2, vec![]);
         assert_ne!(cell_at(&shown, drawer, "Ellipse").1, dim);
         assert_eq!(cell_at(&shown, drawer, "Artboard").1, dim);
@@ -755,14 +1101,21 @@ mod tests {
     fn tools_drag_between_the_drawer_and_the_toolbar() {
         let mut app = app();
         let ctx = ctx();
-        app.run("window.editToolbar", json!({"open": true})).unwrap();
+        app.run("window.editToolbar", json!({"open": true}))
+            .unwrap();
         frame(&mut app, &ctx, 0.0, vec![]);
         let shown = frame(&mut app, &ctx, 0.1, vec![]);
         let drawer = drawer_rect(&ctx).unwrap();
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
         // Onto the divider under the Selection tool: its own slot, second.
         let (artboard, _) = cell_at(&shown, drawer, "Artboard");
-        drag(&mut app, &ctx, 1.0, artboard, tools[0].center_bottom() - vec2(0.0, 3.0));
+        drag(
+            &mut app,
+            &ctx,
+            1.0,
+            artboard,
+            tools[0].center_bottom() - vec2(0.0, 3.0),
+        );
         assert_eq!(&slots(&app)[..2], [&["selection"][..], &["artboard"]]);
         assert!(app.ui.tools_drawer, "the drawer stays open");
         // Onto the middle of the Ellipse tool: into its group.
@@ -774,7 +1127,13 @@ mod tests {
         // A dimmed tool (in the toolbar already) doesn't drag.
         let before = slots(&app);
         let (rectangle, _) = cell_at(&shown, drawer, "Rectangle");
-        drag(&mut app, &ctx, 3.0, rectangle, tools[0].center_bottom() - vec2(0.0, 3.0));
+        drag(
+            &mut app,
+            &ctx,
+            3.0,
+            rectangle,
+            tools[0].center_bottom() - vec2(0.0, 3.0),
+        );
         assert_eq!(slots(&app), before);
         // From the toolbar into the drawer: out of the toolbar.
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
@@ -782,14 +1141,34 @@ mod tests {
         assert!(slot_of(&app, "artboard").is_none(), "{:?}", slots(&app));
         // Within the toolbar: Selection onto the divider over the Lasso.
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
-        drag(&mut app, &ctx, 5.0, tools[0].center(), tools[2].center_top() + vec2(0.0, 3.0));
-        assert_eq!(&slots(&app)[..3], [&["directSelection", "groupSelection"][..], &["selection"], &["lasso", "magicWand"]]);
+        drag(
+            &mut app,
+            &ctx,
+            5.0,
+            tools[0].center(),
+            tools[2].center_top() + vec2(0.0, 3.0),
+        );
+        assert_eq!(
+            &slots(&app)[..3],
+            [
+                &["directSelection", "groupSelection"][..],
+                &["selection"],
+                &["lasso", "magicWand"]
+            ]
+        );
         // The drawer closed, the toolbar is locked: the same drag moves nothing.
-        app.run("window.editToolbar", json!({"open": false})).unwrap();
+        app.run("window.editToolbar", json!({"open": false}))
+            .unwrap();
         frame(&mut app, &ctx, 6.0, vec![]);
         let before = slots(&app);
         let tools = crate::toolbar::tests::widget_rects(&ctx, BUTTON);
-        drag(&mut app, &ctx, 7.0, tools[0].center(), tools[2].center_bottom() - vec2(0.0, 3.0));
+        drag(
+            &mut app,
+            &ctx,
+            7.0,
+            tools[0].center(),
+            tools[2].center_bottom() - vec2(0.0, 3.0),
+        );
         assert_eq!(slots(&app), before);
     }
 
@@ -797,16 +1176,40 @@ mod tests {
     fn drop_targets_follow_the_buttons_edges() {
         let r = |y: f32| Rect::from_min_size(pos2(6.0, y), BUTTON);
         let one = [(0, r(0.0)), (1, r(30.0))];
-        assert_eq!(drop_target(&one, pos2(20.0, 2.0), 1), (Some(0), Place::Before));
-        assert_eq!(drop_target(&one, pos2(20.0, 14.0), 1), (Some(0), Place::Group));
-        assert_eq!(drop_target(&one, pos2(20.0, 27.0), 1), (Some(0), Place::After));
+        assert_eq!(
+            drop_target(&one, pos2(20.0, 2.0), 1),
+            (Some(0), Place::Before)
+        );
+        assert_eq!(
+            drop_target(&one, pos2(20.0, 14.0), 1),
+            (Some(0), Place::Group)
+        );
+        assert_eq!(
+            drop_target(&one, pos2(20.0, 27.0), 1),
+            (Some(0), Place::After)
+        );
         // Past the last button, or beside them: next to the nearest one.
-        assert_eq!(drop_target(&one, pos2(20.0, 200.0), 1), (Some(1), Place::After));
-        assert_eq!(drop_target(&one, pos2(44.5, 40.0), 1), (Some(1), Place::After));
+        assert_eq!(
+            drop_target(&one, pos2(20.0, 200.0), 1),
+            (Some(1), Place::After)
+        );
+        assert_eq!(
+            drop_target(&one, pos2(44.5, 40.0), 1),
+            (Some(1), Place::After)
+        );
         // Two columns: the left and right edges.
-        let two = [(0, Rect::from_min_size(pos2(2.0, 0.0), BUTTON)), (1, Rect::from_min_size(pos2(38.0, 0.0), BUTTON))];
-        assert_eq!(drop_target(&two, pos2(40.0, 10.0), 2), (Some(1), Place::Before));
-        assert_eq!(drop_target(&two, pos2(36.0, 10.0), 2), (Some(0), Place::After));
+        let two = [
+            (0, Rect::from_min_size(pos2(2.0, 0.0), BUTTON)),
+            (1, Rect::from_min_size(pos2(38.0, 0.0), BUTTON)),
+        ];
+        assert_eq!(
+            drop_target(&two, pos2(40.0, 10.0), 2),
+            (Some(1), Place::Before)
+        );
+        assert_eq!(
+            drop_target(&two, pos2(36.0, 10.0), 2),
+            (Some(0), Place::After)
+        );
         assert_eq!(drop_target(&[], pos2(0.0, 0.0), 1), (None, Place::Before));
     }
 }

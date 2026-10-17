@@ -883,9 +883,10 @@ mod tests {
         map.insert(EntityWrapper::new(1), 11);
         map.insert(EntityWrapper::new(0), 12);
         assert_eq!(map.len(), 2);
-        assert!(map
-            .get(&EntityWrapper::new(0))
-            .is_some_and(|val| *val == 12));
+        assert!(
+            map.get(&EntityWrapper::new(0))
+                .is_some_and(|val| *val == 12)
+        );
         map.remove(&EntityWrapper::new(1));
         assert_eq!(map.len(), 1);
         map.clear();

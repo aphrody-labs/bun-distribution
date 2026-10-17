@@ -38,7 +38,11 @@ enum PatchMode {
 pub(super) fn enabled(s: &Session) -> std::result::Result<(), String> {
     has_pixel_layer(s)?;
     let d = s.active().ok_or("no document open")?;
-    if d.doc.selection.is_some() { Ok(()) } else { Err("select the area to patch first".into()) }
+    if d.doc.selection.is_some() {
+        Ok(())
+    } else {
+        Err("select the area to patch first".into())
+    }
 }
 
 /// The layer `p` targets (`None` for an alpha channel or the Quick Mask), as `parse_brush`.
@@ -48,7 +52,11 @@ pub(super) fn target_layer(s: &Session, p: &Value) -> Result<Option<LayerId>> {
     }
     match p.get("layer").and_then(Value::as_u64) {
         Some(id) => Ok(Some(LayerId(id))),
-        None => Ok(Some(s.active().and_then(|d| d.active_layer).ok_or(EngineError::Other("no active layer".into()))?)),
+        None => Ok(Some(
+            s.active()
+                .and_then(|d| d.active_layer)
+                .ok_or(EngineError::Other("no active layer".into()))?,
+        )),
     }
 }
 
@@ -66,7 +74,11 @@ pub(super) fn offset(cmd: &str, p: &Value) -> Result<(i32, i32)> {
 /// selection covers everything outside its tiles (an inverted selection).
 pub(super) fn selection_area(sel: &Surface, canvas: Rect) -> Rect {
     let outside = sel.default_pixel().first().copied().unwrap_or(0.0);
-    let b = if outside > 0.0 { canvas } else { sel.content_bounds() };
+    let b = if outside > 0.0 {
+        canvas
+    } else {
+        sel.content_bounds()
+    };
     b.intersect(&canvas)
 }
 
@@ -74,14 +86,23 @@ pub(super) fn selection_area(sel: &Surface, canvas: Rect) -> Rect {
 pub(super) fn coverage(sel: &Surface, rect: Rect) -> Vec<f32> {
     // Read tile by tile (a per-pixel lookup costs a tile search each).
     let n = sel.channels().max(1);
-    sel.read_region(rect).chunks_exact(n).map(|px| px[0].clamp(0.0, 1.0)).collect()
+    sel.read_region(rect)
+        .chunks_exact(n)
+        .map(|px| px[0].clamp(0.0, 1.0))
+        .collect()
 }
 
 /// Seamless clone with the membrane solved `step` times coarser: the Poisson result is the source
 /// plus a harmonic (smooth) correction `h` of the boundary mismatch, so `h` is solved on a grid of
 /// `step`×`step` cells and interpolated back, while the texture stays the full-resolution source.
 /// The live preview's approximation of [`heal_region`] (`step` 1 is exactly it).
-fn heal_region_coarse(fmt: &PixelFormat, src: &Region, dst: &Region, mask: &[bool], step: usize) -> Region {
+fn heal_region_coarse(
+    fmt: &PixelFormat,
+    src: &Region,
+    dst: &Region,
+    mask: &[bool],
+    step: usize,
+) -> Region {
     if step <= 1 {
         return heal_region(fmt, src, dst, mask);
     }
@@ -108,7 +129,9 @@ fn heal_region_coarse(fmt: &PixelFormat, src: &Region, dst: &Region, mask: &[boo
     }
     for (c, m) in count.iter().enumerate() {
         if *m > 0 {
-            diff[c * n..(c + 1) * n].iter_mut().for_each(|v| *v /= *m as f32);
+            diff[c * n..(c + 1) * n]
+                .iter_mut()
+                .for_each(|v| *v /= *m as f32);
         }
     }
     let membrane = poisson::membrane_fill(cw, chh, n, &diff, &hole);
@@ -130,14 +153,18 @@ fn heal_region_coarse(fmt: &PixelFormat, src: &Region, dst: &Region, mask: &[boo
             }
             for k in 0..n {
                 let v = |cx: usize, cy: usize| membrane[(cy * cw + cx) * n + k];
-                let m = (v(x0, y0) * (1.0 - tx) + v(x1, y0) * tx) * (1.0 - ty) + (v(x0, y1) * (1.0 - tx) + v(x1, y1) * tx) * ty;
+                let m = (v(x0, y0) * (1.0 - tx) + v(x1, y0) * tx) * (1.0 - ty)
+                    + (v(x0, y1) * (1.0 - tx) + v(x1, y1) * tx) * ty;
                 row[x * n + k] = src.data[i * n + k] + m;
             }
         }
     };
     {
         use rayon::prelude::*;
-        out.data.par_chunks_mut(w * n).enumerate().for_each(fill_row);
+        out.data
+            .par_chunks_mut(w * n)
+            .enumerate()
+            .for_each(fill_row);
     }
     clamp_samples(fmt, &mut out.data);
     out
@@ -163,16 +190,25 @@ fn plan(s: &Session, p: &Value) -> Result<Plan> {
     };
     let (dx, dy) = offset(CMD, p)?;
     let id = target_layer(s, p)?;
-    let d = s.active().ok_or(EngineError::Other("no document open".into()))?;
+    let d = s
+        .active()
+        .ok_or(EngineError::Other("no document open".into()))?;
     let canvas = d.doc.bounds();
-    let sel = d.doc.selection.as_ref().ok_or_else(|| bad(CMD, "select the area to patch first"))?;
+    let sel = d
+        .doc
+        .selection
+        .as_ref()
+        .ok_or_else(|| bad(CMD, "select the area to patch first"))?;
     let area = selection_area(sel, canvas);
     if area.is_empty() {
         return Err(bad(CMD, "the selection is empty"));
     }
     let pixels = u64::from(area.width()) * u64::from(area.height());
     if pixels > MAX_PIXELS {
-        return Err(bad(CMD, format!("the selection is too large to patch ({pixels} pixels, at most {MAX_PIXELS})")));
+        return Err(bad(
+            CMD,
+            format!("the selection is too large to patch ({pixels} pixels, at most {MAX_PIXELS})"),
+        ));
     }
     if (dx, dy) == (0, 0) {
         return Err(bad(CMD, "drag the selection to the area to sample from"));
@@ -185,18 +221,35 @@ fn plan(s: &Session, p: &Value) -> Result<Plan> {
         PatchMode::Source => ((0, 0), (dx, dy)),
         PatchMode::Destination => ((dx, dy), (-dx, -dy)),
     };
-    Ok(Plan { id, canvas, area, dst_shift, src_shift, destination: mode == PatchMode::Destination, offset: (dx, dy) })
+    Ok(Plan {
+        id,
+        canvas,
+        area,
+        dst_shift,
+        src_shift,
+        destination: mode == PatchMode::Destination,
+        offset: (dx, dy),
+    })
 }
 
 /// Heal `surf` at the selection (shifted by `dst_shift`) with texture read `src_shift` away, the
 /// membrane solved `step` times coarser (1 = exact). Returns the damaged rectangle.
 fn patch_surface(surf: &mut Surface, sel: &Surface, plan: &Plan, lock: bool, step: usize) -> Rect {
-    let Plan { canvas, area, dst_shift, src_shift, .. } = *plan;
+    let Plan {
+        canvas,
+        area,
+        dst_shift,
+        src_shift,
+        ..
+    } = *plan;
     // The repaired area plus a two-pixel ring: the ring is the Dirichlet boundary of the solve. It is
     // clipped to where both the repaired and the sampled pixels lie on the canvas, so a patch at the
     // canvas edge sees a free (Neumann) boundary there instead of the empty pixels beyond it.
     let dst_area = area.translate(dst_shift.0, dst_shift.1);
-    let g = dst_area.inflate(2).intersect(&canvas).intersect(&canvas.translate(-src_shift.0, -src_shift.1));
+    let g = dst_area
+        .inflate(2)
+        .intersect(&canvas)
+        .intersect(&canvas.translate(-src_shift.0, -src_shift.1));
     if g.is_empty() {
         return Rect::EMPTY;
     }
@@ -216,9 +269,16 @@ pub(super) fn patch(s: &mut Session, p: &Value) -> Result<Value> {
         return patch_content_aware(s, p);
     }
     let plan = plan(s, p)?;
-    let label = if plan.destination { "Patch (Destination)" } else { "Patch" };
+    let label = if plan.destination {
+        "Patch (Destination)"
+    } else {
+        "Patch"
+    };
     let dmg = run_stroke(s, label, plan.id, p, |pre, surf, _, lock| {
-        let sel = pre.selection.as_ref().ok_or_else(|| bad(CMD, "select the area to patch first"))?;
+        let sel = pre
+            .selection
+            .as_ref()
+            .ok_or_else(|| bad(CMD, "select the area to patch first"))?;
         Ok(patch_surface(surf, sel, &plan, lock, 1))
     })?;
     Ok(json!({ "damage": damage_json(dmg), "offset": [plan.offset.0, plan.offset.1] }))
@@ -231,13 +291,19 @@ pub(super) fn patch(s: &mut Session, p: &Value) -> Result<Value> {
 /// the coarsening (the view's zoom-out factor: finer detail wouldn't show).
 pub fn preview(s: &Session, p: &Value, max_cells: u64, min_step: u32) -> Result<(Document, Rect)> {
     let plan = plan(s, p)?;
-    let d = s.active().ok_or(EngineError::Other("no document open".into()))?;
+    let d = s
+        .active()
+        .ok_or(EngineError::Other("no document open".into()))?;
     let pixels = u64::from(plan.area.width() + 4) * u64::from(plan.area.height() + 4);
     // Smallest step whose grid fits `max_cells`: step² · cells ≥ pixels.
     let need = (pixels as f64 / max_cells.max(1) as f64).sqrt().ceil() as usize;
     let step = need.max(min_step as usize).clamp(1, 64);
     let mut doc = (*d.doc).clone();
-    let sel = d.doc.selection.as_ref().ok_or_else(|| bad(CMD, "select the area to patch first"))?;
+    let sel = d
+        .doc
+        .selection
+        .as_ref()
+        .ok_or_else(|| bad(CMD, "select the area to patch first"))?;
     let (surf, lock) = crate::channel_cmds::target_surface(&mut doc, plan.id, p)?;
     let dmg = patch_surface(surf, sel, &plan, lock, step);
     Ok((doc, dmg))
@@ -248,7 +314,9 @@ fn level(p: &Value, k: &str, default: u8, lo: u8, hi: u8) -> Result<u8> {
     match p.get(k) {
         None | Some(Value::Null) => Ok(default),
         Some(v) => match v.as_f64() {
-            Some(x) if x.is_finite() && (f64::from(lo)..=f64::from(hi)).contains(&x) => Ok(x.round() as u8),
+            Some(x) if x.is_finite() && (f64::from(lo)..=f64::from(hi)).contains(&x) => {
+                Ok(x.round() as u8)
+            }
             _ => Err(bad(CMD, format!("`{k}` must be a number {lo}..{hi}"))),
         },
     }
@@ -262,7 +330,10 @@ fn patch_content_aware(s: &mut Session, p: &Value) -> Result<Value> {
     let plan = plan(s, p)?;
     let structure = level(p, "structure", 4, 1, 7)?;
     let color = level(p, "color", 0, 0, 10)?;
-    let target = Target { id: plan.id, all_layers: flag(p, "sampleAllLayers", false) && targets_pixels(p) };
+    let target = Target {
+        id: plan.id,
+        all_layers: flag(p, "sampleAllLayers", false) && targets_pixels(p),
+    };
     let d = s.active().ok_or(EngineError::NoDocument)?;
     let doc = d.doc.clone();
     let p = p.clone();
@@ -277,14 +348,32 @@ fn patch_content_aware(s: &mut Session, p: &Value) -> Result<Value> {
             move |ctx| {
                 ctx.progress(0.0, LABEL);
                 let mut work = (*doc).clone();
-                let sel = doc.selection.as_ref().ok_or_else(|| bad(CMD, "select the area to patch first"))?;
+                let sel = doc
+                    .selection
+                    .as_ref()
+                    .ok_or_else(|| bad(CMD, "select the area to patch first"))?;
                 let win = window(area, canvas);
                 let mut content = read(&mut work, target, &p, win.translate(dx, dy))?;
                 content.rect = win;
                 let selected = mask(sel, win);
                 let avoid = vec![false; selected.len()];
-                let damage = land(&mut work, target, &p, win, &selected, &content, &avoid, structure, color, (0.0, 1.0), ctx, LABEL)?;
-                let surf = crate::channel_cmds::target_surface(&mut work, target.id, &p)?.0.clone();
+                let damage = land(
+                    &mut work,
+                    target,
+                    &p,
+                    win,
+                    &selected,
+                    &content,
+                    &avoid,
+                    structure,
+                    color,
+                    (0.0, 1.0),
+                    ctx,
+                    LABEL,
+                )?;
+                let surf = crate::channel_cmds::target_surface(&mut work, target.id, &p)?
+                    .0
+                    .clone();
                 Ok((surf, damage))
             }
         },

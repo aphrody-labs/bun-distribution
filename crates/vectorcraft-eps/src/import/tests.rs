@@ -58,7 +58,9 @@ pub(super) fn bounds(n: &Node) -> Rect {
 }
 
 pub(super) fn near(a: Rect, b: Rect) -> bool {
-    [(a.x0, b.x0), (a.y0, b.y0), (a.x1, b.x1), (a.y1, b.y1)].iter().all(|(x, y)| (x - y).abs() < 0.05)
+    [(a.x0, b.x0), (a.y0, b.y0), (a.x1, b.x1), (a.y1, b.y1)]
+        .iter()
+        .all(|(x, y)| (x - y).abs() < 0.05)
 }
 
 #[test]
@@ -66,7 +68,11 @@ fn paths_fill_and_stroke_in_document_space() {
     let r = read("newpath 10 20 moveto 60 20 lineto 60 70 lineto closepath 1 0 0 setrgbcolor fill");
     let n = &objects(&r.document)[0];
     // PostScript's y goes up from the bottom of the bounding box.
-    assert!(near(bounds(n), Rect::new(10.0, 30.0, 60.0, 80.0)), "{:?}", bounds(n));
+    assert!(
+        near(bounds(n), Rect::new(10.0, 30.0, 60.0, 80.0)),
+        "{:?}",
+        bounds(n)
+    );
     assert_eq!(fill(n), Some(&Paint::solid(Color::rgb(1.0, 0.0, 0.0))));
     assert!(r.warnings.is_empty(), "{:?}", r.warnings);
     // Curves and arcs.
@@ -74,9 +80,15 @@ fn paths_fill_and_stroke_in_document_space() {
     let o = objects(&r.document);
     assert_eq!(o.len(), 2);
     assert!(stroke(&o[0]).is_some() && fill(&o[0]).is_none());
-    assert!(near(bounds(&o[1]), Rect::new(30.0, 30.0, 70.0, 70.0)), "{:?}", bounds(&o[1]));
+    assert!(
+        near(bounds(&o[1]), Rect::new(30.0, 30.0, 70.0, 70.0)),
+        "{:?}",
+        bounds(&o[1])
+    );
     // Relative operators, rectangles.
-    let r = read("10 10 moveto 20 0 rlineto 0 20 rlineto closepath fill 5 5 10 10 rectfill 0 0 4 4 rectstroke");
+    let r = read(
+        "10 10 moveto 20 0 rlineto 0 20 rlineto closepath fill 5 5 10 10 rectfill 0 0 4 4 rectstroke",
+    );
     let o = objects(&r.document);
     assert!(near(bounds(&o[0]), Rect::new(10.0, 70.0, 30.0, 90.0)));
     assert!(near(bounds(&o[1]), Rect::new(5.0, 85.0, 15.0, 95.0)));
@@ -99,7 +111,11 @@ fn closepath_stops_at_the_path_limit() {
         // The square drawn before the error stays, and the one after it is left out.
         let r = read(&format!("0 0 10 10 rectfill {body} 20 20 10 10 rectfill"));
         assert_eq!(objects(&r.document).len(), 1, "{body}: {:?}", r.warnings);
-        assert!(r.warnings[0].contains("a path has too many points"), "{body}: {:?}", r.warnings);
+        assert!(
+            r.warnings[0].contains("a path has too many points"),
+            "{body}: {:?}",
+            r.warnings
+        );
     }
 }
 
@@ -111,7 +127,10 @@ fn colours_in_every_model() {
          /DeviceRGB setcolorspace 0 0 1 setcolor 0 0 10 10 rectfill \
          [/Indexed /DeviceRGB 1 <ff0000 00ff00>] setcolorspace 1 setcolor 0 0 10 10 rectfill",
     );
-    let fills: Vec<Paint> = objects(&r.document).iter().map(|n| fill(n).unwrap().clone()).collect();
+    let fills: Vec<Paint> = objects(&r.document)
+        .iter()
+        .map(|n| fill(n).unwrap().clone())
+        .collect();
     // The initial colour is black; grey is ink coverage in the document.
     assert_eq!(fills[0], Paint::solid(Color::gray(1.0)));
     assert_eq!(fills[1], Paint::solid(Color::gray(0.75)));
@@ -119,21 +138,38 @@ fn colours_in_every_model() {
     let [r0, g0, b0] = fills[3].color().unwrap().to_rgb();
     assert!(r0 > 0.99 && g0 < 0.01 && b0 < 0.01);
     // A spot ink links to its spot swatch at the tint.
-    let Paint::Solid { swatch: Some(name), tint, .. } = &fills[4] else { panic!("{:?}", fills[4]) };
+    let Paint::Solid {
+        swatch: Some(name),
+        tint,
+        ..
+    } = &fills[4]
+    else {
+        panic!("{:?}", fills[4])
+    };
     assert_eq!((name.as_str(), *tint), ("Gold", 0.5));
     let gold = r.document.swatch("Gold").unwrap();
-    assert!(gold.spot && gold.paint.color() == Some(Color::cmyk(1.0, 0.0, 0.5, 0.0)), "{gold:?}");
+    assert!(
+        gold.spot && gold.paint.color() == Some(Color::cmyk(1.0, 0.0, 0.5, 0.0)),
+        "{gold:?}"
+    );
     assert_eq!(fills[5], Paint::solid(Color::rgb(0.0, 0.0, 1.0)));
     assert_eq!(fills[6], Paint::solid(Color::rgb(0.0, 1.0, 0.0)));
     // Mostly CMYK art opens in CMYK.
     let r = read("0 0 0 1 setcmykcolor 0 0 5 5 rectfill 1 0 0 0 setcmykcolor 0 0 5 5 rectfill");
     assert_eq!(r.document.color_mode, ColorMode::Cmyk);
-    assert_eq!(read("1 0 0 setrgbcolor 0 0 5 5 rectfill").document.color_mode, ColorMode::Rgb);
+    assert_eq!(
+        read("1 0 0 setrgbcolor 0 0 5 5 rectfill")
+            .document
+            .color_mode,
+        ColorMode::Rgb
+    );
 }
 
 #[test]
 fn gsave_and_grestore_bring_the_state_back() {
-    let r = read("gsave 1 0 0 setrgbcolor 5 setlinewidth 50 50 translate 0 0 10 10 rectfill grestore 0 0 10 10 rectfill");
+    let r = read(
+        "gsave 1 0 0 setrgbcolor 5 setlinewidth 50 50 translate 0 0 10 10 rectfill grestore 0 0 10 10 rectfill",
+    );
     let o = objects(&r.document);
     assert_eq!(fill(&o[0]), Some(&Paint::solid(Color::rgb(1.0, 0.0, 0.0))));
     assert!(near(bounds(&o[0]), Rect::new(50.0, 40.0, 60.0, 50.0)));
@@ -148,38 +184,77 @@ fn gsave_and_grestore_bring_the_state_back() {
 fn transforms_concat() {
     let r = read("[2 0 0 2 10 10] concat 0 0 10 10 rectfill 90 rotate 0 0 5 5 rectfill");
     let o = objects(&r.document);
-    assert!(near(bounds(&o[0]), Rect::new(10.0, 70.0, 30.0, 90.0)), "{:?}", bounds(&o[0]));
+    assert!(
+        near(bounds(&o[0]), Rect::new(10.0, 70.0, 30.0, 90.0)),
+        "{:?}",
+        bounds(&o[0])
+    );
     // Rotated a quarter turn about (10, 10), scaled 2: x goes up, y to the left.
-    assert!(near(bounds(&o[1]), Rect::new(0.0, 80.0, 10.0, 90.0)), "{:?}", bounds(&o[1]));
+    assert!(
+        near(bounds(&o[1]), Rect::new(0.0, 80.0, 10.0, 90.0)),
+        "{:?}",
+        bounds(&o[1])
+    );
     let r = read("10 20 translate 2 3 scale 0 0 moveto 10 10 lineto stroke");
-    assert!(near(bounds(&objects(&r.document)[0]), Rect::new(10.0, 50.0, 30.0, 80.0)));
+    assert!(near(
+        bounds(&objects(&r.document)[0]),
+        Rect::new(10.0, 50.0, 30.0, 80.0)
+    ));
     // Matrix operators: transform and itransform.
     let r = read("2 2 scale 3 4 transform itransform translate 0 0 1 1 rectfill");
-    assert!(near(bounds(&objects(&r.document)[0]), Rect::new(6.0, 90.0, 8.0, 92.0)), "{:?}", bounds(&objects(&r.document)[0]));
+    assert!(
+        near(
+            bounds(&objects(&r.document)[0]),
+            Rect::new(6.0, 90.0, 8.0, 92.0)
+        ),
+        "{:?}",
+        bounds(&objects(&r.document)[0])
+    );
 }
 
 #[test]
 fn line_state_reaches_the_stroke() {
-    let r = read("2 setlinewidth 1 setlinecap 2 setlinejoin 4 setmiterlimit [3 1] 0.5 setdash 2 2 scale 0 0 moveto 10 0 lineto stroke");
+    let r = read(
+        "2 setlinewidth 1 setlinecap 2 setlinejoin 4 setmiterlimit [3 1] 0.5 setdash 2 2 scale 0 0 moveto 10 0 lineto stroke",
+    );
     let n = &objects(&r.document)[0];
     let st = stroke(n).unwrap();
     // The width and dashes grow with the transform.
-    assert_eq!((st.width, st.cap, st.join, st.miter_limit), (4.0, LineCap::Round, LineJoin::Bevel, 4.0));
+    assert_eq!(
+        (st.width, st.cap, st.join, st.miter_limit),
+        (4.0, LineCap::Round, LineJoin::Bevel, 4.0)
+    );
     let dash = st.dash.as_ref().unwrap();
     assert_eq!((dash.pattern.clone(), dash.offset), (vec![6.0, 2.0], 1.0));
     // A zero-width line is a hairline.
-    assert!(stroke(&objects(&read("0 setlinewidth 0 0 moveto 9 9 lineto stroke").document)[0]).unwrap().width > 0.0);
+    assert!(
+        stroke(&objects(&read("0 setlinewidth 0 0 moveto 9 9 lineto stroke").document)[0])
+            .unwrap()
+            .width
+            > 0.0
+    );
 }
 
 /// `setdash` takes a dash pattern of up to 65,535 entries, the most elements an array has in a
 /// typical implementation (PLRM 3rd ed., Table B.1), and raises `limitcheck` for a longer one.
 #[test]
 fn dash_patterns_hold_at_most_65535_entries() {
-    let dash = |n: usize| format!("/a {n} array def 0 1 {} {{ a exch 1 put }} for a 0 setdash", n - 1);
+    let dash = |n: usize| {
+        format!(
+            "/a {n} array def 0 1 {} {{ a exch 1 put }} for a 0 setdash",
+            n - 1
+        )
+    };
     check(&format!("{} currentdash pop length 65535 eq", dash(65535)));
     let r = read(&format!("0 0 10 10 rectfill {}", dash(65536)));
     assert_eq!(objects(&r.document).len(), 1, "{:?}", r.warnings);
-    assert!(r.warnings.iter().any(|w| w.contains("limitcheck in `setdash`")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("limitcheck in `setdash`")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 /// Saved and copied graphics states share the dash pattern, and `setdash`, `currentdash` and
@@ -190,7 +265,10 @@ fn dash_patterns_hold_at_most_65535_entries() {
 #[test]
 fn work_on_the_longest_dash_pattern_ends_soon() {
     let dash = "0 0 10 10 rectfill /a 65535 array def 0 1 65534 { a exch 1 put } for a 0 setdash";
-    for body in ["4000000 { gsave grestore } repeat", "2000000 { gstate currentgstate setgstate } repeat"] {
+    for body in [
+        "4000000 { gsave grestore } repeat",
+        "2000000 { gstate currentgstate setgstate } repeat",
+    ] {
         let r = read_soon(&format!("{dash} {body} 20 20 10 10 rectfill"));
         assert_eq!(objects(&r.document).len(), 2, "{body}: {:?}", r.warnings);
         assert!(r.warnings.is_empty(), "{body}: {:?}", r.warnings);
@@ -198,11 +276,18 @@ fn work_on_the_longest_dash_pattern_ends_soon() {
     for (body, why) in [
         ("{ a 0 setdash } loop", "runs too long"),
         ("{ currentdash pop pop } loop", "uses too much memory"),
-        ("{ newpath 0 0 moveto 100 0 lineto strokepath } loop", "runs too long"),
+        (
+            "{ newpath 0 0 moveto 100 0 lineto strokepath } loop",
+            "runs too long",
+        ),
     ] {
         let r = read_soon(&format!("{dash} {body}"));
         assert_eq!(objects(&r.document).len(), 1, "{body}: {:?}", r.warnings);
-        assert!(r.warnings.iter().any(|w| w.contains(why)), "{body}: {:?}", r.warnings);
+        assert!(
+            r.warnings.iter().any(|w| w.contains(why)),
+            "{body}: {:?}",
+            r.warnings
+        );
     }
 }
 
@@ -226,34 +311,64 @@ fn procedures_bind_def_loops_and_dictionaries() {
 
 #[test]
 fn a_fill_then_a_stroke_of_the_same_path_is_one_object() {
-    let r = read("10 10 moveto 50 50 lineto 90 10 lineto closepath gsave 1 0 0 setrgbcolor fill grestore 0 0 1 setrgbcolor stroke");
+    let r = read(
+        "10 10 moveto 50 50 lineto 90 10 lineto closepath gsave 1 0 0 setrgbcolor fill grestore 0 0 1 setrgbcolor stroke",
+    );
     let o = objects(&r.document);
     assert_eq!(o.len(), 1);
     assert_eq!(fill(&o[0]), Some(&Paint::solid(Color::rgb(1.0, 0.0, 0.0))));
-    assert_eq!(stroke(&o[0]).unwrap().paint, Paint::solid(Color::rgb(0.0, 0.0, 1.0)));
+    assert_eq!(
+        stroke(&o[0]).unwrap().paint,
+        Paint::solid(Color::rgb(0.0, 0.0, 1.0))
+    );
 }
 
 #[test]
 fn clips_become_clipping_groups() {
-    let r = read("gsave 0 0 50 50 rectclip 0 0 100 100 rectfill 10 10 5 5 rectfill grestore 60 60 5 5 rectfill");
+    let r = read(
+        "gsave 0 0 50 50 rectclip 0 0 100 100 rectfill 10 10 5 5 rectfill grestore 60 60 5 5 rectfill",
+    );
     let o = objects(&r.document);
     assert_eq!(o.len(), 2);
-    let NodeKind::Group { children, clip: true } = &o[0].kind else { panic!("{:?}", o[0].kind) };
+    let NodeKind::Group {
+        children,
+        clip: true,
+    } = &o[0].kind
+    else {
+        panic!("{:?}", o[0].kind)
+    };
     assert_eq!(children.len(), 3);
-    assert!(matches!(children[0].kind, NodeKind::Path { clipping: true, .. }));
-    assert!(near(bounds(&children[0]), Rect::new(0.0, 50.0, 50.0, 100.0)));
+    assert!(matches!(
+        children[0].kind,
+        NodeKind::Path { clipping: true, .. }
+    ));
+    assert!(near(
+        bounds(&children[0]),
+        Rect::new(0.0, 50.0, 50.0, 100.0)
+    ));
     // A clip around the whole page clips nothing.
     let o = objects(&read("0 0 100 100 rectclip 1 1 5 5 rectfill").document);
     assert!(matches!(o[0].kind, NodeKind::Path { .. }));
     // eoclip of a path.
-    let o = objects(&read("10 10 moveto 30 10 lineto 30 30 lineto closepath eoclip newpath 0 0 50 50 rectfill").document);
+    let o = objects(
+        &read("10 10 moveto 30 10 lineto 30 30 lineto closepath eoclip newpath 0 0 50 50 rectfill")
+            .document,
+    );
     assert!(matches!(o[0].kind, NodeKind::Group { clip: true, .. }));
     // #1542: a diamond touching the page edges has the page as its bounding box but still clips.
     let o = objects(&read("50 0 moveto 100 50 lineto 50 100 lineto 0 50 lineto closepath clip newpath 0 0 100 100 rectfill").document);
-    assert!(matches!(o[0].kind, NodeKind::Group { clip: true, .. }), "{:?}", o[0].kind);
+    assert!(
+        matches!(o[0].kind, NodeKind::Group { clip: true, .. }),
+        "{:?}",
+        o[0].kind
+    );
     // A turned square around the whole page clips nothing.
     let o = objects(&read("50 -60 moveto 160 50 lineto 50 160 lineto -60 50 lineto closepath clip newpath 0 0 100 100 rectfill").document);
-    assert!(matches!(o[0].kind, NodeKind::Path { .. }), "{:?}", o[0].kind);
+    assert!(
+        matches!(o[0].kind, NodeKind::Path { .. }),
+        "{:?}",
+        o[0].kind
+    );
 }
 
 #[test]
@@ -262,33 +377,53 @@ fn clips_nest_only_so_deep() {
     let r = read("1 1 200000 { pop 0 0 50 50 rectclip } for 1 1 5 5 rectfill");
     let mut depth = 0;
     let mut n = objects(&r.document)[0].clone();
-    while let NodeKind::Group { children, clip: true } = &n.kind {
+    while let NodeKind::Group {
+        children,
+        clip: true,
+    } = &n.kind
+    {
         depth += 1;
         n = children.last().unwrap().clone();
     }
     assert_eq!(depth, vectorcraft_doc::clipnest::MAX_NEST);
-    assert!(r.warnings.iter().any(|w| w.contains("clips nested more than")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("clips nested more than")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 #[test]
 fn shadings_become_gradients() {
-    let axial =
-        "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 100 0] /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>";
-    let r = read(&format!("gsave 10 10 moveto 90 10 lineto 50 90 lineto closepath clip newpath {axial} shfill grestore"));
+    let axial = "<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [0 0 100 0] /Function << /FunctionType 2 /Domain [0 1] /C0 [1 0 0] /C1 [0 0 1] /N 1 >> >>";
+    let r = read(&format!(
+        "gsave 10 10 moveto 90 10 lineto 50 90 lineto closepath clip newpath {axial} shfill grestore"
+    ));
     let o = objects(&r.document);
     // The clip path filled with the gradient.
     assert_eq!(o.len(), 1, "{o:?}");
-    let Some(Paint::Gradient(g)) = fill(&o[0]) else { panic!("{:?}", o[0]) };
+    let Some(Paint::Gradient(g)) = fill(&o[0]) else {
+        panic!("{:?}", o[0])
+    };
     assert_eq!(g.gradient.kind, GradientKind::Linear);
     assert_eq!(g.gradient.stops.len(), 2);
     assert_eq!(g.gradient.stops[1].color, Color::rgb(0.0, 0.0, 1.0));
     let geom = g.geom.unwrap();
-    assert_eq!((geom.start, geom.end), (Point::new(0.0, 100.0), Point::new(100.0, 100.0)));
+    assert_eq!(
+        (geom.start, geom.end),
+        (Point::new(0.0, 100.0), Point::new(100.0, 100.0))
+    );
     // Stitched functions keep their bounds as stops; radial shadings, and shading patterns.
     let radial = "<< /ShadingType 3 /ColorSpace /DeviceGray /Coords [50 50 0 50 50 40] /Function << /FunctionType 3 /Domain [0 1] /Bounds [0.25] /Encode [0 1 0 1] /Functions [<< /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [1] /N 1 >> << /FunctionType 2 /Domain [0 1] /C0 [1] /C1 [0] /N 1 >>] >> >>";
-    let r = read(&format!("<< /PatternType 2 /Shading {radial} >> matrix makepattern setpattern 0 0 100 100 rectfill"));
+    let r = read(&format!(
+        "<< /PatternType 2 /Shading {radial} >> matrix makepattern setpattern 0 0 100 100 rectfill"
+    ));
     let o = objects(&r.document);
-    let Some(Paint::Gradient(g)) = fill(&o[0]) else { panic!() };
+    let Some(Paint::Gradient(g)) = fill(&o[0]) else {
+        panic!()
+    };
     assert_eq!(g.gradient.kind, GradientKind::Radial);
     let offsets: Vec<f32> = g.gradient.stops.iter().map(|s| s.offset).collect();
     assert_eq!(offsets, vec![0.0, 0.25, 1.0]);
@@ -320,8 +455,21 @@ fn many_tiling_patterns_and_spot_inks_read_in_linear_time() {
             p => panic!("{p:?}"),
         })
         .collect();
-    assert_eq!(fills, ["Pattern 1", "Pattern 2", "Pattern 1", "Pattern 3", "Pattern 4", "Pattern 3"]);
-    assert!(names.iter().all(|n| d.swatch(n).is_some_and(|s| matches!(s.paint, Paint::Pattern { .. }))));
+    assert_eq!(
+        fills,
+        [
+            "Pattern 1",
+            "Pattern 2",
+            "Pattern 1",
+            "Pattern 3",
+            "Pattern 4",
+            "Pattern 3"
+        ]
+    );
+    assert!(names.iter().all(|n| {
+        d.swatch(n)
+            .is_some_and(|s| matches!(s.paint, Paint::Pattern { .. }))
+    }));
     // 100,000 patterns whose cells differ, an uncolored pattern in 100,000 tints of an ink that is
     // white at every tint (only the tint tells those patterns apart), and 200,000 more inks.
     let r = read_soon(
@@ -334,8 +482,19 @@ fn many_tiling_patterns_and_spot_inks_read_in_linear_time() {
     );
     let d = &r.document;
     assert_eq!(d.patterns.len(), 200_000);
-    assert!(d.patterns.iter().enumerate().all(|(i, p)| p.name == format!("Pattern {}", i + 1)));
-    assert_eq!(d.swatches.iter().filter(|s| matches!(s.paint, Paint::Pattern { .. })).count(), 200_000);
+    assert!(
+        d.patterns
+            .iter()
+            .enumerate()
+            .all(|(i, p)| p.name == format!("Pattern {}", i + 1))
+    );
+    assert_eq!(
+        d.swatches
+            .iter()
+            .filter(|s| matches!(s.paint, Paint::Pattern { .. }))
+            .count(),
+        200_000
+    );
     assert_eq!(d.swatches.iter().filter(|s| s.spot).count(), 200_001);
 }
 
@@ -346,10 +505,18 @@ fn images_and_image_masks() {
         "10 10 translate 20 20 scale 2 2 8 [2 0 0 -2 0 2] {currentfile 6 string readhexstring pop} false 3 colorimage\nff000000ff000000ffffffff\n",
     );
     let o = objects(&r.document);
-    let NodeKind::Image(im) = &o[0].kind else { panic!("{:?} {:?}", o, r.warnings) };
+    let NodeKind::Image(im) = &o[0].kind else {
+        panic!("{:?} {:?}", o, r.warnings)
+    };
     assert_eq!((im.width, im.height), (2, 2));
-    assert!(near(bounds(&o[0]), Rect::new(10.0, 70.0, 30.0, 90.0)), "{:?}", bounds(&o[0]));
-    let png = image::load_from_memory(&r.document.images[&im.key].bytes).unwrap().to_rgba8();
+    assert!(
+        near(bounds(&o[0]), Rect::new(10.0, 70.0, 30.0, 90.0)),
+        "{:?}",
+        bounds(&o[0])
+    );
+    let png = image::load_from_memory(&r.document.images[&im.key].bytes)
+        .unwrap()
+        .to_rgba8();
     assert_eq!(png.get_pixel(0, 0).0, [255, 0, 0, 255]);
     assert_eq!(png.get_pixel(1, 1).0, [255, 255, 255, 255]);
     // The dictionary form through ASCII85 and run-length filters, grey with a decode array.
@@ -358,14 +525,28 @@ fn images_and_image_masks() {
         "/src currentfile /ASCII85Decode filter /RunLengthDecode filter def /DeviceGray setcolorspace \
          << /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8 /Decode [1 0] /ImageMatrix [2 0 0 1 0 0] /DataSource src >> image\n{rl}"
     ));
-    let NodeKind::Image(im) = &objects(&r.document)[0].kind else { panic!("{:?}", r.warnings) };
-    let png = image::load_from_memory(&r.document.images[&im.key].bytes).unwrap().to_rgba8();
-    assert_eq!((png.get_pixel(0, 0).0, png.get_pixel(1, 0).0), ([255, 255, 255, 255], [0, 0, 0, 255]));
+    let NodeKind::Image(im) = &objects(&r.document)[0].kind else {
+        panic!("{:?}", r.warnings)
+    };
+    let png = image::load_from_memory(&r.document.images[&im.key].bytes)
+        .unwrap()
+        .to_rgba8();
+    assert_eq!(
+        (png.get_pixel(0, 0).0, png.get_pixel(1, 0).0),
+        ([255, 255, 255, 255], [0, 0, 0, 255])
+    );
     // An image mask paints the current colour where its bits say.
     let r = read("1 0 0 setrgbcolor 8 1 true [8 0 0 1 0 0] <f0> imagemask");
-    let NodeKind::Image(im) = &objects(&r.document)[0].kind else { panic!() };
-    let png = image::load_from_memory(&r.document.images[&im.key].bytes).unwrap().to_rgba8();
-    assert_eq!((png.get_pixel(0, 0).0, png.get_pixel(7, 0).0), ([255, 0, 0, 255], [255, 0, 0, 0]));
+    let NodeKind::Image(im) = &objects(&r.document)[0].kind else {
+        panic!()
+    };
+    let png = image::load_from_memory(&r.document.images[&im.key].bytes)
+        .unwrap()
+        .to_rgba8();
+    assert_eq!(
+        (png.get_pixel(0, 0).0, png.get_pixel(7, 0).0),
+        ([255, 0, 0, 255], [255, 0, 0, 0])
+    );
 }
 
 #[test]
@@ -373,19 +554,40 @@ fn type_becomes_point_type_in_the_font_named() {
     let r = read("/Helvetica-Bold findfont 12 scalefont setfont 10 20 moveto (Hi) show (!) show");
     let o = objects(&r.document);
     assert_eq!(o.len(), 2);
-    let NodeKind::Text(t) = &o[0].kind else { panic!() };
+    let NodeKind::Text(t) = &o[0].kind else {
+        panic!()
+    };
     assert_eq!(t.plain_text(), "Hi");
     let style = &t.runs[0].style;
-    assert_eq!((style.font_family.as_str(), style.font_style.as_str()), ("Helvetica", "Bold"));
+    assert_eq!(
+        (style.font_family.as_str(), style.font_style.as_str()),
+        ("Helvetica", "Bold")
+    );
     assert!((style.size - 12.0).abs() < 1e-6);
     // On the baseline at (10, 80) in the document, upright.
-    assert!((t.xf.translation().x - 10.0).abs() < 1e-6 && (t.xf.translation().y - 80.0).abs() < 1e-6, "{:?}", t.xf);
-    assert!((t.xf.as_coeffs()[0] - 1.0).abs() < 1e-6 && (t.xf.as_coeffs()[3] - 1.0).abs() < 1e-6, "{:?}", t.xf);
+    assert!(
+        (t.xf.translation().x - 10.0).abs() < 1e-6 && (t.xf.translation().y - 80.0).abs() < 1e-6,
+        "{:?}",
+        t.xf
+    );
+    assert!(
+        (t.xf.as_coeffs()[0] - 1.0).abs() < 1e-6 && (t.xf.as_coeffs()[3] - 1.0).abs() < 1e-6,
+        "{:?}",
+        t.xf
+    );
     // The second show starts where the first ended.
-    let NodeKind::Text(t2) = &o[1].kind else { panic!() };
+    let NodeKind::Text(t2) = &o[1].kind else {
+        panic!()
+    };
     assert!(t2.xf.translation().x > 15.0);
-    assert_eq!(crate::family_style("ABCDEF+TimesNewRomanPS-BoldItalicMT"), ("Times New Roman".into(), "Bold Italic".into()));
-    assert_eq!(crate::family_style("Times-Roman"), ("Times".into(), "Regular".into()));
+    assert_eq!(
+        crate::family_style("ABCDEF+TimesNewRomanPS-BoldItalicMT"),
+        ("Times New Roman".into(), "Bold Italic".into())
+    );
+    assert_eq!(
+        crate::family_style("Times-Roman"),
+        ("Times".into(), "Regular".into())
+    );
 }
 
 #[test]
@@ -394,15 +596,37 @@ fn the_writers_own_output_reads_back() {
     use vectorcraft_geom::shapes;
     let mut d = Document::new(200.0, 100.0);
     let layer = d.layers[0].id;
-    let look = Appearance::basic(Paint::solid(Color::rgb(1.0, 0.0, 0.0)), Paint::solid(Color::rgb(0.0, 0.0, 1.0)), 4.0);
-    let mut red = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(10.0, 10.0, 90.0, 60.0)), look);
-    if let Some(AppearanceItem::Stroke(s)) = red.appearance.items.iter_mut().find(|i| matches!(i, AppearanceItem::Stroke(_))) {
-        s.dash = Some(Dash { pattern: vec![6.0, 3.0], offset: 0.0, align_corners: false });
+    let look = Appearance::basic(
+        Paint::solid(Color::rgb(1.0, 0.0, 0.0)),
+        Paint::solid(Color::rgb(0.0, 0.0, 1.0)),
+        4.0,
+    );
+    let mut red = Node::path(
+        d.alloc_id(),
+        shapes::rectangle(Rect::new(10.0, 10.0, 90.0, 60.0)),
+        look,
+    );
+    if let Some(AppearanceItem::Stroke(s)) = red
+        .appearance
+        .items
+        .iter_mut()
+        .find(|i| matches!(i, AppearanceItem::Stroke(_)))
+    {
+        s.dash = Some(Dash {
+            pattern: vec![6.0, 3.0],
+            offset: 0.0,
+            align_corners: false,
+        });
         s.cap = LineCap::Round;
     }
     d.insert(Some(layer), 0, red).unwrap();
     let mut g = vectorcraft_color::GradientPaint::new(vectorcraft_color::Gradient::default());
-    g.geom = Some(vectorcraft_color::GradientGeom { start: Point::new(110.0, 50.0), end: Point::new(190.0, 50.0), aspect: 1.0, focal: None });
+    g.geom = Some(vectorcraft_color::GradientGeom {
+        start: Point::new(110.0, 50.0),
+        end: Point::new(190.0, 50.0),
+        aspect: 1.0,
+        focal: None,
+    });
     let grad = Node::path(
         d.alloc_id(),
         shapes::ellipse(Rect::new(110.0, 10.0, 190.0, 90.0)),
@@ -411,18 +635,40 @@ fn the_writers_own_output_reads_back() {
     d.insert(Some(layer), 1, grad).unwrap();
     for level in [Level::Three, Level::Two] {
         let r = d.artboards[0].rect;
-        let o = EpsOptions { region: r, origin: Point::new(r.x0, r.y1), preview: Preview::None, level, ..EpsOptions::default() };
+        let o = EpsOptions {
+            region: r,
+            origin: Point::new(r.x0, r.y1),
+            preview: Preview::None,
+            level,
+            ..EpsOptions::default()
+        };
         let bytes = crate::export(&d, &o, None, None).unwrap().bytes;
         let back = import(&bytes).unwrap();
         assert!(back.warnings.is_empty(), "{level:?}: {:?}", back.warnings);
-        assert_eq!(back.document.artboards[0].rect, Rect::new(0.0, 0.0, 200.0, 100.0));
+        assert_eq!(
+            back.document.artboards[0].rect,
+            Rect::new(0.0, 0.0, 200.0, 100.0)
+        );
         let objs = all(&back.document);
-        let rect = objs.iter().find(|n| fill(n).is_some_and(|p| p.color() == Some(Color::rgb(1.0, 0.0, 0.0)))).unwrap();
-        assert!(near(bounds(rect), Rect::new(10.0, 10.0, 90.0, 60.0)), "{:?}", bounds(rect));
+        let rect = objs
+            .iter()
+            .find(|n| fill(n).is_some_and(|p| p.color() == Some(Color::rgb(1.0, 0.0, 0.0))))
+            .unwrap();
+        assert!(
+            near(bounds(rect), Rect::new(10.0, 10.0, 90.0, 60.0)),
+            "{:?}",
+            bounds(rect)
+        );
         let st = objs.iter().find_map(|n| stroke(n)).unwrap();
-        assert_eq!((st.width, st.cap, st.dash.as_ref().unwrap().pattern.clone()), (4.0, LineCap::Round, vec![6.0, 3.0]));
+        assert_eq!(
+            (st.width, st.cap, st.dash.as_ref().unwrap().pattern.clone()),
+            (4.0, LineCap::Round, vec![6.0, 3.0])
+        );
         // Level 3 writes the gradient as a shading (a gradient again); level 2 as bands.
-        let gradients = objs.iter().filter(|n| matches!(fill(n), Some(Paint::Gradient(_)))).count();
+        let gradients = objs
+            .iter()
+            .filter(|n| matches!(fill(n), Some(Paint::Gradient(_))))
+            .count();
         assert_eq!(gradients, usize::from(level == Level::Three), "{level:?}");
     }
 }
@@ -430,13 +676,28 @@ fn the_writers_own_output_reads_back() {
 #[test]
 fn an_unreadable_program_falls_back_to_the_preview() {
     let ps = eps("0 0 10 10 rectfill frobnicate");
-    let tiff = crate::tiff::encode(&Raster { width: 4, height: 4, rgba: [0, 128, 0, 255].repeat(16) }, false, false).unwrap();
+    let tiff = crate::tiff::encode(
+        &Raster {
+            width: 4,
+            height: 4,
+            rgba: [0, 128, 0, 255].repeat(16),
+        },
+        false,
+        false,
+    )
+    .unwrap();
     let bytes = crate::dos_eps(&ps, &tiff).unwrap();
     let r = import(&bytes).unwrap();
     assert!(r.preview);
-    assert!(r.warnings[0].contains("frobnicate") && r.warnings[0].contains("preview"), "{:?}", r.warnings);
+    assert!(
+        r.warnings[0].contains("frobnicate") && r.warnings[0].contains("preview"),
+        "{:?}",
+        r.warnings
+    );
     let o = objects(&r.document);
-    let NodeKind::Image(im) = &o[0].kind else { panic!() };
+    let NodeKind::Image(im) = &o[0].kind else {
+        panic!()
+    };
     assert_eq!((im.width, im.height), (4, 4));
     assert!(near(bounds(&o[0]), Rect::new(0.0, 0.0, 100.0, 100.0)));
     // Without a preview, what was drawn before the error stays, with a warning.
@@ -452,7 +713,15 @@ fn garbage_and_runaway_programs_are_refused() {
     assert!(import(&[0xC5, 0xD0, 0xD3, 0xC6, 0xff, 0xff]).is_err());
     let e = import(b"%!PS\nfoo bar").unwrap_err();
     assert!(e.contains("foo"), "{e}");
-    for body in ["{} loop", "/f {f} def f", "0 1 1e300 {pop} for", "[ 0 1 200000 {} for ]", "1000000000 array", "(abc", "{ 1 2"] {
+    for body in [
+        "{} loop",
+        "/f {f} def f",
+        "0 1 1e300 {pop} for",
+        "[ 0 1 200000 {} for ]",
+        "1000000000 array",
+        "(abc",
+        "{ 1 2",
+    ] {
         assert!(import(&eps(body)).is_err(), "{body}");
     }
     // Damaged numbers draw nothing far away.
@@ -466,11 +735,23 @@ fn the_bounding_box_comes_from_the_header_or_the_trailer() {
     assert_eq!(d.bbox, Some([1.5, 2.5, 29.5, 39.5]));
     let d = Dsc::read(b"%!PS-Adobe-3.0\n%%BoundingBox: (atend)\n%%Pages: 3\n%%EndComments\nshowpage\n%%Trailer\n%%BoundingBox: 0 0 10 20\n");
     assert_eq!((d.bbox, d.pages), (Some([0.0, 0.0, 10.0, 20.0]), Some(3)));
-    let r = import(b"%!PS-Adobe-3.0\n%%Pages: 2\n0 0 5 5 rectfill showpage 0 0 9 9 rectfill showpage\n").unwrap();
+    let r = import(
+        b"%!PS-Adobe-3.0\n%%Pages: 2\n0 0 5 5 rectfill showpage 0 0 9 9 rectfill showpage\n",
+    )
+    .unwrap();
     // No bounding box: a letter page; only the first page.
-    assert_eq!(r.document.artboards[0].rect, Rect::new(0.0, 0.0, 612.0, 792.0));
+    assert_eq!(
+        r.document.artboards[0].rect,
+        Rect::new(0.0, 0.0, 612.0, 792.0)
+    );
     assert_eq!(objects(&r.document).len(), 1);
-    assert!(r.warnings.iter().any(|w| w.contains("first of the file's 2 pages")), "{:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("first of the file's 2 pages")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 /// #1552: a Type 42 font's glyph space is one unit an em, so its identity FontMatrix scaled to 12
@@ -483,7 +764,9 @@ fn type_42_fonts_set_type_at_their_size() {
              /T findfont 12 scalefont setfont 10 20 moveto (Hi) show"
         );
         let r = read(&body);
-        let NodeKind::Text(t) = &objects(&r.document)[0].kind else { panic!("{:?}", r.warnings) };
+        let NodeKind::Text(t) = &objects(&r.document)[0].kind else {
+            panic!("{:?}", r.warnings)
+        };
         let size = t.runs[0].style.size * t.xf.determinant().abs().sqrt();
         assert!((size - 12.0).abs() < 1e-6, "FontType {kind}: {size} pt");
     }
@@ -495,7 +778,9 @@ fn embedded_font_programs_are_skipped() {
                 0123456789abcdef garbage that is encrypted\n0000000000000000000000000000000000000000000000000000000000000000\ncleartomark\n\
                 /MyFont findfont 10 scalefont setfont 10 10 moveto (x) show";
     let r = read(body);
-    let NodeKind::Text(t) = &objects(&r.document)[0].kind else { panic!("{:?}", r.warnings) };
+    let NodeKind::Text(t) = &objects(&r.document)[0].kind else {
+        panic!("{:?}", r.warnings)
+    };
     assert_eq!(t.runs[0].style.font_family, "My Font");
 }
 
@@ -515,22 +800,50 @@ fn rich_doc() -> Document {
         Appearance::basic(solid(1.0, 0.0, 0.0), solid(0.0, 0.0, 1.0), 4.0),
     );
     add(&mut d, n);
-    for (kind, r) in [(GradientKind::Linear, Rect::new(110.0, 10.0, 190.0, 90.0)), (GradientKind::Radial, Rect::new(200.0, 10.0, 290.0, 90.0))] {
-        let mut g = GradientPaint::new(Gradient { kind, ..Gradient::default() });
+    for (kind, r) in [
+        (GradientKind::Linear, Rect::new(110.0, 10.0, 190.0, 90.0)),
+        (GradientKind::Radial, Rect::new(200.0, 10.0, 290.0, 90.0)),
+    ] {
+        let mut g = GradientPaint::new(Gradient {
+            kind,
+            ..Gradient::default()
+        });
         g.geom = Some(GradientGeom::fit(kind, r, 0.0));
-        let n = Node::path(d.alloc_id(), shapes::ellipse(r), Appearance::basic(Paint::Gradient(Box::new(g)), Paint::None, 0.0));
+        let n = Node::path(
+            d.alloc_id(),
+            shapes::ellipse(r),
+            Appearance::basic(Paint::Gradient(Box::new(g)), Paint::None, 0.0),
+        );
         add(&mut d, n);
     }
-    let style = CharStyle { size: 30.0, fill: solid(0.0, 0.5, 0.0), stroke: Paint::None, ..CharStyle::default() };
-    let n = Node::new(d.alloc_id(), NodeKind::Text(Box::new(TextObject::point(Point::new(10.0, 120.0), "Type", style))));
+    let style = CharStyle {
+        size: 30.0,
+        fill: solid(0.0, 0.5, 0.0),
+        stroke: Paint::None,
+        ..CharStyle::default()
+    };
+    let n = Node::new(
+        d.alloc_id(),
+        NodeKind::Text(Box::new(TextObject::point(
+            Point::new(10.0, 120.0),
+            "Type",
+            style,
+        ))),
+    );
     add(&mut d, n);
     let mut img = image::RgbaImage::new(8, 4);
     for (x, _, p) in img.enumerate_pixels_mut() {
-        *p = image::Rgba(if x < 4 { [0, 0, 255, 255] } else { [255, 200, 0, 255] });
+        *p = image::Rgba(if x < 4 {
+            [0, 0, 255, 255]
+        } else {
+            [255, 200, 0, 255]
+        });
     }
     let mut png = vec![];
-    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).unwrap();
-    d.images.insert("pic".into(), ImageBlob::new("image/png", png));
+    img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .unwrap();
+    d.images
+        .insert("pic".into(), ImageBlob::new("image/png", png));
     let im = ImageObject {
         key: "pic".into(),
         width: 8,
@@ -541,19 +854,46 @@ fn rich_doc() -> Document {
     };
     let n = Node::new(d.alloc_id(), NodeKind::Image(Box::new(im)));
     add(&mut d, n);
-    d.swatches.push(Swatch { name: "Spot".into(), paint: Paint::solid(Color::cmyk(0.0, 0.5, 1.0, 0.0)), global: true, spot: true });
-    let spot = Paint::Solid { color: Color::cmyk(0.0, 0.5, 1.0, 0.0), swatch: Some("Spot".into()), tint: 1.0 };
-    let mut clip = Node::path(d.alloc_id(), shapes::ellipse(Rect::new(200.0, 110.0, 290.0, 190.0)), Appearance::default());
+    d.swatches.push(Swatch {
+        name: "Spot".into(),
+        paint: Paint::solid(Color::cmyk(0.0, 0.5, 1.0, 0.0)),
+        global: true,
+        spot: true,
+    });
+    let spot = Paint::Solid {
+        color: Color::cmyk(0.0, 0.5, 1.0, 0.0),
+        swatch: Some("Spot".into()),
+        tint: 1.0,
+    };
+    let mut clip = Node::path(
+        d.alloc_id(),
+        shapes::ellipse(Rect::new(200.0, 110.0, 290.0, 190.0)),
+        Appearance::default(),
+    );
     if let NodeKind::Path { clipping, .. } = &mut clip.kind {
         *clipping = true;
     }
-    let mut inner = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(190.0, 100.0, 300.0, 150.0)), Appearance::basic(spot, Paint::None, 0.0));
+    let mut inner = Node::path(
+        d.alloc_id(),
+        shapes::rectangle(Rect::new(190.0, 100.0, 300.0, 150.0)),
+        Appearance::basic(spot, Paint::None, 0.0),
+    );
     inner.appearance.items.push(AppearanceItem::Stroke({
         let mut st = vectorcraft_doc::StrokeLayer::new(solid(0.0, 0.0, 0.0), 2.0);
-        st.dash = Some(vectorcraft_doc::Dash { pattern: vec![4.0, 2.0], offset: 0.0, align_corners: false });
+        st.dash = Some(vectorcraft_doc::Dash {
+            pattern: vec![4.0, 2.0],
+            offset: 0.0,
+            align_corners: false,
+        });
         st
     }));
-    let g = Node::new(d.alloc_id(), NodeKind::Group { children: vec![Arc::new(clip), Arc::new(inner)], clip: true });
+    let g = Node::new(
+        d.alloc_id(),
+        NodeKind::Group {
+            children: vec![Arc::new(clip), Arc::new(inner)],
+            clip: true,
+        },
+    );
     add(&mut d, g);
     d
 }
@@ -565,15 +905,33 @@ fn the_writers_output_reads_back_looking_the_same() {
     let mut renderer = vectorcraft_render::Renderer::new();
     let want = renderer.render_region(&d, r, 1.0, true);
     for level in [Level::Three, Level::Two] {
-        let o = EpsOptions { region: r, origin: Point::new(r.x0, r.y1), preview: Preview::None, level, ..EpsOptions::default() };
+        let o = EpsOptions {
+            region: r,
+            origin: Point::new(r.x0, r.y1),
+            preview: Preview::None,
+            level,
+            ..EpsOptions::default()
+        };
         let back = import(&crate::export(&d, &o, None, None).unwrap().bytes).unwrap();
         assert!(back.warnings.is_empty(), "{level:?}: {:?}", back.warnings);
-        assert!(back.document.swatch("Spot").is_some_and(|s| s.spot), "{level:?}");
-        let got = renderer.render_region(&back.document, back.document.artboards[0].rect, 1.0, true);
+        assert!(
+            back.document.swatch("Spot").is_some_and(|s| s.spot),
+            "{level:?}"
+        );
+        let got =
+            renderer.render_region(&back.document, back.document.artboards[0].rect, 1.0, true);
         assert_eq!((got.width, got.height), (want.width, want.height));
         // Pixels that differ visibly: anti-aliased edges, gradient steps at level 2.
-        let off = want.pixels.chunks(4).zip(got.pixels.chunks(4)).filter(|(a, b)| a.iter().zip(b.iter()).any(|(x, y)| x.abs_diff(*y) > 48)).count();
-        assert!(off * 100 < want.pixels.len() / 4, "{level:?}: {off} pixels differ");
+        let off = want
+            .pixels
+            .chunks(4)
+            .zip(got.pixels.chunks(4))
+            .filter(|(a, b)| a.iter().zip(b.iter()).any(|(x, y)| x.abs_diff(*y) > 48))
+            .count();
+        assert!(
+            off * 100 < want.pixels.len() / 4,
+            "{level:?}: {off} pixels differ"
+        );
     }
 }
 
@@ -594,13 +952,19 @@ fn blue(body: &str) {
     let r = read(&format!("{body} 10 10 80 80 rectfill"));
     let o = objects(&r.document);
     assert_eq!(o.len(), 1, "{body}: {:?}", r.warnings);
-    assert_eq!(fill(&o[0]), Some(&Paint::solid(Color::rgb(0.0, 0.0, 1.0))), "{body}");
+    assert_eq!(
+        fill(&o[0]),
+        Some(&Paint::solid(Color::rgb(0.0, 0.0, 1.0))),
+        "{body}"
+    );
     assert!(r.warnings.is_empty(), "{body}: {:?}", r.warnings);
 }
 
 /// Check that PostScript `cond` leaves `true`.
 pub(super) fn check(cond: &str) {
-    blue(&format!("{cond} {{ 0 0 1 setrgbcolor }} {{ 1 0 0 setrgbcolor }} ifelse"));
+    blue(&format!(
+        "{cond} {{ 0 0 1 setrgbcolor }} {{ 1 0 0 setrgbcolor }} ifelse"
+    ));
 }
 
 #[test]
@@ -612,11 +976,21 @@ fn the_generic_category_defines_new_categories() {
     );
     let define = "[/CSA /Gradient] { /Generic /Category findresource dup length dict copy /Category defineresource pop } forall \
                   /G1 << /Kind 7 >> /Gradient defineresource pop";
-    check(&format!("{define} /G1 /Gradient findresource /Kind get 7 eq"));
-    check(&format!("{define} /Gradient /Category resourcestatus {{ pop pop true }} {{ false }} ifelse"));
-    check(&format!("{define} /G1 /Gradient resourcestatus {{ pop pop true }} {{ false }} ifelse"));
-    check(&format!("{define} /G1 /Gradient undefineresource /G1 /Gradient resourcestatus not"));
-    check(&format!("{define} {{ /G2 /Gradient findresource }} stopped"));
+    check(&format!(
+        "{define} /G1 /Gradient findresource /Kind get 7 eq"
+    ));
+    check(&format!(
+        "{define} /Gradient /Category resourcestatus {{ pop pop true }} {{ false }} ifelse"
+    ));
+    check(&format!(
+        "{define} /G1 /Gradient resourcestatus {{ pop pop true }} {{ false }} ifelse"
+    ));
+    check(&format!(
+        "{define} /G1 /Gradient undefineresource /G1 /Gradient resourcestatus not"
+    ));
+    check(&format!(
+        "{define} {{ /G2 /Gradient findresource }} stopped"
+    ));
     // Unknown categories aren't instances of Category; a category is a dictionary.
     check("/Nonsense /Category resourcestatus not");
     check("{ /Nonsense /Category findresource } stopped");
@@ -628,23 +1002,60 @@ fn clipsave_and_cliprestore_bring_the_clip_back() {
     // #234.
     blue("clipsave 0 0 50 50 rectclip cliprestore 0 0 1 setrgbcolor");
     // The fill after cliprestore covers the whole square, unclipped.
-    let r = read("clipsave 0 0 50 50 rectclip 1 0 0 setrgbcolor 0 0 10 10 rectfill cliprestore 0 0 1 setrgbcolor 10 10 80 80 rectfill");
+    let r = read(
+        "clipsave 0 0 50 50 rectclip 1 0 0 setrgbcolor 0 0 10 10 rectfill cliprestore 0 0 1 setrgbcolor 10 10 80 80 rectfill",
+    );
     let o = objects(&r.document);
     assert_eq!(o.len(), 2, "{:?}", r.warnings);
-    assert!(matches!(o[0].kind, NodeKind::Group { clip: true, .. }), "{:?}", o[0].kind);
-    assert!(matches!(o[1].kind, NodeKind::Path { clipping: false, .. }), "{:?}", o[1].kind);
-    assert!(near(bounds(&o[1]), Rect::new(10.0, 10.0, 90.0, 90.0)), "{:?}", bounds(&o[1]));
+    assert!(
+        matches!(o[0].kind, NodeKind::Group { clip: true, .. }),
+        "{:?}",
+        o[0].kind
+    );
+    assert!(
+        matches!(
+            o[1].kind,
+            NodeKind::Path {
+                clipping: false,
+                ..
+            }
+        ),
+        "{:?}",
+        o[1].kind
+    );
+    assert!(
+        near(bounds(&o[1]), Rect::new(10.0, 10.0, 90.0, 90.0)),
+        "{:?}",
+        bounds(&o[1])
+    );
     // Nested, leaving the rest of the graphics state alone.
     let r = read(
         "0 0 60 60 rectclip clipsave 0 0 20 20 rectclip clipsave 0 0 5 5 rectclip cliprestore 0 1 0 setrgbcolor cliprestore \
          10 10 80 80 rectfill",
     );
-    let NodeKind::Group { children, clip: true } = &objects(&r.document)[0].kind else { panic!("{:?}", r.warnings) };
-    assert!(near(bounds(&children[0]), Rect::new(0.0, 40.0, 60.0, 100.0)), "{:?}", bounds(&children[0]));
-    assert_eq!(fill(&children[1]), Some(&Paint::solid(Color::rgb(0.0, 1.0, 0.0))));
+    let NodeKind::Group {
+        children,
+        clip: true,
+    } = &objects(&r.document)[0].kind
+    else {
+        panic!("{:?}", r.warnings)
+    };
+    assert!(
+        near(bounds(&children[0]), Rect::new(0.0, 40.0, 60.0, 100.0)),
+        "{:?}",
+        bounds(&children[0])
+    );
+    assert_eq!(
+        fill(&children[1]),
+        Some(&Paint::solid(Color::rgb(0.0, 1.0, 0.0)))
+    );
     // grestore undoes the clipsaves after its gsave; cliprestore with nothing saved does nothing.
     let o = objects(&read("cliprestore gsave clipsave 0 0 50 50 rectclip grestore cliprestore 10 10 80 80 rectfill").document);
-    assert!(matches!(o[0].kind, NodeKind::Path { .. }), "{:?}", o[0].kind);
+    assert!(
+        matches!(o[0].kind, NodeKind::Path { .. }),
+        "{:?}",
+        o[0].kind
+    );
 }
 
 #[test]
@@ -661,7 +1072,9 @@ fn languagelevel_is_an_integer_and_runs() {
 #[test]
 fn intervals_share_their_arrays_and_strings() {
     // #234: astore into a subarray stores into the array.
-    blue("/a 4 array def 1 2 a 0 2 getinterval astore pop a 0 get 1 eq { 0 0 1 setrgbcolor } { 1 0 0 setrgbcolor } ifelse");
+    blue(
+        "/a 4 array def 1 2 a 0 2 getinterval astore pop a 0 get 1 eq { 0 0 1 setrgbcolor } { 1 0 0 setrgbcolor } ifelse",
+    );
     // put, putinterval and copy into an interval; an interval of an interval.
     check("/a [0 0 0 0 0] def a 1 3 getinterval 1 2 getinterval 0 7 put a 2 get 7 eq");
     check("/a [0 0 0 0] def a 2 2 getinterval 0 [8 9] putinterval a 3 get 9 eq");
@@ -671,10 +1084,16 @@ fn intervals_share_their_arrays_and_strings() {
     check("/s 8 string def 42 s 2 6 getinterval cvs pop s 2 2 getinterval (42) eq");
     // The same interval is the same object; another one is not.
     check("/a 4 array def a 0 2 getinterval a 0 2 getinterval eq");
-    check("/a 4 array def a 0 2 getinterval a 0 3 getinterval ne a 0 2 getinterval a 1 2 getinterval ne and");
+    check(
+        "/a 4 array def a 0 2 getinterval a 0 3 getinterval ne a 0 2 getinterval a 1 2 getinterval ne and",
+    );
     // Reads and writes stay inside the interval.
-    check("/a [1 2 3 4] def { a 1 2 getinterval 2 get } stopped { a 1 2 getinterval 2 0 put } stopped and");
-    check("/a [1 2 3 4] def a 1 2 getinterval length 2 eq a 1 2 getinterval aload pop 3 eq exch 2 eq and and");
+    check(
+        "/a [1 2 3 4] def { a 1 2 getinterval 2 get } stopped { a 1 2 getinterval 2 0 put } stopped and",
+    );
+    check(
+        "/a [1 2 3 4] def a 1 2 getinterval length 2 eq a 1 2 getinterval aload pop 3 eq exch 2 eq and and",
+    );
     check("/n 0 def [1 2 3 4] 1 2 getinterval { n add /n exch def } forall n 5 eq");
     // A procedure from an interval runs only its part.
     check("{ 1 2 3 } 1 2 getinterval cvx exec add 5 eq");
@@ -689,7 +1108,11 @@ fn intervals_share_their_arrays_and_strings() {
 fn resourceforall_enumerates_matching_names() {
     // #234.
     blue("(*) { pop } 128 string /Category resourceforall 0 0 1 setrgbcolor");
-    let count = |template: &str| format!("/n 0 def ({template}) {{ pop /n n 1 add def }} 128 string /ProcSet resourceforall n");
+    let count = |template: &str| {
+        format!(
+            "/n 0 def ({template}) {{ pop /n n 1 add def }} 128 string /ProcSet resourceforall n"
+        )
+    };
     let define = "[/Foo /Fop /Bar /F*x] { 1 dict /ProcSet defineresource pop } forall";
     check(&format!("{define} {} 4 eq", count("*")));
     check(&format!("{define} {} 2 eq", count("Fo?")));
@@ -698,10 +1121,16 @@ fn resourceforall_enumerates_matching_names() {
     check(&format!("{define} {} 0 eq", count("Q*")));
     check(&format!("{define} {} 1 eq", count("*a*")));
     // Each name is copied into the scratch string; exit stops.
-    check(&format!("{define} /last () def (B*) {{ dup length string copy /last exch def }} 8 string /ProcSet resourceforall last (Bar) eq"));
-    check(&format!("{define} /n 0 def (*) {{ pop /n n 1 add def exit }} 8 string /ProcSet resourceforall n 1 eq"));
+    check(&format!(
+        "{define} /last () def (B*) {{ dup length string copy /last exch def }} 8 string /ProcSet resourceforall last (Bar) eq"
+    ));
+    check(&format!(
+        "{define} /n 0 def (*) {{ pop /n n 1 add def exit }} 8 string /ProcSet resourceforall n 1 eq"
+    ));
     // A scratch string too small for the names, as the prolog probes it.
-    check(&format!("{define} {{ (*) {{ pop }} 2 string /ProcSet resourceforall }} stopped"));
+    check(&format!(
+        "{define} {{ (*) {{ pop }} 2 string /ProcSet resourceforall }} stopped"
+    ));
     check("/n 0 def (Gen*) { pop /n n 1 add def } 16 string /Category resourceforall n 1 eq");
 }
 
@@ -709,7 +1138,9 @@ fn resourceforall_enumerates_matching_names() {
 fn the_standard_dictionaries_are_dictionaries_in_systemdict() {
     // The reference app's EPS prolog looks them up by name rather than running them.
     check("systemdict /userdict get type /dicttype eq");
-    check("/globaldict where { /globaldict get begin currentdict globaldict eq end } { false } ifelse");
+    check(
+        "/globaldict where { /globaldict get begin currentdict globaldict eq end } { false } ifelse",
+    );
     check("systemdict /systemdict get systemdict eq systemdict /statusdict known and");
     check("userdict /x 5 put systemdict /userdict get /x get 5 eq");
     check("/errordict load /handleerror known errordict $error eq and");
@@ -723,7 +1154,9 @@ fn dictstack_and_internaldict_answer() {
     check("{ 1 array dictstack } stopped");
     check("1183615869 internaldict /k 1 put 1183615869 internaldict /k get 1 eq");
     check("currentsystemparams /MaxPatternCache get type /integertype eq");
-    check("<< /MaxPatternItem currentsystemparams /MaxPatternCache get >> setuserparams currentuserparams /MaxFontItem known");
+    check(
+        "<< /MaxPatternItem currentsystemparams /MaxPatternCache get >> setuserparams currentuserparams /MaxFontItem known",
+    );
 }
 
 #[test]
@@ -742,7 +1175,9 @@ fn an_executable_filter_runs_its_data_as_a_program() {
 #[test]
 fn flushfile_skips_the_data_of_a_filter() {
     // Metadata that isn't PostScript, skipped up to its end marker.
-    blue("currentfile 0 (%%EndPacket) /SubFileDecode filter flushfile\n<?xml version=\"1.0\"?><x a=\"(\"/>\n%%EndPacket\n0 0 1 setrgbcolor");
+    blue(
+        "currentfile 0 (%%EndPacket) /SubFileDecode filter flushfile\n<?xml version=\"1.0\"?><x a=\"(\"/>\n%%EndPacket\n0 0 1 setrgbcolor",
+    );
 }
 
 /// Executable files are untrusted programs too: running one inside itself stops at the nesting
@@ -754,10 +1189,22 @@ fn hostile_executable_files_and_type_loops_are_refused() {
         let e = import(&eps(body)).err().unwrap_or_default();
         assert!(e.contains(why), "{body}: {e}");
     };
-    refused("/p { (p) 0 () /SubFileDecode filter cvx exec } def p", "too deeply");
-    refused("/p { (p) 0 () /SubFileDecode filter cvx exec } def { p } stopped pop p", "too deeply");
-    refused("/a { (b) 0 () /SubFileDecode filter cvx exec } def /b { (a) 0 () /SubFileDecode filter cvx exec } def a", "too deeply");
-    refused("/Helvetica findfont 10 scalefont setfont { pop pop pop } 1000000 string cshow", "too long");
+    refused(
+        "/p { (p) 0 () /SubFileDecode filter cvx exec } def p",
+        "too deeply",
+    );
+    refused(
+        "/p { (p) 0 () /SubFileDecode filter cvx exec } def { p } stopped pop p",
+        "too deeply",
+    );
+    refused(
+        "/a { (b) 0 () /SubFileDecode filter cvx exec } def /b { (a) 0 () /SubFileDecode filter cvx exec } def a",
+        "too deeply",
+    );
+    refused(
+        "/Helvetica findfont 10 scalefont setfont { pop pop pop } 1000000 string cshow",
+        "too long",
+    );
     // The program's own file, made executable, is already running.
     blue("currentfile cvx exec currentfile flushfile 0 0 1 setrgbcolor");
 }
@@ -768,7 +1215,9 @@ fn read_soon(body: &str) -> crate::Imported {
     let (tx, rx) = std::sync::mpsc::channel();
     let ps = eps(body);
     std::thread::spawn(move || tx.send(import(&ps)).ok());
-    rx.recv_timeout(std::time::Duration::from_secs(20)).unwrap_or_else(|_| panic!("reading {body} did not finish")).unwrap()
+    rx.recv_timeout(std::time::Duration::from_secs(20))
+        .unwrap_or_else(|_| panic!("reading {body} did not finish"))
+        .unwrap()
 }
 
 /// Reads `body` after a square through [`read_soon`]: the square stays, and the program runs out
@@ -776,7 +1225,13 @@ fn read_soon(body: &str) -> crate::Imported {
 fn runs_out_of_budget(body: &str) {
     let r = read_soon(&format!("0 0 10 10 rectfill {body}"));
     assert_eq!(objects(&r.document).len(), 1, "{body}: {:?}", r.warnings);
-    assert!(r.warnings.iter().any(|w| w.contains("the program runs too long")), "{body}: {:?}", r.warnings);
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("the program runs too long")),
+        "{body}: {:?}",
+        r.warnings
+    );
 }
 
 /// A loop of operators whose work grows with the path they make runs out of the operation budget
@@ -848,7 +1303,12 @@ fn encoded_user_paths_in_a_loop_run_out_of_the_budget() {
 fn arcs_with_huge_angles_end_at_their_second_angle() {
     // `at(deg)` is the point at `deg` degrees on the circle of radius 10 around (50, 50), in
     // document space.
-    let at = |deg: f64| Point::new(50.0 + 10.0 * deg.to_radians().cos(), 50.0 - 10.0 * deg.to_radians().sin());
+    let at = |deg: f64| {
+        Point::new(
+            50.0 + 10.0 * deg.to_radians().cos(),
+            50.0 - 10.0 * deg.to_radians().sin(),
+        )
+    };
     // Each program is listed with the remainders of its first and second angles after whole turns.
     for (body, first, second) in [
         ("50 50 10 1e18 0 arc", 280.0, 0.0),
@@ -861,9 +1321,17 @@ fn arcs_with_huge_angles_end_at_their_second_angle() {
         assert_eq!(o.len(), 2, "{body}: {:?}", r.warnings);
         // The arc lies within one quarter of the circle, so its endpoints span its bounds.
         let (a, b) = (at(first), at(second));
-        assert!(near(bounds(&o[0]), Rect::from_points(a, b)), "{body}: {:?}", bounds(&o[0]));
+        assert!(
+            near(bounds(&o[0]), Rect::from_points(a, b)),
+            "{body}: {:?}",
+            bounds(&o[0])
+        );
         // The second object is the square drawn at the current point.
-        assert!(near(bounds(&o[1]), Rect::new(b.x, b.y - 1.0, b.x + 1.0, b.y)), "{body}: {:?}", bounds(&o[1]));
+        assert!(
+            near(bounds(&o[1]), Rect::new(b.x, b.y - 1.0, b.x + 1.0, b.y)),
+            "{body}: {:?}",
+            bounds(&o[1])
+        );
     }
 }
 
@@ -875,26 +1343,64 @@ fn arcs_with_huge_angles_end_at_their_second_angle() {
 /// operation budget.
 #[test]
 fn shading_functions_in_shared_arrays_stop_at_the_limits() {
-    let axial = |function: &str| format!("<< /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 100 0] /Function {function} >>");
+    let axial = |function: &str| {
+        format!(
+            "<< /ShadingType 2 /ColorSpace /DeviceGray /Coords [0 0 100 0] /Function {function} >>"
+        )
+    };
     let f = "/f << /FunctionType 2 /Domain [0 1] /C0 [0] /C1 [1] /N 1 >> def";
     // `a`: an array of `n` references to the function `f`.
     let array = |n: usize| format!("{f} /a {n} array def 0 1 {} {{ a exch f put }} for", n - 1);
     // Each level is an array of 100 references to the level below.
     let levels = "/l2 100 array def 0 1 99 { l2 exch a put } for /l3 100 array def 0 1 99 { l3 exch l2 put } for \
                   /l4 100 array def 0 1 99 { l4 exch l3 put } for";
-    let limitcheck = |r: &crate::Imported| r.warnings.iter().any(|w| w.contains("limitcheck in `shfill`: Function"));
-    let r = read_soon(&format!("0 0 10 10 rectfill {} {levels} {} shfill", array(100), axial("l4")));
-    assert!(limitcheck(&r) && objects(&r.document).len() == 1, "{:?}", r.warnings);
+    let limitcheck = |r: &crate::Imported| {
+        r.warnings
+            .iter()
+            .any(|w| w.contains("limitcheck in `shfill`: Function"))
+    };
+    let r = read_soon(&format!(
+        "0 0 10 10 rectfill {} {levels} {} shfill",
+        array(100),
+        axial("l4")
+    ));
+    assert!(
+        limitcheck(&r) && objects(&r.document).len() == 1,
+        "{:?}",
+        r.warnings
+    );
     // 256 references are 257 functions for each sample, the most allowed; one more raises `limitcheck`.
     let r = read_soon(&format!("{} {} shfill", array(256), axial("a")));
     let o = objects(&r.document);
-    assert!(r.warnings.is_empty() && matches!(fill(&o[0]), Some(Paint::Gradient(_))), "{:?}", r.warnings);
-    let r = read_soon(&format!("0 0 10 10 rectfill {} {} shfill", array(257), axial("a")));
-    assert!(limitcheck(&r) && objects(&r.document).len() == 1, "{:?}", r.warnings);
+    assert!(
+        r.warnings.is_empty() && matches!(fill(&o[0]), Some(Paint::Gradient(_))),
+        "{:?}",
+        r.warnings
+    );
+    let r = read_soon(&format!(
+        "0 0 10 10 rectfill {} {} shfill",
+        array(257),
+        axial("a")
+    ));
+    assert!(
+        limitcheck(&r) && objects(&r.document).len() == 1,
+        "{:?}",
+        r.warnings
+    );
     // Each of these shadings visits 33 * 257 functions (33 samples), and 2000 of them count for
     // more than the operation budget.
-    let r = read(&format!("{} /sh {} def 2000 {{ sh shfill }} repeat", array(256), axial("a")));
-    assert!(r.warnings.iter().any(|w| w.contains("the program runs too long")), "{:?}", r.warnings);
+    let r = read(&format!(
+        "{} /sh {} def 2000 {{ sh shfill }} repeat",
+        array(256),
+        axial("a")
+    ));
+    assert!(
+        r.warnings
+            .iter()
+            .any(|w| w.contains("the program runs too long")),
+        "{:?}",
+        r.warnings
+    );
 }
 
 #[test]
@@ -912,8 +1418,20 @@ fn cshow_runs_its_procedure_for_each_character() {
 /// strips of `per` rows, in either byte order, as the reference app writes its EPS previews:
 /// pixel (x, y) is entry `(x + y) % 3` of a red, green, blue map, at alpha `12 x`.
 fn palette_tiff(w: u16, h: u16, per: u16, big: bool) -> Vec<u8> {
-    let u16b = |v: u16| if big { v.to_be_bytes() } else { v.to_le_bytes() };
-    let u32b = |v: u32| if big { v.to_be_bytes() } else { v.to_le_bytes() };
+    let u16b = |v: u16| {
+        if big {
+            v.to_be_bytes()
+        } else {
+            v.to_le_bytes()
+        }
+    };
+    let u32b = |v: u32| {
+        if big {
+            v.to_be_bytes()
+        } else {
+            v.to_le_bytes()
+        }
+    };
     // Shorts in an entry, left-justified.
     let shorts = |v: &[u16]| -> [u8; 4] {
         let mut f = [0; 4];
@@ -959,7 +1477,16 @@ fn palette_tiff(w: u16, h: u16, per: u16, big: bool) -> Vec<u8> {
         (273, 4, n, u32b(if n == 1 { data_at } else { offsets_at })),
         (277, 3, 1, shorts(&[2])),
         (278, 3, 1, shorts(&[per])),
-        (279, 4, n, u32b(if n == 1 { u32::from(h) * row } else { counts_at })),
+        (
+            279,
+            4,
+            n,
+            u32b(if n == 1 {
+                u32::from(h) * row
+            } else {
+                counts_at
+            }),
+        ),
         (284, 3, 1, shorts(&[1])),
         (320, 3, 768, u32b(map_at)),
         (338, 3, 1, shorts(&[1])),
@@ -985,13 +1512,21 @@ fn a_palette_preview_with_alpha_is_placed() {
         assert!(r.preview, "{big} {per}");
         assert!(r.warnings[0].contains("preview"), "{:?}", r.warnings);
         let o = objects(&r.document);
-        let NodeKind::Image(im) = &o[0].kind else { panic!("{:?}", o[0].kind) };
+        let NodeKind::Image(im) = &o[0].kind else {
+            panic!("{:?}", o[0].kind)
+        };
         assert_eq!((im.width, im.height), (20, 10));
         assert!(near(bounds(&o[0]), Rect::new(0.0, 0.0, 100.0, 100.0)));
-        let png = image::load_from_memory(&r.document.images[&im.key].bytes).unwrap().to_rgba8();
+        let png = image::load_from_memory(&r.document.images[&im.key].bytes)
+            .unwrap()
+            .to_rgba8();
         for (x, y) in [(0, 0), (1, 0), (2, 0), (19, 9), (7, 4), (3, 6)] {
             let [r, g, b] = [[255, 0, 0], [0, 128, 0], [0, 0, 255]][((x + y) % 3) as usize];
-            assert_eq!(png.get_pixel(x, y).0, [r, g, b, (x * 12) as u8], "({x}, {y}) {big} {per}");
+            assert_eq!(
+                png.get_pixel(x, y).0,
+                [r, g, b, (x * 12) as u8],
+                "({x}, {y}) {big} {per}"
+            );
         }
     }
 }

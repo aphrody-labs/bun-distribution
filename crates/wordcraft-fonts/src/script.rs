@@ -78,13 +78,62 @@ pub fn needs_layout_tables(c: char) -> bool {
 /// these scripts carry only AAT tables (which the shaper doesn't read), so they come last.
 pub fn script_fallbacks(c: char) -> &'static [&'static str] {
     match c.script() {
-        Script::Myanmar => &["Myanmar Text", "Noto Sans Myanmar", "Padauk", "Pyidaungsu", "Noto Serif Myanmar", "Myanmar Sangam MN", "Myanmar MN"],
-        Script::Khmer => &["Leelawadee UI", "Khmer UI", "Noto Sans Khmer", "Noto Serif Khmer", "Khmer OS", "Khmer Sangam MN", "Khmer MN"],
-        Script::Devanagari => &["Nirmala UI", "Mangal", "Kohinoor Devanagari", "Noto Sans Devanagari", "Noto Serif Devanagari", "Lohit Devanagari"],
-        Script::Bengali => &["Nirmala UI", "Vrinda", "Kohinoor Bangla", "Noto Sans Bengali", "Noto Serif Bengali", "Lohit Bengali"],
-        Script::Thai => &["Leelawadee UI", "Leelawadee", "Tahoma", "Thonburi", "Noto Sans Thai", "Noto Serif Thai"],
-        Script::Lao => &["Leelawadee UI", "Lao UI", "Noto Sans Lao", "Noto Serif Lao", "Lao Sangam MN"],
-        Script::Tamil | Script::Telugu | Script::Kannada | Script::Malayalam | Script::Gujarati | Script::Gurmukhi | Script::Oriya => &["Nirmala UI"],
+        Script::Myanmar => &[
+            "Myanmar Text",
+            "Noto Sans Myanmar",
+            "Padauk",
+            "Pyidaungsu",
+            "Noto Serif Myanmar",
+            "Myanmar Sangam MN",
+            "Myanmar MN",
+        ],
+        Script::Khmer => &[
+            "Leelawadee UI",
+            "Khmer UI",
+            "Noto Sans Khmer",
+            "Noto Serif Khmer",
+            "Khmer OS",
+            "Khmer Sangam MN",
+            "Khmer MN",
+        ],
+        Script::Devanagari => &[
+            "Nirmala UI",
+            "Mangal",
+            "Kohinoor Devanagari",
+            "Noto Sans Devanagari",
+            "Noto Serif Devanagari",
+            "Lohit Devanagari",
+        ],
+        Script::Bengali => &[
+            "Nirmala UI",
+            "Vrinda",
+            "Kohinoor Bangla",
+            "Noto Sans Bengali",
+            "Noto Serif Bengali",
+            "Lohit Bengali",
+        ],
+        Script::Thai => &[
+            "Leelawadee UI",
+            "Leelawadee",
+            "Tahoma",
+            "Thonburi",
+            "Noto Sans Thai",
+            "Noto Serif Thai",
+        ],
+        Script::Lao => &[
+            "Leelawadee UI",
+            "Lao UI",
+            "Noto Sans Lao",
+            "Noto Serif Lao",
+            "Lao Sangam MN",
+        ],
+        Script::Tamil
+        | Script::Telugu
+        | Script::Kannada
+        | Script::Malayalam
+        | Script::Gujarati
+        | Script::Gurmukhi
+        | Script::Oriya => &["Nirmala UI"],
         _ => &[],
     }
 }
@@ -98,7 +147,10 @@ pub fn fallback_rank(c: char, family: &str) -> usize {
     }
     if needs_layout_tables(c) {
         let name = c.script().full_name().replace('_', " ");
-        if family.to_ascii_lowercase().contains(&name.to_ascii_lowercase()) {
+        if family
+            .to_ascii_lowercase()
+            .contains(&name.to_ascii_lowercase())
+        {
             return list.len();
         }
     }

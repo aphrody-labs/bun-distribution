@@ -38,10 +38,13 @@ impl Screenshot {
     ///
     /// [`VisionError::Io`] when the file cannot be moved.
     pub fn keep(self, destination: &Path) -> Result<()> {
-        self.file.persist(destination).map(|_| ()).map_err(|error| VisionError::Io {
-            path: destination.to_path_buf(),
-            source: error.error,
-        })
+        self.file
+            .persist(destination)
+            .map(|_| ())
+            .map_err(|error| VisionError::Io {
+                path: destination.to_path_buf(),
+                source: error.error,
+            })
     }
 }
 
@@ -70,7 +73,10 @@ pub fn capture_window(substr: &str) -> Result<Screenshot> {
 /// substring and get `NotFound`.
 #[must_use]
 pub fn window_titles() -> Vec<String> {
-    aphrody_capture::list_windows().into_iter().map(|window| window.title).collect()
+    aphrody_capture::list_windows()
+        .into_iter()
+        .map(|window| window.title)
+        .collect()
 }
 
 /// Describe what is on screen right now.
@@ -107,10 +113,16 @@ fn write_png(bytes: &[u8]) -> Result<Screenshot> {
         .prefix("aphrody-vision-")
         .suffix(".png")
         .tempfile()
-        .map_err(|source| VisionError::Io { path: std::env::temp_dir(), source })?;
+        .map_err(|source| VisionError::Io {
+            path: std::env::temp_dir(),
+            source,
+        })?;
     std::io::Write::write_all(&mut file, bytes)
         .and_then(|()| std::io::Write::flush(&mut file))
-        .map_err(|source| VisionError::Io { path: file.path().to_path_buf(), source })?;
+        .map_err(|source| VisionError::Io {
+            path: file.path().to_path_buf(),
+            source,
+        })?;
     Ok(Screenshot { file })
 }
 

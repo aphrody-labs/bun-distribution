@@ -16,9 +16,14 @@ fn the_probe_runs_once_and_registers_the_format() {
     let t1 = Instant::now();
     let again = hevc_available();
     let warm = t1.elapsed();
-    eprintln!("first HEVC probe in a fresh process: {cold:?} (available: {first}); the cached answer: {warm:?}");
+    eprintln!(
+        "first HEVC probe in a fresh process: {cold:?} (available: {first}); the cached answer: {warm:?}"
+    );
     assert_eq!(first, again);
-    assert!(warm < Duration::from_millis(50), "the answer is cached: {warm:?}");
+    assert!(
+        warm < Duration::from_millis(50),
+        "the answer is cached: {warm:?}"
+    );
 
     // `register` makes `available(Hevc)` follow the probe; registering again changes nothing
     assert!(!filmcraft_export::available(Format::Hevc) || first);

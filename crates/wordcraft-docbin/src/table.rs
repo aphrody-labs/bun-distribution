@@ -5,7 +5,10 @@ use std::sync::Arc;
 
 use wordcraft_doc::Rgb;
 use wordcraft_doc::para::Paragraph;
-use wordcraft_doc::props::{Align, Border, BorderStyle, Borders, CellProps, HeightRule, RowProps, TableProps, VAlign, VMerge};
+use wordcraft_doc::props::{
+    Align, Border, BorderStyle, Borders, CellProps, HeightRule, RowProps, TableProps, VAlign,
+    VMerge,
+};
 use wordcraft_doc::table::{Cell, Row, Table};
 use wordcraft_doc::{Block, Blocks, para_block};
 
@@ -89,7 +92,9 @@ pub(crate) fn decode(papx: &[u8]) -> RowInfo {
             P_ITAP => r.depth = i32_of(&prl).unwrap_or(0).max(0) as u32,
             T_DEF_TABLE => r.grid = def_table_grid(prl.operand),
             T_TABLE_HEADER => r.header = prl.operand.first().copied().unwrap_or(0) != 0,
-            T_CANT_SPLIT | T_CANT_SPLIT_90 => r.cant_split = prl.operand.first().copied().unwrap_or(0) != 0,
+            T_CANT_SPLIT | T_CANT_SPLIT_90 => {
+                r.cant_split = prl.operand.first().copied().unwrap_or(0) != 0
+            }
             T_ROW_HEIGHT => {
                 if let Some(v) = s16(&prl) {
                     if v < 0 {
@@ -209,7 +214,14 @@ pub(crate) fn assemble(paras: Vec<ParaOut>) -> Blocks {
         if blocks.is_empty() {
             blocks.push(para_block(Paragraph::new()));
         }
-        cells.push(Cell { props: CellProps { span: 1, ..Default::default() }, blocks, controls: Default::default() });
+        cells.push(Cell {
+            props: CellProps {
+                span: 1,
+                ..Default::default()
+            },
+            blocks,
+            controls: Default::default(),
+        });
     }
     fn build_row(mut cells: Vec<Cell>, info: &RowInfo) -> Row {
         // Per-cell overrides first (sprm cell indices count pre-merge cells), then merges.
@@ -236,9 +248,19 @@ pub(crate) fn assemble(paras: Vec<ParaOut>) -> Blocks {
                 if let Some(first) = cells.get_mut(a) {
                     first.props.span = ((b - a) as u32).min(63);
                     for c in removed {
-                        first.blocks.extend(c.blocks.into_iter().filter(|x| x.as_para().is_none_or(|p| !p.is_empty())));
+                        first.blocks.extend(
+                            c.blocks
+                                .into_iter()
+                                .filter(|x| x.as_para().is_none_or(|p| !p.is_empty())),
+                        );
                     }
-                    if first.blocks.len() > 1 && first.blocks.first().and_then(|x| x.as_para()).is_some_and(Paragraph::is_empty) {
+                    if first.blocks.len() > 1
+                        && first
+                            .blocks
+                            .first()
+                            .and_then(|x| x.as_para())
+                            .is_some_and(Paragraph::is_empty)
+                    {
                         first.blocks.remove(0);
                     }
                 }
@@ -256,7 +278,15 @@ pub(crate) fn assemble(paras: Vec<ParaOut>) -> Blocks {
             controls: Default::default(),
         }
     }
-    fn flush_table(out: &mut Blocks, rows: &mut Vec<Row>, cells: &mut Vec<Cell>, cell: &mut Blocks, grid: &[f32], props: &TableProps, nested: bool) {
+    fn flush_table(
+        out: &mut Blocks,
+        rows: &mut Vec<Row>,
+        cells: &mut Vec<Cell>,
+        cell: &mut Blocks,
+        grid: &[f32],
+        props: &TableProps,
+        nested: bool,
+    ) {
         if !cells.is_empty() || !cell.is_empty() {
             flush_cell(cells, cell);
             // A stray trailing row (no TTP of its own): size its cells from the grid.
@@ -294,7 +324,15 @@ pub(crate) fn assemble(paras: Vec<ParaOut>) -> Blocks {
         let is_table = info.in_table || info.ttp || info.cell_mark;
         if !is_table {
             if open {
-                flush_table(&mut out, &mut rows, &mut cells, &mut cell, &grid, &props, depth_seen > 1);
+                flush_table(
+                    &mut out,
+                    &mut rows,
+                    &mut cells,
+                    &mut cell,
+                    &grid,
+                    &props,
+                    depth_seen > 1,
+                );
                 open = false;
                 depth_seen = 0;
             }
@@ -331,7 +369,15 @@ pub(crate) fn assemble(paras: Vec<ParaOut>) -> Blocks {
         }
     }
     if open {
-        flush_table(&mut out, &mut rows, &mut cells, &mut cell, &grid, &props, depth_seen > 1);
+        flush_table(
+            &mut out,
+            &mut rows,
+            &mut cells,
+            &mut cell,
+            &grid,
+            &props,
+            depth_seen > 1,
+        );
     }
     out
 }
@@ -357,7 +403,14 @@ fn def_table_grid(operand: &[u8]) -> Vec<f32> {
 /// left, bottom, right, inside-horizontal, inside-vertical.
 fn table_borders(operand: &[u8]) -> Option<Borders> {
     let b = |i: usize| operand.get(1 + i * 4..1 + i * 4 + 4).and_then(brc80);
-    Some(Borders { top: b(0), left: b(1), bottom: b(2), right: b(3), between: b(4), inside_v: b(5) })
+    Some(Borders {
+        top: b(0),
+        left: b(1),
+        bottom: b(2),
+        right: b(3),
+        between: b(4),
+        inside_v: b(5),
+    })
 }
 
 /// One Brc80: width in 1/8 pt, type, palette colour, space/flags byte.
@@ -377,7 +430,12 @@ fn brc80(b: &[u8]) -> Option<Border> {
     if *ty == 0 && *w == 0 {
         return None;
     }
-    Some(Border { style, width: (*w as f32 / 8.0).clamp(0.25, 12.0), color: fmt::ico(*ico), space: (flags & 0x1F) as f32 })
+    Some(Border {
+        style,
+        width: (*w as f32 / 8.0).clamp(0.25, 12.0),
+        color: fmt::ico(*ico),
+        space: (flags & 0x1F) as f32,
+    })
 }
 
 /// Background colour from a 10-byte `Shd`: cvFore, cvBack (COLORREFs), ipat. Solid patterns

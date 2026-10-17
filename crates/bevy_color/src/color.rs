@@ -1,7 +1,7 @@
 use crate::{
-    color_difference::EuclideanDistance, okhsla::Okhsla, okhsva::Okhsva, okhwba::Okhwba, Alpha,
-    Hsla, Hsva, Hue, Hwba, Laba, Lcha, LinearRgba, Luminance, Mix, Oklaba, Oklcha, Saturation,
-    Srgba, StandardColor, Xyza,
+    Alpha, Hsla, Hsva, Hue, Hwba, Laba, Lcha, LinearRgba, Luminance, Mix, Oklaba, Oklcha,
+    Saturation, Srgba, StandardColor, Xyza, color_difference::EuclideanDistance, okhsla::Okhsla,
+    okhsva::Okhsva, okhwba::Okhwba,
 };
 use bevy_math::{MismatchedUnitsError, TryStableInterpolate};
 #[cfg(feature = "bevy_reflect")]

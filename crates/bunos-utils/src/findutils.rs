@@ -8,7 +8,9 @@ crate::applets! {
 }
 
 fn strings(args: &[OsString]) -> Vec<String> {
-    args.iter().map(|a| a.to_string_lossy().into_owned()).collect()
+    args.iter()
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect()
 }
 
 fn find(args: Vec<OsString>) -> i32 {

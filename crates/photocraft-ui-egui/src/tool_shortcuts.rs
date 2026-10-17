@@ -55,7 +55,11 @@ mod tests {
             crate::menus::invoke(&mut app, &ctx, &id, json!({})).unwrap();
             assert_eq!(app.ui.tool, t);
         }
-        for id in ["tools.select.", "tools.select.missing", "tools.select.Brush"] {
+        for id in [
+            "tools.select.",
+            "tools.select.missing",
+            "tools.select.Brush",
+        ] {
             assert!(!crate::menus::is_live(id));
             assert!(crate::menus::invoke(&mut app, &ctx, id, json!({})).is_err());
         }
@@ -66,18 +70,34 @@ mod tests {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
         assert_eq!(shortcut(&app, Tool::Pencil).as_deref(), Some("B"));
         assert_eq!(shortcut(&app, Tool::SingleRowMarquee), None);
-        app.run("prefs.set", json!({"path": "shortcuts.tools.select.pencil", "value": "F6"})).unwrap();
+        app.run(
+            "prefs.set",
+            json!({"path": "shortcuts.tools.select.pencil", "value": "F6"}),
+        )
+        .unwrap();
         assert_eq!(shortcut(&app, Tool::Pencil).as_deref(), Some("F6"));
-        app.run("prefs.set", json!({"path": "shortcuts.tools.select.pencil", "value": ""})).unwrap();
+        app.run(
+            "prefs.set",
+            json!({"path": "shortcuts.tools.select.pencil", "value": ""}),
+        )
+        .unwrap();
         assert_eq!(shortcut(&app, Tool::Pencil), None);
-        app.run("prefs.reset", json!({"path": "shortcuts.tools.select.pencil"})).unwrap();
+        app.run(
+            "prefs.reset",
+            json!({"path": "shortcuts.tools.select.pencil"}),
+        )
+        .unwrap();
         assert_eq!(shortcut(&app, Tool::Pencil).as_deref(), Some("B"));
     }
 
     #[test]
     fn a_remapped_tool_letter_does_not_steal_text_input() {
         let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-        app.run("prefs.set", json!({"path": "shortcuts.tools.select.pencil", "value": "Q"})).unwrap();
+        app.run(
+            "prefs.set",
+            json!({"path": "shortcuts.tools.select.pencil", "value": "Q"}),
+        )
+        .unwrap();
         let mut h = egui_kittest::Harness::builder().build_ui_state(
             |ui, app: &mut PhotocraftApp| {
                 ui.text_edit_singleline(&mut app.ui.status).request_focus();

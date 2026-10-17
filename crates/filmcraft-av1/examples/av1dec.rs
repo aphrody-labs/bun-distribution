@@ -11,13 +11,25 @@ fn main() {
         std::process::exit(2);
     }
     let data = std::fs::read(&args[1]).expect("read input");
-    let mut out = args.get(2).map(|p| std::io::BufWriter::new(std::fs::File::create(p).expect("create output")));
-    let threads = std::env::var("AV1_THREADS").ok().and_then(|s| s.parse().ok()).unwrap_or(0usize);
-    let loops = std::env::var("AV1_LOOPS").ok().and_then(|s| s.parse().ok()).unwrap_or(1usize);
+    let mut out = args
+        .get(2)
+        .map(|p| std::io::BufWriter::new(std::fs::File::create(p).expect("create output")));
+    let threads = std::env::var("AV1_THREADS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(0usize);
+    let loops = std::env::var("AV1_LOOPS")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(1usize);
     let hl = u16::from_le_bytes([data[6], data[7]]) as usize;
     let t0 = std::time::Instant::now();
     let mut n = 0;
-    let mut dec = if threads > 0 { filmcraft_av1::Decoder::with_threads(threads) } else { filmcraft_av1::Decoder::new() };
+    let mut dec = if threads > 0 {
+        filmcraft_av1::Decoder::with_threads(threads)
+    } else {
+        filmcraft_av1::Decoder::new()
+    };
     // AV1_DRAFT=1: draft mode (non-reference frames skip the in-loop filters).
     dec.set_draft(std::env::var_os("AV1_DRAFT").is_some());
     let mut write = |pics: Vec<filmcraft_av1::Picture>| {

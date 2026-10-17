@@ -1,7 +1,7 @@
 use bevy_asset::{AssetId, Assets};
 use bevy_ecs::resource::Resource;
 use bevy_image::{Image, TextureAtlas, TextureAtlasLayout};
-use bevy_math::{ops, Rect, URect, UVec2, Vec2};
+use bevy_math::{Rect, URect, UVec2, Vec2, ops};
 use bevy_platform::collections::HashMap;
 use wgpu_types::TextureFormat;
 

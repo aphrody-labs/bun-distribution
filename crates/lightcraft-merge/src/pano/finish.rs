@@ -17,7 +17,13 @@ use super::blend::{Buf, push_pull};
 fn edges(alpha: &Plane, vertical: bool) -> Option<(Vec<f64>, Vec<f64>)> {
     let (w, h) = (alpha.width, alpha.height);
     let (n, len) = if vertical { (w, h) } else { (h, w) };
-    let at = |i: usize, k: usize| if vertical { alpha.get(i, k) } else { alpha.get(k, i) };
+    let at = |i: usize, k: usize| {
+        if vertical {
+            alpha.get(i, k)
+        } else {
+            alpha.get(k, i)
+        }
+    };
     let mut lo = vec![f64::NAN; n];
     let mut hi = vec![f64::NAN; n];
     for i in 0..n {
@@ -64,22 +70,32 @@ fn edges(alpha: &Plane, vertical: bool) -> Option<(Vec<f64>, Vec<f64>)> {
 }
 
 fn stretch(img: &Rgb32f, alpha: &Plane, amount: f64, vertical: bool) -> (Rgb32f, Plane) {
-    let Some((lo, hi)) = edges(alpha, vertical) else { return (img.clone(), alpha.clone()) };
+    let Some((lo, hi)) = edges(alpha, vertical) else {
+        return (img.clone(), alpha.clone());
+    };
     let (w, h) = (img.width, img.height);
     let len = if vertical { h } else { w } as f64;
     let mut out = Rgb32f::new(w, h);
     let mut oa = Plane::new(w, h);
-    out.data.par_chunks_mut(w).zip(oa.data.par_chunks_mut(w)).enumerate().for_each(|(y, (row, arow))| {
-        for x in 0..w {
-            let (i, k) = if vertical { (x, y) } else { (y, x) };
-            let t = (k as f64 + 0.5) / len;
-            let src = lo[i] + t * (hi[i] - lo[i]);
-            let s = (1.0 - amount) * (k as f64 + 0.5) + amount * src;
-            let (sx, sy) = if vertical { (x as f32 + 0.5, s as f32) } else { (s as f32, y as f32 + 0.5) };
-            row[x] = img.sample_bilinear(sx, sy);
-            arow[x] = crate::features::bilinear(alpha, sx, sy);
-        }
-    });
+    out.data
+        .par_chunks_mut(w)
+        .zip(oa.data.par_chunks_mut(w))
+        .enumerate()
+        .for_each(|(y, (row, arow))| {
+            for x in 0..w {
+                let (i, k) = if vertical { (x, y) } else { (y, x) };
+                let t = (k as f64 + 0.5) / len;
+                let src = lo[i] + t * (hi[i] - lo[i]);
+                let s = (1.0 - amount) * (k as f64 + 0.5) + amount * src;
+                let (sx, sy) = if vertical {
+                    (x as f32 + 0.5, s as f32)
+                } else {
+                    (s as f32, y as f32 + 0.5)
+                };
+                row[x] = img.sample_bilinear(sx, sy);
+                arow[x] = crate::features::bilinear(alpha, sx, sy);
+            }
+        });
     (out, oa)
 }
 
@@ -112,12 +128,20 @@ pub fn auto_crop(alpha: &Plane) -> Option<(usize, usize, usize, usize)> {
         }
         true
     };
-    let grid: Vec<bool> = (0..gh).into_par_iter().flat_map_iter(|gy| (0..gw).map(move |gx| (gx, gy))).map(|(gx, gy)| ok(gx, gy)).collect();
+    let grid: Vec<bool> = (0..gh)
+        .into_par_iter()
+        .flat_map_iter(|gy| (0..gw).map(move |gx| (gx, gy)))
+        .map(|(gx, gy)| ok(gx, gy))
+        .collect();
     let mut heights = vec![0usize; gw];
     let mut best = (0usize, 0, 0, 0, 0); // area, x, y, w, h
     for gy in 0..gh {
         for gx in 0..gw {
-            heights[gx] = if grid[gy * gw + gx] { heights[gx] + 1 } else { 0 };
+            heights[gx] = if grid[gy * gw + gx] {
+                heights[gx] + 1
+            } else {
+                0
+            };
         }
         let mut stack: Vec<usize> = Vec::new();
         for i in 0..=gw {
@@ -154,7 +178,11 @@ pub fn fill_edges(img: &Rgb32f, alpha: &Plane) -> Rgb32f {
             b.data[i * 3 + c] = (p[c].max(1e-6)).ln();
         }
     }
-    let wgt: Vec<f32> = alpha.data.iter().map(|a| if *a >= 0.999 { 1.0 } else { 0.0 }).collect();
+    let wgt: Vec<f32> = alpha
+        .data
+        .iter()
+        .map(|a| if *a >= 0.999 { 1.0 } else { 0.0 })
+        .collect();
     push_pull(&mut b, &wgt);
     let mut out = img.clone();
     for (i, p) in out.data.iter_mut().enumerate() {
@@ -201,7 +229,10 @@ mod tests {
         let before = a.data.iter().filter(|v| **v >= 0.5).count();
         let (_, a2) = boundary_warp(&img, &a, 1.0);
         let after = a2.data.iter().filter(|v| **v >= 0.5).count();
-        assert!(after as f64 > 0.97 * (w * h) as f64 && after > before, "{before} → {after}");
+        assert!(
+            after as f64 > 0.97 * (w * h) as f64 && after > before,
+            "{before} → {after}"
+        );
         let (_, a0) = boundary_warp(&img, &a, 0.0);
         assert_eq!(a0, a);
         let filled = fill_edges(&img, &a);

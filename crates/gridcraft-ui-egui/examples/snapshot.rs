@@ -81,20 +81,31 @@ fn main() {
     }
     let mut session = Session::new();
     if let Some(p) = &input {
-        session.execute("file.open", json!({"path": p})).expect("open");
+        session
+            .execute("file.open", json!({"path": p}))
+            .expect("open");
     } else if let Some(s) = &sample {
-        session.execute("file.new", json!({"sample": s})).expect("sample");
+        session
+            .execute("file.new", json!({"sample": s}))
+            .expect("sample");
     } else {
         session.new_workbook();
     }
     for c in &cmds {
-        let (id, p) = c.split_once('=').map(|(a, b)| (a.to_string(), serde_json::from_str(b).unwrap_or(json!({})))).unwrap_or((c.clone(), json!({})));
+        let (id, p) = c
+            .split_once('=')
+            .map(|(a, b)| (a.to_string(), serde_json::from_str(b).unwrap_or(json!({}))))
+            .unwrap_or((c.clone(), json!({})));
         if let Err(e) = session.execute(&id, p) {
             eprintln!("{id}: {e}");
         }
     }
-    let mut harness =
-        egui_kittest::Harness::builder().with_size(egui::vec2(size.0, size.1)).with_pixels_per_point(scale).with_max_steps(12).wgpu().build_ui_state(
+    let mut harness = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(size.0, size.1))
+        .with_pixels_per_point(scale)
+        .with_max_steps(12)
+        .wgpu()
+        .build_ui_state(
             move |ui, app: &mut SheetApp| {
                 let ctx = ui.ctx().clone();
                 app.logic(&ctx);
@@ -114,14 +125,22 @@ fn main() {
                 app.grid.pane = pane;
                 app.selected_chart = chart;
                 if let Some(d) = &dialog {
-                    let (name, p) =
-                        d.split_once('=').map(|(a, b)| (a, serde_json::from_str(b).unwrap_or(json!({})))).unwrap_or((d.as_str(), json!({})));
+                    let (name, p) = d
+                        .split_once('=')
+                        .map(|(a, b)| (a, serde_json::from_str(b).unwrap_or(json!({}))))
+                        .unwrap_or((d.as_str(), json!({})));
                     app.open_dialog(name, p);
                 }
                 // Page Layout view: edit the first page's centre header (or footer) section.
-                let active = app.session.active().and_then(|d| d.wb.active().cloned().map(|s| (d.wb.active_sheet, s)));
+                let active = app
+                    .session
+                    .active()
+                    .and_then(|d| d.wb.active().cloned().map(|s| (d.wb.active_sheet, s)));
                 if let (Some(part), Some((si, sh))) = (&hf_edit, active) {
-                    let zone = gridcraft_engine::paper::HfZone { footer: part == "footer", section: 1 };
+                    let zone = gridcraft_engine::paper::HfZone {
+                        footer: part == "footer",
+                        section: 1,
+                    };
                     gridcraft_ui_egui::paper_view::begin(&mut app, si, &sh, (0, 0), zone);
                 }
                 app

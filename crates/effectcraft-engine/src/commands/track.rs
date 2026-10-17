@@ -6,12 +6,17 @@
 //! (group uid, name or 1-based index); both default to the Tracker panel's Current Track.
 
 use effectcraft_project::build::Ids;
-use effectcraft_project::tracking::{self, LowConfidence, TrackChannel, TrackKind, TrackerSettings};
+use effectcraft_project::tracking::{
+    self, LowConfidence, TrackChannel, TrackKind, TrackerSettings,
+};
 use effectcraft_project::{ItemId, Layer, LayerId, Node, PropGroup, Uid, Value};
 use effectcraft_time::Tick;
 use serde_json::json;
 
-use super::{CommandSpec, b_p, bad, comp_id, f_p, frontend, has_comp, layer_mut, layer_p, resolve_layer, str_p};
+use super::{
+    CommandSpec, b_p, bad, comp_id, f_p, frontend, has_comp, layer_mut, layer_p, resolve_layer,
+    str_p,
+};
 use crate::tracking::{Dims, Direction, Work, point_values};
 use crate::{EngineError, Result, Session, cmd, query};
 
@@ -19,8 +24,24 @@ type V = serde_json::Value;
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("track.motion", "Track Motion", ["Animation"], None, "{layer?}", can_track, |s, p| new_with(s, p, TrackKind::Transform, "track.motion")),
-        cmd!("track.stabilize", "Stabilize Motion", ["Animation"], None, "{layer?}", can_track, |s, p| new_with(s, p, TrackKind::Stabilize, "track.stabilize")),
+        cmd!(
+            "track.motion",
+            "Track Motion",
+            ["Animation"],
+            None,
+            "{layer?}",
+            can_track,
+            |s, p| new_with(s, p, TrackKind::Transform, "track.motion")
+        ),
+        cmd!(
+            "track.stabilize",
+            "Stabilize Motion",
+            ["Animation"],
+            None,
+            "{layer?}",
+            can_track,
+            |s, p| new_with(s, p, TrackKind::Stabilize, "track.stabilize")
+        ),
         cmd!(
             "track.new",
             "New Tracker",
@@ -30,8 +51,24 @@ pub fn specs() -> Vec<CommandSpec> {
             can_track,
             new_tracker
         ),
-        cmd!("track.property", "Track this Property", ["Animation"], None, "{layer?, source?: layer}", has_prop_selected, track_property),
-        cmd!("track.select", "Current Track", [], None, "{layer?, tracker?: uid|name|#n}", has_comp, select),
+        cmd!(
+            "track.property",
+            "Track this Property",
+            ["Animation"],
+            None,
+            "{layer?, source?: layer}",
+            has_prop_selected,
+            track_property
+        ),
+        cmd!(
+            "track.select",
+            "Current Track",
+            [],
+            None,
+            "{layer?, tracker?: uid|name|#n}",
+            has_comp,
+            select
+        ),
         cmd!(
             "track.setType",
             "Track Type",
@@ -41,7 +78,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_track,
             set_type
         ),
-        cmd!("track.setTarget", "Edit Target", [], None, "{layer?, tracker?, target: layer|null}", has_track, set_target),
+        cmd!(
+            "track.setTarget",
+            "Edit Target",
+            [],
+            None,
+            "{layer?, tracker?, target: layer|null}",
+            has_track,
+            set_target
+        ),
         cmd!(
             "track.options",
             "Motion Tracker Options",
@@ -69,20 +114,77 @@ pub fn specs() -> Vec<CommandSpec> {
             has_track,
             analyze
         ),
-        cmd!("track.stop", "Stop Analysis", [], None, "{}", is_tracking, |s, _| Ok(json!({"stopped": s.stop_track() | s.stop_mask_track() | s.stop_warp()}))),
-        cmd!("track.apply", "Apply", [], None, "{layer?, tracker?, dimensions?: xy|x|y}", has_track, apply),
-        cmd!("track.reset", "Reset", [], None, "{layer?, tracker?}", has_track, reset),
-        cmd!("track.delete", "Delete Tracker", [], None, "{layer?, tracker?}", has_track, delete),
-        cmd!("track.editTargetDialog", "Edit Target...", [], None, "{}", has_track, |s, p| frontend(s, "track.editTargetDialog", p)),
-        cmd!("track.optionsDialog", "Options...", [], None, "{}", has_track, |s, p| frontend(s, "track.optionsDialog", p)),
-        query!("track.status", "Tracker Status", "{layer?, tracker?}", status),
+        cmd!(
+            "track.stop",
+            "Stop Analysis",
+            [],
+            None,
+            "{}",
+            is_tracking,
+            |s, _| Ok(json!({"stopped": s.stop_track() | s.stop_mask_track() | s.stop_warp()}))
+        ),
+        cmd!(
+            "track.apply",
+            "Apply",
+            [],
+            None,
+            "{layer?, tracker?, dimensions?: xy|x|y}",
+            has_track,
+            apply
+        ),
+        cmd!(
+            "track.reset",
+            "Reset",
+            [],
+            None,
+            "{layer?, tracker?}",
+            has_track,
+            reset
+        ),
+        cmd!(
+            "track.delete",
+            "Delete Tracker",
+            [],
+            None,
+            "{layer?, tracker?}",
+            has_track,
+            delete
+        ),
+        cmd!(
+            "track.editTargetDialog",
+            "Edit Target...",
+            [],
+            None,
+            "{}",
+            has_track,
+            |s, p| frontend(s, "track.editTargetDialog", p)
+        ),
+        cmd!(
+            "track.optionsDialog",
+            "Options...",
+            [],
+            None,
+            "{}",
+            has_track,
+            |s, p| frontend(s, "track.optionsDialog", p)
+        ),
+        query!(
+            "track.status",
+            "Tracker Status",
+            "{layer?, tracker?}",
+            status
+        ),
     ]
 }
 
 // ---------- enablement ----------
 
 fn trackable(l: &Layer) -> bool {
-    l.has_video() && !matches!(l.source, effectcraft_project::LayerSource::Text | effectcraft_project::LayerSource::Shape)
+    l.has_video()
+        && !matches!(
+            l.source,
+            effectcraft_project::LayerSource::Text | effectcraft_project::LayerSource::Shape
+        )
 }
 
 fn can_track(s: &Session) -> std::result::Result<(), String> {
@@ -97,15 +199,26 @@ fn can_track(s: &Session) -> std::result::Result<(), String> {
 
 fn has_prop_selected(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_props.is_empty() { Err("select a property to track".into()) } else { Ok(()) }
+    if s.state.selected_props.is_empty() {
+        Err("select a property to track".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_track(s: &Session) -> std::result::Result<(), String> {
-    current(s, &json!({}), "track").map(|_| ()).map_err(|e| e.to_string().replace("invalid parameters for `track`: ", ""))
+    current(s, &json!({}), "track").map(|_| ()).map_err(|e| {
+        e.to_string()
+            .replace("invalid parameters for `track`: ", "")
+    })
 }
 
 fn is_tracking(s: &Session) -> std::result::Result<(), String> {
-    if s.is_tracking() || s.is_mask_tracking() || s.is_warp_analyzing() { Ok(()) } else { Err("no track analysis is running".into()) }
+    if s.is_tracking() || s.is_mask_tracking() || s.is_warp_analyzing() {
+        Ok(())
+    } else {
+        Err("no track analysis is running".into())
+    }
 }
 
 // ---------- addressing ----------
@@ -123,7 +236,10 @@ pub(crate) fn current(s: &Session, p: &V, cmd: &str) -> Result<(ItemId, LayerId,
                 .selected_layers
                 .iter()
                 .copied()
-                .find(|l| comp.layer(*l).is_some_and(|l| l.trackers().next().is_some()))
+                .find(|l| {
+                    comp.layer(*l)
+                        .is_some_and(|l| l.trackers().next().is_some())
+                })
                 .ok_or_else(|| bad(cmd, "no current track: use Track Motion first"))?,
         },
     };
@@ -131,11 +247,23 @@ pub(crate) fn current(s: &Session, p: &V, cmd: &str) -> Result<(ItemId, LayerId,
     let uid = match p.get("tracker") {
         Some(V::Number(n)) => {
             let n = n.as_u64().unwrap_or(0);
-            layer.tracker(n).map(|(g, _)| g.uid).or_else(|| layer.trackers().nth((n as usize).saturating_sub(1)).map(|(g, _)| g.uid))
+            layer.tracker(n).map(|(g, _)| g.uid).or_else(|| {
+                layer
+                    .trackers()
+                    .nth((n as usize).saturating_sub(1))
+                    .map(|(g, _)| g.uid)
+            })
         }
-        Some(V::String(name)) => match name.strip_prefix('#').and_then(|i| i.parse::<usize>().ok()) {
-            Some(i) => layer.trackers().nth(i.saturating_sub(1)).map(|(g, _)| g.uid),
-            None => layer.trackers().find(|(g, _)| &g.name == name).map(|(g, _)| g.uid),
+        Some(V::String(name)) => match name.strip_prefix('#').and_then(|i| i.parse::<usize>().ok())
+        {
+            Some(i) => layer
+                .trackers()
+                .nth(i.saturating_sub(1))
+                .map(|(g, _)| g.uid),
+            None => layer
+                .trackers()
+                .find(|(g, _)| &g.name == name)
+                .map(|(g, _)| g.uid),
         },
         _ => match s.state.current_track {
             Some((l, t)) if l == lid && layer.tracker(t).is_some() => Some(t),
@@ -146,15 +274,24 @@ pub(crate) fn current(s: &Session, p: &V, cmd: &str) -> Result<(ItemId, LayerId,
     Ok((cid, lid, uid))
 }
 
-fn tracker_mut(proj: &mut effectcraft_project::Project, cid: ItemId, lid: LayerId, uid: Uid) -> Result<&mut PropGroup> {
-    layer_mut(proj, cid, lid)?.props.find_group_mut(uid).ok_or_else(|| EngineError::Other("tracker gone".into()))
+fn tracker_mut(
+    proj: &mut effectcraft_project::Project,
+    cid: ItemId,
+    lid: LayerId,
+    uid: Uid,
+) -> Result<&mut PropGroup> {
+    layer_mut(proj, cid, lid)?
+        .props
+        .find_group_mut(uid)
+        .ok_or_else(|| EngineError::Other("tracker gone".into()))
 }
 
 fn layer_size(s: &Session, cid: ItemId, l: &Layer) -> [f64; 2] {
     let (w, h) = effectcraft_render::source_size(&s.project, l);
     if w == 0 {
         let c = s.project.comp(cid);
-        c.map(|c| [c.width as f64, c.height as f64]).unwrap_or([1920.0, 1080.0])
+        c.map(|c| [c.width as f64, c.height as f64])
+            .unwrap_or([1920.0, 1080.0])
     } else {
         [w as f64, h as f64]
     }
@@ -168,7 +305,12 @@ fn layer_above(comp: &effectcraft_project::Comp, lid: LayerId) -> Option<LayerId
 
 fn kind_p(p: &V, cmd: &str) -> Result<Option<TrackKind>> {
     match str_p(p, "kind") {
-        Some(k) => TrackKind::from_name(k).map(Some).ok_or_else(|| bad(cmd, format!("unknown kind `{k}` (transform|stabilize|affine|perspective|raw)"))),
+        Some(k) => TrackKind::from_name(k).map(Some).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown kind `{k}` (transform|stabilize|affine|perspective|raw)"),
+            )
+        }),
         None => Ok(None),
     }
 }
@@ -190,7 +332,10 @@ fn create(s: &mut Session, p: &V, cmd: &str) -> Result<V> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
     if !trackable(layer) {
-        return Err(bad(cmd, format!("layer `{}` has no pixels to track", layer.name)));
+        return Err(bad(
+            cmd,
+            format!("layer `{}` has no pixels to track", layer.name),
+        ));
     }
     let kind = kind_p(p, cmd)?.unwrap_or_default();
     let mut st = TrackerSettings::new(kind);
@@ -200,7 +345,9 @@ fn create(s: &mut Session, p: &V, cmd: &str) -> Result<V> {
     // Motion Target: the layer above the tracked layer (Stabilize applies to the layer itself).
     st.target = match p.get("target") {
         Some(V::Null) => None,
-        Some(v) => Some(resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no target layer {v}")))?),
+        Some(v) => {
+            Some(resolve_layer(comp, v).ok_or_else(|| bad(cmd, format!("no target layer {v}")))?)
+        }
         None if kind == TrackKind::Stabilize => Some(lid),
         None => layer_above(comp, lid),
     };
@@ -214,7 +361,10 @@ fn create(s: &mut Session, p: &V, cmd: &str) -> Result<V> {
         let mut ids = Ids(&mut next);
         let g = tracking::tracker(&mut ids, &name, st, &pts);
         let uid = g.uid;
-        l.motion_trackers_mut(&mut ids).ok_or_else(|| bad(cmd, "the layer has no Motion Trackers group"))?.children.push(g.into());
+        l.motion_trackers_mut(&mut ids)
+            .ok_or_else(|| bad(cmd, "the layer has no Motion Trackers group"))?
+            .children
+            .push(g.into());
         proj.next_id = next;
         state.current_track = Some((lid, uid));
         state.selected_layers = vec![lid];
@@ -229,11 +379,20 @@ fn track_property(s: &mut Session, p: &V) -> Result<V> {
     let cid = comp_id(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let target = match p.get("layer") {
-        Some(v) => resolve_layer(comp, v).ok_or_else(|| bad("track.property", format!("no layer {v}")))?,
-        None => s.state.selected_props.first().map(|(l, _)| *l).ok_or_else(|| bad("track.property", "select a property first"))?,
+        Some(v) => {
+            resolve_layer(comp, v).ok_or_else(|| bad("track.property", format!("no layer {v}")))?
+        }
+        None => s
+            .state
+            .selected_props
+            .first()
+            .map(|(l, _)| *l)
+            .ok_or_else(|| bad("track.property", "select a property first"))?,
     };
     let source = match p.get("source") {
-        Some(v) => resolve_layer(comp, v).ok_or_else(|| bad("track.property", format!("no layer {v}")))?,
+        Some(v) => {
+            resolve_layer(comp, v).ok_or_else(|| bad("track.property", format!("no layer {v}")))?
+        }
         None => {
             let ti = comp.layers.iter().position(|l| l.id == target).unwrap_or(0);
             comp.layers
@@ -245,7 +404,11 @@ fn track_property(s: &mut Session, p: &V) -> Result<V> {
                 .ok_or_else(|| bad("track.property", "no layer to track"))?
         }
     };
-    create(s, &json!({"layer": source.0, "kind": "transform", "target": target.0, "comp": cid.0}), "track.property")
+    create(
+        s,
+        &json!({"layer": source.0, "kind": "transform", "target": target.0, "comp": cid.0}),
+        "track.property",
+    )
 }
 
 // ---------- settings ----------
@@ -267,7 +430,9 @@ fn set_type(s: &mut Session, p: &V) -> Result<V> {
     let n = s.edit("Track Type", None, |proj, _| {
         let mut next = proj.next_id;
         let g = tracker_mut(proj, cid, lid, uid)?;
-        let st = g.tracker_settings_mut().ok_or_else(|| bad("track.setType", "not a tracker"))?;
+        let st = g
+            .tracker_settings_mut()
+            .ok_or_else(|| bad("track.setType", "not a tracker"))?;
         if let Some(k) = kind {
             if k == TrackKind::Stabilize {
                 st.target = Some(lid);
@@ -276,7 +441,11 @@ fn set_type(s: &mut Session, p: &V) -> Result<V> {
             }
             st.kind = k;
         }
-        for (k, f) in [("position", &mut st.position), ("rotation", &mut st.rotation), ("scale", &mut st.scale)] {
+        for (k, f) in [
+            ("position", &mut st.position),
+            ("rotation", &mut st.rotation),
+            ("scale", &mut st.scale),
+        ] {
             if let Some(v) = b_p(p, k) {
                 *f = v;
             }
@@ -297,7 +466,9 @@ fn set_type(s: &mut Session, p: &V) -> Result<V> {
             let defaults = tracking::default_points(kind, n, size);
             let mut ids = Ids(&mut next);
             for (i, d) in defaults.iter().enumerate().skip(have) {
-                g.children.push(tracking::track_point(&mut ids, &format!("Track Point {}", i + 1), d).into());
+                g.children.push(
+                    tracking::track_point(&mut ids, &format!("Track Point {}", i + 1), d).into(),
+                );
             }
         }
         proj.next_id = next;
@@ -311,12 +482,20 @@ fn set_target(s: &mut Session, p: &V) -> Result<V> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let target = match p.get("target") {
         None | Some(V::Null) => None,
-        Some(v) => Some(resolve_layer(comp, v).ok_or_else(|| bad("track.setTarget", format!("no layer {v}")))?),
+        Some(v) => Some(
+            resolve_layer(comp, v)
+                .ok_or_else(|| bad("track.setTarget", format!("no layer {v}")))?,
+        ),
     };
     s.edit("Edit Target", None, |proj, _| {
-        let st = tracker_mut(proj, cid, lid, uid)?.tracker_settings_mut().ok_or_else(|| bad("track.setTarget", "not a tracker"))?;
+        let st = tracker_mut(proj, cid, lid, uid)?
+            .tracker_settings_mut()
+            .ok_or_else(|| bad("track.setTarget", "not a tracker"))?;
         if st.kind == TrackKind::Stabilize && target.is_some_and(|t| t != lid) {
-            return Err(bad("track.setTarget", "Stabilize applies to the tracked layer"));
+            return Err(bad(
+                "track.setTarget",
+                "Stabilize applies to the tracked layer",
+            ));
         }
         st.target = target;
         Ok(())
@@ -342,7 +521,12 @@ fn options(s: &mut Session, p: &V) -> Result<V> {
             Some(effectcraft_track::ConfidenceAction::Stop) => LowConfidence::Stop,
             Some(effectcraft_track::ConfidenceAction::Extrapolate) => LowConfidence::Extrapolate,
             Some(effectcraft_track::ConfidenceAction::Adapt) => LowConfidence::Adapt,
-            None => return Err(bad("track.options", "action: continue|stop|extrapolate|adapt")),
+            None => {
+                return Err(bad(
+                    "track.options",
+                    "action: continue|stop|extrapolate|adapt",
+                ));
+            }
         }),
     };
     let r = s.edit("Motion Tracker Options", None, |proj, _| {
@@ -350,7 +534,10 @@ fn options(s: &mut Session, p: &V) -> Result<V> {
         if let Some(n) = str_p(p, "name") {
             g.name = n.to_string();
         }
-        let o = &mut g.tracker_settings_mut().ok_or_else(|| bad("track.options", "not a tracker"))?.options;
+        let o = &mut g
+            .tracker_settings_mut()
+            .ok_or_else(|| bad("track.options", "not a tracker"))?
+            .options;
         if let Some(c) = channel {
             o.channel = c;
         }
@@ -390,13 +577,22 @@ fn set_point(s: &mut Session, p: &V) -> Result<V> {
     let n = p.get("point").and_then(V::as_u64).unwrap_or(1).max(1) as usize;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).map(|t| comp.frame_rate.snap_nearest(t)).unwrap_or_else(|| s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .map(|t| comp.frame_rate.snap_nearest(t))
+        .unwrap_or_else(|| s.time());
     let lt = layer.layer_time(t);
     let merge = super::merge_p(p).map(str::to_string);
     s.edit("Move Track Point", merge.as_deref(), |proj, _| {
         let g = tracker_mut(proj, cid, lid, uid)?;
-        let tp_uid = g.track_points().nth(n - 1).map(|g| g.uid).ok_or_else(|| bad("track.setPoint", format!("no track point {n}")))?;
-        let tp = g.find_group_mut(tp_uid).ok_or_else(|| bad("track.setPoint", "no track point"))?;
+        let tp_uid = g
+            .track_points()
+            .nth(n - 1)
+            .map(|g| g.uid)
+            .ok_or_else(|| bad("track.setPoint", format!("no track point {n}")))?;
+        let tp = g
+            .find_group_mut(tp_uid)
+            .ok_or_else(|| bad("track.setPoint", "no track point"))?;
         let cur = point_values(tp, lt);
         let mut center = vec2_p(p, "center").unwrap_or(cur.spec.center);
         if let Some(d) = vec2_p(p, "move") {
@@ -408,13 +604,25 @@ fn set_point(s: &mut Session, p: &V) -> Result<V> {
             }
         };
         set(tp, "featureCenter", center);
-        for (k, m) in [("featureSize", "featureSize"), ("searchOffset", "searchOffset"), ("searchSize", "searchSize"), ("attachOffset", "attachPointOffset")] {
+        for (k, m) in [
+            ("featureSize", "featureSize"),
+            ("searchOffset", "searchOffset"),
+            ("searchSize", "searchSize"),
+            ("attachOffset", "attachPointOffset"),
+        ] {
             if let Some(v) = vec2_p(p, k) {
-                let v = if k.ends_with("Size") { [v[0].max(4.0), v[1].max(4.0)] } else { v };
+                let v = if k.ends_with("Size") {
+                    [v[0].max(4.0), v[1].max(4.0)]
+                } else {
+                    v
+                };
                 set(tp, m, v);
             }
         }
-        let off = tp.get("attachPointOffset").map(|pr| pr.value_at(lt).as_vec2()).unwrap_or([0.0; 2]);
+        let off = tp
+            .get("attachPointOffset")
+            .map(|pr| pr.value_at(lt).as_vec2())
+            .unwrap_or([0.0; 2]);
         set(tp, "attachPoint", [center[0] + off[0], center[1] + off[1]]);
         Ok(())
     })?;
@@ -426,18 +634,34 @@ fn set_point(s: &mut Session, p: &V) -> Result<V> {
 fn analyze(s: &mut Session, p: &V) -> Result<V> {
     let (cid, lid, uid) = current(s, p, "track.analyze")?;
     let dir = match str_p(p, "direction") {
-        Some(d) => Direction::from_name(d).ok_or_else(|| bad("track.analyze", "direction: forward|backward|frameForward|frameBackward"))?,
+        Some(d) => Direction::from_name(d).ok_or_else(|| {
+            bad(
+                "track.analyze",
+                "direction: forward|backward|frameForward|frameBackward",
+            )
+        })?,
         None => Direction::Forward,
     };
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
-    let (tg, settings) = layer.tracker(uid).ok_or_else(|| bad("track.analyze", "no tracker"))?;
-    let now = comp.frame_rate.snap_nearest(if s.state.active_comp == Some(cid) { s.time() } else { Tick::ZERO });
+    let (tg, settings) = layer
+        .tracker(uid)
+        .ok_or_else(|| bad("track.analyze", "no tracker"))?;
+    let now = comp
+        .frame_rate
+        .snap_nearest(if s.state.active_comp == Some(cid) {
+            s.time()
+        } else {
+            Tick::ZERO
+        });
     let start = f_p(p, "start").map(|v| comp.frame_rate.snap_nearest(Tick::from_seconds_f64(v)));
     let end = f_p(p, "end").map(|v| comp.frame_rate.snap_nearest(Tick::from_seconds_f64(v)));
     let times = analysis_times(comp, layer, dir, now, start, end);
     if times.len() < 2 {
-        return Err(bad("track.analyze", "nothing to analyze in that direction (at the layer's end)"));
+        return Err(bad(
+            "track.analyze",
+            "nothing to analyze in that direction (at the layer's end)",
+        ));
     }
     let lt0 = layer.layer_time(times[0]);
     let points: Vec<_> = tg.track_points().map(|g| point_values(g, lt0)).collect();
@@ -457,7 +681,8 @@ fn analyze(s: &mut Session, p: &V) -> Result<V> {
     };
     s.state.current_track = Some((lid, uid));
     let wait = b_p(p, "wait").unwrap_or(false);
-    s.start_track(work, uid, dir, wait).map_err(EngineError::Other)?;
+    s.start_track(work, uid, dir, wait)
+        .map_err(EngineError::Other)?;
     let prog = s.track_progress();
     Ok(json!({
         "frames": times.len() - 1,
@@ -470,7 +695,14 @@ fn analyze(s: &mut Session, p: &V) -> Result<V> {
 
 /// Comp times to analyse from the CTI (`now`) in `dir`, bounded by `start` / `end` and the
 /// layer's In/Out points; the first is the start frame.
-pub(crate) fn analysis_times(comp: &effectcraft_project::Comp, layer: &Layer, dir: Direction, now: Tick, start: Option<Tick>, end: Option<Tick>) -> Vec<Tick> {
+pub(crate) fn analysis_times(
+    comp: &effectcraft_project::Comp,
+    layer: &Layer,
+    dir: Direction,
+    now: Tick,
+    start: Option<Tick>,
+    end: Option<Tick>,
+) -> Vec<Tick> {
     let fd = comp.frame_duration();
     let lo = layer.in_point.max(Tick::ZERO);
     let hi = layer.out_point.min(comp.duration) - fd;
@@ -478,7 +710,11 @@ pub(crate) fn analysis_times(comp: &effectcraft_project::Comp, layer: &Layer, di
     match dir {
         Direction::Forward | Direction::FrameForward => {
             let mut t = start.unwrap_or(now).clamp(lo, hi);
-            let stop = if dir == Direction::FrameForward { t + fd } else { end.unwrap_or(hi).min(hi) };
+            let stop = if dir == Direction::FrameForward {
+                t + fd
+            } else {
+                end.unwrap_or(hi).min(hi)
+            };
             while t <= stop && t <= hi {
                 times.push(t);
                 t += fd;
@@ -486,7 +722,11 @@ pub(crate) fn analysis_times(comp: &effectcraft_project::Comp, layer: &Layer, di
         }
         Direction::Backward | Direction::FrameBackward => {
             let mut t = end.unwrap_or(now).clamp(lo, hi);
-            let stop = if dir == Direction::FrameBackward { t - fd } else { start.unwrap_or(lo).max(lo) };
+            let stop = if dir == Direction::FrameBackward {
+                t - fd
+            } else {
+                start.unwrap_or(lo).max(lo)
+            };
             while t >= stop && t >= lo {
                 times.push(t);
                 t -= fd;
@@ -505,7 +745,9 @@ fn apply(s: &mut Session, p: &V) -> Result<V> {
     if s.is_tracking() {
         return Err(bad("track.apply", "wait for the analysis to finish"));
     }
-    let n = s.edit("Apply Track", None, |proj, _| crate::tracking::apply(proj, cid, lid, uid, dims).map_err(|e| bad("track.apply", e)))?;
+    let n = s.edit("Apply Track", None, |proj, _| {
+        crate::tracking::apply(proj, cid, lid, uid, dims).map_err(|e| bad("track.apply", e))
+    })?;
     Ok(json!({"frames": n}))
 }
 
@@ -554,7 +796,9 @@ fn delete(s: &mut Session, p: &V) -> Result<V> {
         if let Some(mt) = l.props.sub_mut(tracking::MOTION_TRACKERS) {
             mt.children.retain(|c| c.uid() != uid);
             if mt.children.is_empty() {
-                l.props.children.retain(|c| c.match_id() != tracking::MOTION_TRACKERS);
+                l.props
+                    .children
+                    .retain(|c| c.match_id() != tracking::MOTION_TRACKERS);
             }
         }
         if st.current_track == Some((lid, uid)) {
@@ -583,7 +827,10 @@ fn status(s: &mut Session, p: &V) -> Result<V> {
                 json!({"name": tp.name, "uid": tp.uid, "center": v.spec.center, "featureSize": v.spec.feature_size, "searchOffset": v.spec.search_offset, "searchSize": v.spec.search_size, "attachOffset": v.attach_offset, "keys": keys})
             })
             .collect();
-        let trackers: Vec<V> = layer.trackers().map(|(g, _)| json!({"uid": g.uid, "name": g.name})).collect();
+        let trackers: Vec<V> = layer
+            .trackers()
+            .map(|(g, _)| json!({"uid": g.uid, "name": g.name}))
+            .collect();
         out["layer"] = json!(lid.0);
         out["tracker"] = json!({"uid": uid, "name": g.name, "settings": st, "points": points});
         out["trackers"] = json!(trackers);

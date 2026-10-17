@@ -64,13 +64,19 @@ impl Policy {
     /// Create an empty policy with default decision set to `Prompt`.
     #[must_use]
     pub fn new() -> Self {
-        Self { rules_by_program: HashMap::new(), default_decision: Decision::Prompt }
+        Self {
+            rules_by_program: HashMap::new(),
+            default_decision: Decision::Prompt,
+        }
     }
 
     /// Create an empty policy with custom default decision.
     #[must_use]
     pub fn with_default_decision(default_decision: Decision) -> Self {
-        Self { rules_by_program: HashMap::new(), default_decision }
+        Self {
+            rules_by_program: HashMap::new(),
+            default_decision,
+        }
     }
 
     /// Add a prefix rule to the policy.
@@ -119,7 +125,7 @@ impl Policy {
                         } else {
                             Some(existing)
                         }
-                    },
+                    }
                 };
             }
         }
@@ -139,7 +145,9 @@ impl Policy {
         approval: ApprovalPolicy,
     ) -> PolicyEvaluation {
         let matched = self.evaluate(cmd);
-        let raw_decision = matched.as_ref().map_or(self.default_decision, |m| m.decision);
+        let raw_decision = matched
+            .as_ref()
+            .map_or(self.default_decision, |m| m.decision);
 
         match (raw_decision, approval) {
             (Decision::Allow, _) => PolicyEvaluation {
@@ -157,7 +165,7 @@ impl Policy {
                     matched_rule: matched,
                     explanation: Some(reason),
                 }
-            },
+            }
             (Decision::Prompt, ApprovalPolicy::Never) => {
                 // Autonomous No-HITL transformation: Prompt => Forbidden
                 let rule_reason = matched
@@ -176,7 +184,7 @@ impl Policy {
                     matched_rule: matched,
                     explanation: Some(explanation),
                 }
-            },
+            }
             (Decision::Prompt, _) => PolicyEvaluation {
                 decision: Decision::Prompt,
                 matched_rule: matched,
@@ -227,11 +235,15 @@ mod tests {
         policy.add_prefix_rule(r3);
 
         // "git status" => Allow
-        let eval_status = policy.evaluate(&["git".to_string(), "status".to_string()]).unwrap();
+        let eval_status = policy
+            .evaluate(&["git".to_string(), "status".to_string()])
+            .unwrap();
         assert_eq!(eval_status.decision, Decision::Allow);
 
         // "git reset" => Prompt
-        let eval_reset = policy.evaluate(&["git".to_string(), "reset".to_string()]).unwrap();
+        let eval_reset = policy
+            .evaluate(&["git".to_string(), "reset".to_string()])
+            .unwrap();
         assert_eq!(eval_reset.decision, Decision::Prompt);
 
         // "git reset --hard HEAD" => Forbidden (max severity wins)
@@ -260,6 +272,11 @@ mod tests {
         // Under Never (No-HITL): becomes Forbidden with structured explanation
         let eval_nohitl = policy.evaluate_with_approval(&cmd, ApprovalPolicy::Never);
         assert_eq!(eval_nohitl.decision, Decision::Forbidden);
-        assert!(eval_nohitl.explanation.unwrap().contains("approval_policy is 'never'"));
+        assert!(
+            eval_nohitl
+                .explanation
+                .unwrap()
+                .contains("approval_policy is 'never'")
+        );
     }
 }

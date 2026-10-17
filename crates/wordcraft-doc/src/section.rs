@@ -224,7 +224,10 @@ impl NumFormat {
     /// (as Word shows it). So is `custom` (a Word 2010 format string, always written with a
     /// decimal fallback).
     pub fn from_ooxml(s: &str) -> NumFormat {
-        NumFormat::ALL.into_iter().find(|f| f.ooxml() == s).unwrap_or(NumFormat::Decimal)
+        NumFormat::ALL
+            .into_iter()
+            .find(|f| f.ooxml() == s)
+            .unwrap_or(NumFormat::Decimal)
     }
     /// Format `n` (1-based). Formats WordCraft doesn't draw yet (Hebrew, Arabic, Hindi, Thai,
     /// Vietnamese, Russian, text amounts) show decimal, as do values past a sequence's end
@@ -243,7 +246,9 @@ impl NumFormat {
             NumFormat::Bullet | NumFormat::None => String::new(),
             NumFormat::Chicago => chicago(n),
             NumFormat::NumberInDash => format!("- {n} -"),
-            NumFormat::IdeographDigital | NumFormat::KoreanDigital2 | NumFormat::TaiwaneseDigital => cjk::ideograph_digital(n),
+            NumFormat::IdeographDigital
+            | NumFormat::KoreanDigital2
+            | NumFormat::TaiwaneseDigital => cjk::ideograph_digital(n),
             NumFormat::JapaneseCounting => cjk::japanese_counting(n),
             NumFormat::JapaneseLegal => cjk::japanese_legal(n),
             NumFormat::JapaneseDigitalTenThousand => cjk::japanese_digital_ten_thousand(n),
@@ -251,7 +256,9 @@ impl NumFormat {
             NumFormat::AiueoFullWidth => cjk::aiueo_full_width(n),
             NumFormat::Iroha => cjk::iroha(n),
             NumFormat::IrohaFullWidth => cjk::iroha_full_width(n),
-            NumFormat::DecimalFullWidth | NumFormat::DecimalFullWidth2 => cjk::decimal_full_width(n),
+            NumFormat::DecimalFullWidth | NumFormat::DecimalFullWidth2 => {
+                cjk::decimal_full_width(n)
+            }
             NumFormat::DecimalEnclosedCircle => cjk::decimal_enclosed_circle(n),
             NumFormat::DecimalEnclosedCircleChinese => cjk::decimal_enclosed_circle_chinese(n),
             NumFormat::DecimalEnclosedFullstop => cjk::decimal_enclosed_fullstop(n),
@@ -376,7 +383,9 @@ const ONES: [&str; 20] = [
     "eighteen",
     "nineteen",
 ];
-const TENS: [&str; 10] = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+const TENS: [&str; 10] = [
+    "", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety",
+];
 
 /// English cardinal words, capitalised first letter (`Twenty-One`).
 pub fn cardinal_text(n: u32) -> String {
@@ -385,15 +394,27 @@ pub fn cardinal_text(n: u32) -> String {
             0..=19 => ONES.get(n as usize).copied().unwrap_or("").to_string(),
             20..=99 => {
                 let t = TENS.get((n / 10) as usize).copied().unwrap_or("");
-                if n.is_multiple_of(10) { t.to_string() } else { format!("{t}-{}", ONES.get((n % 10) as usize).copied().unwrap_or("")) }
+                if n.is_multiple_of(10) {
+                    t.to_string()
+                } else {
+                    format!("{t}-{}", ONES.get((n % 10) as usize).copied().unwrap_or(""))
+                }
             }
             100..=999 => {
                 let h = format!("{} hundred", words(n / 100));
-                if n.is_multiple_of(100) { h } else { format!("{h} {}", words(n % 100)) }
+                if n.is_multiple_of(100) {
+                    h
+                } else {
+                    format!("{h} {}", words(n % 100))
+                }
             }
             _ => {
                 let th = format!("{} thousand", words(n / 1000));
-                if n.is_multiple_of(1000) { th } else { format!("{th} {}", words(n % 1000)) }
+                if n.is_multiple_of(1000) {
+                    th
+                } else {
+                    format!("{th} {}", words(n % 1000))
+                }
             }
         }
     }
@@ -460,7 +481,14 @@ impl NotePos {
         }
     }
     pub fn from_ooxml(s: &str) -> Option<NotePos> {
-        [NotePos::PageBottom, NotePos::BeneathText, NotePos::SectEnd, NotePos::DocEnd].into_iter().find(|p| p.ooxml() == s)
+        [
+            NotePos::PageBottom,
+            NotePos::BeneathText,
+            NotePos::SectEnd,
+            NotePos::DocEnd,
+        ]
+        .into_iter()
+        .find(|p| p.ooxml() == s)
     }
 }
 
@@ -483,7 +511,13 @@ impl NoteRestart {
         }
     }
     pub fn from_ooxml(s: &str) -> Option<NoteRestart> {
-        [NoteRestart::Continuous, NoteRestart::EachSect, NoteRestart::EachPage].into_iter().find(|r| r.ooxml() == s)
+        [
+            NoteRestart::Continuous,
+            NoteRestart::EachSect,
+            NoteRestart::EachPage,
+        ]
+        .into_iter()
+        .find(|r| r.ooxml() == s)
     }
 }
 
@@ -548,7 +582,12 @@ pub struct Columns {
 
 impl Default for Columns {
     fn default() -> Self {
-        Columns { count: 1, space: 36.0, separator: false, widths: Vec::new() }
+        Columns {
+            count: 1,
+            space: 36.0,
+            separator: false,
+            widths: Vec::new(),
+        }
     }
 }
 
@@ -565,7 +604,12 @@ pub struct LineNumbering {
 
 impl Default for LineNumbering {
     fn default() -> Self {
-        LineNumbering { count_by: 1, start: 1, distance: 0.0, restart: LineNumberRestart::Page }
+        LineNumbering {
+            count_by: 1,
+            start: 1,
+            distance: 0.0,
+            restart: LineNumberRestart::Page,
+        }
     }
 }
 
@@ -603,7 +647,14 @@ impl DocGridType {
         }
     }
     pub fn from_ooxml(s: &str) -> Option<DocGridType> {
-        [DocGridType::Default, DocGridType::Lines, DocGridType::LinesAndChars, DocGridType::SnapToChars].into_iter().find(|t| t.ooxml() == s)
+        [
+            DocGridType::Default,
+            DocGridType::Lines,
+            DocGridType::LinesAndChars,
+            DocGridType::SnapToChars,
+        ]
+        .into_iter()
+        .find(|t| t.ooxml() == s)
     }
 }
 
@@ -629,24 +680,45 @@ pub struct DocGrid {
 impl Default for DocGrid {
     /// Word's grid for a new document: no grid, an 18 pt pitch kept for when one is turned on.
     fn default() -> Self {
-        DocGrid { kind: DocGridType::Default, line_pitch: 18.0, char_space: 0 }
+        DocGrid {
+            kind: DocGridType::Default,
+            line_pitch: 18.0,
+            char_space: 0,
+        }
     }
 }
 
 impl DocGrid {
     /// The line pitch, clamped to something layout can use.
     pub fn line_pitch(&self) -> f32 {
-        if self.line_pitch.is_finite() { self.line_pitch.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH) } else { 18.0 }
+        if self.line_pitch.is_finite() {
+            self.line_pitch.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
+        } else {
+            18.0
+        }
     }
     /// The character pitch for a document whose default font is `font_size` points.
     pub fn char_pitch(&self, font_size: f32) -> f32 {
-        let size = if font_size.is_finite() { font_size.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH) } else { 10.5 };
-        (size + self.char_space.clamp(-MAX_CHAR_SPACE, MAX_CHAR_SPACE) as f32 / 4096.0).clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
+        let size = if font_size.is_finite() {
+            font_size.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
+        } else {
+            10.5
+        };
+        (size + self.char_space.clamp(-MAX_CHAR_SPACE, MAX_CHAR_SPACE) as f32 / 4096.0)
+            .clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
     }
     /// The `w:charSpace` that gives `pitch` with the default font at `font_size` points.
     pub fn char_space_for(pitch: f32, font_size: f32) -> i32 {
-        let pitch = if pitch.is_finite() { pitch.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH) } else { font_size };
-        let size = if font_size.is_finite() { font_size.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH) } else { 10.5 };
+        let pitch = if pitch.is_finite() {
+            pitch.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
+        } else {
+            font_size
+        };
+        let size = if font_size.is_finite() {
+            font_size.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH)
+        } else {
+            10.5
+        };
         (((pitch - size) * 4096.0).round() as i32).clamp(-MAX_CHAR_SPACE, MAX_CHAR_SPACE)
     }
 }
@@ -750,7 +822,12 @@ impl SectionProps {
         }
         self.landscape = on;
         std::mem::swap(&mut self.page_w, &mut self.page_h);
-        let (t, b, l, r) = (self.margin_top, self.margin_bottom, self.margin_left, self.margin_right);
+        let (t, b, l, r) = (
+            self.margin_top,
+            self.margin_bottom,
+            self.margin_left,
+            self.margin_right,
+        );
         if on {
             self.margin_top = l;
             self.margin_bottom = r;
@@ -765,12 +842,21 @@ impl SectionProps {
     }
     /// The line grid's pitch, points, when the section has a line grid (any grid but "no grid").
     pub fn grid_line_pitch(&self) -> Option<f32> {
-        self.doc_grid.filter(|g| g.kind != DocGridType::Default).map(|g| g.line_pitch())
+        self.doc_grid
+            .filter(|g| g.kind != DocGridType::Default)
+            .map(|g| g.line_pitch())
     }
     /// The character grid's pitch, points, when the section has one (`linesAndChars`,
     /// `snapToChars`); `font_size` is the default font size (Normal style).
     pub fn grid_char_pitch(&self, font_size: f32) -> Option<f32> {
-        self.doc_grid.filter(|g| matches!(g.kind, DocGridType::LinesAndChars | DocGridType::SnapToChars)).map(|g| g.char_pitch(font_size))
+        self.doc_grid
+            .filter(|g| {
+                matches!(
+                    g.kind,
+                    DocGridType::LinesAndChars | DocGridType::SnapToChars
+                )
+            })
+            .map(|g| g.char_pitch(font_size))
     }
     /// Lines per page the line pitch gives (at least 1).
     pub fn grid_lines_per_page(&self) -> u32 {
@@ -788,23 +874,28 @@ impl SectionProps {
     pub fn column_boxes(&self) -> Vec<(f32, f32)> {
         let tw = self.text_width();
         let n = self.columns.count.clamp(1, 45) as usize;
-        let boxes: Vec<(f32, f32)> = if !self.columns.widths.is_empty() && self.columns.widths.len() == n {
-            let mut x = 0.0;
-            self.columns
-                .widths
-                .iter()
-                .map(|(w, sp)| {
-                    let b = (x, w.max(18.0));
-                    x += w + sp;
-                    b
-                })
-                .collect()
+        let boxes: Vec<(f32, f32)> =
+            if !self.columns.widths.is_empty() && self.columns.widths.len() == n {
+                let mut x = 0.0;
+                self.columns
+                    .widths
+                    .iter()
+                    .map(|(w, sp)| {
+                        let b = (x, w.max(18.0));
+                        x += w + sp;
+                        b
+                    })
+                    .collect()
+            } else {
+                let space = self.columns.space.max(0.0);
+                let w = ((tw - space * (n as f32 - 1.0)) / n as f32).max(18.0);
+                (0..n).map(|i| (i as f32 * (w + space), w)).collect()
+            };
+        if self.rtl {
+            boxes.into_iter().map(|(x, w)| (tw - x - w, w)).collect()
         } else {
-            let space = self.columns.space.max(0.0);
-            let w = ((tw - space * (n as f32 - 1.0)) / n as f32).max(18.0);
-            (0..n).map(|i| (i as f32 * (w + space), w)).collect()
-        };
-        if self.rtl { boxes.into_iter().map(|(x, w)| (tw - x - w, w)).collect() } else { boxes }
+            boxes
+        }
     }
 }
 
@@ -826,21 +917,38 @@ mod tests {
         assert_eq!(NumFormat::DecimalZero.format(3), "03");
         assert!(!NumFormat::UpperRoman.format(u32::MAX).is_empty());
         assert_eq!(NumFormat::LowerLetter.format(u32::MAX).len(), 30);
-        assert_eq!([NumFormat::Chicago.format(1), NumFormat::Chicago.format(6)], ["*", "\u{2020}\u{2020}"]);
+        assert_eq!(
+            [NumFormat::Chicago.format(1), NumFormat::Chicago.format(6)],
+            ["*", "\u{2020}\u{2020}"]
+        );
         assert_eq!(NumFormat::ChineseCounting.format(11), "十一");
         assert_eq!(NumFormat::ChineseCountingThousand.format(101), "一百零一");
         assert_eq!(NumFormat::DecimalEnclosedCircle.format(3), "③");
-        assert_eq!(NumFormat::Hebrew1.format(3), "3", "formats not drawn yet show decimal");
+        assert_eq!(
+            NumFormat::Hebrew1.format(3),
+            "3",
+            "formats not drawn yet show decimal"
+        );
         for f in NumFormat::ALL {
             assert_eq!(NumFormat::from_ooxml(f.ooxml()), f, "{f:?} round-trips");
-            assert!(f == NumFormat::Bullet || f == NumFormat::None || !f.format(u32::MAX).is_empty(), "{f:?}");
+            assert!(
+                f == NumFormat::Bullet || f == NumFormat::None || !f.format(u32::MAX).is_empty(),
+                "{f:?}"
+            );
         }
-        assert_eq!(NumFormat::from_ooxml("klingon"), NumFormat::Decimal, "unknown formats are decimal");
+        assert_eq!(
+            NumFormat::from_ooxml("klingon"),
+            NumFormat::Decimal,
+            "unknown formats are decimal"
+        );
     }
 
     #[test]
     fn landscape_swaps() {
-        let mut s = SectionProps { margin_left: 50.0, ..Default::default() };
+        let mut s = SectionProps {
+            margin_left: 50.0,
+            ..Default::default()
+        };
         s.set_landscape(true);
         assert_eq!((s.page_w, s.page_h), (792.0, 612.0));
         assert_eq!(s.margin_top, 50.0);
@@ -853,21 +961,40 @@ mod tests {
     fn grid_pitches_are_clamped() {
         let mut s = SectionProps::default();
         assert_eq!(s.grid_line_pitch(), None);
-        s.doc_grid = Some(DocGrid { kind: DocGridType::Lines, line_pitch: 0.0, char_space: i32::MIN });
+        s.doc_grid = Some(DocGrid {
+            kind: DocGridType::Lines,
+            line_pitch: 0.0,
+            char_space: i32::MIN,
+        });
         assert_eq!(s.grid_line_pitch(), Some(MIN_GRID_PITCH));
         assert_eq!(s.grid_char_pitch(10.5), None);
-        s.doc_grid = Some(DocGrid { kind: DocGridType::LinesAndChars, line_pitch: f32::NAN, char_space: i32::MIN });
+        s.doc_grid = Some(DocGrid {
+            kind: DocGridType::LinesAndChars,
+            line_pitch: f32::NAN,
+            char_space: i32::MIN,
+        });
         assert_eq!(s.grid_line_pitch(), Some(18.0));
         assert_eq!(s.grid_char_pitch(10.5), Some(MIN_GRID_PITCH));
         // 648 pt of text height at an 18 pt pitch: 36 lines; 468 pt / 13 pt = 36 characters.
-        s.doc_grid = Some(DocGrid { kind: DocGridType::LinesAndChars, line_pitch: 18.0, char_space: DocGrid::char_space_for(13.0, 10.5) });
+        s.doc_grid = Some(DocGrid {
+            kind: DocGridType::LinesAndChars,
+            line_pitch: 18.0,
+            char_space: DocGrid::char_space_for(13.0, 10.5),
+        });
         assert_eq!(s.grid_lines_per_page(), 36);
         assert_eq!(s.grid_chars_per_line(10.5), 36);
     }
 
     #[test]
     fn columns_split() {
-        let s = SectionProps { columns: Columns { count: 2, space: 36.0, ..Default::default() }, ..Default::default() };
+        let s = SectionProps {
+            columns: Columns {
+                count: 2,
+                space: 36.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
         let b = s.column_boxes();
         assert_eq!(b.len(), 2);
         assert_eq!(b[0], (0.0, 216.0));
@@ -876,11 +1003,23 @@ mod tests {
 
     #[test]
     fn rtl_columns_run_right_to_left() {
-        let s = SectionProps { rtl: true, columns: Columns { count: 2, space: 36.0, ..Default::default() }, ..Default::default() };
+        let s = SectionProps {
+            rtl: true,
+            columns: Columns {
+                count: 2,
+                space: 36.0,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
         assert_eq!(s.column_boxes(), vec![(252.0, 216.0), (0.0, 216.0)]);
         let s = SectionProps {
             rtl: true,
-            columns: Columns { count: 2, widths: vec![(100.0, 20.0), (200.0, 0.0)], ..Default::default() },
+            columns: Columns {
+                count: 2,
+                widths: vec![(100.0, 20.0), (200.0, 0.0)],
+                ..Default::default()
+            },
             ..Default::default()
         };
         // Text width 468: the first column hugs the right edge, the second sits 20pt to its left.

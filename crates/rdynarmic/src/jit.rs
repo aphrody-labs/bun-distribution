@@ -1734,9 +1734,7 @@ mod tests {
     #[repr(align(4096))]
     struct AlignedPage([u8; 0x1000]);
 
-    fn a32_packed_page_entry_config(
-        entry: u64,
-    ) -> (A32UserConfig, Vec<u64>, Box<AlignedPage>) {
+    fn a32_packed_page_entry_config(entry: u64) -> (A32UserConfig, Vec<u64>, Box<AlignedPage>) {
         const ATTRIBUTE_MASK: u64 = ((1u64 << 44) - 1) << 12;
         let code: [u32; 2] = [
             0xE590_1000, // ldr r1, [r0]
@@ -1752,7 +1750,11 @@ mod tests {
         page_memory.0[0..4].copy_from_slice(&0xCAFE_BABEu32.to_le_bytes());
         let mut page_table = vec![0u64; 1 << (16 - 12)];
         let packed_pointer = (page_memory.0.as_ptr() as u64).wrapping_sub(0x3000);
-        assert_eq!(packed_pointer & !ATTRIBUTE_MASK, 0, "test pointer must be attribute-free");
+        assert_eq!(
+            packed_pointer & !ATTRIBUTE_MASK,
+            0,
+            "test pointer must be attribute-free"
+        );
         page_table[3] = packed_pointer | entry;
 
         let mut config =
@@ -5817,9 +5819,8 @@ mod tests {
             for size in 0..3u32 {
                 // CRC destination aliases the accumulator; high data bits must be ignored.
                 let word = 0xe100_0042 | polynomial | (size << 21);
-                let mut config = A32UserConfig::new(Box::new(MockCallbacks::new(
-                    0x1000, &[word, 0xef00_0000],
-                )));
+                let mut config =
+                    A32UserConfig::new(Box::new(MockCallbacks::new(0x1000, &[word, 0xef00_0000])));
                 config.enable_cycle_counting = false;
                 config.code_cache_size = 16 * 1024 * 1024;
                 config.optimizations = OptimizationFlag::NO_OPTIMIZATIONS;
@@ -5827,7 +5828,11 @@ mod tests {
                 let accumulator = 0x89ab_cdefu32;
                 let data = 0xfedc_ba98u32;
                 let mut expected = accumulator;
-                let divisor = if polynomial == 0 { 0xedb8_8320 } else { 0x82f6_3b78 };
+                let divisor = if polynomial == 0 {
+                    0xedb8_8320
+                } else {
+                    0x82f6_3b78
+                };
                 for byte in data.to_le_bytes().into_iter().take(1 << size) {
                     expected ^= byte as u32;
                     for _ in 0..8 {
@@ -5839,7 +5844,11 @@ mod tests {
                 jit.set_register(15, 0x1000);
                 jit.set_cpsr(0xa800_0010);
                 assert!(jit.run().contains(HaltReason::SVC));
-                assert_eq!(jit.get_register(0), expected, "size={size}, polynomial={polynomial}");
+                assert_eq!(
+                    jit.get_register(0),
+                    expected,
+                    "size={size}, polynomial={polynomial}"
+                );
                 assert_eq!(jit.get_register(2), data);
                 assert_eq!(jit.get_cpsr(), 0xa800_0010);
             }

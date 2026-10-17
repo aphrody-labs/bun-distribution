@@ -34,8 +34,8 @@ use arrayvec::ArrayVec;
 use bevy_platform::{
     prelude::{Box, Vec},
     sync::{
-        atomic::{AtomicBool, AtomicPtr, AtomicU32, AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicBool, AtomicPtr, AtomicU32, AtomicU64, Ordering},
     },
 };
 use core::mem::ManuallyDrop;

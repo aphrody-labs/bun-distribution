@@ -9,10 +9,18 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     let p = photocraft_ui_egui::parity::compute();
     if args.iter().any(|a| a == "--json") {
-        println!("{}", serde_json::to_string_pretty(&p).expect("serialize parity"));
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&p).expect("serialize parity")
+        );
         return;
     }
-    println!("Photoshop menu parity: {} / {} live ({:.1}%)", p.live, p.total, p.percent());
+    println!(
+        "Photoshop menu parity: {} / {} live ({:.1}%)",
+        p.live,
+        p.total,
+        p.percent()
+    );
     for m in &p.menus {
         println!("  {:<8} {:>4} / {:<4}", m.menu, m.live, m.total);
     }

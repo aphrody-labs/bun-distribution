@@ -30,9 +30,15 @@ fn guides_are_selected_on_their_own() {
     assert!(s.guides.is_empty());
     // Toggled, a guide joins (or leaves) the selected objects.
     s.toggle_guide(0);
-    assert_eq!((s.objects.clone(), s.guides.clone()), (vec![NodeId(1)], vec![0]));
+    assert_eq!(
+        (s.objects.clone(), s.guides.clone()),
+        (vec![NodeId(1)], vec![0])
+    );
     s.toggle_guide(0);
-    assert_eq!((s.objects.clone(), s.guides.clone()), (vec![NodeId(1)], vec![]));
+    assert_eq!(
+        (s.objects.clone(), s.guides.clone()),
+        (vec![NodeId(1)], vec![])
+    );
     // Pruning drops guides the document no longer has.
     let mut d = Document::new(100.0, 100.0);
     d.guides.push(crate::Guide::new(true, 10.0));
@@ -45,15 +51,24 @@ fn guides_are_selected_on_their_own() {
 fn guides_show_and_lock_with_their_layer() {
     let mut d = Document::new(100.0, 100.0);
     let layer = d.layers[0].id;
-    let g = crate::Guide { layer: Some(layer), ..crate::Guide::new(true, 10.0) };
+    let g = crate::Guide {
+        layer: Some(layer),
+        ..crate::Guide::new(true, 10.0)
+    };
     assert!(d.guide_shown(&g) && d.guide_editable(&g));
     d.node_mut(layer).unwrap().locked = true;
-    assert!(d.guide_shown(&g) && !d.guide_editable(&g), "locked: shown, not editable");
+    assert!(
+        d.guide_shown(&g) && !d.guide_editable(&g),
+        "locked: shown, not editable"
+    );
     d.node_mut(layer).unwrap().visible = false;
     assert!(!d.guide_shown(&g) && !d.guide_editable(&g), "hidden");
     // On no layer, or a layer that's gone: always there.
     assert!(d.guide_shown(&crate::Guide::new(false, 5.0)));
-    let gone = crate::Guide { layer: Some(NodeId(9999)), ..crate::Guide::new(true, 1.0) };
+    let gone = crate::Guide {
+        layer: Some(NodeId(9999)),
+        ..crate::Guide::new(true, 1.0)
+    };
     assert!(d.guide_shown(&gone) && d.guide_editable(&gone));
     d.guides.push(g);
     assert_eq!(d.guides_on(layer).count(), 1);
@@ -68,7 +83,12 @@ fn guides_show_and_lock_with_their_layer() {
     // A guide saved before guides had layers reads as one on no layer.
     let old: crate::Guide = serde_json::from_str(r#"{"vertical": true, "pos": 5.0}"#).unwrap();
     assert_eq!(old.layer, None);
-    assert!(!serde_json::to_string(&crate::Guide::new(true, 5.0)).unwrap().contains("layer"), "nothing new written");
+    assert!(
+        !serde_json::to_string(&crate::Guide::new(true, 5.0))
+            .unwrap()
+            .contains("layer"),
+        "nothing new written"
+    );
 }
 
 #[test]
@@ -94,7 +114,11 @@ fn a_key_object_needs_two_or_more_selected_objects() {
     s.set([NodeId(1), NodeId(2)]);
     s.key = Some(NodeId(2));
     s.remove(NodeId(1));
-    assert_eq!(s.key, Some(NodeId(2)), "another object left: remove keeps the key");
+    assert_eq!(
+        s.key,
+        Some(NodeId(2)),
+        "another object left: remove keeps the key"
+    );
     s.remove(NodeId(2));
     assert_eq!(s.key, None, "the key object itself left");
     // Pruning drops objects the document no longer has and clears the key once no other
@@ -104,7 +128,10 @@ fn a_key_object_needs_two_or_more_selected_objects() {
     let mut ids = vec![];
     for _ in 0..4 {
         let id = d.alloc_id();
-        ids.push(d.insert(Some(layer), usize::MAX, crate::Node::group(id, vec![])).unwrap());
+        ids.push(
+            d.insert(Some(layer), usize::MAX, crate::Node::group(id, vec![]))
+                .unwrap(),
+        );
     }
     s.set(ids.iter().copied());
     s.key = Some(ids[3]);
@@ -116,11 +143,16 @@ fn a_key_object_needs_two_or_more_selected_objects() {
     assert_eq!(s.key, Some(ids[3]), "two objects left: the key stays");
     s.toggle(ids[2]);
     s.prune(&d);
-    assert_eq!((s.objects.clone(), s.key), (vec![ids[3]], None), "one object left");
+    assert_eq!(
+        (s.objects.clone(), s.key),
+        (vec![ids[3]], None),
+        "one object left"
+    );
     // A group key selected with only its own member is cleared too; another selected object
     // outside the group keeps it.
     let member = d.alloc_id();
-    d.insert(Some(ids[3]), usize::MAX, crate::Node::group(member, vec![])).unwrap();
+    d.insert(Some(ids[3]), usize::MAX, crate::Node::group(member, vec![]))
+        .unwrap();
     s.set([member, ids[3]]);
     s.key = Some(ids[3]);
     s.prune(&d);
@@ -159,7 +191,9 @@ fn random_document(r: &mut u64) -> (Document, Vec<NodeId>) {
     let mut ids = vec![];
     for _ in 0..3 {
         let mut layer = Node::layer(d.alloc_id(), "L", crate::LayerColor::Preset(0));
-        let children = (0..1 + below(r, 4)).map(|_| random_group(&mut d, r, 3, &mut ids)).collect();
+        let children = (0..1 + below(r, 4))
+            .map(|_| random_group(&mut d, r, 3, &mut ids))
+            .collect();
         if let Some(c) = layer.children_mut() {
             *c = children;
         }
@@ -173,7 +207,12 @@ fn random_document(r: &mut u64) -> (Document, Vec<NodeId>) {
 fn random_selection(r: &mut u64, ids: &[NodeId]) -> Selection {
     let mut s = Selection::default();
     let missing = (below(r, 2) == 0).then_some(NodeId(u64::MAX));
-    s.set(ids.iter().copied().filter(|_| below(r, 2) == 0).chain(missing));
+    s.set(
+        ids.iter()
+            .copied()
+            .filter(|_| below(r, 2) == 0)
+            .chain(missing),
+    );
     let k = below(r, s.objects.len() as u64) as usize;
     s.objects.rotate_left(k);
     for &o in &s.objects {
@@ -188,8 +227,14 @@ fn random_selection(r: &mut u64, ids: &[NodeId]) -> Selection {
             _ => {}
         }
     }
-    s.key = s.objects.get(below(r, s.objects.len() as u64) as usize).copied();
-    s.target = ids.get(below(r, ids.len() as u64) as usize).copied().filter(|_| below(r, 2) == 0);
+    s.key = s
+        .objects
+        .get(below(r, s.objects.len() as u64) as usize)
+        .copied();
+    s.target = ids
+        .get(below(r, ids.len() as u64) as usize)
+        .copied()
+        .filter(|_| below(r, 2) == 0);
     s.slices = ids.iter().copied().take(below(r, 3) as usize).collect();
     s.guides = vec![1, 0];
     s
@@ -213,7 +258,8 @@ fn deselect_uneditable_matches_removing_one_at_a_time() {
         actual.deselect_uneditable(&d);
         assert_eq!(actual, expected, "seed {seed}");
         unchanged += usize::from(actual == s);
-        partial += usize::from(!actual.objects.is_empty() && actual.objects.len() < s.objects.len());
+        partial +=
+            usize::from(!actual.objects.is_empty() && actual.objects.len() < s.objects.len());
     }
     assert!(unchanged > 10 && partial > 100, "{unchanged} {partial}");
 }

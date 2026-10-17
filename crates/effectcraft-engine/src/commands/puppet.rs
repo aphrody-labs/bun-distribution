@@ -32,13 +32,26 @@ fn pt(v: Option<&Value>) -> Option<[f64; 2]> {
 
 /// The Puppet effect's input pixels and evaluated parameters at comp time `t`. The input comes
 /// from the layer cache, shared: moving pins doesn't change it (#212).
-pub fn puppet_eval(s: &Session, cid: ItemId, lid: LayerId, fx_uid: Uid, t: Tick) -> Option<(std::sync::Arc<Buf>, Params)> {
+pub fn puppet_eval(
+    s: &Session,
+    cid: ItemId,
+    lid: LayerId,
+    fx_uid: Uid,
+    t: Tick,
+) -> Option<(std::sync::Arc<Buf>, Params)> {
     let comp = s.project.comp(cid)?;
     let layer = comp.layer(lid)?;
     let fx = layer.effects()?;
     let index = fx.groups().position(|g| g.uid == fx_uid)?;
     let g = fx.groups().nth(index)?;
-    let ctx = EvalCtx { project: &s.project, comp_id: cid, comp, time: t, expr: s.expr.as_deref(), footage: None };
+    let ctx = EvalCtx {
+        project: &s.project,
+        comp_id: cid,
+        comp,
+        time: t,
+        expr: s.expr.as_deref(),
+        footage: None,
+    };
     let mut r = Renderer::new(&s.project, &*s.footage, RenderOpts::default());
     r.expr = s.expr.as_deref();
     r.cache = Some(&s.layer_cache);
@@ -48,16 +61,28 @@ pub fn puppet_eval(s: &Session, cid: ItemId, lid: LayerId, fx_uid: Uid, t: Tick)
 }
 
 fn find_puppet(s: &Session, cid: ItemId, lid: LayerId) -> Option<Uid> {
-    s.project.comp(cid)?.layer(lid)?.effects()?.groups().find(|g| puppet::is_puppet(g)).map(|g| g.uid)
+    s.project
+        .comp(cid)?
+        .layer(lid)?
+        .effects()?
+        .groups()
+        .find(|g| puppet::is_puppet(g))
+        .map(|g| g.uid)
 }
 
 fn snapped(s: &Session, cid: ItemId, p: &Value) -> Result<Tick> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    Ok(comp.frame_rate.snap_nearest(super::time_p(s, p, Some(comp))))
+    Ok(comp
+        .frame_rate
+        .snap_nearest(super::time_p(s, p, Some(comp))))
 }
 
 fn layer_time(s: &Session, cid: ItemId, lid: LayerId, t: Tick) -> Result<Tick> {
-    let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
+    let l = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .ok_or(EngineError::NoComp)?;
     Ok(l.layer_time(t))
 }
 
@@ -65,16 +90,29 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "puppet.addPin";
     let (cid, lid) = layer_p(s, p, cmd)?;
     let kind = match str_p(p, "kind") {
-        Some(k) => PinKind::from_name(k).ok_or_else(|| bad(cmd, format!("unknown kind `{k}` (position | advanced | bend | starch | overlap)")))?,
+        Some(k) => PinKind::from_name(k).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown kind `{k}` (position | advanced | bend | starch | overlap)"),
+            )
+        })?,
         None => PinKind::Position,
     };
-    let at = pt(p.get("position")).ok_or_else(|| bad(cmd, "missing `position` [x, y] (effect space)"))?;
+    let at = pt(p.get("position"))
+        .ok_or_else(|| bad(cmd, "missing `position` [x, y] (effect space)"))?;
     let t = snapped(s, cid, p)?;
     let lt = layer_time(s, cid, lid, t)?;
     {
-        let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
+        let l = s
+            .project
+            .comp(cid)
+            .and_then(|c| c.layer(lid))
+            .ok_or(EngineError::NoComp)?;
         if l.effects().is_none() || !l.source.is_av() {
-            return Err(bad(cmd, "the Puppet tools work on footage, solid, text, shape and precomp layers"));
+            return Err(bad(
+                cmd,
+                "the Puppet tools work on footage, solid, text, shape and precomp layers",
+            ));
         }
     }
     // Which mesh: the one under the click (through the current deformation), else a new one.
@@ -93,7 +131,11 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
                 continue;
             }
             let inside = puppet::contains(mesh, def, at);
-            let near = def.iter().map(|v| (v[0] - at[0]).hypot(v[1] - at[1])).fold(f64::MAX, f64::min) < 12.0;
+            let near = def
+                .iter()
+                .map(|v| (v[0] - at[0]).hypot(v[1] - at[1]))
+                .fold(f64::MAX, f64::min)
+                < 12.0;
             if inside || near || want_mesh.is_some() {
                 let rest = puppet::unmap(mesh, def, at);
                 // A moving pin holds its nearest mesh vertex at `position + (vertex - rest)`
@@ -102,7 +144,9 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
                 // mesh that is the click itself.
                 let now = (0..mesh.verts.len().min(def.len()))
                     .filter(|_| kind.moves())
-                    .min_by(|a, b| dist2(mesh.verts[*a], rest).total_cmp(&dist2(mesh.verts[*b], rest)))
+                    .min_by(|a, b| {
+                        dist2(mesh.verts[*a], rest).total_cmp(&dist2(mesh.verts[*b], rest))
+                    })
                     .and_then(|v| {
                         let (r, d) = (mesh.verts.get(v)?, def.get(v)?);
                         Some([d[0] - (r[0] - rest[0]), d[1] - (r[1] - rest[1])])
@@ -138,19 +182,25 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let (fx, mesh, pin) = s.edit(label, None, |proj, st| {
         let mut next = proj.next_id;
         let l = layer_mut(proj, cid, lid)?;
-        let fxg = l.props.sub_mut("effects").ok_or_else(|| bad(cmd, "no effects"))?;
+        let fxg = l
+            .props
+            .sub_mut("effects")
+            .ok_or_else(|| bad(cmd, "no effects"))?;
         let mut ids = Ids(&mut next);
         let fx_uid = match fx_uid {
             Some(u) => u,
             None => {
-                let spec = effectcraft_effects::find(puppet::ID).ok_or_else(|| EngineError::Other("Puppet effect missing".into()))?;
+                let spec = effectcraft_effects::find(puppet::ID)
+                    .ok_or_else(|| EngineError::Other("Puppet effect missing".into()))?;
                 let g = effectcraft_effects::instantiate(spec, &mut ids, "Puppet", size);
                 let u = g.uid;
                 fxg.children.push(g.into());
                 u
             }
         };
-        let pg = fxg.find_group_mut(fx_uid).ok_or_else(|| bad(cmd, "Puppet effect gone"))?;
+        let pg = fxg
+            .find_group_mut(fx_uid)
+            .ok_or_else(|| bad(cmd, "Puppet effect gone"))?;
         let (mesh_uid, rest, now) = match target {
             Some(t) => t,
             None => {
@@ -162,7 +212,9 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
             }
         };
         let name = puppet::next_pin_name(pg, kind);
-        let mg = pg.find_group_mut(mesh_uid).ok_or_else(|| bad(cmd, "mesh gone"))?;
+        let mg = pg
+            .find_group_mut(mesh_uid)
+            .ok_or_else(|| bad(cmd, "mesh gone"))?;
         let mut pin = puppet::pin_group(&mut ids, &name, kind, rest);
         if let Some(pos) = pin.get_mut("position") {
             if kind.moves() {
@@ -173,24 +225,42 @@ fn add_pin(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
         let pin_uid = pin.uid;
-        let deform = mg.sub_mut("deform").ok_or_else(|| bad(cmd, "mesh has no Deform group"))?;
+        let deform = mg
+            .sub_mut("deform")
+            .ok_or_else(|| bad(cmd, "mesh has no Deform group"))?;
         deform.children.push(pin.into());
         proj.next_id = next;
         st.selected_props = vec![(lid, pin_uid)];
         Ok((fx_uid, mesh_uid, pin_uid))
     })?;
-    Ok(json!({"effect": fx, "mesh": mesh, "pin": pin, "rest": [target.map(|x| x.1).unwrap_or(at)[0], target.map(|x| x.1).unwrap_or(at)[1]]}))
+    Ok(
+        json!({"effect": fx, "mesh": mesh, "pin": pin, "rest": [target.map(|x| x.1).unwrap_or(at)[0], target.map(|x| x.1).unwrap_or(at)[1]]}),
+    )
 }
 
 /// The pin groups of a layer's Puppet effects, in stack order.
 pub(crate) fn layer_pins(l: &Layer) -> impl Iterator<Item = &PropGroup> {
-    l.effects().into_iter().flat_map(|fx| fx.groups().filter(|g| puppet::is_puppet(g))).flat_map(puppet::meshes).flat_map(puppet::pins)
+    l.effects()
+        .into_iter()
+        .flat_map(|fx| fx.groups().filter(|g| puppet::is_puppet(g)))
+        .flat_map(puppet::meshes)
+        .flat_map(puppet::pins)
 }
 
 /// Selected puppet pins of the active comp: (layer, pin uid).
 pub(crate) fn selected_pins(s: &Session) -> Vec<(LayerId, Uid)> {
-    let Some(c) = s.active_comp() else { return vec![] };
-    s.state.selected_props.iter().filter(|(l, u)| c.layer(*l).is_some_and(|l| layer_pins(l).any(|g| g.uid == *u))).copied().collect()
+    let Some(c) = s.active_comp() else {
+        return vec![];
+    };
+    s.state
+        .selected_props
+        .iter()
+        .filter(|(l, u)| {
+            c.layer(*l)
+                .is_some_and(|l| layer_pins(l).any(|g| g.uid == *u))
+        })
+        .copied()
+        .collect()
 }
 
 /// Edit ▸ Select All with puppet pins selected: every pin of the selected pins' kinds on their
@@ -198,7 +268,8 @@ pub(crate) fn selected_pins(s: &Session) -> Vec<(LayerId, Uid)> {
 pub(crate) fn select_all_of_kind(s: &mut Session) -> Option<Value> {
     let sel = selected_pins(s);
     let comp = s.active_comp()?;
-    let kind = |g: &PropGroup| PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0));
+    let kind =
+        |g: &PropGroup| PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0));
     let mut kinds = vec![];
     for (l, u) in &sel {
         if let Some(g) = comp.layer(*l).and_then(|l| l.props.find_group(*u)) {
@@ -208,21 +279,36 @@ pub(crate) fn select_all_of_kind(s: &mut Session) -> Option<Value> {
     if kinds.is_empty() {
         return None;
     }
-    let all: Vec<(LayerId, Uid)> =
-        comp.layers.iter().flat_map(|l| layer_pins(l).filter(|g| kinds.contains(&(l.id, kind(g)))).map(|g| (l.id, g.uid)).collect::<Vec<_>>()).collect();
+    let all: Vec<(LayerId, Uid)> = comp
+        .layers
+        .iter()
+        .flat_map(|l| {
+            layer_pins(l)
+                .filter(|g| kinds.contains(&(l.id, kind(g))))
+                .map(|g| (l.id, g.uid))
+                .collect::<Vec<_>>()
+        })
+        .collect();
     s.state.selected_props = all.clone();
     Some(json!({ "pins": all.iter().map(|(_, u)| *u).collect::<Vec<_>>() }))
 }
 
 /// Find a pin group (uid or name) in the layer's Puppet effects.
 fn pin_uid(s: &Session, cid: ItemId, lid: LayerId, key: &Value, cmd: &str) -> Result<Uid> {
-    let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
+    let l = s
+        .project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .ok_or(EngineError::NoComp)?;
     let hit = |pin: &&PropGroup| match key {
         Value::Number(n) => n.as_u64() == Some(pin.uid),
         Value::String(name) => &pin.name == name,
         _ => false,
     };
-    layer_pins(l).find(hit).map(|g| g.uid).ok_or_else(|| bad(cmd, format!("no puppet pin {key}")))
+    layer_pins(l)
+        .find(hit)
+        .map(|g| g.uid)
+        .ok_or_else(|| bad(cmd, format!("no puppet pin {key}")))
 }
 
 /// Pins named by `pin` or `pins` (uids or names) on `layer`, else the selected pins (of `layer`
@@ -236,16 +322,26 @@ pub(crate) fn pins_p(s: &Session, p: &Value, cmd: &str) -> Result<Vec<(ItemId, L
     };
     if !keys.is_empty() {
         let (cid, lid) = layer_p(s, p, cmd)?;
-        return keys.iter().map(|k| pin_uid(s, cid, lid, k, cmd).map(|u| (cid, lid, u))).collect();
+        return keys
+            .iter()
+            .map(|k| pin_uid(s, cid, lid, k, cmd).map(|u| (cid, lid, u)))
+            .collect();
     }
     let cid = s.active_comp_id().ok_or(EngineError::NoComp)?;
     let only = match p.get("layer") {
         Some(_) => Some(layer_p(s, p, cmd)?.1),
         None => None,
     };
-    let sel: Vec<_> = selected_pins(s).into_iter().filter(|(l, _)| only.is_none_or(|o| o == *l)).map(|(l, u)| (cid, l, u)).collect();
+    let sel: Vec<_> = selected_pins(s)
+        .into_iter()
+        .filter(|(l, _)| only.is_none_or(|o| o == *l))
+        .map(|(l, u)| (cid, l, u))
+        .collect();
     if sel.is_empty() {
-        return Err(bad(cmd, "missing `pin` / `pins` (uids or names), and no puppet pins are selected"));
+        return Err(bad(
+            cmd,
+            "missing `pin` / `pins` (uids or names), and no puppet pins are selected",
+        ));
     }
     Ok(sel)
 }
@@ -258,7 +354,10 @@ fn select_pins(s: &mut Session, p: &Value) -> Result<Value> {
         Some(Value::Array(a)) if a.is_empty() => vec![],
         _ => pins_p(s, p, cmd)?,
     };
-    let (add, toggle) = (super::b_p(p, "add").unwrap_or(false), super::b_p(p, "toggle").unwrap_or(false));
+    let (add, toggle) = (
+        super::b_p(p, "add").unwrap_or(false),
+        super::b_p(p, "toggle").unwrap_or(false),
+    );
     let st = &mut s.state;
     if !add && !toggle {
         st.selected_props.clear();
@@ -280,15 +379,27 @@ fn select_pins(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(json!({ "pins": selected_pins(s).iter().map(|(_, u)| *u).collect::<Vec<_>>() }))
 }
 
-fn with_pin<T>(s: &mut Session, p: &Value, cmd: &str, label: &str, f: impl FnOnce(&mut PropGroup, Tick) -> Result<T>) -> Result<T> {
+fn with_pin<T>(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    label: &str,
+    f: impl FnOnce(&mut PropGroup, Tick) -> Result<T>,
+) -> Result<T> {
     let (cid, lid) = layer_p(s, p, cmd)?;
-    let key = p.get("pin").cloned().ok_or_else(|| bad(cmd, "missing `pin` (uid or name)"))?;
+    let key = p
+        .get("pin")
+        .cloned()
+        .ok_or_else(|| bad(cmd, "missing `pin` (uid or name)"))?;
     let uid = pin_uid(s, cid, lid, &key, cmd)?;
     let t = snapped(s, cid, p)?;
     let lt = layer_time(s, cid, lid, t)?;
     s.edit(label, merge_p(p), |proj, st| {
         let l = layer_mut(proj, cid, lid)?;
-        let g = l.props.find_group_mut(uid).ok_or_else(|| bad(cmd, "pin gone"))?;
+        let g = l
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| bad(cmd, "pin gone"))?;
         let r = f(g, lt)?;
         st.selected_props = vec![(lid, uid)];
         Ok(r)
@@ -297,10 +408,16 @@ fn with_pin<T>(s: &mut Session, p: &Value, cmd: &str, label: &str, f: impl FnOnc
 
 fn move_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "puppet.movePin";
-    let to = pt(p.get("position")).ok_or_else(|| bad(cmd, "missing `position` [x, y] (effect space)"))?;
+    let to = pt(p.get("position"))
+        .ok_or_else(|| bad(cmd, "missing `position` [x, y] (effect space)"))?;
     with_pin(s, p, cmd, "Move Puppet Pin", |g, lt| {
         let kind = PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0));
-        let pos = g.get_mut("position").ok_or_else(|| bad(cmd, "Bend pins have no position (use puppet.setPin rotation/scale)"))?;
+        let pos = g.get_mut("position").ok_or_else(|| {
+            bad(
+                cmd,
+                "Bend pins have no position (use puppet.setPin rotation/scale)",
+            )
+        })?;
         pos.set_value_at(lt, KV::Vec2(to));
         // Starch and Overlap pins sit on the rest mesh: moving them moves their region.
         if !kind.moves()
@@ -315,17 +432,28 @@ fn move_pin(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn set_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "puppet.setPin";
-    let fields: Vec<(&str, KV)> = [("scale", "scale"), ("rotation", "rotation"), ("amount", "amount"), ("extent", "extent"), ("inFront", "in_front")]
-        .iter()
-        .filter_map(|(k, m)| f_p(p, k).map(|v| (*m, KV::Scalar(v))))
-        .chain(pt(p.get("position")).map(|v| ("position", KV::Vec2(v))))
-        .collect();
+    let fields: Vec<(&str, KV)> = [
+        ("scale", "scale"),
+        ("rotation", "rotation"),
+        ("amount", "amount"),
+        ("extent", "extent"),
+        ("inFront", "in_front"),
+    ]
+    .iter()
+    .filter_map(|(k, m)| f_p(p, k).map(|v| (*m, KV::Scalar(v))))
+    .chain(pt(p.get("position")).map(|v| ("position", KV::Vec2(v))))
+    .collect();
     if fields.is_empty() {
-        return Err(bad(cmd, "nothing to set (position, scale, rotation, amount, extent, inFront)"));
+        return Err(bad(
+            cmd,
+            "nothing to set (position, scale, rotation, amount, extent, inFront)",
+        ));
     }
     with_pin(s, p, cmd, "Edit Puppet Pin", |g, lt| {
         for (m, v) in fields {
-            let pr = g.get_mut(m).ok_or_else(|| bad(cmd, format!("this pin has no `{m}`")))?;
+            let pr = g
+                .get_mut(m)
+                .ok_or_else(|| bad(cmd, format!("this pin has no `{m}`")))?;
             pr.set_value_at(lt, v);
         }
         Ok(())
@@ -335,7 +463,11 @@ fn set_pin(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn remove_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let pins = pins_p(s, p, "puppet.removePin")?;
-    let label = if pins.len() == 1 { "Delete Puppet Pin" } else { "Delete Puppet Pins" };
+    let label = if pins.len() == 1 {
+        "Delete Puppet Pin"
+    } else {
+        "Delete Puppet Pins"
+    };
     s.edit(label, None, |proj, st| {
         for (cid, lid, uid) in &pins {
             let l = layer_mut(proj, *cid, *lid)?;
@@ -351,7 +483,10 @@ fn remove_pin(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn mesh_opts(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "puppet.mesh";
-    let fields: Vec<(&str, f64)> = ["density", "expansion", "triangles"].iter().filter_map(|k| f_p(p, k).map(|v| (*k, v))).collect();
+    let fields: Vec<(&str, f64)> = ["density", "expansion", "triangles"]
+        .iter()
+        .filter_map(|k| f_p(p, k).map(|v| (*k, v)))
+        .collect();
     if let Some(b) = p.get("showMesh").and_then(Value::as_bool) {
         s.state.puppet.show_mesh = b;
     }
@@ -374,7 +509,8 @@ fn mesh_opts(s: &mut Session, p: &Value) -> Result<Value> {
         }
         Err(e) => return Err(e),
     };
-    let fx = find_puppet(s, cid, lid).ok_or_else(|| bad(cmd, "the layer has no Puppet effect (add a pin first)"))?;
+    let fx = find_puppet(s, cid, lid)
+        .ok_or_else(|| bad(cmd, "the layer has no Puppet effect (add a pin first)"))?;
     let want = p.get("mesh").and_then(Value::as_u64);
     let t = snapped(s, cid, p)?;
     let lt = layer_time(s, cid, lid, t)?;
@@ -387,7 +523,10 @@ fn mesh_opts(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit("Puppet Mesh", merge_p(p), |proj, _| {
         let l = layer_mut(proj, cid, lid)?;
-        let g = l.props.find_group_mut(fx).ok_or_else(|| bad(cmd, "Puppet effect gone"))?;
+        let g = l
+            .props
+            .find_group_mut(fx)
+            .ok_or_else(|| bad(cmd, "Puppet effect gone"))?;
         let mut done = 0;
         for c in g.children.iter_mut() {
             let Node::Group(m) = c else { continue };
@@ -401,20 +540,29 @@ fn mesh_opts(s: &mut Session, p: &Value) -> Result<Value> {
             }
             done += 1;
         }
-        if done == 0 { Err(bad(cmd, "no such mesh")) } else { Ok(()) }
+        if done == 0 {
+            Err(bad(cmd, "no such mesh"))
+        } else {
+            Ok(())
+        }
     })?;
     Ok(Value::Null)
 }
 
 /// Parse recorded samples `[[t, x, y]…]` (t = seconds since the drag began, effect space).
 fn samples(p: &Value, cmd: &str) -> Result<Vec<(f64, [f64; 2])>> {
-    let arr = p
-        .get("samples")
-        .and_then(Value::as_array)
-        .ok_or_else(|| bad(cmd, "missing `samples`: [[t, x, y]…] (t = seconds since the drag began, effect space)"))?;
+    let arr = p.get("samples").and_then(Value::as_array).ok_or_else(|| {
+        bad(
+            cmd,
+            "missing `samples`: [[t, x, y]…] (t = seconds since the drag began, effect space)",
+        )
+    })?;
     let mut rec = Vec::with_capacity(arr.len());
     for (i, v) in arr.iter().enumerate() {
-        let a: Vec<f64> = v.as_array().map(|a| a.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+        let a: Vec<f64> = v
+            .as_array()
+            .map(|a| a.iter().filter_map(Value::as_f64).collect())
+            .unwrap_or_default();
         if a.len() < 3 || a.iter().any(|x| !x.is_finite()) {
             return Err(bad(cmd, format!("sample {i}: expected [t, x, y]")));
         }
@@ -435,7 +583,10 @@ fn samples(p: &Value, cmd: &str) -> Result<Vec<(f64, [f64; 2])>> {
 fn record_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "puppet.recordPin";
     let (cid, lid) = layer_p(s, p, cmd)?;
-    let key = p.get("pin").cloned().ok_or_else(|| bad(cmd, "missing `pin` (uid or name)"))?;
+    let key = p
+        .get("pin")
+        .cloned()
+        .ok_or_else(|| bad(cmd, "missing `pin` (uid or name)"))?;
     let uid = pin_uid(s, cid, lid, &key, cmd)?;
     let rec = samples(p, cmd)?;
     // Several selected pins dragged together (`pins`): each follows the drag's displacement from
@@ -454,15 +605,29 @@ fn record_pin(s: &mut Session, p: &Value) -> Result<Value> {
             if pins.iter().any(|(x, _)| *x == u) {
                 continue;
             }
-            let l = s.project.comp(cid).and_then(|c| c.layer(lid)).ok_or(EngineError::NoComp)?;
-            let at = l.props.find_group(u).and_then(|g| g.get("position")).map(|pr| pr.value_at(lt).as_vec2());
-            pins.push((u, at.ok_or_else(|| bad(cmd, "only Position and Advanced pins record motion"))?));
+            let l = s
+                .project
+                .comp(cid)
+                .and_then(|c| c.layer(lid))
+                .ok_or(EngineError::NoComp)?;
+            let at = l
+                .props
+                .find_group(u)
+                .and_then(|g| g.get("position"))
+                .map(|pr| pr.value_at(lt).as_vec2());
+            pins.push((
+                u,
+                at.ok_or_else(|| bad(cmd, "only Position and Advanced pins record motion"))?,
+            ));
         }
         let o = rec[0].1;
         return super::app_more::grouped(s, "Record Puppet Pins", |s| {
             let mut last = Value::Null;
             for (u, base) in &pins {
-                let moved: Vec<Value> = rec.iter().map(|(t, q)| json!([t, base[0] + q[0] - o[0], base[1] + q[1] - o[1]])).collect();
+                let moved: Vec<Value> = rec
+                    .iter()
+                    .map(|(t, q)| json!([t, base[0] + q[0] - o[0], base[1] + q[1] - o[1]]))
+                    .collect();
                 let mut one = p.clone();
                 if let Some(m) = one.as_object_mut() {
                     m.remove("pins");
@@ -476,9 +641,15 @@ fn record_pin(s: &mut Session, p: &Value) -> Result<Value> {
         });
     }
     let opts = &s.state.puppet;
-    let speed = f_p(p, "speed").unwrap_or(opts.record_speed).clamp(1.0, 10_000.0) / 100.0;
+    let speed = f_p(p, "speed")
+        .unwrap_or(opts.record_speed)
+        .clamp(1.0, 10_000.0)
+        / 100.0;
     // Smoothing 10 (the default) keeps the path within 1 layer pixel of the drag.
-    let smoothing = f_p(p, "smoothing").unwrap_or(opts.record_smoothing).max(0.0) / 10.0;
+    let smoothing = f_p(p, "smoothing")
+        .unwrap_or(opts.record_smoothing)
+        .max(0.0)
+        / 10.0;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let fr = comp.frame_rate;
     let fd = fr.frame_duration().seconds();
@@ -492,23 +663,37 @@ fn record_pin(s: &mut Session, p: &Value) -> Result<Value> {
     let span = (rec[rec.len() - 1].0 - t_rec0) * speed;
     let nframes = (span / fd).round().max(0.0) as i64;
     let at = |secs: f64| {
-        let i = rec.partition_point(|r| r.0 <= secs).clamp(1, rec.len().max(2) - 1);
+        let i = rec
+            .partition_point(|r| r.0 <= secs)
+            .clamp(1, rec.len().max(2) - 1);
         if rec.len() == 1 {
             return rec[0].1;
         }
         let (a, b) = (rec[i - 1], rec[i]);
-        let f = if b.0 > a.0 { ((secs - a.0) / (b.0 - a.0)).clamp(0.0, 1.0) } else { 1.0 };
-        [a.1[0] + (b.1[0] - a.1[0]) * f, a.1[1] + (b.1[1] - a.1[1]) * f]
+        let f = if b.0 > a.0 {
+            ((secs - a.0) / (b.0 - a.0)).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        [
+            a.1[0] + (b.1[0] - a.1[0]) * f,
+            a.1[1] + (b.1[1] - a.1[1]) * f,
+        ]
     };
     let n = s.edit("Record Puppet Pin", None, |proj, st| {
         let l = layer_mut(proj, cid, lid)?;
         let lc = l.clone();
-        let g = l.props.find_group_mut(uid).ok_or_else(|| bad(cmd, "pin gone"))?;
+        let g = l
+            .props
+            .find_group_mut(uid)
+            .ok_or_else(|| bad(cmd, "pin gone"))?;
         let kind = PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0));
         if !kind.moves() {
             return Err(bad(cmd, "only Position and Advanced pins record motion"));
         }
-        let pos = g.get_mut("position").ok_or_else(|| bad(cmd, "the pin has no Position"))?;
+        let pos = g
+            .get_mut("position")
+            .ok_or_else(|| bad(cmd, "the pin has no Position"))?;
         let mut new: Vec<Keyframe> = vec![];
         for k in 0..=nframes {
             let f = f0 + k;
@@ -518,20 +703,42 @@ fn record_pin(s: &mut Session, p: &Value) -> Result<Value> {
             let q = at(t_rec0 + k as f64 * fd / speed);
             new.push(Keyframe::new(lc.layer_time(fr.tick_of(f)), KV::Vec2(q)));
         }
-        let (Some(t0), Some(t1)) = (new.first().map(|k| k.time), new.last().map(|k| k.time)) else { return Ok(0) };
-        let mut keys: Vec<Keyframe> = pos.keys.iter().filter(|k| k.time < t0 || k.time > t1).cloned().collect();
+        let (Some(t0), Some(t1)) = (new.first().map(|k| k.time), new.last().map(|k| k.time)) else {
+            return Ok(0);
+        };
+        let mut keys: Vec<Keyframe> = pos
+            .keys
+            .iter()
+            .filter(|k| k.time < t0 || k.time > t1)
+            .cloned()
+            .collect();
         keys.extend(new);
         keys.sort_by_key(|k| k.time);
-        let (a, b) = (keys.iter().position(|k| k.time == t0).unwrap_or(0), keys.iter().position(|k| k.time == t1).unwrap_or(0));
+        let (a, b) = (
+            keys.iter().position(|k| k.time == t0).unwrap_or(0),
+            keys.iter().position(|k| k.time == t1).unwrap_or(0),
+        );
         if smoothing > 0.0 && b > a + 1 {
-            let samples: Vec<(Tick, Vec<f64>)> = keys[a..=b].iter().map(|k| (k.time, k.value.components())).collect();
+            let samples: Vec<(Tick, Vec<f64>)> = keys[a..=b]
+                .iter()
+                .map(|k| (k.time, k.value.components()))
+                .collect();
             keys = super::anim_tools::smooth_keys(&keys, a, b, &samples, smoothing, true);
         }
         pos.keys = keys;
         pos.value = KV::Vec2(rec[0].1);
         let puid = pos.uid;
         st.selected_props = vec![(lid, uid)];
-        st.selected_keys = pos.keys.iter().filter(|k| k.time >= t0 && k.time <= t1).map(|k| crate::KeyRef { layer: lid, prop: puid, time: k.time }).collect();
+        st.selected_keys = pos
+            .keys
+            .iter()
+            .filter(|k| k.time >= t0 && k.time <= t1)
+            .map(|k| crate::KeyRef {
+                layer: lid,
+                prop: puid,
+                time: k.time,
+            })
+            .collect();
         Ok(st.selected_keys.len())
     })?;
     // The current time returns to where recording began.
@@ -552,18 +759,34 @@ fn follow(s: &mut Session, p: &Value) -> Result<Value> {
         Some(k) => {
             let (cid, lid) = layer_p(s, p, cmd)?;
             let leader = pin_uid(s, cid, lid, k, cmd)?;
-            let rest: Vec<Uid> = pins_p(s, p, cmd)?.into_iter().filter(|(_, l, u)| *l == lid && *u != leader).map(|x| x.2).collect();
+            let rest: Vec<Uid> = pins_p(s, p, cmd)?
+                .into_iter()
+                .filter(|(_, l, u)| *l == lid && *u != leader)
+                .map(|x| x.2)
+                .collect();
             (cid, lid, leader, rest)
         }
         None => {
             let sel = pins_p(s, p, cmd)?;
             let (cid, lid, leader) = sel[0];
-            (cid, lid, leader, sel.iter().skip(1).filter(|(_, l, _)| *l == lid).map(|x| x.2).collect())
+            (
+                cid,
+                lid,
+                leader,
+                sel.iter()
+                    .skip(1)
+                    .filter(|(_, l, _)| *l == lid)
+                    .map(|x| x.2)
+                    .collect(),
+            )
         }
     };
     followers.dedup();
     if followers.is_empty() {
-        return Err(bad(cmd, "select the leader pin first, then the pins that follow it (or pass `leader` and `pins`)"));
+        return Err(bad(
+            cmd,
+            "select the leader pin first, then the pins that follow it (or pass `leader` and `pins`)",
+        ));
     }
     let delay = f_p(p, "delay").unwrap_or(0.1).clamp(0.0, 10.0);
     let amount = f_p(p, "amount").unwrap_or(100.0) / 100.0;
@@ -572,29 +795,55 @@ fn follow(s: &mut Session, p: &Value) -> Result<Value> {
     let layer = comp.layer(lid).ok_or(EngineError::NoComp)?;
     // (Position uid, rest) of a pin that moves.
     let moving = |uid: Uid| -> Result<(Uid, [f64; 2], String)> {
-        let g = layer.props.find_group(uid).ok_or_else(|| bad(cmd, "pin gone"))?;
+        let g = layer
+            .props
+            .find_group(uid)
+            .ok_or_else(|| bad(cmd, "pin gone"))?;
         if !PinKind::from_index(g.get("kind").map(|k| k.value.as_enum()).unwrap_or(0)).moves() {
-            return Err(bad(cmd, format!("`{}` has no Position (only Position and Advanced pins follow or lead)", g.name)));
+            return Err(bad(
+                cmd,
+                format!(
+                    "`{}` has no Position (only Position and Advanced pins follow or lead)",
+                    g.name
+                ),
+            ));
         }
-        let pos = g.get("position").ok_or_else(|| bad(cmd, "the pin has no Position"))?;
-        Ok((pos.uid, g.get("rest").map(|r| r.value.as_vec2()).unwrap_or([0.0; 2]), g.name.clone()))
+        let pos = g
+            .get("position")
+            .ok_or_else(|| bad(cmd, "the pin has no Position"))?;
+        Ok((
+            pos.uid,
+            g.get("rest").map(|r| r.value.as_vec2()).unwrap_or([0.0; 2]),
+            g.name.clone(),
+        ))
     };
     let (lead_pos, lead_rest, lead_name) = moving(leader)?;
-    let reference = super::link::reference(comp, layer, layer, lead_pos, true).ok_or_else(|| bad(cmd, "can't reference the leader pin"))?;
-    let mut rigs = followers.iter().map(|u| moving(*u).map(|(pos, rest, _)| (*u, pos, rest))).collect::<Result<Vec<_>>>()?;
+    let reference = super::link::reference(comp, layer, layer, lead_pos, true)
+        .ok_or_else(|| bad(cmd, "can't reference the leader pin"))?;
+    let mut rigs = followers
+        .iter()
+        .map(|u| moving(*u).map(|(pos, rest, _)| (*u, pos, rest)))
+        .collect::<Result<Vec<_>>>()?;
     let dist = |r: [f64; 2]| (r[0] - lead_rest[0]).hypot(r[1] - lead_rest[1]);
     rigs.sort_by(|a, b| dist(a.2).total_cmp(&dist(b.2)));
     let out = super::app_more::grouped(s, "Follow-Through", |s| {
         let mut out = vec![];
         for (k, (pin, pos, _)) in rigs.iter().enumerate() {
-            let d = if cascade { delay * (k + 1) as f64 } else { delay };
+            let d = if cascade {
+                delay * (k + 1) as f64
+            } else {
+                delay
+            };
             let e = format!(
                 "// Follow-Through: trails {} by {d} s\nvar lead = {reference};\nvalue + (lead.valueAtTime(time - {d}) - [{}, {}]) * {amount}",
                 serde_json::to_string(&lead_name).unwrap_or_default(),
                 lead_rest[0],
                 lead_rest[1]
             );
-            s.execute("prop.setExpression", json!({"comp": cid.0, "layer": lid.0, "prop": pos, "expression": e}))?;
+            s.execute(
+                "prop.setExpression",
+                json!({"comp": cid.0, "layer": lid.0, "prop": pos, "expression": e}),
+            )?;
             out.push(json!({"pin": pin, "delay": d}));
         }
         Ok(out)
@@ -618,15 +867,20 @@ fn record_options(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(v) = p.get("showMesh").and_then(Value::as_bool) {
         o.record_show_mesh = v;
     }
-    Ok(json!({"speed": o.record_speed, "smoothing": o.record_smoothing, "useDraftDeformation": o.record_draft, "showMesh": o.record_show_mesh}))
+    Ok(
+        json!({"speed": o.record_speed, "smoothing": o.record_smoothing, "useDraftDeformation": o.record_draft, "showMesh": o.record_show_mesh}),
+    )
 }
 
 /// Meshes, pins and the deformed mesh at the current time (effect space).
 fn info(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, lid) = layer_p(s, p, "puppet.info")?;
-    let Some(fx) = find_puppet(s, cid, lid) else { return Ok(json!({"meshes": []})) };
+    let Some(fx) = find_puppet(s, cid, lid) else {
+        return Ok(json!({"meshes": []}));
+    };
     let t = snapped(s, cid, p)?;
-    let (buf, params) = puppet_eval(s, cid, lid, fx, t).ok_or_else(|| bad("puppet.info", "the layer has no pixels"))?;
+    let (buf, params) = puppet_eval(s, cid, lid, fx, t)
+        .ok_or_else(|| bad("puppet.info", "the layer has no pixels"))?;
     let meshes: Vec<Value> = puppet::overlay(&buf, &params)
         .into_iter()
         .map(|(uid, mesh, def, pins)| {
@@ -655,7 +909,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             add_pin
         ),
-        cmd!("puppet.movePin", "Move Puppet Pin", [], None, "{layer?, pin: uid | name, position: [x,y], time? | frame?, merge?}", has_comp, move_pin),
+        cmd!(
+            "puppet.movePin",
+            "Move Puppet Pin",
+            [],
+            None,
+            "{layer?, pin: uid | name, position: [x,y], time? | frame?, merge?}",
+            has_comp,
+            move_pin
+        ),
         cmd!(
             "puppet.setPin",
             "Edit Puppet Pin",
@@ -674,7 +936,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp,
             remove_pin
         ),
-        cmd!("puppet.selectPins", "Select Puppet Pins", [], None, "{layer?, pins: [uid | name…] ([] deselects), add?, toggle?}", has_comp, select_pins),
+        cmd!(
+            "puppet.selectPins",
+            "Select Puppet Pins",
+            [],
+            None,
+            "{layer?, pins: [uid | name…] ([] deselects), add?, toggle?}",
+            has_comp,
+            select_pins
+        ),
         cmd!(
             "puppet.mesh",
             "Puppet Mesh Options",
@@ -684,7 +954,12 @@ pub fn specs() -> Vec<CommandSpec> {
             super::always,
             mesh_opts
         ),
-        crate::query!("puppet.info", "Puppet Mesh Info", "{layer?, time? | frame?}", info),
+        crate::query!(
+            "puppet.info",
+            "Puppet Mesh Info",
+            "{layer?, time? | frame?}",
+            info
+        ),
         cmd!(
             "puppet.recordPin",
             "Record Puppet Pin",

@@ -22,11 +22,25 @@ fn decode_all(frames: &[Vec<u8>], threads: usize) {
 
 #[test]
 fn corrupted_streams_do_not_panic() {
-    for name in ["default_good", "altref_hidden", "profile2_10bit", "tiles_cols4", "aq_segmentation", "lossless", "profile1_444", "tiles_rows4"] {
+    for name in [
+        "default_good",
+        "altref_hidden",
+        "profile2_10bit",
+        "tiles_cols4",
+        "aq_segmentation",
+        "lossless",
+        "profile1_444",
+        "tiles_rows4",
+    ] {
         let f = common::fixture(name);
-        let Some((ivf, _)) = common::ensure(f) else { return };
+        let Some((ivf, _)) = common::ensure(f) else {
+            return;
+        };
         let data = std::fs::read(ivf).unwrap();
-        let frames: Vec<Vec<u8>> = common::ivf_frames(&data).into_iter().map(|f| f.to_vec()).collect();
+        let frames: Vec<Vec<u8>> = common::ivf_frames(&data)
+            .into_iter()
+            .map(|f| f.to_vec())
+            .collect();
         let mut seed = 0x1234_5678_9abc_def0u64 ^ name.len() as u64;
         for round in 0..10 {
             let t0 = Instant::now();
@@ -47,7 +61,10 @@ fn corrupted_streams_do_not_panic() {
             for threads in [1, 4] {
                 decode_all(&d, threads);
             }
-            assert!(t0.elapsed() < Duration::from_secs(60), "{name} round {round} too slow");
+            assert!(
+                t0.elapsed() < Duration::from_secs(60),
+                "{name} round {round} too slow"
+            );
         }
     }
 }
@@ -55,11 +72,19 @@ fn corrupted_streams_do_not_panic() {
 #[test]
 fn truncated_frames_do_not_panic() {
     let f = common::fixture("default_good");
-    let Some((ivf, _)) = common::ensure(f) else { return };
+    let Some((ivf, _)) = common::ensure(f) else {
+        return;
+    };
     let data = std::fs::read(ivf).unwrap();
-    let frames: Vec<Vec<u8>> = common::ivf_frames(&data).into_iter().map(|f| f.to_vec()).collect();
+    let frames: Vec<Vec<u8>> = common::ivf_frames(&data)
+        .into_iter()
+        .map(|f| f.to_vec())
+        .collect();
     for cut in [1usize, 2, 3, 5, 8, 13, 21, 40, 100, 400] {
-        let d: Vec<Vec<u8>> = frames.iter().map(|f| f[..cut.min(f.len())].to_vec()).collect();
+        let d: Vec<Vec<u8>> = frames
+            .iter()
+            .map(|f| f[..cut.min(f.len())].to_vec())
+            .collect();
         decode_all(&d, 1);
         decode_all(&d, 3);
     }
@@ -94,7 +119,15 @@ fn garbage_input_is_rejected_gracefully() {
 fn oversized_frame_is_rejected() {
     // Key frame header: marker 2, profile 0, show_existing 0, key, show, no error res,
     // sync, color (4 bits), width-1 = 0xffff, height-1 = 0xffff.
-    let bits = "10".to_string() + "00" + "0" + "0" + "1" + "0" + "010010011000001101000010" + "0000" + &"1".repeat(32);
+    let bits = "10".to_string()
+        + "00"
+        + "0"
+        + "0"
+        + "1"
+        + "0"
+        + "010010011000001101000010"
+        + "0000"
+        + &"1".repeat(32);
     let mut v = vec![0u8; bits.len().div_ceil(8) + 8];
     for (i, c) in bits.chars().enumerate() {
         if c == '1' {

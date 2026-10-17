@@ -291,7 +291,9 @@ pub unsafe extern "C" fn nie_crand_free(handle: *mut CRand) {
 #[unsafe(no_mangle)]
 pub extern "C" fn nie_version() -> *const c_char {
     // SAFETY: la chaîne est ASCII-pur, null-terminée, 'static et non-muable.
-    concat!(env!("CARGO_PKG_VERSION"), "\0").as_ptr().cast::<c_char>()
+    concat!(env!("CARGO_PKG_VERSION"), "\0")
+        .as_ptr()
+        .cast::<c_char>()
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -322,14 +324,22 @@ unsafe impl Send for NieBytes {}
 impl NieBytes {
     /// Tampon vide (ptr null, len 0, cap 0) — signal d'erreur ou de non-support.
     fn empty() -> Self {
-        Self { ptr: core::ptr::null_mut(), len: 0, cap: 0 }
+        Self {
+            ptr: core::ptr::null_mut(),
+            len: 0,
+            cap: 0,
+        }
     }
 
     /// Transfère la propriété d'un `Vec<u8>` vers un `NieBytes`.
     /// La mémoire est désormais possédée par JS et doit être libérée via `nie_bytes_free`.
     fn from_vec(v: Vec<u8>) -> Self {
         let mut v = core::mem::ManuallyDrop::new(v);
-        Self { ptr: v.as_mut_ptr(), len: v.len(), cap: v.capacity() }
+        Self {
+            ptr: v.as_mut_ptr(),
+            len: v.len(),
+            cap: v.capacity(),
+        }
     }
 }
 
@@ -681,8 +691,10 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
             .get("op")
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| anyhow::anyhow!("wiki request requires string field `op`"))?;
-        let database =
-            request.get("database").and_then(serde_json::Value::as_str).map(PathBuf::from);
+        let database = request
+            .get("database")
+            .and_then(serde_json::Value::as_str)
+            .map(PathBuf::from);
         if database.is_none() {
             let domain = match op {
                 "character" | "chara" | "search" => "characters",
@@ -693,7 +705,7 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                     return Err(anyhow::anyhow!(
                         "wiki operation `{op}` requires an explicit database; use the VFS domain API for native game data"
                     ));
-                },
+                }
             };
             let supplied = request
                 .get("game_dir")
@@ -707,7 +719,8 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                 supplied.join("data")
             };
             let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
-            vfs.init(&data).map_err(|error| anyhow::anyhow!("VFS unavailable: {error}"))?;
+            vfs.init(&data)
+                .map_err(|error| anyhow::anyhow!("VFS unavailable: {error}"))?;
             let mut direct = request.clone();
             direct["domain"] = serde_json::json!(domain);
             if direct.get("query").is_none()
@@ -744,7 +757,7 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                 let card = aphrody_nie_wiki::cards::character(&connection, &id)?
                     .ok_or_else(|| anyhow::anyhow!("character was not found"))?;
                 serde_json::to_value(card)?
-            },
+            }
             "search" => {
                 let query = string_field("query")?;
                 let limit = request
@@ -757,7 +770,7 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                     query,
                     limit,
                 )?)?
-            },
+            }
             "skill" => {
                 let query = string_field("query").or_else(|_| string_field("id"))?;
                 if let Some(skill) = aphrody_nie_wiki::query::get_skill(&connection, query)? {
@@ -765,16 +778,16 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                 } else {
                     aphrody_nie_wiki::query::lookup_skill_legacy(&data_root, query)?
                 }
-            },
+            }
             "item" => {
                 let query = string_field("query").or_else(|_| string_field("id"))?;
                 aphrody_nie_wiki::query::lookup_item_legacy(&connection, query)?
-            },
+            }
             "team" => {
                 let query = string_field("query").or_else(|_| string_field("id"))?;
                 let corpus = data_root.join("all-gamedata").join("teams.json");
                 aphrody_nie_wiki::query::lookup_team_legacy(&connection, &corpus, query)?
-            },
+            }
             "compare" => {
                 let level = request
                     .get("level")
@@ -790,30 +803,33 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                     second,
                     level,
                 )?)?
-            },
+            }
             "auras" => {
                 let input: aphrody_nie_wiki::auras::AuraListRequest =
                     serde_json::from_value(request.clone())?;
                 serde_json::to_value(aphrody_nie_wiki::auras::list_auras(&connection, &input)?)?
-            },
+            }
             "aura" => {
                 let id = string_field("id")?;
                 let type_slug = request.get("type_slug").and_then(serde_json::Value::as_str);
                 let aura = aphrody_nie_wiki::auras::get_aura(&connection, id, type_slug)?
                     .ok_or_else(|| anyhow::anyhow!("aura was not found"))?;
                 serde_json::to_value(aura)?
-            },
+            }
             "tactics" => {
                 let input: aphrody_nie_wiki::tactics::TacticListRequest =
                     serde_json::from_value(request.clone())?;
-                serde_json::to_value(aphrody_nie_wiki::tactics::list_tactics(&connection, &input)?)?
-            },
+                serde_json::to_value(aphrody_nie_wiki::tactics::list_tactics(
+                    &connection,
+                    &input,
+                )?)?
+            }
             "tactic" => {
                 let id = string_field("id")?;
                 let tactic = aphrody_nie_wiki::tactics::get_tactic(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("tactic was not found"))?;
                 serde_json::to_value(tactic)?
-            },
+            }
             "passives" => {
                 let input: aphrody_nie_wiki::passives::PassiveListRequest =
                     serde_json::from_value(request.clone())?;
@@ -821,13 +837,13 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                     &connection,
                     &input,
                 )?)?
-            },
+            }
             "passive" => {
                 let id = string_field("id")?;
                 let passive = aphrody_nie_wiki::passives::get_passive(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("passive was not found"))?;
                 serde_json::to_value(passive)?
-            },
+            }
             "passive-scaling" => serde_json::to_value(
                 aphrody_nie_wiki::passives::list_passive_scaling(&connection)?,
             )?,
@@ -835,17 +851,17 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                 let input: aphrody_nie_wiki::auxiliary::QuestRequest =
                     serde_json::from_value(request.clone())?;
                 aphrody_nie_wiki::auxiliary::list_quests(&connection, &input)?
-            },
+            }
             "quest" => {
                 let id = string_field("id")?;
                 aphrody_nie_wiki::auxiliary::get_quest(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("quest was not found"))?
-            },
+            }
             "shops" => {
                 let input: aphrody_nie_wiki::auxiliary::ShopRequest =
                     serde_json::from_value(request.clone())?;
                 aphrody_nie_wiki::auxiliary::list_shops(&connection, &input)?
-            },
+            }
             "shop" => {
                 let id = request
                     .get("id")
@@ -853,21 +869,27 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                     .ok_or_else(|| anyhow::anyhow!("shop request requires integer field `id`"))?;
                 aphrody_nie_wiki::auxiliary::get_shop(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("shop was not found"))?
-            },
+            }
             "capsules" => {
                 let input: aphrody_nie_wiki::auxiliary::CapsuleRequest =
                     serde_json::from_value(request.clone())?;
                 aphrody_nie_wiki::auxiliary::list_capsules(&connection, &input)?
-            },
+            }
             "capsule" => {
                 let id = string_field("id")?;
                 aphrody_nie_wiki::auxiliary::get_capsule(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("capsule was not found"))?
-            },
+            }
             "costumes" => aphrody_nie_wiki::auxiliary::list_costumes(
                 &connection,
-                request.get("page").and_then(serde_json::Value::as_u64).unwrap_or(1) as u32,
-                request.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(50) as u32,
+                request
+                    .get("page")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(1) as u32,
+                request
+                    .get("limit")
+                    .and_then(serde_json::Value::as_u64)
+                    .unwrap_or(50) as u32,
             )?,
             "stadiums" => aphrody_nie_wiki::auxiliary::list_stadiums(
                 &connection,
@@ -877,7 +899,7 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
                 let id = string_field("id")?;
                 aphrody_nie_wiki::auxiliary::get_stadium(&connection, id)?
                     .ok_or_else(|| anyhow::anyhow!("stadium was not found"))?
-            },
+            }
             "trophies" => aphrody_nie_wiki::auxiliary::list_trophies(
                 &connection,
                 request.get("query").and_then(serde_json::Value::as_str),
@@ -893,9 +915,9 @@ fn wiki_json_impl(input: &[u8]) -> NieBytes {
     });
 
     match result {
-        Ok(Ok(value)) => {
-            serde_json::to_vec(&value).map(NieBytes::from_vec).unwrap_or_else(|_| NieBytes::empty())
-        },
+        Ok(Ok(value)) => serde_json::to_vec(&value)
+            .map(NieBytes::from_vec)
+            .unwrap_or_else(|_| NieBytes::empty()),
         _ => NieBytes::empty(),
     }
 }
@@ -1133,7 +1155,7 @@ pub unsafe extern "C" fn nie_vfs_open(game_data_dir: *const c_char) -> *mut c_vo
             Err(_) => {
                 set_last_error("game source must be UTF-8");
                 return core::ptr::null_mut();
-            },
+            }
         }
     };
     match aphrody_nie_formats::vfs::open_source(hint) {
@@ -1141,7 +1163,7 @@ pub unsafe extern "C" fn nie_vfs_open(game_data_dir: *const c_char) -> *mut c_vo
         Err(error) => {
             set_last_error(error.to_string());
             core::ptr::null_mut()
-        },
+        }
     }
 }
 
@@ -1166,7 +1188,7 @@ pub unsafe extern "C" fn nie_game_source_resolve_out(hint: *const c_char, out: *
                     *out = NieBytes::empty();
                 }
                 return;
-            },
+            }
         }
     };
     match aphrody_nie_formats::game_source::resolve(hint) {
@@ -1175,13 +1197,13 @@ pub unsafe extern "C" fn nie_game_source_resolve_out(hint: *const c_char, out: *
             unsafe {
                 *out = NieBytes::from_vec(json.to_string().into_bytes());
             }
-        },
+        }
         Err(error) => {
             set_last_error(error.to_string());
             unsafe {
                 *out = NieBytes::empty();
             }
-        },
+        }
     }
 }
 
@@ -1477,7 +1499,10 @@ fn cached_vfs_query(
     vfs: &aphrody_nie_formats::vfs::Vfs,
     request: &serde_json::Value,
 ) -> Option<serde_json::Value> {
-    let domain = request.get("domain").and_then(serde_json::Value::as_str).unwrap_or("characters");
+    let domain = request
+        .get("domain")
+        .and_then(serde_json::Value::as_str)
+        .unwrap_or("characters");
     let key = std::ptr::from_ref(vfs) as usize;
     let mut cache = VFS_DOMAIN_CACHE.get_or_init(Default::default).lock().ok()?;
     let domains = cache.entry(key).or_default();
@@ -1537,7 +1562,10 @@ pub unsafe extern "C" fn nie_vfs_free(vfs: *mut c_void) {
     // SAFETY: vfs provient de nie_vfs_open → Box<Vfs> ; appelé exactement une fois.
     if let Some(cache) = VFS_DOMAIN_CACHE.get() {
         // Clear even a poisoned cache so a reused allocation cannot inherit stale records.
-        cache.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&(vfs as usize));
+        cache
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(&(vfs as usize));
     }
     unsafe { drop(Box::from_raw(vfs.cast::<aphrody_nie_formats::vfs::Vfs>())) };
 }
@@ -1579,7 +1607,11 @@ fn build_font_ctx(vfs: &aphrody_nie_formats::vfs::Vfs) -> Option<FontCtx> {
     }
     let start = tex.data_offset + FONT_DDS_PIXEL_OFFSET;
     let atlas = g4tx_bytes.get(start..)?.to_vec();
-    Some(FontCtx { metrics, atlas, atlas_w: tex.width as u32 })
+    Some(FontCtx {
+        metrics,
+        atlas,
+        atlas_w: tex.width as u32,
+    })
 }
 
 /// Implémentation commune : rend `text` sur un canevas RGBA8 ajusté puis encode en PNG.
@@ -1617,7 +1649,10 @@ fn render_text_impl(ctx: &FontCtx, text: &str, color: [u8; 4]) -> NieBytes {
         None => return NieBytes::empty(),
     };
     let mut png: Vec<u8> = Vec::new();
-    if img.write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png).is_err() {
+    if img
+        .write_to(&mut Cursor::new(&mut png), image::ImageFormat::Png)
+        .is_err()
+    {
         return NieBytes::empty();
     }
     NieBytes::from_vec(png)
@@ -1883,7 +1918,14 @@ pub unsafe extern "C" fn nie_world_player(
     };
     // SAFETY: out est un NiePlayer inscriptible par contrat.
     unsafe {
-        *out = NiePlayer { x: p.pos.x, y: p.pos.y, vx: p.vel.x, vy: p.vel.y, team: p.team, role };
+        *out = NiePlayer {
+            x: p.pos.x,
+            y: p.pos.y,
+            vx: p.vel.x,
+            vy: p.vel.y,
+            team: p.team,
+            role,
+        };
     }
     true
 }
@@ -1903,8 +1945,14 @@ pub unsafe extern "C" fn nie_world_ball(w: *const NieWorld, out: *mut NieBall) {
     let b = &world.ball;
     // SAFETY: out est un NieBall inscriptible par contrat.
     unsafe {
-        *out =
-            NieBall { x: b.pos.x, y: b.pos.y, z: b.pos.z, vx: b.vel.x, vy: b.vel.y, vz: b.vel.z };
+        *out = NieBall {
+            x: b.pos.x,
+            y: b.pos.y,
+            z: b.pos.z,
+            vx: b.vel.x,
+            vy: b.vel.y,
+            vz: b.vel.z,
+        };
     }
 }
 
@@ -2093,7 +2141,10 @@ pub unsafe extern "C" fn nie_match_simulate_json_out(
 
     // SAFETY: les deux pointeurs sont non-null et null-terminés.
     let (home_str, away_str) = unsafe {
-        (std::ffi::CStr::from_ptr(home_json).to_str(), std::ffi::CStr::from_ptr(away_json).to_str())
+        (
+            std::ffi::CStr::from_ptr(home_json).to_str(),
+            std::ffi::CStr::from_ptr(away_json).to_str(),
+        )
     };
 
     let resultat = (|| -> Option<Vec<u8>> {
@@ -2136,7 +2187,11 @@ pub unsafe extern "C" fn nie_last_error_out(out: *mut NieBytes) {
         return;
     }
     let res = LAST_ERROR
-        .with(|err| err.borrow().as_ref().map(|s| NieBytes::from_vec(s.as_bytes().to_vec())))
+        .with(|err| {
+            err.borrow()
+                .as_ref()
+                .map(|s| NieBytes::from_vec(s.as_bytes().to_vec()))
+        })
         .unwrap_or_else(NieBytes::empty);
     unsafe { out.write(res) };
 }
@@ -2259,7 +2314,7 @@ pub unsafe extern "C" fn nie_crilayla_decompress(ptr: *const u8, len: usize) -> 
         Err(e) => {
             set_last_error(format!("crilayla decompress error: {e}"));
             NieBytes::empty()
-        },
+        }
     }
 }
 
@@ -2297,7 +2352,11 @@ pub fn compress_crilayla(data: &[u8]) -> Vec<u8> {
     }
     impl BitWriter {
         fn new() -> Self {
-            Self { bytes: Vec::new(), current: 0, bits_used: 0 }
+            Self {
+                bytes: Vec::new(),
+                current: 0,
+                bits_used: 0,
+            }
         }
         fn push_bit(&mut self, bit: u8) {
             self.current = (self.current << 1) | (bit & 1);
@@ -2559,7 +2618,7 @@ pub unsafe extern "C" fn nie_cpk_extract_by_name_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let base = fname.rsplit(['/', '\\']).next().unwrap_or(fname);
     let extracted = (|| -> Option<Vec<u8>> {
@@ -2653,7 +2712,7 @@ pub unsafe extern "C" fn nie_rdbn_entry_query_json_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let json_bytes = (|| -> Option<Vec<u8>> {
         let rdbn = aphrody_nie_formats::cfgbin::parse(data).ok()?;
@@ -2813,7 +2872,7 @@ pub unsafe extern "C" fn nie_g4tx_subtexture_to_png_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let png = aphrody_nie_formats::g4tx_decode::decode_named_to_png(data, name_str)
         .map(NieBytes::from_vec)
@@ -2848,7 +2907,7 @@ pub unsafe extern "C" fn nie_vfs_file_info_json_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let vfs_ref = unsafe { &*(vfs.cast::<aphrody_nie_formats::vfs::Vfs>()) };
     let info = (|| -> Option<Vec<u8>> {
@@ -2922,7 +2981,7 @@ pub unsafe extern "C" fn nie_save_summary_json_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let base = fname.rsplit(['/', '\\']).next().unwrap_or(fname);
     let summary_bytes = (|| -> Option<Vec<u8>> {
@@ -2991,7 +3050,7 @@ pub unsafe extern "C" fn nie_save_extract_blob_out(
         Err(_) => {
             unsafe { out.write(NieBytes::empty()) };
             return;
-        },
+        }
     };
     let base = fname.rsplit(['/', '\\']).next().unwrap_or(fname);
     let bytes = (|| -> Option<Vec<u8>> {
@@ -3086,7 +3145,9 @@ mod tests {
         // from_u64(n) avec moitié haute nulle == new(n as u32)
         let h64 = nie_crand_from_u64(12_345_u64);
         let h32 = nie_crand_new(12_345_u32);
-        assert_eq!(unsafe { nie_crand_next_u32(h64) }, unsafe { nie_crand_next_u32(h32) });
+        assert_eq!(unsafe { nie_crand_next_u32(h64) }, unsafe {
+            nie_crand_next_u32(h32)
+        });
         unsafe { nie_crand_free(h64) };
         unsafe { nie_crand_free(h32) };
     }
@@ -3148,7 +3209,9 @@ mod tests {
     #[test]
     fn font_render_text_a_real() {
         use std::ffi::CString;
-        let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !aphrody_nie_formats::vfs::donnees_disponibles(&data) {
             eprintln!("skip font_render_text_a_real : jeu absent");
@@ -3190,14 +3253,22 @@ mod tests {
 
         // SAFETY: png.ptr..len est un tampon PNG valide alloué par ce crate.
         let bytes = unsafe { core::slice::from_raw_parts(png.ptr, png.len) };
-        let img = image::load_from_memory(bytes).expect("décodage PNG").to_rgba8();
+        let img = image::load_from_memory(bytes)
+            .expect("décodage PNG")
+            .to_rgba8();
         assert_eq!(img.width(), 39, "largeur = avance de 'A'");
         assert_eq!(img.height(), 71, "hauteur = cell_height");
         let alphas = img.pixels().map(|pixel| pixel[3]);
         let opaque_pixels = alphas.clone().filter(|alpha| *alpha != 0).count();
         let max_alpha = alphas.max().unwrap_or(0);
-        assert!(opaque_pixels > 100, "le glyphe A doit couvrir une surface réelle");
-        assert!(max_alpha > 200, "le masque du glyphe doit contenir un trait opaque");
+        assert!(
+            opaque_pixels > 100,
+            "le glyphe A doit couvrir une surface réelle"
+        );
+        assert!(
+            max_alpha > 200,
+            "le masque du glyphe doit contenir un trait opaque"
+        );
 
         // SAFETY: chaque handle/tampon est libéré exactement une fois.
         unsafe { nie_bytes_free(png) };
@@ -3225,26 +3296,38 @@ mod tests {
             .filter(|(path, _)| path.ends_with("_menu_setting.cfg.bin"))
             .map(|(path, _)| path.to_owned())
             .collect();
-        assert!(paths.len() >= 300, "corpus menu_setting trop petit : {}", paths.len());
+        assert!(
+            paths.len() >= 300,
+            "corpus menu_setting trop petit : {}",
+            paths.len()
+        );
 
         let mut total_layers = 0usize;
         let mut total_commands = 0usize;
         for path in &paths {
-            let bytes = vfs.read(path).unwrap_or_else(|e| panic!("lecture {path}: {e}"));
+            let bytes = vfs
+                .read(path)
+                .unwrap_or_else(|e| panic!("lecture {path}: {e}"));
             let output = menu_setting_json_impl(&bytes);
             assert!(!output.ptr.is_null(), "sortie vide pour {path}");
             // SAFETY: le tampon vient de `menu_setting_json_impl` et reste vivant jusqu'à free.
             let json = unsafe { core::slice::from_raw_parts(output.ptr, output.len) };
             let parsed: aphrody_nie_data::menu_setting::MenuSetting =
                 serde_json::from_slice(json).unwrap_or_else(|e| panic!("JSON {path}: {e}"));
-            assert!(parsed.layer_hashes_consistent(), "layer_id incohérent dans {path}");
+            assert!(
+                parsed.layer_hashes_consistent(),
+                "layer_id incohérent dans {path}"
+            );
             total_layers += parsed.layers.len();
             total_commands += parsed.commands.len();
             // SAFETY: chaque allocation produite par `menu_setting_json_impl` est libérée une fois.
             unsafe { nie_bytes_free(output) };
         }
         assert!(total_layers >= 2_000, "trop peu de layers : {total_layers}");
-        assert!(total_commands >= 300, "trop peu de commandes : {total_commands}");
+        assert!(
+            total_commands >= 300,
+            "trop peu de commandes : {total_commands}"
+        );
         eprintln!(
             "OK {}/{} menu_setting — {total_layers} layers / {total_commands} commandes",
             paths.len(),
@@ -3281,7 +3364,10 @@ mod tests {
             *b = (i % 251) as u8;
         }
         let compressed = compress_crilayla(&sample);
-        assert_eq!(unsafe { nie_crilayla_is_compressed(compressed.as_ptr(), compressed.len()) }, 1);
+        assert_eq!(
+            unsafe { nie_crilayla_is_compressed(compressed.as_ptr(), compressed.len()) },
+            1
+        );
 
         let mut out = NieBytes::empty();
         unsafe {

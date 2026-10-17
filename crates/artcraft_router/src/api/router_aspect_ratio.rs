@@ -9,41 +9,41 @@ use strum::EnumIter;
 #[cfg_attr(test, derive(EnumIter))]
 #[serde(rename_all = "snake_case")]
 pub enum RouterAspectRatio {
-  // Auto (eg. for image editing to use the source; used by Nano Banana Pro edit image, but not text-to-image)
-  Auto,
+    // Auto (eg. for image editing to use the source; used by Nano Banana Pro edit image, but not text-to-image)
+    Auto,
 
-  // Square
-  Square,
+    // Square
+    Square,
 
-  // Wide
-  WideThreeByTwo,
-  WideFourByThree,
-  WideFiveByFour,
-  WideSixteenByNine,
-  WideTwentyOneByNine,
+    // Wide
+    WideThreeByTwo,
+    WideFourByThree,
+    WideFiveByFour,
+    WideSixteenByNine,
+    WideTwentyOneByNine,
 
-  // Tall
-  TallTwoByThree,
-  TallThreeByFour,
-  TallFourByFive,
-  TallNineBySixteen,
-  TallNineByTwentyOne,
+    // Tall
+    TallTwoByThree,
+    TallThreeByFour,
+    TallFourByFive,
+    TallNineBySixteen,
+    TallNineByTwentyOne,
 
-  // Imprecise semantic values that we probably remap to other meanings
-  // on a model-by-model basis.
-  Wide,
-  Tall,
+    // Imprecise semantic values that we probably remap to other meanings
+    // on a model-by-model basis.
+    Wide,
+    Tall,
 
-  // Auto values that bake in resolution
-  // These are from the Seedream models
-  #[serde(rename = "auto_2k")]
-  Auto2k,
-  #[serde(rename = "auto_3k")]
-  Auto3k,
-  #[serde(rename = "auto_4k")]
-  Auto4k,
+    // Auto values that bake in resolution
+    // These are from the Seedream models
+    #[serde(rename = "auto_2k")]
+    Auto2k,
+    #[serde(rename = "auto_3k")]
+    Auto3k,
+    #[serde(rename = "auto_4k")]
+    Auto4k,
 
-  // Defined aspect ratios that bake in resolution
-  // These are from the Seedream models
-  SquareHd,
+    // Defined aspect ratios that bake in resolution
+    // These are from the Seedream models
+    SquareHd,
 }

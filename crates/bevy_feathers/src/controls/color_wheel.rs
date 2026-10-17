@@ -17,20 +17,20 @@ use bevy_ecs::{
 };
 use bevy_math::Vec2;
 use bevy_picking::{
+    Pickable,
     cursor::EntityCursor,
     events::{PointerCancel, PointerDrag, PointerDragEnd, PointerDragStart, PointerPress},
-    Pickable,
 };
-use bevy_reflect::{prelude::ReflectDefault, Reflect, TypePath};
+use bevy_reflect::{Reflect, TypePath, prelude::ReflectDefault};
 use bevy_render::render_resource::AsBindGroup;
 use bevy_scene::prelude::*;
 use bevy_shader::ShaderRef;
 use bevy_ui::{
-    percent, px, AlignSelf, BorderColor, BorderRadius, ComputedNode, ComputedUiRenderTargetInfo,
-    Display, InteractionDisabled, Node, Outline, PositionType, UiGlobalTransform, UiRect, UiScale,
-    UiSystems, UiTransform, Val2,
+    AlignSelf, BorderColor, BorderRadius, ComputedNode, ComputedUiRenderTargetInfo, Display,
+    InteractionDisabled, Node, Outline, PositionType, UiGlobalTransform, UiRect, UiScale,
+    UiSystems, UiTransform, Val2, percent, px,
 };
-use bevy_ui_render::{prelude::UiMaterial, ui_material::MaterialNode, UiMaterialPlugin};
+use bevy_ui_render::{UiMaterialPlugin, prelude::UiMaterial, ui_material::MaterialNode};
 use bevy_ui_widgets::ValueChange;
 
 use crate::{palette, theme::ThemeBackgroundColor, tokens};

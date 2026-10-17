@@ -1,7 +1,8 @@
 //! Malformed-input robustness: decoding random or corrupted files must never panic.
 
 use lightcraft_raw::{
-    BlackLevel, Cfa, ColorData, DngCompression, DngWriteOptions, Method, OpcodeLists, Orientation, RawData, RawFormat, RawImage, Rect,
+    BlackLevel, Cfa, ColorData, DngCompression, DngWriteOptions, Method, OpcodeLists, Orientation,
+    RawData, RawFormat, RawImage, Rect,
 };
 use proptest::prelude::*;
 
@@ -27,7 +28,14 @@ fn sample(comp: DngCompression) -> Vec<u8> {
         opcodes: OpcodeLists::default(),
         metadata: Default::default(),
     };
-    lightcraft_raw::write_dng(&raw, &DngWriteOptions { compression: comp, ..Default::default() }).unwrap()
+    lightcraft_raw::write_dng(
+        &raw,
+        &DngWriteOptions {
+            compression: comp,
+            ..Default::default()
+        },
+    )
+    .unwrap()
 }
 
 fn exercise(bytes: &[u8]) {
@@ -75,7 +83,10 @@ proptest! {
 
 #[test]
 fn truncation_at_every_length() {
-    for comp in [DngCompression::Uncompressed, DngCompression::Lj92 { tile: 16 }] {
+    for comp in [
+        DngCompression::Uncompressed,
+        DngCompression::Lj92 { tile: 16 },
+    ] {
         let d = sample(comp);
         for n in (0..d.len()).step_by(7) {
             exercise(&d[..n]);
@@ -96,7 +107,11 @@ fn hostile_dimensions_are_rejected_quickly() {
     ifd.set(t::PHOTOMETRIC, Value::Short(vec![32803]));
     ifd.set(t::CFA_PATTERN_EP, Value::Byte(vec![0, 1, 1, 2]));
     ifd.set(t::COMPRESSION, Value::Short(vec![7]));
-    ifd.set_image(ImageData::Tiles { tile_width: 60000, tile_height: 60000, tiles: vec![vec![0xff, 0xd8, 0xff, 0xd9]] });
+    ifd.set_image(ImageData::Tiles {
+        tile_width: 60000,
+        tile_height: 60000,
+        tiles: vec![vec![0xff, 0xd8, 0xff, 0xd9]],
+    });
     let bytes = TiffWriter::default().write(&[ifd]).unwrap();
     let t0 = std::time::Instant::now();
     assert!(lightcraft_raw::decode(&bytes).is_err());

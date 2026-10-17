@@ -43,8 +43,12 @@ fn valid_in_window(this: Time, next: Option<Time>, at: Time) -> bool {
 /// Verify `signature` over the raw `signed` bytes with `key`, where the signature's algorithm
 /// identifier names the digest.
 fn verify_signature(signed: &[u8], alg_raw: &[u8], signature: &[u8], key: &PublicKey) -> bool {
-    let Ok(alg) = Tlv::parse_all(alg_raw) else { return false };
-    let Ok((scheme, Some(digest))) = keys::signature_algorithm(&alg) else { return false };
+    let Ok(alg) = Tlv::parse_all(alg_raw) else {
+        return false;
+    };
+    let Ok((scheme, Some(digest))) = keys::signature_algorithm(&alg) else {
+        return false;
+    };
     let d = digest.digest(&[signed]);
     key.verify(scheme, digest, &d, signature).unwrap_or(false)
 }
@@ -68,8 +72,12 @@ impl CertificateList {
         if bytes.is_empty() || bytes.len() > MAX_EVIDENCE {
             return Err(bad("CRL is empty or exceeds the 2 MiB limit"));
         }
-        let parts = Tlv::parse_all(bytes)?.expect(tag::SEQUENCE, "CertificateList")?.children()?;
-        let [tbs, alg, sig] = parts.as_slice() else { return Err(bad("CertificateList")) };
+        let parts = Tlv::parse_all(bytes)?
+            .expect(tag::SEQUENCE, "CertificateList")?
+            .children()?;
+        let [tbs, alg, sig] = parts.as_slice() else {
+            return Err(bad("CertificateList"));
+        };
         let mut f = tbs.children()?.into_iter().peekable();
         if f.peek().is_some_and(|t| t.tag == tag::INTEGER) {
             f.next(); // version
@@ -78,14 +86,24 @@ impl CertificateList {
         let issuer = f.next().ok_or_else(|| bad("tbsCertList"))?.raw.to_vec();
         let this_update = f.next().ok_or_else(|| bad("tbsCertList"))?.time()?;
         let mut next_update = None;
-        if f.peek().is_some_and(|t| t.tag == tag::UTC_TIME || t.tag == tag::GENERALIZED_TIME) {
+        if f.peek()
+            .is_some_and(|t| t.tag == tag::UTC_TIME || t.tag == tag::GENERALIZED_TIME)
+        {
             next_update = f.next().map(|t| t.time()).transpose()?;
         }
         let mut revoked = Vec::new();
         if f.peek().is_some_and(|t| t.tag == tag::SEQUENCE) {
-            for entry in f.next().ok_or_else(|| bad("revokedCertificates"))?.children()? {
+            for entry in f
+                .next()
+                .ok_or_else(|| bad("revokedCertificates"))?
+                .children()?
+            {
                 let e = entry.children()?;
-                let serial = e.first().ok_or_else(|| bad("revoked entry"))?.uint_bytes().to_vec();
+                let serial = e
+                    .first()
+                    .ok_or_else(|| bad("revoked entry"))?
+                    .uint_bytes()
+                    .to_vec();
                 let at = e.get(1).ok_or_else(|| bad("revoked entry"))?.time()?;
                 revoked.push((serial, at));
             }
@@ -107,13 +125,22 @@ impl CertificateList {
         if self.issuer_raw != issuer.subject.raw || issuer.subject.raw != cert.issuer.raw {
             return RevocationStatus::Unknown;
         }
-        if !verify_signature(&self.tbs, &self.sig_alg, &self.signature, &issuer.public_key) {
+        if !verify_signature(
+            &self.tbs,
+            &self.sig_alg,
+            &self.signature,
+            &issuer.public_key,
+        ) {
             return RevocationStatus::Unknown;
         }
         if !valid_in_window(self.this_update, self.next_update, at) {
             return RevocationStatus::Unknown;
         }
-        match self.revoked.iter().find(|(serial, _)| strip(serial) == strip(&cert.serial)) {
+        match self
+            .revoked
+            .iter()
+            .find(|(serial, _)| strip(serial) == strip(&cert.serial))
+        {
             Some((_, t)) => RevocationStatus::Revoked { at: *t },
             None => RevocationStatus::Good,
         }
@@ -180,22 +207,42 @@ impl OcspResponse {
         if bytes.is_empty() || bytes.len() > MAX_EVIDENCE {
             return Err(bad("OCSP response is empty or exceeds the 2 MiB limit"));
         }
-        let resp = Tlv::parse_all(bytes)?.expect(tag::SEQUENCE, "OCSPResponse")?.children()?;
-        let status = resp.first().ok_or_else(|| bad("missing responseStatus"))?.u64()?;
+        let resp = Tlv::parse_all(bytes)?
+            .expect(tag::SEQUENCE, "OCSPResponse")?
+            .children()?;
+        let status = resp
+            .first()
+            .ok_or_else(|| bad("missing responseStatus"))?
+            .u64()?;
         if status != 0 {
-            return Err(bad(format!("responder reported an error (status {status})")));
+            return Err(bad(format!(
+                "responder reported an error (status {status})"
+            )));
         }
-        let response_bytes =
-            resp.get(1).ok_or_else(|| bad("successful response has no responseBytes"))?.expect(tag::ctx(0), "responseBytes")?.inner()?.children()?;
-        let [type_oid, wrapped] = response_bytes.as_slice() else { return Err(bad("responseBytes")) };
+        let response_bytes = resp
+            .get(1)
+            .ok_or_else(|| bad("successful response has no responseBytes"))?
+            .expect(tag::ctx(0), "responseBytes")?
+            .inner()?
+            .children()?;
+        let [type_oid, wrapped] = response_bytes.as_slice() else {
+            return Err(bad("responseBytes"));
+        };
         if type_oid.oid()? != ID_PKIX_OCSP_BASIC {
             return Err(bad("unsupported response type"));
         }
-        let basic = Tlv::parse_all(wrapped.value)?.expect(tag::SEQUENCE, "BasicOCSPResponse")?.children()?;
+        let basic = Tlv::parse_all(wrapped.value)?
+            .expect(tag::SEQUENCE, "BasicOCSPResponse")?
+            .children()?;
         let mut it = basic.into_iter();
         let tbs = it.next().ok_or_else(|| bad("BasicOCSPResponse"))?;
         let alg = it.next().ok_or_else(|| bad("BasicOCSPResponse"))?;
-        let signature = it.next().ok_or_else(|| bad("BasicOCSPResponse"))?.expect(tag::BIT_STRING, "signature")?.bits()?.to_vec();
+        let signature = it
+            .next()
+            .ok_or_else(|| bad("BasicOCSPResponse"))?
+            .expect(tag::BIT_STRING, "signature")?
+            .bits()?
+            .to_vec();
         let mut responder_cert = None;
         for t in it {
             if t.tag == tag::ctx(0) {
@@ -216,7 +263,12 @@ impl OcspResponse {
         let rid = f.next().ok_or_else(|| bad("ResponseData"))?;
         let responder_id = match rid.tag {
             t if t == tag::ctx(1) => ResponderId::ByName(rid.value.to_vec()),
-            t if t == tag::ctx(2) => ResponderId::ByKey(Tlv::parse_all(rid.value)?.expect(tag::OCTET_STRING, "byKey responderID")?.value.to_vec()),
+            t if t == tag::ctx(2) => ResponderId::ByKey(
+                Tlv::parse_all(rid.value)?
+                    .expect(tag::OCTET_STRING, "byKey responderID")?
+                    .value
+                    .to_vec(),
+            ),
             _ => return Err(bad("responderID")),
         };
         let _produced_at = f.next().ok_or_else(|| bad("ResponseData"))?.time()?;
@@ -224,9 +276,17 @@ impl OcspResponse {
         for single in f.next().ok_or_else(|| bad("ResponseData"))?.children()? {
             let s = single.children()?;
             let cert_id_fields = s.first().ok_or_else(|| bad("SingleResponse"))?.children()?;
-            let [hash_alg, name_hash, key_hash, serial] = cert_id_fields.as_slice() else { return Err(bad("CertID")) };
-            let alg_oid = hash_alg.children()?.first().ok_or_else(|| bad("CertID"))?.oid()?;
-            let Some(hash_alg) = DigestAlg::from_oid(&alg_oid) else { return Err(bad("unsupported CertID hash")) };
+            let [hash_alg, name_hash, key_hash, serial] = cert_id_fields.as_slice() else {
+                return Err(bad("CertID"));
+            };
+            let alg_oid = hash_alg
+                .children()?
+                .first()
+                .ok_or_else(|| bad("CertID"))?
+                .oid()?;
+            let Some(hash_alg) = DigestAlg::from_oid(&alg_oid) else {
+                return Err(bad("unsupported CertID hash"));
+            };
             let cert_id = CertId {
                 hash_alg,
                 issuer_name_hash: name_hash.value.to_vec(),
@@ -247,10 +307,26 @@ impl OcspResponse {
                 _ => return Err(bad("certStatus")),
             };
             let this_update = s.get(2).ok_or_else(|| bad("SingleResponse"))?.time()?;
-            let next_update = s.get(3).filter(|t| t.tag == tag::ctx(0)).map(|t| t.inner().and_then(|g| g.time())).transpose()?;
-            responses.push(SingleResponse { cert_id, status, this_update, next_update });
+            let next_update = s
+                .get(3)
+                .filter(|t| t.tag == tag::ctx(0))
+                .map(|t| t.inner().and_then(|g| g.time()))
+                .transpose()?;
+            responses.push(SingleResponse {
+                cert_id,
+                status,
+                this_update,
+                next_update,
+            });
         }
-        Ok(OcspResponse { tbs: tbs.raw.to_vec(), sig_alg: alg.raw.to_vec(), signature, responder_id, responses, responder_cert })
+        Ok(OcspResponse {
+            tbs: tbs.raw.to_vec(),
+            sig_alg: alg.raw.to_vec(),
+            signature,
+            responder_id,
+            responses,
+            responder_cert,
+        })
     }
 
     /// Check `cert` (issued by `issuer`) at `at`. The responder must be the issuer itself, or
@@ -265,37 +341,58 @@ impl OcspResponse {
                 if *name == issuer.subject.raw {
                     Some(issuer)
                 } else {
-                    self.responder_cert.as_ref().filter(|c| *name == c.subject.raw)
+                    self.responder_cert
+                        .as_ref()
+                        .filter(|c| *name == c.subject.raw)
                 }
             }
             ResponderId::ByKey(hash) => {
                 if *hash == DigestAlg::Sha1.digest(&[&issuer.public_key.key_bits()]) {
                     Some(issuer)
                 } else {
-                    self.responder_cert.as_ref().filter(|c| *hash == DigestAlg::Sha1.digest(&[&c.public_key.key_bits()]))
+                    self.responder_cert
+                        .as_ref()
+                        .filter(|c| *hash == DigestAlg::Sha1.digest(&[&c.public_key.key_bits()]))
                 }
             }
         };
-        let Some(responder) = responder else { return RevocationStatus::Unknown };
+        let Some(responder) = responder else {
+            return RevocationStatus::Unknown;
+        };
         // A delegated responder must carry the OCSP-signing EKU and be issued by the issuer.
         if responder.subject.raw != issuer.subject.raw {
-            if responder.issuer.raw != issuer.subject.raw || !responder.signed_by(&issuer.public_key) {
+            if responder.issuer.raw != issuer.subject.raw
+                || !responder.signed_by(&issuer.public_key)
+            {
                 return RevocationStatus::Unknown;
             }
-            if !responder.extended_key_usage.as_ref().is_some_and(|e| e.iter().any(|o| o == EKU_OCSP_SIGNING)) {
+            if !responder
+                .extended_key_usage
+                .as_ref()
+                .is_some_and(|e| e.iter().any(|o| o == EKU_OCSP_SIGNING))
+            {
                 return RevocationStatus::Unknown;
             }
         }
-        if !verify_signature(&self.tbs, &self.sig_alg, &self.signature, &responder.public_key) {
+        if !verify_signature(
+            &self.tbs,
+            &self.sig_alg,
+            &self.signature,
+            &responder.public_key,
+        ) {
             return RevocationStatus::Unknown;
         }
         // Find the SingleResponse for this certificate: the CertID hashes must recompute.
         let single = self.responses.iter().find(|r| {
             let name_hash = r.cert_id.hash_alg.digest(&[&cert.issuer.raw]);
             let key_hash = r.cert_id.hash_alg.digest(&[&issuer.public_key.key_bits()]);
-            name_hash == r.cert_id.issuer_name_hash && key_hash == r.cert_id.issuer_key_hash && strip(&r.cert_id.serial) == strip(&cert.serial)
+            name_hash == r.cert_id.issuer_name_hash
+                && key_hash == r.cert_id.issuer_key_hash
+                && strip(&r.cert_id.serial) == strip(&cert.serial)
         });
-        let Some(single) = single else { return RevocationStatus::Unknown };
+        let Some(single) = single else {
+            return RevocationStatus::Unknown;
+        };
         if !valid_in_window(single.this_update, single.next_update, at) {
             return RevocationStatus::Unknown;
         }

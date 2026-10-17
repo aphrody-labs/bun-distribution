@@ -29,7 +29,9 @@ use std::sync::{Arc, Mutex, PoisonError};
 
 use serde_json::{Value, json};
 
-use filmcraft_project::{ClipId, ItemId, ItemKind, MediaRef, Narration, TrackId, TrackKind, VocalPitch};
+use filmcraft_project::{
+    ClipId, ItemId, ItemKind, MediaRef, Narration, TrackId, TrackKind, VocalPitch,
+};
 use filmcraft_time::{Tick, TimeRange};
 use filmcraft_tts as tts;
 
@@ -48,7 +50,10 @@ pub fn narration_of(s: &Session, item: ItemId) -> Option<&Narration> {
 /// narration.
 pub fn target_clip(s: &Session, p: &Value) -> Option<ClipId> {
     let seq = s.active_sequence()?;
-    let is_narration = |c: ClipId| seq.find_item(c).is_some_and(|(_, it)| s.project.narrations.contains_key(&it.item));
+    let is_narration = |c: ClipId| {
+        seq.find_item(c)
+            .is_some_and(|(_, it)| s.project.narrations.contains_key(&it.item))
+    };
     match u64_p(p, "clip") {
         Some(c) => Some(ClipId(c)).filter(|c| is_narration(*c)),
         None => s.state.selection.iter().copied().find(|c| is_narration(*c)),
@@ -57,7 +62,9 @@ pub fn target_clip(s: &Session, p: &Value) -> Option<ClipId> {
 
 fn has_narration_clip(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
-    target_clip(s, &Value::Null).map(|_| ()).ok_or_else(|| "select a narration clip".into())
+    target_clip(s, &Value::Null)
+        .map(|_| ())
+        .ok_or_else(|| "select a narration clip".into())
 }
 
 /// Script and settings from params, on top of `base`.
@@ -70,19 +77,41 @@ fn settings(cmd: &str, p: &Value, base: Option<&Narration>) -> Result<Narration>
     }
     let text = match str_p(p, "text") {
         Some(t) => t.to_string(),
-        None => base.map(|b| b.text.clone()).ok_or_else(|| bad(cmd, "`text` is required"))?,
+        None => base
+            .map(|b| b.text.clone())
+            .ok_or_else(|| bad(cmd, "`text` is required"))?,
     };
-    let voice = str_p(p, "voice").map(str::to_string).or_else(|| base.map(|b| b.voice.clone())).unwrap_or_else(|| tts::default_voice_id().to_string());
-    let info = tts::voices_in(None).into_iter().find(|v| v.id == voice).ok_or_else(|| bad(cmd, format!("unknown voice `{voice}` (see tts.voices)")))?;
+    let voice = str_p(p, "voice")
+        .map(str::to_string)
+        .or_else(|| base.map(|b| b.voice.clone()))
+        .unwrap_or_else(|| tts::default_voice_id().to_string());
+    let info = tts::voices_in(None)
+        .into_iter()
+        .find(|v| v.id == voice)
+        .ok_or_else(|| bad(cmd, format!("unknown voice `{voice}` (see tts.voices)")))?;
     let pitch = match str_p(p, "pitch") {
-        Some(v) => VocalPitch::from_id(v).ok_or_else(|| bad(cmd, format!("unknown pitch `{v}` (extraLow, low, default, high, extraHigh)")))?,
+        Some(v) => VocalPitch::from_id(v).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown pitch `{v}` (extraLow, low, default, high, extraHigh)"),
+            )
+        })?,
         None => base.map(|b| b.pitch).unwrap_or_default(),
     };
     let pace = match p.get("pace") {
-        Some(v) => v.as_f64().ok_or_else(|| bad(cmd, "`pace` must be a number"))?,
+        Some(v) => v
+            .as_f64()
+            .ok_or_else(|| bad(cmd, "`pace` must be a number"))?,
         None => base.map_or(1.0, |b| b.pace),
     };
-    let n = Narration { text, language: info.language.to_string(), voice, pitch, pace, speech_duration: Tick::ZERO };
+    let n = Narration {
+        text,
+        language: info.language.to_string(),
+        voice,
+        pitch,
+        pace,
+        speech_duration: Tick::ZERO,
+    };
     n.check().map_err(|e| bad(cmd, e))?;
     Ok(n)
 }
@@ -93,28 +122,55 @@ pub type SynthCache = Arc<Mutex<Vec<(String, Arc<tts::Audio>)>>>;
 const CACHE_ENTRIES: usize = 6;
 
 fn cache_key(n: &Narration) -> String {
-    format!("{}\u{1f}{}\u{1f}{}\u{1f}{}", n.voice, n.pitch.id(), n.pace.to_bits(), n.text)
+    format!(
+        "{}\u{1f}{}\u{1f}{}\u{1f}{}",
+        n.voice,
+        n.pitch.id(),
+        n.pace.to_bits(),
+        n.text
+    )
 }
 
 fn tts_err(cmd: &str, e: tts::TtsError) -> EngineError {
     match e {
-        tts::TtsError::NotInstalled => bad(cmd, "the natural voices are not downloaded yet: Text to Speech ▸ Download natural voices (tts.downloadVoices)"),
+        tts::TtsError::NotInstalled => bad(
+            cmd,
+            "the natural voices are not downloaded yet: Text to Speech ▸ Download natural voices (tts.downloadVoices)",
+        ),
         e => bad(cmd, e.to_string()),
     }
 }
 
 /// Synthesize `n` (no cache).
-fn render(n: &Narration, models_dir: Option<&std::path::Path>) -> std::result::Result<tts::Audio, tts::TtsError> {
+fn render(
+    n: &Narration,
+    models_dir: Option<&std::path::Path>,
+) -> std::result::Result<tts::Audio, tts::TtsError> {
     let voice = tts::voice_in(&n.voice, models_dir)?;
-    voice.synthesize(&n.text, &tts::Params { semitones: n.pitch.semitones(), pace: n.pace })
+    voice.synthesize(
+        &n.text,
+        &tts::Params {
+            semitones: n.pitch.semitones(),
+            pace: n.pace,
+        },
+    )
 }
 
 fn synthesize(s: &Session, cmd: &str, n: &Narration) -> Result<Arc<tts::Audio>> {
     let key = cache_key(n);
-    if let Some(a) = s.tts_cache.lock().unwrap_or_else(PoisonError::into_inner).iter().find(|(k, _)| *k == key).map(|(_, a)| a.clone()) {
+    if let Some(a) = s
+        .tts_cache
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+        .find(|(k, _)| *k == key)
+        .map(|(_, a)| a.clone())
+    {
         return Ok(a);
     }
-    let a = Arc::new(render(n, crate::transcript::models_dir().as_deref()).map_err(|e| tts_err(cmd, e))?);
+    let a = Arc::new(
+        render(n, crate::transcript::models_dir().as_deref()).map_err(|e| tts_err(cmd, e))?,
+    );
     cache_put(&s.tts_cache, key, a.clone());
     Ok(a)
 }
@@ -158,7 +214,9 @@ fn voices(_s: &mut Session, _p: &Value) -> Result<Value> {
 
 fn preview(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "tts.preview";
-    let base = target_clip(s, p).and_then(|c| s.active_sequence()?.find_item(c).map(|(_, it)| it.item)).and_then(|i| s.project.narrations.get(&i).cloned());
+    let base = target_clip(s, p)
+        .and_then(|c| s.active_sequence()?.find_item(c).map(|(_, it)| it.item))
+        .and_then(|i| s.project.narrations.get(&i).cloned());
     let mut q = p.clone();
     if q.get("sample").and_then(Value::as_bool).unwrap_or(false) {
         q["text"] = json!(tts::SAMPLE_SENTENCE);
@@ -171,22 +229,37 @@ fn preview(s: &mut Session, p: &Value) -> Result<Value> {
     let mut path = Value::Null;
     if let Some(dest) = str_p(p, "path") {
         let bytes = crate::voiceover::write_wav_f32(&audio.samples, rate);
-        s.services.write_file(dest, &bytes).map_err(|e| EngineError::Other(format!("{dest}: {e}")))?;
+        s.services
+            .write_file(dest, &bytes)
+            .map_err(|e| EngineError::Other(format!("{dest}: {e}")))?;
         path = json!(dest);
     }
     s.tts_preview = Some(audio);
-    Ok(json!({"seconds": seconds, "samples": samples, "sampleRate": rate, "voice": n.voice, "path": path}))
+    Ok(
+        json!({"seconds": seconds, "samples": samples, "sampleRate": rate, "voice": n.voice, "path": path}),
+    )
 }
 
 /// Write `samples` as a new WAV and import it (its own undo step; callers collapse history).
 /// `near`: an edit writes next to the narration's previous file unless `dir` is given.
-fn write_and_import(s: &mut Session, p: &Value, samples: &[f32], rate: u32, near: Option<ItemId>) -> Result<(ItemId, String)> {
-    let beside = near.filter(|_| p.get("dir").is_none()).and_then(|i| match &s.project.items.get(&i)?.kind {
-        ItemKind::Media(m) => match &m.media {
-            MediaRef::File { path } => std::path::Path::new(path).parent().filter(|d| !d.as_os_str().is_empty()).map(|d| d.to_string_lossy().into_owned()),
-            MediaRef::Generator(_) => None,
-        },
-        _ => None,
+fn write_and_import(
+    s: &mut Session,
+    p: &Value,
+    samples: &[f32],
+    rate: u32,
+    near: Option<ItemId>,
+) -> Result<(ItemId, String)> {
+    let beside = near.filter(|_| p.get("dir").is_none()).and_then(|i| {
+        match &s.project.items.get(&i)?.kind {
+            ItemKind::Media(m) => match &m.media {
+                MediaRef::File { path } => std::path::Path::new(path)
+                    .parent()
+                    .filter(|d| !d.as_os_str().is_empty())
+                    .map(|d| d.to_string_lossy().into_owned()),
+                MediaRef::Generator(_) => None,
+            },
+            _ => None,
+        }
     });
     let dir = beside.unwrap_or_else(|| crate::voiceover::media_dir(s, p, "Narrations"));
     let path = crate::voiceover::unique_wav_path(s, &dir, BASE_NAME)?;
@@ -194,7 +267,9 @@ fn write_and_import(s: &mut Session, p: &Value, samples: &[f32], rate: u32, near
         std::fs::create_dir_all(&dir).map_err(|e| EngineError::Other(format!("{dir}: {e}")))?;
     }
     let bytes = crate::voiceover::write_wav_f32(samples, rate);
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     let item = crate::commands::import_bytes(s, &path, bytes.into(), None)?;
     Ok((item, path))
 }
@@ -202,7 +277,13 @@ fn write_and_import(s: &mut Session, p: &Value, samples: &[f32], rate: u32, near
 fn track_is_free(s: &Session, track: TrackId, range: TimeRange) -> bool {
     s.active_sequence()
         .and_then(|q| q.audio_tracks.iter().find(|t| t.id == track))
-        .is_some_and(|t| !t.locked && !t.items.iter().any(|it| it.start < range.end() && range.start < it.end()))
+        .is_some_and(|t| {
+            !t.locked
+                && !t
+                    .items
+                    .iter()
+                    .any(|it| it.start < range.end() && range.start < it.end())
+        })
 }
 
 /// The track a new narration of `range` goes to (None: add a track).
@@ -210,15 +291,27 @@ fn placement(s: &Session, p: &Value, range: TimeRange) -> Result<Option<TrackId>
     let cmd = "tts.create";
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     if let Some(v) = p.get("track") {
-        let id =
-            crate::mixer::strip_ref(seq, v).filter(|id| seq.audio_tracks.iter().any(|t| t.id == *id)).ok_or_else(|| bad(cmd, format!("no audio track {v}")))?;
+        let id = crate::mixer::strip_ref(seq, v)
+            .filter(|id| seq.audio_tracks.iter().any(|t| t.id == *id))
+            .ok_or_else(|| bad(cmd, format!("no audio track {v}")))?;
         if !track_is_free(s, id, range) {
-            return Err(bad(cmd, format!("audio track {v} is locked or has clips there")));
+            return Err(bad(
+                cmd,
+                format!("audio track {v} is locked or has clips there"),
+            ));
         }
         return Ok(Some(id));
     }
     let targeted = s.targeting().targeted;
-    let order = seq.audio_tracks.iter().filter(|t| targeted.contains(&t.id)).chain(seq.audio_tracks.iter().filter(|t| !targeted.contains(&t.id)));
+    let order = seq
+        .audio_tracks
+        .iter()
+        .filter(|t| targeted.contains(&t.id))
+        .chain(
+            seq.audio_tracks
+                .iter()
+                .filter(|t| !targeted.contains(&t.id)),
+        );
     Ok(order.map(|t| t.id).find(|id| track_is_free(s, *id, range)))
 }
 
@@ -241,24 +334,49 @@ fn create(s: &mut Session, p: &Value) -> Result<Value> {
         let track = match track {
             Some(t) => t,
             None => {
-                let before: Vec<TrackId> = s.active_sequence().map(|q| q.audio_tracks.iter().map(|t| t.id).collect()).unwrap_or_default();
-                s.execute("sequence.addTracks", json!({"video": 0, "audio": 1, "audioAfter": "last"}))?;
+                let before: Vec<TrackId> = s
+                    .active_sequence()
+                    .map(|q| q.audio_tracks.iter().map(|t| t.id).collect())
+                    .unwrap_or_default();
+                s.execute(
+                    "sequence.addTracks",
+                    json!({"video": 0, "audio": 1, "audioAfter": "last"}),
+                )?;
                 s.active_sequence()
-                    .and_then(|q| q.audio_tracks.iter().map(|t| t.id).find(|id| !before.contains(id)))
+                    .and_then(|q| {
+                        q.audio_tracks
+                            .iter()
+                            .map(|t| t.id)
+                            .find(|id| !before.contains(id))
+                    })
                     .ok_or_else(|| EngineError::Other("could not add an audio track".into()))?
             }
         };
         let (item, path) = write_and_import(s, p, &audio.samples, rate, None)?;
-        let seq_rate = s.project.sequence(seq_id).map(|q| q.settings.frame_rate).unwrap_or_default();
+        let seq_rate = s
+            .project
+            .sequence(seq_id)
+            .map(|q| q.settings.frame_rate)
+            .unwrap_or_default();
         let narration = n.clone();
         let clip = s.edit("New Narration", |pr, st| {
             let mut it = pr
-                .make_track_item(item, TrackKind::Audio, at, TimeRange::new(Tick::ZERO, dur), seq_rate)
+                .make_track_item(
+                    item,
+                    TrackKind::Audio,
+                    at,
+                    TimeRange::new(Tick::ZERO, dur),
+                    seq_rate,
+                )
                 .ok_or(EngineError::Other("the narration is not importable".into()))?;
             it.duration = dur;
             let id = it.id;
             let seq = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
-            let t = seq.audio_tracks.iter_mut().find(|t| t.id == track).ok_or_else(|| bad(cmd, "the narration track was deleted"))?;
+            let t = seq
+                .audio_tracks
+                .iter_mut()
+                .find(|t| t.id == track)
+                .ok_or_else(|| bad(cmd, "the narration track was deleted"))?;
             let pos = t.items.partition_point(|x| x.start <= at);
             t.items.insert(pos, it);
             seq.check().map_err(EngineError::Other)?;
@@ -307,14 +425,22 @@ fn needed_samples(duration: Tick, speed: f64, rate: u32) -> usize {
 fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "tts.edit";
     let seq_id = s.state.active_sequence.ok_or(EngineError::NoSequence)?;
-    let clip = target_clip(s, p).ok_or_else(|| bad(cmd, "select a narration clip (or pass `clip`)"))?;
+    let clip =
+        target_clip(s, p).ok_or_else(|| bad(cmd, "select a narration clip (or pass `clip`)"))?;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let (track, it) = seq.find_item(clip).ok_or_else(|| bad(cmd, "no such clip"))?;
+    let (track, it) = seq
+        .find_item(clip)
+        .ok_or_else(|| bad(cmd, "no such clip"))?;
     if seq.audio_tracks.iter().any(|t| t.id == track && t.locked) {
         return Err(bad(cmd, "the clip's track is locked"));
     }
     let (old_item, clip_dur, speed) = (it.item, it.duration, it.speed);
-    let base = s.project.narrations.get(&old_item).cloned().ok_or_else(|| bad(cmd, "the clip is not a narration"))?;
+    let base = s
+        .project
+        .narrations
+        .get(&old_item)
+        .cloned()
+        .ok_or_else(|| bad(cmd, "the clip is not a narration"))?;
     let mut n = settings(cmd, p, Some(&base))?;
     let audio = synthesize(s, cmd, &n)?;
     let rate = audio.sample_rate.max(1);
@@ -324,18 +450,27 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
     let needed = needed_samples(clip_dur, speed, rate);
     let mut samples = audio.samples.clone();
     if needed > samples.len() {
-        samples.try_reserve(needed - samples.len()).map_err(|e| bad(cmd, format!("unable to allocate the narration: {e}")))?;
+        samples
+            .try_reserve(needed - samples.len())
+            .map_err(|e| bad(cmd, format!("unable to allocate the narration: {e}")))?;
         samples.resize(needed, 0.0);
     }
     let file_len = samples.len();
     let n0 = s.history.undo.len();
     let result = (|| -> Result<Value> {
         let (item, path) = write_and_import(s, p, &samples, rate, Some(old_item))?;
-        let name = s.project.items.get(&item).map(|i| i.name.clone()).unwrap_or_default();
+        let name = s
+            .project
+            .items
+            .get(&item)
+            .map(|i| i.name.clone())
+            .unwrap_or_default();
         let narration = n.clone();
         s.edit("Edit Narration", |pr, _| {
             let seq = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
-            let (_, it) = seq.find_item_mut(clip).ok_or_else(|| bad(cmd, "the clip was deleted"))?;
+            let (_, it) = seq
+                .find_item_mut(clip)
+                .ok_or_else(|| bad(cmd, "the clip was deleted"))?;
             it.item = item;
             it.name = name;
             it.source_in = Tick::ZERO;
@@ -367,41 +502,77 @@ fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
     let (item, clip) = match u64_p(p, "item") {
         Some(i) => (ItemId(i), None),
         None => {
-            let c = target_clip(s, p).ok_or_else(|| bad(cmd, "pass `item` or `clip`, or select a narration clip"))?;
+            let c = target_clip(s, p)
+                .ok_or_else(|| bad(cmd, "pass `item` or `clip`, or select a narration clip"))?;
             let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-            (seq.find_item(c).map(|(_, it)| it.item).ok_or_else(|| bad(cmd, "no such clip"))?, Some(c.0))
+            (
+                seq.find_item(c)
+                    .map(|(_, it)| it.item)
+                    .ok_or_else(|| bad(cmd, "no such clip"))?,
+                Some(c.0),
+            )
         }
     };
-    let n = s.project.narrations.get(&item).ok_or_else(|| bad(cmd, "not a narration"))?;
+    let n = s
+        .project
+        .narrations
+        .get(&item)
+        .ok_or_else(|| bad(cmd, "not a narration"))?;
     Ok(json!({"item": item.0, "clip": clip, "narration": n}))
 }
 
 fn new_job(s: &mut Session, label: String) -> crate::Job {
     let id = s.jobs.iter().map(|j| j.id).max().unwrap_or(0) + 1;
-    crate::Job { id, label, progress: Default::default(), result: Default::default() }
+    crate::Job {
+        id,
+        label,
+        progress: Default::default(),
+        result: Default::default(),
+    }
 }
 
-fn spawn(s: &mut Session, job: crate::Job, wait: bool, name: &str, run: impl FnOnce() + Send + 'static) -> Result<u64> {
+fn spawn(
+    s: &mut Session,
+    job: crate::Job,
+    wait: bool,
+    name: &str,
+    run: impl FnOnce() + Send + 'static,
+) -> Result<u64> {
     let id = job.id;
     let run = crate::export_tools::guard_job(job.progress.clone(), job.result.clone(), run);
     s.jobs.push(job);
     if wait || cfg!(target_arch = "wasm32") {
         run();
     } else {
-        std::thread::Builder::new().name(name.into()).spawn(run).map_err(|e| EngineError::Other(e.to_string()))?;
+        std::thread::Builder::new()
+            .name(name.into())
+            .spawn(run)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
     }
     Ok(id)
 }
 
 type JobResult = std::sync::Mutex<Option<std::result::Result<filmcraft_export::Report, String>>>;
 
-fn finish(prog: &filmcraft_export::Progress, res: &JobResult, r: std::result::Result<String, String>, t0: web_time::Instant) {
+fn finish(
+    prog: &filmcraft_export::Progress,
+    res: &JobResult,
+    r: std::result::Result<String, String>,
+    t0: web_time::Instant,
+) {
     use std::sync::atomic::Ordering;
     let secs = t0.elapsed().as_secs_f64();
     let r = match r {
         Ok(status) => {
             *prog.status.lock().unwrap_or_else(PoisonError::into_inner) = status;
-            Ok(filmcraft_export::Report { path: String::new(), frames: 0, seconds: secs, bytes: 0, render_fps: 0.0, extra_files: Vec::new() })
+            Ok(filmcraft_export::Report {
+                path: String::new(),
+                frames: 0,
+                seconds: secs,
+                bytes: 0,
+                render_fps: 0.0,
+                extra_files: Vec::new(),
+            })
         }
         Err(e) => {
             *prog.status.lock().unwrap_or_else(PoisonError::into_inner) = e.clone();
@@ -417,18 +588,29 @@ fn finish(prog: &filmcraft_export::Progress, res: &JobResult, r: std::result::Re
 /// the same settings return at once.
 fn render_job(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "tts.render";
-    let base = target_clip(s, p).and_then(|c| s.active_sequence()?.find_item(c).map(|(_, it)| it.item)).and_then(|i| s.project.narrations.get(&i).cloned());
+    let base = target_clip(s, p)
+        .and_then(|c| s.active_sequence()?.find_item(c).map(|(_, it)| it.item))
+        .and_then(|i| s.project.narrations.get(&i).cloned());
     let mut q = p.clone();
     if q.get("sample").and_then(Value::as_bool).unwrap_or(false) {
         q["text"] = json!(tts::SAMPLE_SENTENCE);
     }
     let n = settings(cmd, &q, base.as_ref())?;
     let key = cache_key(&n);
-    if s.tts_cache.lock().unwrap_or_else(PoisonError::into_inner).iter().any(|(k, _)| *k == key) {
+    if s.tts_cache
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+        .any(|(k, _)| *k == key)
+    {
         return Ok(json!({"job": null, "cached": true}));
     }
     let job = new_job(s, "Synthesizing narration".into());
-    let (prog, res, cache) = (job.progress.clone(), job.result.clone(), s.tts_cache.clone());
+    let (prog, res, cache) = (
+        job.progress.clone(),
+        job.result.clone(),
+        s.tts_cache.clone(),
+    );
     let wait = p.get("wait").and_then(Value::as_bool).unwrap_or(false);
     let id = spawn(s, job, wait, "filmcraft-tts", move || {
         let t0 = web_time::Instant::now();
@@ -439,7 +621,9 @@ fn render_job(s: &mut Session, p: &Value) -> Result<Value> {
                 cache_put(&cache, key, Arc::new(a));
                 Ok(format!("{secs:.1} s of speech"))
             }
-            Err(tts::TtsError::NotInstalled) => Err("the natural voices are not downloaded yet".to_string()),
+            Err(tts::TtsError::NotInstalled) => {
+                Err("the natural voices are not downloaded yet".to_string())
+            }
             Err(e) => Err(e.to_string()),
         };
         finish(&prog, &res, r, t0);
@@ -450,41 +634,67 @@ fn render_job(s: &mut Session, p: &Value) -> Result<Value> {
 /// Download the natural voices (Kokoro-82M, its voices and CMUdict) in the background.
 fn download_voices(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "tts.downloadVoices";
-    let dir = crate::transcript::models_dir().ok_or_else(|| bad(cmd, "no data directory for voice models"))?;
+    let dir = crate::transcript::models_dir()
+        .ok_or_else(|| bad(cmd, "no data directory for voice models"))?;
     if tts::catalog::installed(&dir) {
         return Ok(json!({"job": null, "installed": true}));
     }
     if !cfg!(feature = "neural-voices") {
-        return Err(bad(cmd, "natural voices are not available in this build (built without the `neural-voices` feature)"));
+        return Err(bad(
+            cmd,
+            "natural voices are not available in this build (built without the `neural-voices` feature)",
+        ));
     }
     let wait = p.get("wait").and_then(Value::as_bool).unwrap_or(false);
     let job = new_job(s, format!("Downloading {}", tts::catalog::PACKAGE_NAME));
-    job.progress.total.store(tts::catalog::missing_bytes(&dir), std::sync::atomic::Ordering::Relaxed);
+    job.progress.total.store(
+        tts::catalog::missing_bytes(&dir),
+        std::sync::atomic::Ordering::Relaxed,
+    );
     let (prog, res) = (job.progress.clone(), job.result.clone());
     let id = spawn(s, job, wait, "filmcraft-tts-download", move || {
         let t0 = web_time::Instant::now();
         let r = download_package(&dir, &prog);
-        finish(&prog, &res, r.map(|()| "Natural voices installed".to_string()), t0);
+        finish(
+            &prog,
+            &res,
+            r.map(|()| "Natural voices installed".to_string()),
+            t0,
+        );
     })?;
     Ok(json!({"job": id, "installed": false}))
 }
 
 #[cfg(feature = "neural-voices")]
-fn download_package(dir: &std::path::Path, prog: &filmcraft_export::Progress) -> std::result::Result<(), String> {
+fn download_package(
+    dir: &std::path::Path,
+    prog: &filmcraft_export::Progress,
+) -> std::result::Result<(), String> {
     use std::sync::atomic::Ordering;
-    let files: Vec<filmcraft_speech::models::ModelFile> =
-        tts::catalog::FILES.iter().map(|f| filmcraft_speech::models::ModelFile { name: f.name, url: f.url, sha256: f.sha256, size: f.size }).collect();
+    let files: Vec<filmcraft_speech::models::ModelFile> = tts::catalog::FILES
+        .iter()
+        .map(|f| filmcraft_speech::models::ModelFile {
+            name: f.name,
+            url: f.url,
+            sha256: f.sha256,
+            size: f.size,
+        })
+        .collect();
     let mut progress = |done: u64, total: u64, file: &str| {
         prog.done.store(done, Ordering::Relaxed);
         prog.total.store(total, Ordering::Relaxed);
         *prog.status.lock().unwrap_or_else(PoisonError::into_inner) = format!("Downloading {file}");
         !prog.cancel.load(Ordering::Relaxed)
     };
-    filmcraft_speech::models::download_files(&tts::catalog::package_dir(dir), &files, &mut progress).map_err(|e| e.to_string())
+    filmcraft_speech::models::download_files(&tts::catalog::package_dir(dir), &files, &mut progress)
+        .map_err(|e| e.to_string())
 }
 
 #[cfg(not(feature = "neural-voices"))]
-fn download_package(_: &std::path::Path, _: &filmcraft_export::Progress) -> std::result::Result<(), String> {
+fn download_package(
+    _: &std::path::Path,
+    _: &filmcraft_export::Progress,
+) -> std::result::Result<(), String> {
     Err("natural voices are not available in this build".into())
 }
 
@@ -496,12 +706,28 @@ fn spec(
     run: fn(&mut Session, &Value) -> Result<Value>,
     journal: bool,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut: None, params, enabled, run, journal }
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 pub fn commands() -> Vec<CommandSpec> {
     vec![
-        spec("tts.voices", "List Narration Voices", "{}", always, voices, false),
+        spec(
+            "tts.voices",
+            "List Narration Voices",
+            "{}",
+            always,
+            voices,
+            false,
+        ),
         spec(
             "tts.preview",
             "Preview Narration",
@@ -518,8 +744,22 @@ pub fn commands() -> Vec<CommandSpec> {
             create,
             true,
         ),
-        spec("tts.edit", "Edit Narration", r#"{"clip":id?,"text":str?,"voice":str?,"pitch":str?,"pace":f64?,"dir":str?}"#, has_narration_clip, edit, true),
-        spec("tts.inspect", "Inspect Narration", r#"{"clip":id?,"item":id?}"#, always, inspect, false),
+        spec(
+            "tts.edit",
+            "Edit Narration",
+            r#"{"clip":id?,"text":str?,"voice":str?,"pitch":str?,"pace":f64?,"dir":str?}"#,
+            has_narration_clip,
+            edit,
+            true,
+        ),
+        spec(
+            "tts.inspect",
+            "Inspect Narration",
+            r#"{"clip":id?,"item":id?}"#,
+            always,
+            inspect,
+            false,
+        ),
         spec(
             "tts.render",
             "Synthesize Narration",
@@ -528,6 +768,13 @@ pub fn commands() -> Vec<CommandSpec> {
             render_job,
             false,
         ),
-        spec("tts.downloadVoices", "Download Natural Voices", r#"{"wait":bool?}"#, always, download_voices, false),
+        spec(
+            "tts.downloadVoices",
+            "Download Natural Voices",
+            r#"{"wait":bool?}"#,
+            always,
+            download_voices,
+            false,
+        ),
     ]
 }

@@ -23,7 +23,17 @@
 //! # Ok::<(), filmcraft_mpeg2v::Error>(())
 //! ```
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod bits;
 pub mod headers;
@@ -36,11 +46,13 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub use headers::{
-    DisplayExtension, Extension, GopHeader, PictureCodingExtension, PictureHeader, PictureType, QuantMatrixExtension, SequenceExtension, SequenceHeader,
-    profile_level_name, start_codes,
+    DisplayExtension, Extension, GopHeader, PictureCodingExtension, PictureHeader, PictureType,
+    QuantMatrixExtension, SequenceExtension, SequenceHeader, profile_level_name, start_codes,
 };
 
-use headers::{EXTENSION, GROUP_START, PICTURE_START, SEQUENCE_END, SEQUENCE_HEADER, SLICE_MAX, SLICE_MIN};
+use headers::{
+    EXTENSION, GROUP_START, PICTURE_START, SEQUENCE_END, SEQUENCE_HEADER, SLICE_MAX, SLICE_MIN,
+};
 use mc::Frame;
 use slice::{PicParams, Target, decode_slice, slice_row};
 
@@ -161,12 +173,21 @@ struct Seq {
 }
 
 /// MPEG-1 pel_aspect_ratio (height/width of a sample) ×10000, Table 2-D.2.
-const MPEG1_PEL_ASPECT: [u32; 15] = [0, 10000, 6735, 7031, 7615, 8055, 8437, 8935, 9157, 9815, 10255, 10695, 10950, 11575, 12015];
+const MPEG1_PEL_ASPECT: [u32; 15] = [
+    0, 10000, 6735, 7031, 7615, 8055, 8437, 8935, 9157, 9815, 10255, 10695, 10950, 11575, 12015,
+];
 
 impl Seq {
-    fn new(hdr: SequenceHeader, ext: Option<SequenceExtension>, display: Option<DisplayExtension>) -> Result<Seq> {
+    fn new(
+        hdr: SequenceHeader,
+        ext: Option<SequenceExtension>,
+        display: Option<DisplayExtension>,
+    ) -> Result<Seq> {
         let (w, h) = match &ext {
-            Some(e) => (hdr.horizontal_size | (e.horizontal_size_extension as u32) << 12, hdr.vertical_size | (e.vertical_size_extension as u32) << 12),
+            Some(e) => (
+                hdr.horizontal_size | (e.horizontal_size_extension as u32) << 12,
+                hdr.vertical_size | (e.vertical_size_extension as u32) << 12,
+            ),
             None => (hdr.horizontal_size, hdr.vertical_size),
         };
         let chroma = match ext.map_or(1, |e| e.chroma_format) {
@@ -180,12 +201,25 @@ impl Seq {
         }
         let progressive_sequence = ext.is_none_or(|e| e.progressive_sequence);
         let mb_width = (w as usize).div_ceil(16);
-        let mb_height = if progressive_sequence { (h as usize).div_ceil(16) } else { 2 * (h as usize).div_ceil(32) };
-        let frame_rate = headers::frame_rate(hdr.frame_rate_code, ext.map_or(0, |e| e.frame_rate_extension_n), ext.map_or(0, |e| e.frame_rate_extension_d));
+        let mb_height = if progressive_sequence {
+            (h as usize).div_ceil(16)
+        } else {
+            2 * (h as usize).div_ceil(32)
+        };
+        let frame_rate = headers::frame_rate(
+            hdr.frame_rate_code,
+            ext.map_or(0, |e| e.frame_rate_extension_n),
+            ext.map_or(0, |e| e.frame_rate_extension_d),
+        );
         let (sar, dar) = if ext.is_some() {
             let (dw, dh) = display
                 .filter(|d| d.display_horizontal_size > 0 && d.display_vertical_size > 0)
-                .map_or((w, h), |d| (d.display_horizontal_size as u32, d.display_vertical_size as u32));
+                .map_or((w, h), |d| {
+                    (
+                        d.display_horizontal_size as u32,
+                        d.display_vertical_size as u32,
+                    )
+                });
             let dar = match hdr.aspect_ratio_information {
                 2 => Some((4, 3)),
                 3 => Some((16, 9)),
@@ -203,11 +237,17 @@ impl Seq {
             };
             (reduce_sar(sar), dar)
         } else {
-            let v = MPEG1_PEL_ASPECT.get(hdr.aspect_ratio_information as usize).copied().filter(|&v| v > 0).unwrap_or(10000);
+            let v = MPEG1_PEL_ASPECT
+                .get(hdr.aspect_ratio_information as usize)
+                .copied()
+                .filter(|&v| v > 0)
+                .unwrap_or(10000);
             let g = headers::gcd(10000, v);
             ((10000 / g, v / g), None)
         };
-        let bit_rate = (hdr.bit_rate_value as u64 | (ext.map_or(0, |e| e.bit_rate_extension as u64) << 18)) * 400;
+        let bit_rate = (hdr.bit_rate_value as u64
+            | (ext.map_or(0, |e| e.bit_rate_extension as u64) << 18))
+            * 400;
         let info = SequenceInfo {
             mpeg2: ext.is_some(),
             width: w,
@@ -221,9 +261,20 @@ impl Seq {
             dar,
             colour: display.and_then(|d| d.colour),
             video_format: display.map(|d| d.video_format),
-            bit_rate: if hdr.bit_rate_value == 0x3FFFF && ext.is_none() { 0 } else { bit_rate },
+            bit_rate: if hdr.bit_rate_value == 0x3FFFF && ext.is_none() {
+                0
+            } else {
+                bit_rate
+            },
         };
-        Ok(Seq { hdr, ext, display, info: Arc::new(info), mb_width, mb_height })
+        Ok(Seq {
+            hdr,
+            ext,
+            display,
+            info: Arc::new(info),
+            mb_width,
+            mb_height,
+        })
     }
 
     fn shifts(&self) -> (u32, u32) {
@@ -250,12 +301,18 @@ fn reduce_sar((n, d): (u32, u32)) -> (u32, u32) {
 /// Parse the first sequence header (and its extensions) in `data`.
 pub fn probe(data: &[u8]) -> Option<SequenceInfo> {
     let codes = start_codes(data);
-    let mut seq: Option<(SequenceHeader, Option<SequenceExtension>, Option<DisplayExtension>)> = None;
+    let mut seq: Option<(
+        SequenceHeader,
+        Option<SequenceExtension>,
+        Option<DisplayExtension>,
+    )> = None;
     for (k, &(pos, code)) in codes.iter().enumerate() {
         let end = codes.get(k + 1).map_or(data.len(), |c| c.0);
         let payload = &data[(pos + 4).min(end)..end];
         match code {
-            SEQUENCE_HEADER if seq.is_none() => seq = Some((SequenceHeader::parse(payload).ok()?, None, None)),
+            SEQUENCE_HEADER if seq.is_none() => {
+                seq = Some((SequenceHeader::parse(payload).ok()?, None, None))
+            }
             EXTENSION => {
                 if let Some(s) = seq.as_mut() {
                     match Extension::parse(payload) {
@@ -284,11 +341,17 @@ pub struct AccessUnitInfo {
 impl AccessUnitInfo {
     /// Starts with an I picture (decoding can begin here when a sequence header has been seen).
     pub fn is_intra(&self) -> bool {
-        self.pictures.first().is_some_and(|p| matches!(p.0.coding_type, PictureType::I | PictureType::D))
+        self.pictures
+            .first()
+            .is_some_and(|p| matches!(p.0.coding_type, PictureType::I | PictureType::D))
     }
     /// Only B pictures (never used for prediction).
     pub fn is_disposable(&self) -> bool {
-        !self.pictures.is_empty() && self.pictures.iter().all(|p| p.0.coding_type == PictureType::B)
+        !self.pictures.is_empty()
+            && self
+                .pictures
+                .iter()
+                .all(|p| p.0.coding_type == PictureType::B)
     }
 }
 
@@ -307,7 +370,9 @@ pub fn scan_access_unit(data: &[u8]) -> AccessUnitInfo {
                 }
             }
             EXTENSION => {
-                if let (Ok(Extension::PictureCoding(p)), Some(last)) = (Extension::parse(payload), info.pictures.last_mut()) {
+                if let (Ok(Extension::PictureCoding(p)), Some(last)) =
+                    (Extension::parse(payload), info.pictures.last_mut())
+                {
                     last.1 = Some(p);
                 }
             }
@@ -338,7 +403,9 @@ pub fn access_units(es: &[u8]) -> Vec<std::ops::Range<usize>> {
                     .take_while(|c| c.1 == EXTENSION || c.1 == headers::USER_DATA)
                     .find_map(|&(p, c)| {
                         let end = codes.iter().find(|x| x.0 > p).map_or(es.len(), |x| x.0);
-                        (c == EXTENSION).then(|| Extension::parse(&es[(p + 4).min(end)..end]).ok()).flatten()
+                        (c == EXTENSION)
+                            .then(|| Extension::parse(&es[(p + 4).min(end)..end]).ok())
+                            .flatten()
                     })
                     .and_then(|e| match e {
                         Extension::PictureCoding(p) => Some(p.picture_structure),
@@ -402,7 +469,11 @@ struct Anchor {
 pub struct Decoder {
     seq: Option<Seq>,
     /// A sequence header is waiting for its extensions (applied at the next non-extension unit).
-    seq_pending: Option<(SequenceHeader, Option<SequenceExtension>, Option<DisplayExtension>)>,
+    seq_pending: Option<(
+        SequenceHeader,
+        Option<SequenceExtension>,
+        Option<DisplayExtension>,
+    )>,
     matrices: [[u8; 64]; 4],
     closed_gop: bool,
     /// Older and newer anchor (reference) frames.
@@ -429,7 +500,12 @@ impl Decoder {
         Decoder {
             seq: None,
             seq_pending: None,
-            matrices: [headers::DEFAULT_INTRA, [16; 64], headers::DEFAULT_INTRA, [16; 64]],
+            matrices: [
+                headers::DEFAULT_INTRA,
+                [16; 64],
+                headers::DEFAULT_INTRA,
+                [16; 64],
+            ],
             closed_gop: false,
             fwd: None,
             bwd: None,
@@ -529,7 +605,13 @@ impl Decoder {
                 PICTURE_START => {
                     self.finish_picture(data, pts);
                     match PictureHeader::parse(payload) {
-                        Ok(ph) => self.pending = Some(Pending { ph, pce: None, slices: Vec::new() }),
+                        Ok(ph) => {
+                            self.pending = Some(Pending {
+                                ph,
+                                pce: None,
+                                slices: Vec::new(),
+                            })
+                        }
                         Err(e) => err = Some(e),
                     }
                 }
@@ -578,14 +660,20 @@ impl Decoder {
     }
 
     fn apply_sequence(&mut self) {
-        let Some((h, e, d)) = self.seq_pending.take() else { return };
+        let Some((h, e, d)) = self.seq_pending.take() else {
+            return;
+        };
         // a sequence header resets the quantiser matrices (§6.3.11)
         let intra = h.intra_matrix.unwrap_or(headers::DEFAULT_INTRA);
         let non_intra = h.non_intra_matrix.unwrap_or([16; 64]);
         self.matrices = [intra, non_intra, intra, non_intra];
         match Seq::new(h, e, d) {
             Ok(s) => {
-                let changed = self.seq.as_ref().is_none_or(|o| o.mb_width != s.mb_width || o.mb_height != s.mb_height || o.info.chroma != s.info.chroma);
+                let changed = self.seq.as_ref().is_none_or(|o| {
+                    o.mb_width != s.mb_width
+                        || o.mb_height != s.mb_height
+                        || o.info.chroma != s.info.chroma
+                });
                 if changed {
                     self.reset();
                 }
@@ -596,7 +684,9 @@ impl Decoder {
     }
 
     fn finish_picture(&mut self, data: &[u8], pts: i64) {
-        let Some(pd) = self.pending.take() else { return };
+        let Some(pd) = self.pending.take() else {
+            return;
+        };
         let Some(seq) = self.seq.clone() else {
             self.errors += 1;
             return;
@@ -634,7 +724,10 @@ impl Decoder {
             }
         }
         // B pictures need their forward reference unless the GOP is closed
-        if ptype == PictureType::B && second.is_none() && (self.bwd.is_none() || (self.fwd.is_none() && !self.closed_gop)) {
+        if ptype == PictureType::B
+            && second.is_none()
+            && (self.bwd.is_none() || (self.fwd.is_none() && !self.closed_gop))
+        {
             return;
         }
         let is_second = second.is_some();
@@ -642,14 +735,25 @@ impl Decoder {
             Some(b) => (b.frame, b.meta),
             None => (
                 Frame::new(w, h, cw, ch),
-                Meta { pts, ptype, temporal_reference: pd.ph.temporal_reference, pce, field_pictures: structure != 3, info: seq.info.clone() },
+                Meta {
+                    pts,
+                    ptype,
+                    temporal_reference: pd.ph.temporal_reference,
+                    pce,
+                    field_pictures: structure != 3,
+                    info: seq.info.clone(),
+                },
             ),
         };
         // a P second field may predict from the first field of its own frame
         let first_field = (is_second && ptype == PictureType::P).then(|| frame.clone());
         // A missing reference (decoding started at a P picture, or a broken link) predicts from
         // mid-gray.
-        if self.gray.as_ref().is_none_or(|g| g.w != w || g.h != h || g.cw != cw) {
+        if self
+            .gray
+            .as_ref()
+            .is_none_or(|g| g.w != w || g.h != h || g.cw != cw)
+        {
             let mut g = Frame::new(w, h, cw, ch);
             g.planes[0].fill(128);
             self.gray = Some(Arc::new(g));
@@ -666,11 +770,18 @@ impl Decoder {
             mpeg2,
             ptype,
             pce,
-            full_pel: [pd.ph.full_pel_forward_vector, pd.ph.full_pel_backward_vector],
+            full_pel: [
+                pd.ph.full_pel_forward_vector,
+                pd.ph.full_pel_backward_vector,
+            ],
             shx,
             shy,
             mb_width: seq.mb_width,
-            mb_rows: if structure == 3 { seq.mb_height } else { seq.mb_height / 2 },
+            mb_rows: if structure == 3 {
+                seq.mb_height
+            } else {
+                seq.mb_height / 2
+            },
             matrices: self.matrices,
             fwd,
             bwd,
@@ -679,13 +790,25 @@ impl Decoder {
             vertical_size_extension: seq.info.height > 2800,
         };
         let errors = SliceErrors::default();
-        decode_picture(&p, data, &pd.slices, &mut frame, structure, self.threads, &errors);
+        decode_picture(
+            &p,
+            data,
+            &pd.slices,
+            &mut frame,
+            structure,
+            self.threads,
+            &errors,
+        );
         self.errors += errors.count.load(Ordering::Relaxed);
         if let Some(e) = errors.first.into_inner().unwrap_or(None) {
             self.last_error = Some(e);
         }
         if structure != 3 && !is_second {
-            self.building = Some(Building { frame, parity, meta });
+            self.building = Some(Building {
+                frame,
+                parity,
+                meta,
+            });
         } else {
             self.complete(frame, meta);
         }
@@ -700,7 +823,11 @@ impl Decoder {
                 }
                 self.fwd = Some(prev);
             }
-            self.bwd = Some(Anchor { frame: Arc::new(frame), meta, shown: false });
+            self.bwd = Some(Anchor {
+                frame: Arc::new(frame),
+                meta,
+                shown: false,
+            });
         } else {
             self.out.push(to_picture(&frame, &meta));
         }
@@ -723,7 +850,15 @@ impl SliceErrors {
 }
 
 /// Decode the slices of one picture into `frame`.
-fn decode_picture(p: &PicParams, data: &[u8], slices: &[(u8, std::ops::Range<usize>)], frame: &mut Frame, structure: u8, threads: bool, errors: &SliceErrors) {
+fn decode_picture(
+    p: &PicParams,
+    data: &[u8],
+    slices: &[(u8, std::ops::Range<usize>)],
+    frame: &mut Frame,
+    structure: u8,
+    threads: bool,
+    errors: &SliceErrors,
+) {
     let (w, cw) = (frame.w, frame.cw);
     let field = (structure != 3).then_some(p.parity);
     let lines = if structure == 3 { 16 } else { 32 };
@@ -731,7 +866,12 @@ fn decode_picture(p: &PicParams, data: &[u8], slices: &[(u8, std::ops::Range<usi
     let [y, cb, cr] = &mut frame.planes;
     if !p.mpeg2 {
         // MPEG-1 slices may span rows: decode in order into the whole picture
-        let mut t = Target { planes: [&mut y[..], &mut cb[..], &mut cr[..]], strides: [w, cw], line0: [0, 0], field };
+        let mut t = Target {
+            planes: [&mut y[..], &mut cb[..], &mut cr[..]],
+            strides: [w, cw],
+            line0: [0, 0],
+            field,
+        };
         for (code, r) in slices {
             let payload = &data[r.clone()];
             if let Err(e) = decode_slice(p, payload, *code as usize - 1, false, &mut t) {
@@ -753,7 +893,12 @@ fn decode_picture(p: &PicParams, data: &[u8], slices: &[(u8, std::ops::Range<usi
     }
     let run = |r: usize, y: &mut [u8], cb: &mut [u8], cr: &mut [u8]| {
         let Some(list) = rows.get(r) else { return };
-        let mut t = Target { planes: [y, cb, cr], strides: [w, cw], line0: [r * lines, r * clines], field };
+        let mut t = Target {
+            planes: [y, cb, cr],
+            strides: [w, cw],
+            line0: [r * lines, r * clines],
+            field,
+        };
         for payload in list {
             if let Err(e) = decode_slice(p, payload, r, true, &mut t) {
                 errors.add(e.0);
@@ -771,7 +916,12 @@ fn decode_picture(p: &PicParams, data: &[u8], slices: &[(u8, std::ops::Range<usi
         return;
     }
     let _ = threads;
-    for (r, ((y, cb), cr)) in y.chunks_mut(lines * w).zip(cb.chunks_mut(clines * cw)).zip(cr.chunks_mut(clines * cw)).enumerate() {
+    for (r, ((y, cb), cr)) in y
+        .chunks_mut(lines * w)
+        .zip(cb.chunks_mut(clines * cw))
+        .zip(cr.chunks_mut(clines * cw))
+        .enumerate()
+    {
         run(r, y, cb, cr);
     }
 }
@@ -804,7 +954,11 @@ fn to_picture(f: &Frame, meta: &Meta) -> Picture {
         temporal_reference: meta.temporal_reference,
         progressive_frame,
         // field pictures: the first coded field is displayed first
-        top_field_first: if meta.field_pictures { meta.pce.picture_structure == 1 } else { meta.pce.top_field_first },
+        top_field_first: if meta.field_pictures {
+            meta.pce.picture_structure == 1
+        } else {
+            meta.pce.top_field_first
+        },
         repeat_first_field: meta.pce.repeat_first_field,
         field_pictures: meta.field_pictures,
         info: meta.info.clone(),

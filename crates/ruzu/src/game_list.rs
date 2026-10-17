@@ -52,20 +52,27 @@ mod worker;
 /// Upstream's colorful-theme `folder`, `bad_folder` and `star` icons. Keep
 /// local copies so the game list does not depend on the host icon theme or the
 /// zuyu tree.
-const FOLDER_ICON_PNG: &[u8] = include_bytes!("../resources/qt_themes/colorful/icons/48x48/folder.png");
-const BAD_FOLDER_ICON_PNG: &[u8] = include_bytes!("../resources/qt_themes/colorful/icons/48x48/bad_folder.png");
-const FAVORITES_ICON_PNG: &[u8] = include_bytes!("../resources/qt_themes/colorful/icons/48x48/star.png");
+const FOLDER_ICON_PNG: &[u8] =
+    include_bytes!("../resources/qt_themes/colorful/icons/48x48/folder.png");
+const BAD_FOLDER_ICON_PNG: &[u8] =
+    include_bytes!("../resources/qt_themes/colorful/icons/48x48/bad_folder.png");
+const FAVORITES_ICON_PNG: &[u8] =
+    include_bytes!("../resources/qt_themes/colorful/icons/48x48/star.png");
 
 /// Eden's midnight icon QRC aliases qdarkstyle, while the colorful variants
 /// inherit colorful. Embed those assets instead of depending on Qt icon lookup.
 fn theme_icons(theme: &str) -> [&'static [u8]; 3] {
-    let internal = uisettings::THEMES.iter()
+    let internal = uisettings::THEMES
+        .iter()
         .find(|(name, internal)| *name == theme || *internal == theme)
-        .map(|(_, internal)| *internal).unwrap_or("colorful");
+        .map(|(_, internal)| *internal)
+        .unwrap_or("colorful");
     if matches!(internal, "qdarkstyle" | "qdarkstyle_midnight_blue") {
-        [include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/folder.png"),
-         include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/bad_folder.png"),
-         include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/star.png")]
+        [
+            include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/folder.png"),
+            include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/bad_folder.png"),
+            include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/star.png"),
+        ]
     } else {
         // Default retains the existing bundled fallback instead of requiring
         // a desktop icon theme (not universally available on Windows).
@@ -75,19 +82,23 @@ fn theme_icons(theme: &str) -> [&'static [u8]; 3] {
 
 /// QIcon::fromTheme aliases from Eden's theme QRCs (add, refresh).
 fn toolbar_icons(theme: &str) -> [&'static [u8]; 2] {
-    let internal = uisettings::THEMES.iter()
+    let internal = uisettings::THEMES
+        .iter()
         .find(|(name, internal)| *name == theme || *internal == theme)
-        .map(|(_, internal)| *internal).unwrap_or("colorful");
+        .map(|(_, internal)| *internal)
+        .unwrap_or("colorful");
     let add: &[u8] = if matches!(internal, "qdarkstyle" | "qdarkstyle_midnight_blue") {
         include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/list-add.png")
     } else {
         include_bytes!("../resources/qt_themes/colorful/icons/48x48/list-add.png")
     };
     let refresh: &[u8] = match internal {
-        "qdarkstyle" | "qdarkstyle_midnight_blue" | "colorful_midnight_blue" =>
-            include_bytes!("../resources/qt_themes/qdarkstyle/icons/16x16/view-refresh.png"),
-        "colorful_dark" =>
-            include_bytes!("../resources/qt_themes/colorful_dark/icons/16x16/view-refresh.png"),
+        "qdarkstyle" | "qdarkstyle_midnight_blue" | "colorful_midnight_blue" => {
+            include_bytes!("../resources/qt_themes/qdarkstyle/icons/16x16/view-refresh.png")
+        }
+        "colorful_dark" => {
+            include_bytes!("../resources/qt_themes/colorful_dark/icons/16x16/view-refresh.png")
+        }
         _ => include_bytes!("../resources/qt_themes/colorful/icons/16x16/view-refresh.png"),
     };
     [add, refresh]
@@ -103,7 +114,10 @@ fn update_toolbar_icons(add: &gtk::Image, refresh: &gtk::Image, theme: &str) {
         let texture = (|| {
             loader.write(bytes).ok()?;
             loader.close().ok()?;
-            let pixbuf = loader.pixbuf()?.scale_simple(16, 16, gtk::gdk_pixbuf::InterpType::Bilinear)?;
+            let pixbuf =
+                loader
+                    .pixbuf()?
+                    .scale_simple(16, 16, gtk::gdk_pixbuf::InterpType::Bilinear)?;
             Some(gdk::Texture::for_pixbuf(&pixbuf))
         })();
         image.set_paintable(texture.as_ref());
@@ -119,12 +133,21 @@ fn update_toolbar_icons(add: &gtk::Image, refresh: &gtk::Image, theme: &str) {
 fn folder_icon_png(path: &str, theme: &str) -> &'static [u8] {
     let icons = theme_icons(theme);
     if matches!(path, "SDMC" | "UserNAND" | "SysNAND") {
-        let dark = icons[0] == include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/folder.png");
+        let dark =
+            icons[0] == include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/folder.png");
         return match (path == "SDMC", dark) {
-            (true, false) => include_bytes!("../resources/qt_themes/colorful/icons/48x48/sd_card.png"),
-            (false, false) => include_bytes!("../resources/qt_themes/colorful/icons/48x48/chip.png"),
-            (true, true) => include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/sd_card.png"),
-            (false, true) => include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/chip.png"),
+            (true, false) => {
+                include_bytes!("../resources/qt_themes/colorful/icons/48x48/sd_card.png")
+            }
+            (false, false) => {
+                include_bytes!("../resources/qt_themes/colorful/icons/48x48/chip.png")
+            }
+            (true, true) => {
+                include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/sd_card.png")
+            }
+            (false, true) => {
+                include_bytes!("../resources/qt_themes/qdarkstyle/icons/48x48/chip.png")
+            }
         };
     }
     if Path::new(path).exists() {
@@ -244,8 +267,10 @@ pub(crate) fn frontend_content_provider_union() -> Arc<Mutex<ContentProviderUnio
     // SAFETY: the OnceLock owns the boxed adapter for the process lifetime;
     // its ContentProvider methods synchronize access through its mutex.
     unsafe {
-        union.set_slot(ContentProviderUnionSlot::FrontendManual,
-            manual.cast_mut() as *mut dyn ContentProvider);
+        union.set_slot(
+            ContentProviderUnionSlot::FrontendManual,
+            manual.cast_mut() as *mut dyn ContentProvider,
+        );
     }
     Arc::new(Mutex::new(union))
 }
@@ -345,8 +370,9 @@ impl GameEntry {
             _ => path.to_owned(),
         };
         *imp.path.borrow_mut() = path.to_owned();
-        *imp.icon.borrow_mut() = uisettings::with(|values|
-            embedded_icon(folder_icon_png(path, values.theme.get_value())));
+        *imp.icon.borrow_mut() = uisettings::with(|values| {
+            embedded_icon(folder_icon_png(path, values.theme.get_value()))
+        });
         imp.is_folder.set(true);
         imp.is_favorites.set(false);
         imp.deep_scan.set(deep_scan);
@@ -359,8 +385,8 @@ impl GameEntry {
         let obj: Self = glib::Object::new();
         let imp = obj.imp();
         *imp.name.borrow_mut() = crate::i18n::tr("Favorites");
-        *imp.icon.borrow_mut() = uisettings::with(|values|
-            embedded_icon(theme_icons(values.theme.get_value())[2]));
+        *imp.icon.borrow_mut() =
+            uisettings::with(|values| embedded_icon(theme_icons(values.theme.get_value())[2]));
         imp.is_folder.set(true);
         imp.is_favorites.set(true);
         *imp.children.borrow_mut() = Some(children);
@@ -391,10 +417,18 @@ impl GameEntry {
 
     /// QtCommon GameListItemPath::data(DisplayRole), for the GTK tree view.
     fn display_name(&self, first: u8, second: u8) -> String {
-        if self.is_folder() { return self.name(); }
+        if self.is_folder() {
+            return self.name();
+        }
         let filename = common::string_util::split_path(&self.path())
-            .map(|(_, filename, _)| filename).unwrap_or_default();
-        let data = [filename, self.kind(), format!("{:#016x}", self.program_id()), self.name()];
+            .map(|(_, filename, _)| filename)
+            .unwrap_or_default();
+        let data = [
+            filename,
+            self.kind(),
+            format!("{:#016x}", self.program_id()),
+            self.name(),
+        ];
         // Invalid persisted indices must not panic during a list bind.
         let row1 = data.get(first as usize).map(String::as_str).unwrap_or("");
         match data.get(second as usize) {
@@ -545,9 +579,13 @@ impl GameListHandle {
         if view.navigate_from_toolbar(key) {
             return true;
         }
-        let focused = view.parent_window().and_then(|w| gtk::prelude::GtkWindowExt::focus(&w));
-        if focused.is_some_and(|w| w.ancestor(gtk::Popover::static_type()).is_none()
-            && (w == view.column_view || w.is_ancestor(&view.column_view))) {
+        let focused = view
+            .parent_window()
+            .and_then(|w| gtk::prelude::GtkWindowExt::focus(&w));
+        if focused.is_some_and(|w| {
+            w.ancestor(gtk::Popover::static_type()).is_none()
+                && (w == view.column_view || w.is_ancestor(&view.column_view))
+        }) {
             view.handle_navigation(key)
         } else {
             false
@@ -854,7 +892,8 @@ pub fn build<
         let view = Rc::downgrade(&view);
         move |_, keyval, _, _| {
             if navigation_key_for_gdk(keyval).is_some_and(|key| {
-                view.upgrade().is_some_and(|view| view.navigate_from_toolbar(key))
+                view.upgrade()
+                    .is_some_and(|view| view.navigate_from_toolbar(key))
             }) {
                 glib::Propagation::Stop
             } else {
@@ -1049,9 +1088,9 @@ impl GameListView {
         if !matches!(key, NavigationKey::Up | NavigationKey::Down) {
             return false;
         }
-        let focused = self.parent_window().and_then(|window| {
-            gtk::prelude::GtkWindowExt::focus(&window)
-        });
+        let focused = self
+            .parent_window()
+            .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window));
         if !focused.is_some_and(|widget| {
             widget.ancestor(gtk::Popover::static_type()).is_none()
                 && (widget == self.toolbar || widget.is_ancestor(&self.toolbar))
@@ -1059,9 +1098,9 @@ impl GameListView {
             return false;
         }
         if key == NavigationKey::Up {
-            return self.parent_window().is_some_and(|window| {
-                crate::util::controller_navigation::focus_menu_bar(&window)
-            });
+            return self
+                .parent_window()
+                .is_some_and(|window| crate::util::controller_navigation::focus_menu_bar(&window));
         }
         if self.stack.visible_child_name().as_deref() != Some(PAGE_LIST)
             || self.selection.n_items() == 0
@@ -1069,7 +1108,11 @@ impl GameListView {
             return false;
         }
         let selected = self.selection.selected();
-        self.select_position(if selected < self.selection.n_items() { selected } else { 0 });
+        self.select_position(if selected < self.selection.n_items() {
+            selected
+        } else {
+            0
+        });
         true
     }
 
@@ -1133,7 +1176,10 @@ impl GameListView {
                     self.activate_position(selected);
                 }
             }
-            NavigationKey::Escape | NavigationKey::Previous | NavigationKey::Next | NavigationKey::Menu => return false,
+            NavigationKey::Escape
+            | NavigationKey::Previous
+            | NavigationKey::Next
+            | NavigationKey::Menu => return false,
         }
         true
     }
@@ -1252,7 +1298,10 @@ impl GameListView {
             let view = Rc::downgrade(self);
             open_directory.connect_activate(move |_, _| {
                 if let Some(view) = view.upgrade() {
-                    open_directory_location(&crate::main_window::game_list_directory_path(&path), view.parent_window().as_ref());
+                    open_directory_location(
+                        &crate::main_window::game_list_directory_path(&path),
+                        view.parent_window().as_ref(),
+                    );
                 }
             });
         }
@@ -1659,7 +1708,9 @@ impl GameListView {
         let control = {
             let controller = reader.controller.lock().unwrap();
             let provider = reader.content_provider.lock().unwrap();
-            PatchManager::new(program_id, &controller, &*provider).get_control_metadata().0
+            PatchManager::new(program_id, &controller, &*provider)
+                .get_control_metadata()
+                .0
         };
         let control = control.or_else(|| {
             let file = ruzu_core::core::get_game_file_from_path(&reader.vfs, game_path)?;
@@ -1668,24 +1719,43 @@ impl GameListView {
             (loader.read_control_data(&mut control) == ResultStatus::Success).then_some(control)
         });
         let Some(control) = control else {
-            crate::gtk_compat::show_warning(self.parent_window().as_ref(),
-                "Error Opening Save Data Folder", "Unable to read the game's save data metadata.");
+            crate::gtk_compat::show_warning(
+                self.parent_window().as_ref(),
+                "Error Opening Save Data Folder",
+                "Unable to read the game's save data metadata.",
+            );
             return;
         };
         if control.get_default_normal_save_size() > 0 {
-            let Some(parent) = self.parent_window() else { return; };
+            let Some(parent) = self.parent_window() else {
+                return;
+            };
             let view = Rc::downgrade(self);
-            crate::applets::profile_select::select_for_boot(&parent, &self.hid_core, move |index| {
-                let Some(index) = index else { return; };
-                let manager = ruzu_core::hle::service::acc::profile_manager::ProfileManager::new();
-                let Some(uuid) = manager.get_user(index) else { return; };
-                if let Some(view) = view.upgrade() { view.open_save_data_for_user(program_id, uuid); }
-            });
+            crate::applets::profile_select::select_for_boot(
+                &parent,
+                &self.hid_core,
+                move |index| {
+                    let Some(index) = index else {
+                        return;
+                    };
+                    let manager =
+                        ruzu_core::hle::service::acc::profile_manager::ProfileManager::new();
+                    let Some(uuid) = manager.get_user(index) else {
+                        return;
+                    };
+                    if let Some(view) = view.upgrade() {
+                        view.open_save_data_for_user(program_id, uuid);
+                    }
+                },
+            );
         } else if control.get_device_save_data_size() > 0 {
             self.open_save_data_for_user(program_id, 0);
         } else {
-            crate::gtk_compat::show_warning(self.parent_window().as_ref(),
-                "Error Opening Save Data Folder", "This title does not declare save data.");
+            crate::gtk_compat::show_warning(
+                self.parent_window().as_ref(),
+                "Error Opening Save Data Folder",
+                "This title does not declare save data.",
+            );
         }
     }
 
@@ -1693,8 +1763,11 @@ impl GameListView {
         let path = match save_data_location(program_id, user) {
             Ok(path) => path,
             Err(error) => {
-                crate::gtk_compat::show_warning(self.parent_window().as_ref(),
-                    "Error Opening Save Data Folder", &error.to_string());
+                crate::gtk_compat::show_warning(
+                    self.parent_window().as_ref(),
+                    "Error Opening Save Data Folder",
+                    &error.to_string(),
+                );
                 return;
             }
         };
@@ -1870,12 +1943,17 @@ impl GameListView {
     fn reload(&self) {
         release_list_focus(&self.column_view);
         self.update_column_visibility();
-        uisettings::with(|values| update_toolbar_icons(&self.add_directory_icon,
-            &self.refresh_icon, values.theme.get_value()));
+        uisettings::with(|values| {
+            update_toolbar_icons(
+                &self.add_directory_icon,
+                &self.refresh_icon,
+                values.theme.get_value(),
+            )
+        });
         // The favorites root is retained across rescans, unlike directory
         // roots. Refresh its themed decoration before it is rebound as well.
-        *self.favorites_root.imp().icon.borrow_mut() = uisettings::with(|values|
-            embedded_icon(theme_icons(values.theme.get_value())[2]));
+        *self.favorites_root.imp().icon.borrow_mut() =
+            uisettings::with(|values| embedded_icon(theme_icons(values.theme.get_value())[2]));
 
         // Rebuilding the store drops the selection; remember which directory
         // was picked so it can be restored afterwards.
@@ -1913,9 +1991,9 @@ impl GameListView {
                     let games = if directory.is_filesystem_path() {
                         populate_frontend_manual_content_provider(std::slice::from_ref(&directory));
                         scan_dir_games(
-                        Path::new(&directory.path),
-                        directory.deep_scan,
-                        &mut metadata_reader,
+                            Path::new(&directory.path),
+                            directory.deep_scan,
+                            &mut metadata_reader,
                         )
                     } else {
                         worker::add_titles_to_game_list(&directory.path, &mut metadata_reader)
@@ -1937,11 +2015,12 @@ impl GameListView {
             });
         if let Err(error) = spawn_result {
             log::error!("Failed to start GameListWorker: {error}");
-            self.stack.set_visible_child_name(if self.store.n_items() == 0 {
-                PAGE_EMPTY
-            } else {
-                PAGE_LIST
-            });
+            self.stack
+                .set_visible_child_name(if self.store.n_items() == 0 {
+                    PAGE_EMPTY
+                } else {
+                    PAGE_LIST
+                });
             self.filter_bar.set_sensitive(true);
             self.filter_result.set_visible(true);
         }
@@ -2003,7 +2082,8 @@ impl GameListView {
             self.select_directory(&path);
         }
         self.apply_filter(&self.filter_entry.text());
-        self.stack.set_visible_child_name(if is_empty { PAGE_EMPTY } else { PAGE_LIST });
+        self.stack
+            .set_visible_child_name(if is_empty { PAGE_EMPTY } else { PAGE_LIST });
         self.filter_bar.set_sensitive(true);
         self.filter_result.set_visible(true);
     }
@@ -2273,7 +2353,11 @@ fn release_list_focus(view: &gtk::ColumnView) {
 /// by Eden's GameList view. ColumnView::scroll_to requires GTK 4.12; dispatch
 /// the list child's existing GTK 4.6 action instead, without assuming row
 /// heights (icons, scaling and expanded directory children vary).
-fn select_visible_position(view: &gtk::ColumnView, selection: &gtk::SingleSelection, position: u32) {
+fn select_visible_position(
+    view: &gtk::ColumnView,
+    selection: &gtk::SingleSelection,
+    position: u32,
+) {
     if position >= selection.n_items() {
         return;
     }
@@ -2281,7 +2365,10 @@ fn select_visible_position(view: &gtk::ColumnView, selection: &gtk::SingleSelect
     view.grab_focus();
     let mut child = view.first_child();
     while let Some(widget) = child {
-        if widget.activate_action("list.scroll-to-item", Some(&position.to_variant())).is_ok() {
+        if widget
+            .activate_action("list.scroll-to-item", Some(&position.to_variant()))
+            .is_ok()
+        {
             return;
         }
         child = widget.next_sibling();
@@ -2346,15 +2433,24 @@ fn make_name_column(on_context_menu: ContextMenuHandler) -> gtk::ColumnViewColum
 }
 
 // Mechanical GTK factory binding, shared with the widget regression test.
-fn bind_name_cell(entry: &GameEntry, picture: &gtk::Picture, label: &gtk::Label,
-    values: &uisettings::Values) {
-    let size = if entry.is_folder() { *values.folder_icon_size.get_value() }
-        else { *values.game_icon_size.get_value() };
+fn bind_name_cell(
+    entry: &GameEntry,
+    picture: &gtk::Picture,
+    label: &gtk::Label,
+    values: &uisettings::Values,
+) {
+    let size = if entry.is_folder() {
+        *values.folder_icon_size.get_value()
+    } else {
+        *values.game_icon_size.get_value()
+    };
     picture.set_size_request(size as i32, size as i32);
     picture.set_visible(size != 0);
     picture.set_paintable(entry.icon().as_ref());
-    label.set_label(&entry.display_name(*values.row_1_text_id.get_value(),
-        *values.row_2_text_id.get_value()));
+    label.set_label(&entry.display_name(
+        *values.row_1_text_id.get_value(),
+        *values.row_2_text_id.get_value(),
+    ));
 }
 
 /// Decode one of the embedded upstream game-list icons.
@@ -2435,7 +2531,14 @@ fn show_context_menu(
     // open after clicking the chevron. Eden's QMenu uses traditional nested
     // popovers that open when the pointer enters their row.
     if crate::util::inline_menu::enabled() {
-        crate::util::inline_menu::show_context_menu(anchor, "game-list", menu.upcast_ref(), actions.upcast_ref(), x, y);
+        crate::util::inline_menu::show_context_menu(
+            anchor,
+            "game-list",
+            menu.upcast_ref(),
+            actions.upcast_ref(),
+            x,
+            y,
+        );
         return;
     }
     let popover = gtk::PopoverMenu::from_model_full(menu, context_menu_flags());
@@ -2472,14 +2575,24 @@ fn add_unavailable_action(
 
 /// OnGameListOpenFolder's SaveDir + SaveDataFactory::GetFullPath composition.
 fn save_data_location(program_id: u64, user: u128) -> std::io::Result<PathBuf> {
-    use ruzu_core::file_sys::{savedata_factory::SaveDataFactory,
-        fs_save_data_types::{SaveDataSpaceId, SaveDataType}};
+    use ruzu_core::file_sys::{
+        fs_save_data_types::{SaveDataSpaceId, SaveDataType},
+        savedata_factory::SaveDataFactory,
+    };
     let root = common::fs::path_util::get_ruzu_path(common::fs::path_util::RuzuPath::SaveDir);
     std::fs::create_dir_all(&root)?;
-    let dir = frontend_vfs().arc_open_directory(&root.to_string_lossy(), OpenMode::READ)
+    let dir = frontend_vfs()
+        .arc_open_directory(&root.to_string_lossy(), OpenMode::READ)
         .ok_or_else(|| std::io::Error::other("Unable to open the save data directory"))?;
-    let relative = SaveDataFactory::get_full_path(0, &dir, SaveDataSpaceId::User,
-        SaveDataType::Account, program_id, [user as u64, (user >> 64) as u64], 0);
+    let relative = SaveDataFactory::get_full_path(
+        0,
+        &dir,
+        SaveDataSpaceId::User,
+        SaveDataType::Account,
+        program_id,
+        [user as u64, (user >> 64) as u64],
+        0,
+    );
     Ok(root.join(relative.trim_start_matches('/')))
 }
 
@@ -2517,7 +2630,9 @@ fn game_directory_position(path: &str) -> (Option<usize>, usize) {
 
 /// Swap adjacent visible roots, including installed storage roots.
 fn move_game_directory(directories: &mut [GameDir], path: &str, direction: isize) -> bool {
-    let Some(visible_index) = directories.iter().position(|directory| directory.path == path)
+    let Some(visible_index) = directories
+        .iter()
+        .position(|directory| directory.path == path)
     else {
         return false;
     };
@@ -2772,7 +2887,11 @@ impl MetadataReader {
         self.read_virtual_file(file, false)
     }
 
-    fn read_virtual_file(&mut self, file: VirtualFile, require_program_id: bool) -> Option<GameMetadata> {
+    fn read_virtual_file(
+        &mut self,
+        file: VirtualFile,
+        require_program_id: bool,
+    ) -> Option<GameMetadata> {
         let loader = get_loader(&mut self.loader_system, file.clone(), 0, 0)?;
 
         let file_type = loader.get_file_type();
@@ -2801,7 +2920,9 @@ impl MetadataReader {
 
         let mut program_id = 0;
         if loader.read_program_id(&mut program_id) != ResultStatus::Success {
-            if require_program_id { return None; }
+            if require_program_id {
+                return None;
+            }
             program_id = 0;
         }
 
@@ -3041,15 +3162,25 @@ mod tests {
         let (root, handle) = build(&hid, &play_time, |_, _| {}, |_, _, _| {}, || {}, || false);
         let view = &handle.0;
         let generation = view.scan_generation.fetch_add(1, Ordering::AcqRel) + 1;
-        view.scan_result_sender.send(GameListScanResult {
-            generation,
-            directories: ["/synthetic/first", "/synthetic/second"].into_iter().map(|path| {
-                ScannedDirectory { path: path.into(), deep_scan: false, games: Vec::new() }
-            }).collect(),
-            directory_to_select: None,
-        }).unwrap();
+        view.scan_result_sender
+            .send(GameListScanResult {
+                generation,
+                directories: ["/synthetic/first", "/synthetic/second"]
+                    .into_iter()
+                    .map(|path| ScannedDirectory {
+                        path: path.into(),
+                        deep_scan: false,
+                        games: Vec::new(),
+                    })
+                    .collect(),
+                directory_to_select: None,
+            })
+            .unwrap();
         view.process_scan_results();
-        let window = gtk::Window::builder().default_width(640).default_height(400).build();
+        let window = gtk::Window::builder()
+            .default_width(640)
+            .default_height(400)
+            .build();
         let menu_model = gio::Menu::new();
         let submenu = gio::Menu::new();
         submenu.append(Some("Test"), Some("win.test"));
@@ -3061,14 +3192,26 @@ mod tests {
         window.set_child(Some(&layout));
         window.present();
         let context = glib::MainContext::default();
-        while context.pending() { context.iteration(false); }
-        for button in [view.toolbar.first_child().unwrap(), view.refresh_button.clone().upcast()] {
+        while context.pending() {
+            context.iteration(false);
+        }
+        for button in [
+            view.toolbar.first_child().unwrap(),
+            view.refresh_button.clone().upcast(),
+        ] {
             for selected in [gtk::INVALID_LIST_POSITION, 0, 1] {
                 view.selection.set_selected(selected);
                 button.grab_focus();
                 assert!(!handle.controller_key(NavigationKey::Left));
                 assert!(handle.controller_key(NavigationKey::Down));
-                assert_eq!(view.selection.selected(), if selected == gtk::INVALID_LIST_POSITION { 0 } else { selected });
+                assert_eq!(
+                    view.selection.selected(),
+                    if selected == gtk::INVALID_LIST_POSITION {
+                        0
+                    } else {
+                        selected
+                    }
+                );
                 let focused = gtk::prelude::GtkWindowExt::focus(&window).unwrap();
                 assert!(focused == view.column_view || focused.is_ancestor(&view.column_view));
             }
@@ -3105,41 +3248,69 @@ mod tests {
         let play_time = Arc::new(frontend_common::play_time_manager::PlayTimeManager::new());
         let (_, handle) = build(&hid, &play_time, |_, _| {}, |_, _, _| {}, || {}, || false);
         let view = &handle.0;
-        assert_eq!(view.stack.visible_child_name().as_deref(), Some(PAGE_LOADING));
+        assert_eq!(
+            view.stack.visible_child_name().as_deref(),
+            Some(PAGE_LOADING)
+        );
         assert_eq!(view.store.n_items(), 0);
 
         // Supersede the real empty worker, then drive result delivery ourselves.
         let deliver = |paths: &[&str]| {
             let generation = view.scan_generation.fetch_add(1, Ordering::AcqRel) + 1;
-            view.scan_result_sender.send(GameListScanResult {
-                generation,
-                directories: paths.iter().map(|path| ScannedDirectory {
-                    path: (*path).to_owned(), deep_scan: false, games: Vec::new(),
-                }).collect(),
-                directory_to_select: None,
-            }).unwrap();
+            view.scan_result_sender
+                .send(GameListScanResult {
+                    generation,
+                    directories: paths
+                        .iter()
+                        .map(|path| ScannedDirectory {
+                            path: (*path).to_owned(),
+                            deep_scan: false,
+                            games: Vec::new(),
+                        })
+                        .collect(),
+                    directory_to_select: None,
+                })
+                .unwrap();
             view.process_scan_results();
         };
         deliver(&["SDMC", "UserNAND", "SysNAND", "/custom"]);
         assert_eq!(view.stack.visible_child_name().as_deref(), Some(PAGE_LIST));
         assert_eq!(view.store.n_items(), 1);
-        assert_eq!(view.store.item(0).unwrap().downcast::<GameEntry>().unwrap().path(), "/custom");
+        assert_eq!(
+            view.store
+                .item(0)
+                .unwrap()
+                .downcast::<GameEntry>()
+                .unwrap()
+                .path(),
+            "/custom"
+        );
 
         handle.reload();
         let old_generation = view.scan_generation.load(Ordering::Acquire);
         handle.reload();
-        assert_eq!(view.stack.visible_child_name().as_deref(), Some(PAGE_LOADING));
+        assert_eq!(
+            view.stack.visible_child_name().as_deref(),
+            Some(PAGE_LOADING)
+        );
         assert!(!view.handle_navigation(NavigationKey::Enter));
         assert!(!view.filter_result.is_visible());
         // The previous final model is retained but hidden, never replaced by
         // provisional SDMC/UserNAND/SysNAND rows during either scan.
         assert_eq!(view.store.n_items(), 1);
         view.scan_generation.fetch_add(1, Ordering::AcqRel);
-        view.scan_result_sender.send(GameListScanResult {
-            generation: old_generation, directories: Vec::new(), directory_to_select: None,
-        }).unwrap();
+        view.scan_result_sender
+            .send(GameListScanResult {
+                generation: old_generation,
+                directories: Vec::new(),
+                directory_to_select: None,
+            })
+            .unwrap();
         view.process_scan_results();
-        assert_eq!(view.stack.visible_child_name().as_deref(), Some(PAGE_LOADING));
+        assert_eq!(
+            view.stack.visible_child_name().as_deref(),
+            Some(PAGE_LOADING)
+        );
         deliver(&["SDMC", "UserNAND", "SysNAND"]);
         assert_eq!(view.stack.visible_child_name().as_deref(), Some(PAGE_EMPTY));
         assert_eq!(view.store.n_items(), 0);
@@ -3152,26 +3323,46 @@ mod tests {
         use ruzu_core::file_sys::nca_metadata::ContentRecordType;
         let mut native_cache = Box::new(ManualContentProvider::default());
         let title_id = 0x05AA_0000_0000_1000;
-        let file: VirtualFile = Arc::new(
-            ruzu_core::file_sys::vfs::vfs_vector::VectorVfsFile::new(
-                Vec::new(), "synthetic.nca".into(), None));
-        native_cache.add_entry(TitleType::Application, ContentRecordType::Program,
-            title_id, file);
+        let file: VirtualFile = Arc::new(ruzu_core::file_sys::vfs::vfs_vector::VectorVfsFile::new(
+            Vec::new(),
+            "synthetic.nca".into(),
+            None,
+        ));
+        native_cache.add_entry(
+            TitleType::Application,
+            ContentRecordType::Program,
+            title_id,
+            file,
+        );
         let runtime = frontend_content_provider_union();
         let metadata = frontend_content_provider_union();
         assert!(!Arc::ptr_eq(&runtime, &metadata));
         // Synthetic cache owner outlives both registries. The test needs no
         // files, keys, GTK display, or mutation of the shared manual contents.
         unsafe {
-            runtime.lock().unwrap().set_slot(ContentProviderUnionSlot::External,
-                &mut *native_cache as *mut dyn ContentProvider);
+            runtime.lock().unwrap().set_slot(
+                ContentProviderUnionSlot::External,
+                &mut *native_cache as *mut dyn ContentProvider,
+            );
         }
-        assert!(!metadata.lock().unwrap().has_entry(title_id, ContentRecordType::Program));
-        metadata.lock().unwrap().clear_slot(ContentProviderUnionSlot::External);
+        assert!(!metadata
+            .lock()
+            .unwrap()
+            .has_entry(title_id, ContentRecordType::Program));
+        metadata
+            .lock()
+            .unwrap()
+            .clear_slot(ContentProviderUnionSlot::External);
         drop(metadata);
-        assert!(runtime.lock().unwrap().has_entry(title_id, ContentRecordType::Program));
+        assert!(runtime
+            .lock()
+            .unwrap()
+            .has_entry(title_id, ContentRecordType::Program));
         let next_metadata = frontend_content_provider_union();
-        assert!(!next_metadata.lock().unwrap().has_entry(title_id, ContentRecordType::Program));
+        assert!(!next_metadata
+            .lock()
+            .unwrap()
+            .has_entry(title_id, ContentRecordType::Program));
     }
 
     #[test]
@@ -3188,7 +3379,9 @@ mod tests {
             move |_, item| {
                 let label = gtk::Label::new(Some("Game"));
                 label.set_focusable(true);
-                item.downcast_ref::<gtk::ListItem>().unwrap().set_child(Some(&label));
+                item.downcast_ref::<gtk::ListItem>()
+                    .unwrap()
+                    .set_child(Some(&label));
                 *cell.borrow_mut() = Some(label);
             }
         });
@@ -3200,7 +3393,9 @@ mod tests {
         let window = gtk::Window::builder().child(&content).build();
         window.present();
         let context = glib::MainContext::default();
-        while context.pending() { context.iteration(false); }
+        while context.pending() {
+            context.iteration(false);
+        }
         let label = cell.borrow().clone().expect("list cell created");
         gtk::prelude::RootExt::set_focus(&window, Some(&label));
         assert_eq!(gtk::prelude::RootExt::focus(&window), Some(label.upcast()));
@@ -3222,26 +3417,38 @@ mod tests {
         gtk::gdk::set_allowed_backends("x11");
         gtk::init().unwrap();
         let model = gtk::StringList::new(&["Directory"]);
-        for i in 1..100 { model.append(&format!("Homebrew {i}")); }
+        for i in 1..100 {
+            model.append(&format!("Homebrew {i}"));
+        }
         let selection = gtk::SingleSelection::new(Some(model));
         selection.set_autoselect(false);
         selection.set_selected(gtk::INVALID_LIST_POSITION);
         let view = gtk::ColumnView::new(Some(selection.clone()));
         let factory = gtk::SignalListItemFactory::new();
         factory.connect_setup(|_, item| {
-            item.downcast_ref::<gtk::ListItem>().unwrap()
+            item.downcast_ref::<gtk::ListItem>()
+                .unwrap()
                 .set_child(Some(&gtk::Label::new(None)));
         });
         factory.connect_bind(|_, item| {
             let item = item.downcast_ref::<gtk::ListItem>().unwrap();
             let label = item.child().and_downcast::<gtk::Label>().unwrap();
-            label.set_text(&item.item().and_downcast::<gtk::StringObject>().unwrap().string());
+            label.set_text(
+                &item
+                    .item()
+                    .and_downcast::<gtk::StringObject>()
+                    .unwrap()
+                    .string(),
+            );
             label.set_height_request(if item.position() % 2 == 0 { 40 } else { 60 });
         });
         view.append_column(&gtk::ColumnViewColumn::new(Some("Name"), Some(factory)));
         let scroller = gtk::ScrolledWindow::builder().child(&view).build();
-        let window = gtk::Window::builder().default_width(400).default_height(240)
-            .child(&scroller).build();
+        let window = gtk::Window::builder()
+            .default_width(400)
+            .default_height(240)
+            .child(&scroller)
+            .build();
         window.present();
         let pump = || {
             let context = glib::MainContext::default();
@@ -3284,13 +3491,27 @@ mod tests {
             common::fs::path_util::set_ruzu_path(common::fs::path_util::RuzuPath::NANDDir, &nand);
             common::fs::path_util::set_ruzu_path(common::fs::path_util::RuzuPath::SaveDir, &saves);
             let user = 0x1234_u128;
-            let other = saves.join("user/save/0000000000000000/00000000000000000000000000005678/000000000000002A");
+            let other = saves.join(
+                "user/save/0000000000000000/00000000000000000000000000005678/000000000000002A",
+            );
             std::fs::create_dir_all(&other).unwrap();
-            assert_eq!(save_data_location(42, user).unwrap(), saves.join(
-                "user/save/0000000000000000/00000000000000000000000000001234/000000000000002A"));
-            assert_eq!(save_data_location(42, 0).unwrap(), saves.join(
-                "user/save/0000000000000000/00000000000000000000000000000000/000000000000002A"));
-            let uuid: String = user.to_le_bytes().iter().map(|b| format!("{b:02x}")).collect();
+            assert_eq!(
+                save_data_location(42, user).unwrap(),
+                saves.join(
+                    "user/save/0000000000000000/00000000000000000000000000001234/000000000000002A"
+                )
+            );
+            assert_eq!(
+                save_data_location(42, 0).unwrap(),
+                saves.join(
+                    "user/save/0000000000000000/00000000000000000000000000000000/000000000000002A"
+                )
+            );
+            let uuid: String = user
+                .to_le_bytes()
+                .iter()
+                .map(|b| format!("{b:02x}"))
+                .collect();
             let future = saves.join(format!("user/save/account/{uuid}/0000000000000200/0"));
             std::fs::create_dir_all(&future).unwrap();
             assert_eq!(save_data_location(0x201, user).unwrap(), future);
@@ -3299,8 +3520,14 @@ mod tests {
         }
         let root = tempfile::tempdir().unwrap();
         let status = std::process::Command::new(std::env::current_exe().unwrap())
-            .args(["--exact", std::thread::current().name().unwrap(), "--test-threads=1"])
-            .env(CHILD, root.path()).status().unwrap();
+            .args([
+                "--exact",
+                std::thread::current().name().unwrap(),
+                "--test-threads=1",
+            ])
+            .env(CHILD, root.path())
+            .status()
+            .unwrap();
         assert!(status.success());
     }
 
@@ -3315,7 +3542,9 @@ mod tests {
         assert_ne!(colorful[0], dark[0]);
         for (name, internal) in uisettings::THEMES {
             assert_eq!(toolbar_icons(name), toolbar_icons(internal));
-            for bytes in toolbar_icons(internal) { assert!(embedded_icon(bytes).is_some()); }
+            for bytes in toolbar_icons(internal) {
+                assert!(embedded_icon(bytes).is_some());
+            }
         }
     }
 
@@ -3339,7 +3568,12 @@ mod tests {
     fn colorful_and_monochrome_directory_icons_follow_upstream_aliases() {
         let colorful = theme_icons("colorful");
         let monochrome = theme_icons("qdarkstyle");
-        for theme in ["Dark Colorful", "colorful_dark", "Midnight Blue Colorful", "colorful_midnight_blue"] {
+        for theme in [
+            "Dark Colorful",
+            "colorful_dark",
+            "Midnight Blue Colorful",
+            "colorful_midnight_blue",
+        ] {
             assert_eq!(theme_icons(theme), colorful);
         }
         assert_eq!(theme_icons("Midnight Blue"), monochrome);
@@ -3355,8 +3589,19 @@ mod tests {
     #[ignore = "requires a GTK display; run alone with --ignored"]
     fn recycled_name_cell_applies_icon_sizes_and_row_preferences() {
         gtk::init().unwrap();
-        let entry = GameEntry::new_game("Homebrew", "", "", "NRO", "aarch64", "", "", "",
-            "/homebrew/demo.nro", None, 42);
+        let entry = GameEntry::new_game(
+            "Homebrew",
+            "",
+            "",
+            "NRO",
+            "aarch64",
+            "",
+            "",
+            "",
+            "/homebrew/demo.nro",
+            None,
+            42,
+        );
         let folder = GameEntry::new_folder("/homebrew", false, gio::ListStore::new::<GameEntry>());
         let picture = gtk::Picture::new();
         let label = gtk::Label::new(None);
@@ -3383,8 +3628,19 @@ mod tests {
 
     #[test]
     fn game_row_text_uses_selected_metadata_and_suppresses_duplicates() {
-        let entry = GameEntry::new_game("Homebrew", "", "", "NRO", "aarch64", "", "", "",
-            "/homebrew/demo.release.nro", None, 42);
+        let entry = GameEntry::new_game(
+            "Homebrew",
+            "",
+            "",
+            "NRO",
+            "aarch64",
+            "",
+            "",
+            "",
+            "/homebrew/demo.release.nro",
+            None,
+            42,
+        );
         assert_eq!(entry.display_name(0, 4), "demo.release");
         assert_eq!(entry.display_name(1, 4), "NRO");
         assert_eq!(entry.display_name(2, 4), "0x0000000000002a");
@@ -3417,7 +3673,10 @@ mod tests {
         assert_ne!(FOLDER_ICON_PNG, BAD_FOLDER_ICON_PNG);
 
         let existing = make_temp_dir();
-        assert_eq!(folder_icon_png(existing.to_str().unwrap(), "colorful"), FOLDER_ICON_PNG);
+        assert_eq!(
+            folder_icon_png(existing.to_str().unwrap(), "colorful"),
+            FOLDER_ICON_PNG
+        );
 
         let missing = existing.join("gone");
         assert!(!missing.exists());
@@ -3501,9 +3760,14 @@ mod tests {
     fn empty_installed_roots_are_hidden_without_hiding_custom_directories() {
         let make_result = |paths: &[&str]| GameListScanResult {
             generation: 1,
-            directories: paths.iter().map(|path| ScannedDirectory {
-                path: (*path).to_owned(), deep_scan: false, games: Vec::new(),
-            }).collect(),
+            directories: paths
+                .iter()
+                .map(|path| ScannedDirectory {
+                    path: (*path).to_owned(),
+                    deep_scan: false,
+                    games: Vec::new(),
+                })
+                .collect(),
             directory_to_select: None,
         };
         let mut empty = make_result(&["SDMC", "UserNAND", "SysNAND"]);
@@ -3511,21 +3775,38 @@ mod tests {
         assert!(empty.directories.is_empty());
         assert!(empty.is_empty());
 
-        let mut mixed = make_result(&["SDMC", "/homebrew/empty", "UserNAND", "SysNAND", "/homebrew/SDMC"]);
+        let mut mixed = make_result(&[
+            "SDMC",
+            "/homebrew/empty",
+            "UserNAND",
+            "SysNAND",
+            "/homebrew/SDMC",
+        ]);
         assert!(!mixed.is_empty());
-        assert_eq!(mixed.directories.iter().map(|dir| dir.path.as_str()).collect::<Vec<_>>(),
-            ["/homebrew/empty", "/homebrew/SDMC"]);
+        assert_eq!(
+            mixed
+                .directories
+                .iter()
+                .map(|dir| dir.path.as_str())
+                .collect::<Vec<_>>(),
+            ["/homebrew/empty", "/homebrew/SDMC"]
+        );
 
         // Fresh scans still contain the configured roots: installation reveals
         // each category, and an empty scan after removal hides it again.
         for path in ["SDMC", "UserNAND", "SysNAND"] {
             let mut populated = make_result(&[path]);
             populated.directories[0].games.push(GameFile {
-                name: "Homebrew".to_owned(), developer: String::new(),
-                version: String::new(), kind: "NRO".to_owned(),
-                architecture: "aarch64".to_owned(), size: 0,
-                path: PathBuf::from("homebrew.nro"), program_id: 0,
-                add_ons: String::new(), icon: None,
+                name: "Homebrew".to_owned(),
+                developer: String::new(),
+                version: String::new(),
+                kind: "NRO".to_owned(),
+                architecture: "aarch64".to_owned(),
+                size: 0,
+                path: PathBuf::from("homebrew.nro"),
+                program_id: 0,
+                add_ons: String::new(),
+                icon: None,
             });
             assert!(!populated.is_empty());
             assert_eq!(populated.directories[0].path, path);
@@ -3703,16 +3984,32 @@ mod tests {
     #[test]
     fn installed_root_labels_icons_and_open_paths() {
         use common::fs::path_util::{get_ruzu_path, RuzuPath};
-        for (path, title) in [("SDMC", "Installed SD Titles"), ("UserNAND", "Installed NAND Titles"), ("SysNAND", "System Titles")] {
+        for (path, title) in [
+            ("SDMC", "Installed SD Titles"),
+            ("UserNAND", "Installed NAND Titles"),
+            ("SysNAND", "System Titles"),
+        ] {
             let root = GameEntry::new_folder(path, false, gio::ListStore::new::<GameEntry>());
             assert_eq!(root.name(), title);
             assert_eq!(root.path(), path);
             assert_ne!(folder_icon_png(path, "colorful"), BAD_FOLDER_ICON_PNG);
         }
-        assert_eq!(crate::main_window::game_list_directory_path("SDMC"), get_ruzu_path(RuzuPath::SDMCDir).join("Nintendo/Contents/registered"));
-        assert_eq!(crate::main_window::game_list_directory_path("UserNAND"), get_ruzu_path(RuzuPath::NANDDir).join("user/Contents/registered"));
-        assert_eq!(crate::main_window::game_list_directory_path("SysNAND"), get_ruzu_path(RuzuPath::NANDDir).join("system/Contents/registered"));
-        assert_eq!(crate::main_window::game_list_directory_path("/homebrew"), PathBuf::from("/homebrew"));
+        assert_eq!(
+            crate::main_window::game_list_directory_path("SDMC"),
+            get_ruzu_path(RuzuPath::SDMCDir).join("Nintendo/Contents/registered")
+        );
+        assert_eq!(
+            crate::main_window::game_list_directory_path("UserNAND"),
+            get_ruzu_path(RuzuPath::NANDDir).join("user/Contents/registered")
+        );
+        assert_eq!(
+            crate::main_window::game_list_directory_path("SysNAND"),
+            get_ruzu_path(RuzuPath::NANDDir).join("system/Contents/registered")
+        );
+        assert_eq!(
+            crate::main_window::game_list_directory_path("/homebrew"),
+            PathBuf::from("/homebrew")
+        );
     }
 
     #[test]
@@ -3740,20 +4037,12 @@ mod tests {
             },
         ];
 
-        assert!(move_game_directory(
-            &mut directories,
-            "/games/two",
-            -1
-        ));
+        assert!(move_game_directory(&mut directories, "/games/two", -1));
         assert_eq!(directories[0].path, "SDMC");
         assert_eq!(directories[1].path, "/games/one");
         assert_eq!(directories[2].path, "/games/two");
         assert_eq!(directories[3].path, "UserNAND");
-        assert!(move_game_directory(
-            &mut directories,
-            "/games/two",
-            -1
-        ));
+        assert!(move_game_directory(&mut directories, "/games/two", -1));
         assert!(move_game_directory(&mut directories, "SDMC", 1));
         assert!(!move_game_directory(&mut directories, "UserNAND", 1));
         assert!(!move_game_directory(&mut directories, "/missing", 1));

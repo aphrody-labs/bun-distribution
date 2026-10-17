@@ -53,12 +53,18 @@ impl ToolDef {
 
     /// The first argument this tool doesn't take, as a message naming the accepted ones.
     pub fn unknown_arg(&self, args: &Value) -> Option<String> {
-        let Some(m) = args.as_object() else { return Some("arguments must be an object".into()) };
+        let Some(m) = args.as_object() else {
+            return Some("arguments must be an object".into());
+        };
         let schema = self.input_schema();
         let props = schema.get("properties")?.as_object()?;
         let bad = m.keys().find(|k| !props.contains_key(*k))?;
         let accepted: Vec<&str> = props.keys().map(String::as_str).collect();
-        Some(format!("unknown argument \"{bad}\" for {}; expected: {}", self.name, accepted.join(", ")))
+        Some(format!(
+            "unknown argument \"{bad}\" for {}; expected: {}",
+            self.name,
+            accepted.join(", ")
+        ))
     }
 }
 
@@ -86,7 +92,9 @@ const WRITES_FILES: &[&str] = &["save_project", "render_frame", "screenshot"];
 fn title_of(name: &str) -> String {
     let s = name.replace('_', " ");
     let mut c = s.chars();
-    c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
+    c.next()
+        .map(|f| f.to_uppercase().collect::<String>() + c.as_str())
+        .unwrap_or_default()
 }
 
 /// All tools (headless + bridge-only).
@@ -105,7 +113,15 @@ pub fn available(bridge: bool) -> impl Iterator<Item = &'static ToolDef> {
 
 /// Tools refused while file access is confined: they drive the live app like a person (menus,
 /// shortcuts, Open Recent…) or call control-channel methods directly, past the command checks.
-const UNCONFINED_ONLY: &[&str] = &["control", "ui_click", "ui_drag", "ui_key", "ui_type", "ui_set", "script_ui"];
+const UNCONFINED_ONLY: &[&str] = &[
+    "control",
+    "ui_click",
+    "ui_drag",
+    "ui_key",
+    "ui_type",
+    "ui_set",
+    "script_ui",
+];
 
 /// Run a tool by name.
 pub fn run(b: &mut Backend, name: &str, args: &Value) -> Result<Reply> {
@@ -114,7 +130,9 @@ pub fn run(b: &mut Backend, name: &str, args: &Value) -> Result<Reply> {
         return Err(Error::BadArgs(NEED_BRIDGE.into()));
     }
     if b.confinement().is_some() && UNCONFINED_ONLY.contains(&name) {
-        return Err(Error::BadArgs(format!("`{name}` is not available while file access is confined (--automation-read-root/--automation-write-root)")));
+        return Err(Error::BadArgs(format!(
+            "`{name}` is not available while file access is confined (--automation-read-root/--automation-write-root)"
+        )));
     }
     let empty = json!({});
     (t.run)(b, if args.is_null() { &empty } else { args })
@@ -168,7 +186,8 @@ fn params_of(v: Option<&Value>) -> Result<Value> {
     match v {
         None => Ok(json!({})),
         Some(Value::String(s)) if s.trim().is_empty() => Ok(json!({})),
-        Some(Value::String(s)) => serde_json::from_str(s).map_err(|e| Error::BadArgs(format!("`params` is not valid JSON: {e}"))),
+        Some(Value::String(s)) => serde_json::from_str(s)
+            .map_err(|e| Error::BadArgs(format!("`params` is not valid JSON: {e}"))),
         Some(v) => Ok(v.clone()),
     }
 }
@@ -176,8 +195,18 @@ fn params_of(v: Option<&Value>) -> Result<Value> {
 // ------------------------------------------------------------------ engine tools
 
 fn list_commands(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let schemas = get(a, "schemas").and_then(Value::as_bool).unwrap_or(false).then_some(json!(true));
-    let r = b.exec("command.list", obj(&[("filter", get(a, "filter")), ("enabledOnly", get(a, "enabled_only")), ("schemas", schemas.as_ref())]))?;
+    let schemas = get(a, "schemas")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        .then_some(json!(true));
+    let r = b.exec(
+        "command.list",
+        obj(&[
+            ("filter", get(a, "filter")),
+            ("enabledOnly", get(a, "enabled_only")),
+            ("schemas", schemas.as_ref()),
+        ]),
+    )?;
     // Drop empty fields to keep the listing compact.
     let list: Vec<Value> = r
         .as_array()
@@ -186,7 +215,11 @@ fn list_commands(b: &mut Backend, a: &Value) -> Result<Reply> {
         .into_iter()
         .map(|mut c| {
             if let Some(o) = c.as_object_mut() {
-                o.retain(|_, v| !(v.is_null() || v.as_array().is_some_and(Vec::is_empty) || v.as_str() == Some("{}")));
+                o.retain(|_, v| {
+                    !(v.is_null()
+                        || v.as_array().is_some_and(Vec::is_empty)
+                        || v.as_str() == Some("{}"))
+                });
             }
             c
         })
@@ -195,13 +228,19 @@ fn list_commands(b: &mut Backend, a: &Value) -> Result<Reply> {
 }
 
 fn execute_command(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let id = get(a, "command").or(get(a, "id")).and_then(Value::as_str).ok_or_else(|| Error::BadArgs("missing `command` (e.g. `comp.new`)".into()))?;
+    let id = get(a, "command")
+        .or(get(a, "id"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| Error::BadArgs("missing `command` (e.g. `comp.new`)".into()))?;
     let params = params_of(get(a, "params"))?;
     json_reply(b.exec(id, params)?)
 }
 
 fn describe_command(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let id = get(a, "command").or(get(a, "id")).and_then(Value::as_str).ok_or_else(|| Error::BadArgs("missing `command` (e.g. `layer.newText`)".into()))?;
+    let id = get(a, "command")
+        .or(get(a, "id"))
+        .and_then(Value::as_str)
+        .ok_or_else(|| Error::BadArgs("missing `command` (e.g. `layer.newText`)".into()))?;
     json_reply(b.exec("command.describe", json!({"command": id}))?)
 }
 
@@ -210,14 +249,26 @@ fn list_effects(b: &mut Backend, a: &Value) -> Result<Reply> {
 }
 
 fn list_fonts(b: &mut Backend, a: &Value) -> Result<Reply> {
-    json_reply(b.exec("text.fonts", obj(&[("query", get(a, "query")), ("variable", get(a, "variable")), ("rescan", get(a, "rescan"))]))?)
+    json_reply(b.exec(
+        "text.fonts",
+        obj(&[
+            ("query", get(a, "query")),
+            ("variable", get(a, "variable")),
+            ("rescan", get(a, "rescan")),
+        ]),
+    )?)
 }
 
 /// `effect.apply` on one layer, then set parameters on the new instance by param id: one batch,
 /// so one undo step, and a failing value leaves nothing applied.
 fn add_effect(b: &mut Backend, a: &Value) -> Result<Reply> {
     let (layer, effect, comp) = (need(a, "layer")?, need(a, "effect")?, get(a, "comp"));
-    let count = |t: &Value| effects_group(t).and_then(|g| g.get("children")).and_then(Value::as_array).map_or(0, Vec::len);
+    let count = |t: &Value| {
+        effects_group(t)
+            .and_then(|g| g.get("children"))
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len)
+    };
     let before = b.exec("layer.tree", obj(&[("layer", Some(layer)), ("comp", comp)]))?;
     let index = count(&before) + 1;
     let mut p = obj(&[("effect", Some(effect)), ("comp", comp)]);
@@ -235,21 +286,35 @@ fn add_effect(b: &mut Backend, a: &Value) -> Result<Reply> {
         }
     }
     // The undo step is named like effect.apply's own ("Apply Gaussian Blur").
-    let name = effect.as_str().map(|e| effectcraft_engine::effects::lookup(e).map_or(e, |s| s.name));
+    let name = effect
+        .as_str()
+        .map(|e| effectcraft_engine::effects::lookup(e).map_or(e, |s| s.name));
     let label = name.map(|n| json!(format!("Apply {n}")));
-    b.exec("engine.batch", obj(&[("steps", Some(&json!(steps))), ("label", label.as_ref())]))?;
+    b.exec(
+        "engine.batch",
+        obj(&[("steps", Some(&json!(steps))), ("label", label.as_ref())]),
+    )?;
     let tree = b.exec("layer.tree", obj(&[("layer", Some(layer)), ("comp", comp)]))?;
-    let inst = effects_group(&tree).and_then(|g| g.get("children")).and_then(Value::as_array).and_then(|c| c.get(index - 1)).cloned();
+    let inst = effects_group(&tree)
+        .and_then(|g| g.get("children"))
+        .and_then(Value::as_array)
+        .and_then(|c| c.get(index - 1))
+        .cloned();
     let mut params = vec![];
     if let Some(i) = &inst {
         flatten(i, &mut params);
     }
-    json_reply(json!({"layer": tree["id"], "index": index, "path": prefix, "name": inst.as_ref().map(|i| i["name"].clone()), "set": set, "params": params}))
+    json_reply(
+        json!({"layer": tree["id"], "index": index, "path": prefix, "name": inst.as_ref().map(|i| i["name"].clone()), "set": set, "params": params}),
+    )
 }
 
 /// The `effects` group of a `layer.tree` reply.
 fn effects_group(tree: &Value) -> Option<&Value> {
-    tree["properties"]["children"].as_array()?.iter().find(|c| c["path"] == "effects")
+    tree["properties"]["children"]
+        .as_array()?
+        .iter()
+        .find(|c| c["path"] == "effects")
 }
 
 fn get_state(b: &mut Backend, _: &Value) -> Result<Reply> {
@@ -259,7 +324,9 @@ fn get_state(b: &mut Backend, _: &Value) -> Result<Reply> {
 }
 
 fn run_script(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let code = get(a, "code").and_then(Value::as_str).ok_or_else(|| Error::BadArgs("missing `code` (JavaScript)".into()))?;
+    let code = get(a, "code")
+        .and_then(Value::as_str)
+        .ok_or_else(|| Error::BadArgs("missing `code` (JavaScript)".into()))?;
     let mut p = json!({"code": code});
     if let Some(n) = get(a, "name") {
         p["name"] = n.clone();
@@ -279,7 +346,9 @@ fn get_comp(b: &mut Backend, a: &Value) -> Result<Reply> {
 fn flatten(node: &Value, out: &mut Vec<Value>) {
     // A group cut off by `depth` stays visible (instead of vanishing from the flat list).
     if node.get("truncated").and_then(Value::as_bool) == Some(true) {
-        out.push(json!({"path": node["path"], "type": "group", "name": node["name"], "truncated": true}));
+        out.push(
+            json!({"path": node["path"], "type": "group", "name": node["name"], "truncated": true}),
+        );
         return;
     }
     match node.get("children").and_then(Value::as_array) {
@@ -298,7 +367,12 @@ fn flatten(node: &Value, out: &mut Vec<Value>) {
 }
 
 fn get_layer(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let p = obj(&[("layer", Some(need(a, "layer")?)), ("comp", get(a, "comp")), ("depth", get(a, "depth")), ("time", get(a, "time"))]);
+    let p = obj(&[
+        ("layer", Some(need(a, "layer")?)),
+        ("comp", get(a, "comp")),
+        ("depth", get(a, "depth")),
+        ("time", get(a, "time")),
+    ]);
     let mut r = b.exec("layer.tree", p)?;
     if get(a, "flat").and_then(Value::as_bool) == Some(true) {
         let mut props = vec![];
@@ -309,12 +383,22 @@ fn get_layer(b: &mut Backend, a: &Value) -> Result<Reply> {
 }
 
 fn get_property(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let p = obj(&[("layer", Some(need(a, "layer")?)), ("path", Some(need(a, "path")?)), ("comp", get(a, "comp")), ("time", get(a, "time"))]);
+    let p = obj(&[
+        ("layer", Some(need(a, "layer")?)),
+        ("path", Some(need(a, "path")?)),
+        ("comp", get(a, "comp")),
+        ("time", get(a, "time")),
+    ]);
     json_reply(b.exec("prop.get", p)?)
 }
 
 fn set_property(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let (layer, path, comp, time) = (need(a, "layer")?, need(a, "path")?, get(a, "comp"), get(a, "time"));
+    let (layer, path, comp, time) = (
+        need(a, "layer")?,
+        need(a, "path")?,
+        get(a, "comp"),
+        get(a, "time"),
+    );
     let (value, expr) = (get(a, "value"), get(a, "expression"));
     if value.is_none() && expr.is_none() {
         return Err(Error::BadArgs("give `value` and/or `expression`".into()));
@@ -341,15 +425,30 @@ fn set_property(b: &mut Backend, a: &Value) -> Result<Reply> {
         p["expression"] = e.clone();
         b.exec("prop.setExpression", p)?;
     }
-    json_reply(b.exec("prop.get", obj(&[("layer", Some(layer)), ("path", Some(path)), ("comp", comp), ("time", time)]))?)
+    json_reply(b.exec(
+        "prop.get",
+        obj(&[
+            ("layer", Some(layer)),
+            ("path", Some(path)),
+            ("comp", comp),
+            ("time", time),
+        ]),
+    )?)
 }
 
 fn add_keyframe(b: &mut Backend, a: &Value) -> Result<Reply> {
     let (layer, path, comp) = (need(a, "layer")?, need(a, "path")?, get(a, "comp"));
     let keys: Vec<Value> = match get(a, "keys") {
         Some(Value::Array(k)) => k.clone(),
-        Some(_) => return Err(Error::BadArgs("`keys` must be an array of {time, value?}".into())),
-        None => vec![obj(&[("time", Some(need(a, "time")?)), ("value", get(a, "value"))])],
+        Some(_) => {
+            return Err(Error::BadArgs(
+                "`keys` must be an array of {time, value?}".into(),
+            ));
+        }
+        None => vec![obj(&[
+            ("time", Some(need(a, "time")?)),
+            ("value", get(a, "value")),
+        ])],
     };
     if keys.is_empty() {
         return Err(Error::BadArgs("no keys".into()));
@@ -372,7 +471,10 @@ fn add_keyframe(b: &mut Backend, a: &Value) -> Result<Reply> {
         if let Some(c) = comp {
             b.exec("comp.open", json!({"comp": c}))?;
         }
-        let sel: Vec<Value> = keys.iter().map(|k| json!({"layer": info["layer"], "prop": info["uid"], "time": k["time"]})).collect();
+        let sel: Vec<Value> = keys
+            .iter()
+            .map(|k| json!({"layer": info["layer"], "prop": info["uid"], "time": k["time"]}))
+            .collect();
         let mut select = json!({"keys": sel});
         if let Some(tb) = get(a, "timeBase") {
             select["timeBase"] = tb.clone();
@@ -382,8 +484,14 @@ fn add_keyframe(b: &mut Backend, a: &Value) -> Result<Reply> {
             "easyease" | "ease" => b.exec("keys.easyEase", json!({}))?,
             "easyeasein" => b.exec("keys.easyEase", json!({"which": "in"}))?,
             "easyeaseout" => b.exec("keys.easyEase", json!({"which": "out"}))?,
-            i @ ("linear" | "bezier" | "hold") => b.exec("keys.interpolation", json!({"interpolation": i}))?,
-            other => return Err(Error::BadArgs(format!("unknown interpolation `{other}` (linear, bezier, hold, easyEase, easyEaseIn, easyEaseOut)"))),
+            i @ ("linear" | "bezier" | "hold") => {
+                b.exec("keys.interpolation", json!({"interpolation": i}))?
+            }
+            other => {
+                return Err(Error::BadArgs(format!(
+                    "unknown interpolation `{other}` (linear, bezier, hold, easyEase, easyEaseIn, easyEaseOut)"
+                )));
+            }
         };
         return json_reply(b.exec("prop.get", obj(&base))?);
     }
@@ -392,8 +500,15 @@ fn add_keyframe(b: &mut Backend, a: &Value) -> Result<Reply> {
 
 fn render_frame(b: &mut Backend, a: &Value) -> Result<Reply> {
     let max_side = get(a, "max_side").and_then(Value::as_u64).unwrap_or(960) as u32;
-    let transparent = get(a, "transparent").and_then(Value::as_bool).unwrap_or(false);
-    let f = b.render_with(get(a, "comp"), get(a, "time").and_then(Value::as_f64), max_side, transparent)?;
+    let transparent = get(a, "transparent")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let f = b.render_with(
+        get(a, "comp"),
+        get(a, "time").and_then(Value::as_f64),
+        max_side,
+        transparent,
+    )?;
     let mut info = json!({"comp": f.comp, "time": f.time, "width": f.width, "height": f.height});
     if let Some(p) = get(a, "path").and_then(Value::as_str) {
         if let Some(c) = b.confinement() {
@@ -416,7 +531,9 @@ fn open_project(b: &mut Backend, a: &Value) -> Result<Reply> {
     } else if get(a, "new").and_then(Value::as_bool) == Some(true) {
         b.exec("file.newProject", json!({}))?;
     } else {
-        return Err(Error::BadArgs("give `path` (.ecproj), `demo: true` or `new: true`".into()));
+        return Err(Error::BadArgs(
+            "give `path` (.ecproj), `demo: true` or `new: true`".into(),
+        ));
     }
     get_project(b, &json!({}))
 }
@@ -460,9 +577,18 @@ fn script_ui_tool(b: &mut Backend, a: &Value) -> Result<Reply> {
         "click" => "scriptui.click",
         "set" => "scriptui.set",
         "close" => "scriptui.close",
-        other => return Err(Error::BadArgs(format!("unknown action `{other}` (list | get | click | set | close)"))),
+        other => {
+            return Err(Error::BadArgs(format!(
+                "unknown action `{other}` (list | get | click | set | close)"
+            )));
+        }
     };
-    let p = obj(&[("window", get(a, "window")), ("widget", get(a, "widget")), ("value", get(a, "value")), ("result", get(a, "result"))]);
+    let p = obj(&[
+        ("window", get(a, "window")),
+        ("widget", get(a, "widget")),
+        ("value", get(a, "value")),
+        ("result", get(a, "result")),
+    ]);
     json_reply(b.exec(id, p)?)
 }
 
@@ -484,7 +610,14 @@ fn batch_tool(b: &mut Backend, a: &Value) -> Result<Reply> {
         Value::String(_) => params_of(Some(steps))?,
         v => v.clone(),
     };
-    json_reply(b.exec("engine.batch", obj(&[("steps", Some(&steps)), ("label", get(a, "label")), ("atomic", get(a, "atomic"))]))?)
+    json_reply(b.exec(
+        "engine.batch",
+        obj(&[
+            ("steps", Some(&steps)),
+            ("label", get(a, "label")),
+            ("atomic", get(a, "atomic")),
+        ]),
+    )?)
 }
 
 // ------------------------------------------------------------------ bridge-only tools
@@ -495,15 +628,29 @@ fn screenshot(b: &mut Backend, a: &Value) -> Result<Reply> {
     if let (Some(c), Some(p)) = (b.confinement(), &keep) {
         c.check(p, crate::confine::Access::Write)?;
     }
-    let path =
-        keep.clone().unwrap_or_else(|| std::env::temp_dir().join(format!("effectcraft-mcp-shot-{}.png", std::process::id())).to_string_lossy().into_owned());
-    b.control("ui.screenshot", obj(&[("path", Some(&json!(path))), ("panel", get(a, "panel")), ("id", get(a, "id"))]))?;
+    let path = keep.clone().unwrap_or_else(|| {
+        std::env::temp_dir()
+            .join(format!("effectcraft-mcp-shot-{}.png", std::process::id()))
+            .to_string_lossy()
+            .into_owned()
+    });
+    b.control(
+        "ui.screenshot",
+        obj(&[
+            ("path", Some(&json!(path))),
+            ("panel", get(a, "panel")),
+            ("id", get(a, "id")),
+        ]),
+    )?;
     let bytes = std::fs::read(&path).map_err(|e| Error::Other(format!("screenshot: {e}")))?;
     if keep.is_none() {
         let _ = std::fs::remove_file(&path);
     }
     let (png, w, h) = recompress_png(&bytes, max_side)?;
-    Ok(Reply::Image { png, info: json!({"width": w, "height": h, "path": keep}) })
+    Ok(Reply::Image {
+        png,
+        info: json!({"width": w, "height": h, "path": keep}),
+    })
 }
 
 fn passthrough(b: &mut Backend, method: &str, a: &Value) -> Result<Reply> {
@@ -532,7 +679,9 @@ fn ui_set(b: &mut Backend, a: &Value) -> Result<Reply> {
     passthrough(b, "ui.set", a)
 }
 fn control(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let m = need(a, "method")?.as_str().ok_or_else(|| Error::BadArgs("`method` must be a string".into()))?;
+    let m = need(a, "method")?
+        .as_str()
+        .ok_or_else(|| Error::BadArgs("`method` must be a string".into()))?;
     let p = params_of(get(a, "params"))?;
     json_reply(b.control(m, p)?)
 }
@@ -698,7 +847,12 @@ static TOOLS: &[ToolDef] = &[
         name: "list_effects",
         description: "The effect registry: id, After Effects name, category, GPU and 32-bpc support. Narrow with `filter` (id, name or category text). Apply with add_effect.",
         bridge_only: false,
-        schema: || schema(json!({"filter": {"type": "string", "description": "Only effects whose id, name or category contains this text."}}), &[]),
+        schema: || {
+            schema(
+                json!({"filter": {"type": "string", "description": "Only effects whose id, name or category contains this text."}}),
+                &[],
+            )
+        },
         run: list_effects,
     },
     ToolDef {
@@ -748,7 +902,10 @@ static TOOLS: &[ToolDef] = &[
         description: "Open a project: `path` to an .ecproj file, `demo: true` for the built-in demo project, or `new: true` for an empty project. Returns the project overview.",
         bridge_only: false,
         schema: || {
-            schema(json!({"path": {"type": "string", "description": "Path of an .ecproj file."}, "demo": {"type": "boolean"}, "new": {"type": "boolean"}}), &[])
+            schema(
+                json!({"path": {"type": "string", "description": "Path of an .ecproj file."}, "demo": {"type": "boolean"}, "new": {"type": "boolean"}}),
+                &[],
+            )
         },
         run: open_project,
     },
@@ -756,7 +913,12 @@ static TOOLS: &[ToolDef] = &[
         name: "save_project",
         description: "Save the project to its current file, or to `path` (Save As, .ecproj).",
         bridge_only: false,
-        schema: || schema(json!({"path": {"type": "string", "description": "Destination .ecproj path (Save As)."}}), &[]),
+        schema: || {
+            schema(
+                json!({"path": {"type": "string", "description": "Destination .ecproj path (Save As)."}}),
+                &[],
+            )
+        },
         run: save_project,
     },
     ToolDef {
@@ -777,7 +939,12 @@ static TOOLS: &[ToolDef] = &[
         name: "history",
         description: "The branching undo history (History panel): without arguments lists every state {index, id, label, parent, depth (0 = working line, >0 = branch), current, future}; undoing and then editing keeps the undone states as a branch. With `goto` (an index or id from the listing) jumps to that state, on any branch, without losing the others.",
         bridge_only: false,
-        schema: || schema(json!({"goto": {"type": ["integer", "string"], "description": "State index or id to jump to (edit.history.goto)."}}), &[]),
+        schema: || {
+            schema(
+                json!({"goto": {"type": ["integer", "string"], "description": "State index or id to jump to (edit.history.goto)."}}),
+                &[],
+            )
+        },
         run: history_tool,
     },
     ToolDef {
@@ -826,7 +993,12 @@ static TOOLS: &[ToolDef] = &[
         name: "ui_elements",
         description: "Interactive elements drawn in the last frame: id, label, rect [x,y,w,h] in points. Stable ids such as `tools.Selection`, `panel.Timeline`, `panel.tab.EffectControls`, `project.item.<id>`, `viewer.comp`, `timeline.layer.<id>.bar`, `timeline.prop.<uid>.stopwatch`, `timeline.cti`, `effects.item.<name>`. Filter with `prefix`.",
         bridge_only: true,
-        schema: || schema(json!({"prefix": {"type": "string", "description": "Only ids starting with this, e.g. `tools.`, `timeline.layer.`."}}), &[]),
+        schema: || {
+            schema(
+                json!({"prefix": {"type": "string", "description": "Only ids starting with this, e.g. `tools.`, `timeline.layer.`."}}),
+                &[],
+            )
+        },
         run: ui_elements,
     },
     ToolDef {
@@ -890,7 +1062,12 @@ static TOOLS: &[ToolDef] = &[
         name: "control",
         description: "Call any control-channel method (docs/control-protocol.md) with its params, e.g. ui.menu.list, ui.menu.invoke {id}, ui.panel.show {panel}, ui.scroll, ui.viewer.locate {x,y}, ui.timeline.locate {layer,time}, ui.playback {action}, ui.resize.",
         bridge_only: true,
-        schema: || schema(json!({"method": {"type": "string"}, "params": {"type": "object", "additionalProperties": true}}), &["method"]),
+        schema: || {
+            schema(
+                json!({"method": {"type": "string"}, "params": {"type": "object", "additionalProperties": true}}),
+                &["method"],
+            )
+        },
         run: control,
     },
     ToolDef {
@@ -985,8 +1162,12 @@ fn doc_inspect(b: &mut Backend, _: &Value) -> Result<Reply> {
 }
 
 fn command_batch(b: &mut Backend, a: &Value) -> Result<Reply> {
-    let steps = need(a, "steps")?.as_array().ok_or_else(|| Error::BadArgs("steps must be an array".into()))?;
-    let stop = get(a, "stop_on_error").and_then(Value::as_bool).unwrap_or(true);
+    let steps = need(a, "steps")?
+        .as_array()
+        .ok_or_else(|| Error::BadArgs("steps must be an array".into()))?;
+    let stop = get(a, "stop_on_error")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     let mut results = Vec::new();
     let (mut completed, mut failed) = (0, 0);
     for step in steps {

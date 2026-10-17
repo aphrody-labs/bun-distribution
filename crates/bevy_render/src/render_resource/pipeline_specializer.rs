@@ -10,8 +10,8 @@ use bevy_material::specialize::SpecializedMeshPipelineError;
 use bevy_mesh::{MeshVertexBufferLayoutRef, VertexBufferLayout};
 use bevy_platform::{
     collections::{
-        hash_map::{Entry, RawEntryMut, VacantEntry},
         HashMap,
+        hash_map::{Entry, RawEntryMut, VacantEntry},
     },
     hash::FixedHasher,
 };

@@ -103,8 +103,14 @@ fn typed_text_is_a_number_arithmetic_or_an_edit_relative_to_the_value() {
         assert_eq!(eval(text, cur), want, "eval({text:?}, {cur:?})");
     }
     // Junk never panics: long, deep and odd text.
-    for junk in ["(".repeat(5000), "1+".repeat(5000), format!("{}1{}", "(".repeat(40), ")".repeat(40)), "−1".into(), "1\u{0}2".into(), "é%".into()]
-    {
+    for junk in [
+        "(".repeat(5000),
+        "1+".repeat(5000),
+        format!("{}1{}", "(".repeat(40), ")".repeat(40)),
+        "−1".into(),
+        "1\u{0}2".into(),
+        "é%".into(),
+    ] {
         let _ = parse(&junk, false);
         let _ = parse(&junk, true);
     }
@@ -126,7 +132,10 @@ fn a_scrub_moves_a_step_a_point_ten_with_shift_and_a_tenth_with_alt() {
     ];
     for ((dx, step, shift, alt), want) in rows {
         let got = scrub_amount(dx, step, shift, alt);
-        assert!((got - want).abs() < 1e-9, "{dx} points, step {step}, shift {shift}, alt {alt}: {got} (wanted {want})");
+        assert!(
+            (got - want).abs() < 1e-9,
+            "{dx} points, step {step}, shift {shift}, alt {alt}: {got} (wanted {want})"
+        );
     }
     // The value shown: whole steps from where the scrub began (it keeps its fraction), tenths
     // with Alt, and no dust from adding tenths.
@@ -138,7 +147,11 @@ fn a_scrub_moves_a_step_a_point_ten_with_shift_and_a_tenth_with_alt() {
         ((5.0, 7.0, 0.0), 5.0),
         ((5.0, f64::NAN, 1.0), 5.0),
     ] {
-        assert_eq!(scrubbed(from, amount, quantum), want, "from {from}, moved {amount}, quantum {quantum}");
+        assert_eq!(
+            scrubbed(from, amount, quantum),
+            want,
+            "from {from}, moved {amount}, quantum {quantum}"
+        );
     }
     assert_eq!(stepped(0.1, 1.0, 0.2), 0.3);
     assert_eq!(stepped(1.0, 1.0, f64::INFINITY), 1.0);
@@ -151,8 +164,18 @@ fn id(v: serde_json::Value) -> NodeId {
 /// Rectangles A (10, 20, 40×30) and B (100, 50, 20×20); A is selected.
 fn setup() -> (Ui, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id(s.execute("shape.rectangle", &json!({"x": 10, "y": 20, "width": 40, "height": 30})).unwrap());
-    let b = id(s.execute("shape.rectangle", &json!({"x": 100, "y": 50, "width": 20, "height": 20})).unwrap());
+    let a = id(s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 10, "y": 20, "width": 40, "height": 30}),
+        )
+        .unwrap());
+    let b = id(s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 100, "y": 50, "width": 20, "height": 20}),
+        )
+        .unwrap());
     s.execute("select.set", &json!({"ids": [a]})).unwrap();
     let mut u = Ui::new(s);
     u.ctx.enable_accesskit();
@@ -164,19 +187,37 @@ fn setup() -> (Ui, NodeId, NodeId) {
 fn field(u: &mut Ui, name: &str) -> (Pos2, String) {
     u.frame(vec![]);
     let out = u.frame_output(vec![]);
-    let nodes = out.platform_output.accesskit_update.expect("an AccessKit update").nodes;
-    let n =
-        nodes.iter().map(|(_, n)| n).find(|n| n.role() == Role::SpinButton && n.label() == Some(name)).unwrap_or_else(|| panic!("no field {name:?}"));
+    let nodes = out
+        .platform_output
+        .accesskit_update
+        .expect("an AccessKit update")
+        .nodes;
+    let n = nodes
+        .iter()
+        .map(|(_, n)| n)
+        .find(|n| n.role() == Role::SpinButton && n.label() == Some(name))
+        .unwrap_or_else(|| panic!("no field {name:?}"));
     let b = n.bounds().expect("bounds");
-    (pos2(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32), n.value().unwrap_or_default().to_string())
+    (
+        pos2(((b.x0 + b.x1) / 2.0) as f32, ((b.y0 + b.y1) / 2.0) as f32),
+        n.value().unwrap_or_default().to_string(),
+    )
 }
 
 /// The middle of field `name`'s label (what scrubs): just left of its value.
 fn label(u: &mut Ui, name: &str) -> Pos2 {
     u.frame(vec![]);
     let out = u.frame_output(vec![]);
-    let nodes = out.platform_output.accesskit_update.expect("an AccessKit update").nodes;
-    let n = nodes.iter().map(|(_, n)| n).find(|n| n.role() == Role::SpinButton && n.label() == Some(name)).unwrap();
+    let nodes = out
+        .platform_output
+        .accesskit_update
+        .expect("an AccessKit update")
+        .nodes;
+    let n = nodes
+        .iter()
+        .map(|(_, n)| n)
+        .find(|n| n.role() == Role::SpinButton && n.label() == Some(name))
+        .unwrap();
     let b = n.bounds().unwrap();
     pos2(b.x0 as f32 - 12.0, ((b.y0 + b.y1) / 2.0) as f32)
 }
@@ -193,7 +234,13 @@ fn undo_steps(u: &Ui) -> usize {
 
 /// A key pressed and let go within one frame (a quick tap, and what the control channel sends).
 fn key(u: &mut Ui, key: Key, modifiers: Modifiers) {
-    let event = |pressed| Event::Key { key, physical_key: None, pressed, repeat: false, modifiers };
+    let event = |pressed| Event::Key {
+        key,
+        physical_key: None,
+        pressed,
+        repeat: false,
+        modifiers,
+    };
     u.frame_with(vec![event(true), event(false)], modifiers);
     u.frame(vec![]);
 }
@@ -216,15 +263,34 @@ fn type_into(u: &mut Ui, name: &str, text: &str, end: Key) {
 /// Scrub field `name` by its label: `dx` points with `modifiers` held, then let go.
 fn scrub(u: &mut Ui, name: &str, dx: f32, modifiers: Modifiers) {
     let from = label(u, name);
-    let press = |pressed| Event::PointerButton { pos: from, button: egui::PointerButton::Primary, pressed, modifiers };
+    let press = |pressed| Event::PointerButton {
+        pos: from,
+        button: egui::PointerButton::Primary,
+        pressed,
+        modifiers,
+    };
     u.frame_with(vec![Event::PointerMoved(from), press(true)], modifiers);
     let steps = 10;
     for k in 1..=steps {
-        u.frame_with(vec![Event::PointerMoved(pos2(from.x + dx * k as f32 / steps as f32, from.y))], modifiers);
+        u.frame_with(
+            vec![Event::PointerMoved(pos2(
+                from.x + dx * k as f32 / steps as f32,
+                from.y,
+            ))],
+            modifiers,
+        );
     }
     let to = pos2(from.x + dx, from.y);
     u.frame_with(
-        vec![Event::PointerMoved(to), Event::PointerButton { pos: to, button: egui::PointerButton::Primary, pressed: false, modifiers }],
+        vec![
+            Event::PointerMoved(to),
+            Event::PointerButton {
+                pos: to,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers,
+            },
+        ],
         modifiers,
     );
     u.frame(vec![]);
@@ -233,8 +299,14 @@ fn scrub(u: &mut Ui, name: &str, dx: f32, modifiers: Modifiers) {
 #[test]
 fn scrubbing_the_label_moves_the_value_and_is_one_undo_step() {
     let (mut u, a, _) = setup();
-    let shift = Modifiers { shift: true, ..Modifiers::NONE };
-    let alt = Modifiers { alt: true, ..Modifiers::NONE };
+    let shift = Modifiers {
+        shift: true,
+        ..Modifiers::NONE
+    };
+    let alt = Modifiers {
+        alt: true,
+        ..Modifiers::NONE
+    };
     // (field, points, modifiers, x after): X starts at 10.
     let rows = [
         ("X", 25.0, Modifiers::NONE, 35.0),
@@ -246,8 +318,16 @@ fn scrubbing_the_label_moves_the_value_and_is_one_undo_step() {
     for (name, dx, m, want) in rows {
         let steps = undo_steps(&u);
         scrub(&mut u, name, dx, m);
-        assert_eq!(geom(&u, a).0, want, "{name} scrubbed {dx} points with {m:?}");
-        assert_eq!(undo_steps(&u), steps + 1, "one undo step for the whole scrub");
+        assert_eq!(
+            geom(&u, a).0,
+            want,
+            "{name} scrubbed {dx} points with {m:?}"
+        );
+        assert_eq!(
+            undo_steps(&u),
+            steps + 1,
+            "one undo step for the whole scrub"
+        );
     }
     u.app.run("edit.undo", json!({}));
     assert_eq!(geom(&u, a).0, 100.0, "undo takes back the last scrub alone");
@@ -262,7 +342,8 @@ fn scrubbing_the_label_moves_the_value_and_is_one_undo_step() {
     scrub(&mut u, "Opacity", -30.0, Modifiers::NONE);
     assert_eq!(u.app.session.doc().unwrap().node(a).unwrap().opacity, 0.7);
     scrub(&mut u, "Rotation", 15.0, Modifiers::NONE);
-    let rot = figcraft_geom::rotation_degrees(u.app.session.doc().unwrap().node(a).unwrap().transform);
+    let rot =
+        figcraft_geom::rotation_degrees(u.app.session.doc().unwrap().node(a).unwrap().transform);
     assert!((rot.abs() - 15.0).abs() < 1e-6, "rotation {rot}");
     // A press on the label that doesn't move changes nothing.
     let before = (geom(&u, a), undo_steps(&u));
@@ -274,7 +355,10 @@ fn scrubbing_the_label_moves_the_value_and_is_one_undo_step() {
 #[test]
 fn the_arrow_keys_step_by_the_nudge_amounts_and_fractional_fields_by_their_own() {
     let (mut u, a, _) = setup();
-    let shift = Modifiers { shift: true, ..Modifiers::NONE };
+    let shift = Modifiers {
+        shift: true,
+        ..Modifiers::NONE
+    };
     let (p, _) = field(&mut u, "Width");
     click(&mut u, p);
     key(&mut u, Key::ArrowUp, Modifiers::NONE);
@@ -295,7 +379,11 @@ fn the_arrow_keys_step_by_the_nudge_amounts_and_fractional_fields_by_their_own()
     assert_eq!(geom(&u, a).2, 22.0);
     key(&mut u, Key::Enter, Modifiers::NONE);
     u.frame(vec![]);
-    assert_eq!(geom(&u, a).2, 22.0, "Enter after the step commits nothing more");
+    assert_eq!(
+        geom(&u, a).2,
+        22.0,
+        "Enter after the step commits nothing more"
+    );
     // Opacity steps a percent and ten, rotation a degree and ten, whatever the nudge.
     let (p, _) = field(&mut u, "Opacity");
     click(&mut u, p);
@@ -308,8 +396,12 @@ fn the_arrow_keys_step_by_the_nudge_amounts_and_fractional_fields_by_their_own()
     key(&mut u, Key::ArrowUp, Modifiers::NONE);
     key(&mut u, Key::ArrowUp, shift);
     key(&mut u, Key::Escape, Modifiers::NONE);
-    let rot = figcraft_geom::rotation_degrees(u.app.session.doc().unwrap().node(a).unwrap().transform);
-    assert!((rot.abs() - 11.0).abs() < 1e-6, "rotation {rot}: the steps stay after Escape");
+    let rot =
+        figcraft_geom::rotation_degrees(u.app.session.doc().unwrap().node(a).unwrap().transform);
+    assert!(
+        (rot.abs() - 11.0).abs() < 1e-6,
+        "rotation {rot}: the steps stay after Escape"
+    );
 }
 
 #[test]
@@ -345,11 +437,19 @@ fn arithmetic_commits_tab_moves_on_and_escape_restores() {
     let (other, _) = field(&mut u, "Y");
     click(&mut u, other);
     key(&mut u, Key::Escape, Modifiers::NONE);
-    assert_eq!(undo_steps(&u), steps + 1, "Enter or a click away from an untouched field isn't an edit");
+    assert_eq!(
+        undo_steps(&u),
+        steps + 1,
+        "Enter or a click away from an untouched field isn't an edit"
+    );
     // Escape restores: nothing of what was typed is kept.
     type_into(&mut u, "X", "999", Key::Escape);
     assert_eq!((geom(&u, a).0, undo_steps(&u)), (40.0, steps + 1));
-    assert_eq!(field(&mut u, "X").1, "40", "the field shows the value again");
+    assert_eq!(
+        field(&mut u, "X").1,
+        "40",
+        "the field shows the value again"
+    );
     // Tab commits and moves to the next field, Shift+Tab back; what is typed there replaces it.
     type_into(&mut u, "X", "77", Key::Tab);
     assert_eq!(geom(&u, a).0, 77.0, "Tab commits");
@@ -374,20 +474,58 @@ fn mixed_values_take_edits_relative_to_each_layer() {
     let steps = undo_steps(&u);
     // (field, typed) → A's and B's (x, y, w, h) after it
     let rows = [
-        ("X", "+10", (20.0, 20.0, 40.0, 30.0), (110.0, 50.0, 20.0, 20.0)),
-        ("Width", "*2", (20.0, 20.0, 80.0, 30.0), (110.0, 50.0, 40.0, 20.0)),
-        ("Width", "/4", (20.0, 20.0, 20.0, 30.0), (110.0, 50.0, 10.0, 20.0)),
-        ("Height", "50%", (20.0, 20.0, 20.0, 15.0), (110.0, 50.0, 10.0, 10.0)),
-        ("Y", "+ (2*3)", (20.0, 26.0, 20.0, 15.0), (110.0, 56.0, 10.0, 10.0)),
-        ("Y", "/0", (20.0, 26.0, 20.0, 15.0), (110.0, 56.0, 10.0, 10.0)),
+        (
+            "X",
+            "+10",
+            (20.0, 20.0, 40.0, 30.0),
+            (110.0, 50.0, 20.0, 20.0),
+        ),
+        (
+            "Width",
+            "*2",
+            (20.0, 20.0, 80.0, 30.0),
+            (110.0, 50.0, 40.0, 20.0),
+        ),
+        (
+            "Width",
+            "/4",
+            (20.0, 20.0, 20.0, 30.0),
+            (110.0, 50.0, 10.0, 20.0),
+        ),
+        (
+            "Height",
+            "50%",
+            (20.0, 20.0, 20.0, 15.0),
+            (110.0, 50.0, 10.0, 10.0),
+        ),
+        (
+            "Y",
+            "+ (2*3)",
+            (20.0, 26.0, 20.0, 15.0),
+            (110.0, 56.0, 10.0, 10.0),
+        ),
+        (
+            "Y",
+            "/0",
+            (20.0, 26.0, 20.0, 15.0),
+            (110.0, 56.0, 10.0, 10.0),
+        ),
     ];
     let mut edits = 0;
     for (name, text, wa, wb) in rows {
         let before = (geom(&u, a), geom(&u, b));
         type_into(&mut u, name, text, Key::Enter);
-        assert_eq!((geom(&u, a), geom(&u, b)), (wa, wb), "{text:?} typed into {name} showing Mixed");
+        assert_eq!(
+            (geom(&u, a), geom(&u, b)),
+            (wa, wb),
+            "{text:?} typed into {name} showing Mixed"
+        );
         edits += usize::from(before != (wa, wb));
-        assert_eq!(undo_steps(&u), steps + edits, "{text:?}: one undo step for all the layers");
+        assert_eq!(
+            undo_steps(&u),
+            steps + edits,
+            "{text:?}: one undo step for all the layers"
+        );
     }
     // One undo takes the last edit back from both layers.
     u.app.run("edit.undo", json!({}));
@@ -396,7 +534,14 @@ fn mixed_values_take_edits_relative_to_each_layer() {
     let (p, _) = field(&mut u, "X");
     click(&mut u, p);
     key(&mut u, Key::ArrowUp, Modifiers::NONE);
-    key(&mut u, Key::ArrowUp, Modifiers { shift: true, ..Modifiers::NONE });
+    key(
+        &mut u,
+        Key::ArrowUp,
+        Modifiers {
+            shift: true,
+            ..Modifiers::NONE
+        },
+    );
     key(&mut u, Key::Escape, Modifiers::NONE);
     assert_eq!((geom(&u, a).0, geom(&u, b).0), (31.0, 121.0));
     // A plain number is that value for all of them: the field isn't mixed any more.

@@ -178,11 +178,15 @@ impl EvalTarget for McpTarget {
         };
         let body: McpCallResponse = resp.error_for_status()?.json().await?;
         if body.jsonrpc != "2.0" || body.id != 1 {
-            return Err(EvalError::Other("invalid MCP JSON-RPC version or response id".to_owned()));
+            return Err(EvalError::Other(
+                "invalid MCP JSON-RPC version or response id".to_owned(),
+            ));
         }
 
         if body.error.is_some() {
-            return Err(EvalError::Other("MCP server returned a JSON-RPC error".to_owned()));
+            return Err(EvalError::Other(
+                "MCP server returned a JSON-RPC error".to_owned(),
+            ));
         }
 
         let mcp_res = body
@@ -190,7 +194,9 @@ impl EvalTarget for McpTarget {
             .ok_or_else(|| EvalError::Other("missing result in MCP response".to_string()))?;
 
         if mcp_res.is_error {
-            return Err(EvalError::Other("MCP search tool reported an error".to_owned()));
+            return Err(EvalError::Other(
+                "MCP search tool reported an error".to_owned(),
+            ));
         }
 
         let payload = if let Some(structured) = mcp_res.structured_content {
@@ -209,7 +215,11 @@ impl EvalTarget for McpTarget {
 
         let latency_ms = start.elapsed().as_millis() as u64;
 
-        Ok(TargetResponse { hits, mode_served: mode, latency_ms })
+        Ok(TargetResponse {
+            hits,
+            mode_served: mode,
+            latency_ms,
+        })
     }
 }
 
@@ -285,7 +295,10 @@ mod tests {
                  {}\r\nConnection: close\r\n\r\n{body}",
                 body.len()
             );
-            socket.write_all(response.as_bytes()).await.expect("respond");
+            socket
+                .write_all(response.as_bytes())
+                .await
+                .expect("respond");
         });
         let target = McpTarget::new(format!("http://{addr}/mcp"));
         let result = target.query("query", 5).await.expect("MCP search");
@@ -320,7 +333,11 @@ mod tests {
         let target = McpTarget::new(format!("http://{addr}/mcp"));
         assert!(matches!(
             target.query("query", 5).await,
-            Err(EvalError::CircuitBreaker { consecutive_failures: 3, last_status: 429, .. })
+            Err(EvalError::CircuitBreaker {
+                consecutive_failures: 3,
+                last_status: 429,
+                ..
+            })
         ));
         server.await.expect("server task");
     }

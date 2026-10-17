@@ -8,7 +8,11 @@
 //! ```
 
 #![forbid(unsafe_code)]
-#![allow(clippy::cast_possible_truncation, clippy::cast_precision_loss, clippy::cast_sign_loss)]
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -117,20 +121,68 @@ const fn w(x: f32, y: f32, z: f32) -> [f32; 3] {
 }
 
 fn quad(out: &mut Vec<Tri>, a: [f32; 3], b: [f32; 3], c: [f32; 3], d: [f32; 3], color: [u8; 3]) {
-    out.push(Tri { p: [a, b, c], color });
-    out.push(Tri { p: [a, c, d], color });
+    out.push(Tri {
+        p: [a, b, c],
+        color,
+    });
+    out.push(Tri {
+        p: [a, c, d],
+        color,
+    });
 }
 
 /// Boîte alignée sur les axes (min→max), 12 triangles, couleur plate (éclairage deux-faces).
 fn push_box(out: &mut Vec<Tri>, mn: [f32; 3], mx: [f32; 3], color: [u8; 3]) {
     let (x0, y0, z0) = (mn[0], mn[1], mn[2]);
     let (x1, y1, z1) = (mx[0], mx[1], mx[2]);
-    quad(out, w(x0, y0, z0), w(x1, y0, z0), w(x1, y1, z0), w(x0, y1, z0), color); // -z
-    quad(out, w(x1, y0, z1), w(x0, y0, z1), w(x0, y1, z1), w(x1, y1, z1), color); // +z
-    quad(out, w(x0, y0, z1), w(x0, y0, z0), w(x0, y1, z0), w(x0, y1, z1), color); // -x
-    quad(out, w(x1, y0, z0), w(x1, y0, z1), w(x1, y1, z1), w(x1, y1, z0), color); // +x
-    quad(out, w(x0, y1, z0), w(x1, y1, z0), w(x1, y1, z1), w(x0, y1, z1), color); // +y (haut)
-    quad(out, w(x0, y0, z1), w(x1, y0, z1), w(x1, y0, z0), w(x0, y0, z0), color); // -y (bas)
+    quad(
+        out,
+        w(x0, y0, z0),
+        w(x1, y0, z0),
+        w(x1, y1, z0),
+        w(x0, y1, z0),
+        color,
+    ); // -z
+    quad(
+        out,
+        w(x1, y0, z1),
+        w(x0, y0, z1),
+        w(x0, y1, z1),
+        w(x1, y1, z1),
+        color,
+    ); // +z
+    quad(
+        out,
+        w(x0, y0, z1),
+        w(x0, y0, z0),
+        w(x0, y1, z0),
+        w(x0, y1, z1),
+        color,
+    ); // -x
+    quad(
+        out,
+        w(x1, y0, z0),
+        w(x1, y0, z1),
+        w(x1, y1, z1),
+        w(x1, y1, z0),
+        color,
+    ); // +x
+    quad(
+        out,
+        w(x0, y1, z0),
+        w(x1, y1, z0),
+        w(x1, y1, z1),
+        w(x0, y1, z1),
+        color,
+    ); // +y (haut)
+    quad(
+        out,
+        w(x0, y0, z1),
+        w(x1, y0, z1),
+        w(x1, y0, z0),
+        w(x0, y0, z0),
+        color,
+    ); // -y (bas)
 }
 
 /// Segment de ligne blanche au sol (épaisseur `hw`), orientation libre dans le plan terrain.
@@ -174,7 +226,11 @@ fn build_pitch(out: &mut Vec<Tri>) {
     for i in 0..stripes {
         let x0 = -HALF_LEN + 2.0 * HALF_LEN * (i as f32) / stripes as f32;
         let x1 = -HALF_LEN + 2.0 * HALF_LEN * ((i + 1) as f32) / stripes as f32;
-        let g = if i % 2 == 0 { [46u8, 150, 64] } else { [40u8, 134, 58] };
+        let g = if i % 2 == 0 {
+            [46u8, 150, 64]
+        } else {
+            [40u8, 134, 58]
+        };
         quad(
             out,
             w(x0, 0.0, -HALF_WID),
@@ -194,9 +250,21 @@ fn build_pitch(out: &mut Vec<Tri>) {
     for i in 0..seg {
         let a0 = std::f32::consts::TAU * (i as f32) / seg as f32;
         let a1 = std::f32::consts::TAU * ((i + 1) as f32) / seg as f32;
-        line(out, r * a0.cos(), r * a0.sin(), r * a1.cos(), r * a1.sin(), hw);
+        line(
+            out,
+            r * a0.cos(),
+            r * a0.sin(),
+            r * a1.cos(),
+            r * a1.sin(),
+            hw,
+        );
     }
-    push_box(out, w(-0.25, 0.04, -0.25), w(0.25, 0.06, 0.25), [232, 235, 238]);
+    push_box(
+        out,
+        w(-0.25, 0.04, -0.25),
+        w(0.25, 0.06, 0.25),
+        [232, 235, 238],
+    );
     // Surfaces de réparation + de but + points de penalty, des deux côtés.
     for &s in &[-1.0f32, 1.0] {
         let gl = s * HALF_LEN; // ligne de but
@@ -242,8 +310,18 @@ fn push_player(out: &mut Vec<Tri>, p: &Player) {
     let (px, pz) = (p.pos.x, p.pos.y);
     let col = player_color(p);
     // Corps (boîte), tête (peau).
-    push_box(out, w(px - 0.42, 0.0, pz - 0.30), w(px + 0.42, 1.45, pz + 0.30), col);
-    push_box(out, w(px - 0.26, 1.45, pz - 0.26), w(px + 0.26, 1.95, pz + 0.26), [236, 200, 168]);
+    push_box(
+        out,
+        w(px - 0.42, 0.0, pz - 0.30),
+        w(px + 0.42, 1.45, pz + 0.30),
+        col,
+    );
+    push_box(
+        out,
+        w(px - 0.26, 1.45, pz - 0.26),
+        w(px + 0.26, 1.95, pz + 0.26),
+        [236, 200, 168],
+    );
 }
 
 /// Géométrie plate de la scène : terrain + ballon, plus les joueurs-boîtes si `boxes`
@@ -353,7 +431,11 @@ fn main() -> Result<()> {
         flat.shrink_to_fit();
         let mut inst = Vec::new();
         for m in &stadium {
-            inst.push(Instance { model: m, transform: mat_identity(), two_sided: true });
+            inst.push(Instance {
+                model: m,
+                transform: mat_identity(),
+                two_sided: true,
+            });
         }
         if let (Some(h), Some(a)) = (&home, &away) {
             for p in &world.players {
@@ -380,7 +462,12 @@ fn main() -> Result<()> {
             bh,
         );
         std::fs::write(&cli.out, encode_png(&rgba, cli.width, cli.height)?)?;
-        println!("png={} tris={} instances={}", cli.out.display(), flat.len(), inst.len());
+        println!(
+            "png={} tris={} instances={}",
+            cli.out.display(),
+            flat.len(),
+            inst.len()
+        );
         return Ok(());
     }
 

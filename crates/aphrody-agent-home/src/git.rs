@@ -68,7 +68,11 @@ pub fn backup(workspace: &Path, message: &str) -> Result<BackupOutcome, HomeErro
     // depend on a global git config being present.
     let commit_id = commit_tree(&repo, tree_id, &parents, message)?;
 
-    Ok(BackupOutcome { commit_id: commit_id.to_hex().to_string(), initialized, files })
+    Ok(BackupOutcome {
+        commit_id: commit_id.to_hex().to_string(),
+        initialized,
+        files,
+    })
 }
 
 /// Recursively snapshot the worktree into a gix tree, returning the tree id and
@@ -113,7 +117,11 @@ fn write_dir_tree(
             }
             entries.insert(
                 name_bytes.clone(),
-                Entry { mode: EntryKind::Tree.into(), filename: name_bytes.into(), oid: sub_id },
+                Entry {
+                    mode: EntryKind::Tree.into(),
+                    filename: name_bytes.into(),
+                    oid: sub_id,
+                },
             );
         } else if file_type.is_file() {
             let bytes = std::fs::read(&path).map_err(|e| HomeError::io(&path, e))?;
@@ -123,13 +131,19 @@ fn write_dir_tree(
             let mode = file_mode(&path);
             entries.insert(
                 name_bytes.clone(),
-                Entry { mode, filename: name_bytes.into(), oid: blob_id },
+                Entry {
+                    mode,
+                    filename: name_bytes.into(),
+                    oid: blob_id,
+                },
             );
         }
         // Symlinks and other types are skipped from the backup snapshot.
     }
 
-    let tree = gix::objs::Tree { entries: entries.into_values().collect() };
+    let tree = gix::objs::Tree {
+        entries: entries.into_values().collect(),
+    };
     let id = repo.write_object(&tree).map_err(git_err)?.into();
     Ok(id)
 }
@@ -228,7 +242,10 @@ mod tests {
         // The second commit must have the first as a parent.
         let repo = gix::open(&ws).unwrap();
         let head = repo.head_commit().unwrap();
-        let parent_ids: Vec<_> = head.parent_ids().map(|id| id.to_hex().to_string()).collect();
+        let parent_ids: Vec<_> = head
+            .parent_ids()
+            .map(|id| id.to_hex().to_string())
+            .collect();
         assert_eq!(parent_ids, vec![first.commit_id]);
     }
 

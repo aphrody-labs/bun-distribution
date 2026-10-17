@@ -20,14 +20,17 @@ fn app() -> SheetApp {
 }
 
 fn harness() -> Harness {
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).with_step_dt(DT).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        app(),
-    );
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .with_step_dt(DT)
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            app(),
+        );
     h.run_steps(4);
     h
 }
@@ -44,7 +47,8 @@ fn animated() -> Harness {
 fn cell_rect(h: &Harness, a1: &str) -> Rect {
     let app = h.state();
     let sheet = app.session.active().unwrap().wb.active().unwrap();
-    Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll).cell_rect(sheet, CellRef::parse(a1).unwrap())
+    Geo::new(sheet, app.grid.rect.unwrap(), app.view().scroll)
+        .cell_rect(sheet, CellRef::parse(a1).unwrap())
 }
 
 /// Where the outline was drawn in the last frame.
@@ -57,12 +61,20 @@ fn gliding(h: &Harness) -> bool {
 }
 
 fn select(h: &mut Harness, a1: &str) {
-    h.state_mut().run("selection.set", json!({"cell": a1})).unwrap();
+    h.state_mut()
+        .run("selection.set", json!({"cell": a1}))
+        .unwrap();
 }
 
 fn press(h: &mut Harness, key: egui::Key) {
     for pressed in [true, false] {
-        h.input_mut().events.push(egui::Event::Key { key, physical_key: None, pressed, repeat: false, modifiers: egui::Modifiers::NONE });
+        h.input_mut().events.push(egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        });
     }
 }
 
@@ -87,15 +99,27 @@ fn an_arrow_key_glides_the_outline_to_the_next_cell() {
     press(&mut h, egui::Key::ArrowRight);
     h.step();
     // The selection itself moves at once; only its outline takes its time.
-    assert_eq!(h.state().session.active().map(|d| d.selection.active.a1()).as_deref(), Some("B1"));
+    assert_eq!(
+        h.state()
+            .session
+            .active()
+            .map(|d| d.selection.active.a1())
+            .as_deref(),
+        Some("B1")
+    );
     steps(&mut h, 2);
     let x = outline(&h).min.x;
-    assert!(gliding(&h) && x > a1.min.x && x < b1.min.x, "on its way, drawn in between: {x}");
+    assert!(
+        gliding(&h) && x > a1.min.x && x < b1.min.x,
+        "on its way, drawn in between: {x}"
+    );
     steps(&mut h, 40);
     assert!(!gliding(&h), "and it comes to rest");
     assert_eq!(outline(&h), b1, "exactly on the cell");
     // Zooming moves the cell on screen but doesn't glide the outline.
-    h.state_mut().run("view.zoom", json!({"percent": 150})).unwrap();
+    h.state_mut()
+        .run("view.zoom", json!({"percent": 150}))
+        .unwrap();
     for _ in 0..3 {
         h.step();
         assert!(!gliding(&h));
@@ -124,12 +148,19 @@ fn the_view_tab_checkbox_turns_the_glide_off_and_on() {
     h.run_steps(2);
     h.get_by_label("Animations").click();
     h.run_steps(2);
-    assert!(!h.state().ui.animations, "the checkbox turns the setting off");
+    assert!(
+        !h.state().ui.animations,
+        "the checkbox turns the setting off"
+    );
     select(&mut h, "E9");
     let e9 = cell_rect(&h, "E9");
     for _ in 0..5 {
         h.step();
-        assert_eq!(outline(&h), e9, "no animations: the outline is on its cells at once");
+        assert_eq!(
+            outline(&h),
+            e9,
+            "no animations: the outline is on its cells at once"
+        );
         assert!(!gliding(&h));
     }
     h.get_by_label("Animations").click();
@@ -138,7 +169,10 @@ fn the_view_tab_checkbox_turns_the_glide_off_and_on() {
     select(&mut h, "B1");
     steps(&mut h, 2);
     let (x, b1) = (outline(&h).min.x, cell_rect(&h, "B1"));
-    assert!(gliding(&h) && x > b1.min.x && x < e9.min.x, "turned back on, it glides: {x}");
+    assert!(
+        gliding(&h) && x > b1.min.x && x < e9.min.x,
+        "turned back on, it glides: {x}"
+    );
     steps(&mut h, 40);
     assert_eq!(outline(&h), b1);
 }
@@ -175,29 +209,75 @@ fn animations_are_on_until_turned_off_and_the_choice_is_saved() {
 #[test]
 fn view_animations_sets_and_toggles_without_a_dialog() {
     let mut a = app();
-    assert_eq!(a.run("view.animations", json!({"on": false})), Ok(json!({"on": false})));
-    assert_eq!(a.run("view.animations", json!({"on": false})), Ok(json!({"on": false})), "setting it twice changes nothing");
+    assert_eq!(
+        a.run("view.animations", json!({"on": false})),
+        Ok(json!({"on": false}))
+    );
+    assert_eq!(
+        a.run("view.animations", json!({"on": false})),
+        Ok(json!({"on": false})),
+        "setting it twice changes nothing"
+    );
     // No parameters: it toggles, and never opens a dialog.
     assert_eq!(a.run("view.animations", json!({})), Ok(json!({"on": true})));
-    assert_eq!(a.run("view.animations", json!({})), Ok(json!({"on": false})));
+    assert_eq!(
+        a.run("view.animations", json!({})),
+        Ok(json!({"on": false}))
+    );
     assert!(a.dialog.is_none() && a.message.is_none());
     // Parameters that make no sense toggle too, rather than failing or panicking.
-    assert_eq!(a.run("view.animations", json!({"on": "yes"})), Ok(json!({"on": true})));
-    assert_eq!(a.run("view.animations", Value::Null), Ok(json!({"on": false})));
+    assert_eq!(
+        a.run("view.animations", json!({"on": "yes"})),
+        Ok(json!({"on": true}))
+    );
+    assert_eq!(
+        a.run("view.animations", Value::Null),
+        Ok(json!({"on": false}))
+    );
 }
 
 #[test]
 fn agents_find_run_and_read_the_setting_over_the_control_channel() {
     let mut a = app();
     let ctx = egui::Context::default();
-    let found = reply(control::handle(&mut a, &ctx, "engine.commands", &json!({"search": "animations"})));
-    let entry = found["result"].as_array().and_then(|all| all.iter().find(|c| c["id"] == "view.animations")).cloned().unwrap();
-    assert_eq!((&entry["label"], &entry["ui"]), (&json!("Animations"), &json!(true)));
-    assert!(entry["params"].as_str().is_some_and(|doc| doc.contains("on")), "{entry}");
-    let ran = reply(control::handle(&mut a, &ctx, "engine.execute", &json!({"command": "view.animations", "params": {"on": false}})));
+    let found = reply(control::handle(
+        &mut a,
+        &ctx,
+        "engine.commands",
+        &json!({"search": "animations"}),
+    ));
+    let entry = found["result"]
+        .as_array()
+        .and_then(|all| all.iter().find(|c| c["id"] == "view.animations"))
+        .cloned()
+        .unwrap();
+    assert_eq!(
+        (&entry["label"], &entry["ui"]),
+        (&json!("Animations"), &json!(true))
+    );
+    assert!(
+        entry["params"]
+            .as_str()
+            .is_some_and(|doc| doc.contains("on")),
+        "{entry}"
+    );
+    let ran = reply(control::handle(
+        &mut a,
+        &ctx,
+        "engine.execute",
+        &json!({"command": "view.animations", "params": {"on": false}}),
+    ));
     assert_eq!(ran, json!({"ok": true, "result": {"on": false}}));
-    assert_eq!(reply(control::handle(&mut a, &ctx, "ui.inspect", &json!({})))["result"]["ui"]["animations"], json!(false));
-    let set = reply(control::handle(&mut a, &ctx, "ui.set", &json!({"animations": true})));
+    assert_eq!(
+        reply(control::handle(&mut a, &ctx, "ui.inspect", &json!({})))["result"]["ui"]["animations"],
+        json!(false)
+    );
+    let set = reply(control::handle(
+        &mut a,
+        &ctx,
+        "ui.set",
+        &json!({"animations": true}),
+    ));
     assert_eq!(set["result"]["animations"], json!(true));
     assert!(a.ui.animations);
 }

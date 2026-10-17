@@ -14,20 +14,20 @@ use bevy_log::warn;
 use bevy_mesh::Indices;
 use bevy_shape::{Aabb2d, BoundingVolume};
 use glam::Vec4;
-use wgpu::{BufferUsages, DownlevelFlags, COPY_BUFFER_ALIGNMENT};
+use wgpu::{BufferUsages, COPY_BUFFER_ALIGNMENT, DownlevelFlags};
 
 #[cfg(feature = "morph")]
 use bevy_mesh::morph::MorphAttributes;
 
 use crate::{
+    GpuResourceAppExt, Render, RenderApp, RenderSystems,
     mesh::{Mesh, MeshMetadata, MeshVertexBufferLayouts, RenderMesh},
-    render_asset::{prepare_assets, ExtractedAssets},
+    render_asset::{ExtractedAssets, prepare_assets},
     renderer::{RenderAdapter, RenderDevice, RenderQueue},
     slab_allocator::{
         Slab, SlabAllocationBufferSlice, SlabAllocator, SlabAllocatorSettings, SlabId, SlabItem,
         SlabItemLayout,
     },
-    GpuResourceAppExt, Render, RenderApp, RenderSystems,
 };
 
 /// A plugin that manages GPU memory for mesh data.
@@ -751,7 +751,7 @@ impl ElementClass {
 mod tests {
     use super::*;
     use crate::test_utils::create_dummy_device;
-    use bevy_asset::{uuid::Uuid, RenderAssetUsages};
+    use bevy_asset::{RenderAssetUsages, uuid::Uuid};
     use bevy_mesh::PrimitiveTopology;
     use bevy_shape::Aabb3d;
     use glam::{Vec2, Vec3};

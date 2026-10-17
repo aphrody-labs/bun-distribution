@@ -46,7 +46,9 @@ pub(crate) const TAG_SAMPLE_FORMAT: u16 = 339;
 
 /// Tags the `tiff` crate reads to set up decoding. Their values must lie inside the file, so a
 /// hostile count can neither make it allocate nor read past the end.
-pub(crate) const STRUCTURAL_TAGS: &[u16] = &[256, 257, 258, 259, 262, 273, 277, 278, 279, 284, 317, 322, 323, 324, 325, 338, 339, 347, 530];
+pub(crate) const STRUCTURAL_TAGS: &[u16] = &[
+    256, 257, 258, 259, 262, 273, 277, 278, 279, 284, 317, 322, 323, 324, 325, 338, 339, 347, 530,
+];
 
 /// Bytes per value of a TIFF field type; `None` for unknown types (whose entries are skipped).
 fn type_size(ty: u16) -> Option<u64> {
@@ -103,7 +105,12 @@ impl<'a> File<'a> {
             b"MM" => false,
             _ => return None,
         };
-        let mut f = File { b, le, big: false, first_ifd: 0 };
+        let mut f = File {
+            b,
+            le,
+            big: false,
+            first_ifd: 0,
+        };
         match f.u16_at(2)? {
             42 => f.first_ifd = u64::from(f.u32_at(4)?),
             43 => {
@@ -132,17 +139,29 @@ impl<'a> File<'a> {
 
     pub fn u16_at(&self, at: u64) -> Option<u16> {
         let s: [u8; 2] = self.slice(at, 2)?.try_into().ok()?;
-        Some(if self.le { u16::from_le_bytes(s) } else { u16::from_be_bytes(s) })
+        Some(if self.le {
+            u16::from_le_bytes(s)
+        } else {
+            u16::from_be_bytes(s)
+        })
     }
 
     pub fn u32_at(&self, at: u64) -> Option<u32> {
         let s: [u8; 4] = self.slice(at, 4)?.try_into().ok()?;
-        Some(if self.le { u32::from_le_bytes(s) } else { u32::from_be_bytes(s) })
+        Some(if self.le {
+            u32::from_le_bytes(s)
+        } else {
+            u32::from_be_bytes(s)
+        })
     }
 
     pub fn u64_at(&self, at: u64) -> Option<u64> {
         let s: [u8; 8] = self.slice(at, 8)?.try_into().ok()?;
-        Some(if self.le { u64::from_le_bytes(s) } else { u64::from_be_bytes(s) })
+        Some(if self.le {
+            u64::from_le_bytes(s)
+        } else {
+            u64::from_be_bytes(s)
+        })
     }
 
     /// The declared entry count of the directory at `at`, before its table is parsed.
@@ -150,7 +169,11 @@ impl<'a> File<'a> {
         if at < self.header_len() {
             return None;
         }
-        if self.big { self.u64_at(at) } else { self.u16_at(at).map(u64::from) }
+        if self.big {
+            self.u64_at(at)
+        } else {
+            self.u16_at(at).map(u64::from)
+        }
     }
 
     /// The directory at `at`: its whole table, up to and including the next-IFD pointer, must
@@ -159,19 +182,30 @@ impl<'a> File<'a> {
         if at < self.header_len() {
             return None;
         }
-        let (n, first, entry, inline) =
-            if self.big { (self.u64_at(at)?, at.checked_add(8)?, 20u64, 8u64) } else { (u64::from(self.u16_at(at)?), at.checked_add(2)?, 12, 4) };
+        let (n, first, entry, inline) = if self.big {
+            (self.u64_at(at)?, at.checked_add(8)?, 20u64, 8u64)
+        } else {
+            (u64::from(self.u16_at(at)?), at.checked_add(2)?, 12, 4)
+        };
         if n > MAX_ENTRIES {
             return None;
         }
         let next_at = first.checked_add(n.checked_mul(entry)?)?;
-        let next = if self.big { self.u64_at(next_at)? } else { u64::from(self.u32_at(next_at)?) };
+        let next = if self.big {
+            self.u64_at(next_at)?
+        } else {
+            u64::from(self.u32_at(next_at)?)
+        };
         let mut entries = Vec::with_capacity(usize::try_from(n).ok()?);
         for i in 0..n {
             let e = first.checked_add(i.checked_mul(entry)?)?;
             let tag = self.u16_at(e)?;
             let ty = self.u16_at(e.checked_add(2)?)?;
-            let count = if self.big { self.u64_at(e.checked_add(4)?)? } else { u64::from(self.u32_at(e.checked_add(4)?)?) };
+            let count = if self.big {
+                self.u64_at(e.checked_add(4)?)?
+            } else {
+                u64::from(self.u32_at(e.checked_add(4)?)?)
+            };
             let field = e.checked_add(if self.big { 12 } else { 8 })?;
             // Unknown types are skipped, as the specification says.
             let Some(size) = type_size(ty) else { continue };
@@ -183,9 +217,19 @@ impl<'a> File<'a> {
             } else {
                 u64::from(self.u32_at(field)?)
             };
-            entries.push(Entry { tag, ty, count, value_at });
+            entries.push(Entry {
+                tag,
+                ty,
+                count,
+                value_at,
+            });
         }
-        Some(Ifd { at, entries, next, next_at })
+        Some(Ifd {
+            at,
+            entries,
+            next,
+            next_at,
+        })
     }
 
     /// The value bytes of an entry, when they are all inside the file.
@@ -228,7 +272,10 @@ impl<'a> File<'a> {
         }
         match e.ty {
             5 => {
-                let (n, d) = (self.u32_at(e.value_at)?, self.u32_at(e.value_at.checked_add(4)?)?);
+                let (n, d) = (
+                    self.u32_at(e.value_at)?,
+                    self.u32_at(e.value_at.checked_add(4)?)?,
+                );
                 (d != 0).then(|| f64::from(n) / f64::from(d))
             }
             11 => Some(f64::from(f32::from_bits(self.u32_at(e.value_at)?))),
@@ -240,16 +287,23 @@ impl<'a> File<'a> {
     /// The bytes of a one-byte-per-value tag (BYTE, ASCII, SBYTE or UNDEFINED).
     pub fn tag_bytes(&self, ifd: &Ifd, tag: u16) -> Option<&'a [u8]> {
         let e = ifd.get(tag)?;
-        matches!(e.ty, 1 | 2 | 6 | 7).then(|| self.data(e)).flatten()
+        matches!(e.ty, 1 | 2 | 6 | 7)
+            .then(|| self.data(e))
+            .flatten()
     }
 
     /// SubIFD offsets of a directory (tag 330 as LONG, IFD, LONG8 or IFD8).
     fn sub_ifds(&self, ifd: &Ifd) -> Vec<u64> {
-        let Some(e) = ifd.get(TAG_SUB_IFDS) else { return Vec::new() };
+        let Some(e) = ifd.get(TAG_SUB_IFDS) else {
+            return Vec::new();
+        };
         if !matches!(e.ty, 4 | 13 | 16 | 18) {
             return Vec::new();
         }
-        (0..e.count.min(MAX_SUBIFDS)).map_while(|i| self.uint(e, i)).filter(|&o| o != 0).collect()
+        (0..e.count.min(MAX_SUBIFDS))
+            .map_while(|i| self.uint(e, i))
+            .filter(|&o| o != 0)
+            .collect()
     }
 }
 
@@ -320,13 +374,18 @@ impl TiffInfo {
     pub fn default_page(&self) -> Option<usize> {
         self.pages
             .iter()
-            .position(|p| p.parent.is_none() && p.kind == TiffPageKind::Page && p.width > 0 && p.height > 0)
+            .position(|p| {
+                p.parent.is_none() && p.kind == TiffPageKind::Page && p.width > 0 && p.height > 0
+            })
             .or_else(|| (!self.pages.is_empty()).then_some(0))
     }
 
     /// Full-resolution pages in the main chain (what Photoshop calls the pages of the file).
     pub fn page_count(&self) -> usize {
-        self.pages.iter().filter(|p| p.parent.is_none() && p.kind == TiffPageKind::Page).count()
+        self.pages
+            .iter()
+            .filter(|p| p.parent.is_none() && p.kind == TiffPageKind::Page)
+            .count()
     }
 }
 
@@ -340,8 +399,16 @@ fn describe(f: &File<'_>, ifd: &Ifd, parent: Option<usize>) -> TiffPage {
     } else {
         TiffPageKind::Page
     };
-    let u32_of = |tag| f.tag_uint(ifd, tag).and_then(|v| u32::try_from(v).ok()).unwrap_or(0);
-    let u16_of = |tag, default| f.tag_uint(ifd, tag).and_then(|v| u16::try_from(v).ok()).unwrap_or(default);
+    let u32_of = |tag| {
+        f.tag_uint(ifd, tag)
+            .and_then(|v| u32::try_from(v).ok())
+            .unwrap_or(0)
+    };
+    let u16_of = |tag, default| {
+        f.tag_uint(ifd, tag)
+            .and_then(|v| u16::try_from(v).ok())
+            .unwrap_or(default)
+    };
     TiffPage {
         ifd_offset: ifd.at,
         parent,
@@ -351,7 +418,9 @@ fn describe(f: &File<'_>, ifd: &Ifd, parent: Option<usize>) -> TiffPage {
         samples_per_pixel: u16_of(TAG_SAMPLES, 1),
         bits_per_sample: u16_of(TAG_BITS, 1),
         sample_format: u16_of(TAG_SAMPLE_FORMAT, 1),
-        photometric: f.tag_uint(ifd, TAG_PHOTOMETRIC).and_then(|v| u16::try_from(v).ok()),
+        photometric: f
+            .tag_uint(ifd, TAG_PHOTOMETRIC)
+            .and_then(|v| u16::try_from(v).ok()),
         compression: u16_of(TAG_COMPRESSION, 1),
         tiled: ifd.get(TAG_TILE_OFFSETS).is_some(),
         planar: f.tag_uint(ifd, TAG_PLANAR) == Some(2),
@@ -407,17 +476,32 @@ impl Walk<'_, '_> {
 /// the first directory cannot be read; a damaged chain after it ends the list early
 /// (`complete == false`).
 pub fn tiff_info(bytes: &[u8]) -> Result<TiffInfo, CodecError> {
-    let f = File::parse(bytes).ok_or_else(|| CodecError::malformed(Format::Tiff, "not a TIFF or BigTIFF header"))?;
+    let f = File::parse(bytes)
+        .ok_or_else(|| CodecError::malformed(Format::Tiff, "not a TIFF or BigTIFF header"))?;
     info_of(&f)
 }
 
 pub(crate) fn info_of(f: &File<'_>) -> Result<TiffInfo, CodecError> {
-    let mut w = Walk { f, seen: HashSet::new(), pages: Vec::new(), complete: true, entry_budget: (f.b.len() as u64) / 12 + 64 };
+    let mut w = Walk {
+        f,
+        seen: HashSet::new(),
+        pages: Vec::new(),
+        complete: true,
+        entry_budget: (f.b.len() as u64) / 12 + 64,
+    };
     w.chain(f.first_ifd, None, 0);
     if w.pages.is_empty() {
-        return Err(CodecError::malformed(Format::Tiff, "the first image directory is missing or cut off"));
+        return Err(CodecError::malformed(
+            Format::Tiff,
+            "the first image directory is missing or cut off",
+        ));
     }
-    Ok(TiffInfo { big_tiff: f.big, little_endian: f.le, pages: w.pages, complete: w.complete })
+    Ok(TiffInfo {
+        big_tiff: f.big,
+        little_endian: f.le,
+        pages: w.pages,
+        complete: w.complete,
+    })
 }
 
 #[cfg(test)]
@@ -443,6 +527,10 @@ mod tests {
         }
         let info = tiff_info(&b).expect("the first directory is readable");
         assert!(!info.complete);
-        assert!(info.pages.len() < 200, "{} directories parsed", info.pages.len());
+        assert!(
+            info.pages.len() < 200,
+            "{} directories parsed",
+            info.pages.len()
+        );
     }
 }

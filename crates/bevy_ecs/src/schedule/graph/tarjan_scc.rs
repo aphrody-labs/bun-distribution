@@ -88,13 +88,8 @@ where
     index_adjustment: Option<usize>,
 }
 
-impl<
-        'graph,
-        N: GraphNodeId,
-        S: BuildHasher,
-        A: Iterator<Item = N>,
-        Neighbors: Iterator<Item = N>,
-    > TarjanScc<'graph, N, S, A, Neighbors>
+impl<'graph, N: GraphNodeId, S: BuildHasher, A: Iterator<Item = N>, Neighbors: Iterator<Item = N>>
+    TarjanScc<'graph, N, S, A, Neighbors>
 {
     /// Compute the next *strongly connected component* using Algorithm 3 in
     /// [A Space-Efficient Algorithm for Finding Strongly Connected Components][1] by David J. Pierce,
@@ -220,13 +215,8 @@ impl<
     }
 }
 
-impl<
-        'graph,
-        N: GraphNodeId,
-        S: BuildHasher,
-        A: Iterator<Item = N>,
-        Neighbors: Iterator<Item = N>,
-    > Iterator for TarjanScc<'graph, N, S, A, Neighbors>
+impl<'graph, N: GraphNodeId, S: BuildHasher, A: Iterator<Item = N>, Neighbors: Iterator<Item = N>>
+    Iterator for TarjanScc<'graph, N, S, A, Neighbors>
 {
     // It is expected that the `DiGraph` is sparse, and as such wont have many large SCCs.
     // Returning a `SmallVec` allows this iterator to skip allocation in cases where that

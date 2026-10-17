@@ -154,42 +154,68 @@ impl SystemSubsystem for SystemdSubsystem {
             "systemd_list_units" => {
                 let units = self.manager.list_units();
                 Ok(json!({ "units": units, "total": units.len() }))
-            },
+            }
             "systemd_unit_status" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                let status = self.manager.get_unit_status(name).map_err(SubsystemError::Failed)?;
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                let status = self
+                    .manager
+                    .get_unit_status(name)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!(status))
-            },
+            }
             "systemd_start_unit" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                self.manager.start_unit(name).map_err(SubsystemError::Failed)?;
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                self.manager
+                    .start_unit(name)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!({ "success": true, "unit": name, "action": "started" }))
-            },
+            }
             "systemd_stop_unit" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                self.manager.stop_unit(name).map_err(SubsystemError::Failed)?;
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                self.manager
+                    .stop_unit(name)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!({ "success": true, "unit": name, "action": "stopped" }))
-            },
+            }
             "systemd_restart_unit" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                self.manager.restart_unit(name).map_err(SubsystemError::Failed)?;
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                self.manager
+                    .restart_unit(name)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!({ "success": true, "unit": name, "action": "restarted" }))
-            },
+            }
             "systemd_reload_unit" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                self.manager.reload_unit(name).map_err(SubsystemError::Failed)?;
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                self.manager
+                    .reload_unit(name)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!({ "success": true, "unit": name, "action": "reloaded" }))
-            },
+            }
             "systemd_journal_query" => {
                 let unit = arguments.get("unit").and_then(Value::as_str);
                 let level_str = arguments.get("min_level").and_then(Value::as_str);
@@ -213,18 +239,25 @@ impl SystemSubsystem for SystemdSubsystem {
 
                 let entries = self.manager.journal().query(unit, level, since, limit);
                 Ok(json!({ "entries": entries, "count": entries.len() }))
-            },
+            }
             "systemd_load_unit_file" => {
-                let name = arguments.get("name").and_then(Value::as_str).ok_or_else(|| {
-                    SubsystemError::InvalidArguments("missing unit `name`".into())
-                })?;
-                let content =
-                    arguments.get("content").and_then(Value::as_str).ok_or_else(|| {
+                let name = arguments
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
+                        SubsystemError::InvalidArguments("missing unit `name`".into())
+                    })?;
+                let content = arguments
+                    .get("content")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| {
                         SubsystemError::InvalidArguments("missing unit `content`".into())
                     })?;
-                self.manager.load_unit_ini(name, content).map_err(SubsystemError::Failed)?;
+                self.manager
+                    .load_unit_ini(name, content)
+                    .map_err(SubsystemError::Failed)?;
                 Ok(json!({ "success": true, "unit": name, "action": "loaded" }))
-            },
+            }
             other => Err(SubsystemError::UnknownTool(other.to_owned())),
         }
     }
@@ -236,7 +269,10 @@ impl SystemSubsystem for SystemdSubsystem {
                 .into(),
             parameters: vec![],
             steps: vec![
-                SkillStep { tool: "systemd_list_units".into(), arguments: json!({}) },
+                SkillStep {
+                    tool: "systemd_list_units".into(),
+                    arguments: json!({}),
+                },
                 SkillStep {
                     tool: "systemd_journal_query".into(),
                     arguments: json!({ "min_level": "warning", "limit": 20 }),

@@ -34,7 +34,13 @@ impl Expanded {
         if self.files.first() != Some(&e.file) {
             return;
         }
-        let Some(&(file, line)) = e.line.and_then(|l| l.checked_sub(1)).and_then(|l| self.lines.get(l as usize)) else { return };
+        let Some(&(file, line)) = e
+            .line
+            .and_then(|l| l.checked_sub(1))
+            .and_then(|l| self.lines.get(l as usize))
+        else {
+            return;
+        };
         if let Some(name) = self.files.get(file) {
             e.file = name.clone();
             e.line = Some(line);
@@ -55,7 +61,9 @@ fn directive(line: &str) -> Option<Directive<'_>> {
         Some(r) => (r, true),
         None => (t.strip_prefix('#')?, false),
     };
-    let end = rest.find(|c: char| !c.is_ascii_alphabetic()).unwrap_or(rest.len());
+    let end = rest
+        .find(|c: char| !c.is_ascii_alphabetic())
+        .unwrap_or(rest.len());
     let (word, arg) = rest.split_at(end);
     if !(arg.is_empty() || arg.starts_with(char::is_whitespace) || arg.starts_with(['"', '\''])) {
         return None;
@@ -65,7 +73,9 @@ fn directive(line: &str) -> Option<Directive<'_>> {
         "include" => Some(Directive::Include(arg)),
         "includepath" => Some(Directive::IncludePath(arg)),
         // `//@target aftereffects` and friends are plain comments already.
-        "target" | "targetengine" | "strict" | "script" | "engine" if !comment => Some(Directive::Ignored),
+        "target" | "targetengine" | "strict" | "script" | "engine" if !comment => {
+            Some(Directive::Ignored)
+        }
         _ => None,
     }
 }
@@ -99,11 +109,19 @@ impl Walk<'_> {
             self.out.code.push('\n');
         }
         self.out.code.push_str(line);
-        self.out.lines.push((file, u32::try_from(n + 1).unwrap_or(u32::MAX)));
+        self.out
+            .lines
+            .push((file, u32::try_from(n + 1).unwrap_or(u32::MAX)));
     }
 
     /// Inline `code` (file `file`, in folder `dir`), `depth` includes deep.
-    fn walk(&mut self, code: &str, file: usize, dir: Option<&Path>, depth: usize) -> Result<(), ScriptError> {
+    fn walk(
+        &mut self,
+        code: &str,
+        file: usize,
+        dir: Option<&Path>,
+        depth: usize,
+    ) -> Result<(), ScriptError> {
         for (n, line) in code.split('\n').enumerate() {
             let err = |w: &Self, message: String| ScriptError {
                 message,
@@ -115,28 +133,45 @@ impl Walk<'_> {
                 None => self.push(line, file, n),
                 Some(Directive::Ignored) => self.push("", file, n),
                 Some(Directive::IncludePath(paths)) => {
-                    self.search =
-                        paths.split(';').map(str::trim).filter(|p| !p.is_empty()).filter_map(|p| scriptfile::resolve(self.s, p, dir, &[]).ok()).collect();
+                    self.search = paths
+                        .split(';')
+                        .map(str::trim)
+                        .filter(|p| !p.is_empty())
+                        .filter_map(|p| scriptfile::resolve(self.s, p, dir, &[]).ok())
+                        .collect();
                     self.push("", file, n);
                 }
                 Some(Directive::Include(name)) => {
                     if name.is_empty() {
                         return Err(err(self, "#include needs a file name".into()));
                     }
-                    let path = scriptfile::resolve(self.s, name, dir, &self.search).map_err(|e| err(self, format!("#include {e}")))?;
+                    let path = scriptfile::resolve(self.s, name, dir, &self.search)
+                        .map_err(|e| err(self, format!("#include {e}")))?;
                     if !self.seen.insert(path.clone()) {
                         // Already inlined (or the file including it): once is enough.
                         self.push("", file, n);
                         continue;
                     }
                     if depth >= MAX_DEPTH {
-                        return Err(err(self, format!("#include \"{name}\": includes are nested too deeply (at most {MAX_DEPTH})")));
+                        return Err(err(
+                            self,
+                            format!(
+                                "#include \"{name}\": includes are nested too deeply (at most {MAX_DEPTH})"
+                            ),
+                        ));
                     }
-                    scriptfile::check_read(self.s, &path, self.root.as_deref()).map_err(|e| err(self, e))?;
+                    scriptfile::check_read(self.s, &path, self.root.as_deref())
+                        .map_err(|e| err(self, e))?;
                     let text = scriptfile::read(self.s, &path).map_err(|e| err(self, e))?;
                     self.total = self.total.saturating_add(text.len());
                     if self.total > MAX_TOTAL_BYTES {
-                        return Err(err(self, format!("#include \"{name}\": the included files exceed {} MiB", MAX_TOTAL_BYTES >> 20)));
+                        return Err(err(
+                            self,
+                            format!(
+                                "#include \"{name}\": the included files exceed {} MiB",
+                                MAX_TOTAL_BYTES >> 20
+                            ),
+                        ));
                     }
                     // The included lines take the directive's place.
                     self.out.files.push(path.to_string_lossy().to_string());
@@ -161,13 +196,18 @@ pub(crate) fn expand(s: &Session, code: &str, name: &str) -> Result<Option<Expan
         search: vec![],
         seen: HashSet::new(),
         total: code.len(),
-        out: Expanded { code: String::with_capacity(code.len()), lines: vec![], files: vec![if name.is_empty() { "script" } else { name }.to_string()] },
+        out: Expanded {
+            code: String::with_capacity(code.len()),
+            lines: vec![],
+            files: vec![if name.is_empty() { "script" } else { name }.to_string()],
+        },
     };
     if root.is_some() {
         w.seen.insert(crate::runtime::normalize(name));
     }
     // A script without a folder (the Script Console, code run by name) looks in the project's.
-    let dir = root.or_else(|| crate::runtime::project_dir(s).map(|d| crate::runtime::normalize(&d)));
+    let dir =
+        root.or_else(|| crate::runtime::project_dir(s).map(|d| crate::runtime::normalize(&d)));
     w.walk(code, 0, dir.as_deref(), 0)?;
     Ok(Some(w.out))
 }

@@ -74,8 +74,13 @@ pub const MENU: [&str; 9] = [
 
 /// Les 5 MODES DE JEU racine d'IEVR (libellés FR réels, hash menu_text). Atteints via « Adversaires ».
 /// Source : menu_text + cfg `*_mode_top_menu_setting.cfg.bin` / `bb_stadium_top_menu_setting.cfg.bin`.
-pub const MODES: [&str; 5] =
-    ["Mode Histoire", "Mode Chronique", "Mode Compétition", "Victory Road", "Stade BB"];
+pub const MODES: [&str; 5] = [
+    "Mode Histoire",
+    "Mode Chronique",
+    "Mode Compétition",
+    "Victory Road",
+    "Stade BB",
+];
 
 /// Abstraction de rendu : un front-end fournit un `Renderer` qui transforme un état en frame RGBA
 /// (1280×720, 4 octets/px). CPU (`CpuRenderer`) aujourd'hui, wgpu demain (aphrody-nie-game, Phase 4).
@@ -109,7 +114,8 @@ mod tests {
         let flow = demo_flow(2, 1);
 
         assert!(
-            flow.iter().all(|(state, _)| !matches!(state, GameState::Story { .. })),
+            flow.iter()
+                .all(|(state, _)| !matches!(state, GameState::Story { .. })),
             "the data-free demo must not emit unsourced dialogue"
         );
     }

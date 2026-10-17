@@ -46,7 +46,10 @@ pub use tiling::{TilingPage, tiling};
 
 use crate::export::{Exporter, Sheet, Writer};
 use crate::marks::PageBoxes;
-use crate::{AdvancedSettings, ColorConversion, CompressionSettings, OutputSettings, Overprint, PdfError, PdfSettings};
+use crate::{
+    AdvancedSettings, ColorConversion, CompressionSettings, OutputSettings, Overprint, PdfError,
+    PdfSettings,
+};
 use layout::Layout;
 use plates::Separator;
 
@@ -138,7 +141,9 @@ struct Job<'a> {
 /// down through sublayers (also what the Print dialog's preview shows).
 pub fn keep_layers(nodes: &mut Vec<Arc<Node>>, which: PrintLayers) {
     nodes.retain_mut(|n| {
-        let NodeKind::Layer { printable, .. } = n.kind else { return true };
+        let NodeKind::Layer { printable, .. } = n.kind else {
+            return true;
+        };
         let keep = match which {
             PrintLayers::VisiblePrintable => n.visible && printable,
             PrintLayers::Visible => n.visible,
@@ -176,7 +181,11 @@ fn composite_overprints(doc: &mut Document, set: &PrintSettings) {
     }
     let discard_white = doc.setup.discard_white_overprint;
     let symbols = doc.symbols.iter_mut().map(|s| &mut s.art);
-    let nodes = doc.layers.iter_mut().chain(symbols).chain(doc.patterns.iter_mut().flat_map(|p| p.art.iter_mut()));
+    let nodes = doc
+        .layers
+        .iter_mut()
+        .chain(symbols)
+        .chain(doc.patterns.iter_mut().flat_map(|p| p.art.iter_mut()));
     for n in nodes {
         if how == PrintOverprints::Simulate {
             multiply_overprints(n, discard_white);
@@ -192,16 +201,37 @@ fn composite_pdf(set: &PrintSettings) -> (OutputSettings, AdvancedSettings) {
     let output = if profile.is_empty() {
         OutputSettings::default()
     } else {
-        let conversion = if set.color.preserve_numbers { ColorConversion::PreserveNumbers } else { ColorConversion::Destination };
-        OutputSettings { conversion, destination: profile.to_string(), ..Default::default() }
+        let conversion = if set.color.preserve_numbers {
+            ColorConversion::PreserveNumbers
+        } else {
+            ColorConversion::Destination
+        };
+        OutputSettings {
+            conversion,
+            destination: profile.to_string(),
+            ..Default::default()
+        }
     };
-    let overprint = if set.advanced.overprints == PrintOverprints::Preserve { Overprint::Preserve } else { Overprint::Discard };
-    (output, AdvancedSettings { overprint, ..Default::default() })
+    let overprint = if set.advanced.overprints == PrintOverprints::Preserve {
+        Overprint::Preserve
+    } else {
+        Overprint::Discard
+    };
+    (
+        output,
+        AdvancedSettings {
+            overprint,
+            ..Default::default()
+        },
+    )
 }
 
 /// What of `doc` prints on pages of its own: each artboard printed (its rect), or all the art
 /// (`None`) with artboards ignored.
-pub fn print_regions(doc: &Document, set: &PrintSettings) -> Result<Vec<(Option<usize>, kurbo::Rect)>, PdfError> {
+pub fn print_regions(
+    doc: &Document,
+    set: &PrintSettings,
+) -> Result<Vec<(Option<usize>, kurbo::Rect)>, PdfError> {
     set.check()?;
     layout::regions(&printed_document(doc, set), set)
 }
@@ -213,33 +243,72 @@ impl<'a> Job<'a> {
         let mut warnings = vec![];
         let (layouts, tiles) = layout::layout(&doc, set, &mut warnings)?;
         let separations = set.output.mode == OutputMode::Separations;
-        let (inks, more) = if separations { print_inks(&doc, set) } else { Default::default() };
+        let (inks, more) = if separations {
+            print_inks(&doc, set)
+        } else {
+            Default::default()
+        };
         warnings.extend(more);
         let plates: Vec<usize> = (0..inks.len()).filter(|i| inks[*i].print).collect();
-        let printed: Vec<Option<usize>> = if separations { (0..plates.len()).map(Some).collect() } else { vec![None] };
+        let printed: Vec<Option<usize>> = if separations {
+            (0..plates.len()).map(Some).collect()
+        } else {
+            vec![None]
+        };
         if printed.is_empty() {
-            return Err(PdfError::BadSetting("output.inks: no ink is set to print".into()));
+            return Err(PdfError::BadSetting(
+                "output.inks: no ink is set to print".into(),
+            ));
         }
-        let sheets: Vec<(usize, Option<usize>)> = (0..layouts.len()).flat_map(|l| printed.iter().map(move |i| (l, *i))).collect();
+        let sheets: Vec<(usize, Option<usize>)> = (0..layouts.len())
+            .flat_map(|l| printed.iter().map(move |i| (l, *i)))
+            .collect();
         if sheets.len().saturating_mul(set.copies as usize) > MAX_PAGES {
-            return Err(PdfError::BadSetting(format!("the job would print more than {MAX_PAGES} pages")));
+            return Err(PdfError::BadSetting(format!(
+                "the job would print more than {MAX_PAGES} pages"
+            )));
         }
         if separations && doc.color_mode == ColorMode::Rgb {
             warnings.push("the document is RGB: separations convert its colours to CMYK with the colour settings".into());
         }
-        if !postscript && separations && set.output.inks.iter().any(|i| i.frequency.is_some() || i.angle.is_some()) {
+        if !postscript
+            && separations
+            && set
+                .output
+                .inks
+                .iter()
+                .any(|i| i.frequency.is_some() || i.angle.is_some())
+        {
             warnings.push("ink frequencies and angles are not written as halftone screens yet: the output device's screens apply".into());
         }
         if separations && set.advanced.print_as_bitmap {
-            warnings.push("Print as Bitmap is for composite output: separations print the art as it is".into());
+            warnings.push(
+                "Print as Bitmap is for composite output: separations print the art as it is"
+                    .into(),
+            );
         }
-        if separations && cms::profile(set.color.profile.trim()).is_some_and(|p| p.kind != ProfileKind::Cmyk) {
-            warnings.push("separations separate with a CMYK profile: the RGB printer profile is left out".into());
+        if separations
+            && cms::profile(set.color.profile.trim()).is_some_and(|p| p.kind != ProfileKind::Cmyk)
+        {
+            warnings.push(
+                "separations separate with a CMYK profile: the RGB printer profile is left out"
+                    .into(),
+            );
         }
         if !postscript && !set.graphics.auto_flatness {
-            warnings.push("a fixed flatness is not written yet: the output device flattens curves".into());
+            warnings.push(
+                "a fixed flatness is not written yet: the output device flattens curves".into(),
+            );
         }
-        Ok(Self { doc, layouts, tiles, inks, plates, sheets, warnings })
+        Ok(Self {
+            doc,
+            layouts,
+            tiles,
+            inks,
+            plates,
+            sheets,
+            warnings,
+        })
     }
 
     /// The ink of plate `plate` (`None`: composite).
@@ -254,7 +323,9 @@ impl<'a> Job<'a> {
         let mut v: Vec<usize> = if set.collate {
             (0..copies).flat_map(|_| sheets.clone()).collect()
         } else {
-            sheets.flat_map(|s| std::iter::repeat_n(s, copies)).collect()
+            sheets
+                .flat_map(|s| std::iter::repeat_n(s, copies))
+                .collect()
         };
         if set.reverse {
             v.reverse();
@@ -281,11 +352,22 @@ pub fn preview(doc: &Document, set: &PrintSettings) -> Result<PrintPreview, PdfE
                 scale: [l.scale.0 * 100.0, l.scale.1 * 100.0],
                 transform: (l.view * l.place).as_coeffs(),
                 area: [l.area.x0, l.area.y0, l.area.x1, l.area.y1],
-                trim: [l.page_trim.x0, l.page_trim.y0, l.page_trim.x1, l.page_trim.y1],
+                trim: [
+                    l.page_trim.x0,
+                    l.page_trim.y0,
+                    l.page_trim.x1,
+                    l.page_trim.y1,
+                ],
             })
         })
         .collect();
-    Ok(PrintPreview { pages: job.sheets.len() * set.copies.max(1) as usize, sheets, tiles: job.tiles, inks: job.inks, warnings: job.warnings })
+    Ok(PrintPreview {
+        pages: job.sheets.len() * set.copies.max(1) as usize,
+        sheets,
+        tiles: job.tiles,
+        inks: job.inks,
+        warnings: job.warnings,
+    })
 }
 
 /// One sheet of a laid-out job, ready for a writer (PDF here, PostScript in the EPS writer).
@@ -355,7 +437,10 @@ pub fn plan<'a>(doc: &'a Document, opts: &PrintOptions) -> Result<PrintPlan<'a>,
     let title = opts.title.clone().unwrap_or_else(|| job.doc.title.clone());
     let created = opts.created.or_else(vectorcraft_doc::metadata::now_unix);
     let sep = Separator::new(&job.doc, set);
-    let plates: Vec<Document> = (0..job.plates.len()).filter_map(|p| job.ink(Some(p))).map(|i| sep.plate(&i.name)).collect();
+    let plates: Vec<Document> = (0..job.plates.len())
+        .filter_map(|p| job.ink(Some(p)))
+        .map(|i| sep.plate(&i.name))
+        .collect();
     let marks = set.marks.printer_marks();
     let sheets = job
         .sheets
@@ -385,7 +470,15 @@ pub fn plan<'a>(doc: &'a Document, opts: &PrintOptions) -> Result<PrintPlan<'a>,
         })
         .collect();
     let order = job.order(set);
-    Ok(PrintPlan { plates, sheets, order, title, created, warnings: job.warnings, doc: job.doc })
+    Ok(PrintPlan {
+        plates,
+        sheets,
+        order,
+        title,
+        created,
+        warnings: job.warnings,
+        doc: job.doc,
+    })
 }
 
 /// Print `doc` to a PDF as `opts` say.
@@ -394,13 +487,34 @@ pub fn print(doc: &Document, opts: &PrintOptions) -> Result<PrintReport, PdfErro
     let doc = &*plan.doc;
     let separations = opts.settings.output.mode == OutputMode::Separations;
     // Plates are greys already: only composite colours go to the printer profile.
-    let (output, advanced) = if separations { Default::default() } else { composite_pdf(&opts.settings) };
-    let compression = CompressionSettings { compress_text: !opts.uncompressed, ..Default::default() };
-    let pdf = PdfSettings { compression, output, advanced, ..Default::default() };
-    let mut w = Writer::new(doc, &pdf, &plan.title, plan.created, !separations && doc.color_mode == ColorMode::Cmyk)?;
+    let (output, advanced) = if separations {
+        Default::default()
+    } else {
+        composite_pdf(&opts.settings)
+    };
+    let compression = CompressionSettings {
+        compress_text: !opts.uncompressed,
+        ..Default::default()
+    };
+    let pdf = PdfSettings {
+        compression,
+        output,
+        advanced,
+        ..Default::default()
+    };
+    let mut w = Writer::new(
+        doc,
+        &pdf,
+        &plan.title,
+        plan.created,
+        !separations && doc.color_mode == ColorMode::Cmyk,
+    )?;
     // One exporter per ink (one for composite), each drawing its own document.
-    let mut exporters: Vec<Exporter> =
-        if separations { plan.plates.iter().map(|d| Exporter::new(d, &pdf)).collect() } else { vec![Exporter::new(doc, &pdf)] };
+    let mut exporters: Vec<Exporter> = if separations {
+        plan.plates.iter().map(|d| Exporter::new(d, &pdf)).collect()
+    } else {
+        vec![Exporter::new(doc, &pdf)]
+    };
     for ex in &mut exporters {
         ex.non_printing = true;
         ex.intent = opts.settings.color.intent;
@@ -410,8 +524,12 @@ pub fn print(doc: &Document, opts: &PrintOptions) -> Result<PrintReport, PdfErro
         ex.overprint = !separations && pdf.advanced.overprint == Overprint::Preserve;
     }
     for &i in &plan.order {
-        let Some(s) = plan.sheets.get(i) else { continue };
-        let Some(ex) = exporters.get_mut(s.plate.unwrap_or(0)) else { continue };
+        let Some(s) = plan.sheets.get(i) else {
+            continue;
+        };
+        let Some(ex) = exporters.get_mut(s.plate.unwrap_or(0)) else {
+            continue;
+        };
         w.page(ex, &s.sheet())?;
     }
     let overprinted = exporters.iter().any(|ex| ex.overprinted);
@@ -426,12 +544,23 @@ pub fn print(doc: &Document, opts: &PrintOptions) -> Result<PrintReport, PdfErro
             warnings.push(m);
         }
     }
-    Ok(PrintReport { bytes, pages: plan.order.len(), warnings })
+    Ok(PrintReport {
+        bytes,
+        pages: plan.order.len(),
+        warnings,
+    })
 }
 
 /// The printer's marks of page `l` (`None` without marks), with its page information: the
 /// title, artboard and date, the tile, and the ink with its screen.
-fn marks_art(doc: &Document, marks: &PrinterMarks, l: &Layout, ink: Option<&PrintInk>, title: &str, created: Option<i64>) -> Option<Node> {
+fn marks_art(
+    doc: &Document,
+    marks: &PrinterMarks,
+    l: &Layout,
+    ink: Option<&PrintInk>,
+    title: &str,
+    created: Option<i64>,
+) -> Option<Node> {
     if !marks.any() {
         return None;
     }
@@ -442,7 +571,10 @@ fn marks_art(doc: &Document, marks: &PrinterMarks, l: &Layout, ink: Option<&Prin
             info.push_str(&format!("  ·  tile {} of {n}", t + 1));
         }
         if let Some(ink) = ink {
-            info.push_str(&format!("  ·  {} {} lpi {}°", ink.name, ink.frequency, ink.angle));
+            info.push_str(&format!(
+                "  ·  {} {} lpi {}°",
+                ink.name, ink.frequency, ink.angle
+            ));
         }
     }
     let boxes = PageBoxes::new(l.trim, l.bleed, marks);

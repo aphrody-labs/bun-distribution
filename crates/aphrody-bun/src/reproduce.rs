@@ -22,7 +22,9 @@ impl TryFrom<u8> for InputKind {
             0 => Ok(Self::Url),
             1 => Ok(Self::Image),
             2 => Ok(Self::Html),
-            other => Err(format!("unknown input kind {other} (expected 0=url, 1=image, 2=html)")),
+            other => Err(format!(
+                "unknown input kind {other} (expected 0=url, 1=image, 2=html)"
+            )),
         }
     }
 }
@@ -43,12 +45,12 @@ fn reproduce(kind: InputKind, input: &[u8]) -> Result<ReproductionPlan, String> 
                      the host and pass it with kind=2 (html)"
                 ))
             }
-        },
+        }
         InputKind::Image => ReproductionPlan::from_image_bytes(input).map_err(|e| e.to_string()),
         InputKind::Html => {
             let html = std::str::from_utf8(input).map_err(|e| e.to_string())?;
             Ok(ReproductionPlan::from_html(html, ReproductionSource::Html))
-        },
+        }
     }
 }
 
@@ -82,7 +84,9 @@ pub unsafe extern "C" fn bun_rs_m3_reproduce(
         Ok(plan) => serde_json::json!({ "ok": true, "plan": plan }),
         Err(error) => serde_json::json!({ "ok": false, "error": error }),
     };
-    CString::new(envelope.to_string()).expect("JSON has no NUL").into_raw()
+    CString::new(envelope.to_string())
+        .expect("JSON has no NUL")
+        .into_raw()
 }
 
 /// The color most suitable for a UI theme (`sourceColorFromImage`-equivalent) from PNG/JPEG bytes,
@@ -114,7 +118,10 @@ mod tests {
         let ptr = unsafe { bun_rs_m3_reproduce(2, html.as_ptr(), html.len()) };
         // SAFETY: `ptr` is the well-formed, NUL-terminated `CString` `bun_rs_m3_reproduce` just
         // returned, not yet freed.
-        let json = unsafe { std::ffi::CStr::from_ptr(ptr) }.to_str().unwrap().to_owned();
+        let json = unsafe { std::ffi::CStr::from_ptr(ptr) }
+            .to_str()
+            .unwrap()
+            .to_owned();
         // SAFETY: `ptr` was returned by `bun_rs_m3_reproduce` and is freed exactly once, here.
         unsafe { bun_rs_free_string(ptr) };
 
@@ -129,7 +136,10 @@ mod tests {
         let ptr = unsafe { bun_rs_m3_reproduce(9, std::ptr::null(), 0) };
         // SAFETY: `ptr` is the well-formed, NUL-terminated `CString` `bun_rs_m3_reproduce` just
         // returned, not yet freed.
-        let json = unsafe { std::ffi::CStr::from_ptr(ptr) }.to_str().unwrap().to_owned();
+        let json = unsafe { std::ffi::CStr::from_ptr(ptr) }
+            .to_str()
+            .unwrap()
+            .to_owned();
         // SAFETY: `ptr` was returned by `bun_rs_m3_reproduce` and is freed exactly once, here.
         unsafe { bun_rs_free_string(ptr) };
 

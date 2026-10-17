@@ -30,7 +30,11 @@ pub fn ldr<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -39,7 +43,13 @@ pub fn ldr<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
     let result = bus::read_32::<CpuAccess, _, false>(emu, addr).rotate_right((addr & 3) << 3);
     emu.arm9.engine_data.data_cycles = emu.arm9.cp15.timings.get(addr).r_n32_data;
     add_bus_cycles(emu, 1);
-    write_reg_interlock(emu, (instr & 7) as u8, result, 1 + (addr & 3 != 0) as RawTimestamp, 1);
+    write_reg_interlock(
+        emu,
+        (instr & 7) as u8,
+        result,
+        1 + (addr & 3 != 0) as RawTimestamp,
+        1,
+    );
 }
 
 pub fn str<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
@@ -54,7 +64,11 @@ pub fn str<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_write(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_write(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -76,7 +90,11 @@ pub fn ldrh<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -100,7 +118,11 @@ pub fn strh<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_write(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_write(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -122,7 +144,11 @@ pub fn ldrb<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -146,7 +172,11 @@ pub fn strb<const IMM: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         reg!(emu.arm9, off_reg)
     });
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_write(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_write(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -163,7 +193,11 @@ pub fn ldrsh(emu: &mut Emu<Interpreter>, instr: u16) {
     let addr = reg!(emu.arm9, base_reg).wrapping_add(reg!(emu.arm9, off_reg));
     apply_reg_interlocks_2::<0, false>(emu, base_reg, off_reg);
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -181,7 +215,11 @@ pub fn ldrsb(emu: &mut Emu<Interpreter>, instr: u16) {
     let addr = reg!(emu.arm9, base_reg).wrapping_add(reg!(emu.arm9, off_reg));
     apply_reg_interlocks_2::<0, false>(emu, base_reg, off_reg);
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -196,7 +234,11 @@ pub fn ldrsb(emu: &mut Emu<Interpreter>, instr: u16) {
 pub fn ldr_pc_rel(emu: &mut Emu<Interpreter>, instr: u16) {
     let addr = (reg!(emu.arm9, 15) & !3).wrapping_add(((instr & 0xFF) << 2) as u32);
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -211,7 +253,11 @@ pub fn ldr_pc_rel(emu: &mut Emu<Interpreter>, instr: u16) {
 pub fn ldr_sp_rel(emu: &mut Emu<Interpreter>, instr: u16) {
     let addr = reg!(emu.arm9, 13).wrapping_add(((instr & 0xFF) << 2) as u32);
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_read(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_read(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -234,7 +280,11 @@ pub fn str_sp_rel(emu: &mut Emu<Interpreter>, instr: u16) {
     apply_reg_interlock_1::<false>(emu, src_reg);
     let addr = reg!(emu.arm9, 13).wrapping_add(((instr & 0xFF) << 2) as u32);
     prefetch_thumb::<false, true>(emu);
-    if unlikely(!can_write(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+    if unlikely(!can_write(
+        emu,
+        addr,
+        emu.arm9.engine_data.regs.is_in_priv_mode(),
+    )) {
         emu.arm9.engine_data.data_cycles = 1;
         add_bus_cycles(emu, 2);
         add_cycles(emu, 1);
@@ -273,7 +323,11 @@ pub fn push<const PUSH_R14: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
             } else {
                 apply_reg_interlock_1::<true>(emu, reg);
             }
-            if unlikely(!can_write(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_write(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle).
@@ -308,7 +362,11 @@ pub fn push<const PUSH_R14: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
         if not_first {
             add_cycles(emu, data_cycles as RawTimestamp);
         }
-        if unlikely(!can_write(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+        if unlikely(!can_write(
+            emu,
+            cur_addr,
+            emu.arm9.engine_data.regs.is_in_priv_mode(),
+        )) {
             emu.arm9.engine_data.data_cycles = 1;
             add_bus_cycles(emu, 2);
             add_cycles(emu, 1);
@@ -320,7 +378,11 @@ pub fn push<const PUSH_R14: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
     add_bus_cycles(emu, 2);
     emu.arm9.engine_data.data_cycles = data_cycles;
     #[cfg(feature = "interp-timing-details")]
-    if if PUSH_R14 { instr as u8 == 0 } else { instr as u8 & (instr as u8 - 1) == 0 } {
+    if if PUSH_R14 {
+        instr as u8 == 0
+    } else {
+        instr as u8 & (instr as u8 - 1) == 0
+    } {
         // Only one register present, add an internal cycle
         add_cycles(emu, data_cycles as RawTimestamp);
         emu.arm9.engine_data.data_cycles = 1;
@@ -348,7 +410,11 @@ pub fn pop<const POP_R15: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
             if not_first {
                 add_cycles(emu, data_cycles as RawTimestamp);
             }
-            if unlikely(!can_read(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_read(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle).
@@ -384,7 +450,11 @@ pub fn pop<const POP_R15: bool>(emu: &mut Emu<Interpreter>, instr: u16) {
             add_cycles(emu, data_cycles as RawTimestamp);
         }
         emu.arm9.engine_data.data_cycles = 1;
-        if unlikely(!can_read(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+        if unlikely(!can_read(
+            emu,
+            cur_addr,
+            emu.arm9.engine_data.regs.is_in_priv_mode(),
+        )) {
             add_cycles(emu, 1);
             return handle_data_abort::<false>(emu, cur_addr);
         }
@@ -436,13 +506,20 @@ pub fn ldmia(emu: &mut Emu<Interpreter>, instr: u16) {
             if not_first {
                 add_cycles(emu, data_cycles as RawTimestamp);
             }
-            if unlikely(!can_read(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_read(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle).
                 emu.arm9.engine_data.data_cycles = 1;
                 #[cfg(feature = "interp-timing-details")]
-                add_cycles(emu, (instr as u8 & !((1 << reg) - 1)).count_ones() as RawTimestamp);
+                add_cycles(
+                    emu,
+                    (instr as u8 & !((1 << reg) - 1)).count_ones() as RawTimestamp,
+                );
                 return handle_data_abort::<true>(emu, cur_addr);
             }
             let result = bus::read_32::<CpuAccess, _, false>(emu, cur_addr);
@@ -504,14 +581,21 @@ pub fn stmia(emu: &mut Emu<Interpreter>, instr: u16) {
             } else {
                 apply_reg_interlock_1::<true>(emu, reg);
             }
-            if unlikely(!can_write(emu, cur_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_write(
+                emu,
+                cur_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // In case of a data abort, the instruction runs to completion before triggering
                 // the exception (unclear what that means for timings, it's assumed all accesses
                 // from that point on take 1 cycle).
                 emu.arm9.engine_data.data_cycles = 1;
                 add_bus_cycles(emu, 2);
                 #[cfg(feature = "interp-timing-details")]
-                add_cycles(emu, (instr as u8 & !((1 << reg) - 1)).count_ones() as RawTimestamp);
+                add_cycles(
+                    emu,
+                    (instr as u8 & !((1 << reg) - 1)).count_ones() as RawTimestamp,
+                );
                 return handle_data_abort::<true>(emu, cur_addr);
             }
             bus::write_32::<CpuAccess, _>(emu, cur_addr, reg!(emu.arm9, reg));

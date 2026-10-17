@@ -64,7 +64,7 @@ impl Bluetooth {
                                 0,
                             );
                             self.queue_l2cap_config_req(source_cid);
-                        },
+                        }
                         L2CAP_PSM_HID_INTERRUPT => {
                             self.host_hid_interrupt_cid = Some(source_cid);
                             tracing::debug!(
@@ -79,16 +79,16 @@ impl Bluetooth {
                                 0,
                             );
                             self.queue_l2cap_config_req(source_cid);
-                        },
+                        }
                         _ => {
                             tracing::debug!(
                                 psm = format!("{psm:#06x}"),
                                 "rejected unknown L2CAP PSM"
                             );
                             self.queue_l2cap_connect_rsp(ident, source_cid, 0, 2);
-                        },
+                        }
                     }
-                },
+                }
                 L2CAP_CONNECT_RSP if data.len() >= 8 => {
                     let dest_cid = u16::from_le_bytes([data[0], data[1]]);
                     let source_cid = u16::from_le_bytes([data[2], data[3]]);
@@ -118,11 +118,11 @@ impl Bluetooth {
                             "guest rejected Wiimote L2CAP connect request"
                         );
                     }
-                },
+                }
                 L2CAP_CONFIG_REQ if data.len() >= 4 => {
                     let channel = u16::from_le_bytes([data[0], data[1]]);
                     self.queue_l2cap_config_rsp(ident, channel);
-                },
+                }
                 L2CAP_CONFIG_RSP if data.len() >= 2 => {
                     let channel = u16::from_le_bytes([data[0], data[1]]);
                     if Some(channel) == self.host_hid_interrupt_cid {
@@ -138,7 +138,7 @@ impl Bluetooth {
                             );
                         }
                     }
-                },
+                }
                 L2CAP_DISCONNECT_REQ => tracing::debug!("ignored Wiimote L2CAP disconnect request"),
                 _ => tracing::debug!(
                     code = format!("{code:#04x}"),
@@ -161,9 +161,14 @@ impl Bluetooth {
     }
 
     pub(super) fn queue_hid_input_report(&mut self, report: Vec<u8>) {
-        tracing::debug!(bytes = format!("{report:02X?}"), "sending Wiimote input report to guest");
+        tracing::debug!(
+            bytes = format!("{report:02X?}"),
+            "sending Wiimote input report to guest"
+        );
 
-        let cid = self.host_hid_interrupt_cid.unwrap_or(L2CAP_CID_HID_INTERRUPT);
+        let cid = self
+            .host_hid_interrupt_cid
+            .unwrap_or(L2CAP_CID_HID_INTERRUPT);
         self.queue_acl_l2cap(cid, &report);
     }
 
@@ -214,7 +219,10 @@ impl Bluetooth {
         frame.extend_from_slice(&l2cap_len.to_le_bytes());
         frame.extend_from_slice(&cid.to_le_bytes());
         frame.extend_from_slice(payload);
-        tracing::debug!(bytes = format!("{frame:02X?}"), "queued Bluetooth ACL frame");
+        tracing::debug!(
+            bytes = format!("{frame:02X?}"),
+            "queued Bluetooth ACL frame"
+        );
         super::push_capped(&mut self.pending_acl, frame);
     }
 

@@ -19,7 +19,9 @@ use crate::error::CodecError;
 use crate::fidelity::Plan;
 use crate::image::{ChannelLayout, DecodeWarning, Image, Metadata, SampleType};
 use crate::options::{EncodeOptions, Limits};
-use crate::resolution::{exif_resolution, export_exif, export_xmp, photoshop_resolution, xmp_resolution};
+use crate::resolution::{
+    exif_resolution, export_exif, export_xmp, photoshop_resolution, xmp_resolution,
+};
 
 const F: Format = Format::Jpeg;
 const EXIF_HEADER: &[u8] = b"Exif\0\0";
@@ -84,7 +86,9 @@ pub(crate) fn scan_metadata(b: &[u8]) -> JpegMeta {
                 m.exif = Some(seg[EXIF_HEADER.len()..].to_vec());
             }
             0xE1 if seg.starts_with(XMP_HEADER) && m.xmp.is_none() => {
-                m.xmp = std::str::from_utf8(&seg[XMP_HEADER.len()..]).ok().map(|s| s.trim_end_matches('\0').to_owned());
+                m.xmp = std::str::from_utf8(&seg[XMP_HEADER.len()..])
+                    .ok()
+                    .map(|s| s.trim_end_matches('\0').to_owned());
             }
             0xED if seg.starts_with(PHOTOSHOP_HEADER) && photoshop.len() < 1 << 24 => {
                 photoshop.extend_from_slice(&seg[PHOTOSHOP_HEADER.len()..]);
@@ -92,7 +96,9 @@ pub(crate) fn scan_metadata(b: &[u8]) -> JpegMeta {
             0xE2 if seg.len() >= 14 && seg.starts_with(ICC_HEADER) => {
                 icc_parts.push((seg[12], seg[13], &seg[14..]));
             }
-            0xC0..=0xCF if !matches!(marker, 0xC4 | 0xC8 | 0xCC) && seg.len() >= 6 && m.frame.is_none() => {
+            0xC0..=0xCF
+                if !matches!(marker, 0xC4 | 0xC8 | 0xCC) && seg.len() >= 6 && m.frame.is_none() =>
+            {
                 let h = u16::from_be_bytes([seg[1], seg[2]]) as u32;
                 let w = u16::from_be_bytes([seg[3], seg[4]]) as u32;
                 m.frame = Some((w, h, seg[5]));
@@ -111,7 +117,11 @@ pub(crate) fn scan_metadata(b: &[u8]) -> JpegMeta {
     if !icc_parts.is_empty() {
         icc_parts.sort_by_key(|p| p.0);
         let total = icc_parts[0].1 as usize;
-        let seqs_ok = icc_parts.len() == total && icc_parts.iter().enumerate().all(|(k, p)| p.0 as usize == k + 1 && p.1 as usize == total);
+        let seqs_ok = icc_parts.len() == total
+            && icc_parts
+                .iter()
+                .enumerate()
+                .all(|(k, p)| p.0 as usize == k + 1 && p.1 as usize == total);
         if seqs_ok || icc_parts.len() == 1 {
             m.icc = Some(icc_parts.iter().flat_map(|p| p.2.iter().copied()).collect());
         }
@@ -135,29 +145,44 @@ enum DataEnd {
 /// so an embedded thumbnail's end marker or data after the end of the image don't count.
 fn data_end(b: &[u8]) -> DataEnd {
     // Where the bytes run out: inside the image data once a scan has held some.
-    let cut = |scan_data: bool| if scan_data { DataEnd::Truncated } else { DataEnd::Empty };
+    let cut = |scan_data: bool| {
+        if scan_data {
+            DataEnd::Truncated
+        } else {
+            DataEnd::Empty
+        }
+    };
     let mut i = 2; // past SOI
     let mut scan_data = false;
     loop {
-        let Some(&byte) = b.get(i) else { return cut(scan_data) };
+        let Some(&byte) = b.get(i) else {
+            return cut(scan_data);
+        };
         if byte != 0xFF {
             // Not where a marker should be: too odd to judge.
             return DataEnd::Complete;
         }
-        let Some(&code) = b.get(i + 1) else { return cut(scan_data) };
+        let Some(&code) = b.get(i + 1) else {
+            return cut(scan_data);
+        };
         match code {
             0xD9 => return DataEnd::Complete,
             0xFF => i += 1,
             0x01 | 0xD0..=0xD8 => i += 2,
             _ => {
-                let Some(len) = b.get(i + 2..i + 4).and_then(|s| <[u8; 2]>::try_from(s).ok()).map(u16::from_be_bytes) else {
+                let Some(len) = b
+                    .get(i + 2..i + 4)
+                    .and_then(|s| <[u8; 2]>::try_from(s).ok())
+                    .map(u16::from_be_bytes)
+                else {
                     return cut(scan_data);
                 };
                 i = i.saturating_add(2 + usize::from(len));
                 if code == 0xDA {
                     let start = i;
                     loop {
-                        let Some(p) = b.get(i..).and_then(|r| r.iter().position(|&v| v == 0xFF)) else {
+                        let Some(p) = b.get(i..).and_then(|r| r.iter().position(|&v| v == 0xFF))
+                        else {
                             return cut(scan_data || b.len() > start);
                         };
                         i += p;
@@ -187,7 +212,10 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
     if let Some((w, h, nc)) = meta.frame {
         limits.check_bytes(w, h, u64::from(nc.max(1)))?;
     }
-    let options = DecoderOptions::default().set_strict_mode(false).set_max_width(65535).set_max_height(65535);
+    let options = DecoderOptions::default()
+        .set_strict_mode(false)
+        .set_max_width(65535)
+        .set_max_height(65535);
     let mut dec = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(bytes), options);
     dec.decode_headers().map_err(err)?;
     let (w, h) = dec.dimensions().ok_or_else(|| err("no dimensions"))?;
@@ -226,7 +254,12 @@ pub(crate) fn decode(bytes: &[u8], limits: &Limits) -> Result<Image, CodecError>
     }
     let mut img = Image::from_raw(w, h, layout, SampleType::U8, px)?;
     img.icc = meta.icc;
-    img.meta = Metadata { exif: meta.exif, xmp: meta.xmp, dpi: meta.dpi, ..Default::default() };
+    img.meta = Metadata {
+        exif: meta.exif,
+        xmp: meta.xmp,
+        dpi: meta.dpi,
+        ..Default::default()
+    };
     if end == DataEnd::Truncated {
         img.warnings.push(DecodeWarning::Truncated { format: F });
     }
@@ -239,7 +272,10 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
     let (w16, h16) = match (u16::try_from(w), u16::try_from(h)) {
         (Ok(a), Ok(b)) => (a, b),
         _ => {
-            return Err(CodecError::encode(F, "JPEG dimensions are limited to 65535"));
+            return Err(CodecError::encode(
+                F,
+                "JPEG dimensions are limited to 65535",
+            ));
         }
     };
     let ct = match img.layout() {
@@ -264,14 +300,27 @@ pub(crate) fn encode(src: &Image, plan: Plan, opts: &EncodeOptions) -> Result<Ve
             && x >= 1.0
             && y >= 1.0
         {
-            enc.set_density(jpeg_encoder::Density::Inch { x: x.round().min(65535.0) as u16, y: y.round().min(65535.0) as u16 });
+            enc.set_density(jpeg_encoder::Density::Inch {
+                x: x.round().min(65535.0) as u16,
+                y: y.round().min(65535.0) as u16,
+            });
         }
         // Metadata too large for its one segment is left out (and reported by the fidelity
         // warnings) rather than failing the whole export.
-        if let Some(seg) = img.meta.exif.as_deref().and_then(|x| exif_segment(x, img.meta.dpi)) {
+        if let Some(seg) = img
+            .meta
+            .exif
+            .as_deref()
+            .and_then(|x| exif_segment(x, img.meta.dpi))
+        {
             enc.add_app_segment(1, &seg).map_err(e)?;
         }
-        if let Some(seg) = img.meta.xmp.as_deref().and_then(|x| xmp_segment(x, img.meta.dpi)) {
+        if let Some(seg) = img
+            .meta
+            .xmp
+            .as_deref()
+            .and_then(|x| xmp_segment(x, img.meta.dpi))
+        {
             enc.add_app_segment(1, &seg).map_err(e)?;
         }
     }
@@ -308,7 +357,9 @@ pub(crate) fn xmp_segment(xmp: &str, dpi: Option<(f32, f32)>) -> Option<Vec<u8>>
     if XMP_HEADER.len() + xmp.len() <= MAX_SEGMENT {
         return Some(seg(&xmp));
     }
-    let trimmed = LAYERED_ONLY_XMP.iter().fold(xmp.into_owned(), |x, name| remove_element(&x, name));
+    let trimmed = LAYERED_ONLY_XMP
+        .iter()
+        .fold(xmp.into_owned(), |x, name| remove_element(&x, name));
     (XMP_HEADER.len() + trimmed.len() <= MAX_SEGMENT).then(|| seg(&trimmed))
 }
 
@@ -320,7 +371,11 @@ fn remove_element(xmp: &str, name: &str) -> String {
     let mut rest = xmp;
     while let Some(j) = rest.find(&local) {
         let head = rest.get(..j).unwrap_or_default();
-        let prefix_len = head.bytes().rev().take_while(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.')).count();
+        let prefix_len = head
+            .bytes()
+            .rev()
+            .take_while(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-' | b'.'))
+            .count();
         let lt = j - prefix_len;
         let after = rest.get(j + local.len()..).unwrap_or_default();
         // An opening tag of exactly this name (not a closing tag, an attribute or a longer name).

@@ -196,7 +196,7 @@ fn unported_hint(name: &str) -> &'static str {
         "web_search" => {
             "use the agent `web_search` tool or `aphrody web search`: the shared SERP client \
              lives in aphrody-google, which depends on this crate"
-        },
+        }
         _ => "see `aphrody web --help` and the MCP tool catalog of `aphrody-mcp`",
     }
 }
@@ -256,7 +256,9 @@ pub async fn register_bxc_tools(
                 ),
             )
             .with_exposure(ToolExposure::Direct);
-            let executor = UnportedWebAlias { definition: definition.clone() };
+            let executor = UnportedWebAlias {
+                definition: definition.clone(),
+            };
             if registry.register(Arc::new(executor)).is_ok() {
                 catalog.add(definition).await;
                 registered += 1;
@@ -280,15 +282,22 @@ mod tests {
         let mut registry = ToolRegistry::new();
         let catalog = ToolCatalog::new();
         assert_eq!(
-            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Default).await.unwrap(),
+            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Default)
+                .await
+                .unwrap(),
             6
         );
         assert!(registry.get("web_fetch").is_some());
         assert!(registry.get("browser_snapshot").is_some());
-        assert!(registry.get("web_search").is_none(), "no SERP client below aphrody-google");
+        assert!(
+            registry.get("web_search").is_none(),
+            "no SERP client below aphrody-google"
+        );
         assert!(registry.get("web_crawl").is_none());
         assert_eq!(
-            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Default).await.unwrap(),
+            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Default)
+                .await
+                .unwrap(),
             0
         );
     }
@@ -298,18 +307,30 @@ mod tests {
         let mut registry = ToolRegistry::new();
         let catalog = ToolCatalog::new();
         assert_eq!(
-            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Full).await.unwrap(),
+            register_bxc_tools(&mut registry, &catalog, BxcExposureProfile::Full)
+                .await
+                .unwrap(),
             BXC_STABLE_ALIASES.len()
         );
         let tool = registry.get("web_crawl").unwrap();
-        let output = tool.handle(serde_json::json!({"url": "https://example.com"})).await.unwrap();
+        let output = tool
+            .handle(serde_json::json!({"url": "https://example.com"}))
+            .await
+            .unwrap();
         assert!(output.is_error);
         assert!(output.content.contains("web_crawl"));
         assert!(output.content.contains("no native Rust tool mapping"));
 
         let search = registry.get("web_search").unwrap();
-        let output = search.handle(serde_json::json!({"query": "rust"})).await.unwrap();
+        let output = search
+            .handle(serde_json::json!({"query": "rust"}))
+            .await
+            .unwrap();
         assert!(output.is_error);
-        assert!(output.content.contains("aphrody web search"), "{}", output.content);
+        assert!(
+            output.content.contains("aphrody web search"),
+            "{}",
+            output.content
+        );
     }
 }

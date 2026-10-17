@@ -19,14 +19,29 @@ use crate::state::Dialog;
 /// The dialog kind of New Swatch.
 pub const KIND: &str = "newSwatch";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("New Swatch").into(), body, confirm, min_width: 340.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("New Swatch").into(),
+    body,
+    confirm,
+    min_width: 340.0,
+    ..DialogSpec::FORM
+};
 
 /// Open New Swatch for the active paint: a spot colour with `spot`, going into colour `group`.
 pub fn open(app: &mut VectorcraftApp, spot: bool, group: Option<&str>) -> Result<Value, String> {
     let paint = crate::panels::active_paint(app);
-    let name = app.session.active().ok_or("no document open")?.doc.new_swatch_name(&paint);
+    let name = app
+        .session
+        .active()
+        .ok_or("no document open")?
+        .doc
+        .new_swatch_name(&paint);
     let mut fields = match &paint {
-        Paint::Solid { swatch: Some(_), tint, .. } if *tint < 1.0 => {
+        Paint::Solid {
+            swatch: Some(_),
+            tint,
+            ..
+        } if *tint < 1.0 => {
             json!({"__paint": crate::panels::paint_params(&paint), "group": group.unwrap_or_default()})
         }
         Paint::Solid { color, .. } => {
@@ -60,7 +75,9 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 fn params(d: &Dialog) -> Value {
     let mut p = match d.fields.get("__paint") {
         Some(paint) => paint.clone(),
-        None => json!({"color": color_of(d), "mode": d.str("mode"), "spot": d.bool("spot"), "global": d.bool("global")}),
+        None => {
+            json!({"color": color_of(d), "mode": d.str("mode"), "spot": d.bool("spot"), "global": d.bool("global")})
+        }
     };
     p["name"] = json!(d.str("name"));
     let group = d.str("group");
@@ -80,23 +97,48 @@ mod tests {
 
     #[test]
     fn params_carry_the_colour_or_the_paint() {
-        let d = Dialog::new(KIND, json!({"name": "Sky", "color": "#2a6fb0", "mode": "rgb", "spot": true, "global": true, "group": "Mine"}));
-        assert_eq!(params(&d), json!({"name": "Sky", "color": color_of(&d), "mode": "rgb", "spot": true, "global": true, "group": "Mine"}));
-        let d = Dialog::new(KIND, json!({"name": "Dots", "__paint": {"pattern": "Dots"}, "group": ""}));
+        let d = Dialog::new(
+            KIND,
+            json!({"name": "Sky", "color": "#2a6fb0", "mode": "rgb", "spot": true, "global": true, "group": "Mine"}),
+        );
+        assert_eq!(
+            params(&d),
+            json!({"name": "Sky", "color": color_of(&d), "mode": "rgb", "spot": true, "global": true, "group": "Mine"})
+        );
+        let d = Dialog::new(
+            KIND,
+            json!({"name": "Dots", "__paint": {"pattern": "Dots"}, "group": ""}),
+        );
         assert_eq!(params(&d), json!({"name": "Dots", "pattern": "Dots"}));
     }
 
     #[test]
     fn a_tint_opens_as_a_named_tint_swatch() {
         let mut app = VectorcraftApp::new(vectorcraft_engine::Session::new(), Default::default());
-        app.run("file.new", json!({"width": 100, "height": 100})).unwrap();
-        app.run("swatch.new", json!({"name": "Ink", "color": "#cc0066", "spot": true})).unwrap();
-        app.run("paint.setFill", json!({"swatch": "Ink", "tint": 40})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 100}))
+            .unwrap();
+        app.run(
+            "swatch.new",
+            json!({"name": "Ink", "color": "#cc0066", "spot": true}),
+        )
+        .unwrap();
+        app.run("paint.setFill", json!({"swatch": "Ink", "tint": 40}))
+            .unwrap();
         open(&mut app, false, None).unwrap();
         let d = app.ui.dialog.clone().unwrap();
-        assert_eq!(params(&d), json!({"name": "Ink 40%", "swatch": "Ink", "tint": 40.0}));
+        assert_eq!(
+            params(&d),
+            json!({"name": "Ink 40%", "swatch": "Ink", "tint": 40.0})
+        );
         run_and_close(&mut app, "swatch.new", params(&d)).unwrap();
-        let w = app.session.doc().unwrap().doc.swatch("Ink 40%").cloned().unwrap();
+        let w = app
+            .session
+            .doc()
+            .unwrap()
+            .doc
+            .swatch("Ink 40%")
+            .cloned()
+            .unwrap();
         assert_eq!(w.tint_of(), Some(("Ink", 0.4)));
     }
 }

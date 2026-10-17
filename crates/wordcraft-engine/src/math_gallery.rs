@@ -17,13 +17,28 @@ pub struct Template {
 }
 
 const fn t(id: &'static str, label: &'static str, linear: &'static str) -> Template {
-    Template { id, label, linear, limits: None }
+    Template {
+        id,
+        label,
+        linear,
+        limits: None,
+    }
 }
 const fn stacked(id: &'static str, label: &'static str, linear: &'static str) -> Template {
-    Template { id, label, linear, limits: Some(LimLoc::UndOvr) }
+    Template {
+        id,
+        label,
+        linear,
+        limits: Some(LimLoc::UndOvr),
+    }
 }
 const fn beside(id: &'static str, label: &'static str, linear: &'static str) -> Template {
-    Template { id, label, linear, limits: Some(LimLoc::SubSup) }
+    Template {
+        id,
+        label,
+        linear,
+        limits: Some(LimLoc::SubSup),
+    }
 }
 
 impl Template {
@@ -108,7 +123,13 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("rad.cbrt", "Cube Root", "√(3&⬚)"),
                 ],
             ),
-            ("Common Radicals", &[t("rad.quadratic", "Quadratic Root", "(−b±√(b^2−4ac))/2a"), t("rad.hyp", "Hypotenuse", "√(a^2+b^2)")]),
+            (
+                "Common Radicals",
+                &[
+                    t("rad.quadratic", "Quadratic Root", "(−b±√(b^2−4ac))/2a"),
+                    t("rad.hyp", "Hypotenuse", "√(a^2+b^2)"),
+                ],
+            ),
         ],
     },
     Gallery {
@@ -123,29 +144,61 @@ pub const STRUCTURES: &[Gallery] = &[
                     stacked("int.stacked", "Integral with Stacked Limits", "∫_⬚^⬚▒⬚"),
                     t("int.double", "Double Integral", "∬▒⬚"),
                     beside("int.doubleLimits", "Double Integral with Limits", "∬_⬚^⬚▒⬚"),
-                    stacked("int.doubleStacked", "Double Integral with Stacked Limits", "∬_⬚^⬚▒⬚"),
+                    stacked(
+                        "int.doubleStacked",
+                        "Double Integral with Stacked Limits",
+                        "∬_⬚^⬚▒⬚",
+                    ),
                     t("int.triple", "Triple Integral", "∭▒⬚"),
                     beside("int.tripleLimits", "Triple Integral with Limits", "∭_⬚^⬚▒⬚"),
-                    stacked("int.tripleStacked", "Triple Integral with Stacked Limits", "∭_⬚^⬚▒⬚"),
+                    stacked(
+                        "int.tripleStacked",
+                        "Triple Integral with Stacked Limits",
+                        "∭_⬚^⬚▒⬚",
+                    ),
                 ],
             ),
             (
                 "Contour Integrals",
                 &[
                     t("int.contour", "Contour Integral", "∮▒⬚"),
-                    beside("int.contourLimits", "Contour Integral with Limits", "∮_⬚^⬚▒⬚"),
-                    stacked("int.contourStacked", "Contour Integral with Stacked Limits", "∮_⬚^⬚▒⬚"),
+                    beside(
+                        "int.contourLimits",
+                        "Contour Integral with Limits",
+                        "∮_⬚^⬚▒⬚",
+                    ),
+                    stacked(
+                        "int.contourStacked",
+                        "Contour Integral with Stacked Limits",
+                        "∮_⬚^⬚▒⬚",
+                    ),
                     t("int.surface", "Surface Integral", "∯▒⬚"),
-                    beside("int.surfaceLimits", "Surface Integral with Limits", "∯_⬚^⬚▒⬚"),
-                    stacked("int.surfaceStacked", "Surface Integral with Stacked Limits", "∯_⬚^⬚▒⬚"),
+                    beside(
+                        "int.surfaceLimits",
+                        "Surface Integral with Limits",
+                        "∯_⬚^⬚▒⬚",
+                    ),
+                    stacked(
+                        "int.surfaceStacked",
+                        "Surface Integral with Stacked Limits",
+                        "∯_⬚^⬚▒⬚",
+                    ),
                     t("int.volume", "Volume Integral", "∰▒⬚"),
                     beside("int.volumeLimits", "Volume Integral with Limits", "∰_⬚^⬚▒⬚"),
-                    stacked("int.volumeStacked", "Volume Integral with Stacked Limits", "∰_⬚^⬚▒⬚"),
+                    stacked(
+                        "int.volumeStacked",
+                        "Volume Integral with Stacked Limits",
+                        "∰_⬚^⬚▒⬚",
+                    ),
                 ],
             ),
             (
                 "Differentials",
-                &[t("int.dx", "Differential x", "dx"), t("int.dy", "Differential y", "dy"), t("int.dtheta", "Differential theta", "dθ")],
+                &[
+                    t("int.dx", "Differential x", "dx"),
+                    t("int.dy", "Differential y", "dy"),
+                    t("int.dtheta", "Differential theta", "dθ"),
+                ],
             ),
         ],
     },
@@ -158,7 +211,11 @@ pub const STRUCTURES: &[Gallery] = &[
                 &[
                     t("nary.sum", "Summation", "∑▒⬚"),
                     stacked("nary.sumLimits", "Summation with Limits", "∑_⬚^⬚▒⬚"),
-                    beside("nary.sumScripts", "Summation with Subscript-Superscript Limits", "∑_⬚^⬚▒⬚"),
+                    beside(
+                        "nary.sumScripts",
+                        "Summation with Subscript-Superscript Limits",
+                        "∑_⬚^⬚▒⬚",
+                    ),
                     stacked("nary.sumLower", "Summation with Lower Limit", "∑_⬚▒⬚"),
                     beside("nary.sumSub", "Summation with Subscript Limit", "∑_⬚▒⬚"),
                 ],
@@ -168,11 +225,19 @@ pub const STRUCTURES: &[Gallery] = &[
                 &[
                     t("nary.prod", "Product", "∏▒⬚"),
                     stacked("nary.prodLimits", "Product with Limits", "∏_⬚^⬚▒⬚"),
-                    beside("nary.prodScripts", "Product with Subscript-Superscript Limits", "∏_⬚^⬚▒⬚"),
+                    beside(
+                        "nary.prodScripts",
+                        "Product with Subscript-Superscript Limits",
+                        "∏_⬚^⬚▒⬚",
+                    ),
                     stacked("nary.prodLower", "Product with Lower Limit", "∏_⬚▒⬚"),
                     t("nary.coprod", "Coproduct", "∐▒⬚"),
                     stacked("nary.coprodLimits", "Coproduct with Limits", "∐_⬚^⬚▒⬚"),
-                    beside("nary.coprodScripts", "Coproduct with Subscript-Superscript Limits", "∐_⬚^⬚▒⬚"),
+                    beside(
+                        "nary.coprodScripts",
+                        "Coproduct with Subscript-Superscript Limits",
+                        "∐_⬚^⬚▒⬚",
+                    ),
                     stacked("nary.coprodLower", "Coproduct with Lower Limit", "∐_⬚▒⬚"),
                 ],
             ),
@@ -181,12 +246,28 @@ pub const STRUCTURES: &[Gallery] = &[
                 &[
                     t("nary.union", "Union", "⋃▒⬚"),
                     stacked("nary.unionLimits", "Union with Limits", "⋃_⬚^⬚▒⬚"),
-                    beside("nary.unionScripts", "Union with Subscript-Superscript Limits", "⋃_⬚^⬚▒⬚"),
+                    beside(
+                        "nary.unionScripts",
+                        "Union with Subscript-Superscript Limits",
+                        "⋃_⬚^⬚▒⬚",
+                    ),
                     stacked("nary.unionLower", "Union with Lower Limit", "⋃_⬚▒⬚"),
                     t("nary.intersection", "Intersection", "⋂▒⬚"),
-                    stacked("nary.intersectionLimits", "Intersection with Limits", "⋂_⬚^⬚▒⬚"),
-                    beside("nary.intersectionScripts", "Intersection with Subscript-Superscript Limits", "⋂_⬚^⬚▒⬚"),
-                    stacked("nary.intersectionLower", "Intersection with Lower Limit", "⋂_⬚▒⬚"),
+                    stacked(
+                        "nary.intersectionLimits",
+                        "Intersection with Limits",
+                        "⋂_⬚^⬚▒⬚",
+                    ),
+                    beside(
+                        "nary.intersectionScripts",
+                        "Intersection with Subscript-Superscript Limits",
+                        "⋂_⬚^⬚▒⬚",
+                    ),
+                    stacked(
+                        "nary.intersectionLower",
+                        "Intersection with Lower Limit",
+                        "⋂_⬚▒⬚",
+                    ),
                 ],
             ),
             (
@@ -210,7 +291,11 @@ pub const STRUCTURES: &[Gallery] = &[
                     stacked("nary.sum0n", "Summation from 0 to n", "∑_(i=0)^n▒⬚"),
                     stacked("nary.double", "Double summation", "∑_(0≤i≤m,0<j<n)▒P(i,j)"),
                     stacked("nary.prodA", "Product of A", "∏_(k=1)^n▒A_k"),
-                    stacked("nary.unionXY", "Union of intersections", "⋃_(n=1)^m▒〖(X_n∩Y_n)〗"),
+                    stacked(
+                        "nary.unionXY",
+                        "Union of intersections",
+                        "⋃_(n=1)^m▒〖(X_n∩Y_n)〗",
+                    ),
                 ],
             ),
         ],
@@ -242,7 +327,11 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("brk.parenSep", "Parentheses with Separator", "(⬚│⬚)"),
                     t("brk.braceSep", "Braces with Separator", "{⬚│⬚}"),
                     t("brk.angleSep", "Angle Brackets with Separator", "⟨⬚│⬚⟩"),
-                    t("brk.angleSep2", "Angle Brackets with Two Separators", "⟨⬚│⬚│⬚⟩"),
+                    t(
+                        "brk.angleSep2",
+                        "Angle Brackets with Two Separators",
+                        "⟨⬚│⬚│⬚⟩",
+                    ),
                 ],
             ),
             (
@@ -266,13 +355,21 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("brk.stack2", "Stack Object", "█(⬚@⬚)"),
                     t("brk.stack3", "Stack Object (Three)", "█(⬚@⬚@⬚)"),
                     t("brk.binom", "Binomial Coefficient", "(⬚¦⬚)"),
-                    t("brk.binomAngle", "Binomial Coefficient with Angle Brackets", "⟨⬚¦⬚⟩"),
+                    t(
+                        "brk.binomAngle",
+                        "Binomial Coefficient with Angle Brackets",
+                        "⟨⬚¦⬚⟩",
+                    ),
                 ],
             ),
             (
                 "Common Brackets",
                 &[
-                    t("brk.casesAbs", "Absolute value cases", "f(x)={█(−x,&x<0@x,&x≥0)┤"),
+                    t(
+                        "brk.casesAbs",
+                        "Absolute value cases",
+                        "f(x)={█(−x,&x<0@x,&x≥0)┤",
+                    ),
                     t("brk.nk", "Binomial Coefficient", "(n¦k)"),
                     t("brk.nk2", "Binomial Coefficient (angle)", "⟨n¦k⟩"),
                 ],
@@ -320,11 +417,31 @@ pub const STRUCTURES: &[Gallery] = &[
                 "Inverse Hyperbolic Functions",
                 &[
                     t("fn.asinh", "Inverse Hyperbolic Sine Function", "sinh^(−1)⁡⬚"),
-                    t("fn.acosh", "Inverse Hyperbolic Cosine Function", "cosh^(−1)⁡⬚"),
-                    t("fn.atanh", "Inverse Hyperbolic Tangent Function", "tanh^(−1)⁡⬚"),
-                    t("fn.acsch", "Inverse Hyperbolic Cosecant Function", "csch^(−1)⁡⬚"),
-                    t("fn.asech", "Inverse Hyperbolic Secant Function", "sech^(−1)⁡⬚"),
-                    t("fn.acoth", "Inverse Hyperbolic Cotangent Function", "coth^(−1)⁡⬚"),
+                    t(
+                        "fn.acosh",
+                        "Inverse Hyperbolic Cosine Function",
+                        "cosh^(−1)⁡⬚",
+                    ),
+                    t(
+                        "fn.atanh",
+                        "Inverse Hyperbolic Tangent Function",
+                        "tanh^(−1)⁡⬚",
+                    ),
+                    t(
+                        "fn.acsch",
+                        "Inverse Hyperbolic Cosecant Function",
+                        "csch^(−1)⁡⬚",
+                    ),
+                    t(
+                        "fn.asech",
+                        "Inverse Hyperbolic Secant Function",
+                        "sech^(−1)⁡⬚",
+                    ),
+                    t(
+                        "fn.acoth",
+                        "Inverse Hyperbolic Cotangent Function",
+                        "coth^(−1)⁡⬚",
+                    ),
                 ],
             ),
             (
@@ -366,8 +483,24 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("acc.rightHarpoon", "Rightwards Harpoon Above", "⬚\u{20D1}"),
                 ],
             ),
-            ("Boxed Formulas", &[t("acc.boxed", "Boxed Formula", "▭(⬚)"), t("acc.boxedPythagoras", "Boxed Formula (example)", "▭(a^2=b^2+c^2)")]),
-            ("Overbars and Underbars", &[t("acc.overbar", "Overbar", "¯(⬚)"), t("acc.underbar", "Underbar", "▁(⬚)")]),
+            (
+                "Boxed Formulas",
+                &[
+                    t("acc.boxed", "Boxed Formula", "▭(⬚)"),
+                    t(
+                        "acc.boxedPythagoras",
+                        "Boxed Formula (example)",
+                        "▭(a^2=b^2+c^2)",
+                    ),
+                ],
+            ),
+            (
+                "Overbars and Underbars",
+                &[
+                    t("acc.overbar", "Overbar", "¯(⬚)"),
+                    t("acc.underbar", "Underbar", "▁(⬚)"),
+                ],
+            ),
             (
                 "Common Accent Objects",
                 &[
@@ -396,7 +529,14 @@ pub const STRUCTURES: &[Gallery] = &[
             ),
             (
                 "Common Functions",
-                &[t("lim.e", "Limit Example", "lim┬(n→∞)⁡〖(1+1/n)^n〗"), t("lim.maxExample", "Maximum Example", "max┬(0≤x≤1)⁡〖xe^(−x^2)〗")],
+                &[
+                    t("lim.e", "Limit Example", "lim┬(n→∞)⁡〖(1+1/n)^n〗"),
+                    t(
+                        "lim.maxExample",
+                        "Maximum Example",
+                        "max┬(0≤x≤1)⁡〖xe^(−x^2)〗",
+                    ),
+                ],
             ),
         ],
     },
@@ -423,19 +563,57 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("op.rightArrowBelow", "Right Arrow with Text Below", "⟶┬⬚"),
                     t("op.leftArrowAbove", "Left Arrow with Text Above", "⟵┴⬚"),
                     t("op.rightArrowAbove", "Right Arrow with Text Above", "⟶┴⬚"),
-                    t("op.LeftArrowBelow", "Double Left Arrow with Text Below", "⟸┬⬚"),
-                    t("op.RightArrowBelow", "Double Right Arrow with Text Below", "⟹┬⬚"),
-                    t("op.LeftArrowAbove", "Double Left Arrow with Text Above", "⟸┴⬚"),
-                    t("op.RightArrowAbove", "Double Right Arrow with Text Above", "⟹┴⬚"),
-                    t("op.bothArrowBelow", "Left Right Arrow with Text Below", "⟷┬⬚"),
-                    t("op.bothArrowAbove", "Left Right Arrow with Text Above", "⟷┴⬚"),
-                    t("op.BothArrowBelow", "Double Left Right Arrow with Text Below", "⟺┬⬚"),
-                    t("op.BothArrowAbove", "Double Left Right Arrow with Text Above", "⟺┴⬚"),
+                    t(
+                        "op.LeftArrowBelow",
+                        "Double Left Arrow with Text Below",
+                        "⟸┬⬚",
+                    ),
+                    t(
+                        "op.RightArrowBelow",
+                        "Double Right Arrow with Text Below",
+                        "⟹┬⬚",
+                    ),
+                    t(
+                        "op.LeftArrowAbove",
+                        "Double Left Arrow with Text Above",
+                        "⟸┴⬚",
+                    ),
+                    t(
+                        "op.RightArrowAbove",
+                        "Double Right Arrow with Text Above",
+                        "⟹┴⬚",
+                    ),
+                    t(
+                        "op.bothArrowBelow",
+                        "Left Right Arrow with Text Below",
+                        "⟷┬⬚",
+                    ),
+                    t(
+                        "op.bothArrowAbove",
+                        "Left Right Arrow with Text Above",
+                        "⟷┴⬚",
+                    ),
+                    t(
+                        "op.BothArrowBelow",
+                        "Double Left Right Arrow with Text Below",
+                        "⟺┬⬚",
+                    ),
+                    t(
+                        "op.BothArrowAbove",
+                        "Double Left Right Arrow with Text Above",
+                        "⟺┴⬚",
+                    ),
                     t("op.colonEqAbove", "Text over Colon Equal", "≔┴⬚"),
                     t("op.eqAbove", "Text over Equal", "=┴⬚"),
                 ],
             ),
-            ("Common Operator Structures", &[t("op.yields", "Yields", "⟶┴(yields)"), t("op.deltaArrow", "Delta over arrow", "⟶┴∆")]),
+            (
+                "Common Operator Structures",
+                &[
+                    t("op.yields", "Yields", "⟶┴(yields)"),
+                    t("op.deltaArrow", "Delta over arrow", "⟶┴∆"),
+                ],
+            ),
         ],
     },
     Gallery {
@@ -471,7 +649,11 @@ pub const STRUCTURES: &[Gallery] = &[
                     t("mat.id2", "2×2 Identity Matrix", "■(1&0@0&1)"),
                     t("mat.id2zeros", "2×2 Identity Matrix (sparse)", "■(1&⬚@⬚&1)"),
                     t("mat.id3", "3×3 Identity Matrix", "■(1&0&0@0&1&0@0&0&1)"),
-                    t("mat.id3zeros", "3×3 Identity Matrix (sparse)", "■(1&⬚&⬚@⬚&1&⬚@⬚&⬚&1)"),
+                    t(
+                        "mat.id3zeros",
+                        "3×3 Identity Matrix (sparse)",
+                        "■(1&⬚&⬚@⬚&1&⬚@⬚&⬚&1)",
+                    ),
                 ],
             ),
             (
@@ -486,8 +668,16 @@ pub const STRUCTURES: &[Gallery] = &[
             (
                 "Sparse Matrices",
                 &[
-                    t("mat.sparse", "n×n Matrix", "(■(a_11&⋯&a_(1n)@⋮&⋱&⋮@a_(m1)&⋯&a_(mn)))"),
-                    t("mat.identityN", "n×n Identity Matrix", "[■(1&0&⋯&0@0&1&⋯&0@⋮&⋮&⋱&⋮@0&0&⋯&1)]"),
+                    t(
+                        "mat.sparse",
+                        "n×n Matrix",
+                        "(■(a_11&⋯&a_(1n)@⋮&⋱&⋮@a_(m1)&⋯&a_(mn)))",
+                    ),
+                    t(
+                        "mat.identityN",
+                        "n×n Identity Matrix",
+                        "[■(1&0&⋯&0@0&1&⋯&0@⋮&⋮&⋱&⋮@0&0&⋯&1)]",
+                    ),
                 ],
             ),
         ],
@@ -496,7 +686,9 @@ pub const STRUCTURES: &[Gallery] = &[
 
 /// Every structure template.
 pub fn templates() -> impl Iterator<Item = &'static Template> {
-    STRUCTURES.iter().flat_map(|g| g.sections.iter().flat_map(|(_, ts)| ts.iter()))
+    STRUCTURES
+        .iter()
+        .flat_map(|g| g.sections.iter().flat_map(|(_, ts)| ts.iter()))
 }
 
 pub fn template(id: &str) -> Option<&'static Template> {
@@ -505,13 +697,34 @@ pub fn template(id: &str) -> Option<&'static Template> {
 
 /// Symbol sets (the Symbols gallery's categories).
 pub const SYMBOL_SETS: &[(&str, &str)] = &[
-    ("Basic Math", "±∞=≠~×÷!∝<≪>≫≤≥∓≅≈≡∀∁∂√∛∜∪∩∅%°℉℃∆∇∃∄∈∋←↑→↓↔∴+−¬αβγδεϵθϑμπρστφωω∗∙⋮⋯⋰⋱ℵℶ∎"),
-    ("Greek Letters", "αβγδεϵζηθϑικλμνξοπϖρϱσςτυφϕχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"),
-    ("Letter-Like Symbols", "∀∁ℂ∂ðℇϝℱℊℋℌℍℎℏıℑȷℒℓℕ℘ℙℚℛℜℝℤ℧Åℬℭℰℯℳℴℵℶℷℸⅅⅆⅇⅈⅉ"),
-    ("Operators", "+−÷×±∓∝∕∗∘∙√∛∜∩∪⊎⊓⊔∧∨⊕⊖⊗⊘⊙⊚⊛⊞⊟⊠⊡⋄⋅⋆⋉⋊∔∸∖≀=≠<>≤≥≮≰≯≱≡∼≃≈≅≢≄≉≇∝≪≫∈∋∉⊂⊃⊆⊇≺≻≼≽⊏⊐⊑⊒∥⊥⊢⊣⋈≍∴∵∷≐≑≒≓≔≕≖≗≜≝≞≟∑∫∬∭∮∯∰∏∐⋂⋃⋀⋁⨀⨁⨂⨄⨆"),
-    ("Arrows", "←→↑↓↔↕⇐⇒⇑⇓⇔⇕⟵⟶⟷⟸⟹⟺↦⟼↩↪↼↽⇀⇁↿↾⇃⇂⇋⇌⇄⇆⇇⇉⇈⇊↖↗↘↙↶↷↺↻⊸↜↝↞↠↢↣↫↬↭⇚⇛↰↱⇝"),
-    ("Negated Relations", "≠≮≯≰≱≢≁≄≉≇≭≨≩⊀⊁⋠⋡∉∌⊄⊅⊈⊉⊊⊋⋢⋣⋦⋧⋨⋩⋪⋫⋬⋭∤∦⊬⊭⊮⊯∄"),
-    ("Scripts", "𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ"),
+    (
+        "Basic Math",
+        "±∞=≠~×÷!∝<≪>≫≤≥∓≅≈≡∀∁∂√∛∜∪∩∅%°℉℃∆∇∃∄∈∋←↑→↓↔∴+−¬αβγδεϵθϑμπρστφωω∗∙⋮⋯⋰⋱ℵℶ∎",
+    ),
+    (
+        "Greek Letters",
+        "αβγδεϵζηθϑικλμνξοπϖρϱσςτυφϕχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ",
+    ),
+    (
+        "Letter-Like Symbols",
+        "∀∁ℂ∂ðℇϝℱℊℋℌℍℎℏıℑȷℒℓℕ℘ℙℚℛℜℝℤ℧Åℬℭℰℯℳℴℵℶℷℸⅅⅆⅇⅈⅉ",
+    ),
+    (
+        "Operators",
+        "+−÷×±∓∝∕∗∘∙√∛∜∩∪⊎⊓⊔∧∨⊕⊖⊗⊘⊙⊚⊛⊞⊟⊠⊡⋄⋅⋆⋉⋊∔∸∖≀=≠<>≤≥≮≰≯≱≡∼≃≈≅≢≄≉≇∝≪≫∈∋∉⊂⊃⊆⊇≺≻≼≽⊏⊐⊑⊒∥⊥⊢⊣⋈≍∴∵∷≐≑≒≓≔≕≖≗≜≝≞≟∑∫∬∭∮∯∰∏∐⋂⋃⋀⋁⨀⨁⨂⨄⨆",
+    ),
+    (
+        "Arrows",
+        "←→↑↓↔↕⇐⇒⇑⇓⇔⇕⟵⟶⟷⟸⟹⟺↦⟼↩↪↼↽⇀⇁↿↾⇃⇂⇋⇌⇄⇆⇇⇉⇈⇊↖↗↘↙↶↷↺↻⊸↜↝↞↠↢↣↫↬↭⇚⇛↰↱⇝",
+    ),
+    (
+        "Negated Relations",
+        "≠≮≯≰≱≢≁≄≉≇≭≨≩⊀⊁⋠⋡∉∌⊄⊅⊈⊉⊊⊋⋢⋣⋦⋧⋨⋩⋪⋫⋬⋭∤∦⊬⊭⊮⊯∄",
+    ),
+    (
+        "Scripts",
+        "𝒜ℬ𝒞𝒟ℰℱ𝒢ℋℐ𝒥𝒦ℒℳ𝒩𝒪𝒫𝒬ℛ𝒮𝒯𝒰𝒱𝒲𝒳𝒴𝒵𝒶𝒷𝒸𝒹ℯ𝒻ℊ𝒽𝒾𝒿𝓀𝓁𝓂𝓃ℴ𝓅𝓆𝓇𝓈𝓉𝓊𝓋𝓌𝓍𝓎𝓏𝔄𝔅ℭ𝔇𝔈𝔉𝔊ℌℑ𝔍𝔎𝔏𝔐𝔑𝔒𝔓𝔔ℜ𝔖𝔗𝔘𝔙𝔚𝔛𝔜ℨ𝔸𝔹ℂ𝔻𝔼𝔽𝔾ℍ𝕀𝕁𝕂𝕃𝕄ℕ𝕆ℙℚℝ𝕊𝕋𝕌𝕍𝕎𝕏𝕐ℤ",
+    ),
     ("Geometry", "∟∠∡∢⊾⊿⋕⊥∤∥∦∶∷∴∵∎△▭▱○◊□◇⊡⊙"),
 ];
 
@@ -521,16 +734,48 @@ pub const BUILT_INS: &[(&str, &str, &str)] = &[
     ("pythagoras", "Sides of a right triangle", "a^2+b^2=c^2"),
     ("area", "Circle area from its radius", "A=πr^2"),
     ("quadratic", "Roots of ax²+bx+c", "x=(−b±√(b^2−4ac))/2a"),
-    ("binomial", "Binomial expansion of (x+a)ⁿ", "(x+a)^n=∑_(k=0)^n▒〖(n¦k) x^k a^(n−k)〗"),
-    ("expansion", "Power series of (1+x)ⁿ", "(1+x)^n=1+nx/1!+(n(n−1)x^2)/2!+⋯"),
+    (
+        "binomial",
+        "Binomial expansion of (x+a)ⁿ",
+        "(x+a)^n=∑_(k=0)^n▒〖(n¦k) x^k a^(n−k)〗",
+    ),
+    (
+        "expansion",
+        "Power series of (1+x)ⁿ",
+        "(1+x)^n=1+nx/1!+(n(n−1)x^2)/2!+⋯",
+    ),
     ("euler", "Euler's identity", "e^(iπ)+1=0"),
-    ("derivative", "Derivative as a limit", "f'(x)=lim┬(h→0)⁡〖(f(x+h)−f(x))/h〗"),
-    ("taylor", "Exponential series", "e^x=1+x/1!+x^2/2!+x^3/3!+⋯,  −∞<x<∞"),
+    (
+        "derivative",
+        "Derivative as a limit",
+        "f'(x)=lim┬(h→0)⁡〖(f(x+h)−f(x))/h〗",
+    ),
+    (
+        "taylor",
+        "Exponential series",
+        "e^x=1+x/1!+x^2/2!+x^3/3!+⋯,  −∞<x<∞",
+    ),
     ("gaussian", "Integral of e^(−x²)", "∫_(−∞)^∞▒e^(−x^2) dx=√π"),
-    ("fourier", "Sine and cosine series of f(x)", "f(x)=a_0+∑_(n=1)^∞▒〖(a_n cos⁡〖nπx/L〗+b_n sin⁡〖nπx/L〗)〗"),
-    ("trig1", "Sum or difference of sines", "sin⁡α±sin⁡β=2 sin⁡〖1/2(α±β)〗 cos⁡〖1/2(α∓β)〗"),
-    ("trig2", "Sum of cosines", "cos⁡α+cos⁡β=2 cos⁡〖1/2(α+β)〗 cos⁡〖1/2(α−β)〗"),
-    ("normal", "Normal probability density", "f(x)=1/(σ√(2π)) e^(−(x−μ)^2/(2σ^2))"),
+    (
+        "fourier",
+        "Sine and cosine series of f(x)",
+        "f(x)=a_0+∑_(n=1)^∞▒〖(a_n cos⁡〖nπx/L〗+b_n sin⁡〖nπx/L〗)〗",
+    ),
+    (
+        "trig1",
+        "Sum or difference of sines",
+        "sin⁡α±sin⁡β=2 sin⁡〖1/2(α±β)〗 cos⁡〖1/2(α∓β)〗",
+    ),
+    (
+        "trig2",
+        "Sum of cosines",
+        "cos⁡α+cos⁡β=2 cos⁡〖1/2(α+β)〗 cos⁡〖1/2(α−β)〗",
+    ),
+    (
+        "normal",
+        "Normal probability density",
+        "f(x)=1/(σ√(2π)) e^(−(x−μ)^2/(2σ^2))",
+    ),
     ("bayes", "Bayes' rule", "P(A|B)=(P(B|A)P(A))/P(B)"),
 ];
 
@@ -541,10 +786,15 @@ mod tests {
 
     fn has_leftover(a: &[MNode]) -> bool {
         a.iter().any(|n| match n {
-            MNode::Run(r) => r.text.contains('⬚') || r.text.contains('▒') || r.text.contains('┬') || r.text.contains('┴'),
-            other => {
-                (0..wordcraft_doc::math_edit::child_count(other)).any(|c| wordcraft_doc::math_edit::child(other, c).is_some_and(|x| has_leftover(x)))
+            MNode::Run(r) => {
+                r.text.contains('⬚')
+                    || r.text.contains('▒')
+                    || r.text.contains('┬')
+                    || r.text.contains('┴')
             }
+            other => (0..wordcraft_doc::math_edit::child_count(other)).any(|c| {
+                wordcraft_doc::math_edit::child(other, c).is_some_and(|x| has_leftover(x))
+            }),
         })
     }
 
@@ -555,18 +805,27 @@ mod tests {
         a.windows(2).any(|w| {
             matches!(w[0], MNode::Lim { .. } | MNode::Script { .. })
                 && matches!(&w[1], MNode::Run(r) if r.text.starts_with(|c: char| c.is_alphabetic()))
-        }) || a
-            .iter()
-            .any(|n| (0..wordcraft_doc::math_edit::child_count(n)).any(|c| wordcraft_doc::math_edit::child(n, c).is_some_and(|x| split_operand(x))))
+        }) || a.iter().any(|n| {
+            (0..wordcraft_doc::math_edit::child_count(n))
+                .any(|c| wordcraft_doc::math_edit::child(n, c).is_some_and(|x| split_operand(x)))
+        })
     }
 
     #[test]
     fn multi_letter_operands_are_grouped() {
         for tpl in templates() {
-            assert!(!split_operand(&tpl.nodes()), "{} splits an operand: {}", tpl.id, tpl.linear);
+            assert!(
+                !split_operand(&tpl.nodes()),
+                "{} splits an operand: {}",
+                tpl.id,
+                tpl.linear
+            );
         }
         for (id, _, lin) in BUILT_INS {
-            assert!(!split_operand(&parse_linear(lin)), "{id} splits an operand: {lin}");
+            assert!(
+                !split_operand(&parse_linear(lin)),
+                "{id} splits an operand: {lin}"
+            );
         }
     }
 
@@ -577,10 +836,19 @@ mod tests {
             assert!(ids.insert(tpl.id), "duplicate id {}", tpl.id);
             let n = tpl.nodes();
             assert!(!n.is_empty(), "{} builds nothing", tpl.id);
-            assert!(!has_leftover(&n), "{} left linear operators: {}", tpl.id, to_linear(&n));
+            assert!(
+                !has_leftover(&n),
+                "{} left linear operators: {}",
+                tpl.id,
+                to_linear(&n)
+            );
             // Templates with placeholders are structures, not text.
             if tpl.linear.contains('⬚') {
-                assert!(n.iter().any(|x| !matches!(x, MNode::Run(_))), "{} → {n:?}", tpl.id);
+                assert!(
+                    n.iter().any(|x| !matches!(x, MNode::Run(_))),
+                    "{} → {n:?}",
+                    tpl.id
+                );
             }
         }
         for (id, _, lin) in BUILT_INS {

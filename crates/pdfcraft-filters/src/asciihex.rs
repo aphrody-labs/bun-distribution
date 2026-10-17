@@ -25,7 +25,11 @@ pub(crate) fn decode(data: &[u8], max: usize) -> Step {
             break;
         }
         let Some(n) = nibble(b) else {
-            return Err(Failure::corrupt(NAME, format!("invalid character 0x{b:02x} at offset {i}"), out));
+            return Err(Failure::corrupt(
+                NAME,
+                format!("invalid character 0x{b:02x} at offset {i}"),
+                out,
+            ));
         };
         match hi.take() {
             None => hi = Some(n),
@@ -90,8 +94,14 @@ mod tests {
 
     #[test]
     fn limit() {
-        assert!(matches!(decode(b"414243", 2).map_err(|f| f.error), Err(FilterError::LimitExceeded(2))));
-        assert!(matches!(decode(b"41424", 2).map_err(|f| f.error), Err(FilterError::LimitExceeded(2))));
+        assert!(matches!(
+            decode(b"414243", 2).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(2))
+        ));
+        assert!(matches!(
+            decode(b"41424", 2).map_err(|f| f.error),
+            Err(FilterError::LimitExceeded(2))
+        ));
         assert_eq!(decode(b"4142", 2).ok().unwrap(), b"AB");
     }
 

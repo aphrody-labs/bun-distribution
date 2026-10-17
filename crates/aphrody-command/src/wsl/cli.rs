@@ -71,20 +71,23 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
     match run(args.action, args.config) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("Error: {error}");
             1
-        },
+        }
     }
 }
 
 pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
     if let Action::Wslg { action } = action {
-        println!("{}", serde_json::to_string_pretty(&crate::wsl::wslg::run(action)?)?);
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&crate::wsl::wslg::run(action)?)?
+        );
         return Ok(());
     }
     let config = Config::read(&config_path)?;
@@ -99,14 +102,16 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 results.push(build(&config, target)?);
             }
             serde_json::to_value(results)?
-        },
+        }
         Action::Latest { apply } => {
             serde_json::to_value(latest_kernel(&config, &config_path, apply)?)?
-        },
+        }
         Action::Status => {
             let mut reports = serde_json::Map::new();
             for target in Target::ALL {
-                let path = config.output_root.join(format!("{}-report.json", target.name()));
+                let path = config
+                    .output_root
+                    .join(format!("{}-report.json", target.name()));
                 reports.insert(
                     target.name().into(),
                     if path.exists() {
@@ -117,7 +122,7 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 );
             }
             serde_json::Value::Object(reports)
-        },
+        }
         Action::Verify { target } => serde_json::to_value(
             expected_artifacts(&config, target)
                 .iter()
@@ -127,7 +132,7 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
         Action::Import { install_dir } => {
             import(&config, &install_dir)?;
             serde_json::json!({"imported":config.distribution})
-        },
+        }
         Action::Wslg { .. } => unreachable!("handled before the build configuration is read"),
         Action::Dependencies => {
             let status = std::process::Command::new("sudo")
@@ -172,7 +177,9 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 ])
                 .status()?;
             if !status.success() {
-                return Err(crate::wsl::Error::Invalid("dependency installation failed".into()));
+                return Err(crate::wsl::Error::Invalid(
+                    "dependency installation failed".into(),
+                ));
             }
             // Rust-for-Linux needs bindgen >= 0.71.1 (newer than older distro packages) and the rust-src component.
             let status = std::process::Command::new("cargo")
@@ -180,17 +187,21 @@ pub fn run(action: Action, config_path: PathBuf) -> Result<()> {
                 .args(["install", "--locked", "bindgen-cli"])
                 .status()?;
             if !status.success() {
-                return Err(crate::wsl::Error::Invalid("bindgen-cli installation failed".into()));
+                return Err(crate::wsl::Error::Invalid(
+                    "bindgen-cli installation failed".into(),
+                ));
             }
             let status = std::process::Command::new("rustup")
                 .no_window()
                 .args(["component", "add", "rust-src"])
                 .status()?;
             if !status.success() {
-                return Err(crate::wsl::Error::Invalid("rust-src installation failed".into()));
+                return Err(crate::wsl::Error::Invalid(
+                    "rust-src installation failed".into(),
+                ));
             }
             doctor(&config)?
-        },
+        }
     };
     println!("{}", serde_json::to_string_pretty(&result)?);
     Ok(())

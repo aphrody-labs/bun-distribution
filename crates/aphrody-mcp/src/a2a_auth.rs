@@ -13,12 +13,16 @@ fn checked(value: String) -> Result<String, &'static str> {
 
 fn from_file(path: &Path) -> Result<String, &'static str> {
     let file = std::fs::File::open(path).map_err(|_| "A2A credential file unavailable")?;
-    let metadata = file.metadata().map_err(|_| "A2A credential file unavailable")?;
+    let metadata = file
+        .metadata()
+        .map_err(|_| "A2A credential file unavailable")?;
     if !metadata.is_file() || metadata.len() > 4096 {
         return Err("Invalid A2A credential file");
     }
     let mut value = String::new();
-    file.take(4097).read_to_string(&mut value).map_err(|_| "A2A credential file unreadable")?;
+    file.take(4097)
+        .read_to_string(&mut value)
+        .map_err(|_| "A2A credential file unreadable")?;
     checked(value)
 }
 
@@ -47,7 +51,13 @@ mod tests {
         assert_eq!(from_file(&path).unwrap(), "first");
         std::fs::write(&path, "replacement\n").unwrap();
         assert_eq!(from_file(&path).unwrap(), "replacement");
-        for value in ["", "Bearer secret", "secret\nsecond", "non-ascii-🛑", &"x".repeat(4097)] {
+        for value in [
+            "",
+            "Bearer secret",
+            "secret\nsecond",
+            "non-ascii-🛑",
+            &"x".repeat(4097),
+        ] {
             std::fs::write(&path, value).unwrap();
             assert!(from_file(&path).is_err());
         }

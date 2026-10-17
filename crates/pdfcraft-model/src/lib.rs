@@ -1,6 +1,13 @@
 //! pdfcraft-model — typed views over the PDF object graph (L2). See the README.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use pdfcraft_cos::{Dict, Document, ObjRef, Object};
 
@@ -20,8 +27,19 @@ pub struct Page {
 
 fn rect(doc: &Document, o: Option<&Object>) -> Option<[f64; 4]> {
     let o = doc.resolve(o?);
-    let v: Vec<f64> = o.as_array()?.iter().filter_map(|x| doc.resolve(x).as_f64()).collect();
-    (v.len() == 4 && v.iter().all(|x| x.is_finite())).then(|| [v[0].min(v[2]), v[1].min(v[3]), v[0].max(v[2]), v[1].max(v[3])])
+    let v: Vec<f64> = o
+        .as_array()?
+        .iter()
+        .filter_map(|x| doc.resolve(x).as_f64())
+        .collect();
+    (v.len() == 4 && v.iter().all(|x| x.is_finite())).then(|| {
+        [
+            v[0].min(v[2]),
+            v[1].min(v[3]),
+            v[0].max(v[2]),
+            v[1].max(v[3]),
+        ]
+    })
 }
 
 impl Page {
@@ -30,7 +48,12 @@ impl Page {
         let media = rect(doc, self.dict.get(b"MediaBox")).unwrap_or([0.0, 0.0, 612.0, 792.0]);
         match rect(doc, self.dict.get(b"CropBox")) {
             Some(c) => {
-                let r = [c[0].max(media[0]), c[1].max(media[1]), c[2].min(media[2]), c[3].min(media[3])];
+                let r = [
+                    c[0].max(media[0]),
+                    c[1].max(media[1]),
+                    c[2].min(media[2]),
+                    c[3].min(media[3]),
+                ];
                 if r[2] > r[0] && r[3] > r[1] { r } else { media }
             }
             None => media,
@@ -39,13 +62,23 @@ impl Page {
 
     /// Clockwise rotation when displayed: 0, 90, 180 or 270.
     pub fn rotation(&self, doc: &Document) -> i64 {
-        self.dict.get(b"Rotate").and_then(|o| doc.resolve(o).as_int()).unwrap_or(0).rem_euclid(360) / 90 * 90
+        self.dict
+            .get(b"Rotate")
+            .and_then(|o| doc.resolve(o).as_int())
+            .unwrap_or(0)
+            .rem_euclid(360)
+            / 90
+            * 90
     }
 
     /// The size of the page's user-space unit in points (`/UserUnit`; it isn't inherited), read
     /// as Acrobat reads it: a number from 1 up, at most [`MAX_USER_UNIT`]; anything else is 1.
     pub fn user_unit(&self, doc: &Document) -> f64 {
-        self.dict.get(b"UserUnit").and_then(|o| doc.resolve(o).as_f64()).filter(|u| *u >= 1.0).map_or(1.0, |u| u.min(MAX_USER_UNIT))
+        self.dict
+            .get(b"UserUnit")
+            .and_then(|o| doc.resolve(o).as_f64())
+            .filter(|u| *u >= 1.0)
+            .map_or(1.0, |u| u.min(MAX_USER_UNIT))
     }
 
     /// The displayed size (width, height) in points, after `/UserUnit` and `/Rotate`.
@@ -53,7 +86,11 @@ impl Page {
         let c = self.crop(doc);
         let u = self.user_unit(doc);
         let (w, h) = ((c[2] - c[0]) * u, (c[3] - c[1]) * u);
-        if self.rotation(doc) % 180 == 0 { (w, h) } else { (h, w) }
+        if self.rotation(doc) % 180 == 0 {
+            (w, h)
+        } else {
+            (h, w)
+        }
     }
 
     /// The matrix `[a b c d e f]` from display space (points, origin at the bottom-left of the
@@ -61,7 +98,11 @@ impl Page {
     pub fn view_matrix(&self, doc: &Document) -> [f64; 6] {
         let m = view_matrix_for(self.rotation(doc), self.crop(doc));
         let u = self.user_unit(doc);
-        if u == 1.0 { m } else { [m[0] / u, m[1] / u, m[2] / u, m[3] / u, m[4], m[5]] }
+        if u == 1.0 {
+            m
+        } else {
+            [m[0] / u, m[1] / u, m[2] / u, m[3] / u, m[4], m[5]]
+        }
     }
 }
 
@@ -82,8 +123,12 @@ pub fn view_matrix_for(rotation: i64, crop: [f64; 4]) -> [f64; 6] {
 /// Leaf pages in document order, with inherited attributes resolved. Cycles and absurdly deep
 /// trees are cut off rather than followed.
 pub fn pages(doc: &Document) -> Vec<Page> {
-    let Some(root) = doc.root() else { return Vec::new() };
-    let Some(top) = doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")) else { return Vec::new() };
+    let Some(root) = doc.root() else {
+        return Vec::new();
+    };
+    let Some(top) = doc.get(root).as_dict().and_then(|d| d.reference(b"Pages")) else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     let mut seen = std::collections::HashSet::new();
     let mut stack: Vec<(ObjRef, Dict)> = vec![(top, Dict::new())];
@@ -99,9 +144,14 @@ pub fn pages(doc: &Document) -> Vec<Page> {
                 attrs.set(k.to_vec(), v.clone());
             }
         }
-        let is_pages = d.name(b"Type") == Some(b"Pages") || (d.contains(b"Kids") && d.name(b"Type") != Some(b"Page"));
+        let is_pages = d.name(b"Type") == Some(b"Pages")
+            || (d.contains(b"Kids") && d.name(b"Type") != Some(b"Page"));
         if is_pages {
-            let kids = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
+            let kids = d
+                .get(b"Kids")
+                .map(|k| doc.resolve(k))
+                .and_then(|k| k.as_array().cloned())
+                .unwrap_or_default();
             for k in kids.iter().rev() {
                 if let Some(r) = k.as_ref() {
                     stack.push((r, attrs.clone()));
@@ -136,7 +186,9 @@ mod tests {
     fn doc_with(rotate: i64, pages: &str, page: &str) -> Document {
         let objs = [
             "<< /Type /Catalog /Pages 2 0 R >>".to_string(),
-            format!("<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 600 800] /Rotate {rotate} /Resources << /Font << >> >> {pages} >>"),
+            format!(
+                "<< /Type /Pages /Kids [3 0 R] /Count 1 /MediaBox [0 0 600 800] /Rotate {rotate} /Resources << /Font << >> >> {pages} >>"
+            ),
             format!("<< /Type /Page /Parent 2 0 R /CropBox [10 20 210 320] {page} >>"),
         ];
         let mut out = b"%PDF-1.7\n".to_vec();
@@ -146,11 +198,19 @@ mod tests {
             out.extend_from_slice(format!("{} 0 obj\n{o}\nendobj\n", i + 1).as_bytes());
         }
         let x = out.len();
-        out.extend_from_slice(format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!("xref\n0 {}\n0000000000 65535 f \n", objs.len() + 1).as_bytes(),
+        );
         for o in offs {
             out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
         }
-        out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1).as_bytes());
+        out.extend_from_slice(
+            format!(
+                "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n",
+                objs.len() + 1
+            )
+            .as_bytes(),
+        );
         Document::open(Arc::new(out)).unwrap()
     }
 
@@ -168,9 +228,15 @@ mod tests {
             let (w, h) = p.display_size(&d);
             let m = p.view_matrix(&d);
             // The displayed page's corners map onto the crop box's corners.
-            let corners: Vec<[f64; 2]> = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].iter().map(|(x, y)| apply(m, *x, *y)).collect();
+            let corners: Vec<[f64; 2]> = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+                .iter()
+                .map(|(x, y)| apply(m, *x, *y))
+                .collect();
             for c in &corners {
-                assert!([10.0, 210.0].contains(&c[0]) && [20.0, 320.0].contains(&c[1]), "{rotate}: {c:?}");
+                assert!(
+                    [10.0, 210.0].contains(&c[0]) && [20.0, 320.0].contains(&c[1]),
+                    "{rotate}: {c:?}"
+                );
             }
             // The displayed top-left corner is where a reader sees it.
             let tl = apply(m, 0.0, h);
@@ -192,11 +258,23 @@ mod tests {
             let d = doc_with(rotate, "", "/UserUnit 2");
             let p = &pages(&d)[0];
             let (w, h) = p.display_size(&d);
-            assert_eq!((w, h), if rotate % 180 == 0 { (400.0, 600.0) } else { (600.0, 400.0) }, "{rotate}");
+            assert_eq!(
+                (w, h),
+                if rotate % 180 == 0 {
+                    (400.0, 600.0)
+                } else {
+                    (600.0, 400.0)
+                },
+                "{rotate}"
+            );
             let plain = doc(rotate);
             let unscaled = pages(&plain)[0].view_matrix(&plain);
             for (x, y) in [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h), (37.0, 81.0)] {
-                assert_eq!(apply(p.view_matrix(&d), x, y), apply(unscaled, x / 2.0, y / 2.0), "{rotate}: ({x}, {y})");
+                assert_eq!(
+                    apply(p.view_matrix(&d), x, y),
+                    apply(unscaled, x / 2.0, y / 2.0),
+                    "{rotate}: ({x}, {y})"
+                );
             }
         }
         for (pages_attrs, page_attrs, unit) in [
@@ -209,7 +287,11 @@ mod tests {
             ("", "/UserUnit 100000", MAX_USER_UNIT),
         ] {
             let d = doc_with(0, pages_attrs, page_attrs);
-            assert_eq!(pages(&d)[0].user_unit(&d), unit, "{pages_attrs} {page_attrs}");
+            assert_eq!(
+                pages(&d)[0].user_unit(&d),
+                unit,
+                "{pages_attrs} {page_attrs}"
+            );
         }
     }
 }

@@ -152,12 +152,16 @@ pub struct YaraReport {
 pub fn scan(rules_src: &str, data: &[u8]) -> Result<YaraReport, YaraError> {
     // --- Compile ---
     let mut compiler = Compiler::new();
-    compiler.add_source(rules_src).map_err(|e| YaraError::Compile(e.to_string()))?;
+    compiler
+        .add_source(rules_src)
+        .map_err(|e| YaraError::Compile(e.to_string()))?;
     let rules = compiler.build();
 
     // --- Scan ---
     let mut scanner = yara_x::Scanner::new(&rules);
-    let results = scanner.scan(data).map_err(|e| YaraError::Scan(e.to_string()))?;
+    let results = scanner
+        .scan(data)
+        .map_err(|e| YaraError::Scan(e.to_string()))?;
 
     // --- Collect matches ---
     let mut matches: Vec<YaraRuleMatch> = Vec::new();
@@ -165,7 +169,10 @@ pub fn scan(rules_src: &str, data: &[u8]) -> Result<YaraReport, YaraError> {
     for matching_rule in results.matching_rules() {
         let rule_name = matching_rule.identifier().to_owned();
         let namespace = matching_rule.namespace().to_owned();
-        let tags: Vec<String> = matching_rule.tags().map(|t| t.identifier().to_owned()).collect();
+        let tags: Vec<String> = matching_rule
+            .tags()
+            .map(|t| t.identifier().to_owned())
+            .collect();
 
         let matched_strings: Vec<YaraStringMatch> = matching_rule
             .patterns()
@@ -187,10 +194,19 @@ pub fn scan(rules_src: &str, data: &[u8]) -> Result<YaraReport, YaraError> {
             })
             .collect();
 
-        matches.push(YaraRuleMatch { rule_name, namespace, tags, matched_strings });
+        matches.push(YaraRuleMatch {
+            rule_name,
+            namespace,
+            tags,
+            matched_strings,
+        });
     }
 
-    Ok(YaraReport { scanned_bytes: data.len(), match_count: matches.len(), matches })
+    Ok(YaraReport {
+        scanned_bytes: data.len(),
+        match_count: matches.len(),
+        matches,
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -219,7 +235,10 @@ mod tests {
         let report = scan(rules, &data).expect("scan must succeed on valid rules + data");
 
         assert_eq!(report.scanned_bytes, data.len());
-        assert_eq!(report.match_count, 1, "exactly one rule must match: {report:?}");
+        assert_eq!(
+            report.match_count, 1,
+            "exactly one rule must match: {report:?}"
+        );
         let m = &report.matches[0];
         assert_eq!(m.rule_name, "test_mz");
         assert_eq!(m.namespace, "default");
@@ -271,7 +290,10 @@ mod tests {
         mz_data.extend_from_slice(&[0u8; 62]);
 
         let report = scan(rules, &mz_data).expect("scan must succeed");
-        assert_eq!(report.match_count, 1, "only detect_mz should match: {report:?}");
+        assert_eq!(
+            report.match_count, 1,
+            "only detect_mz should match: {report:?}"
+        );
         assert_eq!(report.matches[0].rule_name, "detect_mz");
     }
 
@@ -303,7 +325,10 @@ mod tests {
 
         assert!(json["scanned_bytes"].is_number());
         assert!(json["match_count"].is_number());
-        assert!(json["matches"].is_array(), "matches must always be an array");
+        assert!(
+            json["matches"].is_array(),
+            "matches must always be an array"
+        );
         let first = &json["matches"][0];
         assert!(first["rule_name"].is_string());
         assert!(first["namespace"].is_string());

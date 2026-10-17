@@ -30,13 +30,18 @@ fn max_diff(a: &[[f32; 4]; 4], b: &[[f32; 4]; 4]) -> f32 {
 }
 
 fn main() {
-    let path = std::env::args().nth(1).expect("usage: validate_g4sk <fichier.g4sk>");
+    let path = std::env::args()
+        .nth(1)
+        .expect("usage: validate_g4sk <fichier.g4sk>");
     let data = std::fs::read(&path).expect("lire g4sk");
     let header = g4sk::parse_header(&data).expect("header");
     let bones = g4sk::parse_hierarchy(&data, &header);
     let poses = g4sk::parse_poses(&data, &header).expect("poses");
     let parents: Vec<i16> = bones.bones.iter().map(|b| b.parent_index).collect();
-    println!("os={} heuristic_parents={}", header.bone_count, bones.heuristic);
+    println!(
+        "os={} heuristic_parents={}",
+        header.bone_count, bones.heuristic
+    );
 
     let world = g4sk::rest_world_matrices(&poses, &parents);
 
@@ -48,8 +53,12 @@ fn main() {
     println!("max |FK(C) − A| = {max_fk:.2e}  (attendu < 1e-4)");
 
     // 2) world(A) · inverse_bind ≈ identité.
-    let ident =
-        [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]];
+    let ident = [
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ];
     let mut max_inv = 0.0f32;
     for (i, p) in poses.iter().enumerate() {
         let a = read_mat_a(&data, i);

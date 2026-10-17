@@ -250,19 +250,19 @@ pub fn keysym_to_code(keysym: u32) -> Option<String> {
         return Some(format!("Numpad{}", keysym - 0xFFB0));
     }
     let alias = match keysym {
-        0xFFE7 => Some("MetaLeft"),         // Meta_L
-        0xFFE8 => Some("MetaRight"),        // Meta_R
-        0xFE03 => Some("AltRight"),         // ISO_Level3_Shift (AltGr)
-        0xFF9F => Some("Delete"),           // KP_Delete
-        0xFF9E => Some("Insert"),           // KP_Insert
-        0xFF95 => Some("Home"),             // KP_Home
-        0xFF9C => Some("End"),              // KP_End
-        0xFF96 => Some("ArrowLeft"),        // KP_Left
-        0xFF97 => Some("ArrowUp"),          // KP_Up
-        0xFF98 => Some("ArrowRight"),       // KP_Right
-        0xFF99 => Some("ArrowDown"),        // KP_Down
-        0xFF9A => Some("PageUp"),           // KP_Prior
-        0xFF9B => Some("PageDown"),         // KP_Next
+        0xFFE7 => Some("MetaLeft"),   // Meta_L
+        0xFFE8 => Some("MetaRight"),  // Meta_R
+        0xFE03 => Some("AltRight"),   // ISO_Level3_Shift (AltGr)
+        0xFF9F => Some("Delete"),     // KP_Delete
+        0xFF9E => Some("Insert"),     // KP_Insert
+        0xFF95 => Some("Home"),       // KP_Home
+        0xFF9C => Some("End"),        // KP_End
+        0xFF96 => Some("ArrowLeft"),  // KP_Left
+        0xFF97 => Some("ArrowUp"),    // KP_Up
+        0xFF98 => Some("ArrowRight"), // KP_Right
+        0xFF99 => Some("ArrowDown"),  // KP_Down
+        0xFF9A => Some("PageUp"),     // KP_Prior
+        0xFF9B => Some("PageDown"),   // KP_Next
         _ => None,
     };
     if let Some(code) = alias {
@@ -300,7 +300,11 @@ pub fn combo_to_keysyms(combo: &str) -> Option<Vec<u32>> {
     let parts: Vec<&str> = if combo.trim() == "+" {
         vec!["+"]
     } else {
-        combo.split('+').map(str::trim).filter(|p| !p.is_empty()).collect()
+        combo
+            .split('+')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .collect()
     };
     if parts.is_empty() {
         return None;
@@ -395,7 +399,10 @@ mod tests {
 
     #[test]
     fn combos_parse() {
-        assert_eq!(combo_to_keysyms("ctrl+shift+t"), Some(vec![0xFFE3, 0xFFE1, u32::from(b't')]));
+        assert_eq!(
+            combo_to_keysyms("ctrl+shift+t"),
+            Some(vec![0xFFE3, 0xFFE1, u32::from(b't')])
+        );
         assert_eq!(combo_to_keysyms("Enter"), Some(vec![0xFF0D]));
         assert_eq!(combo_to_keysyms("Alt+F4"), Some(vec![0xFFE9, 0xFFC1]));
         assert_eq!(combo_to_keysyms("KeyA"), Some(vec![u32::from(b'a')]));
@@ -409,7 +416,11 @@ mod tests {
     fn keysym_round_trip() {
         for c in all_codes() {
             let ks = code_to_keysym(&c).unwrap();
-            assert_eq!(keysym_to_code(ks).as_deref(), Some(c.as_str()), "keysym {ks:#x}");
+            assert_eq!(
+                keysym_to_code(ks).as_deref(),
+                Some(c.as_str()),
+                "keysym {ks:#x}"
+            );
         }
         assert_eq!(keysym_to_code(u32::from(b'A')).as_deref(), Some("KeyA"));
         assert_eq!(keysym_to_code(0xFE03).as_deref(), Some("AltRight"));

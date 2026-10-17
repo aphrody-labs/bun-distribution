@@ -7,9 +7,9 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     system::{Commands, Query},
 };
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
-use bevy_ui::{percent, px, BackgroundColor, Node, PositionType, ZIndex};
+use bevy_ui::{BackgroundColor, Node, PositionType, ZIndex, percent, px};
 use bevy_ui_render::ui_material::MaterialNode;
 
 use crate::{

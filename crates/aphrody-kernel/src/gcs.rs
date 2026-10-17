@@ -53,20 +53,32 @@ impl GcsConfig {
         client: &reqwest::Client,
         home: Option<&Path>,
     ) -> Result<Self, SubsystemError> {
-        let emulator = std::env::var("STORAGE_EMULATOR_HOST").ok().filter(|v| !v.is_empty());
+        let emulator = std::env::var("STORAGE_EMULATOR_HOST")
+            .ok()
+            .filter(|v| !v.is_empty());
         let endpoint = emulator.clone().unwrap_or_else(|| GCS_ENDPOINT.to_owned());
-        if let Some(token) =
-            std::env::var("GOOGLE_OAUTH_ACCESS_TOKEN").ok().filter(|t| !t.is_empty())
+        if let Some(token) = std::env::var("GOOGLE_OAUTH_ACCESS_TOKEN")
+            .ok()
+            .filter(|t| !t.is_empty())
         {
-            return Ok(Self { endpoint, token: Some(token) });
+            return Ok(Self {
+                endpoint,
+                token: Some(token),
+            });
         }
         let adc = adc_path(home);
         match adc.as_deref() {
             Some(path) if path.is_file() => {
                 let token = refresh_adc(client, path).await?;
-                Ok(Self { endpoint, token: Some(token) })
-            },
-            _ if emulator.is_some() => Ok(Self { endpoint, token: None }),
+                Ok(Self {
+                    endpoint,
+                    token: Some(token),
+                })
+            }
+            _ if emulator.is_some() => Ok(Self {
+                endpoint,
+                token: None,
+            }),
             searched => Err(SubsystemError::Failed(no_credentials_message(searched))),
         }
     }
@@ -78,8 +90,11 @@ fn no_credentials_message(searched: Option<&Path>) -> String {
                     credentials file, or run `gcloud auth application-default login`";
     match searched {
         Some(path) => {
-            format!("no GCP credentials: {} is not an existing file; {remedies}", path.display())
-        },
+            format!(
+                "no GCP credentials: {} is not an existing file; {remedies}",
+                path.display()
+            )
+        }
         None => format!("no GCP credentials: {remedies}"),
     }
 }
@@ -118,13 +133,17 @@ async fn refresh_adc(
     let raw = std::fs::read_to_string(path).map_err(|e| failed("failed to read ADC file", e))?;
     let creds: Value = serde_json::from_str(&raw).map_err(|e| failed("invalid ADC file", e))?;
     match creds.get("type").and_then(Value::as_str) {
-        Some("authorized_user") => {},
+        Some("authorized_user") => {}
         Some(other) => {
             return Err(SubsystemError::Failed(format!(
                 "ADC credential type `{other}` is not supported for GCS listing; export GOOGLE_OAUTH_ACCESS_TOKEN (e.g. `gcloud auth print-access-token`)"
             )));
-        },
-        None => return Err(SubsystemError::Failed("ADC file has no `type` field".into())),
+        }
+        None => {
+            return Err(SubsystemError::Failed(
+                "ADC file has no `type` field".into(),
+            ));
+        }
     }
     let field = |name: &str| {
         creds
@@ -145,9 +164,15 @@ async fn refresh_adc(
         .await
         .map_err(|e| failed("OAuth token refresh failed", e))?;
     let status = response.status();
-    let body: Value = response.json().await.map_err(|e| failed("OAuth token refresh failed", e))?;
+    let body: Value = response
+        .json()
+        .await
+        .map_err(|e| failed("OAuth token refresh failed", e))?;
     if !status.is_success() {
-        let reason = body.get("error").and_then(Value::as_str).unwrap_or("unknown error");
+        let reason = body
+            .get("error")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown error");
         return Err(SubsystemError::Failed(format!(
             "OAuth token refresh failed ({status}): {reason}"
         )));
@@ -176,9 +201,14 @@ pub async fn list(
     prefix: &str,
 ) -> Result<Value, SubsystemError> {
     if bucket.is_empty() || bucket.contains('/') {
-        return Err(SubsystemError::InvalidArguments(format!("invalid bucket name: {bucket:?}")));
+        return Err(SubsystemError::InvalidArguments(format!(
+            "invalid bucket name: {bucket:?}"
+        )));
     }
-    let url = format!("{}/storage/v1/b/{bucket}/o", config.endpoint.trim_end_matches('/'));
+    let url = format!(
+        "{}/storage/v1/b/{bucket}/o",
+        config.endpoint.trim_end_matches('/')
+    );
     let mut items = Vec::new();
     let mut prefixes = Vec::new();
     let mut page_token: Option<String> = None;
@@ -186,7 +216,10 @@ pub async fn list(
         let mut query = vec![
             ("prefix", prefix.to_owned()),
             ("delimiter", "/".to_owned()),
-            ("fields", "items(name,size,updated,contentType),prefixes,nextPageToken".to_owned()),
+            (
+                "fields",
+                "items(name,size,updated,contentType),prefixes,nextPageToken".to_owned(),
+            ),
         ];
         if let Some(token) = &page_token {
             query.push(("pageToken", token.clone()));
@@ -195,16 +228,30 @@ pub async fn list(
         if let Some(token) = &config.token {
             request = request.bearer_auth(token);
         }
-        let response = request.send().await.map_err(|e| failed("GCS request failed", e))?;
+        let response = request
+            .send()
+            .await
+            .map_err(|e| failed("GCS request failed", e))?;
         let status = response.status();
-        let body: Value =
-            response.json().await.map_err(|e| failed("GCS response is not JSON", e))?;
+        let body: Value = response
+            .json()
+            .await
+            .map_err(|e| failed("GCS response is not JSON", e))?;
         if !status.is_success() {
-            let message =
-                body.pointer("/error/message").and_then(Value::as_str).unwrap_or("unknown error");
-            return Err(SubsystemError::Failed(format!("GCS list failed ({status}): {message}")));
+            let message = body
+                .pointer("/error/message")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown error");
+            return Err(SubsystemError::Failed(format!(
+                "GCS list failed ({status}): {message}"
+            )));
         }
-        for item in body.get("items").and_then(Value::as_array).into_iter().flatten() {
+        for item in body
+            .get("items")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
             items.push(json!({
                 "name": item.get("name").cloned().unwrap_or(Value::Null),
                 "url": format!("gs://{bucket}/{}", item.get("name").and_then(Value::as_str).unwrap_or_default()),
@@ -216,12 +263,20 @@ pub async fn list(
                 "content_type": item.get("contentType").cloned().unwrap_or(Value::Null),
             }));
         }
-        for p in body.get("prefixes").and_then(Value::as_array).into_iter().flatten() {
+        for p in body
+            .get("prefixes")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
             if let Some(p) = p.as_str() {
                 prefixes.push(json!(format!("gs://{bucket}/{p}")));
             }
         }
-        page_token = body.get("nextPageToken").and_then(Value::as_str).map(str::to_owned);
+        page_token = body
+            .get("nextPageToken")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
         if page_token.is_none() {
             break;
         }
@@ -300,9 +355,14 @@ mod tests {
             (200, r#"{"items":[{"name":"models/b.bin","size":"20","updated":"2026-01-02T00:00:00Z"}]}"#.into()),
         ])
         .await;
-        let config = GcsConfig { endpoint, token: Some("tok".into()) };
+        let config = GcsConfig {
+            endpoint,
+            token: Some("tok".into()),
+        };
         let client = http_client().unwrap();
-        let out = list(&client, &config, "bkt", "models/").await.expect("list");
+        let out = list(&client, &config, "bkt", "models/")
+            .await
+            .expect("list");
         assert_eq!(out["count"], 2);
         assert_eq!(out["items"][0]["name"], "models/a.bin");
         assert_eq!(out["items"][0]["size"], 10);
@@ -312,7 +372,11 @@ mod tests {
 
         let requests = server.await.unwrap();
         assert!(requests[0].starts_with("GET /storage/v1/b/bkt/o?prefix=models%2F&delimiter=%2F"));
-        assert!(requests[0].to_ascii_lowercase().contains("authorization: bearer tok"));
+        assert!(
+            requests[0]
+                .to_ascii_lowercase()
+                .contains("authorization: bearer tok")
+        );
         assert!(requests[1].contains("pageToken=p2"));
     }
 
@@ -323,16 +387,26 @@ mod tests {
             r#"{"error":{"code":404,"message":"The specified bucket does not exist."}}"#.into(),
         )])
         .await;
-        let config = GcsConfig { endpoint, token: None };
-        let err = list(&http_client().unwrap(), &config, "missing", "").await.unwrap_err();
+        let config = GcsConfig {
+            endpoint,
+            token: None,
+        };
+        let err = list(&http_client().unwrap(), &config, "missing", "")
+            .await
+            .unwrap_err();
         assert!(err.to_string().contains("bucket does not exist"), "{err}");
         server.await.unwrap();
     }
 
     #[tokio::test]
     async fn rejects_invalid_bucket() {
-        let config = GcsConfig { endpoint: "http://127.0.0.1:9".into(), token: None };
-        let err = list(&http_client().unwrap(), &config, "a/b", "").await.unwrap_err();
+        let config = GcsConfig {
+            endpoint: "http://127.0.0.1:9".into(),
+            token: None,
+        };
+        let err = list(&http_client().unwrap(), &config, "a/b", "")
+            .await
+            .unwrap_err();
         assert!(matches!(err, SubsystemError::InvalidArguments(_)));
     }
 
@@ -342,7 +416,9 @@ mod tests {
         let bucket = std::env::var("GCS_TEST_BUCKET").expect("GCS_TEST_BUCKET");
         let client = http_client().unwrap();
         let home = std::env::var_os("HOME").map(PathBuf::from);
-        let config = GcsConfig::from_env(&client, home.as_deref()).await.expect("credentials");
+        let config = GcsConfig::from_env(&client, home.as_deref())
+            .await
+            .expect("credentials");
         let out = list(&client, &config, &bucket, "").await.expect("list");
         assert!(out["items"].is_array());
     }
@@ -361,7 +437,10 @@ mod tests {
                 Some(PathBuf::from("/explicit/creds.json"))
             );
         }
-        let without_file = table([("CLOUDSDK_CONFIG", "/gcloud-config"), ("APPDATA", "/appdata")]);
+        let without_file = table([
+            ("CLOUDSDK_CONFIG", "/gcloud-config"),
+            ("APPDATA", "/appdata"),
+        ]);
         for windows in [false, true] {
             assert_eq!(
                 adc_path_from(&without_file, windows, home),
@@ -377,7 +456,12 @@ mod tests {
         let xdg = table([("XDG_CONFIG_HOME", "/xdg"), ("APPDATA", "/appdata")]);
         assert_eq!(
             adc_path_from(&xdg, false, Some(Path::new("/h"))),
-            Some(Path::new("/h").join(".config").join("gcloud").join(ADC_FILE))
+            Some(
+                Path::new("/h")
+                    .join(".config")
+                    .join("gcloud")
+                    .join(ADC_FILE)
+            )
         );
         assert_eq!(adc_path_from(&none, false, None), None);
         // On Windows it is `%APPDATA%\gcloud`; without APPDATA there is no default.
@@ -390,10 +474,18 @@ mod tests {
 
     #[test]
     fn empty_adc_variables_count_as_unset() {
-        let env = table([("GOOGLE_APPLICATION_CREDENTIALS", ""), ("CLOUDSDK_CONFIG", "")]);
+        let env = table([
+            ("GOOGLE_APPLICATION_CREDENTIALS", ""),
+            ("CLOUDSDK_CONFIG", ""),
+        ]);
         assert_eq!(
             adc_path_from(&env, false, Some(Path::new("/h"))),
-            Some(Path::new("/h").join(".config").join("gcloud").join(ADC_FILE))
+            Some(
+                Path::new("/h")
+                    .join(".config")
+                    .join("gcloud")
+                    .join(ADC_FILE)
+            )
         );
     }
 

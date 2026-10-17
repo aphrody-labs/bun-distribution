@@ -12,27 +12,71 @@ use vectorcraft_geom::{Affine, ParamCurve, PathData, Point, Rect, SubPath, shape
 pub enum TracedShape {
     /// A rectangle `width` × `height` about `center`, turned by `rotation`, its corners rounded
     /// with `radius` (0: square corners).
-    Rectangle { center: Point, width: f64, height: f64, radius: f64, rotation: f64 },
+    Rectangle {
+        center: Point,
+        width: f64,
+        height: f64,
+        radius: f64,
+        rotation: f64,
+    },
     /// An ellipse with radii `rx` and `ry` about `center`, turned by `rotation` (a circle: equal
     /// radii, no rotation).
-    Ellipse { center: Point, rx: f64, ry: f64, rotation: f64 },
+    Ellipse {
+        center: Point,
+        rx: f64,
+        ry: f64,
+        rotation: f64,
+    },
     /// A regular polygon: its first corner `rotation` from straight up.
-    Polygon { center: Point, radius: f64, sides: u32, rotation: f64 },
+    Polygon {
+        center: Point,
+        radius: f64,
+        sides: u32,
+        rotation: f64,
+    },
 }
 
 impl TracedShape {
     /// The shape's outline.
     pub fn path(&self) -> PathData {
-        let turned = |p: PathData, c: Point, deg: f64| p.transformed(Affine::rotate_about(deg.to_radians(), c));
+        let turned = |p: PathData, c: Point, deg: f64| {
+            p.transformed(Affine::rotate_about(deg.to_radians(), c))
+        };
         match *self {
-            TracedShape::Rectangle { center, width, height, radius, rotation } => {
+            TracedShape::Rectangle {
+                center,
+                width,
+                height,
+                radius,
+                rotation,
+            } => {
                 let r = Rect::from_center_size(center, (width, height));
-                turned(if radius > 0.0 { shapes::rounded_rectangle(r, radius) } else { shapes::rectangle(r) }, center, rotation)
+                turned(
+                    if radius > 0.0 {
+                        shapes::rounded_rectangle(r, radius)
+                    } else {
+                        shapes::rectangle(r)
+                    },
+                    center,
+                    rotation,
+                )
             }
-            TracedShape::Ellipse { center, rx, ry, rotation } => {
-                turned(shapes::ellipse(Rect::from_center_size(center, (2.0 * rx, 2.0 * ry))), center, rotation)
-            }
-            TracedShape::Polygon { center, radius, sides, rotation } => shapes::polygon(center, radius, sides, rotation),
+            TracedShape::Ellipse {
+                center,
+                rx,
+                ry,
+                rotation,
+            } => turned(
+                shapes::ellipse(Rect::from_center_size(center, (2.0 * rx, 2.0 * ry))),
+                center,
+                rotation,
+            ),
+            TracedShape::Polygon {
+                center,
+                radius,
+                sides,
+                rotation,
+            } => shapes::polygon(center, radius, sides, rotation),
         }
     }
 }
@@ -48,7 +92,9 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
         return None;
     }
     // Points all along the outline.
-    let pts: Vec<Point> = (0..sp.segment_count()).flat_map(|i| (0..24).map(move |k| sp.segment(i).eval(f64::from(k) / 24.0))).collect();
+    let pts: Vec<Point> = (0..sp.segment_count())
+        .flat_map(|i| (0..24).map(move |k| sp.segment(i).eval(f64::from(k) / 24.0)))
+        .collect();
     let n = pts.len();
     if n < 8 || !pts.iter().all(|p| p.x.is_finite() && p.y.is_finite()) {
         return None;
@@ -76,12 +122,20 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
         ixy += (a.x * b.y + 2.0 * a.x * a.y + 2.0 * b.x * b.y + b.x * a.y) * cross;
     }
     // Per unit of area: the variances of x and y and their covariance.
-    let (sxx, syy, sxy) = (ixx / (6.0 * area2), iyy / (6.0 * area2), ixy / (12.0 * area2));
+    let (sxx, syy, sxy) = (
+        ixx / (6.0 * area2),
+        iyy / (6.0 * area2),
+        ixy / (12.0 * area2),
+    );
     let mean = (sxx + syy) / 2.0;
     let spread = ((sxx - syy) / 2.0).hypot(sxy);
     let (major, minor) = (mean + spread, (mean - spread).max(0.0));
     // The direction of the longer axis (none when the shape is as wide every way).
-    let axis = if spread < 0.01 * mean { 0.0 } else { 0.5 * (2.0 * sxy).atan2(sxx - syy) };
+    let axis = if spread < 0.01 * mean {
+        0.0
+    } else {
+        0.5 * (2.0 * sxy).atan2(sxx - syy)
+    };
     let size = 4.0 * major.sqrt();
     let tol = tolerance(size);
     if size < 6.0 || !size.is_finite() {
@@ -89,7 +143,10 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
     }
     let local = |p: Point, angle: f64| {
         let d = p - c;
-        (d.x * angle.cos() + d.y * angle.sin(), d.y * angle.cos() - d.x * angle.sin())
+        (
+            d.x * angle.cos() + d.y * angle.sin(),
+            d.y * angle.cos() - d.x * angle.sin(),
+        )
     };
 
     // An ellipse: its radii are twice the roots of its variances.
@@ -105,8 +162,17 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
             // Radii this close are a circle's, of the outline's area: a circle without anti-aliasing
             // is fitted a little wider one way than the other.
             let circle = (rx - ry).abs() <= 2.0 * tol;
-            let (rx, ry) = if circle { ((rx * ry).sqrt(), (rx * ry).sqrt()) } else { (rx, ry) };
-            return Some(TracedShape::Ellipse { center: c, rx, ry, rotation: if circle { 0.0 } else { axis.to_degrees() } });
+            let (rx, ry) = if circle {
+                ((rx * ry).sqrt(), (rx * ry).sqrt())
+            } else {
+                (rx, ry)
+            };
+            return Some(TracedShape::Ellipse {
+                center: c,
+                rx,
+                ry,
+                rotation: if circle { 0.0 } else { axis.to_degrees() },
+            });
         }
     }
 
@@ -122,17 +188,32 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
         let angle = d.y.atan2(d.x);
         let angle = angle - quarter * (angle / quarter).round();
         let xy: Vec<(f64, f64)> = pts.iter().map(|&p| local(p, angle)).collect();
-        let (hw, hh) = xy.iter().fold((0.0f64, 0.0f64), |m, p| (m.0.max(p.0.abs()), m.1.max(p.1.abs())));
+        let (hw, hh) = xy.iter().fold((0.0f64, 0.0f64), |m, p| {
+            (m.0.max(p.0.abs()), m.1.max(p.1.abs()))
+        });
         // Square corners first; else rounded ones, which take (4 − π) r² off the area.
-        let rounded = ((4.0 * hw * hh - area) / (4.0 - std::f64::consts::PI)).max(0.0).sqrt().min(hw.min(hh));
+        let rounded = ((4.0 * hw * hh - area) / (4.0 - std::f64::consts::PI))
+            .max(0.0)
+            .sqrt()
+            .min(hw.min(hh));
         for radius in [0.0, rounded] {
             let off = xy.iter().map(|&(x, y)| {
                 // Distance to the rounded rectangle's edge.
                 let (qx, qy) = (x.abs() - hw + radius, y.abs() - hh + radius);
                 (qx.max(0.0).hypot(qy.max(0.0)) + qx.max(qy).min(0.0) - radius).abs()
             });
-            if hw > 2.0 && hh > 2.0 && (radius == 0.0 || radius >= 0.75) && off.fold(0.0, f64::max) <= tol {
-                return Some(TracedShape::Rectangle { center: c, width: 2.0 * hw, height: 2.0 * hh, radius, rotation: angle.to_degrees() });
+            if hw > 2.0
+                && hh > 2.0
+                && (radius == 0.0 || radius >= 0.75)
+                && off.fold(0.0, f64::max) <= tol
+            {
+                return Some(TracedShape::Rectangle {
+                    center: c,
+                    width: 2.0 * hw,
+                    height: 2.0 * hh,
+                    radius,
+                    rotation: angle.to_degrees(),
+                });
             }
         }
     }
@@ -142,12 +223,27 @@ pub(crate) fn recognise(sp: &SubPath) -> Option<TracedShape> {
     if (3..=12).contains(&sides) {
         let radius = sp.anchors.iter().map(|a| a.p.distance(c)).sum::<f64>() / sides as f64;
         let first = sp.anchors.first()?.p - c;
-        let rotation = (first.y.atan2(first.x).to_degrees() + 90.0).rem_euclid(360.0 / sides as f64);
-        let shape = TracedShape::Polygon { center: c, radius, sides: sides as u32, rotation };
-        let ideal: Vec<Point> = shape.path().subpaths.first()?.anchors.iter().map(|a| a.p).collect();
+        let rotation =
+            (first.y.atan2(first.x).to_degrees() + 90.0).rem_euclid(360.0 / sides as f64);
+        let shape = TracedShape::Polygon {
+            center: c,
+            radius,
+            sides: sides as u32,
+            rotation,
+        };
+        let ideal: Vec<Point> = shape
+            .path()
+            .subpaths
+            .first()?
+            .anchors
+            .iter()
+            .map(|a| a.p)
+            .collect();
         // Every corner of the polygon has one of the outline's on it, and every point of the
         // outline lies on one of the polygon's sides.
-        let cornered = ideal.iter().all(|q| sp.anchors.iter().any(|a| q.distance(a.p) <= 1.5 * tol));
+        let cornered = ideal
+            .iter()
+            .all(|q| sp.anchors.iter().any(|a| q.distance(a.p) <= 1.5 * tol));
         let on_a_side = |p: Point| {
             (0..ideal.len()).any(|i| {
                 let (a, b) = (ideal[i], ideal[(i + 1) % ideal.len()]);
@@ -183,34 +279,101 @@ mod tests {
     #[test]
     fn each_shape_is_told_from_its_own_outline() {
         let c = Point::new(60.3, 45.6);
-        match is(TracedShape::Ellipse { center: c, rx: 20.0, ry: 20.0, rotation: 0.0 }) {
-            Some(TracedShape::Ellipse { center, rx, ry, rotation }) => {
-                assert!(center.distance(c) < 0.05 && (rx - 20.0).abs() < 0.05 && rx == ry && rotation == 0.0, "{center:?} {rx} {ry}")
+        match is(TracedShape::Ellipse {
+            center: c,
+            rx: 20.0,
+            ry: 20.0,
+            rotation: 0.0,
+        }) {
+            Some(TracedShape::Ellipse {
+                center,
+                rx,
+                ry,
+                rotation,
+            }) => {
+                assert!(
+                    center.distance(c) < 0.05
+                        && (rx - 20.0).abs() < 0.05
+                        && rx == ry
+                        && rotation == 0.0,
+                    "{center:?} {rx} {ry}"
+                )
             }
             other => panic!("{other:?}"),
         }
-        match is(TracedShape::Ellipse { center: c, rx: 30.0, ry: 12.0, rotation: 25.0 }) {
-            Some(TracedShape::Ellipse { rx, ry, rotation, .. }) => {
-                assert!((rx - 30.0).abs() < 0.3 && (ry - 12.0).abs() < 0.3 && (rotation - 25.0).abs() < 0.5, "{rx} {ry} {rotation}")
+        match is(TracedShape::Ellipse {
+            center: c,
+            rx: 30.0,
+            ry: 12.0,
+            rotation: 25.0,
+        }) {
+            Some(TracedShape::Ellipse {
+                rx, ry, rotation, ..
+            }) => {
+                assert!(
+                    (rx - 30.0).abs() < 0.3
+                        && (ry - 12.0).abs() < 0.3
+                        && (rotation - 25.0).abs() < 0.5,
+                    "{rx} {ry} {rotation}"
+                )
             }
             other => panic!("{other:?}"),
         }
-        match is(TracedShape::Rectangle { center: c, width: 50.0, height: 20.0, radius: 0.0, rotation: 10.0 }) {
-            Some(TracedShape::Rectangle { width, height, radius, rotation, .. }) => {
-                assert!((width - 50.0).abs() < 0.1 && (height - 20.0).abs() < 0.1 && radius == 0.0 && (rotation - 10.0).abs() < 0.1)
+        match is(TracedShape::Rectangle {
+            center: c,
+            width: 50.0,
+            height: 20.0,
+            radius: 0.0,
+            rotation: 10.0,
+        }) {
+            Some(TracedShape::Rectangle {
+                width,
+                height,
+                radius,
+                rotation,
+                ..
+            }) => {
+                assert!(
+                    (width - 50.0).abs() < 0.1
+                        && (height - 20.0).abs() < 0.1
+                        && radius == 0.0
+                        && (rotation - 10.0).abs() < 0.1
+                )
             }
             other => panic!("{other:?}"),
         }
-        match is(TracedShape::Rectangle { center: c, width: 50.0, height: 30.0, radius: 8.0, rotation: 0.0 }) {
+        match is(TracedShape::Rectangle {
+            center: c,
+            width: 50.0,
+            height: 30.0,
+            radius: 8.0,
+            rotation: 0.0,
+        }) {
             Some(TracedShape::Rectangle { width, radius, .. }) => {
-                assert!((width - 50.0).abs() < 0.2 && (radius - 8.0).abs() < 0.5, "{width} {radius}")
+                assert!(
+                    (width - 50.0).abs() < 0.2 && (radius - 8.0).abs() < 0.5,
+                    "{width} {radius}"
+                )
             }
             other => panic!("{other:?}"),
         }
         for sides in [3, 5, 6, 8] {
-            match is(TracedShape::Polygon { center: c, radius: 25.0, sides, rotation: 7.0 }) {
-                Some(TracedShape::Polygon { radius, sides: n, rotation, .. }) => {
-                    assert!(n == sides && (radius - 25.0).abs() < 0.1 && (rotation - 7.0).abs() < 0.1, "{sides}: {radius} {rotation}")
+            match is(TracedShape::Polygon {
+                center: c,
+                radius: 25.0,
+                sides,
+                rotation: 7.0,
+            }) {
+                Some(TracedShape::Polygon {
+                    radius,
+                    sides: n,
+                    rotation,
+                    ..
+                }) => {
+                    assert!(
+                        n == sides && (radius - 25.0).abs() < 0.1 && (rotation - 7.0).abs() < 0.1,
+                        "{sides}: {radius} {rotation}"
+                    )
                 }
                 other => panic!("{sides} sides: {other:?}"),
             }
@@ -222,14 +385,46 @@ mod tests {
         // A star, an L, a rectangle with one corner cut, an egg.
         let star = shapes::star(Point::new(50.0, 50.0), 30.0, 12.0, 5, 0.0);
         assert_eq!(recognise(&star.subpaths[0]), None);
-        let poly = |pts: &[(f64, f64)]| SubPath::polyline(&pts.iter().map(|&p| Point::from(p)).collect::<Vec<_>>(), true);
-        assert_eq!(recognise(&poly(&[(0.0, 0.0), (40.0, 0.0), (40.0, 15.0), (15.0, 15.0), (15.0, 40.0), (0.0, 40.0)])), None);
-        assert_eq!(recognise(&poly(&[(0.0, 0.0), (40.0, 0.0), (40.0, 22.0), (34.0, 30.0), (0.0, 30.0)])), None);
+        let poly = |pts: &[(f64, f64)]| {
+            SubPath::polyline(
+                &pts.iter().map(|&p| Point::from(p)).collect::<Vec<_>>(),
+                true,
+            )
+        };
+        assert_eq!(
+            recognise(&poly(&[
+                (0.0, 0.0),
+                (40.0, 0.0),
+                (40.0, 15.0),
+                (15.0, 15.0),
+                (15.0, 40.0),
+                (0.0, 40.0)
+            ])),
+            None
+        );
+        assert_eq!(
+            recognise(&poly(&[
+                (0.0, 0.0),
+                (40.0, 0.0),
+                (40.0, 22.0),
+                (34.0, 30.0),
+                (0.0, 30.0)
+            ])),
+            None
+        );
         let mut egg = shapes::ellipse(Rect::new(10.0, 10.0, 70.0, 50.0));
         egg.subpaths[0].anchors[2].p.x += 4.0;
         assert_eq!(recognise(&egg.subpaths[0]), None);
         // Too small to say, open, or not a number.
-        assert_eq!(is(TracedShape::Ellipse { center: Point::new(5.0, 5.0), rx: 2.0, ry: 2.0, rotation: 0.0 }), None);
+        assert_eq!(
+            is(TracedShape::Ellipse {
+                center: Point::new(5.0, 5.0),
+                rx: 2.0,
+                ry: 2.0,
+                rotation: 0.0
+            }),
+            None
+        );
         let mut open = shapes::rectangle(Rect::new(0.0, 0.0, 30.0, 20.0)).subpaths[0].clone();
         open.closed = false;
         assert_eq!(recognise(&open), None);

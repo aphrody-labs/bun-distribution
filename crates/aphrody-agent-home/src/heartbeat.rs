@@ -59,7 +59,10 @@ impl Heartbeat {
     #[must_use]
     pub fn parse(content: &str) -> Self {
         let (_fm, body) = frontmatter::split(content);
-        Self { steps: extract_bullets(body), body: body.to_string() }
+        Self {
+            steps: extract_bullets(body),
+            body: body.to_string(),
+        }
     }
 
     /// True when the checklist has no actionable items.
@@ -96,7 +99,9 @@ fn split_ordered(line: &str) -> Option<(bool, &str)> {
         return None;
     }
     let rest = &line[digits.len()..];
-    let rest = rest.strip_prefix(". ").or_else(|| rest.strip_prefix(") "))?;
+    let rest = rest
+        .strip_prefix(". ")
+        .or_else(|| rest.strip_prefix(") "))?;
     Some((true, rest.trim()))
 }
 

@@ -22,17 +22,24 @@ fn invalid(message: impl Into<String>) -> io::Error {
 fn parse_docs(bytes: &[u8]) -> io::Result<Value> {
     let catalog: Value =
         serde_json::from_slice(bytes).map_err(|error| invalid(error.to_string()))?;
-    let articles = catalog.as_array().ok_or_else(|| invalid("docs catalog must be an array"))?;
+    let articles = catalog
+        .as_array()
+        .ok_or_else(|| invalid("docs catalog must be an array"))?;
     let mut ids = BTreeSet::new();
     for article in articles {
-        let object =
-            article.as_object().ok_or_else(|| invalid("docs article must be an object"))?;
+        let object = article
+            .as_object()
+            .ok_or_else(|| invalid("docs article must be an object"))?;
         for field in ["id", "category", "title", "summary", "readTime", "content"] {
             if !object.get(field).is_some_and(Value::is_string) {
-                return Err(invalid(format!("docs article missing string field {field}")));
+                return Err(invalid(format!(
+                    "docs article missing string field {field}"
+                )));
             }
         }
-        let id = object["id"].as_str().ok_or_else(|| invalid("invalid docs id"))?;
+        let id = object["id"]
+            .as_str()
+            .ok_or_else(|| invalid("invalid docs id"))?;
         if id.is_empty() || !ids.insert(id) {
             return Err(invalid("empty or duplicate docs article id"));
         }
@@ -43,7 +50,9 @@ fn parse_docs(bytes: &[u8]) -> io::Result<Value> {
         if !tags.iter().all(Value::is_string) {
             return Err(invalid("docs tags must be strings"));
         }
-        let category = object["category"].as_str().ok_or_else(|| invalid("invalid category"))?;
+        let category = object["category"]
+            .as_str()
+            .ok_or_else(|| invalid("invalid category"))?;
         if !matches!(
             category,
             "Architecture" | "Framework & Bun" | "Material 3" | "Desktop & Tauri" | "LLM & Memory"
@@ -81,7 +90,9 @@ mod tests {
         assert_eq!(articles[0]["id"], "runtime-architecture");
         assert_eq!(articles[4]["id"], "llms-txt-standard");
         assert!(
-            articles.iter().all(|article| article["content"].as_str().unwrap().starts_with('#'))
+            articles
+                .iter()
+                .all(|article| article["content"].as_str().unwrap().starts_with('#'))
         );
     }
 }

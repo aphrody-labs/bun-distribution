@@ -29,8 +29,16 @@ fn resolve_at(v: &Value, results: &[Value], depth: usize) -> Result<Value, Strin
                 None => v.clone(),
             },
         },
-        Value::Array(a) => Value::Array(a.iter().map(|x| resolve_at(x, results, depth + 1)).collect::<Result<_, _>>()?),
-        Value::Object(o) => Value::Object(o.iter().map(|(k, x)| Ok((k.clone(), resolve_at(x, results, depth + 1)?))).collect::<Result<_, String>>()?),
+        Value::Array(a) => Value::Array(
+            a.iter()
+                .map(|x| resolve_at(x, results, depth + 1))
+                .collect::<Result<_, _>>()?,
+        ),
+        Value::Object(o) => Value::Object(
+            o.iter()
+                .map(|(k, x)| Ok((k.clone(), resolve_at(x, results, depth + 1)?)))
+                .collect::<Result<_, String>>()?,
+        ),
         _ => v.clone(),
     })
 }
@@ -62,7 +70,10 @@ fn parse(s: &str) -> Option<(Step, Vec<Seg>)> {
     let mut path = vec![];
     while !rest.is_empty() {
         if let Some(r) = rest.strip_prefix('.') {
-            let len = r.bytes().take_while(|b| b.is_ascii_alphanumeric() || *b == b'_').count();
+            let len = r
+                .bytes()
+                .take_while(|b| b.is_ascii_alphanumeric() || *b == b'_')
+                .count();
             let (key, r) = r.split_at_checked(len)?;
             if key.is_empty() {
                 return None;
@@ -91,7 +102,9 @@ fn lookup(text: &str, step: Step, path: &[Seg], results: &[Value]) -> Result<Val
             (Seg::Index(n), Value::Array(a)) => a.get(*n),
             _ => None,
         };
-        cur = next.ok_or_else(|| format!("`{text}`: step {i}'s result has no such value (write $$ for a literal $)"))?;
+        cur = next.ok_or_else(|| {
+            format!("`{text}`: step {i}'s result has no such value (write $$ for a literal $)")
+        })?;
     }
     Ok(cur.clone())
 }
@@ -104,9 +117,16 @@ mod tests {
 
     #[test]
     fn references_take_values_from_earlier_results() {
-        let results = [json!({"index": 0}), json!({"id": 2}), json!({"ids": [5, 6]})];
+        let results = [
+            json!({"index": 0}),
+            json!({"id": 2}),
+            json!({"ids": [5, 6]}),
+        ];
         let p = json!({"id": "$1.id", "ids": ["$2.ids.1", "$last.ids[0]"], "nested": {"all": "$2"}, "n": 3, "flag": true});
-        assert_eq!(resolve(&p, &results).unwrap(), json!({"id": 2, "ids": [6, 5], "nested": {"all": {"ids": [5, 6]}}, "n": 3, "flag": true}));
+        assert_eq!(
+            resolve(&p, &results).unwrap(),
+            json!({"id": 2, "ids": [6, 5], "nested": {"all": {"ids": [5, 6]}}, "n": 3, "flag": true})
+        );
     }
 
     #[test]
@@ -126,9 +146,15 @@ mod tests {
             let e = resolve(&json!({"id": bad}), &results).unwrap_err();
             assert!(e.contains(bad), "{bad}: {e}");
         }
-        assert!(resolve(&json!({"id": "$last"}), &[]).is_err(), "no step before the first");
+        assert!(
+            resolve(&json!({"id": "$last"}), &[]).is_err(),
+            "no step before the first"
+        );
         // Huge indexes and deep nesting don't panic.
-        assert!(resolve(&json!("$99999999999999999999999.id"), &results).is_ok_and(|v| v == json!("$99999999999999999999999.id")));
+        assert!(
+            resolve(&json!("$99999999999999999999999.id"), &results)
+                .is_ok_and(|v| v == json!("$99999999999999999999999.id"))
+        );
         let mut deep = json!("$0.id");
         for _ in 0..200 {
             deep = json!([deep]);

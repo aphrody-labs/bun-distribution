@@ -25,7 +25,13 @@ pub struct DivEngine {
 impl DivEngine {
     pub(super) fn new(schedule: &mut Schedule) -> Self {
         schedule.set_event(event_slots::DIV, Event::DivResultReady);
-        DivEngine { control: Control(0), num: 0, denom: 0, quot: 0, rem: 0 }
+        DivEngine {
+            control: Control(0),
+            num: 0,
+            denom: 0,
+            quot: 0,
+            rem: 0,
+        }
     }
 
     fn schedule_data_ready(&mut self, schedule: &mut Schedule) {
@@ -100,7 +106,7 @@ impl DivEngine {
                     self.quot = (num / denom) as i64;
                     self.rem = (num % denom) as i64;
                 }
-            },
+            }
 
             1 | 3 => {
                 // 64/32
@@ -116,7 +122,7 @@ impl DivEngine {
                     self.quot = num / denom as i64;
                     self.rem = num % denom as i64;
                 }
-            },
+            }
 
             _ => {
                 // 64/64
@@ -132,7 +138,7 @@ impl DivEngine {
                     self.quot = num / denom;
                     self.rem = num % denom;
                 }
-            },
+            }
         }
     }
 }

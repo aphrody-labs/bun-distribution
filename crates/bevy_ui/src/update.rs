@@ -1,8 +1,8 @@
 //! This module contains systems that update the UI when something changes
 
 use crate::{
-    experimental::{UiChildren, UiRootNodes},
     ComputedUiRenderTargetInfo, ComputedUiTargetCamera, DefaultUiCamera, UiScale, UiTargetCamera,
+    experimental::{UiChildren, UiRootNodes},
 };
 
 pub use crate::layout::clipping::update_clipping_system;
@@ -75,7 +75,6 @@ pub fn propagate_ui_target_cameras(
 
 #[cfg(test)]
 mod tests {
-    use crate::update::{propagate_ui_target_cameras, update_clipping_system};
     use crate::CalculatedClip;
     use crate::ComputedUiRenderTargetInfo;
     use crate::ComputedUiTargetCamera;
@@ -86,6 +85,7 @@ mod tests {
     use crate::OverrideClip;
     use crate::UiScale;
     use crate::UiTargetCamera;
+    use crate::update::{propagate_ui_target_cameras, update_clipping_system};
     use bevy_app::App;
     use bevy_app::HierarchyPropagatePlugin;
     use bevy_app::PostUpdate;

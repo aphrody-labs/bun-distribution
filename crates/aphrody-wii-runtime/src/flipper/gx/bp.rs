@@ -113,22 +113,22 @@ impl GraphicsProcessor {
             BP_PE_ZMODE => {
                 self.cur_zmode = ZMode::from_raw(val);
                 renderer.exec(GxAction::SetDepthMode(self.cur_zmode));
-            },
+            }
             BP_PE_CMODE0 => {
                 self.cur_blend_mode = BlendMode::from_raw(val);
                 renderer.exec(GxAction::SetBlendMode(self.cur_blend_mode));
-            },
+            }
             BP_PE_ZCOMPARE => {
                 self.cur_pe_control = PeControl::from_raw(val);
                 // early_ztest feeds DrawData::ztex_op
                 self.frame_state_dirty = true;
-            },
+            }
             BP_PE_ALPHA_COMPARE => {
                 self.cur_alpha_compare = AlphaCompare::from_raw(val);
                 self.frame_state_dirty = true;
                 renderer.exec(GxAction::SetAlphaCompare(self.cur_alpha_compare));
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         // TEV color/alpha environment registers (0xC0-0xDF)
@@ -357,7 +357,7 @@ impl GraphicsProcessor {
                     );
 
                     false
-                },
+                }
             };
 
         if gpu_copy {
@@ -595,12 +595,22 @@ impl GraphicsProcessor {
             let yscale_reg =
                 DispCopyYScale::from_raw(self.bp_regs[BP_PE_COPY_YSCALE]).scale() as f32;
             let y_scale = if cmd.scale_invert() {
-                if yscale_reg == 0.0 { 1.0 } else { 256.0 / yscale_reg }
+                if yscale_reg == 0.0 {
+                    1.0
+                } else {
+                    256.0 / yscale_reg
+                }
             } else {
                 yscale_reg / 256.0
             };
-            let y_scale = if y_scale.is_finite() && y_scale > 0.0 { y_scale } else { 1.0 };
-            let dst_h = (1.0 + dims.height_minus1() as f32 * y_scale).floor().max(1.0) as u32;
+            let y_scale = if y_scale.is_finite() && y_scale > 0.0 {
+                y_scale
+            } else {
+                1.0
+            };
+            let dst_h = (1.0 + dims.height_minus1() as f32 * y_scale)
+                .floor()
+                .max(1.0) as u32;
             let gamma = match cmd.gamma() {
                 0 => 1.0,
                 1 => 1.7,
@@ -670,7 +680,11 @@ impl GraphicsProcessor {
             };
 
             if let Some(fmt) = resolved {
-                let (w, h) = if half { (src_w / 2, src_h / 2) } else { (src_w, src_h) };
+                let (w, h) = if half {
+                    (src_w / 2, src_h / 2)
+                } else {
+                    (src_w, src_h)
+                };
                 let row_bytes = texture::encoded_row_bytes(w, fmt);
                 let row_count = texture::encoded_row_count(h, fmt);
 
@@ -742,7 +756,12 @@ impl GraphicsProcessor {
         let x2 = (eff_br_x.max(0) as u32).min(EFB_WIDTH);
         let y2 = (eff_br_y.max(0) as u32).min(EFB_HEIGHT);
 
-        self.cur_scissor = draw::Scissor { x, y, w: x2.saturating_sub(x), h: y2.saturating_sub(y) };
+        self.cur_scissor = draw::Scissor {
+            x,
+            y,
+            w: x2.saturating_sub(x),
+            h: y2.saturating_sub(y),
+        };
     }
 
     fn recompute_scissor_offset(&mut self) {
@@ -756,7 +775,11 @@ impl GraphicsProcessor {
 /// at `base_i4` (TX_SETMODE*/TX_SETIMAGE*/TX_SETTLUT all share this layout).
 #[inline(always)]
 fn tx_slot_reg(base_i0: usize, base_i4: usize, slot: usize) -> usize {
-    if slot < 4 { base_i0 + slot } else { base_i4 + (slot - 4) }
+    if slot < 4 {
+        base_i0 + slot
+    } else {
+        base_i4 + (slot - 4)
+    }
 }
 
 fn slot_palette(palette_mem: &[u16], tmem_offset: u16) -> &[u16] {
@@ -798,7 +821,10 @@ fn texture_cache_id(
     } else {
         0
     };
-    TextureKey { ram_addr: ram_addr as u32, variant }
+    TextureKey {
+        ram_addr: ram_addr as u32,
+        variant,
+    }
 }
 
 /// Returns `true` when the raw texture data in `tex` differs from the last
@@ -887,6 +913,11 @@ impl GraphicsProcessor {
             *entry = u16::from_be_bytes([chunk[0], chunk[1]]);
         }
 
-        tracing::debug!(ram_base = format!("{ram_base:#010X}"), tmem_offset, entries, "LOADTLUT");
+        tracing::debug!(
+            ram_base = format!("{ram_base:#010X}"),
+            tmem_offset,
+            entries,
+            "LOADTLUT"
+        );
     }
 }

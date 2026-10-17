@@ -120,7 +120,12 @@ pub(super) struct Extras {
 
 /// The options in `p` for saving `doc`, checked, with the profiles to embed (the preview and PDF
 /// are left to [`encode`]).
-pub(super) fn save_options(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result<(SaveOptions, Extras)> {
+pub(super) fn save_options(
+    cmd: &str,
+    f: &Format,
+    doc: &Document,
+    p: &Value,
+) -> Result<(SaveOptions, Extras)> {
     let o: NativeOptions = super::encode::options(f, p)?;
     let mut so = SaveOptions::for_doc(doc);
     so.compress = o.compress.unwrap_or(false);
@@ -130,7 +135,13 @@ pub(super) fn save_options(cmd: &str, f: &Format, doc: &Document, p: &Value) -> 
         so.profiles = embedded_profiles(doc);
     }
     so.check().map_err(|e| bad(cmd, e.to_string()))?;
-    Ok((so, Extras { preview: o.preview, pdf: o.pdf_compatible }))
+    Ok((
+        so,
+        Extras {
+            preview: o.preview,
+            pdf: o.pdf_compatible,
+        },
+    ))
 }
 
 /// The `.vectorcraft` file of `doc` with the options in `p`.
@@ -142,7 +153,13 @@ pub(super) fn encode(cmd: &str, f: &Format, doc: &Document, p: &Value) -> Result
 
 /// [`encode`], written to `w` as it is made ([`vectorcraft_format::save_to`]: give it a buffered
 /// writer).
-pub(super) fn encode_to(cmd: &str, f: &Format, doc: &Document, p: &Value, w: impl std::io::Write) -> Result<()> {
+pub(super) fn encode_to(
+    cmd: &str,
+    f: &Format,
+    doc: &Document,
+    p: &Value,
+    w: impl std::io::Write,
+) -> Result<()> {
     let (mut so, extras) = save_options(cmd, f, doc, p)?;
     // Include Linked Files keeps placed documents' files; older versions get their art.
     let full = if so.include_linked || so.version < vectorcraft_format::VERSION {
@@ -155,7 +172,14 @@ pub(super) fn encode_to(cmd: &str, f: &Format, doc: &Document, p: &Value, w: imp
     }
     if extras.pdf {
         // Every artboard as PDF pages (no editing data: the file is the native document).
-        so.pdf = Some(super::pdf::encode(cmd, &full, &json!({ "range": "all", "preserveEditing": false }))?.0);
+        so.pdf = Some(
+            super::pdf::encode(
+                cmd,
+                &full,
+                &json!({ "range": "all", "preserveEditing": false }),
+            )?
+            .0,
+        );
     }
     let native = match full {
         Cow::Owned(full) if so.include_linked && so.version >= vectorcraft_format::VERSION => {
@@ -192,7 +216,9 @@ pub(super) fn install_profiles(profiles: BTreeMap<String, Vec<u8>>) -> Vec<Strin
         .take(MAX_PROFILES)
         .filter(|(name, _)| cms::profile(name).is_none())
         .filter_map(|(name, icc)| {
-            cms::register_icc(&icc, Some(name.clone())).err().map(|e| format!("the colour profile “{name}” the file carries can't be used: {e}"))
+            cms::register_icc(&icc, Some(name.clone()))
+                .err()
+                .map(|e| format!("the colour profile “{name}” the file carries can't be used: {e}"))
         })
         .collect()
 }
@@ -236,18 +262,33 @@ pub(super) fn ai_native(cmd: &str, doc: &Document, so: &SaveOptions) -> Result<V
 /// The first artboard (else the art) as a PNG fitted into [`PREVIEW_MAX`] pixels (`None`: nothing
 /// to show).
 pub(crate) fn preview_png(doc: &Document) -> Result<Option<Vec<u8>>> {
-    let Some(r) = doc.artboards.first().map(|a| a.rect).or_else(|| vectorcraft_render::encode::art_bounds(doc)) else { return Ok(None) };
+    let Some(r) = doc
+        .artboards
+        .first()
+        .map(|a| a.rect)
+        .or_else(|| vectorcraft_render::encode::art_bounds(doc))
+    else {
+        return Ok(None);
+    };
     let scale = f64::from(PREVIEW_MAX) / r.width().max(r.height());
     if vectorcraft_render::raster_size(r, scale).is_err() {
         return Ok(None);
     }
-    vectorcraft_render::Renderer::new().render_region(doc, r, scale, false).to_png().map(Some).map_err(EngineError::Other)
+    vectorcraft_render::Renderer::new()
+        .render_region(doc, r, scale, false)
+        .to_png()
+        .map(Some)
+        .map_err(EngineError::Other)
 }
 
 /// `p` with `compress` from the Use Compression preference when it doesn't say (saves only;
 /// exports and serializing write what they're told).
 pub fn with_compression_pref(prefs: &crate::Prefs, p: &Value) -> Value {
-    let mut q = if p.is_object() { p.clone() } else { Value::Object(Default::default()) };
+    let mut q = if p.is_object() {
+        p.clone()
+    } else {
+        Value::Object(Default::default())
+    };
     if let Some(o) = q.as_object_mut()
         && o.get("compress").is_none_or(Value::is_null)
         // Older versions can't read compressed files: those saves stay plain.

@@ -81,7 +81,10 @@ fn walk_under_begin_node() {
     });
     let descs = parse_chara_descriptions(&root);
     assert_eq!(descs.len(), 2, "2 descriptions non-vides (la 3ᵉ est vide)");
-    assert_eq!(find_by_hash(&descs, HashId(0xAAAA_0001)), Some("Première description"));
+    assert_eq!(
+        find_by_hash(&descs, HashId(0xAAAA_0001)),
+        Some("Première description")
+    );
     assert_eq!(find_by_hash(&descs, HashId(0xAAAA_0002)), Some("Deuxième"));
     assert_eq!(find_by_hash(&descs, HashId(0xAAAA_0003)), None);
     assert_eq!(find_by_hash(&descs, HashId(0xDEAD_BEEF)), None);

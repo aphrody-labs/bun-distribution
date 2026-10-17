@@ -4,12 +4,20 @@ use std::sync::OnceLock;
 
 #[inline]
 pub fn srgb_to_linear(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 #[inline]
 pub fn linear_to_srgb(v: f32) -> f32 {
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 pub fn gamma_to_linear(v: f32, g: f32) -> f32 {
@@ -45,11 +53,19 @@ const HLG_C: f64 = 0.559_910_73;
 /// ITU-R BT.2100 HLG OETF (scene linear 0..1 → signal).
 pub fn hlg_encode(e: f64) -> f64 {
     let e = e.max(0.0);
-    if e <= 1.0 / 12.0 { (3.0 * e).sqrt() } else { HLG_A * (12.0 * e - HLG_B).ln() + HLG_C }
+    if e <= 1.0 / 12.0 {
+        (3.0 * e).sqrt()
+    } else {
+        HLG_A * (12.0 * e - HLG_B).ln() + HLG_C
+    }
 }
 
 pub fn hlg_decode(s: f64) -> f64 {
-    if s <= 0.5 { s * s / 3.0 } else { (((s - HLG_C) / HLG_A).exp() + HLG_B) / 12.0 }
+    if s <= 0.5 {
+        s * s / 3.0
+    } else {
+        (((s - HLG_C) / HLG_A).exp() + HLG_B) / 12.0
+    }
 }
 
 const ENC_BITS: usize = 14;

@@ -3,7 +3,9 @@
 use std::f32::consts::FRAC_PI_4;
 
 /// Attenuation of a centered signal.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum PanLaw {
     /// Constant power: -3 dB at center.
     #[default]
@@ -30,7 +32,11 @@ impl PanLaw {
 
 /// Left/right gains for `pan` in -1 (hard left) ..= 1 (hard right). NaN pans center.
 pub fn gains(pan: f32, law: PanLaw) -> (f32, f32) {
-    let pan = if pan.is_nan() { 0.0 } else { pan.clamp(-1.0, 1.0) };
+    let pan = if pan.is_nan() {
+        0.0
+    } else {
+        pan.clamp(-1.0, 1.0)
+    };
     if law == PanLaw::Zero {
         return ((1.0 - pan).min(1.0), (1.0 + pan).min(1.0));
     }
@@ -92,10 +98,20 @@ pub fn puck_azimuth(layout: &[SpeakerPos], x: f32, y: f32) -> f32 {
     if x.abs() < 1e-9 && y.abs() < 1e-9 {
         return 0.0;
     }
-    let rear =
-        layout.iter().filter(|s| !s.lfe && s.el.abs() < 1.0 && s.az.abs() > 90.5 && s.az.abs() < 179.5).map(|s| s.az.abs()).fold(0.0f32, f32::max);
+    let rear = layout
+        .iter()
+        .filter(|s| !s.lfe && s.el.abs() < 1.0 && s.az.abs() > 90.5 && s.az.abs() < 179.5)
+        .map(|s| s.az.abs())
+        .fold(0.0f32, f32::max);
     let rear = if rear > 0.0 { rear } else { 135.0 };
-    let front = if layout.iter().any(|s| !s.lfe && s.el.abs() < 1.0 && (s.az.abs() - 30.0).abs() < 0.5) { 30.0 } else { 45.0 };
+    let front = if layout
+        .iter()
+        .any(|s| !s.lfe && s.el.abs() < 1.0 && (s.az.abs() - 30.0).abs() < 0.5)
+    {
+        30.0
+    } else {
+        45.0
+    };
     let phi = x.atan2(y).to_degrees();
     let a = phi.abs();
     let warped = if a <= 45.0 {
@@ -125,7 +141,9 @@ pub fn azimuth_to_puck(layout: &[SpeakerPos], az: f32) -> (f32, f32) {
             hi = mid;
         }
     }
-    let phi = (0.5 * (lo + hi)).to_radians().copysign(if target < 0.0 { -1.0 } else { 1.0 });
+    let phi = (0.5 * (lo + hi))
+        .to_radians()
+        .copysign(if target < 0.0 { -1.0 } else { 1.0 });
     let (sx, sy) = (phi.sin(), phi.cos());
     let m = sx.abs().max(sy.abs()).max(1e-6);
     (sx / m, sy / m)
@@ -133,7 +151,13 @@ pub fn azimuth_to_puck(layout: &[SpeakerPos], az: f32) -> (f32, f32) {
 
 /// Constant-power pairwise pan of a direction onto one layer (bed or height) of `layout`,
 /// accumulating `weight × gain²` into `pow`. Returns false when the layer has no speakers.
-fn pair_power(layout: &[SpeakerPos], height: bool, az: f32, weight: f32, pow: &mut [f32; MAX_SPEAKERS]) -> bool {
+fn pair_power(
+    layout: &[SpeakerPos],
+    height: bool,
+    az: f32,
+    weight: f32,
+    pow: &mut [f32; MAX_SPEAKERS],
+) -> bool {
     let mut idx = [0usize; MAX_SPEAKERS];
     let mut n = 0;
     for (i, s) in layout.iter().enumerate().take(MAX_SPEAKERS) {
@@ -227,14 +251,22 @@ pub fn surround_gains(layout: &[SpeakerPos], p: &SurroundParams, out: &mut [f32]
     let k = 1 + (spread * 24.0).round() as usize;
     let width = spread * 180.0;
     let has_height = layout.iter().any(|s| !s.lfe && s.el > 1.0);
-    let z = if has_height { fin(p.z, 0.0).clamp(0.0, 1.0) } else { 0.0 };
+    let z = if has_height {
+        fin(p.z, 0.0).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let (bed_w, top_w) = {
         let a = z * std::f32::consts::FRAC_PI_2;
         (a.cos() * a.cos(), a.sin() * a.sin())
     };
     let mut pow = [0.0f32; MAX_SPEAKERS];
     for i in 0..k {
-        let a = if k == 1 { az } else { az - width + 2.0 * width * (i as f32 + 0.5) / k as f32 };
+        let a = if k == 1 {
+            az
+        } else {
+            az - width + 2.0 * width * (i as f32 + 0.5) / k as f32
+        };
         let w = 1.0 / k as f32;
         if bed_w > 1e-9 && !pair_power(layout, false, a, w * bed_w, &mut pow) {
             pair_power(layout, true, a, w * bed_w, &mut pow);
@@ -244,7 +276,11 @@ pub fn surround_gains(layout: &[SpeakerPos], p: &SurroundParams, out: &mut [f32]
         }
     }
     // Centre %: move energy from C to a phantom centre on L/R.
-    let find = |az: f32| layout.iter().position(|s| !s.lfe && s.el.abs() < 1.0 && (s.az - az).abs() < 0.5);
+    let find = |az: f32| {
+        layout
+            .iter()
+            .position(|s| !s.lfe && s.el.abs() < 1.0 && (s.az - az).abs() < 0.5)
+    };
     let c_share = fin(p.center, 1.0).clamp(0.0, 1.0);
     if let (Some(c), Some(l), Some(r)) = (find(0.0), find(-30.0), find(30.0))
         && c_share < 1.0
@@ -272,7 +308,12 @@ pub fn ambisonic_encode(az: f32, el: f32, spread: f32, out: &mut [f32]) {
     let (a, e) = (fin(az, 0.0).to_radians(), fin(el, 0.0).to_radians());
     let d = 1.0 - fin(spread, 0.0).clamp(0.0, 1.0);
     // Ambisonic azimuth is anticlockwise (left positive); ours is clockwise.
-    let vals = [1.0, -a.sin() * e.cos() * d, e.sin() * d, a.cos() * e.cos() * d];
+    let vals = [
+        1.0,
+        -a.sin() * e.cos() * d,
+        e.sin() * d,
+        a.cos() * e.cos() * d,
+    ];
     for (o, v) in out.iter_mut().zip(vals) {
         *o = v;
     }
@@ -282,7 +323,12 @@ pub fn ambisonic_encode(az: f32, el: f32, spread: f32, out: &mut [f32]) {
 pub fn ambisonic_decode(az: f32, el: f32, n: usize) -> [f32; 4] {
     let (a, e) = (fin(az, 0.0).to_radians(), fin(el, 0.0).to_radians());
     let k = 1.0 / n.max(1) as f32;
-    [k, 3.0 * k * -a.sin() * e.cos(), 3.0 * k * e.sin(), 3.0 * k * a.cos() * e.cos()]
+    [
+        k,
+        3.0 * k * -a.sin() * e.cos(),
+        3.0 * k * e.sin(),
+        3.0 * k * a.cos() * e.cos(),
+    ]
 }
 
 #[cfg(test)]
@@ -292,7 +338,12 @@ mod tests {
 
     #[test]
     fn center_levels() {
-        for law in [PanLaw::Minus3, PanLaw::Minus4_5, PanLaw::Minus6, PanLaw::Zero] {
+        for law in [
+            PanLaw::Minus3,
+            PanLaw::Minus4_5,
+            PanLaw::Minus6,
+            PanLaw::Zero,
+        ] {
             let (l, r) = gains(0.0, law);
             assert!((gain_to_db(l) - law.center_db()).abs() < 0.02, "{law:?}");
             assert!((l - r).abs() < 1e-6);
@@ -302,23 +353,47 @@ mod tests {
     }
 
     fn layout_51() -> Vec<SpeakerPos> {
-        [(-30.0, false), (30.0, false), (0.0, false), (0.0, true), (-110.0, false), (110.0, false)]
-            .iter()
-            .map(|&(az, lfe)| SpeakerPos { az, el: 0.0, lfe })
-            .collect()
+        [
+            (-30.0, false),
+            (30.0, false),
+            (0.0, false),
+            (0.0, true),
+            (-110.0, false),
+            (110.0, false),
+        ]
+        .iter()
+        .map(|&(az, lfe)| SpeakerPos { az, el: 0.0, lfe })
+        .collect()
     }
 
     fn layout_714() -> Vec<SpeakerPos> {
-        let mut v: Vec<SpeakerPos> =
-            [-30.0, 30.0, 0.0, 0.0, -150.0, 150.0, -90.0, 90.0].iter().enumerate().map(|(i, &az)| SpeakerPos { az, el: 0.0, lfe: i == 3 }).collect();
+        let mut v: Vec<SpeakerPos> = [-30.0, 30.0, 0.0, 0.0, -150.0, 150.0, -90.0, 90.0]
+            .iter()
+            .enumerate()
+            .map(|(i, &az)| SpeakerPos {
+                az,
+                el: 0.0,
+                lfe: i == 3,
+            })
+            .collect();
         for az in [-45.0, 45.0, -135.0, 135.0] {
-            v.push(SpeakerPos { az, el: 45.0, lfe: false });
+            v.push(SpeakerPos {
+                az,
+                el: 45.0,
+                lfe: false,
+            });
         }
         v
     }
 
     fn params(x: f32, y: f32) -> SurroundParams {
-        SurroundParams { x, y, z: 0.0, divergence: 0.0, center: 1.0 }
+        SurroundParams {
+            x,
+            y,
+            z: 0.0,
+            divergence: 0.0,
+            center: 1.0,
+        }
     }
 
     #[test]
@@ -330,11 +405,27 @@ mod tests {
                     for div in [0.0, 0.3, 1.0] {
                         for z in [0.0, 0.5, 1.0] {
                             for center in [0.0, 0.5, 1.0] {
-                                let p = SurroundParams { x: xi as f32 / 4.0, y: yi as f32 / 4.0, z, divergence: div, center };
+                                let p = SurroundParams {
+                                    x: xi as f32 / 4.0,
+                                    y: yi as f32 / 4.0,
+                                    z,
+                                    divergence: div,
+                                    center,
+                                };
                                 surround_gains(&layout, &p, &mut g);
-                                let e: f32 = g.iter().zip(layout.iter()).filter(|(_, s)| !s.lfe).map(|(x, _)| x * x).sum();
+                                let e: f32 = g
+                                    .iter()
+                                    .zip(layout.iter())
+                                    .filter(|(_, s)| !s.lfe)
+                                    .map(|(x, _)| x * x)
+                                    .sum();
                                 assert!((e - 1.0).abs() < 1e-4, "energy {e} at {p:?}");
-                                assert!(g.iter().zip(layout.iter()).all(|(x, s)| !s.lfe || *x == 0.0), "LFE is never panned to");
+                                assert!(
+                                    g.iter()
+                                        .zip(layout.iter())
+                                        .all(|(x, s)| !s.lfe || *x == 0.0),
+                                    "LFE is never panned to"
+                                );
                             }
                         }
                     }
@@ -349,22 +440,51 @@ mod tests {
         let mut g = [0.0f32; MAX_SPEAKERS];
         // Front centre with no divergence: C only.
         surround_gains(&l, &params(0.0, 1.0), &mut g);
-        assert!((g[2] - 1.0).abs() < 1e-5 && g.iter().enumerate().all(|(i, x)| i == 2 || x.abs() < 1e-3), "{g:?}");
+        assert!(
+            (g[2] - 1.0).abs() < 1e-5
+                && g.iter().enumerate().all(|(i, x)| i == 2 || x.abs() < 1e-3),
+            "{g:?}"
+        );
         // Divergence spreads the centre image.
-        surround_gains(&l, &SurroundParams { divergence: 0.5, ..params(0.0, 1.0) }, &mut g);
+        surround_gains(
+            &l,
+            &SurroundParams {
+                divergence: 0.5,
+                ..params(0.0, 1.0)
+            },
+            &mut g,
+        );
         assert!(g[2] < 0.99 && g[0] > 0.05 && g[1] > 0.05);
         // Full left (front-left corner): L only.
         surround_gains(&l, &params(-1.0, 1.0), &mut g);
-        assert!((g[0] - 1.0).abs() < 1e-5 && g.iter().enumerate().all(|(i, x)| i == 0 || x.abs() < 1e-3), "{g:?}");
+        assert!(
+            (g[0] - 1.0).abs() < 1e-5
+                && g.iter().enumerate().all(|(i, x)| i == 0 || x.abs() < 1e-3),
+            "{g:?}"
+        );
         // Rear-right corner: Rs only.
         surround_gains(&l, &params(1.0, -1.0), &mut g);
         assert!((g[5] - 1.0).abs() < 1e-5, "{g:?}");
         // Phantom centre (centre 0 %): L and R at -3 dB, no C.
-        surround_gains(&l, &SurroundParams { center: 0.0, ..params(0.0, 1.0) }, &mut g);
+        surround_gains(
+            &l,
+            &SurroundParams {
+                center: 0.0,
+                ..params(0.0, 1.0)
+            },
+            &mut g,
+        );
         assert!(g[2].abs() < 1e-6 && (g[0] - std::f32::consts::FRAC_1_SQRT_2).abs() < 1e-4);
         // Overhead on 7.1.4: heights only.
         let l = layout_714();
-        surround_gains(&l, &SurroundParams { z: 1.0, ..params(-1.0, 1.0) }, &mut g);
+        surround_gains(
+            &l,
+            &SurroundParams {
+                z: 1.0,
+                ..params(-1.0, 1.0)
+            },
+            &mut g,
+        );
         let top: f32 = g[8..12].iter().map(|x| x * x).sum();
         assert!((top - 1.0).abs() < 1e-4 && g[8] > 0.9, "{g:?}");
         // Corner positions map onto speaker angles and back.
@@ -372,7 +492,17 @@ mod tests {
         assert!((x + 1.0).abs() < 1e-3 && (y + 1.0).abs() < 1e-3, "{x} {y}");
         assert!((puck_azimuth(&l, 0.0, -1.0).abs() - 180.0).abs() < 1e-3);
         // Hostile input never produces NaN.
-        surround_gains(&l, &SurroundParams { x: f32::NAN, y: f32::INFINITY, z: f32::NAN, divergence: f32::NAN, center: f32::NAN }, &mut g);
+        surround_gains(
+            &l,
+            &SurroundParams {
+                x: f32::NAN,
+                y: f32::INFINITY,
+                z: f32::NAN,
+                divergence: f32::NAN,
+                center: f32::NAN,
+            },
+            &mut g,
+        );
         assert!(g.iter().all(|x| x.is_finite()));
     }
 }

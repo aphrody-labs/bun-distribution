@@ -44,7 +44,7 @@ impl DiffArgs {
         #[allow(clippy::single_match)]
         match &self.command {
             DiffCommand::Apply(apply) => apply.configure_logger(builder)?,
-            _ => {},
+            _ => {}
         };
         Ok(())
     }
@@ -70,7 +70,9 @@ impl DsdDiff {
     }
 
     pub(crate) fn from_file(path: &Path) -> Result<Self> {
-        Ok(serde_saphyr::from_reader(BufReader::new(io::open_file(path)?))?)
+        Ok(serde_saphyr::from_reader(BufReader::new(io::open_file(
+            path,
+        )?))?)
     }
 }
 
@@ -88,10 +90,23 @@ pub(crate) enum DiffAction {
 
     AddDelink(NewDelinkFile),
     DeleteDelink(NewDelinkFile),
-    ChangeDelinkSections { delink_name: String, sections: SectionsDiff },
-    ChangeDelinkComplete { delink_name: String, before: bool, after: bool },
-    AddDelinkCategory { delink_name: String, category: String },
-    RemoveDelinkCategory { delink_name: String, category: String },
+    ChangeDelinkSections {
+        delink_name: String,
+        sections: SectionsDiff,
+    },
+    ChangeDelinkComplete {
+        delink_name: String,
+        before: bool,
+        after: bool,
+    },
+    AddDelinkCategory {
+        delink_name: String,
+        category: String,
+    },
+    RemoveDelinkCategory {
+        delink_name: String,
+        category: String,
+    },
 
     AddSymbol(NewSymbol),
     DeleteSymbol(NewSymbol),
@@ -189,7 +204,11 @@ pub(crate) enum Diff<T: Eq> {
 
 impl<T: Eq> Diff<T> {
     pub(crate) fn new(before: T, after: T) -> Self {
-        if before == after { Self::Equal(before) } else { Self::Diff { before, after } }
+        if before == after {
+            Self::Equal(before)
+        } else {
+            Self::Diff { before, after }
+        }
     }
 
     pub(crate) fn is_equal(&self) -> bool {

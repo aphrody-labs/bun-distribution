@@ -98,22 +98,36 @@ impl Audit<'_> {
                     }
                     // Pages belong to the page tree, not to whatever links to them.
                     let obj = self.doc.get(r);
-                    if obj.as_dict().is_some_and(|d| matches!(d.name(b"Type"), Some(b"Page" | b"Pages"))) {
+                    if obj
+                        .as_dict()
+                        .is_some_and(|d| matches!(d.name(b"Type"), Some(b"Page" | b"Pages")))
+                    {
                         continue;
                     }
                     self.owner.insert(r.num, cat);
                     stack.push((*obj).clone());
                 }
                 Object::Array(a) => stack.extend(a),
-                Object::Dict(d) => stack.extend(d.iter().filter(|(k, _)| k.as_slice() != b"Parent" && k.as_slice() != b"P").map(|(_, v)| v.clone())),
-                Object::Stream(s) => stack.extend(s.dict.iter().filter(|(k, _)| k.as_slice() != b"Parent").map(|(_, v)| v.clone())),
+                Object::Dict(d) => stack.extend(
+                    d.iter()
+                        .filter(|(k, _)| k.as_slice() != b"Parent" && k.as_slice() != b"P")
+                        .map(|(_, v)| v.clone()),
+                ),
+                Object::Stream(s) => stack.extend(
+                    s.dict
+                        .iter()
+                        .filter(|(k, _)| k.as_slice() != b"Parent")
+                        .map(|(_, v)| v.clone()),
+                ),
                 _ => {}
             }
         }
     }
 
     fn resolve_dict(&self, o: Option<&Object>) -> Dict {
-        o.map(|x| self.doc.resolve(x)).and_then(|x| x.as_dict().cloned()).unwrap_or_default()
+        o.map(|x| self.doc.resolve(x))
+            .and_then(|x| x.as_dict().cloned())
+            .unwrap_or_default()
     }
 
     /// A page's resources, by kind.
@@ -161,8 +175,14 @@ fn size(doc: &Document, num: u32) -> u64 {
 /// Audit the space a document uses; `file_len` is the size of the file on disk (the rest is
 /// overhead).
 pub fn audit_space(doc: &Document, file_len: u64) -> Vec<SpaceUse> {
-    let mut a = Audit { doc, owner: HashMap::new() };
-    let cat = doc.root().and_then(|r| doc.get(r).as_dict().cloned()).unwrap_or_default();
+    let mut a = Audit {
+        doc,
+        owner: HashMap::new(),
+    };
+    let cat = doc
+        .root()
+        .and_then(|r| doc.get(r).as_dict().cloned())
+        .unwrap_or_default();
     let pages = pdfcraft_model::pages(doc);
     // Order matters: the most specific owners first.
     if let Some(s) = cat.get(b"StructTreeRoot") {
@@ -171,8 +191,22 @@ pub fn audit_space(doc: &Document, file_len: u64) -> Vec<SpaceUse> {
         for p in &pages {
             if let Some(annots) = p.dict.get(b"Annots") {
                 for x in doc.resolve(annots).as_array().cloned().unwrap_or_default() {
-                    let widget = x.as_ref().and_then(|r| doc.get(r).as_dict().map(|d| d.name(b"Subtype") == Some(b"Widget"))).unwrap_or(false);
-                    a.claim(&x, if widget { SpaceCategory::Forms } else { SpaceCategory::Comments });
+                    let widget = x
+                        .as_ref()
+                        .and_then(|r| {
+                            doc.get(r)
+                                .as_dict()
+                                .map(|d| d.name(b"Subtype") == Some(b"Widget"))
+                        })
+                        .unwrap_or(false);
+                    a.claim(
+                        &x,
+                        if widget {
+                            SpaceCategory::Forms
+                        } else {
+                            SpaceCategory::Comments
+                        },
+                    );
                 }
             }
         }
@@ -184,8 +218,22 @@ pub fn audit_space(doc: &Document, file_len: u64) -> Vec<SpaceUse> {
     for p in &pages {
         if let Some(annots) = p.dict.get(b"Annots") {
             for x in doc.resolve(annots).as_array().cloned().unwrap_or_default() {
-                let widget = x.as_ref().and_then(|r| doc.get(r).as_dict().map(|d| d.name(b"Subtype") == Some(b"Widget"))).unwrap_or(false);
-                a.claim(&x, if widget { SpaceCategory::Forms } else { SpaceCategory::Comments });
+                let widget = x
+                    .as_ref()
+                    .and_then(|r| {
+                        doc.get(r)
+                            .as_dict()
+                            .map(|d| d.name(b"Subtype") == Some(b"Widget"))
+                    })
+                    .unwrap_or(false);
+                a.claim(
+                    &x,
+                    if widget {
+                        SpaceCategory::Forms
+                    } else {
+                        SpaceCategory::Comments
+                    },
+                );
             }
         }
         // Resources before the content: a content stream's dictionary may point at what it
@@ -222,7 +270,11 @@ pub fn audit_space(doc: &Document, file_len: u64) -> Vec<SpaceUse> {
         .into_iter()
         .map(|c| {
             let b = bytes.get(&c).copied().unwrap_or(0);
-            SpaceUse { category: c, bytes: b, percent: b as f64 * 100.0 / total as f64 }
+            SpaceUse {
+                category: c,
+                bytes: b,
+                percent: b as f64 * 100.0 / total as f64,
+            }
         })
         .collect()
 }

@@ -49,11 +49,22 @@ pub fn load(id: &str, models_dir: &Path) -> Result<NeuralVoice, TtsError> {
     let mut guard = cache().lock().unwrap_or_else(PoisonError::into_inner);
     if guard.as_ref().is_none_or(|l| l.dir != dir) {
         let model = Arc::new(Kokoro::load(&dir)?);
-        let bytes = std::fs::read(dir.join("cmudict.dict")).map_err(|e| TtsError::Model(format!("cmudict.dict: {e}")))?;
-        let lexicon = Arc::new(Lexicon::parse_cmudict(&bytes).map_err(|e| TtsError::Model(format!("cmudict.dict: {e}")))?);
-        *guard = Some(Loaded { dir: dir.clone(), model, lexicon, packs: HashMap::new() });
+        let bytes = std::fs::read(dir.join("cmudict.dict"))
+            .map_err(|e| TtsError::Model(format!("cmudict.dict: {e}")))?;
+        let lexicon = Arc::new(
+            Lexicon::parse_cmudict(&bytes)
+                .map_err(|e| TtsError::Model(format!("cmudict.dict: {e}")))?,
+        );
+        *guard = Some(Loaded {
+            dir: dir.clone(),
+            model,
+            lexicon,
+            packs: HashMap::new(),
+        });
     }
-    let loaded = guard.as_mut().ok_or_else(|| TtsError::Model("voice package not loaded".into()))?;
+    let loaded = guard
+        .as_mut()
+        .ok_or_else(|| TtsError::Model("voice package not loaded".into()))?;
     let pack = match loaded.packs.get(v.file) {
         Some(p) => p.clone(),
         None => {
@@ -62,7 +73,15 @@ pub fn load(id: &str, models_dir: &Path) -> Result<NeuralVoice, TtsError> {
             p
         }
     };
-    Ok(NeuralVoice { info: VoiceInfo { installed: true, ..v.info }, model: loaded.model.clone(), lexicon: loaded.lexicon.clone(), pack })
+    Ok(NeuralVoice {
+        info: VoiceInfo {
+            installed: true,
+            ..v.info
+        },
+        model: loaded.model.clone(),
+        lexicon: loaded.lexicon.clone(),
+        pack,
+    })
 }
 
 impl Voice for NeuralVoice {
@@ -73,7 +92,9 @@ impl Voice for NeuralVoice {
     fn synthesize(&self, text: &str, params: &Params) -> Result<Audio, TtsError> {
         check_text(text)?;
         params.check()?;
-        let chunks = filmcraft_tts_text::phonemize(text, Lang::EnUs, &self.lexicon, &Overrides::default()).map_err(|e| TtsError::Invalid(e.to_string()))?;
+        let chunks =
+            filmcraft_tts_text::phonemize(text, Lang::EnUs, &self.lexicon, &Overrides::default())
+                .map_err(|e| TtsError::Invalid(e.to_string()))?;
         let rate = KOKORO_RATE;
         let max = (MAX_SECONDS * f64::from(rate)) as usize;
         let mut out: Vec<f32> = Vec::new();
@@ -89,7 +110,11 @@ impl Voice for NeuralVoice {
                         continue;
                     }
                     if spoke {
-                        out.resize(out.len().saturating_add((SENTENCE_GAP_MS * rate / 1000) as usize), 0.0);
+                        out.resize(
+                            out.len()
+                                .saturating_add((SENTENCE_GAP_MS * rate / 1000) as usize),
+                            0.0,
+                        );
                     }
                     let s = self.model.speak(p, &self.pack, params.pace, i as u64 + 1)?;
                     out.extend_from_slice(&s);
@@ -112,7 +137,10 @@ impl Voice for NeuralVoice {
             let g = 0.98 / peak;
             out.iter_mut().for_each(|x| *x *= g);
         }
-        Ok(Audio { samples: out, sample_rate: rate })
+        Ok(Audio {
+            samples: out,
+            sample_rate: rate,
+        })
     }
 }
 

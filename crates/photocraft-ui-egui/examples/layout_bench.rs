@@ -35,7 +35,9 @@ use serde_json::{Value, json};
 type H = egui_kittest::Harness<'static, PhotocraftApp>;
 
 fn arg(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1).cloned())
 }
 
 fn ms(t: Instant) -> f64 {
@@ -62,7 +64,11 @@ impl Rows {
             return;
         }
         v.sort_by(f64::total_cmp);
-        let (med, p90, max) = (v[v.len() / 2], v[(v.len() * 9 / 10).min(v.len() - 1)], v[v.len() - 1]);
+        let (med, p90, max) = (
+            v[v.len() / 2],
+            v[(v.len() * 9 / 10).min(v.len() - 1)],
+            v[v.len() - 1],
+        );
         let flag = if med > 16.0 { "  <-- over 16 ms" } else { "" };
         println!("{name:<46} median {med:>8.2} ms   p90 {p90:>8.2}   max {max:>8.2}{flag}");
         self.rows.push((name.to_string(), med, p90, max));
@@ -86,7 +92,15 @@ fn screen(h: &H, x: f64, y: f64) -> Pos2 {
     let idx = app.session.active_index().unwrap_or(0);
     let v = &app.ui.views[idx];
     let rect = photocraft_ui_egui::rulers::content_rect(app, app.last_canvas_rect);
-    ViewXform { rect, zoom: v.zoom, center: v.center, flip: app.ui.view.flip_horizontal, rotation: v.rotation, aspect: 1.0 }.to_screen(x as f32, y as f32)
+    ViewXform {
+        rect,
+        zoom: v.zoom,
+        center: v.center,
+        flip: app.ui.view.flip_horizontal,
+        rotation: v.rotation,
+        aspect: 1.0,
+    }
+    .to_screen(x as f32, y as f32)
 }
 
 fn select(h: &mut H, id: LayerId) {
@@ -100,7 +114,12 @@ fn drag(h: &mut H, from: [f64; 2], d: [f64; 2], steps: usize) -> Vec<f64> {
     let mut times = Vec::new();
     h.event(Event::PointerMoved(p0));
     times.push(frame(h));
-    h.event(Event::PointerButton { pos: p0, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+    h.event(Event::PointerButton {
+        pos: p0,
+        button: PointerButton::Primary,
+        pressed: true,
+        modifiers: Modifiers::NONE,
+    });
     times.push(frame(h));
     for i in 1..=steps {
         let f = i as f64 / steps as f64;
@@ -109,7 +128,12 @@ fn drag(h: &mut H, from: [f64; 2], d: [f64; 2], steps: usize) -> Vec<f64> {
         times.push(frame(h));
     }
     let p1 = screen(h, from[0] + d[0], from[1] + d[1]);
-    h.event(Event::PointerButton { pos: p1, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+    h.event(Event::PointerButton {
+        pos: p1,
+        button: PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
     times.push(frame(h));
     times.push(frame(h));
     times
@@ -117,14 +141,37 @@ fn drag(h: &mut H, from: [f64; 2], d: [f64; 2], steps: usize) -> Vec<f64> {
 
 /// Rows for Move drags (frame times from [`drag`]): the press, the pointer moves, the release.
 fn move_rows(rows: &mut Rows, label: &str, drags: &[Vec<f64>]) {
-    let pick = |f: &dyn Fn(&[f64]) -> Vec<f64>| drags.iter().flat_map(|d| f(d)).collect::<Vec<f64>>();
-    rows.add(&format!("Move {label}: press"), pick(&|d| d.get(1).copied().into_iter().collect()));
-    rows.add(&format!("Move {label}: drag frames"), pick(&|d| d.get(2..d.len().saturating_sub(2)).unwrap_or_default().to_vec()));
-    rows.add(&format!("Move {label}: release (commit)"), pick(&|d| d.len().checked_sub(2).and_then(|i| d.get(i)).copied().into_iter().collect()));
+    let pick =
+        |f: &dyn Fn(&[f64]) -> Vec<f64>| drags.iter().flat_map(|d| f(d)).collect::<Vec<f64>>();
+    rows.add(
+        &format!("Move {label}: press"),
+        pick(&|d| d.get(1).copied().into_iter().collect()),
+    );
+    rows.add(
+        &format!("Move {label}: drag frames"),
+        pick(&|d| {
+            d.get(2..d.len().saturating_sub(2))
+                .unwrap_or_default()
+                .to_vec()
+        }),
+    );
+    rows.add(
+        &format!("Move {label}: release (commit)"),
+        pick(&|d| {
+            d.len()
+                .checked_sub(2)
+                .and_then(|i| d.get(i))
+                .copied()
+                .into_iter()
+                .collect()
+        }),
+    );
 }
 
 fn contains(l: &photocraft_doc::Layer, t: LayerId) -> bool {
-    l.id == t || l.children().is_some_and(|c| c.iter().any(|k| contains(k, t)))
+    l.id == t
+        || l.children()
+            .is_some_and(|c| c.iter().any(|k| contains(k, t)))
 }
 
 /// A point where `id` (or one of its layers, for a group) is the topmost layer with pixels.
@@ -136,7 +183,10 @@ fn point_on(h: &H, id: LayerId) -> Option<[f64; 2]> {
     for r in 0..60 {
         for (dx, dy) in [(0, 0), (r, 0), (-r, 0), (0, r), (0, -r)] {
             let (x, y) = (cx + dx * 3, cy + dy * 3);
-            if photocraft_engine::pick_cmds::layers_at(&st.doc, x, y).first().is_some_and(|&t| contains(l, t)) {
+            if photocraft_engine::pick_cmds::layers_at(&st.doc, x, y)
+                .first()
+                .is_some_and(|&t| contains(l, t))
+            {
                 return Some([x as f64 + 0.5, y as f64 + 0.5]);
             }
         }
@@ -147,38 +197,77 @@ fn point_on(h: &H, id: LayerId) -> Option<[f64; 2]> {
 fn main() {
     reexec_with_gpu_sync();
     let args: Vec<String> = std::env::args().collect();
-    let reps: usize = arg(&args, "--reps").and_then(|v| v.parse().ok()).unwrap_or(9).max(3);
+    let reps: usize = arg(&args, "--reps")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(9)
+        .max(3);
     let mut spec = layout_doc::Spec::full();
-    if let Some((w, hh)) = arg(&args, "--size").and_then(|s| s.split_once('x').and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?)))) {
+    if let Some((w, hh)) = arg(&args, "--size").and_then(|s| {
+        s.split_once('x')
+            .and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?)))
+    }) {
         (spec.width, spec.height) = (w, hh);
     }
     let t = Instant::now();
     let (doc, _) = layout_doc::build(spec);
     let (n, texts) = layout_doc::count(&doc);
-    println!("built {}×{} layout: {n} layers, {texts} text layers in {:.0} ms", spec.width, spec.height, ms(t));
+    println!(
+        "built {}×{} layout: {n} layers, {texts} text layers in {:.0} ms",
+        spec.width,
+        spec.height,
+        ms(t)
+    );
     let doc = if args.iter().any(|a| a == "--direct") {
         doc
     } else {
         let t = Instant::now();
-        let psd = photocraft_io::export(&doc, "layout.psd", &Default::default()).expect("psd export").bytes;
+        let psd = photocraft_io::export(&doc, "layout.psd", &Default::default())
+            .expect("psd export")
+            .bytes;
         let t_save = ms(t);
         let t = Instant::now();
         let r = photocraft_io::import("layout.psd", &psd).expect("psd import");
-        println!("PSD: {:.1} MB, save {t_save:.0} ms, open {:.0} ms ({} warnings)", psd.len() as f64 / 1e6, ms(t), r.warnings.len());
+        println!(
+            "PSD: {:.1} MB, save {t_save:.0} ms, open {:.0} ms ({} warnings)",
+            psd.len() as f64 / 1e6,
+            ms(t),
+            r.warnings.len()
+        );
         // PSD export writes engine-made smart objects as pixels (no SoLd yet): convert them back,
         // as a Photoshop-made file would have them.
         let mut s = photocraft_engine::Session::new();
         s.open_document(r.document, None);
-        let smart = |l: &photocraft_doc::Layer| l.name == "Logo" || (l.name.starts_with("Product ") && !l.name.contains('—') && !l.is_group());
-        let ids: Vec<u64> = s.active().map(|st| st.doc.walk().iter().filter(|(_, _, l)| smart(l)).map(|(_, _, l)| l.id.0).collect()).unwrap_or_default();
+        let smart = |l: &photocraft_doc::Layer| {
+            l.name == "Logo"
+                || (l.name.starts_with("Product ") && !l.name.contains('—') && !l.is_group())
+        };
+        let ids: Vec<u64> = s
+            .active()
+            .map(|st| {
+                st.doc
+                    .walk()
+                    .iter()
+                    .filter(|(_, _, l)| smart(l))
+                    .map(|(_, _, l)| l.id.0)
+                    .collect()
+            })
+            .unwrap_or_default();
         for id in ids {
-            s.execute("layer.smartObjects.convertToSmartObject", json!({"layer": id})).expect("convert");
+            s.execute(
+                "layer.smartObjects.convertToSmartObject",
+                json!({"layer": id}),
+            )
+            .expect("convert");
         }
         (*s.active().expect("doc").doc).clone()
     };
     // Layer ids change through the PSD round trip: find the layers by name and kind.
     let find = |name: &str, pred: &dyn Fn(&LayerContent) -> bool| -> LayerId {
-        doc.walk().iter().find(|(_, _, l)| l.name == name && pred(&l.content)).map(|(_, _, l)| l.id).unwrap_or_else(|| panic!("no layer {name}"))
+        doc.walk()
+            .iter()
+            .find(|(_, _, l)| l.name == name && pred(&l.content))
+            .map(|(_, _, l)| l.id)
+            .unwrap_or_else(|| panic!("no layer {name}"))
     };
     let pixel = find("Tile 1", &|c| matches!(c, LayerContent::Raster(_)));
     let text = find("Product 1 — Oak", &|c| matches!(c, LayerContent::Text(_)));
@@ -186,25 +275,35 @@ fn main() {
     let group = find("Card 1", &|c| matches!(c, LayerContent::Group(_)));
     let smart = find("Product 1", &|c| matches!(c, LayerContent::Smart(_)));
     let hero = find("Hero", &|c| matches!(c, LayerContent::Group(_)));
-    let headline = find("Make things that last", &|c| matches!(c, LayerContent::Text(_)));
+    let headline = find("Make things that last", &|c| {
+        matches!(c, LayerContent::Text(_))
+    });
     let products = find("Products", &|c| matches!(c, LayerContent::Group(_)));
 
     let navigator = args.iter().any(|a| a == "--navigator");
-    let ppp: f32 = arg(&args, "--ppp").and_then(|v| v.parse().ok()).unwrap_or(1.0);
+    let ppp: f32 = arg(&args, "--ppp")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1.0);
     let t = Instant::now();
-    let builder = egui_kittest::Harness::builder().with_size(egui::vec2(1600.0, 1000.0)).with_pixels_per_point(ppp);
-    let mut h: H = builder.wgpu_setup(photocraft_ui_egui::gpu_canvas::wgpu_setup()).build_eframe(move |cc| {
-        PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Services::default());
-        if let Some(rs) = cc.wgpu_render_state.as_ref() {
-            rs.device.set_device_lost_callback(|r, m| eprintln!("GPU device lost ({r:?}): {m}"));
-            app.set_wgpu(rs.clone());
-        }
-        app.session.open_document(doc, Some("layout.psd".into()));
-        app.sync_views();
-        app.ui.panels.navigator = navigator;
-        app
-    });
+    let builder = egui_kittest::Harness::builder()
+        .with_size(egui::vec2(1600.0, 1000.0))
+        .with_pixels_per_point(ppp);
+    let mut h: H = builder
+        .wgpu_setup(photocraft_ui_egui::gpu_canvas::wgpu_setup())
+        .build_eframe(move |cc| {
+            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+            let mut app =
+                PhotocraftApp::new(photocraft_engine::Session::new(), Services::default());
+            if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                rs.device
+                    .set_device_lost_callback(|r, m| eprintln!("GPU device lost ({r:?}): {m}"));
+                app.set_wgpu(rs.clone());
+            }
+            app.session.open_document(doc, Some("layout.psd".into()));
+            app.sync_views();
+            app.ui.panels.navigator = navigator;
+            app
+        });
     settle(&mut h, 4);
     {
         let p = &h.state().perf;
@@ -227,7 +326,10 @@ fn main() {
         spin(&mut h, &what, [pixel, text, shape, group, smart, headline]);
         return;
     }
-    let mut rows = Rows { reps, rows: Vec::new() };
+    let mut rows = Rows {
+        reps,
+        rows: Vec::new(),
+    };
     rows.time("idle frame", || frame(&mut h));
     rows.time("hover over the canvas", || {
         let p = screen(&h, 1000.0, 1000.0);
@@ -252,18 +354,35 @@ fn main() {
     rows.time("click a Layers panel row", || {
         k += 1;
         // The row is the widest node with the name (its disclosure triangle has it too).
-        let row = h.query_all_by_label(names[k % names.len()]).map(|n| n.rect()).max_by(|a, b| a.width().total_cmp(&b.width()));
-        let Some(p) = row.map(|r| r.center()) else { return f64::NAN };
+        let row = h
+            .query_all_by_label(names[k % names.len()])
+            .map(|n| n.rect())
+            .max_by(|a, b| a.width().total_cmp(&b.width()));
+        let Some(p) = row.map(|r| r.center()) else {
+            return f64::NAN;
+        };
         h.event(Event::PointerMoved(p));
         let a = frame(&mut h);
-        h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+        h.event(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed: true,
+            modifiers: Modifiers::NONE,
+        });
         let b = frame(&mut h);
-        h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+        h.event(Event::PointerButton {
+            pos: p,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: Modifiers::NONE,
+        });
         a.max(b).max(frame(&mut h)).max(frame(&mut h))
     });
     rows.time("open / close a group (Layers panel)", || {
         let t = Instant::now();
-        let _ = h.state_mut().run("layer.setExpanded", json!({"layer": products.0}));
+        let _ = h
+            .state_mut()
+            .run("layer.setExpanded", json!({"layer": products.0}));
         (ms(t) + frame(&mut h)).max(frame(&mut h))
     });
     let tools = [Key::V, Key::B, Key::M, Key::T, Key::U, Key::E];
@@ -277,10 +396,14 @@ fn main() {
         rows.time(&format!("toggle visibility ({label})"), || {
             vis = !vis;
             let t = Instant::now();
-            let _ = h.state_mut().run("layer.setProps", json!({"layer": id.0, "visible": vis}));
+            let _ = h
+                .state_mut()
+                .run("layer.setProps", json!({"layer": id.0, "visible": vis}));
             (ms(t) + frame(&mut h)).max(frame(&mut h))
         });
-        let _ = h.state_mut().run("layer.setProps", json!({"layer": id.0, "visible": true}));
+        let _ = h
+            .state_mut()
+            .run("layer.setProps", json!({"layer": id.0, "visible": true}));
         settle(&mut h, 3);
     }
     let mut op = 1.0;
@@ -289,7 +412,9 @@ fn main() {
     rows.time("opacity change (Layers / Properties)", || {
         op = if op > 0.6 { 0.5 } else { 0.9 };
         let t = Instant::now();
-        let _ = h.state_mut().run("layer.setProps", json!({"layer": shape.0, "opacity": op}));
+        let _ = h
+            .state_mut()
+            .run("layer.setProps", json!({"layer": shape.0, "opacity": op}));
         (ms(t) + frame(&mut h)).max(frame(&mut h))
     });
 
@@ -297,7 +422,13 @@ fn main() {
     h.state_mut().ui.tool = Tool::Move;
     h.state_mut().ui.tool_options.move_auto_select = false;
     settle(&mut h, 3);
-    for (label, id) in [("pixel", pixel), ("text", text), ("shape", shape), ("group", group), ("smart object", smart)] {
+    for (label, id) in [
+        ("pixel", pixel),
+        ("text", text),
+        ("shape", shape),
+        ("group", group),
+        ("smart object", smart),
+    ] {
         select(&mut h, id);
         settle(&mut h, 3);
         let Some(from) = point_on(&h, id) else {
@@ -308,7 +439,16 @@ fn main() {
         let mut commit = Vec::new();
         let drags: Vec<Vec<f64>> = (0..reps)
             .map(|i| {
-                let d = drag(&mut h, from, if i.is_multiple_of(2) { [37.0, 23.0] } else { [-37.0, -23.0] }, 8);
+                let d = drag(
+                    &mut h,
+                    from,
+                    if i.is_multiple_of(2) {
+                        [37.0, 23.0]
+                    } else {
+                        [-37.0, -23.0]
+                    },
+                    8,
+                );
                 commit.push(h.state().perf.command_ms);
                 d
             })
@@ -323,12 +463,26 @@ fn main() {
         let mut i = 0u32;
         rows.time("click the canvas (auto-select a layer)", || {
             i += 1;
-            let p = screen(&h, if i.is_multiple_of(2) { a[0] } else { b[0] }, if i.is_multiple_of(2) { a[1] } else { b[1] });
+            let p = screen(
+                &h,
+                if i.is_multiple_of(2) { a[0] } else { b[0] },
+                if i.is_multiple_of(2) { a[1] } else { b[1] },
+            );
             h.event(Event::PointerMoved(p));
             let f0 = frame(&mut h);
-            h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::NONE,
+            });
             let f1 = frame(&mut h);
-            h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::NONE,
+            });
             let f2 = frame(&mut h);
             let f3 = frame(&mut h);
             f0.max(f1).max(f2).max(f3)
@@ -339,7 +493,16 @@ fn main() {
             .map(|i| {
                 select(&mut h, pixel);
                 settle(&mut h, 2);
-                drag(&mut h, from, if i.is_multiple_of(2) { [25.0, 0.0] } else { [-25.0, 0.0] }, 8)
+                drag(
+                    &mut h,
+                    from,
+                    if i.is_multiple_of(2) {
+                        [25.0, 0.0]
+                    } else {
+                        [-25.0, 0.0]
+                    },
+                    8,
+                )
             })
             .collect();
         move_rows(&mut rows, "auto-select type", &drags);
@@ -349,7 +512,8 @@ fn main() {
     if let Some(out) = arg(&args, "--json") {
         let r: Vec<Value> = rows.rows.iter().map(|(n, med, p90, max)| json!({"name": n, "median_ms": med, "p90_ms": p90, "max_ms": max})).collect();
         let report = json!({"width": spec.width, "height": spec.height, "layers": n, "text_layers": texts, "rows": r});
-        std::fs::write(&out, serde_json::to_string_pretty(&report).expect("json")).expect("write json");
+        std::fs::write(&out, serde_json::to_string_pretty(&report).expect("json"))
+            .expect("write json");
     }
 }
 
@@ -373,7 +537,13 @@ fn shots(h: &mut H, dir: &str, ppp: f32, [group, headline]: [LayerId; 2]) {
     for (what, id) in [("card", group), ("headline", headline)] {
         for view in ["fit", "100"] {
             select(h, id);
-            if let Some(b) = h.state().session.active().and_then(|s| s.doc.layer(id)).and_then(photocraft_engine::layer_multi_cmds::layer_bounds) {
+            if let Some(b) = h
+                .state()
+                .session
+                .active()
+                .and_then(|s| s.doc.layer(id))
+                .and_then(photocraft_engine::layer_multi_cmds::layer_bounds)
+            {
                 let app = h.state_mut();
                 let v = &mut app.ui.views[0];
                 if view == "100" {
@@ -385,22 +555,38 @@ fn shots(h: &mut H, dir: &str, ppp: f32, [group, headline]: [LayerId; 2]) {
                 }
             }
             settle(h, 6);
-            let Some(from) = point_on(h, id) else { continue };
+            let Some(from) = point_on(h, id) else {
+                continue;
+            };
             // Press and drag most of the way, render mid-drag, then release and render again.
             let d = [140.0, 60.0];
             let p0 = screen(h, from[0], from[1]);
             h.event(Event::PointerMoved(p0));
             frame(h);
-            h.event(Event::PointerButton { pos: p0, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p0,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::NONE,
+            });
             frame(h);
             for i in 1..=10 {
                 let f = f64::from(i) / 10.0;
-                h.event(Event::PointerMoved(screen(h, from[0] + d[0] * f, from[1] + d[1] * f)));
+                h.event(Event::PointerMoved(screen(
+                    h,
+                    from[0] + d[0] * f,
+                    from[1] + d[1] * f,
+                )));
                 frame(h);
             }
             save(h, &format!("move-{what}-{view}-dragging"));
             let p1 = screen(h, from[0] + d[0], from[1] + d[1]);
-            h.event(Event::PointerButton { pos: p1, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p1,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::NONE,
+            });
             settle(h, 4);
             save(h, &format!("move-{what}-{view}-released"));
             let _ = h.state_mut().run("edit.undo", json!({}));
@@ -436,15 +622,28 @@ fn spin(h: &mut H, what: &str, [pixel, text, shape, group, smart, headline]: [La
     if what == "click" {
         h.state_mut().ui.tool = Tool::Move;
         h.state_mut().ui.tool_options.move_auto_select = true;
-        let pts: Vec<[f64; 2]> = [text, pixel].iter().filter_map(|&id| point_on(h, id)).collect();
+        let pts: Vec<[f64; 2]> = [text, pixel]
+            .iter()
+            .filter_map(|&id| point_on(h, id))
+            .collect();
         while t.elapsed().as_secs() < 20 && !pts.is_empty() {
             k += 1;
             let p = screen(h, pts[k % pts.len()][0], pts[k % pts.len()][1]);
             h.event(Event::PointerMoved(p));
             frame(h);
-            h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: true,
+                modifiers: Modifiers::NONE,
+            });
             frame(h);
-            h.event(Event::PointerButton { pos: p, button: PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+            h.event(Event::PointerButton {
+                pos: p,
+                button: PointerButton::Primary,
+                pressed: false,
+                modifiers: Modifiers::NONE,
+            });
             settle(h, 2);
         }
         return;
@@ -467,6 +666,10 @@ fn reexec_with_gpu_sync() {
         return;
     }
     let exe = std::env::current_exe().expect("exe");
-    let status = std::process::Command::new(exe).args(std::env::args().skip(1)).env("PHOTOCRAFT_GPU_SYNC", "1").status().expect("re-exec");
+    let status = std::process::Command::new(exe)
+        .args(std::env::args().skip(1))
+        .env("PHOTOCRAFT_GPU_SYNC", "1")
+        .status()
+        .expect("re-exec");
     std::process::exit(status.code().unwrap_or(1));
 }

@@ -17,7 +17,17 @@
 //!
 //! Layer L0: no dependencies beyond `std`, no `unsafe`, builds for `wasm32-unknown-unknown`.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod essence;
 mod file;
@@ -28,13 +38,17 @@ mod source;
 pub mod write;
 
 pub use essence::{Codec, PictureInfo, SoundFormat, SoundInfo, aes3_element_samples, decode_pcm};
-pub use file::{Chunk, EssenceTrack, MxfFile, OperationalPattern, Partition, PartitionKind, Sample, Timecode, TrackKind, Wrapping, open};
+pub use file::{
+    Chunk, EssenceTrack, MxfFile, OperationalPattern, Partition, PartitionKind, Sample, Timecode,
+    TrackKind, Wrapping, open,
+};
 pub use index::{IndexEntry, IndexSegment};
 pub use klv::{Rational, Ul};
 pub use source::ByteSource;
 pub use write::{
-    CodedKind, ColorSpace, FrameInfo, MxfWriter, OpAtomPcm, PackageIds, Pattern, PictureCoding, PictureDesc, SoundDesc, StartTimecode, Timestamp, Umid,
-    WriterConfig, encode_pcm, write_opatom_pcm,
+    CodedKind, ColorSpace, FrameInfo, MxfWriter, OpAtomPcm, PackageIds, Pattern, PictureCoding,
+    PictureDesc, SoundDesc, StartTimecode, Timestamp, Umid, WriterConfig, encode_pcm,
+    write_opatom_pcm,
 };
 
 use std::fmt;

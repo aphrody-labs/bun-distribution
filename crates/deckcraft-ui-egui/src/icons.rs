@@ -335,13 +335,26 @@ fn stroke_width(size: f32) -> f32 {
 /// Paint `icon` into `rect` (square or not; draw centred in the largest square). `ink` is the
 /// foreground (text) colour for the current theme; accents are fixed colours (see above), but when
 /// `disabled` is true draw everything in `ink` at ~35% alpha.
-pub fn paint(painter: &egui::Painter, rect: egui::Rect, icon: Icon, ink: egui::Color32, disabled: bool) {
+pub fn paint(
+    painter: &egui::Painter,
+    rect: egui::Rect,
+    icon: Icon,
+    ink: egui::Color32,
+    disabled: bool,
+) {
     let size = rect.width().min(rect.height());
     if !size.is_finite() || size <= 0.5 {
         return;
     }
     let origin = rect.center() - vec2(size * 0.5, size * 0.5);
-    let pen = Pen { p: painter, o: origin, k: size / 24.0, sw: stroke_width(size), ink, dis: disabled };
+    let pen = Pen {
+        p: painter,
+        o: origin,
+        k: size / 24.0,
+        sw: stroke_width(size),
+        ink,
+        dis: disabled,
+    };
     draw(&pen, icon);
 }
 
@@ -424,7 +437,10 @@ fn cubic_pts(p0: P2, p1: P2, p2: P2, p3: P2, n: usize) -> Vec<P2> {
             let t = i as f32 / n as f32;
             let u = 1.0 - t;
             let (a, b, c, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-            (a * p0.0 + b * p1.0 + c * p2.0 + d * p3.0, a * p0.1 + b * p1.1 + c * p2.1 + d * p3.1)
+            (
+                a * p0.0 + b * p1.0 + c * p2.0 + d * p3.0,
+                a * p0.1 + b * p1.1 + c * p2.1 + d * p3.1,
+            )
         })
         .collect()
 }
@@ -434,7 +450,10 @@ fn quad_pts(p0: P2, p1: P2, p2: P2, n: usize) -> Vec<P2> {
         .map(|i| {
             let t = i as f32 / n as f32;
             let u = 1.0 - t;
-            (u * u * p0.0 + 2.0 * u * t * p1.0 + t * t * p2.0, u * u * p0.1 + 2.0 * u * t * p1.1 + t * t * p2.1)
+            (
+                u * u * p0.0 + 2.0 * u * t * p1.0 + t * t * p2.0,
+                u * u * p0.1 + 2.0 * u * t * p1.1 + t * t * p2.1,
+            )
         })
         .collect()
 }
@@ -462,8 +481,14 @@ fn round_pts(pts: &[P2], r: f32, closed: bool) -> Vec<P2> {
             continue;
         }
         let rr = r.min(d1 * 0.5).min(d2 * 0.5);
-        let a = (cur.0 + (prev.0 - cur.0) / d1 * rr, cur.1 + (prev.1 - cur.1) / d1 * rr);
-        let b = (cur.0 + (next.0 - cur.0) / d2 * rr, cur.1 + (next.1 - cur.1) / d2 * rr);
+        let a = (
+            cur.0 + (prev.0 - cur.0) / d1 * rr,
+            cur.1 + (prev.1 - cur.1) / d1 * rr,
+        );
+        let b = (
+            cur.0 + (next.0 - cur.0) / d2 * rr,
+            cur.1 + (next.1 - cur.1) / d2 * rr,
+        );
         out.extend(quad_pts(a, cur, b, 4));
     }
     out
@@ -487,7 +512,9 @@ fn star_pts(c: P2, ro: f32, ri: f32, n: usize, rot: f32) -> Vec<P2> {
 /// Transforms local points (u along `ang`, v across) to design coordinates around `c`.
 fn tf(c: P2, ang: f32, pts: &[P2]) -> Vec<P2> {
     let (s, co) = rad(ang).sin_cos();
-    pts.iter().map(|&(u, v)| (c.0 + u * co - v * s, c.1 + u * s + v * co)).collect()
+    pts.iter()
+        .map(|&(u, v)| (c.0 + u * co - v * s, c.1 + u * s + v * co))
+        .collect()
 }
 
 fn point_in_tri(p: Pos2, a: Pos2, b: Pos2, c: Pos2) -> bool {
@@ -527,7 +554,9 @@ fn triangulate(pts: &[Pos2]) -> Vec<[u32; 3]> {
             if cross <= 1e-7 {
                 continue;
             }
-            let blocked = idx.iter().any(|&j| j != ia && j != ib && j != ic && point_in_tri(pts[j], a, b, c));
+            let blocked = idx
+                .iter()
+                .any(|&j| j != ia && j != ib && j != ic && point_in_tri(pts[j], a, b, c));
             if blocked {
                 continue;
             }
@@ -611,10 +640,12 @@ impl Pen<'_> {
                     cap.push(c + vec2(t.cos(), t.sin()) * r);
                 }
             }
-            self.p.add(PathShape::convex_polygon(cap, col, Stroke::NONE));
+            self.p
+                .add(PathShape::convex_polygon(cap, col, Stroke::NONE));
             return;
         }
-        self.p.add(PathShape::line(v, Stroke::new(self.sw * w, col)));
+        self.p
+            .add(PathShape::line(v, Stroke::new(self.sw * w, col)));
     }
 
     fn line(&self, pts: &[P2], c: C) {
@@ -639,17 +670,32 @@ impl Pen<'_> {
 
     fn dashed(&self, pts: &[P2], c: C, dash: f32, gap: f32) {
         let v = self.v(pts);
-        self.p.extend(Shape::dashed_line(&v, self.stroke(c, 1.0), dash * self.k, gap * self.k));
+        self.p.extend(Shape::dashed_line(
+            &v,
+            self.stroke(c, 1.0),
+            dash * self.k,
+            gap * self.k,
+        ));
     }
 
     fn dashed_w(&self, pts: &[P2], c: C, dash: f32, gap: f32, w: f32) {
         let v = self.v(pts);
-        self.p.extend(Shape::dashed_line(&v, self.stroke(c, w), dash * self.k, gap * self.k));
+        self.p.extend(Shape::dashed_line(
+            &v,
+            self.stroke(c, w),
+            dash * self.k,
+            gap * self.k,
+        ));
     }
 
     fn dotted(&self, pts: &[P2], c: C, spacing: f32, r: f32) {
         let v = self.v(pts);
-        self.p.extend(Shape::dotted_line(&v, self.col(c), spacing * self.k, r * self.sw));
+        self.p.extend(Shape::dotted_line(
+            &v,
+            self.col(c),
+            spacing * self.k,
+            r * self.sw,
+        ));
     }
 
     // --- filled shapes ---
@@ -672,12 +718,16 @@ impl Pen<'_> {
             self.p.add(Shape::mesh(mesh));
             // A hairline in the fill colour anti-aliases the mesh edge.
             if matches!(stroke, C::None) {
-                self.p.add(PathShape::closed_line(v.clone(), Stroke::new(0.6_f32.min(self.sw * 0.5), fc)));
+                self.p.add(PathShape::closed_line(
+                    v.clone(),
+                    Stroke::new(0.6_f32.min(self.sw * 0.5), fc),
+                ));
             }
         }
         let sc = self.col(stroke);
         if sc != Color32::TRANSPARENT {
-            self.p.add(PathShape::closed_line(v, Stroke::new(self.sw * w, sc)));
+            self.p
+                .add(PathShape::closed_line(v, Stroke::new(self.sw * w, sc)));
         }
     }
 
@@ -696,12 +746,22 @@ impl Pen<'_> {
 
     fn poly_w(&self, pts: &[P2], fill: C, stroke: C, w: f32) {
         let v = self.v(pts);
-        self.p.add(PathShape::convex_polygon(v, self.col(fill), self.stroke(stroke, w)));
+        self.p.add(PathShape::convex_polygon(
+            v,
+            self.col(fill),
+            self.stroke(stroke, w),
+        ));
     }
 
     fn rect_w(&self, x0: f32, y0: f32, x1: f32, y1: f32, r: f32, fill: C, stroke: C, w: f32) {
         let rect = Rect::from_min_max(self.pt((x0, y0)), self.pt((x1, y1)));
-        self.p.rect(rect, r * self.k, self.col(fill), self.stroke(stroke, w), StrokeKind::Middle);
+        self.p.rect(
+            rect,
+            r * self.k,
+            self.col(fill),
+            self.stroke(stroke, w),
+            StrokeKind::Middle,
+        );
     }
 
     fn rect(&self, x0: f32, y0: f32, x1: f32, y1: f32, r: f32, fill: C, stroke: C) {
@@ -709,7 +769,12 @@ impl Pen<'_> {
     }
 
     fn circle_w(&self, c: P2, r: f32, fill: C, stroke: C, w: f32) {
-        self.p.circle(self.pt(c), r * self.k, self.col(fill), self.stroke(stroke, w));
+        self.p.circle(
+            self.pt(c),
+            r * self.k,
+            self.col(fill),
+            self.stroke(stroke, w),
+        );
     }
 
     fn circle(&self, c: P2, r: f32, fill: C, stroke: C) {
@@ -737,7 +802,15 @@ impl Pen<'_> {
         let (s, co) = rad(dir).sin_cos();
         let hw = size * 0.62;
         let back = (tip.0 - co * size, tip.1 - s * size);
-        self.poly(&[tip, (back.0 - s * hw, back.1 + co * hw), (back.0 + s * hw, back.1 - co * hw)], c, N);
+        self.poly(
+            &[
+                tip,
+                (back.0 - s * hw, back.1 + co * hw),
+                (back.0 + s * hw, back.1 - co * hw),
+            ],
+            c,
+            N,
+        );
     }
 
     fn head_size(&self) -> f32 {
@@ -802,7 +875,13 @@ impl Pen<'_> {
     // --- text ---
 
     fn text(&self, s: &str, at: P2, size: f32, c: C) {
-        self.p.text(self.pt(at), Align2::CENTER_CENTER, s, FontId::proportional(size * self.k), self.col(c));
+        self.p.text(
+            self.pt(at),
+            Align2::CENTER_CENTER,
+            s,
+            FontId::proportional(size * self.k),
+            self.col(c),
+        );
     }
 
     fn text_bold(&self, s: &str, at: P2, size: f32, c: C) {
@@ -815,10 +894,13 @@ impl Pen<'_> {
 
     fn text_rot(&self, s: &str, at: P2, size: f32, c: C, angle_deg: f32) {
         let col = self.col(c);
-        let galley = self.p.layout_no_wrap(s.to_owned(), FontId::proportional(size * self.k), col);
+        let galley = self
+            .p
+            .layout_no_wrap(s.to_owned(), FontId::proportional(size * self.k), col);
         let rot = egui::emath::Rot2::from_angle(rad(angle_deg));
         let pos = self.pt(at) - rot * (galley.size() * 0.5);
-        self.p.add(TextShape::new(pos, galley, col).with_angle(rad(angle_deg)));
+        self.p
+            .add(TextShape::new(pos, galley, col).with_angle(rad(angle_deg)));
     }
 
     // --- composite parts ---
@@ -845,7 +927,15 @@ impl Pen<'_> {
                 self.seg_w((c.0 + g, c.1 - g), (c.0 - g, c.1 + g), gc, w);
             }
             Glyph::Check => {
-                self.line_w(&[(c.0 - g, c.1 + 0.1), (c.0 - g * 0.25, c.1 + g * 0.75), (c.0 + g, c.1 - g * 0.6)], gc, w);
+                self.line_w(
+                    &[
+                        (c.0 - g, c.1 + 0.1),
+                        (c.0 - g * 0.25, c.1 + g * 0.75),
+                        (c.0 + g, c.1 - g * 0.6),
+                    ],
+                    gc,
+                    w,
+                );
             }
         }
     }
@@ -858,7 +948,12 @@ impl Pen<'_> {
     /// Document page with a folded top-right corner.
     fn page(&self, x0: f32, y0: f32, x1: f32, y1: f32, fill: C, stroke: C) {
         let f = ((x1 - x0) * 0.32).min(5.0);
-        self.rshape(&[(x0, y0), (x1 - f, y0), (x1, y0 + f), (x1, y1), (x0, y1)], 1.2, fill, stroke);
+        self.rshape(
+            &[(x0, y0), (x1 - f, y0), (x1, y0 + f), (x1, y1), (x0, y1)],
+            1.2,
+            fill,
+            stroke,
+        );
         self.line(&[(x1 - f, y0), (x1 - f, y0 + f), (x1, y0 + f)], stroke);
     }
 
@@ -869,14 +964,35 @@ impl Pen<'_> {
         self.rect(x0, y0, x1, y1, 1.5, N, K);
         self.dot((x1 - w * 0.27, y0 + h * 0.3), m * 0.12, Y);
         let base = y1 - h * 0.14;
-        self.poly(&[(x0 + w * 0.12, base), (x0 + w * 0.38, y0 + h * 0.36), (x0 + w * 0.64, base)], G, N);
-        self.poly(&[(x0 + w * 0.48, base), (x0 + w * 0.68, y0 + h * 0.56), (x1 - w * 0.12, base)], G.a(0.7), N);
+        self.poly(
+            &[
+                (x0 + w * 0.12, base),
+                (x0 + w * 0.38, y0 + h * 0.36),
+                (x0 + w * 0.64, base),
+            ],
+            G,
+            N,
+        );
+        self.poly(
+            &[
+                (x0 + w * 0.48, base),
+                (x0 + w * 0.68, y0 + h * 0.56),
+                (x1 - w * 0.12, base),
+            ],
+            G.a(0.7),
+            N,
+        );
     }
 
     fn magnifier(&self, c: P2, r: f32, lens_fill: C, col: C) {
         self.circle(c, r, lens_fill, col);
         let d = r * 0.707;
-        self.seg_w((c.0 + d + 0.6, c.1 + d + 0.6), (c.0 + r * 1.55, c.1 + r * 1.55), col, 1.5);
+        self.seg_w(
+            (c.0 + d + 0.6, c.1 + d + 0.6),
+            (c.0 + r * 1.55, c.1 + r * 1.55),
+            col,
+            1.5,
+        );
     }
 
     fn bubble_pts(x0: f32, y0: f32, x1: f32, y1: f32) -> Vec<P2> {
@@ -899,7 +1015,11 @@ impl Pen<'_> {
     fn person(&self, cx: f32, top: f32, s: f32, fill: C) {
         self.dot((cx, top + 2.6 * s), 2.6 * s, fill);
         let base = top + 12.0 * s;
-        self.poly(&arc_pts((cx, base), 5.2 * s, 5.0 * s, 180.0, 360.0), fill, N);
+        self.poly(
+            &arc_pts((cx, base), 5.2 * s, 5.0 * s, 180.0, 360.0),
+            fill,
+            N,
+        );
     }
 
     fn star(&self, c: P2, ro: f32, fill: C, stroke: C) {
@@ -925,7 +1045,14 @@ impl Pen<'_> {
 
     fn speaker(&self, x: f32, cy: f32, fill: C, stroke: C) {
         self.rshape(
-            &[(x, cy - 3.0), (x + 3.8, cy - 3.0), (x + 8.5, cy - 7.5), (x + 8.5, cy + 7.5), (x + 3.8, cy + 3.0), (x, cy + 3.0)],
+            &[
+                (x, cy - 3.0),
+                (x + 3.8, cy - 3.0),
+                (x + 8.5, cy - 7.5),
+                (x + 8.5, cy + 7.5),
+                (x + 3.8, cy + 3.0),
+                (x, cy + 3.0),
+            ],
             0.8,
             fill,
             stroke,
@@ -962,21 +1089,73 @@ impl Pen<'_> {
     }
 
     /// A writing tool lying along `ang` degrees with its point at `tip`.
-    fn tool(&self, tip: P2, ang: f32, len: f32, hw: f32, cone: f32, body: C, lead: C, cap_len: f32, cap: C) {
+    fn tool(
+        &self,
+        tip: P2,
+        ang: f32,
+        len: f32,
+        hw: f32,
+        cone: f32,
+        body: C,
+        lead: C,
+        cap_len: f32,
+        cap: C,
+    ) {
         let m = |pts: &[P2]| tf(tip, ang, pts);
         self.poly(&m(&[(0.0, 0.0), (cone, -hw), (cone, hw)]), N, K);
-        self.poly(&m(&[(0.0, 0.0), (cone * 0.42, -hw * 0.42), (cone * 0.42, hw * 0.42)]), lead, N);
-        self.poly(&m(&[(cone, -hw), (len - cap_len, -hw), (len - cap_len, hw), (cone, hw)]), body, K);
+        self.poly(
+            &m(&[
+                (0.0, 0.0),
+                (cone * 0.42, -hw * 0.42),
+                (cone * 0.42, hw * 0.42),
+            ]),
+            lead,
+            N,
+        );
+        self.poly(
+            &m(&[
+                (cone, -hw),
+                (len - cap_len, -hw),
+                (len - cap_len, hw),
+                (cone, hw),
+            ]),
+            body,
+            K,
+        );
         if cap_len > 0.0 {
-            self.poly(&m(&[(len - cap_len, -hw), (len, -hw), (len, hw), (len - cap_len, hw)]), cap, K);
+            self.poly(
+                &m(&[
+                    (len - cap_len, -hw),
+                    (len, -hw),
+                    (len, hw),
+                    (len - cap_len, hw),
+                ]),
+                cap,
+                K,
+            );
         }
     }
 
     /// Paint brush lying along `ang` with bristle tip at `tip`.
     fn brush(&self, tip: P2, ang: f32, len: f32, bristle: C) {
         let m = |pts: &[P2]| tf(tip, ang, pts);
-        self.shape(&m(&[(0.0, -0.4), (2.5, -2.2), (5.5, -2.2), (5.5, 2.2), (2.5, 2.2), (0.0, 0.4)]), bristle, K);
-        self.poly(&m(&[(5.5, -2.0), (7.8, -2.0), (7.8, 2.0), (5.5, 2.0)]), K, K);
+        self.shape(
+            &m(&[
+                (0.0, -0.4),
+                (2.5, -2.2),
+                (5.5, -2.2),
+                (5.5, 2.2),
+                (2.5, 2.2),
+                (0.0, 0.4),
+            ]),
+            bristle,
+            K,
+        );
+        self.poly(
+            &m(&[(5.5, -2.0), (7.8, -2.0), (7.8, 2.0), (5.5, 2.0)]),
+            K,
+            K,
+        );
         self.line(&m(&[(7.8, -1.1), (len, -1.3), (len, 1.3), (7.8, 1.1)]), K);
     }
 
@@ -985,9 +1164,29 @@ impl Pen<'_> {
         let w = 0.8;
         match d {
             1 => self.line_w(&[(x + 0.4, y + 1.2), (x + 2.0, y), (x + 2.0, y + h)], c, w),
-            2 => self.line_w(&[(x, y + 1.0), (x + 0.7, y), (x + 2.4, y), (x + 3.1, y + 1.1), (x + 2.9, y + 2.2), (x, y + h), (x + 3.2, y + h)], c, w),
+            2 => self.line_w(
+                &[
+                    (x, y + 1.0),
+                    (x + 0.7, y),
+                    (x + 2.4, y),
+                    (x + 3.1, y + 1.1),
+                    (x + 2.9, y + 2.2),
+                    (x, y + h),
+                    (x + 3.2, y + h),
+                ],
+                c,
+                w,
+            ),
             _ => self.line_w(
-                &[(x, y), (x + 3.0, y), (x + 1.3, y + h * 0.42), (x + 2.6, y + h * 0.5), (x + 3.1, y + h * 0.7), (x + 2.5, y + h), (x, y + h)],
+                &[
+                    (x, y),
+                    (x + 3.0, y),
+                    (x + 1.3, y + h * 0.42),
+                    (x + 2.6, y + h * 0.5),
+                    (x + 3.1, y + h * 0.7),
+                    (x + 2.5, y + h),
+                    (x, y + h),
+                ],
                 c,
                 w,
             ),
@@ -1024,13 +1223,21 @@ impl Pen<'_> {
         }
         let sx = (hx - lx).max(1e-3);
         let sy = (hy - ly).max(1e-3);
-        let pts: Vec<P2> = raw.iter().map(|&(x, y)| p((x - lx) / sx, (y - ly) / sy)).collect();
+        let pts: Vec<P2> = raw
+            .iter()
+            .map(|&(x, y)| p((x - lx) / sx, (y - ly) / sy))
+            .collect();
         self.line(&pts, c);
     }
 
     /// Isometric "layer" diamond.
     fn layer(&self, cx: f32, cy: f32, hw: f32, hh: f32, fill: C, stroke: C) {
-        self.rshape(&[(cx, cy - hh), (cx + hw, cy), (cx, cy + hh), (cx - hw, cy)], 0.8, fill, stroke);
+        self.rshape(
+            &[(cx, cy - hh), (cx + hw, cy), (cx, cy + hh), (cx - hw, cy)],
+            0.8,
+            fill,
+            stroke,
+        );
     }
 
     /// Open book.
@@ -1064,7 +1271,11 @@ impl Pen<'_> {
             self.circle(c, r, fill, N);
             W
         };
-        self.line_w(&[(c.0, c.1 - r * 0.6), c, (c.0 + r * 0.5, c.1 + r * 0.2)], hc, 0.9);
+        self.line_w(
+            &[(c.0, c.1 - r * 0.6), c, (c.0 + r * 0.5, c.1 + r * 0.2)],
+            hc,
+            0.9,
+        );
     }
 
     fn gear_badge(&self, c: P2, r: f32, fill: C) {
@@ -1093,7 +1304,15 @@ impl Pen<'_> {
 
     fn cursor(&self, x: f32, y: f32, s: f32) {
         let p = |u: f32, v: f32| (x + u * s, y + v * s);
-        let pts = [p(0.0, 0.0), p(0.0, 15.0), p(3.8, 11.6), p(6.4, 17.0), p(8.6, 16.0), p(6.1, 10.8), p(11.0, 10.8)];
+        let pts = [
+            p(0.0, 0.0),
+            p(0.0, 15.0),
+            p(3.8, 11.6),
+            p(6.4, 17.0),
+            p(8.6, 16.0),
+            p(6.1, 10.8),
+            p(11.0, 10.8),
+        ];
         self.shape(&pts, K, K);
     }
 }
@@ -1108,7 +1327,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
     match icon {
         // ----- Clipboard & slides -----
         I::Paste => {
-            p.rline(&[(10.5, 21.5), (3.5, 21.5), (3.5, 4.5), (17.0, 4.5), (17.0, 9.0)], 2.0, K);
+            p.rline(
+                &[
+                    (10.5, 21.5),
+                    (3.5, 21.5),
+                    (3.5, 4.5),
+                    (17.0, 4.5),
+                    (17.0, 9.0),
+                ],
+                2.0,
+                K,
+            );
             p.rect(7.0, 2.5, 13.5, 6.5, 1.2, Y, K);
             p.rect(10.5, 10.0, 21.0, 22.0, 1.2, t(B), B);
             p.seg((13.0, 14.0), (18.5, 14.0), B);
@@ -1122,14 +1351,34 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.dot((12.0, 9.4), 1.0, K);
         }
         I::Copy => {
-            p.rline(&[(8.0, 16.0), (3.0, 16.0), (3.0, 2.5), (14.0, 2.5), (14.0, 7.0)], 1.5, K);
+            p.rline(
+                &[
+                    (8.0, 16.0),
+                    (3.0, 16.0),
+                    (3.0, 2.5),
+                    (14.0, 2.5),
+                    (14.0, 7.0),
+                ],
+                1.5,
+                K,
+            );
             p.rect(8.0, 7.5, 20.5, 21.5, 1.5, t(B), B);
             p.seg((11.0, 12.5), (17.5, 12.5), B);
             p.seg((11.0, 16.5), (16.0, 16.5), B);
         }
         I::FormatPainter => {
             p.rect(2.5, 3.0, 17.0, 9.0, 1.5, Y, K);
-            p.rline(&[(17.0, 6.0), (20.5, 6.0), (20.5, 11.5), (11.0, 11.5), (11.0, 14.0)], 1.2, K);
+            p.rline(
+                &[
+                    (17.0, 6.0),
+                    (20.5, 6.0),
+                    (20.5, 11.5),
+                    (11.0, 11.5),
+                    (11.0, 14.0),
+                ],
+                1.2,
+                K,
+            );
             p.rect(9.0, 14.0, 13.0, 21.5, 1.0, K, K);
         }
         I::NewSlide => {
@@ -1149,13 +1398,34 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.arc_arrow((12.0, 12.0), 4.6, -20.0, -290.0, B);
         }
         I::Section => {
-            p.rshape(&[(2.5, 2.5), (13.0, 2.5), (16.5, 5.75), (13.0, 9.0), (2.5, 9.0)], 0.6, PU, N);
+            p.rshape(
+                &[
+                    (2.5, 2.5),
+                    (13.0, 2.5),
+                    (16.5, 5.75),
+                    (13.0, 9.0),
+                    (2.5, 9.0),
+                ],
+                0.6,
+                PU,
+                N,
+            );
             p.rline(&[(5.0, 9.0), (5.0, 16.0), (7.5, 16.0)], 1.0, K);
             p.rect(7.5, 12.0, 21.5, 20.5, 1.2, N, K);
             p.seg((10.0, 15.5), (16.0, 15.5), K.a(0.5));
         }
         I::DuplicateSlide => {
-            p.rline(&[(6.5, 15.5), (2.5, 15.5), (2.5, 3.5), (16.5, 3.5), (16.5, 8.0)], 1.5, K);
+            p.rline(
+                &[
+                    (6.5, 15.5),
+                    (2.5, 15.5),
+                    (2.5, 3.5),
+                    (16.5, 3.5),
+                    (16.5, 8.0),
+                ],
+                1.5,
+                K,
+            );
             p.rect(6.5, 8.0, 21.5, 20.5, 1.5, t(B), B);
             p.seg((14.0, 11.5), (14.0, 17.0), B);
             p.seg((11.25, 14.25), (16.75, 14.25), B);
@@ -1189,8 +1459,16 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         I::ClearFormatting => {
             p.letter_a(2.5, 3.0, 14.0, 17.5, K, 1.1);
             let m = |pts: &[P2]| tf((17.0, 16.5), -45.0, pts);
-            p.poly(&m(&[(-5.5, -2.8), (0.0, -2.8), (0.0, 2.8), (-5.5, 2.8)]), R, R);
-            p.poly(&m(&[(0.0, -2.8), (5.5, -2.8), (5.5, 2.8), (0.0, 2.8)]), N, K);
+            p.poly(
+                &m(&[(-5.5, -2.8), (0.0, -2.8), (0.0, 2.8), (-5.5, 2.8)]),
+                R,
+                R,
+            );
+            p.poly(
+                &m(&[(0.0, -2.8), (5.5, -2.8), (5.5, 2.8), (0.0, 2.8)]),
+                N,
+                K,
+            );
         }
         I::Bold => p.text_bold("B", (12.0, 12.0), 22.0, K),
         I::Italic => {
@@ -1231,8 +1509,16 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::Highlight => {
             let m = |pts: &[P2]| tf((8.0, 15.0), -45.0, pts);
-            p.poly(&m(&[(0.0, -1.2), (3.0, -3.0), (3.0, 3.0), (0.0, 1.4)]), Y, K);
-            p.poly(&m(&[(3.0, -3.0), (13.5, -3.0), (13.5, 3.0), (3.0, 3.0)]), N, K);
+            p.poly(
+                &m(&[(0.0, -1.2), (3.0, -3.0), (3.0, 3.0), (0.0, 1.4)]),
+                Y,
+                K,
+            );
+            p.poly(
+                &m(&[(3.0, -3.0), (13.5, -3.0), (13.5, 3.0), (3.0, 3.0)]),
+                N,
+                K,
+            );
             p.rect(2.5, 19.5, 21.5, 22.5, 0.8, Y, N);
         }
         I::FontColor => {
@@ -1333,8 +1619,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::ShapeFill => {
             let m = |pts: &[P2]| tf((10.0, 10.0), 45.0, pts);
-            p.poly(&m(&[(-5.0, 0.0), (5.0, 0.0), (5.0, 5.0), (-5.0, 5.0)]), B, N);
-            p.rshape(&m(&[(-5.0, -5.0), (5.0, -5.0), (5.0, 5.0), (-5.0, 5.0)]), 0.8, N, K);
+            p.poly(
+                &m(&[(-5.0, 0.0), (5.0, 0.0), (5.0, 5.0), (-5.0, 5.0)]),
+                B,
+                N,
+            );
+            p.rshape(
+                &m(&[(-5.0, -5.0), (5.0, -5.0), (5.0, 5.0), (-5.0, 5.0)]),
+                0.8,
+                N,
+                K,
+            );
             p.line(&quad_pts((5.2, 6.4), (5.5, 1.0), (10.0, 3.0), 10), K);
             p.poly(&[(18.5, 8.5), (20.6, 12.6), (16.4, 12.6)], B, N);
             p.dot((18.5, 13.4), 2.1, B);
@@ -1354,7 +1649,16 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.rect(2.5, 19.5, 21.5, 22.5, 0.8, B, N);
         }
         I::TextOutline => {
-            let outer = [(3.5, 17.0), (9.6, 2.5), (14.4, 2.5), (20.5, 17.0), (16.6, 17.0), (15.2, 13.2), (8.8, 13.2), (7.4, 17.0)];
+            let outer = [
+                (3.5, 17.0),
+                (9.6, 2.5),
+                (14.4, 2.5),
+                (20.5, 17.0),
+                (16.6, 17.0),
+                (15.2, 13.2),
+                (8.8, 13.2),
+                (7.4, 17.0),
+            ];
             p.shape_w(&outer, N, K, 0.8);
             p.poly_w(&[(10.0, 10.0), (12.0, 5.0), (14.0, 10.0)], N, K, 0.8);
             p.rect(2.5, 19.5, 21.5, 22.5, 0.8, O, N);
@@ -1387,8 +1691,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         I::Table => p.table(2.5, 4.0, 21.5, 20.0, 3, 3, B),
         I::Picture => p.picture(2.0, 4.0, 22.0, 20.0),
         I::Screenshot => {
-            for (cx, cy, sx, sy) in [(2.5, 3.5, 1.0, 1.0), (21.5, 3.5, -1.0, 1.0), (2.5, 20.5, 1.0, -1.0), (21.5, 20.5, -1.0, -1.0)] {
-                p.rline(&[(cx, cy + 4.0 * sy), (cx, cy), (cx + 4.0 * sx, cy)], 1.0, K);
+            for (cx, cy, sx, sy) in [
+                (2.5, 3.5, 1.0, 1.0),
+                (21.5, 3.5, -1.0, 1.0),
+                (2.5, 20.5, 1.0, -1.0),
+                (21.5, 20.5, -1.0, -1.0),
+            ] {
+                p.rline(
+                    &[(cx, cy + 4.0 * sy), (cx, cy), (cx + 4.0 * sx, cy)],
+                    1.0,
+                    K,
+                );
             }
             p.rect(6.5, 7.5, 17.5, 16.5, 1.0, t(B), B);
             p.seg((6.5, 10.0), (17.5, 10.0), B);
@@ -1400,15 +1713,31 @@ fn draw(p: &Pen<'_>, icon: Icon) {
                 .map(|i| {
                     let tt = i as f32 / 40.0 * 2.0 * PI;
                     let x = 16.0 * tt.sin().powi(3);
-                    let y = 13.0 * tt.cos() - 5.0 * (2.0 * tt).cos() - 2.0 * (3.0 * tt).cos() - (4.0 * tt).cos();
+                    let y = 13.0 * tt.cos()
+                        - 5.0 * (2.0 * tt).cos()
+                        - 2.0 * (3.0 * tt).cos()
+                        - (4.0 * tt).cos();
                     (7.0 + x * 0.29, 17.0 - y * 0.29)
                 })
                 .collect();
             p.shape(&heart, R, N);
-            p.rshape(&[(17.0, 12.5), (21.5, 17.0), (17.0, 21.5), (12.5, 17.0)], 0.8, G, N);
+            p.rshape(
+                &[(17.0, 12.5), (21.5, 17.0), (17.0, 21.5), (12.5, 17.0)],
+                0.8,
+                G,
+                N,
+            );
         }
         I::Models3d => {
-            let (top, ur, lr, bot, ll, ul, mid) = ((12.0, 2.5), (20.5, 7.2), (20.5, 16.8), (12.0, 21.5), (3.5, 16.8), (3.5, 7.2), (12.0, 11.9));
+            let (top, ur, lr, bot, ll, ul, mid) = (
+                (12.0, 2.5),
+                (20.5, 7.2),
+                (20.5, 16.8),
+                (12.0, 21.5),
+                (3.5, 16.8),
+                (3.5, 7.2),
+                (12.0, 11.9),
+            );
             p.poly(&[top, ur, mid, ul], t(B), N);
             p.poly(&[ul, mid, bot, ll], B.a(0.55), N);
             p.poly(&[mid, ur, lr, bot], B, N);
@@ -1419,13 +1748,27 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         I::SmartArt => {
             p.rect(8.5, 2.5, 15.5, 8.5, 1.0, G, N);
             p.seg((12.0, 8.5), (12.0, 11.5), K);
-            p.rline(&[(5.5, 14.5), (5.5, 11.5), (18.5, 11.5), (18.5, 14.5)], 1.0, K);
+            p.rline(
+                &[(5.5, 14.5), (5.5, 11.5), (18.5, 11.5), (18.5, 14.5)],
+                1.0,
+                K,
+            );
             p.rect(2.0, 14.5, 9.0, 20.5, 1.0, B, N);
             p.rect(15.0, 14.5, 22.0, 20.5, 1.0, O, N);
         }
         I::Chart => p.bars(2.5, 4.0, 21.5, 20.5),
         I::Zoom => {
-            p.rline(&[(10.5, 15.0), (2.0, 15.0), (2.0, 3.0), (18.0, 3.0), (18.0, 9.5)], 1.5, K);
+            p.rline(
+                &[
+                    (10.5, 15.0),
+                    (2.0, 15.0),
+                    (2.0, 3.0),
+                    (18.0, 3.0),
+                    (18.0, 9.5),
+                ],
+                1.5,
+                K,
+            );
             p.seg((5.0, 6.5), (11.0, 6.5), K.a(0.5));
             p.magnifier((14.5, 14.5), 4.5, t(B), B);
         }
@@ -1472,7 +1815,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.rect(3.0, 5.0, 21.0, 21.0, 1.6, N, K);
             p.seg((8.0, 2.8), (8.0, 6.5), K);
             p.seg((16.0, 2.8), (16.0, 6.5), K);
-            for (i, (x, y)) in [(8.0, 13.5), (12.0, 13.5), (16.0, 13.5), (8.0, 17.5), (12.0, 17.5), (16.0, 17.5)].into_iter().enumerate() {
+            for (i, (x, y)) in [
+                (8.0, 13.5),
+                (12.0, 13.5),
+                (16.0, 13.5),
+                (8.0, 17.5),
+                (12.0, 17.5),
+                (16.0, 17.5),
+            ]
+            .into_iter()
+            .enumerate()
+            {
                 p.dot((x, y), 1.1, if i == 4 { B } else { K });
             }
         }
@@ -1489,12 +1842,29 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.rect(14.2, 14.2, 18.8, 18.8, 0.6, N, W);
         }
         I::Equation => {
-            p.line_w(&[(18.5, 6.5), (18.0, 4.0), (6.0, 4.0), (12.5, 12.0), (6.0, 20.0), (18.0, 20.0), (18.5, 17.5)], B, 1.15);
+            p.line_w(
+                &[
+                    (18.5, 6.5),
+                    (18.0, 4.0),
+                    (6.0, 4.0),
+                    (12.5, 12.0),
+                    (6.0, 20.0),
+                    (18.0, 20.0),
+                    (18.5, 17.5),
+                ],
+                B,
+                1.15,
+            );
         }
         I::Symbol => p.text("Ω", (12.0, 12.0), 22.0, K),
         I::Video => {
             p.rect(2.0, 6.0, 15.5, 18.0, 2.0, t(B), K);
-            p.rshape(&[(16.5, 10.5), (22.0, 7.0), (22.0, 17.0), (16.5, 13.5)], 0.6, N, K);
+            p.rshape(
+                &[(16.5, 10.5), (22.0, 7.0), (22.0, 17.0), (16.5, 13.5)],
+                0.6,
+                N,
+                K,
+            );
             p.dot((6.0, 10.0), 1.2, R);
         }
         I::Audio => {
@@ -1522,14 +1892,31 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::HighlighterPen => {
             let m = |pts: &[P2]| tf((6.0, 15.0), -45.0, pts);
-            p.poly(&m(&[(0.0, -1.0), (3.0, -3.2), (3.0, 3.2), (0.0, 2.2)]), Y, K);
-            p.poly(&m(&[(3.0, -3.6), (14.5, -3.6), (14.5, 3.6), (3.0, 3.6)]), t(Y), K);
+            p.poly(
+                &m(&[(0.0, -1.0), (3.0, -3.2), (3.0, 3.2), (0.0, 2.2)]),
+                Y,
+                K,
+            );
+            p.poly(
+                &m(&[(3.0, -3.6), (14.5, -3.6), (14.5, 3.6), (3.0, 3.6)]),
+                t(Y),
+                K,
+            );
             p.rect(2.0, 19.5, 13.0, 22.5, 0.8, Y, N);
         }
         I::Eraser => {
             let m = |pts: &[P2]| tf((12.5, 11.0), -45.0, pts);
-            p.poly(&m(&[(-8.0, -4.0), (-1.0, -4.0), (-1.0, 4.0), (-8.0, 4.0)]), R, N);
-            p.rshape(&m(&[(-8.0, -4.0), (8.0, -4.0), (8.0, 4.0), (-8.0, 4.0)]), 1.0, N, K);
+            p.poly(
+                &m(&[(-8.0, -4.0), (-1.0, -4.0), (-1.0, 4.0), (-8.0, 4.0)]),
+                R,
+                N,
+            );
+            p.rshape(
+                &m(&[(-8.0, -4.0), (8.0, -4.0), (8.0, 4.0), (-8.0, 4.0)]),
+                1.0,
+                N,
+                K,
+            );
             p.seg((12.0, 21.0), (21.0, 21.0), K);
         }
         I::LassoSelect => {
@@ -1549,12 +1936,30 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::InkToMath => {
             p.scribble(1.5, 2.0, 12.5, 11.0, K);
-            p.line_w(&[(21.0, 11.0), (12.5, 11.0), (17.0, 16.25), (12.5, 21.5), (21.0, 21.5)], B, 1.1);
+            p.line_w(
+                &[
+                    (21.0, 11.0),
+                    (12.5, 11.0),
+                    (17.0, 16.25),
+                    (12.5, 21.5),
+                    (21.0, 21.5),
+                ],
+                B,
+                1.1,
+            );
         }
         I::Ruler => {
             let m = |pts: &[P2]| tf((12.0, 12.0), -45.0, pts);
-            p.rshape(&m(&[(-11.5, -4.0), (11.5, -4.0), (11.5, 4.0), (-11.5, 4.0)]), 0.8, Y.a(0.85), K);
-            for (i, u) in [-8.0_f32, -5.0, -2.0, 1.0, 4.0, 7.0].into_iter().enumerate() {
+            p.rshape(
+                &m(&[(-11.5, -4.0), (11.5, -4.0), (11.5, 4.0), (-11.5, 4.0)]),
+                0.8,
+                Y.a(0.85),
+                K,
+            );
+            for (i, u) in [-8.0_f32, -5.0, -2.0, 1.0, 4.0, 7.0]
+                .into_iter()
+                .enumerate()
+            {
                 let l = if i % 2 == 0 { 3.2 } else { 1.8 };
                 p.line_w(&m(&[(u, -4.0), (u, -4.0 + l)]), D, 0.8);
             }
@@ -1588,11 +1993,31 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.frame(2.0, 4.0, 22.0, 20.0);
         }
         I::SlideSize => {
-            p.rline(&[(17.0, 12.0), (17.0, 19.0), (2.5, 19.0), (2.5, 7.0), (10.0, 7.0)], 1.5, K);
+            p.rline(
+                &[
+                    (17.0, 12.0),
+                    (17.0, 19.0),
+                    (2.5, 19.0),
+                    (2.5, 7.0),
+                    (10.0, 7.0),
+                ],
+                1.5,
+                K,
+            );
             p.arrow((9.0, 13.0), (21.5, 2.5), B);
         }
         I::FormatBackground => {
-            p.rline(&[(10.0, 17.0), (2.0, 17.0), (2.0, 4.0), (20.0, 4.0), (20.0, 9.0)], 1.5, K);
+            p.rline(
+                &[
+                    (10.0, 17.0),
+                    (2.0, 17.0),
+                    (2.0, 4.0),
+                    (20.0, 4.0),
+                    (20.0, 9.0),
+                ],
+                1.5,
+                K,
+            );
             p.rect(4.5, 6.5, 13.5, 12.5, 0.6, t(PU), N);
             p.brush((12.0, 20.5), -45.0, 13.0, Y);
         }
@@ -1604,7 +2029,11 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.seg((10.5, 21.0), (13.5, 21.0), K);
             for a in [-160.0_f32, -125.0, -55.0, -20.0] {
                 let (s, c) = rad(a).sin_cos();
-                p.seg((12.0 + c * 8.0, 9.5 + s * 8.0), (12.0 + c * 10.0, 9.5 + s * 10.0), Y);
+                p.seg(
+                    (12.0 + c * 8.0, 9.5 + s * 8.0),
+                    (12.0 + c * 10.0, 9.5 + s * 10.0),
+                    Y,
+                );
             }
         }
 
@@ -1636,7 +2065,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.dot((12.0, 13.5), 1.3, B);
         }
         I::ApplyToAll => {
-            p.rline(&[(6.0, 7.5), (6.0, 3.0), (21.5, 3.0), (21.5, 13.5), (17.5, 13.5)], 1.5, K);
+            p.rline(
+                &[
+                    (6.0, 7.5),
+                    (6.0, 3.0),
+                    (21.5, 3.0),
+                    (21.5, 13.5),
+                    (17.5, 13.5),
+                ],
+                1.5,
+                K,
+            );
             p.rect(2.5, 7.5, 17.5, 18.0, 1.5, N, K);
             p.badge((18.0, 18.0), 4.8, G, Glyph::Check);
         }
@@ -1668,7 +2107,19 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             }
         }
         I::Trigger => {
-            p.rshape(&[(14.5, 2.0), (5.0, 13.5), (11.5, 13.5), (9.5, 22.0), (19.0, 9.5), (12.5, 9.5)], 0.6, Y, K);
+            p.rshape(
+                &[
+                    (14.5, 2.0),
+                    (5.0, 13.5),
+                    (11.5, 13.5),
+                    (9.5, 22.0),
+                    (19.0, 9.5),
+                    (12.5, 9.5),
+                ],
+                0.6,
+                Y,
+                K,
+            );
         }
         I::AnimationPainter => {
             p.star((7.5, 7.5), 6.0, G, N);
@@ -1739,7 +2190,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.rect(8.0, 2.5, 19.5, 21.5, 1.2, t(B), N);
             p.rect(4.5, 2.5, 19.5, 21.5, 1.5, N, K);
             p.seg((8.0, 2.5), (8.0, 21.5), K);
-            p.poly(&[(13.5, 2.5), (17.0, 2.5), (17.0, 9.0), (15.25, 7.5), (13.5, 9.0)], R, N);
+            p.poly(
+                &[
+                    (13.5, 2.5),
+                    (17.0, 2.5),
+                    (17.0, 9.0),
+                    (15.25, 7.5),
+                    (13.5, 9.0),
+                ],
+                R,
+                N,
+            );
         }
         I::Accessibility => {
             p.circle((12.0, 12.0), 9.8, N, B);
@@ -1781,7 +2242,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.arrow((7.5, 10.0), (17.0, 10.0), B);
         }
         I::ShowComments => {
-            p.rline(&[(8.0, 7.5), (8.0, 2.5), (21.5, 2.5), (21.5, 13.0), (17.0, 13.0)], 2.0, K);
+            p.rline(
+                &[
+                    (8.0, 7.5),
+                    (8.0, 2.5),
+                    (21.5, 2.5),
+                    (21.5, 13.0),
+                    (17.0, 13.0),
+                ],
+                2.0,
+                K,
+            );
             p.bubble(2.5, 7.5, 16.5, 17.5, t(Y), K);
             p.seg((5.5, 11.0), (13.5, 11.0), K);
             p.seg((5.5, 14.2), (11.0, 14.2), K);
@@ -1853,7 +2324,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.seg_w((6.5, 19.0), (17.5, 19.0), K, 0.8);
         }
         I::NotesMaster => {
-            p.rline(&[(8.0, 4.0), (8.0, 2.0), (21.0, 2.0), (21.0, 19.0), (16.0, 19.0)], 1.2, PU);
+            p.rline(
+                &[
+                    (8.0, 4.0),
+                    (8.0, 2.0),
+                    (21.0, 2.0),
+                    (21.0, 19.0),
+                    (16.0, 19.0),
+                ],
+                1.2,
+                PU,
+            );
             p.rect(3.0, 4.5, 16.0, 22.0, 1.2, N, K);
             p.rect(5.5, 7.0, 13.5, 12.0, 0.5, t(PU), PU);
             p.seg_w((5.5, 15.5), (13.5, 15.5), K, 0.8);
@@ -1882,8 +2363,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::ZoomGlass => p.magnifier((10.0, 10.0), 7.0, t(B), K),
         I::FitToWindow => {
-            for (cx, cy, sx, sy) in [(2.5, 2.5, 1.0, 1.0), (21.5, 2.5, -1.0, 1.0), (2.5, 21.5, 1.0, -1.0), (21.5, 21.5, -1.0, -1.0)] {
-                p.rline(&[(cx, cy + 5.0 * sy), (cx, cy), (cx + 5.0 * sx, cy)], 0.8, K);
+            for (cx, cy, sx, sy) in [
+                (2.5, 2.5, 1.0, 1.0),
+                (21.5, 2.5, -1.0, 1.0),
+                (2.5, 21.5, 1.0, -1.0),
+                (21.5, 21.5, -1.0, -1.0),
+            ] {
+                p.rline(
+                    &[(cx, cy + 5.0 * sy), (cx, cy), (cx + 5.0 * sx, cy)],
+                    0.8,
+                    K,
+                );
             }
             p.rect(7.0, 8.0, 17.0, 16.0, 1.0, t(B), B);
         }
@@ -1932,14 +2422,49 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.seg((18.0, 21.5), (23.0, 21.5), K);
         }
         I::Group => {
-            p.dashed(&[(2.5, 2.5), (21.5, 2.5), (21.5, 21.5), (2.5, 21.5), (2.5, 2.5)], B, 2.0, 1.6);
+            p.dashed(
+                &[
+                    (2.5, 2.5),
+                    (21.5, 2.5),
+                    (21.5, 21.5),
+                    (2.5, 21.5),
+                    (2.5, 2.5),
+                ],
+                B,
+                2.0,
+                1.6,
+            );
             p.rect(5.5, 5.5, 13.0, 13.0, 0.8, t(G), G);
             p.circle((15.5, 15.5), 4.3, t(O), O);
         }
         I::Ungroup => {
-            p.dashed_w(&[(2.0, 2.0), (12.0, 2.0), (12.0, 12.0), (2.0, 12.0), (2.0, 2.0)], B, 1.6, 1.3, 0.8);
+            p.dashed_w(
+                &[
+                    (2.0, 2.0),
+                    (12.0, 2.0),
+                    (12.0, 12.0),
+                    (2.0, 12.0),
+                    (2.0, 2.0),
+                ],
+                B,
+                1.6,
+                1.3,
+                0.8,
+            );
             p.rect(4.5, 4.5, 9.5, 9.5, 0.6, t(G), G);
-            p.dashed_w(&[(12.0, 12.0), (22.0, 12.0), (22.0, 22.0), (12.0, 22.0), (12.0, 12.0)], B, 1.6, 1.3, 0.8);
+            p.dashed_w(
+                &[
+                    (12.0, 12.0),
+                    (22.0, 12.0),
+                    (22.0, 22.0),
+                    (12.0, 22.0),
+                    (12.0, 12.0),
+                ],
+                B,
+                1.6,
+                1.3,
+                0.8,
+            );
             p.circle((17.0, 17.0), 2.9, t(O), O);
         }
         I::AlignObjects => {
@@ -2033,7 +2558,11 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.circle((12.0, 12.0), 5.2, N, K);
             for i in 0..8 {
                 let (s, c) = rad(i as f32 * 45.0).sin_cos();
-                p.seg((12.0 + c * 7.6, 12.0 + s * 7.6), (12.0 + c * 9.8, 12.0 + s * 9.8), Y);
+                p.seg(
+                    (12.0 + c * 7.6, 12.0 + s * 7.6),
+                    (12.0 + c * 9.8, 12.0 + s * 9.8),
+                    Y,
+                );
             }
         }
         I::ColorAdjust => {
@@ -2093,7 +2622,8 @@ fn draw(p: &Pen<'_>, icon: Icon) {
 
         // ----- Table -----
         I::InsertAbove | I::InsertBelow | I::InsertLeft | I::InsertRight => {
-            let (grid, add): ((f32, f32, f32, f32, usize, usize), (f32, f32, f32, f32)) = match icon {
+            let (grid, add): ((f32, f32, f32, f32, usize, usize), (f32, f32, f32, f32)) = match icon
+            {
                 I::InsertAbove => ((3.0, 10.0, 21.0, 21.0, 2, 3), (3.0, 2.5, 21.0, 7.5)),
                 I::InsertBelow => ((3.0, 3.0, 21.0, 14.0, 2, 3), (3.0, 16.5, 21.0, 21.5)),
                 I::InsertLeft => ((10.0, 3.0, 21.0, 21.0, 3, 2), (2.5, 3.0, 7.5, 21.0)),
@@ -2184,21 +2714,53 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.arc((11.0, 12.0), 10.2, -40.0, 40.0, B);
         }
         I::Loop => {
-            p.path_arrow(&round_pts(&[(4.0, 13.0), (4.0, 7.0), (20.0, 7.0)], 2.5, false), G);
-            p.path_arrow(&round_pts(&[(20.0, 11.0), (20.0, 17.0), (4.0, 17.0)], 2.5, false), G);
+            p.path_arrow(
+                &round_pts(&[(4.0, 13.0), (4.0, 7.0), (20.0, 7.0)], 2.5, false),
+                G,
+            );
+            p.path_arrow(
+                &round_pts(&[(20.0, 11.0), (20.0, 17.0), (4.0, 17.0)], 2.5, false),
+                G,
+            );
         }
         I::Bookmark => {
-            p.rshape(&[(6.0, 2.5), (18.0, 2.5), (18.0, 21.5), (12.0, 16.5), (6.0, 21.5)], 0.8, R, N);
+            p.rshape(
+                &[
+                    (6.0, 2.5),
+                    (18.0, 2.5),
+                    (18.0, 21.5),
+                    (12.0, 16.5),
+                    (6.0, 21.5),
+                ],
+                0.8,
+                R,
+                N,
+            );
         }
 
         // ----- Window chrome -----
         I::Home => {
             p.rect(10.0, 14.5, 14.0, 21.0, 0.8, B, N);
             p.line(&[(2.5, 11.5), (12.0, 3.0), (21.5, 11.5)], K);
-            p.rline(&[(5.0, 9.5), (5.0, 21.0), (19.0, 21.0), (19.0, 9.5)], 1.2, K);
+            p.rline(
+                &[(5.0, 9.5), (5.0, 21.0), (19.0, 21.0), (19.0, 9.5)],
+                1.2,
+                K,
+            );
         }
         I::Save => {
-            p.rshape(&[(3.0, 3.0), (17.5, 3.0), (21.0, 6.5), (21.0, 21.0), (3.0, 21.0)], 1.5, t(B), B);
+            p.rshape(
+                &[
+                    (3.0, 3.0),
+                    (17.5, 3.0),
+                    (21.0, 6.5),
+                    (21.0, 21.0),
+                    (3.0, 21.0),
+                ],
+                1.5,
+                t(B),
+                B,
+            );
             p.rect(7.0, 3.0, 15.0, 8.5, 0.6, N, B);
             p.seg((12.5, 4.5), (12.5, 7.0), B);
             p.rect(6.5, 13.0, 17.5, 21.0, 0.8, N, B);
@@ -2208,7 +2770,11 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             pts.extend(arc_pts((14.0, 14.0), 5.5, 5.5, -90.0, 90.0));
             pts.push((8.5, 19.5));
             let hs = p.head_size();
-            let pts: Vec<P2> = if icon == I::Undo { pts } else { pts.into_iter().map(|(x, y)| (24.0 - x, y)).collect() };
+            let pts: Vec<P2> = if icon == I::Undo {
+                pts
+            } else {
+                pts.into_iter().map(|(x, y)| (24.0 - x, y)).collect()
+            };
             p.line(&pts, K);
             if icon == I::Undo {
                 p.head((3.0, 8.5), 180.0, hs, K);
@@ -2236,16 +2802,55 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.seg((8.0, 16.5), (14.0, 16.5), B);
         }
         I::Folder => {
-            p.rshape(&[(2.5, 4.5), (9.0, 4.5), (11.0, 7.0), (21.5, 7.0), (21.5, 19.5), (2.5, 19.5)], 1.2, t(Y), K);
-            p.rshape(&[(2.5, 10.0), (21.5, 10.0), (21.5, 19.5), (2.5, 19.5)], 1.2, Y.a(0.6), K);
+            p.rshape(
+                &[
+                    (2.5, 4.5),
+                    (9.0, 4.5),
+                    (11.0, 7.0),
+                    (21.5, 7.0),
+                    (21.5, 19.5),
+                    (2.5, 19.5),
+                ],
+                1.2,
+                t(Y),
+                K,
+            );
+            p.rshape(
+                &[(2.5, 10.0), (21.5, 10.0), (21.5, 19.5), (2.5, 19.5)],
+                1.2,
+                Y.a(0.6),
+                K,
+            );
         }
         I::Export => {
-            p.rline(&[(15.0, 8.5), (15.0, 2.5), (3.0, 2.5), (3.0, 21.5), (15.0, 21.5), (15.0, 15.5)], 1.5, K);
+            p.rline(
+                &[
+                    (15.0, 8.5),
+                    (15.0, 2.5),
+                    (3.0, 2.5),
+                    (3.0, 21.5),
+                    (15.0, 21.5),
+                    (15.0, 15.5),
+                ],
+                1.5,
+                K,
+            );
             p.arrow((8.5, 12.0), (22.0, 12.0), B);
         }
         I::Print => {
             p.rect(6.5, 2.5, 17.5, 9.0, 0.8, N, K);
-            p.rline(&[(6.5, 17.5), (2.5, 17.5), (2.5, 9.0), (21.5, 9.0), (21.5, 17.5), (17.5, 17.5)], 1.8, K);
+            p.rline(
+                &[
+                    (6.5, 17.5),
+                    (2.5, 17.5),
+                    (2.5, 9.0),
+                    (21.5, 9.0),
+                    (21.5, 17.5),
+                    (17.5, 17.5),
+                ],
+                1.8,
+                K,
+            );
             p.rect(6.5, 14.0, 17.5, 21.5, 0.8, N, K);
             p.dot((18.5, 12.0), 1.1, G);
         }
@@ -2291,7 +2896,11 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::Eye | I::EyeOff => {
             let mut e = quad_pts((2.0, 12.0), (12.0, 4.0), (22.0, 12.0), 16);
-            e.extend(quad_pts((22.0, 12.0), (12.0, 20.0), (2.0, 12.0), 16).into_iter().skip(1));
+            e.extend(
+                quad_pts((22.0, 12.0), (12.0, 20.0), (2.0, 12.0), 16)
+                    .into_iter()
+                    .skip(1),
+            );
             e.pop();
             p.shape(&e, N, K);
             p.circle((12.0, 12.0), 3.2, N, K);
@@ -2324,7 +2933,16 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         I::Image => {
             p.rect(2.5, 4.0, 21.5, 20.0, 1.5, N, K);
             p.circle((16.0, 9.0), 1.8, N, K);
-            p.line(&[(2.5, 17.5), (8.5, 11.0), (14.0, 16.5), (16.5, 14.0), (21.5, 18.5)], K);
+            p.line(
+                &[
+                    (2.5, 17.5),
+                    (8.5, 11.0),
+                    (14.0, 16.5),
+                    (16.5, 14.0),
+                    (21.5, 18.5),
+                ],
+                K,
+            );
         }
         I::Sparkle => {
             p.sparkle((10.5, 13.0), 9.0, PU);
@@ -2332,7 +2950,13 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         }
         I::Palette => {
             let mut pts = arc_pts((12.0, 12.0), 9.8, 9.5, 70.0, 380.0);
-            pts.extend(cubic_pts((21.2, 15.25), (19.0, 15.0), (14.5, 14.0), (15.5, 21.0), 10));
+            pts.extend(cubic_pts(
+                (21.2, 15.25),
+                (19.0, 15.0),
+                (14.5, 14.0),
+                (15.5, 21.0),
+                10,
+            ));
             p.shape(&pts, N, K);
             p.dot((7.5, 9.5), 1.7, R);
             p.dot((11.5, 6.3), 1.7, Y);
@@ -2363,9 +2987,23 @@ fn draw(p: &Pen<'_>, icon: Icon) {
         I::Pin => {
             let m = |pts: &[P2]| tf((12.0, 12.0), 35.0, pts);
             p.line(&m(&[(0.0, 2.0), (0.0, 10.5)]), K);
-            p.rshape(&m(&[(-6.0, 0.0), (6.0, 0.0), (6.0, 2.5), (-6.0, 2.5)]), 0.6, R, N);
-            p.poly(&m(&[(-3.0, -7.0), (3.0, -7.0), (3.6, 0.0), (-3.6, 0.0)]), R, N);
-            p.rshape(&m(&[(-4.2, -10.0), (4.2, -10.0), (4.2, -7.0), (-4.2, -7.0)]), 0.6, R, N);
+            p.rshape(
+                &m(&[(-6.0, 0.0), (6.0, 0.0), (6.0, 2.5), (-6.0, 2.5)]),
+                0.6,
+                R,
+                N,
+            );
+            p.poly(
+                &m(&[(-3.0, -7.0), (3.0, -7.0), (3.6, 0.0), (-3.6, 0.0)]),
+                R,
+                N,
+            );
+            p.rshape(
+                &m(&[(-4.2, -10.0), (4.2, -10.0), (4.2, -7.0), (-4.2, -7.0)]),
+                0.6,
+                R,
+                N,
+            );
         }
 
         // ----- File tab (Backstage) navigation: outlines in the ink colour -----
@@ -2374,7 +3012,18 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.arrow((17.0, 12.0), (6.5, 12.0), K);
         }
         I::SaveAs => {
-            p.rline(&[(11.0, 20.5), (2.5, 20.5), (2.5, 3.0), (15.0, 3.0), (18.0, 6.0), (18.0, 10.5)], 1.2, K);
+            p.rline(
+                &[
+                    (11.0, 20.5),
+                    (2.5, 20.5),
+                    (2.5, 3.0),
+                    (15.0, 3.0),
+                    (18.0, 6.0),
+                    (18.0, 10.5),
+                ],
+                1.2,
+                K,
+            );
             p.rect(6.0, 3.0, 13.0, 7.5, 0.6, N, K);
             p.seg_w((13.5, 21.0), (21.5, 13.0), O, 1.4);
             p.seg_w((12.5, 22.0), (13.5, 21.0), K, 1.0);
@@ -2388,11 +3037,40 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.line(&[(12.0, 6.0), (12.0, 12.0), (16.0, 14.5)], K);
         }
         I::NewFile => {
-            p.rline(&[(14.0, 2.5), (5.0, 2.5), (5.0, 21.5), (19.0, 21.5), (19.0, 7.5), (14.0, 2.5), (14.0, 7.5), (19.0, 7.5)], 0.8, K);
+            p.rline(
+                &[
+                    (14.0, 2.5),
+                    (5.0, 2.5),
+                    (5.0, 21.5),
+                    (19.0, 21.5),
+                    (19.0, 7.5),
+                    (14.0, 2.5),
+                    (14.0, 7.5),
+                    (19.0, 7.5),
+                ],
+                0.8,
+                K,
+            );
         }
         I::OpenFolder => {
-            p.rline(&[(18.5, 9.0), (18.5, 6.5), (10.0, 6.5), (8.0, 4.0), (2.5, 4.0), (2.5, 19.5), (18.0, 19.5)], 1.0, K);
-            p.rline(&[(2.5, 19.5), (6.0, 10.0), (22.0, 10.0), (18.0, 19.5)], 1.0, K);
+            p.rline(
+                &[
+                    (18.5, 9.0),
+                    (18.5, 6.5),
+                    (10.0, 6.5),
+                    (8.0, 4.0),
+                    (2.5, 4.0),
+                    (2.5, 19.5),
+                    (18.0, 19.5),
+                ],
+                1.0,
+                K,
+            );
+            p.rline(
+                &[(2.5, 19.5), (6.0, 10.0), (22.0, 10.0), (18.0, 19.5)],
+                1.0,
+                K,
+            );
         }
 
         // ----- Status bar (monochrome) -----
@@ -2422,8 +3100,17 @@ fn draw(p: &Pen<'_>, icon: Icon) {
             p.line(&[(8.5, 22.0), (12.0, 19.0), (15.5, 22.0)], K);
         }
         I::FitSmall => {
-            for (cx, cy, sx, sy) in [(3.0, 3.0, 1.0, 1.0), (21.0, 3.0, -1.0, 1.0), (3.0, 21.0, 1.0, -1.0), (21.0, 21.0, -1.0, -1.0)] {
-                p.rline(&[(cx, cy + 5.0 * sy), (cx, cy), (cx + 5.0 * sx, cy)], 0.8, K);
+            for (cx, cy, sx, sy) in [
+                (3.0, 3.0, 1.0, 1.0),
+                (21.0, 3.0, -1.0, 1.0),
+                (3.0, 21.0, 1.0, -1.0),
+                (21.0, 21.0, -1.0, -1.0),
+            ] {
+                p.rline(
+                    &[(cx, cy + 5.0 * sy), (cx, cy), (cx + 5.0 * sx, cy)],
+                    0.8,
+                    K,
+                );
             }
             p.rect(8.0, 8.5, 16.0, 15.5, 0.8, N, K);
         }
@@ -2451,7 +3138,11 @@ mod tests {
             let name = icon.name();
             assert!(names.insert(name), "duplicate name {name}");
             assert_eq!(Icon::from_name(name), Some(icon));
-            assert!(name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'), "{name} is not kebab-case");
+            assert!(
+                name.chars()
+                    .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-'),
+                "{name} is not kebab-case"
+            );
         }
         assert_eq!(Icon::from_name("no-such-icon"), None);
     }
@@ -2465,7 +3156,10 @@ mod tests {
 
     #[test]
     fn triangulates_concave_polygon() {
-        let pts: Vec<Pos2> = star_pts((0.0, 0.0), 10.0, 4.0, 5, 0.0).into_iter().map(|(x, y)| pos2(x, y)).collect();
+        let pts: Vec<Pos2> = star_pts((0.0, 0.0), 10.0, 4.0, 5, 0.0)
+            .into_iter()
+            .map(|(x, y)| pos2(x, y))
+            .collect();
         assert_eq!(triangulate(&pts).len(), pts.len() - 2);
     }
 }

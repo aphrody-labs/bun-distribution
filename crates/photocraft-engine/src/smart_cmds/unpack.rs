@@ -9,24 +9,48 @@ use std::sync::Arc;
 use photocraft_algo::transform::Interp;
 use photocraft_cms::Intent;
 use photocraft_color::BlendMode;
-use photocraft_doc::{Document, Group, Layer, LayerContent, LayerId, Metadata, SmartObject, SmartSource};
+use photocraft_doc::{
+    Document, Group, Layer, LayerContent, LayerId, Metadata, SmartObject, SmartSource,
+};
 use serde_json::{Value, json};
 
-use super::{authorize_source, authorized_source_bytes, decode_source, detach_psd, other, placement, shift_layer, smart};
+use super::{
+    authorize_source, authorized_source_bytes, decode_source, detach_psd, other, placement,
+    shift_layer, smart,
+};
 use crate::commands::layer_param;
 use crate::{EngineError, Result, Session};
 
 /// The smart object's contents as layers in `doc`'s colour model, profile and depth, still in
 /// source pixel coordinates. A Background becomes a normal layer (it can't sit above others).
-fn contents(s: &Session, doc: &Document, sm: &SmartObject, intent: Intent, bpc: bool) -> Result<Vec<Layer>> {
-    let (name, bytes) = authorized_source_bytes(s, "layer.smartObjects.convertToLayers", &doc.metadata, &sm.source)?
-        .ok_or_else(|| other("the smart object's contents are unavailable (missing linked file?)"))?;
+fn contents(
+    s: &Session,
+    doc: &Document,
+    sm: &SmartObject,
+    intent: Intent,
+    bpc: bool,
+) -> Result<Vec<Layer>> {
+    let (name, bytes) = authorized_source_bytes(
+        s,
+        "layer.smartObjects.convertToLayers",
+        &doc.metadata,
+        &sm.source,
+    )?
+    .ok_or_else(|| other("the smart object's contents are unavailable (missing linked file?)"))?;
     let mut src = decode_source(&name, &bytes)?;
     let mode = doc.pixel_format().mode;
     if src.pixel_format().mode != mode || src.icc_profile != doc.icc_profile {
-        crate::color_cmds::convert_document(&mut src, &crate::color_cmds::document_profile(doc), intent, bpc)?;
+        crate::color_cmds::convert_document(
+            &mut src,
+            &crate::color_cmds::document_profile(doc),
+            intent,
+            bpc,
+        )?;
         if src.pixel_format().mode != mode {
-            return Err(other(format!("can't convert the smart object's contents to the document's {:?} mode", doc.mode)));
+            return Err(other(format!(
+                "can't convert the smart object's contents to the document's {:?} mode",
+                doc.mode
+            )));
         }
     }
     if src.depth != doc.depth {
@@ -48,12 +72,18 @@ fn contents(s: &Session, doc: &Document, sm: &SmartObject, intent: Intent, bpc: 
 /// behind: embed those sources so the nested smart objects keep rendering in the document.
 fn embed_nested(meta: &Metadata, l: &mut Layer) {
     let found = match &l.content {
-        LayerContent::Smart(SmartObject { source: SmartSource::Linked { path }, .. }) => photocraft_io::linked::find_linked_file(meta, path),
+        LayerContent::Smart(SmartObject {
+            source: SmartSource::Linked { path },
+            ..
+        }) => photocraft_io::linked::find_linked_file(meta, path),
         _ => None,
     };
     if let Some(f) = found {
         if let LayerContent::Smart(sm) = &mut l.content {
-            sm.source = SmartSource::Embedded { file_name: f.file_name, bytes: Arc::new(f.bytes) };
+            sm.source = SmartSource::Embedded {
+                file_name: f.file_name,
+                bytes: Arc::new(f.bytes),
+            };
         }
         detach_psd(l);
     }
@@ -67,13 +97,21 @@ fn embed_nested(meta: &Metadata, l: &mut Layer) {
 /// live; Distort and Perspective need them rasterized, as Free Transform does).
 fn place(s: &Session, doc: &Document, sm: &SmartObject, layers: &mut [Layer]) -> Result<()> {
     if sm.warp.as_ref().is_some_and(|w| !w.is_identity()) {
-        return Err(other("a warped smart object can't be converted to layers; rasterize it instead (Layer › Smart Objects › Rasterize)"));
+        return Err(other(
+            "a warped smart object can't be converted to layers; rasterize it instead (Layer › Smart Objects › Rasterize)",
+        ));
     }
     let [a, b, c, d, e, f] = sm.transform.m;
     let whole = |v: f64| (v - v.round()).abs() < 1e-9;
-    if sm.perspective.is_none() && [a - 1.0, b, c, d - 1.0].iter().all(|v| v.abs() < 1e-9) && whole(e) && whole(f) {
+    if sm.perspective.is_none()
+        && [a - 1.0, b, c, d - 1.0].iter().all(|v| v.abs() < 1e-9)
+        && whole(e)
+        && whole(f)
+    {
         // Saturating casts: a placement that far out moves the layers off any canvas either way.
-        layers.iter_mut().for_each(|l| shift_layer(l, e.round() as i32, f.round() as i32));
+        layers
+            .iter_mut()
+            .for_each(|l| shift_layer(l, e.round() as i32, f.round() as i32));
         return Ok(());
     }
     // Unlike a whole-pixel shift, this path re-renders nested smart objects from their sources.
@@ -90,7 +128,16 @@ fn place(s: &Session, doc: &Document, sm: &SmartObject, layers: &mut [Layer]) ->
     let h = placement(sm);
     let affine = sm.perspective.is_none().then_some(sm.transform);
     for l in layers {
-        released(l, |l| crate::transform_cmds::transform_layer(None, photocraft_doc::Locks::default(), l, &h, affine, Interp::Bicubic))?;
+        released(l, |l| {
+            crate::transform_cmds::transform_layer(
+                None,
+                photocraft_doc::Locks::default(),
+                l,
+                &h,
+                affine,
+                Interp::Bicubic,
+            )
+        })?;
         crate::transform_cmds::refresh_text(doc, l);
     }
     Ok(())
@@ -101,7 +148,11 @@ fn place(s: &Session, doc: &Document, sm: &SmartObject, layers: &mut [Layer]) ->
 fn released(l: &mut Layer, f: impl FnOnce(&mut Layer) -> Result<()>) -> Result<()> {
     let mut saved = Vec::new();
     crate::image_cmds::for_each_layer(std::slice::from_mut(l), &mut |x| {
-        saved.push((x.locks, x.mask.as_ref().map(|m| m.linked), x.vector_mask.as_ref().map(|m| m.linked)));
+        saved.push((
+            x.locks,
+            x.mask.as_ref().map(|m| m.linked),
+            x.vector_mask.as_ref().map(|m| m.linked),
+        ));
         x.locks = Default::default();
         x.mask.iter_mut().for_each(|m| m.linked = true);
         x.vector_mask.iter_mut().for_each(|m| m.linked = true);
@@ -110,7 +161,9 @@ fn released(l: &mut Layer, f: impl FnOnce(&mut Layer) -> Result<()>) -> Result<(
     // A transform keeps the tree's shape, so the walk meets the layers in the same order.
     let mut saved = saved.into_iter();
     crate::image_cmds::for_each_layer(std::slice::from_mut(l), &mut |x| {
-        let Some((locks, mask, vector)) = saved.next() else { return };
+        let Some((locks, mask, vector)) = saved.next() else {
+            return;
+        };
         x.locks = locks;
         if let (Some(m), Some(linked)) = (x.mask.as_mut(), mask) {
             m.linked = linked;
@@ -142,7 +195,11 @@ fn foldable(so: &Layer, c: &Layer) -> bool {
 /// What replaces smart layer `so`: its one unpacked layer with `so`'s properties folded in, or a
 /// group named after it that carries them (isolated like the smart object, never pass-through).
 fn unpacked(so: &Layer, mut layers: Vec<Layer>) -> Layer {
-    let blend = if so.blend == BlendMode::PassThrough { BlendMode::Normal } else { so.blend };
+    let blend = if so.blend == BlendMode::PassThrough {
+        BlendMode::Normal
+    } else {
+        so.blend
+    };
     if let [c] = layers.as_slice()
         && foldable(so, c)
         && let Some(mut l) = layers.pop()
@@ -161,7 +218,11 @@ fn unpacked(so: &Layer, mut layers: Vec<Layer>) -> Layer {
     g.id = LayerId::fresh();
     g.psd_id = None;
     g.blend = blend;
-    g.content = LayerContent::Group(Group { children: layers, expanded: true, artboard: None });
+    g.content = LayerContent::Group(Group {
+        children: layers,
+        expanded: true,
+        artboard: None,
+    });
     detach_psd(&mut g);
     g
 }

@@ -488,11 +488,17 @@ pub fn configure_compute_resources(
 
     let mut prepared = bind_reflected_layout(pipeline.shader().bindings(), declarations)?;
     if let Some(arguments) = super::metal_update_descriptor::MetalSamplerArgumentBuffer::new(
-        device, pipeline.shader().bindings(),
-        prepared.samplers.iter().map(|sampler| (sampler.index, &sampler.sampler)),
+        device,
+        pipeline.shader().bindings(),
+        prepared
+            .samplers
+            .iter()
+            .map(|sampler| (sampler.index, &sampler.sampler)),
     )? {
         prepared.buffers.push(MetalComputeBufferBinding {
-            index: arguments.index, buffer: arguments.buffer, offset: 0,
+            index: arguments.index,
+            buffer: arguments.buffer,
+            offset: 0,
         });
         prepared.samplers_in_argument_buffer = true;
     }
@@ -518,7 +524,11 @@ pub fn bind_compute_resources(
         for binding in &prepared.textures {
             encoder.setTexture_atIndex(binding.texture.as_deref(), binding.index as usize);
         }
-        for binding in prepared.samplers.iter().filter(|_| !prepared.samplers_in_argument_buffer) {
+        for binding in prepared
+            .samplers
+            .iter()
+            .filter(|_| !prepared.samplers_in_argument_buffer)
+        {
             encoder.setSamplerState_atIndex(Some(&binding.sampler), binding.index as usize);
         }
         if let Some((index, bytes)) = &prepared.push_constants {

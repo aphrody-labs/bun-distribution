@@ -11,7 +11,11 @@ pub(crate) fn quantize(v: i32, qi: u32) -> i32 {
 }
 
 fn at(v: &[i32], i: isize) -> i32 {
-    if v.is_empty() { 0 } else { v[i.clamp(0, v.len() as isize - 1) as usize] }
+    if v.is_empty() {
+        0
+    } else {
+        v[i.clamp(0, v.len() as isize - 1) as usize]
+    }
 }
 
 /// Forward 1-D 5/3 with whole-sample symmetric extension (port of the Phase 0 reference model, local and not in the repo).
@@ -26,7 +30,11 @@ fn forward_1d(x: &[i32], phase: u8) -> (Vec<i32>, Vec<i32>) {
         } else {
             i
         };
-        if (0..n).contains(&r) { x[r as usize] } else { 0 }
+        if (0..n).contains(&r) {
+            x[r as usize]
+        } else {
+            0
+        }
     };
     let (nl, nh) = band_rows(x.len(), phase);
     let h: Vec<i32> = (0..nh as isize)
@@ -35,21 +43,42 @@ fn forward_1d(x: &[i32], phase: u8) -> (Vec<i32>, Vec<i32>) {
             xs(pos) - ((xs(pos - 1) + xs(pos + 1)) >> 1)
         })
         .collect();
-    let l = (0..nl as isize).map(|j| xs(2 * j + p) + ((at(&h, j - 1 + p) + at(&h, j + p) + 2) >> 2)).collect();
+    let l = (0..nl as isize)
+        .map(|j| xs(2 * j + p) + ((at(&h, j - 1 + p) + at(&h, j + p) + 2) >> 2))
+        .collect();
     (l, h)
 }
 
 fn split(x: &Plane, phase: u8, vertical: bool) -> (Plane, Plane) {
-    let (across, n) = if vertical { (x.width, x.height) } else { (x.height, x.width) };
+    let (across, n) = if vertical {
+        (x.width, x.height)
+    } else {
+        (x.height, x.width)
+    };
     let (nl, nh) = band_rows(n, phase);
     let dims = |m| if vertical { (across, m) } else { (m, across) };
-    let (mut lo, mut hi) = (Plane::zeros(dims(nl).0, dims(nl).1), Plane::zeros(dims(nh).0, dims(nh).1));
+    let (mut lo, mut hi) = (
+        Plane::zeros(dims(nl).0, dims(nl).1),
+        Plane::zeros(dims(nh).0, dims(nh).1),
+    );
     for i in 0..across {
-        let line: Vec<i32> = (0..n).map(|k| if vertical { x.data[k * x.width + i] } else { x.data[i * x.width + k] }).collect();
+        let line: Vec<i32> = (0..n)
+            .map(|k| {
+                if vertical {
+                    x.data[k * x.width + i]
+                } else {
+                    x.data[i * x.width + k]
+                }
+            })
+            .collect();
         let (l, h) = forward_1d(&line, phase);
         for (p, v) in [(&mut lo, l), (&mut hi, h)] {
             for (k, v) in v.into_iter().enumerate() {
-                let idx = if vertical { k * p.width + i } else { i * p.width + k };
+                let idx = if vertical {
+                    k * p.width + i
+                } else {
+                    i * p.width + k
+                };
                 p.data[idx] = v;
             }
         }
@@ -78,7 +107,18 @@ pub(crate) fn forward3(x: &Plane, phases: [u8; 3]) -> Bands3 {
     let (ll1, lh1, hl1, hh1) = forward_53_2d(x, phases[0]);
     let (ll2, lh2, hl2, hh2) = forward_53_2d(&ll1, phases[1]);
     let (ll3, lh3, hl3, hh3) = forward_53_2d(&ll2, phases[2]);
-    Bands3 { ll3, hl3, lh3, hh3, hl2, lh2, hh2, hl1, lh1, hh1 }
+    Bands3 {
+        ll3,
+        hl3,
+        lh3,
+        hh3,
+        hl2,
+        lh2,
+        hh2,
+        hl1,
+        lh1,
+        hh1,
+    }
 }
 
 // ---- RDD 34 line encoder (mirror of `llvc::vld_decode_line`; port of the Phase 0 reference model's encoder) ----
@@ -105,7 +145,14 @@ impl BitWriter {
     }
     /// Zero-padded to a whole byte.
     pub(crate) fn finish(self) -> Vec<u8> {
-        self.bits.chunks(8).map(|c| c.iter().enumerate().fold(0u8, |a, (i, &b)| a | (b << (7 - i)))).collect()
+        self.bits
+            .chunks(8)
+            .map(|c| {
+                c.iter()
+                    .enumerate()
+                    .fold(0u8, |a, (i, &b)| a | (b << (7 - i)))
+            })
+            .collect()
     }
 }
 
@@ -115,7 +162,17 @@ pub(crate) fn vld_encode_line(values: &[i32], width: usize, out: &mut BitWriter)
     let mut vals = values[..width.min(values.len())].to_vec();
     vals.resize(4 * sets_n, 0);
     let sets: Vec<&[i32]> = vals.chunks(4).collect();
-    let dpts: Vec<u32> = sets.iter().map(|s| 32 - s.iter().map(|v| v.unsigned_abs()).max().unwrap_or(0).leading_zeros()).collect();
+    let dpts: Vec<u32> = sets
+        .iter()
+        .map(|s| {
+            32 - s
+                .iter()
+                .map(|v| v.unsigned_abs())
+                .max()
+                .unwrap_or(0)
+                .leading_zeros()
+        })
+        .collect();
     let (mut dpt, mut dpts_state, mut cnt, mut zr) = (0u32, 0u8, sets_n, 0usize);
     let mut prev: Option<&[i32]> = None;
     let mut k = 0usize;
@@ -217,9 +274,19 @@ pub(crate) struct Qis {
 }
 
 impl Qis {
-    pub(crate) const ZERO: Qis = Qis { l1: [[0; 3]; 3], l2: [[0; 3]; 3], l3: [[0; 3]; 3], res: 0 };
+    pub(crate) const ZERO: Qis = Qis {
+        l1: [[0; 3]; 3],
+        l2: [[0; 3]; 3],
+        l3: [[0; 3]; 3],
+        res: 0,
+    };
     /// The values seen in every real file (*Container*).
-    pub(crate) const REAL: Qis = Qis { l1: [[1, 1, 2], [2, 2, 3], [2, 2, 3]], l2: [[0, 0, 1]; 3], l3: [[0; 3]; 3], res: 2 };
+    pub(crate) const REAL: Qis = Qis {
+        l1: [[1, 1, 2], [2, 2, 3], [2, 2, 3]],
+        l2: [[0, 0, 1]; 3],
+        l3: [[0; 3]; 3],
+        res: 2,
+    };
 }
 
 /// One tile to encode: `s` is the anchor offset (*Frame geometry*), planes are W/2 x H/2.
@@ -246,7 +313,16 @@ fn split_rows(rows: &[usize], p: usize) -> (Vec<usize>, Vec<usize>) {
 }
 
 fn quantised_rows(plane: &Plane, rows: &[usize], qi: u32) -> Vec<Vec<i32>> {
-    rows.iter().map(|&r| plane.row(r).unwrap().iter().map(|&v| quantize(v, qi)).collect()).collect()
+    rows.iter()
+        .map(|&r| {
+            plane
+                .row(r)
+                .unwrap()
+                .iter()
+                .map(|&v| quantize(v, qi))
+                .collect()
+        })
+        .collect()
 }
 
 fn encode_lines(lines: &[Vec<i32>]) -> Vec<u8> {
@@ -298,13 +374,24 @@ pub(crate) fn encode_tile(t: &TileSpec) -> Vec<u8> {
     let p3 = ((k3 - p2) / 2).rem_euclid(2);
     let (up1, up2, up3) = (p1 as usize, p2 as usize, p3 as usize);
     let comps = [&t.m, &t.c1, &t.c2];
-    let bands: Vec<_> = comps.iter().map(|p| forward3(p, [p1 as u8, p2 as u8, p3 as u8])).collect();
+    let bands: Vec<_> = comps
+        .iter()
+        .map(|p| forward3(p, [p1 as u8, p2 as u8, p3 as u8]))
+        .collect();
     let qi = &t.qi;
     // streams[group][comp] -> halves
-    let mut streams: Vec<Vec<Vec<(Vec<u8>, Vec<u32>)>>> =
-        vec![vec![Vec::new(); 3], vec![Vec::new(); 3], vec![Vec::new(); 3], vec![Vec::new(); 3], vec![Vec::new()]];
+    let mut streams: Vec<Vec<Vec<(Vec<u8>, Vec<u32>)>>> = vec![
+        vec![Vec::new(); 3],
+        vec![Vec::new(); 3],
+        vec![Vec::new(); 3],
+        vec![Vec::new(); 3],
+        vec![Vec::new()],
+    ];
     for n in 0..2 * ntu as i32 {
-        let rows: Vec<usize> = (8 * n - 6 + s..8 * n + 2 + s).filter(|&r| r >= 0 && (r as usize) < vs).map(|r| r as usize).collect();
+        let rows: Vec<usize> = (8 * n - 6 + s..8 * n + 2 + s)
+            .filter(|&r| r >= 0 && (r as usize) < vs)
+            .map(|r| r as usize)
+            .collect();
         let (low1, high1) = split_rows(&rows, up1);
         let (low2, high2) = split_rows(&low1, up2);
         let (low3, high3) = split_rows(&low2, up3);
@@ -354,13 +441,20 @@ pub(crate) fn encode_tile(t: &TileSpec) -> Vec<u8> {
                 streams[g][c].push((encode_lines(&lines), q));
             }
         }
-        streams[4][0].push((encode_lines(&quantised_rows(&t.res, &rows, qi.res)), vec![qi.res]));
+        streams[4][0].push((
+            encode_lines(&quantised_rows(&t.res, &rows, qi.res)),
+            vec![qi.res],
+        ));
     }
-    let blobs: Vec<Vec<Vec<u8>>> = streams.iter().map(|g| g.iter().map(|s| build_stream(s)).collect()).collect();
+    let blobs: Vec<Vec<Vec<u8>>> = streams
+        .iter()
+        .map(|g| g.iter().map(|s| build_stream(s)).collect())
+        .collect();
     let mut head = vec![0u8; 8 * 16];
     head[..4].copy_from_slice(b"0000"); // bytes 4..8: tile index, 0
     let tw = 2 * t.m.width;
-    let w0: u64 = (tw as u64) << 48 | (vs as u64) << 32 | 16 << 20 | 3 << 13 | 3 << 10 | 0b10_0000_0000;
+    let w0: u64 =
+        (tw as u64) << 48 | (vs as u64) << 32 | 16 << 20 | 3 << 13 | 3 << 10 | 0b10_0000_0000;
     head[8..16].copy_from_slice(&w0.to_be_bytes());
     for (g, group) in blobs.iter().enumerate() {
         let words: Vec<usize> = group.iter().map(|b| b.len() / 16).collect();
@@ -378,21 +472,40 @@ pub(crate) fn encode_tile(t: &TileSpec) -> Vec<u8> {
 
 /// A little-endian ARW6 TIFF: IFD0 (Sony, ILCE-7RM6) + a SubIFD with the strip = tile table, zero padding to 512,
 /// then the tiles `(x, y, w, h, bytes)` back to back.
-pub(crate) fn arw6_file(tiles: &[(usize, usize, usize, usize, Vec<u8>)], width: usize, height: usize) -> Vec<u8> {
+pub(crate) fn arw6_file(
+    tiles: &[(usize, usize, usize, usize, Vec<u8>)],
+    width: usize,
+    height: usize,
+) -> Vec<u8> {
     arw6_file_with(tiles, width, height, true, 14)
 }
 
 /// [`arw6_file`] with another BitsPerSample.
-pub(crate) fn arw6_file_bits(tiles: &[(usize, usize, usize, usize, Vec<u8>)], width: usize, height: usize, bits: u16) -> Vec<u8> {
+pub(crate) fn arw6_file_bits(
+    tiles: &[(usize, usize, usize, usize, Vec<u8>)],
+    width: usize,
+    height: usize,
+    bits: u16,
+) -> Vec<u8> {
     arw6_file_with(tiles, width, height, true, bits)
 }
 
 /// [`arw6_file`] without the WhiteLevel tag.
-pub(crate) fn arw6_file_no_white(tiles: &[(usize, usize, usize, usize, Vec<u8>)], width: usize, height: usize) -> Vec<u8> {
+pub(crate) fn arw6_file_no_white(
+    tiles: &[(usize, usize, usize, usize, Vec<u8>)],
+    width: usize,
+    height: usize,
+) -> Vec<u8> {
     arw6_file_with(tiles, width, height, false, 14)
 }
 
-fn arw6_file_with(tiles: &[(usize, usize, usize, usize, Vec<u8>)], width: usize, height: usize, white: bool, bits: u16) -> Vec<u8> {
+fn arw6_file_with(
+    tiles: &[(usize, usize, usize, usize, Vec<u8>)],
+    width: usize,
+    height: usize,
+    white: bool,
+    bits: u16,
+) -> Vec<u8> {
     let mut strip = (tiles.len() as u32).to_le_bytes().to_vec();
     strip.extend([0; 4]);
     let mut offset = 512u64;
@@ -420,13 +533,18 @@ fn arw6_file_with(tiles: &[(usize, usize, usize, usize, Vec<u8>)], width: usize,
     if white {
         raw.set(t::WHITE_LEVEL, Value::Long(vec![15360]));
     }
-    raw.set_image(ImageData::Strips { rows_per_strip: height as u32, strips: vec![strip] });
+    raw.set_image(ImageData::Strips {
+        rows_per_strip: height as u32,
+        strips: vec![strip],
+    });
     let mut ifd0 = IfdBuilder::new();
     ifd0.set(t::MAKE, Value::Ascii("SONY".into()));
     ifd0.set(t::MODEL, Value::Ascii("ILCE-7RM6".into()));
     ifd0.set(t::ORIENTATION, Value::Short(vec![1]));
     ifd0.add_sub_ifd(raw);
-    TiffWriter::new(ByteOrder::Little, false).write(&[ifd0]).unwrap()
+    TiffWriter::new(ByteOrder::Little, false)
+        .write(&[ifd0])
+        .unwrap()
 }
 
 /// A tile whose bands are random quantised integers `q` (level 1 wider), `v = dequant(q, qi)`, planes by
@@ -478,6 +596,13 @@ pub(crate) fn one_tile_quantised(w: usize, h: usize, s: u8, qi: Qis) -> (Vec<u8>
     }
     let res = plane(w2, vs, 7, 0, qi.res);
     let (m, c1, c2) = (comps.remove(0), comps.remove(0), comps.remove(0));
-    let t = TileSpec { s, qi, m, c1, c2, res };
+    let t = TileSpec {
+        s,
+        qi,
+        m,
+        c1,
+        c2,
+        res,
+    };
     (encode_tile(&t), t)
 }

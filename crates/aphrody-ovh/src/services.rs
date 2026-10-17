@@ -33,7 +33,10 @@ pub struct ServiceInfo {
 }
 
 fn text(value: &Value, pointer: &str) -> Option<String> {
-    value.pointer(pointer).and_then(Value::as_str).map(ToString::to_string)
+    value
+        .pointer(pointer)
+        .and_then(Value::as_str)
+        .map(ToString::to_string)
 }
 
 impl ServiceInfo {
@@ -41,7 +44,12 @@ impl ServiceInfo {
         let pending_actions = raw
             .pointer("/billing/lifecycle/current/pendingActions")
             .and_then(Value::as_array)
-            .map(|list| list.iter().filter_map(Value::as_str).map(ToString::to_string).collect())
+            .map(|list| {
+                list.iter()
+                    .filter_map(Value::as_str)
+                    .map(ToString::to_string)
+                    .collect()
+            })
             .unwrap_or_default();
         Self {
             service_id: raw.get("serviceId").and_then(Value::as_u64).unwrap_or(0),
@@ -98,16 +106,16 @@ pub fn evaluate_service(
         "unrenewed" | "terminated" => {
             alerts.push("Service expiré".to_string());
             expired = true;
-        },
+        }
         "unpaid" => {
             alerts.push("Service impayé".to_string());
             expired = true;
-        },
+        }
         "error" | "rupture" => {
             alerts.push(format!("Cycle de vie: {lifecycle}"));
             expired = true;
-        },
-        _ => {},
+        }
+        _ => {}
     }
     if info.resource_state == "suspended" {
         alerts.push("Ressource suspendue".to_string());
@@ -122,7 +130,10 @@ pub fn evaluate_service(
             alerts.push("Service expiré".to_string());
             expired = true;
         } else if days <= threshold_days {
-            alerts.push(format!("Expiration dans {days} jour{}", if days == 1 { "" } else { "s" }));
+            alerts.push(format!(
+                "Expiration dans {days} jour{}",
+                if days == 1 { "" } else { "s" }
+            ));
         }
     }
 
@@ -143,8 +154,10 @@ pub fn evaluate_service(
 /// Pick the service named `target` (exact, case-insensitive resource name); several matches
 /// (a domain also owns a zone, an email and a DNS service) must be disambiguated by id.
 pub fn select_by_name<'a>(services: &'a [ServiceInfo], target: &str) -> Result<&'a ServiceInfo> {
-    let matches: Vec<&ServiceInfo> =
-        services.iter().filter(|s| s.resource_name.eq_ignore_ascii_case(target)).collect();
+    let matches: Vec<&ServiceInfo> = services
+        .iter()
+        .filter(|s| s.resource_name.eq_ignore_ascii_case(target))
+        .collect();
     match matches.as_slice() {
         [one] => Ok(*one),
         [] => bail!("no OVH service named '{target}' (see `aphrody ovh services`)"),
@@ -155,7 +168,7 @@ pub fn select_by_name<'a>(services: &'a [ServiceInfo], target: &str) -> Result<&
                 .collect::<Vec<_>>()
                 .join(", ");
             bail!("'{target}' matches several services, pass the service id: {list}")
-        },
+        }
     }
 }
 
@@ -177,7 +190,12 @@ pub struct RenewOrder {
 }
 
 fn text_field(value: &Value, key: &str) -> String {
-    value.get(key).and_then(|v| v.get("text")).and_then(|v| v.as_str()).unwrap_or("?").to_string()
+    value
+        .get(key)
+        .and_then(|v| v.get("text"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("?")
+        .to_string()
 }
 
 /// Offered renewal periods (`GET /service/{id}/renew`), in the order OVH lists them.
@@ -196,7 +214,9 @@ pub fn select_offer<'a>(
     period: Option<&str>,
 ) -> Result<&'a Value> {
     let found = match period {
-        Some(p) => offers.iter().find(|o| o.get("renewPeriod").and_then(Value::as_str) == Some(p)),
+        Some(p) => offers
+            .iter()
+            .find(|o| o.get("renewPeriod").and_then(Value::as_str) == Some(p)),
         None => offers.first(),
     };
     found.ok_or_else(|| {
@@ -230,7 +250,11 @@ pub fn offer_services(offer: &Value, service_id: u64) -> Vec<u64> {
         return direct;
     }
     let detailed = ids("/strategies/0/servicesDetails", Some("serviceId"));
-    if detailed.is_empty() { vec![service_id] } else { detailed }
+    if detailed.is_empty() {
+        vec![service_id]
+    } else {
+        detailed
+    }
 }
 
 pub struct ServicesManager<'a> {
@@ -274,7 +298,10 @@ impl<'a> ServicesManager<'a> {
     /// Price one renewal `period` (ISO 8601, e.g. `P1M`, `P1Y`; first offer when `None`) with a
     /// dry-run order: nothing is ordered.
     pub async fn renew_quote(&self, service_id: u64, period: Option<&str>) -> Result<RenewQuote> {
-        let offers: Vec<Value> = self.client.get(&format!("/service/{service_id}/renew")).await?;
+        let offers: Vec<Value> = self
+            .client
+            .get(&format!("/service/{service_id}/renew"))
+            .await?;
         let offer = select_offer(&offers, service_id, period)?;
         let chosen = offer
             .get("renewPeriod")
@@ -284,8 +311,10 @@ impl<'a> ServicesManager<'a> {
             .to_string();
         let services = offer_services(offer, service_id);
         let body = serde_json::json!({ "dryRun": true, "duration": chosen, "services": services });
-        let dry: Value =
-            self.client.post(&format!("/service/{service_id}/renew"), Some(body)).await?;
+        let dry: Value = self
+            .client
+            .post(&format!("/service/{service_id}/renew"), Some(body))
+            .await?;
         Ok(RenewQuote {
             period: chosen,
             services,
@@ -301,24 +330,33 @@ impl<'a> ServicesManager<'a> {
             "duration": quote.period,
             "services": quote.services,
         });
-        let order: Value =
-            self.client.post(&format!("/service/{service_id}/renew"), Some(body)).await?;
+        let order: Value = self
+            .client
+            .post(&format!("/service/{service_id}/renew"), Some(body))
+            .await?;
         Ok(RenewOrder {
             order_id: order.get("orderId").and_then(Value::as_u64).unwrap_or(0),
-            url: order.get("url").and_then(Value::as_str).unwrap_or("").to_string(),
+            url: order
+                .get("url")
+                .and_then(Value::as_str)
+                .unwrap_or("")
+                .to_string(),
             price_with_tax: text_field(&order, "priceWithTax"),
         })
     }
 
     /// Pay an order with the account's default registered payment method (else the first one).
     pub async fn pay_order(&self, order_id: u64) -> Result<u64> {
-        let methods: Value =
-            self.client.get(&format!("/me/order/{order_id}/paymentMethods")).await?;
+        let methods: Value = self
+            .client
+            .get(&format!("/me/order/{order_id}/paymentMethods"))
+            .await?;
         let default = methods
             .get("paymentMethods")
             .and_then(Value::as_array)
             .and_then(|list| {
-                list.iter().find(|m| m.get("default").and_then(Value::as_bool) == Some(true))
+                list.iter()
+                    .find(|m| m.get("default").and_then(Value::as_bool) == Some(true))
             })
             .and_then(|m| m.get("paymentMethodId").and_then(Value::as_u64));
         let id = default
@@ -408,7 +446,10 @@ mod tests {
         assert!(alerts.iter().any(|a| a.contains("Renouvellement manuel")));
         let far = fixture("active", Some("manual"), "2027-01-01T00:00:00Z");
         let far_alerts = evaluate_service(&far, None, day("2026-10-05"), 14);
-        assert_eq!(far_alerts, vec!["Renouvellement manuel (alerte requise)".to_string()]);
+        assert_eq!(
+            far_alerts,
+            vec!["Renouvellement manuel (alerte requise)".to_string()]
+        );
         let tomorrow = fixture("active", Some("manual"), "2026-10-06T00:00:00Z");
         assert!(
             evaluate_service(&tomorrow, None, day("2026-10-05"), 14)
@@ -442,7 +483,11 @@ mod tests {
         info.pending_actions = vec!["terminateAtExpirationDate".into()];
         assert!(info.delete_at_expiration());
         let alerts = evaluate_service(&info, None, day("2026-10-05"), 14);
-        assert!(alerts.iter().any(|a| a.contains("Suppression à expiration")));
+        assert!(
+            alerts
+                .iter()
+                .any(|a| a.contains("Suppression à expiration"))
+        );
     }
 
     #[test]
@@ -471,12 +516,17 @@ mod tests {
             json!({ "renewPeriod": "P2Y", "strategies": [{ "servicesDetails": [
                 { "serviceId": 5 }, { "serviceId": 6 }] }] }),
         ];
-        assert_eq!(select_offer(&offers, 9, None).unwrap()["renewPeriod"], "P1Y");
+        assert_eq!(
+            select_offer(&offers, 9, None).unwrap()["renewPeriod"],
+            "P1Y"
+        );
         let p2 = select_offer(&offers, 9, Some("P2Y")).unwrap();
         assert_eq!(offer_services(p2, 9), vec![5, 6]);
         assert_eq!(offer_services(&offers[0], 9), vec![75523385]);
         assert_eq!(offer_services(&json!({}), 9), vec![9]);
-        let error = select_offer(&offers, 9, Some("P3M")).unwrap_err().to_string();
+        let error = select_offer(&offers, 9, Some("P3M"))
+            .unwrap_err()
+            .to_string();
         assert!(error.contains("P1Y, P2Y"));
         assert_eq!(offered_periods(&offers), vec!["P1Y", "P2Y"]);
     }

@@ -49,7 +49,10 @@ impl HttpTarget {
     pub fn new(endpoint_url: impl Into<String>) -> Self {
         let _ = rustls::crypto::ring::default_provider().install_default();
         let endpoint = endpoint_url.into();
-        let client = Client::builder().timeout(Duration::from_secs(30)).build().unwrap_or_default();
+        let client = Client::builder()
+            .timeout(Duration::from_secs(30))
+            .build()
+            .unwrap_or_default();
 
         Self {
             name: format!("http:{}", endpoint),
@@ -113,7 +116,10 @@ impl EvalTarget for HttpTarget {
                 .client
                 .get(&self.endpoint_url)
                 .query(&[("q", query_str), ("limit", &limit.to_string())])
-                .header(USER_AGENT, "aphrody-rag-eval/1.0.0 (codex-oss; +https://aphrody.com)")
+                .header(
+                    USER_AGENT,
+                    "aphrody-rag-eval/1.0.0 (codex-oss; +https://aphrody.com)",
+                )
                 .send()
                 .await;
             let response = match response {
@@ -132,7 +138,7 @@ impl EvalTarget for HttpTarget {
                         });
                     }
                     continue;
-                },
+                }
             };
             let status = response.status();
             if status.is_server_error() || status == StatusCode::TOO_MANY_REQUESTS {
@@ -163,7 +169,11 @@ impl EvalTarget for HttpTarget {
                 parsed.mode,
                 latency_ms
             );
-            return Ok(TargetResponse { hits: parsed.hits, mode_served: parsed.mode, latency_ms });
+            return Ok(TargetResponse {
+                hits: parsed.hits,
+                mode_served: parsed.mode,
+                latency_ms,
+            });
         }
     }
 }

@@ -9,7 +9,14 @@
 //!
 //! Pure logic: no rendering, no UI toolkit. Every function accepts hostile numbers (NaN, huge or
 //! negative times) and never panics.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod easing;
@@ -53,14 +60,27 @@ pub struct AnimState {
 
 impl Default for AnimState {
     fn default() -> Self {
-        AnimState { visible: true, opacity: 1.0, offset_x: 0.0, offset_y: 0.0, scale_x: 1.0, scale_y: 1.0, rotate: 0.0, clip: None, tint: None }
+        AnimState {
+            visible: true,
+            opacity: 1.0,
+            offset_x: 0.0,
+            offset_y: 0.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            rotate: 0.0,
+            clip: None,
+            tint: None,
+        }
     }
 }
 
 impl AnimState {
     /// A hidden state.
     pub fn hidden() -> Self {
-        AnimState { visible: false, ..Default::default() }
+        AnimState {
+            visible: false,
+            ..Default::default()
+        }
     }
     /// Is this the identity (nothing to apply)?
     pub fn is_identity(&self) -> bool {
@@ -70,7 +90,12 @@ impl AnimState {
     /// intersect, a tint replaces.
     pub fn compose(&self, d: &AnimState) -> AnimState {
         let clip = match (self.clip, d.clip) {
-            (Some(a), Some(b)) => Some([a[0].max(b[0]), a[1].max(b[1]), a[2].min(b[2]), a[3].min(b[3])]),
+            (Some(a), Some(b)) => Some([
+                a[0].max(b[0]),
+                a[1].max(b[1]),
+                a[2].min(b[2]),
+                a[3].min(b[3]),
+            ]),
             (a, None) => a,
             (None, b) => b,
         };

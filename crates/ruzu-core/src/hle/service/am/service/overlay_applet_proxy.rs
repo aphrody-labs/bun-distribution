@@ -113,7 +113,8 @@ impl IOverlayAppletProxy {
     }
 
     fn get_common_state_getter_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::common_state_getter::ICommonStateGetter::new(
@@ -124,7 +125,8 @@ impl IOverlayAppletProxy {
     }
 
     fn get_self_controller_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::self_controller::ISelfController::new(
@@ -136,7 +138,8 @@ impl IOverlayAppletProxy {
     }
 
     fn get_window_controller_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::window_controller::IWindowController::new(
@@ -154,7 +157,8 @@ impl IOverlayAppletProxy {
     }
 
     fn get_display_controller_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::display_controller::IDisplayController::new(
@@ -167,7 +171,8 @@ impl IOverlayAppletProxy {
         this: &dyn ServiceFramework,
         ctx: &mut HLERequestContext,
     ) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(
@@ -182,7 +187,8 @@ impl IOverlayAppletProxy {
         this: &dyn ServiceFramework,
         ctx: &mut HLERequestContext,
     ) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::library_applet_creator::ILibraryAppletCreator::new(
@@ -194,7 +200,8 @@ impl IOverlayAppletProxy {
     }
 
     fn get_overlay_functions_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(super::overlay_functions::IOverlayFunctions::new(
@@ -218,7 +225,8 @@ impl IOverlayAppletProxy {
         this: &dyn ServiceFramework,
         ctx: &mut HLERequestContext,
     ) {
-        let proxy = unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
+        let proxy =
+            unsafe { &*(this as *const dyn ServiceFramework as *const IOverlayAppletProxy) };
         Self::push_interface_response(
             ctx,
             Arc::new(
@@ -239,7 +247,9 @@ impl IOverlayAppletProxy {
 }
 
 impl SessionRequestHandler for IOverlayAppletProxy {
-    fn as_any(&self) -> &dyn std::any::Any { self }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
     fn handle_sync_request(&self, context: &mut HLERequestContext) -> ResultCode {
         ServiceFramework::handle_sync_request_impl(self, context)
     }
@@ -256,11 +266,20 @@ mod tests {
 
     #[test]
     fn overlay_proxy_exposes_exact_upstream_interfaces() {
-        let applet = Arc::new(Mutex::new(Applet::new(SystemRef::null(), Process::new(), false)));
+        let applet = Arc::new(Mutex::new(Applet::new(
+            SystemRef::null(),
+            Process::new(),
+            false,
+        )));
         let proxy = IOverlayAppletProxy::new(SystemRef::null(), applet, None, Weak::new());
-        assert_eq!(proxy.handlers.keys().copied().collect::<Vec<_>>(),
-            vec![0, 1, 2, 3, 4, 10, 11, 20, 21, 23, 1000]);
-        assert!(proxy.handlers.values().all(|entry| entry.handler_callback.is_some()));
+        assert_eq!(
+            proxy.handlers.keys().copied().collect::<Vec<_>>(),
+            vec![0, 1, 2, 3, 4, 10, 11, 20, 21, 23, 1000]
+        );
+        assert!(proxy
+            .handlers
+            .values()
+            .all(|entry| entry.handler_callback.is_some()));
         assert_eq!(proxy.handlers[&20].name, "GetOverlayFunctions");
         assert_eq!(proxy.handlers[&21].name, "GetAppletCommonFunctions");
         assert_eq!(proxy.handlers[&23].name, "GetGlobalStateController");

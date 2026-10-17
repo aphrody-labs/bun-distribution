@@ -22,7 +22,10 @@ pub struct Decoded {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Body {
     Rdbn(Vec<RdbnListRows>),
-    T2b { entries: Vec<T2bEntryRow>, vars: Vec<T2bVarRow> },
+    T2b {
+        entries: Vec<T2bEntryRow>,
+        vars: Vec<T2bVarRow>,
+    },
 }
 
 impl Body {
@@ -110,7 +113,11 @@ pub fn decode(data: &[u8]) -> Result<Decoded, DecodeError> {
         let (entries, vars) = t2b_rows(&file.entries)?;
         Body::T2b { entries, vars }
     };
-    Ok(Decoded { sha256, byte_size, body })
+    Ok(Decoded {
+        sha256,
+        byte_size,
+        body,
+    })
 }
 
 fn to_i32(what: &'static str, value: usize) -> Result<i32, DecodeError> {
@@ -136,14 +143,26 @@ fn rdbn_rows(lists: Vec<cfgbin::RdbnList>) -> Result<Vec<RdbnListRows>, DecodeEr
                     values.push(cell);
                 }
             }
-            Ok(RdbnListRows { name: list.name, type_name: list.type_name, values })
+            Ok(RdbnListRows {
+                name: list.name,
+                type_name: list.type_name,
+                values,
+            })
         })
         .collect()
 }
 
 fn rdbn_cell(value: RdbnValue) -> RdbnValueRow {
-    let int = |kind: i16, v: i64| RdbnValueRow { kind, v_int: Some(v), ..Default::default() };
-    let vec = |kind: i16, v: Vec<f32>| RdbnValueRow { kind, v_vec: Some(v), ..Default::default() };
+    let int = |kind: i16, v: i64| RdbnValueRow {
+        kind,
+        v_int: Some(v),
+        ..Default::default()
+    };
+    let vec = |kind: i16, v: Vec<f32>| RdbnValueRow {
+        kind,
+        v_vec: Some(v),
+        ..Default::default()
+    };
     match value {
         RdbnValue::Bool(v) => int(3, i64::from(v)),
         RdbnValue::Byte(v) => int(4, i64::from(v)),
@@ -151,19 +170,30 @@ fn rdbn_cell(value: RdbnValue) -> RdbnValueRow {
         RdbnValue::Int(v) => int(6, i64::from(v)),
         RdbnValue::ActType(v) => int(9, i64::from(v)),
         RdbnValue::Flag(v) => int(10, i64::from(v)),
-        RdbnValue::Float(v) => {
-            RdbnValueRow { kind: 13, v_real: Some(f64::from(v)), ..Default::default() }
+        RdbnValue::Float(v) => RdbnValueRow {
+            kind: 13,
+            v_real: Some(f64::from(v)),
+            ..Default::default()
         },
         RdbnValue::Hash(v) => int(15, i64::from(v)),
         RdbnValue::Rates(v) => vec(18, v.to_vec()),
         RdbnValue::Position(v) => vec(19, v.to_vec()),
-        RdbnValue::Condition(v) => RdbnValueRow { kind: 20, v_text: Some(v), ..Default::default() },
+        RdbnValue::Condition(v) => RdbnValueRow {
+            kind: 20,
+            v_text: Some(v),
+            ..Default::default()
+        },
         // i16 -> f32 is exact (|i16| < 2^24).
         RdbnValue::ShortTuple(v) => vec(21, v.iter().map(|&x| f32::from(x)).collect()),
-        RdbnValue::Blob(v) => {
-            RdbnValueRow { kind: KIND_BLOB, v_bytes: Some(v), ..Default::default() }
+        RdbnValue::Blob(v) => RdbnValueRow {
+            kind: KIND_BLOB,
+            v_bytes: Some(v),
+            ..Default::default()
         },
-        RdbnValue::Invalid => RdbnValueRow { kind: KIND_INVALID, ..Default::default() },
+        RdbnValue::Invalid => RdbnValueRow {
+            kind: KIND_INVALID,
+            ..Default::default()
+        },
     }
 }
 
@@ -210,7 +240,13 @@ fn t2b_rows(roots: &[CfgEntry]) -> Result<(Vec<T2bEntryRow>, Vec<T2bVarRow>), De
                 },
             });
         }
-        stack.extend(entry.children.iter().rev().map(|c| (c, Some(idx), depth + 1)));
+        stack.extend(
+            entry
+                .children
+                .iter()
+                .rev()
+                .map(|c| (c, Some(idx), depth + 1)),
+        );
     }
     Ok((entries, vars))
 }
@@ -230,16 +266,26 @@ mod tests {
             CfgEntry {
                 name: "LIST_BEGIN".into(),
                 variables: vec![Value::Int(2)],
-                children: vec![leaf("A", Value::String("x".into())), leaf("B", Value::Float(1.5))],
+                children: vec![
+                    leaf("A", Value::String("x".into())),
+                    leaf("B", Value::Float(1.5)),
+                ],
             },
             leaf("END", Value::Int(0)),
         ];
         let (entries, vars) = t2b_rows(&roots).unwrap();
-        let names: Vec<_> =
-            entries.iter().map(|e| (e.name.as_str(), e.parent_idx, e.depth)).collect();
+        let names: Vec<_> = entries
+            .iter()
+            .map(|e| (e.name.as_str(), e.parent_idx, e.depth))
+            .collect();
         assert_eq!(
             names,
-            [("LIST_BEGIN", None, 0), ("A", Some(0), 1), ("B", Some(0), 1), ("END", None, 0)]
+            [
+                ("LIST_BEGIN", None, 0),
+                ("A", Some(0), 1),
+                ("B", Some(0), 1),
+                ("END", None, 0)
+            ]
         );
         assert_eq!(vars.len(), 4);
         assert_eq!(vars[1].v_text.as_deref(), Some("x"));
@@ -248,8 +294,14 @@ mod tests {
 
     #[test]
     fn rdbn_cells_keep_binary_types() {
-        assert_eq!(rdbn_cell(RdbnValue::Hash(0xFFFF_FFFF)).v_int, Some(4_294_967_295));
-        assert_eq!(rdbn_cell(RdbnValue::ShortTuple([-2, 7])).v_vec, Some(vec![-2.0, 7.0]));
+        assert_eq!(
+            rdbn_cell(RdbnValue::Hash(0xFFFF_FFFF)).v_int,
+            Some(4_294_967_295)
+        );
+        assert_eq!(
+            rdbn_cell(RdbnValue::ShortTuple([-2, 7])).v_vec,
+            Some(vec![-2.0, 7.0])
+        );
         let invalid = rdbn_cell(RdbnValue::Invalid);
         assert_eq!(invalid.kind, KIND_INVALID);
         assert!(invalid.v_int.is_none() && invalid.v_bytes.is_none());
@@ -262,16 +314,25 @@ mod tests {
         let data = include_bytes!("../../aphrody-nie-formats/tests/fixtures/font_color.cfg.bin");
         let decoded = decode(data).unwrap();
         assert_eq!(decoded.body.format(), "rdbn");
-        let Body::Rdbn(lists) = decoded.body else { unreachable!() };
+        let Body::Rdbn(lists) = decoded.body else {
+            unreachable!()
+        };
         assert_eq!(lists.len(), 1);
         assert_eq!(lists[0].name, "m_FontColorDataList");
         assert_eq!(lists[0].values.len(), 64 * 7);
-        let id = lists[0].values.iter().find(|v| v.field_name == "fontColorId").unwrap();
+        let id = lists[0]
+            .values
+            .iter()
+            .find(|v| v.field_name == "fontColorId")
+            .unwrap();
         assert!(id.v_int.is_some() && id.v_text.is_none());
     }
 
     #[test]
     fn rejects_unknown_formats() {
-        assert!(matches!(decode(&[0u8; 8]), Err(DecodeError::UnknownFormat(8))));
+        assert!(matches!(
+            decode(&[0u8; 8]),
+            Err(DecodeError::UnknownFormat(8))
+        ));
     }
 }

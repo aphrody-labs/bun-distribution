@@ -25,9 +25,12 @@ pub enum ImportOutcome {
 /// PostgreSQL error while running a migration.
 pub async fn migrate(client: &mut Client) -> Result<Vec<i32>, Error> {
     let tx = client.transaction().await?;
-    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&MIGRATION_LOCK]).await?;
-    let exists: bool =
-        tx.query_one("SELECT to_regclass('nie.schema_version') IS NOT NULL", &[]).await?.get(0);
+    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&MIGRATION_LOCK])
+        .await?;
+    let exists: bool = tx
+        .query_one("SELECT to_regclass('nie.schema_version') IS NOT NULL", &[])
+        .await?
+        .get(0);
     let applied: Vec<i32> = if exists {
         tx.query("SELECT version FROM nie.schema_version", &[])
             .await?
@@ -59,7 +62,10 @@ pub async fn store_file(
 ) -> Result<ImportOutcome, Error> {
     let tx = client.transaction().await?;
     let current = tx
-        .query_opt("SELECT sha256 FROM nie.cfgbin_file WHERE path = $1 FOR UPDATE", &[&path])
+        .query_opt(
+            "SELECT sha256 FROM nie.cfgbin_file WHERE path = $1 FOR UPDATE",
+            &[&path],
+        )
         .await?;
     if let Some(row) = current {
         let sha: Vec<u8> = row.get(0);
@@ -67,7 +73,8 @@ pub async fn store_file(
             tx.commit().await?;
             return Ok(ImportOutcome::Unchanged);
         }
-        tx.execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&path]).await?;
+        tx.execute("DELETE FROM nie.cfgbin_file WHERE path = $1", &[&path])
+            .await?;
     }
     let file_id: i64 = tx
         .query_one(
@@ -158,7 +165,10 @@ async fn store_t2b(
     );
     pin_mut!(writer);
     for e in entries {
-        writer.as_mut().write(&[&file_id, &e.idx, &e.parent_idx, &e.depth, &e.name]).await?;
+        writer
+            .as_mut()
+            .write(&[&file_id, &e.idx, &e.parent_idx, &e.depth, &e.name])
+            .await?;
     }
     let mut rows = writer.finish().await?;
 
@@ -167,13 +177,29 @@ async fn store_t2b(
         .await?;
     let writer = BinaryCopyInWriter::new(
         sink,
-        &[Type::INT8, Type::INT4, Type::INT2, Type::INT2, Type::INT4, Type::FLOAT4, Type::TEXT],
+        &[
+            Type::INT8,
+            Type::INT4,
+            Type::INT2,
+            Type::INT2,
+            Type::INT4,
+            Type::FLOAT4,
+            Type::TEXT,
+        ],
     );
     pin_mut!(writer);
     for v in vars {
         writer
             .as_mut()
-            .write(&[&file_id, &v.entry_idx, &v.ord, &v.kind, &v.v_int, &v.v_real, &v.v_text])
+            .write(&[
+                &file_id,
+                &v.entry_idx,
+                &v.ord,
+                &v.kind,
+                &v.v_int,
+                &v.v_real,
+                &v.v_text,
+            ])
             .await?;
     }
     rows += writer.finish().await?;

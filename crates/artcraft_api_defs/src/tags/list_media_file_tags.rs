@@ -9,13 +9,13 @@ use crate::tags::common::TagDetails;
 
 #[derive(Deserialize, ToSchema)]
 pub struct ListMediaFileTagsPathInfo {
-  pub media_file_token: MediaFileToken,
+    pub media_file_token: MediaFileToken,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct ListMediaFileTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// All (live) tags on the media file, sorted by tag value.
-  pub tags: Vec<TagDetails>,
+    /// All (live) tags on the media file, sorted by tag value.
+    pub tags: Vec<TagDetails>,
 }

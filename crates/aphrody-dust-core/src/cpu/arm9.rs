@@ -441,7 +441,9 @@ impl<E: Engine> Arm9<E> {
     ) {
         unsafe {
             self.bus_ptrs.map_range(mask, start_ptr, mem_size, bounds);
-            self.cp15.ptrs.map_sys_bus_range(start_ptr, mem_size, bounds, mask);
+            self.cp15
+                .ptrs
+                .map_sys_bus_range(start_ptr, mem_size, bounds, mask);
             self.invalidate_word_range(bounds);
         }
     }
@@ -482,7 +484,7 @@ impl<E: Engine> Arm9<E> {
                         0x8000,
                         (0x0300_0000, 0x03FF_FFFF),
                     );
-                },
+                }
                 1 => {
                     self.map_sys_bus_ptr_range(
                         bus::ptrs::mask::ALL,
@@ -490,7 +492,7 @@ impl<E: Engine> Arm9<E> {
                         0x4000,
                         (0x0300_0000, 0x03FF_FFFF),
                     );
-                },
+                }
                 2 => {
                     self.map_sys_bus_ptr_range(
                         bus::ptrs::mask::ALL,
@@ -498,10 +500,10 @@ impl<E: Engine> Arm9<E> {
                         0x4000,
                         (0x0300_0000, 0x03FF_FFFF),
                     );
-                },
+                }
                 _ => {
                     self.unmap_sys_bus_ptr_range((0x0300_0000, 0x03FF_FFFF));
-                },
+                }
             }
         }
     }

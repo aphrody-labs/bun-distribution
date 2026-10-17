@@ -9,7 +9,10 @@ use crate::harness::Qa;
 fn batch_tool_builds_in_one_call_and_one_undo_step() {
     let mut qa = Qa::new("batch");
     qa.exec("comp.new", json!({"name": "B", "width": 64, "height": 64}));
-    let undo = qa.tool("get_project", json!({}))["undo"].as_array().unwrap().len();
+    let undo = qa.tool("get_project", json!({}))["undo"]
+        .as_array()
+        .unwrap()
+        .len();
     let r = qa.tool(
         "batch",
         json!({"label": "Ring", "steps": [
@@ -32,14 +35,39 @@ fn batch_tool_builds_in_one_call_and_one_undo_step() {
             json!({"steps": [{"command": "layer.newNull", "params": {}}, {"command": "layer.rename", "params": {"layer": "Nope", "name": "x"}}]}),
         )
         .unwrap_err();
-    assert!(e.starts_with("step 2 (layer.rename)") && e.contains("rolled back"), "{e}");
-    assert_eq!(qa.tool("get_comp", json!({}))["layers"].as_array().unwrap().len(), 1);
+    assert!(
+        e.starts_with("step 2 (layer.rename)") && e.contains("rolled back"),
+        "{e}"
+    );
+    assert_eq!(
+        qa.tool("get_comp", json!({}))["layers"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 
     // depth-limited flat listings keep cut-off groups visible; `@uid` reaches any property.
-    let flat = qa.tool("get_layer", json!({"layer": "Ring", "flat": true, "depth": 1}));
+    let flat = qa.tool(
+        "get_layer",
+        json!({"layer": "Ring", "flat": true, "depth": 1}),
+    );
     let props = flat["properties"].as_array().unwrap();
-    assert!(props.iter().any(|p| p["path"] == "effects" && p["truncated"] == true), "{flat}");
-    let uid = qa.tool("get_property", json!({"layer": "Ring", "path": "contents/trim/end"}))["uid"].as_u64().unwrap();
-    let byuid = qa.tool("get_property", json!({"layer": "Ring", "path": format!("@{uid}")}));
+    assert!(
+        props
+            .iter()
+            .any(|p| p["path"] == "effects" && p["truncated"] == true),
+        "{flat}"
+    );
+    let uid = qa.tool(
+        "get_property",
+        json!({"layer": "Ring", "path": "contents/trim/end"}),
+    )["uid"]
+        .as_u64()
+        .unwrap();
+    let byuid = qa.tool(
+        "get_property",
+        json!({"layer": "Ring", "path": format!("@{uid}")}),
+    );
     assert_eq!(byuid["name"], "End");
 }

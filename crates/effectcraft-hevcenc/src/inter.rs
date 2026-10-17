@@ -35,7 +35,16 @@ impl PlaneRef<'_> {
 
 /// Luma prediction samples (14-bit intermediate) of a w x h block at (x, y) displaced by the
 /// quarter-sample vector `mv`, into `out` (stride w).
-pub fn mc_luma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h: usize, out: &mut [i16]) {
+pub fn mc_luma(
+    f: PlaneRef,
+    bd: u32,
+    x: i32,
+    y: i32,
+    mv: [i16; 2],
+    w: usize,
+    h: usize,
+    out: &mut [i16],
+) {
     let (fx, fy) = ((mv[0] & 3) as usize, (mv[1] & 3) as usize);
     let xi = x + (mv[0] as i32 >> 2);
     let yi = y + (mv[1] as i32 >> 2);
@@ -66,7 +75,9 @@ pub fn mc_luma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h: 
     } else if fx == 0 {
         for r in 0..h {
             for c in 0..w {
-                let s: i32 = (0..8).map(|k| vf[k] as i32 * win[(r + k) * ws + c + 3] as i32).sum();
+                let s: i32 = (0..8)
+                    .map(|k| vf[k] as i32 * win[(r + k) * ws + c + 3] as i32)
+                    .sum();
                 out[r * w + c] = (s >> shift1) as i16;
             }
         }
@@ -81,7 +92,9 @@ pub fn mc_luma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h: 
         }
         for r in 0..h {
             for c in 0..w {
-                let s: i32 = (0..8).map(|k| vf[k] as i32 * tmp[(r + k) * ws + c] as i32).sum();
+                let s: i32 = (0..8)
+                    .map(|k| vf[k] as i32 * tmp[(r + k) * ws + c] as i32)
+                    .sum();
                 out[r * w + c] = (s >> 6) as i16;
             }
         }
@@ -89,7 +102,16 @@ pub fn mc_luma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h: 
 }
 
 /// Chroma prediction samples of a w x h block at chroma position (x, y) with a 1/8-sample vector.
-pub fn mc_chroma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h: usize, out: &mut [i16]) {
+pub fn mc_chroma(
+    f: PlaneRef,
+    bd: u32,
+    x: i32,
+    y: i32,
+    mv: [i16; 2],
+    w: usize,
+    h: usize,
+    out: &mut [i16],
+) {
     let (fx, fy) = ((mv[0] & 7) as usize, (mv[1] & 7) as usize);
     let xi = x + (mv[0] as i32 >> 3);
     let yi = y + (mv[1] as i32 >> 3);
@@ -120,7 +142,9 @@ pub fn mc_chroma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h
     } else if fx == 0 {
         for r in 0..h {
             for c in 0..w {
-                let s: i32 = (0..4).map(|k| vf[k] as i32 * win[(r + k) * ws + c + 1] as i32).sum();
+                let s: i32 = (0..4)
+                    .map(|k| vf[k] as i32 * win[(r + k) * ws + c + 1] as i32)
+                    .sum();
                 out[r * w + c] = (s >> shift1) as i16;
             }
         }
@@ -135,7 +159,9 @@ pub fn mc_chroma(f: PlaneRef, bd: u32, x: i32, y: i32, mv: [i16; 2], w: usize, h
         }
         for r in 0..h {
             for c in 0..w {
-                let s: i32 = (0..4).map(|k| vf[k] as i32 * tmp[(r + k) * ws + c] as i32).sum();
+                let s: i32 = (0..4)
+                    .map(|k| vf[k] as i32 * tmp[(r + k) * ws + c] as i32)
+                    .sum();
                 out[r * w + c] = (s >> 6) as i16;
             }
         }

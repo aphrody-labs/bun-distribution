@@ -3,10 +3,18 @@ use photocraft_color::SampleType;
 
 fn session(mode: &str, depth: u64) -> Session {
     let mut s = Session::new();
-    s.execute("file.new", json!({"width": 12, "height": 8, "depth": depth, "mode": mode})).unwrap();
+    s.execute(
+        "file.new",
+        json!({"width": 12, "height": 8, "depth": depth, "mode": mode}),
+    )
+    .unwrap();
     s.edit("setup", |doc, active| {
         let b = doc.bounds();
-        let surf = doc.layer_mut(active.unwrap()).unwrap().surface_mut().unwrap();
+        let surf = doc
+            .layer_mut(active.unwrap())
+            .unwrap()
+            .surface_mut()
+            .unwrap();
         let ch = surf.channels();
         let mut data = Vec::new();
         for y in b.y0..b.y1 {
@@ -52,8 +60,14 @@ fn rgb_becomes_cmy_inks_and_back_exactly() {
         // Cyan ink = the red data read as ink.
         let cyan = d.channels[0].surface.pixel(4, 3)[0];
         let red = before[(3 * 12 + 4) * 4];
-        assert!((cyan - (1.0 - red)).abs() <= tol(depth), "{depth}: {cyan} vs {red}");
-        assert!(!s.is_enabled("image.mode.multichannel"), "already multichannel");
+        assert!(
+            (cyan - (1.0 - red)).abs() <= tol(depth),
+            "{depth}: {cyan} vs {red}"
+        );
+        assert!(
+            !s.is_enabled("image.mode.multichannel"),
+            "already multichannel"
+        );
         // The display prints the inks: a white RGB pixel shows paper.
         let shown = photocraft_compose::flatten(doc(&s));
         assert!(shown.px.iter().all(|p| p[3] == 1.0));
@@ -77,8 +91,16 @@ fn rgb_becomes_cmy_inks_and_back_exactly() {
 #[test]
 fn cmyk_lab_and_gray_channel_sets() {
     for (mode, back, names) in [
-        ("cmyk", "image.mode.cmyk", vec!["Cyan", "Magenta", "Yellow", "Black"]),
-        ("lab", "image.mode.lab", vec!["Alpha 1", "Alpha 2", "Alpha 3"]),
+        (
+            "cmyk",
+            "image.mode.cmyk",
+            vec!["Cyan", "Magenta", "Yellow", "Black"],
+        ),
+        (
+            "lab",
+            "image.mode.lab",
+            vec!["Alpha 1", "Alpha 2", "Alpha 3"],
+        ),
         ("grayscale", "image.mode.grayscale", vec!["Black"]),
     ] {
         for depth in [8, 16] {
@@ -86,10 +108,20 @@ fn cmyk_lab_and_gray_channel_sets() {
             let before = pixels(&s);
             let r = s.execute("image.mode.multichannel", json!({})).unwrap();
             assert_eq!(r["channels"], json!(names), "{mode}");
-            assert_eq!(doc(&s).depth, if depth == 8 { SampleType::U8 } else { SampleType::U16 });
+            assert_eq!(
+                doc(&s).depth,
+                if depth == 8 {
+                    SampleType::U8
+                } else {
+                    SampleType::U16
+                }
+            );
             s.execute(back, json!({})).unwrap();
             for (a, b) in pixels(&s).iter().zip(&before) {
-                assert!((a - b).abs() <= 2.0 * tol(depth), "{mode}/{depth}: {a} vs {b}");
+                assert!(
+                    (a - b).abs() <= 2.0 * tol(depth),
+                    "{mode}/{depth}: {a} vs {b}"
+                );
             }
         }
     }
@@ -99,7 +131,11 @@ fn cmyk_lab_and_gray_channel_sets() {
 fn flattens_layers_and_keeps_alpha_channels() {
     let mut s = session("rgb", 8);
     s.execute("layer.new.layer", json!({})).unwrap();
-    s.execute("select.rect", json!({"x": 0, "y": 0, "width": 4, "height": 4})).unwrap();
+    s.execute(
+        "select.rect",
+        json!({"x": 0, "y": 0, "width": 4, "height": 4}),
+    )
+    .unwrap();
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
     s.execute("select.saveSelection", json!({})).unwrap();
     s.execute("select.deselect", json!({})).unwrap();
@@ -108,7 +144,10 @@ fn flattens_layers_and_keeps_alpha_channels() {
     s.execute("image.mode.multichannel", json!({})).unwrap();
     let d = doc(&s);
     assert_eq!(d.channels.len(), 4);
-    assert!(d.channels[3].spot.is_none(), "the saved selection stays an alpha channel");
+    assert!(
+        d.channels[3].spot.is_none(),
+        "the saved selection stays an alpha channel"
+    );
     // The black fill on the upper layer is solid ink in all three plates.
     for k in 0..3 {
         assert!(d.channels[k].surface.pixel(1, 1)[0] > 0.99);
@@ -142,7 +181,8 @@ fn mismatched_channel_count_converts_the_printed_look() {
 #[test]
 fn duotone_inks_become_channels() {
     let mut s = session("grayscale", 8);
-    s.execute("image.mode.duotone", json!({"type": "duotone"})).unwrap();
+    s.execute("image.mode.duotone", json!({"type": "duotone"}))
+        .unwrap();
     let inks = doc(&s).duotone.as_ref().unwrap().inks.len();
     let r = s.execute("image.mode.multichannel", json!({})).unwrap();
     assert_eq!(r["channels"].as_array().unwrap().len(), inks);
@@ -154,7 +194,8 @@ fn psd_round_trip_keeps_names_inks_and_values() {
         let mut s = session("cmyk", depth);
         s.execute("image.mode.multichannel", json!({})).unwrap();
         let d = doc(&s).clone();
-        let out = photocraft_io::export(&d, "x.psd", &photocraft_io::ExportOptions::default()).unwrap();
+        let out =
+            photocraft_io::export(&d, "x.psd", &photocraft_io::ExportOptions::default()).unwrap();
         let file = photocraft_io::document_to_psd(&d);
         assert_eq!(file.header.color_mode.as_u16(), 7);
         assert_eq!(file.header.channels, 4);
@@ -165,8 +206,14 @@ fn psd_round_trip_keeps_names_inks_and_values() {
         assert!(back.layers.is_empty());
         assert_eq!(ink_names(&back), ink_names(&d));
         for (a, b) in back.channels.iter().zip(&d.channels) {
-            assert_eq!(a.spot.map(|(c, _)| c.to_rgba8()), b.spot.map(|(c, _)| c.to_rgba8()));
-            let (va, vb) = (a.surface.read_region(d.bounds()), b.surface.read_region(d.bounds()));
+            assert_eq!(
+                a.spot.map(|(c, _)| c.to_rgba8()),
+                b.spot.map(|(c, _)| c.to_rgba8())
+            );
+            let (va, vb) = (
+                a.surface.read_region(d.bounds()),
+                b.surface.read_region(d.bounds()),
+            );
             for (x, y) in va.iter().zip(&vb) {
                 assert!((x - y).abs() <= tol(depth), "{depth}");
             }
@@ -181,7 +228,10 @@ fn psd_stores_ink_as_dark() {
     s.execute("image.mode.multichannel", json!({})).unwrap();
     let file = photocraft_io::document_to_psd(doc(&s));
     let merged = file.decode_merged().unwrap();
-    assert!(merged.iter().all(|&b| b == 0), "solid black ink is stored as 0");
+    assert!(
+        merged.iter().all(|&b| b == 0),
+        "solid black ink is stored as 0"
+    );
 }
 
 #[test]
@@ -193,7 +243,10 @@ fn pcraft_round_trip() {
     let back = photocraft_format::load_from_bytes(&bytes).unwrap();
     assert_eq!(back.mode, ColorMode::Multichannel);
     assert_eq!(back.channels, d.channels);
-    assert_eq!(photocraft_compose::flatten(&back), photocraft_compose::flatten(&d));
+    assert_eq!(
+        photocraft_compose::flatten(&back),
+        photocraft_compose::flatten(&d)
+    );
 }
 
 #[test]
@@ -201,7 +254,8 @@ fn flat_export_prints_the_inks() {
     let mut s = session("grayscale", 8);
     s.execute("edit.fill", json!({"color": "#000000"})).unwrap();
     s.execute("image.mode.multichannel", json!({})).unwrap();
-    let out = photocraft_io::export(doc(&s), "x.png", &photocraft_io::ExportOptions::default()).unwrap();
+    let out =
+        photocraft_io::export(doc(&s), "x.png", &photocraft_io::ExportOptions::default()).unwrap();
     let back = photocraft_io::import("x.png", &out.bytes).unwrap().document;
     let px = photocraft_compose::flatten(&back).get(3, 3);
     // Solid process black ink, not paper.

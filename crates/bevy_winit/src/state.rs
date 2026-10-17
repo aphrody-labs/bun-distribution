@@ -14,7 +14,7 @@ use bevy_input::{
     mouse::{MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel},
 };
 use bevy_log::{trace, warn};
-use bevy_math::{ivec2, DVec2, Vec2};
+use bevy_math::{DVec2, Vec2, ivec2};
 use bevy_platform::time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 use bevy_tasks::tick_global_task_pools_on_main_thread;
@@ -40,12 +40,12 @@ use bevy_window::{
 use bevy_window::{CursorOptions, PrimaryWindow, RawHandleWrapper};
 
 use crate::{
+    AppSendEvent, CreateMonitorParams, CreateWindowParams, RawWinitWindowEvent, UpdateMode,
+    WINIT_WINDOWS, WinitSettings, WinitUserEvent,
     accessibility::ACCESS_KIT_ADAPTERS,
     converters::{self, convert_touch_phase},
     create_windows,
-    system::{create_monitors, CachedWindow, WinitWindowPressedKeys},
-    AppSendEvent, CreateMonitorParams, CreateWindowParams, RawWinitWindowEvent, UpdateMode,
-    WinitSettings, WinitUserEvent, WINIT_WINDOWS,
+    system::{CachedWindow, WinitWindowPressedKeys, create_monitors},
 };
 
 /// Persistent state that is used to run the [`App`] according to the current

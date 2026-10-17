@@ -4,8 +4,8 @@ use bevy_ecs::{
     world::{FromWorld, World},
 };
 use bevy_mesh::{
-    morph::{MorphAttributes, MorphBuildError, MAX_MORPH_WEIGHTS, MAX_TEXTURE_WIDTH},
     Mesh,
+    morph::{MAX_MORPH_WEIGHTS, MAX_TEXTURE_WIDTH, MorphAttributes, MorphBuildError},
 };
 use bevy_platform::collections::HashMap;
 use wgpu::{

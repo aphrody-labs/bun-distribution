@@ -32,16 +32,29 @@ fn compress(data: &[u8]) -> Vec<u8> {
 
 /// Decodes a zstd frame of at most `max` bytes (`LimitExceeded` beyond). With `exact`, the
 /// decoded length must be exactly that (`Corrupt` otherwise).
-fn decompress_bounded(data: &[u8], max: usize, exact: Option<usize>, what: &str) -> Result<Vec<u8>> {
+fn decompress_bounded(
+    data: &[u8],
+    max: usize,
+    exact: Option<usize>,
+    what: &str,
+) -> Result<Vec<u8>> {
     let zstd = |e: &dyn std::fmt::Display| FormatError::corrupt(format!("{what}: zstd: {e}"));
     let mut dec = ruzstd::decoding::StreamingDecoder::new(data).map_err(|e| zstd(&e))?;
     let mut out = Vec::with_capacity(exact.unwrap_or(0).min(max).min(64 << 20));
     // `max` may be `usize::MAX`: one byte past it must not overflow.
     let limit = u64::try_from(max).unwrap_or(u64::MAX).saturating_add(1);
-    (&mut dec).take(limit).read_to_end(&mut out).map_err(|e| zstd(&e))?;
+    (&mut dec)
+        .take(limit)
+        .read_to_end(&mut out)
+        .map_err(|e| zstd(&e))?;
     match exact {
-        Some(n) if out.len() != n => Err(FormatError::corrupt(format!("{what}: expected {n} bytes, got {}", out.len()))),
-        None if out.len() > max => Err(FormatError::LimitExceeded(format!("{what} exceeds {max} bytes"))),
+        Some(n) if out.len() != n => Err(FormatError::corrupt(format!(
+            "{what}: expected {n} bytes, got {}",
+            out.len()
+        ))),
+        None if out.len() > max => Err(FormatError::LimitExceeded(format!(
+            "{what} exceeds {max} bytes"
+        ))),
         _ => Ok(out),
     }
 }
@@ -55,9 +68,15 @@ fn hash_bytes(b: &[u8]) -> Hash {
 }
 
 fn png(img: &Rgba8Image) -> Result<Vec<u8>> {
-    let image = photocraft_codecs::Image::from_u8(img.width, img.height, photocraft_codecs::ChannelLayout::Rgba, img.pixels.clone())
-        .map_err(|e| FormatError::Unsupported(format!("preview: {e}")))?;
-    photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default()).map_err(|e| FormatError::Unsupported(format!("preview: {e}")))
+    let image = photocraft_codecs::Image::from_u8(
+        img.width,
+        img.height,
+        photocraft_codecs::ChannelLayout::Rgba,
+        img.pixels.clone(),
+    )
+    .map_err(|e| FormatError::Unsupported(format!("preview: {e}")))?;
+    photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default())
+        .map_err(|e| FormatError::Unsupported(format!("preview: {e}")))
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +93,9 @@ pub(crate) struct ZipSource<'a> {
 
 impl<'a> ZipSource<'a> {
     pub fn new(bytes: &'a [u8]) -> Result<Self> {
-        Ok(ZipSource { zip: ZipReader::new(bytes)? })
+        Ok(ZipSource {
+            zip: ZipReader::new(bytes)?,
+        })
     }
 }
 
@@ -91,11 +112,15 @@ pub(crate) struct DirSource {
 impl ByteSource for DirSource {
     fn get(&self, path: &str, max: usize) -> Result<Vec<u8>> {
         let p = self.root.join(path);
-        let metadata = std::fs::metadata(&p).map_err(|_| FormatError::corrupt(format!("missing `{path}`")))?;
+        let metadata =
+            std::fs::metadata(&p).map_err(|_| FormatError::corrupt(format!("missing `{path}`")))?;
         if !metadata.is_file() {
-            return Err(FormatError::corrupt(format!("`{path}` is not a regular file")));
+            return Err(FormatError::corrupt(format!(
+                "`{path}` is not a regular file"
+            )));
         }
-        let mut file = std::fs::File::open(&p).map_err(|_| FormatError::corrupt(format!("missing `{path}`")))?;
+        let mut file = std::fs::File::open(&p)
+            .map_err(|_| FormatError::corrupt(format!("missing `{path}`")))?;
         read_entry(&mut file, metadata.len(), max, path)
     }
 }
@@ -103,12 +128,19 @@ impl ByteSource for DirSource {
 /// Read one opened bundle entry under its `max` budget. The stat `len` is a buffer hint only
 /// (files can change while open, and a FIFO reports 0), so the bound is enforced on the read
 /// itself, never on the hint.
-pub fn read_entry(file: &mut impl std::io::Read, len: u64, max: usize, path: &str) -> Result<Vec<u8>> {
+pub fn read_entry(
+    file: &mut impl std::io::Read,
+    len: u64,
+    max: usize,
+    path: &str,
+) -> Result<Vec<u8>> {
     let mut limited = file.take((max as u64).saturating_add(1));
     let hint = len.min((max as u64).saturating_add(1));
     let bytes = crate::read::read_all(&mut limited, hint)?;
     if bytes.len() > max {
-        return Err(FormatError::LimitExceeded(format!("`{path}` exceeds {max} bytes")));
+        return Err(FormatError::LimitExceeded(format!(
+            "`{path}` exceeds {max} bytes"
+        )));
     }
     Ok(bytes)
 }
@@ -141,7 +173,9 @@ fn check_manifest_depth(json: &[u8]) -> Result<()> {
             b'[' | b'{' => {
                 depth += 1;
                 if depth > MAX_MANIFEST_DEPTH {
-                    return Err(FormatError::LimitExceeded(format!("manifest JSON nested deeper than {MAX_MANIFEST_DEPTH} levels")));
+                    return Err(FormatError::LimitExceeded(format!(
+                        "manifest JSON nested deeper than {MAX_MANIFEST_DEPTH} levels"
+                    )));
                 }
             }
             b']' | b'}' => depth = depth.saturating_sub(1),
@@ -206,7 +240,10 @@ impl LoadFetch<'_> {
     fn account(&mut self, n: usize) -> Result<()> {
         self.total += n as u64;
         if self.total > self.opts.max_total_bytes {
-            return Err(FormatError::LimitExceeded(format!("bundle expands beyond {} bytes", self.opts.max_total_bytes)));
+            return Err(FormatError::LimitExceeded(format!(
+                "bundle expands beyond {} bytes",
+                self.opts.max_total_bytes
+            )));
         }
         Ok(())
     }
@@ -222,7 +259,9 @@ impl Fetch for LoadFetch<'_> {
         let z = self.src.get(&path, len + len / 8 + 4096)?;
         let data = decompress(&z, len, &path)?;
         if hash_bytes(&data) != hash {
-            return Err(FormatError::corrupt(format!("{path}: content does not match its hash")));
+            return Err(FormatError::corrupt(format!(
+                "{path}: content does not match its hash"
+            )));
         }
         Ok(data)
     }
@@ -241,7 +280,9 @@ impl Fetch for LoadFetch<'_> {
         let data = decompress_bounded(&z, self.opts.max_blob_bytes, None, &path)?;
         self.account(data.len())?;
         if hash_bytes(&data) != hash {
-            return Err(FormatError::corrupt(format!("{path}: content does not match its hash")));
+            return Err(FormatError::corrupt(format!(
+                "{path}: content does not match its hash"
+            )));
         }
         let data = Arc::new(data);
         self.blobs.insert(hash.to_owned(), data.clone());
@@ -253,13 +294,21 @@ impl Fetch for LoadFetch<'_> {
 fn admit_canvas(size: photocraft_geom::Size, opts: &LoadOptions) -> Result<()> {
     let (w, h) = (size.width, size.height);
     if w == 0 || h == 0 {
-        return Err(FormatError::corrupt(format!("canvas size {w}x{h} is empty")));
+        return Err(FormatError::corrupt(format!(
+            "canvas size {w}x{h} is empty"
+        )));
     }
     if w > opts.max_canvas_side || h > opts.max_canvas_side {
-        return Err(FormatError::LimitExceeded(format!("canvas {w}x{h} exceeds {} pixels per side", opts.max_canvas_side)));
+        return Err(FormatError::LimitExceeded(format!(
+            "canvas {w}x{h} exceeds {} pixels per side",
+            opts.max_canvas_side
+        )));
     }
     if size.area() > opts.max_canvas_pixels {
-        return Err(FormatError::LimitExceeded(format!("canvas {w}x{h} exceeds {} pixels", opts.max_canvas_pixels)));
+        return Err(FormatError::LimitExceeded(format!(
+            "canvas {w}x{h} exceeds {} pixels",
+            opts.max_canvas_pixels
+        )));
     }
     Ok(())
 }
@@ -267,7 +316,12 @@ fn admit_canvas(size: photocraft_geom::Size, opts: &LoadOptions) -> Result<()> {
 pub(crate) fn load(src: &dyn ByteSource, opts: &LoadOptions) -> Result<Document> {
     let m = read_manifest(src, opts)?;
     admit_canvas(m.document.size, opts)?;
-    let mut fetch = LoadFetch { src, opts: *opts, total: 0, blobs: HashMap::new() };
+    let mut fetch = LoadFetch {
+        src,
+        opts: *opts,
+        total: 0,
+        blobs: HashMap::new(),
+    };
     let mut loader = Loader {
         fetch: &mut fetch,
         preserve_ids: opts.preserve_ids,
@@ -315,14 +369,18 @@ impl Sink for Collect<'_> {
             && w.upgrade().is_some_and(|t| Arc::ptr_eq(&t, tile))
         {
             let h = h.clone();
-            self.tiles.entry(h.clone()).or_insert_with(|| (tile.clone(), format.sample));
+            self.tiles
+                .entry(h.clone())
+                .or_insert_with(|| (tile.clone(), format.sample));
             return h;
         }
         let h = hash_bytes(&tile_le(tile, format.sample));
         if let Some(cache) = self.hash_cache.as_deref_mut() {
             cache.insert(key, (Arc::downgrade(tile), h.clone()));
         }
-        self.tiles.entry(h.clone()).or_insert_with(|| (tile.clone(), format.sample));
+        self.tiles
+            .entry(h.clone())
+            .or_insert_with(|| (tile.clone(), format.sample));
         h
     }
 
@@ -370,7 +428,12 @@ pub struct PcraftWriter {
 
 impl Default for PcraftWriter {
     fn default() -> Self {
-        Self { hash_cache: HashMap::new(), compressed: HashMap::new(), verified_directory: None, reverify_budget: DEFAULT_REVERIFY_BUDGET }
+        Self {
+            hash_cache: HashMap::new(),
+            compressed: HashMap::new(),
+            verified_directory: None,
+            reverify_budget: DEFAULT_REVERIFY_BUDGET,
+        }
     }
 }
 
@@ -427,14 +490,20 @@ impl Object {
 
 /// Whether `compressed` decodes to exactly `expected`.
 fn content_matches(expected: &[u8], compressed: &[u8], what: &str) -> bool {
-    decompress(compressed, expected.len(), what).is_ok_and(|actual| hash_bytes(&actual) == hash_bytes(expected))
+    decompress(compressed, expected.len(), what)
+        .is_ok_and(|actual| hash_bytes(&actual) == hash_bytes(expected))
 }
 
 fn file_signature(metadata: &std::fs::Metadata) -> Option<FileSignature> {
     #[cfg(unix)]
     let unix = {
         use std::os::unix::fs::MetadataExt;
-        (metadata.ino(), metadata.dev(), metadata.ctime(), metadata.ctime_nsec())
+        (
+            metadata.ino(),
+            metadata.dev(),
+            metadata.ctime(),
+            metadata.ctime_nsec(),
+        )
     };
     Some(FileSignature {
         len: metadata.len(),
@@ -456,7 +525,10 @@ fn path_signature(path: &Path) -> Result<Option<FileSignature>> {
 fn unsafe_bundle_entry(path: &Path) -> FormatError {
     FormatError::Io(std::io::Error::new(
         std::io::ErrorKind::InvalidData,
-        format!("refusing directory bundle save: {} is a symlink or not a regular file", path.display()),
+        format!(
+            "refusing directory bundle save: {} is a symlink or not a regular file",
+            path.display()
+        ),
     ))
 }
 
@@ -476,7 +548,10 @@ fn plain_directory_or_missing(path: &Path) -> Result<()> {
         Ok(metadata) if metadata.is_dir() => Ok(()),
         Ok(_) => Err(FormatError::Io(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
-            format!("refusing directory bundle save: {} is a symlink or not a directory", path.display()),
+            format!(
+                "refusing directory bundle save: {} is a symlink or not a directory",
+                path.display()
+            ),
         ))),
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => Err(e.into()),
@@ -511,7 +586,11 @@ fn bundle_root(dir: &Path) -> Result<PathBuf> {
 
 fn validate_bundle_file(root: &Path, path: &Path) -> Result<()> {
     let parent = path.parent().ok_or_else(|| unsafe_bundle_entry(path))?;
-    if parent != root && parent != root.join("tiles") && parent != root.join("blobs") && parent != root.join("composite") {
+    if parent != root
+        && parent != root.join("tiles")
+        && parent != root.join("blobs")
+        && parent != root.join("composite")
+    {
         return Err(unsafe_bundle_entry(path));
     }
     plain_directory_or_missing(parent)?;
@@ -528,7 +607,11 @@ fn write_bundle_file(root: &Path, path: &Path, data: &[u8]) -> Result<()> {
     let mut temporary = None;
     for _ in 0..8 {
         let candidate = parent.join(crate::atomic::temp_name(&name.to_string_lossy()));
-        match std::fs::OpenOptions::new().write(true).create_new(true).open(&candidate) {
+        match std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
             Ok(file) => {
                 temporary = Some((candidate, file));
                 break;
@@ -538,7 +621,13 @@ fn write_bundle_file(root: &Path, path: &Path, data: &[u8]) -> Result<()> {
         }
     }
     let (tmp, mut file) = temporary.ok_or_else(|| {
-        FormatError::Io(std::io::Error::new(std::io::ErrorKind::AlreadyExists, format!("could not create a temporary file beside {}", path.display())))
+        FormatError::Io(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!(
+                "could not create a temporary file beside {}",
+                path.display()
+            ),
+        ))
     })?;
     let result = (|| -> Result<()> {
         // The parent may have changed between validation and create_new. Check the new file's
@@ -557,7 +646,9 @@ fn write_bundle_file(root: &Path, path: &Path, data: &[u8]) -> Result<()> {
         // Recheck the parent and target just before publishing. rename replaces a symlink
         // itself, never its referent, even if one appears after this check.
         validate_bundle_file(root, path)?;
-        crate::atomic::retry_rename(crate::atomic::RenameRetry::platform(), || std::fs::rename(&tmp, path))?;
+        crate::atomic::retry_rename(crate::atomic::RenameRetry::platform(), || {
+            std::fs::rename(&tmp, path)
+        })?;
         #[cfg(unix)]
         {
             let _ = std::fs::File::open(parent).and_then(|d| d.sync_all());
@@ -576,7 +667,11 @@ fn remove_bundle_file(root: &Path, path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn existing_object_is_valid(path: &Path, object: &Object, what: &str) -> Result<(bool, Option<FileSignature>)> {
+fn existing_object_is_valid(
+    path: &Path,
+    object: &Object,
+    what: &str,
+) -> Result<(bool, Option<FileSignature>)> {
     let mut file = match std::fs::File::open(path) {
         Ok(file) => file,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok((false, None)),
@@ -592,14 +687,18 @@ fn existing_object_is_valid(path: &Path, object: &Object, what: &str) -> Result<
     let expected_len = expected.len();
     // This is the same bound used by the tile loader. It comfortably includes
     // zstd framing overhead while keeping damaged files bounded when inspected.
-    let max_compressed_len = expected_len.saturating_add(expected_len / 8).saturating_add(4096);
+    let max_compressed_len = expected_len
+        .saturating_add(expected_len / 8)
+        .saturating_add(4096);
     let max_compressed_len_u64 = u64::try_from(max_compressed_len).unwrap_or(u64::MAX);
     if metadata.len() > max_compressed_len_u64 {
         return Ok((false, None));
     }
 
     let mut compressed = Vec::new();
-    (&mut file).take(max_compressed_len_u64.saturating_add(1)).read_to_end(&mut compressed)?;
+    (&mut file)
+        .take(max_compressed_len_u64.saturating_add(1))
+        .read_to_end(&mut compressed)?;
     if compressed.len() > max_compressed_len {
         return Ok((false, None));
     }
@@ -611,9 +710,18 @@ type Compressed<'a> = (&'a String, Arc<Vec<u8>>);
 
 /// Compresses `objects` on scoped worker threads (sequentially on wasm).
 fn par_compress<'a>(objects: &[(&'a String, &'a Object)]) -> Result<Vec<Compressed<'a>>> {
-    let threads = if cfg!(target_arch = "wasm32") { 1 } else { std::thread::available_parallelism().map_or(1, |n| n.get()).clamp(1, 32) };
+    let threads = if cfg!(target_arch = "wasm32") {
+        1
+    } else {
+        std::thread::available_parallelism()
+            .map_or(1, |n| n.get())
+            .clamp(1, 32)
+    };
     if threads < 2 || objects.len() < 2 {
-        return Ok(objects.iter().map(|(p, o)| (*p, Arc::new(o.compressed()))).collect());
+        return Ok(objects
+            .iter()
+            .map(|(p, o)| (*p, Arc::new(o.compressed())))
+            .collect());
     }
     let next = std::sync::atomic::AtomicUsize::new(0);
     std::thread::scope(|sc| {
@@ -635,7 +743,9 @@ fn par_compress<'a>(objects: &[(&'a String, &'a Object)]) -> Result<Vec<Compress
         let joined: Vec<_> = hs.into_iter().map(|h| h.join()).collect();
         let mut out = Vec::with_capacity(objects.len());
         for r in joined {
-            out.extend(r.map_err(|_| FormatError::Io(std::io::Error::other("compression worker panicked")))?);
+            out.extend(r.map_err(|_| {
+                FormatError::Io(std::io::Error::other("compression worker panicked"))
+            })?);
         }
         Ok(out)
     })
@@ -656,7 +766,10 @@ impl PcraftWriter {
     fn prepare(&mut self, doc: &Document, opts: &SaveOptions) -> Result<Prepared> {
         self.hash_cache.retain(|_, (w, _)| w.strong_count() > 0);
         convert::check_nesting(&doc.layers)?;
-        let mut c = Collect { hash_cache: Some(&mut self.hash_cache), ..Default::default() };
+        let mut c = Collect {
+            hash_cache: Some(&mut self.hash_cache),
+            ..Default::default()
+        };
         let document = convert::doc_m(doc, &mut c);
         let mut previews = Vec::new();
         if let Some(t) = &opts.thumbnail {
@@ -680,7 +793,12 @@ impl PcraftWriter {
         })?;
         let manifest = serde_json::to_vec_pretty(&manifest)?;
         check_manifest_depth(&manifest)?;
-        let stats = SaveStats { tiles_total: c.tiles.len(), blobs_total: c.blobs.len(), manifest_bytes: manifest.len(), ..Default::default() };
+        let stats = SaveStats {
+            tiles_total: c.tiles.len(),
+            blobs_total: c.blobs.len(),
+            manifest_bytes: manifest.len(),
+            ..Default::default()
+        };
         let mut objects = BTreeMap::new();
         for (h, (t, s)) in c.tiles {
             objects.insert(tile_path(&h), Object::Tile(t, s));
@@ -688,7 +806,12 @@ impl PcraftWriter {
         for (h, b) in c.blobs {
             objects.insert(blob_path(&h), Object::Blob(b));
         }
-        Ok(Prepared { manifest, objects, previews, stats })
+        Ok(Prepared {
+            manifest,
+            objects,
+            previews,
+            stats,
+        })
     }
 
     /// Save as a ZIP bundle in memory.
@@ -702,7 +825,11 @@ impl PcraftWriter {
         }
         let mut next = HashMap::with_capacity(p.objects.len());
         // New objects are compressed on all cores first (zstd dominates a full save).
-        let todo: Vec<(&String, &Object)> = p.objects.iter().filter(|(path, _)| !self.compressed.contains_key(*path)).collect();
+        let todo: Vec<(&String, &Object)> = p
+            .objects
+            .iter()
+            .filter(|(path, _)| !self.compressed.contains_key(*path))
+            .collect();
         let mut fresh: HashMap<&String, Arc<Vec<u8>>> = par_compress(&todo)?.into_iter().collect();
         for (path, obj) in &p.objects {
             let data = match self.compressed.get(path) {
@@ -717,7 +844,9 @@ impl PcraftWriter {
                         Object::Tile(..) => stats.tiles_written += 1,
                         Object::Blob(_) => stats.blobs_written += 1,
                     }
-                    fresh.remove(path).unwrap_or_else(|| Arc::new(obj.compressed()))
+                    fresh
+                        .remove(path)
+                        .unwrap_or_else(|| Arc::new(obj.compressed()))
                 }
             };
             z.add(path, &data)?;
@@ -730,7 +859,12 @@ impl PcraftWriter {
     /// Save into a directory bundle: reuses only valid existing objects,
     /// rewrites missing or damaged objects, then writes the manifest
     /// atomically and removes unreferenced objects.
-    pub fn save_dir(&mut self, doc: &Document, dir: &Path, opts: &SaveOptions) -> Result<SaveStats> {
+    pub fn save_dir(
+        &mut self,
+        doc: &Document,
+        dir: &Path,
+        opts: &SaveOptions,
+    ) -> Result<SaveStats> {
         let canonical_dir = bundle_root(dir)?;
         let dir = canonical_dir.as_path();
         let existing = list_objects(dir)?;
@@ -741,8 +875,15 @@ impl PcraftWriter {
         }
         let p = self.prepare(doc, opts)?;
         let mut stats = p.stats;
-        if self.verified_directory.as_ref().is_none_or(|cache| cache.directory != canonical_dir) {
-            self.verified_directory = Some(DirectoryVerificationCache { directory: canonical_dir.clone(), ..Default::default() });
+        if self
+            .verified_directory
+            .as_ref()
+            .is_none_or(|cache| cache.directory != canonical_dir)
+        {
+            self.verified_directory = Some(DirectoryVerificationCache {
+                directory: canonical_dir.clone(),
+                ..Default::default()
+            });
         }
         let generation = match &mut self.verified_directory {
             Some(cache) => {
@@ -760,7 +901,12 @@ impl PcraftWriter {
             let signature = path_signature(&object_path)?;
             let already_verified = !recheck.contains(path)
                 && signature.is_some_and(|signature| {
-                    self.verified_directory.as_ref().is_some_and(|cache| cache.objects.get(path).is_some_and(|v| v.signature == signature))
+                    self.verified_directory.as_ref().is_some_and(|cache| {
+                        cache
+                            .objects
+                            .get(path)
+                            .is_some_and(|v| v.signature == signature)
+                    })
                 });
             if existing.contains(path) && already_verified {
                 if matches!(obj, Object::Tile(..)) {
@@ -774,7 +920,13 @@ impl PcraftWriter {
                     if let Some(signature) = signature
                         && let Some(cache) = &mut self.verified_directory
                     {
-                        cache.objects.insert(path.clone(), Verified { signature, checked_at: generation });
+                        cache.objects.insert(
+                            path.clone(),
+                            Verified {
+                                signature,
+                                checked_at: generation,
+                            },
+                        );
                     }
                     if matches!(obj, Object::Tile(..)) {
                         stats.tiles_reused += 1;
@@ -791,7 +943,13 @@ impl PcraftWriter {
             if let Some(cache) = &mut self.verified_directory {
                 match written {
                     Some(signature) => {
-                        cache.objects.insert(path.clone(), Verified { signature, checked_at: generation });
+                        cache.objects.insert(
+                            path.clone(),
+                            Verified {
+                                signature,
+                                checked_at: generation,
+                            },
+                        );
                     }
                     None => {
                         cache.objects.remove(path);
@@ -834,12 +992,22 @@ impl PcraftWriter {
     /// least one, so an object larger than the budget is still reached in turn).
     fn rolling_recheck(&self, objects: &BTreeMap<String, Object>) -> HashSet<String> {
         let mut out = HashSet::new();
-        let Some(cache) = &self.verified_directory else { return out };
+        let Some(cache) = &self.verified_directory else {
+            return out;
+        };
         if self.reverify_budget == 0 {
             return out;
         }
-        let mut candidates: Vec<(&String, &Verified)> = cache.objects.iter().filter(|(path, _)| objects.contains_key(*path)).collect();
-        candidates.sort_by(|a, b| a.1.checked_at.cmp(&b.1.checked_at).then_with(|| a.0.cmp(b.0)));
+        let mut candidates: Vec<(&String, &Verified)> = cache
+            .objects
+            .iter()
+            .filter(|(path, _)| objects.contains_key(*path))
+            .collect();
+        candidates.sort_by(|a, b| {
+            a.1.checked_at
+                .cmp(&b.1.checked_at)
+                .then_with(|| a.0.cmp(b.0))
+        });
         let mut spent = 0u64;
         for (path, verified) in candidates {
             let next = spent.saturating_add(verified.signature.len);
@@ -854,7 +1022,12 @@ impl PcraftWriter {
 
     /// Save to `path`: a directory bundle if `path` is an existing directory
     /// or ends with a path separator, otherwise a ZIP file (written atomically).
-    pub fn save_path(&mut self, doc: &Document, path: &Path, opts: &SaveOptions) -> Result<SaveStats> {
+    pub fn save_path(
+        &mut self,
+        doc: &Document,
+        path: &Path,
+        opts: &SaveOptions,
+    ) -> Result<SaveStats> {
         let s = path.to_string_lossy();
         if path.is_dir() || s.ends_with('/') || s.ends_with('\\') {
             self.save_dir(doc, path, opts)
@@ -881,7 +1054,9 @@ fn list_objects(dir: &Path) -> Result<HashSet<String>> {
             if name.ends_with(".zst") {
                 let path = e.path();
                 match std::fs::symlink_metadata(&path) {
-                    Ok(metadata) if metadata.file_type().is_symlink() => return Err(unsafe_bundle_entry(&path)),
+                    Ok(metadata) if metadata.file_type().is_symlink() => {
+                        return Err(unsafe_bundle_entry(&path));
+                    }
                     Ok(metadata) if metadata.is_file() => {
                         out.insert(format!("{sub}/{name}"));
                     }

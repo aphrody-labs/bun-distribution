@@ -1989,11 +1989,14 @@ mod tests {
             let base = 0x1000usize;
             manager.smmu_set_physical_base_for_test(base);
             let last_page = (gib << 30) - SMMU_PAGE_SIZE as usize;
-            let compressed = manager.smmu_compressed_physical_from_device_memory(base + last_page)
+            let compressed = manager
+                .smmu_compressed_physical_from_device_memory(base + last_page)
                 .expect("last configured physical page must be representable");
             assert_eq!(compressed as usize, (last_page >> 12) + 1);
-            assert_eq!(manager.smmu_host_ptr_from_compressed_physical(compressed, 0),
-                Some(base + last_page));
+            assert_eq!(
+                manager.smmu_host_ptr_from_compressed_physical(compressed, 0),
+                Some(base + last_page)
+            );
         }
     }
 

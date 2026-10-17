@@ -72,6 +72,6 @@ pub use web_tools::{
 };
 #[cfg(not(target_arch = "wasm32"))]
 pub use winclean::{
-    WINCLEAN_DIRECT_TOOLS, WINCLEAN_GAMING_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool, WincleanTool,
-    winclean_gaming_tools, winclean_tools,
+    WINCLEAN_DIRECT_TOOLS, WINCLEAN_GAMING_TOOLS, WINCLEAN_GATEWAY, WincleanGatewayTool,
+    WincleanTool, winclean_gaming_tools, winclean_tools,
 };

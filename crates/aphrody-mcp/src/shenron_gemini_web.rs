@@ -43,9 +43,13 @@ async fn client(language: &str) -> Result<GeminiWebClient, &'static str> {
         if path.trim().is_empty() || !Path::new(&path).is_file() {
             return Err("Gemini Web session file is unavailable");
         }
-        GeminiWebClient::from_cookie_file(path, language).await.map_err(session_error)
+        GeminiWebClient::from_cookie_file(path, language)
+            .await
+            .map_err(session_error)
     } else {
-        GeminiWebClient::from_default_cookie_file(language).await.map_err(session_error)
+        GeminiWebClient::from_default_cookie_file(language)
+            .await
+            .map_err(session_error)
     }
 }
 
@@ -59,11 +63,13 @@ pub async fn chat(prompt: &str, model: GeminiModel) -> Result<String, &'static s
     let client = tokio::time::timeout(Duration::from_secs(30), client("fr"))
         .await
         .map_err(|_| "Gemini Web session timed out")??;
-    let reply =
-        tokio::time::timeout(Duration::from_secs(90), client.ask(prompt, Some(&model.header())))
-            .await
-            .map_err(|_| "Gemini Web answer timed out")?
-            .map_err(|_| "Gemini Web answer failed")?;
+    let reply = tokio::time::timeout(
+        Duration::from_secs(90),
+        client.ask(prompt, Some(&model.header())),
+    )
+    .await
+    .map_err(|_| "Gemini Web answer timed out")?
+    .map_err(|_| "Gemini Web answer failed")?;
     let answer = reply.text.trim();
     if answer.is_empty() {
         return Err("Gemini Web returned an empty answer");

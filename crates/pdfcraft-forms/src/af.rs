@@ -17,7 +17,13 @@ pub enum Format {
     #[default]
     None,
     /// `AFNumber_Format(dec, sepStyle, negStyle, currStyle, strCurrency, bCurrencyPrepend)`.
-    Number { decimals: u8, sep: u8, neg: u8, currency: String, prepend: bool },
+    Number {
+        decimals: u8,
+        sep: u8,
+        neg: u8,
+        currency: String,
+        prepend: bool,
+    },
     /// `AFPercent_Format(dec, sepStyle)`.
     Percent { decimals: u8, sep: u8 },
     /// `AFDate_FormatEx(cFormat)`.
@@ -69,7 +75,13 @@ impl CalcOp {
         }
     }
 
-    pub const ALL: [CalcOp; 5] = [CalcOp::Sum, CalcOp::Product, CalcOp::Average, CalcOp::Minimum, CalcOp::Maximum];
+    pub const ALL: [CalcOp; 5] = [
+        CalcOp::Sum,
+        CalcOp::Product,
+        CalcOp::Average,
+        CalcOp::Minimum,
+        CalcOp::Maximum,
+    ];
 }
 
 /// The Calculate tab.
@@ -106,7 +118,9 @@ pub struct Scripts {
 
 impl Actions {
     pub fn is_empty(&self) -> bool {
-        self.format == Format::None && self.validate == Validate::None && self.calculate == Calculate::None
+        self.format == Format::None
+            && self.validate == Validate::None
+            && self.calculate == Calculate::None
     }
 }
 
@@ -198,11 +212,20 @@ impl Parser<'_> {
                         b'u' => {
                             let code = hex4(self.s.get(self.i..self.i.checked_add(4)?)?)?;
                             self.i += 4;
-                            let code = if (0xD800..=0xDBFF).contains(&code) && self.s.get(self.i..self.i.checked_add(6)?)?.starts_with(b"\\u") {
-                                let low = hex4(self.s.get(self.i.checked_add(2)?..self.i.checked_add(6)?)?)?;
+                            let code = if (0xD800..=0xDBFF).contains(&code)
+                                && self
+                                    .s
+                                    .get(self.i..self.i.checked_add(6)?)?
+                                    .starts_with(b"\\u")
+                            {
+                                let low = hex4(
+                                    self.s.get(self.i.checked_add(2)?..self.i.checked_add(6)?)?,
+                                )?;
                                 if (0xDC00..=0xDFFF).contains(&low) {
                                     self.i += 6;
-                                    0x10000 + ((u32::from(code) - 0xD800) << 10) + (u32::from(low) - 0xDC00)
+                                    0x10000
+                                        + ((u32::from(code) - 0xD800) << 10)
+                                        + (u32::from(low) - 0xDC00)
                                 } else {
                                     u32::from(code)
                                 }
@@ -251,10 +274,17 @@ impl Parser<'_> {
             }
             _ => {
                 let start = self.i;
-                while self.i < self.s.len() && (self.s[self.i].is_ascii_digit() || matches!(self.s[self.i], b'.' | b'-' | b'+' | b'e' | b'E')) {
+                while self.i < self.s.len()
+                    && (self.s[self.i].is_ascii_digit()
+                        || matches!(self.s[self.i], b'.' | b'-' | b'+' | b'e' | b'E'))
+                {
                     self.i += 1;
                 }
-                std::str::from_utf8(&self.s[start..self.i]).ok()?.parse().ok().map(Arg::Num)
+                std::str::from_utf8(&self.s[start..self.i])
+                    .ok()?
+                    .parse()
+                    .ok()
+                    .map(Arg::Num)
             }
         }
     }
@@ -296,10 +326,18 @@ impl Parser<'_> {
 fn call(js: &str, name: &str) -> Option<Vec<Arg>> {
     let at = js.find(&format!("{name}("))?;
     // Not part of a longer identifier (AFDate_Format vs AFDate_FormatEx).
-    if js[..at].chars().last().is_some_and(|c| c.is_alphanumeric() || c == '_') {
+    if js[..at]
+        .chars()
+        .last()
+        .is_some_and(|c| c.is_alphanumeric() || c == '_')
+    {
         return None;
     }
-    let mut p = Parser { s: js.as_bytes(), i: at + name.len() + 1, depth: 0 };
+    let mut p = Parser {
+        s: js.as_bytes(),
+        i: at + name.len() + 1,
+        depth: 0,
+    };
     p.list(b')')
 }
 
@@ -323,7 +361,12 @@ pub const DATE_PRESETS: [&str; 14] = [
 pub const TIME_PRESETS: [&str; 4] = ["HH:MM", "h:MM tt", "HH:MM:ss", "h:MM:ss tt"];
 
 pub fn parse_format(js: &str) -> Option<Format> {
-    let a = |args: &[Arg], i: usize| args.get(i).and_then(Arg::num).unwrap_or(0.0).clamp(0.0, 255.0) as u8;
+    let a = |args: &[Arg], i: usize| {
+        args.get(i)
+            .and_then(Arg::num)
+            .unwrap_or(0.0)
+            .clamp(0.0, 255.0) as u8
+    };
     if let Some(args) = call(js, "AFNumber_Format") {
         return Some(Format::Number {
             decimals: a(&args, 0),
@@ -334,19 +377,26 @@ pub fn parse_format(js: &str) -> Option<Format> {
         });
     }
     if let Some(args) = call(js, "AFPercent_Format") {
-        return Some(Format::Percent { decimals: a(&args, 0), sep: a(&args, 1) });
+        return Some(Format::Percent {
+            decimals: a(&args, 0),
+            sep: a(&args, 1),
+        });
     }
     if let Some(args) = call(js, "AFDate_FormatEx") {
         return Some(Format::Date(args.first().and_then(Arg::string)?));
     }
     if let Some(args) = call(js, "AFDate_Format") {
-        return Some(Format::Date(DATE_PRESETS.get(a(&args, 0) as usize)?.to_string()));
+        return Some(Format::Date(
+            DATE_PRESETS.get(a(&args, 0) as usize)?.to_string(),
+        ));
     }
     if let Some(args) = call(js, "AFTime_FormatEx") {
         return Some(Format::Time(args.first().and_then(Arg::string)?));
     }
     if let Some(args) = call(js, "AFTime_Format") {
-        return Some(Format::Time(TIME_PRESETS.get(a(&args, 0) as usize)?.to_string()));
+        return Some(Format::Time(
+            TIME_PRESETS.get(a(&args, 0) as usize)?.to_string(),
+        ));
     }
     if let Some(args) = call(js, "AFSpecial_Format") {
         return Some(Format::Special(a(&args, 0).min(3)));
@@ -361,7 +411,10 @@ pub fn parse_validate(js: &str) -> Option<Validate> {
     let args = call(js, "AFRange_Validate")?;
     let flag = |i: usize| args.get(i).is_some_and(Arg::truthy);
     let num = |i: usize| args.get(i).and_then(Arg::num);
-    Some(Validate::Range { min: if flag(0) { num(1) } else { None }, max: if flag(2) { num(3) } else { None } })
+    Some(Validate::Range {
+        min: if flag(0) { num(1) } else { None },
+        max: if flag(2) { num(3) } else { None },
+    })
 }
 
 pub fn parse_calculate(js: &str) -> Option<Calculate> {
@@ -381,7 +434,11 @@ pub fn parse_calculate(js: &str) -> Option<Calculate> {
     };
     let fields = match args.get(1)? {
         Arg::List(l) => l.iter().filter_map(Arg::string).collect(),
-        Arg::Str(s) => s.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect(),
+        Arg::Str(s) => s
+            .split(',')
+            .map(|x| x.trim().to_string())
+            .filter(|x| !x.is_empty())
+            .collect(),
         _ => return None,
     };
     Some(Calculate::Simple { op, fields })
@@ -417,24 +474,55 @@ fn js_str(s: &str) -> String {
 pub fn format_js(f: &Format) -> Option<(String, String)> {
     Some(match f {
         Format::None => return None,
-        Format::Number { decimals, sep, neg, currency, prepend } => {
-            let args = format!("{decimals}, {sep}, {neg}, 0, {}, {prepend}", js_str(currency));
-            (format!("AFNumber_Format({args});"), format!("AFNumber_Keystroke({args});"))
+        Format::Number {
+            decimals,
+            sep,
+            neg,
+            currency,
+            prepend,
+        } => {
+            let args = format!(
+                "{decimals}, {sep}, {neg}, 0, {}, {prepend}",
+                js_str(currency)
+            );
+            (
+                format!("AFNumber_Format({args});"),
+                format!("AFNumber_Keystroke({args});"),
+            )
         }
-        Format::Percent { decimals, sep } => (format!("AFPercent_Format({decimals}, {sep});"), format!("AFPercent_Keystroke({decimals}, {sep});")),
-        Format::Date(f) => (format!("AFDate_FormatEx({});", js_str(f)), format!("AFDate_KeystrokeEx({});", js_str(f))),
-        Format::Time(f) => (format!("AFTime_FormatEx({});", js_str(f)), format!("AFTime_KeystrokeEx({});", js_str(f))),
-        Format::Special(n) => (format!("AFSpecial_Format({n});"), format!("AFSpecial_Keystroke({n});")),
-        Format::Mask(m) => (String::new(), format!("AFSpecial_KeystrokeEx({});", js_str(m))),
+        Format::Percent { decimals, sep } => (
+            format!("AFPercent_Format({decimals}, {sep});"),
+            format!("AFPercent_Keystroke({decimals}, {sep});"),
+        ),
+        Format::Date(f) => (
+            format!("AFDate_FormatEx({});", js_str(f)),
+            format!("AFDate_KeystrokeEx({});", js_str(f)),
+        ),
+        Format::Time(f) => (
+            format!("AFTime_FormatEx({});", js_str(f)),
+            format!("AFTime_KeystrokeEx({});", js_str(f)),
+        ),
+        Format::Special(n) => (
+            format!("AFSpecial_Format({n});"),
+            format!("AFSpecial_Keystroke({n});"),
+        ),
+        Format::Mask(m) => (
+            String::new(),
+            format!("AFSpecial_KeystrokeEx({});", js_str(m)),
+        ),
     })
 }
 
 pub fn validate_js(v: &Validate) -> Option<String> {
     match v {
         Validate::None => None,
-        Validate::Range { min, max } => {
-            Some(format!("AFRange_Validate({}, {}, {}, {});", min.is_some(), min.unwrap_or(0.0), max.is_some(), max.unwrap_or(0.0)))
-        }
+        Validate::Range { min, max } => Some(format!(
+            "AFRange_Validate({}, {}, {}, {});",
+            min.is_some(),
+            min.unwrap_or(0.0),
+            max.is_some(),
+            max.unwrap_or(0.0)
+        )),
     }
 }
 
@@ -444,9 +532,15 @@ pub fn calculate_js(c: &Calculate) -> Option<String> {
         Calculate::Simple { op, fields } => Some(format!(
             "AFSimple_Calculate({}, new Array({}));",
             js_str(op.code()),
-            fields.iter().map(|f| js_str(f)).collect::<Vec<_>>().join(", ")
+            fields
+                .iter()
+                .map(|f| js_str(f))
+                .collect::<Vec<_>>()
+                .join(", ")
         )),
-        Calculate::Notation(expr) => Some(format!("/** BVCALC {expr} EVCALC **/ event.value = AFMakeNumber(0);")),
+        Calculate::Notation(expr) => Some(format!(
+            "/** BVCALC {expr} EVCALC **/ event.value = AFMakeNumber(0);"
+        )),
     }
 }
 
@@ -455,7 +549,11 @@ pub fn calculate_js(c: &Calculate) -> Option<String> {
 /// AFMakeNumber: a number from typed text (currency symbols, group separators, spaces and a
 /// trailing % ignored; a comma decimal separator accepted).
 pub fn make_number(s: &str) -> Option<f64> {
-    let t: String = s.trim().chars().filter(|c| !c.is_whitespace() && !matches!(c, '$' | '€' | '£' | '¥' | '\'' | '%')).collect();
+    let t: String = s
+        .trim()
+        .chars()
+        .filter(|c| !c.is_whitespace() && !matches!(c, '$' | '€' | '£' | '¥' | '\'' | '%'))
+        .collect();
     if t.is_empty() {
         return None;
     }
@@ -473,7 +571,11 @@ pub fn make_number(s: &str) -> Option<f64> {
 
 /// A number as JavaScript prints it (integers without a fraction).
 pub fn js_number(v: f64) -> String {
-    if v.fract() == 0.0 && v.abs() < 1e15 { format!("{}", v as i64) } else { format!("{v}") }
+    if v.fract() == 0.0 && v.abs() < 1e15 {
+        format!("{}", v as i64)
+    } else {
+        format!("{v}")
+    }
 }
 
 fn group(int: &str, sep: char) -> String {
@@ -512,8 +614,29 @@ fn number_text(v: f64, decimals: u8, sep: u8) -> String {
     out
 }
 
-const MONTHS: [&str; 12] = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+const DAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 /// A date and time read from text.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -554,7 +677,9 @@ fn order(fmt: &str) -> Vec<(char, u32)> {
     for c in cleaned.chars() {
         if let Some(digit) = c.to_digit(10) {
             match out.last_mut() {
-                Some(('#', n)) if prev.is_ascii_digit() => *n = n.saturating_mul(10).saturating_add(digit),
+                Some(('#', n)) if prev.is_ascii_digit() => {
+                    *n = n.saturating_mul(10).saturating_add(digit)
+                }
                 _ => out.push(('#', digit)),
             }
             prev = c;
@@ -598,7 +723,9 @@ pub fn parse_date(text: &str, fmt: &str) -> Option<DateTime> {
         if let Ok(n) = cur.parse::<u32>() {
             nums.push(n);
         } else if cur.len() >= 3
-            && let Some(i) = MONTHS.iter().position(|m| m.to_lowercase().starts_with(&cur.to_lowercase()))
+            && let Some(i) = MONTHS
+                .iter()
+                .position(|m| m.to_lowercase().starts_with(&cur.to_lowercase()))
         {
             *month = Some(i as u32 + 1);
         }
@@ -606,7 +733,8 @@ pub fn parse_date(text: &str, fmt: &str) -> Option<DateTime> {
     };
     for c in t.chars() {
         // Digits and letters form separate tokens ("5Mar" is 5 and Mar).
-        let same_kind = cur.is_empty() || cur.chars().next().is_some_and(|x| x.is_ascii_digit()) == c.is_ascii_digit();
+        let same_kind = cur.is_empty()
+            || cur.chars().next().is_some_and(|x| x.is_ascii_digit()) == c.is_ascii_digit();
         if c.is_alphanumeric() && same_kind {
             cur.push(c);
         } else {
@@ -617,7 +745,14 @@ pub fn parse_date(text: &str, fmt: &str) -> Option<DateTime> {
         }
     }
     flush(&mut cur, &mut nums, &mut month_name);
-    let mut dt = DateTime { y: 0, m: 1, d: 1, hh: 0, mm: 0, ss: 0 };
+    let mut dt = DateTime {
+        y: 0,
+        m: 1,
+        d: 1,
+        hh: 0,
+        mm: 0,
+        ss: 0,
+    };
     let mut it = nums.into_iter().peekable();
     let mut have_y = false;
     for (k, literal) in order(fmt) {
@@ -638,7 +773,11 @@ pub fn parse_date(text: &str, fmt: &str) -> Option<DateTime> {
             'd' => dt.d = it.next()?,
             'y' => {
                 let y = i32::try_from(it.next()?).ok()?;
-                dt.y = if y < 100 { if y < 50 { 2000 + y } else { 1900 + y } } else { y };
+                dt.y = if y < 100 {
+                    if y < 50 { 2000 + y } else { 1900 + y }
+                } else {
+                    y
+                };
                 have_y = true;
             }
             'H' => dt.hh = it.next().unwrap_or(0),
@@ -680,7 +819,11 @@ pub fn format_date(dt: DateTime, fmt: &str) -> String {
         while i + n < chars.len() && chars[i + n] == c {
             n += 1;
         }
-        let h12 = if dt.hh.is_multiple_of(12) { 12 } else { dt.hh % 12 };
+        let h12 = if dt.hh.is_multiple_of(12) {
+            12
+        } else {
+            dt.hh % 12
+        };
         match (c, n) {
             ('y', 4..) => {
                 let _ = write!(out, "{:04}", dt.y);
@@ -702,8 +845,15 @@ pub fn format_date(dt: DateTime, fmt: &str) -> String {
                 let _ = write!(out, "{}", dt.m);
             }
             ('d', 3..) => {
-                let name = DAYS.get(weekday(dt.y, dt.m, dt.d)).copied().unwrap_or_default();
-                out.push_str(if n >= 4 { name } else { name.get(..3).unwrap_or(name) });
+                let name = DAYS
+                    .get(weekday(dt.y, dt.m, dt.d))
+                    .copied()
+                    .unwrap_or_default();
+                out.push_str(if n >= 4 {
+                    name
+                } else {
+                    name.get(..3).unwrap_or(name)
+                });
             }
             ('d', 2) => {
                 let _ = write!(out, "{:02}", dt.d);
@@ -790,8 +940,16 @@ pub fn format_value(f: &Format, value: &str) -> String {
     }
     match f {
         Format::None => value.to_string(),
-        Format::Number { decimals, sep, neg, currency, prepend } => {
-            let Some(v) = make_number(value) else { return value.to_string() };
+        Format::Number {
+            decimals,
+            sep,
+            neg,
+            currency,
+            prepend,
+        } => {
+            let Some(v) = make_number(value) else {
+                return value.to_string();
+            };
             let body = number_text(v, *decimals, *sep);
             let body = match (currency.is_empty(), *prepend) {
                 (true, _) => body,
@@ -809,12 +967,19 @@ pub fn format_value(f: &Format, value: &str) -> String {
         Format::Percent { decimals, sep } => match make_number(value) {
             Some(v) => format!(
                 "{}%",
-                if v < 0.0 { format!("-{}", number_text(v * 100.0, *decimals, *sep)) } else { number_text(v * 100.0, *decimals, *sep) }
+                if v < 0.0 {
+                    format!("-{}", number_text(v * 100.0, *decimals, *sep))
+                } else {
+                    number_text(v * 100.0, *decimals, *sep)
+                }
             ),
             None => value.to_string(),
         },
-        Format::Date(fmt) | Format::Time(fmt) => parse_date(value, fmt).map_or_else(|| value.to_string(), |dt| format_date(dt, fmt)),
-        Format::Special(n) => apply_mask(SPECIAL_MASKS[(*n).min(3) as usize], value).unwrap_or_else(|| value.to_string()),
+        Format::Date(fmt) | Format::Time(fmt) => {
+            parse_date(value, fmt).map_or_else(|| value.to_string(), |dt| format_date(dt, fmt))
+        }
+        Format::Special(n) => apply_mask(SPECIAL_MASKS[(*n).min(3) as usize], value)
+            .unwrap_or_else(|| value.to_string()),
         Format::Mask(m) => apply_mask(m, value).unwrap_or_else(|| value.to_string()),
     }
 }
@@ -848,19 +1013,30 @@ pub fn keystroke(f: &Format, field: &str, value: &str) -> Result<String, String>
 
 /// The Validate event: `Err` with Acrobat's message when the value is out of range.
 pub fn validate(v: &Validate, value: &str) -> Result<(), String> {
-    let Validate::Range { min, max } = v else { return Ok(()) };
+    let Validate::Range { min, max } = v else {
+        return Ok(());
+    };
     if value.trim().is_empty() {
         return Ok(());
     }
-    let Some(x) = make_number(value) else { return Ok(()) };
+    let Some(x) = make_number(value) else {
+        return Ok(());
+    };
     let fmt = |n: f64| js_number(n);
     let ok = min.is_none_or(|m| x >= m) && max.is_none_or(|m| x <= m);
     if ok {
         return Ok(());
     }
     Err(match (min, max) {
-        (Some(a), Some(b)) => format!("Invalid value: must be greater than or equal to {} and less than or equal to {}.", fmt(*a), fmt(*b)),
-        (Some(a), None) => format!("Invalid value: must be greater than or equal to {}.", fmt(*a)),
+        (Some(a), Some(b)) => format!(
+            "Invalid value: must be greater than or equal to {} and less than or equal to {}.",
+            fmt(*a),
+            fmt(*b)
+        ),
+        (Some(a), None) => format!(
+            "Invalid value: must be greater than or equal to {}.",
+            fmt(*a)
+        ),
         (None, Some(b)) => format!("Invalid value: must be less than or equal to {}.", fmt(*b)),
         (None, None) => String::new(),
     })
@@ -955,7 +1131,11 @@ pub fn calculate(c: &Calculate, values: &dyn Fn(&str) -> Vec<String>) -> Option<
     match c {
         Calculate::None => None,
         Calculate::Simple { op, fields } => {
-            let xs: Vec<f64> = fields.iter().flat_map(|f| values(f)).map(|v| num(&v)).collect();
+            let xs: Vec<f64> = fields
+                .iter()
+                .flat_map(|f| values(f))
+                .map(|v| num(&v))
+                .collect();
             let v = match op {
                 CalcOp::Sum => xs.iter().sum(),
                 CalcOp::Product => xs.iter().product(),
@@ -969,7 +1149,11 @@ pub fn calculate(c: &Calculate, values: &dyn Fn(&str) -> Vec<String>) -> Option<
                 CalcOp::Minimum => xs.iter().copied().fold(f64::INFINITY, f64::min),
                 CalcOp::Maximum => xs.iter().copied().fold(f64::NEG_INFINITY, f64::max),
             };
-            Some(if v.is_finite() { js_number(v) } else { "0".into() })
+            Some(if v.is_finite() {
+                js_number(v)
+            } else {
+                "0".into()
+            })
         }
         Calculate::Notation(expr) => {
             let v = eval_notation(expr, &|name| values(name).first().map(num).unwrap_or(0.0))?;
@@ -986,43 +1170,121 @@ mod tests {
     fn scripts_are_recognised_and_written_back() {
         assert_eq!(
             parse_format("AFNumber_Format(2, 0, 0, 0, \"$\", true);"),
-            Some(Format::Number { decimals: 2, sep: 0, neg: 0, currency: "$".into(), prepend: true })
+            Some(Format::Number {
+                decimals: 2,
+                sep: 0,
+                neg: 0,
+                currency: "$".into(),
+                prepend: true
+            })
         );
-        assert_eq!(parse_format("AFPercent_Format(1, 0);"), Some(Format::Percent { decimals: 1, sep: 0 }));
-        assert_eq!(parse_format("AFDate_FormatEx(\"dd-mmm-yyyy\");"), Some(Format::Date("dd-mmm-yyyy".into())));
-        assert_eq!(parse_format("AFDate_Format(2);"), Some(Format::Date("mm/dd/yy".into())));
-        assert_eq!(parse_format("AFTime_Format(1);"), Some(Format::Time("h:MM tt".into())));
-        assert_eq!(parse_format("AFSpecial_Format(2);"), Some(Format::Special(2)));
-        assert_eq!(parse_format("AFSpecial_KeystrokeEx(\"AA-9999\");"), Some(Format::Mask("AA-9999".into())));
+        assert_eq!(
+            parse_format("AFPercent_Format(1, 0);"),
+            Some(Format::Percent {
+                decimals: 1,
+                sep: 0
+            })
+        );
+        assert_eq!(
+            parse_format("AFDate_FormatEx(\"dd-mmm-yyyy\");"),
+            Some(Format::Date("dd-mmm-yyyy".into()))
+        );
+        assert_eq!(
+            parse_format("AFDate_Format(2);"),
+            Some(Format::Date("mm/dd/yy".into()))
+        );
+        assert_eq!(
+            parse_format("AFTime_Format(1);"),
+            Some(Format::Time("h:MM tt".into()))
+        );
+        assert_eq!(
+            parse_format("AFSpecial_Format(2);"),
+            Some(Format::Special(2))
+        );
+        assert_eq!(
+            parse_format("AFSpecial_KeystrokeEx(\"AA-9999\");"),
+            Some(Format::Mask("AA-9999".into()))
+        );
         assert_eq!(parse_format("app.alert('hi')"), None);
-        assert_eq!(parse_validate("AFRange_Validate(true, 0, true, 100);"), Some(Validate::Range { min: Some(0.0), max: Some(100.0) }));
-        assert_eq!(parse_validate("AFRange_Validate(false, 0, true, 10);"), Some(Validate::Range { min: None, max: Some(10.0) }));
+        assert_eq!(
+            parse_validate("AFRange_Validate(true, 0, true, 100);"),
+            Some(Validate::Range {
+                min: Some(0.0),
+                max: Some(100.0)
+            })
+        );
+        assert_eq!(
+            parse_validate("AFRange_Validate(false, 0, true, 10);"),
+            Some(Validate::Range {
+                min: None,
+                max: Some(10.0)
+            })
+        );
         assert_eq!(
             parse_calculate("AFSimple_Calculate(\"SUM\", new Array (\"a\", \"b.c\"));"),
-            Some(Calculate::Simple { op: CalcOp::Sum, fields: vec!["a".into(), "b.c".into()] })
+            Some(Calculate::Simple {
+                op: CalcOp::Sum,
+                fields: vec!["a".into(), "b.c".into()]
+            })
         );
-        assert_eq!(parse_calculate("AFSimple_Calculate('AVG', ['x']);"), Some(Calculate::Simple { op: CalcOp::Average, fields: vec!["x".into()] }));
         assert_eq!(
-            parse_calculate("/** BVCALC Price * Qty EVCALC **/ event.value = AFMakeNumber(getField(\"Price\").value) * …"),
+            parse_calculate("AFSimple_Calculate('AVG', ['x']);"),
+            Some(Calculate::Simple {
+                op: CalcOp::Average,
+                fields: vec!["x".into()]
+            })
+        );
+        assert_eq!(
+            parse_calculate(
+                "/** BVCALC Price * Qty EVCALC **/ event.value = AFMakeNumber(getField(\"Price\").value) * …"
+            ),
             Some(Calculate::Notation("Price * Qty".into()))
         );
         // Round trips through what the tabs write.
         for f in [
-            Format::Number { decimals: 2, sep: 2, neg: 2, currency: "€".into(), prepend: false },
-            Format::Percent { decimals: 0, sep: 0 },
+            Format::Number {
+                decimals: 2,
+                sep: 2,
+                neg: 2,
+                currency: "€".into(),
+                prepend: false,
+            },
+            Format::Percent {
+                decimals: 0,
+                sep: 0,
+            },
             Format::Date("mmmm d, yyyy".into()),
             Format::Special(3),
         ] {
             let (fj, _) = format_js(&f).unwrap();
             assert_eq!(parse_format(&fj), Some(f));
         }
-        let euro = format_js(&Format::Number { decimals: 2, sep: 2, neg: 0, currency: "€".into(), prepend: true }).unwrap().0;
+        let euro = format_js(&Format::Number {
+            decimals: 2,
+            sep: 2,
+            neg: 0,
+            currency: "€".into(),
+            prepend: true,
+        })
+        .unwrap()
+        .0;
         assert!(euro.contains("\\u20AC"), "{euro}");
         assert!(!euro.contains('€'), "{euro}");
-        let pound = format_js(&Format::Number { decimals: 2, sep: 0, neg: 0, currency: "£".into(), prepend: true }).unwrap().0;
+        let pound = format_js(&Format::Number {
+            decimals: 2,
+            sep: 0,
+            neg: 0,
+            currency: "£".into(),
+            prepend: true,
+        })
+        .unwrap()
+        .0;
         assert!(pound.contains("\\u00A3"), "{pound}");
         assert!(!pound.contains('£'), "{pound}");
-        let c = Calculate::Simple { op: CalcOp::Product, fields: vec!["q".into(), "p".into()] };
+        let c = Calculate::Simple {
+            op: CalcOp::Product,
+            fields: vec!["q".into(), "p".into()],
+        };
         assert_eq!(parse_calculate(&calculate_js(&c).unwrap()), Some(c));
         let c = Calculate::Notation("a + b".into());
         assert_eq!(parse_calculate(&calculate_js(&c).unwrap()), Some(c));
@@ -1030,24 +1292,48 @@ mod tests {
 
     #[test]
     fn numbers_format_like_acrobat() {
-        let n = |d, s, ng, c: &str, p| Format::Number { decimals: d, sep: s, neg: ng, currency: c.into(), prepend: p };
+        let n = |d, s, ng, c: &str, p| Format::Number {
+            decimals: d,
+            sep: s,
+            neg: ng,
+            currency: c.into(),
+            prepend: p,
+        };
         assert_eq!(format_value(&n(2, 0, 0, "$", true), "1234.5"), "$1,234.50");
         assert_eq!(format_value(&n(0, 1, 0, "", true), "1234567"), "1234567");
-        assert_eq!(format_value(&n(2, 2, 0, " €", false), "1234.5"), "1.234,50 €");
+        assert_eq!(
+            format_value(&n(2, 2, 0, " €", false), "1234.5"),
+            "1.234,50 €"
+        );
         assert_eq!(format_value(&n(2, 0, 2, "", true), "-12"), "(12.00)");
         assert_eq!(format_value(&n(1, 0, 0, "", true), "-0.25"), "-0.3");
-        assert_eq!(format_value(&Format::Percent { decimals: 1, sep: 0 }, "0.125"), "12.5%");
+        assert_eq!(
+            format_value(
+                &Format::Percent {
+                    decimals: 1,
+                    sep: 0
+                },
+                "0.125"
+            ),
+            "12.5%"
+        );
         assert_eq!(make_number("$1,234.50"), Some(1234.5));
         assert_eq!(make_number("1.234,5"), Some(1234.5));
         assert_eq!(make_number("(7)"), Some(-7.0));
         assert_eq!(make_number("abc"), None);
-        assert_eq!(keystroke(&n(2, 0, 0, "$", true), "Total", "$1,000"), Ok("1000".into()));
+        assert_eq!(
+            keystroke(&n(2, 0, 0, "$", true), "Total", "$1,000"),
+            Ok("1000".into())
+        );
         assert_eq!(
             keystroke(&n(2, 0, 0, "$", true), "Total", "ten"),
             Err("The value entered does not match the format of the field [ Total ]".into())
         );
         // Blank input clears a formatted field (#1323); without a format it is text like any other.
-        assert_eq!(keystroke(&n(2, 0, 0, "$", true), "Total", " \t"), Ok(String::new()));
+        assert_eq!(
+            keystroke(&n(2, 0, 0, "$", true), "Total", " \t"),
+            Ok(String::new())
+        );
         assert_eq!(keystroke(&Format::None, "Name", " \t"), Ok(" \t".into()));
     }
 
@@ -1055,32 +1341,73 @@ mod tests {
     fn dates_times_and_masks() {
         let d = Format::Date("mm/dd/yyyy".into());
         assert_eq!(format_value(&d, "1/2/24"), "01/02/2024");
-        assert_eq!(format_value(&Format::Date("mmmm d, yyyy".into()), "10/1/2026"), "October 1, 2026");
-        assert_eq!(format_value(&Format::Date("dddd, mmm d, yyyy".into()), "10/1/2026"), "Thursday, Oct 1, 2026");
-        assert_eq!(format_value(&Format::Date("dd-mmm-yy".into()), "5-Mar-21"), "05-Mar-21", "month names are read");
+        assert_eq!(
+            format_value(&Format::Date("mmmm d, yyyy".into()), "10/1/2026"),
+            "October 1, 2026"
+        );
+        assert_eq!(
+            format_value(&Format::Date("dddd, mmm d, yyyy".into()), "10/1/2026"),
+            "Thursday, Oct 1, 2026"
+        );
+        assert_eq!(
+            format_value(&Format::Date("dd-mmm-yy".into()), "5-Mar-21"),
+            "05-Mar-21",
+            "month names are read"
+        );
         assert!(keystroke(&d, "Due", "2/30/2024").is_err(), "no 30 February");
         assert!(keystroke(&d, "Due", "13/1/2024").is_err());
         // Literal digits in the format (a leave form fixing the year as "dd.mm.26").
         let fixed = Format::Date("dd.mm.26".into());
         assert_eq!(keystroke(&fixed, "Von", "15.05.26"), Ok("15.05.26".into()));
         assert_eq!(format_value(&fixed, "15.05.26"), "15.05.26");
-        assert_eq!(format_value(&fixed, "3.1"), "03.01.26", "the literal may be left out");
-        assert!(keystroke(&fixed, "Von", "15.05.27").is_err(), "a different number there is not the literal");
+        assert_eq!(
+            format_value(&fixed, "3.1"),
+            "03.01.26",
+            "the literal may be left out"
+        );
+        assert!(
+            keystroke(&fixed, "Von", "15.05.27").is_err(),
+            "a different number there is not the literal"
+        );
         assert!(keystroke(&fixed, "Von", "32.05.26").is_err());
-        assert_eq!(format_value(&Format::Time("h:MM tt".into()), "14:05"), "2:05 pm");
-        assert_eq!(format_value(&Format::Time("HH:MM".into()), "2:05 pm"), "14:05");
-        assert_eq!(format_value(&Format::Special(2), "5551234567"), "(555) 123-4567");
-        assert_eq!(format_value(&Format::Special(3), "123-45-6789"), "123-45-6789");
+        assert_eq!(
+            format_value(&Format::Time("h:MM tt".into()), "14:05"),
+            "2:05 pm"
+        );
+        assert_eq!(
+            format_value(&Format::Time("HH:MM".into()), "2:05 pm"),
+            "14:05"
+        );
+        assert_eq!(
+            format_value(&Format::Special(2), "5551234567"),
+            "(555) 123-4567"
+        );
+        assert_eq!(
+            format_value(&Format::Special(3), "123-45-6789"),
+            "123-45-6789"
+        );
         assert!(keystroke(&Format::Special(0), "Zip", "1234").is_err());
-        assert_eq!(format_value(&Format::Mask("AA-9999".into()), "ab1234"), "ab-1234");
+        assert_eq!(
+            format_value(&Format::Mask("AA-9999".into()), "ab1234"),
+            "ab-1234"
+        );
         assert!(keystroke(&Format::Mask("AA-9999".into()), "Code", "a11234").is_err());
     }
 
     #[test]
     fn validation_and_calculation() {
-        let r = Validate::Range { min: Some(0.0), max: Some(100.0) };
+        let r = Validate::Range {
+            min: Some(0.0),
+            max: Some(100.0),
+        };
         assert!(validate(&r, "50").is_ok() && validate(&r, "").is_ok());
-        assert_eq!(validate(&r, "120"), Err("Invalid value: must be greater than or equal to 0 and less than or equal to 100.".into()));
+        assert_eq!(
+            validate(&r, "120"),
+            Err(
+                "Invalid value: must be greater than or equal to 0 and less than or equal to 100."
+                    .into()
+            )
+        );
         let vals = |name: &str| -> Vec<String> {
             match name {
                 "a" => vec!["2".into()],
@@ -1090,13 +1417,31 @@ mod tests {
                 _ => vec![],
             }
         };
-        let simple = |op, f: &[&str]| calculate(&Calculate::Simple { op, fields: f.iter().map(|s| s.to_string()).collect() }, &vals);
+        let simple = |op, f: &[&str]| {
+            calculate(
+                &Calculate::Simple {
+                    op,
+                    fields: f.iter().map(|s| s.to_string()).collect(),
+                },
+                &vals,
+            )
+        };
         assert_eq!(simple(CalcOp::Sum, &["a", "b"]), Some("5.5".into()));
         assert_eq!(simple(CalcOp::Product, &["a", "b"]), Some("7".into()));
-        assert_eq!(simple(CalcOp::Average, &["row"]), Some("2".into()), "groups count every child");
+        assert_eq!(
+            simple(CalcOp::Average, &["row"]),
+            Some("2".into()),
+            "groups count every child"
+        );
         assert_eq!(simple(CalcOp::Maximum, &["a", "row"]), Some("3".into()));
         assert_eq!(simple(CalcOp::Sum, &["missing"]), Some("0".into()));
-        assert_eq!(calculate(&Calculate::Notation("(a + b) * 2 - Unit\\ Price / 4".into()), &vals), Some("10".into()));
+        assert_eq!(
+            calculate(
+                &Calculate::Notation("(a + b) * 2 - Unit\\ Price / 4".into()),
+                &vals
+            ),
+            Some("10".into())
+        );
         assert_eq!(calculate(&Calculate::Notation("a +".into()), &vals), None);
     }
 }
@@ -1152,7 +1497,11 @@ pub enum LayerOp {
 pub fn button_script(js: &str) -> ButtonAction {
     let t = js.trim();
     // Print takes an options object whose contents don't change what PdfCraft does.
-    if t.starts_with("this.print(") || t.starts_with("print(") || t.contains(";this.print(") || t.contains("; this.print(") {
+    if t.starts_with("this.print(")
+        || t.starts_with("print(")
+        || t.contains(";this.print(")
+        || t.contains("; this.print(")
+    {
         return ButtonAction::Named("Print".into());
     }
     if let Some(args) = call(t, "this.resetForm").or_else(|| call(t, "resetForm")) {
@@ -1161,7 +1510,10 @@ pub fn button_script(js: &str) -> ButtonAction {
             Some(Arg::Str(s)) => vec![s.clone()],
             _ => Vec::new(),
         };
-        return ButtonAction::Reset { fields, exclude: false };
+        return ButtonAction::Reset {
+            fields,
+            exclude: false,
+        };
     }
     if let Some(m) = call(t, "app.alert").and_then(|args| args.first().and_then(Arg::string)) {
         return ButtonAction::Alert(m);
@@ -1187,14 +1539,44 @@ mod button_tests {
 
     #[test]
     fn common_button_scripts_are_recognised() {
-        assert_eq!(button_script("this.print({bUI: true});"), ButtonAction::Named("Print".into()));
-        assert_eq!(button_script("this.resetForm([\"a\", \"b\"]);"), ButtonAction::Reset { fields: vec!["a".into(), "b".into()], exclude: false });
-        assert_eq!(button_script("this.resetForm();"), ButtonAction::Reset { fields: vec![], exclude: false });
-        assert_eq!(button_script("app.alert('Thanks!');"), ButtonAction::Alert("Thanks!".into()));
-        assert_eq!(button_script("app.launchURL(\"https://example.org\", true);"), ButtonAction::Uri("https://example.org".into()));
-        assert_eq!(button_script("this.pageNum++;"), ButtonAction::Named("NextPage".into()));
-        assert_eq!(button_script("event.target.buttonImportIcon();"), ButtonAction::ImportIcon);
-        assert!(matches!(button_script("var x = 1; doStuff(x);"), ButtonAction::Script(_)));
+        assert_eq!(
+            button_script("this.print({bUI: true});"),
+            ButtonAction::Named("Print".into())
+        );
+        assert_eq!(
+            button_script("this.resetForm([\"a\", \"b\"]);"),
+            ButtonAction::Reset {
+                fields: vec!["a".into(), "b".into()],
+                exclude: false
+            }
+        );
+        assert_eq!(
+            button_script("this.resetForm();"),
+            ButtonAction::Reset {
+                fields: vec![],
+                exclude: false
+            }
+        );
+        assert_eq!(
+            button_script("app.alert('Thanks!');"),
+            ButtonAction::Alert("Thanks!".into())
+        );
+        assert_eq!(
+            button_script("app.launchURL(\"https://example.org\", true);"),
+            ButtonAction::Uri("https://example.org".into())
+        );
+        assert_eq!(
+            button_script("this.pageNum++;"),
+            ButtonAction::Named("NextPage".into())
+        );
+        assert_eq!(
+            button_script("event.target.buttonImportIcon();"),
+            ButtonAction::ImportIcon
+        );
+        assert!(matches!(
+            button_script("var x = 1; doStuff(x);"),
+            ButtonAction::Script(_)
+        ));
     }
 }
 
@@ -1218,7 +1600,11 @@ mod never_crash_tests {
         let n = 200_000;
         let js = format!("AFNumber_Format({}0{});", "[".repeat(n), "]".repeat(n));
         assert_eq!(parse_format(&js), None);
-        let js = format!("AFNumber_Format({}0{});", "new Array(".repeat(n), ")".repeat(n));
+        let js = format!(
+            "AFNumber_Format({}0{});",
+            "new Array(".repeat(n),
+            ")".repeat(n)
+        );
         assert_eq!(parse_format(&js), None);
     }
 
@@ -1237,10 +1623,24 @@ mod never_crash_tests {
     #[test]
     fn out_of_range_dates_format_without_panicking() {
         for m in [0, 13, u32::MAX] {
-            let dt = DateTime { y: 2024, m, d: 1, hh: 0, mm: 0, ss: 0 };
+            let dt = DateTime {
+                y: 2024,
+                m,
+                d: 1,
+                hh: 0,
+                mm: 0,
+                ss: 0,
+            };
             let _ = format_date(dt, "dddd mmmm mmm d yyyy");
         }
-        let dt = DateTime { y: i32::MAX, m: 1, d: u32::MAX, hh: 0, mm: 0, ss: 0 };
+        let dt = DateTime {
+            y: i32::MAX,
+            m: 1,
+            d: u32::MAX,
+            hh: 0,
+            mm: 0,
+            ss: 0,
+        };
         let _ = format_date(dt, "dddd ddd");
     }
 }

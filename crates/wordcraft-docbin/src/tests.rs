@@ -38,7 +38,15 @@ pub(crate) struct FibSpec {
 
 impl Default for FibSpec {
     fn default() -> Self {
-        FibSpec { nfib: 0x00C1, flags: 0x1000, ccp_text: 0, ccp_ftn: 0, ccp_hdd: 0, ccp_edn: 0, pairs: Vec::new() }
+        FibSpec {
+            nfib: 0x00C1,
+            flags: 0x1000,
+            ccp_text: 0,
+            ccp_ftn: 0,
+            ccp_hdd: 0,
+            ccp_edn: 0,
+            pairs: Vec::new(),
+        }
     }
 }
 
@@ -91,8 +99,16 @@ fn plcpcd(pieces: &[Piece], first_fc: u32) -> Vec<u8> {
     for p in pieces {
         // Bytes this piece occupies in the text region: one per character compressed, two
         // uncompressed (count chars, not UTF-8 bytes).
-        let len = if p.compressed { p.text.chars().count() } else { p.text.chars().count() * 2 } as u32;
-        let fc = if p.compressed { 2 * (first_fc + off) } else { first_fc + off };
+        let len = if p.compressed {
+            p.text.chars().count()
+        } else {
+            p.text.chars().count() * 2
+        } as u32;
+        let fc = if p.compressed {
+            2 * (first_fc + off)
+        } else {
+            first_fc + off
+        };
         let fc_raw = if p.compressed { fc | 0x4000_0000 } else { fc };
         v.extend_from_slice(&[0, 0]); // fNoParaLast & friends
         v.extend_from_slice(&fc_raw.to_le_bytes());
@@ -126,18 +142,29 @@ fn text_doc(main: &[Piece], extra: &[Piece], ccp_hdd: u32) -> Vec<u8> {
     clx.extend_from_slice(&plc);
     let mut table = vec![0u8; CLX_AT as usize];
     table.extend_from_slice(&clx);
-    let spec = FibSpec { ccp_text, ccp_hdd, pairs: vec![(33, CLX_AT, clx.len() as u32)], ..Default::default() };
+    let spec = FibSpec {
+        ccp_text,
+        ccp_hdd,
+        pairs: vec![(33, CLX_AT, clx.len() as u32)],
+        ..Default::default()
+    };
     word[..fib_bytes(&spec).len()].copy_from_slice(&fib_bytes(&spec));
     cfb_file(&[("WordDocument", &word), ("0Table", &table)])
 }
 
 fn body_texts(doc: &wordcraft_doc::Document) -> Vec<String> {
-    doc.body.iter().filter_map(|b| b.as_para().map(|p| p.text.clone())).collect()
+    doc.body
+        .iter()
+        .filter_map(|b| b.as_para().map(|p| p.text.clone()))
+        .collect()
 }
 
 #[test]
 fn not_a_compound_file() {
-    assert!(matches!(read(&[0u8; 64]), Err(super::DocbinError::Container(_))));
+    assert!(matches!(
+        read(&[0u8; 64]),
+        Err(super::DocbinError::Container(_))
+    ));
 }
 
 #[test]
@@ -172,7 +199,10 @@ fn word_6_95_rejected() {
 
 #[test]
 fn encrypted_rejected() {
-    let spec = FibSpec { flags: 0x1100, ..Default::default() };
+    let spec = FibSpec {
+        flags: 0x1100,
+        ..Default::default()
+    };
     let f = cfb_file(&[("WordDocument", &fib_bytes(&spec))]);
     assert!(matches!(read(&f), Err(super::DocbinError::Encrypted)));
 }
@@ -188,21 +218,38 @@ fn wrong_csw_rejected() {
 
 #[test]
 fn missing_clx_rejected() {
-    let spec = FibSpec { ccp_text: 3, ..Default::default() };
+    let spec = FibSpec {
+        ccp_text: 3,
+        ..Default::default()
+    };
     let f = cfb_file(&[("WordDocument", &fib_bytes(&spec)), ("0Table", &[0u8; 16])]);
     assert!(matches!(read(&f), Err(super::DocbinError::Malformed(m)) if m.contains("piece table")));
 }
 
 #[test]
 fn unicode_text_extracted() {
-    let f = text_doc(&[Piece { compressed: false, text: "Héllo Wörld\rSecond€\r".into() }], &[], 0);
+    let f = text_doc(
+        &[Piece {
+            compressed: false,
+            text: "Héllo Wörld\rSecond€\r".into(),
+        }],
+        &[],
+        0,
+    );
     let doc = read(&f).expect("opens");
     assert_eq!(body_texts(&doc), ["Héllo Wörld", "Second€"]);
 }
 
 #[test]
 fn compressed_cp1252_text_extracted() {
-    let f = text_doc(&[Piece { compressed: true, text: "caf\u{E9} 100\u{BD}\r".into() }], &[], 0);
+    let f = text_doc(
+        &[Piece {
+            compressed: true,
+            text: "caf\u{E9} 100\u{BD}\r".into(),
+        }],
+        &[],
+        0,
+    );
     let doc = read(&f).expect("opens");
     assert_eq!(body_texts(&doc), ["café 100½"]);
 }
@@ -211,9 +258,18 @@ fn compressed_cp1252_text_extracted() {
 fn multiple_pieces_and_encodings() {
     let f = text_doc(
         &[
-            Piece { compressed: false, text: "plain ".into() },
-            Piece { compressed: true, text: "mixed\u{E9} ".into() },
-            Piece { compressed: false, text: "end\r".into() },
+            Piece {
+                compressed: false,
+                text: "plain ".into(),
+            },
+            Piece {
+                compressed: true,
+                text: "mixed\u{E9} ".into(),
+            },
+            Piece {
+                compressed: false,
+                text: "end\r".into(),
+            },
         ],
         &[],
         0,
@@ -225,12 +281,26 @@ fn multiple_pieces_and_encodings() {
 #[test]
 fn special_characters_mapped() {
     let raw = "a\tb\u{B}c\u{C}d\u{E}e\u{1E}f\u{1F}g\r\u{13}field\u{14}result\u{15}\r";
-    let f = text_doc(&[Piece { compressed: false, text: raw.into() }], &[], 0);
+    let f = text_doc(
+        &[Piece {
+            compressed: false,
+            text: raw.into(),
+        }],
+        &[],
+        0,
+    );
     let doc = read(&f).expect("opens");
     // The field collapses to one anchor object; its instruction is hidden and its cached
     // result kept on the object.
-    assert_eq!(body_texts(&doc), ["a\tb\nc\u{C}d\u{E}e\u{2011}f\u{AD}g", "\u{FFFC}"]);
-    let p1 = doc.body.get(1).and_then(|b| b.as_para()).expect("field para");
+    assert_eq!(
+        body_texts(&doc),
+        ["a\tb\nc\u{C}d\u{E}e\u{2011}f\u{AD}g", "\u{FFFC}"]
+    );
+    let p1 = doc
+        .body
+        .get(1)
+        .and_then(|b| b.as_para())
+        .expect("field para");
     assert!(
         matches!(p1.objects.first(), Some(wordcraft_doc::para::InlineObject::Field { instr, result, .. }) if instr == "field" && result == "result"),
         "objects: {:?}",
@@ -240,14 +310,28 @@ fn special_characters_mapped() {
 
 #[test]
 fn empty_paragraphs_kept() {
-    let f = text_doc(&[Piece { compressed: false, text: "a\r\rb\r".into() }], &[], 0);
+    let f = text_doc(
+        &[Piece {
+            compressed: false,
+            text: "a\r\rb\r".into(),
+        }],
+        &[],
+        0,
+    );
     let doc = read(&f).expect("opens");
     assert_eq!(body_texts(&doc), ["a", "", "b"]);
 }
 
 #[test]
 fn empty_document_gets_a_paragraph() {
-    let f = text_doc(&[Piece { compressed: false, text: "".into() }], &[], 0);
+    let f = text_doc(
+        &[Piece {
+            compressed: false,
+            text: "".into(),
+        }],
+        &[],
+        0,
+    );
     let doc = read(&f).expect("opens");
     assert_eq!(doc.body.len(), 1);
 }
@@ -255,8 +339,14 @@ fn empty_document_gets_a_paragraph() {
 #[test]
 fn header_text_stays_out_of_body() {
     let f = text_doc(
-        &[Piece { compressed: false, text: "body\r".into() }],
-        &[Piece { compressed: false, text: "header\u{D}".into() }],
+        &[Piece {
+            compressed: false,
+            text: "body\r".into(),
+        }],
+        &[Piece {
+            compressed: false,
+            text: "header\u{D}".into(),
+        }],
         8, // ccpHdd covers the extra piece
     );
     let doc = read(&f).expect("opens");
@@ -265,7 +355,10 @@ fn header_text_stays_out_of_body() {
 
 #[test]
 fn clx_outside_table_rejected() {
-    let spec = FibSpec { pairs: vec![(33, 0x1000, 0x40)], ..Default::default() };
+    let spec = FibSpec {
+        pairs: vec![(33, 0x1000, 0x40)],
+        ..Default::default()
+    };
     let f = cfb_file(&[("WordDocument", &fib_bytes(&spec)), ("0Table", &[0u8; 16])]);
     assert!(matches!(read(&f), Err(super::DocbinError::Malformed(_))));
 }
@@ -274,7 +367,10 @@ fn clx_outside_table_rejected() {
 fn garbage_plcpcd_rejected() {
     let mut table = vec![0u8; CLX_AT as usize];
     table.extend_from_slice(&[0x02, 0x05, 0x00, 0x00, 0x00, 1, 2, 3, 4]); // lcb 5: not ≡ 1 mod 12
-    let spec = FibSpec { pairs: vec![(33, CLX_AT, 9)], ..Default::default() };
+    let spec = FibSpec {
+        pairs: vec![(33, CLX_AT, 9)],
+        ..Default::default()
+    };
     let f = cfb_file(&[("WordDocument", &fib_bytes(&spec)), ("0Table", &table)]);
     assert!(matches!(read(&f), Err(super::DocbinError::Malformed(m)) if m.contains("PlcPcd")));
 }
@@ -372,7 +468,14 @@ fn std_bytes(stk: u8, istd_base: u16, name: &str, papx: &[u8], chpx: &[u8]) -> V
 }
 
 /// One STD record with an explicit next-paragraph style ([MS-DOC] §2.9.260 StdfBase).
-fn std_bytes_next(stk: u8, istd_base: u16, istd_next: u16, name: &str, papx: &[u8], chpx: &[u8]) -> Vec<u8> {
+fn std_bytes_next(
+    stk: u8,
+    istd_base: u16,
+    istd_next: u16,
+    name: &str,
+    papx: &[u8],
+    chpx: &[u8],
+) -> Vec<u8> {
     let cupx = if stk == 1 { 2 } else { 1 };
     let mut base = vec![0u8; 10];
     // sti 0xFFF (user-defined) | flags
@@ -438,7 +541,12 @@ fn ffn_bytes(names: &[&str]) -> Vec<u8> {
 /// cchData and an FFN (39-byte header, NUL-terminated UTF-16 name, optional alternate name
 /// whose offset in characters is `ixchSzAlt`).
 fn ffn_bytes_alt(fonts: &[(&str, Option<&str>)]) -> Vec<u8> {
-    let utf16z = |s: &str| -> Vec<u8> { s.chars().chain(['\0']).flat_map(|c| (c as u16).to_le_bytes()).collect() };
+    let utf16z = |s: &str| -> Vec<u8> {
+        s.chars()
+            .chain(['\0'])
+            .flat_map(|c| (c as u16).to_le_bytes())
+            .collect()
+    };
     let mut v = (fonts.len() as u16).to_le_bytes().to_vec();
     v.extend_from_slice(&0u16.to_le_bytes()); // cbExtra
     for (name, alt) in fonts {
@@ -539,7 +647,13 @@ fn rich_doc(spec: &RichSpec) -> Vec<u8> {
 fn rich_doc_with(spec: &RichSpec, extra: &RichExtra) -> Vec<u8> {
     let text: String = spec.text.into();
     let ccp = text.chars().count() as u32;
-    let mut plc = plcpcd(&[Piece { compressed: false, text: text.clone() }], TEXT_FC);
+    let mut plc = plcpcd(
+        &[Piece {
+            compressed: false,
+            text: text.clone(),
+        }],
+        TEXT_FC,
+    );
     // The single Pcd is last: its Prm is the final two bytes.
     let n = plc.len();
     plc[n - 2..].copy_from_slice(&extra.prm.to_le_bytes());
@@ -557,7 +671,10 @@ fn rich_doc_with(spec: &RichSpec, extra: &RichExtra) -> Vec<u8> {
     let chpx_page_at = (TEXT_FC as usize + text.len() * 2).div_ceil(512) * 512;
     let papx_page_at = chpx_page_at + 512;
     let mut word = vec![0u8; TEXT_FC as usize];
-    word.extend_from_slice(&piece_bytes(&Piece { compressed: false, text: text.clone() }));
+    word.extend_from_slice(&piece_bytes(&Piece {
+        compressed: false,
+        text: text.clone(),
+    }));
     word.resize(chpx_page_at, 0);
     word.extend_from_slice(&chpx_fkp(&spec.chpx_runs, ccp));
     word.extend_from_slice(&papx_fkp(&spec.papx_entries));
@@ -567,17 +684,39 @@ fn rich_doc_with(spec: &RichSpec, extra: &RichExtra) -> Vec<u8> {
         .styles
         .iter()
         .enumerate()
-        .map(|(i, s)| std_bytes_next(s.0, s.1, extra.style_next.get(i).copied().unwrap_or(0x0FFF), s.2, &s.3, &s.4))
+        .map(|(i, s)| {
+            std_bytes_next(
+                s.0,
+                s.1,
+                extra.style_next.get(i).copied().unwrap_or(0x0FFF),
+                s.2,
+                &s.3,
+                &s.4,
+            )
+        })
         .collect();
     let stsh = stsh_bytes(&styles);
-    let fonts: Vec<(&str, Option<&str>)> = spec.fonts.iter().enumerate().map(|(i, n)| (*n, extra.alt_fonts.get(i).copied().flatten())).collect();
+    let fonts: Vec<(&str, Option<&str>)> = spec
+        .fonts
+        .iter()
+        .enumerate()
+        .map(|(i, n)| (*n, extra.alt_fonts.get(i).copied().flatten()))
+        .collect();
     let ffn = ffn_bytes_alt(&fonts);
     let clx_at = 0x40;
     let bins_at = clx_at + clx.len();
-    let plcf_chpx =
-        [0u32.to_le_bytes().as_slice(), fc_of(0x3FF0_0000).to_le_bytes().as_slice(), ((chpx_page_at / 512) as u32).to_le_bytes().as_slice()].concat();
-    let plcf_papx =
-        [0u32.to_le_bytes().as_slice(), fc_of(0x3FF0_0000).to_le_bytes().as_slice(), ((papx_page_at / 512) as u32).to_le_bytes().as_slice()].concat();
+    let plcf_chpx = [
+        0u32.to_le_bytes().as_slice(),
+        fc_of(0x3FF0_0000).to_le_bytes().as_slice(),
+        ((chpx_page_at / 512) as u32).to_le_bytes().as_slice(),
+    ]
+    .concat();
+    let plcf_papx = [
+        0u32.to_le_bytes().as_slice(),
+        fc_of(0x3FF0_0000).to_le_bytes().as_slice(),
+        ((papx_page_at / 512) as u32).to_le_bytes().as_slice(),
+    ]
+    .concat();
     let mut table = vec![0u8; clx_at];
     table.extend_from_slice(&clx);
     let chpx_bins_at = table.len();
@@ -608,7 +747,10 @@ fn rich_doc_with(spec: &RichSpec, extra: &RichExtra) -> Vec<u8> {
 }
 
 fn para0(doc: &wordcraft_doc::Document) -> wordcraft_doc::Paragraph {
-    doc.body.first().and_then(|b| b.as_para().cloned()).unwrap_or_default()
+    doc.body
+        .first()
+        .and_then(|b| b.as_para().cloned())
+        .unwrap_or_default()
 }
 
 #[test]
@@ -619,7 +761,7 @@ fn character_formatting_applied() {
         fonts: vec!["Times New Roman", "Arial"],
         chpx_runs: vec![
             (0, Vec::new()),
-            (6, grpprl(&[(0x0835, &[0x01])])),                     // bold
+            (6, grpprl(&[(0x0835, &[0x01])])), // bold
             (11, grpprl(&[(0x0835, &[0x01]), (0x2A42, &[0x06])])), // bold + red (ico 6)
         ],
         papx_entries: vec![(0, 0, Vec::new())],
@@ -628,9 +770,23 @@ fn character_formatting_applied() {
     let p = para0(&doc);
     assert_eq!(p.text, "plain bold red");
     // runs: plain(0..6) bold(6..11) bold+red(11..16)
-    assert!(p.runs.get(1).is_some_and(|r| r.props.bold == Some(true)), "run 1 bold: {:?}", p.runs);
-    assert!(p.runs.get(2).is_some_and(|r| r.props.bold == Some(true)), "run 2 bold+red: {:?}", p.runs);
-    assert!(p.runs.get(2).is_some_and(|r| matches!(r.props.color, Some(wordcraft_doc::props::TextColor::Rgb(_)))), "run 2 red");
+    assert!(
+        p.runs.get(1).is_some_and(|r| r.props.bold == Some(true)),
+        "run 1 bold: {:?}",
+        p.runs
+    );
+    assert!(
+        p.runs.get(2).is_some_and(|r| r.props.bold == Some(true)),
+        "run 2 bold+red: {:?}",
+        p.runs
+    );
+    assert!(
+        p.runs.get(2).is_some_and(|r| matches!(
+            r.props.color,
+            Some(wordcraft_doc::props::TextColor::Rgb(_))
+        )),
+        "run 2 red"
+    );
     assert!(p.runs.first().is_some_and(|r| r.props.bold.is_none()));
 }
 
@@ -639,17 +795,41 @@ fn font_and_size_from_style_and_direct() {
     let spec = RichSpec {
         text: "Hello\r",
         styles: vec![
-            (1, 0x0FFF, "Normal", Vec::new(), grpprl(&[(0x4A43, &24u16.to_le_bytes())])), // 12pt
-            (2, 0x0FFF, "Emphasis", Vec::new(), grpprl(&[(0x4A4F, &1u16.to_le_bytes())])), // Arial
+            (
+                1,
+                0x0FFF,
+                "Normal",
+                Vec::new(),
+                grpprl(&[(0x4A43, &24u16.to_le_bytes())]),
+            ), // 12pt
+            (
+                2,
+                0x0FFF,
+                "Emphasis",
+                Vec::new(),
+                grpprl(&[(0x4A4F, &1u16.to_le_bytes())]),
+            ), // Arial
         ],
         fonts: vec!["Times New Roman", "Arial"],
         chpx_runs: vec![(0, grpprl(&[(0x4A4F, &1u16.to_le_bytes())]))],
         papx_entries: vec![(0, 0, Vec::new())],
     };
     let doc = read(&rich_doc(&spec)).expect("opens");
-    assert!(doc.styles.styles.iter().any(|s| s.name == "Normal" && s.chr.size == Some(12.0)), "Normal 12pt");
+    assert!(
+        doc.styles
+            .styles
+            .iter()
+            .any(|s| s.name == "Normal" && s.chr.size == Some(12.0)),
+        "Normal 12pt"
+    );
     let p = para0(&doc);
-    assert!(p.runs.first().is_some_and(|r| r.props.font.as_deref() == Some("Arial")), "run font: {:?}", p.runs);
+    assert!(
+        p.runs
+            .first()
+            .is_some_and(|r| r.props.font.as_deref() == Some("Arial")),
+        "run font: {:?}",
+        p.runs
+    );
 }
 
 #[test]
@@ -658,15 +838,32 @@ fn paragraph_props_and_heading_style() {
         text: "centered\rplain\r",
         styles: vec![
             (1, 0x0FFF, "Normal", Vec::new(), Vec::new()),
-            (1, 0, "heading 1", grpprl(&[(0x2461, &[0x01, 0x00])]), Vec::new()), // centered
+            (
+                1,
+                0,
+                "heading 1",
+                grpprl(&[(0x2461, &[0x01, 0x00])]),
+                Vec::new(),
+            ), // centered
         ],
         fonts: vec!["Times New Roman"],
         chpx_runs: vec![(0, Vec::new())],
-        papx_entries: vec![(0, 1, Vec::new()), (9, 0, grpprl(&[(0x845E, &720u16.to_le_bytes())]))],
+        papx_entries: vec![
+            (0, 1, Vec::new()),
+            (9, 0, grpprl(&[(0x845E, &720u16.to_le_bytes())])),
+        ],
     };
     let doc = read(&rich_doc(&spec)).expect("opens");
-    let heading = doc.styles.styles.iter().find(|s| s.name == "Heading 1").expect("style");
-    assert_eq!(heading.para.align, Some(wordcraft_doc::props::Align::Center));
+    let heading = doc
+        .styles
+        .styles
+        .iter()
+        .find(|s| s.name == "Heading 1")
+        .expect("style");
+    assert_eq!(
+        heading.para.align,
+        Some(wordcraft_doc::props::Align::Center)
+    );
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
     assert_eq!(p0.props.style.as_deref(), Some("Heading 1"));
     assert_eq!(heading.para.outline_level, Some(0));
@@ -689,24 +886,50 @@ fn first_line_indent_chars_and_exact_line_spacing() {
         fonts: vec!["Times New Roman"],
         chpx_runs: vec![(0, Vec::new())],
         papx_entries: vec![
-            (0, 0, grpprl(&[(0x8460, &480i16.to_le_bytes()), (0x4457, &200i16.to_le_bytes()), (0x6412, &multiple)])),
+            (
+                0,
+                0,
+                grpprl(&[
+                    (0x8460, &480i16.to_le_bytes()),
+                    (0x4457, &200i16.to_le_bytes()),
+                    (0x6412, &multiple),
+                ]),
+            ),
             (9, 0, grpprl(&[(0x6412, &exact)])),
             (15, 0, grpprl(&[(0x8411, &(-360i16).to_le_bytes())])),
         ],
     };
     let doc = read(&rich_doc(&spec)).expect("opens");
-    let para = |i: usize| doc.body.get(i).and_then(|b| b.as_para()).expect("para").props.clone();
+    let para = |i: usize| {
+        doc.body
+            .get(i)
+            .and_then(|b| b.as_para())
+            .expect("para")
+            .props
+            .clone()
+    };
     let p0 = para(0);
-    assert_eq!((p0.indent_first, p0.indent_first_chars), (Some(24.0), Some(2.0)));
-    assert_eq!(p0.line_spacing, Some(wordcraft_doc::props::LineSpacing::Multiple(1.5)));
-    assert_eq!(para(1).line_spacing, Some(wordcraft_doc::props::LineSpacing::Exactly(20.0)));
+    assert_eq!(
+        (p0.indent_first, p0.indent_first_chars),
+        (Some(24.0), Some(2.0))
+    );
+    assert_eq!(
+        p0.line_spacing,
+        Some(wordcraft_doc::props::LineSpacing::Multiple(1.5))
+    );
+    assert_eq!(
+        para(1).line_spacing,
+        Some(wordcraft_doc::props::LineSpacing::Exactly(20.0))
+    );
     assert_eq!(para(2).indent_first, Some(-18.0)); // sprmPDxaLeft1_80: a hanging indent
 }
 
 /// Local corpus (gitignored `plan/word/fixtures`): real files must open with text and styles.
 #[test]
 fn corpus_files_open() {
-    let Some(dir) = std::env::var_os("WORDCRAFT_DOCBIN_FIXTURES") else { return };
+    let Some(dir) = std::env::var_os("WORDCRAFT_DOCBIN_FIXTURES") else {
+        return;
+    };
     let mut checked = 0;
     if let Ok(entries) = std::fs::read_dir(&dir) {
         for e in entries.flatten() {
@@ -760,26 +983,38 @@ struct StructSpec {
 fn struct_doc(spec: &StructSpec) -> Vec<u8> {
     let text: String = spec.text.into();
     let ccp = text.chars().count() as u32;
-    let mut all: Vec<Piece> = vec![Piece { compressed: false, text: text.clone() }];
+    let mut all: Vec<Piece> = vec![Piece {
+        compressed: false,
+        text: text.clone(),
+    }];
     let mut story_ends = Vec::new();
     let mut ftn_len = 0u32;
     for s in &spec.note_stories {
         let t: String = (*s).into();
         ftn_len += t.chars().count() as u32;
-        all.push(Piece { compressed: false, text: t });
+        all.push(Piece {
+            compressed: false,
+            text: t,
+        });
     }
     let mut hdd_len = 0u32;
     for s in &spec.header_stories {
         let t: String = (*s).into();
         hdd_len += t.chars().count() as u32;
         story_ends.push(hdd_len);
-        all.push(Piece { compressed: false, text: t });
+        all.push(Piece {
+            compressed: false,
+            text: t,
+        });
     }
     let mut edn_len = 0u32;
     for s in &spec.endnote_stories {
         let t: String = (*s).into();
         edn_len += t.chars().count() as u32;
-        all.push(Piece { compressed: false, text: t });
+        all.push(Piece {
+            compressed: false,
+            text: t,
+        });
     }
     let plc = plcpcd(&all, TEXT_FC);
     let mut clx = vec![0x02u8];
@@ -828,7 +1063,11 @@ fn struct_doc(spec: &StructSpec) -> Vec<u8> {
     // slot 1 (odd header): the story, when present
     let has_story = !spec.header_stories.is_empty();
     if has_story {
-        cp += spec.header_stories.iter().map(|s| s.chars().count() as u32).sum::<u32>();
+        cp += spec
+            .header_stories
+            .iter()
+            .map(|s| s.chars().count() as u32)
+            .sum::<u32>();
     }
     plcf_hdd.extend_from_slice(&cp.to_le_bytes());
     // remaining slots: empty
@@ -840,12 +1079,20 @@ fn struct_doc(spec: &StructSpec) -> Vec<u8> {
     let mut table = vec![0u8; clx_at];
     table.extend_from_slice(&clx);
     let chpx_bins_at = table.len();
-    let plcf_chpx =
-        [0u32.to_le_bytes().as_slice(), fc_of(0x3FF0_0000).to_le_bytes().as_slice(), ((chpx_page_at / 512) as u32).to_le_bytes().as_slice()].concat();
+    let plcf_chpx = [
+        0u32.to_le_bytes().as_slice(),
+        fc_of(0x3FF0_0000).to_le_bytes().as_slice(),
+        ((chpx_page_at / 512) as u32).to_le_bytes().as_slice(),
+    ]
+    .concat();
     table.extend_from_slice(&plcf_chpx);
     let papx_bins_at = table.len();
-    let plcf_papx =
-        [0u32.to_le_bytes().as_slice(), fc_of(0x3FF0_0000).to_le_bytes().as_slice(), ((papx_page_at / 512) as u32).to_le_bytes().as_slice()].concat();
+    let plcf_papx = [
+        0u32.to_le_bytes().as_slice(),
+        fc_of(0x3FF0_0000).to_le_bytes().as_slice(),
+        ((papx_page_at / 512) as u32).to_le_bytes().as_slice(),
+    ]
+    .concat();
     table.extend_from_slice(&plcf_papx);
     let sed_at = table.len();
     table.extend_from_slice(&plcf_sed);
@@ -885,7 +1132,14 @@ fn struct_doc(spec: &StructSpec) -> Vec<u8> {
         pairs.push((74, lfo_at as u32, spec.plf_lfo.len() as u32));
     }
     pairs.extend(extra_at);
-    let spec_fib = FibSpec { ccp_text: ccp, ccp_ftn: ftn_len, ccp_hdd: hdd_len, ccp_edn: edn_len, pairs, ..Default::default() };
+    let spec_fib = FibSpec {
+        ccp_text: ccp,
+        ccp_ftn: ftn_len,
+        ccp_hdd: hdd_len,
+        ccp_edn: edn_len,
+        pairs,
+        ..Default::default()
+    };
     let fib = fib_bytes(&spec_fib);
     word[..fib.len()].copy_from_slice(&fib);
     word.extend(std::iter::repeat_n(0, first_sepx - word.len()));
@@ -895,7 +1149,11 @@ fn struct_doc(spec: &StructSpec) -> Vec<u8> {
     if spec.data_stream.is_empty() {
         cfb_file(&[("WordDocument", &word), ("0Table", &table)])
     } else {
-        cfb_file(&[("WordDocument", &word), ("0Table", &table), ("Data", &spec.data_stream)])
+        cfb_file(&[
+            ("WordDocument", &word),
+            ("0Table", &table),
+            ("Data", &spec.data_stream),
+        ])
     }
 }
 
@@ -904,7 +1162,14 @@ fn section_props_parsed() {
     let spec = StructSpec {
         text: "a\rb\r",
         header_stories: vec![],
-        sections: vec![(2, grpprl(&[(0xB01F, &12240u16.to_le_bytes()), (0xB020, &15840u16.to_le_bytes()), (0xB021, &1440u16.to_le_bytes())]))],
+        sections: vec![(
+            2,
+            grpprl(&[
+                (0xB01F, &12240u16.to_le_bytes()),
+                (0xB020, &15840u16.to_le_bytes()),
+                (0xB021, &1440u16.to_le_bytes()),
+            ]),
+        )],
         chpx_runs: vec![(0, Vec::new())],
         papx_entries: vec![(0, 0, Vec::new()), (2, 0, Vec::new())],
         plf_lst: Vec::new(),
@@ -961,7 +1226,11 @@ fn header_story_becomes_part() {
     let doc = read(&struct_doc(&spec)).expect("opens");
     let id = doc.last_section.headers.default.expect("odd header part");
     let part = doc.parts.get(&id).expect("part");
-    assert!(part.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text.contains("Header text"))));
+    assert!(
+        part.blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text.contains("Header text")))
+    );
 }
 
 /// A `sprmTDefTable` Prl for `edges` twip boundaries and TC80s of 20 bytes per column,
@@ -1016,11 +1285,22 @@ fn table_assembled_from_marks() {
     assert_eq!(tbl.grid.len(), 2);
     assert_eq!(tbl.grid[0], 144.0); // 2880 twips = 144 pt
     assert_eq!(tbl.total_width(), 288.0);
-    let cell_text = |r: usize, c: usize| tbl.rows[r].cells[c].blocks.iter().filter_map(|b| b.as_para()).map(|p| p.text.clone()).collect::<String>();
+    let cell_text = |r: usize, c: usize| {
+        tbl.rows[r].cells[c]
+            .blocks
+            .iter()
+            .filter_map(|b| b.as_para())
+            .map(|p| p.text.clone())
+            .collect::<String>()
+    };
     assert_eq!(cell_text(0, 0), "a");
     assert_eq!(cell_text(0, 1), "b");
     assert_eq!(cell_text(1, 1), "d");
-    let last = doc.body.last().and_then(|b| b.as_para()).expect("tail para");
+    let last = doc
+        .body
+        .last()
+        .and_then(|b| b.as_para())
+        .expect("tail para");
     assert_eq!(last.text, "tail");
 }
 
@@ -1067,7 +1347,15 @@ fn table_merges_borders_shading() {
     let text = "a\u{7}b\u{7}c\u{7}d\u{7}e\u{7}\r";
     let ttp_base = || grpprl(&[(0x2416, &[0x01]), (0x2417, &[0x01])]);
     let mut row1: Vec<u8> = [ttp_base(), def3.clone(), h_merge].concat();
-    let mut row2: Vec<u8> = [ttp_base(), def2, borders, shd, vert_merge, grpprl(&[(0x9407, &(-400i16).to_le_bytes())])].concat();
+    let mut row2: Vec<u8> = [
+        ttp_base(),
+        def2,
+        borders,
+        shd,
+        vert_merge,
+        grpprl(&[(0x9407, &(-400i16).to_le_bytes())]),
+    ]
+    .concat();
     let in_tbl = grpprl(&[(0x2416, &[0x01])]);
     let spec = StructSpec {
         text,
@@ -1095,11 +1383,22 @@ fn table_merges_borders_shading() {
     // Row 1: three cell marks merged to two cells, the first spanning two columns.
     assert_eq!(tbl.rows[0].cells.len(), 2);
     assert_eq!(tbl.rows[0].cells[0].span(), 2);
-    let r0 = tbl.rows[0].cells[0].blocks.iter().filter_map(|b| b.as_para()).map(|p| p.text.clone()).collect::<String>();
+    let r0 = tbl.rows[0].cells[0]
+        .blocks
+        .iter()
+        .filter_map(|b| b.as_para())
+        .map(|p| p.text.clone())
+        .collect::<String>();
     assert_eq!(r0, "ab");
     // Row 2: shading, vertical-merge restart, exact height 20pt.
-    assert_eq!(tbl.rows[1].cells[0].props.shading, Some(wordcraft_doc::Rgb(255, 255, 0)));
-    assert_eq!(tbl.rows[1].cells[0].props.vmerge, wordcraft_doc::props::VMerge::Restart);
+    assert_eq!(
+        tbl.rows[1].cells[0].props.shading,
+        Some(wordcraft_doc::Rgb(255, 255, 0))
+    );
+    assert_eq!(
+        tbl.rows[1].cells[0].props.vmerge,
+        wordcraft_doc::props::VMerge::Restart
+    );
     assert_eq!(tbl.rows[1].props.height, Some(20.0));
     // Table borders from the first row that carries them: single 0.5pt black.
     let b = tbl.props.borders.expect("borders");
@@ -1121,7 +1420,11 @@ fn lvl(start: u32, nfc: u8, chars: &[u16], ph: bool) -> Vec<u8> {
         v[6] = 1; // rgbxchNums[0]: the placeholder sits at one-based offset 1
     }
     v[15] = 1; // a space follows the number text
-    let papx: Vec<u8> = [grpprl(&[(0x840F, &720u16.to_le_bytes())]), grpprl(&[(0x8411, &(-360i16).to_le_bytes())])].concat();
+    let papx: Vec<u8> = [
+        grpprl(&[(0x840F, &720u16.to_le_bytes())]),
+        grpprl(&[(0x8411, &(-360i16).to_le_bytes())]),
+    ]
+    .concat();
     v[25] = papx.len() as u8; // cbGrpprlPapx
     v.extend_from_slice(&papx);
     v.extend_from_slice(&(chars.len() as u16).to_le_bytes());
@@ -1165,14 +1468,26 @@ fn list_numbering_parsed() {
         .collect();
     let text = "one\rtwo\rplain\r";
     let listed = |off: bool| {
-        if off { grpprl(&[(0x460B, &[0x00, 0x00])]) } else { [grpprl(&[(0x260A, &[0x00])]), grpprl(&[(0x460B, &[0x01, 0x00])])].concat() }
+        if off {
+            grpprl(&[(0x460B, &[0x00, 0x00])])
+        } else {
+            [
+                grpprl(&[(0x260A, &[0x00])]),
+                grpprl(&[(0x460B, &[0x01, 0x00])]),
+            ]
+            .concat()
+        }
     };
     let spec = StructSpec {
         text,
         header_stories: vec![],
         sections: vec![(text.chars().count() as u32, Vec::new())],
         chpx_runs: vec![(0, Vec::new())],
-        papx_entries: vec![(0, 0, listed(false)), (4, 0, listed(false)), (8, 0, listed(true))],
+        papx_entries: vec![
+            (0, 0, listed(false)),
+            (4, 0, listed(false)),
+            (8, 0, listed(true)),
+        ],
         plf_lst: plf_lst(0x1000, false, &levels),
         plf_lfo: plf_lfo(0x1000),
         note_stories: vec![],
@@ -1190,9 +1505,20 @@ fn list_numbering_parsed() {
     assert_eq!(l0.hanging, 18.0);
     assert_eq!(l0.suffix, wordcraft_doc::numbering::LevelSuffix::Space);
     // Paragraphs 1-2 are in the list, paragraph 3 is not.
-    let n = |i: usize| doc.body.get(i).and_then(|b| b.as_para()).and_then(|p| p.props.numbering);
-    assert_eq!(n(0), Some(wordcraft_doc::props::NumRef { num: 1, level: 0 }));
-    assert_eq!(n(1), Some(wordcraft_doc::props::NumRef { num: 1, level: 0 }));
+    let n = |i: usize| {
+        doc.body
+            .get(i)
+            .and_then(|b| b.as_para())
+            .and_then(|p| p.props.numbering)
+    };
+    assert_eq!(
+        n(0),
+        Some(wordcraft_doc::props::NumRef { num: 1, level: 0 })
+    );
+    assert_eq!(
+        n(1),
+        Some(wordcraft_doc::props::NumRef { num: 1, level: 0 })
+    );
     assert_eq!(n(2), None);
     // The numbering produces labels through the shared counter.
     let mut c = wordcraft_doc::numbering::Counters::default();
@@ -1204,9 +1530,15 @@ fn list_numbering_parsed() {
 fn structured_doc() -> Vec<u8> {
     let def2 = t_def_table(&[0, 2880, 5760]);
     let mut row: Vec<u8> = [grpprl(&[(0x2416, &[0x01]), (0x2417, &[0x01])]), def2].concat();
-    let listed = [grpprl(&[(0x260A, &[0x00])]), grpprl(&[(0x460B, &[0x01, 0x00])])].concat();
+    let listed = [
+        grpprl(&[(0x260A, &[0x00])]),
+        grpprl(&[(0x460B, &[0x01, 0x00])]),
+    ]
+    .concat();
     let text = "Intro\ra\u{7}b\u{7}first\rsecond\r";
-    let levels: Vec<Vec<u8>> = (0..9).map(|_| lvl(1, 0x00, &[0x0000, 0x002E], true)).collect();
+    let levels: Vec<Vec<u8>> = (0..9)
+        .map(|_| lvl(1, 0x00, &[0x0000, 0x002E], true))
+        .collect();
     let spec = StructSpec {
         text,
         header_stories: vec!["Running head\r\r"],
@@ -1214,7 +1546,10 @@ fn structured_doc() -> Vec<u8> {
             (6, Vec::new()), // section 1: the intro paragraph; its header story is the odd header
             (
                 text.chars().count() as u32,
-                grpprl(&[(0xB01F, &15840u16.to_le_bytes()), (0xB020, &12240u16.to_le_bytes())]), // landscape letter
+                grpprl(&[
+                    (0xB01F, &15840u16.to_le_bytes()),
+                    (0xB020, &12240u16.to_le_bytes()),
+                ]), // landscape letter
             ),
         ],
         chpx_runs: vec![(0, Vec::new())],
@@ -1239,25 +1574,56 @@ fn structured_doc() -> Vec<u8> {
 fn combined_structure_document() {
     let doc = read(&structured_doc()).expect("opens");
     // Body shape: intro paragraph, table, two list paragraphs.
-    assert!(doc.body.first().and_then(|b| b.as_para()).is_some_and(|p| p.text == "Intro"), "intro para");
+    assert!(
+        doc.body
+            .first()
+            .and_then(|b| b.as_para())
+            .is_some_and(|p| p.text == "Intro"),
+        "intro para"
+    );
     let tbl = doc.body.iter().find_map(|b| b.as_table()).expect("table");
     assert_eq!(tbl.rows.len(), 1);
     assert_eq!(tbl.rows[0].cells.len(), 2);
-    let texts: Vec<String> = doc.plain_text(wordcraft_doc::StoryRef::Body).split('\n').map(str::to_string).collect();
-    assert!(texts.contains(&"first".to_string()) && texts.contains(&"second".to_string()), "list text present: {texts:?}");
+    let texts: Vec<String> = doc
+        .plain_text(wordcraft_doc::StoryRef::Body)
+        .split('\n')
+        .map(str::to_string)
+        .collect();
+    assert!(
+        texts.contains(&"first".to_string()) && texts.contains(&"second".to_string()),
+        "list text present: {texts:?}"
+    );
     // Section 1 is attached to the intro paragraph and owns the header story; the final
     // section is landscape.
-    let sec1 = doc.body.first().and_then(|b| b.as_para()).and_then(|p| p.section.clone()).expect("section on intro");
+    let sec1 = doc
+        .body
+        .first()
+        .and_then(|b| b.as_para())
+        .and_then(|p| p.section.clone())
+        .expect("section on intro");
     let h = sec1.headers.default.expect("header part");
-    assert!(doc.parts.get(&h).is_some_and(|p| p.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text.contains("Running head")))));
+    assert!(doc.parts.get(&h).is_some_and(|p| {
+        p.blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text.contains("Running head")))
+    }));
     assert_eq!(doc.last_section.page_w, 792.0);
     assert_eq!(doc.last_section.page_h, 612.0);
     assert!(doc.last_section.landscape);
     // The whole document round-trips through JSON (the wcraft.json shape).
     let json = serde_json::to_value(&doc).expect("serialises");
-    assert!(json.get("body").is_some_and(|b| b.as_array().is_some_and(|a| !a.is_empty())));
-    assert!(json.get("numbering").is_some_and(|n| n.get("nums").is_some_and(|x| x.as_array().is_some_and(|a| !a.is_empty()))));
-    assert!(json.get("lastSection").is_some_and(|s| s.get("landscape") == Some(&serde_json::json!(true))));
+    assert!(
+        json.get("body")
+            .is_some_and(|b| b.as_array().is_some_and(|a| !a.is_empty()))
+    );
+    assert!(json.get("numbering").is_some_and(|n| {
+        n.get("nums")
+            .is_some_and(|x| x.as_array().is_some_and(|a| !a.is_empty()))
+    }));
+    assert!(
+        json.get("lastSection")
+            .is_some_and(|s| s.get("landscape") == Some(&serde_json::json!(true)))
+    );
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -1296,16 +1662,27 @@ fn footnote_reference_links_story_part() {
         note_stories: vec!["Note body\r"],
         // Pair 2 (PlcffndRef): the 0x02 sits at CP 3, auto-numbered. Pair 3 (PlcffndTxt):
         // one story spanning the whole footnote subdocument.
-        extra_pairs: vec![(2, plc(&[3, ccp], &1u16.to_le_bytes())), (3, plc(&[0, 10], &[]))],
+        extra_pairs: vec![
+            (2, plc(&[3, ccp], &1u16.to_le_bytes())),
+            (3, plc(&[0, 10], &[])),
+        ],
         ..structured_spec(text, ccp)
     };
     let doc = read(&struct_doc(&spec)).expect("opens");
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
     let note = p0.objects.first().expect("note ref object");
-    let wordcraft_doc::para::InlineObject::NoteRef { kind, id, .. } = note else { panic!("not a note: {note:?}") };
+    let wordcraft_doc::para::InlineObject::NoteRef { kind, id, .. } = note else {
+        panic!("not a note: {note:?}")
+    };
     assert_eq!(*kind, wordcraft_doc::para::NoteKind::Footnote);
     let part = doc.parts.get(id).expect("note part");
-    assert!(part.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text.contains("Note body"))), "note text: {:?}", part.blocks);
+    assert!(
+        part.blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text.contains("Note body"))),
+        "note text: {:?}",
+        part.blocks
+    );
     assert_eq!(part.kind, wordcraft_doc::PartKind::Footnote);
 }
 
@@ -1326,10 +1703,18 @@ fn endnote_reference_links_story_part() {
     };
     let doc = read(&struct_doc(&spec)).expect("opens");
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
-    let wordcraft_doc::para::InlineObject::NoteRef { kind, id, .. } = p0.objects.first().expect("note ref object") else { panic!("no note ref") };
+    let wordcraft_doc::para::InlineObject::NoteRef { kind, id, .. } =
+        p0.objects.first().expect("note ref object")
+    else {
+        panic!("no note ref")
+    };
     assert_eq!(*kind, wordcraft_doc::para::NoteKind::Endnote);
     let part = doc.parts.get(id).expect("endnote part");
-    assert!(part.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text.contains("Endnote body"))));
+    assert!(
+        part.blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text.contains("Endnote body")))
+    );
 }
 
 #[test]
@@ -1342,10 +1727,16 @@ fn fields_and_hyperlinks() {
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
     assert_eq!(p0.text, "Go site n\u{FFFC}.");
     // The hyperlink result run carries the target.
-    let linked = p0.runs.iter().find(|r| r.props.link.is_some()).expect("linked run");
+    let linked = p0
+        .runs
+        .iter()
+        .find(|r| r.props.link.is_some())
+        .expect("linked run");
     assert_eq!(linked.props.link.as_deref(), Some("http://x"));
     // The PAGE field became one object with its cached result.
-    let wordcraft_doc::para::InlineObject::Field { instr, result, .. } = p0.objects.first().expect("field object") else {
+    let wordcraft_doc::para::InlineObject::Field { instr, result, .. } =
+        p0.objects.first().expect("field object")
+    else {
         panic!("no field: {:?}", p0.objects)
     };
     assert_eq!(instr, "PAGE");
@@ -1358,7 +1749,11 @@ fn bookmarks_become_objects() {
     let ccp = text.chars().count() as u32;
     let spec = StructSpec {
         text,
-        extra_pairs: vec![(21, sttbf_bkmk(&["bm1"])), (22, plc(&[0, ccp], &[0, 0, 0, 0])), (23, plc(&[5, ccp], &[0, 0]))],
+        extra_pairs: vec![
+            (21, sttbf_bkmk(&["bm1"])),
+            (22, plc(&[0, ccp], &[0, 0, 0, 0])),
+            (23, plc(&[5, ccp], &[0, 0])),
+        ],
         ..structured_spec(text, ccp)
     };
     let doc = read(&struct_doc(&spec)).expect("opens");
@@ -1369,7 +1764,11 @@ fn bookmarks_become_objects() {
         "objects: {:?}",
         p0.objects
     );
-    assert!(matches!(p0.objects.get(1), Some(wordcraft_doc::para::InlineObject::BookmarkEnd { name }) if name == "bm1"), "objects: {:?}", p0.objects);
+    assert!(
+        matches!(p0.objects.get(1), Some(wordcraft_doc::para::InlineObject::BookmarkEnd { name }) if name == "bm1"),
+        "objects: {:?}",
+        p0.objects
+    );
     assert_eq!(p0.text, "\u{FFFC}Hello\u{FFFC} world");
 }
 
@@ -1388,11 +1787,18 @@ fn inline_png_picture() {
     picf[32..34].copy_from_slice(&1000u16.to_le_bytes()); // mx = 100%
     picf[34..36].copy_from_slice(&1000u16.to_le_bytes()); // my = 100%
     let data: Vec<u8> = [picf, png.clone()].concat();
-    let spec = StructSpec { text, data_stream: data, chpx_runs: vec![(0, grpprl(&[(0x6A03, &0u32.to_le_bytes())]))], ..structured_spec(text, ccp) };
+    let spec = StructSpec {
+        text,
+        data_stream: data,
+        chpx_runs: vec![(0, grpprl(&[(0x6A03, &0u32.to_le_bytes())]))],
+        ..structured_spec(text, ccp)
+    };
     let doc = read(&struct_doc(&spec)).expect("opens");
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
     assert_eq!(p0.text, "Pic\u{FFFC}!");
-    let wordcraft_doc::para::InlineObject::Image { media, w, h, .. } = p0.objects.first().expect("image object") else {
+    let wordcraft_doc::para::InlineObject::Image { media, w, h, .. } =
+        p0.objects.first().expect("image object")
+    else {
         panic!("no image: {:?}", p0.objects)
     };
     assert_eq!((*w, *h), (72.0, 36.0)); // 1440 × 720 twips
@@ -1473,7 +1879,24 @@ fn huge_story_ranges_are_clamped_to_their_subdocument() {
     let text = "A\u{2}\u{2}\r";
     let ccp = text.chars().count() as u32;
     let big = 4_000_000_000u32;
-    let hdd = plc(&[0, 0, 0, 0, 0, 0, 0, 0, big, 0xFFFF_FFF0, 0xFFFF_FFFF, 0xFFFF_FFFF, 0xFFFF_FFFF], &[]);
+    let hdd = plc(
+        &[
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            big,
+            0xFFFF_FFF0,
+            0xFFFF_FFFF,
+            0xFFFF_FFFF,
+            0xFFFF_FFFF,
+        ],
+        &[],
+    );
     let spec = StructSpec {
         text,
         note_stories: vec!["Note body\r"],
@@ -1490,14 +1913,43 @@ fn huge_story_ranges_are_clamped_to_their_subdocument() {
     };
     let doc = read(&struct_doc(&spec)).expect("opens");
     let all = all_text(&doc);
-    assert!(!all.contains('\u{FFFD}'), "replacement characters: {} bytes of text", all.len());
+    assert!(
+        !all.contains('\u{FFFD}'),
+        "replacement characters: {} bytes of text",
+        all.len()
+    );
     assert!(all.len() < 200, "text grew to {} bytes", all.len());
-    let header = doc.last_section.headers.default.and_then(|id| doc.parts.get(&id)).expect("header part");
-    assert!(header.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text == "Head")), "header: {:?}", header.blocks);
-    let footnote = doc.parts.values().find(|p| p.kind == wordcraft_doc::PartKind::Footnote).expect("footnote part");
-    assert!(footnote.blocks.iter().any(|b| b.as_para().is_some_and(|p| p.text == "Note body")));
+    let header = doc
+        .last_section
+        .headers
+        .default
+        .and_then(|id| doc.parts.get(&id))
+        .expect("header part");
+    assert!(
+        header
+            .blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text == "Head")),
+        "header: {:?}",
+        header.blocks
+    );
+    let footnote = doc
+        .parts
+        .values()
+        .find(|p| p.kind == wordcraft_doc::PartKind::Footnote)
+        .expect("footnote part");
+    assert!(
+        footnote
+            .blocks
+            .iter()
+            .any(|b| b.as_para().is_some_and(|p| p.text == "Note body"))
+    );
     // The endnote story starts past the endnote subdocument: nothing to read.
-    assert!(!doc.parts.values().any(|p| p.kind == wordcraft_doc::PartKind::Endnote));
+    assert!(
+        !doc.parts
+            .values()
+            .any(|p| p.kind == wordcraft_doc::PartKind::Endnote)
+    );
 }
 
 /// A document whose piece table is given raw (cps + one Pcd per piece), with `text` bytes
@@ -1507,7 +1959,13 @@ fn raw_piece_doc(cps: &[u32], fcs: &[u32], text: &[u8], ccp_text: u32) -> Vec<u8
 }
 
 /// [`raw_piece_doc`] with extra raw FIB (pair, fc, lcb) entries.
-fn raw_piece_doc_with(cps: &[u32], fcs: &[u32], text: &[u8], ccp_text: u32, extra: &[(usize, u32, u32)]) -> Vec<u8> {
+fn raw_piece_doc_with(
+    cps: &[u32],
+    fcs: &[u32],
+    text: &[u8],
+    ccp_text: u32,
+    extra: &[(usize, u32, u32)],
+) -> Vec<u8> {
     let mut plc = Vec::new();
     for c in cps {
         plc.extend_from_slice(&c.to_le_bytes());
@@ -1526,7 +1984,11 @@ fn raw_piece_doc_with(cps: &[u32], fcs: &[u32], text: &[u8], ccp_text: u32, extr
     word.extend_from_slice(text);
     let mut pairs = vec![(33, CLX_AT, clx.len() as u32)];
     pairs.extend_from_slice(extra);
-    let spec = FibSpec { ccp_text, pairs, ..Default::default() };
+    let spec = FibSpec {
+        ccp_text,
+        pairs,
+        ..Default::default()
+    };
     let fib = fib_bytes(&spec);
     word[..fib.len()].copy_from_slice(&fib);
     cfb_file(&[("WordDocument", &word), ("0Table", &table)])
@@ -1555,7 +2017,12 @@ fn walk_stops_at_the_last_piece() {
 fn inverted_and_gapped_pieces_are_skipped() {
     // Piece 0 is inverted (CPs 5 → 2), piece 1 reads "ok\r", piece 2 points past the stream.
     let base = (2 * TEXT_FC) | 0x4000_0000;
-    let f = raw_piece_doc(&[5, 2, 5, 50_000_000], &[base, base, 0x3FFF_0000], b"ok\r", 50_000_000);
+    let f = raw_piece_doc(
+        &[5, 2, 5, 50_000_000],
+        &[base, base, 0x3FFF_0000],
+        b"ok\r",
+        50_000_000,
+    );
     let doc = read(&f).expect("opens");
     let all = all_text(&doc);
     assert!(!all.contains('\u{FFFD}'));
@@ -1570,13 +2037,19 @@ fn many_pieces_walk_in_n_log_n() {
     let mut text = vec![b'x'; n - 1];
     text.push(b'\r');
     let cps: Vec<u32> = (0..=n as u32).collect();
-    let fcs: Vec<u32> = (0..n as u32).map(|i| (2 * (TEXT_FC + i)) | 0x4000_0000).collect();
+    let fcs: Vec<u32> = (0..n as u32)
+        .map(|i| (2 * (TEXT_FC + i)) | 0x4000_0000)
+        .collect();
     let started = std::time::Instant::now();
     let doc = read(&raw_piece_doc(&cps, &fcs, &text, n as u32)).expect("opens");
     let body = body_texts(&doc);
     assert_eq!(body.len(), 1);
     assert_eq!(body[0].len(), n - 1);
-    assert!(started.elapsed() < std::time::Duration::from_secs(30), "took {:?}", started.elapsed());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(30),
+        "took {:?}",
+        started.elapsed()
+    );
 }
 
 #[test]
@@ -1657,7 +2130,11 @@ fn list_and_lfo_offsets_near_u32_max_are_safe() {
 }
 
 /// A StructSpec with one section (`sepx`) over `text`, no lists, notes or extras.
-fn one_section(text: &'static str, sepx: Vec<u8>, papx_entries: Vec<(u32, u16, Vec<u8>)>) -> StructSpec {
+fn one_section(
+    text: &'static str,
+    sepx: Vec<u8>,
+    papx_entries: Vec<(u32, u16, Vec<u8>)>,
+) -> StructSpec {
     StructSpec {
         text,
         header_stories: vec![],
@@ -1679,7 +2156,10 @@ fn piece_prm_character_formatting_applied() {
     // 1-7 plus a one-byte operand in bits 8-15 (isprm 0x55 is sprmCFBold); Prm1 = a
     // zero-based Prc index in bits 1-15. Piece properties apply after the CHPX.
     let bold = grpprl(&[(0x0835, &[0x01])]);
-    let prcs = vec![bold.clone(), [grpprl(&[(0x0836, &[0x01])]), bold.clone()].concat()];
+    let prcs = vec![
+        bold.clone(),
+        [grpprl(&[(0x0836, &[0x01])]), bold.clone()].concat(),
+    ];
     let run = |prm: u16, chpx: Vec<u8>| {
         let spec = RichSpec {
             text: "Bold\r",
@@ -1688,15 +2168,38 @@ fn piece_prm_character_formatting_applied() {
             chpx_runs: vec![(0, chpx)],
             papx_entries: vec![(0, 0, Vec::new())],
         };
-        let doc = read(&rich_doc_with(&spec, &RichExtra { prcs: prcs.clone(), prm, ..Default::default() })).expect("opens");
+        let doc = read(&rich_doc_with(
+            &spec,
+            &RichExtra {
+                prcs: prcs.clone(),
+                prm,
+                ..Default::default()
+            },
+        ))
+        .expect("opens");
         let p = para0(&doc);
         assert_eq!(p.text, "Bold");
-        p.runs.first().map(|r| (r.props.bold, r.props.italic)).unwrap_or_default()
+        p.runs
+            .first()
+            .map(|r| (r.props.bold, r.props.italic))
+            .unwrap_or_default()
     };
     assert_eq!(run(0x01AA, Vec::new()), (Some(true), None), "Prm0 bold on");
-    assert_eq!(run(0x0001, Vec::new()), (Some(true), None), "Prm1 → Prc 0 (bold)");
-    assert_eq!(run(0x0003, Vec::new()), (Some(true), Some(true)), "Prm1 → Prc 1 (italic + bold)");
-    assert_eq!(run(0x00AA, bold.clone()).0, Some(false), "Prm0 bold off overrides the CHPX");
+    assert_eq!(
+        run(0x0001, Vec::new()),
+        (Some(true), None),
+        "Prm1 → Prc 0 (bold)"
+    );
+    assert_eq!(
+        run(0x0003, Vec::new()),
+        (Some(true), Some(true)),
+        "Prm1 → Prc 1 (italic + bold)"
+    );
+    assert_eq!(
+        run(0x00AA, bold.clone()).0,
+        Some(false),
+        "Prm0 bold off overrides the CHPX"
+    );
     assert_eq!(run(0x0000, Vec::new()), (None, None), "no Prm: plain");
     assert_eq!(run(0x0000, bold).0, Some(true), "CHPX bold alone");
 }
@@ -1705,9 +2208,19 @@ fn piece_prm_character_formatting_applied() {
 fn section_break_kinds_imported() {
     // #459. SBkcOperand: 0 continuous, 1 new column, 2 new page, 3 even page, 4 odd page.
     use wordcraft_doc::section::SectionStart;
-    let kinds = [SectionStart::Continuous, SectionStart::NextColumn, SectionStart::NextPage, SectionStart::EvenPage, SectionStart::OddPage];
+    let kinds = [
+        SectionStart::Continuous,
+        SectionStart::NextColumn,
+        SectionStart::NextPage,
+        SectionStart::EvenPage,
+        SectionStart::OddPage,
+    ];
     for (bkc, want) in kinds.into_iter().enumerate() {
-        let spec = one_section("Text\r", grpprl(&[(0x3009, &[bkc as u8])]), vec![(0, 0, Vec::new())]);
+        let spec = one_section(
+            "Text\r",
+            grpprl(&[(0x3009, &[bkc as u8])]),
+            vec![(0, 0, Vec::new())],
+        );
         let doc = read(&struct_doc(&spec)).expect("opens");
         assert_eq!(doc.last_section.start, want, "sprmSBkc {bkc}");
     }
@@ -1725,27 +2238,75 @@ fn explicit_section_orientation_imported() {
         }
         prls.push((0xB01F, &w));
         prls.push((0xB020, &h));
-        let doc = read(&struct_doc(&one_section("Text\r", grpprl(&prls), vec![(0, 0, Vec::new())]))).expect("opens");
-        (doc.last_section.landscape, doc.last_section.page_w, doc.last_section.page_h)
+        let doc = read(&struct_doc(&one_section(
+            "Text\r",
+            grpprl(&prls),
+            vec![(0, 0, Vec::new())],
+        )))
+        .expect("opens");
+        (
+            doc.last_section.landscape,
+            doc.last_section.page_w,
+            doc.last_section.page_h,
+        )
     };
-    assert_eq!(page(12240, 15840, Some(1)), (false, 612.0, 792.0), "explicit portrait");
-    assert_eq!(page(15840, 12240, Some(2)), (true, 792.0, 612.0), "explicit landscape");
-    assert_eq!(page(12240, 15840, None), (false, 612.0, 792.0), "inferred portrait");
-    assert_eq!(page(15840, 12240, None), (true, 792.0, 612.0), "inferred landscape");
+    assert_eq!(
+        page(12240, 15840, Some(1)),
+        (false, 612.0, 792.0),
+        "explicit portrait"
+    );
+    assert_eq!(
+        page(15840, 12240, Some(2)),
+        (true, 792.0, 612.0),
+        "explicit landscape"
+    );
+    assert_eq!(
+        page(12240, 15840, None),
+        (false, 612.0, 792.0),
+        "inferred portrait"
+    );
+    assert_eq!(
+        page(15840, 12240, None),
+        (true, 792.0, 612.0),
+        "inferred landscape"
+    );
 }
 
 #[test]
 fn negative_list_reference_keeps_list_membership() {
     // #461. sprmPIlfo 0xF802-0xFFFF is the negation of a 1-based LFO index whose paragraph
     // keeps its own indents ([MS-DOC] §2.6.2); 0 and 0xF801 mean "not in a list".
-    let levels: Vec<Vec<u8>> = (0..9).map(|_| lvl(1, 0x00, &[0x0000, 0x002E], true)).collect();
-    let listed = |ilfo: u16| [grpprl(&[(0x260A, &[0x00]), (0x840F, &720u16.to_le_bytes())]), grpprl(&[(0x460B, &ilfo.to_le_bytes())])].concat();
+    let levels: Vec<Vec<u8>> = (0..9)
+        .map(|_| lvl(1, 0x00, &[0x0000, 0x002E], true))
+        .collect();
+    let listed = |ilfo: u16| {
+        [
+            grpprl(&[(0x260A, &[0x00]), (0x840F, &720u16.to_le_bytes())]),
+            grpprl(&[(0x460B, &ilfo.to_le_bytes())]),
+        ]
+        .concat()
+    };
     let text = "pos\rneg\rzero\rnone\r";
-    let mut spec = one_section(text, Vec::new(), vec![(0, 0, listed(0x0001)), (4, 0, listed(0xFFFF)), (8, 0, listed(0)), (13, 0, listed(0xF801))]);
+    let mut spec = one_section(
+        text,
+        Vec::new(),
+        vec![
+            (0, 0, listed(0x0001)),
+            (4, 0, listed(0xFFFF)),
+            (8, 0, listed(0)),
+            (13, 0, listed(0xF801)),
+        ],
+    );
     spec.plf_lst = plf_lst(0x1000, true, &levels[..1]);
     spec.plf_lfo = plf_lfo(0x1000);
     let doc = read(&struct_doc(&spec)).expect("opens");
-    let para = |i: usize| doc.body.get(i).and_then(|b| b.as_para()).map(|p| (p.props.numbering, p.props.indent_left)).unwrap_or_default();
+    let para = |i: usize| {
+        doc.body
+            .get(i)
+            .and_then(|b| b.as_para())
+            .map(|p| (p.props.numbering, p.props.indent_left))
+            .unwrap_or_default()
+    };
     let one = Some(wordcraft_doc::props::NumRef { num: 1, level: 0 });
     assert_eq!(para(0), (one, Some(36.0)), "0x0001");
     assert_eq!(para(1), (one, Some(36.0)), "0xFFFF = -1");
@@ -1761,7 +2322,13 @@ fn style_inherits_its_declared_base() {
         let spec = RichSpec {
             text: "Text\r",
             styles: vec![
-                (1, 0x0FFF, "Normal", Vec::new(), grpprl(&[(0x0835, &[0x01])])), // bold
+                (
+                    1,
+                    0x0FFF,
+                    "Normal",
+                    Vec::new(),
+                    grpprl(&[(0x0835, &[0x01])]),
+                ), // bold
                 (1, 0, "Derived", Vec::new(), Vec::new()),
                 (1, 1, "Grandchild", Vec::new(), grpprl(&[(0x0836, &[0x01])])), // italic
                 // A corrupt cycle must neither hang nor crash.
@@ -1772,15 +2339,29 @@ fn style_inherits_its_declared_base() {
             chpx_runs: vec![(0, Vec::new())],
             papx_entries: vec![(0, 1, Vec::new())],
         };
-        let extra = RichExtra { style_next: vec![0x0FFF, next, 0x0FFF, 0x0FFF, 0x0FFF], ..Default::default() };
+        let extra = RichExtra {
+            style_next: vec![0x0FFF, next, 0x0FFF, 0x0FFF, 0x0FFF],
+            ..Default::default()
+        };
         let doc = read(&rich_doc_with(&spec, &extra)).expect("opens");
-        let style = |name: &str| doc.styles.styles.iter().find(|s| s.name == name).cloned().expect("style");
+        let style = |name: &str| {
+            doc.styles
+                .styles
+                .iter()
+                .find(|s| s.name == name)
+                .cloned()
+                .expect("style")
+        };
         let derived = style("Derived");
         assert_eq!(derived.based_on.as_deref(), Some("Normal"), "next {next}");
         assert_eq!(derived.chr.bold, Some(true), "next {next}");
         let grand = style("Grandchild");
         assert_eq!(grand.based_on.as_deref(), Some("Derived"));
-        assert_eq!((grand.chr.bold, grand.chr.italic), (Some(true), Some(true)), "two-level chain");
+        assert_eq!(
+            (grand.chr.bold, grand.chr.italic),
+            (Some(true), Some(true)),
+            "two-level chain"
+        );
         assert_eq!(style("Normal").based_on, None);
         assert_eq!(para0(&doc).props.style.as_deref(), Some("Derived"));
     }
@@ -1795,12 +2376,30 @@ fn alternate_font_name_keeps_later_entries() {
             text: "ab\r",
             styles: vec![(1, 0x0FFF, "Normal", Vec::new(), Vec::new())],
             fonts: vec!["Arial", "Courier New"],
-            chpx_runs: vec![(0, grpprl(&[(0x4A4F, &0u16.to_le_bytes())])), (1, grpprl(&[(0x4A4F, &1u16.to_le_bytes())]))],
+            chpx_runs: vec![
+                (0, grpprl(&[(0x4A4F, &0u16.to_le_bytes())])),
+                (1, grpprl(&[(0x4A4F, &1u16.to_le_bytes())])),
+            ],
             papx_entries: vec![(0, 0, Vec::new())],
         };
-        let doc = read(&rich_doc_with(&spec, &RichExtra { alt_fonts: vec![alt, None], ..Default::default() })).expect("opens");
-        let fonts: Vec<Option<String>> = para0(&doc).runs.iter().map(|r| r.props.font.clone()).collect();
-        assert_eq!(fonts, [Some("Arial".to_string()), Some("Courier New".to_string())], "alt {alt:?}");
+        let doc = read(&rich_doc_with(
+            &spec,
+            &RichExtra {
+                alt_fonts: vec![alt, None],
+                ..Default::default()
+            },
+        ))
+        .expect("opens");
+        let fonts: Vec<Option<String>> = para0(&doc)
+            .runs
+            .iter()
+            .map(|r| r.props.font.clone())
+            .collect();
+        assert_eq!(
+            fonts,
+            [Some("Arial".to_string()), Some("Courier New".to_string())],
+            "alt {alt:?}"
+        );
     }
 }
 
@@ -1847,22 +2446,52 @@ fn tab_stops_read_from_styles_and_paragraphs() {
     let doc = read(&rich_doc(&spec)).expect("opens");
     let tabs = |i: usize| {
         let p = doc.body.get(i).and_then(|b| b.as_para()).expect("para");
-        doc.styles.resolve_para(&p.props).tabs.iter().map(|t| (t.pos, t.align, t.leader)).collect::<Vec<_>>()
+        doc.styles
+            .resolve_para(&p.props)
+            .tabs
+            .iter()
+            .map(|t| (t.pos, t.align, t.leader))
+            .collect::<Vec<_>>()
     };
     assert_eq!(
         tabs(0),
-        [(36.0, TabAlign::Left, TabLeader::None), (72.0, TabAlign::Bar, TabLeader::None), (468.0, TabAlign::Right, TabLeader::Dot)],
+        [
+            (36.0, TabAlign::Left, TabLeader::None),
+            (72.0, TabAlign::Bar, TabLeader::None),
+            (468.0, TabAlign::Right, TabLeader::Dot)
+        ],
         "the style's stops, less the removed one, plus the paragraph's"
     );
-    assert_eq!(tabs(1), [(144.0, TabAlign::Decimal, TabLeader::MiddleDot), (234.0, TabAlign::Center, TabLeader::None)], "sprmPChgTabs");
-    assert_eq!(doc.styles.styles.iter().find(|s| s.name == "Normal").and_then(|s| s.para.tabs.as_ref()).map(Vec::len), Some(2));
+    assert_eq!(
+        tabs(1),
+        [
+            (144.0, TabAlign::Decimal, TabLeader::MiddleDot),
+            (234.0, TabAlign::Center, TabLeader::None)
+        ],
+        "sprmPChgTabs"
+    );
+    assert_eq!(
+        doc.styles
+            .styles
+            .iter()
+            .find(|s| s.name == "Normal")
+            .and_then(|s| s.para.tabs.as_ref())
+            .map(Vec::len),
+        Some(2)
+    );
 }
 
 /// Hostile tab operands (counts past the end, more than 64 stops, cb 255) never panic and
 /// never swallow the sprms after them.
 #[test]
 fn hostile_tab_operands_are_safe() {
-    for operand in [vec![2u8, 200, 9], vec![0], vec![255, 1, 0x10, 0x00], vec![255, 3], vec![5, 0, 70, 0, 1, 2]] {
+    for operand in [
+        vec![2u8, 200, 9],
+        vec![0],
+        vec![255, 1, 0x10, 0x00],
+        vec![255, 3],
+        vec![5, 0, 70, 0, 1, 2],
+    ] {
         let papx = grpprl(&[(0xC615, &operand), (0x2403, &[1])]);
         let spec = RichSpec {
             text: "x\r",
@@ -1874,8 +2503,16 @@ fn hostile_tab_operands_are_safe() {
         let _ = read(&rich_doc(&spec));
     }
     let mut iter = crate::sprm::iter(&[0x15, 0xC6, 3, 0, 0, 0, 0x03, 0x24, 1]);
-    assert_eq!(iter.next().map(|p| (p.op, p.operand.len())), Some((0xC615, 4)), "cb is one byte: the operand is cb + 1 bytes");
-    assert_eq!(iter.next().map(|p| p.op), Some(0x2403), "the next sprm is still read");
+    assert_eq!(
+        iter.next().map(|p| (p.op, p.operand.len())),
+        Some((0xC615, 4)),
+        "cb is one byte: the operand is cb + 1 bytes"
+    );
+    assert_eq!(
+        iter.next().map(|p| p.op),
+        Some(0x2403),
+        "the next sprm is still read"
+    );
 }
 
 /// A section mark (0x0C) at a section's end is the section's last paragraph mark, not a page
@@ -1900,9 +2537,18 @@ fn section_marks_end_paragraphs() {
     let doc = read(&struct_doc(&spec)).expect("opens");
     assert_eq!(body_texts(&doc), ["first", "second"]);
     let p0 = doc.body.first().and_then(|b| b.as_para()).expect("para");
-    assert_eq!(p0.section.as_ref().map(|s| s.start), Some(SectionStart::Continuous), "the section ends at its mark");
+    assert_eq!(
+        p0.section.as_ref().map(|s| s.start),
+        Some(SectionStart::Continuous),
+        "the section ends at its mark"
+    );
     // A page break inside a section stays a page break.
-    let spec = StructSpec { text: "a\u{C}b\r", sections: vec![(4, Vec::new())], papx_entries: vec![(0, 0, Vec::new())], ..spec };
+    let spec = StructSpec {
+        text: "a\u{C}b\r",
+        sections: vec![(4, Vec::new())],
+        papx_entries: vec![(0, 0, Vec::new())],
+        ..spec
+    };
     let doc = read(&struct_doc(&spec)).expect("opens");
     assert_eq!(body_texts(&doc), ["a\u{C}b"]);
 }

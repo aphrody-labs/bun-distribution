@@ -38,7 +38,10 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 /// Open the presets manager on `selected` (default: the first preset).
 pub fn open(app: &mut VectorcraftApp, selected: Option<&str>) {
     let first = FlattenOptions::preset_label(FlattenOptions::PRESETS[0]).unwrap_or_default();
-    app.ui.dialog = Some(Dialog::new(KIND, json!({ "selected": selected.unwrap_or(first) })));
+    app.ui.dialog = Some(Dialog::new(
+        KIND,
+        json!({ "selected": selected.unwrap_or(first) }),
+    ));
 }
 
 /// What a button asked for, done once the list and fields are drawn.
@@ -54,7 +57,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
     let presets = app.session.flattener_presets();
     let builtins = FlattenOptions::PRESETS.len();
-    let i = presets.iter().position(|p| p.name.eq_ignore_ascii_case(d.str("selected").trim())).unwrap_or(0);
+    let i = presets
+        .iter()
+        .position(|p| p.name.eq_ignore_ascii_case(d.str("selected").trim()))
+        .unwrap_or(0);
     let (preset, builtin) = (&presets[i], i < builtins);
     if d.str(SHOWN) != preset.name {
         put_options(&mut d.fields, &preset.options);
@@ -69,30 +75,48 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             ui.set_width(232.0);
             widgets::dim_label(ui, tl!("Presets:"));
             widgets::list_box(ui, |ui| {
-                egui::ScrollArea::vertical().id_salt("flattener-presets").min_scrolled_height(250.0).max_height(250.0).show(ui, |ui| {
-                    ui.set_width(ui.available_width());
-                    ui.set_min_height(250.0);
-                    for (k, p) in presets.iter().enumerate() {
-                        let label = if k < builtins { format!("[{}]", tl!(&p.name)) } else { p.name.clone() };
-                        if ui.selectable_label(k == i, label).clicked() {
-                            act = Some(Action::Select(p.name.clone()));
+                egui::ScrollArea::vertical()
+                    .id_salt("flattener-presets")
+                    .min_scrolled_height(250.0)
+                    .max_height(250.0)
+                    .show(ui, |ui| {
+                        ui.set_width(ui.available_width());
+                        ui.set_min_height(250.0);
+                        for (k, p) in presets.iter().enumerate() {
+                            let label = if k < builtins {
+                                format!("[{}]", tl!(&p.name))
+                            } else {
+                                p.name.clone()
+                            };
+                            if ui.selectable_label(k == i, label).clicked() {
+                                act = Some(Action::Select(p.name.clone()));
+                            }
                         }
-                    }
-                });
+                    });
             });
             ui.add_space(6.0);
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 4.0;
-                if widgets::flat_button(ui, tl!("New"), 44.0).on_hover_text(tl!("A saved copy of the selected preset")).clicked() {
+                if widgets::flat_button(ui, tl!("New"), 44.0)
+                    .on_hover_text(tl!("A saved copy of the selected preset"))
+                    .clicked()
+                {
                     act = Some(Action::New);
                 }
-                if ui.add_enabled_ui(!builtin, |ui| widgets::flat_button(ui, tl!("Delete"), 52.0)).inner.clicked() {
+                if ui
+                    .add_enabled_ui(!builtin, |ui| widgets::flat_button(ui, tl!("Delete"), 52.0))
+                    .inner
+                    .clicked()
+                {
                     act = Some(Action::Delete);
                 }
                 if widgets::flat_button(ui, tl!("Import…"), 62.0).clicked() {
                     act = Some(Action::Import);
                 }
-                if widgets::flat_button(ui, tl!("Export…"), 62.0).on_hover_text(tl!("Save the selected preset to a file")).clicked() {
+                if widgets::flat_button(ui, tl!("Export…"), 62.0)
+                    .on_hover_text(tl!("Save the selected preset to a file"))
+                    .clicked()
+                {
                     act = Some(Action::Export);
                 }
             });
@@ -108,13 +132,20 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
                 }
             });
             ui.add_space(8.0);
-            let mut o = FlattenOptions::from_params(&Value::Object(d.fields.clone())).unwrap_or_else(|_| preset.options.clone());
+            let mut o = FlattenOptions::from_params(&Value::Object(d.fields.clone()))
+                .unwrap_or_else(|_| preset.options.clone());
             if options_editor(ui, "flattener-presets", &mut o, !builtin) {
                 put_options(&mut d.fields, &o);
             }
             if builtin {
                 ui.add_space(6.0);
-                ui.label(egui::RichText::new(tl!("Built-in presets don't change: New makes a copy you can edit.")).color(t.text_dim).size(11.5));
+                ui.label(
+                    egui::RichText::new(tl!(
+                        "Built-in presets don't change: New makes a copy you can edit."
+                    ))
+                    .color(t.text_dim)
+                    .size(11.5),
+                );
             }
         });
     });
@@ -127,7 +158,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     } else {
         match fields {
             Ok(o) if o != preset.options => {
-                if let Err(e) = app.run("flattener.presets.save", json!({"name": preset.name, "options": o})) {
+                if let Err(e) = app.run(
+                    "flattener.presets.save",
+                    json!({"name": preset.name, "options": o}),
+                ) {
                     app.status(e);
                 }
             }
@@ -136,7 +170,10 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
         let name = d.str("name");
         if !renaming && name.trim() != preset.name {
-            match app.run("flattener.presets.save", json!({"name": preset.name, "newName": name})) {
+            match app.run(
+                "flattener.presets.save",
+                json!({"name": preset.name, "newName": name}),
+            ) {
                 Ok(r) => select(d, r["name"].as_str().unwrap_or_default()),
                 Err(e) => {
                     app.status(e);
@@ -151,7 +188,18 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             // as it is then.
             Action::Import | Action::Export => {
                 let (current, export) = (preset.name.clone(), matches!(a, Action::Export));
-                crate::picks::in_dialog(app, d, move |app, d| run(app, d, if export { Action::Export } else { Action::Import }, &current))
+                crate::picks::in_dialog(app, d, move |app, d| {
+                    run(
+                        app,
+                        d,
+                        if export {
+                            Action::Export
+                        } else {
+                            Action::Import
+                        },
+                        &current,
+                    )
+                })
             }
             a => run(app, d, a, &preset.name),
         };
@@ -176,11 +224,19 @@ fn run(app: &mut VectorcraftApp, d: &mut Dialog, act: Action, current: &str) -> 
             select(d, r["name"].as_str().unwrap_or_default());
         }
         Action::Delete => {
-            let i = app.session.prefs.flattener_presets.iter().position(|p| p.name == current);
+            let i = app
+                .session
+                .prefs
+                .flattener_presets
+                .iter()
+                .position(|p| p.name == current);
             app.run("flattener.presets.delete", json!({ "name": current }))?;
             // The one above it takes its place (the last built-in one above the first saved one).
-            let next =
-                app.session.flattener_presets().get((i.unwrap_or(0) + FlattenOptions::PRESETS.len()).saturating_sub(1)).map(|p| p.name.clone());
+            let next = app
+                .session
+                .flattener_presets()
+                .get((i.unwrap_or(0) + FlattenOptions::PRESETS.len()).saturating_sub(1))
+                .map(|p| p.name.clone());
             select(d, &next.unwrap_or_default());
         }
         Action::Import => {
@@ -189,7 +245,10 @@ fn run(app: &mut VectorcraftApp, d: &mut Dialog, act: Action, current: &str) -> 
                 f();
                 return Ok(());
             }
-            let pick = crate::FilePick { filters: vec![("Flattener presets", PRESET_EXTS)], ..Default::default() };
+            let pick = crate::FilePick {
+                filters: vec![("Flattener presets", PRESET_EXTS)],
+                ..Default::default()
+            };
             let path = crate::picks::open(app, &pick).ok_or("cancelled")?;
             let r = app.run("flattener.presets.import", json!({ "path": path }))?;
             if let Some(first) = r["imported"].get(0).and_then(Value::as_str) {
@@ -197,7 +256,12 @@ fn run(app: &mut VectorcraftApp, d: &mut Dialog, act: Action, current: &str) -> 
             }
         }
         Action::Export => {
-            crate::io::save_command_output(app, "flattener.presets.export", PRESET_FORMAT, json!({ "names": [current] }))?;
+            crate::io::save_command_output(
+                app,
+                "flattener.presets.export",
+                PRESET_FORMAT,
+                json!({ "names": [current] }),
+            )?;
         }
     }
     Ok(())
@@ -211,7 +275,9 @@ mod tests {
     fn frame(app: &mut VectorcraftApp) {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| super::super::show(app, ui.ctx()));
+        let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+            super::super::show(app, ui.ctx())
+        });
         out.textures_delta.clear();
     }
 
@@ -221,7 +287,14 @@ mod tests {
     }
 
     fn field(app: &VectorcraftApp, k: &str) -> Value {
-        app.ui.dialog.as_ref().unwrap().fields.get(k).cloned().unwrap_or_default()
+        app.ui
+            .dialog
+            .as_ref()
+            .unwrap()
+            .fields
+            .get(k)
+            .cloned()
+            .unwrap_or_default()
     }
 
     #[test]
@@ -229,7 +302,10 @@ mod tests {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
         app.run("ui.flattenerPresetsDialog", json!({})).unwrap();
         frame(&mut app);
-        assert_eq!((field(&app, "selected"), field(&app, "lineArtPpi")), (json!("High Resolution"), json!(1200.0)));
+        assert_eq!(
+            (field(&app, "selected"), field(&app, "lineArtPpi")),
+            (json!("High Resolution"), json!(1200.0))
+        );
         // Built-in presets go back to their values.
         set(&mut app, "balance", json!(10));
         assert_eq!(field(&app, "balance"), json!(100.0));
@@ -241,14 +317,20 @@ mod tests {
         app.ui.dialog = Some(d);
         frame(&mut app);
         assert_eq!(field(&app, "selected"), json!("Flattener Preset 1"));
-        assert_eq!(app.session.prefs.flattener_presets[0].options, FlattenOptions::preset("high").unwrap());
+        assert_eq!(
+            app.session.prefs.flattener_presets[0].options,
+            FlattenOptions::preset("high").unwrap()
+        );
         // Its options and name save as they change.
         set(&mut app, "balance", json!(10));
         assert_eq!(app.session.prefs.flattener_presets[0].options.balance, 10.0);
         set(&mut app, "name", json!("Coarse"));
         assert_eq!(app.session.prefs.flattener_presets[0].name, "Coarse");
         frame(&mut app);
-        assert_eq!((field(&app, "selected"), field(&app, "balance")), (json!("Coarse"), json!(10.0)));
+        assert_eq!(
+            (field(&app, "selected"), field(&app, "balance")),
+            (json!("Coarse"), json!(10.0))
+        );
         // A taken name is refused and the field goes back.
         set(&mut app, "name", json!("Low Resolution"));
         assert_eq!(field(&app, "name"), json!("Coarse"));
@@ -264,17 +346,32 @@ mod tests {
     #[test]
     fn saved_presets_persist_with_the_ui_state_and_preferences_still_apply() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("flattener.presets.save", json!({"name": "Kept", "lineArtPpi": 600})).unwrap();
+        app.run(
+            "flattener.presets.save",
+            json!({"name": "Kept", "lineArtPpi": 600}),
+        )
+        .unwrap();
         // Preferences OK with saved presets around (they aren't preference fields).
         app.run("edit.preferences", json!({})).unwrap();
         crate::prefs_dialog::confirm(&mut app).unwrap();
         crate::prefs_dialog::snapshot(&mut app);
         let saved = serde_json::to_vec(&app.ui).unwrap();
         let mut back = VectorcraftApp::new(Session::new(), Default::default());
-        back.ui = serde_json::from_slice::<crate::UiState>(&saved).unwrap().sanitized();
+        back.ui = serde_json::from_slice::<crate::UiState>(&saved)
+            .unwrap()
+            .sanitized();
         crate::prefs_dialog::restore(&mut back);
-        assert_eq!(back.session.prefs.flattener_presets, app.session.prefs.flattener_presets);
-        assert_eq!(back.session.flatten_options(&json!({"preset": "Kept"})).unwrap().line_art_ppi, 600.0);
+        assert_eq!(
+            back.session.prefs.flattener_presets,
+            app.session.prefs.flattener_presets
+        );
+        assert_eq!(
+            back.session
+                .flatten_options(&json!({"preset": "Kept"}))
+                .unwrap()
+                .line_art_ppi,
+            600.0
+        );
     }
 
     #[test]
@@ -285,18 +382,31 @@ mod tests {
         let picked = file.clone();
         let services = crate::Services {
             pick_save: Some(Box::new(move |_: &crate::FilePick| Some(picked.clone()))),
-            write: Some(Box::new(|p: &str, b: &[u8]| std::fs::write(p, b).map_err(|e| e.to_string()))),
+            write: Some(Box::new(|p: &str, b: &[u8]| {
+                std::fs::write(p, b).map_err(|e| e.to_string())
+            })),
             ..Default::default()
         };
         let mut app = VectorcraftApp::new(Session::new(), services);
-        app.run("flattener.presets.save", json!({"name": "Mine", "balance": 20})).unwrap();
-        app.run("ui.flattenerPresetsDialog", json!({"selected": "Mine"})).unwrap();
+        app.run(
+            "flattener.presets.save",
+            json!({"name": "Mine", "balance": 20}),
+        )
+        .unwrap();
+        app.run("ui.flattenerPresetsDialog", json!({"selected": "Mine"}))
+            .unwrap();
         let mut d = app.ui.dialog.clone().unwrap();
         run(&mut app, &mut d, Action::Export, "Mine").unwrap();
         // Opening the file imports it (also how the web's picked file arrives).
         let bytes = std::fs::read(&file).unwrap();
         crate::io::open_bytes(&mut app, &file, &bytes, Some(file.clone())).unwrap();
-        let names: Vec<&str> = app.session.prefs.flattener_presets.iter().map(|p| p.name.as_str()).collect();
+        let names: Vec<&str> = app
+            .session
+            .prefs
+            .flattener_presets
+            .iter()
+            .map(|p| p.name.as_str())
+            .collect();
         assert_eq!(names, ["Mine", "Mine 2"]);
         assert_eq!(app.session.prefs.flattener_presets[1].options.balance, 20.0);
         let _ = std::fs::remove_dir_all(dir);

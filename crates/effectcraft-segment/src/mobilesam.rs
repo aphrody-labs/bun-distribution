@@ -27,19 +27,33 @@ struct W<'a>(&'a Weights);
 
 impl W<'_> {
     fn get(&self, name: &str, n: usize) -> Result<&[f32]> {
-        let t = self.0.get(name).ok_or_else(|| format!("checkpoint is missing {name}"))?;
+        let t = self
+            .0
+            .get(name)
+            .ok_or_else(|| format!("checkpoint is missing {name}"))?;
         if t.data.len() != n {
-            return Err(format!("{name}: expected {n} values, found {}", t.data.len()));
+            return Err(format!(
+                "{name}: expected {n} values, found {}",
+                t.data.len()
+            ));
         }
         Ok(&t.data)
     }
     fn linear(&self, p: &str, out: usize, inp: usize, bias: bool) -> Result<Linear> {
         let w = self.get(&format!("{p}.weight"), out * inp)?;
-        let b = if bias { Some(self.get(&format!("{p}.bias"), out)?) } else { None };
+        let b = if bias {
+            Some(self.get(&format!("{p}.bias"), out)?)
+        } else {
+            None
+        };
         Linear::new(w, b, out, inp).ok_or_else(|| format!("{p}: bad shape"))
     }
     fn norm(&self, p: &str, c: usize, eps: f32) -> Result<Norm> {
-        Ok(Norm { w: self.get(&format!("{p}.weight"), c)?.to_vec(), b: self.get(&format!("{p}.bias"), c)?.to_vec(), eps })
+        Ok(Norm {
+            w: self.get(&format!("{p}.weight"), c)?.to_vec(),
+            b: self.get(&format!("{p}.bias"), c)?.to_vec(),
+            eps,
+        })
     }
     /// A conv + batch norm (eval) folded into one weight and bias: `[out × inp/groups × k × k]`.
     fn conv_bn(&self, p: &str, out: usize, per: usize) -> Result<(Vec<f32>, Vec<f32>)> {
@@ -128,7 +142,9 @@ impl Block {
     fn new(w: &W, p: &str, dim: usize, heads: usize, ws: usize) -> Result<Block> {
         let n = ws * ws;
         // Offsets between window positions, numbered in first-seen order (as TinyViT does).
-        let points: Vec<(i64, i64)> = (0..ws as i64).flat_map(|r| (0..ws as i64).map(move |c| (r, c))).collect();
+        let points: Vec<(i64, i64)> = (0..ws as i64)
+            .flat_map(|r| (0..ws as i64).map(move |c| (r, c)))
+            .collect();
         let mut offsets: Vec<(i64, i64)> = vec![];
         let mut idx = Vec::with_capacity(n * n);
         for a in &points {
@@ -146,7 +162,9 @@ impl Block {
         }
         let table = w.get(&format!("{p}.attn.attention_biases"), heads * offsets.len())?;
         let no = offsets.len();
-        let bias = (0..heads).flat_map(|h| idx.iter().map(move |i| table[h * no + i])).collect::<Vec<f32>>();
+        let bias = (0..heads)
+            .flat_map(|h| idx.iter().map(move |i| table[h * no + i]))
+            .collect::<Vec<f32>>();
         Ok(Block {
             norm: w.norm(&format!("{p}.attn.norm"), dim, 1e-5)?,
             qkv: w.linear(&format!("{p}.attn.qkv"), 3 * dim, dim, true)?,
@@ -169,7 +187,8 @@ impl Block {
         let (ph, pw) = (h.div_ceil(ws) * ws, w.div_ceil(ws) * ws);
         let mut pad = vec![0.0f32; ph * pw * dim];
         for y in 0..h {
-            pad[y * pw * dim..(y * pw + w) * dim].copy_from_slice(&x[y * w * dim..(y + 1) * w * dim]);
+            pad[y * pw * dim..(y * pw + w) * dim]
+                .copy_from_slice(&x[y * w * dim..(y + 1) * w * dim]);
         }
         self.norm.forward(&mut pad);
         let qkv = self.qkv.forward(&pad, ph * pw);
@@ -180,7 +199,11 @@ impl Block {
             .into_par_iter()
             .map(|win| {
                 let (wy, wx) = (win / nwx, win % nwx);
-                let (mut q, mut k, mut v) = (vec![0.0f32; n * dim], vec![0.0f32; n * dim], vec![0.0f32; n * dim]);
+                let (mut q, mut k, mut v) = (
+                    vec![0.0f32; n * dim],
+                    vec![0.0f32; n * dim],
+                    vec![0.0f32; n * dim],
+                );
                 for t in 0..n {
                     let (ty, tx) = (wy * ws + t / ws, wx * ws + t % ws);
                     let src = &qkv[(ty * pw + tx) * 3 * dim..][..3 * dim];
@@ -261,8 +284,19 @@ impl Encoder {
                 c3: w.pointwise_bn(&format!("{d}.conv3"), out, out)?,
             });
             let s = l + 1;
-            stages
-                .push((0..DEPTHS[s]).map(|i| Block::new(w, &format!("{p}.layers.{s}.blocks.{i}"), DIMS[s], HEADS[s], WINDOWS[s])).collect::<Result<Vec<_>>>()?);
+            stages.push(
+                (0..DEPTHS[s])
+                    .map(|i| {
+                        Block::new(
+                            w,
+                            &format!("{p}.layers.{s}.blocks.{i}"),
+                            DIMS[s],
+                            HEADS[s],
+                            WINDOWS[s],
+                        )
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+            );
         }
         let n2 = w.get(&format!("{p}.neck.2.weight"), DIM * DIM * 9)?;
         Ok(Encoder {
@@ -323,7 +357,11 @@ impl Attn {
         })
     }
     fn forward(&self, q: &[f32], nq: usize, k: &[f32], v: &[f32], nk: usize) -> Vec<f32> {
-        let (q, k, v) = (self.q.forward(q, nq), self.k.forward(k, nk), self.v.forward(v, nk));
+        let (q, k, v) = (
+            self.q.forward(q, nq),
+            self.k.forward(k, nk),
+            self.v.forward(v, nk),
+        );
         let heads = 8;
         let o = nn::attention(&q, &k, &v, nq, nk, heads, self.q.out / heads, None);
         self.out.forward(&o, nq)
@@ -376,8 +414,16 @@ impl Decoder {
     fn new(w: &W) -> Result<Decoder> {
         let pe = "prompt_encoder";
         let md = "mask_decoder";
-        let gauss = w.get(&format!("{pe}.pe_layer.positional_encoding_gaussian_matrix"), 2 * DIM / 2)?.to_vec();
-        let pt = |i: usize| w.get(&format!("{pe}.point_embeddings.{i}.weight"), DIM).map(<[f32]>::to_vec);
+        let gauss = w
+            .get(
+                &format!("{pe}.pe_layer.positional_encoding_gaussian_matrix"),
+                2 * DIM / 2,
+            )?
+            .to_vec();
+        let pt = |i: usize| {
+            w.get(&format!("{pe}.point_embeddings.{i}.weight"), DIM)
+                .map(<[f32]>::to_vec)
+        };
         let conv = |p: &str, out: usize, inp: usize, ks: usize| -> Result<Conv> {
             let wt = w.get(&format!("{p}.weight"), out * inp * ks * ks)?;
             let b = w.get(&format!("{p}.bias"), out)?;
@@ -401,7 +447,13 @@ impl Decoder {
             })
             .collect::<Result<Vec<_>>>()?;
         let upconv = |p: &str, inp: usize, out: usize| -> Result<Upconv> {
-            Upconv::new(w.get(&format!("{p}.weight"), inp * out * 4)?, w.get(&format!("{p}.bias"), out)?, inp, out).ok_or_else(|| format!("{p}: bad shape"))
+            Upconv::new(
+                w.get(&format!("{p}.weight"), inp * out * 4)?,
+                w.get(&format!("{p}.bias"), out)?,
+                inp,
+                out,
+            )
+            .ok_or_else(|| format!("{p}: bad shape"))
         };
         let mlp3 = |p: &str, out: usize| -> Result<[Linear; 3]> {
             Ok([
@@ -414,7 +466,9 @@ impl Decoder {
             gauss,
             dense_pe: vec![],
             point_embed: [pt(0)?, pt(1)?, pt(2)?, pt(3)?],
-            not_a_point: w.get(&format!("{pe}.not_a_point_embed.weight"), DIM)?.to_vec(),
+            not_a_point: w
+                .get(&format!("{pe}.not_a_point_embed.weight"), DIM)?
+                .to_vec(),
             no_mask: w.get(&format!("{pe}.no_mask_embed.weight"), DIM)?.to_vec(),
             md1: conv(&format!("{pe}.mask_downscaling.0"), 4, 1, 2)?,
             md_ln1: w.norm(&format!("{pe}.mask_downscaling.1"), 4, 1e-6)?,
@@ -425,14 +479,25 @@ impl Decoder {
             final_attn: Attn::new(w, &format!("{md}.transformer.final_attn_token_to_image"), 2)?,
             norm_final: w.norm(&format!("{md}.transformer.norm_final_attn"), DIM, 1e-5)?,
             iou_token: w.get(&format!("{md}.iou_token.weight"), DIM)?.to_vec(),
-            mask_tokens: w.get(&format!("{md}.mask_tokens.weight"), 4 * DIM)?.to_vec(),
+            mask_tokens: w
+                .get(&format!("{md}.mask_tokens.weight"), 4 * DIM)?
+                .to_vec(),
             up1: upconv(&format!("{md}.output_upscaling.0"), DIM, DIM / 4)?,
             up_ln: w.norm(&format!("{md}.output_upscaling.1"), DIM / 4, 1e-6)?,
             up2: upconv(&format!("{md}.output_upscaling.3"), DIM / 4, DIM / 8)?,
-            hyper: (0..4).map(|i| mlp3(&format!("{md}.output_hypernetworks_mlps.{i}"), DIM / 8)).collect::<Result<Vec<_>>>()?,
+            hyper: (0..4)
+                .map(|i| mlp3(&format!("{md}.output_hypernetworks_mlps.{i}"), DIM / 8))
+                .collect::<Result<Vec<_>>>()?,
             iou_head: mlp3(&format!("{md}.iou_prediction_head"), 4)?,
         };
-        d.dense_pe = (0..EMB * EMB).flat_map(|i| d.pe(((i % EMB) as f32 + 0.5) / EMB as f32, ((i / EMB) as f32 + 0.5) / EMB as f32)).collect();
+        d.dense_pe = (0..EMB * EMB)
+            .flat_map(|i| {
+                d.pe(
+                    ((i % EMB) as f32 + 0.5) / EMB as f32,
+                    ((i / EMB) as f32 + 0.5) / EMB as f32,
+                )
+            })
+            .collect();
         Ok(d)
     }
 
@@ -440,8 +505,13 @@ impl Decoder {
     fn pe(&self, x: f32, y: f32) -> Vec<f32> {
         let half = DIM / 2;
         let (cx, cy) = (2.0 * x - 1.0, 2.0 * y - 1.0);
-        let a: Vec<f32> = (0..half).map(|j| 2.0 * PI * (cx * self.gauss[j] + cy * self.gauss[half + j])).collect();
-        a.iter().map(|v| v.sin()).chain(a.iter().map(|v| v.cos())).collect()
+        let a: Vec<f32> = (0..half)
+            .map(|j| 2.0 * PI * (cx * self.gauss[j] + cy * self.gauss[half + j]))
+            .collect();
+        a.iter()
+            .map(|v| v.sin())
+            .chain(a.iter().map(|v| v.cos()))
+            .collect()
     }
 
     fn mlp3(layers: &[Linear; 3], x: &[f32]) -> Vec<f32> {
@@ -454,7 +524,14 @@ impl Decoder {
 
     /// Mask logits (`LOW×LOW`, in the padded `IMG` square) and their predicted IoU for the
     /// prompt (coordinates already in `IMG` space).
-    fn forward(&self, emb: &[f32], points: &[([f32; 2], bool)], bbox: Option<[f32; 4]>, mask: Option<&[f32]>, multimask: bool) -> (Vec<f32>, f32) {
+    fn forward(
+        &self,
+        emb: &[f32],
+        points: &[([f32; 2], bool)],
+        bbox: Option<[f32; 4]>,
+        mask: Option<&[f32]>,
+        multimask: bool,
+    ) -> (Vec<f32>, f32) {
         // Sparse prompt tokens.
         let mut sparse: Vec<f32> = vec![];
         for (p, fg) in points {
@@ -467,7 +544,9 @@ impl Decoder {
             Some(b) => {
                 for (i, (x, y)) in [(b[0], b[1]), (b[2], b[3])].into_iter().enumerate() {
                     let mut e = self.pe((x + 0.5) / IMG as f32, (y + 0.5) / IMG as f32);
-                    e.iter_mut().zip(&self.point_embed[2 + i]).for_each(|(a, b)| *a += b);
+                    e.iter_mut()
+                        .zip(&self.point_embed[2 + i])
+                        .for_each(|(a, b)| *a += b);
                     sparse.extend(e);
                 }
             }
@@ -486,7 +565,9 @@ impl Decoder {
                 nn::gelu(&mut t);
                 self.md3.forward(&t, h * w)
             }
-            _ => (0..EMB * EMB).flat_map(|_| self.no_mask.iter().copied()).collect(),
+            _ => (0..EMB * EMB)
+                .flat_map(|_| self.no_mask.iter().copied())
+                .collect(),
         };
         // Tokens: IoU, four mask tokens, prompts.
         let mut tokens: Vec<f32> = self.iou_token.clone();
@@ -535,9 +616,18 @@ impl Decoder {
         nn::gelu(&mut up);
         let c = DIM / 8;
         let iou = Self::mlp3(&self.iou_head, &queries[..DIM]);
-        let pick = if multimask { (1..4).max_by(|a, b| iou[*a].total_cmp(&iou[*b])).unwrap_or(0) } else { 0 };
+        let pick = if multimask {
+            (1..4)
+                .max_by(|a, b| iou[*a].total_cmp(&iou[*b]))
+                .unwrap_or(0)
+        } else {
+            0
+        };
         let hyper = Self::mlp3(&self.hyper[pick], &queries[(1 + pick) * DIM..][..DIM]);
-        let logits: Vec<f32> = up.par_chunks(c).map(|px| px.iter().zip(&hyper).map(|(a, b)| a * b).sum()).collect();
+        let logits: Vec<f32> = up
+            .par_chunks(c)
+            .map(|px| px.iter().zip(&hyper).map(|(a, b)| a * b).sum())
+            .collect();
         (logits, iou.get(pick).copied().unwrap_or(0.0))
     }
 }
@@ -572,7 +662,11 @@ fn hash_rgb(rgb: &[[f32; 3]], w: usize, h: usize) -> u64 {
 impl MobileSam {
     pub fn from_weights(w: &Weights) -> Result<MobileSam> {
         let w = W(w);
-        Ok(MobileSam { enc: Encoder::new(&w)?, dec: Decoder::new(&w)?, cache: Mutex::new(None) })
+        Ok(MobileSam {
+            enc: Encoder::new(&w)?,
+            dec: Decoder::new(&w)?,
+            cache: Mutex::new(None),
+        })
     }
 
     /// Embed an image (straight RGB 0–1, row-major `w×h`), or reuse the last embedding.
@@ -588,18 +682,36 @@ impl MobileSam {
             return Ok(e.clone());
         }
         let scale = IMG as f32 / w.max(h) as f32;
-        let (rw, rh) = (((w as f32 * scale).round() as usize).clamp(1, IMG), ((h as f32 * scale).round() as usize).clamp(1, IMG));
+        let (rw, rh) = (
+            ((w as f32 * scale).round() as usize).clamp(1, IMG),
+            ((h as f32 * scale).round() as usize).clamp(1, IMG),
+        );
         // Resize (box filter when shrinking, bilinear when growing), normalise, pad.
         let mut x = vec![0.0f32; IMG * IMG * 3];
-        x.par_chunks_mut(IMG * 3).enumerate().take(rh).for_each(|(y, row)| {
-            for xo in 0..rw {
-                let px = sample(rgb, w, h, (xo as f32 + 0.5) / scale, (y as f32 + 0.5) / scale, 1.0 / scale);
-                for c in 0..3 {
-                    row[xo * 3 + c] = (px[c] * 255.0 - MEAN[c]) / STD[c];
+        x.par_chunks_mut(IMG * 3)
+            .enumerate()
+            .take(rh)
+            .for_each(|(y, row)| {
+                for xo in 0..rw {
+                    let px = sample(
+                        rgb,
+                        w,
+                        h,
+                        (xo as f32 + 0.5) / scale,
+                        (y as f32 + 0.5) / scale,
+                        1.0 / scale,
+                    );
+                    for c in 0..3 {
+                        row[xo * 3 + c] = (px[c] * 255.0 - MEAN[c]) / STD[c];
+                    }
                 }
-            }
-        });
-        let e = Embedding { data: self.enc.forward(&x), w, h, scale };
+            });
+        let e = Embedding {
+            data: self.enc.forward(&x),
+            w,
+            h,
+            scale,
+        };
         if let Ok(mut c) = self.cache.lock() {
             *c = Some((key, e.clone()));
         }
@@ -609,23 +721,38 @@ impl MobileSam {
     /// Foreground probability (`w×h`) for a prompt on an embedded image, and the predicted IoU.
     pub fn predict(&self, e: &Embedding, prompt: &Prompt) -> (Vec<f32>, f32) {
         let s = e.scale;
-        let points: Vec<([f32; 2], bool)> = prompt.points.iter().map(|(p, fg)| ([p[0] * s, p[1] * s], *fg)).collect();
+        let points: Vec<([f32; 2], bool)> = prompt
+            .points
+            .iter()
+            .map(|(p, fg)| ([p[0] * s, p[1] * s], *fg))
+            .collect();
         let bbox = prompt.bbox.map(|b| b.map(|v| v * s));
         // A prior mask (probabilities at image size) → logits on the low-res grid.
-        let mask: Option<Vec<f32>> = prompt.mask.as_ref().filter(|m| m.len() == e.w * e.h).map(|m| {
-            (0..LOW * LOW)
-                .map(|i| {
-                    let (gx, gy) = (((i % LOW) as f32 + 0.5) * 4.0 / s, ((i / LOW) as f32 + 0.5) * 4.0 / s);
-                    if gx >= e.w as f32 || gy >= e.h as f32 {
-                        return -20.0;
-                    }
-                    let p = m[(gy as usize).min(e.h - 1) * e.w + (gx as usize).min(e.w - 1)];
-                    ((p - 0.5) * 40.0).clamp(-20.0, 20.0)
-                })
-                .collect()
-        });
+        let mask: Option<Vec<f32>> =
+            prompt
+                .mask
+                .as_ref()
+                .filter(|m| m.len() == e.w * e.h)
+                .map(|m| {
+                    (0..LOW * LOW)
+                        .map(|i| {
+                            let (gx, gy) = (
+                                ((i % LOW) as f32 + 0.5) * 4.0 / s,
+                                ((i / LOW) as f32 + 0.5) * 4.0 / s,
+                            );
+                            if gx >= e.w as f32 || gy >= e.h as f32 {
+                                return -20.0;
+                            }
+                            let p =
+                                m[(gy as usize).min(e.h - 1) * e.w + (gx as usize).min(e.w - 1)];
+                            ((p - 0.5) * 40.0).clamp(-20.0, 20.0)
+                        })
+                        .collect()
+                });
         let multimask = points.len() == 1 && bbox.is_none() && mask.is_none();
-        let (logits, iou) = self.dec.forward(&e.data, &points, bbox, mask.as_deref(), multimask);
+        let (logits, iou) = self
+            .dec
+            .forward(&e.data, &points, bbox, mask.as_deref(), multimask);
         // Low-res logits (the padded square) → image pixels, bilinear, then sigmoid.
         let prob: Vec<f32> = (0..e.w * e.h)
             .into_par_iter()
@@ -646,22 +773,35 @@ fn bilinear(g: &[f32], w: usize, h: usize, u: f32, v: f32) -> f32 {
     let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
     let (fx, fy) = (u - x0 as f32, v - y0 as f32);
     let at = |x: usize, y: usize| g.get(y * w + x).copied().unwrap_or(0.0);
-    (at(x0, y0) * (1.0 - fx) + at(x1, y0) * fx) * (1.0 - fy) + (at(x0, y1) * (1.0 - fx) + at(x1, y1) * fx) * fy
+    (at(x0, y0) * (1.0 - fx) + at(x1, y0) * fx) * (1.0 - fy)
+        + (at(x0, y1) * (1.0 - fx) + at(x1, y1) * fx) * fy
 }
 
 /// The image's colour around `(x, y)`: a `foot`-pixel box average when shrinking, else bilinear.
 fn sample(rgb: &[[f32; 3]], w: usize, h: usize, x: f32, y: f32, foot: f32) -> [f32; 3] {
     if foot <= 1.0 {
-        let (u, v) = ((x - 0.5).clamp(0.0, (w - 1) as f32), (y - 0.5).clamp(0.0, (h - 1) as f32));
+        let (u, v) = (
+            (x - 0.5).clamp(0.0, (w - 1) as f32),
+            (y - 0.5).clamp(0.0, (h - 1) as f32),
+        );
         let (x0, y0) = (u.floor() as usize, v.floor() as usize);
         let (x1, y1) = ((x0 + 1).min(w - 1), (y0 + 1).min(h - 1));
         let (fx, fy) = (u - x0 as f32, v - y0 as f32);
         let p = |x: usize, y: usize| rgb[y * w + x];
-        return [0, 1, 2].map(|c| (p(x0, y0)[c] * (1.0 - fx) + p(x1, y0)[c] * fx) * (1.0 - fy) + (p(x0, y1)[c] * (1.0 - fx) + p(x1, y1)[c] * fx) * fy);
+        return [0, 1, 2].map(|c| {
+            (p(x0, y0)[c] * (1.0 - fx) + p(x1, y0)[c] * fx) * (1.0 - fy)
+                + (p(x0, y1)[c] * (1.0 - fx) + p(x1, y1)[c] * fx) * fy
+        });
     }
     let r = foot / 2.0;
-    let (xa, xb) = (((x - r).floor().max(0.0)) as usize, ((x + r).ceil() as usize).min(w));
-    let (ya, yb) = (((y - r).floor().max(0.0)) as usize, ((y + r).ceil() as usize).min(h));
+    let (xa, xb) = (
+        ((x - r).floor().max(0.0)) as usize,
+        ((x + r).ceil() as usize).min(w),
+    );
+    let (ya, yb) = (
+        ((y - r).floor().max(0.0)) as usize,
+        ((y + r).ceil() as usize).min(h),
+    );
     let mut s = [0.0f32; 3];
     let mut n = 0.0;
     for yy in ya..yb.max(ya + 1).min(h) {

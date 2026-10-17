@@ -100,7 +100,11 @@ pub fn wiggle_keys(
     let fps = fr.as_f64();
     let step = ((fps / o.frequency.max(0.01)).round() as i64).max(1);
     let orig = keys.to_vec();
-    let mut out: Vec<Keyframe> = keys.iter().filter(|k| k.time <= t0 || k.time >= t1).cloned().collect();
+    let mut out: Vec<Keyframe> = keys
+        .iter()
+        .filter(|k| k.time <= t0 || k.time >= t1)
+        .cloned()
+        .collect();
     let template = keys[a].clone();
     let dims = template.value.components().len();
     let mut k = 1;
@@ -118,14 +122,18 @@ pub fn wiggle_keys(
             let jit = noise(o.noise, o.seed, stream, k) * o.magnitude / 100.0 * step as f64 / fps;
             Tick::from_seconds_f64((lt.seconds() + jit).clamp(t0.seconds(), t1.seconds()))
         };
-        let Some(v) = evaluate(&orig, base_t, spatial_prop) else { break };
+        let Some(v) = evaluate(&orig, base_t, spatial_prop) else {
+            break;
+        };
         let mut c = v.components();
         if o.spatial || !spatial_prop {
             for (d, x) in c.iter_mut().enumerate().take(dims) {
                 let n = match o.dims {
                     Dims::One(i) if i != d => 0.0,
                     Dims::One(_) | Dims::Same => noise(o.noise, o.seed, stream, k),
-                    Dims::Independent => noise(o.noise, o.seed, stream.wrapping_add(d as u64 * 7919 + 1), k),
+                    Dims::Independent => {
+                        noise(o.noise, o.seed, stream.wrapping_add(d as u64 * 7919 + 1), k)
+                    }
                 };
                 *x += n * o.magnitude;
             }
@@ -147,8 +155,16 @@ pub fn wiggle_keys(
 fn max_error(keys: &[Keyframe], samples: &[(Tick, Vec<f64>)], spatial: bool) -> (f64, usize) {
     let mut worst = (0.0, 0);
     for (i, (t, v)) in samples.iter().enumerate() {
-        let Some(e) = evaluate(keys, *t, spatial) else { continue };
-        let d = e.components().iter().zip(v).map(|(a, b)| (a - b) * (a - b)).sum::<f64>().sqrt();
+        let Some(e) = evaluate(keys, *t, spatial) else {
+            continue;
+        };
+        let d = e
+            .components()
+            .iter()
+            .zip(v)
+            .map(|(a, b)| (a - b) * (a - b))
+            .sum::<f64>()
+            .sqrt();
         if d > worst.0 {
             worst = (d, i);
         }
@@ -159,7 +175,14 @@ fn max_error(keys: &[Keyframe], samples: &[(Tick, Vec<f64>)], spatial: bool) -> 
 /// Smoother: replace the keys strictly between `a` and `b` (indices) by the fewest auto-Bezier
 /// keys at sample times that keep the curve within `tolerance` of `samples` (the original
 /// curve, usually one sample per frame). Keys outside `a..=b` are kept.
-pub fn smooth_keys(keys: &[Keyframe], a: usize, b: usize, samples: &[(Tick, Vec<f64>)], tolerance: f64, spatial: bool) -> Vec<Keyframe> {
+pub fn smooth_keys(
+    keys: &[Keyframe],
+    a: usize,
+    b: usize,
+    samples: &[(Tick, Vec<f64>)],
+    tolerance: f64,
+    spatial: bool,
+) -> Vec<Keyframe> {
     let template = keys[a].value.clone();
     let make = |t: Tick, c: &[f64]| {
         let mut k = Keyframe::new(t, template.with_components(c));
@@ -182,7 +205,12 @@ pub fn smooth_keys(keys: &[Keyframe], a: usize, b: usize, samples: &[(Tick, Vec<
         let cur = build(&chosen);
         let (err, at) = max_error(&cur, samples, spatial);
         let t = samples[at].0;
-        if err <= tolerance || chosen.contains(&at) || t <= keys[a].time || t >= keys[b].time || chosen.len() >= samples.len() {
+        if err <= tolerance
+            || chosen.contains(&at)
+            || t <= keys[a].time
+            || t >= keys[b].time
+            || chosen.len() >= samples.len()
+        {
             return cur;
         }
         chosen.push(at);
@@ -238,7 +266,12 @@ fn parse_wiggle(p: &Value) -> Result<WiggleOpts> {
         "one" => Dims::One(p.get("dimension").and_then(Value::as_u64).unwrap_or(0) as usize),
         "same" | "all" => Dims::Same,
         "independent" => Dims::Independent,
-        x => return Err(bad(c, format!("dimensions: one|same|independent, got `{x}`"))),
+        x => {
+            return Err(bad(
+                c,
+                format!("dimensions: one|same|independent, got `{x}`"),
+            ));
+        }
     };
     let frequency = f_p(p, "frequency").unwrap_or(5.0);
     if frequency.is_nan() || frequency <= 0.0 {
@@ -262,12 +295,24 @@ fn run_on_selection(
     label: &str,
     cmd: &str,
     min: usize,
-    f: &dyn Fn(&[Keyframe], usize, usize, bool, FrameRate, &dyn Fn(Tick) -> Tick, &dyn Fn(Tick) -> Tick, Uid) -> Vec<Keyframe>,
+    f: &dyn Fn(
+        &[Keyframe],
+        usize,
+        usize,
+        bool,
+        FrameRate,
+        &dyn Fn(Tick) -> Tick,
+        &dyn Fn(Tick) -> Tick,
+        Uid,
+    ) -> Vec<Keyframe>,
 ) -> Result<Value> {
     let cid = s.active_comp_id().ok_or(EngineError::NoComp)?;
     let groups = grouped_selection(s);
     if !groups.values().any(|v| v.len() >= min) {
-        return Err(bad(cmd, format!("select at least {min} keyframes of a property")));
+        return Err(bad(
+            cmd,
+            format!("select at least {min} keyframes of a property"),
+        ));
     }
     let (mut before, mut after) = (0usize, 0usize);
     s.edit(label, None, |proj, st| {
@@ -275,26 +320,40 @@ fn run_on_selection(
         let fr = comp.frame_rate;
         let mut sel = vec![];
         for ((lid, uid), times) in groups {
-            let Some(l) = comp.layer_mut(lid) else { continue };
+            let Some(l) = comp.layer_mut(lid) else {
+                continue;
+            };
             let lc = l.clone();
             let to_comp = |t: Tick| lc.comp_time(t);
             let to_layer = |t: Tick| lc.layer_time(t);
-            let Some(pr) = l.props.find_mut(uid) else { continue };
+            let Some(pr) = l.props.find_mut(uid) else {
+                continue;
+            };
             if times.len() < min || !pr.value.interpolates() {
                 continue;
             }
-            let (Some(a), Some(b)) =
-                (effectcraft_keyframe::key_at(&pr.keys, times[0]), effectcraft_keyframe::key_at(&pr.keys, *times.last().unwrap_or(&times[0])))
-            else {
+            let (Some(a), Some(b)) = (
+                effectcraft_keyframe::key_at(&pr.keys, times[0]),
+                effectcraft_keyframe::key_at(&pr.keys, *times.last().unwrap_or(&times[0])),
+            ) else {
                 continue;
             };
             let in_range = |k: &Keyframe| k.time >= pr.keys[a].time && k.time <= pr.keys[b].time;
             before += pr.keys.iter().filter(|k| in_range(k)).count();
             let (t0, t1) = (pr.keys[a].time, pr.keys[b].time);
             pr.keys = f(&pr.keys, a, b, pr.spatial, fr, &to_comp, &to_layer, uid);
-            let n: Vec<Tick> = pr.keys.iter().filter(|k| k.time >= t0 && k.time <= t1).map(|k| k.time).collect();
+            let n: Vec<Tick> = pr
+                .keys
+                .iter()
+                .filter(|k| k.time >= t0 && k.time <= t1)
+                .map(|k| k.time)
+                .collect();
             after += n.len();
-            sel.extend(n.into_iter().map(|time| KeyRef { layer: lid, prop: uid, time }));
+            sel.extend(n.into_iter().map(|time| KeyRef {
+                layer: lid,
+                prop: uid,
+                time,
+            }));
         }
         st.selected_keys = sel;
         Ok(())
@@ -304,15 +363,29 @@ fn run_on_selection(
 
 fn wiggle(s: &mut Session, p: &Value) -> Result<Value> {
     let o = parse_wiggle(p)?;
-    run_on_selection(s, "Wiggler", "keys.wiggle", 2, &|keys, a, b, spatial, fr, tc, tl, uid| wiggle_keys(keys, a, b, spatial, fr, tc, tl, &o, uid))
+    run_on_selection(
+        s,
+        "Wiggler",
+        "keys.wiggle",
+        2,
+        &|keys, a, b, spatial, fr, tc, tl, uid| {
+            wiggle_keys(keys, a, b, spatial, fr, tc, tl, &o, uid)
+        },
+    )
 }
 
 fn smooth(s: &mut Session, p: &Value) -> Result<Value> {
     let tol = f_p(p, "tolerance").unwrap_or(1.0).max(0.0);
-    run_on_selection(s, "Smoother", "keys.smooth", 3, &|keys, a, b, spatial, fr, tc, tl, _| {
-        let samples = sample_curve(keys, keys[a].time, keys[b].time, spatial, fr, tc, tl);
-        smooth_keys(keys, a, b, &samples, tol, spatial)
-    })
+    run_on_selection(
+        s,
+        "Smoother",
+        "keys.smooth",
+        3,
+        &|keys, a, b, spatial, fr, tc, tl, _| {
+            let samples = sample_curve(keys, keys[a].time, keys[b].time, spatial, fr, tc, tl);
+            smooth_keys(keys, a, b, &samples, tol, spatial)
+        },
+    )
 }
 
 /// Motion Sketch: `points` are `[t, x, y]` (t = capture seconds from the start) or `[x, y]`
@@ -323,10 +396,18 @@ fn sketch(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let fr = comp.frame_rate;
     let fd = fr.frame_duration().seconds();
-    let pts = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(c, "missing `points`: [[t, x, y]…] or [[x, y]…] in comp pixels"))?;
+    let pts = p.get("points").and_then(Value::as_array).ok_or_else(|| {
+        bad(
+            c,
+            "missing `points`: [[t, x, y]…] or [[x, y]…] in comp pixels",
+        )
+    })?;
     let mut rec: Vec<(f64, [f64; 2])> = vec![];
     for (i, v) in pts.iter().enumerate() {
-        let a: Vec<f64> = v.as_array().map(|a| a.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
+        let a: Vec<f64> = v
+            .as_array()
+            .map(|a| a.iter().filter_map(Value::as_f64).collect())
+            .unwrap_or_default();
         match a.len() {
             2 => rec.push((i as f64 * fd, [a[0], a[1]])),
             3.. => rec.push((a[0], [a[1], a[2]])),
@@ -340,7 +421,11 @@ fn sketch(s: &mut Session, p: &Value) -> Result<Value> {
     // Capture speed: 100 % plays back at the recorded speed; 200 % plays back twice as slow.
     let speed = f_p(p, "captureSpeed").unwrap_or(100.0).max(1.0) / 100.0;
     let smoothing = f_p(p, "smoothing").unwrap_or(1.0).max(0.0);
-    let start = p.get("start").and_then(Value::as_f64).map(Tick::from_seconds_f64).unwrap_or_else(|| s.time());
+    let start = p
+        .get("start")
+        .and_then(Value::as_f64)
+        .map(Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time());
     let f0 = fr.frame_at(start);
     let t_rec0 = rec[0].0;
     let span = (rec.last().map(|r| r.0).unwrap_or(0.0) - t_rec0) * speed;
@@ -350,13 +435,23 @@ fn sketch(s: &mut Session, p: &Value) -> Result<Value> {
         // Linear interpolation of the recorded path at recording time `secs`.
         let i = rec.partition_point(|r| r.0 <= secs).clamp(1, rec.len() - 1);
         let (a, b) = (rec[i - 1], rec[i]);
-        let f = if b.0 > a.0 { ((secs - a.0) / (b.0 - a.0)).clamp(0.0, 1.0) } else { 1.0 };
-        [a.1[0] + (b.1[0] - a.1[0]) * f, a.1[1] + (b.1[1] - a.1[1]) * f]
+        let f = if b.0 > a.0 {
+            ((secs - a.0) / (b.0 - a.0)).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        [
+            a.1[0] + (b.1[0] - a.1[0]) * f,
+            a.1[1] + (b.1[1] - a.1[1]) * f,
+        ]
     };
     let n = s.edit("Motion Sketch", None, |proj, st| {
         let l = layer_mut(proj, cid, lid)?;
         let lc = l.clone();
-        let pos = l.props.prop_mut("transform/position").ok_or_else(|| bad(c, "the layer has no Position"))?;
+        let pos = l
+            .props
+            .prop_mut("transform/position")
+            .ok_or_else(|| bad(c, "the layer has no Position"))?;
         let z = pos.value.as_vec3()[2];
         let three = matches!(pos.value, KValue::Vec3(_));
         let mut new: Vec<Keyframe> = vec![];
@@ -366,21 +461,47 @@ fn sketch(s: &mut Session, p: &Value) -> Result<Value> {
                 break;
             }
             let q = at(t_rec0 + k as f64 * fd / speed);
-            let v = if three { KValue::Vec3([q[0], q[1], z]) } else { KValue::Vec2(q) };
+            let v = if three {
+                KValue::Vec3([q[0], q[1], z])
+            } else {
+                KValue::Vec2(q)
+            };
             new.push(Keyframe::new(lc.layer_time(fr.tick_of(f)), v));
         }
-        let (Some(t0), Some(t1)) = (new.first().map(|k| k.time), new.last().map(|k| k.time)) else { return Ok(0) };
-        let mut keys: Vec<Keyframe> = pos.keys.iter().filter(|k| k.time < t0 || k.time > t1).cloned().collect();
+        let (Some(t0), Some(t1)) = (new.first().map(|k| k.time), new.last().map(|k| k.time)) else {
+            return Ok(0);
+        };
+        let mut keys: Vec<Keyframe> = pos
+            .keys
+            .iter()
+            .filter(|k| k.time < t0 || k.time > t1)
+            .cloned()
+            .collect();
         keys.extend(new);
         keys.sort_by_key(|k| k.time);
-        let (a, b) = (keys.iter().position(|k| k.time == t0).unwrap_or(0), keys.iter().position(|k| k.time == t1).unwrap_or(0));
+        let (a, b) = (
+            keys.iter().position(|k| k.time == t0).unwrap_or(0),
+            keys.iter().position(|k| k.time == t1).unwrap_or(0),
+        );
         if smoothing > 0.0 && b > a + 1 {
-            let samples: Vec<(Tick, Vec<f64>)> = keys[a..=b].iter().map(|k| (k.time, k.value.components())).collect();
+            let samples: Vec<(Tick, Vec<f64>)> = keys[a..=b]
+                .iter()
+                .map(|k| (k.time, k.value.components()))
+                .collect();
             keys = smooth_keys(&keys, a, b, &samples, smoothing, true);
         }
         pos.keys = keys;
         let uid = pos.uid;
-        st.selected_keys = pos.keys.iter().filter(|k| k.time >= t0 && k.time <= t1).map(|k| KeyRef { layer: lid, prop: uid, time: k.time }).collect();
+        st.selected_keys = pos
+            .keys
+            .iter()
+            .filter(|k| k.time >= t0 && k.time <= t1)
+            .map(|k| KeyRef {
+                layer: lid,
+                prop: uid,
+                time: k.time,
+            })
+            .collect();
         Ok(st.selected_keys.len())
     })?;
     Ok(json!({"keys": n}))
@@ -397,7 +518,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_keys,
             wiggle
         ),
-        cmd!("keys.smooth", "Smoother", [], None, "{tolerance? (property units, 1)}", has_keys, smooth),
+        cmd!(
+            "keys.smooth",
+            "Smoother",
+            [],
+            None,
+            "{tolerance? (property units, 1)}",
+            has_keys,
+            smooth
+        ),
         cmd!(
             "motion.sketch",
             "Motion Sketch",

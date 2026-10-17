@@ -7,14 +7,23 @@ fn session_with_documents(count: usize) -> (Session, Vec<DocId>) {
     let mut session = Session::new();
     let mut ids = Vec::new();
     for i in 0..count {
-        session.execute("file.new", json!({"name": format!("Document {i}"), "width": 8, "height": 8})).unwrap();
+        session
+            .execute(
+                "file.new",
+                json!({"name": format!("Document {i}"), "width": 8, "height": 8}),
+            )
+            .unwrap();
         ids.push(session.active().unwrap().doc.id);
     }
     (session, ids)
 }
 
 fn document_ids(session: &Session) -> Vec<DocId> {
-    session.documents().iter().map(|state| state.doc.id).collect()
+    session
+        .documents()
+        .iter()
+        .map(|state| state.doc.id)
+        .collect()
 }
 
 #[test]
@@ -25,10 +34,19 @@ fn closing_a_background_document_keeps_the_active_document() {
         let active_id = ids[active];
         ids.remove(closing);
 
-        session.execute("file.close", json!({"document": closing})).unwrap();
+        session
+            .execute("file.close", json!({"document": closing}))
+            .unwrap();
 
-        assert_eq!(session.active().unwrap().doc.id, active_id, "active {active}, closing {closing}");
-        assert_eq!(session.active_index(), ids.iter().position(|id| *id == active_id));
+        assert_eq!(
+            session.active().unwrap().doc.id,
+            active_id,
+            "active {active}, closing {closing}"
+        );
+        assert_eq!(
+            session.active_index(),
+            ids.iter().position(|id| *id == active_id)
+        );
         assert_eq!(document_ids(&session), ids);
     }
 }
@@ -44,7 +62,10 @@ fn closing_the_active_document_selects_the_next_or_previous_document() {
         session.execute("file.close", json!({})).unwrap();
 
         assert_eq!(session.active().unwrap().doc.id, next_id);
-        assert_eq!(session.active_index(), ids.iter().position(|id| *id == next_id));
+        assert_eq!(
+            session.active_index(),
+            ids.iter().position(|id| *id == next_id)
+        );
         assert_eq!(document_ids(&session), ids);
     }
 }
@@ -66,7 +87,11 @@ fn closing_an_invalid_document_preserves_the_session() {
     assert!(session.set_active(1));
     for index in [3, usize::MAX] {
         assert!(session.close(index).is_none());
-        assert!(session.execute("file.close", json!({"document": index})).is_err());
+        assert!(
+            session
+                .execute("file.close", json!({"document": index}))
+                .is_err()
+        );
         assert_eq!(session.active_index(), Some(1));
         assert_eq!(session.active().unwrap().doc.id, ids[1]);
         assert_eq!(document_ids(&session), ids);
@@ -76,7 +101,9 @@ fn closing_an_invalid_document_preserves_the_session() {
 #[test]
 fn closing_other_documents_keeps_the_requested_document() {
     let (mut session, ids) = session_with_documents(3);
-    session.execute("file.closeOthers", json!({"document": 1})).unwrap();
+    session
+        .execute("file.closeOthers", json!({"document": 1}))
+        .unwrap();
     assert_eq!(document_ids(&session), vec![ids[1]]);
     assert_eq!(session.active_index(), Some(0));
     session.execute("file.closeAll", json!({})).unwrap();

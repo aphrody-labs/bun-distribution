@@ -38,10 +38,15 @@ pub struct Relationships {
 
 #[cfg(not(target_arch = "wasm32"))]
 fn declared_reference(vfs: &Vfs, role: &'static str, logical: String, locale: &str) -> Reference {
-    let normalized =
-        logical.trim_start_matches('#').trim_start_matches('/').replace("<LG>", locale);
-    let candidate =
-        if normalized.starts_with("data/") { normalized } else { format!("data/{normalized}") };
+    let normalized = logical
+        .trim_start_matches('#')
+        .trim_start_matches('/')
+        .replace("<LG>", locale);
+    let candidate = if normalized.starts_with("data/") {
+        normalized
+    } else {
+        format!("data/{normalized}")
+    };
     let entry = vfs.find(&candidate);
     Reference {
         role,
@@ -80,7 +85,9 @@ pub fn inspect(vfs: &Vfs, path: &str, locale: &str) -> Result<Relationships, Str
             ("animation", object.anime_path),
         ] {
             if let Some(logical) = logical {
-                result.declared.push(declared_reference(vfs, role, logical, locale));
+                result
+                    .declared
+                    .push(declared_reference(vfs, role, logical, locale));
             }
         }
         result.unresolved.push("Only direct declarations and explicit locale substitution are resolved; missing paths do not fall back to an unrelated basename.");
@@ -91,14 +98,21 @@ pub fn inspect(vfs: &Vfs, path: &str, locale: &str) -> Result<Relationships, Str
         for (role, extension) in [("model", "g4md"), ("mesh", "g4mg"), ("texture", "g4tx")] {
             let candidate = format!("{stem}.{extension}");
             if candidate != path && vfs.find(&candidate).is_some() {
-                result.naming_candidates.push(declared_reference(vfs, role, candidate, locale));
+                result
+                    .naming_candidates
+                    .push(declared_reference(vfs, role, candidate, locale));
             }
         }
         let texture = format!("{stem}.g4tx").replace("/common/", "/dx11/");
         if vfs.find(&texture).is_some()
-            && !result.naming_candidates.iter().any(|candidate| candidate.logical_path == texture)
+            && !result
+                .naming_candidates
+                .iter()
+                .any(|candidate| candidate.logical_path == texture)
         {
-            result.naming_candidates.push(declared_reference(vfs, "texture", texture, locale));
+            result
+                .naming_candidates
+                .push(declared_reference(vfs, "texture", texture, locale));
         }
         result.unresolved.push("Same-stem candidates are the desktop preview policy; decoded material and motion dependency bindings are not established.");
     } else {

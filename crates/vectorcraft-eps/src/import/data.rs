@@ -52,11 +52,16 @@ fn run_length(raw: &[u8]) -> Res<(Vec<u8>, usize)> {
             128 => break,
             0..=127 => {
                 let len = usize::from(n) + 1;
-                out.extend_from_slice(raw.get(i..i + len).ok_or(PsError::Ps("ioerror", "RunLengthDecode".into()))?);
+                out.extend_from_slice(
+                    raw.get(i..i + len)
+                        .ok_or(PsError::Ps("ioerror", "RunLengthDecode".into()))?,
+                );
                 i += len;
             }
             _ => {
-                let b = *raw.get(i).ok_or(PsError::Ps("ioerror", "RunLengthDecode".into()))?;
+                let b = *raw
+                    .get(i)
+                    .ok_or(PsError::Ps("ioerror", "RunLengthDecode".into()))?;
                 i += 1;
                 out.extend(std::iter::repeat_n(b, 257 - usize::from(n)));
             }
@@ -78,7 +83,9 @@ fn flate(raw: &[u8]) -> Res<(Vec<u8>, usize)> {
             out.reserve(256 * 1024);
         }
         let input = raw.get(z.total_in() as usize..).unwrap_or_default();
-        let status = z.decompress_vec(input, &mut out, flate2::FlushDecompress::None).map_err(|_| PsError::Ps("ioerror", "FlateDecode".into()))?;
+        let status = z
+            .decompress_vec(input, &mut out, flate2::FlushDecompress::None)
+            .map_err(|_| PsError::Ps("ioerror", "FlateDecode".into()))?;
         if out.len() > MAX_DATA {
             return Err(PsError::Limit("decoded data is too large"));
         }
@@ -100,7 +107,9 @@ fn lzw(raw: &[u8]) -> Res<(Vec<u8>, usize)> {
     let (mut acc, mut bits, mut width, mut i) = (0u32, 0u32, 9u32, 0usize);
     loop {
         while bits < width {
-            let Some(&b) = raw.get(i) else { return Ok((out, i)) };
+            let Some(&b) = raw.get(i) else {
+                return Ok((out, i));
+            };
             i += 1;
             acc = (acc << 8) | u32::from(b);
             bits += 8;
@@ -150,9 +159,16 @@ fn lzw(raw: &[u8]) -> Res<(Vec<u8>, usize)> {
 /// took.
 fn dct(raw: &[u8]) -> Res<(Vec<u8>, usize, u8)> {
     let end = find(raw, &[0xFF, 0xD9]).map_or(raw.len(), |e| e + 2);
-    let img = image::load_from_memory_with_format(raw.get(..end).unwrap_or_default(), image::ImageFormat::Jpeg)
-        .map_err(|_| PsError::Ps("ioerror", "DCTDecode".into()))?;
-    if img.color().channel_count() == 1 { Ok((img.to_luma8().into_raw(), end, 1)) } else { Ok((img.to_rgb8().into_raw(), end, 3)) }
+    let img = image::load_from_memory_with_format(
+        raw.get(..end).unwrap_or_default(),
+        image::ImageFormat::Jpeg,
+    )
+    .map_err(|_| PsError::Ps("ioerror", "DCTDecode".into()))?;
+    if img.color().channel_count() == 1 {
+        Ok((img.to_luma8().into_raw(), end, 1))
+    } else {
+        Ok((img.to_rgb8().into_raw(), end, 3))
+    }
 }
 
 /// A decoding filter and its parameters.
@@ -177,12 +193,21 @@ struct Predictor {
 impl Predictor {
     /// The predictor of a filter's parameters, if it has one.
     fn of(d: &DictRef) -> Res<Option<Self>> {
-        let num = |k: &str, default: f64| d.borrow().get(&Key::name(k)).and_then(Obj::as_num).unwrap_or(default);
+        let num = |k: &str, default: f64| {
+            d.borrow()
+                .get(&Key::name(k))
+                .and_then(Obj::as_num)
+                .unwrap_or(default)
+        };
         let kind = num("Predictor", 1.0);
         if kind <= 1.0 {
             return Ok(None);
         }
-        let (colors, bpc, columns) = (num("Colors", 1.0), num("BitsPerComponent", 8.0), num("Columns", 1.0));
+        let (colors, bpc, columns) = (
+            num("Colors", 1.0),
+            num("BitsPerComponent", 8.0),
+            num("Columns", 1.0),
+        );
         if !(kind == 2.0 || (10.0..=15.0).contains(&kind))
             || !(1.0..=32.0).contains(&colors)
             || ![1.0, 2.0, 4.0, 8.0, 16.0].contains(&bpc)
@@ -190,13 +215,20 @@ impl Predictor {
         {
             return ps_err("rangecheck", "Predictor");
         }
-        Ok(Some(Self { kind: kind as u8, colors: colors as usize, bpc: bpc as usize, columns: columns as usize }))
+        Ok(Some(Self {
+            kind: kind as u8,
+            colors: colors as usize,
+            bpc: bpc as usize,
+            columns: columns as usize,
+        }))
     }
 
     /// The data the predictor made `data` from.
     fn undo(self, data: &[u8]) -> Vec<u8> {
         // A row longer than the data is the data.
-        let row = (self.colors * self.bpc * self.columns).div_ceil(8).min(data.len().max(1));
+        let row = (self.colors * self.bpc * self.columns)
+            .div_ceil(8)
+            .min(data.len().max(1));
         // Bytes per pixel (at least one) is how far back the left neighbour is.
         let bpp = (self.colors * self.bpc).div_ceil(8).max(1);
         if self.kind == 2 {
@@ -218,13 +250,23 @@ impl Predictor {
         let mut out: Vec<u8> = Vec::with_capacity(data.len());
         let mut prev = vec![0u8; row];
         for chunk in data.chunks(row + 1) {
-            let Some((&kind, line)) = chunk.split_first() else { break };
+            let Some((&kind, line)) = chunk.split_first() else {
+                break;
+            };
             let mut cur = line.to_vec();
             cur.resize(row, 0);
             for i in 0..row {
-                let a = if i >= bpp { cur.get(i - bpp).copied().unwrap_or(0) } else { 0 };
+                let a = if i >= bpp {
+                    cur.get(i - bpp).copied().unwrap_or(0)
+                } else {
+                    0
+                };
                 let b = prev.get(i).copied().unwrap_or(0);
-                let c = if i >= bpp { prev.get(i - bpp).copied().unwrap_or(0) } else { 0 };
+                let c = if i >= bpp {
+                    prev.get(i - bpp).copied().unwrap_or(0)
+                } else {
+                    0
+                };
                 let add = match kind {
                     1 => a,
                     2 => b,
@@ -263,17 +305,29 @@ fn decode(f: &Filter, raw: &[u8]) -> Res<(Vec<u8>, usize, Option<u8>)> {
         "ASCIIHexDecode" => {
             let end = raw.iter().position(|b| *b == b'>');
             let body = raw.get(..end.unwrap_or(raw.len())).unwrap_or_default();
-            (hex_decode(body).ok_or(PsError::Ps("ioerror", "ASCIIHexDecode".into()))?, end.map_or(raw.len(), |e| e + 1))
+            (
+                hex_decode(body).ok_or(PsError::Ps("ioerror", "ASCIIHexDecode".into()))?,
+                end.map_or(raw.len(), |e| e + 1),
+            )
         }
         "ASCII85Decode" => {
             let end = find(raw, b"~>");
-            let mut text = String::from_utf8_lossy(raw.get(..end.unwrap_or(raw.len())).unwrap_or_default()).into_owned();
+            let mut text =
+                String::from_utf8_lossy(raw.get(..end.unwrap_or(raw.len())).unwrap_or_default())
+                    .into_owned();
             text.push_str("~>");
-            (ps::ascii85_decode(&text).ok_or(PsError::Ps("ioerror", "ASCII85Decode".into()))?, end.map_or(raw.len(), |e| e + 2))
+            (
+                ps::ascii85_decode(&text).ok_or(PsError::Ps("ioerror", "ASCII85Decode".into()))?,
+                end.map_or(raw.len(), |e| e + 2),
+            )
         }
         "RunLengthDecode" => run_length(raw)?,
         "FlateDecode" | "LZWDecode" => {
-            let (data, used) = if &*f.name == "FlateDecode" { flate(raw)? } else { lzw(raw)? };
+            let (data, used) = if &*f.name == "FlateDecode" {
+                flate(raw)?
+            } else {
+                lzw(raw)?
+            };
             match f.predictor {
                 Some(p) => (p.undo(&data), used),
                 None => (data, used),
@@ -287,7 +341,11 @@ fn decode(f: &Filter, raw: &[u8]) -> Res<(Vec<u8>, usize, Option<u8>)> {
             let (count, eod) = &f.sub;
             if eod.is_empty() {
                 // A count of 0 without an end string sets no end: the data passes through whole.
-                let n = if *count == 0 { raw.len() } else { (*count).min(raw.len()) };
+                let n = if *count == 0 {
+                    raw.len()
+                } else {
+                    (*count).min(raw.len())
+                };
                 (raw.get(..n).unwrap_or_default().to_vec(), n)
             } else {
                 let (mut at, mut seen) = (0, 0);
@@ -297,7 +355,12 @@ fn decode(f: &Filter, raw: &[u8]) -> Res<(Vec<u8>, usize, Option<u8>)> {
                             seen += 1;
                             at += i + eod.len();
                         }
-                        Some(i) => break (raw.get(..at + i).unwrap_or_default().to_vec(), at + i + eod.len()),
+                        Some(i) => {
+                            break (
+                                raw.get(..at + i).unwrap_or_default().to_vec(),
+                                at + i + eod.len(),
+                            );
+                        }
                         None => break (raw.to_vec(), raw.len()),
                     }
                 }
@@ -322,19 +385,30 @@ impl Interp<'_> {
     pub fn data_op(&mut self, op: Op) -> Res {
         use Op::*;
         match op {
-            CurrentFile => self.push(Obj::File { stream: Rc::new(RefCell::new(Stream::Current)), exec: false })?,
+            CurrentFile => self.push(Obj::File {
+                stream: Rc::new(RefCell::new(Stream::Current)),
+                exec: false,
+            })?,
             Filter => self.filter()?,
             ReadHexString | ReadString => {
                 let s = self.pop_str()?;
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
                 let n = s.len();
-                let got = if op == ReadString { self.read(&f, n)? } else { self.read_hex(&f, n)? };
+                let got = if op == ReadString {
+                    self.read(&f, n)?
+                } else {
+                    self.read_hex(&f, n)?
+                };
                 self.fill(s, &got)?;
                 self.push(Obj::Bool(got.len() == n))?;
             }
             ReadLine => {
                 let s = self.pop_str()?;
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
                 let n = s.len();
                 let mut line = vec![];
                 let mut ended = false;
@@ -369,10 +443,20 @@ impl Interp<'_> {
                 let name = self.pop()?.text().unwrap_or_else(|| Rc::from(""));
                 // The standard files take what programs print (and give nothing); there is no
                 // file system to open others in.
-                if !matches!(&*name, "%stdout" | "%stderr" | "%stdin" | "%lineedit" | "%statementedit") {
+                if !matches!(
+                    &*name,
+                    "%stdout" | "%stderr" | "%stdin" | "%lineedit" | "%statementedit"
+                ) {
                     return ps_err("invalidfileaccess", "file");
                 }
-                self.push(Obj::File { stream: Rc::new(RefCell::new(Stream::Buf { data: vec![], pos: 0, rgb: None })), exec: false })?;
+                self.push(Obj::File {
+                    stream: Rc::new(RefCell::new(Stream::Buf {
+                        data: vec![],
+                        pos: 0,
+                        rgb: None,
+                    })),
+                    exec: false,
+                })?;
             }
             Status => match self.pop()? {
                 Obj::File { .. } => self.push(Obj::Bool(true))?,
@@ -381,7 +465,9 @@ impl Interp<'_> {
                 _ => return ps_err("typecheck", ""),
             },
             BytesAvailable => {
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
                 self.materialize(&f)?;
                 let n = match &*f.borrow() {
                     Stream::Current => self.lex.rest().len(),
@@ -403,7 +489,9 @@ impl Interp<'_> {
                 self.pop()?;
             }
             Read => {
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
                 match self.read(&f, 1)?.first() {
                     Some(b) => {
                         self.push(Obj::Int(i64::from(*b)))?;
@@ -413,14 +501,22 @@ impl Interp<'_> {
                 }
             }
             FilePosition => {
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
-                let Stream::Buf { pos, .. } = &*f.borrow() else { return ps_err("ioerror", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
+                let Stream::Buf { pos, .. } = &*f.borrow() else {
+                    return ps_err("ioerror", "");
+                };
                 self.push(Obj::Int(*pos as i64))?;
             }
             SetFilePosition => {
                 let at = self.pop_count()?;
-                let Obj::File { stream: f, .. } = self.pop()? else { return ps_err("typecheck", "") };
-                let Stream::Buf { data, pos, .. } = &mut *f.borrow_mut() else { return ps_err("ioerror", "") };
+                let Obj::File { stream: f, .. } = self.pop()? else {
+                    return ps_err("typecheck", "");
+                };
+                let Stream::Buf { data, pos, .. } = &mut *f.borrow_mut() else {
+                    return ps_err("ioerror", "");
+                };
                 *pos = at.min(data.len());
             }
             // There are no files to delete, rename or run.
@@ -447,7 +543,9 @@ impl Interp<'_> {
             Obj::Str(s) => {
                 let bytes = s.to_vec();
                 let mut lex = Lexer::new(&bytes);
-                let Some(o) = lex.next()? else { return self.push(Obj::Bool(false)) };
+                let Some(o) = lex.next()? else {
+                    return self.push(Obj::Bool(false));
+                };
                 let o = self.scanned(o, lex.immediate)?;
                 // The whitespace after the token is read with it.
                 let used = bytes.len() - lex.data().len();
@@ -467,7 +565,9 @@ impl Interp<'_> {
                     }
                     Stream::Pending(_) => (None, false),
                 };
-                let Some(o) = o else { return self.push(Obj::Bool(false)) };
+                let Some(o) = o else {
+                    return self.push(Obj::Bool(false));
+                };
                 let o = self.scanned(o, immediate)?;
                 self.push(o)?;
             }
@@ -502,8 +602,12 @@ impl Interp<'_> {
         let mut out = Vec::with_capacity(n);
         let mut high: Option<u8> = None;
         while out.len() < n {
-            let Some(&b) = self.read(f, 1)?.first() else { break };
-            let Some(v) = char::from(b).to_digit(16) else { continue };
+            let Some(&b) = self.read(f, 1)?.first() else {
+                break;
+            };
+            let Some(v) = char::from(b).to_digit(16) else {
+                continue;
+            };
             match high.take() {
                 Some(h) => out.push(h << 4 | v as u8),
                 None => high = Some(v as u8),
@@ -523,7 +627,10 @@ impl Interp<'_> {
     /// `filter`: a file that decodes its source. Over the program's own data it decodes when
     /// first read (the data follows the operator that reads it); over other data, at once.
     fn filter(&mut self) -> Res {
-        let name = self.pop()?.text().ok_or(PsError::Ps("typecheck", "filter".into()))?;
+        let name = self
+            .pop()?
+            .text()
+            .ok_or(PsError::Ps("typecheck", "filter".into()))?;
         let sub = if &*name == "SubFileDecode" {
             let eod = self.pop_str()?.to_vec();
             let count = self.pop_count()?;
@@ -537,7 +644,11 @@ impl Interp<'_> {
             predictor = Predictor::of(&d)?;
         }
         let spec_name = name.clone();
-        let spec = Filter { name, sub, predictor };
+        let spec = Filter {
+            name,
+            sub,
+            predictor,
+        };
         let stream = match self.pop()? {
             Obj::File { stream: f, .. } => {
                 if let Stream::Buf { data, pos, .. } = &*f.borrow() {
@@ -553,17 +664,27 @@ impl Interp<'_> {
                         // The new filter reads a pending one's data: it has none left of its own
                         // (`flushfile` on it skips nothing more).
                         if !c.is_empty() {
-                            *f.borrow_mut() = Stream::Buf { data: vec![], pos: 0, rgb: None };
+                            *f.borrow_mut() = Stream::Buf {
+                                data: vec![],
+                                pos: 0,
+                                rgb: None,
+                            };
                         }
                         c.push(spec);
                         Stream::Pending(c)
                     }
                     None => {
                         let mut b = f.borrow_mut();
-                        let Stream::Buf { data, pos, .. } = &mut *b else { return io("filter") };
+                        let Stream::Buf { data, pos, .. } = &mut *b else {
+                            return io("filter");
+                        };
                         let (out, used, rgb) = decode(&spec, data.get(*pos..).unwrap_or_default())?;
                         *pos = pos.saturating_add(used);
-                        Stream::Buf { data: out, pos: 0, rgb }
+                        Stream::Buf {
+                            data: out,
+                            pos: 0,
+                            rgb,
+                        }
                     }
                 }
             }
@@ -584,7 +705,10 @@ impl Interp<'_> {
         if &*spec_name == "ReusableStreamDecode" {
             self.materialize(&stream)?;
         }
-        self.push(Obj::File { stream, exec: false })
+        self.push(Obj::File {
+            stream,
+            exec: false,
+        })
     }
 
     /// The data an executable file runs as a program: what is left of it. `None` for the
@@ -635,12 +759,18 @@ impl Interp<'_> {
 
     /// The bytes a data procedure gives, called until it gives an empty string or `n` bytes.
     fn gather(&mut self, p: &Obj, n: usize) -> Res<Vec<u8>> {
-        Ok(self.read_sources(&[Source::Proc(p.clone())], n, n)?.pop().unwrap_or_default())
+        Ok(self
+            .read_sources(&[Source::Proc(p.clone())], n, n)?
+            .pop()
+            .unwrap_or_default())
     }
 
     /// `n` bytes of image data from `src` (zeros past its end).
     fn source_bytes(&mut self, src: &Source, n: usize) -> Res<Vec<u8>> {
-        let mut v = self.read_sources(std::slice::from_ref(src), n, n)?.pop().unwrap_or_default();
+        let mut v = self
+            .read_sources(std::slice::from_ref(src), n, n)?
+            .pop()
+            .unwrap_or_default();
         v.resize(n, 0);
         Ok(v)
     }
@@ -664,7 +794,13 @@ impl Interp<'_> {
                     // A string gives its bytes over and over.
                     Source::Str(s) => {
                         let at = o.len() % s.len().max(1);
-                        s.get(at..).unwrap_or_default().iter().chain(s.iter().cycle()).take(want).copied().collect()
+                        s.get(at..)
+                            .unwrap_or_default()
+                            .iter()
+                            .chain(s.iter().cycle())
+                            .take(want)
+                            .copied()
+                            .collect()
                     }
                     Source::Proc(p) => {
                         self.call(p.clone())?;
@@ -674,7 +810,11 @@ impl Interp<'_> {
                     }
                 };
                 *e = chunk.is_empty();
-                o.extend_from_slice(chunk.get(..chunk.len().min(n - o.len())).unwrap_or_default());
+                o.extend_from_slice(
+                    chunk
+                        .get(..chunk.len().min(n - o.len()))
+                        .unwrap_or_default(),
+                );
             }
         }
         Ok(out)
@@ -704,7 +844,10 @@ impl Interp<'_> {
         let img = match self.stack.last() {
             Some(Obj::Dict(_)) if op != Op::ColorImage => {
                 let d = self.pop_dict()?;
-                let kind = d.borrow().get(&Key::name("ImageType")).and_then(Obj::as_num);
+                let kind = d
+                    .borrow()
+                    .get(&Key::name("ImageType"))
+                    .and_then(Obj::as_num);
                 if kind == Some(3.0) && !mask {
                     self.masked_image(&d)?
                 } else {
@@ -726,23 +869,34 @@ impl Interp<'_> {
     /// sources (`InterleaveType` 3) or interleaved with the image's by row (2) or by sample (1).
     fn masked_image(&mut self, d: &DictRef) -> Res<Option<Pixels>> {
         let get = |k: &str| d.borrow().get(&Key::name(k)).cloned();
-        let (Some(Obj::Dict(data)), Some(Obj::Dict(mask))) = (get("DataDict"), get("MaskDict")) else {
+        let (Some(Obj::Dict(data)), Some(Obj::Dict(mask))) = (get("DataDict"), get("MaskDict"))
+        else {
             return ps_err("typecheck", "ImageType 3");
         };
-        let interleave = get("InterleaveType").and_then(|o| o.as_num()).unwrap_or(1.0);
+        let interleave = get("InterleaveType")
+            .and_then(|o| o.as_num())
+            .unwrap_or(1.0);
         let mut image = self.image_dict(&data, false)?;
         let mut stencil = self.image_dict(&mask, false)?;
         stencil.space = Space::Gray;
         let n = image.space.n();
-        if image.w.saturating_mul(image.h) > MAX_PIXELS || stencil.w.saturating_mul(stencil.h) > MAX_PIXELS {
+        if image.w.saturating_mul(image.h) > MAX_PIXELS
+            || stencil.w.saturating_mul(stencil.h) > MAX_PIXELS
+        {
             self.out.warn(TOO_LARGE);
             return Ok(None);
         }
         if interleave != 3.0 {
-            let src = image.sources.first().cloned().ok_or(PsError::Ps("undefined", "DataSource".into()))?;
+            let src = image
+                .sources
+                .first()
+                .cloned()
+                .ok_or(PsError::Ps("undefined", "DataSource".into()))?;
             let (pixels, samples) = if interleave == 2.0 {
                 let (mrow, drow) = (stencil.row_bytes(1), image.row_bytes(n));
-                let total = mrow.saturating_mul(stencil.h).saturating_add(drow.saturating_mul(image.h));
+                let total = mrow
+                    .saturating_mul(stencil.h)
+                    .saturating_add(drow.saturating_mul(image.h));
                 self.alloc(total)?;
                 let raw = self.source_bytes(&src, total.min(MAX_DATA))?;
                 by_rows(&raw, (mrow, stencil.h), (drow, image.h))
@@ -758,14 +912,22 @@ impl Interp<'_> {
             stencil.sources = vec![Source::Str(pixels)];
             image.sources = vec![Source::Str(samples)];
         }
-        let Some(mut img) = self.decode_image(image)? else { return Ok(None) };
-        let Some(m) = self.decode_image(stencil)? else { return Ok(Some(img)) };
+        let Some(mut img) = self.decode_image(image)? else {
+            return Ok(None);
+        };
+        let Some(m) = self.decode_image(stencil)? else {
+            return Ok(Some(img));
+        };
         let (w, h, mw, mh) = (img.w as usize, img.h as usize, m.w as usize, m.h as usize);
         for (i, px) in img.rgba.as_chunks_mut::<4>().0.iter_mut().enumerate() {
             let (x, y) = (i % w, i / w);
             // The mask's pixel over this one (in 64 bits: rows times rows overflow 32).
-            let at = (y as u64 * mh as u64 / h.max(1) as u64) * mw as u64 + x as u64 * mw as u64 / w.max(1) as u64;
-            if usize::try_from(at * 4).ok().and_then(|i| m.rgba.get(i)).is_none_or(|v| *v >= 128)
+            let at = (y as u64 * mh as u64 / h.max(1) as u64) * mw as u64
+                + x as u64 * mw as u64 / w.max(1) as u64;
+            if usize::try_from(at * 4)
+                .ok()
+                .and_then(|i| m.rgba.get(i))
+                .is_none_or(|v| *v >= 128)
                 && let Some(a) = px.get_mut(3)
             {
                 *a = 0;
@@ -782,27 +944,65 @@ impl Interp<'_> {
         if kind != 1.0 && kind != 4.0 {
             return ps_err("rangecheck", "ImageType");
         }
-        let size = |k: &str| num(k).filter(|v| *v >= 1.0 && *v <= 65_535.0).map(|v| v as usize).ok_or(PsError::Ps("rangecheck", k.to_string()));
+        let size = |k: &str| {
+            num(k)
+                .filter(|v| *v >= 1.0 && *v <= 65_535.0)
+                .map(|v| v as usize)
+                .ok_or(PsError::Ps("rangecheck", k.to_string()))
+        };
         let (w, h) = (size("Width")?, size("Height")?);
-        let bpc = if mask { 1 } else { num("BitsPerComponent").unwrap_or(8.0) as u8 };
-        let matrix =
-            get("ImageMatrix").and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow()))).ok_or(PsError::Ps("typecheck", "ImageMatrix".into()))?;
-        let decode: Vec<f64> = get("Decode").and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())).unwrap_or_default();
-        let space = if mask { Space::Gray } else { (*self.g.space).clone() };
+        let bpc = if mask {
+            1
+        } else {
+            num("BitsPerComponent").unwrap_or(8.0) as u8
+        };
+        let matrix = get("ImageMatrix")
+            .and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow())))
+            .ok_or(PsError::Ps("typecheck", "ImageMatrix".into()))?;
+        let decode: Vec<f64> = get("Decode")
+            .and_then(|o| {
+                o.items()
+                    .map(|i| i.borrow().iter().filter_map(Obj::as_num).collect())
+            })
+            .unwrap_or_default();
+        let space = if mask {
+            Space::Gray
+        } else {
+            (*self.g.space).clone()
+        };
         let multi = get("MultipleDataSources").is_some_and(|o| matches!(o, Obj::Bool(true)));
         let sources = match (get("DataSource"), multi) {
             (None, _) => vec![],
-            (Some(Obj::Array { items, exec: false }), true) => items.borrow().iter().map(source).collect::<Res<Vec<_>>>()?,
+            (Some(Obj::Array { items, exec: false }), true) => {
+                items.borrow().iter().map(source).collect::<Res<Vec<_>>>()?
+            }
             (Some(src), _) => vec![source(&src)?],
         };
         let mask_color: Option<Vec<u32>> = (kind == 4.0)
             .then(|| {
-                get("MaskColor").and_then(|o| o.items().map(|i| i.borrow().iter().filter_map(|v| v.as_num().map(|v| v.max(0.0) as u32)).collect()))
+                get("MaskColor").and_then(|o| {
+                    o.items().map(|i| {
+                        i.borrow()
+                            .iter()
+                            .filter_map(|v| v.as_num().map(|v| v.max(0.0) as u32))
+                            .collect()
+                    })
+                })
             })
             .flatten();
         // An image mask paints its 0 bits with Decode [0 1], its 1 bits with [1 0].
         let stencil = mask.then(|| decode.first().is_some_and(|v| *v > 0.5));
-        Ok(Spec { w, h, bpc, space, decode, matrix, sources, mask_color, stencil })
+        Ok(Spec {
+            w,
+            h,
+            bpc,
+            space,
+            decode,
+            matrix,
+            sources,
+            mask_color,
+            stencil,
+        })
     }
 
     /// The operand forms: `w h bpc matrix src image`, `w h polarity matrix src imagemask`, and
@@ -827,11 +1027,30 @@ impl Interp<'_> {
         }
         sources.reverse();
         let matrix = self.pop_matrix()?;
-        let (bpc, stencil) = if op == Op::ImageMask { (1, Some(self.pop_bool()?)) } else { (self.pop_int()?.clamp(1, 16) as u8, None) };
-        let size = |v: i64| usize::try_from(v).ok().filter(|v| (1..=65_535).contains(v)).ok_or(PsError::Ps("rangecheck", "image".into()));
+        let (bpc, stencil) = if op == Op::ImageMask {
+            (1, Some(self.pop_bool()?))
+        } else {
+            (self.pop_int()?.clamp(1, 16) as u8, None)
+        };
+        let size = |v: i64| {
+            usize::try_from(v)
+                .ok()
+                .filter(|v| (1..=65_535).contains(v))
+                .ok_or(PsError::Ps("rangecheck", "image".into()))
+        };
         let h = size(self.pop_int()?)?;
         let w = size(self.pop_int()?)?;
-        Ok(Spec { w, h, bpc, space, decode: vec![], matrix, sources, mask_color: None, stencil })
+        Ok(Spec {
+            w,
+            h,
+            bpc,
+            space,
+            decode: vec![],
+            matrix,
+            sources,
+            mask_color: None,
+            stencil,
+        })
     }
 
     /// The image's pixels, straight RGBA, rows from the first one read.
@@ -868,8 +1087,15 @@ impl Interp<'_> {
         let row_bits = if multi { s.w * bpc } else { s.w * n * bpc };
         let row = row_bits.div_ceil(8);
         // Several sources are read in turn, a row at a time each (zeros past their ends).
-        let sources = if multi { &s.sources[..] } else { s.sources.get(..1).ok_or(PsError::Ps("undefined", "DataSource".into()))? };
-        let mut planes = self.read_sources(sources, row * s.h, if multi { row } else { row * s.h })?;
+        let sources = if multi {
+            &s.sources[..]
+        } else {
+            s.sources
+                .get(..1)
+                .ok_or(PsError::Ps("undefined", "DataSource".into()))?
+        };
+        let mut planes =
+            self.read_sources(sources, row * s.h, if multi { row } else { row * s.h })?;
         for p in &mut planes {
             p.resize(row * s.h, 0);
         }
@@ -879,19 +1105,34 @@ impl Interp<'_> {
             let byte = bit / 8;
             match bpc {
                 8 => u32::from(plane.get(byte).copied().unwrap_or(0)),
-                16 => u32::from(plane.get(byte).copied().unwrap_or(0)) << 8 | u32::from(plane.get(byte + 1).copied().unwrap_or(0)),
-                12 => {
-                    let v = u32::from(plane.get(byte).copied().unwrap_or(0)) << 8 | u32::from(plane.get(byte + 1).copied().unwrap_or(0));
-                    if bit.is_multiple_of(8) { v >> 4 } else { v & 0xfff }
+                16 => {
+                    u32::from(plane.get(byte).copied().unwrap_or(0)) << 8
+                        | u32::from(plane.get(byte + 1).copied().unwrap_or(0))
                 }
-                _ => (u32::from(plane.get(byte).copied().unwrap_or(0)) >> (8 - bpc - bit % 8)) & ((1 << bpc) - 1),
+                12 => {
+                    let v = u32::from(plane.get(byte).copied().unwrap_or(0)) << 8
+                        | u32::from(plane.get(byte + 1).copied().unwrap_or(0));
+                    if bit.is_multiple_of(8) {
+                        v >> 4
+                    } else {
+                        v & 0xfff
+                    }
+                }
+                _ => {
+                    (u32::from(plane.get(byte).copied().unwrap_or(0)) >> (8 - bpc - bit % 8))
+                        & ((1 << bpc) - 1)
+                }
             }
         };
         let default_decode: Vec<f64> = match &space {
             Space::Indexed { .. } => vec![0.0, max],
             _ => (0..n).flat_map(|_| [0.0, 1.0]).collect(),
         };
-        let decode = if s.decode.len() >= 2 * n && jpeg.is_none() { s.decode.clone() } else { default_decode };
+        let decode = if s.decode.len() >= 2 * n && jpeg.is_none() {
+            s.decode.clone()
+        } else {
+            default_decode
+        };
         let paint = self.g.paint.color().map(|c| c.to_rgba8(1.0));
         let mut rgba = Vec::with_capacity(s.w * s.h * 4);
         let mut cache: HashMap<Vec<u32>, [u8; 3]> = HashMap::new();
@@ -913,12 +1154,19 @@ impl Interp<'_> {
                 }
                 let masked = s.mask_color.as_ref().is_some_and(|m| masked(m, &raw));
                 for (c, slot) in comps.iter_mut().enumerate() {
-                    let (d0, d1) = (decode.get(2 * c).copied().unwrap_or(0.0), decode.get(2 * c + 1).copied().unwrap_or(1.0));
+                    let (d0, d1) = (
+                        decode.get(2 * c).copied().unwrap_or(0.0),
+                        decode.get(2 * c + 1).copied().unwrap_or(1.0),
+                    );
                     *slot = d0 + f64::from(*raw.get(c).unwrap_or(&0)) * (d1 - d0) / max;
                 }
                 let rgb = match (&space, raw.as_slice()) {
                     (Space::Gray, [v]) if bpc == 8 && decode == [0.0, 1.0] => [*v as u8; 3],
-                    (Space::Rgb, [r, g, b]) if bpc == 8 && decode == [0.0, 1.0, 0.0, 1.0, 0.0, 1.0] => [*r as u8, *g as u8, *b as u8],
+                    (Space::Rgb, [r, g, b])
+                        if bpc == 8 && decode == [0.0, 1.0, 0.0, 1.0, 0.0, 1.0] =>
+                    {
+                        [*r as u8, *g as u8, *b as u8]
+                    }
                     _ => match cache.get(&raw) {
                         Some(c) => *c,
                         None => {
@@ -933,7 +1181,12 @@ impl Interp<'_> {
                 rgba.extend([rgb[0], rgb[1], rgb[2], if masked { 0 } else { 255 }]);
             }
         }
-        Ok(Some(Pixels { w: s.w as u32, h: s.h as u32, rgba, matrix: s.matrix }))
+        Ok(Some(Pixels {
+            w: s.w as u32,
+            h: s.h as u32,
+            rgba,
+            matrix: s.matrix,
+        }))
     }
 
     /// One pixel's colour in `space` as display RGB.
@@ -962,18 +1215,31 @@ impl Interp<'_> {
         if self.g.null {
             return Ok(());
         }
-        let Some(rgba) = image::RgbaImage::from_raw(img.w, img.h, img.rgba) else { return Ok(()) };
+        let Some(rgba) = image::RgbaImage::from_raw(img.w, img.h, img.rgba) else {
+            return Ok(());
+        };
         let mut png = vec![];
-        if rgba.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).is_err() {
+        if rgba
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .is_err()
+        {
             self.out.warn("an image that couldn't be read was left out");
             return Ok(());
         }
         let blob = ImageBlob::new("image/png", png);
         let key = blob.content_key();
         self.out.doc.images.entry(key.clone()).or_insert(blob);
-        let im = ImageObject { key, width: img.w, height: img.h, xf, link: None, placement: Default::default() };
+        let im = ImageObject {
+            key,
+            width: img.w,
+            height: img.h,
+            xf,
+            link: None,
+            placement: Default::default(),
+        };
         let clips = self.g.clips.clone();
-        self.out.push(Node::new(NodeId(0), NodeKind::Image(Box::new(im))), &clips);
+        self.out
+            .push(Node::new(NodeId(0), NodeKind::Image(Box::new(im))), &clips);
         Ok(())
     }
 }
@@ -1004,15 +1270,26 @@ impl Spec {
 
 /// Data of an ImageType 3 interleaved by row, split into the mask's and the image's: the one
 /// with fewer rows gives one row before each run of the other's (`(row bytes, rows)` each).
-fn by_rows(raw: &[u8], (mrow, mh): (usize, usize), (drow, dh): (usize, usize)) -> (Vec<u8>, Vec<u8>) {
+fn by_rows(
+    raw: &[u8],
+    (mrow, mh): (usize, usize),
+    (drow, dh): (usize, usize),
+) -> (Vec<u8>, Vec<u8>) {
     let room = |row: usize, rows: usize| row.saturating_mul(rows).min(raw.len());
-    let (mut mask, mut data) = (Vec::with_capacity(room(mrow, mh)), Vec::with_capacity(room(drow, dh)));
+    let (mut mask, mut data) = (
+        Vec::with_capacity(room(mrow, mh)),
+        Vec::with_capacity(room(drow, dh)),
+    );
     let mut at = 0;
     let mut take = |into: &mut Vec<u8>, n: usize| {
         into.extend_from_slice(raw.get(at..at + n).unwrap_or_default());
         at += n;
     };
-    let (blocks, masks, rows) = if mh >= dh { (dh, mh / dh.max(1), 1) } else { (mh, 1, dh / mh.max(1)) };
+    let (blocks, masks, rows) = if mh >= dh {
+        (dh, mh / dh.max(1), 1)
+    } else {
+        (mh, 1, dh / mh.max(1))
+    };
     for _ in 0..blocks {
         for _ in 0..masks {
             take(&mut mask, mrow);
@@ -1029,7 +1306,11 @@ fn by_rows(raw: &[u8], (mrow, mh): (usize, usize), (drow, dh): (usize, usize)) -
 fn by_samples(raw: &[u8], w: usize, h: usize, n: usize, bpc: u8) -> (Vec<u8>, Vec<u8>) {
     let bpc = usize::from(bpc);
     let bit = |at: usize| raw.get(at / 8).is_some_and(|b| b & (0x80 >> (at % 8)) != 0);
-    let (mrow, drow, row) = ((w * bpc).div_ceil(8), (w * n * bpc).div_ceil(8), (w * (n + 1) * bpc).div_ceil(8));
+    let (mrow, drow, row) = (
+        (w * bpc).div_ceil(8),
+        (w * n * bpc).div_ceil(8),
+        (w * (n + 1) * bpc).div_ceil(8),
+    );
     let (mut mask, mut data) = (vec![0u8; mrow * h], vec![0u8; drow * h]);
     let put = |into: &mut [u8], at: usize| {
         if let Some(b) = into.get_mut(at / 8) {
@@ -1066,7 +1347,10 @@ fn source(o: &Obj) -> Res<Source> {
     Ok(match o {
         Obj::File { stream: f, .. } => Source::File(f.clone()),
         Obj::Str(s) => Source::Str(s.to_vec()),
-        Obj::Array { items, .. } => Source::Proc(Obj::Array { items: items.clone(), exec: true }),
+        Obj::Array { items, .. } => Source::Proc(Obj::Array {
+            items: items.clone(),
+            exec: true,
+        }),
         _ => return ps_err("typecheck", "DataSource"),
     })
 }
@@ -1077,5 +1361,8 @@ fn masked(m: &[u32], raw: &[u32]) -> bool {
         return m.iter().zip(raw).all(|(a, b)| a == b);
     }
     m.len() == raw.len() * 2
-        && raw.iter().enumerate().all(|(i, v)| (m.get(2 * i).copied().unwrap_or(0)..=m.get(2 * i + 1).copied().unwrap_or(0)).contains(v))
+        && raw.iter().enumerate().all(|(i, v)| {
+            (m.get(2 * i).copied().unwrap_or(0)..=m.get(2 * i + 1).copied().unwrap_or(0))
+                .contains(v)
+        })
 }

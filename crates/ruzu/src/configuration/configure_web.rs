@@ -33,7 +33,8 @@ pub fn page() -> Page {
     service.append(&username_status);
     service.append(&token_status);
     for (entry, status, is_token) in [
-        (&username, &username_status, false), (&token, &token_status, true),
+        (&username, &username_status, false),
+        (&token, &token_status, true),
     ] {
         // Like QRegularExpressionValidator, permit incomplete input while
         // rejecting characters/lengths that cannot become an acceptable value.
@@ -52,11 +53,9 @@ pub fn page() -> Page {
     }
     let generate = gtk::Button::with_label("Generate Token");
     let token_for_generate = token.clone();
-    generate.connect_clicked(move |_| {
-        match generate_token() {
-            Ok(value) => token_for_generate.set_text(&value),
-            Err(error) => token_status.set_text(&format!("Could not generate token: {error}")),
-        }
+    generate.connect_clicked(move |_| match generate_token() {
+        Ok(value) => token_for_generate.set_text(&value),
+        Err(error) => token_status.set_text(&format!("Could not generate token: {error}")),
     });
     service.append(&generate);
     column.append(&service_group);
@@ -76,9 +75,13 @@ fn verify_login(entry: &gtk::Entry, status: &gtk::Label, is_token: bool) {
     } else {
         (4..=20).contains(&text.chars().count()) && !text.contains('\n')
     };
-    status.set_text(if valid { "All Good" } else if is_token {
+    status.set_text(if valid {
+        "All Good"
+    } else if is_token {
         "Must be 48 characters, and lowercase a-z"
-    } else { "Must be between 4-20 characters" });
+    } else {
+        "Must be between 4-20 characters"
+    });
 }
 
 /// ConfigureWeb::GenerateToken: system entropy replaces QRandomGenerator::system.
@@ -91,7 +94,9 @@ fn generate_token() -> Result<String, getrandom::Error> {
         for byte in bytes {
             if byte < 234 {
                 result.push((b'a' + byte % 26) as char);
-                if result.len() == 48 { break; }
+                if result.len() == 48 {
+                    break;
+                }
             }
         }
     }
@@ -122,7 +127,11 @@ mod tests {
             values.yuzu_username.set_value("LegacyUser".into());
             values.yuzu_token.set_value("legacy-token".into());
         }
-        fn entries(widget: &gtk::Widget, output: &mut Vec<gtk::Entry>, buttons: &mut Vec<gtk::Button>) {
+        fn entries(
+            widget: &gtk::Widget,
+            output: &mut Vec<gtk::Entry>,
+            buttons: &mut Vec<gtk::Button>,
+        ) {
             if let Some(entry) = widget.downcast_ref::<gtk::Entry>() {
                 output.push(entry.clone());
             }
@@ -147,9 +156,15 @@ mod tests {
         assert_eq!(buttons.len(), 1);
         buttons[0].emit_clicked();
         assert_eq!(edits[1].text().len(), 48);
-        assert!(edits[1].text().bytes().all(|byte| byte.is_ascii_lowercase()));
+        assert!(edits[1]
+            .text()
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase()));
         // Generate changes only the draft, never the persistent setting.
-        assert_eq!(common::settings::values().eden_token.get_value(), &"a".repeat(48));
+        assert_eq!(
+            common::settings::values().eden_token.get_value(),
+            &"a".repeat(48)
+        );
         edits[1].set_text("");
         let mut position = 0;
         edits[1].insert_text("ABC123", &mut position);

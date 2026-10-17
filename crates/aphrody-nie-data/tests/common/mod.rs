@@ -44,7 +44,10 @@ fn contient_dump(racine: &Path) -> bool {
 }
 
 fn depuis(base: &Path) -> Option<PathBuf> {
-    SOUS_CHEMINS.iter().map(|s| base.join(s)).find(|p| p.is_dir() && contient_dump(p))
+    SOUS_CHEMINS
+        .iter()
+        .map(|s| base.join(s))
+        .find(|p| p.is_dir() && contient_dump(p))
 }
 
 /// Racine du corpus de dumps, ou `None` si absent de cette machine.

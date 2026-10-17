@@ -58,7 +58,9 @@ pub struct Hello {
 
 /// What a participant may do: edit, or only view (a view link). A viewer gets everyone's changes
 /// and presence, and the server refuses every batch it sends.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub enum Access {
     #[default]
@@ -149,15 +151,24 @@ impl Signal {
     pub const MAX_BYTES: usize = 1024;
 
     pub fn chat(text: &str) -> Signal {
-        Signal { kind: Signal::CHAT.into(), text: text.into() }
+        Signal {
+            kind: Signal::CHAT.into(),
+            text: text.into(),
+        }
     }
 
     pub fn spotlight(on: bool) -> Signal {
-        Signal { kind: Signal::SPOTLIGHT.into(), text: if on { "on".into() } else { String::new() } }
+        Signal {
+            kind: Signal::SPOTLIGHT.into(),
+            text: if on { "on".into() } else { String::new() },
+        }
     }
 
     pub fn ready() -> Signal {
-        Signal { kind: Signal::READY.into(), text: String::new() }
+        Signal {
+            kind: Signal::READY.into(),
+            text: String::new(),
+        }
     }
 
     /// A spotlight that is on.
@@ -174,8 +185,17 @@ impl Signal {
         }
         match self.kind.as_str() {
             Signal::CHAT => {
-                let text: String = self.text.chars().map(|c| if c.is_control() { ' ' } else { c }).take(Signal::MAX_CHAT).collect();
-                Some(Signal::chat(if text.trim().is_empty() { "" } else { &text }))
+                let text: String = self
+                    .text
+                    .chars()
+                    .map(|c| if c.is_control() { ' ' } else { c })
+                    .take(Signal::MAX_CHAT)
+                    .collect();
+                Some(Signal::chat(if text.trim().is_empty() {
+                    ""
+                } else {
+                    &text
+                }))
             }
             Signal::SPOTLIGHT if self.text.is_empty() || self.on() => Some(self),
             Signal::READY if self.text.is_empty() => Some(self),
@@ -249,7 +269,11 @@ pub enum Admin {
     /// A file's links (without their tokens).
     Links { file: String },
     /// A new link to a file.
-    CreateLink { file: String, access: Access, label: String },
+    CreateLink {
+        file: String,
+        access: Access,
+        label: String,
+    },
     /// Revoke a link: it no longer joins, and whoever joined with it is disconnected.
     Revoke { file: String, link: String },
     /// Remove a file and its links (whoever is in it is disconnected).
@@ -467,7 +491,10 @@ pub struct FileUsage {
 pub enum LibraryReq {
     /// The file's library, unless the server's version is `have`; `usage` reports how the asking
     /// file uses it.
-    Fetch { have: Option<u64>, usage: Option<Usage> },
+    Fetch {
+        have: Option<u64>,
+        usage: Option<Usage>,
+    },
     /// Keep `archive` (a `.figcraft` archive holding the published library) as the file's library.
     /// Needs an edit link; the library must be the one kept (same id) at a newer version.
     Publish { archive: Vec<u8> },
@@ -723,15 +750,26 @@ pub fn encode<T: Serialize>(msg: &T) -> Result<Vec<u8>, Error> {
 /// about the message's size, and refuses trailing bytes).
 pub fn decode<T: DeserializeOwned>(bytes: &[u8], max_bytes: usize) -> Result<T, Error> {
     if bytes.len() > max_bytes {
-        return Err(Error::Decode(format!("message of {} bytes is over the {max_bytes}-byte limit", bytes.len())));
+        return Err(Error::Decode(format!(
+            "message of {} bytes is over the {max_bytes}-byte limit",
+            bytes.len()
+        )));
     }
-    let Some((&version, body)) = bytes.split_first() else { return Err(Error::Decode("empty message".into())) };
+    let Some((&version, body)) = bytes.split_first() else {
+        return Err(Error::Decode("empty message".into()));
+    };
     if version != WIRE_VERSION {
-        return Err(Error::Decode(format!("wire version {version}, expected {WIRE_VERSION}")));
+        return Err(Error::Decode(format!(
+            "wire version {version}, expected {WIRE_VERSION}"
+        )));
     }
-    let (msg, rest) = postcard::take_from_bytes::<T>(body).map_err(|e| Error::Decode(e.to_string()))?;
+    let (msg, rest) =
+        postcard::take_from_bytes::<T>(body).map_err(|e| Error::Decode(e.to_string()))?;
     if !rest.is_empty() {
-        return Err(Error::Decode(format!("{} bytes after the message", rest.len())));
+        return Err(Error::Decode(format!(
+            "{} bytes after the message",
+            rest.len()
+        )));
     }
     Ok(msg)
 }
@@ -744,7 +782,10 @@ pub fn encode_json<T: Serialize>(msg: &T) -> Result<String, Error> {
 /// Read a JSON message of at most `max_bytes`.
 pub fn decode_json<T: DeserializeOwned>(text: &str, max_bytes: usize) -> Result<T, Error> {
     if text.len() > max_bytes {
-        return Err(Error::Decode(format!("message of {} bytes is over the {max_bytes}-byte limit", text.len())));
+        return Err(Error::Decode(format!(
+            "message of {} bytes is over the {max_bytes}-byte limit",
+            text.len()
+        )));
     }
     serde_json::from_str(text).map_err(|e| Error::Decode(e.to_string()))
 }

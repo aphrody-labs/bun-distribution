@@ -36,7 +36,10 @@ pub(crate) fn agent_card_from_manifest_with_auth(
 
     let jsonrpc_url = base_url.to_owned();
     AgentCard {
-        name: manifest.name.clone().unwrap_or_else(|| "aphrody".to_owned()),
+        name: manifest
+            .name
+            .clone()
+            .unwrap_or_else(|| "aphrody".to_owned()),
         description: manifest
             .description
             .clone()
@@ -60,13 +63,16 @@ pub(crate) fn agent_card_from_manifest_with_auth(
             manifest.default_output_modes.clone()
         },
         skills,
-        provider: manifest.provider.as_ref().map(|p| aphrody_a2a::AgentProvider {
-            organization: p.organization.clone(),
-            url: p
-                .url
-                .clone()
-                .unwrap_or_else(|| "https://github.com/aphrody-labs/aphrody".to_owned()),
-        }),
+        provider: manifest
+            .provider
+            .as_ref()
+            .map(|p| aphrody_a2a::AgentProvider {
+                organization: p.organization.clone(),
+                url: p
+                    .url
+                    .clone()
+                    .unwrap_or_else(|| "https://github.com/aphrody-labs/aphrody".to_owned()),
+            }),
         documentation_url: manifest.documentation_url.clone(),
         icon_url: None,
         security_schemes: requires_bearer.then(|| {
@@ -118,7 +124,10 @@ mod tests {
             json["securitySchemes"],
             serde_json::json!({ "bearer": { "httpAuthSecurityScheme": { "scheme": "Bearer" } } })
         );
-        assert_eq!(json["securityRequirements"], serde_json::json!([{ "bearer": [] }]));
+        assert_eq!(
+            json["securityRequirements"],
+            serde_json::json!([{ "bearer": [] }])
+        );
         assert_eq!(serde_json::from_value::<AgentCard>(json).unwrap(), card);
     }
 
@@ -126,11 +135,17 @@ mod tests {
     fn unprotected_card_preserves_the_existing_public_contract() {
         let manifest = manifest();
         let card = agent_card_from_manifest_with_auth(&manifest, "http://127.0.0.1:1234", false);
-        assert_eq!(card, agent_card_from_manifest(&manifest, "http://127.0.0.1:1234"));
+        assert_eq!(
+            card,
+            agent_card_from_manifest(&manifest, "http://127.0.0.1:1234")
+        );
         let json = serde_json::to_value(card).unwrap();
         assert!(json.get("securitySchemes").is_none());
         assert!(json.get("securityRequirements").is_none());
         assert_eq!(json["skills"][0]["id"], "catalog");
-        assert_eq!(json["supportedInterfaces"][0]["url"], "http://127.0.0.1:1234");
+        assert_eq!(
+            json["supportedInterfaces"][0]["url"],
+            "http://127.0.0.1:1234"
+        );
     }
 }

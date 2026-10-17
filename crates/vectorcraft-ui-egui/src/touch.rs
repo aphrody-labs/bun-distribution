@@ -37,11 +37,20 @@ pub(crate) struct Taps {
 
 impl Taps {
     /// Follow a finger's `phase` at `pos` (touch `id`) at time `now` (seconds).
-    pub(crate) fn feed(&mut self, id: TouchId, phase: TouchPhase, pos: Pos2, now: f64) -> Option<Touch> {
+    pub(crate) fn feed(
+        &mut self,
+        id: TouchId,
+        phase: TouchPhase,
+        pos: Pos2,
+        now: f64,
+    ) -> Option<Touch> {
         match phase {
             TouchPhase::Start => {
                 if self.down.is_empty() {
-                    *self = Self { start: now, ..Self::default() };
+                    *self = Self {
+                        start: now,
+                        ..Self::default()
+                    };
                 }
                 if !self.down.iter().any(|(d, _)| *d == id) {
                     self.down.push((id, pos));
@@ -51,7 +60,11 @@ impl Taps {
                 (before < 2 && self.most >= 2).then_some(Touch::Fingers)
             }
             TouchPhase::Move => {
-                if self.down.iter().any(|(d, at)| *d == id && at.distance(pos) > TAP_SLOP) {
+                if self
+                    .down
+                    .iter()
+                    .any(|(d, at)| *d == id && at.distance(pos) > TAP_SLOP)
+                {
                     self.spoilt = true;
                 }
                 None
@@ -63,7 +76,8 @@ impl Taps {
                     return None;
                 }
                 self.spoilt |= phase == TouchPhase::Cancel || now - self.start > TAP_TIME;
-                (self.down.is_empty() && !self.spoilt && self.most >= 2).then_some(Touch::Tap(self.most))
+                (self.down.is_empty() && !self.spoilt && self.most >= 2)
+                    .then_some(Touch::Tap(self.most))
             }
         }
     }
@@ -96,19 +110,35 @@ mod tests {
         let mut t = Taps::default();
         let p = Pos2::new(100.0, 100.0);
         assert_eq!(t.feed(id(1), TouchPhase::Start, p, 0.0), None);
-        assert_eq!(t.feed(id(2), TouchPhase::Start, p + egui::vec2(60.0, 0.0), 0.05), Some(Touch::Fingers));
+        assert_eq!(
+            t.feed(id(2), TouchPhase::Start, p + egui::vec2(60.0, 0.0), 0.05),
+            Some(Touch::Fingers)
+        );
         assert!(t.is_down());
-        assert_eq!(t.feed(id(1), TouchPhase::Move, p + egui::vec2(3.0, 2.0), 0.1), None);
-        assert_eq!(t.feed(id(1), TouchPhase::End, p, 0.15), None, "one finger still down");
+        assert_eq!(
+            t.feed(id(1), TouchPhase::Move, p + egui::vec2(3.0, 2.0), 0.1),
+            None
+        );
+        assert_eq!(
+            t.feed(id(1), TouchPhase::End, p, 0.15),
+            None,
+            "one finger still down"
+        );
         assert_eq!(t.feed(id(2), TouchPhase::End, p, 0.2), Some(Touch::Tap(2)));
         assert!(!t.is_down());
         // Three fingers.
         for (n, at) in [(4, 0.0), (5, 0.02), (6, 0.04)] {
             t.feed(id(n), TouchPhase::Start, p, 1.0 + at);
         }
-        let ends: Vec<_> = [4, 5, 6].into_iter().map(|n| t.feed(id(n), TouchPhase::End, p, 1.2)).collect();
+        let ends: Vec<_> = [4, 5, 6]
+            .into_iter()
+            .map(|n| t.feed(id(n), TouchPhase::End, p, 1.2))
+            .collect();
         assert_eq!(ends, [None, None, Some(Touch::Tap(3))]);
-        assert_eq!((tap_command(2), tap_command(3), tap_command(1)), (Some("edit.undo"), Some("edit.redo"), None));
+        assert_eq!(
+            (tap_command(2), tap_command(3), tap_command(1)),
+            (Some("edit.undo"), Some("edit.redo"), None)
+        );
     }
 
     #[test]
@@ -119,13 +149,35 @@ mod tests {
             for n in 0..fingers {
                 t.feed(id(n), TouchPhase::Start, p, 0.0);
             }
-            t.feed(id(0), TouchPhase::Move, p + egui::vec2(moved, 0.0), held / 2.0);
-            (0..fingers).filter_map(|n| t.feed(id(n), if n + 1 == fingers { last } else { TouchPhase::End }, p, held)).last()
+            t.feed(
+                id(0),
+                TouchPhase::Move,
+                p + egui::vec2(moved, 0.0),
+                held / 2.0,
+            );
+            (0..fingers)
+                .filter_map(|n| {
+                    t.feed(
+                        id(n),
+                        if n + 1 == fingers {
+                            last
+                        } else {
+                            TouchPhase::End
+                        },
+                        p,
+                        held,
+                    )
+                })
+                .last()
         };
         assert_eq!(gesture(0.0, 0.2, TouchPhase::End, 2), Some(Touch::Tap(2)));
         assert_eq!(gesture(40.0, 0.2, TouchPhase::End, 2), None, "a pinch");
         assert_eq!(gesture(0.0, 0.9, TouchPhase::End, 2), None, "held too long");
         assert_eq!(gesture(0.0, 0.2, TouchPhase::Cancel, 2), None, "cancelled");
-        assert_eq!(gesture(0.0, 0.2, TouchPhase::End, 1), None, "a pen or one finger");
+        assert_eq!(
+            gesture(0.0, 0.2, TouchPhase::End, 1),
+            None,
+            "a pen or one finger"
+        );
     }
 }

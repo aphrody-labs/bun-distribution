@@ -22,16 +22,30 @@ fn pixel_hash(px: &[[f32; 4]]) -> String {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let path = std::env::args().nth(1).ok_or("provide a local image path")?;
+    let path = std::env::args()
+        .nth(1)
+        .ok_or("provide a local image path")?;
     let bytes = photocraft_format::read::read_file(std::path::Path::new(&path))?;
     let doc = photocraft_io::import(&path, &bytes)?.document;
     let px = photocraft_compose::flatten(&doc).px;
-    println!("{}", json!({"width":doc.size.width,"height":doc.size.height,"preview_factor":1}));
+    println!(
+        "{}",
+        json!({"width":doc.size.width,"height":doc.size.height,"preview_factor":1})
+    );
     for count in [8usize, 16, 32, 64, 128, 256] {
         for run in 0..4 {
             let start = Instant::now();
             let clear = px.iter().any(|p| p[3] < 0.5);
-            let mut pal = quantize::build_palette(&px, PaletteKind::Selective, if clear { count.saturating_sub(1).max(2) } else { count }, Forced::BlackWhite)?;
+            let mut pal = quantize::build_palette(
+                &px,
+                PaletteKind::Selective,
+                if clear {
+                    count.saturating_sub(1).max(2)
+                } else {
+                    count
+                },
+                Forced::BlackWhite,
+            )?;
             let transparent = if clear && pal.len() < 256 {
                 pal.push([255; 3]);
                 Some(pal.len() - 1)
@@ -41,7 +55,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             let palette_ms = elapsed(start);
             let mut out = px.clone();
             let start = Instant::now();
-            let indices = quantize::quantize(&mut out, doc.size.width as usize, &pal, Dither::Diffusion, 0.75, transparent);
+            let indices = quantize::quantize(
+                &mut out,
+                doc.size.width as usize,
+                &pal,
+                Dither::Diffusion,
+                0.75,
+                transparent,
+            );
             let diffusion_ms = elapsed(start);
             std::hint::black_box(indices);
             let start = Instant::now();

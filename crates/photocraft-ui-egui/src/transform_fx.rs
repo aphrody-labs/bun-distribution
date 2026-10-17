@@ -66,7 +66,8 @@ impl Plan {
     /// `shown` in document pixels: where the composite is drawn.
     pub fn doc_rect(&self) -> [f32; 4] {
         let k = 1.0 / self.scale;
-        [self.shown.x0, self.shown.y0, self.shown.x1, self.shown.y1].map(|v| (f64::from(v) * k) as f32)
+        [self.shown.x0, self.shown.y0, self.shown.x1, self.shown.y1]
+            .map(|v| (f64::from(v) * k) as f32)
     }
 }
 
@@ -79,13 +80,23 @@ pub fn pixel_cost_ns(layer: &Layer) -> f64 {
     let enabled = || layer.effects.items.iter().filter(|e| e.enabled());
     let maps: f64 = enabled()
         .map(|e| match e {
-            Effect::Stroke(_) | Effect::ColorOverlay { .. } | Effect::GradientOverlay { .. } | Effect::PatternOverlay { .. } => 1.0,
+            Effect::Stroke(_)
+            | Effect::ColorOverlay { .. }
+            | Effect::GradientOverlay { .. }
+            | Effect::PatternOverlay { .. } => 1.0,
             Effect::Satin(_) | Effect::BevelEmboss(_) => 12.0,
-            Effect::DropShadow(_) | Effect::InnerShadow(_) | Effect::OuterGlow(_) | Effect::InnerGlow(_) => 6.0,
+            Effect::DropShadow(_)
+            | Effect::InnerShadow(_)
+            | Effect::OuterGlow(_)
+            | Effect::InnerGlow(_) => 6.0,
         })
         .sum();
     // Every Stroke reads the same two distance fields.
-    let fields = if enabled().any(|e| matches!(e, Effect::Stroke(_))) { 46.0 } else { 0.0 };
+    let fields = if enabled().any(|e| matches!(e, Effect::Stroke(_))) {
+        46.0
+    } else {
+        0.0
+    };
     12.0 + maps + fields
 }
 
@@ -114,13 +125,34 @@ pub fn work_layer(layer: &Layer, scale: f64) -> Layer {
 /// Plan the composite of `layer` moved onto `quad` (document pixels, clockwise from top-left) in
 /// a document of `canvas` pixels, shown at `zoom` screen pixels per document pixel, within
 /// `budget` work pixels. `None` when nothing of it is on the canvas or the box isn't finite.
-pub fn plan(layer: &Layer, canvas: [u32; 2], quad: [[f64; 2]; 4], zoom: f32, budget: f64) -> Option<(Plan, Layer)> {
+pub fn plan(
+    layer: &Layer,
+    canvas: [u32; 2],
+    quad: [[f64; 2]; 4],
+    zoom: f32,
+    budget: f64,
+) -> Option<(Plan, Layer)> {
     if quad.iter().flatten().any(|v| !v.is_finite()) {
         return None;
     }
-    let (min, max) = quad.iter().fold(([f64::MAX; 2], [f64::MIN; 2]), |(lo, hi), q| ([lo[0].min(q[0]), lo[1].min(q[1])], [hi[0].max(q[0]), hi[1].max(q[1])]));
-    let budget = if budget.is_finite() { budget.clamp(1.0, MAX_PIXELS) } else { MIN_PIXELS };
-    let mut scale = if zoom.is_finite() && zoom > 0.0 { f64::from(zoom).min(1.0) } else { 1.0 };
+    let (min, max) = quad
+        .iter()
+        .fold(([f64::MAX; 2], [f64::MIN; 2]), |(lo, hi), q| {
+            (
+                [lo[0].min(q[0]), lo[1].min(q[1])],
+                [hi[0].max(q[0]), hi[1].max(q[1])],
+            )
+        });
+    let budget = if budget.is_finite() {
+        budget.clamp(1.0, MAX_PIXELS)
+    } else {
+        MIN_PIXELS
+    };
+    let mut scale = if zoom.is_finite() && zoom > 0.0 {
+        f64::from(zoom).min(1.0)
+    } else {
+        1.0
+    };
     // The reach of the style is in work pixels too, so the area isn't simply the scale squared:
     // shrink until it fits (a few rounds settle it).
     for round in 0..6 {
@@ -130,8 +162,18 @@ pub fn plan(layer: &Layer, canvas: [u32; 2], quad: [[f64; 2]; 4], zoom: f32, bud
             let v = (v * scale).clamp(-COORD_LIMIT, COORD_LIMIT);
             (if up { v.ceil() } else { v.floor() }) as i32
         };
-        let bounds = Rect::new(edge(min[0], false), edge(min[1], false), edge(max[0], true), edge(max[1], true));
-        let canvas = Rect::new(0, 0, edge(f64::from(canvas[0]), true), edge(f64::from(canvas[1]), true));
+        let bounds = Rect::new(
+            edge(min[0], false),
+            edge(min[1], false),
+            edge(max[0], true),
+            edge(max[1], true),
+        );
+        let canvas = Rect::new(
+            0,
+            0,
+            edge(f64::from(canvas[0]), true),
+            edge(f64::from(canvas[1]), true),
+        );
         let shown = bounds.inflate(reach).intersect(&canvas);
         if bounds.is_empty() || shown.is_empty() {
             return None;
@@ -139,7 +181,15 @@ pub fn plan(layer: &Layer, canvas: [u32; 2], quad: [[f64; 2]; 4], zoom: f32, bud
         let content = shown.inflate(2 * reach);
         let area = f64::from(content.width()) * f64::from(content.height());
         if area <= budget {
-            return Some((Plan { scale, bounds, shown, content }, work));
+            return Some((
+                Plan {
+                    scale,
+                    bounds,
+                    shown,
+                    content,
+                },
+                work,
+            ));
         }
         if round == 5 {
             break;
@@ -161,7 +211,14 @@ fn rows<T: Send>(out: &mut [T], width: usize, y0: i32, row: impl Fn(i32, &mut [T
 /// drawn over `rect` as straight-alpha floats. `to_unit` takes a work pixel to the unit square
 /// of the source rectangle, and `inside` is a work point within the box. The edges of the
 /// rectangle fade over one texel, as a resampled layer's do; `nearest` keeps texels whole.
-pub fn resample(image: &ColorImage, uv: [f32; 2], to_unit: &Homography, inside: [f64; 2], rect: Rect, nearest: bool) -> Buffer {
+pub fn resample(
+    image: &ColorImage,
+    uv: [f32; 2],
+    to_unit: &Homography,
+    inside: [f64; 2],
+    rect: Rect,
+    nearest: bool,
+) -> Buffer {
     let mut out = Buffer::transparent(rect);
     let [iw, ih] = image.size;
     let (tw, th) = (f64::from(uv[0]) * iw as f64, f64::from(uv[1]) * ih as f64);
@@ -172,15 +229,31 @@ pub fn resample(image: &ColorImage, uv: [f32; 2], to_unit: &Homography, inside: 
         return out;
     }
     let texel = |x: i64, y: i64| -> [f32; 4] {
-        let (x, y) = (x.clamp(0, iw as i64 - 1) as usize, y.clamp(0, ih as i64 - 1) as usize);
-        image.pixels.get(y * iw + x).map_or([0.0; 4], |c| c.to_array().map(f32::from))
+        let (x, y) = (
+            x.clamp(0, iw as i64 - 1) as usize,
+            y.clamp(0, ih as i64 - 1) as usize,
+        );
+        image
+            .pixels
+            .get(y * iw + x)
+            .map_or([0.0; 4], |c| c.to_array().map(f32::from))
     };
     let fade = |t: f64, n: f64| (t + 0.5).min(n - t + 0.5).clamp(0.0, 1.0) as f32;
     let straight = |p: [f32; 4]| -> [f32; 4] {
-        let c = Color32::from_rgba_premultiplied(p[0].round() as u8, p[1].round() as u8, p[2].round() as u8, p[3].round() as u8);
+        let c = Color32::from_rgba_premultiplied(
+            p[0].round() as u8,
+            p[1].round() as u8,
+            p[2].round() as u8,
+            p[3].round() as u8,
+        );
         let [r, g, b, _] = c.to_srgba_unmultiplied();
         // The alpha keeps its fraction: a soft edge would band at 8 bits.
-        [f32::from(r) / 255.0, f32::from(g) / 255.0, f32::from(b) / 255.0, (p[3] / 255.0).clamp(0.0, 1.0)]
+        [
+            f32::from(r) / 255.0,
+            f32::from(g) / 255.0,
+            f32::from(b) / 255.0,
+            (p[3] / 255.0).clamp(0.0, 1.0),
+        ]
     };
     let width = rect.width() as usize;
     rows(&mut out.px, width, rect.y0, |y, row| {
@@ -191,7 +264,10 @@ pub fn resample(image: &ColorImage, uv: [f32; 2], to_unit: &Homography, inside: 
             if w * side <= 1e-12 {
                 continue;
             }
-            let (tx, ty) = ((m[0] * px + m[1] * py + m[2]) / w * tw, (m[3] * px + m[4] * py + m[5]) / w * th);
+            let (tx, ty) = (
+                (m[0] * px + m[1] * py + m[2]) / w * tw,
+                (m[3] * px + m[4] * py + m[5]) / w * th,
+            );
             if !(tx.is_finite() && ty.is_finite()) {
                 continue;
             }
@@ -209,7 +285,12 @@ pub fn resample(image: &ColorImage, uv: [f32; 2], to_unit: &Homography, inside: 
             let (x0, y0) = (fx.floor(), fy.floor());
             let (ax, ay) = ((fx - x0) as f32, (fy - y0) as f32);
             let (x0, y0) = (x0 as i64, y0 as i64);
-            let (a, b, c, d) = (texel(x0, y0), texel(x0 + 1, y0), texel(x0, y0 + 1), texel(x0 + 1, y0 + 1));
+            let (a, b, c, d) = (
+                texel(x0, y0),
+                texel(x0 + 1, y0),
+                texel(x0, y0 + 1),
+                texel(x0 + 1, y0 + 1),
+            );
             let mut p = [0.0f32; 4];
             for (k, v) in p.iter_mut().enumerate() {
                 let (top, bottom) = (a[k] + (b[k] - a[k]) * ax, c[k] + (d[k] - c[k]) * ax);
@@ -239,13 +320,38 @@ pub struct Source<'a> {
 /// and `plan` come from [`plan`]; `doc` gives the global light and the patterns.
 pub fn compose(doc: &Document, work: &Layer, plan: &Plan, source: &Source) -> Option<Buffer> {
     let s = plan.scale;
-    let to_quad = Homography::rect_to_quad([0.0, 0.0, 1.0, 1.0], source.quad.map(|q| [q[0] * s, q[1] * s]))?;
+    let to_quad = Homography::rect_to_quad(
+        [0.0, 0.0, 1.0, 1.0],
+        source.quad.map(|q| [q[0] * s, q[1] * s]),
+    )?;
     let to_unit = to_quad.inverse()?;
-    let inside = source.quad.iter().fold([0.0; 2], |c, q| [c[0] + q[0] * s / 4.0, c[1] + q[1] * s / 4.0]);
-    let content = resample(source.image, source.uv, &to_unit, inside, plan.content, source.nearest);
+    let inside = source.quad.iter().fold([0.0; 2], |c, q| {
+        [c[0] + q[0] * s / 4.0, c[1] + q[1] * s / 4.0]
+    });
+    let content = resample(
+        source.image,
+        source.uv,
+        &to_unit,
+        inside,
+        plan.content,
+        source.nearest,
+    );
     let shape: Vec<f32> = content.px.iter().map(|p| p[3]).collect();
-    let anchor = work.effects.reference.unwrap_or((f64::from(plan.bounds.x0), f64::from(plan.bounds.y0)));
-    let maps = effects::build_maps(work, shape, plan.content, &doc.global_light, &TextureCtx { rect: plan.content, patterns: &doc.patterns, anchor });
+    let anchor = work
+        .effects
+        .reference
+        .unwrap_or((f64::from(plan.bounds.x0), f64::from(plan.bounds.y0)));
+    let maps = effects::build_maps(
+        work,
+        shape,
+        plan.content,
+        &doc.global_light,
+        &TextureCtx {
+            rect: plan.content,
+            patterns: &doc.patterns,
+            anchor,
+        },
+    );
     // The maps hold what every pixel needs of its surroundings, so the style is laid over the
     // content band by band, in parallel, as the compositor does tile by tile.
     let shown = plan.shown;
@@ -253,9 +359,21 @@ pub fn compose(doc: &Document, work: &Layer, plan: &Plan, source: &Source) -> Op
     let mut out = Buffer::transparent(shown);
     bands(&mut out.px, width * BAND_ROWS, |i, px| {
         let y0 = shown.y0.saturating_add((i * BAND_ROWS) as i32);
-        let band = Rect::new(shown.x0, y0, shown.x1, y0.saturating_add((px.len() / width.max(1)) as i32));
+        let band = Rect::new(
+            shown.x0,
+            y0,
+            shown.x1,
+            y0.saturating_add((px.len() / width.max(1)) as i32),
+        );
         let mut over = Buffer::transparent(band);
-        effects::composite_with_effects(work, &crop(&content, band), &mut over, &maps, plan.bounds, &doc.patterns);
+        effects::composite_with_effects(
+            work,
+            &crop(&content, band),
+            &mut over,
+            &maps,
+            plan.bounds,
+            &doc.patterns,
+        );
         for (o, p) in px.iter_mut().zip(over.px) {
             *o = p;
         }
@@ -273,7 +391,11 @@ fn crop(buf: &Buffer, rect: Rect) -> Buffer {
     if part.is_empty() {
         return out;
     }
-    let (sw, dw, n) = (buf.rect.width() as usize, rect.width() as usize, part.width() as usize);
+    let (sw, dw, n) = (
+        buf.rect.width() as usize,
+        rect.width() as usize,
+        part.width() as usize,
+    );
     for y in part.y0..part.y1 {
         let s0 = (y - buf.rect.y0) as usize * sw + (part.x0 - buf.rect.x0) as usize;
         let d0 = (y - rect.y0) as usize * dw + (part.x0 - rect.x0) as usize;
@@ -289,7 +411,9 @@ fn bands<T: Send>(out: &mut [T], len: usize, band: impl Fn(usize, &mut [T]) + Sy
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
-        out.par_chunks_mut(len.max(1)).enumerate().for_each(|(i, o)| band(i, o));
+        out.par_chunks_mut(len.max(1))
+            .enumerate()
+            .for_each(|(i, o)| band(i, o));
     }
     #[cfg(target_arch = "wasm32")]
     for (i, o) in out.chunks_mut(len.max(1)).enumerate() {
@@ -333,7 +457,13 @@ pub struct Frame<'a> {
 impl Frame<'_> {
     /// The plan for this frame, the layer it composites and the texel level it reads.
     pub fn plan(&self) -> Option<(Plan, Layer, u32)> {
-        let (plan, work) = plan(self.layer, [self.doc.size.width, self.doc.size.height], self.quad, self.zoom, budget(self.layer, self.dragging))?;
+        let (plan, work) = plan(
+            self.layer,
+            [self.doc.size.width, self.doc.size.height],
+            self.quad,
+            self.zoom,
+            budget(self.layer, self.dragging),
+        )?;
         let level = PreviewTextures::choose(plan.scale as f32, self.quad_scale, self.nearest).0;
         Some((plan, work, level))
     }
@@ -341,7 +471,17 @@ impl Frame<'_> {
     /// The composite a [`Frame::plan`] describes.
     pub fn compose(&self, plan: &Plan, work: &Layer, level: u32) -> Option<Buffer> {
         let (texels, uv): (Arc<ColorImage>, [f32; 2]) = self.texels.level_image(level)?;
-        compose(self.doc, work, plan, &Source { image: &texels, uv, quad: self.quad, nearest: self.nearest })
+        compose(
+            self.doc,
+            work,
+            plan,
+            &Source {
+                image: &texels,
+                uv,
+                quad: self.quad,
+                nearest: self.nearest,
+            },
+        )
     }
 }
 
@@ -378,12 +518,18 @@ pub struct StyledPreview {
 impl StyledPreview {
     /// `name` keys the texture in egui.
     pub fn new(name: String) -> Self {
-        Self { name, state: Mutex::new(State::default()) }
+        Self {
+            name,
+            state: Mutex::new(State::default()),
+        }
     }
 
     /// How many times the composite was made: once per change of the box, the zoom or the layer.
     pub fn builds(&self) -> u64 {
-        self.state.lock().unwrap_or_else(PoisonError::into_inner).builds
+        self.state
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .builds
     }
 
     /// The composite for `frame` and the document rectangle it covers (x0, y0, x1, y1),
@@ -395,7 +541,9 @@ impl StyledPreview {
         let q = frame.quad.map(|q| q.map(f64::to_bits));
         let key = Key {
             revision: frame.revision,
-            quad: [q[0][0], q[0][1], q[1][0], q[1][1], q[2][0], q[2][1], q[3][0], q[3][1]],
+            quad: [
+                q[0][0], q[0][1], q[1][0], q[1][1], q[2][0], q[2][1], q[3][0], q[3][1],
+            ],
             plan,
             level,
             nearest: frame.nearest,
@@ -406,7 +554,11 @@ impl StyledPreview {
             return Some((s.tex.id(), s.rect));
         }
         let out = frame.compose(&plan, &work, level)?;
-        let options = if crisp { TextureOptions::NEAREST } else { TextureOptions::LINEAR };
+        let options = if crisp {
+            TextureOptions::NEAREST
+        } else {
+            TextureOptions::LINEAR
+        };
         let tex = ctx.load_texture(self.name.clone(), image(&out), options);
         let (id, rect) = (tex.id(), plan.doc_rect());
         state.shown = Some(Shown { key, tex, rect });
@@ -456,7 +608,12 @@ mod tests {
     }
 
     fn doc() -> Document {
-        Document::new("t", photocraft_geom::Size::new(200, 200), photocraft_color::ColorMode::Rgb, photocraft_color::SampleType::U8)
+        Document::new(
+            "t",
+            photocraft_geom::Size::new(200, 200),
+            photocraft_color::ColorMode::Rgb,
+            photocraft_color::SampleType::U8,
+        )
     }
 
     fn rect_quad(r: [f64; 4]) -> [[f64; 2]; 4] {
@@ -464,17 +621,42 @@ mod tests {
     }
 
     /// The composite of a blue `w`×`h` block of texels moved onto `quad`, and its plan.
-    fn composite(layer: &Layer, w: usize, h: usize, quad: [[f64; 2]; 4], zoom: f32) -> (Buffer, Plan) {
+    fn composite(
+        layer: &Layer,
+        w: usize,
+        h: usize,
+        quad: [[f64; 2]; 4],
+        zoom: f32,
+    ) -> (Buffer, Plan) {
         let texels = ColorImage::new([w, h], vec![BLUE; w * h]);
-        let (plan, work) = plan(layer, [200, 200], quad, zoom, budget(layer, false)).expect("on the canvas");
-        let out = compose(&doc(), &work, &plan, &Source { image: &texels, uv: [1.0, 1.0], quad, nearest: false }).expect("composited");
+        let (plan, work) =
+            plan(layer, [200, 200], quad, zoom, budget(layer, false)).expect("on the canvas");
+        let out = compose(
+            &doc(),
+            &work,
+            &plan,
+            &Source {
+                image: &texels,
+                uv: [1.0, 1.0],
+                quad,
+                nearest: false,
+            },
+        )
+        .expect("composited");
         (out, plan)
     }
 
     /// The composite at a document point.
     fn at(out: &Buffer, plan: &Plan, x: f64, y: f64) -> [f32; 4] {
-        let (x, y) = ((x * plan.scale).floor() as i32, (y * plan.scale).floor() as i32);
-        if out.rect.contains(x, y) { out.get(x, y) } else { [0.0; 4] }
+        let (x, y) = (
+            (x * plan.scale).floor() as i32,
+            (y * plan.scale).floor() as i32,
+        );
+        if out.rect.contains(x, y) {
+            out.get(x, y)
+        } else {
+            [0.0; 4]
+        }
     }
 
     fn is(p: [f32; 4], rgb: [f32; 3]) -> bool {
@@ -491,13 +673,27 @@ mod tests {
         let l = styled(vec![stroke(4.0)]);
         let (out, plan) = composite(&l, 40, 20, rect_quad([60.0, 80.0, 100.0, 100.0]), 1.0);
         assert_eq!(plan.scale, 1.0);
-        assert!(is(at(&out, &plan, 80.0, 90.0), FILL), "the pixels themselves");
-        assert!(is(at(&out, &plan, 60.0, 80.0), FILL) && is(at(&out, &plan, 99.0, 99.0), FILL), "exact at the corners: no resampling blur");
+        assert!(
+            is(at(&out, &plan, 80.0, 90.0), FILL),
+            "the pixels themselves"
+        );
+        assert!(
+            is(at(&out, &plan, 60.0, 80.0), FILL) && is(at(&out, &plan, 99.0, 99.0), FILL),
+            "exact at the corners: no resampling blur"
+        );
         for (x, y) in [(57.0, 90.0), (102.0, 90.0), (80.0, 77.0), (80.0, 102.0)] {
-            assert!(is(at(&out, &plan, x, y), RED), "stroke at {x},{y}: {:?}", at(&out, &plan, x, y));
+            assert!(
+                is(at(&out, &plan, x, y), RED),
+                "stroke at {x},{y}: {:?}",
+                at(&out, &plan, x, y)
+            );
         }
         for (x, y) in [(54.0, 90.0), (105.0, 90.0), (80.0, 74.0), (80.0, 105.0)] {
-            assert_eq!(at(&out, &plan, x, y)[3], 0.0, "nothing past the stroke at {x},{y}");
+            assert_eq!(
+                at(&out, &plan, x, y)[3],
+                0.0,
+                "nothing past the stroke at {x},{y}"
+            );
         }
     }
 
@@ -508,7 +704,12 @@ mod tests {
         let (out, plan) = composite(&l, 20, 20, rect_quad([60.0, 60.0, 140.0, 140.0]), 1.0);
         assert!(is(at(&out, &plan, 100.0, 100.0), FILL));
         assert!(is(at(&out, &plan, 57.0, 100.0), RED) && is(at(&out, &plan, 142.0, 100.0), RED));
-        assert_eq!(at(&out, &plan, 53.0, 100.0)[3], 0.0, "{:?}", at(&out, &plan, 53.0, 100.0));
+        assert_eq!(
+            at(&out, &plan, 53.0, 100.0)[3],
+            0.0,
+            "{:?}",
+            at(&out, &plan, 53.0, 100.0)
+        );
         assert_eq!(at(&out, &plan, 146.0, 100.0)[3], 0.0);
     }
 
@@ -522,8 +723,16 @@ mod tests {
         for quad in [upright, turned] {
             let (out, plan) = composite(&l, 40, 40, quad, 1.0);
             assert!(is(at(&out, &plan, 100.0, 100.0), FILL));
-            assert!(is(at(&out, &plan, 124.0, 124.0), GREEN), "{:?}", at(&out, &plan, 124.0, 124.0));
-            assert_eq!(at(&out, &plan, 76.0, 76.0)[3], 0.0, "no shadow on the lit side");
+            assert!(
+                is(at(&out, &plan, 124.0, 124.0), GREEN),
+                "{:?}",
+                at(&out, &plan, 124.0, 124.0)
+            );
+            assert_eq!(
+                at(&out, &plan, 76.0, 76.0)[3],
+                0.0,
+                "no shadow on the lit side"
+            );
         }
     }
 
@@ -542,7 +751,12 @@ mod tests {
         let r = plan.doc_rect();
         assert!(r[0] <= 56.0 && r[2] >= 104.0, "{r:?}");
         // Zoomed in, the work is never finer than the document.
-        assert_eq!(composite(&l, 40, 40, rect_quad([60.0, 60.0, 100.0, 100.0]), 8.0).1.scale, 1.0);
+        assert_eq!(
+            composite(&l, 40, 40, rect_quad([60.0, 60.0, 100.0, 100.0]), 8.0)
+                .1
+                .scale,
+            1.0
+        );
     }
 
     #[test]
@@ -552,7 +766,11 @@ mod tests {
         let l = styled(vec![stroke(4.0)]);
         let (out, plan) = composite(&l, 40, 20, rect_quad([-20.0, 80.0, 20.0, 100.0]), 1.0);
         assert_eq!(plan.shown.x0, 0);
-        assert!(is(at(&out, &plan, 0.0, 90.0), FILL), "{:?}", at(&out, &plan, 0.0, 90.0));
+        assert!(
+            is(at(&out, &plan, 0.0, 90.0), FILL),
+            "{:?}",
+            at(&out, &plan, 0.0, 90.0)
+        );
         assert!(is(at(&out, &plan, 22.0, 90.0), RED));
         // Wholly off the canvas: nothing to composite.
         assert!(plan_of(&l, rect_quad([-90.0, 0.0, -50.0, 20.0])).is_none());
@@ -573,7 +791,10 @@ mod tests {
         l.fill_opacity = 1.0;
         l.opacity = 0.5;
         let (out, plan) = composite(&l, 40, 40, rect_quad([60.0, 60.0, 100.0, 100.0]), 1.0);
-        assert!((at(&out, &plan, 80.0, 80.0)[3] - 0.5).abs() < 0.01 && (at(&out, &plan, 57.0, 80.0)[3] - 0.5).abs() < 0.01);
+        assert!(
+            (at(&out, &plan, 80.0, 80.0)[3] - 0.5).abs() < 0.01
+                && (at(&out, &plan, 57.0, 80.0)[3] - 0.5).abs() < 0.01
+        );
     }
 
     #[test]
@@ -587,7 +808,9 @@ mod tests {
             assert!(area <= budget && area > budget * 0.5, "{area} of {budget}");
             assert!(p.scale < 1.0);
             // The style shrank with it.
-            let Some(Effect::Stroke(s)) = work.effects.items.first() else { panic!("stroke") };
+            let Some(Effect::Stroke(s)) = work.effects.items.first() else {
+                panic!("stroke")
+            };
             assert!((f64::from(s.size) - 8.0 * p.scale).abs() < 1e-3);
         }
     }
@@ -603,15 +826,26 @@ mod tests {
         }
         // Astronomically large or far away: planned within the budget or refused, never a huge
         // allocation or an overflow.
-        for q in [rect_quad([-1e300, -1e300, 1e300, 1e300]), rect_quad([1e18, 1e18, 1e18 + 40.0, 1e18 + 40.0]), rect_quad([0.0, 0.0, 1e12, 1.0])] {
+        for q in [
+            rect_quad([-1e300, -1e300, 1e300, 1e300]),
+            rect_quad([1e18, 1e18, 1e18 + 40.0, 1e18 + 40.0]),
+            rect_quad([0.0, 0.0, 1e12, 1.0]),
+        ] {
             if let Some(p) = plan_of(&l, q) {
-                assert!(f64::from(p.content.width()) * f64::from(p.content.height()) <= budget(&l, false), "{p:?}");
+                assert!(
+                    f64::from(p.content.width()) * f64::from(p.content.height())
+                        <= budget(&l, false),
+                    "{p:?}"
+                );
             }
         }
         // A collapsed box, a zero or NaN zoom and an absurd budget.
         assert!(plan_of(&l, [[80.0, 80.0]; 4]).is_none());
         for zoom in [0.0, -1.0, f32::NAN, f32::INFINITY] {
-            assert_eq!(plan(&l, [200, 200], ok, zoom, budget(&l, false)).map(|p| p.0.scale), Some(1.0));
+            assert_eq!(
+                plan(&l, [200, 200], ok, zoom, budget(&l, false)).map(|p| p.0.scale),
+                Some(1.0)
+            );
         }
         for budget in [f64::NAN, f64::INFINITY, -5.0, 0.0] {
             if let Some((p, _)) = plan(&l, [200, 200], ok, 1.0, budget) {
@@ -623,7 +857,20 @@ mod tests {
         let line = [[60.0, 60.0], [100.0, 100.0], [60.0, 60.0], [100.0, 100.0]];
         if let Some((p, work)) = plan(&l, [200, 200], line, 1.0, budget(&l, false)) {
             let texels = ColorImage::new([4, 4], vec![BLUE; 16]);
-            assert!(compose(&doc(), &work, &p, &Source { image: &texels, uv: [1.0, 1.0], quad: line, nearest: false }).is_none());
+            assert!(
+                compose(
+                    &doc(),
+                    &work,
+                    &p,
+                    &Source {
+                        image: &texels,
+                        uv: [1.0, 1.0],
+                        quad: line,
+                        nearest: false
+                    }
+                )
+                .is_none()
+            );
         }
     }
 
@@ -632,22 +879,72 @@ mod tests {
     fn bands_join_without_a_seam() {
         let l = styled(vec![stroke(5.0), shadow(12.0)]);
         let quad = [[40.0, 20.0], [150.0, 40.0], [130.0, 180.0], [20.0, 150.0]];
-        let texels = ColorImage::new([30, 40], (0..1200).map(|i| if i % 7 == 0 { Color32::TRANSPARENT } else { BLUE }).collect());
+        let texels = ColorImage::new(
+            [30, 40],
+            (0..1200)
+                .map(|i| {
+                    if i % 7 == 0 {
+                        Color32::TRANSPARENT
+                    } else {
+                        BLUE
+                    }
+                })
+                .collect(),
+        );
         let (plan, work) = plan(&l, [200, 200], quad, 1.0, budget(&l, false)).expect("planned");
-        assert!(plan.shown.height() as usize > 2 * BAND_ROWS, "{:?}", plan.shown);
-        let source = Source { image: &texels, uv: [1.0, 1.0], quad, nearest: false };
+        assert!(
+            plan.shown.height() as usize > 2 * BAND_ROWS,
+            "{:?}",
+            plan.shown
+        );
+        let source = Source {
+            image: &texels,
+            uv: [1.0, 1.0],
+            quad,
+            nearest: false,
+        };
         let banded = compose(&doc(), &work, &plan, &source).expect("composited");
         // The same in one pass.
-        let to_unit = Homography::rect_to_quad([0.0, 0.0, 1.0, 1.0], quad).and_then(|h| h.inverse()).expect("invertible");
-        let content = resample(&texels, [1.0, 1.0], &to_unit, [85.0, 97.5], plan.content, false);
+        let to_unit = Homography::rect_to_quad([0.0, 0.0, 1.0, 1.0], quad)
+            .and_then(|h| h.inverse())
+            .expect("invertible");
+        let content = resample(
+            &texels,
+            [1.0, 1.0],
+            &to_unit,
+            [85.0, 97.5],
+            plan.content,
+            false,
+        );
         let shape = content.px.iter().map(|p| p[3]).collect();
         let anchor = (f64::from(plan.bounds.x0), f64::from(plan.bounds.y0));
-        let maps = effects::build_maps(&work, shape, plan.content, &doc().global_light, &TextureCtx { rect: plan.content, patterns: &[], anchor });
+        let maps = effects::build_maps(
+            &work,
+            shape,
+            plan.content,
+            &doc().global_light,
+            &TextureCtx {
+                rect: plan.content,
+                patterns: &[],
+                anchor,
+            },
+        );
         let mut whole = Buffer::transparent(plan.shown);
-        effects::composite_with_effects(&work, &crop(&content, plan.shown), &mut whole, &maps, plan.bounds, &[]);
+        effects::composite_with_effects(
+            &work,
+            &crop(&content, plan.shown),
+            &mut whole,
+            &maps,
+            plan.bounds,
+            &[],
+        );
         assert_eq!(banded.rect, whole.rect);
         assert!(banded.px == whole.px, "banded and whole composites differ");
-        assert!(whole.px.iter().any(|p| is(*p, RED)) && whole.px.iter().any(|p| is(*p, GREEN)) && whole.px.iter().any(|p| is(*p, FILL)));
+        assert!(
+            whole.px.iter().any(|p| is(*p, RED))
+                && whole.px.iter().any(|p| is(*p, GREEN))
+                && whole.px.iter().any(|p| is(*p, FILL))
+        );
     }
 
     #[test]
@@ -656,10 +953,19 @@ mod tests {
         // fields) far fewer pixels than a shadow.
         let (stroked, shadowed) = (styled(vec![stroke(4.0)]), styled(vec![shadow(10.0)]));
         assert!(budget(&stroked, true) < budget(&stroked, false));
-        assert!((budget(&shadowed, false) / budget(&shadowed, true) - REST_MS / DRAG_MS).abs() < 1e-9);
-        assert!(budget(&stroked, true) * 3.0 < budget(&shadowed, true), "{} vs {}", budget(&stroked, true), budget(&shadowed, true));
+        assert!(
+            (budget(&shadowed, false) / budget(&shadowed, true) - REST_MS / DRAG_MS).abs() < 1e-9
+        );
+        assert!(
+            budget(&stroked, true) * 3.0 < budget(&shadowed, true),
+            "{} vs {}",
+            budget(&stroked, true),
+            budget(&shadowed, true)
+        );
         // Two strokes share their distance fields; an effect switched off costs nothing.
-        assert!(pixel_cost_ns(&styled(vec![stroke(4.0), stroke(9.0)])) < pixel_cost_ns(&stroked) + 2.0);
+        assert!(
+            pixel_cost_ns(&styled(vec![stroke(4.0), stroke(9.0)])) < pixel_cost_ns(&stroked) + 2.0
+        );
         let mut off = styled(vec![stroke(4.0), shadow(10.0)]);
         if let Some(Effect::Stroke(s)) = off.effects.items.first_mut() {
             s.common.enabled = false;
@@ -673,12 +979,27 @@ mod tests {
 
     #[test]
     fn resampling_handles_empty_texels_and_nearest_neighbor() {
-        let unit = Homography::rect_to_quad([0.0, 0.0, 1.0, 1.0], rect_quad([0.0, 0.0, 8.0, 8.0])).and_then(|h| h.inverse()).expect("invertible");
+        let unit = Homography::rect_to_quad([0.0, 0.0, 1.0, 1.0], rect_quad([0.0, 0.0, 8.0, 8.0]))
+            .and_then(|h| h.inverse())
+            .expect("invertible");
         let r = Rect::new(-2, -2, 10, 10);
         let empty = ColorImage::new([0, 0], Vec::new());
-        assert!(resample(&empty, [1.0, 1.0], &unit, [4.0, 4.0], r, false).px.iter().all(|p| p[3] == 0.0));
+        assert!(
+            resample(&empty, [1.0, 1.0], &unit, [4.0, 4.0], r, false)
+                .px
+                .iter()
+                .all(|p| p[3] == 0.0)
+        );
         // A 2×2 checker enlarged four times: Nearest Neighbor keeps hard texels, bilinear blends.
-        let checker = ColorImage::new([2, 2], vec![Color32::WHITE, Color32::BLACK, Color32::BLACK, Color32::WHITE]);
+        let checker = ColorImage::new(
+            [2, 2],
+            vec![
+                Color32::WHITE,
+                Color32::BLACK,
+                Color32::BLACK,
+                Color32::WHITE,
+            ],
+        );
         let hard = resample(&checker, [1.0, 1.0], &unit, [4.0, 4.0], r, true);
         assert_eq!(hard.get(3, 0), [1.0, 1.0, 1.0, 1.0]);
         assert_eq!(hard.get(4, 0), [0.0, 0.0, 0.0, 1.0]);

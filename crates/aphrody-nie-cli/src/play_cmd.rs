@@ -71,19 +71,23 @@ pub fn run(args: PlayArgs) -> Result<()> {
     let mut applied_cmds = Vec::new();
 
     let mut screen = if args.r#match {
-        Screen::Match { world: aphrody_nie_runtime::World::kickoff() }
+        Screen::Match {
+            world: aphrody_nie_runtime::World::kickoff(),
+        }
     } else {
         match args.screen.to_lowercase().as_str() {
             "title" => Screen::Title,
             "modes" => Screen::ModeSelect { sel: 0 },
-            "match" => Screen::Match { world: aphrody_nie_runtime::World::kickoff() },
+            "match" => Screen::Match {
+                world: aphrody_nie_runtime::World::kickoff(),
+            },
             _ => {
                 // Default to main menu
                 let mut s = Screen::Title;
                 s.input("CMD_ENTER");
                 applied_cmds.push("CMD_ENTER (boot->menu)".to_string());
                 s
-            },
+            }
         }
     };
 
@@ -127,7 +131,7 @@ pub fn run(args: PlayArgs) -> Result<()> {
                 ball_pos: [world.ball.pos.x, world.ball.pos.y, world.ball.pos.z],
             };
             ("Match".to_string(), Some(score))
-        },
+        }
         Screen::Story { idx, titre, .. } => (format!("Story(event={titre}, idx={idx})"), None),
         Screen::Info { title } => (format!("Info({title})"), None),
         Screen::Liste { titre, sel, .. } => (format!("Liste({titre}, sel={sel})"), None),
@@ -165,7 +169,9 @@ pub fn run(args: PlayArgs) -> Result<()> {
             final_screen_name,
             total_frames,
             summary.simulated_time_seconds,
-            args.out.as_ref().map_or("none", |p| p.to_str().unwrap_or("-"))
+            args.out
+                .as_ref()
+                .map_or("none", |p| p.to_str().unwrap_or("-"))
         );
         if let Some(score) = &summary.match_score {
             println!(

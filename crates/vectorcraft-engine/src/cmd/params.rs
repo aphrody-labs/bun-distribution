@@ -34,7 +34,10 @@ pub struct ParamKeys<'a> {
 fn object_body(doc: &str) -> std::result::Result<(&str, &str), String> {
     // (Named, not written in the `Err`: these are for the tests of the descriptions, not messages
     // the app shows, which the message catalogs would have to translate.)
-    let (no_object, not_closed) = ("the description doesn't start with the params object `{…}`", "the params object `{…}` isn't closed");
+    let (no_object, not_closed) = (
+        "the description doesn't start with the params object `{…}`",
+        "the params object `{…}` isn't closed",
+    );
     if !doc.starts_with('{') {
         return Err(no_object.into());
     }
@@ -48,7 +51,10 @@ fn object_body(doc: &str) -> std::result::Result<(&str, &str), String> {
             (None, '}' | ']' | ')') => {
                 depth = depth.saturating_sub(1);
                 if depth == 0 {
-                    return Ok((doc.get(1..i).unwrap_or_default(), doc.get(i + 1..).unwrap_or_default()));
+                    return Ok((
+                        doc.get(1..i).unwrap_or_default(),
+                        doc.get(i + 1..).unwrap_or_default(),
+                    ));
                 }
             }
             _ => {}
@@ -80,7 +86,10 @@ fn split_top(s: &str, sep: char) -> Vec<&str> {
 
 fn is_key(s: &str) -> bool {
     let mut chars = s.chars();
-    chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_') && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
 /// The keys a params description names, or what in it doesn't read as one.
@@ -89,7 +98,12 @@ pub fn doc_keys(doc: &str) -> std::result::Result<ParamKeys<'_>, String> {
     let (mut body, mut rest) = object_body(doc)?;
     let mut entries = split_top(body, ',');
     // `{…} or {…}`, `{…} | {…}`: the objects the command takes instead.
-    while let Some(next) = rest.trim_start().strip_prefix("or ").or_else(|| rest.trim_start().strip_prefix("| ")).filter(|r| r.starts_with('{')) {
+    while let Some(next) = rest
+        .trim_start()
+        .strip_prefix("or ")
+        .or_else(|| rest.trim_start().strip_prefix("| "))
+        .filter(|r| r.starts_with('{'))
+    {
         (body, rest) = object_body(next)?;
         entries.extend(split_top(body, ','));
     }
@@ -102,7 +116,10 @@ pub fn doc_keys(doc: &str) -> std::result::Result<ParamKeys<'_>, String> {
         // is a value.
         let mut noted = false;
         for alternative in split_top(entry, '|') {
-            let head = alternative.split([':', '=', '(']).next().unwrap_or_default();
+            let head = alternative
+                .split([':', '=', '('])
+                .next()
+                .unwrap_or_default();
             let rest = alternative.get(head.len()..).unwrap_or_default();
             let name = head.trim().trim_end_matches('?').trim_end();
             if !noted {
@@ -126,7 +143,9 @@ pub fn doc_keys(doc: &str) -> std::result::Result<ParamKeys<'_>, String> {
 fn named_commands(more: &str) -> impl Iterator<Item = &'static super::CommandSpec> + '_ {
     let words: Vec<&str> = more.split_whitespace().collect();
     let id = |w: &str| find_command(w.trim_matches(|c: char| !c.is_ascii_alphanumeric()));
-    (1..words.len()).filter_map(move |i| id(words.get(i)?).filter(|_| matches!(words.get(i - 1), Some(&"as" | &"of"))))
+    (1..words.len()).filter_map(move |i| {
+        id(words.get(i)?).filter(|_| matches!(words.get(i - 1), Some(&"as" | &"of")))
+    })
 }
 
 /// Every key command `doc` accepts, the keys of the commands its `…` entries name included.
@@ -155,18 +174,24 @@ fn accepted(doc: &'static str, depth: usize) -> Option<Vec<&'static str>> {
 /// Does the description `doc` name `key` as a parameter (its own keys, and those of the commands
 /// its `…` entries name)?
 pub(crate) fn takes_key(doc: &'static str, key: &str) -> bool {
-    doc_keys(doc).is_ok_and(|parsed| parsed.keys.contains(&key)) || accepted(doc, 0).is_some_and(|keys| keys.contains(&key))
+    doc_keys(doc).is_ok_and(|parsed| parsed.keys.contains(&key))
+        || accepted(doc, 0).is_some_and(|keys| keys.contains(&key))
 }
 
 /// The edits (insert, delete, replace, swap of neighbours) that turn `a` into `b`, ignoring case.
 fn distance(a: &str, b: &str) -> usize {
-    let (a, b): (Vec<char>, Vec<char>) = (a.chars().map(|c| c.to_ascii_lowercase()).collect(), b.chars().map(|c| c.to_ascii_lowercase()).collect());
+    let (a, b): (Vec<char>, Vec<char>) = (
+        a.chars().map(|c| c.to_ascii_lowercase()).collect(),
+        b.chars().map(|c| c.to_ascii_lowercase()).collect(),
+    );
     let (mut before, mut prev): (Vec<usize>, Vec<usize>) = (Vec::new(), (0..=b.len()).collect());
     for (i, ca) in a.iter().enumerate() {
         let mut row = vec![i + 1];
         for (j, cb) in b.iter().enumerate() {
             let at = |r: &[usize], k: usize| r.get(k).copied().unwrap_or(usize::MAX / 2);
-            let mut d = (at(&prev, j) + usize::from(ca != cb)).min(at(&prev, j + 1) + 1).min(at(&row, j) + 1);
+            let mut d = (at(&prev, j) + usize::from(ca != cb))
+                .min(at(&prev, j + 1) + 1)
+                .min(at(&row, j) + 1);
             if i > 0 && j > 0 && a.get(i - 1) == Some(cb) && b.get(j - 1) == Some(ca) {
                 d = d.min(at(&before, j - 1) + 1);
             }
@@ -186,11 +211,15 @@ fn nearest<'a>(key: &str, keys: &[&'a str]) -> Option<&'a str> {
 /// `params` has only keys the description `doc` of command `id` names, or the parameter error
 /// naming the first one it doesn't, with the nearest accepted key or the accepted ones.
 pub fn check_keys(id: &str, doc: &'static str, params: &Value) -> Result<()> {
-    let Value::Object(given) = params else { return Ok(()) };
+    let Value::Object(given) = params else {
+        return Ok(());
+    };
     if given.is_empty() {
         return Ok(());
     }
-    let Some(keys) = accepted(doc, 0) else { return Ok(()) };
+    let Some(keys) = accepted(doc, 0) else {
+        return Ok(());
+    };
     match given.keys().find(|k| !keys.contains(&k.as_str())) {
         Some(key) => Err(unknown(id, key, &keys)),
         None => Ok(()),
@@ -204,8 +233,13 @@ fn unknown(id: &str, key: &str, keys: &[&str]) -> crate::EngineError {
         id,
         match nearest(key, keys) {
             Some(near) => format!("unknown parameter `{key}`; did you mean `{near}`?"),
-            None if keys.is_empty() => format!("unknown parameter `{key}`; the command takes no parameters"),
-            None => format!("unknown parameter `{key}`; the command takes: {}", keys.join(", ")),
+            None if keys.is_empty() => {
+                format!("unknown parameter `{key}`; the command takes no parameters")
+            }
+            None => format!(
+                "unknown parameter `{key}`; the command takes: {}",
+                keys.join(", ")
+            ),
         },
     )
 }
@@ -215,13 +249,20 @@ fn unknown(id: &str, key: &str, keys: &[&str]) -> crate::EngineError {
 /// default's type. Numbers out of range pass: the effect clamps them when it draws. An effect
 /// plug-in resolves its own against its manifest, and an unknown effect is the command's to report.
 pub fn check_effect_params(id: &str, effect: &str, params: &Value) -> Result<()> {
-    let Value::Object(given) = params else { return Ok(()) };
+    let Value::Object(given) = params else {
+        return Ok(());
+    };
     if effect.starts_with(vectorcraft_plugins::effect::PREFIX) {
         return Ok(());
     }
-    let Some(info) = vectorcraft_render::effects::effect_info(effect) else { return Ok(()) };
+    let Some(info) = vectorcraft_render::effects::effect_info(effect) else {
+        return Ok(());
+    };
     let defaults = info.defaults.as_object();
-    let mut keys: Vec<&str> = defaults.into_iter().flat_map(|d| d.keys().map(String::as_str)).collect();
+    let mut keys: Vec<&str> = defaults
+        .into_iter()
+        .flat_map(|d| d.keys().map(String::as_str))
+        .collect();
     // A description that doesn't parse names no more keys (the tests rule that out).
     for key in doc_keys(info.params).map(|d| d.keys).unwrap_or_default() {
         if !keys.contains(&key) {
@@ -233,10 +274,16 @@ pub fn check_effect_params(id: &str, effect: &str, params: &Value) -> Result<()>
             return Err(unknown(id, key, &keys));
         }
         match defaults.and_then(|d| d.get(key)) {
-            Some(Value::Number(_)) if !v.is_number() => return Err(bad(id, format!("`{key}` must be a number"))),
-            Some(Value::Bool(_)) if !v.is_boolean() => return Err(bad(id, format!("`{key}` must be true or false"))),
+            Some(Value::Number(_)) if !v.is_number() => {
+                return Err(bad(id, format!("`{key}` must be a number")));
+            }
+            Some(Value::Bool(_)) if !v.is_boolean() => {
+                return Err(bad(id, format!("`{key}` must be true or false")));
+            }
             // (A colour is also taken as `[r, g, b]` or as a colour object.)
-            Some(Value::String(_)) if v.is_number() || v.is_boolean() => return Err(bad(id, format!("`{key}` must be a string"))),
+            Some(Value::String(_)) if v.is_number() || v.is_boolean() => {
+                return Err(bad(id, format!("`{key}` must be a string")));
+            }
             _ => {}
         }
     }
@@ -380,10 +427,17 @@ pub const UNCHECKED: &[&str] = &[
 /// [`check_effect_params`] for the effect `effect.apply` adds. A command the engine doesn't have
 /// passes: running it reports that.
 pub fn check_params(id: &str, params: &Value) -> Result<()> {
-    let Some(spec) = find_command(id) else { return Ok(()) };
-    if let ("effect.apply" | "appearance.addEffect", Some(effect), Some(given)) =
-        (id, params.get("effect").or_else(|| params.get("id")).and_then(Value::as_str), params.get("params"))
-    {
+    let Some(spec) = find_command(id) else {
+        return Ok(());
+    };
+    if let ("effect.apply" | "appearance.addEffect", Some(effect), Some(given)) = (
+        id,
+        params
+            .get("effect")
+            .or_else(|| params.get("id"))
+            .and_then(Value::as_str),
+        params.get("params"),
+    ) {
         check_effect_params(id, effect, given)?;
     }
     if UNCHECKED.contains(&id) {
@@ -391,8 +445,16 @@ pub fn check_params(id: &str, params: &Value) -> Result<()> {
     }
     check_keys(id, spec.params, params)?;
     if id == "command.batch" {
-        for step in params.get("commands").and_then(Value::as_array).into_iter().flatten() {
-            if let (Some(step_id), Some(step_params)) = (step.get("command").and_then(Value::as_str), step.get("params")) {
+        for step in params
+            .get("commands")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+        {
+            if let (Some(step_id), Some(step_params)) = (
+                step.get("command").and_then(Value::as_str),
+                step.get("params"),
+            ) {
                 check_params(step_id, step_params)?;
             }
         }

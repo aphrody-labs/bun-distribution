@@ -105,7 +105,10 @@ impl ArtboardTool {
     /// The selected artboards that are still in the document: the active one and the others,
     /// in order.
     fn selected(&self, cx: &ToolContext) -> Vec<usize> {
-        let mut all: Vec<usize> = std::iter::once(self.active).chain(self.others.iter().copied()).filter(|i| *i < cx.doc.artboards.len()).collect();
+        let mut all: Vec<usize> = std::iter::once(self.active)
+            .chain(self.others.iter().copied())
+            .filter(|i| *i < cx.doc.artboards.len())
+            .collect();
         all.sort_unstable();
         all.dedup();
         all
@@ -118,7 +121,11 @@ impl ArtboardTool {
         if let Some(at) = sel.iter().position(|j| *j == i) {
             if sel.len() > 1 {
                 sel.remove(at);
-                self.active = if i == self.active { sel.first().copied().unwrap_or(0) } else { self.active };
+                self.active = if i == self.active {
+                    sel.first().copied().unwrap_or(0)
+                } else {
+                    self.active
+                };
             }
         } else {
             sel.push(i);
@@ -133,13 +140,17 @@ impl ArtboardTool {
         self.guides.clear();
         self.targets = cx.smart_guides.then(|| {
             let art = match cx.doc.artboards.get(index) {
-                Some(a) if art_moves => cx.doc.art_on_artboard(a.rect, cx.move_locked_with_artboard),
+                Some(a) if art_moves => {
+                    cx.doc.art_on_artboard(a.rect, cx.move_locked_with_artboard)
+                }
                 _ => vec![],
             };
             Targets::for_artboard(cx.doc, index, &art).styled(cx)
         });
         // Nothing to skip: no artboard has this index.
-        self.copy_targets = cx.smart_guides.then(|| Targets::for_artboard(cx.doc, usize::MAX, &[]).styled(cx));
+        self.copy_targets = cx
+            .smart_guides
+            .then(|| Targets::for_artboard(cx.doc, usize::MAX, &[]).styled(cx));
     }
 
     /// Snap a dragged handle: to whole pixels, the grid, or Smart Guides (in that order, as when
@@ -170,7 +181,13 @@ impl ArtboardTool {
         if cx.snap_to_grid {
             return vectorcraft_geom::snap::snap_point_to_grid(tl + d, cx.grid_step()) - tl;
         }
-        let Some(t) = (if copy { &self.copy_targets } else { &self.targets }) else { return d };
+        let Some(t) = (if copy {
+            &self.copy_targets
+        } else {
+            &self.targets
+        }) else {
+            return d;
+        };
         let moved = rect + d;
         let (adj, ov) = if cx.doc.setup.has_bleed() {
             t.snap_rects(&[moved, cx.doc.setup.bleed_rect(moved)], cx.snap_tol())
@@ -197,7 +214,10 @@ const MIN_SIDE: f64 = 1.0;
 
 fn create_artboard(r: Rect) -> Vec<Action> {
     vec![
-        Action::Exec("artboard.new".into(), json!({ "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height() })),
+        Action::Exec(
+            "artboard.new".into(),
+            json!({ "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height() }),
+        ),
         Action::Notify("created".into()),
     ]
 }
@@ -210,7 +230,8 @@ fn keep_min_side(r: Rect, anchor: Point) -> Rect {
         return r;
     }
     let k = MIN_SIDE / short;
-    (Affine::translate(anchor.to_vec2()) * Affine::scale(k) * Affine::translate(-anchor.to_vec2())).transform_rect_bbox(r)
+    (Affine::translate(anchor.to_vec2()) * Affine::scale(k) * Affine::translate(-anchor.to_vec2()))
+        .transform_rect_bbox(r)
 }
 
 /// Where the bleed edge lies beyond a handle, along the axes the handle moves.
@@ -233,7 +254,11 @@ impl Tool for ArtboardTool {
     fn pointer(&mut self, cx: &ToolContext, ev: &PointerEvent) -> Vec<Action> {
         let p = ev.pos;
         let m = ev.mods;
-        if ev.kind == PointerKind::Drag && self.click_art.is_some_and(|(start, _)| m != Mods::default() || p.distance(start) >= cx.tol(3.0)) {
+        if ev.kind == PointerKind::Drag
+            && self
+                .click_art
+                .is_some_and(|(start, _)| m != Mods::default() || p.distance(start) >= cx.tol(3.0))
+        {
             self.click_art = None;
         }
         match (ev.kind, self.drag) {
@@ -242,7 +267,13 @@ impl Tool for ArtboardTool {
                 if let Some(r) = self.active_rect(cx)
                     && let Some(handle) = hit_handle(r, p, cx.tol(5.0))
                 {
-                    self.drag = Some(Drag::Resize { index: self.active, handle, rect: r, grab: handle.pos(r) - p, began: false });
+                    self.drag = Some(Drag::Resize {
+                        index: self.active,
+                        handle,
+                        rect: r,
+                        grab: handle.pos(r) - p,
+                        began: false,
+                    });
                     return vec![];
                 }
                 if m == Mods::default() {
@@ -250,7 +281,11 @@ impl Tool for ArtboardTool {
                         .and_then(|h| cx.doc.bounds_of(&[h.top_object(cx.isolation)], true))
                         // Match Fit to Selected Art, and do not stretch zero-sized art to the
                         // artboard command's minimum side or pass non-finite bounds to it.
-                        .filter(|r| r.width() >= MIN_SIDE && r.height() >= MIN_SIDE && [r.x0, r.y0, r.x1, r.y1].iter().all(|n| n.is_finite()))
+                        .filter(|r| {
+                            r.width() >= MIN_SIDE
+                                && r.height() >= MIN_SIDE
+                                && [r.x0, r.y0, r.x1, r.y1].iter().all(|n| n.is_finite())
+                        })
                         .map(|r| (p, r));
                 }
                 if let Some(i) = cx.doc.artboard_at(p)
@@ -265,7 +300,14 @@ impl Tool for ArtboardTool {
                         self.active = i;
                     }
                     let many = self.selected(cx).len() > 1 && self.selected(cx).contains(&i);
-                    self.drag = Some(Drag::Move { index: i, many, start: p, rect: a.rect, began: false, copy: false });
+                    self.drag = Some(Drag::Move {
+                        index: i,
+                        many,
+                        start: p,
+                        rect: a.rect,
+                        began: false,
+                        copy: false,
+                    });
                 } else {
                     self.others.clear();
                     let p = self.draw.press(cx, p, &[], None);
@@ -273,9 +315,25 @@ impl Tool for ArtboardTool {
                 }
                 vec![]
             }
-            (PointerKind::Drag, Some(Drag::Move { index, many, start, rect, began, copy })) => {
+            (
+                PointerKind::Drag,
+                Some(Drag::Move {
+                    index,
+                    many,
+                    start,
+                    rect,
+                    began,
+                    copy,
+                }),
+            ) => {
                 let mut out = vec![];
-                let label = |copy: bool| if copy { "Duplicate Artboard" } else { "Move Artboard" };
+                let label = |copy: bool| {
+                    if copy {
+                        "Duplicate Artboard"
+                    } else {
+                        "Move Artboard"
+                    }
+                };
                 if !began {
                     if p.distance(start) < cx.tol(3.0) {
                         return out;
@@ -287,7 +345,14 @@ impl Tool for ArtboardTool {
                     out.push(Action::Cancel);
                     out.push(Action::Begin(label(m.alt).into()));
                 }
-                self.drag = Some(Drag::Move { index, many, start, rect, began: true, copy: m.alt });
+                self.drag = Some(Drag::Move {
+                    index,
+                    many,
+                    start,
+                    rect,
+                    began: true,
+                    copy: m.alt,
+                });
                 let d = self.snap_move(cx, rect, move_delta(start, p, m.shift), m.alt);
                 self.preview = Some(rect + d);
                 let mut v = json!({ "index": index, "dx": d.x, "dy": d.y, "moveArt": self.move_art, "copy": m.alt });
@@ -297,18 +362,41 @@ impl Tool for ArtboardTool {
                 out.push(Action::Preview("artboard.move".into(), v));
                 out
             }
-            (PointerKind::Drag, Some(Drag::Resize { index, handle, rect, grab, began })) => {
+            (
+                PointerKind::Drag,
+                Some(Drag::Resize {
+                    index,
+                    handle,
+                    rect,
+                    grab,
+                    began,
+                }),
+            ) => {
                 let mut out = vec![];
                 if !began {
                     out.push(Action::Begin("Resize Artboard".into()));
                     self.begin_snapping(cx, index, self.scale_art);
                 }
-                self.drag = Some(Drag::Resize { index, handle, rect, grab, began: true });
+                self.drag = Some(Drag::Resize {
+                    index,
+                    handle,
+                    rect,
+                    grab,
+                    began: true,
+                });
                 let h = self.snap_handle(cx, p + grab, bleed_offset(cx, rect, handle));
                 let proportional = m.shift || self.scale_art;
-                let mut nr = scale_for_drag(rect, handle, h, proportional, m.alt).transform_rect_bbox(rect);
+                let mut nr =
+                    scale_for_drag(rect, handle, h, proportional, m.alt).transform_rect_bbox(rect);
                 if proportional {
-                    nr = keep_min_side(nr, if m.alt { rect.center() } else { handle.opposite().pos(rect) });
+                    nr = keep_min_side(
+                        nr,
+                        if m.alt {
+                            rect.center()
+                        } else {
+                            handle.opposite().pos(rect)
+                        },
+                    );
                 }
                 self.preview = Some(nr);
                 let mut v = rect_json(index, nr);
@@ -319,7 +407,9 @@ impl Tool for ArtboardTool {
                 out
             }
             (PointerKind::Drag, Some(Drag::Create { start, .. })) => {
-                let cur = self.draw.drag(cx, p, Some(&Leave::diagonal(start, m.shift)));
+                let cur = self
+                    .draw
+                    .drag(cx, p, Some(&Leave::diagonal(start, m.shift)));
                 self.drag = Some(Drag::Create { start, cur });
                 vec![]
             }
@@ -333,12 +423,21 @@ impl Tool for ArtboardTool {
                     return create_artboard(r);
                 }
                 match d {
-                    Drag::Move { began: true, copy, many, .. } => {
+                    Drag::Move {
+                        began: true,
+                        copy,
+                        many,
+                        ..
+                    } => {
                         // The copies, last in the previewed document, become the selection (the
                         // last one active).
                         if copy {
                             let n = cx.doc.artboards.len();
-                            let k = if many { self.selected(cx).len().min(n) } else { 1 };
+                            let k = if many {
+                                self.selected(cx).len().min(n)
+                            } else {
+                                1
+                            };
                             self.active = n.saturating_sub(1);
                             self.others = (n.saturating_sub(k)..n.saturating_sub(1)).collect();
                         }
@@ -398,9 +497,16 @@ impl Tool for ArtboardTool {
                 vec![Action::Exec("artboard.delete".into(), params)]
             }
             ToolKey::Escape => {
-                let busy = matches!(self.drag, Some(Drag::Move { began: true, .. } | Drag::Resize { began: true, .. }));
+                let busy = matches!(
+                    self.drag,
+                    Some(Drag::Move { began: true, .. } | Drag::Resize { began: true, .. })
+                );
                 self.end_drag();
-                if busy { vec![Action::Cancel] } else { vec![Action::SwitchTool("selection".into())] }
+                if busy {
+                    vec![Action::Cancel]
+                } else {
+                    vec![Action::SwitchTool("selection".into())]
+                }
             }
             _ => vec![],
         }
@@ -420,24 +526,53 @@ impl Tool for ArtboardTool {
             let r = Rect::from_points(start, cur);
             o.push(Overlay::Marquee(r));
             if cx.measurement_labels {
-                o.push(Overlay::Measure { p: cur + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: cx.size_label(r.width(), r.height()) });
+                o.push(Overlay::Measure {
+                    p: cur + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
+                    text: cx.size_label(r.width(), r.height()),
+                });
             }
             return o;
         }
         // The other selected artboards: dashed bounds (in a drag the document shows them moved).
-        for r in self.others.iter().filter_map(|i| cx.doc.artboards.get(*i)).map(|a| a.rect) {
-            o.push(Overlay::Path { path: polygon(&rect_corners(r), true), color: BLUE, width: 1.0, dashed: true });
+        for r in self
+            .others
+            .iter()
+            .filter_map(|i| cx.doc.artboards.get(*i))
+            .map(|a| a.rect)
+        {
+            o.push(Overlay::Path {
+                path: polygon(&rect_corners(r), true),
+                color: BLUE,
+                width: 1.0,
+                dashed: true,
+            });
         }
-        let Some(ab) = cx.doc.artboards.get(self.active) else { return o };
+        let Some(ab) = cx.doc.artboards.get(self.active) else {
+            return o;
+        };
         let r = self.preview.unwrap_or(ab.rect);
-        o.push(Overlay::Path { path: polygon(&rect_corners(r), true), color: BLUE, width: 1.0, dashed: true });
+        o.push(Overlay::Path {
+            path: polygon(&rect_corners(r), true),
+            color: BLUE,
+            width: 1.0,
+            dashed: true,
+        });
         for h in Handle::ALL {
-            o.push(Overlay::Anchor { p: h.pos(r), color: BLUE, filled: false, size: 7.0 });
+            o.push(Overlay::Anchor {
+                p: h.pos(r),
+                color: BLUE,
+                filled: false,
+                size: 7.0,
+            });
         }
         // Where the canvas names the other artboards: on the top edge, flush with the left one
         // (labels are drawn 8 px right of and 14 px above their point).
         let at = Point::new(r.x0 - cx.tol(8.0), r.y0 - cx.tol(4.0));
-        o.push(Overlay::Label { p: at, text: format!("{:02} - {}", self.active + 1, ab.name), color: BLUE });
+        o.push(Overlay::Label {
+            p: at,
+            text: format!("{:02} - {}", self.active + 1, ab.name),
+            color: BLUE,
+        });
         if let (Some(Drag::Resize { began: true, .. }), true) = (self.drag, cx.measurement_labels) {
             o.push(Overlay::Measure {
                 p: Point::new(r.x1, r.y1) + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
@@ -461,7 +596,11 @@ impl Tool for ArtboardTool {
                 Handle::TopRight | Handle::BottomLeft => Cursor::ResizeNeSw,
             };
         }
-        if cx.doc.artboards.iter().any(|a| a.rect.contains(p)) { Cursor::Move } else { Cursor::Crosshair }
+        if cx.doc.artboards.iter().any(|a| a.rect.contains(p)) {
+            Cursor::Move
+        } else {
+            Cursor::Crosshair
+        }
     }
 
     fn options(&self) -> Value {
@@ -476,8 +615,13 @@ impl Tool for ArtboardTool {
             }
             // The selected artboards, the first active.
             "selected" => {
-                let all: Vec<usize> =
-                    value.as_array().into_iter().flatten().filter_map(Value::as_u64).filter_map(|i| usize::try_from(i).ok()).collect();
+                let all: Vec<usize> = value
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_u64)
+                    .filter_map(|i| usize::try_from(i).ok())
+                    .collect();
                 if let Some((first, rest)) = all.split_first() {
                     self.active = *first;
                     self.others = rest.iter().copied().filter(|i| i != first).collect();
@@ -490,7 +634,10 @@ impl Tool for ArtboardTool {
     }
 
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
-        let busy = matches!(self.drag, Some(Drag::Move { began: true, .. } | Drag::Resize { began: true, .. }));
+        let busy = matches!(
+            self.drag,
+            Some(Drag::Move { began: true, .. } | Drag::Resize { began: true, .. })
+        );
         self.end_drag();
         if busy { vec![Action::Cancel] } else { vec![] }
     }
@@ -541,7 +688,10 @@ mod tests {
         // The engine applies the preview to the document, as it does during a drag.
         d.artboards[1].rect = Rect::new(610.0, 0.0, 810.0, 200.0);
         let cx = cx(&d, &s, &p);
-        assert_eq!(preview_params(&t.pointer(&cx, &ev(PointerKind::Drag, 720.0, 100.0)))["dx"], 20.0);
+        assert_eq!(
+            preview_params(&t.pointer(&cx, &ev(PointerKind::Drag, 720.0, 100.0)))["dx"],
+            20.0
+        );
         let corners: Vec<Point> = t
             .overlays(&cx)
             .iter()
@@ -550,7 +700,11 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_eq!(corners[0], Point::new(620.0, 0.0), "the handles sit on the moved artboard, not 10 pt past it");
+        assert_eq!(
+            corners[0],
+            Point::new(620.0, 0.0),
+            "the handles sit on the moved artboard, not 10 pt past it"
+        );
     }
 
     #[test]
@@ -561,9 +715,18 @@ mod tests {
         let mut c = cx(&d, &s, &p);
         // Left edge 3 pt right of artboard 1's right edge (500) → lands on it.
         assert_eq!(drag_board2(&c, &mut t, -97.0, 0.0)["dx"], -100.0);
-        assert!(t.overlays(&c).iter().any(|o| matches!(o, Overlay::Line { color, .. } if *color == crate::guides::MAGENTA)));
+        assert!(
+            t.overlays(&c).iter().any(
+                |o| matches!(o, Overlay::Line { color, .. } if *color == crate::guides::MAGENTA)
+            )
+        );
         t.pointer(&c, &ev(PointerKind::Up, 603.0, 100.0));
-        assert!(!t.overlays(&c).iter().any(|o| matches!(o, Overlay::Line { .. })), "guides go away on release");
+        assert!(
+            !t.overlays(&c)
+                .iter()
+                .any(|o| matches!(o, Overlay::Line { .. })),
+            "guides go away on release"
+        );
         c.smart_guides = false;
         assert_eq!(drag_board2(&c, &mut t, -97.0, 0.0)["dx"], -97.0);
     }
@@ -574,7 +737,12 @@ mod tests {
         let l = d.layers[0].id;
         let id = d.alloc_id();
         let art = vectorcraft_geom::shapes::rectangle(Rect::new(650.0, 50.0, 660.0, 60.0));
-        d.insert(Some(l), 0, vectorcraft_doc::Node::path(id, art, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            vectorcraft_doc::Node::path(id, art, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         let mut t = ArtboardTool::default();
@@ -598,24 +766,36 @@ mod tests {
         c.snap_to_grid = true;
         // Grid step 72 / 8 = 9: x 610 → 612, y 4 → 0.
         let v = drag_board2(&c, &mut t, 10.0, 4.0);
-        assert_eq!((v["dx"].as_f64(), v["dy"].as_f64()), (Some(12.0), Some(0.0)));
+        assert_eq!(
+            (v["dx"].as_f64(), v["dy"].as_f64()),
+            (Some(12.0), Some(0.0))
+        );
         t.pointer(&c, &ev(PointerKind::Up, 710.0, 104.0));
         c.snap_to_grid = false;
         c.snap_to_pixel = true;
         let v = drag_board2(&c, &mut t, 10.4, 3.6);
-        assert_eq!((v["dx"].as_f64(), v["dy"].as_f64()), (Some(10.0), Some(4.0)));
+        assert_eq!(
+            (v["dx"].as_f64(), v["dy"].as_f64()),
+            (Some(10.0), Some(4.0))
+        );
     }
 
     #[test]
     fn resizing_snaps_the_dragged_handle() {
         let d = two_boards();
         let (s, p) = (Selection::default(), paint());
-        let mut t = ArtboardTool { active: 1, ..Default::default() };
+        let mut t = ArtboardTool {
+            active: 1,
+            ..Default::default()
+        };
         let c = cx(&d, &s, &p);
         // Left handle to 3 pt off artboard 1's right edge.
         t.pointer(&c, &ev(PointerKind::Down, 600.0, 100.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 503.0, 100.0)));
-        assert_eq!((v["x"].as_f64(), v["width"].as_f64()), (Some(500.0), Some(300.0)));
+        assert_eq!(
+            (v["x"].as_f64(), v["width"].as_f64()),
+            (Some(500.0), Some(300.0))
+        );
         t.pointer(&c, &ev(PointerKind::Up, 503.0, 100.0));
         // The handle, not the pointer, follows: grabbed 2 pt left of it, dragged 10 pt.
         t.pointer(&c, &ev(PointerKind::Down, 798.0, 100.0));
@@ -634,7 +814,10 @@ mod tests {
         d.artboards.push(third);
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
-        let shift = Mods { shift: true, ..Default::default() };
+        let shift = Mods {
+            shift: true,
+            ..Default::default()
+        };
         let click = |t: &mut ArtboardTool, x: f64, y: f64, m: Mods| {
             t.pointer(&c, &ev(PointerKind::Down, x, y).with_mods(m));
             t.pointer(&c, &ev(PointerKind::Up, x, y).with_mods(m));
@@ -642,14 +825,30 @@ mod tests {
         let mut t = ArtboardTool::default();
         click(&mut t, 450.0, 450.0, Mods::default());
         click(&mut t, 700.0, 100.0, shift);
-        assert_eq!(t.options()["selected"], json!([1, 0]), "the Shift-clicked one is active");
+        assert_eq!(
+            t.options()["selected"],
+            json!([1, 0]),
+            "the Shift-clicked one is active"
+        );
         // A drag from either moves both.
         t.pointer(&c, &ev(PointerKind::Down, 450.0, 450.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 470.0, 450.0)));
-        assert_eq!((v["indices"].clone(), v["dx"].as_f64()), (json!([0, 1]), Some(20.0)));
-        assert_eq!(t.pointer(&c, &ev(PointerKind::Up, 470.0, 450.0)), vec![Action::Commit]);
+        assert_eq!(
+            (v["indices"].clone(), v["dx"].as_f64()),
+            (json!([0, 1]), Some(20.0))
+        );
+        assert_eq!(
+            t.pointer(&c, &ev(PointerKind::Up, 470.0, 450.0)),
+            vec![Action::Commit]
+        );
         // Delete removes both; with all three selected it can't, so the key isn't taken.
-        assert_eq!(t.key(&c, ToolKey::Delete, Mods::default()), vec![Action::Exec("artboard.delete".into(), json!({"indices": [0, 1]}))]);
+        assert_eq!(
+            t.key(&c, ToolKey::Delete, Mods::default()),
+            vec![Action::Exec(
+                "artboard.delete".into(),
+                json!({"indices": [0, 1]})
+            )]
+        );
         t.set_option("selected", &json!([0, 1, 2]));
         assert!(!t.claims_key(&c, ToolKey::Delete));
         // Shift-click takes one out; a plain click on an unselected one selects just it.
@@ -667,21 +866,35 @@ mod tests {
         let l = d.layers[0].id;
         let id = d.alloc_id();
         let art = vectorcraft_geom::shapes::rectangle(Rect::new(700.0, 50.0, 710.0, 60.0));
-        d.insert(Some(l), 0, vectorcraft_doc::Node::path(id, art, vectorcraft_doc::Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            vectorcraft_doc::Node::path(id, art, vectorcraft_doc::Appearance::default_art()),
+        )
+        .unwrap();
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
         // Off: the right handle 3 pt past the art's right edge (710) lands on it; the height stays.
-        let mut t = ArtboardTool { active: 1, ..Default::default() };
+        let mut t = ArtboardTool {
+            active: 1,
+            ..Default::default()
+        };
         t.pointer(&c, &ev(PointerKind::Down, 800.0, 100.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 713.0, 100.0)));
-        assert_eq!((v["width"].as_f64(), v["height"].as_f64(), v.get("scaleArt")), (Some(110.0), Some(200.0), None));
+        assert_eq!(
+            (v["width"].as_f64(), v["height"].as_f64(), v.get("scaleArt")),
+            (Some(110.0), Some(200.0), None)
+        );
         t.pointer(&c, &ev(PointerKind::Up, 713.0, 100.0));
         // On: the art scales along, so it's no target, and the height follows the width.
         t.set_option("scaleArt", &json!(true));
         assert_eq!(t.options()["scaleArt"], true);
         t.pointer(&c, &ev(PointerKind::Down, 800.0, 100.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 713.0, 100.0)));
-        assert_eq!((v["width"].as_f64(), v["scaleArt"].as_bool()), (Some(113.0), Some(true)));
+        assert_eq!(
+            (v["width"].as_f64(), v["scaleArt"].as_bool()),
+            (Some(113.0), Some(true))
+        );
         assert!((v["height"].as_f64().unwrap() - 113.0).abs() < 1e-9);
     }
 
@@ -694,12 +907,21 @@ mod tests {
         let (s, p) = (Selection::default(), paint());
         let mut c = cx(&d, &s, &p);
         c.smart_guides = false;
-        let mut t = ArtboardTool { active: 1, scale_art: true, ..Default::default() };
+        let mut t = ArtboardTool {
+            active: 1,
+            scale_art: true,
+            ..Default::default()
+        };
         // The right handle to 2.5 % of the width: 5 × 0.5, grown to 10 × 1 about the left middle.
         t.pointer(&c, &ev(PointerKind::Down, 800.0, 10.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 605.0, 10.0)));
         let got = ["x", "y", "width", "height"].map(|k| v[k].as_f64().unwrap());
-        assert!(got.iter().zip([600.0, 9.5, 10.0, 1.0]).all(|(a, b)| (a - b).abs() < 1e-9), "{got:?}");
+        assert!(
+            got.iter()
+                .zip([600.0, 9.5, 10.0, 1.0])
+                .all(|(a, b)| (a - b).abs() < 1e-9),
+            "{got:?}"
+        );
     }
 
     #[test]
@@ -716,7 +938,10 @@ mod tests {
         // Resizing: the left handle's bleed edge snaps the same way.
         t.pointer(&c, &ev(PointerKind::Down, 600.0, 100.0));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 523.0, 100.0)));
-        assert_eq!((v["x"].as_f64(), v["width"].as_f64()), (Some(520.0), Some(280.0)));
+        assert_eq!(
+            (v["x"].as_f64(), v["width"].as_f64()),
+            (Some(520.0), Some(280.0))
+        );
     }
 
     #[test]
@@ -735,25 +960,56 @@ mod tests {
         assert_eq!(t.active, 1);
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 710.0, 120.0));
         assert_eq!(a[0], Action::Begin("Move Artboard".into()));
-        assert_eq!(a[1], Action::Preview("artboard.move".into(), json!({"index": 1, "dx": 10.0, "dy": 20.0, "moveArt": true, "copy": false})));
-        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 710.0, 120.0)), vec![Action::Commit]);
-        assert!(t.overlays(&cx).iter().any(|o| matches!(o, Overlay::Label { text, .. } if text == "02 - Artboard 2")));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "artboard.move".into(),
+                json!({"index": 1, "dx": 10.0, "dy": 20.0, "moveArt": true, "copy": false})
+            )
+        );
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 710.0, 120.0)),
+            vec![Action::Commit]
+        );
+        assert!(
+            t.overlays(&cx)
+                .iter()
+                .any(|o| matches!(o, Overlay::Label { text, .. } if text == "02 - Artboard 2"))
+        );
         // Handle drag resizes.
         t.pointer(&cx, &ev(PointerKind::Down, 800.0, 100.0));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 900.0, 100.0));
-        assert_eq!(a[1], Action::Preview("artboard.setProps".into(), json!({"index": 1, "x": 600.0, "y": 0.0, "width": 300.0, "height": 200.0})));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "artboard.setProps".into(),
+                json!({"index": 1, "x": 600.0, "y": 0.0, "width": 300.0, "height": 200.0})
+            )
+        );
         t.pointer(&cx, &ev(PointerKind::Up, 900.0, 100.0));
         // Drag on the pasteboard creates one.
         t.pointer(&cx, &ev(PointerKind::Down, 1000.0, 1000.0));
         t.pointer(&cx, &ev(PointerKind::Drag, 1100.0, 1050.0));
         assert!(matches!(t.overlays(&cx)[0], Overlay::Marquee(_)));
         let a = t.pointer(&cx, &ev(PointerKind::Up, 1100.0, 1050.0));
-        assert_eq!(a[0], Action::Exec("artboard.new".into(), json!({"x": 1000.0, "y": 1000.0, "width": 100.0, "height": 50.0})));
+        assert_eq!(
+            a[0],
+            Action::Exec(
+                "artboard.new".into(),
+                json!({"x": 1000.0, "y": 1000.0, "width": 100.0, "height": 50.0})
+            )
+        );
         assert_eq!(a[1], Action::Notify("created".into()));
         // Delete removes the active artboard, ahead of the Clear shortcut.
         assert!(t.claims_key(&cx, ToolKey::Delete) && t.claims_key(&cx, ToolKey::Backspace));
-        assert_eq!(t.key(&cx, ToolKey::Delete, Mods::default()), vec![Action::Exec("artboard.delete".into(), json!({"index": 1}))]);
-        assert_eq!(t.key(&cx, ToolKey::Escape, Mods::default()), vec![Action::SwitchTool("selection".into())]);
+        assert_eq!(
+            t.key(&cx, ToolKey::Delete, Mods::default()),
+            vec![Action::Exec("artboard.delete".into(), json!({"index": 1}))]
+        );
+        assert_eq!(
+            t.key(&cx, ToolKey::Escape, Mods::default()),
+            vec![Action::SwitchTool("selection".into())]
+        );
     }
 
     #[test]
@@ -761,16 +1017,25 @@ mod tests {
         let d = two_boards();
         let (s, p) = (Selection::default(), paint());
         let c = cx(&d, &s, &p);
-        let alt = Mods { alt: true, ..Mods::default() };
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
         let mut t = ArtboardTool::default();
         // A copy of artboard 2 dragged 203 pt right: its left edge 3 pt off the original's right
         // edge (800), which stays put and is a target.
         t.pointer(&c, &ev(PointerKind::Down, 700.0, 100.0).with_mods(alt));
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 903.0, 100.0).with_mods(alt)));
-        assert_eq!((v["dx"].as_f64(), v["copy"].as_bool()), (Some(200.0), Some(true)));
+        assert_eq!(
+            (v["dx"].as_f64(), v["copy"].as_bool()),
+            (Some(200.0), Some(true))
+        );
         // Released Alt: a plain move, and the artboard's own old edge is no target.
         let v = preview_params(&t.pointer(&c, &ev(PointerKind::Drag, 903.0, 100.0)));
-        assert_eq!((v["dx"].as_f64(), v["copy"].as_bool()), (Some(203.0), Some(false)));
+        assert_eq!(
+            (v["dx"].as_f64(), v["copy"].as_bool()),
+            (Some(203.0), Some(false))
+        );
     }
 
     #[test]
@@ -779,18 +1044,48 @@ mod tests {
         let s = Selection::default();
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let alt = Mods { alt: true, ..Mods::default() };
-        let moved =
-            |dx: f64, copy: bool| Action::Preview("artboard.move".into(), json!({"index": 0, "dx": dx, "dy": 0.0, "moveArt": true, "copy": copy}));
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
+        let moved = |dx: f64, copy: bool| {
+            Action::Preview(
+                "artboard.move".into(),
+                json!({"index": 0, "dx": dx, "dy": 0.0, "moveArt": true, "copy": copy}),
+            )
+        };
         let mut t = ArtboardTool::default();
         t.pointer(&cx, &ev(PointerKind::Down, 100.0, 100.0).with_mods(alt));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 150.0, 100.0).with_mods(alt));
-        assert_eq!(a, vec![Action::Begin("Duplicate Artboard".into()), moved(50.0, true)]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Begin("Duplicate Artboard".into()),
+                moved(50.0, true)
+            ]
+        );
         // Alt released mid-drag: a plain move after all, and back.
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 160.0, 100.0));
-        assert_eq!(a, vec![Action::Cancel, Action::Begin("Move Artboard".into()), moved(60.0, false)]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Cancel,
+                Action::Begin("Move Artboard".into()),
+                moved(60.0, false)
+            ]
+        );
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 170.0, 100.0).with_mods(alt));
-        assert_eq!(a, vec![Action::Cancel, Action::Begin("Duplicate Artboard".into()), moved(70.0, true)]);
-        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 170.0, 100.0).with_mods(alt)), vec![Action::Commit]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Cancel,
+                Action::Begin("Duplicate Artboard".into()),
+                moved(70.0, true)
+            ]
+        );
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 170.0, 100.0).with_mods(alt)),
+            vec![Action::Commit]
+        );
     }
 }

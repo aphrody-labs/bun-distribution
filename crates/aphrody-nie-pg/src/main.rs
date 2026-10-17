@@ -15,7 +15,10 @@ use clap::{Parser, Subcommand};
 use tokio_postgres::{Client, NoTls};
 
 #[derive(Parser)]
-#[command(name = "aphrody-nie-pg", about = "IEVR VFS cfg.bin -> PostgreSQL (schema nie)")]
+#[command(
+    name = "aphrody-nie-pg",
+    about = "IEVR VFS cfg.bin -> PostgreSQL (schema nie)"
+)]
 struct Cli {
     #[arg(long = "db", alias = "url", env = "NIE_PG_URL")]
     url: Option<String>,
@@ -48,17 +51,19 @@ async fn main() -> Result<()> {
     if matches!(cli.command, Command::Check) {
         return check();
     }
-    let url = cli.url.context("NIE_PG_URL or an explicit --db is required")?;
+    let url = cli
+        .url
+        .context("NIE_PG_URL or an explicit --db is required")?;
     let mut client = connect(&url).await?;
     match cli.command {
         Command::Migrate => {
             let done = migrate(&mut client).await?;
             println!("migrations applied: {done:?}");
-        },
+        }
         Command::Import { prefix, limit } => {
             migrate(&mut client).await?;
             import(&mut client, &prefix, limit).await?;
-        },
+        }
         Command::Status => status(&client).await?,
         Command::Check => unreachable!("handled before connecting"),
     }
@@ -81,7 +86,10 @@ fn check() -> Result<()> {
             slot.1 += 1;
         }
     }
-    let missing: Vec<_> = referenced.iter().filter(|(cpk, _)| !packs.join(cpk).is_file()).collect();
+    let missing: Vec<_> = referenced
+        .iter()
+        .filter(|(cpk, _)| !packs.join(cpk).is_file())
+        .collect();
     let lost =
         |i: fn(&(usize, usize)) -> usize| -> usize { missing.iter().map(|(_, c)| i(c)).sum() };
     let total = |i: fn(&(usize, usize)) -> usize| -> usize { referenced.values().map(i).sum() };
@@ -103,13 +111,18 @@ fn check() -> Result<()> {
         println!("complete");
         Ok(())
     } else {
-        bail!("incomplete game install: {} CPK missing under {}", missing.len(), packs.display())
+        bail!(
+            "incomplete game install: {} CPK missing under {}",
+            missing.len(),
+            packs.display()
+        )
     }
 }
 
 async fn connect(url: &str) -> Result<Client> {
-    let (client, connection) =
-        tokio_postgres::connect(url, NoTls).await.context("cannot connect to PostgreSQL")?;
+    let (client, connection) = tokio_postgres::connect(url, NoTls)
+        .await
+        .context("cannot connect to PostgreSQL")?;
     tokio::spawn(async move {
         if let Err(error) = connection.await {
             eprintln!("PostgreSQL connection lost: {error}");
@@ -142,20 +155,26 @@ async fn import(client: &mut Client, prefix: &str, limit: usize) -> Result<()> {
     let (mut written, mut unchanged, mut rows) = (0u64, 0u64, 0u64);
     let mut skipped: Vec<(String, String)> = Vec::new();
     for (i, path) in paths.iter().enumerate() {
-        let decoded =
-            match vfs.read(path).map_err(anyhow::Error::from).and_then(|b| Ok(decode(&b)?)) {
-                Ok(decoded) => decoded,
-                Err(error) => {
-                    skipped.push((path.clone(), error.to_string()));
-                    continue;
-                },
-            };
-        match store_file(client, path, &decoded).await.with_context(|| format!("import {path}"))? {
+        let decoded = match vfs
+            .read(path)
+            .map_err(anyhow::Error::from)
+            .and_then(|b| Ok(decode(&b)?))
+        {
+            Ok(decoded) => decoded,
+            Err(error) => {
+                skipped.push((path.clone(), error.to_string()));
+                continue;
+            }
+        };
+        match store_file(client, path, &decoded)
+            .await
+            .with_context(|| format!("import {path}"))?
+        {
             ImportOutcome::Unchanged => unchanged += 1,
             ImportOutcome::Written { rows: n } => {
                 written += 1;
                 rows += n;
-            },
+            }
         }
         if (i + 1) % 1000 == 0 {
             eprintln!("{}/{} files", i + 1, paths.len());

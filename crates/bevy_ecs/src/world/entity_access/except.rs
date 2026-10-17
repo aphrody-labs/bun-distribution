@@ -5,8 +5,8 @@ use crate::{
     entity::{ContainsEntity, Entity, EntityEquivalent},
     query::Access,
     world::{
-        unsafe_world_cell::UnsafeEntityCell, DynamicComponentFetch, FilteredEntityMut,
-        FilteredEntityRef, Mut, Ref,
+        DynamicComponentFetch, FilteredEntityMut, FilteredEntityRef, Mut, Ref,
+        unsafe_world_cell::UnsafeEntityCell,
     },
 };
 

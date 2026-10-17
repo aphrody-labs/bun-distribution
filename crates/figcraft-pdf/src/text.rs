@@ -34,9 +34,17 @@ struct Run {
 }
 
 /// Draw a text node; `xf` maps its local space to the page.
-pub(crate) fn draw_text(ex: &mut Exporter, s: &mut Surface, n: &Node, xf: Affine, inner: &[Raster]) {
+pub(crate) fn draw_text(
+    ex: &mut Exporter,
+    s: &mut Surface,
+    n: &Node,
+    xf: Affine,
+    inner: &[Raster],
+) {
     let NodeKind::Text(t) = &n.kind else { return };
-    let Some((layout, dy)) = figcraft_text::layout_node(n) else { return };
+    let Some((layout, dy)) = figcraft_text::layout_node(n) else {
+        return;
+    };
     let gxf = xf * Affine::translate((0.0, dy));
     if !affine_ok(gxf) {
         return;
@@ -46,11 +54,20 @@ pub(crate) fn draw_text(ex: &mut Exporter, s: &mut Surface, n: &Node, xf: Affine
     }
     let (w, h) = (n.width, n.height);
     let chars: Vec<char> = t.characters.chars().collect();
-    let styles: BTreeSet<usize> = layout.glyphs.iter().map(|g| g.style).chain(layout.decorations.iter().map(|d| d.style)).collect();
+    let styles: BTreeSet<usize> = layout
+        .glyphs
+        .iter()
+        .map(|g| g.style)
+        .chain(layout.decorations.iter().map(|d| d.style))
+        .collect();
     // Every run's fills, then the inner shadows over them, then the strokes on top.
     let mut stroked = Vec::new();
     for k in styles {
-        let fills = layout.styles.get(k).and_then(|st| st.fills.as_ref()).unwrap_or(&n.fills);
+        let fills = layout
+            .styles
+            .get(k)
+            .and_then(|st| st.fills.as_ref())
+            .unwrap_or(&n.fills);
         let mut decorations = BezPath::new();
         for d in layout.decorations.iter().filter(|d| d.style == k) {
             decorations.extend(d.path());
@@ -69,7 +86,8 @@ pub(crate) fn draw_text(ex: &mut Exporter, s: &mut Surface, n: &Node, xf: Affine
                 || matches!(&p.kind, PaintKind::Gradient(g) if matches!(g.kind, GradientKind::Linear | GradientKind::Radial));
             // shortcut: text on a path is written as outlines (not selectable); turn each glyph
             // with its own text matrix when selectable path text is asked for.
-            if embeddable && !real_text_written && !ex.opts.outline_text && layout.on_path.is_none() {
+            if embeddable && !real_text_written && !ex.opts.outline_text && layout.on_path.is_none()
+            {
                 // The first fill writes the text itself; the rest paint its outlines on top.
                 real_text_written = true;
                 let mut rest = glyph_runs(ex, s, &layout, k, &chars, p, w, h, gxf);
@@ -84,7 +102,10 @@ pub(crate) fn draw_text(ex: &mut Exporter, s: &mut Surface, n: &Node, xf: Affine
         }
     }
     ex.place_inner(s, inner);
-    let props = StrokeProps { align: StrokeAlign::Center, ..n.stroke.clone() };
+    let props = StrokeProps {
+        align: StrokeAlign::Center,
+        ..n.stroke.clone()
+    };
     for outlines in &stroked {
         let area = figcraft_pathops::stroke_center(outlines, props.weight, &props);
         for p in &n.strokes {
@@ -101,10 +122,18 @@ const MAX_LINKS: usize = 10_000;
 fn record_links(ex: &mut Exporter, layout: &TextLayout, gxf: Affine) {
     for line in &layout.lines {
         let mut run: Option<(&str, f64, f64)> = None;
-        let glyphs = layout.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]);
+        let glyphs = layout
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[]);
         for g in glyphs.iter().map(Some).chain([None]) {
             let link = g.and_then(|g| {
-                let url = layout.styles.get(g.style)?.link.as_deref().filter(|u| !u.trim().is_empty())?;
+                let url = layout
+                    .styles
+                    .get(g.style)?
+                    .link
+                    .as_deref()
+                    .filter(|u| !u.trim().is_empty())?;
                 let (a, b) = (g.x, g.x + g.advance);
                 (a.is_finite() && b.is_finite()).then(|| (url, a.min(b), a.max(b)))
             });
@@ -118,7 +147,12 @@ fn record_links(ex: &mut Exporter, layout: &TextLayout, gxf: Affine) {
             if let Some((url, x0, x1)) = run.take()
                 && ex.links.len() < MAX_LINKS
             {
-                let area = gxf.transform_rect_bbox(figcraft_geom::Rect::new(x0, line.top, x1, line.top + line.height));
+                let area = gxf.transform_rect_bbox(figcraft_geom::Rect::new(
+                    x0,
+                    line.top,
+                    x1,
+                    line.top + line.height,
+                ));
                 ex.links.push((area, url.to_string()));
             }
             run = link;
@@ -138,7 +172,11 @@ impl Exporter<'_> {
         };
         let font = Font::new(data, face.index);
         if font.is_none() {
-            log::warn!("PDF export: the font {} {} can't be embedded; its text is outlined", face.family, face.style);
+            log::warn!(
+                "PDF export: the font {} {} can't be embedded; its text is outlined",
+                face.family,
+                face.style
+            );
         }
         self.fonts.insert(face.id, font.clone());
         font
@@ -162,22 +200,49 @@ fn glyph_runs(
     let mut rest = BezPath::new();
     for line in &layout.lines {
         let mut run: Option<Run> = None;
-        for g in layout.glyphs.get(line.glyph_start..line.glyph_end).unwrap_or(&[]).iter().filter(|g| g.style == style) {
+        for g in layout
+            .glyphs
+            .get(line.glyph_start..line.glyph_end)
+            .unwrap_or(&[])
+            .iter()
+            .filter(|g| g.style == style)
+        {
             // Glyphs at a variable font instance other than the default are outlined (an
             // embedded font draws its default instance).
-            let has_source = g.char_end > g.char_start && g.char_end <= chars.len() && g.coords.is_empty();
-            let font = if has_source && g.size.is_finite() && g.size > 0.0 && g.x.is_finite() && g.y.is_finite() { ex.font(&g.face) } else { None };
+            let has_source =
+                g.char_end > g.char_start && g.char_end <= chars.len() && g.coords.is_empty();
+            let font = if has_source
+                && g.size.is_finite()
+                && g.size > 0.0
+                && g.x.is_finite()
+                && g.y.is_finite()
+            {
+                ex.font(&g.face)
+            } else {
+                None
+            };
             let Some(font) = font else {
                 // List markers, ellipses and unembeddable fonts: outlines.
                 rest.extend(g.path());
                 continue;
             };
-            let continues = run.as_ref().is_some_and(|r| r.face == g.face.id && (r.size - g.size).abs() < 1e-9);
+            let continues = run
+                .as_ref()
+                .is_some_and(|r| r.face == g.face.id && (r.size - g.size).abs() < 1e-9);
             if !continues {
                 if let Some(r) = run.take() {
                     write_run(s, r, p, w, h, gxf, ex.ink());
                 }
-                run = Some(Run { face: g.face.id, font, size: g.size, x0: g.x, y0: g.y, glyphs: Vec::new(), text: String::new(), last_chars: None });
+                run = Some(Run {
+                    face: g.face.id,
+                    font,
+                    size: g.size,
+                    x0: g.x,
+                    y0: g.y,
+                    glyphs: Vec::new(),
+                    text: String::new(),
+                    last_chars: None,
+                });
             }
             if let Some(r) = run.as_mut() {
                 push_glyph(r, g, chars);
@@ -197,7 +262,8 @@ fn push_glyph(r: &mut Run, g: &Glyph, chars: &[char]) {
         (Some(last), Some(prev)) if last == src => prev.4.clone(),
         _ => {
             let start = r.text.len();
-            r.text.extend(chars.get(g.char_start..g.char_end).unwrap_or(&[]).iter());
+            r.text
+                .extend(chars.get(g.char_start..g.char_end).unwrap_or(&[]).iter());
             start..r.text.len()
         }
     };
@@ -206,11 +272,21 @@ fn push_glyph(r: &mut Run, g: &Glyph, chars: &[char]) {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn write_run(s: &mut Surface, r: Run, p: &Paint, w: f64, h: f64, gxf: Affine, ink: crate::print::Ink) {
+fn write_run(
+    s: &mut Surface,
+    r: Run,
+    p: &Paint,
+    w: f64,
+    h: f64,
+    gxf: Affine,
+    ink: crate::print::Ink,
+) {
     if r.glyphs.is_empty() {
         return;
     }
-    let Some((paint, opacity)) = vector_paint(p, w, h, ink) else { return };
+    let Some((paint, opacity)) = vector_paint(p, w, h, ink) else {
+        return;
+    };
     let size = r.size;
     let glyphs: Vec<KrillaGlyph> = r
         .glyphs
@@ -219,7 +295,15 @@ fn write_run(s: &mut Surface, r: Run, p: &Paint, w: f64, h: f64, gxf: Affine, in
         .map(|(i, (gid, x, y, advance, range))| {
             // Absolute positions: each advance reaches the next glyph's pen position.
             let next = r.glyphs.get(i + 1).map_or(x + advance, |n| n.1);
-            KrillaGlyph::new(GlyphId::new(*gid), ((next - x) / size) as f32, 0.0, ((r.y0 - y) / size) as f32, 0.0, range.clone(), None)
+            KrillaGlyph::new(
+                GlyphId::new(*gid),
+                ((next - x) / size) as f32,
+                0.0,
+                ((r.y0 - y) / size) as f32,
+                0.0,
+                range.clone(),
+                None,
+            )
         })
         .collect();
     let pb = blend(p.blend);
@@ -228,8 +312,19 @@ fn write_run(s: &mut Surface, r: Run, p: &Paint, w: f64, h: f64, gxf: Affine, in
     }
     s.push_transform(&to_xf(gxf));
     s.set_stroke(None);
-    s.set_fill(Some(Fill { paint, opacity, rule: FillRule::NonZero }));
-    s.draw_glyphs(Point::from_xy(r.x0 as f32, r.y0 as f32), &glyphs, r.font, &r.text, size as f32, false);
+    s.set_fill(Some(Fill {
+        paint,
+        opacity,
+        rule: FillRule::NonZero,
+    }));
+    s.draw_glyphs(
+        Point::from_xy(r.x0 as f32, r.y0 as f32),
+        &glyphs,
+        r.font,
+        &r.text,
+        size as f32,
+        false,
+    );
     s.pop();
     if pb.is_some() {
         s.pop();

@@ -33,7 +33,11 @@ pub struct IamResource {
 
 impl IamResource {
     pub fn from_json(raw: &Value) -> Option<Self> {
-        let text = |key: &str| raw.get(key).and_then(Value::as_str).map(ToString::to_string);
+        let text = |key: &str| {
+            raw.get(key)
+                .and_then(Value::as_str)
+                .map(ToString::to_string)
+        };
         Some(Self {
             id: text("id")?,
             urn: text("urn")?,
@@ -58,7 +62,11 @@ pub struct IamGroup {
 
 impl IamGroup {
     pub fn from_json(raw: &Value) -> Option<Self> {
-        let text = |key: &str| raw.get(key).and_then(Value::as_str).map(ToString::to_string);
+        let text = |key: &str| {
+            raw.get(key)
+                .and_then(Value::as_str)
+                .map(ToString::to_string)
+        };
         Some(Self {
             id: text("id")?,
             name: text("name")?,
@@ -130,7 +138,11 @@ impl IamPolicy {
 
 /// Name of the n-th managed group: `aphrody-all`, `aphrody-all-2`, `aphrody-all-3`, ...
 pub fn group_name(index: usize) -> String {
-    if index == 0 { GROUP_NAME.to_string() } else { format!("{GROUP_NAME}-{}", index + 1) }
+    if index == 0 {
+        GROUP_NAME.to_string()
+    } else {
+        format!("{GROUP_NAME}-{}", index + 1)
+    }
 }
 
 /// Desired content of one managed group.
@@ -149,7 +161,7 @@ impl GroupPlan {
                 let current: BTreeSet<&String> = group.resource_ids.iter().collect();
                 let wanted: BTreeSet<&String> = self.resource_ids.iter().collect();
                 current != wanted
-            },
+            }
         }
     }
 }
@@ -160,11 +172,19 @@ impl GroupPlan {
 /// disappeared are dropped; new ones fill the free slots in group order, then open new groups.
 /// Groups that end up empty are not planned (they keep existing untouched).
 pub fn plan_groups(resources: &[IamResource], groups: &[IamGroup]) -> Vec<GroupPlan> {
-    let wanted: BTreeSet<&str> =
-        resources.iter().filter(|r| !r.is_account()).map(|r| r.id.as_str()).collect();
+    let wanted: BTreeSet<&str> = resources
+        .iter()
+        .filter(|r| !r.is_account())
+        .map(|r| r.id.as_str())
+        .collect();
 
     let mut managed: Vec<&IamGroup> = groups.iter().filter(|g| g.is_managed()).collect();
-    managed.sort_by(|a, b| a.name.len().cmp(&b.name.len()).then_with(|| a.name.cmp(&b.name)));
+    managed.sort_by(|a, b| {
+        a.name
+            .len()
+            .cmp(&b.name.len())
+            .then_with(|| a.name.cmp(&b.name))
+    });
 
     let mut assigned: BTreeSet<&str> = BTreeSet::new();
     let mut plans: Vec<GroupPlan> = managed
@@ -184,12 +204,17 @@ pub fn plan_groups(resources: &[IamResource], groups: &[IamGroup]) -> Vec<GroupP
         })
         .collect();
 
-    let mut pending: Vec<&IamResource> =
-        resources.iter().filter(|r| !r.is_account() && !assigned.contains(r.id.as_str())).collect();
+    let mut pending: Vec<&IamResource> = resources
+        .iter()
+        .filter(|r| !r.is_account() && !assigned.contains(r.id.as_str()))
+        .collect();
     pending.sort_by(|a, b| a.urn.cmp(&b.urn));
 
     for resource in pending {
-        if let Some(plan) = plans.iter_mut().find(|p| p.resource_ids.len() < GROUP_CAPACITY) {
+        if let Some(plan) = plans
+            .iter_mut()
+            .find(|p| p.resource_ids.len() < GROUP_CAPACITY)
+        {
             plan.resource_ids.push(resource.id.clone());
             continue;
         }
@@ -200,7 +225,11 @@ pub fn plan_groups(resources: &[IamResource], groups: &[IamGroup]) -> Vec<GroupP
                     && !plans.iter().any(|p| &p.name == candidate)
             })
             .unwrap_or_else(|| group_name(plans.len()));
-        plans.push(GroupPlan { name, existing: None, resource_ids: vec![resource.id.clone()] });
+        plans.push(GroupPlan {
+            name,
+            existing: None,
+            resource_ids: vec![resource.id.clone()],
+        });
     }
 
     plans.retain(|p| !p.resource_ids.is_empty());
@@ -250,9 +279,14 @@ pub fn plan_policy(
             let current: BTreeSet<&String> = policy.resource_urns.iter().collect();
             let wanted: BTreeSet<&String> = resource_urns.iter().collect();
             current != wanted || identities.len() != policy.identities.len() || !policy.allow_all
-        },
+        }
     };
-    Ok(PolicyPlan { existing: existing.cloned(), identities, resource_urns, needs_write })
+    Ok(PolicyPlan {
+        existing: existing.cloned(),
+        identities,
+        resource_urns,
+        needs_write,
+    })
 }
 
 /// Request body of the policy (`POST /iam/policy`, `PUT /iam/policy/{id}`). Optional fields of an
@@ -268,11 +302,11 @@ pub fn policy_body(plan: &PolicyPlan, existing_raw: Option<&Value>) -> Value {
     if let (Some(raw), Some(map)) = (existing_raw, body.as_object_mut()) {
         for key in ["permissionsGroups", "conditions", "expiredAt"] {
             match raw.get(key) {
-                Some(Value::Null) | None => {},
-                Some(Value::Array(items)) if items.is_empty() => {},
+                Some(Value::Null) | None => {}
+                Some(Value::Array(items)) if items.is_empty() => {}
                 Some(value) => {
                     map.insert(key.to_string(), value.clone());
-                },
+                }
             }
         }
     }
@@ -311,7 +345,10 @@ impl<'a> IamManager<'a> {
     }
 
     pub async fn list_groups(&self) -> Result<Vec<IamGroup>> {
-        let raw: Vec<Value> = self.client.get_v2("/iam/resourceGroup?details=true").await?;
+        let raw: Vec<Value> = self
+            .client
+            .get_v2("/iam/resourceGroup?details=true")
+            .await?;
         Ok(raw.iter().filter_map(IamGroup::from_json).collect())
     }
 
@@ -338,7 +375,12 @@ impl<'a> IamManager<'a> {
         Ok(details
             .get("identities")
             .and_then(Value::as_array)
-            .map(|list| list.iter().filter_map(Value::as_str).map(ToString::to_string).collect())
+            .map(|list| {
+                list.iter()
+                    .filter_map(Value::as_str)
+                    .map(ToString::to_string)
+                    .collect()
+            })
             .unwrap_or_default())
     }
 
@@ -371,30 +413,45 @@ impl<'a> IamManager<'a> {
                             .await?;
                     }
                     group_urns.push(group.urn.clone());
-                },
+                }
                 None if apply => {
-                    let created: Value =
-                        self.client.post_v2("/iam/resourceGroup", Some(body)).await?;
+                    let created: Value = self
+                        .client
+                        .post_v2("/iam/resourceGroup", Some(body))
+                        .await?;
                     let urn = created
                         .get("urn")
                         .and_then(Value::as_str)
                         .ok_or_else(|| anyhow!("group {} created without urn", plan.name))?;
                     group_urns.push(urn.to_string());
-                },
+                }
                 None => group_urns.push(format!("<new group {}>", plan.name)),
             }
         }
 
-        let policy =
-            plan_policy(existing.as_ref().map(|(p, _)| p), &account.urn, &group_urns, &identities)?;
+        let policy = plan_policy(
+            existing.as_ref().map(|(p, _)| p),
+            &account.urn,
+            &group_urns,
+            &identities,
+        )?;
         if apply && policy.needs_write {
             let body = policy_body(&policy, existing.as_ref().map(|(_, raw)| raw));
             let _: Value = match &policy.existing {
-                Some(p) => self.client.put_v2(&format!("/iam/policy/{}", p.id), Some(body)).await?,
+                Some(p) => {
+                    self.client
+                        .put_v2(&format!("/iam/policy/{}", p.id), Some(body))
+                        .await?
+                }
                 None => self.client.post_v2("/iam/policy", Some(body)).await?,
             };
         }
-        Ok(SyncReport { groups: plans, policy, resource_count: resources.len(), applied: apply })
+        Ok(SyncReport {
+            groups: plans,
+            policy,
+            resource_count: resources.len(),
+            applied: apply,
+        })
     }
 }
 
@@ -448,7 +505,12 @@ mod tests {
         assert_eq!(plans.len(), 1);
         assert_eq!(plans[0].name, "aphrody-all");
         assert_eq!(plans[0].resource_ids.len(), 10);
-        assert!(!plans[0].resource_ids.iter().any(|id| id.starts_with("0000")));
+        assert!(
+            !plans[0]
+                .resource_ids
+                .iter()
+                .any(|id| id.starts_with("0000"))
+        );
         assert!(plans[0].needs_write());
     }
 
@@ -473,7 +535,10 @@ mod tests {
         let groups = vec![group("aphrody-all", &["id-01", "id-02"])];
         let plans = plan_groups(&resources, &groups);
         assert_eq!(plans.len(), 1);
-        assert_eq!(plans[0].resource_ids, vec!["id-01".to_string(), "id-03".to_string()]);
+        assert_eq!(
+            plans[0].resource_ids,
+            vec!["id-01".to_string(), "id-03".to_string()]
+        );
         assert!(plans[0].needs_write());
         // Only the account left: nothing to group.
         assert!(plan_groups(&[account()], &groups).is_empty());
@@ -519,9 +584,13 @@ mod tests {
     #[test]
     fn policy_in_sync_is_left_alone_and_identities_are_unioned() {
         let existing = policy(&["urn:acc", "urn:g1"], &["id-a"], true);
-        let in_sync =
-            plan_policy(Some(&existing), "urn:acc", &["urn:g1".to_string()], &["id-a".to_string()])
-                .unwrap();
+        let in_sync = plan_policy(
+            Some(&existing),
+            "urn:acc",
+            &["urn:g1".to_string()],
+            &["id-a".to_string()],
+        )
+        .unwrap();
         assert!(!in_sync.needs_write);
 
         let widened = plan_policy(

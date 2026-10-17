@@ -431,12 +431,21 @@ impl SoftwareKeyboardFrontend {
     /// Follows the render host, like Qt's GRenderWindow-parented keyboard.
     pub(crate) fn set_parent(&self, parent: &gtk::Window) {
         *self.parent.borrow_mut() = parent.clone();
-        let dialog = self.active.borrow().as_ref().map(|active| active.dialog.clone());
-        if let Some(dialog) = dialog { dialog.set_transient_for(Some(parent)); }
+        let dialog = self
+            .active
+            .borrow()
+            .as_ref()
+            .map(|active| active.dialog.clone());
+        if let Some(dialog) = dialog {
+            dialog.set_transient_for(Some(parent));
+        }
     }
 
     fn text_check_parent(&self) -> gtk::Window {
-        self.active.borrow().as_ref().map(|active| active.dialog.clone().upcast())
+        self.active
+            .borrow()
+            .as_ref()
+            .map(|active| active.dialog.clone().upcast())
             .unwrap_or_else(|| self.parent.borrow().clone())
     }
 
@@ -1405,18 +1414,27 @@ mod tests {
     #[ignore = "requires GTK display; run alone"]
     fn keyboard_and_text_check_follow_render_parent() {
         gtk::init().unwrap();
-        let app = gtk::Application::builder().application_id("org.ruzu.KeyboardParentTest").build();
+        let app = gtk::Application::builder()
+            .application_id("org.ruzu.KeyboardParentTest")
+            .build();
         app.register(None::<&gtk::gio::Cancellable>).unwrap();
         let main = gtk::ApplicationWindow::new(&app);
         let detached = gtk::Window::new();
         let (keyboard, receiver) = GtkSoftwareKeyboard::new();
-        let frontend = SoftwareKeyboardFrontend::new(&main, &keyboard, receiver,
-            Arc::new(parking_lot::Mutex::new(HIDCore::new())));
+        let frontend = SoftwareKeyboardFrontend::new(
+            &main,
+            &keyboard,
+            receiver,
+            Arc::new(parking_lot::Mutex::new(HIDCore::new())),
+        );
         frontend.set_parent(&detached);
         frontend.open_dialog(false);
         let dialog = frontend.active.borrow().as_ref().unwrap().dialog.clone();
         assert_eq!(dialog.transient_for(), Some(detached.clone()));
-        assert_eq!(frontend.text_check_parent(), dialog.clone().upcast::<gtk::Window>());
+        assert_eq!(
+            frontend.text_check_parent(),
+            dialog.clone().upcast::<gtk::Window>()
+        );
         frontend.set_parent(main.upcast_ref());
         assert_eq!(dialog.transient_for(), Some(main.clone().upcast()));
         assert_eq!(frontend.text_check_parent(), dialog.upcast::<gtk::Window>());

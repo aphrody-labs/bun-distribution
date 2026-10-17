@@ -70,7 +70,10 @@ fn wanted(app: &mut PhotocraftApp) -> Option<Value> {
         }
         return Some(crate::cam_transform::params(app, &place));
     }
-    let d = app.drag.as_ref().filter(|d| d.tool == Tool::ContentAwareMove)?;
+    let d = app
+        .drag
+        .as_ref()
+        .filter(|d| d.tool == Tool::ContentAwareMove)?;
     let (start, mods) = (d.start, d.modifiers);
     let end = d.points.last().map_or(start, |p| [p[0], p[1]]);
     if !crate::retouch_ui::patch_drags_selection(app, start, mods) {
@@ -97,7 +100,11 @@ fn step(app: &mut PhotocraftApp, now: f64) -> Option<(Arc<Document>, u64)> {
     let st = app.session.active()?;
     let (doc, revision) = (st.doc.id, st.revision);
     let key = params.to_string();
-    if app.cam_preview.as_ref().is_some_and(|p| p.doc != doc || p.revision != revision) {
+    if app
+        .cam_preview
+        .as_ref()
+        .is_some_and(|p| p.doc != doc || p.revision != revision)
+    {
         app.cam_preview = None;
     }
     let p = app.cam_preview.get_or_insert_with(|| CamPreview {
@@ -157,7 +164,8 @@ fn step(app: &mut PhotocraftApp, now: f64) -> Option<(Arc<Document>, u64)> {
 
 /// Compute the preview of `params` on a worker thread.
 fn start(app: &PhotocraftApp, params: &Value, key: String) -> Option<Running> {
-    let job = photocraft_engine::retouch_cmds::content_aware_move_preview(&app.session, params).ok()?;
+    let job =
+        photocraft_engine::retouch_cmds::content_aware_move_preview(&app.session, params).ok()?;
     let ctx = JobCtx::new();
     let (tx, rx) = std::sync::mpsc::channel();
     let worker = ctx.clone();
@@ -183,7 +191,9 @@ pub(crate) fn wake(app: &PhotocraftApp, ctx: &egui::Context) {
 
 /// Whether the canvas shows a preview.
 pub(crate) fn showing(app: &PhotocraftApp) -> bool {
-    app.cam_preview.as_ref().is_some_and(|p| p.shown.as_ref().is_some_and(|s| s.0 == p.key))
+    app.cam_preview
+        .as_ref()
+        .is_some_and(|p| p.shown.as_ref().is_some_and(|s| s.0 == p.key))
 }
 
 #[cfg(test)]
@@ -198,21 +208,52 @@ mod tests {
 
     #[test]
     fn the_drag_previews_the_move_after_it_rests_and_never_touches_the_document() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 100, "height": 60})).unwrap();
-        app.run("paint.pencil", json!({"points": [[16, 30], [28, 30]], "size": 4, "color": "#0000ff"})).unwrap();
-        app.run("select.lasso", json!({"points": [[6, 14], [38, 14], [38, 46], [6, 46]]})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 100, "height": 60}))
+            .unwrap();
+        app.run(
+            "paint.pencil",
+            json!({"points": [[16, 30], [28, 30]], "size": 4, "color": "#0000ff"}),
+        )
+        .unwrap();
+        app.run(
+            "select.lasso",
+            json!({"points": [[6, 14], [38, 14], [38, 46], [6, 46]]}),
+        )
+        .unwrap();
         app.ui.tool = Tool::ContentAwareMove;
         let m = egui::Modifiers::NONE;
         let steps = app.session.active().unwrap().history.past_len();
 
         // Nothing to preview before the patch moves.
-        tool_event(&mut app, ToolEvent::Down { x: 22.0, y: 30.0, pressure: 1.0 }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 22.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+            m,
+        );
         assert!(step(&mut app, 0.0).is_none() && app.cam_preview.is_none());
-        tool_event(&mut app, ToolEvent::Move { x: 72.0, y: 30.0, pressure: 1.0 }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 72.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+            m,
+        );
         // Still moving: the wait starts and nothing is computed or shown yet.
         assert!(step(&mut app, 1000.0).is_none());
-        assert!(step(&mut app, 1000.0 + DEBOUNCE_MS / 2.0).is_none() && app.cam_preview.as_ref().unwrap().running.is_none());
+        assert!(
+            step(&mut app, 1000.0 + DEBOUNCE_MS / 2.0).is_none()
+                && app.cam_preview.as_ref().unwrap().running.is_none()
+        );
         // At rest: the job runs, off this thread, and its result shows once it arrives.
         let mut now = 1000.0 + DEBOUNCE_MS;
         let mut shown = step(&mut app, now);
@@ -226,13 +267,27 @@ mod tests {
         }
         let (preview, key) = shown.expect("a preview once the pointer rested");
         assert!(key > BASE && showing(&app));
-        assert!(blue(&preview, 72, 30) && !blue(&preview, 22, 30), "the preview shows the move");
+        assert!(
+            blue(&preview, 72, 30) && !blue(&preview, 22, 30),
+            "the preview shows the move"
+        );
         let doc = app.session.active().unwrap().doc.clone();
-        assert!(blue(&doc, 22, 30) && !blue(&doc, 72, 30), "the document is untouched");
+        assert!(
+            blue(&doc, 22, 30) && !blue(&doc, 72, 30),
+            "the document is untouched"
+        );
         assert_eq!(app.session.active().unwrap().history.past_len(), steps);
 
         // Moving on drops the stale preview at once and cancels what is not shown yet.
-        tool_event(&mut app, ToolEvent::Move { x: 60.0, y: 30.0, pressure: 1.0 }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 60.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+            m,
+        );
         assert!(step(&mut app, now + 5.0).is_none() && !showing(&app));
         // Release commits the exact move; the preview is gone.
         tool_event(&mut app, ToolEvent::Up { x: 60.0, y: 30.0 }, m);
@@ -241,15 +296,43 @@ mod tests {
 
     #[test]
     fn the_transform_on_drop_box_previews_the_dropped_patch() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 100, "height": 60})).unwrap();
-        app.run("paint.pencil", json!({"points": [[16, 30], [28, 30]], "size": 4, "color": "#0000ff"})).unwrap();
-        app.run("select.lasso", json!({"points": [[6, 14], [38, 14], [38, 46], [6, 46]]})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 100, "height": 60}))
+            .unwrap();
+        app.run(
+            "paint.pencil",
+            json!({"points": [[16, 30], [28, 30]], "size": 4, "color": "#0000ff"}),
+        )
+        .unwrap();
+        app.run(
+            "select.lasso",
+            json!({"points": [[6, 14], [38, 14], [38, 46], [6, 46]]}),
+        )
+        .unwrap();
         app.ui.tool = Tool::ContentAwareMove;
         app.ui.tool_options.cam_transform_on_drop = true;
         let m = egui::Modifiers::NONE;
-        tool_event(&mut app, ToolEvent::Down { x: 22.0, y: 30.0, pressure: 1.0 }, m);
-        tool_event(&mut app, ToolEvent::Move { x: 72.0, y: 30.0, pressure: 1.0 }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 22.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+            m,
+        );
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 72.0,
+                y: 30.0,
+                pressure: 1.0,
+            },
+            m,
+        );
         tool_event(&mut app, ToolEvent::Up { x: 72.0, y: 30.0 }, m);
         assert!(crate::cam_transform::active(&app));
         let (mut now, mut shown) = (0.0, step(&mut app, 0.0));
@@ -270,13 +353,37 @@ mod tests {
 
     #[test]
     fn a_selection_too_large_to_preview_is_not_retried() {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", json!({"width": 600, "height": 400})).unwrap();
-        app.run("select.rect", json!({"x": 10, "y": 10, "width": 300, "height": 300})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", json!({"width": 600, "height": 400}))
+            .unwrap();
+        app.run(
+            "select.rect",
+            json!({"x": 10, "y": 10, "width": 300, "height": 300}),
+        )
+        .unwrap();
         app.ui.tool = Tool::ContentAwareMove;
         let m = egui::Modifiers::NONE;
-        tool_event(&mut app, ToolEvent::Down { x: 100.0, y: 100.0, pressure: 1.0 }, m);
-        tool_event(&mut app, ToolEvent::Move { x: 140.0, y: 100.0, pressure: 1.0 }, m);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: 100.0,
+                y: 100.0,
+                pressure: 1.0,
+            },
+            m,
+        );
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: 140.0,
+                y: 100.0,
+                pressure: 1.0,
+            },
+            m,
+        );
         assert!(step(&mut app, 0.0).is_none());
         assert!(step(&mut app, DEBOUNCE_MS + 1.0).is_none());
         let p = app.cam_preview.as_ref().unwrap();

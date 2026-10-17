@@ -40,7 +40,11 @@ fn cache() -> &'static Mutex<Vec<(Key, Arc<Analysis>)>> {
 /// The audio clip a menu command works on: the first selected clip on an audio track.
 fn selected_audio(s: &Session) -> Option<ClipId> {
     let seq = s.active_sequence()?;
-    s.state.selection.iter().copied().find(|c| seq.find_item(*c).and_then(|(t, _)| seq.track(t)).is_some_and(|t| t.kind == TrackKind::Audio))
+    s.state.selection.iter().copied().find(|c| {
+        seq.find_item(*c)
+            .and_then(|(t, _)| seq.track(t))
+            .is_some_and(|t| t.kind == TrackKind::Audio)
+    })
 }
 
 fn check_clip(s: &Session, c: ClipId) -> std::result::Result<(), String> {
@@ -66,7 +70,14 @@ fn is_remixed(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
     let c = selected_audio(s).ok_or("select an audio clip")?;
     let seq = s.active_sequence().ok_or("no sequence is open")?;
-    if seq.find_item(c).is_some_and(|(_, i)| filmcraft_render::remix::is_remixed(i)) { Ok(()) } else { Err("the selected clip is not remixed".into()) }
+    if seq
+        .find_item(c)
+        .is_some_and(|(_, i)| filmcraft_render::remix::is_remixed(i))
+    {
+        Ok(())
+    } else {
+        Err("the selected clip is not remixed".into())
+    }
 }
 
 fn target_clip(s: &Session, p: &Value, cmd: &str) -> Result<ClipId> {
@@ -87,30 +98,53 @@ fn duration_p(s: &Session, p: &Value) -> Option<Tick> {
     if let Some(sec) = f64_p(p, "seconds") {
         return Some(Tick::from_seconds_f64(sec));
     }
-    if let Some(f) = p.get("frame").or_else(|| p.get("frames")).and_then(Value::as_i64) {
+    if let Some(f) = p
+        .get("frame")
+        .or_else(|| p.get("frames"))
+        .and_then(Value::as_i64)
+    {
         return Some(rate.tick_of(f));
     }
     if let Some(tc) = p.get("timecode").and_then(Value::as_str) {
-        let df = s.active_sequence().map(|q| q.settings.drop_frame).unwrap_or(false);
-        return filmcraft_time::parse_timecode(tc, rate, df, 0).ok().map(|f| rate.tick_of(f));
+        let df = s
+            .active_sequence()
+            .map(|q| q.settings.drop_frame)
+            .unwrap_or(false);
+        return filmcraft_time::parse_timecode(tc, rate, df, 0)
+            .ok()
+            .map(|f| rate.tick_of(f));
     }
     None
 }
 
 /// Analysis of `[source_in, source_in + dur)` of the clip's media at the sequence rate (cached).
 fn analysis(s: &Session, item: ItemId, source_in: Tick, dur: Tick) -> Result<Arc<Analysis>> {
-    let sr = s.active_sequence().map(|q| q.settings.sample_rate).unwrap_or(48_000).max(1);
+    let sr = s
+        .active_sequence()
+        .map(|q| q.settings.sample_rate)
+        .unwrap_or(48_000)
+        .max(1);
     let m0 = source_in.to_units_floor(sr as i64);
     let len = (source_in + dur).to_units_floor(sr as i64) - m0;
     let key = (item.0, m0, len, sr);
-    if let Some((_, a)) = cache().lock().unwrap_or_else(|e| e.into_inner()).iter().find(|(k, _)| *k == key) {
+    if let Some((_, a)) = cache()
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .iter()
+        .find(|(k, _)| *k == key)
+    {
         return Ok(a.clone());
     }
     let provider = s.media.provider(s.project.clone(), s.services.clone());
-    let src = filmcraft_render::SourceProvider::source(&provider, item).ok_or_else(|| EngineError::Other("the clip's media is offline".into()))?;
-    let buf = src.audio(m0, len.max(0) as usize, sr).map_err(|e| EngineError::Other(format!("reading the clip's audio: {e}")))?;
+    let src = filmcraft_render::SourceProvider::source(&provider, item)
+        .ok_or_else(|| EngineError::Other("the clip's media is offline".into()))?;
+    let buf = src
+        .audio(m0, len.max(0) as usize, sr)
+        .map_err(|e| EngineError::Other(format!("reading the clip's audio: {e}")))?;
     let refs: Vec<&[f32]> = buf.channels.iter().map(Vec::as_slice).collect();
-    let a = Arc::new(dsp::analyze(&refs, sr).map_err(|e| EngineError::Other(format!("cannot remix: {e}")))?);
+    let a = Arc::new(
+        dsp::analyze(&refs, sr).map_err(|e| EngineError::Other(format!("cannot remix: {e}")))?,
+    );
     let mut c = cache().lock().unwrap_or_else(|e| e.into_inner());
     c.push((key, a.clone()));
     if c.len() > 8 {
@@ -120,32 +154,73 @@ fn analysis(s: &Session, item: ItemId, source_in: Tick, dur: Tick) -> Result<Arc
 }
 
 /// The remix of `c` to `target` with the given sliders: (new duration, state).
-fn make_plan(s: &Session, c: ClipId, target: Tick, segments: f64, variations: f64) -> Result<(Tick, Remix, Arc<Analysis>)> {
+fn make_plan(
+    s: &Session,
+    c: ClipId,
+    target: Tick,
+    segments: f64,
+    variations: f64,
+) -> Result<(Tick, Remix, Arc<Analysis>)> {
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let sr = seq.settings.sample_rate.max(1) as i64;
-    let (_, it) = seq.find_item(c).ok_or_else(|| EngineError::Other("no such clip".into()))?;
+    let (_, it) = seq
+        .find_item(c)
+        .ok_or_else(|| EngineError::Other("no such clip".into()))?;
     let old = filmcraft_render::remix::Remix::of(it);
     let original = old.as_ref().map(|r| r.original).unwrap_or(it.duration);
     let a = analysis(s, it.item, it.source_in, original)?;
-    let params = Params { segments: segments.clamp(0.0, 100.0), variations: variations.clamp(0.0, 100.0) };
-    let plan = dsp::plan(&a, target.to_units_floor(sr), params).map_err(|e| EngineError::Other(format!("cannot remix: {e}")))?;
-    let pieces = plan.pieces.iter().map(|p| TickPiece { src: it.source_in + Tick::from_units(p.src, sr), len: Tick::from_units(p.len, sr) }).collect();
-    let rm = Remix { target, segments: params.segments, variations: params.variations, original, xfade: Tick::from_units(plan.xfade, sr), pieces };
+    let params = Params {
+        segments: segments.clamp(0.0, 100.0),
+        variations: variations.clamp(0.0, 100.0),
+    };
+    let plan = dsp::plan(&a, target.to_units_floor(sr), params)
+        .map_err(|e| EngineError::Other(format!("cannot remix: {e}")))?;
+    let pieces = plan
+        .pieces
+        .iter()
+        .map(|p| TickPiece {
+            src: it.source_in + Tick::from_units(p.src, sr),
+            len: Tick::from_units(p.len, sr),
+        })
+        .collect();
+    let rm = Remix {
+        target,
+        segments: params.segments,
+        variations: params.variations,
+        original,
+        xfade: Tick::from_units(plan.xfade, sr),
+        pieces,
+    };
     Ok((Tick::from_units(plan.len(), sr), rm, a))
 }
 
 /// Apply `rm` to clip `c` with duration `dur` (one undo step); refuses overlaps.
 fn apply(s: &mut Session, label: &str, c: ClipId, dur: Tick, rm: Option<Remix>) -> Result<()> {
     s.edit_sequence(label, move |q, _, _| {
-        let (tid, it) = q.find_item(c).ok_or_else(|| EngineError::Other("no such clip".into()))?;
+        let (tid, it) = q
+            .find_item(c)
+            .ok_or_else(|| EngineError::Other("no such clip".into()))?;
         let start = it.start;
-        let tr = q.track(tid).ok_or_else(|| EngineError::Other("no such track".into()))?;
-        if let Some(next) = tr.items.iter().filter(|i| i.id != c && i.start >= start).map(|i| i.start).min()
+        let tr = q
+            .track(tid)
+            .ok_or_else(|| EngineError::Other("no such track".into()))?;
+        if let Some(next) = tr
+            .items
+            .iter()
+            .filter(|i| i.id != c && i.start >= start)
+            .map(|i| i.start)
+            .min()
             && start + dur > next
         {
-            return Err(EngineError::Other(format!("not enough room: the remixed clip ({:.2} s) would overlap the next clip on {}", dur.seconds(), tr.name)));
+            return Err(EngineError::Other(format!(
+                "not enough room: the remixed clip ({:.2} s) would overlap the next clip on {}",
+                dur.seconds(),
+                tr.name
+            )));
         }
-        let (_, it) = q.find_item_mut(c).ok_or_else(|| EngineError::Other("no such clip".into()))?;
+        let (_, it) = q
+            .find_item_mut(c)
+            .ok_or_else(|| EngineError::Other("no such clip".into()))?;
         it.duration = dur;
         match rm {
             Some(r) => {
@@ -165,8 +240,12 @@ fn apply(s: &mut Session, label: &str, c: ClipId, dur: Tick, rm: Option<Remix>) 
 }
 
 fn report(s: &Session, c: ClipId, a: Option<&Analysis>) -> Value {
-    let Some(seq) = s.active_sequence() else { return Value::Null };
-    let Some((_, it)) = seq.find_item(c) else { return Value::Null };
+    let Some(seq) = s.active_sequence() else {
+        return Value::Null;
+    };
+    let Some((_, it)) = seq.find_item(c) else {
+        return Value::Null;
+    };
     let rm = Remix::of(it);
     let mut v = json!({
         "clip": c.0,
@@ -175,13 +254,22 @@ fn report(s: &Session, c: ClipId, a: Option<&Analysis>) -> Value {
         "seconds": it.duration.seconds(),
     });
     if let Some(r) = rm {
-        let cuts: Vec<Value> = r.pieces.windows(2).map(|w| json!({"out": (w[0].src + w[0].len).0, "in": w[1].src.0})).collect();
+        let cuts: Vec<Value> = r
+            .pieces
+            .windows(2)
+            .map(|w| json!({"out": (w[0].src + w[0].len).0, "in": w[1].src.0}))
+            .collect();
         v["target"] = json!(r.target.0);
         v["targetSeconds"] = json!(r.target.seconds());
         v["originalSeconds"] = json!(r.original.seconds());
         v["segments"] = json!(r.segments);
         v["variations"] = json!(r.variations);
-        v["pieces"] = Value::Array(r.pieces.iter().map(|p| json!({"src": p.src.0, "len": p.len.0})).collect());
+        v["pieces"] = Value::Array(
+            r.pieces
+                .iter()
+                .map(|p| json!({"src": p.src.0, "len": p.len.0}))
+                .collect(),
+        );
         v["cuts"] = Value::Array(cuts);
         v["errorSeconds"] = json!((it.duration - r.target).seconds());
     }
@@ -195,7 +283,9 @@ fn report(s: &Session, c: ClipId, a: Option<&Analysis>) -> Value {
 fn enable(s: &mut Session, p: &Value) -> Result<Value> {
     let c = target_clip(s, p, "clip.remix.enable")?;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let (_, it) = seq.find_item(c).ok_or_else(|| bad("clip.remix.enable", "no such clip"))?;
+    let (_, it) = seq
+        .find_item(c)
+        .ok_or_else(|| bad("clip.remix.enable", "no such clip"))?;
     if filmcraft_render::remix::is_remixed(it) {
         return Ok(report(s, c, None));
     }
@@ -215,16 +305,25 @@ fn remix(s: &mut Session, p: &Value, cmd: &str, label: &str) -> Result<Value> {
     let variations = f64_p(p, "variations");
     if target.is_none() && segments.is_none() && variations.is_none() {
         if cmd == "clip.remix" {
-            return Err(bad(cmd, "need a target `duration` (ticks), `seconds`, `frame` or `timecode`"));
+            return Err(bad(
+                cmd,
+                "need a target `duration` (ticks), `seconds`, `frame` or `timecode`",
+            ));
         }
         return Ok(report(s, c, None));
     }
-    let target = target.or(cur.as_ref().map(|r| r.target)).unwrap_or(it.duration);
+    let target = target
+        .or(cur.as_ref().map(|r| r.target))
+        .unwrap_or(it.duration);
     if target.0 <= 0 {
         return Err(bad(cmd, "the target duration must be positive"));
     }
-    let segments = segments.or(cur.as_ref().map(|r| r.segments)).unwrap_or(50.0);
-    let variations = variations.or(cur.as_ref().map(|r| r.variations)).unwrap_or(50.0);
+    let segments = segments
+        .or(cur.as_ref().map(|r| r.segments))
+        .unwrap_or(50.0);
+    let variations = variations
+        .or(cur.as_ref().map(|r| r.variations))
+        .unwrap_or(50.0);
     let (d, rm, a) = make_plan(s, c, target, segments, variations)?;
     apply(s, label, c, d, Some(rm))?;
     Ok(report(s, c, Some(&a)))
@@ -233,7 +332,9 @@ fn remix(s: &mut Session, p: &Value, cmd: &str, label: &str) -> Result<Value> {
 fn revert(s: &mut Session, p: &Value) -> Result<Value> {
     let c = target_clip(s, p, "clip.remix.revert")?;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let (_, it) = seq.find_item(c).ok_or_else(|| bad("clip.remix.revert", "no such clip"))?;
+    let (_, it) = seq
+        .find_item(c)
+        .ok_or_else(|| bad("clip.remix.revert", "no such clip"))?;
     let rm = Remix::of(it).ok_or_else(|| bad("clip.remix.revert", "the clip is not remixed"))?;
     apply(s, "Revert Remix", c, rm.original, None)?;
     Ok(report(s, c, None))

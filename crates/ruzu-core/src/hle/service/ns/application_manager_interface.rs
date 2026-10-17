@@ -142,7 +142,11 @@ pub const IAPPLICATION_MANAGER_INTERFACE_COMMANDS: &[(u32, bool, &str)] = &[
     (406, false, "GetApplicationControlProperty"),
     (407, true, "ListApplicationTitle"),
     (408, true, "ListApplicationIcon"),
-    (419, true, "RequestDownloadApplicationControlDataInBackground"),
+    (
+        419,
+        true,
+        "RequestDownloadApplicationControlDataInBackground",
+    ),
     (502, false, "RequestCheckGameCardRegistration"),
     (503, false, "RequestGameCardRegistrationGoldPoint"),
     (504, false, "RequestRegisterGameCard"),
@@ -422,7 +426,10 @@ impl IApplicationManagerInterface {
         }
     }
 
-    fn check_sd_card_mount_status_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn check_sd_card_mount_status_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use super::content_management_interface::IContentManagementInterface;
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let delegate = IContentManagementInterface::new(service.system);
@@ -436,34 +443,53 @@ impl IApplicationManagerInterface {
         IContentManagementInterface::get_free_space_size_handler(&delegate, ctx);
     }
 
-    fn get_application_desired_language_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_desired_language_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use super::read_only_application_control_data_interface::IReadOnlyApplicationControlDataInterface;
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let delegate = IReadOnlyApplicationControlDataInterface::new(service.system);
-        IReadOnlyApplicationControlDataInterface::get_application_desired_language_handler(&delegate, ctx);
+        IReadOnlyApplicationControlDataInterface::get_application_desired_language_handler(
+            &delegate, ctx,
+        );
     }
 
-    fn convert_application_language_to_language_code_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn convert_application_language_to_language_code_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use super::read_only_application_control_data_interface::IReadOnlyApplicationControlDataInterface;
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let delegate = IReadOnlyApplicationControlDataInterface::new(service.system);
         IReadOnlyApplicationControlDataInterface::convert_application_language_to_language_code_handler(&delegate, ctx);
     }
 
-    fn get_application_control_data_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_control_data_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use super::read_only_application_control_data_interface::IReadOnlyApplicationControlDataInterface;
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let delegate = IReadOnlyApplicationControlDataInterface::new(service.system);
-        IReadOnlyApplicationControlDataInterface::get_application_control_data_handler(&delegate, ctx);
+        IReadOnlyApplicationControlDataInterface::get_application_control_data_handler(
+            &delegate, ctx,
+        );
     }
 
-    fn check_application_launch_version_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn check_application_launch_version_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let application_id = RequestParser::new(ctx).pop_u64();
         check_application_launch_version(application_id);
         ResponseBuilder::new(ctx, 2, 0, 0).push_result(RESULT_SUCCESS);
     }
 
-    fn is_application_update_requested_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn is_application_update_requested_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let id = RequestParser::new(ctx).pop_u64();
         let (required, version) = is_application_update_requested(id);
         let mut rb = ResponseBuilder::new(ctx, 4, 0, 0);
@@ -472,27 +498,37 @@ impl IApplicationManagerInterface {
         rb.push_u32(version);
     }
 
-    fn is_any_application_entity_installed_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn is_any_application_entity_installed_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let installed = is_any_application_entity_installed();
         let mut rb = ResponseBuilder::new(ctx, 3, 0, 0);
         rb.push_result(RESULT_SUCCESS);
         rb.push_u32(u32::from(installed));
     }
 
-    fn get_application_terminate_result_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_terminate_result_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let _application_id = RequestParser::new(ctx).pop_u64();
         let mut rb = ResponseBuilder::new(ctx, 3, 0, 0);
         rb.push_result(RESULT_SUCCESS);
         rb.push_result(RESULT_SUCCESS);
     }
 
-    fn get_application_rights_on_client_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_rights_on_client_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let mut rp = RequestParser::new(ctx);
         let _flags = rp.pop_u32();
         rp.skip(1); // CMIF aligns the following u64 (and Uid) to eight bytes.
         let application_id = rp.pop_u64();
         let uid = rp.pop_raw::<[u8; 16]>();
-        let bytes = get_application_rights_on_client(application_id, uid, ctx.get_write_buffer_size(0));
+        let bytes =
+            get_application_rights_on_client(application_id, uid, ctx.get_write_buffer_size(0));
         let count = (bytes.len() / size_of::<ApplicationRightsOnClient>()) as u32;
         ctx.write_buffer(&bytes, 0);
         let mut rb = ResponseBuilder::new(ctx, 3, 0, 0);
@@ -500,28 +536,52 @@ impl IApplicationManagerInterface {
         rb.push_u32(count);
     }
 
-    fn get_application_view_deprecated_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let bytes = application_view_bytes(&ctx.read_buffer(0), ctx.get_write_buffer_size(0), false, false);
+    fn get_application_view_deprecated_handler(
+        _: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
+        let bytes = application_view_bytes(
+            &ctx.read_buffer(0),
+            ctx.get_write_buffer_size(0),
+            false,
+            false,
+        );
         ctx.write_buffer(&bytes, 0);
         ResponseBuilder::new(ctx, 2, 0, 0).push_result(RESULT_SUCCESS);
     }
 
     fn get_application_view_handler(_: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let bytes = application_view_bytes(&ctx.read_buffer(0), ctx.get_write_buffer_size(0), true, false);
+        let bytes = application_view_bytes(
+            &ctx.read_buffer(0),
+            ctx.get_write_buffer_size(0),
+            true,
+            false,
+        );
         ctx.write_buffer(&bytes, 0);
         ResponseBuilder::new(ctx, 2, 0, 0).push_result(RESULT_SUCCESS);
     }
 
-    fn get_application_view_with_promotion_info_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_application_view_with_promotion_info_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use crate::hle::service::set::settings_types::GetFirmwareVersionType;
         use crate::hle::service::set::system_settings_server::get_firmware_version_impl_for_system;
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         // Upstream's frontend_common FirmwareManager wrapper simply calls SET;
         // call its owner directly to avoid a core -> frontend crate dependency.
-        let fw = get_firmware_version_impl_for_system(service.system.get(), GetFirmwareVersionType::Version2)
-            .unwrap_or_default();
+        let fw = get_firmware_version_impl_for_system(
+            service.system.get(),
+            GetFirmwareVersionType::Version2,
+        )
+        .unwrap_or_default();
         let is_fw20 = fw.major >= 20;
-        let bytes = application_view_bytes(&ctx.read_buffer(0), ctx.get_write_buffer_size(0), is_fw20, true);
+        let bytes = application_view_bytes(
+            &ctx.read_buffer(0),
+            ctx.get_write_buffer_size(0),
+            is_fw20,
+            true,
+        );
         let per_entry = if is_fw20 { 0x78 } else { 0x70 };
         let count = (bytes.len() / per_entry) as u32;
         ctx.write_buffer(&bytes, 0);
@@ -530,14 +590,24 @@ impl IApplicationManagerInterface {
         rb.push_u32(count);
     }
 
-    pub(super) fn list_application_record_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    pub(super) fn list_application_record_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         use crate::file_sys::nca_metadata::{ContentRecordType, TitleType};
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let offset = RequestParser::new(ctx).pop_u32() as i32;
-        let provider = service.system.get().get_content_provider()
+        let provider = service
+            .system
+            .get()
+            .get_content_provider()
             .expect("application listing requires the content provider");
         let entries = provider.lock().unwrap().list_entries_filter_origin(
-            None, Some(TitleType::Application), Some(ContentRecordType::Program), None);
+            None,
+            Some(TitleType::Application),
+            Some(ContentRecordType::Program),
+            None,
+        );
         let bytes = Self::list_application_record(
             entries.iter().map(|(_, entry)| entry.title_id),
             crate::launch_timestamp_cache::get_launch_timestamp,
@@ -572,8 +642,11 @@ impl IApplicationManagerInterface {
                 last_updated: timestamp(application_id),
             });
         }
-        records.sort_unstable_by(|a, b| b.last_updated.cmp(&a.last_updated)
-            .then_with(|| a.application_id.cmp(&b.application_id)));
+        records.sort_unstable_by(|a, b| {
+            b.last_updated
+                .cmp(&a.last_updated)
+                .then_with(|| a.application_id.cmp(&b.application_id))
+        });
         let mut bytes = Vec::new();
         for record in records.iter().skip(offset.max(0) as usize).take(limit) {
             bytes.extend_from_slice(&record.application_id.to_le_bytes());
@@ -602,7 +675,10 @@ impl IApplicationManagerInterface {
         rb.push_copy_object_id(object_id);
     }
 
-    fn get_sd_card_mount_status_changed_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_sd_card_mount_status_changed_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         log::warn!("(STUBBED) get_sd_card_mount_status_changed_event called");
         let Some(object_id) = service.sd_card_mount_status_event.copy_object_id(ctx) else {
@@ -615,7 +691,10 @@ impl IApplicationManagerInterface {
         rb.push_copy_object_id(object_id);
     }
 
-    fn get_game_card_update_detection_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_game_card_update_detection_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         log::warn!("(STUBBED) get_game_card_update_detection_event called");
         let Some(object_id) = service.gamecard_update_detection_event.copy_object_id(ctx) else {
@@ -628,7 +707,10 @@ impl IApplicationManagerInterface {
         rb.push_copy_object_id(object_id);
     }
 
-    fn get_game_card_mount_failure_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_game_card_mount_failure_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         log::warn!("(STUBBED) get_game_card_mount_failure_event called");
         let Some(object_id) = service.gamecard_mount_failure_event.copy_object_id(ctx) else {
@@ -641,7 +723,10 @@ impl IApplicationManagerInterface {
         rb.push_copy_object_id(object_id);
     }
 
-    fn get_game_card_waken_ready_event_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_game_card_waken_ready_event_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         log::warn!("(STUBBED) get_game_card_waken_ready_event called");
         let Some(object_id) = service.gamecard_waken_ready_event.copy_object_id(ctx) else {
@@ -680,7 +765,10 @@ impl IApplicationManagerInterface {
         Control::list_application_icon(&Control::new(service.system), ctx);
     }
 
-    fn request_download_application_control_data_in_background(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn request_download_application_control_data_in_background(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe { &*(this as *const dyn ServiceFramework as *const Self) };
         let mut rp = RequestParser::new(ctx);
         let source = rp.pop_u64();
@@ -720,7 +808,8 @@ impl IApplicationManagerInterface {
             rb.push_result(RESULT_UNKNOWN);
             return;
         };
-        let result = super::async_result::IAsyncResult::new(Some(Arc::clone(&service.unknown_event)));
+        let result =
+            super::async_result::IAsyncResult::new(Some(Arc::clone(&service.unknown_event)));
         let mut rb = ResponseBuilder::new(ctx, 2, 1, 1);
         rb.push_result(RESULT_SUCCESS);
         rb.push_copy_object_id(object_id);
@@ -846,8 +935,14 @@ pub fn is_qualification_transition_supported_by_process_id(process_id: u64) -> b
 }
 
 // Mechanical output construction of upstream GetApplicationRightsOnClient.
-fn get_application_rights_on_client(application_id: u64, uid: [u8; 16], capacity: usize) -> Vec<u8> {
-    if capacity < size_of::<ApplicationRightsOnClient>() { return Vec::new(); }
+fn get_application_rights_on_client(
+    application_id: u64,
+    uid: [u8; 16],
+    capacity: usize,
+) -> Vec<u8> {
+    if capacity < size_of::<ApplicationRightsOnClient>() {
+        return Vec::new();
+    }
     let mut bytes = vec![0; size_of::<ApplicationRightsOnClient>()];
     bytes[..8].copy_from_slice(&application_id.to_le_bytes());
     bytes[8..24].copy_from_slice(&uid);
@@ -857,8 +952,17 @@ fn get_application_rights_on_client(application_id: u64, uid: [u8; 16], capacity
 // Mechanical buffer serialization shared by the three view IPC adapters above.
 // Their formats and firmware selection remain owned by this upstream interface.
 fn application_view_bytes(ids: &[u8], capacity: usize, is_fw20: bool, promotion: bool) -> Vec<u8> {
-    let view_size = if is_fw20 { size_of::<ApplicationViewV20>() } else { size_of::<ApplicationViewV19>() };
-    let stride = view_size + if promotion { size_of::<PromotionInfo>() } else { 0 };
+    let view_size = if is_fw20 {
+        size_of::<ApplicationViewV20>()
+    } else {
+        size_of::<ApplicationViewV19>()
+    };
+    let stride = view_size
+        + if promotion {
+            size_of::<PromotionInfo>()
+        } else {
+            0
+        };
     let count = (ids.len() / 8).min(capacity / stride);
     let mut bytes = vec![0; count * stride];
     for (id, dst) in ids.chunks_exact(8).zip(bytes.chunks_exact_mut(stride)) {
@@ -869,9 +973,14 @@ fn application_view_bytes(ids: &[u8], capacity: usize, is_fw20: bool, promotion:
             ..Default::default()
         };
         if promotion {
-            write_application_view_with_promotion(dst, &ApplicationViewWithPromotionData {
-                view, promotion: PromotionInfo::default(),
-            }, is_fw20);
+            write_application_view_with_promotion(
+                dst,
+                &ApplicationViewWithPromotionData {
+                    view,
+                    promotion: PromotionInfo::default(),
+                },
+                is_fw20,
+            );
         } else {
             write_application_view(dst, &view, is_fw20);
         }
@@ -904,7 +1013,10 @@ mod tests {
         let service = IApplicationManagerInterface::new(SystemRef::null());
         for &(id, implemented, name) in IAPPLICATION_MANAGER_INTERFACE_COMMANDS {
             if implemented {
-                assert!(service.handlers[&id].handler_callback.is_some(), "{id}: {name}");
+                assert!(
+                    service.handlers[&id].handler_callback.is_some(),
+                    "{id}: {name}"
+                );
             }
         }
     }
@@ -919,8 +1031,12 @@ mod tests {
         let content = IContentManagementInterface::new(system_ref);
         let control = IReadOnlyApplicationControlDataInterface::new(system_ref);
         for (id, direct) in [
-            (43, &content as &dyn ServiceFramework), (48, &content),
-            (55, &control), (59, &control), (400, &control)] {
+            (43, &content as &dyn ServiceFramework),
+            (48, &content),
+            (55, &control),
+            (59, &control),
+            (400, &control),
+        ] {
             let callback: fn(&dyn ServiceFramework, &mut HLERequestContext) = match id {
                 43 => IContentManagementInterface::check_sd_card_mount_status_handler,
                 48 => IContentManagementInterface::get_free_space_size_handler,
@@ -932,7 +1048,11 @@ mod tests {
             let mut expected = HLERequestContext::new();
             service.handlers[&id].handler_callback.unwrap()(&service, &mut ctx);
             callback(direct, &mut expected);
-            assert_eq!(ctx.command_buffer(), expected.command_buffer(), "command {id}");
+            assert_eq!(
+                ctx.command_buffer(),
+                expected.command_buffer(),
+                "command {id}"
+            );
         }
     }
 
@@ -969,7 +1089,9 @@ mod tests {
             let mut expected = HLERequestContext::new();
             let mut rb = ResponseBuilder::new(&mut expected, 2 + output.len() as u32, 0, 0);
             rb.push_result(RESULT_SUCCESS);
-            for value in output { rb.push_u32(value); }
+            for value in output {
+                rb.push_u32(value);
+            }
             drop(rb);
             assert_eq!(ctx.command_buffer(), expected.command_buffer());
         }
@@ -978,9 +1100,15 @@ mod tests {
     #[test]
     fn application_views_use_correct_stride_and_bounded_entry_count() {
         let ids: Vec<u8> = [0x1122_3344_5566_7788u64, 0xfedc_ba98_7654_3210]
-            .into_iter().flat_map(u64::to_le_bytes).collect();
-        for (is_fw20, promotion, stride) in [(false, false, 0x50), (true, false, 0x58),
-            (false, true, 0x70), (true, true, 0x78)] {
+            .into_iter()
+            .flat_map(u64::to_le_bytes)
+            .collect();
+        for (is_fw20, promotion, stride) in [
+            (false, false, 0x50),
+            (true, false, 0x58),
+            (false, true, 0x70),
+            (true, true, 0x78),
+        ] {
             assert!(application_view_bytes(&ids, stride - 1, is_fw20, promotion).is_empty());
             for (capacity, count) in [(stride, 1), (stride * 2 - 1, 1), (stride * 3, 2)] {
                 let bytes = application_view_bytes(&ids, capacity, is_fw20, promotion);
@@ -996,7 +1124,12 @@ mod tests {
         }
         let service = IApplicationManagerInterface::new(SystemRef::null());
         for command in [1701, 1704, 1706] {
-            assert!(service.handlers().get(&command).unwrap().handler_callback.is_some());
+            assert!(service
+                .handlers()
+                .get(&command)
+                .unwrap()
+                .handler_callback
+                .is_some());
         }
     }
 
@@ -1058,9 +1191,18 @@ mod tests {
             assert_eq!(&record[9..16], &[0; 7]);
             assert_eq!(&record[16..24], &timestamp(id).to_le_bytes());
         }
-        assert_eq!(IApplicationManagerInterface::list_application_record(inputs, timestamp, 1, 1), bytes[24..48]);
-        assert!(IApplicationManagerInterface::list_application_record(inputs, timestamp, 3, 9).is_empty());
-        assert!(IApplicationManagerInterface::list_application_record(inputs, timestamp, 0, 0).is_empty());
+        assert_eq!(
+            IApplicationManagerInterface::list_application_record(inputs, timestamp, 1, 1),
+            bytes[24..48]
+        );
+        assert!(
+            IApplicationManagerInterface::list_application_record(inputs, timestamp, 3, 9)
+                .is_empty()
+        );
+        assert!(
+            IApplicationManagerInterface::list_application_record(inputs, timestamp, 0, 0)
+                .is_empty()
+        );
         assert_eq!(std::mem::offset_of!(ApplicationRecord, last_updated), 16);
         assert_eq!(std::mem::size_of::<ApplicationRecord>(), 24);
     }
@@ -1086,12 +1228,19 @@ mod tests {
             let object_id = command as u64 + 100;
             let readable = Arc::new(Mutex::new(KReadableEvent::new()));
             readable.lock().unwrap().initialize(1, object_id);
-            process.lock().unwrap().register_readable_event_object(object_id, readable.clone());
+            process
+                .lock()
+                .unwrap()
+                .register_readable_event_object(object_id, readable.clone());
             event.attach_kernel_event(readable.clone(), process.clone());
             for iteration in 0..2 {
                 let mut ctx = HLERequestContext::new_with_thread(thread.clone(), 0);
                 // 4088 aliases 4022 and must return the very same native event.
-                let dispatch = if command == 4022 && iteration == 1 { 4088 } else { command };
+                let dispatch = if command == 4022 && iteration == 1 {
+                    4088
+                } else {
+                    command
+                };
                 service.handlers[&dispatch].handler_callback.unwrap()(&service, &mut ctx);
                 assert!(matches!(ctx.outgoing_copy_objects.as_slice(),
                     [KAutoObjectRef::ObjectId(id)] if *id == object_id));
@@ -1101,8 +1250,6 @@ mod tests {
             }
         }
     }
-
-
 
     #[test]
     fn record_update_requests_copy_and_signal_the_same_event() {

@@ -2,7 +2,10 @@
 
 use std::sync::{Arc, OnceLock};
 
-use moxcms::{ColorProfile, DataColorSpace, Layout, ProfileText, RenderingIntent, TransformF32Executor, TransformOptions};
+use moxcms::{
+    ColorProfile, DataColorSpace, Layout, ProfileText, RenderingIntent, TransformF32Executor,
+    TransformOptions,
+};
 
 use super::{CmsError, Intent, ProfileKind};
 
@@ -15,7 +18,12 @@ fn moxcms_intent(i: Intent) -> RenderingIntent {
     }
 }
 
-const INTENTS: [Intent; 4] = [Intent::Perceptual, Intent::RelativeColorimetric, Intent::Saturation, Intent::AbsoluteColorimetric];
+const INTENTS: [Intent; 4] = [
+    Intent::Perceptual,
+    Intent::RelativeColorimetric,
+    Intent::Saturation,
+    Intent::AbsoluteColorimetric,
+];
 
 fn intent_index(i: Intent) -> usize {
     INTENTS.iter().position(|x| *x == i).unwrap_or(1)
@@ -35,15 +43,26 @@ pub struct IccProfile {
 
 impl std::fmt::Debug for IccProfile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("IccProfile").field("name", &self.name).field("kind", &self.kind).finish()
+        f.debug_struct("IccProfile")
+            .field("name", &self.name)
+            .field("kind", &self.kind)
+            .finish()
     }
 }
 
 fn text(t: &Option<ProfileText>) -> Option<String> {
     match t.as_ref()? {
         ProfileText::PlainString(s) => Some(s.clone()),
-        ProfileText::Localizable(v) => v.iter().find(|l| l.language == "en").or(v.first()).map(|l| l.value.clone()),
-        ProfileText::Description(d) => Some(if d.ascii_string.is_empty() { d.unicode_string.clone() } else { d.ascii_string.clone() }),
+        ProfileText::Localizable(v) => v
+            .iter()
+            .find(|l| l.language == "en")
+            .or(v.first())
+            .map(|l| l.value.clone()),
+        ProfileText::Description(d) => Some(if d.ascii_string.is_empty() {
+            d.unicode_string.clone()
+        } else {
+            d.ascii_string.clone()
+        }),
     }
     .map(|s| s.trim_matches(char::from(0)).trim().to_string())
     .filter(|s| !s.is_empty())
@@ -55,14 +74,28 @@ impl IccProfile {
             DataColorSpace::Rgb => ProfileKind::Rgb,
             DataColorSpace::Cmyk => ProfileKind::Cmyk,
             DataColorSpace::Gray => ProfileKind::Gray,
-            other => return Err(CmsError::Unsupported(format!("profile colour space {other:?} is not RGB, CMYK or Gray"))),
+            other => {
+                return Err(CmsError::Unsupported(format!(
+                    "profile colour space {other:?} is not RGB, CMYK or Gray"
+                )));
+            }
         };
-        let name = name.or_else(|| text(&profile.description)).unwrap_or_else(|| format!("Untitled {kind:?} profile"));
-        Ok(Self { name, kind, profile, srgb: ColorProfile::new_srgb(), to_srgb: Default::default(), from_srgb: Default::default() })
+        let name = name
+            .or_else(|| text(&profile.description))
+            .unwrap_or_else(|| format!("Untitled {kind:?} profile"));
+        Ok(Self {
+            name,
+            kind,
+            profile,
+            srgb: ColorProfile::new_srgb(),
+            to_srgb: Default::default(),
+            from_srgb: Default::default(),
+        })
     }
 
     pub fn from_bytes(name: Option<String>, bytes: &[u8]) -> Result<Self, CmsError> {
-        let p = ColorProfile::new_from_slice(bytes).map_err(|e| CmsError::BadProfile(format!("{e:?}")))?;
+        let p = ColorProfile::new_from_slice(bytes)
+            .map_err(|e| CmsError::BadProfile(format!("{e:?}")))?;
         Self::from_profile(name, p)
     }
 
@@ -83,18 +116,39 @@ impl IccProfile {
     }
 
     fn opts(intent: Intent) -> TransformOptions {
-        TransformOptions { rendering_intent: moxcms_intent(intent), ..Default::default() }
+        TransformOptions {
+            rendering_intent: moxcms_intent(intent),
+            ..Default::default()
+        }
     }
 
     fn to_xf(&self, intent: Intent) -> Xf {
         self.to_srgb[intent_index(intent)]
-            .get_or_init(|| self.profile.create_transform_f32(self.layout(), &self.srgb, Layout::Rgb, Self::opts(intent)).ok())
+            .get_or_init(|| {
+                self.profile
+                    .create_transform_f32(
+                        self.layout(),
+                        &self.srgb,
+                        Layout::Rgb,
+                        Self::opts(intent),
+                    )
+                    .ok()
+            })
             .clone()
     }
 
     fn inverse_xf(&self, intent: Intent) -> Xf {
         self.from_srgb[intent_index(intent)]
-            .get_or_init(|| self.srgb.create_transform_f32(Layout::Rgb, &self.profile, self.layout(), Self::opts(intent)).ok())
+            .get_or_init(|| {
+                self.srgb
+                    .create_transform_f32(
+                        Layout::Rgb,
+                        &self.profile,
+                        self.layout(),
+                        Self::opts(intent),
+                    )
+                    .ok()
+            })
             .clone()
     }
 
@@ -118,7 +172,8 @@ impl IccProfile {
 
     /// Whether transforms can be built for this profile (checked at registration).
     pub fn usable(&self) -> bool {
-        self.to_xf(Intent::RelativeColorimetric).is_some() && self.inverse_xf(Intent::RelativeColorimetric).is_some()
+        self.to_xf(Intent::RelativeColorimetric).is_some()
+            && self.inverse_xf(Intent::RelativeColorimetric).is_some()
     }
 }
 

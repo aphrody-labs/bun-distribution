@@ -80,7 +80,11 @@ impl Version {
         if it.next().is_some() {
             return Err(format!("version « {s} » : plus de trois composantes"));
         }
-        Ok(Self { majeure, mineure, corrective })
+        Ok(Self {
+            majeure,
+            mineure,
+            corrective,
+        })
     }
 }
 
@@ -329,7 +333,10 @@ pub fn ordonner(mods: &[Manifeste]) -> Result<Vec<usize>, String> {
     // fait de la priorité le départage naturel entre mods indépendants.
     let mut ordre_depart: Vec<usize> = (0..mods.len()).collect();
     ordre_depart.sort_by(|&a, &b| {
-        mods[a].priorite.cmp(&mods[b].priorite).then_with(|| mods[a].nom.cmp(&mods[b].nom))
+        mods[a]
+            .priorite
+            .cmp(&mods[b].priorite)
+            .then_with(|| mods[a].nom.cmp(&mods[b].nom))
     });
 
     // `0` = jamais vu, `1` = en cours de visite (donc un retour ici est un cycle), `2` = fini.
@@ -352,20 +359,20 @@ pub fn ordonner(mods: &[Manifeste]) -> Result<Vec<usize>, String> {
                         0 => {
                             etat[j] = 1;
                             pile.push((j, 0));
-                        },
+                        }
                         1 => {
                             return Err(format!(
                                 "cycle de dépendances : « {} » et « {} » s'attendent mutuellement",
                                 mods[i].nom, mods[j].nom
                             ));
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
-                },
+                }
                 None => {
                     etat[i] = 2;
                     sortie.push(i);
-                },
+                }
             }
         }
     }
@@ -380,7 +387,10 @@ mod tests {
         Manifeste {
             dependances: deps
                 .iter()
-                .map(|d| Dependance { nom: (*d).to_string(), version_min: None })
+                .map(|d| Dependance {
+                    nom: (*d).to_string(),
+                    version_min: None,
+                })
                 .collect(),
             priorite,
             ..Manifeste::gabarit(nom, "aphrody")
@@ -391,13 +401,20 @@ mod tests {
     fn une_version_se_lit_et_se_compare() {
         assert_eq!(
             Version::analyser("1.3.66").expect("valide"),
-            Version { majeure: 1, mineure: 3, corrective: 66 }
+            Version {
+                majeure: 1,
+                mineure: 3,
+                corrective: 66
+            }
         );
         assert!(Version::analyser("1.3.66").unwrap() > Version::analyser("1.3.9").unwrap());
         assert!(Version::analyser("2.0.0").unwrap() > Version::analyser("1.99.99").unwrap());
         // Une comparaison textuelle rendrait « 1.3.9 » > « 1.3.66 » : c'est tout l'intérêt.
         assert!("1.3.9" > "1.3.66");
-        assert!(Version::analyser("1.3").is_err(), "trois composantes exigées");
+        assert!(
+            Version::analyser("1.3").is_err(),
+            "trois composantes exigées"
+        );
         assert!(Version::analyser("1.3.a").is_err());
         assert!(Version::analyser("1.3.4.5").is_err());
     }
@@ -446,7 +463,11 @@ mod tests {
         std::fs::write(dir.join("data_common_gamedata_b.cfg.bin"), b"b").expect("aplati");
 
         let fautifs = valider_arborescence(&dir).expect("validation");
-        assert_eq!(fautifs, vec!["data_common_gamedata_b.cfg.bin"], "manifeste et README tolérés");
+        assert_eq!(
+            fautifs,
+            vec!["data_common_gamedata_b.cfg.bin"],
+            "manifeste et README tolérés"
+        );
 
         let assets = fichiers(&dir).expect("fichiers");
         assert_eq!(assets.len(), 1, "seuls les chemins VFS sont des assets");
@@ -465,7 +486,11 @@ mod tests {
 
     #[test]
     fn a_egalite_de_dependances_la_priorite_departage() {
-        let mods = vec![m("fort", 10, &[]), m("faible", -5, &[]), m("neutre", 0, &[])];
+        let mods = vec![
+            m("fort", 10, &[]),
+            m("faible", -5, &[]),
+            m("neutre", 0, &[]),
+        ];
         let ordre = ordonner(&mods).expect("ordonnancement");
         let noms: Vec<&str> = ordre.iter().map(|&i| mods[i].nom.as_str()).collect();
         // Ordre d'application croissant : le plus prioritaire s'applique en dernier, donc gagne.
@@ -487,8 +512,10 @@ mod tests {
         let mut base = m("base", 0, &[]);
         base.version = "1.0.0".to_string();
         let mut haut = m("haut", 0, &[]);
-        haut.dependances =
-            vec![Dependance { nom: "base".to_string(), version_min: Some("2.0.0".to_string()) }];
+        haut.dependances = vec![Dependance {
+            nom: "base".to_string(),
+            version_min: Some("2.0.0".to_string()),
+        }];
         let e = ordonner(&[haut, base]).expect_err("trop ancienne");
         assert!(e.contains(">= 2.0.0"), "{e}");
     }

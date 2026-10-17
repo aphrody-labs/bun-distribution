@@ -25,7 +25,9 @@ pub fn print_inks(doc: &Document, set: &PrintSettings) -> (Vec<PrintInk>, Vec<St
             PrintInk {
                 print: o.is_none_or(|o| o.print),
                 frequency: o.and_then(|o| o.frequency).unwrap_or(DEFAULT_FREQUENCY),
-                angle: o.and_then(|o| o.angle).unwrap_or_else(|| PrintInk::default_angle(&p.name)),
+                angle: o
+                    .and_then(|o| o.angle)
+                    .unwrap_or_else(|| PrintInk::default_angle(&p.name)),
                 spot: p.spot,
                 name: p.name,
             }
@@ -36,7 +38,14 @@ pub fn print_inks(doc: &Document, set: &PrintSettings) -> (Vec<PrintInk>, Vec<St
         .iter()
         .filter(|i| !list.iter().any(|p| p.name == i.name))
         .map(|i| {
-            format!("there is no ink named `{}` to print (inks: {})", i.name, list.iter().map(|p| p.name.as_str()).collect::<Vec<_>>().join(", "))
+            format!(
+                "there is no ink named `{}` to print (inks: {})",
+                i.name,
+                list.iter()
+                    .map(|p| p.name.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
         })
         .collect();
     (list, warnings)
@@ -47,8 +56,14 @@ pub fn print_inks(doc: &Document, set: &PrintSettings) -> (Vec<PrintInk>, Vec<St
 fn separation_cms(set: &PrintSettings) -> Arc<Cms> {
     let active = cms::active();
     match cms::profile(set.color.profile.trim()) {
-        Some(p) if p.kind == ProfileKind::Cmyk && cms::canonical_name(&active.settings().cmyk) != p.name => {
-            let settings = cms::ColorSettings { cmyk: p.name, ..active.settings().clone() };
+        Some(p)
+            if p.kind == ProfileKind::Cmyk
+                && cms::canonical_name(&active.settings().cmyk) != p.name =>
+        {
+            let settings = cms::ColorSettings {
+                cmyk: p.name,
+                ..active.settings().clone()
+            };
             Cms::new(&settings).map_or(active, Arc::new)
         }
         _ => active,
@@ -64,14 +79,19 @@ pub(crate) struct Separator<'a> {
 
 impl<'a> Separator<'a> {
     pub fn new(doc: &'a Document, set: &'a PrintSettings) -> Self {
-        Self { doc, cms: separation_cms(set), set }
+        Self {
+            doc,
+            cms: separation_cms(set),
+            set,
+        }
     }
 
     /// How much of ink `plate` colour `c` (with swatch link `link`) prints, 0..1.
     fn ink(&self, plate: &str, c: &Color, link: Link) -> f32 {
         let color = &self.set.color;
         // Spot colours as process: only Registration keeps its link.
-        let link = link.filter(|(name, _)| !self.set.output.spots_to_process || *name == REGISTRATION);
+        let link =
+            link.filter(|(name, _)| !self.set.output.spots_to_process || *name == REGISTRATION);
         // Without Preserve Numbers, CMYK colours are separated again from their appearance.
         let lab;
         let c = if !color.preserve_numbers && matches!(c, Color::Cmyk { .. }) {
@@ -86,7 +106,9 @@ impl<'a> Separator<'a> {
     /// Recolour `n`'s subtree as plate `plate`: the grey of each colour's coverage, unlinked.
     pub fn node(&self, plate: &str, n: &mut Node) {
         visit_node_colors(n, &mut |c, swatch, tint| {
-            *c = Color::Gray { k: self.ink(plate, c, swatch.as_deref().map(|s| (s, *tint))) };
+            *c = Color::Gray {
+                k: self.ink(plate, c, swatch.as_deref().map(|s| (s, *tint))),
+            };
             *swatch = None;
             *tint = 1.0;
         });
@@ -98,7 +120,11 @@ impl<'a> Separator<'a> {
     pub fn plate(&self, plate: &str) -> Document {
         let mut d = self.doc.clone();
         let discard_white = d.setup.discard_white_overprint;
-        let nodes = d.layers.iter_mut().chain(d.symbols.iter_mut().map(|s| &mut s.art)).chain(d.patterns.iter_mut().flat_map(|p| p.art.iter_mut()));
+        let nodes = d
+            .layers
+            .iter_mut()
+            .chain(d.symbols.iter_mut().map(|s| &mut s.art))
+            .chain(d.patterns.iter_mut().flat_map(|p| p.art.iter_mut()));
         for n in nodes {
             multiply_overprints(n, discard_white);
             self.node(plate, Arc::make_mut(n));
@@ -106,7 +132,8 @@ impl<'a> Separator<'a> {
         for blob in d.images.values_mut() {
             let gray = blob.map_rgb(|[r, g, b]| {
                 let rgb = |v: u8| v as f32 / 255.0;
-                let v = (255.0 * (1.0 - self.ink(plate, &Color::rgb(rgb(r), rgb(g), rgb(b)), None))).round() as u8;
+                let v = (255.0 * (1.0 - self.ink(plate, &Color::rgb(rgb(r), rgb(g), rgb(b)), None)))
+                    .round() as u8;
                 [v; 3]
             });
             if let Some(gray) = gray {

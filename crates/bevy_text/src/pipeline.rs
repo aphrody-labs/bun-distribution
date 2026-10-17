@@ -8,20 +8,19 @@ use bevy_image::prelude::*;
 use bevy_log::warn_once;
 use bevy_math::{Rect, Vec2};
 use bevy_platform::hash::FixedHasher;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use core::hash::BuildHasher;
 use parley::style::{OverflowWrap, TextWrapMode, WordBreak};
 use parley::{Alignment, AlignmentOptions, Layout, PositionedLayoutItem, StyleProperty};
 use swash::FontRef;
 
 use crate::{
-    add_glyph_to_atlas,
+    ComputedTextBlock, Font, FontAtlasKey, FontAtlasSet, FontHinting, FontSmoothing, FontSource,
+    Justify, LetterSpacing, LineBreak, LineHeight, PositionedGlyph, TextBounds, TextEntity,
+    TextFont, TextLayout, add_glyph_to_atlas,
     error::TextError,
     get_glyph_atlas_info,
     parley_context::{FontCx, LayoutCx, ScaleCx},
-    ComputedTextBlock, Font, FontAtlasKey, FontAtlasSet, FontHinting, FontSmoothing, FontSource,
-    Justify, LetterSpacing, LineBreak, LineHeight, PositionedGlyph, TextBounds, TextEntity,
-    TextFont, TextLayout,
 };
 use crate::{RemSize, TextBrush};
 
@@ -137,20 +136,20 @@ impl TextPipeline {
 
                         if logical_font_size <= 0.0 {
                             warn_once!(
-                        "Text span {entity} has a font size <= 0.0. Nothing will be displayed."
-                    );
+                                "Text span {entity} has a font size <= 0.0. Nothing will be displayed."
+                            );
                             continue;
                         }
 
                         const WARN_FONT_SIZE: f32 = 1000.0;
                         if logical_font_size > WARN_FONT_SIZE {
                             warn_once!(
-                        "Text span {entity} has an excessively large font size ({} with scale factor {}). \
+                                "Text span {entity} has an excessively large font size ({} with scale factor {}). \
                         Extremely large font sizes will cause performance issues with font atlas \
                         generation and high memory usage.",
-                        logical_font_size,
-                        scale_factor,
-                    );
+                                logical_font_size,
+                                scale_factor,
+                            );
                         }
 
                         sections.push(TextSectionView {

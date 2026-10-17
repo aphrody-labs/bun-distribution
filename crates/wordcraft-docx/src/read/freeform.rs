@@ -22,15 +22,32 @@ pub fn cust_geom(sppr: &El, w: f32, h: f32) -> Option<Freeform> {
         if paths.len() >= MAX_PATHS {
             break;
         }
-        let dim = |n: &str, shape: f32| p.attr(n).and_then(int).filter(|v| *v > 0).map_or(shape as f64 * 12_700.0, |v| v as f64);
+        let dim = |n: &str, shape: f32| {
+            p.attr(n)
+                .and_then(int)
+                .filter(|v| *v > 0)
+                .map_or(shape as f64 * 12_700.0, |v| v as f64)
+        };
         let (pw, ph) = (dim("w", w), dim("h", h));
         let scale = |[x, y]: [f64; 2]| -> [f32; 2] {
-            let sx = if pw > 0.0 { w as f64 / pw } else { 1.0 / 12_700.0 };
-            let sy = if ph > 0.0 { h as f64 / ph } else { 1.0 / 12_700.0 };
+            let sx = if pw > 0.0 {
+                w as f64 / pw
+            } else {
+                1.0 / 12_700.0
+            };
+            let sy = if ph > 0.0 {
+                h as f64 / ph
+            } else {
+                1.0 / 12_700.0
+            };
             [(x * sx) as f32, (y * sy) as f32]
         };
         let pt = |e: &El| -> Option<[f64; 2]> {
-            let c = |n: &str| e.attr(n).and_then(int).map(|v| (v as f64).clamp(-MAX_EMU, MAX_EMU));
+            let c = |n: &str| {
+                e.attr(n)
+                    .and_then(int)
+                    .map(|v| (v as f64).clamp(-MAX_EMU, MAX_EMU))
+            };
             Some([c("x")?, c("y")?])
         };
         // Each subpath (from an `a:moveTo`) becomes a path of its own.
@@ -55,7 +72,8 @@ pub fn cust_geom(sppr: &El, w: f32, h: f32) -> Option<Freeform> {
                         cur.extend(pts.last());
                         continue;
                     };
-                    let ctrl: Vec<[f64; 2]> = std::iter::once(start).chain(pts.iter().copied()).collect();
+                    let ctrl: Vec<[f64; 2]> =
+                        std::iter::once(start).chain(pts.iter().copied()).collect();
                     for i in 1..=CURVE_STEPS {
                         cur.push(bezier(&ctrl, i as f64 / CURVE_STEPS as f64));
                     }
@@ -68,10 +86,21 @@ pub fn cust_geom(sppr: &El, w: f32, h: f32) -> Option<Freeform> {
             done.push((cur, false));
         }
         for (pts, closed) in done.into_iter().take(MAX_PATHS.saturating_sub(paths.len())) {
-            paths.push(FreePath { pts: pts.into_iter().take(MAX_POINTS).map(scale).collect(), closed: closed && !fill_none });
+            paths.push(FreePath {
+                pts: pts.into_iter().take(MAX_POINTS).map(scale).collect(),
+                closed: closed && !fill_none,
+            });
         }
     }
-    let f = Freeform { w, h, paths, alpha: 1.0, ink: None, order: None }.sanitized();
+    let f = Freeform {
+        w,
+        h,
+        paths,
+        alpha: 1.0,
+        ink: None,
+        order: None,
+    }
+    .sanitized();
     (!f.paths.is_empty()).then_some(f)
 }
 
@@ -88,7 +117,9 @@ pub fn ink_tool(name: &str) -> Option<InkTool> {
 /// The drawing order of an ink stroke written by WordCraft, from its drawing's name
 /// (`Ink Pen 3 #12`: the twelfth stroke drawn), for Ink Replay.
 pub fn ink_order(name: &str) -> Option<u32> {
-    name.split_whitespace().skip(3).find_map(|w| w.strip_prefix('#')?.parse().ok())
+    name.split_whitespace()
+        .skip(3)
+        .find_map(|w| w.strip_prefix('#')?.parse().ok())
 }
 
 /// The outline opacity of `ln` (`a:ln`): its colour's `a:alpha`, 0–1.

@@ -91,9 +91,13 @@ mod tests {
 
     #[tokio::test]
     async fn an_empty_query_is_rejected_without_touching_the_database() {
-        let out =
-            query(HomeQueryRequest { query: "  ".into(), limit: None, kinds: None, profile: None })
-                .await;
+        let out = query(HomeQueryRequest {
+            query: "  ".into(),
+            limit: None,
+            kinds: None,
+            profile: None,
+        })
+        .await;
         assert!(out.contains("query is empty"), "{out}");
     }
 }

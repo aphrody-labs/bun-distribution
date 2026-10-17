@@ -25,7 +25,9 @@ use std::path::Path;
 const PIED: usize = 16;
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let data_dir = Path::new(&dir).join("data");
 
     let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
@@ -34,8 +36,11 @@ fn main() {
         return;
     }
 
-    let chemins: Vec<String> =
-        vfs.iter().map(|(p, _)| p.to_string()).filter(|p| p.ends_with(".cfg.bin")).collect();
+    let chemins: Vec<String> = vfs
+        .iter()
+        .map(|(p, _)| p.to_string())
+        .filter(|p| p.ends_with(".cfg.bin"))
+        .collect();
 
     // Un octet est « constant » tant qu'on ne lui a vu qu'une seule valeur.
     let mut valeurs_vues: Vec<BTreeMap<u8, usize>> = vec![BTreeMap::new(); PIED];
@@ -78,15 +83,32 @@ fn main() {
     println!("Position par position, sur les {PIED} dernie octets :");
     println!("{:>4}  {:<9} {:>8}  détail", "off", "état", "valeurs");
     for (i, vues) in valeurs_vues.iter().enumerate() {
-        let etat = if vues.len() == 1 { "CONSTANT" } else { "variable" };
+        let etat = if vues.len() == 1 {
+            "CONSTANT"
+        } else {
+            "variable"
+        };
         let mut detail: Vec<String> = vues.iter().map(|(v, n)| format!("0x{v:02X}×{n}")).collect();
         detail.truncate(6);
-        let suite =
-            if vues.len() > 6 { format!(" … +{}", vues.len() - 6) } else { String::new() };
-        println!("{:>4}  {:<9} {:>8}  {}{}", i, etat, vues.len(), detail.join(" "), suite);
+        let suite = if vues.len() > 6 {
+            format!(" … +{}", vues.len() - 6)
+        } else {
+            String::new()
+        };
+        println!(
+            "{:>4}  {:<9} {:>8}  {}{}",
+            i,
+            etat,
+            vues.len(),
+            detail.join(" "),
+            suite
+        );
     }
 
-    println!("\n{} motif(s) de pied distinct(s). Les plus fréquents :", motifs.len());
+    println!(
+        "\n{} motif(s) de pied distinct(s). Les plus fréquents :",
+        motifs.len()
+    );
     let mut classes: Vec<(&Vec<u8>, &usize)> = motifs.iter().collect();
     classes.sort_by(|a, b| b.1.cmp(a.1));
     for (motif, n) in classes.iter().take(8) {
@@ -140,7 +162,9 @@ fn nombre_de_cles(octets: &[u8], e: &Entete) -> Option<i32> {
     if champ + 4 > octets.len() {
         return None;
     }
-    Some(i32::from_le_bytes(octets[champ..champ + 4].try_into().ok()?))
+    Some(i32::from_le_bytes(
+        octets[champ..champ + 4].try_into().ok()?,
+    ))
 }
 
 /// Croise la seule valeur variable du pied (offset 6) avec ce que porte le fichier.
@@ -299,7 +323,10 @@ fn correler_octet_variable(vfs: &aphrody_nie_formats::vfs::Vfs, chemins: &[Strin
         println!("{:<32} {:>10} {:>10}  {}", dossier, c[0], c[1], verdict);
     }
     let total_dossiers = par_dossier.len();
-    let tous_homogenes = par_dossier.values().filter(|c| c[0] == 0 || c[1] == 0).count();
+    let tous_homogenes = par_dossier
+        .values()
+        .filter(|c| c[0] == 0 || c[1] == 0)
+        .count();
     println!(
         "\n{tous_homogenes}/{total_dossiers} dossiers sont homogènes ({homogenes} parmi les 20 \
          affichés). Un dossier mélangé suffit à réfuter « l'octet suit l'emplacement »."

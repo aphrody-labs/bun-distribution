@@ -16,7 +16,9 @@ pub struct Pins {
 
 fn version_token(value: &str) -> Result<&str> {
     if value.is_empty()
-        || !value.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
+        || !value
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
     {
         bail!("version refusée: {value}");
     }
@@ -45,7 +47,13 @@ pub fn load(root: &Path, host: &str) -> Result<Pins> {
     let list = |key: &str| -> Vec<String> {
         packages[key]
             .as_array()
-            .map(|items| items.iter().filter_map(Value::as_str).map(str::to_owned).collect())
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_owned)
+                    .collect()
+            })
             .unwrap_or_default()
     };
     let mut apt = list("common");
@@ -137,7 +145,9 @@ pub fn developer_script(root: &Path, apply: bool) -> Result<String> {
         if family == "nu_plugins" {
             out.push_str("plugin_registry=\"\"; if command -v nu >/dev/null 2>&1; then plugin_registry=$(nu -c '$nu.plugin-path'); fi\n");
         }
-        let tools = catalog[family].as_array().with_context(|| format!("{family} absent"))?;
+        let tools = catalog[family]
+            .as_array()
+            .with_context(|| format!("{family} absent"))?;
         for tool in tools {
             let command = version_token(tool["command"].as_str().context("command absent")?)?;
             let package = version_token(tool["package"].as_str().context("package absent")?)?;

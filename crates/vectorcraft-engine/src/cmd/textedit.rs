@@ -3,7 +3,9 @@
 
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, CharStyle, Node, NodeId, NodeKind, TextKind, TextObject, TextRun};
+use vectorcraft_doc::{
+    Appearance, CharStyle, Node, NodeId, NodeKind, TextKind, TextObject, TextRun,
+};
 use vectorcraft_geom::Affine;
 use vectorcraft_text::edit;
 
@@ -83,7 +85,10 @@ pub fn specs() -> Vec<CommandSpec> {
             Some("Cmd+Shift+,"),
             "{by?: steps (1)} type.step {attribute: size, by: -by}",
             has_selection,
-            |s, p| type_step(s, &json!({"attribute": "size", "by": -f64_or(p, "by", 1.0)}))
+            |s, p| type_step(
+                s,
+                &json!({"attribute": "size", "by": -f64_or(p, "by", 1.0)})
+            )
         ),
         cmd!(
             "text.discardEmpty",
@@ -116,7 +121,11 @@ fn text_ref(s: &Session, id: NodeId) -> Result<TextObject> {
 /// style and paragraph styles follow, exactly as `text.editRange` over the full
 /// range does. Dataset apply and friends share this so Variables edits behave
 /// like Type tool edits.
-pub(crate) fn set_plain_text(d: &mut vectorcraft_doc::Document, id: NodeId, text: &str) -> Result<()> {
+pub(crate) fn set_plain_text(
+    d: &mut vectorcraft_doc::Document,
+    id: NodeId,
+    text: &str,
+) -> Result<()> {
     let len = match d.node(id).map(|n| &n.kind) {
         Some(NodeKind::Text(t)) => edit::runs_len(&t.runs),
         Some(_) => return Err(EngineError::Other(format!("node {} is not text", id.0))),
@@ -147,7 +156,9 @@ fn edit_range(s: &mut Session, p: &Value) -> Result<Value> {
     let (a, b) = range_of(p, len);
     let styled: Option<Vec<TextRun>> = match p.get("runs") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(serde_json::from_value(v.clone()).map_err(|e| bad(C, format!("bad `runs`: {e}")))?),
+        Some(v) => Some(
+            serde_json::from_value(v.clone()).map_err(|e| bad(C, format!("bad `runs`: {e}")))?,
+        ),
     };
     let insert = str_param(p, "insert").unwrap_or("").to_string();
     let caret = s.edit("Typing", |d, _| {
@@ -177,7 +188,12 @@ fn get_range(s: &mut Session, p: &Value) -> Result<Value> {
     let mut runs = edit::slice_runs(&t.runs, a, b);
     if p.get("effective").and_then(Value::as_bool).unwrap_or(false) {
         for run in &mut runs {
-            run.style = t.effective_char_style(&run.style).ok_or_else(|| bad("text.getRange", "text transform is collapsed or unrepresentable"))?;
+            run.style = t.effective_char_style(&run.style).ok_or_else(|| {
+                bad(
+                    "text.getRange",
+                    "text transform is collapsed or unrepresentable",
+                )
+            })?;
         }
     }
     let text: String = runs.iter().map(|r| r.text.as_str()).collect();
@@ -215,21 +231,38 @@ pub(crate) struct CharChange {
 /// `digits: "default"|"arabic"|"hindi"|"farsi"` → the numeral system the digits are drawn in.
 pub(crate) fn digits_param(p: &Value, cmd: &str) -> Result<Option<vectorcraft_doc::Digits>> {
     use vectorcraft_doc::Digits;
-    let Some(v) = p.get("digits").filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get("digits").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     Ok(Some(match v.as_str() {
         Some("default") => Digits::Default,
         Some("arabic") => Digits::Arabic,
         Some("hindi") => Digits::Hindi,
         Some("farsi") => Digits::Farsi,
-        _ => return Err(bad(cmd, "`digits` must be \"default\", \"arabic\", \"hindi\" or \"farsi\"")),
+        _ => {
+            return Err(bad(
+                cmd,
+                "`digits` must be \"default\", \"arabic\", \"hindi\" or \"farsi\"",
+            ));
+        }
     }))
 }
 
 /// `features: ["dlig", "-liga", …]` → the canonical tag list (differences from the defaults).
 pub(crate) fn features_param(p: &Value, cmd: &str) -> Result<Option<Vec<String>>> {
-    let Some(v) = p.get("features").filter(|v| !v.is_null()) else { return Ok(None) };
-    let tags: Vec<&str> = v.as_array().ok_or_else(|| bad(cmd, "features must be a list of tags"))?.iter().filter_map(Value::as_str).collect();
-    if let Some(t) = tags.iter().find(|t| !vectorcraft_text::OtFeatures::known_tag(t)) {
+    let Some(v) = p.get("features").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
+    let tags: Vec<&str> = v
+        .as_array()
+        .ok_or_else(|| bad(cmd, "features must be a list of tags"))?
+        .iter()
+        .filter_map(Value::as_str)
+        .collect();
+    if let Some(t) = tags
+        .iter()
+        .find(|t| !vectorcraft_text::OtFeatures::known_tag(t))
+    {
         return Err(bad(
             cmd,
             format!(
@@ -237,13 +270,19 @@ pub(crate) fn features_param(p: &Value, cmd: &str) -> Result<Option<Vec<String>>
             ),
         ));
     }
-    Ok(Some(vectorcraft_text::OtFeatures::default().with_tags(tags).to_tags()))
+    Ok(Some(
+        vectorcraft_text::OtFeatures::default()
+            .with_tags(tags)
+            .to_tags(),
+    ))
 }
 
 /// `charAlign: "romanBaseline"|"emBoxTop"|"emBoxCenter"|"emBoxBottom"|"icfTop"|"icfBottom"` (Character Alignment).
 pub(crate) fn char_align_param(p: &Value, cmd: &str) -> Result<Option<vectorcraft_doc::CharAlign>> {
     use vectorcraft_doc::CharAlign;
-    let Some(v) = p.get("charAlign").filter(|v| !v.is_null()) else { return Ok(None) };
+    let Some(v) = p.get("charAlign").filter(|v| !v.is_null()) else {
+        return Ok(None);
+    };
     Ok(Some(match v.as_str() {
         Some("romanBaseline") => CharAlign::RomanBaseline,
         Some("emBoxTop") => CharAlign::EmBoxTop,
@@ -264,7 +303,9 @@ fn paint_param(p: &Value, k: &str, cmd: &str) -> Result<Option<Paint>> {
     match p.get(k) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::String(n)) if n.eq_ignore_ascii_case("none") => Ok(Some(Paint::None)),
-        Some(v) => Ok(Some(Paint::solid(color_value(v).ok_or_else(|| bad(cmd, format!("bad {k} colour")))?))),
+        Some(v) => Ok(Some(Paint::solid(
+            color_value(v).ok_or_else(|| bad(cmd, format!("bad {k} colour")))?,
+        ))),
     }
 }
 
@@ -272,7 +313,9 @@ fn auto_or_num(p: &Value, k: &str, cmd: &str) -> Result<Option<Option<f64>>> {
     match p.get(k) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::String(a)) if a.eq_ignore_ascii_case("auto") => Ok(Some(None)),
-        Some(v) => Ok(Some(Some(v.as_f64().ok_or_else(|| bad(cmd, format!("{k} must be a number or \"auto\"")))?))),
+        Some(v) => Ok(Some(Some(v.as_f64().ok_or_else(|| {
+            bad(cmd, format!("{k} must be a number or \"auto\""))
+        })?))),
     }
 }
 
@@ -285,7 +328,12 @@ impl CharChange {
         let mut stroke_opts = match p.get("strokeOptions") {
             None | Some(Value::Null) => StrokeChange::default(),
             Some(o) if o.is_object() => StrokeChange::parse(o, cmd)?,
-            Some(_) => return Err(bad(cmd, "strokeOptions must be an object of stroke.set options")),
+            Some(_) => {
+                return Err(bad(
+                    cmd,
+                    "strokeOptions must be an object of stroke.set options",
+                ));
+            }
         };
         if let Some(w) = num("strokeWidth") {
             stroke_opts.weight = Some(w.clamp(0.0, 1000.0));
@@ -347,10 +395,25 @@ impl CharChange {
 
     fn localize(&mut self, t: &TextObject, cmd: &str) -> Result<()> {
         use super::typecmd::local_type_value;
-        self.size = self.size.map(|v| local_type_value(t, v, (0.1, 1296.0), false, cmd)).transpose()?;
-        self.leading = self.leading.map(|v| v.map(|v| local_type_value(t, v, (0.1, 5000.0), false, cmd)).transpose()).transpose()?;
-        self.baseline_shift = self.baseline_shift.map(|v| local_type_value(t, v, (-1296.0, 1296.0), false, cmd)).transpose()?;
-        self.h_scale = self.h_scale.map(|v| local_type_value(t, v, (1.0, 10000.0), true, cmd)).transpose()?;
+        self.size = self
+            .size
+            .map(|v| local_type_value(t, v, (0.1, 1296.0), false, cmd))
+            .transpose()?;
+        self.leading = self
+            .leading
+            .map(|v| {
+                v.map(|v| local_type_value(t, v, (0.1, 5000.0), false, cmd))
+                    .transpose()
+            })
+            .transpose()?;
+        self.baseline_shift = self
+            .baseline_shift
+            .map(|v| local_type_value(t, v, (-1296.0, 1296.0), false, cmd))
+            .transpose()?;
+        self.h_scale = self
+            .h_scale
+            .map(|v| local_type_value(t, v, (1.0, 10000.0), true, cmd))
+            .transpose()?;
         Ok(())
     }
 
@@ -361,7 +424,9 @@ impl CharChange {
             if self.style.is_none() {
                 let styles = vectorcraft_text::FontDb::global().styles(f);
                 if !styles.is_empty()
-                    && !styles.iter().any(|s| s.eq_ignore_ascii_case(&st.font_style))
+                    && !styles
+                        .iter()
+                        .any(|s| s.eq_ignore_ascii_case(&st.font_style))
                     && let Some(face) = vectorcraft_text::FontDb::global().face(f, &st.font_style)
                 {
                     st.font_style = face.style.clone();
@@ -446,7 +511,11 @@ pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>
             .scan(0, |at, r| {
                 let start = *at;
                 *at += r.text.len();
-                Some(r.text.char_indices().map(move |(i, c)| (start + i, c, &r.style)))
+                Some(
+                    r.text
+                        .char_indices()
+                        .map(move |(i, c)| (start + i, c, &r.style)),
+                )
             })
             .flatten()
     }
@@ -454,20 +523,36 @@ pub(crate) fn protect_missing_glyphs(before: &[TextRun], runs: &mut Vec<TextRun>
     let mut faces = std::collections::HashMap::new();
     let mut covers = |st: &CharStyle, c: char| {
         let face = faces
-            .entry((st.font_family.clone(), st.font_style.clone(), st.font_version.clone()))
-            .or_insert_with(|| db.face_version(&st.font_family, &st.font_style, st.font_version.as_deref()));
+            .entry((
+                st.font_family.clone(),
+                st.font_style.clone(),
+                st.font_version.clone(),
+            ))
+            .or_insert_with(|| {
+                db.face_version(&st.font_family, &st.font_style, st.font_version.as_deref())
+            });
         face.as_ref().map(|f| f.covers(c))
     };
     // Byte ranges that keep a font (family, style).
     let mut keep: Vec<(usize, usize, &CharStyle)> = vec![];
     for ((at, c, old), (_, _, new)) in chars(before).zip(chars(runs)) {
         let changed = (&old.font_family, &old.font_style) != (&new.font_family, &new.font_style);
-        if !changed || c.is_whitespace() || c.is_control() || covers(new, c) != Some(false) || covers(old, c) != Some(true) {
+        if !changed
+            || c.is_whitespace()
+            || c.is_control()
+            || covers(new, c) != Some(false)
+            || covers(old, c) != Some(true)
+        {
             continue;
         }
         let end = at + c.len_utf8();
         match keep.last_mut() {
-            Some((_, e, st)) if *e == at && (&st.font_family, &st.font_style) == (&old.font_family, &old.font_style) => *e = end,
+            Some((_, e, st))
+                if *e == at
+                    && (&st.font_family, &st.font_style) == (&old.font_family, &old.font_style) =>
+            {
+                *e = end
+            }
             _ => keep.push((at, end, old)),
         }
     }
@@ -483,7 +568,10 @@ fn set_range_style(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "text.setRangeStyle";
     // The type object given, else the one selected (#785).
     let id = match p.get("id").filter(|v| !v.is_null()) {
-        Some(v) => v.as_u64().map(NodeId).ok_or_else(|| bad(C, format!("`id` must be an object id, not {v}")))?,
+        Some(v) => v
+            .as_u64()
+            .map(NodeId)
+            .ok_or_else(|| bad(C, format!("`id` must be an object id, not {v}")))?,
         None => match super::typecmd::text_targets(s, &json!({}), C)?.as_slice() {
             [one] => *one,
             _ => return Err(bad(C, "missing `id`: give one, or select one type object")),
@@ -493,7 +581,8 @@ fn set_range_style(s: &mut Session, p: &Value) -> Result<Value> {
     if change.is_empty() {
         return Err(bad(C, "nothing to change"));
     }
-    let protect = s.prefs.missing_glyph_protection && (change.font.is_some() || change.style.is_some());
+    let protect =
+        s.prefs.missing_glyph_protection && (change.font.is_some() || change.style.is_some());
     let t = text_ref(s, id)?;
     change.localize(&t, C)?;
     let (a, b) = range_of(p, edit::runs_len(&t.runs));
@@ -522,26 +611,54 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
         "onPath" | "path" => true,
         o => return Err(bad(C, format!("mode must be area|onPath, got {o}"))),
     };
-    let node = s.doc()?.doc.node(pid).cloned().ok_or(EngineError::NoNode(pid))?;
-    let NodeKind::Path { path, .. } = &node.kind else { return Err(bad(C, "`path` must be a path object")) };
+    let node = s
+        .doc()?
+        .doc
+        .node(pid)
+        .cloned()
+        .ok_or(EngineError::NoNode(pid))?;
+    let NodeKind::Path { path, .. } = &node.kind else {
+        return Err(bad(C, "`path` must be a path object"));
+    };
     if path.is_empty() {
         return Err(bad(C, "the path is empty"));
     }
-    if !on_path && !path.is_closed() && path.bounds().is_none_or(|b| b.width() < 1.0 || b.height() < 1.0) {
+    if !on_path
+        && !path.is_closed()
+        && path
+            .bounds()
+            .is_none_or(|b| b.width() < 1.0 || b.height() < 1.0)
+    {
         return Err(bad(C, "area type needs a path that encloses an area"));
     }
     let style = super::create::new_type_style(s, p);
     let text = str_param(p, "text").unwrap_or("").to_string();
     let start = match point_param(p, "at") {
-        Some(at) if on_path => vectorcraft_geom::ArcPath::new(path).fraction_at(at).unwrap_or(0.0),
+        Some(at) if on_path => vectorcraft_geom::ArcPath::new(path)
+            .fraction_at(at)
+            .unwrap_or(0.0),
         _ => 0.0,
     };
-    let kind = if on_path { TextKind::OnPath { path: path.clone(), start, end: None } } else { TextKind::Area { frame: path.clone() } };
+    let kind = if on_path {
+        TextKind::OnPath {
+            path: path.clone(),
+            start,
+            end: None,
+        }
+    } else {
+        TextKind::Area {
+            frame: path.clone(),
+        }
+    };
     let mut t = TextObject {
         vertical: p.get("vertical").and_then(Value::as_bool).unwrap_or(false),
         kind,
         xf: Affine::IDENTITY,
-        runs: vec![TextRun { text, style, inline: None }],
+        runs: vec![TextRun {
+            text,
+            style,
+            inline: None,
+        }],
         para: super::create::new_type_para(),
         paras: Vec::new(),
         area: Default::default(),
@@ -561,18 +678,25 @@ fn create_in_path(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         refresh_bounds(&mut t);
     }
-    let id = s.edit(if on_path { "Type on a Path" } else { "Area Type" }, |d, sel| {
-        let (par, idx, _) = d.position(pid).ok_or(EngineError::NoNode(pid))?;
-        d.remove(pid)?;
-        let id = d.alloc_id();
-        let mut n = Node::new(id, NodeKind::Text(Box::new(t)));
-        n.appearance = Appearance::default().into();
-        n.opacity = node.opacity;
-        n.name = node.name.clone();
-        d.insert(par, idx, n)?;
-        sel.set([id]);
-        Ok(id)
-    })?;
+    let id = s.edit(
+        if on_path {
+            "Type on a Path"
+        } else {
+            "Area Type"
+        },
+        |d, sel| {
+            let (par, idx, _) = d.position(pid).ok_or(EngineError::NoNode(pid))?;
+            d.remove(pid)?;
+            let id = d.alloc_id();
+            let mut n = Node::new(id, NodeKind::Text(Box::new(t)));
+            n.appearance = Appearance::default().into();
+            n.opacity = node.opacity;
+            n.name = node.name.clone();
+            d.insert(par, idx, n)?;
+            sel.set([id]);
+            Ok(id)
+        },
+    )?;
     Ok(super::typecmd::with_overflow(s, &[id], json!({"id": id.0})))
 }
 
@@ -589,7 +713,9 @@ enum Step {
 /// The Type tool's selected text while it edits (its typing session ends first: one undo step).
 pub(crate) fn editing_range(s: &mut Session) -> Result<Option<(NodeId, usize, usize)>> {
     let o = s.tool_options();
-    let Some(id) = o.get("editing").and_then(Value::as_u64).map(NodeId) else { return Ok(None) };
+    let Some(id) = o.get("editing").and_then(Value::as_u64).map(NodeId) else {
+        return Ok(None);
+    };
     if super::edit::typing_in_progress(s) {
         s.set_tool_option("commitTyping", &Value::Bool(true));
         s.commit_interaction()?;
@@ -606,7 +732,12 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
         Some("tracking") => Step::Tracking,
         Some("kerning") => Step::Kerning,
         Some("baselineShift") => Step::BaselineShift,
-        _ => return Err(bad(C, "attribute must be size|leading|tracking|kerning|baselineShift")),
+        _ => {
+            return Err(bad(
+                C,
+                "attribute must be size|leading|tracking|kerning|baselineShift",
+            ));
+        }
     };
     let by = f64_or(p, "by", 1.0);
     if !by.is_finite() {
@@ -621,10 +752,16 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
         };
     // (text, its range; None: all of it).
     let targets: Vec<(NodeId, Option<(usize, usize)>)> = match id_param(p, "id") {
-        Some(id) => vec![(id, Some(range_of(p, edit::runs_len(&text_ref(s, id)?.runs))))],
+        Some(id) => vec![(
+            id,
+            Some(range_of(p, edit::runs_len(&text_ref(s, id)?.runs))),
+        )],
         None => match editing_range(s)? {
             Some((id, a, b)) => vec![(id, Some((a.min(b), a.max(b))))],
-            None => super::typecmd::text_targets(s, p, C)?.into_iter().map(|id| (id, None)).collect(),
+            None => super::typecmd::text_targets(s, p, C)?
+                .into_iter()
+                .map(|id| (id, None))
+                .collect(),
         },
     };
     // The ranges stepped. At a caret: kerning is the space after the character before it, leading
@@ -632,7 +769,9 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
     let mut ranges = vec![];
     for (id, range) in targets {
         let text = text_ref(s, id)?.plain_text();
-        let (a, b) = range.map_or((0, text.len()), |(a, b)| (a.min(text.len()), b.min(text.len())));
+        let (a, b) = range.map_or((0, text.len()), |(a, b)| {
+            (a.min(text.len()), b.min(text.len()))
+        });
         let (a, b) = match step {
             _ if a < b => (a, b),
             Step::Kerning => (edit::prev_char(&text, a), a),
@@ -651,7 +790,9 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
             for &(id, a, b) in &ranges {
                 let t = text_mut(d, id).ok_or(EngineError::NoNode(id))?;
                 let points = if matches!(step, Step::Size | Step::Leading | Step::BaselineShift) {
-                    t.style_scale().ok_or_else(|| bad(C, "text transform is collapsed or unrepresentable"))?.points
+                    t.style_scale()
+                        .ok_or_else(|| bad(C, "text transform is collapsed or unrepresentable"))?
+                        .points
                 } else {
                     1.0
                 };
@@ -659,14 +800,37 @@ fn type_step(s: &mut Session, p: &Value) -> Result<Value> {
                 for run in &mut runs {
                     let st = &mut run.style;
                     match step {
-                        Step::Size => st.size = super::typecmd::local_type_value(t, st.size * points + inc, (0.1, 1296.0), false, C)?,
+                        Step::Size => {
+                            st.size = super::typecmd::local_type_value(
+                                t,
+                                st.size * points + inc,
+                                (0.1, 1296.0),
+                                false,
+                                C,
+                            )?
+                        }
                         Step::Leading => {
-                            st.leading = Some(super::typecmd::local_type_value(t, st.effective_leading() * points + inc, (0.1, 5000.0), false, C)?);
+                            st.leading = Some(super::typecmd::local_type_value(
+                                t,
+                                st.effective_leading() * points + inc,
+                                (0.1, 5000.0),
+                                false,
+                                C,
+                            )?);
                         }
                         Step::Tracking => st.tracking = (st.tracking + inc).clamp(-1000.0, 10000.0),
-                        Step::Kerning => st.kerning = Some((st.kerning.unwrap_or(0.0) + inc).clamp(-1000.0, 10000.0)),
+                        Step::Kerning => {
+                            st.kerning =
+                                Some((st.kerning.unwrap_or(0.0) + inc).clamp(-1000.0, 10000.0))
+                        }
                         Step::BaselineShift => {
-                            st.baseline_shift = super::typecmd::local_type_value(t, st.baseline_shift * points + inc, (-1296.0, 1296.0), false, C)?;
+                            st.baseline_shift = super::typecmd::local_type_value(
+                                t,
+                                st.baseline_shift * points + inc,
+                                (-1296.0, 1296.0),
+                                false,
+                                C,
+                            )?;
                         }
                     }
                 }
@@ -737,9 +901,13 @@ fn fit_headline(s: &mut Session, p: &Value) -> Result<Value> {
         for id in &ids {
             let Some(t) = text_mut(d, *id) else { continue };
             let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
-            let Some(first) = lay.lines.first() else { continue };
+            let Some(first) = lay.lines.first() else {
+                continue;
+            };
             let target = first.avail.1 - first.avail.0;
-            let Some(tr) = headline_tracking(t, target) else { continue };
+            let Some(tr) = headline_tracking(t, target) else {
+                continue;
+            };
             let end = t.plain_text().find('\n').unwrap_or(t.plain_text().len());
             edit::style_range(&mut t.runs, 0, end, |st| st.tracking = tr);
             refresh_bounds(t);
@@ -760,7 +928,11 @@ fn discard_empty(s: &mut Session, p: &Value) -> Result<Value> {
     // plus the text (and its id), roll back to it without a trace.
     let st = s.doc_mut()?;
     if st.interaction.is_none()
-        && let Some(k) = st.history.undo.iter().rposition(|e| e.doc.node_uncached(id).is_none())
+        && let Some(k) = st
+            .history
+            .undo
+            .iter()
+            .rposition(|e| e.doc.node_uncached(id).is_none())
         && let Some(created) = st.history.undo.get(k)
     {
         let mut now = (*st.doc).clone();
@@ -774,6 +946,10 @@ fn discard_empty(s: &mut Session, p: &Value) -> Result<Value> {
             return Ok(json!({"removed": true}));
         }
     }
-    s.edit("Discard Empty Type", |d, _| d.remove(id).map(|_| ()).map_err(|_| EngineError::NoNode(id)))?;
+    s.edit("Discard Empty Type", |d, _| {
+        d.remove(id)
+            .map(|_| ())
+            .map_err(|_| EngineError::NoNode(id))
+    })?;
     Ok(json!({"removed": true}))
 }

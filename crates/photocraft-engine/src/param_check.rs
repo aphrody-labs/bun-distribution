@@ -48,8 +48,12 @@ fn documented_keys(doc: &str) -> Option<Vec<&str>> {
         }
         // `…` / `...` straight inside the top-level braces: the list is not complete.
         if depth == 1
-            && (doc.get(i..).is_some_and(|r| r.starts_with('…') || r.starts_with("...")))
-            && doc.get(..i).is_some_and(|l| l.trim_start().starts_with('{'))
+            && (doc
+                .get(i..)
+                .is_some_and(|r| r.starts_with('…') || r.starts_with("...")))
+            && doc
+                .get(..i)
+                .is_some_and(|l| l.trim_start().starts_with('{'))
         {
             return None;
         }
@@ -69,8 +73,12 @@ fn documented_keys(doc: &str) -> Option<Vec<&str>> {
                 keys.push(word);
                 break;
             }
-            let Some(after) = rest.strip_prefix(',') else { break };
-            let Some(&(na, nb)) = quoted.get(k + 1) else { break };
+            let Some(after) = rest.strip_prefix(',') else {
+                break;
+            };
+            let Some(&(na, nb)) = quoted.get(k + 1) else {
+                break;
+            };
             if na != end + 2 || after.as_bytes().first() != Some(&b'"') {
                 break;
             }
@@ -86,14 +94,25 @@ pub(crate) fn check(spec: &CommandSpec, params: &Value) -> Result<()> {
     if !STRICT.contains(&spec.id) {
         return Ok(());
     }
-    let Some(map) = params.as_object() else { return Ok(()) };
-    let Some(keys) = documented_keys(spec.params) else { return Ok(()) };
+    let Some(map) = params.as_object() else {
+        return Ok(());
+    };
+    let Some(keys) = documented_keys(spec.params) else {
+        return Ok(());
+    };
     for key in map.keys() {
         if UNIVERSAL.contains(&key.as_str()) || keys.contains(&key.as_str()) {
             continue;
         }
-        let expected = if keys.is_empty() { "no parameters".to_string() } else { format!("expected: {}", keys.join(", ")) };
-        return Err(EngineError::BadParams { cmd: spec.id.to_string(), msg: format!("unknown parameter `{key}` ({expected})") });
+        let expected = if keys.is_empty() {
+            "no parameters".to_string()
+        } else {
+            format!("expected: {}", keys.join(", "))
+        };
+        return Err(EngineError::BadParams {
+            cmd: spec.id.to_string(),
+            msg: format!("unknown parameter `{key}` ({expected})"),
+        });
     }
     Ok(())
 }
@@ -107,32 +126,58 @@ mod tests {
 
     #[test]
     fn documented_keys_reads_keys_and_stops_at_open_docs() {
-        assert_eq!(documented_keys(r##"{"layer":id?} (shows them instead)"##), Some(vec!["layer"]));
-        assert_eq!(documented_keys(r##"{"locks":{"all","pixels":bool}?,"name":str?}"##), Some(vec!["locks", "all", "pixels", "name"]));
+        assert_eq!(
+            documented_keys(r##"{"layer":id?} (shows them instead)"##),
+            Some(vec!["layer"])
+        );
+        assert_eq!(
+            documented_keys(r##"{"locks":{"all","pixels":bool}?,"name":str?}"##),
+            Some(vec!["locks", "all", "pixels", "name"])
+        );
         assert_eq!(documented_keys("{}"), Some(vec![]));
-        assert_eq!(documented_keys(r##"{"layer":id?, …params of that kind}"##), None);
+        assert_eq!(
+            documented_keys(r##"{"layer":id?, …params of that kind}"##),
+            None
+        );
     }
 
     #[test]
     fn strict_commands_have_closed_docs() {
         for id in STRICT {
             let spec = crate::commands::find(id).expect("strict command exists");
-            assert!(documented_keys(spec.params).is_some_and(|k| !k.is_empty()), "{id}: params doc must list its keys");
+            assert!(
+                documented_keys(spec.params).is_some_and(|k| !k.is_empty()),
+                "{id}: params doc must list its keys"
+            );
         }
     }
 
     #[test]
     fn unknown_param_is_an_error_naming_the_key_and_the_accepted_ones() {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
-        let a = s.execute("layer.new.layer", json!({})).unwrap()["layer"].as_u64().unwrap();
-        let visible = |s: &Session| s.active().unwrap().doc.layer(photocraft_doc::LayerId(a)).unwrap().visible;
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
+        let a = s.execute("layer.new.layer", json!({})).unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        let visible = |s: &Session| {
+            s.active()
+                .unwrap()
+                .doc
+                .layer(photocraft_doc::LayerId(a))
+                .unwrap()
+                .visible
+        };
         for cmd in ["layer.hideLayers", "layer.showLayers"] {
             let err = s.execute(cmd, json!({"ids": [a]})).unwrap_err().to_string();
-            assert!(err.contains("unknown parameter `ids`") && err.contains("expected: layer"), "{err}");
+            assert!(
+                err.contains("unknown parameter `ids`") && err.contains("expected: layer"),
+                "{err}"
+            );
             assert!(visible(&s), "{cmd}: nothing ran");
         }
-        s.execute("layer.hideLayers", json!({"layer": a, "coalesce": "k"})).unwrap();
+        s.execute("layer.hideLayers", json!({"layer": a, "coalesce": "k"}))
+            .unwrap();
         assert!(!visible(&s));
     }
 }

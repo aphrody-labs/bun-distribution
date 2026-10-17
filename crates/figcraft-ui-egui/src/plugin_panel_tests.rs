@@ -51,7 +51,8 @@ fn session() -> Session {
     let manifest = json!({"id": "org.test.panel", "name": "Panel test", "main": "p.wasm", "api": 2, "permissions": {"access": "write"}});
     let mut s = Session::new();
     s.execute("plugin.import", &json!({"manifest": manifest, "wasm": base64::engine::general_purpose::STANDARD.encode(wasm)})).unwrap();
-    s.execute("plugin.run", &json!({"id": "org.test.panel"})).unwrap();
+    s.execute("plugin.run", &json!({"id": "org.test.panel"}))
+        .unwrap();
     s
 }
 
@@ -65,23 +66,49 @@ fn the_panel_names_its_controls_and_its_button_calls_the_plugin_back() {
     let mut u = Ui::new(session());
     u.ctx.enable_accesskit();
     u.frame(vec![]);
-    let tree = u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
-    let named = |label: &str| tree.iter().map(|(_, n)| n).find(|n| n.label() == Some(label)).cloned();
-    for label in ["Size", "Labels", "Warm", "Cool", "Accent", "Shape", "Title", "Go"] {
+    let tree = u
+        .frame_output(vec![])
+        .platform_output
+        .accesskit_update
+        .unwrap()
+        .nodes;
+    let named = |label: &str| {
+        tree.iter()
+            .map(|(_, n)| n)
+            .find(|n| n.label() == Some(label))
+            .cloned()
+    };
+    for label in [
+        "Size", "Labels", "Warm", "Cool", "Accent", "Shape", "Title", "Go",
+    ] {
         assert!(named(label).is_some(), "no control named {label:?}");
     }
     let go = named("Go").and_then(|n| n.bounds()).unwrap();
-    let at = Pos2::new(((go.x0 + go.x1) / 2.0) as f32, ((go.y0 + go.y1) / 2.0) as f32);
+    let at = Pos2::new(
+        ((go.x0 + go.x1) / 2.0) as f32,
+        ((go.y0 + go.y1) / 2.0) as f32,
+    );
     let before = layers(&u);
     u.button(at, true);
     u.button(at, false);
-    assert_eq!(layers(&u), before + 1, "Go made the plugin draw a rectangle");
+    assert_eq!(
+        layers(&u),
+        before + 1,
+        "Go made the plugin draw a rectangle"
+    );
     assert_eq!(u.app.session.ds().unwrap().history.undo.len(), 1);
-    assert_eq!(u.app.session.plugins.panels.len(), 1, "the panel stays open");
+    assert_eq!(
+        u.app.session.plugins.panels.len(),
+        1,
+        "the panel stays open"
+    );
     // Its close button ends the session.
     u.app.run("plugin.close", json!({"id": "org.test.panel"}));
     u.frame(vec![]);
-    assert_eq!(u.app.session.execute("plugin.ui", &json!({})).unwrap(), Value::Null);
+    assert_eq!(
+        u.app.session.execute("plugin.ui", &json!({})).unwrap(),
+        Value::Null
+    );
 }
 
 #[test]
@@ -94,27 +121,69 @@ fn a_colour_field_opens_the_colour_picker_and_two_panels_show_side_by_side() {
     let mut u = Ui::new(session());
     u.ctx.enable_accesskit();
     u.frame(vec![]);
-    let nodes = |u: &mut Ui| u.frame_output(vec![]).platform_output.accesskit_update.unwrap().nodes;
+    let nodes = |u: &mut Ui| {
+        u.frame_output(vec![])
+            .platform_output
+            .accesskit_update
+            .unwrap()
+            .nodes
+    };
     // The swatch beside a colour field opens the colour picker on it.
-    let swatch = nodes(&mut u).iter().map(|(_, n)| n).find(|n| n.label() == Some("Color")).and_then(|n| n.bounds()).unwrap();
-    let at = Pos2::new(((swatch.x0 + swatch.x1) / 2.0) as f32, ((swatch.y0 + swatch.y1) / 2.0) as f32);
+    let swatch = nodes(&mut u)
+        .iter()
+        .map(|(_, n)| n)
+        .find(|n| n.label() == Some("Color"))
+        .and_then(|n| n.bounds())
+        .unwrap();
+    let at = Pos2::new(
+        ((swatch.x0 + swatch.x1) / 2.0) as f32,
+        ((swatch.y0 + swatch.y1) / 2.0) as f32,
+    );
     u.button(at, true);
     u.button(at, false);
-    let picked = Some(PickerTarget::PluginField { plugin: "org.test.panel".into(), control: "accent".into(), pending: None });
+    let picked = Some(PickerTarget::PluginField {
+        plugin: "org.test.panel".into(),
+        control: "accent".into(),
+        pending: None,
+    });
     assert_eq!(u.app.ui.picker, picked);
     u.frame(vec![]);
-    assert_eq!(u.app.ui.picker, picked, "the picker shows the field's colour");
+    assert_eq!(
+        u.app.ui.picker, picked,
+        "the picker shows the field's colour"
+    );
     // A colour picked there calls the plugin back with it.
     let before = layers(&u);
     crate::plugins_ui::set_field(&mut u.app, "org.test.panel", "accent", "#00FF00");
-    assert_eq!(u.app.session.plugins.panel("org.test.panel").unwrap().values["accent"], "#00FF00");
+    assert_eq!(
+        u.app
+            .session
+            .plugins
+            .panel("org.test.panel")
+            .unwrap()
+            .values["accent"],
+        "#00FF00"
+    );
     assert_eq!(layers(&u), before + 1);
     // A second plugin's panel opens beside the first.
     let other = json!({"id": "org.test.other", "name": "Other", "main": "p.wasm", "api": 2, "permissions": {"access": "write"}});
     let module = base64::engine::general_purpose::STANDARD.encode(panel_module());
-    u.app.session.execute("plugin.import", &json!({"manifest": other, "wasm": module})).unwrap();
-    u.app.session.execute("plugin.run", &json!({"id": "org.test.other"})).unwrap();
+    u.app
+        .session
+        .execute("plugin.import", &json!({"manifest": other, "wasm": module}))
+        .unwrap();
+    u.app
+        .session
+        .execute("plugin.run", &json!({"id": "org.test.other"}))
+        .unwrap();
     u.frame(vec![]);
-    let accents = nodes(&mut u).iter().filter(|(_, n)| n.label() == Some("Accent")).count();
-    assert_eq!((accents, u.app.session.plugins.panels.len()), (2, 2), "both panels are drawn");
+    let accents = nodes(&mut u)
+        .iter()
+        .filter(|(_, n)| n.label() == Some("Accent"))
+        .count();
+    assert_eq!(
+        (accents, u.app.session.plugins.panels.len()),
+        (2, 2),
+        "both panels are drawn"
+    );
 }

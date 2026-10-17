@@ -15,7 +15,13 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of New Color Group.
 pub const KIND: &str = "newColorGroup";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("New Color Group").into(), body, confirm, min_width: 320.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("New Color Group").into(),
+    body,
+    confirm,
+    min_width: 320.0,
+    ..DialogSpec::FORM
+};
 
 /// Open New Color Group for the swatches selected in the panel. It starts from the artwork when
 /// art is selected and no swatches are.
@@ -53,7 +59,10 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
             set(d, "fromArtwork", true);
         }
         ui.end_row();
-        for (key, text) in [("toGlobal", tl!("Convert Process to Global")), ("includeTints", tl!("Include Swatches for Tints"))] {
+        for (key, text) in [
+            ("toGlobal", tl!("Convert Process to Global")),
+            ("includeTints", tl!("Include Swatches for Tints")),
+        ] {
             ui.label("");
             ui.horizontal(|ui| {
                 ui.add_space(18.0);

@@ -92,7 +92,13 @@ impl ChannelView {
             && self.shown_layer_mask(doc).is_none()
     }
     /// The layer mask shown on the canvas (#196) and how, if its layer still has a mask.
-    pub fn shown_layer_mask<'a>(&self, doc: &'a Document) -> Option<(&'a photocraft_doc::LayerMask, crate::mask_view_cmds::MaskViewMode)> {
+    pub fn shown_layer_mask<'a>(
+        &self,
+        doc: &'a Document,
+    ) -> Option<(
+        &'a photocraft_doc::LayerMask,
+        crate::mask_view_cmds::MaskViewMode,
+    )> {
         let v = self.layer_mask?;
         Some((doc.layer(v.layer)?.mask.as_ref()?, v.mode))
     }
@@ -109,7 +115,11 @@ pub struct QuickMaskOptions {
 
 impl Default for QuickMaskOptions {
     fn default() -> Self {
-        Self { color: AlphaChannel::DEFAULT_COLOR, opacity: 0.5, indicates: ColorIndicates::MaskedAreas }
+        Self {
+            color: AlphaChannel::DEFAULT_COLOR,
+            opacity: 0.5,
+            indicates: ColorIndicates::MaskedAreas,
+        }
     }
 }
 
@@ -124,11 +134,23 @@ pub(crate) fn fix_view(st: &mut DocState) {
         v.color_hidden.truncate(colors);
         match v.target {
             ChannelTarget::Alpha(i) if i >= n => v.target = ChannelTarget::Composite,
-            ChannelTarget::Color(k) if k >= colors || colors < 2 => v.target = ChannelTarget::Composite,
-            ChannelTarget::LayerMask if st.active_layer.and_then(|id| st.doc.layer(id)).is_none_or(|l| l.mask.is_none()) => {
+            ChannelTarget::Color(k) if k >= colors || colors < 2 => {
+                v.target = ChannelTarget::Composite
+            }
+            ChannelTarget::LayerMask
+                if st
+                    .active_layer
+                    .and_then(|id| st.doc.layer(id))
+                    .is_none_or(|l| l.mask.is_none()) =>
+            {
                 v.target = ChannelTarget::Composite;
             }
-            ChannelTarget::VectorMask if st.active_layer.and_then(|id| st.doc.layer(id)).is_none_or(|l| l.vector_mask.is_none()) => {
+            ChannelTarget::VectorMask
+                if st
+                    .active_layer
+                    .and_then(|id| st.doc.layer(id))
+                    .is_none_or(|l| l.vector_mask.is_none()) =>
+            {
                 v.target = ChannelTarget::Composite;
             }
             _ => {}
@@ -141,7 +163,9 @@ pub(crate) fn fix_view(st: &mut DocState) {
     let shown = {
         let doc = &st.doc;
         let v = &st.channel_view;
-        (0..n).any(|i| v.alpha_shown(i)) || (quick && !v.quick_mask_hidden) || active.is_some_and(|id| doc.layer(id).is_some_and(|l| l.mask.is_some()))
+        (0..n).any(|i| v.alpha_shown(i))
+            || (quick && !v.quick_mask_hidden)
+            || active.is_some_and(|id| doc.layer(id).is_some_and(|l| l.mask.is_some()))
     };
     if st.channel_view.visible_colors(colors) == 0 && !shown {
         st.channel_view.color_hidden.clear();
@@ -197,7 +221,10 @@ pub fn channel_format(doc: &Document) -> PixelFormat {
 /// Next free "`base` N" name (Alpha 1, Spot Color 2, …).
 pub fn next_alpha_name(doc: &Document, base: &str) -> String {
     // `channels.len() + 1` candidates always include a free one.
-    (1..=doc.channels.len() + 1).map(|n| format!("{base} {n}")).find(|n| !doc.channels.iter().any(|c| &c.name == n)).unwrap_or_else(|| base.to_string())
+    (1..=doc.channels.len() + 1)
+        .map(|n| format!("{base} {n}"))
+        .find(|n| !doc.channels.iter().any(|c| &c.name == n))
+        .unwrap_or_else(|| base.to_string())
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -207,7 +234,11 @@ fn read_plane(s: &Surface, r: Rect) -> Vec<f32> {
     let mut v = Vec::new();
     s.read_region_into(r, &mut v);
     let ch = s.channels();
-    if ch > 1 { v.chunks_exact(ch).map(|p| p[0]).collect() } else { v }
+    if ch > 1 {
+        v.chunks_exact(ch).map(|p| p[0]).collect()
+    } else {
+        v
+    }
 }
 
 fn plane_surface(vals: &[f32], r: Rect, fmt: PixelFormat) -> Surface {
@@ -255,7 +286,9 @@ pub fn parse_ref(v: &Value, doc: &Document) -> Option<ChanRef> {
             if let Some(k) = o.get("color").and_then(Value::as_u64) {
                 Some(ChanRef::Color(k as usize))
             } else {
-                o.get("alpha").and_then(Value::as_u64).map(|i| ChanRef::Alpha(i as usize))
+                o.get("alpha")
+                    .and_then(Value::as_u64)
+                    .map(|i| ChanRef::Alpha(i as usize))
             }
         }
         Value::String(s) => {
@@ -272,17 +305,30 @@ pub fn parse_ref(v: &Value, doc: &Document) -> Option<ChanRef> {
             if l == composite_name(mode).to_ascii_lowercase() {
                 return Some(ChanRef::Composite);
             }
-            if let Some(k) = color_names(mode).iter().position(|n| n.eq_ignore_ascii_case(&l)) {
-                return Some(if color_names(mode).len() == 1 { ChanRef::Composite } else { ChanRef::Color(k) });
+            if let Some(k) = color_names(mode)
+                .iter()
+                .position(|n| n.eq_ignore_ascii_case(&l))
+            {
+                return Some(if color_names(mode).len() == 1 {
+                    ChanRef::Composite
+                } else {
+                    ChanRef::Color(k)
+                });
             }
-            doc.channels.iter().position(|c| c.name == *s).map(ChanRef::Alpha)
+            doc.channels
+                .iter()
+                .position(|c| c.name == *s)
+                .map(ChanRef::Alpha)
         }
         _ => None,
     }
 }
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn doc_index(s: &Session, p: &Value, key: &str) -> Result<usize> {
@@ -297,8 +343,14 @@ fn doc_index(s: &Session, p: &Value, key: &str) -> Result<usize> {
 fn alpha_index(doc: &Document, p: &Value, key: &str, cmd: &str) -> Result<usize> {
     match p.get(key).and_then(|v| parse_ref(v, doc)) {
         Some(ChanRef::Alpha(i)) if i < doc.channels.len() => Ok(i),
-        Some(ChanRef::Alpha(i)) => Err(bad(cmd, format!("no alpha channel {i} (document has {})", doc.channels.len()))),
-        _ => Err(bad(cmd, format!("`{key}` must name an alpha channel (index or name)"))),
+        Some(ChanRef::Alpha(i)) => Err(bad(
+            cmd,
+            format!("no alpha channel {i} (document has {})", doc.channels.len()),
+        )),
+        _ => Err(bad(
+            cmd,
+            format!("`{key}` must name an alpha channel (index or name)"),
+        )),
     }
 }
 
@@ -313,13 +365,20 @@ fn native_pixels(doc: &Document, layer: Option<LayerId>) -> Result<(Vec<f32>, us
     match layer {
         Some(id) => {
             let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
-            let s = l.surface().ok_or_else(|| EngineError::Other(format!("layer \"{}\" has no pixels", l.name)))?;
+            let s = l
+                .surface()
+                .ok_or_else(|| EngineError::Other(format!("layer \"{}\" has no pixels", l.name)))?;
             if s.format() == fmt {
                 return Ok((s.read_region(r), n));
             }
             let raw = s.read_region(r);
             let sf = s.format();
-            Ok((raw.chunks_exact(sf.channels()).flat_map(|p| from_rgba(&fmt, to_rgba(&sf, p))).collect(), n))
+            Ok((
+                raw.chunks_exact(sf.channels())
+                    .flat_map(|p| from_rgba(&fmt, to_rgba(&sf, p)))
+                    .collect(),
+                n,
+            ))
         }
         None => {
             let buf = photocraft_compose::render(doc, r);
@@ -346,23 +405,49 @@ fn source_layer(doc: &Document, p: &Value, cmd: &str) -> Result<Option<LayerId>>
 
 /// Planes of channel `r` from document `doc` (`layer` = None: merged). A composite gives one
 /// plane per colour channel; everything else gives one plane.
-fn ref_planes(doc: &Document, layer: Option<LayerId>, active: Option<LayerId>, r: ChanRef) -> Result<Vec<Vec<f32>>> {
+fn ref_planes(
+    doc: &Document,
+    layer: Option<LayerId>,
+    active: Option<LayerId>,
+    r: ChanRef,
+) -> Result<Vec<Vec<f32>>> {
     let area = doc.bounds();
     let colors = color_count(doc);
     Ok(match r {
         ChanRef::Composite | ChanRef::Color(_) => {
             let (px, n) = native_pixels(doc, layer)?;
-            let planes: Vec<Vec<f32>> = (0..colors).map(|c| px.chunks_exact(n).map(|p| p[c]).collect()).collect();
+            let planes: Vec<Vec<f32>> = (0..colors)
+                .map(|c| px.chunks_exact(n).map(|p| p[c]).collect())
+                .collect();
             match r {
-                ChanRef::Color(k) => vec![planes.get(k).cloned().ok_or_else(|| EngineError::Other(format!("no colour channel {k}")))?],
+                ChanRef::Color(k) => vec![
+                    planes
+                        .get(k)
+                        .cloned()
+                        .ok_or_else(|| EngineError::Other(format!("no colour channel {k}")))?,
+                ],
                 _ => planes,
             }
         }
-        ChanRef::Alpha(i) => vec![read_plane(&doc.channels.get(i).ok_or_else(|| EngineError::Other(format!("no alpha channel {i}")))?.surface, area)],
-        ChanRef::QuickMask => vec![read_plane(&doc.quick_mask.as_ref().ok_or_else(|| EngineError::Other("not in Quick Mask mode".into()))?.surface, area)],
+        ChanRef::Alpha(i) => vec![read_plane(
+            &doc.channels
+                .get(i)
+                .ok_or_else(|| EngineError::Other(format!("no alpha channel {i}")))?
+                .surface,
+            area,
+        )],
+        ChanRef::QuickMask => vec![read_plane(
+            &doc.quick_mask
+                .as_ref()
+                .ok_or_else(|| EngineError::Other("not in Quick Mask mode".into()))?
+                .surface,
+            area,
+        )],
         ChanRef::Selection => vec![sel::mask_from_surface(doc.selection.as_ref(), area)],
         ChanRef::Transparency => {
-            let id = layer.or(active).ok_or_else(|| EngineError::Other("transparency needs a layer".into()))?;
+            let id = layer
+                .or(active)
+                .ok_or_else(|| EngineError::Other("transparency needs a layer".into()))?;
             let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
             match l.surface() {
                 Some(s) => {
@@ -374,11 +459,15 @@ fn ref_planes(doc: &Document, layer: Option<LayerId>, active: Option<LayerId>, r
                 // Use its existing renderer rather than treating it as a canvas-wide fill.
                 None => match &l.content {
                     LayerContent::Shape(shape) => vec![
-                        photocraft_vector::CompiledShape::new(shape, photocraft_vector::DEFAULT_TOLERANCE, area)
-                            .render_rgba(area)
-                            .into_iter()
-                            .map(|p| p[3])
-                            .collect(),
+                        photocraft_vector::CompiledShape::new(
+                            shape,
+                            photocraft_vector::DEFAULT_TOLERANCE,
+                            area,
+                        )
+                        .render_rgba(area)
+                        .into_iter()
+                        .map(|p| p[3])
+                        .collect(),
                     ],
                     // Adjustment and fill layers cover the whole canvas.
                     _ => vec![vec![1.0; area.width() as usize * area.height() as usize]],
@@ -386,24 +475,43 @@ fn ref_planes(doc: &Document, layer: Option<LayerId>, active: Option<LayerId>, r
             }
         }
         ChanRef::LayerMask => {
-            let id = layer.or(active).ok_or_else(|| EngineError::Other("layer mask needs a layer".into()))?;
+            let id = layer
+                .or(active)
+                .ok_or_else(|| EngineError::Other("layer mask needs a layer".into()))?;
             let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
-            let m = l.mask.as_ref().ok_or_else(|| EngineError::Other(format!("layer \"{}\" has no mask", l.name)))?;
+            let m = l
+                .mask
+                .as_ref()
+                .ok_or_else(|| EngineError::Other(format!("layer \"{}\" has no mask", l.name)))?;
             vec![read_plane(&m.surface, area)]
         }
         ChanRef::VectorMask => {
-            let id = layer.or(active).ok_or_else(|| EngineError::Other("vector mask needs a layer".into()))?;
+            let id = layer
+                .or(active)
+                .ok_or_else(|| EngineError::Other("vector mask needs a layer".into()))?;
             let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
-            let m = l.vector_mask.as_ref().ok_or_else(|| EngineError::Other(format!("layer \"{}\" has no vector mask", l.name)))?;
+            let m = l.vector_mask.as_ref().ok_or_else(|| {
+                EngineError::Other(format!("layer \"{}\" has no vector mask", l.name))
+            })?;
             // The path's shape, whether or not the mask is enabled (as Photoshop loads it).
-            let shape = photocraft_doc::VectorMask { enabled: true, density: 1.0, feather: 0.0, ..m.clone() };
+            let shape = photocraft_doc::VectorMask {
+                enabled: true,
+                density: 1.0,
+                feather: 0.0,
+                ..m.clone()
+            };
             vec![photocraft_vector::vector_mask_values(&shape, area)]
         }
     })
 }
 
 /// One grayscale plane (composites reduce to luminosity, as in Calculations).
-fn gray_plane(doc: &Document, layer: Option<LayerId>, active: Option<LayerId>, r: ChanRef) -> Result<Vec<f32>> {
+fn gray_plane(
+    doc: &Document,
+    layer: Option<LayerId>,
+    active: Option<LayerId>,
+    r: ChanRef,
+) -> Result<Vec<f32>> {
     let mut planes = ref_planes(doc, layer, active, r)?;
     if planes.len() == 1
         && let Some(only) = planes.pop()
@@ -433,11 +541,24 @@ fn source(s: &Session, p: &Value, cmd: &str, gray: bool) -> Result<Vec<Vec<f32>>
     let st = &s.documents()[di];
     let target = s.active().ok_or(EngineError::NoDocument)?;
     if st.doc.size != target.doc.size {
-        return Err(bad(cmd, format!("source document \"{}\" is {}×{}; it must match the target size", st.doc.name, st.doc.size.width, st.doc.size.height)));
+        return Err(bad(
+            cmd,
+            format!(
+                "source document \"{}\" is {}×{}; it must match the target size",
+                st.doc.name, st.doc.size.width, st.doc.size.height
+            ),
+        ));
     }
-    let r = p.get("channel").map_or(Some(ChanRef::Composite), |v| parse_ref(v, &st.doc)).ok_or_else(|| bad(cmd, "unknown `channel`"))?;
+    let r = p
+        .get("channel")
+        .map_or(Some(ChanRef::Composite), |v| parse_ref(v, &st.doc))
+        .ok_or_else(|| bad(cmd, "unknown `channel`"))?;
     let layer = source_layer(&st.doc, p, cmd)?;
-    let mut planes = if gray { vec![gray_plane(&st.doc, layer, st.active_layer, r)?] } else { ref_planes(&st.doc, layer, st.active_layer, r)? };
+    let mut planes = if gray {
+        vec![gray_plane(&st.doc, layer, st.active_layer, r)?]
+    } else {
+        ref_planes(&st.doc, layer, st.active_layer, r)?
+    };
     // Guard every caller (`.remove(0)` / `src[0]`) against an empty source.
     if planes.is_empty() {
         return Err(bad(cmd, "the source has no channels"));
@@ -466,14 +587,31 @@ pub enum Blending {
 
 impl Blending {
     pub fn parse(p: &Value) -> std::result::Result<Self, String> {
-        let name = p.get("blending").and_then(Value::as_str).unwrap_or("multiply");
-        let scale = p.get("scale").and_then(Value::as_f64).unwrap_or(1.0).clamp(1.0, 2.0) as f32;
-        let offset = p.get("offset").and_then(Value::as_f64).unwrap_or(0.0).clamp(-255.0, 255.0) as f32 / 255.0;
+        let name = p
+            .get("blending")
+            .and_then(Value::as_str)
+            .unwrap_or("multiply");
+        let scale = p
+            .get("scale")
+            .and_then(Value::as_f64)
+            .unwrap_or(1.0)
+            .clamp(1.0, 2.0) as f32;
+        let offset = p
+            .get("offset")
+            .and_then(Value::as_f64)
+            .unwrap_or(0.0)
+            .clamp(-255.0, 255.0) as f32
+            / 255.0;
         match name.to_ascii_lowercase().as_str() {
             "add" => Ok(Blending::Add { scale, offset }),
             "subtract" => Ok(Blending::Subtract { scale, offset }),
             other => match crate::commands::blend_from_str(other) {
-                Some(m) if m.is_separable() && !matches!(m, BlendMode::Dissolve | BlendMode::PassThrough) => Ok(Blending::Mode(m)),
+                Some(m)
+                    if m.is_separable()
+                        && !matches!(m, BlendMode::Dissolve | BlendMode::PassThrough) =>
+                {
+                    Ok(Blending::Mode(m))
+                }
                 _ => Err(format!("unsupported blending `{other}`")),
             },
         }
@@ -497,7 +635,12 @@ fn source_spec(p: &Value, key: &str, prefix: &str) -> Option<Value> {
         return Some(v.clone());
     }
     let mut m = serde_json::Map::new();
-    for (k, field) in [("document", "Document"), ("layer", "Layer"), ("channel", "Channel"), ("invert", "Invert")] {
+    for (k, field) in [
+        ("document", "Document"),
+        ("layer", "Layer"),
+        ("channel", "Channel"),
+        ("invert", "Invert"),
+    ] {
         match p.get(format!("{prefix}{field}")) {
             None | Some(Value::Null) => {}
             Some(Value::String(s)) if s.is_empty() || (k == "layer" && s == "merged") => {}
@@ -536,7 +679,10 @@ pub(crate) fn target_of(p: &Value) -> Target {
             "quickMask" => Target::QuickMask,
             _ => Target::Pixels,
         },
-        Some(Value::Object(o)) => o.get("channel").and_then(Value::as_u64).map_or(Target::Pixels, |i| Target::Alpha(i as usize)),
+        Some(Value::Object(o)) => o
+            .get("channel")
+            .and_then(Value::as_u64)
+            .map_or(Target::Pixels, |i| Target::Alpha(i as usize)),
         _ => Target::Pixels,
     }
 }
@@ -547,13 +693,26 @@ pub(crate) fn is_channel_target(p: &Value) -> bool {
 }
 
 /// The surface a pixel command writes to and whether the layer's transparency is locked.
-pub(crate) fn target_surface<'a>(doc: &'a mut Document, layer: Option<LayerId>, p: &Value) -> Result<(&'a mut Surface, bool)> {
+pub(crate) fn target_surface<'a>(
+    doc: &'a mut Document,
+    layer: Option<LayerId>,
+    p: &Value,
+) -> Result<(&'a mut Surface, bool)> {
     match target_of(p) {
         Target::Alpha(i) => {
             let n = doc.channels.len();
-            doc.channels.get_mut(i).map(|c| (&mut c.surface, false)).ok_or_else(|| EngineError::Other(format!("no alpha channel {i} (document has {n})")))
+            doc.channels
+                .get_mut(i)
+                .map(|c| (&mut c.surface, false))
+                .ok_or_else(|| {
+                    EngineError::Other(format!("no alpha channel {i} (document has {n})"))
+                })
         }
-        Target::QuickMask => doc.quick_mask.as_mut().map(|c| (&mut c.surface, false)).ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
+        Target::QuickMask => doc
+            .quick_mask
+            .as_mut()
+            .map(|c| (&mut c.surface, false))
+            .ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
         t => {
             let id = layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
             let lock = doc.effective_locks(id).transparency && t == Target::Pixels;
@@ -562,20 +721,35 @@ pub(crate) fn target_surface<'a>(doc: &'a mut Document, layer: Option<LayerId>, 
     }
 }
 
-pub(crate) fn read_target_surface<'a>(doc: &'a Document, layer: Option<LayerId>, p: &Value) -> Result<&'a Surface> {
+pub(crate) fn read_target_surface<'a>(
+    doc: &'a Document,
+    layer: Option<LayerId>,
+    p: &Value,
+) -> Result<&'a Surface> {
     match target_of(p) {
         Target::Alpha(i) => {
             let n = doc.channels.len();
-            doc.channels.get(i).map(|c| &c.surface).ok_or_else(|| EngineError::Other(format!("no alpha channel {i} (document has {n})")))
+            doc.channels.get(i).map(|c| &c.surface).ok_or_else(|| {
+                EngineError::Other(format!("no alpha channel {i} (document has {n})"))
+            })
         }
-        Target::QuickMask => doc.quick_mask.as_ref().map(|c| &c.surface).ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
+        Target::QuickMask => doc
+            .quick_mask
+            .as_ref()
+            .map(|c| &c.surface)
+            .ok_or_else(|| EngineError::Other("not in Quick Mask mode".into())),
         Target::Pixels => {
             let id = layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
-            doc.layer(id).and_then(Layer::surface).ok_or(EngineError::NoLayer(id))
+            doc.layer(id)
+                .and_then(Layer::surface)
+                .ok_or(EngineError::NoLayer(id))
         }
         Target::Mask => {
             let id = layer.ok_or_else(|| EngineError::Other("no active layer".into()))?;
-            doc.layer(id).and_then(|l| l.mask.as_ref()).map(|m| &m.surface).ok_or(EngineError::NoLayer(id))
+            doc.layer(id)
+                .and_then(|l| l.mask.as_ref())
+                .map(|m| &m.surface)
+                .ok_or(EngineError::NoLayer(id))
         }
     }
 }
@@ -583,7 +757,11 @@ pub(crate) fn read_target_surface<'a>(doc: &'a Document, layer: Option<LayerId>,
 /// The grayscale surface filters and adjustments edit instead of the layer's pixels (made explicit
 /// over the canvas), if the params target one: an alpha channel, the Quick Mask, or the mask of
 /// `layer`.
-pub(crate) fn channel_surface_for_filter<'a>(doc: &'a mut Document, layer: Option<LayerId>, p: &Value) -> Result<Option<&'a mut Surface>> {
+pub(crate) fn channel_surface_for_filter<'a>(
+    doc: &'a mut Document,
+    layer: Option<LayerId>,
+    p: &Value,
+) -> Result<Option<&'a mut Surface>> {
     if target_of(p) == Target::Pixels {
         return Ok(None);
     }
@@ -608,11 +786,21 @@ fn edits_mask(id: &str) -> bool {
 
 /// The precondition of `id` when `p` targets the active layer's mask (`"target":"mask"`): the
 /// layer needs a mask. None when another precondition applies.
-pub(crate) fn mask_target_enabled(s: &Session, id: &str, p: &Value) -> Option<std::result::Result<(), String>> {
+pub(crate) fn mask_target_enabled(
+    s: &Session,
+    id: &str,
+    p: &Value,
+) -> Option<std::result::Result<(), String>> {
     if target_of(p) != Target::Mask || !edits_mask(id) {
         return None;
     }
-    Some(crate::active_layer_of(s).and_then(|l| if l.mask.is_some() { Ok(()) } else { Err("the active layer has no layer mask".into()) }))
+    Some(crate::active_layer_of(s).and_then(|l| {
+        if l.mask.is_some() {
+            Ok(())
+        } else {
+            Err("the active layer has no layer mask".into())
+        }
+    }))
 }
 
 /// Whether command `id` edits the targeted channel or mask when its params name no `"target"`
@@ -696,13 +884,25 @@ pub(crate) fn color_restriction(s: &Session, id: &str, params: &Value) -> Option
 /// After a pixel edit with colour channel `k` targeted, put the other channels (and the layer's
 /// transparency) of layer `id` back as they were. Only changed tiles are touched.
 pub(crate) fn restrict_to_color(before: &Document, after: &mut Document, id: LayerId, k: usize) {
-    let Some(old) = before.layer(id).and_then(Layer::surface) else { return };
-    let Some(new) = after.layer_mut(id).and_then(Layer::surface_mut) else { return };
+    let Some(old) = before.layer(id).and_then(Layer::surface) else {
+        return;
+    };
+    let Some(new) = after.layer_mut(id).and_then(Layer::surface_mut) else {
+        return;
+    };
     if old.format() != new.format() {
         return;
     }
-    let mut coords: Vec<TileCoord> = new.tiles().filter(|(c, t)| old.tile(**c).is_none_or(|o| !std::sync::Arc::ptr_eq(o, t))).map(|(c, _)| *c).collect();
-    coords.extend(old.tiles().filter(|(c, _)| new.tile(**c).is_none()).map(|(c, _)| *c));
+    let mut coords: Vec<TileCoord> = new
+        .tiles()
+        .filter(|(c, t)| old.tile(**c).is_none_or(|o| !std::sync::Arc::ptr_eq(o, t)))
+        .map(|(c, _)| *c)
+        .collect();
+    coords.extend(
+        old.tiles()
+            .filter(|(c, _)| new.tile(**c).is_none())
+            .map(|(c, _)| *c),
+    );
     let n = new.channels();
     for c in coords {
         let r = c.rect();
@@ -732,16 +932,29 @@ pub(crate) fn targeted_color(s: &Session) -> Option<usize> {
 /// (or the canvas) of that channel only with the background colour's value for it, as Photoshop
 /// does. A channel has no transparency of its own, so the other channels and the layer's alpha
 /// stay; partly selected pixels blend.
-pub(crate) fn clear_color_channel(doc: &mut Document, id: LayerId, k: usize, background: [f32; 4]) -> Result<()> {
+pub(crate) fn clear_color_channel(
+    doc: &mut Document,
+    id: LayerId,
+    k: usize,
+    background: [f32; 4],
+) -> Result<()> {
     let canvas = doc.bounds();
     let sel = doc.selection.clone();
-    let area = sel.as_ref().map_or(canvas, |m| m.content_bounds().intersect(&canvas));
+    let area = sel
+        .as_ref()
+        .map_or(canvas, |m| m.content_bounds().intersect(&canvas));
     let surf = crate::commands::paint_surface(doc, id, &Value::Null)?;
     let fmt = surf.format();
     let n = fmt.channels();
     // The background colour in the layer's colour model, so `k` picks the right component.
-    let Some(v) = from_rgba(&fmt, [background[0], background[1], background[2], 1.0]).get(k).copied().filter(|_| k < n) else {
-        return Err(EngineError::Other(format!("no colour channel {k} in this layer")));
+    let Some(v) = from_rgba(&fmt, [background[0], background[1], background[2], 1.0])
+        .get(k)
+        .copied()
+        .filter(|_| k < n)
+    else {
+        return Err(EngineError::Other(format!(
+            "no colour channel {k} in this layer"
+        )));
     };
     if area.is_empty() {
         return Ok(());
@@ -749,7 +962,9 @@ pub(crate) fn clear_color_channel(doc: &mut Document, id: LayerId, k: usize, bac
     let cover = sel.map(|m| (m.read_region(area), m.format().channels().max(1)));
     let mut px = surf.read_region(area);
     for (i, p) in px.chunks_exact_mut(n).enumerate() {
-        let w = cover.as_ref().map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0));
+        let w = cover
+            .as_ref()
+            .map_or(1.0, |(m, mk)| m.get(i * mk).copied().unwrap_or(0.0));
         if let Some(c) = p.get_mut(k) {
             *c += (v - *c) * w.clamp(0.0, 1.0);
         }
@@ -774,15 +989,26 @@ pub(crate) fn targeted_channel(s: &Session) -> Option<Value> {
 /// Clear (Delete) with an alpha channel or the Quick Mask targeted (`target` from
 /// [`targeted_channel`]): fill the selected area (or the canvas) of it with the background colour,
 /// as gray, as Photoshop does. Partly selected pixels blend.
-pub(crate) fn clear_channel(doc: &mut Document, target: &Value, background: [f32; 4]) -> Result<()> {
+pub(crate) fn clear_channel(
+    doc: &mut Document,
+    target: &Value,
+    background: [f32; 4],
+) -> Result<()> {
     let canvas = doc.bounds();
     let sel = doc.selection.clone();
-    let area = sel.as_ref().map_or(canvas, |m| m.content_bounds().intersect(&canvas));
+    let area = sel
+        .as_ref()
+        .map_or(canvas, |m| m.content_bounds().intersect(&canvas));
     if area.is_empty() {
         return Ok(());
     }
     let (surf, _) = target_surface(doc, None, target)?;
-    crate::fill_cmds::fill_color(surf, area, [background[0], background[1], background[2], 1.0], sel.as_ref())
+    crate::fill_cmds::fill_color(
+        surf,
+        area,
+        [background[0], background[1], background[2], 1.0],
+        sel.as_ref(),
+    )
 }
 
 /// The active document targets an alpha channel or is in Quick Mask mode, so pixel commands
@@ -798,27 +1024,51 @@ pub(crate) fn edits_channel(s: &Session) -> bool {
 // Enabled predicates
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 fn has_channels(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.doc.channels.is_empty()) { Ok(()) } else { Err("the document has no alpha channels".into()) }
+    if s.active().is_some_and(|d| !d.doc.channels.is_empty()) {
+        Ok(())
+    } else {
+        Err("the document has no alpha channels".into())
+    }
 }
 fn has_selection(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.doc.selection.is_some()) { Ok(()) } else { Err("no selection".into()) }
+    if s.active().is_some_and(|d| d.doc.selection.is_some()) {
+        Ok(())
+    } else {
+        Err("no selection".into())
+    }
 }
 fn has_spot(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.doc.channels.iter().any(|c| c.spot.is_some())) { Ok(()) } else { Err("the document has no spot channels".into()) }
+    if s.active()
+        .is_some_and(|d| d.doc.channels.iter().any(|c| c.spot.is_some()))
+    {
+        Ok(())
+    } else {
+        Err("the document has no spot channels".into())
+    }
 }
 fn can_split(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
-    if color_count(&d.doc) + d.doc.channels.len() < 2 { Err("only one channel to split".into()) } else { Ok(()) }
+    if color_count(&d.doc) + d.doc.channels.len() < 2 {
+        Err("only one channel to split".into())
+    } else {
+        Ok(())
+    }
 }
 fn can_merge(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if mergeable(s).len() >= 2 { Ok(()) } else { Err("Merge Channels needs at least two open grayscale documents of the same size".into()) }
+    if mergeable(s).len() >= 2 {
+        Ok(())
+    } else {
+        Err("Merge Channels needs at least two open grayscale documents of the same size".into())
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -830,8 +1080,15 @@ fn operation<'a>(p: &'a Value, key: &str) -> &'a str {
 
 fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "select.saveSelection";
-    let op = p.get("operation").and_then(Value::as_str).unwrap_or("new").to_string();
-    if !matches!(op.as_str(), "new" | "replace" | "add" | "subtract" | "intersect") {
+    let op = p
+        .get("operation")
+        .and_then(Value::as_str)
+        .unwrap_or("new")
+        .to_string();
+    if !matches!(
+        op.as_str(),
+        "new" | "replace" | "add" | "subtract" | "intersect"
+    ) {
         return Err(bad(cmd, format!("unknown operation `{op}`")));
     }
     let di = doc_index(s, p, "document")?;
@@ -842,7 +1099,12 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(cmd, "the destination document must have the same size"));
     }
     let channel = p.get("channel").cloned().unwrap_or(Value::Null);
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     let prev = s.active_index();
     s.set_active(di);
     let r = s.edit("Save Selection", |doc, _| {
@@ -852,20 +1114,34 @@ fn save_selection(s: &mut Session, p: &Value) -> Result<Value> {
             Value::String(x) if x == "new" => None,
             v => match parse_ref(v, doc) {
                 Some(ChanRef::Alpha(i)) if i < doc.channels.len() => Some(i),
-                _ => return Err(bad(cmd, "`channel` must be \"new\" or an existing alpha channel")),
+                _ => {
+                    return Err(bad(
+                        cmd,
+                        "`channel` must be \"new\" or an existing alpha channel",
+                    ));
+                }
             },
         };
         match (existing, op.as_str()) {
             (None, _) | (_, "new") => {
-                let name = name.clone().unwrap_or_else(|| next_alpha_name(doc, "Alpha"));
-                doc.channels.push(AlphaChannel::new(name, plane_surface(&selection, area, fmt)));
+                let name = name
+                    .clone()
+                    .unwrap_or_else(|| next_alpha_name(doc, "Alpha"));
+                doc.channels.push(AlphaChannel::new(
+                    name,
+                    plane_surface(&selection, area, fmt),
+                ));
                 Ok(doc.channels.len() - 1)
             }
             (Some(i), op) => {
                 let old = read_plane(&doc.channels[i].surface, area);
                 let vals: Vec<f32> = match op {
                     "add" => old.iter().zip(&selection).map(|(a, b)| a.max(*b)).collect(),
-                    "subtract" => old.iter().zip(&selection).map(|(a, b)| (a - b).max(0.0)).collect(),
+                    "subtract" => old
+                        .iter()
+                        .zip(&selection)
+                        .map(|(a, b)| (a - b).max(0.0))
+                        .collect(),
                     "intersect" => old.iter().zip(&selection).map(|(a, b)| a.min(*b)).collect(),
                     _ => selection.clone(),
                 };
@@ -912,7 +1188,10 @@ fn load_selection(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let p = &targeted;
     // Composite and colour channels load their luminosity / values, as ⌘-clicking them does.
-    let plane = source(s, p, cmd, true)?.into_iter().next().ok_or_else(|| bad(cmd, "the channel has no pixels"))?;
+    let plane = source(s, p, cmd, true)?
+        .into_iter()
+        .next()
+        .ok_or_else(|| bad(cmd, "the channel has no pixels"))?;
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let label = match p.get("channel").and_then(|v| parse_ref(v, doc)) {
         Some(ChanRef::Transparency) => "Load Transparency",
@@ -940,7 +1219,12 @@ fn quick_mask_from(doc: &Document, o: &QuickMaskOptions) -> AlphaChannel {
         Some(s) => plane_surface(&sel::mask_from_surface(Some(s), area), area, fmt),
         None => unselected_surface(area, fmt, o.indicates),
     };
-    AlphaChannel { color: o.color, opacity: o.opacity, indicates: o.indicates, ..AlphaChannel::new("Quick Mask", surface) }
+    AlphaChannel {
+        color: o.color,
+        opacity: o.opacity,
+        indicates: o.indicates,
+        ..AlphaChannel::new("Quick Mask", surface)
+    }
 }
 
 /// The colourless, nothing-selected Quick Mask for `indicates`.
@@ -962,14 +1246,22 @@ fn uniform(vals: &[f32], target: f32) -> bool {
 fn selection_from(doc: &Document, ch: &AlphaChannel) -> Option<Surface> {
     let area = doc.bounds();
     let vals = read_plane(&ch.surface, area);
-    if doc.quick_mask_unselected && ch.indicates != ColorIndicates::SelectedAreas && uniform(&vals, 1.0) {
+    if doc.quick_mask_unselected
+        && ch.indicates != ColorIndicates::SelectedAreas
+        && uniform(&vals, 1.0)
+    {
         return None;
     }
     sel::combine(None, &vals, area, SelectionMode::Replace)
 }
 
 fn quick_mask(s: &mut Session, p: &Value) -> Result<Value> {
-    let on = s.active().ok_or(EngineError::NoDocument)?.doc.quick_mask.is_some();
+    let on = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .doc
+        .quick_mask
+        .is_some();
     let want = p.get("on").and_then(Value::as_bool).unwrap_or(!on);
     if want == on {
         return Ok(json!({ "quickMask": on }));
@@ -1015,20 +1307,39 @@ fn color_value(p: &Value, key: &str) -> Option<Color> {
 }
 
 fn new_channel(s: &mut Session, p: &Value) -> Result<Value> {
-    let fill = p.get("fill").and_then(Value::as_str).unwrap_or("black").to_string();
+    let fill = p
+        .get("fill")
+        .and_then(Value::as_str)
+        .unwrap_or("black")
+        .to_string();
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
     let indicates = indicates_param(p.get("indicates"));
     let color = color_value(p, "color");
-    let opacity = p.get("opacity").and_then(Value::as_f64).map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
+    let opacity = p
+        .get("opacity")
+        .and_then(Value::as_f64)
+        .map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
     let i = s.edit("New Channel", |doc, _| {
         let area = doc.bounds();
         let fmt = channel_format(doc);
         let surface = match fill.as_str() {
-            "white" => plane_surface(&vec![1.0; area.width() as usize * area.height() as usize], area, fmt),
-            "selection" => plane_surface(&sel::mask_from_surface(doc.selection.as_ref(), area), area, fmt),
+            "white" => plane_surface(
+                &vec![1.0; area.width() as usize * area.height() as usize],
+                area,
+                fmt,
+            ),
+            "selection" => plane_surface(
+                &sel::mask_from_surface(doc.selection.as_ref(), area),
+                area,
+                fmt,
+            ),
             _ => Surface::new(fmt),
         };
-        let mut ch = AlphaChannel::new(name.clone().unwrap_or_else(|| next_alpha_name(doc, "Alpha")), surface);
+        let mut ch = AlphaChannel::new(
+            name.clone()
+                .unwrap_or_else(|| next_alpha_name(doc, "Alpha")),
+            surface,
+        );
         if let Some(v) = indicates {
             ch.indicates = v;
         }
@@ -1048,19 +1359,36 @@ fn new_channel(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn new_spot(s: &mut Session, p: &Value) -> Result<Value> {
     let color = color_value(p, "color").unwrap_or(Color::rgb(1.0, 0.0, 0.0));
-    let solidity = p.get("solidity").and_then(Value::as_f64).unwrap_or(0.0).clamp(0.0, 100.0) as f32 / 100.0;
+    let solidity = p
+        .get("solidity")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0)
+        .clamp(0.0, 100.0) as f32
+        / 100.0;
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-    let from_sel = p.get("fromSelection").and_then(Value::as_bool).unwrap_or(true);
+    let from_sel = p
+        .get("fromSelection")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     let i = s.edit("New Spot Channel", |doc, _| {
         let area = doc.bounds();
         let fmt = channel_format(doc);
         let surface = if from_sel && doc.selection.is_some() {
-            plane_surface(&sel::mask_from_surface(doc.selection.as_ref(), area), area, fmt)
+            plane_surface(
+                &sel::mask_from_surface(doc.selection.as_ref(), area),
+                area,
+                fmt,
+            )
         } else {
             Surface::new(fmt)
         };
-        let name = name.clone().unwrap_or_else(|| next_alpha_name(doc, "Spot Color"));
-        doc.channels.push(AlphaChannel { spot: Some((color, solidity)), ..AlphaChannel::new(name, surface) });
+        let name = name
+            .clone()
+            .unwrap_or_else(|| next_alpha_name(doc, "Spot Color"));
+        doc.channels.push(AlphaChannel {
+            spot: Some((color, solidity)),
+            ..AlphaChannel::new(name, surface)
+        });
         Ok(doc.channels.len() - 1)
     })?;
     if let Some(st) = s.active_mut() {
@@ -1074,13 +1402,28 @@ fn duplicate_channel(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "channel.duplicate";
     let src = s.active().ok_or(EngineError::NoDocument)?;
     let area = src.doc.bounds();
-    let r = p.get("channel").and_then(|v| parse_ref(v, &src.doc)).ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
+    let r = p
+        .get("channel")
+        .and_then(|v| parse_ref(v, &src.doc))
+        .ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
     let mut ch = match r {
-        ChanRef::Alpha(i) => src.doc.channels.get(i).cloned().ok_or_else(|| bad(cmd, format!("no alpha channel {i}")))?,
-        ChanRef::QuickMask => src.doc.quick_mask.clone().ok_or_else(|| bad(cmd, "not in Quick Mask mode"))?,
+        ChanRef::Alpha(i) => src
+            .doc
+            .channels
+            .get(i)
+            .cloned()
+            .ok_or_else(|| bad(cmd, format!("no alpha channel {i}")))?,
+        ChanRef::QuickMask => src
+            .doc
+            .quick_mask
+            .clone()
+            .ok_or_else(|| bad(cmd, "not in Quick Mask mode"))?,
         other => {
             let plane = gray_plane(&src.doc, None, src.active_layer, other)?;
-            AlphaChannel::new(String::new(), plane_surface(&plane, area, channel_format(&src.doc)))
+            AlphaChannel::new(
+                String::new(),
+                plane_surface(&plane, area, channel_format(&src.doc)),
+            )
         }
     };
     let base = match r {
@@ -1088,9 +1431,15 @@ fn duplicate_channel(s: &mut Session, p: &Value) -> Result<Value> {
         ChanRef::Color(k) => color_names(edit_mode(&src.doc))[k].to_string(),
         _ => composite_name(edit_mode(&src.doc)).to_string(),
     };
-    ch.name = p.get("name").and_then(Value::as_str).map_or_else(|| format!("{base} copy"), str::to_string);
+    ch.name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map_or_else(|| format!("{base} copy"), str::to_string);
     if p.get("invert").and_then(Value::as_bool).unwrap_or(false) {
-        let v: Vec<f32> = read_plane(&ch.surface, area).into_iter().map(|v| 1.0 - v).collect();
+        let v: Vec<f32> = read_plane(&ch.surface, area)
+            .into_iter()
+            .map(|v| 1.0 - v)
+            .collect();
         ch.surface = plane_surface(&v, area, ch.surface.format());
     }
     match p.get("document") {
@@ -1133,7 +1482,10 @@ fn gray_document(name: &str, like: &Document, plane: &[f32]) -> Document {
     bg.locks.transparency = true;
     bg.locks.position = true;
     if let Some(s) = bg.surface_mut() {
-        let data: Vec<f32> = plane.iter().flat_map(|v| [v.clamp(0.0, 1.0), 1.0]).collect();
+        let data: Vec<f32> = plane
+            .iter()
+            .flat_map(|v| [v.clamp(0.0, 1.0), 1.0])
+            .collect();
         s.write_region(like.bounds(), &data);
         s.prune();
     }
@@ -1146,14 +1498,23 @@ fn delete_channel(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let i = match p.get("channel") {
         Some(_) => alpha_index(doc, p, "channel", cmd)?,
-        None => match s.active().ok_or(EngineError::NoDocument)?.channel_view.target {
+        None => match s
+            .active()
+            .ok_or(EngineError::NoDocument)?
+            .channel_view
+            .target
+        {
             ChannelTarget::Alpha(i) => i,
             _ => return Err(bad(cmd, "missing `channel`")),
         },
     };
     // `edit` validates the view against the shorter channel list before we can remap it.
     // Keep the original indices and eyes so a surviving final channel is not discarded.
-    let view = s.active().ok_or(EngineError::NoDocument)?.channel_view.clone();
+    let view = s
+        .active()
+        .ok_or(EngineError::NoDocument)?
+        .channel_view
+        .clone();
     s.edit("Delete Channel", |doc, _| {
         doc.channels.remove(i);
         Ok(())
@@ -1186,7 +1547,13 @@ fn rename_channel(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "channel.rename";
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let i = alpha_index(doc, p, "channel", cmd)?;
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "missing `name`"))?.to_string();
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(cmd, "missing `name`"))?
+        .to_string();
     s.edit("Rename Channel", |doc, _| {
         doc.channels[i].name = name;
         Ok(())
@@ -1199,7 +1566,11 @@ fn move_channel(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let n = doc.channels.len();
     let i = alpha_index(doc, p, "channel", cmd)?;
-    let to = p.get("to").and_then(Value::as_u64).map(|v| (v as usize).min(n - 1)).ok_or_else(|| bad(cmd, "missing `to`"))?;
+    let to = p
+        .get("to")
+        .and_then(Value::as_u64)
+        .map(|v| (v as usize).min(n - 1))
+        .ok_or_else(|| bad(cmd, "missing `to`"))?;
     if to == i {
         return Ok(json!({ "channel": i }));
     }
@@ -1262,9 +1633,14 @@ fn target(s: &mut Session, t: ChannelTarget) {
 
 fn parse_target(s: &Session, p: &Value, cmd: &str) -> Result<ChannelTarget> {
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
-    match p.get("channel").map_or(Some(ChanRef::Composite), |v| parse_ref(v, doc)) {
+    match p
+        .get("channel")
+        .map_or(Some(ChanRef::Composite), |v| parse_ref(v, doc))
+    {
         Some(ChanRef::Composite) => Ok(ChannelTarget::Composite),
-        Some(ChanRef::Color(k)) if k < color_count(doc) && color_count(doc) > 1 => Ok(ChannelTarget::Color(k)),
+        Some(ChanRef::Color(k)) if k < color_count(doc) && color_count(doc) > 1 => {
+            Ok(ChannelTarget::Color(k))
+        }
         Some(ChanRef::Alpha(i)) if i < doc.channels.len() => Ok(ChannelTarget::Alpha(i)),
         Some(ChanRef::LayerMask) => {
             let active = crate::active_layer_of(s).map_err(|e| bad(cmd, e))?;
@@ -1280,7 +1656,10 @@ fn parse_target(s: &Session, p: &Value, cmd: &str) -> Result<ChannelTarget> {
             }
             Ok(ChannelTarget::VectorMask)
         }
-        _ => Err(bad(cmd, "`channel` must be \"composite\", \"mask\", \"vectorMask\", a colour channel name or an alpha channel")),
+        _ => Err(bad(
+            cmd,
+            "`channel` must be \"composite\", \"mask\", \"vectorMask\", a colour channel name or an alpha channel",
+        )),
     }
 }
 
@@ -1291,7 +1670,11 @@ fn target_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// The channel shortcuts' modifier as the platform writes it, for error messages (`⌘4`, `Ctrl+4`).
-const SLOT_KEY: &str = if cfg!(target_os = "macos") { "⌘" } else { "Ctrl+" };
+const SLOT_KEY: &str = if cfg!(target_os = "macos") {
+    "⌘"
+} else {
+    "Ctrl+"
+};
 
 /// ⌘2 composite, ⌘3… colour channels then alpha channels (Photoshop CC defaults).
 fn target_slot(s: &mut Session, slot: usize) -> Result<Value> {
@@ -1301,8 +1684,14 @@ fn target_slot(s: &mut Session, slot: usize) -> Result<Value> {
     let t = match slot {
         2 => ChannelTarget::Composite,
         n if n - 3 < shown_colors => ChannelTarget::Color(n - 3),
-        n if n - 3 - shown_colors < doc.channels.len() => ChannelTarget::Alpha(n - 3 - shown_colors),
-        _ => return Err(EngineError::Other(format!("no channel for {SLOT_KEY}{slot}"))),
+        n if n - 3 - shown_colors < doc.channels.len() => {
+            ChannelTarget::Alpha(n - 3 - shown_colors)
+        }
+        _ => {
+            return Err(EngineError::Other(format!(
+                "no channel for {SLOT_KEY}{slot}"
+            )));
+        }
     };
     target(s, t);
     Ok(list(s))
@@ -1311,7 +1700,10 @@ fn target_slot(s: &mut Session, slot: usize) -> Result<Value> {
 fn set_visible(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "channel.setVisible";
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
-    let r = p.get("channel").and_then(|v| parse_ref(v, doc)).ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
+    let r = p
+        .get("channel")
+        .and_then(|v| parse_ref(v, doc))
+        .ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
     let colors = color_count(doc);
     let n = doc.channels.len();
     let st = s.active_mut().ok_or(EngineError::NoDocument)?;
@@ -1341,12 +1733,29 @@ fn set_visible(s: &mut Session, p: &Value) -> Result<Value> {
 fn options(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "channel.options";
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
-    let r = p.get("channel").and_then(|v| parse_ref(v, doc)).ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
+    let r = p
+        .get("channel")
+        .and_then(|v| parse_ref(v, doc))
+        .ok_or_else(|| bad(cmd, "missing or unknown `channel`"))?;
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     let color = color_value(p, "color");
-    let opacity = p.get("opacity").and_then(Value::as_f64).map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
-    let solidity = p.get("solidity").and_then(Value::as_f64).map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
-    let kind = p.get("indicates").and_then(Value::as_str).map(str::to_string);
+    let opacity = p
+        .get("opacity")
+        .and_then(Value::as_f64)
+        .map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
+    let solidity = p
+        .get("solidity")
+        .and_then(Value::as_f64)
+        .map(|v| (v as f32 / 100.0).clamp(0.0, 1.0));
+    let kind = p
+        .get("indicates")
+        .and_then(Value::as_str)
+        .map(str::to_string);
     let apply = move |ch: &mut AlphaChannel| -> Result<()> {
         if let Some(n) = &name {
             ch.name = n.clone();
@@ -1358,7 +1767,8 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
                 return Ok(());
             }
             Some(k) => {
-                ch.indicates = indicates_param(Some(&json!(k))).ok_or_else(|| bad(cmd, format!("unknown `indicates` {k}")))?;
+                ch.indicates = indicates_param(Some(&json!(k)))
+                    .ok_or_else(|| bad(cmd, format!("unknown `indicates` {k}")))?;
                 ch.spot = None;
             }
             None => {}
@@ -1391,7 +1801,11 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
             if probe.spot.is_some() {
                 return Err(bad(cmd, "Quick Mask can't be a spot channel"));
             }
-            s.quick_mask_options = QuickMaskOptions { color: probe.color, opacity: probe.opacity, indicates: probe.indicates };
+            s.quick_mask_options = QuickMaskOptions {
+                color: probe.color,
+                opacity: probe.opacity,
+                indicates: probe.indicates,
+            };
             if s.active().is_some_and(|d| d.doc.quick_mask.is_some()) {
                 let o = s.quick_mask_options;
                 s.edit("Quick Mask Options", |doc, _| {
@@ -1402,7 +1816,11 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
                         // An untouched no-selection mask stays colourless (nothing selected)
                         // when the colour switches between masked and selected areas.
                         if unselected && q.indicates != o.indicates {
-                            let empty = if q.indicates == ColorIndicates::SelectedAreas { 0.0 } else { 1.0 };
+                            let empty = if q.indicates == ColorIndicates::SelectedAreas {
+                                0.0
+                            } else {
+                                1.0
+                            };
                             if uniform(&read_plane(&q.surface, area), empty) {
                                 q.surface = unselected_surface(area, fmt, o.indicates);
                             }
@@ -1415,7 +1833,12 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
                 })?;
             }
         }
-        _ => return Err(bad(cmd, "`channel` must be an alpha/spot channel or \"quickMask\"")),
+        _ => {
+            return Err(bad(
+                cmd,
+                "`channel` must be an alpha/spot channel or \"quickMask\"",
+            ));
+        }
     }
     Ok(list(s))
 }
@@ -1426,12 +1849,23 @@ fn merge_spot(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = &s.active().ok_or(EngineError::NoDocument)?.doc;
     let i = match p.get("channel") {
         Some(_) => alpha_index(doc, p, "channel", cmd)?,
-        None => match s.active().ok_or(EngineError::NoDocument)?.channel_view.target {
+        None => match s
+            .active()
+            .ok_or(EngineError::NoDocument)?
+            .channel_view
+            .target
+        {
             ChannelTarget::Alpha(i) => i,
-            _ => doc.channels.iter().position(|c| c.spot.is_some()).ok_or_else(|| bad(cmd, "no spot channel"))?,
+            _ => doc
+                .channels
+                .iter()
+                .position(|c| c.spot.is_some())
+                .ok_or_else(|| bad(cmd, "no spot channel"))?,
         },
     };
-    let (ink, solidity) = doc.channels[i].spot.ok_or_else(|| bad(cmd, "not a spot channel"))?;
+    let (ink, solidity) = doc.channels[i]
+        .spot
+        .ok_or_else(|| bad(cmd, "not a spot channel"))?;
     s.edit("Merge Spot Channel", |doc, active| {
         let area = doc.bounds();
         let fmt = doc.pixel_format();
@@ -1479,16 +1913,32 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
     let (px, n) = native_pixels(&doc, None)?;
     let mode = edit_mode(&doc);
     let names = color_names(mode);
-    let short = |name: &str| name.chars().next().map(|c| c.to_ascii_uppercase().to_string()).unwrap_or_default();
+    let short = |name: &str| {
+        name.chars()
+            .next()
+            .map(|c| c.to_ascii_uppercase().to_string())
+            .unwrap_or_default()
+    };
     let mut docs: Vec<Document> = Vec::new();
     for (c, name) in names.iter().enumerate() {
         let plane: Vec<f32> = px.chunks_exact(n).map(|p| p[c]).collect();
-        docs.push(gray_document(&format!("{}_{}", doc.name, short(name)), &doc, &plane));
+        docs.push(gray_document(
+            &format!("{}_{}", doc.name, short(name)),
+            &doc,
+            &plane,
+        ));
     }
     for ch in &doc.channels {
-        docs.push(gray_document(&format!("{}_{}", doc.name, ch.name), &doc, &read_plane(&ch.surface, area)));
+        docs.push(gray_document(
+            &format!("{}_{}", doc.name, ch.name),
+            &doc,
+            &read_plane(&ch.surface, area),
+        ));
     }
-    if p.get("closeOriginal").and_then(Value::as_bool).unwrap_or(true) {
+    if p.get("closeOriginal")
+        .and_then(Value::as_bool)
+        .unwrap_or(true)
+    {
         s.close(idx);
     }
     let made: Vec<usize> = docs.into_iter().map(|d| s.add_document(d, None)).collect();
@@ -1497,10 +1947,18 @@ fn split(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Open grayscale documents with the active document's size, active first.
 fn mergeable(s: &Session) -> Vec<usize> {
-    let Some(a) = s.active() else { return Vec::new() };
+    let Some(a) = s.active() else {
+        return Vec::new();
+    };
     let ok = |d: &DocState| d.doc.mode == ColorMode::Grayscale && d.doc.size == a.doc.size;
     let mut v: Vec<usize> = s.active_index().into_iter().filter(|_| ok(a)).collect();
-    v.extend(s.documents().iter().enumerate().filter(|(i, d)| Some(*i) != s.active_index() && ok(d)).map(|(i, _)| i));
+    v.extend(
+        s.documents()
+            .iter()
+            .enumerate()
+            .filter(|(i, d)| Some(*i) != s.active_index() && ok(d))
+            .map(|(i, _)| i),
+    );
     v
 }
 
@@ -1517,12 +1975,27 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     let srcs: Vec<usize> = match p.get("documents").and_then(Value::as_array) {
         Some(a) => a
             .iter()
-            .map(|v| v.as_u64().map(|i| i as usize).filter(|i| *i < s.documents().len()).ok_or_else(|| bad(cmd, "bad document index")))
+            .map(|v| {
+                v.as_u64()
+                    .map(|i| i as usize)
+                    .filter(|i| *i < s.documents().len())
+                    .ok_or_else(|| bad(cmd, "bad document index"))
+            })
             .collect::<Result<_>>()?,
-        None => mergeable(s).into_iter().take(mode.color_channels()).collect(),
+        None => mergeable(s)
+            .into_iter()
+            .take(mode.color_channels())
+            .collect(),
     };
     if srcs.len() < mode.color_channels() {
-        return Err(bad(cmd, format!("{mode:?} needs {} grayscale documents, got {}", mode.color_channels(), srcs.len())));
+        return Err(bad(
+            cmd,
+            format!(
+                "{mode:?} needs {} grayscale documents, got {}",
+                mode.color_channels(),
+                srcs.len()
+            ),
+        ));
     }
     // Each source closes by its *current* index, so a repeated index would shift the later
     // removals onto a document that was never named (#934). Refuse it rather than guess.
@@ -1530,18 +2003,33 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(dup) = srcs.iter().find(|i| !seen.insert(**i)) {
         return Err(bad(cmd, format!("document {dup} is listed more than once")));
     }
-    let Some(first) = srcs.first().and_then(|&i| s.documents().get(i)).map(|d| d.doc.clone()) else {
+    let Some(first) = srcs
+        .first()
+        .and_then(|&i| s.documents().get(i))
+        .map(|d| d.doc.clone())
+    else {
         return Err(bad(cmd, "bad document index"));
     };
     let mut planes = Vec::new();
     for &i in &srcs {
         let d = &s.documents()[i].doc;
         if d.size != first.size || d.mode != ColorMode::Grayscale {
-            return Err(bad(cmd, format!("\"{}\" is not a grayscale document of the same size", d.name)));
+            return Err(bad(
+                cmd,
+                format!(
+                    "\"{}\" is not a grayscale document of the same size",
+                    d.name
+                ),
+            ));
         }
         planes.push(gray_plane(d, None, None, ChanRef::Composite)?);
     }
-    let mut out = Document::new(p.get("name").and_then(Value::as_str).unwrap_or("Untitled"), first.size, mode, first.depth);
+    let mut out = Document::new(
+        p.get("name").and_then(Value::as_str).unwrap_or("Untitled"),
+        first.size,
+        mode,
+        first.depth,
+    );
     out.resolution_dpi = first.resolution_dpi;
     let fmt = out.pixel_format();
     let cc = mode.color_channels();
@@ -1564,7 +2052,10 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
     let area = out.bounds();
     let cf = channel_format(&out);
     for (k, pl) in planes[cc..].iter().enumerate() {
-        out.channels.push(AlphaChannel::new(format!("Alpha {}", k + 1), plane_surface(pl, area, cf)));
+        out.channels.push(AlphaChannel::new(
+            format!("Alpha {}", k + 1),
+            plane_surface(pl, area, cf),
+        ));
     }
     let mut close: Vec<usize> = srcs.clone();
     close.sort_unstable();
@@ -1581,23 +2072,45 @@ fn merge(s: &mut Session, p: &Value) -> Result<Value> {
 fn apply_image(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "image.applyImage";
     let blending = Blending::parse(p).map_err(|e| bad(cmd, e))?;
-    let opacity = p.get("opacity").and_then(Value::as_f64).unwrap_or(100.0).clamp(0.0, 100.0) as f32 / 100.0;
-    let preserve = p.get("preserveTransparency").and_then(Value::as_bool).unwrap_or(false);
+    let opacity = p
+        .get("opacity")
+        .and_then(Value::as_f64)
+        .unwrap_or(100.0)
+        .clamp(0.0, 100.0) as f32
+        / 100.0;
+    let preserve = p
+        .get("preserveTransparency")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let src_spec = source_spec(p, "source", "source").unwrap_or_else(|| json!({}));
     let src = source(s, &src_spec, cmd, false)?;
     let mask = mask_plane(s, p, cmd)?;
     let layer = s.active().and_then(|d| d.active_layer);
     s.edit("Apply Image", |doc, _| {
         let area = doc.bounds();
-        let selection = doc.selection.as_ref().map(|m| sel::mask_from_surface(Some(m), area));
-        let weight = |i: usize| opacity * mask.as_ref().map_or(1.0, |m| m[i]) * selection.as_ref().map_or(1.0, |m| m[i]);
+        let selection = doc
+            .selection
+            .as_ref()
+            .map(|m| sel::mask_from_surface(Some(m), area));
+        let weight = |i: usize| {
+            opacity * mask.as_ref().map_or(1.0, |m| m[i]) * selection.as_ref().map_or(1.0, |m| m[i])
+        };
         if is_channel_target(p) {
             // A grayscale target gets the luminosity of a colour source (one plane).
-            let srcp =
-                if src.len() == 1 { src[0].clone() } else { (0..src[0].len()).map(|i| src.iter().map(|pl| pl[i]).sum::<f32>() / src.len() as f32).collect() };
+            let srcp = if src.len() == 1 {
+                src[0].clone()
+            } else {
+                (0..src[0].len())
+                    .map(|i| src.iter().map(|pl| pl[i]).sum::<f32>() / src.len() as f32)
+                    .collect()
+            };
             let (surf, _) = target_surface(doc, None, p)?;
             let base = read_plane(surf, area);
-            let out: Vec<f32> = base.iter().enumerate().map(|(i, &b)| b + (blending.apply(b, srcp[i]) - b) * weight(i)).collect();
+            let out: Vec<f32> = base
+                .iter()
+                .enumerate()
+                .map(|(i, &b)| b + (blending.apply(b, srcp[i]) - b) * weight(i))
+                .collect();
             *surf = plane_surface(&out, area, surf.format());
             return Ok(());
         }
@@ -1606,13 +2119,19 @@ fn apply_image(s: &mut Session, p: &Value) -> Result<Value> {
         let surf = crate::commands::paint_surface(doc, id, &Value::Null)?;
         let sf = surf.format();
         if sf != fmt {
-            return Err(EngineError::Other("the target layer's format doesn't match the document".into()));
+            return Err(EngineError::Other(
+                "the target layer's format doesn't match the document".into(),
+            ));
         }
         let n = sf.channels();
         let colors = sf.mode.color_channels();
         let mut v = surf.read_region(area);
         for (i, px) in v.chunks_exact_mut(n).enumerate() {
-            let base_a = if sf.alpha { px[colors].clamp(0.0, 1.0) } else { 1.0 };
+            let base_a = if sf.alpha {
+                px[colors].clamp(0.0, 1.0)
+            } else {
+                1.0
+            };
             let mut w = weight(i);
             if preserve {
                 w *= base_a;
@@ -1623,11 +2142,19 @@ fn apply_image(s: &mut Session, p: &Value) -> Result<Value> {
             // Painted over the layer like a brush: the blend only acts where the layer has
             // pixels (where it is transparent the source shows as is), and the alpha grows by
             // source-over, so applying to an empty layer copies the source in any mode.
-            let out_a = if preserve { base_a } else { w + base_a * (1.0 - w) };
+            let out_a = if preserve {
+                base_a
+            } else {
+                w + base_a * (1.0 - w)
+            };
             for (c, b) in px[..colors].iter_mut().enumerate() {
                 let top = src.get(c).unwrap_or(&src[0])[i];
                 let blended = top + (blending.apply(*b, top) - top) * base_a;
-                *b = if preserve { *b + (blended - *b) * w } else { (w * blended + base_a * (1.0 - w) * *b) / out_a };
+                *b = if preserve {
+                    *b + (blended - *b) * w
+                } else {
+                    (w * blended + base_a * (1.0 - w) * *b) / out_a
+                };
             }
             if sf.alpha {
                 px[colors] = out_a;
@@ -1643,21 +2170,51 @@ fn apply_image(s: &mut Session, p: &Value) -> Result<Value> {
 fn calculations(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "image.calculations";
     let blending = Blending::parse(p).map_err(|e| bad(cmd, e))?;
-    let opacity = p.get("opacity").and_then(Value::as_f64).unwrap_or(100.0).clamp(0.0, 100.0) as f32 / 100.0;
-    let s1 = source(s, &source_spec(p, "source1", "source1").unwrap_or_else(|| json!({})), cmd, true)?.remove(0);
-    let s2 = source(s, &source_spec(p, "source2", "source2").unwrap_or_else(|| json!({})), cmd, true)?.remove(0);
+    let opacity = p
+        .get("opacity")
+        .and_then(Value::as_f64)
+        .unwrap_or(100.0)
+        .clamp(0.0, 100.0) as f32
+        / 100.0;
+    let s1 = source(
+        s,
+        &source_spec(p, "source1", "source1").unwrap_or_else(|| json!({})),
+        cmd,
+        true,
+    )?
+    .remove(0);
+    let s2 = source(
+        s,
+        &source_spec(p, "source2", "source2").unwrap_or_else(|| json!({})),
+        cmd,
+        true,
+    )?
+    .remove(0);
     let mask = mask_plane(s, p, cmd)?;
     // Source 1 is blended onto Source 2.
-    let out: Vec<f32> =
-        s2.iter().zip(&s1).enumerate().map(|(i, (&b, &t))| b + (blending.apply(b, t) - b) * opacity * mask.as_ref().map_or(1.0, |m| m[i])).collect();
+    let out: Vec<f32> = s2
+        .iter()
+        .zip(&s1)
+        .enumerate()
+        .map(|(i, (&b, &t))| {
+            b + (blending.apply(b, t) - b) * opacity * mask.as_ref().map_or(1.0, |m| m[i])
+        })
+        .collect();
     let name = p.get("name").and_then(Value::as_str).map(str::to_string);
-    match p.get("result").and_then(Value::as_str).unwrap_or("newChannel") {
+    match p
+        .get("result")
+        .and_then(Value::as_str)
+        .unwrap_or("newChannel")
+    {
         "newChannel" => {
             let i = s.edit("Calculations", |doc, _| {
-                let name = name.clone().unwrap_or_else(|| next_alpha_name(doc, "Alpha"));
+                let name = name
+                    .clone()
+                    .unwrap_or_else(|| next_alpha_name(doc, "Alpha"));
                 let area = doc.bounds();
                 let fmt = channel_format(doc);
-                doc.channels.push(AlphaChannel::new(name, plane_surface(&out, area, fmt)));
+                doc.channels
+                    .push(AlphaChannel::new(name, plane_surface(&out, area, fmt)));
                 Ok(doc.channels.len() - 1)
             })?;
             Ok(json!({ "channel": i }))
@@ -1675,7 +2232,10 @@ fn calculations(s: &mut Session, p: &Value) -> Result<Value> {
             })?;
             Ok(json!({ "selected": selected }))
         }
-        other => Err(bad(cmd, format!("unknown result `{other}` (newChannel|newDocument|selection)"))),
+        other => Err(bad(
+            cmd,
+            format!("unknown result `{other}` (newChannel|newDocument|selection)"),
+        )),
     }
 }
 
@@ -1740,7 +2300,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             load_selection
         ),
-        spec!("select.editInQuickMaskMode", "Edit in Quick Mask Mode", ["Select"], Some("Q"), r##"{"on":bool?=toggle}"##, has_doc, quick_mask),
+        spec!(
+            "select.editInQuickMaskMode",
+            "Edit in Quick Mask Mode",
+            ["Select"],
+            Some("Q"),
+            r##"{"on":bool?=toggle}"##,
+            has_doc,
+            quick_mask
+        ),
         spec!(
             "image.applyImage",
             "Apply Image…",
@@ -1786,9 +2354,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             duplicate_channel
         ),
-        spec!("channel.delete", "Delete Channel", [], None, r##"{"channel":index|name?=targeted}"##, has_channels, delete_channel),
-        spec!("channel.rename", "Rename Channel", [], None, r##"{"channel":index|name,"name":str}"##, has_channels, rename_channel),
-        spec!("channel.move", "Reorder Channel", [], None, r##"{"channel":index|name,"to":index}"##, has_channels, move_channel),
+        spec!(
+            "channel.delete",
+            "Delete Channel",
+            [],
+            None,
+            r##"{"channel":index|name?=targeted}"##,
+            has_channels,
+            delete_channel
+        ),
+        spec!(
+            "channel.rename",
+            "Rename Channel",
+            [],
+            None,
+            r##"{"channel":index|name,"name":str}"##,
+            has_channels,
+            rename_channel
+        ),
+        spec!(
+            "channel.move",
+            "Reorder Channel",
+            [],
+            None,
+            r##"{"channel":index|name,"to":index}"##,
+            has_channels,
+            move_channel
+        ),
         spec!(
             "channel.target",
             "Target Channel",
@@ -1816,8 +2408,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             options
         ),
-        spec!("channel.mergeSpot", "Merge Spot Channel", [], None, r##"{"channel":index|name?=targeted or first spot}"##, has_spot, merge_spot),
-        spec!("channel.split", "Split Channels", [], None, r##"{"closeOriginal":bool=true}"##, can_split, split),
+        spec!(
+            "channel.mergeSpot",
+            "Merge Spot Channel",
+            [],
+            None,
+            r##"{"channel":index|name?=targeted or first spot}"##,
+            has_spot,
+            merge_spot
+        ),
+        spec!(
+            "channel.split",
+            "Split Channels",
+            [],
+            None,
+            r##"{"closeOriginal":bool=true}"##,
+            can_split,
+            split
+        ),
         spec!(
             "channel.merge",
             "Merge Channels…",
@@ -1837,39 +2445,124 @@ pub fn specs() -> Vec<CommandSpec> {
             run: |s, _| Ok(list(s)),
             journal: false,
         },
-        spec!("channel.target.composite", "Target Composite Channel", [], Some("Cmd+2"), "{}", has_doc, |s, _| target_slot(s, 2)),
+        spec!(
+            "channel.target.composite",
+            "Target Composite Channel",
+            [],
+            Some("Cmd+2"),
+            "{}",
+            has_doc,
+            |s, _| target_slot(s, 2)
+        ),
         // ⌘\ targets the active layer's mask, as clicking its thumbnail does.
-        spec!("channel.target.layerMask", "Target Layer Mask", [], Some("Cmd+\\"), "{}", has_layer_mask, |s, _| target_cmd(
-            s,
-            &serde_json::json!({"channel": "mask"})
-        )),
+        spec!(
+            "channel.target.layerMask",
+            "Target Layer Mask",
+            [],
+            Some("Cmd+\\"),
+            "{}",
+            has_layer_mask,
+            |s, _| target_cmd(s, &serde_json::json!({"channel": "mask"}))
+        ),
         // ⌘⌥2 loads the image's luminosity as a selection (⌘-click on the composite channel).
-        spec!("select.loadLuminosity", "Load Luminosity", [], Some("Cmd+Alt+2"), "{}", has_doc, |s, _| load_selection(
-            s,
-            &serde_json::json!({"channel": "composite"})
-        )),
-        spec!("channel.target.slot3", "Target Channel 3", [], Some("Cmd+3"), "{}", slot_ok::<3>, |s, _| target_slot(s, 3)),
-        spec!("channel.target.slot4", "Target Channel 4", [], Some("Cmd+4"), "{}", slot_ok::<4>, |s, _| target_slot(s, 4)),
-        spec!("channel.target.slot5", "Target Channel 5", [], Some("Cmd+5"), "{}", slot_ok::<5>, |s, _| target_slot(s, 5)),
-        spec!("channel.target.slot6", "Target Channel 6", [], Some("Cmd+6"), "{}", slot_ok::<6>, |s, _| target_slot(s, 6)),
-        spec!("channel.target.slot7", "Target Channel 7", [], Some("Cmd+7"), "{}", slot_ok::<7>, |s, _| target_slot(s, 7)),
-        spec!("channel.target.slot8", "Target Channel 8", [], Some("Cmd+8"), "{}", slot_ok::<8>, |s, _| target_slot(s, 8)),
-        spec!("channel.target.slot9", "Target Channel 9", [], Some("Cmd+9"), "{}", slot_ok::<9>, |s, _| target_slot(s, 9)),
+        spec!(
+            "select.loadLuminosity",
+            "Load Luminosity",
+            [],
+            Some("Cmd+Alt+2"),
+            "{}",
+            has_doc,
+            |s, _| load_selection(s, &serde_json::json!({"channel": "composite"}))
+        ),
+        spec!(
+            "channel.target.slot3",
+            "Target Channel 3",
+            [],
+            Some("Cmd+3"),
+            "{}",
+            slot_ok::<3>,
+            |s, _| target_slot(s, 3)
+        ),
+        spec!(
+            "channel.target.slot4",
+            "Target Channel 4",
+            [],
+            Some("Cmd+4"),
+            "{}",
+            slot_ok::<4>,
+            |s, _| target_slot(s, 4)
+        ),
+        spec!(
+            "channel.target.slot5",
+            "Target Channel 5",
+            [],
+            Some("Cmd+5"),
+            "{}",
+            slot_ok::<5>,
+            |s, _| target_slot(s, 5)
+        ),
+        spec!(
+            "channel.target.slot6",
+            "Target Channel 6",
+            [],
+            Some("Cmd+6"),
+            "{}",
+            slot_ok::<6>,
+            |s, _| target_slot(s, 6)
+        ),
+        spec!(
+            "channel.target.slot7",
+            "Target Channel 7",
+            [],
+            Some("Cmd+7"),
+            "{}",
+            slot_ok::<7>,
+            |s, _| target_slot(s, 7)
+        ),
+        spec!(
+            "channel.target.slot8",
+            "Target Channel 8",
+            [],
+            Some("Cmd+8"),
+            "{}",
+            slot_ok::<8>,
+            |s, _| target_slot(s, 8)
+        ),
+        spec!(
+            "channel.target.slot9",
+            "Target Channel 9",
+            [],
+            Some("Cmd+9"),
+            "{}",
+            slot_ok::<9>,
+            |s, _| target_slot(s, 9)
+        ),
     ]
 }
 
 /// Target Layer Mask: the active layer has a mask.
 fn has_layer_mask(s: &Session) -> std::result::Result<(), String> {
     let st = s.active().ok_or("no document open")?;
-    let layer = st.active_layer.and_then(|id| st.doc.layer(id)).ok_or("no active layer")?;
-    layer.mask.as_ref().map(|_| ()).ok_or_else(|| "the active layer has no layer mask".to_string())
+    let layer = st
+        .active_layer
+        .and_then(|id| st.doc.layer(id))
+        .ok_or("no active layer")?;
+    layer
+        .mask
+        .as_ref()
+        .map(|_| ())
+        .ok_or_else(|| "the active layer has no layer mask".to_string())
 }
 
 fn slot_ok<const N: usize>(s: &Session) -> std::result::Result<(), String> {
     let d = s.active().ok_or("no document open")?;
     let colors = color_count(&d.doc);
     let shown = if colors > 1 { colors } else { 0 };
-    if N - 3 < shown + d.doc.channels.len() { Ok(()) } else { Err(format!("no channel for {SLOT_KEY}{N}")) }
+    if N - 3 < shown + d.doc.channels.len() {
+        Ok(())
+    } else {
+        Err(format!("no channel for {SLOT_KEY}{N}"))
+    }
 }
 
 fn has_apply_target(s: &Session) -> std::result::Result<(), String> {
@@ -1877,10 +2570,17 @@ fn has_apply_target(s: &Session) -> std::result::Result<(), String> {
         return Ok(());
     }
     let d = s.active().ok_or("no document open")?;
-    let l = d.active_layer.and_then(|id| d.doc.layer(id)).ok_or("no active layer")?;
+    let l = d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or("no active layer")?;
     if matches!(l.content, LayerContent::Raster(_)) {
         Ok(())
     } else {
-        Err(format!("Apply Image needs a pixel layer (active layer is {} {} layer)", l.content.article(), l.content.kind_name()))
+        Err(format!(
+            "Apply Image needs a pixel layer (active layer is {} {} layer)",
+            l.content.article(),
+            l.content.kind_name()
+        ))
     }
 }

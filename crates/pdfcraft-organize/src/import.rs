@@ -51,7 +51,10 @@ impl Copier<'_> {
         let new = dst.add(Object::Null);
         self.map.insert(r, new);
         let obj = self.src.get(r);
-        if obj.as_dict().is_some_and(|d| d.name(b"Type") == Some(b"OCG")) {
+        if obj
+            .as_dict()
+            .is_some_and(|d| d.name(b"Type") == Some(b"OCG"))
+        {
             self.ocgs.push((r, new));
         }
         let copied = self.copy_value(dst, &obj, Some(new));
@@ -62,7 +65,9 @@ impl Copier<'_> {
     fn copy_value(&mut self, dst: &mut Document, o: &Object, this: Option<ObjRef>) -> Object {
         match o {
             Object::Ref(r) => Object::Ref(self.copy_ref(dst, *r)),
-            Object::Array(a) => Object::Array(a.iter().map(|x| self.copy_value(dst, x, None)).collect()),
+            Object::Array(a) => {
+                Object::Array(a.iter().map(|x| self.copy_value(dst, x, None)).collect())
+            }
             Object::Dict(d) => Object::Dict(self.copy_dict(dst, d, this)),
             Object::Stream(s) => {
                 let mut s = s.clone();
@@ -74,7 +79,8 @@ impl Copier<'_> {
     }
 
     fn copy_dict(&mut self, dst: &mut Document, d: &Dict, this: Option<ObjRef>) -> Dict {
-        let is_annot = d.name(b"Type") == Some(b"Annot") || (d.contains(b"Subtype") && d.contains(b"Rect") && !d.contains(b"Type"));
+        let is_annot = d.name(b"Type") == Some(b"Annot")
+            || (d.contains(b"Subtype") && d.contains(b"Rect") && !d.contains(b"Type"));
         let is_field = d.contains(b"FT") || (d.contains(b"T") && d.contains(b"Kids"));
         let mut out = Dict::new();
         for (k, v) in d.iter() {
@@ -127,7 +133,11 @@ impl Copier<'_> {
     }
 
     /// Rewrite `/P`, `/Dest` and GoTo actions on copied annotations.
-    fn fix_annotations(&self, dst: &mut Document, annot_pages: &HashMap<ObjRef, ObjRef>) -> Result<(), OrganizeError> {
+    fn fix_annotations(
+        &self,
+        dst: &mut Document,
+        annot_pages: &HashMap<ObjRef, ObjRef>,
+    ) -> Result<(), OrganizeError> {
         for &a in &self.annots {
             let src_dict = dst.get(a).as_dict().cloned();
             let Some(d) = src_dict else { continue };
@@ -183,8 +193,20 @@ impl Copier<'_> {
 
 /// Copy `o` from `src` into `dst`, reusing the copies listed in `map` (source → destination), so
 /// an object the copied pages already brought along (an ICC profile) is not stored twice.
-pub(crate) fn copy_object(dst: &mut Document, src: &Document, o: &Object, map: HashMap<ObjRef, ObjRef>) -> Object {
-    let mut c = Copier { src, map, pages: HashMap::new(), annots: Vec::new(), fields: Vec::new(), ocgs: Vec::new() };
+pub(crate) fn copy_object(
+    dst: &mut Document,
+    src: &Document,
+    o: &Object,
+    map: HashMap<ObjRef, ObjRef>,
+) -> Object {
+    let mut c = Copier {
+        src,
+        map,
+        pages: HashMap::new(),
+        annots: Vec::new(),
+        fields: Vec::new(),
+        ocgs: Vec::new(),
+    };
     c.copy_value(dst, o, None)
 }
 
@@ -223,9 +245,17 @@ pub fn import_pages_with(
 ) -> Result<ImportOutcome, OrganizeError> {
     let first_new = dst.object_numbers().last().map_or(1, |n| n + 1);
     let imported = import_pages_mapped(dst, src, src_pages, at, conflicts)?;
-    let created: Vec<ObjRef> = dst.object_numbers().into_iter().filter(|n| *n >= first_new).map(|n| ObjRef::new(n, dst.generation(n))).collect();
+    let created: Vec<ObjRef> = dst
+        .object_numbers()
+        .into_iter()
+        .filter(|n| *n >= first_new)
+        .map(|n| ObjRef::new(n, dst.generation(n)))
+        .collect();
     crate::dedupe::dedupe_resources(dst, &created, true);
-    Ok(ImportOutcome { pages: imported.pages, renamed_fields: imported.renamed_fields })
+    Ok(ImportOutcome {
+        pages: imported.pages,
+        renamed_fields: imported.renamed_fields,
+    })
 }
 
 /// Copy pages `src_pages` (0-based, in the given order) of `src` into `dst`, inserting them at
@@ -238,7 +268,12 @@ pub fn import_pages_with(
 ///
 /// Resources identical to ones already in `dst` (the same fonts, images, colour profiles) are
 /// shared rather than stored twice (see `dedupe`).
-pub fn import_pages(dst: &mut Document, src: &Document, src_pages: &[usize], at: usize) -> Result<Vec<ObjRef>, OrganizeError> {
+pub fn import_pages(
+    dst: &mut Document,
+    src: &Document,
+    src_pages: &[usize],
+    at: usize,
+) -> Result<Vec<ObjRef>, OrganizeError> {
     import_pages_with(dst, src, src_pages, at, FieldConflicts::Merge).map(|o| o.pages)
 }
 
@@ -268,7 +303,14 @@ fn import_pages_mapped(
     }
     let mut existing = walk(dst)?;
     let root = pages_root(dst)?;
-    let mut copier = Copier { src, map: HashMap::new(), pages: HashMap::new(), annots: Vec::new(), fields: Vec::new(), ocgs: Vec::new() };
+    let mut copier = Copier {
+        src,
+        map: HashMap::new(),
+        pages: HashMap::new(),
+        annots: Vec::new(),
+        fields: Vec::new(),
+        ocgs: Vec::new(),
+    };
     // Allocate every destination page first, so destinations between copied pages resolve.
     let targets: Vec<(ObjRef, ObjRef, Dict)> = src_pages
         .iter()
@@ -303,7 +345,9 @@ fn import_pages_mapped(
         let resources = resources_with_ancestors(src, &src_dict);
         let mut d = Dict::new();
         for (k, v) in src_dict.iter() {
-            if SKIP_ON_PAGE.contains(&k.as_slice()) || (k.as_slice() == b"Resources" && resources.is_some()) {
+            if SKIP_ON_PAGE.contains(&k.as_slice())
+                || (k.as_slice() == b"Resources" && resources.is_some())
+            {
                 continue;
             }
             if k.as_slice() == b"Annots" {
@@ -315,7 +359,10 @@ fn import_pages_mapped(
                     // value, shown on both pages. Copying the field again would make two fields
                     // of one name, filled in separately.
                     let resolved = src.resolve(&a);
-                    let field = resolved.as_dict().filter(|d| d.name(b"Subtype") == Some(b"Widget")).and_then(|d| d.reference(b"Parent"));
+                    let field = resolved
+                        .as_dict()
+                        .filter(|d| d.name(b"Subtype") == Some(b"Widget"))
+                        .and_then(|d| d.reference(b"Parent"));
                     if repeat
                         && let Some(parent) = field
                         && let Some(copied) = copier.map.get(&parent).copied()
@@ -325,14 +372,23 @@ fn import_pages_mapped(
                         dst.set(r, c);
                         // `/Kids` may be an array object of its own: add to it there, so the
                         // field keeps its other widgets.
-                        match dst.get(copied).as_dict().and_then(|f| f.get(b"Kids").cloned()) {
+                        match dst
+                            .get(copied)
+                            .as_dict()
+                            .and_then(|f| f.get(b"Kids").cloned())
+                        {
                             Some(Object::Ref(list)) => {
-                                let mut kids = dst.get(list).as_array().cloned().unwrap_or_default();
+                                let mut kids =
+                                    dst.get(list).as_array().cloned().unwrap_or_default();
                                 kids.push(Object::Ref(r));
                                 dst.set(list, Object::Array(kids));
                             }
                             _ => dst.update_dict(copied, |f| {
-                                let mut kids = f.get(b"Kids").and_then(|k| k.as_array()).cloned().unwrap_or_default();
+                                let mut kids = f
+                                    .get(b"Kids")
+                                    .and_then(|k| k.as_array())
+                                    .cloned()
+                                    .unwrap_or_default();
                                 kids.push(Object::Ref(r));
                                 f.set(b"Kids".to_vec(), Object::Array(kids));
                             })?,
@@ -343,8 +399,14 @@ fn import_pages_mapped(
                     }
                     // A widget that is its own field (no parent to hang a second widget on) stays
                     // the one object, shown on both pages, so the field stays one.
-                    let own_field = resolved.as_dict().is_some_and(|d| d.name(b"Subtype") == Some(b"Widget") && !d.contains(b"Parent"));
-                    let annots = if own_field { &mut copier } else { own.as_mut().unwrap_or(&mut copier) };
+                    let own_field = resolved.as_dict().is_some_and(|d| {
+                        d.name(b"Subtype") == Some(b"Widget") && !d.contains(b"Parent")
+                    });
+                    let annots = if own_field {
+                        &mut copier
+                    } else {
+                        own.as_mut().unwrap_or(&mut copier)
+                    };
                     // Direct (inline) annotation dictionaries become indirect objects, so every
                     // copied annotation can be fixed up the same way.
                     let r = match a {
@@ -400,7 +462,12 @@ fn import_pages_mapped(
     let inserted: Vec<(ObjRef, Dict)> = new_pages.iter().map(|r| (*r, Dict::new())).collect();
     existing.splice(at..at, inserted);
     rebuild(dst, &existing)?;
-    Ok(Imported { pages: new_pages, page_map: copier.pages, objects: copier.map, renamed_fields })
+    Ok(Imported {
+        pages: new_pages,
+        page_map: copier.pages,
+        objects: copier.map,
+        renamed_fields,
+    })
 }
 
 /// A page's `/Resources` with the names that only its page-tree ancestors list, or `None` when
@@ -410,7 +477,9 @@ fn import_pages_mapped(
 /// another tree, so it must list them itself or it draws nothing of them (#1628). The page's
 /// entry wins over an ancestor's, and a nearer ancestor's over a farther one's.
 fn resources_with_ancestors(src: &Document, page: &Dict) -> Option<Object> {
-    let mut merged = page.get(b"Resources").map(|r| src.dict(r).unwrap_or_default());
+    let mut merged = page
+        .get(b"Resources")
+        .map(|r| src.dict(r).unwrap_or_default());
     let mut added = false;
     let mut seen = std::collections::HashSet::new();
     let mut parent = page.reference(b"Parent");
@@ -422,7 +491,9 @@ fn resources_with_ancestors(src: &Document, page: &Dict) -> Option<Object> {
         let node = src.get(r);
         let Some(node) = node.as_dict() else { break };
         parent = node.reference(b"Parent");
-        let Some(theirs) = node.get(b"Resources").and_then(|r| src.dict(r)) else { continue };
+        let Some(theirs) = node.get(b"Resources").and_then(|r| src.dict(r)) else {
+            continue;
+        };
         let Some(mine) = merged.as_mut() else {
             merged = Some(theirs);
             continue;
@@ -472,7 +543,11 @@ fn name_tree_lookup(src: &Document, node: &Object, key: &[u8], depth: u8) -> Opt
     }
     let node = src.resolve(node);
     let d = node.as_dict()?;
-    if let Some(names) = d.get(b"Names").map(|n| src.resolve(n)).and_then(|n| n.as_array().cloned()) {
+    if let Some(names) = d
+        .get(b"Names")
+        .map(|n| src.resolve(n))
+        .and_then(|n| n.as_array().cloned())
+    {
         for pair in names.chunks(2) {
             if let [k, v] = pair
                 && src.resolve(k).as_string().is_some_and(|s| s.bytes == key)
@@ -481,8 +556,13 @@ fn name_tree_lookup(src: &Document, node: &Object, key: &[u8], depth: u8) -> Opt
             }
         }
     }
-    let kids = d.get(b"Kids").map(|k| src.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
-    kids.iter().find_map(|k| name_tree_lookup(src, k, key, depth + 1))
+    let kids = d
+        .get(b"Kids")
+        .map(|k| src.resolve(k))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default();
+    kids.iter()
+        .find_map(|k| name_tree_lookup(src, k, key, depth + 1))
 }
 
 /// All (key, value) pairs of a name tree, in order.
@@ -492,7 +572,11 @@ fn name_tree_entries(src: &Document, node: &Object, depth: u8, out: &mut Vec<(Ve
     }
     let node = src.resolve(node);
     let Some(d) = node.as_dict() else { return };
-    if let Some(names) = d.get(b"Names").map(|n| src.resolve(n)).and_then(|n| n.as_array().cloned()) {
+    if let Some(names) = d
+        .get(b"Names")
+        .map(|n| src.resolve(n))
+        .and_then(|n| n.as_array().cloned())
+    {
         for pair in names.chunks(2) {
             if let [k, v] = pair
                 && let Some(k) = src.resolve(k).as_string()
@@ -501,14 +585,23 @@ fn name_tree_entries(src: &Document, node: &Object, depth: u8, out: &mut Vec<(Ve
             }
         }
     }
-    for k in d.get(b"Kids").map(|k| src.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default() {
+    for k in d
+        .get(b"Kids")
+        .map(|k| src.resolve(k))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default()
+    {
         name_tree_entries(src, &k, depth + 1, out);
     }
 }
 
 /// Register copied optional content groups in the destination's `/OCProperties`, keeping each
 /// layer's default visibility from the source.
-fn register_layers(dst: &mut Document, src: &Document, ocgs: &[(ObjRef, ObjRef)]) -> Result<(), OrganizeError> {
+fn register_layers(
+    dst: &mut Document,
+    src: &Document,
+    ocgs: &[(ObjRef, ObjRef)],
+) -> Result<(), OrganizeError> {
     if ocgs.is_empty() {
         return Ok(());
     }
@@ -516,21 +609,46 @@ fn register_layers(dst: &mut Document, src: &Document, ocgs: &[(ObjRef, ObjRef)]
         .root()
         .and_then(|r| src.get(r).as_dict().cloned())
         .and_then(|c| c.get(b"OCProperties").map(|o| src.resolve(o)))
-        .and_then(|o| o.as_dict().and_then(|d| d.get(b"D")).map(|d| src.resolve(d)))
-        .and_then(|d| d.as_dict().and_then(|d| d.get(b"OFF")).map(|o| src.resolve(o)))
+        .and_then(|o| {
+            o.as_dict()
+                .and_then(|d| d.get(b"D"))
+                .map(|d| src.resolve(d))
+        })
+        .and_then(|d| {
+            d.as_dict()
+                .and_then(|d| d.get(b"OFF"))
+                .map(|o| src.resolve(o))
+        })
         .and_then(|o| o.as_array().cloned())
         .unwrap_or_default();
     let root = dst.root().ok_or(OrganizeError::NoPageTree)?;
-    let catalog = dst.get(root).as_dict().cloned().ok_or(OrganizeError::NoPageTree)?;
+    let catalog = dst
+        .get(root)
+        .as_dict()
+        .cloned()
+        .ok_or(OrganizeError::NoPageTree)?;
     let (props_ref, mut props) = match catalog.get(b"OCProperties") {
         Some(Object::Ref(r)) => (Some(*r), dst.get(*r).as_dict().cloned().unwrap_or_default()),
         Some(Object::Dict(d)) => (None, d.clone()),
         _ => (None, Dict::new()),
     };
-    let list = |d: &Dict, k: &[u8], doc: &Document| d.get(k).map(|v| doc.resolve(v)).and_then(|v| v.as_array().cloned()).unwrap_or_default();
+    let list = |d: &Dict, k: &[u8], doc: &Document| {
+        d.get(k)
+            .map(|v| doc.resolve(v))
+            .and_then(|v| v.as_array().cloned())
+            .unwrap_or_default()
+    };
     let mut all = list(&props, b"OCGs", dst);
-    let mut config = props.get(b"D").map(|d| dst.resolve(d)).and_then(|d| d.as_dict().cloned()).unwrap_or_default();
-    let (mut on, mut off, mut order) = (list(&config, b"ON", dst), list(&config, b"OFF", dst), list(&config, b"Order", dst));
+    let mut config = props
+        .get(b"D")
+        .map(|d| dst.resolve(d))
+        .and_then(|d| d.as_dict().cloned())
+        .unwrap_or_default();
+    let (mut on, mut off, mut order) = (
+        list(&config, b"ON", dst),
+        list(&config, b"OFF", dst),
+        list(&config, b"Order", dst),
+    );
     for (from, to) in ocgs {
         let r = Object::Ref(*to);
         if all.contains(&r) {
@@ -538,7 +656,11 @@ fn register_layers(dst: &mut Document, src: &Document, ocgs: &[(ObjRef, ObjRef)]
         }
         all.push(r.clone());
         order.push(r.clone());
-        if src_off.contains(&Object::Ref(*from)) { off.push(r) } else { on.push(r) }
+        if src_off.contains(&Object::Ref(*from)) {
+            off.push(r)
+        } else {
+            on.push(r)
+        }
     }
     props.set(b"OCGs".to_vec(), Object::Array(all));
     config.set(b"ON".to_vec(), Object::Array(on));
@@ -547,7 +669,9 @@ fn register_layers(dst: &mut Document, src: &Document, ocgs: &[(ObjRef, ObjRef)]
     props.set(b"D".to_vec(), Object::Dict(config));
     match props_ref {
         Some(r) => dst.set(r, Object::Dict(props)),
-        None => dst.update_dict(root, |c| c.set(b"OCProperties".to_vec(), Object::Dict(props)))?,
+        None => dst.update_dict(root, |c| {
+            c.set(b"OCProperties".to_vec(), Object::Dict(props))
+        })?,
     }
     Ok(())
 }
@@ -558,12 +682,20 @@ fn register_layers(dst: &mut Document, src: &Document, ocgs: &[(ObjRef, ObjRef)]
 /// are one field). A colliding node's own `/T` becomes the first free `Name-1`, `Name-2`…
 /// variant, so everything below it keeps its place in the tree. Returns what was renamed
 /// (old fully-qualified name → new one), in order.
-fn resolve_field_conflicts(dst: &mut Document, fields: &[ObjRef]) -> Result<Vec<(String, String)>, OrganizeError> {
+fn resolve_field_conflicts(
+    dst: &mut Document,
+    fields: &[ObjRef],
+) -> Result<Vec<(String, String)>, OrganizeError> {
     let mut taken = taken_field_names(dst)?;
     let planned = plan_renames(dst, fields, &mut taken);
     let mut renamed = Vec::new();
     for (node, new_t, old, new) in planned {
-        dst.update_dict(node, |d| d.set(b"T".to_vec(), Object::String(pdfcraft_cos::PdfString::text(&new_t))))?;
+        dst.update_dict(node, |d| {
+            d.set(
+                b"T".to_vec(),
+                Object::String(pdfcraft_cos::PdfString::text(&new_t)),
+            )
+        })?;
         renamed.push((old, new));
     }
     Ok(renamed)
@@ -574,9 +706,16 @@ fn resolve_field_conflicts(dst: &mut Document, fields: &[ObjRef]) -> Result<Vec<
 /// field of `src` itself uses) is renamed to the first free variant, exactly as the import
 /// would. Unreadable structure previews as nothing: the import itself will say why it failed.
 pub fn field_name_conflicts(dst: &Document, src: &Document) -> Vec<(String, String)> {
-    let Ok(mut taken) = taken_field_names(dst) else { return Vec::new() };
-    let Ok(roots) = field_roots(src) else { return Vec::new() };
-    plan_renames(src, &roots, &mut taken).into_iter().map(|(_, _, old, new)| (old, new)).collect()
+    let Ok(mut taken) = taken_field_names(dst) else {
+        return Vec::new();
+    };
+    let Ok(roots) = field_roots(src) else {
+        return Vec::new();
+    };
+    plan_renames(src, &roots, &mut taken)
+        .into_iter()
+        .map(|(_, _, old, new)| (old, new))
+        .collect()
 }
 
 /// What combining `sources`, in order, would rename in each one: the whole list is simulated
@@ -588,7 +727,10 @@ pub fn combine_field_conflicts(sources: &[&Document]) -> Vec<Vec<(String, String
     sources
         .iter()
         .map(|src| match field_roots(src) {
-            Ok(roots) => plan_renames(src, &roots, &mut taken).into_iter().map(|(_, _, old, new)| (old, new)).collect(),
+            Ok(roots) => plan_renames(src, &roots, &mut taken)
+                .into_iter()
+                .map(|(_, _, old, new)| (old, new))
+                .collect(),
             Err(_) => Vec::new(),
         })
         .collect()
@@ -600,7 +742,11 @@ pub fn combine_field_conflicts(sources: &[&Document]) -> Vec<Vec<(String, String
 /// variant of its own `/T`. Names are compared and renamed as decoded text, not as stored
 /// bytes, so one name written in two encodings (PDFDocEncoding, UTF-16BE) is one name.
 /// Read-only: returns (node, new `/T`, old name, new name). Cycle- and depth-safe.
-fn plan_renames(doc: &Document, roots: &[ObjRef], taken: &mut std::collections::HashSet<String>) -> Vec<(ObjRef, String, String, String)> {
+fn plan_renames(
+    doc: &Document,
+    roots: &[ObjRef],
+    taken: &mut std::collections::HashSet<String>,
+) -> Vec<(ObjRef, String, String, String)> {
     let mut planned = Vec::new();
     let mut seen = std::collections::HashSet::new();
     for &root in roots {
@@ -622,8 +768,13 @@ fn plan_renames_under(
     if depth > 32 || !seen.insert(node) {
         return;
     }
-    let Some(d) = doc.get(node).as_dict().cloned() else { return };
-    let mut name = d.get(b"T").and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text())).unwrap_or_default();
+    let Some(d) = doc.get(node).as_dict().cloned() else {
+        return;
+    };
+    let mut name = d
+        .get(b"T")
+        .and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text()))
+        .unwrap_or_default();
     if !name.is_empty() {
         let fqn = qualified(prefix, &name);
         if taken.contains(&fqn) {
@@ -644,7 +795,11 @@ fn plan_renames_under(
         }
     }
     let prefix = qualified_optional(prefix, &name);
-    let kids = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
+    let kids = d
+        .get(b"Kids")
+        .map(|k| doc.resolve(k))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default();
     for kid in kids.iter().filter_map(|k| k.as_ref()) {
         plan_renames_under(doc, kid, &prefix, taken, seen, depth + 1, planned);
     }
@@ -677,10 +832,18 @@ fn field_roots(doc: &Document) -> Result<Vec<ObjRef>, OrganizeError> {
         .filter_map(|f| f.as_ref())
         .collect();
     for (page, _) in walk(doc)? {
-        let Some(d) = doc.get(page).as_dict().cloned() else { continue };
-        let annots = d.get(b"Annots").map(|a| doc.resolve(a)).and_then(|a| a.as_array().cloned()).unwrap_or_default();
+        let Some(d) = doc.get(page).as_dict().cloned() else {
+            continue;
+        };
+        let annots = d
+            .get(b"Annots")
+            .map(|a| doc.resolve(a))
+            .and_then(|a| a.as_array().cloned())
+            .unwrap_or_default();
         for a in annots.iter() {
-            let Some(w) = doc.resolve(a).as_dict().cloned() else { continue };
+            let Some(w) = doc.resolve(a).as_dict().cloned() else {
+                continue;
+            };
             if w.name(b"Subtype") != Some(b"Widget") {
                 continue;
             }
@@ -713,13 +876,22 @@ fn collect_names(
     if depth > 32 || !seen.insert(node) {
         return;
     }
-    let Some(d) = dst.get(node).as_dict().cloned() else { return };
-    let name = d.get(b"T").and_then(|t| dst.resolve(t).as_string().map(|s| s.to_text())).unwrap_or_default();
+    let Some(d) = dst.get(node).as_dict().cloned() else {
+        return;
+    };
+    let name = d
+        .get(b"T")
+        .and_then(|t| dst.resolve(t).as_string().map(|s| s.to_text()))
+        .unwrap_or_default();
     let prefix = qualified_optional(prefix, &name);
     if !name.is_empty() {
         out.insert(prefix.clone());
     }
-    let kids = d.get(b"Kids").map(|k| dst.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
+    let kids = d
+        .get(b"Kids")
+        .map(|k| dst.resolve(k))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default();
     for kid in kids.iter().filter_map(|k| k.as_ref()) {
         collect_names(dst, kid, &prefix, seen, depth + 1, out);
     }
@@ -727,12 +899,20 @@ fn collect_names(
 
 /// `prefix.name`, or `name` at the top level.
 fn qualified(prefix: &str, name: &str) -> String {
-    if prefix.is_empty() { name.to_string() } else { format!("{prefix}.{name}") }
+    if prefix.is_empty() {
+        name.to_string()
+    } else {
+        format!("{prefix}.{name}")
+    }
 }
 
 /// The prefix a node's children hang under: its own name, when it has one.
 fn qualified_optional(prefix: &str, name: &str) -> String {
-    if name.is_empty() { prefix.to_string() } else { qualified(prefix, name) }
+    if name.is_empty() {
+        prefix.to_string()
+    } else {
+        qualified(prefix, name)
+    }
 }
 
 /// Add top-level fields to the destination's `/AcroForm /Fields` (creating the form if needed).
@@ -741,13 +921,21 @@ fn register_fields(dst: &mut Document, fields: &[ObjRef]) -> Result<(), Organize
         return Ok(());
     }
     let root = dst.root().ok_or(OrganizeError::NoPageTree)?;
-    let catalog = dst.get(root).as_dict().cloned().ok_or(OrganizeError::NoPageTree)?;
+    let catalog = dst
+        .get(root)
+        .as_dict()
+        .cloned()
+        .ok_or(OrganizeError::NoPageTree)?;
     let (form_ref, mut form) = match catalog.get(b"AcroForm") {
         Some(Object::Ref(r)) => (Some(*r), dst.get(*r).as_dict().cloned().unwrap_or_default()),
         Some(Object::Dict(d)) => (None, d.clone()),
         _ => (None, Dict::new()),
     };
-    let mut list = form.get(b"Fields").map(|f| dst.resolve(f)).and_then(|f| f.as_array().cloned()).unwrap_or_default();
+    let mut list = form
+        .get(b"Fields")
+        .map(|f| dst.resolve(f))
+        .and_then(|f| f.as_array().cloned())
+        .unwrap_or_default();
     for f in fields {
         if !list.contains(&Object::Ref(*f)) {
             list.push(Object::Ref(*f));
@@ -778,7 +966,12 @@ pub fn extract_pages(src: &Document, pages: &[usize]) -> Result<Document, Organi
         }
     }
     // After the title: the XMP packet repeats it.
-    crate::pdfx::carry(&mut out, Some(src), &crate::pdfx::PrintStandard::of(src), imported.objects)?;
+    crate::pdfx::carry(
+        &mut out,
+        Some(src),
+        &crate::pdfx::PrintStandard::of(src),
+        imported.objects,
+    )?;
     // The pages share their source's resource dictionary, so the part would otherwise carry every
     // XObject the source lists — images and all (#204). Keep only what these pages draw.
     crate::prune::prune_unused_xobjects(&mut out)?;
@@ -797,8 +990,15 @@ pub enum SplitBy {
 /// The page ranges (0-based, end-exclusive) a split produces.
 pub fn split_ranges(page_count: usize, by: &SplitBy) -> Vec<std::ops::Range<usize>> {
     let mut cuts: Vec<usize> = match by {
-        SplitBy::PageCount(n) => (1..).map(|i| i * (*n).max(1)).take_while(|c| *c < page_count).collect(),
-        SplitBy::Before(v) => v.iter().copied().filter(|c| *c > 0 && *c < page_count).collect(),
+        SplitBy::PageCount(n) => (1..)
+            .map(|i| i * (*n).max(1))
+            .take_while(|c| *c < page_count)
+            .collect(),
+        SplitBy::Before(v) => v
+            .iter()
+            .copied()
+            .filter(|c| *c > 0 && *c < page_count)
+            .collect(),
     };
     cuts.sort_unstable();
     cuts.dedup();
@@ -816,7 +1016,10 @@ pub fn split_ranges(page_count: usize, by: &SplitBy) -> Vec<std::ops::Range<usiz
 /// Split a document into several new documents.
 pub fn split(src: &Document, by: &SplitBy) -> Result<Vec<Document>, OrganizeError> {
     let n = crate::page_count(src)?;
-    split_ranges(n, by).into_iter().map(|r| extract_pages(src, &r.collect::<Vec<_>>())).collect()
+    split_ranges(n, by)
+        .into_iter()
+        .map(|r| extract_pages(src, &r.collect::<Vec<_>>()))
+        .collect()
 }
 
 /// What combining produced, beyond the document: the fields renamed to keep colliding names
@@ -838,19 +1041,28 @@ pub fn combine(sources: &[(&str, &Document)]) -> Result<Document, OrganizeError>
 }
 
 /// [`combine`] reporting what the conflict resolution renamed.
-pub fn combine_with(sources: &[(&str, &Document)], conflicts: FieldConflicts) -> Result<CombineOutcome, OrganizeError> {
-    let all: Vec<(&str, &Document, Option<&[usize]>)> = sources.iter().map(|(t, d)| (*t, *d, None)).collect();
+pub fn combine_with(
+    sources: &[(&str, &Document)],
+    conflicts: FieldConflicts,
+) -> Result<CombineOutcome, OrganizeError> {
+    let all: Vec<(&str, &Document, Option<&[usize]>)> =
+        sources.iter().map(|(t, d)| (*t, *d, None)).collect();
     combine_selected_with(&all, conflicts)
 }
 
 /// Combine Files with chosen pages: each source contributes `pages` (0-based, in that order;
 /// `None` for all of them). Bookmarks that point at pages left out lose their destination.
-pub fn combine_selected(sources: &[(&str, &Document, Option<&[usize]>)]) -> Result<Document, OrganizeError> {
+pub fn combine_selected(
+    sources: &[(&str, &Document, Option<&[usize]>)],
+) -> Result<Document, OrganizeError> {
     combine_selected_with(sources, FieldConflicts::Rename).map(|o| o.doc)
 }
 
 /// [`combine_selected`] reporting what the conflict resolution renamed.
-pub fn combine_selected_with(sources: &[(&str, &Document, Option<&[usize]>)], conflicts: FieldConflicts) -> Result<CombineOutcome, OrganizeError> {
+pub fn combine_selected_with(
+    sources: &[(&str, &Document, Option<&[usize]>)],
+    conflicts: FieldConflicts,
+) -> Result<CombineOutcome, OrganizeError> {
     let mut combiner = Combiner::with_field_conflicts(conflicts);
     for (title, src, chosen) in sources {
         combiner.add(title, src, *chosen)?;
@@ -918,7 +1130,12 @@ impl Combiner {
 
     /// Add `src`'s `pages` (0-based, in that order; `None` for all of them) after the pages added so far,
     /// under a bookmark titled `title`. `src` need not outlive the call.
-    pub fn add(&mut self, title: &str, src: &Document, pages: Option<&[usize]>) -> Result<(), OrganizeError> {
+    pub fn add(
+        &mut self,
+        title: &str,
+        src: &Document,
+        pages: Option<&[usize]>,
+    ) -> Result<(), OrganizeError> {
         let n = crate::page_count(src)?;
         let pages: Vec<usize> = match pages {
             Some(p) => {
@@ -934,15 +1151,27 @@ impl Combiner {
         self.renamed_fields.extend(imported.renamed_fields);
         if let Some(first) = imported.pages.first() {
             let outline = source_outline(src, imported.page_map);
-            self.marks.push(Mark { title: title.to_string(), page: *first, outline });
+            self.marks.push(Mark {
+                title: title.to_string(),
+                page: *first,
+                outline,
+            });
         }
         collect_attachments(&mut self.out, src, &mut self.attachments);
         let declared = crate::pdfx::PrintStandard::of(src);
-        match self.standard.as_ref().map(|first| first.declared.same_as(&declared)) {
+        match self
+            .standard
+            .as_ref()
+            .map(|first| first.declared.same_as(&declared))
+        {
             Some(same) => self.agreed &= same,
             None => {
                 let source = declared.declares_output_intents().then(|| src.clone());
-                self.standard = Some(Standard { declared, objects: imported.objects, source });
+                self.standard = Some(Standard {
+                    declared,
+                    objects: imported.objects,
+                    source,
+                });
             }
         }
         Ok(())
@@ -956,16 +1185,36 @@ impl Combiner {
 
     /// [`Combiner::finish`] reporting what the combine renamed.
     pub fn finish_with_renames(self) -> Result<CombineOutcome, OrganizeError> {
-        let Combiner { mut out, marks, attachments, standard, agreed, renamed_fields, .. } = self;
+        let Combiner {
+            mut out,
+            marks,
+            attachments,
+            standard,
+            agreed,
+            renamed_fields,
+            ..
+        } = self;
         if let Some(first) = standard.filter(|_| agreed) {
-            crate::pdfx::carry(&mut out, first.source.as_ref(), &first.declared, first.objects)?;
+            crate::pdfx::carry(
+                &mut out,
+                first.source.as_ref(),
+                &first.declared,
+                first.objects,
+            )?;
         }
         // Sources often share fonts, images and profiles (or are the same file): store them once.
-        let all: Vec<ObjRef> = out.object_numbers().into_iter().map(|n| ObjRef::new(n, out.generation(n))).collect();
+        let all: Vec<ObjRef> = out
+            .object_numbers()
+            .into_iter()
+            .map(|n| ObjRef::new(n, out.generation(n)))
+            .collect();
         crate::dedupe::dedupe_resources(&mut out, &all, false);
         add_outline(&mut out, &marks)?;
         set_attachments(&mut out, attachments)?;
-        Ok(CombineOutcome { doc: out, renamed_fields })
+        Ok(CombineOutcome {
+            doc: out,
+            renamed_fields,
+        })
     }
 }
 
@@ -984,7 +1233,10 @@ pub fn combine_grouped(runs: &[Run<'_>]) -> Result<Document, OrganizeError> {
 }
 
 /// [`combine_grouped`] reporting what the conflict resolution renamed.
-pub fn combine_grouped_with(runs: &[Run<'_>], conflicts: FieldConflicts) -> Result<CombineOutcome, OrganizeError> {
+pub fn combine_grouped_with(
+    runs: &[Run<'_>],
+    conflicts: FieldConflicts,
+) -> Result<CombineOutcome, OrganizeError> {
     // Each file's pages, in the order its runs list them, and each run's place in that list.
     struct File<'a> {
         title: &'a str,
@@ -997,11 +1249,20 @@ pub fn combine_grouped_with(runs: &[Run<'_>], conflicts: FieldConflicts) -> Resu
         let at = match files.iter().position(|(g, _)| g == group) {
             Some(at) => at,
             None => {
-                files.push((*group, File { title, src, pages: Vec::new() }));
+                files.push((
+                    *group,
+                    File {
+                        title,
+                        src,
+                        pages: Vec::new(),
+                    },
+                ));
                 files.len() - 1
             }
         };
-        let Some((_, file)) = files.get_mut(at) else { continue };
+        let Some((_, file)) = files.get_mut(at) else {
+            continue;
+        };
         let n = crate::page_count(file.src)?;
         let pages: Vec<usize> = match chosen {
             Some(p) => {
@@ -1020,7 +1281,11 @@ pub fn combine_grouped_with(runs: &[Run<'_>], conflicts: FieldConflicts) -> Resu
     let mut attachments = Vec::new();
     let mut copies: Vec<Vec<ObjRef>> = Vec::with_capacity(files.len());
     let mut renamed_fields = Vec::new();
-    let mut standard: Option<(crate::pdfx::PrintStandard, &Document, HashMap<ObjRef, ObjRef>)> = None;
+    let mut standard: Option<(
+        crate::pdfx::PrintStandard,
+        &Document,
+        HashMap<ObjRef, ObjRef>,
+    )> = None;
     let mut agreed = true;
     for (_, file) in &files {
         let at = crate::page_count(&out)?;
@@ -1028,7 +1293,11 @@ pub fn combine_grouped_with(runs: &[Run<'_>], conflicts: FieldConflicts) -> Resu
         copies.push(imported.pages.clone());
         renamed_fields.extend(imported.renamed_fields);
         if let Some(first) = imported.pages.first() {
-            marks.push(Mark { title: file.title.to_string(), page: *first, outline: source_outline(file.src, imported.page_map) });
+            marks.push(Mark {
+                title: file.title.to_string(),
+                page: *first,
+                outline: source_outline(file.src, imported.page_map),
+            });
         }
         collect_attachments(&mut out, file.src, &mut attachments);
         let declared = crate::pdfx::PrintStandard::of(file.src);
@@ -1041,18 +1310,28 @@ pub fn combine_grouped_with(runs: &[Run<'_>], conflicts: FieldConflicts) -> Resu
     // were copied in run order, so its bookmark (its first copied page) is its first page shown.
     let mut order: Vec<(ObjRef, Dict)> = Vec::new();
     for (file, start, len) in slices {
-        let run = copies.get(file).and_then(|c| c.get(start..start.saturating_add(len))).unwrap_or_default();
+        let run = copies
+            .get(file)
+            .and_then(|c| c.get(start..start.saturating_add(len)))
+            .unwrap_or_default();
         order.extend(run.iter().map(|r| (*r, Dict::new())));
     }
     rebuild(&mut out, &order)?;
     if let Some((declared, src, objects)) = standard.filter(|_| agreed) {
         crate::pdfx::carry(&mut out, Some(src), &declared, objects)?;
     }
-    let all: Vec<ObjRef> = out.object_numbers().into_iter().map(|n| ObjRef::new(n, out.generation(n))).collect();
+    let all: Vec<ObjRef> = out
+        .object_numbers()
+        .into_iter()
+        .map(|n| ObjRef::new(n, out.generation(n)))
+        .collect();
     crate::dedupe::dedupe_resources(&mut out, &all, false);
     add_outline(&mut out, &marks)?;
     set_attachments(&mut out, attachments)?;
-    Ok(CombineOutcome { doc: out, renamed_fields })
+    Ok(CombineOutcome {
+        doc: out,
+        renamed_fields,
+    })
 }
 
 /// Copy a source's document-level attachments (`/Names /EmbeddedFiles`) into `dst`.
@@ -1067,7 +1346,14 @@ fn collect_attachments(dst: &mut Document, src: &Document, out: &mut Vec<(Vec<u8
     };
     let mut entries = Vec::new();
     name_tree_entries(src, &tree, 0, &mut entries);
-    let mut copier = Copier { src, map: HashMap::new(), pages: HashMap::new(), annots: Vec::new(), fields: Vec::new(), ocgs: Vec::new() };
+    let mut copier = Copier {
+        src,
+        map: HashMap::new(),
+        pages: HashMap::new(),
+        annots: Vec::new(),
+        fields: Vec::new(),
+        ocgs: Vec::new(),
+    };
     for (k, v) in entries {
         let v = copier.copy_value(dst, &v, None);
         out.push((k, v));
@@ -1075,7 +1361,10 @@ fn collect_attachments(dst: &mut Document, src: &Document, out: &mut Vec<(Vec<u8
 }
 
 /// Write attachments as a flat, sorted `/EmbeddedFiles` name tree; duplicate names get " (2)"…
-fn set_attachments(dst: &mut Document, mut entries: Vec<(Vec<u8>, Object)>) -> Result<(), OrganizeError> {
+fn set_attachments(
+    dst: &mut Document,
+    mut entries: Vec<(Vec<u8>, Object)>,
+) -> Result<(), OrganizeError> {
     if entries.is_empty() {
         return Ok(());
     }
@@ -1137,14 +1426,26 @@ fn source_outline(src: &Document, pages: HashMap<ObjRef, ObjRef>) -> Vec<Outline
         .and_then(|r| src.get(r).as_dict().cloned())
         .and_then(|c| c.get(b"Outlines").map(|o| src.resolve(o)))
         .and_then(|o| o.as_dict().and_then(|d| d.reference(b"First")));
-    let mapper = Copier { src, map: HashMap::new(), pages, annots: Vec::new(), fields: Vec::new(), ocgs: Vec::new() };
+    let mapper = Copier {
+        src,
+        map: HashMap::new(),
+        pages,
+        annots: Vec::new(),
+        fields: Vec::new(),
+        ocgs: Vec::new(),
+    };
     let mut budget = 10_000usize;
     outline_level(&mapper, first, 0, &mut budget)
 }
 
 /// One level of bookmarks from `first` (its siblings), each with its children. Cycle- and size-safe:
 /// at most `budget` bookmarks are read in all, and nesting stops at 32 levels.
-fn outline_level(m: &Copier<'_>, first: Option<ObjRef>, depth: u8, budget: &mut usize) -> Vec<OutlineNode> {
+fn outline_level(
+    m: &Copier<'_>,
+    first: Option<ObjRef>,
+    depth: u8,
+    budget: &mut usize,
+) -> Vec<OutlineNode> {
     if depth > 32 {
         return Vec::new();
     }
@@ -1156,20 +1457,33 @@ fn outline_level(m: &Copier<'_>, first: Option<ObjRef>, depth: u8, budget: &mut 
             break;
         }
         *budget -= 1;
-        let Some(item) = m.src.get(r).as_dict().cloned() else { break };
+        let Some(item) = m.src.get(r).as_dict().cloned() else {
+            break;
+        };
         cur = item.reference(b"Next");
-        let title = item.get(b"Title").map(|t| m.src.resolve(t).as_ref().clone());
+        let title = item
+            .get(b"Title")
+            .map(|t| m.src.resolve(t).as_ref().clone());
         let colour = item.get(b"C").map(|v| m.src.resolve(v).as_ref().clone());
         let flags = item.get(b"F").map(|v| m.src.resolve(v).as_ref().clone());
         let target = item.get(b"Dest").cloned().or_else(|| {
             let a = m.src.resolve(item.get(b"A")?);
             let a = a.as_dict()?;
-            (a.name(b"S") == Some(b"GoTo")).then(|| a.get(b"D").cloned()).flatten()
+            (a.name(b"S") == Some(b"GoTo"))
+                .then(|| a.get(b"D").cloned())
+                .flatten()
         });
         let dest = target.and_then(|t| m.map_dest(&t));
         let open = item.int(b"Count").is_some_and(|c| c > 0);
         let children = outline_level(m, item.reference(b"First"), depth + 1, budget);
-        made.push(OutlineNode { title, colour, flags, dest, open, children });
+        made.push(OutlineNode {
+            title,
+            colour,
+            flags,
+            dest,
+            open,
+            children,
+        });
     }
     made
 }
@@ -1177,7 +1491,11 @@ fn outline_level(m: &Copier<'_>, first: Option<ObjRef>, depth: u8, budget: &mut 
 /// Write `nodes` as one level under `parent`: each bookmark is created, then its children, depth first
 /// and in order, so the object numbers come out as they always did. Returns the level's first and last
 /// item and how many items it has (`None` when it is empty).
-fn write_outline_level(dst: &mut Document, parent: ObjRef, nodes: &[OutlineNode]) -> Result<Option<(ObjRef, ObjRef, usize)>, OrganizeError> {
+fn write_outline_level(
+    dst: &mut Document,
+    parent: ObjRef,
+    nodes: &[OutlineNode],
+) -> Result<Option<(ObjRef, ObjRef, usize)>, OrganizeError> {
     let mut made: Vec<ObjRef> = Vec::new();
     for node in nodes {
         let new = dst.add(Object::Null);
@@ -1203,7 +1521,10 @@ fn write_outline_level(dst: &mut Document, parent: ObjRef, nodes: &[OutlineNode]
             d.set(b"First".to_vec(), Object::Ref(f));
             d.set(b"Last".to_vec(), Object::Ref(l));
             // Keep the source's open/closed state.
-            d.set(b"Count".to_vec(), Object::Int(if node.open { n as i64 } else { -(n as i64) }));
+            d.set(
+                b"Count".to_vec(),
+                Object::Int(if node.open { n as i64 } else { -(n as i64) }),
+            );
         }
         dst.set(new, Object::Dict(d));
         made.push(new);
@@ -1222,12 +1543,20 @@ fn add_outline(doc: &mut Document, marks: &[Mark]) -> Result<(), OrganizeError> 
     }
     let outlines = doc.add(Object::Null);
     let items: Vec<ObjRef> = marks.iter().map(|_| doc.add(Object::Null)).collect();
-    let (Some(&first_item), Some(&last_item)) = (items.first(), items.last()) else { return Ok(()) };
+    let (Some(&first_item), Some(&last_item)) = (items.first(), items.last()) else {
+        return Ok(());
+    };
     for (i, (mark, r)) in marks.iter().zip(&items).enumerate() {
         let mut d = Dict::new();
-        d.set(b"Title".to_vec(), Object::String(pdfcraft_cos::PdfString::text(&mark.title)));
+        d.set(
+            b"Title".to_vec(),
+            Object::String(pdfcraft_cos::PdfString::text(&mark.title)),
+        );
         d.set(b"Parent".to_vec(), Object::Ref(outlines));
-        d.set(b"Dest".to_vec(), Object::Array(vec![Object::Ref(mark.page), Object::name("Fit")]));
+        d.set(
+            b"Dest".to_vec(),
+            Object::Array(vec![Object::Ref(mark.page), Object::name("Fit")]),
+        );
         if i > 0 {
             d.set(b"Prev".to_vec(), Object::Ref(items[i - 1]));
         }
@@ -1259,21 +1588,45 @@ fn add_outline(doc: &mut Document, marks: &[Mark]) -> Result<(), OrganizeError> 
 /// for backgrounds and watermarks taken from a PDF. The form's `/BBox` is the page's crop box
 /// and its `/Matrix` undoes the page rotation, so it draws upright as displayed. Returns the
 /// form and its displayed size in points.
-pub fn page_as_form(dst: &mut Document, src: &Document, page: usize) -> Result<(ObjRef, (f64, f64)), OrganizeError> {
+pub fn page_as_form(
+    dst: &mut Document,
+    src: &Document,
+    page: usize,
+) -> Result<(ObjRef, (f64, f64)), OrganizeError> {
     use pdfcraft_cos::Stream;
     let all = walk(src)?;
     // `walk` gives the inheritable attributes (resources, boxes, rotation); the content is
     // the page's own.
-    let (pr, d) = all.get(page).cloned().ok_or(OrganizeError::NoSuchPage(page))?;
+    let (pr, d) = all
+        .get(page)
+        .cloned()
+        .ok_or(OrganizeError::NoSuchPage(page))?;
     let own = src.get(pr).as_dict().cloned().unwrap_or_default();
     let rect = |k: &[u8]| -> Option<[f64; 4]> {
         let a = src.resolve(d.get(k)?);
-        let v: Vec<f64> = a.as_array()?.iter().filter_map(|x| src.resolve(x).as_f64()).collect();
-        (v.len() == 4).then(|| [v[0].min(v[2]), v[1].min(v[3]), v[0].max(v[2]), v[1].max(v[3])])
+        let v: Vec<f64> = a
+            .as_array()?
+            .iter()
+            .filter_map(|x| src.resolve(x).as_f64())
+            .collect();
+        (v.len() == 4).then(|| {
+            [
+                v[0].min(v[2]),
+                v[1].min(v[3]),
+                v[0].max(v[2]),
+                v[1].max(v[3]),
+            ]
+        })
     };
-    let bbox = rect(b"CropBox").or_else(|| rect(b"MediaBox")).unwrap_or([0.0, 0.0, 612.0, 792.0]);
+    let bbox = rect(b"CropBox")
+        .or_else(|| rect(b"MediaBox"))
+        .unwrap_or([0.0, 0.0, 612.0, 792.0]);
     let (w, h) = (bbox[2] - bbox[0], bbox[3] - bbox[1]);
-    let rotate = d.get(b"Rotate").and_then(|r| src.resolve(r).as_int()).unwrap_or(0).rem_euclid(360);
+    let rotate = d
+        .get(b"Rotate")
+        .and_then(|r| src.resolve(r).as_int())
+        .unwrap_or(0)
+        .rem_euclid(360);
     // Content: the page's streams, decoded and joined.
     let mut content = Vec::new();
     if let Some(c) = own.get(b"Contents") {
@@ -1283,18 +1636,33 @@ pub fn page_as_form(dst: &mut Document, src: &Document, page: usize) -> Result<(
         };
         for o in list {
             if let Object::Stream(s) = &*src.resolve(&o) {
-                content.extend(s.decoded().map_err(|e| OrganizeError::Invalid(format!("page {} content: {e}", page + 1)))?);
+                content.extend(s.decoded().map_err(|e| {
+                    OrganizeError::Invalid(format!("page {} content: {e}", page + 1))
+                })?);
                 content.push(b'\n');
             }
         }
     }
-    let mut copier = Copier { src, map: HashMap::new(), pages: HashMap::new(), annots: Vec::new(), fields: Vec::new(), ocgs: Vec::new() };
-    let resources = d.get(b"Resources").map(|r| copier.copy_value(dst, r, None)).unwrap_or(Object::Dict(Dict::new()));
+    let mut copier = Copier {
+        src,
+        map: HashMap::new(),
+        pages: HashMap::new(),
+        annots: Vec::new(),
+        fields: Vec::new(),
+        ocgs: Vec::new(),
+    };
+    let resources = d
+        .get(b"Resources")
+        .map(|r| copier.copy_value(dst, r, None))
+        .unwrap_or(Object::Dict(Dict::new()));
     register_layers(dst, src, &copier.ocgs)?;
     let mut fd = Dict::new();
     fd.set(b"Type".to_vec(), Object::name("XObject"));
     fd.set(b"Subtype".to_vec(), Object::name("Form"));
-    fd.set(b"BBox".to_vec(), Object::Array(bbox.iter().map(|v| Object::Real(*v)).collect()));
+    fd.set(
+        b"BBox".to_vec(),
+        Object::Array(bbox.iter().map(|v| Object::Real(*v)).collect()),
+    );
     // Map the crop box to (0, 0)–(w, h) as displayed (turning a rotated page upright).
     let m: [f64; 6] = match rotate {
         90 => [0.0, -1.0, 1.0, 0.0, -bbox[1], bbox[2]],
@@ -1302,9 +1670,16 @@ pub fn page_as_form(dst: &mut Document, src: &Document, page: usize) -> Result<(
         270 => [0.0, 1.0, -1.0, 0.0, bbox[3], -bbox[0]],
         _ => [1.0, 0.0, 0.0, 1.0, -bbox[0], -bbox[1]],
     };
-    fd.set(b"Matrix".to_vec(), Object::Array(m.iter().map(|v| Object::Real(*v)).collect()));
+    fd.set(
+        b"Matrix".to_vec(),
+        Object::Array(m.iter().map(|v| Object::Real(*v)).collect()),
+    );
     fd.set(b"Resources".to_vec(), resources);
     let r = dst.add(Object::Stream(Stream::flate(fd, &content)));
-    let size = if rotate == 90 || rotate == 270 { (h, w) } else { (w, h) };
+    let size = if rotate == 90 || rotate == 270 {
+        (h, w)
+    } else {
+        (w, h)
+    };
     Ok((r, size))
 }

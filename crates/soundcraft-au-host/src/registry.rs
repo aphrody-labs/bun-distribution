@@ -1,8 +1,14 @@
 //! The process-wide Audio Unit registry: scan cache, leaked `PluginInfo`s, instantiation.
 
-use crate::ffi::{self, Instance, PARAM_FLAG_DISPLAY_LOG, PARAM_FLAG_METER_READ_ONLY, PARAM_FLAG_WRITABLE, RawParam};
+use crate::ffi::{
+    self, Instance, PARAM_FLAG_DISPLAY_LOG, PARAM_FLAG_METER_READ_ONLY, PARAM_FLAG_WRITABLE,
+    RawParam,
+};
 use crate::plugin::AuPlugin;
-use crate::{AuDescriptor, AuError, SUPPORTED_TYPES, TYPE_EFFECT, TYPE_INSTRUMENT, TYPE_MUSIC_EFFECT, parse_id};
+use crate::{
+    AuDescriptor, AuError, SUPPORTED_TYPES, TYPE_EFFECT, TYPE_INSTRUMENT, TYPE_MUSIC_EFFECT,
+    parse_id,
+};
 use soundcraft_dsp::{ParamInfo, Plugin, PluginInfo, Taper, Unit};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Mutex, OnceLock, PoisonError};
@@ -50,7 +56,11 @@ fn list() -> Vec<AuDescriptor> {
                 continue;
             }
             let (vendor, name) = crate::split_component_name(&c.name);
-            let name = if name.is_empty() { "Audio Unit".to_string() } else { name };
+            let name = if name.is_empty() {
+                "Audio Unit".to_string()
+            } else {
+                name
+            };
             out.push(AuDescriptor {
                 category: crate::category_for(c.ty, c.subtype, &name),
                 is_instrument: c.ty == TYPE_INSTRUMENT,
@@ -116,14 +126,25 @@ pub(crate) fn unit_for(unit: u32, custom: &str) -> Unit {
 
 /// The SoundCraft description of one parameter (`None` for read-only/meter/broken ones).
 pub(crate) fn param_info(p: &RawParam) -> Option<ParamInfo> {
-    if p.flags & PARAM_FLAG_WRITABLE == 0 || p.flags & PARAM_FLAG_METER_READ_ONLY != 0 || p.unit == U_METERS {
+    if p.flags & PARAM_FLAG_WRITABLE == 0
+        || p.flags & PARAM_FLAG_METER_READ_ONLY != 0
+        || p.unit == U_METERS
+    {
         return None;
     }
     if !(p.min.is_finite() && p.max.is_finite() && p.max > p.min) {
         return None;
     }
-    let name = if p.name.trim().is_empty() { format!("Param {}", p.id) } else { p.name.trim().to_string() };
-    let default = if p.default.is_finite() { p.default.clamp(p.min, p.max) } else { p.min };
+    let name = if p.name.trim().is_empty() {
+        format!("Param {}", p.id)
+    } else {
+        p.name.trim().to_string()
+    };
+    let default = if p.default.is_finite() {
+        p.default.clamp(p.min, p.max)
+    } else {
+        p.min
+    };
     let base = ParamInfo {
         id: leak(p.id.to_string()),
         name: leak(name),
@@ -135,23 +156,51 @@ pub(crate) fn param_info(p: &RawParam) -> Option<ParamInfo> {
         choices: &[],
     };
     if p.unit == U_BOOLEAN && p.min == 0.0 && p.max == 1.0 {
-        return Some(ParamInfo { unit: Unit::Toggle, default: default.round(), ..base });
+        return Some(ParamInfo {
+            unit: Unit::Toggle,
+            default: default.round(),
+            ..base
+        });
     }
     if p.unit == ffi::UNIT_INDEXED && p.min == 0.0 && p.max.fract() == 0.0 && p.max <= MAX_CHOICES {
         let n = p.max as usize;
-        let labels: Vec<&'static str> =
-            (0..=n).map(|i| leak(p.value_strings.get(i).filter(|s| !s.is_empty()).cloned().unwrap_or_else(|| i.to_string()))).collect();
-        return Some(ParamInfo { unit: Unit::Choice, default: default.round(), choices: Box::leak(labels.into_boxed_slice()), ..base });
+        let labels: Vec<&'static str> = (0..=n)
+            .map(|i| {
+                leak(
+                    p.value_strings
+                        .get(i)
+                        .filter(|s| !s.is_empty())
+                        .cloned()
+                        .unwrap_or_else(|| i.to_string()),
+                )
+            })
+            .collect();
+        return Some(ParamInfo {
+            unit: Unit::Choice,
+            default: default.round(),
+            choices: Box::leak(labels.into_boxed_slice()),
+            ..base
+        });
     }
     let unit = unit_for(p.unit, &p.custom_unit);
-    let log = p.min > 0.0 && (p.flags & PARAM_FLAG_DISPLAY_LOG != 0 || (unit == Unit::Hz && p.max / p.min >= 10.0));
-    Some(ParamInfo { unit, taper: if log { Taper::Log } else { Taper::Linear }, ..base })
+    let log = p.min > 0.0
+        && (p.flags & PARAM_FLAG_DISPLAY_LOG != 0 || (unit == Unit::Hz && p.max / p.min >= 10.0));
+    Some(ParamInfo {
+        unit,
+        taper: if log { Taper::Log } else { Taper::Linear },
+        ..base
+    })
 }
 
 /// Builds and leaks the `PluginInfo` for one plugin type. Called at most once per id (cached).
 fn build_info(d: &AuDescriptor, inst: &Instance) -> &'static PluginInfo {
     let mut seen = HashSet::new();
-    let params: Vec<ParamInfo> = inst.params().iter().filter(|p| seen.insert(p.id)).filter_map(param_info).collect();
+    let params: Vec<ParamInfo> = inst
+        .params()
+        .iter()
+        .filter(|p| seen.insert(p.id))
+        .filter_map(param_info)
+        .collect();
     let short: String = d.name.chars().take(8).collect();
     Box::leak(Box::new(PluginInfo {
         id: leak(d.id.clone()),
@@ -172,7 +221,11 @@ fn instantiate_raw(id: &str) -> Result<(Instance, &'static PluginInfo, u32), AuE
         if r.failed.contains(id) {
             return Err(AuError::Instantiate(id.to_string(), "failed before".into()));
         }
-        ensure_scanned(&mut r).iter().find(|d| d.id == id).cloned().ok_or_else(|| AuError::NotFound(id.to_string()))?
+        ensure_scanned(&mut r)
+            .iter()
+            .find(|d| d.id == id)
+            .cloned()
+            .ok_or_else(|| AuError::NotFound(id.to_string()))?
     };
     let has_input = ty == TYPE_EFFECT || ty == TYPE_MUSIC_EFFECT;
     let made = Instance::new(ty, sub, manu, has_input);
@@ -256,7 +309,10 @@ mod tests {
     #[test]
     fn params_map_and_hostile_ones_are_dropped() {
         let p = param_info(&raw(U_HERTZ, 10.0, 22_050.0, 6900.0, 0)).unwrap();
-        assert_eq!((p.id, p.name, p.unit, p.taper, p.default), ("7", "Cutoff", Unit::Hz, Taper::Log, 6900.0));
+        assert_eq!(
+            (p.id, p.name, p.unit, p.taper, p.default),
+            ("7", "Cutoff", Unit::Hz, Taper::Log, 6900.0)
+        );
         let t = param_info(&raw(U_BOOLEAN, 0.0, 1.0, 1.0, 0)).unwrap();
         assert_eq!(t.unit, Unit::Toggle);
         let mut ix = raw(ffi::UNIT_INDEXED, 0.0, 2.0, 1.0, 0);
@@ -264,10 +320,25 @@ mod tests {
         let c = param_info(&ix).unwrap();
         assert_eq!((c.unit, c.choices), (Unit::Choice, &["Low", "1", "2"][..]));
         // Indexed not starting at 0 stays a plain range.
-        assert_eq!(param_info(&raw(ffi::UNIT_INDEXED, 1.0, 4.0, 1.0, 0)).unwrap().unit, Unit::None);
+        assert_eq!(
+            param_info(&raw(ffi::UNIT_INDEXED, 1.0, 4.0, 1.0, 0))
+                .unwrap()
+                .unit,
+            Unit::None
+        );
         // Hostile defaults clamp; broken ranges, meters and read-only params are skipped.
-        assert_eq!(param_info(&raw(U_DECIBELS, -20.0, 20.0, f32::NAN, 0)).unwrap().default, -20.0);
-        assert_eq!(param_info(&raw(U_DECIBELS, -20.0, 20.0, 99.0, 0)).unwrap().default, 20.0);
+        assert_eq!(
+            param_info(&raw(U_DECIBELS, -20.0, 20.0, f32::NAN, 0))
+                .unwrap()
+                .default,
+            -20.0
+        );
+        assert_eq!(
+            param_info(&raw(U_DECIBELS, -20.0, 20.0, 99.0, 0))
+                .unwrap()
+                .default,
+            20.0
+        );
         assert!(param_info(&raw(U_DECIBELS, 1.0, 1.0, 1.0, 0)).is_none());
         assert!(param_info(&raw(U_DECIBELS, f32::NEG_INFINITY, 0.0, 0.0, 0)).is_none());
         assert!(param_info(&raw(U_DECIBELS, 0.0, f32::NAN, 0.0, 0)).is_none());

@@ -2,8 +2,8 @@ mod extrusion;
 mod primitive_impls;
 
 use bevy_math::{
-    ops::{self, FloatPow},
     Isometry3d, Mat3, Quat, Vec3A,
+    ops::{self, FloatPow},
 };
 
 use super::{BoundingVolume, IntersectsVolume};
@@ -294,7 +294,7 @@ mod aabb3d_tests {
     use approx::assert_relative_eq;
 
     use crate::{Aabb3d, BoundingSphere, BoundingVolume, IntersectsVolume};
-    use bevy_math::{ops, EulerRot, Quat, Vec3, Vec3A};
+    use bevy_math::{EulerRot, Quat, Vec3, Vec3A, ops};
 
     #[test]
     fn center() {
@@ -690,7 +690,7 @@ mod bounding_sphere_tests {
     use approx::assert_relative_eq;
 
     use crate::{BoundingSphere, BoundingVolume, IntersectsVolume};
-    use bevy_math::{ops, Quat, Vec3, Vec3A};
+    use bevy_math::{Quat, Vec3, Vec3A, ops};
 
     #[test]
     fn area() {

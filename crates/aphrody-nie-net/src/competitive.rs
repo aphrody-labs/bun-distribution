@@ -152,17 +152,50 @@ pub struct TierEloFactors {
 
 /// Official Achillea / Rose Griffon calibration table for directional K-factors.
 const TIER_FACTORS_TABLE: [TierEloFactors; 11] = [
-    TierEloFactors { win_k: 40, loss_k: 10 }, // 0 Fer: +20 / -5 at equal skill
-    TierEloFactors { win_k: 40, loss_k: 12 }, // 1 Bronze: +20 / -6
-    TierEloFactors { win_k: 38, loss_k: 16 }, // 2 Argent: +19 / -8
-    TierEloFactors { win_k: 38, loss_k: 18 }, // 3 Or: +19 / -9
-    TierEloFactors { win_k: 36, loss_k: 20 }, // 4 Platine: +18 / -10
-    TierEloFactors { win_k: 36, loss_k: 24 }, // 5 Diamant: +18 / -12
-    TierEloFactors { win_k: 34, loss_k: 26 }, // 6 Émeraude: +17 / -13
-    TierEloFactors { win_k: 34, loss_k: 28 }, // 7 Rubis: +17 / -14
-    TierEloFactors { win_k: 32, loss_k: 32 }, // 8 Divin: +16 / -16 (strictly symmetric)
-    TierEloFactors { win_k: 32, loss_k: 32 }, // 9 Supernova: +16 / -16
-    TierEloFactors { win_k: 32, loss_k: 32 }, // 10 Légendaire: +16 / -16
+    TierEloFactors {
+        win_k: 40,
+        loss_k: 10,
+    }, // 0 Fer: +20 / -5 at equal skill
+    TierEloFactors {
+        win_k: 40,
+        loss_k: 12,
+    }, // 1 Bronze: +20 / -6
+    TierEloFactors {
+        win_k: 38,
+        loss_k: 16,
+    }, // 2 Argent: +19 / -8
+    TierEloFactors {
+        win_k: 38,
+        loss_k: 18,
+    }, // 3 Or: +19 / -9
+    TierEloFactors {
+        win_k: 36,
+        loss_k: 20,
+    }, // 4 Platine: +18 / -10
+    TierEloFactors {
+        win_k: 36,
+        loss_k: 24,
+    }, // 5 Diamant: +18 / -12
+    TierEloFactors {
+        win_k: 34,
+        loss_k: 26,
+    }, // 6 Émeraude: +17 / -13
+    TierEloFactors {
+        win_k: 34,
+        loss_k: 28,
+    }, // 7 Rubis: +17 / -14
+    TierEloFactors {
+        win_k: 32,
+        loss_k: 32,
+    }, // 8 Divin: +16 / -16 (strictly symmetric)
+    TierEloFactors {
+        win_k: 32,
+        loss_k: 32,
+    }, // 9 Supernova: +16 / -16
+    TierEloFactors {
+        win_k: 32,
+        loss_k: 32,
+    }, // 10 Légendaire: +16 / -16
 ];
 
 /// Returns directional K-factors for a given rank tier index.
@@ -315,7 +348,11 @@ impl CompetitiveLadder {
     /// Creates a new competitive ladder.
     #[must_use]
     pub fn new(season_number: u32, season_k_factor: u32) -> Self {
-        Self { profiles: HashMap::new(), season_number, season_k_factor }
+        Self {
+            profiles: HashMap::new(),
+            season_number,
+            season_k_factor,
+        }
     }
 
     /// Gets or creates a player's competitive profile.
@@ -361,7 +398,11 @@ impl CompetitiveLadder {
     #[must_use]
     pub fn leaderboard(&self, limit: usize) -> Vec<&PlayerCompetitiveProfile> {
         let mut list: Vec<&PlayerCompetitiveProfile> = self.profiles.values().collect();
-        list.sort_by(|a, b| b.current_ap.cmp(&a.current_ap).then_with(|| b.wins.cmp(&a.wins)));
+        list.sort_by(|a, b| {
+            b.current_ap
+                .cmp(&a.current_ap)
+                .then_with(|| b.wins.cmp(&a.wins))
+        });
         list.truncate(limit);
         list
     }
@@ -419,7 +460,9 @@ mod tests {
         ladder.get_or_create("user_mark", "Mark Evans");
         ladder.get_or_create("user_axel", "Axel Blaze");
 
-        let res = ladder.submit_match_result("user_mark", "user_axel").unwrap();
+        let res = ladder
+            .submit_match_result("user_mark", "user_axel")
+            .unwrap();
         assert!(res.winner_gain > 0);
 
         let mark = ladder.profiles.get("user_mark").unwrap();

@@ -20,7 +20,10 @@ pub struct RuntimeSubsystem;
 /// `dlopen` the `aphrody-ffi` cdylib. No native library is loaded by the probe.
 fn bun_ffi_available(runtime: &Runtime) -> bool {
     runtime
-        .command(["-e", "if (typeof require('bun:ffi').dlopen !== 'function') process.exit(1)"])
+        .command([
+            "-e",
+            "if (typeof require('bun:ffi').dlopen !== 'function') process.exit(1)",
+        ])
         .output()
         .is_ok_and(|output| output.status.success())
 }
@@ -112,7 +115,7 @@ impl SystemSubsystem for RuntimeSubsystem {
                     )));
                 }
                 path
-            },
+            }
             None => std::env::current_dir()
                 .map_err(|e| SubsystemError::Failed(format!("no working directory: {e}")))?,
         };
@@ -141,7 +144,10 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         std::fs::write(dir.path().join("mise.toml"), "[tools]\nuv = \"0.12.17\"\n").expect("write");
         let result = RuntimeSubsystem::new()
-            .call("runtime_resolve", json!({"project_dir": dir.path(), "toolchain": "uv"}))
+            .call(
+                "runtime_resolve",
+                json!({"project_dir": dir.path(), "toolchain": "uv"}),
+            )
             .await
             .expect("resolve");
         let uv = &result["runtimes"][0];
@@ -154,10 +160,14 @@ mod tests {
     async fn rejects_unknown_toolchain_and_tool() {
         let rt = RuntimeSubsystem::new();
         assert!(matches!(
-            rt.call("runtime_resolve", json!({"toolchain": "node"})).await,
+            rt.call("runtime_resolve", json!({"toolchain": "node"}))
+                .await,
             Err(SubsystemError::InvalidArguments(_))
         ));
-        assert!(matches!(rt.call("nope", json!({})).await, Err(SubsystemError::UnknownTool(_))));
+        assert!(matches!(
+            rt.call("nope", json!({})).await,
+            Err(SubsystemError::UnknownTool(_))
+        ));
         assert_eq!(rt.tools().len(), 1);
     }
 }

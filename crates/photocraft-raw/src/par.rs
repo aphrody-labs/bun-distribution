@@ -1,12 +1,18 @@
 //! Data-parallel helpers: rayon on native targets, sequential on wasm.
 
 /// Calls `f(index, chunk)` for each `chunk`-sized piece of `buf`.
-pub(crate) fn chunks_mut<T: Send>(buf: &mut [T], chunk: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) {
+pub(crate) fn chunks_mut<T: Send>(
+    buf: &mut [T],
+    chunk: usize,
+    f: impl Fn(usize, &mut [T]) + Sync + Send,
+) {
     let chunk = chunk.max(1);
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
-        buf.par_chunks_mut(chunk).enumerate().for_each(|(i, c)| f(i, c));
+        buf.par_chunks_mut(chunk)
+            .enumerate()
+            .for_each(|(i, c)| f(i, c));
     }
     #[cfg(target_arch = "wasm32")]
     buf.chunks_mut(chunk).enumerate().for_each(|(i, c)| f(i, c));
@@ -25,7 +31,12 @@ pub(crate) fn workers() -> usize {
 }
 
 /// Processes normal-sized chunks with at most `jobs` live scratch buffers.
-pub(crate) fn chunks_mut_limited<T: Send>(buf: &mut [T], chunk: usize, jobs: usize, f: impl Fn(usize, &mut [T]) + Sync + Send) {
+pub(crate) fn chunks_mut_limited<T: Send>(
+    buf: &mut [T],
+    chunk: usize,
+    jobs: usize,
+    f: impl Fn(usize, &mut [T]) + Sync + Send,
+) {
     let chunk = chunk.max(1);
     // Each worker holds one band's scratch at a time. When the normal worker
     // count fits, preserve Rayon's fine-grained load balancing.

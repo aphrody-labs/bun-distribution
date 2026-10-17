@@ -18,7 +18,10 @@ impl MoveFs for Faults {
     }
     fn rename_no_replace(&self, a: &Path, b: &Path) -> std::io::Result<()> {
         if self.0.iter().any(|p| same_path_or_file(p, a)) {
-            Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "injected partial move"))
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "injected partial move",
+            ))
         } else {
             RealFs.rename_no_replace(a, b)
         }
@@ -39,20 +42,30 @@ fn packet(marker: &str) -> String {
     )
 }
 fn queues(s: &Session) -> Vec<crate::rename::SidecarMove> {
-    s.pending_sidecar_repairs.iter().chain(s.undo.iter().chain(&s.redo).flat_map(|e| &e.retry_sidecars)).cloned().collect()
+    s.pending_sidecar_repairs
+        .iter()
+        .chain(s.undo.iter().chain(&s.redo).flat_map(|e| &e.retry_sidecars))
+        .cloned()
+        .collect()
 }
 fn session(path: &Path) -> Session {
     let mut s = Session::new();
     let photo = Photo::new(
         PhotoId(1),
-        Source::File { path: path.to_string_lossy().into_owned() },
+        Source::File {
+            path: path.to_string_lossy().into_owned(),
+        },
         path.file_name().unwrap().to_str().unwrap(),
         "JPEG",
         4,
         3,
         "",
     );
-    s.catalog.apply(Op::AddPhoto { photo: Box::new(photo) }).unwrap();
+    s.catalog
+        .apply(Op::AddPhoto {
+            photo: Box::new(photo),
+        })
+        .unwrap();
     s.selection = crate::Selection::single(PhotoId(1));
     s
 }
@@ -61,7 +74,10 @@ fn save(s: &mut Session) -> serde_json::Value {
 }
 fn assert_fresh(path: &Path) {
     let xml = std::fs::read_to_string(path).unwrap();
-    assert!(xml.contains("fixture:Marker="), "foreign property must survive real serialization/merge");
+    assert!(
+        xml.contains("fixture:Marker="),
+        "foreign property must survive real serialization/merge"
+    );
     let data = parse_sidecar(&xml, crate::crs::Target::Rendered).unwrap();
     assert_eq!(data.title.as_deref(), Some("Fresh"));
     assert!(data.keywords.unwrap().contains(&"café".to_string()));
@@ -73,13 +89,20 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
         for upper_full in [false, true] {
             for naming in [SidecarNaming::Stem, SidecarNaming::Full] {
                 for auto in [false, true] {
-                    let dir = crate::tests_xmp::temp_dir(&format!("r3-companions-{upper_stem}-{upper_full}-{naming:?}-{auto}"));
+                    let dir = crate::tests_xmp::temp_dir(&format!(
+                        "r3-companions-{upper_stem}-{upper_full}-{naming:?}-{auto}"
+                    ));
                     let a = dir.join("a.jpg");
                     let b = dir.join("Trip.jpg");
-                    std::fs::write(&a, b"physical fixture; Session rename does not decode").unwrap();
+                    std::fs::write(&a, b"physical fixture; Session rename does not decode")
+                        .unwrap();
                     let path = |photo: &Path, style, upper| {
                         let path = sidecar_path(&photo.to_string_lossy(), style);
-                        if upper { path.with_extension("XMP") } else { path }
+                        if upper {
+                            path.with_extension("XMP")
+                        } else {
+                            path
+                        }
                     };
                     let stem_a = path(&a, SidecarNaming::Stem, upper_stem);
                     let full_a = path(&a, SidecarNaming::Full, upper_full);
@@ -94,8 +117,18 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
                     s.xmp.auto_write = auto;
                     let fs = Faults(vec![full_a.clone(), b.clone()]);
                     let plans = s.plan_rename_with(&fs, &[PhotoId(1)], "Trip", 1);
-                    assert!(s.execute_fn("photo.rename", |s| Ok(json!({"renamed": s.apply_rename_with(&fs, &plans)?}))).is_err());
-                    assert_eq!(s.catalog.photo(PhotoId(1)).unwrap().source, Source::File { path: b.to_string_lossy().into_owned() });
+                    assert!(
+                        s.execute_fn("photo.rename", |s| Ok(
+                            json!({"renamed": s.apply_rename_with(&fs, &plans)?})
+                        ))
+                        .is_err()
+                    );
+                    assert_eq!(
+                        s.catalog.photo(PhotoId(1)).unwrap().source,
+                        Source::File {
+                            path: b.to_string_lossy().into_owned()
+                        }
+                    );
                     let pending = queues(&s);
                     assert_eq!(pending.len(), 1);
                     assert_eq!(std::fs::read_to_string(&stem_b).unwrap(), stem_bytes);
@@ -103,12 +136,19 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
                     // Missing packet and an unrelated packet at either case spelling remain protected.
                     let held = dir.join("held.xmp");
                     std::fs::rename(&full_a, &held).unwrap();
-                    s.execute("photo.setMeta", &json!({"title": "Fresh", "addKeywords": ["café"]})).unwrap();
+                    s.execute(
+                        "photo.setMeta",
+                        &json!({"title": "Fresh", "addKeywords": ["café"]}),
+                    )
+                    .unwrap();
                     assert_eq!(save(&mut s)["failed"].as_array().unwrap().len(), 1);
                     assert_eq!(queues(&s), pending);
                     assert_eq!(std::fs::read_to_string(&stem_b).unwrap(), stem_bytes);
                     std::fs::rename(&held, &full_a).unwrap();
-                    for collision in [full_b.clone(), full_b.with_extension(if upper_full { "xmp" } else { "XMP" })] {
+                    for collision in [
+                        full_b.clone(),
+                        full_b.with_extension(if upper_full { "xmp" } else { "XMP" }),
+                    ] {
                         std::fs::write(&collision, packet("unrelated-packet")).unwrap();
                         let occupied = std::fs::read(&collision).unwrap();
                         assert_eq!(save(&mut s)["failed"].as_array().unwrap().len(), 1);
@@ -125,11 +165,22 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
                     }
                     assert!(queues(&s).is_empty());
                     assert!(!full_a.exists());
-                    let (written, untouched, expected) =
-                        if naming == SidecarNaming::Stem { (&stem_b, &full_b, &full_bytes) } else { (&full_b, &stem_b, &stem_bytes) };
+                    let (written, untouched, expected) = if naming == SidecarNaming::Stem {
+                        (&stem_b, &full_b, &full_bytes)
+                    } else {
+                        (&full_b, &stem_b, &stem_bytes)
+                    };
                     assert_fresh(written);
                     assert_eq!(std::fs::read_to_string(untouched).unwrap(), *expected);
-                    assert_eq!(parse_sidecar(&std::fs::read_to_string(written).unwrap(), crate::crs::Target::Rendered).unwrap().rating, Some(4));
+                    assert_eq!(
+                        parse_sidecar(
+                            &std::fs::read_to_string(written).unwrap(),
+                            crate::crs::Target::Rendered
+                        )
+                        .unwrap()
+                        .rating,
+                        Some(4)
+                    );
                     for (command, rating) in [("edit.undo", 0), ("edit.redo", 4)] {
                         s.execute(command, &json!({})).unwrap();
                         if !auto {
@@ -137,7 +188,12 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
                         }
                         assert_fresh(written);
                         assert_eq!(
-                            parse_sidecar(&std::fs::read_to_string(written).unwrap(), crate::crs::Target::Rendered).unwrap().rating,
+                            parse_sidecar(
+                                &std::fs::read_to_string(written).unwrap(),
+                                crate::crs::Target::Rendered
+                            )
+                            .unwrap()
+                            .rating,
                             Some(rating)
                         );
                         assert_eq!(std::fs::read_to_string(untouched).unwrap(), *expected);
@@ -156,7 +212,8 @@ fn partial_move_companions_allow_save_and_autowrite_without_weakening_collisions
 fn rollback_repair_and_shared_copy_keep_known_companions() {
     for rollback in [false, true] {
         for naming in [SidecarNaming::Stem, SidecarNaming::Full] {
-            let dir = crate::tests_xmp::temp_dir(&format!("r3-companion-rollback-{rollback}-{naming:?}"));
+            let dir =
+                crate::tests_xmp::temp_dir(&format!("r3-companion-rollback-{rollback}-{naming:?}"));
             let a = dir.join("a.jpg");
             let b = dir.join("Trip.jpg");
             std::fs::write(&a, b"physical fixture").unwrap();
@@ -170,20 +227,40 @@ fn rollback_repair_and_shared_copy_keep_known_companions() {
                 std::fs::write(dir.join("a.CR3"), b"physical stem sibling").unwrap();
             }
             let mut s = session(&a);
-            let fs = Faults(vec![full_a.clone(), if rollback { stem_b.clone() } else { b.clone() }]);
+            let fs = Faults(vec![
+                full_a.clone(),
+                if rollback { stem_b.clone() } else { b.clone() },
+            ]);
             let plans = s.plan_rename_with(&fs, &[PhotoId(1)], "Trip", 1);
-            assert!(s.execute_fn("photo.rename", |s| Ok(json!({"renamed": s.apply_rename_with(&fs, &plans)?}))).is_err());
+            assert!(
+                s.execute_fn("photo.rename", |s| Ok(
+                    json!({"renamed": s.apply_rename_with(&fs, &plans)?})
+                ))
+                .is_err()
+            );
             assert_eq!(queues(&s).len(), 1);
             let actual = if rollback { &a } else { &b };
-            assert_eq!(s.catalog.photo(PhotoId(1)).unwrap().source, Source::File { path: actual.to_string_lossy().into_owned() });
+            assert_eq!(
+                s.catalog.photo(PhotoId(1)).unwrap().source,
+                Source::File {
+                    path: actual.to_string_lossy().into_owned()
+                }
+            );
             s.xmp.naming = naming;
-            s.execute("photo.setMeta", &json!({"title": "Fresh", "addKeywords": ["café"]})).unwrap();
+            s.execute(
+                "photo.setMeta",
+                &json!({"title": "Fresh", "addKeywords": ["café"]}),
+            )
+            .unwrap();
             let result = save(&mut s);
             assert!(result["failed"].as_array().unwrap().is_empty(), "{result}");
             assert!(queues(&s).is_empty());
             assert_fresh(&sidecar_path(&actual.to_string_lossy(), naming));
             if !rollback {
-                assert_eq!(std::fs::read_to_string(&stem_a).unwrap(), packet("stem-keep"));
+                assert_eq!(
+                    std::fs::read_to_string(&stem_a).unwrap(),
+                    packet("stem-keep")
+                );
             }
             drop(s);
             std::fs::remove_dir_all(dir).unwrap();
@@ -211,18 +288,39 @@ fn a_later_save_recognizes_companions_after_an_earlier_repair_retires() {
     s.xmp.naming = SidecarNaming::Full;
     let fs = Faults(vec![full_a.clone(), upper_a.clone(), b.clone()]);
     let plans = s.plan_rename_with(&fs, &[PhotoId(1)], "Trip", 1);
-    assert!(s.execute_fn("photo.rename", |s| Ok(json!({"renamed": s.apply_rename_with(&fs, &plans)?}))).is_err());
+    assert!(
+        s.execute_fn("photo.rename", |s| Ok(
+            json!({"renamed": s.apply_rename_with(&fs, &plans)?})
+        ))
+        .is_err()
+    );
     assert_eq!(queues(&s).len(), 2);
-    assert!(s.repair_sidecars_with(&Faults(vec![full_a.clone()])).is_err());
+    assert!(
+        s.repair_sidecars_with(&Faults(vec![full_a.clone()]))
+            .is_err()
+    );
     assert_eq!(queues(&s).len(), 1);
     let upper_b = sidecar_path(&b.to_string_lossy(), SidecarNaming::Full).with_extension("XMP");
-    assert_eq!(std::fs::read_to_string(&upper_b).unwrap(), packet("upper-keep"));
-    s.execute("photo.setMeta", &json!({"title": "Fresh", "addKeywords": ["café"]})).unwrap();
+    assert_eq!(
+        std::fs::read_to_string(&upper_b).unwrap(),
+        packet("upper-keep")
+    );
+    s.execute(
+        "photo.setMeta",
+        &json!({"title": "Fresh", "addKeywords": ["café"]}),
+    )
+    .unwrap();
     assert!(save(&mut s)["failed"].as_array().unwrap().is_empty());
     assert!(queues(&s).is_empty());
     assert_fresh(&sidecar_path(&b.to_string_lossy(), SidecarNaming::Full));
-    assert_eq!(std::fs::read_to_string(&upper_b).unwrap(), packet("upper-keep"));
-    assert_eq!(std::fs::read_to_string(sidecar_path(&b.to_string_lossy(), SidecarNaming::Stem)).unwrap(), packet("stem-keep"));
+    assert_eq!(
+        std::fs::read_to_string(&upper_b).unwrap(),
+        packet("upper-keep")
+    );
+    assert_eq!(
+        std::fs::read_to_string(sidecar_path(&b.to_string_lossy(), SidecarNaming::Stem)).unwrap(),
+        packet("stem-keep")
+    );
     drop(s);
     std::fs::remove_dir_all(dir).unwrap();
 }
@@ -244,16 +342,45 @@ fn queued_stem_retry_preserves_shared_packet_after_batch_rollback() {
     std::fs::write(&b, &png).unwrap();
     std::fs::write(&shared, &bytes).unwrap();
     let mut s = session(&a);
-    let photo = Photo::new(PhotoId(2), Source::File { path: b.to_string_lossy().into_owned() }, "a.png", "PNG", 4, 3, "");
-    s.catalog.apply(Op::AddPhoto { photo: Box::new(photo) }).unwrap();
+    let photo = Photo::new(
+        PhotoId(2),
+        Source::File {
+            path: b.to_string_lossy().into_owned(),
+        },
+        "a.png",
+        "PNG",
+        4,
+        3,
+        "",
+    );
+    s.catalog
+        .apply(Op::AddPhoto {
+            photo: Box::new(photo),
+        })
+        .unwrap();
     s.xmp.auto_write = false;
 
     // Existing Faults refuses renames only: the first shared-packet copy must succeed.
     let faults = Faults(vec![shared.clone(), second.clone()]);
     let plans = s.plan_rename_with(&faults, &[PhotoId(1), PhotoId(2)], "Trip_{seq}", 1);
-    assert!(s.execute_fn("photo.rename", |s| Ok(json!({"renamed": s.apply_rename_with(&faults, &plans)?}))).is_err());
-    assert_eq!(s.catalog.photo(PhotoId(1)).unwrap().source, Source::File { path: a.to_string_lossy().into_owned() });
-    assert_eq!(s.catalog.photo(PhotoId(2)).unwrap().source, Source::File { path: second.to_string_lossy().into_owned() });
+    assert!(
+        s.execute_fn("photo.rename", |s| Ok(
+            json!({"renamed": s.apply_rename_with(&faults, &plans)?})
+        ))
+        .is_err()
+    );
+    assert_eq!(
+        s.catalog.photo(PhotoId(1)).unwrap().source,
+        Source::File {
+            path: a.to_string_lossy().into_owned()
+        }
+    );
+    assert_eq!(
+        s.catalog.photo(PhotoId(2)).unwrap().source,
+        Source::File {
+            path: second.to_string_lossy().into_owned()
+        }
+    );
     assert_eq!(std::fs::read(&a).unwrap(), jpeg);
     assert_eq!(std::fs::read(&second).unwrap(), png);
     assert!(!b.exists() && !first.exists());
@@ -262,8 +389,16 @@ fn queued_stem_retry_preserves_shared_packet_after_batch_rollback() {
     assert!(!second_packet.exists());
     let pending = queues(&s);
     assert_eq!(pending.len(), 1);
-    assert!(same_path_for_volume(&pending[0].from, &shared), "{:?}", pending[0].from);
-    assert!(same_path_for_volume(&pending[0].to, &second_packet), "{:?}", pending[0].to);
+    assert!(
+        same_path_for_volume(&pending[0].from, &shared),
+        "{:?}",
+        pending[0].from
+    );
+    assert!(
+        same_path_for_volume(&pending[0].to, &second_packet),
+        "{:?}",
+        pending[0].to
+    );
     let catalog_before = s.catalog.to_snapshot();
     let history_before = (s.undo.len(), s.redo.len(), s.commits());
 
@@ -273,16 +408,30 @@ fn queued_stem_retry_preserves_shared_packet_after_batch_rollback() {
     let history_after = (s.undo.len(), s.redo.len(), s.commits());
     let repaired = queues(&s).is_empty();
     let old_paths_absent = !b.exists() && !first.exists();
-    let files = [&a, &second, &first_packet, &second_packet].map(|p| std::fs::read(p).map_err(|e| e.kind()));
+    let files = [&a, &second, &first_packet, &second_packet]
+        .map(|p| std::fs::read(p).map_err(|e| e.kind()));
     let retained = std::fs::read(&shared).map_err(|e| e.kind());
     drop(s);
     std::fs::remove_dir_all(&dir).unwrap();
-    assert!(!dir.exists(), "fixture cleanup must precede the qualifying assertion");
+    assert!(
+        !dir.exists(),
+        "fixture cleanup must precede the qualifying assertion"
+    );
 
     assert_eq!(retry.unwrap()["renamed"], 0);
-    assert_eq!(catalog_after, catalog_before, "repair must preserve both catalog sources");
+    assert_eq!(
+        catalog_after, catalog_before,
+        "repair must preserve both catalog sources"
+    );
     assert_eq!(history_after, history_before);
     assert!(repaired && old_paths_absent);
-    assert_eq!(files, [Ok(jpeg), Ok(png), Ok(bytes.clone()), Ok(bytes.clone())]);
-    assert_eq!(retained, Ok(bytes), "queued repair took shared XMP from the photo restored by batch rollback");
+    assert_eq!(
+        files,
+        [Ok(jpeg), Ok(png), Ok(bytes.clone()), Ok(bytes.clone())]
+    );
+    assert_eq!(
+        retained,
+        Ok(bytes),
+        "queued repair took shared XMP from the photo restored by batch rollback"
+    );
 }

@@ -13,20 +13,56 @@ use crate::{CmdError, CmdResult, CommandSpec, Session, p};
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        CommandSpec::new("review.readAloud", "Read Aloud", "Review › Speech", read_aloud)
-            .key("Mod+Alt+Space")
-            .params(r#"{"skipCitations"?: bool}"#)
-            .pure(),
-        CommandSpec::new("readAloud.playPause", "Play/Pause", "Review › Speech", play_pause).pure(),
+        CommandSpec::new(
+            "review.readAloud",
+            "Read Aloud",
+            "Review › Speech",
+            read_aloud,
+        )
+        .key("Mod+Alt+Space")
+        .params(r#"{"skipCitations"?: bool}"#)
+        .pure(),
+        CommandSpec::new(
+            "readAloud.playPause",
+            "Play/Pause",
+            "Review › Speech",
+            play_pause,
+        )
+        .pure(),
         CommandSpec::new("readAloud.next", "Next Sentence", "Review › Speech", next).pure(),
-        CommandSpec::new("readAloud.previous", "Previous Sentence", "Review › Speech", previous).pure(),
+        CommandSpec::new(
+            "readAloud.previous",
+            "Previous Sentence",
+            "Review › Speech",
+            previous,
+        )
+        .pure(),
         CommandSpec::new("readAloud.stop", "Stop Reading", "Review › Speech", stop).pure(),
-        CommandSpec::new("readAloud.speed", "Reading Speed", "Review › Speech", speed).params(r#"{"value": number (0.5…3, 1 = normal)}"#).pure(),
-        CommandSpec::new("readAloud.skipCitations", "Skip Citations and Bibliography", "Review › Speech", skip_citations)
-            .params(r#"{"value"?: bool}"#)
+        CommandSpec::new("readAloud.speed", "Reading Speed", "Review › Speech", speed)
+            .params(r#"{"value": number (0.5…3, 1 = normal)}"#)
             .pure(),
-        CommandSpec::new("readAloud.status", "Read Aloud Status", "Review › Speech", status).pure(),
-        CommandSpec::new("caret.pastCitation", "Move Past Citation", "Zotero › Citations", past_citation).pure(),
+        CommandSpec::new(
+            "readAloud.skipCitations",
+            "Skip Citations and Bibliography",
+            "Review › Speech",
+            skip_citations,
+        )
+        .params(r#"{"value"?: bool}"#)
+        .pure(),
+        CommandSpec::new(
+            "readAloud.status",
+            "Read Aloud Status",
+            "Review › Speech",
+            status,
+        )
+        .pure(),
+        CommandSpec::new(
+            "caret.pastCitation",
+            "Move Past Citation",
+            "Zotero › Citations",
+            past_citation,
+        )
+        .pure(),
     ]
 }
 
@@ -82,7 +118,9 @@ fn stop(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn speed(s: &mut Session, v: &Value) -> CmdResult {
-    let r = p::f32(v, "value").or_else(|| p::f32(v, "rate")).ok_or_else(|| CmdError::Params("`value` (number, 0.5…3) is required".into()))?;
+    let r = p::f32(v, "value")
+        .or_else(|| p::f32(v, "rate"))
+        .ok_or_else(|| CmdError::Params("`value` (number, 0.5…3) is required".into()))?;
     s.read_aloud.set_rate(r);
     status(s, v)
 }
@@ -122,27 +160,45 @@ fn past_citation(s: &mut Session, _: &Value) -> CmdResult {
         .field_ranges(story)
         .into_iter()
         .filter(|r| speech::is_citation_code(&r.instr))
-        .map(|r| (r.start, Pos::new(story, r.end.path.clone(), r.end.off + obj)))
+        .map(|r| {
+            (
+                r.start,
+                Pos::new(story, r.end.path.clone(), r.end.off + obj),
+            )
+        })
         .collect();
     for path in s.doc.para_paths(story) {
-        let Some(para) = s.doc.para(story, &path) else { continue };
+        let Some(para) = s.doc.para(story, &path) else {
+            continue;
+        };
         for off in para.object_offsets() {
             if let Some(InlineObject::Field { instr, .. }) = para.object_at(off)
                 && speech::is_citation_code(instr)
             {
-                spans.push((Pos::new(story, path.clone(), off), Pos::new(story, path.clone(), off + obj)));
+                spans.push((
+                    Pos::new(story, path.clone(), off),
+                    Pos::new(story, path.clone(), off + obj),
+                ));
             }
         }
     }
     spans.sort();
     // The citation the caret is in or right before, else the next one.
     let Some(mut i) = spans.iter().position(|(_, end)| *end > caret) else {
-        return Err(CmdError::Failed("there's no citation after the caret".into()));
+        return Err(CmdError::Failed(
+            "there's no citation after the caret".into(),
+        ));
     };
     let mut after = spans.get(i).map(|x| x.1.clone()).unwrap_or(caret);
     // Swallow citations that follow directly ("(A)(B)" or "(A) (B)").
     while let Some((start, end)) = spans.get(i + 1) {
-        let gap = if start.path == after.path { s.doc.para(story, &after.path).and_then(|p| p.text.get(after.off..start.off)) } else { None };
+        let gap = if start.path == after.path {
+            s.doc
+                .para(story, &after.path)
+                .and_then(|p| p.text.get(after.off..start.off))
+        } else {
+            None
+        };
         if !gap.is_some_and(|g| g.chars().all(|c| c.is_whitespace() || c == ';' || c == ',')) {
             break;
         }
@@ -166,21 +222,39 @@ mod tests {
     fn cite(d: &mut Document, block: usize, off: usize, text: &str) {
         let c = CharProps::default();
         let p = d.para_mut(StoryRef::Body, &Path::top(block)).unwrap();
-        p.insert_object(off, InlineObject::FieldStart { instr: "ADDIN ZOTERO_ITEM CSL_CITATION {}".into(), locked: false }, &c).unwrap();
+        p.insert_object(
+            off,
+            InlineObject::FieldStart {
+                instr: "ADDIN ZOTERO_ITEM CSL_CITATION {}".into(),
+                locked: false,
+            },
+            &c,
+        )
+        .unwrap();
         let n = p.insert_text(off + 3, text, &c).unwrap();
-        p.insert_object(off + 3 + n, InlineObject::FieldEnd, &c).unwrap();
+        p.insert_object(off + 3 + n, InlineObject::FieldEnd, &c)
+            .unwrap();
     }
 
     /// "Cats purr (Smith 2020). Dogs bark (Jones 2021; Lee 2019).\nReferences\nSmith J. Cats.\nJones K. Dogs."
     /// with Zotero citations and a Zotero bibliography over the last two paragraphs.
     fn doc() -> Document {
-        let mut d = Document::from_text("Cats purr . Dogs bark .\nReferences\nSmith J. Cats.\nJones K. Dogs.");
+        let mut d = Document::from_text(
+            "Cats purr . Dogs bark .\nReferences\nSmith J. Cats.\nJones K. Dogs.",
+        );
         cite(&mut d, 0, 22, "(Jones 2021; Lee 2019)");
         cite(&mut d, 0, 10, "(Smith 2020)");
         let c = CharProps::default();
         d.para_mut(StoryRef::Body, &Path::top(2))
             .unwrap()
-            .insert_object(0, InlineObject::FieldStart { instr: "ADDIN ZOTERO_BIBL {} CSL_BIBLIOGRAPHY".into(), locked: false }, &c)
+            .insert_object(
+                0,
+                InlineObject::FieldStart {
+                    instr: "ADDIN ZOTERO_BIBL {} CSL_BIBLIOGRAPHY".into(),
+                    locked: false,
+                },
+                &c,
+            )
             .unwrap();
         let p3 = d.para_mut(StoryRef::Body, &Path::top(3)).unwrap();
         let end = p3.len();
@@ -189,16 +263,32 @@ mod tests {
     }
 
     fn texts(s: &Session) -> Vec<String> {
-        crate::speech::sentences(&s.doc, &Pos::body(0, 0), None, s.read_aloud.skip_citations).into_iter().map(|u| u.text).collect()
+        crate::speech::sentences(&s.doc, &Pos::body(0, 0), None, s.read_aloud.skip_citations)
+            .into_iter()
+            .map(|u| u.text)
+            .collect()
     }
 
     #[test]
     fn citations_and_bibliography_are_skipped() {
         let mut s = Session::new(doc());
-        assert_eq!(s.doc.plain_text(StoryRef::Body).lines().next(), Some("Cats purr (Smith 2020). Dogs bark (Jones 2021; Lee 2019)."));
+        assert_eq!(
+            s.doc.plain_text(StoryRef::Body).lines().next(),
+            Some("Cats purr (Smith 2020). Dogs bark (Jones 2021; Lee 2019).")
+        );
         assert_eq!(texts(&s), ["Cats purr.", "Dogs bark.", "References"]);
-        s.run("readAloud.skipCitations", &json!({"value": false})).unwrap();
-        assert_eq!(texts(&s), ["Cats purr (Smith 2020).", "Dogs bark (Jones 2021; Lee 2019).", "References", "Smith J. Cats.", "Jones K. Dogs."]);
+        s.run("readAloud.skipCitations", &json!({"value": false}))
+            .unwrap();
+        assert_eq!(
+            texts(&s),
+            [
+                "Cats purr (Smith 2020).",
+                "Dogs bark (Jones 2021; Lee 2019).",
+                "References",
+                "Smith J. Cats.",
+                "Jones K. Dogs."
+            ]
+        );
     }
 
     #[test]
@@ -209,16 +299,30 @@ mod tests {
         assert_eq!(r["state"], "playing");
         assert_eq!(r["count"], 3);
         assert_eq!(r["current"]["text"], "Cats purr.");
-        assert_eq!(s.run("readAloud.next", &json!({})).unwrap()["current"]["text"], "Dogs bark.");
+        assert_eq!(
+            s.run("readAloud.next", &json!({})).unwrap()["current"]["text"],
+            "Dogs bark."
+        );
         assert_eq!(s.run("readAloud.previous", &json!({})).unwrap()["index"], 0);
-        assert_eq!(s.run("readAloud.speed", &json!({"value": 1.5})).unwrap()["rate"], 1.5);
+        assert_eq!(
+            s.run("readAloud.speed", &json!({"value": 1.5})).unwrap()["rate"],
+            1.5
+        );
         assert!(s.run("readAloud.speed", &json!({})).is_err());
         // Pressing Read Aloud again pauses, then carries on.
-        assert_eq!(s.run("review.readAloud", &json!({})).unwrap()["state"], "paused");
-        assert_eq!(s.run("readAloud.playPause", &json!({})).unwrap()["state"], "playing");
+        assert_eq!(
+            s.run("review.readAloud", &json!({})).unwrap()["state"],
+            "paused"
+        );
+        assert_eq!(
+            s.run("readAloud.playPause", &json!({})).unwrap()["state"],
+            "playing"
+        );
         // Turning skipping off mid-reading keeps the place.
         s.run("readAloud.next", &json!({})).unwrap();
-        let r = s.run("readAloud.skipCitations", &json!({"value": false})).unwrap();
+        let r = s
+            .run("readAloud.skipCitations", &json!({"value": false}))
+            .unwrap();
         assert_eq!(r["current"]["text"], "Dogs bark (Jones 2021; Lee 2019).");
         assert_eq!(r["count"], 4);
         let r = s.run("readAloud.stop", &json!({})).unwrap();
@@ -230,7 +334,10 @@ mod tests {
     #[test]
     fn read_aloud_reads_the_selection_only() {
         let mut s = Session::new(Document::from_text("One. Two. Three."));
-        s.sel = crate::Selection { anchor: Pos::body(0, 5), focus: Pos::body(0, 9) };
+        s.sel = crate::Selection {
+            anchor: Pos::body(0, 5),
+            focus: Pos::body(0, 9),
+        };
         let r = s.run("review.readAloud", &json!({})).unwrap();
         assert_eq!(r["count"], 1);
         assert_eq!(r["current"]["text"], "Two.");
@@ -240,7 +347,10 @@ mod tests {
     fn read_aloud_at_the_end_starts_from_the_top() {
         let mut s = Session::new(Document::from_text("One. Two."));
         s.sel = crate::Selection::caret(Pos::body(0, 9));
-        assert_eq!(s.run("review.readAloud", &json!({})).unwrap()["current"]["text"], "One.");
+        assert_eq!(
+            s.run("review.readAloud", &json!({})).unwrap()["current"]["text"],
+            "One."
+        );
         let mut s = Session::new(Document::from_text(""));
         assert!(s.run("review.readAloud", &json!({})).is_err());
     }
@@ -253,7 +363,10 @@ mod tests {
         s.run("caret.pastCitation", &json!({})).unwrap();
         let first_end = s.sel.focus.clone();
         let p = s.doc.para_at(&first_end).unwrap();
-        assert_eq!(p.text.get(first_end.off..), Some(". Dogs bark \u{FFFC}(Jones 2021; Lee 2019)\u{FFFC}."));
+        assert_eq!(
+            p.text.get(first_end.off..),
+            Some(". Dogs bark \u{FFFC}(Jones 2021; Lee 2019)\u{FFFC}.")
+        );
         // Inside the second → after it.
         let inside = p.text.find("Lee").unwrap();
         s.sel = crate::Selection::caret(Pos::body(0, inside));

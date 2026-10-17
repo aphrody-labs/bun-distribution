@@ -38,7 +38,9 @@ impl Session {
     /// copy; remove this copy's registration only when the preference was turned off.
     pub fn invite_links_startup(&mut self) {
         let pref = self.prefs.invite_links;
-        let Some(r) = self.live.links.as_mut() else { return };
+        let Some(r) = self.live.links.as_mut() else {
+            return;
+        };
         let want = match pref {
             Some(on) => on,
             None if r.installed() => true,
@@ -62,8 +64,14 @@ fn register(s: &mut Session, p: &Value) -> Result<Value> {
                 .into(),
         ));
     };
-    let on = boolean(p, "on").unwrap_or_else(|| !s.prefs.invite_links.unwrap_or_else(|| r.installed()));
-    r.set(on).map_err(|e| EngineError::Other(format!("couldn't {} invite links: {e}", if on { "register" } else { "unregister" })))?;
+    let on =
+        boolean(p, "on").unwrap_or_else(|| !s.prefs.invite_links.unwrap_or_else(|| r.installed()));
+    r.set(on).map_err(|e| {
+        EngineError::Other(format!(
+            "couldn't {} invite links: {e}",
+            if on { "register" } else { "unregister" }
+        ))
+    })?;
     let registered = r.registered();
     s.prefs.invite_links = Some(on);
     Ok(json!({"on": on, "registered": registered}))

@@ -8,12 +8,12 @@ pub const MODERATOR_CREATE_WALLET_FOR_USER_PATH: &str = "/v1/moderation/wallet/c
 
 #[derive(Deserialize, ToSchema)]
 pub struct ModeratorCreateWalletForUserRequest {
-  pub user_token: Option<UserToken>,
-  pub payments_namespace: Option<PaymentsNamespace>,
+    pub user_token: Option<UserToken>,
+    pub payments_namespace: Option<PaymentsNamespace>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct ModeratorCreateWalletForUserResponse {
-  pub success: bool,
-  pub wallet_token: WalletToken,
+    pub success: bool,
+    pub wallet_token: WalletToken,
 }

@@ -11,7 +11,9 @@ use serde_json::Value;
 
 use crate::cmd::component::{main_of, swap_instance};
 use crate::components::inside_instance;
-use crate::library::{asset_root, import, import_styles, import_variables, prune, style_links, swap_props};
+use crate::library::{
+    asset_root, import, import_styles, import_variables, prune, style_links, swap_props,
+};
 use crate::params::id_of;
 use crate::{EngineError, Result};
 
@@ -35,7 +37,11 @@ fn b_main(doc: &Document, a_main: NodeId, a_root: NodeId, b_root: NodeId) -> Opt
     match (&b.kind, a_main == a_root) {
         (NodeKind::ComponentSet { .. }, false) => {
             let name = &doc.node(a_main)?.name;
-            b.children.iter().copied().find(|c| doc.node(*c).is_some_and(|n| n.name == *name && matches!(n.kind, NodeKind::Component { .. })))
+            b.children.iter().copied().find(|c| {
+                doc.node(*c).is_some_and(|n| {
+                    n.name == *name && matches!(n.kind, NodeKind::Component { .. })
+                })
+            })
         }
         _ => main_of(doc, b_root),
     }
@@ -63,7 +69,13 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
             _ => None,
         })
         .collect();
-    let records: Vec<ImportedComponent> = doc.libraries.components.iter().filter(|r| r.library == from && shown.contains(&r.root)).cloned().collect();
+    let records: Vec<ImportedComponent> = doc
+        .libraries
+        .components
+        .iter()
+        .filter(|r| r.library == from && shown.contains(&r.root))
+        .cloned()
+        .collect();
     let mut pairs = Vec::new();
     for r in &records {
         let name = doc.node(r.root).map(|n| n.name.clone()).unwrap_or_default();
@@ -73,15 +85,24 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
         }
     }
     let keys: Vec<NodeId> = pairs.iter().map(|(_, k)| *k).collect();
-    let map = if keys.is_empty() { BTreeMap::new() } else { import(doc, to, &keys, false)? };
+    let map = if keys.is_empty() {
+        BTreeMap::new()
+    } else {
+        import(doc, to, &keys, false)?
+    };
     // A's mains (each variant) and roots → B's.
     let mut mains: BTreeMap<NodeId, NodeId> = BTreeMap::new();
     let mut roots: BTreeMap<NodeId, NodeId> = BTreeMap::new();
     for (a_root, key) in &pairs {
-        let Some(b_root) = map.get(key).copied() else { continue };
+        let Some(b_root) = map.get(key).copied() else {
+            continue;
+        };
         roots.insert(*a_root, b_root);
         let a_mains: Vec<NodeId> = match doc.node(*a_root).map(|n| &n.kind) {
-            Some(NodeKind::ComponentSet { .. }) => doc.node(*a_root).map(|n| n.children.clone()).unwrap_or_default(),
+            Some(NodeKind::ComponentSet { .. }) => doc
+                .node(*a_root)
+                .map(|n| n.children.clone())
+                .unwrap_or_default(),
             _ => vec![*a_root],
         };
         let before = mains.len();
@@ -90,7 +111,10 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
                 Some(b) => {
                     mains.insert(a, b);
                 }
-                None => out.unmatched.push(format!("variant {}", doc.node(a).map(|n| n.name.as_str()).unwrap_or_default())),
+                None => out.unmatched.push(format!(
+                    "variant {}",
+                    doc.node(a).map(|n| n.name.as_str()).unwrap_or_default()
+                )),
             }
         }
         if mains.len() > before {
@@ -111,7 +135,11 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
         let swaps = swap_props(doc, b);
         if let Ok(NodeKind::Instance { props, .. }) = doc.get_mut(inst).map(|n| &mut n.kind) {
             for k in swaps {
-                if let Some(to) = props.get(&k).and_then(id_of).and_then(|c| mains.get(&c).or_else(|| roots.get(&c))) {
+                if let Some(to) = props
+                    .get(&k)
+                    .and_then(id_of)
+                    .and_then(|c| mains.get(&c).or_else(|| roots.get(&c)))
+                {
                     props.insert(k, Value::from(to.0));
                 }
             }
@@ -119,13 +147,29 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
     }
 
     // Styles the document's own layers link to: by name and type.
-    let linked: BTreeSet<String> = doc.nodes().filter(|n| outside(doc, n.id)).flat_map(|n| style_links(n).cloned()).collect();
-    let style_recs: Vec<ImportedRecord> = doc.libraries.styles.iter().filter(|r| r.library == from && linked.contains(&r.local)).cloned().collect();
+    let linked: BTreeSet<String> = doc
+        .nodes()
+        .filter(|n| outside(doc, n.id))
+        .flat_map(|n| style_links(n).cloned())
+        .collect();
+    let style_recs: Vec<ImportedRecord> = doc
+        .libraries
+        .styles
+        .iter()
+        .filter(|r| r.library == from && linked.contains(&r.local))
+        .cloned()
+        .collect();
     let mut style_keys: BTreeMap<String, String> = BTreeMap::new();
     for r in &style_recs {
-        let Some(st) = doc.style(&r.local) else { continue };
+        let Some(st) = doc.style(&r.local) else {
+            continue;
+        };
         let kind = st.kind.type_name();
-        match m.styles.iter().find(|x| x.published && x.name == st.name && x.kind == kind) {
+        match m
+            .styles
+            .iter()
+            .find(|x| x.published && x.name == st.name && x.kind == kind)
+        {
             Some(x) => {
                 style_keys.insert(r.local.clone(), x.id.clone());
             }
@@ -133,30 +177,69 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
         }
     }
     let imported = import_styles(doc, to, &style_keys.values().cloned().collect(), false);
-    let styles: BTreeMap<String, String> = style_keys.iter().filter_map(|(a, k)| imported.get(k).map(|b| (a.clone(), b.clone()))).collect();
+    let styles: BTreeMap<String, String> = style_keys
+        .iter()
+        .filter_map(|(a, k)| imported.get(k).map(|b| (a.clone(), b.clone())))
+        .collect();
     out.styles = styles.len();
 
     // Variables: by collection and variable name and type; collections and modes by name.
-    let coll_name = |d: &Document, id: &str| d.variables.collection(id).map(|c| c.name.clone()).unwrap_or_default();
+    let coll_name = |d: &Document, id: &str| {
+        d.variables
+            .collection(id)
+            .map(|c| c.name.clone())
+            .unwrap_or_default()
+    };
     // Variables the document's own layers bind or its own variables alias.
-    let remote: BTreeSet<String> = doc.libraries.variables.iter().map(|r| r.local.clone()).collect();
-    let aliases = doc.variables.variables.iter().filter(|v| !remote.contains(&v.id)).flat_map(|v| v.values.values()).filter_map(|x| match x {
-        VariableValue::Alias(a) => Some(a.clone()),
-        _ => None,
-    });
-    let used: BTreeSet<String> = doc.nodes().filter(|n| outside(doc, n.id)).flat_map(|n| n.bound.values().cloned()).chain(aliases).collect();
-    let var_recs: Vec<ImportedRecord> = doc.libraries.variables.iter().filter(|r| r.library == from && used.contains(&r.local)).cloned().collect();
-    let lib_coll = |name: &str| to.doc.variables.collections.iter().find(|c| c.name == name && m.collection(&c.id).is_some_and(|x| x.published));
+    let remote: BTreeSet<String> = doc
+        .libraries
+        .variables
+        .iter()
+        .map(|r| r.local.clone())
+        .collect();
+    let aliases = doc
+        .variables
+        .variables
+        .iter()
+        .filter(|v| !remote.contains(&v.id))
+        .flat_map(|v| v.values.values())
+        .filter_map(|x| match x {
+            VariableValue::Alias(a) => Some(a.clone()),
+            _ => None,
+        });
+    let used: BTreeSet<String> = doc
+        .nodes()
+        .filter(|n| outside(doc, n.id))
+        .flat_map(|n| n.bound.values().cloned())
+        .chain(aliases)
+        .collect();
+    let var_recs: Vec<ImportedRecord> = doc
+        .libraries
+        .variables
+        .iter()
+        .filter(|r| r.library == from && used.contains(&r.local))
+        .cloned()
+        .collect();
+    let lib_coll = |name: &str| {
+        to.doc
+            .variables
+            .collections
+            .iter()
+            .find(|c| c.name == name && m.collection(&c.id).is_some_and(|x| x.published))
+    };
     let mut var_keys: BTreeMap<String, String> = BTreeMap::new();
     for r in &var_recs {
-        let Some(v) = doc.variables.get(&r.local) else { continue };
+        let Some(v) = doc.variables.get(&r.local) else {
+            continue;
+        };
         let cname = coll_name(doc, &v.collection);
         let found = lib_coll(&cname).and_then(|c| {
-            to.doc
-                .variables
-                .variables
-                .iter()
-                .find(|x| x.collection == c.id && x.name == v.name && x.kind == v.kind && m.variable(&x.id).is_some_and(|y| y.published))
+            to.doc.variables.variables.iter().find(|x| {
+                x.collection == c.id
+                    && x.name == v.name
+                    && x.kind == v.kind
+                    && m.variable(&x.id).is_some_and(|y| y.published)
+            })
         });
         match found {
             Some(x) => {
@@ -170,19 +253,40 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
         .collections
         .iter()
         .filter(|r| r.library == from)
-        .filter_map(|r| lib_coll(&coll_name(doc, &r.local)).map(|c| (r.local.clone(), c.id.clone())))
+        .filter_map(|r| {
+            lib_coll(&coll_name(doc, &r.local)).map(|c| (r.local.clone(), c.id.clone()))
+        })
         .collect();
-    let vmap = import_variables(doc, to, &var_keys.values().cloned().collect(), &coll_keys.values().cloned().collect(), false);
-    let vars: BTreeMap<String, String> = var_keys.iter().filter_map(|(a, k)| vmap.variables.get(k).map(|b| (a.clone(), b.clone()))).collect();
+    let vmap = import_variables(
+        doc,
+        to,
+        &var_keys.values().cloned().collect(),
+        &coll_keys.values().cloned().collect(),
+        false,
+    );
+    let vars: BTreeMap<String, String> = var_keys
+        .iter()
+        .filter_map(|(a, k)| vmap.variables.get(k).map(|b| (a.clone(), b.clone())))
+        .collect();
     // A's collection → (B's, A's mode id → B's mode of the same name).
     let mut colls: BTreeMap<String, (String, BTreeMap<String, String>)> = BTreeMap::new();
     for (a, k) in &coll_keys {
-        let (Some(b), Some(ac)) = (vmap.collections.get(k), doc.variables.collection(a)) else { continue };
+        let (Some(b), Some(ac)) = (vmap.collections.get(k), doc.variables.collection(a)) else {
+            continue;
+        };
         let modes = doc
             .variables
             .collection(b)
             .map(|bc| {
-                ac.modes.iter().filter_map(|am| bc.modes.iter().find(|bm| bm.name == am.name).map(|bm| (am.id.clone(), bm.id.clone()))).collect()
+                ac.modes
+                    .iter()
+                    .filter_map(|am| {
+                        bc.modes
+                            .iter()
+                            .find(|bm| bm.name == am.name)
+                            .map(|bm| (am.id.clone(), bm.id.clone()))
+                    })
+                    .collect()
             })
             .unwrap_or_default();
         colls.insert(a.clone(), (b.clone(), modes));
@@ -190,16 +294,38 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
     out.variables = vars.len();
     // shortcut: this file's collections extending one of A's stay on A (listed); move them with their
     // overrides (mode ids differ between libraries) when swapping themes needs it.
-    let a_colls: BTreeSet<&str> = doc.libraries.collections.iter().filter(|r| r.library == from).map(|r| r.local.as_str()).collect();
-    for c in doc.variables.collections.iter().filter(|c| c.extends.as_deref().is_some_and(|e| a_colls.contains(e))) {
-        out.unmatched.push(format!("extended collection {}", c.name));
+    let a_colls: BTreeSet<&str> = doc
+        .libraries
+        .collections
+        .iter()
+        .filter(|r| r.library == from)
+        .map(|r| r.local.as_str())
+        .collect();
+    for c in doc
+        .variables
+        .collections
+        .iter()
+        .filter(|c| c.extends.as_deref().is_some_and(|e| a_colls.contains(e)))
+    {
+        out.unmatched
+            .push(format!("extended collection {}", c.name));
     }
 
     // Re-point layers outside the library copies, and local variables aliasing A's.
-    let ids: Vec<NodeId> = doc.nodes().filter(|n| outside(doc, n.id)).map(|n| n.id).collect();
+    let ids: Vec<NodeId> = doc
+        .nodes()
+        .filter(|n| outside(doc, n.id))
+        .map(|n| n.id)
+        .collect();
     for id in ids {
         let Ok(n) = doc.get_mut(id) else { continue };
-        for r in [&mut n.styles.fill, &mut n.styles.stroke, &mut n.styles.effect, &mut n.styles.grid, &mut n.styles.text] {
+        for r in [
+            &mut n.styles.fill,
+            &mut n.styles.stroke,
+            &mut n.styles.effect,
+            &mut n.styles.grid,
+            &mut n.styles.text,
+        ] {
             if let Some(b) = r.as_ref().and_then(|s| styles.get(s)) {
                 *r = Some(b.clone());
             }
@@ -214,13 +340,23 @@ pub fn swap_library(doc: &mut Document, from: &str, to: &PublishedLibrary) -> Re
         }
         n.var_modes = std::mem::take(&mut n.var_modes)
             .into_iter()
-            .map(|(c, mode)| match colls.get(&c).and_then(|(b, modes)| modes.get(&mode).map(|bm| (b.clone(), bm.clone()))) {
-                Some(moved) => moved,
-                None => (c, mode),
+            .map(|(c, mode)| {
+                match colls
+                    .get(&c)
+                    .and_then(|(b, modes)| modes.get(&mode).map(|bm| (b.clone(), bm.clone())))
+                {
+                    Some(moved) => moved,
+                    None => (c, mode),
+                }
             })
             .collect();
     }
-    for v in doc.variables.variables.iter_mut().filter(|v| !remote.contains(&v.id)) {
+    for v in doc
+        .variables
+        .variables
+        .iter_mut()
+        .filter(|v| !remote.contains(&v.id))
+    {
         for val in v.values.values_mut() {
             if let VariableValue::Alias(a) = val
                 && let Some(b) = vars.get(a)

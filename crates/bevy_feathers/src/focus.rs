@@ -12,8 +12,8 @@ use bevy_ecs::{
 };
 use bevy_input_focus::{InputFocus, InputFocusVisible};
 use bevy_platform::collections::HashSet;
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
-use bevy_ui::{px, Outline, UiSystems};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
+use bevy_ui::{Outline, UiSystems, px};
 use bevy_ui_widgets::MenuFocusSystem;
 
 use crate::{

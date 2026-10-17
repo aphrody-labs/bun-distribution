@@ -22,7 +22,9 @@ use std::collections::BTreeMap;
 
 use kurbo::{BezPath, CubicBez, ParamCurve, ParamCurveArclen};
 use vectorcraft_color::{Color, Paint};
-use vectorcraft_doc::{CharStyle, Justify, Node, NodeId, NodeKind, ParaStyle, TextKind, TextObject, TextRun};
+use vectorcraft_doc::{
+    CharStyle, Justify, Node, NodeId, NodeKind, ParaStyle, TextKind, TextObject, TextRun,
+};
 use vectorcraft_geom::{Affine, PathData, Point, Rect};
 
 /// Longest story read (bytes).
@@ -140,7 +142,10 @@ impl Reader<'_> {
             b'/' => Some(Val::Name(self.key()?)),
             _ => {
                 let start = self.at;
-                while self.b.get(self.at).is_some_and(|c| !c.is_ascii_whitespace() && !matches!(c, b'<' | b'>' | b'[' | b']' | b'(' | b')' | b'/')) {
+                while self.b.get(self.at).is_some_and(|c| {
+                    !c.is_ascii_whitespace()
+                        && !matches!(c, b'<' | b'>' | b'[' | b']' | b'(' | b')' | b'/')
+                }) {
                     self.at += 1;
                 }
                 let word = std::str::from_utf8(self.b.get(start..self.at)?).ok()?;
@@ -162,7 +167,9 @@ impl Reader<'_> {
         }
         self.at += 1;
         let start = self.at;
-        while self.b.get(self.at).is_some_and(|c| !c.is_ascii_whitespace() && !matches!(c, b'<' | b'>' | b'[' | b']' | b'(' | b')' | b'/')) {
+        while self.b.get(self.at).is_some_and(|c| {
+            !c.is_ascii_whitespace() && !matches!(c, b'<' | b'>' | b'[' | b']' | b'(' | b')' | b'/')
+        }) {
             self.at += 1;
         }
         Some(String::from_utf8_lossy(self.b.get(start..self.at)?).into_owned())
@@ -210,7 +217,12 @@ impl Reader<'_> {
         }
         Some(Val::Str(match bytes.strip_prefix(&[0xfe, 0xff]) {
             Some(rest) => {
-                let units: Vec<u16> = rest.as_chunks::<2>().0.iter().map(|p| u16::from_be_bytes(*p)).collect();
+                let units: Vec<u16> = rest
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|p| u16::from_be_bytes(*p))
+                    .collect();
                 String::from_utf16_lossy(&units)
             }
             None => bytes.iter().map(|b| char::from(*b)).collect(),
@@ -220,7 +232,11 @@ impl Reader<'_> {
 
 /// The values of a text document: its top-level `/key value` pairs.
 fn read(bytes: &[u8]) -> Option<Val> {
-    let mut r = Reader { b: bytes, at: 0, budget: MAX_VALUES };
+    let mut r = Reader {
+        b: bytes,
+        at: 0,
+        budget: MAX_VALUES,
+    };
     let mut d = BTreeMap::new();
     loop {
         r.skip_space();
@@ -246,7 +262,11 @@ enum FrameKind {
     /// Area type flowed inside a path: its cubic segments on the canvas, four points each.
     Area(Vec<[f64; 8]>),
     /// Type on a path, from `start` to `end` (segment index and the place in that segment).
-    OnPath { segments: Vec<[f64; 8]>, start: f64, end: f64 },
+    OnPath {
+        segments: Vec<[f64; 8]>,
+        start: f64,
+        end: f64,
+    },
 }
 
 /// A paragraph's attributes, as the text document keeps them.
@@ -307,7 +327,10 @@ impl Texts {
     /// The text document in the editing copy `data`, if it has one that can be read.
     pub(super) fn read(data: &[u8]) -> Option<Texts> {
         fn find(h: &[u8], n: &[u8], from: usize) -> Option<usize> {
-            h.get(from..)?.windows(n.len()).position(|w| w == n).map(|p| p + from)
+            h.get(from..)?
+                .windows(n.len())
+                .position(|w| w == n)
+                .map(|p| p + from)
         }
         let start = find(data, b"%AI11_BeginTextDocument", 0)?;
         let from = find(data, b"/ASCII85Decode", start)? + b"/ASCII85Decode".len();
@@ -320,7 +343,13 @@ impl Texts {
         let packed: String = String::from_utf8_lossy(data.get(from..end)?)
             .split(['\r', '\n'])
             .enumerate()
-            .map(|(i, l)| if i > 0 { l.strip_prefix('%').unwrap_or(l) } else { l })
+            .map(|(i, l)| {
+                if i > 0 {
+                    l.strip_prefix('%').unwrap_or(l)
+                } else {
+                    l
+                }
+            })
             .collect::<String>()
             .trim_start_matches([' ', ','])
             .to_string();
@@ -335,7 +364,14 @@ impl Texts {
             .get("0")?
             .list()
             .iter()
-            .map(|f| f.get("0").and_then(|f| f.get("0")).and_then(|f| f.get("0")).and_then(Val::str).unwrap_or_default().to_string())
+            .map(|f| {
+                f.get("0")
+                    .and_then(|f| f.get("0"))
+                    .and_then(|f| f.get("0"))
+                    .and_then(Val::str)
+                    .unwrap_or_default()
+                    .to_string()
+            })
             .collect();
         let main = doc.get("1")?;
         Some(Texts {
@@ -354,7 +390,8 @@ impl Texts {
         let segments = || -> Option<Vec<[f64; 8]>> {
             let n = f.get("1")?.get("0")?.nums()?;
             let (chunks, rest) = n.as_chunks::<8>();
-            (rest.is_empty() && !chunks.is_empty() && chunks.len() <= MAX_SEGMENTS).then(|| chunks.to_vec())
+            (rest.is_empty() && !chunks.is_empty() && chunks.len() <= MAX_SEGMENTS)
+                .then(|| chunks.to_vec())
         };
         match carries.get("0").and_then(Val::num).unwrap_or(0.0) as i64 {
             0 => Some(FrameKind::Point(carries.get("2")?.nums()?.try_into().ok()?)),
@@ -365,7 +402,11 @@ impl Texts {
                 let n = segments.len() as f64;
                 let start = range.first().copied().unwrap_or(0.0).clamp(0.0, n);
                 let end = range.get(1).copied().unwrap_or(n).clamp(start, n);
-                Some(FrameKind::OnPath { segments, start, end })
+                Some(FrameKind::OnPath {
+                    segments,
+                    start,
+                    end,
+                })
             }
             _ => None,
         }
@@ -374,14 +415,23 @@ impl Texts {
     /// Story `i`, if its frames are of kinds this reads.
     pub(super) fn story(&self, i: usize) -> Option<Story> {
         let s = self.stories.get(i)?;
-        let text = s.get("0")?.get("0")?.str().filter(|t| t.len() <= MAX_STORY)?.to_string();
+        let text = s
+            .get("0")?
+            .get("0")?
+            .str()
+            .filter(|t| t.len() <= MAX_STORY)?
+            .to_string();
         let view = s.get("1")?;
         let frames: Vec<FrameKind> = view
             .get("0")?
             .list()
             .iter()
             .take(MAX_FRAMES)
-            .map(|f| f.get("0").and_then(Val::num).and_then(|n| self.frame(n as usize)))
+            .map(|f| {
+                f.get("0")
+                    .and_then(Val::num)
+                    .and_then(|n| self.frame(n as usize))
+            })
             .collect::<Option<_>>()?;
         if frames.is_empty() {
             return None;
@@ -397,38 +447,85 @@ impl Texts {
             let mut found = vec![];
             find_nodes(f, "L", &mut found);
             for l in found {
-                let off = l.get("0").and_then(|o| o.get("0")).and_then(Val::nums).unwrap_or_else(|| vec![0.0, 0.0]);
-                let Some(seg) = l.get("6").map(Val::list).and_then(|c| c.iter().find(|c| c.is_node("S"))) else { continue };
-                let so = seg.get("0").and_then(|o| o.get("0")).and_then(Val::nums).unwrap_or_else(|| vec![0.0, 0.0]);
+                let off = l
+                    .get("0")
+                    .and_then(|o| o.get("0"))
+                    .and_then(Val::nums)
+                    .unwrap_or_else(|| vec![0.0, 0.0]);
+                let Some(seg) = l
+                    .get("6")
+                    .map(Val::list)
+                    .and_then(|c| c.iter().find(|c| c.is_node("S")))
+                else {
+                    continue;
+                };
+                let so = seg
+                    .get("0")
+                    .and_then(|o| o.get("0"))
+                    .and_then(Val::nums)
+                    .unwrap_or_else(|| vec![0.0, 0.0]);
                 if let (Some(ox), Some(oy), Some(sx)) = (off.first(), off.get(1), so.first()) {
                     lines.push((ox + sx, *oy));
                 }
             }
         }
         let mut paras = vec![];
-        for run in s.get("0")?.get("5").map(|p| p.get("0").map(Val::list).unwrap_or_default()).unwrap_or_default() {
+        for run in s
+            .get("0")?
+            .get("5")
+            .map(|p| p.get("0").map(Val::list).unwrap_or_default())
+            .unwrap_or_default()
+        {
             let n = run.get("1").and_then(Val::num)? as usize;
-            let props = run.get("0").and_then(|r| r.get("0")).and_then(|r| r.get("5"));
+            let props = run
+                .get("0")
+                .and_then(|r| r.get("0"))
+                .and_then(|r| r.get("5"));
             paras.push((n, self.para(props)));
         }
         let mut runs = vec![];
-        for run in s.get("0")?.get("6").map(|p| p.get("0").map(Val::list).unwrap_or_default()).unwrap_or_default() {
+        for run in s
+            .get("0")?
+            .get("6")
+            .map(|p| p.get("0").map(Val::list).unwrap_or_default())
+            .unwrap_or_default()
+        {
             let n = run.get("1").and_then(Val::num)? as usize;
-            let props = run.get("0").and_then(|r| r.get("0")).and_then(|r| r.get("6"));
+            let props = run
+                .get("0")
+                .and_then(|r| r.get("0"))
+                .and_then(|r| r.get("6"));
             runs.push((n, self.style(props)));
         }
         if runs.is_empty() {
             runs.push((text.chars().count(), self.style(None)));
         }
-        Some(Story { text, anchor, lines, frames, paras, runs })
+        Some(Story {
+            text,
+            anchor,
+            lines,
+            frames,
+            paras,
+            runs,
+        })
     }
 
     /// A paragraph's attributes: its own keys, else the document's.
     fn para(&self, p: Option<&Val>) -> Para {
-        let pick = |k: &str| p.and_then(|p| p.get(k)).or_else(|| self.para_defaults.get(k));
-        let num = |k: &str| pick(k).and_then(Val::num).filter(|v| v.abs() < 1e5).unwrap_or(0.0);
+        let pick = |k: &str| {
+            p.and_then(|p| p.get(k))
+                .or_else(|| self.para_defaults.get(k))
+        };
+        let num = |k: &str| {
+            pick(k)
+                .and_then(Val::num)
+                .filter(|v| v.abs() < 1e5)
+                .unwrap_or(0.0)
+        };
         Para {
-            justify: pick("0").and_then(Val::num).map_or(0, |v| v.clamp(0.0, 6.0) as u8),
+            justify: pick("0")
+                .and_then(Val::num)
+                .map_or(0, |v| v.clamp(0.0, 6.0) as u8),
             first_indent: num("1"),
             left_indent: num("2"),
             right_indent: num("3"),
@@ -443,18 +540,33 @@ impl Texts {
         let pick = |k: &str| s.and_then(|s| s.get(k)).or_else(|| self.defaults.get(k));
         let num = |k: &str| pick(k).and_then(Val::num);
         let on = |k: &str| !matches!(pick(k), Some(Val::Bool(false)));
-        let font = num("0").and_then(|i| self.fonts.get(i as usize)).filter(|f| !f.is_empty()).cloned();
+        let font = num("0")
+            .and_then(|i| self.fonts.get(i as usize))
+            .filter(|f| !f.is_empty())
+            .cloned();
         let size = num("1").filter(|v| *v > 0.0 && *v < 1e5).unwrap_or(12.0);
         Style {
             font,
             size,
-            leading: if on("4") { None } else { num("5").filter(|v| *v > 0.0 && *v < 1e5) },
+            leading: if on("4") {
+                None
+            } else {
+                num("5").filter(|v| *v > 0.0 && *v < 1e5)
+            },
             tracking: num("8").filter(|v| v.abs() < 1e5).unwrap_or(0.0),
             baseline_shift: num("9").filter(|v| v.abs() < 1e5).unwrap_or(0.0),
             h_scale: num("6").filter(|v| *v > 0.0 && *v < 100.0).unwrap_or(1.0),
             v_scale: num("7").filter(|v| *v > 0.0 && *v < 100.0).unwrap_or(1.0),
-            fill: if on("56") { Some(pick("53").and_then(paint).unwrap_or(Color::BLACK)) } else { None },
-            stroke: if matches!(pick("57"), Some(Val::Bool(true))) { pick("54").and_then(paint) } else { None },
+            fill: if on("56") {
+                Some(pick("53").and_then(paint).unwrap_or(Color::BLACK))
+            } else {
+                None
+            },
+            stroke: if matches!(pick("57"), Some(Val::Bool(true))) {
+                pick("54").and_then(paint)
+            } else {
+                None
+            },
             stroke_width: num("63").filter(|v| *v >= 0.0 && *v < 1e4).unwrap_or(1.0),
         }
     }
@@ -503,7 +615,10 @@ fn find_nodes<'a>(v: &'a Val, name: &str, out: &mut Vec<&'a Val>) {
 /// A point of the canvas (y down) in the units of the art (y up), given the centre `template` of
 /// the file's template box.
 fn to_art((x, y): (f64, f64), template: (f64, f64)) -> (f64, f64) {
-    (x - CANVAS_CENTRE + template.0, CANVAS_CENTRE + template.1 - y)
+    (
+        x - CANVAS_CENTRE + template.0,
+        CANVAS_CENTRE + template.1 - y,
+    )
 }
 
 /// Segments of the canvas as a path of the document.
@@ -529,7 +644,8 @@ fn path_of(segments: &[[f64; 8]], template: (f64, f64), to_doc: Affine) -> PathD
 /// Where on `segments` the place `t` (segment index and the place in it) is, as a fraction of their
 /// length.
 fn length_fraction(segments: &[[f64; 8]], t: f64) -> f64 {
-    let cubic = |s: &[f64; 8]| CubicBez::new((s[0], s[1]), (s[2], s[3]), (s[4], s[5]), (s[6], s[7]));
+    let cubic =
+        |s: &[f64; 8]| CubicBez::new((s[0], s[1]), (s[2], s[3]), (s[4], s[5]), (s[6], s[7]));
     let lengths: Vec<f64> = segments.iter().map(|s| cubic(s).arclen(0.01)).collect();
     let total: f64 = lengths.iter().sum();
     if !total.is_finite() || total <= 1e-9 {
@@ -538,7 +654,9 @@ fn length_fraction(segments: &[[f64; 8]], t: f64) -> f64 {
     let whole = t.floor().max(0.0) as usize;
     let before: f64 = lengths.iter().take(whole).sum();
     let within = match segments.get(whole) {
-        Some(s) => cubic(s).subsegment(0.0..t.fract().clamp(0.0, 1.0)).arclen(0.01),
+        Some(s) => cubic(s)
+            .subsegment(0.0..t.fract().clamp(0.0, 1.0))
+            .arclen(0.01),
         None => 0.0,
     };
     ((before + within) / total).clamp(0.0, 1.0)
@@ -562,7 +680,13 @@ impl Story {
     /// the centre `(tx, ty)` of the file's template box.
     pub(super) fn place(&self, template: (f64, f64)) -> (f64, f64) {
         let [a, b, c, d, e, f] = self.matrix();
-        to_art((a * self.anchor.0 + c * self.anchor.1 + e, b * self.anchor.0 + d * self.anchor.1 + f), template)
+        to_art(
+            (
+                a * self.anchor.0 + c * self.anchor.1 + e,
+                b * self.anchor.0 + d * self.anchor.1 + f,
+            ),
+            template,
+        )
     }
 
     /// Each line's characters and where it starts (in the units of the art, y up): where the page
@@ -575,7 +699,10 @@ impl Story {
             .enumerate()
             .map(|(i, (lx, ly))| {
                 let (x, y) = (self.anchor.0 + lx, self.anchor.1 + ly);
-                (text.get(i).copied().unwrap_or_default().to_string(), to_art((a * x + c * y + e, b * x + d * y + f), template))
+                (
+                    text.get(i).copied().unwrap_or_default().to_string(),
+                    to_art((a * x + c * y + e, b * x + d * y + f), template),
+                )
             })
             .collect()
     }
@@ -589,14 +716,26 @@ impl Story {
             FrameKind::Area(s) => bounds(s)?,
             FrameKind::OnPath { segments, .. } => bounds(segments)?.inflate(size * 1.5, size * 1.5),
             FrameKind::Point(_) => {
-                let longest = self.text.split(['\r', '\x03']).map(|l| l.chars().count()).max().unwrap_or(0) as f64;
+                let longest = self
+                    .text
+                    .split(['\r', '\x03'])
+                    .map(|l| l.chars().count())
+                    .max()
+                    .unwrap_or(0) as f64;
                 let reach = longest * size + size;
-                let points: Vec<Point> = self.line_starts(template).into_iter().map(|(_, (x, y))| to_doc * Point::new(x, y)).collect();
+                let points: Vec<Point> = self
+                    .line_starts(template)
+                    .into_iter()
+                    .map(|(_, (x, y))| to_doc * Point::new(x, y))
+                    .collect();
                 let first = points.first().copied().unwrap_or_else(|| {
                     let (x, y) = self.place(template);
                     to_doc * Point::new(x, y)
                 });
-                points.iter().fold(Rect::from_points(first, first), |r, p| r.union_pt(*p)).inflate(reach, size * 1.5)
+                points
+                    .iter()
+                    .fold(Rect::from_points(first, first), |r, p| r.union_pt(*p))
+                    .inflate(reach, size * 1.5)
             }
         };
         r.is_finite().then_some(r)
@@ -605,7 +744,13 @@ impl Story {
     /// The story as the text object of its frame `frame` (`to_doc` takes the art's units onto the
     /// document), or `None` for type that is mirrored, has no size, or a frame past the first of
     /// threaded type (the first frame holds the whole story).
-    pub(super) fn node(&self, id: NodeId, frame: usize, template: (f64, f64), to_doc: Affine) -> Option<Node> {
+    pub(super) fn node(
+        &self,
+        id: NodeId,
+        frame: usize,
+        template: (f64, f64),
+        to_doc: Affine,
+    ) -> Option<Node> {
         let kind = self.frames.get(frame)?;
         let threaded = frame > 0;
         let (scale, xf, kind) = match kind {
@@ -617,19 +762,45 @@ impl Story {
                 }
                 let (x, y) = self.place(template);
                 let at = to_doc * Point::new(x, y);
-                (scale, Affine::new([a / scale, b / scale, c / scale, d / scale, at.x, at.y]), TextKind::Point)
+                (
+                    scale,
+                    Affine::new([a / scale, b / scale, c / scale, d / scale, at.x, at.y]),
+                    TextKind::Point,
+                )
             }
-            FrameKind::Area(s) => (1.0, Affine::IDENTITY, TextKind::Area { frame: path_of(s, template, to_doc) }),
-            FrameKind::OnPath { segments, start, end } => {
+            FrameKind::Area(s) => (
+                1.0,
+                Affine::IDENTITY,
+                TextKind::Area {
+                    frame: path_of(s, template, to_doc),
+                },
+            ),
+            FrameKind::OnPath {
+                segments,
+                start,
+                end,
+            } => {
                 let n = segments.len() as f64;
                 let end = (*end < n - 0.02).then(|| length_fraction(segments, *end));
-                (1.0, Affine::IDENTITY, TextKind::OnPath { path: path_of(segments, template, to_doc), start: length_fraction(segments, *start), end })
+                (
+                    1.0,
+                    Affine::IDENTITY,
+                    TextKind::OnPath {
+                        path: path_of(segments, template, to_doc),
+                        start: length_fraction(segments, *start),
+                        end,
+                    },
+                )
             }
         };
         let text: String = if threaded {
             String::new()
         } else {
-            self.text.trim_end_matches('\r').chars().map(|c| if matches!(c, '\r' | '\x03') { '\n' } else { c }).collect()
+            self.text
+                .trim_end_matches('\r')
+                .chars()
+                .map(|c| if matches!(c, '\r' | '\x03') { '\n' } else { c })
+                .collect()
         };
         if text.trim().is_empty() && !threaded {
             return None;
@@ -649,9 +820,19 @@ impl Story {
         }
         if from < chars.len() {
             let last = self.runs.last().map(|r| &r.1)?;
-            runs.push(TextRun::new(chars.get(from..).unwrap_or_default().iter().collect::<String>(), char_style(last, scale, leading)));
+            runs.push(TextRun::new(
+                chars
+                    .get(from..)
+                    .unwrap_or_default()
+                    .iter()
+                    .collect::<String>(),
+                char_style(last, scale, leading),
+            ));
         }
-        let first = self.runs.first().map(|r| char_style(&r.1, scale, leading))?;
+        let first = self
+            .runs
+            .first()
+            .map(|r| char_style(&r.1, scale, leading))?;
         let mut t = TextObject::point(Point::ZERO, "", first);
         if !runs.is_empty() {
             t.runs = runs;
@@ -671,7 +852,8 @@ impl Story {
     /// taller, and type that doesn't fit its frame isn't drawn. The frame is made taller, from its
     /// top, by what the first line needs (`vectorcraft_text::fit_first_line`). Whether it was.
     pub(super) fn fit_first_line(&self, t: &mut TextObject) -> bool {
-        !self.lines.is_empty() && vectorcraft_text::fit_first_line(vectorcraft_text::FontDb::global(), t)
+        !self.lines.is_empty()
+            && vectorcraft_text::fit_first_line(vectorcraft_text::FontDb::global(), t)
     }
 
     /// The leading the file's own line positions imply: the distance from one line to the next, less
@@ -690,14 +872,20 @@ impl Story {
             self.paras.last().map(|(_, p)| p)
         };
         let chars: Vec<char> = self.text.chars().collect();
-        let breaks: Vec<usize> = chars.iter().enumerate().filter(|(_, c)| matches!(c, '\r' | '\x03')).map(|(i, _)| i).collect();
+        let breaks: Vec<usize> = chars
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| matches!(c, '\r' | '\x03'))
+            .map(|(i, _)| i)
+            .collect();
         // More lines than breaks: area type wraps, and which break ends which line is unknown.
         let wraps = self.lines.len() > breaks.len() + 1;
         self.lines.windows(2).enumerate().find_map(|(i, w)| {
             let pitch = w[1].1 - w[0].1;
             let between = match breaks.get(i) {
                 Some(&at) if !wraps && chars.get(at) == Some(&'\r') => {
-                    para_at(at).map_or(0.0, |p| p.space_after) + para_at(at + 1).map_or(0.0, |p| p.space_before)
+                    para_at(at).map_or(0.0, |p| p.space_after)
+                        + para_at(at + 1).map_or(0.0, |p| p.space_before)
                 }
                 _ => 0.0,
             };
@@ -758,8 +946,13 @@ fn para_style(p: &Para, scale: f64) -> ParaStyle {
 }
 
 fn char_style(s: &Style, scale: f64, leading: Option<f64>) -> CharStyle {
-    let (family, style) = s.font.as_deref().map_or_else(|| (CharStyle::default().font_family, "Regular".to_string()), crate::family_style);
-    let family = vectorcraft_text::FontDb::global().find_family(&family).unwrap_or(family);
+    let (family, style) = s.font.as_deref().map_or_else(
+        || (CharStyle::default().font_family, "Regular".to_string()),
+        crate::family_style,
+    );
+    let family = vectorcraft_text::FontDb::global()
+        .find_family(&family)
+        .unwrap_or(family);
     CharStyle {
         font_family: family,
         font_style: style,
@@ -771,7 +964,11 @@ fn char_style(s: &Style, scale: f64, leading: Option<f64>) -> CharStyle {
         v_scale: s.v_scale * 100.0,
         fill: s.fill.map_or(Paint::None, Paint::solid),
         stroke: s.stroke.map_or(Paint::None, Paint::solid),
-        stroke_width: if s.stroke.is_some() { s.stroke_width * scale } else { 0.0 },
+        stroke_width: if s.stroke.is_some() {
+            s.stroke_width * scale
+        } else {
+            0.0
+        },
         ..CharStyle::default()
     }
 }
@@ -782,7 +979,10 @@ mod tests {
 
     #[test]
     fn values_read_nested_dictionaries_lists_and_utf16_strings() {
-        let v = read(b" /1 << /0 [ 1 2.5 -3 ] /2 (\xfe\xff\x00h\x00i) /3 true /99 /Name >> /0 (a\\)b\\n)").unwrap();
+        let v = read(
+            b" /1 << /0 [ 1 2.5 -3 ] /2 (\xfe\xff\x00h\x00i) /3 true /99 /Name >> /0 (a\\)b\\n)",
+        )
+        .unwrap();
         let one = v.get("1").unwrap();
         assert_eq!(one.get("0").unwrap().nums(), Some(vec![1.0, 2.5, -3.0]));
         assert_eq!(one.get("2").unwrap().str(), Some("hi"));
@@ -793,7 +993,13 @@ mod tests {
 
     #[test]
     fn damaged_documents_are_not_read() {
-        for bad in [&b"/0 << /1"[..], b"/0 [ 1 2", b"/0 (abc", b"/0 nope", b"0 1"] {
+        for bad in [
+            &b"/0 << /1"[..],
+            b"/0 [ 1 2",
+            b"/0 (abc",
+            b"/0 nope",
+            b"0 1",
+        ] {
             assert!(read(bad).is_none(), "{}", String::from_utf8_lossy(bad));
         }
         let deep = format!("/0 {}", "[".repeat(200));
@@ -804,7 +1010,10 @@ mod tests {
     /// the paragraph spacing has put them), every paragraph styled `para`.
     fn story(text: &str, ys: &[f64], para: &Para) -> Story {
         let size = 13.0;
-        let paras = text.split_inclusive('\r').map(|p| (p.chars().count(), para.clone())).collect();
+        let paras = text
+            .split_inclusive('\r')
+            .map(|p| (p.chars().count(), para.clone()))
+            .collect();
         Story {
             text: text.to_string(),
             anchor: (0.0, 0.0),
@@ -841,12 +1050,19 @@ mod tests {
     #[test]
     fn leading_leaves_out_the_space_between_paragraphs_that_the_lines_already_have() {
         // Lines 10.6 apart that are three paragraphs with 5 less after each: auto leading (15.6) less 5.
-        let para = Para { space_after: -5.0, ..Para::default() };
+        let para = Para {
+            space_after: -5.0,
+            ..Para::default()
+        };
         let s = story("one\rtwo\rthree\r", &[0.0, 10.6, 21.2], &para);
         assert!((s.line_leading(1.0).unwrap() - 15.6).abs() < 1e-9);
         assert!((leading_of(&s).unwrap() - 15.6).abs() < 1e-9);
         // Space after and space before both count; the scale of the frame carries onto the leading.
-        let para = Para { space_after: 4.0, space_before: 2.0, ..Para::default() };
+        let para = Para {
+            space_after: 4.0,
+            space_before: 2.0,
+            ..Para::default()
+        };
         let s = story("one\rtwo\r", &[0.0, 20.0], &para);
         assert!((s.line_leading(1.0).unwrap() - 14.0).abs() < 1e-9);
         assert!((s.line_leading(0.5).unwrap() - 7.0).abs() < 1e-9);
@@ -855,18 +1071,28 @@ mod tests {
     #[test]
     fn leading_between_lines_of_a_paragraph_is_their_distance() {
         // A line break inside a paragraph has no paragraph spacing between its lines.
-        let para = Para { space_after: -5.0, space_before: 3.0, ..Para::default() };
+        let para = Para {
+            space_after: -5.0,
+            space_before: 3.0,
+            ..Para::default()
+        };
         let s = story("one\x03two\x03three\r", &[0.0, 15.6, 31.2], &para);
         assert!((s.line_leading(1.0).unwrap() - 15.6).abs() < 1e-9);
         // Paragraphs without spacing: the distance as it was.
         let s = story("one\rtwo\r", &[0.0, 15.6], &Para::default());
         assert!((s.line_leading(1.0).unwrap() - 15.6).abs() < 1e-9);
         // Area type whose paragraph wraps: lines and breaks don't pair up, so nothing is taken off.
-        let para = Para { space_after: -5.0, ..Para::default() };
+        let para = Para {
+            space_after: -5.0,
+            ..Para::default()
+        };
         let s = story("one two three\rfour\r", &[0.0, 15.6, 31.2, 41.8], &para);
         assert!((s.line_leading(1.0).unwrap() - 15.6).abs() < 1e-9);
         // One line has no distance to read.
-        assert_eq!(story("one\r", &[0.0], &Para::default()).line_leading(1.0), None);
+        assert_eq!(
+            story("one\r", &[0.0], &Para::default()).line_leading(1.0),
+            None
+        );
     }
 
     #[test]
@@ -874,24 +1100,53 @@ mod tests {
         // A heading in a frame as tall as its size: a line of the font it shows in here is taller.
         let s = story("Heading\r", &[0.0], &Para::default());
         let area = |height: f64| {
-            let mut t = TextObject::point(Point::ZERO, "Heading", CharStyle { size: 13.0, ..CharStyle::default() });
-            t.kind = TextKind::Area { frame: vectorcraft_geom::shapes::rectangle(Rect::new(10.0, 20.0, 210.0, 20.0 + height)) };
+            let mut t = TextObject::point(
+                Point::ZERO,
+                "Heading",
+                CharStyle {
+                    size: 13.0,
+                    ..CharStyle::default()
+                },
+            );
+            t.kind = TextKind::Area {
+                frame: vectorcraft_geom::shapes::rectangle(Rect::new(
+                    10.0,
+                    20.0,
+                    210.0,
+                    20.0 + height,
+                )),
+            };
             t
         };
-        let height =
-            |t: &TextObject| if let TextKind::Area { frame } = &t.kind { frame.bounds().map(|b| (b.x0, b.y0, b.x1, b.height())) } else { None };
-        let lines = |t: &TextObject| vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t).lines.len();
+        let height = |t: &TextObject| {
+            if let TextKind::Area { frame } = &t.kind {
+                frame.bounds().map(|b| (b.x0, b.y0, b.x1, b.height()))
+            } else {
+                None
+            }
+        };
+        let lines = |t: &TextObject| {
+            vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t)
+                .lines
+                .len()
+        };
         let mut t = area(13.0);
         assert_eq!(lines(&t), 0, "nothing of it shows");
         assert!(s.fit_first_line(&mut t));
         let (x0, y0, x1, h) = height(&t).unwrap();
-        assert!((x0, y0, x1) == (10.0, 20.0, 210.0) && h > 13.0 && h < 26.0, "taller from its top: {h}");
+        assert!(
+            (x0, y0, x1) == (10.0, 20.0, 210.0) && h > 13.0 && h < 26.0,
+            "taller from its top: {h}"
+        );
         assert_eq!(lines(&t), 1);
         // A frame that holds the line stays as it is; so does one the file lays no line out in
         // (its type is overset in the file too).
         let mut t = area(40.0);
         assert!(!s.fit_first_line(&mut t) && height(&t).unwrap().3 == 40.0);
         let mut t = area(13.0);
-        assert!(!story("Heading\r", &[], &Para::default()).fit_first_line(&mut t) && height(&t).unwrap().3 == 13.0);
+        assert!(
+            !story("Heading\r", &[], &Para::default()).fit_first_line(&mut t)
+                && height(&t).unwrap().3 == 13.0
+        );
     }
 }

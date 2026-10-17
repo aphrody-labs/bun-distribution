@@ -68,8 +68,11 @@ impl VisibilityResolvePass {
     pub fn new(device: &MetalDevice) -> Result<Self, MetalComputePassError> {
         Ok(Self {
             device: device.clone(),
-            pass: ComputePass::new(device,
-                include_str!("../host_shaders/metal_visibility_resolve.metal"), "visibility_resolve")?,
+            pass: ComputePass::new(
+                device,
+                include_str!("../host_shaders/metal_visibility_resolve.metal"),
+                "visibility_resolve",
+            )?,
         })
     }
 
@@ -81,9 +84,14 @@ impl VisibilityResolvePass {
         count: usize,
         accumulation: &MetalBuffer,
     ) -> Result<Arc<MetalBuffer>, MetalComputePassError> {
-        if count == 0 || offset % 8 != 0 || count > u32::MAX as usize
-            || offset / 8 > u32::MAX as usize || accumulation.length() < 8
-            || count.checked_mul(8).and_then(|bytes| offset.checked_add(bytes))
+        if count == 0
+            || offset % 8 != 0
+            || count > u32::MAX as usize
+            || offset / 8 > u32::MAX as usize
+            || accumulation.length() < 8
+            || count
+                .checked_mul(8)
+                .and_then(|bytes| offset.checked_add(bytes))
                 .is_none_or(|end| end > source.length())
         {
             return Err(MetalComputePassError::VisibilityRange);
@@ -112,13 +120,23 @@ impl VisibilityResolvePass {
                     encoder.setBuffer_offset_atIndex(Some(accumulation.handle()), 0, 2);
                     encoder.setBytes_length_atIndex(NonNull::from(&params).cast(), 16, 3);
                     encoder.dispatchThreadgroups_threadsPerThreadgroup(
-                        MTLSize { width: groups, height: 1, depth: 1 },
-                        MTLSize { width: 256, height: 1, depth: 1 },
+                        MTLSize {
+                            width: groups,
+                            height: 1,
+                            depth: 1,
+                        },
+                        MTLSize {
+                            width: 256,
+                            height: 1,
+                            depth: 1,
+                        },
                     );
                 }
                 encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
             })?;
-            if groups == 1 { return Ok(output); }
+            if groups == 1 {
+                return Ok(output);
+            }
             previous_pass = Some(output);
             remaining = groups;
         }
@@ -177,8 +195,14 @@ impl Uint8Pass {
             StagingBufferUsage::DeviceLocal,
             false,
         )?;
-        self.assemble_into(scheduler, num_vertices, src_buffer, src_offset,
-            &staging.buffer, staging.offset)?;
+        self.assemble_into(
+            scheduler,
+            num_vertices,
+            src_buffer,
+            src_offset,
+            &staging.buffer,
+            staging.offset,
+        )?;
         Ok(staging)
     }
 
@@ -193,19 +217,24 @@ impl Uint8Pass {
         destination: &MetalBuffer,
         destination_offset: usize,
     ) -> Result<(), MetalComputePassError> {
-        if src_offset.checked_add(num_vertices as usize)
-            .is_none_or(|end| end > src_buffer.length()) {
+        if src_offset
+            .checked_add(num_vertices as usize)
+            .is_none_or(|end| end > src_buffer.length())
+        {
             return Err(MetalComputePassError::SourceRange);
         }
-        if (num_vertices as usize).checked_mul(2)
+        if (num_vertices as usize)
+            .checked_mul(2)
             .and_then(|size| destination_offset.checked_add(size))
-            .is_none_or(|end| end > destination.length()) {
+            .is_none_or(|end| end > destination.length())
+        {
             return Err(MetalComputePassError::OutputSize);
         }
         if num_vertices == 0 {
             return Ok(());
         }
-        destination.mark_content_range_modified(destination_offset as u64, u64::from(num_vertices) * 2);
+        destination
+            .mark_content_range_modified(destination_offset as u64, u64::from(num_vertices) * 2);
         scheduler.request_outside_render_pass_operation_context_for(ComputeWork::IndexConversion);
         scheduler.with_compute_encoder_for(ComputeWork::IndexConversion, |encoder| {
             const DISPATCH_SIZE: usize = 1024;
@@ -300,7 +329,8 @@ impl QuadIndexedPass {
             u32::from(is_strip),
             num_primitives,
         ];
-        scheduler.request_outside_render_pass_operation_context_for(ComputeWork::QuadIndexConversion);
+        scheduler
+            .request_outside_render_pass_operation_context_for(ComputeWork::QuadIndexConversion);
         scheduler.with_compute_encoder_for(ComputeWork::QuadIndexConversion, |encoder| {
             const DISPATCH_SIZE: usize = 1024;
             encoder.setComputePipelineState(&self.pass.pipeline);
@@ -369,7 +399,8 @@ impl ConditionalRenderingResolvePass {
             return Err(MetalComputePassError::ConditionalRange);
         }
         let uniform = u32::from(compare_to_zero);
-        scheduler.request_outside_render_pass_operation_context_for(ComputeWork::ConditionalResolve);
+        scheduler
+            .request_outside_render_pass_operation_context_for(ComputeWork::ConditionalResolve);
         scheduler.with_compute_encoder_for(ComputeWork::ConditionalResolve, |encoder| {
             // Tracked resources order previous encoders; this barrier also covers
             // preceding shader writes when the scheduler reuses a compute encoder.
@@ -471,29 +502,49 @@ impl ConditionalDirectArguments {
         });
         if !reusable {
             let source = staging.request_upload_buffer(
-                scheduler, DIRECT_ARGUMENTS_PER_BATCH * DIRECT_ARGUMENT_BYTES, false,
+                scheduler,
+                DIRECT_ARGUMENTS_PER_BATCH * DIRECT_ARGUMENT_BYTES,
+                false,
             )?;
-            source.buffer.write(source.offset, &[0; DIRECT_ARGUMENTS_PER_BATCH * DIRECT_ARGUMENT_BYTES])?;
+            source.buffer.write(
+                source.offset,
+                &[0; DIRECT_ARGUMENTS_PER_BATCH * DIRECT_ARGUMENT_BYTES],
+            )?;
             let output = pass.resolve(
-                scheduler, staging, &predicate.buffer, predicate.offset, predicate.inverted,
-                &source.buffer, source.offset, DIRECT_ARGUMENT_BYTES as u32,
-                DIRECT_ARGUMENTS_PER_BATCH as u32, ConditionalArgumentLayout::DrawIndexed,
+                scheduler,
+                staging,
+                &predicate.buffer,
+                predicate.offset,
+                predicate.inverted,
+                &source.buffer,
+                source.offset,
+                DIRECT_ARGUMENT_BYTES as u32,
+                DIRECT_ARGUMENTS_PER_BATCH as u32,
+                ConditionalArgumentLayout::DrawIndexed,
             )?;
             self.batch = Some(DirectArgumentsBatch {
                 token: scheduler.conditional_batch_token(),
                 predicate: Arc::clone(&predicate.buffer),
                 predicate_offset: predicate.offset,
                 inverted: predicate.inverted,
-                source, output, count: 0,
+                source,
+                output,
+                count: 0,
             });
         }
         let batch = self.batch.as_mut().unwrap();
         let offset = batch.count * DIRECT_ARGUMENT_BYTES;
         // The command buffer is still unsubmitted (token checked above).
         // Metal reads the finished CPU record array at execution, not encoding.
-        batch.source.buffer.write(batch.source.offset + offset, bytemuck::cast_slice(&words))?;
+        batch
+            .source
+            .buffer
+            .write(batch.source.offset + offset, bytemuck::cast_slice(&words))?;
         batch.count += 1;
-        Ok(Some((Arc::clone(&batch.output.buffer), batch.output.offset + offset)))
+        Ok(Some((
+            Arc::clone(&batch.output.buffer),
+            batch.output.offset + offset,
+        )))
     }
 }
 
@@ -562,7 +613,8 @@ impl ConditionalRenderingArgumentsPass {
             command_count,
             u32::from(inverted),
         ];
-        scheduler.request_outside_render_pass_operation_context_for(ComputeWork::ConditionalArguments);
+        scheduler
+            .request_outside_render_pass_operation_context_for(ComputeWork::ConditionalArguments);
         scheduler.with_compute_encoder_for(ComputeWork::ConditionalArguments, |encoder| {
             encoder.memoryBarrierWithScope(MTLBarrierScope::Buffers);
             encoder.setComputePipelineState(&self.pass.pipeline);
@@ -604,23 +656,40 @@ mod tests {
         let pass = VisibilityResolvePass::new(&device).unwrap();
         let mut scheduler = MetalScheduler::new(&device);
         let accumulation = MetalBuffer::new(&device, 8).unwrap();
-        accumulation.write(0, &0xffff_ffff_0000_0007u64.to_ne_bytes()).unwrap();
+        accumulation
+            .write(0, &0xffff_ffff_0000_0007u64.to_ne_bytes())
+            .unwrap();
         let mut outputs = Vec::new();
         for count in [1, 255, 256, 257, 2048, 65537] {
-            let words: Vec<u64> = (0..count).map(|index|
-                if index % 3 == 0 { u64::MAX } else { 0x1000_0000_1u64 + index as u64 }).collect();
+            let words: Vec<u64> = (0..count)
+                .map(|index| {
+                    if index % 3 == 0 {
+                        u64::MAX
+                    } else {
+                        0x1000_0000_1u64 + index as u64
+                    }
+                })
+                .collect();
             let upload = MetalBuffer::new(&device, count * 8 + 16).unwrap();
             upload.write(0, &vec![0xa5; upload.length()]).unwrap();
             upload.write(8, bytemuck::cast_slice(&words)).unwrap();
             let source = MetalBuffer::new_private(&device, upload.length()).unwrap();
-            upload.encode_copy(&mut scheduler, &source, 0, 0, upload.length()).unwrap();
-            let value = pass.run(&mut scheduler, &source, 8, count, &accumulation).unwrap();
-            let expected = words.into_iter().fold(0xffff_ffff_0000_0007u64, u64::wrapping_add);
+            upload
+                .encode_copy(&mut scheduler, &source, 0, 0, upload.length())
+                .unwrap();
+            let value = pass
+                .run(&mut scheduler, &source, 8, count, &accumulation)
+                .unwrap();
+            let expected = words
+                .into_iter()
+                .fold(0xffff_ffff_0000_0007u64, u64::wrapping_add);
             outputs.push((value, expected));
         }
         for (offset, count) in [(1, 1), (0, 0), (0, 2), (usize::MAX, 1)] {
-            assert!(matches!(pass.run(&mut scheduler, &accumulation, offset, count, &accumulation),
-                Err(MetalComputePassError::VisibilityRange)));
+            assert!(matches!(
+                pass.run(&mut scheduler, &accumulation, offset, count, &accumulation),
+                Err(MetalComputePassError::VisibilityRange)
+            ));
         }
         scheduler.finish_all().unwrap();
         for (value, expected) in outputs {
@@ -844,16 +913,28 @@ kernel void count_invocations(device atomic_uint* result [[buffer(0)]]) {
         let mut direct = ConditionalDirectArguments::default();
         let mut predicate = MetalConditionalRendering {
             buffer: Arc::new(MetalBuffer::new_private(&device, 4).unwrap()),
-            offset: 0, inverted: false, private_resolve: true,
+            offset: 0,
+            inverted: false,
+            private_resolve: true,
         };
         let upload = MetalBuffer::new(&device, 4).unwrap();
         upload.write(0, &1u32.to_ne_bytes()).unwrap();
-        upload.encode_copy(&mut scheduler, &predicate.buffer, 0, 0, 4).unwrap();
+        upload
+            .encode_copy(&mut scheduler, &predicate.buffer, 0, 0, 4)
+            .unwrap();
         let mut outputs: Vec<(Arc<MetalBuffer>, usize)> = Vec::new();
         for i in 0..DIRECT_ARGUMENTS_PER_BATCH + 1 {
             let before = scheduler.conditional_batch_token();
-            let output = direct.append(&pass, &mut scheduler, &mut pool, &predicate,
-                [3, 2, i as u32, u32::MAX, 0x80000000]).unwrap().unwrap();
+            let output = direct
+                .append(
+                    &pass,
+                    &mut scheduler,
+                    &mut pool,
+                    &predicate,
+                    [3, 2, i as u32, u32::MAX, 0x80000000],
+                )
+                .unwrap()
+                .unwrap();
             if i != 0 && i < DIRECT_ARGUMENTS_PER_BATCH {
                 assert_eq!(scheduler.conditional_batch_token(), before);
                 assert!(Arc::ptr_eq(&outputs[0].0, &output.0));
@@ -865,21 +946,32 @@ kernel void count_invocations(device atomic_uint* result [[buffer(0)]]) {
         }
         predicate.private_resolve = false;
         let token = scheduler.conditional_batch_token();
-        assert!(direct.append(&pass, &mut scheduler, &mut pool, &predicate, [1; 5]).unwrap().is_none());
+        assert!(direct
+            .append(&pass, &mut scheduler, &mut pool, &predicate, [1; 5])
+            .unwrap()
+            .is_none());
         assert_eq!(scheduler.conditional_batch_token(), token);
         let readback = MetalBuffer::new(&device, outputs.len() * 20).unwrap();
         for (i, (buffer, offset)) in outputs.iter().enumerate() {
-            buffer.encode_copy(&mut scheduler, &readback, *offset, i * 20, 20).unwrap();
+            buffer
+                .encode_copy(&mut scheduler, &readback, *offset, i * 20, 20)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = vec![0; outputs.len() * 20];
         readback.read(0, &mut bytes).unwrap();
         for (i, record) in bytes.chunks_exact(20).enumerate() {
-            assert_eq!(record, bytemuck::cast_slice::<u32, u8>(&[3, 2, i as u32, u32::MAX, 0x80000000]));
+            assert_eq!(
+                record,
+                bytemuck::cast_slice::<u32, u8>(&[3, 2, i as u32, u32::MAX, 0x80000000])
+            );
         }
         // Completion allows pool reuse but never CPU appends to the old batch.
         predicate.private_resolve = true;
-        direct.append(&pass, &mut scheduler, &mut pool, &predicate, [7; 5]).unwrap().unwrap();
+        direct
+            .append(&pass, &mut scheduler, &mut pool, &predicate, [7; 5])
+            .unwrap()
+            .unwrap();
         assert_eq!(direct.batch.as_ref().unwrap().count, 1);
         scheduler.finish_all().unwrap();
     }
@@ -895,9 +987,13 @@ kernel void count_invocations(device atomic_uint* result [[buffer(0)]]) {
         let first = Arc::new(MetalBuffer::new_private(&device, 8).unwrap());
         let second = Arc::new(MetalBuffer::new_private(&device, 8).unwrap());
         let upload = MetalBuffer::new(&device, 16).unwrap();
-        upload.write(0, bytemuck::cast_slice(&[0u32, 17, 17, 0])).unwrap();
+        upload
+            .write(0, bytemuck::cast_slice(&[0u32, 17, 17, 0]))
+            .unwrap();
         upload.encode_copy(&mut scheduler, &first, 0, 0, 8).unwrap();
-        upload.encode_copy(&mut scheduler, &second, 8, 0, 8).unwrap();
+        upload
+            .encode_copy(&mut scheduler, &second, 8, 0, 8)
+            .unwrap();
 
         // No intervening encoder work: each changed predicate key must itself
         // invalidate the group, not rely on the producer/submission token.
@@ -919,8 +1015,12 @@ kernel void count_invocations(device atomic_uint* result [[buffer(0)]]) {
                 private_resolve: true,
             };
             let before = scheduler.conditional_batch_token();
-            outputs.push(direct.append(&pass, &mut scheduler, &mut pool, &predicate, words)
-                .unwrap().unwrap());
+            outputs.push(
+                direct
+                    .append(&pass, &mut scheduler, &mut pool, &predicate, words)
+                    .unwrap()
+                    .unwrap(),
+            );
             if index == 1 {
                 assert_eq!(scheduler.conditional_batch_token(), before);
                 assert_eq!(direct.batch.as_ref().unwrap().count, 2);
@@ -931,13 +1031,18 @@ kernel void count_invocations(device atomic_uint* result [[buffer(0)]]) {
         }
         let readback = MetalBuffer::new(&device, outputs.len() * 20).unwrap();
         for (index, (buffer, offset)) in outputs.iter().enumerate() {
-            buffer.encode_copy(&mut scheduler, &readback, *offset, index * 20, 20).unwrap();
+            buffer
+                .encode_copy(&mut scheduler, &readback, *offset, index * 20, 20)
+                .unwrap();
         }
         scheduler.finish_all().unwrap();
         let mut bytes = vec![0; outputs.len() * 20];
         readback.read(0, &mut bytes).unwrap();
         for (record, instances) in bytes.chunks_exact(20).zip([0u32, 0, 2, 0, 2, 0]) {
-            assert_eq!(record, bytemuck::cast_slice::<u32, u8>(&[3, instances, 11, u32::MAX, 7]));
+            assert_eq!(
+                record,
+                bytemuck::cast_slice::<u32, u8>(&[3, instances, 11, u32::MAX, 7])
+            );
         }
     }
 
@@ -1078,32 +1183,43 @@ vertex void count_vertices(device atomic_uint* result [[buffer(0)]],
                     .encode_copy(&mut scheduler, &predicate, 0, 0, 4)
                     .unwrap();
                 for _ in 0..2 {
-                let (args_buffer, args_offset) = if batched {
-                    let mut raw = [0; 5];
-                    raw[..words.len()].copy_from_slice(&words);
-                    direct.append(&pass, &mut scheduler, &mut pool,
-                        &super::super::metal_query_cache::MetalConditionalRendering {
-                            buffer: Arc::clone(&predicate), offset: 0, inverted, private_resolve: true,
-                        }, raw).unwrap().unwrap()
-                } else {
-                let args = pass
-                    .resolve(
-                        &mut scheduler,
-                        &mut pool,
-                        &predicate,
-                        0,
-                        inverted,
-                        &source,
-                        0,
-                        layout.byte_size() as u32,
-                        1,
-                        layout,
-                    )
-                    .unwrap();
-                    (args.buffer, args.offset)
-                };
-                scheduler.begin_render_pass(&render_pass).unwrap();
-                scheduler.with_render_encoder(|encoder| unsafe {
+                    let (args_buffer, args_offset) = if batched {
+                        let mut raw = [0; 5];
+                        raw[..words.len()].copy_from_slice(&words);
+                        direct
+                            .append(
+                                &pass,
+                                &mut scheduler,
+                                &mut pool,
+                                &super::super::metal_query_cache::MetalConditionalRendering {
+                                    buffer: Arc::clone(&predicate),
+                                    offset: 0,
+                                    inverted,
+                                    private_resolve: true,
+                                },
+                                raw,
+                            )
+                            .unwrap()
+                            .unwrap()
+                    } else {
+                        let args = pass
+                            .resolve(
+                                &mut scheduler,
+                                &mut pool,
+                                &predicate,
+                                0,
+                                inverted,
+                                &source,
+                                0,
+                                layout.byte_size() as u32,
+                                1,
+                                layout,
+                            )
+                            .unwrap();
+                        (args.buffer, args.offset)
+                    };
+                    scheduler.begin_render_pass(&render_pass).unwrap();
+                    scheduler.with_render_encoder(|encoder| unsafe {
                     encoder.setRenderPipelineState(&pipeline);
                     encoder.setVertexBuffer_offset_atIndex(Some(counts.handle()),
                         (layout_index * 4 + i) * 12, 0);

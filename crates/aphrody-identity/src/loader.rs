@@ -53,7 +53,10 @@ pub const CAPACITE: usize = 256;
 #[derive(Debug, thiserror::Error)]
 pub enum LoadError {
     #[error("{chemin} : {source}")]
-    Io { chemin: String, source: std::io::Error },
+    Io {
+        chemin: String,
+        source: std::io::Error,
+    },
     #[error("source de {0} octets, au-delà de {MAX_SOURCE}")]
     TropGrande(usize),
     #[error("URL refusée : {0} (seule {CDN} est acceptée)")]
@@ -117,7 +120,21 @@ impl Format {
         match octets {
             [0x89, b'P', b'N', b'G', ..] => Some(Self::Png),
             [0xFF, 0xD8, 0xFF, ..] => Some(Self::Jpeg),
-            [b'R', b'I', b'F', b'F', _, _, _, _, b'W', b'E', b'B', b'P', ..] => Some(Self::WebP),
+            [
+                b'R',
+                b'I',
+                b'F',
+                b'F',
+                _,
+                _,
+                _,
+                _,
+                b'W',
+                b'E',
+                b'B',
+                b'P',
+                ..,
+            ] => Some(Self::WebP),
             [b'G', b'I', b'F', b'8', b'7' | b'9', b'a', ..] => Some(Self::Gif),
             [0, 0, 1, 0, n0, n1, ..] if u16::from_le_bytes([*n0, *n1]) > 0 => Some(Self::Ico),
             _ => est_svg(octets).then_some(Self::Svg),
@@ -144,7 +161,10 @@ fn est_svg(octets: &[u8]) -> bool {
             reste = r.1.trim_start();
         } else if let Some(r) = reste.strip_prefix("<!--").and_then(|r| r.split_once("-->")) {
             reste = r.1.trim_start();
-        } else if let Some(r) = reste.strip_prefix("<!DOCTYPE").and_then(|r| r.split_once('>')) {
+        } else if let Some(r) = reste
+            .strip_prefix("<!DOCTYPE")
+            .and_then(|r| r.split_once('>'))
+        {
             reste = r.1.trim_start();
         } else {
             break;
@@ -172,7 +192,9 @@ impl SymboleSpec {
         let spec = spec.strip_prefix("symbol:").unwrap_or(spec);
         let (nom, requete) = spec.split_once('?').unwrap_or((spec, ""));
         if !symbols::is_symbol_name(nom) {
-            return Err(LoadError::SymboleInvalide(format!("nom « {nom} » (attendu [a-z0-9_]+)")));
+            return Err(LoadError::SymboleInvalide(format!(
+                "nom « {nom} » (attendu [a-z0-9_]+)"
+            )));
         }
         let mut style = SymbolStyle::Outlined;
         let mut axes = SymbolAxes::default();
@@ -194,7 +216,7 @@ impl SymboleSpec {
                             "style={valeur} (attendu outlined, rounded ou sharp)"
                         ))
                     })?;
-                },
+                }
                 "fill" => axes.fill = nombre(0.0, 1.0)?,
                 "wght" => axes.weight = nombre(100.0, 700.0)?,
                 "grad" => axes.grade = nombre(-25.0, 200.0)?,
@@ -203,10 +225,14 @@ impl SymboleSpec {
                     return Err(LoadError::SymboleInvalide(format!(
                         "paramètre inconnu « {cle} » (style, fill, wght, grad, opsz)"
                     )));
-                },
+                }
             }
         }
-        Ok(Self { nom: nom.to_owned(), style, axes })
+        Ok(Self {
+            nom: nom.to_owned(),
+            style,
+            axes,
+        })
     }
 
     /// Forme canonique : `symbol:home?style=outlined&fill=0&wght=400&grad=0&opsz=24`.
@@ -255,7 +281,9 @@ impl Source {
         }
         #[cfg(not(feature = "fs"))]
         {
-            Err(LoadError::Requete(format!("{spec} : pas de système de fichiers dans ce build")))
+            Err(LoadError::Requete(format!(
+                "{spec} : pas de système de fichiers dans ce build"
+            )))
         }
     }
 
@@ -327,7 +355,13 @@ pub struct Request {
 
 impl Default for Request {
     fn default() -> Self {
-        Self { size: None, scale: 1.0, tint: None, fit: Fit::Contain, output: Output::Rgba }
+        Self {
+            size: None,
+            scale: 1.0,
+            tint: None,
+            fit: Fit::Contain,
+            output: Output::Rgba,
+        }
     }
 }
 
@@ -335,12 +369,18 @@ impl Request {
     /// Carré de `size` pixels CSS, le reste par défaut.
     #[must_use]
     pub fn px(size: u32) -> Self {
-        Self { size: Some(size), ..Self::default() }
+        Self {
+            size: Some(size),
+            ..Self::default()
+        }
     }
 
     fn valider(&self) -> Result<(), LoadError> {
         if !(self.scale.is_finite() && self.scale > 0.0 && self.scale <= 16.0) {
-            return Err(LoadError::Requete(format!("scale {} hors de ]0, 16]", self.scale)));
+            return Err(LoadError::Requete(format!(
+                "scale {} hors de ]0, 16]",
+                self.scale
+            )));
         }
         if self.size == Some(0) {
             return Err(LoadError::Requete("size nulle".into()));
@@ -368,7 +408,7 @@ pub fn couleur(hex: &str) -> Option<[u8; 4]> {
         3 => {
             let c = |i: usize| u8::from_str_radix(h.get(i..=i)?, 16).ok().map(|v| v * 17);
             Some([c(0)?, c(1)?, c(2)?, 255])
-        },
+        }
         6 => Some([octet(0)?, octet(2)?, octet(4)?, 255]),
         8 => Some([octet(0)?, octet(2)?, octet(4)?, octet(6)?]),
         _ => None,
@@ -436,7 +476,10 @@ struct Cache<V> {
 
 impl<V> Default for Cache<V> {
     fn default() -> Self {
-        Self { entrees: HashMap::new(), ordre: VecDeque::new() }
+        Self {
+            entrees: HashMap::new(),
+            ordre: VecDeque::new(),
+        }
     }
 }
 
@@ -523,7 +566,10 @@ impl Loader {
                 .filter(|path| !path.is_empty())
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
-                    workspace.parent().expect("Aphrody workspace parent").join("material")
+                    workspace
+                        .parent()
+                        .expect("Aphrody workspace parent")
+                        .join("material")
                 });
             let depot = material.join("packages/m3-fonts/fonts/upstream/material-symbols");
             let dossier = std::env::var_os("APHRODY_SYMBOLS_DIR")
@@ -600,12 +646,12 @@ impl Loader {
             Source::Fichier(chemin) => {
                 let octets = lire(chemin)?;
                 self.depuis_octets(&octets, requete)
-            },
+            }
             Source::Octets(octets) => self.depuis_octets(octets, requete),
             Source::Url(url) => {
                 let octets = self.telecharger(url)?;
                 self.depuis_octets(&octets, requete)
-            },
+            }
             Source::Symbole(s) => self.symbole(s, requete),
         }
     }
@@ -642,16 +688,21 @@ impl Loader {
                         message: format!("UTF-8 invalide : {e}"),
                     })?;
                     let propre = aphrody_svg::sanitize::sanitize(texte, SanitizeOptions::default())
-                        .map_err(|e| LoadError::Decodage { format, message: e.to_string() })?;
+                        .map_err(|e| LoadError::Decodage {
+                            format,
+                            message: e.to_string(),
+                        })?;
                     rendre_svg(&propre, format, None, requete, empreinte)
-                },
+                }
                 Format::Ico => charger_ico(octets, requete, empreinte),
                 _ => {
                     if requete.output == Output::Svg {
                         return Err(LoadError::SortieSvg(format));
                     }
-                    let img = Image::depuis_octets(octets)
-                        .map_err(|e| LoadError::Decodage { format, message: e.to_string() })?;
+                    let img = Image::depuis_octets(octets).map_err(|e| LoadError::Decodage {
+                        format,
+                        message: e.to_string(),
+                    })?;
                     let intrinseque = (img.largeur, img.hauteur);
                     Ok(Loaded {
                         format,
@@ -661,7 +712,7 @@ impl Loader {
                         contenu: Contenu::Rgba(ajuster(img, requete)?),
                         empreinte,
                     })
-                },
+                }
             }
         })
     }
@@ -677,9 +728,15 @@ impl Loader {
         if let Some(o) = verrou(&self.telecharges).get(&cle) {
             return Ok(o);
         }
-        let fetch = self.fetch.as_ref().ok_or_else(|| LoadError::SansReseau(url.to_owned()))?;
+        let fetch = self
+            .fetch
+            .as_ref()
+            .ok_or_else(|| LoadError::SansReseau(url.to_owned()))?;
         let octets = fetch(url)
-            .map_err(|message| LoadError::Reseau { url: url.to_owned(), message })?
+            .map_err(|message| LoadError::Reseau {
+                url: url.to_owned(),
+                message,
+            })?
             .ok_or_else(|| LoadError::Introuvable(url.to_owned()))?;
         if octets.len() > MAX_SOURCE {
             return Err(LoadError::TropGrande(octets.len()));
@@ -715,11 +772,17 @@ impl Loader {
         let canonique = s.canonique();
         let mut h = Sha256::new();
         h.update(canonique.as_bytes());
-        h.update(if police.is_some() { b"police" as &[u8] } else { b"cdn" });
+        h.update(if police.is_some() {
+            b"police" as &[u8]
+        } else {
+            b"cdn"
+        });
         let empreinte: [u8; 32] = h.finalize().into();
         self.en_cache_ou(empreinte, requete, || {
-            let inconnu =
-                || LoadError::SymboleInconnu { nom: s.nom.clone(), style: s.style.as_str() };
+            let inconnu = || LoadError::SymboleInconnu {
+                nom: s.nom.clone(),
+                style: s.style.as_str(),
+            };
             let opsz = s.axes.optical_size;
             let svg = if let Some(ttf) = police {
                 let chemin = symbols::symbol_path(&ttf, &s.nom, s.axes, NumberFormat::Trimmed(2))
@@ -744,7 +807,10 @@ impl Loader {
                 }
                 let texte = String::from_utf8_lossy(&octets);
                 aphrody_svg::sanitize::sanitize(&texte, SanitizeOptions::default()).map_err(
-                    |e| LoadError::Decodage { format: Format::Symbole, message: e.to_string() },
+                    |e| LoadError::Decodage {
+                        format: Format::Symbole,
+                        message: e.to_string(),
+                    },
                 )?
             };
             rendre_svg(&svg, Format::Symbole, Some(opsz), requete, empreinte)
@@ -754,10 +820,15 @@ impl Loader {
 
 #[cfg(feature = "fs")]
 fn lire(chemin: &Path) -> Result<Vec<u8>, LoadError> {
-    let io = |source| LoadError::Io { chemin: chemin.display().to_string(), source };
+    let io = |source| LoadError::Io {
+        chemin: chemin.display().to_string(),
+        source,
+    };
     let taille = std::fs::metadata(chemin).map_err(io)?.len();
     if taille > MAX_SOURCE as u64 {
-        return Err(LoadError::TropGrande(usize::try_from(taille).unwrap_or(usize::MAX)));
+        return Err(LoadError::TropGrande(
+            usize::try_from(taille).unwrap_or(usize::MAX),
+        ));
     }
     std::fs::read(chemin).map_err(io)
 }
@@ -765,7 +836,10 @@ fn lire(chemin: &Path) -> Result<Vec<u8>, LoadError> {
 fn decoder_police(octets: &[u8]) -> Result<Arc<[u8]>, LoadError> {
     symbols::decode_font(octets)
         .map(|ttf| Arc::from(ttf.into_owned()))
-        .map_err(|e| LoadError::Decodage { format: Format::Symbole, message: e.to_string() })
+        .map_err(|e| LoadError::Decodage {
+            format: Format::Symbole,
+            message: e.to_string(),
+        })
 }
 
 /// Téléchargement HTTPS bloquant (feature `net`), limité à [`MAX_SOURCE`] octets.
@@ -797,9 +871,15 @@ pub fn fetch_https(url: &str) -> Result<Option<Vec<u8>>, String> {
 fn taille_px(v: f64) -> Result<u32, LoadError> {
     let v = v.round();
     if !v.is_finite() || v < 1.0 || v > f64::from(MAX_COTE) {
-        return Err(LoadError::Requete(format!("côté de {v} px hors de 1..={MAX_COTE}")));
+        return Err(LoadError::Requete(format!(
+            "côté de {v} px hors de 1..={MAX_COTE}"
+        )));
     }
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "borné ci-dessus")]
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "borné ci-dessus"
+    )]
     Ok(v as u32)
 }
 
@@ -822,13 +902,16 @@ fn dimensions(
                 Fit::Contain => {
                     let r = (cote / w).min(cote / h);
                     ((taille_px(w * r)?, taille_px(h * r)?), None)
-                },
+                }
                 Fit::Cover | Fit::None => {
                     let r = (cote / w).max(cote / h);
-                    ((taille_px(w * r)?, taille_px(h * r)?), Some(taille_px(cote)?))
-                },
+                    (
+                        (taille_px(w * r)?, taille_px(h * r)?),
+                        Some(taille_px(cote)?),
+                    )
+                }
             }
-        },
+        }
     };
     if u64::from(dims.0) * u64::from(dims.1) > MAX_PIXELS {
         return Err(LoadError::Requete(format!(
@@ -851,12 +934,19 @@ fn recadrer(img: Image, cote: u32) -> Image {
         let debut = ((y as usize) * (w as usize) + x0 as usize) * 4;
         rgba.extend_from_slice(&img.rgba[debut..debut + (cw as usize) * 4]);
     }
-    Image { largeur: cw, hauteur: ch, rgba }
+    Image {
+        largeur: cw,
+        hauteur: ch,
+        rgba,
+    }
 }
 
 fn teinter(img: &mut Image, [r, g, b, a]: [u8; 4]) {
     for px in img.rgba.as_chunks_mut::<4>().0 {
-        #[allow(clippy::cast_possible_truncation, reason = "produit de deux octets / 255")]
+        #[allow(
+            clippy::cast_possible_truncation,
+            reason = "produit de deux octets / 255"
+        )]
         let alpha = ((u16::from(px[3]) * u16::from(a) + 127) / 255) as u8;
         *px = [r, g, b, alpha];
     }
@@ -871,7 +961,11 @@ fn ajuster(img: Image, requete: &Request) -> Result<Image, LoadError> {
         let tampon = image::RgbaImage::from_raw(img.largeur, img.hauteur, img.rgba)
             .ok_or_else(|| LoadError::Requete("tampon RGBA incohérent".into()))?;
         let r = image::imageops::resize(&tampon, w, h, image::imageops::FilterType::Lanczos3);
-        Image { largeur: w, hauteur: h, rgba: r.into_raw() }
+        Image {
+            largeur: w,
+            hauteur: h,
+            rgba: r.into_raw(),
+        }
     };
     if let Some(cote) = recadre {
         img = recadrer(img, cote);
@@ -898,11 +992,17 @@ fn rendre_svg(
     requete: &Request,
     empreinte: [u8; 32],
 ) -> Result<Loaded, LoadError> {
-    let erreur = |e: aphrody_svg::Error| LoadError::Decodage { format, message: e.to_string() };
+    let erreur = |e: aphrody_svg::Error| LoadError::Decodage {
+        format,
+        message: e.to_string(),
+    };
     let (iw, ih) = viewbox::geometry(svg)
         .map_err(erreur)?
         .size()
-        .ok_or_else(|| LoadError::Decodage { format, message: "SVG sans taille".into() })?;
+        .ok_or_else(|| LoadError::Decodage {
+            format,
+            message: "SVG sans taille".into(),
+        })?;
     // Un glyphe se rend à `opsz` px par défaut, comme la police à sa taille optique.
     let (iw, ih) = cote_glyphe.map_or((iw, ih), |c| (f64::from(c), f64::from(c)));
     #[allow(
@@ -928,17 +1028,28 @@ fn rendre_svg(
                     aphrody_svg::theme::apply(&doc, &Theme::new().tint(hex(t))).map_err(erreur)?;
             }
             let (w, h) = recadre.map_or((w, h), |c| (c, c));
-            let sizing = Sizing::Fixed { width: Some(f64::from(w)), height: Some(f64::from(h)) };
+            let sizing = Sizing::Fixed {
+                width: Some(f64::from(w)),
+                height: Some(f64::from(h)),
+            };
             let doc = viewbox::normalize(&doc, sizing).map_err(erreur)?;
             Ok(base(Contenu::Svg(doc)))
-        },
+        }
         Output::Rgba => {
             let rendu = aphrody_svg::raster::render(
                 svg,
-                RenderOptions { width: Some(w), height: Some(h), ..RenderOptions::default() },
+                RenderOptions {
+                    width: Some(w),
+                    height: Some(h),
+                    ..RenderOptions::default()
+                },
             )
             .map_err(erreur)?;
-            let mut img = Image { largeur: rendu.width, hauteur: rendu.height, rgba: rendu.rgba };
+            let mut img = Image {
+                largeur: rendu.width,
+                hauteur: rendu.height,
+                rgba: rendu.rgba,
+            };
             if let Some(c) = recadre {
                 img = recadrer(img, c);
             }
@@ -946,7 +1057,7 @@ fn rendre_svg(
                 teinter(&mut img, t);
             }
             Ok(base(Contenu::Rgba(img)))
-        },
+        }
     }
 }
 
@@ -958,8 +1069,10 @@ pub fn meilleure_entree(entrees: &[EntreeIco], cible: Option<u32>) -> Option<usi
     let plus_grande = |(_, a): &(usize, &EntreeIco), (_, b): &(usize, &EntreeIco)| {
         cote(a).cmp(&cote(b)).then(a.bits.cmp(&b.bits))
     };
-    let couvrantes =
-        entrees.iter().enumerate().filter(|(_, e)| cible.is_some_and(|c| cote(e) >= c));
+    let couvrantes = entrees
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| cible.is_some_and(|c| cote(e) >= c));
     couvrantes
         .min_by(|(_, a), (_, b)| cote(a).cmp(&cote(b)).then(b.bits.cmp(&a.bits)))
         .or_else(|| entrees.iter().enumerate().max_by(plus_grande))
@@ -983,16 +1096,24 @@ fn charger_ico(octets: &[u8], requete: &Request, empreinte: [u8; 32]) -> Result<
             png: e.is_png(),
         })
         .collect();
-    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss, reason = "borné à MAX_COTE")]
-    let cible = requete
-        .size
-        .map(|s| (f64::from(s) * f64::from(requete.scale)).round().min(f64::from(MAX_COTE)) as u32);
+    #[allow(
+        clippy::cast_possible_truncation,
+        clippy::cast_sign_loss,
+        reason = "borné à MAX_COTE"
+    )]
+    let cible = requete.size.map(|s| {
+        (f64::from(s) * f64::from(requete.scale))
+            .round()
+            .min(f64::from(MAX_COTE)) as u32
+    });
     let i = meilleure_entree(&entrees, cible).ok_or_else(|| erreur("aucune entrée".into()))?;
     let entree = &dir.entries()[i];
     let img = if entree.is_png() {
         Image::depuis_octets(entree.data()).map_err(|e| erreur(format!("entrée {i} : {e}")))?
     } else {
-        let d = entree.decode().map_err(|e| erreur(format!("entrée {i} : {e}")))?;
+        let d = entree
+            .decode()
+            .map_err(|e| erreur(format!("entrée {i} : {e}")))?;
         Image::nouvelle(d.width(), d.height(), d.into_rgba_data())
             .map_err(|e| erreur(format!("entrée {i} : {e}")))?
     };
@@ -1025,7 +1146,10 @@ mod tests {
     fn formats_reconnus_aux_octets() {
         assert_eq!(Format::detecter(b"\x89PNG\r\n"), Some(Format::Png));
         assert_eq!(Format::detecter(b"\xFF\xD8\xFF\xE0"), Some(Format::Jpeg));
-        assert_eq!(Format::detecter(b"RIFF\0\0\0\0WEBPVP8L"), Some(Format::WebP));
+        assert_eq!(
+            Format::detecter(b"RIFF\0\0\0\0WEBPVP8L"),
+            Some(Format::WebP)
+        );
         assert_eq!(Format::detecter(b"GIF89a"), Some(Format::Gif));
         assert_eq!(Format::detecter(b"\0\0\x01\0\x02\0"), Some(Format::Ico));
         assert_eq!(Format::detecter(b"\0\0\x01\0\0\0"), None);
@@ -1046,15 +1170,27 @@ mod tests {
         assert_eq!(s.style, SymbolStyle::Rounded);
         assert_eq!(
             s.axes,
-            SymbolAxes { fill: 1.0, weight: 300.0, grade: -25.0, optical_size: 48.0 }
+            SymbolAxes {
+                fill: 1.0,
+                weight: 300.0,
+                grade: -25.0,
+                optical_size: 48.0
+            }
         );
         assert_eq!(
             SymboleSpec::parse("home").expect("défauts").canonique(),
             "symbol:home?style=outlined&fill=0&wght=400&grad=0&opsz=24"
         );
-        for faux in
-            ["", "Home", "../x", "a?style=bold", "a?wght=900", "a?fill=x", "a?zoom=2", "a?opsz=NaN"]
-        {
+        for faux in [
+            "",
+            "Home",
+            "../x",
+            "a?style=bold",
+            "a?wght=900",
+            "a?fill=x",
+            "a?zoom=2",
+            "a?opsz=NaN",
+        ] {
             assert!(
                 matches!(SymboleSpec::parse(faux), Err(LoadError::SymboleInvalide(_))),
                 "{faux}"
@@ -1074,7 +1210,12 @@ mod tests {
 
     #[test]
     fn choix_d_entree() {
-        let e = |c: u32, bits: u16| EntreeIco { largeur: c, hauteur: c, bits, png: false };
+        let e = |c: u32, bits: u16| EntreeIco {
+            largeur: c,
+            hauteur: c,
+            bits,
+            png: false,
+        };
         let entrees = [e(16, 32), e(32, 8), e(32, 32), e(48, 32), e(256, 32)];
         assert_eq!(meilleure_entree(&entrees, Some(24)), Some(2));
         assert_eq!(meilleure_entree(&entrees, Some(32)), Some(2));
@@ -1086,7 +1227,11 @@ mod tests {
 
     #[test]
     fn dimensions_selon_fit() {
-        let r = |size, fit| Request { size, fit, ..Request::default() };
+        let r = |size, fit| Request {
+            size,
+            fit,
+            ..Request::default()
+        };
         assert_eq!(
             dimensions((200.0, 100.0), &r(Some(50), Fit::Contain)).ok(),
             Some(((50, 25), None))
@@ -1103,7 +1248,10 @@ mod tests {
             dimensions((200.0, 100.0), &r(Some(50), Fit::None)).ok(),
             Some(((200, 100), None))
         );
-        let x2 = Request { scale: 2.0, ..r(None, Fit::Contain) };
+        let x2 = Request {
+            scale: 2.0,
+            ..r(None, Fit::Contain)
+        };
         assert_eq!(dimensions((20.0, 10.0), &x2).ok(), Some(((40, 20), None)));
         assert!(dimensions((1.0, 1.0), &r(Some(20_000), Fit::Fill)).is_err());
         assert!(dimensions((0.0, 1.0), &r(None, Fit::Fill)).is_err());

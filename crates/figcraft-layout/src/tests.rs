@@ -4,10 +4,21 @@ use figcraft_doc::{AutoLayout, Document, NodeKind};
 fn setup(mode: LayoutMode) -> (Document, NodeId, Vec<NodeId>) {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 300.0, 100.0).unwrap();
-    d.get_mut(f).unwrap().layout = Some(AutoLayout { mode, gap: 10.0, padding: [5.0, 5.0, 5.0, 5.0], ..Default::default() });
-    let a = d.create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 50.0, 20.0).unwrap();
-    let b = d.create(f, NodeKind::Rectangle, "B", 0.0, 0.0, 30.0, 40.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 300.0, 100.0)
+        .unwrap();
+    d.get_mut(f).unwrap().layout = Some(AutoLayout {
+        mode,
+        gap: 10.0,
+        padding: [5.0, 5.0, 5.0, 5.0],
+        ..Default::default()
+    });
+    let a = d
+        .create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 50.0, 20.0)
+        .unwrap();
+    let b = d
+        .create(f, NodeKind::Rectangle, "B", 0.0, 0.0, 30.0, 40.0)
+        .unwrap();
     (d, f, vec![a, b])
 }
 
@@ -69,7 +80,9 @@ fn fill_children_share_space() {
 fn space_between_and_absolute() {
     let (mut d, f, k) = setup(LayoutMode::Horizontal);
     d.get_mut(f).unwrap().layout.as_mut().unwrap().main_align = MainAlign::SpaceBetween;
-    let abs = d.create(f, NodeKind::Rectangle, "Abs", 7.0, 7.0, 10.0, 10.0).unwrap();
+    let abs = d
+        .create(f, NodeKind::Rectangle, "Abs", 7.0, 7.0, 10.0, 10.0)
+        .unwrap();
     d.get_mut(abs).unwrap().child_layout.absolute = true;
     layout_frame(&mut d, f, &NoMeasure);
     assert_eq!(pos(&d, k[1]).0, 300.0 - 5.0 - 30.0);
@@ -80,10 +93,31 @@ fn space_between_and_absolute() {
 fn wrap_into_rows() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0).unwrap();
-    d.get_mut(f).unwrap().layout = Some(AutoLayout { wrap: true, gap: 10.0, cross_gap: 5.0, padding: [0.0; 4], ..Default::default() });
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
+    d.get_mut(f).unwrap().layout = Some(AutoLayout {
+        wrap: true,
+        gap: 10.0,
+        cross_gap: 5.0,
+        padding: [0.0; 4],
+        ..Default::default()
+    });
     d.get_mut(f).unwrap().child_layout.sizing_v = Sizing::Hug;
-    let ids: Vec<NodeId> = (0..5).map(|i| d.create(f, NodeKind::Rectangle, &format!("R{i}"), 0.0, 0.0, 40.0, 20.0).unwrap()).collect();
+    let ids: Vec<NodeId> = (0..5)
+        .map(|i| {
+            d.create(
+                f,
+                NodeKind::Rectangle,
+                &format!("R{i}"),
+                0.0,
+                0.0,
+                40.0,
+                20.0,
+            )
+            .unwrap()
+        })
+        .collect();
     layout_frame(&mut d, f, &NoMeasure);
     // Two per row (40+10+40 = 90 ≤ 100).
     assert_eq!(pos(&d, ids[2]), (0.0, 25.0, 40.0, 20.0));
@@ -94,7 +128,9 @@ fn wrap_into_rows() {
 fn grid_mode() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 210.0, 110.0).unwrap();
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 210.0, 110.0)
+        .unwrap();
     d.get_mut(f).unwrap().layout = Some(AutoLayout {
         mode: LayoutMode::Grid,
         grid_columns: 2,
@@ -104,7 +140,20 @@ fn grid_mode() {
         padding: [0.0; 4],
         ..Default::default()
     });
-    let ids: Vec<NodeId> = (0..4).map(|i| d.create(f, NodeKind::Rectangle, &format!("R{i}"), 0.0, 0.0, 10.0, 10.0).unwrap()).collect();
+    let ids: Vec<NodeId> = (0..4)
+        .map(|i| {
+            d.create(
+                f,
+                NodeKind::Rectangle,
+                &format!("R{i}"),
+                0.0,
+                0.0,
+                10.0,
+                10.0,
+            )
+            .unwrap()
+        })
+        .collect();
     layout_frame(&mut d, f, &NoMeasure);
     assert_eq!(pos(&d, ids[3]).0, 110.0);
     assert_eq!(pos(&d, ids[3]).1, 60.0);
@@ -114,13 +163,25 @@ fn grid_mode() {
 fn nested_hug_propagates_with_layout_page() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let outer = d.create(p, NodeKind::Frame, "Outer", 0.0, 0.0, 10.0, 10.0).unwrap();
-    d.get_mut(outer).unwrap().layout = Some(AutoLayout { padding: [0.0; 4], ..Default::default() });
+    let outer = d
+        .create(p, NodeKind::Frame, "Outer", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(outer).unwrap().layout = Some(AutoLayout {
+        padding: [0.0; 4],
+        ..Default::default()
+    });
     d.get_mut(outer).unwrap().child_layout.sizing_h = Sizing::Hug;
-    let inner = d.create(outer, NodeKind::Frame, "Inner", 0.0, 0.0, 10.0, 10.0).unwrap();
-    d.get_mut(inner).unwrap().layout = Some(AutoLayout { padding: [0.0; 4], gap: 0.0, ..Default::default() });
+    let inner = d
+        .create(outer, NodeKind::Frame, "Inner", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(inner).unwrap().layout = Some(AutoLayout {
+        padding: [0.0; 4],
+        gap: 0.0,
+        ..Default::default()
+    });
     d.get_mut(inner).unwrap().child_layout.sizing_h = Sizing::Hug;
-    d.create(inner, NodeKind::Rectangle, "R", 0.0, 0.0, 77.0, 10.0).unwrap();
+    d.create(inner, NodeKind::Rectangle, "R", 0.0, 0.0, 77.0, 10.0)
+        .unwrap();
     layout_page(&mut d, p, &NoMeasure);
     assert_eq!(d.node(inner).unwrap().width, 77.0);
     assert_eq!(d.node(outer).unwrap().width, 77.0);
@@ -130,11 +191,23 @@ fn nested_hug_propagates_with_layout_page() {
 fn constraints_on_resize() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0).unwrap();
-    let r = d.create(f, NodeKind::Rectangle, "R", 80.0, 10.0, 10.0, 10.0).unwrap();
-    d.get_mut(r).unwrap().constraints = figcraft_doc::Constraints { horizontal: HConstraint::Right, vertical: VConstraint::TopBottom };
-    let c = d.create(f, NodeKind::Rectangle, "C", 45.0, 45.0, 10.0, 10.0).unwrap();
-    d.get_mut(c).unwrap().constraints = figcraft_doc::Constraints { horizontal: HConstraint::Center, vertical: VConstraint::Scale };
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 100.0, 100.0)
+        .unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "R", 80.0, 10.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(r).unwrap().constraints = figcraft_doc::Constraints {
+        horizontal: HConstraint::Right,
+        vertical: VConstraint::TopBottom,
+    };
+    let c = d
+        .create(f, NodeKind::Rectangle, "C", 45.0, 45.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(c).unwrap().constraints = figcraft_doc::Constraints {
+        horizontal: HConstraint::Center,
+        vertical: VConstraint::Scale,
+    };
     set_size(&mut d, f, 200.0, 200.0);
     apply_constraints(&mut d, f, 100.0, 100.0);
     assert_eq!(pos(&d, r), (180.0, 10.0, 10.0, 110.0));
@@ -143,7 +216,13 @@ fn constraints_on_resize() {
 
 #[test]
 fn grid_lines_columns_stretch() {
-    let g = LayoutGrid { kind: GridKind::Columns, count: 4, gutter: 20.0, offset: 10.0, ..LayoutGrid::default() };
+    let g = LayoutGrid {
+        kind: GridKind::Columns,
+        count: 4,
+        gutter: 20.0,
+        offset: 10.0,
+        ..LayoutGrid::default()
+    };
     let r = grid_lines(&g, 400.0, 100.0);
     assert_eq!(r.len(), 4);
     assert_eq!(r[0].x0, 10.0);
@@ -160,7 +239,14 @@ fn hostile_values() {
     layout_frame(&mut d, f, &NoMeasure);
     d.get_mut(f).unwrap().layout.as_mut().unwrap().mode = LayoutMode::Grid;
     layout_frame(&mut d, f, &NoMeasure);
-    let _ = grid_lines(&LayoutGrid { size: 0.0, ..Default::default() }, 1e9, 1e9);
+    let _ = grid_lines(
+        &LayoutGrid {
+            size: 0.0,
+            ..Default::default()
+        },
+        1e9,
+        1e9,
+    );
 }
 
 /// A fake measurer: each text has a natural (unwrapped) size and a first baseline; wrapping at a
@@ -181,7 +267,16 @@ impl Measure for FakeMeasure {
 }
 
 pub(super) fn text(d: &mut Document, parent: NodeId, name: &str) -> NodeId {
-    d.create(parent, NodeKind::Text(figcraft_doc::TextData::new(name)), name, 0.0, 0.0, 10.0, 10.0).unwrap()
+    d.create(
+        parent,
+        NodeKind::Text(figcraft_doc::TextData::new(name)),
+        name,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+    )
+    .unwrap()
 }
 
 #[test]
@@ -247,8 +342,13 @@ fn min_over_max_and_junk_limits() {
 fn hug_text_wraps_at_max_width() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0).unwrap();
-    d.get_mut(f).unwrap().layout = Some(AutoLayout { padding: [0.0; 4], ..Default::default() });
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(f).unwrap().layout = Some(AutoLayout {
+        padding: [0.0; 4],
+        ..Default::default()
+    });
     let t = text(&mut d, f, "Long");
     d.get_mut(t).unwrap().child_layout.sizing_h = Sizing::Hug;
     let m = FakeMeasure([(t, (200.0, 20.0, 15.0))].into_iter().collect());
@@ -264,17 +364,24 @@ fn hug_text_wraps_at_max_width() {
     layout_frame(&mut d, f, &m);
     let n = d.node(t).unwrap();
     assert_eq!((n.width, n.height), (200.0, 20.0));
-    assert!(matches!(&n.kind, NodeKind::Text(tx) if tx.auto_resize == TextAutoResize::WidthAndHeight));
+    assert!(
+        matches!(&n.kind, NodeKind::Text(tx) if tx.auto_resize == TextAutoResize::WidthAndHeight)
+    );
 }
 
 #[test]
 fn absolute_children_follow_constraints() {
     let (mut d, f, _) = setup(LayoutMode::Horizontal);
-    let abs = d.create(f, NodeKind::Rectangle, "Badge", 280.0, 4.0, 10.0, 10.0).unwrap();
+    let abs = d
+        .create(f, NodeKind::Rectangle, "Badge", 280.0, 4.0, 10.0, 10.0)
+        .unwrap();
     {
         let n = d.get_mut(abs).unwrap();
         n.child_layout.absolute = true;
-        n.constraints = figcraft_doc::Constraints { horizontal: HConstraint::Right, vertical: VConstraint::Top };
+        n.constraints = figcraft_doc::Constraints {
+            horizontal: HConstraint::Right,
+            vertical: VConstraint::Top,
+        };
     }
     d.get_mut(f).unwrap().child_layout.sizing_h = Sizing::Hug;
     layout_frame(&mut d, f, &NoMeasure);
@@ -294,13 +401,26 @@ fn absolute_children_follow_constraints() {
 fn baseline_alignment_horizontal() {
     let mut d = Document::new("t");
     let p = d.first_page().unwrap();
-    let f = d.create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0).unwrap();
-    d.get_mut(f).unwrap().layout = Some(AutoLayout { padding: [5.0; 4], gap: 0.0, cross_align: CrossAlign::Baseline, ..Default::default() });
+    let f = d
+        .create(p, NodeKind::Frame, "F", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
+    d.get_mut(f).unwrap().layout = Some(AutoLayout {
+        padding: [5.0; 4],
+        gap: 0.0,
+        cross_align: CrossAlign::Baseline,
+        ..Default::default()
+    });
     d.get_mut(f).unwrap().child_layout.sizing_v = Sizing::Hug;
     let small = text(&mut d, f, "small");
     let big = text(&mut d, f, "big");
-    let rect = d.create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 20.0).unwrap();
-    let m = FakeMeasure([(small, (30.0, 14.0, 10.0)), (big, (60.0, 40.0, 30.0))].into_iter().collect());
+    let rect = d
+        .create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 20.0)
+        .unwrap();
+    let m = FakeMeasure(
+        [(small, (30.0, 14.0, 10.0)), (big, (60.0, 40.0, 30.0))]
+            .into_iter()
+            .collect(),
+    );
     layout_frame(&mut d, f, &m);
     // Baselines line up at 5 + 30; the rectangle (no baseline) sits at the top.
     assert_eq!(pos(&d, small).1, 25.0);
@@ -309,11 +429,26 @@ fn baseline_alignment_horizontal() {
     // Hug height covers the shifted small text: max(20 + 14, 40) + padding.
     assert_eq!(d.node(f).unwrap().height, 50.0);
     // Nested auto layout frames align on their first child's baseline.
-    let outer = d.create(p, NodeKind::Frame, "O", 0.0, 0.0, 400.0, 100.0).unwrap();
-    d.get_mut(outer).unwrap().layout = Some(AutoLayout { padding: [0.0; 4], gap: 0.0, cross_align: CrossAlign::Baseline, ..Default::default() });
+    let outer = d
+        .create(p, NodeKind::Frame, "O", 0.0, 0.0, 400.0, 100.0)
+        .unwrap();
+    d.get_mut(outer).unwrap().layout = Some(AutoLayout {
+        padding: [0.0; 4],
+        gap: 0.0,
+        cross_align: CrossAlign::Baseline,
+        ..Default::default()
+    });
     d.reparent(f, outer, None).unwrap();
     let t2 = text(&mut d, outer, "t2");
-    let m = FakeMeasure([(small, (30.0, 14.0, 10.0)), (big, (60.0, 40.0, 30.0)), (t2, (20.0, 60.0, 50.0))].into_iter().collect());
+    let m = FakeMeasure(
+        [
+            (small, (30.0, 14.0, 10.0)),
+            (big, (60.0, 40.0, 30.0)),
+            (t2, (20.0, 60.0, 50.0)),
+        ]
+        .into_iter()
+        .collect(),
+    );
     layout_page(&mut d, p, &m);
     // Frame baseline = 5 + 30 = 35; t2's is 50 → the frame moves down 15.
     assert_eq!(pos(&d, f).1, 15.0);
@@ -345,9 +480,26 @@ fn grid_frame(cols: u32, w: f64, h: f64) -> (Document, NodeId) {
 fn grid_tracks_fixed_hug_fr() {
     use figcraft_doc::GridTrack;
     let (mut d, f) = grid_frame(4, 400.0, 100.0);
-    d.get_mut(f).unwrap().layout.as_mut().unwrap().column_tracks =
-        vec![GridTrack::fixed(50.0), GridTrack::hug(), GridTrack::fill(1.0), GridTrack::fill(2.0)];
-    let ids: Vec<NodeId> = (0..4).map(|i| d.create(f, NodeKind::Rectangle, &format!("R{i}"), 0.0, 0.0, 30.0 + i as f64, 20.0).unwrap()).collect();
+    d.get_mut(f).unwrap().layout.as_mut().unwrap().column_tracks = vec![
+        GridTrack::fixed(50.0),
+        GridTrack::hug(),
+        GridTrack::fill(1.0),
+        GridTrack::fill(2.0),
+    ];
+    let ids: Vec<NodeId> = (0..4)
+        .map(|i| {
+            d.create(
+                f,
+                NodeKind::Rectangle,
+                &format!("R{i}"),
+                0.0,
+                0.0,
+                30.0 + i as f64,
+                20.0,
+            )
+            .unwrap()
+        })
+        .collect();
     for c in &ids {
         d.get_mut(*c).unwrap().child_layout.sizing_h = Sizing::Fill;
     }
@@ -369,7 +521,20 @@ fn grid_tracks_fixed_hug_fr() {
 #[test]
 fn grid_cells_spans_and_anchors() {
     let (mut d, f) = grid_frame(3, 320.0, 200.0);
-    let ids: Vec<NodeId> = (0..4).map(|i| d.create(f, NodeKind::Rectangle, &format!("R{i}"), 0.0, 0.0, 10.0, 10.0).unwrap()).collect();
+    let ids: Vec<NodeId> = (0..4)
+        .map(|i| {
+            d.create(
+                f,
+                NodeKind::Rectangle,
+                &format!("R{i}"),
+                0.0,
+                0.0,
+                10.0,
+                10.0,
+            )
+            .unwrap()
+        })
+        .collect();
     // R0 spans two columns and fills them; R3 is anchored at column 0, row 2.
     {
         let cl = &mut d.get_mut(ids[0]).unwrap().child_layout;
@@ -384,7 +549,14 @@ fn grid_cells_spans_and_anchors() {
     layout_frame(&mut d, f, &NoMeasure);
     let g = grid_geometry(&d, f).unwrap();
     let cell = |id: NodeId| g.cells.iter().find(|c| c.id == id).copied().unwrap();
-    assert_eq!((cell(ids[0]).column, cell(ids[0]).row, cell(ids[0]).column_span), (0, 0, 2));
+    assert_eq!(
+        (
+            cell(ids[0]).column,
+            cell(ids[0]).row,
+            cell(ids[0]).column_span
+        ),
+        (0, 0, 2)
+    );
     assert_eq!((cell(ids[1]).column, cell(ids[1]).row), (2, 0));
     assert_eq!((cell(ids[2]).column, cell(ids[2]).row), (0, 1));
     assert_eq!((cell(ids[3]).column, cell(ids[3]).row), (0, 2));
@@ -405,8 +577,11 @@ fn grid_hug_with_span() {
         n.child_layout.sizing_v = Sizing::Hug;
         n.layout.as_mut().unwrap().column_tracks = vec![GridTrack::hug(), GridTrack::fixed(20.0)];
     }
-    d.create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 40.0, 10.0).unwrap();
-    let wide = d.create(f, NodeKind::Rectangle, "W", 0.0, 0.0, 100.0, 30.0).unwrap();
+    d.create(f, NodeKind::Rectangle, "A", 0.0, 0.0, 40.0, 10.0)
+        .unwrap();
+    let wide = d
+        .create(f, NodeKind::Rectangle, "W", 0.0, 0.0, 100.0, 30.0)
+        .unwrap();
     d.get_mut(wide).unwrap().child_layout.grid_column_span = 2;
     layout_frame(&mut d, f, &NoMeasure);
     // Column 0 grows so the span fits: 100 - 10 gap - 20 fixed = 70.
@@ -421,11 +596,20 @@ fn grid_hostile_values() {
     let (mut d, f) = grid_frame(0, f64::NAN, -5.0);
     {
         let l = d.get_mut(f).unwrap().layout.as_mut().unwrap();
-        l.column_tracks = vec![GridTrack { sizing: Sizing::Fixed, value: f64::NAN }, GridTrack::fill(f64::INFINITY), GridTrack::fill(-3.0)];
+        l.column_tracks = vec![
+            GridTrack {
+                sizing: Sizing::Fixed,
+                value: f64::NAN,
+            },
+            GridTrack::fill(f64::INFINITY),
+            GridTrack::fill(-3.0),
+        ];
         l.row_tracks = vec![GridTrack::fixed(1e300)];
         l.grid_rows = u32::MAX;
     }
-    let r = d.create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0).unwrap();
+    let r = d
+        .create(f, NodeKind::Rectangle, "R", 0.0, 0.0, 10.0, 10.0)
+        .unwrap();
     {
         let cl = &mut d.get_mut(r).unwrap().child_layout;
         cl.grid_column = Some(u32::MAX);
@@ -435,7 +619,17 @@ fn grid_hostile_values() {
         cl.sizing_h = Sizing::Fill;
     }
     for i in 0..20 {
-        let c = d.create(f, NodeKind::Rectangle, &format!("K{i}"), 0.0, 0.0, 10.0, 10.0).unwrap();
+        let c = d
+            .create(
+                f,
+                NodeKind::Rectangle,
+                &format!("K{i}"),
+                0.0,
+                0.0,
+                10.0,
+                10.0,
+            )
+            .unwrap();
         d.get_mut(c).unwrap().child_layout.grid_column_span = 3;
     }
     layout_frame(&mut d, f, &NoMeasure);

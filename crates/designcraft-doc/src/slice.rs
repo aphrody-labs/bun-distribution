@@ -24,11 +24,17 @@ impl Story {
             let s = r.start.max(a);
             let e = r.end.min(b);
             if s < e {
-                out.chars.push(CharRun { len: e - s, format: f.clone() });
+                out.chars.push(CharRun {
+                    len: e - s,
+                    format: f.clone(),
+                });
             }
         }
         if out.chars.is_empty() {
-            out.chars.push(CharRun { len: 0, format: self.char_format_at(a).clone() });
+            out.chars.push(CharRun {
+                len: 0,
+                format: self.char_format_at(a).clone(),
+            });
         }
         let count = |m: char, upto: usize| self.text[..upto].matches(m).count();
         let span = |m: char| count(m, a)..count(m, b);
@@ -71,12 +77,20 @@ impl Story {
         let p0 = self.para_at(pos);
         for (k, pf) in src.paras.iter().enumerate().skip(1) {
             if let Some(p) = self.paras.get_mut(p0 + k) {
-                *p = crate::story::ParaFormat { table: None, ..pf.clone() };
+                *p = crate::story::ParaFormat {
+                    table: None,
+                    ..pf.clone()
+                };
             }
         }
         // Payloads of footnotes, cross-references and index markers, in order.
         let first = |m: char| self.text[..pos].matches(m).count();
-        let (nf, nx, ni, na) = (first(FOOTNOTE_REF), first(XREF_MARK), first(INDEX_MARK), first(ANCHOR_MARK));
+        let (nf, nx, ni, na) = (
+            first(FOOTNOTE_REF),
+            first(XREF_MARK),
+            first(INDEX_MARK),
+            first(ANCHOR_MARK),
+        );
         let no = first(crate::anchored::OBJECT_MARK);
         for (k, o) in src.objects.iter().enumerate() {
             if let Some(slot) = self.objects.get_mut(no + k) {
@@ -86,7 +100,10 @@ impl Story {
         for (k, n) in src.notes.iter().enumerate() {
             if let Some(slot) = self.notes.get_mut(nf + k) {
                 let id = slot.id;
-                *slot = Arc::new(crate::notes::Footnote { id, text: n.text.clone() });
+                *slot = Arc::new(crate::notes::Footnote {
+                    id,
+                    text: n.text.clone(),
+                });
             }
         }
         for (k, x) in src.xrefs.iter().enumerate() {
@@ -103,7 +120,10 @@ impl Story {
         for (k, a) in src.anchors.iter().enumerate() {
             if let Some(slot) = self.anchors.get_mut(na + k) {
                 let id = slot.id;
-                *slot = Arc::new(crate::xref::TextAnchor { id, name: a.name.clone() });
+                *slot = Arc::new(crate::xref::TextAnchor {
+                    id,
+                    name: a.name.clone(),
+                });
             }
         }
         // Tables: re-attach by paragraph (fresh ids so a pasted copy never shares an id).
@@ -111,7 +131,9 @@ impl Story {
             let mut next = self.tables.keys().max().copied().unwrap_or(0) + 1;
             for (k, pf) in src.paras.iter().enumerate() {
                 let Some(tid) = pf.table else { continue };
-                let Some(t) = src.tables.get(&tid) else { continue };
+                let Some(t) = src.tables.get(&tid) else {
+                    continue;
+                };
                 let pi = p0 + k;
                 let mut t = (**t).clone();
                 t.id = next;

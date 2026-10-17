@@ -94,7 +94,9 @@ fn parse_qwen_boxes(raw: &str) -> Vec<Region> {
         while let Some(start_idx) = rest.find("<|box_start|>") {
             let before = &rest[..start_idx];
             let after_start = &rest[start_idx + "<|box_start|>".len()..];
-            let Some(end_idx) = after_start.find("<|box_end|>") else { break };
+            let Some(end_idx) = after_start.find("<|box_end|>") else {
+                break;
+            };
             let box_str = &after_start[..end_idx];
 
             let label = extract_box_label(before, &after_start[end_idx + "<|box_end|>".len()..]);
@@ -118,14 +120,25 @@ fn parse_qwen_boxes(raw: &str) -> Vec<Region> {
         let trimmed = line.trim();
         if let Some(bbox) = extract_bracket_coords(trimmed) {
             let label = trimmed
-                .replace(&format!("[{}]", extract_bracket_inner(trimmed).unwrap_or("")), "")
+                .replace(
+                    &format!("[{}]", extract_bracket_inner(trimmed).unwrap_or("")),
+                    "",
+                )
                 .trim_matches(|c: char| {
                     c.is_whitespace() || c == ':' || c == '-' || c == '*' || c == '.'
                 })
                 .trim()
                 .to_string();
-            let name = if label.is_empty() { "object".to_string() } else { label.clone() };
-            regions.push(Region { label: name, text: label, bbox: Some(bbox) });
+            let name = if label.is_empty() {
+                "object".to_string()
+            } else {
+                label.clone()
+            };
+            regions.push(Region {
+                label: name,
+                text: label,
+                bbox: Some(bbox),
+            });
         }
     }
 
@@ -172,10 +185,21 @@ fn extract_box_label(before: &str, after: &str) -> Option<String> {
 /// `[y0, x0, y1, x1]`
 /// Qwen-VL standard coordinate order is (ymin, xmin, ymax, xmax).
 fn parse_1000_coords(s: &str) -> Option<BBox> {
-    let cleaned: String =
-        s.chars().map(|c| if c.is_ascii_digit() || c == '.' { c } else { ' ' }).collect();
+    let cleaned: String = s
+        .chars()
+        .map(|c| {
+            if c.is_ascii_digit() || c == '.' {
+                c
+            } else {
+                ' '
+            }
+        })
+        .collect();
 
-    let nums: Vec<f32> = cleaned.split_whitespace().filter_map(|w| w.parse::<f32>().ok()).collect();
+    let nums: Vec<f32> = cleaned
+        .split_whitespace()
+        .filter_map(|w| w.parse::<f32>().ok())
+        .collect();
 
     if nums.len() != 4 {
         return None;
@@ -187,7 +211,12 @@ fn parse_1000_coords(s: &str) -> Option<BBox> {
     let y1 = (nums[2] / QWEN_SCALE).clamp(0.0, 1.0);
     let x1 = (nums[3] / QWEN_SCALE).clamp(0.0, 1.0);
 
-    Some(BBox { x0: x0.min(x1), y0: y0.min(y1), x1: x0.max(x1), y1: y0.max(y1) })
+    Some(BBox {
+        x0: x0.min(x1),
+        y0: y0.min(y1),
+        x1: x0.max(x1),
+        y1: y0.max(y1),
+    })
 }
 
 /// Parse `<tag><loc_..>…</tag>` blocks.
@@ -225,7 +254,11 @@ fn parse_tagged(raw: &str) -> Vec<Region> {
         let (bbox, text) = split_locations(body);
         let text = text.trim().to_owned();
         if !text.is_empty() || bbox.is_some() {
-            regions.push(Region { label: tag.to_owned(), text, bbox });
+            regions.push(Region {
+                label: tag.to_owned(),
+                text,
+                bbox,
+            });
         }
         rest = &body_start[consumed..];
     }
@@ -240,9 +273,13 @@ fn split_locations(body: &str) -> (Option<BBox>, &str) {
 
     loop {
         let trimmed = cursor.trim_start();
-        let Some(rest) = trimmed.strip_prefix("<loc_") else { break };
+        let Some(rest) = trimmed.strip_prefix("<loc_") else {
+            break;
+        };
         let Some(end) = rest.find('>') else { break };
-        let Ok(value) = rest[..end].parse::<f32>() else { break };
+        let Ok(value) = rest[..end].parse::<f32>() else {
+            break;
+        };
         coords.push(value / LOC_SCALE);
         cursor = &rest[end + 1..];
         if coords.len() == 4 {
@@ -264,11 +301,19 @@ fn split_locations(body: &str) -> (Option<BBox>, &str) {
 /// One region per non-empty line of a tagless answer.
 fn parse_lines(raw: &str) -> Vec<Region> {
     raw.lines()
-        .map(|line| line.trim().trim_start_matches(['-', '*', '\u{2022}']).trim())
+        .map(|line| {
+            line.trim()
+                .trim_start_matches(['-', '*', '\u{2022}'])
+                .trim()
+        })
         // A numbered list ("1. the toolbar") keeps its text, loses its bullet.
         .map(strip_ordinal)
         .filter(|line| !line.is_empty() && line.chars().any(char::is_alphanumeric))
-        .map(|line| Region { label: "text".to_owned(), text: line.to_owned(), bbox: None })
+        .map(|line| Region {
+            label: "text".to_owned(),
+            text: line.to_owned(),
+            bbox: None,
+        })
         .collect()
 }
 
@@ -279,7 +324,9 @@ fn strip_ordinal(line: &str) -> &str {
         return line;
     }
     let rest = &line[digits.len()..];
-    rest.strip_prefix('.').or_else(|| rest.strip_prefix(')')).map_or(line, str::trim_start)
+    rest.strip_prefix('.')
+        .or_else(|| rest.strip_prefix(')'))
+        .map_or(line, str::trim_start)
 }
 
 #[cfg(test)]
@@ -359,7 +406,10 @@ mod tests {
     fn list_markers_are_dropped_from_prose_regions() {
         let regions = parse_regions("- the sidebar\n* the canvas\n1. the status bar\n2) the tabs");
         let texts: Vec<&str> = regions.iter().map(|r| r.text.as_str()).collect();
-        assert_eq!(texts, vec!["the sidebar", "the canvas", "the status bar", "the tabs"]);
+        assert_eq!(
+            texts,
+            vec!["the sidebar", "the canvas", "the status bar", "the tabs"]
+        );
     }
 
     #[test]
@@ -386,8 +436,15 @@ mod tests {
     fn regions_serialise_without_a_null_box() {
         // A consumer drawing overlays branches on the key being absent; a
         // `"bbox": null` would have to be special-cased in every reader.
-        let region = Region { label: "text".into(), text: "hi".into(), bbox: None };
-        assert_eq!(serde_json::to_string(&region).unwrap(), r#"{"label":"text","text":"hi"}"#);
+        let region = Region {
+            label: "text".into(),
+            text: "hi".into(),
+            bbox: None,
+        };
+        assert_eq!(
+            serde_json::to_string(&region).unwrap(),
+            r#"{"label":"text","text":"hi"}"#
+        );
     }
 
     #[test]

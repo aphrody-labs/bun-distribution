@@ -9,7 +9,10 @@ fn tmp(name: &str) -> std::path::PathBuf {
     let dir = std::env::temp_dir().join(format!(
         "pc-layered-save-{name}-{}-{}",
         std::process::id(),
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
     ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
@@ -20,25 +23,56 @@ fn tmp(name: &str) -> std::path::PathBuf {
 fn pathless_save_clears_dirty(dir: &std::path::Path, name: &str) {
     let path = dir.join(name);
     let mut headless = Headless::trusted_local();
-    headless.handle("doc.new", json!({"width": 8, "height": 8, "background": "white"})).unwrap();
-    headless.handle("doc.save", json!({"path": path.to_str().unwrap()})).unwrap();
+    headless
+        .handle(
+            "doc.new",
+            json!({"width": 8, "height": 8, "background": "white"}),
+        )
+        .unwrap();
+    headless
+        .handle("doc.save", json!({"path": path.to_str().unwrap()}))
+        .unwrap();
     assert!(path.is_file(), "{name} was written");
 
     // Reopen the saved file and edit it, so the pathless save below writes back over its own file.
-    headless.handle("doc.open", json!({"path": path.to_str().unwrap()})).unwrap();
-    headless.handle("engine.execute", json!({"command": "image.adjustments.invert", "params": {}})).unwrap();
-    assert!(headless.session.active().unwrap().is_dirty(), "{name}: the edit dirties");
+    headless
+        .handle("doc.open", json!({"path": path.to_str().unwrap()}))
+        .unwrap();
+    headless
+        .handle(
+            "engine.execute",
+            json!({"command": "image.adjustments.invert", "params": {}}),
+        )
+        .unwrap();
+    assert!(
+        headless.session.active().unwrap().is_dirty(),
+        "{name}: the edit dirties"
+    );
 
     // The reported symptom: the save succeeds but the session still reports `dirty`.
     headless.handle("doc.save", json!({})).unwrap();
-    assert!(!headless.session.active().unwrap().is_dirty(), "{name}: a pathless save is clean");
+    assert!(
+        !headless.session.active().unwrap().is_dirty(),
+        "{name}: a pathless save is clean"
+    );
     let revision = headless.session.active().unwrap().revision;
-    assert_eq!(headless.session.active().unwrap().saved_revision, revision, "{name}: the current revision is recorded");
-    assert_eq!(headless.session.active().unwrap().path.as_deref(), path.to_str(), "{name}: the file is still the path");
+    assert_eq!(
+        headless.session.active().unwrap().saved_revision,
+        revision,
+        "{name}: the current revision is recorded"
+    );
+    assert_eq!(
+        headless.session.active().unwrap().path.as_deref(),
+        path.to_str(),
+        "{name}: the file is still the path"
+    );
 
     // A second save, with no further edit, stays clean.
     headless.handle("doc.save", json!({})).unwrap();
-    assert!(!headless.session.active().unwrap().is_dirty(), "{name}: a repeat save stays clean");
+    assert!(
+        !headless.session.active().unwrap().is_dirty(),
+        "{name}: a repeat save stays clean"
+    );
 
     let bytes = std::fs::read(&path).unwrap();
     if name.ends_with("psd") {
@@ -65,15 +99,39 @@ fn a_flat_export_is_a_copy_and_leaves_the_document_dirty() {
     let native = dir.join("doc.pcraft");
     let png = dir.join("copy.png");
     let mut headless = Headless::trusted_local();
-    headless.handle("doc.new", json!({"width": 8, "height": 8, "background": "white"})).unwrap();
-    headless.handle("doc.save", json!({"path": native.to_str().unwrap()})).unwrap();
-    headless.handle("engine.execute", json!({"command": "image.adjustments.invert", "params": {}})).unwrap();
-    assert!(headless.session.active().unwrap().is_dirty(), "the edit dirties");
+    headless
+        .handle(
+            "doc.new",
+            json!({"width": 8, "height": 8, "background": "white"}),
+        )
+        .unwrap();
+    headless
+        .handle("doc.save", json!({"path": native.to_str().unwrap()}))
+        .unwrap();
+    headless
+        .handle(
+            "engine.execute",
+            json!({"command": "image.adjustments.invert", "params": {}}),
+        )
+        .unwrap();
+    assert!(
+        headless.session.active().unwrap().is_dirty(),
+        "the edit dirties"
+    );
 
-    headless.handle("doc.save", json!({"path": png.to_str().unwrap()})).unwrap();
+    headless
+        .handle("doc.save", json!({"path": png.to_str().unwrap()}))
+        .unwrap();
     assert!(png.is_file(), "the PNG copy was written");
-    assert!(headless.session.active().unwrap().is_dirty(), "a flat export leaves the document dirty");
-    assert_eq!(headless.session.active().unwrap().path.as_deref(), native.to_str(), "the path is not retargeted to the copy");
+    assert!(
+        headless.session.active().unwrap().is_dirty(),
+        "a flat export leaves the document dirty"
+    );
+    assert_eq!(
+        headless.session.active().unwrap().path.as_deref(),
+        native.to_str(),
+        "the path is not retargeted to the copy"
+    );
 
     // ...and the document can still be saved back to its own native file.
     headless.handle("doc.save", json!({})).unwrap();

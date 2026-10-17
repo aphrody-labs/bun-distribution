@@ -179,9 +179,16 @@ impl Renderer {
         resolution_scale_shift: u8,
         renderer_3d_rx: Renderer3dRx,
     ) -> (Self, crate::wgpu::TextureView, FrontendChannels) {
-        const BG: Bg = Bg { control: BgControl(0), scroll: [0; 2], priority: 4 };
-        const AFFINE_BG_DATA: AffineBgData =
-            AffineBgData { x_incr: [0; 2], y_incr: [0; 2], pos: [0; 2] };
+        const BG: Bg = Bg {
+            control: BgControl(0),
+            scroll: [0; 2],
+            priority: 4,
+        };
+        const AFFINE_BG_DATA: AffineBgData = AffineBgData {
+            x_incr: [0; 2],
+            y_incr: [0; 2],
+            pos: [0; 2],
+        };
 
         let rendering_data_b = RenderingData {
             is_enabled: false,
@@ -218,7 +225,10 @@ impl Renderer {
                     Box::new_zeroed().assume_init(),
                 )),
                 rendering_data: UnsafeCell::new([
-                    RenderingData { is_on_lower_screen: true, ..rendering_data_b.clone() },
+                    RenderingData {
+                        is_on_lower_screen: true,
+                        ..rendering_data_b.clone()
+                    },
                     rendering_data_b,
                 ]),
                 capture_scanlines: UnsafeCell::new((
@@ -364,8 +374,14 @@ impl Renderer {
         let rendering_data = unsafe { &mut *self.shared_data.rendering_data.get() };
 
         let prev_affine_bg_pos = [
-            [rendering_data[0].affine_bg_data[0].pos, rendering_data[0].affine_bg_data[1].pos],
-            [rendering_data[1].affine_bg_data[0].pos, rendering_data[1].affine_bg_data[1].pos],
+            [
+                rendering_data[0].affine_bg_data[0].pos,
+                rendering_data[0].affine_bg_data[1].pos,
+            ],
+            [
+                rendering_data[1].affine_bg_data[0].pos,
+                rendering_data[1].affine_bg_data[1].pos,
+            ],
         ];
 
         rendering_data[0] = RenderingData::from(&*engines.0);
@@ -378,7 +394,9 @@ impl Renderer {
     }
 
     fn start_scanline(&mut self) {
-        self.shared_data.processing_line.store(true, Ordering::Release);
+        self.shared_data
+            .processing_line
+            .store(true, Ordering::Release);
         #[cfg(not(feature = "threaded"))]
         self.local_data.step_scanline();
     }
@@ -462,8 +480,8 @@ impl RendererTrait for Renderer {
                 ),
                 3 => {
                     // TODO: Main memory display mode
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         if engines.1.control().display_mode_b() == 1 {
@@ -511,7 +529,10 @@ impl RendererTrait for Renderer {
                 engines.0.control(),
                 engines.0.capture_control(),
                 bg_obj_scanline,
-                engines.0.engine_3d_enabled_in_frame().then_some(scanline_3d),
+                engines
+                    .0
+                    .engine_3d_enabled_in_frame()
+                    .then_some(scanline_3d),
                 vram,
             )
         }
@@ -632,8 +653,11 @@ impl ThreadData {
                 )
             };
 
-            let display_mode =
-                if R::IS_A { data.control.display_mode_a() } else { data.control.display_mode_b() };
+            let display_mode = if R::IS_A {
+                data.control.display_mode_a()
+            } else {
+                data.control.display_mode_b()
+            };
 
             let render_bg_obj_line = display_mode == 1
                 || (R::IS_A
@@ -655,7 +679,8 @@ impl ThreadData {
                         && (data.capture_control.src_a_3d_only() || enabled_in_bg_obj))
                         || (display_mode == 1 && enabled_in_bg_obj)
                     {
-                        self.gfx_data.process_3d_scanline(self.cur_scanline as usize);
+                        self.gfx_data
+                            .process_3d_scanline(self.cur_scanline as usize);
                     } else {
                         self.gfx_data.skip_3d_scanline();
                     }
@@ -698,7 +723,11 @@ impl ThreadData {
                     let backdrop = BgObjPixel(rgb5_to_rgb6_64(vram.palette.read_le::<u16>(0)))
                         .with_color_effects_mask(1 << 5)
                         .0;
-                    buffers.bg_obj_scanline.get_mut().0.fill(BgObjPixel(backdrop | backdrop << 32));
+                    buffers
+                        .bg_obj_scanline
+                        .get_mut()
+                        .0
+                        .fill(BgObjPixel(backdrop | backdrop << 32));
 
                     unsafe {
                         fns.render_scanline_bgs_and_objs[data.control.bg_mode() as usize](
@@ -712,10 +741,12 @@ impl ThreadData {
                         scanline_buffer.0.fill(BgObjPixel(0x3_FFFF));
                         *scanline_flags =
                             ScanlineFlags::master_brightness_only(data.master_brightness_control);
-                    },
+                    }
 
                     1 => {
-                        scanline_buffer.0.copy_from_slice(&buffers.bg_obj_scanline.get_mut().0);
+                        scanline_buffer
+                            .0
+                            .copy_from_slice(&buffers.bg_obj_scanline.get_mut().0);
                         *scanline_flags = ScanlineFlags::new(
                             data.master_brightness_control,
                             data.color_effects_control,
@@ -727,14 +758,14 @@ impl ThreadData {
                                 scanline_buffer.0[i].0 &= !0xFC00_0000_FC00_0000;
                             }
                         }
-                    },
+                    }
 
                     2 => {
                         *scanline_flags =
                             ScanlineFlags::master_brightness_only(data.master_brightness_control);
-                    },
+                    }
 
-                    _ => {},
+                    _ => {}
                 }
 
                 if R::IS_A
@@ -744,8 +775,9 @@ impl ThreadData {
                     let (capture_bg_obj_scanline, capture_scanline_3d) =
                         unsafe { &mut *self.shared_data.capture_scanlines.get() };
                     if data.is_capturing_3d_output {
-                        let scanline_3d =
-                            self.gfx_data.capture_3d_scanline(self.cur_scanline as usize);
+                        let scanline_3d = self
+                            .gfx_data
+                            .capture_3d_scanline(self.cur_scanline as usize);
                         if data.capture_control.src_a_3d_only() {
                             capture_scanline_3d.0.copy_from_slice(&scanline_3d.0);
                         } else {
@@ -789,7 +821,8 @@ impl ThreadData {
     fn step_scanline(&mut self) {
         if self.cur_scanline == 0 {
             let data = &unsafe { &*self.shared_data.rendering_data.get() }[0];
-            self.gfx_data.start_frame(data.engine_3d_enabled_in_frame, data.is_capturing_3d_output);
+            self.gfx_data
+                .start_frame(data.engine_3d_enabled_in_frame, data.is_capturing_3d_output);
         }
 
         let vcount = self.shared_data.vcount.load(Ordering::Acquire);
@@ -802,7 +835,9 @@ impl ThreadData {
             vcount, &vram.1,
         );
 
-        self.shared_data.processing_line.store(false, Ordering::Release);
+        self.shared_data
+            .processing_line
+            .store(false, Ordering::Release);
 
         self.cur_scanline += 1;
         if self.cur_scanline == SCREEN_HEIGHT as i16 {

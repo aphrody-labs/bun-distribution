@@ -10,16 +10,23 @@ use std::time::Duration;
 use deckcraft_media::{Bytes, Container, MediaError, audio, probe, video};
 
 fn fixture(name: &str) -> Bytes {
-    let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name);
+    let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .join(name);
     Arc::new(std::fs::read(&p).unwrap_or_else(|e| panic!("{}: {e}", p.display())))
 }
 
 fn sine(rate: u32, secs: f64) -> Vec<f32> {
-    (0..(rate as f64 * secs) as usize).map(|i| (i as f64 * 440.0 * std::f64::consts::TAU / rate as f64).sin() as f32 * 0.125).collect()
+    (0..(rate as f64 * secs) as usize)
+        .map(|i| (i as f64 * 440.0 * std::f64::consts::TAU / rate as f64).sin() as f32 * 0.125)
+        .collect()
 }
 
 fn wav(rate: u32, channels: u16, samples: &[f32]) -> Vec<u8> {
-    let data: Vec<u8> = samples.iter().flat_map(|s| ((s * 32767.0) as i16).to_le_bytes()).collect();
+    let data: Vec<u8> = samples
+        .iter()
+        .flat_map(|s| ((s * 32767.0) as i16).to_le_bytes())
+        .collect();
     let mut b = Vec::new();
     b.extend_from_slice(b"RIFF");
     b.extend_from_slice(&(36 + data.len() as u32).to_le_bytes());
@@ -49,7 +56,10 @@ fn ext80(v: u32) -> [u8; 10] {
 }
 
 fn aiff(rate: u32, samples: &[f32]) -> Vec<u8> {
-    let data: Vec<u8> = samples.iter().flat_map(|s| ((s * 32767.0) as i16).to_be_bytes()).collect();
+    let data: Vec<u8> = samples
+        .iter()
+        .flat_map(|s| ((s * 32767.0) as i16).to_be_bytes())
+        .collect();
     let mut comm = Vec::new();
     comm.extend_from_slice(&1u16.to_be_bytes());
     comm.extend_from_slice(&(samples.len() as u32).to_be_bytes());
@@ -91,7 +101,9 @@ fn frequency(p: &audio::Pcm) -> f64 {
         }
     }
     match (crossings.first(), crossings.last()) {
-        (Some(a), Some(b)) if b > a => (crossings.len() - 1) as f64 / 2.0 / ((b - a) as f64 / p.rate as f64),
+        (Some(a), Some(b)) if b > a => {
+            (crossings.len() - 1) as f64 / 2.0 / ((b - a) as f64 / p.rate as f64)
+        }
         _ => 0.0,
     }
 }
@@ -100,17 +112,27 @@ fn frequency(p: &audio::Pcm) -> f64 {
 fn check_tone(name: &str, bytes: &Bytes, rate: u32, channels: u16) {
     let p = audio::decode(bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
     assert_eq!((p.rate, p.channels), (rate, channels), "{name}");
-    assert!((p.duration() - 0.5).abs() < 0.06, "{name}: {} s", p.duration());
+    assert!(
+        (p.duration() - 0.5).abs() < 0.06,
+        "{name}: {} s",
+        p.duration()
+    );
     let f = frequency(&p);
     assert!((f - 440.0).abs() < 15.0, "{name}: {f} Hz");
     let rms = p.rms();
     // 1/8 / √2 (ffmpeg's mono → stereo upmix for the Vorbis fixture lowers it by another √2).
     assert!((0.055..0.105).contains(&rms), "{name}: rms {rms}");
     let info = probe(bytes).unwrap_or_else(|e| panic!("{name}: probe {e}"));
-    let a = info.audio.unwrap_or_else(|| panic!("{name}: no audio info"));
+    let a = info
+        .audio
+        .unwrap_or_else(|| panic!("{name}: no audio info"));
     assert!(a.decodable, "{name}");
     assert_eq!((a.sample_rate, a.channels), (rate, channels), "{name}");
-    assert!((info.duration_ms as i64 - 500).abs() <= 60, "{name}: {} ms", info.duration_ms);
+    assert!(
+        (info.duration_ms as i64 - 500).abs() <= 60,
+        "{name}: {} ms",
+        info.duration_ms
+    );
     assert!(info.video.is_none(), "{name}");
 }
 
@@ -172,8 +194,15 @@ fn wma_is_probed_but_not_decoded() {
     assert_eq!(Container::sniff(&b), Container::Asf);
     let info = probe(&b).expect("probe");
     let a = info.audio.clone().expect("audio");
-    assert_eq!((a.codec.as_str(), a.sample_rate, a.channels, a.decodable), ("WMA 2", 44_100, 1, false));
-    assert!((info.duration_ms as i64 - 500).abs() <= 120, "{}", info.duration_ms);
+    assert_eq!(
+        (a.codec.as_str(), a.sample_rate, a.channels, a.decodable),
+        ("WMA 2", 44_100, 1, false)
+    );
+    assert!(
+        (info.duration_ms as i64 - 500).abs() <= 120,
+        "{}",
+        info.duration_ms
+    );
     assert!(!info.playable());
     assert!(matches!(audio::decode(&b), Err(MediaError::Unsupported(_))));
 }
@@ -185,7 +214,13 @@ fn garbage_is_an_error_not_a_panic() {
     assert!(audio::decode(&b).is_err());
     assert!(video::VideoDecoder::open(b.clone()).is_err());
     // Truncated real files too.
-    for name in ["tone.mp3", "tone.m4a", "tone.opus", "clip-h264.mp4", "clip-vp9.webm"] {
+    for name in [
+        "tone.mp3",
+        "tone.m4a",
+        "tone.opus",
+        "clip-h264.mp4",
+        "clip-vp9.webm",
+    ] {
         let full = fixture(name);
         let cut: Bytes = Arc::new(full[..full.len() / 3].to_vec());
         let _ = probe(&cut);
@@ -231,27 +266,53 @@ fn expected_centre(w: usize, h: usize, k: usize) -> [f64; 3] {
 fn check_video(name: &str, w: u32, h: u32, frames: usize, codec: &str) {
     let b = fixture(name);
     let info = probe(&b).unwrap_or_else(|e| panic!("{name}: {e}"));
-    let v = info.video.clone().unwrap_or_else(|| panic!("{name}: no video info"));
-    assert_eq!((v.codec.as_str(), v.width, v.height, v.decodable), (codec, w, h, true), "{name}");
+    let v = info
+        .video
+        .clone()
+        .unwrap_or_else(|| panic!("{name}: no video info"));
+    assert_eq!(
+        (v.codec.as_str(), v.width, v.height, v.decodable),
+        (codec, w, h, true),
+        "{name}"
+    );
     assert!((v.fps - 10.0).abs() < 0.6, "{name}: {} fps", v.fps);
-    assert!((info.duration_ms as i64 - frames as i64 * 100).abs() <= 120, "{name}: {} ms", info.duration_ms);
+    assert!(
+        (info.duration_ms as i64 - frames as i64 * 100).abs() <= 120,
+        "{name}: {} ms",
+        info.duration_ms
+    );
     let mut d = video::VideoDecoder::open(b.clone()).unwrap_or_else(|e| panic!("{name}: {e}"));
     let mut got = vec![];
     while let Some(f) = d.next_frame().unwrap_or_else(|e| panic!("{name}: {e}")) {
-        assert_eq!((f.width, f.height, f.rgba.len()), (w, h, (w * h * 4) as usize), "{name}");
+        assert_eq!(
+            (f.width, f.height, f.rgba.len()),
+            (w, h, (w * h * 4) as usize),
+            "{name}"
+        );
         got.push(f);
     }
     assert_eq!(got.len(), frames, "{name}");
     for (k, f) in got.iter().enumerate() {
-        assert!((f.time - k as f64 * 0.1).abs() < 0.02, "{name}: frame {k} at {}", f.time);
+        assert!(
+            (f.time - k as f64 * 0.1).abs() < 0.02,
+            "{name}: frame {k} at {}",
+            f.time
+        );
         let (c, e) = (centre(f), expected_centre(w as usize, h as usize, k));
         for i in 0..3 {
-            assert!((c[i] - e[i]).abs() < 24.0, "{name}: frame {k} channel {i}: {c:?} vs {e:?}");
+            assert!(
+                (c[i] - e[i]).abs() < 24.0,
+                "{name}: frame {k} channel {i}: {c:?} vs {e:?}"
+            );
         }
     }
     // Seeking lands on the frame shown at that time.
     d.seek(0.35);
-    let f = d.next_frame().ok().flatten().unwrap_or_else(|| panic!("{name}: no frame after seek"));
+    let f = d
+        .next_frame()
+        .ok()
+        .flatten()
+        .unwrap_or_else(|| panic!("{name}: no frame after seek"));
     assert!((f.time - 0.3).abs() < 0.02, "{name}: seek gave {}", f.time);
     // Poster frames.
     let p = video::poster_frame(&b, 0.25).unwrap_or_else(|e| panic!("{name}: {e}"));
@@ -266,7 +327,10 @@ fn h264_mp4_with_b_frames_and_aac_audio() {
     // Its audio track decodes too.
     let b = fixture("clip-h264.mp4");
     let info = probe(&b).expect("probe");
-    assert_eq!(info.audio.as_ref().map(|a| (a.codec.as_str(), a.decodable)), Some(("AAC", true)));
+    assert_eq!(
+        info.audio.as_ref().map(|a| (a.codec.as_str(), a.decodable)),
+        Some(("AAC", true))
+    );
     let p = audio::decode(&b).expect("audio of the video");
     assert!((frequency(&p) - 440.0).abs() < 15.0);
 }
@@ -274,7 +338,10 @@ fn h264_mp4_with_b_frames_and_aac_audio() {
 #[test]
 fn h264_mov() {
     check_video("clip-h264.mov", 64, 48, 6, "H.264");
-    assert_eq!(probe(&fixture("clip-h264.mov")).map(|i| i.container), Ok("mov"));
+    assert_eq!(
+        probe(&fixture("clip-h264.mov")).map(|i| i.container),
+        Ok("mov")
+    );
 }
 
 #[test]
@@ -286,7 +353,13 @@ fn hevc_mp4() {
 fn vp9_webm_with_opus_audio() {
     check_video("clip-vp9.webm", 64, 48, 5, "VP9");
     let b = fixture("clip-vp9.webm");
-    assert_eq!(probe(&b).ok().and_then(|i| i.audio).map(|a| (a.codec, a.sample_rate)), Some(("Opus".to_string(), 48_000)));
+    assert_eq!(
+        probe(&b)
+            .ok()
+            .and_then(|i| i.audio)
+            .map(|a| (a.codec, a.sample_rate)),
+        Some(("Opus".to_string(), 48_000))
+    );
     let p = audio::decode(&b).expect("opus in webm");
     assert_eq!(p.rate, 48_000);
     assert!((frequency(&p) - 440.0).abs() < 15.0);
@@ -302,7 +375,10 @@ fn video_feed_follows_the_clock() {
     let mut feed = deckcraft_media::VideoFeed::new(fixture("clip-h264.mov")).expect("feed");
     assert_eq!(feed.size(), (64, 48));
     let t = Duration::from_secs(5);
-    assert!(feed.frame_at_blocking(0.0, t).is_some_and(|f| f.time == 0.0));
+    assert!(
+        feed.frame_at_blocking(0.0, t)
+            .is_some_and(|f| f.time == 0.0)
+    );
     let f = feed.frame_at_blocking(0.25, t).map(|f| f.time);
     assert!(f.is_some_and(|v| (v - 0.2).abs() < 0.02), "{f:?}");
     // Jumping back (a loop) seeks.
@@ -317,7 +393,21 @@ fn player_plays_decoded_audio_through_the_mixer() {
     use deckcraft_media::{ClipParams, Player, VoiceSpec};
     let b: Bytes = Arc::new(wav(48_000, 1, &sine(48_000, 0.5)));
     let mut p = Player::new(None);
-    p.play(1, 1, &b, VoiceSpec { clip: ClipParams { volume: 0.5, ..Default::default() }, looping: false, duration: 0.5, audio: true }, None);
+    p.play(
+        1,
+        1,
+        &b,
+        VoiceSpec {
+            clip: ClipParams {
+                volume: 0.5,
+                ..Default::default()
+            },
+            looping: false,
+            duration: 0.5,
+            audio: true,
+        },
+        None,
+    );
     assert!(p.wait_loaded(1, Duration::from_secs(5)));
     let mut buf = vec![0.0f32; 4800 * 2];
     p.render(&mut buf, 2, 48_000);

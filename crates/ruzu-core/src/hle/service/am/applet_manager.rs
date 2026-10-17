@@ -400,7 +400,12 @@ impl AppletManager {
     /// Upgrade the non-owning reference only for the duration of the caller's
     /// operation; never retain the manager lock while locking WindowSystem.
     pub fn get_window_system(&self) -> Option<Arc<Mutex<WindowSystem>>> {
-        self.lock.lock().unwrap().window_system.as_ref().and_then(Weak::upgrade)
+        self.lock
+            .lock()
+            .unwrap()
+            .window_system
+            .as_ref()
+            .and_then(Weak::upgrade)
     }
 
     /// Upstream: `void SetWindowSystem(WindowSystem* window_system)`

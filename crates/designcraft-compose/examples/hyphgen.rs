@@ -16,13 +16,21 @@ use designcraft_compose::hyphen::dict::{Dictionary, hyphenated};
 use designcraft_compose::hyphen::patgen::{self, DEFAULT_LEVELS};
 
 /// Mac OS Roman, 0x80..=0xFF (the list's encoding; 0xA5 `•` marks breaks).
-const MAC_ROMAN_HIGH: &str =
-    "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»…\u{A0}ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ\u{F8FF}ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ";
+const MAC_ROMAN_HIGH: &str = "ÄÅÇÉÑÖÜáàâäãåçéèêëíìîïñóòôöõúùûü†°¢£§•¶ß®©™´¨≠ÆØ∞±≤≥¥µ∂∑∏π∫ªºΩæø¿¡¬√ƒ≈∆«»…\u{A0}ÀÃÕŒœ–—“”‘’÷◊ÿŸ⁄€‹›ﬁﬂ‡·‚„‰ÂÊÁËÈÍÎÏÌÓÔ\u{F8FF}ÒÚÛÙıˆ˜¯˘˙˚¸˝˛ˇ";
 
 fn mac_roman(bytes: &[u8]) -> String {
     let high: Vec<char> = MAC_ROMAN_HIGH.chars().collect();
     assert_eq!(high.len(), 128);
-    bytes.iter().map(|&b| if b < 0x80 { b as char } else { high[b as usize - 0x80] }).collect()
+    bytes
+        .iter()
+        .map(|&b| {
+            if b < 0x80 {
+                b as char
+            } else {
+                high[b as usize - 0x80]
+            }
+        })
+        .collect()
 }
 
 const BREAK: char = '•';
@@ -96,8 +104,15 @@ fn main() {
         })
         .collect();
     let have: std::collections::HashSet<String> = list.iter().map(|x| x.0.clone()).collect();
-    let extra: Vec<(String, u64)> = parts.into_iter().filter(|(w, _)| !have.contains(w)).collect();
-    println!("{entries} entries → {} words (+{} from compounds)", list.len(), extra.len());
+    let extra: Vec<(String, u64)> = parts
+        .into_iter()
+        .filter(|(w, _)| !have.contains(w))
+        .collect();
+    println!(
+        "{entries} entries → {} words (+{} from compounds)",
+        list.len(),
+        extra.len()
+    );
     list.extend(extra);
     let dict = Dictionary::from_entries(list);
     let bytes = dict.to_bytes();
@@ -111,7 +126,14 @@ fn main() {
     let train: Vec<(Vec<char>, Vec<usize>)> = dict
         .iter()
         .filter(|(w, _)| w.chars().all(|c| c.is_ascii_lowercase() || c == '\''))
-        .map(|(w, m)| (w.chars().collect(), (1..w.len().min(64)).filter(|&i| m & (1 << i) != 0).collect()))
+        .map(|(w, m)| {
+            (
+                w.chars().collect(),
+                (1..w.len().min(64))
+                    .filter(|&i| m & (1 << i) != 0)
+                    .collect(),
+            )
+        })
         .collect();
     println!("training on {} words", train.len());
     let mut log = |s: String| println!("  {s}");
@@ -119,14 +141,27 @@ fn main() {
     let custom: Option<Vec<patgen::Level>> = std::env::var("HYPHGEN_LEVELS").ok().map(|s| {
         s.split(';')
             .map(|l| {
-                let v: Vec<u32> = l.split(',').map(|x| x.trim().parse().expect("number")).collect();
-                patgen::Level { min_len: v[0] as usize, max_len: v[1] as usize, good_weight: v[2], bad_weight: v[3], threshold: v[4] }
+                let v: Vec<u32> = l
+                    .split(',')
+                    .map(|x| x.trim().parse().expect("number"))
+                    .collect();
+                patgen::Level {
+                    min_len: v[0] as usize,
+                    max_len: v[1] as usize,
+                    good_weight: v[2],
+                    bad_weight: v[3],
+                    threshold: v[4],
+                }
             })
             .collect()
     });
     let levels = custom.as_deref().unwrap_or(DEFAULT_LEVELS);
     if validate {
-        let (fit, hold): (Vec<_>, Vec<_>) = train.iter().cloned().enumerate().partition(|(i, _)| i % 10 != 0);
+        let (fit, hold): (Vec<_>, Vec<_>) = train
+            .iter()
+            .cloned()
+            .enumerate()
+            .partition(|(i, _)| i % 10 != 0);
         let fit: Vec<_> = fit.into_iter().map(|x| x.1).collect();
         let hold: Vec<_> = hold.into_iter().map(|x| x.1).collect();
         let p = patgen::train(&fit, levels, &mut log);
@@ -166,9 +201,22 @@ fn main() {
     }
     std::fs::write(out_dir.join("en-us.pat"), &out).expect("write en-us.pat");
     println!("en-us.pat: {} patterns, {} bytes", pats.len(), out.len());
-    for w in ["hyphenation", "typography", "composition", "photographer", "unquestionably", "localization", "blockchain", "smartphone"] {
+    for w in [
+        "hyphenation",
+        "typography",
+        "composition",
+        "photographer",
+        "unquestionably",
+        "localization",
+        "blockchain",
+        "smartphone",
+    ] {
         let c: Vec<char> = w.chars().collect();
-        let m = pats.points(&c).unwrap_or_default().iter().fold(0u64, |m, &i| m | 1 << i);
+        let m = pats
+            .points(&c)
+            .unwrap_or_default()
+            .iter()
+            .fold(0u64, |m, &i| m | 1 << i);
         println!("  patterns: {}", hyphenated(w, m));
     }
 }

@@ -10,7 +10,9 @@ use serde_json::{Value, json};
 use vectorcraft_geom::{Affine, Point, Rect, Vec2};
 
 use super::{BLUE, polygon, rect_corners};
-use crate::bbox::{Handle, hit_handle, in_rotate_zone, move_delta, rotate_for_drag, scale_for_drag};
+use crate::bbox::{
+    Handle, hit_handle, in_rotate_zone, move_delta, rotate_for_drag, scale_for_drag,
+};
 use crate::select::{matrix_json, selection_bounds};
 use crate::{Action, Cursor, Mods, Overlay, PointerEvent, PointerKind, Tool, ToolContext, ToolKey};
 
@@ -89,7 +91,11 @@ pub struct FreeTransformTool {
 
 /// Shear for dragging side `h` of `r` by `d` (about the opposite side, or the centre with Alt).
 pub fn shear_for_side(r: Rect, h: Handle, d: Vec2, from_center: bool) -> Affine {
-    let o = if from_center { r.center() } else { h.opposite().pos(r) };
+    let o = if from_center {
+        r.center()
+    } else {
+        h.opposite().pos(r)
+    };
     let hp = h.pos(r);
     let m = match h {
         Handle::Top | Handle::Bottom => {
@@ -188,31 +194,50 @@ impl FreeTransformTool {
                 self.quad = Some(q);
                 self.measure = None;
                 let corners: Vec<Value> = q.iter().map(|c| json!([c.x, c.y])).collect();
-                return Action::Preview("object.distort".into(), json!({ "corners": corners, "from": [d.rect.x0, d.rect.y0, d.rect.x1, d.rect.y1] }));
+                return Action::Preview(
+                    "object.distort".into(),
+                    json!({ "corners": corners, "from": [d.rect.x0, d.rect.y0, d.rect.x1, d.rect.y1] }),
+                );
             }
             Op::Move => {
                 let v = move_delta(d.start, p, shift);
-                self.measure = cx.measurement_labels.then(|| (p, cx.offset_label(v.x, v.y)));
+                self.measure = cx
+                    .measurement_labels
+                    .then(|| (p, cx.offset_label(v.x, v.y)));
                 Affine::translate(v)
             }
             Op::Scale(h) => {
                 let mut a = scale_for_drag(d.rect, h, p, shift, m.alt);
                 if let Some(t) = &self.targets {
-                    (a, self.guides) = t.snap_scale(&vectorcraft_doc::OrientedBox::aligned(d.rect), h, a, shift, m.alt, cx.snap_tol());
+                    (a, self.guides) = t.snap_scale(
+                        &vectorcraft_doc::OrientedBox::aligned(d.rect),
+                        h,
+                        a,
+                        shift,
+                        m.alt,
+                        cx.snap_tol(),
+                    );
                 }
                 let nr = a.transform_rect_bbox(d.rect);
-                self.measure = cx.transform_tools_guides.then(|| (p, cx.size_label(nr.width(), nr.height())));
+                self.measure = cx
+                    .transform_tools_guides
+                    .then(|| (p, cx.size_label(nr.width(), nr.height())));
                 a
             }
             Op::Shear(h) => shear_for_side(d.rect, h, delta, m.alt),
             Op::Rotate => {
                 let (a, deg) = rotate_for_drag(d.rect.center(), d.start, p, shift);
-                self.measure = cx.transform_tools_guides.then(|| (p, format!("{:.1}°", -deg)));
+                self.measure = cx
+                    .transform_tools_guides
+                    .then(|| (p, format!("{:.1}°", -deg)));
                 a
             }
         };
         self.quad = Some(rect_corners(d.rect).map(|c| xf * c));
-        Action::Preview("object.transform".into(), json!({ "matrix": matrix_json(xf), "copy": false }))
+        Action::Preview(
+            "object.transform".into(),
+            json!({ "matrix": matrix_json(xf), "copy": false }),
+        )
     }
 }
 
@@ -230,16 +255,27 @@ impl Tool for FreeTransformTool {
         match ev.kind {
             PointerKind::Down => {
                 self.drag = None;
-                let Some(r) = selection_bounds(cx) else { return vec![] };
+                let Some(r) = selection_bounds(cx) else {
+                    return vec![];
+                };
                 if let Some(op) = self.classify(cx, r, p, ev.mods) {
-                    self.targets = (cx.smart_guides && op.handle().is_some())
-                        .then(|| crate::guides::Targets::collect(cx.doc, &cx.selection.objects, None).styled(cx));
-                    self.drag = Some(Drag { op, rect: r, start: p, began: false });
+                    self.targets = (cx.smart_guides && op.handle().is_some()).then(|| {
+                        crate::guides::Targets::collect(cx.doc, &cx.selection.objects, None)
+                            .styled(cx)
+                    });
+                    self.drag = Some(Drag {
+                        op,
+                        rect: r,
+                        start: p,
+                        began: false,
+                    });
                 }
                 vec![]
             }
             PointerKind::Drag => {
-                let Some(mut d) = self.drag else { return vec![] };
+                let Some(mut d) = self.drag else {
+                    return vec![];
+                };
                 let mut out = vec![];
                 // A handle drag follows the modifiers held now: the gesture is to start dragging
                 // and then hold Cmd (a Cmd press on the canvas is the temporary Selection tool).
@@ -270,7 +306,11 @@ impl Tool for FreeTransformTool {
                 self.measure = None;
                 self.guides.clear();
                 self.targets = None;
-                if d.is_some_and(|d| d.began) { vec![Action::Commit] } else { vec![] }
+                if d.is_some_and(|d| d.began) {
+                    vec![Action::Commit]
+                } else {
+                    vec![]
+                }
             }
             _ => vec![],
         }
@@ -295,24 +335,48 @@ impl Tool for FreeTransformTool {
             (None, Some(r)) => rect_corners(r),
             _ => return o,
         };
-        o.push(Overlay::Path { path: polygon(&quad, true), color: BLUE, width: 1.0, dashed: false });
+        o.push(Overlay::Path {
+            path: polygon(&quad, true),
+            color: BLUE,
+            width: 1.0,
+            dashed: false,
+        });
         for i in 0..4 {
             let (a, b) = (quad[i], quad[(i + 1) % 4]);
-            o.push(Overlay::Anchor { p: a, color: BLUE, filled: false, size: 6.0 });
+            o.push(Overlay::Anchor {
+                p: a,
+                color: BLUE,
+                filled: false,
+                size: 6.0,
+            });
             if self.mode != DistortMode::Perspective {
-                o.push(Overlay::Anchor { p: a.midpoint(b), color: BLUE, filled: false, size: 6.0 });
+                o.push(Overlay::Anchor {
+                    p: a.midpoint(b),
+                    color: BLUE,
+                    filled: false,
+                    size: 6.0,
+                });
             }
         }
         o.extend(self.guides.iter().cloned());
         if let Some((p, t)) = &self.measure {
-            o.push(Overlay::Measure { p: *p + Vec2::new(cx.tol(12.0), cx.tol(12.0)), text: t.clone() });
+            o.push(Overlay::Measure {
+                p: *p + Vec2::new(cx.tol(12.0), cx.tol(12.0)),
+                text: t.clone(),
+            });
         }
         o
     }
 
     fn cursor(&self, cx: &ToolContext, p: Point, m: Mods) -> Cursor {
-        let Some(r) = selection_bounds(cx) else { return Cursor::Arrow };
-        match self.drag.map(|d| d.op).or_else(|| self.classify(cx, r, p, m)) {
+        let Some(r) = selection_bounds(cx) else {
+            return Cursor::Arrow;
+        };
+        match self
+            .drag
+            .map(|d| d.op)
+            .or_else(|| self.classify(cx, r, p, m))
+        {
             Some(Op::Rotate) => Cursor::rotate_about(r.center(), p),
             Some(Op::Move) => Cursor::Move,
             Some(Op::Scale(h) | Op::Shear(h)) => match h {
@@ -348,7 +412,11 @@ impl Tool for FreeTransformTool {
         self.quad = None;
         self.guides.clear();
         self.targets = None;
-        if self.drag.take().is_some_and(|d| d.began) { vec![Action::Cancel] } else { vec![] }
+        if self.drag.take().is_some_and(|d| d.began) {
+            vec![Action::Cancel]
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -373,12 +441,19 @@ mod tests {
         t.pointer(&cx, &ev(PointerKind::Down, 200.0, 200.0));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 300.0, 300.0));
         assert_eq!(a[0], Action::Begin("Scale".into()));
-        assert!(matches!(&a[1], Action::Preview(c, v) if c == "object.transform" && v["matrix"][0] == 2.0));
-        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 300.0, 300.0)), vec![Action::Commit]);
+        assert!(
+            matches!(&a[1], Action::Preview(c, v) if c == "object.transform" && v["matrix"][0] == 2.0)
+        );
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 300.0, 300.0)),
+            vec![Action::Commit]
+        );
         t.pointer(&cx, &ev(PointerKind::Down, 150.0, 150.0));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 160.0, 170.0));
         assert_eq!(a[0], Action::Begin("Move".into()));
-        assert!(matches!(&a[1], Action::Preview(_, v) if v["matrix"][4] == 10.0 && v["matrix"][5] == 20.0));
+        assert!(
+            matches!(&a[1], Action::Preview(_, v) if v["matrix"][4] == 10.0 && v["matrix"][5] == 20.0)
+        );
     }
 
     #[test]
@@ -389,13 +464,23 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = FreeTransformTool::default();
-        let cmd = Mods { cmd: true, ..Default::default() };
+        let cmd = Mods {
+            cmd: true,
+            ..Default::default()
+        };
         t.pointer(&cx, &ev(PointerKind::Down, 150.0, 100.0).with_mods(cmd));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 170.0, 100.0).with_mods(cmd));
         assert_eq!(a[0], Action::Begin("Shear".into()));
         // Bottom edge fixed, top edge moved 20 right.
-        let Action::Preview(_, v) = &a[1] else { panic!() };
-        let c: Vec<f64> = v["matrix"].as_array().unwrap().iter().map(|x| x.as_f64().unwrap()).collect();
+        let Action::Preview(_, v) = &a[1] else {
+            panic!()
+        };
+        let c: Vec<f64> = v["matrix"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|x| x.as_f64().unwrap())
+            .collect();
         let m = Affine::new([c[0], c[1], c[2], c[3], c[4], c[5]]);
         assert!((m * Point::new(100.0, 200.0)).distance(Point::new(100.0, 200.0)) < 1e-9);
         assert!((m * Point::new(100.0, 100.0)).distance(Point::new(120.0, 100.0)) < 1e-9);
@@ -409,22 +494,46 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = FreeTransformTool::default();
-        let cmd = Mods { cmd: true, ..Default::default() };
-        let perspective = Mods { cmd: true, alt: true, shift: true, ..Default::default() };
+        let cmd = Mods {
+            cmd: true,
+            ..Default::default()
+        };
+        let perspective = Mods {
+            cmd: true,
+            alt: true,
+            shift: true,
+            ..Default::default()
+        };
         // Start dragging the bottom-right corner, then hold Cmd: Free Distort, a step of its own.
         t.pointer(&cx, &ev(PointerKind::Down, 200.0, 200.0));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 210.0, 210.0));
         assert_eq!(a[0], Action::Begin("Scale".into()));
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 220.0, 230.0).with_mods(cmd));
         let corners = json!({"corners": [[100.0, 100.0], [200.0, 100.0], [220.0, 230.0], [100.0, 200.0]], "from": [100.0, 100.0, 200.0, 200.0]});
-        assert_eq!(a, vec![Action::Cancel, Action::Begin("Distort".into()), Action::Preview("object.distort".into(), corners)]);
+        assert_eq!(
+            a,
+            vec![
+                Action::Cancel,
+                Action::Begin("Distort".into()),
+                Action::Preview("object.distort".into(), corners)
+            ]
+        );
         // Cmd+Alt+Shift: Perspective Distort, still the same step.
-        let a = t.pointer(&cx, &ev(PointerKind::Drag, 220.0, 230.0).with_mods(perspective));
-        assert!(matches!(&a[..], [Action::Preview(c, _)] if c == "object.distort"), "{a:?}");
+        let a = t.pointer(
+            &cx,
+            &ev(PointerKind::Drag, 220.0, 230.0).with_mods(perspective),
+        );
+        assert!(
+            matches!(&a[..], [Action::Preview(c, _)] if c == "object.distort"),
+            "{a:?}"
+        );
         // Letting go of the keys scales again.
         let a = t.pointer(&cx, &ev(PointerKind::Drag, 220.0, 230.0));
         assert_eq!(a[..2], [Action::Cancel, Action::Begin("Scale".into())]);
-        assert_eq!(t.pointer(&cx, &ev(PointerKind::Up, 220.0, 230.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &ev(PointerKind::Up, 220.0, 230.0)),
+            vec![Action::Commit]
+        );
         // Cmd held during a side handle's drag shears.
         t.pointer(&cx, &ev(PointerKind::Down, 150.0, 100.0));
         t.pointer(&cx, &ev(PointerKind::Drag, 155.0, 100.0));
@@ -453,7 +562,12 @@ mod tests {
             )
         );
         t.pointer(&cx, &ev(PointerKind::Up, 220.0, 230.0));
-        let q = distort_quad(Rect::new(0.0, 0.0, 10.0, 10.0), Handle::TopLeft, Vec2::new(2.0, 0.0), DistortMode::Perspective);
+        let q = distort_quad(
+            Rect::new(0.0, 0.0, 10.0, 10.0),
+            Handle::TopLeft,
+            Vec2::new(2.0, 0.0),
+            DistortMode::Perspective,
+        );
         assert_eq!(q[0], Point::new(2.0, 0.0));
         assert_eq!(q[1], Point::new(8.0, 0.0));
         assert_eq!(q[2], Point::new(10.0, 10.0));

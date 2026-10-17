@@ -51,7 +51,10 @@ fn split(size: f64, pct: f64) -> (f64, f64) {
 }
 
 fn blur(sigma: f64) -> Filter {
-    Filter::from_primitive(FilterPrimitive::GaussianBlur { std_deviation: sigma.max(0.0) as f32, edge_mode: EdgeMode::None })
+    Filter::from_primitive(FilterPrimitive::GaussianBlur {
+        std_deviation: sigma.max(0.0) as f32,
+        edge_mode: EdgeMode::None,
+    })
 }
 
 fn shadow(sigma: f64, color: peniko::Color) -> Filter {
@@ -66,15 +69,30 @@ fn shadow(sigma: f64, color: peniko::Color) -> Filter {
 
 impl Renderer {
     /// Draw an item with soft effects: below-effects, the (feathered) body, inner shadow.
-    pub(crate) fn draw_item_fx(&mut self, ctx: &mut RenderContext, f: &Frame, it: &Item, bp: &BezPath, xf: Affine, page: Option<usize>) {
+    pub(crate) fn draw_item_fx(
+        &mut self,
+        ctx: &mut RenderContext,
+        f: &Frame,
+        it: &Item,
+        bp: &BezPath,
+        xf: Affine,
+        page: Option<usize>,
+    ) {
         let doc = f.doc;
         let e = &it.effects;
-        let sw = if it.stroke.is_none() { 0.0 } else { it.stroke.extent() };
+        let sw = if it.stroke.is_none() {
+            0.0
+        } else {
+            it.stroke.extent()
+        };
         // Spread-space reach of what the object paints.
-        let reach = xf.transform_rect_bbox(bp.bounding_box()).inflate(sw + 1.0, sw + 1.0);
+        let reach = xf
+            .transform_rect_bbox(bp.bounding_box())
+            .inflate(sw + 1.0, sw + 1.0);
         // The silhouette is the shape when the object paints its area (fill / image); text frames
         // without a fill cast the shadow of their text only, which can't be grown.
-        let solid = !it.fill.is_none() || matches!(it.content, designcraft_doc::Content::Graphic(_));
+        let solid =
+            !it.fill.is_none() || matches!(it.content, designcraft_doc::Content::Graphic(_));
         let mut below = vec![];
         if e.outer_glow.on {
             let g = &e.outer_glow;
@@ -82,17 +100,28 @@ impl Renderer {
         }
         if e.drop_shadow.on {
             let d = &e.drop_shadow;
-            below.push((offset(doc.light_angle(d.angle, d.global_light), d.distance), d.size, d.spread, d.color.clone(), d.opacity));
+            below.push((
+                offset(doc.light_angle(d.angle, d.global_light), d.distance),
+                d.size,
+                d.spread,
+                d.color.clone(),
+                d.opacity,
+            ));
         }
         for (off, size, pct, color, opacity) in below {
-            let Some(c) = doc.resolve_color(&color, 1.0) else { continue };
+            let Some(c) = doc.resolve_color(&color, 1.0) else {
+                continue;
+            };
             let (sigma, grow) = split(size, pct);
             let filter = shadow(sigma, color_of(&c, opacity.clamp(0.0, 1.0)));
             // The offset moves the geometry, not the filter: vello drops layer content that lies
             // entirely outside the viewport before filtering.
             let r = (reach + off).inflate(grow, grow);
             self.with_filters(ctx, f, r, sigma, |me, c, fr| {
-                let moved = Frame { view: fr.view * Affine::translate(off), ..*fr };
+                let moved = Frame {
+                    view: fr.view * Affine::translate(off),
+                    ..*fr
+                };
                 c.set_transform(moved.view);
                 c.push_layer(None, None, None, None, Some(filter));
                 me.draw_body(c, &moved, it, bp, xf, page);
@@ -108,7 +137,8 @@ impl Renderer {
         // Gradient feather: the object (feathered or not) drawn in its own layer, then kept as
         // much as the opacity gradient says.
         let gf = &e.gradient_feather;
-        let directional = e.directional_feather.on && e.directional_feather.widths.iter().any(|w| *w > 0.0);
+        let directional =
+            e.directional_feather.on && e.directional_feather.widths.iter().any(|w| *w > 0.0);
         if gf.on || directional {
             ctx.set_transform(Affine::IDENTITY);
             ctx.push_layer(None, None, None, None, None);
@@ -122,14 +152,26 @@ impl Renderer {
                 me.draw_body(c, fr, it, bp, xf, page);
                 // Keep the body where the blurred inset silhouette is.
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestIn)), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Normal, Compose::DestIn)),
+                    None,
+                    None,
+                    None,
+                );
                 c.set_transform(fr.view);
                 c.push_layer(None, None, None, None, Some(blur(w / 4.0)));
                 c.set_transform(fr.view * xf);
                 c.set_paint(peniko::Color::BLACK);
                 c.fill_path(bp);
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestOut)), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Normal, Compose::DestOut)),
+                    None,
+                    None,
+                    None,
+                );
                 c.set_transform(fr.view * xf);
                 c.set_stroke(kurbo::Stroke::new(w).with_join(kurbo::Join::Round));
                 c.stroke_path(bp);
@@ -145,12 +187,32 @@ impl Renderer {
         let df = &e.directional_feather;
         if df.on && df.widths.iter().any(|w| *w > 0.0) {
             let b = it.inner_bounds();
-            let area = if xf.determinant().abs() > 1e-12 { xf.inverse().transform_rect_bbox(reach) } else { b };
+            let area = if xf.determinant().abs() > 1e-12 {
+                xf.inverse().transform_rect_bbox(reach)
+            } else {
+                b
+            };
             let ramps = [
-                (df.widths[0], kurbo::Point::new(b.x0, b.y0), kurbo::Point::new(b.x0, b.y0 + df.widths[0])),
-                (df.widths[1], kurbo::Point::new(b.x0, b.y0), kurbo::Point::new(b.x0 + df.widths[1], b.y0)),
-                (df.widths[2], kurbo::Point::new(b.x0, b.y1), kurbo::Point::new(b.x0, b.y1 - df.widths[2])),
-                (df.widths[3], kurbo::Point::new(b.x1, b.y0), kurbo::Point::new(b.x1 - df.widths[3], b.y0)),
+                (
+                    df.widths[0],
+                    kurbo::Point::new(b.x0, b.y0),
+                    kurbo::Point::new(b.x0, b.y0 + df.widths[0]),
+                ),
+                (
+                    df.widths[1],
+                    kurbo::Point::new(b.x0, b.y0),
+                    kurbo::Point::new(b.x0 + df.widths[1], b.y0),
+                ),
+                (
+                    df.widths[2],
+                    kurbo::Point::new(b.x0, b.y1),
+                    kurbo::Point::new(b.x0, b.y1 - df.widths[2]),
+                ),
+                (
+                    df.widths[3],
+                    kurbo::Point::new(b.x1, b.y0),
+                    kurbo::Point::new(b.x1 - df.widths[3], b.y0),
+                ),
             ];
             for (w, p0, p1) in ramps {
                 if w <= 0.0 {
@@ -161,7 +223,13 @@ impl Renderer {
                     peniko::ColorStop::from((1.0, peniko::Color::from_rgba8(0, 0, 0, 255))),
                 ];
                 ctx.set_transform(Affine::IDENTITY);
-                ctx.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestIn)), None, None, None);
+                ctx.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Normal, Compose::DestIn)),
+                    None,
+                    None,
+                    None,
+                );
                 ctx.set_transform(f.view * xf);
                 ctx.set_paint(peniko::Gradient::new_linear(p0, p1).with_stops(stops.as_slice()));
                 ctx.fill_rect(&area.inflate(4.0, 4.0));
@@ -171,18 +239,34 @@ impl Renderer {
         }
         if gf.on {
             let (p0, p1) = gf.points(it.inner_bounds());
-            let stop = |o: f32, a: f32| peniko::ColorStop::from((o, peniko::Color::from_rgba8(0, 0, 0, (a.clamp(0.0, 1.0) * 255.0).round() as u8)));
+            let stop = |o: f32, a: f32| {
+                peniko::ColorStop::from((
+                    o,
+                    peniko::Color::from_rgba8(0, 0, 0, (a.clamp(0.0, 1.0) * 255.0).round() as u8),
+                ))
+            };
             let stops = [stop(0.0, gf.start), stop(1.0, gf.end)];
             let grad = if gf.radial {
-                peniko::Gradient::new_radial(p0, (p1 - p0).hypot().max(1e-3) as f32).with_stops(stops.as_slice())
+                peniko::Gradient::new_radial(p0, (p1 - p0).hypot().max(1e-3) as f32)
+                    .with_stops(stops.as_slice())
             } else {
                 peniko::Gradient::new_linear(p0, p1).with_stops(stops.as_slice())
             };
             ctx.set_transform(Affine::IDENTITY);
-            ctx.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestIn)), None, None, None);
+            ctx.push_layer(
+                None,
+                Some(BlendMode::new(Mix::Normal, Compose::DestIn)),
+                None,
+                None,
+                None,
+            );
             ctx.set_transform(f.view * xf);
             ctx.set_paint(grad);
-            let area = if xf.determinant().abs() > 1e-12 { xf.inverse().transform_rect_bbox(reach) } else { it.inner_bounds() };
+            let area = if xf.determinant().abs() > 1e-12 {
+                xf.inverse().transform_rect_bbox(reach)
+            } else {
+                it.inner_bounds()
+            };
             ctx.fill_rect(&area.inflate(4.0, 4.0));
             ctx.reset_paint_transform();
             ctx.pop_layer();
@@ -200,7 +284,18 @@ impl Renderer {
             let s = &e.inner_shadow;
             let (sigma, choke) = split(s.size, s.choke);
             let off = offset(doc.light_angle(s.angle, s.global_light), s.distance);
-            self.inner_edge(ctx, f, reach, bp, xf, off, sigma, choke, color_of(&c, s.opacity.clamp(0.0, 1.0)), Mix::Normal);
+            self.inner_edge(
+                ctx,
+                f,
+                reach,
+                bp,
+                xf,
+                off,
+                sigma,
+                choke,
+                color_of(&c, s.opacity.clamp(0.0, 1.0)),
+                Mix::Normal,
+            );
         }
         // Inner glow: from the edges inwards (or out from the centre), screened over the object.
         if e.inner_glow.on
@@ -214,7 +309,13 @@ impl Renderer {
                     c.set_transform(fr.view * xf);
                     c.push_clip_layer(bp);
                     c.set_transform(Affine::IDENTITY);
-                    c.push_layer(None, Some(BlendMode::new(Mix::Screen, Compose::SrcOver)), None, None, None);
+                    c.push_layer(
+                        None,
+                        Some(BlendMode::new(Mix::Screen, Compose::SrcOver)),
+                        None,
+                        None,
+                        None,
+                    );
                     c.set_transform(fr.view);
                     c.push_layer(None, None, None, None, Some(blur(sigma)));
                     c.set_transform(fr.view * xf);
@@ -222,10 +323,19 @@ impl Renderer {
                     c.fill_path(bp);
                     // Fade towards the edge: cut a band of the glow's size away.
                     c.set_transform(Affine::IDENTITY);
-                    c.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::DestOut)), None, None, None);
+                    c.push_layer(
+                        None,
+                        Some(BlendMode::new(Mix::Normal, Compose::DestOut)),
+                        None,
+                        None,
+                        None,
+                    );
                     c.set_transform(fr.view * xf);
                     c.set_paint(peniko::Color::BLACK);
-                    c.set_stroke(kurbo::Stroke::new((g.size - choke).max(0.5) * 2.0).with_join(kurbo::Join::Round));
+                    c.set_stroke(
+                        kurbo::Stroke::new((g.size - choke).max(0.5) * 2.0)
+                            .with_join(kurbo::Join::Round),
+                    );
                     c.stroke_path(bp);
                     c.pop_layer();
                     c.pop_layer();
@@ -233,7 +343,18 @@ impl Renderer {
                     c.pop_layer();
                 });
             } else {
-                self.inner_edge(ctx, f, reach, bp, xf, Vec2::ZERO, sigma, choke, paint, Mix::Screen);
+                self.inner_edge(
+                    ctx,
+                    f,
+                    reach,
+                    bp,
+                    xf,
+                    Vec2::ZERO,
+                    sigma,
+                    choke,
+                    paint,
+                    Mix::Screen,
+                );
             }
         }
         // Satin: the shape shifted both ways along the angle, blurred, where exactly one covers.
@@ -249,7 +370,13 @@ impl Renderer {
                 c.set_transform(fr.view * xf);
                 c.push_clip_layer(bp);
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Multiply, Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
                 c.set_transform(fr.view);
                 c.push_layer(None, None, None, None, Some(blur(sigma)));
                 if invert {
@@ -258,12 +385,31 @@ impl Renderer {
                     c.fill_path(bp);
                 }
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(Mix::Normal, if invert { Compose::DestOut } else { Compose::SrcOver })), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(
+                        Mix::Normal,
+                        if invert {
+                            Compose::DestOut
+                        } else {
+                            Compose::SrcOver
+                        },
+                    )),
+                    None,
+                    None,
+                    None,
+                );
                 c.set_transform(fr.view * Affine::translate(off) * xf);
                 c.set_paint(paint);
                 c.fill_path(bp);
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(Mix::Normal, Compose::Xor)), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(Mix::Normal, Compose::Xor)),
+                    None,
+                    None,
+                    None,
+                );
                 c.set_transform(fr.view * Affine::translate(-off) * xf);
                 c.fill_path(bp);
                 c.pop_layer();
@@ -276,14 +422,39 @@ impl Renderer {
         // Bevel and Emboss (inner bevel): highlight from the lit side, shadow from the other.
         if e.bevel.on {
             let b = &e.bevel;
-            let off = offset(doc.light_angle(b.angle, b.global_light), b.size * (b.depth / 100.0).clamp(0.01, 10.0) * 0.5);
+            let off = offset(
+                doc.light_angle(b.angle, b.global_light),
+                b.size * (b.depth / 100.0).clamp(0.01, 10.0) * 0.5,
+            );
             let sigma = b.size.max(0.0) / 2.0;
             if let Some(c) = doc.resolve_color(&b.highlight, 1.0) {
                 // The inverse shape moved away from the light lights the edges facing it.
-                self.inner_edge(ctx, f, reach, bp, xf, off, sigma, 0.0, color_of(&c, b.highlight_opacity.clamp(0.0, 1.0)), Mix::Screen);
+                self.inner_edge(
+                    ctx,
+                    f,
+                    reach,
+                    bp,
+                    xf,
+                    off,
+                    sigma,
+                    0.0,
+                    color_of(&c, b.highlight_opacity.clamp(0.0, 1.0)),
+                    Mix::Screen,
+                );
             }
             if let Some(c) = doc.resolve_color(&b.shadow, 1.0) {
-                self.inner_edge(ctx, f, reach, bp, xf, -off, sigma, 0.0, color_of(&c, b.shadow_opacity.clamp(0.0, 1.0)), Mix::Multiply);
+                self.inner_edge(
+                    ctx,
+                    f,
+                    reach,
+                    bp,
+                    xf,
+                    -off,
+                    sigma,
+                    0.0,
+                    color_of(&c, b.shadow_opacity.clamp(0.0, 1.0)),
+                    Mix::Multiply,
+                );
             }
         }
     }
@@ -309,14 +480,23 @@ impl Renderer {
             c.push_clip_layer(bp);
             if mix != Mix::Normal {
                 c.set_transform(Affine::IDENTITY);
-                c.push_layer(None, Some(BlendMode::new(mix, Compose::SrcOver)), None, None, None);
+                c.push_layer(
+                    None,
+                    Some(BlendMode::new(mix, Compose::SrcOver)),
+                    None,
+                    None,
+                    None,
+                );
             }
             c.set_transform(fr.view);
             c.push_layer(None, None, None, None, Some(blur(sigma)));
             // Everything outside the offset shape, so the colour bleeds in from the edges.
             let m = Affine::translate(off) * xf;
             let pad = sigma * 4.0 + choke + off.hypot() + 4.0 * fr.px;
-            let mut inv = m.transform_rect_bbox(bp.bounding_box()).inflate(pad, pad).to_path(0.1);
+            let mut inv = m
+                .transform_rect_bbox(bp.bounding_box())
+                .inflate(pad, pad)
+                .to_path(0.1);
             let mut shape = bp.clone();
             shape.apply_affine(m);
             inv.extend(shape.iter());
@@ -352,22 +532,44 @@ impl Renderer {
         }
         // 3σ of the Gaussian in pixels, plus a pixel of antialiasing.
         let spread = sigma.max(0.0) * 3.0 / f.px + 2.0;
-        let screen = Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64).inflate(spread, spread);
-        let r = f.view.transform_rect_bbox(reach).inflate(spread, spread).intersect(screen);
+        let screen =
+            Rect::new(0.0, 0.0, ctx.width() as f64, ctx.height() as f64).inflate(spread, spread);
+        let r = f
+            .view
+            .transform_rect_bbox(reach)
+            .inflate(spread, spread)
+            .intersect(screen);
         let (x0, y0) = (r.x0.floor(), r.y0.floor());
-        let (w, h) = ((r.x1.ceil() - x0).min(crate::MAX_SIDE as f64), (r.y1.ceil() - y0).min(crate::MAX_SIDE as f64));
+        let (w, h) = (
+            (r.x1.ceil() - x0).min(crate::MAX_SIDE as f64),
+            (r.y1.ceil() - y0).min(crate::MAX_SIDE as f64),
+        );
         if w < 1.0 || h < 1.0 {
             return;
         }
         let (w, h) = (w as u16, h as u16);
-        let mut off = RenderContext::new_with(w, h, vello_cpu::RenderSettings { num_threads: 0, ..Default::default() });
-        let shifted = Frame { mt: false, view: Affine::translate((-x0, -y0)) * f.view, ..*f };
+        let mut off = RenderContext::new_with(
+            w,
+            h,
+            vello_cpu::RenderSettings {
+                num_threads: 0,
+                ..Default::default()
+            },
+        );
+        let shifted = Frame {
+            mt: false,
+            view: Affine::translate((-x0, -y0)) * f.view,
+            ..*f
+        };
         draw(self, &mut off, &shifted);
         off.flush();
         let mut pm = vello_cpu::Pixmap::new(w, h);
         off.render(&mut pm, &mut self.resources);
         ctx.set_transform(Affine::translate((x0, y0)));
-        ctx.set_paint(vello_cpu::Image { image: vello_cpu::ImageSource::Pixmap(std::sync::Arc::new(pm)), sampler: peniko::ImageSampler::default() });
+        ctx.set_paint(vello_cpu::Image {
+            image: vello_cpu::ImageSource::Pixmap(std::sync::Arc::new(pm)),
+            sampler: peniko::ImageSampler::default(),
+        });
         ctx.fill_rect(&Rect::new(0.0, 0.0, w as f64, h as f64));
         ctx.set_transform(Affine::IDENTITY);
     }

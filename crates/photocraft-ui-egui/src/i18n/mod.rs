@@ -62,7 +62,14 @@ const RTL_LANGUAGES: [&str; 10] = ["ar", "ckb", "dv", "fa", "he", "ps", "sd", "u
 /// The reading direction of a language code (`ar`, `fa-ir`, `he`; any case).
 pub fn dir_for_code(code: &str) -> Dir {
     let primary = code.split(['-', '_']).next().unwrap_or("");
-    if RTL_LANGUAGES.iter().any(|l| l.eq_ignore_ascii_case(primary)) { Dir::Rtl } else { Dir::Ltr }
+    if RTL_LANGUAGES
+        .iter()
+        .any(|l| l.eq_ignore_ascii_case(primary))
+    {
+        Dir::Rtl
+    } else {
+        Dir::Ltr
+    }
 }
 
 fn plural_one_other(n: u64) -> usize {
@@ -133,7 +140,10 @@ fn inflate(source: &[u8]) -> Result<String, String> {
     if source.is_empty() {
         return Ok(text);
     }
-    flate2::read::DeflateDecoder::new(source).take(MAX_CATALOG_BYTES + 1).read_to_string(&mut text).map_err(|e| e.to_string())?;
+    flate2::read::DeflateDecoder::new(source)
+        .take(MAX_CATALOG_BYTES + 1)
+        .read_to_string(&mut text)
+        .map_err(|e| e.to_string())?;
     if text.len() as u64 > MAX_CATALOG_BYTES {
         return Err(format!("over {MAX_CATALOG_BYTES} bytes"));
     }
@@ -151,7 +161,12 @@ fn unpack(source: &[u8]) -> Result<String, String> {
     if source.is_empty() {
         return Ok(String::new());
     }
-    let keys: Vec<&str> = KEY_TEXT.get_or_init(|| inflate(KEYS)).as_ref().map_err(|e| format!("catalog keys: {e}"))?.split('\n').collect();
+    let keys: Vec<&str> = KEY_TEXT
+        .get_or_init(|| inflate(KEYS))
+        .as_ref()
+        .map_err(|e| format!("catalog keys: {e}"))?
+        .split('\n')
+        .collect();
     expand(&inflate(source)?, &keys)
 }
 
@@ -169,7 +184,11 @@ fn expand(packed: &str, keys: &[&str]) -> Result<String, String> {
         } else if let Some(rest) = line.strip_prefix('\x02') {
             let (offset, tr) = rest.split_once('\t').ok_or_else(bad)?;
             let offset: i64 = offset.parse().map_err(|_| bad())?;
-            let index = i64::try_from(next).ok().and_then(|n| n.checked_add(offset)).and_then(|i| usize::try_from(i).ok()).ok_or_else(bad)?;
+            let index = i64::try_from(next)
+                .ok()
+                .and_then(|n| n.checked_add(offset))
+                .and_then(|i| usize::try_from(i).ok())
+                .ok_or_else(bad)?;
             (index, tr)
         } else {
             text.push_str(line.strip_prefix('\x03').unwrap_or(line));
@@ -188,38 +207,185 @@ fn expand(packed: &str, keys: &[&str]) -> Result<String, String> {
 
 /// The registry. English first: it is the fallback and the source language.
 pub static LANGUAGES: [LangInfo; 21] = [
-    LangInfo { code: "en", name: "English", source: b"", plural: plural_one_other, complete_menus: false, catalog: OnceLock::new() },
-    LangInfo { code: "ja", name: "日本語", source: catalog!("ja"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "zh-hans", name: "简体中文", source: catalog!("zh-hans"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "en",
+        name: "English",
+        source: b"",
+        plural: plural_one_other,
+        complete_menus: false,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "ja",
+        name: "日本語",
+        source: catalog!("ja"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "zh-hans",
+        name: "简体中文",
+        source: catalog!("zh-hans"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Traditional Chinese in the vocabulary used in Taiwan; `zh-TW`, `zh-HK`, `zh-MO` and `zh-Hant-*`
     // locales all resolve here (see `candidates`).
-    LangInfo { code: "zh-hant", name: "繁體中文", source: catalog!("zh-hant"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "es", name: "Español", source: catalog!("es"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "ru", name: "Русский", source: catalog!("ru"), plural: plural_russian, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "zh-hant",
+        name: "繁體中文",
+        source: catalog!("zh-hant"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "es",
+        name: "Español",
+        source: catalog!("es"),
+        plural: plural_one_other,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "ru",
+        name: "Русский",
+        source: catalog!("ru"),
+        plural: plural_russian,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Ukrainian has the same one/few/many rule for integer counts.
-    LangInfo { code: "uk", name: "Українська", source: catalog!("uk"), plural: plural_russian, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "uk",
+        name: "Українська",
+        source: catalog!("uk"),
+        plural: plural_russian,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Serbian (Latin script, Ekavian) has the same one/few/many rule for integer counts. `sr-RS`,
     // `sr-Latn-*` and `sr_RS@latin` resolve here; so do Cyrillic `sr` locales, which read Latin
     // rather than English.
-    LangInfo { code: "sr", name: "Srpski", source: catalog!("sr"), plural: plural_russian, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "cs", name: "Čeština", source: catalog!("cs"), plural: plural_cs, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "fr", name: "Français", source: catalog!("fr"), plural: plural_fr, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "id", name: "Bahasa Indonesia", source: catalog!("id"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "ko", name: "한국어", source: catalog!("ko"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "pl", name: "Polski", source: catalog!("pl"), plural: plural_polish, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "de", name: "Deutsch", source: catalog!("de"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "sr",
+        name: "Srpski",
+        source: catalog!("sr"),
+        plural: plural_russian,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "cs",
+        name: "Čeština",
+        source: catalog!("cs"),
+        plural: plural_cs,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "fr",
+        name: "Français",
+        source: catalog!("fr"),
+        plural: plural_fr,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "id",
+        name: "Bahasa Indonesia",
+        source: catalog!("id"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "ko",
+        name: "한국어",
+        source: catalog!("ko"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "pl",
+        name: "Polski",
+        source: catalog!("pl"),
+        plural: plural_polish,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "de",
+        name: "Deutsch",
+        source: catalog!("de"),
+        plural: plural_one_other,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Brazilian Portuguese; `pt`, `pt-BR` and `pt-PT` locales all resolve here (see `candidates`).
-    LangInfo { code: "pt-br", name: "Português (Brasil)", source: catalog!("pt-br"), plural: plural_pt, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "el", name: "Ελληνικά", source: catalog!("el"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "pt-br",
+        name: "Português (Brasil)",
+        source: catalog!("pt-br"),
+        plural: plural_pt,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "el",
+        name: "Ελληνικά",
+        source: catalog!("el"),
+        plural: plural_one_other,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Dutch; `nl-NL` and `nl-BE` locales both resolve here.
-    LangInfo { code: "nl", name: "Nederlands", source: catalog!("nl"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
-    LangInfo { code: "it", name: "Italiano", source: catalog!("it"), plural: plural_one_other, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "nl",
+        name: "Nederlands",
+        source: catalog!("nl"),
+        plural: plural_one_other,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
+    LangInfo {
+        code: "it",
+        name: "Italiano",
+        source: catalog!("it"),
+        plural: plural_one_other,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Hungarian: a count takes the singular noun ("3 réteg"), so one plural form.
-    LangInfo { code: "hu", name: "Magyar", source: catalog!("hu"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "hu",
+        name: "Magyar",
+        source: catalog!("hu"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Turkish; `tr`, `tr-TR` and `tr_TR` locales resolve here.
-    LangInfo { code: "tr", name: "Türkçe", source: catalog!("tr"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "tr",
+        name: "Türkçe",
+        source: catalog!("tr"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
     // Vietnamese; `vi-VN` resolves here.
-    LangInfo { code: "vi", name: "Tiếng Việt", source: catalog!("vi"), plural: plural_none, complete_menus: true, catalog: OnceLock::new() },
+    LangInfo {
+        code: "vi",
+        name: "Tiếng Việt",
+        source: catalog!("vi"),
+        plural: plural_none,
+        complete_menus: true,
+        catalog: OnceLock::new(),
+    },
 ];
 
 impl LangInfo {
@@ -263,7 +429,10 @@ impl Lang {
 
     /// A language by its exact code.
     pub fn from_code(code: &str) -> Option<Lang> {
-        LANGUAGES.iter().find(|l| l.code.eq_ignore_ascii_case(code)).map(Lang)
+        LANGUAGES
+            .iter()
+            .find(|l| l.code.eq_ignore_ascii_case(code))
+            .map(Lang)
     }
 
     /// Resolve the `interface.language` preference: a language code, or `auto` (and anything
@@ -272,7 +441,9 @@ impl Lang {
         if pref.eq_ignore_ascii_case("auto") {
             return system_lang();
         }
-        Lang::from_code(pref).or_else(|| lang_from_tag(pref)).unwrap_or_else(system_lang)
+        Lang::from_code(pref)
+            .or_else(|| lang_from_tag(pref))
+            .unwrap_or_else(system_lang)
     }
 
     /// Every registered language.
@@ -302,16 +473,27 @@ impl Lang {
 /// Candidate language codes for a locale tag, most specific first: `zh_TW.UTF-8` →
 /// `zh-tw`, `zh-hant`, `zh`.
 fn candidates(tag: &str) -> Vec<String> {
-    let base = tag.split(['.', '@']).next().unwrap_or("").replace('_', "-").to_ascii_lowercase();
+    let base = tag
+        .split(['.', '@'])
+        .next()
+        .unwrap_or("")
+        .replace('_', "-")
+        .to_ascii_lowercase();
     let parts: Vec<&str> = base.split('-').filter(|p| !p.is_empty()).collect();
-    let Some(&primary) = parts.first() else { return Vec::new() };
+    let Some(&primary) = parts.first() else {
+        return Vec::new();
+    };
     let mut out = Vec::new();
     for n in (1..=parts.len()).rev() {
         out.push(parts[..n].join("-"));
     }
     if primary == "zh" && !parts.iter().any(|p| matches!(*p, "hans" | "hant")) {
         // Chinese by region when no script is given.
-        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) { "zh-hant" } else { "zh-hans" };
+        let script = if parts.iter().any(|p| matches!(*p, "tw" | "hk" | "mo")) {
+            "zh-hant"
+        } else {
+            "zh-hans"
+        };
         out.insert(out.len() - 1, script.to_string());
     }
     if primary == "pt" && !out.iter().any(|c| c == "pt-br") {
@@ -366,7 +548,10 @@ pub fn language_scope(lang: Lang) -> impl Drop {
             set_current(self.previous);
         }
     }
-    let restore = Restore { previous: current(), _thread: std::marker::PhantomData };
+    let restore = Restore {
+        previous: current(),
+        _thread: std::marker::PhantomData,
+    };
     set_current(lang);
     restore
 }
@@ -402,7 +587,9 @@ pub fn tr(lang: Lang, s: &str) -> &str {
 
 /// Like [`tr`], for an English string that needs a disambiguating `context`.
 pub fn tr_ctx<'a>(lang: Lang, context: &str, s: &'a str) -> &'a str {
-    lang.catalog().contextual(context, s).unwrap_or_else(|| tr(lang, s))
+    lang.catalog()
+        .contextual(context, s)
+        .unwrap_or_else(|| tr(lang, s))
 }
 
 /// A string keyed by its command id, falling back to the translation of the English `label`.
@@ -422,7 +609,10 @@ pub fn fmt(template: &str, args: &[(&str, &str)]) -> String {
 /// A plural-aware message: `one`/`other` are the English forms (with `{n}` where the count goes).
 pub fn trn(lang: Lang, n: u64, one: &str, other: &str) -> String {
     let idx = (lang.0.plural)(n);
-    let text = lang.catalog().plural(one, other, idx).unwrap_or(if n == 1 { one } else { other });
+    let text = lang
+        .catalog()
+        .plural(one, other, idx)
+        .unwrap_or(if n == 1 { one } else { other });
     fmt(text, &[("n", &n.to_string())])
 }
 
@@ -451,7 +641,10 @@ mod tests {
             assert_eq!(lang_from_tag(tag), Some(VI()), "{tag}");
         }
         assert_eq!(VI().name(), "Tiếng Việt");
-        assert!(VI().complete_menus(), "Vietnamese translates every source key");
+        assert!(
+            VI().complete_menus(),
+            "Vietnamese translates every source key"
+        );
         assert_eq!(Lang::from_pref("vi"), VI());
         assert_eq!(Lang::from_pref("VI"), VI());
     }
@@ -486,7 +679,14 @@ mod tests {
         assert_eq!(lang_from_tag("zh-Hant-TW"), Some(ZH()));
         assert_eq!(lang_from_tag("zh-Hant-HK"), Some(ZH()));
         // Simplified Chinese locales never pick up the Traditional catalog: they resolve to `zh-hans`.
-        for tag in ["zh-CN", "zh_CN.UTF-8", "zh_SG", "zh-Hans", "zh-Hans-CN", "zh"] {
+        for tag in [
+            "zh-CN",
+            "zh_CN.UTF-8",
+            "zh_SG",
+            "zh-Hans",
+            "zh-Hans-CN",
+            "zh",
+        ] {
             assert_ne!(lang_from_tag(tag), Some(ZH()), "{tag}");
             assert_eq!(lang_from_tag(tag), Lang::from_code("zh-hans"), "{tag}");
         }
@@ -517,12 +717,21 @@ mod tests {
     #[test]
     fn simplified_chinese_covers_dynamic_shortcuts_and_layer_counts() {
         let zh = Lang::from_code("zh-hans").expect("zh-hans registered");
-        assert!(zh.complete_menus(), "Simplified Chinese must participate in the coverage gates");
+        assert!(
+            zh.complete_menus(),
+            "Simplified Chinese must participate in the coverage gates"
+        );
         assert_eq!(Lang::from_pref("ZH-Hans"), zh);
         assert_eq!(tr(zh, "Pixel Layer"), "像素图层");
         assert_eq!(tr(zh, "System Info"), "系统信息");
         for key in ["⌥", "Alt"] {
-            assert_eq!(fmt(tr(zh, "Add a mask  (from the selection; {key} inverts)"), &[("key", key)]), format!("添加蒙版  （基于选区；{key} 反相）"));
+            assert_eq!(
+                fmt(
+                    tr(zh, "Add a mask  (from the selection; {key} inverts)"),
+                    &[("key", key)]
+                ),
+                format!("添加蒙版  （基于选区；{key} 反相）")
+            );
         }
         for n in [0, 1, 3] {
             assert_eq!(trn(zh, n, "{n} layer", "{n} layers"), format!("{n} 个图层"));
@@ -581,7 +790,12 @@ mod tests {
         assert!(hu.complete_menus());
         assert_eq!(hu.name(), "Magyar");
         assert_eq!(tr(hu, "Layer"), "Réteg");
-        for (n, expected) in [(0, "0 réteg"), (1, "1 réteg"), (3, "3 réteg"), (21, "21 réteg")] {
+        for (n, expected) in [
+            (0, "0 réteg"),
+            (1, "1 réteg"),
+            (3, "3 réteg"),
+            (21, "21 réteg"),
+        ] {
             assert_eq!(trn(hu, n, "{n} layer", "{n} layers"), expected);
         }
         assert_eq!(tr_ctx(hu, "layerLabel", "Red"), "Piros");
@@ -633,19 +847,39 @@ mod tests {
             (
                 "Exported {n} swatch to {file}",
                 "Exported {n} swatches to {file}",
-                ["Экспортирован {n} образец в {file}", "Экспортированы {n} образца в {file}", "Экспортировано {n} образцов в {file}"],
+                [
+                    "Экспортирован {n} образец в {file}",
+                    "Экспортированы {n} образца в {file}",
+                    "Экспортировано {n} образцов в {file}",
+                ],
             ),
             (
                 "Imported {n} brush from {group}",
                 "Imported {n} brushes from {group}",
-                ["Импортирована {n} кисть из {group}", "Импортированы {n} кисти из {group}", "Импортировано {n} кистей из {group}"],
+                [
+                    "Импортирована {n} кисть из {group}",
+                    "Импортированы {n} кисти из {group}",
+                    "Импортировано {n} кистей из {group}",
+                ],
             ),
             (
                 "Imported {n} swatch from {file}",
                 "Imported {n} swatches from {file}",
-                ["Импортирован {n} образец из {file}", "Импортированы {n} образца из {file}", "Импортировано {n} образцов из {file}"],
+                [
+                    "Импортирован {n} образец из {file}",
+                    "Импортированы {n} образца из {file}",
+                    "Импортировано {n} образцов из {file}",
+                ],
             ),
-            ("Played {n} step", "Played {n} steps", ["Воспроизведён {n} шаг", "Воспроизведены {n} шага", "Воспроизведено {n} шагов"]),
+            (
+                "Played {n} step",
+                "Played {n} steps",
+                [
+                    "Воспроизведён {n} шаг",
+                    "Воспроизведены {n} шага",
+                    "Воспроизведено {n} шагов",
+                ],
+            ),
             (
                 "Updated {n} linked smart object changed on disk",
                 "Updated {n} linked smart objects changed on disk",
@@ -664,16 +898,32 @@ mod tests {
                     "Удалено {n} слоёв, записанных в этом варианте. Обновите вариант или сбросьте предупреждение.",
                 ],
             ),
-            ("{n} sample point removed", "{n} sample points removed", ["Удалена {n} точка замера", "Удалены {n} точки замера", "Удалено {n} точек замера"]),
+            (
+                "{n} sample point removed",
+                "{n} sample points removed",
+                [
+                    "Удалена {n} точка замера",
+                    "Удалены {n} точки замера",
+                    "Удалено {n} точек замера",
+                ],
+            ),
             (
                 "Loaded {n} action from {file}",
                 "Loaded {n} actions from {file}",
-                ["Загружена {n} операция из {file}", "Загружены {n} операции из {file}", "Загружено {n} операций из {file}"],
+                [
+                    "Загружена {n} операция из {file}",
+                    "Загружены {n} операции из {file}",
+                    "Загружено {n} операций из {file}",
+                ],
             ),
             (
                 "Saved {n} action to {file}",
                 "Saved {n} actions to {file}",
-                ["Сохранена {n} операция в {file}", "Сохранены {n} операции в {file}", "Сохранено {n} операций в {file}"],
+                [
+                    "Сохранена {n} операция в {file}",
+                    "Сохранены {n} операции в {file}",
+                    "Сохранено {n} операций в {file}",
+                ],
             ),
             (
                 "{n} step with no Photoshop equivalent left out",
@@ -686,18 +936,49 @@ mod tests {
             ),
         ];
         // Include zero, teens, and compound counts as well as each basic form.
-        for (n, form) in [(0, 2), (1, 0), (2, 1), (3, 1), (4, 1), (5, 2), (11, 2), (12, 2), (14, 2), (21, 0), (22, 1), (25, 2), (101, 0), (112, 2)] {
+        for (n, form) in [
+            (0, 2),
+            (1, 0),
+            (2, 1),
+            (3, 1),
+            (4, 1),
+            (5, 2),
+            (11, 2),
+            (12, 2),
+            (14, 2),
+            (21, 0),
+            (22, 1),
+            (25, 2),
+            (101, 0),
+            (112, 2),
+        ] {
             for (one, other, forms) in cases {
                 let expected = forms[form].replace("{n}", &n.to_string());
                 assert_eq!(trn(ru, n, one, other), expected, "{one}, n={n}");
             }
         }
         assert_eq!(
-            fmt(&trn(ru, 2, "Imported {n} brush from {group}", "Imported {n} brushes from {group}"), &[("group", "Кисти")]),
+            fmt(
+                &trn(
+                    ru,
+                    2,
+                    "Imported {n} brush from {group}",
+                    "Imported {n} brushes from {group}"
+                ),
+                &[("group", "Кисти")]
+            ),
             "Импортированы 2 кисти из Кисти"
         );
         assert_eq!(
-            fmt(&trn(ru, 22, "Loaded {n} action from {file}", "Loaded {n} actions from {file}"), &[("file", "actions.atn")]),
+            fmt(
+                &trn(
+                    ru,
+                    22,
+                    "Loaded {n} action from {file}",
+                    "Loaded {n} actions from {file}"
+                ),
+                &[("file", "actions.atn")]
+            ),
             "Загружены 22 операции из actions.atn"
         );
     }
@@ -709,9 +990,18 @@ mod tests {
         assert_eq!(tr_ctx(ru, "fontWeight", "Light"), "Лёгкий");
         assert_eq!(tr_ctx(ru, "fontWeight", "ExtraBold"), "Сверхжирный");
         assert_eq!(tr_ctx(ru, "fontWeight", "Black"), "Сверхжирный (Black)");
-        assert_eq!(tr(ru, "Delete and Fill Selection"), "Удалить и залить выделение");
-        assert_eq!(tr(ru, "Discard the embedded profile (don't color manage)"), "Не использовать встроенный профиль (без управления цветом)");
-        assert_eq!(tr(ru, "No object found there — drag a rectangle around it"), "Объект не найден — обведите его прямоугольником");
+        assert_eq!(
+            tr(ru, "Delete and Fill Selection"),
+            "Удалить и залить выделение"
+        );
+        assert_eq!(
+            tr(ru, "Discard the embedded profile (don't color manage)"),
+            "Не использовать встроенный профиль (без управления цветом)"
+        );
+        assert_eq!(
+            tr(ru, "No object found there — drag a rectangle around it"),
+            "Объект не найден — обведите его прямоугольником"
+        );
     }
 
     #[test]
@@ -719,7 +1009,15 @@ mod tests {
         let uk = Lang::from_code("uk").expect("uk registered");
         assert_eq!(uk.name(), "Українська");
         assert!(uk.complete_menus());
-        for tag in ["uk", "UK", "uk-UA", "uk_UA", "uk_UA.UTF-8", "uk-UA@euro", "uk-Cyrl-UA"] {
+        for tag in [
+            "uk",
+            "UK",
+            "uk-UA",
+            "uk_UA",
+            "uk_UA.UTF-8",
+            "uk-UA@euro",
+            "uk-Cyrl-UA",
+        ] {
             assert_eq!(lang_from_tag(tag), Some(uk), "{tag}");
             assert_eq!(Lang::from_pref(tag), uk, "{tag}");
         }
@@ -730,10 +1028,19 @@ mod tests {
         assert_eq!(tr_id(uk, "select.all", "All"), "Виділити все");
         assert_eq!(tr_ctx(uk, "cameraRaw", "Light"), "Світло");
         assert_eq!(tr_ctx(uk, "fontWeight", "Light"), "Легкий");
-        assert_eq!(fmt(tr(uk, "Camera Raw Filter ({layer})"), &[("layer", "Background")]), "Фільтр Camera Raw (Background)");
+        assert_eq!(
+            fmt(
+                tr(uk, "Camera Raw Filter ({layer})"),
+                &[("layer", "Background")]
+            ),
+            "Фільтр Camera Raw (Background)"
+        );
         for key in ["Alt", "⌥"] {
             assert_eq!(
-                fmt(tr(uk, "Add a mask  (from the selection; {key} inverts)"), &[("key", key)]),
+                fmt(
+                    tr(uk, "Add a mask  (from the selection; {key} inverts)"),
+                    &[("key", key)]
+                ),
                 format!("Додати маску  (із виділення; {key} інвертує)")
             );
         }
@@ -767,8 +1074,14 @@ mod tests {
             (u64::MAX, "елементів", "шарів"),
         ] {
             assert_eq!(trn(uk, n, "{n} item", "{n} items"), format!("{n} {item}"));
-            assert_eq!(trn(uk, n, "{n} layer", "{n} layers"), format!("{n} {layer}"));
-            assert_eq!(trn(uk, n, "Group · {n} layer", "Group · {n} layers"), format!("Група · {n} {layer}"));
+            assert_eq!(
+                trn(uk, n, "{n} layer", "{n} layers"),
+                format!("{n} {layer}")
+            );
+            assert_eq!(
+                trn(uk, n, "Group · {n} layer", "Group · {n} layers"),
+                format!("Група · {n} {layer}")
+            );
         }
     }
 
@@ -777,21 +1090,45 @@ mod tests {
         let sr = Lang::from_code("sr").expect("sr registered");
         assert_eq!(sr.name(), "Srpski");
         assert!(sr.complete_menus());
-        for tag in ["sr", "SR", "sr-RS", "sr_RS", "sr_RS.UTF-8", "sr_RS@latin", "sr-Latn", "sr-Latn-RS", "sr-Cyrl-RS", "sr-ME"] {
+        for tag in [
+            "sr",
+            "SR",
+            "sr-RS",
+            "sr_RS",
+            "sr_RS.UTF-8",
+            "sr_RS@latin",
+            "sr-Latn",
+            "sr-Latn-RS",
+            "sr-Cyrl-RS",
+            "sr-ME",
+        ] {
             assert_eq!(lang_from_tag(tag), Some(sr), "{tag}");
             assert_eq!(Lang::from_pref(tag), sr, "{tag}");
         }
         assert_eq!(tr(sr, "File"), "Datoteka");
         assert_eq!(tr(sr, "Layer"), "Sloj");
         assert_eq!(tr(sr, "New document…"), "Novi dokument…");
-        assert_eq!(tr_id(sr, "select.all", "All"), "Izaberi sve", "an id override wins over the plain label");
+        assert_eq!(
+            tr_id(sr, "select.all", "All"),
+            "Izaberi sve",
+            "an id override wins over the plain label"
+        );
         assert_eq!(tr(sr, "All"), "Sve");
         assert_eq!(tr_ctx(sr, "cameraRaw", "Light"), "Svetlo");
         assert_eq!(tr_ctx(sr, "fontWeight", "Light"), "Lagano");
-        assert_eq!(fmt(tr(sr, "Camera Raw Filter ({layer})"), &[("layer", "Background")]), "Camera Raw filter (Background)");
+        assert_eq!(
+            fmt(
+                tr(sr, "Camera Raw Filter ({layer})"),
+                &[("layer", "Background")]
+            ),
+            "Camera Raw filter (Background)"
+        );
         for key in ["Alt", "⌥"] {
             assert_eq!(
-                fmt(tr(sr, "Add a mask  (from the selection; {key} inverts)"), &[("key", key)]),
+                fmt(
+                    tr(sr, "Add a mask  (from the selection; {key} inverts)"),
+                    &[("key", key)]
+                ),
                 format!("Dodaj masku  (iz selekcije; {key} invertuje)")
             );
         }
@@ -818,8 +1155,14 @@ mod tests {
             (122, "stavke", "sloja"),
         ] {
             assert_eq!(trn(sr, n, "{n} item", "{n} items"), format!("{n} {item}"));
-            assert_eq!(trn(sr, n, "{n} layer", "{n} layers"), format!("{n} {layer}"));
-            assert_eq!(trn(sr, n, "Group · {n} layer", "Group · {n} layers"), format!("Grupa · {n} {layer}"));
+            assert_eq!(
+                trn(sr, n, "{n} layer", "{n} layers"),
+                format!("{n} {layer}")
+            );
+            assert_eq!(
+                trn(sr, n, "Group · {n} layer", "Group · {n} layers"),
+                format!("Grupa · {n} {layer}")
+            );
         }
         for (n, expected) in [
             (1, "Uklonjena je 1 tačka uzorkovanja"),
@@ -828,27 +1171,45 @@ mod tests {
             (13, "Uklonjeno je 13 tačaka uzorkovanja"),
             (21, "Uklonjena je 21 tačka uzorkovanja"),
         ] {
-            assert_eq!(trn(sr, n, "{n} sample point removed", "{n} sample points removed"), expected);
+            assert_eq!(
+                trn(
+                    sr,
+                    n,
+                    "{n} sample point removed",
+                    "{n} sample points removed"
+                ),
+                expected
+            );
         }
     }
 
     #[test]
     fn catalog_kinds_are_parsed_and_looked_up() {
-        let c = Catalog::parse("# c\n\tHello\tこんにちは\n@id\tfile.save\t保存する\nmenu\tWindows\tウィンドウ群\n@plural\t{n} file|{n} files\t{n} 個\n\n");
+        let c = Catalog::parse(
+            "# c\n\tHello\tこんにちは\n@id\tfile.save\t保存する\nmenu\tWindows\tウィンドウ群\n@plural\t{n} file|{n} files\t{n} 個\n\n",
+        );
         assert_eq!(c.plain("Hello"), Some("こんにちは"));
         assert_eq!(c.id("file.save"), Some("保存する"));
         assert_eq!(c.contextual("menu", "Windows"), Some("ウィンドウ群"));
         assert_eq!(c.contextual("other", "Windows"), None);
         assert_eq!(c.plural("{n} file", "{n} files", 0), Some("{n} 個"));
-        assert_eq!(c.plural("{n} file", "{n} files", 5), Some("{n} 個"), "an index past the forms clamps");
+        assert_eq!(
+            c.plural("{n} file", "{n} files", 5),
+            Some("{n} 個"),
+            "an index past the forms clamps"
+        );
     }
 
     #[test]
     fn malformed_lines_are_reported_not_fatal() {
-        let (entries, errors) = parse_entries("\tok\tはい\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n");
+        let (entries, errors) =
+            parse_entries("\tok\tはい\nno tabs here\n\tonly\n\ta\tb\tc\textra\n\t\tempty source\n");
         assert_eq!(entries.len(), 1);
         assert_eq!(errors.len(), 4, "{errors:?}");
-        assert_eq!(parse_entries("\ta\\tb\tx\\ny\\\\z\n").0[0], (String::new(), "a\tb".into(), "x\ny\\z".into()));
+        assert_eq!(
+            parse_entries("\ta\\tb\tx\\ny\\\\z\n").0[0],
+            (String::new(), "a\tb".into(), "x\ny\\z".into())
+        );
     }
 
     #[test]
@@ -864,7 +1225,10 @@ mod tests {
         assert_eq!(trn(CS(), 3, "{n} item", "{n} items"), "3 položky");
         assert_eq!(trn(CS(), 5, "{n} item", "{n} items"), "5 položek");
         assert_eq!(trn(CS(), 0, "{n} item", "{n} items"), "0 položek");
-        assert_eq!(fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]), "y before x");
+        assert_eq!(
+            fmt("{b} before {a}", &[("a", "x"), ("b", "y"), ("c", "z")]),
+            "y before x"
+        );
         assert_eq!(fmt("{missing}", &[]), "{missing}");
         assert_eq!(placeholders("a {x} b {y} {"), ["x", "y"]);
     }
@@ -876,9 +1240,16 @@ mod tests {
             assert_eq!(lang_from_tag(tag), Some(fr), "{tag}");
         }
         assert_eq!(tr(fr, "Layer"), "Calque");
-        assert_eq!(tr_id(fr, "select.all", "All"), "Tout sélectionner", "an id override wins over the plain label");
+        assert_eq!(
+            tr_id(fr, "select.all", "All"),
+            "Tout sélectionner",
+            "an id override wins over the plain label"
+        );
         assert_eq!(tr(fr, "All"), "Tout");
-        let forms: Vec<usize> = [0, 1, 2, 5, 100, u64::MAX].into_iter().map(plural_fr).collect();
+        let forms: Vec<usize> = [0, 1, 2, 5, 100, u64::MAX]
+            .into_iter()
+            .map(plural_fr)
+            .collect();
         assert_eq!(forms, [0, 0, 1, 1, 1, 1]);
         assert_eq!(trn(fr, 0, "{n} item", "{n} items"), "0 élément");
         assert_eq!(trn(fr, 1, "{n} item", "{n} items"), "1 élément");
@@ -887,16 +1258,26 @@ mod tests {
 
     #[test]
     fn polish_plural_rule() {
-        let forms: Vec<usize> = [0, 1, 2, 4, 5, 12, 14, 21, 22, 25, 112, 122].into_iter().map(plural_polish).collect();
+        let forms: Vec<usize> = [0, 1, 2, 4, 5, 12, 14, 21, 22, 25, 112, 122]
+            .into_iter()
+            .map(plural_polish)
+            .collect();
         assert_eq!(forms, [2, 0, 1, 1, 2, 2, 2, 2, 1, 2, 2, 1]);
     }
 
     #[test]
     fn czech_plural_rule() {
-        let forms: Vec<usize> = [0, 1, 2, 3, 4, 5, 11, 12, 21, 22, 100, u64::MAX].into_iter().map(plural_cs).collect();
+        let forms: Vec<usize> = [0, 1, 2, 3, 4, 5, 11, 12, 21, 22, 100, u64::MAX]
+            .into_iter()
+            .map(plural_cs)
+            .collect();
         assert_eq!(forms, [2, 0, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2]);
         assert_eq!(tr(CS(), "Layer"), "Vrstva");
-        assert_eq!(tr_id(CS(), "select.all", "All"), "Vybrat vše", "an id override wins over the plain label");
+        assert_eq!(
+            tr_id(CS(), "select.all", "All"),
+            "Vybrat vše",
+            "an id override wins over the plain label"
+        );
         assert_eq!(tr(CS(), "All"), "Vše");
     }
 
@@ -907,7 +1288,11 @@ mod tests {
         for l in LANGUAGES.iter().skip(1) {
             let file = std::fs::read_to_string(dir.join(format!("{}.tsv", l.code))).unwrap();
             assert_eq!(unpack(l.source).unwrap(), file, "{}", l.code);
-            assert!(l.source.len() < file.len() / 2, "{}: stored deflated", l.code);
+            assert!(
+                l.source.len() < file.len() / 2,
+                "{}: stored deflated",
+                l.code
+            );
         }
         assert_eq!(LANGUAGES[0].text(), "", "English has no catalog");
     }
@@ -917,7 +1302,10 @@ mod tests {
     fn corrupt_catalog_data_is_an_error() {
         assert!(inflate(b"\xff\xff\xff\xff not deflate").is_err());
         let ja = LANGUAGES.iter().find(|l| l.code == "ja").unwrap();
-        assert!(inflate(&ja.source[..ja.source.len() / 2]).is_err(), "truncated");
+        assert!(
+            inflate(&ja.source[..ja.source.len() / 2]).is_err(),
+            "truncated"
+        );
         let info: &'static LangInfo = Box::leak(Box::new(LangInfo {
             code: "xx",
             name: "x",
@@ -936,8 +1324,18 @@ mod tests {
     fn packed_lines_unpack_and_bad_references_are_errors() {
         let keys = ["\tOpen", "@id\tfile.open", "\tClose"];
         let packed = "# c\n\x01Ouvrir\n\x02-1\tOuvrir\n\x02+1\tFermer\n\x03\x01x\n";
-        assert_eq!(expand(packed, &keys).unwrap(), "# c\n\tOpen\tOuvrir\n\tOpen\tOuvrir\n\tClose\tFermer\n\x01x\n");
-        for bad in ["\x02-1\tx", "\x02 3\tx", "\x023", "\x029223372036854775807\tx", "\x02-9223372036854775808\tx", "\x01a\n\x01b\n\x01c\n\x01d"] {
+        assert_eq!(
+            expand(packed, &keys).unwrap(),
+            "# c\n\tOpen\tOuvrir\n\tOpen\tOuvrir\n\tClose\tFermer\n\x01x\n"
+        );
+        for bad in [
+            "\x02-1\tx",
+            "\x02 3\tx",
+            "\x023",
+            "\x029223372036854775807\tx",
+            "\x02-9223372036854775808\tx",
+            "\x01a\n\x01b\n\x01c\n\x01d",
+        ] {
             assert!(expand(bad, &keys).is_err(), "{bad:?}");
         }
     }
@@ -946,17 +1344,35 @@ mod tests {
     #[test]
     fn bundled_catalogs_are_consistent() {
         for l in &LANGUAGES {
-            assert!(l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(), "{}", l.code);
+            assert!(
+                l.code == l.code.to_ascii_lowercase() && !l.name.is_empty(),
+                "{}",
+                l.code
+            );
             let (entries, errors) = parse_entries(&l.text());
             assert!(errors.is_empty(), "{}: {errors:?}", l.code);
             let mut seen = std::collections::HashSet::new();
             for (ctx, src, tr) in &entries {
-                assert!(seen.insert((ctx.clone(), src.clone())), "{}: duplicate {ctx:?} {src:?}", l.code);
+                assert!(
+                    seen.insert((ctx.clone(), src.clone())),
+                    "{}: duplicate {ctx:?} {src:?}",
+                    l.code
+                );
                 if ctx == "@plural" {
                     let one_other: Vec<&str> = src.split('|').collect();
-                    assert_eq!(one_other.len(), 2, "{}: plural source must be `one|other`: {src:?}", l.code);
+                    assert_eq!(
+                        one_other.len(),
+                        2,
+                        "{}: plural source must be `one|other`: {src:?}",
+                        l.code
+                    );
                     let forms = (0..=1000).map(l.plural).max().unwrap_or(0) + 1;
-                    assert_eq!(tr.split('|').count(), forms, "{}: {forms} plural forms expected in {src:?}", l.code);
+                    assert_eq!(
+                        tr.split('|').count(),
+                        forms,
+                        "{}: {forms} plural forms expected in {src:?}",
+                        l.code
+                    );
                     for form in tr.split('|') {
                         let mut want = placeholders(one_other[1]);
                         let mut got = placeholders(form);
@@ -972,10 +1388,20 @@ mod tests {
                 got.sort_unstable();
                 assert_eq!(want, got, "{}: placeholders differ in {src:?}", l.code);
                 if ctx.is_empty() {
-                    assert_eq!(src.ends_with('…'), tr.ends_with('…'), "{}: ellipsis mismatch: {src:?}", l.code);
+                    assert_eq!(
+                        src.ends_with('…'),
+                        tr.ends_with('…'),
+                        "{}: ellipsis mismatch: {src:?}",
+                        l.code
+                    );
                 }
                 if ctx == "@id" {
-                    assert!(crate::menus::is_live(src) || crate::menu_catalog::CATALOG.iter().any(|m| m.3 == src), "{}: unknown command id {src:?}", l.code);
+                    assert!(
+                        crate::menus::is_live(src)
+                            || crate::menu_catalog::CATALOG.iter().any(|m| m.3 == src),
+                        "{}: unknown command id {src:?}",
+                        l.code
+                    );
                 }
             }
         }
@@ -993,7 +1419,10 @@ mod tests {
             strings.extend(path.iter().copied());
             strings.insert(label);
         }
-        for c in photocraft_engine::command_specs().iter().filter(|c| !c.menu.is_empty()) {
+        for c in photocraft_engine::command_specs()
+            .iter()
+            .filter(|c| !c.menu.is_empty())
+        {
             strings.extend(c.menu.iter().copied());
             strings.insert(c.label);
         }
@@ -1001,7 +1430,11 @@ mod tests {
         for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
             let cat = l.catalog();
             let missing: Vec<_> = strings.iter().filter(|s| cat.plain(s).is_none()).collect();
-            assert!(missing.is_empty(), "{}: untranslated menu strings: {missing:#?}", l.code);
+            assert!(
+                missing.is_empty(),
+                "{}: untranslated menu strings: {missing:#?}",
+                l.code
+            );
         }
     }
 
@@ -1013,7 +1446,9 @@ mod tests {
         while let Some(at) = rest.find("#[cfg(test)]\nmod ") {
             out.push_str(&rest[..at]);
             let after = &rest[at..];
-            let Some(open) = after.find('{') else { return out };
+            let Some(open) = after.find('{') else {
+                return out;
+            };
             let mut depth = 0usize;
             let mut end = after.len();
             for (i, c) in after[open..].char_indices() {
@@ -1039,7 +1474,10 @@ mod tests {
     fn test_modules_are_cut_out_one_by_one() {
         let text = "a\n#[cfg(test)]\nmod t { fn x() { tl!(\"hidden\"); } }\nb tl!(\"seen\")\n#[cfg(test)]\nmod u {}\nc";
         let code = without_test_modules(text);
-        assert!(code.contains("tl!(\"seen\")"), "code after the first test module is scanned: {code}");
+        assert!(
+            code.contains("tl!(\"seen\")"),
+            "code after the first test module is scanned: {code}"
+        );
         assert!(!code.contains("hidden"), "{code}");
         assert!(code.starts_with("a\n") && code.ends_with("\nc"), "{code}");
     }
@@ -1048,19 +1486,47 @@ mod tests {
     fn czech_status_templates_preserve_details_and_plural_counts() {
         let cs = CS();
         let template = "Step {step} ({id}) failed: {error}";
-        let args = [("step", "2"), ("id", "file.export"), ("error", "disk full: /tmp/image.psd")];
-        assert_eq!(fmt(tr(cs, template), &args), "Krok 2 (file.export) selhal: disk full: /tmp/image.psd");
-        assert_eq!(fmt(tr(Lang::EN, template), &args), "Step 2 (file.export) failed: disk full: /tmp/image.psd");
+        let args = [
+            ("step", "2"),
+            ("id", "file.export"),
+            ("error", "disk full: /tmp/image.psd"),
+        ];
+        assert_eq!(
+            fmt(tr(cs, template), &args),
+            "Krok 2 (file.export) selhal: disk full: /tmp/image.psd"
+        );
+        assert_eq!(
+            fmt(tr(Lang::EN, template), &args),
+            "Step 2 (file.export) failed: disk full: /tmp/image.psd"
+        );
         // Languages without these dynamic templates keep the English source.
         assert_eq!(tr(JA(), template), template);
-        for (n, expected) in [(0, "Odstraněno 0 bodů měření"), (1, "Odstraněn 1 bod měření"), (2, "Odstraněny 2 body měření"), (5, "Odstraněno 5 bodů měření")]
-        {
-            assert_eq!(trn(cs, n, "{n} sample point removed", "{n} sample points removed"), expected);
+        for (n, expected) in [
+            (0, "Odstraněno 0 bodů měření"),
+            (1, "Odstraněn 1 bod měření"),
+            (2, "Odstraněny 2 body měření"),
+            (5, "Odstraněno 5 bodů měření"),
+        ] {
+            assert_eq!(
+                trn(
+                    cs,
+                    n,
+                    "{n} sample point removed",
+                    "{n} sample points removed"
+                ),
+                expected
+            );
         }
         let one = "Imported {n} swatch from {file}";
         let other = "Imported {n} swatches from {file}";
-        assert_eq!(fmt(&trn(cs, 3, one, other), &[("file", "English name.aco")]), "Importovány 3 vzorky ze souboru English name.aco");
-        assert_eq!(tr(cs, "Preferences can't be saved"), "Předvolby nelze uložit");
+        assert_eq!(
+            fmt(&trn(cs, 3, one, other), &[("file", "English name.aco")]),
+            "Importovány 3 vzorky ze souboru English name.aco"
+        );
+        assert_eq!(
+            tr(cs, "Preferences can't be saved"),
+            "Předvolby nelze uložit"
+        );
     }
 
     #[test]
@@ -1089,9 +1555,15 @@ mod tests {
         ] {
             assert_ne!(tr(cs, kind.message()), kind.message());
         }
-        assert_eq!(fmt(tr(cs, "Driver: {driver}"), &[("driver", "Mesa 25.0")]), "Ovladač: Mesa 25.0");
         assert_eq!(
-            fmt(tr(cs, "Monitor profile on {display}: {profile}"), &[("display", "DELL U2720Q"), ("profile", "sRGB IEC61966-2.1")]),
+            fmt(tr(cs, "Driver: {driver}"), &[("driver", "Mesa 25.0")]),
+            "Ovladač: Mesa 25.0"
+        );
+        assert_eq!(
+            fmt(
+                tr(cs, "Monitor profile on {display}: {profile}"),
+                &[("display", "DELL U2720Q"), ("profile", "sRGB IEC61966-2.1")]
+            ),
             "Profil monitoru DELL U2720Q: sRGB IEC61966-2.1"
         );
     }
@@ -1103,11 +1575,30 @@ mod tests {
         assert_eq!(tr_ctx(cs, "navigator", "Zoom"), "Zvětšení");
         assert_eq!(tr_ctx(Lang::EN, "navigator", "Zoom"), "Zoom");
         let template = "Data Set: {name}  ({index}/{total})";
-        assert_eq!(fmt(tr(cs, template), &[("name", "Data Set 1"), ("index", "1"), ("total", "2")]), "Datová sada: Data Set 1  (1/2)");
-        for (n, expected) in
-            [(1, "Importován 1 přechod ze souboru Sunset"), (3, "Importovány 3 přechody ze souboru Sunset"), (5, "Importováno 5 přechodů ze souboru Sunset")]
-        {
-            assert_eq!(fmt(&trn(cs, n, "Imported {n} gradient from {file}", "Imported {n} gradients from {file}"), &[("file", "Sunset")]), expected);
+        assert_eq!(
+            fmt(
+                tr(cs, template),
+                &[("name", "Data Set 1"), ("index", "1"), ("total", "2")]
+            ),
+            "Datová sada: Data Set 1  (1/2)"
+        );
+        for (n, expected) in [
+            (1, "Importován 1 přechod ze souboru Sunset"),
+            (3, "Importovány 3 přechody ze souboru Sunset"),
+            (5, "Importováno 5 přechodů ze souboru Sunset"),
+        ] {
+            assert_eq!(
+                fmt(
+                    &trn(
+                        cs,
+                        n,
+                        "Imported {n} gradient from {file}",
+                        "Imported {n} gradients from {file}"
+                    ),
+                    &[("file", "Sunset")]
+                ),
+                expected
+            );
         }
     }
 
@@ -1126,7 +1617,9 @@ mod tests {
                 if path.is_dir() {
                     stack.push(path);
                 } else if path.extension().is_some_and(|e| e == "rs") && !path.ends_with("lib.rs") {
-                    let text = std::fs::read_to_string(&path).unwrap_or_default().replace("\r\n", "\n");
+                    let text = std::fs::read_to_string(&path)
+                        .unwrap_or_default()
+                        .replace("\r\n", "\n");
                     // Test modules aside, scan every `tl!("…")`. Each test *module* is cut out
                     // on its own: cutting the file at the first one hid everything after a small
                     // test module early in a file (panels.rs has one at ~line 540). A
@@ -1137,7 +1630,9 @@ mod tests {
                         rest = &rest[at + 5..];
                         let mut end = 0;
                         let bytes = rest.as_bytes();
-                        while end < bytes.len() && !(bytes[end] == b'"' && (end == 0 || bytes[end - 1] != b'\\')) {
+                        while end < bytes.len()
+                            && !(bytes[end] == b'"' && (end == 0 || bytes[end - 1] != b'\\'))
+                        {
                             end += 1;
                         }
                         let lit = rest.get(..end).unwrap_or("").replace("\\\"", "\"");
@@ -1148,11 +1643,22 @@ mod tests {
                 }
             }
         }
-        assert!(literals.len() > 300, "scan found only {} literals", literals.len());
+        assert!(
+            literals.len() > 300,
+            "scan found only {} literals",
+            literals.len()
+        );
         for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
             let cat = l.catalog();
-            let missing: Vec<_> = literals.iter().filter(|s| !KEEP_AS_IS.contains(&s.as_str()) && cat.plain(s).is_none()).collect();
-            assert!(missing.is_empty(), "{}: untranslated tl! strings: {missing:#?}", l.code);
+            let missing: Vec<_> = literals
+                .iter()
+                .filter(|s| !KEEP_AS_IS.contains(&s.as_str()) && cat.plain(s).is_none())
+                .collect();
+            assert!(
+                missing.is_empty(),
+                "{}: untranslated tl! strings: {missing:#?}",
+                l.code
+            );
         }
     }
 
@@ -1161,7 +1667,11 @@ mod tests {
     fn brush_section_names_are_translated() {
         for lang in Lang::all().filter(|l| l.complete_menus()) {
             for (name, _) in crate::brush_panel::SECTIONS {
-                assert!(lang.0.catalog().plain(name).is_some(), "{} missing brush section: {name}", lang.code());
+                assert!(
+                    lang.0.catalog().plain(name).is_some(),
+                    "{} missing brush section: {name}",
+                    lang.code()
+                );
             }
         }
     }
@@ -1176,7 +1686,11 @@ mod tests {
                 let tr = cat.plain(label);
                 assert!(tr.is_some(), "{} missing {label}", lang.code());
                 if label != "Reveal in Finder" {
-                    assert!(!tr.unwrap_or_default().contains("Finder"), "{}: {label} names the Finder", lang.code());
+                    assert!(
+                        !tr.unwrap_or_default().contains("Finder"),
+                        "{}: {label} names the Finder",
+                        lang.code()
+                    );
                 }
             }
         }
@@ -1188,7 +1702,9 @@ mod tests {
             for color in photocraft_doc::LabelColor::ALL {
                 let cat = lang.0.catalog();
                 assert!(
-                    cat.contextual("layerLabel", color.label()).or_else(|| cat.plain(color.label())).is_some(),
+                    cat.contextual("layerLabel", color.label())
+                        .or_else(|| cat.plain(color.label()))
+                        .is_some(),
                     "{} missing {}",
                     lang.code(),
                     color.label()
@@ -1206,12 +1722,32 @@ mod tests {
     /// "Light" section (`type_tool::style_label`).
     #[test]
     fn font_weight_names_are_translated() {
-        const TERMS: &[&str] = &["Thin", "ExtraLight", "Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold", "Black", "Italic"];
+        const TERMS: &[&str] = &[
+            "Thin",
+            "ExtraLight",
+            "Light",
+            "Regular",
+            "Medium",
+            "SemiBold",
+            "Bold",
+            "ExtraBold",
+            "Black",
+            "Italic",
+        ];
         for lang in Lang::all().filter(|l| l.complete_menus()) {
             for t in TERMS {
-                assert!(lang.0.catalog().contextual("fontWeight", t).is_some(), "{} missing font weight: {t}", lang.code());
+                assert!(
+                    lang.0.catalog().contextual("fontWeight", t).is_some(),
+                    "{} missing font weight: {t}",
+                    lang.code()
+                );
             }
-            assert_ne!(tr_ctx(lang, "cameraRaw", "Light"), tr_ctx(lang, "fontWeight", "Light"), "{}: Camera Raw Light vs the font weight", lang.code());
+            assert_ne!(
+                tr_ctx(lang, "cameraRaw", "Light"),
+                tr_ctx(lang, "fontWeight", "Light"),
+                "{}: Camera Raw Light vs the font weight",
+                lang.code()
+            );
         }
     }
 
@@ -1219,8 +1755,15 @@ mod tests {
     #[test]
     fn blend_mode_names_are_translated() {
         for l in LANGUAGES.iter().filter(|l| l.complete_menus) {
-            for m in std::iter::once(photocraft_color::BlendMode::PassThrough).chain(photocraft_color::BlendMode::layer_modes()) {
-                assert!(l.catalog().plain(m.label()).is_some(), "{}: blend mode {:?}", l.code, m.label());
+            for m in std::iter::once(photocraft_color::BlendMode::PassThrough)
+                .chain(photocraft_color::BlendMode::layer_modes())
+            {
+                assert!(
+                    l.catalog().plain(m.label()).is_some(),
+                    "{}: blend mode {:?}",
+                    l.code,
+                    m.label()
+                );
             }
         }
     }
@@ -1230,15 +1773,32 @@ mod tests {
     fn color_lookup_export_scope_labels_are_translated() {
         for lang in Lang::all().filter(|l| *l != Lang::EN) {
             for source in ["Scope", "Selected"] {
-                assert!(lang.catalog().plain(source).is_some(), "{}: missing LUT export label {source:?}", lang.code());
-                assert_ne!(tr(lang, source), source, "{}: untranslated LUT export label {source:?}", lang.code());
+                assert!(
+                    lang.catalog().plain(source).is_some(),
+                    "{}: missing LUT export label {source:?}",
+                    lang.code()
+                );
+                assert_ne!(
+                    tr(lang, source),
+                    source,
+                    "{}: untranslated LUT export label {source:?}",
+                    lang.code()
+                );
             }
         }
     }
 
     #[test]
     fn mixer_brush_ui_strings_have_translations_in_every_registered_language() {
-        const STRINGS: &[&str] = &["Mixer Brush", "Mixer Brush Tool", "Wet", "Load", "Mix", "Flow", "Sample All Layers"];
+        const STRINGS: &[&str] = &[
+            "Mixer Brush",
+            "Mixer Brush Tool",
+            "Wet",
+            "Load",
+            "Mix",
+            "Flow",
+            "Sample All Layers",
+        ];
         for lang in Lang::all() {
             for source in STRINGS {
                 let translated = tr(lang, source);
@@ -1253,7 +1813,12 @@ mod tests {
 
     #[test]
     fn pattern_stamp_ui_strings_have_translations_in_every_registered_language() {
-        const STRINGS: &[&str] = &["Pattern Stamp Tool", "Pattern Stamp", "Impressionist", "Aligned"];
+        const STRINGS: &[&str] = &[
+            "Pattern Stamp Tool",
+            "Pattern Stamp",
+            "Impressionist",
+            "Aligned",
+        ];
         for lang in Lang::all() {
             for source in STRINGS {
                 let translated = tr(lang, source);
@@ -1270,33 +1835,83 @@ mod tests {
     /// tl! scanner cannot see. Cover the partial catalog too, without claiming whole-app coverage.
     #[test]
     fn camera_raw_labels_are_translated_in_every_available_language() {
-        let sources = [include_str!("../camera_raw_ui.rs"), include_str!("../camera_raw_scope_ui.rs")];
+        let sources = [
+            include_str!("../camera_raw_ui.rs"),
+            include_str!("../camera_raw_scope_ui.rs"),
+        ];
         let mut labels = std::collections::BTreeSet::new();
         for source in sources {
             let code = source.split("#[cfg(test)]").next().unwrap();
-            for marker in ["tl!(\"", "row(ui, &mut dirty, \"", "row(ui, dirty, \"", "section(ui, \"", "wheel(ui, &mut dirty, \"", "=> \""] {
+            for marker in [
+                "tl!(\"",
+                "row(ui, &mut dirty, \"",
+                "row(ui, dirty, \"",
+                "section(ui, \"",
+                "wheel(ui, &mut dirty, \"",
+                "=> \"",
+            ] {
                 for tail in code.split(marker).skip(1) {
                     labels.insert(tail.split('"').next().unwrap());
                 }
             }
         }
-        let bands = sources[0].split("const BANDS:").nth(1).unwrap().split(" = ").nth(1).unwrap().split(';').next().unwrap();
+        let bands = sources[0]
+            .split("const BANDS:")
+            .nth(1)
+            .unwrap()
+            .split(" = ")
+            .nth(1)
+            .unwrap()
+            .split(';')
+            .next()
+            .unwrap();
         for band in bands.split('"').skip(1).step_by(2) {
             labels.insert(band);
         }
-        assert!(labels.len() >= 66, "missing Camera Raw source labels: {labels:?}");
+        assert!(
+            labels.len() >= 66,
+            "missing Camera Raw source labels: {labels:?}"
+        );
         for lang in Lang::all().filter(|l| *l != Lang::EN) {
             let catalog = lang.catalog();
-            let missing: Vec<_> = labels.iter().filter(|s| catalog.contextual("cameraRaw", s).or_else(|| catalog.plain(s)).is_none()).collect();
-            assert!(missing.is_empty(), "{}: Camera Raw labels: {missing:?}", lang.code());
-            assert_ne!(tr_ctx(lang, "cameraRaw", "Highlights"), tr_ctx(lang, "cameraRaw", "Lights"), "{}: distinct curve regions", lang.code());
-            assert_ne!(tr_ctx(lang, "cameraRaw", "Shadows"), tr_ctx(lang, "cameraRaw", "Darks"), "{}: distinct curve regions", lang.code());
+            let missing: Vec<_> = labels
+                .iter()
+                .filter(|s| {
+                    catalog
+                        .contextual("cameraRaw", s)
+                        .or_else(|| catalog.plain(s))
+                        .is_none()
+                })
+                .collect();
+            assert!(
+                missing.is_empty(),
+                "{}: Camera Raw labels: {missing:?}",
+                lang.code()
+            );
+            assert_ne!(
+                tr_ctx(lang, "cameraRaw", "Highlights"),
+                tr_ctx(lang, "cameraRaw", "Lights"),
+                "{}: distinct curve regions",
+                lang.code()
+            );
+            assert_ne!(
+                tr_ctx(lang, "cameraRaw", "Shadows"),
+                tr_ctx(lang, "cameraRaw", "Darks"),
+                "{}: distinct curve regions",
+                lang.code()
+            );
         }
         let ru = Lang::from_code("ru").unwrap();
         assert_eq!(tr_ctx(ru, "cameraRaw", "Vibrance"), "Красочность");
         assert_eq!(tr_ctx(ru, "cameraRaw", "Aqua"), "Голубые");
-        let text = fmt(tr(ru, "Camera Raw Filter ({layer})"), &[("layer", "{Background} 影像")]);
-        assert_eq!(text, "Фильтр Camera Raw ({Background} 影像)", "user layer names are not translated");
+        let text = fmt(
+            tr(ru, "Camera Raw Filter ({layer})"),
+            &[("layer", "{Background} 影像")],
+        );
+        assert_eq!(
+            text, "Фильтр Camera Raw ({Background} 影像)",
+            "user layer names are not translated"
+        );
     }
 }
 

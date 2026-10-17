@@ -40,13 +40,27 @@ pub struct ShapeParams<'a> {
 /// Shape `para[range]` with `face`, the rest of `para` as context. Glyphs are in visual order
 /// (left to right) and clusters are byte offsets into `para`. `map` substitutes characters (All
 /// Caps) without moving clusters. An empty or out-of-bounds range shapes nothing.
-pub fn shape_range(face: &FontFace, para: &str, range: Range<usize>, params: &ShapeParams, map: impl Fn(char) -> char) -> Vec<ShapedGlyph> {
-    let (Some(pre), Some(text), Some(post)) = (para.get(..range.start), para.get(range.clone()), para.get(range.end..)) else {
+pub fn shape_range(
+    face: &FontFace,
+    para: &str,
+    range: Range<usize>,
+    params: &ShapeParams,
+    map: impl Fn(char) -> char,
+) -> Vec<ShapedGlyph> {
+    let (Some(pre), Some(text), Some(post)) = (
+        para.get(..range.start),
+        para.get(range.clone()),
+        para.get(range.end..),
+    ) else {
         return Vec::new();
     };
     let mut out = Vec::with_capacity(text.len());
     let shaped = face.hb().map(|hb| {
-        let shaper = face.shaper.shaper(&hb).instance(face.instance.as_ref()).build();
+        let shaper = face
+            .shaper
+            .shaper(&hb)
+            .instance(face.instance.as_ref())
+            .build();
         let mut buf = UnicodeBuffer::new();
         buf.set_pre_context(pre);
         buf.set_post_context(post);
@@ -54,14 +68,24 @@ pub fn shape_range(face: &FontFace, para: &str, range: Range<usize>, params: &Sh
             buf.add(map(c), (range.start + i) as u32);
         }
         buf.guess_segment_properties();
-        if let Some(s) = params.script.and_then(|t| Script::from_iso15924_tag(Tag::new(&t))) {
+        if let Some(s) = params
+            .script
+            .and_then(|t| Script::from_iso15924_tag(Tag::new(&t)))
+        {
             buf.set_script(s);
         }
-        if let Some(l) = params.language.or_else(|| params.script.and_then(crate::script::default_language)).and_then(|l| l.parse::<Language>().ok())
+        if let Some(l) = params
+            .language
+            .or_else(|| params.script.and_then(crate::script::default_language))
+            .and_then(|l| l.parse::<Language>().ok())
         {
             buf.set_language(l);
         }
-        buf.set_direction(if params.rtl { Direction::RightToLeft } else { Direction::LeftToRight });
+        buf.set_direction(if params.rtl {
+            Direction::RightToLeft
+        } else {
+            Direction::LeftToRight
+        });
         let gb = shaper.shape(buf, ShapeOptions::new().features(params.features));
         for (info, pos) in gb.glyph_infos().iter().zip(gb.glyph_positions()) {
             out.push(ShapedGlyph {
@@ -82,7 +106,13 @@ pub fn shape_range(face: &FontFace, para: &str, range: Range<usize>, params: &Sh
         for (i, c) in text.char_indices() {
             let g = cmap.map(map(c)).unwrap_or_default();
             let adv = gm.advance_width(g).unwrap_or(face.upem as f32 * 0.5);
-            out.push(ShapedGlyph { gid: g.to_u32(), cluster: range.start + i, x_advance: adv.round() as i32, x_offset: 0, y_offset: 0 });
+            out.push(ShapedGlyph {
+                gid: g.to_u32(),
+                cluster: range.start + i,
+                x_advance: adv.round() as i32,
+                x_offset: 0,
+                y_offset: 0,
+            });
         }
         if params.rtl {
             out.reverse();
@@ -100,10 +130,16 @@ mod tests {
     fn rtl_items_come_in_visual_order_and_mirror() {
         let face = FontDb::global().face(DEFAULT_FAMILY, "Regular");
         let text = "(ab)";
-        let p = ShapeParams { rtl: true, ..Default::default() };
+        let p = ShapeParams {
+            rtl: true,
+            ..Default::default()
+        };
         let g = shape_range(&face, text, 0..text.len(), &p, |c| c);
         // Visual order: last cluster first.
-        assert_eq!(g.iter().map(|g| g.cluster).collect::<Vec<_>>(), vec![3, 2, 1, 0]);
+        assert_eq!(
+            g.iter().map(|g| g.cluster).collect::<Vec<_>>(),
+            vec![3, 2, 1, 0]
+        );
         // L4: in a right-to-left run "(" is drawn with the ")" glyph and vice versa.
         if face.covers('(') && face.covers(')') {
             assert_eq!(g[3].gid, face.glyph_for(')'));

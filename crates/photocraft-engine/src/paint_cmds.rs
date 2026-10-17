@@ -1,6 +1,9 @@
 //! Paint helpers: Paint Bucket and Gradient tool.
 
-use photocraft_algo::paint::{GradientShape, bucket_fill_inks, bucket_fill_region_inks, bucket_fill_region_src, bucket_fill_src, paint_gradient};
+use photocraft_algo::paint::{
+    GradientShape, bucket_fill_inks, bucket_fill_region_inks, bucket_fill_region_src,
+    bucket_fill_src, paint_gradient,
+};
 use serde_json::{Value, json};
 
 use crate::commands::{CommandSpec, blend_from_str};
@@ -21,7 +24,11 @@ fn color(v: Option<&Value>, d: [f32; 4]) -> [f32; 4] {
         }
         Some(Value::String(h)) => {
             let h = h.trim_start_matches('#');
-            let c = |i: usize| h.get(i..i + 2).and_then(|x| u8::from_str_radix(x, 16).ok()).map(|v| f32::from(v) / 255.0);
+            let c = |i: usize| {
+                h.get(i..i + 2)
+                    .and_then(|x| u8::from_str_radix(x, 16).ok())
+                    .map(|v| f32::from(v) / 255.0)
+            };
             match (c(0), c(2), c(4)) {
                 (Some(r), Some(g), Some(b)) => [r, g, b, c(6).unwrap_or(1.0)],
                 _ => d,
@@ -45,31 +52,47 @@ fn bucket(s: &mut Session, p: &Value) -> Result<Value> {
     let fg = s.tools.foreground;
     let c = color(p.get("color"), fg);
     let (x, y) = (f(p, "x", 0.0).floor() as i32, f(p, "y", 0.0).floor() as i32);
-    let (tol, contiguous, aa) = (f(p, "tolerance", 32.0), b(p, "contiguous", true), b(p, "antiAlias", true));
+    let (tol, contiguous, aa) = (
+        f(p, "tolerance", 32.0),
+        b(p, "contiguous", true),
+        b(p, "antiAlias", true),
+    );
     let opacity = opacity(p, "paint.bucket")?;
-    let all = b(p, "sampleAllLayers", false) && crate::channel_cmds::target_of(p) == crate::channel_cmds::Target::Pixels;
+    let all = b(p, "sampleAllLayers", false)
+        && crate::channel_cmds::target_of(p) == crate::channel_cmds::Target::Pixels;
     // Other visible layers can define the region, but the fill still writes only to the target.
     let region = if all {
         let (area, img) = crate::selection_cmds::sample_rgba8(s, true)?;
-        let region = photocraft_algo::selection::wand_region(&img, area, (x, y), tol, contiguous, aa);
+        let region =
+            photocraft_algo::selection::wand_region(&img, area, (x, y), tol, contiguous, aa);
         drop(img);
         region
     } else {
         None
     };
     // Fill source: foreground colour (default) or a pattern (the Paint Bucket "Fill" dropdown).
-    let source = p.get("contents").or_else(|| p.get("source")).and_then(Value::as_str).unwrap_or("foreground");
+    let source = p
+        .get("contents")
+        .or_else(|| p.get("source"))
+        .and_then(Value::as_str)
+        .unwrap_or("foreground");
     let pattern = if source == "pattern" {
         let pat = crate::pattern_cmds::resolve_param(s, "paint.bucket", p)?;
-        let tile = photocraft_compose::pattern::Tile::new(&pat)
-            .ok_or_else(|| EngineError::BadParams { cmd: "paint.bucket".into(), msg: "the pattern is empty or too large to paint".into() })?;
+        let tile =
+            photocraft_compose::pattern::Tile::new(&pat).ok_or_else(|| EngineError::BadParams {
+                cmd: "paint.bucket".into(),
+                msg: "the pattern is empty or too large to paint".into(),
+            })?;
         let (scale, angle, _, phase) = crate::pattern_cmds::placement(p);
         Some((tile, scale, angle, phase))
     } else {
         None
     };
     // A foreground picked as CMYK fills a CMYK document with the picked inks (#4196).
-    let inks = s.tools.picked_cmyk([c[0], c[1], c[2]]).filter(|_| c[3] >= 1.0 && pattern.is_none());
+    let inks = s
+        .tools
+        .picked_cmyk([c[0], c[1], c[2]])
+        .filter(|_| c[3] >= 1.0 && pattern.is_none());
     let filled = s.edit("Paint Bucket", |doc, active| {
         let area = doc.bounds();
         let sel = doc.selection.clone();
@@ -78,21 +101,51 @@ fn bucket(s: &mut Session, p: &Value) -> Result<Value> {
             false
         } else if let Some((tile, scale, angle, phase)) = &pattern {
             // Render the pattern over the canvas once, then sample it at each filled pixel.
-            let place = photocraft_compose::pattern::Placement::new(photocraft_geom::Rect::EMPTY, false, *phase, *scale, *angle);
+            let place = photocraft_compose::pattern::Placement::new(
+                photocraft_geom::Rect::EMPTY,
+                false,
+                *phase,
+                *scale,
+                *angle,
+            );
             let rendered = photocraft_compose::pattern::render(tile, &place, area);
             let w = area.width() as usize;
-            let src = |px: i32, py: i32| rendered[(py - area.y0) as usize * w + (px - area.x0) as usize];
+            let src =
+                |px: i32, py: i32| rendered[(py - area.y0) as usize * w + (px - area.x0) as usize];
             if let Some(region) = &region {
                 bucket_fill_region_src(surf, region, opacity, sel.as_ref(), lock, src);
                 true
             } else {
-                bucket_fill_src(surf, area, (x, y), tol, contiguous, aa, opacity, sel.as_ref(), lock, src)
+                bucket_fill_src(
+                    surf,
+                    area,
+                    (x, y),
+                    tol,
+                    contiguous,
+                    aa,
+                    opacity,
+                    sel.as_ref(),
+                    lock,
+                    src,
+                )
             }
         } else if let Some(region) = &region {
             bucket_fill_region_inks(surf, region, opacity, sel.as_ref(), lock, |_, _| c, inks);
             true
         } else {
-            bucket_fill_inks(surf, area, (x, y), tol, contiguous, aa, opacity, sel.as_ref(), lock, |_, _| c, inks)
+            bucket_fill_inks(
+                surf,
+                area,
+                (x, y),
+                tol,
+                contiguous,
+                aa,
+                opacity,
+                sel.as_ref(),
+                lock,
+                |_, _| c,
+                inks,
+            )
         };
         surf.prune();
         Ok(ok)
@@ -101,8 +154,14 @@ fn bucket(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn gradient(s: &mut Session, p: &Value) -> Result<Value> {
-    let from = point(p, "from").ok_or_else(|| EngineError::BadParams { cmd: "paint.gradient".into(), msg: "missing from".into() })?;
-    let to = point(p, "to").ok_or_else(|| EngineError::BadParams { cmd: "paint.gradient".into(), msg: "missing to".into() })?;
+    let from = point(p, "from").ok_or_else(|| EngineError::BadParams {
+        cmd: "paint.gradient".into(),
+        msg: "missing from".into(),
+    })?;
+    let to = point(p, "to").ok_or_else(|| EngineError::BadParams {
+        cmd: "paint.gradient".into(),
+        msg: "missing to".into(),
+    })?;
     let shape = match p.get("style").and_then(Value::as_str).unwrap_or("linear") {
         "radial" => GradientShape::Radial,
         "angle" => GradientShape::Angle,
@@ -116,39 +175,92 @@ fn gradient(s: &mut Session, p: &Value) -> Result<Value> {
     let stops: Vec<(f32, [f32; 4])> = match gradients::tool_stops(s, p)? {
         Some(st) => st,
         None => {
-            let colors: Vec<[f32; 4]> =
-                p.get("colors").and_then(Value::as_array).map(|a| a.iter().map(|v| color(Some(v), fg)).collect()).unwrap_or_else(|| vec![fg, bg]);
+            let colors: Vec<[f32; 4]> = p
+                .get("colors")
+                .and_then(Value::as_array)
+                .map(|a| a.iter().map(|v| color(Some(v), fg)).collect())
+                .unwrap_or_else(|| vec![fg, bg]);
             let n = colors.len();
-            let cs = colors.into_iter().enumerate().map(|(i, c)| (if n > 1 { i as f32 / (n - 1) as f32 } else { 0.0 }, c)).collect();
-            gradients::apply_opacity(cs, &gradients::transparency_param(p, "paint.gradient")?.unwrap_or_default())
+            let cs = colors
+                .into_iter()
+                .enumerate()
+                .map(|(i, c)| {
+                    (
+                        if n > 1 {
+                            i as f32 / (n - 1) as f32
+                        } else {
+                            0.0
+                        },
+                        c,
+                    )
+                })
+                .collect();
+            gradients::apply_opacity(
+                cs,
+                &gradients::transparency_param(p, "paint.gradient")?.unwrap_or_default(),
+            )
         }
     };
     // Photoshop's interpolation (`method`, with `smoothness` 0..=100, default 100) baked into dense
     // stops, as for Gradient Overlay: Photoshop 27.11's Classic black → white is 0.037 at t = 1/16
     // where straight stops give 0.0625.
-    let stops = match p.get("method").and_then(Value::as_str).and_then(photocraft_io::GradientMethod::from_name) {
+    let stops = match p
+        .get("method")
+        .and_then(Value::as_str)
+        .and_then(photocraft_io::GradientMethod::from_name)
+    {
         Some(m) if stops.len() >= 2 => {
-            let colors = stops.iter().map(|(t, c)| (*t, photocraft_color::Color::rgba(c[0], c[1], c[2], c[3]))).collect();
+            let colors = stops
+                .iter()
+                .map(|(t, c)| (*t, photocraft_color::Color::rgba(c[0], c[1], c[2], c[3])))
+                .collect();
             let mids = vec![0.5; stops.len() - 1];
-            photocraft_io::bake_gradient(colors, &mids, (f(p, "smoothness", 100.0) / 100.0).clamp(0.0, 1.0), m)
-                .into_iter()
-                .map(|(t, c)| {
-                    let rgb = c.to_rgb();
-                    (t, [rgb[0], rgb[1], rgb[2], c.alpha])
-                })
-                .collect()
+            photocraft_io::bake_gradient(
+                colors,
+                &mids,
+                (f(p, "smoothness", 100.0) / 100.0).clamp(0.0, 1.0),
+                m,
+            )
+            .into_iter()
+            .map(|(t, c)| {
+                let rgb = c.to_rgb();
+                (t, [rgb[0], rgb[1], rgb[2], c.alpha])
+            })
+            .collect()
         }
         _ => stops,
     };
     let reverse = b(p, "reverse", false);
     let opacity = opacity(p, "paint.gradient")?;
-    let blend = p.get("mode").and_then(Value::as_str).and_then(blend_from_str).unwrap_or(photocraft_color::BlendMode::Normal);
+    let blend = p
+        .get("mode")
+        .and_then(Value::as_str)
+        .and_then(blend_from_str)
+        .unwrap_or(photocraft_color::BlendMode::Normal);
     let dither = b(p, "dither", true); // Photoshop dithers gradients by default (reduces banding).
     s.edit("Gradient", |doc, active| {
         let sel = doc.selection.clone();
-        let area = sel.as_ref().map(|m| m.content_bounds()).filter(|r| !r.is_empty()).unwrap_or_else(|| doc.bounds()).intersect(&doc.bounds());
+        let area = sel
+            .as_ref()
+            .map(|m| m.content_bounds())
+            .filter(|r| !r.is_empty())
+            .unwrap_or_else(|| doc.bounds())
+            .intersect(&doc.bounds());
         let (surf, lock) = crate::channel_cmds::target_surface(doc, *active, p)?;
-        paint_gradient(surf, area, from, to, shape, &stops, reverse, opacity, blend, dither, sel.as_ref(), lock);
+        paint_gradient(
+            surf,
+            area,
+            from,
+            to,
+            shape,
+            &stops,
+            reverse,
+            opacity,
+            blend,
+            dither,
+            sel.as_ref(),
+            lock,
+        );
         Ok(())
     })?;
     Ok(Value::Null)
@@ -187,22 +299,36 @@ mod tests {
 
     fn session() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 20, "height": 10})).unwrap();
+        s.execute("file.new", json!({"width": 20, "height": 10}))
+            .unwrap();
         s
     }
 
     fn px(s: &Session, x: i32, y: i32) -> Vec<f32> {
         let d = s.active().unwrap();
-        d.doc.layer(d.active_layer.unwrap()).unwrap().surface().unwrap().pixel(x, y)
+        d.doc
+            .layer(d.active_layer.unwrap())
+            .unwrap()
+            .surface()
+            .unwrap()
+            .pixel(x, y)
     }
 
     /// A visible wall on the Background with an empty, active layer above it.
     fn bucket_layers(depth: u32) -> (Session, photocraft_doc::LayerId) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 20, "height": 10, "depth": depth, "background": "white"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 20, "height": 10, "depth": depth, "background": "white"}),
+        )
+        .unwrap();
         let bottom = s.active().unwrap().active_layer.unwrap();
         s.edit("wall", |doc, _| {
-            doc.layer_mut(bottom).unwrap().surface_mut().unwrap().fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
+            doc.layer_mut(bottom)
+                .unwrap()
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
@@ -216,25 +342,60 @@ mod tests {
             for all in [None, Some(false), Some(true)] {
                 let (mut s, bottom) = bucket_layers(depth);
                 let before = s.active().unwrap().doc.layer(bottom).unwrap().clone();
-                let mut p = json!({"x": 2, "y": 2, "color": "#ff0000", "antiAlias": false, "tolerance": 0});
+                let mut p =
+                    json!({"x": 2, "y": 2, "color": "#ff0000", "antiAlias": false, "tolerance": 0});
                 if let Some(all) = all {
                     p["sampleAllLayers"] = json!(all);
                 }
-                assert_eq!(s.execute("paint.bucket", p.clone()).unwrap()["filled"], true);
-                assert_eq!(px(&s, 5, 5), vec![1.0, 0.0, 0.0, 1.0], "depth {depth}, all {all:?}");
-                let beyond = if all == Some(true) { vec![0.0; 4] } else { vec![1.0, 0.0, 0.0, 1.0] };
-                assert_eq!(px(&s, 15, 5), beyond, "depth {depth}, all {all:?}: sample flag controls the boundary");
-                assert_eq!(s.active().unwrap().doc.layer(bottom).unwrap(), &before, "only the active layer is written");
+                assert_eq!(
+                    s.execute("paint.bucket", p.clone()).unwrap()["filled"],
+                    true
+                );
+                assert_eq!(
+                    px(&s, 5, 5),
+                    vec![1.0, 0.0, 0.0, 1.0],
+                    "depth {depth}, all {all:?}"
+                );
+                let beyond = if all == Some(true) {
+                    vec![0.0; 4]
+                } else {
+                    vec![1.0, 0.0, 0.0, 1.0]
+                };
+                assert_eq!(
+                    px(&s, 15, 5),
+                    beyond,
+                    "depth {depth}, all {all:?}: sample flag controls the boundary"
+                );
+                assert_eq!(
+                    s.active().unwrap().doc.layer(bottom).unwrap(),
+                    &before,
+                    "only the active layer is written"
+                );
                 if all == Some(true) {
                     assert_eq!(px(&s, 10, 5), vec![0.0; 4], "wall itself is untouched");
                     assert!(s.undo());
                     p["contiguous"] = json!(false);
                     s.execute("paint.bucket", p).unwrap();
-                    assert_eq!(px(&s, 15, 5), vec![1.0, 0.0, 0.0, 1.0], "noncontiguous finds both white regions");
+                    assert_eq!(
+                        px(&s, 15, 5),
+                        vec![1.0, 0.0, 0.0, 1.0],
+                        "noncontiguous finds both white regions"
+                    );
                     assert_eq!(px(&s, 10, 5), vec![0.0; 4]);
                     assert!(s.undo());
-                    assert_eq!(s.execute("paint.bucket", json!({"x": -1, "y": 2, "sampleAllLayers": true})).unwrap()["filled"], false);
-                    assert_eq!(px(&s, 5, 5), vec![0.0; 4], "an off-canvas sample does not fill the layer");
+                    assert_eq!(
+                        s.execute(
+                            "paint.bucket",
+                            json!({"x": -1, "y": 2, "sampleAllLayers": true})
+                        )
+                        .unwrap()["filled"],
+                        false
+                    );
+                    assert_eq!(
+                        px(&s, 5, 5),
+                        vec![0.0; 4],
+                        "an off-canvas sample does not fill the layer"
+                    );
                 }
             }
         }
@@ -245,25 +406,42 @@ mod tests {
         let (mut s, _) = bucket_layers(8);
         s.edit("hidden wall", |doc, active| {
             let l = doc.layer_mut(active.unwrap()).unwrap();
-            l.surface_mut().unwrap().fill_rect(Rect::new(4, 0, 5, 10), &[0.0, 0.0, 0.0, 1.0]);
+            l.surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(4, 0, 5, 10), &[0.0, 0.0, 0.0, 1.0]);
             l.visible = false;
             Ok(())
         })
         .unwrap();
         s.execute("layer.new.layer", json!({})).unwrap();
         s.execute("paint.bucket", json!({"x": 2, "y": 2, "color": "#ff0000", "antiAlias": false, "tolerance": 0, "sampleAllLayers": true})).unwrap();
-        assert_eq!(px(&s, 4, 5), vec![1.0, 0.0, 0.0, 1.0], "hidden wall does not bound the fill");
+        assert_eq!(
+            px(&s, 4, 5),
+            vec![1.0, 0.0, 0.0, 1.0],
+            "hidden wall does not bound the fill"
+        );
         assert_eq!(px(&s, 8, 5), vec![1.0, 0.0, 0.0, 1.0]);
-        assert_eq!(px(&s, 15, 5), vec![0.0; 4], "visible wall still bounds the fill");
+        assert_eq!(
+            px(&s, 15, 5),
+            vec![0.0; 4],
+            "visible wall still bounds the fill"
+        );
     }
 
     #[test]
     fn bucket_sample_all_layers_keeps_selection_opacity_and_history() {
         for depth in [8, 16, 32] {
             let (mut s, _) = bucket_layers(depth);
-            s.execute("select.rect", json!({"x": 0, "y": 2, "width": 20, "height": 6})).unwrap();
+            s.execute(
+                "select.rect",
+                json!({"x": 0, "y": 2, "width": 20, "height": 6}),
+            )
+            .unwrap();
             s.edit("feather", |doc, _| {
-                doc.selection.as_mut().unwrap().fill_rect(Rect::new(0, 2, 4, 8), &[0.5]);
+                doc.selection
+                    .as_mut()
+                    .unwrap()
+                    .fill_rect(Rect::new(0, 2, 4, 8), &[0.5]);
                 Ok(())
             })
             .unwrap();
@@ -271,11 +449,17 @@ mod tests {
             s.execute("paint.bucket", json!({"x": 2, "y": 5, "color": "#ff0000", "antiAlias": false, "tolerance": 0, "opacity": 50, "sampleAllLayers": true}))
                 .unwrap();
             let (feathered, full) = (px(&s, 2, 5), px(&s, 6, 5));
-            assert!((feathered[3] - 0.25).abs() < 0.005 && (full[3] - 0.5).abs() < 0.005, "depth {depth}: selection coverage multiplies opacity");
+            assert!(
+                (feathered[3] - 0.25).abs() < 0.005 && (full[3] - 0.5).abs() < 0.005,
+                "depth {depth}: selection coverage multiplies opacity"
+            );
             assert_eq!(full[..3], [1.0, 0.0, 0.0]);
             assert_eq!(px(&s, 6, 1), vec![0.0; 4], "outside selection");
             assert_eq!(px(&s, 15, 5), vec![0.0; 4], "outside sampled region");
-            assert_eq!(s.active().unwrap().history.undo_label(), Some("Paint Bucket"));
+            assert_eq!(
+                s.active().unwrap().history.undo_label(),
+                Some("Paint Bucket")
+            );
             assert!(s.undo());
             assert_eq!(px(&s, 2, 5), vec![0.0; 4]);
             assert_eq!(s.active().unwrap().doc.selection, selection);
@@ -295,9 +479,16 @@ mod tests {
         )
         .unwrap();
         let left: Vec<f32> = (0..10).map(|x| px(&s, x, 0)[0]).collect();
-        assert!(left.iter().any(|&r| r < 0.3) && left.iter().any(|&r| r > 0.9), "pattern varies inside the region: {left:?}");
+        assert!(
+            left.iter().any(|&r| r < 0.3) && left.iter().any(|&r| r > 0.9),
+            "pattern varies inside the region: {left:?}"
+        );
         assert_eq!(px(&s, 10, 5), vec![0.0; 4], "wall untouched");
-        assert_eq!(px(&s, 15, 5), vec![0.0; 4], "region past the wall untouched");
+        assert_eq!(
+            px(&s, 15, 5),
+            vec![0.0; 4],
+            "region past the wall untouched"
+        );
     }
 
     #[test]
@@ -313,7 +504,8 @@ mod tests {
                         s.execute("channel.new", json!({"fill": "white"})).unwrap();
                     }
                     crate::channel_cmds::Target::QuickMask => {
-                        s.execute("select.editInQuickMaskMode", json!({"on": true})).unwrap();
+                        s.execute("select.editInQuickMaskMode", json!({"on": true}))
+                            .unwrap();
                     }
                     _ => panic!("expected a grayscale target"),
                 }
@@ -329,13 +521,30 @@ mod tests {
                 s.execute("paint.bucket", p.clone()).unwrap();
                 let d = &s.active().unwrap().doc;
                 let surf = match crate::channel_cmds::target_of(&p) {
-                    crate::channel_cmds::Target::Mask => &d.layer(s.active().unwrap().active_layer.unwrap()).unwrap().mask.as_ref().unwrap().surface,
+                    crate::channel_cmds::Target::Mask => {
+                        &d.layer(s.active().unwrap().active_layer.unwrap())
+                            .unwrap()
+                            .mask
+                            .as_ref()
+                            .unwrap()
+                            .surface
+                    }
                     crate::channel_cmds::Target::Alpha(i) => &d.channels[i].surface,
-                    crate::channel_cmds::Target::QuickMask => &d.quick_mask.as_ref().unwrap().surface,
+                    crate::channel_cmds::Target::QuickMask => {
+                        &d.quick_mask.as_ref().unwrap().surface
+                    }
                     _ => panic!("expected a grayscale target"),
                 };
-                assert_eq!(surf.sample_channel(2, 5, 0), 0.0, "{target}, all {all}: filled target");
-                assert_eq!(surf.sample_channel(7, 5, 0), 1.0, "{target}, all {all}: stopped at target wall");
+                assert_eq!(
+                    surf.sample_channel(2, 5, 0),
+                    0.0,
+                    "{target}, all {all}: filled target"
+                );
+                assert_eq!(
+                    surf.sample_channel(7, 5, 0),
+                    1.0,
+                    "{target}, all {all}: stopped at target wall"
+                );
                 assert_eq!(px(&s, 2, 5), vec![0.0; 4], "layer pixels remain untouched");
             }
         }
@@ -345,11 +554,18 @@ mod tests {
     fn bucket_fill_contiguous() {
         let mut s = session();
         s.edit("wall", |doc, _| {
-            doc.layers[0].surface_mut().unwrap().fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
+            doc.layers[0]
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
-        s.execute("paint.bucket", json!({"x": 2, "y": 2, "color": "#ff0000", "antiAlias": false})).unwrap();
+        s.execute(
+            "paint.bucket",
+            json!({"x": 2, "y": 2, "color": "#ff0000", "antiAlias": false}),
+        )
+        .unwrap();
         assert_eq!(px(&s, 5, 5), vec![1.0, 0.0, 0.0, 1.0]);
         assert_eq!(px(&s, 15, 5), vec![1.0, 1.0, 1.0, 1.0]);
         s.execute("paint.bucket", json!({"x": 2, "y": 2, "color": "#0000ff", "contiguous": false, "antiAlias": false, "tolerance": 0})).unwrap();
@@ -364,18 +580,35 @@ mod tests {
         let mut s = session();
         s.execute("image.mode.cmyk", json!({})).unwrap();
         let rgb = photocraft_color::convert::cmyk_to_rgb(cyan).map(|c| c.clamp(0.0, 1.0));
-        s.execute("tools.setColors", json!({"foreground": rgb, "foregroundCmyk": cyan})).unwrap();
+        s.execute(
+            "tools.setColors",
+            json!({"foreground": rgb, "foregroundCmyk": cyan}),
+        )
+        .unwrap();
         let inks_at = |s: &Session, x: i32, y: i32| -> Vec<f32> {
             let st = s.active().unwrap();
-            let surf = st.doc.layer(st.active_layer.unwrap()).unwrap().surface().unwrap();
-            surf.read_region(Rect::new(x, y, x + 1, y + 1)).into_iter().take(4).collect()
+            let surf = st
+                .doc
+                .layer(st.active_layer.unwrap())
+                .unwrap()
+                .surface()
+                .unwrap();
+            surf.read_region(Rect::new(x, y, x + 1, y + 1))
+                .into_iter()
+                .take(4)
+                .collect()
         };
         let is_cyan = |got: &[f32]| got.iter().zip(cyan).all(|(a, b)| (a - b).abs() < 0.02);
-        s.execute("paint.bucket", json!({"x": 2, "y": 2, "antiAlias": false})).unwrap();
+        s.execute("paint.bucket", json!({"x": 2, "y": 2, "antiAlias": false}))
+            .unwrap();
         let got = inks_at(&s, 5, 5);
         assert!(is_cyan(&got), "bucket: {got:?}");
         s.execute("select.all", json!({})).unwrap();
-        s.execute("edit.stroke", json!({"width": 2, "location": "inside", "color": rgb})).unwrap();
+        s.execute(
+            "edit.stroke",
+            json!({"width": 2, "location": "inside", "color": rgb}),
+        )
+        .unwrap();
         let got = inks_at(&s, 0, 5);
         assert!(is_cyan(&got), "stroke: {got:?}");
     }
@@ -385,7 +618,10 @@ mod tests {
         // Paint Bucket with contents="pattern" flood-fills the region with a pattern, not a colour.
         let mut s = session();
         s.edit("wall", |doc, _| {
-            doc.layers[0].surface_mut().unwrap().fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
+            doc.layers[0]
+                .surface_mut()
+                .unwrap()
+                .fill_rect(Rect::new(10, 0, 11, 10), &[0.0, 0.0, 0.0, 1.0]);
             Ok(())
         })
         .unwrap();
@@ -398,22 +634,44 @@ mod tests {
                 [p[0], p[1], p[2], p[3]]
             })
             .collect();
-        assert!(left.iter().any(|p| p[0] < 0.3) && left.iter().any(|p| p[0] > 0.9), "pattern varies in the fill: {left:?}");
-        assert_eq!(px(&s, 15, 5), vec![1.0, 1.0, 1.0, 1.0], "region past the wall untouched");
+        assert!(
+            left.iter().any(|p| p[0] < 0.3) && left.iter().any(|p| p[0] > 0.9),
+            "pattern varies in the fill: {left:?}"
+        );
+        assert_eq!(
+            px(&s, 15, 5),
+            vec![1.0, 1.0, 1.0, 1.0],
+            "region past the wall untouched"
+        );
     }
 
     #[test]
     fn gradient_tool_with_selection_and_reverse() {
         let mut s = session();
-        s.execute("paint.gradient", json!({"from": [0, 0], "to": [20, 0], "colors": ["#000000", "#ffffff"]})).unwrap();
+        s.execute(
+            "paint.gradient",
+            json!({"from": [0, 0], "to": [20, 0], "colors": ["#000000", "#ffffff"]}),
+        )
+        .unwrap();
         assert!(px(&s, 0, 5)[0] < 0.05 && px(&s, 19, 5)[0] > 0.95);
         s.execute("paint.gradient", json!({"from": [0, 0], "to": [20, 0], "colors": ["#000000", "#ffffff"], "reverse": true})).unwrap();
         assert!(px(&s, 0, 5)[0] > 0.95);
-        s.execute("select.rect", json!({"x": 0, "y": 0, "width": 5, "height": 10})).unwrap();
-        s.execute("paint.gradient", json!({"from": [0, 0], "to": [0, 10], "colors": ["#ff0000"]})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 0, "y": 0, "width": 5, "height": 10}),
+        )
+        .unwrap();
+        s.execute(
+            "paint.gradient",
+            json!({"from": [0, 0], "to": [0, 10], "colors": ["#ff0000"]}),
+        )
+        .unwrap();
         assert_eq!(px(&s, 2, 5)[..3], [1.0, 0.0, 0.0]);
         assert!(px(&s, 10, 5)[1] > 0.4, "outside the selection untouched");
-        assert!(s.execute("paint.gradient", json!({"from": [0, 0]})).is_err());
+        assert!(
+            s.execute("paint.gradient", json!({"from": [0, 0]}))
+                .is_err()
+        );
     }
 
     #[test]
@@ -427,22 +685,34 @@ mod tests {
             (0..19).map(|x| px(&s, x, 5)[0]).collect::<Vec<f32>>()
         };
         let smooth = run(false);
-        assert!(smooth.iter().all(|&v| v == smooth[0]), "no dither: perfectly flat");
+        assert!(
+            smooth.iter().all(|&v| v == smooth[0]),
+            "no dither: perfectly flat"
+        );
         let noisy = run(true);
-        assert!(noisy.windows(2).any(|w| w[0] != w[1]), "dither: per-pixel variation");
+        assert!(
+            noisy.windows(2).any(|w| w[0] != w[1]),
+            "dither: per-pixel variation"
+        );
     }
 
     /// The two commands under test, each painting #808080 over a white document.
     fn grey_fill(cmd: &str, opacity: Value) -> Value {
         match cmd {
             "paint.bucket" => json!({"x": 2, "y": 2, "color": "#808080", "opacity": opacity}),
-            _ => json!({"from": [0, 0], "to": [19, 0], "colors": ["#808080", "#808080"], "dither": false, "opacity": opacity}),
+            _ => {
+                json!({"from": [0, 0], "to": [19, 0], "colors": ["#808080", "#808080"], "dither": false, "opacity": opacity})
+            }
         }
     }
 
     fn white(depth: u32) -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 20, "height": 10, "depth": depth, "background": "white"})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 20, "height": 10, "depth": depth, "background": "white"}),
+        )
+        .unwrap();
         s
     }
 
@@ -454,17 +724,31 @@ mod tests {
                 let mut full = white(depth);
                 full.execute(cmd, grey_fill(cmd, json!(100))).unwrap();
                 let expected = px(&full, 5, 5);
-                assert!((expected[0] - 128.0 / 255.0).abs() < 0.01, "{cmd} depth {depth}: 100% paints #808080, got {expected:?}");
+                assert!(
+                    (expected[0] - 128.0 / 255.0).abs() < 0.01,
+                    "{cmd} depth {depth}: 100% paints #808080, got {expected:?}"
+                );
                 for over in [200.0, 1e9] {
                     let mut s = white(depth);
                     s.execute(cmd, grey_fill(cmd, json!(over))).unwrap();
-                    assert_eq!(px(&s, 5, 5), expected, "{cmd} depth {depth}: opacity {over} clamps to 100");
+                    assert_eq!(
+                        px(&s, 5, 5),
+                        expected,
+                        "{cmd} depth {depth}: opacity {over} clamps to 100"
+                    );
                 }
                 let (mut low, mut one) = (white(depth), white(depth));
                 low.execute(cmd, grey_fill(cmd, json!(-50))).unwrap();
                 one.execute(cmd, grey_fill(cmd, json!(1))).unwrap();
-                assert_eq!(px(&low, 5, 5), px(&one, 5, 5), "{cmd} depth {depth}: opacity below 1 clamps to 1");
-                assert!(px(&low, 5, 5).iter().all(|v| (0.0..=1.0).contains(v)), "{cmd} depth {depth}: no overshoot");
+                assert_eq!(
+                    px(&low, 5, 5),
+                    px(&one, 5, 5),
+                    "{cmd} depth {depth}: opacity below 1 clamps to 1"
+                );
+                assert!(
+                    px(&low, 5, 5).iter().all(|v| (0.0..=1.0).contains(v)),
+                    "{cmd} depth {depth}: no overshoot"
+                );
             }
         }
     }
@@ -476,14 +760,24 @@ mod tests {
                 let mut s = white(8);
                 let (before, steps) = (px(&s, 5, 5), s.active().unwrap().history.past_len());
                 let err = s.execute(cmd, grey_fill(cmd, bad.clone())).unwrap_err();
-                assert!(matches!(err, EngineError::BadParams { .. }), "{cmd} {bad}: {err:?}");
+                assert!(
+                    matches!(err, EngineError::BadParams { .. }),
+                    "{cmd} {bad}: {err:?}"
+                );
                 assert_eq!(px(&s, 5, 5), before, "{cmd} {bad}: pixels unchanged");
-                assert_eq!(s.active().unwrap().history.past_len(), steps, "{cmd} {bad}: no history step");
+                assert_eq!(
+                    s.active().unwrap().history.past_len(),
+                    steps,
+                    "{cmd} {bad}: no history step"
+                );
             }
             // An explicit null keeps the default (100%), like the Magic Eraser.
             let mut s = white(8);
             s.execute(cmd, grey_fill(cmd, Value::Null)).unwrap();
-            assert!((px(&s, 5, 5)[0] - 128.0 / 255.0).abs() < 0.01, "{cmd}: null opacity is 100%");
+            assert!(
+                (px(&s, 5, 5)[0] - 128.0 / 255.0).abs() < 0.01,
+                "{cmd}: null opacity is 100%"
+            );
         }
     }
 }

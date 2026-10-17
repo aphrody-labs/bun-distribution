@@ -28,8 +28,16 @@ impl InstalledProfile {
     /// Whether a document can be assigned, converted or proofed to it (device and colour space
     /// profiles in RGB, CMYK or Gray; device links, abstract and named colour profiles are not).
     pub fn is_destination(&self) -> bool {
-        matches!(self.class, ProfileClass::Input | ProfileClass::Display | ProfileClass::Output | ProfileClass::ColorSpace)
-            && matches!(self.color_space, ColorSpace::Rgb | ColorSpace::Cmyk | ColorSpace::Gray)
+        matches!(
+            self.class,
+            ProfileClass::Input
+                | ProfileClass::Display
+                | ProfileClass::Output
+                | ProfileClass::ColorSpace
+        ) && matches!(
+            self.color_space,
+            ColorSpace::Rgb | ColorSpace::Cmyk | ColorSpace::Gray
+        )
     }
 }
 
@@ -43,9 +51,12 @@ const MAX_BYTES: u64 = 32 << 20;
 /// The operating system's colour profile folders.
 pub fn profile_dirs() -> Vec<PathBuf> {
     let mut v = Vec::new();
-    let home = std::env::var_os("HOME").or_else(|| std::env::var_os("USERPROFILE")).map(PathBuf::from);
+    let home = std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from);
     if cfg!(windows) {
-        let root = std::env::var_os("SystemRoot").map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
+        let root = std::env::var_os("SystemRoot")
+            .map_or_else(|| PathBuf::from(r"C:\Windows"), PathBuf::from);
         v.push(root.join(r"System32\spool\drivers\color"));
     } else if cfg!(target_os = "macos") {
         v.push(PathBuf::from("/System/Library/ColorSync/Profiles"));
@@ -72,7 +83,12 @@ pub fn scan(dirs: &[PathBuf]) -> Vec<InstalledProfile> {
         collect(d, 0, &mut files);
     }
     let mut out: Vec<InstalledProfile> = files.iter().filter_map(|f| read_one(f)).collect();
-    out.sort_by(|a, b| a.description.to_lowercase().cmp(&b.description.to_lowercase()).then_with(|| a.path.cmp(&b.path)));
+    out.sort_by(|a, b| {
+        a.description
+            .to_lowercase()
+            .cmp(&b.description.to_lowercase())
+            .then_with(|| a.path.cmp(&b.path))
+    });
     out.dedup_by(|a, b| a.path == b.path);
     out
 }
@@ -81,7 +97,9 @@ fn collect(dir: &Path, depth: usize, files: &mut Vec<PathBuf>) {
     if depth > MAX_DEPTH || files.len() >= MAX_FILES {
         return;
     }
-    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in entries.flatten() {
         if files.len() >= MAX_FILES {
             return;
@@ -90,7 +108,11 @@ fn collect(dir: &Path, depth: usize, files: &mut Vec<PathBuf>) {
         let Ok(ft) = e.file_type() else { continue };
         if ft.is_dir() {
             collect(&path, depth + 1, files);
-        } else if path.extension().and_then(|x| x.to_str()).is_some_and(|x| x.eq_ignore_ascii_case("icc") || x.eq_ignore_ascii_case("icm")) {
+        } else if path
+            .extension()
+            .and_then(|x| x.to_str())
+            .is_some_and(|x| x.eq_ignore_ascii_case("icc") || x.eq_ignore_ascii_case("icm"))
+        {
             files.push(path);
         }
     }
@@ -104,11 +126,19 @@ fn read_one(path: &Path) -> Option<InstalledProfile> {
     let p = Profile::parse(&bytes).ok()?;
     let path = path.to_string_lossy().into_owned();
     let description = if p.description.trim().is_empty() {
-        Path::new(&path).file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| path.clone())
+        Path::new(&path)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_else(|| path.clone())
     } else {
         p.description.trim().to_string()
     };
-    Some(InstalledProfile { path, description, class: p.class, color_space: p.color_space })
+    Some(InstalledProfile {
+        path,
+        description,
+        class: p.class,
+        color_space: p.color_space,
+    })
 }
 
 /// How long a scan is reused: dialogs ask every frame, and a newly installed profile shows up
@@ -129,7 +159,8 @@ pub fn installed() -> Vec<InstalledProfile> {
         return list.clone();
     }
     let list = scan(&profile_dirs());
-    *cache.lock().unwrap_or_else(|e| e.into_inner()) = Some((std::time::Instant::now(), list.clone()));
+    *cache.lock().unwrap_or_else(|e| e.into_inner()) =
+        Some((std::time::Instant::now(), list.clone()));
     list
 }
 
@@ -151,11 +182,32 @@ fn space_id(c: ColorSpace) -> String {
 }
 
 fn list(_: &mut Session, p: &Value) -> Result<Value> {
-    let bad = |msg: String| EngineError::BadParams { cmd: "edit.installedProfiles".into(), msg };
+    let bad = |msg: String| EngineError::BadParams {
+        cmd: "edit.installedProfiles".into(),
+        msg,
+    };
     let class = match p.get("class") {
         None | Some(Value::Null) => "any",
-        Some(Value::String(s)) if ["any", "input", "display", "output", "deviceLink", "colorSpace", "abstract", "namedColor"].contains(&s.as_str()) => s,
-        Some(v) => return Err(bad(format!("class is any|input|display|output|deviceLink|colorSpace|abstract|namedColor, not {v}"))),
+        Some(Value::String(s))
+            if [
+                "any",
+                "input",
+                "display",
+                "output",
+                "deviceLink",
+                "colorSpace",
+                "abstract",
+                "namedColor",
+            ]
+            .contains(&s.as_str()) =>
+        {
+            s
+        }
+        Some(v) => {
+            return Err(bad(format!(
+                "class is any|input|display|output|deviceLink|colorSpace|abstract|namedColor, not {v}"
+            )));
+        }
     };
     let space = match p.get("colorSpace") {
         None | Some(Value::Null) => "any",
@@ -168,7 +220,10 @@ fn list(_: &mut Session, p: &Value) -> Result<Value> {
         .filter(|i| space == "any" || space_id(i.color_space) == space)
         .map(|i| json!({"path": i.path, "description": i.description, "class": class_id(i.class), "colorSpace": space_id(i.color_space)}))
         .collect();
-    let dirs: Vec<String> = profile_dirs().iter().map(|d| d.to_string_lossy().into_owned()).collect();
+    let dirs: Vec<String> = profile_dirs()
+        .iter()
+        .map(|d| d.to_string_lossy().into_owned())
+        .collect();
     Ok(json!({"profiles": profiles, "dirs": dirs}))
 }
 
@@ -201,8 +256,16 @@ mod tests {
     #[test]
     fn scan_lists_parsable_profiles_by_description_and_skips_junk() {
         let d = temp_dir("scan");
-        std::fs::write(d.join("b.icc"), Builtin::Srgb.profile().to_bytes().as_slice()).unwrap();
-        std::fs::write(d.join("vendor").join("a.ICM"), Builtin::CoatedCmyk.profile().to_bytes().as_slice()).unwrap();
+        std::fs::write(
+            d.join("b.icc"),
+            Builtin::Srgb.profile().to_bytes().as_slice(),
+        )
+        .unwrap();
+        std::fs::write(
+            d.join("vendor").join("a.ICM"),
+            Builtin::CoatedCmyk.profile().to_bytes().as_slice(),
+        )
+        .unwrap();
         std::fs::write(d.join("broken.icc"), b"not a profile").unwrap();
         std::fs::write(d.join("empty.icc"), b"").unwrap();
         std::fs::write(d.join("notes.txt"), b"x").unwrap();
@@ -210,7 +273,10 @@ mod tests {
         let names: Vec<&str> = found.iter().map(|p| p.description.as_str()).collect();
         assert_eq!(names.len(), 2, "{names:?}");
         assert!(names[0].to_lowercase() <= names[1].to_lowercase());
-        let cmyk = found.iter().find(|p| p.color_space == ColorSpace::Cmyk).unwrap();
+        let cmyk = found
+            .iter()
+            .find(|p| p.color_space == ColorSpace::Cmyk)
+            .unwrap();
         assert!(cmyk.path.ends_with("a.ICM"));
         assert!(cmyk.is_destination());
         // The listed path is what the profile commands accept.
@@ -229,11 +295,24 @@ mod tests {
         let mut s = Session::new();
         let r = s.execute("edit.installedProfiles", json!({})).unwrap();
         assert!(r["profiles"].is_array() && r["dirs"].is_array());
-        let r = s.execute("edit.installedProfiles", json!({"class": "output", "colorSpace": "cmyk"})).unwrap();
+        let r = s
+            .execute(
+                "edit.installedProfiles",
+                json!({"class": "output", "colorSpace": "cmyk"}),
+            )
+            .unwrap();
         for p in r["profiles"].as_array().unwrap() {
-            assert_eq!((p["class"].as_str(), p["colorSpace"].as_str()), (Some("output"), Some("cmyk")));
+            assert_eq!(
+                (p["class"].as_str(), p["colorSpace"].as_str()),
+                (Some("output"), Some("cmyk"))
+            );
         }
-        for bad in [json!({"class": 3}), json!({"class": "printer"}), json!({"colorSpace": "lab"}), json!({"colorSpace": []})] {
+        for bad in [
+            json!({"class": 3}),
+            json!({"class": "printer"}),
+            json!({"colorSpace": "lab"}),
+            json!({"colorSpace": []}),
+        ] {
             assert!(s.execute("edit.installedProfiles", bad).is_err());
         }
     }

@@ -27,7 +27,9 @@ fn parse_jsonrpc_error(err: JsonRpcError) -> A2AError {
             _ => None,
         })
         .map(|arr| {
-            arr.into_iter().filter_map(|v| serde_json::from_value::<TypedDetail>(v).ok()).collect()
+            arr.into_iter()
+                .filter_map(|v| serde_json::from_value::<TypedDetail>(v).ok())
+                .collect()
         })
         .unwrap_or_default();
 
@@ -79,7 +81,9 @@ impl JsonRpcTransport {
             return Err(parse_jsonrpc_error(err));
         }
 
-        rpc_response.result.ok_or_else(|| A2AError::internal("JSON-RPC response missing result"))
+        rpc_response
+            .result
+            .ok_or_else(|| A2AError::internal("JSON-RPC response missing result"))
     }
 
     async fn call_value<Req>(
@@ -129,7 +133,10 @@ impl JsonRpcTransport {
         })?;
         let rpc_request = JsonRpcRequest::new(id, method, Some(payload));
 
-        let mut builder = self.client.post(&self.endpoint).header("Accept", "text/event-stream");
+        let mut builder = self
+            .client
+            .post(&self.endpoint)
+            .header("Accept", "text/event-stream");
         for (key, values) in params {
             for v in values {
                 builder = builder.header(key, v);
@@ -184,7 +191,12 @@ where
     F: Fn(&str) -> Option<Result<StreamResponse, A2AError>> + Clone + Send + 'static,
 {
     let mapped = stream::unfold(
-        (Box::pin(stream), Vec::<u8>::new(), VecDeque::new(), parse_event),
+        (
+            Box::pin(stream),
+            Vec::<u8>::new(),
+            VecDeque::new(),
+            parse_event,
+        ),
         |(mut stream, mut buf, mut pending, parse_event)| async move {
             loop {
                 if let Some(item) = pending.pop_front() {
@@ -202,17 +214,17 @@ where
                                         "SSE UTF-8 decode error: {e}"
                                     ))));
                                     continue;
-                                },
+                                }
                             };
                             if let Some(result) = parse_event(event_text) {
                                 pending.push_back(result);
                             }
                         }
-                    },
+                    }
                     Some(Err(e)) => {
                         pending
                             .push_back(Err(A2AError::internal(format!("SSE stream error: {e}"))));
-                    },
+                    }
                     None => return None,
                 }
             }
@@ -230,7 +242,12 @@ where
     F: Fn(&str) -> Option<Result<StreamResponse, A2AError>> + Clone + 'static,
 {
     let mapped = stream::unfold(
-        (Box::pin(stream), Vec::<u8>::new(), VecDeque::new(), parse_event),
+        (
+            Box::pin(stream),
+            Vec::<u8>::new(),
+            VecDeque::new(),
+            parse_event,
+        ),
         |(mut stream, mut buf, mut pending, parse_event)| async move {
             loop {
                 if let Some(item) = pending.pop_front() {
@@ -248,17 +265,17 @@ where
                                         "SSE UTF-8 decode error: {e}"
                                     ))));
                                     continue;
-                                },
+                                }
                             };
                             if let Some(result) = parse_event(event_text) {
                                 pending.push_back(result);
                             }
                         }
-                    },
+                    }
                     Some(Err(e)) => {
                         pending
                             .push_back(Err(A2AError::internal(format!("SSE stream error: {e}"))));
-                    },
+                    }
                     None => return None,
                 }
             }
@@ -316,14 +333,14 @@ fn parse_sse_jsonrpc_event(event_text: &str) -> Option<Result<StreamResponse, A2
             } else {
                 None
             }
-        },
+        }
         Err(_) => {
             // Fallback: parse directly as StreamResponse
             match protojson_conv::from_str::<StreamResponse>(&data) {
                 Ok(sr) => Some(Ok(sr)),
                 Err(e) => Some(Err(A2AError::internal(format!("SSE parse error: {e}")))),
             }
-        },
+        }
     }
 }
 
@@ -389,7 +406,8 @@ impl Transport for JsonRpcTransport {
         params: &ServiceParams,
         req: &SendMessageRequest,
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
-        self.call_streaming(params, methods::SEND_STREAMING_MESSAGE, req).await
+        self.call_streaming(params, methods::SEND_STREAMING_MESSAGE, req)
+            .await
     }
 
     async fn get_task(
@@ -421,7 +439,8 @@ impl Transport for JsonRpcTransport {
         params: &ServiceParams,
         req: &SubscribeToTaskRequest,
     ) -> Result<BoxStream<'static, Result<StreamResponse, A2AError>>, A2AError> {
-        self.call_streaming(params, methods::SUBSCRIBE_TO_TASK, req).await
+        self.call_streaming(params, methods::SUBSCRIBE_TO_TASK, req)
+            .await
     }
 
     async fn create_push_config(
@@ -430,8 +449,9 @@ impl Transport for JsonRpcTransport {
         req: &TaskPushNotificationConfig,
     ) -> Result<TaskPushNotificationConfig, A2AError> {
         let payload = serialize_create_task_push_notification_config_request(req)?;
-        let result =
-            self.call_value_with_payload(params, methods::CREATE_PUSH_CONFIG, payload).await?;
+        let result = self
+            .call_value_with_payload(params, methods::CREATE_PUSH_CONFIG, payload)
+            .await?;
         deserialize_task_push_notification_config(result)
     }
 
@@ -440,7 +460,9 @@ impl Transport for JsonRpcTransport {
         params: &ServiceParams,
         req: &GetTaskPushNotificationConfigRequest,
     ) -> Result<TaskPushNotificationConfig, A2AError> {
-        let result = self.call_value(params, methods::GET_PUSH_CONFIG, req).await?;
+        let result = self
+            .call_value(params, methods::GET_PUSH_CONFIG, req)
+            .await?;
         deserialize_task_push_notification_config(result)
     }
 
@@ -449,7 +471,9 @@ impl Transport for JsonRpcTransport {
         params: &ServiceParams,
         req: &ListTaskPushNotificationConfigsRequest,
     ) -> Result<ListTaskPushNotificationConfigsResponse, A2AError> {
-        let result = self.call_value(params, methods::LIST_PUSH_CONFIGS, req).await?;
+        let result = self
+            .call_value(params, methods::LIST_PUSH_CONFIGS, req)
+            .await?;
         deserialize_list_task_push_notification_configs_response(result)
     }
 
@@ -495,7 +519,8 @@ impl Transport for JsonRpcTransport {
         params: &ServiceParams,
         req: &GetExtendedAgentCardRequest,
     ) -> Result<AgentCard, A2AError> {
-        self.call(params, methods::GET_EXTENDED_AGENT_CARD, req).await
+        self.call(params, methods::GET_EXTENDED_AGENT_CARD, req)
+            .await
     }
 
     async fn destroy(&self) -> Result<(), A2AError> {
@@ -510,13 +535,20 @@ pub struct JsonRpcTransportFactory {
 
 impl JsonRpcTransportFactory {
     pub fn new(client: Option<Client>) -> Self {
-        JsonRpcTransportFactory { client: client.unwrap_or_default() }
+        JsonRpcTransportFactory {
+            client: client.unwrap_or_default(),
+        }
     }
 
     // Custom root certificates require TLS crates not available on wasm32.
-    #[cfg(all(not(target_family = "wasm"), any(feature = "rustls-tls", feature = "native-tls")))]
+    #[cfg(all(
+        not(target_family = "wasm"),
+        any(feature = "rustls-tls", feature = "native-tls")
+    ))]
     pub fn with_root_certificates_pem(pem: &[u8]) -> Result<Self, A2AError> {
-        Ok(Self { client: crate::build_reqwest_client_with_root_pem(pem)? })
+        Ok(Self {
+            client: crate::build_reqwest_client_with_root_pem(pem)?,
+        })
     }
 }
 
@@ -532,7 +564,10 @@ impl TransportFactory for JsonRpcTransportFactory {
         _card: &AgentCard,
         iface: &AgentInterface,
     ) -> Result<Box<dyn Transport>, A2AError> {
-        Ok(Box::new(JsonRpcTransport::new(self.client.clone(), iface.url.clone())))
+        Ok(Box::new(JsonRpcTransport::new(
+            self.client.clone(),
+            iface.url.clone(),
+        )))
     }
 }
 
@@ -557,7 +592,12 @@ mod tests {
     fn byte_stream(
         chunks: Vec<String>,
     ) -> impl futures::Stream<Item = Result<bytes::Bytes, reqwest::Error>> + Send + 'static {
-        stream::iter(chunks.into_iter().map(|s| Ok(bytes::Bytes::from(s))).collect::<Vec<_>>())
+        stream::iter(
+            chunks
+                .into_iter()
+                .map(|s| Ok(bytes::Bytes::from(s)))
+                .collect::<Vec<_>>(),
+        )
     }
 
     async fn spawn_jsonrpc_server(response_body: String) -> (String, oneshot::Receiver<String>) {
@@ -612,7 +652,10 @@ mod tests {
     }
 
     fn find_header_end(buffer: &[u8]) -> Option<usize> {
-        buffer.windows(4).position(|window| window == b"\r\n\r\n").map(|position| position + 4)
+        buffer
+            .windows(4)
+            .position(|window| window == b"\r\n\r\n")
+            .map(|position| position + 4)
     }
 
     fn parse_content_length(headers: &str) -> usize {
@@ -647,7 +690,11 @@ mod tests {
         let status_update = TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         };
         let sr = StreamResponse::StatusUpdate(status_update);
@@ -667,7 +714,11 @@ mod tests {
     async fn test_parse_sse_stream_jsonrpc_error() {
         let rpc_resp = JsonRpcResponse::error(
             JsonRpcId::Number(1),
-            JsonRpcError { code: -32600, message: "bad request".into(), data: None },
+            JsonRpcError {
+                code: -32600,
+                message: "bad request".into(),
+                data: None,
+            },
         );
         let data = serde_json::to_string(&rpc_resp).unwrap();
         let sse_text = format!("data: {}\n\n", data);
@@ -684,7 +735,11 @@ mod tests {
         let status_update = TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         };
         let sr = StreamResponse::StatusUpdate(status_update);
@@ -702,7 +757,11 @@ mod tests {
         let status_update = TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         };
         let sr = StreamResponse::StatusUpdate(status_update);
@@ -730,7 +789,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let data = serde_json::to_string(&protojson_conv::to_value(&sr).unwrap()).unwrap();
@@ -749,7 +812,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let data = serde_json::to_string(&protojson_conv::to_value(&sr).unwrap()).unwrap();
@@ -770,7 +837,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let data = serde_json::to_string(&protojson_conv::to_value(&sr).unwrap()).unwrap();
@@ -788,7 +859,11 @@ mod tests {
             StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: "t1".into(),
                 context_id: "c1".into(),
-                status: TaskStatus { state, message: None, timestamp: None },
+                status: TaskStatus {
+                    state,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             })
         };
@@ -818,7 +893,11 @@ mod tests {
             StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: "t1".into(),
                 context_id: "c1".into(),
-                status: TaskStatus { state, message: None, timestamp: None },
+                status: TaskStatus {
+                    state,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             })
         };
@@ -854,7 +933,11 @@ mod tests {
             StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
                 task_id: "t1".into(),
                 context_id: "c1".into(),
-                status: TaskStatus { state, message: None, timestamp: None },
+                status: TaskStatus {
+                    state,
+                    message: None,
+                    timestamp: None,
+                },
                 metadata: None,
             })
         };
@@ -948,7 +1031,7 @@ mod tests {
                     other => panic!("expected text part, got {other:?}"),
                 };
                 assert_eq!(text, "中", "multi-byte char must survive chunk split");
-            },
+            }
             other => panic!("expected StatusUpdate, got {other:?}"),
         }
     }
@@ -966,7 +1049,10 @@ mod tests {
         let items: Vec<_> = parse_sse_stream(raw_stream).collect().await;
         assert_eq!(items.len(), 1, "expected one error item, got {items:?}");
         let err = items.into_iter().next().unwrap().expect_err("should error");
-        assert!(err.to_string().contains("UTF-8"), "error should mention UTF-8 decoding: {err}",);
+        assert!(
+            err.to_string().contains("UTF-8"),
+            "error should mention UTF-8 decoding: {err}",
+        );
     }
 
     /// JSON-RPC envelope whose `result` is not a valid `StreamResponse`
@@ -983,7 +1069,10 @@ mod tests {
         let items: Vec<_> = parse_sse_stream(stream).collect().await;
         assert_eq!(items.len(), 1, "expected one error item, got {items:?}");
         let err = items.into_iter().next().unwrap().expect_err("should error");
-        assert!(err.to_string().contains("parse error"), "error should mention parse error: {err}",);
+        assert!(
+            err.to_string().contains("parse error"),
+            "error should mention parse error: {err}",
+        );
     }
 
     /// Direct `StreamResponse` JSON (JSON-RPC fallback path) that fails
@@ -997,7 +1086,10 @@ mod tests {
         let items: Vec<_> = parse_sse_stream(stream).collect().await;
         assert_eq!(items.len(), 1, "expected one error item, got {items:?}");
         let err = items.into_iter().next().unwrap().expect_err("should error");
-        assert!(err.to_string().contains("parse error"), "error should mention parse error: {err}",);
+        assert!(
+            err.to_string().contains("parse error"),
+            "error should mention parse error: {err}",
+        );
     }
 
     /// Errors yielded by the underlying byte stream must be surfaced to the
@@ -1013,8 +1105,9 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         drop(listener);
-        let err =
-            reqwest::get(format!("http://{addr}/")).await.expect_err("connection should fail");
+        let err = reqwest::get(format!("http://{addr}/"))
+            .await
+            .expect_err("connection should fail");
 
         let s = stream::iter(vec![Err::<bytes::Bytes, reqwest::Error>(err)]);
         let items: Vec<_> = parse_sse_stream(s).collect().await;
@@ -1033,8 +1126,9 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
         drop(listener);
-        let err =
-            reqwest::get(format!("http://{addr}/")).await.expect_err("connection should fail");
+        let err = reqwest::get(format!("http://{addr}/"))
+            .await
+            .expect_err("connection should fail");
 
         let s = stream::iter(vec![Err::<bytes::Bytes, reqwest::Error>(err)]);
         let items: Vec<_> = parse_sse_stream_rest(s).collect().await;
@@ -1053,7 +1147,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Working, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Working,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let data = serde_json::to_string(&protojson_conv::to_value(&sr).unwrap()).unwrap();
@@ -1073,7 +1171,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".into(),
             context_id: "c1".into(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let data = serde_json::to_string(&protojson_conv::to_value(&sr).unwrap()).unwrap();
@@ -1392,7 +1494,11 @@ mod tests {
         let a2a_err = parse_jsonrpc_error(err);
         assert_eq!(a2a_err.code, error_code::INVALID_PARAMS);
         assert!(a2a_err.message.contains("message.parts: required"));
-        assert!(a2a_err.message.contains("message.role: must be user or agent"));
+        assert!(
+            a2a_err
+                .message
+                .contains("message.role: must be user or agent")
+        );
     }
 
     #[test]

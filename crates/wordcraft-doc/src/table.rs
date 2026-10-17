@@ -19,11 +19,21 @@ pub struct Cell {
 
 impl Cell {
     pub fn empty() -> Cell {
-        Cell { props: CellProps { span: 1, ..Default::default() }, blocks: vec![para_block(Paragraph::new())], controls: ControlWrap::default() }
+        Cell {
+            props: CellProps {
+                span: 1,
+                ..Default::default()
+            },
+            blocks: vec![para_block(Paragraph::new())],
+            controls: ControlWrap::default(),
+        }
     }
     pub fn with_text(s: &str) -> Cell {
         Cell {
-            props: CellProps { span: 1, ..Default::default() },
+            props: CellProps {
+                span: 1,
+                ..Default::default()
+            },
             blocks: vec![para_block(Paragraph::with_text(s, Default::default()))],
             controls: ControlWrap::default(),
         }
@@ -66,7 +76,10 @@ impl Table {
         let cols = cols.clamp(1, MAX_COLS);
         let w = (width / cols as f32).max(6.0);
         Table {
-            props: TableProps { style: Some("TableGrid".into()), ..Default::default() },
+            props: TableProps {
+                style: Some("TableGrid".into()),
+                ..Default::default()
+            },
             grid: vec![w; cols],
             rows: (0..rows)
                 .map(|_| Row {
@@ -86,12 +99,21 @@ impl Table {
     }
 
     pub fn cols(&self) -> usize {
-        self.grid.len().max(self.rows.iter().map(|r| r.cells.iter().map(Cell::span).sum::<usize>()).max().unwrap_or(0))
+        self.grid.len().max(
+            self.rows
+                .iter()
+                .map(|r| r.cells.iter().map(Cell::span).sum::<usize>())
+                .max()
+                .unwrap_or(0),
+        )
     }
 
     /// Grid column where cell `c` of row `r` starts.
     pub fn grid_col(&self, r: usize, c: usize) -> usize {
-        self.rows.get(r).map(|row| row.cells.iter().take(c).map(Cell::span).sum()).unwrap_or(0)
+        self.rows
+            .get(r)
+            .map(|row| row.cells.iter().take(c).map(Cell::span).sum())
+            .unwrap_or(0)
     }
 
     /// Cell index in row `r` that covers grid column `g`.
@@ -109,11 +131,17 @@ impl Table {
 
     /// Insert a row copied (formatting, empty text) from row `like` at index `at`.
     pub fn insert_row(&mut self, at: usize, like: usize) {
-        let Some(src) = self.rows.get(like.min(self.rows.len().saturating_sub(1))) else { return };
+        let Some(src) = self.rows.get(like.min(self.rows.len().saturating_sub(1))) else {
+            return;
+        };
         if self.rows.len() >= MAX_ROWS {
             return;
         }
-        let mut row = Row { props: src.props.clone(), cells: Vec::with_capacity(src.cells.len()), controls: ControlWrap::default() };
+        let mut row = Row {
+            props: src.props.clone(),
+            cells: Vec::with_capacity(src.cells.len()),
+            controls: ControlWrap::default(),
+        };
         row.props.header = false;
         for c in &src.cells {
             let mut nc = Cell::empty();
@@ -138,7 +166,11 @@ impl Table {
             return;
         }
         let g = g.min(self.grid.len());
-        let w = self.grid.get(g.min(self.grid.len().saturating_sub(1))).copied().unwrap_or(72.0);
+        let w = self
+            .grid
+            .get(g.min(self.grid.len().saturating_sub(1)))
+            .copied()
+            .unwrap_or(72.0);
         self.grid.insert(g, w);
         for r in 0..self.rows.len() {
             let mut x = 0;
@@ -207,7 +239,9 @@ impl Table {
 
     /// Merge cells `c0..=c1` of row `r` horizontally (content is concatenated).
     pub fn merge_right(&mut self, r: usize, c0: usize, c1: usize) {
-        let Some(row) = self.rows.get_mut(r) else { return };
+        let Some(row) = self.rows.get_mut(r) else {
+            return;
+        };
         if c1 <= c0 || c1 >= row.cells.len() {
             return;
         }
@@ -215,10 +249,20 @@ impl Table {
         if let Some(first) = row.cells.get_mut(c0) {
             for c in removed {
                 first.props.span += c.props.span.max(1);
-                let nonempty: Vec<_> = c.blocks.into_iter().filter(|b| b.as_para().is_none_or(|p| !p.is_empty())).collect();
+                let nonempty: Vec<_> = c
+                    .blocks
+                    .into_iter()
+                    .filter(|b| b.as_para().is_none_or(|p| !p.is_empty()))
+                    .collect();
                 first.blocks.extend(nonempty);
             }
-            if first.blocks.len() > 1 && first.blocks.first().and_then(|b| b.as_para()).is_some_and(Paragraph::is_empty) {
+            if first.blocks.len() > 1
+                && first
+                    .blocks
+                    .first()
+                    .and_then(|b| b.as_para())
+                    .is_some_and(Paragraph::is_empty)
+            {
                 first.blocks.remove(0);
             }
         }
@@ -227,7 +271,9 @@ impl Table {
     /// Merge a rectangle of cells (rows r0..=r1, grid columns g0..=g1).
     pub fn merge(&mut self, r0: usize, r1: usize, g0: usize, g1: usize) {
         for r in r0..=r1.min(self.rows.len().saturating_sub(1)) {
-            let (Some(a), Some(b)) = (self.cell_at_grid(r, g0), self.cell_at_grid(r, g1)) else { continue };
+            let (Some(a), Some(b)) = (self.cell_at_grid(r, g0), self.cell_at_grid(r, g1)) else {
+                continue;
+            };
             self.merge_right(r, a, b);
             if let Some(c) = self.rows.get_mut(r).and_then(|row| row.cells.get_mut(a)) {
                 c.props.vmerge = if r1 == r0 {
@@ -245,9 +291,17 @@ impl Table {
         {
             let mut moved = Vec::new();
             for r in r0 + 1..=r1.min(self.rows.len().saturating_sub(1)) {
-                if let Some(c) = self.cell_at_grid(r, g0).and_then(|ci| self.rows.get_mut(r).and_then(|row| row.cells.get_mut(ci))) {
-                    let blocks = std::mem::replace(&mut c.blocks, vec![para_block(Paragraph::new())]);
-                    moved.extend(blocks.into_iter().filter(|b| b.as_para().is_none_or(|p| !p.is_empty())));
+                if let Some(c) = self
+                    .cell_at_grid(r, g0)
+                    .and_then(|ci| self.rows.get_mut(r).and_then(|row| row.cells.get_mut(ci)))
+                {
+                    let blocks =
+                        std::mem::replace(&mut c.blocks, vec![para_block(Paragraph::new())]);
+                    moved.extend(
+                        blocks
+                            .into_iter()
+                            .filter(|b| b.as_para().is_none_or(|p| !p.is_empty())),
+                    );
                 }
             }
             if let Some(c) = self.rows.get_mut(r0).and_then(|row| row.cells.get_mut(a)) {
@@ -262,13 +316,24 @@ impl Table {
     /// extent and the table's width stay as they were.
     pub fn split_cell(&mut self, r: usize, c: usize, n: usize) {
         let n = n.clamp(1, MAX_COLS);
-        let Some(span) = self.rows.get(r).and_then(|row| row.cells.get(c)).map(Cell::span) else { return };
+        let Some(span) = self
+            .rows
+            .get(r)
+            .and_then(|row| row.cells.get(c))
+            .map(Cell::span)
+        else {
+            return;
+        };
         if n <= 1 {
             return;
         }
         if span >= n {
-            let Some(row) = self.rows.get_mut(r) else { return };
-            let Some(cell) = row.cells.get_mut(c) else { return };
+            let Some(row) = self.rows.get_mut(r) else {
+                return;
+            };
+            let Some(cell) = row.cells.get_mut(c) else {
+                return;
+            };
             let w = cell.props.width.map(|w| w / n as f32);
             cell.props.width = w;
             cell.props.span = (span - (n - 1)) as u32;
@@ -326,7 +391,8 @@ impl Table {
                     self.grid.insert(j + 1, right);
                     for rr in 0..self.rows.len() {
                         if let Some(ci) = self.cell_at_grid(rr, j)
-                            && let Some(cell) = self.rows.get_mut(rr).and_then(|row| row.cells.get_mut(ci))
+                            && let Some(cell) =
+                                self.rows.get_mut(rr).and_then(|row| row.cells.get_mut(ci))
                         {
                             cell.props.span = cell.props.span.max(1).saturating_add(1);
                         }
@@ -341,7 +407,9 @@ impl Table {
         // The cell now spans `g..end`: cut it at the new lines.
         let grid = self.grid.clone();
         let width = |a: usize, b: usize| grid.get(a..b).map(|x| x.iter().sum::<f32>());
-        let Some(row) = self.rows.get_mut(r) else { return };
+        let Some(row) = self.rows.get_mut(r) else {
+            return;
+        };
         let mut a = g;
         let mut parts = Vec::with_capacity(lines.len() + 1);
         for &b in lines.iter().chain(std::iter::once(&end)) {

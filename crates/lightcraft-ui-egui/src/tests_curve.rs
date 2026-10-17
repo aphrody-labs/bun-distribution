@@ -11,7 +11,10 @@ const T: Duration = Duration::from_secs(20);
 
 /// Detail view with the Edit panel's Curve flyout open on `channel`.
 fn curve_open(channel: &str) -> Headless {
-    let services = Services { png: None, ..Default::default() };
+    let services = Services {
+        png: None,
+        ..Default::default()
+    };
     let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
     let mut h = Headless::new(app, [1200.0, 1400.0], 1.0);
     let r = h.request("ui.set", json!({"view": "detail"}), T);
@@ -30,7 +33,11 @@ fn curve_open(channel: &str) -> Headless {
 }
 
 fn exec(h: &mut Headless, command: &str, params: serde_json::Value) -> serde_json::Value {
-    let r = h.request("engine.execute", json!({"command": command, "params": params}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": command, "params": params}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{command}: {r}");
     r["result"].clone()
 }
@@ -47,14 +54,24 @@ fn pts(v: &[lightcraft_geom::Point]) -> Vec<(f64, f64)> {
 /// Side of the (square) curve graph in screen points.
 fn curve_side(h: &mut Headless) -> f64 {
     let r = h.request("ui.widgets", json!({"filter": "curve"}), T);
-    let w = r["result"].as_array().unwrap().iter().find(|w| w["id"] == "curve").cloned().unwrap_or_else(|| panic!("curve widget on screen: {r}"));
+    let w = r["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|w| w["id"] == "curve")
+        .cloned()
+        .unwrap_or_else(|| panic!("curve widget on screen: {r}"));
     w["rect"][2].as_f64().unwrap()
 }
 
 #[test]
 fn dragging_a_point_moves_it_in_both_axes_with_one_undo_step() {
     let mut h = curve_open("master");
-    exec(&mut h, "develop.curve", json!({"channel": "master", "points": [[0.0, 0.0], [0.5, 0.5], [1.0, 1.0]]}));
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "master", "points": [[0.0, 0.0], [0.5, 0.5], [1.0, 1.0]]}),
+    );
     h.step();
     let side = curve_side(&mut h);
     let undo_before = h.app.session.undo.len();
@@ -63,16 +80,28 @@ fn dragging_a_point_moves_it_in_both_axes_with_one_undo_step() {
     assert_eq!(r["ok"], true, "{r}");
     h.step();
     let c = pts(&develop(&h).curve.master);
-    assert_eq!(c.len(), 3, "dragging moves the point, it doesn't add one: {c:?}");
+    assert_eq!(
+        c.len(),
+        3,
+        "dragging moves the point, it doesn't add one: {c:?}"
+    );
     assert!((c[1].0 - 0.4).abs() < 0.03, "x follows the pointer: {c:?}");
     assert!((c[1].1 - 0.7).abs() < 0.03, "y follows the pointer: {c:?}");
-    assert_eq!(h.app.session.undo.len(), undo_before + 1, "one undo step per drag");
+    assert_eq!(
+        h.app.session.undo.len(),
+        undo_before + 1,
+        "one undo step per drag"
+    );
 }
 
 #[test]
 fn alt_dragging_a_point_moves_it_a_tenth_as_far() {
     let mut h = curve_open("master");
-    exec(&mut h, "develop.curve", json!({"channel": "master", "points": [[0.0, 0.0], [0.5, 0.5], [1.0, 1.0]]}));
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "master", "points": [[0.0, 0.0], [0.5, 0.5], [1.0, 1.0]]}),
+    );
     h.step();
     let side = curve_side(&mut h);
     // the same drag as above with ⌥ held: x 0.5 → ~0.49, y 0.5 → ~0.52
@@ -82,8 +111,14 @@ fn alt_dragging_a_point_moves_it_a_tenth_as_far() {
     h.step();
     let c = pts(&develop(&h).curve.master);
     assert_eq!(c.len(), 3, "{c:?}");
-    assert!(c[1].0 < 0.5 && c[1].0 > 0.485, "x moves a tenth of the pointer: {c:?}");
-    assert!(c[1].1 > 0.51 && c[1].1 < 0.525, "y moves a tenth of the pointer: {c:?}");
+    assert!(
+        c[1].0 < 0.5 && c[1].0 > 0.485,
+        "x moves a tenth of the pointer: {c:?}"
+    );
+    assert!(
+        c[1].1 > 0.51 && c[1].1 < 0.525,
+        "y moves a tenth of the pointer: {c:?}"
+    );
 }
 
 fn click_widget(h: &mut Headless, id: &str, count: u64) {
@@ -97,8 +132,16 @@ const S_CURVE: [[f64; 2]; 4] = [[0.0, 0.0], [0.25, 0.15], [0.75, 0.85], [1.0, 1.
 #[test]
 fn double_clicking_a_channel_resets_only_that_channel() {
     let mut h = curve_open("master");
-    exec(&mut h, "develop.curve", json!({"channel": "master", "points": S_CURVE}));
-    exec(&mut h, "develop.curve", json!({"channel": "green", "points": S_CURVE}));
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "master", "points": S_CURVE}),
+    );
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "green", "points": S_CURVE}),
+    );
     h.step();
     click_widget(&mut h, "curveChannel:green", 2);
     let c = develop(&h).curve;
@@ -111,9 +154,17 @@ fn double_clicking_a_channel_resets_only_that_channel() {
 fn reset_button_resets_every_curve() {
     let mut h = curve_open("red");
     for ch in ["master", "red", "blue"] {
-        exec(&mut h, "develop.curve", json!({"channel": ch, "points": S_CURVE}));
+        exec(
+            &mut h,
+            "develop.curve",
+            json!({"channel": ch, "points": S_CURVE}),
+        );
     }
-    exec(&mut h, "develop.set", json!({"control": "curve.highlights", "value": -40}));
+    exec(
+        &mut h,
+        "develop.set",
+        json!({"control": "curve.highlights", "value": -40}),
+    );
     h.step();
     click_widget(&mut h, "button:curveReset", 1);
     let c = develop(&h).curve;
@@ -129,7 +180,11 @@ fn point_curve_preset_dropdown_applies_and_saves() {
     assert_eq!(c.master.len(), 5, "the preset's S-curve: {:?}", c.master);
     assert!(c.master[1].y < 0.25 && c.master[3].y > 0.75);
     // shape it further, then save it from the dropdown (name prompt)
-    exec(&mut h, "develop.curve", json!({"channel": "blue", "points": [[0.0, 0.08], [1.0, 1.0]]}));
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "blue", "points": [[0.0, 0.08], [1.0, 1.0]]}),
+    );
     h.step();
     click_widget(&mut h, "dropdown:curvePreset", 1);
     click_widget(&mut h, "curvePresetMenu:save", 1);
@@ -157,16 +212,27 @@ fn point_curve_preset_dropdown_applies_and_saves() {
 #[test]
 fn dragging_a_point_past_its_neighbour_is_clamped() {
     let mut h = curve_open("red");
-    exec(&mut h, "develop.curve", json!({"channel": "red", "points": [[0.0, 0.0], [0.3, 0.3], [0.6, 0.6], [1.0, 1.0]]}));
+    exec(
+        &mut h,
+        "develop.curve",
+        json!({"channel": "red", "points": [[0.0, 0.0], [0.3, 0.3], [0.6, 0.6], [1.0, 1.0]]}),
+    );
     h.step();
     let side = curve_side(&mut h);
     // drag the point at 0.3 far to the right (past 0.6)
-    let r = h.request("ui.dragWidget", json!({"id": "curve", "fx": 0.3, "fy": 0.7, "dx": 0.5 * side, "dy": 0.0, "steps": 12}), T);
+    let r = h.request(
+        "ui.dragWidget",
+        json!({"id": "curve", "fx": 0.3, "fy": 0.7, "dx": 0.5 * side, "dy": 0.0, "steps": 12}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.step();
     let c = pts(&develop(&h).curve.red);
     assert_eq!(c.len(), 4, "{c:?}");
-    assert!(c[1].0 < c[2].0 && c[1].0 > 0.55, "clamped just left of its neighbour: {c:?}");
+    assert!(
+        c[1].0 < c[2].0 && c[1].0 > 0.55,
+        "clamped just left of its neighbour: {c:?}"
+    );
     assert_eq!(c[2], (0.6, 0.6), "the neighbour stays: {c:?}");
 }
 
@@ -179,10 +245,21 @@ fn targeted_adjustment_announces_itself_and_esc_turns_it_off() {
     assert_eq!(r["ok"], true, "{r}");
     h.step();
     assert_eq!(h.app.ui.tool, "tat:curve");
-    assert!(h.app.ui.toast.as_ref().is_some_and(|t| t.0.contains("Esc")), "{:?}", h.app.ui.toast);
+    assert!(
+        h.app.ui.toast.as_ref().is_some_and(|t| t.0.contains("Esc")),
+        "{:?}",
+        h.app.ui.toast
+    );
     let r = h.request("ui.key", json!({"key": "esc"}), T);
     assert_eq!(r["ok"], true, "{r}");
     h.step();
-    assert!(h.app.ui.tool.is_empty(), "Esc turns the tool off: {:?}", h.app.ui.tool);
-    assert!(matches!(h.app.ui.view, crate::state::ViewMode::Detail), "the first Esc only leaves the tool");
+    assert!(
+        h.app.ui.tool.is_empty(),
+        "Esc turns the tool off: {:?}",
+        h.app.ui.tool
+    );
+    assert!(
+        matches!(h.app.ui.view, crate::state::ViewMode::Detail),
+        "the first Esc only leaves the tool"
+    );
 }

@@ -56,7 +56,11 @@ pub struct CameraRawPreviewState {
 
 impl Default for CameraRawPreviewState {
     fn default() -> Self {
-        Self { zoom: None, center: [0.5, 0.5], hand: false }
+        Self {
+            zoom: None,
+            center: [0.5, 0.5],
+            hand: false,
+        }
     }
 }
 
@@ -280,7 +284,10 @@ impl Tool {
         }
     }
     pub fn is_type(self) -> bool {
-        matches!(self, Self::Type | Self::VerticalType | Self::HorizontalTypeMask | Self::VerticalTypeMask)
+        matches!(
+            self,
+            Self::Type | Self::VerticalType | Self::HorizontalTypeMask | Self::VerticalTypeMask
+        )
     }
     /// The Type Mask tools: their text becomes a selection on commit.
     pub fn is_type_mask(self) -> bool {
@@ -328,11 +335,18 @@ impl Tool {
             Tool::Crop | Tool::PerspectiveCrop | Tool::Slice | Tool::SliceSelect => 'C',
             Tool::Frame => 'K',
             Tool::Gradient | Tool::PaintBucket => 'G',
-            Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => 'T',
+            Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => {
+                'T'
+            }
             Tool::Hand => 'H',
             Tool::RotateView => 'R',
             Tool::Zoom => 'Z',
-            Tool::Remove | Tool::SpotHealing | Tool::Healing | Tool::Patch | Tool::ContentAwareMove | Tool::RedEye => 'J',
+            Tool::Remove
+            | Tool::SpotHealing
+            | Tool::Healing
+            | Tool::Patch
+            | Tool::ContentAwareMove
+            | Tool::RedEye => 'J',
             Tool::CloneStamp | Tool::PatternStamp => 'S',
             Tool::HistoryBrush => 'Y',
             Tool::Blur | Tool::Sharpen | Tool::Smudge => '\0',
@@ -340,9 +354,19 @@ impl Tool {
             Tool::SingleRowMarquee | Tool::SingleColumnMarquee => '\0',
             Tool::Dodge | Tool::Burn | Tool::Sponge => 'O',
             Tool::QuickSelection | Tool::ObjectSelection => 'W',
-            Tool::Pen | Tool::FreeformPen | Tool::CurvaturePen | Tool::AddAnchorPoint | Tool::DeleteAnchorPoint | Tool::ConvertPoint => 'P',
+            Tool::Pen
+            | Tool::FreeformPen
+            | Tool::CurvaturePen
+            | Tool::AddAnchorPoint
+            | Tool::DeleteAnchorPoint
+            | Tool::ConvertPoint => 'P',
             Tool::PathSelection | Tool::DirectSelection => 'A',
-            Tool::Rectangle | Tool::EllipseShape | Tool::Triangle | Tool::Polygon | Tool::Line | Tool::CustomShape => 'U',
+            Tool::Rectangle
+            | Tool::EllipseShape
+            | Tool::Triangle
+            | Tool::Polygon
+            | Tool::Line
+            | Tool::CustomShape => 'U',
         }
     }
     /// Glyph drawn in the toolbar (vector icons come later).
@@ -360,7 +384,9 @@ impl Tool {
             Tool::MagicWand => "W",
             Tool::Crop => "C",
             Tool::Gradient | Tool::PaintBucket => "G",
-            Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => "T",
+            Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => {
+                "T"
+            }
             Tool::Hand => "✋",
             Tool::RotateView => "🧭",
             Tool::Zoom => "🔍",
@@ -371,7 +397,9 @@ impl Tool {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
         Tool::ALL.into_iter().find(|t| {
             let a = format!("{t:?}").to_ascii_lowercase();
-            n == a || n == a.replace("marquee", "") || n == t.label().to_ascii_lowercase().replace(' ', "")
+            n == a
+                || n == a.replace("marquee", "")
+                || n == t.label().to_ascii_lowercase().replace(' ', "")
         })
     }
 }
@@ -483,7 +511,14 @@ pub struct View {
 
 impl Default for View {
     fn default() -> Self {
-        Self { zoom: 1.0, center: [0.0, 0.0], fit_pending: true, fill_pending: false, doc_size: [0, 0], rotation: 0.0 }
+        Self {
+            zoom: 1.0,
+            center: [0.0, 0.0],
+            fit_pending: true,
+            fill_pending: false,
+            doc_size: [0, 0],
+            rotation: 0.0,
+        }
     }
 }
 
@@ -940,7 +975,11 @@ pub struct ContentAwareOptions {
 
 impl Default for ContentAwareOptions {
     fn default() -> Self {
-        Self { amount: 100.0, protect: None, protect_skin_tones: false }
+        Self {
+            amount: 100.0,
+            protect: None,
+            protect_skin_tones: false,
+        }
     }
 }
 
@@ -1014,7 +1053,13 @@ pub struct Extras {
 
 impl Default for Extras {
     fn default() -> Self {
-        Self { rulers: false, grid: false, guides: true, snap: true, lock_guides: false }
+        Self {
+            rulers: false,
+            grid: false,
+            guides: true,
+            snap: true,
+            lock_guides: false,
+        }
     }
 }
 
@@ -1368,7 +1413,11 @@ impl UiState {
         id
     }
 
-    pub fn open_dialog(&mut self, kind: DialogKind, fields: serde_json::Map<String, serde_json::Value>) -> u64 {
+    pub fn open_dialog(
+        &mut self,
+        kind: DialogKind,
+        fields: serde_json::Map<String, serde_json::Value>,
+    ) -> u64 {
         let id = self.alloc_id();
         self.dialogs.push(Dialog { id, kind, fields });
         id
@@ -1401,21 +1450,42 @@ mod tests {
         assert_eq!(Tool::from_name("Eraser Tool"), Some(Tool::Eraser));
         assert_eq!(Tool::from_name("mixerBrush"), Some(Tool::MixerBrush));
         assert_eq!(Tool::from_name("Mixer Brush Tool"), Some(Tool::MixerBrush));
-        assert_eq!(Tool::from_name("colorReplacement"), Some(Tool::ColorReplacement));
-        assert_eq!(Tool::from_name("Color Replacement Tool"), Some(Tool::ColorReplacement));
+        assert_eq!(
+            Tool::from_name("colorReplacement"),
+            Some(Tool::ColorReplacement)
+        );
+        assert_eq!(
+            Tool::from_name("Color Replacement Tool"),
+            Some(Tool::ColorReplacement)
+        );
         assert_eq!(Tool::from_name("redEye"), Some(Tool::RedEye));
         assert_eq!(Tool::from_name("Red Eye Tool"), Some(Tool::RedEye));
         assert_eq!(Tool::RedEye.key(), 'J');
         assert!(!Tool::RedEye.is_brushlike());
         assert_eq!(Tool::from_name("patternStamp"), Some(Tool::PatternStamp));
-        assert_eq!(Tool::from_name("Pattern Stamp Tool"), Some(Tool::PatternStamp));
+        assert_eq!(
+            Tool::from_name("Pattern Stamp Tool"),
+            Some(Tool::PatternStamp)
+        );
         assert_eq!(Tool::ALL.len(), 67);
-        assert_eq!(Tool::from_name("Vertical Type Mask Tool"), Some(Tool::VerticalTypeMask));
-        assert_eq!(Tool::from_name("addAnchorPoint"), Some(Tool::AddAnchorPoint));
-        assert_eq!(Tool::from_name("Delete Anchor Point Tool"), Some(Tool::DeleteAnchorPoint));
+        assert_eq!(
+            Tool::from_name("Vertical Type Mask Tool"),
+            Some(Tool::VerticalTypeMask)
+        );
+        assert_eq!(
+            Tool::from_name("addAnchorPoint"),
+            Some(Tool::AddAnchorPoint)
+        );
+        assert_eq!(
+            Tool::from_name("Delete Anchor Point Tool"),
+            Some(Tool::DeleteAnchorPoint)
+        );
         assert_eq!(Tool::DeleteAnchorPoint.key(), 'P');
         assert_eq!(Tool::from_name("convertPoint"), Some(Tool::ConvertPoint));
-        assert_eq!(Tool::from_name("Convert Point Tool"), Some(Tool::ConvertPoint));
+        assert_eq!(
+            Tool::from_name("Convert Point Tool"),
+            Some(Tool::ConvertPoint)
+        );
         assert_eq!(Tool::ConvertPoint.key(), 'P', "it shares the Pen's key");
         assert!(!Tool::ConvertPoint.is_brushlike());
         assert_eq!(Tool::from_name("Remove Tool"), Some(Tool::Remove));
@@ -1434,18 +1504,30 @@ mod tests {
         let readme = include_str!("../../../docs/libraries/photocraft/README.md");
         let (_, rest) = readme.split_once("<h4>🧰 ").unwrap();
         let (count, rest) = rest.split_once(" tools</h4>").unwrap();
-        assert_eq!(count.parse::<usize>().unwrap(), Tool::ALL.len(), "README.md tool heading");
+        assert_eq!(
+            count.parse::<usize>().unwrap(),
+            Tool::ALL.len(),
+            "README.md tool heading"
+        );
         let list = rest.trim_start().lines().next().unwrap();
         // "Rectangular and Elliptical Marquee" names two tools: "Rectangular Marquee", "Elliptical Marquee".
         let mut named: Vec<String> = Vec::new();
         for entry in list.split(" · ") {
-            match entry.split_once(" and ").and_then(|(first, rest)| Some((first, rest.split_once(' ')?))) {
-                Some((first, (second, noun))) => named.extend([format!("{first} {noun}"), format!("{second} {noun}")]),
+            match entry
+                .split_once(" and ")
+                .and_then(|(first, rest)| Some((first, rest.split_once(' ')?)))
+            {
+                Some((first, (second, noun))) => {
+                    named.extend([format!("{first} {noun}"), format!("{second} {noun}")])
+                }
                 None => named.push(entry.to_owned()),
             }
         }
         named.sort();
-        let mut labels: Vec<String> = Tool::ALL.iter().map(|tool| tool.label().trim_end_matches(" Tool").to_owned()).collect();
+        let mut labels: Vec<String> = Tool::ALL
+            .iter()
+            .map(|tool| tool.label().trim_end_matches(" Tool").to_owned())
+            .collect();
         labels.sort();
         assert_eq!(named, labels, "README.md tool list");
     }

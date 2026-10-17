@@ -51,7 +51,11 @@ pub struct VideoSource {
 impl VideoSource {
     /// Display aspect ratio (width / height), 16:9 when unknown.
     pub fn aspect(&self) -> f64 {
-        if self.width == 0 || self.height == 0 { 16.0 / 9.0 } else { f64::from(self.width) / f64::from(self.height) }
+        if self.width == 0 || self.height == 0 {
+            16.0 / 9.0
+        } else {
+            f64::from(self.width) / f64::from(self.height)
+        }
     }
 }
 
@@ -107,6 +111,11 @@ impl SourcePool {
 
 impl PartialEq for SourcePool {
     fn eq(&self, other: &Self) -> bool {
-        self.map.len() == other.map.len() && self.map.iter().zip(other.map.iter()).all(|((a, x), (b, y))| a == b && Arc::ptr_eq(x, y))
+        self.map.len() == other.map.len()
+            && self
+                .map
+                .iter()
+                .zip(other.map.iter())
+                .all(|((a, x), (b, y))| a == b && Arc::ptr_eq(x, y))
     }
 }

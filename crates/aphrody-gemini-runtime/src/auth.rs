@@ -53,12 +53,16 @@ pub const DEFAULT_FETCH_TIMEOUT_MS: u64 = 10_000;
 pub const EXPIRY_SAFETY_MARGIN_MS: i64 = 5 * 60 * 1000;
 
 /// Env vars that supply the OAuth client id (in priority order).
-pub const CLIENT_ID_ENV_VARS: &[&str] =
-    &["OPENCLAW_GEMINI_OAUTH_CLIENT_ID", "GEMINI_CLI_OAUTH_CLIENT_ID"];
+pub const CLIENT_ID_ENV_VARS: &[&str] = &[
+    "OPENCLAW_GEMINI_OAUTH_CLIENT_ID",
+    "GEMINI_CLI_OAUTH_CLIENT_ID",
+];
 
 /// Env vars that supply the OAuth client secret (in priority order).
-pub const CLIENT_SECRET_ENV_VARS: &[&str] =
-    &["OPENCLAW_GEMINI_OAUTH_CLIENT_SECRET", "GEMINI_CLI_OAUTH_CLIENT_SECRET"];
+pub const CLIENT_SECRET_ENV_VARS: &[&str] = &[
+    "OPENCLAW_GEMINI_OAUTH_CLIENT_SECRET",
+    "GEMINI_CLI_OAUTH_CLIENT_SECRET",
+];
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -165,7 +169,13 @@ impl GeminiCliCredentials {
         let expires = pick_i64(&v, &["expires", "expiry_date"]).unwrap_or(0);
         let email = pick_str(&v, &["email"]);
         let project_id = pick_str(&v, &["projectId", "project_id"]);
-        Ok(Self { access, refresh, expires, email, project_id })
+        Ok(Self {
+            access,
+            refresh,
+            expires,
+            email,
+            project_id,
+        })
     }
 
     /// Read the classic credential file at `<home>/.gemini/oauth_creds.json`.
@@ -186,8 +196,10 @@ impl GeminiCliCredentials {
     ///
     /// Same as [`Self::read_default`].
     pub fn read_from(path: &PathBuf) -> Result<Self, AuthError> {
-        let raw = std::fs::read_to_string(path)
-            .map_err(|source| AuthError::Read { path: path.clone(), source })?;
+        let raw = std::fs::read_to_string(path).map_err(|source| AuthError::Read {
+            path: path.clone(),
+            source,
+        })?;
         Self::parse_json(&raw)
     }
 
@@ -203,8 +215,10 @@ impl GeminiCliCredentials {
     pub fn write_default(&self) -> Result<(), AuthError> {
         let path = default_creds_path()?;
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|source| AuthError::Write { path: path.clone(), source })?;
+            std::fs::create_dir_all(parent).map_err(|source| AuthError::Write {
+                path: path.clone(),
+                source,
+            })?;
         }
         let raw = serde_json::to_string_pretty(self)?;
         std::fs::write(&path, raw).map_err(|source| AuthError::Write { path, source })
@@ -247,7 +261,10 @@ impl GeminiCliCredentials {
 /// `parseGeminiAuth` in `gemini-auth.ts`.
 #[must_use]
 pub fn api_key_headers(api_key: &str) -> Vec<(&'static str, String)> {
-    vec![("x-goog-api-key", api_key.to_owned()), ("Content-Type", "application/json".to_owned())]
+    vec![
+        ("x-goog-api-key", api_key.to_owned()),
+        ("Content-Type", "application/json".to_owned()),
+    ]
 }
 
 // ---------------------------------------------------------------------------
@@ -292,9 +309,13 @@ impl TokenResponse {
     ) -> Result<GeminiCliCredentials, AuthError> {
         let access = self.access_token.ok_or(AuthError::MissingAccessToken)?;
         let expires_in_ms = self.expires_in.unwrap_or(0).saturating_mul(1_000);
-        let expires = now_ms.saturating_add(expires_in_ms).saturating_sub(EXPIRY_SAFETY_MARGIN_MS);
-        let refresh =
-            self.refresh_token.or_else(|| refresh_fallback.map(str::to_owned)).unwrap_or_default();
+        let expires = now_ms
+            .saturating_add(expires_in_ms)
+            .saturating_sub(EXPIRY_SAFETY_MARGIN_MS);
+        let refresh = self
+            .refresh_token
+            .or_else(|| refresh_fallback.map(str::to_owned))
+            .unwrap_or_default();
         Ok(GeminiCliCredentials {
             access,
             refresh,
@@ -370,7 +391,10 @@ pub async fn request_token_grant(
 ) -> Result<TokenResponse, AuthError> {
     let resp = client
         .post(TOKEN_URL)
-        .header("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+        .header(
+            "Content-Type",
+            "application/x-www-form-urlencoded;charset=UTF-8",
+        )
         .header("Accept", "*/*")
         .header("User-Agent", "aphrody-gemini-runtime/1")
         .body(body)
@@ -601,7 +625,10 @@ mod tests {
 
     #[test]
     fn expiry_predicate_uses_injectable_clock() {
-        let creds = GeminiCliCredentials { expires: 1_000, ..GeminiCliCredentials::default() };
+        let creds = GeminiCliCredentials {
+            expires: 1_000,
+            ..GeminiCliCredentials::default()
+        };
         assert!(creds.is_expired_at(2_000));
         assert!(!creds.is_expired_at(500));
 
@@ -614,18 +641,32 @@ mod tests {
 
     #[test]
     fn auth_headers_bearer_when_access_present() {
-        let creds =
-            GeminiCliCredentials { access: "ya29.ZZ".into(), ..GeminiCliCredentials::default() };
+        let creds = GeminiCliCredentials {
+            access: "ya29.ZZ".into(),
+            ..GeminiCliCredentials::default()
+        };
         let h = creds.auth_headers();
-        assert!(h.iter().any(|(k, v)| *k == "Authorization" && v == "Bearer ya29.ZZ"));
-        assert!(h.iter().any(|(k, v)| *k == "Content-Type" && v == "application/json"));
+        assert!(
+            h.iter()
+                .any(|(k, v)| *k == "Authorization" && v == "Bearer ya29.ZZ")
+        );
+        assert!(
+            h.iter()
+                .any(|(k, v)| *k == "Content-Type" && v == "application/json")
+        );
     }
 
     #[test]
     fn api_key_headers_use_x_goog_header() {
         let h = api_key_headers("AIzaXX");
-        assert!(h.iter().any(|(k, v)| *k == "x-goog-api-key" && v == "AIzaXX"));
-        assert!(h.iter().any(|(k, v)| *k == "Content-Type" && v == "application/json"));
+        assert!(
+            h.iter()
+                .any(|(k, v)| *k == "x-goog-api-key" && v == "AIzaXX")
+        );
+        assert!(
+            h.iter()
+                .any(|(k, v)| *k == "Content-Type" && v == "application/json")
+        );
     }
 
     // --- body builders ------------------------------------------------------
@@ -666,7 +707,9 @@ mod tests {
             expires_in: Some(3_600),
             token_type: Some("Bearer".into()),
         };
-        let creds = resp.into_credentials(None, None, None, 1_000_000).expect("creds");
+        let creds = resp
+            .into_credentials(None, None, None, 1_000_000)
+            .expect("creds");
         // 1_000_000 + 3_600_000 - 300_000 = 4_300_000
         assert_eq!(creds.expires, 4_300_000);
         assert_eq!(creds.refresh, "rt");

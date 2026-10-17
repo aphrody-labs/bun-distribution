@@ -8,12 +8,24 @@ use std::{
 };
 
 pub fn output_directory(path: &Path, workspace: &Path) -> Result<PathBuf> {
-    ensure!(path.is_absolute(), "protected output directory must be absolute");
-    ensure!(path.exists(), "protected output directory must already exist");
-    ensure!(!fs::symlink_metadata(path)?.file_type().is_symlink(), "symlink output refused");
+    ensure!(
+        path.is_absolute(),
+        "protected output directory must be absolute"
+    );
+    ensure!(
+        path.exists(),
+        "protected output directory must already exist"
+    );
+    ensure!(
+        !fs::symlink_metadata(path)?.file_type().is_symlink(),
+        "symlink output refused"
+    );
     let root = path.canonicalize()?;
     let workspace = workspace.canonicalize()?;
-    ensure!(!root.starts_with(workspace), "protected output must be outside the workspace");
+    ensure!(
+        !root.starts_with(workspace),
+        "protected output must be outside the workspace"
+    );
     ensure!(root.is_dir(), "protected output must be a directory");
     secure(&root, true)?;
     Ok(root)
@@ -24,14 +36,23 @@ pub fn hash(bytes: &[u8]) -> String {
 }
 
 pub fn save(root: &Path, name: &str, bytes: &[u8]) -> Result<()> {
-    ensure!(!name.contains(['/', '\\']) && !name.starts_with('.'), "invalid storage name");
+    ensure!(
+        !name.contains(['/', '\\']) && !name.starts_with('.'),
+        "invalid storage name"
+    );
     let target = root.join(name);
     if target.exists() {
-        ensure!(!fs::symlink_metadata(&target)?.file_type().is_symlink(), "symlink file refused");
+        ensure!(
+            !fs::symlink_metadata(&target)?.file_type().is_symlink(),
+            "symlink file refused"
+        );
         let previous = fs::read(&target)?;
         let backup = root.join(format!("{name}.{}.backup", uuid::Uuid::new_v4()));
         create(&backup, &previous)?;
-        ensure!(hash(&fs::read(&backup)?) == hash(&previous), "backup checksum mismatch");
+        ensure!(
+            hash(&fs::read(&backup)?) == hash(&previous),
+            "backup checksum mismatch"
+        );
         create(&backup.with_extension("sha256"), hash(&previous).as_bytes())?;
     }
     let temp = root.join(format!("{name}.{}.tmp", uuid::Uuid::new_v4()));
@@ -64,7 +85,10 @@ fn create(path: &Path, bytes: &[u8]) -> Result<()> {
 #[cfg(unix)]
 fn secure(path: &Path, directory: bool) -> Result<()> {
     use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(if directory { 0o700 } else { 0o600 }))?;
+    fs::set_permissions(
+        path,
+        fs::Permissions::from_mode(if directory { 0o700 } else { 0o600 }),
+    )?;
     Ok(())
 }
 

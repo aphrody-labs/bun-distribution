@@ -19,7 +19,12 @@ pub struct Pixels {
 }
 
 impl Pixels {
-    fn remap(&self, width: usize, height: usize, src: impl Fn(usize, usize) -> (usize, usize)) -> Pixels {
+    fn remap(
+        &self,
+        width: usize,
+        height: usize,
+        src: impl Fn(usize, usize) -> (usize, usize),
+    ) -> Pixels {
         let ch = self.ch;
         let mut data = vec![0u16; width * height * ch];
         for (y, row) in data.chunks_exact_mut(width * ch).enumerate() {
@@ -31,7 +36,12 @@ impl Pixels {
                 }
             }
         }
-        Pixels { width, height, ch, data }
+        Pixels {
+            width,
+            height,
+            ch,
+            data,
+        }
     }
 }
 
@@ -110,7 +120,12 @@ mod tests {
 
     /// 3×2, one channel: 1 2 3 / 4 5 6.
     fn img() -> Pixels {
-        Pixels { width: 3, height: 2, ch: 1, data: vec![1, 2, 3, 4, 5, 6] }
+        Pixels {
+            width: 3,
+            height: 2,
+            ch: 1,
+            data: vec![1, 2, 3, 4, 5, 6],
+        }
     }
 
     fn run(t: Transform) -> (usize, usize, Vec<u16>) {
@@ -120,32 +135,73 @@ mod tests {
 
     #[test]
     fn rotations_are_counter_clockwise() {
-        assert_eq!(run(Transform::Rotate(Rotation::Ccw90)), (2, 3, vec![3, 6, 2, 5, 1, 4]));
-        assert_eq!(run(Transform::Rotate(Rotation::Ccw180)), (3, 2, vec![6, 5, 4, 3, 2, 1]));
-        assert_eq!(run(Transform::Rotate(Rotation::Ccw270)), (2, 3, vec![4, 1, 5, 2, 6, 3]));
-        assert_eq!(run(Transform::Rotate(Rotation::None)), (3, 2, vec![1, 2, 3, 4, 5, 6]));
+        assert_eq!(
+            run(Transform::Rotate(Rotation::Ccw90)),
+            (2, 3, vec![3, 6, 2, 5, 1, 4])
+        );
+        assert_eq!(
+            run(Transform::Rotate(Rotation::Ccw180)),
+            (3, 2, vec![6, 5, 4, 3, 2, 1])
+        );
+        assert_eq!(
+            run(Transform::Rotate(Rotation::Ccw270)),
+            (2, 3, vec![4, 1, 5, 2, 6, 3])
+        );
+        assert_eq!(
+            run(Transform::Rotate(Rotation::None)),
+            (3, 2, vec![1, 2, 3, 4, 5, 6])
+        );
     }
 
     #[test]
     fn mirrors_follow_libheif() {
         // axis 0 (heic-rs `LeftRight`) exchanges top and bottom; axis 1 left and right.
-        assert_eq!(run(Transform::Mirror(Mirror::LeftRight)), (3, 2, vec![4, 5, 6, 1, 2, 3]));
-        assert_eq!(run(Transform::Mirror(Mirror::TopBottom)), (3, 2, vec![3, 2, 1, 6, 5, 4]));
+        assert_eq!(
+            run(Transform::Mirror(Mirror::LeftRight)),
+            (3, 2, vec![4, 5, 6, 1, 2, 3])
+        );
+        assert_eq!(
+            run(Transform::Mirror(Mirror::TopBottom)),
+            (3, 2, vec![3, 2, 1, 6, 5, 4])
+        );
     }
 
     fn clap(w: u32, h: u32, ho: i32, vo: i32) -> Clap {
-        Clap { width: (w, 1), height: (h, 1), horiz_off: (ho, 1), vert_off: (vo, 1) }
+        Clap {
+            width: (w, 1),
+            height: (h, 1),
+            horiz_off: (ho, 1),
+            vert_off: (vo, 1),
+        }
     }
 
     #[test]
     fn clap_corners_round_like_libheif() {
         // Measured against libheif 1.23 on a 512 × 512 picture.
-        assert_eq!(crop_rect(512, 512, clap(301, 201, 0, 0)).unwrap(), (105, 156, 301, 201));
-        assert_eq!(crop_rect(512, 512, clap(300, 200, 0, 0)).unwrap(), (106, 156, 300, 200));
-        assert_eq!(crop_rect(512, 512, clap(301, 201, 37, -21)).unwrap(), (142, 135, 301, 201));
-        assert_eq!(crop_rect(512, 512, clap(301, 201, -3, 5)).unwrap(), (102, 161, 301, 201));
-        assert_eq!(crop_rect(512, 512, clap(300, 201, 0, 0)).unwrap(), (106, 156, 300, 201));
-        assert_eq!(crop_rect(1500, 1000, clap(1001, 701, 37, -21)).unwrap(), (286, 129, 1001, 701));
+        assert_eq!(
+            crop_rect(512, 512, clap(301, 201, 0, 0)).unwrap(),
+            (105, 156, 301, 201)
+        );
+        assert_eq!(
+            crop_rect(512, 512, clap(300, 200, 0, 0)).unwrap(),
+            (106, 156, 300, 200)
+        );
+        assert_eq!(
+            crop_rect(512, 512, clap(301, 201, 37, -21)).unwrap(),
+            (142, 135, 301, 201)
+        );
+        assert_eq!(
+            crop_rect(512, 512, clap(301, 201, -3, 5)).unwrap(),
+            (102, 161, 301, 201)
+        );
+        assert_eq!(
+            crop_rect(512, 512, clap(300, 201, 0, 0)).unwrap(),
+            (106, 156, 300, 201)
+        );
+        assert_eq!(
+            crop_rect(1500, 1000, clap(1001, 701, 37, -21)).unwrap(),
+            (286, 129, 1001, 701)
+        );
         let p = apply(img(), &[Transform::Crop(clap(2, 1, 1, 0))]).unwrap();
         // The half-pixel top rounds down a row.
         assert_eq!((p.width, p.height, p.data), (2, 1, vec![5, 6]));
@@ -158,8 +214,14 @@ mod tests {
             clap(4, 1, 0, 0),
             clap(3, 2, 1, 0),
             clap(3, 2, 0, -1),
-            Clap { width: (1, 0), ..clap(1, 1, 0, 0) },
-            Clap { horiz_off: (0, 0), ..clap(1, 1, 0, 0) },
+            Clap {
+                width: (1, 0),
+                ..clap(1, 1, 0, 0)
+            },
+            Clap {
+                horiz_off: (0, 0),
+                ..clap(1, 1, 0, 0)
+            },
         ] {
             assert!(crop_rect(3, 2, c).is_err(), "{c:?}");
         }
@@ -171,7 +233,11 @@ mod tests {
         assert!(!odd_crop(512, 512, &[Transform::Crop(clap(300, 200, 0, 0))]).unwrap());
         assert!(odd_crop(512, 512, &[Transform::Crop(clap(301, 200, 0, 0))]).unwrap());
         // After a quarter turn the crop applies to a 200 × 300 image.
-        let t = [Transform::Crop(clap(300, 200, 0, 0)), Transform::Rotate(Rotation::Ccw90), Transform::Crop(clap(197, 300, 0, 0))];
+        let t = [
+            Transform::Crop(clap(300, 200, 0, 0)),
+            Transform::Rotate(Rotation::Ccw90),
+            Transform::Crop(clap(197, 300, 0, 0)),
+        ];
         assert!(odd_crop(512, 512, &t).unwrap());
         assert!(!odd_crop(512, 512, &[Transform::Rotate(Rotation::Ccw90)]).unwrap());
     }

@@ -66,16 +66,36 @@ fn edt_1d(f: &[f64], d: &mut [f64], v: &mut [usize], z: &mut [f64]) {
 pub fn inside_distance(cov: &Pixmap) -> Vec<f32> {
     let (w, h) = (cov.width() as usize, cov.height() as usize);
     const FAR: f64 = 1e20;
-    let mut g: Vec<f64> = cov.data().chunks_exact(4).map(|p| if p.get(3).copied().unwrap_or(0) >= 128 { FAR } else { 0.0 }).collect();
+    let mut g: Vec<f64> = cov
+        .data()
+        .chunks_exact(4)
+        .map(|p| {
+            if p.get(3).copied().unwrap_or(0) >= 128 {
+                FAR
+            } else {
+                0.0
+            }
+        })
+        .collect();
     let n = w.max(h);
-    let (mut f, mut d, mut v, mut z) = (vec![0f64; n], vec![0f64; n], vec![0usize; n], vec![0f64; n + 1]);
+    let (mut f, mut d, mut v, mut z) = (
+        vec![0f64; n],
+        vec![0f64; n],
+        vec![0usize; n],
+        vec![0f64; n + 1],
+    );
     for x in 0..w {
         for y in 0..h {
             if let (Some(fy), Some(gv)) = (f.get_mut(y), g.get(y * w + x)) {
                 *fy = *gv;
             }
         }
-        edt_1d(f.get(..h).unwrap_or(&[]), d.get_mut(..h).unwrap_or(&mut []), &mut v, &mut z);
+        edt_1d(
+            f.get(..h).unwrap_or(&[]),
+            d.get_mut(..h).unwrap_or(&mut []),
+            &mut v,
+            &mut z,
+        );
         for y in 0..h {
             if let (Some(gv), Some(dy)) = (g.get_mut(y * w + x), d.get(y)) {
                 *gv = *dy;
@@ -87,13 +107,26 @@ pub fn inside_distance(cov: &Pixmap) -> Vec<f32> {
         if let (Some(src), Some(dst)) = (g.get(row..row + w), f.get_mut(..w)) {
             dst.copy_from_slice(src);
         }
-        edt_1d(f.get(..w).unwrap_or(&[]), d.get_mut(..w).unwrap_or(&mut []), &mut v, &mut z);
+        edt_1d(
+            f.get(..w).unwrap_or(&[]),
+            d.get_mut(..w).unwrap_or(&mut []),
+            &mut v,
+            &mut z,
+        );
         if let (Some(dst), Some(src)) = (g.get_mut(row..row + w), d.get(..w)) {
             dst.copy_from_slice(src);
         }
     }
     // Centre-to-centre distance to the nearest outside pixel → distance to the edge between.
-    g.iter().map(|s| if *s > 0.0 { (s.sqrt() - 0.5).max(0.0) as f32 } else { 0.0 }).collect()
+    g.iter()
+        .map(|s| {
+            if *s > 0.0 {
+                (s.sqrt() - 0.5).max(0.0) as f32
+            } else {
+                0.0
+            }
+        })
+        .collect()
 }
 
 /// Running-sum box blur of a `w` × `h` field along rows (`stride` 1) or columns (`stride` `w`),
@@ -145,7 +178,11 @@ fn smooth_normals(dist: &[f32], w: usize, h: usize, r: usize) -> Vec<(f32, f32)>
         .zip(&gy)
         .map(|(x, y)| {
             let len = (x * x + y * y).sqrt();
-            if len > 1e-4 { (x / len, y / len) } else { (0.0, 0.0) }
+            if len > 1e-4 {
+                (x / len, y / len)
+            } else {
+                (0.0, 0.0)
+            }
         })
         .collect()
 }
@@ -165,11 +202,21 @@ fn sample(p: &Pixmap, x: f32, y: f32) -> [f32; 4] {
         }
         let i = ((yi * w + xi) * 4) as usize;
         match data.get(i..i + 4) {
-            Some(s) => [f32::from(s[0]), f32::from(s[1]), f32::from(s[2]), f32::from(s[3])],
+            Some(s) => [
+                f32::from(s[0]),
+                f32::from(s[1]),
+                f32::from(s[2]),
+                f32::from(s[3]),
+            ],
             None => [0.0; 4],
         }
     };
-    let (a, b, c, d) = (px(x0, y0), px(x0 + 1, y0), px(x0, y0 + 1), px(x0 + 1, y0 + 1));
+    let (a, b, c, d) = (
+        px(x0, y0),
+        px(x0 + 1, y0),
+        px(x0, y0 + 1),
+        px(x0 + 1, y0 + 1),
+    );
     std::array::from_fn(|k| {
         let top = a[k] + (b[k] - a[k]) * tx;
         let bot = c[k] + (d[k] - c[k]) * tx;
@@ -180,13 +227,28 @@ fn sample(p: &Pixmap, x: f32, y: f32) -> [f32; 4] {
 /// The glass of a `w` × `h` layer whose `shape` maps through `xf` (local → layer pixels), from
 /// `back`, its backdrop padded by `pad` pixels each way, at `scale` device pixels per unit.
 #[allow(clippy::too_many_arguments)]
-pub fn glass(g: &Glass, shape: &Outline, back: &Pixmap, pad: u32, w: u32, h: u32, xf: Affine, scale: f64) -> Option<Pixmap> {
+pub fn glass(
+    g: &Glass,
+    shape: &Outline,
+    back: &Pixmap,
+    pad: u32,
+    w: u32,
+    h: u32,
+    xf: Affine,
+    scale: f64,
+) -> Option<Pixmap> {
     let g = g.sanitized();
     let depth = (g.depth * scale).clamp(1.0, 1024.0);
     // Coverage with a margin, so distances aren't cut short where the layer is cropped (past the
     // margin the edge is further than `depth` away and nothing bends).
     let m = depth.ceil() as u32 + 2;
-    let cov = spread_alpha(std::slice::from_ref(shape), 0.0, Affine::translate((f64::from(m), f64::from(m))) * xf, w + 2 * m, h + 2 * m)?;
+    let cov = spread_alpha(
+        std::slice::from_ref(shape),
+        0.0,
+        Affine::translate((f64::from(m), f64::from(m))) * xf,
+        w + 2 * m,
+        h + 2 * m,
+    )?;
     let dist = inside_distance(&cov);
     let (cw, ch) = (cov.width() as usize, cov.height() as usize);
     let normals = smooth_normals(&dist, cw, ch, (depth * 0.1).clamp(1.0, 8.0) as usize);
@@ -227,7 +289,9 @@ pub fn glass(g: &Glass, shape: &Outline, back: &Pixmap, pad: u32, w: u32, h: u32
             let i = (y * w as usize + x) * 4;
             if let Some(p) = dst.get_mut(i..i + 4) {
                 for (o, v) in p.iter_mut().zip(base) {
-                    *o = ((v * (1.0 - hl) + 255.0 * hl) * c).round().clamp(0.0, 255.0) as u8;
+                    *o = ((v * (1.0 - hl) + 255.0 * hl) * c)
+                        .round()
+                        .clamp(0.0, 255.0) as u8;
                 }
             }
         }
@@ -243,7 +307,10 @@ mod tests {
     fn distance_of_a_square() {
         let mut p = Pixmap::new(21, 21).unwrap();
         let r = tiny_skia::Rect::from_xywh(5.0, 5.0, 11.0, 11.0).unwrap();
-        let paint = tiny_skia::Paint { shader: tiny_skia::Shader::SolidColor(tiny_skia::Color::WHITE), ..Default::default() };
+        let paint = tiny_skia::Paint {
+            shader: tiny_skia::Shader::SolidColor(tiny_skia::Color::WHITE),
+            ..Default::default()
+        };
         p.fill_rect(r, &paint, tiny_skia::Transform::identity(), None);
         let d = inside_distance(&p);
         // Outside: 0. The centre pixel (10, 10) is 5.5 px from each edge.

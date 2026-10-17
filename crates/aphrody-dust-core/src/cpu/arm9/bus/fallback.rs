@@ -24,19 +24,23 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
     match addr >> 24 {
         #[cfg(feature = "bft-r")]
         0x02 => unsafe {
-            emu.main_mem().read_unchecked((addr & emu.main_mem_mask().get()) as usize)
+            emu.main_mem()
+                .read_unchecked((addr & emu.main_mem_mask().get()) as usize)
         },
 
         #[cfg(feature = "bft-r")]
         0x03 => unsafe {
-            emu.swram.arm9_r_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).read()
+            emu.swram
+                .arm9_r_ptr()
+                .add(addr as usize & emu.swram.arm9_mask() as usize)
+                .read()
         },
 
         #[allow(clippy::match_same_arms)]
         0x04 => match addr & 0x00FF_FFFF {
             0x000..=0x003 | 0x008..=0x057 | 0x064..=0x067 | 0x06C..=0x06D => {
                 emu.gpu.engine_2d_a.read_8::<A>(addr)
-            },
+            }
             0x06E..=0x06F => 0,
 
             0x004 => emu.gpu.disp_status_9().0 as u8,
@@ -62,7 +66,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
                     &mut emu.arm9.schedule,
                     &mut emu.arm9.irqs,
                 ) >> 8) as u8
-            },
+            }
             0x102 => emu.arm9.timers.0[0].control().0,
             0x103 => 0,
 
@@ -77,7 +81,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
                     &mut emu.arm9.schedule,
                     &mut emu.arm9.irqs,
                 ) >> 8) as u8
-            },
+            }
             0x106 => emu.arm9.timers.0[1].control().0,
             0x107 => 0,
 
@@ -92,7 +96,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
                     &mut emu.arm9.schedule,
                     &mut emu.arm9.irqs,
                 ) >> 8) as u8
-            },
+            }
             0x10A => emu.arm9.timers.0[2].control().0,
             0x10B => 0,
 
@@ -107,7 +111,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
                     &mut emu.arm9.schedule,
                     &mut emu.arm9.irqs,
                 ) >> 8) as u8
-            },
+            }
             0x10E => emu.arm9.timers.0[3].control().0,
             0x10F => 0,
 
@@ -173,15 +177,19 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
 
             0x1000..=0x1003 | 0x1008..=0x1057 | 0x106C..=0x106D => {
                 emu.gpu.engine_2d_b.read_8::<A>(addr)
-            },
+            }
 
             _ => {
                 #[cfg(feature = "log")]
                 if !A::IS_DEBUG {
-                    slog::warn!(emu.arm9.logger, "Unknown IO read8 @ {:#05X}", addr & 0x00FF_FFFF);
+                    slog::warn!(
+                        emu.arm9.logger,
+                        "Unknown IO read8 @ {:#05X}",
+                        addr & 0x00FF_FFFF
+                    );
                 }
                 0
-            },
+            }
         },
 
         0x05 => emu.gpu.vram.palette.read(addr as usize & 0x7FF),
@@ -203,7 +211,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
             } else {
                 (emu.arm9.local_ex_mem_control().gba_rom_halfword(addr) >> ((addr & 1) << 3)) as u8
             }
-        },
+        }
 
         0x0A => {
             if emu.global_ex_mem_control().arm7_gba_slot_access() {
@@ -211,7 +219,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
             } else {
                 0xFF
             }
-        },
+        }
 
         #[cfg(feature = "bft-r")]
         0xFF => {
@@ -220,7 +228,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
             } else {
                 0
             }
-        },
+        }
 
         _ => {
             #[cfg(feature = "log")]
@@ -228,7 +236,7 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
                 slog::warn!(emu.arm9.logger, "Unknown read8 @ {:#010X}", addr);
             }
             0
-        },
+        }
     }
 }
 
@@ -238,13 +246,17 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
     match addr >> 24 {
         #[cfg(feature = "bft-r")]
         0x02 => unsafe {
-            emu.main_mem().read_le_unchecked((addr & emu.main_mem_mask().get()) as usize)
+            emu.main_mem()
+                .read_le_unchecked((addr & emu.main_mem_mask().get()) as usize)
         },
 
         #[cfg(feature = "bft-r")]
         0x03 => unsafe {
             u16::read_le_aligned(
-                emu.swram.arm9_r_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).cast(),
+                emu.swram
+                    .arm9_r_ptr()
+                    .add(addr as usize & emu.swram.arm9_mask() as usize)
+                    .cast(),
             )
         },
 
@@ -252,7 +264,7 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
         0x04 => match addr & 0x00FF_FFFE {
             0x000..=0x002 | 0x008..=0x056 | 0x064 | 0x066 | 0x06C => {
                 emu.gpu.engine_2d_a.read_16::<A>(addr)
-            },
+            }
             0x06E => 0,
 
             0x004 => emu.gpu.disp_status_9().0,
@@ -348,20 +360,20 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
             0x240 => {
                 emu.gpu.vram.bank_control()[0].0 as u16
                     | (emu.gpu.vram.bank_control()[1].0 as u16) << 8
-            },
+            }
             0x242 => {
                 emu.gpu.vram.bank_control()[2].0 as u16
                     | (emu.gpu.vram.bank_control()[3].0 as u16) << 8
-            },
+            }
             0x244 => {
                 emu.gpu.vram.bank_control()[4].0 as u16
                     | (emu.gpu.vram.bank_control()[5].0 as u16) << 8
-            },
+            }
             0x246 => emu.gpu.vram.bank_control()[6].0 as u16 | (emu.swram.control().0 as u16) << 8,
             0x248 => {
                 emu.gpu.vram.bank_control()[7].0 as u16
                     | (emu.gpu.vram.bank_control()[8].0 as u16) << 8
-            },
+            }
 
             0x280 => emu.arm9.div_engine.control().0,
             0x282 => 0,
@@ -382,10 +394,14 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
             _ => {
                 #[cfg(feature = "log")]
                 if !A::IS_DEBUG {
-                    slog::warn!(emu.arm9.logger, "Unknown IO read16 @ {:#05X}", addr & 0x00FF_FFFE);
+                    slog::warn!(
+                        emu.arm9.logger,
+                        "Unknown IO read16 @ {:#05X}",
+                        addr & 0x00FF_FFFE
+                    );
                 }
                 0
-            },
+            }
         },
 
         0x05 => emu.gpu.vram.palette.read_le(addr as usize & 0x7FE),
@@ -407,7 +423,7 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
             } else {
                 emu.arm9.local_ex_mem_control().gba_rom_halfword(addr)
             }
-        },
+        }
 
         0x0A => {
             if emu.global_ex_mem_control().arm7_gba_slot_access() {
@@ -415,7 +431,7 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
             } else {
                 0xFFFF
             }
-        },
+        }
 
         #[cfg(feature = "bft-r")]
         0xFF => {
@@ -424,7 +440,7 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
             } else {
                 0
             }
-        },
+        }
 
         _ => {
             #[cfg(feature = "log")]
@@ -432,7 +448,7 @@ pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u16
                 slog::warn!(emu.arm9.logger, "Unknown read16 @ {:#010X}", addr);
             }
             0
-        },
+        }
     }
 }
 
@@ -442,13 +458,17 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
     match addr >> 24 {
         #[cfg(feature = "bft-r")]
         0x02 => unsafe {
-            emu.main_mem().read_le_unchecked((addr & emu.main_mem_mask().get()) as usize)
+            emu.main_mem()
+                .read_le_unchecked((addr & emu.main_mem_mask().get()) as usize)
         },
 
         #[cfg(feature = "bft-r")]
         0x03 => unsafe {
             u32::read_le_aligned(
-                emu.swram.arm9_r_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).cast(),
+                emu.swram
+                    .arm9_r_ptr()
+                    .add(addr as usize & emu.swram.arm9_mask() as usize)
+                    .cast(),
             )
         },
 
@@ -484,7 +504,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                     &mut emu.arm9.irqs,
                 ) as u32
                     | (emu.arm9.timers.0[0].control().0 as u32) << 16
-            },
+            }
 
             0x104 => {
                 emu.arm9.timers.read_counter(
@@ -493,7 +513,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                     &mut emu.arm9.irqs,
                 ) as u32
                     | (emu.arm9.timers.0[1].control().0 as u32) << 16
-            },
+            }
 
             0x108 => {
                 emu.arm9.timers.read_counter(
@@ -502,7 +522,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                     &mut emu.arm9.irqs,
                 ) as u32
                     | (emu.arm9.timers.0[2].control().0 as u32) << 16
-            },
+            }
 
             0x10C => {
                 emu.arm9.timers.read_counter(
@@ -511,11 +531,11 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                     &mut emu.arm9.irqs,
                 ) as u32
                     | (emu.arm9.timers.0[3].control().0 as u32) << 16
-            },
+            }
 
             0x130 => {
                 (emu.input.status().0 & 0xFFFF) | (emu.input.arm9_key_irq_control().0 as u32) << 16
-            },
+            }
 
             0x180 => emu.ipc.sync_9().0 as u32,
             0x184 => emu.ipc.fifo_control_9().0 as u32,
@@ -535,17 +555,17 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                     | (emu.gpu.vram.bank_control()[1].0 as u32) << 8
                     | (emu.gpu.vram.bank_control()[2].0 as u32) << 16
                     | (emu.gpu.vram.bank_control()[3].0 as u32) << 24
-            },
+            }
             0x244 => {
                 emu.gpu.vram.bank_control()[4].0 as u32
                     | (emu.gpu.vram.bank_control()[5].0 as u32) << 8
                     | (emu.gpu.vram.bank_control()[6].0 as u32) << 16
                     | (emu.swram.control().0 as u32) << 24
-            },
+            }
             0x248 => {
                 emu.gpu.vram.bank_control()[7].0 as u32
                     | (emu.gpu.vram.bank_control()[8].0 as u32) << 8
-            },
+            }
 
             0x280 => emu.arm9.div_engine.control().0 as u32,
             0x290 => emu.arm9.div_engine.num() as u32,
@@ -572,27 +592,32 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                 } else {
                     emu.ipc.recv_9(&mut emu.arm7.irqs)
                 }
-            },
+            }
 
             0x10_0010 => {
                 if emu.ds_slot.arm9_access() {
                     if A::IS_DEBUG {
                         emu.ds_slot.peek_rom_data()
                     } else {
-                        emu.ds_slot.read_rom_data_arm9(&mut emu.arm9.irqs, &mut emu.arm9.schedule)
+                        emu.ds_slot
+                            .read_rom_data_arm9(&mut emu.arm9.irqs, &mut emu.arm9.schedule)
                     }
                 } else {
                     0
                 }
-            },
+            }
 
             _ => {
                 #[cfg(feature = "log")]
                 if !A::IS_DEBUG {
-                    slog::warn!(emu.arm9.logger, "Unknown IO read32 @ {:#05X}", addr & 0x00FF_FFFC);
+                    slog::warn!(
+                        emu.arm9.logger,
+                        "Unknown IO read32 @ {:#05X}",
+                        addr & 0x00FF_FFFC
+                    );
                 }
                 0
-            },
+            }
         },
 
         0x05 => emu.gpu.vram.palette.read_le(addr as usize & 0x7FC),
@@ -614,7 +639,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
             } else {
                 emu.arm9.local_ex_mem_control().gba_rom_word(addr)
             }
-        },
+        }
 
         0x0A => {
             if emu.global_ex_mem_control().arm7_gba_slot_access() {
@@ -622,7 +647,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
             } else {
                 0xFFFF_FFFF
             }
-        },
+        }
 
         #[cfg(feature = "bft-r")]
         0xFF => {
@@ -631,7 +656,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
             } else {
                 0
             }
-        },
+        }
 
         _ => {
             #[cfg(feature = "log")]
@@ -639,7 +664,7 @@ pub fn read_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32) -> u32
                 slog::warn!(emu.arm9.logger, "Unknown read32 @ {:#010X}", addr);
             }
             0
-        },
+        }
     }
 }
 
@@ -649,19 +674,23 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
     match addr >> 24 {
         #[cfg(feature = "bft-w")]
         0x02 => unsafe {
-            emu.main_mem().write_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
+            emu.main_mem()
+                .write_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
         },
 
         #[cfg(feature = "bft-w")]
         0x03 => unsafe {
-            emu.swram.arm9_w_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).write(value);
+            emu.swram
+                .arm9_w_ptr()
+                .add(addr as usize & emu.swram.arm9_mask() as usize)
+                .write(value);
         },
 
         #[allow(clippy::match_same_arms)]
         0x04 => match addr & 0x00FF_FFFF {
             0x000..=0x003 | 0x008..=0x057 | 0x064..=0x06D => {
                 emu.gpu.engine_2d_a.write_8::<A>(addr, value);
-            },
+            }
 
             0x004 => emu.gpu.write_disp_status_9(gpu::DispStatus(
                 (emu.gpu.disp_status_9().0 & 0xFF00) | value as u16,
@@ -670,13 +699,19 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                 (emu.gpu.disp_status_9().0 & 0x00FF) | (value as u16) << 8,
             )),
 
-            0x060 => emu.gpu.engine_3d.write_rendering_control(engine_3d::RenderingControl(
-                (emu.gpu.engine_3d.rendering_control().0 & 0x4F00) | value as u16,
-            )),
-            0x061 => emu.gpu.engine_3d.write_rendering_control(engine_3d::RenderingControl(
-                (emu.gpu.engine_3d.rendering_control().0 & 0xFF) | (value as u16) << 8,
-            )),
-            0x062 | 0x063 => {},
+            0x060 => emu
+                .gpu
+                .engine_3d
+                .write_rendering_control(engine_3d::RenderingControl(
+                    (emu.gpu.engine_3d.rendering_control().0 & 0x4F00) | value as u16,
+                )),
+            0x061 => emu
+                .gpu
+                .engine_3d
+                .write_rendering_control(engine_3d::RenderingControl(
+                    (emu.gpu.engine_3d.rendering_control().0 & 0xFF) | (value as u16) << 8,
+                )),
+            0x062 | 0x063 => {}
 
             0x0E0..=0x0EF => emu.arm9.dma_fill[addr as usize & 0xF] = value,
 
@@ -687,7 +722,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                 (emu.input.arm9_key_irq_control().0 & 0x00FF) | (value as u16) << 8,
             )),
 
-            0x180 | 0x182 | 0x183 => {},
+            0x180 | 0x182 | 0x183 => {}
             0x181 => emu.ipc.write_sync_9(
                 ipc::Sync((emu.ipc.sync_9().0 & 0x00FF) | (value as u16) << 8),
                 &mut emu.arm7.irqs,
@@ -702,7 +737,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                 &mut emu.arm9.irqs,
                 &mut emu.arm9.schedule,
             ),
-            0x186 | 0x187 => {},
+            0x186 | 0x187 => {}
 
             0x1A0 => {
                 if emu.ds_slot.arm9_access() {
@@ -718,7 +753,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         );
                     }
                 }
-            },
+            }
             0x1A1 => {
                 if emu.ds_slot.arm9_access() {
                     emu.ds_slot.write_spi_control(ds_slot::AuxSpiControl(
@@ -733,7 +768,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         );
                     }
                 }
-            },
+            }
 
             0x1A2 => {
                 if emu.ds_slot.arm9_access() {
@@ -751,7 +786,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         );
                     }
                 }
-            },
+            }
             0x1A3 => {
                 if !emu.ds_slot.arm9_access() {
                     #[cfg(feature = "log")]
@@ -762,7 +797,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         );
                     }
                 }
-            },
+            }
 
             0x1A8..=0x1AF => {
                 if emu.ds_slot.arm9_access() {
@@ -776,21 +811,25 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         );
                     }
                 }
-            },
+            }
 
             0x204 => {
-                emu.arm9.write_local_ex_mem_control(LocalExMemControl(value));
+                emu.arm9
+                    .write_local_ex_mem_control(LocalExMemControl(value));
                 emu.write_global_ex_mem_control(GlobalExMemControl(
                     (emu.global_ex_mem_control().0 & 0xFF00) | value as u16,
                 ));
-            },
+            }
             0x205 => emu.write_global_ex_mem_control(GlobalExMemControl(
                 (emu.global_ex_mem_control().0 & 0x00FF) | (value as u16) << 8,
             )),
-            0x206..=0x207 => {},
+            0x206..=0x207 => {}
 
-            0x208 => emu.arm9.irqs.write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
-            0x209..=0x20B => {},
+            0x208 => emu
+                .arm9
+                .irqs
+                .write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
+            0x209..=0x20B => {}
 
             0x240 => emu.gpu.vram.write_bank_control_a(
                 gpu::vram::BankControl(value),
@@ -829,25 +868,31 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                 &mut emu.arm9,
                 &mut emu.gpu.engine_3d,
             ),
-            0x247 => emu.swram.write_control(swram::Control(value), &mut emu.arm7, &mut emu.arm9),
+            0x247 => emu
+                .swram
+                .write_control(swram::Control(value), &mut emu.arm7, &mut emu.arm9),
             0x248 => {
-                emu.gpu.vram.write_bank_control_h(gpu::vram::BankControl(value), &mut emu.arm9);
-            },
+                emu.gpu
+                    .vram
+                    .write_bank_control_h(gpu::vram::BankControl(value), &mut emu.arm9);
+            }
             0x249 => {
-                emu.gpu.vram.write_bank_control_i(gpu::vram::BankControl(value), &mut emu.arm9);
-            },
+                emu.gpu
+                    .vram
+                    .write_bank_control_i(gpu::vram::BankControl(value), &mut emu.arm9);
+            }
 
             0x280 => emu
                 .arm9
                 .div_engine
                 .write_control(div_engine::Control(value as u16), &mut emu.arm9.schedule),
-            0x281..=0x283 => {},
+            0x281..=0x283 => {}
 
             0x2B0 => emu
                 .arm9
                 .sqrt_engine
                 .write_control(sqrt_engine::Control(value as u16), &mut emu.arm9.schedule),
-            0x2B1..=0x2B3 => {},
+            0x2B1..=0x2B3 => {}
 
             0x300 => emu.arm9.post_boot_flag.0 = (emu.arm9.post_boot_flag.0 & 1) | (value & 3),
 
@@ -855,7 +900,7 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
 
             0x1000..=0x1003 | 0x1008..=0x1057 | 0x106C..=0x106D => {
                 emu.gpu.engine_2d_b.write_8::<A>(addr, value);
-            },
+            }
 
             _ =>
             {
@@ -868,16 +913,21 @@ pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8)
                         value
                     );
                 }
-            },
+            }
         },
 
         _ =>
         {
             #[cfg(feature = "log")]
             if !A::IS_DEBUG {
-                slog::warn!(emu.arm9.logger, "Unknown write8 @ {:#010X}: {:#04X}", addr, value);
+                slog::warn!(
+                    emu.arm9.logger,
+                    "Unknown write8 @ {:#010X}: {:#04X}",
+                    addr,
+                    value
+                );
             }
-        },
+        }
     }
 }
 
@@ -887,13 +937,17 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
     match addr >> 24 {
         #[cfg(feature = "bft-w")]
         0x02 => unsafe {
-            emu.main_mem().write_le_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
+            emu.main_mem()
+                .write_le_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
         },
 
         #[cfg(feature = "bft-w")]
         0x03 => unsafe {
             value.write_le_aligned(
-                emu.swram.arm9_w_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).cast(),
+                emu.swram
+                    .arm9_w_ptr()
+                    .add(addr as usize & emu.swram.arm9_mask() as usize)
+                    .cast(),
             );
         },
 
@@ -902,15 +956,17 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
             match addr & 0x00FF_FFFE {
                 0x000..=0x002 | 0x008..=0x056 | 0x064..=0x06C => {
                     emu.gpu.engine_2d_a.write_16::<A>(addr, value);
-                },
+                }
 
                 0x004 => emu.gpu.write_disp_status_9(gpu::DispStatus(value)),
                 0x006 => emu.gpu.write_vcount(value),
 
                 0x060 => {
-                    emu.gpu.engine_3d.write_rendering_control(engine_3d::RenderingControl(value));
-                },
-                0x062 => {},
+                    emu.gpu
+                        .engine_3d
+                        .write_rendering_control(engine_3d::RenderingControl(value));
+                }
+                0x062 => {}
 
                 0x0B0 => emu.arm9.dma.channels[0].write_src_addr(
                     (emu.arm9.dma.channels[0].src_addr & 0xFFFF_0000) | value as u32,
@@ -1053,13 +1109,13 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                 0x132 => emu.write_arm9_key_irq_control(KeyIrqControl(value)),
 
                 0x180 => emu.ipc.write_sync_9(ipc::Sync(value), &mut emu.arm7.irqs),
-                0x182 => {},
+                0x182 => {}
                 0x184 => emu.ipc.write_fifo_control_9(
                     ipc::FifoControl(value),
                     &mut emu.arm9.irqs,
                     &mut emu.arm9.schedule,
                 ),
-                0x186 => {},
+                0x186 => {}
 
                 0x1A0 => {
                     if emu.ds_slot.arm9_access() {
@@ -1073,7 +1129,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             );
                         }
                     }
-                },
+                }
 
                 0x1A2 => {
                     if emu.ds_slot.arm9_access() {
@@ -1091,7 +1147,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             );
                         }
                     }
-                },
+                }
 
                 0x1A4 => {
                     if emu.ds_slot.arm9_access() {
@@ -1111,7 +1167,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             );
                         }
                     }
-                },
+                }
                 0x1A6 => {
                     if emu.ds_slot.arm9_access() {
                         emu.ds_slot.write_rom_control(
@@ -1130,7 +1186,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             );
                         }
                     }
-                },
+                }
 
                 0x1A8..=0x1AE => {
                     if emu.ds_slot.arm9_access() {
@@ -1144,19 +1200,23 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             );
                         }
                     }
-                },
+                }
 
                 // The KEY2 encryption seeds aren't used
-                0x1B8 | 0x1BA => {},
+                0x1B8 | 0x1BA => {}
 
                 0x204 => {
-                    emu.arm9.write_local_ex_mem_control(LocalExMemControl(value as u8));
+                    emu.arm9
+                        .write_local_ex_mem_control(LocalExMemControl(value as u8));
                     emu.write_global_ex_mem_control(GlobalExMemControl(value));
-                },
-                0x206 => {},
+                }
+                0x206 => {}
 
-                0x208 => emu.arm9.irqs.write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
-                0x20A => {},
+                0x208 => emu
+                    .arm9
+                    .irqs
+                    .write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
+                0x20A => {}
 
                 0x240 => {
                     emu.gpu.vram.write_bank_control_a(
@@ -1169,7 +1229,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                         &mut emu.arm9,
                         &mut emu.gpu.engine_3d,
                     );
-                },
+                }
                 0x242 => {
                     emu.gpu.vram.write_bank_control_c(
                         gpu::vram::BankControl(value as u8),
@@ -1183,7 +1243,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                         &mut emu.arm9,
                         &mut emu.gpu.engine_3d,
                     );
-                },
+                }
                 0x244 => {
                     emu.gpu.vram.write_bank_control_e(
                         gpu::vram::BankControl(value as u8),
@@ -1195,7 +1255,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                         &mut emu.arm9,
                         &mut emu.gpu.engine_3d,
                     );
-                },
+                }
                 0x246 => {
                     emu.gpu.vram.write_bank_control_g(
                         gpu::vram::BankControl(value as u8),
@@ -1207,7 +1267,7 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                         &mut emu.arm7,
                         &mut emu.arm9,
                     );
-                },
+                }
                 0x248 => {
                     emu.gpu
                         .vram
@@ -1216,33 +1276,33 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                         gpu::vram::BankControl((value >> 8) as u8),
                         &mut emu.arm9,
                     );
-                },
+                }
 
                 0x280 => emu
                     .arm9
                     .div_engine
                     .write_control(div_engine::Control(value), &mut emu.arm9.schedule),
-                0x282 => {},
+                0x282 => {}
 
                 0x2B0 => emu
                     .arm9
                     .sqrt_engine
                     .write_control(sqrt_engine::Control(value), &mut emu.arm9.schedule),
-                0x2B2 => {},
+                0x2B2 => {}
 
                 0x300 => {
                     emu.arm9.post_boot_flag.0 = (emu.arm9.post_boot_flag.0 & 1) | (value as u8 & 3);
-                },
+                }
 
                 0x304 => emu.gpu.write_power_control(gpu::PowerControl(value)),
 
                 0x320..=0x6A2 => {
                     gpu::engine_3d::Engine3d::write_16::<A, _>(emu, addr as u16, value);
-                },
+                }
 
                 0x1000..=0x1002 | 0x1008..=0x1056 | 0x106C => {
                     emu.gpu.engine_2d_b.write_16::<A>(addr, value);
-                },
+                }
 
                 _ =>
                 {
@@ -1255,9 +1315,9 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
                             value
                         );
                     }
-                },
+                }
             }
-        },
+        }
 
         0x05 => emu.gpu.vram.write_palette(addr & 0x7FE, value),
 
@@ -1275,9 +1335,14 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, value
         {
             #[cfg(feature = "log")]
             if !A::IS_DEBUG {
-                slog::warn!(emu.arm9.logger, "Unknown write16 @ {:#010X}: {:#06X}", addr, value);
+                slog::warn!(
+                    emu.arm9.logger,
+                    "Unknown write16 @ {:#010X}: {:#06X}",
+                    addr,
+                    value
+                );
             }
-        },
+        }
     }
 }
 
@@ -1287,13 +1352,17 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
     match addr >> 24 {
         #[cfg(feature = "bft-w")]
         0x02 => unsafe {
-            emu.main_mem().write_le_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
+            emu.main_mem()
+                .write_le_unchecked((addr & emu.main_mem_mask().get()) as usize, value);
         },
 
         #[cfg(feature = "bft-w")]
         0x03 => unsafe {
             value.write_le_aligned(
-                emu.swram.arm9_w_ptr().add(addr as usize & emu.swram.arm9_mask() as usize).cast(),
+                emu.swram
+                    .arm9_w_ptr()
+                    .add(addr as usize & emu.swram.arm9_mask() as usize)
+                    .cast(),
             );
         },
 
@@ -1301,12 +1370,12 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
             match addr & 0x00FF_FFFC {
                 0x000 | 0x008..=0x054 | 0x064..=0x06C => {
                     emu.gpu.engine_2d_a.write_32::<A>(addr, value);
-                },
+                }
 
                 0x004 => {
                     emu.gpu.write_disp_status_9(gpu::DispStatus(value as u16));
                     emu.gpu.write_vcount((value >> 16) as u16);
-                },
+                }
 
                 0x060 => emu
                     .gpu
@@ -1378,7 +1447,9 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
 
                 0x130 => emu.write_arm9_key_irq_control(KeyIrqControl((value >> 16) as u16)),
 
-                0x180 => emu.ipc.write_sync_9(ipc::Sync(value as u16), &mut emu.arm7.irqs),
+                0x180 => emu
+                    .ipc
+                    .write_sync_9(ipc::Sync(value as u16), &mut emu.arm7.irqs),
                 0x184 => emu.ipc.write_fifo_control_9(
                     ipc::FifoControl(value as u16),
                     &mut emu.arm9.irqs,
@@ -1388,7 +1459,8 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
 
                 0x1A0 => {
                     if emu.ds_slot.arm9_access() {
-                        emu.ds_slot.write_spi_control(ds_slot::AuxSpiControl(value as u16));
+                        emu.ds_slot
+                            .write_spi_control(ds_slot::AuxSpiControl(value as u16));
                         emu.ds_slot.write_spi_data(
                             (value >> 16) as u8,
                             &mut emu.arm7.schedule,
@@ -1407,7 +1479,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                             );
                         }
                     }
-                },
+                }
 
                 0x1A4 => {
                     if emu.ds_slot.arm9_access() {
@@ -1425,7 +1497,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                             );
                         }
                     }
-                },
+                }
 
                 0x1A8..=0x1AC => {
                     if emu.ds_slot.arm9_access() {
@@ -1439,18 +1511,25 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                             );
                         }
                     }
-                },
+                }
 
                 // The KEY2 encryption seeds aren't used
-                0x1B0 | 0x1B4 => {},
+                0x1B0 | 0x1B4 => {}
 
                 0x204 => {
-                    emu.arm9.write_local_ex_mem_control(LocalExMemControl(value as u8));
+                    emu.arm9
+                        .write_local_ex_mem_control(LocalExMemControl(value as u8));
                     emu.write_global_ex_mem_control(GlobalExMemControl(value as u16));
-                },
+                }
 
-                0x208 => emu.arm9.irqs.write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
-                0x210 => emu.arm9.irqs.write_enabled(IrqFlags(value), &mut emu.arm9.schedule),
+                0x208 => emu
+                    .arm9
+                    .irqs
+                    .write_master_enable(value & 1 != 0, &mut emu.arm9.schedule),
+                0x210 => emu
+                    .arm9
+                    .irqs
+                    .write_enabled(IrqFlags(value), &mut emu.arm9.schedule),
                 0x214 => {
                     if emu.gpu.engine_3d.gx_fifo_irq_requested() {
                         // The GXFIFO IRQ can't be acknowledged through IF as long as the trigger
@@ -1460,7 +1539,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                     emu.arm9
                         .irqs
                         .write_requested(IrqFlags(emu.arm9.irqs.requested().0 & !value), ());
-                },
+                }
 
                 0x240 => {
                     emu.gpu.vram.write_bank_control_a(
@@ -1485,7 +1564,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                         &mut emu.arm9,
                         &mut emu.gpu.engine_3d,
                     );
-                },
+                }
                 0x244 => {
                     emu.gpu.vram.write_bank_control_e(
                         gpu::vram::BankControl(value as u8),
@@ -1507,7 +1586,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                         &mut emu.arm7,
                         &mut emu.arm9,
                     );
-                },
+                }
                 0x248 => {
                     emu.gpu
                         .vram
@@ -1516,7 +1595,7 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                         gpu::vram::BankControl((value >> 8) as u8),
                         &mut emu.arm9,
                     );
-                },
+                }
 
                 0x280 => emu
                     .arm9
@@ -1554,17 +1633,17 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
 
                 0x300 => {
                     emu.arm9.post_boot_flag.0 = (emu.arm9.post_boot_flag.0 & 1) | (value as u8 & 3);
-                },
+                }
 
                 0x304 => emu.gpu.write_power_control(gpu::PowerControl(value as u16)),
 
                 0x320..=0x6A0 => {
                     gpu::engine_3d::Engine3d::write_32::<A, _>(emu, addr as u16, value);
-                },
+                }
 
                 0x1000 | 0x1008..=0x1054 | 0x106C => {
                     emu.gpu.engine_2d_b.write_32::<A>(addr, value);
-                },
+                }
 
                 _ =>
                 {
@@ -1577,9 +1656,9 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
                             value
                         );
                     }
-                },
+                }
             }
-        },
+        }
 
         0x05 => emu.gpu.vram.write_palette(addr & 0x7FC, value),
 
@@ -1597,8 +1676,13 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, mut addr: u32, mut v
         {
             #[cfg(feature = "log")]
             if !A::IS_DEBUG {
-                slog::warn!(emu.arm9.logger, "Unknown write32 @ {:#010X}: {:#010X}", addr, value);
+                slog::warn!(
+                    emu.arm9.logger,
+                    "Unknown write32 @ {:#010X}: {:#010X}",
+                    addr,
+                    value
+                );
             }
-        },
+        }
     }
 }

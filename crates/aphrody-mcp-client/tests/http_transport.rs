@@ -33,7 +33,9 @@ fn install_crypto_provider() {
 /// Accept one connection and wrap it for line-oriented reads.
 fn accept(listener: &TcpListener) -> BufReader<TcpStream> {
     let (stream, _) = listener.accept().expect("accept MCP request");
-    stream.set_read_timeout(Some(Duration::from_secs(5))).expect("read timeout");
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .expect("read timeout");
     BufReader::new(stream)
 }
 
@@ -110,9 +112,15 @@ fn serve_with_session(
                 .to_string(),
                 other => panic!("unexpected method: {other}"),
             };
-            let status = if response.is_empty() { "202 Accepted" } else { "200 OK" };
+            let status = if response.is_empty() {
+                "202 Accepted"
+            } else {
+                "200 OK"
+            };
             let session_header = if request.2["method"] == "initialize" {
-                session.map(|id| format!("Mcp-Session-Id: {id}\r\n")).unwrap_or_default()
+                session
+                    .map(|id| format!("Mcp-Session-Id: {id}\r\n"))
+                    .unwrap_or_default()
             } else if request.2["method"] == "tools/list" {
                 // A successful non-initialize response cannot replace the negotiated session.
                 "Mcp-Session-Id: wrong-method-session\r\n".to_owned()
@@ -157,25 +165,50 @@ async fn headers_accept_and_bearer_reach_every_request_and_the_raw_result_surviv
         .call_tool_raw("echo", json!({ "text": "hi" }))
         .await
         .expect("tools/call returns the raw result");
-    assert_eq!(raw["structuredContent"]["answer"], 42, "fields the typed result drops survive");
+    assert_eq!(
+        raw["structuredContent"]["answer"], 42,
+        "fields the typed result drops survive"
+    );
     let typed = parse_call_tool_result(&raw).expect("typed view of the same payload");
     assert_eq!(typed.text_content(), "hi");
 
     let seen = server.join().expect("fixture assertions");
     for (line, headers, _) in &seen {
         assert!(line.starts_with("POST /mcp HTTP/1.1"), "{line}");
-        assert_eq!(headers.get("authorization").map(String::as_str), Some("Bearer fixture-secret"));
-        assert_eq!(headers.get("x-project").map(String::as_str), Some("fixture-workspace"));
+        assert_eq!(
+            headers.get("authorization").map(String::as_str),
+            Some("Bearer fixture-secret")
+        );
+        assert_eq!(
+            headers.get("x-project").map(String::as_str),
+            Some("fixture-workspace")
+        );
         assert_eq!(
             headers.get("accept").map(String::as_str),
             Some("application/json, text/event-stream")
         );
-        assert_eq!(headers.get("content-type").map(String::as_str), Some("application/json"));
-        assert!(!headers.contains_key("mcp-session-id"), "stateless server invented a session");
+        assert_eq!(
+            headers.get("content-type").map(String::as_str),
+            Some("application/json")
+        );
+        assert!(
+            !headers.contains_key("mcp-session-id"),
+            "stateless server invented a session"
+        );
     }
-    let methods: Vec<&str> =
-        seen.iter().filter_map(|(_, _, body)| body["method"].as_str()).collect();
-    assert_eq!(methods, ["initialize", "notifications/initialized", "tools/list", "tools/call"]);
+    let methods: Vec<&str> = seen
+        .iter()
+        .filter_map(|(_, _, body)| body["method"].as_str())
+        .collect();
+    assert_eq!(
+        methods,
+        [
+            "initialize",
+            "notifications/initialized",
+            "tools/list",
+            "tools/call"
+        ]
+    );
     let call = &seen[3].2;
     assert_eq!(call["params"]["name"], "echo");
     assert_eq!(call["params"]["arguments"]["text"], "hi");
@@ -187,17 +220,29 @@ async fn initialized_session_reaches_notifications_and_calls_and_ignores_unrelat
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind fixture");
     let address = listener.local_addr().expect("fixture address");
     let server = serve_with_session(listener, 4, Some("fixture-session"));
-    let mut client =
-        McpClient::from_http(format!("http://{address}/mcp"), Some("fixture-secret".into()), None)
-            .expect("HTTP client");
+    let mut client = McpClient::from_http(
+        format!("http://{address}/mcp"),
+        Some("fixture-secret".into()),
+        None,
+    )
+    .expect("HTTP client");
     client.initialize().await.expect("initialize");
     client.list_tools().await.expect("tools/list");
-    client.call_tool_raw("echo", json!({})).await.expect("tools/call");
+    client
+        .call_tool_raw("echo", json!({}))
+        .await
+        .expect("tools/call");
     let seen = server.join().expect("fixture");
     assert!(!seen[0].1.contains_key("mcp-session-id"));
     for (_, headers, _) in &seen[1..] {
-        assert_eq!(headers.get("mcp-session-id").map(String::as_str), Some("fixture-session"));
-        assert_eq!(headers.get("authorization").map(String::as_str), Some("Bearer fixture-secret"));
+        assert_eq!(
+            headers.get("mcp-session-id").map(String::as_str),
+            Some("fixture-session")
+        );
+        assert_eq!(
+            headers.get("authorization").map(String::as_str),
+            Some("Bearer fixture-secret")
+        );
     }
     assert_eq!(seen[1].2["method"], "notifications/initialized");
     assert_eq!(seen[3].2["method"], "tools/call");
@@ -214,7 +259,11 @@ async fn rejected_or_malformed_initialize_cannot_install_a_session() {
             let mut reader = accept(&listener);
             let request = read_request(&mut reader);
             let (status, result, session) = match case {
-                0 => ("403 Forbidden", json!({"error": "rejected"}), "bogus-session"),
+                0 => (
+                    "403 Forbidden",
+                    json!({"error": "rejected"}),
+                    "bogus-session",
+                ),
                 1 => (
                     "200 OK",
                     json!({"jsonrpc":"2.0","id":request.2["id"],"error":{"code":-32603,"message":"rejected"}}),
@@ -260,10 +309,16 @@ async fn rejected_or_malformed_initialize_cannot_install_a_session() {
             .expect_err("invalid initialization must fail");
         assert!(!error.to_string().contains("bogus-session"));
         assert!(!error.to_string().contains("invalid session"));
-        transport.notify("notifications/initialized", json!({})).await.expect("notification");
+        transport
+            .notify("notifications/initialized", json!({}))
+            .await
+            .expect("notification");
     }
     for (_, headers, _) in server.join().expect("fixture") {
-        assert!(!headers.contains_key("mcp-session-id"), "invalid initialize installed a session");
+        assert!(
+            !headers.contains_key("mcp-session-id"),
+            "invalid initialize installed a session"
+        );
     }
 }
 
@@ -285,7 +340,10 @@ async fn notification_rejection_is_reported_with_a_bounded_body() {
     });
     let mut transport =
         HttpTransport::new(format!("http://{address}/mcp"), None, None).expect("HTTP transport");
-    let error = transport.notify("notifications/initialized", json!({})).await.expect_err("403");
+    let error = transport
+        .notify("notifications/initialized", json!({}))
+        .await
+        .expect_err("403");
     assert!(matches!(error, McpClientError::HttpStatus { status:403,body } if body.len()==1024));
     server.join().expect("fixture");
 }
@@ -307,10 +365,16 @@ async fn redirects_are_reported_not_followed() {
             .expect("respond");
     });
 
-    let mut client =
-        McpClient::from_http(format!("http://{address}/mcp"), Some("fixture-secret".into()), None)
-            .expect("HTTP client");
-    let error = client.initialize().await.expect_err("a redirect must not be followed");
+    let mut client = McpClient::from_http(
+        format!("http://{address}/mcp"),
+        Some("fixture-secret".into()),
+        None,
+    )
+    .expect("HTTP client");
+    let error = client
+        .initialize()
+        .await
+        .expect_err("a redirect must not be followed");
     assert!(
         matches!(error, McpClientError::HttpStatus { status: 307, .. }),
         "unexpected error: {error}"
@@ -347,7 +411,11 @@ async fn event_stream_selects_the_matching_response_and_rejects_missing_ids_and_
         let server = thread::spawn(move || {
             let mut reader = accept(&listener);
             let _ = read_request(&mut reader);
-            let bytes = if case == 2 { 32 * 1024 * 1024 + 1 } else { body.len() };
+            let bytes = if case == 2 {
+                32 * 1024 * 1024 + 1
+            } else {
+                body.len()
+            };
             write!(
                 reader.get_mut(),
                 "HTTP/1.1 200 OK\r\nContent-Type: Text/Event-Stream; charset=utf-8\r\nContent-Length: {bytes}\r\nConnection: close\r\n\r\n{body}"
@@ -356,10 +424,17 @@ async fn event_stream_selects_the_matching_response_and_rejects_missing_ids_and_
         });
         let mut transport =
             HttpTransport::new(format!("http://{address}/mcp"), None, None).unwrap();
-        let result = transport.call("ping", json!({}), Duration::from_secs(2)).await;
+        let result = transport
+            .call("ping", json!({}), Duration::from_secs(2))
+            .await;
         match case {
             0 => assert_eq!(result.unwrap()["value"], 42),
-            1 => assert!(result.unwrap_err().to_string().contains("matching response")),
+            1 => assert!(
+                result
+                    .unwrap_err()
+                    .to_string()
+                    .contains("matching response")
+            ),
             _ => assert!(result.unwrap_err().to_string().contains("byte limit")),
         }
         server.join().unwrap();
@@ -381,7 +456,10 @@ async fn event_stream_heartbeats_do_not_extend_the_request_deadline() {
         thread::sleep(Duration::from_millis(500));
     });
     let mut transport = HttpTransport::new(format!("http://{address}/mcp"), None, None).unwrap();
-    let error = transport.call("ping", json!({}), Duration::from_millis(100)).await.unwrap_err();
+    let error = transport
+        .call("ping", json!({}), Duration::from_millis(100))
+        .await
+        .unwrap_err();
     assert!(matches!(error, McpClientError::Http(ref error) if error.is_timeout()));
     server.join().unwrap();
 }

@@ -35,7 +35,10 @@ fn run_file(s: &mut Session, main: &Path) -> Outcome {
 fn eval_file_evaluates_relative_to_the_calling_script() {
     let dir = tmp("ok");
     // lib/a.jsx loads b.jsx next to itself, not next to main.jsx.
-    write(&dir.join("lib/a.jsx"), "var fromA = $.evalFile('b.jsx') + 1;\nfunction twice(x) { return 2 * x; }\nfromA");
+    write(
+        &dir.join("lib/a.jsx"),
+        "var fromA = $.evalFile('b.jsx') + 1;\nfunction twice(x) { return 2 * x; }\nfromA",
+    );
     write(&dir.join("lib/b.jsx"), "var fromB = 20;\nfromB");
     write(
         &dir.join("main.jsx"),
@@ -47,8 +50,14 @@ fn eval_file_evaluates_relative_to_the_calling_script() {
     assert_eq!(o.result, json!([21, 20, 40, "number"]));
     // Errors in the evaluated file reach the caller, which can catch them.
     write(&dir.join("bad.jsx"), "throw new Error('bad file');");
-    write(&dir.join("main.jsx"), "var m; try { $.evalFile('bad.jsx'); } catch (e) { m = e.message; } m");
-    assert_eq!(run_file(&mut s, &dir.join("main.jsx")).result, json!("bad file"));
+    write(
+        &dir.join("main.jsx"),
+        "var m; try { $.evalFile('bad.jsx'); } catch (e) { m = e.message; } m",
+    );
+    assert_eq!(
+        run_file(&mut s, &dir.join("main.jsx")).result,
+        json!("bad file")
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -58,21 +67,29 @@ fn eval_file_is_bounded_and_gated() {
     // A file that evaluates itself forever stops at the depth limit.
     write(&dir.join("loop.jsx"), "$.evalFile('loop.jsx');");
     let mut s = session();
-    let e = run_file(&mut s, &dir.join("loop.jsx")).error.expect("an error");
+    let e = run_file(&mut s, &dir.join("loop.jsx"))
+        .error
+        .expect("an error");
     assert!(e.message.contains("nested too deeply"), "{e:?}");
     // Deeply bracketed files are refused before they reach the parser.
     write(&dir.join("deep.jsx"), &"[".repeat(100_000));
     write(&dir.join("main.jsx"), "$.evalFile('deep.jsx')");
-    let e = run_file(&mut s, &dir.join("main.jsx")).error.expect("an error");
+    let e = run_file(&mut s, &dir.join("main.jsx"))
+        .error
+        .expect("an error");
     assert!(e.message.contains("nested too deeply"), "{e:?}");
     // Missing files are a clear error.
     write(&dir.join("main.jsx"), "$.evalFile('missing.jsx')");
-    let e = run_file(&mut s, &dir.join("main.jsx")).error.expect("an error");
+    let e = run_file(&mut s, &dir.join("main.jsx"))
+        .error
+        .expect("an error");
     assert!(e.message.contains("missing.jsx"), "{e:?}");
     // Files outside the script's (and the project's) folder need the file preference.
     write(&dir.join("outside.jsx"), "7");
     write(&dir.join("app/main.jsx"), "$.evalFile('../outside.jsx')");
-    let e = run_file(&mut s, &dir.join("app/main.jsx")).error.expect("blocked");
+    let e = run_file(&mut s, &dir.join("app/main.jsx"))
+        .error
+        .expect("blocked");
     assert!(e.message.contains("Allow Scripts to Write Files"), "{e:?}");
     s.prefs.scripting.allow_scripts_write_files = true;
     let o = run_file(&mut s, &dir.join("app/main.jsx"));
@@ -92,8 +109,26 @@ fn bridgetalk_identifies_effectcraft() {
     assert!(o.error.is_none(), "{:?}", o.error);
     let v = env!("CARGO_PKG_VERSION");
     let spec = format!("effectcraft-{v}");
-    assert_eq!(o.result, json!(["function", "effectcraft", v, spec, false, spec, "ISNOTINSTALLED", spec]));
+    assert_eq!(
+        o.result,
+        json!([
+            "function",
+            "effectcraft",
+            v,
+            spec,
+            false,
+            spec,
+            "ISNOTINSTALLED",
+            spec
+        ])
+    );
     // Messages to other applications are unsupported, with a clear error.
-    let e = run_code(&mut s, "var bt = new BridgeTalk(); bt.target = 'photoshop'; bt.body = '1'; bt.send();", "bt.jsx").error.expect("unsupported");
+    let e = run_code(
+        &mut s,
+        "var bt = new BridgeTalk(); bt.target = 'photoshop'; bt.body = '1'; bt.send();",
+        "bt.jsx",
+    )
+    .error
+    .expect("unsupported");
     assert!(e.message.contains("not supported"), "{e:?}");
 }

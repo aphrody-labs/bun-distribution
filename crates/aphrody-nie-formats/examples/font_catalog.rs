@@ -30,7 +30,8 @@ fn main() {
     let game_dir = aphrody_nie_formats::vfs::resolve_game_dir();
     let data_dir = game_dir.join("data");
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).expect("init VFS depuis cpk_list.cfg.bin");
+    vfs.init(&data_dir)
+        .expect("init VFS depuis cpk_list.cfg.bin");
 
     println!(
         "{:<20} {:>8} {:>6} {:>6} {:>10} {:>10}",
@@ -86,7 +87,11 @@ fn main() {
             continue;
         }
         let dds = &g4tx_bytes[t.data_offset..];
-        let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" { 148 } else { 128 };
+        let px_off = if dds.len() >= 88 && &dds[84..88] == b"DX10" {
+            148
+        } else {
+            128
+        };
         let Some(atlas) = dds.get(px_off..) else {
             println!("  payload atlas hors limites");
             continue;
@@ -120,7 +125,12 @@ fn main() {
                 4,
                 [255, 255, 255, 255],
             );
-            let lit: usize = canvas.as_chunks::<4>().0.iter().filter(|p| p[3] > 8).count();
+            let lit: usize = canvas
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .filter(|p| p[3] > 8)
+                .count();
             if lit == 0 {
                 continue;
             }

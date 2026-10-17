@@ -7,7 +7,10 @@ use rayon::prelude::*;
 use effectcraft_color::Label;
 use effectcraft_keyframe::{Keyframe, Value};
 use effectcraft_project::build;
-use effectcraft_project::{AlphaMode, BitDepth, Comp, Footage, FootageKind, FrameBlend, ItemId, ItemKind, LayerSource, Project, Solid};
+use effectcraft_project::{
+    AlphaMode, BitDepth, Comp, Footage, FootageKind, FrameBlend, ItemId, ItemKind, LayerSource,
+    Project, Solid,
+};
 use effectcraft_time::{FrameRate, Tick};
 
 use crate::{FootageSource, Image, RenderOpts, Renderer, frame_position};
@@ -15,7 +18,15 @@ use crate::{FootageSource, Image, RenderOpts, Renderer, frame_position};
 #[test]
 fn frame_mix_weights_for_24_to_30_conform() {
     // Comp frame k at 30 fps sits at source frame 0.8·k of 24 fps footage.
-    let want = [(0, 0.0), (0, 0.8), (1, 0.6), (2, 0.4), (3, 0.2), (4, 0.0), (4, 0.8)];
+    let want = [
+        (0, 0.0),
+        (0, 0.8),
+        (1, 0.6),
+        (2, 0.4),
+        (3, 0.2),
+        (4, 0.0),
+        (4, 0.8),
+    ];
     for (k, (i, w)) in want.into_iter().enumerate() {
         let t = FrameRate::FPS_30.tick_of(k as i64);
         let (fi, fw) = frame_position(t, FrameRate::FPS_24);
@@ -24,7 +35,10 @@ fn frame_mix_weights_for_24_to_30_conform() {
     }
     // NTSC 29.97 footage in a 29.97 comp lines up exactly.
     for k in [0, 1, 7, 1001, 30_000] {
-        assert_eq!(frame_position(FrameRate::FPS_29_97.tick_of(k), FrameRate::FPS_29_97), (k, 0.0));
+        assert_eq!(
+            frame_position(FrameRate::FPS_29_97.tick_of(k), FrameRate::FPS_29_97),
+            (k, 0.0)
+        );
     }
 }
 
@@ -39,7 +53,8 @@ fn pattern(w: u32, h: u32, dx: f64) -> Image {
     img.rows_mut().for_each(|(y, row)| {
         for (x, p) in row.iter_mut().enumerate() {
             let (u, v) = (x as f64 - dx, y as f64);
-            let s = (0.5 + 0.2 * (u * 0.21 + v * 0.07).sin() + 0.15 * (u * 0.05 - v * 0.19).cos()) as f32;
+            let s = (0.5 + 0.2 * (u * 0.21 + v * 0.07).sin() + 0.15 * (u * 0.05 - v * 0.19).cos())
+                as f32;
             *p = [s, s * 0.8, 1.0 - s, 1.0];
         }
     });
@@ -60,8 +75,18 @@ impl FootageSource for Frames {
 fn setup(mode: FrameBlend, size: (u32, u32)) -> (Project, ItemId) {
     let mut p = Project::default();
     p.settings.bit_depth = BitDepth::Bpc32;
-    let comp = Comp::new(size.0, size.1, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let cid = p.add_item("Comp", Label::Sandstone, None, ItemKind::Comp(comp.clone().into()));
+    let comp = Comp::new(
+        size.0,
+        size.1,
+        FrameRate::FPS_30,
+        Tick::from_seconds_f64(2.0),
+    );
+    let cid = p.add_item(
+        "Comp",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.clone().into()),
+    );
     let f = Footage {
         path: "clip.mov".into(),
         kind: FootageKind::Video,
@@ -83,7 +108,14 @@ fn setup(mode: FrameBlend, size: (u32, u32)) -> (Project, ItemId) {
         ..Default::default()
     };
     let fid = p.add_item("clip", Label::Aqua, None, ItemKind::Footage(f));
-    let mut l = build::layer(&mut p, &comp, "clip", LayerSource::Footage { item: fid }, size, None);
+    let mut l = build::layer(
+        &mut p,
+        &comp,
+        "clip",
+        LayerSource::Footage { item: fid },
+        size,
+        None,
+    );
     l.switches.frame_blend = mode;
     p.comp_mut(cid).unwrap().layers.push(l);
     (p, cid)
@@ -142,17 +174,53 @@ fn time_stretched_precomp_frame_mixes() {
     let mut p = Project::default();
     p.settings.bit_depth = BitDepth::Bpc32;
     let mut inner = Comp::new(400, 20, FrameRate::FPS_30, Tick::from_seconds_f64(2.0));
-    let sid = p.add_item("S", Label::Red, None, ItemKind::Solid(Solid { color: [1.0; 3], width: 10, height: 20, pixel_aspect: 1.0 }));
-    let mut l = build::layer(&mut p, &inner, "S", LayerSource::Solid { item: sid }, (10, 20), None);
+    let sid = p.add_item(
+        "S",
+        Label::Red,
+        None,
+        ItemKind::Solid(Solid {
+            color: [1.0; 3],
+            width: 10,
+            height: 20,
+            pixel_aspect: 1.0,
+        }),
+    );
+    let mut l = build::layer(
+        &mut p,
+        &inner,
+        "S",
+        LayerSource::Solid { item: sid },
+        (10, 20),
+        None,
+    );
     // Anchor at the left edge: x = 10 + 10 per frame.
     l.props.prop_mut("transform/anchor").unwrap().value = Value::Vec3([0.0, 10.0, 0.0]);
-    l.props.prop_mut("transform/position").unwrap().keys =
-        vec![Keyframe::new(Tick::ZERO, Value::Vec3([10.0, 10.0, 0.0])), Keyframe::new(Tick::from_seconds_f64(1.0), Value::Vec3([310.0, 10.0, 0.0]))];
+    l.props.prop_mut("transform/position").unwrap().keys = vec![
+        Keyframe::new(Tick::ZERO, Value::Vec3([10.0, 10.0, 0.0])),
+        Keyframe::new(Tick::from_seconds_f64(1.0), Value::Vec3([310.0, 10.0, 0.0])),
+    ];
     inner.layers.push(l);
-    let iid = p.add_item("Inner", Label::Sandstone, None, ItemKind::Comp(inner.into()));
+    let iid = p.add_item(
+        "Inner",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(inner.into()),
+    );
     let outer = Comp::new(400, 20, FrameRate::FPS_30, Tick::from_seconds_f64(4.0));
-    let cid = p.add_item("Outer", Label::Sandstone, None, ItemKind::Comp(outer.clone().into()));
-    let mut pre = build::layer(&mut p, &outer, "Inner", LayerSource::Comp { item: iid }, (400, 20), None);
+    let cid = p.add_item(
+        "Outer",
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(outer.clone().into()),
+    );
+    let mut pre = build::layer(
+        &mut p,
+        &outer,
+        "Inner",
+        LayerSource::Comp { item: iid },
+        (400, 20),
+        None,
+    );
     pre.stretch = 200.0;
     pre.out_point = Tick::from_seconds_f64(4.0);
     pre.switches.frame_blend = FrameBlend::FrameMix;
@@ -160,10 +228,19 @@ fn time_stretched_precomp_frame_mixes() {
     // Outer frame 1 → inner frame 0.5: solids at 10..20 (frame 0) and 20..30 (frame 1), half each.
     let img = crate::render_frame(&p, cid, FrameRate::FPS_30.tick_of(1), 1.0);
     for x in [12, 17, 22, 27] {
-        assert!((img.get(x, 10)[3] - 0.5).abs() < 5e-3, "x {x}: {:?}", img.get(x, 10));
+        assert!(
+            (img.get(x, 10)[3] - 0.5).abs() < 5e-3,
+            "x {x}: {:?}",
+            img.get(x, 10)
+        );
     }
     // Without frame blending the nested comp renders at the in-between time: one solid, 15..25.
     p.comp_mut(cid).unwrap().layers[0].switches.frame_blend = FrameBlend::Off;
     let img = crate::render_frame(&p, cid, FrameRate::FPS_30.tick_of(1), 1.0);
-    assert!(img.get(12, 10)[3] < 1e-3 && (img.get(17, 10)[3] - 1.0).abs() < 1e-3 && (img.get(22, 10)[3] - 1.0).abs() < 1e-3 && img.get(27, 10)[3] < 1e-3);
+    assert!(
+        img.get(12, 10)[3] < 1e-3
+            && (img.get(17, 10)[3] - 1.0).abs() < 1e-3
+            && (img.get(22, 10)[3] - 1.0).abs() < 1e-3
+            && img.get(27, 10)[3] < 1e-3
+    );
 }

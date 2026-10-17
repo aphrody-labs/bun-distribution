@@ -44,8 +44,22 @@ fn one_frame_fcpxml_marker_is_a_point() {
     let (imp, _) = import(xml.as_bytes(), Format::Fcpxml, None).unwrap();
     let s = imp.project.sequence(only_seq(&imp)).unwrap();
     assert_eq!(s.markers.len(), 2);
-    assert_eq!((s.markers[0].name.as_str(), s.markers[0].start, s.markers[0].duration), ("Point", r.tick_of(24), Tick::ZERO));
-    assert_eq!((s.markers[1].name.as_str(), s.markers[1].start, s.markers[1].duration), ("Range", r.tick_of(48), r.tick_of(2)));
+    assert_eq!(
+        (
+            s.markers[0].name.as_str(),
+            s.markers[0].start,
+            s.markers[0].duration
+        ),
+        ("Point", r.tick_of(24), Tick::ZERO)
+    );
+    assert_eq!(
+        (
+            s.markers[1].name.as_str(),
+            s.markers[1].start,
+            s.markers[1].duration
+        ),
+        ("Range", r.tick_of(48), r.tick_of(2))
+    );
 }
 
 #[test]
@@ -80,7 +94,13 @@ fn point_roundtrips_through_the_one_frame_convention() {
     assert!(text.contains("duration=\"1/24s\""), "{text}");
     let qs = imp.project.sequence(only_seq(&imp)).unwrap();
     assert_eq!(
-        qs.markers.iter().map(|m| (m.name.as_str(), m.start, m.duration)).collect::<Vec<_>>(),
-        vec![("Point", r.tick_of(24), Tick::ZERO), ("Range", r.tick_of(48), r.tick_of(5))]
+        qs.markers
+            .iter()
+            .map(|m| (m.name.as_str(), m.start, m.duration))
+            .collect::<Vec<_>>(),
+        vec![
+            ("Point", r.tick_of(24), Tick::ZERO),
+            ("Range", r.tick_of(48), r.tick_of(5))
+        ]
     );
 }

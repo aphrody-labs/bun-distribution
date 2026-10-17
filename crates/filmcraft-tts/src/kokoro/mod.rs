@@ -43,16 +43,28 @@ impl Kokoro {
     pub fn load(dir: &Path) -> Result<Kokoro, TtsError> {
         let cfg = weights::read_config(&dir.join("config.json"))?;
         let w = weights::Weights::load(&dir.join("kokoro-v1_0.pth"))?;
-        Ok(Kokoro { model: model::Model::load(&w)?, vocab: cfg.vocab })
+        Ok(Kokoro {
+            model: model::Model::load(&w)?,
+            vocab: cfg.vocab,
+        })
     }
 
     /// Phoneme ids of `phonemes`; symbols outside the vocabulary are dropped.
     pub fn ids(&self, phonemes: &str) -> Vec<u32> {
-        phonemes.chars().filter_map(|c| self.vocab.get(&c).copied()).collect()
+        phonemes
+            .chars()
+            .filter_map(|c| self.vocab.get(&c).copied())
+            .collect()
     }
 
     /// Speak `phonemes` with `voice` at `speed` (0.5–2). Deterministic for a given `seed`.
-    pub fn speak(&self, phonemes: &str, voice: &VoicePack, speed: f64, seed: u64) -> Result<Vec<f32>, TtsError> {
+    pub fn speak(
+        &self,
+        phonemes: &str,
+        voice: &VoicePack,
+        speed: f64,
+        seed: u64,
+    ) -> Result<Vec<f32>, TtsError> {
         if !(0.5..=2.0).contains(&speed) {
             return Err(TtsError::Invalid("speed must be between 0.5 and 2".into()));
         }
@@ -61,7 +73,9 @@ impl Kokoro {
             return Err(TtsError::Empty);
         }
         if ids.len() > MAX_PHONEMES {
-            return Err(TtsError::Invalid(format!("at most {MAX_PHONEMES} phonemes per pass")));
+            return Err(TtsError::Invalid(format!(
+                "at most {MAX_PHONEMES} phonemes per pass"
+            )));
         }
         let style = weights::style_for(&voice.0, ids.len(), self.model.device())?;
         let out = self.model.forward(&ids, &style, speed, seed)?;
@@ -80,8 +94,13 @@ mod tests {
 
     fn model() -> Option<(Kokoro, VoicePack)> {
         let dir = std::path::PathBuf::from(std::env::var_os("FILMCRAFT_KOKORO_DIR")?);
-        let voice = [dir.join("af_heart.pt"), dir.join("voices/af_heart.pt")].into_iter().find(|p| p.exists())?;
-        Some((Kokoro::load(&dir).unwrap(), VoicePack::load(&voice).unwrap()))
+        let voice = [dir.join("af_heart.pt"), dir.join("voices/af_heart.pt")]
+            .into_iter()
+            .find(|p| p.exists())?;
+        Some((
+            Kokoro::load(&dir).unwrap(),
+            VoicePack::load(&voice).unwrap(),
+        ))
     }
 
     #[test]
@@ -104,7 +123,11 @@ mod tests {
     fn refuses_bad_input() {
         let Some((k, v)) = model() else { return };
         assert_eq!(k.speak("", &v, 1.0, 1).err(), Some(TtsError::Empty));
-        assert_eq!(k.speak("日本語👍", &v, 1.0, 1).err(), Some(TtsError::Empty), "nothing in the vocabulary");
+        assert_eq!(
+            k.speak("日本語👍", &v, 1.0, 1).err(),
+            Some(TtsError::Empty),
+            "nothing in the vocabulary"
+        );
         assert!(k.speak("a", &v, 3.0, 1).is_err());
         assert!(k.speak("a", &v, f64::NAN, 1).is_err());
         assert!(k.speak(&"ə".repeat(MAX_PHONEMES + 1), &v, 1.0, 1).is_err());

@@ -125,7 +125,9 @@ static SHARED_CONTEXT: std::sync::Mutex<Option<GpuContext>> = std::sync::Mutex::
 /// [`GpuError::NoAdapter`] when no adapter is usable (headless CI, remote
 /// desktops); [`GpuError::Device`] when device creation fails.
 pub fn shared_context() -> Result<GpuContext, GpuError> {
-    let mut guard = SHARED_CONTEXT.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut guard = SHARED_CONTEXT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if let Some(context) = guard.as_ref() {
         return Ok(context.clone());
     }
@@ -192,7 +194,13 @@ async fn create_context() -> Result<GpuContext, GpuError> {
         })
         .await
         .map_err(GpuError::Device)?;
-    Ok(GpuContext { instance, adapter, device, queue, report })
+    Ok(GpuContext {
+        instance,
+        adapter,
+        device,
+        queue,
+        report,
+    })
 }
 
 /// Render `scene` on the first available GPU adapter and read the result
@@ -215,7 +223,11 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
 
     let target = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("aphrody-render-target"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -230,7 +242,10 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
         source: wgpu::ShaderSource::Wgsl(include_str!("gpu.wgsl").into()),
     });
 
-    let globals = GlobalsUniform { canvas_size: [width as f32, height as f32], _pad: [0.0; 2] };
+    let globals = GlobalsUniform {
+        canvas_size: [width as f32, height as f32],
+        _pad: [0.0; 2],
+    };
     let globals_buf = wgpu::util::DeviceExt::create_buffer_init(
         &device,
         &wgpu::util::BufferInitDescriptor {
@@ -418,7 +433,13 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
 
         for node in &scene.nodes {
             match node {
-                Node::Surface { rect, corners, fill, elevation, outline } => {
+                Node::Surface {
+                    rect,
+                    corners,
+                    fill,
+                    elevation,
+                    outline,
+                } => {
                     if *elevation > 0 {
                         draw_shadow(
                             &device,
@@ -460,8 +481,13 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                             outline.width,
                         );
                     }
-                },
-                Node::StateLayer { rect, corners, content, state } => {
+                }
+                Node::StateLayer {
+                    rect,
+                    corners,
+                    content,
+                    state,
+                } => {
                     let tinted = content.resolve(&scheme).with_alpha_factor(state.opacity());
                     draw_fill(
                         &device,
@@ -476,8 +502,14 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                         0.0,
                         0.0,
                     );
-                },
-                Node::Ripple { cx, cy, radius, color, alpha } => {
+                }
+                Node::Ripple {
+                    cx,
+                    cy,
+                    radius,
+                    color,
+                    alpha,
+                } => {
                     let rect = Rect::new(cx - radius, cy - radius, radius * 2.0, radius * 2.0);
                     let tinted = color.resolve(&scheme).with_alpha_factor(*alpha);
                     draw_fill(
@@ -493,8 +525,13 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                         0.0,
                         0.0,
                     );
-                },
-                Node::Text { rect, text, style, color } => {
+                }
+                Node::Text {
+                    rect,
+                    text,
+                    style,
+                    color,
+                } => {
                     let bitmap = rasterize_line(text, *style, 1.0);
                     if bitmap.width > 0 && bitmap.height > 0 {
                         let tex = upload_coverage(
@@ -518,7 +555,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                             true,
                         );
                     }
-                },
+                }
                 Node::Icon { rect, path, color } => {
                     let width = rect.w.round().max(1.0) as u32;
                     let height = rect.h.round().max(1.0) as u32;
@@ -528,7 +565,9 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                     let scaled: Vec<Vec<(f32, f32)>> = subpaths
                         .into_iter()
                         .map(|line| {
-                            line.into_iter().map(|(x, y)| (x * scale_x, y * scale_y)).collect()
+                            line.into_iter()
+                                .map(|(x, y)| (x * scale_x, y * scale_y))
+                                .collect()
                         })
                         .collect();
                     let coverage = rasterize_polylines(&scaled, width, height, 4);
@@ -546,8 +585,13 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                         color.resolve(&scheme),
                         true,
                     );
-                },
-                Node::Image { rect, width, height, rgba } => {
+                }
+                Node::Image {
+                    rect,
+                    width,
+                    height,
+                    rgba,
+                } => {
                     let tex = upload_rgba(&device, &queue, *width, *height, rgba);
                     draw_textured(
                         &device,
@@ -562,7 +606,7 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                         Rgba8::BLACK,
                         false,
                     );
-                },
+                }
             }
         }
     }
@@ -589,7 +633,11 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
                 rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
     queue.submit(std::iter::once(encoder.finish()));
 
@@ -605,7 +653,9 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
         .map_err(|err| GpuError::Readback(err.to_string()))?
         .map_err(|err| GpuError::Readback(err.to_string()))?;
 
-    let data = slice.get_mapped_range().map_err(|err| GpuError::Readback(err.to_string()))?;
+    let data = slice
+        .get_mapped_range()
+        .map_err(|err| GpuError::Readback(err.to_string()))?;
     let mut rgba = vec![0_u8; (width as usize) * (height as usize) * 4];
     for row in 0..height as usize {
         let src = &data
@@ -616,7 +666,12 @@ async fn render_scene_gpu_async(scene: &Scene) -> Result<GpuFrame, GpuError> {
     drop(data);
     readback.unmap();
 
-    Ok(GpuFrame { rgba, width, height, adapter: adapter_report })
+    Ok(GpuFrame {
+        rgba,
+        width,
+        height,
+        adapter: adapter_report,
+    })
 }
 
 fn align_bytes_per_row(unaligned: u32) -> u32 {
@@ -690,8 +745,14 @@ fn draw_fill<'pass>(
         label: Some("shape-bind-group"),
         layout: bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: globals_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: buf.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: globals_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: buf.as_entire_binding(),
+            },
         ],
     });
     let _ = queue;
@@ -716,9 +777,19 @@ fn draw_shadow<'pass>(
     elevation: u8,
 ) {
     let (offset_y, sigma) = shadow_params(elevation, 1.0);
-    let shadow_color = Rgba8 { r: 0, g: 0, b: 0, a: (0.30 * 255.0) as u8 };
+    let shadow_color = Rgba8 {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: (0.30 * 255.0) as u8,
+    };
     let pad = sigma * 3.0;
-    let padded = Rect::new(rect.x - pad, rect.y - pad, rect.w + pad * 2.0, rect.h + pad * 2.0);
+    let padded = Rect::new(
+        rect.x - pad,
+        rect.y - pad,
+        rect.w + pad * 2.0,
+        rect.h + pad * 2.0,
+    );
     let padded_corners = Corners::uniform(0.0); // unused for shadow kind; SDF uses `corners` below.
     let _ = padded_corners;
     let corners = corners.clamped(rect.w, rect.h);
@@ -747,8 +818,14 @@ fn draw_shadow<'pass>(
         label: Some("shadow-bind-group"),
         layout: bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: globals_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 1, resource: buf.as_entire_binding() },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: globals_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: buf.as_entire_binding(),
+            },
         ],
     });
     let _ = queue;
@@ -766,7 +843,11 @@ fn upload_coverage(
 ) -> wgpu::Texture {
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("coverage"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -787,7 +868,11 @@ fn upload_coverage(
             bytes_per_row: Some(width),
             rows_per_image: Some(height),
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
     texture
 }
@@ -827,7 +912,11 @@ fn upload_rgba(
                 bytes_per_row: Some(width * 4),
                 rows_per_image: Some(height),
             },
-            wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
         );
     }
     texture
@@ -868,9 +957,18 @@ fn draw_textured<'pass>(
         label: Some("tex-bind-group"),
         layout: bgl,
         entries: &[
-            wgpu::BindGroupEntry { binding: 0, resource: globals_buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 2, resource: buf.as_entire_binding() },
-            wgpu::BindGroupEntry { binding: 3, resource: wgpu::BindingResource::Sampler(sampler) },
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: globals_buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: buf.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
             wgpu::BindGroupEntry {
                 binding: 4,
                 resource: wgpu::BindingResource::TextureView(&view),
@@ -920,7 +1018,10 @@ mod tests {
             eprintln!("skipping gpu_matches_cpu_within_tolerance: no GPU adapter available");
             return;
         };
-        println!("adapter: {} ({})", gpu_frame.adapter.name, gpu_frame.adapter.backend);
+        println!(
+            "adapter: {} ({})",
+            gpu_frame.adapter.name, gpu_frame.adapter.backend
+        );
         let cpu = render_scene(&scene());
         assert_eq!(gpu_frame.width, cpu.width);
         assert_eq!(gpu_frame.height, cpu.height);
@@ -941,6 +1042,10 @@ mod tests {
             }
         }
         let ratio = within_tolerance as f64 / total as f64;
-        assert!(ratio >= 0.995, "only {:.4}% of pixels within tolerance", ratio * 100.0);
+        assert!(
+            ratio >= 0.995,
+            "only {:.4}% of pixels within tolerance",
+            ratio * 100.0
+        );
     }
 }

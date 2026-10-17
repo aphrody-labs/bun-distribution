@@ -22,7 +22,14 @@ pub struct StrokeStyle {
 
 impl Default for StrokeStyle {
     fn default() -> Self {
-        StrokeStyle { width: 1.0, cap: LineCap::Butt, join: LineJoin::Miter, miter_limit: 4.0, dashes: Vec::new(), dash_offset: 0.0 }
+        StrokeStyle {
+            width: 1.0,
+            cap: LineCap::Butt,
+            join: LineJoin::Miter,
+            miter_limit: 4.0,
+            dashes: Vec::new(),
+            dash_offset: 0.0,
+        }
     }
 }
 
@@ -42,7 +49,11 @@ fn len(a: P) -> f64 {
 }
 fn norm(a: P) -> P {
     let l = len(a);
-    if l > 0.0 { (a.0 / l, a.1 / l) } else { (0.0, 0.0) }
+    if l > 0.0 {
+        (a.0 / l, a.1 / l)
+    } else {
+        (0.0, 0.0)
+    }
 }
 /// Left normal in y-down coordinates.
 fn perp(a: P) -> P {
@@ -83,7 +94,11 @@ fn arc_step(r: f64, tol: f64) -> f64 {
 /// Vertex radius for chords of `step` radians so each chord's pie slice has the area of the
 /// circular sector (keeps round caps/joins area-exact at any tessellation).
 fn area_radius(r: f64, step: f64) -> f64 {
-    if step < 1e-9 { r } else { r * (step / step.sin()).sqrt() }
+    if step < 1e-9 {
+        r
+    } else {
+        r * (step / step.sin()).sqrt()
+    }
 }
 
 fn circle(c: P, r: f64, tol: f64) -> Vec<P> {
@@ -100,7 +115,11 @@ fn circle(c: P, r: f64, tol: f64) -> Vec<P> {
 /// Stroke outline pieces for `lines`. Fill them with the non-zero rule.
 pub fn stroke_polygons(lines: &[Polyline], style: &StrokeStyle, tol: f64) -> Vec<Vec<P>> {
     let mut out = Vec::new();
-    if style.width <= 0.0 || !style.width.is_finite() || !style.miter_limit.is_finite() || style.miter_limit < 1.0 {
+    if style.width <= 0.0
+        || !style.width.is_finite()
+        || !style.miter_limit.is_finite()
+        || style.miter_limit < 1.0
+    {
         return out;
     }
     for pl in lines {
@@ -146,7 +165,15 @@ fn stroke_one(pl: &Polyline, style: &StrokeStyle, tol: f64, out: &mut Vec<Vec<P>
         let c = pts[0];
         match style.cap {
             LineCap::Round => emit(out, circle(c, hw, tol)),
-            LineCap::Square => emit(out, vec![(c.0 - hw, c.1 - hw), (c.0 + hw, c.1 - hw), (c.0 + hw, c.1 + hw), (c.0 - hw, c.1 + hw)]),
+            LineCap::Square => emit(
+                out,
+                vec![
+                    (c.0 - hw, c.1 - hw),
+                    (c.0 + hw, c.1 - hw),
+                    (c.0 + hw, c.1 + hw),
+                    (c.0 - hw, c.1 + hw),
+                ],
+            ),
             LineCap::Butt => {}
         }
         return;
@@ -213,7 +240,20 @@ fn stroke_one(pl: &Polyline, style: &StrokeStyle, tol: f64, out: &mut Vec<Vec<P>
                 (jn, true) => jn,
                 (_, false) => LineJoin::Miter,
             };
-            join_piece(v, d1, d2, hw, join, if knot[j] { style.miter_limit.min(500.0) } else { f64::INFINITY }, tol, out);
+            join_piece(
+                v,
+                d1,
+                d2,
+                hw,
+                join,
+                if knot[j] {
+                    style.miter_limit.min(500.0)
+                } else {
+                    f64::INFINITY
+                },
+                tol,
+                out,
+            );
         }
     }
     if !closed {
@@ -225,7 +265,16 @@ fn stroke_one(pl: &Polyline, style: &StrokeStyle, tol: f64, out: &mut Vec<Vec<P>
 }
 
 #[allow(clippy::too_many_arguments)]
-fn join_piece(v: P, d1: P, d2: P, hw: f64, join: LineJoin, miter_limit: f64, tol: f64, out: &mut Vec<Vec<P>>) {
+fn join_piece(
+    v: P,
+    d1: P,
+    d2: P,
+    hw: f64,
+    join: LineJoin,
+    miter_limit: f64,
+    tol: f64,
+    out: &mut Vec<Vec<P>>,
+) {
     let c = cross(d1, d2);
     let d = dot(d1, d2);
     if c.abs() < 1e-12 && d > 0.0 {
@@ -287,7 +336,10 @@ fn cap_piece(p: P, dir: P, hw: f64, cap: LineCap, tol: f64, out: &mut Vec<Vec<P>
         LineCap::Square => {
             let n = mul(perp(dir), hw);
             let e = mul(dir, hw);
-            emit(out, vec![add(p, n), add(add(p, n), e), add(sub(p, n), e), sub(p, n)]);
+            emit(
+                out,
+                vec![add(p, n), add(add(p, n), e), add(sub(p, n), e), sub(p, n)],
+            );
         }
     }
 }
@@ -335,7 +387,15 @@ pub fn dash_polyline(pl: &Polyline, pattern: &[f64], offset: f64) -> Vec<Polylin
         }
     }
     let mut out = Vec::new();
-    let mut cur: Option<Polyline> = if idx.is_multiple_of(2) { Some(Polyline { pts: vec![pts[0]], knot: vec![true], closed: false }) } else { None };
+    let mut cur: Option<Polyline> = if idx.is_multiple_of(2) {
+        Some(Polyline {
+            pts: vec![pts[0]],
+            knot: vec![true],
+            closed: false,
+        })
+    } else {
+        None
+    };
     let mut guard = 0usize;
     for (wi, w) in pts.windows(2).enumerate() {
         let (a, b) = (w[0], w[1]);
@@ -356,7 +416,11 @@ pub fn dash_polyline(pl: &Polyline, pattern: &[f64], offset: f64) -> Vec<Polylin
             pos += step;
             left -= step;
             let at_end = seg - pos <= 1e-12;
-            let p = if at_end { b } else { add(a, mul(sub(b, a), pos / seg)) };
+            let p = if at_end {
+                b
+            } else {
+                add(a, mul(sub(b, a), pos / seg))
+            };
             if let Some(c) = cur.as_mut() {
                 c.pts.push(p);
                 c.knot.push(!at_end || b_knot);
@@ -369,7 +433,11 @@ pub fn dash_polyline(pl: &Polyline, pattern: &[f64], offset: f64) -> Vec<Polylin
                         out.push(c);
                     }
                 } else {
-                    cur = Some(Polyline { pts: vec![p], knot: vec![true], closed: false });
+                    cur = Some(Polyline {
+                        pts: vec![p],
+                        knot: vec![true],
+                        closed: false,
+                    });
                 }
             }
         }
@@ -384,7 +452,8 @@ pub fn dash_polyline(pl: &Polyline, pattern: &[f64], offset: f64) -> Vec<Polylin
         // A dash that crosses the closing vertex has a join there, not two caps.
         // Preserve knot flags when stitching the tail onto the first dash.
         let seam = pl.pts.first().copied();
-        let wraps = out.first().and_then(|d| d.pts.first()).copied() == seam && out.last().and_then(|d| d.pts.last()).copied() == seam;
+        let wraps = out.first().and_then(|d| d.pts.first()).copied() == seam
+            && out.last().and_then(|d| d.pts.last()).copied() == seam;
         if wraps && out.len() == 1 {
             if let Some(dash) = out.first_mut() {
                 dash.closed = true;
@@ -407,7 +476,11 @@ mod tests {
     use super::*;
 
     fn line(pts: &[P], closed: bool) -> Polyline {
-        Polyline { pts: pts.to_vec(), knot: vec![true; pts.len()], closed }
+        Polyline {
+            pts: pts.to_vec(),
+            knot: vec![true; pts.len()],
+            closed,
+        }
     }
 
     #[test]
@@ -416,7 +489,9 @@ mod tests {
         let d = dash_polyline(&pl, &[2.0, 1.0], 0.0);
         // on [0,2] [3,5] [6,8] [9,10]
         assert_eq!(d.len(), 4);
-        assert!((d[1].pts[0].0 - 3.0).abs() < 1e-9 && (d[1].pts.last().unwrap().0 - 5.0).abs() < 1e-9);
+        assert!(
+            (d[1].pts[0].0 - 3.0).abs() < 1e-9 && (d[1].pts.last().unwrap().0 - 5.0).abs() < 1e-9
+        );
         assert!((d[3].pts.last().unwrap().0 - 10.0).abs() < 1e-9);
         let o = dash_polyline(&pl, &[2.0, 1.0], 1.0);
         assert!((o[0].pts.last().unwrap().0 - 1.0).abs() < 1e-9);
@@ -427,7 +502,12 @@ mod tests {
         let pl = line(&[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)], false);
         for join in [LineJoin::Miter, LineJoin::Round, LineJoin::Bevel] {
             for cap in [LineCap::Butt, LineCap::Round, LineCap::Square] {
-                let st = StrokeStyle { width: 2.0, join, cap, ..Default::default() };
+                let st = StrokeStyle {
+                    width: 2.0,
+                    join,
+                    cap,
+                    ..Default::default()
+                };
                 for p in stroke_polygons(std::slice::from_ref(&pl), &st, 0.1) {
                     assert!(signed_area(&p) > 0.0);
                 }
@@ -451,11 +531,25 @@ mod tests {
     #[test]
     fn invalid_and_too_dense_dashes_finish_with_bounded_work() {
         let pl = line(&[(0.0, 0.0), (100.0, 0.0)], false);
-        for pattern in [vec![0.0, 0.0], vec![f64::INFINITY, 1.0], vec![f64::NAN, 1.0], vec![-1.0, 2.0], vec![1.0; 33], vec![1e-8, 1e-8]] {
+        for pattern in [
+            vec![0.0, 0.0],
+            vec![f64::INFINITY, 1.0],
+            vec![f64::NAN, 1.0],
+            vec![-1.0, 2.0],
+            vec![1.0; 33],
+            vec![1e-8, 1e-8],
+        ] {
             assert!(dash_polyline(&pl, &pattern, 0.0).is_empty());
         }
         assert!(dash_polyline(&pl, &[2.0, 1.0], f64::INFINITY).is_empty());
-        assert!(dash_polyline(&line(&[(f64::NAN, 0.0), (1.0, 0.0)], false), &[2.0, 1.0], 0.0).is_empty());
+        assert!(
+            dash_polyline(
+                &line(&[(f64::NAN, 0.0), (1.0, 0.0)], false),
+                &[2.0, 1.0],
+                0.0
+            )
+            .is_empty()
+        );
     }
 
     #[test]
@@ -463,8 +557,17 @@ mod tests {
         let pl = line(&[(0.0, 0.0), (30.0, 0.0)], false);
         let d = dash_polyline(&pl, &[4.0, 2.0, 1.0, 3.0], -10.0);
         assert_eq!(
-            d.iter().map(|p| (p.pts.first().unwrap().0, p.pts.last().unwrap().0)).collect::<Vec<_>>(),
-            [(0.0, 4.0), (6.0, 7.0), (10.0, 14.0), (16.0, 17.0), (20.0, 24.0), (26.0, 27.0)]
+            d.iter()
+                .map(|p| (p.pts.first().unwrap().0, p.pts.last().unwrap().0))
+                .collect::<Vec<_>>(),
+            [
+                (0.0, 4.0),
+                (6.0, 7.0),
+                (10.0, 14.0),
+                (16.0, 17.0),
+                (20.0, 24.0),
+                (26.0, 27.0)
+            ]
         );
     }
 }

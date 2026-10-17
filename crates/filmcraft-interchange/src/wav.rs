@@ -17,7 +17,12 @@ pub fn wav_header(data_len: u32, channels: u16, sample_rate: u32, bits: u16) -> 
     let mut v = Vec::with_capacity(44);
     v.extend_from_slice(b"RIFF");
     // Saturating: a huge source (data_len saturated by the caller) must not overflow.
-    v.extend_from_slice(&36u32.saturating_add(data_len).saturating_add(data_len & 1).to_le_bytes());
+    v.extend_from_slice(
+        &36u32
+            .saturating_add(data_len)
+            .saturating_add(data_len & 1)
+            .to_le_bytes(),
+    );
     v.extend_from_slice(b"WAVEfmt ");
     v.extend_from_slice(&16u32.to_le_bytes());
     v.extend_from_slice(&1u16.to_le_bytes());
@@ -178,7 +183,10 @@ mod tests {
         let a = aiff_file(&pcm, 2, 44_100, 24);
         assert_eq!(parse_aiff(&a), Some((pcm.clone(), 2, 44_100, 24)));
         let p16: Vec<u8> = (0..32u8).collect();
-        assert_eq!(parse_aiff(&aiff_file(&p16, 1, 96_000, 16)), Some((p16, 1, 96_000, 16)));
+        assert_eq!(
+            parse_aiff(&aiff_file(&p16, 1, 96_000, 16)),
+            Some((p16, 1, 96_000, 16))
+        );
         assert!(parse_wav(b"RIFF").is_none());
         assert!(parse_aiff(&a[..30]).is_none());
         for cut in 0..w.len() {

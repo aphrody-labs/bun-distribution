@@ -47,18 +47,25 @@ fn worker() -> Result<&'static mpsc::UnboundedSender<Job>, String> {
         .name("aphrody-browser".to_owned())
         .stack_size(BROWSER_STACK)
         .spawn(move || {
-            let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+            let runtime = match tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+            {
                 Ok(runtime) => runtime,
                 Err(error) => {
                     tracing::error!(%error, "browser runtime failed to start");
                     return;
-                },
+                }
             };
             let local = tokio::task::LocalSet::new();
             local.block_on(&runtime, async move {
-                let proxy = std::env::var("APHRODY_BROWSER_PROXY").ok().filter(|p| !p.is_empty());
-                let stealth =
-                    matches!(std::env::var("APHRODY_BROWSER_STEALTH").as_deref(), Ok("1" | "true"));
+                let proxy = std::env::var("APHRODY_BROWSER_PROXY")
+                    .ok()
+                    .filter(|p| !p.is_empty());
+                let stealth = matches!(
+                    std::env::var("APHRODY_BROWSER_STEALTH").as_deref(),
+                    Ok("1" | "true")
+                );
                 let mut state = aphrody_web_service::WebSession::new(proxy, None, stealth);
                 while let Some(job) = receiver.recv().await {
                     let result = state.call(&job.tool, job.args).await;
@@ -89,7 +96,11 @@ static CATALOG: LazyLock<Vec<Tool>> = LazyLock::new(|| {
 
 /// Every browser tool, minus names in `taken`.
 pub(crate) fn list(taken: impl Fn(&str) -> bool) -> Vec<Tool> {
-    CATALOG.iter().filter(|tool| !taken(tool.name.as_ref())).cloned().collect()
+    CATALOG
+        .iter()
+        .filter(|tool| !taken(tool.name.as_ref()))
+        .cloned()
+        .collect()
 }
 
 pub(crate) fn get(name: &str) -> Option<Tool> {
@@ -101,13 +112,18 @@ pub(crate) fn owns(name: &str) -> bool {
 }
 
 fn engine_name(public: &str) -> String {
-    format!("{ENGINE_PREFIX}{}", public.strip_prefix(PUBLIC_PREFIX).unwrap_or(public))
+    format!(
+        "{ENGINE_PREFIX}{}",
+        public.strip_prefix(PUBLIC_PREFIX).unwrap_or(public)
+    )
 }
 
 async fn run(tool: String, args: Value) -> Result<Value, String> {
     let (reply, answer) = oneshot::channel();
     let label = tool.clone();
-    worker()?.send(Job { tool, args, reply }).map_err(|_| "browser thread stopped".to_owned())?;
+    worker()?
+        .send(Job { tool, args, reply })
+        .map_err(|_| "browser thread stopped".to_owned())?;
     tokio::time::timeout(CALL_TIMEOUT, answer)
         .await
         .map_err(|_| format!("{label} timed out after {}s", CALL_TIMEOUT.as_secs()))?
@@ -118,8 +134,10 @@ async fn run(tool: String, args: Value) -> Result<Value, String> {
 /// (text, image or resource content).
 pub(crate) async fn call(request: &CallToolRequestParams) -> CallToolResult {
     let name = request.name.as_ref();
-    let args =
-        request.arguments.as_ref().map_or_else(|| json!({}), |map| Value::Object(map.clone()));
+    let args = request
+        .arguments
+        .as_ref()
+        .map_or_else(|| json!({}), |map| Value::Object(map.clone()));
     match run(engine_name(name), args).await {
         Ok(raw) => serde_json::from_value::<CallToolResult>(raw.clone()).unwrap_or_else(|error| {
             CallToolResult::error(vec![ContentBlock::text(format!(
@@ -144,8 +162,15 @@ mod tests {
 
     #[test]
     fn catalog_publishes_every_engine_tool() {
-        assert!(CATALOG.len() >= 30, "expected the full Obscura catalog, got {}", CATALOG.len());
-        assert_eq!(CATALOG.len(), aphrody_web_service::WebSession::tools().len());
+        assert!(
+            CATALOG.len() >= 30,
+            "expected the full Obscura catalog, got {}",
+            CATALOG.len()
+        );
+        assert_eq!(
+            CATALOG.len(),
+            aphrody_web_service::WebSession::tools().len()
+        );
         for name in [
             "aphrody_browser_navigate",
             "aphrody_browser_snapshot",
@@ -160,8 +185,11 @@ mod tests {
 
     #[tokio::test]
     async fn shared_session_rejects_non_web_navigation_without_network() {
-        let result =
-            call(&request("aphrody_browser_navigate", json!({ "url": "file:///tmp/a" }))).await;
+        let result = call(&request(
+            "aphrody_browser_navigate",
+            json!({ "url": "file:///tmp/a" }),
+        ))
+        .await;
         assert_eq!(result.is_error, Some(true));
         assert!(text(&result).contains("not allowed"), "{result:?}");
     }
@@ -183,7 +211,10 @@ mod tests {
             "browser_close",
         ] {
             let public = crate::bxc_tools::public_name(source_name);
-            assert!(owns(&public), "{source_name} should resolve to native {public}");
+            assert!(
+                owns(&public),
+                "{source_name} should resolve to native {public}"
+            );
         }
     }
 
@@ -196,9 +227,11 @@ mod tests {
     #[tokio::test]
     #[ignore = "network-dependent; V8 snapshot abort on Windows debug (aphrody-web obscura)"]
     async fn engine_runs_a_page_end_to_end() {
-        let nav =
-            call(&request("aphrody_browser_navigate", json!({ "url": "https://example.com" })))
-                .await;
+        let nav = call(&request(
+            "aphrody_browser_navigate",
+            json!({ "url": "https://example.com" }),
+        ))
+        .await;
         if nav.is_error == Some(true) {
             eprintln!("offline: {}", text(&nav));
             return;

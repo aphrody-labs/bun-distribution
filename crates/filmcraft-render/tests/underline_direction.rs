@@ -12,7 +12,13 @@ fn set(e: &mut EffectInstance, k: &str, v: ParamValue) {
 
 fn draw(layer: EffectInstance) -> Image {
     let mut img = Image::new(320, 200);
-    render_graphic_layers(&[layer], Tick::ZERO, (320, 200), &Affine::IDENTITY, &mut img);
+    render_graphic_layers(
+        &[layer],
+        Tick::ZERO,
+        (320, 200),
+        &Affine::IDENTITY,
+        &mut img,
+    );
     img
 }
 
@@ -32,7 +38,10 @@ fn ink_box(img: &Image) -> [usize; 4] {
 }
 
 fn count(img: &Image) -> usize {
-    (0..img.h).flat_map(|y| (0..img.w).map(move |x| (x, y))).filter(|&(x, y)| img.get(x, y)[3] > 0.4).count()
+    (0..img.h)
+        .flat_map(|y| (0..img.w).map(move |x| (x, y)))
+        .filter(|&(x, y)| img.get(x, y)[3] > 0.4)
+        .count()
 }
 
 #[test]
@@ -47,13 +56,25 @@ fn underline_horizontal_vs_vertical_letter_a() {
     set(&mut v, "underline", ParamValue::Bool(true));
     let v_ul = draw(v);
 
-    assert!(count(&h_ul) > count(&h_plain) + 20, "horizontal underline adds ink");
-    assert!(count(&v_ul) > count(&v_plain) + 20, "vertical underline adds ink");
+    assert!(
+        count(&h_ul) > count(&h_plain) + 20,
+        "horizontal underline adds ink"
+    );
+    assert!(
+        count(&v_ul) > count(&v_plain) + 20,
+        "vertical underline adds ink"
+    );
 
     let hb = ink_box(&h_ul);
     let hp = ink_box(&h_plain);
     let vb = ink_box(&v_ul);
     let vp = ink_box(&v_plain);
-    assert!(hb[3] > hp[3] + 1, "horizontal underline sits below the letter: plain {hp:?} ul {hb:?}");
-    assert!(vb[2] > vp[2] + 1, "vertical underline sits to the right of the letter: plain {vp:?} ul {vb:?}");
+    assert!(
+        hb[3] > hp[3] + 1,
+        "horizontal underline sits below the letter: plain {hp:?} ul {hb:?}"
+    );
+    assert!(
+        vb[2] > vp[2] + 1,
+        "vertical underline sits to the right of the letter: plain {vp:?} ul {vb:?}"
+    );
 }

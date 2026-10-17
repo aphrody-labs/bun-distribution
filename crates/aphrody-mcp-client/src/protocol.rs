@@ -167,9 +167,11 @@ impl CallToolResult {
         for item in &self.content {
             match item {
                 McpContent::Text { text } => parts.push(text.as_str()),
-                McpContent::Resource { text: Some(text), .. } => parts.push(text.as_str()),
+                McpContent::Resource {
+                    text: Some(text), ..
+                } => parts.push(text.as_str()),
                 McpContent::Resource { uri: Some(uri), .. } => parts.push(uri.as_str()),
-                _ => {},
+                _ => {}
             }
         }
         parts.join("\n")
@@ -216,10 +218,17 @@ pub fn parse_response(text: &str) -> Result<JsonValue> {
         .map_err(|e| McpClientError::Malformed(format!("invalid JSON: {e}; raw={text}")))?;
     if let Some(err) = v.get("error") {
         let code = err.get("code").and_then(JsonValue::as_i64).unwrap_or(0);
-        let message =
-            err.get("message").and_then(JsonValue::as_str).unwrap_or("unknown error").to_owned();
+        let message = err
+            .get("message")
+            .and_then(JsonValue::as_str)
+            .unwrap_or("unknown error")
+            .to_owned();
         let data = err.get("data").cloned();
-        return Err(McpClientError::JsonRpc { code, message, data });
+        return Err(McpClientError::JsonRpc {
+            code,
+            message,
+            data,
+        });
     }
     v.get("result")
         .cloned()
@@ -247,16 +256,31 @@ pub fn parse_server_info(result: &JsonValue) -> Result<ServerInfo> {
     let server_info = result
         .get("serverInfo")
         .ok_or_else(|| McpClientError::Malformed(format!("missing `serverInfo`: {result}")))?;
-    let name = server_info.get("name").and_then(JsonValue::as_str).unwrap_or("unknown").to_owned();
-    let version =
-        server_info.get("version").and_then(JsonValue::as_str).unwrap_or("0.0.0").to_owned();
-    let capabilities = result.get("capabilities").cloned().unwrap_or(JsonValue::Null);
+    let name = server_info
+        .get("name")
+        .and_then(JsonValue::as_str)
+        .unwrap_or("unknown")
+        .to_owned();
+    let version = server_info
+        .get("version")
+        .and_then(JsonValue::as_str)
+        .unwrap_or("0.0.0")
+        .to_owned();
+    let capabilities = result
+        .get("capabilities")
+        .cloned()
+        .unwrap_or(JsonValue::Null);
     let protocol_version = result
         .get("protocolVersion")
         .and_then(JsonValue::as_str)
         .unwrap_or(MCP_PROTOCOL_VERSION)
         .to_owned();
-    Ok(ServerInfo { name, version, capabilities, protocol_version })
+    Ok(ServerInfo {
+        name,
+        version,
+        capabilities,
+        protocol_version,
+    })
 }
 
 /// Parse a `tools/call` result into [`CallToolResult`].
@@ -265,7 +289,10 @@ pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
     // the flattened shape. Normalize text resources; binary resources must
     // use the raw API rather than silently disappearing from the answer.
     let mut normalized = result.clone();
-    if let Some(items) = normalized.get_mut("content").and_then(JsonValue::as_array_mut) {
+    if let Some(items) = normalized
+        .get_mut("content")
+        .and_then(JsonValue::as_array_mut)
+    {
         for item in items {
             if item.get("type").and_then(JsonValue::as_str) == Some("resource")
                 && let Some(resource) = item.get("resource")
@@ -275,9 +302,12 @@ pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
                         "binary resource requires call_tool_raw".to_owned(),
                     ));
                 }
-                let uri = resource.get("uri").and_then(JsonValue::as_str).ok_or_else(|| {
-                    McpClientError::Malformed("embedded resource is missing uri".to_owned())
-                })?;
+                let uri = resource
+                    .get("uri")
+                    .and_then(JsonValue::as_str)
+                    .ok_or_else(|| {
+                        McpClientError::Malformed("embedded resource is missing uri".to_owned())
+                    })?;
                 *item = serde_json::json!({"type":"resource","uri":uri,"text":resource.get("text"),"mimeType":resource.get("mimeType")});
             }
         }
@@ -315,6 +345,13 @@ pub fn parse_call_tool_result(result: &JsonValue) -> Result<CallToolResult> {
     }
 
     // Fallback: raw JSON value as a single text item:
-    let text = if let Some(s) = result.as_str() { s.to_owned() } else { result.to_string() };
-    Ok(CallToolResult { content: vec![McpContent::Text { text }], ..CallToolResult::default() })
+    let text = if let Some(s) = result.as_str() {
+        s.to_owned()
+    } else {
+        result.to_string()
+    };
+    Ok(CallToolResult {
+        content: vec![McpContent::Text { text }],
+        ..CallToolResult::default()
+    })
 }

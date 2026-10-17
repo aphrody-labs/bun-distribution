@@ -33,7 +33,10 @@ pub(super) struct Registry(Arc<Mutex<HashMap<String, Handoff>>>);
 
 impl Registry {
     pub(super) fn contains(&self, id: &str) -> bool {
-        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).contains_key(id)
+        self.0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .contains_key(id)
     }
 }
 
@@ -42,12 +45,17 @@ pub(super) fn session_id(request: &Request) -> Result<Option<String>, ()> {
     let Some(query) = request.uri().query() else {
         return Ok(None);
     };
-    let Some(value) = query.split('&').find_map(|part| part.strip_prefix("session=")) else {
+    let Some(value) = query
+        .split('&')
+        .find_map(|part| part.strip_prefix("session="))
+    else {
         return Ok(None);
     };
     if value.is_empty()
         || value.len() > 128
-        || !value.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
     {
         return Err(());
     }
@@ -71,7 +79,10 @@ pub(super) async fn accept(
 ) -> Result<()> {
     let (handoff, incoming) = mpsc::channel(1);
     let existing = {
-        let mut entries = registry.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut entries = registry
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         if let Some(sender) = entries.get(&id) {
             Some(sender.clone())
         } else if slot.is_some() {
@@ -83,11 +94,24 @@ pub(super) async fn accept(
     };
     if let Some(sender) = existing {
         drop(slot);
-        sender.send(ws).await.map_err(|_| anyhow!("resumable PTY already ended"))?;
+        sender
+            .send(ws)
+            .await
+            .map_err(|_| anyhow!("resumable PTY already ended"))?;
         return Ok(());
     }
-    let result = run(ws, &cfg, incoming, slot.expect("new session holds quota slot")).await;
-    registry.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+    let result = run(
+        ws,
+        &cfg,
+        incoming,
+        slot.expect("new session holds quota slot"),
+    )
+    .await;
+    registry
+        .0
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .remove(&id);
     result
 }
 
@@ -111,7 +135,9 @@ async fn run(
         if exited_while_detached && current.is_some() && pending.is_empty() {
             break;
         }
-        let idle_left = cfg.idle_ttl.map(|ttl| ttl.saturating_sub(last_activity.elapsed()));
+        let idle_left = cfg
+            .idle_ttl
+            .map(|ttl| ttl.saturating_sub(last_activity.elapsed()));
         let detach_left = detached_at.map(|at| DETACHED_GRACE.saturating_sub(at.elapsed()));
         if idle_left == Some(Duration::ZERO) || detach_left == Some(Duration::ZERO) {
             break;

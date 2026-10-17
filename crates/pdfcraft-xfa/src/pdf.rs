@@ -39,7 +39,9 @@ fn content_hash(data: &[u8]) -> [u8; 32] {
 }
 
 fn hex32(h: &[u8; 32]) -> Vec<u8> {
-    h.iter().flat_map(|b| format!("{b:02x}").into_bytes()).collect()
+    h.iter()
+        .flat_map(|b| format!("{b:02x}").into_bytes())
+        .collect()
 }
 
 fn parse_hex32(s: &[u8]) -> Option<[u8; 32]> {
@@ -131,22 +133,42 @@ fn all_faces() -> Vec<(&'static str, &'static str)> {
 
 /// A PDF appearance-state name for a check button's on value.
 fn state_name(on: &str) -> String {
-    let s: String = on.trim().chars().map(|c| if c.is_whitespace() || "()<>[]{}/%#".contains(c) || c.is_control() { '_' } else { c }).collect();
-    if s.is_empty() || s == "Off" { "Yes".into() } else { s }
+    let s: String = on
+        .trim()
+        .chars()
+        .map(|c| {
+            if c.is_whitespace() || "()<>[]{}/%#".contains(c) || c.is_control() {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    if s.is_empty() || s == "Off" {
+        "Yes".into()
+    } else {
+        s
+    }
 }
 
 fn empty_form(doc: &mut Document, w: f64, h: f64) -> Object {
     let mut d = Dict::new();
     d.set(b"Type".to_vec(), Object::name("XObject"));
     d.set(b"Subtype".to_vec(), Object::name("Form"));
-    d.set(b"BBox".to_vec(), Object::Array([0.0, 0.0, w, h].iter().map(|v| Object::Real(*v)).collect()));
+    d.set(
+        b"BBox".to_vec(),
+        Object::Array([0.0, 0.0, w, h].iter().map(|v| Object::Real(*v)).collect()),
+    );
     Object::Ref(doc.add(Object::Stream(Stream::from_raw(d, Vec::new()))))
 }
 
 fn js_action(js: &str) -> Object {
     let mut a = Dict::new();
     a.set(b"S".to_vec(), Object::name("JavaScript"));
-    a.set(b"JS".to_vec(), Object::String(PdfString::literal(js.as_bytes().to_vec())));
+    a.set(
+        b"JS".to_vec(),
+        Object::String(PdfString::literal(js.as_bytes().to_vec())),
+    );
     Object::Dict(a)
 }
 
@@ -202,10 +224,22 @@ const MAX_FIELD_DEPTH: usize = 32;
 /// laid-out signature box finds its signature. Fields of an earlier layout pass are not read.
 fn signed_fields(doc: &Document, catalog: &Dict) -> HashMap<String, Signed> {
     let mut out = HashMap::new();
-    let Some(acro) = catalog.get(b"AcroForm").map(|a| doc.resolve(a)) else { return out };
-    let Some(fields) = acro.as_dict().and_then(|a| a.get(b"Fields")).map(|f| doc.resolve(f)) else { return out };
-    let mut stack: Vec<(Object, String, bool, usize)> =
-        fields.as_array().into_iter().flatten().map(|f| (f.clone(), String::new(), false, 0)).collect();
+    let Some(acro) = catalog.get(b"AcroForm").map(|a| doc.resolve(a)) else {
+        return out;
+    };
+    let Some(fields) = acro
+        .as_dict()
+        .and_then(|a| a.get(b"Fields"))
+        .map(|f| doc.resolve(f))
+    else {
+        return out;
+    };
+    let mut stack: Vec<(Object, String, bool, usize)> = fields
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|f| (f.clone(), String::new(), false, 0))
+        .collect();
     let mut seen = 0usize;
     while let Some((field, prefix, parent_is_sig, depth)) = stack.pop() {
         seen += 1;
@@ -217,7 +251,11 @@ fn signed_fields(doc: &Document, catalog: &Dict) -> HashMap<String, Signed> {
         if d.contains(SOM_KEY) {
             continue;
         }
-        let name = match d.get(b"T").map(|t| doc.resolve(t)).and_then(|t| t.as_string().map(|t| t.to_text())) {
+        let name = match d
+            .get(b"T")
+            .map(|t| doc.resolve(t))
+            .and_then(|t| t.as_string().map(|t| t.to_text()))
+        {
             Some(t) if prefix.is_empty() => t,
             Some(t) => format!("{prefix}.{t}"),
             None => prefix,
@@ -226,14 +264,27 @@ fn signed_fields(doc: &Document, catalog: &Dict) -> HashMap<String, Signed> {
             Some(ft) => ft == b"Sig",
             None => parent_is_sig,
         };
-        let kids: Vec<Object> = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()).unwrap_or_default();
+        let kids: Vec<Object> = d
+            .get(b"Kids")
+            .map(|k| doc.resolve(k))
+            .and_then(|k| k.as_array().cloned())
+            .unwrap_or_default();
         if is_sig && let Some(value) = d.get(b"V").filter(|v| doc.resolve(v).as_dict().is_some()) {
             // The appearance is on the field when it is its own widget, or on its one widget.
-            let appearance = d.get(b"AP").cloned().or_else(|| kids.iter().find_map(|k| doc.resolve(k).as_dict().and_then(|k| k.get(b"AP").cloned())));
-            out.entry(name.clone()).or_insert(Signed { value: value.clone(), appearance });
+            let appearance = d.get(b"AP").cloned().or_else(|| {
+                kids.iter()
+                    .find_map(|k| doc.resolve(k).as_dict().and_then(|k| k.get(b"AP").cloned()))
+            });
+            out.entry(name.clone()).or_insert(Signed {
+                value: value.clone(),
+                appearance,
+            });
         }
         if depth < MAX_FIELD_DEPTH {
-            stack.extend(kids.into_iter().map(|k| (k, name.clone(), is_sig, depth + 1)));
+            stack.extend(
+                kids.into_iter()
+                    .map(|k| (k, name.clone(), is_sig, depth + 1)),
+            );
         }
     }
     out
@@ -241,10 +292,21 @@ fn signed_fields(doc: &Document, catalog: &Dict) -> HashMap<String, Signed> {
 
 impl Emitter<'_> {
     fn da(face: &Face) -> Vec<u8> {
-        format!("/{} {} Tf {} rg", face.resource_name(), n(face.size), rgb(face.color)).into_bytes()
+        format!(
+            "/{} {} Tf {} rg",
+            face.resource_name(),
+            n(face.size),
+            rgb(face.color)
+        )
+        .into_bytes()
     }
 
-    fn widget(&mut self, w: &Widget, page: &Page, page_ref: ObjRef) -> Result<Option<ObjRef>, XfaError> {
+    fn widget(
+        &mut self,
+        w: &Widget,
+        page: &Page,
+        page_ref: ObjRef,
+    ) -> Result<Option<ObjRef>, XfaError> {
         let r = w.rect;
         let (x0, y0, x1, y1) = (r.x, page.height - r.bottom(), r.right(), page.height - r.y);
         let mut d = Dict::new();
@@ -252,8 +314,14 @@ impl Emitter<'_> {
         d.set(b"Subtype".to_vec(), Object::name("Widget"));
         d.set(b"F".to_vec(), Object::Int(4));
         d.set(b"P".to_vec(), Object::Ref(page_ref));
-        d.set(b"Rect".to_vec(), Object::Array([x0, y0, x1, y1].iter().map(|v| Object::Real(*v)).collect()));
-        d.set(b"DA".to_vec(), Object::String(PdfString::literal(Self::da(&w.face))));
+        d.set(
+            b"Rect".to_vec(),
+            Object::Array([x0, y0, x1, y1].iter().map(|v| Object::Real(*v)).collect()),
+        );
+        d.set(
+            b"DA".to_vec(),
+            Object::String(PdfString::literal(Self::da(&w.face))),
+        );
         if let Some(t) = &w.tooltip {
             d.set(b"TU".to_vec(), Object::String(PdfString::text(t)));
         }
@@ -268,8 +336,22 @@ impl Emitter<'_> {
             mk.set(b"BG".to_vec(), rgb_array(c));
         }
         let mut bs = Dict::new();
-        bs.set(b"W".to_vec(), Object::Real(if w.border.shape == BorderShape::None { 0.0 } else { w.border.width.clamp(0.1, 12.0) }));
-        bs.set(b"S".to_vec(), Object::name(if w.border.shape == BorderShape::Underline { "U" } else { "S" }));
+        bs.set(
+            b"W".to_vec(),
+            Object::Real(if w.border.shape == BorderShape::None {
+                0.0
+            } else {
+                w.border.width.clamp(0.1, 12.0)
+            }),
+        );
+        bs.set(
+            b"S".to_vec(),
+            Object::name(if w.border.shape == BorderShape::Underline {
+                "U"
+            } else {
+                "S"
+            }),
+        );
         d.set(b"BS".to_vec(), Object::Dict(bs));
         let mut ff: i64 = 0;
         if w.read_only {
@@ -304,12 +386,23 @@ impl Emitter<'_> {
                 }
                 if let WidgetKind::Date(pattern) = &w.kind {
                     let mut aa = Dict::new();
-                    aa.set(b"F".to_vec(), js_action(&format!("AFDate_FormatEx(\"{pattern}\");")));
-                    aa.set(b"K".to_vec(), js_action(&format!("AFDate_KeystrokeEx(\"{pattern}\");")));
+                    aa.set(
+                        b"F".to_vec(),
+                        js_action(&format!("AFDate_FormatEx(\"{pattern}\");")),
+                    );
+                    aa.set(
+                        b"K".to_vec(),
+                        js_action(&format!("AFDate_KeystrokeEx(\"{pattern}\");")),
+                    );
                     d.set(b"AA".to_vec(), Object::Dict(aa));
                 }
             }
-            WidgetKind::Choice { options, list_box, multi, editable } => {
+            WidgetKind::Choice {
+                options,
+                list_box,
+                multi,
+                editable,
+            } => {
                 d.set(b"FT".to_vec(), Object::name("Ch"));
                 if !list_box {
                     ff |= 1 << 17;
@@ -326,7 +419,10 @@ impl Emitter<'_> {
                         if saved == shown {
                             Object::String(PdfString::text(shown))
                         } else {
-                            Object::Array(vec![Object::String(PdfString::text(saved)), Object::String(PdfString::text(shown))])
+                            Object::Array(vec![
+                                Object::String(PdfString::text(saved)),
+                                Object::String(PdfString::text(shown)),
+                            ])
                         }
                     })
                     .collect();
@@ -340,22 +436,40 @@ impl Emitter<'_> {
                     d.set(b"Q".to_vec(), Object::Int(q));
                 }
                 let values = |v: &str| -> Object {
-                    let picked: Vec<&str> = if *multi { v.lines().filter(|l| !l.is_empty()).collect() } else { vec![v] };
+                    let picked: Vec<&str> = if *multi {
+                        v.lines().filter(|l| !l.is_empty()).collect()
+                    } else {
+                        vec![v]
+                    };
                     match picked.as_slice() {
                         [one] => Object::String(PdfString::text(one)),
-                        many => Object::Array(many.iter().map(|s| Object::String(PdfString::text(s))).collect()),
+                        many => Object::Array(
+                            many.iter()
+                                .map(|s| Object::String(PdfString::text(s)))
+                                .collect(),
+                        ),
                     }
                 };
                 if let Some(v) = &w.value {
                     d.set(b"V".to_vec(), values(v));
                     // The selected indices (ISO 32000-2 Table 231): ascending, each once. Where
                     // two options save the same value the first is meant; the data can't say.
-                    let picked: Vec<&str> = if *multi { v.lines().filter(|l| !l.is_empty()).collect() } else { vec![v.as_str()] };
-                    let mut idx: Vec<usize> = picked.iter().filter_map(|p| options.iter().position(|(saved, _)| saved == p)).collect();
+                    let picked: Vec<&str> = if *multi {
+                        v.lines().filter(|l| !l.is_empty()).collect()
+                    } else {
+                        vec![v.as_str()]
+                    };
+                    let mut idx: Vec<usize> = picked
+                        .iter()
+                        .filter_map(|p| options.iter().position(|(saved, _)| saved == p))
+                        .collect();
                     idx.sort_unstable();
                     idx.dedup();
                     if !idx.is_empty() {
-                        d.set(b"I".to_vec(), Object::Array(idx.into_iter().map(|i| Object::Int(i as i64)).collect()));
+                        d.set(
+                            b"I".to_vec(),
+                            Object::Array(idx.into_iter().map(|i| Object::Int(i as i64)).collect()),
+                        );
                     }
                 }
                 if let Some(v) = &w.default {
@@ -385,9 +499,18 @@ impl Emitter<'_> {
                 d.set(b"FT".to_vec(), Object::name("Btn"));
                 let on = state_name(on);
                 let checked = w.value.is_some();
-                d.set(b"V".to_vec(), Object::name(if checked { &on } else { "Off" }));
-                d.set(b"AS".to_vec(), Object::name(if checked { &on } else { "Off" }));
-                if w.default.as_deref().is_some_and(|dv| crate::data::is_on(dv, &on)) {
+                d.set(
+                    b"V".to_vec(),
+                    Object::name(if checked { &on } else { "Off" }),
+                );
+                d.set(
+                    b"AS".to_vec(),
+                    Object::name(if checked { &on } else { "Off" }),
+                );
+                if w.default
+                    .as_deref()
+                    .is_some_and(|dv| crate::data::is_on(dv, &on))
+                {
                     d.set(b"DV".to_vec(), Object::name(&on));
                 }
                 let mut nd = Dict::new();
@@ -396,7 +519,15 @@ impl Emitter<'_> {
                 let mut ap = Dict::new();
                 ap.set(b"N".to_vec(), Object::Dict(nd));
                 d.set(b"AP".to_vec(), Object::Dict(ap));
-                d.set(b"PCItems".to_vec(), Object::Array(w.items.iter().map(|i| Object::String(PdfString::text(i))).collect()));
+                d.set(
+                    b"PCItems".to_vec(),
+                    Object::Array(
+                        w.items
+                            .iter()
+                            .map(|i| Object::String(PdfString::text(i)))
+                            .collect(),
+                    ),
+                );
             }
             WidgetKind::Radio { group, on, .. } => {
                 top_level = false;
@@ -408,11 +539,21 @@ impl Emitter<'_> {
                         g.set(b"Ff".to_vec(), Object::Int((1 << 15) | (1 << 14)));
                         g.set(b"T".to_vec(), Object::String(PdfString::text(group)));
                         g.set(b"V".to_vec(), Object::name("Off"));
-                        g.set(b"DA".to_vec(), Object::String(PdfString::literal(Self::da(&w.face))));
+                        g.set(
+                            b"DA".to_vec(),
+                            Object::String(PdfString::literal(Self::da(&w.face))),
+                        );
                         g.set(b"Kids".to_vec(), Object::Array(Vec::new()));
                         // The group's SOM path: the button's without its last step.
-                        let group_som = w.som.rsplit_once('.').map(|(g, _)| g.to_string()).unwrap_or_else(|| w.som.clone());
-                        g.set(SOM_KEY.to_vec(), Object::String(PdfString::text(&group_som)));
+                        let group_som = w
+                            .som
+                            .rsplit_once('.')
+                            .map(|(g, _)| g.to_string())
+                            .unwrap_or_else(|| w.som.clone());
+                        g.set(
+                            SOM_KEY.to_vec(),
+                            Object::String(PdfString::text(&group_som)),
+                        );
                         let p = self.doc.add(Object::Dict(g));
                         self.radio_groups.insert(group.clone(), (p, Vec::new()));
                         self.fields.push(p);
@@ -423,7 +564,10 @@ impl Emitter<'_> {
                 d.set(b"Parent".to_vec(), Object::Ref(parent));
                 let state = state_name(on);
                 let chosen = w.value.is_some();
-                d.set(b"AS".to_vec(), Object::name(if chosen { &state } else { "Off" }));
+                d.set(
+                    b"AS".to_vec(),
+                    Object::name(if chosen { &state } else { "Off" }),
+                );
                 if chosen {
                     self.radio_selected.insert(group.clone(), state.clone());
                 }
@@ -459,7 +603,10 @@ impl Emitter<'_> {
                         }
                         Action::Url(u) => {
                             ad.set(b"S".to_vec(), Object::name("URI"));
-                            ad.set(b"URI".to_vec(), Object::String(PdfString::literal(u.as_bytes().to_vec())));
+                            ad.set(
+                                b"URI".to_vec(),
+                                Object::String(PdfString::literal(u.as_bytes().to_vec())),
+                            );
                         }
                         Action::Script(_) => {}
                     }
@@ -506,17 +653,31 @@ impl Emitter<'_> {
         Some(r)
     }
 
-    fn new_image_xobject(&mut self, data: &[u8], content_type: &str, hash: &[u8; 32]) -> Option<ObjRef> {
-        let what = if content_type.is_empty() { "picture" } else { content_type };
+    fn new_image_xobject(
+        &mut self,
+        data: &[u8],
+        content_type: &str,
+        hash: &[u8; 32],
+    ) -> Option<ObjRef> {
+        let what = if content_type.is_empty() {
+            "picture"
+        } else {
+            content_type
+        };
         let mut d = Dict::new();
-        d.set(IMAGE_SHA_KEY.to_vec(), Object::String(PdfString::literal(hex32(hash))));
+        d.set(
+            IMAGE_SHA_KEY.to_vec(),
+            Object::String(PdfString::literal(hex32(hash))),
+        );
         d.set(b"Type".to_vec(), Object::name("XObject"));
         d.set(b"Subtype".to_vec(), Object::name("Image"));
         d.set(b"BitsPerComponent".to_vec(), Object::Int(8));
         match crate::image::kind(data) {
             Some(crate::image::Kind::Jpeg) => {
                 let Some((iw, ih, comps, adobe)) = jpeg_info(data) else {
-                    self.warnings.push(format!("a {what} image is not a readable JPEG and is left out"));
+                    self.warnings.push(format!(
+                        "a {what} image is not a readable JPEG and is left out"
+                    ));
                     return None;
                 };
                 d.set(b"Width".to_vec(), Object::Int(i64::from(iw)));
@@ -531,10 +692,21 @@ impl Emitter<'_> {
                 );
                 if comps == 4 && adobe {
                     // Adobe APP14 JPEGs store inverted CMYK.
-                    d.set(b"Decode".to_vec(), Object::Array([1, 0, 1, 0, 1, 0, 1, 0].iter().map(|v| Object::Int(*v)).collect()));
+                    d.set(
+                        b"Decode".to_vec(),
+                        Object::Array(
+                            [1, 0, 1, 0, 1, 0, 1, 0]
+                                .iter()
+                                .map(|v| Object::Int(*v))
+                                .collect(),
+                        ),
+                    );
                 }
                 d.set(b"Filter".to_vec(), Object::name("DCTDecode"));
-                Some(self.doc.add(Object::Stream(Stream::from_raw(d, data.to_vec()))))
+                Some(
+                    self.doc
+                        .add(Object::Stream(Stream::from_raw(d, data.to_vec()))),
+                )
             }
             Some(crate::image::Kind::Png | crate::image::Kind::Gif) => {
                 let img = match crate::image::decode(data) {
@@ -561,7 +733,9 @@ impl Emitter<'_> {
                 Some(self.doc.add(Object::Stream(Stream::flate(d, &img.samples))))
             }
             None => {
-                self.warnings.push(format!("a {what} image is not a JPEG, PNG or GIF and is left out"));
+                self.warnings.push(format!(
+                    "a {what} image is not a JPEG, PNG or GIF and is left out"
+                ));
                 None
             }
         }
@@ -577,9 +751,25 @@ impl Emitter<'_> {
         for (i, item) in page.items.iter().enumerate() {
             match item {
                 Item::Fill { rect, color } => {
-                    content.extend(format!("{} rg {} {} {} {} re f\n", rgb(*color), n(rect.x), n(h - rect.bottom()), n(rect.w), n(rect.h)).bytes());
+                    content.extend(
+                        format!(
+                            "{} rg {} {} {} {} re f\n",
+                            rgb(*color),
+                            n(rect.x),
+                            n(h - rect.bottom()),
+                            n(rect.w),
+                            n(rect.h)
+                        )
+                        .bytes(),
+                    );
                 }
-                Item::Line { from, to, width, color, dashed } => {
+                Item::Line {
+                    from,
+                    to,
+                    width,
+                    color,
+                    dashed,
+                } => {
                     content.extend(
                         format!(
                             "q {} RG {} w {}{} {} m {} {} l S Q\n",
@@ -598,7 +788,8 @@ impl Emitter<'_> {
                     // The form's own text, set in the standard fonts: what they can't draw is
                     // shown as `?` and reported once (the layout goes on), never silently.
                     if let Some(c) = pdfcraft_fonts::first_undrawable(&s.text) {
-                        const PREFIX: &str = "some of the form's text has characters the standard fonts can't draw";
+                        const PREFIX: &str =
+                            "some of the form's text has characters the standard fonts can't draw";
                         if !self.warnings.iter().any(|w| w.starts_with(PREFIX)) {
                             self.warnings.push(format!(
                                 "{PREFIX} (the first is \"{}\" (U+{:04X})); they are shown as ? until PdfCraft can embed fonts for them",
@@ -610,16 +801,38 @@ impl Emitter<'_> {
                     let name = s.face.resource_name();
                     fonts.insert(name, s.face.family.base_font(s.face.bold, s.face.italic));
                     content.extend(
-                        format!("BT /{name} {} Tf {} rg 1 0 0 1 {} {} Tm ", n(s.face.size), rgb(s.face.color), n(s.x), n(h - s.baseline)).bytes(),
+                        format!(
+                            "BT /{name} {} Tf {} rg 1 0 0 1 {} {} Tm ",
+                            n(s.face.size),
+                            rgb(s.face.color),
+                            n(s.x),
+                            n(h - s.baseline)
+                        )
+                        .bytes(),
                     );
                     content.extend(literal(&win_ansi(&s.text)));
                     content.extend_from_slice(b" Tj ET\n");
                 }
-                Item::Image { rect, data, content_type } => {
-                    let Some(r) = self.image_xobject(data, content_type) else { continue };
+                Item::Image {
+                    rect,
+                    data,
+                    content_type,
+                } => {
+                    let Some(r) = self.image_xobject(data, content_type) else {
+                        continue;
+                    };
                     let name = format!("Im{i}");
                     xobjects.set(name.clone().into_bytes(), Object::Ref(r));
-                    content.extend(format!("q {} 0 0 {} {} {} cm /{name} Do Q\n", n(rect.w), n(rect.h), n(rect.x), n(h - rect.bottom())).bytes());
+                    content.extend(
+                        format!(
+                            "q {} 0 0 {} {} {} cm /{name} Do Q\n",
+                            n(rect.w),
+                            n(rect.h),
+                            n(rect.x),
+                            n(h - rect.bottom())
+                        )
+                        .bytes(),
+                    );
                 }
                 Item::Widget(w) => {
                     if let Some(r) = self.widget(w, page, page_ref)? {
@@ -639,12 +852,22 @@ impl Emitter<'_> {
         }
         let mut cd = Dict::new();
         cd.set(b"Type".to_vec(), Object::name("XObject"));
-        let contents = self.doc.add(Object::Stream(Stream::flate(Dict::new(), &content)));
+        let contents = self
+            .doc
+            .add(Object::Stream(Stream::flate(Dict::new(), &content)));
         let _ = cd;
         let mut pd = Dict::new();
         pd.set(b"Type".to_vec(), Object::name("Page"));
         pd.set(b"Parent".to_vec(), Object::Ref(pages_ref));
-        pd.set(b"MediaBox".to_vec(), Object::Array([0.0, 0.0, page.width, page.height].iter().map(|v| Object::Real(*v)).collect()));
+        pd.set(
+            b"MediaBox".to_vec(),
+            Object::Array(
+                [0.0, 0.0, page.width, page.height]
+                    .iter()
+                    .map(|v| Object::Real(*v))
+                    .collect(),
+            ),
+        );
         pd.set(b"Resources".to_vec(), Object::Dict(res));
         pd.set(b"Contents".to_vec(), Object::Ref(contents));
         if !annots.is_empty() {
@@ -661,18 +884,48 @@ impl Emitter<'_> {
 /// the pages under `pages` (the flat page list [`write_form`] writes).
 fn earlier_images(doc: &Document, pages: ObjRef) -> HashMap<[u8; 32], ObjRef> {
     let mut out = HashMap::new();
-    let kids = doc.get(pages).as_dict().and_then(|d| d.get(b"Kids").map(|k| doc.resolve(k))).and_then(|k| k.as_array().cloned()).unwrap_or_default();
-    for page in kids.iter().filter_map(Object::as_ref).take(MAX_PAGES_SEARCHED) {
+    let kids = doc
+        .get(pages)
+        .as_dict()
+        .and_then(|d| d.get(b"Kids").map(|k| doc.resolve(k)))
+        .and_then(|k| k.as_array().cloned())
+        .unwrap_or_default();
+    for page in kids
+        .iter()
+        .filter_map(Object::as_ref)
+        .take(MAX_PAGES_SEARCHED)
+    {
         let page = doc.get(page);
-        let Some(resources) = page.as_dict().and_then(|p| p.get(b"Resources")).map(|r| doc.resolve(r)) else { continue };
-        let Some(xobjects) = resources.as_dict().and_then(|r| r.get(b"XObject")).map(|x| doc.resolve(x)) else { continue };
-        for r in xobjects.as_dict().into_iter().flat_map(|x| x.iter()).filter_map(|(_, v)| v.as_ref()) {
+        let Some(resources) = page
+            .as_dict()
+            .and_then(|p| p.get(b"Resources"))
+            .map(|r| doc.resolve(r))
+        else {
+            continue;
+        };
+        let Some(xobjects) = resources
+            .as_dict()
+            .and_then(|r| r.get(b"XObject"))
+            .map(|x| doc.resolve(x))
+        else {
+            continue;
+        };
+        for r in xobjects
+            .as_dict()
+            .into_iter()
+            .flat_map(|x| x.iter())
+            .filter_map(|(_, v)| v.as_ref())
+        {
             if out.len() >= MAX_REMEMBERED_IMAGES {
                 return out;
             }
             if let Object::Stream(s) = &*doc.get(r)
                 && s.dict.name(b"Subtype") == Some(b"Image")
-                && let Some(hash) = s.dict.get(IMAGE_SHA_KEY).and_then(Object::as_string).and_then(|h| parse_hex32(&h.bytes))
+                && let Some(hash) = s
+                    .dict
+                    .get(IMAGE_SHA_KEY)
+                    .and_then(Object::as_string)
+                    .and_then(|h| parse_hex32(&h.bytes))
             {
                 out.insert(hash, r);
             }
@@ -682,8 +935,14 @@ fn earlier_images(doc: &Document, pages: ObjRef) -> HashMap<[u8; 32], ObjRef> {
 }
 
 pub fn write_form(doc: &mut Document, form: &Form) -> Result<Written, XfaError> {
-    let catalog_ref = doc.root().ok_or_else(|| XfaError::Malformed("the document has no catalog".into()))?;
-    let mut catalog = doc.get(catalog_ref).as_dict().cloned().ok_or_else(|| XfaError::Malformed("the catalog is not a dictionary".into()))?;
+    let catalog_ref = doc
+        .root()
+        .ok_or_else(|| XfaError::Malformed("the document has no catalog".into()))?;
+    let mut catalog = doc
+        .get(catalog_ref)
+        .as_dict()
+        .cloned()
+        .ok_or_else(|| XfaError::Malformed("the catalog is not a dictionary".into()))?;
     let mut catalog_changed = false;
     let pages_ref = match catalog.get(b"Pages").and_then(Object::as_ref) {
         Some(r) if doc.get(r).as_dict().is_some() => r,
@@ -713,17 +972,30 @@ pub fn write_form(doc: &mut Document, form: &Form) -> Result<Written, XfaError> 
     for page in &form.pages {
         kids.push(Object::Ref(em.page(page, pages_ref)?));
     }
-    let groups: Vec<(String, (ObjRef, Vec<ObjRef>))> = em.radio_groups.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+    let groups: Vec<(String, (ObjRef, Vec<ObjRef>))> = em
+        .radio_groups
+        .iter()
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect();
     for (name, (parent, widgets)) in groups {
         let selected = em.radio_selected.get(&name).cloned();
         em.doc.update_dict(parent, |d| {
-            d.set(b"Kids".to_vec(), Object::Array(widgets.iter().map(|r| Object::Ref(*r)).collect()));
+            d.set(
+                b"Kids".to_vec(),
+                Object::Array(widgets.iter().map(|r| Object::Ref(*r)).collect()),
+            );
             if let Some(s) = &selected {
                 d.set(b"V".to_vec(), Object::name(s));
             }
         })?;
     }
-    let Emitter { doc, fields, field_count, warnings, .. } = em;
+    let Emitter {
+        doc,
+        fields,
+        field_count,
+        warnings,
+        ..
+    } = em;
     let count = kids.len();
     doc.update_dict(pages_ref, |d| {
         d.set(b"Type".to_vec(), Object::name("Pages"));
@@ -737,11 +1009,23 @@ pub fn write_form(doc: &mut Document, form: &Form) -> Result<Written, XfaError> 
         Some(o) => doc.resolve(o).as_dict().cloned().unwrap_or_default(),
         None => Dict::new(),
     };
-    let mut all: Vec<Object> = acro.get(b"Fields").map(|f| doc.resolve(f)).and_then(|f| f.as_array().cloned()).unwrap_or_default();
+    let mut all: Vec<Object> = acro
+        .get(b"Fields")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_array().cloned())
+        .unwrap_or_default();
     all.extend(fields.iter().map(|r| Object::Ref(*r)));
     acro.set(b"Fields".to_vec(), Object::Array(all));
-    let mut dr = acro.get(b"DR").map(|d| doc.resolve(d)).and_then(|d| d.as_dict().cloned()).unwrap_or_default();
-    let mut dr_fonts = dr.get(b"Font").map(|f| doc.resolve(f)).and_then(|f| f.as_dict().cloned()).unwrap_or_default();
+    let mut dr = acro
+        .get(b"DR")
+        .map(|d| doc.resolve(d))
+        .and_then(|d| d.as_dict().cloned())
+        .unwrap_or_default();
+    let mut dr_fonts = dr
+        .get(b"Font")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_dict().cloned())
+        .unwrap_or_default();
     for (name, base) in all_faces() {
         if !dr_fonts.contains(name.as_bytes()) {
             dr_fonts.set(name.as_bytes().to_vec(), standard_font(base));
@@ -757,12 +1041,23 @@ pub fn write_form(doc: &mut Document, form: &Form) -> Result<Written, XfaError> 
     dr.set(b"Font".to_vec(), Object::Dict(dr_fonts));
     acro.set(b"DR".to_vec(), Object::Dict(dr));
     if !acro.contains(b"DA") {
-        acro.set(b"DA".to_vec(), Object::String(PdfString::literal(b"/Helv 0 Tf 0 g".to_vec())));
+        acro.set(
+            b"DA".to_vec(),
+            Object::String(PdfString::literal(b"/Helv 0 Tf 0 g".to_vec())),
+        );
     }
     let mut mark = Dict::new();
     mark.set(b"Pages".to_vec(), Object::Int(count as i64));
     mark.set(b"Fields".to_vec(), Object::Int(field_count as i64));
-    mark.set(b"Warnings".to_vec(), Object::Array(warnings.iter().map(|w| Object::String(PdfString::text(w))).collect()));
+    mark.set(
+        b"Warnings".to_vec(),
+        Object::Array(
+            warnings
+                .iter()
+                .map(|w| Object::String(PdfString::text(w)))
+                .collect(),
+        ),
+    );
     acro.set(LAYOUT_KEY.to_vec(), Object::Dict(mark));
     match acro_ref {
         Some(r) => doc.set(r, Object::Dict(acro)),
@@ -774,7 +1069,11 @@ pub fn write_form(doc: &mut Document, form: &Form) -> Result<Written, XfaError> 
     if catalog_changed {
         doc.set(catalog_ref, Object::Dict(catalog));
     }
-    Ok(Written { pages: count, fields: field_count, warnings })
+    Ok(Written {
+        pages: count,
+        fields: field_count,
+        warnings,
+    })
 }
 
 /// The layout a document already carries from an earlier pass, if any.

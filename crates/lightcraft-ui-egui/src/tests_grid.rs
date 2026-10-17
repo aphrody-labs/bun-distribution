@@ -22,23 +22,52 @@ const N: u64 = 3000;
 fn library() -> Session {
     let mut s = Session::new();
     for i in 0..N {
-        let (w, h) = if i % 5 == 4 { (4000, 6000) } else { (6000, 4000) };
+        let (w, h) = if i % 5 == 4 {
+            (4000, 6000)
+        } else {
+            (6000, 4000)
+        };
         let path = format!("/lightcraft-grid-test/IMG_{i:05}.jpg");
-        let mut p = Photo::new(PhotoId(i + 1), Source::File { path }, &format!("IMG_{i:05}.jpg"), "JPEG", w, h, "2026-01-01T00:00:00");
+        let mut p = Photo::new(
+            PhotoId(i + 1),
+            Source::File { path },
+            &format!("IMG_{i:05}.jpg"),
+            "JPEG",
+            w,
+            h,
+            "2026-01-01T00:00:00",
+        );
         let day = i / 40;
-        p.captured = Some(format!("2026-{:02}-{:02}T{:02}:00:00", 12 - day / 28, 28 - day % 28, 8 + i % 40 / 4));
-        s.catalog.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
+        p.captured = Some(format!(
+            "2026-{:02}-{:02}T{:02}:00:00",
+            12 - day / 28,
+            28 - day % 28,
+            8 + i % 40 / 4
+        ));
+        s.catalog
+            .apply(Op::AddPhoto { photo: Box::new(p) })
+            .unwrap();
     }
     for k in 0..N / 100 {
         let b = k * 100 + 1;
-        let stack = Stack { id: StackId(k + 1), photos: vec![PhotoId(b), PhotoId(b + 1), PhotoId(b + 2)], collapsed: false };
+        let stack = Stack {
+            id: StackId(k + 1),
+            photos: vec![PhotoId(b), PhotoId(b + 1), PhotoId(b + 2)],
+            collapsed: false,
+        };
         s.catalog.apply(Op::AddStack { stack }).unwrap();
     }
     s
 }
 
 fn grid(view: ViewMode) -> Headless {
-    let app = LightcraftApp::new(library(), Services { png: None, ..Default::default() });
+    let app = LightcraftApp::new(
+        library(),
+        Services {
+            png: None,
+            ..Default::default()
+        },
+    );
     let mut h = Headless::new(app, [1200.0, 800.0], 1.0);
     h.app.ui.view = view;
     h.app.ui.thumb_size = 160.0;
@@ -51,7 +80,11 @@ fn widget(h: &Headless, id: &str) -> Option<egui::Rect> {
 }
 
 fn select(h: &mut Headless, id: PhotoId) {
-    let r = h.request("engine.execute", json!({"command": "library.select", "params": {"ids": [id.0]}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "library.select", "params": {"ids": [id.0]}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
 }
@@ -71,11 +104,23 @@ fn assert_cheap_frames(h: &mut Headless) {
     }
     let s = &h.app.caches.grid_stats;
     assert_eq!(s.frames - before.frames, frames);
-    assert_eq!(s.view_builds, before.view_builds, "date runs rebuilt on an unchanged frame");
-    assert_eq!(s.layout_builds, before.layout_builds, "layout rebuilt on an unchanged frame");
-    assert_eq!(s.stack_index_builds, before.stack_index_builds, "stack index rebuilt on an unchanged frame");
+    assert_eq!(
+        s.view_builds, before.view_builds,
+        "date runs rebuilt on an unchanged frame"
+    );
+    assert_eq!(
+        s.layout_builds, before.layout_builds,
+        "layout rebuilt on an unchanged frame"
+    );
+    assert_eq!(
+        s.stack_index_builds, before.stack_index_builds,
+        "stack index rebuilt on an unchanged frame"
+    );
     let per_frame = (s.cells_visited - before.cells_visited) / frames;
-    assert!(per_frame > 0 && per_frame < 300, "visited {per_frame} of {N} cells per frame");
+    assert!(
+        per_frame > 0 && per_frame < 300,
+        "visited {per_frame} of {N} cells per frame"
+    );
 }
 
 #[test]
@@ -97,17 +142,38 @@ fn grid_headers_selection_scrolling_stacks_and_shape_changes() {
     let mut h = grid(ViewMode::PhotoGrid);
     let vis = h.app.session.visible().to_vec();
     // the newest day's header heads the grid
-    assert!(widget(&h, "group:2026-12-28").is_some(), "{:?}", h.app.widgets.iter().filter(|(w, _)| w.starts_with("group:")).collect::<Vec<_>>());
+    assert!(
+        widget(&h, "group:2026-12-28").is_some(),
+        "{:?}",
+        h.app
+            .widgets
+            .iter()
+            .filter(|(w, _)| w.starts_with("group:"))
+            .collect::<Vec<_>>()
+    );
     assert_eq!(h.app.grid_scroll, Some(0.0));
     // selecting a photo far down scrolls the grid to it; its day's header is drawn (pinned or not)
     let target = PhotoId(2001); // the top of a stack, captured on day 50
     let i = vis.iter().position(|x| *x == target).unwrap();
     select(&mut h, target);
-    assert!(h.app.grid_scroll.unwrap() > 1000.0, "{:?}", h.app.grid_scroll);
-    assert!(on_screen(&h, target), "the active photo is scrolled into view");
+    assert!(
+        h.app.grid_scroll.unwrap() > 1000.0,
+        "{:?}",
+        h.app.grid_scroll
+    );
+    assert!(
+        on_screen(&h, target),
+        "the active photo is scrolled into view"
+    );
     // stacks: the badge on the stack's top and members
-    assert!(widget(&h, &format!("stack:{}", target.0)).is_some(), "stack badge drawn");
-    assert!(widget(&h, "stack:2002").is_some(), "stack member badge drawn");
+    assert!(
+        widget(&h, &format!("stack:{}", target.0)).is_some(),
+        "stack badge drawn"
+    );
+    assert!(
+        widget(&h, "stack:2002").is_some(),
+        "stack member badge drawn"
+    );
     // keyboard: the next photo becomes active and stays in view
     h.request("ui.key", json!({"key": "right"}), T);
     h.settle(SETTLE);
@@ -123,10 +189,17 @@ fn grid_headers_selection_scrolling_stacks_and_shape_changes() {
     let before = widget(&h, &format!("thumb:{}", landscape.0)).unwrap();
     assert!(before.width() > before.height(), "{before:?}");
     let layouts = h.app.caches.grid_stats.layout_builds;
-    let r = h.request("engine.execute", json!({"command": "photo.rotateRight", "params": {"ids": [landscape.0]}}), T);
+    let r = h.request(
+        "engine.execute",
+        json!({"command": "photo.rotateRight", "params": {"ids": [landscape.0]}}),
+        T,
+    );
     assert_eq!(r["ok"], true, "{r}");
     h.settle(SETTLE);
-    assert!(h.app.caches.grid_stats.layout_builds > layouts, "a shape change re-lays the grid");
+    assert!(
+        h.app.caches.grid_stats.layout_builds > layouts,
+        "a shape change re-lays the grid"
+    );
     let after = widget(&h, &format!("thumb:{}", landscape.0)).unwrap();
     assert!(after.height() > after.width(), "{after:?}");
     assert_cheap_frames(&mut h);
@@ -143,12 +216,21 @@ fn unloaded_thumbnails_show_their_selection() {
     let active = h.app.session.selection.active.expect("active");
     let canvas = h.app.canvas_rect.expect("grid drawn");
     let mut checked = 0;
-    for (w, r) in h.app.widgets.iter().filter(|(w, _)| w.starts_with("thumb:")) {
+    for (w, r) in h
+        .app
+        .widgets
+        .iter()
+        .filter(|(w, _)| w.starts_with("thumb:"))
+    {
         if !canvas.shrink(4.0).contains_rect(*r) || r.min.x < 6.0 {
             continue;
         }
         let id = w.trim_start_matches("thumb:").parse::<u64>().unwrap();
-        let want = if id == active.0 { egui::Color32::WHITE } else { egui::Color32::from_gray(170) };
+        let want = if id == active.0 {
+            egui::Color32::WHITE
+        } else {
+            egui::Color32::from_gray(170)
+        };
         let px = img[((r.min.x - 1.0) as usize, r.center().y as usize)];
         assert_eq!(px, want, "photo {id}");
         checked += 1;

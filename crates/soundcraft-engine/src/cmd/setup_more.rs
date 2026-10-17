@@ -5,7 +5,10 @@ use super::more_util::{set_text, store_value, text, toggle_flag, values_with_pre
 use super::*;
 use crate::cmd;
 use serde_json::json;
-use soundcraft_model::{BusId, ChannelFormat, ClipContent, OutputPath, Route, Session, Source, SourceAudio, SourceId, TrackId, TrackKind};
+use soundcraft_model::{
+    BusId, ChannelFormat, ClipContent, OutputPath, Route, Session, Source, SourceAudio, SourceId,
+    TrackId, TrackKind,
+};
 use soundcraft_time::Timecode;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -16,24 +19,65 @@ macro_rules! option {
     };
 }
 
-const MIDI_FILTER_KINDS: [&str; 8] = ["notes", "pitch_bend", "mono_aftertouch", "poly_aftertouch", "program", "cc", "sysex", "realtime"];
+const MIDI_FILTER_KINDS: [&str; 8] = [
+    "notes",
+    "pitch_bend",
+    "mono_aftertouch",
+    "poly_aftertouch",
+    "program",
+    "cc",
+    "sysex",
+    "realtime",
+];
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        option!("options.destructive_punch", "DestructivePunch", "options.destructive_punch"),
-        option!("options.transport_online", "Transport Online", "options.transport_online"),
-        option!("options.dynamic_transport", "Dynamic Transport", "options.dynamic_transport"),
+        option!(
+            "options.destructive_punch",
+            "DestructivePunch",
+            "options.destructive_punch"
+        ),
+        option!(
+            "options.transport_online",
+            "Transport Online",
+            "options.transport_online"
+        ),
+        option!(
+            "options.dynamic_transport",
+            "Dynamic Transport",
+            "options.dynamic_transport"
+        ),
         option!(
             "options.marker_target_follows_selection",
             "Marker Target Follows First Selected Track",
             "options.marker_target_follows_first_selected_track"
         ),
         option!("options.midi_thru", "MIDI Thru", "options.midi_thru"),
-        option!("options.auto_spot_clips", "Auto-Spot Clips", "options.auto_spot_clips"),
-        option!("options.keyboard_lock", "Edit/Tool Mode Keyboard Lock", "options.edit_tool_mode_keyboard_lock"),
-        option!("options.calibration_mode", "Calibration Mode", "options.calibration_mode"),
-        option!("options.midi_live_mode", "MIDI Live Mode", "options.midi_live_mode"),
-        option!("options.low_latency_monitoring", "Low Latency Monitoring", "options.low_latency_monitoring"),
+        option!(
+            "options.auto_spot_clips",
+            "Auto-Spot Clips",
+            "options.auto_spot_clips"
+        ),
+        option!(
+            "options.keyboard_lock",
+            "Edit/Tool Mode Keyboard Lock",
+            "options.edit_tool_mode_keyboard_lock"
+        ),
+        option!(
+            "options.calibration_mode",
+            "Calibration Mode",
+            "options.calibration_mode"
+        ),
+        option!(
+            "options.midi_live_mode",
+            "MIDI Live Mode",
+            "options.midi_live_mode"
+        ),
+        option!(
+            "options.low_latency_monitoring",
+            "Low Latency Monitoring",
+            "options.low_latency_monitoring"
+        ),
         cmd!(
             "options.prepare_dpe_tracks",
             "Prepare DPE Tracks",
@@ -134,11 +178,21 @@ fn prepare_dpe(e: &mut Engine, p: &Value) -> Result<Value> {
     let tracks: Vec<TrackId> = if p.get("tracks").is_some() || p.get("track").is_some() {
         tracks_param(e, id, p)?
     } else {
-        s.tracks.iter().filter(|t| t.mixer.record_arm).map(|t| t.id).collect()
+        s.tracks
+            .iter()
+            .filter(|t| t.mixer.record_arm)
+            .map(|t| t.id)
+            .collect()
     };
-    let tracks: Vec<TrackId> = tracks.into_iter().filter(|t| s.track(*t).is_some_and(|x| x.kind == TrackKind::Audio)).collect();
+    let tracks: Vec<TrackId> = tracks
+        .into_iter()
+        .filter(|t| s.track(*t).is_some_and(|x| x.kind == TrackKind::Audio))
+        .collect();
     if tracks.is_empty() {
-        return Err(bad(id, "record-enable (or pass) the audio tracks to prepare"));
+        return Err(bad(
+            id,
+            "record-enable (or pass) the audio tracks to prepare",
+        ));
     }
     let end = s.content_end();
     if end <= 0 {
@@ -178,7 +232,10 @@ fn disk_allocation(e: &mut Engine, p: &Value) -> Result<Value> {
     let t = track_param(e, id, p, "track")?;
     let s = e.session_mut();
     if let Some(path) = str_param(p, "path") {
-        let key = t.map_or_else(|| "disk.root".to_string(), |t| format!("disk.track.{}", t.0));
+        let key = t.map_or_else(
+            || "disk.root".to_string(),
+            |t| format!("disk.track.{}", t.0),
+        );
         set_text(&mut s.edit, &key, Some(path));
     }
     let root = text(&s.edit, "disk.root").unwrap_or_else(|| "Audio Files".into());
@@ -195,7 +252,11 @@ fn peripherals(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     if let Some(m) = p.get("settings").and_then(Value::as_object) {
         for (k, v) in m.iter().take(256) {
-            let key: String = k.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-')).take(64).collect();
+            let key: String = k
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '-'))
+                .take(64)
+                .collect();
             if key.is_empty() {
                 continue;
             }
@@ -212,7 +273,12 @@ fn peripherals(e: &mut Engine, p: &Value) -> Result<Value> {
             }
         }
     }
-    let flags: Vec<&String> = s.edit.flags.iter().filter(|f| f.starts_with("peripherals.")).collect();
+    let flags: Vec<&String> = s
+        .edit
+        .flags
+        .iter()
+        .filter(|f| f.starts_with("peripherals."))
+        .collect();
     Ok(json!({"values": values_with_prefix(&s.edit, "peripherals."), "flags": flags}))
 }
 
@@ -226,10 +292,19 @@ fn io_setup(e: &mut Engine, p: &Value) -> Result<Value> {
     if action == "list" {
         return Ok(io_state(e.session()));
     }
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(id, "`name` required"))?.to_string();
-    let new_name = str_param(p, "new_name").map(str::trim).filter(|n| !n.is_empty()).map(str::to_string);
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(id, "`name` required"))?
+        .to_string();
+    let new_name = str_param(p, "new_name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string);
     let format = match str_param(p, "format") {
-        Some(f) => ChannelFormat::from_id(f).ok_or_else(|| bad(id, format!("unknown format `{f}`")))?,
+        Some(f) => {
+            ChannelFormat::from_id(f).ok_or_else(|| bad(id, format!("unknown format `{f}`")))?
+        }
         None => ChannelFormat::Stereo,
     };
     let s = e.session_mut();
@@ -245,11 +320,18 @@ fn io_setup(e: &mut Engine, p: &Value) -> Result<Value> {
             if s.bus_by_name(&to).is_some() {
                 return Err(bad(id, format!("a bus named `{to}` exists")));
             }
-            let b = s.busses.iter_mut().find(|b| b.name.eq_ignore_ascii_case(&name)).ok_or_else(|| bad(id, format!("no bus `{name}`")))?;
+            let b = s
+                .busses
+                .iter_mut()
+                .find(|b| b.name.eq_ignore_ascii_case(&name))
+                .ok_or_else(|| bad(id, format!("no bus `{name}`")))?;
             b.name = to;
         }
         "delete_bus" => {
-            let bid: BusId = s.bus_by_name(&name).map(|b| b.id).ok_or_else(|| bad(id, format!("no bus `{name}`")))?;
+            let bid: BusId = s
+                .bus_by_name(&name)
+                .map(|b| b.id)
+                .ok_or_else(|| bad(id, format!("no bus `{name}`")))?;
             s.busses.retain(|b| b.id != bid);
             for t in &mut s.tracks {
                 if t.mixer.input == Route::Bus(bid) {
@@ -270,11 +352,19 @@ fn io_setup(e: &mut Engine, p: &Value) -> Result<Value> {
                 return Err(bad(id, format!("an output named `{name}` exists")));
             }
             let first = i64_or(p, "first_channel", 0).clamp(0, 1023) as u16;
-            s.outputs.push(OutputPath { name, first_channel: first, format });
+            s.outputs.push(OutputPath {
+                name,
+                first_channel: first,
+                format,
+            });
         }
         "rename_output" => {
             let to = new_name.ok_or_else(|| bad(id, "`new_name` required"))?;
-            let o = s.outputs.iter_mut().find(|o| o.name.eq_ignore_ascii_case(&name)).ok_or_else(|| bad(id, format!("no output `{name}`")))?;
+            let o = s
+                .outputs
+                .iter_mut()
+                .find(|o| o.name.eq_ignore_ascii_case(&name))
+                .ok_or_else(|| bad(id, format!("no output `{name}`")))?;
             let old = std::mem::replace(&mut o.name, to.clone());
             for t in &mut s.tracks {
                 if t.mixer.output == Route::Hardware(old.clone()) {
@@ -296,7 +386,8 @@ fn io_setup(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn current_timecode(e: &mut Engine, p: &Value) -> Result<Value> {
     let id = "setup.current_timecode";
-    let tc = str_param(p, "timecode").ok_or_else(|| bad(id, "`timecode` required (HH:MM:SS:FF)"))?;
+    let tc =
+        str_param(p, "timecode").ok_or_else(|| bad(id, "`timecode` required (HH:MM:SS:FF)"))?;
     let tc = Timecode::parse(tc).map_err(|err| bad(id, err.to_string()))?;
     let s = e.session_mut();
     let at = s.edit.selection.start.max(0);
@@ -307,8 +398,11 @@ fn current_timecode(e: &mut Engine, p: &Value) -> Result<Value> {
 
 fn current_feet_frames(e: &mut Engine, p: &Value) -> Result<Value> {
     let id = "setup.current_feet_frames";
-    let text_v = str_param(p, "feet_frames").ok_or_else(|| bad(id, "`feet_frames` required (F+FF)"))?;
-    let (ft, fr) = text_v.split_once('+').ok_or_else(|| bad(id, "use F+FF, e.g. 12+08"))?;
+    let text_v =
+        str_param(p, "feet_frames").ok_or_else(|| bad(id, "`feet_frames` required (F+FF)"))?;
+    let (ft, fr) = text_v
+        .split_once('+')
+        .ok_or_else(|| bad(id, "use F+FF, e.g. 12+08"))?;
     let ft: i64 = ft.trim().parse().map_err(|_| bad(id, "bad feet"))?;
     let fr: i64 = fr.trim().parse().map_err(|_| bad(id, "bad frames"))?;
     if !(0..=10_000_000).contains(&ft) || !(0..16).contains(&fr) {
@@ -318,7 +412,9 @@ fn current_feet_frames(e: &mut Engine, p: &Value) -> Result<Value> {
     let at = s.edit.selection.start.max(0);
     let frames_at = s.frame_rate.frames_at(at, s.sample_rate);
     let start = ft * 16 + fr - frames_at;
-    s.edit.values.insert("feet_frames.start".into(), start as f64);
+    s.edit
+        .values
+        .insert("feet_frames.start".into(), start as f64);
     Ok(json!({"feet_frames_start": start}))
 }
 
@@ -326,11 +422,24 @@ fn offset_setting(e: &mut Engine, p: &Value, key: &str) -> Result<Value> {
     let s = e.session_mut();
     let sr = s.sample_rate;
     let per_frame = s.frame_rate.samples_per_frame(sr);
-    if let Some(f) = p.get("frames").and_then(Value::as_f64).filter(|v| v.is_finite()) {
-        s.edit.values.insert(key.to_string(), (f.clamp(-10_000.0, 10_000.0) * per_frame).round());
-    } else if let Some(n) = p.get("samples").and_then(Value::as_f64).filter(|v| v.is_finite()) {
+    if let Some(f) = p
+        .get("frames")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+    {
+        s.edit.values.insert(
+            key.to_string(),
+            (f.clamp(-10_000.0, 10_000.0) * per_frame).round(),
+        );
+    } else if let Some(n) = p
+        .get("samples")
+        .and_then(Value::as_f64)
+        .filter(|v| v.is_finite())
+    {
         let lim = sr.as_f64() * 3600.0;
-        s.edit.values.insert(key.to_string(), n.clamp(-lim, lim).round());
+        s.edit
+            .values
+            .insert(key.to_string(), n.clamp(-lim, lim).round());
     }
     let samples = s.edit.value(key, 0.0);
     Ok(json!({"samples": samples, "frames": samples / per_frame.max(1e-9)}))
@@ -339,10 +448,38 @@ fn offset_setting(e: &mut Engine, p: &Value, key: &str) -> Result<Value> {
 fn click_countoff(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     store_value(&mut s.edit, p, "volume_db", "click.volume_db", -60.0, 12.0);
-    store_value(&mut s.edit, p, "accent_note", "click.accent_note", 0.0, 127.0);
-    store_value(&mut s.edit, p, "normal_note", "click.normal_note", 0.0, 127.0);
-    store_value(&mut s.edit, p, "accent_velocity", "click.accent_velocity", 1.0, 127.0);
-    store_value(&mut s.edit, p, "normal_velocity", "click.normal_velocity", 1.0, 127.0);
+    store_value(
+        &mut s.edit,
+        p,
+        "accent_note",
+        "click.accent_note",
+        0.0,
+        127.0,
+    );
+    store_value(
+        &mut s.edit,
+        p,
+        "normal_note",
+        "click.normal_note",
+        0.0,
+        127.0,
+    );
+    store_value(
+        &mut s.edit,
+        p,
+        "accent_velocity",
+        "click.accent_velocity",
+        1.0,
+        127.0,
+    );
+    store_value(
+        &mut s.edit,
+        p,
+        "normal_velocity",
+        "click.normal_velocity",
+        1.0,
+        127.0,
+    );
     if let Some(v) = p.get("countoff").and_then(Value::as_bool) {
         s.edit.countoff = v;
     }
@@ -367,7 +504,12 @@ fn click_countoff(e: &mut Engine, p: &Value) -> Result<Value> {
 fn kinds(p: &Value, key: &str) -> Vec<&'static str> {
     p.get(key)
         .and_then(Value::as_array)
-        .map(|a| a.iter().filter_map(Value::as_str).filter_map(|k| MIDI_FILTER_KINDS.iter().copied().find(|x| *x == k)).collect())
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .filter_map(|k| MIDI_FILTER_KINDS.iter().copied().find(|x| *x == k))
+                .collect()
+        })
         .unwrap_or_default()
 }
 
@@ -379,33 +521,61 @@ fn midi_filter(e: &mut Engine, p: &Value) -> Result<Value> {
     for k in kinds(p, "allow") {
         s.edit.set_flag(&format!("midi.filter.{k}"), false);
     }
-    let filtered: Vec<&str> = MIDI_FILTER_KINDS.iter().copied().filter(|k| s.edit.flag(&format!("midi.filter.{k}"))).collect();
+    let filtered: Vec<&str> = MIDI_FILTER_KINDS
+        .iter()
+        .copied()
+        .filter(|k| s.edit.flag(&format!("midi.filter.{k}")))
+        .collect();
     Ok(json!({"filtered": filtered}))
 }
 
 fn device_key(name: &str) -> String {
-    let n: String = name.chars().filter(|c| !c.is_control() && *c != '=').take(64).collect();
+    let n: String = name
+        .chars()
+        .filter(|c| !c.is_control() && *c != '=')
+        .take(64)
+        .collect();
     format!("midi.input.{}", n.trim())
 }
 
 fn midi_inputs(e: &mut Engine, p: &Value) -> Result<Value> {
     let s = e.session_mut();
     for (key, on) in [("enable", true), ("disable", false)] {
-        for n in p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).take(64).collect::<Vec<_>>()).unwrap_or_default() {
+        for n in p
+            .get(key)
+            .and_then(Value::as_array)
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_str)
+                    .take(64)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default()
+        {
             if !n.trim().is_empty() {
                 s.edit.set_flag(&device_key(n), on);
             }
         }
     }
-    let enabled: Vec<&str> = s.edit.flags.iter().filter_map(|f| f.strip_prefix("midi.input.")).collect();
+    let enabled: Vec<&str> = s
+        .edit
+        .flags
+        .iter()
+        .filter_map(|f| f.strip_prefix("midi.input."))
+        .collect();
     Ok(json!({"enabled": enabled}))
 }
 
 /// Decode a source file of another session (paths relative to that session's folder).
 fn load_source(dir: &Path, src: &Source, sr: u32) -> Option<soundcraft_audio_io::AudioBuffer> {
-    let p = if Path::new(&src.path).is_absolute() { PathBuf::from(&src.path) } else { dir.join(&src.path) };
+    let p = if Path::new(&src.path).is_absolute() {
+        PathBuf::from(&src.path)
+    } else {
+        dir.join(&src.path)
+    };
     let bytes = std::fs::read(&p).ok()?;
-    let (_, mut buf) = soundcraft_audio_io::decode(&bytes, p.extension().and_then(|x| x.to_str())).ok()?;
+    let (_, mut buf) =
+        soundcraft_audio_io::decode(&bytes, p.extension().and_then(|x| x.to_str())).ok()?;
     if buf.sample_rate != sr && buf.sample_rate > 0 {
         buf.channels = soundcraft_dsp::offline::resample(&buf.channels, buf.sample_rate, sr);
         buf.sample_rate = sr;
@@ -415,40 +585,79 @@ fn load_source(dir: &Path, src: &Source, sr: u32) -> Option<soundcraft_audio_io:
 
 fn import_session_data(e: &mut Engine, p: &Value) -> Result<Value> {
     let id = "file.import_session_data";
-    let path = str_param(p, "path").filter(|x| !x.trim().is_empty()).ok_or_else(|| bad(id, "`path` required"))?.to_string();
-    let text_v = std::fs::read_to_string(&path).map_err(|err| EngineError::Io(format!("{path}: {err}")))?;
-    let other = Session::from_json(&text_v).map_err(|err| EngineError::Io(format!("{path}: {err}")))?;
-    let dir = Path::new(&path).parent().map(Path::to_path_buf).unwrap_or_default();
-    let names: Option<Vec<String>> =
-        p.get("tracks").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect());
+    let path = str_param(p, "path")
+        .filter(|x| !x.trim().is_empty())
+        .ok_or_else(|| bad(id, "`path` required"))?
+        .to_string();
+    let text_v =
+        std::fs::read_to_string(&path).map_err(|err| EngineError::Io(format!("{path}: {err}")))?;
+    let other =
+        Session::from_json(&text_v).map_err(|err| EngineError::Io(format!("{path}: {err}")))?;
+    let dir = Path::new(&path)
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_default();
+    let names: Option<Vec<String>> = p.get("tracks").and_then(Value::as_array).map(|a| {
+        a.iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect()
+    });
     let picked: Vec<soundcraft_model::Track> = match &names {
         Some(ns) => {
             let mut v = Vec::new();
             for n in ns {
-                v.push(other.track_by_name(n).cloned().ok_or_else(|| bad(id, format!("`{path}` has no track named `{n}`")))?);
+                v.push(
+                    other
+                        .track_by_name(n)
+                        .cloned()
+                        .ok_or_else(|| bad(id, format!("`{path}` has no track named `{n}`")))?,
+                );
             }
             v
         }
-        None => other.tracks.iter().filter(|t| t.kind != TrackKind::Master).cloned().collect(),
+        None => other
+            .tracks
+            .iter()
+            .filter(|t| t.kind != TrackKind::Master)
+            .cloned()
+            .collect(),
     };
     if picked.is_empty() {
         return Err(bad(id, "nothing to import"));
     }
-    let mut needed: Vec<SourceId> =
-        picked.iter().flat_map(|t| t.playlists.iter().flat_map(|pl| pl.clips.iter().filter_map(|c| c.source()))).collect();
+    let mut needed: Vec<SourceId> = picked
+        .iter()
+        .flat_map(|t| {
+            t.playlists
+                .iter()
+                .flat_map(|pl| pl.clips.iter().filter_map(|c| c.source()))
+        })
+        .collect();
     // A Sampler's sample is session audio too.
-    needed.extend(picked.iter().filter_map(|t| t.instrument.as_ref().and_then(|i| i.sample)));
+    needed.extend(
+        picked
+            .iter()
+            .filter_map(|t| t.instrument.as_ref().and_then(|i| i.sample)),
+    );
     needed.sort_by_key(|x| x.0);
     needed.dedup();
     let sr = e.session().sample_rate.hz();
-    let decoded: Vec<(Source, Option<soundcraft_audio_io::AudioBuffer>)> =
-        needed.iter().filter_map(|sid| other.source(*sid).cloned()).map(|src| (src.clone(), load_source(&dir, &src, sr))).collect();
+    let decoded: Vec<(Source, Option<soundcraft_audio_io::AudioBuffer>)> = needed
+        .iter()
+        .filter_map(|sid| other.source(*sid).cloned())
+        .map(|src| (src.clone(), load_source(&dir, &src, sr)))
+        .collect();
     let s = e.session_mut();
     let mut map: std::collections::BTreeMap<u64, SourceId> = Default::default();
     let mut missing = Vec::new();
     for (src, buf) in decoded {
         let nid = SourceId(s.alloc());
-        let abs = if Path::new(&src.path).is_absolute() { PathBuf::from(&src.path) } else { dir.join(&src.path) };
+        let abs = if Path::new(&src.path).is_absolute() {
+            PathBuf::from(&src.path)
+        } else {
+            dir.join(&src.path)
+        };
         let mut ns = src.clone();
         ns.id = nid;
         ns.path = abs.to_string_lossy().into_owned();
@@ -490,7 +699,9 @@ fn import_session_data(e: &mut Engine, p: &Value) -> Result<Value> {
         // Busses are matched by name (created when missing).
         let remap = |s: &mut Session, r: &Route| -> Route {
             match r {
-                Route::Bus(b) => other.bus(*b).map_or(Route::None, |ob| Route::Bus(s.add_bus(&ob.name, ob.format))),
+                Route::Bus(b) => other
+                    .bus(*b)
+                    .map_or(Route::None, |ob| Route::Bus(s.add_bus(&ob.name, ob.format))),
                 x => x.clone(),
             }
         };
@@ -499,7 +710,11 @@ fn import_session_data(e: &mut Engine, p: &Value) -> Result<Value> {
         for slot in tr.mixer.sends.iter_mut().flatten() {
             slot.target = remap(s, &slot.target);
         }
-        let pos = s.tracks.iter().position(|t| t.kind == TrackKind::Master).unwrap_or(s.tracks.len());
+        let pos = s
+            .tracks
+            .iter()
+            .position(|t| t.kind == TrackKind::Master)
+            .unwrap_or(s.tracks.len());
         out.push(tr.id);
         s.tracks.insert(pos, tr);
     }
@@ -514,27 +729,39 @@ mod tests {
     #[test]
     fn option_flags_toggle() {
         let mut e = Engine::default();
-        assert_eq!(e.execute("options.midi_thru", &json!({})).unwrap()["value"], true);
+        assert_eq!(
+            e.execute("options.midi_thru", &json!({})).unwrap()["value"],
+            true
+        );
         assert!(e.session().edit.flag("options.midi_thru"));
-        e.execute("options.midi_thru", &json!({"value": false})).unwrap();
+        e.execute("options.midi_thru", &json!({"value": false}))
+            .unwrap();
         assert!(!e.session().edit.flag("options.midi_thru"));
     }
 
     #[test]
     fn io_bus_lifecycle() {
         let mut e = crate::demo::demo_engine();
-        e.execute("setup.io", &json!({"action": "create_bus", "name": "Drums"})).unwrap();
-        e.execute("setup.io", &json!({"action": "rename_bus", "name": "Verb", "new_name": "Hall"})).unwrap();
+        e.execute(
+            "setup.io",
+            &json!({"action": "create_bus", "name": "Drums"}),
+        )
+        .unwrap();
+        e.execute(
+            "setup.io",
+            &json!({"action": "rename_bus", "name": "Verb", "new_name": "Hall"}),
+        )
+        .unwrap();
         assert!(e.session().bus_by_name("Hall").is_some());
-        e.execute("setup.io", &json!({"action": "delete_bus", "name": "Hall"})).unwrap();
-        assert!(
-            e.session().tracks.iter().all(|t| t
-                .mixer
+        e.execute("setup.io", &json!({"action": "delete_bus", "name": "Hall"}))
+            .unwrap();
+        assert!(e.session().tracks.iter().all(|t| {
+            t.mixer
                 .sends
                 .iter()
                 .flatten()
-                .all(|s| matches!(s.target, Route::None | Route::Main | Route::Hardware(_))))
-        );
+                .all(|s| matches!(s.target, Route::None | Route::Main | Route::Hardware(_)))
+        }));
         assert!(e.session().tracks.iter().all(|t| {
             !matches!(t.mixer.input, Route::Bus(_))
                 || e.session()
@@ -544,9 +771,16 @@ mod tests {
                     })
                     .is_some()
         }));
-        e.execute("setup.io", &json!({"action": "create_output", "name": "Out 3-4", "first_channel": 2})).unwrap();
+        e.execute(
+            "setup.io",
+            &json!({"action": "create_output", "name": "Out 3-4", "first_channel": 2}),
+        )
+        .unwrap();
         assert_eq!(e.session().outputs.len(), 2);
-        assert!(e.execute("setup.io", &json!({"action": "nope", "name": "x"})).is_err());
+        assert!(
+            e.execute("setup.io", &json!({"action": "nope", "name": "x"}))
+                .is_err()
+        );
         assert!(e.can_undo());
     }
 
@@ -554,17 +788,32 @@ mod tests {
     fn current_timecode_sets_start() {
         let mut e = Engine::default();
         e.execute("edit.select", &json!({"start": 48_000})).unwrap();
-        e.execute("setup.current_timecode", &json!({"timecode": "01:00:00:00"})).unwrap();
+        e.execute(
+            "setup.current_timecode",
+            &json!({"timecode": "01:00:00:00"}),
+        )
+        .unwrap();
         let s = e.session();
-        let shown =
-            soundcraft_time::format_position(48_000, soundcraft_time::TimeFormat::Timecode, s.sample_rate, &s.tempo, s.frame_rate, s.timecode_start);
+        let shown = soundcraft_time::format_position(
+            48_000,
+            soundcraft_time::TimeFormat::Timecode,
+            s.sample_rate,
+            &s.tempo,
+            s.frame_rate,
+            s.timecode_start,
+        );
         assert_eq!(shown, "01:00:00:00");
     }
 
     #[test]
     fn click_countoff_settings() {
         let mut e = Engine::default();
-        let r = e.execute("setup.click_countoff", &json!({"volume_db": -12.0, "countoff_bars": 4, "countoff": true})).unwrap();
+        let r = e
+            .execute(
+                "setup.click_countoff",
+                &json!({"volume_db": -12.0, "countoff_bars": 4, "countoff": true}),
+            )
+            .unwrap();
         assert_eq!(r["volume_db"], -12.0);
         assert_eq!(e.session().edit.countoff_bars, 4);
         assert!(e.session().edit.countoff);
@@ -574,20 +823,40 @@ mod tests {
     fn shortcuts_listed() {
         let mut e = Engine::default();
         let r = e.execute("setup.keyboard_shortcuts", &json!({})).unwrap();
-        assert!(r["shortcuts"].as_array().unwrap().iter().any(|x| x["id"] == "edit.undo"));
+        assert!(
+            r["shortcuts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|x| x["id"] == "edit.undo")
+        );
     }
 
     #[test]
     fn engine_and_midi_settings() {
         let mut e = Engine::default();
-        let r = e.execute("setup.playback_engine", &json!({"buffer_size": 300, "device": "Interface"})).unwrap();
+        let r = e
+            .execute(
+                "setup.playback_engine",
+                &json!({"buffer_size": 300, "device": "Interface"}),
+            )
+            .unwrap();
         assert_eq!(r["buffer_size"], 512.0);
         assert_eq!(r["device"], "Interface");
-        let r = e.execute("setup.midi_input_filter", &json!({"filter": ["sysex", "bogus"]})).unwrap();
+        let r = e
+            .execute(
+                "setup.midi_input_filter",
+                &json!({"filter": ["sysex", "bogus"]}),
+            )
+            .unwrap();
         assert_eq!(r["filtered"], json!(["sysex"]));
-        let r = e.execute("setup.midi_input_devices", &json!({"enable": ["Keys"]})).unwrap();
+        let r = e
+            .execute("setup.midi_input_devices", &json!({"enable": ["Keys"]}))
+            .unwrap();
         assert_eq!(r["enabled"], json!(["Keys"]));
-        let r = e.execute("setup.video_sync_offset", &json!({"frames": 2})).unwrap();
+        let r = e
+            .execute("setup.video_sync_offset", &json!({"frames": 2}))
+            .unwrap();
         assert_eq!(r["samples"], 3200.0);
     }
 
@@ -599,14 +868,25 @@ mod tests {
         let mut donor = crate::demo::demo_engine();
         crate::io::save_session(&mut donor, &path).unwrap();
         let mut e = Engine::default();
-        let r = e.execute("file.import_session_data", &json!({"path": path, "tracks": ["Kick", "Keys"]})).unwrap();
+        let r = e
+            .execute(
+                "file.import_session_data",
+                &json!({"path": path, "tracks": ["Kick", "Keys"]}),
+            )
+            .unwrap();
         assert_eq!(r["tracks"].as_array().unwrap().len(), 2);
         assert_eq!(r["missing"], json!([]));
         let kick = e.session().track_by_name("Kick").unwrap();
         let src = kick.clips()[0].source().unwrap();
         assert!(e.session().pool.get(src).is_some());
         assert_eq!(e.session().track_by_name("Keys").unwrap().clips().len(), 1);
-        assert!(e.execute("file.import_session_data", &json!({"path": path, "tracks": ["Nope"]})).is_err());
+        assert!(
+            e.execute(
+                "file.import_session_data",
+                &json!({"path": path, "tracks": ["Nope"]})
+            )
+            .is_err()
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -616,16 +896,43 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let wav = dir.join("hit.wav");
-        let buf = soundcraft_audio_io::AudioBuffer { sample_rate: 48_000, channels: vec![vec![0.5; 4_800]] };
-        std::fs::write(&wav, soundcraft_audio_io::encode(&buf, &soundcraft_audio_io::EncodeOptions::default()).unwrap()).unwrap();
+        let buf = soundcraft_audio_io::AudioBuffer {
+            sample_rate: 48_000,
+            channels: vec![vec![0.5; 4_800]],
+        };
+        std::fs::write(
+            &wav,
+            soundcraft_audio_io::encode(&buf, &soundcraft_audio_io::EncodeOptions::default())
+                .unwrap(),
+        )
+        .unwrap();
         let mut donor = Engine::default();
-        donor.execute("track.new", &json!({"count": 1, "name": "Pads", "kind": "instrument"})).unwrap();
-        donor.execute("mix.sampler_load", &json!({"track": "Pads", "path": wav.to_string_lossy()})).unwrap();
+        donor
+            .execute(
+                "track.new",
+                &json!({"count": 1, "name": "Pads", "kind": "instrument"}),
+            )
+            .unwrap();
+        donor
+            .execute(
+                "mix.sampler_load",
+                &json!({"track": "Pads", "path": wav.to_string_lossy()}),
+            )
+            .unwrap();
         let path = dir.join("donor.scraft").to_string_lossy().into_owned();
         crate::io::save_session(&mut donor, &path).unwrap();
         let mut e = crate::demo::demo_engine();
-        e.execute("file.import_session_data", &json!({"path": path, "tracks": ["Pads"]})).unwrap();
-        let sample = e.session().track_by_name("Pads").and_then(|t| t.instrument.as_ref()).and_then(|i| i.sample).unwrap();
+        e.execute(
+            "file.import_session_data",
+            &json!({"path": path, "tracks": ["Pads"]}),
+        )
+        .unwrap();
+        let sample = e
+            .session()
+            .track_by_name("Pads")
+            .and_then(|t| t.instrument.as_ref())
+            .and_then(|i| i.sample)
+            .unwrap();
         let src = e.session().source(sample).unwrap();
         assert_eq!(src.name, "hit");
         assert!(e.session().pool.get(sample).is_some());

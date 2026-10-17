@@ -22,12 +22,22 @@ fn activate(s: &mut Session, sheet: &str) {
 
 fn value(s: &Session, sheet: &str, cell: &str) -> Value {
     let wb = &s.doc().unwrap().wb;
-    wb.sheet(wb.sheet_index(sheet).unwrap()).unwrap().value(CellRef::parse(cell).unwrap())
+    wb.sheet(wb.sheet_index(sheet).unwrap())
+        .unwrap()
+        .value(CellRef::parse(cell).unwrap())
 }
 
 fn formula(s: &Session, sheet: &str, cell: &str) -> String {
     let wb = &s.doc().unwrap().wb;
-    wb.sheet(wb.sheet_index(sheet).unwrap()).unwrap().cell(CellRef::parse(cell).unwrap()).unwrap().formula.as_ref().unwrap().text.clone()
+    wb.sheet(wb.sheet_index(sheet).unwrap())
+        .unwrap()
+        .cell(CellRef::parse(cell).unwrap())
+        .unwrap()
+        .formula
+        .as_ref()
+        .unwrap()
+        .text
+        .clone()
 }
 
 fn cut_to(s: &mut Session, source: &str, range: &str, destination: &str, at: &str) {
@@ -40,7 +50,11 @@ fn cut_to(s: &mut Session, source: &str, range: &str, destination: &str, at: &st
 #[test]
 fn cross_sheet_cut_preserves_total_through_undo_redo_and_xlsx() {
     let mut s = workbook();
-    run(&mut s, "range.setValues", json!({"range": "A1", "values": [[10], [20]]}));
+    run(
+        &mut s,
+        "range.setValues",
+        json!({"range": "A1", "values": [[10], [20]]}),
+    );
     set(&mut s, "B1", "=SUM(A1:A2)");
     run(&mut s, "home.insertSheet", json!({"name": "Sheet2"}));
     cut_to(&mut s, "Sheet1", "A1:A2", "Sheet2", "C3");
@@ -64,8 +78,14 @@ fn cross_sheet_cut_preserves_total_through_undo_redo_and_xlsx() {
     run(&mut s, "edit.redo", json!({}));
     assert_moved(&s);
 
-    let saved = s.execute("file.saveBytes", json!({"format": "xlsx"})).unwrap();
-    run(&mut s, "file.open", json!({"name": "moved.xlsx", "base64": saved["base64"]}));
+    let saved = s
+        .execute("file.saveBytes", json!({"format": "xlsx"}))
+        .unwrap();
+    run(
+        &mut s,
+        "file.open",
+        json!({"name": "moved.xlsx", "base64": saved["base64"]}),
+    );
     assert_moved(&s);
 }
 
@@ -73,11 +93,23 @@ fn cross_sheet_cut_preserves_total_through_undo_redo_and_xlsx() {
 fn references_on_all_sheets_follow_cut_but_destination_local_refs_do_not() {
     let mut s = workbook();
     run(&mut s, "sheet.rename", json!({"name": "Source Data"}));
-    run(&mut s, "range.setValues", json!({"range": "A1", "values": [[10], [20]]}));
+    run(
+        &mut s,
+        "range.setValues",
+        json!({"range": "A1", "values": [[10], [20]]}),
+    );
     set(&mut s, "B1", "=SUM($A$1:$A$2)");
-    run(&mut s, "formulas.defineName", json!({"name": "MovedData", "refersTo": "='Source Data'!$A$1:$A$2"}));
+    run(
+        &mut s,
+        "formulas.defineName",
+        json!({"name": "MovedData", "refersTo": "='Source Data'!$A$1:$A$2"}),
+    );
     run(&mut s, "home.insertSheet", json!({"name": "Target's Data"}));
-    run(&mut s, "range.setValues", json!({"range": "A1", "values": [[100], [200]]}));
+    run(
+        &mut s,
+        "range.setValues",
+        json!({"range": "A1", "values": [[100], [200]]}),
+    );
     set(&mut s, "B1", "=SUM('Source Data'!$A$1:$A$2)");
     set(&mut s, "B2", "=SUM(A1:A2)");
     run(&mut s, "home.insertSheet", json!({"name": "Summary"}));
@@ -85,19 +117,43 @@ fn references_on_all_sheets_follow_cut_but_destination_local_refs_do_not() {
     set(&mut s, "A2", "=SUM(MovedData)");
     cut_to(&mut s, "Source Data", "A1:A2", "Target's Data", "C3");
 
-    for (sheet, cell) in [("Source Data", "B1"), ("Target's Data", "B1"), ("Summary", "A1"), ("Summary", "A2")] {
-        assert_eq!(value(&s, sheet, cell), Value::Number(30.0), "{sheet}!{cell}");
+    for (sheet, cell) in [
+        ("Source Data", "B1"),
+        ("Target's Data", "B1"),
+        ("Summary", "A1"),
+        ("Summary", "A2"),
+    ] {
+        assert_eq!(
+            value(&s, sheet, cell),
+            Value::Number(30.0),
+            "{sheet}!{cell}"
+        );
     }
-    assert_eq!(formula(&s, "Source Data", "B1"), "SUM('Target''s Data'!$C$3:$C$4)");
-    assert_eq!(formula(&s, "Summary", "A1"), "'Target''s Data'!$C$3+'Target''s Data'!C$4");
+    assert_eq!(
+        formula(&s, "Source Data", "B1"),
+        "SUM('Target''s Data'!$C$3:$C$4)"
+    );
+    assert_eq!(
+        formula(&s, "Summary", "A1"),
+        "'Target''s Data'!$C$3+'Target''s Data'!C$4"
+    );
     assert_eq!(value(&s, "Target's Data", "B2"), Value::Number(300.0));
     assert_eq!(formula(&s, "Target's Data", "B2"), "SUM(A1:A2)");
 
     // Recalculation must keep tracking the destination after the move, not just retain a cache.
     activate(&mut s, "Target's Data");
     set(&mut s, "C3", "40");
-    for (sheet, cell) in [("Source Data", "B1"), ("Target's Data", "B1"), ("Summary", "A1"), ("Summary", "A2")] {
-        assert_eq!(value(&s, sheet, cell), Value::Number(60.0), "{sheet}!{cell}");
+    for (sheet, cell) in [
+        ("Source Data", "B1"),
+        ("Target's Data", "B1"),
+        ("Summary", "A1"),
+        ("Summary", "A2"),
+    ] {
+        assert_eq!(
+            value(&s, sheet, cell),
+            Value::Number(60.0),
+            "{sheet}!{cell}"
+        );
     }
 }
 
@@ -131,7 +187,11 @@ fn moved_formulas_keep_external_source_refs_and_move_internal_refs_once() {
 #[test]
 fn same_sheet_overlapping_cut_still_updates_references_once() {
     let mut s = workbook();
-    run(&mut s, "range.setValues", json!({"range": "A1", "values": [[10], [20]]}));
+    run(
+        &mut s,
+        "range.setValues",
+        json!({"range": "A1", "values": [[10], [20]]}),
+    );
     set(&mut s, "B1", "=SUM(A1:A2)");
     set(&mut s, "A3", "=A1+A2");
     run(&mut s, "edit.cut", json!({"range": "A1:A3"}));

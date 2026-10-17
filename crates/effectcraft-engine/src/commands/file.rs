@@ -9,15 +9,23 @@ use crate::sequence::{SequenceOptions, Source};
 use crate::{EngineError, Result, Session, cmd};
 
 fn has_path(s: &Session) -> std::result::Result<(), String> {
-    if s.path.is_some() { Ok(()) } else { Err("the project has not been saved yet".into()) }
+    if s.path.is_some() {
+        Ok(())
+    } else {
+        Err("the project has not been saved yet".into())
+    }
 }
 
 fn new_project(s: &mut Session, _: &Value) -> Result<Value> {
     // Settings ▸ Project ▸ New Project Loads Template: open the template as an untitled project.
     let tpl = s.prefs.project.template_path.trim().to_string();
     if s.prefs.project.use_template && !tpl.is_empty() {
-        let bytes = s.services.read_file(&tpl).map_err(|e| EngineError::Other(format!("cannot read the new project template {tpl}: {e}")))?;
-        let text = String::from_utf8(bytes).map_err(|_| EngineError::Other("the new project template is not a project file".into()))?;
+        let bytes = s.services.read_file(&tpl).map_err(|e| {
+            EngineError::Other(format!("cannot read the new project template {tpl}: {e}"))
+        })?;
+        let text = String::from_utf8(bytes).map_err(|_| {
+            EngineError::Other("the new project template is not a project file".into())
+        })?;
         s.replace_project(Project::from_json(&text)?, None);
         s.update_sentinel();
         return Ok(json!({"template": tpl}));
@@ -30,7 +38,13 @@ fn new_project(s: &mut Session, _: &Value) -> Result<Value> {
 fn demo(s: &mut Session, _: &Value) -> Result<Value> {
     let p = crate::demo::demo_project();
     s.replace_project(p, None);
-    if let Some(id) = s.project.items.values().find(|i| i.name == crate::demo::MAIN_COMP).map(|i| i.id) {
+    if let Some(id) = s
+        .project
+        .items
+        .values()
+        .find(|i| i.name == crate::demo::MAIN_COMP)
+        .map(|i| i.id)
+    {
         s.open_comp(id);
         s.set_time(effectcraft_time::Tick::from_seconds_f64(2.5));
     }
@@ -39,12 +53,21 @@ fn demo(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub(crate) fn open(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("file.open", "missing `path`"))?;
-    let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
-    let text = String::from_utf8(bytes).map_err(|_| EngineError::Other("not a text project file".into()))?;
+    let bytes = s
+        .services
+        .read_file(path)
+        .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+    let text = String::from_utf8(bytes)
+        .map_err(|_| EngineError::Other("not a text project file".into()))?;
     // XML copies (File ▸ Save a Copy As XML…) open like the JSON project.
-    let text = if crate::xml_project::is_xml(&text) { crate::xml_project::from_xml(&text).map_err(EngineError::Other)? } else { text };
-    let (mut proj, repaired) =
-        Project::from_json_repaired(&text).map_err(|e| EngineError::Other(format!("{path} is not a project EffectCraft can open: {e}")))?;
+    let text = if crate::xml_project::is_xml(&text) {
+        crate::xml_project::from_xml(&text).map_err(EngineError::Other)?
+    } else {
+        text
+    };
+    let (mut proj, repaired) = Project::from_json_repaired(&text).map_err(|e| {
+        EngineError::Other(format!("{path} is not a project EffectCraft can open: {e}"))
+    })?;
     resolve_relative_footage(&mut proj, path, s.services.as_ref());
     s.replace_project(proj, Some(path.to_string()));
     s.restore_view(&effectcraft_project::saved_view(&text));
@@ -52,13 +75,25 @@ pub(crate) fn open(s: &mut Session, p: &Value) -> Result<Value> {
     // Values past the limits (a corrupt or hostile file) were brought within them (#788).
     if !repaired.is_empty() {
         let more = repaired.len().saturating_sub(3);
-        let shown = repaired.iter().take(3).cloned().collect::<Vec<_>>().join("; ");
-        let more = if more > 0 { format!(" and {more} more") } else { String::new() };
+        let shown = repaired
+            .iter()
+            .take(3)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join("; ");
+        let more = if more > 0 {
+            format!(" and {more} more")
+        } else {
+            String::new()
+        };
         s.toast(format!("This project had values outside EffectCraft's limits, corrected when it opened: {shown}{more}."));
     }
     // Written by a newer EffectCraft: what this version doesn't know would be lost on saving.
     let saved_by = effectcraft_project::saved_by(&text);
-    if let Some(v) = saved_by.as_deref().filter(|v| effectcraft_project::is_newer_version(v, effectcraft_project::APP_VERSION)) {
+    if let Some(v) = saved_by
+        .as_deref()
+        .filter(|v| effectcraft_project::is_newer_version(v, effectcraft_project::APP_VERSION))
+    {
         s.toast(format!(
             "This project was saved by EffectCraft {v}, newer than this version ({}). Settings this version doesn't know are lost if you save it.",
             effectcraft_project::APP_VERSION
@@ -80,15 +115,30 @@ pub(crate) fn open(s: &mut Session, p: &Value) -> Result<Value> {
 /// directory is kept.
 fn resolve_relative_footage(p: &mut Project, project_path: &str, services: &dyn crate::Services) {
     use std::path::Path;
-    let Some(dir) = Path::new(project_path).parent().filter(|d| !d.as_os_str().is_empty()) else { return };
+    let Some(dir) = Path::new(project_path)
+        .parent()
+        .filter(|d| !d.as_os_str().is_empty())
+    else {
+        return;
+    };
     let beside = |f: &str| dir.join(f).to_string_lossy().to_string();
     for item in p.items.values_mut() {
-        let ItemKind::Footage(f) = &mut item.kind else { continue };
-        if f.path.is_empty() || !Path::new(&f.path).is_relative() || services.exists(&f.path) || !services.exists(&beside(&f.path)) {
+        let ItemKind::Footage(f) = &mut item.kind else {
+            continue;
+        };
+        if f.path.is_empty()
+            || !Path::new(&f.path).is_relative()
+            || services.exists(&f.path)
+            || !services.exists(&beside(&f.path))
+        {
             continue;
         }
         f.path = beside(&f.path);
-        for frame in f.sequence.iter_mut().filter(|q| Path::new(q.as_str()).is_relative()) {
+        for frame in f
+            .sequence
+            .iter_mut()
+            .filter(|q| Path::new(q.as_str()).is_relative())
+        {
             *frame = beside(frame);
         }
     }
@@ -99,12 +149,18 @@ fn resolve_relative_footage(p: &mut Project, project_path: &str, services: &dyn 
 /// wouldn't read back.
 pub(crate) fn file_text(s: &Session, path: &str) -> Result<String> {
     let json = s.project.to_file_json_with_view(&s.saved_view())?;
-    if crate::xml_project::is_xml_path(path) { crate::xml_project::to_xml(&json).map_err(EngineError::Other) } else { Ok(json) }
+    if crate::xml_project::is_xml_path(path) {
+        crate::xml_project::to_xml(&json).map_err(EngineError::Other)
+    } else {
+        Ok(json)
+    }
 }
 
 fn save_to(s: &mut Session, path: &str) -> Result<Value> {
     let json = file_text(s, path)?;
-    s.services.write_file(path, json.as_bytes()).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    s.services
+        .write_file(path, json.as_bytes())
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     s.path = Some(path.to_string());
     s.mark_saved();
     s.note_project_path(path);
@@ -113,7 +169,10 @@ fn save_to(s: &mut Session, path: &str) -> Result<Value> {
 }
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").map(str::to_string).or_else(|| s.path.clone()).ok_or_else(|| bad("file.save", "no path: use file.saveAs {path}"))?;
+    let path = str_p(p, "path")
+        .map(str::to_string)
+        .or_else(|| s.path.clone())
+        .ok_or_else(|| bad("file.save", "no path: use file.saveAs {path}"))?;
     save_to(s, &path)
 }
 
@@ -123,14 +182,21 @@ fn save_as(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn increment_save(s: &mut Session, _: &Value) -> Result<Value> {
-    let cur = s.path.clone().ok_or_else(|| bad("file.incrementAndSave", "save the project first"))?;
+    let cur = s
+        .path
+        .clone()
+        .ok_or_else(|| bad("file.incrementAndSave", "save the project first"))?;
     // After Effects: `Intro.aep` → `Intro 2.aep` → `Intro 3.aep`.
-    let next = crate::autosave::increment_path(&cur, |p| s.file_ops().is_file(std::path::Path::new(p)));
+    let next =
+        crate::autosave::increment_path(&cur, |p| s.file_ops().is_file(std::path::Path::new(p)));
     save_to(s, &next)
 }
 
 fn revert(s: &mut Session, _: &Value) -> Result<Value> {
-    let path = s.path.clone().ok_or_else(|| bad("file.revert", "not saved"))?;
+    let path = s
+        .path
+        .clone()
+        .ok_or_else(|| bad("file.revert", "not saved"))?;
     open(s, &json!({"path": path}))
 }
 
@@ -167,11 +233,18 @@ fn import_cmd(s: &mut Session, p: &Value) -> Result<Value> {
                 let mut r = add_footage(s, pending, probed)?;
                 finish_import(s, &mut r, target, &p);
                 let mut toast = format!("Imported {made} item{}", if made == 1 { "" } else { "s" });
-                let errors: Vec<&str> = r["errors"].as_array().into_iter().flatten().filter_map(Value::as_str).collect();
+                let errors: Vec<&str> = r["errors"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(Value::as_str)
+                    .collect();
                 match errors.as_slice() {
                     [] => {}
                     [one] => toast = format!("{toast}. {one}"),
-                    [first, rest @ ..] => toast = format!("{toast}. {first} (and {} more)", rest.len()),
+                    [first, rest @ ..] => {
+                        toast = format!("{toast}. {first} (and {} more)", rest.len())
+                    }
                 }
                 r["toast"] = json!(toast);
                 Ok(r)
@@ -179,7 +252,11 @@ fn import_cmd(s: &mut Session, p: &Value) -> Result<Value> {
             Ok(apply)
         });
     }
-    let probed = pending.sources.iter().map(|src| pending.prober.probe(src)).collect();
+    let probed = pending
+        .sources
+        .iter()
+        .map(|src| pending.prober.probe(src))
+        .collect();
     let mut r = add_footage(s, pending, probed)?;
     finish_import(s, &mut r, target, p);
     Ok(r)
@@ -200,20 +277,41 @@ fn finish_import(s: &mut Session, r: &mut Value, target: Option<ItemId>, p: &Val
 /// active before it, one layer under the other, at the drop's `time`, `index` and `position`
 /// (as in `layer.addItem`): the comps of layered files (their layers' footage stays in the
 /// Project panel) and the other footage. `target` stays open. Returns what couldn't be added.
-pub(crate) fn add_to_comp(s: &mut Session, r: &Value, target: Option<ItemId>, p: &Value) -> Vec<String> {
-    let Some(cid) = target.filter(|_| p.get("addToComp").and_then(Value::as_bool).unwrap_or(false)) else { return vec![] };
-    let ids = |k: &str| r.get(k).and_then(Value::as_array).into_iter().flatten().filter_map(Value::as_u64).collect::<Vec<u64>>();
+pub(crate) fn add_to_comp(
+    s: &mut Session,
+    r: &Value,
+    target: Option<ItemId>,
+    p: &Value,
+) -> Vec<String> {
+    let Some(cid) = target.filter(|_| p.get("addToComp").and_then(Value::as_bool).unwrap_or(false))
+    else {
+        return vec![];
+    };
+    let ids = |k: &str| {
+        r.get(k)
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_u64)
+            .collect::<Vec<u64>>()
+    };
     let comps = ids("comps");
     let in_comps: std::collections::HashSet<u64> = comps
         .iter()
         .filter_map(|c| s.project.comp(ItemId(*c)))
         .flat_map(|c| c.layers.iter())
         .filter_map(|l| match l.source {
-            LayerSource::Footage { item } | LayerSource::Comp { item } | LayerSource::Solid { item } => Some(item.0),
+            LayerSource::Footage { item }
+            | LayerSource::Comp { item }
+            | LayerSource::Solid { item } => Some(item.0),
             _ => None,
         })
         .collect();
-    let add: Vec<u64> = comps.iter().copied().chain(ids("items").into_iter().filter(|i| !in_comps.contains(i))).collect();
+    let add: Vec<u64> = comps
+        .iter()
+        .copied()
+        .chain(ids("items").into_iter().filter(|i| !in_comps.contains(i)))
+        .collect();
     let mut errors = vec![];
     for (k, item) in add.into_iter().enumerate() {
         let mut params = json!({"comp": cid.0, "item": item, "time": p.get("time"), "position": p.get("position")});
@@ -233,7 +331,11 @@ pub(crate) fn add_to_comp(s: &mut Session, r: &Value, target: Option<ItemId>, p:
 /// File ▸ Import, all in one go (scripts and commands built on it); see [`import_cmd`].
 pub(crate) fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let pending = prepare_import(s, p)?;
-    let probed = pending.sources.iter().map(|src| pending.prober.probe(src)).collect();
+    let probed = pending
+        .sources
+        .iter()
+        .map(|src| pending.prober.probe(src))
+        .collect();
     add_footage(s, pending, probed)
 }
 
@@ -285,10 +387,21 @@ impl Prober {
         if let Source::File(_) = src
             && let Some(f) = data_footage(self.services.as_ref(), path)
         {
-            return f.map(|footage| Probed { name, footage, ask_alpha: false, warning: None }).map_err(fail);
+            return f
+                .map(|footage| Probed {
+                    name,
+                    footage,
+                    ask_alpha: false,
+                    warning: None,
+                })
+                .map_err(fail);
         }
-        let importer = self.importer.as_ref().ok_or_else(|| fail("media import is not available in this build".into()))?;
-        let mut f = crate::sequence::probe(importer.as_ref(), src, self.sequence_rate).map_err(fail)?;
+        let importer = self
+            .importer
+            .as_ref()
+            .ok_or_else(|| fail("media import is not available in this build".into()))?;
+        let mut f =
+            crate::sequence::probe(importer.as_ref(), src, self.sequence_rate).map_err(fail)?;
         let mut warning = None;
         // Settings ▸ Import ▸ Report Missing Frames (numbered sequences).
         if f.kind == FootageKind::Sequence
@@ -301,11 +414,17 @@ impl Prober {
         // Settings ▸ Import ▸ Interpret Unlabeled Alpha As: images only (a 3D model renders its
         // own alpha, and audio and data have none).
         let mut ask_alpha = false;
-        if matches!(f.kind, FootageKind::Still | FootageKind::Sequence | FootageKind::Video)
-            && f.alpha != effectcraft_project::AlphaMode::Ignore
+        if matches!(
+            f.kind,
+            FootageKind::Still | FootageKind::Sequence | FootageKind::Video
+        ) && f.alpha != effectcraft_project::AlphaMode::Ignore
             && !alpha_is_labeled(path, &f.codec)
         {
-            let setting = if f.kind == FootageKind::Video { self.movie_alpha } else { self.still_alpha };
+            let setting = if f.kind == FootageKind::Video {
+                self.movie_alpha
+            } else {
+                self.still_alpha
+            };
             match setting {
                 Some(a) => f.alpha = a,
                 None => ask_alpha = true,
@@ -317,7 +436,9 @@ impl Prober {
                 .services
                 .read_file(path)
                 .map_err(|e| e.to_string())
-                .and_then(|b| effectcraft_pdf::parse_page(&b, self.page as usize).map_err(|e| e.to_string()))
+                .and_then(|b| {
+                    effectcraft_pdf::parse_page(&b, self.page as usize).map_err(|e| e.to_string())
+                })
                 .map_err(fail)?;
             (f.width, f.height) = doc.pixel_size();
             f.page = self.page;
@@ -333,9 +454,20 @@ impl Prober {
                 .and_then(|b| effectcraft_psd::Psd::parse(b).ok())
                 .and_then(|d| find_psd_layer(&d, sel))
                 .ok_or_else(|| fail(format!("no layer {sel}")))?;
-            f.layer = Some(effectcraft_project::SourceLayer { index: index as u32, name, layer_size: false, embedded: None, placed: false });
+            f.layer = Some(effectcraft_project::SourceLayer {
+                index: index as u32,
+                name,
+                layer_size: false,
+                embedded: None,
+                placed: false,
+            });
         }
-        Ok(Probed { name, footage: f, ask_alpha, warning })
+        Ok(Probed {
+            name,
+            footage: f,
+            ask_alpha,
+            warning,
+        })
     }
 }
 
@@ -344,14 +476,21 @@ impl Prober {
 /// for dropped files, Default Drag Import As) asks for that. The other files are left to probe.
 fn prepare_import(s: &mut Session, p: &Value) -> Result<PendingImport> {
     let paths: Vec<String> = match p.get("paths").or(p.get("path")) {
-        Some(Value::Array(a)) => a.iter().filter_map(|v| v.as_str().map(str::to_string)).collect(),
+        Some(Value::Array(a)) => a
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect(),
         Some(Value::String(x)) => vec![x.clone()],
         _ => return Err(bad("file.import", "missing `paths`")),
     };
     // Photoshop documents as compositions (Import As: Composition / – Retain Layer Sizes).
     // Files dragged in follow Settings ▸ Import ▸ Default Drag Import As.
     let drag = p.get("drag").and_then(Value::as_bool).unwrap_or(false);
-    let import_as = str_p(p, "importAs").unwrap_or(if drag { s.prefs.drag_import_as() } else { "footage" });
+    let import_as = str_p(p, "importAs").unwrap_or(if drag {
+        s.prefs.drag_import_as()
+    } else {
+        "footage"
+    });
     for path in &paths {
         s.prefs.push_recent_footage(path);
     }
@@ -360,12 +499,21 @@ fn prepare_import(s: &mut Session, p: &Value) -> Result<PendingImport> {
         "footage" => None,
         "composition" | "comp" => Some(false),
         "compositionLayerSizes" | "compositionRetainLayerSizes" | "layerSizes" => Some(true),
-        other => return Err(bad("file.import", format!("importAs: footage|composition|compositionLayerSizes, not `{other}`"))),
+        other => {
+            return Err(bad(
+                "file.import",
+                format!("importAs: footage|composition|compositionLayerSizes, not `{other}`"),
+            ));
+        }
     };
     // PDF / Illustrator: which page (1-based, as in the Import dialog).
     let page = match p.get("page") {
         None | Some(Value::Null) => 0,
-        Some(v) => match v.as_u64().or_else(|| v.as_f64().filter(|x| x.fract() == 0.0 && *x >= 1.0).map(|x| x as u64)) {
+        Some(v) => match v.as_u64().or_else(|| {
+            v.as_f64()
+                .filter(|x| x.fract() == 0.0 && *x >= 1.0)
+                .map(|x| x as u64)
+        }) {
             Some(n) if n >= 1 => (n - 1) as u32,
             _ => return Err(bad("file.import", "page: a page number from 1")),
         },
@@ -379,7 +527,10 @@ fn prepare_import(s: &mut Session, p: &Value) -> Result<PendingImport> {
         for path in paths {
             let bytes = match s.services.read_file(&path) {
                 Ok(b) if effectcraft_psd::is_psd(&b) => b,
-                Ok(b) if effectcraft_pdf::sniff(&b).is_some() && !path.to_ascii_lowercase().ends_with(".svg") => {
+                Ok(b)
+                    if effectcraft_pdf::sniff(&b).is_some()
+                        && !path.to_ascii_lowercase().ends_with(".svg") =>
+                {
                     // PDF / Illustrator / EPS: one layer per file layer.
                     match import_vector_comp(s, &path, &b, page) {
                         Ok((comp, made)) => {
@@ -411,7 +562,10 @@ fn prepare_import(s: &mut Session, p: &Value) -> Result<PendingImport> {
     let opts = SequenceOptions::for_import(p);
     let fps = match p.get("frameRate") {
         None | Some(Value::Null) => s.prefs.import.sequence_fps,
-        Some(v) => v.as_f64().filter(|x| *x > 0.0 && *x <= 999.0).ok_or_else(|| bad("file.import", "frameRate: frames per second, up to 999"))?,
+        Some(v) => v
+            .as_f64()
+            .filter(|x| *x > 0.0 && *x <= 999.0)
+            .ok_or_else(|| bad("file.import", "frameRate: frames per second, up to 999"))?,
     };
     let sources = crate::sequence::group(s.services.as_ref(), &paths, opts);
     let prober = Prober {
@@ -424,13 +578,28 @@ fn prepare_import(s: &mut Session, p: &Value) -> Result<PendingImport> {
         page,
         psd_layer: p.get("layer").cloned(),
     };
-    Ok(PendingImport { sources, prober, comps, items, errors })
+    Ok(PendingImport {
+        sources,
+        prober,
+        comps,
+        items,
+        errors,
+    })
 }
 
 /// The last part of an import: add the probed files to the project (one undo step) and select
 /// everything the import made, so the Project panel shows it.
-fn add_footage(s: &mut Session, pending: PendingImport, probed: Vec<std::result::Result<Probed, String>>) -> Result<Value> {
-    let PendingImport { comps, mut items, mut errors, .. } = pending;
+fn add_footage(
+    s: &mut Session,
+    pending: PendingImport,
+    probed: Vec<std::result::Result<Probed, String>>,
+) -> Result<Value> {
+    let PendingImport {
+        comps,
+        mut items,
+        mut errors,
+        ..
+    } = pending;
     let mut found = vec![];
     let mut warnings = vec![];
     for r in probed {
@@ -476,20 +645,45 @@ fn add_footage(s: &mut Session, pending: PendingImport, probed: Vec<std::result:
         s.open_comp(ItemId(*c));
     }
     for w in &warnings {
-        s.events.push(crate::Event::Toast { message: w.clone(), error: true });
+        s.events.push(crate::Event::Toast {
+            message: w.clone(),
+            error: true,
+        });
     }
     // Ask User: the frontend opens Interpret Footage for footage with unlabeled alpha.
     if let Some(first) = asked.first() {
-        s.events.push(crate::Event::Frontend { command: "file.interpretFootage".into(), params: json!({"item": first, "reason": "unlabeledAlpha"}) });
+        s.events.push(crate::Event::Frontend {
+            command: "file.interpretFootage".into(),
+            params: json!({"item": first, "reason": "unlabeledAlpha"}),
+        });
     }
-    Ok(json!({"items": items, "comps": comps, "errors": errors, "warnings": warnings, "unlabeledAlpha": asked}))
+    Ok(
+        json!({"items": items, "comps": comps, "errors": errors, "warnings": warnings, "unlabeledAlpha": asked}),
+    )
 }
 
 /// Whether a file format states how its alpha is stored (PNG, GIF, WebP and PSD are straight by
 /// definition, OpenEXR premultiplied); TGA, TIFF and movies with alpha don't.
 fn alpha_is_labeled(path: &str, codec: &str) -> bool {
-    let ext = std::path::Path::new(path).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    matches!(ext.as_str(), "png" | "gif" | "webp" | "psd" | "psb" | "exr" | "svg" | "jpg" | "jpeg" | "ai" | "pdf" | "eps") || codec.eq_ignore_ascii_case("PSD")
+    let ext = std::path::Path::new(path)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        ext.as_str(),
+        "png"
+            | "gif"
+            | "webp"
+            | "psd"
+            | "psb"
+            | "exr"
+            | "svg"
+            | "jpg"
+            | "jpeg"
+            | "ai"
+            | "pdf"
+            | "eps"
+    ) || codec.eq_ignore_ascii_case("PSD")
 }
 
 /// A Photoshop layer by index or name (pixel layers only).
@@ -503,11 +697,23 @@ fn find_psd_layer(d: &effectcraft_psd::Psd, sel: &Value) -> Option<(usize, Strin
 }
 
 /// Import a Photoshop document as a composition (one undo step). Returns (comp, items, warnings).
-pub(crate) fn import_psd_comp(s: &mut Session, path: &str, bytes: Vec<u8>, retain: bool) -> Result<(u64, Vec<u64>, Vec<String>)> {
+pub(crate) fn import_psd_comp(
+    s: &mut Session,
+    path: &str,
+    bytes: Vec<u8>,
+    retain: bool,
+) -> Result<(u64, Vec<u64>, Vec<String>)> {
     let psd = effectcraft_psd::Psd::parse(bytes).map_err(|e| EngineError::Other(e.to_string()))?;
-    let name = std::path::Path::new(path).file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "Photoshop".into());
+    let name = std::path::Path::new(path)
+        .file_stem()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Photoshop".into());
     let rate = effectcraft_time::FrameRate::FPS_29_97;
-    let secs = if s.prefs.import.still_footage == "seconds" { s.prefs.import.still_seconds } else { 10.0 };
+    let secs = if s.prefs.import.still_footage == "seconds" {
+        s.prefs.import.still_seconds
+    } else {
+        10.0
+    };
     let duration = rate.snap_nearest(effectcraft_time::Tick::from_seconds_f64(secs));
     let r = s.edit("Import", None, |proj, st| {
         let r = crate::psd_import::import(proj, &psd, path, &name, retain, rate, duration);
@@ -521,16 +727,29 @@ pub(crate) fn import_psd_comp(s: &mut Session, path: &str, bytes: Vec<u8>, retai
 
 /// Import page `page` of a PDF / Illustrator / EPS file as a composition (one undo step).
 /// Returns (comp, items).
-fn import_vector_comp(s: &mut Session, path: &str, bytes: &[u8], page: u32) -> Result<(u64, Vec<u64>)> {
-    let mut name = std::path::Path::new(path).file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "Vector".into());
+fn import_vector_comp(
+    s: &mut Session,
+    path: &str,
+    bytes: &[u8],
+    page: u32,
+) -> Result<(u64, Vec<u64>)> {
+    let mut name = std::path::Path::new(path)
+        .file_stem()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "Vector".into());
     if page > 0 {
         name = format!("{name} (Page {})", page + 1);
     }
     let rate = effectcraft_time::FrameRate::FPS_29_97;
-    let secs = if s.prefs.import.still_footage == "seconds" { s.prefs.import.still_seconds } else { 10.0 };
+    let secs = if s.prefs.import.still_footage == "seconds" {
+        s.prefs.import.still_seconds
+    } else {
+        10.0
+    };
     let duration = rate.snap_nearest(effectcraft_time::Tick::from_seconds_f64(secs));
     let (comp, folder, items) = s.edit("Import", None, |proj, st| {
-        let r = crate::vector::import_vector_comp(proj, path, bytes, &name, page, rate, duration).map_err(EngineError::Other)?;
+        let r = crate::vector::import_vector_comp(proj, path, bytes, &name, page, rate, duration)
+            .map_err(EngineError::Other)?;
         st.project_selection = vec![r.0];
         Ok(r)
     })?;
@@ -543,18 +762,33 @@ fn import_vector_comp(s: &mut Session, path: &str, bytes: &[u8], page: u32) -> R
 pub const DATA_EXTENSIONS: &[&str] = &["json", "csv", "tsv"];
 
 /// A data footage item for `path` (JSON / CSV / TSV), `None` for other files.
-pub(crate) fn data_footage(services: &dyn crate::Services, path: &str) -> Option<std::result::Result<effectcraft_project::Footage, String>> {
-    let ext = std::path::Path::new(path).extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase();
+pub(crate) fn data_footage(
+    services: &dyn crate::Services,
+    path: &str,
+) -> Option<std::result::Result<effectcraft_project::Footage, String>> {
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
     if !DATA_EXTENSIONS.contains(&ext.as_str()) {
         return None;
     }
     Some((|| {
         let bytes = services.read_file(path).map_err(|e| e.to_string())?;
-        let text = String::from_utf8(bytes).map_err(|_| "data files must be UTF-8 text".to_string())?;
+        let text =
+            String::from_utf8(bytes).map_err(|_| "data files must be UTF-8 text".to_string())?;
         if ext == "json" {
-            serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}')).map_err(|e| format!("invalid JSON: {e}"))?;
+            serde_json::from_str::<Value>(text.trim_start_matches('\u{feff}'))
+                .map_err(|e| format!("invalid JSON: {e}"))?;
         }
-        Ok(effectcraft_project::Footage { path: path.to_string(), kind: FootageKind::Data, codec: ext.to_uppercase(), data: Some(text), ..Default::default() })
+        Ok(effectcraft_project::Footage {
+            path: path.to_string(),
+            kind: FootageKind::Data,
+            codec: ext.to_uppercase(),
+            data: Some(text),
+            ..Default::default()
+        })
     })())
 }
 
@@ -577,7 +811,11 @@ fn project_settings(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(l) = p.get("linearize").and_then(Value::as_bool) {
             proj.settings.linearize = l;
         }
-        if let Some(l) = p.get("blendLinear").or_else(|| p.get("blendColorsUsing1Gamma")).and_then(Value::as_bool) {
+        if let Some(l) = p
+            .get("blendLinear")
+            .or_else(|| p.get("blendColorsUsing1Gamma"))
+            .and_then(Value::as_bool)
+        {
             proj.settings.blend_linear = l;
         }
         use effectcraft_project::{ColorEngine, ColorSpace, HdrMode};
@@ -601,11 +839,17 @@ fn project_settings(s: &mut Session, p: &Value) -> Result<Value> {
             proj.settings.color_engine = engine;
         }
         if let Some(w) = p.get("workingSpace") {
-            let ids = ColorSpace::WORKING.iter().map(|c| c.id()).collect::<Vec<_>>().join("|");
+            let ids = ColorSpace::WORKING
+                .iter()
+                .map(|c| c.id())
+                .collect::<Vec<_>>()
+                .join("|");
             proj.settings.working_space = match w.as_str() {
                 None | Some("none" | "None" | "") => None,
                 Some(n) => Some(
-                    ColorSpace::parse(n).filter(|c| ColorSpace::WORKING.contains(c)).ok_or_else(|| bad(cmd, format!("workingSpace: none|{ids}, not `{n}`")))?,
+                    ColorSpace::parse(n)
+                        .filter(|c| ColorSpace::WORKING.contains(c))
+                        .ok_or_else(|| bad(cmd, format!("workingSpace: none|{ids}, not `{n}`")))?,
                 ),
             };
         }
@@ -617,8 +861,13 @@ fn project_settings(s: &mut Session, p: &Value) -> Result<Value> {
                 _ => return Err(bad(cmd, format!("workingGamma: 2.2|2.4, not `{g}`"))),
             };
         }
-        if proj.settings.color_engine == ColorEngine::Ocio && !proj.settings.working_space.is_some_and(|w| w.is_linear()) {
-            return Err(bad(cmd, "the OCIO built-in config's working spaces are acescg and aces2065"));
+        if proj.settings.color_engine == ColorEngine::Ocio
+            && !proj.settings.working_space.is_some_and(|w| w.is_linear())
+        {
+            return Err(bad(
+                cmd,
+                "the OCIO built-in config's working spaces are acescg and aces2065",
+            ));
         }
         if let Some(h) = str_p(p, "hdr") {
             proj.settings.hdr = match h.to_ascii_lowercase().replace([' ', '-', '_'], "").as_str() {
@@ -631,7 +880,14 @@ fn project_settings(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(o) = p.get("outputSpace") {
             proj.settings.output_space = match o.as_str() {
                 None | Some("none" | "None" | "" | "default") => None,
-                Some(n) => Some(ColorSpace::parse(n).ok_or_else(|| bad(cmd, format!("outputSpace: srgb|rec709|rec2020|p3|rec2100pq|rec2100hlg, not `{n}`")))?),
+                Some(n) => Some(ColorSpace::parse(n).ok_or_else(|| {
+                    bad(
+                        cmd,
+                        format!(
+                            "outputSpace: srgb|rec709|rec2020|p3|rec2100pq|rec2100hlg, not `{n}`"
+                        ),
+                    )
+                })?),
             };
         }
         if let Some(r) = p.get("renderer").or_else(|| p.get("gpuAcceleration")) {
@@ -640,14 +896,24 @@ fn project_settings(s: &mut Session, p: &Value) -> Result<Value> {
                 Value::String(s) => match effectcraft_render::Backend::parse(s) {
                     Some(effectcraft_render::Backend::Cpu) => false,
                     Some(_) => true,
-                    None => return Err(bad("file.projectSettings", format!("renderer: gpu|software, not `{s}`"))),
+                    None => {
+                        return Err(bad(
+                            "file.projectSettings",
+                            format!("renderer: gpu|software, not `{s}`"),
+                        ));
+                    }
                 },
                 _ => return Err(bad("file.projectSettings", "renderer: gpu|software")),
             };
         }
         if let Some(t) = str_p(p, "timeDisplay") {
             proj.settings.time_display = effectcraft_project::TimeDisplayStyle::parse(t)
-                .ok_or_else(|| bad("file.projectSettings", format!("timeDisplay: timecode|frames|feet35|feet16, not `{t}`")))?;
+                .ok_or_else(|| {
+                    bad(
+                        "file.projectSettings",
+                        format!("timeDisplay: timecode|frames|feet35|feet16, not `{t}`"),
+                    )
+                })?;
         }
         Ok(())
     })?;
@@ -663,7 +929,12 @@ fn render_backend(s: &mut Session, p: &Value) -> Result<Value> {
             Value::String(v) => match effectcraft_render::Backend::parse(v) {
                 Some(effectcraft_render::Backend::Cpu) => false,
                 Some(_) => true,
-                None => return Err(bad("render.backend", format!("backend: gpu|cpu, not `{v}`"))),
+                None => {
+                    return Err(bad(
+                        "render.backend",
+                        format!("backend: gpu|cpu, not `{v}`"),
+                    ));
+                }
             },
             _ => return Err(bad("render.backend", "backend: gpu|cpu")),
         };
@@ -685,7 +956,11 @@ pub fn backend_status(s: &Session) -> Value {
     let why = if !gpu {
         Some("the project's renderer is Mercury Software Only".to_string())
     } else if adapter.is_none() {
-        Some(s.accel_note.clone().unwrap_or_else(|| "no GPU compositor is attached".into()))
+        Some(
+            s.accel_note
+                .clone()
+                .unwrap_or_else(|| "no GPU compositor is attached".into()),
+        )
     } else {
         None
     };
@@ -708,13 +983,69 @@ fn cycle_depth(s: &mut Session, _: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("file.newProject", "New Project", ["File", "New"], Some("Cmd+Alt+N"), "{}", always, new_project),
-        cmd!("file.openDemoProject", "Open Demo Project", ["Help"], None, "{}", always, demo),
-        cmd!("file.open", "Open Project...", ["File"], Some("Cmd+O"), "{path}", always, open),
-        cmd!("file.save", "Save", ["File"], Some("Cmd+S"), "{path?}", always, save),
-        cmd!("file.saveAs", "Save As...", ["File", "Save As"], Some("Cmd+Shift+S"), "{path}", always, save_as),
-        cmd!("file.incrementAndSave", "Increment and Save", ["File"], Some("Cmd+Alt+Shift+S"), "{}", has_path, increment_save),
-        cmd!("file.revert", "Revert", ["File"], None, "{}", has_path, revert),
+        cmd!(
+            "file.newProject",
+            "New Project",
+            ["File", "New"],
+            Some("Cmd+Alt+N"),
+            "{}",
+            always,
+            new_project
+        ),
+        cmd!(
+            "file.openDemoProject",
+            "Open Demo Project",
+            ["Help"],
+            None,
+            "{}",
+            always,
+            demo
+        ),
+        cmd!(
+            "file.open",
+            "Open Project...",
+            ["File"],
+            Some("Cmd+O"),
+            "{path}",
+            always,
+            open
+        ),
+        cmd!(
+            "file.save",
+            "Save",
+            ["File"],
+            Some("Cmd+S"),
+            "{path?}",
+            always,
+            save
+        ),
+        cmd!(
+            "file.saveAs",
+            "Save As...",
+            ["File", "Save As"],
+            Some("Cmd+Shift+S"),
+            "{path}",
+            always,
+            save_as
+        ),
+        cmd!(
+            "file.incrementAndSave",
+            "Increment and Save",
+            ["File"],
+            Some("Cmd+Alt+Shift+S"),
+            "{}",
+            has_path,
+            increment_save
+        ),
+        cmd!(
+            "file.revert",
+            "Revert",
+            ["File"],
+            None,
+            "{}",
+            has_path,
+            revert
+        ),
         cmd!(
             "file.import",
             "File...",
@@ -733,7 +1064,23 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             project_settings
         ),
-        cmd!("file.cycleBitDepth", "Cycle Project Bit Depth", [], None, "{}", always, cycle_depth),
-        cmd!("render.backend", "Video Rendering and Effects", [], None, "{backend?: gpu|cpu}", always, render_backend),
+        cmd!(
+            "file.cycleBitDepth",
+            "Cycle Project Bit Depth",
+            [],
+            None,
+            "{}",
+            always,
+            cycle_depth
+        ),
+        cmd!(
+            "render.backend",
+            "Video Rendering and Effects",
+            [],
+            None,
+            "{backend?: gpu|cpu}",
+            always,
+            render_backend
+        ),
     ]
 }

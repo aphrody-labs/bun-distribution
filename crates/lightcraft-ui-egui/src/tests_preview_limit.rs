@@ -8,7 +8,10 @@ use crate::state::{AppSettings, LOUPE_EDGE_CEILING, PREVIEW_LIMITS, STANDARD_PRE
 const BIG: usize = 16384;
 
 fn with_limit(preview_limit: u32) -> AppSettings {
-    AppSettings { preview_limit, ..Default::default() }
+    AppSettings {
+        preview_limit,
+        ..Default::default()
+    }
 }
 
 // Given a fresh install
@@ -27,15 +30,25 @@ fn automatic_renders_a_one_to_one_view_at_native_size() {
 // Given Automatic, a Retina fit view of 3024 px is not held to the old 2560 px cap
 #[test]
 fn automatic_does_not_cap_a_fit_view_at_the_old_default() {
-    assert_eq!(with_limit(0).loupe_edge(3024.0, 6000, BIG), 3072, "rounded up to the next 64 px step");
+    assert_eq!(
+        with_limit(0).loupe_edge(3024.0, 6000, BIG),
+        3072,
+        "rounded up to the next 64 px step"
+    );
 }
 
 // Dragging a window edge must not re-render (and re-key the caches) on every pixel
 #[test]
 fn render_sizes_move_in_steps() {
     let s = with_limit(0);
-    assert_eq!(s.loupe_edge(2945.0, 6000, BIG), s.loupe_edge(3008.0, 6000, BIG));
-    assert_ne!(s.loupe_edge(3008.0, 6000, BIG), s.loupe_edge(3009.0, 6000, BIG));
+    assert_eq!(
+        s.loupe_edge(2945.0, 6000, BIG),
+        s.loupe_edge(3008.0, 6000, BIG)
+    );
+    assert_ne!(
+        s.loupe_edge(3008.0, 6000, BIG),
+        s.loupe_edge(3009.0, 6000, BIG)
+    );
 }
 
 // Neighbour prefetch and hover / before stand-ins stay at the preview level: a full-size decode
@@ -45,10 +58,20 @@ fn prefetch_and_stand_ins_never_ask_for_the_full_source_level() {
     use lightcraft_engine::SourceLevel;
     let s = with_limit(0);
     for wanted in [1000.0, 2560.0, 3024.0, 6000.0, 48000.0] {
-        assert!(s.prefetch_edge(wanted, 6000, BIG) <= SourceLevel::Preview.max_edge(), "{wanted}");
-        assert!(s.stand_in_edge(s.loupe_edge(wanted, 6000, BIG), BIG) <= SourceLevel::Preview.max_edge());
+        assert!(
+            s.prefetch_edge(wanted, 6000, BIG) <= SourceLevel::Preview.max_edge(),
+            "{wanted}"
+        );
+        assert!(
+            s.stand_in_edge(s.loupe_edge(wanted, 6000, BIG), BIG)
+                <= SourceLevel::Preview.max_edge()
+        );
     }
-    assert_eq!(s.prefetch_edge(1000.0, 6000, BIG), 1024, "a small view is not raised");
+    assert_eq!(
+        s.prefetch_edge(1000.0, 6000, BIG),
+        1024,
+        "a small view is not raised"
+    );
 }
 
 // Given Automatic, a small photo zoomed far in is not rendered above its own pixels
@@ -60,14 +83,21 @@ fn never_renders_above_the_photos_own_pixels() {
 // Given Automatic, a huge zoom on a huge photo stays under the memory/GPU ceiling
 #[test]
 fn automatic_is_bounded_by_the_ceiling() {
-    assert_eq!(with_limit(0).loupe_edge(48000.0, 12000, BIG), LOUPE_EDGE_CEILING as usize);
+    assert_eq!(
+        with_limit(0).loupe_edge(48000.0, 12000, BIG),
+        LOUPE_EDGE_CEILING as usize
+    );
 }
 
 // Given the user chose 1600 px, the render never exceeds it
 #[test]
 fn an_explicit_limit_caps_the_render() {
     assert_eq!(with_limit(1600).loupe_edge(6000.0, 6000, BIG), 1600);
-    assert_eq!(with_limit(1600).loupe_edge(900.0, 6000, BIG), 960, "and does not raise a small view past its step");
+    assert_eq!(
+        with_limit(1600).loupe_edge(900.0, 6000, BIG),
+        960,
+        "and does not raise a small view past its step"
+    );
 }
 
 // Given a browser whose GPU allows 2048 px textures (egui_glow panics on a bigger one), no render
@@ -102,10 +132,19 @@ fn degenerate_inputs_give_a_usable_size() {
     let s = with_limit(0);
     for wanted in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -5.0, 0.0] {
         let e = s.loupe_edge(wanted, 6000, BIG);
-        assert!((8..=LOUPE_EDGE_CEILING as usize).contains(&e), "{wanted}: {e}");
+        assert!(
+            (8..=LOUPE_EDGE_CEILING as usize).contains(&e),
+            "{wanted}: {e}"
+        );
     }
-    assert!((8..=LOUPE_EDGE_CEILING as usize).contains(&s.loupe_edge(1000.0, 0, BIG)) && s.prefetch_edge(f32::NAN, 0, BIG) >= 8);
-    assert!(with_limit(7).loupe_edge(1000.0, 6000, BIG) >= 8, "a corrupt limit is clamped");
+    assert!(
+        (8..=LOUPE_EDGE_CEILING as usize).contains(&s.loupe_edge(1000.0, 0, BIG))
+            && s.prefetch_edge(f32::NAN, 0, BIG) >= 8
+    );
+    assert!(
+        with_limit(7).loupe_edge(1000.0, 6000, BIG) >= 8,
+        "a corrupt limit is clamped"
+    );
 }
 
 // Build Standard-Sized Previews needs a number even when the limit is Automatic
@@ -128,7 +167,9 @@ fn an_old_saved_preview_edge_does_not_pin_the_cap() {
 fn saved_limits_round_trip_and_unknown_ones_are_reset() {
     let mut ui = crate::UiState::default();
     ui.settings.preview_limit = 3840;
-    let back = serde_json::from_str::<crate::UiState>(&serde_json::to_string(&ui).unwrap()).unwrap().sanitized();
+    let back = serde_json::from_str::<crate::UiState>(&serde_json::to_string(&ui).unwrap())
+        .unwrap()
+        .sanitized();
     assert_eq!(back.settings.preview_limit, 3840);
     ui.settings.preview_limit = 123;
     assert_eq!(ui.sanitized().settings.preview_limit, 0);
@@ -154,22 +195,39 @@ mod in_the_loupe {
     }
 
     fn detail_in(size: [f32; 2]) -> (Headless, usize) {
-        let services = Services { png: None, ..Default::default() };
+        let services = Services {
+            png: None,
+            ..Default::default()
+        };
         let app = LightcraftApp::new(lightcraft_engine::Session::with_demo(), services);
         let mut h = Headless::new(app, size, 1.0);
-        let r = h.request("ui.set", json!({"view": "detail", "right": "none", "filmstrip": false}), T);
+        let r = h.request(
+            "ui.set",
+            json!({"view": "detail", "right": "none", "filmstrip": false}),
+            T,
+        );
         assert_eq!(r["ok"], true, "{r}");
         h.settle(SETTLE);
         let native = {
             let id = h.app.session.active().expect("a photo is open");
-            let p = h.app.session.catalog.photo(id).expect("it is in the catalog");
+            let p = h
+                .app
+                .session
+                .catalog
+                .photo(id)
+                .expect("it is in the catalog");
             p.width.max(p.height) as usize
         };
         (h, native)
     }
 
     fn rendered_long_edge(h: &Headless) -> usize {
-        let t = h.app.renderer.textures.get(&Slot::Main).expect("the loupe rendered");
+        let t = h
+            .app
+            .renderer
+            .textures
+            .get(&Slot::Main)
+            .expect("the loupe rendered");
         t.size[0].max(t.size[1])
     }
 
@@ -182,9 +240,16 @@ mod in_the_loupe {
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
         let main = rendered_long_edge(&h);
-        assert!(main <= 2560 && main < native, "native {native}: the whole-frame render is {main}");
+        assert!(
+            main <= 2560 && main < native,
+            "native {native}: the whole-frame render is {main}"
+        );
         let region = h.app.region_view.expect("a window render");
-        assert_eq!(region.full.0.max(region.full.1), native, "the window is cut from the photo's own pixels");
+        assert_eq!(
+            region.full.0.max(region.full.1),
+            native,
+            "the window is cut from the photo's own pixels"
+        );
         let (w, hh) = region_tile(&h).expect("its texture");
         assert!(w >= 1300 && hh >= 700, "it covers the canvas: {w}×{hh}");
     }
@@ -196,8 +261,18 @@ mod in_the_loupe {
     #[test]
     fn a_mask_overlay_at_one_to_one_is_a_window_and_keeps_zoom_and_pan() {
         let (mut h, native) = detail();
-        for (command, params) in [("panel.masking", json!({})), ("mask.add", json!({"kind": "radial", "center": [0.4, 0.5], "rx": 0.2, "ry": 0.2}))] {
-            let r = h.request("engine.execute", json!({"command": command, "params": params}), T);
+        for (command, params) in [
+            ("panel.masking", json!({})),
+            (
+                "mask.add",
+                json!({"kind": "radial", "center": [0.4, 0.5], "rx": 0.2, "ry": 0.2}),
+            ),
+        ] {
+            let r = h.request(
+                "engine.execute",
+                json!({"command": command, "params": params}),
+                T,
+            );
             assert_eq!(r["ok"], true, "{command}: {r}");
         }
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
@@ -206,40 +281,82 @@ mod in_the_loupe {
         h.settle(SETTLE);
         let (zoom, pan) = (h.app.ui.zoom, h.app.ui.pan);
         assert_eq!(zoom, crate::state::Zoom::Percent(100.0));
-        let plain = h.app.region_view.expect("a window render without the overlay");
+        let plain = h
+            .app
+            .region_view
+            .expect("a window render without the overlay");
 
         h.app.ui.mask_overlay = true;
         h.settle(SETTLE);
         let id = h.app.session.active().expect("a photo");
         let d = h.app.session.develop_of(id).expect("settings");
-        assert!(matches!(crate::panels::detail::view_overlay(&h.app, &d), lightcraft_pipeline::Overlay::Mask { .. }), "the mask overlay is shown");
-        assert_eq!((h.app.ui.zoom, h.app.ui.pan), (zoom, pan), "showing the overlay keeps zoom and pan");
+        assert!(
+            matches!(
+                crate::panels::detail::view_overlay(&h.app, &d),
+                lightcraft_pipeline::Overlay::Mask { .. }
+            ),
+            "the mask overlay is shown"
+        );
+        assert_eq!(
+            (h.app.ui.zoom, h.app.ui.pan),
+            (zoom, pan),
+            "showing the overlay keeps zoom and pan"
+        );
         let main = rendered_long_edge(&h);
-        assert!(main <= 2560 && main < native, "native {native}: the whole-frame render is {main}");
+        assert!(
+            main <= 2560 && main < native,
+            "native {native}: the whole-frame render is {main}"
+        );
         let shown = h.app.region_view.expect("a window render with the overlay");
-        assert_eq!(shown.full.0.max(shown.full.1), native, "cut from the photo's own pixels");
+        assert_eq!(
+            shown.full.0.max(shown.full.1),
+            native,
+            "cut from the photo's own pixels"
+        );
         assert_eq!(shown.window, plain.window, "the same part of the photo");
-        assert_ne!(shown.settings, plain.settings, "the overlay is part of the window's look");
+        assert_ne!(
+            shown.settings, plain.settings,
+            "the overlay is part of the window's look"
+        );
 
         h.app.ui.mask_overlay = false;
         h.settle(SETTLE);
-        assert_eq!((h.app.ui.zoom, h.app.ui.pan), (zoom, pan), "hiding it keeps them too");
-        assert_eq!(h.app.region_view.map(|r| r.settings), Some(plain.settings), "back to the plain window");
+        assert_eq!(
+            (h.app.ui.zoom, h.app.ui.pan),
+            (zoom, pan),
+            "hiding it keeps them too"
+        );
+        assert_eq!(
+            h.app.region_view.map(|r| r.settings),
+            Some(plain.settings),
+            "back to the plain window"
+        );
     }
 
     // Given the user capped the preview at 1600 px, then 1:1 is rendered no larger than that
     #[test]
     fn an_explicit_limit_still_caps_one_to_one() {
         let (mut h, native) = detail();
-        assert!(native > 1600, "the demo photo must be larger than the cap for this to mean anything (is {native})");
+        assert!(
+            native > 1600,
+            "the demo photo must be larger than the cap for this to mean anything (is {native})"
+        );
         h.app.ui.settings.preview_limit = 1600;
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        assert!(rendered_long_edge(&h) <= 1600, "rendered {}", rendered_long_edge(&h));
+        assert!(
+            rendered_long_edge(&h) <= 1600,
+            "rendered {}",
+            rendered_long_edge(&h)
+        );
     }
 
     fn region_tile(h: &Headless) -> Option<(usize, usize)> {
-        h.app.renderer.textures.get(&Slot::Region).map(|t| (t.size[0], t.size[1]))
+        h.app
+            .renderer
+            .textures
+            .get(&Slot::Region)
+            .map(|t| (t.size[0], t.size[1]))
     }
 
     // Given a fit view, the whole-frame render is all there is: no second render, no original decoded
@@ -262,8 +379,15 @@ mod in_the_loupe {
         // it covers what is on screen (the 1400×900 window less its chrome), and is not the frame
         assert!(w >= 1300 && hh >= 700, "{w}×{hh}");
         assert!(w < native && hh < native, "{w}×{hh} of a {native} px frame");
-        let region = h.app.region_view.expect("the window is described for the inspector");
-        assert_eq!(region.full.0.max(region.full.1), native, "1:1 means the frame is the photo's own size");
+        let region = h
+            .app
+            .region_view
+            .expect("the window is described for the inspector");
+        assert_eq!(
+            region.full.0.max(region.full.1),
+            native,
+            "1:1 means the frame is the photo's own size"
+        );
     }
 
     // Given 800 % zoom (a frame of 48000 px), the window is rendered and bounded
@@ -273,7 +397,10 @@ mod in_the_loupe {
         h.app.ui.zoom = crate::state::Zoom::Percent(800.0);
         h.settle(SETTLE);
         let (w, hh) = region_tile(&h).expect("a window render");
-        assert!(w.max(hh) <= crate::region::MAX_SPAN && w < native * 8 / 2, "{w}×{hh}");
+        assert!(
+            w.max(hh) <= crate::region::MAX_SPAN && w < native * 8 / 2,
+            "{w}×{hh}"
+        );
         // …and panning far away asks for another window
         let before = h.app.region_view.unwrap().window;
         h.app.ui.pan = (0.9, 0.9);
@@ -291,22 +418,46 @@ mod in_the_loupe {
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
         let view = h.app.region_view.expect("a window render");
-        let tile = h.app.renderer.textures.get(&Slot::Region).and_then(|t| t.pixels.clone()).expect("tile pixels");
-        let main = h.app.renderer.textures.get(&Slot::Main).and_then(|t| t.pixels.clone()).expect("main pixels");
+        let tile = h
+            .app
+            .renderer
+            .textures
+            .get(&Slot::Region)
+            .and_then(|t| t.pixels.clone())
+            .expect("tile pixels");
+        let main = h
+            .app
+            .renderer
+            .textures
+            .get(&Slot::Main)
+            .and_then(|t| t.pixels.clone())
+            .expect("main pixels");
         let (mut sum, mut n) = (0.0f32, 0.0f32);
         for j in (8..tile.size[1] - 8).step_by(37) {
             for i in (8..tile.size[0] - 8).step_by(37) {
                 // the same point of the frame in the whole-frame render
                 let u = (view.window.x + i) as f32 / view.full.0 as f32;
                 let v = (view.window.y + j) as f32 / view.full.1 as f32;
-                let (mx, my) =
-                    (((u * main.size[0] as f32) as usize).min(main.size[0] - 1), ((v * main.size[1] as f32) as usize).min(main.size[1] - 1));
-                let (a, b) = (tile.pixels[j * tile.size[0] + i], main.pixels[my * main.size[0] + mx]);
-                sum += (0..3).map(|k| (a.to_array()[k] as f32 - b.to_array()[k] as f32).abs()).sum::<f32>() / 3.0;
+                let (mx, my) = (
+                    ((u * main.size[0] as f32) as usize).min(main.size[0] - 1),
+                    ((v * main.size[1] as f32) as usize).min(main.size[1] - 1),
+                );
+                let (a, b) = (
+                    tile.pixels[j * tile.size[0] + i],
+                    main.pixels[my * main.size[0] + mx],
+                );
+                sum += (0..3)
+                    .map(|k| (a.to_array()[k] as f32 - b.to_array()[k] as f32).abs())
+                    .sum::<f32>()
+                    / 3.0;
                 n += 1.0;
             }
         }
-        assert!(sum / n < 6.0, "mean difference {:.2} / 255 between the window and the frame render", sum / n);
+        assert!(
+            sum / n < 6.0,
+            "mean difference {:.2} / 255 between the window and the frame render",
+            sum / n
+        );
     }
 
     // Given a Fit view, a slider drag (whose Main draft is at 0.6 scale) does not start window renders
@@ -346,7 +497,10 @@ mod in_the_loupe {
         assert!(tile(&h, Slot::Region).is_some() && tile(&h, Slot::RegionBefore).is_some());
         h.request("ui.set", json!({"view": "photoGrid"}), T);
         h.step();
-        assert_eq!((tile(&h, Slot::Region), tile(&h, Slot::RegionBefore)), (None, None));
+        assert_eq!(
+            (tile(&h, Slot::Region), tile(&h, Slot::RegionBefore)),
+            (None, None)
+        );
         assert_eq!((h.app.region_view, h.app.region_before_view), (None, None));
     }
 
@@ -364,7 +518,11 @@ mod in_the_loupe {
         let second = h.app.region_view.expect("a window");
         assert_ne!(first.settings, second.settings);
         assert_ne!(first.key, second.key);
-        assert_eq!(h.app.renderer.textures.get(&Slot::Region).map(|t| t.key), Some(second.key), "the new window arrived");
+        assert_eq!(
+            h.app.renderer.textures.get(&Slot::Region).map(|t| t.key),
+            Some(second.key),
+            "the new window arrived"
+        );
     }
 
     // Given a photo with spot removal, a zoomed view still gets its sharp window
@@ -394,14 +552,27 @@ mod in_the_loupe {
         h.max_texture_side = 2048;
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        for zoom in [crate::state::Zoom::Fit, crate::state::Zoom::Percent(100.0), crate::state::Zoom::Percent(800.0)] {
+        for zoom in [
+            crate::state::Zoom::Fit,
+            crate::state::Zoom::Percent(100.0),
+            crate::state::Zoom::Percent(800.0),
+        ] {
             h.app.ui.zoom = zoom;
             h.settle(SETTLE);
             for (slot, t) in &h.app.renderer.textures {
-                assert!(t.size[0] <= 2048 && t.size[1] <= 2048, "{zoom:?} {slot:?}: {}×{}", t.size[0], t.size[1]);
+                assert!(
+                    t.size[0] <= 2048 && t.size[1] <= 2048,
+                    "{zoom:?} {slot:?}: {}×{}",
+                    t.size[0],
+                    t.size[1]
+                );
             }
             let main = h.app.renderer.textures.get(&Slot::Main).expect("loupe");
-            assert!(main.size[0].max(main.size[1]) >= 700, "still a real render, not a thumbnail: {:?}", main.size);
+            assert!(
+                main.size[0].max(main.size[1]) >= 700,
+                "still a real render, not a thumbnail: {:?}",
+                main.size
+            );
         }
     }
 
@@ -411,7 +582,10 @@ mod in_the_loupe {
     #[test]
     fn a_window_covers_a_canvas_wider_than_2048_px() {
         let (mut h, native) = detail_in([2600.0, 1200.0]);
-        assert!(native > 2600, "the photo is wider than the canvas at 1:1: {native}");
+        assert!(
+            native > 2600,
+            "the photo is wider than the canvas at 1:1: {native}"
+        );
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
         let canvas = h.app.canvas_rect.expect("the loupe was drawn");
@@ -419,10 +593,22 @@ mod in_the_loupe {
         let region = h.app.region_view.expect("a window");
         // the canvas in pixels of the window's frame (scale 1, at 100 %: a point is a pixel)
         let to_px = region.full.0 as f32 / image.width();
-        let (left, right) = (to_px * (canvas.left() - image.left()), to_px * (canvas.right() - image.left()));
-        assert!(right - left > 2048.0, "the canvas shows more than 2048 px: {left}..{right}");
-        let (x0, x1) = (region.window.x as f32, (region.window.x + region.window.w) as f32);
-        assert!(x0 <= left + 0.5 && x1 >= right - 0.5, "the window {x0}..{x1} leaves part of the canvas {left}..{right} to the preview");
+        let (left, right) = (
+            to_px * (canvas.left() - image.left()),
+            to_px * (canvas.right() - image.left()),
+        );
+        assert!(
+            right - left > 2048.0,
+            "the canvas shows more than 2048 px: {left}..{right}"
+        );
+        let (x0, x1) = (
+            region.window.x as f32,
+            (region.window.x + region.window.w) as f32,
+        );
+        assert!(
+            x0 <= left + 0.5 && x1 >= right - 0.5,
+            "the window {x0}..{x1} leaves part of the canvas {left}..{right} to the preview"
+        );
         let (w, _) = region_tile(&h).expect("the window rendered");
         assert_eq!(w, region.window.w, "and that is the texture drawn");
     }
@@ -438,15 +624,29 @@ mod in_the_loupe {
         h.request("engine.execute", json!({"command": "develop.set", "params": {"control": "light.exposure", "value": 0.5}}), T);
         h.settle(SETTLE);
         let main = rendered_long_edge(&h);
-        assert!(main <= 1000 && main * 4 < native, "the whole-frame draft is {main} px for a {native} px photo");
+        assert!(
+            main <= 1000 && main * 4 < native,
+            "the whole-frame draft is {main} px for a {native} px photo"
+        );
         let region = h.app.region_view.expect("the window is drafted too");
-        assert_eq!(region.full.0.max(region.full.1), native, "at 100 %, magnified by the GPU");
+        assert_eq!(
+            region.full.0.max(region.full.1),
+            native,
+            "at 100 %, magnified by the GPU"
+        );
         let (w, hh) = region_tile(&h).expect("a window draft");
-        assert!(w * hh <= 3_000_000, "{w}×{hh}: the window holds what is on screen, not the frame");
+        assert!(
+            w * hh <= 3_000_000,
+            "{w}×{hh}: the window holds what is on screen, not the frame"
+        );
     }
 
     fn tile(h: &Headless, slot: Slot) -> Option<(usize, usize)> {
-        h.app.renderer.textures.get(&slot).map(|t| (t.size[0], t.size[1]))
+        h.app
+            .renderer
+            .textures
+            .get(&slot)
+            .map(|t| (t.size[0], t.size[1]))
     }
 
     // Given Before/After side by side at 1:1, both sides are sharp windows of the same frame: the
@@ -457,14 +657,23 @@ mod in_the_loupe {
         h.app.ui.before_after = crate::state::BeforeAfter::SideBySide;
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        let (after, before) = (h.app.region_view.expect("After window"), h.app.region_before_view.expect("Before window"));
+        let (after, before) = (
+            h.app.region_view.expect("After window"),
+            h.app.region_before_view.expect("Before window"),
+        );
         assert_eq!(after.full, before.full, "the same frame");
         assert_eq!(after.full.0.max(after.full.1), native);
-        let (a, b) = (tile(&h, Slot::Region).expect("After tile"), tile(&h, Slot::RegionBefore).expect("Before tile"));
+        let (a, b) = (
+            tile(&h, Slot::Region).expect("After tile"),
+            tile(&h, Slot::RegionBefore).expect("Before tile"),
+        );
         assert_eq!(a, b, "the same window of each");
         let main = h.app.renderer.textures.get(&Slot::Main).unwrap();
         let before_main = h.app.renderer.textures.get(&Slot::Before).unwrap();
-        assert_eq!(main.size, before_main.size, "and the same whole-frame size under them");
+        assert_eq!(
+            main.size, before_main.size,
+            "and the same whole-frame size under them"
+        );
     }
 
     // Given Before/After side by side, when I zoom to 1:1, then one window job decodes the original
@@ -476,17 +685,31 @@ mod in_the_loupe {
         let id = h.app.session.active().expect("a photo is open");
         h.app.ui.before_after = crate::state::BeforeAfter::SideBySide;
         h.app.ui.zoom = crate::state::Zoom::Percent(100.0);
-        let pending = |h: &Headless| [Slot::Region, Slot::RegionBefore].into_iter().filter(|s| h.app.renderer.is_pending(*s)).count();
+        let pending = |h: &Headless| {
+            [Slot::Region, Slot::RegionBefore]
+                .into_iter()
+                .filter(|s| h.app.renderer.is_pending(*s))
+                .count()
+        };
         for _ in 0..100 {
             h.step();
             if pending(&h) > 0 {
                 break;
             }
         }
-        assert!(!h.app.session.media.has_source(id, lightcraft_engine::SourceLevel::Full), "the original is still decoding");
+        assert!(
+            !h.app
+                .session
+                .media
+                .has_source(id, lightcraft_engine::SourceLevel::Full),
+            "the original is still decoding"
+        );
         assert_eq!(pending(&h), 1, "one window job decodes it");
         h.settle(SETTLE);
-        assert!(tile(&h, Slot::Region).is_some() && tile(&h, Slot::RegionBefore).is_some(), "both windows arrived");
+        assert!(
+            tile(&h, Slot::Region).is_some() && tile(&h, Slot::RegionBefore).is_some(),
+            "both windows arrived"
+        );
     }
 
     // Given the Before view alone (\), only the Before gets a window
@@ -508,7 +731,10 @@ mod in_the_loupe {
         h.app.ui.before_after = crate::state::BeforeAfter::Split;
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        assert_eq!(h.app.region_view.map(|v| v.window), h.app.region_before_view.map(|v| v.window));
+        assert_eq!(
+            h.app.region_view.map(|v| v.window),
+            h.app.region_before_view.map(|v| v.window)
+        );
         assert!(tile(&h, Slot::Region).is_some() && tile(&h, Slot::RegionBefore).is_some());
     }
 
@@ -539,14 +765,28 @@ mod in_the_loupe {
             h.request("ui.zoom", json!({"factor": 1.08}), T);
             assert_eq!(h.app.region_view, None, "no window while the pinch runs");
         }
-        assert!(matches!(h.app.ui.zoom, crate::state::Zoom::Percent(p) if p > 100.0), "{:?}", h.app.ui.zoom);
-        assert_eq!(rendered_long_edge(&h), main_at_fit, "the whole-frame render keeps its size");
-        assert!(!h.app.renderer.is_pending(Slot::Region), "no window was asked for during the pinch");
+        assert!(
+            matches!(h.app.ui.zoom, crate::state::Zoom::Percent(p) if p > 100.0),
+            "{:?}",
+            h.app.ui.zoom
+        );
+        assert_eq!(
+            rendered_long_edge(&h),
+            main_at_fit,
+            "the whole-frame render keeps its size"
+        );
+        assert!(
+            !h.app.renderer.is_pending(Slot::Region),
+            "no window was asked for during the pinch"
+        );
         for _ in 0..60 {
             h.step();
         }
         h.settle(SETTLE);
-        let region = h.app.region_view.expect("the window arrives when the pinch is over");
+        let region = h
+            .app
+            .region_view
+            .expect("the window arrives when the pinch is over");
         assert_eq!(region.full.0.max(region.full.1), native);
     }
 
@@ -571,11 +811,19 @@ mod in_the_loupe {
     #[test]
     #[ignore = "a measurement, not a check"]
     fn profile_slider_drag() {
-        for (size, percent) in
-            [([1400.0, 900.0], 0.0), ([1400.0, 900.0], 100.0), ([1400.0, 900.0], 400.0), ([2800.0, 1700.0], 100.0), ([2800.0, 1700.0], 400.0)]
-        {
+        for (size, percent) in [
+            ([1400.0, 900.0], 0.0),
+            ([1400.0, 900.0], 100.0),
+            ([1400.0, 900.0], 400.0),
+            ([2800.0, 1700.0], 100.0),
+            ([2800.0, 1700.0], 400.0),
+        ] {
             let (mut h, native) = detail_in(size);
-            h.app.ui.zoom = if percent == 0.0 { crate::state::Zoom::Fit } else { crate::state::Zoom::Percent(percent) };
+            h.app.ui.zoom = if percent == 0.0 {
+                crate::state::Zoom::Fit
+            } else {
+                crate::state::Zoom::Percent(percent)
+            };
             h.settle(SETTLE);
             h.app.session.begin_interaction("Exposure").unwrap();
             let mut ms = Vec::new();
@@ -588,7 +836,10 @@ mod in_the_loupe {
                 );
                 assert_eq!(r["ok"], true);
                 let mut frames = 0;
-                while (h.app.renderer.is_pending(Slot::Main) || h.app.renderer.is_pending(Slot::Region)) && frames < 2000 {
+                while (h.app.renderer.is_pending(Slot::Main)
+                    || h.app.renderer.is_pending(Slot::Region))
+                    && frames < 2000
+                {
                     h.step();
                     std::thread::sleep(std::time::Duration::from_micros(200));
                     frames += 1;
@@ -608,7 +859,11 @@ mod in_the_loupe {
             );
             eprintln!("        {}", h.app.renderer.memory());
             let job_ms = |slot| h.app.renderer.textures.get(&slot).map_or(0.0, |t| t.ms);
-            eprintln!("        last job times: whole frame {:.1} ms, window {:.1} ms", job_ms(Slot::Main), job_ms(Slot::Region));
+            eprintln!(
+                "        last job times: whole frame {:.1} ms, window {:.1} ms",
+                job_ms(Slot::Main),
+                job_ms(Slot::Region)
+            );
         }
     }
 
@@ -617,20 +872,32 @@ mod in_the_loupe {
     #[test]
     fn a_drag_keeps_the_decoded_original_even_when_every_result_is_superseded() {
         let (mut h, _) = detail();
-        assert_eq!(h.app.session.memory_report().full_source.bytes, 0, "fit needed no original");
+        assert_eq!(
+            h.app.session.memory_report().full_source.bytes,
+            0,
+            "fit needed no original"
+        );
         h.app.ui.zoom = crate::state::Zoom::Percent(400.0);
         h.app.session.begin_interaction("Exposure").unwrap();
         let mut ticks = 0;
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
-        while !h.app.renderer.textures.contains_key(&Slot::Region) && std::time::Instant::now() < deadline {
+        while !h.app.renderer.textures.contains_key(&Slot::Region)
+            && std::time::Instant::now() < deadline
+        {
             let v = (ticks % 40) as f64 * 0.02;
             h.request("engine.execute", json!({"command": "develop.set", "params": {"control": "light.exposure", "value": v}}), T);
             h.step();
             ticks += 1;
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
-        assert!(h.app.renderer.textures.contains_key(&Slot::Region), "a window arrived");
-        assert!(h.app.session.memory_report().full_source.bytes > 0, "the original stayed in the cache while the drag went on");
+        assert!(
+            h.app.renderer.textures.contains_key(&Slot::Region),
+            "a window arrived"
+        );
+        assert!(
+            h.app.session.memory_report().full_source.bytes > 0,
+            "the original stayed in the cache while the drag went on"
+        );
     }
 
     // Given an original bigger than the cache budget (a 64 MP raw's 797 MB exceeds the default
@@ -642,21 +909,32 @@ mod in_the_loupe {
         h.app.session.media.set_budget(16 << 20);
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        assert!(h.app.session.memory_report().full_source.bytes > 16 << 20, "the original stayed over budget");
+        assert!(
+            h.app.session.memory_report().full_source.bytes > 16 << 20,
+            "the original stayed over budget"
+        );
         h.request("ui.set", json!({"view": "photoGrid"}), T);
         h.step();
-        assert_eq!(h.app.session.memory_report().full_source.bytes, 0, "the grid needs no original");
+        assert_eq!(
+            h.app.session.memory_report().full_source.bytes,
+            0,
+            "the grid needs no original"
+        );
     }
 
     /// The meshes the last frame drew with `slot`'s texture: (paint order, clip rect, bounds).
     fn drawn(h: &Headless, slot: Slot) -> Vec<(usize, egui::Rect, egui::Rect)> {
-        let Some(tex) = h.app.renderer.textures.get(&slot) else { return vec![] };
+        let Some(tex) = h.app.renderer.textures.get(&slot) else {
+            return vec![];
+        };
         h.view
             .shapes
             .iter()
             .enumerate()
             .filter_map(|(i, c)| match &c.shape {
-                egui::epaint::Shape::Mesh(m) if m.texture_id == tex.tex.id() => Some((i, c.clip_rect, m.calc_bounds())),
+                egui::epaint::Shape::Mesh(m) if m.texture_id == tex.tex.id() => {
+                    Some((i, c.clip_rect, m.calc_bounds()))
+                }
                 _ => None,
             })
             .collect()
@@ -666,20 +944,37 @@ mod in_the_loupe {
     // stand-in on its side of the line, never under it, and inside its side of the line
     #[test]
     fn a_wipe_paints_the_before_window_over_its_stand_in() {
-        for mode in [crate::state::BeforeAfter::Split, crate::state::BeforeAfter::SplitTopBottom] {
+        for mode in [
+            crate::state::BeforeAfter::Split,
+            crate::state::BeforeAfter::SplitTopBottom,
+        ] {
             let (mut h, _) = detail();
             h.app.ui.before_after = mode;
             h.request("engine.execute", json!({"command": "view.zoom100"}), T);
             h.settle(SETTLE);
             h.step();
             let (stand_in, window) = (drawn(&h, Slot::Before), drawn(&h, Slot::RegionBefore));
-            assert!(!stand_in.is_empty() && !window.is_empty(), "{mode:?}: the stand-in {stand_in:?} and the window {window:?} are both painted");
-            assert!(window[0].0 > stand_in[0].0, "{mode:?}: the Before window is under its stand-in");
+            assert!(
+                !stand_in.is_empty() && !window.is_empty(),
+                "{mode:?}: the stand-in {stand_in:?} and the window {window:?} are both painted"
+            );
+            assert!(
+                window[0].0 > stand_in[0].0,
+                "{mode:?}: the Before window is under its stand-in"
+            );
             let mid = h.app.image_rect.unwrap().center();
             let clip = window[0].1;
             match mode {
-                crate::state::BeforeAfter::Split => assert!(clip.right() <= mid.x + 0.5, "{clip:?} crosses the line at x = {}", mid.x),
-                _ => assert!(clip.bottom() <= mid.y + 0.5, "{clip:?} crosses the line at y = {}", mid.y),
+                crate::state::BeforeAfter::Split => assert!(
+                    clip.right() <= mid.x + 0.5,
+                    "{clip:?} crosses the line at x = {}",
+                    mid.x
+                ),
+                _ => assert!(
+                    clip.bottom() <= mid.y + 0.5,
+                    "{clip:?} crosses the line at y = {}",
+                    mid.y
+                ),
             }
             let after = drawn(&h, Slot::Region);
             assert!(!after.is_empty());
@@ -714,7 +1009,11 @@ mod in_the_loupe {
         let canvas = h.app.canvas_rect.unwrap();
         let window = drawn(&h, Slot::RegionBefore);
         assert!(!window.is_empty());
-        assert!(window[0].1.right() >= canvas.right() - 0.5, "the Before window stops at the wipe line: {:?}", window[0].1);
+        assert!(
+            window[0].1.right() >= canvas.right() - 0.5,
+            "the Before window stops at the wipe line: {:?}",
+            window[0].1
+        );
     }
 
     // Given Before and After side by side at 1:1, each window is painted inside its own pane: its
@@ -729,8 +1028,18 @@ mod in_the_loupe {
         let canvas = h.app.canvas_rect.unwrap();
         let (before, after) = (drawn(&h, Slot::RegionBefore), drawn(&h, Slot::Region));
         assert!(!before.is_empty() && !after.is_empty());
-        assert!(before.iter().all(|(_, clip, _)| clip.right() <= canvas.center().x), "the Before window spills into the After pane: {before:?}");
-        assert!(after.iter().all(|(_, clip, _)| clip.left() >= canvas.center().x), "the After window spills into the Before pane: {after:?}");
+        assert!(
+            before
+                .iter()
+                .all(|(_, clip, _)| clip.right() <= canvas.center().x),
+            "the Before window spills into the After pane: {before:?}"
+        );
+        assert!(
+            after
+                .iter()
+                .all(|(_, clip, _)| clip.left() >= canvas.center().x),
+            "the After window spills into the Before pane: {after:?}"
+        );
     }
 
     // Given a Before and an After with the same look (an unedited photo), both windows are kept
@@ -741,7 +1050,12 @@ mod in_the_loupe {
         h.app.ui.before_after = crate::state::BeforeAfter::SideBySide;
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        assert_eq!(h.app.region_tiles.len(), 2, "{:?}", h.app.region_tiles.keys().collect::<Vec<_>>());
+        assert_eq!(
+            h.app.region_tiles.len(),
+            2,
+            "{:?}",
+            h.app.region_tiles.keys().collect::<Vec<_>>()
+        );
     }
 
     // Given soft proofing at 1:1 (a mode that draws one image, so no window), the whole-frame
@@ -772,7 +1086,10 @@ mod in_the_loupe {
         assert_eq!(rendered_long_edge(&h), native);
         h.request("engine.execute", json!({"command": "develop.set", "params": {"control": "light.exposure", "value": 0.5}}), T);
         h.settle(SETTLE);
-        assert!(h.app.region_view.is_some(), "a new look tries a window again");
+        assert!(
+            h.app.region_view.is_some(),
+            "a new look tries a window again"
+        );
     }
 
     // Given a pinch out from 400 %, the window there is is kept (magnified, then shrunk) until the
@@ -787,7 +1104,11 @@ mod in_the_loupe {
         h.request("ui.move", json!({"x": at.x, "y": at.y}), T);
         for _ in 0..12 {
             h.request("ui.zoom", json!({"factor": 0.9}), T);
-            assert_eq!(h.app.region_view.map(|v| v.key), Some(key), "the window of before the pinch");
+            assert_eq!(
+                h.app.region_view.map(|v| v.key),
+                Some(key),
+                "the window of before the pinch"
+            );
         }
     }
 
@@ -800,7 +1121,8 @@ mod in_the_loupe {
         h.settle(SETTLE);
         let held = |h: &Headless| {
             let m = h.app.renderer.memory();
-            (m["stageCaches"]["gpuBytes"].as_u64().unwrap() + m["stageCaches"]["cpuBytes"].as_u64().unwrap()) as usize
+            (m["stageCaches"]["gpuBytes"].as_u64().unwrap()
+                + m["stageCaches"]["cpuBytes"].as_u64().unwrap()) as usize
         };
         let before = held(&h);
         assert!(before > 3, "the views hold something ({before} bytes)");
@@ -817,11 +1139,23 @@ mod in_the_loupe {
 
     /// Load a Display P3 monitor profile (`app.displayProfile`), as Settings ▸ Display does.
     fn use_display_profile(h: &mut Headless) {
-        let dir = std::env::temp_dir().join(format!("lightcraft-zoom-display-{}-{:?}", std::process::id(), std::thread::current().id()));
+        let dir = std::env::temp_dir().join(format!(
+            "lightcraft-zoom-display-{}-{:?}",
+            std::process::id(),
+            std::thread::current().id()
+        ));
         std::fs::create_dir_all(&dir).expect("temp dir");
         let path = dir.join("p3.icc");
-        std::fs::write(&path, lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3)).expect("profile written");
-        let r = h.request("engine.execute", json!({"command": "app.displayProfile", "params": {"path": path.to_string_lossy()}}), T);
+        std::fs::write(
+            &path,
+            lightcraft_codecs::icc::write_named(lightcraft_codecs::NamedSpace::DisplayP3),
+        )
+        .expect("profile written");
+        let r = h.request(
+            "engine.execute",
+            json!({"command": "app.displayProfile", "params": {"path": path.to_string_lossy()}}),
+            T,
+        );
         assert_eq!(r["ok"], true, "{r}");
         assert!(h.app.renderer.display_id().is_some());
     }
@@ -836,7 +1170,10 @@ mod in_the_loupe {
         use_display_profile(&mut h);
         h.request("engine.execute", json!({"command": "view.zoom100"}), T);
         h.settle(SETTLE);
-        assert!(rendered_long_edge(&h) < native, "the whole frame is smaller than the photo");
+        assert!(
+            rendered_long_edge(&h) < native,
+            "the whole frame is smaller than the photo"
+        );
         let view = h.app.region_view.expect("a window render");
         assert_eq!(view.full.0.max(view.full.1), native);
         let (whole, window) = (drawn(&h, Slot::Main), drawn(&h, Slot::Region));
@@ -855,10 +1192,22 @@ mod in_the_loupe {
         h.app.ui.zoom = crate::state::Zoom::Percent(100.0);
         h.settle(SETTLE);
         for i in 0..2u8 {
-            assert!(h.app.compare_windows[i as usize].is_some(), "pane {i} asked for a window");
-            let (whole, window) = (drawn(&h, Slot::Compare(i)), drawn(&h, Slot::CompareRegion(i)));
-            assert!(!whole.is_empty() && !window.is_empty(), "pane {i}: both are painted");
-            assert!(window[0].0 > whole[0].0, "pane {i}: the window is painted over the whole-frame render");
+            assert!(
+                h.app.compare_windows[i as usize].is_some(),
+                "pane {i} asked for a window"
+            );
+            let (whole, window) = (
+                drawn(&h, Slot::Compare(i)),
+                drawn(&h, Slot::CompareRegion(i)),
+            );
+            assert!(
+                !whole.is_empty() && !window.is_empty(),
+                "pane {i}: both are painted"
+            );
+            assert!(
+                window[0].0 > whole[0].0,
+                "pane {i}: the window is painted over the whole-frame render"
+            );
         }
     }
 
@@ -883,17 +1232,55 @@ mod in_the_loupe {
     #[test]
     fn compare_at_one_to_one_gets_a_sharp_window_per_pane() {
         let h = compare_at(crate::state::Zoom::Percent(100.0));
-        let (sel, cand) = h.app.ui.compare.map(|(a, b)| (lightcraft_catalog::PhotoId(a), lightcraft_catalog::PhotoId(b))).expect("a pair");
+        let (sel, cand) = h
+            .app
+            .ui
+            .compare
+            .map(|(a, b)| {
+                (
+                    lightcraft_catalog::PhotoId(a),
+                    lightcraft_catalog::PhotoId(b),
+                )
+            })
+            .expect("a pair");
         for (i, id) in [(0u8, sel), (1u8, cand)] {
-            let whole = h.app.renderer.textures.get(&Slot::Compare(i)).expect("the whole-frame render");
-            assert!(whole.size[0].max(whole.size[1]) <= 2560, "pane {i}: the whole frame stays small");
-            let w = h.app.compare_windows[i as usize].unwrap_or_else(|| panic!("pane {i} asked for a window"));
+            let whole = h
+                .app
+                .renderer
+                .textures
+                .get(&Slot::Compare(i))
+                .expect("the whole-frame render");
+            assert!(
+                whole.size[0].max(whole.size[1]) <= 2560,
+                "pane {i}: the whole frame stays small"
+            );
+            let w = h.app.compare_windows[i as usize]
+                .unwrap_or_else(|| panic!("pane {i} asked for a window"));
             assert_eq!(w.photo, id);
-            assert_eq!(w.full.0.max(w.full.1), native_of(&h, id), "pane {i}: 1:1 is the photo's own pixels");
-            let tex = h.app.renderer.textures.get(&Slot::CompareRegion(i)).unwrap_or_else(|| panic!("pane {i}: its texture"));
+            assert_eq!(
+                w.full.0.max(w.full.1),
+                native_of(&h, id),
+                "pane {i}: 1:1 is the photo's own pixels"
+            );
+            let tex = h
+                .app
+                .renderer
+                .textures
+                .get(&Slot::CompareRegion(i))
+                .unwrap_or_else(|| panic!("pane {i}: its texture"));
             assert_eq!(tex.photo, id);
-            assert!(tex.size[0] >= 600 && tex.size[1] >= 600, "pane {i}: it covers the pane: {:?}", tex.size);
-            assert!(h.app.session.media.has_source(id, lightcraft_engine::SourceLevel::Full), "pane {i}: both originals stay decoded");
+            assert!(
+                tex.size[0] >= 600 && tex.size[1] >= 600,
+                "pane {i}: it covers the pane: {:?}",
+                tex.size
+            );
+            assert!(
+                h.app
+                    .session
+                    .media
+                    .has_source(id, lightcraft_engine::SourceLevel::Full),
+                "pane {i}: both originals stay decoded"
+            );
         }
     }
 
@@ -902,7 +1289,17 @@ mod in_the_loupe {
     fn compare_at_fit_makes_no_window() {
         let h = compare_at(crate::state::Zoom::Fit);
         assert_eq!(h.app.compare_windows, [None, None]);
-        assert!(!h.app.renderer.textures.contains_key(&Slot::CompareRegion(0)) && !h.app.renderer.textures.contains_key(&Slot::CompareRegion(1)));
+        assert!(
+            !h.app
+                .renderer
+                .textures
+                .contains_key(&Slot::CompareRegion(0))
+                && !h
+                    .app
+                    .renderer
+                    .textures
+                    .contains_key(&Slot::CompareRegion(1))
+        );
     }
 
     // Given Compare at 1:1, when I zoom back to fit or go back to Detail, then the windows' textures
@@ -910,19 +1307,48 @@ mod in_the_loupe {
     #[test]
     fn leaving_a_zoomed_compare_frees_its_windows() {
         let mut h = compare_at(crate::state::Zoom::Percent(100.0));
-        assert!(h.app.renderer.textures.contains_key(&Slot::CompareRegion(1)));
+        assert!(
+            h.app
+                .renderer
+                .textures
+                .contains_key(&Slot::CompareRegion(1))
+        );
         h.app.ui.zoom = crate::state::Zoom::Fit;
         h.settle(SETTLE);
-        assert!(!h.app.renderer.textures.contains_key(&Slot::CompareRegion(1)), "fit: no window");
+        assert!(
+            !h.app
+                .renderer
+                .textures
+                .contains_key(&Slot::CompareRegion(1)),
+            "fit: no window"
+        );
         h.app.ui.zoom = crate::state::Zoom::Percent(100.0);
         h.settle(SETTLE);
-        assert!(h.app.renderer.textures.contains_key(&Slot::CompareRegion(0)));
+        assert!(
+            h.app
+                .renderer
+                .textures
+                .contains_key(&Slot::CompareRegion(0))
+        );
         let r = h.request("ui.set", json!({"view": "detail"}), T);
         assert_eq!(r["ok"], true, "{r}");
         h.settle(SETTLE);
         assert_eq!(h.app.compare_windows, [None, None]);
-        assert!(!h.app.renderer.textures.contains_key(&Slot::CompareRegion(0)) && !h.app.renderer.textures.contains_key(&Slot::CompareRegion(1)));
-        assert!(h.app.session.media.usage().2.count <= 1, "one original in Detail");
+        assert!(
+            !h.app
+                .renderer
+                .textures
+                .contains_key(&Slot::CompareRegion(0))
+                && !h
+                    .app
+                    .renderer
+                    .textures
+                    .contains_key(&Slot::CompareRegion(1))
+        );
+        assert!(
+            h.app.session.media.usage().2.count <= 1,
+            "one original in Detail"
+        );
     }
 
     // A pane's window is drawn where it belongs: its pixels agree with the pane's whole-frame render
@@ -937,28 +1363,68 @@ mod in_the_loupe {
         h.step();
         for i in 0..2u8 {
             let view = h.app.compare_windows[i as usize].expect("a window");
-            let tile = h.app.renderer.textures.get(&Slot::CompareRegion(i)).and_then(|t| t.pixels.clone()).expect("tile pixels");
-            let main = h.app.renderer.textures.get(&Slot::Compare(i)).and_then(|t| t.pixels.clone()).expect("pane pixels");
+            let tile = h
+                .app
+                .renderer
+                .textures
+                .get(&Slot::CompareRegion(i))
+                .and_then(|t| t.pixels.clone())
+                .expect("tile pixels");
+            let main = h
+                .app
+                .renderer
+                .textures
+                .get(&Slot::Compare(i))
+                .and_then(|t| t.pixels.clone())
+                .expect("pane pixels");
             let (mut sum, mut n) = (0.0f32, 0.0f32);
             for j in (8..tile.size[1] - 8).step_by(37) {
                 for x in (8..tile.size[0] - 8).step_by(37) {
                     let u = (view.window.x + x) as f32 / view.full.0 as f32;
                     let v = (view.window.y + j) as f32 / view.full.1 as f32;
-                    let (mx, my) =
-                        (((u * main.size[0] as f32) as usize).min(main.size[0] - 1), ((v * main.size[1] as f32) as usize).min(main.size[1] - 1));
-                    let (a, b) = (tile.pixels[j * tile.size[0] + x], main.pixels[my * main.size[0] + mx]);
-                    sum += (0..3).map(|k| (a.to_array()[k] as f32 - b.to_array()[k] as f32).abs()).sum::<f32>() / 3.0;
+                    let (mx, my) = (
+                        ((u * main.size[0] as f32) as usize).min(main.size[0] - 1),
+                        ((v * main.size[1] as f32) as usize).min(main.size[1] - 1),
+                    );
+                    let (a, b) = (
+                        tile.pixels[j * tile.size[0] + x],
+                        main.pixels[my * main.size[0] + mx],
+                    );
+                    sum += (0..3)
+                        .map(|k| (a.to_array()[k] as f32 - b.to_array()[k] as f32).abs())
+                        .sum::<f32>()
+                        / 3.0;
                     n += 1.0;
                 }
             }
-            assert!(sum / n < 6.0, "pane {i}: mean difference {:.2} / 255 between the window and the pane's render", sum / n);
-            let (whole, window) = (drawn(&h, Slot::Compare(i)), drawn(&h, Slot::CompareRegion(i)));
-            assert!(!whole.is_empty() && !window.is_empty(), "pane {i}: both are painted");
-            assert!(window[0].0 > whole[0].0, "pane {i}: the window is painted over the whole-frame render");
-            assert!(window[0].1.width() < h.size.x * 0.6, "pane {i}: clipped to its pane, {:?}", window[0].1);
+            assert!(
+                sum / n < 6.0,
+                "pane {i}: mean difference {:.2} / 255 between the window and the pane's render",
+                sum / n
+            );
+            let (whole, window) = (
+                drawn(&h, Slot::Compare(i)),
+                drawn(&h, Slot::CompareRegion(i)),
+            );
+            assert!(
+                !whole.is_empty() && !window.is_empty(),
+                "pane {i}: both are painted"
+            );
+            assert!(
+                window[0].0 > whole[0].0,
+                "pane {i}: the window is painted over the whole-frame render"
+            );
+            assert!(
+                window[0].1.width() < h.size.x * 0.6,
+                "pane {i}: clipped to its pane, {:?}",
+                window[0].1
+            );
         }
         // the two panes' clips don't overlap
-        let (a, b) = (drawn(&h, Slot::CompareRegion(0))[0].1, drawn(&h, Slot::CompareRegion(1))[0].1);
+        let (a, b) = (
+            drawn(&h, Slot::CompareRegion(0))[0].1,
+            drawn(&h, Slot::CompareRegion(1))[0].1,
+        );
         assert!(a.right() <= b.left() + 0.5, "{a:?} / {b:?}");
     }
 
@@ -967,7 +1433,11 @@ mod in_the_loupe {
     #[test]
     fn reference_view_at_one_to_one_gets_windows_and_a_drag_keeps_them() {
         let (mut h, _) = detail();
-        let r = h.request("engine.execute", json!({"command": "photo.setReference"}), T);
+        let r = h.request(
+            "engine.execute",
+            json!({"command": "photo.setReference"}),
+            T,
+        );
         assert_eq!(r["ok"], true, "{r}");
         let r = h.request("ui.key", json!({"key": "r", "shift": true}), T);
         assert_eq!(r["ok"], true, "{r}");
@@ -981,7 +1451,11 @@ mod in_the_loupe {
         for _ in 0..5 {
             h.step();
         }
-        assert_eq!(h.app.compare_windows[1], Some(before), "no window per drag tick");
+        assert_eq!(
+            h.app.compare_windows[1],
+            Some(before),
+            "no window per drag tick"
+        );
         assert!(!h.app.renderer.is_pending(Slot::CompareRegion(1)));
         h.app.session.end_interaction().unwrap();
         h.settle(SETTLE);

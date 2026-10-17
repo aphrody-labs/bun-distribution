@@ -7,13 +7,23 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).parent().map(Path::to_path_buf).unwrap_or_else(|| PathBuf::from("."))
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| PathBuf::from("."))
 }
 
 fn cargo(args: &[&str]) -> Result<(), String> {
-    let st =
-        Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into())).args(args).current_dir(root()).status().map_err(|e| e.to_string())?;
-    if st.success() { Ok(()) } else { Err(format!("cargo {} failed", args.join(" "))) }
+    let st = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
+        .args(args)
+        .current_dir(root())
+        .status()
+        .map_err(|e| e.to_string())?;
+    if st.success() {
+        Ok(())
+    } else {
+        Err(format!("cargo {} failed", args.join(" ")))
+    }
 }
 
 /// Layer table: crate name (minus `soundcraft-`) → layer. Apps and xtask are exempt.
@@ -35,12 +45,24 @@ const LAYERS: &[(&str, u8)] = &[
 ];
 /// Standalone format crates: no workspace dependencies at all (publishable on their own).
 const STANDALONE: &[&str] = &["time", "audio-io", "midi", "video", "dsp"];
-const UI_CRATES: &[&str] = &["craft-ui", "egui", "eframe", "winit", "egui_kittest", "rfd", "egui-wgpu", "egui_glow"];
+const UI_CRATES: &[&str] = &[
+    "craft-ui",
+    "egui",
+    "eframe",
+    "winit",
+    "egui_kittest",
+    "rfd",
+    "egui-wgpu",
+    "egui_glow",
+];
 const EXEMPT: &[&str] = &["soundcraft", "soundcraft-cli", "soundcraft-web", "xtask"];
 
 fn layers() -> Result<(), String> {
-    let out =
-        Command::new("cargo").args(["metadata", "--format-version", "1", "--no-deps"]).current_dir(root()).output().map_err(|e| e.to_string())?;
+    let out = Command::new("cargo")
+        .args(["metadata", "--format-version", "1", "--no-deps"])
+        .current_dir(root())
+        .output()
+        .map_err(|e| e.to_string())?;
     let v: serde_json::Value = serde_json::from_slice(&out.stdout).map_err(|e| e.to_string())?;
     let mut problems = Vec::new();
     for p in v["packages"].as_array().cloned().unwrap_or_default() {
@@ -80,8 +102,10 @@ fn layers() -> Result<(), String> {
     }
 }
 
-const ASSET_EXT: &[&str] =
-    &["png", "jpg", "jpeg", "svg", "ico", "icns", "ttf", "otf", "ttc", "woff", "woff2", "wav", "aif", "aiff", "flac", "mp3", "ogg", "gif", "webp"];
+const ASSET_EXT: &[&str] = &[
+    "png", "jpg", "jpeg", "svg", "ico", "icns", "ttf", "otf", "ttc", "woff", "woff2", "wav", "aif",
+    "aiff", "flac", "mp3", "ogg", "gif", "webp",
+];
 
 fn assets() -> Result<(), String> {
     let out = Command::new("git")
@@ -90,16 +114,23 @@ fn assets() -> Result<(), String> {
         .output()
         .map_err(|e| e.to_string())?;
     let files = String::from_utf8_lossy(&out.stdout).to_string();
-    let attribution = std::fs::read_to_string(root().join("ATTRIBUTION.md")).map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
+    let attribution = std::fs::read_to_string(root().join("ATTRIBUTION.md"))
+        .map_err(|e| format!("ATTRIBUTION.md: {e}"))?;
     let mut missing = Vec::new();
     for f in files.lines() {
-        let ext = Path::new(f).extension().and_then(|x| x.to_str()).unwrap_or("").to_ascii_lowercase();
+        let ext = Path::new(f)
+            .extension()
+            .and_then(|x| x.to_str())
+            .unwrap_or("")
+            .to_ascii_lowercase();
         if !ASSET_EXT.contains(&ext.as_str()) {
             continue;
         }
         // Generated icon trees are covered by their directory row.
         let covered = attribution.contains(&format!("`{f}`"))
-            || Path::new(f).ancestors().skip(1).any(|a| !a.as_os_str().is_empty() && attribution.contains(&format!("`{}/`", a.display())));
+            || Path::new(f).ancestors().skip(1).any(|a| {
+                !a.as_os_str().is_empty() && attribution.contains(&format!("`{}/`", a.display()))
+            });
         if !covered {
             missing.push(f.to_string());
         }
@@ -108,12 +139,24 @@ fn assets() -> Result<(), String> {
         println!("assets: ok");
         Ok(())
     } else {
-        Err(format!("assets without an ATTRIBUTION.md row:\n  {}", missing.join("\n  ")))
+        Err(format!(
+            "assets without an ATTRIBUTION.md row:\n  {}",
+            missing.join("\n  ")
+        ))
     }
 }
 
 fn parity() -> Result<(), String> {
-    cargo(&["run", "-q", "-p", "soundcraft-cli", "--", "parity", "--write", "docs/parity-checklist.md"])
+    cargo(&[
+        "run",
+        "-q",
+        "-p",
+        "soundcraft-cli",
+        "--",
+        "parity",
+        "--write",
+        "docs/parity-checklist.md",
+    ])
 }
 
 /// Crates that must compile for the web.
@@ -146,8 +189,23 @@ fn wasm() -> Result<(), String> {
 
 fn ci() -> Result<(), String> {
     let steps: Vec<(&str, Box<dyn Fn() -> Result<(), String>>)> = vec![
-        ("fmt", Box::new(|| cargo(&["fmt", "--all", "--", "--check"]))),
-        ("clippy", Box::new(|| cargo(&["clippy", "--workspace", "--all-targets", "--", "-D", "warnings"]))),
+        (
+            "fmt",
+            Box::new(|| cargo(&["fmt", "--all", "--", "--check"])),
+        ),
+        (
+            "clippy",
+            Box::new(|| {
+                cargo(&[
+                    "clippy",
+                    "--workspace",
+                    "--all-targets",
+                    "--",
+                    "-D",
+                    "warnings",
+                ])
+            }),
+        ),
         ("test", Box::new(|| cargo(&["test", "--workspace"]))),
         ("assets", Box::new(assets)),
         ("layers", Box::new(layers)),

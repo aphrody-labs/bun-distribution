@@ -74,7 +74,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
 
     let mut fichiers: Vec<String> = vfs
@@ -138,8 +138,12 @@ fn main() {
         };
         for liste in cfgbin::read_values(&rdbn, &data) {
             for (i, row) in liste.rows.iter().enumerate() {
-                let champs: Vec<&String> =
-                    row.fields.iter().filter(|(_, v)| porte(v, cible)).map(|(k, _)| k).collect();
+                let champs: Vec<&String> = row
+                    .fields
+                    .iter()
+                    .filter(|(_, v)| porte(v, cible))
+                    .map(|(k, _)| k)
+                    .collect();
                 if champs.is_empty() {
                     continue;
                 }
@@ -151,10 +155,17 @@ fn main() {
                     "{}\n  {} [{i}] · champ(s) {}",
                     chemin.trim_start_matches(&prefixe),
                     liste.name,
-                    champs.iter().map(|c| c.as_str()).collect::<Vec<_>>().join(", ")
+                    champs
+                        .iter()
+                        .map(|c| c.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 );
-                let corps: Vec<String> =
-                    row.fields.iter().map(|(k, v)| format!("{k}={}", court(v))).collect();
+                let corps: Vec<String> = row
+                    .fields
+                    .iter()
+                    .map(|(k, v)| format!("{k}={}", court(v)))
+                    .collect();
                 println!("    {}\n", corps.join("  "));
             }
         }

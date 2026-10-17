@@ -29,14 +29,21 @@ pub struct Selection {
 
 impl Selection {
     pub fn caret(p: Pos) -> Self {
-        Selection { anchor: p.clone(), focus: p }
+        Selection {
+            anchor: p.clone(),
+            focus: p,
+        }
     }
     pub fn is_collapsed(&self) -> bool {
         self.anchor == self.focus
     }
     /// (start, end) in document order.
     pub fn ordered(&self) -> (Pos, Pos) {
-        if self.anchor <= self.focus { (self.anchor.clone(), self.focus.clone()) } else { (self.focus.clone(), self.anchor.clone()) }
+        if self.anchor <= self.focus {
+            (self.anchor.clone(), self.focus.clone())
+        } else {
+            (self.focus.clone(), self.anchor.clone())
+        }
     }
 }
 
@@ -75,7 +82,13 @@ impl CellRange {
     pub fn cells(&self, t: &Table) -> Vec<(usize, usize)> {
         let ((r0, r1), (g0, g1)) = (self.rows, self.cols);
         let mut out = Vec::new();
-        for (r, row) in t.rows.iter().enumerate().take(r1.saturating_add(1)).skip(r0) {
+        for (r, row) in t
+            .rows
+            .iter()
+            .enumerate()
+            .take(r1.saturating_add(1))
+            .skip(r0)
+        {
             let mut g = 0usize;
             for (c, cell) in row.cells.iter().enumerate() {
                 let end = g.saturating_add(cell.span());
@@ -537,7 +550,12 @@ impl Prefs {
 /// The citation style a document records (References › Style), APA when it records none or
 /// one we don't know.
 fn doc_bib_style(doc: &Document) -> String {
-    doc.settings.bib_style.as_deref().and_then(crate::cmd::citations::find_style).map_or("APA", |st| st.name).to_string()
+    doc.settings
+        .bib_style
+        .as_deref()
+        .and_then(crate::cmd::citations::find_style)
+        .map_or("APA", |st| st.name)
+        .to_string()
 }
 
 /// Maximum undo depth.
@@ -644,7 +662,9 @@ impl Session {
         for _ in 0..n {
             let i = n - 1 - self.go_back_step % n;
             self.go_back_step = self.go_back_step.wrapping_add(1);
-            let Some(p) = self.edit_marks.get(i) else { continue };
+            let Some(p) = self.edit_marks.get(i) else {
+                continue;
+            };
             let p = self.doc.clamp(p);
             if p != self.sel.focus || n == 1 {
                 return Some(p);
@@ -657,19 +677,28 @@ impl Session {
     /// moved since the block was made).
     pub fn column_segments(&self) -> Option<&[(Pos, Pos)]> {
         // Cells that are one run of the text are an ordinary stream selection.
-        self.column.as_ref().filter(|c| c.sel == self.sel && !c.cells.as_ref().is_some_and(|r| r.stream)).map(|c| c.segments.as_slice())
+        self.column
+            .as_ref()
+            .filter(|c| c.sel == self.sel && !c.cells.as_ref().is_some_and(|r| r.stream))
+            .map(|c| c.segments.as_slice())
     }
 
     /// The whole table cells selected, if the selection is that (see [`CellRange`]).
     pub fn cell_range(&self) -> Option<&CellRange> {
-        self.column.as_ref().filter(|c| c.sel == self.sel).and_then(|c| c.cells.as_ref())
+        self.column
+            .as_ref()
+            .filter(|c| c.sel == self.sel)
+            .and_then(|c| c.cells.as_ref())
     }
 
     /// The selection as it was made: where a drag, Shift+click or Shift+arrows started and where
     /// the caret went, even when Word's table rule widened it to whole cells or rows (`sel` holds
     /// those).
     pub fn sel_ends(&self) -> &Selection {
-        self.widened.as_ref().filter(|w| w.sel == self.sel).map_or(&self.sel, |w| &w.ends)
+        self.widened
+            .as_ref()
+            .filter(|w| w.sel == self.sel)
+            .map_or(&self.sel, |w| &w.ends)
     }
 
     /// Document revision (bumped by every change).
@@ -690,11 +719,20 @@ impl Session {
         if !self.find.highlight {
             return &[];
         }
-        if self.find.highlights.as_ref().is_none_or(|(r, _)| *r != self.rev) {
+        if self
+            .find
+            .highlights
+            .as_ref()
+            .is_none_or(|(r, _)| *r != self.rev)
+        {
             let found = crate::cmd::edit::search(self, StoryRef::Body).unwrap_or_default();
             self.find.highlights = Some((self.rev, found));
         }
-        self.find.highlights.as_ref().map(|(_, v)| v.as_slice()).unwrap_or(&[])
+        self.find
+            .highlights
+            .as_ref()
+            .map(|(_, v)| v.as_slice())
+            .unwrap_or(&[])
     }
 
     /// Whether the markup area beside the page can show balloons: markup shown in Print Layout
@@ -715,21 +753,46 @@ impl Session {
     /// as in Word; so do deletions in headers, footers, notes and text boxes, which get no balloons.
     pub fn revisions_in_balloons(&self) -> bool {
         let m = &self.prefs.markup;
-        self.balloons_shown() && m.balloons == wordcraft_layout::display::BalloonMode::Revisions && m.insertions_deletions
+        self.balloons_shown()
+            && m.balloons == wordcraft_layout::display::BalloonMode::Revisions
+            && m.insertions_deletions
     }
 
     /// Initials for new comments: the ones set in File › Options, else the user name's.
     pub fn user_initials(&self) -> String {
         let set = self.initials.trim();
-        if set.is_empty() { self.author.split_whitespace().filter_map(|w| w.chars().next()).collect() } else { set.to_string() }
+        if set.is_empty() {
+            self.author
+                .split_whitespace()
+                .filter_map(|w| w.chars().next())
+                .collect()
+        } else {
+            set.to_string()
+        }
     }
 
     /// The current layout (recomputed when the document or view changed).
     pub fn layout(&mut self) -> Arc<DocLayout> {
-        let mode = if self.view.read_mode { ViewMode::Read } else { self.view.mode };
-        let width = if self.view.read_mode { self.view.read_width } else { self.view.web_width };
-        let height = if self.view.read_mode { self.view.read_height } else { 0.0 };
-        let spacing = if self.view.read_mode { self.view.read_line_spacing.map(f32::to_bits) } else { None };
+        let mode = if self.view.read_mode {
+            ViewMode::Read
+        } else {
+            self.view.mode
+        };
+        let width = if self.view.read_mode {
+            self.view.read_width
+        } else {
+            self.view.web_width
+        };
+        let height = if self.view.read_mode {
+            self.view.read_height
+        } else {
+            0.0
+        };
+        let spacing = if self.view.read_mode {
+            self.view.read_line_spacing.map(f32::to_bits)
+        } else {
+            None
+        };
         // Deletions in balloons depend on the view (the Comments pane, Read Mode, side by side), so
         // a view change that moves them in or out of the text lays it out again.
         let hide_deleted = !self.view.show_markup || self.prefs.markup.hides_deletions();
@@ -757,14 +820,31 @@ impl Session {
             hide_deleted,
             deletions_in_balloons: deleted.1,
             proofing: self.view.proofing,
-            numeral: self.view.numeral.resolve(SYSTEM_LOCALE.get().map(String::as_str)),
+            numeral: self
+                .view
+                .numeral
+                .resolve(SYSTEM_LOCALE.get().map(String::as_str)),
             comment_balloons: false,
             field_codes: self.view.field_codes,
             outline: outline.clone(),
-            proof: wordcraft_layout::ProofOptions { grammar: self.prefs.mark_grammar, spelling: self.prefs.spelling() },
+            proof: wordcraft_layout::ProofOptions {
+                grammar: self.prefs.mark_grammar,
+                spelling: self.prefs.spelling(),
+            },
         };
         let l = Arc::new(wordcraft_layout::layout(&self.doc, &mut self.cache, &opts));
-        self.layout = Some((self.rev, width, height, mode, spacing, l.clone(), self.view.proofing, outline, deleted, self.view.numeral));
+        self.layout = Some((
+            self.rev,
+            width,
+            height,
+            mode,
+            spacing,
+            l.clone(),
+            self.view.proofing,
+            outline,
+            deleted,
+            self.view.numeral,
+        ));
         l
     }
     /// A layout for output (PDF, images, print): no proofing marks, print view.
@@ -775,8 +855,16 @@ impl Session {
     /// [`Session::export_layout`]; with `markup` (Print Markup) each page also has the markup
     /// area with the comments in balloons.
     pub fn export_layout_with(&self, markup: bool) -> Arc<DocLayout> {
-        let opts = LayoutOptions { view: ViewMode::Print, comment_balloons: markup && self.prefs.markup.comments, ..Default::default() };
-        Arc::new(wordcraft_layout::layout(&self.doc, &mut LayoutCache::new(), &opts))
+        let opts = LayoutOptions {
+            view: ViewMode::Print,
+            comment_balloons: markup && self.prefs.markup.comments,
+            ..Default::default()
+        };
+        Arc::new(wordcraft_layout::layout(
+            &self.doc,
+            &mut LayoutCache::new(),
+            &opts,
+        ))
     }
 
     /// Invalidate the cached layout (fonts changed etc.).
@@ -795,9 +883,14 @@ impl Session {
             return;
         }
         self.editing_lang = tag;
-        let untouched = self.path.is_none() && !self.dirty && self.history.is_empty() && self.redo.is_empty();
-        if untouched && self.doc.plain_text(StoryRef::Body).trim().is_empty() && self.doc.paragraph_count() <= 1 {
-            self.doc.styles.default_chr.lang = Some(self.editing_lang.clone().unwrap_or_else(|| "en-US".into()));
+        let untouched =
+            self.path.is_none() && !self.dirty && self.history.is_empty() && self.redo.is_empty();
+        if untouched
+            && self.doc.plain_text(StoryRef::Body).trim().is_empty()
+            && self.doc.paragraph_count() <= 1
+        {
+            self.doc.styles.default_chr.lang =
+                Some(self.editing_lang.clone().unwrap_or_else(|| "en-US".into()));
             self.rev = self.rev.wrapping_add(1);
             self.relayout();
         }
@@ -825,7 +918,13 @@ impl Session {
     /// Record `doc`/`sel` as their own undo step after the fact and close the typing group, so
     /// Undo right after an automatic change (AutoFormat, AutoCorrect) reverts only that change.
     pub fn push_undo(&mut self, label: &str, doc: Document, sel: Selection) {
-        self.history.push(Arc::new(Undo { label: label.to_string(), doc, sel, pending: self.pending.clone(), column: None }));
+        self.history.push(Arc::new(Undo {
+            label: label.to_string(),
+            doc,
+            sel,
+            pending: self.pending.clone(),
+            column: None,
+        }));
         if self.history.len() > MAX_UNDO {
             self.history.remove(0);
             self.undo_evicted += 1;
@@ -876,7 +975,12 @@ impl Session {
     /// The Undo button's list (#701): the undo steps' labels (English, as commands name them),
     /// newest first, at most [`UNDO_LIST_MAX`].
     pub fn undo_history(&self) -> Vec<&str> {
-        self.history.iter().rev().take(UNDO_LIST_MAX).map(|u| u.label.as_str()).collect()
+        self.history
+            .iter()
+            .rev()
+            .take(UNDO_LIST_MAX)
+            .map(|u| u.label.as_str())
+            .collect()
     }
     /// Undo the newest `count` steps in one go, as picking an entry in the Undo list does (#701).
     /// More than the undo depth undoes everything; a step that would take the document's
@@ -890,7 +994,9 @@ impl Session {
     }
     pub fn undo(&mut self) -> bool {
         self.typing_open = false;
-        let Some(u) = self.history.pop().map(Arc::unwrap_or_clone) else { return false };
+        let Some(u) = self.history.pop().map(Arc::unwrap_or_clone) else {
+            return false;
+        };
         let cur = Undo {
             label: u.label.clone(),
             doc: std::mem::replace(&mut self.doc, u.doc),
@@ -904,12 +1010,18 @@ impl Session {
     }
     /// Would Undo (or Redo) take the document's protection away? Only Stop Protection lifts it.
     pub fn step_lifts_protection(&self, redo: bool) -> bool {
-        let next = if redo { self.redo.last() } else { self.history.last() };
+        let next = if redo {
+            self.redo.last()
+        } else {
+            self.history.last()
+        };
         next.is_some_and(|u| crate::cmd::protect::protection_lifted(&self.doc, &u.doc))
     }
     pub fn redo(&mut self) -> bool {
         self.typing_open = false;
-        let Some(u) = self.redo.pop().map(Arc::unwrap_or_clone) else { return false };
+        let Some(u) = self.redo.pop().map(Arc::unwrap_or_clone) else {
+            return false;
+        };
         let cur = Undo {
             label: u.label.clone(),
             doc: std::mem::replace(&mut self.doc, u.doc),
@@ -1056,7 +1168,11 @@ impl Session {
             edit_marks: _,
             go_back_step: _,
         } = self;
-        let head = if history.len() + SNAPSHOT_HEAD > MAX_UNDO { history.iter().take(SNAPSHOT_HEAD).cloned().collect() } else { Vec::new() };
+        let head = if history.len() + SNAPSHOT_HEAD > MAX_UNDO {
+            history.iter().take(SNAPSHOT_HEAD).cloned().collect()
+        } else {
+            Vec::new()
+        };
         EditSnapshot {
             doc: doc.clone(),
             sel: sel.clone(),
@@ -1074,7 +1190,17 @@ impl Session {
     /// selection or undo/redo (undo steps the limit pushed out meanwhile come back). The layout
     /// is recomputed.
     pub fn restore(&mut self, snap: EditSnapshot) {
-        let EditSnapshot { doc, sel, history_len, evicted, head, redo, typing_open, join_next, dirty } = snap;
+        let EditSnapshot {
+            doc,
+            sel,
+            history_len,
+            evicted,
+            head,
+            redo,
+            typing_open,
+            join_next,
+            dirty,
+        } = snap;
         let gone = usize::try_from(self.undo_evicted.saturating_sub(evicted)).unwrap_or(usize::MAX);
         if gone > 0 {
             let back = gone.min(head.len());
@@ -1098,10 +1224,15 @@ impl Session {
         self.sel.focus = self.doc.clamp(&self.sel.focus);
         // The equation being edited must still be there (undo, edits elsewhere).
         if let Some(m) = &self.math {
-            let eq = self.doc.para_at(&m.at).and_then(|p| match p.object_at(m.at.off) {
-                Some(wordcraft_doc::InlineObject::Equation { math, .. }) => Some(wordcraft_doc::math_edit::clamp(&math.nodes, &m.pos)),
-                _ => None,
-            });
+            let eq = self
+                .doc
+                .para_at(&m.at)
+                .and_then(|p| match p.object_at(m.at.off) {
+                    Some(wordcraft_doc::InlineObject::Equation { math, .. }) => {
+                        Some(wordcraft_doc::math_edit::clamp(&math.nodes, &m.pos))
+                    }
+                    _ => None,
+                });
             match eq {
                 Some(pos) => {
                     if let Some(m) = self.math.as_mut() {
@@ -1119,18 +1250,26 @@ impl Session {
     pub fn run(&mut self, id: &str, params: &Value) -> Result<Value, CmdError> {
         let join = std::mem::take(&mut self.join_next);
         let reg = self.registry.clone();
-        let Some(spec) = reg.get(id) else { return Err(CmdError::Unknown(id.to_string())) };
+        let Some(spec) = reg.get(id) else {
+            return Err(CmdError::Unknown(id.to_string()));
+        };
         if let Some(why) = (spec.enabled)(self) {
             return Err(CmdError::Disabled(format!("{id}: {why}")));
         }
         // Restrict Editing: refused outright, or allowed as long as it only edits the exceptions.
-        let guard = if spec.mutates { crate::cmd::protect::check_before(self, id, params)? } else { false };
+        let guard = if spec.mutates {
+            crate::cmd::protect::check_before(self, id, params)?
+        } else {
+            false
+        };
         if spec.mutates && self.doc.settings.protection.as_deref() == Some("trackedChanges") {
             self.doc.settings.track_changes = true;
         }
         // Macro recording and Repeat.
-        let record = !matches!(id, "tools.recordMacro" | "tools.macros" | "edit.undo" | "edit.redo" | "edit.repeat")
-            && (spec.mutates || id.starts_with("caret.") || id.starts_with("select."));
+        let record = !matches!(
+            id,
+            "tools.recordMacro" | "tools.macros" | "edit.undo" | "edit.redo" | "edit.repeat"
+        ) && (spec.mutates || id.starts_with("caret.") || id.starts_with("select."));
         // A password never lands in a recorded macro or Repeat.
         let kept = || {
             let mut p = params.clone();
@@ -1147,7 +1286,10 @@ impl Session {
         }
         // Typing, caret movement and selection outside the equation commands leave the equation.
         if self.math.is_some()
-            && (id.starts_with("text.") || id.starts_with("caret.") || id.starts_with("select.") || id.starts_with("edit.paste"))
+            && (id.starts_with("text.")
+                || id.starts_with("caret.")
+                || id.starts_with("select.")
+                || id.starts_with("edit.paste"))
             && let Some(m) = self.math.take()
         {
             let off = m.at.off + wordcraft_doc::para::OBJ.len_utf8();
@@ -1183,18 +1325,25 @@ impl Session {
             self.typing_open = false;
         }
         // Only the paste right after a tracked cut makes it a move.
-        if (spec.mutates || matches!(id, "edit.undo" | "edit.undoTo" | "edit.redo")) && !matches!(id, "edit.cut" | "edit.paste" | "edit.pasteSpecial")
+        if (spec.mutates || matches!(id, "edit.undo" | "edit.undoTo" | "edit.redo"))
+            && !matches!(id, "edit.cut" | "edit.paste" | "edit.pasteSpecial")
         {
             self.pending_move = None;
         }
         let sel_before = self.sel.clone();
         let run = spec.run;
         let mutates = spec.mutates;
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| crate::cmd::column::dispatch(self, id, mutates, run, params)));
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            crate::cmd::column::dispatch(self, id, mutates, run, params)
+        }));
         let mut result = match result {
             Ok(r) => r,
             Err(p) => {
-                let msg = p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_default();
+                let msg = p
+                    .downcast_ref::<&str>()
+                    .map(|s| s.to_string())
+                    .or_else(|| p.downcast_ref::<String>().cloned())
+                    .unwrap_or_default();
                 Err(CmdError::Failed(format!("{id} panicked: {msg}")))
             }
         };
@@ -1204,7 +1353,9 @@ impl Session {
             && let Some((before, ..)) = &before_doc
             && !crate::cmd::protect::outside_unchanged(before, &self.doc, &self.author)
         {
-            result = Err(CmdError::Disabled(format!("{id}: only the editable regions of this protected document can change")));
+            result = Err(CmdError::Disabled(format!(
+                "{id}: only the editable regions of this protected document can change"
+            )));
         }
         match &result {
             Ok(_) => {
@@ -1217,7 +1368,9 @@ impl Session {
                     self.doc.ensure_nonempty();
                     self.doc.prune_text_boxes();
                     // Glued connectors follow the shapes they join.
-                    if crate::cmd::connectors::reroutes_after(id) && crate::cmd::connectors::reroute(self) {
+                    if crate::cmd::connectors::reroutes_after(id)
+                        && crate::cmd::connectors::reroute(self)
+                    {
                         self.touch();
                     }
                 }
@@ -1233,7 +1386,9 @@ impl Session {
                 // Outline view: collapsed headings follow edits; the caret stays where it shows.
                 crate::cmd::outline::after_command(self, &sel_before);
                 // Extra selected objects last until something else is edited or selected.
-                if !matches!(id, "select.addObject" | "arrange.ungroup") && (spec.mutates || self.sel != sel_before) {
+                if !matches!(id, "select.addObject" | "arrange.ungroup")
+                    && (spec.mutates || self.sel != sel_before)
+                {
                     self.also_selected.clear();
                 }
             }
@@ -1268,17 +1423,30 @@ impl Session {
             return p.clone();
         }
         let f = &self.sel.focus;
-        let Some(p) = self.doc.para_at(f) else { return CharProps::default() };
+        let Some(p) = self.doc.para_at(f) else {
+            return CharProps::default();
+        };
         let props = p.props_at(f.off);
         // As in Word, text typed at either end of a hyperlink isn't part of it; only typing
         // inside the link extends it.
-        let inside_link = props.link.is_some() && f.off > 0 && f.off < p.len() && p.props_of_char(f.off).link == props.link;
-        if props.link.is_some() && !inside_link { props.unlinked() } else { props.clone() }
+        let inside_link = props.link.is_some()
+            && f.off > 0
+            && f.off < p.len()
+            && p.props_of_char(f.off).link == props.link;
+        if props.link.is_some() && !inside_link {
+            props.unlinked()
+        } else {
+            props.clone()
+        }
     }
 
     /// Words in the document, as the status bar shows them (see [`Prefs::count_notes`]).
     pub fn word_count(&self) -> usize {
-        if self.prefs.count_notes { self.doc.word_count_including_notes() } else { self.doc.word_count() }
+        if self.prefs.count_notes {
+            self.doc.word_count_including_notes()
+        } else {
+            self.doc.word_count()
+        }
     }
 
     /// Selected plain text.
@@ -1286,7 +1454,11 @@ impl Session {
         // A column block or whole cells that aren't one run of the text: each piece's own text,
         // a line each, so the status bar and Word Count count those cells only.
         if let Some(segs) = self.column_segments() {
-            return segs.iter().map(|(a, b)| self.doc.copy_range(a.min(b), a.max(b)).plain_text()).collect::<Vec<_>>().join("\n");
+            return segs
+                .iter()
+                .map(|(a, b)| self.doc.copy_range(a.min(b), a.max(b)).plain_text())
+                .collect::<Vec<_>>()
+                .join("\n");
         }
         let (a, b) = self.sel.ordered();
         self.doc.copy_range(&a, &b).plain_text()

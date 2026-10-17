@@ -25,14 +25,17 @@ use std::collections::{BTreeMap, HashMap};
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, SyncSender, TrySendError, channel, sync_channel};
+use std::sync::mpsc::{
+    Receiver, RecvTimeoutError, Sender, SyncSender, TrySendError, channel, sync_channel,
+};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 use figcraft_collab::message::{
-    self, Access, Admin, AdminReply, ClientMsg, Hello, HostInfo, LibraryReply, LibraryReq, Manage, OpenHosting, OpenLibrary, OpenPlugins, PROTOCOL,
-    PluginReply, PluginReq, Presence, Resolve, ServerMsg, reads_hosting,
+    self, Access, Admin, AdminReply, ClientMsg, Hello, HostInfo, LibraryReply, LibraryReq, Manage,
+    OpenHosting, OpenLibrary, OpenPlugins, PROTOCOL, PluginReply, PluginReq, Presence, Resolve,
+    ServerMsg, reads_hosting,
 };
 use figcraft_collab::{Outgoing, Server};
 use figcraft_engine::live::{Event, MAX_NAME, PEOPLE, sanitize};
@@ -81,7 +84,12 @@ pub struct Handled {
 
 impl From<AdminReply> for Handled {
     fn from(reply: AdminReply) -> Self {
-        Self { reply, revoked: None, removed: None, blocked: None }
+        Self {
+            reply,
+            revoked: None,
+            removed: None,
+            blocked: None,
+        }
     }
 }
 
@@ -156,19 +164,35 @@ pub trait Backend: Send + 'static {
 
     /// A request on a managing connection; `open` tells about a file that is open.
     fn admin(&mut self, _req: Admin, _open: &dyn Fn(&str) -> Option<OpenFile>) -> Handled {
-        AdminReply::Failed { reason: "nothing to manage here".into() }.into()
+        AdminReply::Failed {
+            reason: "nothing to manage here".into(),
+        }
+        .into()
     }
 
     /// A request on a library connection to `file`, opened with a link of `access` (checked by
     /// [`admit`](Self::admit)).
-    fn library(&mut self, _ip: IpAddr, _file: &str, _access: Access, _req: LibraryReq) -> LibraryReply {
-        LibraryReply::Failed { reason: "this session is hosted by an app: team libraries live on a figcraft-server".into() }
+    fn library(
+        &mut self,
+        _ip: IpAddr,
+        _file: &str,
+        _access: Access,
+        _req: LibraryReq,
+    ) -> LibraryReply {
+        LibraryReply::Failed {
+            reason: "this session is hosted by an app: team libraries live on a figcraft-server"
+                .into(),
+        }
     }
 
     /// A request on a plugin directory connection; `publisher`: it was opened with the right key
     /// (checked by [`manage`](Self::manage)).
     fn plugins(&mut self, _ip: IpAddr, _publisher: bool, _req: PluginReq) -> PluginReply {
-        PluginReply::Failed { reason: "this session is hosted by an app: plugin directories live on a figcraft-server".into() }
+        PluginReply::Failed {
+            reason:
+                "this session is hosted by an app: plugin directories live on a figcraft-server"
+                    .into(),
+        }
     }
 
     /// A new connection from `ip` ([`ip_key`]): whether it may go on (why not is shown to the
@@ -196,12 +220,27 @@ pub trait Backend: Send + 'static {
 
     /// A request on an open hosting connection from `ip`; `owns`: the file whose owner token it
     /// was opened with.
-    fn hosted(&mut self, _ip: IpAddr, _owns: Option<&str>, _req: Admin, _open: &dyn Fn(&str) -> Option<OpenFile>) -> Handled {
-        AdminReply::Failed { reason: "nothing to manage here".into() }.into()
+    fn hosted(
+        &mut self,
+        _ip: IpAddr,
+        _owns: Option<&str>,
+        _req: Admin,
+        _open: &dyn Fn(&str) -> Option<OpenFile>,
+    ) -> Handled {
+        AdminReply::Failed {
+            reason: "nothing to manage here".into(),
+        }
+        .into()
     }
 
     /// Someone in `file` (joined with `link`, from `ip`) reports it to the operator.
-    fn report(&mut self, _file: &str, _link: Option<&str>, _ip: IpAddr, _reason: &str) -> Result<(), String> {
+    fn report(
+        &mut self,
+        _file: &str,
+        _link: Option<&str>,
+        _ip: IpAddr,
+        _reason: &str,
+    ) -> Result<(), String> {
         Err("this session is hosted by an app: tell the person hosting it".into())
     }
 
@@ -233,7 +272,10 @@ struct Held {
 impl Held {
     fn new(n: usize, counter: &Arc<AtomicUsize>) -> Arc<Held> {
         counter.fetch_add(n, Ordering::Relaxed);
-        Arc::new(Held { n, counter: counter.clone() })
+        Arc::new(Held {
+            n,
+            counter: counter.clone(),
+        })
     }
 }
 
@@ -323,18 +365,26 @@ impl Line {
         let all = match &charges.all {
             Some(h) => h.clone(),
             None => {
-                if !over_budget && self.all.load(Ordering::Relaxed).saturating_add(n) > self.max_all {
+                if !over_budget && self.all.load(Ordering::Relaxed).saturating_add(n) > self.max_all
+                {
                     return Err(Push::Everyone);
                 }
                 charges.all.insert(Held::new(n, &self.all)).clone()
             }
         };
         self.queued.fetch_add(n, Ordering::Relaxed);
-        let charge = Charge { n, mine: self.queued.clone(), _all: all, _block: block };
-        self.tx.try_send(Out::Bytes(b.clone(), Some(charge))).map_err(|e| match e {
-            TrySendError::Full(_) => Push::Full,
-            TrySendError::Disconnected(_) => Push::Gone,
-        })
+        let charge = Charge {
+            n,
+            mine: self.queued.clone(),
+            _all: all,
+            _block: block,
+        };
+        self.tx
+            .try_send(Out::Bytes(b.clone(), Some(charge)))
+            .map_err(|e| match e {
+                TrySendError::Full(_) => Push::Full,
+                TrySendError::Disconnected(_) => Push::Gone,
+            })
     }
 }
 
@@ -434,7 +484,11 @@ fn spawn(name: &str, f: impl FnOnce() + Send + 'static) -> io::Result<JoinHandle
 
 /// A name others may see: trimmed, no control characters, at most [`MAX_NAME`] characters.
 pub(crate) fn clean_name(s: &str) -> String {
-    s.trim().chars().filter(|c| !c.is_control()).take(MAX_NAME).collect()
+    s.trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_NAME)
+        .collect()
 }
 
 /// A running hub: its listener, connections and hub thread. Dropping it stops it.
@@ -454,14 +508,30 @@ pub struct Hosting {
 
 impl Hosting {
     /// Serve `backend`'s files on `listener`.
-    pub fn serve<B: Backend>(listener: TcpListener, backend: B, limits: NetLimits) -> io::Result<Hosting> {
+    pub fn serve<B: Backend>(
+        listener: TcpListener,
+        backend: B,
+        limits: NetLimits,
+    ) -> io::Result<Hosting> {
         Self::start(listener, backend, limits, None)
     }
 
-    pub(crate) fn start<B: Backend>(listener: TcpListener, backend: B, limits: NetLimits, local: Option<Local>) -> io::Result<Hosting> {
+    pub(crate) fn start<B: Backend>(
+        listener: TcpListener,
+        backend: B,
+        limits: NetLimits,
+        local: Option<Local>,
+    ) -> io::Result<Hosting> {
         let addr = listener.local_addr()?;
         let in_flight = InFlight(Arc::default());
-        let mut hub = Hub { backend, rooms: HashMap::new(), conns: HashMap::new(), local: None, outbox: Vec::new(), in_flight: in_flight.clone() };
+        let mut hub = Hub {
+            backend,
+            rooms: HashMap::new(),
+            conns: HashMap::new(),
+            local: None,
+            outbox: Vec::new(),
+            in_flight: in_flight.clone(),
+        };
         if let Some(l) = local {
             let mut room = Room::new(l.server);
             room.local = Some((l.id, l.inbox));
@@ -485,7 +555,9 @@ impl Hosting {
         let reading = shared.reading.clone();
         let accept_thread = {
             let (hub_tx, stop, open) = (hub_tx.clone(), stop.clone(), open.clone());
-            spawn("live-accept", move || accept(&listener, &hub_tx, &stop, &open, limits, shared))
+            spawn("live-accept", move || {
+                accept(&listener, &hub_tx, &stop, &open, limits, shared)
+            })
         };
         let accept_thread = match accept_thread {
             Ok(t) => t,
@@ -568,13 +640,19 @@ impl Hosting {
             let _ = t.join();
         }
         // The accept loop checks the flag after each connection: wake it with one.
-        let wake = if self.addr.ip().is_unspecified() { SocketAddr::new(loopback(self.addr), self.addr.port()) } else { self.addr };
+        let wake = if self.addr.ip().is_unspecified() {
+            SocketAddr::new(loopback(self.addr), self.addr.port())
+        } else {
+            self.addr
+        };
         let woke = TcpStream::connect_timeout(&wake, Duration::from_secs(1)).is_ok();
         if let Some(t) = self.accept_thread.take() {
             if woke {
                 let _ = t.join();
             } else {
-                log::warn!("live session: couldn't wake the accept loop; it ends with the next connection");
+                log::warn!(
+                    "live session: couldn't wake the accept loop; it ends with the next connection"
+                );
             }
         }
         // Readers end once their writers have closed the sockets.
@@ -594,7 +672,11 @@ impl Drop for Hosting {
 
 /// The loopback address of `addr`'s family.
 fn loopback(addr: SocketAddr) -> std::net::IpAddr {
-    if addr.is_ipv6() { std::net::Ipv6Addr::LOCALHOST.into() } else { std::net::Ipv4Addr::LOCALHOST.into() }
+    if addr.is_ipv6() {
+        std::net::Ipv6Addr::LOCALHOST.into()
+    } else {
+        std::net::Ipv4Addr::LOCALHOST.into()
+    }
 }
 
 /// Counts an open connection until dropped.
@@ -614,11 +696,19 @@ pub type Block = (IpAddr, u8);
 /// gets: the address itself (an IPv4 /32 or an IPv6 /64, ×1) and, for IPv6, its /56 (×2) and /48
 /// (×4), so a tunnel's free /48 doesn't multiply the limits 65,536 times.
 pub fn ip_blocks(key: IpAddr) -> Vec<(Block, u32)> {
-    let IpAddr::V6(v6) = key else { return vec![((key, 32), 1)] };
+    let IpAddr::V6(v6) = key else {
+        return vec![((key, 32), 1)];
+    };
     let [a, b, c, d, ..] = v6.segments();
     vec![
         ((IpAddr::V6(Ipv6Addr::new(a, b, c, d, 0, 0, 0, 0)), 64), 1),
-        ((IpAddr::V6(Ipv6Addr::new(a, b, c, d & 0xff00, 0, 0, 0, 0)), 56), 2),
+        (
+            (
+                IpAddr::V6(Ipv6Addr::new(a, b, c, d & 0xff00, 0, 0, 0, 0)),
+                56,
+            ),
+            2,
+        ),
         ((IpAddr::V6(Ipv6Addr::new(a, b, c, 0, 0, 0, 0, 0)), 48), 4),
     ]
 }
@@ -646,7 +736,10 @@ impl PerAddress {
             return None;
         }
         *n += 1;
-        Some(Counted { table: self.clone(), ip })
+        Some(Counted {
+            table: self.clone(),
+            ip,
+        })
     }
 
     /// Count a connection from `ip` in each of its blocks, unless one of them is full. A wider
@@ -727,9 +820,18 @@ fn health_check(stream: &mut TcpStream, until: Instant) -> bool {
 /// The client a trusted proxy names: the last address of its last `X-Forwarded-For` (the one the
 /// proxy added; any before it are whatever the client sent).
 fn forwarded_for(req: &Request) -> Option<IpAddr> {
-    let last = req.headers().get_all("x-forwarded-for").iter().next_back()?.to_str().ok()?;
+    let last = req
+        .headers()
+        .get_all("x-forwarded-for")
+        .iter()
+        .next_back()?
+        .to_str()
+        .ok()?;
     let entry = last.rsplit(',').next()?.trim();
-    entry.parse::<IpAddr>().ok().or_else(|| entry.parse::<SocketAddr>().ok().map(|a| a.ip()))
+    entry
+        .parse::<IpAddr>()
+        .ok()
+        .or_else(|| entry.parse::<SocketAddr>().ok().map(|a| a.ip()))
 }
 
 /// What every connection shares: the count per address, the bytes queued for all of them and the
@@ -745,7 +847,14 @@ struct Shared {
     readers: Readers,
 }
 
-fn accept(listener: &TcpListener, hub: &Sender<HubIn>, stop: &AtomicBool, open: &Arc<AtomicUsize>, limits: NetLimits, shared: Shared) {
+fn accept(
+    listener: &TcpListener,
+    hub: &Sender<HubIn>,
+    stop: &AtomicBool,
+    open: &Arc<AtomicUsize>,
+    limits: NetLimits,
+    shared: Shared,
+) {
     let mut next = 0u64;
     for stream in listener.incoming() {
         if stop.load(Ordering::SeqCst) {
@@ -768,7 +877,9 @@ fn accept(listener: &TcpListener, hub: &Sender<HubIn>, stop: &AtomicBool, open: 
         let guard = Open(open.clone());
         next += 1;
         let (conn, hub, shared) = (next, hub.clone(), shared.clone());
-        if let Err(e) = spawn("live-conn", move || serve(stream, conn, &hub, limits, guard, &shared)) {
+        if let Err(e) = spawn("live-conn", move || {
+            serve(stream, conn, &hub, limits, guard, &shared)
+        }) {
             log::warn!("live session: can't start a connection thread: {e}");
         }
     }
@@ -795,7 +906,9 @@ fn encode(msg: &ServerMsg) -> Option<Bytes> {
 
 /// Queue `Refused {reason}` and a close for one connection (small: not counted against its caps).
 fn refuse(out: &Line, why: &str) {
-    if let Some(b) = encode(&ServerMsg::Refused { reason: why.to_string() }) {
+    if let Some(b) = encode(&ServerMsg::Refused {
+        reason: why.to_string(),
+    }) {
         let _ = out.tx.try_send(Out::Bytes(b, None));
     }
     let _ = out.tx.try_send(Out::Close(CloseCode::Policy, reason(why)));
@@ -805,20 +918,27 @@ fn refuse(out: &Line, why: &str) {
 const BUSY: &str = "the server is busy: try again in a moment";
 
 /// Read the next binary message (skipping pings) and its size, or why the connection should end.
-fn next_message(ws: &mut WebSocket<Duplex>, max: usize) -> Result<Option<(ClientMsg, usize)>, String> {
+fn next_message(
+    ws: &mut WebSocket<Duplex>,
+    max: usize,
+) -> Result<Option<(ClientMsg, usize)>, String> {
     loop {
         return match ws.read() {
             Ok(Message::Binary(b)) => {
                 // Whole now: it counts as in flight from here, no longer as being read.
                 ws.get_mut().read_done();
-                message::decode::<ClientMsg>(&b, max).map(|m| Some((m, b.len()))).map_err(|_| "that message couldn't be read".to_string())
+                message::decode::<ClientMsg>(&b, max)
+                    .map(|m| Some((m, b.len())))
+                    .map_err(|_| "that message couldn't be read".to_string())
             }
             Ok(Message::Text(_)) => Err("only binary messages are spoken here".into()),
             Ok(Message::Ping(_) | Message::Pong(_) | Message::Frame(_)) => continue,
             Ok(Message::Close(_)) => Ok(None),
             Err(tungstenite::Error::Capacity(_)) => Err(too_large(max)),
             // The reading budget's refusal (see `Meter`).
-            Err(tungstenite::Error::Io(e)) if e.kind() == io::ErrorKind::Other => Err(e.to_string()),
+            Err(tungstenite::Error::Io(e)) if e.kind() == io::ErrorKind::Other => {
+                Err(e.to_string())
+            }
             Err(_) => Ok(None),
         };
     }
@@ -827,23 +947,45 @@ fn next_message(ws: &mut WebSocket<Duplex>, max: usize) -> Result<Option<(Client
 /// Why a message over `max` bytes is refused.
 fn too_large(max: usize) -> String {
     match max >> 20 {
-        0 => format!("message too large: this server takes at most {} KiB at once here", max >> 10),
-        mib => format!("message too large: this server takes at most {mib} MiB at once (a change that big can't be kept here)"),
+        0 => format!(
+            "message too large: this server takes at most {} KiB at once here",
+            max >> 10
+        ),
+        mib => format!(
+            "message too large: this server takes at most {mib} MiB at once (a change that big can't be kept here)"
+        ),
     }
 }
 
 /// One connection's reader (the writer runs on its own thread).
-fn serve(mut stream: TcpStream, conn: u64, hub: &Sender<HubIn>, limits: NetLimits, open: Open, shared: &Shared) {
+fn serve(
+    mut stream: TcpStream,
+    conn: u64,
+    hub: &Sender<HubIn>,
+    limits: NetLimits,
+    open: Open,
+    shared: &Shared,
+) {
     let _ = stream.set_nodelay(true);
-    if stream.set_read_timeout(Some(limits.hello_timeout)).is_err() || stream.set_write_timeout(Some(limits.write_timeout)).is_err() {
+    if stream.set_read_timeout(Some(limits.hello_timeout)).is_err()
+        || stream
+            .set_write_timeout(Some(limits.write_timeout))
+            .is_err()
+    {
         return;
     }
     if health_check(&mut stream, Instant::now() + limits.hello_timeout) {
         return;
     }
-    let Ok(peer) = stream.peer_addr().map(|a| a.ip().to_canonical()) else { return };
-    let proxied = limits.trusted_proxy.is_some_and(|p| p.to_canonical() == peer);
-    let Ok((rd, wr, sock)) = Duplex::split(stream, None) else { return };
+    let Ok(peer) = stream.peer_addr().map(|a| a.ip().to_canonical()) else {
+        return;
+    };
+    let proxied = limits
+        .trusted_proxy
+        .is_some_and(|p| p.to_canonical() == peer);
+    let Ok((rd, wr, sock)) = Duplex::split(stream, None) else {
+        return;
+    };
     let cfg = config(limits.max_client_message);
     let mut forwarded = None;
     // The handshake callback's type is tungstenite's (its error is an HTTP response).
@@ -854,7 +996,11 @@ fn serve(mut stream: TcpStream, conn: u64, hub: &Sender<HubIn>, limits: NetLimit
         }
         Ok(resp)
     };
-    let mut ws = match tungstenite::accept_hdr_with_config(rd, read_client, Some(config(limits.max_hello))) {
+    let mut ws = match tungstenite::accept_hdr_with_config(
+        rd,
+        read_client,
+        Some(config(limits.max_hello)),
+    ) {
         Ok(ws) => ws,
         Err(e) => {
             log::debug!("live session: handshake failed: {e}");
@@ -863,10 +1009,14 @@ fn serve(mut stream: TcpStream, conn: u64, hub: &Sender<HubIn>, limits: NetLimit
         }
     };
     if proxied && forwarded.is_none() {
-        log::debug!("live session: connection {conn} came through the proxy without X-Forwarded-For");
+        log::debug!(
+            "live session: connection {conn} came through the proxy without X-Forwarded-For"
+        );
     }
     let ip = ip_key(forwarded.unwrap_or(peer));
-    let counted = shared.per_address.enter_all(ip, limits.max_per_address, limits.max_connections);
+    let counted = shared
+        .per_address
+        .enter_all(ip, limits.max_per_address, limits.max_connections);
     let wide = wide_block(ip);
     let block = shared.blocks.get(wide);
     ws.get_mut().meter(Meter::new(
@@ -888,24 +1038,35 @@ fn serve(mut stream: TcpStream, conn: u64, hub: &Sender<HubIn>, limits: NetLimit
         max_block: limits.max_queued_block,
         max_all: limits.max_queued_total,
     };
-    let writer =
-        match sock.try_clone().map(|s| spawn("live-write", move || write_loop(WebSocket::from_raw_socket(wr, Role::Server, Some(cfg)), &rx, &s))) {
-            Ok(Ok(t)) => t,
-            _ => {
-                shutdown(&sock);
-                return;
-            }
-        };
+    let writer = match sock.try_clone().map(|s| {
+        spawn("live-write", move || {
+            write_loop(
+                WebSocket::from_raw_socket(wr, Role::Server, Some(cfg)),
+                &rx,
+                &s,
+            )
+        })
+    }) {
+        Ok(Ok(t)) => t,
+        _ => {
+            shutdown(&sock);
+            return;
+        }
+    };
     let end = |why: Option<&str>| {
         if let Some(why) = why {
             refuse(&out, why);
         } else {
-            let _ = out.tx.try_send(Out::Close(CloseCode::Normal, String::new()));
+            let _ = out
+                .tx
+                .try_send(Out::Close(CloseCode::Normal, String::new()));
         }
     };
     if counted.is_none() {
         log::info!("event=refused ip={ip} reason=connections_per_address");
-        end(Some("too many connections from your address: close some and try again"));
+        end(Some(
+            "too many connections from your address: close some and try again",
+        ));
     } else {
         match next_message(&mut ws, limits.max_hello) {
             Ok(Some((
@@ -924,14 +1085,32 @@ fn serve(mut stream: TcpStream, conn: u64, hub: &Sender<HubIn>, limits: NetLimit
                     ClientMsg::OpenPlugins(o) if o.key.is_empty() => limits.max_request,
                     _ => limits.max_client_message,
                 };
-                let idle = if session { limits.idle_timeout } else { limits.request_idle };
-                let reserved = !session && open.0.load(Ordering::Relaxed) > limits.max_connections.saturating_sub(limits.reserve_for_sessions);
+                let idle = if session {
+                    limits.idle_timeout
+                } else {
+                    limits.request_idle
+                };
+                let reserved = !session
+                    && open.0.load(Ordering::Relaxed)
+                        > limits
+                            .max_connections
+                            .saturating_sub(limits.reserve_for_sessions);
                 // (In flight is only taken when the connection goes on: the hub gives it back.)
                 if reserved || !shared.in_flight.take(bytes, limits.max_in_flight) {
                     end(Some(BUSY));
                 } else {
                     ws.set_config(|c| *c = config(max));
-                    let opened = sock.try_clone().is_ok_and(|s| hub.send(HubIn::Open { conn, ip, first, out: out.clone(), sock: s, bytes }).is_ok());
+                    let opened = sock.try_clone().is_ok_and(|s| {
+                        hub.send(HubIn::Open {
+                            conn,
+                            ip,
+                            first,
+                            out: out.clone(),
+                            sock: s,
+                            bytes,
+                        })
+                        .is_ok()
+                    });
                     if opened && ws.get_ref().set_read_timeout(Some(idle)).is_ok() {
                         read_loop(&mut ws, conn, hub, limits, max, &shared.in_flight, &end);
                         let _ = hub.send(HubIn::Gone { conn });
@@ -974,7 +1153,9 @@ fn read_loop(
                 }
                 // Typing sends a chat signal per keystroke; more than this is dropped.
                 if matches!(msg, ClientMsg::Signal(_)) && !signals.take(now) {
-                    log::debug!("live session: connection {conn} sends signals too fast; dropping one");
+                    log::debug!(
+                        "live session: connection {conn} sends signals too fast; dropping one"
+                    );
                     continue;
                 }
                 if !in_flight.take(bytes, limits.max_in_flight) {
@@ -1011,10 +1192,15 @@ fn write_loop(mut ws: WebSocket<Duplex>, rx: &Receiver<Out>, sock: &TcpStream) {
         // Close politely: the close frame, then no more writing; the reader drains what the peer
         // still sends until it hangs up (closing on unread data would reset the connection and
         // could lose the close frame), or until the linger runs out.
-        let _ = ws.close(Some(CloseFrame { code, reason: why.into() }));
+        let _ = ws.close(Some(CloseFrame {
+            code,
+            reason: why.into(),
+        }));
         let _ = sock.shutdown(std::net::Shutdown::Write);
         let until = Instant::now() + LINGER;
-        while let Ok(_) | Err(RecvTimeoutError::Timeout) = rx.recv_timeout(until.saturating_duration_since(Instant::now())) {
+        while let Ok(_) | Err(RecvTimeoutError::Timeout) =
+            rx.recv_timeout(until.saturating_duration_since(Instant::now()))
+        {
             if Instant::now() >= until {
                 break;
             }
@@ -1029,11 +1215,22 @@ fn write_loop(mut ws: WebSocket<Duplex>, rx: &Receiver<Out>, sock: &TcpStream) {
 fn linger(ws: &mut WebSocket<Duplex>) {
     let until = Instant::now() + LINGER;
     let mut buf = [0u8; 4096];
-    while Instant::now() < until && ws.get_ref().set_read_timeout(Some(Duration::from_millis(250))).is_ok() {
+    while Instant::now() < until
+        && ws
+            .get_ref()
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .is_ok()
+    {
         match ws.get_mut().read(&mut buf) {
             Ok(0) => break,
             Ok(_) => {}
-            Err(e) if matches!(e.kind(), io::ErrorKind::WouldBlock | io::ErrorKind::TimedOut | io::ErrorKind::Interrupted) => {}
+            Err(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::WouldBlock
+                        | io::ErrorKind::TimedOut
+                        | io::ErrorKind::Interrupted
+                ) => {}
             Err(_) => break,
         }
     }
@@ -1042,11 +1239,19 @@ fn linger(ws: &mut WebSocket<Duplex>) {
 /// What a connection is for.
 enum Kind {
     /// In `file`'s session as client `id`, through link `link`.
-    Joined { file: String, id: u32, link: Option<String> },
+    Joined {
+        file: String,
+        id: u32,
+        link: Option<String>,
+    },
     /// Managing the server's files.
     Managing,
     /// Using `file`'s team library through link `link` of `access` (revoking it disconnects).
-    Library { file: String, access: Access, link: Option<String> },
+    Library {
+        file: String,
+        access: Access,
+        link: Option<String>,
+    },
     /// Using the plugin directory; `publisher`: with the server's key.
     Plugins { publisher: bool },
     /// Publishing without the key, or managing the file `owns` with its owner token.
@@ -1085,7 +1290,14 @@ struct Room {
 
 impl Room {
     fn new(server: Server) -> Self {
-        Self { server, ids: BTreeMap::new(), throttles: BTreeMap::new(), latest: BTreeMap::new(), guests: 0, local: None }
+        Self {
+            server,
+            ids: BTreeMap::new(),
+            throttles: BTreeMap::new(),
+            latest: BTreeMap::new(),
+            guests: 0,
+            local: None,
+        }
     }
 
     /// Nobody is in it.
@@ -1095,7 +1307,10 @@ impl Room {
 
     /// What listings say about it.
     fn info(&self) -> OpenFile {
-        OpenFile { people: u32::try_from(self.server.peers().count()).unwrap_or(u32::MAX), seq: self.server.seq() }
+        OpenFile {
+            people: u32::try_from(self.server.peers().count()).unwrap_or(u32::MAX),
+            seq: self.server.seq(),
+        }
     }
 }
 
@@ -1106,7 +1321,8 @@ fn unsupported(protocol: u32) -> String {
 
 /// What someone in a file is told when the link they joined with is revoked (its owner stopped
 /// sharing): the session's end for them.
-pub const STOPPED: &str = "Sharing was stopped: the link you joined with no longer works. Your copy stays open";
+pub const STOPPED: &str =
+    "Sharing was stopped: the link you joined with no longer works. Your copy stays open";
 
 /// What everyone in a file is told when its changes couldn't be saved (they reconnect).
 const UNSAVED: &str = "The server couldn't save the latest changes; reconnecting";
@@ -1126,7 +1342,11 @@ struct Hub<B> {
 impl<B: Backend> Hub<B> {
     fn run(mut self, rx: &Receiver<HubIn>) {
         'run: loop {
-            let due = earliest(self.rooms.values().flat_map(|r| r.throttles.values().map(Throttle::due)));
+            let due = earliest(
+                self.rooms
+                    .values()
+                    .flat_map(|r| r.throttles.values().map(Throttle::due)),
+            );
             let first = match due {
                 Some(d) => match rx.recv_timeout(d.saturating_duration_since(Instant::now())) {
                     Ok(m) => Some(m),
@@ -1152,7 +1372,12 @@ impl<B: Backend> Hub<B> {
             self.send_out();
         }
         self.send_out();
-        self.backend.stop(self.rooms.iter_mut().map(|(f, r)| (f.as_str(), &mut r.server)).collect());
+        self.backend.stop(
+            self.rooms
+                .iter_mut()
+                .map(|(f, r)| (f.as_str(), &mut r.server))
+                .collect(),
+        );
         let (code, why) = match self.backend.closing() {
             Closing::Ended => (CloseCode::Away, ENDED),
             Closing::Restarting => (CloseCode::Restart, RESTARTING),
@@ -1166,11 +1391,19 @@ impl<B: Backend> Hub<B> {
 
     fn handle(&mut self, m: HubIn) {
         match m {
-            HubIn::Open { conn, ip, first, out, sock, bytes } => {
+            HubIn::Open {
+                conn,
+                ip,
+                first,
+                out,
+                sock,
+                bytes,
+            } => {
                 self.in_flight.give(bytes);
                 // The operator (with the server key) gets in from anywhere; everyone else is
                 // checked (blocked addresses, connection rates).
-                let operator = matches!(&first, ClientMsg::Manage(m) if self.backend.manage(&m.key).is_ok());
+                let operator =
+                    matches!(&first, ClientMsg::Manage(m) if self.backend.manage(&m.key).is_ok());
                 if !operator && let Err(why) = self.backend.connect(ip) {
                     log::info!("event=refused ip={ip} reason={why:?}");
                     return refuse(&out, &why);
@@ -1188,12 +1421,17 @@ impl<B: Backend> Hub<B> {
             }
             HubIn::Msg { conn, msg, bytes } => {
                 self.in_flight.give(bytes);
-                let Some(c) = self.conns.get(&conn) else { return };
+                let Some(c) = self.conns.get(&conn) else {
+                    return;
+                };
                 let ip = c.ip;
                 // The operator (with the server key) isn't held to the limits on addresses.
                 if !matches!(c.kind, Kind::Managing) && !self.backend.message(ip, &msg) {
                     log::info!("event=refused ip={ip} reason=messages_per_address");
-                    return self.kick(&[conn], "too many messages from your address: wait a minute and try again");
+                    return self.kick(
+                        &[conn],
+                        "too many messages from your address: wait a minute and try again",
+                    );
                 }
                 self.message(conn, ip, msg, bytes);
             }
@@ -1223,8 +1461,15 @@ impl<B: Backend> Hub<B> {
         match self.conns.get(&conn).map(|c| &c.kind) {
             Some(Kind::Joined { file, link, .. }) if matches!(msg, ClientMsg::Report { .. }) => {
                 let (file, link) = (file.clone(), link.clone());
-                let reason = if let ClientMsg::Report { reason } = &msg { reason.as_str() } else { "" };
-                let error = self.backend.report(&file, link.as_deref(), ip, reason).err();
+                let reason = if let ClientMsg::Report { reason } = &msg {
+                    reason.as_str()
+                } else {
+                    ""
+                };
+                let error = self
+                    .backend
+                    .report(&file, link.as_deref(), ip, reason)
+                    .err();
                 self.answer(conn, &ServerMsg::Reported { error });
             }
             Some(Kind::Joined { file, id, .. }) => {
@@ -1240,12 +1485,18 @@ impl<B: Backend> Hub<B> {
                     self.handled(conn, handled);
                 }
                 ClientMsg::Ping => self.answer(conn, &ServerMsg::Pong),
-                _ => self.kick(&[conn], "only publishing and managing your own files are spoken on this connection"),
+                _ => self.kick(
+                    &[conn],
+                    "only publishing and managing your own files are spoken on this connection",
+                ),
             },
             Some(Kind::Managing) => match msg {
                 ClientMsg::Admin(req) => self.admin(conn, req),
                 ClientMsg::Ping => self.answer(conn, &ServerMsg::Pong),
-                _ => self.kick(&[conn], "only requests to manage files are spoken on this connection"),
+                _ => self.kick(
+                    &[conn],
+                    "only requests to manage files are spoken on this connection",
+                ),
             },
             Some(Kind::Library { file, access, .. }) => match msg {
                 ClientMsg::Library(req) => {
@@ -1254,7 +1505,10 @@ impl<B: Backend> Hub<B> {
                     self.answer(conn, &ServerMsg::Library(Box::new(reply)));
                 }
                 ClientMsg::Ping => self.answer(conn, &ServerMsg::Pong),
-                _ => self.kick(&[conn], "only library requests are spoken on this connection"),
+                _ => self.kick(
+                    &[conn],
+                    "only library requests are spoken on this connection",
+                ),
             },
             Some(Kind::Plugins { publisher }) => match msg {
                 ClientMsg::Plugins(req) => {
@@ -1262,7 +1516,10 @@ impl<B: Backend> Hub<B> {
                     self.answer(conn, &ServerMsg::Plugins(Box::new(reply)));
                 }
                 ClientMsg::Ping => self.answer(conn, &ServerMsg::Pong),
-                _ => self.kick(&[conn], "only plugin directory requests are spoken on this connection"),
+                _ => self.kick(
+                    &[conn],
+                    "only plugin directory requests are spoken on this connection",
+                ),
             },
             None => {}
         }
@@ -1287,17 +1544,24 @@ impl<B: Backend> Hub<B> {
             && let Some(room) = self.rooms.get(file)
             && let Err(reason) = self.backend.room(file, &room.server, n)
         {
-            let reject = ServerMsg::Reject { batch_id: *batch_id, reason, fixes: Vec::new() };
+            let reject = ServerMsg::Reject {
+                batch_id: *batch_id,
+                reason,
+                fixes: Vec::new(),
+            };
             return self.queue(file, vec![Outgoing::To(id, reject)]);
         }
-        let Some(room) = self.rooms.get_mut(file) else { return };
+        let Some(room) = self.rooms.get_mut(file) else {
+            return;
+        };
         let outs = room.server.receive(id, msg);
         self.backend.changed(file, &mut room.server);
         self.queue(file, outs);
     }
 
     fn queue(&mut self, file: &str, outs: Vec<Outgoing>) {
-        self.outbox.extend(outs.into_iter().map(|o| (file.to_string(), o)));
+        self.outbox
+            .extend(outs.into_iter().map(|o| (file.to_string(), o)));
     }
 
     fn join(&mut self, conn: u64, mut hello: Hello, c: Pending) {
@@ -1317,11 +1581,21 @@ impl<B: Backend> Hub<B> {
                 Err(why) => return refuse(&c.out, &why),
             }
         }
-        let info = if hosting { self.backend.hosting(&file) } else { None };
-        let Some(room) = self.rooms.get_mut(&file) else { return };
+        let info = if hosting {
+            self.backend.hosting(&file)
+        } else {
+            None
+        };
+        let Some(room) = self.rooms.get_mut(&file) else {
+            return;
+        };
         // Colours: the first one nobody has.
         let taken: Vec<&str> = room.server.peers().map(|p| p.color.as_str()).collect();
-        let color = PEOPLE.iter().find(|c| !taken.contains(c)).copied().unwrap_or(PEOPLE[taken.len() % PEOPLE.len()]);
+        let color = PEOPLE
+            .iter()
+            .find(|c| !taken.contains(c))
+            .copied()
+            .unwrap_or(PEOPLE[taken.len() % PEOPLE.len()]);
         hello.color = color.to_string();
         hello.name = match clean_name(&hello.name) {
             n if n.is_empty() => {
@@ -1341,14 +1615,33 @@ impl<B: Backend> Hub<B> {
                 if let Some(me) = room.server.peers().find(|p| p.client_id == id) {
                     more.push(Outgoing::To(id, ServerMsg::PeerJoined(me.clone())));
                 }
-                more.extend(room.latest.iter().map(|(&from, p)| Outgoing::To(id, ServerMsg::Presence { client_id: from, presence: p.clone() })));
+                more.extend(room.latest.iter().map(|(&from, p)| {
+                    Outgoing::To(
+                        id,
+                        ServerMsg::Presence {
+                            client_id: from,
+                            presence: p.clone(),
+                        },
+                    )
+                }));
                 // A client that reads it hears about the server's hosting (operator, terms, expiry).
                 more.extend(info.map(|i| Outgoing::To(id, ServerMsg::Hosting(Box::new(i)))));
                 if let Some(c) = old.and_then(|old| self.conns.remove(&old)) {
                     shutdown(&c.sock);
                 }
-                self.conns
-                    .insert(conn, Conn { out: c.out, sock: c.sock, kind: Kind::Joined { file: file.clone(), id, link: admission.link }, ip: c.ip });
+                self.conns.insert(
+                    conn,
+                    Conn {
+                        out: c.out,
+                        sock: c.sock,
+                        kind: Kind::Joined {
+                            file: file.clone(),
+                            id,
+                            link: admission.link,
+                        },
+                        ip: c.ip,
+                    },
+                );
                 self.queue(&file, more);
             }
             Err(ServerMsg::Refused { reason }) => {
@@ -1364,7 +1657,15 @@ impl<B: Backend> Hub<B> {
 
     /// Take in connection `c` as `kind` and send it `first`.
     fn take_in(&mut self, conn: u64, c: Pending, kind: Kind, first: &ServerMsg) {
-        self.conns.insert(conn, Conn { out: c.out, sock: c.sock, kind, ip: c.ip });
+        self.conns.insert(
+            conn,
+            Conn {
+                out: c.out,
+                sock: c.sock,
+                kind,
+                ip: c.ip,
+            },
+        );
         self.answer(conn, first);
     }
 
@@ -1377,7 +1678,12 @@ impl<B: Backend> Hub<B> {
             return refuse(&c.out, &why);
         }
         log::info!("live session: connection {conn} manages files");
-        self.take_in(conn, c, Kind::Managing, &ServerMsg::Admin(Box::new(AdminReply::Ready)));
+        self.take_in(
+            conn,
+            c,
+            Kind::Managing,
+            &ServerMsg::Admin(Box::new(AdminReply::Ready)),
+        );
     }
 
     fn open_library(&mut self, conn: u64, o: OpenLibrary, c: Pending) {
@@ -1388,7 +1694,16 @@ impl<B: Backend> Hub<B> {
             Ok(a) => (a.access, a.link),
             Err(why) => return refuse(&c.out, &why),
         };
-        self.take_in(conn, c, Kind::Library { file: o.file, access, link }, &ServerMsg::Library(Box::new(LibraryReply::Ready { access })));
+        self.take_in(
+            conn,
+            c,
+            Kind::Library {
+                file: o.file,
+                access,
+                link,
+            },
+            &ServerMsg::Library(Box::new(LibraryReply::Ready { access })),
+        );
     }
 
     /// A plugin directory connection: anyone may browse; a key, when given, must be the server's.
@@ -1400,7 +1715,12 @@ impl<B: Backend> Hub<B> {
         if publisher && let Err(why) = self.backend.manage(&o.key) {
             return refuse(&c.out, &why);
         }
-        self.take_in(conn, c, Kind::Plugins { publisher }, &ServerMsg::Plugins(Box::new(PluginReply::Ready { publisher })));
+        self.take_in(
+            conn,
+            c,
+            Kind::Plugins { publisher },
+            &ServerMsg::Plugins(Box::new(PluginReply::Ready { publisher })),
+        );
     }
 
     /// An open hosting connection: what the server says about its hosting, then publishing (when
@@ -1417,7 +1737,12 @@ impl<B: Backend> Hub<B> {
             }
         };
         let owns = (!o.owner.is_empty()).then(|| o.file.clone());
-        self.take_in(conn, c, Kind::Hosting { owns }, &ServerMsg::Hosting(Box::new(info)));
+        self.take_in(
+            conn,
+            c,
+            Kind::Hosting { owns },
+            &ServerMsg::Hosting(Box::new(info)),
+        );
     }
 
     /// A join code: the file it opens and the token to join it with, then the connection closes
@@ -1431,7 +1756,10 @@ impl<B: Backend> Hub<B> {
                 if let Some(b) = encode(&ServerMsg::Resolved { file, token }) {
                     let _ = c.out.tx.try_send(Out::Bytes(b, None));
                 }
-                let _ = c.out.tx.try_send(Out::Close(CloseCode::Normal, String::new()));
+                let _ = c
+                    .out
+                    .tx
+                    .try_send(Out::Close(CloseCode::Normal, String::new()));
             }
             Err(why) => {
                 log::info!("event=code_refused ip={} reason={why:?}", c.ip);
@@ -1453,18 +1781,33 @@ impl<B: Backend> Hub<B> {
         if let Some((file, link)) = handled.revoked {
             let with = |joined: bool| -> Vec<u64> {
                 let uses = |c: &Conn| match &c.kind {
-                    Kind::Joined { file: f, link: Some(l), .. } => joined && *f == file && *l == link,
-                    Kind::Library { file: f, link: Some(l), .. } => !joined && *f == file && *l == link,
+                    Kind::Joined {
+                        file: f,
+                        link: Some(l),
+                        ..
+                    } => joined && *f == file && *l == link,
+                    Kind::Library {
+                        file: f,
+                        link: Some(l),
+                        ..
+                    } => !joined && *f == file && *l == link,
                     _ => false,
                 };
-                self.conns.iter().filter(|(_, c)| uses(c)).map(|(k, _)| *k).collect()
+                self.conns
+                    .iter()
+                    .filter(|(_, c)| uses(c))
+                    .map(|(k, _)| *k)
+                    .collect()
             };
             let (people, libraries) = (with(true), with(false));
             // People in the file are told the session is over for them, as when a host stops (they
             // keep their copy; nothing retries); a library request is refused.
             for conn in &people {
                 if let Some(c) = self.conns.get(conn) {
-                    let _ = c.out.tx.try_send(Out::Close(CloseCode::Away, STOPPED.into()));
+                    let _ = c
+                        .out
+                        .tx
+                        .try_send(Out::Close(CloseCode::Away, STOPPED.into()));
                 }
                 self.gone(*conn);
             }
@@ -1482,8 +1825,16 @@ impl<B: Backend> Hub<B> {
             self.kick(&users, "this file was removed from the server");
         }
         if let Some(ip) = handled.blocked {
-            let users: Vec<u64> = self.conns.iter().filter(|(_, c)| c.ip == ip).map(|(k, _)| *k).collect();
-            self.kick(&users, "this server no longer accepts connections from your address");
+            let users: Vec<u64> = self
+                .conns
+                .iter()
+                .filter(|(_, c)| c.ip == ip)
+                .map(|(k, _)| *k)
+                .collect();
+            self.kick(
+                &users,
+                "this server no longer accepts connections from your address",
+            );
         }
     }
 
@@ -1493,7 +1844,9 @@ impl<B: Backend> Hub<B> {
             return;
         }
         let mut drop = Vec::new();
-        if !encode(msg).is_some_and(|b| deliver(&self.conns, conn, &b, &mut Charges::default(), &mut drop)) {
+        if !encode(msg)
+            .is_some_and(|b| deliver(&self.conns, conn, &b, &mut Charges::default(), &mut drop))
+        {
             drop.push(conn);
         }
         self.drop_conns(drop);
@@ -1520,9 +1873,15 @@ impl<B: Backend> Hub<B> {
     }
 
     fn gone(&mut self, conn: u64) {
-        let Some(c) = self.conns.remove(&conn) else { return };
-        let Kind::Joined { file, id, .. } = c.kind else { return };
-        let Some(room) = self.rooms.get_mut(&file) else { return };
+        let Some(c) = self.conns.remove(&conn) else {
+            return;
+        };
+        let Kind::Joined { file, id, .. } = c.kind else {
+            return;
+        };
+        let Some(room) = self.rooms.get_mut(&file) else {
+            return;
+        };
         if room.ids.get(&id) == Some(&conn) {
             room.ids.remove(&id);
         }
@@ -1540,11 +1899,18 @@ impl<B: Backend> Hub<B> {
         log::error!("file {file}: changes couldn't be saved; reconnecting everyone in it");
         self.outbox.retain(|(f, _)| f != file);
         self.rooms.remove(file);
-        let users: Vec<u64> =
-            self.conns.iter().filter(|(_, c)| matches!(&c.kind, Kind::Joined { file: f, .. } if f == file)).map(|(k, _)| *k).collect();
+        let users: Vec<u64> = self
+            .conns
+            .iter()
+            .filter(|(_, c)| matches!(&c.kind, Kind::Joined { file: f, .. } if f == file))
+            .map(|(k, _)| *k)
+            .collect();
         for conn in users {
             if let Some(c) = self.conns.remove(&conn)
-                && c.out.tx.try_send(Out::Close(CloseCode::Restart, reason(UNSAVED))).is_err()
+                && c.out
+                    .tx
+                    .try_send(Out::Close(CloseCode::Restart, reason(UNSAVED)))
+                    .is_err()
             {
                 shutdown(&c.sock);
             }
@@ -1553,17 +1919,26 @@ impl<B: Backend> Hub<B> {
 
     /// Nobody is in `file`: the backend saves it and may close it.
     fn close_if_empty(&mut self, file: &str) {
-        let Some(room) = self.rooms.get_mut(file).filter(|r| r.empty()) else { return };
+        let Some(room) = self.rooms.get_mut(file).filter(|r| r.empty()) else {
+            return;
+        };
         if self.backend.idle(file, &mut room.server) {
             self.rooms.remove(file);
         }
     }
 
     fn presence(&mut self, file: &str, id: u32, p: Presence) {
-        let Some(room) = self.rooms.get_mut(file) else { return };
+        let Some(room) = self.rooms.get_mut(file) else {
+            return;
+        };
         let p = sanitize(p);
         room.latest.insert(id, p.clone());
-        if let Some(p) = room.throttles.entry(id).or_insert_with(|| Throttle::new(PRESENCE_INTERVAL)).offer(p, Instant::now()) {
+        if let Some(p) = room
+            .throttles
+            .entry(id)
+            .or_insert_with(|| Throttle::new(PRESENCE_INTERVAL))
+            .offer(p, Instant::now())
+        {
             let outs = room.server.receive(id, ClientMsg::Presence(p));
             self.queue(file, outs);
         }
@@ -1572,9 +1947,18 @@ impl<B: Backend> Hub<B> {
     fn flush_due(&mut self, now: Instant) {
         let mut outs = Vec::new();
         for (file, room) in &mut self.rooms {
-            let due: Vec<(u32, Presence)> = room.throttles.iter_mut().filter_map(|(id, t)| t.take_due(now).map(|p| (*id, p))).collect();
+            let due: Vec<(u32, Presence)> = room
+                .throttles
+                .iter_mut()
+                .filter_map(|(id, t)| t.take_due(now).map(|p| (*id, p)))
+                .collect();
             for (id, p) in due {
-                outs.extend(room.server.receive(id, ClientMsg::Presence(p)).into_iter().map(|o| (file.clone(), o)));
+                outs.extend(
+                    room.server
+                        .receive(id, ClientMsg::Presence(p))
+                        .into_iter()
+                        .map(|o| (file.clone(), o)),
+                );
             }
         }
         self.outbox.extend(outs);
@@ -1589,23 +1973,39 @@ impl<B: Backend> Hub<B> {
         while !self.outbox.is_empty() {
             let mut stuck = Vec::new();
             for (file, o) in std::mem::take(&mut self.outbox) {
-                let Some(room) = self.rooms.get(&file) else { continue };
+                let Some(room) = self.rooms.get(&file) else {
+                    continue;
+                };
                 let (to, msg): (Vec<u32>, ServerMsg) = match o {
                     Outgoing::To(id, m) => (vec![id], m),
                     Outgoing::All(m) => (room.server.peers().map(|p| p.client_id).collect(), m),
-                    Outgoing::Others(x, m) => (room.server.peers().map(|p| p.client_id).filter(|id| *id != x).collect(), m),
+                    Outgoing::Others(x, m) => (
+                        room.server
+                            .peers()
+                            .map(|p| p.client_id)
+                            .filter(|id| *id != x)
+                            .collect(),
+                        m,
+                    ),
                 };
                 let mut bytes = None;
                 // One count against the server's budget, and each block's, for every copy of this
                 // message; welcomes aren't counted against blocks.
-                let mut held = Charges { skip_blocks: matches!(msg, ServerMsg::Welcome { .. }), ..Charges::default() };
+                let mut held = Charges {
+                    skip_blocks: matches!(msg, ServerMsg::Welcome { .. }),
+                    ..Charges::default()
+                };
                 for id in to {
                     if let Some((local, inbox)) = room.local.as_ref().filter(|(l, _)| *l == id) {
                         to_local(inbox, *local, &msg);
                         continue;
                     }
-                    let Some(&conn) = room.ids.get(&id) else { continue };
-                    let Some(b) = bytes.get_or_insert_with(|| encode(&msg)).clone() else { continue };
+                    let Some(&conn) = room.ids.get(&id) else {
+                        continue;
+                    };
+                    let Some(b) = bytes.get_or_insert_with(|| encode(&msg)).clone() else {
+                        continue;
+                    };
                     if !deliver(&self.conns, conn, &b, &mut held, &mut stuck) {
                         stuck.push(conn);
                     }
@@ -1620,12 +2020,23 @@ impl<B: Backend> Hub<B> {
 /// gone). When the server's budget for queued bytes is used up, the connection holding the most
 /// queued bytes is shed (added to `shed`) to make room, unless that is `conn` itself: whoever
 /// hogs the budget goes, not the next client that happens to need a little of it.
-fn deliver(conns: &HashMap<u64, Conn>, conn: u64, b: &Bytes, held: &mut Charges, shed: &mut Vec<u64>) -> bool {
-    let Some(c) = conns.get(&conn) else { return true };
+fn deliver(
+    conns: &HashMap<u64, Conn>,
+    conn: u64,
+    b: &Bytes,
+    held: &mut Charges,
+    shed: &mut Vec<u64>,
+) -> bool {
+    let Some(c) = conns.get(&conn) else {
+        return true;
+    };
     match c.out.push(b, held, false) {
         Ok(()) => true,
         Err(Push::Everyone) => {
-            let biggest = conns.iter().filter(|(k, _)| !shed.contains(k)).max_by_key(|(_, c)| c.out.queued.load(Ordering::Relaxed));
+            let biggest = conns
+                .iter()
+                .filter(|(k, _)| !shed.contains(k))
+                .max_by_key(|(_, c)| c.out.queued.load(Ordering::Relaxed));
             match biggest {
                 Some((&big, bc)) if big != conn && bc.out.queued.load(Ordering::Relaxed) > 0 => {
                     log::info!("event=shed conn={big} ip={} reason=queued_bytes", bc.ip);
@@ -1633,7 +2044,9 @@ fn deliver(conns: &HashMap<u64, Conn>, conn: u64, b: &Bytes, held: &mut Charges,
                     c.out.push(b, held, true).is_ok()
                 }
                 _ => {
-                    log::info!("live session: connection {conn} holds the most queued bytes; disconnecting it");
+                    log::info!(
+                        "live session: connection {conn} holds the most queued bytes; disconnecting it"
+                    );
                     false
                 }
             }
@@ -1649,11 +2062,20 @@ fn deliver(conns: &HashMap<u64, Conn>, conn: u64, b: &Bytes, held: &mut Charges,
 /// What the hosting person's window should know.
 pub(crate) fn to_local(inbox: &Inbox, local: u32, msg: &ServerMsg) {
     match msg {
-        ServerMsg::PeerJoined(p) if p.client_id != local => inbox.push(Event::PeerJoined(p.clone())),
+        ServerMsg::PeerJoined(p) if p.client_id != local => {
+            inbox.push(Event::PeerJoined(p.clone()))
+        }
         ServerMsg::PeerLeft { client_id } => inbox.push(Event::PeerLeft(*client_id)),
-        ServerMsg::Presence { client_id, presence } => inbox.presence(*client_id, presence.clone()),
-        ServerMsg::Changes { .. } | ServerMsg::Reject { .. } => inbox.push(Event::Sync(msg.clone())),
-        ServerMsg::Signal { client_id, signal } => inbox.push(Event::Signal(*client_id, signal.clone())),
+        ServerMsg::Presence {
+            client_id,
+            presence,
+        } => inbox.presence(*client_id, presence.clone()),
+        ServerMsg::Changes { .. } | ServerMsg::Reject { .. } => {
+            inbox.push(Event::Sync(msg.clone()))
+        }
+        ServerMsg::Signal { client_id, signal } => {
+            inbox.push(Event::Signal(*client_id, signal.clone()))
+        }
         _ => {}
     }
 }

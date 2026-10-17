@@ -15,13 +15,17 @@ use skrifa::{FontRef, MetadataProvider};
 use crate::sfnt::{FaceNames, read_faces, read_faces_bytes};
 
 /// Bundled fonts (SIL OFL 1.1; see `assets/fonts/*.attribution` and ATTRIBUTION.md).
-pub static INTER_REGULAR: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/Inter-Regular.ttf");
+pub static INTER_REGULAR: &[u8] =
+    include_bytes!("../../../assets/filmcraft/fonts/Inter-Regular.ttf");
 pub static INTER_MEDIUM: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/Inter-Medium.ttf");
-pub static INTER_SEMIBOLD: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/Inter-SemiBold.ttf");
+pub static INTER_SEMIBOLD: &[u8] =
+    include_bytes!("../../../assets/filmcraft/fonts/Inter-SemiBold.ttf");
 pub static INTER_BOLD: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/Inter-Bold.ttf");
 pub static INTER_ITALIC: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/Inter-Italic.ttf");
-pub static JETBRAINS_MONO_REGULAR: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/JetBrainsMono-Regular.ttf");
-pub static NOTO_SERIF_REGULAR: &[u8] = include_bytes!("../../../assets/filmcraft/fonts/NotoSerif-Regular.ttf");
+pub static JETBRAINS_MONO_REGULAR: &[u8] =
+    include_bytes!("../../../assets/filmcraft/fonts/JetBrainsMono-Regular.ttf");
+pub static NOTO_SERIF_REGULAR: &[u8] =
+    include_bytes!("../../../assets/filmcraft/fonts/NotoSerif-Regular.ttf");
 
 /// A font from the optional craft-fonts build input (empty unless built with `CRAFT_FONTS_DIR`; see
 /// `build.rs` and storytold/craft-fonts `docs/integration.md`).
@@ -94,7 +98,9 @@ impl DirectorySource {
                 dirs.push(h.join("Library/Fonts"));
             }
         } else if cfg!(windows) {
-            let win = std::env::var_os("WINDIR").map(PathBuf::from).unwrap_or_else(|| PathBuf::from("C:\\Windows"));
+            let win = std::env::var_os("WINDIR")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("C:\\Windows"));
             dirs.push(win.join("Fonts"));
             if let Some(l) = std::env::var_os("LOCALAPPDATA") {
                 dirs.push(PathBuf::from(l).join("Microsoft\\Windows\\Fonts"));
@@ -111,14 +117,21 @@ impl DirectorySource {
 }
 
 fn walk(dir: &std::path::Path, depth: u32, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
             if depth < 4 {
                 walk(&p, depth + 1, out);
             }
-        } else if p.extension().and_then(|x| x.to_str()).is_some_and(|x| matches!(x.to_ascii_lowercase().as_str(), "ttf" | "otf" | "ttc" | "otc")) {
+        } else if p.extension().and_then(|x| x.to_str()).is_some_and(|x| {
+            matches!(
+                x.to_ascii_lowercase().as_str(),
+                "ttf" | "otf" | "ttc" | "otc"
+            )
+        }) {
             out.push(p);
         }
     }
@@ -133,7 +146,9 @@ impl FontSource for DirectorySource {
         files.sort();
         let mut out = Vec::new();
         for f in files {
-            let Ok(mut file) = std::fs::File::open(&f) else { continue };
+            let Ok(mut file) = std::fs::File::open(&f) else {
+                continue;
+            };
             for n in read_faces(&mut file) {
                 out.push(info_from(n, FaceData::File(f.clone()), "system"));
             }
@@ -143,7 +158,15 @@ impl FontSource for DirectorySource {
 }
 
 fn info_from(n: FaceNames, data: FaceData, origin: &'static str) -> FaceInfo {
-    FaceInfo { family: n.family, style: n.style, weight: n.weight, italic: n.italic, index: n.index, data, origin }
+    FaceInfo {
+        family: n.family,
+        style: n.style,
+        weight: n.weight,
+        italic: n.italic,
+        index: n.index,
+        data,
+        origin,
+    }
 }
 
 /// A loaded (or loadable) face.
@@ -188,7 +211,9 @@ impl Face {
             .get_or_init(|| match &self.info.data {
                 FaceData::Static(b) => Some(FaceBytes::Static(b)),
                 FaceData::Shared(b) => Some(FaceBytes::Shared(b.clone())),
-                FaceData::File(p) => std::fs::read(p).ok().map(|v| FaceBytes::Shared(Arc::new(v))),
+                FaceData::File(p) => std::fs::read(p)
+                    .ok()
+                    .map(|v| FaceBytes::Shared(Arc::new(v))),
             })
             .as_ref()
             .map(FaceBytes::get)
@@ -206,11 +231,21 @@ impl Face {
         Some(self.shaper.get_or_init(|| harfrust::ShaperData::new(&f)))
     }
     pub fn units_per_em(&self) -> f32 {
-        self.font().map(|f| f.metrics(Size::unscaled(), LocationRef::default()).units_per_em as f32).filter(|u| *u > 0.0).unwrap_or(1000.0)
+        self.font()
+            .map(|f| {
+                f.metrics(Size::unscaled(), LocationRef::default())
+                    .units_per_em as f32
+            })
+            .filter(|u| *u > 0.0)
+            .unwrap_or(1000.0)
     }
     /// Glyph for a character (None when the face does not cover it).
     pub fn glyph(&self, c: char) -> Option<u32> {
-        self.font()?.charmap().map(c).map(|g| g.to_u32()).filter(|g| *g != 0)
+        self.font()?
+            .charmap()
+            .map(c)
+            .map(|g| g.to_u32())
+            .filter(|g| *g != 0)
     }
     pub fn has_char(&self, c: char) -> bool {
         self.glyph(c).is_some()
@@ -220,10 +255,16 @@ impl Face {
     /// probing many system faces does not keep every font file in memory.
     pub fn covers_text(&self, text: &str) -> bool {
         if let (FaceData::File(p), None) = (&self.info.data, self.bytes.get()) {
-            let Ok(data) = std::fs::read(p) else { return false };
-            let Ok(font) = FontRef::from_index(&data, self.info.index) else { return false };
+            let Ok(data) = std::fs::read(p) else {
+                return false;
+            };
+            let Ok(font) = FontRef::from_index(&data, self.info.index) else {
+                return false;
+            };
             let charmap = font.charmap();
-            return text.chars().all(|c| charmap.map(c).is_some_and(|g| g.to_u32() != 0));
+            return text
+                .chars()
+                .all(|c| charmap.map(c).is_some_and(|g| g.to_u32() != 0));
         }
         text.chars().all(|c| self.has_char(c))
     }
@@ -236,7 +277,9 @@ impl Face {
         let units = match font.vorg() {
             Ok(table) => f32::from(table.vertical_origin_y(glyph)),
             Err(_) => {
-                let bounds = font.glyph_metrics(Size::unscaled(), LocationRef::default()).bounds(glyph)?;
+                let bounds = font
+                    .glyph_metrics(Size::unscaled(), LocationRef::default())
+                    .bounds(glyph)?;
                 bounds.y_max + f32::from(font.vmtx().ok()?.side_bearing(glyph)?)
             }
         };
@@ -264,7 +307,9 @@ impl Face {
             cap_height: m.cap_height.unwrap_or(m.ascent * 0.7),
             x_height: m.x_height.unwrap_or(m.ascent * 0.5),
             underline_pos: m.underline.map_or(px * 0.1, |u| -u.offset),
-            underline_thickness: m.underline.map_or(px * 0.06, |u| u.thickness.max(px * 0.03)),
+            underline_thickness: m
+                .underline
+                .map_or(px * 0.06, |u| u.thickness.max(px * 0.03)),
         }
     }
     /// Whether the face's GSUB offers an OpenType feature (e.g. `smcp`).
@@ -272,8 +317,12 @@ impl Face {
         use skrifa::raw::TableProvider;
         let Some(f) = self.font() else { return false };
         let Ok(gsub) = f.gsub() else { return false };
-        let Ok(list) = gsub.feature_list() else { return false };
-        list.feature_records().iter().any(|r| r.feature_tag().to_be_bytes() == *tag)
+        let Ok(list) = gsub.feature_list() else {
+            return false;
+        };
+        list.feature_records()
+            .iter()
+            .any(|r| r.feature_tag().to_be_bytes() == *tag)
     }
 }
 
@@ -285,8 +334,19 @@ struct Db {
 fn db() -> &'static RwLock<Db> {
     static DB: OnceLock<RwLock<Db>> = OnceLock::new();
     DB.get_or_init(|| {
-        let mut db = Db { faces: Vec::new(), scanned: false };
-        for b in [INTER_REGULAR, INTER_MEDIUM, INTER_SEMIBOLD, INTER_BOLD, INTER_ITALIC, JETBRAINS_MONO_REGULAR, NOTO_SERIF_REGULAR] {
+        let mut db = Db {
+            faces: Vec::new(),
+            scanned: false,
+        };
+        for b in [
+            INTER_REGULAR,
+            INTER_MEDIUM,
+            INTER_SEMIBOLD,
+            INTER_BOLD,
+            INTER_ITALIC,
+            JETBRAINS_MONO_REGULAR,
+            NOTO_SERIF_REGULAR,
+        ] {
             for n in read_faces_bytes(b) {
                 push(&mut db, info_from(n, FaceData::Static(b), "bundled"));
             }
@@ -295,7 +355,10 @@ fn db() -> &'static RwLock<Db> {
         // family + style is then skipped as a duplicate)
         for f in CRAFT_FONTS {
             for n in read_faces_bytes(f.bytes) {
-                push(&mut db, info_from(n, FaceData::Static(f.bytes), CRAFT_ORIGIN));
+                push(
+                    &mut db,
+                    info_from(n, FaceData::Static(f.bytes), CRAFT_ORIGIN),
+                );
             }
         }
         RwLock::new(db)
@@ -304,7 +367,12 @@ fn db() -> &'static RwLock<Db> {
 
 fn push(db: &mut Db, info: FaceInfo) -> FaceId {
     let id = db.faces.len();
-    db.faces.push(Arc::new(Face { id, info, bytes: OnceLock::new(), shaper: OnceLock::new() }));
+    db.faces.push(Arc::new(Face {
+        id,
+        info,
+        bytes: OnceLock::new(),
+        shaper: OnceLock::new(),
+    }));
     id
 }
 
@@ -315,7 +383,10 @@ pub fn add_source(src: &dyn FontSource) -> usize {
     let mut d = db().write().unwrap_or_else(|e| e.into_inner());
     let mut n = 0;
     for f in faces {
-        let dup = d.faces.iter().any(|g| g.info.family.eq_ignore_ascii_case(&f.family) && g.info.style.eq_ignore_ascii_case(&f.style));
+        let dup = d.faces.iter().any(|g| {
+            g.info.family.eq_ignore_ascii_case(&f.family)
+                && g.info.style.eq_ignore_ascii_case(&f.style)
+        });
         if !dup {
             push(&mut d, f);
             n += 1;
@@ -329,7 +400,10 @@ pub fn add_font_data(data: Vec<u8>) -> Vec<FaceId> {
     let data = Arc::new(data);
     let names = read_faces_bytes(&data);
     let mut d = db().write().unwrap_or_else(|e| e.into_inner());
-    names.into_iter().map(|n| push(&mut d, info_from(n, FaceData::Shared(data.clone()), "user"))).collect()
+    names
+        .into_iter()
+        .map(|n| push(&mut d, info_from(n, FaceData::Shared(data.clone()), "user")))
+        .collect()
 }
 
 /// Scan the system font folders once (native only; a no-op on wasm). Returns the number of faces
@@ -342,7 +416,11 @@ pub fn scan_system() -> usize {
     if system_scanned() {
         return 0;
     }
-    let n = if cfg!(target_arch = "wasm32") { 0 } else { add_source(&DirectorySource::system()) };
+    let n = if cfg!(target_arch = "wasm32") {
+        0
+    } else {
+        add_source(&DirectorySource::system())
+    };
     db().write().unwrap_or_else(|e| e.into_inner()).scanned = true;
     n
 }
@@ -357,7 +435,11 @@ pub fn system_scanned() -> bool {
 #[allow(clippy::expect_used)]
 pub fn face(id: FaceId) -> Arc<Face> {
     let d = db().read().unwrap_or_else(|e| e.into_inner());
-    d.faces.get(id).or_else(|| d.faces.first()).cloned().expect("bundled fonts present")
+    d.faces
+        .get(id)
+        .or_else(|| d.faces.first())
+        .cloned()
+        .expect("bundled fonts present")
 }
 
 /// All faces (bundled first).
@@ -430,26 +512,47 @@ pub fn resolve(family: &str, style: &str) -> Resolved {
             return r;
         }
     }
-    let mut r = resolve_in(DEFAULT_FAMILY, style).unwrap_or(Resolved { face: 0, synth_bold: false, synth_italic: false, missing: true });
+    let mut r = resolve_in(DEFAULT_FAMILY, style).unwrap_or(Resolved {
+        face: 0,
+        synth_bold: false,
+        synth_italic: false,
+        missing: true,
+    });
     r.missing = !family.is_empty() && !family.eq_ignore_ascii_case(DEFAULT_FAMILY);
     r
 }
 
 fn resolve_in(family: &str, style: &str) -> Option<Resolved> {
     let faces = all_faces();
-    let fam: Vec<&Arc<Face>> = faces.iter().filter(|f| f.info.family.eq_ignore_ascii_case(family)).collect();
+    let fam: Vec<&Arc<Face>> = faces
+        .iter()
+        .filter(|f| f.info.family.eq_ignore_ascii_case(family))
+        .collect();
     if fam.is_empty() {
         return None;
     }
-    if let Some(f) = fam.iter().find(|f| f.info.style.eq_ignore_ascii_case(style)) {
-        return Some(Resolved { face: f.id, synth_bold: false, synth_italic: false, missing: false });
+    if let Some(f) = fam
+        .iter()
+        .find(|f| f.info.style.eq_ignore_ascii_case(style))
+    {
+        return Some(Resolved {
+            face: f.id,
+            synth_bold: false,
+            synth_italic: false,
+            missing: false,
+        });
     }
     let (w, it) = style_wants(style);
     let best = fam.iter().min_by_key(|f| {
         let italic_pen = if f.info.italic == it { 0 } else { 1000 };
         italic_pen + (f.info.weight as i32 - w as i32).unsigned_abs()
     })?;
-    Some(Resolved { face: best.id, synth_bold: w >= 600 && best.info.weight <= 500, synth_italic: it && !best.info.italic, missing: false })
+    Some(Resolved {
+        face: best.id,
+        synth_bold: w >= 600 && best.info.weight <= 500,
+        synth_italic: it && !best.info.italic,
+        missing: false,
+    })
 }
 
 /// Whether a family name reads as a serif face (Noto Serif, Shippori Mincho, …), to pick a Mincho
@@ -475,14 +578,26 @@ pub fn fallback_for(c: char, prefer: FaceId) -> FaceId {
     }
     // then the craft-fonts faces (Japanese): Mincho for serif text, Gothic otherwise, nearest weight
     let serif = is_serif(&p.info.family);
-    let mut craft: Vec<&Arc<Face>> = faces.iter().filter(|f| f.info.origin == CRAFT_ORIGIN).collect();
-    craft.sort_by_key(|f| (is_serif(&f.info.family) != serif, f.info.italic != p.info.italic, f.info.weight.abs_diff(p.info.weight)));
+    let mut craft: Vec<&Arc<Face>> = faces
+        .iter()
+        .filter(|f| f.info.origin == CRAFT_ORIGIN)
+        .collect();
+    craft.sort_by_key(|f| {
+        (
+            is_serif(&f.info.family) != serif,
+            f.info.italic != p.info.italic,
+            f.info.weight.abs_diff(p.info.weight),
+        )
+    });
     for f in craft {
         if f.has_char(c) {
             return f.id;
         }
     }
-    for f in faces.iter().filter(|f| f.info.origin != "bundled" && f.bytes.get().is_some()) {
+    for f in faces
+        .iter()
+        .filter(|f| f.info.origin != "bundled" && f.bytes.get().is_some())
+    {
         if f.has_char(c) {
             return f.id;
         }
@@ -527,14 +642,25 @@ mod tests {
     fn system_scan_finds_fonts() {
         let t = std::time::Instant::now();
         scan_system(); // (another test may have triggered the scan already)
-        let n = all_faces().iter().filter(|f| f.info.origin == "system").count();
+        let n = all_faces()
+            .iter()
+            .filter(|f| f.info.origin == "system")
+            .count();
         eprintln!("system fonts: {n} faces in {:?}", t.elapsed());
         assert_eq!(scan_system(), 0, "scans once");
         if cfg!(target_os = "macos") {
             assert!(n > 20, "{n}");
             let r = resolve("Helvetica", "Bold");
             assert_eq!(face(r.face).info.family, "Helvetica");
-            let l = crate::layout("Helvetica", &crate::TextStyle { family: "Helvetica".into(), size: 30.0, ..Default::default() }, &Default::default());
+            let l = crate::layout(
+                "Helvetica",
+                &crate::TextStyle {
+                    family: "Helvetica".into(),
+                    size: 30.0,
+                    ..Default::default()
+                },
+                &Default::default(),
+            );
             assert!(!l.missing_font && l.glyphs.iter().all(|g| g.id != 0));
         }
     }
@@ -543,29 +669,62 @@ mod tests {
     /// requested face lacks: Gothic for sans text, Mincho for serif text.
     #[test]
     fn japanese_falls_back_to_craft_fonts() {
-        let craft: Vec<_> = all_faces().into_iter().filter(|f| f.info.origin == CRAFT_ORIGIN).collect();
+        let craft: Vec<_> = all_faces()
+            .into_iter()
+            .filter(|f| f.info.origin == CRAFT_ORIGIN)
+            .collect();
         if craft_japanese().next().is_none() {
             eprintln!("SKIPPED: built without craft-fonts (set CRAFT_FONTS_DIR to run)");
             assert!(craft.is_empty());
             return;
         }
-        assert!(craft.len() >= craft_japanese().count(), "{} faces", craft.len());
-        let bundled = all_faces().iter().take_while(|f| f.info.origin == "bundled").count();
-        assert!(craft.iter().all(|f| f.id >= bundled), "craft-fonts faces come after the bundled faces");
+        assert!(
+            craft.len() >= craft_japanese().count(),
+            "{} faces",
+            craft.len()
+        );
+        let bundled = all_faces()
+            .iter()
+            .take_while(|f| f.info.origin == "bundled")
+            .count();
+        assert!(
+            craft.iter().all(|f| f.id >= bundled),
+            "craft-fonts faces come after the bundled faces"
+        );
         let sans = resolve("Inter", "Regular").face;
         let serif = resolve("Noto Serif", "Regular").face;
         for c in "日本語の文字".chars() {
             let g = face(fallback_for(c, sans));
             assert_eq!(g.info.origin, CRAFT_ORIGIN, "{c}");
-            assert!(g.has_char(c) && !is_serif(&g.info.family), "{c}: {}", g.info.family);
+            assert!(
+                g.has_char(c) && !is_serif(&g.info.family),
+                "{c}: {}",
+                g.info.family
+            );
             let m = face(fallback_for(c, serif));
-            assert!(m.has_char(c) && is_serif(&m.info.family), "{c}: {}", m.info.family);
+            assert!(
+                m.has_char(c) && is_serif(&m.info.family),
+                "{c}: {}",
+                m.info.family
+            );
         }
         // the bold UI face for bold text
         let bold = face(fallback_for('日', resolve("Inter", "Bold").face));
-        assert!(bold.info.weight >= 600, "{} {}", bold.info.family, bold.info.style);
+        assert!(
+            bold.info.weight >= 600,
+            "{} {}",
+            bold.info.family,
+            bold.info.style
+        );
         // and laid out with real glyphs (no tofu)
-        let l = crate::layout("日本語の文字", &crate::TextStyle { size: 40.0, ..Default::default() }, &Default::default());
+        let l = crate::layout(
+            "日本語の文字",
+            &crate::TextStyle {
+                size: 40.0,
+                ..Default::default()
+            },
+            &Default::default(),
+        );
         assert_eq!(l.glyphs.len(), 6);
         assert!(l.glyphs.iter().all(|g| g.id != 0), "{:?}", l.glyphs);
     }
@@ -584,7 +743,8 @@ mod tests {
 
     #[test]
     fn covers_text_does_not_keep_file_bytes() {
-        let path = std::env::temp_dir().join(format!("filmcraft-covers-text-{}.ttf", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("filmcraft-covers-text-{}.ttf", std::process::id()));
         std::fs::write(&path, INTER_REGULAR).expect("write temp font");
         let info = FaceInfo {
             family: "Inter".into(),
@@ -595,10 +755,18 @@ mod tests {
             data: FaceData::File(path.clone()),
             origin: "system",
         };
-        let f = Face { id: 0, info, bytes: OnceLock::new(), shaper: OnceLock::new() };
+        let f = Face {
+            id: 0,
+            info,
+            bytes: OnceLock::new(),
+            shaper: OnceLock::new(),
+        };
         assert!(f.covers_text("A\u{416}"));
         assert!(!f.covers_text("A\u{5d0}"));
-        assert!(f.bytes.get().is_none(), "probing coverage must not cache the file");
+        assert!(
+            f.bytes.get().is_none(),
+            "probing coverage must not cache the file"
+        );
         assert!(f.data().is_some());
         assert!(f.bytes.get().is_some());
         let _ = std::fs::remove_file(&path);

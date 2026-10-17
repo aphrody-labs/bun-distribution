@@ -68,17 +68,32 @@ fn vector_only(doc: &Document, id: NodeId, depth: usize, paths: &mut bool) -> bo
     if !n.visible {
         return true;
     }
-    if n.fills.iter().chain(&n.strokes).any(|p| matches!(p.kind, PaintKind::Image(_) | PaintKind::Pattern(_))) {
+    if n.fills
+        .iter()
+        .chain(&n.strokes)
+        .any(|p| matches!(p.kind, PaintKind::Image(_) | PaintKind::Pattern(_)))
+    {
         return false;
     }
     match n.kind {
-        NodeKind::Vector { .. } | NodeKind::BooleanOp { .. } | NodeKind::Star { .. } | NodeKind::Polygon { .. } | NodeKind::Line => {
+        NodeKind::Vector { .. }
+        | NodeKind::BooleanOp { .. }
+        | NodeKind::Star { .. }
+        | NodeKind::Polygon { .. }
+        | NodeKind::Line => {
             *paths = true;
             true
         }
         NodeKind::Rectangle | NodeKind::Ellipse { .. } => true,
-        NodeKind::Group | NodeKind::Frame | NodeKind::Component { .. } | NodeKind::Instance { .. } => {
-            depth < 16 && !n.children.is_empty() && n.children.iter().all(|c| vector_only(doc, *c, depth + 1, paths))
+        NodeKind::Group
+        | NodeKind::Frame
+        | NodeKind::Component { .. }
+        | NodeKind::Instance { .. } => {
+            depth < 16
+                && !n.children.is_empty()
+                && n.children
+                    .iter()
+                    .all(|c| vector_only(doc, *c, depth + 1, paths))
         }
         _ => false,
     }
@@ -89,9 +104,17 @@ fn asset_kind(doc: &Document, n: &Node) -> Option<AssetKind> {
     let mut paths = false;
     if !n.exports.is_empty() {
         Some(AssetKind::Export)
-    } else if n.width <= ICON_MAX && n.height <= ICON_MAX && vector_only(doc, n.id, 0, &mut paths) && paths {
+    } else if n.width <= ICON_MAX
+        && n.height <= ICON_MAX
+        && vector_only(doc, n.id, 0, &mut paths)
+        && paths
+    {
         Some(AssetKind::Icon)
-    } else if n.fills.iter().any(|p| p.visible && matches!(p.kind, PaintKind::Image(_))) {
+    } else if n
+        .fills
+        .iter()
+        .any(|p| p.visible && matches!(p.kind, PaintKind::Image(_)))
+    {
         Some(AssetKind::Image)
     } else {
         None
@@ -123,11 +146,23 @@ pub fn assets(doc: &Document, ids: &[NodeId]) -> Vec<Asset> {
         {
             let settings = match kind {
                 AssetKind::Export => n.exports.clone(),
-                AssetKind::Icon => vec![ExportSetting { format: ExportFormat::Svg, ..Default::default() }],
+                AssetKind::Icon => vec![ExportSetting {
+                    format: ExportFormat::Svg,
+                    ..Default::default()
+                }],
                 AssetKind::Image => vec![ExportSetting::default()],
             };
-            let exports = settings.iter().map(|e| format!("{} {}", e.format.label(), e.size.label())).collect();
-            out.push(Asset { id, name: n.name.clone(), kind, exports, settings });
+            let exports = settings
+                .iter()
+                .map(|e| format!("{} {}", e.format.label(), e.size.label()))
+                .collect();
+            out.push(Asset {
+                id,
+                name: n.name.clone(),
+                kind,
+                exports,
+                settings,
+            });
         }
         if kind != Some(AssetKind::Icon) {
             stack.extend(n.children.iter().rev().copied());
@@ -138,7 +173,10 @@ pub fn assets(doc: &Document, ids: &[NodeId]) -> Vec<Asset> {
 
 /// The files exporting the assets in and under `ids` makes (see [`assets`]).
 pub fn asset_jobs(doc: &Document, ids: &[NodeId]) -> Vec<crate::cmd::file::ExportJob> {
-    crate::cmd::file::jobs_for(assets(doc, ids).into_iter().map(|a| (a.id, a.settings)), doc)
+    crate::cmd::file::jobs_for(
+        assets(doc, ids).into_iter().map(|a| (a.id, a.settings)),
+        doc,
+    )
 }
 
 /// How the Inspect tab writes colours.
@@ -158,7 +196,13 @@ pub enum ColorFormat {
 }
 
 impl ColorFormat {
-    pub const ALL: [ColorFormat; 5] = [ColorFormat::Hex, ColorFormat::Rgb, ColorFormat::Css, ColorFormat::Hsl, ColorFormat::Hsb];
+    pub const ALL: [ColorFormat; 5] = [
+        ColorFormat::Hex,
+        ColorFormat::Rgb,
+        ColorFormat::Css,
+        ColorFormat::Hsl,
+        ColorFormat::Hsb,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -181,7 +225,9 @@ impl ColorFormat {
     }
 
     pub fn from_id(s: &str) -> Option<ColorFormat> {
-        ColorFormat::ALL.into_iter().find(|f| f.id().eq_ignore_ascii_case(s.trim()))
+        ColorFormat::ALL
+            .into_iter()
+            .find(|f| f.id().eq_ignore_ascii_case(s.trim()))
     }
 
     /// `c` in this format; the opacity follows as " · 50%" (CSS puts it in `rgba`).
@@ -192,7 +238,9 @@ impl ColorFormat {
         let body = match self {
             ColorFormat::Hex => format!("#{}", c.to_hex()),
             ColorFormat::Rgb => format!("{r}, {g}, {b}"),
-            ColorFormat::Css if alpha => return format!("rgba({r}, {g}, {b}, {})", num(f64::from(c.a))),
+            ColorFormat::Css if alpha => {
+                return format!("rgba({r}, {g}, {b}, {})", num(f64::from(c.a)));
+            }
             ColorFormat::Css => return format!("rgb({r}, {g}, {b})"),
             ColorFormat::Hsl => {
                 let x = Hsl::from_color(c);
@@ -203,7 +251,11 @@ impl ColorFormat {
                 format!("{}, {}, {}", x.h.round(), pct(x.s), pct(x.b))
             }
         };
-        if alpha { format!("{body} · {}", pct(c.a)) } else { body }
+        if alpha {
+            format!("{body} · {}", pct(c.a))
+        } else {
+            body
+        }
     }
 }
 
@@ -226,7 +278,9 @@ pub fn has_status(doc: &Document, id: NodeId) -> bool {
         section(n)
             || (n.kind.is_frame_like()
                 && !matches!(n.kind, NodeKind::Instance { .. })
-                && n.parent.and_then(|p| doc.node(p)).is_some_and(|p| p.is_page() || section(p)))
+                && n.parent
+                    .and_then(|p| doc.node(p))
+                    .is_some_and(|p| p.is_page() || section(p)))
     })
 }
 
@@ -235,7 +289,12 @@ pub fn has_status(doc: &Document, id: NodeId) -> bool {
 pub fn dev_items(doc: &Document, status: Option<DevStatus>, page: Option<NodeId>) -> Vec<DevItem> {
     let mut out = Vec::new();
     let mut visited = 0usize;
-    for pg in doc.pages.iter().copied().filter(|pg| page.is_none_or(|p| p == *pg)) {
+    for pg in doc
+        .pages
+        .iter()
+        .copied()
+        .filter(|pg| page.is_none_or(|p| p == *pg))
+    {
         let mut stack = vec![pg];
         while let Some(id) = stack.pop() {
             visited += 1;
@@ -244,7 +303,12 @@ pub fn dev_items(doc: &Document, status: Option<DevStatus>, page: Option<NodeId>
             }
             let Some(n) = doc.node(id) else { continue };
             if !n.dev_status.is_none() && status.is_none_or(|s| s == n.dev_status) {
-                out.push(DevItem { id, name: n.name.clone(), page: pg, status: n.dev_status });
+                out.push(DevItem {
+                    id,
+                    name: n.name.clone(),
+                    page: pg,
+                    status: n.dev_status,
+                });
             }
             stack.extend(n.children.iter().rev().copied());
         }
@@ -263,7 +327,9 @@ pub fn specs() -> Vec<CommandSpec> {
                 let cmd = "inspect.readyForDev";
                 let status = match string(p, "status").as_deref() {
                     None => Some(DevStatus::ReadyForDev),
-                    Some(v) if v.eq_ignore_ascii_case("any") || v.eq_ignore_ascii_case("all") => None,
+                    Some(v) if v.eq_ignore_ascii_case("any") || v.eq_ignore_ascii_case("all") => {
+                        None
+                    }
                     Some(v) => Some(
                         DevStatus::ALL
                             .into_iter()
@@ -273,10 +339,16 @@ pub fn specs() -> Vec<CommandSpec> {
                 };
                 let doc = s.doc()?;
                 let page = match get(p, "page") {
-                    Some(v) => Some(id_of(v).filter(|pg| doc.pages.contains(pg)).ok_or_else(|| crate::bad(cmd, "page: a page id"))?),
+                    Some(v) => Some(
+                        id_of(v)
+                            .filter(|pg| doc.pages.contains(pg))
+                            .ok_or_else(|| crate::bad(cmd, "page: a page id"))?,
+                    ),
                     None => None,
                 };
-                Ok(json!({"items": serde_json::to_value(dev_items(doc, status, page)).unwrap_or(Value::Null)}))
+                Ok(
+                    json!({"items": serde_json::to_value(dev_items(doc, status, page)).unwrap_or(Value::Null)}),
+                )
             }
         ),
         spec!(
@@ -286,7 +358,9 @@ pub fn specs() -> Vec<CommandSpec> {
             false,
             |s, p| {
                 let ids = targets(s, p);
-                Ok(json!({"assets": serde_json::to_value(assets(s.doc()?, &ids)).unwrap_or(Value::Null)}))
+                Ok(
+                    json!({"assets": serde_json::to_value(assets(s.doc()?, &ids)).unwrap_or(Value::Null)}),
+                )
             }
         ),
         spec!(
@@ -298,15 +372,23 @@ pub fn specs() -> Vec<CommandSpec> {
                 let cmd = "inspect.properties";
                 let id = match id(p, "id") {
                     Some(i) => i,
-                    None => s.selection().first().copied().ok_or_else(|| crate::bad(cmd, "select a layer or pass `id`"))?,
+                    None => s
+                        .selection()
+                        .first()
+                        .copied()
+                        .ok_or_else(|| crate::bad(cmd, "select a layer or pass `id`"))?,
                 };
                 let fmt = match string(p, "colorFormat") {
-                    Some(f) => ColorFormat::from_id(&f).ok_or_else(|| crate::bad(cmd, "colorFormat: hex|rgb|css|hsl|hsb"))?,
+                    Some(f) => ColorFormat::from_id(&f)
+                        .ok_or_else(|| crate::bad(cmd, "colorFormat: hex|rgb|css|hsl|hsb"))?,
                     None => ColorFormat::Hex,
                 };
                 let doc = s.doc()?;
-                doc.node(id).ok_or_else(|| crate::bad(cmd, "no such layer"))?;
-                Ok(json!({"sections": serde_json::to_value(properties_with(doc, id, fmt)).unwrap_or(Value::Null)}))
+                doc.node(id)
+                    .ok_or_else(|| crate::bad(cmd, "no such layer"))?;
+                Ok(
+                    json!({"sections": serde_json::to_value(properties_with(doc, id, fmt)).unwrap_or(Value::Null)}),
+                )
             }
         ),
     ]
@@ -323,7 +405,12 @@ fn num(v: f64) -> String {
 }
 
 fn prop(label: impl Into<String>, value: impl Into<String>) -> Prop {
-    Prop { label: label.into(), value: value.into(), color: None, token: None }
+    Prop {
+        label: label.into(),
+        value: value.into(),
+        color: None,
+        token: None,
+    }
 }
 
 impl Prop {
@@ -345,7 +432,11 @@ pub fn bound_variable<'d>(doc: &'d Document, n: &Node, field: &str) -> Option<&'
         "stroke" => &["stroke", "strokes/0/color"],
         _ => &[],
     };
-    let found = if forms.is_empty() { n.bound.get(field) } else { forms.iter().find_map(|k| n.bound.get(*k)) };
+    let found = if forms.is_empty() {
+        n.bound.get(field)
+    } else {
+        forms.iter().find_map(|k| n.bound.get(*k))
+    };
     found.and_then(|v| doc.variables.get(v))
 }
 
@@ -366,7 +457,9 @@ pub fn properties(doc: &Document, id: NodeId) -> Vec<Section> {
 /// [`properties`] with colours written in `fmt`.
 pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Section> {
     let color_text = |c: Color| fmt.format(c);
-    let Some(n) = doc.node(id) else { return Vec::new() };
+    let Some(n) = doc.node(id) else {
+        return Vec::new();
+    };
     let mut out = vec![layout(doc, id, n)];
     if let Some(l) = &n.layout {
         out.push(auto_layout(doc, n, l));
@@ -382,7 +475,8 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
             .enumerate()
             .filter(|(_, p)| p.visible)
             .map(|(i, p)| {
-                let token = crate::cmd::lists::paint_binding_key(n, fills, i).and_then(|k| variable(doc, n, k));
+                let token = crate::cmd::lists::paint_binding_key(n, fills, i)
+                    .and_then(|k| variable(doc, n, k));
                 paint_row(p, fmt).token(token)
             })
             .collect();
@@ -393,7 +487,10 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
     };
     let fills = paint_rows(true, n.styles.fill.as_ref());
     if !fills.is_empty() {
-        out.push(Section { title: "Fills", rows: fills });
+        out.push(Section {
+            title: "Fills",
+            rows: fills,
+        });
     }
     let mut strokes = paint_rows(false, n.styles.stroke.as_ref());
     if !strokes.is_empty() {
@@ -402,11 +499,26 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
             StrokeAlign::Center => "center",
             StrokeAlign::Outside => "outside",
         };
-        strokes.push(prop("Weight", format!("{} {align}", num(n.stroke.weight))).token(variable(doc, n, "strokeWeight")));
-        out.push(Section { title: "Strokes", rows: strokes });
+        strokes.push(
+            prop("Weight", format!("{} {align}", num(n.stroke.weight))).token(variable(
+                doc,
+                n,
+                "strokeWeight",
+            )),
+        );
+        out.push(Section {
+            title: "Strokes",
+            rows: strokes,
+        });
     }
     // A grain size: one number, or across × down.
-    let grain = |(sx, sy): (f64, f64)| if sx == sy { num(sx) } else { format!("{}×{}", num(sx), num(sy)) };
+    let grain = |(sx, sy): (f64, f64)| {
+        if sx == sy {
+            num(sx)
+        } else {
+            format!("{}×{}", num(sx), num(sy))
+        }
+    };
     let pct = |v: f64| (v * 100.0).round();
     let effects: Vec<Prop> = n
         .effects
@@ -414,15 +526,36 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
         .filter(|e| e.visible)
         .map(|e| match &e.kind {
             EffectKind::DropShadow(s) | EffectKind::InnerShadow(s) => {
-                let label = if matches!(e.kind, EffectKind::DropShadow(_)) { "Drop shadow" } else { "Inner shadow" };
-                let v = format!("{} {} {} {} {}", num(s.offset.0), num(s.offset.1), num(s.radius), num(s.spread), color_text(s.color));
+                let label = if matches!(e.kind, EffectKind::DropShadow(_)) {
+                    "Drop shadow"
+                } else {
+                    "Inner shadow"
+                };
+                let v = format!(
+                    "{} {} {} {} {}",
+                    num(s.offset.0),
+                    num(s.offset.1),
+                    num(s.radius),
+                    num(s.spread),
+                    color_text(s.color)
+                );
                 prop(label, v).color(s.color)
             }
             EffectKind::LayerBlur(b) | EffectKind::BackgroundBlur(b) => {
-                let label = if matches!(e.kind, EffectKind::LayerBlur(_)) { "Layer blur" } else { "Background blur" };
+                let label = if matches!(e.kind, EffectKind::LayerBlur(_)) {
+                    "Layer blur"
+                } else {
+                    "Background blur"
+                };
                 let at = |(x, y): (f64, f64)| format!("{}% {}%", pct(x), pct(y));
                 let v = if b.is_progressive() {
-                    format!("Progressive {} → {} from {} to {}", num(b.start_radius), num(b.radius), at(b.start), at(b.end))
+                    format!(
+                        "Progressive {} → {} from {} to {}",
+                        num(b.start_radius),
+                        num(b.radius),
+                        at(b.start),
+                        at(b.end)
+                    )
                 } else {
                     num(b.radius)
                 };
@@ -431,15 +564,35 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
             EffectKind::Noise(nz) => {
                 let colors = match nz.mode {
                     NoiseMode::Mono => color_text(nz.color),
-                    NoiseMode::Duo => format!("{} {}", color_text(nz.color), color_text(nz.secondary)),
+                    NoiseMode::Duo => {
+                        format!("{} {}", color_text(nz.color), color_text(nz.secondary))
+                    }
                     NoiseMode::Multi => format!("{}%", pct(f64::from(nz.opacity))),
                 };
-                let row = prop("Noise", format!("{} {} {}% {colors}", nz.mode.label(), grain(nz.grain()), pct(nz.density)));
-                if nz.mode == NoiseMode::Multi { row } else { row.color(nz.color) }
+                let row = prop(
+                    "Noise",
+                    format!(
+                        "{} {} {}% {colors}",
+                        nz.mode.label(),
+                        grain(nz.grain()),
+                        pct(nz.density)
+                    ),
+                );
+                if nz.mode == NoiseMode::Multi {
+                    row
+                } else {
+                    row.color(nz.color)
+                }
             }
-            EffectKind::Texture(t) => {
-                prop("Texture", format!("{} {}{}", grain(t.grain()), num(t.radius), if t.clip_to_shape { " clipped" } else { "" }))
-            }
+            EffectKind::Texture(t) => prop(
+                "Texture",
+                format!(
+                    "{} {}{}",
+                    grain(t.grain()),
+                    num(t.radius),
+                    if t.clip_to_shape { " clipped" } else { "" }
+                ),
+            ),
             EffectKind::Glass(g) => prop(
                 "Glass",
                 format!(
@@ -456,7 +609,10 @@ pub fn properties_with(doc: &Document, id: NodeId, fmt: ColorFormat) -> Vec<Sect
         })
         .collect();
     if !effects.is_empty() {
-        out.push(Section { title: "Effects", rows: tag_first(effects, style_name(doc, n.styles.effect.as_ref())) });
+        out.push(Section {
+            title: "Effects",
+            rows: tag_first(effects, style_name(doc, n.styles.effect.as_ref())),
+        });
     }
     out
 }
@@ -476,7 +632,11 @@ fn paint_row(p: &figcraft_color::Paint, fmt: ColorFormat) -> Prop {
                 GradientKind::Angular => "Angular",
                 GradientKind::Diamond => "Diamond",
             };
-            let stops: Vec<String> = g.stops.iter().map(|s| format!("{} {}%", fmt.format(s.color), (s.position * 100.0).round())).collect();
+            let stops: Vec<String> = g
+                .stops
+                .iter()
+                .map(|s| format!("{} {}%", fmt.format(s.color), (s.position * 100.0).round()))
+                .collect();
             let r = prop(kind, stops.join(", "));
             match g.stops.first() {
                 Some(s) => r.color(s.color),
@@ -496,12 +656,17 @@ fn tag_first(mut rows: Vec<Prop>, token: Option<String>) -> Vec<Prop> {
 }
 
 fn layout(doc: &Document, id: NodeId, n: &Node) -> Section {
-    let mut rows =
-        vec![prop("Width", num(n.width)).token(variable(doc, n, "width")), prop("Height", num(n.height)).token(variable(doc, n, "height"))];
+    let mut rows = vec![
+        prop("Width", num(n.width)).token(variable(doc, n, "width")),
+        prop("Height", num(n.height)).token(variable(doc, n, "height")),
+    ];
     // Position from the top-left of the frame around it (groups aren't frames; the canvas
     // origin at the top level).
     if let Some(b) = doc.world_bounds(id) {
-        let origin = doc.containing_frame(id).and_then(|f| doc.world_bounds(f)).map_or((0.0, 0.0), |pb| (pb.x0, pb.y0));
+        let origin = doc
+            .containing_frame(id)
+            .and_then(|f| doc.world_bounds(f))
+            .map_or((0.0, 0.0), |pb| (pb.x0, pb.y0));
         rows.push(prop("Top", num(b.y0 - origin.1)));
         rows.push(prop("Left", num(b.x0 - origin.0)));
     }
@@ -510,22 +675,41 @@ fn layout(doc: &Document, id: NodeId, n: &Node) -> Section {
         rows.push(prop("Rotation", format!("{}°", num(rot))));
     }
     if n.opacity < 0.999 {
-        rows.push(prop("Opacity", format!("{}%", (f64::from(n.opacity) * 100.0).round())).token(variable(doc, n, "opacity")));
+        rows.push(
+            prop(
+                "Opacity",
+                format!("{}%", (f64::from(n.opacity) * 100.0).round()),
+            )
+            .token(variable(doc, n, "opacity")),
+        );
     }
-    if !matches!(n.blend, figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough) {
+    if !matches!(
+        n.blend,
+        figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough
+    ) {
         rows.push(prop("Blend", n.blend.label()));
     }
     if n.kind.has_corner_radius() {
         let r = match n.corners.uniform() {
             Some(r) if r > 0.0 => Some(num(r)),
             Some(_) => None,
-            None => Some(n.corners.radii.iter().map(|r| num(*r)).collect::<Vec<_>>().join(" ")),
+            None => Some(
+                n.corners
+                    .radii
+                    .iter()
+                    .map(|r| num(*r))
+                    .collect::<Vec<_>>()
+                    .join(" "),
+            ),
         };
         if let Some(r) = r {
             rows.push(prop("Radius", r).token(variable(doc, n, "cornerRadius")));
         }
     }
-    Section { title: "Layout", rows }
+    Section {
+        title: "Layout",
+        rows,
+    }
 }
 
 fn auto_layout(doc: &Document, n: &Node, l: &AutoLayout) -> Section {
@@ -538,7 +722,10 @@ fn auto_layout(doc: &Document, n: &Node, l: &AutoLayout) -> Section {
     };
     let mut rows = vec![prop("Direction", dir)];
     if l.mode == LayoutMode::Grid {
-        rows.push(prop("Grid", format!("{} × {}", l.grid_columns, l.grid_rows)));
+        rows.push(prop(
+            "Grid",
+            format!("{} × {}", l.grid_columns, l.grid_rows),
+        ));
         rows.push(prop("Gap", format!("{} {}", num(l.gap), num(l.cross_gap))));
     } else {
         let gap = match l.main_align {
@@ -549,9 +736,17 @@ fn auto_layout(doc: &Document, n: &Node, l: &AutoLayout) -> Section {
         };
         rows.push(prop("Gap", gap).token(variable(doc, n, "gap")));
         if l.wrap {
-            let label = if l.mode == LayoutMode::Vertical { "Column gap" } else { "Row gap" };
+            let label = if l.mode == LayoutMode::Vertical {
+                "Column gap"
+            } else {
+                "Row gap"
+            };
             let spread = l.content_align == ContentAlign::SpaceBetween;
-            rows.push(if spread { prop(label, "Auto (space between)") } else { prop(label, num(l.cross_gap)).token(variable(doc, n, "crossGap")) });
+            rows.push(if spread {
+                prop(label, "Auto (space between)")
+            } else {
+                prop(label, num(l.cross_gap)).token(variable(doc, n, "crossGap"))
+            });
         }
     }
     let [t, r, b, lft] = l.padding;
@@ -562,7 +757,9 @@ fn auto_layout(doc: &Document, n: &Node, l: &AutoLayout) -> Section {
     } else {
         format!("{} {} {} {}", num(t), num(r), num(b), num(lft))
     };
-    let pad_token = variable(doc, n, "padding").or_else(|| variable(doc, n, "paddingHorizontal")).or_else(|| variable(doc, n, "paddingVertical"));
+    let pad_token = variable(doc, n, "padding")
+        .or_else(|| variable(doc, n, "paddingHorizontal"))
+        .or_else(|| variable(doc, n, "paddingVertical"));
     rows.push(prop("Padding", padding).token(pad_token));
     let main = match l.main_align {
         MainAlign::Min => "start",
@@ -579,7 +776,10 @@ fn auto_layout(doc: &Document, n: &Node, l: &AutoLayout) -> Section {
         CrossAlign::Baseline => "baseline",
     };
     rows.push(prop("Align", format!("{main}, {cross}")));
-    Section { title: "Auto layout", rows }
+    Section {
+        title: "Auto layout",
+        rows,
+    }
 }
 
 fn typography(doc: &Document, n: &Node, t: &TextData) -> Section {
@@ -612,14 +812,27 @@ fn typography(doc: &Document, n: &Node, t: &TextData) -> Section {
             figcraft_doc::DecorationStyle::Dotted => ", dotted",
             figcraft_doc::DecorationStyle::Wavy => ", wavy",
         };
-        let kind = if s.decoration == TextDecoration::Underline { "underline" } else { "strikethrough" };
+        let kind = if s.decoration == TextDecoration::Underline {
+            "underline"
+        } else {
+            "strikethrough"
+        };
         rows.push(prop("Decoration", format!("{kind}{style}")));
     }
     if t.list_spacing > 0.0 {
         rows.push(prop("List spacing", num(t.list_spacing)));
     }
     if variable(doc, n, "characters").is_some() {
-        rows.push(prop("Content", t.characters.chars().take(80).collect::<String>()).token(variable(doc, n, "characters")));
+        rows.push(
+            prop("Content", t.characters.chars().take(80).collect::<String>()).token(variable(
+                doc,
+                n,
+                "characters",
+            )),
+        );
     }
-    Section { title: "Typography", rows }
+    Section {
+        title: "Typography",
+        rows,
+    }
 }

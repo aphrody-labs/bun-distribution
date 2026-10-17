@@ -99,12 +99,18 @@ impl Plugin for PitchShifter {
             if !self.phase.is_finite() {
                 self.phase = 0.0;
             }
-            let p2 = if self.phase >= 0.5 { self.phase - 0.5 } else { self.phase + 0.5 };
+            let p2 = if self.phase >= 0.5 {
+                self.phase - 0.5
+            } else {
+                self.phase + 0.5
+            };
             let g1 = (std::f32::consts::PI * self.phase).sin().powi(2);
             let g2 = 1.0 - g1;
             let (d1, d2) = (self.phase * w + 2.0, p2 * w + 2.0);
             for c in 0..ch {
-                let (Some(buf), Some(line)) = (io.get_mut(c), self.lines.get_mut(c)) else { continue };
+                let (Some(buf), Some(line)) = (io.get_mut(c), self.lines.get_mut(c)) else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 line.push(if x.is_finite() { *x } else { 0.0 });
                 let wet = g1 * line.read(d1) + g2 * line.read(d2);

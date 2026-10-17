@@ -45,14 +45,19 @@ pub struct StrokePieces<'a> {
 /// The centre line and arrowheads of stroke `st` along `bp`.
 pub fn stroke_pieces<'a>(bp: &'a BezPath, st: &StrokeLayer) -> StrokePieces<'a> {
     if st.start_arrow.is_none() && st.end_arrow.is_none() {
-        return StrokePieces { line: Cow::Borrowed(bp), heads: vec![] };
+        return StrokePieces {
+            line: Cow::Borrowed(bp),
+            heads: vec![],
+        };
     }
     arrow::pieces(bp, st)
 }
 
 /// Does `bp` end with a `ClosePath`?
 pub fn is_closed(bp: &BezPath) -> bool {
-    bp.elements().last().is_some_and(|e| matches!(e, PathEl::ClosePath))
+    bp.elements()
+        .last()
+        .is_some_and(|e| matches!(e, PathEl::ClosePath))
 }
 
 /// The width actually stroked: inside/outside strokes of closed paths are drawn twice as wide
@@ -107,12 +112,19 @@ pub fn line_outline(line: &BezPath, st: &StrokeLayer, width: f64, tol: f64) -> B
                 let (l, r) = profile.at(dot.t);
                 let (l, r) = (l.max(0.0), r.max(0.0));
                 let at = dot.at + width::left(dot.dir) * (width * (l - r) / 4.0);
-                out.extend(dot_outline(&[Dot { at, ..*dot }], width * (l + r) / 2.0, st.cap, tol).iter());
+                out.extend(
+                    dot_outline(&[Dot { at, ..*dot }], width * (l + r) / 2.0, st.cap, tol).iter(),
+                );
             }
             out
         }
         (None, Some(d)) => {
-            let mut out = kurbo::stroke(d.path.iter(), &style(st, width), &kurbo::StrokeOpts::default(), tol);
+            let mut out = kurbo::stroke(
+                d.path.iter(),
+                &style(st, width),
+                &kurbo::StrokeOpts::default(),
+                tol,
+            );
             out.extend(dot_outline(&d.dots, width, st.cap, tol).iter());
             out
         }
@@ -141,7 +153,11 @@ fn point_dots(line: &BezPath) -> Vec<Dot> {
                 PathEl::CurveTo(a, b, c) => *a == at && *b == at && *c == at,
                 PathEl::ClosePath => true,
             });
-            still.then_some(Dot { at, dir: kurbo::Vec2::new(1.0, 0.0), t: 0.0 })
+            still.then_some(Dot {
+                at,
+                dir: kurbo::Vec2::new(1.0, 0.0),
+                t: 0.0,
+            })
         })
         .collect()
 }
@@ -155,7 +171,14 @@ fn point_dots(line: &BezPath) -> Vec<Dot> {
 // shortcut: closed subpaths of plain strokes only. An open path that turns back on itself inside
 // a wider stroke (and dashes on such a shape) can still cancel; fix it in the offsetting if reported.
 fn plain_outline(line: &BezPath, style: &kurbo::Stroke, tol: f64) -> BezPath {
-    let stroke = |els: &[PathEl]| kurbo::stroke(els.iter().copied(), style, &kurbo::StrokeOpts::default(), tol);
+    let stroke = |els: &[PathEl]| {
+        kurbo::stroke(
+            els.iter().copied(),
+            style,
+            &kurbo::StrokeOpts::default(),
+            tol,
+        )
+    };
     let els = line.elements();
     // Only a stroke at least as wide as a closed subpath's bounds can cross over: everything
     // else takes the one call it always did.
@@ -164,7 +187,10 @@ fn plain_outline(line: &BezPath, style: &kurbo::Stroke, tol: f64) -> BezPath {
         style.width >= b.width().min(b.height())
     };
     let subs = subpaths(line);
-    if !subs.iter().any(|(r, closed)| *closed && els.get(r.clone()).is_some_and(may_cross)) {
+    if !subs
+        .iter()
+        .any(|(r, closed)| *closed && els.get(r.clone()).is_some_and(may_cross))
+    {
         return stroke(els);
     }
     let reach = style.width / 2.0 - 2.0 * tol;
@@ -178,7 +204,9 @@ fn plain_outline(line: &BezPath, style: &kurbo::Stroke, tol: f64) -> BezPath {
         }
         let sub = BezPath::from_vec(sub.to_vec());
         for (c, _) in subpaths(&outline) {
-            let Some(contour) = outline.elements().get(c) else { continue };
+            let Some(contour) = outline.elements().get(c) else {
+                continue;
+            };
             if reaches_edge(contour, &sub, reach) {
                 out.extend(contour.iter().copied());
             }
@@ -190,7 +218,10 @@ fn plain_outline(line: &BezPath, style: &kurbo::Stroke, tol: f64) -> BezPath {
 /// Whether some point of `contour` lies at least `reach` from `path`: an offset contour that
 /// never does is nowhere the edge of the stroke.
 fn reaches_edge(contour: &[PathEl], path: &BezPath, reach: f64) -> bool {
-    let far = |p: kurbo::Point| path.segments().all(|s| s.nearest(p, 1e-6).distance_sq >= reach * reach);
+    let far = |p: kurbo::Point| {
+        path.segments()
+            .all(|s| s.nearest(p, 1e-6).distance_sq >= reach * reach)
+    };
     kurbo::segments(contour.iter().copied()).any(|s| far(s.eval(0.0)) || far(s.eval(0.5)))
 }
 

@@ -75,7 +75,11 @@ pub const FOLDER_ROLES: &[FolderRole] = &[
         role: "Effets : particules (ptlb), fx (fxbin), objbin, shaders pixel (pfxo)",
         status: "✗ non exploité",
     },
-    FolderRole { prefix: "data/common/menu", role: "Données menu (cfg.bin)", status: "partiel" },
+    FolderRole {
+        prefix: "data/common/menu",
+        role: "Données menu (cfg.bin)",
+        status: "partiel",
+    },
     FolderRole {
         prefix: "data/dx11/shader",
         role: "Shaders compilés DXBC (vfxo/pfxo/gfxo/cfxo) — conteneur lu, bytecode SM5 non désassemblé",
@@ -112,7 +116,9 @@ pub const FOLDER_ROLES: &[FolderRole] = &[
         status: "✓ exploité (flux H.264 démuxé → MP4 ; VP9 non remuxé)",
     },
     FolderRole {
-        prefix: "data/dx11/font", role: "Polices", status: "✗ non exploité (non requis)"
+        prefix: "data/dx11/font",
+        role: "Polices",
+        status: "✗ non exploité (non requis)",
     },
     FolderRole {
         prefix: "data/common/font",
@@ -120,9 +126,15 @@ pub const FOLDER_ROLES: &[FolderRole] = &[
         status: "✗ non exploité (non requis)",
     },
     FolderRole {
-        prefix: "data/common/craft", role: "Artisanat (cfg.bin)", status: "✓ exploité"
+        prefix: "data/common/craft",
+        role: "Artisanat (cfg.bin)",
+        status: "✓ exploité",
     },
-    FolderRole { prefix: "data/common/action", role: "Tables d'action", status: "partiel" },
+    FolderRole {
+        prefix: "data/common/action",
+        role: "Tables d'action",
+        status: "partiel",
+    },
     // ── Sous-dossiers vérifiés en direct contre le VFS réel (session 2026-08-07) ────────────
     FolderRole {
         prefix: "data/common/chr/_face",

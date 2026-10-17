@@ -34,17 +34,38 @@ fn available(app: &WordApp) -> bool {
 }
 
 /// The spot under screen point `p`: page, page point, resize reach and the spot.
-fn target_at(app: &WordApp, layout: &DocLayout, rects: &[Rect], scale: f32, p: Pos2) -> Option<(usize, f32, f32, f32, Target)> {
+fn target_at(
+    app: &WordApp,
+    layout: &DocLayout,
+    rects: &[Rect],
+    scale: f32,
+    p: Pos2,
+) -> Option<(usize, f32, f32, f32, Target)> {
     let (page, x, y) = crate::canvas::page_at(rects, layout, scale, p)?;
     let reach = REACH_PX / page_scale(rects, layout, scale, page)?;
-    let t = table_mouse::target_at(layout, &app.session.doc, app.session.sel.focus.story, page, x, y, reach)?;
+    let t = table_mouse::target_at(
+        layout,
+        &app.session.doc,
+        app.session.sel.focus.story,
+        page,
+        x,
+        y,
+        reach,
+    )?;
     Some((page, x, y, reach, t))
 }
 
 /// Mouse input: a press on a selection area selects (and a drag goes on selecting), on an insert
 /// button inserts, on the move handle starts a move (released without moving, it selects the
 /// table). `false` (nothing done) when the pointer isn't on any of them, so the caret logic runs.
-pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect], layout: &DocLayout, scale: f32) -> bool {
+pub fn pointer(
+    app: &mut WordApp,
+    ui: &Ui,
+    resp: &egui::Response,
+    rects: &[Rect],
+    layout: &DocLayout,
+    scale: f32,
+) -> bool {
     let latest = ui.input(|i| i.pointer.latest_pos());
     if let Some(mut d) = app.canvas.table_drag.take() {
         if let Some(p) = latest
@@ -65,7 +86,11 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect]
             }
             // Released: a drag moves the table (one undo step), a click selects it.
             let moved = (d.to.0 - d.from.0).abs() >= 0.5 || (d.to.1 - d.from.1).abs() >= 0.5;
-            let id = if moved && table_mouse::movable(&d.target.geom) { "table.moveDrag" } else { "table.selectAt" };
+            let id = if moved && table_mouse::movable(&d.target.geom) {
+                "table.moveDrag"
+            } else {
+                "table.selectAt"
+            };
             if let Err(e) = app.run(id, at) {
                 app.status(e);
             }
@@ -91,7 +116,9 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect]
         return false;
     }
     let Some(p) = latest else { return false };
-    let Some((page, x, y, reach, target)) = target_at(app, layout, rects, scale, p) else { return false };
+    let Some((page, x, y, reach, target)) = target_at(app, layout, rects, scale, p) else {
+        return false;
+    };
     let at = json!({"page": page, "x": x, "y": y, "reach": reach});
     match target.spot {
         Spot::InsertRow(_) | Spot::InsertColumn(_) => {
@@ -106,7 +133,14 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect]
             {
                 app.status(e);
             }
-            app.canvas.table_drag = Some(TableDrag { page, from: (x, y), to: (x, y), sent: (x, y), reach, target });
+            app.canvas.table_drag = Some(TableDrag {
+                page,
+                from: (x, y),
+                to: (x, y),
+                sent: (x, y),
+                reach,
+                target,
+            });
         }
     }
     true
@@ -114,12 +148,20 @@ pub fn pointer(app: &mut WordApp, ui: &Ui, resp: &egui::Response, rects: &[Rect]
 
 /// The pointer: the move arrows on the handle, the plain arrow on an insert button; over a
 /// selection area the system pointer hides and `paint` draws the selection arrow.
-pub fn cursor(app: &WordApp, ui: &Ui, resp: &egui::Response, layout: &DocLayout, rects: &[Rect], scale: f32) {
+pub fn cursor(
+    app: &WordApp,
+    ui: &Ui,
+    resp: &egui::Response,
+    layout: &DocLayout,
+    rects: &[Rect],
+    scale: f32,
+) {
     let spot = match &app.canvas.table_drag {
         Some(d) => Some(d.target.spot),
-        None if resp.hovered() && available(app) => {
-            ui.input(|i| i.pointer.latest_pos()).and_then(|p| target_at(app, layout, rects, scale, p)).map(|(.., t)| t.spot)
-        }
+        None if resp.hovered() && available(app) => ui
+            .input(|i| i.pointer.latest_pos())
+            .and_then(|p| target_at(app, layout, rects, scale, p))
+            .map(|(.., t)| t.spot),
         None => None,
     };
     let icon = match spot {
@@ -134,17 +176,34 @@ pub fn cursor(app: &WordApp, ui: &Ui, resp: &egui::Response, layout: &DocLayout,
 /// The move handle of the table under the pointer; an insert button under the pointer with the
 /// border it inserts at; the selection arrow over a selection area; and while the handle is
 /// dragged, a dashed outline of where the table goes.
-pub fn paint(app: &WordApp, painter: &egui::Painter, t: &Tokens, layout: &DocLayout, rects: &[Rect], scale: f32) {
+pub fn paint(
+    app: &WordApp,
+    painter: &egui::Painter,
+    t: &Tokens,
+    layout: &DocLayout,
+    rects: &[Rect],
+    scale: f32,
+) {
     let hover = painter.ctx().input(|i| i.pointer.hover_pos());
     if let Some(d) = &app.canvas.table_drag {
         match d.target.spot {
             Spot::Handle => {
                 let g = &d.target.geom;
-                let (x, y) = table_mouse::moved_to(layout, d.page, g, d.to.0 - d.from.0, d.to.1 - d.from.1);
+                let (x, y) =
+                    table_mouse::moved_to(layout, d.page, g, d.to.0 - d.from.0, d.to.1 - d.from.1);
                 let (w, h) = (g.right() - g.left(), g.bottom() - g.top());
-                if let (Some(a), Some(b)) = (to_screen(rects, layout, scale, d.page, x, y), to_screen(rects, layout, scale, d.page, x + w, y + h)) {
+                if let (Some(a), Some(b)) = (
+                    to_screen(rects, layout, scale, d.page, x, y),
+                    to_screen(rects, layout, scale, d.page, x + w, y + h),
+                ) {
                     let r = Rect::from_two_pos(a, b);
-                    let pts = [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom(), r.left_top()];
+                    let pts = [
+                        r.left_top(),
+                        r.right_top(),
+                        r.right_bottom(),
+                        r.left_bottom(),
+                        r.left_top(),
+                    ];
                     painter.extend(Shape::dashed_line(&pts, Stroke::new(1.0, t.text), 3.0, 3.0));
                 }
             }
@@ -160,8 +219,12 @@ pub fn paint(app: &WordApp, painter: &egui::Painter, t: &Tokens, layout: &DocLay
         return;
     }
     let Some(p) = hover else { return };
-    let Some((page, x, y)) = crate::canvas::page_at(rects, layout, scale, p) else { return };
-    let Some(sc) = page_scale(rects, layout, scale, page) else { return };
+    let Some((page, x, y)) = crate::canvas::page_at(rects, layout, scale, p) else {
+        return;
+    };
+    let Some(sc) = page_scale(rects, layout, scale, page) else {
+        return;
+    };
     let (doc, story, reach) = (&app.session.doc, app.session.sel.focus.story, REACH_PX / sc);
     let s = |x: f32, y: f32| to_screen(rects, layout, scale, page, x, y);
     if let Some(g) = table_mouse::handle_table(layout, doc, story, page, x, y, reach) {
@@ -170,10 +233,16 @@ pub fn paint(app: &WordApp, painter: &egui::Painter, t: &Tokens, layout: &DocLay
             move_handle(painter, Rect::from_two_pos(a, b), t);
         }
     }
-    let Some(target) = table_mouse::target_at(layout, doc, story, page, x, y, reach) else { return };
+    let Some(target) = table_mouse::target_at(layout, doc, story, page, x, y, reach) else {
+        return;
+    };
     match table_mouse::insert_mark(&target) {
         Some(m) => {
-            if let (Some(c), Some(a), Some(b)) = (s(m.center.0, m.center.1), s(m.from.0, m.from.1), s(m.to.0, m.to.1)) {
+            if let (Some(c), Some(a), Some(b)) = (
+                s(m.center.0, m.center.1),
+                s(m.from.0, m.from.1),
+                s(m.to.0, m.to.1),
+            ) {
                 insert_button(painter, c, a, b, sc, t);
             }
         }
@@ -185,15 +254,29 @@ pub fn paint(app: &WordApp, painter: &egui::Painter, t: &Tokens, layout: &DocLay
 /// The move handle: a small square with arrows in four directions.
 fn move_handle(painter: &egui::Painter, r: Rect, t: &Tokens) {
     painter.rect_filled(r, 1.0, Color32::WHITE);
-    painter.rect_stroke(r, 1.0, Stroke::new(1.0, t.text_dim), egui::StrokeKind::Inside);
+    painter.rect_stroke(
+        r,
+        1.0,
+        Stroke::new(1.0, t.text_dim),
+        egui::StrokeKind::Inside,
+    );
     let (c, k) = (r.center(), r.width() * 0.34);
     let stroke = Stroke::new(1.0, t.text);
     painter.line_segment([c - vec2(k, 0.0), c + vec2(k, 0.0)], stroke);
     painter.line_segment([c - vec2(0.0, k), c + vec2(0.0, k)], stroke);
     let head = k * 0.5;
-    for d in [vec2(1.0, 0.0), vec2(-1.0, 0.0), vec2(0.0, 1.0), vec2(0.0, -1.0)] {
+    for d in [
+        vec2(1.0, 0.0),
+        vec2(-1.0, 0.0),
+        vec2(0.0, 1.0),
+        vec2(0.0, -1.0),
+    ] {
         let (tip, side) = (c + d * k, vec2(-d.y, d.x) * head);
-        painter.add(Shape::convex_polygon(vec![tip, tip - d * head + side, tip - d * head - side], t.text, Stroke::NONE));
+        painter.add(Shape::convex_polygon(
+            vec![tip, tip - d * head + side, tip - d * head - side],
+            t.text,
+            Stroke::NONE,
+        ));
     }
 }
 
@@ -224,7 +307,16 @@ fn arrow(painter: &egui::Painter, tip: Pos2, spot: Spot) {
     let at = |(x, y): (f32, f32)| tip + vec2(x * cos - y * sin, x * sin + y * cos);
     let head = [(0.0, 0.0), (5.5, 6.5), (-5.5, 6.5)].map(at);
     let shaft = [(2.0, 6.5), (2.0, 13.0), (-2.0, 13.0), (-2.0, 6.5)].map(at);
-    let outline = [(0.0, 0.0), (5.5, 6.5), (2.0, 6.5), (2.0, 13.0), (-2.0, 13.0), (-2.0, 6.5), (-5.5, 6.5)].map(at);
+    let outline = [
+        (0.0, 0.0),
+        (5.5, 6.5),
+        (2.0, 6.5),
+        (2.0, 13.0),
+        (-2.0, 13.0),
+        (-2.0, 6.5),
+        (-5.5, 6.5),
+    ]
+    .map(at);
     painter.add(Shape::convex_polygon(head.to_vec(), fill, Stroke::NONE));
     painter.add(Shape::convex_polygon(shaft.to_vec(), fill, Stroke::NONE));
     painter.add(Shape::closed_line(outline.to_vec(), Stroke::new(1.0, edge)));
@@ -233,7 +325,9 @@ fn arrow(painter: &egui::Painter, tip: Pos2, spot: Spot) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::table_resize::tests::{H, button, cell, screen, steps, table_window, table_window_stepping};
+    use crate::table_resize::tests::{
+        H, button, cell, screen, steps, table_window, table_window_stepping,
+    };
 
     fn click(h: &mut H, at: Pos2) {
         h.event(egui::Event::PointerMoved(at));
@@ -254,16 +348,35 @@ mod tests {
         let at = screen(&mut h, b.x + b.w / 2.0, b.y - 3.0);
         h.event(egui::Event::PointerMoved(at));
         steps(&mut h, 2);
-        assert_eq!(h.output().platform_output.cursor_icon, egui::CursorIcon::None, "the drawn selection arrow");
+        assert_eq!(
+            h.output().platform_output.cursor_icon,
+            egui::CursorIcon::None,
+            "the drawn selection arrow"
+        );
         click(&mut h, at);
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (1, 1))));
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (1, 1)))
+        );
         assert_eq!(h.state().session.undo_depth(), depth);
-        assert!(!crate::mini_toolbar::visible(h.state()), "no mini toolbar over the table's selection areas");
+        assert!(
+            !crate::mini_toolbar::visible(h.state()),
+            "no mini toolbar over the table's selection areas"
+        );
         let c = cell(&mut h, 1, 2);
         let text = screen(&mut h, c.x + c.w / 2.0, c.y + c.h / 2.0);
         click(&mut h, text);
         assert!(h.state().session.cell_range().is_none());
-        assert_eq!(h.state().session.sel.focus.path.cell().map(|(_, r, c)| (r, c)), Some((1, 2)));
+        assert_eq!(
+            h.state()
+                .session
+                .sel
+                .focus
+                .path
+                .cell()
+                .map(|(_, r, c)| (r, c)),
+            Some((1, 2))
+        );
     }
 
     /// A drag down the row selection areas selects every row it passes, as it goes.
@@ -280,11 +393,18 @@ mod tests {
         assert_eq!(h.state().session.cell_range().map(|r| r.rows), Some((0, 0)));
         h.event(egui::Event::PointerMoved(end));
         h.step();
-        assert_eq!(h.state().session.cell_range().map(|r| r.rows), Some((0, 1)), "the selection follows the pointer");
+        assert_eq!(
+            h.state().session.cell_range().map(|r| r.rows),
+            Some((0, 1)),
+            "the selection follows the pointer"
+        );
         button(&h, end, false);
         steps(&mut h, 2);
         assert!(h.state().canvas.table_drag.is_none());
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (0, 2))));
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (0, 2)))
+        );
     }
 
     /// An ordinary drag from one cell's text into another's selects the rectangle of whole cells
@@ -301,13 +421,22 @@ mod tests {
         button(&h, start, true);
         h.step();
         for k in 1..=4 {
-            h.event(egui::Event::PointerMoved(start + (end - start) * (k as f32 / 4.0)));
+            h.event(egui::Event::PointerMoved(
+                start + (end - start) * (k as f32 / 4.0),
+            ));
             h.step();
         }
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (1, 2))), "the selection follows the pointer");
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (1, 2))),
+            "the selection follows the pointer"
+        );
         button(&h, end, false);
         steps(&mut h, 2);
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((0, 1), (1, 2))));
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((0, 1), (1, 2)))
+        );
         assert_eq!(h.state().session.undo_depth(), depth);
         assert!(!crate::mini_toolbar::visible(h.state()));
     }
@@ -322,11 +451,25 @@ mod tests {
         let at = screen(&mut h, a.x - 10.0, a.bottom());
         h.event(egui::Event::PointerMoved(at));
         steps(&mut h, 2);
-        assert_eq!(h.output().platform_output.cursor_icon, egui::CursorIcon::Default);
+        assert_eq!(
+            h.output().platform_output.cursor_icon,
+            egui::CursorIcon::Default
+        );
         click(&mut h, at);
-        let rows = h.state().session.doc.body.iter().find_map(|b| b.as_table()).map(|t| t.rows.len());
+        let rows = h
+            .state()
+            .session
+            .doc
+            .body
+            .iter()
+            .find_map(|b| b.as_table())
+            .map(|t| t.rows.len());
         assert_eq!(rows, Some(3));
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 1), (0, 2))), "the new row is selected");
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 1), (0, 2))),
+            "the new row is selected"
+        );
         assert_eq!(h.state().session.undo_depth(), depth + 1);
     }
 
@@ -342,12 +485,20 @@ mod tests {
         h.step();
         button(&h, at, false);
         h.step();
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 1), (1, 1))), "a click selects the cell");
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 1), (1, 1))),
+            "a click selects the cell"
+        );
         button(&h, at, true);
         h.step();
         button(&h, at, false);
         steps(&mut h, 2);
-        assert_eq!(h.state().session.cell_range().map(|r| (r.rows, r.cols)), Some(((1, 1), (0, 2))), "a double-click its row");
+        assert_eq!(
+            h.state().session.cell_range().map(|r| (r.rows, r.cols)),
+            Some(((1, 1), (0, 2))),
+            "a double-click its row"
+        );
     }
 
     /// Dragging the move handle: the move arrows over it, nothing changes while dragging, then
@@ -362,20 +513,31 @@ mod tests {
         let start = screen(&mut h, hx, hy);
         h.event(egui::Event::PointerMoved(start));
         steps(&mut h, 2);
-        assert_eq!(h.output().platform_output.cursor_icon, egui::CursorIcon::Move);
+        assert_eq!(
+            h.output().platform_output.cursor_icon,
+            egui::CursorIcon::Move
+        );
         button(&h, start, true);
         h.step();
         let end = screen(&mut h, hx + 40.0, hy + 30.0);
         for k in 1..=5 {
-            h.event(egui::Event::PointerMoved(start + (end - start) * (k as f32 / 5.0)));
+            h.event(egui::Event::PointerMoved(
+                start + (end - start) * (k as f32 / 5.0),
+            ));
             h.step();
         }
-        assert!(h.state().canvas.table_drag.is_some(), "a move is in progress");
+        assert!(
+            h.state().canvas.table_drag.is_some(),
+            "a move is in progress"
+        );
         assert_eq!(cell(&mut h, 0, 0), a, "the table waits for the release");
         button(&h, end, false);
         steps(&mut h, 3);
         let moved = cell(&mut h, 0, 0);
-        assert!((moved.x - (a.x + 40.0)).abs() < 1.0 && (moved.y - (a.y + 30.0)).abs() < 1.0, "{a:?} → {moved:?}");
+        assert!(
+            (moved.x - (a.x + 40.0)).abs() < 1.0 && (moved.y - (a.y + 30.0)).abs() < 1.0,
+            "{a:?} → {moved:?}"
+        );
         assert_eq!(h.state().session.undo_depth(), depth + 1);
     }
 }

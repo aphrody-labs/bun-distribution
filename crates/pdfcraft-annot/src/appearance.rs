@@ -28,7 +28,10 @@ pub fn cloud_radius(w: f64) -> f64 {
 
 /// One of the ten `/LE` names (ISO 32000-2 Table 217). Unknown names are not drawn.
 pub(crate) fn known_ending(kind: &[u8]) -> bool {
-    std::str::from_utf8(kind).ok().and_then(crate::LineEnding::parse).is_some()
+    std::str::from_utf8(kind)
+        .ok()
+        .and_then(crate::LineEnding::parse)
+        .is_some()
 }
 
 /// Draw a line ending (`/LE`) at `tip`, for a line arriving from `from`.
@@ -62,25 +65,68 @@ fn line_end(c: &mut String, kind: &[u8], tip: (f64, f64), from: (f64, f64), w: f
         b"OpenArrow" | b"ClosedArrow" | b"ROpenArrow" | b"RClosedArrow" => {
             // Open and closed arrows keep their original geometry. A reverse arrow uses the same
             // head, pointing back along the line.
-            let (ux, uy) = if kind.starts_with(b"R") { (-ix, -iy) } else { (ix, iy) };
+            let (ux, uy) = if kind.starts_with(b"R") {
+                (-ix, -iy)
+            } else {
+                (ix, iy)
+            };
             let (cos, sin) = (30f64.to_radians().cos(), 30f64.to_radians().sin());
-            let a = (tip.0 + s * (ux * cos - uy * sin), tip.1 + s * (ux * sin + uy * cos));
-            let b = (tip.0 + s * (ux * cos + uy * sin), tip.1 + s * (-ux * sin + uy * cos));
-            let op = if kind.ends_with(b"ClosedArrow") { "h B" } else { "S" };
-            c.push_str(&format!("{} {} m {} {} l {} {} l {op}\n", n(a.0), n(a.1), n(tip.0), n(tip.1), n(b.0), n(b.1)));
+            let a = (
+                tip.0 + s * (ux * cos - uy * sin),
+                tip.1 + s * (ux * sin + uy * cos),
+            );
+            let b = (
+                tip.0 + s * (ux * cos + uy * sin),
+                tip.1 + s * (-ux * sin + uy * cos),
+            );
+            let op = if kind.ends_with(b"ClosedArrow") {
+                "h B"
+            } else {
+                "S"
+            };
+            c.push_str(&format!(
+                "{} {} m {} {} l {} {} l {op}\n",
+                n(a.0),
+                n(a.1),
+                n(tip.0),
+                n(tip.1),
+                n(b.0),
+                n(b.1)
+            ));
         }
         b"Square" | b"Circle" | b"Diamond" => {
             let h = s / 2.0;
             if kind == b"Square" {
-                c.push_str(&format!("{} {} {} {} re h B\n", n(tip.0 - h), n(tip.1 - h), n(s), n(s)));
+                c.push_str(&format!(
+                    "{} {} {} {} re h B\n",
+                    n(tip.0 - h),
+                    n(tip.1 - h),
+                    n(s),
+                    n(s)
+                ));
             } else if kind == b"Circle" {
                 c.push_str(&ellipse(tip.0 - h, tip.1 - h, tip.0 + h, tip.1 + h));
                 c.push_str("B\n");
             } else {
                 let (px, py) = (-iy, ix);
-                let v = |along: f64, across: f64| (tip.0 + ix * along + px * across, tip.1 + iy * along + py * across);
+                let v = |along: f64, across: f64| {
+                    (
+                        tip.0 + ix * along + px * across,
+                        tip.1 + iy * along + py * across,
+                    )
+                };
                 let (a, b, d, e) = (v(h, 0.0), v(0.0, h), v(-h, 0.0), v(0.0, -h));
-                c.push_str(&format!("{} {} m {} {} l {} {} l {} {} l h B\n", n(a.0), n(a.1), n(b.0), n(b.1), n(d.0), n(d.1), n(e.0), n(e.1)));
+                c.push_str(&format!(
+                    "{} {} m {} {} l {} {} l {} {} l h B\n",
+                    n(a.0),
+                    n(a.1),
+                    n(b.0),
+                    n(b.1),
+                    n(d.0),
+                    n(d.1),
+                    n(e.0),
+                    n(e.1)
+                ));
             }
         }
         _ => {
@@ -93,7 +139,13 @@ fn line_end(c: &mut String, kind: &[u8], tip: (f64, f64), from: (f64, f64), w: f
                 (px, py)
             };
             let h = s / 2.0;
-            c.push_str(&format!("{} {} m {} {} l S\n", n(tip.0 - sx * h), n(tip.1 - sy * h), n(tip.0 + sx * h), n(tip.1 + sy * h)));
+            c.push_str(&format!(
+                "{} {} m {} {} l S\n",
+                n(tip.0 - sx * h),
+                n(tip.1 - sy * h),
+                n(tip.0 + sx * h),
+                n(tip.1 + sy * h)
+            ));
         }
     }
     true
@@ -105,25 +157,48 @@ fn line_end(c: &mut String, kind: &[u8], tip: (f64, f64), from: (f64, f64), w: f
 /// neighbour). Ink is drawn so, as Acrobat draws it, rather than as straight segments. The curve
 /// stays within its points and these control points.
 pub fn smooth_segments(pts: &[(f64, f64)]) -> Vec<[(f64, f64); 3]> {
-    let Some(&last) = pts.last() else { return Vec::new() };
+    let Some(&last) = pts.last() else {
+        return Vec::new();
+    };
     let at = |i: usize| pts.get(i).copied().unwrap_or(last);
     (0..pts.len().saturating_sub(1))
         .map(|i| {
             let (p0, p1, p2, p3) = (at(i.saturating_sub(1)), at(i), at(i + 1), at(i + 2));
-            [(p1.0 + (p2.0 - p0.0) / 6.0, p1.1 + (p2.1 - p0.1) / 6.0), (p2.0 - (p3.0 - p1.0) / 6.0, p2.1 - (p3.1 - p1.1) / 6.0), p2]
+            [
+                (p1.0 + (p2.0 - p0.0) / 6.0, p1.1 + (p2.1 - p0.1) / 6.0),
+                (p2.0 - (p3.0 - p1.0) / 6.0, p2.1 - (p3.1 - p1.1) / 6.0),
+                p2,
+            ]
         })
         .collect()
 }
 
 /// `c` operators for [`smooth_segments`] (the path already starts at the first point).
 fn smooth_curve(pts: &[(f64, f64)]) -> String {
-    smooth_segments(pts).iter().map(|[a, b, e]| format!("{} {} {} {} {} {} c\n", n(a.0), n(a.1), n(b.0), n(b.1), n(e.0), n(e.1))).collect()
+    smooth_segments(pts)
+        .iter()
+        .map(|[a, b, e]| {
+            format!(
+                "{} {} {} {} {} {} c\n",
+                n(a.0),
+                n(a.1),
+                n(b.0),
+                n(b.1),
+                n(e.0),
+                n(e.1)
+            )
+        })
+        .collect()
 }
 
 /// A closed cloudy outline through `pts` (§12.5.4 `/BE /S /C`): each edge becomes a row of
 /// half-circle bumps of about `r`, bulging outwards.
 pub fn cloud_path(pts: &[(f64, f64)], r: f64) -> String {
-    let area: f64 = pts.iter().zip(pts.iter().cycle().skip(1)).map(|(a, b)| a.0 * b.1 - b.0 * a.1).sum();
+    let area: f64 = pts
+        .iter()
+        .zip(pts.iter().cycle().skip(1))
+        .map(|(a, b)| a.0 * b.1 - b.0 * a.1)
+        .sum();
     // Outward normal of an edge: to the right of travel for counter-clockwise outlines.
     let sign = if area >= 0.0 { 1.0 } else { -1.0 };
     let mut c = String::new();
@@ -143,8 +218,19 @@ pub fn cloud_path(pts: &[(f64, f64)], r: f64) -> String {
         let h = 4.0 / 3.0 * step / 2.0;
         for j in 0..k {
             let p0 = (a.0 + ux * step * j as f64, a.1 + uy * step * j as f64);
-            let p1 = (a.0 + ux * step * (j + 1) as f64, a.1 + uy * step * (j + 1) as f64);
-            c.push_str(&format!("{} {} {} {} {} {} c\n", n(p0.0 + nx * h), n(p0.1 + ny * h), n(p1.0 + nx * h), n(p1.1 + ny * h), n(p1.0), n(p1.1)));
+            let p1 = (
+                a.0 + ux * step * (j + 1) as f64,
+                a.1 + uy * step * (j + 1) as f64,
+            );
+            c.push_str(&format!(
+                "{} {} {} {} {} {} c\n",
+                n(p0.0 + nx * h),
+                n(p0.1 + ny * h),
+                n(p1.0 + nx * h),
+                n(p1.1 + ny * h),
+                n(p1.0),
+                n(p1.1)
+            ));
         }
     }
     c.push_str("h\n");
@@ -159,13 +245,21 @@ fn nums(d: &Dict, key: &[u8]) -> Option<Vec<f64>> {
 fn color(d: &Dict, key: &[u8]) -> Option<Option<Rgb>> {
     let c = match d.get(key) {
         None => return Some(None),
-        Some(o) => o.as_array()?.iter().map(|o| o.as_f64()).collect::<Option<Vec<f64>>>()?,
+        Some(o) => o
+            .as_array()?
+            .iter()
+            .map(|o| o.as_f64())
+            .collect::<Option<Vec<f64>>>()?,
     };
     Some(match c.as_slice() {
         [] => None,
         [g] => Some([*g; 3]),
         [r, g, b] => Some([*r, *g, *b]),
-        [c, m, y, k] => Some([(1.0 - c) * (1.0 - k), (1.0 - m) * (1.0 - k), (1.0 - y) * (1.0 - k)]),
+        [c, m, y, k] => Some([
+            (1.0 - c) * (1.0 - k),
+            (1.0 - m) * (1.0 - k),
+            (1.0 - y) * (1.0 - k),
+        ]),
         _ => return None,
     })
 }
@@ -175,7 +269,12 @@ fn interior_color(d: &Dict, fallback: Option<Rgb>) -> Option<Rgb> {
 }
 
 fn border_width(d: &Dict) -> f64 {
-    if let Some(w) = d.get(b"BS").and_then(|b| b.as_dict()).and_then(|b| b.get(b"W")).and_then(|w| w.as_f64()) {
+    if let Some(w) = d
+        .get(b"BS")
+        .and_then(|b| b.as_dict())
+        .and_then(|b| b.get(b"W"))
+        .and_then(|w| w.as_f64())
+    {
         return w.max(0.0);
     }
     match nums(d, b"Border") {
@@ -186,12 +285,19 @@ fn border_width(d: &Dict) -> f64 {
 
 /// Dash pattern operator for a dashed border, if any.
 fn dash(d: &Dict) -> String {
-    let Some(bs) = d.get(b"BS").and_then(|b| b.as_dict()) else { return String::new() };
+    let Some(bs) = d.get(b"BS").and_then(|b| b.as_dict()) else {
+        return String::new();
+    };
     if bs.name(b"S") != Some(b"D") {
         return String::new();
     }
-    let arr = nums(bs, b"D").filter(|a| !a.is_empty() && a.iter().all(|x| *x >= 0.0)).unwrap_or_else(|| vec![3.0]);
-    format!("[{}] 0 d\n", arr.iter().map(|x| n(*x)).collect::<Vec<_>>().join(" "))
+    let arr = nums(bs, b"D")
+        .filter(|a| !a.is_empty() && a.iter().all(|x| *x >= 0.0))
+        .unwrap_or_else(|| vec![3.0]);
+    format!(
+        "[{}] 0 d\n",
+        arr.iter().map(|x| n(*x)).collect::<Vec<_>>().join(" ")
+    )
 }
 
 fn rg(c: Rgb) -> String {
@@ -204,7 +310,11 @@ fn rg_stroke(c: Rgb) -> String {
 
 /// `/DA` of a text box: (text colour, font size). Defaults to black 12 pt.
 pub fn parse_da(d: &Dict) -> (Rgb, f64) {
-    let da = d.get(b"DA").and_then(|o| o.as_string()).map(|s| String::from_utf8_lossy(&s.bytes).into_owned()).unwrap_or_default();
+    let da = d
+        .get(b"DA")
+        .and_then(|o| o.as_string())
+        .map(|s| String::from_utf8_lossy(&s.bytes).into_owned())
+        .unwrap_or_default();
     let toks: Vec<&str> = da.split_whitespace().collect();
     let mut col = [0.0; 3];
     let mut size = 12.0;
@@ -253,7 +363,10 @@ fn form(bbox: [f64; 4], content: &[u8], resources: Dict) -> Stream {
     d.set(b"Type".to_vec(), Object::name("XObject"));
     d.set(b"Subtype".to_vec(), Object::name("Form"));
     d.set(b"FormType".to_vec(), Object::Int(1));
-    d.set(b"BBox".to_vec(), Object::Array(bbox.iter().map(|x| Object::Real(*x)).collect()));
+    d.set(
+        b"BBox".to_vec(),
+        Object::Array(bbox.iter().map(|x| Object::Real(*x)).collect()),
+    );
     d.set(b"Resources".to_vec(), Object::Dict(resources));
     Stream::flate(d, content)
 }
@@ -261,12 +374,22 @@ fn form(bbox: [f64; 4], content: &[u8], resources: Dict) -> Stream {
 /// The page `/Rotate` an image signature's picture is turned back by (`/PCPictureRotate`, written
 /// when the signature is added to a turned page): 0, 90, 180 or 270.
 pub(crate) fn picture_turn(d: &Dict) -> i64 {
-    d.get(b"PCPictureRotate").and_then(Object::as_int).unwrap_or(0).rem_euclid(360) / 90 * 90
+    d.get(b"PCPictureRotate")
+        .and_then(Object::as_int)
+        .unwrap_or(0)
+        .rem_euclid(360)
+        / 90
+        * 90
 }
 
 /// The page `/Rotate` a rubber stamp's label is turned back by (`/PCStampRotate`).
 fn stamp_turn(d: &Dict) -> i64 {
-    d.get(b"PCStampRotate").and_then(Object::as_int).unwrap_or(0).rem_euclid(360) / 90 * 90
+    d.get(b"PCStampRotate")
+        .and_then(Object::as_int)
+        .unwrap_or(0)
+        .rem_euclid(360)
+        / 90
+        * 90
 }
 
 /// The first text [`build`] would draw in the standard fonts (Helvetica, WinAnsiEncoding) that
@@ -275,11 +398,17 @@ fn stamp_turn(d: &Dict) -> i64 {
 /// "By …" line, and a redaction mark's overlay text (drawn when it is applied). `None` when all of
 /// it can be drawn.
 pub fn undrawable_text(d: &Dict) -> Option<(&'static str, char)> {
-    let text = |key: &[u8]| d.get(key).and_then(Object::as_string).map(PdfString::to_text);
+    let text = |key: &[u8]| {
+        d.get(key)
+            .and_then(Object::as_string)
+            .map(PdfString::to_text)
+    };
     let (what, text) = match d.name(b"Subtype")? {
         b"FreeText" => ("the comment's text", text(b"Contents")?),
         b"Line" | b"PolyLine" | b"Polygon" => ("the measurement label", text(b"PCMeasureValue")?),
-        b"Stamp" if matches!(d.get(b"PCStamp"), Some(Object::Bool(true))) => ("the stamp's \"By\" line", text(b"PCByLine")?),
+        b"Stamp" if matches!(d.get(b"PCStamp"), Some(Object::Bool(true))) => {
+            ("the stamp's \"By\" line", text(b"PCByLine")?)
+        }
         // Drawn in Helvetica when the redaction is applied: refused when it is marked.
         b"Redact" => ("the redaction's overlay text", text(b"OverlayText")?),
         _ => return None,
@@ -298,18 +427,33 @@ pub fn build(d: &Dict) -> Option<Stream> {
     }
     let subtype = d.name(b"Subtype")?.to_vec();
     let rect = nums(d, b"Rect").filter(|r| r.len() == 4)?;
-    let rect = [rect[0].min(rect[2]), rect[1].min(rect[3]), rect[0].max(rect[2]), rect[1].max(rect[3])];
+    let rect = [
+        rect[0].min(rect[2]),
+        rect[1].min(rect[3]),
+        rect[0].max(rect[2]),
+        rect[1].max(rect[3]),
+    ];
     // Cloudy borders (§12.5.4) are drawn for polygons only.
-    let cloudy = d.get(b"BE").and_then(|b| b.as_dict()).is_some_and(|b| b.name(b"S") == Some(b"C"));
+    let cloudy = d
+        .get(b"BE")
+        .and_then(|b| b.as_dict())
+        .is_some_and(|b| b.name(b"S") == Some(b"C"));
     if cloudy && subtype != b"Polygon" {
         return None;
     }
-    let opacity = d.get(b"CA").and_then(|o| o.as_f64()).unwrap_or(1.0).clamp(0.0, 1.0);
+    let opacity = d
+        .get(b"CA")
+        .and_then(|o| o.as_f64())
+        .unwrap_or(1.0)
+        .clamp(0.0, 1.0);
     let stroke = color(d, b"C")?;
     let w = border_width(d);
     let mut res = Dict::new();
     let mut c = String::new();
-    let markup = matches!(subtype.as_slice(), b"Highlight" | b"Underline" | b"StrikeOut" | b"Squiggly");
+    let markup = matches!(
+        subtype.as_slice(),
+        b"Highlight" | b"Underline" | b"StrikeOut" | b"Squiggly"
+    );
     if let Some(gs) = ext_gstate(opacity, subtype == b"Highlight") {
         res.set(b"ExtGState".to_vec(), Object::Dict(gs));
         c.push_str("/GS0 gs\n");
@@ -317,13 +461,19 @@ pub fn build(d: &Dict) -> Option<Stream> {
     match subtype.as_slice() {
         b"Text" => {
             let col = stroke.unwrap_or([1.0, 0.82, 0.0]);
-            let icon = d.name(b"Name").map(|n| String::from_utf8_lossy(n).into_owned()).unwrap_or_else(|| "Note".into());
+            let icon = d
+                .name(b"Name")
+                .map(|n| String::from_utf8_lossy(n).into_owned())
+                .unwrap_or_else(|| "Note".into());
             c.push_str(&note_icon(&icon, col));
             return Some(form([0.0, 0.0, NOTE_SIZE, NOTE_SIZE], c.as_bytes(), res));
         }
         b"FileAttachment" => {
             let col = stroke.unwrap_or([0.0, 0.47, 0.84]);
-            let icon = d.name(b"Name").map(|n| String::from_utf8_lossy(n).into_owned()).unwrap_or_else(|| "PushPin".into());
+            let icon = d
+                .name(b"Name")
+                .map(|n| String::from_utf8_lossy(n).into_owned())
+                .unwrap_or_else(|| "PushPin".into());
             c.push_str(&attach_icon(&icon, col));
             return Some(form([0.0, 0.0, NOTE_SIZE, NOTE_SIZE], c.as_bytes(), res));
         }
@@ -335,7 +485,12 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 let (p1, p2, p3, p4) = (p(0), p(1), p(2), p(3));
                 let h = (p1.0 - p3.0).hypot(p1.1 - p3.1);
                 // A point a fraction `t` of the way from the bottom edge to the top edge.
-                let at = |bottom: (f64, f64), top: (f64, f64), t: f64| (bottom.0 + (top.0 - bottom.0) * t, bottom.1 + (top.1 - bottom.1) * t);
+                let at = |bottom: (f64, f64), top: (f64, f64), t: f64| {
+                    (
+                        bottom.0 + (top.0 - bottom.0) * t,
+                        bottom.1 + (top.1 - bottom.1) * t,
+                    )
+                };
                 match subtype.as_slice() {
                     b"Highlight" => {
                         c.push_str(&rg(col));
@@ -355,7 +510,15 @@ pub fn build(d: &Dict) -> Option<Stream> {
                         let lw = (h * 0.07).clamp(0.5, 3.0);
                         let t = if subtype == b"Underline" { 0.08 } else { 0.42 };
                         let (a, b) = (at(p3, p1, t), at(p4, p2, t));
-                        c.push_str(&format!("{}{} w\n{} {} m {} {} l S\n", rg_stroke(col), n(lw), n(a.0), n(a.1), n(b.0), n(b.1)));
+                        c.push_str(&format!(
+                            "{}{} w\n{} {} m {} {} l S\n",
+                            rg_stroke(col),
+                            n(lw),
+                            n(a.0),
+                            n(a.1),
+                            n(b.0),
+                            n(b.1)
+                        ));
                     }
                     _ => {
                         // Squiggly: a zigzag along the bottom of the quad.
@@ -369,9 +532,18 @@ pub fn build(d: &Dict) -> Option<Stream> {
                             let t = i as f64 / steps as f64;
                             let base = (p3.0 + (p4.0 - p3.0) * t, p3.1 + (p4.1 - p3.1) * t);
                             let up = if i % 2 == 0 { amp * 2.0 } else { 0.0 };
-                            let (ux, uy) = if h > 0.0 { ((p1.0 - p3.0) / h, (p1.1 - p3.1) / h) } else { (0.0, 1.0) };
+                            let (ux, uy) = if h > 0.0 {
+                                ((p1.0 - p3.0) / h, (p1.1 - p3.1) / h)
+                            } else {
+                                (0.0, 1.0)
+                            };
                             let (x, y) = (base.0 + ux * up, base.1 + uy * up);
-                            c.push_str(&format!("{} {} {}\n", n(x), n(y), if i == 0 { "m" } else { "l" }));
+                            c.push_str(&format!(
+                                "{} {} {}\n",
+                                n(x),
+                                n(y),
+                                if i == 0 { "m" } else { "l" }
+                            ));
                         }
                         c.push_str("S\n");
                     }
@@ -403,7 +575,12 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 return Some(form(rect, c.as_bytes(), res));
             }
             let inset = w / 2.0;
-            let [x0, y0, x1, y1] = [rect[0] + inset, rect[1] + inset, rect[2] - inset, rect[3] - inset];
+            let [x0, y0, x1, y1] = [
+                rect[0] + inset,
+                rect[1] + inset,
+                rect[2] - inset,
+                rect[3] - inset,
+            ];
             if let Some(f) = fill {
                 c.push_str(&rg(f));
             }
@@ -411,7 +588,13 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 c.push_str(&format!("{}{} w\n{}", rg_stroke(s), n(w), dash(d)));
             }
             if subtype == b"Square" {
-                c.push_str(&format!("{} {} {} {} re\n", n(x0), n(y0), n(x1 - x0), n(y1 - y0)));
+                c.push_str(&format!(
+                    "{} {} {} {} re\n",
+                    n(x0),
+                    n(y0),
+                    n(x1 - x0),
+                    n(y1 - y0)
+                ));
             } else {
                 c.push_str(&ellipse(x0, y0, x1, y1));
             }
@@ -427,32 +610,60 @@ pub fn build(d: &Dict) -> Option<Stream> {
             let col = stroke?;
             let ends: Vec<Vec<u8>> = match d.get(b"LE") {
                 None => vec![b"None".to_vec(), b"None".to_vec()],
-                Some(o) => o.as_array()?.iter().map(|e| e.as_name().map(<[u8]>::to_vec)).collect::<Option<_>>()?,
+                Some(o) => o
+                    .as_array()?
+                    .iter()
+                    .map(|e| e.as_name().map(<[u8]>::to_vec))
+                    .collect::<Option<_>>()?,
             };
             if ends.len() != 2 || ends.iter().any(|e| !known_ending(e)) {
                 return None;
             }
             let fill = interior_color(d, Some(col)).unwrap_or(col);
-            c.push_str(&format!("{}{}{} w 1 J 1 j\n{}", rg_stroke(col), rg(fill), n(w), dash(d)));
-            c.push_str(&format!("{} {} m {} {} l S\n[] 0 d\n", n(l[0]), n(l[1]), n(l[2]), n(l[3])));
-            for (end, (tip, from)) in ends.iter().zip([((l[0], l[1]), (l[2], l[3])), ((l[2], l[3]), (l[0], l[1]))]) {
+            c.push_str(&format!(
+                "{}{}{} w 1 J 1 j\n{}",
+                rg_stroke(col),
+                rg(fill),
+                n(w),
+                dash(d)
+            ));
+            c.push_str(&format!(
+                "{} {} m {} {} l S\n[] 0 d\n",
+                n(l[0]),
+                n(l[1]),
+                n(l[2]),
+                n(l[3])
+            ));
+            for (end, (tip, from)) in ends
+                .iter()
+                .zip([((l[0], l[1]), (l[2], l[3])), ((l[2], l[3]), (l[0], l[1]))])
+            {
                 if !line_end(&mut c, end, tip, from, w) {
                     return None;
                 }
             }
         }
         b"Polygon" | b"PolyLine" => {
-            let v = nums(d, b"Vertices").filter(|v| v.len() >= 4 && v.len() % 2 == 0 && v.iter().all(|x| x.is_finite()))?;
+            let v = nums(d, b"Vertices")
+                .filter(|v| v.len() >= 4 && v.len() % 2 == 0 && v.iter().all(|x| x.is_finite()))?;
             let pts: Vec<(f64, f64)> = v.as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).collect();
             let col = stroke;
             let closed = subtype == b"Polygon";
-            let fill = if closed { interior_color(d, None) } else { None };
+            let fill = if closed {
+                interior_color(d, None)
+            } else {
+                None
+            };
             let ends = if subtype == b"PolyLine" {
                 match d.get(b"LE") {
                     None => None,
                     Some(o) => {
-                        let names: Vec<Vec<u8>> =
-                            o.as_array().filter(|a| a.len() == 2)?.iter().map(|e| e.as_name().map(<[u8]>::to_vec)).collect::<Option<_>>()?;
+                        let names: Vec<Vec<u8>> = o
+                            .as_array()
+                            .filter(|a| a.len() == 2)?
+                            .iter()
+                            .map(|e| e.as_name().map(<[u8]>::to_vec))
+                            .collect::<Option<_>>()?;
                         if names.iter().any(|e| !known_ending(e)) {
                             return None;
                         }
@@ -469,11 +680,24 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 c.push_str(&format!("{}{} w 1 J 1 j\n{}", rg_stroke(s), n(w), dash(d)));
             }
             if cloudy {
-                let intensity = d.get(b"BE").and_then(|b| b.as_dict()).and_then(|b| b.get(b"I")).and_then(|i| i.as_f64()).unwrap_or(1.0);
-                c.push_str(&cloud_path(&pts, cloud_radius(w) * intensity.clamp(0.5, 2.0)));
+                let intensity = d
+                    .get(b"BE")
+                    .and_then(|b| b.as_dict())
+                    .and_then(|b| b.get(b"I"))
+                    .and_then(|i| i.as_f64())
+                    .unwrap_or(1.0);
+                c.push_str(&cloud_path(
+                    &pts,
+                    cloud_radius(w) * intensity.clamp(0.5, 2.0),
+                ));
             } else {
                 for (i, p) in pts.iter().enumerate() {
-                    c.push_str(&format!("{} {} {}\n", n(p.0), n(p.1), if i == 0 { "m" } else { "l" }));
+                    c.push_str(&format!(
+                        "{} {} {}\n",
+                        n(p.0),
+                        n(p.1),
+                        if i == 0 { "m" } else { "l" }
+                    ));
                 }
                 if closed {
                     c.push_str("h\n");
@@ -487,12 +711,22 @@ pub fn build(d: &Dict) -> Option<Stream> {
             });
             if let Some(ends) = ends {
                 let col = col?;
-                let (Some(start), Some(end)) = (ends.first(), ends.get(1)) else { return None };
-                let (Some(&tip0), Some(&from0)) = (pts.first(), pts.get(1)) else { return None };
-                let (Some(&tip1), Some(&from1)) = (pts.last(), pts.get(pts.len().saturating_sub(2))) else { return None };
+                let (Some(start), Some(end)) = (ends.first(), ends.get(1)) else {
+                    return None;
+                };
+                let (Some(&tip0), Some(&from0)) = (pts.first(), pts.get(1)) else {
+                    return None;
+                };
+                let (Some(&tip1), Some(&from1)) =
+                    (pts.last(), pts.get(pts.len().saturating_sub(2)))
+                else {
+                    return None;
+                };
                 let fill = interior_color(d, Some(col)).unwrap_or(col);
                 c.push_str(&format!("[] 0 d\n{}", rg(fill)));
-                if !line_end(&mut c, start, tip0, from0, w) || !line_end(&mut c, end, tip1, from1, w) {
+                if !line_end(&mut c, start, tip0, from0, w)
+                    || !line_end(&mut c, end, tip1, from1, w)
+                {
                     return None;
                 }
             }
@@ -526,8 +760,17 @@ pub fn build(d: &Dict) -> Option<Stream> {
             let list = d.get(b"InkList")?.as_array()?;
             c.push_str(&format!("{}{} w 1 J 1 j\n", rg_stroke(col), n(w)));
             for s in list {
-                let pts: Vec<f64> = s.as_array()?.iter().map(|o| o.as_f64()).collect::<Option<_>>()?;
-                let pts: Vec<(f64, f64)> = pts.as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).collect();
+                let pts: Vec<f64> = s
+                    .as_array()?
+                    .iter()
+                    .map(|o| o.as_f64())
+                    .collect::<Option<_>>()?;
+                let pts: Vec<(f64, f64)> = pts
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|p| (p[0], p[1]))
+                    .collect();
                 let Some(first) = pts.first() else { continue };
                 c.push_str(&format!("{} {} m\n", n(first.0), n(first.1)));
                 match pts.as_slice() {
@@ -545,9 +788,17 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 let (w, h) = (x1 - x0, y1 - y0);
                 c.push_str(&rg(stroke.unwrap_or([0.0; 3])));
                 for contour in outline {
-                    let v: Vec<f64> = contour.as_array().map(|a| a.iter().filter_map(Object::as_f64).collect()).unwrap_or_default();
+                    let v: Vec<f64> = contour
+                        .as_array()
+                        .map(|a| a.iter().filter_map(Object::as_f64).collect())
+                        .unwrap_or_default();
                     for (i, p) in v.as_chunks::<2>().0.iter().enumerate() {
-                        c.push_str(&format!("{} {} {}\n", n(x0 + p[0] * w), n(y0 + p[1] * h), if i == 0 { "m" } else { "l" }));
+                        c.push_str(&format!(
+                            "{} {} {}\n",
+                            n(x0 + p[0] * w),
+                            n(y0 + p[1] * h),
+                            if i == 0 { "m" } else { "l" }
+                        ));
                     }
                     if v.len() >= 6 {
                         c.push_str("h\n");
@@ -567,8 +818,15 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 let place = if image {
                     format!("{} 0 0 {} {} {} cm", n(w), n(h), n(x0), n(y0))
                 } else {
-                    let size = nums(d, b"PCPictureSize").filter(|s| s.len() == 2 && s[0] > 0.0 && s[1] > 0.0)?;
-                    format!("{} 0 0 {} {} {} cm", n(w / size[0]), n(h / size[1]), n(x0), n(y0))
+                    let size = nums(d, b"PCPictureSize")
+                        .filter(|s| s.len() == 2 && s[0] > 0.0 && s[1] > 0.0)?;
+                    format!(
+                        "{} 0 0 {} {} {} cm",
+                        n(w / size[0]),
+                        n(h / size[1]),
+                        n(x0),
+                        n(y0)
+                    )
                 };
                 c.push_str(&format!("q {place} /Pic Do Q\n"));
                 let mut xo = Dict::new();
@@ -580,7 +838,10 @@ pub fn build(d: &Dict) -> Option<Stream> {
                     // The page's view matrix without its offset: display axes in user space.
                     let m = pdfcraft_model::view_matrix_for(turn, [0.0; 4]);
                     let matrix = [m[0], m[1], m[2], m[3], 0.0, 0.0];
-                    stream.dict.set(b"Matrix".to_vec(), Object::Array(matrix.iter().map(|x| Object::Real(*x)).collect()));
+                    stream.dict.set(
+                        b"Matrix".to_vec(),
+                        Object::Array(matrix.iter().map(|x| Object::Real(*x)).collect()),
+                    );
                 }
                 return Some(stream);
             }
@@ -618,7 +879,12 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 b"PCDot" => {
                     let r = w.min(h) * 0.3;
                     c.push_str(&rg(col));
-                    c.push_str(&ellipse(x0 + w / 2.0 - r, y0 + h / 2.0 - r, x0 + w / 2.0 + r, y0 + h / 2.0 + r));
+                    c.push_str(&ellipse(
+                        x0 + w / 2.0 - r,
+                        y0 + h / 2.0 - r,
+                        x0 + w / 2.0 + r,
+                        y0 + h / 2.0 + r,
+                    ));
                     c.push_str("f\n");
                 }
                 b"PCLine" => c.push_str(&format!(
@@ -636,25 +902,42 @@ pub fn build(d: &Dict) -> Option<Stream> {
                         return None;
                     }
                     let kind = crate::StampKind::from_name(other)?;
-                    let by = d.get(b"PCByLine").and_then(|o| o.as_string()).map(PdfString::to_text);
+                    let by = d
+                        .get(b"PCByLine")
+                        .and_then(|o| o.as_string())
+                        .map(PdfString::to_text);
                     let turn = stamp_turn(d);
                     let draw = if turn == 0 {
                         rect
                     } else {
                         let (rw, rh) = (rect[2] - rect[0], rect[3] - rect[1]);
-                        let (dw, dh) = if matches!(turn, 90 | 270) { (rh, rw) } else { (rw, rh) };
+                        let (dw, dh) = if matches!(turn, 90 | 270) {
+                            (rh, rw)
+                        } else {
+                            (rw, rh)
+                        };
                         if dw < 1.0 || dh < 1.0 {
                             return None;
                         }
                         [0.0, 0.0, dw, dh]
                     };
-                    let mut stream = stamp(kind, draw, stroke.unwrap_or(kind.color()), by.as_deref(), opacity, res);
+                    let mut stream = stamp(
+                        kind,
+                        draw,
+                        stroke.unwrap_or(kind.color()),
+                        by.as_deref(),
+                        opacity,
+                        res,
+                    );
                     if turn != 0 {
                         // Upright in the stamp's displayed box, then mapped into `/Rect` the way
                         // the page maps display space into user space. Viewers fit that box to
                         // `/Rect`; the page rotation then shows the label the right way up.
                         let m = pdfcraft_model::view_matrix_for(turn, rect);
-                        stream.dict.set(b"Matrix".to_vec(), Object::Array(m.iter().copied().map(Object::Real).collect()));
+                        stream.dict.set(
+                            b"Matrix".to_vec(),
+                            Object::Array(m.iter().copied().map(Object::Real).collect()),
+                        );
                     }
                     return Some(stream);
                 }
@@ -663,7 +946,11 @@ pub fn build(d: &Dict) -> Option<Stream> {
         b"FreeText" => {
             let (text_color, size) = parse_da(d);
             let bg = stroke;
-            let bw = if d.contains(b"BS") || d.contains(b"Border") { border_width(d) } else { 0.0 };
+            let bw = if d.contains(b"BS") || d.contains(b"Border") {
+                border_width(d)
+            } else {
+                0.0
+            };
             // A callout: the leader line (arrowhead at its first point), and the text box inside
             // `/Rect` by `/RD`.
             let full = rect;
@@ -671,7 +958,12 @@ pub fn build(d: &Dict) -> Option<Stream> {
             if d.contains(b"CL") {
                 let cl = nums(d, b"CL").filter(|l| l.len() == 4 || l.len() == 6)?;
                 let rd = nums(d, b"RD").filter(|r| r.len() == 4 && r.iter().all(|x| *x >= 0.0))?;
-                rect = [full[0] + rd[0], full[1] + rd[1], full[2] - rd[2], full[3] - rd[3]];
+                rect = [
+                    full[0] + rd[0],
+                    full[1] + rd[1],
+                    full[2] - rd[2],
+                    full[3] - rd[3],
+                ];
                 if rect[2] - rect[0] < 1.0 || rect[3] - rect[1] < 1.0 {
                     return None;
                 }
@@ -683,13 +975,24 @@ pub fn build(d: &Dict) -> Option<Stream> {
                     return None;
                 }
                 let lw = bw.max(0.5);
-                let pts: Vec<(f64, f64)> = cl.as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).collect();
+                let pts: Vec<(f64, f64)> =
+                    cl.as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).collect();
                 if pts.len() < 2 || pts.iter().any(|p| !p.0.is_finite() || !p.1.is_finite()) {
                     return None;
                 }
-                c.push_str(&format!("{}{}{} w 1 J 1 j\n", rg_stroke(text_color), rg(bg.unwrap_or([1.0; 3])), n(lw)));
+                c.push_str(&format!(
+                    "{}{}{} w 1 J 1 j\n",
+                    rg_stroke(text_color),
+                    rg(bg.unwrap_or([1.0; 3])),
+                    n(lw)
+                ));
                 for (i, p) in pts.iter().enumerate() {
-                    c.push_str(&format!("{} {} {}\n", n(p.0), n(p.1), if i == 0 { "m" } else { "l" }));
+                    c.push_str(&format!(
+                        "{} {} {}\n",
+                        n(p.0),
+                        n(p.1),
+                        if i == 0 { "m" } else { "l" }
+                    ));
                 }
                 c.push_str("S\n");
                 if !line_end(&mut c, &end, pts[0], pts[1], lw) {
@@ -697,7 +1000,14 @@ pub fn build(d: &Dict) -> Option<Stream> {
                 }
             }
             if let Some(bg) = bg {
-                c.push_str(&format!("{}{} {} {} {} re f\n", rg(bg), n(rect[0]), n(rect[1]), n(rect[2] - rect[0]), n(rect[3] - rect[1])));
+                c.push_str(&format!(
+                    "{}{} {} {} {} re f\n",
+                    rg(bg),
+                    n(rect[0]),
+                    n(rect[1]),
+                    n(rect[2] - rect[0]),
+                    n(rect[3] - rect[1])
+                ));
             }
             if bw > 0.0 {
                 let h = bw / 2.0;
@@ -712,7 +1022,11 @@ pub fn build(d: &Dict) -> Option<Stream> {
                     n(rect[3] - rect[1] - bw)
                 ));
             }
-            let text = d.get(b"Contents").and_then(|o| o.as_string()).map(PdfString::to_text).unwrap_or_default();
+            let text = d
+                .get(b"Contents")
+                .and_then(|o| o.as_string())
+                .map(PdfString::to_text)
+                .unwrap_or_default();
             let pad = 2.0 + bw;
             let width = (rect[2] - rect[0] - 2.0 * pad).max(1.0);
             let q = d.int(b"Q").unwrap_or(0);
@@ -760,7 +1074,9 @@ pub fn build(d: &Dict) -> Option<Stream> {
     let mut out = c.into_bytes();
     if let Some(value) = d.get(b"PCMeasureValue").and_then(Object::as_string) {
         let value = value.to_text();
-        if value.chars().count() <= 256 && matches!(subtype.as_slice(), b"Line" | b"PolyLine" | b"Polygon") {
+        if value.chars().count() <= 256
+            && matches!(subtype.as_slice(), b"Line" | b"PolyLine" | b"Polygon")
+        {
             let size = 10.0;
             let x = (rect[0] + rect[2] - text_width(&value, size)) * 0.5;
             let y = rect[3] - 12.0;
@@ -784,7 +1100,14 @@ pub fn build(d: &Dict) -> Option<Stream> {
 
 /// A rubber stamp: a rounded frame (a pointed tag for sign-here stamps) with the label in bold
 /// capitals, and the dynamic stamps' "By … at …" line.
-fn stamp(kind: crate::StampKind, rect: [f64; 4], col: Rgb, by: Option<&str>, opacity: f64, mut res: Dict) -> Stream {
+fn stamp(
+    kind: crate::StampKind,
+    rect: [f64; 4],
+    col: Rgb,
+    by: Option<&str>,
+    opacity: f64,
+    mut res: Dict,
+) -> Stream {
     let [x0, y0, x1, y1] = rect;
     let h = y1 - y0;
     let mut c = String::new();
@@ -860,20 +1183,42 @@ fn stamp(kind: crate::StampKind, rect: [f64; 4], col: Rgb, by: Option<&str>, opa
         ));
     }
     let label = kind.label();
-    let (title_h, by_h) = if by.is_some() { (h * 0.5, h * 0.22) } else { (h * 0.52, 0.0) };
-    let text_area = if kind.group() == crate::StampGroup::SignHere { (x0 + h * 0.45, x1 - lw * 2.0) } else { (x0 + lw * 2.0, x1 - lw * 2.0) };
+    let (title_h, by_h) = if by.is_some() {
+        (h * 0.5, h * 0.22)
+    } else {
+        (h * 0.52, 0.0)
+    };
+    let text_area = if kind.group() == crate::StampGroup::SignHere {
+        (x0 + h * 0.45, x1 - lw * 2.0)
+    } else {
+        (x0 + lw * 2.0, x1 - lw * 2.0)
+    };
     let mut size = title_h;
     let tw = text_width(label, size) * 1.12;
     if tw > text_area.1 - text_area.0 - 4.0 {
         size *= (text_area.1 - text_area.0 - 4.0) / tw;
     }
     let tw = text_width(label, size) * 1.12;
-    let text_col = if kind.group() == crate::StampGroup::SignHere { [1.0, 1.0, 1.0] } else { col };
-    let ty = if by.is_some() { y0 + h * 0.48 } else { y0 + (h - size * 0.72) / 2.0 };
+    let text_col = if kind.group() == crate::StampGroup::SignHere {
+        [1.0, 1.0, 1.0]
+    } else {
+        col
+    };
+    let ty = if by.is_some() {
+        y0 + h * 0.48
+    } else {
+        y0 + (h - size * 0.72) / 2.0
+    };
     let mut out = c.into_bytes();
     out.extend(
-        format!("BT\n{}/HelvB {} Tf\n1 0 0 1 {} {} Tm ", rg(text_col), n(size), n(text_area.0 + (text_area.1 - text_area.0 - tw) / 2.0), n(ty))
-            .bytes(),
+        format!(
+            "BT\n{}/HelvB {} Tf\n1 0 0 1 {} {} Tm ",
+            rg(text_col),
+            n(size),
+            n(text_area.0 + (text_area.1 - text_area.0 - tw) / 2.0),
+            n(ty)
+        )
+        .bytes(),
     );
     out.extend(literal(&win_ansi(label)));
     out.extend_from_slice(b" Tj\n");
@@ -885,7 +1230,13 @@ fn stamp(kind: crate::StampKind, rect: [f64; 4], col: Rgb, by: Option<&str>, opa
         }
         let bw = text_width(b, s);
         out.extend(
-            format!("/Helv {} Tf\n1 0 0 1 {} {} Tm ", n(s), n(text_area.0 + (text_area.1 - text_area.0 - bw) / 2.0), n(y0 + h * 0.18)).bytes(),
+            format!(
+                "/Helv {} Tf\n1 0 0 1 {} {} Tm ",
+                n(s),
+                n(text_area.0 + (text_area.1 - text_area.0 - bw) / 2.0),
+                n(y0 + h * 0.18)
+            )
+            .bytes(),
         );
         out.extend(literal(&win_ansi(b)));
         out.extend_from_slice(b" Tj\n");
@@ -909,7 +1260,12 @@ fn stamp(kind: crate::StampKind, rect: [f64; 4], col: Rgb, by: Option<&str>, opa
 /// An ellipse inscribed in a rectangle, as four Bézier arcs.
 fn ellipse(x0: f64, y0: f64, x1: f64, y1: f64) -> String {
     let k = 0.552_284_75;
-    let (cx, cy, rx, ry) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0, (x1 - x0) / 2.0, (y1 - y0) / 2.0);
+    let (cx, cy, rx, ry) = (
+        (x0 + x1) / 2.0,
+        (y0 + y1) / 2.0,
+        (x1 - x0) / 2.0,
+        (y1 - y0) / 2.0,
+    );
     let (ox, oy) = (rx * k, ry * k);
     let mut s = format!("{} {} m\n", n(cx + rx), n(cy));
     for [a, b, c, d, e, f] in [
@@ -918,7 +1274,15 @@ fn ellipse(x0: f64, y0: f64, x1: f64, y1: f64) -> String {
         [cx - rx, cy - oy, cx - ox, cy - ry, cx, cy - ry],
         [cx + ox, cy - ry, cx + rx, cy - oy, cx + rx, cy],
     ] {
-        s.push_str(&format!("{} {} {} {} {} {} c\n", n(a), n(b), n(c), n(d), n(e), n(f)));
+        s.push_str(&format!(
+            "{} {} {} {} {} {} c\n",
+            n(a),
+            n(b),
+            n(c),
+            n(d),
+            n(e),
+            n(f)
+        ));
     }
     s.push_str("h\n");
     s

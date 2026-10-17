@@ -133,7 +133,7 @@ pub fn resoudre_awb(vfs: &Vfs, path: &str, raw: &[u8]) -> Option<(Vec<u8>, Sourc
         (SourceAwb::Externe(frere), _, _) => {
             let bytes = vfs.read(&frere).ok()?;
             Some((bytes, SourceAwb::Externe(frere)))
-        },
+        }
     }
 }
 
@@ -165,7 +165,9 @@ pub fn cues(raw: &[u8], awb: Option<&[u8]>) -> Vec<Cue> {
         return liste
             .into_iter()
             .map(|c| Cue {
-                size: c.awb_id.and_then(|id| tailles.as_ref()?.get(&u32::from(id)).copied()),
+                size: c
+                    .awb_id
+                    .and_then(|id| tailles.as_ref()?.get(&u32::from(id)).copied()),
                 name: c.name,
                 awb_id: c.awb_id,
                 length_ms: c.length_ms,
@@ -217,14 +219,24 @@ pub fn decoder_cue(awb: &[u8], awb_id: u16) -> Result<Vec<u8>, String> {
 #[must_use]
 pub fn nom_de_fichier(path: &str, cue: &Cue) -> String {
     let base = if cue.name.is_empty() {
-        let radical = path.rsplit('/').next().and_then(|n| n.split('.').next()).unwrap_or("audio");
+        let radical = path
+            .rsplit('/')
+            .next()
+            .and_then(|n| n.split('.').next())
+            .unwrap_or("audio");
         format!("{radical}_{}", cue.awb_id.unwrap_or(0))
     } else {
         cue.name.clone()
     };
     let sain: String = base
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' || c == '-' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
     format!("{sain}.wav")
 }
@@ -254,13 +266,25 @@ mod tests {
             channels: None,
             size: None,
         };
-        assert_eq!(nom_de_fichier("data/sound/waza_stream.acb", &anonyme), "waza_stream_1461.wav");
+        assert_eq!(
+            nom_de_fichier("data/sound/waza_stream.acb", &anonyme),
+            "waza_stream_1461.wav"
+        );
 
-        let nomme = Cue { name: "ev74_00840_me".to_string(), ..anonyme.clone() };
-        assert_eq!(nom_de_fichier("data/sound/waza_stream.acb", &nomme), "ev74_00840_me.wav");
+        let nomme = Cue {
+            name: "ev74_00840_me".to_string(),
+            ..anonyme.clone()
+        };
+        assert_eq!(
+            nom_de_fichier("data/sound/waza_stream.acb", &nomme),
+            "ev74_00840_me.wav"
+        );
 
         // Un nom exotique ne traverse pas tel quel vers le disque.
-        let sale = Cue { name: "a/b:c*d".to_string(), ..anonyme };
+        let sale = Cue {
+            name: "a/b:c*d".to_string(),
+            ..anonyme
+        };
         assert_eq!(nom_de_fichier("x.acb", &sale), "a_b_c_d.wav");
     }
 

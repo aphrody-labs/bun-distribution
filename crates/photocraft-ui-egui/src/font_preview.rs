@@ -74,47 +74,106 @@ struct SampleImages {
 fn sample_texts(chars: &[char]) -> (String, Option<&'static str>) {
     let has = |c: char| chars.binary_search(&c).is_ok();
     if !SAMPLE.chars().all(has) {
-        return (chars.iter().copied().filter(|c| !c.is_whitespace()).take(6).collect(), None);
+        return (
+            chars
+                .iter()
+                .copied()
+                .filter(|c| !c.is_whitespace())
+                .take(6)
+                .collect(),
+            None,
+        );
     }
-    let arabic = ARABIC_CORE.into_iter().chain(ARABIC_SAMPLE.chars().filter(|c| !c.is_whitespace())).all(has);
+    let arabic = ARABIC_CORE
+        .into_iter()
+        .chain(ARABIC_SAMPLE.chars().filter(|c| !c.is_whitespace()))
+        .all(has);
     (SAMPLE.into(), arabic.then_some(ARABIC_SAMPLE))
 }
 
-fn render(engine: &mut photocraft_text::TextEngine, family: &str, text: &str, slot: f32, scale: u32, size: f32) -> Option<ColorImage> {
+fn render(
+    engine: &mut photocraft_text::TextEngine,
+    family: &str,
+    text: &str,
+    slot: f32,
+    scale: u32,
+    size: f32,
+) -> Option<ColorImage> {
     if text.is_empty() {
         return None;
     }
-    let layer = TextLayer { text: text.into(), font_family: family.into(), size_pt: size * scale as f32, ..Default::default() };
+    let layer = TextLayer {
+        text: text.into(),
+        font_family: family.into(),
+        size_pt: size * scale as f32,
+        ..Default::default()
+    };
     let layout = engine.layout(&layer, 72.0);
     let bounds = layout.bounds()?;
     let width = (slot as u32 * scale) as usize;
     let height = (scaled(HEIGHT, size) as u32 * scale) as usize;
-    let transform = Affine::translate(f64::from(-bounds[0]), f64::from((height as f32 - (bounds[3] - bounds[1])) / 2.0 - bounds[1]));
+    let transform = Affine::translate(
+        f64::from(-bounds[0]),
+        f64::from((height as f32 - (bounds[3] - bounds[1])) / 2.0 - bounds[1]),
+    );
     // Reject oversized ink before the rasterizer allocates a surface (malformed installed fonts).
     let ink = photocraft_text::render::ink_rect(&layout, &transform);
     if ink.is_empty() || ink.width() > width as u32 * 4 || ink.height() > height as u32 * 4 {
         return None;
     }
-    let rendered = photocraft_text::render::rasterize(&layout, &transform, PixelFormat::new(ColorMode::Rgb, SampleType::U8, true), layer.antialias);
+    let rendered = photocraft_text::render::rasterize(
+        &layout,
+        &transform,
+        PixelFormat::new(ColorMode::Rgb, SampleType::U8, true),
+        layer.antialias,
+    );
     let mut rgba = vec![[0u8; 4]; width * height];
-    rendered.surface.read_rgba8_into(photocraft_geom::Rect::new(0, 0, width as i32, height as i32), &mut rgba);
-    Some(ColorImage::from_rgba_unmultiplied([width, height], &rgba.into_iter().flat_map(|p| [255, 255, 255, p[3]]).collect::<Vec<_>>()))
+    rendered.surface.read_rgba8_into(
+        photocraft_geom::Rect::new(0, 0, width as i32, height as i32),
+        &mut rgba,
+    );
+    Some(ColorImage::from_rgba_unmultiplied(
+        [width, height],
+        &rgba
+            .into_iter()
+            .flat_map(|p| [255, 255, 255, p[3]])
+            .collect::<Vec<_>>(),
+    ))
 }
 
-fn images(engine: &mut photocraft_text::TextEngine, family: &str, scale: u32, size: f32) -> Option<SampleImages> {
+fn images(
+    engine: &mut photocraft_text::TextEngine,
+    family: &str,
+    scale: u32,
+    size: f32,
+) -> Option<SampleImages> {
     // Unknown/unreadable families keep their plain menu label, rather than a misleading fallback.
     if !engine.fonts.has_family(family) {
         return None;
     }
     let (latin, arabic) = sample_texts(&engine.fonts.charmap(family, 400, false));
     let latin = render(engine, family, &latin, scaled(WIDTH, size), scale, size)?;
-    let arabic = arabic.and_then(|text| render(engine, family, text, scaled(ARABIC_WIDTH, size), scale, size));
+    let arabic = arabic.and_then(|text| {
+        render(
+            engine,
+            family,
+            text,
+            scaled(ARABIC_WIDTH, size),
+            scale,
+            size,
+        )
+    });
     Some(SampleImages { latin, arabic })
 }
 
 fn key(ctx: &egui::Context, family: &str, size: f32) -> Key {
     let scale = ctx.pixels_per_point().ceil().clamp(1.0, 4.0) as u32;
-    (family.to_owned(), scale, photocraft_text::fonts::shared_generation(), size as u32)
+    (
+        family.to_owned(),
+        scale,
+        photocraft_text::fonts::shared_generation(),
+        size as u32,
+    )
 }
 
 /// Width a row reserves for its samples: wider once a painted row showed the family covers
@@ -124,9 +183,16 @@ pub(crate) fn slot_width(ctx: &egui::Context, family: &str, size: f32) -> f32 {
     let key = key(ctx, family, size);
     let arabic = ctx.data_mut(|d| {
         let cache = d.get_temp_mut_or_default::<Cache>(egui::Id::new(CACHE_ID));
-        cache.0.iter().any(|(k, samples)| k == &key && samples.as_ref().is_some_and(|s| s.arabic.is_some()))
+        cache
+            .0
+            .iter()
+            .any(|(k, samples)| k == &key && samples.as_ref().is_some_and(|s| s.arabic.is_some()))
     });
-    if arabic { scaled(WIDTH, size) + GAP + scaled(ARABIC_WIDTH, size) } else { scaled(WIDTH, size) }
+    if arabic {
+        scaled(WIDTH, size) + GAP + scaled(ARABIC_WIDTH, size)
+    } else {
+        scaled(WIDTH, size)
+    }
 }
 
 pub(crate) fn paint(ui: &egui::Ui, family: &str, row: Rect, size: f32) {
@@ -143,9 +209,26 @@ pub(crate) fn paint(ui: &egui::Ui, family: &str, row: Rect, size: f32) {
         Some(samples)
     });
     let samples = cached.unwrap_or_else(|| {
-        let samples = images(&mut photocraft_text::shared().lock().unwrap_or_else(PoisonError::into_inner), family, scale, size).map(|img| {
-            let load = |image| ctx.load_texture(format!("font-sample-{family}"), image, TextureOptions::LINEAR);
-            Samples { latin: load(img.latin), arabic: img.arabic.map(load) }
+        let samples = images(
+            &mut photocraft_text::shared()
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner),
+            family,
+            scale,
+            size,
+        )
+        .map(|img| {
+            let load = |image| {
+                ctx.load_texture(
+                    format!("font-sample-{family}"),
+                    image,
+                    TextureOptions::LINEAR,
+                )
+            };
+            Samples {
+                latin: load(img.latin),
+                arabic: img.arabic.map(load),
+            }
         });
         if samples.as_ref().is_some_and(|s| s.arabic.is_some()) {
             // The row reserved only the Latin width until now.
@@ -164,7 +247,10 @@ pub(crate) fn paint(ui: &egui::Ui, family: &str, row: Rect, size: f32) {
         let tint = crate::theme::Tokens::get(ctx).text;
         let uv = Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0));
         let [w, h] = box_for(size);
-        let latin = Rect::from_min_size(pos2(row.right() - w - 8.0, row.center().y - h / 2.0), vec2(w, h));
+        let latin = Rect::from_min_size(
+            pos2(row.right() - w - 8.0, row.center().y - h / 2.0),
+            vec2(w, h),
+        );
         ui.painter().image(samples.latin.id(), latin, uv, tint);
         if let Some(arabic) = samples.arabic {
             let aw = scaled(ARABIC_WIDTH, size);
@@ -178,7 +264,11 @@ pub(crate) fn paint(ui: &egui::Ui, family: &str, row: Rect, size: f32) {
 mod tests {
     use super::*;
 
-    fn image(engine: &mut photocraft_text::TextEngine, family: &str, scale: u32) -> Option<ColorImage> {
+    fn image(
+        engine: &mut photocraft_text::TextEngine,
+        family: &str,
+        scale: u32,
+    ) -> Option<ColorImage> {
         images(engine, family, scale, MEDIUM).map(|i| i.latin)
     }
 
@@ -195,7 +285,10 @@ mod tests {
         let mono = image(&mut engine, "JetBrains Mono", 1).expect("bundled mono");
         assert_eq!(sans.size, [100, 24]);
         assert!(sans.pixels.iter().any(|p| p.a() > 0));
-        assert_ne!(sans.pixels, mono.pixels, "samples use different font outlines");
+        assert_ne!(
+            sans.pixels, mono.pixels,
+            "samples use different font outlines"
+        );
         assert_eq!(image(&mut engine, "Inter", 2).unwrap().size, [200, 48]);
         assert!(image(&mut engine, "Missing font", 1).is_none());
     }
@@ -205,9 +298,15 @@ mod tests {
     fn the_preview_size_preference_scales_the_sample() {
         assert_eq!(sample(FontPreview::Off), None);
         assert_eq!(sample(FontPreview::Medium), Some((18.0, [100.0, 24.0])));
-        let Some((_, [w, h])) = sample(FontPreview::Huge) else { panic!("Huge previews") };
+        let Some((_, [w, h])) = sample(FontPreview::Huge) else {
+            panic!("Huge previews")
+        };
         assert!(w > 100.0 && h > 24.0, "Huge is bigger than Medium: {w}×{h}");
-        assert!(sample(FontPreview::Small).unwrap().1[0] < sample(FontPreview::ExtraLarge).unwrap().1[0], "sizes are ordered");
+        assert!(
+            sample(FontPreview::Small).unwrap().1[0]
+                < sample(FontPreview::ExtraLarge).unwrap().1[0],
+            "sizes are ordered"
+        );
         let mut engine = photocraft_text::TextEngine::new();
         let big = images(&mut engine, "Inter", 1, 32.0).unwrap().latin;
         assert_eq!(big.size, [178, 43], "the box follows the size");
@@ -217,7 +316,13 @@ mod tests {
     fn latin_only_families_get_no_arabic_sample() {
         let mut engine = photocraft_text::TextEngine::new();
         for family in ["Inter", "JetBrains Mono"] {
-            assert!(images(&mut engine, family, 1, MEDIUM).expect("bundled").arabic.is_none(), "{family}");
+            assert!(
+                images(&mut engine, family, 1, MEDIUM)
+                    .expect("bundled")
+                    .arabic
+                    .is_none(),
+                "{family}"
+            );
         }
         assert!(images(&mut engine, "", 1, MEDIUM).is_none());
         assert!(images(&mut engine, "Missing font", 1, MEDIUM).is_none());
@@ -234,9 +339,20 @@ mod tests {
         assert_eq!((own_glyphs.chars().count(), none), (6, None));
         assert!(own_glyphs.chars().all(|c| arabic.contains(c)));
         assert_eq!(sample_texts(&[]), (String::new(), None));
-        for missing in ARABIC_CORE.into_iter().chain(ARABIC_SAMPLE.chars().filter(|c| !c.is_whitespace())) {
-            let partial: String = format!("{latin}{arabic}").chars().filter(|&c| c != missing).collect();
-            assert_eq!(sample_texts(&charmap(&partial)).1, None, "without U+{:04X}", missing as u32);
+        for missing in ARABIC_CORE
+            .into_iter()
+            .chain(ARABIC_SAMPLE.chars().filter(|c| !c.is_whitespace()))
+        {
+            let partial: String = format!("{latin}{arabic}")
+                .chars()
+                .filter(|&c| c != missing)
+                .collect();
+            assert_eq!(
+                sample_texts(&charmap(&partial)).1,
+                None,
+                "without U+{:04X}",
+                missing as u32
+            );
         }
     }
 
@@ -244,7 +360,11 @@ mod tests {
     fn a_system_arabic_face_renders_both_samples() {
         let mut engine = photocraft_text::TextEngine::new();
         engine.fonts.load_system_fonts();
-        let both = engine.fonts.families().into_iter().find(|f| sample_texts(&engine.fonts.charmap(f, 400, false)).1.is_some());
+        let both = engine.fonts.families().into_iter().find(|f| {
+            sample_texts(&engine.fonts.charmap(f, 400, false))
+                .1
+                .is_some()
+        });
         let Some(family) = both else {
             eprintln!("skipped: no installed family covers both Latin and Arabic");
             return;

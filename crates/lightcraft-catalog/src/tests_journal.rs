@@ -17,24 +17,50 @@ fn open(m: &MemStore) -> (Journal, Catalog, LoadReport) {
 fn op_for(c: &mut Catalog, kind: u8, a: u8, b: u8) -> Op {
     let photos: Vec<PhotoId> = c.photos().map(|p| p.id).collect();
     let albums: Vec<AlbumId> = c.albums().map(|a| a.id).collect();
-    let pid = photos.get(a as usize % photos.len().max(1)).copied().unwrap_or(PhotoId(99));
-    let aid = albums.get(a as usize % albums.len().max(1)).copied().unwrap_or(AlbumId(99));
+    let pid = photos
+        .get(a as usize % photos.len().max(1))
+        .copied()
+        .unwrap_or(PhotoId(99));
+    let aid = albums
+        .get(a as usize % albums.len().max(1))
+        .copied()
+        .unwrap_or(AlbumId(99));
     let rules = |b: u8| Filter {
         rating: b % 6,
         flag: [None, Some(Flag::Pick), Some(Flag::Reject)][b as usize % 3],
         date_from: (b % 4 == 1).then(|| "2026-01".to_string()),
-        text: if b.is_multiple_of(5) { format!("{}", b % 10) } else { String::new() },
+        text: if b.is_multiple_of(5) {
+            format!("{}", b % 10)
+        } else {
+            String::new()
+        },
         ..Default::default()
     };
     match kind % 16 {
         0 | 1 => {
             let id = c.alloc_photo_id();
-            let mut p = Photo::new(id, Source::File { path: format!("/p/{}.jpg", id.0) }, &format!("{}.jpg", id.0), "JPEG", 60, 40, "2026-01-01");
+            let mut p = Photo::new(
+                id,
+                Source::File {
+                    path: format!("/p/{}.jpg", id.0),
+                },
+                &format!("{}.jpg", id.0),
+                "JPEG",
+                60,
+                40,
+                "2026-01-01",
+            );
             p.content_hash = Some(format!("{:032x}", id.0 * 7919));
             Op::AddPhoto { photo: Box::new(p) }
         }
-        2 => Op::SetRating { id: pid, rating: b % 7 },
-        3 => Op::SetFlag { id: pid, flag: [Flag::None, Flag::Pick, Flag::Reject][b as usize % 3] },
+        2 => Op::SetRating {
+            id: pid,
+            rating: b % 7,
+        },
+        3 => Op::SetFlag {
+            id: pid,
+            flag: [Flag::None, Flag::Pick, Flag::Reject][b as usize % 3],
+        },
         4 => {
             let mut d = DevelopSettings::default();
             d.light.exposure = b as f64 / 37.0 - 2.0;
@@ -42,8 +68,19 @@ fn op_for(c: &mut Catalog, kind: u8, a: u8, b: u8) -> Op {
             let settings = Arc::new(d);
             Op::Batch {
                 ops: vec![
-                    Op::SetDevelop { id: pid, settings: settings.clone(), label: "Exposure".into(), edited: Some(format!("t{b}")) },
-                    Op::PushHistory { id: pid, step: HistoryStep { label: "Exposure".into(), settings } },
+                    Op::SetDevelop {
+                        id: pid,
+                        settings: settings.clone(),
+                        label: "Exposure".into(),
+                        edited: Some(format!("t{b}")),
+                    },
+                    Op::PushHistory {
+                        id: pid,
+                        step: HistoryStep {
+                            label: "Exposure".into(),
+                            settings,
+                        },
+                    },
                 ],
             }
         }
@@ -63,21 +100,52 @@ fn op_for(c: &mut Catalog, kind: u8, a: u8, b: u8) -> Op {
                 },
             }
         }
-        6 => Op::SetAlbumPhotos { id: aid, photos: photos.iter().copied().filter(|p| (p.0 + b as u64).is_multiple_of(3)).collect() },
-        7 => Op::RenameAlbum { id: aid, name: format!("Renamed {b} ✓") },
-        8 => Op::SetDeleted { id: pid, deleted: b.is_multiple_of(2) },
+        6 => Op::SetAlbumPhotos {
+            id: aid,
+            photos: photos
+                .iter()
+                .copied()
+                .filter(|p| (p.0 + b as u64).is_multiple_of(3))
+                .collect(),
+        },
+        7 => Op::RenameAlbum {
+            id: aid,
+            name: format!("Renamed {b} ✓"),
+        },
+        8 => Op::SetDeleted {
+            id: pid,
+            deleted: b.is_multiple_of(2),
+        },
         10 => {
             let id = c.alloc_album_id();
-            Op::AddAlbum { album: Album { smart: Some(Box::new(rules(b))), ..Album::new(id, format!("Smart {b}")) } }
+            Op::AddAlbum {
+                album: Album {
+                    smart: Some(Box::new(rules(b))),
+                    ..Album::new(id, format!("Smart {b}"))
+                },
+            }
         }
-        11 => Op::SetAlbumRules { id: aid, rules: Box::new(rules(b)) },
+        11 => Op::SetAlbumRules {
+            id: aid,
+            rules: Box::new(rules(b)),
+        },
         12 => {
-            let members: Vec<PhotoId> = photos.iter().copied().filter(|p| (p.0 + b as u64).is_multiple_of(4)).collect();
-            c.group_ops(pid, &members, b.is_multiple_of(2)).unwrap_or(Op::Batch { ops: vec![] })
+            let members: Vec<PhotoId> = photos
+                .iter()
+                .copied()
+                .filter(|p| (p.0 + b as u64).is_multiple_of(4))
+                .collect();
+            c.group_ops(pid, &members, b.is_multiple_of(2))
+                .unwrap_or(Op::Batch { ops: vec![] })
         }
-        13 => Op::Batch { ops: c.remove_from_stacks_ops(&[pid]) },
+        13 => Op::Batch {
+            ops: c.remove_from_stacks_ops(&[pid]),
+        },
         14 => c.set_top_ops(pid).unwrap_or(Op::Batch { ops: vec![] }),
-        9 if b.is_multiple_of(5) => Op::SetLabelName { label: ColorLabel::ALL[a as usize % 5], name: (a % 3 != 1).then(|| format!("Label {b}")) },
+        9 if b.is_multiple_of(5) => Op::SetLabelName {
+            label: ColorLabel::ALL[a as usize % 5],
+            name: (a % 3 != 1).then(|| format!("Label {b}")),
+        },
         9 if b % 7 == 5 => Op::SetKeyword {
             path: format!("travel|place {}", b % 4),
             info: (!b.is_multiple_of(3)).then(|| crate::keywords::KeywordInfo {
@@ -86,12 +154,26 @@ fn op_for(c: &mut Catalog, kind: u8, a: u8, b: u8) -> Op {
                 ..Default::default()
             }),
         },
-        9 if b % 11 == 4 => c.folder_label_op(&format!("/p/f{}", a % 4), ColorLabel::ALL.get(usize::from(b % 6)).copied()),
-        9 if b % 7 == 3 => Op::SetAlbumOrder { id: aid, order: (!b.is_multiple_of(3)).then_some(u32::from(b % 5)) },
-        9 if b.is_multiple_of(2) => {
-            Op::SetFile { id: pid, file_name: format!("Renamed_{b}.jpg"), source: Source::File { path: format!("/p/Renamed_{b}.jpg") } }
-        }
-        9 => Op::SetCaptured { id: pid, captured: (!b.is_multiple_of(3)).then(|| format!("2026-0{}-1{}T10:{:02}:00", 1 + b % 9, b % 10, a % 60)) },
+        9 if b % 11 == 4 => c.folder_label_op(
+            &format!("/p/f{}", a % 4),
+            ColorLabel::ALL.get(usize::from(b % 6)).copied(),
+        ),
+        9 if b % 7 == 3 => Op::SetAlbumOrder {
+            id: aid,
+            order: (!b.is_multiple_of(3)).then_some(u32::from(b % 5)),
+        },
+        9 if b.is_multiple_of(2) => Op::SetFile {
+            id: pid,
+            file_name: format!("Renamed_{b}.jpg"),
+            source: Source::File {
+                path: format!("/p/Renamed_{b}.jpg"),
+            },
+        },
+        9 => Op::SetCaptured {
+            id: pid,
+            captured: (!b.is_multiple_of(3))
+                .then(|| format!("2026-0{}-1{}T10:{:02}:00", 1 + b % 9, b % 10, a % 60)),
+        },
         15 => match c.photo(pid).cloned() {
             // a virtual copy: same source, own id, copy_of/copy_name set
             Some(src) => {
@@ -151,7 +233,10 @@ fn sample_catalog_with_log() -> (MemStore, Catalog, Catalog) {
         }
     }
     let before_last = c.clone();
-    let op = Op::SetRating { id: c.photos().next().unwrap().id, rating: 5 };
+    let op = Op::SetRating {
+        id: c.photos().next().unwrap().id,
+        rating: 5,
+    };
     c.apply(op.clone()).unwrap();
     j.append(&[op]).unwrap();
     (m, before_last, c)
@@ -163,13 +248,21 @@ fn sample_catalog_with_log() -> (MemStore, Catalog, Catalog) {
 fn torn_last_record_is_tolerated() {
     let (m, before_last, full) = sample_catalog_with_log();
     let log = m.get(LOG).unwrap();
-    let last_start = log[..log.len() - 1].iter().rposition(|b| *b == b'\n').unwrap() + 1;
+    let last_start = log[..log.len() - 1]
+        .iter()
+        .rposition(|b| *b == b'\n')
+        .unwrap()
+        + 1;
     for cut in last_start..log.len() {
         let t = MemStore::new();
         t.set(LOG, log[..cut].to_vec());
         let (mut j, mut c, r) = open(&t);
         // the full record minus only its newline is complete and kept
-        let expect = if cut == log.len() - 1 { &full } else { &before_last };
+        let expect = if cut == log.len() - 1 {
+            &full
+        } else {
+            &before_last
+        };
         assert_eq!(c.to_snapshot(), expect.to_snapshot(), "cut at {cut}");
         assert!(r.damaged.is_none());
         if cut < log.len() - 1 {
@@ -177,7 +270,10 @@ fn torn_last_record_is_tolerated() {
         }
         // keeps working after recovery
         let id = c.photos().next().unwrap().id;
-        let op = Op::SetFlag { id, flag: Flag::Reject };
+        let op = Op::SetFlag {
+            id,
+            flag: Flag::Reject,
+        };
         c.apply(op.clone()).unwrap();
         j.append(&[op]).unwrap();
         let (_, c2, r2) = open(&t);
@@ -233,11 +329,18 @@ fn mid_log_damage_is_preserved_and_recovered() {
 
 #[test]
 fn record_codec() {
-    let op = Op::RenameAlbum { id: AlbumId(3), name: "Line\nbreak \"quoted\" }".into() };
+    let op = Op::RenameAlbum {
+        id: AlbumId(3),
+        name: "Line\nbreak \"quoted\" }".into(),
+    };
     let line = encode_record(42, &op);
     assert!(!line.contains('\n'));
     assert_eq!(decode_record(&line), Some((42, op)));
-    assert_eq!(decode_record(&line.replace("Line", "Lime")), None, "crc mismatch");
+    assert_eq!(
+        decode_record(&line.replace("Line", "Lime")),
+        None,
+        "crc mismatch"
+    );
     assert_eq!(decode_record(&line[..line.len() - 1]), None);
     // log lines stay plain JSON
     let v: serde_json::Value = serde_json::from_str(&line).unwrap();
@@ -248,8 +351,22 @@ fn record_codec() {
 fn push_history_is_bounded_and_invertible() {
     let mut c = Catalog::new();
     let id = c.alloc_photo_id();
-    c.apply(Op::AddPhoto { photo: Box::new(Photo::new(id, Source::Demo { scene: 1 }, "a", "JPEG", 1, 1, "t")) }).unwrap();
-    let step = |i: usize| HistoryStep { label: format!("s{i}"), settings: Arc::new(DevelopSettings::default()) };
+    c.apply(Op::AddPhoto {
+        photo: Box::new(Photo::new(
+            id,
+            Source::Demo { scene: 1 },
+            "a",
+            "JPEG",
+            1,
+            1,
+            "t",
+        )),
+    })
+    .unwrap();
+    let step = |i: usize| HistoryStep {
+        label: format!("s{i}"),
+        settings: Arc::new(DevelopSettings::default()),
+    };
     for i in 0..HISTORY_LIMIT + 5 {
         c.apply(Op::PushHistory { id, step: step(i) }).unwrap();
     }
@@ -257,7 +374,12 @@ fn push_history_is_bounded_and_invertible() {
     assert_eq!(h.len(), HISTORY_LIMIT);
     assert_eq!(h[0].label, "s5");
     let before = c.to_snapshot();
-    let inv = c.apply(Op::PushHistory { id, step: step(999) }).unwrap();
+    let inv = c
+        .apply(Op::PushHistory {
+            id,
+            step: step(999),
+        })
+        .unwrap();
     c.apply(inv).unwrap();
     assert_eq!(c.to_snapshot(), before);
 }
@@ -269,7 +391,19 @@ fn fs_store_roundtrip() {
     let (mut j, mut c, r) = Journal::open(Box::new(FsStore::open(&dir).unwrap())).unwrap();
     assert!(r.created);
     let id = c.alloc_photo_id();
-    let add = Op::AddPhoto { photo: Box::new(Photo::new(id, Source::File { path: "/a.jpg".into() }, "a.jpg", "JPEG", 1, 1, "t")) };
+    let add = Op::AddPhoto {
+        photo: Box::new(Photo::new(
+            id,
+            Source::File {
+                path: "/a.jpg".into(),
+            },
+            "a.jpg",
+            "JPEG",
+            1,
+            1,
+            "t",
+        )),
+    };
     c.apply(add.clone()).unwrap();
     c.apply(Op::SetRating { id, rating: 4 }).unwrap();
     j.append(&[add, Op::SetRating { id, rating: 4 }]).unwrap();
@@ -309,9 +443,15 @@ fn streamed_snapshot_keeps_the_on_disk_format() {
     // an old-style snapshot (written by a build before streaming) loads, and is rewritten the same
     std::fs::write(dir.join(SNAPSHOT), legacy.as_bytes()).unwrap();
     let (mut fj, fc, r) = Journal::open(Box::new(FsStore::open(&dir).unwrap())).unwrap();
-    assert_eq!((fc.to_snapshot(), r.snapshot_seq), (c.to_snapshot(), j.seq()));
+    assert_eq!(
+        (fc.to_snapshot(), r.snapshot_seq),
+        (c.to_snapshot(), j.seq())
+    );
     fj.snapshot(&fc).unwrap();
-    assert_eq!(std::fs::read(dir.join(SNAPSHOT)).unwrap(), legacy.as_bytes());
+    assert_eq!(
+        std::fs::read(dir.join(SNAPSHOT)).unwrap(),
+        legacy.as_bytes()
+    );
     drop(fj);
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -331,7 +471,11 @@ fn failed_streamed_write_keeps_the_old_file() {
     assert!(r.is_err());
     assert_eq!(std::fs::read(dir.join(SNAPSHOT)).unwrap(), b"old");
     assert!(!dir.join(format!("{SNAPSHOT}.tmp")).exists());
-    assert_eq!(s.write_atomic_with(SNAPSHOT, &mut |w| w.write_all(b"new")).unwrap(), 3);
+    assert_eq!(
+        s.write_atomic_with(SNAPSHOT, &mut |w| w.write_all(b"new"))
+            .unwrap(),
+        3
+    );
     assert_eq!(std::fs::read(dir.join(SNAPSHOT)).unwrap(), b"new");
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -343,10 +487,21 @@ fn a_damaged_process_value_loads_as_v1_with_the_edits() {
     use lightcraft_develop::ProcessVersion;
     let mut c = Catalog::new();
     let id = c.alloc_photo_id();
-    let mut p = Photo::new(id, Source::Demo { scene: 1 }, "a.jpg", "JPEG", 10, 10, "2026-10-09T00:00:00");
+    let mut p = Photo::new(
+        id,
+        Source::Demo { scene: 1 },
+        "a.jpg",
+        "JPEG",
+        10,
+        10,
+        "2026-10-09T00:00:00",
+    );
     p.develop = Arc::new(DevelopSettings {
         process: ProcessVersion(7),
-        light: lightcraft_develop::Light { exposure: 0.5, ..Default::default() },
+        light: lightcraft_develop::Light {
+            exposure: 0.5,
+            ..Default::default()
+        },
         ..Default::default()
     });
     c.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
@@ -365,13 +520,30 @@ fn a_damaged_process_value_loads_as_v1_with_the_edits() {
     // and in a (CRC-valid) log record
     let edit = DevelopSettings {
         process: ProcessVersion(7),
-        light: lightcraft_develop::Light { exposure: 0.8, ..Default::default() },
+        light: lightcraft_develop::Light {
+            exposure: 0.8,
+            ..Default::default()
+        },
         ..Default::default()
     };
-    let op = Op::SetDevelop { id, settings: Arc::new(edit), label: "Edit".into(), edited: None };
-    let body = serde_json::to_string(&op).unwrap().replace(r#""process":7"#, r#""process":"seven""#);
+    let op = Op::SetDevelop {
+        id,
+        settings: Arc::new(edit),
+        label: "Edit".into(),
+        edited: None,
+    };
+    let body = serde_json::to_string(&op)
+        .unwrap()
+        .replace(r#""process":7"#, r#""process":"seven""#);
     assert!(body.contains("seven"));
-    m.set(LOG, format!("{{\"seq\":1,\"crc\":{},\"op\":{body}}}\n", crc32fast::hash(body.as_bytes())).into_bytes());
+    m.set(
+        LOG,
+        format!(
+            "{{\"seq\":1,\"crc\":{},\"op\":{body}}}\n",
+            crc32fast::hash(body.as_bytes())
+        )
+        .into_bytes(),
+    );
     let (_, loaded, _) = open(&m);
     let d = &loaded.photo(id).unwrap().develop;
     assert_eq!((d.process, d.light.exposure), (ProcessVersion::V1, 0.8));

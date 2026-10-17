@@ -51,8 +51,12 @@ pub struct RateLimiter {
 
 impl RateLimiter {
     pub fn new(bytes_per_sec: u64) -> Option<Arc<Self>> {
-        (bytes_per_sec > 0)
-            .then(|| Arc::new(Self { bytes_per_sec, next_free: Mutex::new(Instant::now()) }))
+        (bytes_per_sec > 0).then(|| {
+            Arc::new(Self {
+                bytes_per_sec,
+                next_free: Mutex::new(Instant::now()),
+            })
+        })
     }
 
     pub async fn throttle(&self, bytes: u64) {
@@ -92,13 +96,22 @@ impl<F> CachedFetcher<F> {
         limiter: Option<Arc<RateLimiter>>,
         stats: Arc<TransferStats>,
     ) -> Self {
-        Self { inner, cache_dir, limiter, stats }
+        Self {
+            inner,
+            cache_dir,
+            limiter,
+            stats,
+        }
     }
 
     fn chunk_path(&self, depot: DepotId, chunk: &ChunkId) -> Option<PathBuf> {
         let dir = self.cache_dir.as_ref()?;
         let hex = hex::encode(chunk.0);
-        Some(dir.join(depot.0.to_string()).join(&hex[..2]).join(format!("{hex}.chunk")))
+        Some(
+            dir.join(depot.0.to_string())
+                .join(&hex[..2])
+                .join(format!("{hex}.chunk")),
+        )
     }
 }
 
@@ -110,13 +123,17 @@ impl<F: ChunkFetcher> ChunkFetcher for CachedFetcher<F> {
             && !data.is_empty()
         {
             self.stats.cache_hits.fetch_add(1, Ordering::Relaxed);
-            self.stats.cache_bytes.fetch_add(data.len() as u64, Ordering::Relaxed);
+            self.stats
+                .cache_bytes
+                .fetch_add(data.len() as u64, Ordering::Relaxed);
             return Ok(Bytes::from(data));
         }
 
         let data = self.inner.fetch_chunk(depot_id, chunk_id).await?;
         self.stats.network_chunks.fetch_add(1, Ordering::Relaxed);
-        self.stats.network_bytes.fetch_add(data.len() as u64, Ordering::Relaxed);
+        self.stats
+            .network_bytes
+            .fetch_add(data.len() as u64, Ordering::Relaxed);
 
         if let Some(path) = path {
             // Écriture atomique ; une erreur de cache ne doit jamais échouer le téléchargement.

@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use egui::{Align2, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Stroke, Visuals};
+use egui::{
+    Align2, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Rect, Stroke,
+    Visuals,
+};
 
 /// WordCraft's app colour (and its darker ink for text on light backgrounds).
 pub const APP_COLOR: Color32 = Color32::from_rgb(0x3B, 0x5B, 0xDB);
@@ -34,7 +37,9 @@ impl Appearance {
     }
 
     pub fn from_code(code: &str) -> Option<Appearance> {
-        Appearance::ALL.into_iter().find(|a| a.code().eq_ignore_ascii_case(code.trim()))
+        Appearance::ALL
+            .into_iter()
+            .find(|a| a.code().eq_ignore_ascii_case(code.trim()))
     }
 
     /// The English label (translated with `tl!` where shown).
@@ -82,7 +87,9 @@ impl From<Appearance> for String {
 /// Interface size (File › Options › General, `ui.interfaceSize`), in percent (#475): scales the
 /// ribbon, menus, panes and dialogs on top of the display scale the system reports, through
 /// egui's zoom factor. Document zoom (View › Zoom) is a separate setting and never changes with it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[serde(from = "serde_json::Value", into = "u16")]
 pub struct InterfaceSize(u16);
 
@@ -95,7 +102,13 @@ impl InterfaceSize {
 
     /// A size from any number: rounded and clamped to 80–200 %; `None` for NaN or infinity.
     pub fn from_percent(percent: f64) -> Option<InterfaceSize> {
-        percent.is_finite().then(|| InterfaceSize(percent.round().clamp(f64::from(Self::MIN), f64::from(Self::MAX)) as u16))
+        percent.is_finite().then(|| {
+            InterfaceSize(
+                percent
+                    .round()
+                    .clamp(f64::from(Self::MIN), f64::from(Self::MAX)) as u16,
+            )
+        })
     }
 
     pub fn percent(self) -> u16 {
@@ -118,7 +131,9 @@ impl Default for InterfaceSize {
 /// discarding the whole `ui.json`.
 impl From<serde_json::Value> for InterfaceSize {
     fn from(v: serde_json::Value) -> Self {
-        v.as_f64().and_then(InterfaceSize::from_percent).unwrap_or_default()
+        v.as_f64()
+            .and_then(InterfaceSize::from_percent)
+            .unwrap_or_default()
     }
 }
 
@@ -158,7 +173,9 @@ impl Animations {
     }
 
     pub fn from_code(code: &str) -> Option<Animations> {
-        Animations::ALL.into_iter().find(|a| a.code().eq_ignore_ascii_case(code.trim()))
+        Animations::ALL
+            .into_iter()
+            .find(|a| a.code().eq_ignore_ascii_case(code.trim()))
     }
 
     /// The English label (translated with `tl!` where shown).
@@ -321,7 +338,11 @@ impl Tokens {
         }
     }
     pub fn get(ctx: &egui::Context) -> Tokens {
-        if ctx.global_style().visuals.dark_mode { Tokens::dark() } else { Tokens::light() }
+        if ctx.global_style().visuals.dark_mode {
+            Tokens::dark()
+        } else {
+            Tokens::light()
+        }
     }
 }
 
@@ -348,7 +369,12 @@ pub fn install_fonts_with(ctx: &egui::Context, prefer_hans: bool, system_cjk: bo
 /// [`install_fonts_with`], also adding document-font `faces` as last-resort fallbacks (#565): the
 /// faces that cover text the interface fonts cannot draw (an input method's composition, or a
 /// file name in the window caption).
-pub fn install_fonts_extra(ctx: &egui::Context, prefer_hans: bool, system_cjk: bool, faces: &[Arc<wordcraft_fonts::FontFace>]) {
+pub fn install_fonts_extra(
+    ctx: &egui::Context,
+    prefer_hans: bool,
+    system_cjk: bool,
+    faces: &[Arc<wordcraft_fonts::FontFace>],
+) {
     let mut fonts = font_definitions(prefer_hans, system_cjk);
     add_fallback_faces(&mut fonts, faces);
     ctx.set_fonts(fonts);
@@ -361,7 +387,11 @@ pub fn add_fallback_faces(fonts: &mut FontDefinitions, faces: &[Arc<wordcraft_fo
         let mut data = FontData::from_owned(f.data().to_vec());
         data.index = f.index();
         fonts.font_data.insert(name.clone(), Arc::new(data));
-        for fam in [FontFamily::Proportional, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {
+        for fam in [
+            FontFamily::Proportional,
+            FontFamily::Name("medium".into()),
+            FontFamily::Name("semibold".into()),
+        ] {
             if let Some(v) = fonts.families.get_mut(&fam) {
                 v.push(name.clone());
             }
@@ -387,11 +417,16 @@ pub fn faces_for_preedit(
     lookup: impl Fn(char) -> Option<Arc<wordcraft_fonts::FontFace>>,
 ) -> Vec<Arc<wordcraft_fonts::FontFace>> {
     let mut out: Vec<Arc<wordcraft_fonts::FontFace>> = Vec::new();
-    for c in text.chars().filter(|c| !c.is_ascii() && !c.is_whitespace() && !covered(*c)) {
+    for c in text
+        .chars()
+        .filter(|c| !c.is_ascii() && !c.is_whitespace() && !covered(*c))
+    {
         if have.iter().chain(&out).any(|f| f.covers(c)) {
             continue;
         }
-        if let Some(f) = lookup(c).filter(|f| f.data().len() <= 16 << 20 && !have.iter().chain(&out).any(|h| h.id() == f.id())) {
+        if let Some(f) = lookup(c).filter(|f| {
+            f.data().len() <= 16 << 20 && !have.iter().chain(&out).any(|h| h.id() == f.id())
+        }) {
             out.push(f);
         }
     }
@@ -402,13 +437,35 @@ pub fn faces_for_preedit(
 pub fn font_definitions(prefer_hans: bool, system_cjk: bool) -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
     let add = |fonts: &mut FontDefinitions, name: &str, bytes: &'static [u8]| {
-        fonts.font_data.insert(name.into(), Arc::new(FontData::from_static(bytes)));
+        fonts
+            .font_data
+            .insert(name.into(), Arc::new(FontData::from_static(bytes)));
     };
-    add(&mut fonts, "Inter", include_bytes!("../../../assets/wordcraft/fonts/Inter-Regular.ttf"));
-    add(&mut fonts, "InterMedium", include_bytes!("../../../assets/wordcraft/fonts/Inter-Medium.ttf"));
-    add(&mut fonts, "InterSemiBold", include_bytes!("../../../assets/wordcraft/fonts/Inter-SemiBold.ttf"));
-    add(&mut fonts, "SourceSans", include_bytes!("../../../assets/wordcraft/fonts/SourceSans3-Regular.ttf"));
-    add(&mut fonts, "Mono", include_bytes!("../../../assets/wordcraft/fonts/JetBrainsMono-Regular.ttf"));
+    add(
+        &mut fonts,
+        "Inter",
+        include_bytes!("../../../assets/wordcraft/fonts/Inter-Regular.ttf"),
+    );
+    add(
+        &mut fonts,
+        "InterMedium",
+        include_bytes!("../../../assets/wordcraft/fonts/Inter-Medium.ttf"),
+    );
+    add(
+        &mut fonts,
+        "InterSemiBold",
+        include_bytes!("../../../assets/wordcraft/fonts/Inter-SemiBold.ttf"),
+    );
+    add(
+        &mut fonts,
+        "SourceSans",
+        include_bytes!("../../../assets/wordcraft/fonts/SourceSans3-Regular.ttf"),
+    );
+    add(
+        &mut fonts,
+        "Mono",
+        include_bytes!("../../../assets/wordcraft/fonts/JetBrainsMono-Regular.ttf"),
+    );
     if let Some(prop) = fonts.families.get_mut(&FontFamily::Proportional) {
         prop.insert(0, "Inter".into());
         prop.push("SourceSans".into());
@@ -416,11 +473,21 @@ pub fn font_definitions(prefer_hans: bool, system_cjk: bool) -> FontDefinitions 
     if let Some(m) = fonts.families.get_mut(&FontFamily::Monospace) {
         m.insert(0, "Mono".into());
     }
-    fonts.families.insert(FontFamily::Name("medium".into()), vec!["InterMedium".into(), "Inter".into(), "SourceSans".into()]);
-    fonts.families.insert(FontFamily::Name("semibold".into()), vec!["InterSemiBold".into(), "Inter".into(), "SourceSans".into()]);
+    fonts.families.insert(
+        FontFamily::Name("medium".into()),
+        vec!["InterMedium".into(), "Inter".into(), "SourceSans".into()],
+    );
+    fonts.families.insert(
+        FontFamily::Name("semibold".into()),
+        vec!["InterSemiBold".into(), "Inter".into(), "SourceSans".into()],
+    );
     let add_cjk = |fonts: &mut FontDefinitions, name: String, data: FontData| {
         fonts.font_data.insert(name.clone(), Arc::new(data));
-        for fam in [FontFamily::Proportional, FontFamily::Name("medium".into()), FontFamily::Name("semibold".into())] {
+        for fam in [
+            FontFamily::Proportional,
+            FontFamily::Name("medium".into()),
+            FontFamily::Name("semibold".into()),
+        ] {
             if let Some(v) = fonts.families.get_mut(&fam) {
                 v.push(name.clone());
             }
@@ -429,7 +496,11 @@ pub fn font_definitions(prefer_hans: bool, system_cjk: bool) -> FontDefinitions 
     let cjk = wordcraft_fonts::ui_cjk_fonts(prefer_hans);
     for f in &cjk {
         // The same static bytes the document fonts use: one copy in the binary.
-        add_cjk(&mut fonts, format!("{} {}", f.family, f.style), FontData::from_static(f.bytes));
+        add_cjk(
+            &mut fonts,
+            format!("{} {}", f.family, f.style),
+            FontData::from_static(f.bytes),
+        );
     }
     // The embedded faces leave interface characters without a glyph (a build without craft-fonts,
     // without its Chinese face, #241, or with faces lacking catalog characters, #486): an
@@ -452,8 +523,10 @@ pub fn font_definitions(prefer_hans: bool, system_cjk: bool) -> FontDefinitions 
 /// missing characters, or for the language names when only those are missing.
 #[cfg(not(target_arch = "wasm32"))]
 fn system_cjk_font(hans: bool) -> Option<&'static wordcraft_fonts::SystemUiFont> {
-    static ZH: std::sync::OnceLock<Option<wordcraft_fonts::SystemUiFont>> = std::sync::OnceLock::new();
-    static OTHER: std::sync::OnceLock<Option<wordcraft_fonts::SystemUiFont>> = std::sync::OnceLock::new();
+    static ZH: std::sync::OnceLock<Option<wordcraft_fonts::SystemUiFont>> =
+        std::sync::OnceLock::new();
+    static OTHER: std::sync::OnceLock<Option<wordcraft_fonts::SystemUiFont>> =
+        std::sync::OnceLock::new();
     (if hans { &ZH } else { &OTHER })
         .get_or_init(|| {
             let embedded = wordcraft_fonts::ui_cjk_fonts(hans);
@@ -465,7 +538,10 @@ fn system_cjk_font(hans: bool) -> Option<&'static wordcraft_fonts::SystemUiFont>
                     return None;
                 }
             }
-            log::debug!("interface: {} CJK characters lack an embedded glyph", needed.len());
+            log::debug!(
+                "interface: {} CJK characters lack an embedded glyph",
+                needed.len()
+            );
             wordcraft_fonts::system_cjk_ui_font(hans, &needed)
         })
         .as_ref()
@@ -532,18 +608,38 @@ impl TypeRung {
 
 /// Width in points of one line of `tracking`-spaced text. `layout_no_wrap` ignores
 /// letter-spacing, so non-zero tracking goes through an explicit `LayoutJob`.
-pub fn text_width(painter: &egui::Painter, text: &str, font: &FontId, tracking: f32, color: Color32) -> f32 {
+pub fn text_width(
+    painter: &egui::Painter,
+    text: &str,
+    font: &FontId,
+    tracking: f32,
+    color: Color32,
+) -> f32 {
     if text.is_empty() {
         return 0.0;
     }
     if tracking.abs() <= 1e-6 {
-        return painter.layout_no_wrap(text.to_string(), font.clone(), color).size().x;
+        return painter
+            .layout_no_wrap(text.to_string(), font.clone(), color)
+            .size()
+            .x;
     }
-    painter.layout_job(tracked_job(text, font, tracking, color)).size().x
+    painter
+        .layout_job(tracked_job(text, font, tracking, color))
+        .size()
+        .x
 }
 
 /// Paint one line of tracked text with the given anchor and return its rect.
-pub fn paint_text(painter: &egui::Painter, pos: egui::Pos2, anchor: Align2, text: &str, font: &FontId, tracking: f32, color: Color32) -> Rect {
+pub fn paint_text(
+    painter: &egui::Painter,
+    pos: egui::Pos2,
+    anchor: Align2,
+    text: &str,
+    font: &FontId,
+    tracking: f32,
+    color: Color32,
+) -> Rect {
     if tracking.abs() <= 1e-6 {
         return painter.text(pos, anchor, text.to_string(), font.clone(), color);
     }
@@ -555,7 +651,13 @@ pub fn paint_text(painter: &egui::Painter, pos: egui::Pos2, anchor: Align2, text
 
 /// A single-section, no-wrap `LayoutJob` carrying `tracking` (egui 0.36 has no `default_format`).
 fn tracked_job(text: &str, font: &FontId, tracking: f32, color: Color32) -> egui::text::LayoutJob {
-    let format = egui::text::TextFormat { font_id: font.clone(), extra_letter_spacing: tracking, line_height: None, color, ..Default::default() };
+    let format = egui::text::TextFormat {
+        font_id: font.clone(),
+        extra_letter_spacing: tracking,
+        line_height: None,
+        color,
+        ..Default::default()
+    };
     egui::text::LayoutJob::single_section(text.to_string(), format)
 }
 
@@ -577,7 +679,8 @@ pub fn apply(ctx: &egui::Context, appearance: Appearance) {
         s.text_styles.insert(egui::TextStyle::Body, regular(12.5));
         s.text_styles.insert(egui::TextStyle::Button, regular(12.5));
         s.text_styles.insert(egui::TextStyle::Small, regular(10.5));
-        s.text_styles.insert(egui::TextStyle::Heading, semibold(17.0));
+        s.text_styles
+            .insert(egui::TextStyle::Heading, semibold(17.0));
         s.interaction.tooltip_delay = 0.45;
     });
     ctx.options_mut(|o| {
@@ -593,13 +696,21 @@ pub fn apply_animations(ctx: &egui::Context, on: bool) {
     let defaults = egui::Style::default();
     ctx.all_styles_mut(|s| {
         s.animation_time = if on { defaults.animation_time } else { 0.0 };
-        s.scroll_animation = if on { defaults.scroll_animation } else { egui::style::ScrollAnimation::none() };
+        s.scroll_animation = if on {
+            defaults.scroll_animation
+        } else {
+            egui::style::ScrollAnimation::none()
+        };
     });
 }
 
 /// egui's visuals for one of our palettes.
 fn visuals(t: &Tokens) -> Visuals {
-    let mut v = if t.dark { Visuals::dark() } else { Visuals::light() };
+    let mut v = if t.dark {
+        Visuals::dark()
+    } else {
+        Visuals::light()
+    };
     v.panel_fill = t.ribbon;
     v.window_fill = t.menu;
     v.extreme_bg_color = t.input;
@@ -628,8 +739,18 @@ fn visuals(t: &Tokens) -> Visuals {
     v.widgets.active.corner_radius = CornerRadius::same(4);
     v.widgets.open.bg_fill = t.pressed;
     v.widgets.open.weak_bg_fill = t.pressed;
-    v.popup_shadow = egui::Shadow { offset: [0, 4], blur: 16, spread: 0, color: Color32::from_black_alpha(if t.dark { 120 } else { 40 }) };
-    v.window_shadow = egui::Shadow { offset: [0, 8], blur: 28, spread: 0, color: Color32::from_black_alpha(if t.dark { 140 } else { 50 }) };
+    v.popup_shadow = egui::Shadow {
+        offset: [0, 4],
+        blur: 16,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark { 120 } else { 40 }),
+    };
+    v.window_shadow = egui::Shadow {
+        offset: [0, 8],
+        blur: 28,
+        spread: 0,
+        color: Color32::from_black_alpha(if t.dark { 140 } else { 50 }),
+    };
     v
 }
 
@@ -646,7 +767,11 @@ mod tests {
         let lum = |c: egui::Color32| {
             let ch = |v: u8| {
                 let v = f32::from(v) / 255.0;
-                if v <= 0.040_45 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+                if v <= 0.040_45 {
+                    v / 12.92
+                } else {
+                    ((v + 0.055) / 1.055).powf(2.4)
+                }
             };
             0.2126 * ch(c.r()) + 0.7152 * ch(c.g()) + 0.0722 * ch(c.b())
         };
@@ -670,9 +795,19 @@ mod tests {
     #[test]
     fn input_borders_reach_three_to_one() {
         for t in [super::Tokens::light(), super::Tokens::dark()] {
-            for (name, bg) in [("input", t.input), ("ribbon", t.ribbon), ("panel", t.panel), ("menu", t.menu), ("title bar", t.title_bar)] {
+            for (name, bg) in [
+                ("input", t.input),
+                ("ribbon", t.ribbon),
+                ("panel", t.panel),
+                ("menu", t.menu),
+                ("title bar", t.title_bar),
+            ] {
                 let r = contrast(t.input_border, bg);
-                assert!(r >= 3.0, "dark={}: input_border on {name} is {r:.2}:1", t.dark);
+                assert!(
+                    r >= 3.0,
+                    "dark={}: input_border on {name} is {r:.2}:1",
+                    t.dark
+                );
             }
         }
     }
@@ -687,14 +822,27 @@ mod tests {
         let bangla = "\u{0986}\u{09AE}\u{09BF}";
         let got = super::faces_for_preedit(bangla, &[], |_| false, lookup);
         assert_eq!(got.len(), 1, "one face, not one per character");
-        assert!(super::faces_for_preedit(bangla, &got, |_| false, lookup).is_empty(), "already added");
-        assert!(super::faces_for_preedit(bangla, &[], |_| true, lookup).is_empty(), "the interface fonts draw it");
-        assert!(super::faces_for_preedit("abc", &[], |_| false, lookup).is_empty(), "ASCII never needs one");
+        assert!(
+            super::faces_for_preedit(bangla, &got, |_| false, lookup).is_empty(),
+            "already added"
+        );
+        assert!(
+            super::faces_for_preedit(bangla, &[], |_| true, lookup).is_empty(),
+            "the interface fonts draw it"
+        );
+        assert!(
+            super::faces_for_preedit("abc", &[], |_| false, lookup).is_empty(),
+            "ASCII never needs one"
+        );
         let mut defs = super::font_definitions(false, false);
         let before = defs.font_data.len();
         super::add_fallback_faces(&mut defs, &got);
         assert_eq!(defs.font_data.len(), before + 1);
-        assert!(defs.families[&egui::FontFamily::Proportional].last().is_some_and(|n| n.starts_with("fallback ")));
+        assert!(
+            defs.families[&egui::FontFamily::Proportional]
+                .last()
+                .is_some_and(|n| n.starts_with("fallback "))
+        );
     }
 
     /// A file name in a script Inter lacks (Hebrew, Arabic, …) is drawn in the window caption,
@@ -705,26 +853,47 @@ mod tests {
     fn caption_borrows_one_fallback_face_for_hebrew() {
         let face = wordcraft_fonts::FontDb::global().face("Source Sans 3", "Regular");
         let lookup = |c: char| {
-            assert!(!super::caption_char_covered(c), "{c} is already drawn by the interface fonts");
+            assert!(
+                !super::caption_char_covered(c),
+                "{c} is already drawn by the interface fonts"
+            );
             Some(face.clone())
         };
         let hebrew = "מסמך";
         let got = super::faces_for_preedit(hebrew, &[], super::caption_char_covered, lookup);
         assert_eq!(got.len(), 1, "one face for the whole file name");
-        assert!(super::faces_for_preedit(hebrew, &got, super::caption_char_covered, lookup).is_empty(), "already added");
-        assert!(super::faces_for_preedit("文档", &[], super::caption_char_covered, lookup).is_empty(), "CJK uses the CJK UI font");
-        assert!(super::faces_for_preedit("report", &[], super::caption_char_covered, lookup).is_empty(), "Latin needs nothing");
+        assert!(
+            super::faces_for_preedit(hebrew, &got, super::caption_char_covered, lookup).is_empty(),
+            "already added"
+        );
+        assert!(
+            super::faces_for_preedit("文档", &[], super::caption_char_covered, lookup).is_empty(),
+            "CJK uses the CJK UI font"
+        );
+        assert!(
+            super::faces_for_preedit("report", &[], super::caption_char_covered, lookup).is_empty(),
+            "Latin needs nothing"
+        );
         let mut defs = super::font_definitions(false, false);
         super::add_fallback_faces(&mut defs, &got);
         let semi = &defs.families[&egui::FontFamily::Name("semibold".into())];
-        assert!(semi.iter().any(|n| n.starts_with("fallback ")), "the caption is painted with semibold");
+        assert!(
+            semi.iter().any(|n| n.starts_with("fallback ")),
+            "the caption is painted with semibold"
+        );
     }
 
     /// #656: dialog primary buttons, the Discord pill, the table eraser and the Navigation search
     /// highlight take their colours from the theme, not fixed light-theme values.
     #[test]
     fn interface_colours_come_from_the_theme() {
-        let banned = ["fill(crate::theme::APP_COLOR)", "0x58, 0x65, 0xF2", "0x47, 0x52, 0xC4", "0xFF, 0xF1, 0x76", "0xD1, 0x3B, 0x3B"];
+        let banned = [
+            "fill(crate::theme::APP_COLOR)",
+            "0x58, 0x65, 0xF2",
+            "0x47, 0x52, 0xC4",
+            "0xFF, 0xF1, 0x76",
+            "0xD1, 0x3B, 0x3B",
+        ];
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         for entry in std::fs::read_dir(&dir).unwrap() {
             let path = entry.unwrap().path();
@@ -746,7 +915,8 @@ mod tests {
     fn interface_symbols_have_glyphs() {
         let ctx = egui::Context::default();
         ctx.set_fonts(super::font_definitions(false, false));
-        ctx.run_ui(egui::RawInput::default(), |_| {}).drop_without_applying_deltas();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .drop_without_applying_deltas();
         let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut symbols = BTreeSet::new();
         for entry in std::fs::read_dir(&dir).unwrap() {
@@ -761,8 +931,12 @@ mod tests {
                     if i % 2 == 1 {
                         symbols.extend(
                             part.chars()
-                                .filter(|c| !c.is_ascii() && !c.is_alphabetic() && !c.is_whitespace())
-                                .map(|c| (c, path.file_name().unwrap().to_string_lossy().to_string())),
+                                .filter(|c| {
+                                    !c.is_ascii() && !c.is_alphabetic() && !c.is_whitespace()
+                                })
+                                .map(|c| {
+                                    (c, path.file_name().unwrap().to_string_lossy().to_string())
+                                }),
                         );
                     }
                 }
@@ -779,7 +953,11 @@ mod tests {
         symbols.retain(|(c, file)| !exempt(*c, file));
         let font = super::regular(12.5);
         let missing: Vec<String> = ctx.fonts_mut(|f| {
-            symbols.iter().filter(|(c, _)| !f.has_glyph(&font, *c)).map(|(c, file)| format!("{c} U+{:04X} in {file}", *c as u32)).collect()
+            symbols
+                .iter()
+                .filter(|(c, _)| !f.has_glyph(&font, *c))
+                .map(|(c, file)| format!("{c} U+{:04X} in {file}", *c as u32))
+                .collect()
         });
         assert!(missing.is_empty(), "symbols without a glyph: {missing:#?}");
     }

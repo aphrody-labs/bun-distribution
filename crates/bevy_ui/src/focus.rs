@@ -1,7 +1,7 @@
 use crate::{
-    ui_transform::UiGlobalTransform, CalculatedClip, ComputedNode, ComputedUiTargetCamera, UiStack,
+    CalculatedClip, ComputedNode, ComputedUiTargetCamera, UiStack, ui_transform::UiGlobalTransform,
 };
-use bevy_camera::{visibility::InheritedVisibility, Camera, NormalizedRenderTarget, RenderTarget};
+use bevy_camera::{Camera, NormalizedRenderTarget, RenderTarget, visibility::InheritedVisibility};
 use bevy_ecs::{
     change_detection::DetectChangesMut,
     entity::{ContainsEntity, Entity, EntityHashMap},
@@ -10,9 +10,9 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     system::{Local, Query, Res},
 };
-use bevy_input::{mouse::MouseButton, touch::Touches, ButtonInput};
+use bevy_input::{ButtonInput, mouse::MouseButton, touch::Touches};
 use bevy_math::Vec2;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_window::{PrimaryWindow, Window};
 
 use smallvec::SmallVec;

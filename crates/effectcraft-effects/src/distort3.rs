@@ -13,11 +13,27 @@ use effectcraft_project::ParamUi;
 use effectcraft_raster::{Image, Px};
 use rayon::prelude::*;
 
-use crate::util::{Plane, dist_to_poly, gauss_plane, layer_or_self, pick, point_in_poly, poly_length, poly_point_at, premul, remap, src_at, unpremul};
+use crate::util::{
+    Plane, dist_to_poly, gauss_plane, layer_or_self, pick, point_in_poly, poly_length,
+    poly_point_at, premul, remap, src_at, unpremul,
+};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Distort", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Distort",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pt(x: f64, y: f64) -> Value {
@@ -25,7 +41,9 @@ fn pt(x: f64, y: f64) -> Value {
 }
 
 /// Mask choices for mask popups ("None", "Mask 1" … "Mask 8").
-const MASK_CHOICES: [&str; 9] = ["None", "Mask 1", "Mask 2", "Mask 3", "Mask 4", "Mask 5", "Mask 6", "Mask 7", "Mask 8"];
+const MASK_CHOICES: [&str; 9] = [
+    "None", "Mask 1", "Mask 2", "Mask 3", "Mask 4", "Mask 5", "Mask 6", "Mask 7", "Mask 8",
+];
 
 /// The chosen mask as a polyline in buffer pixels (`None` for "None" or a missing mask).
 fn mask_px(ctx: &EffectCtx, b: &Buf, id: &str) -> Option<(Vec<[f64; 2]>, bool)> {
@@ -37,24 +55,47 @@ fn mask_px(ctx: &EffectCtx, b: &Buf, id: &str) -> Option<(Vec<[f64; 2]>, bool)> 
     if m.points.len() < 2 {
         return None;
     }
-    Some((m.points.iter().map(|q| [q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1]]).collect(), m.closed))
+    Some((
+        m.points
+            .iter()
+            .map(|q| [q[0] * b.scale + b.offset[0], q[1] * b.scale + b.offset[1]])
+            .collect(),
+        m.closed,
+    ))
 }
 
 /// Resample a polyline to `n` points evenly spaced by arc length.
 fn resample_poly(pts: &[[f64; 2]], closed: bool, n: usize) -> Vec<[f64; 2]> {
     let len = poly_length(pts, closed);
-    let div = if closed { n as f64 } else { (n - 1).max(1) as f64 };
-    (0..n).map(|i| poly_point_at(pts, closed, len * i as f64 / div).0).collect()
+    let div = if closed {
+        n as f64
+    } else {
+        (n - 1).max(1) as f64
+    };
+    (0..n)
+        .map(|i| poly_point_at(pts, closed, len * i as f64 / div).0)
+        .collect()
 }
 
 fn centroid(pts: &[[f64; 2]]) -> [f64; 2] {
     let n = pts.len().max(1) as f64;
-    let s = pts.iter().fold([0.0, 0.0], |a, q| [a[0] + q[0], a[1] + q[1]]);
+    let s = pts
+        .iter()
+        .fold([0.0, 0.0], |a, q| [a[0] + q[0], a[1] + q[1]]);
     [s[0] / n, s[1] / n]
 }
 
 /// Elasticity popup (Stiff … Super Fluid) → inverse-distance weighting exponent.
-const ELASTICITY: [&str; 8] = ["Stiff", "Less Stiff", "Below Normal", "Absolutely Normal", "Above Average", "Loose", "Liquid", "Super Fluid"];
+const ELASTICITY: [&str; 8] = [
+    "Stiff",
+    "Less Stiff",
+    "Below Normal",
+    "Absolutely Normal",
+    "Above Average",
+    "Loose",
+    "Liquid",
+    "Super Fluid",
+];
 fn elastic_exp(i: u32) -> f64 {
     [1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.5][(i as usize).min(7)]
 }
@@ -74,14 +115,18 @@ fn cc_bender(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let (ux, uy) = (ax / len, ay / len);
     // Perpendicular (to the right of the axis when it points up).
     let (nx, ny) = (-uy, ux);
-    let reference = if ctx.params.b("adjustToDistance") { len } else { ctx.layer_size[1] * b.scale };
+    let reference = if ctx.params.b("adjustToDistance") {
+        len
+    } else {
+        ctx.layer_size[1] * b.scale
+    };
     let f = move |t: f64| -> f64 {
         let t = t.clamp(0.0, 1.0);
         match style {
-            1 => 0.5 * (PI * t).sin() * t,                              // Marilyn: billowing middle
-            2 => 0.5 * t,                                               // Sharp: straight lean from the base
+            1 => 0.5 * (PI * t).sin() * t, // Marilyn: billowing middle
+            2 => 0.5 * t,                  // Sharp: straight lean from the base
             3 => 0.25 * (1.0 - (PI * t).cos()) - 0.1 * (TAU * t).sin(), // Boxer: S-shaped
-            _ => 0.5 * t * t,                                           // Bend: smooth curve
+            _ => 0.5 * t * t,              // Bend: smooth curve
         }
     };
     b.img = remap(&b.img, false, |x, y| {
@@ -120,7 +165,12 @@ fn cc_blobbylize(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let prop = src_at(ctx.params.e("property"));
     let raw = Plane::from_image(&blob, |px| {
         let (c, a) = unpremul(px);
-        pick(prop, c, a) * if matches!(prop, crate::util::Src::Alpha) { 1.0 } else { a }
+        pick(prop, c, a)
+            * if matches!(prop, crate::util::Src::Alpha) {
+                1.0
+            } else {
+                a
+            }
     });
     let h = gauss_plane(&raw, soft, soft);
     let intensity = ctx.params.f("lightIntensity") / 100.0;
@@ -157,7 +207,11 @@ fn cc_blobbylize(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 continue;
             }
             let n = norm3([-gx * depth, -gy * depth, 1.0]);
-            let l = if point { norm3([lpos.0 - x as f64, lpos.1 - y as f64, lheight / 100.0 * span]) } else { ldir };
+            let l = if point {
+                norm3([lpos.0 - x as f64, lpos.1 - y as f64, lheight / 100.0 * span])
+            } else {
+                ldir
+            };
             let ndl = dot3(n, l).max(0.0);
             let hv3 = norm3([l[0], l[1], l[2] + 1.0]);
             let sp = dot3(n, hv3).max(0.0).powf(shininess) * specular;
@@ -177,18 +231,32 @@ fn cc_blobbylize(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 fn cc_power_pin(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let (lw, lh) = (ctx.layer_size[0].max(1.0), ctx.layer_size[1].max(1.0));
-    let ex = [ctx.params.f("expandTop"), ctx.params.f("expandLeft"), ctx.params.f("expandRight"), ctx.params.f("expandBottom")];
+    let ex = [
+        ctx.params.f("expandTop"),
+        ctx.params.f("expandLeft"),
+        ctx.params.f("expandRight"),
+        ctx.params.f("expandBottom"),
+    ];
     // Source rectangle (layer space), grown by the Expand percentages.
     let (x0, y0) = (-ex[1] / 100.0 * lw, -ex[0] / 100.0 * lh);
     let (x1, y1) = (lw + ex[2] / 100.0 * lw, lh + ex[3] / 100.0 * lh);
-    let corners_layer = [ctx.params.v2("topLeft"), ctx.params.v2("topRight"), ctx.params.v2("bottomRight"), ctx.params.v2("bottomLeft")];
+    let corners_layer = [
+        ctx.params.v2("topLeft"),
+        ctx.params.v2("topRight"),
+        ctx.params.v2("bottomRight"),
+        ctx.params.v2("bottomLeft"),
+    ];
     let unstretch = ctx.params.b("unstretch");
     // Grow the buffer to hold the pinned quad (Unstretch writes inside the layer rectangle, so it needs no room).
     if !ctx.adjustment && !unstretch {
         let mut need = 0.0f64;
         for c in &corners_layer {
             let (px, py) = b.to_px(*c);
-            need = need.max(-px).max(-py).max(px - b.img.width as f64).max(py - b.img.height as f64);
+            need = need
+                .max(-px)
+                .max(-py)
+                .max(px - b.img.width as f64)
+                .max(py - b.img.height as f64);
         }
         if need > 0.0 {
             b.pad(need.ceil().min(4096.0) as u32 + 1);
@@ -204,8 +272,14 @@ fn cc_power_pin(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let src = b.img.clone();
     let (sc, off) = (b.scale, b.offset);
     let bil = move |u: f64, v: f64| -> (f64, f64) {
-        let top = (q[0].x + (q[1].x - q[0].x) * u, q[0].y + (q[1].y - q[0].y) * u);
-        let bot = (q[3].x + (q[2].x - q[3].x) * u, q[3].y + (q[2].y - q[3].y) * u);
+        let top = (
+            q[0].x + (q[1].x - q[0].x) * u,
+            q[0].y + (q[1].y - q[0].y) * u,
+        );
+        let bot = (
+            q[3].x + (q[2].x - q[3].x) * u,
+            q[3].y + (q[2].y - q[3].y) * u,
+        );
         (top.0 + (bot.0 - top.0) * v, top.1 + (bot.1 - top.1) * v)
     };
     b.img = crate::util::gen_image(src.width, src.height, |x, y| {
@@ -235,7 +309,8 @@ fn cc_power_pin(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 let e = 1e-4;
                 let (ax, ay) = bil(bu + e, bv);
                 let (cx, cy) = bil(bu, bv + e);
-                let (j00, j10, j01, j11) = ((ax - fx) / e, (ay - fy) / e, (cx - fx) / e, (cy - fy) / e);
+                let (j00, j10, j01, j11) =
+                    ((ax - fx) / e, (ay - fy) / e, (cx - fx) / e, (cy - fy) / e);
                 let det = j00 * j11 - j01 * j10;
                 if det.abs() < 1e-12 {
                     break;
@@ -287,7 +362,11 @@ fn cc_ripple_pulse(ctx: &EffectCtx, mut b: Buf) -> Buf {
             let (dx, dy) = (x as f64 + 0.5 - c.0, y as f64 + 0.5 - c.1);
             let r = (dx * dx + dy * dy).sqrt();
             let d = wave(r) * height;
-            let (ux, uy) = if r > 1e-9 { (dx / r, dy / r) } else { (0.0, 0.0) };
+            let (ux, uy) = if r > 1e-9 {
+                (dx / r, dy / r)
+            } else {
+                (0.0, 0.0)
+            };
             let mut s = src.sample_bilinear(x as f64 + 0.5 - ux * d, y as f64 + 0.5 - uy * d);
             if bump && d != 0.0 {
                 let slope = (wave(r + 0.5) - wave(r - 0.5)) * height;
@@ -311,8 +390,16 @@ fn cc_slant(ctx: &EffectCtx, mut b: Buf) -> Buf {
         return b;
     }
     let stretch = ctx.params.b("stretching");
-    let xs = if stretch { 1.0 / (1.0 + k * k).sqrt() } else { 1.0 };
-    let hinv = if height.abs() < 1e-6 { 1e6 } else { 1.0 / height };
+    let xs = if stretch {
+        1.0 / (1.0 + k * k).sqrt()
+    } else {
+        1.0
+    };
+    let hinv = if height.abs() < 1e-6 {
+        1e6
+    } else {
+        1.0 / height
+    };
     if !ctx.adjustment {
         let lean = (k * ctx.layer_size[1] * b.scale * height.max(1.0)).abs();
         let grow = ((height - 1.0).max(0.0) * ctx.layer_size[1] * b.scale).max(lean);
@@ -332,7 +419,12 @@ fn cc_slant(ctx: &EffectCtx, mut b: Buf) -> Buf {
 fn cc_smear(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let reach = ctx.params.f("reach") / 100.0;
     if !ctx.adjustment {
-        b.pad(cc_smear_pad(ctx, [b.img.width, b.img.height], b.offset, b.scale));
+        b.pad(cc_smear_pad(
+            ctx,
+            [b.img.width, b.img.height],
+            b.offset,
+            b.scale,
+        ));
     }
     let from = b.to_px(ctx.params.v2("from"));
     let to = b.to_px(ctx.params.v2("to"));
@@ -412,7 +504,12 @@ fn cc_split(ctx: &EffectCtx, b: Buf) -> Buf {
 }
 
 fn cc_split2(ctx: &EffectCtx, b: Buf) -> Buf {
-    split_impl(ctx, b, ctx.params.f("split1") / 100.0, ctx.params.f("split2") / 100.0)
+    split_impl(
+        ctx,
+        b,
+        ctx.params.f("split1") / 100.0,
+        ctx.params.f("split2") / 100.0,
+    )
 }
 
 // ---------------------------------------------------------------- Smear (mask based)
@@ -435,7 +532,12 @@ pub struct SmearSetup {
 
 /// `None` when Smear leaves the buffer as it is (a mask missing, Percent 0).
 pub fn smear_setup(ctx: &EffectCtx, b: &Buf) -> Option<SmearSetup> {
-    let (Some((src_m, _)), Some((bound, _))) = (mask_px(ctx, b, "sourceMask"), mask_px(ctx, b, "boundaryMask")) else { return None };
+    let (Some((src_m, _)), Some((bound, _))) = (
+        mask_px(ctx, b, "sourceMask"),
+        mask_px(ctx, b, "boundaryMask"),
+    ) else {
+        return None;
+    };
     let pct = ctx.params.f("percent") / 100.0;
     let off = ctx.params.v2("maskOffset");
     let (ox, oy) = (off[0] * b.scale, off[1] * b.scale);
@@ -452,15 +554,30 @@ pub fn smear_setup(ctx: &EffectCtx, b: &Buf) -> Option<SmearSetup> {
     if pct == 0.0 {
         return None;
     }
-    Some(SmearSetup { bound, moved, c, cs, sn, scl, off: [ox, oy], pct, kexp })
+    Some(SmearSetup {
+        bound,
+        moved,
+        c,
+        cs,
+        sn,
+        scl,
+        off: [ox, oy],
+        pct,
+        kexp,
+    })
 }
 
 fn smear(ctx: &EffectCtx, mut b: Buf) -> Buf {
-    let Some(s) = smear_setup(ctx, &b) else { return b };
+    let Some(s) = smear_setup(ctx, &b) else {
+        return b;
+    };
     let (c, cs, sn, scl, [ox, oy]) = (s.c, s.cs, s.sn, s.scl, s.off);
     let inv = |x: f64, y: f64| -> (f64, f64) {
         let (dx, dy) = (x - ox - c[0], y - oy - c[1]);
-        (c[0] + (dx * cs + dy * sn) / scl, c[1] + (-dx * sn + dy * cs) / scl)
+        (
+            c[0] + (dx * cs + dy * sn) / scl,
+            c[1] + (-dx * sn + dy * cs) / scl,
+        )
     };
     let (bound, moved, pct, kexp) = (&s.bound, &s.moved, s.pct, s.kexp);
     b.img = remap(&b.img, false, |x, y| {
@@ -489,7 +606,10 @@ fn parse_correspondence(s: &str) -> Vec<(f64, f64)> {
         .split_whitespace()
         .filter_map(|t| {
             let (a, b) = t.split_once(',')?;
-            Some((a.trim().parse::<f64>().ok()?.rem_euclid(1.0), b.trim().parse::<f64>().ok()?.rem_euclid(1.0)))
+            Some((
+                a.trim().parse::<f64>().ok()?.rem_euclid(1.0),
+                b.trim().parse::<f64>().ok()?.rem_euclid(1.0),
+            ))
         })
         .collect();
     v.sort_by(|a, b| a.1.total_cmp(&b.1));
@@ -505,10 +625,21 @@ fn map_fraction(pairs: &[(f64, f64)], u: f64, closed: bool) -> f64 {
     }
     if !closed {
         // Open paths: clamp beyond the first / last pair (ends map to ends).
-        let ext: Vec<(f64, f64)> = std::iter::once((0.0, 0.0)).chain(pairs.iter().copied()).chain(std::iter::once((1.0, 1.0))).collect();
-        let k = ext.iter().rposition(|p| p.1 <= u).unwrap_or(0).min(ext.len() - 2);
+        let ext: Vec<(f64, f64)> = std::iter::once((0.0, 0.0))
+            .chain(pairs.iter().copied())
+            .chain(std::iter::once((1.0, 1.0)))
+            .collect();
+        let k = ext
+            .iter()
+            .rposition(|p| p.1 <= u)
+            .unwrap_or(0)
+            .min(ext.len() - 2);
         let (a, b) = (ext[k], ext[k + 1]);
-        let t = if b.1 > a.1 { (u - a.1) / (b.1 - a.1) } else { 0.0 };
+        let t = if b.1 > a.1 {
+            (u - a.1) / (b.1 - a.1)
+        } else {
+            0.0
+        };
         return (a.0 + (b.0 - a.0) * t).clamp(0.0, 1.0);
     }
     let k = pairs.iter().rposition(|p| p.1 <= u).unwrap_or(n - 1);
@@ -538,7 +669,12 @@ pub struct ReshapeSetup {
 
 /// `None` when Reshape leaves the buffer as it is (a mask missing, Percent 0).
 pub fn reshape_setup(ctx: &EffectCtx, b: &Buf) -> Option<ReshapeSetup> {
-    let (Some((sm, sc)), Some((dm, dc))) = (mask_px(ctx, b, "sourceMask"), mask_px(ctx, b, "destinationMask")) else { return None };
+    let (Some((sm, sc)), Some((dm, dc))) = (
+        mask_px(ctx, b, "sourceMask"),
+        mask_px(ctx, b, "destinationMask"),
+    ) else {
+        return None;
+    };
     let pct = ctx.params.f("percent") / 100.0;
     if pct == 0.0 {
         return None;
@@ -552,7 +688,14 @@ pub fn reshape_setup(ctx: &EffectCtx, b: &Buf) -> Option<ReshapeSetup> {
     let rot = if sc && dc {
         (0..N)
             .min_by(|&r1, &r2| {
-                let cost = |r: usize| (0..N).map(|i| (s[(i + r) % N][0] - d[i][0]).powi(2) + (s[(i + r) % N][1] - d[i][1]).powi(2)).sum::<f64>();
+                let cost = |r: usize| {
+                    (0..N)
+                        .map(|i| {
+                            (s[(i + r) % N][0] - d[i][0]).powi(2)
+                                + (s[(i + r) % N][1] - d[i][1]).powi(2)
+                        })
+                        .sum::<f64>()
+                };
                 cost(r1).total_cmp(&cost(r2))
             })
             .unwrap_or(0)
@@ -579,12 +722,29 @@ pub fn reshape_setup(ctx: &EffectCtx, b: &Buf) -> Option<ReshapeSetup> {
         })
         .collect();
     let smooth = ctx.params.e("interpolation") == 2;
-    Some(ReshapeSetup { dest: d, disp, bound, kexp, pct, smooth })
+    Some(ReshapeSetup {
+        dest: d,
+        disp,
+        bound,
+        kexp,
+        pct,
+        smooth,
+    })
 }
 
 fn reshape(ctx: &EffectCtx, mut b: Buf) -> Buf {
     const N: usize = RESHAPE_POINTS;
-    let Some(ReshapeSetup { dest: d, disp, bound, kexp, pct, smooth }) = reshape_setup(ctx, &b) else { return b };
+    let Some(ReshapeSetup {
+        dest: d,
+        disp,
+        bound,
+        kexp,
+        pct,
+        smooth,
+    }) = reshape_setup(ctx, &b)
+    else {
+        return b;
+    };
     b.img = remap(&b.img, false, |x, y| {
         if let Some(bd) = &bound
             && !point_in_poly(bd, x, y)
@@ -642,25 +802,40 @@ fn twirl_legacy(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 // ---------------------------------------------------------------- Warp
 
-const WARP_STYLES: [&str; 15] =
-    ["Arc", "Arc Lower", "Arc Upper", "Arch", "Bulge", "Shell Lower", "Shell Upper", "Flag", "Wave", "Fish", "Rise", "Fisheye", "Inflate", "Squeeze", "Twist"];
+const WARP_STYLES: [&str; 15] = [
+    "Arc",
+    "Arc Lower",
+    "Arc Upper",
+    "Arch",
+    "Bulge",
+    "Shell Lower",
+    "Shell Upper",
+    "Flag",
+    "Wave",
+    "Fish",
+    "Rise",
+    "Fisheye",
+    "Inflate",
+    "Squeeze",
+    "Twist",
+];
 
 /// Forward warp in normalised coordinates (u across the warp axis' length, v across it, both
 /// −1…1); `k` is Bend (−1…1). Returns the warped point.
 fn warp_style(style: u32, k: f64, u: f64, v: f64) -> (f64, f64) {
     let bell = 1.0 - u * u;
     match style {
-        0 => (u * (1.0 - 0.3 * k * v), v - k * bell),          // Arc
-        1 => (u, v - k * bell * (v + 1.0) * 0.5),              // Arc Lower
-        2 => (u, v - k * bell * (1.0 - v) * 0.5),              // Arc Upper
-        3 => (u, v - k * bell),                                // Arch
-        4 => (u, v * (1.0 + k * bell)),                        // Bulge
-        5 => (u, v + k * bell * bell * (v + 1.0) * 0.5),       // Shell Lower
-        6 => (u, v - k * bell * bell * (1.0 - v) * 0.5),       // Shell Upper
-        7 => (u, v - 0.5 * k * (PI * u).sin()),                // Flag
+        0 => (u * (1.0 - 0.3 * k * v), v - k * bell),    // Arc
+        1 => (u, v - k * bell * (v + 1.0) * 0.5),        // Arc Lower
+        2 => (u, v - k * bell * (1.0 - v) * 0.5),        // Arc Upper
+        3 => (u, v - k * bell),                          // Arch
+        4 => (u, v * (1.0 + k * bell)),                  // Bulge
+        5 => (u, v + k * bell * bell * (v + 1.0) * 0.5), // Shell Lower
+        6 => (u, v - k * bell * bell * (1.0 - v) * 0.5), // Shell Upper
+        7 => (u, v - 0.5 * k * (PI * u).sin()),          // Flag
         8 => (u, v - 0.5 * k * (PI * u + 0.5 * PI * v).sin()), // Wave
-        9 => (u, v * (1.0 + 0.5 * k * (PI * u).sin())),        // Fish
-        10 => (u, v - 0.5 * k * (0.5 * PI * u).sin()),         // Rise
+        9 => (u, v * (1.0 + 0.5 * k * (PI * u).sin())),  // Fish
+        10 => (u, v - 0.5 * k * (0.5 * PI * u).sin()),   // Rise
         11 => {
             // Fisheye: radial bulge inside the unit circle.
             let r2 = u * u + v * v;
@@ -671,8 +846,14 @@ fn warp_style(style: u32, k: f64, u: f64, v: f64) -> (f64, f64) {
                 (u * f, v * f)
             }
         }
-        12 => (u * (1.0 + 0.5 * k * (1.0 - v * v)), v * (1.0 + 0.5 * k * bell)), // Inflate
-        13 => (u * (1.0 - 0.5 * k * (1.0 - v * v)), v * (1.0 + 0.5 * k * bell)), // Squeeze
+        12 => (
+            u * (1.0 + 0.5 * k * (1.0 - v * v)),
+            v * (1.0 + 0.5 * k * bell),
+        ), // Inflate
+        13 => (
+            u * (1.0 - 0.5 * k * (1.0 - v * v)),
+            v * (1.0 + 0.5 * k * bell),
+        ), // Squeeze
         _ => {
             // Twist: rotation decreasing towards the edge of the unit circle.
             let r = (u * u + v * v).sqrt();
@@ -694,9 +875,14 @@ fn warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
     if k == 0.0 && hd == 0.0 && vd == 0.0 {
         return b;
     }
-    let (hx, hy) = (ctx.layer_size[0] * b.scale * 0.5, ctx.layer_size[1] * b.scale * 0.5);
+    let (hx, hy) = (
+        ctx.layer_size[0] * b.scale * 0.5,
+        ctx.layer_size[1] * b.scale * 0.5,
+    );
     if !ctx.adjustment {
-        let pad = ((k.abs() + hd.abs() + vd.abs()) * 0.6 * hx.max(hy)).ceil().min(4096.0);
+        let pad = ((k.abs() + hd.abs() + vd.abs()) * 0.6 * hx.max(hy))
+            .ceil()
+            .min(4096.0);
         b.pad(pad as u32 + 1);
     }
     b.img = remap(&b.img, false, warp_inverse(ctx, &b));
@@ -705,13 +891,19 @@ fn warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
 
 /// Warp's inverse map for buffer geometry `b` (padded): the source point of an output point
 /// (buffer px), by Newton iterations on the forward warp; `None` = transparent.
-fn warp_inverse(ctx: &EffectCtx, b: &Buf) -> impl Fn(f64, f64) -> Option<(f64, f64)> + Sync + use<> {
+fn warp_inverse(
+    ctx: &EffectCtx,
+    b: &Buf,
+) -> impl Fn(f64, f64) -> Option<(f64, f64)> + Sync + use<> {
     let k = ctx.params.f("bend") / 100.0;
     let hd = ctx.params.f("horizontalDistortion") / 100.0;
     let vd = ctx.params.f("verticalDistortion") / 100.0;
     let style = ctx.params.e("warpStyle");
     let vertical = ctx.params.e("warpAxis") == 1;
-    let (hx, hy) = (ctx.layer_size[0] * b.scale * 0.5, ctx.layer_size[1] * b.scale * 0.5);
+    let (hx, hy) = (
+        ctx.layer_size[0] * b.scale * 0.5,
+        ctx.layer_size[1] * b.scale * 0.5,
+    );
     let c = b.to_px([ctx.layer_size[0] * 0.5, ctx.layer_size[1] * 0.5]);
     let (hx, hy) = (hx.max(1e-6), hy.max(1e-6));
     let fwd = move |x: f64, y: f64| -> (f64, f64) {
@@ -782,8 +974,18 @@ fn bicubic(img: &Image, x: f64, y: f64) -> Px {
     let fy = y - 0.5;
     let (x0, y0) = (fx.floor(), fy.floor());
     let (tx, ty) = (fx - x0, fy - y0);
-    let wx = [cubic_w(1.0 + tx), cubic_w(tx), cubic_w(1.0 - tx), cubic_w(2.0 - tx)];
-    let wy = [cubic_w(1.0 + ty), cubic_w(ty), cubic_w(1.0 - ty), cubic_w(2.0 - ty)];
+    let wx = [
+        cubic_w(1.0 + tx),
+        cubic_w(tx),
+        cubic_w(1.0 - tx),
+        cubic_w(2.0 - tx),
+    ];
+    let wy = [
+        cubic_w(1.0 + ty),
+        cubic_w(ty),
+        cubic_w(1.0 - ty),
+        cubic_w(2.0 - ty),
+    ];
     let mut o = [0.0f64; 4];
     for (j, wyj) in wy.iter().enumerate() {
         for (i, wxi) in wx.iter().enumerate() {
@@ -795,7 +997,12 @@ fn bicubic(img: &Image, x: f64, y: f64) -> Px {
         }
     }
     let a = o[3].clamp(0.0, 1.0) as f32;
-    [(o[0] as f32).clamp(0.0, a.max(o[0] as f32)), (o[1] as f32).clamp(0.0, a.max(o[1] as f32)), (o[2] as f32).clamp(0.0, a.max(o[2] as f32)), a]
+    [
+        (o[0] as f32).clamp(0.0, a.max(o[0] as f32)),
+        (o[1] as f32).clamp(0.0, a.max(o[1] as f32)),
+        (o[2] as f32).clamp(0.0, a.max(o[2] as f32)),
+        a,
+    ]
 }
 
 fn upscale(ctx: &EffectCtx, mut b: Buf) -> Buf {
@@ -805,7 +1012,11 @@ fn upscale(ctx: &EffectCtx, mut b: Buf) -> Buf {
     }
     let detail = (ctx.params.f("detail") / 100.0) as f32;
     let noise = ctx.params.f("reduceNoise") / 100.0;
-    let src = if noise > 0.0 { effectcraft_raster::gaussian_blur(&b.img, noise * 1.5, noise * 1.5, true) } else { b.img.clone() };
+    let src = if noise > 0.0 {
+        effectcraft_raster::gaussian_blur(&b.img, noise * 1.5, noise * 1.5, true)
+    } else {
+        b.img.clone()
+    };
     let lc = [ctx.layer_size[0] * 0.5, ctx.layer_size[1] * 0.5];
     // Alpha: Bilinear (index 0) resamples the alpha channel bilinearly, Bicubic like the colour.
     let bilinear_alpha = ctx.params.e("alpha") == 0;
@@ -826,7 +1037,11 @@ fn upscale(ctx: &EffectCtx, mut b: Buf) -> Buf {
             for (x, px) in row.iter_mut().enumerate() {
                 let sx = c.0 + (x as f64 + 0.5 - c.0) / k;
                 let sy = c.1 + (y as f64 + 0.5 - c.1) / k;
-                *px = if sx < 0.0 || sy < 0.0 || sx > src.width as f64 || sy > src.height as f64 { [0.0; 4] } else { up(&src, sx, sy) };
+                *px = if sx < 0.0 || sy < 0.0 || sx > src.width as f64 || sy > src.height as f64 {
+                    [0.0; 4]
+                } else {
+                    up(&src, sx, sy)
+                };
             }
         });
         o
@@ -841,18 +1056,24 @@ fn upscale(ctx: &EffectCtx, mut b: Buf) -> Buf {
             }
         });
         let c_sc = [lc[0] * b.scale, lc[1] * b.scale];
-        b.offset = [b.offset[0] * kx + c_sc[0] * (kx - 1.0), b.offset[1] * ky + c_sc[1] * (ky - 1.0)];
+        b.offset = [
+            b.offset[0] * kx + c_sc[0] * (kx - 1.0),
+            b.offset[1] * ky + c_sc[1] * (ky - 1.0),
+        ];
         o
     };
     if detail > 0.0 {
         let sigma = 0.6 * k;
         let blur = effectcraft_raster::gaussian_blur(&out, sigma, sigma, true);
-        out.data.par_iter_mut().zip(blur.data.par_iter()).for_each(|(p, q)| {
-            let a = p[3];
-            for c in 0..3 {
-                p[c] = (p[c] + (p[c] - q[c]) * detail * 1.5).clamp(0.0, a.max(p[c]));
-            }
-        });
+        out.data
+            .par_iter_mut()
+            .zip(blur.data.par_iter())
+            .for_each(|(p, q)| {
+                let a = p[3];
+                for c in 0..3 {
+                    p[c] = (p[c] + (p[c] - q[c]) * detail * 1.5).clamp(0.0, a.max(p[c]));
+                }
+            });
     }
     b.img = out;
     b
@@ -867,9 +1088,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ccbender",
             "CC Bender",
             vec![
-                p("amount", "Amount", num(0.0), slider(-200.0, 200.0, -100.0, 100.0, 1)),
-                p("style", "Style", Value::Enum(0), popup(&["Bend", "Marilyn", "Sharp", "Boxer"])),
-                p("adjustToDistance", "Adjust To Distance", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "amount",
+                    "Amount",
+                    num(0.0),
+                    slider(-200.0, 200.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "style",
+                    "Style",
+                    Value::Enum(0),
+                    popup(&["Bend", "Marilyn", "Sharp", "Boxer"]),
+                ),
+                p(
+                    "adjustToDistance",
+                    "Adjust To Distance",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 p("top", "Top", pt(0.5, 0.0), ParamUi::Point),
                 p("base", "Base", pt(0.5, 1.0), ParamUi::Point),
             ],
@@ -879,20 +1115,85 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ccblobbylize",
             "CC Blobbylize",
             vec![
-                p("blobLayer", "Blob Layer", Value::Layer(None), ParamUi::Layer),
-                p("property", "Property", Value::Enum(3), popup(&crate::util::SRC_NAMES[..8])),
-                p("softness", "Softness", num(6.0), slider(0.0, 200.0, 0.0, 50.0, 1)),
+                p(
+                    "blobLayer",
+                    "Blob Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
+                p(
+                    "property",
+                    "Property",
+                    Value::Enum(3),
+                    popup(&crate::util::SRC_NAMES[..8]),
+                ),
+                p(
+                    "softness",
+                    "Softness",
+                    num(6.0),
+                    slider(0.0, 200.0, 0.0, 50.0, 1),
+                ),
                 p("cutAway", "Cut Away", num(0.0), pct()),
-                p("lightIntensity", "Light Intensity", num(100.0), slider(0.0, 400.0, 0.0, 200.0, 1)),
-                p("lightColor", "Light Color", col(1.0, 1.0, 1.0), ParamUi::Color),
-                p("lightType", "Light Type", Value::Enum(0), popup(&["Distant Light", "Point Light"])),
-                p("lightHeight", "Light Height", num(50.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
-                p("lightPosition", "Light Position", pt(0.25, 0.25), ParamUi::Point),
-                p("lightDirection", "Light Direction", num(-45.0), ParamUi::Angle),
-                p("ambient", "Ambient", num(20.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-                p("diffuse", "Diffuse", num(70.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-                p("specular", "Specular", num(40.0), slider(0.0, 200.0, 0.0, 100.0, 1)),
-                p("roughness", "Roughness", num(0.05), slider(0.001, 0.5, 0.001, 0.5, 3)),
+                p(
+                    "lightIntensity",
+                    "Light Intensity",
+                    num(100.0),
+                    slider(0.0, 400.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "lightColor",
+                    "Light Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
+                p(
+                    "lightType",
+                    "Light Type",
+                    Value::Enum(0),
+                    popup(&["Distant Light", "Point Light"]),
+                ),
+                p(
+                    "lightHeight",
+                    "Light Height",
+                    num(50.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "lightPosition",
+                    "Light Position",
+                    pt(0.25, 0.25),
+                    ParamUi::Point,
+                ),
+                p(
+                    "lightDirection",
+                    "Light Direction",
+                    num(-45.0),
+                    ParamUi::Angle,
+                ),
+                p(
+                    "ambient",
+                    "Ambient",
+                    num(20.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "diffuse",
+                    "Diffuse",
+                    num(70.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "specular",
+                    "Specular",
+                    num(40.0),
+                    slider(0.0, 200.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "roughness",
+                    "Roughness",
+                    num(0.05),
+                    slider(0.001, 0.5, 0.001, 0.5, 3),
+                ),
                 p("metal", "Metal", num(100.0), pct()),
             ],
             cc_blobbylize,
@@ -906,11 +1207,36 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("bottomLeft", "Bottom Left", pt(0.0, 1.0), ParamUi::Point),
                 p("bottomRight", "Bottom Right", pt(1.0, 1.0), ParamUi::Point),
                 p("perspective", "Perspective", num(100.0), pct()),
-                p("unstretch", "Unstretch", Value::Bool(false), ParamUi::Checkbox),
-                p("expandTop", "Top", num(0.0), slider(-100.0, 1000.0, 0.0, 100.0, 1)),
-                p("expandLeft", "Left", num(0.0), slider(-100.0, 1000.0, 0.0, 100.0, 1)),
-                p("expandRight", "Right", num(0.0), slider(-100.0, 1000.0, 0.0, 100.0, 1)),
-                p("expandBottom", "Bottom", num(0.0), slider(-100.0, 1000.0, 0.0, 100.0, 1)),
+                p(
+                    "unstretch",
+                    "Unstretch",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "expandTop",
+                    "Top",
+                    num(0.0),
+                    slider(-100.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "expandLeft",
+                    "Left",
+                    num(0.0),
+                    slider(-100.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "expandRight",
+                    "Right",
+                    num(0.0),
+                    slider(-100.0, 1000.0, 0.0, 100.0, 1),
+                ),
+                p(
+                    "expandBottom",
+                    "Bottom",
+                    num(0.0),
+                    slider(-100.0, 1000.0, 0.0, 100.0, 1),
+                ),
             ],
             cc_power_pin,
         ),
@@ -919,10 +1245,30 @@ pub fn specs() -> Vec<EffectSpec> {
             "CC Ripple Pulse",
             vec![
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
-                p("pulseLevel", "Pulse Level (animate)", num(0.0), slider(-1000.0, 1000.0, -100.0, 100.0, 1)),
-                p("timeSpan", "Time Span (sec)", num(1.0), slider(0.01, 100.0, 0.01, 10.0, 2)),
-                p("amplitude", "Amplitude", num(100.0), slider(-1000.0, 1000.0, -200.0, 200.0, 1)),
-                p("renderBump", "Render Bump As Well", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "pulseLevel",
+                    "Pulse Level (animate)",
+                    num(0.0),
+                    slider(-1000.0, 1000.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "timeSpan",
+                    "Time Span (sec)",
+                    num(1.0),
+                    slider(0.01, 100.0, 0.01, 10.0, 2),
+                ),
+                p(
+                    "amplitude",
+                    "Amplitude",
+                    num(100.0),
+                    slider(-1000.0, 1000.0, -200.0, 200.0, 1),
+                ),
+                p(
+                    "renderBump",
+                    "Render Bump As Well",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             cc_ripple_pulse,
         ),
@@ -930,9 +1276,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ccslant",
             "CC Slant",
             vec![
-                p("slant", "Slant", num(0.0), slider(-1000.0, 1000.0, -100.0, 100.0, 1)),
-                p("stretching", "Stretching", Value::Bool(false), ParamUi::Checkbox),
-                p("height", "Height", num(100.0), slider(-1000.0, 1000.0, 0.0, 200.0, 1)),
+                p(
+                    "slant",
+                    "Slant",
+                    num(0.0),
+                    slider(-1000.0, 1000.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "stretching",
+                    "Stretching",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "height",
+                    "Height",
+                    num(100.0),
+                    slider(-1000.0, 1000.0, 0.0, 200.0, 1),
+                ),
                 p("floor", "Floor", pt(0.5, 1.0), ParamUi::Point),
             ],
             cc_slant,
@@ -943,8 +1304,18 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("from", "From", pt(0.35, 0.5), ParamUi::Point),
                 p("to", "To", pt(0.65, 0.5), ParamUi::Point),
-                p("reach", "Reach", num(50.0), slider(-100.0, 100.0, -100.0, 100.0, 1)),
-                p("radius", "Radius", num(50.0), slider(0.0, 4000.0, 0.0, 400.0, 1)),
+                p(
+                    "reach",
+                    "Reach",
+                    num(50.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "radius",
+                    "Radius",
+                    num(50.0),
+                    slider(0.0, 4000.0, 0.0, 400.0, 1),
+                ),
             ],
             cc_smear,
         ),
@@ -954,7 +1325,12 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("pointA", "Point A", pt(0.25, 0.5), ParamUi::Point),
                 p("pointB", "Point B", pt(0.75, 0.5), ParamUi::Point),
-                p("split", "Split", num(50.0), slider(0.0, 1000.0, 0.0, 200.0, 1)),
+                p(
+                    "split",
+                    "Split",
+                    num(50.0),
+                    slider(0.0, 1000.0, 0.0, 200.0, 1),
+                ),
             ],
             cc_split,
         ),
@@ -964,8 +1340,18 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("pointA", "Point A", pt(0.25, 0.5), ParamUi::Point),
                 p("pointB", "Point B", pt(0.75, 0.5), ParamUi::Point),
-                p("split1", "Split 1", num(50.0), slider(0.0, 1000.0, 0.0, 200.0, 1)),
-                p("split2", "Split 2", num(50.0), slider(0.0, 1000.0, 0.0, 200.0, 1)),
+                p(
+                    "split1",
+                    "Split 1",
+                    num(50.0),
+                    slider(0.0, 1000.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "split2",
+                    "Split 2",
+                    num(50.0),
+                    slider(0.0, 1000.0, 0.0, 200.0, 1),
+                ),
             ],
             cc_split2,
         ),
@@ -973,14 +1359,39 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.smear",
             "Smear",
             vec![
-                p("sourceMask", "Source Mask", Value::Enum(0), popup(&MASK_CHOICES)),
-                p("boundaryMask", "Boundary Mask", Value::Enum(0), popup(&MASK_CHOICES)),
+                p(
+                    "sourceMask",
+                    "Source Mask",
+                    Value::Enum(0),
+                    popup(&MASK_CHOICES),
+                ),
+                p(
+                    "boundaryMask",
+                    "Boundary Mask",
+                    Value::Enum(0),
+                    popup(&MASK_CHOICES),
+                ),
                 p("maskOffset", "Mask Offset", pt(0.0, 0.0), ParamUi::Point),
                 p("maskRotation", "Mask Rotation", num(0.0), ParamUi::Angle),
-                p("maskScale", "Mask Scale", num(100.0), slider(1.0, 1000.0, 1.0, 400.0, 1)),
+                p(
+                    "maskScale",
+                    "Mask Scale",
+                    num(100.0),
+                    slider(1.0, 1000.0, 1.0, 400.0, 1),
+                ),
                 p("percent", "Percent", num(100.0), pct()),
-                p("elasticity", "Elasticity", Value::Enum(3), popup(&ELASTICITY)),
-                p("interpolation", "Interpolation Method", Value::Enum(1), popup(&["Discrete", "Linear", "Smooth"])),
+                p(
+                    "elasticity",
+                    "Elasticity",
+                    Value::Enum(3),
+                    popup(&ELASTICITY),
+                ),
+                p(
+                    "interpolation",
+                    "Interpolation Method",
+                    Value::Enum(1),
+                    popup(&["Discrete", "Linear", "Smooth"]),
+                ),
             ],
             smear,
         ),
@@ -988,14 +1399,44 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.reshape",
             "Reshape",
             vec![
-                p("sourceMask", "Source Mask", Value::Enum(0), popup(&MASK_CHOICES)),
-                p("destinationMask", "Destination Mask", Value::Enum(0), popup(&MASK_CHOICES)),
-                p("boundaryMask", "Boundary Mask", Value::Enum(0), popup(&MASK_CHOICES)),
+                p(
+                    "sourceMask",
+                    "Source Mask",
+                    Value::Enum(0),
+                    popup(&MASK_CHOICES),
+                ),
+                p(
+                    "destinationMask",
+                    "Destination Mask",
+                    Value::Enum(0),
+                    popup(&MASK_CHOICES),
+                ),
+                p(
+                    "boundaryMask",
+                    "Boundary Mask",
+                    Value::Enum(0),
+                    popup(&MASK_CHOICES),
+                ),
                 p("percent", "Percent", num(100.0), pct()),
-                p("elasticity", "Elasticity", Value::Enum(0), popup(&ELASTICITY)),
-                p("interpolation", "Interpolation Method", Value::Enum(1), popup(&["Discrete", "Linear", "Smooth"])),
+                p(
+                    "elasticity",
+                    "Elasticity",
+                    Value::Enum(0),
+                    popup(&ELASTICITY),
+                ),
+                p(
+                    "interpolation",
+                    "Interpolation Method",
+                    Value::Enum(1),
+                    popup(&["Discrete", "Linear", "Smooth"]),
+                ),
                 // Correspondence points: "source,destination" outline fractions (0..1) per point.
-                p("correspondencePoints", "Correspondence Points", Value::Str(String::new()), ParamUi::Hidden),
+                p(
+                    "correspondencePoints",
+                    "Correspondence Points",
+                    Value::Str(String::new()),
+                    ParamUi::Hidden,
+                ),
             ],
             reshape,
         ),
@@ -1004,7 +1445,12 @@ pub fn specs() -> Vec<EffectSpec> {
             "Twirl (Legacy)",
             vec![
                 p("angle", "Angle", num(0.0), ParamUi::Angle),
-                p("radius", "Twirl Radius", num(30.0), slider(0.0, 100.0, 0.0, 100.0, 1)),
+                p(
+                    "radius",
+                    "Twirl Radius",
+                    num(30.0),
+                    slider(0.0, 100.0, 0.0, 100.0, 1),
+                ),
                 p("center", "Twirl Center", pt(0.5, 0.5), ParamUi::Point),
             ],
             twirl_legacy,
@@ -1013,11 +1459,36 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.warp",
             "Warp",
             vec![
-                p("warpStyle", "Warp Style", Value::Enum(0), popup(&WARP_STYLES)),
-                p("warpAxis", "Warp Axis", Value::Enum(0), popup(&["Horizontal", "Vertical"])),
-                p("bend", "Bend", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
-                p("horizontalDistortion", "Horizontal Distortion", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
-                p("verticalDistortion", "Vertical Distortion", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 0)),
+                p(
+                    "warpStyle",
+                    "Warp Style",
+                    Value::Enum(0),
+                    popup(&WARP_STYLES),
+                ),
+                p(
+                    "warpAxis",
+                    "Warp Axis",
+                    Value::Enum(0),
+                    popup(&["Horizontal", "Vertical"]),
+                ),
+                p(
+                    "bend",
+                    "Bend",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 0),
+                ),
+                p(
+                    "horizontalDistortion",
+                    "Horizontal Distortion",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 0),
+                ),
+                p(
+                    "verticalDistortion",
+                    "Vertical Distortion",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 0),
+                ),
             ],
             warp,
         ),
@@ -1025,10 +1496,20 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.upscale",
             "Detail-preserving Upscale",
             vec![
-                p("scale", "Scale", num(100.0), slider(100.0, 1000.0, 100.0, 400.0, 1)),
+                p(
+                    "scale",
+                    "Scale",
+                    num(100.0),
+                    slider(100.0, 1000.0, 100.0, 400.0, 1),
+                ),
                 p("reduceNoise", "Reduce Noise", num(0.0), pct()),
                 p("detail", "Detail", num(20.0), pct()),
-                p("alpha", "Alpha", Value::Enum(1), popup(&["Bilinear", "Bicubic"])),
+                p(
+                    "alpha",
+                    "Alpha",
+                    Value::Enum(1),
+                    popup(&["Bilinear", "Bicubic"]),
+                ),
             ],
             upscale,
         ),
@@ -1041,35 +1522,77 @@ mod tests {
     use crate::{EffectEnv, MaskShape, Params};
 
     fn img(w: u32, h: u32) -> Image {
-        crate::util::gen_image(w, h, |x, y| [x as f32 / w as f32, y as f32 / h as f32, ((x * 7 + y * 3) % 11) as f32 / 11.0, 1.0])
+        crate::util::gen_image(w, h, |x, y| {
+            [
+                x as f32 / w as f32,
+                y as f32 / h as f32,
+                ((x * 7 + y * 3) % 11) as f32 / 11.0,
+                1.0,
+            ]
+        })
     }
 
     /// Run with Point defaults scaled to the layer (like `instantiate`).
     fn run(id: &str, set: &[(&str, Value)], im: Image, masks: &[MaskShape]) -> Buf {
         let s = crate::find(id).unwrap();
         let ls = [im.width as f64, im.height as f64];
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for ps in &s.params {
             if let (ParamUi::Point, Value::Vec2(v)) = (&ps.ui, &ps.default) {
-                params.values.insert(ps.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
+                params
+                    .values
+                    .insert(ps.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
             }
         }
         for (k, v) in set {
             assert!(params.values.contains_key(*k), "{id}: {k}");
             params.values.insert(k.to_string(), v.clone());
         }
-        let env = EffectEnv { masks, ..Default::default() };
-        let ctx = EffectCtx { params: &params, time: 0.5, layer_size: ls, seed: 1, adjustment: false, env };
-        crate::apply(s, &ctx, Buf { img: im, offset: [0.0, 0.0], scale: 1.0 })
+        let env = EffectEnv {
+            masks,
+            ..Default::default()
+        };
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.5,
+            layer_size: ls,
+            seed: 1,
+            adjustment: false,
+            env,
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img: im,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn maxd(a: &Image, b: &Image) -> f32 {
         assert_eq!((a.width, a.height), (b.width, b.height));
-        a.data.iter().zip(&b.data).map(|(p, q)| (0..4).map(|i| (p[i] - q[i]).abs()).fold(0.0, f32::max)).fold(0.0, f32::max)
+        a.data
+            .iter()
+            .zip(&b.data)
+            .map(|(p, q)| (0..4).map(|i| (p[i] - q[i]).abs()).fold(0.0, f32::max))
+            .fold(0.0, f32::max)
     }
 
     fn rect_mask(x0: f64, y0: f64, x1: f64, y1: f64) -> MaskShape {
-        MaskShape { name: "m".into(), points: vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]], closed: true, inverted: false }
+        MaskShape {
+            name: "m".into(),
+            points: vec![[x0, y0], [x1, y0], [x1, y1], [x0, y1]],
+            closed: true,
+            inverted: false,
+        }
     }
 
     #[test]
@@ -1082,7 +1605,10 @@ mod tests {
             ("ec.distort.ccslant", vec![]),
             ("ec.distort.ccsmear", vec![("reach", num(0.0))]),
             ("ec.distort.ccsplit", vec![("split", num(0.0))]),
-            ("ec.distort.ccsplit2", vec![("split1", num(0.0)), ("split2", num(0.0))]),
+            (
+                "ec.distort.ccsplit2",
+                vec![("split1", num(0.0)), ("split2", num(0.0))],
+            ),
             ("ec.distort.smear", vec![]),
             ("ec.distort.reshape", vec![]),
             ("ec.distort.twirllegacy", vec![]),
@@ -1095,35 +1621,76 @@ mod tests {
             assert_eq!(o.offset, [0.0, 0.0], "{id}");
         }
         // Power pin with perspective 0 at default corners is also identity.
-        let o = run("ec.distort.ccpowerpin", &[("perspective", num(0.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.ccpowerpin",
+            &[("perspective", num(0.0))],
+            im.clone(),
+            &[],
+        );
         assert!(maxd(&o.img, &im) < 1e-4);
     }
 
     #[test]
     fn all_deterministic() {
         let im = img(36, 28);
-        let masks = [rect_mask(8.0, 8.0, 16.0, 16.0), rect_mask(12.0, 10.0, 22.0, 20.0), rect_mask(2.0, 2.0, 34.0, 26.0)];
+        let masks = [
+            rect_mask(8.0, 8.0, 16.0, 16.0),
+            rect_mask(12.0, 10.0, 22.0, 20.0),
+            rect_mask(2.0, 2.0, 34.0, 26.0),
+        ];
         let cases: &[(&str, Vec<(&str, Value)>)] = &[
-            ("ec.distort.ccbender", vec![("amount", num(40.0)), ("style", Value::Enum(3))]),
+            (
+                "ec.distort.ccbender",
+                vec![("amount", num(40.0)), ("style", Value::Enum(3))],
+            ),
             ("ec.distort.ccblobbylize", vec![]),
-            ("ec.distort.ccpowerpin", vec![("topLeft", pt(5.0, 3.0)), ("perspective", num(40.0))]),
+            (
+                "ec.distort.ccpowerpin",
+                vec![("topLeft", pt(5.0, 3.0)), ("perspective", num(40.0))],
+            ),
             ("ec.distort.ccripplepulse", vec![("pulseLevel", num(80.0))]),
-            ("ec.distort.ccslant", vec![("slant", num(30.0)), ("stretching", Value::Bool(true))]),
+            (
+                "ec.distort.ccslant",
+                vec![("slant", num(30.0)), ("stretching", Value::Bool(true))],
+            ),
             ("ec.distort.ccsmear", vec![]),
             ("ec.distort.ccsplit", vec![]),
             ("ec.distort.ccsplit2", vec![("split2", num(10.0))]),
-            ("ec.distort.smear", vec![("sourceMask", Value::Enum(1)), ("boundaryMask", Value::Enum(3)), ("maskOffset", pt(4.0, 2.0))]),
-            ("ec.distort.reshape", vec![("sourceMask", Value::Enum(1)), ("destinationMask", Value::Enum(2)), ("boundaryMask", Value::Enum(3))]),
+            (
+                "ec.distort.smear",
+                vec![
+                    ("sourceMask", Value::Enum(1)),
+                    ("boundaryMask", Value::Enum(3)),
+                    ("maskOffset", pt(4.0, 2.0)),
+                ],
+            ),
+            (
+                "ec.distort.reshape",
+                vec![
+                    ("sourceMask", Value::Enum(1)),
+                    ("destinationMask", Value::Enum(2)),
+                    ("boundaryMask", Value::Enum(3)),
+                ],
+            ),
             ("ec.distort.twirllegacy", vec![("angle", num(90.0))]),
-            ("ec.distort.warp", vec![("bend", num(50.0)), ("horizontalDistortion", num(20.0))]),
+            (
+                "ec.distort.warp",
+                vec![("bend", num(50.0)), ("horizontalDistortion", num(20.0))],
+            ),
             ("ec.distort.upscale", vec![("scale", num(200.0))]),
         ];
         for (id, set) in cases {
             let a = run(id, set, im.clone(), &masks);
             let b = run(id, set, im.clone(), &masks);
             assert_eq!(a.img, b.img, "{id}");
-            assert!(a.img.data.iter().all(|p| p.iter().all(|v| v.is_finite())), "{id}");
-            assert!(a.img.width != im.width || a.img.height != im.height || maxd(&a.img, &im) > 1e-3, "{id} did nothing");
+            assert!(
+                a.img.data.iter().all(|p| p.iter().all(|v| v.is_finite())),
+                "{id}"
+            );
+            assert!(
+                a.img.width != im.width || a.img.height != im.height || maxd(&a.img, &im) > 1e-3,
+                "{id} did nothing"
+            );
         }
     }
 
@@ -1131,15 +1698,36 @@ mod tests {
     /// (200 × 100) layer bounds, after `id` with `set`.
     fn on_text(id: &str, set: &[(&str, Value)]) -> Buf {
         let s = crate::find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in set {
             assert!(params.values.contains_key(*k), "{id}: {k}");
             params.values.insert(k.to_string(), v.clone());
         }
         let mut im = Image::new(20, 10);
         im.data.iter_mut().for_each(|p| *p = [1.0; 4]);
-        let ctx = EffectCtx { params: &params, time: 0.0, layer_size: [200.0, 100.0], seed: 1, adjustment: false, env: Default::default() };
-        crate::apply(s, &ctx, Buf { img: im, offset: [-90.0, -45.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [200.0, 100.0],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img: im,
+                offset: [-90.0, -45.0],
+                scale: 1.0,
+            },
+        )
     }
 
     /// Alpha at layer point `p` (0 outside the buffer).
@@ -1152,12 +1740,29 @@ mod tests {
     /// (comp-sized, as in After Effects), not cut off where the glyphs end.
     #[test]
     fn effects_on_text_reach_past_its_box() {
-        let smear = on_text("ec.distort.ccsmear", &[("from", pt(100.0, 50.0)), ("to", pt(140.0, 50.0)), ("reach", num(100.0)), ("radius", num(30.0))]);
-        assert!(alpha_at(&smear, [130.0, 50.0]) > 0.9, "the smear is cut off at the text's box");
+        let smear = on_text(
+            "ec.distort.ccsmear",
+            &[
+                ("from", pt(100.0, 50.0)),
+                ("to", pt(140.0, 50.0)),
+                ("reach", num(100.0)),
+                ("radius", num(30.0)),
+            ],
+        );
+        assert!(
+            alpha_at(&smear, [130.0, 50.0]) > 0.9,
+            "the smear is cut off at the text's box"
+        );
         assert!(smear.img.width < 200, "it grows only as far as pixels move");
-        let tiles = on_text("ec.distort.cctiler", &[("scale", num(50.0)), ("center", pt(100.0, 50.0))]);
+        let tiles = on_text(
+            "ec.distort.cctiler",
+            &[("scale", num(50.0)), ("center", pt(100.0, 50.0))],
+        );
         assert!(alpha_at(&tiles, [100.0, 50.0]) > 0.9);
-        assert!(alpha_at(&tiles, [2.0, 50.0]) > 0.9, "tiles fill the layer bounds");
+        assert!(
+            alpha_at(&tiles, [2.0, 50.0]) > 0.9,
+            "tiles fill the layer bounds"
+        );
         assert!(alpha_at(&tiles, [50.0, 50.0]) < 0.1);
         // A footage layer's buffer is its bounds already: no change.
         let o = run("ec.distort.ccsmear", &[], img(40, 30), &[]);
@@ -1169,16 +1774,33 @@ mod tests {
         let im = img(40, 30);
         for s in 0..WARP_STYLES.len() as u32 {
             for axis in 0..2 {
-                let o = run("ec.distort.warp", &[("warpStyle", Value::Enum(s)), ("warpAxis", Value::Enum(axis)), ("bend", num(50.0))], im.clone(), &[]);
+                let o = run(
+                    "ec.distort.warp",
+                    &[
+                        ("warpStyle", Value::Enum(s)),
+                        ("warpAxis", Value::Enum(axis)),
+                        ("bend", num(50.0)),
+                    ],
+                    im.clone(),
+                    &[],
+                );
                 let pad = o.offset[0] as u32;
                 // The layer centre's neighbourhood is still made of source pixels.
-                assert!(o.img.get(pad as i64 + 20, pad as i64 + 15)[3] > 0.5, "style {s}");
+                assert!(
+                    o.img.get(pad as i64 + 20, pad as i64 + 15)[3] > 0.5,
+                    "style {s}"
+                );
                 assert!(o.img.width > im.width);
             }
         }
         // Arc with positive bend raises the middle of the layer: the top edge in the middle
         // moves up (opaque pixels above the original top).
-        let o = run("ec.distort.warp", &[("warpStyle", Value::Enum(3)), ("bend", num(50.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.warp",
+            &[("warpStyle", Value::Enum(3)), ("bend", num(50.0))],
+            im.clone(),
+            &[],
+        );
         let pad = o.offset[1] as i64;
         assert!(o.img.get(o.offset[0] as i64 + 20, pad - 3)[3] > 0.5);
         assert!(o.img.get(o.offset[0] as i64 + 1, pad - 3)[3] < 0.5);
@@ -1198,7 +1820,12 @@ mod tests {
     #[test]
     fn power_pin_unstretch_expands_pinned_region() {
         let im = crate::util::gen_image(24, 16, |_, _| [1.0, 0.0, 0.0, 1.0]);
-        let inset = [("topLeft", pt(6.0, 4.0)), ("topRight", pt(18.0, 4.0)), ("bottomRight", pt(18.0, 12.0)), ("bottomLeft", pt(6.0, 12.0))];
+        let inset = [
+            ("topLeft", pt(6.0, 4.0)),
+            ("topRight", pt(18.0, 4.0)),
+            ("bottomRight", pt(18.0, 12.0)),
+            ("bottomLeft", pt(6.0, 12.0)),
+        ];
         let opaque = |o: &Buf| o.img.data.iter().filter(|p| p[3] > 0.99).count();
         let off = run("ec.distort.ccpowerpin", &inset, im.clone(), &[]);
         assert_eq!(opaque(&off), 96);
@@ -1208,14 +1835,24 @@ mod tests {
         assert_eq!(opaque(&on), 24 * 16);
         assert!(on.img.get(0, 0)[3] > 0.99);
         // Default corners are the identity either way.
-        let id = run("ec.distort.ccpowerpin", &[("unstretch", Value::Bool(true))], im.clone(), &[]);
+        let id = run(
+            "ec.distort.ccpowerpin",
+            &[("unstretch", Value::Bool(true))],
+            im.clone(),
+            &[],
+        );
         assert!(maxd(&id.img, &im) < 1e-4);
     }
 
     #[test]
     fn split_opens_a_gap() {
         let im = img(40, 30);
-        let o = run("ec.distort.ccsplit", &[("split", num(40.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.ccsplit",
+            &[("split", num(40.0))],
+            im.clone(),
+            &[],
+        );
         assert_eq!(o.img.get(20, 15)[3], 0.0);
         assert_eq!(o.img.get(2, 2), im.get(2, 2));
     }
@@ -1223,7 +1860,12 @@ mod tests {
     #[test]
     fn slant_shears_from_floor() {
         let im = img(20, 20);
-        let o = run("ec.distort.ccslant", &[("slant", num(50.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.ccslant",
+            &[("slant", num(50.0))],
+            im.clone(),
+            &[],
+        );
         let pad = o.offset[0] as i64;
         // Bottom row stays put; the top row shifts right by ~10 px.
         assert!((o.img.get(pad + 5, pad + 19)[0] - im.get(5, 19)[0]).abs() < 0.05);
@@ -1233,9 +1875,28 @@ mod tests {
     #[test]
     fn reshape_moves_source_to_destination() {
         // A bright square at the source mask; reshape to a shifted destination mask.
-        let im = crate::util::gen_image(40, 40, |x, y| if (10..20).contains(&x) && (10..20).contains(&y) { [1.0; 4] } else { [0.0, 0.0, 0.0, 1.0] });
-        let masks = [rect_mask(10.0, 10.0, 20.0, 20.0), rect_mask(16.0, 10.0, 26.0, 20.0), rect_mask(0.0, 0.0, 40.0, 40.0)];
-        let o = run("ec.distort.reshape", &[("sourceMask", Value::Enum(1)), ("destinationMask", Value::Enum(2)), ("boundaryMask", Value::Enum(3))], im, &masks);
+        let im = crate::util::gen_image(40, 40, |x, y| {
+            if (10..20).contains(&x) && (10..20).contains(&y) {
+                [1.0; 4]
+            } else {
+                [0.0, 0.0, 0.0, 1.0]
+            }
+        });
+        let masks = [
+            rect_mask(10.0, 10.0, 20.0, 20.0),
+            rect_mask(16.0, 10.0, 26.0, 20.0),
+            rect_mask(0.0, 0.0, 40.0, 40.0),
+        ];
+        let o = run(
+            "ec.distort.reshape",
+            &[
+                ("sourceMask", Value::Enum(1)),
+                ("destinationMask", Value::Enum(2)),
+                ("boundaryMask", Value::Enum(3)),
+            ],
+            im,
+            &masks,
+        );
         assert!(o.img.get(24, 15)[0] > 0.8, "{:?}", o.img.get(24, 15));
         assert!(o.img.get(11, 15)[0] < 0.3, "{:?}", o.img.get(11, 15));
     }
@@ -1244,11 +1905,37 @@ mod tests {
     fn reshape_correspondence_points_steer_the_match() {
         // Matching outlines with a zero pair change nothing; a quarter-turn offset twists.
         let im = img(40, 40);
-        let masks = [rect_mask(10.0, 10.0, 30.0, 30.0), rect_mask(10.0, 10.0, 30.0, 30.0), rect_mask(0.0, 0.0, 40.0, 40.0)];
-        let base = [("sourceMask", Value::Enum(1)), ("destinationMask", Value::Enum(2)), ("boundaryMask", Value::Enum(3))];
-        let same = run("ec.distort.reshape", &[base.as_slice(), &[("correspondencePoints", Value::Str("0,0".into()))]].concat(), im.clone(), &masks);
+        let masks = [
+            rect_mask(10.0, 10.0, 30.0, 30.0),
+            rect_mask(10.0, 10.0, 30.0, 30.0),
+            rect_mask(0.0, 0.0, 40.0, 40.0),
+        ];
+        let base = [
+            ("sourceMask", Value::Enum(1)),
+            ("destinationMask", Value::Enum(2)),
+            ("boundaryMask", Value::Enum(3)),
+        ];
+        let same = run(
+            "ec.distort.reshape",
+            &[
+                base.as_slice(),
+                &[("correspondencePoints", Value::Str("0,0".into()))],
+            ]
+            .concat(),
+            im.clone(),
+            &masks,
+        );
         assert!(maxd(&same.img, &im) < 1e-3, "matching outlines: no change");
-        let twisted = run("ec.distort.reshape", &[base.as_slice(), &[("correspondencePoints", Value::Str("0.25,0".into()))]].concat(), im.clone(), &masks);
+        let twisted = run(
+            "ec.distort.reshape",
+            &[
+                base.as_slice(),
+                &[("correspondencePoints", Value::Str("0.25,0".into()))],
+            ]
+            .concat(),
+            im.clone(),
+            &masks,
+        );
         assert!(maxd(&twisted.img, &im) > 0.1);
         // Fraction mapping.
         assert!((map_fraction(&[(0.0, 0.0), (0.5, 0.25)], 0.125, true) - 0.25).abs() < 1e-9);
@@ -1259,7 +1946,12 @@ mod tests {
     #[test]
     fn upscale_grows_about_centre() {
         let im = img(20, 10);
-        let o = run("ec.distort.upscale", &[("scale", num(200.0)), ("detail", num(0.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.upscale",
+            &[("scale", num(200.0)), ("detail", num(0.0))],
+            im.clone(),
+            &[],
+        );
         assert_eq!((o.img.width, o.img.height), (40, 20));
         // Grown about the layer centre: layer point (0,0) now sits at buffer pixel (10,5), so the
         // centre (10,5) lands in the middle of the 40×20 buffer.
@@ -1271,7 +1963,12 @@ mod tests {
     #[test]
     fn twirl_legacy_rotates_inside_radius() {
         let im = img(40, 40);
-        let o = run("ec.distort.twirllegacy", &[("angle", num(180.0)), ("radius", num(100.0))], im.clone(), &[]);
+        let o = run(
+            "ec.distort.twirllegacy",
+            &[("angle", num(180.0)), ("radius", num(100.0))],
+            im.clone(),
+            &[],
+        );
         assert!(maxd(&o.img, &im) > 0.1);
         // Corners lie outside the radius.
         assert_eq!(o.img.get(0, 0), im.get(0, 0));
@@ -1281,13 +1978,42 @@ mod tests {
     fn half_resolution_matches_scaled_geometry() {
         // Bender at scale 0.5: the buffer is half size, parameters in layer pixels.
         let s = crate::find("ec.distort.ccbender").unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         params.values.insert("amount".into(), num(30.0));
         params.values.insert("top".into(), pt(20.0, 0.0));
         params.values.insert("base".into(), pt(20.0, 40.0));
-        let ctx = EffectCtx { params: &params, time: 0.0, layer_size: [40.0, 40.0], seed: 1, adjustment: false, env: Default::default() };
-        let full = crate::apply(s, &ctx, Buf { img: img(40, 40), offset: [0.0; 2], scale: 1.0 });
-        let half = crate::apply(s, &ctx, Buf { img: effectcraft_raster::resample(&img(40, 40), 20, 20), offset: [0.0; 2], scale: 0.5 });
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.0,
+            layer_size: [40.0, 40.0],
+            seed: 1,
+            adjustment: false,
+            env: Default::default(),
+        };
+        let full = crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img: img(40, 40),
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+        );
+        let half = crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img: effectcraft_raster::resample(&img(40, 40), 20, 20),
+                offset: [0.0; 2],
+                scale: 0.5,
+            },
+        );
         let a = full.img.sample_bilinear(20.0, 4.0)[3];
         let b = half.img.sample_bilinear(10.0, 2.0)[3];
         assert!((a - b).abs() < 0.3);

@@ -144,12 +144,20 @@ fn rational(n: f64, d: f64) -> String {
         return "—".into();
     }
     let v = n / d;
-    if (v - v.round()).abs() < 1e-9 { format!("{}", v.round()) } else { format!("{:.4}", v).trim_end_matches('0').to_string() }
+    if (v - v.round()).abs() < 1e-9 {
+        format!("{}", v.round())
+    } else {
+        format!("{:.4}", v).trim_end_matches('0').to_string()
+    }
 }
 
 fn list<T: ToString>(v: &[T]) -> String {
     let shown: Vec<String> = v.iter().take(16).map(|x| x.to_string()).collect();
-    if v.len() > 16 { format!("{} … ({} values)", shown.join(", "), v.len()) } else { shown.join(", ") }
+    if v.len() > 16 {
+        format!("{} … ({} values)", shown.join(", "), v.len())
+    } else {
+        shown.join(", ")
+    }
 }
 
 /// Spelled-out enumerations for the commonest tags.
@@ -220,7 +228,11 @@ fn enumerated(group: &str, tag: u16, v: i64) -> Option<&'static str> {
 }
 
 fn value_text(group: &str, tag: u16, v: &Value) -> String {
-    let single = |x: i64| enumerated(group, tag, x).map(str::to_string).unwrap_or_else(|| x.to_string());
+    let single = |x: i64| {
+        enumerated(group, tag, x)
+            .map(str::to_string)
+            .unwrap_or_else(|| x.to_string())
+    };
     match v {
         Value::Ascii(s) => s.trim().to_string(),
         Value::Short(a) if a.len() == 1 => single(a[0] as i64),
@@ -237,17 +249,38 @@ fn value_text(group: &str, tag: u16, v: &Value) -> String {
             // exposure time as a fraction of a second
             let (n, d) = a[0];
             let s = n as f64 / d as f64;
-            if s >= 1.0 || n == 0 { format!("{} s", rational(n as f64, d as f64)) } else { format!("1/{} s", (1.0 / s).round()) }
+            if s >= 1.0 || n == 0 {
+                format!("{} s", rational(n as f64, d as f64))
+            } else {
+                format!("1/{} s", (1.0 / s).round())
+            }
         }
-        Value::Rational(a) if tag == 0x829d && group != "GPS" && a.len() == 1 => format!("f/{}", rational(a[0].0 as f64, a[0].1 as f64)),
-        Value::Rational(a) if tag == 0x920a && group != "GPS" && a.len() == 1 => format!("{} mm", rational(a[0].0 as f64, a[0].1 as f64)),
-        Value::Rational(a) => a.iter().map(|(n, d)| rational(*n as f64, *d as f64)).collect::<Vec<_>>().join(", "),
-        Value::SRational(a) => a.iter().map(|(n, d)| rational(*n as f64, *d as f64)).collect::<Vec<_>>().join(", "),
+        Value::Rational(a) if tag == 0x829d && group != "GPS" && a.len() == 1 => {
+            format!("f/{}", rational(a[0].0 as f64, a[0].1 as f64))
+        }
+        Value::Rational(a) if tag == 0x920a && group != "GPS" && a.len() == 1 => {
+            format!("{} mm", rational(a[0].0 as f64, a[0].1 as f64))
+        }
+        Value::Rational(a) => a
+            .iter()
+            .map(|(n, d)| rational(*n as f64, *d as f64))
+            .collect::<Vec<_>>()
+            .join(", "),
+        Value::SRational(a) => a
+            .iter()
+            .map(|(n, d)| rational(*n as f64, *d as f64))
+            .collect::<Vec<_>>()
+            .join(", "),
         Value::Byte(b) | Value::Undefined(b) => {
             // version tags and short printable values read as text
-            let printable = b.len() <= 64 && b.iter().all(|c| c.is_ascii_graphic() || *c == b' ' || *c == 0);
+            let printable = b.len() <= 64
+                && b.iter()
+                    .all(|c| c.is_ascii_graphic() || *c == b' ' || *c == 0);
             if printable && !b.is_empty() {
-                String::from_utf8_lossy(b).trim_end_matches('\0').trim().to_string()
+                String::from_utf8_lossy(b)
+                    .trim_end_matches('\0')
+                    .trim()
+                    .to_string()
             } else if b.len() <= 8 {
                 list(b)
             } else {
@@ -263,19 +296,40 @@ fn value_text(group: &str, tag: u16, v: &Value) -> String {
 fn rows_of(group: &'static str, ifd: &Ifd, out: &mut Vec<TagRow>) {
     for e in &ifd.entries {
         // pointers to other IFDs and image data are structure, not metadata
-        if matches!(e.tag, 0x8769 | 0x8825 | 0xa005 | 0x014a | 0x0111 | 0x0117 | 0x0144 | 0x0145 | 0x0201 | 0x0202 | 0x02bc | 0x83bb | 0x8773)
-            && group != "GPS"
+        if matches!(
+            e.tag,
+            0x8769
+                | 0x8825
+                | 0xa005
+                | 0x014a
+                | 0x0111
+                | 0x0117
+                | 0x0144
+                | 0x0145
+                | 0x0201
+                | 0x0202
+                | 0x02bc
+                | 0x83bb
+                | 0x8773
+        ) && group != "GPS"
         {
             continue;
         }
-        out.push(TagRow { group, tag: e.tag, name: name(group, e.tag), value: value_text(group, e.tag, &e.value) });
+        out.push(TagRow {
+            group,
+            tag: e.tag,
+            name: name(group, e.tag),
+            value: value_text(group, e.tag, &e.value),
+        });
     }
 }
 
 /// The IFD holding a raw file's sensor data when it is not IFD0 (a colour-filter-array or linear-raw
 /// image in a sub-IFD). IFD0 of such files describes a thumbnail, so its Compression is not the raw's.
 fn raw_image_ifd(ifd0: &Ifd) -> Option<&Ifd> {
-    ifd0.sub_ifds.iter().find(|s| matches!(s.u32(0x0106), Some(32803 | 34892)))
+    ifd0.sub_ifds
+        .iter()
+        .find(|s| matches!(s.u32(0x0106), Some(32803 | 34892)))
 }
 
 /// Nikon maker note `NEFCompression` (0x0093) spelled out, per the public Nikon tag documentation.
@@ -305,7 +359,13 @@ fn nikon_nef_compression(tiff: &Tiff, bytes: &[u8]) -> Option<&'static str> {
         return None;
     }
     let e = ifd0.exif.as_ref()?.get(0x927c)?;
-    let mn = lightcraft_tiff::makernote::parse_makernote(bytes, e.offset, e.count() as u64, tiff.order, &make)?;
+    let mn = lightcraft_tiff::makernote::parse_makernote(
+        bytes,
+        e.offset,
+        e.count() as u64,
+        tiff.order,
+        &make,
+    )?;
     nef_compression(mn.ifd.u32(0x0093)?)
 }
 
@@ -320,7 +380,11 @@ pub fn tag_rows(tiff: &Tiff) -> Vec<TagRow> {
             && let Some(row) = out.iter_mut().find(|r| r.tag == 0x0103)
         {
             // lossless JPEG (DNG, CR2) on the sensor image; plain "JPEG" would read as lossy
-            row.value = if c.get_u64(0) == Some(7) { "Lossless JPEG".to_string() } else { value_text("TIFF", 0x0103, c) };
+            row.value = if c.get_u64(0) == Some(7) {
+                "Lossless JPEG".to_string()
+            } else {
+                value_text("TIFF", 0x0103, c)
+            };
         }
         if let Some(e) = &ifd0.exif {
             rows_of("EXIF", e, &mut out);
@@ -343,14 +407,20 @@ pub fn file_tag_rows(bytes: &[u8]) -> Vec<TagRow> {
     {
         let mut rows = tag_rows(&t);
         if let Some(words) = nikon_nef_compression(&t, bytes)
-            && let Some(row) = rows.iter_mut().find(|r| r.group == "TIFF" && r.tag == 0x0103)
+            && let Some(row) = rows
+                .iter_mut()
+                .find(|r| r.group == "TIFF" && r.tag == 0x0103)
         {
             row.value = words.to_string();
         }
         return rows;
     }
-    let Some(exif) = crate::embedded(bytes).exif else { return Vec::new() };
-    Tiff::parse(crate::strip_exif_header(&exif)).map(|t| tag_rows(&t)).unwrap_or_default()
+    let Some(exif) = crate::embedded(bytes).exif else {
+        return Vec::new();
+    };
+    Tiff::parse(crate::strip_exif_header(&exif))
+        .map(|t| tag_rows(&t))
+        .unwrap_or_default()
 }
 
 #[cfg(test)]
@@ -366,7 +436,11 @@ mod tests {
             f_number: Some(2.8),
             iso: Some(400),
             focal_length: Some(35.0),
-            gps: Some(crate::Gps { latitude: 51.5, longitude: -0.12, altitude: Some(20.0) }),
+            gps: Some(crate::Gps {
+                latitude: 51.5,
+                longitude: -0.12,
+                altitude: Some(20.0),
+            }),
             ..Default::default()
         };
         let exif = crate::write_exif(&m);
@@ -378,8 +452,15 @@ mod tests {
         assert_eq!(get("F-Number").as_deref(), Some("f/2.8"));
         assert_eq!(get("Focal Length").as_deref(), Some("35 mm"));
         assert_eq!(get("ISO Speed").as_deref(), Some("400"));
-        assert!(rows.iter().any(|r| r.group == "GPS" && r.name == "GPS Latitude"), "{rows:?}");
-        assert!(!rows.iter().any(|r| r.tag == 0x8769), "IFD pointers are left out");
+        assert!(
+            rows.iter()
+                .any(|r| r.group == "GPS" && r.name == "GPS Latitude"),
+            "{rows:?}"
+        );
+        assert!(
+            !rows.iter().any(|r| r.tag == 0x8769),
+            "IFD pointers are left out"
+        );
     }
 
     fn entry(tag: u16, ty: u16, count: u32, val: u32) -> Vec<u8> {
@@ -419,14 +500,22 @@ mod tests {
             entry(0x8769, 4, 1, exif_at as u32),
         ]));
         b.extend(sub);
-        b.extend(ifd(&[entry(0x927c, 7, note.len() as u32, if nef.is_some() { note_at as u32 } else { 0 })]));
+        b.extend(ifd(&[entry(
+            0x927c,
+            7,
+            note.len() as u32,
+            if nef.is_some() { note_at as u32 } else { 0 },
+        )]));
         b.extend(make);
         b.extend(note);
         b
     }
 
     fn compression(rows: &[TagRow]) -> Vec<&str> {
-        rows.iter().filter(|r| r.group == "TIFF" && r.tag == 0x0103).map(|r| r.value.as_str()).collect()
+        rows.iter()
+            .filter(|r| r.group == "TIFF" && r.tag == 0x0103)
+            .map(|r| r.value.as_str())
+            .collect()
     }
 
     #[test]
@@ -437,7 +526,12 @@ mod tests {
 
     #[test]
     fn nef_compression_is_spelled_out_from_the_maker_note() {
-        for (v, words) in [(3, "Lossless"), (10, "Packed 14 bits"), (2, "Uncompressed"), (14, "High Efficiency*")] {
+        for (v, words) in [
+            (3, "Lossless"),
+            (10, "Packed 14 bits"),
+            (2, "Uncompressed"),
+            (14, "High Efficiency*"),
+        ] {
             let b = synthetic_raw(Some(v));
             assert_eq!(compression(&file_tag_rows(&b)), [words]);
         }
@@ -447,7 +541,10 @@ mod tests {
     fn dng_raw_sub_ifd_jpeg_is_lossless_but_a_plain_jpeg_tiff_is_not() {
         let b = synthetic_raw(None);
         // switch the sensor sub-IFD's Compression from 34713 to 7
-        let pos = b.windows(12).position(|w| w == entry(0x0103, 3, 1, 34713).as_slice()).unwrap();
+        let pos = b
+            .windows(12)
+            .position(|w| w == entry(0x0103, 3, 1, 34713).as_slice())
+            .unwrap();
         let mut dng = b.clone();
         dng[pos + 8] = 7;
         dng[pos + 9] = 0;

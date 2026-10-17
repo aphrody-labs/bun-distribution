@@ -76,18 +76,27 @@ impl Session {
 
     /// The first free "PDF Preset N": the name a new preset gets.
     pub fn new_pdf_preset_name(&self) -> String {
-        (1..).map(|i| format!("PDF Preset {i}")).find(|n| !self.pdf_preset_taken(n, None)).unwrap_or_default()
+        (1..)
+            .map(|i| format!("PDF Preset {i}"))
+            .find(|n| !self.pdf_preset_taken(n, None))
+            .unwrap_or_default()
     }
 
     /// The index of the saved PDF preset `name` (any case).
     fn pdf_saved_index(&self, name: &str) -> Option<usize> {
-        self.prefs.pdf_presets.iter().position(|q| q.name.eq_ignore_ascii_case(name.trim()))
+        self.prefs
+            .pdf_presets
+            .iter()
+            .position(|q| q.name.eq_ignore_ascii_case(name.trim()))
     }
 
     /// Whether `name` is taken by a built-in PDF preset or a saved one other than the one at
     /// `except`.
     fn pdf_preset_taken(&self, name: &str, except: Option<usize>) -> bool {
-        builtin_preset(name).is_some() || self.pdf_saved_index(name).is_some_and(|i| Some(i) != except)
+        builtin_preset(name).is_some()
+            || self
+                .pdf_saved_index(name)
+                .is_some_and(|i| Some(i) != except)
     }
 }
 
@@ -96,7 +105,10 @@ fn row(p: PdfPreset, built_in: bool) -> Value {
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
-    let rows = builtin_presets().into_iter().map(|p| row(p, true)).chain(s.prefs.pdf_presets.iter().cloned().map(|p| row(p, false)));
+    let rows = builtin_presets()
+        .into_iter()
+        .map(|p| row(p, true))
+        .chain(s.prefs.pdf_presets.iter().cloned().map(|p| row(p, false)));
     Ok(json!({ "presets": rows.collect::<Vec<_>>() }))
 }
 
@@ -108,7 +120,10 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.new_pdf_preset_name(),
     };
     if builtin_preset(&name).is_some() {
-        return Err(bad(C, format!("`{name}` is a built-in preset and is read-only: save it under another name")));
+        return Err(bad(
+            C,
+            format!("`{name}` is a built-in preset and is read-only: save it under another name"),
+        ));
     }
     let at = s.pdf_saved_index(&name);
     let saved = at.and_then(|i| s.prefs.pdf_presets.get(i)).cloned();
@@ -121,12 +136,21 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
     settings.clear_passwords();
     let name = match str_param(p, "newName").map(str::trim) {
         Some("") => return Err(bad(C, "`newName` is empty")),
-        Some(n) if s.pdf_preset_taken(n, at) => return Err(bad(C, format!("a preset named `{n}` exists"))),
+        Some(n) if s.pdf_preset_taken(n, at) => {
+            return Err(bad(C, format!("a preset named `{n}` exists")));
+        }
         Some(n) => n.to_string(),
         None => saved.as_ref().map_or(name, |old| old.name.clone()),
     };
-    let description = str_param(p, "description").map(str::to_string).or_else(|| saved.map(|old| old.description)).unwrap_or_default();
-    let preset = PdfPreset { name: name.clone(), description, settings: settings.clone() };
+    let description = str_param(p, "description")
+        .map(str::to_string)
+        .or_else(|| saved.map(|old| old.description))
+        .unwrap_or_default();
+    let preset = PdfPreset {
+        name: name.clone(),
+        description,
+        settings: settings.clone(),
+    };
     match at.and_then(|i| s.prefs.pdf_presets.get_mut(i)) {
         Some(slot) => *slot = preset,
         None => s.prefs.pdf_presets.push(preset),
@@ -140,7 +164,9 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     if builtin_preset(name).is_some() {
         return Err(bad(C, format!("`{name}` is a built-in preset and stays")));
     }
-    let i = s.pdf_saved_index(name).ok_or_else(|| bad(C, format!("no saved PDF preset named `{name}`")))?;
+    let i = s
+        .pdf_saved_index(name)
+        .ok_or_else(|| bad(C, format!("no saved PDF preset named `{name}`")))?;
     Ok(json!({ "deleted": s.prefs.pdf_presets.remove(i).name }))
 }
 
@@ -150,17 +176,25 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         Some(names) => {
             let find = |n: &Value| {
                 let n = n.as_str().unwrap_or_default();
-                find_preset(n, &s.prefs.pdf_presets).ok_or_else(|| bad(C, format!("no PDF preset named `{n}`")))
+                find_preset(n, &s.prefs.pdf_presets)
+                    .ok_or_else(|| bad(C, format!("no PDF preset named `{n}`")))
             };
             names.iter().map(find).collect::<Result<Vec<_>>>()?
         }
         None => s.prefs.pdf_presets.clone(),
     };
     if presets.is_empty() {
-        return Err(bad(C, "no saved presets to export (name built-in ones in `names`)"));
+        return Err(bad(
+            C,
+            "no saved presets to export (name built-in ones in `names`)",
+        ));
     }
     let count = presets.len();
-    let text = serde_json::to_string_pretty(&PresetFile { format: PRESET_FORMAT.into(), presets }).map_err(|e| bad(C, e.to_string()))?;
+    let text = serde_json::to_string_pretty(&PresetFile {
+        format: PRESET_FORMAT.into(),
+        presets,
+    })
+    .map_err(|e| bad(C, e.to_string()))?;
     match str_param(p, "path") {
         Some(path) => {
             super::fileio::write_file(path, text.as_bytes())?;
@@ -172,25 +206,40 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "pdf.preset.import";
-    let bytes = match (str_param(p, "path"), str_param(p, "data"), str_param(p, "dataBase64")) {
+    let bytes = match (
+        str_param(p, "path"),
+        str_param(p, "data"),
+        str_param(p, "dataBase64"),
+    ) {
         (Some(path), ..) => super::fileio::read_file(path)?,
         (None, Some(text), _) => text.as_bytes().to_vec(),
-        (None, None, Some(b64)) => vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(C, "bad dataBase64"))?,
+        (None, None, Some(b64)) => {
+            vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(C, "bad dataBase64"))?
+        }
         _ => return Err(bad(C, "give `path`, `data` or `dataBase64`")),
     };
-    let file: PresetFile = serde_json::from_slice(&bytes).map_err(|e| bad(C, format!("not a PDF presets file: {e}")))?;
+    let file: PresetFile = serde_json::from_slice(&bytes)
+        .map_err(|e| bad(C, format!("not a PDF presets file: {e}")))?;
     if file.format != PRESET_FORMAT {
-        return Err(bad(C, format!("not a PDF presets file (format `{}`)", file.format)));
+        return Err(bad(
+            C,
+            format!("not a PDF presets file (format `{}`)", file.format),
+        ));
     }
     // Values a hand-edited file may carry are refused as the export options refuse them.
     for q in &file.presets {
-        q.settings.check_values().map_err(|e| bad(C, format!("`{}`: {e}", q.name)))?;
+        q.settings
+            .check_values()
+            .map_err(|e| bad(C, format!("`{}`: {e}", q.name)))?;
     }
     let replace = bool_or(p, "replace", false);
     let mut imported = vec![];
     for mut preset in file.presets {
         preset.settings.clear_passwords();
-        let base = Some(preset.name.trim()).filter(|n| !n.is_empty()).unwrap_or("PDF Preset").to_string();
+        let base = Some(preset.name.trim())
+            .filter(|n| !n.is_empty())
+            .unwrap_or("PDF Preset")
+            .to_string();
         match s.pdf_saved_index(&base).filter(|_| replace) {
             Some(i) => {
                 if let Some(slot) = s.prefs.pdf_presets.get_mut(i) {

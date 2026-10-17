@@ -4,7 +4,15 @@ use photocraft_codecs::web::{GifFrame, encode_gif_animated};
 use photocraft_io::{IoError, import_gif_frames};
 
 fn gif(colours: &[([u8; 3], u16)]) -> Vec<u8> {
-    let frames: Vec<GifFrame> = colours.iter().map(|&(c, delay_cs)| GifFrame { indices: vec![0; 6], palette: vec![c], transparent: None, delay_cs }).collect();
+    let frames: Vec<GifFrame> = colours
+        .iter()
+        .map(|&(c, delay_cs)| GifFrame {
+            indices: vec![0; 6],
+            palette: vec![c],
+            transparent: None,
+            delay_cs,
+        })
+        .collect();
     encode_gif_animated(3, 2, &frames, true).unwrap()
 }
 
@@ -13,7 +21,12 @@ fn frames_arrive_in_order_as_documents_with_their_delays() {
     let bytes = gif(&[([255, 0, 0], 3), ([0, 0, 255], 7)]);
     let mut seen = Vec::new();
     let n = import_gif_frames("a.gif", &bytes, &mut |doc, delay_ms| {
-        seen.push((doc.layers.len(), doc.bounds().width(), doc.bounds().height(), delay_ms));
+        seen.push((
+            doc.layers.len(),
+            doc.bounds().width(),
+            doc.bounds().height(),
+            delay_ms,
+        ));
         Ok(())
     })
     .unwrap();

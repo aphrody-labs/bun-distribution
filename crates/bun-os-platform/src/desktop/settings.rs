@@ -14,14 +14,24 @@ use super::launcher::{Provider, SearchItem};
 pub enum Control {
     Toggle,
     /// `(value, label key)` pairs.
-    Choice { options: Vec<(String, String)> },
-    Slider { min: f32, max: f32, step: f32 },
+    Choice {
+        options: Vec<(String, String)>,
+    },
+    Slider {
+        min: f32,
+        max: f32,
+        step: f32,
+    },
     /// Runs a platform command (rescan, install session).
-    Action { command: String },
+    Action {
+        command: String,
+    },
     /// Read-only value provided by the host.
     Info,
     /// Opens another page.
-    Page { page: String },
+    Page {
+        page: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -86,29 +96,68 @@ impl SettingsRegistry {
     /// Built-in pages of the console shell (setting ids are the `shell.db` keys).
     pub fn bun_os_defaults() -> Self {
         let mut registry = Self::default();
-        let action = |command: &str| Control::Action { command: command.into() };
+        let action = |command: &str| Control::Action {
+            command: command.into(),
+        };
         for p in [
-            page("console", "sports_esports", 0, vec![
-                item("haptics", "settings.haptics", Control::Toggle),
-                item("motion", "settings.motion", Control::Toggle),
-                item("hud", "settings.performance", Control::Toggle),
-                item("rescan", "settings.reload", action("library.rescan")),
-            ]),
-            page("appearance", "palette", 10, vec![
-                item("dynamic-color", "settings.dynamic-color", Control::Toggle),
-                item("theme", "settings.theme", Control::Page { page: "themes".into() }),
-                item("language", "settings.language", Control::Page { page: "language".into() }),
-            ]),
-            page("notifications", "notifications", 20, vec![item(
-                "do-not-disturb",
-                "action.do-not-disturb",
-                Control::Toggle,
-            )]),
-            page("media", "photo_library", 30, vec![item("gallery", "media.title", action("shell.gallery"))]),
-            page("system", "settings", 40, vec![
-                item("session", "settings.session", action("shell.session")),
-                item("desktop", "settings.desktop", action("shell.desktop")),
-            ]),
+            page(
+                "console",
+                "sports_esports",
+                0,
+                vec![
+                    item("haptics", "settings.haptics", Control::Toggle),
+                    item("motion", "settings.motion", Control::Toggle),
+                    item("hud", "settings.performance", Control::Toggle),
+                    item("rescan", "settings.reload", action("library.rescan")),
+                ],
+            ),
+            page(
+                "appearance",
+                "palette",
+                10,
+                vec![
+                    item("dynamic-color", "settings.dynamic-color", Control::Toggle),
+                    item(
+                        "theme",
+                        "settings.theme",
+                        Control::Page {
+                            page: "themes".into(),
+                        },
+                    ),
+                    item(
+                        "language",
+                        "settings.language",
+                        Control::Page {
+                            page: "language".into(),
+                        },
+                    ),
+                ],
+            ),
+            page(
+                "notifications",
+                "notifications",
+                20,
+                vec![item(
+                    "do-not-disturb",
+                    "action.do-not-disturb",
+                    Control::Toggle,
+                )],
+            ),
+            page(
+                "media",
+                "photo_library",
+                30,
+                vec![item("gallery", "media.title", action("shell.gallery"))],
+            ),
+            page(
+                "system",
+                "settings",
+                40,
+                vec![
+                    item("session", "settings.session", action("shell.session")),
+                    item("desktop", "settings.desktop", action("shell.desktop")),
+                ],
+            ),
         ] {
             registry.register(p);
         }

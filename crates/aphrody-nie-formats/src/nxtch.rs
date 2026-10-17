@@ -134,7 +134,10 @@ pub fn is_nxtch(data: &[u8]) -> bool {
 /// - [`FormatError::BadMagic`] si le magic 40 bits n'est pas NXTCH.
 pub fn parse_header(data: &[u8]) -> Result<NxtchHeader, FormatError> {
     if data.len() < NXTCH_HEADER_SIZE {
-        return Err(FormatError::TooShort { got: data.len(), need: NXTCH_HEADER_SIZE });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: NXTCH_HEADER_SIZE,
+        });
     }
     if !is_nxtch(data) {
         return Err(FormatError::BadMagic { format: "NXTCH" });
@@ -151,7 +154,14 @@ pub fn parse_header(data: &[u8]) -> Result<NxtchHeader, FormatError> {
     let mipmap_count = read_i32_le(data, 0x28)?;
     let texture_data_size2 = read_i32_le(data, 0x2C)?;
 
-    Ok(NxtchHeader { texture_data_size, width, height, format, mipmap_count, texture_data_size2 })
+    Ok(NxtchHeader {
+        texture_data_size,
+        width,
+        height,
+        format,
+        mipmap_count,
+        texture_data_size2,
+    })
 }
 
 /// Calcule la taille totale (tous mips) du buffer texture linéaire attendu.
@@ -179,7 +189,7 @@ pub fn calculate_texture_data_size(
             NxtchFormat::Bc1 | NxtchFormat::Bc4 => mw.div_ceil(4) * mh.div_ceil(4) * 8,
             NxtchFormat::Bc2 | NxtchFormat::Bc3 | NxtchFormat::Bc5 | NxtchFormat::Bc7 => {
                 mw.div_ceil(4) * mh.div_ceil(4) * 16
-            },
+            }
             NxtchFormat::Rgba8 => mw * mh * 4,
             // BC6 et Unknown : non couverts par le switch C# → 0.
             _ => 0,
@@ -209,8 +219,16 @@ pub fn unswizzle(
     let block_height = ((height as i64 + 3) / 4).max(0) as usize;
 
     let compressed = block_size >= 8;
-    let w = if compressed { block_width } else { width.max(0) as usize };
-    let h = if compressed { block_height } else { height.max(0) as usize };
+    let w = if compressed {
+        block_width
+    } else {
+        width.max(0) as usize
+    };
+    let h = if compressed {
+        block_height
+    } else {
+        height.max(0) as usize
+    };
 
     let mut output = alloc::vec![0u8; w.saturating_mul(h).saturating_mul(block_size)];
 
@@ -283,11 +301,20 @@ mod tests {
     #[test]
     fn size_calc_matches_csharp_formulas() {
         // BC1 256×256, 1 mip = ceil(256/4)*ceil(256/4)*8 = 64*64*8 = 32768.
-        assert_eq!(calculate_texture_data_size(NxtchFormat::Bc1, 256, 256, 1), 32_768);
+        assert_eq!(
+            calculate_texture_data_size(NxtchFormat::Bc1, 256, 256, 1),
+            32_768
+        );
         // BC3 256×256, 1 mip = 64*64*16 = 65536.
-        assert_eq!(calculate_texture_data_size(NxtchFormat::Bc3, 256, 256, 1), 65_536);
+        assert_eq!(
+            calculate_texture_data_size(NxtchFormat::Bc3, 256, 256, 1),
+            65_536
+        );
         // RGBA8 16×16, 1 mip = 16*16*4 = 1024.
-        assert_eq!(calculate_texture_data_size(NxtchFormat::Rgba8, 16, 16, 1), 1024);
+        assert_eq!(
+            calculate_texture_data_size(NxtchFormat::Rgba8, 16, 16, 1),
+            1024
+        );
         // BC1 8×8 avec 2 mips : 8×8 (2*2*8=32) + 4×4 (1*1*8=8) = 40.
         assert_eq!(calculate_texture_data_size(NxtchFormat::Bc1, 8, 8, 2), 40);
         // Dimension non multiple de 4 : BC1 5×5 → ceil(5/4)=2 → 2*2*8 = 32.
@@ -325,7 +352,10 @@ mod tests {
 
     #[test]
     fn header_trop_court_rejete() {
-        assert!(matches!(parse_header(&[0u8; 10]), Err(FormatError::TooShort { .. })));
+        assert!(matches!(
+            parse_header(&[0u8; 10]),
+            Err(FormatError::TooShort { .. })
+        ));
     }
 
     #[test]

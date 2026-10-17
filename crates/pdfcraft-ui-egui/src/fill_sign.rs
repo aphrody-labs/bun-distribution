@@ -4,8 +4,12 @@
 //! can be moved, deleted and undone like any comment.
 
 use egui::{Color32, CornerRadius, Pos2, Sense, Stroke, pos2, vec2};
-use pdfcraft_engine::signature_scan::{DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE, SCAN_MAX_SIDE, ScanError};
-use pdfcraft_engine::{Edit, FillMark, NewAnnotation, PhotoRect, Shape, SignatureImage, SignaturePhoto, Style, Turn};
+use pdfcraft_engine::signature_scan::{
+    DEFAULT_SENSITIVITY, PREVIEW_MAX_SIDE, SCAN_MAX_SIDE, ScanError,
+};
+use pdfcraft_engine::{
+    Edit, FillMark, NewAnnotation, PhotoRect, Shape, SignatureImage, SignaturePhoto, Style, Turn,
+};
 use pdfcraft_render::{DocInfo, PageInfo};
 
 use crate::canvas::{DocView, PageXform};
@@ -23,8 +27,16 @@ pub enum FillTool {
     Initials,
 }
 
-pub const FILL_TOOLS: [FillTool; 8] =
-    [FillTool::Text, FillTool::Cross, FillTool::Check, FillTool::Dot, FillTool::Line, FillTool::Date, FillTool::Signature, FillTool::Initials];
+pub const FILL_TOOLS: [FillTool; 8] = [
+    FillTool::Text,
+    FillTool::Cross,
+    FillTool::Check,
+    FillTool::Dot,
+    FillTool::Line,
+    FillTool::Date,
+    FillTool::Signature,
+    FillTool::Initials,
+];
 
 /// A saved signature or initials: drawn strokes (normalised to the pad width, y up) or typed
 /// text (drawn in the script font), or a locally imported image.
@@ -41,7 +53,14 @@ impl SavedSig {
     pub fn graphic(&self) -> Option<pdfcraft_engine::sign::Graphic> {
         match self {
             SavedSig::Drawn(strokes) => Some(pdfcraft_engine::sign::Graphic::Strokes(
-                strokes.iter().map(|s| s.iter().map(|p| [f64::from(p[0]), f64::from(p[1])]).collect()).collect(),
+                strokes
+                    .iter()
+                    .map(|s| {
+                        s.iter()
+                            .map(|p| [f64::from(p[0]), f64::from(p[1])])
+                            .collect()
+                    })
+                    .collect(),
             )),
             SavedSig::Typed(text) => pdfcraft_engine::typed_signature_graphic(text),
             SavedSig::Image(image) => Some(image.graphic()),
@@ -63,7 +82,9 @@ pub(crate) mod image_data {
         if encoded.len() > MAX_SIGNATURE_IMAGE_BYTES.div_ceil(3) * 4 {
             return Err(serde::de::Error::custom("signature image exceeds 4 MiB"));
         }
-        let bytes = base64::engine::general_purpose::STANDARD.decode(encoded).map_err(serde::de::Error::custom)?;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(encoded)
+            .map_err(serde::de::Error::custom)?;
         SignatureImage::from_bytes(&bytes).map_err(serde::de::Error::custom)
     }
 }
@@ -90,36 +111,73 @@ pub struct SigDraft {
 
 impl SigDraft {
     pub fn new(initials: bool, name: &str) -> Self {
-        let text = if initials { name.split_whitespace().filter_map(|w| w.chars().next()).collect() } else { name.trim().to_string() };
-        Self { text, initials, ..Default::default() }
+        let text = if initials {
+            name.split_whitespace()
+                .filter_map(|w| w.chars().next())
+                .collect()
+        } else {
+            name.trim().to_string()
+        };
+        Self {
+            text,
+            initials,
+            ..Default::default()
+        }
     }
 
     /// Edit a copy of the saved value; Cancel must leave the original untouched.
     pub fn from_saved(initials: bool, saved: &SavedSig) -> Self {
         match saved {
-            SavedSig::Drawn(strokes) => Self { strokes: strokes.clone(), drawing: true, initials, editing: true, ..Default::default() },
-            SavedSig::Typed(text) => Self { text: text.clone(), initials, editing: true, ..Default::default() },
-            SavedSig::Image(image) => Self { image: Some(image.clone()), image_mode: true, initials, editing: true, ..Default::default() },
+            SavedSig::Drawn(strokes) => Self {
+                strokes: strokes.clone(),
+                drawing: true,
+                initials,
+                editing: true,
+                ..Default::default()
+            },
+            SavedSig::Typed(text) => Self {
+                text: text.clone(),
+                initials,
+                editing: true,
+                ..Default::default()
+            },
+            SavedSig::Image(image) => Self {
+                image: Some(image.clone()),
+                image_mode: true,
+                initials,
+                editing: true,
+                ..Default::default()
+            },
         }
     }
 
     fn ready(&self) -> bool {
         if self.scan_mode {
             // A preview made while the frame or slider is still moving is not the result.
-            self.scan.as_ref().is_some_and(|s| s.drag.is_none() && s.full && !s.scanning()) && self.image.is_some()
+            self.scan
+                .as_ref()
+                .is_some_and(|s| s.drag.is_none() && s.full && !s.scanning())
+                && self.image.is_some()
         } else if self.image_mode {
             self.image.is_some()
         } else if self.drawing {
             self.strokes.iter().any(|s| s.len() > 1)
         } else {
             !self.text.trim().is_empty()
-                && self.text.chars().take(pdfcraft_engine::MAX_SIGNATURE_CHARS + 1).count() <= pdfcraft_engine::MAX_SIGNATURE_CHARS
+                && self
+                    .text
+                    .chars()
+                    .take(pdfcraft_engine::MAX_SIGNATURE_CHARS + 1)
+                    .count()
+                    <= pdfcraft_engine::MAX_SIGNATURE_CHARS
         }
     }
 
     pub fn saved(&self) -> Option<SavedSig> {
         if self.scan_mode {
-            self.ready().then(|| self.image.clone().map(SavedSig::Image)).flatten()
+            self.ready()
+                .then(|| self.image.clone().map(SavedSig::Image))
+                .flatten()
         } else if self.image_mode {
             self.image.clone().map(SavedSig::Image)
         } else if self.drawing {
@@ -180,7 +238,10 @@ impl PartialEq for ScanWorker {
 
 impl std::fmt::Debug for ScanWorker {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ScanWorker").field("running", &self.running.as_ref().map(|(r, _)| r)).field("queued", &self.queued).finish()
+        f.debug_struct("ScanWorker")
+            .field("running", &self.running.as_ref().map(|(r, _)| r))
+            .field("queued", &self.queued)
+            .finish()
     }
 }
 
@@ -215,11 +276,19 @@ impl ScanDraft {
     }
 
     fn request(&self, full: bool) -> ScanRequest {
-        ScanRequest { frame: self.frame, sensitivity: self.sensitivity, full }
+        ScanRequest {
+            frame: self.frame,
+            sensitivity: self.sensitivity,
+            full,
+        }
     }
 
     fn run(photo: &SignaturePhoto, req: ScanRequest) -> ScanAnswer {
-        let max_side = if req.full { SCAN_MAX_SIDE } else { PREVIEW_MAX_SIDE };
+        let max_side = if req.full {
+            SCAN_MAX_SIDE
+        } else {
+            PREVIEW_MAX_SIDE
+        };
         pdfcraft_engine::guard(|| photo.scan(req.frame, req.sensitivity, max_side))
     }
 
@@ -236,7 +305,12 @@ impl ScanDraft {
     /// wait (a scan of a large frame takes a noticeable fraction of a second). The draft isn't
     /// ready until the answer for the current frame and sensitivity arrives; [`Self::poll`]
     /// picks it up. Where threads are unavailable (the web) it scans at once.
-    pub fn rescan_in_background(&mut self, image: &mut Option<SignatureImage>, full: bool, ctx: Option<&egui::Context>) {
+    pub fn rescan_in_background(
+        &mut self,
+        image: &mut Option<SignatureImage>,
+        full: bool,
+        ctx: Option<&egui::Context>,
+    ) {
         if cfg!(target_arch = "wasm32") {
             return self.rescan(image, full);
         }
@@ -254,13 +328,15 @@ impl ScanDraft {
         let photo = self.photo.clone();
         let ctx = ctx.cloned();
         let (tx, rx) = std::sync::mpsc::channel();
-        let spawned = std::thread::Builder::new().name("signature-scan".into()).spawn(move || {
-            // The receiver may be gone (the dialog closed or a newer photo): nothing to report.
-            let _ = tx.send(Self::run(&photo, req));
-            if let Some(ctx) = ctx {
-                ctx.request_repaint();
-            }
-        });
+        let spawned = std::thread::Builder::new()
+            .name("signature-scan".into())
+            .spawn(move || {
+                // The receiver may be gone (the dialog closed or a newer photo): nothing to report.
+                let _ = tx.send(Self::run(&photo, req));
+                if let Some(ctx) = ctx {
+                    ctx.request_repaint();
+                }
+            });
         if spawned.is_err() {
             return false;
         }
@@ -275,11 +351,15 @@ impl ScanDraft {
 
     /// Pick up a finished background scan (each frame), and start the newest waiting request.
     pub fn poll(&mut self, image: &mut Option<SignatureImage>, ctx: Option<&egui::Context>) {
-        let Some((req, rx)) = &self.worker.running else { return };
+        let Some((req, rx)) = &self.worker.running else {
+            return;
+        };
         let answer = match rx.try_recv() {
             Ok(answer) => answer,
             Err(std::sync::mpsc::TryRecvError::Empty) => return,
-            Err(std::sync::mpsc::TryRecvError::Disconnected) => Err("the scan stopped unexpectedly".into()),
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                Err("the scan stopped unexpectedly".into())
+            }
         };
         let req = *req;
         self.worker.running = None;
@@ -320,7 +400,12 @@ impl ScanDraft {
         }
     }
 
-    pub fn turn(&mut self, turn: Turn, image: &mut Option<SignatureImage>, ctx: Option<&egui::Context>) {
+    pub fn turn(
+        &mut self,
+        turn: Turn,
+        image: &mut Option<SignatureImage>,
+        ctx: Option<&egui::Context>,
+    ) {
         self.frame = self.photo.turn(turn, self.frame);
         self.version = next_photo_version();
         self.rescan_in_background(image, true, ctx);
@@ -408,21 +493,44 @@ fn to_user(xf: &PageXform, info: &DocInfo, page: usize, p: Pos2) -> [f64; 2] {
 
 fn new(page: usize, shape: Shape, contents: String, author: &str) -> Edit {
     let style = Style::default_for(&shape);
-    Edit::AddAnnotation(NewAnnotation { page, shape, style, contents, author: author.to_string() })
+    Edit::AddAnnotation(NewAnnotation {
+        page,
+        shape,
+        style,
+        contents,
+        author: author.to_string(),
+    })
 }
 
 /// A typewriter annotation sized to its text.
 pub fn typed(page: usize, at: [f64; 2], text: &str, size: f64, author: &str) -> Edit {
     let rect = crate::comments::text_box_rect(at, text, size);
-    new(page, Shape::Typewriter { rect, font_size: size }, text.to_string(), author)
+    new(
+        page,
+        Shape::Typewriter {
+            rect,
+            font_size: size,
+        },
+        text.to_string(),
+        author,
+    )
 }
 
 /// Place a saved signature (strokes normalised to a 0–1 box, y up) with its left edge at `at`,
 /// 150 pt wide. Left, centred and upright are as displayed on a page turned by `rotation` (its
 /// `/Rotate`), so the strokes are turned back into user space.
-pub fn signature_at(page: usize, at: [f64; 2], strokes: &[Vec<[f32; 2]>], rotation: i64, author: &str) -> Option<Edit> {
+pub fn signature_at(
+    page: usize,
+    at: [f64; 2],
+    strokes: &[Vec<[f32; 2]>],
+    rotation: i64,
+    author: &str,
+) -> Option<Edit> {
     let w = 150.0;
-    let (min_y, max_y) = strokes.iter().flatten().fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p[1]), b.max(p[1])));
+    let (min_y, max_y) = strokes
+        .iter()
+        .flatten()
+        .fold((f32::MAX, f32::MIN), |(a, b), p| (a.min(p[1]), b.max(p[1])));
     if !min_y.is_finite() {
         return None;
     }
@@ -446,12 +554,27 @@ pub fn signature_at(page: usize, at: [f64; 2], strokes: &[Vec<[f32; 2]>], rotati
 
 /// Place typed text in the script font with its left edge at `at`, `height` points tall, upright
 /// as displayed on a page turned by `rotation`.
-pub fn typed_signature_at(page: usize, at: [f64; 2], text: &str, height: f64, rotation: i64, author: &str) -> Option<Edit> {
-    pdfcraft_engine::typed_signature_shape(at, text, height, rotation).map(|shape| new(page, shape, String::new(), author))
+pub fn typed_signature_at(
+    page: usize,
+    at: [f64; 2],
+    text: &str,
+    height: f64,
+    rotation: i64,
+    author: &str,
+) -> Option<Edit> {
+    pdfcraft_engine::typed_signature_shape(at, text, height, rotation)
+        .map(|shape| new(page, shape, String::new(), author))
 }
 
 /// Place a saved signature or initials, upright as `info`'s page is displayed.
-pub fn place(page: usize, info: &PageInfo, at: [f64; 2], sig: &SavedSig, initials: bool, author: &str) -> Option<Edit> {
+pub fn place(
+    page: usize,
+    info: &PageInfo,
+    at: [f64; 2],
+    sig: &SavedSig,
+    initials: bool,
+    author: &str,
+) -> Option<Edit> {
     let rotation = i64::from(info.rotation);
     match sig {
         SavedSig::Drawn(strokes) => signature_at(page, at, strokes, rotation, author),
@@ -482,7 +605,16 @@ pub(crate) fn script_preview(text: &str, w: usize, h: usize) -> egui::ColorImage
     let polys: Vec<Vec<(f64, f64)>> = o
         .contours
         .iter()
-        .map(|c| c.iter().map(|p| (x0 + (p[0] - left) * k, h as f64 * 0.5 + (top + bottom) / 2.0 * k - p[1] * k)).collect())
+        .map(|c| {
+            c.iter()
+                .map(|p| {
+                    (
+                        x0 + (p[0] - left) * k,
+                        h as f64 * 0.5 + (top + bottom) / 2.0 * k - p[1] * k,
+                    )
+                })
+                .collect()
+        })
         .collect();
     for y in 0..h {
         let sy = y as f64 + 0.5;
@@ -497,7 +629,10 @@ pub(crate) fn script_preview(text: &str, w: usize, h: usize) -> egui::ColorImage
         }
         xs.sort_by(|a, b| a.total_cmp(b));
         for pair in xs.as_chunks::<2>().0 {
-            let (from, to) = (pair[0].round().clamp(0.0, w as f64) as usize, pair[1].round().clamp(0.0, w as f64) as usize);
+            let (from, to) = (
+                pair[0].round().clamp(0.0, w as f64) as usize,
+                pair[1].round().clamp(0.0, w as f64) as usize,
+            );
             for x in from..to {
                 img[(x, y)] = Color32::BLACK;
             }
@@ -507,12 +642,28 @@ pub(crate) fn script_preview(text: &str, w: usize, h: usize) -> egui::ColorImage
 }
 
 /// Saved previews and add/remove controls, shared by the left panel and quick-tool picker.
-pub(crate) fn signature_entries(ui: &mut egui::Ui, app: &mut crate::PdfCraftApp, t: &Tokens) -> Option<&'static str> {
+pub(crate) fn signature_entries(
+    ui: &mut egui::Ui,
+    app: &mut crate::PdfCraftApp,
+    t: &Tokens,
+) -> Option<&'static str> {
     ui.set_width(ui.available_width().clamp(240.0, 248.0));
     let mut command = None;
     for (i, (saved, what, use_id, change_id, remove_id)) in [
-        (app.signature.as_ref(), "signature", "sign.fill.signature", "sign.fill.signature.change", "sign.fill.signature.remove"),
-        (app.initials.as_ref(), "initials", "sign.fill.initials", "sign.fill.initials.change", "sign.fill.initials.remove"),
+        (
+            app.signature.as_ref(),
+            "signature",
+            "sign.fill.signature",
+            "sign.fill.signature.change",
+            "sign.fill.signature.remove",
+        ),
+        (
+            app.initials.as_ref(),
+            "initials",
+            "sign.fill.initials",
+            "sign.fill.initials.change",
+            "sign.fill.initials.remove",
+        ),
     ]
     .into_iter()
     .enumerate()
@@ -525,19 +676,40 @@ pub(crate) fn signature_entries(ui: &mut egui::Ui, app: &mut crate::PdfCraftApp,
             continue;
         };
         ui.horizontal(|ui| {
-            let (rect, response) = ui.allocate_exact_size(vec2((ui.available_width() - 68.0).max(140.0), 52.0), Sense::click());
+            let (rect, response) = ui.allocate_exact_size(
+                vec2((ui.available_width() - 68.0).max(140.0), 52.0),
+                Sense::click(),
+            );
             let use_label = label("Use {what}");
-            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, use_label.clone()));
+            response.widget_info(|| {
+                egui::WidgetInfo::labeled(egui::WidgetType::Button, true, use_label.clone())
+            });
             let painter = ui.painter_at(rect);
             painter.rect_filled(rect, CornerRadius::same(4), Color32::WHITE);
             painter.rect_stroke(
                 rect,
                 CornerRadius::same(4),
-                Stroke::new(1.0, if response.hovered() { t.accent } else { t.border }),
+                Stroke::new(
+                    1.0,
+                    if response.hovered() {
+                        t.accent
+                    } else {
+                        t.border
+                    },
+                ),
                 egui::StrokeKind::Inside,
             );
-            paint_saved(ui, rect.shrink(8.0), saved, &mut app.saved_signature_previews[i], &format!("saved-{what}"));
-            if response.on_hover_text(label("Place saved {what}")).clicked() {
+            paint_saved(
+                ui,
+                rect.shrink(8.0),
+                saved,
+                &mut app.saved_signature_previews[i],
+                &format!("saved-{what}"),
+            );
+            if response
+                .on_hover_text(label("Place saved {what}"))
+                .clicked()
+            {
                 command = Some(use_id);
             }
             if crate::icons::button(ui, "pencil", 26.0, false, &label("Change {what}")).clicked() {
@@ -554,12 +726,25 @@ pub(crate) fn signature_entries(ui: &mut egui::Ui, app: &mut crate::PdfCraftApp,
 
 /// Draw a saved signature as large as fits in `rect`, centred: typed text and images through
 /// `cache` (a texture named `key`), strokes as lines.
-pub(crate) fn paint_saved(ui: &egui::Ui, rect: egui::Rect, saved: &SavedSig, cache: &mut Option<(SavedSig, egui::TextureHandle)>, key: &str) {
+pub(crate) fn paint_saved(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    saved: &SavedSig,
+    cache: &mut Option<(SavedSig, egui::TextureHandle)>,
+    key: &str,
+) {
     let painter = ui.painter_at(rect);
     match saved {
         SavedSig::Typed(text) => {
             if cache.as_ref().is_none_or(|(s, _)| s != saved) {
-                *cache = Some((saved.clone(), ui.ctx().load_texture(key, script_preview(text, 480, 104), egui::TextureOptions::LINEAR)));
+                *cache = Some((
+                    saved.clone(),
+                    ui.ctx().load_texture(
+                        key,
+                        script_preview(text, 480, 104),
+                        egui::TextureOptions::LINEAR,
+                    ),
+                ));
             }
             if let Some((_, tex)) = cache {
                 let size = vec2(480.0, 104.0) * (rect.width() / 480.0).min(rect.height() / 104.0);
@@ -577,14 +762,20 @@ pub(crate) fn paint_saved(ui: &egui::Ui, rect: egui::Rect, saved: &SavedSig, cac
                 .iter()
                 .flatten()
                 .filter(|p| p.iter().all(|v| v.is_finite()))
-                .fold(egui::Rect::NOTHING, |r, p| r.union(egui::Rect::from_min_max(pos2(p[0], p[1]), pos2(p[0], p[1]))));
+                .fold(egui::Rect::NOTHING, |r, p| {
+                    r.union(egui::Rect::from_min_max(pos2(p[0], p[1]), pos2(p[0], p[1])))
+                });
             if bounds.is_finite() {
-                let scale = (rect.width() / bounds.width().max(0.01)).min(rect.height() / bounds.height().max(0.01));
+                let scale = (rect.width() / bounds.width().max(0.01))
+                    .min(rect.height() / bounds.height().max(0.01));
                 for stroke in strokes {
                     let pts = stroke
                         .iter()
                         .filter(|p| p.iter().all(|v| v.is_finite()))
-                        .map(|p| rect.center() + vec2(p[0] - bounds.center().x, bounds.center().y - p[1]) * scale)
+                        .map(|p| {
+                            rect.center()
+                                + vec2(p[0] - bounds.center().x, bounds.center().y - p[1]) * scale
+                        })
                         .collect();
                     painter.add(egui::Shape::line(pts, Stroke::new(1.5, Color32::BLACK)));
                 }
@@ -624,11 +815,22 @@ pub(crate) fn page_input(
     if let Some(SavedSig::Image(image)) = saved {
         if let Some(rect) = image.rect(p, at, tool == FillTool::Initials) {
             let tex = image_texture(ui, image, preview);
-            xf.paint_user_image(ui.painter(), tex, p, rect, i64::from(p.rotation), Color32::WHITE);
+            xf.paint_user_image(
+                ui.painter(),
+                tex,
+                p,
+                rect,
+                i64::from(p.rotation),
+                Color32::WHITE,
+            );
             ui.ctx().set_cursor_icon(egui::CursorIcon::None);
         }
     } else {
-        ui.ctx().set_cursor_icon(if tool == FillTool::Text { egui::CursorIcon::Text } else { egui::CursorIcon::Crosshair });
+        ui.ctx().set_cursor_icon(if tool == FillTool::Text {
+            egui::CursorIcon::Text
+        } else {
+            egui::CursorIcon::Crosshair
+        });
     }
     if !resp.clicked() {
         return None;
@@ -637,27 +839,64 @@ pub(crate) fn page_input(
         FillTool::Text => {
             // Clicking away from an open box commits it: the page sees this click before the box
             // sees its lost focus, so replacing the box first would drop what was typed.
-            let open =
-                view.fill_text.replace(TypeBox { page, at: [at[0], at[1] + text_size * 0.6], text: String::new(), size: text_size, focus: true });
-            open.filter(|tb| !tb.text.trim().is_empty()).map(|tb| FillAction::Edit(Box::new(typed(tb.page, tb.at, tb.text.trim(), tb.size, author))))
+            let open = view.fill_text.replace(TypeBox {
+                page,
+                at: [at[0], at[1] + text_size * 0.6],
+                text: String::new(),
+                size: text_size,
+                focus: true,
+            });
+            open.filter(|tb| !tb.text.trim().is_empty()).map(|tb| {
+                FillAction::Edit(Box::new(typed(
+                    tb.page,
+                    tb.at,
+                    tb.text.trim(),
+                    tb.size,
+                    author,
+                )))
+            })
         }
         FillTool::Date => Some(match date_text {
-            Ok(text) => FillAction::Edit(Box::new(typed(page, [at[0], at[1] + text_size * 0.6], text, text_size, author))),
+            Ok(text) => FillAction::Edit(Box::new(typed(
+                page,
+                [at[0], at[1] + text_size * 0.6],
+                text,
+                text_size,
+                author,
+            ))),
             Err(why) => FillAction::Refused(why.clone()),
         }),
         FillTool::Signature => match signature {
-            Some(s) => place(page, p, at, s, false, author).map(|e| FillAction::Signature(Box::new(e))),
+            Some(s) => {
+                place(page, p, at, s, false, author).map(|e| FillAction::Signature(Box::new(e)))
+            }
             None => Some(FillAction::CreateSignature),
         },
         FillTool::Initials => match initials {
-            Some(s) => place(page, p, at, s, true, author).map(|e| FillAction::Signature(Box::new(e))),
+            Some(s) => {
+                place(page, p, at, s, true, author).map(|e| FillAction::Signature(Box::new(e)))
+            }
             None => Some(FillAction::CreateInitials),
         },
         mark => {
             let mark = mark.mark()?;
-            let (w, h) = if mark == FillMark::Line { (36.0, 4.0) } else { (12.0, 12.0) };
-            let rect = [at[0] - w / 2.0, at[1] - h / 2.0, at[0] + w / 2.0, at[1] + h / 2.0];
-            Some(FillAction::Edit(Box::new(new(page, Shape::Mark { rect, mark }, String::new(), author))))
+            let (w, h) = if mark == FillMark::Line {
+                (36.0, 4.0)
+            } else {
+                (12.0, 12.0)
+            };
+            let rect = [
+                at[0] - w / 2.0,
+                at[1] - h / 2.0,
+                at[0] + w / 2.0,
+                at[1] + h / 2.0,
+            ];
+            Some(FillAction::Edit(Box::new(new(
+                page,
+                Shape::Mark { rect, mark },
+                String::new(),
+                author,
+            ))))
         }
     }
 }
@@ -677,41 +916,56 @@ pub enum FillAction {
 }
 
 /// The in-place editor for typed text. Returns the edit once committed.
-pub(crate) fn type_box(ctx: &egui::Context, view: &mut DocView, info: &DocInfo, author: &str) -> Option<Edit> {
+pub(crate) fn type_box(
+    ctx: &egui::Context,
+    view: &mut DocView,
+    info: &DocInfo,
+    author: &str,
+) -> Option<Edit> {
     let tb = view.fill_text.clone()?;
     let xf = view.page_xform(tb.page)?;
-    let v = info.pages.get(tb.page)?.user_to_view(tb.at[0] as f32, tb.at[1] as f32);
+    let v = info
+        .pages
+        .get(tb.page)?
+        .user_to_view(tb.at[0] as f32, tb.at[1] as f32);
     let pos = xf.norm_to_screen(v[0] / xf.pw, v[1] / xf.ph);
     let zoom = xf.rect.width() / xf.pw.max(1.0);
     let mut commit = false;
     let mut cancel = false;
-    egui::Area::new(egui::Id::new(("fill-text", view.id.0))).order(egui::Order::Foreground).fixed_pos(pos).show(ctx, |ui| {
-        let Some(t) = view.fill_text.as_mut() else { return };
-        // The box is white in every theme, so the caret must not follow the theme (pale in dark mode) (#655).
-        ui.visuals_mut().text_cursor.stroke.color = crate::edit_text_ui::caret_color_on(Color32::WHITE);
-        let width = ((t.text.chars().count().max(8) as f32) * t.size as f32 * 0.6 * zoom).clamp(60.0, 600.0);
-        // The area's max rect is last frame's size, which caps the edit's width; widen it so the
-        // box grows as text is typed.
-        ui.set_min_width(width);
-        let r = ui.add(
-            egui::TextEdit::singleline(&mut t.text)
-                .font(egui::FontId::proportional((t.size as f32 * zoom).max(8.0)))
-                .desired_width(width)
-                .background_color(Color32::from_rgba_unmultiplied(255, 255, 255, 230))
-                .text_color(Color32::BLACK)
-                .hint_text(tl!("Type text"))
-                .id_salt("fill-text-edit"),
-        );
-        if t.focus {
-            r.request_focus();
-            t.focus = false;
-        }
-        if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
-            cancel = true;
-        } else if r.lost_focus() {
-            commit = true;
-        }
-    });
+    egui::Area::new(egui::Id::new(("fill-text", view.id.0)))
+        .order(egui::Order::Foreground)
+        .fixed_pos(pos)
+        .show(ctx, |ui| {
+            let Some(t) = view.fill_text.as_mut() else {
+                return;
+            };
+            // The box is white in every theme, so the caret must not follow the theme (pale in dark mode) (#655).
+            ui.visuals_mut().text_cursor.stroke.color =
+                crate::edit_text_ui::caret_color_on(Color32::WHITE);
+            let width = ((t.text.chars().count().max(8) as f32) * t.size as f32 * 0.6 * zoom)
+                .clamp(60.0, 600.0);
+            // The area's max rect is last frame's size, which caps the edit's width; widen it so the
+            // box grows as text is typed.
+            ui.set_min_width(width);
+            let r = ui.add(
+                egui::TextEdit::singleline(&mut t.text)
+                    .font(egui::FontId::proportional((t.size as f32 * zoom).max(8.0)))
+                    .desired_width(width)
+                    .background_color(Color32::from_rgba_unmultiplied(255, 255, 255, 230))
+                    .text_color(Color32::BLACK)
+                    .hint_text(tl!("Type text"))
+                    .id_salt("fill-text-edit"),
+            );
+            if t.focus {
+                r.request_focus();
+                t.focus = false;
+            }
+            if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                cancel = true;
+            } else if r.lost_focus() {
+                commit = true;
+            }
+        });
     if cancel {
         view.fill_text = None;
         return None;
@@ -734,16 +988,35 @@ pub(crate) fn signature_pad(
     preview: &mut Option<(SavedSig, egui::TextureHandle)>,
     photo_texture: &mut Option<(u64, egui::TextureHandle)>,
 ) -> (bool, bool, bool) {
-    let what = if d.initials { tl!("initials") } else { tl!("signature") };
-    let title = if d.editing { tl!("Change {what}") } else { tl!("Create {what}") };
-    ui.label(egui::RichText::new(crate::i18n::fmt(title, &[("what", what)])).font(crate::theme::semibold(18.0)));
+    let what = if d.initials {
+        tl!("initials")
+    } else {
+        tl!("signature")
+    };
+    let title = if d.editing {
+        tl!("Change {what}")
+    } else {
+        tl!("Create {what}")
+    };
+    ui.label(
+        egui::RichText::new(crate::i18n::fmt(title, &[("what", what)]))
+            .font(crate::theme::semibold(18.0)),
+    );
     ui.horizontal(|ui| {
-        if crate::widgets::pill_button(ui, tl_ctx!("signature pad", "Type"), !d.drawing && !d.image_mode && !d.scan_mode).clicked() {
+        if crate::widgets::pill_button(
+            ui,
+            tl_ctx!("signature pad", "Type"),
+            !d.drawing && !d.image_mode && !d.scan_mode,
+        )
+        .clicked()
+        {
             d.drawing = false;
             d.image_mode = false;
             d.scan_mode = false;
         }
-        if crate::widgets::pill_button(ui, tl!("Draw"), d.drawing && !d.image_mode && !d.scan_mode).clicked() {
+        if crate::widgets::pill_button(ui, tl!("Draw"), d.drawing && !d.image_mode && !d.scan_mode)
+            .clicked()
+        {
             d.drawing = true;
             d.image_mode = false;
             d.scan_mode = false;
@@ -768,11 +1041,22 @@ pub(crate) fn signature_pad(
         return (apply, cancel, browse);
     }
     if d.image_mode {
-        ui.label(egui::RichText::new(tl!("Choose a PNG or JPEG image (up to 4 MiB). Transparency is preserved.")).color(t.text_muted));
+        ui.label(
+            egui::RichText::new(tl!(
+                "Choose a PNG or JPEG image (up to 4 MiB). Transparency is preserved."
+            ))
+            .color(t.text_muted),
+        );
         let browse = crate::widgets::ghost_button(ui, "folder", tl!("Browse…")).clicked();
         let (rect, _) = ui.allocate_exact_size(vec2(460.0, 150.0), Sense::hover());
-        ui.painter().rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
-        ui.painter().rect_stroke(rect, CornerRadius::same(6), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+        ui.painter()
+            .rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
+        ui.painter().rect_stroke(
+            rect,
+            CornerRadius::same(6),
+            Stroke::new(1.0, t.border),
+            egui::StrokeKind::Inside,
+        );
         if let Some(image) = &d.image {
             image_preview(ui, rect.shrink(8.0), image, preview);
         }
@@ -780,7 +1064,13 @@ pub(crate) fn signature_pad(
         return (apply, cancel, browse);
     }
     if !d.drawing {
-        let l = ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Type your {what}."), &[("what", what)])).color(t.text_muted));
+        let l = ui.label(
+            egui::RichText::new(crate::i18n::fmt(
+                tl!("Type your {what}."),
+                &[("what", what)],
+            ))
+            .color(t.text_muted),
+        );
         ui.add(
             egui::TextEdit::singleline(&mut d.text)
                 .char_limit(pdfcraft_engine::MAX_SIGNATURE_CHARS)
@@ -791,27 +1081,61 @@ pub(crate) fn signature_pad(
         let (rect, _) = ui.allocate_exact_size(vec2(460.0, 150.0), Sense::hover());
         let painter = ui.painter_at(rect);
         painter.rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
-        painter.rect_stroke(rect, CornerRadius::same(6), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+        painter.rect_stroke(
+            rect,
+            CornerRadius::same(6),
+            Stroke::new(1.0, t.border),
+            egui::StrokeKind::Inside,
+        );
         let key = SavedSig::Typed(d.text.clone());
         if preview.as_ref().is_none_or(|(s, _)| *s != key) {
             let img = script_preview(&d.text, 920, 300);
-            *preview = Some((key, ui.ctx().load_texture("typed-signature", img, egui::TextureOptions::LINEAR)));
+            *preview = Some((
+                key,
+                ui.ctx()
+                    .load_texture("typed-signature", img, egui::TextureOptions::LINEAR),
+            ));
         }
         if let Some((_, tex)) = preview {
-            painter.image(tex.id(), rect.shrink(4.0), egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+            painter.image(
+                tex.id(),
+                rect.shrink(4.0),
+                egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
         }
         let (apply, cancel) = pad_buttons(ui, d);
         return (apply, cancel, false);
     }
-    ui.label(egui::RichText::new(crate::i18n::fmt(tl!("Draw your {what} below."), &[("what", what)])).color(t.text_muted));
+    ui.label(
+        egui::RichText::new(crate::i18n::fmt(
+            tl!("Draw your {what} below."),
+            &[("what", what)],
+        ))
+        .color(t.text_muted),
+    );
     let strokes = &mut d.strokes;
     let (rect, resp) = ui.allocate_exact_size(vec2(460.0, 150.0), Sense::drag());
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
-    painter.rect_stroke(rect, CornerRadius::same(6), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
-    painter.hline(rect.x_range().shrink(24.0), rect.bottom() - 34.0, Stroke::new(1.0, t.divider));
+    painter.rect_stroke(
+        rect,
+        CornerRadius::same(6),
+        Stroke::new(1.0, t.border),
+        egui::StrokeKind::Inside,
+    );
+    painter.hline(
+        rect.x_range().shrink(24.0),
+        rect.bottom() - 34.0,
+        Stroke::new(1.0, t.divider),
+    );
     // Normalised: x 0–1 across the pad, y up, in units of the pad's width.
-    let norm = |p: Pos2| [(p.x - rect.left()) / rect.width(), (rect.bottom() - p.y) / rect.width()];
+    let norm = |p: Pos2| {
+        [
+            (p.x - rect.left()) / rect.width(),
+            (rect.bottom() - p.y) / rect.width(),
+        ]
+    };
     if resp.drag_started() {
         strokes.push(Vec::new());
     }
@@ -819,12 +1143,22 @@ pub(crate) fn signature_pad(
         && let (Some(p), Some(s)) = (resp.interact_pointer_pos(), strokes.last_mut())
     {
         let n = norm(p.clamp(rect.min, rect.max));
-        if s.last().is_none_or(|l| (l[0] - n[0]).abs() + (l[1] - n[1]).abs() > 0.002) {
+        if s.last()
+            .is_none_or(|l| (l[0] - n[0]).abs() + (l[1] - n[1]).abs() > 0.002)
+        {
             s.push(n);
         }
     }
     for s in strokes.iter() {
-        let pts: Vec<Pos2> = s.iter().map(|p| pos2(rect.left() + p[0] * rect.width(), rect.bottom() - p[1] * rect.width())).collect();
+        let pts: Vec<Pos2> = s
+            .iter()
+            .map(|p| {
+                pos2(
+                    rect.left() + p[0] * rect.width(),
+                    rect.bottom() - p[1] * rect.width(),
+                )
+            })
+            .collect();
         painter.add(egui::Shape::line(pts, Stroke::new(2.0, Color32::BLACK)));
     }
     let (apply, cancel) = pad_buttons(ui, d);
@@ -850,10 +1184,19 @@ fn scan_tab(
         browse = crate::widgets::ghost_button(ui, "camera", tl!("Choose photo…")).clicked();
         if let Some(scan) = d.scan.as_mut() {
             ui.add_space(8.0);
-            if crate::icons::button(ui, "rotate-ccw", 28.0, false, tl!("Rotate counterclockwise")).clicked() {
+            if crate::icons::button(
+                ui,
+                "rotate-ccw",
+                28.0,
+                false,
+                tl!("Rotate counterclockwise"),
+            )
+            .clicked()
+            {
                 scan.turn(Turn::CounterClockwise, &mut d.image, Some(ui.ctx()));
             }
-            if crate::icons::button(ui, "rotate-cw", 28.0, false, tl!("Rotate clockwise")).clicked() {
+            if crate::icons::button(ui, "rotate-cw", 28.0, false, tl!("Rotate clockwise")).clicked()
+            {
                 scan.turn(Turn::Clockwise, &mut d.image, Some(ui.ctx()));
             }
         }
@@ -861,12 +1204,23 @@ fn scan_tab(
     let (area, resp) = ui.allocate_exact_size(vec2(460.0, 230.0), Sense::drag());
     let painter = ui.painter_at(area);
     painter.rect_filled(area, CornerRadius::same(6), t.pasteboard);
-    painter.rect_stroke(area, CornerRadius::same(6), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+    painter.rect_stroke(
+        area,
+        CornerRadius::same(6),
+        Stroke::new(1.0, t.border),
+        egui::StrokeKind::Inside,
+    );
     if let Some(scan) = d.scan.as_mut() {
         scan.poll(&mut d.image, Some(ui.ctx()));
     }
     let Some(scan) = d.scan.as_mut() else {
-        painter.text(area.center(), egui::Align2::CENTER_CENTER, tl!("No photo chosen"), egui::FontId::proportional(13.0), t.text_muted);
+        painter.text(
+            area.center(),
+            egui::Align2::CENTER_CENTER,
+            tl!("No photo chosen"),
+            egui::FontId::proportional(13.0),
+            t.text_muted,
+        );
         resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Other, true, tl!("Photo")));
         return browse;
     };
@@ -877,21 +1231,41 @@ fn scan_tab(
     let fit = area.shrink(8.0);
     let scale = (fit.width() / pw).min(fit.height() / ph);
     let shown = egui::Rect::from_center_size(fit.center(), vec2(pw * scale, ph * scale));
-    if photo_texture.as_ref().is_none_or(|(v, _)| *v != scan.version) {
+    if photo_texture
+        .as_ref()
+        .is_none_or(|(v, _)| *v != scan.version)
+    {
         let thumb = scan.photo.thumbnail(1024);
         let size = [thumb.width() as usize, thumb.height() as usize];
         let pixels = egui::ColorImage::from_rgba_unmultiplied(size, thumb.as_raw());
-        *photo_texture = Some((scan.version, ui.ctx().load_texture("signature-photo", pixels, egui::TextureOptions::LINEAR)));
+        *photo_texture = Some((
+            scan.version,
+            ui.ctx()
+                .load_texture("signature-photo", pixels, egui::TextureOptions::LINEAR),
+        ));
     }
     if let Some((_, tex)) = photo_texture {
-        painter.image(tex.id(), shown, egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        painter.image(
+            tex.id(),
+            shown,
+            egui::Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
     let to_screen = |x: f32, y: f32| pos2(shown.left() + x * scale, shown.top() + y * scale);
-    let to_photo = |p: Pos2| [((p.x - shown.left()) / scale).clamp(0.0, pw), ((p.y - shown.top()) / scale).clamp(0.0, ph)];
+    let to_photo = |p: Pos2| {
+        [
+            ((p.x - shown.left()) / scale).clamp(0.0, pw),
+            ((p.y - shown.top()) / scale).clamp(0.0, ph),
+        ]
+    };
     let frame_screen = |f: PhotoRect| {
         egui::Rect::from_min_max(
             to_screen(f.x as f32, f.y as f32),
-            to_screen(f.x.saturating_add(f.width) as f32, f.y.saturating_add(f.height) as f32),
+            to_screen(
+                f.x.saturating_add(f.width) as f32,
+                f.y.saturating_add(f.height) as f32,
+            ),
         )
     };
 
@@ -901,16 +1275,28 @@ fn scan_tab(
         && let Some(p) = resp.interact_pointer_pos()
     {
         let fr = frame_screen(scan.frame);
-        let corners = [fr.left_top(), fr.right_top(), fr.left_bottom(), fr.right_bottom()];
-        let opposite = [fr.right_bottom(), fr.left_bottom(), fr.right_top(), fr.left_top()];
+        let corners = [
+            fr.left_top(),
+            fr.right_top(),
+            fr.left_bottom(),
+            fr.right_bottom(),
+        ];
+        let opposite = [
+            fr.right_bottom(),
+            fr.left_bottom(),
+            fr.right_top(),
+            fr.left_top(),
+        ];
         let at = to_photo(p);
-        scan.drag = Some(if let Some(i) = corners.iter().position(|c| c.distance(p) <= handle) {
-            FrameDrag::Span(opposite.get(i).map_or(at, |o| to_photo(*o)))
-        } else if fr.contains(p) {
-            FrameDrag::Move([at[0] - scan.frame.x as f32, at[1] - scan.frame.y as f32])
-        } else {
-            FrameDrag::Span(at)
-        });
+        scan.drag = Some(
+            if let Some(i) = corners.iter().position(|c| c.distance(p) <= handle) {
+                FrameDrag::Span(opposite.get(i).map_or(at, |o| to_photo(*o)))
+            } else if fr.contains(p) {
+                FrameDrag::Move([at[0] - scan.frame.x as f32, at[1] - scan.frame.y as f32])
+            } else {
+                FrameDrag::Span(at)
+            },
+        );
     }
     if resp.dragged()
         && let (Some(drag), Some(p)) = (scan.drag, resp.interact_pointer_pos())
@@ -923,7 +1309,12 @@ fn scan_tab(
                 let y = (at[1] - grab[1]).clamp(0.0, (ph - h).max(0.0));
                 (x, y, x + w, y + h)
             }
-            FrameDrag::Span(anchor) => (anchor[0].min(at[0]), anchor[1].min(at[1]), anchor[0].max(at[0]), anchor[1].max(at[1])),
+            FrameDrag::Span(anchor) => (
+                anchor[0].min(at[0]),
+                anchor[1].min(at[1]),
+                anchor[0].max(at[0]),
+                anchor[1].max(at[1]),
+            ),
         };
         // At least a few screen points, so a frame can always be grabbed again.
         let min = (12.0 / scale).max(1.0);
@@ -956,18 +1347,45 @@ fn scan_tab(
             painter.rect_filled(r, CornerRadius::ZERO, dim);
         }
     }
-    painter.rect_stroke(fr, CornerRadius::ZERO, Stroke::new(2.0, t.accent), egui::StrokeKind::Middle);
-    for c in [fr.left_top(), fr.right_top(), fr.left_bottom(), fr.right_bottom()] {
+    painter.rect_stroke(
+        fr,
+        CornerRadius::ZERO,
+        Stroke::new(2.0, t.accent),
+        egui::StrokeKind::Middle,
+    );
+    for c in [
+        fr.left_top(),
+        fr.right_top(),
+        fr.left_bottom(),
+        fr.right_bottom(),
+    ] {
         let r = egui::Rect::from_center_size(c, vec2(9.0, 9.0));
         painter.rect_filled(r, CornerRadius::same(2), Color32::WHITE);
-        painter.rect_stroke(r, CornerRadius::same(2), Stroke::new(1.5, t.accent), egui::StrokeKind::Inside);
+        painter.rect_stroke(
+            r,
+            CornerRadius::same(2),
+            Stroke::new(1.5, t.accent),
+            egui::StrokeKind::Inside,
+        );
     }
     if resp.hovered() && scan.drag.is_none() {
         let hover = ui.input(|i| i.pointer.hover_pos());
         let fr = frame_screen(scan.frame);
         let icon = match hover {
-            Some(p) if [fr.left_top(), fr.right_bottom()].iter().any(|c| c.distance(p) <= handle) => egui::CursorIcon::ResizeNwSe,
-            Some(p) if [fr.right_top(), fr.left_bottom()].iter().any(|c| c.distance(p) <= handle) => egui::CursorIcon::ResizeNeSw,
+            Some(p)
+                if [fr.left_top(), fr.right_bottom()]
+                    .iter()
+                    .any(|c| c.distance(p) <= handle) =>
+            {
+                egui::CursorIcon::ResizeNwSe
+            }
+            Some(p)
+                if [fr.right_top(), fr.left_bottom()]
+                    .iter()
+                    .any(|c| c.distance(p) <= handle) =>
+            {
+                egui::CursorIcon::ResizeNeSw
+            }
             Some(p) if fr.contains(p) => egui::CursorIcon::Grab,
             _ => egui::CursorIcon::Crosshair,
         };
@@ -977,7 +1395,9 @@ fn scan_tab(
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         let l = ui.label(tl!("Ink sensitivity"));
-        let slider = ui.add(egui::Slider::new(&mut scan.sensitivity, 0..=100)).labelled_by(l.id);
+        let slider = ui
+            .add(egui::Slider::new(&mut scan.sensitivity, 0..=100))
+            .labelled_by(l.id);
         if slider.changed() {
             // Quick previews while dragging; keyboard steps get the full result at once.
             scan.rescan_in_background(&mut d.image, !slider.dragged(), Some(ui.ctx()));
@@ -988,29 +1408,54 @@ fn scan_tab(
     });
     ui.add_space(4.0);
     let (rect, _) = ui.allocate_exact_size(vec2(460.0, 110.0), Sense::hover());
-    ui.painter().rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
-    ui.painter().rect_stroke(rect, CornerRadius::same(6), Stroke::new(1.0, t.border), egui::StrokeKind::Inside);
+    ui.painter()
+        .rect_filled(rect, CornerRadius::same(6), Color32::WHITE);
+    ui.painter().rect_stroke(
+        rect,
+        CornerRadius::same(6),
+        Stroke::new(1.0, t.border),
+        egui::StrokeKind::Inside,
+    );
     if let Some(image) = &d.image {
         image_preview(ui, rect.shrink(8.0), image, preview);
     } else if let Some(problem) = &scan.problem {
-        ui.put(rect.shrink(12.0), egui::Label::new(egui::RichText::new(problem.as_str()).color(Color32::from_rgb(0x8A, 0x5A, 0x00))).wrap());
+        ui.put(
+            rect.shrink(12.0),
+            egui::Label::new(
+                egui::RichText::new(problem.as_str()).color(Color32::from_rgb(0x8A, 0x5A, 0x00)),
+            )
+            .wrap(),
+        );
     }
     browse
 }
 
-fn image_texture(ui: &egui::Ui, image: &SignatureImage, cache: &mut Option<(SavedSig, egui::TextureHandle)>) -> egui::TextureId {
+fn image_texture(
+    ui: &egui::Ui,
+    image: &SignatureImage,
+    cache: &mut Option<(SavedSig, egui::TextureHandle)>,
+) -> egui::TextureId {
     let key = SavedSig::Image(image.clone());
     if cache.as_ref().is_some_and(|(s, _)| *s != key) {
         *cache = None;
     }
     let (_, tex) = cache.get_or_insert_with(|| {
         let pixels = egui::ColorImage::from_rgba_unmultiplied(image.size(), image.rgba());
-        (key, ui.ctx().load_texture("signature-image", pixels, egui::TextureOptions::LINEAR))
+        (
+            key,
+            ui.ctx()
+                .load_texture("signature-image", pixels, egui::TextureOptions::LINEAR),
+        )
     });
     tex.id()
 }
 
-fn image_preview(ui: &egui::Ui, rect: egui::Rect, image: &SignatureImage, cache: &mut Option<(SavedSig, egui::TextureHandle)>) {
+fn image_preview(
+    ui: &egui::Ui,
+    rect: egui::Rect,
+    image: &SignatureImage,
+    cache: &mut Option<(SavedSig, egui::TextureHandle)>,
+) {
     let tex = image_texture(ui, image, cache);
     let [w, h] = image.size();
     let size = vec2(w as f32, h as f32);
@@ -1037,7 +1482,13 @@ fn pad_buttons(ui: &mut egui::Ui, d: &mut SigDraft) -> (bool, bool) {
         }
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
             let ready = d.ready();
-            if ui.add_enabled_ui(ready, |ui| crate::widgets::pill_button(ui, tl!("Apply"), true)).inner.clicked() {
+            if ui
+                .add_enabled_ui(ready, |ui| {
+                    crate::widgets::pill_button(ui, tl!("Apply"), true)
+                })
+                .inner
+                .clicked()
+            {
                 apply = true;
             }
             if crate::widgets::pill_button(ui, tl!("Cancel"), false).clicked() {
@@ -1071,7 +1522,10 @@ impl crate::PdfCraftApp {
         let epoch = self.dialog_epoch();
         let initials = self.signature_draft.initials;
         let scan = self.signature_draft.scan_mode;
-        let dialog = rfd::AsyncFileDialog::new().add_filter(tl!(if scan { "Photo" } else { "Image" }), &["png", "jpg", "jpeg"]);
+        let dialog = rfd::AsyncFileDialog::new().add_filter(
+            tl!(if scan { "Photo" } else { "Image" }),
+            &["png", "jpg", "jpeg"],
+        );
         #[cfg(not(target_arch = "wasm32"))]
         self.ask_one(crate::pickers::Ask::File(dialog), None, move |app, path| {
             if app.dialog_epoch() != epoch
@@ -1082,12 +1536,15 @@ impl crate::PdfCraftApp {
                 return;
             }
             if scan {
-                let result = std::fs::File::open(path).map_err(ScanError::from).and_then(SignaturePhoto::read);
+                let result = std::fs::File::open(path)
+                    .map_err(ScanError::from)
+                    .and_then(SignaturePhoto::read);
                 app.use_signature_photo(result.map_err(|e| e.to_string()));
                 return;
             }
-            let result =
-                std::fs::File::open(path).map_err(pdfcraft_engine::signature_image::SignatureImageError::from).and_then(SignatureImage::read);
+            let result = std::fs::File::open(path)
+                .map_err(pdfcraft_engine::signature_image::SignatureImageError::from)
+                .and_then(SignatureImage::read);
             app.use_signature_image(result.map_err(|e| e.to_string()));
         });
         #[cfg(target_arch = "wasm32")]
@@ -1100,9 +1557,15 @@ impl crate::PdfCraftApp {
             let inbox = self.signature_images.clone();
             let ctx = self.ctx.clone();
             let (limit, too_large) = if scan {
-                (pdfcraft_engine::signature_scan::MAX_PHOTO_BYTES, ScanError::Size.to_string())
+                (
+                    pdfcraft_engine::signature_scan::MAX_PHOTO_BYTES,
+                    ScanError::Size.to_string(),
+                )
             } else {
-                (pdfcraft_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES, pdfcraft_engine::signature_image::SignatureImageError::Size.to_string())
+                (
+                    pdfcraft_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES,
+                    pdfcraft_engine::signature_image::SignatureImageError::Size.to_string(),
+                )
             };
             wasm_bindgen_futures::spawn_local(async move {
                 let bytes = if let Some(file) = dialog.pick_file().await {
@@ -1111,18 +1574,34 @@ impl crate::PdfCraftApp {
                     } else {
                         // `pick_file` returns a readable handle. Read its Blob directly so a
                         // rejected browser read is an error (rfd's read helper unwraps it).
-                        Some(match wasm_bindgen_futures::JsFuture::from(file.inner().array_buffer()).await {
-                            Ok(buffer) => {
-                                let bytes = js_sys::Uint8Array::new(&buffer);
-                                if bytes.length() as usize > limit { Err(too_large) } else { Ok(bytes.to_vec()) }
-                            }
-                            Err(error) => Err(format!("{error:?}")),
-                        })
+                        Some(
+                            match wasm_bindgen_futures::JsFuture::from(file.inner().array_buffer())
+                                .await
+                            {
+                                Ok(buffer) => {
+                                    let bytes = js_sys::Uint8Array::new(&buffer);
+                                    if bytes.length() as usize > limit {
+                                        Err(too_large)
+                                    } else {
+                                        Ok(bytes.to_vec())
+                                    }
+                                }
+                                Err(error) => Err(format!("{error:?}")),
+                            },
+                        )
                     }
                 } else {
                     None
                 };
-                *inbox.picked.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(PickedImage { epoch, initials, scan, bytes });
+                *inbox
+                    .picked
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(PickedImage {
+                    epoch,
+                    initials,
+                    scan,
+                    bytes,
+                });
                 if let Some(ctx) = ctx {
                     ctx.request_repaint();
                 }
@@ -1132,9 +1611,16 @@ impl crate::PdfCraftApp {
 
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn process_signature_images(&mut self) {
-        let picked = self.signature_images.picked.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
+        let picked = self
+            .signature_images
+            .picked
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
         let Some(picked) = picked else { return };
-        self.signature_images.busy.store(false, std::sync::atomic::Ordering::SeqCst);
+        self.signature_images
+            .busy
+            .store(false, std::sync::atomic::Ordering::SeqCst);
         if self.dialog_epoch() != picked.epoch
             || self.dialog != Some(crate::Dialog::Signature)
             || self.signature_draft.initials != picked.initials
@@ -1145,18 +1631,27 @@ impl crate::PdfCraftApp {
         let Some(bytes) = picked.bytes else { return };
         if picked.scan {
             let result = bytes.and_then(|bytes| {
-                pdfcraft_engine::guard(|| SignaturePhoto::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string())
+                pdfcraft_engine::guard(|| SignaturePhoto::from_bytes(&bytes))
+                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())
             });
             self.use_signature_photo(result);
             return;
         }
-        let result = bytes
-            .and_then(|bytes| pdfcraft_engine::guard(|| SignatureImage::from_bytes(&bytes)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+        let result = bytes.and_then(|bytes| {
+            pdfcraft_engine::guard(|| SignatureImage::from_bytes(&bytes))
+                .map_err(|e| e.to_string())?
+                .map_err(|e| e.to_string())
+        });
         self.use_signature_image(result);
     }
 
     fn use_signature_image(&mut self, result: Result<SignatureImage, String>) {
-        let cleaned = result.and_then(|image| image.remove_white_background(245, 35).map_err(|e| e.to_string()));
+        let cleaned = result.and_then(|image| {
+            image
+                .remove_white_background(245, 35)
+                .map_err(|e| e.to_string())
+        });
         match cleaned {
             Ok(image) => {
                 self.signature_draft.image = Some(image);
@@ -1169,29 +1664,46 @@ impl crate::PdfCraftApp {
     /// Files dropped while the signature pad shows the Image or Scan tab are imported there (the
     /// first one) instead of opening behind the dialog.
     #[cfg(not(target_arch = "wasm32"))]
-    pub(crate) fn drop_on_signature_pad(&mut self, dropped: Vec<egui::DroppedFileHandle>) -> Vec<egui::DroppedFileHandle> {
+    pub(crate) fn drop_on_signature_pad(
+        &mut self,
+        dropped: Vec<egui::DroppedFileHandle>,
+    ) -> Vec<egui::DroppedFileHandle> {
         let d = &self.signature_draft;
-        if dropped.is_empty() || self.dialog != Some(crate::Dialog::Signature) || !(d.scan_mode || d.image_mode) {
+        if dropped.is_empty()
+            || self.dialog != Some(crate::Dialog::Signature)
+            || !(d.scan_mode || d.image_mode)
+        {
             return dropped;
         }
         let scan = d.scan_mode;
-        let Some(file) = dropped.into_iter().next() else { return Vec::new() };
+        let Some(file) = dropped.into_iter().next() else {
+            return Vec::new();
+        };
         let limit = pdfcraft_engine::signature_image::MAX_SIGNATURE_IMAGE_BYTES;
         let path = file.path().to_path_buf();
         let bytes: Result<Vec<u8>, String> = if path.is_absolute() {
             use std::io::Read as _;
             let mut bytes = Vec::new();
-            std::fs::File::open(&path).and_then(|f| f.take(limit as u64 + 1).read_to_end(&mut bytes)).map(|_| bytes).map_err(|e| e.to_string())
+            std::fs::File::open(&path)
+                .and_then(|f| f.take(limit as u64 + 1).read_to_end(&mut bytes))
+                .map(|_| bytes)
+                .map_err(|e| e.to_string())
         } else {
             file.bytes().map_err(|e| e.to_string())
         };
         if scan {
-            let photo =
-                bytes.and_then(|b| pdfcraft_engine::guard(|| SignaturePhoto::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+            let photo = bytes.and_then(|b| {
+                pdfcraft_engine::guard(|| SignaturePhoto::from_bytes(&b))
+                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())
+            });
             self.use_signature_photo(photo);
         } else {
-            let image =
-                bytes.and_then(|b| pdfcraft_engine::guard(|| SignatureImage::from_bytes(&b)).map_err(|e| e.to_string())?.map_err(|e| e.to_string()));
+            let image = bytes.and_then(|b| {
+                pdfcraft_engine::guard(|| SignatureImage::from_bytes(&b))
+                    .map_err(|e| e.to_string())?
+                    .map_err(|e| e.to_string())
+            });
             self.use_signature_image(image);
         }
         Vec::new()
@@ -1214,7 +1726,10 @@ impl crate::PdfCraftApp {
 mod tests {
     #[test]
     fn long_signature_previews_have_clear_margins() {
-        for text in ["Alexandria Catherine Elizabeth Montgomery-Wellington", "Jg Jg Jg Jg Jg Jg Jg Jg Jg Jg Jg"] {
+        for text in [
+            "Alexandria Catherine Elizabeth Montgomery-Wellington",
+            "Jg Jg Jg Jg Jg Jg Jg Jg Jg Jg Jg",
+        ] {
             for [w, h] in [[920, 300], [480, 104]] {
                 let image = super::script_preview(text, w, h);
                 assert!(image.pixels.iter().any(|p| p.a() > 0));

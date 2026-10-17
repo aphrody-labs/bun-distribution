@@ -92,15 +92,27 @@ fn text(field: &'static str, s: &str, min: usize, max: usize) -> Result<(), Mani
 fn url(field: &'static str, u: &Option<String>) -> Result<(), ManifestError> {
     match u {
         None => Ok(()),
-        Some(u) if u.len() <= 500 && u.starts_with("https://") && !u.chars().any(|c| c.is_control() || c.is_whitespace()) => Ok(()),
-        Some(_) => bad(field, "must be an https:// address of at most 500 characters"),
+        Some(u)
+            if u.len() <= 500
+                && u.starts_with("https://")
+                && !u.chars().any(|c| c.is_control() || c.is_whitespace()) =>
+        {
+            Ok(())
+        }
+        Some(_) => bad(
+            field,
+            "must be an https:// address of at most 500 characters",
+        ),
     }
 }
 
 /// Check a manifest from outside before trusting it.
 pub fn validate(m: &DenoiserManifest) -> Result<(), ManifestError> {
     if !valid_id(&m.id) {
-        return bad("id", "1 to 64 lowercase letters, digits, `.`, `_` or `-`, starting with a letter or digit");
+        return bad(
+            "id",
+            "1 to 64 lowercase letters, digits, `.`, `_` or `-`, starting with a letter or digit",
+        );
     }
     text("name", &m.name, 1, 80)?;
     text("version", &m.version, 1, 40)?;
@@ -110,14 +122,19 @@ pub fn validate(m: &DenoiserManifest) -> Result<(), ManifestError> {
     url("licence.url", &m.licence.url)?;
     url("source", &m.source)?;
     if let Some(h) = &m.sha256
-        && !(h.len() == 64 && h.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))
+        && !(h.len() == 64
+            && h.bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))
     {
         return bad("sha256", "must be 64 lowercase hex digits");
     }
     if let Some(n) = m.size_bytes
         && (n == 0 || n > MAX_MODEL_BYTES)
     {
-        return bad("sizeBytes", format!("must be between 1 and {MAX_MODEL_BYTES}"));
+        return bad(
+            "sizeBytes",
+            format!("must be between 1 and {MAX_MODEL_BYTES}"),
+        );
     }
     // a U-Net with four poolings wants a multiple of 16; nothing smaller than 64 or larger than 2048 is a tile
     if !(64..=2048).contains(&m.tile) || !m.tile.is_multiple_of(16) {
@@ -125,9 +142,16 @@ pub fn validate(m: &DenoiserManifest) -> Result<(), ManifestError> {
     }
     // tiles must overlap by less than half, or one tile's blend ramps would run into its other neighbour's
     if !m.overlap.is_multiple_of(2) || m.overlap < 16 || m.overlap.saturating_mul(2) >= m.tile {
-        return bad("overlap", "must be even, at least 16 and less than half the tile");
+        return bad(
+            "overlap",
+            "must be even, at least 16 and less than half the tile",
+        );
     }
-    if let Gain::MatchMean { nominal, max_deviation } = m.gain {
+    if let Gain::MatchMean {
+        nominal,
+        max_deviation,
+    } = m.gain
+    {
         if !(nominal.is_finite() && (1e-6..=1e12).contains(&nominal)) {
             return bad("gain.nominal", "must be between 0.000001 and 1000000000000");
         }
@@ -144,7 +168,8 @@ pub fn parse(bytes: &[u8]) -> Result<DenoiserManifest, ManifestError> {
         return Err(ManifestError::TooLarge);
     }
     let bytes = bytes.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(bytes);
-    let m: DenoiserManifest = serde_json::from_slice(bytes).map_err(|e| ManifestError::Parse(e.to_string()))?;
+    let m: DenoiserManifest =
+        serde_json::from_slice(bytes).map_err(|e| ManifestError::Parse(e.to_string()))?;
     validate(&m)?;
     Ok(m)
 }
@@ -166,7 +191,10 @@ mod tests {
             domain: Domain::BayerToRgb,
             tile: 512,
             overlap: 64,
-            gain: Gain::MatchMean { nominal: 1.0e6, max_deviation: 0.05 },
+            gain: Gain::MatchMean {
+                nominal: 1.0e6,
+                max_deviation: 0.05,
+            },
         }
     }
 
@@ -183,17 +211,52 @@ mod tests {
             ("id", Box::new(|m| m.id = "../evil".into())),
             ("id", Box::new(|m| m.id = String::new())),
             ("name", Box::new(|m| m.name = "x\u{7}".into())),
-            ("source", Box::new(|m| m.source = Some("http://insecure".into()))),
+            (
+                "source",
+                Box::new(|m| m.source = Some("http://insecure".into())),
+            ),
             ("sha256", Box::new(|m| m.sha256 = Some("XYZ".into()))),
             ("sizeBytes", Box::new(|m| m.size_bytes = Some(0))),
             ("tile", Box::new(|m| m.tile = 500)),
             ("tile", Box::new(|m| m.tile = 4096)),
             ("overlap", Box::new(|m| m.overlap = 300)),
             ("overlap", Box::new(|m| m.overlap = 63)),
-            ("gain.maxDeviation", Box::new(|m| m.gain = Gain::MatchMean { nominal: 1.0, max_deviation: f32::NAN })),
-            ("gain.maxDeviation", Box::new(|m| m.gain = Gain::MatchMean { nominal: 1.0, max_deviation: 2.0 })),
-            ("gain.nominal", Box::new(|m| m.gain = Gain::MatchMean { nominal: 0.0, max_deviation: 0.1 })),
-            ("gain.nominal", Box::new(|m| m.gain = Gain::MatchMean { nominal: f32::INFINITY, max_deviation: 0.1 })),
+            (
+                "gain.maxDeviation",
+                Box::new(|m| {
+                    m.gain = Gain::MatchMean {
+                        nominal: 1.0,
+                        max_deviation: f32::NAN,
+                    }
+                }),
+            ),
+            (
+                "gain.maxDeviation",
+                Box::new(|m| {
+                    m.gain = Gain::MatchMean {
+                        nominal: 1.0,
+                        max_deviation: 2.0,
+                    }
+                }),
+            ),
+            (
+                "gain.nominal",
+                Box::new(|m| {
+                    m.gain = Gain::MatchMean {
+                        nominal: 0.0,
+                        max_deviation: 0.1,
+                    }
+                }),
+            ),
+            (
+                "gain.nominal",
+                Box::new(|m| {
+                    m.gain = Gain::MatchMean {
+                        nominal: f32::INFINITY,
+                        max_deviation: 0.1,
+                    }
+                }),
+            ),
         ];
         for (field, edit) in cases {
             let mut m = sample();
@@ -207,7 +270,10 @@ mod tests {
 
     #[test]
     fn parse_is_bounded_and_tolerant() {
-        assert_eq!(parse(&vec![b' '; MAX_MANIFEST_BYTES + 1]), Err(ManifestError::TooLarge));
+        assert_eq!(
+            parse(&vec![b' '; MAX_MANIFEST_BYTES + 1]),
+            Err(ManifestError::TooLarge)
+        );
         assert!(matches!(parse(b"{ nope"), Err(ManifestError::Parse(_))));
         assert!(matches!(parse(b""), Err(ManifestError::Parse(_))));
         let mut with_bom = vec![0xEF, 0xBB, 0xBF];

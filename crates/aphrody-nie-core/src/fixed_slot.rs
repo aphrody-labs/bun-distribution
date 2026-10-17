@@ -95,7 +95,10 @@ mod tests {
     use super::*;
 
     fn hexbuf(h: &str) -> Vec<u8> {
-        (0..h.len()).step_by(2).map(|i| u8::from_str_radix(&h[i..i + 2], 16).unwrap()).collect()
+        (0..h.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&h[i..i + 2], 16).unwrap())
+            .collect()
     }
 
     // CASE1 (oracle uemu) : prior = 0xAA*, cap=4, count=0, p2=0x11223344, p3=0xAABBCCDD,
@@ -103,7 +106,15 @@ mod tests {
     #[test]
     fn case1_append_index0() {
         let mut arr = vec![0xAAu8; 4 * ELEM_SIZE];
-        let n = push(&mut arr, 4, 0, 0x1122_3344, 0xAABB_CCDD, 0x0102_0304, 0xDEAD_BEEF);
+        let n = push(
+            &mut arr,
+            4,
+            0,
+            0x1122_3344,
+            0xAABB_CCDD,
+            0x0102_0304,
+            0xDEAD_BEEF,
+        );
         assert_eq!(n, 1);
         let expect = hexbuf(
             "ddccbbaa000000000000803f000000000000803f0000000000000040aaaaaaaaaaaaaaaaaaaaaaaa\

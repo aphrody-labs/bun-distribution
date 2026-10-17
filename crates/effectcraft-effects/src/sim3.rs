@@ -31,8 +31,21 @@ use crate::sim::{Acc, Post, SPS, Shape, Sprite, SpritePlan, Tint, combine, splat
 use crate::util::{SimCache, hash1, params_key, point_in_poly, unpremul};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Simulation", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Simulation",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 // ---------------------------------------------------------------- Particle Playground
@@ -124,10 +137,17 @@ impl MapImg {
         let (ls, os) = (ctx.layer_size, lp.size);
         let sx = if ls[0] > 0.0 { os[0] / ls[0] } else { 1.0 };
         let sy = if ls[1] > 0.0 { os[1] / ls[1] } else { 1.0 };
-        MapImg { img: lp.buf.img, k: [lp.buf.scale * sx, lp.buf.scale * sy], o: lp.buf.offset }
+        MapImg {
+            img: lp.buf.img,
+            k: [lp.buf.scale * sx, lp.buf.scale * sy],
+            o: lp.buf.offset,
+        }
     }
     fn at(&self, x: f32, y: f32) -> Px {
-        let (c, a) = unpremul(self.img.sample_bilinear_clamped(x as f64 * self.k[0] + self.o[0], y as f64 * self.k[1] + self.o[1]));
+        let (c, a) = unpremul(self.img.sample_bilinear_clamped(
+            x as f64 * self.k[0] + self.o[0],
+            y as f64 * self.k[1] + self.o[1],
+        ));
         [c[0], c[1], c[2], a]
     }
 }
@@ -164,14 +184,31 @@ pub const MAP_TARGETS: [&str; 27] = [
 ];
 
 /// Ephemeral Property Mapper operators.
-pub const MAP_OPERATORS: [&str; 7] = ["Set", "Add", "Difference", "Subtract", "Multiply", "Min", "Max"];
+pub const MAP_OPERATORS: [&str; 7] = [
+    "Set",
+    "Add",
+    "Difference",
+    "Subtract",
+    "Multiply",
+    "Min",
+    "Max",
+];
 
 /// Affects ▸ Particles From options.
-pub const PARTICLES_FROM: [&str; 8] =
-    ["All", "Cannon", "Grid", "Layer Exploder", "Particle Exploder", "Grid & Layer Exploder", "Cannon & Grid", "Cannon & Particle Exploder"];
+pub const PARTICLES_FROM: [&str; 8] = [
+    "All",
+    "Cannon",
+    "Grid",
+    "Layer Exploder",
+    "Particle Exploder",
+    "Grid & Layer Exploder",
+    "Cannon & Grid",
+    "Cannon & Particle Exploder",
+];
 
 /// Layer Map ▸ Time Offset Type options.
-pub const TIME_OFFSET_TYPES: [&str; 4] = ["Relative", "Absolute", "Relative Random", "Absolute Random"];
+pub const TIME_OFFSET_TYPES: [&str; 4] =
+    ["Relative", "Absolute", "Relative Random", "Absolute Random"];
 
 /// A property's current value (`target` in [`MAP_TARGETS`]).
 fn prop_get(q: &PgParticle, target: u32) -> f32 {
@@ -251,7 +288,9 @@ impl Affects {
         let g = |id: &str| format!("{group}/affects/{id}");
         Affects {
             from: pr.e(&g("particlesFrom")),
-            selection: ctx.layer_param(&g("selectionMap"), true).map(|lp| MapImg::from(ctx, lp)),
+            selection: ctx
+                .layer_param(&g("selectionMap"), true)
+                .map(|lp| MapImg::from(ctx, lp)),
             chars: pr.s(&g("characters")).chars().collect(),
             age: pr.f(&g("olderYoungerThan")) as f32,
             feather: pr.f(&g("ageFeather")).max(0.0) as f32,
@@ -271,13 +310,18 @@ impl Affects {
         if !src_ok {
             return 0.0;
         }
-        if !self.chars.is_empty() && !char::from_u32(q.ch).is_some_and(|c| self.chars.contains(&c)) {
+        if !self.chars.is_empty() && !char::from_u32(q.ch).is_some_and(|c| self.chars.contains(&c))
+        {
             return 0.0;
         }
         let mut w = 1.0;
         if self.age != 0.0 {
             // Signed distance past the age threshold, feathered across Age Feather.
-            let d = if self.age > 0.0 { q.age - self.age } else { -self.age - q.age };
+            let d = if self.age > 0.0 {
+                q.age - self.age
+            } else {
+                -self.age - q.age
+            };
             w *= if self.feather > 0.0 {
                 (d / self.feather + 0.5).clamp(0.0, 1.0)
             } else if d >= 0.0 {
@@ -316,8 +360,10 @@ impl Mapper {
             let v = lo + (hi - lo) * px[ch];
             if target == 14 || target == 17 {
                 // Gradient Velocity / Force: along the map channel's gradient.
-                let gx = self.map.at(q.p[0] + 1.0, q.p[1])[ch] - self.map.at(q.p[0] - 1.0, q.p[1])[ch];
-                let gy = self.map.at(q.p[0], q.p[1] + 1.0)[ch] - self.map.at(q.p[0], q.p[1] - 1.0)[ch];
+                let gx =
+                    self.map.at(q.p[0] + 1.0, q.p[1])[ch] - self.map.at(q.p[0] - 1.0, q.p[1])[ch];
+                let gy =
+                    self.map.at(q.p[0], q.p[1] + 1.0)[ch] - self.map.at(q.p[0], q.p[1] - 1.0)[ch];
                 let (gx, gy) = (gx * 0.5 * (hi - lo) * w, gy * 0.5 * (hi - lo) * w);
                 if target == 14 {
                     q.v = [q.v[0] + gx, q.v[1] + gy];
@@ -337,7 +383,11 @@ impl Mapper {
                 _ => v,
             };
             // (An unlimited lifespan has no in-between.)
-            let v = if w >= 1.0 || !cur.is_finite() { new } else { cur + (new - cur) * w };
+            let v = if w >= 1.0 || !cur.is_finite() {
+                new
+            } else {
+                cur + (new - cur) * w
+            };
             prop_set(q, target, v);
         }
     }
@@ -392,11 +442,21 @@ impl Pg {
         let off = if r >= 0.0 {
             [h(2) * r, h(4) * r]
         } else {
-            let (a, rr) = (hash1(id, 5, s) * std::f32::consts::TAU, hash1(id, 6, s).sqrt() * -r);
+            let (a, rr) = (
+                hash1(id, 5, s) * std::f32::consts::TAU,
+                hash1(id, 6, s).sqrt() * -r,
+            );
             [a.cos() * rr, a.sin() * rr]
         };
         let p = [self.pos[0] + off[0], self.pos[1] + off[1]];
-        let mut q = PgParticle::new(p, [d[0] * speed, d[1] * speed], self.color, self.radius, id, SRC_CANNON);
+        let mut q = PgParticle::new(
+            p,
+            [d[0] * speed, d[1] * speed],
+            self.color,
+            self.radius,
+            id,
+            SRC_CANNON,
+        );
         if !self.cannon_text.is_empty() {
             q.ch = self.cannon_text[id as usize % self.cannon_text.len()] as u32;
         }
@@ -425,9 +485,15 @@ impl Pg {
         let mut push = vec![[0.0f32; 2]; st.parts.len()];
         if self.repel != 0.0 && self.repel_radius > 0.0 && eph.len() > 1 {
             let cell = self.repel_radius;
-            let mut grid: std::collections::HashMap<(i32, i32), Vec<usize>> = std::collections::HashMap::new();
+            let mut grid: std::collections::HashMap<(i32, i32), Vec<usize>> =
+                std::collections::HashMap::new();
             for (i, q) in eph.iter().enumerate() {
-                grid.entry(((q.p[0] / cell).floor() as i32, (q.p[1] / cell).floor() as i32)).or_default().push(i);
+                grid.entry((
+                    (q.p[0] / cell).floor() as i32,
+                    (q.p[1] / cell).floor() as i32,
+                ))
+                .or_default()
+                .push(i);
             }
             let parts = &eph;
             push.par_iter_mut().enumerate().for_each(|(i, f)| {
@@ -436,10 +502,15 @@ impl Pg {
                 if w <= 0.0 {
                     return;
                 }
-                let (cx, cy) = ((q.p[0] / cell).floor() as i32, (q.p[1] / cell).floor() as i32);
+                let (cx, cy) = (
+                    (q.p[0] / cell).floor() as i32,
+                    (q.p[1] / cell).floor() as i32,
+                );
                 for gy in cy - 1..=cy + 1 {
                     for gx in cx - 1..=cx + 1 {
-                        let Some(list) = grid.get(&(gx, gy)) else { continue };
+                        let Some(list) = grid.get(&(gx, gy)) else {
+                            continue;
+                        };
                         for &j in list {
                             if j == i {
                                 continue;
@@ -458,38 +529,57 @@ impl Pg {
             });
         }
         let wall = self.wall.as_deref();
-        st.parts.par_iter_mut().zip(eph.par_iter()).zip(push.par_iter()).for_each(|((q, e), f)| {
-            let gw = self.grav_affects.weight(e);
-            let g = if self.grav_spread > 0.0 { 1.0 + (hash1(q.id, 7, s) * 2.0 - 1.0) * self.grav_spread } else { 1.0 };
-            let ax = self.gravity[0] * g * gw + (e.force[0] + f[0]) / e.mass;
-            let ay = self.gravity[1] * g * gw + (e.force[1] + f[1]) / e.mass;
-            // Static friction: a resting particle stays until the push beats it.
-            let resting = e.v[0].abs() < 1e-3 && e.v[1].abs() < 1e-3;
-            let (ax, ay) = if resting && (ax * ax + ay * ay).sqrt() <= e.static_friction { (0.0, 0.0) } else { (ax, ay) };
-            let damp = (1.0 - e.friction * 0.1).max(0.0);
-            let nv = [(e.v[0] + ax * dt) * damp, (e.v[1] + ay * dt) * damp];
-            // Keep only the persistent part of the velocity.
-            q.v = [nv[0] - (e.v[0] - q.v[0]), nv[1] - (e.v[1] - q.v[1])];
-            q.ang_vel += e.torque * dt;
-            q.angle += e.ang_vel * dt;
-            q.scale = [(q.scale[0] + e.scale_speed * dt).max(0.0), (q.scale[1] + e.scale_speed * dt).max(0.0)];
-            q.age += dt;
-            let np = [q.p[0] + nv[0] * dt, q.p[1] + nv[1] * dt];
-            if let Some(w) = wall
-                && self.wall_affects.weight(e) > 0.5
-            {
-                let was = point_in_poly(w, q.p[0] as f64, q.p[1] as f64);
-                let now = point_in_poly(w, np[0] as f64, np[1] as f64);
-                if was != now {
-                    // Bounce: reverse the velocity and stay on the same side.
-                    q.v = [-q.v[0] * 0.9, -q.v[1] * 0.9];
-                    return;
+        st.parts
+            .par_iter_mut()
+            .zip(eph.par_iter())
+            .zip(push.par_iter())
+            .for_each(|((q, e), f)| {
+                let gw = self.grav_affects.weight(e);
+                let g = if self.grav_spread > 0.0 {
+                    1.0 + (hash1(q.id, 7, s) * 2.0 - 1.0) * self.grav_spread
+                } else {
+                    1.0
+                };
+                let ax = self.gravity[0] * g * gw + (e.force[0] + f[0]) / e.mass;
+                let ay = self.gravity[1] * g * gw + (e.force[1] + f[1]) / e.mass;
+                // Static friction: a resting particle stays until the push beats it.
+                let resting = e.v[0].abs() < 1e-3 && e.v[1].abs() < 1e-3;
+                let (ax, ay) = if resting && (ax * ax + ay * ay).sqrt() <= e.static_friction {
+                    (0.0, 0.0)
+                } else {
+                    (ax, ay)
+                };
+                let damp = (1.0 - e.friction * 0.1).max(0.0);
+                let nv = [(e.v[0] + ax * dt) * damp, (e.v[1] + ay * dt) * damp];
+                // Keep only the persistent part of the velocity.
+                q.v = [nv[0] - (e.v[0] - q.v[0]), nv[1] - (e.v[1] - q.v[1])];
+                q.ang_vel += e.torque * dt;
+                q.angle += e.ang_vel * dt;
+                q.scale = [
+                    (q.scale[0] + e.scale_speed * dt).max(0.0),
+                    (q.scale[1] + e.scale_speed * dt).max(0.0),
+                ];
+                q.age += dt;
+                let np = [q.p[0] + nv[0] * dt, q.p[1] + nv[1] * dt];
+                if let Some(w) = wall
+                    && self.wall_affects.weight(e) > 0.5
+                {
+                    let was = point_in_poly(w, q.p[0] as f64, q.p[1] as f64);
+                    let now = point_in_poly(w, np[0] as f64, np[1] as f64);
+                    if was != now {
+                        // Bounce: reverse the velocity and stay on the same side.
+                        q.v = [-q.v[0] * 0.9, -q.v[1] * 0.9];
+                        return;
+                    }
                 }
-            }
-            q.p = np;
-        });
+                q.p = np;
+            });
         let b = self.bounds;
-        let eph_life: Vec<f32> = st.parts.iter().map(|q| self.ephemeral(q).lifespan).collect();
+        let eph_life: Vec<f32> = st
+            .parts
+            .iter()
+            .map(|q| self.ephemeral(q).lifespan)
+            .collect();
         let mut k = 0;
         st.parts.retain(|q| {
             let life = eph_life[k];
@@ -501,7 +591,12 @@ impl Pg {
         if self.pex_radius > 0.0 {
             let mut out = Vec::with_capacity(st.parts.len());
             for q in std::mem::take(&mut st.parts) {
-                if q.src == SRC_PARTICLE_EXPLODER || q.ch != 0 || q.r <= self.pex_radius * 1.01 || self.pex_affects.weight(&q) <= 0.5 || out.len() > 60_000 {
+                if q.src == SRC_PARTICLE_EXPLODER
+                    || q.ch != 0
+                    || q.r <= self.pex_radius * 1.01
+                    || self.pex_affects.weight(&q) <= 0.5
+                    || out.len() > 60_000
+                {
                     out.push(q);
                     continue;
                 }
@@ -561,44 +656,90 @@ fn image_key(img: &Image) -> u64 {
 
 fn mapper_from(ctx: &EffectCtx, group: &str, ephemeral: bool) -> Option<Mapper> {
     let pr = ctx.params;
-    let map = ctx.layer_param(&format!("{group}/useLayerAsMap"), true).map(|lp| MapImg::from(ctx, lp))?;
+    let map = ctx
+        .layer_param(&format!("{group}/useLayerAsMap"), true)
+        .map(|lp| MapImg::from(ctx, lp))?;
     let ch = |c: &str| {
         (
             pr.e(&format!("{group}/map{c}To")),
-            if ephemeral { pr.e(&format!("{group}/{}Operator", c.to_lowercase())) } else { 0 },
+            if ephemeral {
+                pr.e(&format!("{group}/{}Operator", c.to_lowercase()))
+            } else {
+                0
+            },
             pr.f(&format!("{group}/{}Min", c.to_lowercase())) as f32,
             pr.f(&format!("{group}/{}Max", c.to_lowercase())) as f32,
         )
     };
-    Some(Mapper { map, chans: [ch("Red"), ch("Green"), ch("Blue")], affects: Affects::from(ctx, group) })
+    Some(Mapper {
+        map,
+        chans: [ch("Red"), ch("Green"), ch("Blue")],
+        affects: Affects::from(ctx, group),
+    })
 }
 
 /// Draw a map layer frame as a particle: centred on (x, y) buffer px, rotated `angle` degrees
 /// and scaled, over `out`.
-fn blit_layer(out: &mut Image, lp: &crate::LayerPixels, x: f64, y: f64, angle: f64, scale: [f64; 2], buf_scale: f64, alpha: f32) {
-    let (w, h) = (lp.size[0] * scale[0].abs() * buf_scale, lp.size[1] * scale[1].abs() * buf_scale);
+fn blit_layer(
+    out: &mut Image,
+    lp: &crate::LayerPixels,
+    x: f64,
+    y: f64,
+    angle: f64,
+    scale: [f64; 2],
+    buf_scale: f64,
+    alpha: f32,
+) {
+    let (w, h) = (
+        lp.size[0] * scale[0].abs() * buf_scale,
+        lp.size[1] * scale[1].abs() * buf_scale,
+    );
     let r = (w * w + h * h).sqrt() * 0.5 + 1.0;
-    let (x0, x1) = ((x - r).floor().max(0.0) as i64, (x + r).ceil().min(out.width as f64) as i64);
-    let (y0, y1) = ((y - r).floor().max(0.0) as i64, (y + r).ceil().min(out.height as f64) as i64);
+    let (x0, x1) = (
+        (x - r).floor().max(0.0) as i64,
+        (x + r).ceil().min(out.width as f64) as i64,
+    );
+    let (y0, y1) = (
+        (y - r).floor().max(0.0) as i64,
+        (y + r).ceil().min(out.height as f64) as i64,
+    );
     if x0 >= x1 || y0 >= y1 || scale[0] == 0.0 || scale[1] == 0.0 {
         return;
     }
     let (sa, ca) = angle.to_radians().sin_cos();
     for py in y0..y1 {
         for px in x0..x1 {
-            let (dx, dy) = ((px as f64 + 0.5 - x) / buf_scale, (py as f64 + 0.5 - y) / buf_scale);
+            let (dx, dy) = (
+                (px as f64 + 0.5 - x) / buf_scale,
+                (py as f64 + 0.5 - y) / buf_scale,
+            );
             // Undo rotation, then scale; into map layer pixels around its centre.
-            let (u, v) = ((dx * ca + dy * sa) / scale[0] + lp.size[0] * 0.5, (-dx * sa + dy * ca) / scale[1] + lp.size[1] * 0.5);
+            let (u, v) = (
+                (dx * ca + dy * sa) / scale[0] + lp.size[0] * 0.5,
+                (-dx * sa + dy * ca) / scale[1] + lp.size[1] * 0.5,
+            );
             if u < 0.0 || v < 0.0 || u >= lp.size[0] || v >= lp.size[1] {
                 continue;
             }
-            let s = lp.buf.img.sample_bilinear(u * lp.buf.scale + lp.buf.offset[0], v * lp.buf.scale + lp.buf.offset[1]);
+            let s = lp.buf.img.sample_bilinear(
+                u * lp.buf.scale + lp.buf.offset[0],
+                v * lp.buf.scale + lp.buf.offset[1],
+            );
             if s[3] <= 0.0 {
                 continue;
             }
             let d = out.get(px, py);
             let k = 1.0 - s[3] * alpha;
-            out.set(px as u32, py as u32, [s[0] * alpha + d[0] * k, s[1] * alpha + d[1] * k, s[2] * alpha + d[2] * k, s[3] * alpha + d[3] * k]);
+            out.set(
+                px as u32,
+                py as u32,
+                [
+                    s[0] * alpha + d[0] * k,
+                    s[1] * alpha + d[1] * k,
+                    s[2] * alpha + d[2] * k,
+                    s[3] * alpha + d[3] * k,
+                ],
+            );
         }
     }
 }
@@ -609,8 +750,15 @@ fn pg_of(ctx: &EffectCtx) -> Pg {
     let (lw, lh) = (ctx.layer_size[0] as f32, ctx.layer_size[1] as f32);
     let grav_dir = (pr.f("gravity/gravityDirection") as f32).to_radians();
     let gf = pr.f("gravity/gravityForce") as f32;
-    let wall = (pr.f("wall/wallBoundary").round() as usize).checked_sub(1).and_then(|i| ctx.env.masks.get(i)).map(|m| m.points.clone());
-    let persistent = if pr.b("mapperEnabled") { mapper_from(ctx, "persistentPropertyMapper", false) } else { None };
+    let wall = (pr.f("wall/wallBoundary").round() as usize)
+        .checked_sub(1)
+        .and_then(|i| ctx.env.masks.get(i))
+        .map(|m| m.points.clone());
+    let persistent = if pr.b("mapperEnabled") {
+        mapper_from(ctx, "persistentPropertyMapper", false)
+    } else {
+        None
+    };
     let ephemeral = mapper_from(ctx, "ephemeralPropertyMapper", true);
     Pg {
         cannon: pr.b("cannonEnabled"),
@@ -680,14 +828,23 @@ fn pg_accelerated(ctx: &EffectCtx, key: u64, pg: &Pg) -> Option<std::sync::Arc<P
         seed: pg.seed,
         bounds: pg.bounds,
     };
-    let req = crate::psim::SimRequest { key, steps, births: &births, system: crate::psim::ParticleSystem::Cannon(desc) };
+    let req = crate::psim::SimRequest {
+        key,
+        steps,
+        births: &births,
+        system: crate::psim::ParticleSystem::Cannon(desc),
+    };
     let parts = backend.simulate(&req)?;
     Some(std::sync::Arc::new(PgState {
         parts: parts
             .into_iter()
             .map(|q| {
                 let born = pg.spawn(q.id);
-                PgParticle { p: [q.p[0], q.p[1]], v: [q.v[0], q.v[1]], ..born }
+                PgParticle {
+                    p: [q.p[0], q.p[1]],
+                    v: [q.v[0], q.v[1]],
+                    ..born
+                }
             })
             .collect(),
         carry: 0.0,
@@ -701,17 +858,42 @@ fn pg_accelerated(ctx: &EffectCtx, key: u64, pg: &Pg) -> Option<std::sync::Arc<P
 pub fn playground_state(ctx: &EffectCtx) -> Option<Vec<crate::psim::SimParticle>> {
     let pg = pg_of(ctx);
     let pr = ctx.params;
-    let grid = pr.b("gridEnabled") && pr.f("grid/particlesAcross").round() > 0.0 && pr.f("grid/particlesDown").round() > 0.0;
-    let exploder = pr.b("exploderEnabled") && pr.get("layerExploder/explodeLayer").and_then(Value::as_layer).is_some();
+    let grid = pr.b("gridEnabled")
+        && pr.f("grid/particlesAcross").round() > 0.0
+        && pr.f("grid/particlesDown").round() > 0.0;
+    let exploder = pr.b("exploderEnabled")
+        && pr
+            .get("layerExploder/explodeLayer")
+            .and_then(Value::as_layer)
+            .is_some();
     if !pg.cannon_only() || grid || exploder {
         return None;
     }
-    let key = params_key(ctx, &Buf { img: Image::new(0, 0), offset: [0.0; 2], scale: 1.0 }, 0x7067);
-    let st = pg_accelerated(ctx, key, &pg).unwrap_or_else(|| PG_CACHE.run(key, steps_at(ctx.time), PgState::default, |st, _| pg.step(st)));
+    let key = params_key(
+        ctx,
+        &Buf {
+            img: Image::new(0, 0),
+            offset: [0.0; 2],
+            scale: 1.0,
+        },
+        0x7067,
+    );
+    let st = pg_accelerated(ctx, key, &pg).unwrap_or_else(|| {
+        PG_CACHE.run(key, steps_at(ctx.time), PgState::default, |st, _| {
+            pg.step(st)
+        })
+    });
     Some(
         st.parts
             .iter()
-            .map(|q| crate::psim::SimParticle { p: [q.p[0], q.p[1], 0.0], v: [q.v[0], q.v[1], 0.0], age: 0.0, life: 0.0, rnd: 0.0, id: q.id })
+            .map(|q| crate::psim::SimParticle {
+                p: [q.p[0], q.p[1], 0.0],
+                v: [q.v[0], q.v[1], 0.0],
+                age: 0.0,
+                life: 0.0,
+                rnd: 0.0,
+                id: q.id,
+            })
             .collect(),
     )
 }
@@ -736,9 +918,13 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
     let grid_text: Vec<char> = pr.s("options/gridText").chars().collect();
     let exploder = if pr.b("exploderEnabled") {
         let host = ctx.env.host;
-        let lid = pr.get("layerExploder/explodeLayer").and_then(Value::as_layer);
+        let lid = pr
+            .get("layerExploder/explodeLayer")
+            .and_then(Value::as_layer);
         match (host, lid) {
-            (Some(h), Some(id)) => h.layer_at(id, ctx.env.comp_time - ctx.time, true).or_else(|| h.layer(id, true)),
+            (Some(h), Some(id)) => h
+                .layer_at(id, ctx.env.comp_time - ctx.time, true)
+                .or_else(|| h.layer(id, true)),
             _ => None,
         }
     } else {
@@ -747,11 +933,24 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
     let ex_r = pr.f("layerExploder/radiusOfNewParticles").max(0.5) as f32;
     let ex_disp = pr.f("layerExploder/velocityDispersion") as f32;
 
-    let mut key = params_key(ctx, &Buf { img: Image::new(0, 0), offset: [0.0; 2], scale: 1.0 }, 0x7067);
+    let mut key = params_key(
+        ctx,
+        &Buf {
+            img: Image::new(0, 0),
+            offset: [0.0; 2],
+            scale: 1.0,
+        },
+        0x7067,
+    );
     for m in [&pg.persistent, &pg.ephemeral].into_iter().flatten() {
         key ^= image_key(&m.map.img).rotate_left(7);
     }
-    for a in [&pg.pex_affects, &pg.grav_affects, &pg.repel_affects, &pg.wall_affects] {
+    for a in [
+        &pg.pex_affects,
+        &pg.grav_affects,
+        &pg.repel_affects,
+        &pg.wall_affects,
+    ] {
         if let Some(s) = &a.selection {
             key ^= image_key(&s.img).rotate_left(11);
         }
@@ -760,7 +959,9 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
         key ^= image_key(&e.buf.img).rotate_left(13);
     }
     if let Some(w) = &pg.wall {
-        key ^= w.iter().fold(0u64, |a, p| a.rotate_left(5) ^ p[0].to_bits() ^ p[1].to_bits().rotate_left(17));
+        key ^= w.iter().fold(0u64, |a, p| {
+            a.rotate_left(5) ^ p[0].to_bits() ^ p[1].to_bits().rotate_left(17)
+        });
     }
     let seed = pg.seed;
     let init = || {
@@ -781,8 +982,16 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
                         }
                         c as u32
                     };
-                    let fx = if across > 1 { i as f64 / (across - 1) as f64 - 0.5 } else { 0.0 };
-                    let fy = if down > 1 { j as f64 / (down - 1) as f64 - 0.5 } else { 0.0 };
+                    let fx = if across > 1 {
+                        i as f64 / (across - 1) as f64 - 0.5
+                    } else {
+                        0.0
+                    };
+                    let fy = if down > 1 {
+                        j as f64 / (down - 1) as f64 - 0.5
+                    } else {
+                        0.0
+                    };
                     let p = [(gpos[0] + fx * gw) as f32, (gpos[1] + fy * gh) as f32];
                     let id = st.next_id;
                     st.next_id += 1;
@@ -806,8 +1015,12 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
                         let h = |k: u32| hash1(id, k, seed) * 2.0 - 1.0;
                         let (dx, dy) = (x - lw * 0.5, y - lh * 0.5);
                         let l = (dx * dx + dy * dy).sqrt().max(1.0);
-                        let v = [dx / l * ex_disp + h(1) * ex_disp, dy / l * ex_disp + h(2) * ex_disp];
-                        st.parts.push(PgParticle::new([x, y], v, c, ex_r, id, SRC_LAYER_EXPLODER));
+                        let v = [
+                            dx / l * ex_disp + h(1) * ex_disp,
+                            dy / l * ex_disp + h(2) * ex_disp,
+                        ];
+                        st.parts
+                            .push(PgParticle::new([x, y], v, c, ex_r, id, SRC_LAYER_EXPLODER));
                     }
                     x += step;
                 }
@@ -817,15 +1030,25 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
         st
     };
     // A cannon with gravity only: every particle moves on its own (GPU particles).
-    let independent = pg.cannon_only() && !(grid_on && across > 0 && down > 0) && exploder.is_none();
-    let gpu = if independent { pg_accelerated(ctx, key, &pg) } else { None };
-    let st = gpu.unwrap_or_else(|| PG_CACHE.run(key, steps_at(ctx.time), init, |st, _| pg.step(st)));
+    let independent =
+        pg.cannon_only() && !(grid_on && across > 0 && down > 0) && exploder.is_none();
+    let gpu = if independent {
+        pg_accelerated(ctx, key, &pg)
+    } else {
+        None
+    };
+    let st =
+        gpu.unwrap_or_else(|| PG_CACHE.run(key, steps_at(ctx.time), init, |st, _| pg.step(st)));
     // Render: what the ephemeral mapper changes shows for this frame only.
     let parts: Vec<PgParticle> = st.parts.iter().map(|q| pg.ephemeral(q)).collect();
     let auto_orient = pr.b("options/autoOrientRotation");
     let s = b.scale as f32;
     // Layer Map: affected particles show the map layer (at a time set by the offset type).
-    let map_id = if pr.b("layerMapEnabled") { pr.get("layerMap/layerMapLayer").and_then(Value::as_layer) } else { None };
+    let map_id = if pr.b("layerMapEnabled") {
+        pr.get("layerMap/layerMapLayer").and_then(Value::as_layer)
+    } else {
+        None
+    };
     let map_affects = Affects::from(ctx, "layerMap");
     let offset_type = pr.e("layerMap/timeOffsetType");
     let offset = pr.f("layerMap/timeOffset");
@@ -834,7 +1057,11 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
     let mut blits: Vec<(PgParticle, i64)> = vec![];
     for q in &parts {
         let (x, y) = b.to_px([q.p[0] as f64, q.p[1] as f64]);
-        let angle = if auto_orient && (q.v[0] != 0.0 || q.v[1] != 0.0) { q.v[1].atan2(q.v[0]).to_degrees() + 90.0 } else { q.angle };
+        let angle = if auto_orient && (q.v[0] != 0.0 || q.v[1] != 0.0) {
+            q.v[1].atan2(q.v[0]).to_degrees() + 90.0
+        } else {
+            q.angle
+        };
         if let (Some(_), true) = (map_id, map_affects.weight(q) > 0.5) {
             let rnd = hash1(q.id, 41, seed) as f64;
             let t = match offset_type {
@@ -856,28 +1083,64 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
                 let wgt = (size * 0.045).max(0.35) as f32;
                 let (sa, ca) = (angle as f64).to_radians().sin_cos();
                 let tr = |g: [f64; 2]| {
-                    let (gx, gy) = ((g[0] - 2.0) * u * q.scale[0] as f64 / sc.max(1e-6) as f64, (g[1] - 3.0) * u * q.scale[1] as f64 / sc.max(1e-6) as f64);
+                    let (gx, gy) = (
+                        (g[0] - 2.0) * u * q.scale[0] as f64 / sc.max(1e-6) as f64,
+                        (g[1] - 3.0) * u * q.scale[1] as f64 / sc.max(1e-6) as f64,
+                    );
                     [x + gx * ca - gy * sa, y + gx * sa + gy * ca]
                 };
                 for stroke in crate::textfx::glyph_strokes(c) {
                     if stroke.len() == 1 {
                         let p0 = tr(stroke[0]);
-                        sprites.push(Sprite::new(p0[0] as f32, p0[1] as f32, wgt, q.c, Shape::Disc));
+                        sprites.push(Sprite::new(
+                            p0[0] as f32,
+                            p0[1] as f32,
+                            wgt,
+                            q.c,
+                            Shape::Disc,
+                        ));
                     }
                     for w2 in stroke.windows(2) {
                         let (a0, a1) = (tr(w2[0]), tr(w2[1]));
-                        sprites.push(Sprite::new(a0[0] as f32, a0[1] as f32, wgt, q.c, Shape::Line { dx: (a1[0] - a0[0]) as f32, dy: (a1[1] - a0[1]) as f32 }));
+                        sprites.push(Sprite::new(
+                            a0[0] as f32,
+                            a0[1] as f32,
+                            wgt,
+                            q.c,
+                            Shape::Line {
+                                dx: (a1[0] - a0[0]) as f32,
+                                dy: (a1[1] - a0[1]) as f32,
+                            },
+                        ));
                     }
                 }
             }
-            None => sprites.push(Sprite::new(x as f32, y as f32, q.r * sc * s, q.c, Shape::Disc)),
+            None => sprites.push(Sprite::new(
+                x as f32,
+                y as f32,
+                q.r * sc * s,
+                q.c,
+                Shape::Disc,
+            )),
         }
     }
-    let mut plan = PgPlan { sprites: SpritePlan { sprites, tints: vec![], acc: Acc::Over, post: Post::Combine(5) }, blits: vec![], frames: vec![] };
+    let mut plan = PgPlan {
+        sprites: SpritePlan {
+            sprites,
+            tints: vec![],
+            acc: Acc::Over,
+            post: Post::Combine(5),
+        },
+        blits: vec![],
+        frames: vec![],
+    };
     if let (Some(id), Some(host)) = (map_id, ctx.env.host) {
-        let me = pr.get(&crate::layer_source_id("layerMap/layerMapLayer")).is_none_or(|v| v.as_enum() != 0);
+        let me = pr
+            .get(&crate::layer_source_id("layerMap/layerMapLayer"))
+            .is_none_or(|v| v.as_enum() != 0);
         // Fetched frames by frame number: their index in `plan.frames` (`None` = unavailable).
-        let mut frames: std::collections::HashMap<i64, Option<usize>> = std::collections::HashMap::new();
+        let mut frames: std::collections::HashMap<i64, Option<usize>> =
+            std::collections::HashMap::new();
         for (q, frame) in &blits {
             let at = if !frames.contains_key(frame) && frames.len() >= 32 {
                 // Too many distinct times: reuse the nearest fetched frame.
@@ -894,7 +1157,14 @@ pub fn playground_plan(ctx: &EffectCtx, b: &Buf) -> PgPlan {
             };
             if let Some(i) = at {
                 let (x, y) = b.to_px([q.p[0] as f64, q.p[1] as f64]);
-                plan.blits.push(PgBlit { frame: i, x, y, angle: q.angle as f64, scale: [q.scale[0] as f64, q.scale[1] as f64], alpha: q.c[3] });
+                plan.blits.push(PgBlit {
+                    frame: i,
+                    x,
+                    y,
+                    angle: q.angle as f64,
+                    scale: [q.scale[0] as f64, q.scale[1] as f64],
+                    alpha: q.c[3],
+                });
             }
         }
     }
@@ -923,9 +1193,23 @@ pub struct PgPlan {
 
 impl PgPlan {
     pub fn finish(&self, mut b: Buf) -> Buf {
-        let mut fx = splat(b.img.width, b.img.height, &self.sprites.sprites, self.sprites.acc);
+        let mut fx = splat(
+            b.img.width,
+            b.img.height,
+            &self.sprites.sprites,
+            self.sprites.acc,
+        );
         for q in &self.blits {
-            blit_layer(&mut fx, &self.frames[q.frame], q.x, q.y, q.angle, q.scale, b.scale, q.alpha);
+            blit_layer(
+                &mut fx,
+                &self.frames[q.frame],
+                q.x,
+                q.y,
+                q.angle,
+                q.scale,
+                b.scale,
+                q.alpha,
+            );
         }
         // Particles replace the layer's own pixels.
         b.img = combine(&b.img, &fx, 5);
@@ -936,7 +1220,9 @@ impl PgPlan {
 // ---------------------------------------------------------------- CC Hair
 
 fn cc_hair(ctx: &EffectCtx, b: Buf) -> Buf {
-    let Some(mut plan) = hair_plan(ctx, &b) else { return b };
+    let Some(mut plan) = hair_plan(ctx, &b) else {
+        return b;
+    };
     plan.resolve(&b.img);
     plan.finish(b)
 }
@@ -953,7 +1239,9 @@ pub(crate) fn hair_plan(ctx: &EffectCtx, b: &Buf) -> Option<SpritePlan> {
     let thick = pr.f("thickness").max(0.05) as f32;
     let weight = pr.f("weight") as f32;
     let const_mass = pr.b("constantMass");
-    let map = ctx.layer_param("hairfallMap/mapLayer", true).map(|lp| MapImg::from(ctx, lp));
+    let map = ctx
+        .layer_param("hairfallMap/mapLayer", true)
+        .map(|lp| MapImg::from(ctx, lp));
     let map_strength = (pr.f("hairfallMap/mapStrength") / 100.0) as f32;
     let map_soft = pr.f("hairfallMap/mapSoftness").max(0.0) as f32;
     let noise = (pr.f("hairfallMap/addNoise") / 100.0) as f32;
@@ -964,7 +1252,11 @@ pub(crate) fn hair_plan(ctx: &EffectCtx, b: &Buf) -> Option<SpritePlan> {
     let light_i = (pr.f("light/lightIntensity") / 100.0) as f32;
     let ld = (pr.f("light/lightDirection") as f32).to_radians();
     let light = [ld.sin(), -ld.cos()];
-    let (amb, dif, spe) = ((pr.f("shading/ambient") / 100.0) as f32, (pr.f("shading/diffuse") / 100.0) as f32, (pr.f("shading/specular") / 100.0) as f32);
+    let (amb, dif, spe) = (
+        (pr.f("shading/ambient") / 100.0) as f32,
+        (pr.f("shading/diffuse") / 100.0) as f32,
+        (pr.f("shading/specular") / 100.0) as f32,
+    );
     let rough = (pr.f("shading/roughness") / 100.0).clamp(0.01, 1.0) as f32;
     let seed = ctx.seed ^ (pr.f("randomSeed") as u32).wrapping_mul(0x85eb_ca6b);
     let (lw, lh) = (ctx.layer_size[0] as f32, ctx.layer_size[1] as f32);
@@ -979,16 +1271,25 @@ pub(crate) fn hair_plan(ctx: &EffectCtx, b: &Buf) -> Option<SpritePlan> {
             let (bx, by) = b.to_px([rx as f64, ry as f64]);
             let mut l = len * (0.75 + 0.5 * hash1(i, 3, seed));
             // Lean: random, plus the map's local gradient (hairfall map).
-            let mut lean = [(hash1(i, 4, seed) * 2.0 - 1.0) * 0.6, -1.0 + hash1(i, 5, seed) * 0.4];
+            let mut lean = [
+                (hash1(i, 4, seed) * 2.0 - 1.0) * 0.6,
+                -1.0 + hash1(i, 5, seed) * 0.4,
+            ];
             if let Some(m) = &map {
                 let lum = |x: f32, y: f32| {
                     let c = m.at(x, y);
                     (0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]) * c[3]
                 };
                 let d = map_soft.max(1.0);
-                let (gx, gy) = (lum(rx + d, ry) - lum(rx - d, ry), lum(rx, ry + d) - lum(rx, ry - d));
+                let (gx, gy) = (
+                    lum(rx + d, ry) - lum(rx - d, ry),
+                    lum(rx, ry + d) - lum(rx, ry - d),
+                );
                 l *= 1.0 - map_strength + map_strength * lum(rx, ry);
-                lean = [lean[0] + gx * map_strength * 4.0, lean[1] + gy * map_strength * 4.0];
+                lean = [
+                    lean[0] + gx * map_strength * 4.0,
+                    lean[1] + gy * map_strength * 4.0,
+                ];
                 if noise > 0.0 {
                     lean[0] += (hash1(i, 6, seed) * 2.0 - 1.0) * noise;
                 }
@@ -996,7 +1297,13 @@ pub(crate) fn hair_plan(ctx: &EffectCtx, b: &Buf) -> Option<SpritePlan> {
             let ll = (lean[0] * lean[0] + lean[1] * lean[1]).sqrt().max(1e-4);
             let dir = [lean[0] / ll, lean[1] / ll];
             // Droop: heavier (or thinner with Constant Mass off) hair bends more.
-            let droop = weight * if const_mass { 1.0 } else { 1.0 / thick.max(0.2) } * l;
+            let droop = weight
+                * if const_mass {
+                    1.0
+                } else {
+                    1.0 / thick.max(0.2)
+                }
+                * l;
             let pt = |s: f32| [rx + dir[0] * l * s, ry + dir[1] * l * s + droop * s * s];
             let mut out = Vec::with_capacity(segs as usize);
             for k in 0..segs {
@@ -1013,23 +1320,44 @@ pub(crate) fn hair_plan(ctx: &EffectCtx, b: &Buf) -> Option<SpritePlan> {
                 let spec = (1.0 - tl.abs()).powf(1.0 / rough) * spe;
                 let shade = (amb + dif * diff * light_i) * bright;
                 let tip = 1.0 - 0.6 * s1;
-                let (pa, pc) = (b.to_px([a[0] as f64, a[1] as f64]), b.to_px([c[0] as f64, c[1] as f64]));
+                let (pa, pc) = (
+                    b.to_px([a[0] as f64, a[1] as f64]),
+                    b.to_px([c[0] as f64, c[1] as f64]),
+                );
                 let sp = Sprite {
                     x: pa.0 as f32,
                     y: pa.1 as f32,
                     r: thick * 0.5 * b.scale as f32 * tip,
                     c: [0.0, 0.0, 0.0, opacity],
-                    shape: Shape::Line { dx: (pc.0 - pa.0) as f32, dy: (pc.1 - pa.1) as f32 },
+                    shape: Shape::Line {
+                        dx: (pc.0 - pa.0) as f32,
+                        dy: (pc.1 - pa.1) as f32,
+                    },
                     rot: 0.0,
                 };
                 // The root's colour mixed with the hair colour (no strand where it is clear).
-                out.push((sp, Tint::Root { x: bx, y: by, hair: [hc[0], hc[1], hc[2]], inherit, shade, spec: spec * light_i }));
+                out.push((
+                    sp,
+                    Tint::Root {
+                        x: bx,
+                        y: by,
+                        hair: [hc[0], hc[1], hc[2]],
+                        inherit,
+                        shade,
+                        spec: spec * light_i,
+                    },
+                ));
             }
             out
         })
         .collect();
     let (sprites, tints) = strands.into_iter().flatten().unzip();
-    Some(SpritePlan { sprites, tints, acc: Acc::Over, post: Post::Combine(0) })
+    Some(SpritePlan {
+        sprites,
+        tints,
+        acc: Acc::Over,
+        post: Post::Combine(0),
+    })
 }
 
 pub fn specs() -> Vec<EffectSpec> {
@@ -1041,69 +1369,225 @@ pub fn specs() -> Vec<EffectSpec> {
     let affects = |group: &str| -> Vec<crate::ParamSpec> {
         let id = |s: &str| leak(format!("{group}/affects/{s}"));
         vec![
-            p(id("particlesFrom"), "Particles From", Value::Enum(0), popup(&PARTICLES_FROM)),
-            p(id("selectionMap"), "Selection Map", Value::Layer(None), ParamUi::Layer),
-            p(id("characters"), "Characters", Value::Str(String::new()), ParamUi::Text),
-            p(id("olderYoungerThan"), "Older/Younger than", num(0.0), slider(-1000.0, 1000.0, -10.0, 10.0, 2)),
-            p(id("ageFeather"), "Age Feather", num(0.0), slider(0.0, 1000.0, 0.0, 10.0, 2)),
+            p(
+                id("particlesFrom"),
+                "Particles From",
+                Value::Enum(0),
+                popup(&PARTICLES_FROM),
+            ),
+            p(
+                id("selectionMap"),
+                "Selection Map",
+                Value::Layer(None),
+                ParamUi::Layer,
+            ),
+            p(
+                id("characters"),
+                "Characters",
+                Value::Str(String::new()),
+                ParamUi::Text,
+            ),
+            p(
+                id("olderYoungerThan"),
+                "Older/Younger than",
+                num(0.0),
+                slider(-1000.0, 1000.0, -10.0, 10.0, 2),
+            ),
+            p(
+                id("ageFeather"),
+                "Age Feather",
+                num(0.0),
+                slider(0.0, 1000.0, 0.0, 10.0, 2),
+            ),
         ]
     };
     let mut pg = vec![
         // Options (the Options dialog): text fired by the cannon / placed on the grid.
-        p("options/cannonText", "Cannon Text", Value::Str(String::new()), ParamUi::Text),
-        p("options/gridText", "Grid Text", Value::Str(String::new()), ParamUi::Text),
-        p("options/autoOrientRotation", "Auto-Orient Rotation", Value::Bool(false), ParamUi::Checkbox),
+        p(
+            "options/cannonText",
+            "Cannon Text",
+            Value::Str(String::new()),
+            ParamUi::Text,
+        ),
+        p(
+            "options/gridText",
+            "Grid Text",
+            Value::Str(String::new()),
+            ParamUi::Text,
+        ),
+        p(
+            "options/autoOrientRotation",
+            "Auto-Orient Rotation",
+            Value::Bool(false),
+            ParamUi::Checkbox,
+        ),
         // Generator switches (kept for saved projects; After Effects turns a generator off with
         // its rate / counts instead).
-        p("cannonEnabled", "Cannon Enabled", Value::Bool(true), ParamUi::Hidden),
-        p("gridEnabled", "Grid Enabled", Value::Bool(true), ParamUi::Hidden),
-        p("exploderEnabled", "Layer Exploder Enabled", Value::Bool(true), ParamUi::Hidden),
-        p("layerMapEnabled", "Layer Map Enabled", Value::Bool(true), ParamUi::Hidden),
-        p("mapperEnabled", "Persistent Property Mapper Enabled", Value::Bool(true), ParamUi::Hidden),
+        p(
+            "cannonEnabled",
+            "Cannon Enabled",
+            Value::Bool(true),
+            ParamUi::Hidden,
+        ),
+        p(
+            "gridEnabled",
+            "Grid Enabled",
+            Value::Bool(true),
+            ParamUi::Hidden,
+        ),
+        p(
+            "exploderEnabled",
+            "Layer Exploder Enabled",
+            Value::Bool(true),
+            ParamUi::Hidden,
+        ),
+        p(
+            "layerMapEnabled",
+            "Layer Map Enabled",
+            Value::Bool(true),
+            ParamUi::Hidden,
+        ),
+        p(
+            "mapperEnabled",
+            "Persistent Property Mapper Enabled",
+            Value::Bool(true),
+            ParamUi::Hidden,
+        ),
         // Cannon
-        p("cannon/cannonPosition", "Position", pt(0.5, 0.9), ParamUi::Point),
-        p("cannon/barrelRadius", "Barrel Radius", num(0.0), slider(-1000.0, 1000.0, -100.0, 100.0, 1)),
-        sp("cannon/particlesPerSecond", "Particles Per Second", px(60.0, 500.0)),
+        p(
+            "cannon/cannonPosition",
+            "Position",
+            pt(0.5, 0.9),
+            ParamUi::Point,
+        ),
+        p(
+            "cannon/barrelRadius",
+            "Barrel Radius",
+            num(0.0),
+            slider(-1000.0, 1000.0, -100.0, 100.0, 1),
+        ),
+        sp(
+            "cannon/particlesPerSecond",
+            "Particles Per Second",
+            px(60.0, 500.0),
+        ),
         p("cannon/barrelAngle", "Direction", num(0.0), ParamUi::Angle),
-        sp("cannon/directionRandomSpread", "Direction Random Spread", px(20.0, 360.0)),
+        sp(
+            "cannon/directionRandomSpread",
+            "Direction Random Spread",
+            px(20.0, 360.0),
+        ),
         sp("cannon/velocity", "Velocity", px(130.0, 1000.0)),
-        sp("cannon/velocityRandomSpread", "Velocity Random Spread", px(20.0, 500.0)),
-        p("cannon/cannonColor", "Color", col(1.0, 0.0, 0.0), ParamUi::Color),
-        sp("cannon/cannonParticleRadius", "Particle Radius", px(2.0, 50.0)),
+        sp(
+            "cannon/velocityRandomSpread",
+            "Velocity Random Spread",
+            px(20.0, 500.0),
+        ),
+        p(
+            "cannon/cannonColor",
+            "Color",
+            col(1.0, 0.0, 0.0),
+            ParamUi::Color,
+        ),
+        sp(
+            "cannon/cannonParticleRadius",
+            "Particle Radius",
+            px(2.0, 50.0),
+        ),
         // Grid
-        p("grid/gridPosition", "Position", pt(0.5, 0.5), ParamUi::Point),
+        p(
+            "grid/gridPosition",
+            "Position",
+            pt(0.5, 0.5),
+            ParamUi::Point,
+        ),
         sp("grid/gridWidth", "Width", px(100.0, 2000.0)),
         sp("grid/gridHeight", "Height", px(100.0, 2000.0)),
         sp("grid/particlesAcross", "Particles Across", px(0.0, 100.0)),
         sp("grid/particlesDown", "Particles Down", px(0.0, 100.0)),
-        p("grid/gridColor", "Color", col(1.0, 1.0, 1.0), ParamUi::Color),
+        p(
+            "grid/gridColor",
+            "Color",
+            col(1.0, 1.0, 1.0),
+            ParamUi::Color,
+        ),
         sp("grid/gridParticleRadius", "Particle Radius", px(2.0, 50.0)),
         // Layer Exploder
-        p("layerExploder/explodeLayer", "Explode Layer", Value::Layer(None), ParamUi::Layer),
-        sp("layerExploder/radiusOfNewParticles", "Radius of New Particles", px(2.0, 50.0)),
-        sp("layerExploder/velocityDispersion", "Velocity Dispersion", px(20.0, 500.0)),
+        p(
+            "layerExploder/explodeLayer",
+            "Explode Layer",
+            Value::Layer(None),
+            ParamUi::Layer,
+        ),
+        sp(
+            "layerExploder/radiusOfNewParticles",
+            "Radius of New Particles",
+            px(2.0, 50.0),
+        ),
+        sp(
+            "layerExploder/velocityDispersion",
+            "Velocity Dispersion",
+            px(20.0, 500.0),
+        ),
     ];
     pg.extend([
-        sp("particleExploder/radiusOfNewParticles", "Radius of New Particles", px(0.0, 50.0)),
-        sp("particleExploder/velocityDispersion", "Velocity Dispersion", px(20.0, 500.0)),
+        sp(
+            "particleExploder/radiusOfNewParticles",
+            "Radius of New Particles",
+            px(0.0, 50.0),
+        ),
+        sp(
+            "particleExploder/velocityDispersion",
+            "Velocity Dispersion",
+            px(20.0, 500.0),
+        ),
     ]);
     pg.extend(affects("particleExploder"));
     pg.extend([
-        p("layerMap/layerMapLayer", "Use Layer", Value::Layer(None), ParamUi::Layer),
-        p("layerMap/timeOffsetType", "Time Offset Type", Value::Enum(0), popup(&TIME_OFFSET_TYPES)),
-        p("layerMap/timeOffset", "Time Offset", num(0.0), slider(-1000.0, 1000.0, -10.0, 10.0, 2)),
+        p(
+            "layerMap/layerMapLayer",
+            "Use Layer",
+            Value::Layer(None),
+            ParamUi::Layer,
+        ),
+        p(
+            "layerMap/timeOffsetType",
+            "Time Offset Type",
+            Value::Enum(0),
+            popup(&TIME_OFFSET_TYPES),
+        ),
+        p(
+            "layerMap/timeOffset",
+            "Time Offset",
+            num(0.0),
+            slider(-1000.0, 1000.0, -10.0, 10.0, 2),
+        ),
     ]);
     pg.extend(affects("layerMap"));
     pg.extend([
         // Gravity
         sp("gravity/gravityForce", "Force", px(108.0, 1000.0)),
-        sp("gravity/gravityForceRandomSpread", "Force Random Spread", px(0.0, 100.0)),
-        p("gravity/gravityDirection", "Direction", num(180.0), ParamUi::Angle),
+        sp(
+            "gravity/gravityForceRandomSpread",
+            "Force Random Spread",
+            px(0.0, 100.0),
+        ),
+        p(
+            "gravity/gravityDirection",
+            "Direction",
+            num(180.0),
+            ParamUi::Angle,
+        ),
     ]);
     pg.extend(affects("gravity"));
     pg.extend([
         // Repel
-        p("repel/repelForce", "Force", num(0.0), slider(-100.0, 100.0, -10.0, 10.0, 2)),
+        p(
+            "repel/repelForce",
+            "Force",
+            num(0.0),
+            slider(-100.0, 100.0, -10.0, 10.0, 2),
+        ),
         sp("repel/repelForceRadius", "Force Radius", px(0.0, 100.0)),
     ]);
     pg.extend(affects("repel"));
@@ -1114,61 +1598,161 @@ pub fn specs() -> Vec<EffectSpec> {
     pg.extend(affects("wall"));
     pg.extend([
         // Persistent Property Mapper
-        p("persistentPropertyMapper/useLayerAsMap", "Use Layer As Map", Value::Layer(None), ParamUi::Layer),
+        p(
+            "persistentPropertyMapper/useLayerAsMap",
+            "Use Layer As Map",
+            Value::Layer(None),
+            ParamUi::Layer,
+        ),
     ]);
     for (to, mn, mx, n_to) in [
-        ("persistentPropertyMapper/mapRedTo", "persistentPropertyMapper/redMin", "persistentPropertyMapper/redMax", "Map Red To"),
-        ("persistentPropertyMapper/mapGreenTo", "persistentPropertyMapper/greenMin", "persistentPropertyMapper/greenMax", "Map Green To"),
-        ("persistentPropertyMapper/mapBlueTo", "persistentPropertyMapper/blueMin", "persistentPropertyMapper/blueMax", "Map Blue To"),
+        (
+            "persistentPropertyMapper/mapRedTo",
+            "persistentPropertyMapper/redMin",
+            "persistentPropertyMapper/redMax",
+            "Map Red To",
+        ),
+        (
+            "persistentPropertyMapper/mapGreenTo",
+            "persistentPropertyMapper/greenMin",
+            "persistentPropertyMapper/greenMax",
+            "Map Green To",
+        ),
+        (
+            "persistentPropertyMapper/mapBlueTo",
+            "persistentPropertyMapper/blueMin",
+            "persistentPropertyMapper/blueMax",
+            "Map Blue To",
+        ),
     ] {
         pg.push(p(to, n_to, Value::Enum(0), popup(&MAP_TARGETS)));
-        pg.push(p(mn, "Min", num(0.0), slider(-10000.0, 10000.0, -100.0, 100.0, 2)));
-        pg.push(p(mx, "Max", num(1.0), slider(-10000.0, 10000.0, -100.0, 100.0, 2)));
+        pg.push(p(
+            mn,
+            "Min",
+            num(0.0),
+            slider(-10000.0, 10000.0, -100.0, 100.0, 2),
+        ));
+        pg.push(p(
+            mx,
+            "Max",
+            num(1.0),
+            slider(-10000.0, 10000.0, -100.0, 100.0, 2),
+        ));
     }
     pg.extend(affects("persistentPropertyMapper"));
     // Ephemeral Property Mapper: like the persistent one, with an operator per channel; the
     // values hold for one frame.
-    pg.push(p("ephemeralPropertyMapper/useLayerAsMap", "Use Layer As Map", Value::Layer(None), ParamUi::Layer));
+    pg.push(p(
+        "ephemeralPropertyMapper/useLayerAsMap",
+        "Use Layer As Map",
+        Value::Layer(None),
+        ParamUi::Layer,
+    ));
     for c in ["Red", "Green", "Blue"] {
         let l = c.to_lowercase();
-        pg.push(p(leak(format!("ephemeralPropertyMapper/map{c}To")), leak(format!("Map {c} To")), Value::Enum(0), popup(&MAP_TARGETS)));
-        pg.push(p(leak(format!("ephemeralPropertyMapper/{l}Operator")), "Operator", Value::Enum(0), popup(&MAP_OPERATORS)));
-        pg.push(p(leak(format!("ephemeralPropertyMapper/{l}Min")), "Min", num(0.0), slider(-10000.0, 10000.0, -100.0, 100.0, 2)));
-        pg.push(p(leak(format!("ephemeralPropertyMapper/{l}Max")), "Max", num(1.0), slider(-10000.0, 10000.0, -100.0, 100.0, 2)));
+        pg.push(p(
+            leak(format!("ephemeralPropertyMapper/map{c}To")),
+            leak(format!("Map {c} To")),
+            Value::Enum(0),
+            popup(&MAP_TARGETS),
+        ));
+        pg.push(p(
+            leak(format!("ephemeralPropertyMapper/{l}Operator")),
+            "Operator",
+            Value::Enum(0),
+            popup(&MAP_OPERATORS),
+        ));
+        pg.push(p(
+            leak(format!("ephemeralPropertyMapper/{l}Min")),
+            "Min",
+            num(0.0),
+            slider(-10000.0, 10000.0, -100.0, 100.0, 2),
+        ));
+        pg.push(p(
+            leak(format!("ephemeralPropertyMapper/{l}Max")),
+            "Max",
+            num(1.0),
+            slider(-10000.0, 10000.0, -100.0, 100.0, 2),
+        ));
     }
     pg.extend(affects("ephemeralPropertyMapper"));
-    pg.push(p("randomSeed", "Random Seed", num(0.0), slider(0.0, 10000.0, 0.0, 1000.0, 0)));
+    pg.push(p(
+        "randomSeed",
+        "Random Seed",
+        num(0.0),
+        slider(0.0, 10000.0, 0.0, 1000.0, 0),
+    ));
     let pc = |d: f64| (num(d), slider(0.0, 100.0, 0.0, 100.0, 1));
     vec![
-        spec("ec.sim.particleplayground", "Particle Playground", pg, particle_playground),
+        spec(
+            "ec.sim.particleplayground",
+            "Particle Playground",
+            pg,
+            particle_playground,
+        ),
         spec(
             "ec.sim.cchair",
             "CC Hair",
             vec![
                 sp("length", "Length", px(30.0, 200.0)),
-                p("thickness", "Thickness", num(1.0), slider(0.05, 20.0, 0.1, 5.0, 2)),
-                p("weight", "Weight", num(0.2), slider(-10.0, 10.0, -2.0, 2.0, 2)),
-                p("constantMass", "Constant Mass", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "thickness",
+                    "Thickness",
+                    num(1.0),
+                    slider(0.05, 20.0, 0.1, 5.0, 2),
+                ),
+                p(
+                    "weight",
+                    "Weight",
+                    num(0.2),
+                    slider(-10.0, 10.0, -2.0, 2.0, 2),
+                ),
+                p(
+                    "constantMass",
+                    "Constant Mass",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
                 sp("density", "Density", px(100.0, 1000.0)),
                 // Hairfall Map
                 sp("hairfallMap/mapStrength", "Map Strength", pc(0.0)),
-                p("hairfallMap/mapLayer", "Map Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "hairfallMap/mapLayer",
+                    "Map Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 sp("hairfallMap/mapSoftness", "Map Softness", px(0.0, 100.0)),
                 sp("hairfallMap/addNoise", "Add Noise", pc(0.0)),
                 // Hair Color
-                p("hairColor/hairColor", "Color", col(0.35, 0.25, 0.15), ParamUi::Color),
+                p(
+                    "hairColor/hairColor",
+                    "Color",
+                    col(0.35, 0.25, 0.15),
+                    ParamUi::Color,
+                ),
                 sp("hairColor/brightness", "Brightness", px(100.0, 400.0)),
                 sp("hairColor/opacity", "Opacity", pc(100.0)),
                 sp("hairColor/colorInheritance", "Color Inheritance", pc(0.0)),
                 // Light
                 sp("light/lightIntensity", "Light Intensity", px(100.0, 400.0)),
-                p("light/lightDirection", "Light Direction", num(-45.0), ParamUi::Angle),
+                p(
+                    "light/lightDirection",
+                    "Light Direction",
+                    num(-45.0),
+                    ParamUi::Angle,
+                ),
                 // Shading
                 sp("shading/ambient", "Ambient", pc(40.0)),
                 sp("shading/diffuse", "Diffuse", pc(60.0)),
                 sp("shading/specular", "Specular", pc(30.0)),
                 sp("shading/roughness", "Roughness", pc(20.0)),
-                p("randomSeed", "Random Seed", num(0.0), slider(0.0, 10000.0, 0.0, 1000.0, 0)),
+                p(
+                    "randomSeed",
+                    "Random Seed",
+                    num(0.0),
+                    slider(0.0, 10000.0, 0.0, 1000.0, 0),
+                ),
             ],
             cc_hair,
         ),
@@ -1181,11 +1765,25 @@ mod tests {
     use crate::{EffectEnv, MaskShape, run_fx};
 
     fn run(vals: &[(&str, Value)], t: f64) -> Image {
-        run_fx("ec.sim.particleplayground", vals, Image::filled(80, 60, [0.2, 0.2, 0.2, 1.0]), t, EffectEnv::default()).img
+        run_fx(
+            "ec.sim.particleplayground",
+            vals,
+            Image::filled(80, 60, [0.2, 0.2, 0.2, 1.0]),
+            t,
+            EffectEnv::default(),
+        )
+        .img
     }
 
     fn cannon(t: f64) -> Image {
-        run(&[("cannon/cannonPosition", Value::Vec2([40.0, 50.0])), ("cannon/velocity", num(60.0)), ("gravity/gravityForce", num(30.0))], t)
+        run(
+            &[
+                ("cannon/cannonPosition", Value::Vec2([40.0, 50.0])),
+                ("cannon/velocity", num(60.0)),
+                ("gravity/gravityForce", num(30.0)),
+            ],
+            t,
+        )
     }
 
     #[test]
@@ -1194,7 +1792,11 @@ mod tests {
         // Particles replace the layer: some coverage, mostly transparent, red.
         let cov: f32 = a.data.iter().map(|p| p[3]).sum();
         assert!(cov > 5.0, "{cov}");
-        assert!(a.data.iter().any(|p| p[3] > 0.5 && p[0] > 0.5 && p[1] < 0.1));
+        assert!(
+            a.data
+                .iter()
+                .any(|p| p[3] > 0.5 && p[0] > 0.5 && p[1] < 0.1)
+        );
         // Seek back and forth: the same frame every time.
         let _ = cannon(2.0);
         let b = cannon(1.0);
@@ -1245,8 +1847,16 @@ mod tests {
         // ½ g t² = 12.5 px.
         assert!((row_of(&t1) - 22).abs() <= 2, "{}", row_of(&t1));
         // A wall (mask 1) whose floor is at y = 15 keeps them above it.
-        let masks = [MaskShape { name: "w".into(), points: vec![[0.0, 0.0], [80.0, 0.0], [80.0, 15.0], [0.0, 15.0]], closed: true, inverted: false }];
-        let env = EffectEnv { masks: &masks, ..Default::default() };
+        let masks = [MaskShape {
+            name: "w".into(),
+            points: vec![[0.0, 0.0], [80.0, 0.0], [80.0, 15.0], [0.0, 15.0]],
+            closed: true,
+            inverted: false,
+        }];
+        let env = EffectEnv {
+            masks: &masks,
+            ..Default::default()
+        };
         let w = grid(1.5, env);
         assert!(row_of(&w) <= 16, "{}", row_of(&w));
     }
@@ -1279,7 +1889,12 @@ mod tests {
             }
             x1 - x0
         };
-        assert!(spread(0.2) > spread(0.0) + 4, "{} vs {}", spread(0.2), spread(0.0));
+        assert!(
+            spread(0.2) > spread(0.0) + 4,
+            "{} vs {}",
+            spread(0.2),
+            spread(0.0)
+        );
     }
 
     #[test]
@@ -1302,10 +1917,22 @@ mod tests {
             0.7,
         );
         assert_eq!(a.data, b.data);
-        let st =
-            Pg { persistent: Some(mapper(Image::filled(4, 4, [1.0, 0.0, 0.5, 1.0]), [(15, 0, 0.0, 120.0), (0, 0, 0.0, 1.0), (9, 0, 0.0, 2.0)])), ..bare(1) };
+        let st = Pg {
+            persistent: Some(mapper(
+                Image::filled(4, 4, [1.0, 0.0, 0.5, 1.0]),
+                [(15, 0, 0.0, 120.0), (0, 0, 0.0, 1.0), (9, 0, 0.0, 2.0)],
+            )),
+            ..bare(1)
+        };
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([1.0, 1.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID));
+        s.parts.push(PgParticle::new(
+            [1.0, 1.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            0,
+            SRC_GRID,
+        ));
         st.step(&mut s);
         // Red 1 → X speed 120 px/s; blue 0.5 → scale 1.
         assert!((s.parts[0].v[0] - 120.0).abs() < 1e-3);
@@ -1345,12 +1972,24 @@ mod tests {
     }
 
     fn mapper(img: Image, chans: [(u32, u32, f32, f32); 3]) -> Mapper {
-        Mapper { map: MapImg { img, k: [1.0; 2], o: [0.0; 2] }, chans, affects: Affects::default() }
+        Mapper {
+            map: MapImg {
+                img,
+                k: [1.0; 2],
+                o: [0.0; 2],
+            },
+            chans,
+            affects: Affects::default(),
+        }
     }
 
     #[test]
     fn barrel_radius_square_or_disc() {
-        let pg = |r: f32| Pg { cannon: true, barrel_radius: r, ..bare(3) };
+        let pg = |r: f32| Pg {
+            cannon: true,
+            barrel_radius: r,
+            ..bare(3)
+        };
         let (sq, disc) = (pg(10.0), pg(-10.0));
         let mut corner = false;
         for id in 0..400 {
@@ -1368,13 +2007,25 @@ mod tests {
 
     #[test]
     fn mapper_drives_position_and_opacity_in_ae_order() {
-        let st =
-            Pg { persistent: Some(mapper(Image::filled(4, 4, [1.0, 0.5, 0.25, 1.0]), [(12, 0, 0.0, 30.0), (20, 0, 0.0, 1.0), (4, 0, 0.0, 1.0)])), ..bare(1) };
+        let st = Pg {
+            persistent: Some(mapper(
+                Image::filled(4, 4, [1.0, 0.5, 0.25, 1.0]),
+                [(12, 0, 0.0, 30.0), (20, 0, 0.0, 1.0), (4, 0, 0.0, 1.0)],
+            )),
+            ..bare(1)
+        };
         assert_eq!(MAP_TARGETS[12], "X");
         assert_eq!(MAP_TARGETS[20], "Opacity");
         assert_eq!(MAP_TARGETS[26], "Scale Speed");
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([1.0, 1.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID));
+        s.parts.push(PgParticle::new(
+            [1.0, 1.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            0,
+            SRC_GRID,
+        ));
         st.step(&mut s);
         assert!((s.parts[0].p[0] - 30.0).abs() < 1e-3, "{:?}", s.parts[0].p);
         assert!((s.parts[0].c[3] - 0.5).abs() < 1e-3);
@@ -1384,15 +2035,31 @@ mod tests {
     #[test]
     fn ephemeral_mapper_holds_for_one_step_with_operators() {
         // Ephemeral X Speed = 60 px/s (Set): the particle moves, but keeps no velocity.
-        let st = Pg { ephemeral: Some(mapper(Image::filled(4, 4, [1.0, 1.0, 1.0, 1.0]), [(15, 0, 0.0, 60.0), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)])), ..bare(1) };
+        let st = Pg {
+            ephemeral: Some(mapper(
+                Image::filled(4, 4, [1.0, 1.0, 1.0, 1.0]),
+                [(15, 0, 0.0, 60.0), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)],
+            )),
+            ..bare(1)
+        };
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([1.0, 1.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID));
+        s.parts.push(PgParticle::new(
+            [1.0, 1.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            0,
+            SRC_GRID,
+        ));
         st.step(&mut s);
         assert!((s.parts[0].p[0] - 2.0).abs() < 1e-4, "{:?}", s.parts[0].p);
         assert!(s.parts[0].v[0].abs() < 1e-4);
         // Operators: Add / Multiply / Max on the particle's own value.
         let op = |o: u32, cur: f32| {
-            let m = mapper(Image::filled(4, 4, [1.0, 1.0, 1.0, 1.0]), [(21, o, 0.0, 3.0), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)]);
+            let m = mapper(
+                Image::filled(4, 4, [1.0, 1.0, 1.0, 1.0]),
+                [(21, o, 0.0, 3.0), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)],
+            );
             let mut q = PgParticle::new([1.0, 1.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID);
             q.mass = cur;
             m.apply(&mut q);
@@ -1408,28 +2075,62 @@ mod tests {
     #[test]
     fn affects_select_by_source_age_and_characters() {
         let mut q = PgParticle::new([0.0; 2], [0.0; 2], [1.0; 4], 2.0, 0, SRC_CANNON);
-        let a = Affects { from: 2, ..Default::default() };
+        let a = Affects {
+            from: 2,
+            ..Default::default()
+        };
         assert_eq!(a.weight(&q), 0.0, "grid only");
         q.src = SRC_GRID;
         assert_eq!(a.weight(&q), 1.0);
-        let older = Affects { age: 1.0, ..Default::default() };
+        let older = Affects {
+            age: 1.0,
+            ..Default::default()
+        };
         q.age = 0.5;
         assert_eq!(older.weight(&q), 0.0);
         q.age = 1.5;
         assert_eq!(older.weight(&q), 1.0);
-        let younger = Affects { age: -1.0, feather: 1.0, ..Default::default() };
+        let younger = Affects {
+            age: -1.0,
+            feather: 1.0,
+            ..Default::default()
+        };
         q.age = 1.0;
         assert!((younger.weight(&q) - 0.5).abs() < 1e-5, "feathered");
-        let chars = Affects { chars: vec!['A', 'B'], ..Default::default() };
+        let chars = Affects {
+            chars: vec!['A', 'B'],
+            ..Default::default()
+        };
         q.ch = 'B' as u32;
         assert_eq!(chars.weight(&q), 1.0);
         q.ch = 'C' as u32;
         assert_eq!(chars.weight(&q), 0.0);
         // Gravity restricted to the cannon leaves grid particles in place.
-        let st = Pg { gravity: [0.0, 100.0], grav_affects: Affects { from: 1, ..Default::default() }, ..bare(1) };
+        let st = Pg {
+            gravity: [0.0, 100.0],
+            grav_affects: Affects {
+                from: 1,
+                ..Default::default()
+            },
+            ..bare(1)
+        };
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([5.0, 5.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID));
-        s.parts.push(PgParticle::new([5.0, 5.0], [0.0; 2], [1.0; 4], 2.0, 1, SRC_CANNON));
+        s.parts.push(PgParticle::new(
+            [5.0, 5.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            0,
+            SRC_GRID,
+        ));
+        s.parts.push(PgParticle::new(
+            [5.0, 5.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            1,
+            SRC_CANNON,
+        ));
         for _ in 0..10 {
             st.step(&mut s);
         }
@@ -1439,19 +2140,47 @@ mod tests {
 
     #[test]
     fn particle_exploder_bursts_big_particles() {
-        let st = Pg { pex_radius: 2.0, pex_dispersion: 30.0, ..bare(1) };
+        let st = Pg {
+            pex_radius: 2.0,
+            pex_dispersion: 30.0,
+            ..bare(1)
+        };
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([50.0, 50.0], [0.0; 2], [1.0; 4], 6.0, 0, SRC_GRID));
+        s.parts.push(PgParticle::new(
+            [50.0, 50.0],
+            [0.0; 2],
+            [1.0; 4],
+            6.0,
+            0,
+            SRC_GRID,
+        ));
         s.next_id = 1;
         st.step(&mut s);
         assert_eq!(s.parts.len(), 9, "(6/2)² new particles");
-        assert!(s.parts.iter().all(|q| q.r == 2.0 && q.src == SRC_PARTICLE_EXPLODER));
+        assert!(
+            s.parts
+                .iter()
+                .all(|q| q.r == 2.0 && q.src == SRC_PARTICLE_EXPLODER)
+        );
         st.step(&mut s);
         assert_eq!(s.parts.len(), 9, "new particles do not burst again");
         // Lifespan from a mapper removes particles once they are older.
-        let life = Pg { persistent: Some(mapper(Image::filled(4, 4, [1.0; 4]), [(22, 0, 0.0, 0.05), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)])), ..bare(1) };
+        let life = Pg {
+            persistent: Some(mapper(
+                Image::filled(4, 4, [1.0; 4]),
+                [(22, 0, 0.0, 0.05), (0, 0, 0.0, 1.0), (0, 0, 0.0, 1.0)],
+            )),
+            ..bare(1)
+        };
         let mut s = PgState::default();
-        s.parts.push(PgParticle::new([1.0, 1.0], [0.0; 2], [1.0; 4], 2.0, 0, SRC_GRID));
+        s.parts.push(PgParticle::new(
+            [1.0, 1.0],
+            [0.0; 2],
+            [1.0; 4],
+            2.0,
+            0,
+            SRC_GRID,
+        ));
         for _ in 0..2 {
             life.step(&mut s);
         }
@@ -1484,12 +2213,19 @@ mod tests {
         let text = grid("I-O");
         assert_ne!(dots.data, text.data);
         // "I" is a vertical bar: ink above and below the grid point, not a round dot.
-        assert!(text.get(20, 26)[3] > 0.3 && text.get(20, 34)[3] > 0.3, "{:?}", text.get(20, 26));
+        assert!(
+            text.get(20, 26)[3] > 0.3 && text.get(20, 34)[3] > 0.3,
+            "{:?}",
+            text.get(20, 26)
+        );
         // A space leaves its grid point empty.
         let gap = grid("I O");
         assert!(gap.get(40, 30)[3] < 0.05);
         // Cannon text: particles carry the characters in order.
-        let pg = Pg { cannon_text: vec!['A', 'B'], ..bare(1) };
+        let pg = Pg {
+            cannon_text: vec!['A', 'B'],
+            ..bare(1)
+        };
         assert_eq!(pg.spawn(0).ch, 'A' as u32);
         assert_eq!(pg.spawn(3).ch, 'B' as u32);
     }
@@ -1507,7 +2243,14 @@ mod tests {
             }
             fn layer_at(&self, _: u64, t: f64, _: bool) -> Option<crate::LayerPixels> {
                 let v = (t as f32 / 4.0).clamp(0.0, 1.0);
-                Some(crate::LayerPixels { buf: Buf { img: Image::filled(6, 6, [v, 0.0, 1.0 - v, 1.0]), offset: [0.0; 2], scale: 1.0 }, size: [6.0, 6.0] })
+                Some(crate::LayerPixels {
+                    buf: Buf {
+                        img: Image::filled(6, 6, [v, 0.0, 1.0 - v, 1.0]),
+                        offset: [0.0; 2],
+                        scale: 1.0,
+                    },
+                    size: [6.0, 6.0],
+                })
             }
         }
         let render = |kind: u32, offset: f64| {
@@ -1521,13 +2264,28 @@ mod tests {
                 ("layerMap/timeOffsetType", Value::Enum(kind)),
                 ("layerMap/timeOffset", num(offset)),
             ];
-            let env = EffectEnv { host: Some(&Clock), comp_time: 1.0, frame_rate: 10.0, ..Default::default() };
-            run_fx("ec.sim.particleplayground", &vals, Image::filled(80, 60, [0.2, 0.2, 0.2, 1.0]), 1.0, env).img
+            let env = EffectEnv {
+                host: Some(&Clock),
+                comp_time: 1.0,
+                frame_rate: 10.0,
+                ..Default::default()
+            };
+            run_fx(
+                "ec.sim.particleplayground",
+                &vals,
+                Image::filled(80, 60, [0.2, 0.2, 0.2, 1.0]),
+                1.0,
+                env,
+            )
+            .img
         };
         // The particle is a 6×6 copy of the map layer.
         let rel = render(0, 1.0);
         assert!(rel.get(40, 30)[3] > 0.99 && rel.get(46, 30)[3] < 0.01);
-        assert!((rel.get(40, 30)[0] - 0.5).abs() < 1e-3, "relative: now + 1 s = 2 s");
+        assert!(
+            (rel.get(40, 30)[0] - 0.5).abs() < 1e-3,
+            "relative: now + 1 s = 2 s"
+        );
         let abs = render(1, 3.0);
         assert!((abs.get(40, 30)[0] - 0.75).abs() < 1e-3, "absolute: 3 s");
     }
@@ -1540,15 +2298,36 @@ mod tests {
                 img.set(x, y, [0.8, 0.6, 0.4, 1.0]);
             }
         }
-        let out = run_fx("ec.sim.cchair", &[("length", num(12.0)), ("density", num(300.0))], img.clone(), 0.0, EffectEnv::default());
+        let out = run_fx(
+            "ec.sim.cchair",
+            &[("length", num(12.0)), ("density", num(300.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         // Hair reaches beyond the square (above it: hair leans up, then droops).
-        let outside: f32 = (0..60).flat_map(|x| (0..20).map(move |y| (x, y))).map(|(x, y)| out.img.get(x, y)[3]).sum();
+        let outside: f32 = (0..60)
+            .flat_map(|x| (0..20).map(move |y| (x, y)))
+            .map(|(x, y)| out.img.get(x, y)[3])
+            .sum();
         assert!(outside > 1.0, "{outside}");
         // Nothing grows from transparent areas far away.
         assert_eq!(out.img.get(2, 58)[3], 0.0);
-        let again = run_fx("ec.sim.cchair", &[("length", num(12.0)), ("density", num(300.0))], img.clone(), 3.0, EffectEnv::default());
+        let again = run_fx(
+            "ec.sim.cchair",
+            &[("length", num(12.0)), ("density", num(300.0))],
+            img.clone(),
+            3.0,
+            EffectEnv::default(),
+        );
         assert_eq!(out.img.data, again.img.data);
-        let none = run_fx("ec.sim.cchair", &[("length", num(0.0))], img.clone(), 0.0, EffectEnv::default());
+        let none = run_fx(
+            "ec.sim.cchair",
+            &[("length", num(0.0))],
+            img.clone(),
+            0.0,
+            EffectEnv::default(),
+        );
         assert_eq!(none.img.data, img.data);
     }
 }

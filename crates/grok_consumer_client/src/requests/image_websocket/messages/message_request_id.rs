@@ -5,7 +5,7 @@ use serde::Deserialize;
 /// If we're not careful, we might accidentally ingest completed image messages this way.
 #[derive(Deserialize, Clone, Debug)]
 pub struct MessageRequestId {
-  /// UUID.
-  /// Probably an identifier for the original request/prompt.
-  pub request_id: String, // Option<String>,
+    /// UUID.
+    /// Probably an identifier for the original request/prompt.
+    pub request_id: String, // Option<String>,
 }

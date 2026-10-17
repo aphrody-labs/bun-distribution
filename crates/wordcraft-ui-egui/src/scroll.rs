@@ -22,7 +22,12 @@ pub const NOTCH_PX: f32 = 56.0;
 
 /// Whether to synthesise kinetic scrolling. macOS and Windows send their own momentum events
 /// (or report touchpads as line deltas), and browsers do their own; only Linux/BSD need it.
-const SYNTH_MOMENTUM: bool = !cfg!(any(target_os = "macos", target_os = "ios", target_os = "windows", target_arch = "wasm32"));
+const SYNTH_MOMENTUM: bool = !cfg!(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "windows",
+    target_arch = "wasm32"
+));
 
 /// Longest frame time trusted for velocity and decay (a stall shouldn't fling the page).
 const MAX_DT: f32 = 0.1;
@@ -101,7 +106,8 @@ impl Momentum {
     }
 
     fn start_coast(&mut self) {
-        let fling = self.streaming && self.since_input <= STALE && self.velocity.length() >= MIN_FLING;
+        let fling =
+            self.streaming && self.since_input <= STALE && self.velocity.length() >= MIN_FLING;
         self.streaming = false;
         if fling {
             self.coasting = true;
@@ -164,11 +170,31 @@ impl CanvasScroll {
     /// wheel/touchpad events in `input`. `hovered`: the pointer is over the canvas (only then do
     /// its wheel events scroll it). `notch`: points per wheel notch. `page`: viewport height.
     /// `animate`: animation effects are on, so wheel notches ease in rather than land at once.
-    pub fn frame(&mut self, input: &egui::InputState, opts: &InputOptions, hovered: bool, notch: f32, page: f32, animate: bool) -> Vec2 {
-        let notch = if notch.is_finite() { notch.clamp(1.0, 1000.0) } else { NOTCH_PX };
-        let page = if page.is_finite() { page.clamp(0.0, 100_000.0) } else { 0.0 };
+    pub fn frame(
+        &mut self,
+        input: &egui::InputState,
+        opts: &InputOptions,
+        hovered: bool,
+        notch: f32,
+        page: f32,
+        animate: bool,
+    ) -> Vec2 {
+        let notch = if notch.is_finite() {
+            notch.clamp(1.0, 1000.0)
+        } else {
+            NOTCH_PX
+        };
+        let page = if page.is_finite() {
+            page.clamp(0.0, 100_000.0)
+        } else {
+            0.0
+        };
         // Browsers report lines (Firefox: three per notch) where native platforms report notches.
-        let line = if cfg!(target_arch = "wasm32") { notch / 3.0 } else { notch };
+        let line = if cfg!(target_arch = "wasm32") {
+            notch / 3.0
+        } else {
+            notch
+        };
         let dt = input.unstable_dt;
         let mut now = Vec2::ZERO;
         let mut touchpad = Vec2::ZERO;
@@ -176,16 +202,33 @@ impl CanvasScroll {
         let mut stop = false;
         for event in &input.events {
             match event {
-                Event::MouseWheel { unit, delta, phase, modifiers } => {
+                Event::MouseWheel {
+                    unit,
+                    delta,
+                    phase,
+                    modifiers,
+                } => {
                     // Ctrl/⌘+wheel zooms (egui turns it into a zoom factor).
                     if !hovered || modifiers.matches_any(opts.zoom_modifier) {
                         continue;
                     }
-                    let d = axis_lock(if delta.is_finite() { *delta } else { Vec2::ZERO }, *modifiers, opts);
+                    let d = axis_lock(
+                        if delta.is_finite() {
+                            *delta
+                        } else {
+                            Vec2::ZERO
+                        },
+                        *modifiers,
+                        opts,
+                    );
                     match unit {
                         // Touchpads (and precise mice): 1:1. Browsers also report wheel notches in
                         // points, so big jumps there still ease in, like egui does.
-                        MouseWheelUnit::Point if !cfg!(target_arch = "wasm32") || d.length() < 8.0 => touchpad += d,
+                        MouseWheelUnit::Point
+                            if !cfg!(target_arch = "wasm32") || d.length() < 8.0 =>
+                        {
+                            touchpad += d
+                        }
                         MouseWheelUnit::Point => self.pending += d,
                         // Whole notches ease in; fractional ones (X11/Windows touchpads, free-spinning
                         // wheels) are already smooth.
@@ -198,7 +241,9 @@ impl CanvasScroll {
                     }
                     lifted |= matches!(phase, TouchPhase::End | TouchPhase::Cancel);
                 }
-                Event::Key { pressed: true, .. } | Event::PointerButton { pressed: true, .. } | Event::Text(_) => stop = true,
+                Event::Key { pressed: true, .. }
+                | Event::PointerButton { pressed: true, .. }
+                | Event::Text(_) => stop = true,
                 _ => {}
             }
         }
@@ -222,8 +267,18 @@ impl CanvasScroll {
         // Ease wheel notches in: 90% of the way in 0.1 s (egui's curve). Without animation effects
         // the whole distance lands this frame.
         if self.pending != Vec2::ZERO {
-            let t = if animate && dt.is_finite() { egui::emath::exponential_smooth_factor(0.9, 0.1, dt.clamp(0.0, MAX_DT)) } else { 1.0 };
-            let ease = |pending: f32| if pending.abs() < 1.0 { pending } else { pending * t };
+            let t = if animate && dt.is_finite() {
+                egui::emath::exponential_smooth_factor(0.9, 0.1, dt.clamp(0.0, MAX_DT))
+            } else {
+                1.0
+            };
+            let ease = |pending: f32| {
+                if pending.abs() < 1.0 {
+                    pending
+                } else {
+                    pending * t
+                }
+            };
             let step = Vec2::new(ease(self.pending.x), ease(self.pending.y));
             now += step;
             self.pending -= step;
@@ -257,7 +312,12 @@ impl CanvasScroll {
         for event in &input.events {
             match event {
                 Event::Zoom(factor) => zoom *= factor,
-                Event::MouseWheel { unit, delta, phase: TouchPhase::Move, modifiers } if modifiers.matches_any(opts.zoom_modifier) => {
+                Event::MouseWheel {
+                    unit,
+                    delta,
+                    phase: TouchPhase::Move,
+                    modifiers,
+                } if modifiers.matches_any(opts.zoom_modifier) => {
                     let d = egui_points(*unit, *delta, input, opts);
                     turned += opts.scroll_zoom_speed * (d.x + d.y);
                 }
@@ -271,11 +331,23 @@ impl CanvasScroll {
             self.zoom_time = input.time;
             let total = self.zoom_pending + turned;
             // A hair of tolerance: a notch's two steps mustn't come out as 1.9999.
-            let steps = if total.is_finite() { (total / ZOOM_STEP + 1e-3_f32.copysign(total)).trunc() } else { 0.0 };
-            self.zoom_pending = if total.is_finite() { total - steps * ZOOM_STEP } else { 0.0 };
+            let steps = if total.is_finite() {
+                (total / ZOOM_STEP + 1e-3_f32.copysign(total)).trunc()
+            } else {
+                0.0
+            };
+            self.zoom_pending = if total.is_finite() {
+                total - steps * ZOOM_STEP
+            } else {
+                0.0
+            };
             zoom *= (steps.clamp(-MAX_ZOOM_STEPS, MAX_ZOOM_STEPS) * ZOOM_STEP).exp();
         }
-        if zoom.is_finite() && zoom > 0.0 { zoom } else { 1.0 }
+        if zoom.is_finite() && zoom > 0.0 {
+            zoom
+        } else {
+            1.0
+        }
     }
 }
 
@@ -292,7 +364,12 @@ fn axis_lock(d: Vec2, modifiers: Modifiers, opts: &InputOptions) -> Vec2 {
 
 /// A wheel event's delta in points the way egui's own scroll areas count it: a line is
 /// `line_scroll_speed` points and a page is the window's height.
-fn egui_points(unit: MouseWheelUnit, delta: Vec2, input: &egui::InputState, opts: &InputOptions) -> Vec2 {
+fn egui_points(
+    unit: MouseWheelUnit,
+    delta: Vec2,
+    input: &egui::InputState,
+    opts: &InputOptions,
+) -> Vec2 {
     let d = match unit {
         MouseWheelUnit::Point => delta,
         MouseWheelUnit::Line => delta * opts.line_scroll_speed,
@@ -308,7 +385,12 @@ fn egui_points(unit: MouseWheelUnit, delta: Vec2, input: &egui::InputState, opts
 pub fn unsmoothed_scroll(input: &egui::InputState, opts: &InputOptions) -> Vec2 {
     let mut total = Vec2::ZERO;
     for event in &input.events {
-        if let Event::MouseWheel { unit, delta, phase: TouchPhase::Move, modifiers } = event
+        if let Event::MouseWheel {
+            unit,
+            delta,
+            phase: TouchPhase::Move,
+            modifiers,
+        } = event
             && !modifiers.matches_any(opts.zoom_modifier)
         {
             total += axis_lock(egui_points(*unit, *delta, input, opts), *modifiers, opts);
@@ -320,7 +402,11 @@ pub fn unsmoothed_scroll(input: &egui::InputState, opts: &InputOptions) -> Vec2 
 /// Points per wheel notch at `zoom` (1.0 = 100%): more when zoomed in, less when zoomed out, but
 /// gently, so zoomed-out overviews don't crawl and close-ups don't jump.
 pub fn notch_px(zoom: f32) -> f32 {
-    let z = if zoom.is_finite() && zoom > 0.0 { zoom.sqrt().clamp(0.75, 2.0) } else { 1.0 };
+    let z = if zoom.is_finite() && zoom > 0.0 {
+        zoom.sqrt().clamp(0.75, 2.0)
+    } else {
+        1.0
+    };
     NOTCH_PX * z
 }
 
@@ -342,7 +428,10 @@ mod tests {
         flick(&mut m);
         m.release();
         let first = m.tick(FRAME);
-        assert!(first.y < -10.0, "keeps going the same way after the fingers lift: {first:?}");
+        assert!(
+            first.y < -10.0,
+            "keeps going the same way after the fingers lift: {first:?}"
+        );
         let mut total = first.y;
         let mut last = first.y.abs();
         let mut frames = 0;
@@ -397,28 +486,47 @@ mod tests {
     }
 
     fn wheel(unit: MouseWheelUnit, delta: Vec2, modifiers: Modifiers) -> Event {
-        Event::MouseWheel { unit, delta, phase: TouchPhase::Move, modifiers }
+        Event::MouseWheel {
+            unit,
+            delta,
+            phase: TouchPhase::Move,
+            modifiers,
+        }
     }
 
     /// One 60 fps frame over a tall egui scroll area with the pointer on it; `animate` false puts
     /// [`unsmoothed_scroll`] in place of egui's eased delta, as the app does. Returns the scroll
     /// area's offset and the frame's [`CanvasScroll::zoom`] (its state is kept with the context).
-    fn egui_frame(ctx: &egui::Context, frame_no: &mut u32, animate: bool, mut events: Vec<Event>) -> (f32, f32) {
+    fn egui_frame(
+        ctx: &egui::Context,
+        frame_no: &mut u32,
+        animate: bool,
+        mut events: Vec<Event>,
+    ) -> (f32, f32) {
         *frame_no += 1;
         events.insert(0, Event::PointerMoved(egui::pos2(50.0, 50.0)));
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(400.0, 300.0));
-        let input = egui::RawInput { events, time: Some(f64::from(*frame_no) / 60.0), screen_rect: Some(screen), ..Default::default() };
+        let input = egui::RawInput {
+            events,
+            time: Some(f64::from(*frame_no) / 60.0),
+            screen_rect: Some(screen),
+            ..Default::default()
+        };
         let mut seen = (0.0, 1.0);
         ctx.run_ui(input, |ui| {
             let opts = ui.ctx().options(|o| o.input_options);
             if !animate {
-                ui.ctx().input_mut(|i| i.smooth_scroll_delta = unsmoothed_scroll(i, &opts));
+                ui.ctx()
+                    .input_mut(|i| i.smooth_scroll_delta = unsmoothed_scroll(i, &opts));
             }
             let id = egui::Id::new("canvas scroll under test");
-            let mut scroll = ui.data(|d| d.get_temp::<CanvasScroll>(id)).unwrap_or_default();
+            let mut scroll = ui
+                .data(|d| d.get_temp::<CanvasScroll>(id))
+                .unwrap_or_default();
             let zoom = ui.input(|i| scroll.zoom(i, &opts, animate));
             ui.data_mut(|d| d.insert_temp(id, scroll));
-            let out = egui::ScrollArea::vertical().show(ui, |ui| ui.allocate_space(egui::vec2(100.0, 5000.0)));
+            let out = egui::ScrollArea::vertical()
+                .show(ui, |ui| ui.allocate_space(egui::vec2(100.0, 5000.0)));
             seen = (out.state.offset.y, zoom);
         })
         .drop_without_applying_deltas();
@@ -430,26 +538,91 @@ mod tests {
     #[test]
     fn egui_scroll_areas_take_a_wheel_notch_at_once_without_animation() {
         let line = InputOptions::default().line_scroll_speed;
-        let notch = || vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, -1.0), Modifiers::NONE)];
-        let settle = |ctx: &egui::Context, n: &mut u32, animate| (0..40).map(|_| egui_frame(ctx, n, animate, Vec::new()).0).last().unwrap();
+        let notch = || {
+            vec![wheel(
+                MouseWheelUnit::Line,
+                Vec2::new(0.0, -1.0),
+                Modifiers::NONE,
+            )]
+        };
+        let settle = |ctx: &egui::Context, n: &mut u32, animate| {
+            (0..40)
+                .map(|_| egui_frame(ctx, n, animate, Vec::new()).0)
+                .last()
+                .unwrap()
+        };
 
         let (ctx, mut n) = (egui::Context::default(), 0);
         egui_frame(&ctx, &mut n, true, Vec::new());
         let first = egui_frame(&ctx, &mut n, true, notch()).0;
-        assert!(first > 0.0 && first < line, "egui eases the notch in: {first}");
+        assert!(
+            first > 0.0 && first < line,
+            "egui eases the notch in: {first}"
+        );
         assert!((settle(&ctx, &mut n, true) - line).abs() < 0.5);
 
         let (ctx, mut n) = (egui::Context::default(), 0);
         egui_frame(&ctx, &mut n, false, Vec::new());
-        assert_eq!(egui_frame(&ctx, &mut n, false, notch()).0, line, "the whole notch in one frame");
-        assert_eq!(settle(&ctx, &mut n, false), line, "and none of egui's leftover easing after it");
+        assert_eq!(
+            egui_frame(&ctx, &mut n, false, notch()).0,
+            line,
+            "the whole notch in one frame"
+        );
+        assert_eq!(
+            settle(&ctx, &mut n, false),
+            line,
+            "and none of egui's leftover easing after it"
+        );
         // Shift turns the notch sideways, and Ctrl/⌘+wheel zooms rather than scrolls, as in egui.
-        assert_eq!(egui_frame(&ctx, &mut n, false, vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, -1.0), Modifiers::SHIFT)]).0, line);
-        assert_eq!(egui_frame(&ctx, &mut n, false, vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, -1.0), Modifiers::COMMAND)]).0, line);
+        assert_eq!(
+            egui_frame(
+                &ctx,
+                &mut n,
+                false,
+                vec![wheel(
+                    MouseWheelUnit::Line,
+                    Vec2::new(0.0, -1.0),
+                    Modifiers::SHIFT
+                )]
+            )
+            .0,
+            line
+        );
+        assert_eq!(
+            egui_frame(
+                &ctx,
+                &mut n,
+                false,
+                vec![wheel(
+                    MouseWheelUnit::Line,
+                    Vec2::new(0.0, -1.0),
+                    Modifiers::COMMAND
+                )]
+            )
+            .0,
+            line
+        );
         // Touchpad deltas pass through as they are.
-        assert_eq!(egui_frame(&ctx, &mut n, false, vec![wheel(MouseWheelUnit::Point, Vec2::new(0.0, -3.0), Modifiers::NONE)]).0, line + 3.0);
+        assert_eq!(
+            egui_frame(
+                &ctx,
+                &mut n,
+                false,
+                vec![wheel(
+                    MouseWheelUnit::Point,
+                    Vec2::new(0.0, -3.0),
+                    Modifiers::NONE
+                )]
+            )
+            .0,
+            line + 3.0
+        );
         // A junk delta scrolls nothing. Last: egui's own wheel state doesn't recover from it.
-        let junk = vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, f32::NEG_INFINITY), Modifiers::NONE)];
+        let junk = vec![wheel(
+            MouseWheelUnit::Line,
+            Vec2::new(0.0, f32::NEG_INFINITY),
+            Modifiers::NONE,
+        )];
         assert_eq!(egui_frame(&ctx, &mut n, false, junk).0, line + 3.0);
     }
 
@@ -461,42 +634,105 @@ mod tests {
         let opts = InputOptions::default();
         let notch_zoom = (opts.scroll_zoom_speed * opts.line_scroll_speed).exp();
         let step = ZOOM_STEP.exp();
-        let turn = |notches: f32| vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, notches), Modifiers::COMMAND)];
+        let turn = |notches: f32| {
+            vec![wheel(
+                MouseWheelUnit::Line,
+                Vec2::new(0.0, notches),
+                Modifiers::COMMAND,
+            )]
+        };
         let near = |a: f32, b: f32| (a - b).abs() < 1e-5;
 
         let (ctx, mut n) = (egui::Context::default(), 0);
         egui_frame(&ctx, &mut n, true, Vec::new());
         let first = egui_frame(&ctx, &mut n, true, turn(1.0)).1;
-        assert!(first > 1.0 && first < notch_zoom, "egui eases the zoom in: {first} of {notch_zoom}");
+        assert!(
+            first > 1.0 && first < notch_zoom,
+            "egui eases the zoom in: {first} of {notch_zoom}"
+        );
 
         let (ctx, mut n) = (egui::Context::default(), 0);
         egui_frame(&ctx, &mut n, false, Vec::new());
         let zoom = egui_frame(&ctx, &mut n, false, turn(1.0)).1;
-        assert!(near(zoom, notch_zoom) && near(zoom, step * step), "a notch is two steps at once: {zoom}");
-        assert_eq!(egui_frame(&ctx, &mut n, false, Vec::new()).1, 1.0, "nothing left for later frames");
-        assert!(near(egui_frame(&ctx, &mut n, false, turn(-1.0)).1, 1.0 / notch_zoom));
+        assert!(
+            near(zoom, notch_zoom) && near(zoom, step * step),
+            "a notch is two steps at once: {zoom}"
+        );
+        assert_eq!(
+            egui_frame(&ctx, &mut n, false, Vec::new()).1,
+            1.0,
+            "nothing left for later frames"
+        );
+        assert!(near(
+            egui_frame(&ctx, &mut n, false, turn(-1.0)).1,
+            1.0 / notch_zoom
+        ));
         // Quarter notches, as a touchpad pinch or a free-spinning wheel sends them: a step with
         // every second one and nothing in between, never a little with each.
-        let zooms: Vec<f32> = (0..4).map(|_| egui_frame(&ctx, &mut n, false, turn(0.25)).1).collect();
-        assert!(zooms[0] == 1.0 && near(zooms[1], step) && zooms[2] == 1.0 && near(zooms[3], step), "{zooms:?}");
-        let zooms: Vec<f32> = (0..4).map(|_| egui_frame(&ctx, &mut n, false, turn(-0.25)).1).collect();
-        assert!(zooms[0] == 1.0 && near(zooms[1], 1.0 / step) && zooms[2] == 1.0 && near(zooms[3], 1.0 / step), "{zooms:?}");
+        let zooms: Vec<f32> = (0..4)
+            .map(|_| egui_frame(&ctx, &mut n, false, turn(0.25)).1)
+            .collect();
+        assert!(
+            zooms[0] == 1.0 && near(zooms[1], step) && zooms[2] == 1.0 && near(zooms[3], step),
+            "{zooms:?}"
+        );
+        let zooms: Vec<f32> = (0..4)
+            .map(|_| egui_frame(&ctx, &mut n, false, turn(-0.25)).1)
+            .collect();
+        assert!(
+            zooms[0] == 1.0
+                && near(zooms[1], 1.0 / step)
+                && zooms[2] == 1.0
+                && near(zooms[3], 1.0 / step),
+            "{zooms:?}"
+        );
         // Part of a step doesn't wait for ever: after a pause the count starts again.
         assert_eq!(egui_frame(&ctx, &mut n, false, turn(0.25)).1, 1.0);
         for _ in 0..60 {
             assert_eq!(egui_frame(&ctx, &mut n, false, Vec::new()).1, 1.0);
         }
-        assert_eq!(egui_frame(&ctx, &mut n, false, turn(0.25)).1, 1.0, "the quarter turn of a second ago has lapsed");
+        assert_eq!(
+            egui_frame(&ctx, &mut n, false, turn(0.25)).1,
+            1.0,
+            "the quarter turn of a second ago has lapsed"
+        );
         assert!(near(egui_frame(&ctx, &mut n, false, turn(0.25)).1, step));
         // A pinch the system reports as a pinch arrives as a zoom factor of its own and follows the
         // fingers; a plain notch doesn't zoom.
-        assert_eq!(egui_frame(&ctx, &mut n, false, vec![Event::Zoom(1.5)]).1, 1.5);
-        assert_eq!(egui_frame(&ctx, &mut n, false, vec![wheel(MouseWheelUnit::Line, Vec2::new(0.0, 1.0), Modifiers::NONE)]).1, 1.0);
+        assert_eq!(
+            egui_frame(&ctx, &mut n, false, vec![Event::Zoom(1.5)]).1,
+            1.5
+        );
+        assert_eq!(
+            egui_frame(
+                &ctx,
+                &mut n,
+                false,
+                vec![wheel(
+                    MouseWheelUnit::Line,
+                    Vec2::new(0.0, 1.0),
+                    Modifiers::NONE
+                )]
+            )
+            .1,
+            1.0
+        );
         // An absurd turn is a bounded zoom, and junk never comes out as a zoom factor (the endless
         // wheel delta last, as above).
         let huge = egui_frame(&ctx, &mut n, false, turn(1e6)).1;
-        assert!(huge > notch_zoom && huge <= (MAX_ZOOM_STEPS * ZOOM_STEP).exp() * 1.001, "{huge}");
-        for junk in [Event::Zoom(f32::NAN), Event::Zoom(0.0), wheel(MouseWheelUnit::Page, Vec2::new(0.0, f32::INFINITY), Modifiers::COMMAND)] {
+        assert!(
+            huge > notch_zoom && huge <= (MAX_ZOOM_STEPS * ZOOM_STEP).exp() * 1.001,
+            "{huge}"
+        );
+        for junk in [
+            Event::Zoom(f32::NAN),
+            Event::Zoom(0.0),
+            wheel(
+                MouseWheelUnit::Page,
+                Vec2::new(0.0, f32::INFINITY),
+                Modifiers::COMMAND,
+            ),
+        ] {
             assert_eq!(egui_frame(&ctx, &mut n, false, vec![junk]).1, 1.0);
         }
     }

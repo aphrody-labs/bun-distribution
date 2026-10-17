@@ -15,7 +15,11 @@ fn can_merge(s: &Session) -> std::result::Result<(), String> {
         return Err("Photo Merge needs access to the photo files".into());
     }
     // the photo count is checked when run (an explicit `ids` parameter may name them)
-    if s.catalog.photos().nth(1).is_none() { Err("the library has fewer than 2 photos".into()) } else { Ok(()) }
+    if s.catalog.photos().nth(1).is_none() {
+        Err("the library has fewer than 2 photos".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn run(s: &mut Session, id: &str, p: &Value) -> Result<Value> {
@@ -28,8 +32,11 @@ fn run(s: &mut Session, id: &str, p: &Value) -> Result<Value> {
     let out = job.run(&|_, _| true).map_err(|e| bad(id, e))?;
     let mut info = out.info;
     if let (Some(path), Some(img)) = (str_param(p, "previewPath"), &out.preview) {
-        let png = lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(img), &lightcraft_codecs::EncodeMeta::default())
-            .map_err(|e| bad(id, e.to_string()))?;
+        let png = lightcraft_codecs::encode_png(
+            &lightcraft_codecs::EncodeImage::rgba8(img),
+            &lightcraft_codecs::EncodeMeta::default(),
+        )
+        .map_err(|e| bad(id, e.to_string()))?;
         s.check_write_target(path).map_err(|e| bad(id, e))?;
         crate::export::write_file(path, &png).map_err(|e| bad(id, e))?;
         info["previewPath"] = json!(path);

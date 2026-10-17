@@ -64,14 +64,29 @@ impl H264 {
             bits: 8,
             mono: p.chroma_width == 0,
         };
-        let rgba = yuv::to_rgba(&planes, Matrix::from_code(p.color.matrix, p.height), p.color.full_range);
-        Pic { pts: p.pts, width: p.width, height: p.height, rgba }
+        let rgba = yuv::to_rgba(
+            &planes,
+            Matrix::from_code(p.color.matrix, p.height),
+            p.color.full_range,
+        );
+        Pic {
+            pts: p.pts,
+            width: p.width,
+            height: p.height,
+            rgba,
+        }
     }
 }
 
 impl Codec for H264 {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<Pic>> {
-        Ok(self.dec.decode(sample, pts).map_err(dec_err)?.into_iter().map(H264::convert).collect())
+        Ok(self
+            .dec
+            .decode(sample, pts)
+            .map_err(dec_err)?
+            .into_iter()
+            .map(H264::convert)
+            .collect())
     }
     fn flush(&mut self) -> Vec<Pic> {
         self.dec.flush().into_iter().map(H264::convert).collect()
@@ -91,7 +106,19 @@ macro_rules! plane_pic {
         let (w, h) = (p.width as usize, p.height as usize);
         let rgba = match (&p.y, &p.u, &p.v) {
             (P::U8(y), P::U8(u), P::U8(v)) => yuv::to_rgba(
-                &Planes { y, u, v, y_stride: p.y_stride, c_stride: p.uv_stride, width: w, height: h, sx: $sx, sy: $sy, bits: 8, mono: $mono },
+                &Planes {
+                    y,
+                    u,
+                    v,
+                    y_stride: p.y_stride,
+                    c_stride: p.uv_stride,
+                    width: w,
+                    height: h,
+                    sx: $sx,
+                    sy: $sy,
+                    bits: 8,
+                    mono: $mono,
+                },
                 $matrix,
                 $full,
             ),
@@ -114,7 +141,12 @@ macro_rules! plane_pic {
             ),
             _ => vec![0; w * h * 4],
         };
-        Pic { pts: p.pts, width: p.width, height: p.height, rgba }
+        Pic {
+            pts: p.pts,
+            width: p.width,
+            height: p.height,
+            rgba,
+        }
     }};
 }
 
@@ -132,13 +164,27 @@ impl Hevc {
         let sx = u32::from(p.chroma_width < p.width);
         let sy = u32::from(p.chroma_height < p.height);
         let m = Matrix::from_code(p.color.matrix, p.height);
-        plane_pic!(&p, filmcraft_hevc::Plane, sx, sy, m, p.color.full_range, p.chroma_width == 0)
+        plane_pic!(
+            &p,
+            filmcraft_hevc::Plane,
+            sx,
+            sy,
+            m,
+            p.color.full_range,
+            p.chroma_width == 0
+        )
     }
 }
 
 impl Codec for Hevc {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<Pic>> {
-        Ok(self.dec.decode(sample, pts).map_err(dec_err)?.into_iter().map(Hevc::convert).collect())
+        Ok(self
+            .dec
+            .decode(sample, pts)
+            .map_err(dec_err)?
+            .into_iter()
+            .map(Hevc::convert)
+            .collect())
     }
     fn flush(&mut self) -> Vec<Pic> {
         self.dec.flush().into_iter().map(Hevc::convert).collect()
@@ -160,7 +206,13 @@ impl Vp9 {
         if p.color.color_space == 7 {
             // RGB (4:4:4): the planes carry G, B, R.
             let shift = p.bit_depth.saturating_sub(8);
-            let at = |pl: &filmcraft_vp9::Plane, i: usize| if i < pl.len() { (pl.get(i) >> shift) as u8 } else { 0 };
+            let at = |pl: &filmcraft_vp9::Plane, i: usize| {
+                if i < pl.len() {
+                    (pl.get(i) >> shift) as u8
+                } else {
+                    0
+                }
+            };
             let mut rgba = Vec::with_capacity(w * h * 4);
             for row in 0..h {
                 for col in 0..w {
@@ -169,7 +221,12 @@ impl Vp9 {
                     rgba.extend_from_slice(&[at(&p.v, c), at(&p.y, i), at(&p.u, c), 255]);
                 }
             }
-            return Pic { pts: p.pts, width: p.width, height: p.height, rgba };
+            return Pic {
+                pts: p.pts,
+                width: p.width,
+                height: p.height,
+                rgba,
+            };
         }
         // color_space (VP9 §7.2.2): 1 BT.601, 2 BT.709, 3 SMPTE-170, 4 SMPTE-240, 5 BT.2020.
         let m = match p.color.color_space {
@@ -178,13 +235,27 @@ impl Vp9 {
             5 => Matrix::Bt2020,
             _ => Matrix::from_code(2, p.height),
         };
-        plane_pic!(&p, filmcraft_vp9::Plane, u32::from(p.subsampling_x), u32::from(p.subsampling_y), m, p.color.full_range, false)
+        plane_pic!(
+            &p,
+            filmcraft_vp9::Plane,
+            u32::from(p.subsampling_x),
+            u32::from(p.subsampling_y),
+            m,
+            p.color.full_range,
+            false
+        )
     }
 }
 
 impl Codec for Vp9 {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<Pic>> {
-        Ok(self.dec.decode(sample, pts).map_err(dec_err)?.into_iter().map(Vp9::convert).collect())
+        Ok(self
+            .dec
+            .decode(sample, pts)
+            .map_err(dec_err)?
+            .into_iter()
+            .map(Vp9::convert)
+            .collect())
     }
     fn flush(&mut self) -> Vec<Pic> {
         self.dec.flush().into_iter().map(Vp9::convert).collect()
@@ -221,7 +292,12 @@ impl Av1 {
             Matrix::from_code(p.matrix_coefficients, p.height),
             p.full_range,
         );
-        Pic { pts: p.pts, width: p.width, height: p.height, rgba }
+        Pic {
+            pts: p.pts,
+            width: p.width,
+            height: p.height,
+            rgba,
+        }
     }
 }
 
@@ -233,7 +309,13 @@ impl Codec for Av1 {
                 self.dec.decode(&self.config_obus).map_err(dec_err)?;
             }
         }
-        Ok(self.dec.decode_pts(sample, pts).map_err(dec_err)?.into_iter().map(Av1::convert).collect())
+        Ok(self
+            .dec
+            .decode_pts(sample, pts)
+            .map_err(dec_err)?
+            .into_iter()
+            .map(Av1::convert)
+            .collect())
     }
     fn flush(&mut self) -> Vec<Pic> {
         self.dec.flush().into_iter().map(Av1::convert).collect()
@@ -274,19 +356,47 @@ fn open_track(bytes: &[u8]) -> Result<(Demux, Track, Box<dyn Codec>)> {
     match Container::sniff(bytes) {
         Container::Mp4 => {
             let f = filmcraft_isobmff::open(bytes).map_err(dec_err)?;
-            let ti = f.track_of_kind(filmcraft_isobmff::TrackKind::Video).ok_or(MediaError::Missing("video track"))?;
+            let ti = f
+                .track_of_kind(filmcraft_isobmff::TrackKind::Video)
+                .ok_or(MediaError::Missing("video track"))?;
             let t = &f.tracks[ti];
-            let entry = t.entries.first().ok_or(MediaError::Missing("video track"))?;
+            let entry = t
+                .entries
+                .first()
+                .ok_or(MediaError::Missing("video track"))?;
             let codec: Box<dyn Codec> = match &entry.codec {
                 CodecConfig::Avc(a) => Box::new(H264::new(a.to_bytes())?),
                 CodecConfig::Hevc(c) => Box::new(Hevc::new(c.to_bytes())?),
-                CodecConfig::Vp9(_) => Box::new(Vp9 { dec: filmcraft_vp9::Decoder::new() }),
-                CodecConfig::Av1(c) => Box::new(Av1 { dec: filmcraft_av1::Decoder::new(), config_obus: c.config_obus.clone(), primed: false }),
-                other => return Err(MediaError::Unsupported(format!("{} video", codec_name(other)))),
+                CodecConfig::Vp9(_) => Box::new(Vp9 {
+                    dec: filmcraft_vp9::Decoder::new(),
+                }),
+                CodecConfig::Av1(c) => Box::new(Av1 {
+                    dec: filmcraft_av1::Decoder::new(),
+                    config_obus: c.config_obus.clone(),
+                    primed: false,
+                }),
+                other => {
+                    return Err(MediaError::Unsupported(format!(
+                        "{} video",
+                        codec_name(other)
+                    )));
+                }
             };
-            let (w, h) = entry.video.as_ref().map(|v| (v.width as u32, v.height as u32)).unwrap_or((t.width, t.height));
-            let samples = (0..t.samples.len()).map(|i| (t.presentation_pts(i).unwrap_or(0), t.samples[i].is_sync)).collect();
-            let track = Track { samples, timebase: (1, t.timescale.max(1) as i64), width: w, height: h, codec: codec_name(&entry.codec) };
+            let (w, h) = entry
+                .video
+                .as_ref()
+                .map(|v| (v.width as u32, v.height as u32))
+                .unwrap_or((t.width, t.height));
+            let samples = (0..t.samples.len())
+                .map(|i| (t.presentation_pts(i).unwrap_or(0), t.samples[i].is_sync))
+                .collect();
+            let track = Track {
+                samples,
+                timebase: (1, t.timescale.max(1) as i64),
+                width: w,
+                height: h,
+                codec: codec_name(&entry.codec),
+            };
             Ok((Demux::Mp4(Box::new(f), ti), track, codec))
         }
         Container::Matroska => {
@@ -294,21 +404,36 @@ fn open_track(bytes: &[u8]) -> Result<(Demux, Track, Box<dyn Codec>)> {
             let ti = f
                 .tracks
                 .iter()
-                .position(|t| t.kind == filmcraft_matroska::TrackKind::Video && !t.samples.is_empty())
+                .position(|t| {
+                    t.kind == filmcraft_matroska::TrackKind::Video && !t.samples.is_empty()
+                })
                 .ok_or(MediaError::Missing("video track"))?;
             let t = &f.tracks[ti];
             let codec: Box<dyn Codec> = match &t.codec {
                 MkvCodec::Avc { avcc } => Box::new(H264::new(avcc.clone())?),
                 MkvCodec::Hevc { hvcc } => Box::new(Hevc::new(hvcc.clone())?),
-                MkvCodec::Vp9 { .. } => Box::new(Vp9 { dec: filmcraft_vp9::Decoder::new() }),
+                MkvCodec::Vp9 { .. } => Box::new(Vp9 {
+                    dec: filmcraft_vp9::Decoder::new(),
+                }),
                 MkvCodec::Av1 { av1c } => Box::new(Av1 {
                     dec: filmcraft_av1::Decoder::new(),
-                    config_obus: filmcraft_isobmff::Av1Config::parse(av1c).map(|c| c.config_obus).unwrap_or_default(),
+                    config_obus: filmcraft_isobmff::Av1Config::parse(av1c)
+                        .map(|c| c.config_obus)
+                        .unwrap_or_default(),
                     primed: false,
                 }),
-                other => return Err(MediaError::Unsupported(format!("{} video", mkv_codec_name(other)))),
+                other => {
+                    return Err(MediaError::Unsupported(format!(
+                        "{} video",
+                        mkv_codec_name(other)
+                    )));
+                }
             };
-            let (w, h) = t.video.as_ref().map(|v| (v.pixel_width, v.pixel_height)).unwrap_or((0, 0));
+            let (w, h) = t
+                .video
+                .as_ref()
+                .map(|v| (v.pixel_width, v.pixel_height))
+                .unwrap_or((0, 0));
             let samples = t.samples.iter().map(|s| (s.pts, s.keyframe)).collect();
             let track = Track {
                 samples,
@@ -383,7 +508,17 @@ pub struct VideoDecoder {
 impl VideoDecoder {
     pub fn open(bytes: Bytes) -> Result<VideoDecoder> {
         let (demux, track, codec) = open_track(&bytes)?;
-        Ok(VideoDecoder { bytes, demux, track, codec, next: 0, ready: VecDeque::new(), skip_before: f64::NEG_INFINITY, eos: false, errors: 0 })
+        Ok(VideoDecoder {
+            bytes,
+            demux,
+            track,
+            codec,
+            next: 0,
+            ready: VecDeque::new(),
+            skip_before: f64::NEG_INFINITY,
+            eos: false,
+            errors: 0,
+        })
     }
     pub fn size(&self) -> (u32, u32) {
         (self.track.width, self.track.height)
@@ -408,7 +543,12 @@ impl VideoDecoder {
                 if time + 1e-6 < self.skip_before {
                     continue;
                 }
-                return Ok(Some(Frame { time, width: p.width, height: p.height, rgba: p.rgba }));
+                return Ok(Some(Frame {
+                    time,
+                    width: p.width,
+                    height: p.height,
+                    rgba: p.rgba,
+                }));
             }
             if self.eos {
                 return Ok(None);
@@ -457,7 +597,13 @@ impl VideoDecoder {
         self.next = start;
         self.eos = false;
         // Keep the frame on screen at `t`: the one whose pts is the last ≤ t.
-        let shown = self.track.samples.iter().map(|s| s.0).filter(|p| *p <= target).max();
+        let shown = self
+            .track
+            .samples
+            .iter()
+            .map(|s| s.0)
+            .filter(|p| *p <= target)
+            .max();
         self.skip_before = shown.map(|p| self.secs(p)).unwrap_or(f64::NEG_INFINITY);
     }
 }
@@ -485,8 +631,11 @@ pub fn poster_frame(bytes: &Bytes, t: f64) -> Result<Frame> {
 /// [`poster_frame`] as PNG bytes.
 pub fn poster_png(bytes: &Bytes, t: f64) -> Result<Vec<u8>> {
     let f = poster_frame(bytes, t)?;
-    let img = image::RgbaImage::from_raw(f.width, f.height, f.rgba).ok_or(MediaError::Corrupt("bad picture size".into()))?;
+    let img = image::RgbaImage::from_raw(f.width, f.height, f.rgba)
+        .ok_or(MediaError::Corrupt("bad picture size".into()))?;
     let mut out = Vec::new();
-    image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).map_err(dec_err)?;
+    image::DynamicImage::ImageRgba8(img)
+        .write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .map_err(dec_err)?;
     Ok(out)
 }

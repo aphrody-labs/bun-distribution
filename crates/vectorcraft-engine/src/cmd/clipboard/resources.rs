@@ -19,7 +19,10 @@ use std::sync::Arc;
 use serde_json::{Map, Value, json};
 use vectorcraft_brush::Brush;
 use vectorcraft_color::{Color, Paint, Swatch};
-use vectorcraft_doc::{Appearance, AppearanceItem, Document, GraphicStyle, Node, NodeKind, PatternDef, Symbol, TextStyleDef};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, Document, GraphicStyle, Node, NodeKind, PatternDef, Symbol,
+    TextStyleDef,
+};
 
 use super::super::patterncmds::add_pattern;
 use super::super::{Result, bad, unique_name};
@@ -66,13 +69,21 @@ type Visit<'v> = &'v mut dyn FnMut(Ref<'_>);
 
 fn paint_refs(p: &Paint, f: Visit) {
     match p {
-        Paint::Solid { swatch: Some(s), tint, .. } => f(Ref::Swatch(s, *tint)),
+        Paint::Solid {
+            swatch: Some(s),
+            tint,
+            ..
+        } => f(Ref::Swatch(s, *tint)),
         Paint::Gradient(g) => {
             // The gradient swatch it was applied from, and its stops' links.
             if let Some(s) = &g.swatch {
                 f(Ref::Name(Res::Swatch, s));
             }
-            g.gradient.stops.iter().filter_map(|st| Some((st.swatch.as_deref()?, st.tint))).for_each(|(s, t)| f(Ref::Swatch(s, t)));
+            g.gradient
+                .stops
+                .iter()
+                .filter_map(|st| Some((st.swatch.as_deref()?, st.tint)))
+                .for_each(|(s, t)| f(Ref::Swatch(s, t)));
         }
         Paint::Pattern { pattern, .. } => f(Ref::Name(Res::Pattern, pattern)),
         _ => {}
@@ -200,7 +211,12 @@ impl Used {
         let (res, name) = match r {
             Ref::Style(id) => {
                 if self.styles.insert(id) {
-                    todo.extend(defs.styles.iter().filter(|g| g.id != 0 && g.id == id).map(|g| Source::Appearance(&g.appearance)));
+                    todo.extend(
+                        defs.styles
+                            .iter()
+                            .filter(|g| g.id != 0 && g.id == id)
+                            .map(|g| Source::Appearance(&g.appearance)),
+                    );
                 }
                 return;
             }
@@ -219,11 +235,36 @@ impl Used {
         set.insert(name.to_string());
         match res {
             // A tint swatch's base, a gradient swatch's linked stops.
-            Res::Swatch => todo.extend(defs.swatches.iter().filter(|w| w.name == name).map(|w| Source::Paint(&w.paint))),
-            Res::Symbol => todo.extend(defs.symbols.iter().filter(|s| s.name == name).map(|s| Source::Node(&s.art))),
-            Res::Pattern => todo.extend(defs.patterns.iter().filter(|p| p.name == name).flat_map(|p| p.art.iter().map(|a| Source::Node(a)))),
-            Res::CharStyle => todo.extend(defs.char_styles.iter().filter(|s| s.name == name).map(|s| Source::Attrs(&s.attrs))),
-            Res::ParaStyle => todo.extend(defs.para_styles.iter().filter(|s| s.name == name).map(|s| Source::Attrs(&s.attrs))),
+            Res::Swatch => todo.extend(
+                defs.swatches
+                    .iter()
+                    .filter(|w| w.name == name)
+                    .map(|w| Source::Paint(&w.paint)),
+            ),
+            Res::Symbol => todo.extend(
+                defs.symbols
+                    .iter()
+                    .filter(|s| s.name == name)
+                    .map(|s| Source::Node(&s.art)),
+            ),
+            Res::Pattern => todo.extend(
+                defs.patterns
+                    .iter()
+                    .filter(|p| p.name == name)
+                    .flat_map(|p| p.art.iter().map(|a| Source::Node(a))),
+            ),
+            Res::CharStyle => todo.extend(
+                defs.char_styles
+                    .iter()
+                    .filter(|s| s.name == name)
+                    .map(|s| Source::Attrs(&s.attrs)),
+            ),
+            Res::ParaStyle => todo.extend(
+                defs.para_styles
+                    .iter()
+                    .filter(|s| s.name == name)
+                    .map(|s| Source::Attrs(&s.attrs)),
+            ),
             _ => {}
         }
     }
@@ -238,7 +279,9 @@ impl Used {
     /// tint swatch of a tint used? (Never the built-in Registration swatch.)
     fn carries(&self, w: &Swatch) -> bool {
         let named = is_base(w) || matches!(w.paint, Paint::Gradient(_));
-        !w.is_reserved() && (named && self.has(Res::Swatch, &w.name) || w.tint_of().is_some_and(|(b, t)| self.has_tint(b, t)))
+        !w.is_reserved()
+            && (named && self.has(Res::Swatch, &w.name)
+                || w.tint_of().is_some_and(|(b, t)| self.has_tint(b, t)))
     }
 }
 
@@ -276,7 +319,11 @@ enum Placed {
 impl Placed {
     /// Added as `name`, which `from` was free or not.
     fn added(from: &str, name: String) -> Self {
-        if name == from { Placed::Added } else { Placed::Renamed(name) }
+        if name == from {
+            Placed::Added
+        } else {
+            Placed::Renamed(name)
+        }
     }
     /// The name of the definition the paste added (`None` when the document's own is used).
     fn new_name(&self, from: &str) -> Option<String> {
@@ -290,29 +337,51 @@ impl Placed {
 
 /// Is `name` `base` or a numbered copy of it ("base 2")?
 fn copy_of(base: &str, name: &str) -> bool {
-    name == base || name.strip_prefix(base).and_then(|r| r.strip_prefix(' ')).is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
+    name == base
+        || name
+            .strip_prefix(base)
+            .and_then(|r| r.strip_prefix(' '))
+            .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// The document's own resource for pasted resource `name`, among the document's `names`: the
 /// one of that name when `same` holds for it (or, pasting back into the source document, at all),
 /// else a numbered copy of it (added by an earlier paste) that is the same. `None`: add it.
-fn existing<'a>(name: &str, names: impl IntoIterator<Item = &'a str>, same_doc: bool, same: impl Fn(&str) -> bool) -> Option<Placed> {
+fn existing<'a>(
+    name: &str,
+    names: impl IntoIterator<Item = &'a str>,
+    same_doc: bool,
+    same: impl Fn(&str) -> bool,
+) -> Option<Placed> {
     let mut found: Vec<&str> = names.into_iter().filter(|n| copy_of(name, n)).collect();
     // The name itself first.
     found.sort_by_key(|n| *n != name);
     if same_doc && found.first() == Some(&name) {
         return Some(Placed::Existing);
     }
-    found.into_iter().find(|n| same(n)).map(|n| if n == name { Placed::Existing } else { Placed::Reused(n.to_string()) })
+    found.into_iter().find(|n| same(n)).map(|n| {
+        if n == name {
+            Placed::Existing
+        } else {
+            Placed::Reused(n.to_string())
+        }
+    })
 }
 
 /// Find `item` in `list` ([`existing`], `same` comparing it under the entry's name) or add it
 /// under a free name.
-fn place<T: Named>(list: &mut Vec<T>, item: &T, same_doc: bool, same: impl Fn(&T, &T) -> bool) -> Placed {
+fn place<T: Named>(
+    list: &mut Vec<T>,
+    item: &T,
+    same_doc: bool,
+    same: impl Fn(&T, &T) -> bool,
+) -> Placed {
     let same_as = |n: &str| {
         let mut c = item.clone();
         c.set_name(n.to_string());
-        list.iter().find(|x| x.name() == n).is_some_and(|x| same(x, &c))
+        list.iter()
+            .find(|x| x.name() == n)
+            .is_some_and(|x| same(x, &c))
     };
     if let Some(p) = existing(item.name(), list.iter().map(Named::name), same_doc, same_as) {
         return p;
@@ -345,14 +414,24 @@ impl SwatchChoices {
         let one = |v: &Value| match v.as_str() {
             Some("merge") => Ok(SwatchChoice::Merge),
             Some("add") => Ok(SwatchChoice::Add),
-            _ => Err(bad(cmd, format!("swatchConflict must be \"merge\" or \"add\", not {v}"))),
+            _ => Err(bad(
+                cmd,
+                format!("swatchConflict must be \"merge\" or \"add\", not {v}"),
+            )),
         };
         match p.get("swatchConflict") {
             None | Some(Value::Null) => Ok(Self::default()),
-            Some(Value::Object(m)) => {
-                Ok(Self { all: SwatchChoice::Merge, by_name: m.iter().map(|(k, v)| Ok((k.clone(), one(v)?))).collect::<Result<_>>()? })
-            }
-            Some(v) => Ok(Self { all: one(v)?, by_name: BTreeMap::new() }),
+            Some(Value::Object(m)) => Ok(Self {
+                all: SwatchChoice::Merge,
+                by_name: m
+                    .iter()
+                    .map(|(k, v)| Ok((k.clone(), one(v)?)))
+                    .collect::<Result<_>>()?,
+            }),
+            Some(v) => Ok(Self {
+                all: one(v)?,
+                by_name: BTreeMap::new(),
+            }),
         }
     }
     fn of(&self, name: &str) -> SwatchChoice {
@@ -414,7 +493,9 @@ impl Relink {
     }
     fn attrs(&self, a: &mut Map<String, Value>) {
         for k in STYLE_PAINTS {
-            let Some(before) = style_paint(a, k) else { continue };
+            let Some(before) = style_paint(a, k) else {
+                continue;
+            };
             let mut p = before.clone();
             self.paint(&mut p);
             if p != before
@@ -427,7 +508,10 @@ impl Relink {
     /// Relink a node tree (the mirror of [`node_refs`]).
     fn node(&self, n: &mut Node) {
         self.appearance(&mut n.appearance);
-        n.extras_mut().graphic_style = n.extras().graphic_style.and_then(|id| self.styles.get(&id).copied());
+        n.extras_mut().graphic_style = n
+            .extras()
+            .graphic_style
+            .and_then(|id| self.styles.get(&id).copied());
         if let Some(m) = n.extras_if_any().and_then(|e| e.mask.as_mut()) {
             self.node(Arc::make_mut(&mut m.art));
         }
@@ -466,7 +550,11 @@ fn same_art(r: &Relink, ours: &[Arc<Node>], theirs: &[Arc<Node>]) -> bool {
         r.node(&mut n);
         n
     };
-    ours.len() == theirs.len() && ours.iter().zip(theirs).all(|(a, b)| relinked(&unlinked, a) == relinked(r, b))
+    ours.len() == theirs.len()
+        && ours
+            .iter()
+            .zip(theirs)
+            .all(|(a, b)| relinked(&unlinked, a) == relinked(r, b))
 }
 
 /// What pasting did to the document's resources (part of the paste result).
@@ -488,8 +576,13 @@ impl Imported {
             self.added += 1;
         }
         if let Placed::Reused(to) | Placed::Renamed(to) = p {
-            self.renamed.push(json!({"kind": r.id(), "from": from, "to": to}));
-            self.relink.renames.entry(r).or_default().insert(from.to_string(), to.clone());
+            self.renamed
+                .push(json!({"kind": r.id(), "from": from, "to": to}));
+            self.relink
+                .renames
+                .entry(r)
+                .or_default()
+                .insert(from.to_string(), to.clone());
         }
     }
     /// Point a pasted copy at the document's resources.
@@ -502,17 +595,49 @@ impl Clipboard {
     /// `nodes` (from `src`) and the resources of `src` they use.
     pub(super) fn gather(src: &Document, nodes: Vec<Node>) -> Self {
         let used = Used::of(&Defs::of(src), &nodes);
-        let pick = |r: Res, list: &[TextStyleDef]| list.iter().filter(|s| used.has(r, &s.name)).cloned().collect::<Vec<_>>();
+        let pick = |r: Res, list: &[TextStyleDef]| {
+            list.iter()
+                .filter(|s| used.has(r, &s.name))
+                .cloned()
+                .collect::<Vec<_>>()
+        };
         let brushes = match used.names.get(&Res::Brush) {
-            Some(names) => vectorcraft_brush::library(src).into_iter().filter(|b| names.contains(&b.name)).collect(),
+            Some(names) => vectorcraft_brush::library(src)
+                .into_iter()
+                .filter(|b| names.contains(&b.name))
+                .collect(),
             None => vec![],
         };
         Self {
-            images: src.images.iter().filter(|(k, _)| used.has(Res::Image, k)).map(|(k, b)| (k.clone(), b.clone())).collect(),
-            symbols: src.symbols.iter().filter(|s| used.has(Res::Symbol, &s.name)).cloned().collect(),
-            patterns: src.patterns.iter().filter(|p| used.has(Res::Pattern, &p.name)).cloned().collect(),
-            swatches: src.swatches_iter().filter(|w| used.carries(w)).cloned().collect(),
-            graphic_styles: src.graphic_styles.iter().filter(|g| g.id != 0 && used.styles.contains(&g.id)).cloned().collect(),
+            images: src
+                .images
+                .iter()
+                .filter(|(k, _)| used.has(Res::Image, k))
+                .map(|(k, b)| (k.clone(), b.clone()))
+                .collect(),
+            symbols: src
+                .symbols
+                .iter()
+                .filter(|s| used.has(Res::Symbol, &s.name))
+                .cloned()
+                .collect(),
+            patterns: src
+                .patterns
+                .iter()
+                .filter(|p| used.has(Res::Pattern, &p.name))
+                .cloned()
+                .collect(),
+            swatches: src
+                .swatches_iter()
+                .filter(|w| used.carries(w))
+                .cloned()
+                .collect(),
+            graphic_styles: src
+                .graphic_styles
+                .iter()
+                .filter(|g| g.id != 0 && used.styles.contains(&g.id))
+                .cloned()
+                .collect(),
             char_styles: pick(Res::CharStyle, &src.char_styles),
             para_styles: pick(Res::ParaStyle, &src.para_styles),
             brushes,
@@ -535,24 +660,40 @@ impl Clipboard {
     }
 
     /// The used global and spot colours whose name `d` gives another one: (pasted, document).
-    pub(super) fn conflicts<'a, 'd>(&'a self, d: &'d Document, used: &Used) -> Vec<(&'a Swatch, &'d Swatch)> {
+    pub(super) fn conflicts<'a, 'd>(
+        &'a self,
+        d: &'d Document,
+        used: &Used,
+    ) -> Vec<(&'a Swatch, &'d Swatch)> {
         self.swatches
             .iter()
             .filter(|w| is_base(w) && used.has(Res::Swatch, &w.name))
-            .filter_map(|w| d.swatch(&w.name).filter(|t| is_base(t) && (t.paint != w.paint || t.spot != w.spot)).map(|t| (w, t)))
+            .filter_map(|w| {
+                d.swatch(&w.name)
+                    .filter(|t| is_base(t) && (t.paint != w.paint || t.spot != w.spot))
+                    .map(|t| (w, t))
+            })
             .collect()
     }
 
     /// Add the resources the objects use to `d` (inside the paste's undo step) and work out how
     /// pasted copies relink to them.
-    pub(crate) fn import_into(&self, d: &mut Document, choices: &SwatchChoices, same_doc: bool) -> Imported {
+    pub(crate) fn import_into(
+        &self,
+        d: &mut Document,
+        choices: &SwatchChoices,
+        same_doc: bool,
+    ) -> Imported {
         let used = self.used();
         let mut out = Imported::default();
         self.import_images(d, &used, same_doc, &mut out);
         self.import_brushes(d, &used, same_doc, &mut out);
         self.import_swatches(d, &used, choices, same_doc, &mut out);
         // Character and paragraph styles (their colours relinked first).
-        for (r, mine, theirs) in [(Res::CharStyle, &self.char_styles, &mut d.char_styles), (Res::ParaStyle, &self.para_styles, &mut d.para_styles)] {
+        for (r, mine, theirs) in [
+            (Res::CharStyle, &self.char_styles, &mut d.char_styles),
+            (Res::ParaStyle, &self.para_styles, &mut d.para_styles),
+        ] {
             for def in mine.iter().filter(|s| used.has(r, &s.name)) {
                 let mut s = def.clone();
                 out.relink.attrs(&mut s.attrs);
@@ -563,31 +704,75 @@ impl Clipboard {
         // Symbols and patterns, compared once relinked. Those added are relinked at the end, when
         // every new name and graphic style id is known.
         let mut added_symbols = vec![];
-        for def in self.symbols.iter().filter(|s| used.has(Res::Symbol, &s.name)) {
+        for def in self
+            .symbols
+            .iter()
+            .filter(|s| used.has(Res::Symbol, &s.name))
+        {
             let r = &out.relink;
-            let p = place(&mut d.symbols, def, same_doc, |a, b| same_art(r, std::slice::from_ref(&a.art), std::slice::from_ref(&b.art)));
+            let p = place(&mut d.symbols, def, same_doc, |a, b| {
+                same_art(
+                    r,
+                    std::slice::from_ref(&a.art),
+                    std::slice::from_ref(&b.art),
+                )
+            });
             added_symbols.extend(p.new_name(&def.name));
             out.placed(Res::Symbol, &def.name, &p);
         }
         let mut added_patterns = vec![];
-        for def in self.patterns.iter().filter(|p| used.has(Res::Pattern, &p.name)) {
+        for def in self
+            .patterns
+            .iter()
+            .filter(|p| used.has(Res::Pattern, &p.name))
+        {
             // Tile options alike, and the art once relinked.
-            let bare = |p: &PatternDef| PatternDef { name: String::new(), art: vec![], ..p.clone() };
-            let same = |n: &str| d.pattern(n).is_some_and(|x| bare(x) == bare(def) && same_art(&out.relink, &x.art, &def.art));
-            let p = existing(&def.name, d.patterns.iter().map(|p| p.name.as_str()), same_doc, same).unwrap_or_else(|| {
+            let bare = |p: &PatternDef| PatternDef {
+                name: String::new(),
+                art: vec![],
+                ..p.clone()
+            };
+            let same = |n: &str| {
+                d.pattern(n).is_some_and(|x| {
+                    bare(x) == bare(def) && same_art(&out.relink, &x.art, &def.art)
+                })
+            };
+            let p = existing(
+                &def.name,
+                d.patterns.iter().map(|p| p.name.as_str()),
+                same_doc,
+                same,
+            )
+            .unwrap_or_else(|| {
                 // Its swatch comes along under the same name.
-                let name = unique_name(&def.name, |n| d.pattern(n).is_some() || d.swatch_name_taken(n));
-                add_pattern(d, PatternDef { name: name.clone(), ..def.clone() });
+                let name = unique_name(&def.name, |n| {
+                    d.pattern(n).is_some() || d.swatch_name_taken(n)
+                });
+                add_pattern(
+                    d,
+                    PatternDef {
+                        name: name.clone(),
+                        ..def.clone()
+                    },
+                );
                 Placed::added(&def.name, name)
             });
             added_patterns.extend(p.new_name(&def.name));
             out.placed(Res::Pattern, &def.name, &p);
         }
         self.import_graphic_styles(d, &used, same_doc, &mut out);
-        for s in d.symbols.iter_mut().filter(|s| added_symbols.contains(&s.name)) {
+        for s in d
+            .symbols
+            .iter_mut()
+            .filter(|s| added_symbols.contains(&s.name))
+        {
             out.relink.node(Arc::make_mut(&mut s.art));
         }
-        for p in d.patterns.iter_mut().filter(|p| added_patterns.contains(&p.name)) {
+        for p in d
+            .patterns
+            .iter_mut()
+            .filter(|p| added_patterns.contains(&p.name))
+        {
             for a in &mut p.art {
                 out.relink.node(Arc::make_mut(a));
             }
@@ -598,7 +783,10 @@ impl Clipboard {
     /// Image blobs: a different blob under a key the document uses gets a new key.
     fn import_images(&self, d: &mut Document, used: &Used, same_doc: bool, out: &mut Imported) {
         for (key, blob) in self.images.iter().filter(|(k, _)| used.has(Res::Image, k)) {
-            let p = existing(key, d.images.keys().map(String::as_str), same_doc, |k| d.images.get(k) == Some(blob)).unwrap_or_else(|| {
+            let p = existing(key, d.images.keys().map(String::as_str), same_doc, |k| {
+                d.images.get(k) == Some(blob)
+            })
+            .unwrap_or_else(|| {
                 let k = unique_name(key, |n| d.images.contains_key(n));
                 d.images.insert(k.clone(), blob.clone());
                 Placed::added(key, k)
@@ -608,7 +796,11 @@ impl Clipboard {
     }
 
     fn import_brushes(&self, d: &mut Document, used: &Used, same_doc: bool, out: &mut Imported) {
-        let brushes: Vec<&Brush> = self.brushes.iter().filter(|b| used.has(Res::Brush, &b.name)).collect();
+        let brushes: Vec<&Brush> = self
+            .brushes
+            .iter()
+            .filter(|b| used.has(Res::Brush, &b.name))
+            .collect();
         if brushes.is_empty() {
             return;
         }
@@ -625,10 +817,27 @@ impl Clipboard {
 
     /// Global and spot colours (a name conflict merges or adds as `choices` say), then the tint
     /// swatches of the tints used and the gradient swatches.
-    fn import_swatches(&self, d: &mut Document, used: &Used, choices: &SwatchChoices, same_doc: bool, out: &mut Imported) {
-        let conflicts: BTreeSet<String> =
-            if same_doc { BTreeSet::new() } else { self.conflicts(d, used).into_iter().map(|(w, _)| w.name.clone()).collect() };
-        let bases: Vec<&Swatch> = self.swatches.iter().filter(|w| is_base(w) && used.has(Res::Swatch, &w.name)).collect();
+    fn import_swatches(
+        &self,
+        d: &mut Document,
+        used: &Used,
+        choices: &SwatchChoices,
+        same_doc: bool,
+        out: &mut Imported,
+    ) {
+        let conflicts: BTreeSet<String> = if same_doc {
+            BTreeSet::new()
+        } else {
+            self.conflicts(d, used)
+                .into_iter()
+                .map(|(w, _)| w.name.clone())
+                .collect()
+        };
+        let bases: Vec<&Swatch> = self
+            .swatches
+            .iter()
+            .filter(|w| is_base(w) && used.has(Res::Swatch, &w.name))
+            .collect();
         for w in &bases {
             let p = if conflicts.contains(&w.name) && choices.of(&w.name) == SwatchChoice::Merge {
                 out.merged += 1;
@@ -646,7 +855,11 @@ impl Clipboard {
             }
         }
         // Then the tint and gradient swatches, linked like the objects.
-        for def in self.swatches.iter().filter(|w| !is_base(w) && used.carries(w)) {
+        for def in self
+            .swatches
+            .iter()
+            .filter(|w| !is_base(w) && used.carries(w))
+        {
             let mut w = def.clone();
             out.relink.paint(&mut w.paint);
             let p = add_swatch(d, &w, same_doc);
@@ -655,24 +868,53 @@ impl Clipboard {
     }
 
     /// Graphic styles: in the source document by id, elsewhere by name and look.
-    fn import_graphic_styles(&self, d: &mut Document, used: &Used, same_doc: bool, out: &mut Imported) {
-        for g in self.graphic_styles.iter().filter(|g| used.styles.contains(&g.id)) {
+    fn import_graphic_styles(
+        &self,
+        d: &mut Document,
+        used: &Used,
+        same_doc: bool,
+        out: &mut Imported,
+    ) {
+        for g in self
+            .graphic_styles
+            .iter()
+            .filter(|g| used.styles.contains(&g.id))
+        {
             let mut new = g.clone();
             out.relink.appearance(&mut new.appearance);
-            let found = match d.graphic_styles.iter().position(|x| same_doc && x.id == g.id) {
+            let found = match d
+                .graphic_styles
+                .iter()
+                .position(|x| same_doc && x.id == g.id)
+            {
                 Some(i) => Some(i),
                 None => {
                     let same = |n: &str| d.graphic_style(n).is_some_and(|x| x.same_look(&new));
-                    let p = existing(&g.name, d.graphic_styles.iter().map(|x| x.name.as_str()), same_doc, same);
+                    let p = existing(
+                        &g.name,
+                        d.graphic_styles.iter().map(|x| x.name.as_str()),
+                        same_doc,
+                        same,
+                    );
                     // Objects follow the style's id, not its name.
-                    p.and_then(|p| d.graphic_style_index(if let Placed::Reused(n) = &p { n } else { &g.name }))
+                    p.and_then(|p| {
+                        d.graphic_style_index(if let Placed::Reused(n) = &p {
+                            n
+                        } else {
+                            &g.name
+                        })
+                    })
                 }
             };
             let i = match found {
                 Some(i) => i,
                 None => {
                     let name = unique_name(&g.name, |n| d.graphic_style(n).is_some());
-                    out.placed(Res::GraphicStyle, &g.name, &Placed::added(&g.name, name.clone()));
+                    out.placed(
+                        Res::GraphicStyle,
+                        &g.name,
+                        &Placed::added(&g.name, name.clone()),
+                    );
                     let id = d.next_graphic_style_id();
                     d.graphic_styles.push(GraphicStyle { name, id, ..new });
                     d.graphic_styles.len() - 1
@@ -686,10 +928,26 @@ impl Clipboard {
 /// Swatch `w` in `d` ([`existing`]), else added under a free name (swatches and colour groups
 /// share one namespace).
 fn add_swatch(d: &mut Document, w: &Swatch, same_doc: bool) -> Placed {
-    let same = |n: &str| d.swatch(n).is_some_and(|t| *t == Swatch { name: n.to_string(), ..w.clone() });
-    existing(&w.name, d.swatches_iter().map(|t| t.name.as_str()), same_doc, same).unwrap_or_else(|| {
+    let same = |n: &str| {
+        d.swatch(n).is_some_and(|t| {
+            *t == Swatch {
+                name: n.to_string(),
+                ..w.clone()
+            }
+        })
+    };
+    existing(
+        &w.name,
+        d.swatches_iter().map(|t| t.name.as_str()),
+        same_doc,
+        same,
+    )
+    .unwrap_or_else(|| {
         let name = d.free_swatch_name(&w.name);
-        d.swatches.push(Swatch { name: name.clone(), ..w.clone() });
+        d.swatches.push(Swatch {
+            name: name.clone(),
+            ..w.clone()
+        });
         Placed::added(&w.name, name)
     })
 }

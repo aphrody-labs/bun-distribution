@@ -36,17 +36,31 @@ impl Sensor {
     pub(crate) fn saturation_points(&self) -> [Option<u16>; 3] {
         let none = [None; 3];
         let Some(cfa) = &self.cfa else { return none };
-        if self.samples != 1 || self.linearization.is_some() || self.width.checked_mul(self.height) != Some(self.data.len()) {
+        if self.samples != 1
+            || self.linearization.is_some()
+            || self.width.checked_mul(self.height) != Some(self.data.len())
+        {
             return none;
         }
         let white = self.white[0];
-        let black = if self.black.values.is_empty() { 0.0 } else { self.black.values.iter().sum::<f32>() / self.black.values.len() as f32 };
+        let black = if self.black.values.is_empty() {
+            0.0
+        } else {
+            self.black.values.iter().sum::<f32>() / self.black.values.len() as f32
+        };
         // a hostile file can state any levels: NaN, negative or inverted ones are left alone
-        if !(black.is_finite() && white.is_finite() && black >= 0.0 && white > black && white <= 65535.0) {
+        if !(black.is_finite()
+            && white.is_finite()
+            && black >= 0.0
+            && white > black
+            && white <= 65535.0)
+        {
             return none;
         }
         let a = self.active;
-        let fits = |start: usize, len: usize, max: usize| start.checked_add(len).is_some_and(|end| end <= max);
+        let fits = |start: usize, len: usize, max: usize| {
+            start.checked_add(len).is_some_and(|end| end <= max)
+        };
         if !fits(a.x, a.width, self.width) || !fits(a.y, a.height, self.height) {
             return none;
         }
@@ -68,7 +82,12 @@ impl Sensor {
         let mut out = none;
         for c in 0..3 {
             // the most populated value of the upper half of the range
-            let Some((v, n)) = (lo..hi).map(|v| (v, hist[v][c])).max_by_key(|&(v, n)| (n, v)) else { continue };
+            let Some((v, n)) = (lo..hi)
+                .map(|v| (v, hist[v][c]))
+                .max_by_key(|&(v, n)| (n, v))
+            else {
+                continue;
+            };
             let min_n = (total[c] as f64 * MIN_SHARE).max(100.0);
             if f64::from(n) < min_n || v as f32 >= white - NEAR_WHITE * (white - black) {
                 continue;
@@ -78,10 +97,14 @@ impl Sensor {
             if (darker as f64) < min_n {
                 continue;
             }
-            let below: u64 = (v.saturating_sub(NEIGHBOURHOOD)..v).map(|u| u64::from(hist[u][c])).sum();
+            let below: u64 = (v.saturating_sub(NEIGHBOURHOOD)..v)
+                .map(|u| u64::from(hist[u][c]))
+                .sum();
             let from = (v + ((ABOVE_MARGIN * (white - black)) as usize).max(1) + 1).min(hist.len());
             let above: u64 = hist[from..].iter().map(|h| u64::from(h[c])).sum();
-            if f64::from(n) >= MIN_SPIKE * (below as f64 / NEIGHBOURHOOD as f64).max(1.0) && above as f64 <= MAX_ABOVE * f64::from(n) {
+            if f64::from(n) >= MIN_SPIKE * (below as f64 / NEIGHBOURHOOD as f64).max(1.0)
+                && above as f64 <= MAX_ABOVE * f64::from(n)
+            {
                 out[c] = u16::try_from(v).ok();
             }
         }
@@ -96,7 +119,9 @@ impl Sensor {
         if points.iter().all(Option::is_none) {
             return 0;
         }
-        let Some(cfa) = self.cfa.clone() else { return 0 };
+        let Some(cfa) = self.cfa.clone() else {
+            return 0;
+        };
         let (a, w) = (self.active, self.width);
         // the white level itself, rounded up: (white - black) / (white - black) is exactly 1
         let white = self.white[0].ceil() as u16;

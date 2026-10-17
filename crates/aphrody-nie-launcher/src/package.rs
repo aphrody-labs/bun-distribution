@@ -55,7 +55,11 @@ pub fn inspect_package_header(data: &[u8]) -> Result<PackageHeader> {
     let guid_bytes: [u8; 16] = data[9..25].try_into().unwrap();
     let package_id = Uuid::from_bytes_le(guid_bytes);
 
-    Ok(PackageHeader { package_id, payload_offset: 25, file_size: data.len() as u64 })
+    Ok(PackageHeader {
+        package_id,
+        payload_offset: 25,
+        file_size: data.len() as u64,
+    })
 }
 
 /// Verify HMAC-SHA256 authentication tag over a ciphertext block.

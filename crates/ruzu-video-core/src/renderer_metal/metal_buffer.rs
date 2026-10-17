@@ -4,16 +4,16 @@
 //! Native Metal buffer allocation and copy operations.
 
 use objc2::rc::Retained;
-use std::collections::VecDeque;
-use std::ops::Range;
-use std::sync::OnceLock;
-use std::sync::atomic::{AtomicU64, Ordering};
-use parking_lot::Mutex;
 use objc2::runtime::ProtocolObject;
 use objc2_metal::{
     MTLBlitCommandEncoder, MTLBuffer, MTLDevice, MTLResource, MTLResourceOptions, MTLTexture,
     MTLTextureDescriptor, MTLTextureType, MTLTextureUsage,
 };
+use parking_lot::Mutex;
+use std::collections::VecDeque;
+use std::ops::Range;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::OnceLock;
 use thiserror::Error;
 
 use crate::surface::{bytes_per_block, PixelFormat};
@@ -34,7 +34,11 @@ struct WriteHistory {
 
 impl WriteHistory {
     fn new(revision: u64) -> Self {
-        Self { floor: revision, latest: revision, ranges: VecDeque::with_capacity(WRITE_HISTORY_CAPACITY) }
+        Self {
+            floor: revision,
+            latest: revision,
+            ranges: VecDeque::with_capacity(WRITE_HISTORY_CAPACITY),
+        }
     }
 
     fn record(&mut self, revision: u64, range: Option<Range<usize>>) {
@@ -43,7 +47,11 @@ impl WriteHistory {
             self.latest = self.latest.max(revision);
             // An out-of-order notification can invalidate a snapshot already
             // tagged with latest. Require a later revision before certifying it.
-            self.floor = if discontinuous { self.latest.saturating_add(1) } else { self.latest };
+            self.floor = if discontinuous {
+                self.latest.saturating_add(1)
+            } else {
+                self.latest
+            };
             self.ranges.clear();
             return;
         }
@@ -55,10 +63,16 @@ impl WriteHistory {
     }
 
     fn unchanged(&self, since: u64, current: u64, range: Range<usize>) -> bool {
-        current != u64::MAX && self.latest == current && since >= self.floor && since <= current
+        current != u64::MAX
+            && self.latest == current
+            && since >= self.floor
+            && since <= current
             && !self.ranges.iter().any(|(revision, written)| {
-                *revision > since && written.start < range.end && range.start < written.end
-                    && !written.is_empty() && !range.is_empty()
+                *revision > since
+                    && written.start < range.end
+                    && range.start < written.end
+                    && !written.is_empty()
+                    && !range.is_empty()
             })
     }
 }
@@ -135,7 +149,8 @@ impl MetalBuffer {
         // Metal rejects zero-byte buffers. The common cache's null object still
         // needs a bindable native resource, matching Eden's reserved null
         // buffer behavior.
-        let allocation_length = Self::checked_allocation_length(length, device.profile().max_buffer_length)?;
+        let allocation_length =
+            Self::checked_allocation_length(length, device.profile().max_buffer_length)?;
         let buffer = device
             .device()
             .newBufferWithLength_options(allocation_length, options)
@@ -176,27 +191,38 @@ impl MetalBuffer {
     }
 
     pub(crate) fn mark_content_range_modified(&self, offset: u64, size: u64) {
-        let range = offset.checked_add(size).filter(|end| *end <= self.length as u64)
+        let range = offset
+            .checked_add(size)
+            .filter(|end| *end <= self.length as u64)
             .map(|end| offset as usize..end as usize);
         self.record_write(range);
     }
 
     fn record_write(&self, range: Option<Range<usize>>) {
-        let previous = self.content_generation.fetch_update(Ordering::Relaxed, Ordering::Relaxed,
-            |generation| Some(generation.saturating_add(1))).unwrap();
+        let previous = self
+            .content_generation
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |generation| {
+                Some(generation.saturating_add(1))
+            })
+            .unwrap();
         if let Some(history) = self.write_history.get() {
             history.lock().record(previous.saturating_add(1), range);
         }
     }
 
     pub fn enable_write_history(&self) {
-        self.write_history.get_or_init(|| Mutex::new(WriteHistory::new(self.content_generation())));
+        self.write_history
+            .get_or_init(|| Mutex::new(WriteHistory::new(self.content_generation())));
     }
 
     pub fn region_unchanged_since(&self, revision: u64, offset: usize, size: usize) -> bool {
-        let Some(end) = offset.checked_add(size).filter(|end| *end <= self.length) else { return false; };
+        let Some(end) = offset.checked_add(size).filter(|end| *end <= self.length) else {
+            return false;
+        };
         self.write_history.get().is_some_and(|history| {
-            history.lock().unchanged(revision, self.content_generation(), offset..end)
+            history
+                .lock()
+                .unchanged(revision, self.content_generation(), offset..end)
         })
     }
 
@@ -237,7 +263,9 @@ impl MetalBuffer {
         let element_count = size.div_ceil(bytes_per_element).max(1);
         let bytes_per_row = element_count.checked_mul(bytes_per_element).ok_or(
             MetalBufferError::RangeOutOfBounds {
-                offset, end: usize::MAX, length: self.length,
+                offset,
+                end: usize::MAX,
+                length: self.length,
             },
         )?;
         // Validate the actual native footprint, including a partial last texel.
@@ -303,7 +331,14 @@ impl MetalBuffer {
         destination_offset: usize,
         size: usize,
     ) -> Result<(), MetalBufferError> {
-        self.encode_copy_impl(scheduler, destination, source_offset, destination_offset, size, false)
+        self.encode_copy_impl(
+            scheduler,
+            destination,
+            source_offset,
+            destination_offset,
+            size,
+            false,
+        )
     }
 
     pub(crate) fn encode_upload_copy(
@@ -314,7 +349,14 @@ impl MetalBuffer {
         destination_offset: usize,
         size: usize,
     ) -> Result<(), MetalBufferError> {
-        self.encode_copy_impl(scheduler, destination, source_offset, destination_offset, size, true)
+        self.encode_copy_impl(
+            scheduler,
+            destination,
+            source_offset,
+            destination_offset,
+            size,
+            true,
+        )
     }
 
     fn encode_copy_impl(
@@ -388,15 +430,23 @@ mod tests {
                 (PixelFormat::R32G32B32A32Float, 256, 16, 256),
             ] {
                 for writable in [false, true] {
-                    let texture = buffer.new_texture_view(&device, format, 256, size, writable).unwrap();
+                    let texture = buffer
+                        .new_texture_view(&device, format, 256, size, writable)
+                        .unwrap();
                     assert_eq!(texture.textureType(), MTLTextureType::TypeTextureBuffer);
                     assert_eq!(texture.width(), width);
                     assert_eq!(texture.bufferBytesPerRow(), row);
                     assert_eq!(texture.bufferOffset(), 256);
                     assert_eq!(texture.storageMode(), buffer.handle().storageMode());
                     assert_eq!(texture.cpuCacheMode(), buffer.handle().cpuCacheMode());
-                    assert_eq!(texture.hazardTrackingMode(), buffer.handle().hazardTrackingMode());
-                    assert_eq!(texture.usage().contains(MTLTextureUsage::ShaderWrite), writable);
+                    assert_eq!(
+                        texture.hazardTrackingMode(),
+                        buffer.handle().hazardTrackingMode()
+                    );
+                    assert_eq!(
+                        texture.usage().contains(MTLTextureUsage::ShaderWrite),
+                        writable
+                    );
                 }
             }
         }
@@ -419,17 +469,30 @@ mod tests {
     #[test]
     fn allocation_length_respects_device_limit_without_truncating() {
         for length in [0, 1, 2, 3, 4] {
-            assert_eq!(MetalBuffer::checked_allocation_length(length, 4).unwrap(), 4);
+            assert_eq!(
+                MetalBuffer::checked_allocation_length(length, 4).unwrap(),
+                4
+            );
         }
         for length in [5, 255, 256] {
-            assert_eq!(MetalBuffer::checked_allocation_length(length, 256).unwrap(), length);
+            assert_eq!(
+                MetalBuffer::checked_allocation_length(length, 256).unwrap(),
+                length
+            );
         }
-        for (length, maximum, requested) in [(257, 256, 257), (usize::MAX, 256, usize::MAX), (0, 3, 4)] {
-            assert!(matches!(MetalBuffer::checked_allocation_length(length, maximum),
+        for (length, maximum, requested) in
+            [(257, 256, 257), (usize::MAX, 256, usize::MAX), (0, 3, 4)]
+        {
+            assert!(
+                matches!(MetalBuffer::checked_allocation_length(length, maximum),
                 Err(MetalBufferError::AllocationTooLarge { requested: actual, maximum: limit })
-                    if actual == requested && limit == maximum));
+                    if actual == requested && limit == maximum)
+            );
         }
-        assert_eq!(MetalBuffer::checked_allocation_length(usize::MAX, usize::MAX).unwrap(), usize::MAX);
+        assert_eq!(
+            MetalBuffer::checked_allocation_length(usize::MAX, usize::MAX).unwrap(),
+            usize::MAX
+        );
     }
 
     #[test]
@@ -441,10 +504,14 @@ mod tests {
         assert_eq!(source.content_generation(), 0);
         source.write(0, &[1, 2, 3, 4]).unwrap();
         assert_eq!(source.content_generation(), 1);
-        source.encode_copy(&mut scheduler, &destination, 0, 0, 4).unwrap();
+        source
+            .encode_copy(&mut scheduler, &destination, 0, 0, 4)
+            .unwrap();
         assert_eq!(destination.content_generation(), 1);
         assert_eq!(scheduler.completed_tick(), 0);
-        destination.content_generation.store(u64::MAX - 1, Ordering::Relaxed);
+        destination
+            .content_generation
+            .store(u64::MAX - 1, Ordering::Relaxed);
         destination.mark_content_modified();
         destination.mark_content_modified();
         assert_eq!(destination.content_generation(), u64::MAX);
@@ -470,7 +537,9 @@ mod tests {
         history.record(8, Some(0..4));
         assert!(!history.unchanged(8, 9, 4..8));
         assert!(!history.unchanged(9, 9, 4..8));
-        for revision in 10..=74 { history.record(revision, Some(4..8)); }
+        for revision in 10..=74 {
+            history.record(revision, Some(4..8));
+        }
         assert_eq!(history.ranges.len(), WRITE_HISTORY_CAPACITY);
         assert!(!history.unchanged(9, 74, 0..4));
         assert!(history.unchanged(10, 74, 0..4));

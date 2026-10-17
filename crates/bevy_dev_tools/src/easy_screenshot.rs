@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::prelude::*;
 use bevy_input::{common_conditions::input_just_pressed, keyboard::KeyCode};
-use bevy_render::view::screenshot::{save_to_disk, Screenshot};
+use bevy_render::view::screenshot::{Screenshot, save_to_disk};
 use bevy_window::{PrimaryWindow, Window};
 #[cfg(all(not(target_os = "windows"), feature = "screenrecording"))]
 pub use x264::{Preset, Tune};
@@ -180,7 +180,9 @@ impl Plugin for EasyScreenRecordPlugin {
     fn build(&self, app: &mut App) {
         #[cfg(target_os = "windows")]
         {
-            tracing::warn!("Screen recording is not currently supported on Windows: see https://github.com/bevyengine/bevy/issues/22132");
+            tracing::warn!(
+                "Screen recording is not currently supported on Windows: see https://github.com/bevyengine/bevy/issues/22132"
+            );
         }
         #[cfg(not(target_os = "windows"))]
         {

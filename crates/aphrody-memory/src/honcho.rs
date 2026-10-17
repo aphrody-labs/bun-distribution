@@ -130,15 +130,22 @@ struct HonchoListEnvelope {
 
 impl HonchoMessage {
     fn into_record(self, agent_id: &str) -> MemoryRecord {
-        let created_at_unix_ms =
-            self.created_at.as_deref().and_then(parse_iso_to_unix_ms).unwrap_or_else(now_unix_ms);
+        let created_at_unix_ms = self
+            .created_at
+            .as_deref()
+            .and_then(parse_iso_to_unix_ms)
+            .unwrap_or_else(now_unix_ms);
         // Honcho doesn't have a first-class tags concept; we stash tags inside
         // `metadata.tags` on write and read them back here when present.
         let metadata = self.metadata.unwrap_or_else(|| serde_json::json!({}));
         let tags: Vec<String> = metadata
             .get("tags")
             .and_then(serde_json::Value::as_array)
-            .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(str::to_string))
+                    .collect()
+            })
             .unwrap_or_default();
         MemoryRecord {
             id: self.id,
@@ -193,7 +200,10 @@ impl MemoryProvider for HonchoProvider {
         metadata.insert(
             "tags".into(),
             serde_json::Value::Array(
-                rec.tags.iter().map(|t| serde_json::Value::String(t.clone())).collect(),
+                rec.tags
+                    .iter()
+                    .map(|t| serde_json::Value::String(t.clone()))
+                    .collect(),
             ),
         );
         let metadata_value = serde_json::Value::Object(metadata);
@@ -252,8 +262,10 @@ impl MemoryProvider for HonchoProvider {
             envelope.items
         };
         let agent_id = q.agent_id;
-        let mut out: Vec<MemoryRecord> =
-            messages.into_iter().map(|m| m.into_record(&agent_id)).collect();
+        let mut out: Vec<MemoryRecord> = messages
+            .into_iter()
+            .map(|m| m.into_record(&agent_id))
+            .collect();
         if !q.tags.is_empty() {
             out.retain(|r| q.tags.iter().all(|t| r.tags.iter().any(|rt| rt == t)));
         }

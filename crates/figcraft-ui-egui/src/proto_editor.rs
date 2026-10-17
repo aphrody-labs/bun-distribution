@@ -69,7 +69,12 @@ pub fn set_action(app: &mut FigApp, slot: &Slot, a: Action) {
 }
 
 fn set_condition(app: &mut FigApp, slot: &Slot, block: usize, e: &Expr) {
-    run_at(app, slot, "proto.conditional.setCondition", json!({"block": block, "condition": e}));
+    run_at(
+        app,
+        slot,
+        "proto.conditional.setCondition",
+        json!({"block": block, "condition": e}),
+    );
 }
 
 /// What the action editors read: the document, its page and the interaction being edited.
@@ -82,7 +87,11 @@ pub struct Cx<'a> {
 
 impl Cx<'_> {
     fn slot(&self, path: Vec<usize>) -> Slot {
-        Slot { node: self.node, k: self.k, path }
+        Slot {
+            node: self.node,
+            k: self.k,
+            path,
+        }
     }
 }
 
@@ -135,7 +144,8 @@ fn open_id(cx: &Cx) -> Id {
 
 /// The open action (the conditionals around it are open too); the first one by default.
 fn open_path(ctx: &egui::Context, cx: &Cx) -> Vec<usize> {
-    ctx.data(|d| d.get_temp(open_id(cx))).unwrap_or_else(|| vec![0])
+    ctx.data(|d| d.get_temp(open_id(cx)))
+        .unwrap_or_else(|| vec![0])
 }
 
 fn set_open(ctx: &egui::Context, cx: &Cx, path: Vec<usize>) {
@@ -146,11 +156,22 @@ fn set_open(ctx: &egui::Context, cx: &Cx, path: Vec<usize>) {
 fn nested(ui: &mut Ui, indent: f32, add: impl FnOnce(&mut Ui)) -> Rect {
     let avail = ui.available_rect_before_wrap();
     let max = Rect::from_min_max(pos2(avail.min.x + indent, avail.min.y), avail.max);
-    ui.scope_builder(egui::UiBuilder::new().max_rect(max).layout(egui::Layout::top_down(egui::Align::Min)), add).response.rect
+    ui.scope_builder(
+        egui::UiBuilder::new()
+            .max_rect(max)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+        add,
+    )
+    .response
+    .rect
 }
 
 /// The drag-to-reorder id of the action list at `prefix` (tests find its rows' grips by it).
-pub(crate) fn list_key(node: NodeId, k: usize, prefix: &[usize]) -> (&'static str, NodeId, usize, &[usize]) {
+pub(crate) fn list_key(
+    node: NodeId,
+    k: usize,
+    prefix: &[usize],
+) -> (&'static str, NodeId, usize, &[usize]) {
     ("proto_actions", node, k, prefix)
 }
 
@@ -189,14 +210,31 @@ pub fn action_list(app: &mut FigApp, ui: &mut Ui, cx: &Cx, list: &[Action], pref
 /// A text button with an icon ("+ Add action").
 fn link_button(ui: &mut Ui, icon: Icon, label: &str) -> egui::Response {
     let t = Tokens::get(ui.ctx());
-    let galley = ui.painter().layout_no_wrap(label.to_string(), regular(11.0), t.text_secondary);
+    let galley = ui
+        .painter()
+        .layout_no_wrap(label.to_string(), regular(11.0), t.text_secondary);
     let (r, resp) = ui.allocate_exact_size(vec2(galley.size().x + 28.0, FIELD_H), Sense::click());
     if resp.hovered() {
         ui.painter().rect_filled(r, CornerRadius::same(5), t.hover);
     }
-    let col = if resp.hovered() { t.text } else { t.text_secondary };
-    icons::paint(ui.painter(), Rect::from_center_size(pos2(r.min.x + 11.0, r.center().y), vec2(12.0, 12.0)), icon, col);
-    ui.painter().text(pos2(r.min.x + 22.0, r.center().y), Align2::LEFT_CENTER, label, regular(11.0), col);
+    let col = if resp.hovered() {
+        t.text
+    } else {
+        t.text_secondary
+    };
+    icons::paint(
+        ui.painter(),
+        Rect::from_center_size(pos2(r.min.x + 11.0, r.center().y), vec2(12.0, 12.0)),
+        icon,
+        col,
+    );
+    ui.painter().text(
+        pos2(r.min.x + 22.0, r.center().y),
+        Align2::LEFT_CENTER,
+        label,
+        regular(11.0),
+        col,
+    );
     resp
 }
 
@@ -207,7 +245,14 @@ fn add_action_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, path: Vec<usize>) {
             if let Some(l) = action_menu(ui) {
                 match action_of(l, cx.doc, cx.page, cx.node, None) {
                     Some(a) => {
-                        if run_at(app, &cx.slot(path.clone()), "proto.action.add", json!({ "action": a })).is_some() {
+                        if run_at(
+                            app,
+                            &cx.slot(path.clone()),
+                            "proto.action.add",
+                            json!({ "action": a }),
+                        )
+                        .is_some()
+                        {
                             set_open(ui.ctx(), cx, path.clone());
                         }
                     }
@@ -222,7 +267,16 @@ fn add_action_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, path: Vec<usize>) {
 /// One action: its kind (open) or a summary (closed) with a menu to move or remove it, and when
 /// open its settings below. Returns its row and the area it covers with its settings.
 #[allow(clippy::too_many_arguments)]
-fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usize>, count: usize, open: bool, single: bool) -> (Rect, Rect) {
+fn action_item(
+    app: &mut FigApp,
+    ui: &mut Ui,
+    cx: &Cx,
+    a: &Action,
+    path: Vec<usize>,
+    count: usize,
+    open: bool,
+    single: bool,
+) -> (Rect, Rect) {
     let t = Tokens::get(ui.ctx());
     let i = path.last().copied().unwrap_or(0);
     let removable = path.len() > 1 || count > 1;
@@ -234,12 +288,23 @@ fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usi
             icons::paint(
                 ui.painter(),
                 Rect::from_center_size(r.center(), vec2(12.0, 12.0)),
-                if open { Icon::Chevron } else { Icon::ChevronRight },
+                if open {
+                    Icon::Chevron
+                } else {
+                    Icon::ChevronRight
+                },
                 t.icon_secondary,
             );
             if resp.clicked() {
                 // Closing keeps the conditional around it open.
-                let next = if open { slot.path.get(..slot.path.len().saturating_sub(2)).unwrap_or_default().to_vec() } else { slot.path.clone() };
+                let next = if open {
+                    slot.path
+                        .get(..slot.path.len().saturating_sub(2))
+                        .unwrap_or_default()
+                        .to_vec()
+                } else {
+                    slot.path.clone()
+                };
                 set_open(ui.ctx(), cx, next);
             }
         }
@@ -262,8 +327,18 @@ fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usi
             }
             let text = action_summary(cx.doc, a);
             let shown = widgets::elide(ui, &text, w - 12.0);
-            ui.painter().text(pos2(r.min.x + 6.0, r.center().y), Align2::LEFT_CENTER, &shown, regular(11.0), t.text);
-            let resp = if shown != text { resp.on_hover_text(text) } else { resp };
+            ui.painter().text(
+                pos2(r.min.x + 6.0, r.center().y),
+                Align2::LEFT_CENTER,
+                &shown,
+                regular(11.0),
+                t.text,
+            );
+            let resp = if shown != text {
+                resp.on_hover_text(text)
+            } else {
+                resp
+            };
             if resp.clicked() {
                 set_open(ui.ctx(), cx, slot.path.clone());
             }
@@ -281,7 +356,11 @@ fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usi
                 if let Some(to) = moved
                     && let Some(r) = run_at(app, &slot, "proto.action.move", json!({ "to": to }))
                 {
-                    if open && let Some(p) = r.get("path").and_then(|p| serde_json::from_value::<Vec<usize>>(p.clone()).ok()) {
+                    if open
+                        && let Some(p) = r
+                            .get("path")
+                            .and_then(|p| serde_json::from_value::<Vec<usize>>(p.clone()).ok())
+                    {
                         set_open(ui.ctx(), cx, p);
                     }
                     ui.close();
@@ -292,7 +371,14 @@ fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usi
                     }
                     if menu_item(ui, tr("Remove"), "") {
                         if run_at(app, &slot, "proto.action.remove", json!({})).is_some() {
-                            set_open(ui.ctx(), cx, slot.path.get(..slot.path.len().saturating_sub(2)).unwrap_or_default().to_vec());
+                            set_open(
+                                ui.ctx(),
+                                cx,
+                                slot.path
+                                    .get(..slot.path.len().saturating_sub(2))
+                                    .unwrap_or_default()
+                                    .to_vec(),
+                            );
                         }
                         ui.close();
                     }
@@ -303,16 +389,29 @@ fn action_item(app: &mut FigApp, ui: &mut Ui, cx: &Cx, a: &Action, path: Vec<usi
     if open {
         nested(ui, if single { 0.0 } else { INDENT }, |ui| match a {
             Action::Conditional { blocks } => conditional_blocks(app, ui, cx, &slot, blocks),
-            Action::SetVariable { variable, value, expr } => set_variable_fields(app, ui, cx, &slot, variable, value, expr.as_ref()),
+            Action::SetVariable {
+                variable,
+                value,
+                expr,
+            } => set_variable_fields(app, ui, cx, &slot, variable, value, expr.as_ref()),
             other => action_fields(app, ui, cx.doc, cx.page, &slot, other),
         });
     }
-    (header, header.with_max_y(ui.cursor().min.y.max(header.max.y)))
+    (
+        header,
+        header.with_max_y(ui.cursor().min.y.max(header.max.y)),
+    )
 }
 
 /// The if / else if / else blocks of a conditional action: each one's condition and actions,
 /// then "Else if" and "Else".
-fn conditional_blocks(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, blocks: &[ConditionalBlock]) {
+fn conditional_blocks(
+    app: &mut FigApp,
+    ui: &mut Ui,
+    cx: &Cx,
+    slot: &Slot,
+    blocks: &[ConditionalBlock],
+) {
     let t = Tokens::get(ui.ctx());
     for (b, block) in blocks.iter().enumerate() {
         let label = match (&block.condition, b) {
@@ -327,17 +426,34 @@ fn conditional_blocks(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, block
         let prefix = [slot.path.as_slice(), &[b]].concat();
         // A line down the block's actions, under its label (and under their rows' drag handles).
         let line = ui.painter().add(egui::Shape::Noop);
-        let r = nested(ui, INDENT, |ui| action_list(app, ui, cx, &block.actions, &prefix));
+        let r = nested(ui, INDENT, |ui| {
+            action_list(app, ui, cx, &block.actions, &prefix)
+        });
         let x = r.min.x - INDENT + PAD + 2.0;
-        ui.painter().set(line, egui::Shape::vline(x, r.min.y + 2.0..=r.max.y - 4.0, Stroke::new(1.0, t.border)));
+        ui.painter().set(
+            line,
+            egui::Shape::vline(x, r.min.y + 2.0..=r.max.y - 4.0, Stroke::new(1.0, t.border)),
+        );
     }
     let has_else = blocks.last().is_some_and(|b| b.condition.is_none());
     row(ui, 28.0, |ui| {
-        if link_button(ui, Icon::Plus, tr("Else if")).on_hover_text(tr("Add another condition")).clicked() {
+        if link_button(ui, Icon::Plus, tr("Else if"))
+            .on_hover_text(tr("Add another condition"))
+            .clicked()
+        {
             run_at(app, slot, "proto.conditional.addBlock", json!({}));
         }
-        if !has_else && link_button(ui, Icon::Plus, tr("Else")).on_hover_text(tr("Add actions for when no condition holds")).clicked() {
-            run_at(app, slot, "proto.conditional.addBlock", json!({"else": true}));
+        if !has_else
+            && link_button(ui, Icon::Plus, tr("Else"))
+                .on_hover_text(tr("Add actions for when no condition holds"))
+                .clicked()
+        {
+            run_at(
+                app,
+                slot,
+                "proto.conditional.addBlock",
+                json!({"else": true}),
+            );
         }
     });
 }
@@ -347,12 +463,28 @@ fn text_mode_id(slot: &Slot, b: usize) -> Id {
     slot.id("proto_cond_text").with(b)
 }
 
-fn block_header(app: &mut FigApp, ui: &mut Ui, slot: &Slot, b: usize, label: &str, cond: Option<&Expr>) {
+fn block_header(
+    app: &mut FigApp,
+    ui: &mut Ui,
+    slot: &Slot,
+    b: usize,
+    label: &str,
+    cond: Option<&Expr>,
+) {
     let t = Tokens::get(ui.ctx());
     row(ui, 28.0, |ui| {
         let buttons = if cond.is_some() { 56.0 } else { 24.0 };
-        let (r, _) = ui.allocate_exact_size(vec2(ui.available_width() - buttons, FIELD_H), Sense::hover());
-        ui.painter().text(r.left_center(), Align2::LEFT_CENTER, label, semibold(11.0), t.text);
+        let (r, _) = ui.allocate_exact_size(
+            vec2(ui.available_width() - buttons, FIELD_H),
+            Sense::hover(),
+        );
+        ui.painter().text(
+            r.left_center(),
+            Align2::LEFT_CENTER,
+            label,
+            semibold(11.0),
+            t.text,
+        );
         if let Some(c) = cond {
             let id = text_mode_id(slot, b);
             let builder = simple(c).is_some();
@@ -366,9 +498,18 @@ fn block_header(app: &mut FigApp, ui: &mut Ui, slot: &Slot, b: usize, label: &st
                 ui.data_mut(|d| d.insert_temp(id, !text));
             }
         }
-        let what = if cond.is_some() { tr("Remove this condition and its actions") } else { tr("Remove the else and its actions") };
+        let what = if cond.is_some() {
+            tr("Remove this condition and its actions")
+        } else {
+            tr("Remove the else and its actions")
+        };
         if icons::button(ui, Icon::Minus, 24.0, false, what).clicked() {
-            run_at(app, slot, "proto.conditional.removeBlock", json!({ "block": b }));
+            run_at(
+                app,
+                slot,
+                "proto.conditional.removeBlock",
+                json!({ "block": b }),
+            );
         }
     });
 }
@@ -403,29 +544,49 @@ impl Simple {
 
 /// `e` as a builder condition, if it is one (anything else is edited as an expression).
 pub fn simple(e: &Expr) -> Option<Simple> {
-    let Expr::Op { op, args } = e else { return None };
+    let Expr::Op { op, args } = e else {
+        return None;
+    };
     match (op, args.as_slice()) {
-        (ExprOp::Not, [Expr::Value(VariableValue::Alias(v))]) => Some(Simple { var: v.clone(), op: ExprOp::Not, rhs: Rhs::Nothing }),
+        (ExprOp::Not, [Expr::Value(VariableValue::Alias(v))]) => Some(Simple {
+            var: v.clone(),
+            op: ExprOp::Not,
+            rhs: Rhs::Nothing,
+        }),
         (_, [Expr::Value(VariableValue::Alias(v)), rhs]) if BINARY.contains(op) => {
             let rhs = match rhs {
                 Expr::Value(VariableValue::Alias(w)) => Rhs::Variable(w.clone()),
                 Expr::Value(x) => Rhs::Value(x.clone()),
                 _ => return None,
             };
-            Some(Simple { var: v.clone(), op: *op, rhs })
+            Some(Simple {
+                var: v.clone(),
+                op: *op,
+                rhs,
+            })
         }
         _ => None,
     }
 }
 
-const BINARY: [ExprOp; 8] =
-    [ExprOp::Equals, ExprOp::NotEqual, ExprOp::Less, ExprOp::LessOrEqual, ExprOp::Greater, ExprOp::GreaterOrEqual, ExprOp::And, ExprOp::Or];
+const BINARY: [ExprOp; 8] = [
+    ExprOp::Equals,
+    ExprOp::NotEqual,
+    ExprOp::Less,
+    ExprOp::LessOrEqual,
+    ExprOp::Greater,
+    ExprOp::GreaterOrEqual,
+    ExprOp::And,
+    ExprOp::Or,
+];
 
 /// The operators the builder offers for a variable of `kind`.
 pub fn ops_for(kind: Option<VariableType>) -> &'static [ExprOp] {
     use ExprOp::*;
     match kind {
-        Some(VariableType::Number) => &[Equals, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual],
+        Some(VariableType::Number) => {
+            &[Equals, NotEqual, Less, LessOrEqual, Greater, GreaterOrEqual]
+        }
         Some(VariableType::Boolean) => &[Equals, NotEqual, And, Or, Not],
         _ => &[Equals, NotEqual],
     }
@@ -435,22 +596,39 @@ pub fn ops_for(kind: Option<VariableType>) -> &'static [ExprOp] {
 fn with_op(s: &Simple, op: ExprOp, vars: &Variables) -> Simple {
     let rhs = match (op, &s.rhs) {
         (ExprOp::Not, _) => Rhs::Nothing,
-        (_, Rhs::Nothing) => Rhs::Value(vars.get(&s.var).map_or(VariableValue::Boolean(true), |v| start_value(vars, v))),
+        (_, Rhs::Nothing) => Rhs::Value(
+            vars.get(&s.var)
+                .map_or(VariableValue::Boolean(true), |v| start_value(vars, v)),
+        ),
         (_, r) => r.clone(),
     };
-    Simple { var: s.var.clone(), op, rhs }
+    Simple {
+        var: s.var.clone(),
+        op,
+        rhs,
+    }
 }
 
 /// Block `b`'s condition: the builder (variable, operator, value or variable) when it fits,
 /// otherwise (or by choice) an expression field.
 fn condition_editor(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, b: usize, c: &Expr) {
     let vars = &cx.doc.variables;
-    let text = ui.data(|d| d.get_temp::<bool>(text_mode_id(slot, b))).unwrap_or(false);
+    let text = ui
+        .data(|d| d.get_temp::<bool>(text_mode_id(slot, b)))
+        .unwrap_or(false);
     match simple(c).filter(|_| !text) {
         Some(s) => builder_row(app, ui, cx, slot, b, &s),
         None => {
             let id = slot.id("proto_cond_expr").with(b);
-            if let Some(e) = expr_field(ui, id, vars, Some(c), tr("e.g. count >= 3 and not done"), |e| e.check_condition(vars), None::<fn(&mut Ui)>) {
+            if let Some(e) = expr_field(
+                ui,
+                id,
+                vars,
+                Some(c),
+                tr("e.g. count >= 3 and not done"),
+                |e| e.check_condition(vars),
+                None::<fn(&mut Ui)>,
+            ) {
                 set_condition(app, slot, b, &e);
             }
         }
@@ -470,7 +648,15 @@ fn builder_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, b: usize, s:
         let shown = widgets::elide(ui, name, side - 48.0);
         let resp = widgets::dropdown(ui, &shown, side, Some(Icon::Variable)).on_hover_text(name);
         if resp.clicked() {
-            crate::variable_ui::open_proto(ui, VarSlot { slot: slot.clone(), part: VarPart::Lhs(b) }, None, resp.rect.left_bottom());
+            crate::variable_ui::open_proto(
+                ui,
+                VarSlot {
+                    slot: slot.clone(),
+                    part: VarPart::Lhs(b),
+                },
+                None,
+                resp.rect.left_bottom(),
+            );
         }
         let resp = widgets::dropdown(ui, s.op.symbol(), op_w, None);
         menu_popup(&resp).show(|ui| {
@@ -482,14 +668,32 @@ fn builder_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, b: usize, s:
             }
         });
         let field = Rect::from_min_size(ui.cursor().min, vec2(side, FIELD_H));
-        let commit = |app: &mut FigApp, rhs: Rhs| set_condition(app, slot, b, &Simple { rhs, ..s.clone() }.expr());
+        let commit = |app: &mut FigApp, rhs: Rhs| {
+            set_condition(app, slot, b, &Simple { rhs, ..s.clone() }.expr())
+        };
         match &s.rhs {
             Rhs::Nothing => {}
             Rhs::Variable(other) => {
                 let (rect, _) = ui.allocate_exact_size(vec2(side, FIELD_H), Sense::hover());
-                let name = vars.get(other).map_or(tr("Missing variable"), |v| v.name.as_str());
-                match widgets::bound_field(ui, slot.id("proto_cond_rhs_var").with(b), Lead::None, rect, name) {
-                    Some(BindEvent::Open(at)) => crate::variable_ui::open_proto(ui, VarSlot { slot: slot.clone(), part: VarPart::Rhs(b) }, kind, at),
+                let name = vars
+                    .get(other)
+                    .map_or(tr("Missing variable"), |v| v.name.as_str());
+                match widgets::bound_field(
+                    ui,
+                    slot.id("proto_cond_rhs_var").with(b),
+                    Lead::None,
+                    rect,
+                    name,
+                ) {
+                    Some(BindEvent::Open(at)) => crate::variable_ui::open_proto(
+                        ui,
+                        VarSlot {
+                            slot: slot.clone(),
+                            part: VarPart::Rhs(b),
+                        },
+                        kind,
+                        at,
+                    ),
                     Some(BindEvent::Detach) => {
                         let v = var.map_or(VariableValue::Boolean(true), |v| start_value(vars, v));
                         commit(app, Rhs::Value(v));
@@ -501,8 +705,20 @@ fn builder_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, b: usize, s:
                 if let Some(nv) = literal_field(ui, slot.id("proto_cond_rhs").with(b), v, side) {
                     commit(app, Rhs::Value(nv));
                 }
-                if crate::variable_ui::variable_button(ui, field, slot.id("proto_cond_rhs_bind").with(b)) {
-                    crate::variable_ui::open_proto(ui, VarSlot { slot: slot.clone(), part: VarPart::Rhs(b) }, kind, field.left_bottom());
+                if crate::variable_ui::variable_button(
+                    ui,
+                    field,
+                    slot.id("proto_cond_rhs_bind").with(b),
+                ) {
+                    crate::variable_ui::open_proto(
+                        ui,
+                        VarSlot {
+                            slot: slot.clone(),
+                            part: VarPart::Rhs(b),
+                        },
+                        kind,
+                        field.left_bottom(),
+                    );
                 }
             }
         }
@@ -513,10 +729,14 @@ fn builder_row(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, b: usize, s:
 /// new value when edited.
 fn literal_field(ui: &mut Ui, id: Id, cur: &VariableValue, w: f32) -> Option<VariableValue> {
     match cur {
-        VariableValue::Number(n) => match widgets::number_field(ui, id, Lead::None, Some(*n), "", w, 1.0) {
-            Some(FieldEdit::Set(x) | FieldEdit::Scrub(x, true)) if x.is_finite() && x != *n => Some(VariableValue::Number(x)),
-            _ => None,
-        },
+        VariableValue::Number(n) => {
+            match widgets::number_field(ui, id, Lead::None, Some(*n), "", w, 1.0) {
+                Some(FieldEdit::Set(x) | FieldEdit::Scrub(x, true)) if x.is_finite() && x != *n => {
+                    Some(VariableValue::Number(x))
+                }
+                _ => None,
+            }
+        }
         VariableValue::Boolean(on) => {
             let resp = widgets::dropdown(ui, if *on { "true" } else { "false" }, w, None);
             let mut out = None;
@@ -539,14 +759,24 @@ fn literal_field(ui: &mut Ui, id: Id, cur: &VariableValue, w: f32) -> Option<Var
                 .filter(|n| n.to_hex() != hex)
                 .map(VariableValue::Color)
         }
-        VariableValue::String(s) => widgets::text_field(ui, id, s, w, tr("Text")).filter(|n| n != s).map(VariableValue::String),
+        VariableValue::String(s) => widgets::text_field(ui, id, s, w, tr("Text"))
+            .filter(|n| n != s)
+            .map(VariableValue::String),
         VariableValue::Alias(_) => None,
     }
 }
 
 /// A set variable action: the variable (from the variable picker) and the value it gets, fixed or
 /// computed by an expression when the action runs (`count + 1`, `"Hi " + name`).
-fn set_variable_fields(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, variable: &str, value: &Value, expr: Option<&Expr>) {
+fn set_variable_fields(
+    app: &mut FigApp,
+    ui: &mut Ui,
+    cx: &Cx,
+    slot: &Slot,
+    variable: &str,
+    value: &Value,
+    expr: Option<&Expr>,
+) {
     let vars = &cx.doc.variables;
     let var = vars.get(variable);
     widgets::sublabels(ui, tr("Variable"), None);
@@ -556,19 +786,48 @@ fn set_variable_fields(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, vari
         let shown = widgets::elide(ui, name, w - 48.0);
         let resp = widgets::dropdown(ui, &shown, w, Some(Icon::Variable));
         if resp.clicked() {
-            crate::variable_ui::open_proto(ui, VarSlot { slot: slot.clone(), part: VarPart::SetVariable }, None, resp.rect.left_bottom());
+            crate::variable_ui::open_proto(
+                ui,
+                VarSlot {
+                    slot: slot.clone(),
+                    part: VarPart::SetVariable,
+                },
+                None,
+                resp.rect.left_bottom(),
+            );
         }
     });
     let Some(var) = var else { return };
-    let set =
-        |app: &mut FigApp, value: Value, expr: Option<Expr>| set_action(app, slot, Action::SetVariable { variable: var.id.clone(), value, expr });
+    let set = |app: &mut FigApp, value: Value, expr: Option<Expr>| {
+        set_action(
+            app,
+            slot,
+            Action::SetVariable {
+                variable: var.id.clone(),
+                value,
+                expr,
+            },
+        )
+    };
     // The toggle between a fixed value and an expression ends the value's row.
     let toggle = |ui: &mut Ui| {
         let on = expr.is_some();
-        let tip = if on { tr("Use a fixed value") } else { tr("Use an expression, e.g. count + 1") };
+        let tip = if on {
+            tr("Use a fixed value")
+        } else {
+            tr("Use an expression, e.g. count + 1")
+        };
         icons::button(ui, Icon::Code, 24.0, on, tip).clicked()
     };
-    widgets::sublabels(ui, if expr.is_some() { tr("Expression") } else { tr("Value") }, None);
+    widgets::sublabels(
+        ui,
+        if expr.is_some() {
+            tr("Expression")
+        } else {
+            tr("Value")
+        },
+        None,
+    );
     let mut toggled = false;
     match expr {
         Some(e) => {
@@ -597,7 +856,8 @@ fn set_variable_fields(app: &mut FigApp, ui: &mut Ui, cx: &Cx, slot: &Slot, vari
             }
         }
         None => {
-            let cur = figcraft_engine::proto_run::literal(var.kind, value).unwrap_or_else(|| start_value(vars, var));
+            let cur = figcraft_engine::proto_run::literal(var.kind, value)
+                .unwrap_or_else(|| start_value(vars, var));
             row(ui, 32.0, |ui| {
                 let w = ui.available_width() - 32.0;
                 if let Some(v) = literal_field(ui, slot.id("proto_set_value"), &cur, w) {
@@ -629,15 +889,23 @@ fn expr_field(
     let shown = cur.map(|e| e.display(vars)).unwrap_or_default();
     let key = id.with("draft");
     // A draft that failed to read: (the expression it was typed over, the text, the error).
-    let draft: Option<(String, String, String)> = ui.data(|d| d.get_temp::<(String, String, String)>(key)).filter(|d| d.0 == shown);
+    let draft: Option<(String, String, String)> = ui
+        .data(|d| d.get_temp::<(String, String, String)>(key))
+        .filter(|d| d.0 == shown);
     let mut error = draft.as_ref().map(|d| d.2.clone());
     let mut out = None;
     row(ui, 32.0, |ui| {
         let reserve = if trailing.is_some() { 32.0 } else { 0.0 };
-        let text_now = draft.as_ref().map_or(shown.as_str(), |d| d.1.as_str()).to_string();
+        let text_now = draft
+            .as_ref()
+            .map_or(shown.as_str(), |d| d.1.as_str())
+            .to_string();
         let w = ui.available_width() - reserve;
         if let Some(text) = widgets::text_field(ui, id, &text_now, w, placeholder) {
-            match Expr::parse(&text, vars).map_err(|e| e.message).and_then(|e| check(&e).map(|()| e)) {
+            match Expr::parse(&text, vars)
+                .map_err(|e| e.message)
+                .and_then(|e| check(&e).map(|()| e))
+            {
                 Ok(e) => {
                     ui.data_mut(|d| d.remove::<(String, String, String)>(key));
                     error = None;
@@ -655,37 +923,87 @@ fn expr_field(
     });
     if let Some(m) = error {
         let w = ui.available_width();
-        let galley = ui.painter().layout(m, regular(10.5), t.danger, (w - 2.0 * PAD).max(40.0));
+        let galley = ui
+            .painter()
+            .layout(m, regular(10.5), t.danger, (w - 2.0 * PAD).max(40.0));
         let (r, _) = ui.allocate_exact_size(vec2(w, galley.size().y + 6.0), Sense::hover());
-        ui.painter().galley(pos2(r.min.x + PAD, r.min.y), galley, t.danger);
+        ui.painter()
+            .galley(pos2(r.min.x + PAD, r.min.y), galley, t.danger);
     }
     out
 }
 
 /// Use the variable picked in the variable picker in the action `vs` points at.
 pub fn pick_variable(app: &mut FigApp, vs: &VarSlot, id: &str) {
-    let Ok(doc) = app.session.ds().map(|d| d.doc.clone()) else { return };
+    let Ok(doc) = app.session.ds().map(|d| d.doc.clone()) else {
+        return;
+    };
     let vars = &doc.variables;
     let Some(picked) = vars.get(id) else { return };
-    let current = doc.node(vs.slot.node).and_then(|n| n.interactions.get(vs.slot.k)).and_then(|it| action_at(&it.actions, &vs.slot.path));
+    let current = doc
+        .node(vs.slot.node)
+        .and_then(|n| n.interactions.get(vs.slot.k))
+        .and_then(|it| action_at(&it.actions, &vs.slot.path));
     match (vs.part, current) {
-        (VarPart::SetVariable, Some(Action::SetVariable { variable, value, expr })) => {
+        (
+            VarPart::SetVariable,
+            Some(Action::SetVariable {
+                variable,
+                value,
+                expr,
+            }),
+        ) => {
             // Another type starts from the new variable's value.
             let same = vars.get(variable).is_some_and(|v| v.kind == picked.kind);
-            let (value, expr) = if same { (value.clone(), expr.clone()) } else { (value_json(&start_value(vars, picked)), None) };
-            set_action(app, &vs.slot, Action::SetVariable { variable: picked.id.clone(), value, expr });
+            let (value, expr) = if same {
+                (value.clone(), expr.clone())
+            } else {
+                (value_json(&start_value(vars, picked)), None)
+            };
+            set_action(
+                app,
+                &vs.slot,
+                Action::SetVariable {
+                    variable: picked.id.clone(),
+                    value,
+                    expr,
+                },
+            );
         }
         (VarPart::Lhs(b), Some(Action::Conditional { blocks })) => {
-            let cur = blocks.get(b).and_then(|x| x.condition.as_ref()).and_then(simple);
+            let cur = blocks
+                .get(b)
+                .and_then(|x| x.condition.as_ref())
+                .and_then(simple);
             let next = match cur {
-                Some(s) if vars.get(&s.var).is_some_and(|v| v.kind == picked.kind) => Simple { var: picked.id.clone(), ..s },
-                _ => Simple { var: picked.id.clone(), op: ExprOp::Equals, rhs: Rhs::Value(start_value(vars, picked)) },
+                Some(s) if vars.get(&s.var).is_some_and(|v| v.kind == picked.kind) => Simple {
+                    var: picked.id.clone(),
+                    ..s
+                },
+                _ => Simple {
+                    var: picked.id.clone(),
+                    op: ExprOp::Equals,
+                    rhs: Rhs::Value(start_value(vars, picked)),
+                },
             };
             set_condition(app, &vs.slot, b, &next.expr());
         }
         (VarPart::Rhs(b), Some(Action::Conditional { blocks })) => {
-            if let Some(s) = blocks.get(b).and_then(|x| x.condition.as_ref()).and_then(simple) {
-                set_condition(app, &vs.slot, b, &Simple { rhs: Rhs::Variable(picked.id.clone()), ..s }.expr());
+            if let Some(s) = blocks
+                .get(b)
+                .and_then(|x| x.condition.as_ref())
+                .and_then(simple)
+            {
+                set_condition(
+                    app,
+                    &vs.slot,
+                    b,
+                    &Simple {
+                        rhs: Rhs::Variable(picked.id.clone()),
+                        ..s
+                    }
+                    .expr(),
+                );
             }
         }
         _ => {}

@@ -53,8 +53,12 @@ const ANTIGRAVITY_BARE_PRO_IDS: &[&str] = &["gemini-3-pro", "gemini-3.1-pro", "g
 /// Registered Antigravity model ids advertised by this provider. Mirrors
 /// `GEMINI_3_PRO_ANTIGRAVITY_TEMPLATE_IDS` / `GEMINI_3_FLASH_ANTIGRAVITY_TEMPLATE_IDS`
 /// in `openclaw/extensions/google/provider-models.ts`.
-pub const ANTIGRAVITY_MODEL_IDS: &[&str] =
-    &["gemini-3.8-flash", "gemini-3-pro-low", "gemini-3-pro-high", "gemini-3-flash"];
+pub const ANTIGRAVITY_MODEL_IDS: &[&str] = &[
+    "gemini-3.8-flash",
+    "gemini-3-pro-low",
+    "gemini-3-pro-high",
+    "gemini-3-flash",
+];
 
 // ---------------------------------------------------------------------------
 // Model id normalization (ported from model-id.ts)
@@ -124,7 +128,11 @@ impl GoogleAntigravityAdapter {
             ));
         }
         Url::parse(&base_url)?;
-        Ok(Self { api_key, base_url, client: Some(Client::new()) })
+        Ok(Self {
+            api_key,
+            base_url,
+            client: Some(Client::new()),
+        })
     }
 
     /// Construct from `GOOGLE_ANTIGRAVITY_API_KEY` (+ optional
@@ -135,7 +143,9 @@ impl GoogleAntigravityAdapter {
     /// Returns [`GatewayError::Config`] when the API key env var is unset.
     pub fn from_env() -> Result<Self, GatewayError> {
         let api_key = env::var(ENV_API_KEY).map_err(|_| {
-            GatewayError::Config(format!("GoogleAntigravityAdapter: env var {ENV_API_KEY} not set"))
+            GatewayError::Config(format!(
+                "GoogleAntigravityAdapter: env var {ENV_API_KEY} not set"
+            ))
         })?;
         let base_url = env::var(ENV_BASE_URL).unwrap_or_else(|_| ANTIGRAVITY_BASE_URL.to_owned());
         Self::new(api_key, base_url)
@@ -161,13 +171,24 @@ impl GoogleAntigravityAdapter {
 impl GatewayAdapter for GoogleAntigravityAdapter {
     async fn chat(&self, mut req: ChatRequest) -> Result<ChatResponse, GatewayError> {
         req.model = normalize_antigravity_model_id(&req.model);
-        openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_key, req).await
+        openai_compat::chat(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 
     async fn chat_stream(&self, mut req: ChatRequest) -> Result<ChunkStream, GatewayError> {
         req.model = normalize_antigravity_model_id(&req.model);
-        openai_compat::chat_stream(&self.http_client(), self.endpoint_url()?, &self.api_key, req)
-            .await
+        openai_compat::chat_stream(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 }
 
@@ -196,7 +217,10 @@ mod tests {
         let adapter =
             GoogleAntigravityAdapter::new("ag-test", ANTIGRAVITY_BASE_URL).expect("construct");
         let url = adapter.endpoint_url().expect("url");
-        assert_eq!(url.as_str(), "https://aistudio.googleapis.com/v1/chat/completions");
+        assert_eq!(
+            url.as_str(),
+            "https://aistudio.googleapis.com/v1/chat/completions"
+        );
     }
 
     #[test]
@@ -206,7 +230,10 @@ mod tests {
             GoogleAntigravityAdapter::new("ag-test", "https://generativelanguage.googleapis.com")
                 .expect("construct");
         let url = adapter.endpoint_url().expect("url");
-        assert_eq!(url.as_str(), "https://generativelanguage.googleapis.com/v1/chat/completions");
+        assert_eq!(
+            url.as_str(),
+            "https://generativelanguage.googleapis.com/v1/chat/completions"
+        );
     }
 
     #[test]
@@ -225,16 +252,34 @@ mod tests {
 
     #[test]
     fn normalize_bare_pro_ids_get_low_suffix() {
-        assert_eq!(normalize_antigravity_model_id("gemini-3-pro"), "gemini-3-pro-low");
-        assert_eq!(normalize_antigravity_model_id("gemini-3.1-pro"), "gemini-3.1-pro-low");
-        assert_eq!(normalize_antigravity_model_id("gemini-3-1-pro"), "gemini-3-1-pro-low");
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3-pro"),
+            "gemini-3-pro-low"
+        );
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3.1-pro"),
+            "gemini-3.1-pro-low"
+        );
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3-1-pro"),
+            "gemini-3-1-pro-low"
+        );
     }
 
     #[test]
     fn normalize_already_suffixed_passthrough() {
-        assert_eq!(normalize_antigravity_model_id("gemini-3-pro-low"), "gemini-3-pro-low");
-        assert_eq!(normalize_antigravity_model_id("gemini-3-pro-high"), "gemini-3-pro-high");
-        assert_eq!(normalize_antigravity_model_id("gemini-3-flash"), "gemini-3-flash");
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3-pro-low"),
+            "gemini-3-pro-low"
+        );
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3-pro-high"),
+            "gemini-3-pro-high"
+        );
+        assert_eq!(
+            normalize_antigravity_model_id("gemini-3-flash"),
+            "gemini-3-flash"
+        );
         assert_eq!(
             normalize_antigravity_model_id("claude-opus-4-6-thinking"),
             "claude-opus-4-6-thinking"

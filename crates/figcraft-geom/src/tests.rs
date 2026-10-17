@@ -15,7 +15,12 @@ fn rounded_rect_area_matches_circle_corners() {
     let r = 10.0;
     let p = rounded_rect(100.0, 50.0, [r; 4], 0.0);
     let expected = 5000.0 - 4.0 * r * r + PI * r * r;
-    assert!((area(&p) - expected).abs() < 0.5, "{} vs {}", area(&p), expected);
+    assert!(
+        (area(&p) - expected).abs() < 0.5,
+        "{} vs {}",
+        area(&p),
+        expected
+    );
 }
 
 #[test]
@@ -30,7 +35,10 @@ fn smoothing_stays_in_bounds_and_reduces_area_less_than_sharp() {
     for s in [0.0, 0.3, 0.6, 1.0] {
         let p = rounded_rect(200.0, 120.0, [24.0, 0.0, 40.0, 8.0], s);
         let b = p.bounding_box();
-        assert!(b.x0 >= -1e-6 && b.y0 >= -1e-6 && b.x1 <= 200.0 + 1e-6 && b.y1 <= 120.0 + 1e-6, "s={s} {b:?}");
+        assert!(
+            b.x0 >= -1e-6 && b.y0 >= -1e-6 && b.x1 <= 200.0 + 1e-6 && b.y1 <= 120.0 + 1e-6,
+            "s={s} {b:?}"
+        );
         assert!(area(&p) < 200.0 * 120.0);
     }
     // More smoothing removes more area at the same radius.
@@ -103,8 +111,13 @@ fn set_rotation_keeps_center() {
     for flip in [Affine::FLIP_X, Affine::FLIP_Y] {
         for deg in [0.0, 30.0, -120.0] {
             let r = set_rotation_about_center(xf * flip, 100.0, 50.0, deg);
-            assert!(is_flipped(r) && (rotation_degrees(r) - deg).abs() < 1e-9, "{deg}");
-            assert!((xf * flip * Point::new(50.0, 25.0) - r * Point::new(50.0, 25.0)).hypot() < 1e-9);
+            assert!(
+                is_flipped(r) && (rotation_degrees(r) - deg).abs() < 1e-9,
+                "{deg}"
+            );
+            assert!(
+                (xf * flip * Point::new(50.0, 25.0) - r * Point::new(50.0, 25.0)).hypot() < 1e-9
+            );
         }
     }
 }

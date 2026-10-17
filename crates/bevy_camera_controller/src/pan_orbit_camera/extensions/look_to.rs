@@ -7,7 +7,7 @@ use bevy_app::prelude::*;
 use bevy_curve::prelude::*;
 use bevy_ecs::prelude::*;
 use bevy_ecs::resource::IsResource;
-use bevy_math::{prelude::*, DAffine3, DQuat, DVec3};
+use bevy_math::{DAffine3, DQuat, DVec3, prelude::*};
 use bevy_platform::collections::HashMap;
 use bevy_time::{Real, Time, Timer, TimerMode};
 use bevy_transform::components::Transform;

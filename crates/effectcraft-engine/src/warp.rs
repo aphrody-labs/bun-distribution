@@ -17,7 +17,9 @@ use std::sync::{Arc, Mutex};
 
 use effectcraft_effects::warp_stab::{self, ANALYSIS, ANALYSIS_KEY};
 use effectcraft_keyframe::Value;
-use effectcraft_project::{GroupKind, ItemId, ItemKind, Layer, LayerId, LayerSource, Project, PropGroup, Uid};
+use effectcraft_project::{
+    GroupKind, ItemId, ItemKind, Layer, LayerId, LayerSource, Project, PropGroup, Uid,
+};
 use effectcraft_raster::Image;
 use effectcraft_render::{EvalCtx, ExprHost, FootageSource, LayerCache, Renderer};
 use effectcraft_time::Tick;
@@ -111,15 +113,23 @@ fn fnv(s: &str) -> u64 {
 /// interpretation), In/Out, start time, stretch, Time Remap and the comp frame rate.
 pub fn signature(p: &Project, comp: ItemId, layer: &Layer) -> String {
     let src = match &layer.source {
-        LayerSource::Footage { item } | LayerSource::Solid { item } | LayerSource::Comp { item } => match p.item(*item).map(|i| &i.kind) {
+        LayerSource::Footage { item }
+        | LayerSource::Solid { item }
+        | LayerSource::Comp { item } => match p.item(*item).map(|i| &i.kind) {
             Some(ItemKind::Footage(f)) => format!("{f:?}"),
             Some(ItemKind::Solid(s)) => format!("{s:?}"),
-            Some(ItemKind::Comp(c)) => format!("{}x{}@{:?}/{:?}", c.width, c.height, c.frame_rate, c.duration),
+            Some(ItemKind::Comp(c)) => format!(
+                "{}x{}@{:?}/{:?}",
+                c.width, c.height, c.frame_rate, c.duration
+            ),
             _ => String::new(),
         },
         _ => String::new(),
     };
-    let rate = p.comp(comp).map(|c| format!("{:?}", c.frame_rate)).unwrap_or_default();
+    let rate = p
+        .comp(comp)
+        .map(|c| format!("{:?}", c.frame_rate))
+        .unwrap_or_default();
     let s = format!(
         "{:?}|{src}|{:?}|{:?}|{:?}|{}|{:?}|{rate}",
         layer.source,
@@ -149,7 +159,9 @@ pub(crate) fn invalidate(before: &Project, after: &mut Project) -> Vec<(ItemId, 
     let mut todo = vec![];
     let mut clear = vec![];
     for (cid, it) in &after.items {
-        let ItemKind::Comp(c) = &it.kind else { continue };
+        let ItemKind::Comp(c) = &it.kind else {
+            continue;
+        };
         for l in &c.layers {
             let Some(fx) = l.effects() else { continue };
             if !fx.groups().any(is_warp) {
@@ -162,14 +174,22 @@ pub(crate) fn invalidate(before: &Project, after: &mut Project) -> Vec<(ItemId, 
                 if analysed && str_of(g, ANALYSIS_KEY) != sig {
                     clear.push((*cid, l.id, g.uid));
                     todo.push((*cid, l.id, g.uid));
-                } else if !analysed && old_layer.and_then(|ol| ol.props.find_group(g.uid)).is_none() {
+                } else if !analysed
+                    && old_layer
+                        .and_then(|ol| ol.props.find_group(g.uid))
+                        .is_none()
+                {
                     todo.push((*cid, l.id, g.uid));
                 }
             }
         }
     }
     for (cid, lid, uid) in clear {
-        if let Some(g) = after.comp_mut(cid).and_then(|c| c.layer_mut(lid)).and_then(|l| l.props.find_group_mut(uid)) {
+        if let Some(g) = after
+            .comp_mut(cid)
+            .and_then(|c| c.layer_mut(lid))
+            .and_then(|l| l.props.find_group_mut(uid))
+        {
             for m in [ANALYSIS, ANALYSIS_KEY] {
                 if let Some(p) = g.get_mut(m) {
                     p.value = Value::Str(String::new());
@@ -182,7 +202,12 @@ pub(crate) fn invalidate(before: &Project, after: &mut Project) -> Vec<(ItemId, 
 }
 
 /// The layer's input to effect `effect_index` at comp time `t`, in layer pixels at 100 %.
-fn input_frame(r: &Renderer, ctx: &EvalCtx, layer: &Layer, effect_index: usize) -> Option<(Arc<Image>, [f64; 2])> {
+fn input_frame(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    layer: &Layer,
+    effect_index: usize,
+) -> Option<(Arc<Image>, [f64; 2])> {
     let buf = r.layer_input(ctx, layer, effect_index)?;
     if (buf.scale - 1.0).abs() > 1e-9 && buf.scale > 0.0 {
         let w = (buf.img.width as f64 / buf.scale).round().max(1.0) as u32;
@@ -203,22 +228,42 @@ async fn run_work(w: WarpWork, shared: &WarpShared) {
         s.error = Some(msg.to_string());
         s.finished = true;
     };
-    let Some(comp) = w.project.comp(w.comp) else { return fail("composition missing") };
-    let Some(layer) = comp.layer(w.layer) else { return fail("layer missing") };
-    let mut r = Renderer::new(&w.project, w.footage.as_ref(), crate::offload::analysis_opts(accel));
+    let Some(comp) = w.project.comp(w.comp) else {
+        return fail("composition missing");
+    };
+    let Some(layer) = comp.layer(w.layer) else {
+        return fail("layer missing");
+    };
+    let mut r = Renderer::new(
+        &w.project,
+        w.footage.as_ref(),
+        crate::offload::analysis_opts(accel),
+    );
     r.expr = w.expr.as_deref();
     r.cache = Some(&w.cache);
     let r = &r;
     let ctx0 = EvalCtx::new(&w.project, w.comp, comp, Tick::ZERO);
-    let ctx0 = EvalCtx { expr: w.expr.as_deref(), ..ctx0 };
+    let ctx0 = EvalCtx {
+        expr: w.expr.as_deref(),
+        ..ctx0
+    };
     let ctx0 = &ctx0;
-    let frame_at = |t: Tick| crate::offload::in_passes(accel, move |a| input_frame(&r.with_accel(a), &ctx0.at(t), layer, w.effect_index));
+    let frame_at = |t: Tick| {
+        crate::offload::in_passes(accel, move |a| {
+            input_frame(&r.with_accel(a), &ctx0.at(t), layer, w.effect_index)
+        })
+    };
     {
         let mut s = lock(&shared.state);
         s.step = 1;
         s.total = w.times.len() as u64;
     }
-    let mut an = Analyzer::new(w.size, AnalyzeOpts { detailed: w.detailed });
+    let mut an = Analyzer::new(
+        w.size,
+        AnalyzeOpts {
+            detailed: w.detailed,
+        },
+    );
     let mut next = frame_at(w.times[0]).await;
     for k in 0..w.times.len() {
         if shared.cancel.load(Ordering::Relaxed) {
@@ -227,27 +272,59 @@ async fn run_work(w: WarpWork, shared: &WarpShared) {
             s.finished = true;
             return;
         }
-        let Some(cur) = next.take() else { return fail(&format!("no frame at {:.3} s", w.times[k].seconds())) };
+        let Some(cur) = next.take() else {
+            return fail(&format!("no frame at {:.3} s", w.times[k].seconds()));
+        };
         let ((), nf) = crate::offload::join_fetch(
             accel.is_some(),
-            || an.push(&effectcraft_track::Frame { img: &cur.0, offset: cur.1 }),
-            || async { if k + 1 < w.times.len() { frame_at(w.times[k + 1]).await } else { None } },
+            || {
+                an.push(&effectcraft_track::Frame {
+                    img: &cur.0,
+                    offset: cur.1,
+                })
+            },
+            || async {
+                if k + 1 < w.times.len() {
+                    frame_at(w.times[k + 1]).await
+                } else {
+                    None
+                }
+            },
         )
         .await;
         next = nf;
         let mut s = lock(&shared.state);
         s.done = k as u64 + 1;
         s.elapsed = t0.elapsed().as_secs_f64();
-        s.fps = if s.elapsed > 0.0 { s.done as f64 / s.elapsed } else { 0.0 };
+        s.fps = if s.elapsed > 0.0 {
+            s.done as f64 / s.elapsed
+        } else {
+            0.0
+        };
         crate::offload::report(s.done, s.total);
     }
     lock(&shared.state).step = 2;
     let lt0 = layer.layer_time(w.times[0]).seconds();
-    let fd = if w.times.len() > 1 { layer.layer_time(w.times[1]).seconds() - lt0 } else { comp.frame_duration().seconds() };
+    let fd = if w.times.len() > 1 {
+        layer.layer_time(w.times[1]).seconds() - lt0
+    } else {
+        comp.frame_duration().seconds()
+    };
     let a = an.finish(lt0, fd);
     // Step 2: derive a plan once (validates the motion and warms nothing else up).
-    let plan = effectcraft_track::stabilize::plan(&a, &StabSettings { fps: if fd > 0.0 { 1.0 / fd } else { 30.0 }, ..Default::default() });
-    if plan.warps.len() != a.frames.len() || plan.warps.iter().any(|h| h.0.iter().flatten().any(|v| !v.is_finite())) {
+    let plan = effectcraft_track::stabilize::plan(
+        &a,
+        &StabSettings {
+            fps: if fd > 0.0 { 1.0 / fd } else { 30.0 },
+            ..Default::default()
+        },
+    );
+    if plan.warps.len() != a.frames.len()
+        || plan
+            .warps
+            .iter()
+            .any(|h| h.0.iter().flatten().any(|v| !v.is_finite()))
+    {
         return fail("the stabilization could not be computed");
     }
     *lock(&shared.result) = Some(a);
@@ -272,7 +349,8 @@ pub(crate) fn analysis_times(comp: &effectcraft_project::Comp, layer: &Layer) ->
 
 impl Session {
     pub fn is_warp_analyzing(&self) -> bool {
-        self.warp_job.as_ref().is_some_and(|j| !j.is_finished()) || self.offloaded(JobKind::Warp).is_some()
+        self.warp_job.as_ref().is_some_and(|j| !j.is_finished())
+            || self.offloaded(JobKind::Warp).is_some()
     }
 
     /// Progress of the running (or just finished) analysis.
@@ -280,14 +358,27 @@ impl Session {
         self.warp_job.as_ref().map(|j| j.progress()).or_else(|| {
             self.offloaded(JobKind::Warp).map(|j| {
                 let p = &j.progress;
-                WarpProgress { step: 1, done: p.done, total: p.total, elapsed: p.elapsed, fps: rate(p.done, p.elapsed), ..Default::default() }
+                WarpProgress {
+                    step: 1,
+                    done: p.done,
+                    total: p.total,
+                    elapsed: p.elapsed,
+                    fps: rate(p.done, p.elapsed),
+                    ..Default::default()
+                }
             })
         })
     }
 
     /// The effect being analysed: (comp, layer, effect uid).
     pub fn warp_target(&self) -> Option<(ItemId, LayerId, Uid)> {
-        self.warp_job.as_ref().map(|j| (j.comp, j.layer, j.effect)).or_else(|| self.offloaded(JobKind::Warp).map(|j| (j.comp, j.layer, j.uid)))
+        self.warp_job
+            .as_ref()
+            .map(|j| (j.comp, j.layer, j.effect))
+            .or_else(|| {
+                self.offloaded(JobKind::Warp)
+                    .map(|j| (j.comp, j.layer, j.uid))
+            })
     }
 
     /// Cancel the running analysis (nothing is written).
@@ -306,7 +397,13 @@ impl Session {
 
     /// Start analysing Warp Stabilizer `effect` on `layer`. `wait`: block until done (wasm32
     /// always does). Returns the number of frames.
-    pub fn start_warp(&mut self, comp: ItemId, layer: LayerId, effect: Uid, wait: bool) -> Result<usize, String> {
+    pub fn start_warp(
+        &mut self,
+        comp: ItemId,
+        layer: LayerId,
+        effect: Uid,
+        wait: bool,
+    ) -> Result<usize, String> {
         if self.is_warp_analyzing() {
             return Err("a Warp Stabilizer analysis is already running".into());
         }
@@ -315,8 +412,15 @@ impl Session {
         let c = self.project.comp(comp).ok_or("no composition")?;
         let l = c.layer(layer).ok_or("no layer")?;
         let fx = l.effects().ok_or("the layer has no effects")?;
-        let index = fx.groups().position(|g| g.uid == effect).ok_or("no such effect")?;
-        let g = fx.groups().nth(index).filter(|g| is_warp(g)).ok_or("not a Warp Stabilizer")?;
+        let index = fx
+            .groups()
+            .position(|g| g.uid == effect)
+            .ok_or("no such effect")?;
+        let g = fx
+            .groups()
+            .nth(index)
+            .filter(|g| is_warp(g))
+            .ok_or("not a Warp Stabilizer")?;
         if l.switches.adjustment {
             return Err("Warp Stabilizer needs footage, not an adjustment layer".into());
         }
@@ -325,7 +429,9 @@ impl Session {
             return Err("the layer must be at least two frames long".into());
         }
         let size = effectcraft_render::effect_bounds(&self.project, c, l).0;
-        let detailed = g.prop("advanced/detailedAnalysis").is_some_and(|p| p.value.as_bool());
+        let detailed = g
+            .prop("advanced/detailedAnalysis")
+            .is_some_and(|p| p.value.as_bool());
         let n = times.len();
         let work = WarpWork {
             project: self.project.clone(),
@@ -342,7 +448,11 @@ impl Session {
         let key = signature(&self.project, comp, l);
         if !wait && self.offloads() {
             drop(work);
-            self.offload_analysis(crate::offload::WorkerJob::Warp { comp, layer, effect })?;
+            self.offload_analysis(crate::offload::WorkerJob::Warp {
+                comp,
+                layer,
+                effect,
+            })?;
             return Ok(n);
         }
         let wait = wait || cfg!(target_arch = "wasm32");
@@ -362,19 +472,32 @@ impl Session {
                     .map_err(|e| e.to_string())?,
             )
         };
-        self.warp_job = Some(WarpJob { shared, thread, comp, layer, effect, key });
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.warp_job = Some(WarpJob {
+            shared,
+            thread,
+            comp,
+            layer,
+            effect,
+            key,
+        });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
         self.poll_warp_job();
         Ok(n)
     }
 
     /// Write a finished analysis into its effect (one undo step) and drop the job.
     fn poll_warp_job(&mut self) -> bool {
-        let Some(job) = &self.warp_job else { return false };
+        let Some(job) = &self.warp_job else {
+            return false;
+        };
         if !job.is_finished() {
             return false;
         }
-        let Some(mut job) = self.warp_job.take() else { return false };
+        let Some(mut job) = self.warp_job.take() else {
+            return false;
+        };
         if let Some(t) = job.thread.take() {
             let _ = t.join();
         }
@@ -389,7 +512,11 @@ impl Session {
                         .comp_mut(cid)
                         .and_then(|c| c.layer_mut(lid))
                         .and_then(|l| l.props.find_group_mut(uid))
-                        .ok_or_else(|| crate::EngineError::Other("the Warp Stabilizer was removed during analysis".into()))?;
+                        .ok_or_else(|| {
+                            crate::EngineError::Other(
+                                "the Warp Stabilizer was removed during analysis".into(),
+                            )
+                        })?;
                     for (m, v) in [(ANALYSIS, json), (ANALYSIS_KEY, key)] {
                         if let Some(pr) = g.get_mut(m) {
                             pr.value = Value::Str(v);
@@ -398,17 +525,27 @@ impl Session {
                     Ok(())
                 });
                 let msg = match r {
-                    Ok(()) => format!("Warp Stabilizer: analysed {} frame(s) in {:.1} s", a.frames.len(), st.elapsed),
+                    Ok(()) => format!(
+                        "Warp Stabilizer: analysed {} frame(s) in {:.1} s",
+                        a.frames.len(),
+                        st.elapsed
+                    ),
                     Err(e) => format!("Warp Stabilizer: {e}"),
                 };
-                self.events.push(Event::Toast { message: msg, error: false });
+                self.events.push(Event::Toast {
+                    message: msg,
+                    error: false,
+                });
             }
             _ => {
                 let msg = match &st.error {
                     Some(e) => format!("Warp Stabilizer analysis failed: {e}"),
                     None => "Warp Stabilizer analysis cancelled".into(),
                 };
-                self.events.push(Event::Toast { message: msg, error: st.error.is_some() });
+                self.events.push(Event::Toast {
+                    message: msg,
+                    error: st.error.is_some(),
+                });
                 self.bump();
             }
         }

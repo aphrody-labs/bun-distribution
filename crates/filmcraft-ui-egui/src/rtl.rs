@@ -50,13 +50,25 @@ const SCRIPTS: &[Script] = &[
     Script {
         code: "Hebr",
         sample: "אבגדהוזחטיכךלמםנןסעפףצץקרשת",
-        preferred: &["Noto Sans Hebrew", "SF Hebrew", "Arial Hebrew", "Segoe UI", "Arial", "Tahoma", "DejaVu Sans"],
+        preferred: &[
+            "Noto Sans Hebrew",
+            "SF Hebrew",
+            "Arial Hebrew",
+            "Segoe UI",
+            "Arial",
+            "Tahoma",
+            "DejaVu Sans",
+        ],
     },
 ];
 
 /// The craft-fonts faces for right-to-left scripts (empty unless built with `CRAFT_FONTS_DIR`).
 pub(crate) fn craft_fonts() -> impl Iterator<Item = &'static CraftFont> {
-    filmcraft_text::fonts::CRAFT_FONTS.iter().filter(|f| f.scripts.iter().any(|s| SCRIPTS.iter().any(|x| x.code == *s)))
+    filmcraft_text::fonts::CRAFT_FONTS.iter().filter(|f| {
+        f.scripts
+            .iter()
+            .any(|s| SCRIPTS.iter().any(|x| x.code == *s))
+    })
 }
 
 /// Installed faces for the scripts craft-fonts does not cover, looked up once per process (native
@@ -67,12 +79,18 @@ fn system_fonts() -> &'static [(String, Arc<FontData>)] {
         if cfg!(target_arch = "wasm32") {
             return Vec::new();
         }
-        let missing: Vec<&Script> = SCRIPTS.iter().filter(|s| !craft_fonts().any(|f| f.scripts.contains(&s.code))).collect();
+        let missing: Vec<&Script> = SCRIPTS
+            .iter()
+            .filter(|s| !craft_fonts().any(|f| f.scripts.contains(&s.code)))
+            .collect();
         if missing.is_empty() {
             return Vec::new();
         }
         filmcraft_text::fonts::scan_system();
-        let faces: Vec<_> = filmcraft_text::fonts::all_faces().into_iter().filter(|f| f.info.origin == "system" && !f.info.italic).collect();
+        let faces: Vec<_> = filmcraft_text::fonts::all_faces()
+            .into_iter()
+            .filter(|f| f.info.origin == "system" && !f.info.italic)
+            .collect();
         let by_weight = |f: &&Arc<Face>| f.info.weight.abs_diff(400);
         let mut chosen: Vec<&Arc<Face>> = Vec::new();
         let mut out = Vec::new();
@@ -81,15 +99,26 @@ fn system_fonts() -> &'static [(String, Arc<FontData>)] {
                 continue;
             }
             let covers = |f: &&Arc<Face>| f.covers_text(s.sample);
-            let preferred =
-                s.preferred.iter().find_map(|name| faces.iter().filter(|f| f.info.family.eq_ignore_ascii_case(name)).filter(covers).min_by_key(by_weight));
-            let Some(face) = preferred.or_else(|| faces.iter().filter(covers).min_by_key(by_weight)) else {
+            let preferred = s.preferred.iter().find_map(|name| {
+                faces
+                    .iter()
+                    .filter(|f| f.info.family.eq_ignore_ascii_case(name))
+                    .filter(covers)
+                    .min_by_key(by_weight)
+            });
+            let Some(face) =
+                preferred.or_else(|| faces.iter().filter(covers).min_by_key(by_weight))
+            else {
                 continue;
             };
             let Some(data) = face.data() else {
                 continue;
             };
-            let font = FontData { font: Cow::Owned(data), index: face.info.index, tweak: Default::default() };
+            let font = FontData {
+                font: Cow::Owned(data),
+                index: face.info.index,
+                tweak: Default::default(),
+            };
             out.push((format!("system-{}", s.code.to_lowercase()), Arc::new(font)));
             chosen.push(face);
         }
@@ -106,7 +135,9 @@ pub(crate) fn install(fonts: &mut FontDefinitions) {
     let mut names = Vec::new();
     for f in craft_fonts() {
         let name = format!("craft:{} {}", f.family, f.style);
-        fonts.font_data.insert(name.clone(), Arc::new(FontData::from_static(f.bytes)));
+        fonts
+            .font_data
+            .insert(name.clone(), Arc::new(FontData::from_static(f.bytes)));
         names.push(name);
     }
     for (name, font) in system_fonts() {
@@ -130,13 +161,17 @@ pub(crate) fn is_system_face(name: &str) -> bool {
 
 /// Whether `text` has a right-to-left letter (Arabic, Hebrew…), the only text [`Lines`] reorders.
 pub(crate) fn has_rtl(text: &str) -> bool {
-    text.chars().any(|c| matches!(bidi_class(c), BidiClass::R | BidiClass::AL))
+    text.chars()
+        .any(|c| matches!(bidi_class(c), BidiClass::R | BidiClass::AL))
 }
 
 /// Characters that stay together, in logical order, in a right-to-left word: letters, marks and
 /// joiners. egui shapes such a word as one right-to-left run.
 fn in_word(c: char) -> bool {
-    matches!(bidi_class(c), BidiClass::R | BidiClass::AL | BidiClass::NSM | BidiClass::BN)
+    matches!(
+        bidi_class(c),
+        BidiClass::R | BidiClass::AL | BidiClass::NSM | BidiClass::BN
+    )
 }
 
 /// A bracket shown right to left takes its mirrored glyph (UAX #9 rule L4).
@@ -168,7 +203,11 @@ fn line_sections(bidi: &BidiInfo<'_>, line: Range<usize>) -> Vec<String> {
     let Some(whole) = text.get(line.clone()).filter(|s| !s.is_empty()) else {
         return Vec::new();
     };
-    let Some(para) = bidi.paragraphs.iter().find(|p| p.range.start <= line.start && line.end <= p.range.end) else {
+    let Some(para) = bidi
+        .paragraphs
+        .iter()
+        .find(|p| p.range.start <= line.start && line.end <= p.range.end)
+    else {
         return vec![whole.to_owned()];
     };
     let (levels, runs) = bidi.visual_runs(para, line);
@@ -217,7 +256,11 @@ fn line_sections(bidi: &BidiInfo<'_>, line: Range<usize>) -> Vec<String> {
 /// Byte ranges of the lines egui broke `text` into in `galley` (newlines left out), or None when
 /// the rows do not account for every character.
 fn line_ranges(text: &str, galley: &Galley) -> Option<Vec<Range<usize>>> {
-    let bounds: Vec<usize> = text.char_indices().map(|(i, _)| i).chain(std::iter::once(text.len())).collect();
+    let bounds: Vec<usize> = text
+        .char_indices()
+        .map(|(i, _)| i)
+        .chain(std::iter::once(text.len()))
+        .collect();
     let mut out = Vec::with_capacity(galley.rows.len());
     let mut at = 0usize;
     for row in &galley.rows {
@@ -253,10 +296,20 @@ pub(crate) struct Lines {
 impl Lines {
     /// Lay out `text` in `font`, wrapped at `wrap_width` (`f32::INFINITY`: only at `\n`). Text
     /// without right-to-left letters is laid out as egui always does, in one galley.
-    pub fn new(painter: &Painter, text: &str, font: FontId, color: Color32, wrap_width: f32) -> Self {
+    pub fn new(
+        painter: &Painter,
+        text: &str,
+        font: FontId,
+        color: Color32,
+        wrap_width: f32,
+    ) -> Self {
         let logical = painter.layout(text.to_owned(), font.clone(), color, wrap_width);
         if !has_rtl(text) {
-            return Self { size: logical.size(), rows: vec![logical], rtl: false };
+            return Self {
+                size: logical.size(),
+                rows: vec![logical],
+                rtl: false,
+            };
         }
         let bidi = BidiInfo::new(text, None);
         let rtl = bidi.paragraphs.first().is_some_and(|p| p.level.is_rtl());
@@ -276,10 +329,16 @@ impl Lines {
                         format: TextFormat::simple(font.clone(), color),
                     });
                 }
-                if job.sections.is_empty() { painter.layout_no_wrap(String::new(), font.clone(), color) } else { painter.layout_job(job) }
+                if job.sections.is_empty() {
+                    painter.layout_no_wrap(String::new(), font.clone(), color)
+                } else {
+                    painter.layout_job(job)
+                }
             })
             .collect();
-        let size = rows.iter().fold(Vec2::ZERO, |s, g| Vec2::new(s.x.max(g.size().x), s.y + g.size().y));
+        let size = rows.iter().fold(Vec2::ZERO, |s, g| {
+            Vec2::new(s.x.max(g.size().x), s.y + g.size().y)
+        });
         Self { rows, rtl, size }
     }
 
@@ -288,7 +347,11 @@ impl Lines {
     pub fn paint(&self, painter: &Painter, rect: Rect, color: Color32) {
         let mut y = rect.min.y;
         for g in &self.rows {
-            let x = if self.rtl { rect.max.x - g.size().x } else { rect.min.x };
+            let x = if self.rtl {
+                rect.max.x - g.size().x
+            } else {
+                rect.min.x
+            };
             painter.galley(pos2(x, y), g.clone(), color);
             y += g.size().y;
         }
@@ -300,7 +363,11 @@ impl Lines {
 pub(crate) fn paint_line(painter: &Painter, rect: Rect, text: &str, font: FontId, color: Color32) {
     let lines = Lines::new(painter, text, font, color, f32::INFINITY);
     let top = rect.center().y - lines.size.y / 2.0;
-    lines.paint(painter, Rect::from_min_max(pos2(rect.min.x, top), pos2(rect.max.x, top + lines.size.y)), color);
+    lines.paint(
+        painter,
+        Rect::from_min_max(pos2(rect.min.x, top), pos2(rect.max.x, top + lines.size.y)),
+        color,
+    );
 }
 
 #[cfg(test)]
@@ -310,7 +377,10 @@ mod tests {
     /// The sections of each line of `text` (split at newlines), left to right.
     fn visual(text: &str) -> Vec<Vec<String>> {
         let bidi = BidiInfo::new(text, None);
-        paragraph_ranges(text).into_iter().map(|l| line_sections(&bidi, l)).collect()
+        paragraph_ranges(text)
+            .into_iter()
+            .map(|l| line_sections(&bidi, l))
+            .collect()
     }
 
     #[test]
@@ -323,12 +393,18 @@ mod tests {
     fn marks_and_joiners_stay_in_their_word() {
         // fatha, shadda and a zero-width non-joiner belong to the letters around them
         assert_eq!(visual("كَتَبَ مُحَمَّد"), [["مُحَمَّد", " ", "كَتَبَ"]]);
-        assert_eq!(visual("می\u{200c}خواهم بود"), [["بود", " ", "می\u{200c}خواهم"]]);
+        assert_eq!(
+            visual("می\u{200c}خواهم بود"),
+            [["بود", " ", "می\u{200c}خواهم"]]
+        );
     }
 
     #[test]
     fn latin_and_numbers_inside_rtl_keep_their_order() {
-        assert_eq!(visual("قال FilmCraft 0.6 جيد"), [["جيد", " ", "FilmCraft 0.6", " ", "قال"]]);
+        assert_eq!(
+            visual("قال FilmCraft 0.6 جيد"),
+            [["جيد", " ", "FilmCraft 0.6", " ", "قال"]]
+        );
         // Arabic-Indic digits read left to right, one section each so the shaper keeps them so
         assert_eq!(visual("سنة ١٤٤٥"), [["١", "٤", "٤", "٥", " ", "سنة"]]);
     }
@@ -341,22 +417,34 @@ mod tests {
 
     #[test]
     fn ltr_paragraph_with_an_rtl_phrase() {
-        assert_eq!(visual("Lesson كلمة أخرى end"), [["Lesson ", "أخرى", " ", "كلمة", " end"]]);
+        assert_eq!(
+            visual("Lesson كلمة أخرى end"),
+            [["Lesson ", "أخرى", " ", "كلمة", " end"]]
+        );
         assert!(!has_rtl("Lesson 3: (draft)"));
         assert!(has_rtl("Lesson كلمة"));
     }
 
     #[test]
     fn each_line_is_reordered_on_its_own() {
-        assert_eq!(visual("سطر أول\nسطر ثان"), [["أول", " ", "سطر"], ["ثان", " ", "سطر"]]);
-        assert_eq!(visual("نص\n\nEnglish"), [vec!["نص"], vec![], vec!["English"]]);
+        assert_eq!(
+            visual("سطر أول\nسطر ثان"),
+            [["أول", " ", "سطر"], ["ثان", " ", "سطر"]]
+        );
+        assert_eq!(
+            visual("نص\n\nEnglish"),
+            [vec!["نص"], vec![], vec!["English"]]
+        );
     }
 
     #[test]
     fn hostile_ranges_give_nothing() {
         let text = "كلمة";
         let bidi = BidiInfo::new(text, None);
-        assert!(line_sections(&bidi, 1..3).is_empty(), "not on a char boundary");
+        assert!(
+            line_sections(&bidi, 1..3).is_empty(),
+            "not on a char boundary"
+        );
         assert!(line_sections(&bidi, 0..99).is_empty(), "past the end");
         #[allow(clippy::reversed_empty_ranges)]
         let backwards = 4..2;
@@ -370,46 +458,95 @@ mod tests {
         let ctx = egui::Context::default();
         let mut fonts = FontDefinitions::default();
         install(&mut fonts);
-        if !craft_fonts().any(|f| f.scripts.contains(&"Arab")) && !system_fonts().iter().any(|(name, _)| name == "system-arab") {
+        if !craft_fonts().any(|f| f.scripts.contains(&"Arab"))
+            && !system_fonts().iter().any(|(name, _)| name == "system-arab")
+        {
             eprintln!("SKIPPED: no craft-fonts or installed Arabic font");
             return;
         }
         ctx.set_fonts(fonts);
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
         let painter = Painter::new(ctx.clone(), egui::LayerId::background(), Rect::EVERYTHING);
         let font = FontId::proportional(13.0);
-        let lines = Lines::new(&painter, "كلمة أخرى", font.clone(), Color32::WHITE, f32::INFINITY);
+        let lines = Lines::new(
+            &painter,
+            "كلمة أخرى",
+            font.clone(),
+            Color32::WHITE,
+            f32::INFINITY,
+        );
         assert!(lines.rtl);
-        let row = lines.rows.first().and_then(|g| g.rows.first()).map(|r| r.glyphs.clone()).unwrap_or_default();
+        let row = lines
+            .rows
+            .first()
+            .and_then(|g| g.rows.first())
+            .map(|r| r.glyphs.clone())
+            .unwrap_or_default();
         // egui shapes each word on its own (letters joined, in visual order) and pads the row with
         // empty glyphs so every char keeps a cursor position: only drawn glyphs count here
         let drawn: Vec<_> = row.iter().filter(|g| !g.uv_rect.is_nothing()).collect();
         let order = drawn.iter().map(|g| g.chr).collect::<String>();
-        let xs = |word: &str| drawn.iter().filter(|g| word.contains(g.chr)).map(|g| g.pos.x).collect::<Vec<f32>>();
+        let xs = |word: &str| {
+            drawn
+                .iter()
+                .filter(|g| word.contains(g.chr))
+                .map(|g| g.pos.x)
+                .collect::<Vec<f32>>()
+        };
         let (first, second) = (xs("كلمة"), xs("أخرى"));
         assert!(!first.is_empty() && !second.is_empty(), "{order:?}");
-        assert!(second.iter().fold(f32::MIN, |a, &b| a.max(b)) < first.iter().fold(f32::MAX, |a, &b| a.min(b)), "{order:?}");
-        let leftmost = drawn.iter().min_by(|a, b| a.pos.x.total_cmp(&b.pos.x)).map(|g| g.chr);
+        assert!(
+            second.iter().fold(f32::MIN, |a, &b| a.max(b))
+                < first.iter().fold(f32::MAX, |a, &b| a.min(b)),
+            "{order:?}"
+        );
+        let leftmost = drawn
+            .iter()
+            .min_by(|a, b| a.pos.x.total_cmp(&b.pos.x))
+            .map(|g| g.chr);
         assert_eq!(leftmost, Some('ى'), "{order:?}");
         let missing = painter.layout_no_wrap("\u{fffd}".into(), font, Color32::WHITE);
-        let missing_uv = missing.rows.first().and_then(|r| r.glyphs.first()).map(|g| g.uv_rect);
-        assert!(drawn.iter().all(|g| Some(g.uv_rect) != missing_uv), "an Arabic letter drew as a missing glyph");
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        let missing_uv = missing
+            .rows
+            .first()
+            .and_then(|r| r.glyphs.first())
+            .map(|g| g.uv_rect);
+        assert!(
+            drawn.iter().all(|g| Some(g.uv_rect) != missing_uv),
+            "an Arabic letter drew as a missing glyph"
+        );
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
     }
 
     /// Lines broken by wrapping are each reordered: the first line holds the first words.
     #[test]
     fn line_ranges_follow_the_rows() {
         let ctx = egui::Context::default();
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
         let painter = Painter::new(ctx.clone(), egui::LayerId::background(), Rect::EVERYTHING);
         let text = "one two three\nfour";
-        let galley = painter.layout(text.to_owned(), FontId::proportional(13.0), Color32::WHITE, 40.0);
+        let galley = painter.layout(
+            text.to_owned(),
+            FontId::proportional(13.0),
+            Color32::WHITE,
+            40.0,
+        );
         let ranges = line_ranges(text, &galley).unwrap_or_default();
         assert!(ranges.len() >= 3, "{ranges:?}");
         let joined: Vec<&str> = ranges.iter().filter_map(|r| text.get(r.clone())).collect();
         assert_eq!(joined.concat().replace(' ', ""), "onetwothreefour");
-        assert_eq!(ranges.last().and_then(|r| text.get(r.clone())), Some("four"));
-        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        assert_eq!(
+            ranges.last().and_then(|r| text.get(r.clone())),
+            Some("four")
+        );
+        ctx.run_ui(egui::RawInput::default(), |_| {})
+            .textures_delta
+            .clear();
     }
 }

@@ -119,9 +119,17 @@ fn edit_effects(
 }
 
 fn check_revolve_count(n: &Node, cmd: &str) -> Result<()> {
-    let all = || n.appearance.effects.iter().chain(n.appearance.items.iter().flat_map(|i| i.effects()));
+    let all = || {
+        n.appearance
+            .effects
+            .iter()
+            .chain(n.appearance.items.iter().flat_map(|i| i.effects()))
+    };
     if all().filter(|e| e.id == effects::REVOLVE).count() > 1 {
-        return Err(bad(cmd, "A profile supports one Revolve effect. Edit the existing effect's options instead."));
+        return Err(bad(
+            cmd,
+            "A profile supports one Revolve effect. Edit the existing effect's options instead.",
+        ));
     }
     if all().filter(|e| effects::is_three_d(&e.id)).count() > 1 {
         return Err(bad(cmd, ONE_3D));
@@ -129,11 +137,14 @@ fn check_revolve_count(n: &Node, cmd: &str) -> Result<()> {
     Ok(())
 }
 
-const ONE_3D: &str = "An object takes one 3D effect. Edit the existing effect's options, or remove it first.";
+const ONE_3D: &str =
+    "An object takes one 3D effect. Edit the existing effect's options, or remove it first.";
 
 pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.apply";
-    let id = str_param(p, "effect").or_else(|| str_param(p, "id")).ok_or_else(|| bad(C, "missing `effect` id"))?;
+    let id = str_param(p, "effect")
+        .or_else(|| str_param(p, "id"))
+        .ok_or_else(|| bad(C, "missing `effect` id"))?;
     let mut params = p.get("params").cloned().unwrap_or(Value::Null);
     if !params.is_null() && !params.is_object() {
         return Err(bad(C, "`params` must be an object"));
@@ -142,12 +153,19 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     if id == effects::CROP_MARKS && params.get("style").is_none() {
         params["style"] = json!(s.crop_mark_style().id());
     }
-    let effect = effects::new_effect(id, &params).ok_or_else(|| bad(C, format!("unknown effect `{id}`")))?;
-    let label = effects::effect_info(id).map(|e| e.label.trim_end_matches('…').to_string()).unwrap_or_default();
+    let effect =
+        effects::new_effect(id, &params).ok_or_else(|| bad(C, format!("unknown effect `{id}`")))?;
+    let label = effects::effect_info(id)
+        .map(|e| e.label.trim_end_matches('…').to_string())
+        .unwrap_or_default();
     if let Some(loose) = loose_for_pathfinder(s, p, id)? {
         let gid = s.edit(&label, |d, sel| {
             let gid = super::object::group_nodes(d, &loose)?;
-            d.node_mut(gid).ok_or(EngineError::NoNode(gid))?.appearance.effects.push(effect.clone());
+            d.node_mut(gid)
+                .ok_or(EngineError::NoNode(gid))?
+                .appearance
+                .effects
+                .push(effect.clone());
             sel.set([gid]);
             Ok(gid)
         })?;
@@ -156,11 +174,18 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     let item = item_target(s, p, C)?;
     if effects::is_three_d(id) {
         for target in appearance_targets(s, p)? {
-            let n = s.doc()?.doc.node(target).ok_or(EngineError::NoNode(target))?;
+            let n = s
+                .doc()?
+                .doc
+                .node(target)
+                .ok_or(EngineError::NoNode(target))?;
             if id == effects::REVOLVE {
                 effects::validate_revolve(n, &effect.params).map_err(|e| bad(C, e))?;
                 if effects::has_revolve(n) {
-                    return Err(bad(C, "A profile supports one Revolve effect. Edit the existing effect's options instead."));
+                    return Err(bad(
+                        C,
+                        "A profile supports one Revolve effect. Edit the existing effect's options instead.",
+                    ));
                 }
             } else {
                 effects::validate_solid(n, id, &effect.params).map_err(|e| bad(C, e))?;
@@ -171,11 +196,19 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     let mut index = 0;
-    let ids = edit_effects(s, p, item, C, &label, "Apply Effect: select objects", |fx| {
-        fx.push(effect.clone());
-        index = fx.len() - 1;
-        true
-    })?;
+    let ids = edit_effects(
+        s,
+        p,
+        item,
+        C,
+        &label,
+        "Apply Effect: select objects",
+        |fx| {
+            fx.push(effect.clone());
+            index = fx.len() - 1;
+            true
+        },
+    )?;
     // The item the effect landed on in the first object (the active item applies where it fits).
     let first = ids.first().and_then(|id| s.doc().ok()?.doc.node(*id));
     let landed = first.and_then(|n| item.effects_item(&n.appearance, C).ok().flatten());
@@ -186,12 +219,23 @@ pub(crate) fn apply(s: &mut Session, p: &Value) -> Result<Value> {
 /// contents of a group or layer, so on several loose objects (none a group) it would do nothing.
 /// `None` when the effect isn't one, objects are named (`ids`) or another target is asked for.
 fn loose_for_pathfinder(s: &Session, p: &Value, id: &str) -> Result<Option<Vec<NodeId>>> {
-    if !effects::is_pathfinder(id) || ["ids", "id", "item", "target"].iter().any(|k| p.get(k).is_some()) {
+    if !effects::is_pathfinder(id)
+        || ["ids", "id", "item", "target"]
+            .iter()
+            .any(|k| p.get(k).is_some())
+    {
         return Ok(None);
     }
     let roots = super::appearance::subject_roots(s)?;
     let d = &s.doc()?.doc;
-    let grouped = roots.iter().any(|r| d.node(*r).is_some_and(|n| matches!(n.kind, NodeKind::Group { clip: false, .. } | NodeKind::Layer { .. })));
+    let grouped = roots.iter().any(|r| {
+        d.node(*r).is_some_and(|n| {
+            matches!(
+                n.kind,
+                NodeKind::Group { clip: false, .. } | NodeKind::Layer { .. }
+            )
+        })
+    });
     Ok((roots.len() >= 2 && !grouped).then_some(roots))
 }
 
@@ -216,7 +260,9 @@ fn list(s: &mut Session, p: &Value) -> Result<Value> {
                     .enumerate()
                     .map(|(i, it)| json!({"index": i, "kind": it.kind_name(), "effects": fx(it.effects())}))
                     .collect();
-                applied.push(json!({"id": id.0, "effects": fx(&n.appearance.effects), "items": items}));
+                applied.push(
+                    json!({"id": id.0, "effects": fx(&n.appearance.effects), "items": items}),
+                );
             }
         }
     }
@@ -227,9 +273,15 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.remove";
     let index = index_param(p, "index", C)?;
     let item = item_target(s, p, C)?;
-    let ids = edit_effects(s, p, item, C, "Remove Effect", &format!("{C}: no effect at index {index}"), |fx| {
-        (index < fx.len()).then(|| fx.remove(index)).is_some()
-    })?;
+    let ids = edit_effects(
+        s,
+        p,
+        item,
+        C,
+        "Remove Effect",
+        &format!("{C}: no effect at index {index}"),
+        |fx| (index < fx.len()).then(|| fx.remove(index)).is_some(),
+    )?;
     Ok(json!({ "ids": ids_json(&ids) }))
 }
 
@@ -237,13 +289,21 @@ fn duplicate(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "effect.duplicate";
     let index = index_param(p, "index", C)?;
     let item = item_target(s, p, C)?;
-    let ids = edit_effects(s, p, item, C, "Duplicate Effect", &format!("{C}: no effect at index {index}"), |fx| match fx.get(index).cloned() {
-        Some(e) => {
-            fx.insert(index + 1, e);
-            true
-        }
-        None => false,
-    })?;
+    let ids = edit_effects(
+        s,
+        p,
+        item,
+        C,
+        "Duplicate Effect",
+        &format!("{C}: no effect at index {index}"),
+        |fx| match fx.get(index).cloned() {
+            Some(e) => {
+                fx.insert(index + 1, e);
+                true
+            }
+            None => false,
+        },
+    )?;
     Ok(json!({ "ids": ids_json(&ids) }))
 }
 
@@ -252,30 +312,54 @@ fn move_effect(s: &mut Session, p: &Value) -> Result<Value> {
     let from = index_param(p, "from", C)?;
     let to = index_param(p, "to", C)?;
     let src = item_target_at(s, p, "fromItem", C)?;
-    let dst = if p.get("toItem").is_some() { item_target_at(s, p, "toItem", C)? } else { src };
+    let dst = if p.get("toItem").is_some() {
+        item_target_at(s, p, "toItem", C)?
+    } else {
+        src
+    };
     let copy = p.get("copy").and_then(Value::as_bool).unwrap_or(false);
     let roots = appearance_targets(s, p)?;
     // Where the effect landed in the first object.
     let mut landed = None;
-    let ids = s.edit(if copy { "Duplicate Effect" } else { "Move Effect" }, |d, _| {
-        let mut done = vec![];
-        for id in &roots {
-            let Some(n) = d.node_mut(*id) else { continue };
-            let (si, di) = (src.effects_item(&n.appearance, C)?, dst.effects_item(&n.appearance, C)?);
-            let Some(fx) = n.appearance.effects_mut(si).filter(|fx| from < fx.len()) else { continue };
-            let e = if copy { fx[from].clone() } else { fx.remove(from) };
-            let Some(fx) = n.appearance.effects_mut(di) else { continue };
-            let at = to.min(fx.len());
-            fx.insert(at, e);
-            check_revolve_count(n, C)?;
-            landed.get_or_insert((at, di));
-            done.push(*id);
-        }
-        if done.is_empty() {
-            return Err(EngineError::Other(format!("{C}: no effect at index {from}")));
-        }
-        Ok(done)
-    })?;
+    let ids = s.edit(
+        if copy {
+            "Duplicate Effect"
+        } else {
+            "Move Effect"
+        },
+        |d, _| {
+            let mut done = vec![];
+            for id in &roots {
+                let Some(n) = d.node_mut(*id) else { continue };
+                let (si, di) = (
+                    src.effects_item(&n.appearance, C)?,
+                    dst.effects_item(&n.appearance, C)?,
+                );
+                let Some(fx) = n.appearance.effects_mut(si).filter(|fx| from < fx.len()) else {
+                    continue;
+                };
+                let e = if copy {
+                    fx[from].clone()
+                } else {
+                    fx.remove(from)
+                };
+                let Some(fx) = n.appearance.effects_mut(di) else {
+                    continue;
+                };
+                let at = to.min(fx.len());
+                fx.insert(at, e);
+                check_revolve_count(n, C)?;
+                landed.get_or_insert((at, di));
+                done.push(*id);
+            }
+            if done.is_empty() {
+                return Err(EngineError::Other(format!(
+                    "{C}: no effect at index {from}"
+                )));
+            }
+            Ok(done)
+        },
+    )?;
     let (index, item) = landed.unzip();
     Ok(json!({ "ids": ids_json(&ids), "index": index, "item": item.flatten() }))
 }
@@ -284,12 +368,22 @@ fn move_effect(s: &mut Session, p: &Value) -> Result<Value> {
 /// (none when `p` doesn't say which: running it reports why).
 pub(crate) fn set_params_effects(s: &Session, p: &Value) -> Vec<String> {
     const C: &str = "effect.setParams";
-    let (Ok(index), Ok(item), Ok(ids), Ok(st)) = (index_param(p, "index", C), item_target(s, p, C), appearance_targets(s, p), s.doc()) else {
+    let (Ok(index), Ok(item), Ok(ids), Ok(st)) = (
+        index_param(p, "index", C),
+        item_target(s, p, C),
+        appearance_targets(s, p),
+        s.doc(),
+    ) else {
         return vec![];
     };
     let effect = |id: &NodeId| {
         let ap = &st.doc.node(*id)?.appearance;
-        Some(ap.effects_at(item.effects_item(ap, C).ok()?)?.get(index)?.id.clone())
+        Some(
+            ap.effects_at(item.effects_item(ap, C).ok()?)?
+                .get(index)?
+                .id
+                .clone(),
+        )
     };
     ids.iter().filter_map(effect).collect()
 }
@@ -321,23 +415,33 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
-    let ids = edit_effects(s, p, item, C, "Effect Options", &format!("{C}: no effect at index {index}"), |fx| {
-        let Some(e) = fx.get_mut(index) else { return false };
-        if let (Value::Object(new), cur) = (&params, &mut e.params) {
-            if !cur.is_object() {
-                *cur = effects::merged_params(&e.id, &Value::Null);
-            }
-            if let Value::Object(m) = cur {
-                for (k, v) in new {
-                    m.insert(k.clone(), v.clone());
+    let ids = edit_effects(
+        s,
+        p,
+        item,
+        C,
+        "Effect Options",
+        &format!("{C}: no effect at index {index}"),
+        |fx| {
+            let Some(e) = fx.get_mut(index) else {
+                return false;
+            };
+            if let (Value::Object(new), cur) = (&params, &mut e.params) {
+                if !cur.is_object() {
+                    *cur = effects::merged_params(&e.id, &Value::Null);
+                }
+                if let Value::Object(m) = cur {
+                    for (k, v) in new {
+                        m.insert(k.clone(), v.clone());
+                    }
                 }
             }
-        }
-        if let Some(v) = visible {
-            e.visible = v;
-        }
-        true
-    })?;
+            if let Some(v) = visible {
+                e.visible = v;
+            }
+            true
+        },
+    )?;
     Ok(json!({ "ids": ids_json(&ids) }))
 }
 
@@ -350,9 +454,13 @@ fn set_params(s: &mut Session, p: &Value) -> Result<Value> {
 fn expandable(n: &Node) -> bool {
     match &n.kind {
         NodeKind::Path { clipping: true, .. } | NodeKind::Path { guide: true, .. } => false,
-        NodeKind::Path { .. } | NodeKind::Compound { .. } => !n.appearance.is_basic() || vectorcraft_brush::has_brush(n),
+        NodeKind::Path { .. } | NodeKind::Compound { .. } => {
+            !n.appearance.is_basic() || vectorcraft_brush::has_brush(n)
+        }
         NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => {
-            !n.appearance.items.is_empty() || !n.appearance.effects.is_empty() || children.iter().any(|c| expandable(c))
+            !n.appearance.items.is_empty()
+                || !n.appearance.effects.is_empty()
+                || children.iter().any(|c| expandable(c))
         }
         NodeKind::Text(_) => !n.appearance.items.is_empty() || !n.appearance.effects.is_empty(),
         _ => !n.appearance.effects.is_empty(),
@@ -406,8 +514,15 @@ fn expand_pieces(d: &mut Document, m: &mut Node, all: bool, stroke_art: effects:
 /// Expand Appearance of `id` (and, recursively, of a group's or layer's members): every fill and
 /// stroke becomes an object of its own (strokes outlined, brushes as their art), geometry effects
 /// are baked, raster effects become an embedded image, and the object keeps its transparency.
-fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush], out: &mut Vec<NodeId>) {
-    let Some(mut n) = d.node(id).cloned() else { return };
+fn expand_node(
+    d: &mut Document,
+    id: NodeId,
+    brushes: &[vectorcraft_brush::Brush],
+    out: &mut Vec<NodeId>,
+) {
+    let Some(mut n) = d.node(id).cloned() else {
+        return;
+    };
     if !expandable(&n) {
         return;
     }
@@ -445,8 +560,9 @@ fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush
     let image = raster_image(d, &n);
     let mut v = n.clone();
     rasterfx::strip_raster(&mut v, false);
-    let mut stroke_art =
-        |d: &mut Document, path: &PathData, rule: FillRule, st: &StrokeLayer| super::pathops::outlined_stroke(d, brushes, path, rule, st);
+    let mut stroke_art = |d: &mut Document, path: &PathData, rule: FillRule, st: &StrokeLayer| {
+        super::pathops::outlined_stroke(d, brushes, path, rule, st)
+    };
     let expanded = match image {
         // Blur, feather and inner glow change the object itself: it becomes the image (a layer
         // keeps it as its only member).
@@ -463,7 +579,11 @@ fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush
             } else {
                 // Type, images, symbol instances, live objects: through their outlines.
                 let symbol = match &n.kind {
-                    NodeKind::SymbolInstance { symbol, .. } => d.symbols.iter().find(|s| s.name == *symbol).map(|s| s.art.clone()),
+                    NodeKind::SymbolInstance { symbol, .. } => d
+                        .symbols
+                        .iter()
+                        .find(|s| s.name == *symbol)
+                        .map(|s| s.art.clone()),
                     _ => None,
                 };
                 effects::expand_outlined(&v, symbol.as_deref()).map(|mut m| {
@@ -490,7 +610,11 @@ fn expand_node(d: &mut Document, id: NodeId, brushes: &[vectorcraft_brush::Brush
         }
     }
     if container {
-        let children: Vec<NodeId> = d.node(id).and_then(|n| n.children()).map(|c| c.iter().map(|c| c.id).collect()).unwrap_or_default();
+        let children: Vec<NodeId> = d
+            .node(id)
+            .and_then(|n| n.children())
+            .map(|c| c.iter().map(|c| c.id).collect())
+            .unwrap_or_default();
         for c in children {
             expand_node(d, c, brushes, out);
         }
@@ -506,7 +630,9 @@ fn expand_appearance(s: &mut Session, p: &Value) -> Result<Value> {
             expand_node(d, *id, &brushes, &mut out);
         }
         if out.is_empty() {
-            return Err(EngineError::Other("Expand Appearance: the selection has a basic appearance".into()));
+            return Err(EngineError::Other(
+                "Expand Appearance: the selection has a basic appearance".into(),
+            ));
         }
         Ok(out)
     })?;
@@ -523,8 +649,14 @@ mod tests {
 
     fn session_with_rect() -> (Session, NodeId) {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-        let r = s.execute("shape.rectangle", &json!({"x": 100, "y": 100, "width": 100, "height": 100})).unwrap();
+        s.execute("file.new", &json!({"width": 400, "height": 400}))
+            .unwrap();
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 100, "y": 100, "width": 100, "height": 100}),
+            )
+            .unwrap();
         (s, NodeId(r["id"].as_u64().unwrap()))
     }
 
@@ -535,26 +667,64 @@ mod tests {
     #[test]
     fn revolve_commands_keep_profile_live_edit_options_expand_and_undo() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width":300,"height":300})).unwrap();
-        let r = s.execute("path.create", &json!({"d":"M 150 40 L 180 60 L 180 140 L 150 160"})).unwrap();
+        s.execute("file.new", &json!({"width":300,"height":300}))
+            .unwrap();
+        let r = s
+            .execute(
+                "path.create",
+                &json!({"d":"M 150 40 L 180 60 L 180 140 L 150 160"}),
+            )
+            .unwrap();
         let id = NodeId(r["id"].as_u64().unwrap());
         let source = node(&s, id).path_data().unwrap().clone();
-        s.execute("effect.apply", &json!({"effect":"threeD.revolve","ids":[id.0],"item":null})).unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect":"threeD.revolve","ids":[id.0],"item":null}),
+        )
+        .unwrap();
         let before = effects_for_test(&s, id);
         assert_eq!(node(&s, id).path_data(), Some(&source));
         let doc = &s.doc().unwrap().doc;
         let restored = vectorcraft_format::load(&vectorcraft_format::save(doc, false)).unwrap();
         assert_eq!(restored.node(id).unwrap().path_data(), Some(&source));
-        assert_eq!(effects::revolve_art(restored.node(id).unwrap()).unwrap(), before);
-        let pdf = s.execute("document.serialize", &json!({"format":"pdf"})).unwrap();
+        assert_eq!(
+            effects::revolve_art(restored.node(id).unwrap()).unwrap(),
+            before
+        );
+        let pdf = s
+            .execute("document.serialize", &json!({"format":"pdf"}))
+            .unwrap();
         let bytes = vectorcraft_format::base64_decode(pdf["dataBase64"].as_str().unwrap()).unwrap();
         assert!(bytes.starts_with(b"%PDF"));
-        assert!(s.execute("effect.apply", &json!({"effect":"threeD.revolve","ids":[id.0],"item":null})).is_err());
-        assert!(s.execute("effect.duplicate", &json!({"index":0,"ids":[id.0],"item":null})).is_err());
-        s.execute("effect.setParams", &json!({"index":0,"params":{"angle":180,"offset":10},"ids":[id.0],"item":null})).unwrap();
+        assert!(
+            s.execute(
+                "effect.apply",
+                &json!({"effect":"threeD.revolve","ids":[id.0],"item":null})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "effect.duplicate",
+                &json!({"index":0,"ids":[id.0],"item":null})
+            )
+            .is_err()
+        );
+        s.execute(
+            "effect.setParams",
+            &json!({"index":0,"params":{"angle":180,"offset":10},"ids":[id.0],"item":null}),
+        )
+        .unwrap();
         assert_ne!(effects_for_test(&s, id), before);
-        assert!(s.execute("effect.setParams", &json!({"index":0,"params":{"edge":"invalid"},"ids":[id.0],"item":null})).is_err());
-        s.execute("effect.expandAppearance", &json!({"ids":[id.0]})).unwrap();
+        assert!(
+            s.execute(
+                "effect.setParams",
+                &json!({"index":0,"params":{"edge":"invalid"},"ids":[id.0],"item":null})
+            )
+            .is_err()
+        );
+        s.execute("effect.expandAppearance", &json!({"ids":[id.0]}))
+            .unwrap();
         assert!(matches!(node(&s, id).kind, NodeKind::Group { .. }));
         assert!(!effects::has_revolve(&node(&s, id)));
         s.execute("edit.undo", &json!({})).unwrap();
@@ -570,35 +740,89 @@ mod tests {
         for effect in effects::SOLIDS {
             let (mut s, id) = session_with_rect();
             let source = node(&s, id).path_data().unwrap().clone();
-            s.execute("effect.apply", &json!({"effect": effect, "ids": [id.0], "item": null})).unwrap();
+            s.execute(
+                "effect.apply",
+                &json!({"effect": effect, "ids": [id.0], "item": null}),
+            )
+            .unwrap();
             let art = effects::solid_art(&node(&s, id)).unwrap();
-            assert_eq!(node(&s, id).path_data(), Some(&source), "{effect}: the source stays editable");
+            assert_eq!(
+                node(&s, id).path_data(),
+                Some(&source),
+                "{effect}: the source stays editable"
+            );
             let doc = &s.doc().unwrap().doc;
             let restored = vectorcraft_format::load(&vectorcraft_format::save(doc, false)).unwrap();
-            assert_eq!(effects::solid_art(restored.node(id).unwrap()).unwrap(), art, "{effect}: reopens the same");
+            assert_eq!(
+                effects::solid_art(restored.node(id).unwrap()).unwrap(),
+                art,
+                "{effect}: reopens the same"
+            );
             // One 3D effect per object, whichever kind.
             for other in ["threeD.revolve", "threeD.extrude", "threeD.rotate"] {
-                assert!(s.execute("effect.apply", &json!({"effect": other, "ids": [id.0], "item": null})).is_err(), "{effect} + {other}");
+                assert!(
+                    s.execute(
+                        "effect.apply",
+                        &json!({"effect": other, "ids": [id.0], "item": null})
+                    )
+                    .is_err(),
+                    "{effect} + {other}"
+                );
             }
             s.execute("effect.setParams", &json!({"index": 0, "params": {"rotationY": 50, "rotationX": 10}, "ids": [id.0], "item": null})).unwrap();
-            assert_ne!(effects::solid_art(&node(&s, id)).unwrap(), art, "{effect}: options change the art");
-            assert!(s.execute("effect.setParams", &json!({"index": 0, "params": {"bevel": "nope"}, "ids": [id.0], "item": null})).is_err());
-            let svg = s.execute("document.serialize", &json!({"format": "svg"})).unwrap();
-            let svg = svg["data"].as_str().or_else(|| svg["text"].as_str()).map(str::to_string).unwrap_or_else(|| svg.to_string());
-            assert!(svg.matches("<path").count() >= 2, "{effect}: exported as vector faces");
-            s.execute("effect.expandAppearance", &json!({"ids": [id.0]})).unwrap();
-            assert!(matches!(node(&s, id).kind, NodeKind::Group { .. }), "{effect}");
+            assert_ne!(
+                effects::solid_art(&node(&s, id)).unwrap(),
+                art,
+                "{effect}: options change the art"
+            );
+            assert!(
+                s.execute(
+                    "effect.setParams",
+                    &json!({"index": 0, "params": {"bevel": "nope"}, "ids": [id.0], "item": null})
+                )
+                .is_err()
+            );
+            let svg = s
+                .execute("document.serialize", &json!({"format": "svg"}))
+                .unwrap();
+            let svg = svg["data"]
+                .as_str()
+                .or_else(|| svg["text"].as_str())
+                .map(str::to_string)
+                .unwrap_or_else(|| svg.to_string());
+            assert!(
+                svg.matches("<path").count() >= 2,
+                "{effect}: exported as vector faces"
+            );
+            s.execute("effect.expandAppearance", &json!({"ids": [id.0]}))
+                .unwrap();
+            assert!(
+                matches!(node(&s, id).kind, NodeKind::Group { .. }),
+                "{effect}"
+            );
             assert!(!effects::has_solid(&node(&s, id)));
             s.execute("edit.undo", &json!({})).unwrap();
             s.execute("edit.undo", &json!({})).unwrap();
             s.execute("edit.undo", &json!({})).unwrap();
-            assert_eq!(node(&s, id).appearance.effects.len(), 0, "{effect}: back to the plain rectangle");
+            assert_eq!(
+                node(&s, id).appearance.effects.len(),
+                0,
+                "{effect}: back to the plain rectangle"
+            );
         }
         // Type has no outline to extrude.
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width": 400, "height": 400})).unwrap();
-        let t = s.execute("text.create", &json!({"x": 50, "y": 50, "text": "3D"})).unwrap();
-        let err = s.execute("effect.apply", &json!({"effect": "threeD.extrude", "ids": [t["id"]], "item": null})).unwrap_err();
+        s.execute("file.new", &json!({"width": 400, "height": 400}))
+            .unwrap();
+        let t = s
+            .execute("text.create", &json!({"x": 50, "y": 50, "text": "3D"}))
+            .unwrap();
+        let err = s
+            .execute(
+                "effect.apply",
+                &json!({"effect": "threeD.extrude", "ids": [t["id"]], "item": null}),
+            )
+            .unwrap_err();
         assert!(err.to_string().contains("requires a path"), "{err}");
     }
 
@@ -609,37 +833,76 @@ mod tests {
     #[test]
     fn revolve_visibility_parameter_saves_expands_and_undoes_without_other_appearance_changes() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"width":300,"height":300})).unwrap();
-        let r = s.execute("path.create", &json!({"d":"M 150 40 L 180 60 L 180 140 L 150 160"})).unwrap();
+        s.execute("file.new", &json!({"width":300,"height":300}))
+            .unwrap();
+        let r = s
+            .execute(
+                "path.create",
+                &json!({"d":"M 150 40 L 180 60 L 180 140 L 150 160"}),
+            )
+            .unwrap();
         let id = NodeId(r["id"].as_u64().unwrap());
-        s.execute("effect.apply", &json!({"effect":"threeD.revolve","ids":[id.0],"item":null})).unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect":"threeD.revolve","ids":[id.0],"item":null}),
+        )
+        .unwrap();
         let live = node(&s, id);
-        let restored = vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false)).unwrap();
-        assert_eq!(restored.node(id).unwrap().appearance.effects[0].params["expandVisibleOnly"], json!(true));
+        let restored =
+            vectorcraft_format::load(&vectorcraft_format::save(&s.doc().unwrap().doc, false))
+                .unwrap();
+        assert_eq!(
+            restored.node(id).unwrap().appearance.effects[0].params["expandVisibleOnly"],
+            json!(true)
+        );
         let count = |n: &vectorcraft_doc::Node| n.children().unwrap()[0].children().unwrap().len();
-        s.execute("effect.expandAppearance", &json!({"ids":[id.0]})).unwrap();
+        s.execute("effect.expandAppearance", &json!({"ids":[id.0]}))
+            .unwrap();
         let visible = count(&node(&s, id));
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(node(&s, id), live);
-        s.execute("effect.setParams", &json!({"index":0,"item":null,"ids":[id.0],"params":{"expandVisibleOnly":false}})).unwrap();
-        s.execute("effect.expandAppearance", &json!({"ids":[id.0]})).unwrap();
+        s.execute(
+            "effect.setParams",
+            &json!({"index":0,"item":null,"ids":[id.0],"params":{"expandVisibleOnly":false}}),
+        )
+        .unwrap();
+        s.execute("effect.expandAppearance", &json!({"ids":[id.0]}))
+            .unwrap();
         assert!(count(&node(&s, id)) > visible);
         s.execute("edit.undo", &json!({})).unwrap();
-        assert_eq!(node(&s, id).appearance.effects[0].params["expandVisibleOnly"], json!(false));
+        assert_eq!(
+            node(&s, id).appearance.effects[0].params["expandVisibleOnly"],
+            json!(false)
+        );
         s.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(node(&s, id), live);
         // The shared command still expands ordinary multiple-fill artwork as before.
-        let r = s.execute("shape.rectangle", &json!({"x":10,"y":10,"width":20,"height":20})).unwrap();
+        let r = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x":10,"y":10,"width":20,"height":20}),
+            )
+            .unwrap();
         let ordinary = NodeId(r["id"].as_u64().unwrap());
-        s.execute("effect.apply", &json!({"effect":"distort.twist","ids":[ordinary.0],"params":{"angle":15}})).unwrap();
-        s.execute("effect.expandAppearance", &json!({"ids":[ordinary.0]})).unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect":"distort.twist","ids":[ordinary.0],"params":{"angle":15}}),
+        )
+        .unwrap();
+        s.execute("effect.expandAppearance", &json!({"ids":[ordinary.0]}))
+            .unwrap();
         assert!(node(&s, ordinary).appearance.effects.is_empty());
     }
 
     #[test]
     fn apply_uses_catalog_defaults_and_undoes() {
         let (mut s, id) = session_with_rect();
-        let r = s.execute("effect.apply", &json!({"effect": "stylize.dropShadow", "params": {"x": 3}})).unwrap();
+        let r = s
+            .execute(
+                "effect.apply",
+                &json!({"effect": "stylize.dropShadow", "params": {"x": 3}}),
+            )
+            .unwrap();
         assert_eq!(r["index"], json!(0));
         let n = node(&s, id);
         assert_eq!(n.appearance.effects.len(), 1);
@@ -647,18 +910,27 @@ mod tests {
         assert_eq!(n.appearance.effects[0].params["opacity"], json!(75.0));
         s.execute("edit.undo", &json!({})).unwrap();
         assert!(node(&s, id).appearance.effects.is_empty());
-        assert!(s.execute("effect.apply", &json!({"effect": "nope"})).is_err());
+        assert!(
+            s.execute("effect.apply", &json!({"effect": "nope"}))
+                .is_err()
+        );
     }
 
     #[test]
     fn list_remove_and_set_params() {
         let (mut s, id) = session_with_rect();
-        s.execute("effect.apply", &json!({"effect": "distort.twist"})).unwrap();
-        s.execute("effect.apply", &json!({"effect": "stylize.outerGlow"})).unwrap();
+        s.execute("effect.apply", &json!({"effect": "distort.twist"}))
+            .unwrap();
+        s.execute("effect.apply", &json!({"effect": "stylize.outerGlow"}))
+            .unwrap();
         let l = s.execute("effect.list", &json!({})).unwrap();
         assert!(l["catalog"].as_array().unwrap().len() >= 34);
         assert_eq!(l["applied"][0]["effects"].as_array().unwrap().len(), 2);
-        s.execute("effect.setParams", &json!({"index": 0, "params": {"angle": 45}, "visible": false})).unwrap();
+        s.execute(
+            "effect.setParams",
+            &json!({"index": 0, "params": {"angle": 45}, "visible": false}),
+        )
+        .unwrap();
         let e = &node(&s, id).appearance.effects[0];
         assert_eq!(e.params["angle"], json!(45));
         assert!(!e.visible);
@@ -672,8 +944,13 @@ mod tests {
     #[test]
     fn expand_appearance_bakes_geometry() {
         let (mut s, id) = session_with_rect();
-        s.execute("paint.setStroke", &json!({"none": true})).unwrap();
-        s.execute("effect.apply", &json!({"effect": "path.offsetPath", "params": {"offset": 10}})).unwrap();
+        s.execute("paint.setStroke", &json!({"none": true}))
+            .unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect": "path.offsetPath", "params": {"offset": 10}}),
+        )
+        .unwrap();
         s.execute("effect.expandAppearance", &json!({})).unwrap();
         // One fill: the path itself, reshaped.
         let n = node(&s, id);
@@ -688,8 +965,13 @@ mod tests {
     #[test]
     fn expand_transform_copies_makes_compound() {
         let (mut s, id) = session_with_rect();
-        s.execute("paint.setStroke", &json!({"none": true})).unwrap();
-        s.execute("effect.apply", &json!({"effect": "distort.transform", "params": {"moveH": 120, "copies": 1}})).unwrap();
+        s.execute("paint.setStroke", &json!({"none": true}))
+            .unwrap();
+        s.execute(
+            "effect.apply",
+            &json!({"effect": "distort.transform", "params": {"moveH": 120, "copies": 1}}),
+        )
+        .unwrap();
         s.execute("effect.expandAppearance", &json!({})).unwrap();
         let n = node(&s, id);
         assert!(matches!(n.kind, NodeKind::Compound { .. }));
@@ -700,13 +982,32 @@ mod tests {
     #[test]
     fn pathfinder_effect_on_loose_objects_groups_them_first() {
         let (mut s, a) = session_with_rect();
-        let b = NodeId(s.execute("shape.rectangle", &json!({"x": 150, "y": 100, "width": 100, "height": 100})).unwrap()["id"].as_u64().unwrap());
-        s.execute("select.set", &json!({"ids": [a.0, b.0]})).unwrap();
-        let r = s.execute("effect.apply", &json!({"effect": "pathfinder.add"})).unwrap();
+        let b = NodeId(
+            s.execute(
+                "shape.rectangle",
+                &json!({"x": 150, "y": 100, "width": 100, "height": 100}),
+            )
+            .unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
+        s.execute("select.set", &json!({"ids": [a.0, b.0]}))
+            .unwrap();
+        let r = s
+            .execute("effect.apply", &json!({"effect": "pathfinder.add"}))
+            .unwrap();
         assert_eq!(r["grouped"], true);
         let g = NodeId(r["ids"][0].as_u64().unwrap());
         let gn = node(&s, g);
-        assert_eq!(gn.children().unwrap().iter().map(|c| c.id).collect::<Vec<_>>(), [a, b], "stacking order kept");
+        assert_eq!(
+            gn.children()
+                .unwrap()
+                .iter()
+                .map(|c| c.id)
+                .collect::<Vec<_>>(),
+            [a, b],
+            "stacking order kept"
+        );
         assert!(vectorcraft_render::effects::has_pathfinder(&gn));
         assert_eq!(s.doc().unwrap().selection.objects, [g]);
         // Live: one united shape, so expanding leaves a single path.
@@ -717,10 +1018,15 @@ mod tests {
         s.execute("edit.undo", &json!({})).unwrap();
         let d = &s.doc().unwrap().doc;
         assert!(d.node(g).is_none());
-        assert!(d.node(a).is_some_and(|n| n.appearance.effects.is_empty()) && d.parent_of(a) == d.parent_of(b));
+        assert!(
+            d.node(a).is_some_and(|n| n.appearance.effects.is_empty())
+                && d.parent_of(a) == d.parent_of(b)
+        );
         // A selection holding a group applies to each object as before; so does a single object.
         s.execute("select.set", &json!({"ids": [a.0]})).unwrap();
-        let r = s.execute("effect.apply", &json!({"effect": "pathfinder.add"})).unwrap();
+        let r = s
+            .execute("effect.apply", &json!({"effect": "pathfinder.add"}))
+            .unwrap();
         assert!(r.get("grouped").is_none());
         assert_eq!(node(&s, a).appearance.effects.len(), 1);
     }
@@ -728,13 +1034,30 @@ mod tests {
     #[test]
     fn pathfinder_effect_on_a_group_renders_live_and_expands() {
         let (mut s, a) = session_with_rect();
-        let b = s.execute("shape.rectangle", &json!({"x": 150, "y": 100, "width": 100, "height": 100})).unwrap();
-        s.execute("select.set", &json!({"ids": [a.0, b["id"]]})).unwrap();
-        let g = NodeId(s.execute("object.group", &json!({})).unwrap()["id"].as_u64().unwrap());
-        s.execute("effect.apply", &json!({"effect": "pathfinder.subtract"})).unwrap();
+        let b = s
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 150, "y": 100, "width": 100, "height": 100}),
+            )
+            .unwrap();
+        s.execute("select.set", &json!({"ids": [a.0, b["id"]]}))
+            .unwrap();
+        let g = NodeId(
+            s.execute("object.group", &json!({})).unwrap()["id"]
+                .as_u64()
+                .unwrap(),
+        );
+        s.execute("effect.apply", &json!({"effect": "pathfinder.subtract"}))
+            .unwrap();
         // Live: the renderer shows only the back square minus the front one.
         let doc = s.doc().unwrap().doc.clone();
-        let img = vectorcraft_render::Renderer::new().render(&doc, 400, 400, vectorcraft_geom::Affine::IDENTITY, &Default::default());
+        let img = vectorcraft_render::Renderer::new().render(
+            &doc,
+            400,
+            400,
+            vectorcraft_geom::Affine::IDENTITY,
+            &Default::default(),
+        );
         assert!(img.pixel(125, 150)[3] > 0);
         assert_eq!(img.pixel(200, 150)[3], 0);
         s.execute("effect.expandAppearance", &json!({})).unwrap();

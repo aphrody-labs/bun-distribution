@@ -272,7 +272,11 @@ mod tests {
             (-40.0, -1.0),
         ];
         for (x, want) in cases {
-            assert!((erf(x) - want).abs() < 2e-6, "erf({x}) = {} want {want}", erf(x));
+            assert!(
+                (erf(x) - want).abs() < 2e-6,
+                "erf({x}) = {} want {want}",
+                erf(x)
+            );
         }
     }
 
@@ -312,7 +316,13 @@ mod tests {
 
         let mut x = vec![1.0f32, 2.0, 3.0, 4.0];
         let r = vec![0.0f32; 4];
-        add_layer_norm(&mut x, &r, &[1.0, 1.0, 1.0, 1.0], &[0.0, 0.0, 0.0, 0.0], 1e-12);
+        add_layer_norm(
+            &mut x,
+            &r,
+            &[1.0, 1.0, 1.0, 1.0],
+            &[0.0, 0.0, 0.0, 0.0],
+            1e-12,
+        );
         let sum: f32 = x.iter().sum();
         let var: f32 = x.iter().map(|v| v * v).sum::<f32>() / 4.0;
         assert!(sum.abs() < 1e-5 && (var - 1.0).abs() < 1e-5);
@@ -328,8 +338,10 @@ mod tests {
         linear(&mut dst, &src, &w, &b, gemm::Parallelism::None);
         for r in 0..rows {
             for o in 0..out {
-                let want: f32 =
-                    (0..inp).map(|i| src[r * inp + i] * w[o * inp + i]).sum::<f32>() + b[o];
+                let want: f32 = (0..inp)
+                    .map(|i| src[r * inp + i] * w[o * inp + i])
+                    .sum::<f32>()
+                    + b[o];
                 assert!((dst[r * out + o] - want).abs() < 1e-4);
             }
         }

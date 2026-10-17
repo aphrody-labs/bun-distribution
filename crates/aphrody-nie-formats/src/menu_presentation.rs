@@ -19,7 +19,9 @@ pub struct Rect {
 
 impl Rect {
     fn valid(&self) -> bool {
-        [self.x, self.y, self.w, self.h].iter().all(|n| n.is_finite() && n.abs() <= 16384.0)
+        [self.x, self.y, self.w, self.h]
+            .iter()
+            .all(|n| n.is_finite() && n.abs() <= 16384.0)
             && self.w > 0.0
             && self.h > 0.0
     }
@@ -44,7 +46,9 @@ pub struct Provenance {
 
 impl Provenance {
     fn valid(&self) -> bool {
-        [&self.source, &self.record, &self.method].iter().all(|value| !value.trim().is_empty())
+        [&self.source, &self.record, &self.method]
+            .iter()
+            .all(|value| !value.trim().is_empty())
     }
 }
 
@@ -152,7 +156,10 @@ pub fn parse_scene(json: &str) -> Result<Scene, String> {
         !matches!(value.len(), 7 | 9)
             || !value.starts_with('#')
             || !value.as_bytes()[1..].iter().all(u8::is_ascii_hexdigit)
-    }) || scene.provenance.as_ref().is_some_and(|value| !value.valid())
+    }) || scene
+        .provenance
+        .as_ref()
+        .is_some_and(|value| !value.valid())
     {
         return Err("Invalid scene background or provenance".into());
     }
@@ -162,7 +169,10 @@ pub fn parse_scene(json: &str) -> Result<Scene, String> {
             || !controls.insert(&control.id)
             || !control.rect.valid()
             || control.label.trim().is_empty()
-            || control.host_action_id.as_ref().is_some_and(|id| id.trim().is_empty())
+            || control
+                .host_action_id
+                .as_ref()
+                .is_some_and(|id| id.trim().is_empty())
             || !control.provenance.valid()
         {
             return Err("Invalid or duplicate scene control".into());
@@ -205,14 +215,29 @@ pub fn parse_scene(json: &str) -> Result<Scene, String> {
             || layer.region.trim().is_empty()
             || !layer.provenance.valid()
             || layer.rotation_deg.is_some_and(|v| !v.is_finite())
-            || layer.mask_mode.as_deref().is_some_and(|v| v != "alpha" && v != "luminance")
-            || layer.mask_region.as_deref().is_some_and(|v| v.trim().is_empty())
+            || layer
+                .mask_mode
+                .as_deref()
+                .is_some_and(|v| v != "alpha" && v != "luminance")
+            || layer
+                .mask_region
+                .as_deref()
+                .is_some_and(|v| v.trim().is_empty())
             || (layer.mask_mode.is_some() && layer.mask_region.is_none())
-            || layer.focused_region.as_deref().is_some_and(|v| v.trim().is_empty())
+            || layer
+                .focused_region
+                .as_deref()
+                .is_some_and(|v| v.trim().is_empty())
             || ((layer.visible_when.is_some() || layer.focused_region.is_some())
                 && layer.action_id.is_none())
-            || layer.visible_when.as_deref().is_some_and(|v| v != "focused")
-            || layer.action_id.as_ref().is_some_and(|id| !controls.contains(id))
+            || layer
+                .visible_when
+                .as_deref()
+                .is_some_and(|v| v != "focused")
+            || layer
+                .action_id
+                .as_ref()
+                .is_some_and(|id| !controls.contains(id))
         {
             return Err("Invalid scene region, geometry or action reference".into());
         }
@@ -267,10 +292,16 @@ mod tests {
         assert_eq!(scene.background.as_deref(), Some("#000000"));
         assert_eq!(scene.layers.len(), 1);
         assert_eq!(scene.layers[0].region, "load_ball01");
-        assert_eq!((scene.layers[0].rect.x, scene.layers[0].rect.y), (1392.0, 976.0));
+        assert_eq!(
+            (scene.layers[0].rect.x, scene.layers[0].rect.y),
+            (1392.0, 976.0)
+        );
         assert_eq!(scene.texts.len(), 1);
         assert_eq!(scene.texts[0].text, "CHARGEMENT EN COURS…");
-        assert_eq!((scene.texts[0].rect.x, scene.texts[0].rect.y), (1472.0, 980.0));
+        assert_eq!(
+            (scene.texts[0].rect.x, scene.texts[0].rect.y),
+            (1472.0, 980.0)
+        );
         assert!(scene.controls.is_empty());
         assert!(!scene.unresolved.is_empty());
     }
@@ -318,11 +349,19 @@ mod tests {
     #[test]
     fn rejects_non_color_backgrounds_and_non_rgb_text_colors() {
         let source = scene_json("loading").unwrap();
-        for background in ["", "#", "#gggggg", "url(/capture.png)", "linear-gradient(black,white)"]
-        {
+        for background in [
+            "",
+            "#",
+            "#gggggg",
+            "url(/capture.png)",
+            "linear-gradient(black,white)",
+        ] {
             let mut json: serde_json::Value = serde_json::from_str(&source).unwrap();
             json["background"] = serde_json::json!(background);
-            assert!(parse_scene(&json.to_string()).is_err(), "accepted {background}");
+            assert!(
+                parse_scene(&json.to_string()).is_err(),
+                "accepted {background}"
+            );
         }
         let mut json: serde_json::Value = serde_json::from_str(&source).unwrap();
         json["texts"][0]["color"] = serde_json::json!(0xffffffffu32);
@@ -341,7 +380,10 @@ mod tests {
         ] {
             let scene = parse_scene(&scene_json(id).unwrap()).unwrap();
             assert!(scene.layers.len() > 25, "{id}");
-            assert!(scene.controls.iter().any(|control| control.id == "back"), "{id}");
+            assert!(
+                scene.controls.iter().any(|control| control.id == "back"),
+                "{id}"
+            );
             assert!(scene.slots.iter().any(|slot| slot.id == "model"), "{id}");
             assert!(!scene.texts.is_empty());
             assert!(!scene.unresolved.is_empty());
@@ -364,9 +406,19 @@ mod tests {
     fn title_menu_preserves_all_native_controls_and_observed_bindings() {
         let scene = parse_scene(&scene_json("title-menu").unwrap()).unwrap();
         assert_eq!(scene.controls.len(), 13);
-        assert_eq!(scene.controls.iter().filter(|c| c.native_action_hash.is_some()).count(), 11);
-        let bindings: Vec<_> =
-            scene.controls.iter().filter_map(|c| c.host_action_id.as_deref()).collect();
+        assert_eq!(
+            scene
+                .controls
+                .iter()
+                .filter(|c| c.native_action_hash.is_some())
+                .count(),
+            11
+        );
+        let bindings: Vec<_> = scene
+            .controls
+            .iter()
+            .filter_map(|c| c.host_action_id.as_deref())
+            .collect();
         assert_eq!(
             bindings,
             [
@@ -389,7 +441,12 @@ mod tests {
                 "avatar",
             ]
         );
-        assert!(scene.layers.iter().all(|layer| !layer.provenance.source.is_empty()));
+        assert!(
+            scene
+                .layers
+                .iter()
+                .all(|layer| !layer.provenance.source.is_empty())
+        );
     }
 
     #[test]
@@ -397,7 +454,10 @@ mod tests {
         let source = scene_json("start").unwrap();
         for (field, value) in [
             ("assetPath", serde_json::json!("data/../capture.g4tx")),
-            ("assetPath", serde_json::json!("https://example.com/texture.g4tx")),
+            (
+                "assetPath",
+                serde_json::json!("https://example.com/texture.g4tx"),
+            ),
             ("actionId", serde_json::json!("missing")),
             ("rect", serde_json::json!({"x":0,"y":0,"w":0,"h":10})),
         ] {

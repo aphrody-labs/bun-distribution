@@ -46,9 +46,21 @@ pub fn invert(m: &Mat3) -> Option<Mat3> {
     }
     let r = 1.0 / det;
     let o = [
-        [(e * i - f * h) * r, (c * h - b * i) * r, (b * f - c * e) * r],
-        [(f * g - d * i) * r, (a * i - c * g) * r, (c * d - a * f) * r],
-        [(d * h - e * g) * r, (b * g - a * h) * r, (a * e - b * d) * r],
+        [
+            (e * i - f * h) * r,
+            (c * h - b * i) * r,
+            (b * f - c * e) * r,
+        ],
+        [
+            (f * g - d * i) * r,
+            (a * i - c * g) * r,
+            (c * d - a * f) * r,
+        ],
+        [
+            (d * h - e * g) * r,
+            (b * g - a * h) * r,
+            (a * e - b * d) * r,
+        ],
     ];
     o.iter().flatten().all(|v| v.is_finite()).then_some(o)
 }
@@ -77,7 +89,11 @@ pub fn xyz_to_xy(v: [f64; 3]) -> Option<[f64; 2]> {
 pub fn cct(xy: [f64; 2]) -> f64 {
     let n = (xy[0] - 0.3320) / (0.1858 - xy[1]);
     let t = 449.0 * n.powi(3) + 3525.0 * n.powi(2) + 6823.3 * n + 5520.33;
-    if t.is_finite() { t.clamp(2000.0, 50000.0) } else { 5000.0 }
+    if t.is_finite() {
+        t.clamp(2000.0, 50000.0)
+    } else {
+        5000.0
+    }
 }
 
 /// Approximate temperature of an EXIF `LightSource` code (the
@@ -108,22 +124,37 @@ pub fn illuminant_temperature(code: u32) -> Option<f64> {
 
 /// Bradford chromatic adaptation from white `src` to white `dst` (XYZ).
 pub fn bradford(src: [f64; 3], dst: [f64; 3]) -> Mat3 {
-    const M: Mat3 = [[0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [0.0389, -0.0685, 1.0296]];
-    let Some(mi) = invert(&M) else { return IDENTITY };
+    const M: Mat3 = [
+        [0.8951, 0.2664, -0.1614],
+        [-0.7502, 1.7135, 0.0367],
+        [0.0389, -0.0685, 1.0296],
+    ];
+    let Some(mi) = invert(&M) else {
+        return IDENTITY;
+    };
     let s = apply(&M, src);
     let d = apply(&M, dst);
     if s.iter().any(|v| v.abs() < 1e-9) {
         return IDENTITY;
     }
-    mul(&mi, &mul(&diag([d[0] / s[0], d[1] / s[1], d[2] / s[2]]), &M))
+    mul(
+        &mi,
+        &mul(&diag([d[0] / s[0], d[1] / s[1], d[2] / s[2]]), &M),
+    )
 }
 
 /// RGB → XYZ matrix for primaries and a white point (all as chromaticities),
 /// white mapping to Y = 1.
 pub fn rgb_to_xyz(prim: [[f64; 2]; 3], white: [f64; 2]) -> Mat3 {
     let cols = prim.map(xy_to_xyz);
-    let p: Mat3 = [[cols[0][0], cols[1][0], cols[2][0]], [cols[0][1], cols[1][1], cols[2][1]], [cols[0][2], cols[1][2], cols[2][2]]];
-    let Some(pi) = invert(&p) else { return IDENTITY };
+    let p: Mat3 = [
+        [cols[0][0], cols[1][0], cols[2][0]],
+        [cols[0][1], cols[1][1], cols[2][1]],
+        [cols[0][2], cols[1][2], cols[2][2]],
+    ];
+    let Some(pi) = invert(&p) else {
+        return IDENTITY;
+    };
     let s = apply(&pi, xy_to_xyz(white));
     mul(&p, &diag(s))
 }
@@ -141,7 +172,10 @@ pub fn xyz_d50_to_prophoto() -> Mat3 {
 /// Linear sRGB (D65) → XYZ adapted to D50: the documented neutral camera
 /// matrix used when a file carries no colour calibration.
 pub fn srgb_to_xyz_d50() -> Mat3 {
-    mul(&bradford(xy_to_xyz(D65_XY), xy_to_xyz(D50_XY)), &rgb_to_xyz(REC709, D65_XY))
+    mul(
+        &bradford(xy_to_xyz(D65_XY), xy_to_xyz(D50_XY)),
+        &rgb_to_xyz(REC709, D65_XY),
+    )
 }
 
 /// One DNG calibration (ColorMatrixN with its companions).
@@ -209,7 +243,10 @@ impl ColorInfo {
         };
         let cm = pick(&|c| c.color_matrix);
         let cc = pick(&|c| c.camera_calibration);
-        let fm = match (first.forward_matrix, self.calibrations.get(1).map(|c| c.forward_matrix)) {
+        let fm = match (
+            first.forward_matrix,
+            self.calibrations.get(1).map(|c| c.forward_matrix),
+        ) {
             (Some(a), Some(Some(b))) => Some(lerp_mat(&a, &b, g)),
             (Some(a), None) => Some(a),
             _ => None,
@@ -224,9 +261,15 @@ impl ColorInfo {
     pub fn neutral_to_xy(&self, neutral: [f64; 3]) -> [f64; 2] {
         let mut xy = D50_XY;
         for _ in 0..30 {
-            let Some((xyz_to_cam, _, _)) = self.at(cct(xy)) else { return xy };
-            let Some(cam_to_xyz) = invert(&xyz_to_cam) else { return xy };
-            let Some(next) = xyz_to_xy(apply(&cam_to_xyz, neutral)) else { return xy };
+            let Some((xyz_to_cam, _, _)) = self.at(cct(xy)) else {
+                return xy;
+            };
+            let Some(cam_to_xyz) = invert(&xyz_to_cam) else {
+                return xy;
+            };
+            let Some(next) = xyz_to_xy(apply(&cam_to_xyz, neutral)) else {
+                return xy;
+            };
             if !(0.0..1.0).contains(&next[0]) || !(0.0..1.0).contains(&next[1]) {
                 return xy;
             }
@@ -305,7 +348,10 @@ mod tests {
     #[test]
     fn white_points_map_to_d50() {
         let w = apply(&srgb_to_xyz_d50(), [1.0; 3]);
-        assert!(close(w[0], 0.9642, 2e-3) && close(w[1], 1.0, 1e-9) && close(w[2], 0.8249, 2e-3), "{w:?}");
+        assert!(
+            close(w[0], 0.9642, 2e-3) && close(w[1], 1.0, 1e-9) && close(w[2], 0.8249, 2e-3),
+            "{w:?}"
+        );
         let p = apply(&xyz_d50_to_prophoto(), xy_to_xyz(D50_XY));
         assert!(p.iter().all(|v| close(*v, 1.0, 1e-9)), "{p:?}");
     }
@@ -323,7 +369,12 @@ mod tests {
         let cam_to_xyz = rgb_to_xyz(REC709, D65_XY);
         let cm = invert(&cam_to_xyz).unwrap();
         let info = ColorInfo {
-            calibrations: vec![Calibration { temperature: 6504.0, color_matrix: cm, forward_matrix: None, camera_calibration: IDENTITY }],
+            calibrations: vec![Calibration {
+                temperature: 6504.0,
+                color_matrix: cm,
+                forward_matrix: None,
+                camera_calibration: IDENTITY,
+            }],
             ..Default::default()
         };
         let neutral = info.xy_to_neutral(D65_XY).unwrap();
@@ -332,6 +383,9 @@ mod tests {
         assert!(close(xy[0], D65_XY[0], 1e-4) && close(xy[1], D65_XY[1], 1e-4));
         let m = info.balanced_to_xyz_d50(neutral).unwrap();
         let w = apply(&m, [1.0; 3]);
-        assert!(close(w[0], 0.9642, 3e-3) && close(w[1], 1.0, 1e-9) && close(w[2], 0.8249, 3e-3), "{w:?}");
+        assert!(
+            close(w[0], 0.9642, 3e-3) && close(w[1], 1.0, 1e-9) && close(w[2], 0.8249, 3e-3),
+            "{w:?}"
+        );
     }
 }

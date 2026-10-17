@@ -1,7 +1,7 @@
 use crate::{
     Capsule2d, Circle, CircularSegment, Primitive2d, Rectangle, RegularPolygon, Rhombus, Triangle2d,
 };
-use bevy_math::{ops, Vec2};
+use bevy_math::{Vec2, ops};
 
 /// A primitive that can be resized uniformly.
 ///

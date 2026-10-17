@@ -17,34 +17,34 @@ use bevy_ecs::{
     system::{Commands, Query, Res},
 };
 use bevy_input::{
-    keyboard::{Key, KeyCode, KeyboardInput},
     ButtonInput,
+    keyboard::{Key, KeyCode, KeyboardInput},
 };
 use bevy_input_focus::{FocusGained, FocusLost, FocusedInput, InputFocus, InputFocusSystems};
 use bevy_log::{warn, warn_once};
-use bevy_math::{ops, Rot2};
+use bevy_math::{Rot2, ops};
 use bevy_picking::{
+    PickingSystems,
     cursor::EntityCursor,
     events::{
         PointerCancel, PointerDrag, PointerDragEnd, PointerDragStart, PointerPress, PointerRelease,
     },
     hover::Hovered,
     pointer::PointerButton,
-    PickingSystems,
 };
 use bevy_platform::collections::HashMap;
-use bevy_reflect::std_traits::ReflectDefault;
 use bevy_reflect::Reflect;
+use bevy_reflect::std_traits::ReflectDefault;
 use bevy_scene::prelude::*;
 use bevy_text::{
     EditableText, FontSourceTemplate, Justify, LineHeight, TextEdit, TextFont, TextLayout,
     TextReadWriteMode,
 };
 use bevy_ui::{
-    percent, px, widget::Text, AlignItems, AlignSelf, BackgroundGradient, ColorStop, ComputedNode,
-    ComputedUiRenderTargetInfo, Display, Gradient, InteractionDisabled, InterpolationColorSpace,
-    JustifyContent, LinearGradient, Node, PositionType, UiGlobalTransform, UiRect, UiScale,
-    UiTransform,
+    AlignItems, AlignSelf, BackgroundGradient, ColorStop, ComputedNode, ComputedUiRenderTargetInfo,
+    Display, Gradient, InteractionDisabled, InterpolationColorSpace, JustifyContent,
+    LinearGradient, Node, PositionType, UiGlobalTransform, UiRect, UiScale, UiTransform, percent,
+    px, widget::Text,
 };
 use bevy_ui_widgets::ValueChange;
 use smol_str::SmolStr;

@@ -19,9 +19,13 @@ pub(crate) fn native_sock(_: &JsValue, args: &[JsValue], ctx: &mut Context) -> J
     let id = args.get(1).cloned().unwrap_or_default().to_number(ctx)? as u32;
     let params = arg_string(args, 2, ctx)?;
     let p: J = serde_json::from_str(&params).unwrap_or(J::Null);
-    let allowed = with_active(|a| Ok(a.session.prefs.scripting.allow_scripts_write_files)).unwrap_or(false);
+    let allowed =
+        with_active(|a| Ok(a.session.prefs.scripting.allow_scripts_write_files)).unwrap_or(false);
     if !allowed {
-        return Err(throw(format!("scripts can't access the network unless {} is on", crate::runtime::GATE)));
+        return Err(throw(format!(
+            "scripts can't access the network unless {} is on",
+            crate::runtime::GATE
+        )));
     }
     if op == "check" {
         return Ok(js_str("{}"));
@@ -57,7 +61,11 @@ mod imp {
     use super::*;
 
     enum Sock {
-        Stream { s: TcpStream, buf: Vec<u8>, eof: bool },
+        Stream {
+            s: TcpStream,
+            buf: Vec<u8>,
+            eof: bool,
+        },
         Listener(TcpListener),
     }
 
@@ -67,7 +75,10 @@ mod imp {
     }
 
     fn table() -> &'static Mutex<Table> {
-        static T: Mutex<Table> = Mutex::new(Table { next: 1, socks: BTreeMap::new() });
+        static T: Mutex<Table> = Mutex::new(Table {
+            next: 1,
+            socks: BTreeMap::new(),
+        });
         &T
     }
 
@@ -80,26 +91,47 @@ mod imp {
     }
 
     fn timeout(p: &J) -> Duration {
-        Duration::from_secs_f64(p.get("timeout").and_then(J::as_f64).unwrap_or(10.0).clamp(0.0, 3600.0))
+        Duration::from_secs_f64(
+            p.get("timeout")
+                .and_then(J::as_f64)
+                .unwrap_or(10.0)
+                .clamp(0.0, 3600.0),
+        )
     }
 
     /// `host:port` (After Effects' form) → socket addresses.
     fn addr(host: &str) -> Result<Vec<std::net::SocketAddr>, String> {
-        let a = host.to_socket_addrs().map_err(|e| format!("bad address `{host}` (use host:port): {e}"))?;
+        let a = host
+            .to_socket_addrs()
+            .map_err(|e| format!("bad address `{host}` (use host:port): {e}"))?;
         Ok(a.collect())
     }
 
     /// Text ↔ bytes in the socket's encoding: UTF-8, else one byte per character (ASCII /
     /// BINARY, as in After Effects).
     fn encode(s: &str, utf8: bool) -> Vec<u8> {
-        if utf8 { s.as_bytes().to_vec() } else { s.chars().map(|c| (c as u32).min(255) as u8).collect() }
+        if utf8 {
+            s.as_bytes().to_vec()
+        } else {
+            s.chars().map(|c| (c as u32).min(255) as u8).collect()
+        }
     }
     fn decode(b: &[u8], utf8: bool) -> String {
-        if utf8 { String::from_utf8_lossy(b).into_owned() } else { b.iter().map(|&c| c as char).collect() }
+        if utf8 {
+            String::from_utf8_lossy(b).into_owned()
+        } else {
+            b.iter().map(|&c| c as char).collect()
+        }
     }
 
     /// Fill a stream's buffer until `done(buf)` or the timeout / end of stream.
-    fn fill(s: &mut TcpStream, buf: &mut Vec<u8>, eof: &mut bool, limit: Duration, done: impl Fn(&[u8]) -> bool) {
+    fn fill(
+        s: &mut TcpStream,
+        buf: &mut Vec<u8>,
+        eof: &mut bool,
+        limit: Duration,
+        done: impl Fn(&[u8]) -> bool,
+    ) {
         let end = Instant::now() + limit;
         let mut chunk = [0u8; 4096];
         while !done(buf) && !*eof {
@@ -111,7 +143,12 @@ mod imp {
             match s.read(&mut chunk) {
                 Ok(0) => *eof = true,
                 Ok(n) => buf.extend_from_slice(&chunk[..n]),
-                Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::TimedOut | ErrorKind::Interrupted) => {
+                Err(e)
+                    if matches!(
+                        e.kind(),
+                        ErrorKind::WouldBlock | ErrorKind::TimedOut | ErrorKind::Interrupted
+                    ) =>
+                {
                     if e.kind() != ErrorKind::Interrupted {
                         break;
                     }
@@ -122,7 +159,10 @@ mod imp {
     }
 
     pub(super) fn run(op: &str, id: u32, p: &J) -> J {
-        let utf8 = p.get("encoding").and_then(J::as_str).is_some_and(|e| e.eq_ignore_ascii_case("utf-8") || e.eq_ignore_ascii_case("utf8"));
+        let utf8 = p
+            .get("encoding")
+            .and_then(J::as_str)
+            .is_some_and(|e| e.eq_ignore_ascii_case("utf-8") || e.eq_ignore_ascii_case("utf8"));
         match op {
             "open" => {
                 let host = p.get("host").and_then(J::as_str).unwrap_or("");
@@ -148,7 +188,9 @@ mod imp {
                     v if v.fract() == 0.0 && (0.0..=65535.0).contains(&v) => v as u16,
                     v => return err(format!("bad port {v} (0 to 65535)")),
                 };
-                match TcpListener::bind(("127.0.0.1", port)).and_then(|l| l.set_nonblocking(true).map(|_| l)) {
+                match TcpListener::bind(("127.0.0.1", port))
+                    .and_then(|l| l.set_nonblocking(true).map(|_| l))
+                {
                     Ok(l) => {
                         let port = l.local_addr().map(|a| a.port()).unwrap_or(port);
                         json!({"id": add(Sock::Listener(l)), "port": port})
@@ -174,7 +216,11 @@ mod imp {
                         Ok((s, peer)) => {
                             let _ = s.set_nonblocking(false);
                             let host = peer.to_string();
-                            let new = Sock::Stream { s, buf: vec![], eof: false };
+                            let new = Sock::Stream {
+                                s,
+                                buf: vec![],
+                                eof: false,
+                            };
                             let nid = t.next;
                             t.next += 1;
                             t.socks.insert(nid, new);
@@ -197,7 +243,9 @@ mod imp {
                         json!({"value": !(*eof && buf.is_empty())})
                     }
                     ("connected", Sock::Listener(_)) => json!({"value": true}),
-                    ("eof", Sock::Stream { buf, eof, .. }) => json!({"value": *eof && buf.is_empty()}),
+                    ("eof", Sock::Stream { buf, eof, .. }) => {
+                        json!({"value": *eof && buf.is_empty()})
+                    }
                     ("read", Sock::Stream { s, buf, eof }) => {
                         let count = p.get("count").and_then(J::as_i64).unwrap_or(-1);
                         let limit = timeout(p);
@@ -235,7 +283,9 @@ mod imp {
                             Err(e) => err(e),
                         }
                     }
-                    ("host", Sock::Stream { s, .. }) => json!({"value": s.peer_addr().map(|a| a.to_string()).unwrap_or_default()}),
+                    ("host", Sock::Stream { s, .. }) => {
+                        json!({"value": s.peer_addr().map(|a| a.to_string()).unwrap_or_default()})
+                    }
                     (op, _) => err(format!("`{op}` is not supported on this socket")),
                 }
             }

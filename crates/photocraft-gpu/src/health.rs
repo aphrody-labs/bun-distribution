@@ -61,7 +61,10 @@ pub struct DeviceHealth(Arc<Inner>);
 
 impl fmt::Debug for DeviceHealth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("DeviceHealth").field("fault", &self.fault()).field("errors", &self.errors()).finish()
+        f.debug_struct("DeviceHealth")
+            .field("fault", &self.fault())
+            .field("errors", &self.errors())
+            .finish()
     }
 }
 
@@ -99,7 +102,11 @@ impl DeviceHealth {
         // Errors about invalid or lost objects follow a device loss whose callback may not have
         // run yet (it fires on the next poll).
         let lower = text.to_ascii_lowercase();
-        let fault = if lower.contains("lost") || lower.contains("destroyed") { Fault::Lost(first_line(&text)) } else { Fault::Error(first_line(&text)) };
+        let fault = if lower.contains("lost") || lower.contains("destroyed") {
+            Fault::Lost(first_line(&text))
+        } else {
+            Fault::Error(first_line(&text))
+        };
         self.mark(fault);
     }
 
@@ -126,7 +133,11 @@ impl DeviceHealth {
         if self.is_ok() {
             return None;
         }
-        self.0.fault.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.0
+            .fault
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 
     /// Uncaptured wgpu errors seen so far.
@@ -143,7 +154,12 @@ impl DeviceHealth {
         if !self.is_ok() {
             return false;
         }
-        let poll = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| device.poll(wgpu::PollType::Wait { submission_index: index, timeout: None })));
+        let poll = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            device.poll(wgpu::PollType::Wait {
+                submission_index: index,
+                timeout: None,
+            })
+        }));
         match poll {
             Ok(Ok(_)) => {}
             Ok(Err(e)) => log::warn!("wgpu poll: {e}"),
@@ -157,14 +173,22 @@ impl DeviceHealth {
         if !self.is_ok() {
             return;
         }
-        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| device.poll(wgpu::PollType::Poll))).is_err() {
+        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            device.poll(wgpu::PollType::Poll)
+        }))
+        .is_err()
+        {
             self.mark(Fault::Lost("the device stopped responding".into()));
         }
     }
 }
 
 fn first_line(s: &str) -> String {
-    let line = s.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or("");
+    let line = s
+        .lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .unwrap_or("");
     let mut out: String = line.chars().take(200).collect();
     if line.chars().count() > 200 {
         out.push('…');
@@ -189,14 +213,20 @@ mod tests {
         c.mark(Fault::Lost("reset".into()));
         assert_eq!(h.fault(), Some(Fault::Lost("reset".into())));
         c.mark(Fault::Lost("later".into()));
-        assert_eq!(h.fault().map(|f| f.to_string()).as_deref(), Some("GPU device lost: reset"));
+        assert_eq!(
+            h.fault().map(|f| f.to_string()).as_deref(),
+            Some("GPU device lost: reset")
+        );
     }
 
     #[test]
     fn fault_text() {
         assert_eq!(Fault::Lost(String::new()).to_string(), "GPU device lost");
         assert_eq!(Fault::Error("x".into()).to_string(), "GPU error: x");
-        assert_eq!(first_line("\n  Buffer 'pc' is invalid\nmore"), "Buffer 'pc' is invalid");
+        assert_eq!(
+            first_line("\n  Buffer 'pc' is invalid\nmore"),
+            "Buffer 'pc' is invalid"
+        );
         assert_eq!(first_line(&"a".repeat(300)).chars().count(), 201);
     }
 }

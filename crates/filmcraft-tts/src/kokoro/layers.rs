@@ -19,21 +19,42 @@ pub(crate) struct Conv {
 }
 
 impl Conv {
-    pub(crate) fn load(wt: &Weights, name: &str, pad: usize, stride: usize, dil: usize, groups: usize) -> R<Conv> {
+    pub(crate) fn load(
+        wt: &Weights,
+        name: &str,
+        pad: usize,
+        stride: usize,
+        dil: usize,
+        groups: usize,
+    ) -> R<Conv> {
         let w = wt.get(&format!("{name}.weight"))?;
         if w.rank() != 3 {
             return Err(err(format!("{name}: conv weight must be 3-D")));
         }
         let b = wt.get(&format!("{name}.bias")).ok();
-        Ok(Conv { w, b, pad, stride, dil, groups })
+        Ok(Conv {
+            w,
+            b,
+            pad,
+            stride,
+            dil,
+            groups,
+        })
     }
     /// `pad = dil · (k − 1) / 2` ("same" length for stride 1).
     pub(crate) fn same(wt: &Weights, name: &str, dil: usize) -> R<Conv> {
-        let k = wt.get(&format!("{name}.weight"))?.dims().get(2).copied().unwrap_or(1);
+        let k = wt
+            .get(&format!("{name}.weight"))?
+            .dims()
+            .get(2)
+            .copied()
+            .unwrap_or(1);
         Conv::load(wt, name, dil * (k.saturating_sub(1)) / 2, 1, dil, 1)
     }
     pub(crate) fn fwd(&self, x: &Tensor) -> R<Tensor> {
-        let y = x.conv1d(&self.w, self.pad, self.stride, self.dil, self.groups).map_err(err)?;
+        let y = x
+            .conv1d(&self.w, self.pad, self.stride, self.dil, self.groups)
+            .map_err(err)?;
         add_bias(y, self.b.as_ref())
     }
 }
@@ -42,7 +63,8 @@ fn add_bias(y: Tensor, b: Option<&Tensor>) -> R<Tensor> {
     match b {
         Some(b) => {
             let c = b.dims1().map_err(err)?;
-            y.broadcast_add(&b.reshape((1, c, 1)).map_err(err)?).map_err(err)
+            y.broadcast_add(&b.reshape((1, c, 1)).map_err(err)?)
+                .map_err(err)
         }
         None => Ok(y),
     }
@@ -59,11 +81,27 @@ pub(crate) struct ConvT {
 }
 
 impl ConvT {
-    pub(crate) fn load(wt: &Weights, name: &str, pad: usize, out_pad: usize, stride: usize, groups: usize) -> R<ConvT> {
-        Ok(ConvT { w: wt.get(&format!("{name}.weight"))?, b: wt.get(&format!("{name}.bias")).ok(), pad, out_pad, stride, groups })
+    pub(crate) fn load(
+        wt: &Weights,
+        name: &str,
+        pad: usize,
+        out_pad: usize,
+        stride: usize,
+        groups: usize,
+    ) -> R<ConvT> {
+        Ok(ConvT {
+            w: wt.get(&format!("{name}.weight"))?,
+            b: wt.get(&format!("{name}.bias")).ok(),
+            pad,
+            out_pad,
+            stride,
+            groups,
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor) -> R<Tensor> {
-        let y = x.conv_transpose1d(&self.w, self.pad, self.out_pad, self.stride, 1, self.groups).map_err(err)?;
+        let y = x
+            .conv_transpose1d(&self.w, self.pad, self.out_pad, self.stride, 1, self.groups)
+            .map_err(err)?;
         add_bias(y, self.b.as_ref())
     }
 }
@@ -76,7 +114,10 @@ pub(crate) struct Linear {
 
 impl Linear {
     pub(crate) fn load(wt: &Weights, name: &str) -> R<Linear> {
-        Ok(Linear { w: wt.get(&format!("{name}.weight"))?.t().map_err(err)?, b: wt.get(&format!("{name}.bias")).ok() })
+        Ok(Linear {
+            w: wt.get(&format!("{name}.weight"))?.t().map_err(err)?,
+            b: wt.get(&format!("{name}.bias")).ok(),
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor) -> R<Tensor> {
         let y = x.broadcast_matmul(&self.w).map_err(err)?;
@@ -96,8 +137,13 @@ pub(crate) fn leaky(x: &Tensor, slope: f64) -> R<Tensor> {
 pub(crate) fn norm_last(x: &Tensor, eps: f64) -> R<Tensor> {
     let mean = x.mean_keepdim(D::Minus1).map_err(err)?;
     let xc = x.broadcast_sub(&mean).map_err(err)?;
-    let var = xc.sqr().map_err(err)?.mean_keepdim(D::Minus1).map_err(err)?;
-    xc.broadcast_div(&(var + eps).map_err(err)?.sqrt().map_err(err)?).map_err(err)
+    let var = xc
+        .sqr()
+        .map_err(err)?
+        .mean_keepdim(D::Minus1)
+        .map_err(err)?;
+    xc.broadcast_div(&(var + eps).map_err(err)?.sqrt().map_err(err)?)
+        .map_err(err)
 }
 
 /// Layer norm over the last dimension with weight and bias.
@@ -109,10 +155,18 @@ pub(crate) struct LayerNorm {
 
 impl LayerNorm {
     pub(crate) fn load(wt: &Weights, gamma: &str, beta: &str, eps: f64) -> R<LayerNorm> {
-        Ok(LayerNorm { g: wt.get(gamma)?, b: wt.get(beta)?, eps })
+        Ok(LayerNorm {
+            g: wt.get(gamma)?,
+            b: wt.get(beta)?,
+            eps,
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor) -> R<Tensor> {
-        norm_last(x, self.eps)?.broadcast_mul(&self.g).map_err(err)?.broadcast_add(&self.b).map_err(err)
+        norm_last(x, self.eps)?
+            .broadcast_mul(&self.g)
+            .map_err(err)?
+            .broadcast_add(&self.b)
+            .map_err(err)
     }
 }
 
@@ -134,13 +188,18 @@ pub(crate) struct AdaIn {
 
 impl AdaIn {
     pub(crate) fn load(wt: &Weights, name: &str) -> R<AdaIn> {
-        Ok(AdaIn { fc: Linear::load(wt, &format!("{name}.fc"))? })
+        Ok(AdaIn {
+            fc: Linear::load(wt, &format!("{name}.fc"))?,
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor, s: &Tensor) -> R<Tensor> {
         let (gamma, beta) = style_affine(&self.fc, s)?;
         let c = gamma.dim(1).map_err(err)?;
         let n = norm_last(x, 1e-5)?;
-        n.broadcast_mul(&gamma.reshape((1, c, 1)).map_err(err)?).map_err(err)?.broadcast_add(&beta.reshape((1, c, 1)).map_err(err)?).map_err(err)
+        n.broadcast_mul(&gamma.reshape((1, c, 1)).map_err(err)?)
+            .map_err(err)?
+            .broadcast_add(&beta.reshape((1, c, 1)).map_err(err)?)
+            .map_err(err)
     }
 }
 
@@ -151,11 +210,17 @@ pub(crate) struct AdaLayerNorm {
 
 impl AdaLayerNorm {
     pub(crate) fn load(wt: &Weights, name: &str) -> R<AdaLayerNorm> {
-        Ok(AdaLayerNorm { fc: Linear::load(wt, &format!("{name}.fc"))? })
+        Ok(AdaLayerNorm {
+            fc: Linear::load(wt, &format!("{name}.fc"))?,
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor, s: &Tensor) -> R<Tensor> {
         let (gamma, beta) = style_affine(&self.fc, s)?;
-        norm_last(x, 1e-5)?.broadcast_mul(&gamma).map_err(err)?.broadcast_add(&beta).map_err(err)
+        norm_last(x, 1e-5)?
+            .broadcast_mul(&gamma)
+            .map_err(err)?
+            .broadcast_add(&beta)
+            .map_err(err)
     }
 }
 
@@ -172,9 +237,22 @@ pub(crate) struct AdaResBlock {
 
 impl AdaResBlock {
     pub(crate) fn load(wt: &Weights, name: &str, upsample: bool) -> R<AdaResBlock> {
-        let shortcut = wt.get(&format!("{name}.conv1x1.weight")).ok().map(|w| Conv { w, b: None, pad: 0, stride: 1, dil: 1, groups: 1 });
+        let shortcut = wt
+            .get(&format!("{name}.conv1x1.weight"))
+            .ok()
+            .map(|w| Conv {
+                w,
+                b: None,
+                pad: 0,
+                stride: 1,
+                dil: 1,
+                groups: 1,
+            });
         let pool = if upsample {
-            let c = wt.get(&format!("{name}.pool.weight"))?.dim(0).map_err(err)?;
+            let c = wt
+                .get(&format!("{name}.pool.weight"))?
+                .dim(0)
+                .map_err(err)?;
             Some(ConvT::load(wt, &format!("{name}.pool"), 1, 1, 2, c)?)
         } else {
             None
@@ -213,7 +291,12 @@ impl AdaResBlock {
 /// Nearest-neighbour ×2 along time.
 pub(crate) fn upsample2(x: &Tensor) -> R<Tensor> {
     let (b, c, t) = x.dims3().map_err(err)?;
-    x.unsqueeze(3).map_err(err)?.broadcast_as((b, c, t, 2)).map_err(err)?.reshape((b, c, t * 2)).map_err(err)
+    x.unsqueeze(3)
+        .map_err(err)?
+        .broadcast_as((b, c, t, 2))
+        .map_err(err)?
+        .reshape((b, c, t * 2))
+        .map_err(err)
 }
 
 /// Snake activation `x + sin²(αx) / α` with a learned α per channel.
@@ -236,12 +319,23 @@ pub(crate) struct SnakeResBlock {
 
 impl SnakeResBlock {
     pub(crate) fn load(wt: &Weights, name: &str, dilations: [usize; 3]) -> R<SnakeResBlock> {
-        let mut b = SnakeResBlock { convs1: vec![], convs2: vec![], adain1: vec![], adain2: vec![], alpha1: vec![], alpha2: vec![] };
+        let mut b = SnakeResBlock {
+            convs1: vec![],
+            convs2: vec![],
+            adain1: vec![],
+            adain2: vec![],
+            alpha1: vec![],
+            alpha2: vec![],
+        };
         for (j, d) in dilations.iter().enumerate() {
-            b.convs1.push(Conv::same(wt, &format!("{name}.convs1.{j}"), *d)?);
-            b.convs2.push(Conv::same(wt, &format!("{name}.convs2.{j}"), 1)?);
-            b.adain1.push(AdaIn::load(wt, &format!("{name}.adain1.{j}"))?);
-            b.adain2.push(AdaIn::load(wt, &format!("{name}.adain2.{j}"))?);
+            b.convs1
+                .push(Conv::same(wt, &format!("{name}.convs1.{j}"), *d)?);
+            b.convs2
+                .push(Conv::same(wt, &format!("{name}.convs2.{j}"), 1)?);
+            b.adain1
+                .push(AdaIn::load(wt, &format!("{name}.adain1.{j}"))?);
+            b.adain2
+                .push(AdaIn::load(wt, &format!("{name}.adain2.{j}"))?);
             b.alpha1.push(wt.get(&format!("{name}.alpha1.{j}"))?);
             b.alpha2.push(wt.get(&format!("{name}.alpha2.{j}"))?);
         }
@@ -250,9 +344,14 @@ impl SnakeResBlock {
     pub(crate) fn fwd(&self, x: &Tensor, s: &Tensor) -> R<Tensor> {
         let mut x = x.clone();
         for j in 0..self.convs1.len() {
-            let (Some(c1), Some(c2), Some(n1), Some(n2), Some(a1), Some(a2)) =
-                (self.convs1.get(j), self.convs2.get(j), self.adain1.get(j), self.adain2.get(j), self.alpha1.get(j), self.alpha2.get(j))
-            else {
+            let (Some(c1), Some(c2), Some(n1), Some(n2), Some(a1), Some(a2)) = (
+                self.convs1.get(j),
+                self.convs2.get(j),
+                self.adain1.get(j),
+                self.adain2.get(j),
+                self.alpha1.get(j),
+                self.alpha2.get(j),
+            ) else {
                 break;
             };
             let mut t = snake(&n1.fwd(&x, s)?, a1)?;
@@ -281,8 +380,14 @@ impl LstmDir {
         if g4 != 4 * hidden {
             return Err(err(format!("{name}: bad LSTM shape")));
         }
-        let b_ih: Vec<f32> = wt.get(&format!("{name}.bias_ih_l0{suffix}"))?.to_vec1().map_err(err)?;
-        let b_hh: Vec<f32> = wt.get(&format!("{name}.bias_hh_l0{suffix}"))?.to_vec1().map_err(err)?;
+        let b_ih: Vec<f32> = wt
+            .get(&format!("{name}.bias_ih_l0{suffix}"))?
+            .to_vec1()
+            .map_err(err)?;
+        let b_hh: Vec<f32> = wt
+            .get(&format!("{name}.bias_hh_l0{suffix}"))?
+            .to_vec1()
+            .map_err(err)?;
         let bias = b_ih.iter().zip(&b_hh).map(|(a, b)| a + b).collect();
         // row-major [4H, H] → transposed [H, 4H] so the recurrent product walks memory forwards
         let hh: Vec<Vec<f32>> = w_hh.to_vec2().map_err(err)?;
@@ -294,7 +399,12 @@ impl LstmDir {
                 }
             }
         }
-        Ok(LstmDir { w_ih: w_ih.t().map_err(err)?, w_hh: w_t, bias, hidden })
+        Ok(LstmDir {
+            w_ih: w_ih.t().map_err(err)?,
+            w_hh: w_t,
+            bias,
+            hidden,
+        })
     }
 
     /// `x`: `[T, I]` → `[T, H]` (in input order).
@@ -302,14 +412,22 @@ impl LstmDir {
         let (t_len, _) = x.dims2().map_err(err)?;
         let h = self.hidden;
         let g4 = 4 * h;
-        let pre: Vec<f32> = x.matmul(&self.w_ih).map_err(err)?.flatten_all().map_err(err)?.to_vec1().map_err(err)?;
+        let pre: Vec<f32> = x
+            .matmul(&self.w_ih)
+            .map_err(err)?
+            .flatten_all()
+            .map_err(err)?
+            .to_vec1()
+            .map_err(err)?;
         let mut out = vec![0f32; t_len * h];
         let (mut hs, mut cs) = (vec![0f32; h], vec![0f32; h]);
         let mut gates = vec![0f32; g4];
         let sig = |v: f32| 1.0 / (1.0 + (-v).exp());
         for step in 0..t_len {
             let t = if reverse { t_len - 1 - step } else { step };
-            let Some(p) = pre.get(t * g4..(t + 1) * g4) else { break };
+            let Some(p) = pre.get(t * g4..(t + 1) * g4) else {
+                break;
+            };
             for ((g, a), b) in gates.iter_mut().zip(p).zip(&self.bias) {
                 *g = a + b;
             }
@@ -317,7 +435,9 @@ impl LstmDir {
                 if *hv == 0.0 {
                     continue;
                 }
-                let Some(row) = self.w_hh.get(k * g4..(k + 1) * g4) else { break };
+                let Some(row) = self.w_hh.get(k * g4..(k + 1) * g4) else {
+                    break;
+                };
                 for (g, w) in gates.iter_mut().zip(row) {
                     *g += hv * w;
                 }
@@ -344,7 +464,10 @@ pub(crate) struct BiLstm {
 
 impl BiLstm {
     pub(crate) fn load(wt: &Weights, name: &str) -> R<BiLstm> {
-        Ok(BiLstm { fwd: LstmDir::load(wt, name, "")?, bwd: LstmDir::load(wt, name, "_reverse")? })
+        Ok(BiLstm {
+            fwd: LstmDir::load(wt, name, "")?,
+            bwd: LstmDir::load(wt, name, "_reverse")?,
+        })
     }
     pub(crate) fn fwd(&self, x: &Tensor) -> R<Tensor> {
         let x2 = x.squeeze(0).map_err(err)?.contiguous().map_err(err)?;

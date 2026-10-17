@@ -24,7 +24,11 @@ impl IosDevice for ETicketServices {
         match cmd {
             IOCTL_GET_TITLE_ID => {
                 if in_count != 0 || io_count != 1 {
-                    tracing::warn!(in_count, io_count, "ES_GetTitleID: unexpected vector counts");
+                    tracing::warn!(
+                        in_count,
+                        io_count,
+                        "ES_GetTitleID: unexpected vector counts"
+                    );
                     return ES_EINVAL;
                 }
 
@@ -33,8 +37,10 @@ impl IosDevice for ETicketServices {
                     return ES_EINVAL;
                 };
 
-                ctx.mmio.phys_write_u32(out_buf, (dvd.tmd_title_id() >> 32) as u32);
-                ctx.mmio.phys_write_u32(out_buf + 4, dvd.tmd_title_id() as u32);
+                ctx.mmio
+                    .phys_write_u32(out_buf, (dvd.tmd_title_id() >> 32) as u32);
+                ctx.mmio
+                    .phys_write_u32(out_buf + 4, dvd.tmd_title_id() as u32);
 
                 tracing::debug!(
                     title_id = format!("{:016X}", dvd.tmd_title_id()),
@@ -42,18 +48,22 @@ impl IosDevice for ETicketServices {
                     "ES_GetTitleID"
                 );
                 0
-            },
+            }
             IOCTL_GET_CONSUMPTION => {
                 tracing::warn!(in_count, io_count, "ES_GetConsumption: stubbed");
                 0
-            },
+            }
             IOCTL_DI_GET_TICKET_VIEW => {
                 tracing::warn!(in_count, io_count, "ES_DIGetTicketView: stubbed");
                 0
-            },
+            }
             IOCTL_GET_DATA_DIR => {
                 if in_count != 1 || io_count != 1 {
-                    tracing::warn!(in_count, io_count, "ES_GetDataDir: unexpected vector counts");
+                    tracing::warn!(
+                        in_count,
+                        io_count,
+                        "ES_GetDataDir: unexpected vector counts"
+                    );
                     return ES_EINVAL;
                 }
 
@@ -90,7 +100,7 @@ impl IosDevice for ETicketServices {
                     "ES_GetDataDir"
                 );
                 0
-            },
+            }
             _ => {
                 tracing::warn!(
                     device = &ctx.device_path,
@@ -101,7 +111,7 @@ impl IosDevice for ETicketServices {
                     "ETicketServices: unimplemented ioctlv"
                 );
                 ES_EINVAL
-            },
+            }
         }
     }
 }

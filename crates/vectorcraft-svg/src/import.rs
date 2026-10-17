@@ -6,10 +6,12 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use usvg::roxmltree;
-use vectorcraft_color::{BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint};
+use vectorcraft_color::{
+    BlendMode, Color, Gradient, GradientGeom, GradientKind, GradientPaint, GradientStop, Paint,
+};
 use vectorcraft_doc::{
-    Appearance, AppearanceItem, Dash, Document, FillLayer, ImageBlob, ImageObject, LayerColor, LineCap, LineJoin, Node, NodeId, NodeKind, PatternDef,
-    StrokeLayer, Unit,
+    Appearance, AppearanceItem, Dash, Document, FillLayer, ImageBlob, ImageObject, LayerColor,
+    LineCap, LineJoin, Node, NodeId, NodeKind, PatternDef, StrokeLayer, Unit,
 };
 use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, Point, Rect, Vec2, shapes};
 
@@ -32,8 +34,14 @@ mod vector_effect;
 pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<String>), SvgError> {
     let (svg, found) = prepass(svg, opts);
     let svg = svg.as_ref();
-    let xml = roxmltree::Document::parse_with_options(svg, roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() })
-        .map_err(|e| SvgError::Parse(e.to_string()))?;
+    let xml = roxmltree::Document::parse_with_options(
+        svg,
+        roxmltree::ParsingOptions {
+            allow_dtd: true,
+            ..Default::default()
+        },
+    )
+    .map_err(|e| SvgError::Parse(e.to_string()))?;
     let units = RootUnits::of(xml.root_element());
     let root_name = root_layer_name(xml.root_element());
     let mut warnings = found.warnings;
@@ -94,7 +102,11 @@ pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<S
     let is_layer = |im: &Importer, c: &usvg::Node| matches!(c, usvg::Node::Group(g) if !g.id().is_empty() && !made_up(g.id()) && !im.links.contains_key(g.id()) && !im.uses.contains_key(g.id()) && only_clips(g) && im.text_slot(g).is_none());
     let is_text = |im: &Importer, c: &usvg::Node| matches!(c, usvg::Node::Group(g) if im.text_slot(g).is_some());
     let layer_mode = |im: &Importer, top: &usvg::Group| {
-        top.children().iter().any(|c| is_layer(im, c)) && top.children().iter().all(|c| is_layer(im, c) || is_text(im, c))
+        top.children().iter().any(|c| is_layer(im, c))
+            && top
+                .children()
+                .iter()
+                .all(|c| is_layer(im, c) || is_text(im, c))
     };
     // The layers may sit in more wrappers (a transform on all the art, a `<switch>`'s group).
     if !layer_mode(&im, top) {
@@ -129,7 +141,9 @@ pub(crate) fn import(svg: &str, opts: &ImportOptions) -> Result<(Document, Vec<S
             // A clip path with no shape shows nothing of the layer: it stays, empty.
             let clip = match g.clip_path() {
                 Some(cp) => {
-                    art = im.clipped(cp, ts, art, &format!("layer '{name}'")).unwrap_or_default();
+                    art = im
+                        .clipped(cp, ts, art, &format!("layer '{name}'"))
+                        .unwrap_or_default();
                     !art.is_empty()
                 }
                 None => false,
@@ -178,8 +192,14 @@ const INKSCAPE: &str = "http://www.inkscape.org/namespaces/inkscape";
 /// The layer name on root element `root` (`<svg id="Main">`, or its `data-name`), as exports of
 /// one-layer documents write it. An Inkscape root's id (`svg8`) is one Inkscape made up, not a name.
 fn root_layer_name(root: XNode) -> Option<String> {
-    let id = root.attribute("id").filter(|_| root.attribute((INKSCAPE, "version")).is_none());
-    root.attribute("data-name").or(id).map(str::trim).filter(|n| !n.is_empty()).map(str::to_string)
+    let id = root
+        .attribute("id")
+        .filter(|_| root.attribute((INKSCAPE, "version")).is_none());
+    root.attribute("data-name")
+        .or(id)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .map(str::to_string)
 }
 
 /// Is element `g` a `<g>` marked as a layer ([`SUBLAYER`])? Only one with an id counts: the id (or
@@ -194,11 +214,18 @@ fn marked_layer(g: XNode) -> bool {
 /// layer `l` into its sublayers, in its colour, and theirs in turn. A marked group anywhere else
 /// (in a group, a mask, a symbol) stays a group: only layers hold layers.
 fn promote_sublayers(l: &mut Node, marked: &HashSet<NodeId>) {
-    let NodeKind::Layer { color, children, .. } = &mut l.kind else { return };
+    let NodeKind::Layer {
+        color, children, ..
+    } = &mut l.kind
+    else {
+        return;
+    };
     let color = *color;
     for c in children.iter_mut().filter(|c| marked.contains(&c.id)) {
         let c = Arc::make_mut(c);
-        let NodeKind::Group { children, clip } = &mut c.kind else { continue };
+        let NodeKind::Group { children, clip } = &mut c.kind else {
+            continue;
+        };
         let mut sub = Node::layer(c.id, "", color);
         sub.set_clips(*clip);
         if let Some(ch) = sub.children_mut() {
@@ -231,11 +258,19 @@ struct RootUnits {
 
 impl RootUnits {
     fn of(root: XNode) -> Self {
-        let unit = |name: &str| root.attribute(name).and_then(|v| svgtypes::Length::from_str(v.trim()).ok()).map(|l| l.unit);
+        let unit = |name: &str| {
+            root.attribute(name)
+                .and_then(|v| svgtypes::Length::from_str(v.trim()).ok())
+                .map(|l| l.unit)
+        };
         use svgtypes::LengthUnit as U;
         let physical = |u: Option<U>| matches!(u, Some(U::In | U::Cm | U::Mm | U::Pt | U::Pc));
         let (w, h) = (unit("width"), unit("height"));
-        let (dpi, k) = if physical(w) || physical(h) { (CSS_PX_PER_IN, PT_PER_IN / CSS_PX_PER_IN) } else { (PT_PER_IN, 1.0) };
+        let (dpi, k) = if physical(w) || physical(h) {
+            (CSS_PX_PER_IN, PT_PER_IN / CSS_PX_PER_IN)
+        } else {
+            (PT_PER_IN, 1.0)
+        };
         let unit = match w {
             Some(U::Mm) => Unit::Millimeters,
             Some(U::Cm) => Unit::Centimeters,
@@ -279,7 +314,11 @@ fn filter_names(filters: &[Arc<usvg::filter::Filter>]) -> String {
                     kinds.push(k);
                 }
             }
-            let id = if f.id().is_empty() || made_up(f.id()) { String::new() } else { format!("'{}' ", f.id()) };
+            let id = if f.id().is_empty() || made_up(f.id()) {
+                String::new()
+            } else {
+                format!("'{}' ", f.id())
+            };
             format!("{id}({})", kinds.join(", "))
         })
         .collect();
@@ -288,11 +327,22 @@ fn filter_names(filters: &[Arc<usvg::filter::Filter>]) -> String {
 
 /// Inkscape's pages (`<inkscape:page>` in its `<sodipodi:namedview>`, in user units) as artboards
 /// through `user` (user units → document points), named by their labels; `None` without any.
-fn inkscape_pages(xml: &roxmltree::Document, user: Affine) -> Option<Vec<vectorcraft_doc::Artboard>> {
-    let num = |n: roxmltree::Node, a: &str| n.attribute(a).and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite());
+fn inkscape_pages(
+    xml: &roxmltree::Document,
+    user: Affine,
+) -> Option<Vec<vectorcraft_doc::Artboard>> {
+    let num = |n: roxmltree::Node, a: &str| {
+        n.attribute(a)
+            .and_then(|v| v.trim().parse::<f64>().ok())
+            .filter(|v| v.is_finite())
+    };
     let pages: Vec<vectorcraft_doc::Artboard> = xml
         .descendants()
-        .filter(|n| n.is_element() && n.tag_name().name() == "page" && n.tag_name().namespace() == Some(INKSCAPE))
+        .filter(|n| {
+            n.is_element()
+                && n.tag_name().name() == "page"
+                && n.tag_name().namespace() == Some(INKSCAPE)
+        })
         .filter_map(|p| {
             let (w, h) = (num(p, "width")?, num(p, "height")?);
             let (x, y) = (num(p, "x").unwrap_or(0.0), num(p, "y").unwrap_or(0.0));
@@ -304,7 +354,10 @@ fn inkscape_pages(xml: &roxmltree::Document, user: Affine) -> Option<Vec<vectorc
         .enumerate()
         .map(|(i, (p, r))| vectorcraft_doc::Artboard {
             id: i as u32 + 1,
-            name: p.attribute((INKSCAPE, "label")).filter(|l| !l.trim().is_empty()).map_or_else(|| format!("Artboard {}", i + 1), str::to_string),
+            name: p
+                .attribute((INKSCAPE, "label"))
+                .filter(|l| !l.trim().is_empty())
+                .map_or_else(|| format!("Artboard {}", i + 1), str::to_string),
             rect: r,
             show_center_mark: false,
             show_cross_hairs: false,
@@ -402,7 +455,10 @@ fn midpoint_stops(xml: &roxmltree::Document) -> HashMap<String, Vec<Option<f32>>
                 .filter(|c| c.tag_name().name() == "stop")
                 .map(|c| c.attribute("data-vc-midpoint").and_then(|v| v.parse().ok()))
                 .collect();
-            marks.iter().any(Option::is_some).then(|| (id.to_string(), marks))
+            marks
+                .iter()
+                .any(Option::is_some)
+                .then(|| (id.to_string(), marks))
         })
         .collect()
 }
@@ -413,12 +469,18 @@ fn gradient_stops(g: &usvg::BaseGradient, marks: Option<&[Option<f32>]>) -> Vec<
     let marks = marks.filter(|m| m.len() == g.stops().len());
     let mut out: Vec<GradientStop> = Vec::with_capacity(g.stops().len());
     for (i, s) in g.stops().iter().enumerate() {
-        if let (Some(mid), Some(prev)) = (marks.and_then(|m| m.get(i).copied().flatten()), out.last_mut()) {
+        if let (Some(mid), Some(prev)) = (
+            marks.and_then(|m| m.get(i).copied().flatten()),
+            out.last_mut(),
+        ) {
             prev.midpoint = mid.clamp(0.0, 1.0);
             continue;
         }
         let c = s.color();
-        out.push(GradientStop { opacity: s.opacity().get(), ..GradientStop::new(s.offset().get(), Color::rgb8(c.red, c.green, c.blue)) });
+        out.push(GradientStop {
+            opacity: s.opacity().get(),
+            ..GradientStop::new(s.offset().get(), Color::rgb8(c.red, c.green, c.blue))
+        });
     }
     out
 }
@@ -431,10 +493,19 @@ fn mask_flags(xml: &roxmltree::Document) -> HashMap<String, (bool, bool)> {
         return HashMap::new();
     }
     let flags = |n: roxmltree::Node| {
-        let has = |f: &str| n.attribute(attr).is_some_and(|v| v.split_whitespace().any(|x| x == f));
-        Some((n.attribute("id")?.to_string(), (!has("noclip"), has("invert"))))
+        let has = |f: &str| {
+            n.attribute(attr)
+                .is_some_and(|v| v.split_whitespace().any(|x| x == f))
+        };
+        Some((
+            n.attribute("id")?.to_string(),
+            (!has("noclip"), has("invert")),
+        ))
     };
-    xml.descendants().filter(|n| n.tag_name().name() == "mask" && n.has_attribute(attr)).filter_map(flags).collect()
+    xml.descendants()
+        .filter(|n| n.tag_name().name() == "mask" && n.has_attribute(attr))
+        .filter_map(flags)
+        .collect()
 }
 
 /// Prefix of the ids [`prepass`] gives the elements it has to find again that have none.
@@ -447,7 +518,9 @@ fn made_up(id: &str) -> bool {
 
 /// The URL an `<a>` element links to.
 pub(super) fn href<'a>(a: XNode<'a, '_>) -> Option<&'a str> {
-    a.attribute("href").or_else(|| a.attribute(("http://www.w3.org/1999/xlink", "href"))).filter(|h| !h.is_empty())
+    a.attribute("href")
+        .or_else(|| a.attribute(("http://www.w3.org/1999/xlink", "href")))
+        .filter(|h| !h.is_empty())
 }
 
 /// What usvg would lose, found in the XML before it runs ([`prepass`]).
@@ -499,7 +572,10 @@ impl Edits {
 
     /// Set attribute `name` of element `n` (in `svg`) to `value` (XML-escaped already).
     pub(super) fn set(&mut self, svg: &str, n: XNode, name: &str, value: &str) {
-        match n.attributes().find(|a| a.name() == name && a.namespace().is_none()) {
+        match n
+            .attributes()
+            .find(|a| a.name() == name && a.namespace().is_none())
+        {
             Some(a) => self.list.push((a.range_value(), value.to_string())),
             None => self.insert(tag_name_end(svg, n), format!(" {name}=\"{value}\"")),
         }
@@ -513,10 +589,14 @@ impl Edits {
         }
         // Stable: inserts at one place keep their order.
         self.list.sort_by_key(|(r, _)| (r.start, r.end));
-        let mut out = String::with_capacity(svg.len() + self.list.iter().map(|(_, t)| t.len()).sum::<usize>());
+        let mut out = String::with_capacity(
+            svg.len() + self.list.iter().map(|(_, t)| t.len()).sum::<usize>(),
+        );
         let mut last = 0;
         for (r, text) in self.list {
-            let (Some(part), Some(_)) = (svg.get(last..r.start), svg.get(r.clone())) else { continue };
+            let (Some(part), Some(_)) = (svg.get(last..r.start), svg.get(r.clone())) else {
+                continue;
+            };
             out.push_str(part);
             out.push_str(&text);
             last = r.end;
@@ -540,11 +620,29 @@ fn prepass<'s>(svg: &'s str, opts: &ImportOptions) -> (Cow<'s, str>, Found) {
     // (`:` for prefixed elements such as `<svg:image>`.)
     let css_transform = has_css_transform(svg);
     if !css_transform
-        && !["<a", "display", "<use", ":use", "<image", ":image", vector_effect::NON_SCALING, "data-", "groupmode"].iter().any(|t| svg.contains(t))
+        && ![
+            "<a",
+            "display",
+            "<use",
+            ":use",
+            "<image",
+            ":image",
+            vector_effect::NON_SCALING,
+            "data-",
+            "groupmode",
+        ]
+        .iter()
+        .any(|t| svg.contains(t))
     {
         return (svg.into(), found);
     }
-    let Ok(xml) = roxmltree::Document::parse_with_options(svg, roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() }) else {
+    let Ok(xml) = roxmltree::Document::parse_with_options(
+        svg,
+        roxmltree::ParsingOptions {
+            allow_dtd: true,
+            ..Default::default()
+        },
+    ) else {
         return (svg.into(), found);
     };
     let mut edits = Edits::default();
@@ -562,21 +660,41 @@ fn prepass<'s>(svg: &'s str, opts: &ImportOptions) -> (Cow<'s, str>, Found) {
             }
         }
     }
-    found.sublayers = elements().filter(|g| marked_layer(*g)).filter_map(|g| g.attribute("id")).map(str::to_string).collect();
-    let symbols: HashSet<&str> = elements().filter(|n| n.tag_name().name() == "symbol").filter_map(|n| n.attribute("id")).collect();
+    found.sublayers = elements()
+        .filter(|g| marked_layer(*g))
+        .filter_map(|g| g.attribute("id"))
+        .map(str::to_string)
+        .collect();
+    let symbols: HashSet<&str> = elements()
+        .filter(|n| n.tag_name().name() == "symbol")
+        .filter_map(|n| n.attribute("id"))
+        .collect();
     for u in elements().filter(|n| n.tag_name().name() == "use") {
-        if let Some(sym) = href(u).and_then(|h| h.strip_prefix('#')).filter(|s| symbols.contains(s)) {
+        if let Some(sym) = href(u)
+            .and_then(|h| h.strip_prefix('#'))
+            .filter(|s| symbols.contains(s))
+        {
             found.uses.insert(edits.id(svg, u), sym.to_string());
         }
     }
-    let (display, non_scaling) = (svg.contains("display"), svg.contains(vector_effect::NON_SCALING));
+    let (display, non_scaling) = (
+        svg.contains("display"),
+        svg.contains(vector_effect::NON_SCALING),
+    );
     if display || non_scaling {
         let css = css::Styles::new(&xml);
         if display {
             hidden_objects(svg, &xml, &css, &mut edits, &mut found.hidden);
         }
         if non_scaling {
-            vector_effect::find(svg, &xml, &css, &mut edits, &mut found.non_scaling, &mut found.warnings);
+            vector_effect::find(
+                svg,
+                &xml,
+                &css,
+                &mut edits,
+                &mut found.non_scaling,
+                &mut found.warnings,
+            );
         }
     }
     found.files = files::Files::read(svg, &xml, opts, &mut edits, &mut found.warnings);
@@ -591,17 +709,37 @@ fn prepass<'s>(svg: &'s str, opts: &ImportOptions) -> (Cow<'s, str>, Found) {
 
 /// Is there a `transform` CSS declaration in `svg` (`transform` followed by `:`)?
 fn has_css_transform(svg: &str) -> bool {
-    svg.match_indices("transform").any(|(i, t)| svg.get(i + t.len()..).is_some_and(|s| s.trim_start().starts_with(':')))
+    svg.match_indices("transform").any(|(i, t)| {
+        svg.get(i + t.len()..)
+            .is_some_and(|s| s.trim_start().starts_with(':'))
+    })
 }
 
 /// The elements that are objects (what [`hidden_objects`] shows).
-const OBJECTS: &[&str] = &["g", "a", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "image", "text", "use"];
+const OBJECTS: &[&str] = &[
+    "g", "a", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "image", "text",
+    "use",
+];
 
 /// Show the undisplayed objects outside `<defs>` (and the like) for usvg, recording their ids. The
 /// objects in a `<switch>` count too (some apps wrap all their layers in one).
-fn hidden_objects(svg: &str, xml: &roxmltree::Document, css: &css::Styles, edits: &mut Edits, ids: &mut HashSet<String>) {
-    let linked: HashSet<&str> = xml.descendants().filter_map(href).filter_map(|h| h.strip_prefix('#')).collect();
-    let mut todo: Vec<XNode> = xml.root_element().children().filter(XNode::is_element).collect();
+fn hidden_objects(
+    svg: &str,
+    xml: &roxmltree::Document,
+    css: &css::Styles,
+    edits: &mut Edits,
+    ids: &mut HashSet<String>,
+) {
+    let linked: HashSet<&str> = xml
+        .descendants()
+        .filter_map(href)
+        .filter_map(|h| h.strip_prefix('#'))
+        .collect();
+    let mut todo: Vec<XNode> = xml
+        .root_element()
+        .children()
+        .filter(XNode::is_element)
+        .collect();
     while let Some(n) = todo.pop() {
         let tag = n.tag_name().name();
         if n.attribute("id").is_some_and(|id| linked.contains(id)) {
@@ -615,9 +753,15 @@ fn hidden_objects(svg: &str, xml: &roxmltree::Document, css: &css::Styles, edits
         }
         ids.insert(edits.id(svg, n));
         // A `style` declaration wins over the attribute and style sheet rules.
-        match n.attributes().find(|a| a.name() == "style" && a.namespace().is_none()) {
+        match n
+            .attributes()
+            .find(|a| a.name() == "style" && a.namespace().is_none())
+        {
             Some(a) => edits.insert(a.range_value().end, ";display:inline".to_string()),
-            None => edits.insert(tag_name_end(svg, n), " style=\"display:inline\"".to_string()),
+            None => edits.insert(
+                tag_name_end(svg, n),
+                " style=\"display:inline\"".to_string(),
+            ),
         }
     }
 }
@@ -625,11 +769,15 @@ fn hidden_objects(svg: &str, xml: &roxmltree::Document, css: &css::Styles, edits
 /// Where the start tag of element `n` ends its name (where an attribute can go).
 fn tag_name_end(svg: &str, n: XNode) -> usize {
     let start = n.range().start;
-    svg.get(start + 1..).and_then(|s| s.find(|c: char| c.is_whitespace() || c == '/' || c == '>')).map_or(start + 2, |i| start + 1 + i)
+    svg.get(start + 1..)
+        .and_then(|s| s.find(|c: char| c.is_whitespace() || c == '/' || c == '>'))
+        .map_or(start + 2, |i| start + 1 + i)
 }
 
 /// The elements that become objects, whose `data-*` attributes are kept.
-const OBJECT_ELEMENTS: &[&str] = &["g", "a", "use", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "image"];
+const OBJECT_ELEMENTS: &[&str] = &[
+    "g", "a", "use", "path", "rect", "circle", "ellipse", "line", "polyline", "polygon", "image",
+];
 
 /// The most `data-*` attributes kept per element (the file is untrusted).
 const MAX_DATA: usize = 64;
@@ -671,7 +819,14 @@ fn labels(xml: &roxmltree::Document) -> HashMap<String, String> {
 }
 
 fn aff(t: usvg::Transform) -> Affine {
-    Affine::new([t.sx as f64, t.ky as f64, t.kx as f64, t.sy as f64, t.tx as f64, t.ty as f64])
+    Affine::new([
+        t.sx as f64,
+        t.ky as f64,
+        t.kx as f64,
+        t.sy as f64,
+        t.tx as f64,
+        t.ty as f64,
+    ])
 }
 
 fn is_plain(g: &usvg::Group) -> bool {
@@ -680,7 +835,10 @@ fn is_plain(g: &usvg::Group) -> bool {
 
 /// Does group `g` leave its art as it is, but for a clip path (no mask, filter, opacity or blend)?
 fn only_clips(g: &usvg::Group) -> bool {
-    g.mask().is_none() && g.filters().is_empty() && g.opacity().get() >= 1.0 && g.blend_mode() == usvg::BlendMode::Normal
+    g.mask().is_none()
+        && g.filters().is_empty()
+        && g.opacity().get() >= 1.0
+        && g.blend_mode() == usvg::BlendMode::Normal
 }
 
 fn blend(b: usvg::BlendMode) -> BlendMode {
@@ -727,7 +885,10 @@ fn clip_shapes(cp: &usvg::ClipPath, ts: Affine) -> Vec<(BezPath, FillRule)> {
         for c in g.children() {
             match c {
                 usvg::Node::Group(g) => collect(g, m * aff(g.transform()), out),
-                usvg::Node::Path(p) => out.push((bezpath(p.data(), m), p.fill().map(|f| rule(f.rule())).unwrap_or_default())),
+                usvg::Node::Path(p) => out.push((
+                    bezpath(p.data(), m),
+                    p.fill().map(|f| rule(f.rule())).unwrap_or_default(),
+                )),
                 _ => {}
             }
         }
@@ -740,7 +901,9 @@ fn clip_shapes(cp: &usvg::ClipPath, ts: Affine) -> Vec<(BezPath, FillRule)> {
 /// Does clip path `cp` (on an element whose user space `ts` maps to the document) leave `art`,
 /// placed by `xf`, whole? (Only its bounds are checked: the box must be inside a clip shape.)
 fn uncut(cp: &usvg::ClipPath, ts: Affine, art: &Node, xf: Affine) -> bool {
-    let Some(b) = art.visual_bounds() else { return false };
+    let Some(b) = art.visual_bounds() else {
+        return false;
+    };
     if cp.clip_path().is_some() {
         return false;
     }
@@ -748,8 +911,17 @@ fn uncut(cp: &usvg::ClipPath, ts: Affine, art: &Node, xf: Affine) -> bool {
     let e = 1e-6 * (b.width() + b.height()).max(1e-9);
     let b = b.inflate(-e, -e);
     let shapes = clip_shapes(cp, ts);
-    let corners = [Point::new(b.x0, b.y0), Point::new(b.x1, b.y0), Point::new(b.x1, b.y1), Point::new(b.x0, b.y1)];
-    corners.iter().all(|c| shapes.iter().any(|(s, _)| kurbo::Shape::contains(s, xf * *c)))
+    let corners = [
+        Point::new(b.x0, b.y0),
+        Point::new(b.x1, b.y0),
+        Point::new(b.x1, b.y1),
+        Point::new(b.x0, b.y1),
+    ];
+    corners.iter().all(|c| {
+        shapes
+            .iter()
+            .any(|(s, _)| kurbo::Shape::contains(s, xf * *c))
+    })
 }
 
 fn rule(r: usvg::FillRule) -> FillRule {
@@ -770,13 +942,21 @@ impl Importer {
     /// it as it is (but for a transform) and isn't a text.
     fn wrapper<'g>(&self, g: &'g usvg::Group) -> Option<&'g usvg::Group> {
         match g.children() {
-            [usvg::Node::Group(w)] if w.id().is_empty() && is_plain(w) && self.text_slot(w).is_none() => Some(w),
+            [usvg::Node::Group(w)]
+                if w.id().is_empty() && is_plain(w) && self.text_slot(w).is_none() =>
+            {
+                Some(w)
+            }
             _ => None,
         }
     }
 
     fn children(&mut self, g: &usvg::Group, acc: Affine) -> Vec<Arc<Node>> {
-        g.children().iter().filter_map(|c| self.node(c, acc)).map(Arc::new).collect()
+        g.children()
+            .iter()
+            .filter_map(|c| self.node(c, acc))
+            .map(Arc::new)
+            .collect()
     }
 
     fn node(&mut self, n: &usvg::Node, acc: Affine) -> Option<Node> {
@@ -797,7 +977,11 @@ impl Importer {
     /// Give `n` the `data-*` attributes of element `id`, unless it has data already (what an
     /// inner element made of it keeps).
     fn keep_data(&self, id: &str, n: &mut Node) {
-        if let Some(data) = self.data.get(id).filter(|_| n.extras().attrs.as_ref().is_none_or(|a| a.data.is_empty())) {
+        if let Some(data) = self
+            .data
+            .get(id)
+            .filter(|_| n.extras().attrs.as_ref().is_none_or(|a| a.data.is_empty()))
+        {
             n.edit_attrs(|a| a.data = data.clone());
         }
     }
@@ -858,18 +1042,35 @@ impl Importer {
         let art = match kids.len() {
             0 => return None,
             1 => Arc::unwrap_or_clone(kids.pop()?),
-            _ => self.named("", NodeKind::Group { children: kids, clip: false }),
+            _ => self.named(
+                "",
+                NodeKind::Group {
+                    children: kids,
+                    clip: false,
+                },
+            ),
         };
         // usvg clips a `<use>` of a symbol to its viewport: that only counts when it cuts the art.
         let whole = g.clip_path().is_none_or(|cp| uncut(cp, ts, &art, xf));
         let name = match self.symbols.get(&sym) {
-            Some(made) if whole && made.art == without_ids(&art) && made.reuse.allows(xf) => made.name.clone(),
+            Some(made) if whole && made.art == without_ids(&art) && made.reuse.allows(xf) => {
+                made.name.clone()
+            }
             Some(_) => return None,
             None => {
-                let name = unique_name(self.name_of(&sym), |n| self.doc.symbols.iter().any(|s| s.name == n));
+                let name = unique_name(self.name_of(&sym), |n| {
+                    self.doc.symbols.iter().any(|s| s.name == n)
+                });
                 let reuse = Reuse::of(&self.doc, &art);
-                let made = SymbolMade { name: name.clone(), art: without_ids(&art), reuse };
-                self.doc.symbols.push(vectorcraft_doc::Symbol { name: name.clone(), art: Arc::new(art) });
+                let made = SymbolMade {
+                    name: name.clone(),
+                    art: without_ids(&art),
+                    reuse,
+                };
+                self.doc.symbols.push(vectorcraft_doc::Symbol {
+                    name: name.clone(),
+                    art: Arc::new(art),
+                });
                 self.symbols.insert(sym, made);
                 if !whole || !reuse.allows(xf) {
                     return None;
@@ -877,7 +1078,11 @@ impl Importer {
                 name
             }
         };
-        let label = if made_up(g.id()) { "a symbol instance".to_string() } else { format!("'{}'", g.id()) };
+        let label = if made_up(g.id()) {
+            "a symbol instance".to_string()
+        } else {
+            format!("'{}'", g.id())
+        };
         let mask = g.mask().and_then(|m| self.opacity_mask(m, ts, &label));
         let mut n = self.named(g.id(), NodeKind::SymbolInstance { symbol: name, xf });
         n.opacity = g.opacity().get();
@@ -902,7 +1107,15 @@ impl Importer {
         if !matches!(kids.get(main), Some(usvg::Node::Path(p)) if p.is_visible()) {
             return Some(vec![]);
         }
-        let text::PendingText { name, mut obj, servers, paints, non_scaling, under, .. } = self.slots.texts.get(i)?.clone();
+        let text::PendingText {
+            name,
+            mut obj,
+            servers,
+            paints,
+            non_scaling,
+            under,
+            ..
+        } = self.slots.texts.get(i)?.clone();
         // The scale the type draws at becomes its size (last, below): text space grows by `grow`.
         let xf = ts * obj.xf;
         let grow = text::size_scale(&obj, xf);
@@ -928,16 +1141,29 @@ impl Importer {
         }
         obj.xf = xf;
         if non_scaling && !vector_effect::unscale_text(&mut obj, self.screen) {
-            let label = if name.is_empty() || made_up(&name) { "a text".to_string() } else { format!("text '{name}'") };
-            self.warn(format!("non-scaling stroke on {label} approximated: the text is stretched or skewed"));
+            let label = if name.is_empty() || made_up(&name) {
+                "a text".to_string()
+            } else {
+                format!("text '{name}'")
+            };
+            self.warn(format!(
+                "non-scaling stroke on {label} approximated: the text is stretched or skewed"
+            ));
         }
         // A stroke under the characters is the object's own: it paints in the document.
         let under = under.map(|(mut sl, k)| {
             if let Some(k) = k {
                 sl.paint = slot_paint(self, k, ts);
             }
-            let mut ap = Appearance { items: vec![AppearanceItem::Stroke(sl)], ..Default::default() };
-            ap.scale_strokes(if non_scaling { self.screen } else { obj.xf.determinant().abs().sqrt() });
+            let mut ap = Appearance {
+                items: vec![AppearanceItem::Stroke(sl)],
+                ..Default::default()
+            };
+            ap.scale_strokes(if non_scaling {
+                self.screen
+            } else {
+                obj.xf.determinant().abs().sqrt()
+            });
             ap.set_contents_at(1);
             ap
         });
@@ -958,9 +1184,16 @@ impl Importer {
         }
         let is_text = text.is_some();
         // Made-up ids aren't names.
-        let id = if is_text || made_up(g.id()) { "" } else { g.id() };
+        let id = if is_text || made_up(g.id()) {
+            ""
+        } else {
+            g.id()
+        };
         let label = match (&text, id) {
-            (Some(t), _) => t.first().and_then(|n| n.name.as_deref()).map_or_else(|| "a text".to_string(), |n| format!("text '{n}'")),
+            (Some(t), _) => t
+                .first()
+                .and_then(|n| n.name.as_deref())
+                .map_or_else(|| "a text".to_string(), |n| format!("text '{n}'")),
             (None, "") => "a group".to_string(),
             (None, id) => format!("'{id}'"),
         };
@@ -981,7 +1214,10 @@ impl Importer {
                     }
                     _ => label.clone(),
                 };
-                self.warn(format!("filter {} on {on} isn't supported; drawn without it", filter_names(filters)));
+                self.warn(format!(
+                    "filter {} on {on} isn't supported; drawn without it",
+                    filter_names(filters)
+                ));
                 vec![]
             }),
         };
@@ -992,12 +1228,24 @@ impl Importer {
         let mut n = if let Some(cp) = g.clip_path() {
             // SVG filters before it clips: the effects go on the art inside the clip.
             if !effects.is_empty() {
-                let mut inner = self.named("", NodeKind::Group { children, clip: false });
+                let mut inner = self.named(
+                    "",
+                    NodeKind::Group {
+                        children,
+                        clip: false,
+                    },
+                );
                 inner.appearance.effects = effects.clone();
                 children = vec![Arc::new(inner)];
             }
             let children = self.clipped(cp, ts, children, &label)?;
-            self.named(id, NodeKind::Group { children, clip: true })
+            self.named(
+                id,
+                NodeKind::Group {
+                    children,
+                    clip: true,
+                },
+            )
         } else {
             if children.is_empty() {
                 return None;
@@ -1007,8 +1255,11 @@ impl Importer {
             // blends or masks before the effects). A text takes its own mask too.
             if (is_text || id.is_empty() && mask.is_none())
                 && children.len() == 1
-                && (g.blend_mode() == usvg::BlendMode::Normal || children[0].blend == BlendMode::Normal)
-                && (effects.is_empty() || children[0].blend == BlendMode::Normal && children[0].extras().mask.is_none())
+                && (g.blend_mode() == usvg::BlendMode::Normal
+                    || children[0].blend == BlendMode::Normal)
+                && (effects.is_empty()
+                    || children[0].blend == BlendMode::Normal
+                        && children[0].extras().mask.is_none())
                 && let Some(only) = children.pop()
             {
                 let mut c = Arc::unwrap_or_clone(only);
@@ -1023,7 +1274,13 @@ impl Importer {
                 c.appearance.effects.extend(effects);
                 return Some(c);
             }
-            let mut n = self.named(id, NodeKind::Group { children, clip: false });
+            let mut n = self.named(
+                id,
+                NodeKind::Group {
+                    children,
+                    clip: false,
+                },
+            );
             n.appearance.effects = effects;
             n
         };
@@ -1040,14 +1297,25 @@ impl Importer {
     /// `<mask>` → opacity mask (luminance; alpha masks are approximated by their luminance). A
     /// mask our export wrote gets its options back ([`mask_flags`]) and its art without what
     /// stands for them: the inverting filter group and the backdrop rectangle.
-    fn opacity_mask(&mut self, m: &usvg::Mask, ts: Affine, label: &str) -> Option<Box<vectorcraft_doc::OpacityMask>> {
+    fn opacity_mask(
+        &mut self,
+        m: &usvg::Mask,
+        ts: Affine,
+        label: &str,
+    ) -> Option<Box<vectorcraft_doc::OpacityMask>> {
         if m.kind() == usvg::MaskType::Alpha {
-            self.warn(format!("alpha mask on {label} imported as a luminance opacity mask"));
+            self.warn(format!(
+                "alpha mask on {label} imported as a luminance opacity mask"
+            ));
         }
         if m.mask().is_some() {
             self.warn(format!("nested mask on {label} ignored"));
         }
-        let (clip, invert) = self.mask_flags.get(m.id()).copied().unwrap_or((true, false));
+        let (clip, invert) = self
+            .mask_flags
+            .get(m.id())
+            .copied()
+            .unwrap_or((true, false));
         let (mut nodes, mut ts) = (m.root().children(), ts);
         if invert
             && let [usvg::Node::Group(g)] = nodes
@@ -1060,12 +1328,22 @@ impl Importer {
         {
             nodes = rest;
         }
-        let mut children: Vec<Arc<Node>> = nodes.iter().filter_map(|c| self.node(c, ts)).map(Arc::new).collect();
+        let mut children: Vec<Arc<Node>> = nodes
+            .iter()
+            .filter_map(|c| self.node(c, ts))
+            .map(Arc::new)
+            .collect();
         // Mask art that is all hidden draws nothing: that is an empty mask, not no mask (black all
         // over when clipped, white when not, inverted when the mask is).
         let art = match children.len() {
             1 => Arc::unwrap_or_clone(children.pop()?),
-            _ => self.named("", NodeKind::Group { children, clip: false }),
+            _ => self.named(
+                "",
+                NodeKind::Group {
+                    children,
+                    clip: false,
+                },
+            ),
         };
         let mut mask = vectorcraft_doc::OpacityMask::new(art, clip);
         mask.invert = invert;
@@ -1076,7 +1354,13 @@ impl Importer {
     /// children of a clip group or clipping layer, its clipping path first. A clip path clipped in
     /// turn (`<clipPath clip-path>`) nests one clip group in another, so the clips intersect.
     /// `None` when the clip path has no shape (nothing shows).
-    fn clipped(&mut self, cp: &usvg::ClipPath, ts: Affine, mut children: Vec<Arc<Node>>, label: &str) -> Option<Vec<Arc<Node>>> {
+    fn clipped(
+        &mut self,
+        cp: &usvg::ClipPath,
+        ts: Affine,
+        mut children: Vec<Arc<Node>>,
+        label: &str,
+    ) -> Option<Vec<Arc<Node>>> {
         let mut clips = vec![self.clip_node(cp, ts)?];
         let mut next = cp.clip_path();
         while let Some(c) = next {
@@ -1091,7 +1375,13 @@ impl Importer {
         for clip in clips {
             let mut ch = vec![Arc::new(clip)];
             ch.extend(children);
-            children = vec![Arc::new(self.named("", NodeKind::Group { children: ch, clip: true }))];
+            children = vec![Arc::new(self.named(
+                "",
+                NodeKind::Group {
+                    children: ch,
+                    clip: true,
+                },
+            ))];
         }
         let mut ch = vec![Arc::new(outer)];
         ch.extend(children);
@@ -1104,10 +1394,21 @@ impl Importer {
         if art.is_empty() {
             return;
         }
-        if let NodeKind::Layer { children, clip: clip @ true, .. } = &mut l.kind {
+        if let NodeKind::Layer {
+            children,
+            clip: clip @ true,
+            ..
+        } = &mut l.kind
+        {
             *clip = false;
             let clipped = std::mem::take(children);
-            children.push(Arc::new(self.named("", NodeKind::Group { children: clipped, clip: true })));
+            children.push(Arc::new(self.named(
+                "",
+                NodeKind::Group {
+                    children: clipped,
+                    clip: true,
+                },
+            )));
         }
         if let Some(ch) = l.children_mut() {
             let i = index.min(ch.len());
@@ -1128,13 +1429,31 @@ impl Importer {
         let id = cp.id().to_string();
         if subs.len() == 1 {
             let path = PathData::new(subs);
-            return Some(self.named(&id, NodeKind::Path { path, rule: r, live: None, clipping: true, guide: false }));
+            return Some(self.named(
+                &id,
+                NodeKind::Path {
+                    path,
+                    rule: r,
+                    live: None,
+                    clipping: true,
+                    guide: false,
+                },
+            ));
         }
         let children = subs
             .into_iter()
             .map(|sp| {
                 let nid = self.doc.alloc_id();
-                Arc::new(Node::new(nid, NodeKind::Path { path: PathData::single(sp), rule: r, live: None, clipping: false, guide: false }))
+                Arc::new(Node::new(
+                    nid,
+                    NodeKind::Path {
+                        path: PathData::single(sp),
+                        rule: r,
+                        live: None,
+                        clipping: false,
+                        guide: false,
+                    },
+                ))
             })
             .collect();
         Some(self.named(&id, NodeKind::Compound { children, rule: r }))
@@ -1161,7 +1480,12 @@ impl Importer {
                     self.warn(format!("gradient '{}': focal radius ignored", rg.id()));
                 }
                 let c = Point::new(rg.cx() as f64, rg.cy() as f64);
-                let mut geom = GradientGeom { start: c, end: c + Vec2::new(rg.r().get() as f64, 0.0), aspect: 1.0, focal: None };
+                let mut geom = GradientGeom {
+                    start: c,
+                    end: c + Vec2::new(rg.r().get() as f64, 0.0),
+                    aspect: 1.0,
+                    focal: None,
+                };
                 // A focal point outside the circle is pulled inside it.
                 geom.set_focal(Some(Point::new(rg.fx() as f64, rg.fy() as f64)));
                 let base: &usvg::BaseGradient = rg;
@@ -1178,10 +1502,15 @@ impl Importer {
         if let Some(reflect) = reflect {
             match area.map(|a| spread::expand(kind, &mut geom, &mut stops, reflect, a)) {
                 Some(spread::Expanded::Whole) => {}
-                Some(spread::Expanded::Capped) => {
-                    self.warn(format!("gradient '{}': spreadMethod repeats more than {} times; it pads after that", base.id(), spread::MAX_PERIODS))
-                }
-                None => self.warn(format!("gradient '{}': spreadMethod approximated as pad", base.id())),
+                Some(spread::Expanded::Capped) => self.warn(format!(
+                    "gradient '{}': spreadMethod repeats more than {} times; it pads after that",
+                    base.id(),
+                    spread::MAX_PERIODS
+                )),
+                None => self.warn(format!(
+                    "gradient '{}': spreadMethod approximated as pad",
+                    base.id()
+                )),
             }
         }
         Paint::Gradient(Box::new(GradientPaint {
@@ -1200,19 +1529,40 @@ impl Importer {
         let xf = m * aff(pt.transform()) * Affine::translate((r.x() as f64, r.y() as f64));
         let key = Arc::as_ptr(pt) as usize;
         if let Some(name) = self.patterns.get(&key) {
-            return Paint::Pattern { pattern: name.clone(), xf };
+            return Paint::Pattern {
+                pattern: name.clone(),
+                xf,
+            };
         }
         let tile = Rect::new(0.0, 0.0, r.width() as f64, r.height() as f64);
         let content = self.children(pt.root(), aff(pt.root().transform()));
         if content.is_empty() {
             return Paint::None;
         }
-        let clip =
-            self.named("", NodeKind::Path { path: shapes::rectangle(tile), rule: FillRule::NonZero, live: None, clipping: true, guide: false });
+        let clip = self.named(
+            "",
+            NodeKind::Path {
+                path: shapes::rectangle(tile),
+                rule: FillRule::NonZero,
+                live: None,
+                clipping: true,
+                guide: false,
+            },
+        );
         let mut children = vec![Arc::new(clip)];
         children.extend(content);
-        let art = self.named("", NodeKind::Group { children, clip: true });
-        let base = if pt.id().is_empty() { "Pattern" } else { pt.id() };
+        let art = self.named(
+            "",
+            NodeKind::Group {
+                children,
+                clip: true,
+            },
+        );
+        let base = if pt.id().is_empty() {
+            "Pattern"
+        } else {
+            pt.id()
+        };
         let name = unique_name(base, |n| self.doc.pattern(n).is_some());
         let mut def = PatternDef::new(&name, vec![Arc::new(art)]);
         def.tile = tile;
@@ -1222,7 +1572,12 @@ impl Importer {
     }
 
     /// The fill and stroke of `p` mapped by `m`; `area`: the bounds of the path after `m`.
-    fn appearance(&mut self, p: &usvg::Path, m: Affine, area: Option<Rect>) -> (Appearance, FillRule) {
+    fn appearance(
+        &mut self,
+        p: &usvg::Path,
+        m: Affine,
+        area: Option<Rect>,
+    ) -> (Appearance, FillRule) {
         let mut fill = None;
         let mut r = FillRule::NonZero;
         if let Some(f) = p.fill() {
@@ -1236,7 +1591,11 @@ impl Importer {
         if let Some(s) = p.stroke() {
             // A non-scaling stroke is as wide on screen whatever `m` does: the path takes `m`, so a
             // stroke of that width in the document is exact.
-            let scale = if self.non_scaling.contains(p.id()) { self.screen } else { m.determinant().abs().sqrt() };
+            let scale = if self.non_scaling.contains(p.id()) {
+                self.screen
+            } else {
+                m.determinant().abs().sqrt()
+            };
             // The stroke reaches past the path (miters further: a generous margin).
             let reach = s.width().get() as f64 * scale * (s.miterlimit().get() as f64).max(1.0);
             let paint = self.paint(s.paint(), m, area.map(|a| a.inflate(reach, reach)));
@@ -1266,7 +1625,13 @@ impl Importer {
             usvg::PaintOrder::FillAndStroke => [fill, stroke],
             usvg::PaintOrder::StrokeAndFill => [stroke, fill],
         };
-        (Appearance { items: items.into_iter().flatten().collect(), ..Default::default() }, r)
+        (
+            Appearance {
+                items: items.into_iter().flatten().collect(),
+                ..Default::default()
+            },
+            r,
+        )
     }
 
     fn path(&mut self, p: &usvg::Path, acc: Affine) -> Option<Node> {
@@ -1285,14 +1650,32 @@ impl Importer {
                 .into_iter()
                 .map(|sp| {
                     let id = self.doc.alloc_id();
-                    let mut c = Node::new(id, NodeKind::Path { path: PathData::single(sp), rule: r, live: None, clipping: false, guide: false });
+                    let mut c = Node::new(
+                        id,
+                        NodeKind::Path {
+                            path: PathData::single(sp),
+                            rule: r,
+                            live: None,
+                            clipping: false,
+                            guide: false,
+                        },
+                    );
                     c.appearance = appearance.clone().into();
                     Arc::new(c)
                 })
                 .collect();
             self.named(p.id(), NodeKind::Compound { children, rule: r })
         } else {
-            self.named(p.id(), NodeKind::Path { path, rule: r, live: None, clipping: false, guide: false })
+            self.named(
+                p.id(),
+                NodeKind::Path {
+                    path,
+                    rule: r,
+                    live: None,
+                    clipping: false,
+                    guide: false,
+                },
+            )
         };
         n.appearance = appearance.into();
         Some(n)
@@ -1314,18 +1697,43 @@ impl Importer {
             .with_guessed_format()
             .ok()
             .and_then(|r| r.into_dimensions().ok())
-            .unwrap_or((size.width().round().max(1.0) as u32, size.height().round().max(1.0) as u32));
+            .unwrap_or((
+                size.width().round().max(1.0) as u32,
+                size.height().round().max(1.0) as u32,
+            ));
         let key = format!("img-{:016x}", fnv1a(bytes));
         // A linked file keeps a preview; a placeholder is all a missing one has (its preview).
         let linked = self.files.linked(i.kind());
         let missing = linked.is_some_and(|l| l.missing);
         let link = linked.map(|l| l.link.clone());
         self.doc.images.entry(key.clone()).or_insert_with(|| {
-            let blob = ImageBlob { mime: mime.into(), bytes: bytes.clone(), proxy: missing.then(|| bytes.clone()) };
-            if link.is_some() && !missing { blob.with_proxy() } else { blob }
+            let blob = ImageBlob {
+                mime: mime.into(),
+                bytes: bytes.clone(),
+                proxy: missing.then(|| bytes.clone()),
+            };
+            if link.is_some() && !missing {
+                blob.with_proxy()
+            } else {
+                blob
+            }
         });
-        let xf = acc * Affine::scale_non_uniform(size.width() as f64 / pw as f64, size.height() as f64 / ph as f64);
-        Some(self.named(i.id(), NodeKind::Image(Box::new(ImageObject { key, width: pw, height: ph, xf, link, placement: Default::default() }))))
+        let xf = acc
+            * Affine::scale_non_uniform(
+                size.width() as f64 / pw as f64,
+                size.height() as f64 / ph as f64,
+            );
+        Some(self.named(
+            i.id(),
+            NodeKind::Image(Box::new(ImageObject {
+                key,
+                width: pw,
+                height: ph,
+                xf,
+                link,
+                placement: Default::default(),
+            })),
+        ))
     }
 
     /// An SVG shown as an image (a data URL or a linked file) → its art, `acc` mapping its size.
@@ -1340,7 +1748,14 @@ impl Importer {
             std::mem::take(&mut self.data),
         );
         let art = self.group_node(tree.root(), acc);
-        (self.links, self.hidden, self.uses, self.labels, self.non_scaling, self.data) = outer;
+        (
+            self.links,
+            self.hidden,
+            self.uses,
+            self.labels,
+            self.non_scaling,
+            self.data,
+        ) = outer;
         art
     }
 }

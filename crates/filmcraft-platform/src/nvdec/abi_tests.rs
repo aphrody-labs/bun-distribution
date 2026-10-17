@@ -6,11 +6,30 @@ use super::ffi::*;
 use std::mem::{align_of, offset_of, size_of};
 #[test]
 fn layouts_match_the_header() {
-    assert_eq!(offset_of!(CUVIDPICPARAMS, nBitstreamDataLen), 24, "CUVIDPICPARAMS.nBitstreamDataLen");
-    assert_eq!(offset_of!(CUVIDPICPARAMS, pBitstreamData), 32, "CUVIDPICPARAMS.pBitstreamData");
-    assert_eq!(offset_of!(CUVIDPICPARAMS, nNumSlices), 40, "CUVIDPICPARAMS.nNumSlices");
-    assert_eq!(offset_of!(CUVIDPICPARAMS, pSliceDataOffsets), 48, "CUVIDPICPARAMS.pSliceDataOffsets");
-    assert_eq!((size_of::<CUVIDEOFORMAT>(), align_of::<CUVIDEOFORMAT>()), (64, 4));
+    assert_eq!(
+        offset_of!(CUVIDPICPARAMS, nBitstreamDataLen),
+        24,
+        "CUVIDPICPARAMS.nBitstreamDataLen"
+    );
+    assert_eq!(
+        offset_of!(CUVIDPICPARAMS, pBitstreamData),
+        32,
+        "CUVIDPICPARAMS.pBitstreamData"
+    );
+    assert_eq!(
+        offset_of!(CUVIDPICPARAMS, nNumSlices),
+        40,
+        "CUVIDPICPARAMS.nNumSlices"
+    );
+    assert_eq!(
+        offset_of!(CUVIDPICPARAMS, pSliceDataOffsets),
+        48,
+        "CUVIDPICPARAMS.pSliceDataOffsets"
+    );
+    assert_eq!(
+        (size_of::<CUVIDEOFORMAT>(), align_of::<CUVIDEOFORMAT>()),
+        (64, 4)
+    );
     assert_eq!(offset_of!(CUVIDEOFORMAT, codec), 0);
     assert_eq!(offset_of!(CUVIDEOFORMAT, frame_rate), 4);
     assert_eq!(offset_of!(CUVIDEOFORMAT, progressive_sequence), 12);
@@ -25,7 +44,10 @@ fn layouts_match_the_header() {
     assert_eq!(offset_of!(CUVIDEOFORMAT, display_aspect_ratio), 48);
     assert_eq!(offset_of!(CUVIDEOFORMAT, video_signal_description), 56);
     assert_eq!(offset_of!(CUVIDEOFORMAT, seqhdr_data_length), 60);
-    assert_eq!((size_of::<CUVIDDECODECAPS>(), align_of::<CUVIDDECODECAPS>()), (88, 4));
+    assert_eq!(
+        (size_of::<CUVIDDECODECAPS>(), align_of::<CUVIDDECODECAPS>()),
+        (88, 4)
+    );
     assert_eq!(offset_of!(CUVIDDECODECAPS, eCodecType), 0);
     assert_eq!(offset_of!(CUVIDDECODECAPS, eChromaFormat), 4);
     assert_eq!(offset_of!(CUVIDDECODECAPS, nBitDepthMinus8), 8);
@@ -44,7 +66,13 @@ fn layouts_match_the_header() {
     assert_eq!(offset_of!(CUVIDDECODECAPS, bIsDecodeStatsSupported), 48);
     assert_eq!(offset_of!(CUVIDDECODECAPS, reserved4), 49);
     assert_eq!(offset_of!(CUVIDDECODECAPS, reserved3), 52);
-    assert_eq!((size_of::<CUVIDDECODECREATEINFO>(), align_of::<CUVIDDECODECREATEINFO>()), (176, 8));
+    assert_eq!(
+        (
+            size_of::<CUVIDDECODECREATEINFO>(),
+            align_of::<CUVIDDECODECREATEINFO>()
+        ),
+        (176, 8)
+    );
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, ulWidth), 0);
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, ulHeight), 8);
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, ulNumDecodeSurfaces), 16);
@@ -67,7 +95,13 @@ fn layouts_match_the_header() {
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, enableHistogram), 136);
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, enableDecodeFeatures), 144);
     assert_eq!(offset_of!(CUVIDDECODECREATEINFO, Reserved2), 152);
-    assert_eq!((size_of::<CUVIDPARSERPARAMS>(), align_of::<CUVIDPARSERPARAMS>()), (136, 8));
+    assert_eq!(
+        (
+            size_of::<CUVIDPARSERPARAMS>(),
+            align_of::<CUVIDPARSERPARAMS>()
+        ),
+        (136, 8)
+    );
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, CodecType), 0);
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, ulMaxNumDecodeSurfaces), 4);
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, ulClockRate), 8);
@@ -83,18 +117,33 @@ fn layouts_match_the_header() {
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, pfnGetSEIMsg), 80);
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, pvReserved2), 88);
     assert_eq!(offset_of!(CUVIDPARSERPARAMS, pExtVideoInfo), 128);
-    assert_eq!((size_of::<CUVIDSOURCEDATAPACKET>(), align_of::<CUVIDSOURCEDATAPACKET>()), (32, 8));
+    assert_eq!(
+        (
+            size_of::<CUVIDSOURCEDATAPACKET>(),
+            align_of::<CUVIDSOURCEDATAPACKET>()
+        ),
+        (32, 8)
+    );
     assert_eq!(offset_of!(CUVIDSOURCEDATAPACKET, flags), 0);
     assert_eq!(offset_of!(CUVIDSOURCEDATAPACKET, payload_size), 8);
     assert_eq!(offset_of!(CUVIDSOURCEDATAPACKET, payload), 16);
     assert_eq!(offset_of!(CUVIDSOURCEDATAPACKET, timestamp), 24);
-    assert_eq!((size_of::<CUVIDPARSERDISPINFO>(), align_of::<CUVIDPARSERDISPINFO>()), (24, 8));
+    assert_eq!(
+        (
+            size_of::<CUVIDPARSERDISPINFO>(),
+            align_of::<CUVIDPARSERDISPINFO>()
+        ),
+        (24, 8)
+    );
     assert_eq!(offset_of!(CUVIDPARSERDISPINFO, picture_index), 0);
     assert_eq!(offset_of!(CUVIDPARSERDISPINFO, progressive_frame), 4);
     assert_eq!(offset_of!(CUVIDPARSERDISPINFO, top_field_first), 8);
     assert_eq!(offset_of!(CUVIDPARSERDISPINFO, repeat_first_field), 12);
     assert_eq!(offset_of!(CUVIDPARSERDISPINFO, timestamp), 16);
-    assert_eq!((size_of::<CUVIDPROCPARAMS>(), align_of::<CUVIDPROCPARAMS>()), (264, 8));
+    assert_eq!(
+        (size_of::<CUVIDPROCPARAMS>(), align_of::<CUVIDPROCPARAMS>()),
+        (264, 8)
+    );
     assert_eq!(offset_of!(CUVIDPROCPARAMS, progressive_frame), 0);
     assert_eq!(offset_of!(CUVIDPROCPARAMS, second_field), 4);
     assert_eq!(offset_of!(CUVIDPROCPARAMS, top_field_first), 8);
@@ -114,8 +163,14 @@ fn layouts_match_the_header() {
     assert_eq!((size_of::<FrameRate>(), align_of::<FrameRate>()), (8, 4));
     assert_eq!((size_of::<Rect>(), align_of::<Rect>()), (16, 4));
     assert_eq!((size_of::<ShortRect>(), align_of::<ShortRect>()), (8, 2));
-    assert_eq!((size_of::<AspectRatio>(), align_of::<AspectRatio>()), (8, 4));
-    assert_eq!((size_of::<VideoSignal>(), align_of::<VideoSignal>()), (4, 1));
+    assert_eq!(
+        (size_of::<AspectRatio>(), align_of::<AspectRatio>()),
+        (8, 4)
+    );
+    assert_eq!(
+        (size_of::<VideoSignal>(), align_of::<VideoSignal>()),
+        (4, 1)
+    );
 }
 #[test]
 fn constants_match_the_header() {

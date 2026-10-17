@@ -5,7 +5,7 @@ use bevy_reflect_derive::Reflect;
 use core::fmt;
 
 use super::error::AccessErrorKind;
-use crate::{enums::VariantType, AccessError, PartialReflect, ReflectKind, ReflectMut, ReflectRef};
+use crate::{AccessError, PartialReflect, ReflectKind, ReflectMut, ReflectRef, enums::VariantType};
 
 type InnerResult<T> = Result<T, AccessErrorKind>;
 

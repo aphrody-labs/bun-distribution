@@ -29,14 +29,27 @@ fn page_of(tok: &str, count: usize, labels: &[String]) -> Result<usize, PrintErr
 /// hyphen inside the label for the delimiter between endpoints.
 fn hyphenated_label_range(part: &str, count: usize, labels: &[String]) -> Option<(usize, usize)> {
     for (split, _) in part.match_indices('-') {
-        let (Some(first), Some(last)) = (part.get(..split), part.get(split + 1..)) else { continue };
+        let (Some(first), Some(last)) = (part.get(..split), part.get(split + 1..)) else {
+            continue;
+        };
         let (first, last) = (first.trim(), last.trim());
         // Avoid changing the meaning of ordinary numeric and open-ended ranges.
-        if !labels.iter().any(|l| l.contains('-') && (l == first || l == last)) {
+        if !labels
+            .iter()
+            .any(|l| l.contains('-') && (l == first || l == last))
+        {
             continue;
         }
-        let from = if first.is_empty() { Some(0) } else { page_of(first, count, labels).ok() };
-        let to = if last.is_empty() { count.checked_sub(1) } else { page_of(last, count, labels).ok() };
+        let from = if first.is_empty() {
+            Some(0)
+        } else {
+            page_of(first, count, labels).ok()
+        };
+        let to = if last.is_empty() {
+            count.checked_sub(1)
+        } else {
+            page_of(last, count, labels).ok()
+        };
         if let (Some(from), Some(to)) = (from, to) {
             return Some((from, to));
         }
@@ -47,7 +60,13 @@ fn hyphenated_label_range(part: &str, count: usize, labels: &[String]) -> Option
 /// The pages to print (0-based, in print order). `range` is `None` for all pages; it may list
 /// numbers and labels with `-` ranges (open-ended allowed: `5-`, `-3`). The subset counts the
 /// selected pages (the first selected is "odd"), as Acrobat does.
-pub fn select_pages(count: usize, range: Option<&str>, labels: &[String], subset: Subset, reverse: bool) -> Result<Vec<usize>, PrintError> {
+pub fn select_pages(
+    count: usize,
+    range: Option<&str>,
+    labels: &[String],
+    subset: Subset,
+    reverse: bool,
+) -> Result<Vec<usize>, PrintError> {
     let mut pages = Vec::new();
     match range.map(str::trim).filter(|r| !r.is_empty()) {
         None => pages.extend(0..count),
@@ -67,10 +86,20 @@ pub fn select_pages(count: usize, range: Option<&str>, labels: &[String], subset
                 }
                 match part.split_once('-') {
                     // A label may itself contain a dash ("A-1"): try the whole token first.
-                    Some(_) if labels.iter().any(|l| l == part) => pages.push(page_of(part, count, labels)?),
+                    Some(_) if labels.iter().any(|l| l == part) => {
+                        pages.push(page_of(part, count, labels)?)
+                    }
                     Some((a, b)) => {
-                        let from = if a.trim().is_empty() { 0 } else { page_of(a, count, labels)? };
-                        let to = if b.trim().is_empty() { count.saturating_sub(1) } else { page_of(b, count, labels)? };
+                        let from = if a.trim().is_empty() {
+                            0
+                        } else {
+                            page_of(a, count, labels)?
+                        };
+                        let to = if b.trim().is_empty() {
+                            count.saturating_sub(1)
+                        } else {
+                            page_of(b, count, labels)?
+                        };
                         if from <= to {
                             pages.extend(from..=to);
                         } else {
@@ -88,7 +117,12 @@ pub fn select_pages(count: usize, range: Option<&str>, labels: &[String], subset
 /// The pages to print from an explicit list (0-based, e.g. the thumbnails selected in the
 /// interface), in the order given. Unlike a typed range the entries are page positions, never
 /// labels. The subset and `reverse` apply as in [`select_pages`].
-pub fn select_listed(count: usize, pages: &[usize], subset: Subset, reverse: bool) -> Result<Vec<usize>, PrintError> {
+pub fn select_listed(
+    count: usize,
+    pages: &[usize],
+    subset: Subset,
+    reverse: bool,
+) -> Result<Vec<usize>, PrintError> {
     if let Some(p) = pages.iter().find(|p| **p >= count) {
         return Err(PrintError::OutOfRange(p.saturating_add(1), count));
     }

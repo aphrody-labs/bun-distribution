@@ -14,7 +14,9 @@ use crate::pattern::RepeatSpec;
 use crate::text::TextObject;
 
 /// Stable per-document object id. Never reused.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize,
+)]
 #[serde(transparent)]
 pub struct NodeId(pub u64);
 
@@ -132,7 +134,9 @@ pub enum LiveShape {
 impl LiveShape {
     pub fn label(&self) -> &'static str {
         match self {
-            LiveShape::Rectangle { radii, .. } if radii.iter().any(|r| *r > 0.0) => "Rounded Rectangle",
+            LiveShape::Rectangle { radii, .. } if radii.iter().any(|r| *r > 0.0) => {
+                "Rounded Rectangle"
+            }
             LiveShape::Rectangle { .. } => "Rectangle",
             LiveShape::Ellipse { .. } => "Ellipse",
             LiveShape::Polygon { .. } => "Polygon",
@@ -143,11 +147,20 @@ impl LiveShape {
     /// Regenerate the path.
     pub fn to_path(&self) -> PathData {
         match self {
-            LiveShape::Rectangle { w, h, radii, kinds, xf } => {
-                shapes::rectangle_with_corners(Rect::new(0.0, 0.0, *w, *h), *radii, *kinds).transformed(*xf)
+            LiveShape::Rectangle {
+                w,
+                h,
+                radii,
+                kinds,
+                xf,
+            } => shapes::rectangle_with_corners(Rect::new(0.0, 0.0, *w, *h), *radii, *kinds)
+                .transformed(*xf),
+            LiveShape::Ellipse { w, h, pie, xf } => {
+                shapes::ellipse_pie(Rect::new(0.0, 0.0, *w, *h), pie.0, pie.1).transformed(*xf)
             }
-            LiveShape::Ellipse { w, h, pie, xf } => shapes::ellipse_pie(Rect::new(0.0, 0.0, *w, *h), pie.0, pie.1).transformed(*xf),
-            LiveShape::Polygon { radii, kinds, .. } => cut_corners(&self.polygon_outline(), radii, kinds).0,
+            LiveShape::Polygon { radii, kinds, .. } => {
+                cut_corners(&self.polygon_outline(), radii, kinds).0
+            }
             LiveShape::Line { a, b } => shapes::line(*a, *b),
             LiveShape::Path { base, radii, kinds } => cut_corners(base, radii, kinds).0,
         }
@@ -155,14 +168,24 @@ impl LiveShape {
     /// A polygon's outline with its corners uncut, in the document (empty for other shapes).
     pub fn polygon_outline(&self) -> PathData {
         match self {
-            LiveShape::Polygon { radius, sides, xf, .. } => shapes::polygon(Point::ZERO, *radius, *sides, 0.0).transformed(*xf),
+            LiveShape::Polygon {
+                radius, sides, xf, ..
+            } => shapes::polygon(Point::ZERO, *radius, *sides, 0.0).transformed(*xf),
             _ => PathData::default(),
         }
     }
     /// Give a polygon `n` sides (3–1000). Its corners keep the radius and kind they shared; else
     /// the corners past the old last one are sharp.
     pub fn set_sides(&mut self, n: u64) {
-        let LiveShape::Polygon { sides, radii, kinds, .. } = self else { return };
+        let LiveShape::Polygon {
+            sides,
+            radii,
+            kinds,
+            ..
+        } = self
+        else {
+            return;
+        };
         *sides = n.clamp(3, 1000) as u32;
         fn spread<T: Copy + PartialEq + Default>(v: &mut Vec<T>, n: usize) {
             match v.first().copied() {
@@ -177,13 +200,17 @@ impl LiveShape {
     /// A polygon's radius in the document, centre to vertex: its own radius by the mean scale of
     /// `xf` (exact while its sides are equal). None for other shapes.
     pub fn polygon_radius(&self) -> Option<f64> {
-        let LiveShape::Polygon { radius, xf, .. } = self else { return None };
+        let LiveShape::Polygon { radius, xf, .. } = self else {
+            return None;
+        };
         Some(radius * xf.determinant().abs().sqrt())
     }
     /// A polygon's angle: the counterclockwise degrees in [0, 360) its first vertex is turned by
     /// from straight up (the Rotate field's sense). None for other shapes.
     pub fn polygon_angle(&self) -> Option<f64> {
-        let LiveShape::Polygon { .. } = self else { return None };
+        let LiveShape::Polygon { .. } = self else {
+            return None;
+        };
         // No −0° or 360° from rounding: a polygon drawn upright reads 0°.
         let a = (-self.angle_deg()).rem_euclid(360.0);
         Some(if a > 360.0 - 1e-9 { 0.0 } else { a + 0.0 })
@@ -191,14 +218,18 @@ impl LiveShape {
     /// Whether a polygon's sides are all as long: `xf` scales it evenly and doesn't shear it. True
     /// for other shapes.
     pub fn polygon_sides_equal(&self) -> bool {
-        let LiveShape::Polygon { xf, .. } = self else { return true };
+        let LiveShape::Polygon { xf, .. } = self else {
+            return true;
+        };
         let [a, b, c, d, _, _] = xf.as_coeffs();
         let (sx, sy) = (a.hypot(b), c.hypot(d));
         (sx - sy).abs() <= 1e-9 * sx.max(sy) && (a * c + b * d).abs() <= 1e-9 * sx * sy
     }
     /// Give a polygon the document radius `r` (centre to vertex, see [`LiveShape::polygon_radius`]).
     pub fn set_polygon_radius(&mut self, r: f64) {
-        let LiveShape::Polygon { radius, xf, .. } = self else { return };
+        let LiveShape::Polygon { radius, xf, .. } = self else {
+            return;
+        };
         let k = xf.determinant().abs().sqrt();
         if k > 1e-12 && r.is_finite() {
             *radius = r.max(0.0) / k;
@@ -206,12 +237,16 @@ impl LiveShape {
     }
     /// The document radius that makes a polygon's sides `side` long (with its sides equal).
     pub fn polygon_radius_for_side(&self, side: f64) -> Option<f64> {
-        let LiveShape::Polygon { sides, .. } = self else { return None };
+        let LiveShape::Polygon { sides, .. } = self else {
+            return None;
+        };
         Some(side / (2.0 * (std::f64::consts::PI / f64::from((*sides).max(3))).sin()))
     }
     /// Turn a polygon about its centre to `angle` (degrees, as [`LiveShape::polygon_angle`]).
     pub fn set_polygon_angle(&mut self, angle: f64) {
-        let Some(now) = self.polygon_angle() else { return };
+        let Some(now) = self.polygon_angle() else {
+            return;
+        };
         if let LiveShape::Polygon { xf, .. } = self
             && angle.is_finite()
         {
@@ -222,10 +257,18 @@ impl LiveShape {
     /// Make a polygon's sides equal (Make Sides Equal): drop the uneven scale and the shear from
     /// `xf`, keeping its centre, angle, reflection and [`LiveShape::polygon_radius`].
     pub fn make_sides_equal(&mut self) {
-        let Some(r) = self.polygon_radius() else { return };
-        let LiveShape::Polygon { radius, xf, .. } = self else { return };
+        let Some(r) = self.polygon_radius() else {
+            return;
+        };
+        let LiveShape::Polygon { radius, xf, .. } = self else {
+            return;
+        };
         let [a, b, _, _, e, f] = xf.as_coeffs();
-        let flip = if xf.determinant() < 0.0 { Affine::FLIP_Y } else { Affine::IDENTITY };
+        let flip = if xf.determinant() < 0.0 {
+            Affine::FLIP_Y
+        } else {
+            Affine::IDENTITY
+        };
         *xf = Affine::translate((e, f)) * Affine::rotate(b.atan2(a)) * flip;
         *radius = r;
     }
@@ -271,7 +314,12 @@ impl LiveShape {
     /// isn't finite, and for other shapes. Files saved before transforms did this (#291) carry an
     /// uneven scale in `xf`: their corners are elliptical until this runs.
     pub fn fold_scale(&mut self) -> bool {
-        let LiveShape::Rectangle { w, h, radii, xf, .. } = self else { return false };
+        let LiveShape::Rectangle {
+            w, h, radii, xf, ..
+        } = self
+        else {
+            return false;
+        };
         let [m0, m1, m2, m3, m4, m5] = xf.as_coeffs();
         let (sx, sy) = (m0.hypot(m1), m2.hypot(m3));
         let orthogonal = sx > 1e-12 && sy > 1e-12 && (m0 * m2 + m1 * m3).abs() <= 1e-9 * sx * sy;
@@ -311,7 +359,9 @@ impl LiveShape {
     /// Rotation angle of the live shape in degrees, clockwise on the page (y points down).
     pub fn angle_deg(&self) -> f64 {
         match self {
-            LiveShape::Rectangle { xf, .. } | LiveShape::Ellipse { xf, .. } | LiveShape::Polygon { xf, .. } => {
+            LiveShape::Rectangle { xf, .. }
+            | LiveShape::Ellipse { xf, .. }
+            | LiveShape::Polygon { xf, .. } => {
                 let c = xf.as_coeffs();
                 c[1].atan2(c[0]).to_degrees()
             }
@@ -372,7 +422,10 @@ impl Scaling {
 
 impl From<bool> for Scaling {
     fn from(strokes: bool) -> Self {
-        Self { strokes, ..Self::default() }
+        Self {
+            strokes,
+            ..Self::default()
+        }
     }
 }
 
@@ -387,7 +440,11 @@ pub struct ImageObject {
     pub xf: Affine,
     /// The file a linked image shows (File → Place with Link); `None`: embedded. Files saved
     /// before links had details hold just the path.
-    #[serde(default, skip_serializing_if = "Option::is_none", deserialize_with = "crate::links::de_link")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "crate::links::de_link"
+    )]
     pub link: Option<crate::LinkInfo>,
     /// Links panel → Placement Options: how a file read again takes this image's place.
     #[serde(default, skip_serializing_if = "crate::skip::is_default")]
@@ -601,7 +658,10 @@ impl Node {
     /// `None` on a node without extras allocates nothing.
     #[inline]
     pub fn extras_mut(&mut self) -> ExtrasMut<'_> {
-        ExtrasMut { slot: &mut self.extras.0, local: NodeExtras::default() }
+        ExtrasMut {
+            slot: &mut self.extras.0,
+            local: NodeExtras::default(),
+        }
     }
     /// The rarely set parts of this node, if it has any: to change what is there in place.
     #[inline]
@@ -661,7 +721,9 @@ impl Drop for ExtrasMut<'_> {
         match self.slot.as_deref() {
             Some(e) if *e == NO_EXTRAS => *self.slot = None,
             Some(_) => {}
-            None if self.local != NO_EXTRAS => *self.slot = Some(Box::new(std::mem::take(&mut self.local))),
+            None if self.local != NO_EXTRAS => {
+                *self.slot = Some(Box::new(std::mem::take(&mut self.local)))
+            }
             None => {}
         }
     }
@@ -838,7 +900,13 @@ pub struct OpacityMask {
 
 impl OpacityMask {
     pub fn new(art: Node, clip: bool) -> Self {
-        Self { art: Arc::new(art), clip, invert: false, disabled: false, linked: true }
+        Self {
+            art: Arc::new(art),
+            clip,
+            invert: false,
+            disabled: false,
+            linked: true,
+        }
     }
 }
 
@@ -861,17 +929,40 @@ impl Node {
         }
     }
     pub fn path(id: NodeId, path: PathData, appearance: Appearance) -> Self {
-        let mut n = Self::new(id, NodeKind::Path { path, rule: FillRule::NonZero, live: None, clipping: false, guide: false });
+        let mut n = Self::new(
+            id,
+            NodeKind::Path {
+                path,
+                rule: FillRule::NonZero,
+                live: None,
+                clipping: false,
+                guide: false,
+            },
+        );
         n.appearance = appearance.into();
         n
     }
     pub fn group(id: NodeId, children: Vec<Arc<Node>>) -> Self {
-        Self::new(id, NodeKind::Group { children, clip: false })
+        Self::new(
+            id,
+            NodeKind::Group {
+                children,
+                clip: false,
+            },
+        )
     }
     pub fn layer(id: NodeId, name: &str, color: LayerColor) -> Self {
         let mut n = Self::new(
             id,
-            NodeKind::Layer { color, template: false, printable: true, children: vec![], clip: false, preview: true, dim_images: None },
+            NodeKind::Layer {
+                color,
+                template: false,
+                printable: true,
+                children: vec![],
+                clip: false,
+                preview: true,
+                dim_images: None,
+            },
         );
         n.name = Some(name.to_string());
         n
@@ -882,8 +973,12 @@ impl Node {
             | NodeKind::Group { children, .. }
             | NodeKind::Compound { children, .. }
             | NodeKind::Blend { children, .. }
-            | NodeKind::Envelope { content: children, .. }
-            | NodeKind::Repeat(RepeatSpec { source: children, .. }) => Some(children),
+            | NodeKind::Envelope {
+                content: children, ..
+            }
+            | NodeKind::Repeat(RepeatSpec {
+                source: children, ..
+            }) => Some(children),
             _ => None,
         }
     }
@@ -893,8 +988,12 @@ impl Node {
             | NodeKind::Group { children, .. }
             | NodeKind::Compound { children, .. }
             | NodeKind::Blend { children, .. }
-            | NodeKind::Envelope { content: children, .. }
-            | NodeKind::Repeat(RepeatSpec { source: children, .. }) => Some(children),
+            | NodeKind::Envelope {
+                content: children, ..
+            }
+            | NodeKind::Repeat(RepeatSpec {
+                source: children, ..
+            }) => Some(children),
             _ => None,
         }
     }
@@ -996,7 +1095,10 @@ impl Node {
             NodeKind::Path { path, .. } => Some(path.to_bezpath()),
             NodeKind::Compound { children, .. } => {
                 let mut bp = vectorcraft_geom::BezPath::new();
-                children.iter().filter_map(|c| c.path_data()).for_each(|pd| bp.extend(pd.to_bezpath()));
+                children
+                    .iter()
+                    .filter_map(|c| c.path_data())
+                    .for_each(|pd| bp.extend(pd.to_bezpath()));
                 Some(bp)
             }
             _ => None,
@@ -1018,22 +1120,44 @@ impl Node {
     pub fn geometric_bounds(&self) -> Option<Rect> {
         match &self.kind {
             NodeKind::Path { path, .. } => path.bounds(),
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => {
-                children.first().and_then(|c| c.geometric_bounds())
+            NodeKind::Group {
+                children,
+                clip: true,
             }
-            NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => children
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } => children.first().and_then(|c| c.geometric_bounds()),
+            NodeKind::Layer { children, .. }
+            | NodeKind::Group { children, .. }
+            | NodeKind::Compound { children, .. } => children
                 .iter()
                 .skip(usize::from(self.extras().shaper.is_some()))
                 .filter(|c| c.visible || !matches!(self.kind, NodeKind::Layer { .. }))
-                .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.geometric_bounds())),
+                .fold(None, |acc, c| {
+                    vectorcraft_geom::union_opt(acc, c.geometric_bounds())
+                }),
             NodeKind::Text(t) => self.projected(t.bounds()),
-            NodeKind::Image(im) => Some(im.xf.transform_rect_bbox(Rect::new(0.0, 0.0, im.width as f64, im.height as f64))),
-            NodeKind::SymbolInstance { xf, .. } => self.projected(Some(xf.transform_rect_bbox(Rect::new(-10.0, -10.0, 10.0, 10.0)))),
+            NodeKind::Image(im) => Some(im.xf.transform_rect_bbox(Rect::new(
+                0.0,
+                0.0,
+                im.width as f64,
+                im.height as f64,
+            ))),
+            NodeKind::SymbolInstance { xf, .. } => self.projected(Some(
+                xf.transform_rect_bbox(Rect::new(-10.0, -10.0, 10.0, 10.0)),
+            )),
             NodeKind::Blend { children, spec } => {
                 let b = crate::live::nodes_bounds(children);
                 vectorcraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()))
             }
-            NodeKind::Envelope { content, kind, frame, .. } => crate::live::envelope_bounds(content, kind, **frame),
+            NodeKind::Envelope {
+                content,
+                kind,
+                frame,
+                ..
+            } => crate::live::envelope_bounds(content, kind, **frame),
             NodeKind::Mesh(m) => m.bounds(),
             NodeKind::Repeat(r) => r.bounds(),
             NodeKind::PlacedDocument(p) => Some(p.bounds()),
@@ -1043,10 +1167,21 @@ impl Node {
     /// measure theirs along their own shape, see [`Appearance::stroked_bounds`]).
     pub fn visual_bounds(&self) -> Option<Rect> {
         match &self.kind {
-            NodeKind::Group { children, clip: true } | NodeKind::Layer { children, clip: true, .. } => {
+            NodeKind::Group {
+                children,
+                clip: true,
+            }
+            | NodeKind::Layer {
+                children,
+                clip: true,
+                ..
+            } => {
                 // A clipping path that paints (see `clip_paint`) strokes over the clip edge.
                 let clip = children.first()?;
-                if matches!(clip.kind, NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_)) {
+                if matches!(
+                    clip.kind,
+                    NodeKind::Path { .. } | NodeKind::Compound { .. } | NodeKind::Text(_)
+                ) {
                     clip.visual_bounds()
                 } else {
                     clip.geometric_bounds()
@@ -1058,21 +1193,37 @@ impl Node {
                 children
                     .iter()
                     .skip(usize::from(self.extras().shaper.is_some()))
-                    .fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual_bounds()))
+                    .fold(None, |acc, c| {
+                        vectorcraft_geom::union_opt(acc, c.visual_bounds())
+                    })
                     .map(|b| b.inflate(o, o))
             }
             NodeKind::Blend { children, spec } => {
-                let b = children.iter().fold(None, |acc, c| vectorcraft_geom::union_opt(acc, c.visual_bounds()));
+                let b = children.iter().fold(None, |acc, c| {
+                    vectorcraft_geom::union_opt(acc, c.visual_bounds())
+                });
                 let o = crate::live::max_outset(children);
-                vectorcraft_geom::union_opt(b, spec.spine.as_ref().and_then(|s| s.bounds()).map(|r| r.inflate(o, o)))
+                vectorcraft_geom::union_opt(
+                    b,
+                    spec.spine
+                        .as_ref()
+                        .and_then(|s| s.bounds())
+                        .map(|r| r.inflate(o, o)),
+                )
             }
-            NodeKind::Envelope { content, .. } | NodeKind::Repeat(RepeatSpec { source: content, .. }) => {
+            NodeKind::Envelope { content, .. }
+            | NodeKind::Repeat(RepeatSpec {
+                source: content, ..
+            }) => {
                 let o = crate::live::max_outset(content);
                 self.geometric_bounds().map(|b| b.inflate(o, o))
             }
             NodeKind::Path { .. } | NodeKind::Compound { .. } => {
                 let b = self.geometric_bounds()?;
-                Some(self.appearance.stroked_bounds(b, || self.stroke_path().unwrap_or_default()))
+                Some(
+                    self.appearance
+                        .stroked_bounds(b, || self.stroke_path().unwrap_or_default()),
+                )
             }
             _ => {
                 let o = self.appearance.outset();
@@ -1125,7 +1276,9 @@ impl Node {
                     }
                 }
             }
-            NodeKind::Layer { children, .. } | NodeKind::Group { children, .. } | NodeKind::Compound { children, .. } => {
+            NodeKind::Layer { children, .. }
+            | NodeKind::Group { children, .. }
+            | NodeKind::Compound { children, .. } => {
                 for c in children.iter_mut() {
                     Arc::make_mut(c).transform_scaled(a, sc);
                 }
@@ -1150,13 +1303,20 @@ impl Node {
                     s.transform(a);
                 }
             }
-            NodeKind::Envelope { content, kind, frame, .. } => {
+            NodeKind::Envelope {
+                content,
+                kind,
+                frame,
+                ..
+            } => {
                 for c in content.iter_mut() {
                     Arc::make_mut(c).transform_scaled(a, sc);
                 }
                 **frame = crate::live::envelope_frame(a * **frame);
                 match &mut **kind {
-                    EnvelopeKind::Mesh { points, handles, .. } => {
+                    EnvelopeKind::Mesh {
+                        points, handles, ..
+                    } => {
                         for p in points.iter_mut() {
                             *p = a * *p;
                         }
@@ -1210,28 +1370,53 @@ impl Node {
     /// type objects paint their runs (the first run speaks for all) in text space, fitted to the
     /// layout bounds; everything else paints its fill or stroke in the document, fitted to the
     /// geometric bounds. Strokes fit the box grown by half their weight.
-    pub fn proxy_paint(&self, stroke: bool, item: Option<usize>) -> Option<(&vectorcraft_color::Paint, Affine, Rect)> {
+    pub fn proxy_paint(
+        &self,
+        stroke: bool,
+        item: Option<usize>,
+    ) -> Option<(&vectorcraft_color::Paint, Affine, Rect)> {
         let item = self.appearance.item_of_kind(item, !stroke);
         if item.is_none()
             && let NodeKind::Text(t) = &self.kind
         {
             let st = &t.runs.first()?.style;
             let b = t.local_bounds();
-            return Some(if stroke { (&st.stroke, t.xf, crate::appearance::stroke_paint_bounds(b, st.stroke_width)) } else { (&st.fill, t.xf, b) });
+            return Some(if stroke {
+                (
+                    &st.stroke,
+                    t.xf,
+                    crate::appearance::stroke_paint_bounds(b, st.stroke_width),
+                )
+            } else {
+                (&st.fill, t.xf, b)
+            });
         }
         // An object without bounds (an empty path) still shows its paints, fitted to an empty box.
         let b = self.geometric_bounds().unwrap_or(Rect::ZERO);
         if stroke {
-            self.appearance.stroke_at(item).map(|s| (&s.paint, Affine::IDENTITY, s.paint_bounds(b)))
+            self.appearance
+                .stroke_at(item)
+                .map(|s| (&s.paint, Affine::IDENTITY, s.paint_bounds(b)))
         } else {
-            self.appearance.fill_at(item).map(|f| (&f.paint, Affine::IDENTITY, b))
+            self.appearance
+                .fill_at(item)
+                .map(|f| (&f.paint, Affine::IDENTITY, b))
         }
     }
     /// The gradient behind the Fill (or Stroke) proxy and its placement in document coordinates
     /// (see [`Node::proxy_paint`]): what the gradient annotator shows and edits.
-    pub fn proxy_gradient(&self, stroke: bool, item: Option<usize>) -> Option<(&vectorcraft_color::GradientPaint, vectorcraft_color::GradientGeom)> {
+    pub fn proxy_gradient(
+        &self,
+        stroke: bool,
+        item: Option<usize>,
+    ) -> Option<(
+        &vectorcraft_color::GradientPaint,
+        vectorcraft_color::GradientGeom,
+    )> {
         let (paint, to_doc, b) = self.proxy_paint(stroke, item)?;
-        let vectorcraft_color::Paint::Gradient(g) = paint else { return None };
+        let vectorcraft_color::Paint::Gradient(g) = paint else {
+            return None;
+        };
         let mut geom = g.resolve(b);
         if to_doc != Affine::IDENTITY {
             geom.transform(to_doc, g.gradient.kind);
@@ -1241,9 +1426,15 @@ impl Node {
     /// The freeform gradient behind the Fill (or Stroke) proxy, its points in document coordinates
     /// (the automatic ones while unplaced), and the length its spreads are fractions of there
     /// (see [`Node::proxy_paint`]): what the Gradient tool's freeform annotator shows and edits.
-    pub fn proxy_freeform(&self, stroke: bool, item: Option<usize>) -> Option<(vectorcraft_color::Freeform, f64)> {
+    pub fn proxy_freeform(
+        &self,
+        stroke: bool,
+        item: Option<usize>,
+    ) -> Option<(vectorcraft_color::Freeform, f64)> {
         let (paint, to_doc, b) = self.proxy_paint(stroke, item)?;
-        let vectorcraft_color::Paint::Gradient(g) = paint else { return None };
+        let vectorcraft_color::Paint::Gradient(g) = paint else {
+            return None;
+        };
         if g.gradient.kind != vectorcraft_color::GradientKind::Freeform {
             return None;
         }
@@ -1284,13 +1475,20 @@ impl Node {
                 }
                 out.push((bp, *rule));
             }
-            NodeKind::Group { children, clip: true } => {
+            NodeKind::Group {
+                children,
+                clip: true,
+            } => {
                 if let Some(c) = children.first() {
                     c.push_clip_shapes(text, out);
                 }
             }
             NodeKind::Group { children, .. } | NodeKind::Layer { children, .. } => {
-                for c in children.iter().skip(usize::from(self.extras().shaper.is_some())).filter(|c| c.visible) {
+                for c in children
+                    .iter()
+                    .skip(usize::from(self.extras().shaper.is_some()))
+                    .filter(|c| c.visible)
+                {
                     c.push_clip_shapes(text, out);
                 }
             }
@@ -1300,14 +1498,19 @@ impl Node {
                 }
             }
             NodeKind::Image(im) => {
-                let frame = shapes::rectangle(Rect::new(0.0, 0.0, im.width as f64, im.height as f64)).transformed(im.xf);
+                let frame =
+                    shapes::rectangle(Rect::new(0.0, 0.0, im.width as f64, im.height as f64))
+                        .transformed(im.xf);
                 out.push((frame.to_bezpath(), FillRule::NonZero));
             }
             NodeKind::PlacedDocument(p) => {
                 let frame = shapes::rectangle(p.natural()).transformed(p.xf);
                 out.push((frame.to_bezpath(), FillRule::NonZero));
             }
-            NodeKind::Blend { .. } | NodeKind::Envelope { .. } | NodeKind::Mesh(_) | NodeKind::Repeat(_) => {
+            NodeKind::Blend { .. }
+            | NodeKind::Envelope { .. }
+            | NodeKind::Mesh(_)
+            | NodeKind::Repeat(_) => {
                 crate::live::expand_deep(self, text).push_clip_shapes(text, out);
             }
         }
@@ -1341,9 +1544,17 @@ impl Node {
         let paints = |fill: bool| {
             let item = |i: &AppearanceItem| match i {
                 AppearanceItem::Fill(f) => fill && f.visible && !f.paint.is_none(),
-                AppearanceItem::Stroke(s) => !fill && s.visible && !s.paint.is_none() && s.width > 0.0,
+                AppearanceItem::Stroke(s) => {
+                    !fill && s.visible && !s.paint.is_none() && s.width > 0.0
+                }
             };
-            let run = |r: &crate::text::TextRun| if fill { !r.style.fill.is_none() } else { !r.style.stroke.is_none() && r.style.stroke_width > 0.0 };
+            let run = |r: &crate::text::TextRun| {
+                if fill {
+                    !r.style.fill.is_none()
+                } else {
+                    !r.style.stroke.is_none() && r.style.stroke_width > 0.0
+                }
+            };
             self.appearance.items.iter().any(item) || runs.is_some_and(|rs| rs.iter().any(run))
         };
         let part = |fill: bool| {
@@ -1356,13 +1567,20 @@ impl Node {
                 }
                 if let NodeKind::Text(t) = &mut n.kind {
                     for r in &mut t.runs {
-                        *(if fill { &mut r.style.stroke } else { &mut r.style.fill }) = vectorcraft_color::Paint::None;
+                        *(if fill {
+                            &mut r.style.stroke
+                        } else {
+                            &mut r.style.fill
+                        }) = vectorcraft_color::Paint::None;
                     }
                 }
                 n
             })
         };
-        ClipPaint { fill: part(true), stroke: part(false) }
+        ClipPaint {
+            fill: part(true),
+            stroke: part(false),
+        }
     }
 }
 
@@ -1403,7 +1621,9 @@ impl Knockout {
     pub fn from_value(v: &serde_json::Value) -> Option<Self> {
         match v {
             serde_json::Value::Bool(b) => Some(Self::from(*b)),
-            serde_json::Value::String(s) => Self::ALL.into_iter().find(|k| k.label().eq_ignore_ascii_case(s.trim())),
+            serde_json::Value::String(s) => Self::ALL
+                .into_iter()
+                .find(|k| k.label().eq_ignore_ascii_case(s.trim())),
             _ => None,
         }
     }
@@ -1441,7 +1661,8 @@ impl Serialize for Knockout {
 impl<'de> Deserialize<'de> for Knockout {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> Result<Self, D::Error> {
         let v = serde_json::Value::deserialize(d)?;
-        Self::from_value(&v).ok_or_else(|| serde::de::Error::custom(format!("invalid knockout {v}")))
+        Self::from_value(&v)
+            .ok_or_else(|| serde::de::Error::custom(format!("invalid knockout {v}")))
     }
 }
 
@@ -1449,14 +1670,22 @@ impl Node {
     /// Whether the children of this group or layer knock each other out, inside a group (or page)
     /// where that is `enclosing`.
     pub fn knocks_out(&self, enclosing: bool) -> bool {
-        matches!(self.kind, NodeKind::Group { .. } | NodeKind::Layer { .. }) && self.knockout.resolve(enclosing)
+        matches!(self.kind, NodeKind::Group { .. } | NodeKind::Layer { .. })
+            && self.knockout.resolve(enclosing)
     }
 
     /// A plain group or layer that is neutral to knockout and has no transparency or appearance
     /// of its own: inside a knockout group its children composite as the group's own children.
     pub fn passes_knockout_through(&self) -> bool {
-        matches!(self.kind, NodeKind::Group { clip: false, .. } | NodeKind::Layer { template: false, clip: false, .. })
-            && self.has_default_transparency()
+        matches!(
+            self.kind,
+            NodeKind::Group { clip: false, .. }
+                | NodeKind::Layer {
+                    template: false,
+                    clip: false,
+                    ..
+                }
+        ) && self.has_default_transparency()
             && self.appearance.items.is_empty()
             && self.appearance.effects.is_empty()
     }
@@ -1479,7 +1708,10 @@ impl Node {
 
     /// Whether this is a clip group or a layer with a clipping mask: its first child clips the rest.
     pub fn clips(&self) -> bool {
-        matches!(self.kind, NodeKind::Group { clip: true, .. } | NodeKind::Layer { clip: true, .. })
+        matches!(
+            self.kind,
+            NodeKind::Group { clip: true, .. } | NodeKind::Layer { clip: true, .. }
+        )
     }
 
     /// Make this group or layer clip its children by its first child, or stop it.
@@ -1499,14 +1731,25 @@ impl Node {
     /// [`Self::blends_through`], with `inner` answering it for the children (e.g. from a cache).
     pub fn blends_through_with(&self, inner: &mut dyn FnMut(&Arc<Node>) -> bool) -> bool {
         match self.children() {
-            Some(ch) if !matches!(self.kind, NodeKind::Compound { .. }) => Self::children_blend(ch, inner),
-            _ => self.appearance.items.iter().any(|i| i.visible() && i.blend() != BlendMode::Normal),
+            Some(ch) if !matches!(self.kind, NodeKind::Compound { .. }) => {
+                Self::children_blend(ch, inner)
+            }
+            _ => self
+                .appearance
+                .items
+                .iter()
+                .any(|i| i.visible() && i.blend() != BlendMode::Normal),
         }
     }
 
     /// [`Self::blends_through`] of a group made of `children` (`inner` answers it for each child).
-    pub fn children_blend(children: &[Arc<Node>], inner: &mut dyn FnMut(&Arc<Node>) -> bool) -> bool {
-        children.iter().any(|c| c.visible && (c.blend != BlendMode::Normal || (!c.isolate && inner(c))))
+    pub fn children_blend(
+        children: &[Arc<Node>],
+        inner: &mut dyn FnMut(&Arc<Node>) -> bool,
+    ) -> bool {
+        children
+            .iter()
+            .any(|c| c.visible && (c.blend != BlendMode::Normal || (!c.isolate && inner(c))))
     }
 }
 
@@ -1568,20 +1811,30 @@ impl ImageMap {
 
     /// Parse a label or serialized name, ignoring case.
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|m| m.label().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|m| m.label().eq_ignore_ascii_case(s))
     }
 }
 
 impl Node {
     /// The URL this object links to, if any.
     pub fn url(&self) -> Option<&str> {
-        self.extras().attrs.as_deref().map(|a| a.url.as_str()).filter(|u| !u.is_empty())
+        self.extras()
+            .attrs
+            .as_deref()
+            .map(|a| a.url.as_str())
+            .filter(|u| !u.is_empty())
     }
 
     /// Whether the canvas shows this object's centre point when it is selected: as set in the
     /// Attributes panel, else [`Self::shows_center_by_default`].
     pub fn shows_center(&self) -> bool {
-        self.extras().attrs.as_deref().and_then(|a| a.show_center).unwrap_or_else(|| self.shows_center_by_default())
+        self.extras()
+            .attrs
+            .as_deref()
+            .and_then(|a| a.show_center)
+            .unwrap_or_else(|| self.shows_center_by_default())
     }
 
     /// Shapes drawn with the shape tools (live rectangles, ellipses and polygons) show their centre.
@@ -1611,12 +1864,16 @@ impl Node {
                 || self.blend != BlendMode::Normal
                 || self.extras().mask.as_ref().is_some_and(|m| !m.disabled)
                 || effects(&self.appearance.effects)
+                || self.appearance.items.iter().any(|i| {
+                    i.visible()
+                        && (i.opacity() < 1.0
+                            || i.blend() != BlendMode::Normal
+                            || see_through(i.paint())
+                            || effects(i.effects()))
+                })
                 || self
-                    .appearance
-                    .items
-                    .iter()
-                    .any(|i| i.visible() && (i.opacity() < 1.0 || i.blend() != BlendMode::Normal || see_through(i.paint()) || effects(i.effects())))
-                || self.children().is_some_and(|ch| ch.iter().any(|c| c.shows_transparency())))
+                    .children()
+                    .is_some_and(|ch| ch.iter().any(|c| c.shows_transparency())))
     }
 }
 
@@ -1632,7 +1889,12 @@ impl Node {
     /// everywhere for objects without them, such as type, whose boxes stand in).
     pub fn contains_fn(&self) -> impl Fn(Point) -> bool + use<> {
         let shapes = self.clip_shapes(None);
-        move |p| shapes.is_empty() || shapes.iter().any(|(bp, rule)| vectorcraft_geom::hit::fill_contains(bp, *rule, p))
+        move |p| {
+            shapes.is_empty()
+                || shapes
+                    .iter()
+                    .any(|(bp, rule)| vectorcraft_geom::hit::fill_contains(bp, *rule, p))
+        }
     }
 }
 
@@ -1646,7 +1908,10 @@ mod kind_de {
     use std::sync::Arc;
 
     use serde::de::value::{MapAccessDeserializer, StringDeserializer};
-    use serde::de::{self, DeserializeSeed, Deserializer, EnumAccess, IntoDeserializer, MapAccess, VariantAccess, Visitor};
+    use serde::de::{
+        self, DeserializeSeed, Deserializer, EnumAccess, IntoDeserializer, MapAccess,
+        VariantAccess, Visitor,
+    };
     use serde::{Deserialize, forward_to_deserialize_any};
     use vectorcraft_geom::{Affine, FillRule, PathData};
 
@@ -1744,7 +2009,14 @@ mod kind_de {
             while let Some(key) = map.next_key::<String>()? {
                 if key == "type" {
                     let tag: String = map.next_value()?;
-                    return KindDef::deserialize(Tagged { tag, map: Buffered { before: before.into_iter(), value: None, map } });
+                    return KindDef::deserialize(Tagged {
+                        tag,
+                        map: Buffered {
+                            before: before.into_iter(),
+                            value: None,
+                            map,
+                        },
+                    });
                 }
                 before.push((key, map.next_value::<serde_json::Value>()?));
             }
@@ -1762,17 +2034,24 @@ mod kind_de {
     impl<'de, A: MapAccess<'de>> MapAccess<'de> for Buffered<A> {
         type Error = A::Error;
 
-        fn next_key_seed<K: DeserializeSeed<'de>>(&mut self, seed: K) -> Result<Option<K::Value>, A::Error> {
+        fn next_key_seed<K: DeserializeSeed<'de>>(
+            &mut self,
+            seed: K,
+        ) -> Result<Option<K::Value>, A::Error> {
             match self.before.next() {
                 Some((key, value)) => {
                     self.value = Some(value);
-                    seed.deserialize(StringDeserializer::<A::Error>::new(key)).map(Some)
+                    seed.deserialize(StringDeserializer::<A::Error>::new(key))
+                        .map(Some)
                 }
                 None => self.map.next_key_seed(seed),
             }
         }
 
-        fn next_value_seed<V: DeserializeSeed<'de>>(&mut self, seed: V) -> Result<V::Value, A::Error> {
+        fn next_value_seed<V: DeserializeSeed<'de>>(
+            &mut self,
+            seed: V,
+        ) -> Result<V::Value, A::Error> {
             match self.value.take() {
                 Some(value) => seed.deserialize(value).map_err(de::Error::custom),
                 None => self.map.next_value_seed(seed),
@@ -1804,7 +2083,10 @@ mod kind_de {
         type Error = A::Error;
         type Variant = Fields<A>;
 
-        fn variant_seed<V: DeserializeSeed<'de>>(self, seed: V) -> Result<(V::Value, Fields<A>), A::Error> {
+        fn variant_seed<V: DeserializeSeed<'de>>(
+            self,
+            seed: V,
+        ) -> Result<(V::Value, Fields<A>), A::Error> {
             let kind = seed.deserialize(self.tag.into_deserializer())?;
             Ok((kind, Fields(self.map)))
         }
@@ -1817,18 +2099,31 @@ mod kind_de {
         type Error = A::Error;
 
         fn unit_variant(self) -> Result<(), A::Error> {
-            Err(de::Error::invalid_type(de::Unexpected::UnitVariant, &"an object kind with fields"))
+            Err(de::Error::invalid_type(
+                de::Unexpected::UnitVariant,
+                &"an object kind with fields",
+            ))
         }
 
-        fn newtype_variant_seed<T: DeserializeSeed<'de>>(self, seed: T) -> Result<T::Value, A::Error> {
+        fn newtype_variant_seed<T: DeserializeSeed<'de>>(
+            self,
+            seed: T,
+        ) -> Result<T::Value, A::Error> {
             seed.deserialize(MapAccessDeserializer::new(self.0))
         }
 
         fn tuple_variant<V: Visitor<'de>>(self, _: usize, _: V) -> Result<V::Value, A::Error> {
-            Err(de::Error::invalid_type(de::Unexpected::TupleVariant, &"an object kind with fields"))
+            Err(de::Error::invalid_type(
+                de::Unexpected::TupleVariant,
+                &"an object kind with fields",
+            ))
         }
 
-        fn struct_variant<V: Visitor<'de>>(self, _: &'static [&'static str], visitor: V) -> Result<V::Value, A::Error> {
+        fn struct_variant<V: Visitor<'de>>(
+            self,
+            _: &'static [&'static str],
+            visitor: V,
+        ) -> Result<V::Value, A::Error> {
             visitor.visit_map(self.0)
         }
     }
@@ -1842,13 +2137,20 @@ mod tests {
     /// them back into its extras; a node without any keeps none.
     #[test]
     fn extras_are_written_flat_in_order() {
-        let mut n = Node::path(NodeId(7), shapes::rectangle(Rect::new(0.0, 0.0, 4.0, 2.0)), Appearance::default_art());
+        let mut n = Node::path(
+            NodeId(7),
+            shapes::rectangle(Rect::new(0.0, 0.0, 4.0, 2.0)),
+            Appearance::default_art(),
+        );
         n.name = Some("n".into());
         n.knockout_shape = true;
         n.bbox_angle = 30.0;
         {
             let mut e = n.extras_mut();
-            e.mask = Some(Box::new(OpacityMask::new(Node::group(NodeId(8), vec![]), true)));
+            e.mask = Some(Box::new(OpacityMask::new(
+                Node::group(NodeId(8), vec![]),
+                true,
+            )));
             e.trace = Some(Box::new(serde_json::json!({"preset": "p"})));
             e.series_index = Some(2);
             e.graphic_style = Some(3);
@@ -1866,7 +2168,10 @@ mod tests {
                     fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                         f.write_str("an object")
                     }
-                    fn visit_map<A: serde::de::MapAccess<'de>>(self, mut a: A) -> Result<Keys, A::Error> {
+                    fn visit_map<A: serde::de::MapAccess<'de>>(
+                        self,
+                        mut a: A,
+                    ) -> Result<Keys, A::Error> {
                         let mut out = vec![];
                         while let Some(k) = a.next_key::<String>()? {
                             a.next_value::<serde::de::IgnoredAny>()?;
@@ -1898,7 +2203,11 @@ mod tests {
         ];
         assert_eq!(keys, order);
         assert_eq!(serde_json::from_value::<Node>(v).unwrap(), n);
-        let plain = Node::path(NodeId(9), shapes::rectangle(Rect::new(0.0, 0.0, 4.0, 2.0)), Appearance::default_art());
+        let plain = Node::path(
+            NodeId(9),
+            shapes::rectangle(Rect::new(0.0, 0.0, 4.0, 2.0)),
+            Appearance::default_art(),
+        );
         let back: Node = serde_json::from_value(serde_json::to_value(&plain).unwrap()).unwrap();
         assert!(back.extras_box().is_none());
         // Clearing the last extra lets them go; clearing one a node doesn't have allocates none.
@@ -1913,14 +2222,26 @@ mod tests {
 
     #[test]
     fn rect_live_shape_roundtrip() {
-        let l = LiveShape::Rectangle { w: 10.0, h: 20.0, radii: [0.0; 4], kinds: Default::default(), xf: Affine::translate((5.0, 5.0)) };
+        let l = LiveShape::Rectangle {
+            w: 10.0,
+            h: 20.0,
+            radii: [0.0; 4],
+            kinds: Default::default(),
+            xf: Affine::translate((5.0, 5.0)),
+        };
         assert_eq!(l.to_path().bounds(), Some(Rect::new(5.0, 5.0, 15.0, 25.0)));
         assert_eq!(l.label(), "Rectangle");
     }
 
     #[test]
     fn corner_kinds_save_only_when_some_corner_isnt_round() {
-        let mut l = LiveShape::Rectangle { w: 100.0, h: 50.0, radii: [0.0, 10.0, 0.0, 0.0], kinds: Default::default(), xf: Affine::IDENTITY };
+        let mut l = LiveShape::Rectangle {
+            w: 100.0,
+            h: 50.0,
+            radii: [0.0, 10.0, 0.0, 0.0],
+            kinds: Default::default(),
+            xf: Affine::IDENTITY,
+        };
         // Older files read as round.
         let json = serde_json::to_value(&l).unwrap();
         assert!(json.get("kinds").is_none(), "{json}");
@@ -1929,16 +2250,35 @@ mod tests {
             kinds[1] = CornerKind::Chamfer;
         }
         let json = serde_json::to_value(&l).unwrap();
-        assert_eq!(json["kinds"], serde_json::json!(["round", "chamfer", "round", "round"]));
+        assert_eq!(
+            json["kinds"],
+            serde_json::json!(["round", "chamfer", "round", "round"])
+        );
         assert_eq!(serde_json::from_value::<LiveShape>(json).unwrap(), l);
         // Polygons saved before Live Corners cut theirs read as sharp; a live path round-trips.
         let p: LiveShape =
             serde_json::from_value(serde_json::json!({"shape": "polygon", "radius": 10.0, "sides": 5, "xf": [1, 0, 0, 1, 0, 0]})).unwrap();
-        assert_eq!(p, LiveShape::Polygon { radius: 10.0, sides: 5, xf: Affine::IDENTITY, radii: vec![], kinds: vec![] });
+        assert_eq!(
+            p,
+            LiveShape::Polygon {
+                radius: 10.0,
+                sides: 5,
+                xf: Affine::IDENTITY,
+                radii: vec![],
+                kinds: vec![]
+            }
+        );
         let star = shapes::star(Point::new(0.0, 0.0), 20.0, 10.0, 5, 0.0);
-        let path = LiveShape::Path { base: star, radii: vec![2.0; 10], kinds: vec![] };
+        let path = LiveShape::Path {
+            base: star,
+            radii: vec![2.0; 10],
+            kinds: vec![],
+        };
         let json = serde_json::to_value(&path).unwrap();
-        assert_eq!((json["shape"].as_str(), json.get("kinds")), (Some("path"), None));
+        assert_eq!(
+            (json["shape"].as_str(), json.get("kinds")),
+            (Some("path"), None)
+        );
         assert_eq!(serde_json::from_value::<LiveShape>(json).unwrap(), path);
         assert_eq!(path.label(), "Path");
     }
@@ -1947,13 +2287,28 @@ mod tests {
     fn a_polygon_reports_and_takes_its_radius_angle_and_equal_sides() {
         let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
         // A hexagon of radius 10 at (50, 50), drawn 2× and turned 30° clockwise on the page.
-        let xf = Affine::translate((50.0, 50.0)) * Affine::rotate(30f64.to_radians()) * Affine::scale(2.0);
-        let mut p = LiveShape::Polygon { radius: 10.0, sides: 6, xf, radii: vec![], kinds: vec![] };
-        assert!(close(p.polygon_radius().unwrap(), 20.0) && close(p.polygon_angle().unwrap(), 330.0) && p.polygon_sides_equal());
+        let xf = Affine::translate((50.0, 50.0))
+            * Affine::rotate(30f64.to_radians())
+            * Affine::scale(2.0);
+        let mut p = LiveShape::Polygon {
+            radius: 10.0,
+            sides: 6,
+            xf,
+            radii: vec![],
+            kinds: vec![],
+        };
+        assert!(
+            close(p.polygon_radius().unwrap(), 20.0)
+                && close(p.polygon_angle().unwrap(), 330.0)
+                && p.polygon_sides_equal()
+        );
         p.set_polygon_angle(45.0);
         assert!(close(p.polygon_angle().unwrap(), 45.0));
         let centre = p.to_path().bounds().unwrap().center();
-        assert!(close(centre.x, 50.0) && close(centre.y, 50.0), "turned about its centre: {centre:?}");
+        assert!(
+            close(centre.x, 50.0) && close(centre.y, 50.0),
+            "turned about its centre: {centre:?}"
+        );
         p.set_polygon_radius(30.0);
         assert!(close(p.polygon_radius().unwrap(), 30.0));
         // A hexagon's side is as long as its radius.
@@ -1963,17 +2318,34 @@ mod tests {
         assert!(!p.polygon_sides_equal());
         let (r, a) = (p.polygon_radius().unwrap(), p.polygon_angle().unwrap());
         p.make_sides_equal();
-        assert!(p.polygon_sides_equal() && close(p.polygon_radius().unwrap(), r) && close(p.polygon_angle().unwrap(), a));
-        let LiveShape::Polygon { xf, .. } = &p else { panic!("polygon") };
+        assert!(
+            p.polygon_sides_equal()
+                && close(p.polygon_radius().unwrap(), r)
+                && close(p.polygon_angle().unwrap(), a)
+        );
+        let LiveShape::Polygon { xf, .. } = &p else {
+            panic!("polygon")
+        };
         assert_eq!(*xf * Point::ZERO, Point::new(100.0, 50.0));
         // Other shapes have none of it.
-        let e = LiveShape::Ellipse { w: 1.0, h: 1.0, pie: (0.0, 360.0), xf: Affine::IDENTITY };
+        let e = LiveShape::Ellipse {
+            w: 1.0,
+            h: 1.0,
+            pie: (0.0, 360.0),
+            xf: Affine::IDENTITY,
+        };
         assert_eq!((e.polygon_radius(), e.polygon_angle()), (None, None));
     }
 
     /// A node holding a live rectangle (`w` × `h`, all radii `r`, placed by `xf`) and its path.
     fn live_rect(w: f64, h: f64, r: f64, xf: Affine) -> Node {
-        let live = LiveShape::Rectangle { w, h, radii: [r; 4], kinds: Default::default(), xf };
+        let live = LiveShape::Rectangle {
+            w,
+            h,
+            radii: [r; 4],
+            kinds: Default::default(),
+            xf,
+        };
         let mut n = Node::path(NodeId(1), live.to_path(), Appearance::default_art());
         if let NodeKind::Path { live: slot, .. } = &mut n.kind {
             *slot = Some(Box::new(live));
@@ -1982,8 +2354,15 @@ mod tests {
     }
 
     fn live_of(n: &Node) -> (f64, f64, [f64; 4], Affine) {
-        let NodeKind::Path { live: Some(l), .. } = &n.kind else { panic!("not a live shape") };
-        let LiveShape::Rectangle { w, h, radii, xf, .. } = &**l else { panic!("not a live rectangle") };
+        let NodeKind::Path { live: Some(l), .. } = &n.kind else {
+            panic!("not a live shape")
+        };
+        let LiveShape::Rectangle {
+            w, h, radii, xf, ..
+        } = &**l
+        else {
+            panic!("not a live rectangle")
+        };
         (*w, *h, *radii, *xf)
     }
 
@@ -1992,40 +2371,69 @@ mod tests {
     }
 
     fn near_xf(a: Affine, b: Affine) -> bool {
-        a.as_coeffs().iter().zip(b.as_coeffs()).all(|(x, y)| near(*x, y))
+        a.as_coeffs()
+            .iter()
+            .zip(b.as_coeffs())
+            .all(|(x, y)| near(*x, y))
     }
 
     /// Size and radius of a live rectangle, within rounding.
     fn assert_live(n: &Node, w: f64, h: f64, r: f64) {
         let (lw, lh, radii, _) = live_of(n);
-        assert!(near(lw, w) && near(lh, h) && radii.iter().all(|x| near(*x, r)), "{lw} × {lh} r {radii:?}, want {w} × {h} r {r}");
+        assert!(
+            near(lw, w) && near(lh, h) && radii.iter().all(|x| near(*x, r)),
+            "{lw} × {lh} r {radii:?}, want {w} × {h} r {r}"
+        );
     }
 
     /// Each corner arc of a rounded rectangle's path, mapped by `back` (to undo a rotation),
     /// spans `r` along x and y: the corner is a circular arc of radius `r`.
     fn assert_round_corners(n: &Node, back: Affine, r: f64) {
-        let NodeKind::Path { path, .. } = &n.kind else { panic!("not a path") };
-        let a: Vec<Point> = path.subpaths[0].anchors.iter().map(|a| back * a.p).collect();
+        let NodeKind::Path { path, .. } = &n.kind else {
+            panic!("not a path")
+        };
+        let a: Vec<Point> = path.subpaths[0]
+            .anchors
+            .iter()
+            .map(|a| back * a.p)
+            .collect();
         assert_eq!(a.len(), 8, "a rounded rectangle");
         // Anchors 1→2, 3→4, 5→6 and 7→0 are the arcs.
         for (i, j) in [(1, 2), (3, 4), (5, 6), (7, 0)] {
             let (x, y) = ((a[j].x - a[i].x).abs(), (a[j].y - a[i].y).abs());
-            assert!(near(x, r) && near(y, r), "corner spans {x} × {y}, want {r} × {r}");
+            assert!(
+                near(x, r) && near(y, r),
+                "corner spans {x} × {y}, want {r} × {r}"
+            );
         }
     }
 
-    const KEEP_CORNERS: Scaling = Scaling { strokes: false, effects: None, keep_type_strokes: false, keep_corners: true, patterns: false };
+    const KEEP_CORNERS: Scaling = Scaling {
+        strokes: false,
+        effects: None,
+        keep_type_strokes: false,
+        keep_corners: true,
+        patterns: false,
+    };
 
     #[test]
     fn uneven_scales_keep_live_corners_circular() {
         // A 100 pt rounded square at (10, 10) stretched to 300 × 100 (#291).
         let mut n = live_rect(100.0, 100.0, 20.0, Affine::translate((10.0, 10.0)));
-        let stretch = Affine::translate((10.0, 10.0)) * Affine::scale_non_uniform(3.0, 1.0) * Affine::translate((-10.0, -10.0));
+        let stretch = Affine::translate((10.0, 10.0))
+            * Affine::scale_non_uniform(3.0, 1.0)
+            * Affine::translate((-10.0, -10.0));
         n.transform(stretch, KEEP_CORNERS);
         assert_live(&n, 300.0, 100.0, 20.0);
-        assert!(near_xf(live_of(&n).3, Affine::translate((10.0, 10.0))), "the scale went into the size");
+        assert!(
+            near_xf(live_of(&n).3, Affine::translate((10.0, 10.0))),
+            "the scale went into the size"
+        );
         let b = n.geometric_bounds().unwrap();
-        assert!(near(b.x0, 10.0) && near(b.y0, 10.0) && near(b.x1, 310.0) && near(b.y1, 110.0), "{b:?}");
+        assert!(
+            near(b.x0, 10.0) && near(b.y0, 10.0) && near(b.x1, 310.0) && near(b.y1, 110.0),
+            "{b:?}"
+        );
         assert_round_corners(&n, Affine::IDENTITY, 20.0);
         // Scale Corners on: the radius scales by the mean scale, still circular.
         let mut n = live_rect(100.0, 100.0, 20.0, Affine::IDENTITY);
@@ -2044,7 +2452,10 @@ mod tests {
         let place = Affine::translate((200.0, 100.0)) * Affine::rotate(30f64.to_radians());
         let mut n = live_rect(100.0, 50.0, 10.0, place);
         // Stretched along its own width, as a bounding-box drag of a rotated shape does.
-        n.transform(place * Affine::scale_non_uniform(2.0, 1.0) * place.inverse(), KEEP_CORNERS);
+        n.transform(
+            place * Affine::scale_non_uniform(2.0, 1.0) * place.inverse(),
+            KEEP_CORNERS,
+        );
         assert_live(&n, 200.0, 50.0, 10.0);
         assert!(near_xf(live_of(&n).3, place));
         assert_round_corners(&n, place.inverse(), 10.0);
@@ -2065,13 +2476,25 @@ mod tests {
         let a = Affine::scale_non_uniform(2.0, 1.0);
         n.transform(a, Scaling::default());
         assert_eq!(live_of(&n), (100.0, 50.0, [10.0; 4], a * rot));
-        let (NodeKind::Path { path, .. }, NodeKind::Path { path: old, .. }) = (&n.kind, &before.kind) else { panic!() };
+        let (NodeKind::Path { path, .. }, NodeKind::Path { path: old, .. }) =
+            (&n.kind, &before.kind)
+        else {
+            panic!()
+        };
         assert_eq!(*path, old.transformed(a));
         // A file saved with an uneven scale in `xf` keeps its exact geometry when moved...
         let legacy = Affine::translate((5.0, 5.0)) * Affine::scale_non_uniform(2.0, 1.0);
         let mut n = live_rect(100.0, 100.0, 20.0, legacy);
         n.transform(Affine::translate((10.0, 0.0)), KEEP_CORNERS);
-        assert_eq!(live_of(&n), (100.0, 100.0, [20.0; 4], Affine::translate((10.0, 0.0)) * legacy));
+        assert_eq!(
+            live_of(&n),
+            (
+                100.0,
+                100.0,
+                [20.0; 4],
+                Affine::translate((10.0, 0.0)) * legacy
+            )
+        );
         // ...and once scaled, has document units and circular corners of its mean radius.
         n.transform(Affine::scale(2.0), Scaling::default());
         assert_live(&n, 400.0, 200.0, 20.0 * 2f64.sqrt() * 2.0);
@@ -2085,23 +2508,53 @@ mod tests {
     fn a_scale_left_in_the_transform_folds_into_the_size() {
         let legacy = Affine::translate((5.0, 5.0)) * Affine::scale_non_uniform(4.0, 1.0);
         let n = live_rect(50.0, 80.0, 20.0, legacy);
-        let NodeKind::Path { live: Some(live), .. } = &n.kind else { panic!("not live") };
+        let NodeKind::Path {
+            live: Some(live), ..
+        } = &n.kind
+        else {
+            panic!("not live")
+        };
         let folded = live.folded();
         assert_eq!(live_of(&n).3, legacy, "folded() leaves the shape alone");
-        let LiveShape::Rectangle { w, h, radii, xf, .. } = &folded else { panic!("not a rectangle") };
+        let LiveShape::Rectangle {
+            w, h, radii, xf, ..
+        } = &folded
+        else {
+            panic!("not a rectangle")
+        };
         // Drawn 200 × 80 with 80 × 20 corners; folded, the corners are circles of the mean radius.
-        assert!(near(*w, 200.0) && near(*h, 80.0) && radii.iter().all(|r| near(*r, 40.0)), "{w} × {h} r {radii:?}");
+        assert!(
+            near(*w, 200.0) && near(*h, 80.0) && radii.iter().all(|r| near(*r, 40.0)),
+            "{w} × {h} r {radii:?}"
+        );
         assert!(near_xf(*xf, Affine::translate((5.0, 5.0))));
-        let (a, b) = (folded.to_path().bounds().unwrap(), live.to_path().bounds().unwrap());
-        assert!(near(a.x0, b.x0) && near(a.y0, b.y0) && near(a.x1, b.x1) && near(a.y1, b.y1), "same place and size: {a:?} {b:?}");
+        let (a, b) = (
+            folded.to_path().bounds().unwrap(),
+            live.to_path().bounds().unwrap(),
+        );
+        assert!(
+            near(a.x0, b.x0) && near(a.y0, b.y0) && near(a.x1, b.x1) && near(a.y1, b.y1),
+            "same place and size: {a:?} {b:?}"
+        );
         let corners = crate::LiveCorners::of(&n).unwrap();
-        assert_eq!(corners.style(&corners.all()).0, Some(40.0), "the radius in document units");
+        assert_eq!(
+            corners.style(&corners.all()).0,
+            Some(40.0),
+            "the radius in document units"
+        );
         // Nothing to fold: a moved, rotated or reflected rectangle and a sheared one stay as they are.
-        let place = Affine::translate((5.0, 5.0)) * Affine::rotate(0.5) * Affine::scale_non_uniform(-1.0, 1.0);
+        let place = Affine::translate((5.0, 5.0))
+            * Affine::rotate(0.5)
+            * Affine::scale_non_uniform(-1.0, 1.0);
         let shear = Affine::new([1.0, 0.0, 0.5, 1.0, 0.0, 0.0]);
         for xf in [place, shear] {
             let mut l = live_rect(100.0, 160.0, 20.0, xf);
-            let NodeKind::Path { live: Some(live), .. } = &mut l.kind else { panic!("not live") };
+            let NodeKind::Path {
+                live: Some(live), ..
+            } = &mut l.kind
+            else {
+                panic!("not live")
+            };
             assert!(!live.fold_scale());
             assert_eq!(live_of(&l), (100.0, 160.0, [20.0; 4], xf));
         }
@@ -2109,7 +2562,13 @@ mod tests {
 
     #[test]
     fn default_transparency() {
-        let p = || Node::path(NodeId(1), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
+        let p = || {
+            Node::path(
+                NodeId(1),
+                shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+                Appearance::default_art(),
+            )
+        };
         assert!(p().has_default_transparency());
         let tweaks: [fn(&mut Node); 7] = [
             |n| n.opacity = 0.5,
@@ -2129,7 +2588,11 @@ mod tests {
 
     #[test]
     fn transform_group_recurses() {
-        let p = Node::path(NodeId(2), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
+        let p = Node::path(
+            NodeId(2),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::default_art(),
+        );
         let mut g = Node::group(NodeId(1), vec![Arc::new(p)]);
         g.transform(Affine::scale(2.0), true);
         assert_eq!(g.geometric_bounds(), Some(Rect::new(0.0, 0.0, 20.0, 20.0)));
@@ -2141,28 +2604,49 @@ mod tests {
     fn unplaced_gradients_pin_only_when_a_refit_would_differ() {
         use vectorcraft_color::{Gradient, GradientGeom, GradientKind, GradientPaint, Paint};
         let grad = || Paint::Gradient(Box::new(GradientPaint::new(Gradient::default())));
-        let fresh = || Node::path(NodeId(2), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)), Appearance::basic(grad(), grad(), 2.0));
+        let fresh = || {
+            Node::path(
+                NodeId(2),
+                shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+                Appearance::basic(grad(), grad(), 2.0),
+            )
+        };
         let geoms = |n: &Node| match (n.appearance.fill_paint(), n.appearance.stroke_paint()) {
             (Paint::Gradient(f), Paint::Gradient(s)) => (f.geom, s.geom),
             _ => panic!("gradient fill and stroke"),
         };
         let mut n = fresh();
         n.transform(Affine::translate((10.0, 5.0)) * Affine::scale(2.0), true);
-        assert_eq!(geoms(&n), (None, None), "moves and uniform scales keep refitting");
+        assert_eq!(
+            geoms(&n),
+            (None, None),
+            "moves and uniform scales keep refitting"
+        );
         let mut n = fresh();
         n.transform(Affine::rotate(std::f64::consts::FRAC_PI_2), false);
         let (f, s) = geoms(&n);
         // Fitted on the old bounds (strokes on the stroke-inflated box), then rotated: vertical.
-        let mut want = GradientGeom::fit(GradientKind::Linear, Rect::new(0.0, 0.0, 100.0, 50.0), 0.0);
-        want.transform(Affine::rotate(std::f64::consts::FRAC_PI_2), GradientKind::Linear);
+        let mut want =
+            GradientGeom::fit(GradientKind::Linear, Rect::new(0.0, 0.0, 100.0, 50.0), 0.0);
+        want.transform(
+            Affine::rotate(std::f64::consts::FRAC_PI_2),
+            GradientKind::Linear,
+        );
         let f = f.unwrap();
-        assert!(f.start.distance(want.start) < 1e-9 && f.end.distance(want.end) < 1e-9, "{f:?}");
+        assert!(
+            f.start.distance(want.start) < 1e-9 && f.end.distance(want.end) < 1e-9,
+            "{f:?}"
+        );
         assert!((s.unwrap().length() - 102.0).abs() < 1e-9);
     }
 
     #[test]
     fn display_names() {
-        let p = Node::path(NodeId(2), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
+        let p = Node::path(
+            NodeId(2),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::default_art(),
+        );
         assert_eq!(p.display_name(), "<Path>");
         let l = Node::layer(NodeId(1), "Layer 1", LayerColor::Preset(0));
         assert_eq!(l.display_name(), "Layer 1");
@@ -2170,26 +2654,69 @@ mod tests {
 
     #[test]
     fn visual_bounds_include_stroke() {
-        let mut p = Node::path(NodeId(2), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
+        let mut p = Node::path(
+            NodeId(2),
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+            Appearance::default_art(),
+        );
         p.appearance.stroke_mut().unwrap().join = crate::appearance::LineJoin::Round;
         assert_eq!(p.visual_bounds(), Some(Rect::new(-0.5, -0.5, 10.5, 10.5)));
     }
 
     /// A group holding a path, a compound, an image and a nested group, as a file writes it.
     fn nested_group() -> Node {
-        let path = |id| Node::path(NodeId(id), shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)), Appearance::default_art());
-        let image = ImageObject { key: "k".into(), width: 2, height: 3, xf: Affine::IDENTITY, link: None, placement: Default::default() };
-        let inner = Node::new(NodeId(5), NodeKind::Group { children: vec![Arc::new(path(6))], clip: true });
-        let compound = Node::new(NodeId(3), NodeKind::Compound { children: vec![Arc::new(path(4))], rule: FillRule::EvenOdd });
-        let kids = vec![Arc::new(path(2)), Arc::new(compound), Arc::new(Node::new(NodeId(7), NodeKind::Image(Box::new(image)))), Arc::new(inner)];
-        Node::new(NodeId(1), NodeKind::Group { children: kids, clip: false })
+        let path = |id| {
+            Node::path(
+                NodeId(id),
+                shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+                Appearance::default_art(),
+            )
+        };
+        let image = ImageObject {
+            key: "k".into(),
+            width: 2,
+            height: 3,
+            xf: Affine::IDENTITY,
+            link: None,
+            placement: Default::default(),
+        };
+        let inner = Node::new(
+            NodeId(5),
+            NodeKind::Group {
+                children: vec![Arc::new(path(6))],
+                clip: true,
+            },
+        );
+        let compound = Node::new(
+            NodeId(3),
+            NodeKind::Compound {
+                children: vec![Arc::new(path(4))],
+                rule: FillRule::EvenOdd,
+            },
+        );
+        let kids = vec![
+            Arc::new(path(2)),
+            Arc::new(compound),
+            Arc::new(Node::new(NodeId(7), NodeKind::Image(Box::new(image)))),
+            Arc::new(inner),
+        ];
+        Node::new(
+            NodeId(1),
+            NodeKind::Group {
+                children: kids,
+                clip: false,
+            },
+        )
     }
 
     #[test]
     fn kinds_read_back_with_type_first_or_anywhere() {
         let n = nested_group();
         let json = serde_json::to_string(&n).unwrap();
-        assert!(json.contains(r#""kind":{"type":"group","children":["#), "written with `type` first: {json}");
+        assert!(
+            json.contains(r#""kind":{"type":"group","children":["#),
+            "written with `type` first: {json}"
+        );
         assert_eq!(serde_json::from_str::<Node>(&json).unwrap(), n);
         // Through a JSON value, whose keys are sorted: `type` comes after `children`.
         let v = serde_json::to_value(&n).unwrap();
@@ -2197,17 +2724,32 @@ mod tests {
         assert_eq!(serde_json::from_str::<Node>(&v.to_string()).unwrap(), n);
         // `type` last, in the middle, and keys a newer version added (ignored, as before).
         let kind = r#"{"children":[],"x":{"deep":[1,2]},"clip":true,"type":"group"}"#;
-        assert_eq!(serde_json::from_str::<NodeKind>(kind).unwrap(), NodeKind::Group { children: vec![], clip: true });
+        assert_eq!(
+            serde_json::from_str::<NodeKind>(kind).unwrap(),
+            NodeKind::Group {
+                children: vec![],
+                clip: true
+            }
+        );
         let kind = r#"{"symbol":"S","type":"symbolinstance","later":1,"xf":[1,0,0,1,5,6]}"#;
         assert_eq!(
             serde_json::from_str::<NodeKind>(kind).unwrap(),
-            NodeKind::SymbolInstance { symbol: "S".into(), xf: Affine::translate((5.0, 6.0)) }
+            NodeKind::SymbolInstance {
+                symbol: "S".into(),
+                xf: Affine::translate((5.0, 6.0))
+            }
         );
         let kind = r#"{"width":2,"type":"image","key":"k","height":3,"xf":[1,0,0,1,0,0]}"#;
-        assert!(matches!(serde_json::from_str::<NodeKind>(kind).unwrap(), NodeKind::Image(i) if i.key == "k" && i.height == 3));
+        assert!(
+            matches!(serde_json::from_str::<NodeKind>(kind).unwrap(), NodeKind::Image(i) if i.key == "k" && i.height == 3)
+        );
         // Defaults as before.
-        let NodeKind::Layer { printable, preview, template, .. } =
-            serde_json::from_str(r#"{"type":"layer","color":{"Preset":0},"children":[]}"#).unwrap()
+        let NodeKind::Layer {
+            printable,
+            preview,
+            template,
+            ..
+        } = serde_json::from_str(r#"{"type":"layer","color":{"Preset":0},"children":[]}"#).unwrap()
         else {
             panic!("a layer")
         };
@@ -2216,7 +2758,14 @@ mod tests {
 
     #[test]
     fn bad_kinds_are_errors() {
-        for bad in [r#"{"children":[]}"#, r#"{"type":"nothing"}"#, r#"{"type":"group"}"#, r#"{"type":3,"children":[]}"#, r#"[]"#, r#""group""#] {
+        for bad in [
+            r#"{"children":[]}"#,
+            r#"{"type":"nothing"}"#,
+            r#"{"type":"group"}"#,
+            r#"{"type":3,"children":[]}"#,
+            r#"[]"#,
+            r#""group""#,
+        ] {
             assert!(serde_json::from_str::<NodeKind>(bad).is_err(), "{bad}");
         }
     }

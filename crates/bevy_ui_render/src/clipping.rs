@@ -111,7 +111,7 @@ fn edge_clip<T: Copy>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bevy_math::{vec2, Affine2, Mat2, Rect, Rot2};
+    use bevy_math::{Affine2, Mat2, Rect, Rot2, vec2};
     use bevy_ui::{CalculatedClip, CalculatedClipRect};
 
     fn calculated_clip(regions: impl IntoIterator<Item = CalculatedClipRect>) -> CalculatedClip {
@@ -183,17 +183,19 @@ mod tests {
 
     #[test]
     fn quad_outside_clip_rect_returns_empty_vertices_list() {
-        assert!(clip_polygon(
-            Some(&calculated_clip([CalculatedClipRect {
-                rect: Rect {
-                    min: vec2(2., 2.),
-                    max: vec2(3., 3.),
-                },
-                world_to_clip_local: Affine2::IDENTITY,
-            }])),
-            &quad(),
-            Vec2::lerp
-        )
-        .is_empty());
+        assert!(
+            clip_polygon(
+                Some(&calculated_clip([CalculatedClipRect {
+                    rect: Rect {
+                        min: vec2(2., 2.),
+                        max: vec2(3., 3.),
+                    },
+                    world_to_clip_local: Affine2::IDENTITY,
+                }])),
+                &quad(),
+                Vec2::lerp
+            )
+            .is_empty()
+        );
     }
 }

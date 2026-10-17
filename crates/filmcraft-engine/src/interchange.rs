@@ -9,15 +9,30 @@ use crate::{EngineError, Result, Session};
 
 /// The interchange format of a file, if it is one (by content, with the extension as a hint).
 pub fn detect(path: &str, bytes: &[u8]) -> Option<Format> {
-    let ext = std::path::Path::new(path).extension().and_then(|e| e.to_str()).map(str::to_ascii_lowercase);
-    if !matches!(ext.as_deref(), Some("edl" | "xml" | "fcpxml" | "otio" | "aaf" | "omf" | "omfi")) {
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(str::to_ascii_lowercase);
+    if !matches!(
+        ext.as_deref(),
+        Some("edl" | "xml" | "fcpxml" | "otio" | "aaf" | "omf" | "omfi")
+    ) {
         return None;
     }
     filmcraft_interchange::detect(bytes, ext.as_deref())
 }
 
 fn report_json(r: &filmcraft_interchange::Report) -> Vec<String> {
-    r.entries.iter().map(|e| if e.count > 1 { format!("{} (×{})", e.message, e.count) } else { e.message.clone() }).collect()
+    r.entries
+        .iter()
+        .map(|e| {
+            if e.count > 1 {
+                format!("{} (×{})", e.message, e.count)
+            } else {
+                e.message.clone()
+            }
+        })
+        .collect()
 }
 
 fn is_file_media(item: &filmcraft_project::ProjectItem) -> bool {
@@ -36,27 +51,44 @@ pub fn import(s: &mut Session, path: &str, bytes: &[u8], format: Format) -> Resu
     let (fragment, report) = match format {
         // AAF / OMF may embed audio: write it next to the document (the media items point there)
         Format::Aaf | Format::Omf => {
-            let r = if format == Format::Aaf { filmcraft_interchange::aaf::import(bytes, &opts) } else { filmcraft_interchange::omf::import(bytes, &opts) };
-            let (fragment, extracted, report) = r.map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+            let r = if format == Format::Aaf {
+                filmcraft_interchange::aaf::import(bytes, &opts)
+            } else {
+                filmcraft_interchange::omf::import(bytes, &opts)
+            };
+            let (fragment, extracted, report) =
+                r.map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
             for m in extracted {
-                if let Some(dir) = std::path::Path::new(&m.path).parent().filter(|_| !s.services.export_in_memory()) {
+                if let Some(dir) = std::path::Path::new(&m.path)
+                    .parent()
+                    .filter(|_| !s.services.export_in_memory())
+                {
                     let _ = std::fs::create_dir_all(dir);
                 }
-                s.services.write_file(&m.path, &m.wav).map_err(|e| EngineError::Other(format!("{}: {e}", m.path)))?;
+                s.services
+                    .write_file(&m.path, &m.wav)
+                    .map_err(|e| EngineError::Other(format!("{}: {e}", m.path)))?;
             }
             (fragment, report)
         }
-        _ => filmcraft_interchange::import_with(bytes, format, &opts).map_err(|e| EngineError::Other(format!("{path}: {e}")))?,
+        _ => filmcraft_interchange::import_with(bytes, format, &opts)
+            .map_err(|e| EngineError::Other(format!("{path}: {e}")))?,
     };
     let before: std::collections::HashSet<ItemId> = s.project.items.keys().copied().collect();
-    let name = opts.name.clone().unwrap_or_else(|| format.name().to_string());
+    let name = opts
+        .name
+        .clone()
+        .unwrap_or_else(|| format.name().to_string());
     let seqs = s.edit(&format!("Import {name}"), |proj, _| {
         let seqs = filmcraft_interchange::merge_into(proj, fragment, None);
         // A document that sets only some Motion parameters leaves the others at their "auto"
         // (NaN) defaults. Resolve them as placing a clip does, for every format. A media file's
         // picture size is only what the document says so far (an EDL says nothing: the importer
         // assumes the sequence size), so its clips' anchors wait for Link Media below.
-        proj.resolve_placed_auto_points(|seq| !before.contains(&seq), |source| !is_file_media(source));
+        proj.resolve_placed_auto_points(
+            |seq| !before.contains(&seq),
+            |source| !is_file_media(source),
+        );
         Ok(seqs)
     })?;
     // Link media: probe each new file-backed item that exists, through the host's reader as a
@@ -81,7 +113,9 @@ pub fn import(s: &mut Session, path: &str, bytes: &[u8], format: Format) -> Resu
             Some(src) => {
                 let info = src.info().clone();
                 let identity = crate::relink::identity_of(&*s.services, &mpath).ok();
-                let rebase = (format == Format::Edl).then_some(info.start_timecode).flatten();
+                let rebase = (format == Format::Edl)
+                    .then_some(info.start_timecode)
+                    .flatten();
                 s.edit("Link Media", |proj, _| {
                     if let Some(item) = proj.items.get_mut(&id)
                         && let ItemKind::Media(m) = &mut item.kind
@@ -95,7 +129,10 @@ pub fn import(s: &mut Session, path: &str, bytes: &[u8], format: Format) -> Resu
                         }
                     }
                     // the picture size is now the file's own: centre the anchors of its clips in it
-                    proj.resolve_placed_auto_points(|seq| !before.contains(&seq), |source| source.id == id);
+                    proj.resolve_placed_auto_points(
+                        |seq| !before.contains(&seq),
+                        |source| source.id == id,
+                    );
                     Ok(())
                 })?;
                 s.media.insert_file(id, &mpath, src);
@@ -126,19 +163,43 @@ pub fn export(s: &mut Session, p: &Value) -> Result<Value> {
     // else, so the error can list exactly what is accepted.
     let format = match p.get("format") {
         None | Some(Value::Null) => Format::Fcp7Xml,
-        Some(v) => v.as_str().and_then(|name| Format::ALL.into_iter().find(|f| f.extension().eq_ignore_ascii_case(name))).ok_or_else(|| {
-            let names: Vec<&str> = Format::ALL.iter().map(|f| f.extension()).collect();
-            crate::commands::bad("file.exportInterchange", format!("unknown format {v}: use one of {}", names.join(", ")))
-        })?,
+        Some(v) => v
+            .as_str()
+            .and_then(|name| {
+                Format::ALL
+                    .into_iter()
+                    .find(|f| f.extension().eq_ignore_ascii_case(name))
+            })
+            .ok_or_else(|| {
+                let names: Vec<&str> = Format::ALL.iter().map(|f| f.extension()).collect();
+                crate::commands::bad(
+                    "file.exportInterchange",
+                    format!("unknown format {v}: use one of {}", names.join(", ")),
+                )
+            })?,
     };
-    let path = p.get("path").and_then(Value::as_str).ok_or_else(|| EngineError::Other("need `path`".into()))?.to_string();
-    let seq = p.get("sequence").and_then(Value::as_u64).map(ItemId).or(s.state.active_sequence).ok_or(EngineError::NoSequence)?;
+    let path = p
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| EngineError::Other("need `path`".into()))?
+        .to_string();
+    let seq = p
+        .get("sequence")
+        .and_then(Value::as_u64)
+        .map(ItemId)
+        .or(s.state.active_sequence)
+        .ok_or(EngineError::NoSequence)?;
     let opts = ExportOptions {
-        relative_to: std::path::Path::new(&path).parent().map(|d| d.to_string_lossy().to_string()),
+        relative_to: std::path::Path::new(&path)
+            .parent()
+            .map(|d| d.to_string_lossy().to_string()),
         name: s.project.item(seq).map(|i| i.name.clone()),
         ..Default::default()
     };
-    let (bytes, report) = filmcraft_interchange::export(&s.project, seq, format, &opts).map_err(|e| EngineError::Other(e.to_string()))?;
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(e.to_string()))?;
+    let (bytes, report) = filmcraft_interchange::export(&s.project, seq, format, &opts)
+        .map_err(|e| EngineError::Other(e.to_string()))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(e.to_string()))?;
     Ok(json!({"path": path, "bytes": bytes.len(), "report": report_json(&report)}))
 }

@@ -52,5 +52,8 @@ fn median_radius_8_is_stronger_than_4_at_full_res() {
     let g4 = r4.get(cx_px, cy)[1];
     let g8 = r8.get(cx_px, cy)[1];
     assert!(g4 > 0.9, "radius 4 should keep the 8px stripe (got g={g4})");
-    assert!(g8 < 0.1, "radius 8 should erase the 8px stripe (got g={g8}); a 4px cap would leave it green");
+    assert!(
+        g8 < 0.1,
+        "radius 8 should erase the 8px stripe (got g={g8}); a 4px cap would leave it green"
+    );
 }

@@ -49,7 +49,12 @@ pub struct MenuLook<'a> {
 impl Default for MenuLook<'static> {
     /// Samples on, English names, medium rows, no favourites.
     fn default() -> Self {
-        Self { samples: true, english_names: true, row: ROW, favorites: &[] }
+        Self {
+            samples: true,
+            english_names: true,
+            row: ROW,
+            favorites: &[],
+        }
     }
 }
 
@@ -152,7 +157,16 @@ fn remap_highlight(before: &[Row], selected: Option<usize>, after: &[Row]) -> Op
 
 /// What the rows were listed for: the query, the script, kind and favourites filters, Show Font
 /// Names in English, the expanded families, the favourites and the font list's generation.
-type RowsKey = (String, usize, Option<FontClass>, bool, bool, Vec<String>, Vec<String>, u64);
+type RowsKey = (
+    String,
+    usize,
+    Option<FontClass>,
+    bool,
+    bool,
+    Vec<String>,
+    Vec<String>,
+    u64,
+);
 
 /// The menu's state between frames.
 #[derive(Clone, Default)]
@@ -213,7 +227,14 @@ pub fn font_menu(
 }
 
 /// The list inside the open menu.
-fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, sample: Option<&str>, look: MenuLook) -> Option<FontPick> {
+fn list(
+    ui: &mut Ui,
+    state_id: egui::Id,
+    st: &mut MenuState,
+    current: &str,
+    sample: Option<&str>,
+    look: MenuLook,
+) -> Option<FontPick> {
     let row_h = look.row;
     let t = Tokens::get(ui.ctx());
     // Each time the menu opens: no query, the current family highlighted and in view (the
@@ -228,7 +249,8 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     }
     st.last = pass;
     // For [`end_stale_preview`]: the menu is open, in this layer.
-    ui.ctx().data_mut(|d| d.insert_temp(open_id(), (pass, ui.layer_id())));
+    ui.ctx()
+        .data_mut(|d| d.insert_temp(open_id(), (pass, ui.layer_id())));
     let field = state_id.with("query");
     if opening_now {
         ui.data_mut(|d| d.insert_temp(field, String::new()));
@@ -238,8 +260,14 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     // Arrow keys move the highlight and open or close a family's styles (taken before the
     // search field sees them).
     let key = |i: &mut egui::InputState, k| i.consume_key(egui::Modifiers::NONE, k);
-    let (up, down, left, right) =
-        ui.input_mut(|i| (key(i, egui::Key::ArrowUp), key(i, egui::Key::ArrowDown), key(i, egui::Key::ArrowLeft), key(i, egui::Key::ArrowRight)));
+    let (up, down, left, right) = ui.input_mut(|i| {
+        (
+            key(i, egui::Key::ArrowUp),
+            key(i, egui::Key::ArrowDown),
+            key(i, egui::Key::ArrowLeft),
+            key(i, egui::Key::ArrowRight),
+        )
+    });
     if ui.memory(|m| m.focused().is_none()) {
         ui.memory_mut(|m| m.request_focus(field.with("edit")));
     }
@@ -249,7 +277,13 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(4.0, 2.0);
         for i in 0..SCRIPTS {
-            if ui.selectable_label(st.script == i, egui::RichText::new(script_label(i)).size(11.0)).clicked() {
+            if ui
+                .selectable_label(
+                    st.script == i,
+                    egui::RichText::new(script_label(i)).size(11.0),
+                )
+                .clicked()
+            {
                 st.script = i;
                 refilter = true;
             }
@@ -257,16 +291,32 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     });
     ui.horizontal_wrapped(|ui| {
         ui.spacing_mut().item_spacing = vec2(4.0, 2.0);
-        if ui.selectable_label(st.favorites_only, egui::RichText::new("★").size(11.0)).on_hover_text(tl!("Favorites")).clicked() {
+        if ui
+            .selectable_label(st.favorites_only, egui::RichText::new("★").size(11.0))
+            .on_hover_text(tl!("Favorites"))
+            .clicked()
+        {
             st.favorites_only = !st.favorites_only;
             refilter = true;
         }
-        if ui.selectable_label(st.class.is_none(), egui::RichText::new(tl!("Any Kind")).size(11.0)).clicked() {
+        if ui
+            .selectable_label(
+                st.class.is_none(),
+                egui::RichText::new(tl!("Any Kind")).size(11.0),
+            )
+            .clicked()
+        {
             st.class = None;
             refilter = true;
         }
         for c in FontClass::ALL {
-            if ui.selectable_label(st.class == Some(c), egui::RichText::new(class_label(c)).size(11.0)).clicked() {
+            if ui
+                .selectable_label(
+                    st.class == Some(c),
+                    egui::RichText::new(class_label(c)).size(11.0),
+                )
+                .clicked()
+            {
                 st.class = if st.class == Some(c) { None } else { Some(c) };
                 refilter = true;
             }
@@ -280,12 +330,23 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     let current = current.as_str();
     let favorite = |f: &str| look.favorites.iter().any(|x| x.eq_ignore_ascii_case(f));
     // The generation is read first: fonts that load meanwhile make the next frame list them.
-    let key: RowsKey =
-        (query.clone(), st.script, st.class, st.favorites_only, look.english_names, st.expanded.clone(), look.favorites.to_vec(), db.generation());
+    let key: RowsKey = (
+        query.clone(),
+        st.script,
+        st.class,
+        st.favorites_only,
+        look.english_names,
+        st.expanded.clone(),
+        look.favorites.to_vec(),
+        db.generation(),
+    );
     if st.rows_key.as_ref() != Some(&key) {
         let wanted = |f: &str| {
             let label = db.family_display_name(f, look.english_names);
-            if !(query.is_empty() || f.to_lowercase().contains(&query) || label.to_lowercase().contains(&query)) {
+            if !(query.is_empty()
+                || f.to_lowercase().contains(&query)
+                || label.to_lowercase().contains(&query))
+            {
                 return false;
             }
             if st.favorites_only && !favorite(f) {
@@ -317,7 +378,9 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
         st.highlight = None;
     }
     if st.highlight.is_none() && query.is_empty() {
-        st.highlight = rows.iter().position(|r| matches!(r, Row::Family(f) if f.eq_ignore_ascii_case(current)));
+        st.highlight = rows
+            .iter()
+            .position(|r| matches!(r, Row::Family(f) if f.eq_ignore_ascii_case(current)));
     }
     let mut keyed = false;
     if (up || down) && !rows.is_empty() {
@@ -330,14 +393,21 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
         keyed = true;
     }
     // → opens the highlighted family's styles, ← closes them (from the family or one of them).
-    if let Some(row) = st.highlight.and_then(|i| rows.get(i)).cloned().filter(|_| left || right) {
+    if let Some(row) = st
+        .highlight
+        .and_then(|i| rows.get(i))
+        .cloned()
+        .filter(|_| left || right)
+    {
         let f = row.family().to_lowercase();
         let open = st.expanded.contains(&f);
         if right && !open && db.styles(row.family()).len() > 1 {
             st.expanded.push(f);
         } else if left && open {
             st.expanded.retain(|e| *e != f);
-            st.highlight = rows.iter().position(|r| *r == Row::Family(row.family().to_string()));
+            st.highlight = rows
+                .iter()
+                .position(|r| *r == Row::Family(row.family().to_string()));
         }
         keyed = true;
     }
@@ -351,7 +421,9 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     // the menu's one scrolling part, under the search field and filters (#555): it fills the
     // menu's room (its max rect) below them.
     let room = (ui.max_rect().bottom() - ui.next_widget_position().y).clamp(120.0, 600.0);
-    let mut area = egui::ScrollArea::vertical().max_height(room).min_scrolled_height(room.min(row_h * rows.len() as f32));
+    let mut area = egui::ScrollArea::vertical()
+        .max_height(room)
+        .min_scrolled_height(room.min(row_h * rows.len() as f32));
     // The highlight in view: centred as the menu opens, scrolled just enough as the keys move it.
     if let Some(top) = st.highlight.map(|i| i as f32 * row_h) {
         let target = if opening {
@@ -375,8 +447,14 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
     let shown = area.show_rows(ui, row_h, rows.len(), |ui, range| {
         for i in range {
             let Some(row) = rows.get(i) else { continue };
-            let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), row_h), Sense::click());
-            if resp.hovered() && ui.input(|inp| inp.pointer.delta() != egui::Vec2::ZERO || inp.smooth_scroll_delta != egui::Vec2::ZERO) {
+            let (rect, resp) =
+                ui.allocate_exact_size(vec2(ui.available_width(), row_h), Sense::click());
+            if resp.hovered()
+                && ui.input(|inp| {
+                    inp.pointer.delta() != egui::Vec2::ZERO
+                        || inp.smooth_scroll_delta != egui::Vec2::ZERO
+                })
+            {
                 hovered = Some(i);
             }
             let p = ui.painter_at(rect);
@@ -392,39 +470,78 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
                 && db.styles(f).len() > 1
             {
                 let open = st.expanded.iter().any(|e| e.eq_ignore_ascii_case(f));
-                p.text(tri.center(), egui::Align2::CENTER_CENTER, if open { "▾" } else { "▸" }, egui::FontId::proportional(11.0), t.text_dim);
-                on_triangle = resp.interact_pointer_pos().is_some_and(|pos| tri.contains(pos));
+                p.text(
+                    tri.center(),
+                    egui::Align2::CENTER_CENTER,
+                    if open { "▾" } else { "▸" },
+                    egui::FontId::proportional(11.0),
+                    t.text_dim,
+                );
+                on_triangle = resp
+                    .interact_pointer_pos()
+                    .is_some_and(|pos| tri.contains(pos));
                 if resp.clicked() && on_triangle {
                     toggled = Some(f.to_lowercase());
                 }
             }
             // The star at the end of a family's row.
-            let star = egui::Rect::from_min_max(egui::pos2(rect.max.x - STAR, rect.min.y), rect.max);
+            let star =
+                egui::Rect::from_min_max(egui::pos2(rect.max.x - STAR, rect.min.y), rect.max);
             let mut on_star = false;
             if let Row::Family(f) = row {
                 let on = favorite(f);
                 let hot = resp.hover_pos().is_some_and(|pos| star.contains(pos));
                 if on || hot || st.highlight == Some(i) {
                     let color = if on { t.accent } else { t.text_dim };
-                    p.text(star.center(), egui::Align2::CENTER_CENTER, if on { "★" } else { "☆" }, egui::FontId::proportional(12.0), color);
+                    p.text(
+                        star.center(),
+                        egui::Align2::CENTER_CENTER,
+                        if on { "★" } else { "☆" },
+                        egui::FontId::proportional(12.0),
+                        color,
+                    );
                 }
-                on_star = resp.interact_pointer_pos().is_some_and(|pos| star.contains(pos));
+                on_star = resp
+                    .interact_pointer_pos()
+                    .is_some_and(|pos| star.contains(pos));
                 if resp.clicked() && on_star {
                     starred = Some(f.clone());
                 }
             }
-            let indent = if row.style().is_some() { DISCLOSURE + 12.0 } else { DISCLOSURE };
+            let indent = if row.style().is_some() {
+                DISCLOSURE + 12.0
+            } else {
+                DISCLOSURE
+            };
             let name_w = rect.width() * NAME_SHARE;
-            let name_rect = egui::Rect::from_min_max(rect.min + vec2(indent, 0.0), egui::pos2(rect.min.x + name_w - 4.0, rect.max.y));
+            let name_rect = egui::Rect::from_min_max(
+                rect.min + vec2(indent, 0.0),
+                egui::pos2(rect.min.x + name_w - 4.0, rect.max.y),
+            );
             // Family rows follow Show Font Names in English; style rows keep the style name (#394).
             let name = match row {
                 Row::Style(_, style) => style.clone(),
                 Row::Family(f) => db.family_display_name(f, look.english_names),
             };
-            ui.painter_at(name_rect).text(name_rect.left_center(), egui::Align2::LEFT_CENTER, name, egui::FontId::proportional(12.0), t.text);
-            let sample_rect = egui::Rect::from_min_max(rect.min + vec2(name_w, 2.0), rect.max - vec2(STAR + 2.0, 2.0));
+            ui.painter_at(name_rect).text(
+                name_rect.left_center(),
+                egui::Align2::LEFT_CENTER,
+                name,
+                egui::FontId::proportional(12.0),
+                t.text,
+            );
+            let sample_rect = egui::Rect::from_min_max(
+                rect.min + vec2(name_w, 2.0),
+                rect.max - vec2(STAR + 2.0, 2.0),
+            );
             if !look.samples {
-            } else if let Some(tex) = sample_texture(ui.ctx(), row.family(), row.style(), sample, sample_rect.height()) {
+            } else if let Some(tex) = sample_texture(
+                ui.ctx(),
+                row.family(),
+                row.style(),
+                sample,
+                sample_rect.height(),
+            ) {
                 paint_sample(ui, sample_rect, &tex, t.text);
             }
             if resp.clicked() && !on_triangle && !on_star {
@@ -449,7 +566,11 @@ fn list(ui: &mut Ui, state_id: egui::Id, st: &mut MenuState, current: &str, samp
         return Some(FontPick::Favorite(f));
     }
     if enter && chosen.is_none() {
-        chosen = st.highlight.and_then(|i| rows.get(i)).or(rows.first()).map(Row::pick);
+        chosen = st
+            .highlight
+            .and_then(|i| rows.get(i))
+            .or(rows.first())
+            .map(Row::pick);
     }
     if let Some((f, s)) = chosen {
         ui.close();
@@ -487,7 +608,10 @@ fn paint_sample(ui: &Ui, area: egui::Rect, tex: &egui::TextureHandle, tint: Colo
     let size = tex.size_vec2() / ui.ctx().pixels_per_point();
     let at = egui::Rect::from_min_size(area.left_center() - vec2(0.0, size.y * 0.5), size);
     let shown = at.intersect(area);
-    let uv = egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2((shown.width() / size.x).clamp(0.0, 1.0), 1.0));
+    let uv = egui::Rect::from_min_max(
+        egui::pos2(0.0, 0.0),
+        egui::pos2((shown.width() / size.x).clamp(0.0, 1.0), 1.0),
+    );
     ui.painter_at(area).image(tex.id(), shown, uv, tint);
 }
 
@@ -531,10 +655,27 @@ thread_local! {
 /// generic sample), white with coverage as alpha (tinted when drawn). Rendered off the UI thread
 /// on native (the worker asks for a frame when it is done), a few per frame; `None` until it is
 /// ready.
-fn sample_texture(ctx: &egui::Context, family: &str, style: Option<&str>, sample: Option<&str>, height: f32) -> Option<egui::TextureHandle> {
+fn sample_texture(
+    ctx: &egui::Context,
+    family: &str,
+    style: Option<&str>,
+    sample: Option<&str>,
+    height: f32,
+) -> Option<egui::TextureHandle> {
     let px = (height * ctx.pixels_per_point()).round().clamp(8.0, 96.0) as u32;
-    let key: Key = (family.to_string(), style.unwrap_or("Regular").to_string(), sample.unwrap_or_default().to_string(), px);
-    let texture = |img: egui::ColorImage| ctx.load_texture(format!("font-sample-{family}-{px}"), img, egui::TextureOptions::LINEAR);
+    let key: Key = (
+        family.to_string(),
+        style.unwrap_or("Regular").to_string(),
+        sample.unwrap_or_default().to_string(),
+        px,
+    );
+    let texture = |img: egui::ColorImage| {
+        ctx.load_texture(
+            format!("font-sample-{family}-{px}"),
+            img,
+            egui::TextureOptions::LINEAR,
+        )
+    };
     SAMPLES.with(|s| {
         let mut s = s.borrow_mut();
         if let Some(t) = s.ready.get(&key) {
@@ -563,11 +704,13 @@ fn sample_texture(ctx: &egui::Context, family: &str, style: Option<&str>, sample
             let (tx, rx) = std::sync::mpsc::channel();
             let (f, style, text) = (key.0.clone(), key.1.clone(), key.2.clone());
             let repaint = ctx.clone();
-            let spawned = std::thread::Builder::new().name("font-sample".into()).spawn(move || {
-                // The receiver may be gone (the cache was cleared): nothing to do then.
-                let _ = tx.send(render_sample(&f, &style, &text, px));
-                repaint.request_repaint();
-            });
+            let spawned = std::thread::Builder::new()
+                .name("font-sample".into())
+                .spawn(move || {
+                    // The receiver may be gone (the cache was cleared): nothing to do then.
+                    let _ = tx.send(render_sample(&f, &style, &text, px));
+                    repaint.request_repaint();
+                });
             if spawned.is_ok() {
                 s.pending.insert(key, rx);
             } else {
@@ -596,7 +739,12 @@ const MAX_ASPECT: f32 = 10.0;
 fn render_sample(family: &str, style: &str, text: &str, px: u32) -> Option<egui::ColorImage> {
     let db = vectorcraft_text::FontDb::global();
     let face: Arc<vectorcraft_text::FontFace> = db.face(family, style)?;
-    let covers = |s: &str| !s.trim().is_empty() && s.chars().filter(|c| !c.is_whitespace()).all(|c| face.covers(c));
+    let covers = |s: &str| {
+        !s.trim().is_empty()
+            && s.chars()
+                .filter(|c| !c.is_whitespace())
+                .all(|c| face.covers(c))
+    };
     let text = if covers(text) { text } else { FALLBACK_SAMPLE };
     if !covers(text) && !face.family.eq_ignore_ascii_case(family) {
         return None;
@@ -605,7 +753,12 @@ fn render_sample(family: &str, style: &str, text: &str, px: u32) -> Option<egui:
     let em = (asc + desc).max(1.0) / face.units_per_em();
     // The em box fills the height with a little air.
     let size = px as f64 * 0.8 / em;
-    let style = vectorcraft_doc::CharStyle { font_family: face.family.clone(), font_style: face.style.clone(), size, ..Default::default() };
+    let style = vectorcraft_doc::CharStyle {
+        font_family: face.family.clone(),
+        font_style: face.style.clone(),
+        size,
+        ..Default::default()
+    };
     let t = vectorcraft_doc::TextObject::point(vectorcraft_geom::Point::ZERO, text, style);
     let layout = vectorcraft_text::layout(db, &t);
     let mut path = layout.to_bezpath();
@@ -614,13 +767,25 @@ fn render_sample(family: &str, style: &str, text: &str, px: u32) -> Option<egui:
     let h = px as usize;
     // Baseline where the ascent fits the top (with the air above it).
     let baseline = px as f64 * 0.1 + asc / face.units_per_em() * size;
-    path.apply_affine(vectorcraft_geom::Affine::translate((1.0 - b.x0.min(0.0), baseline)));
+    path.apply_affine(vectorcraft_geom::Affine::translate((
+        1.0 - b.x0.min(0.0),
+        baseline,
+    )));
     let mask = crate::panels::glyphs::rasterize(&path, w, h);
-    Some(egui::ColorImage::new([w, h], mask.iter().map(|&a| Color32::from_rgba_premultiplied(a, a, a, a)).collect()))
+    Some(egui::ColorImage::new(
+        [w, h],
+        mask.iter()
+            .map(|&a| Color32::from_rgba_premultiplied(a, a, a, a))
+            .collect(),
+    ))
 }
 
 #[cfg(test)]
-pub(crate) fn render_sample_for_test(family: &str, text: &str, px: u32) -> Option<egui::ColorImage> {
+pub(crate) fn render_sample_for_test(
+    family: &str,
+    text: &str,
+    px: u32,
+) -> Option<egui::ColorImage> {
     render_sample(family, "Regular", text, px)
 }
 
@@ -649,8 +814,14 @@ pub(crate) fn end_stale_preview(app: &mut VectorcraftApp, ctx: &egui::Context) {
         return;
     };
     // (`layer_id_at` outside `input`: egui's context lock isn't re-entrant.)
-    let (escape, press) = ctx.input(|i| (i.key_pressed(egui::Key::Escape), i.pointer.any_pressed().then(|| i.pointer.interact_pos())));
-    let leaving = escape || press.is_some_and(|at| at.is_none_or(|p| ctx.layer_id_at(p) != Some(layer)));
+    let (escape, press) = ctx.input(|i| {
+        (
+            i.key_pressed(egui::Key::Escape),
+            i.pointer.any_pressed().then(|| i.pointer.interact_pos()),
+        )
+    });
+    let leaving =
+        escape || press.is_some_and(|at| at.is_none_or(|p| ctx.layer_id_at(p) != Some(layer)));
     if leaving {
         apply(app, ctx, FontPick::EndPreview);
     }
@@ -709,7 +880,10 @@ fn toggle_favorite(app: &mut VectorcraftApp, family: String) {
 /// For a font menu that only picks a font and never changes the document (Find Font's Replace
 /// With, the Glyphs panel): the family (and style) chosen, if any. A star is toggled here; the
 /// highlighted row is not previewed.
-pub(crate) fn picked(app: &mut VectorcraftApp, pick: Option<FontPick>) -> Option<(String, Option<String>)> {
+pub(crate) fn picked(
+    app: &mut VectorcraftApp,
+    pick: Option<FontPick>,
+) -> Option<(String, Option<String>)> {
     match pick? {
         FontPick::Chosen(f, style) => Some((f, style)),
         FontPick::Favorite(f) => {
@@ -722,7 +896,11 @@ pub(crate) fn picked(app: &mut VectorcraftApp, pick: Option<FontPick>) -> Option
 
 /// The command that sets font `family` (and `style`, else the closest the family has) on what the
 /// menus act on.
-fn font_command(app: &VectorcraftApp, family: &str, style: Option<&str>) -> (&'static str, serde_json::Value) {
+fn font_command(
+    app: &VectorcraftApp,
+    family: &str,
+    style: Option<&str>,
+) -> (&'static str, serde_json::Value) {
     let mut p = json!({"font": family});
     if let Some(s) = style {
         p["style"] = json!(s);
@@ -749,10 +927,16 @@ pub(crate) fn sample_text(app: &VectorcraftApp) -> Option<String> {
             vectorcraft_doc::NodeKind::Text(t) => t.plain_text().get(a..b).map(str::to_string),
             _ => None,
         },
-        _ => app.session.active()?.selection.objects.iter().find_map(|id| match &doc.node(*id)?.kind {
-            vectorcraft_doc::NodeKind::Text(t) => Some(t.plain_text()),
-            _ => None,
-        }),
+        _ => app
+            .session
+            .active()?
+            .selection
+            .objects
+            .iter()
+            .find_map(|id| match &doc.node(*id)?.kind {
+                vectorcraft_doc::NodeKind::Text(t) => Some(t.plain_text()),
+                _ => None,
+            }),
     }?;
     let line = text.lines().map(str::trim).find(|l| !l.is_empty())?;
     Some(line.chars().take(12).collect())
@@ -766,9 +950,22 @@ mod tests {
     #[test]
     fn the_thai_filter_lists_fonts_with_thai() {
         use vectorcraft_text::FontTraits;
-        let (thai, japanese, latin) =
-            (FontTraits { thai: true, ..Default::default() }, FontTraits { japanese: true, ..Default::default() }, FontTraits::default());
-        let passing = |t: FontTraits| (0..super::SCRIPTS).filter(|s| super::script_matches(*s, t)).collect::<Vec<_>>();
+        let (thai, japanese, latin) = (
+            FontTraits {
+                thai: true,
+                ..Default::default()
+            },
+            FontTraits {
+                japanese: true,
+                ..Default::default()
+            },
+            FontTraits::default(),
+        );
+        let passing = |t: FontTraits| {
+            (0..super::SCRIPTS)
+                .filter(|s| super::script_matches(*s, t))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(passing(thai), [0, 3]);
         assert_eq!(passing(japanese), [0, 1]);
         assert_eq!(passing(latin), [0, 2]);
@@ -784,14 +981,32 @@ mod tests {
     #[test]
     fn keeps_the_same_family_when_other_rows_are_inserted_or_removed() {
         let before = [family("Alpha"), family("Bravo"), family("Charlie")];
-        assert_eq!(remap_highlight(&before, Some(2), &[family("Bravo"), family("Charlie")]), Some(1));
-        assert_eq!(remap_highlight(&before, Some(2), &[family("Alpha"), family("New"), family("Bravo"), family("Charlie")]), Some(3));
+        assert_eq!(
+            remap_highlight(&before, Some(2), &[family("Bravo"), family("Charlie")]),
+            Some(1)
+        );
+        assert_eq!(
+            remap_highlight(
+                &before,
+                Some(2),
+                &[
+                    family("Alpha"),
+                    family("New"),
+                    family("Bravo"),
+                    family("Charlie")
+                ]
+            ),
+            Some(3)
+        );
     }
 
     #[test]
     fn clears_the_highlight_when_its_family_is_filtered_out() {
         let before = [family("Alpha"), family("Bravo"), family("Charlie")];
-        assert_eq!(remap_highlight(&before, Some(1), &[family("Alpha"), family("Charlie")]), None);
+        assert_eq!(
+            remap_highlight(&before, Some(1), &[family("Alpha"), family("Charlie")]),
+            None
+        );
         assert_eq!(remap_highlight(&before, Some(10), &before), None);
         assert_eq!(remap_highlight(&before, None, &before), None);
     }
@@ -799,7 +1014,11 @@ mod tests {
     #[test]
     fn expanded_style_rows_do_not_retarget_the_highlight() {
         let before = [family("Alpha"), family("Bravo")];
-        let after = [family("Alpha"), Row::Style("Alpha".into(), "Bold".into()), family("Bravo")];
+        let after = [
+            family("Alpha"),
+            Row::Style("Alpha".into(), "Bold".into()),
+            family("Bravo"),
+        ];
         assert_eq!(remap_highlight(&before, Some(1), &after), Some(2));
         assert_eq!(remap_highlight(&after, Some(1), &before), None);
     }

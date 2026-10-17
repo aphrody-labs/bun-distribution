@@ -332,7 +332,7 @@ pub use adaptors::*;
 #[cfg(feature = "alloc")]
 pub use cubic_splines::*;
 pub use easing::*;
-pub use interval::{interval, Interval};
+pub use interval::{Interval, interval};
 
 #[cfg(feature = "alloc")]
 pub use {
@@ -1047,8 +1047,8 @@ mod base {
     mod tests {
         use super::*;
         use alloc::vec::Vec;
-        use approx::{assert_abs_diff_eq, AbsDiffEq};
-        use bevy_math::{ops, Quat, Vec2};
+        use approx::{AbsDiffEq, assert_abs_diff_eq};
+        use bevy_math::{Quat, Vec2, ops};
         use core::f32::consts::TAU;
 
         #[test]
@@ -1408,7 +1408,7 @@ pub mod prelude {
     pub use crate::easing::*;
 
     #[doc(hidden)]
-    pub use crate::interval::{interval, Interval};
+    pub use crate::interval::{Interval, interval};
 
     #[doc(hidden)]
     #[cfg(feature = "alloc")]

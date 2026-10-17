@@ -99,7 +99,12 @@ pub const DEFAULT_WRAP_INDENT: f32 = 72.0;
 
 impl Default for MathProps {
     fn default() -> Self {
-        MathProps { brk_bin: BrkBin::Before, brk_bin_sub: BrkBinSub::MinusMinus, wrap_indent: DEFAULT_WRAP_INDENT, wrap_right: false }
+        MathProps {
+            brk_bin: BrkBin::Before,
+            brk_bin_sub: BrkBinSub::MinusMinus,
+            wrap_indent: DEFAULT_WRAP_INDENT,
+            wrap_right: false,
+        }
     }
 }
 
@@ -157,10 +162,17 @@ pub struct MRun {
 
 impl MRun {
     pub fn new(text: impl Into<String>) -> MRun {
-        MRun { text: text.into(), ..Default::default() }
+        MRun {
+            text: text.into(),
+            ..Default::default()
+        }
     }
     pub fn plain(text: impl Into<String>) -> MRun {
-        MRun { text: text.into(), sty: Some(MSty::Plain), ..Default::default() }
+        MRun {
+            text: text.into(),
+            sty: Some(MSty::Plain),
+            ..Default::default()
+        }
     }
 }
 
@@ -340,7 +352,8 @@ fn yes() -> bool {
 
 /// A row holds an equation-number mark (`#`) in a top-level run.
 pub fn has_number_mark(row: &[MNode]) -> bool {
-    row.iter().any(|n| matches!(n, MNode::Run(r) if !r.lit && r.text.contains('#')))
+    row.iter()
+        .any(|n| matches!(n, MNode::Run(r) if !r.lit && r.text.contains('#')))
 }
 
 /// Integral signs (their limits default to sub/sup positions).
@@ -350,7 +363,11 @@ pub fn is_integral(c: char) -> bool {
 
 /// Characters that take n-ary operator form in the linear format.
 pub fn is_nary_char(c: char) -> bool {
-    is_integral(c) || matches!(c, '∑' | '∏' | '∐' | '⋃' | '⋂' | '⋁' | '⋀' | '⨁' | '⨂' | '⨀' | '⨄' | '⨆')
+    is_integral(c)
+        || matches!(
+            c,
+            '∑' | '∏' | '∐' | '⋃' | '⋂' | '⋁' | '⋀' | '⨁' | '⨂' | '⨀' | '⨄' | '⨆'
+        )
 }
 
 /// Mathematical alphanumeric for `c` in a style and alphabet (Unicode block U+1D400).
@@ -359,7 +376,11 @@ pub fn math_alnum(c: char, bold: bool, italic: bool, scr: MScr) -> char {
     let upper = c.is_ascii_uppercase();
     let lower = c.is_ascii_lowercase();
     if upper || lower {
-        let k = if upper { c as u32 - 'A' as u32 } else { c as u32 - 'a' as u32 };
+        let k = if upper {
+            c as u32 - 'A' as u32
+        } else {
+            c as u32 - 'a' as u32
+        };
         // Letters that live in the Letterlike Symbols block.
         let hole = |table: &[(char, char)]| table.iter().find(|(f, _)| *f == c).map(|(_, t)| *t);
         let (base_u, base_l) = match (scr, bold, italic) {
@@ -392,14 +413,23 @@ pub fn math_alnum(c: char, bold: bool, italic: bool, scr: MScr) -> char {
             }
             (MScr::Script, true, _) => (0x1D4D0, 0x1D4EA),
             (MScr::Fraktur, false, _) => {
-                if let Some(t) = hole(&[('C', 'ℭ'), ('H', 'ℌ'), ('I', 'ℑ'), ('R', 'ℜ'), ('Z', 'ℨ')]) {
+                if let Some(t) = hole(&[('C', 'ℭ'), ('H', 'ℌ'), ('I', 'ℑ'), ('R', 'ℜ'), ('Z', 'ℨ')])
+                {
                     return t;
                 }
                 (0x1D504, 0x1D51E)
             }
             (MScr::Fraktur, true, _) => (0x1D56C, 0x1D586),
             (MScr::DoubleStruck, _, _) => {
-                if let Some(t) = hole(&[('C', 'ℂ'), ('H', 'ℍ'), ('N', 'ℕ'), ('P', 'ℙ'), ('Q', 'ℚ'), ('R', 'ℝ'), ('Z', 'ℤ')]) {
+                if let Some(t) = hole(&[
+                    ('C', 'ℂ'),
+                    ('H', 'ℍ'),
+                    ('N', 'ℕ'),
+                    ('P', 'ℙ'),
+                    ('Q', 'ℚ'),
+                    ('R', 'ℝ'),
+                    ('Z', 'ℤ'),
+                ]) {
                     return t;
                 }
                 (0x1D538, 0x1D552)
@@ -512,7 +542,12 @@ fn lin_node(n: &MNode, s: &mut String, depth: usize) {
             });
             lin_operand(den, s, depth);
         }
-        MNode::Script { kind, base, sub, sup } => {
+        MNode::Script {
+            kind,
+            base,
+            sub,
+            sup,
+        } => {
             if *kind == ScriptKind::Pre {
                 s.push('_');
                 lin_operand(sub, s, depth);
@@ -544,7 +579,15 @@ fn lin_node(n: &MNode, s: &mut String, depth: usize) {
                 s.push(')');
             }
         }
-        MNode::Nary { chr, sub_hide, sup_hide, sub, sup, e, .. } => {
+        MNode::Nary {
+            chr,
+            sub_hide,
+            sup_hide,
+            sub,
+            sup,
+            e,
+            ..
+        } => {
             s.push(*chr);
             if !sub_hide && !sub.is_empty() {
                 s.push('_');
@@ -557,7 +600,9 @@ fn lin_node(n: &MNode, s: &mut String, depth: usize) {
             s.push('▒');
             lin_operand(e, s, depth);
         }
-        MNode::Delim { beg, end, elems, .. } => {
+        MNode::Delim {
+            beg, end, elems, ..
+        } => {
             // A standard pair writes as itself; anything else uses explicit `├X … Y┤`.
             let pair = matches!((beg, end), (Some(b), Some(e)) if crate::math_linear::closer(*b) == Some(*e));
             let invisible = beg.is_none() && end.is_none();
@@ -615,7 +660,9 @@ fn lin_node(n: &MNode, s: &mut String, depth: usize) {
             lin_operand(e, s, depth);
         }
         // A numbered equation (`E=mc^2#(1)`) is written as its one row.
-        MNode::EqArr { rows } if rows.len() == 1 && rows.first().is_some_and(|r| has_number_mark(r)) => {
+        MNode::EqArr { rows }
+            if rows.len() == 1 && rows.first().is_some_and(|r| has_number_mark(r)) =>
+        {
             if let Some(r) = rows.first() {
                 lin_arg(r, s, depth);
             }
@@ -680,19 +727,23 @@ pub enum MClass {
 /// The spacing class of a character in an equation.
 pub fn math_class(c: char) -> MClass {
     match c {
-        '+' | '−' | '-' | '±' | '∓' | '×' | '÷' | '·' | '∙' | '∗' | '*' | '∘' | '⊕' | '⊖' | '⊗' | '⊘' | '⊙' | '⊚' | '⊛' | '∪' | '∩' | '∧' | '∨'
-        | '∖' | '⋅' | '⋆' | '⊎' | '⊓' | '⊔' | '⋄' | '⊞' | '⊟' | '⊠' | '⊡' | '⋉' | '⋊' | '⋋' | '⋌' | '⋎' | '⋏' | '⋒' | '⋓' | '∔' | '∸' | '≀' | '⨿'
-        | '⊼' | '⊻' | '⊽' => MClass::Bin,
-        '=' | '<' | '>' | '≤' | '≥' | '≠' | '≈' | '≡' | '≢' | '∼' | '≃' | '≅' | '≐' | '∝' | '≪' | '≫' | '≺' | '≻' | '≼' | '≽' | '⊂' | '⊃' | '⊆'
-        | '⊇' | '⊄' | '⊅' | '⊈' | '⊉' | '⊊' | '⊋' | '∈' | '∉' | '∋' | '∌' | '⊥' | '∥' | '∦' | '∣' | '∤' | '≔' | '≕' | '≝' | '≜' | '≞' | '≟' | '→'
-        | '←' | '↔' | '⇒' | '⇐' | '⇔' | '↦' | '⟼' | '⟶' | '⟵' | '⟷' | '⟹' | '⟸' | '⟺' | '↑' | '↓' | '↕' | '⇑' | '⇓' | '⇕' | '↗' | '↘' | '↙' | '↖'
-        | '⊢' | '⊣' | '⊨' | '⊩' | '⊪' | '⊬' | '⊭' | '⊮' | '⊯' | '≲' | '≳' | '≍' | '⊏' | '⊐' | '⊑' | '⊒' | '⋢' | '⋣' | '≶' | '≷' | '≮' | '≯' | '≰'
-        | '≱' | '≦' | '≧' | '⩽' | '⩾' | ':' | '∶' | '∷' | '∺' | '∻' | '≗' | '≙' | '≚' | '≑' | '≒' | '≓' | '≖' | '⇌' | '⇋' | '⇄' | '⇆' | '⇇' | '⇉'
-        | '⇈' | '⇊' | '↪' | '↩' | '↼' | '↽' | '⇀' | '⇁' | '↿' | '↾' | '⇃' | '⇂' | '↶' | '↷' | '↺' | '↻' | '⊸' | '↜' | '↝' | '↞' | '↠' | '↢' | '↣'
-        | '↫' | '↬' | '↭' | '⇚' | '⇛' | '↰' | '↱' | '⇝' | '≁' | '≄' | '≉' | '≇' | '≭' | '≨' | '≩' | '⊀' | '⊁' | '⋠' | '⋡' | '⋦' | '⋧' | '⋨' | '⋩'
-        | '⋪' | '⋫' | '⋬' | '⋭' | '⋈' | '∴' | '∵' | '≏' | '≎' | '⋘' | '⋙' | '⊲' | '⊳' | '⊴' | '⊵' | '⋐' | '⋑' => {
-            MClass::Rel
-        }
+        '+' | '−' | '-' | '±' | '∓' | '×' | '÷' | '·' | '∙' | '∗' | '*' | '∘' | '⊕' | '⊖' | '⊗'
+        | '⊘' | '⊙' | '⊚' | '⊛' | '∪' | '∩' | '∧' | '∨' | '∖' | '⋅' | '⋆' | '⊎' | '⊓' | '⊔'
+        | '⋄' | '⊞' | '⊟' | '⊠' | '⊡' | '⋉' | '⋊' | '⋋' | '⋌' | '⋎' | '⋏' | '⋒' | '⋓' | '∔'
+        | '∸' | '≀' | '⨿' | '⊼' | '⊻' | '⊽' => MClass::Bin,
+        '=' | '<' | '>' | '≤' | '≥' | '≠' | '≈' | '≡' | '≢' | '∼' | '≃' | '≅' | '≐' | '∝' | '≪'
+        | '≫' | '≺' | '≻' | '≼' | '≽' | '⊂' | '⊃' | '⊆' | '⊇' | '⊄' | '⊅' | '⊈' | '⊉' | '⊊'
+        | '⊋' | '∈' | '∉' | '∋' | '∌' | '⊥' | '∥' | '∦' | '∣' | '∤' | '≔' | '≕' | '≝' | '≜'
+        | '≞' | '≟' | '→' | '←' | '↔' | '⇒' | '⇐' | '⇔' | '↦' | '⟼' | '⟶' | '⟵' | '⟷' | '⟹'
+        | '⟸' | '⟺' | '↑' | '↓' | '↕' | '⇑' | '⇓' | '⇕' | '↗' | '↘' | '↙' | '↖' | '⊢' | '⊣'
+        | '⊨' | '⊩' | '⊪' | '⊬' | '⊭' | '⊮' | '⊯' | '≲' | '≳' | '≍' | '⊏' | '⊐' | '⊑' | '⊒'
+        | '⋢' | '⋣' | '≶' | '≷' | '≮' | '≯' | '≰' | '≱' | '≦' | '≧' | '⩽' | '⩾' | ':' | '∶'
+        | '∷' | '∺' | '∻' | '≗' | '≙' | '≚' | '≑' | '≒' | '≓' | '≖' | '⇌' | '⇋' | '⇄' | '⇆'
+        | '⇇' | '⇉' | '⇈' | '⇊' | '↪' | '↩' | '↼' | '↽' | '⇀' | '⇁' | '↿' | '↾' | '⇃' | '⇂'
+        | '↶' | '↷' | '↺' | '↻' | '⊸' | '↜' | '↝' | '↞' | '↠' | '↢' | '↣' | '↫' | '↬' | '↭'
+        | '⇚' | '⇛' | '↰' | '↱' | '⇝' | '≁' | '≄' | '≉' | '≇' | '≭' | '≨' | '≩' | '⊀' | '⊁'
+        | '⋠' | '⋡' | '⋦' | '⋧' | '⋨' | '⋩' | '⋪' | '⋫' | '⋬' | '⋭' | '⋈' | '∴' | '∵' | '≏'
+        | '≎' | '⋘' | '⋙' | '⊲' | '⊳' | '⊴' | '⊵' | '⋐' | '⋑' => MClass::Rel,
         '(' | '[' | '{' | '⟨' | '⌈' | '⌊' | '⟦' | '〈' => MClass::Open,
         ')' | ']' | '}' | '⟩' | '⌉' | '⌋' | '⟧' | '〉' | '!' => MClass::Close,
         ',' | ';' => MClass::Punct,
@@ -722,16 +773,65 @@ pub fn merge_runs(a: Arg) -> Arg {
                 }
                 MNode::Run(r)
             }
-            MNode::Frac { kind, num, den } => MNode::Frac { kind, num: merge_runs(num), den: merge_runs(den) },
-            MNode::Script { kind, base, sub, sup } => MNode::Script { kind, base: merge_runs(base), sub: merge_runs(sub), sup: merge_runs(sup) },
-            MNode::Rad { deg, deg_hide, e } => MNode::Rad { deg: merge_runs(deg), deg_hide, e: merge_runs(e) },
-            MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub, sup, e } => {
-                MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub: merge_runs(sub), sup: merge_runs(sup), e: merge_runs(e) }
-            }
-            MNode::Delim { beg, end, sep, grow, shp_match, elems } => {
-                MNode::Delim { beg, end, sep, grow, shp_match, elems: elems.into_iter().map(merge_runs).collect() }
-            }
-            MNode::Func { name, e } => MNode::Func { name: merge_runs(name), e: merge_runs(e) },
+            MNode::Frac { kind, num, den } => MNode::Frac {
+                kind,
+                num: merge_runs(num),
+                den: merge_runs(den),
+            },
+            MNode::Script {
+                kind,
+                base,
+                sub,
+                sup,
+            } => MNode::Script {
+                kind,
+                base: merge_runs(base),
+                sub: merge_runs(sub),
+                sup: merge_runs(sup),
+            },
+            MNode::Rad { deg, deg_hide, e } => MNode::Rad {
+                deg: merge_runs(deg),
+                deg_hide,
+                e: merge_runs(e),
+            },
+            MNode::Nary {
+                chr,
+                lim_loc,
+                grow,
+                sub_hide,
+                sup_hide,
+                sub,
+                sup,
+                e,
+            } => MNode::Nary {
+                chr,
+                lim_loc,
+                grow,
+                sub_hide,
+                sup_hide,
+                sub: merge_runs(sub),
+                sup: merge_runs(sup),
+                e: merge_runs(e),
+            },
+            MNode::Delim {
+                beg,
+                end,
+                sep,
+                grow,
+                shp_match,
+                elems,
+            } => MNode::Delim {
+                beg,
+                end,
+                sep,
+                grow,
+                shp_match,
+                elems: elems.into_iter().map(merge_runs).collect(),
+            },
+            MNode::Func { name, e } => MNode::Func {
+                name: merge_runs(name),
+                e: merge_runs(e),
+            },
             other => other,
         };
         out.push(n);
@@ -752,23 +852,54 @@ mod tests {
         let n = parse_linear("x=(-b±√(b^2-4ac))/2a");
         assert_eq!(n.len(), 2, "{n:#?}");
         assert_eq!(n[0], run("x="));
-        let MNode::Frac { num, den, .. } = &n[1] else { panic!("{n:#?}") };
+        let MNode::Frac { num, den, .. } = &n[1] else {
+            panic!("{n:#?}")
+        };
         assert_eq!(den, &vec![run("2a")]);
-        assert!(num.iter().any(|m| matches!(m, MNode::Rad { .. })), "{num:#?}");
-        let MNode::Rad { e, .. } = num.iter().find(|m| matches!(m, MNode::Rad { .. })).unwrap() else { panic!() };
-        assert!(matches!(e.first(), Some(MNode::Script { kind: ScriptKind::Sup, .. })), "{e:#?}");
+        assert!(
+            num.iter().any(|m| matches!(m, MNode::Rad { .. })),
+            "{num:#?}"
+        );
+        let MNode::Rad { e, .. } = num.iter().find(|m| matches!(m, MNode::Rad { .. })).unwrap()
+        else {
+            panic!()
+        };
+        assert!(
+            matches!(
+                e.first(),
+                Some(MNode::Script {
+                    kind: ScriptKind::Sup,
+                    ..
+                })
+            ),
+            "{e:#?}"
+        );
     }
 
     #[test]
     fn scripts_and_nary() {
         let n = parse_linear("∑_(i=1)^n▒i^2");
-        let MNode::Nary { chr, sub, sup, e, .. } = &n[0] else { panic!("{n:#?}") };
+        let MNode::Nary {
+            chr, sub, sup, e, ..
+        } = &n[0]
+        else {
+            panic!("{n:#?}")
+        };
         assert_eq!(*chr, '∑');
         assert_eq!(sub, &vec![run("i=1")]);
         assert_eq!(sup, &vec![run("n")]);
         assert!(matches!(e.first(), Some(MNode::Script { .. })));
         let n = parse_linear("x_i^2");
-        assert!(matches!(&n[0], MNode::Script { kind: ScriptKind::SubSup, .. }), "{n:#?}");
+        assert!(
+            matches!(
+                &n[0],
+                MNode::Script {
+                    kind: ScriptKind::SubSup,
+                    ..
+                }
+            ),
+            "{n:#?}"
+        );
     }
 
     #[test]
@@ -776,7 +907,9 @@ mod tests {
         let n = parse_linear("sin x");
         assert!(matches!(&n[0], MNode::Func { .. }), "{n:#?}");
         let n = parse_linear("■(a&b@c&d)");
-        let MNode::Matrix { rows, .. } = &n[0] else { panic!("{n:#?}") };
+        let MNode::Matrix { rows, .. } = &n[0] else {
+            panic!("{n:#?}")
+        };
         assert_eq!(rows.len(), 2);
         assert_eq!(rows[0].len(), 2);
     }
@@ -809,7 +942,10 @@ mod tests {
 
     #[test]
     fn hostile_linear_never_panics() {
-        for s in ["", "/", "^", "_", "√", "∑", "((((", "))))", "■(", "█(@@&&", "a/", "/b", "^^^__", "√(&)", "∫_^▒", "lim_", "sin"] {
+        for s in [
+            "", "/", "^", "_", "√", "∑", "((((", "))))", "■(", "█(@@&&", "a/", "/b", "^^^__",
+            "√(&)", "∫_^▒", "lim_", "sin",
+        ] {
             let _ = to_linear(&parse_linear(s));
         }
         let deep = "(".repeat(5000) + &")".repeat(5000);

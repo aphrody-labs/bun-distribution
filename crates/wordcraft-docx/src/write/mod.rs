@@ -32,7 +32,8 @@ impl PartRels {
             return id.clone();
         }
         let id = format!("rId{}", self.list.len() + 1);
-        self.list.push((id.clone(), kind.to_string(), target.to_string(), external));
+        self.list
+            .push((id.clone(), kind.to_string(), target.to_string(), external));
         self.index.insert(key, id.clone());
         id
     }
@@ -42,19 +43,41 @@ impl PartRels {
         if self.list.iter().any(|(i, ..)| i == id) {
             return;
         }
-        self.list.push((id.to_string(), kind.to_string(), target.to_string(), external));
+        self.list.push((
+            id.to_string(),
+            kind.to_string(),
+            target.to_string(),
+            external,
+        ));
     }
     pub(crate) fn is_empty(&self) -> bool {
         self.list.is_empty()
     }
     pub(crate) fn xml(&self) -> Vec<u8> {
         let mut w = W::new();
-        w.open("Relationships", &[("xmlns", "http://schemas.openxmlformats.org/package/2006/relationships")]);
+        w.open(
+            "Relationships",
+            &[(
+                "xmlns",
+                "http://schemas.openxmlformats.org/package/2006/relationships",
+            )],
+        );
         for (id, kind, target, external) in &self.list {
             if *external {
-                w.empty("Relationship", &[("Id", id), ("Type", kind), ("Target", target), ("TargetMode", "External")]);
+                w.empty(
+                    "Relationship",
+                    &[
+                        ("Id", id),
+                        ("Type", kind),
+                        ("Target", target),
+                        ("TargetMode", "External"),
+                    ],
+                );
             } else {
-                w.empty("Relationship", &[("Id", id), ("Type", kind), ("Target", target)]);
+                w.empty(
+                    "Relationship",
+                    &[("Id", id), ("Type", kind), ("Target", target)],
+                );
             }
         }
         w.close("Relationships");
@@ -122,7 +145,10 @@ pub fn write_as(doc: &Document, flavor: Flavor) -> Result<Vec<u8>, DocxError> {
 
 /// The parts of the package [`write_as`] zips, in order, `[Content_Types].xml` first: (part name
 /// without the leading `/`, bytes).
-pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String, Vec<u8>)>, DocxError> {
+pub(crate) fn write_parts(
+    doc: &Document,
+    flavor: Flavor,
+) -> Result<Vec<(String, Vec<u8>)>, DocxError> {
     // A range field must be whole in the file: drop markers that lost their partner in editing.
     let balanced;
     let doc = if doc.has_unbalanced_field_ranges() {
@@ -162,7 +188,11 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
             .text_box_chains()
             .iter()
             .enumerate()
-            .flat_map(|(n, c)| c.iter().enumerate().map(move |(seq, id)| (*id, (n as u32 + 1, seq as u32))))
+            .flat_map(|(n, c)| {
+                c.iter()
+                    .enumerate()
+                    .map(move |(seq, id)| (*id, (n as u32 + 1, seq as u32)))
+            })
             .collect(),
     };
     wr.assign_media();
@@ -208,7 +238,11 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
         let mut w = W::new();
         let tag = if footer { "w:ftr" } else { "w:hdr" };
         w.open(tag, &ns_refs);
-        let blocks: Blocks = doc.parts.get(&id).map(|p| p.blocks.clone()).unwrap_or_default();
+        let blocks: Blocks = doc
+            .parts
+            .get(&id)
+            .map(|p| p.blocks.clone())
+            .unwrap_or_default();
         wr.blocks(&mut w, &blocks, &mut prels, false, 0);
         w.close(tag);
         push_part(
@@ -223,11 +257,19 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
 
     // Notes (references were collected from the body and headers).
     for foot in [true, false] {
-        let seps = if foot { &doc.footnote_separators } else { &doc.endnote_separators };
+        let seps = if foot {
+            &doc.footnote_separators
+        } else {
+            &doc.endnote_separators
+        };
         if !notes_part(doc, &wr, foot) {
             continue;
         }
-        let (root, tag, file) = if foot { ("w:footnotes", "w:footnote", "footnotes.xml") } else { ("w:endnotes", "w:endnote", "endnotes.xml") };
+        let (root, tag, file) = if foot {
+            ("w:footnotes", "w:footnote", "footnotes.xml")
+        } else {
+            ("w:endnotes", "w:endnote", "endnotes.xml")
+        };
         let mut prels = PartRels::default();
         let mut w = W::new();
         w.open(root, &ns_refs);
@@ -252,10 +294,20 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
                     w.open(tag, &[("w:type", kind), ("w:id", id)]);
                     w.open("w:p", &[]);
                     w.open("w:pPr", &[]);
-                    w.empty("w:spacing", &[("w:after", "0"), ("w:line", "240"), ("w:lineRule", "auto")]);
+                    w.empty(
+                        "w:spacing",
+                        &[("w:after", "0"), ("w:line", "240"), ("w:lineRule", "auto")],
+                    );
                     w.close("w:pPr");
                     w.open("w:r", &[]);
-                    w.empty(if kind == "separator" { "w:separator" } else { "w:continuationSeparator" }, &[]);
+                    w.empty(
+                        if kind == "separator" {
+                            "w:separator"
+                        } else {
+                            "w:continuationSeparator"
+                        },
+                        &[],
+                    );
                     w.close("w:r");
                     w.close("w:p");
                     w.close(tag);
@@ -265,11 +317,18 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
         }
         let base = note_id_base(doc, foot);
         let mut k = 0;
-        while let Some(pid) = (if foot { &wr.footnotes } else { &wr.endnotes }).get(k).copied() {
+        while let Some(pid) = (if foot { &wr.footnotes } else { &wr.endnotes })
+            .get(k)
+            .copied()
+        {
             let nid = (k + base).to_string();
             k += 1;
             w.open(tag, &[("w:id", &nid)]);
-            let blocks: Blocks = doc.parts.get(&pid).map(|p| p.blocks.clone()).unwrap_or_default();
+            let blocks: Blocks = doc
+                .parts
+                .get(&pid)
+                .map(|p| p.blocks.clone())
+                .unwrap_or_default();
             wr.note_blocks(&mut w, &blocks, &mut prels, foot, pid);
             w.close(tag);
         }
@@ -281,7 +340,10 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
             &mut overrides,
             &format!("word/{file}"),
             w.into_bytes(),
-            &format!("{CT_WML}{}+xml", if foot { "footnotes" } else { "endnotes" }),
+            &format!(
+                "{CT_WML}{}+xml",
+                if foot { "footnotes" } else { "endnotes" }
+            ),
             prels,
         );
     }
@@ -293,7 +355,11 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
         w.open("w:comments", &ns_refs);
         for (cid, c) in &doc.comments {
             let id = cid.to_string();
-            let author = if c.author.is_empty() { "Unknown" } else { c.author.as_str() };
+            let author = if c.author.is_empty() {
+                "Unknown"
+            } else {
+                c.author.as_str()
+            };
             let mut a = vec![("w:id", id.as_str()), ("w:author", author)];
             if !c.date.is_empty() {
                 a.push(("w:date", c.date.as_str()));
@@ -302,28 +368,57 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
                 a.push(("w:initials", c.initials.as_str()));
             }
             w.open("w:comment", &a);
-            let blocks: Blocks = doc.parts.get(&c.part).map(|p| p.blocks.clone()).unwrap_or_default();
+            let blocks: Blocks = doc
+                .parts
+                .get(&c.part)
+                .map(|p| p.blocks.clone())
+                .unwrap_or_default();
             wr.blocks(&mut w, &blocks, &mut prels, false, 0);
             w.close("w:comment");
         }
         w.close("w:comments");
         rels.add(rt::COMMENTS, "comments.xml", false);
-        push_part(&mut entries, &mut overrides, "word/comments.xml", w.into_bytes(), &format!("{CT_WML}comments+xml"), prels);
+        push_part(
+            &mut entries,
+            &mut overrides,
+            "word/comments.xml",
+            w.into_bytes(),
+            &format!("{CT_WML}comments+xml"),
+            prels,
+        );
 
         let mut w = W::new();
         w.open(
             "w15:commentsEx",
             &[
-                ("xmlns:w15", "http://schemas.microsoft.com/office/word/2012/wordml"),
-                ("xmlns:mc", "http://schemas.openxmlformats.org/markup-compatibility/2006"),
+                (
+                    "xmlns:w15",
+                    "http://schemas.microsoft.com/office/word/2012/wordml",
+                ),
+                (
+                    "xmlns:mc",
+                    "http://schemas.openxmlformats.org/markup-compatibility/2006",
+                ),
             ],
         );
-        let pid_of = |cid: u32| comment_paras.iter().find(|(c, _)| *c == cid).map(|(_, p)| p.clone());
+        let pid_of = |cid: u32| {
+            comment_paras
+                .iter()
+                .find(|(c, _)| *c == cid)
+                .map(|(_, p)| p.clone())
+        };
         for (cid, c) in &doc.comments {
             let Some(pid) = pid_of(*cid) else { continue };
             let done = if c.resolved { "1" } else { "0" };
             match c.parent.and_then(pid_of) {
-                Some(parent) => w.empty("w15:commentEx", &[("w15:paraId", &pid), ("w15:paraIdParent", &parent), ("w15:done", done)]),
+                Some(parent) => w.empty(
+                    "w15:commentEx",
+                    &[
+                        ("w15:paraId", &pid),
+                        ("w15:paraIdParent", &parent),
+                        ("w15:done", done),
+                    ],
+                ),
                 None => w.empty("w15:commentEx", &[("w15:paraId", &pid), ("w15:done", done)]),
             }
         }
@@ -340,21 +435,45 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
     }
 
     rels.add(rt::STYLES, "styles.xml", false);
-    push_part(&mut entries, &mut overrides, "word/styles.xml", styles_xml(doc), &format!("{CT_WML}styles+xml"), PartRels::default());
+    push_part(
+        &mut entries,
+        &mut overrides,
+        "word/styles.xml",
+        styles_xml(doc),
+        &format!("{CT_WML}styles+xml"),
+        PartRels::default(),
+    );
     if !doc.numbering.nums.is_empty() || !doc.numbering.abstracts.is_empty() {
         rels.add(rt::NUMBERING, "numbering.xml", false);
-        push_part(&mut entries, &mut overrides, "word/numbering.xml", numbering_xml(doc), &format!("{CT_WML}numbering+xml"), PartRels::default());
+        push_part(
+            &mut entries,
+            &mut overrides,
+            "word/numbering.xml",
+            numbering_xml(doc),
+            &format!("{CT_WML}numbering+xml"),
+            PartRels::default(),
+        );
     }
     rels.add(rt::SETTINGS, "settings.xml", false);
     // The attached template is an external relationship of the settings part (§17.15.1.6).
     let mut settings_rels = PartRels::default();
-    let template = doc.settings.attached_template.as_deref().map(str::trim).filter(|t| !t.is_empty());
+    let template = doc
+        .settings
+        .attached_template
+        .as_deref()
+        .map(str::trim)
+        .filter(|t| !t.is_empty());
     let template_rel = template.map(|t| settings_rels.add(rt::ATTACHED_TEMPLATE, t, true));
     push_part(
         &mut entries,
         &mut overrides,
         "word/settings.xml",
-        settings_xml(doc, notes_part(doc, &wr, true), notes_part(doc, &wr, false), template_rel.as_deref()),
+        settings_xml(
+            doc,
+            notes_part(doc, &wr, true),
+            notes_part(doc, &wr, false),
+            template_rel.as_deref(),
+        ),
         &format!("{CT_WML}settings+xml"),
         settings_rels,
     );
@@ -377,7 +496,11 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
             continue;
         }
         if let Some(bytes) = doc.media.get(key) {
-            let ext = file.rsplit('.').next().unwrap_or("bin").to_ascii_lowercase();
+            let ext = file
+                .rsplit('.')
+                .next()
+                .unwrap_or("bin")
+                .to_ascii_lowercase();
             media_types.insert(ext, content_type_for(file));
             entries.push((format!("word/media/{file}"), bytes.to_vec()));
         }
@@ -392,16 +515,32 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
 
     // The macro project and the parts it relates to (VBA data, signatures…), verbatim. A
     // macro-free package can't hold them (Word drops them too).
-    if let Some(vba) = doc.passthrough.get(VBA_PROJECT_PART).filter(|b| !b.is_empty()) {
+    if let Some(vba) = doc
+        .passthrough
+        .get(VBA_PROJECT_PART)
+        .filter(|b| !b.is_empty())
+    {
         if flavor.macros() {
             let mut vba_rels = PartRels::default();
-            let manifest = doc.passthrough.get(VBA_RELATED).map(|m| String::from_utf8_lossy(m).into_owned()).unwrap_or_default();
+            let manifest = doc
+                .passthrough
+                .get(VBA_RELATED)
+                .map(|m| String::from_utf8_lossy(m).into_owned())
+                .unwrap_or_default();
             let mut written: Vec<String> = Vec::new();
             for line in manifest.lines().take(MAX_VBA_RELATED) {
                 let mut f = line.split('\t');
-                let (Some(kind), Some(path), Some(ct), None) = (f.next(), f.next(), f.next(), f.next()) else { continue };
-                let Some(target) = path.strip_prefix("word/").filter(|t| !t.is_empty()) else { continue };
-                let Some(bytes) = doc.passthrough.get(path) else { continue };
+                let (Some(kind), Some(path), Some(ct), None) =
+                    (f.next(), f.next(), f.next(), f.next())
+                else {
+                    continue;
+                };
+                let Some(target) = path.strip_prefix("word/").filter(|t| !t.is_empty()) else {
+                    continue;
+                };
+                let Some(bytes) = doc.passthrough.get(path) else {
+                    continue;
+                };
                 let ours = written.iter().any(|w| w.eq_ignore_ascii_case(path));
                 // Never shadow a part this writer produces (a hostile relationship may point at one).
                 let clash = path.eq_ignore_ascii_case("word/document.xml")
@@ -412,15 +551,37 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
                     continue;
                 }
                 // A relative reference whose first segment has a colon would read as a URI scheme.
-                let target = if target.split('/').next().is_some_and(|seg| seg.contains(':')) { format!(".//{target}") } else { target.to_string() };
+                let target = if target
+                    .split('/')
+                    .next()
+                    .is_some_and(|seg| seg.contains(':'))
+                {
+                    format!(".//{target}")
+                } else {
+                    target.to_string()
+                };
                 vba_rels.add(kind, &target, false);
                 if !ours {
-                    push_part(&mut entries, &mut overrides, path, bytes.to_vec(), ct, PartRels::default());
+                    push_part(
+                        &mut entries,
+                        &mut overrides,
+                        path,
+                        bytes.to_vec(),
+                        ct,
+                        PartRels::default(),
+                    );
                     written.push(path.to_string());
                 }
             }
             rels.add(rt::VBA_PROJECT, "vbaProject.bin", false);
-            push_part(&mut entries, &mut overrides, VBA_PROJECT_PART, vba.to_vec(), "application/vnd.ms-office.vbaProject", vba_rels);
+            push_part(
+                &mut entries,
+                &mut overrides,
+                VBA_PROJECT_PART,
+                vba.to_vec(),
+                "application/vnd.ms-office.vbaProject",
+                vba_rels,
+            );
         } else {
             log::warn!("docx: {flavor:?} can't hold macros; the VBA project is left out");
         }
@@ -428,7 +589,13 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
 
     // Main part goes first in the zip after content types.
     entries.insert(0, ("word/document.xml".into(), body));
-    overrides.insert(0, ("/word/document.xml".into(), flavor.main_content_type().into()));
+    overrides.insert(
+        0,
+        (
+            "/word/document.xml".into(),
+            flavor.main_content_type().into(),
+        ),
+    );
     entries.insert(1, ("word/_rels/document.xml.rels".into(), rels.xml()));
 
     // Package-level parts.
@@ -436,13 +603,25 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
     root.add(rt::CORE, "docProps/core.xml", false);
     root.add(rt::APP, "docProps/app.xml", false);
     entries.push(("docProps/core.xml".into(), core_xml(doc)));
-    overrides.push(("/docProps/core.xml".into(), "application/vnd.openxmlformats-package.core-properties+xml".into()));
+    overrides.push((
+        "/docProps/core.xml".into(),
+        "application/vnd.openxmlformats-package.core-properties+xml".into(),
+    ));
     entries.push(("docProps/app.xml".into(), app_xml(doc)));
-    overrides.push(("/docProps/app.xml".into(), "application/vnd.openxmlformats-officedocument.extended-properties+xml".into()));
+    overrides.push((
+        "/docProps/app.xml".into(),
+        "application/vnd.openxmlformats-officedocument.extended-properties+xml".into(),
+    ));
     if !doc.custom_props.is_empty() {
         root.add(rt::CUSTOM, "docProps/custom.xml", false);
-        entries.push(("docProps/custom.xml".into(), crate::custom::write(&doc.custom_props)));
-        overrides.push(("/docProps/custom.xml".into(), "application/vnd.openxmlformats-officedocument.custom-properties+xml".into()));
+        entries.push((
+            "docProps/custom.xml".into(),
+            crate::custom::write(&doc.custom_props),
+        ));
+        overrides.push((
+            "/docProps/custom.xml".into(),
+            "application/vnd.openxmlformats-officedocument.custom-properties+xml".into(),
+        ));
     }
     if !doc.sources.is_empty() {
         root.add(rt::CUSTOM_XML, "customXml/item1.xml", false);
@@ -469,9 +648,27 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
 
     // Content types.
     let mut w = W::new();
-    w.open("Types", &[("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types")]);
-    w.empty("Default", &[("Extension", "rels"), ("ContentType", "application/vnd.openxmlformats-package.relationships+xml")]);
-    w.empty("Default", &[("Extension", "xml"), ("ContentType", "application/xml")]);
+    w.open(
+        "Types",
+        &[(
+            "xmlns",
+            "http://schemas.openxmlformats.org/package/2006/content-types",
+        )],
+    );
+    w.empty(
+        "Default",
+        &[
+            ("Extension", "rels"),
+            (
+                "ContentType",
+                "application/vnd.openxmlformats-package.relationships+xml",
+            ),
+        ],
+    );
+    w.empty(
+        "Default",
+        &[("Extension", "xml"), ("ContentType", "application/xml")],
+    );
     for (ext, ct) in &media_types {
         if ext != "xml" && ext != "rels" {
             w.empty("Default", &[("Extension", ext), ("ContentType", ct)]);
@@ -485,7 +682,14 @@ pub(crate) fn write_parts(doc: &Document, flavor: Flavor) -> Result<Vec<(String,
     Ok(entries)
 }
 
-fn push_part(entries: &mut Vec<(String, Vec<u8>)>, overrides: &mut Vec<(String, String)>, path: &str, bytes: Vec<u8>, ct: &str, rels: PartRels) {
+fn push_part(
+    entries: &mut Vec<(String, Vec<u8>)>,
+    overrides: &mut Vec<(String, String)>,
+    path: &str,
+    bytes: Vec<u8>,
+    ct: &str,
+    rels: PartRels,
+) {
     if !rels.is_empty() {
         let (dir, file) = path.rsplit_once('/').unwrap_or(("", path));
         entries.push((format!("{dir}/_rels/{file}.rels"), rels.xml()));
@@ -496,7 +700,13 @@ fn push_part(entries: &mut Vec<(String, Vec<u8>)>, overrides: &mut Vec<(String, 
 
 /// Content type by file extension (or sniffed name).
 fn content_type_for(file: &str) -> &'static str {
-    match file.rsplit('.').next().unwrap_or("").to_ascii_lowercase().as_str() {
+    match file
+        .rsplit('.')
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "png" => "image/png",
         "jpg" | "jpeg" | "jpe" => "image/jpeg",
         "gif" => "image/gif",
@@ -540,8 +750,13 @@ impl Writer<'_> {
     fn assign_media(&mut self) {
         let mut used: std::collections::HashSet<String> = std::collections::HashSet::new();
         for (key, bytes) in &self.doc.media {
-            let clean: String = key.chars().filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-')).take(80).collect();
-            let has_known_ext = clean.rsplit_once('.').is_some_and(|(s, _)| !s.is_empty()) && content_type_for(&clean) != "application/octet-stream";
+            let clean: String = key
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+                .take(80)
+                .collect();
+            let has_known_ext = clean.rsplit_once('.').is_some_and(|(s, _)| !s.is_empty())
+                && content_type_for(&clean) != "application/octet-stream";
             let mut base = if has_known_ext && !clean.starts_with('.') {
                 clean
             } else {
@@ -549,7 +764,10 @@ impl Writer<'_> {
                 let stem = if stem.is_empty() { "image" } else { stem };
                 format!("{stem}.{}", sniff(bytes))
             };
-            let (stem, ext) = base.rsplit_once('.').map(|(s, e)| (s.to_string(), e.to_string())).unwrap_or((base.clone(), "bin".into()));
+            let (stem, ext) = base
+                .rsplit_once('.')
+                .map(|(s, e)| (s.to_string(), e.to_string()))
+                .unwrap_or((base.clone(), "bin".into()));
             let mut i = 1;
             while used.contains(&base.to_ascii_lowercase()) {
                 i += 1;
@@ -567,17 +785,28 @@ impl Writer<'_> {
 
     /// The drawing id of a shape: its own (once; a copy gets a fresh one), else a fresh one.
     fn shape_docpr(&mut self, own: u32) -> String {
-        if own != 0 && self.shape_ids.insert(own) { own.to_string() } else { self.next_docpr() }
+        if own != 0 && self.shape_ids.insert(own) {
+            own.to_string()
+        } else {
+            self.next_docpr()
+        }
     }
 
     fn bookmark_id(&mut self, name: &str) -> String {
         let n = self.bookmarks.len() as u32;
-        self.bookmarks.entry(name.to_string()).or_insert(n).to_string()
+        self.bookmarks
+            .entry(name.to_string())
+            .or_insert(n)
+            .to_string()
     }
 
     fn note_id(&mut self, part: u32, foot: bool) -> String {
         let base = note_id_base(self.doc, foot);
-        let list = if foot { &mut self.footnotes } else { &mut self.endnotes };
+        let list = if foot {
+            &mut self.footnotes
+        } else {
+            &mut self.endnotes
+        };
         let idx = match list.iter().position(|p| *p == part) {
             Some(i) => i,
             None => {
@@ -611,16 +840,31 @@ impl Writer<'_> {
 
     /// Whether `p` holds a reference to the note being written.
     fn holds_own_ref(&self, p: &wordcraft_doc::Paragraph) -> bool {
-        let Some((foot, id)) = self.current_note else { return false };
+        let Some((foot, id)) = self.current_note else {
+            return false;
+        };
         p.objects.iter().any(|o| match o {
-            wordcraft_doc::InlineObject::NoteRef { kind, id: nid, .. } => *nid == id && (*kind == wordcraft_doc::para::NoteKind::Footnote) == foot,
+            wordcraft_doc::InlineObject::NoteRef { kind, id: nid, .. } => {
+                *nid == id && (*kind == wordcraft_doc::para::NoteKind::Footnote) == foot
+            }
             _ => false,
         })
     }
 
     /// Note stories: the first paragraph starts with the note's own reference mark.
-    fn note_blocks(&mut self, w: &mut W, blocks: &Blocks, rels: &mut PartRels, foot: bool, part: u32) {
-        self.pending_mark = Some(if foot { "w:footnoteRef" } else { "w:endnoteRef" });
+    fn note_blocks(
+        &mut self,
+        w: &mut W,
+        blocks: &Blocks,
+        rels: &mut PartRels,
+        foot: bool,
+        part: u32,
+    ) {
+        self.pending_mark = Some(if foot {
+            "w:footnoteRef"
+        } else {
+            "w:endnoteRef"
+        });
         self.current_note = Some((foot, part));
         self.blocks(w, blocks, rels, false, 0);
         self.current_note = None;
@@ -630,10 +874,17 @@ impl Writer<'_> {
 
 /// Built-in names Word keeps in lower case in styles.xml.
 fn file_style_name(name: &str) -> String {
-    if let Some((f, _)) = crate::read::LOWER_NAMES.iter().find(|(_, ui)| ui.eq_ignore_ascii_case(name)) {
+    if let Some((f, _)) = crate::read::LOWER_NAMES
+        .iter()
+        .find(|(_, ui)| ui.eq_ignore_ascii_case(name))
+    {
         return (*f).to_string();
     }
-    for (pre, f) in [("Heading ", "heading "), ("TOC ", "toc "), ("Index ", "index ")] {
+    for (pre, f) in [
+        ("Heading ", "heading "),
+        ("TOC ", "toc "),
+        ("Index ", "index "),
+    ] {
         if let Some(d) = name.strip_prefix(pre)
             && d.len() == 1
             && d.chars().all(|c| c.is_ascii_digit())
@@ -693,7 +944,10 @@ fn style_xml(w: &mut W, st: &Style) {
         a.push(("w:customStyle", "1"));
     }
     w.open("w:style", &a);
-    w.val("w:name", &file_style_name(if st.name.is_empty() { &st.id } else { &st.name }));
+    w.val(
+        "w:name",
+        &file_style_name(if st.name.is_empty() { &st.id } else { &st.name }),
+    );
     if let Some(b) = &st.based_on {
         w.val("w:basedOn", b);
     }
@@ -762,26 +1016,66 @@ fn style_xml(w: &mut W, st: &Style) {
                     props::borders(w, "w:tcBorders", bs, Some("w:insideH"), &[]);
                 }
                 if let Some(f) = fill {
-                    w.empty("w:shd", &[("w:val", "clear"), ("w:color", "auto"), ("w:fill", &f.hex())]);
+                    w.empty(
+                        "w:shd",
+                        &[
+                            ("w:val", "clear"),
+                            ("w:color", "auto"),
+                            ("w:fill", &f.hex()),
+                        ],
+                    );
                 }
                 w.close("w:tcPr");
             }
             w.close("w:tblStylePr");
         };
-        cond(w, "wholeTable", &wordcraft_doc::CharProps::default(), t.fill, None);
-        cond(w, "firstRow", &t.header_chr, t.header_fill, t.header_borders);
+        cond(
+            w,
+            "wholeTable",
+            &wordcraft_doc::CharProps::default(),
+            t.fill,
+            None,
+        );
+        cond(
+            w,
+            "firstRow",
+            &t.header_chr,
+            t.header_fill,
+            t.header_borders,
+        );
         // The total row's borders, its top edge falling back to the built-in top rule.
         let total_borders = match (t.total_borders, t.total_border_top) {
             (Some(mut b), top) => {
                 b.top = b.top.or(top);
                 Some(b)
             }
-            (None, top) => top.map(|b| wordcraft_doc::props::Borders { top: Some(b), ..Default::default() }),
+            (None, top) => top.map(|b| wordcraft_doc::props::Borders {
+                top: Some(b),
+                ..Default::default()
+            }),
         };
         cond(w, "lastRow", &t.total_chr, t.total_fill, total_borders);
-        cond(w, "firstCol", &t.first_col_chr, t.first_col_fill, t.first_col_borders);
-        cond(w, "lastCol", &t.last_col_chr, t.last_col_fill, t.last_col_borders);
-        cond(w, "band1Vert", &t.col_band_chr, t.col_band_fill, t.col_band_borders);
+        cond(
+            w,
+            "firstCol",
+            &t.first_col_chr,
+            t.first_col_fill,
+            t.first_col_borders,
+        );
+        cond(
+            w,
+            "lastCol",
+            &t.last_col_chr,
+            t.last_col_fill,
+            t.last_col_borders,
+        );
+        cond(
+            w,
+            "band1Vert",
+            &t.col_band_chr,
+            t.col_band_fill,
+            t.col_band_borders,
+        );
         cond(w, "band1Horz", &t.band_chr, t.band_fill, t.band_borders);
     }
     w.close("w:style");
@@ -794,7 +1088,14 @@ fn numbering_xml(doc: &Document) -> Vec<u8> {
     w.open("w:numbering", &ns_refs);
     for a in &doc.numbering.abstracts {
         w.open("w:abstractNum", &[("w:abstractNumId", &a.id.to_string())]);
-        w.val("w:multiLevelType", if a.levels.len() > 1 { "multilevel" } else { "singleLevel" });
+        w.val(
+            "w:multiLevelType",
+            if a.levels.len() > 1 {
+                "multilevel"
+            } else {
+                "singleLevel"
+            },
+        );
         if let Some(n) = &a.name {
             w.val("w:name", n);
         }
@@ -807,8 +1108,16 @@ fn numbering_xml(doc: &Document) -> Vec<u8> {
         w.open("w:num", &[("w:numId", &n.id.to_string())]);
         w.val("w:abstractNumId", &n.abstract_id.to_string());
         for lvl in 0..9u8 {
-            let start = n.start_overrides.iter().find(|(l, _)| (*l).min(8) == lvl).map(|(_, s)| *s);
-            let level = n.level_overrides.iter().find(|(l, _)| (*l).min(8) == lvl).map(|(_, l)| l);
+            let start = n
+                .start_overrides
+                .iter()
+                .find(|(l, _)| (*l).min(8) == lvl)
+                .map(|(_, s)| *s);
+            let level = n
+                .level_overrides
+                .iter()
+                .find(|(l, _)| (*l).min(8) == lvl)
+                .map(|(_, l)| l);
             if start.is_none() && level.is_none() {
                 continue;
             }
@@ -853,14 +1162,32 @@ fn write_level(w: &mut W, i: usize, l: &Level) {
     w.open("w:pPr", &[]);
     if let Some(t) = l.tab.filter(|t| t.is_finite()) {
         w.open("w:tabs", &[]);
-        w.empty("w:tab", &[("w:val", "num"), ("w:pos", &crate::units::twips(t.clamp(-1584.0, 1584.0)))]);
+        w.empty(
+            "w:tab",
+            &[
+                ("w:val", "num"),
+                ("w:pos", &crate::units::twips(t.clamp(-1584.0, 1584.0))),
+            ],
+        );
         w.close("w:tabs");
     }
     let ind = crate::units::twips(l.indent);
     if l.hanging >= 0.0 {
-        w.empty("w:ind", &[("w:left", &ind), ("w:hanging", &crate::units::twips(l.hanging))]);
+        w.empty(
+            "w:ind",
+            &[
+                ("w:left", &ind),
+                ("w:hanging", &crate::units::twips(l.hanging)),
+            ],
+        );
     } else {
-        w.empty("w:ind", &[("w:left", &ind), ("w:firstLine", &crate::units::twips(-l.hanging))]);
+        w.empty(
+            "w:ind",
+            &[
+                ("w:left", &ind),
+                ("w:firstLine", &crate::units::twips(-l.hanging)),
+            ],
+        );
     }
     w.close("w:pPr");
     props::rpr(w, &l.chr);
@@ -870,20 +1197,37 @@ fn write_level(w: &mut W, i: usize, l: &Level) {
 /// The file id of the first footnote or endnote: after the separators (-1, 0) and the
 /// continuation notice (1), when the document has one.
 fn note_id_base(doc: &Document, foot: bool) -> usize {
-    let seps = if foot { &doc.footnote_separators } else { &doc.endnote_separators };
-    if seps.continuation_notice.is_some() { 2 } else { 1 }
+    let seps = if foot {
+        &doc.footnote_separators
+    } else {
+        &doc.endnote_separators
+    };
+    if seps.continuation_notice.is_some() {
+        2
+    } else {
+        1
+    }
 }
 
 /// Whether the footnotes (or endnotes) part is written: there are notes, or separators of the
 /// document's own to keep.
 fn notes_part(doc: &Document, wr: &Writer<'_>, foot: bool) -> bool {
-    let (ids, seps) = if foot { (&wr.footnotes, &doc.footnote_separators) } else { (&wr.endnotes, &doc.endnote_separators) };
+    let (ids, seps) = if foot {
+        (&wr.footnotes, &doc.footnote_separators)
+    } else {
+        (&wr.endnotes, &doc.endnote_separators)
+    };
     !ids.is_empty() || !seps.is_empty()
 }
 
 /// `w:settings`, its children in the schema's order (CT_Settings is a sequence). `template_rel`
 /// is the id of the attached template's relationship, when there is one.
-fn settings_xml(doc: &Document, footnotes: bool, endnotes: bool, template_rel: Option<&str>) -> Vec<u8> {
+fn settings_xml(
+    doc: &Document,
+    footnotes: bool,
+    endnotes: bool,
+    template_rel: Option<&str>,
+) -> Vec<u8> {
     let s = &doc.settings;
     let s_notes = (&doc.footnote_separators, &doc.endnote_separators);
     let mut w = W::new();
@@ -923,16 +1267,27 @@ fn settings_xml(doc: &Document, footnotes: bool, endnotes: bool, template_rel: O
         }
         w.empty("w:documentProtection", &a);
     }
-    w.val("w:defaultTabStop", &crate::units::twips(s.default_tab.clamp(1.0, 1584.0)));
+    w.val(
+        "w:defaultTabStop",
+        &crate::units::twips(s.default_tab.clamp(1.0, 1584.0)),
+    );
     if s.auto_hyphenation {
         w.empty("w:autoHyphenation", &[]);
     }
     // Schema order: consecutiveHyphenLimit, hyphenationZone, doNotHyphenateCaps.
     if s.consecutive_hyphen_limit > 0 {
-        w.val("w:consecutiveHyphenLimit", &s.consecutive_hyphen_limit.min(32_767).to_string());
+        w.val(
+            "w:consecutiveHyphenLimit",
+            &s.consecutive_hyphen_limit.min(32_767).to_string(),
+        );
     }
-    if s.hyphenation_zone.is_finite() && (s.hyphenation_zone - wordcraft_doc::DEFAULT_HYPHENATION_ZONE).abs() > 0.01 {
-        w.val("w:hyphenationZone", &crate::units::twips(s.hyphenation_zone.clamp(0.0, 1584.0)));
+    if s.hyphenation_zone.is_finite()
+        && (s.hyphenation_zone - wordcraft_doc::DEFAULT_HYPHENATION_ZONE).abs() > 0.01
+    {
+        w.val(
+            "w:hyphenationZone",
+            &crate::units::twips(s.hyphenation_zone.clamp(0.0, 1584.0)),
+        );
     }
     if !s.hyphenate_caps {
         w.empty("w:doNotHyphenateCaps", &[]);
@@ -940,22 +1295,47 @@ fn settings_xml(doc: &Document, footnotes: bool, endnotes: bool, template_rel: O
     if s.even_odd_headers {
         w.empty("w:evenAndOddHeaders", &[]);
     }
-    for (tag, v) in [("w:drawingGridHorizontalSpacing", s.grid_h), ("w:drawingGridVerticalSpacing", s.grid_v)] {
+    for (tag, v) in [
+        ("w:drawingGridHorizontalSpacing", s.grid_h),
+        ("w:drawingGridVerticalSpacing", s.grid_v),
+    ] {
         if v.is_finite() && (v - wordcraft_doc::DEFAULT_GRID).abs() > 0.01 {
             w.val(tag, &crate::units::twips(v.clamp(0.5, 1584.0)));
         }
     }
     w.val("w:characterSpacingControl", "doNotCompress");
     for (tag, fmt, pr, used, el) in [
-        ("w:footnotePr", s.footnote_format, &s.footnote_pr, footnotes, "w:footnote"),
-        ("w:endnotePr", s.endnote_format, &s.endnote_pr, endnotes, "w:endnote"),
+        (
+            "w:footnotePr",
+            s.footnote_format,
+            &s.footnote_pr,
+            footnotes,
+            "w:footnote",
+        ),
+        (
+            "w:endnotePr",
+            s.endnote_format,
+            &s.endnote_pr,
+            endnotes,
+            "w:endnote",
+        ),
     ] {
         w.open(tag, &[]);
-        story::note_pr_inner(&mut w, &wordcraft_doc::section::NoteProps { num_fmt: Some(fmt), ..*pr });
+        story::note_pr_inner(
+            &mut w,
+            &wordcraft_doc::section::NoteProps {
+                num_fmt: Some(fmt),
+                ..*pr
+            },
+        );
         if used {
             w.empty(el, &[("w:id", "-1")]);
             w.empty(el, &[("w:id", "0")]);
-            let seps = if el == "w:footnote" { &s_notes.0 } else { &s_notes.1 };
+            let seps = if el == "w:footnote" {
+                &s_notes.0
+            } else {
+                &s_notes.1
+            };
             if seps.continuation_notice.is_some() {
                 w.empty(el, &[("w:id", "1")]);
             }
@@ -964,7 +1344,14 @@ fn settings_xml(doc: &Document, footnotes: bool, endnotes: bool, template_rel: O
     }
     w.open("w:compat", &[]);
     let mode = doc.settings.compat_mode.clamp(11, 15).to_string();
-    w.empty("w:compatSetting", &[("w:name", "compatibilityMode"), ("w:uri", "http://schemas.microsoft.com/office/word"), ("w:val", &mode)]);
+    w.empty(
+        "w:compatSetting",
+        &[
+            ("w:name", "compatibilityMode"),
+            ("w:uri", "http://schemas.microsoft.com/office/word"),
+            ("w:val", &mode),
+        ],
+    );
     w.close("w:compat");
     if let Some(m) = &s.math {
         math::math_pr(&mut w, m);
@@ -975,21 +1362,45 @@ fn settings_xml(doc: &Document, footnotes: bool, endnotes: bool, template_rel: O
 
 fn theme_xml(doc: &Document) -> Vec<u8> {
     let s = &doc.settings;
-    let names = ["dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5", "accent6", "hlink", "folHlink"];
+    let names = [
+        "dk1", "lt1", "dk2", "lt2", "accent1", "accent2", "accent3", "accent4", "accent5",
+        "accent6", "hlink", "folHlink",
+    ];
     let mut w = W::new();
-    let name = if s.theme_name.is_empty() { "Craft" } else { s.theme_name.as_str() };
-    w.open("a:theme", &[("xmlns:a", "http://schemas.openxmlformats.org/drawingml/2006/main"), ("name", name)]);
+    let name = if s.theme_name.is_empty() {
+        "Craft"
+    } else {
+        s.theme_name.as_str()
+    };
+    w.open(
+        "a:theme",
+        &[
+            (
+                "xmlns:a",
+                "http://schemas.openxmlformats.org/drawingml/2006/main",
+            ),
+            ("name", name),
+        ],
+    );
     w.open("a:themeElements", &[]);
     w.open("a:clrScheme", &[("name", name)]);
     for (i, n) in names.iter().enumerate() {
-        let c = s.theme_colors.get(i).or_else(|| wordcraft_doc::THEME_COLORS.get(i)).copied().unwrap_or_default();
+        let c = s
+            .theme_colors
+            .get(i)
+            .or_else(|| wordcraft_doc::THEME_COLORS.get(i))
+            .copied()
+            .unwrap_or_default();
         w.open(&format!("a:{n}"), &[]);
         w.empty("a:srgbClr", &[("val", &c.hex())]);
         w.close(&format!("a:{n}"));
     }
     w.close("a:clrScheme");
     w.open("a:fontScheme", &[("name", name)]);
-    for (tag, face) in [("a:majorFont", &s.major_font), ("a:minorFont", &s.minor_font)] {
+    for (tag, face) in [
+        ("a:majorFont", &s.major_font),
+        ("a:minorFont", &s.minor_font),
+    ] {
         w.open(tag, &[]);
         w.empty("a:latin", &[("typeface", face)]);
         w.empty("a:ea", &[("typeface", "")]);
@@ -1035,7 +1446,10 @@ fn core_xml(doc: &Document) -> Vec<u8> {
     w.open(
         "cp:coreProperties",
         &[
-            ("xmlns:cp", "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"),
+            (
+                "xmlns:cp",
+                "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+            ),
             ("xmlns:dc", "http://purl.org/dc/elements/1.1/"),
             ("xmlns:dcterms", "http://purl.org/dc/terms/"),
             ("xmlns:dcmitype", "http://purl.org/dc/dcmitype/"),
@@ -1058,7 +1472,10 @@ fn core_xml(doc: &Document) -> Vec<u8> {
     if c.revision > 0 {
         w.leaf("cp:revision", &[], &c.revision.to_string());
     }
-    for (tag, v) in [("dcterms:created", &c.created), ("dcterms:modified", &c.modified)] {
+    for (tag, v) in [
+        ("dcterms:created", &c.created),
+        ("dcterms:modified", &c.modified),
+    ] {
         if !v.is_empty() {
             w.leaf(tag, &[("xsi:type", "dcterms:W3CDTF")], v);
         }
@@ -1072,8 +1489,14 @@ fn app_xml(doc: &Document) -> Vec<u8> {
     w.open(
         "Properties",
         &[
-            ("xmlns", "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"),
-            ("xmlns:vt", "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"),
+            (
+                "xmlns",
+                "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties",
+            ),
+            (
+                "xmlns:vt",
+                "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes",
+            ),
         ],
     );
     w.leaf("Application", &[], "WordCraft");
@@ -1137,14 +1560,27 @@ pub(crate) fn from_source_type(st: &str) -> String {
 /// The document's citation style, APA when it has none, and a style sheet file name made from
 /// it (`\APA.XSL`, `\MLA.XSL`).
 fn bib_style(doc: &Document) -> (&str, String) {
-    let name = doc.settings.bib_style.as_deref().map(str::trim).filter(|n| !n.is_empty()).unwrap_or("APA");
+    let name = doc
+        .settings
+        .bib_style
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .unwrap_or("APA");
     let file: String = name.chars().filter(char::is_ascii_alphanumeric).collect();
-    (name, format!("\\{}.XSL", if file.is_empty() { "APA" } else { &file }))
+    (
+        name,
+        format!("\\{}.XSL", if file.is_empty() { "APA" } else { &file }),
+    )
 }
 
 fn write_name_list(w: &mut W, names: &str) {
     w.open("b:NameList", &[]);
-    let persons: Vec<_> = names.split(';').map(str::trim).filter(|s| !s.is_empty()).collect();
+    let persons: Vec<_> = names
+        .split(';')
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .collect();
     for a in persons {
         w.open("b:Person", &[]);
         // Parse "Last, First" or "Last, First Middle"
@@ -1197,8 +1633,14 @@ fn bibliography_xml(doc: &Document) -> Vec<u8> {
         &[
             ("SelectedStyle", selected.as_str()),
             ("StyleName", style_name),
-            ("xmlns:b", "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"),
-            ("xmlns", "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"),
+            (
+                "xmlns:b",
+                "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+            ),
+            (
+                "xmlns",
+                "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+            ),
         ],
     );
     for src in &doc.sources {
@@ -1283,10 +1725,22 @@ fn bibliography_props_xml() -> Vec<u8> {
     let mut w = W::new();
     w.open(
         "ds:datastoreItem",
-        &[("xmlns:ds", "http://schemas.openxmlformats.org/officeDocument/2006/customXml"), ("ds:itemID", "{3315B9A8-2323-4554-B8B2-1234567890AB}")],
+        &[
+            (
+                "xmlns:ds",
+                "http://schemas.openxmlformats.org/officeDocument/2006/customXml",
+            ),
+            ("ds:itemID", "{3315B9A8-2323-4554-B8B2-1234567890AB}"),
+        ],
     );
     w.open("ds:schemaRefs", &[]);
-    w.empty("ds:schemaRef", &[("ds:uri", "http://schemas.openxmlformats.org/officeDocument/2006/bibliography")]);
+    w.empty(
+        "ds:schemaRef",
+        &[(
+            "ds:uri",
+            "http://schemas.openxmlformats.org/officeDocument/2006/bibliography",
+        )],
+    );
     w.close("ds:schemaRefs");
     w.close("ds:datastoreItem");
     w.into_bytes()

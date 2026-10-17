@@ -624,15 +624,25 @@ mod tests {
                     engine.call_method(EXEC_UPLOAD, 1, true);
                     engine.set_current_dma_segment(0x11000);
                     engine.set_current_dirty(was_dirty);
-                    if multi { engine.call_multi_method(DATA_UPLOAD, &[42], 1, 1); }
-                    else { engine.call_method(DATA_UPLOAD, 42, true); }
+                    if multi {
+                        engine.call_multi_method(DATA_UPLOAD, &[42], 1, 1);
+                    } else {
+                        engine.call_method(DATA_UPLOAD, 42, true);
+                    }
                     assert_eq!(engine.upload_dirty, was_dirty);
                     assert!(!engine.current_dirty());
                     engine.call_method(EXEC_UPLOAD, 1, true);
                     assert_eq!(engine.uploads.last().unwrap().was_dirty, was_dirty);
                     engine.call_method(LAUNCH, 1, true);
-                    assert_eq!(rasterizer.last_dispatch.borrow().as_ref().unwrap().indirect_compute_address,
-                        (was_dirty || source_dirty).then_some(0x11000));
+                    assert_eq!(
+                        rasterizer
+                            .last_dispatch
+                            .borrow()
+                            .as_ref()
+                            .unwrap()
+                            .indirect_compute_address,
+                        (was_dirty || source_dirty).then_some(0x11000)
+                    );
                     assert!(engine.uploads.is_empty());
                     assert_eq!(engine.get_indirect_compute_address(), None);
                 }

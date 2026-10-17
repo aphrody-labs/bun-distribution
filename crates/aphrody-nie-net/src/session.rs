@@ -25,7 +25,11 @@ pub enum SessionError {
     #[error(
         "Desync detected at tick {tick}: local hash {local_hash:#010x} != remote hash {remote_hash:#010x}"
     )]
-    DesyncDetected { tick: u64, local_hash: u32, remote_hash: u32 },
+    DesyncDetected {
+        tick: u64,
+        local_hash: u32,
+        remote_hash: u32,
+    },
 }
 
 /// Active networked match session managing simulation, prediction, and rollback.
@@ -119,22 +123,32 @@ impl NetMatchSession {
             .local_inputs
             .get(&next_tick)
             .copied()
-            .unwrap_or_else(|| PlayerTickInput { tick: next_tick, ..Default::default() });
+            .unwrap_or_else(|| PlayerTickInput {
+                tick: next_tick,
+                ..Default::default()
+            });
 
         // If remote input for next_tick is not yet received, predict using last known remote input
-        let remote_input = self.remote_inputs.get(&next_tick).copied().unwrap_or_else(|| {
-            self.last_remote_input.map_or(
-                PlayerTickInput { tick: next_tick, ..Default::default() },
-                |last| PlayerTickInput {
-                    tick: next_tick,
-                    dx: last.dx,
-                    dy: last.dy,
-                    shoot: false, // do not predict action triggers
-                    pass: false,
-                    skill_id: None,
-                },
-            )
-        });
+        let remote_input = self
+            .remote_inputs
+            .get(&next_tick)
+            .copied()
+            .unwrap_or_else(|| {
+                self.last_remote_input.map_or(
+                    PlayerTickInput {
+                        tick: next_tick,
+                        ..Default::default()
+                    },
+                    |last| PlayerTickInput {
+                        tick: next_tick,
+                        dx: last.dx,
+                        dy: last.dy,
+                        shoot: false, // do not predict action triggers
+                        pass: false,
+                        skill_id: None,
+                    },
+                )
+            });
 
         let (home_input, away_input) = match self.local_slot {
             PlayerSlot::Home | PlayerSlot::Home2 => (local_input, remote_input),
@@ -174,7 +188,10 @@ impl NetMatchSession {
 
     /// Rewinds world state to `target_tick` and replays all inputs up to `current_tick`.
     fn execute_rollback(&mut self, target_tick: u64) -> Result<(), SessionError> {
-        let frame_pos = self.history.iter().position(|f| f.tick == target_tick.saturating_sub(1));
+        let frame_pos = self
+            .history
+            .iter()
+            .position(|f| f.tick == target_tick.saturating_sub(1));
 
         let Some(pos) = frame_pos else {
             return Err(SessionError::RollbackDepthExceeded(
@@ -198,13 +215,19 @@ impl NetMatchSession {
                 .local_inputs
                 .get(&t)
                 .copied()
-                .unwrap_or(PlayerTickInput { tick: t, ..Default::default() });
+                .unwrap_or(PlayerTickInput {
+                    tick: t,
+                    ..Default::default()
+                });
 
             let remote_in = self
                 .remote_inputs
                 .get(&t)
                 .copied()
-                .unwrap_or(PlayerTickInput { tick: t, ..Default::default() });
+                .unwrap_or(PlayerTickInput {
+                    tick: t,
+                    ..Default::default()
+                });
 
             let (home_in, away_in) = match self.local_slot {
                 PlayerSlot::Home | PlayerSlot::Home2 => (local_in, remote_in),
@@ -309,8 +332,18 @@ mod tests {
 
         // Advance 10 ticks in sync
         for tick in 1..=10 {
-            let in1 = PlayerTickInput { tick, dx: 0.5, dy: 0.5, ..Default::default() };
-            let in2 = PlayerTickInput { tick, dx: -0.5, dy: -0.5, ..Default::default() };
+            let in1 = PlayerTickInput {
+                tick,
+                dx: 0.5,
+                dy: 0.5,
+                ..Default::default()
+            };
+            let in2 = PlayerTickInput {
+                tick,
+                dx: -0.5,
+                dy: -0.5,
+                ..Default::default()
+            };
             s1.queue_local_input(in1);
             s1.receive_remote_input(in2);
             s2.queue_local_input(in2);
@@ -321,17 +354,32 @@ mod tests {
 
         // Now simulate latency: s1 advances 5 ticks without receiving s2's inputs yet (prediction mode)
         for tick in 11..=15 {
-            let in1 = PlayerTickInput { tick, dx: 0.2, dy: 0.8, ..Default::default() };
+            let in1 = PlayerTickInput {
+                tick,
+                dx: 0.2,
+                dy: 0.8,
+                ..Default::default()
+            };
             s1.queue_local_input(in1);
             s1.advance_tick().unwrap();
         }
 
         // Later, s2's delayed inputs for ticks 11..=15 arrive at s1
         for tick in 11..=15 {
-            let in2 = PlayerTickInput { tick, dx: -0.8, dy: -0.2, ..Default::default() };
+            let in2 = PlayerTickInput {
+                tick,
+                dx: -0.8,
+                dy: -0.2,
+                ..Default::default()
+            };
             s1.receive_remote_input(in2);
             s2.queue_local_input(in2);
-            let in1 = PlayerTickInput { tick, dx: 0.2, dy: 0.8, ..Default::default() };
+            let in1 = PlayerTickInput {
+                tick,
+                dx: 0.2,
+                dy: 0.8,
+                ..Default::default()
+            };
             s2.receive_remote_input(in1);
             s2.advance_tick().unwrap();
         }
@@ -364,6 +412,9 @@ mod tests {
         // And the rollback must not be doomed to repeat: once 11..=15 are replayed with both real
         // inputs, they are confirmed. Left at 10, the oldest late packet stays eligible and every
         // subsequent tick rolls back to it again.
-        assert_eq!(s1.confirmed_tick, 15, "replayed ticks must become confirmed");
+        assert_eq!(
+            s1.confirmed_tick, 15,
+            "replayed ticks must become confirmed"
+        );
     }
 }

@@ -24,7 +24,10 @@ pub(crate) struct GBuf {
 
 impl GBuf {
     pub fn to_px(&self, p: [f64; 2]) -> (f64, f64) {
-        (p[0] * self.scale + self.offset[0], p[1] * self.scale + self.offset[1])
+        (
+            p[0] * self.scale + self.offset[0],
+            p[1] * self.scale + self.offset[1],
+        )
     }
 
     /// Buf::pad: grow by `pad` transparent pixels on every side.
@@ -47,13 +50,20 @@ impl GBuf {
 
 /// Run a chain of GPU effects (one upload, one readback), quantising after each when `levels`
 /// is set. `None` when anything cannot run here.
-pub(crate) fn run_chain(e: &mut Enc, chain: &[FxStep], buf: &Buf, levels: Option<f32>) -> Option<Buf> {
+pub(crate) fn run_chain(
+    e: &mut Enc,
+    chain: &[FxStep],
+    buf: &Buf,
+    levels: Option<f32>,
+) -> Option<Buf> {
     if !e.g.can_readback() || buf.img.is_empty() {
         return None;
     }
     // Deferred readbacks (a browser worker): served by key once the bytes arrived.
     let deferred = e.g.deferred.clone();
-    let key = deferred.as_ref().map(|_| crate::deferred::chain_key(chain, buf, levels));
+    let key = deferred
+        .as_ref()
+        .map(|_| crate::deferred::chain_key(chain, buf, levels));
     if let (Some(d), Some(k)) = (&deferred, key) {
         match d.lookup(k) {
             crate::deferred::Lookup::Ready(r) => return r.and_then(readback_buf),
@@ -65,7 +75,11 @@ pub(crate) fn run_chain(e: &mut Enc, chain: &[FxStep], buf: &Buf, levels: Option
         }
     }
     let misses = deferred.as_ref().map(|d| d.misses());
-    let mut b = GBuf { img: e.g.upload_image(&buf.img)?, offset: buf.offset, scale: buf.scale };
+    let mut b = GBuf {
+        img: e.g.upload_image(&buf.img)?,
+        offset: buf.offset,
+        scale: buf.scale,
+    };
     e.take_missing();
     for step in chain {
         b = apply(e, step.spec.id, &step.ctx, b)?;
@@ -89,7 +103,11 @@ pub(crate) fn run_chain(e: &mut Enc, chain: &[FxStep], buf: &Buf, levels: Option
         };
     }
     let img = e.download(&b.img)?;
-    Some(Buf { img, offset: b.offset, scale: b.scale })
+    Some(Buf {
+        img,
+        offset: b.offset,
+        scale: b.scale,
+    })
 }
 
 /// A layer buffer from deferred readback bytes (RGBA f32).
@@ -97,7 +115,11 @@ fn readback_buf(r: crate::deferred::Readback) -> Option<Buf> {
     let mut img = effectcraft_raster::Image::new(r.width, r.height);
     let dst: &mut [u8] = bytemuck::cast_slice_mut(&mut img.data);
     (dst.len() == r.bytes.len()).then(|| dst.copy_from_slice(&r.bytes))?;
-    Some(Buf { img, offset: r.offset, scale: r.scale })
+    Some(Buf {
+        img,
+        offset: r.offset,
+        scale: r.scale,
+    })
 }
 
 /// An effect stack running on a GPU-resident image (adjustment layers): GPU chains stay on
@@ -109,8 +131,18 @@ pub(crate) struct GpuFx<'e, 'g> {
 }
 
 impl<'e, 'g> GpuFx<'e, 'g> {
-    pub fn new(e: &'e mut Enc<'g>, img: GpuImage, offset: [f64; 2], scale: f64, levels: Option<f32>) -> Self {
-        GpuFx { e, b: Some(GBuf { img, offset, scale }), levels }
+    pub fn new(
+        e: &'e mut Enc<'g>,
+        img: GpuImage,
+        offset: [f64; 2],
+        scale: f64,
+        levels: Option<f32>,
+    ) -> Self {
+        GpuFx {
+            e,
+            b: Some(GBuf { img, offset, scale }),
+            levels,
+        }
     }
 
     /// The result: (image, offset, scale); `None` when a step failed.
@@ -122,10 +154,16 @@ impl<'e, 'g> GpuFx<'e, 'g> {
 impl effectcraft_render::FxTarget for GpuFx<'_, '_> {
     fn gpu(&mut self, steps: &[FxStep]) -> bool {
         let Some(b) = &self.b else { return false };
-        let mut cur = GBuf { img: b.img.clone(), offset: b.offset, scale: b.scale };
+        let mut cur = GBuf {
+            img: b.img.clone(),
+            offset: b.offset,
+            scale: b.scale,
+        };
         self.e.take_missing();
         for step in steps {
-            let Some(next) = apply(self.e, step.spec.id, &step.ctx, cur) else { return false };
+            let Some(next) = apply(self.e, step.spec.id, &step.ctx, cur) else {
+                return false;
+            };
             // A kernel the device couldn't build: the effects render on the CPU (#613).
             if self.e.take_missing() {
                 return false;
@@ -141,20 +179,40 @@ impl effectcraft_render::FxTarget for GpuFx<'_, '_> {
 
     fn cpu(&mut self, f: &mut dyn FnMut(Buf) -> Buf) {
         let Some(b) = self.b.take() else { return };
-        let Some(img) = self.e.download(&b.img) else { return };
-        let out = f(Buf { img, offset: b.offset, scale: b.scale });
-        self.b = self.e.g.upload_image(&out.img).map(|img| GBuf { img, offset: out.offset, scale: out.scale });
+        let Some(img) = self.e.download(&b.img) else {
+            return;
+        };
+        let out = f(Buf {
+            img,
+            offset: b.offset,
+            scale: b.scale,
+        });
+        self.b = self.e.g.upload_image(&out.img).map(|img| GBuf {
+            img,
+            offset: out.offset,
+            scale: out.scale,
+        });
     }
 
     /// GBuf::cover, like `pad`: a bigger texture with the old one copied into place, no
     /// readback. A region the device can't allocate leaves the buffer as it is.
     fn cover(&mut self, size: [f64; 2]) {
         let Some(b) = self.b.take() else { return };
-        let out = match effectcraft_effects::cover_plan(b.offset, b.scale, size, b.img.width, b.img.height) {
+        let out = match effectcraft_effects::cover_plan(
+            b.offset,
+            b.scale,
+            size,
+            b.img.width,
+            b.img.height,
+        ) {
             Some((dx, dy, w, h)) if self.e.g.fits(w, h) => {
                 let img = self.e.image(w, h);
                 self.e.copy_into(&b.img, &img, dx, dy);
-                GBuf { img, offset: [b.offset[0] + dx as f64, b.offset[1] + dy as f64], scale: b.scale }
+                GBuf {
+                    img,
+                    offset: [b.offset[0] + dx as f64, b.offset[1] + dy as f64],
+                    scale: b.scale,
+                }
             }
             _ => b,
         };
@@ -171,16 +229,28 @@ fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         "ec.blur.gaussian" => gaussian(e, ctx, b),
         "ec.blur.fastbox" => box_blur(e, ctx, b),
         "ec.blur.directional" => directional(e, ctx, b),
-        "ec.stylize.glow" if crate::fx_stylize::glow_extra(ctx) => crate::fx_stylize::glow(e, ctx, b),
-        "ec.distort.transform" if crate::fx_stylize::transform_blur(ctx) => crate::fx_stylize::transform(e, ctx, b),
+        "ec.stylize.glow" if crate::fx_stylize::glow_extra(ctx) => {
+            crate::fx_stylize::glow(e, ctx, b)
+        }
+        "ec.distort.transform" if crate::fx_stylize::transform_blur(ctx) => {
+            crate::fx_stylize::transform(e, ctx, b)
+        }
         "ec.stylize.glow" => glow(e, ctx, b),
         "ec.perspective.dropshadow" => drop_shadow(e, ctx, b),
         "ec.distort.transform" => transform(e, ctx, b),
         "ec.color.curves" => curves(e, ctx, b),
-        "ec.color.huesaturation" if !effectcraft_effects::huesat_ranges_identity(ctx) => crate::fx_tone::hue_saturation(e, ctx, b),
-        "ec.color.levels" if !effectcraft_effects::levels_channels_identity(ctx) => crate::fx_tone::levels(e, ctx, b),
-        "ec.channel.invert" if (4..=11).contains(&ctx.params.e("channel")) => crate::fx_tone::invert(e, ctx, b),
-        "ec.noise.fractal" if crate::fx_noise::fractal_extra(ctx) => crate::fx_noise::fractal(e, ctx, b, false),
+        "ec.color.huesaturation" if !effectcraft_effects::huesat_ranges_identity(ctx) => {
+            crate::fx_tone::hue_saturation(e, ctx, b)
+        }
+        "ec.color.levels" if !effectcraft_effects::levels_channels_identity(ctx) => {
+            crate::fx_tone::levels(e, ctx, b)
+        }
+        "ec.channel.invert" if (4..=11).contains(&ctx.params.e("channel")) => {
+            crate::fx_tone::invert(e, ctx, b)
+        }
+        "ec.noise.fractal" if crate::fx_noise::fractal_extra(ctx) => {
+            crate::fx_noise::fractal(e, ctx, b, false)
+        }
         _ if id.starts_with("ec.control.") => Some(b),
         _ if crate::fx_color::IDS.contains(&id) => crate::fx_color::apply(e, id, ctx, b),
         _ if crate::fx_distort::IDS.contains(&id) => crate::fx_distort::apply(e, id, ctx, b),
@@ -219,29 +289,67 @@ pub(crate) fn box_radii(sigma: f64, n: usize) -> Vec<usize> {
         wl -= 1;
     }
     let wu = wl + 2;
-    let m_ideal = (12.0 * sigma * sigma - (n as i64 * wl * wl) as f64 - 4.0 * n as f64 * wl as f64 - 3.0 * n as f64) / (-4.0 * wl as f64 - 4.0);
+    let m_ideal = (12.0 * sigma * sigma
+        - (n as i64 * wl * wl) as f64
+        - 4.0 * n as f64 * wl as f64
+        - 3.0 * n as f64)
+        / (-4.0 * wl as f64 - 4.0);
     let m = m_ideal.round() as i64;
-    (0..n as i64).map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize).collect()
+    (0..n as i64)
+        .map(|i| (((if i < m { wl } else { wu }) - 1) / 2).max(0) as usize)
+        .collect()
 }
 
 /// Horizontal passes with radii `rx`, then vertical passes with radii `ry` (raster::blur).
-pub(crate) fn box_passes(e: &mut Enc, img: &GpuImage, rx: &[usize], ry: &[usize], repeat: bool) -> GpuImage {
+pub(crate) fn box_passes(
+    e: &mut Enc,
+    img: &GpuImage,
+    rx: &[usize],
+    ry: &[usize],
+    repeat: bool,
+) -> GpuImage {
     let mut cur = img.clone();
-    let passes = rx.iter().map(|&r| (false, r)).chain(ry.iter().map(|&r| (true, r))).filter(|p| p.1 > 0);
+    let passes = rx
+        .iter()
+        .map(|&r| (false, r))
+        .chain(ry.iter().map(|&r| (true, r)))
+        .filter(|p| p.1 > 0);
     for (vertical, r) in passes {
-        let block = if vertical { (4 * r).clamp(32, 256) } else { 256 } as u32;
-        let (lines, n) = if vertical { (cur.width, cur.height) } else { (cur.height, cur.width) };
+        let block = if vertical {
+            (4 * r).clamp(32, 256)
+        } else {
+            256
+        } as u32;
+        let (lines, n) = if vertical {
+            (cur.width, cur.height)
+        } else {
+            (cur.height, cur.width)
+        };
         let mut p = Params::default();
         p.u[0] = [r as u32, repeat as u32, block, 0];
         let out = e.scratch(cur.width, cur.height);
-        e.dispatch(if vertical { "box_v" } else { "box_h" }, &p, &cur, None, &out, None, (lines.div_ceil(64), n.div_ceil(block)));
+        e.dispatch(
+            if vertical { "box_v" } else { "box_h" },
+            &p,
+            &cur,
+            None,
+            &out,
+            None,
+            (lines.div_ceil(64), n.div_ceil(block)),
+        );
         cur = out;
     }
     cur
 }
 
 /// raster::gaussian_blur (3 box passes per axis).
-pub(crate) fn gaussian_blur(e: &mut Enc, img: &GpuImage, sx: f64, sy: f64, repeat: bool) -> GpuImage {
+pub(crate) fn gaussian_blur(
+    e: &mut Enc,
+    img: &GpuImage,
+    sx: f64,
+    sy: f64,
+    repeat: bool,
+) -> GpuImage {
     let rx = if sx > 0.05 { box_radii(sx, 3) } else { vec![] };
     let ry = if sy > 0.05 { box_radii(sy, 3) } else { vec![] };
     box_passes(e, img, &rx, &ry, repeat)
@@ -280,7 +388,13 @@ fn box_blur(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     if !repeat && !ctx.adjustment {
         b.pad(e, (r * it) as u32 + 1)?;
     }
-    b.img = box_passes(e, &b.img, &vec![r * kx as usize; it], &vec![r * ky as usize; it], repeat || ctx.adjustment);
+    b.img = box_passes(
+        e,
+        &b.img,
+        &vec![r * kx as usize; it],
+        &vec![r * ky as usize; it],
+        repeat || ctx.adjustment,
+    );
     Some(b)
 }
 
@@ -304,7 +418,9 @@ fn directional(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 
 fn glow(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     // Other Glow Operations and the Arbitrary Map render on the CPU.
-    if ctx.params.e("colors") == 2 || effectcraft_effects::glow_operation(ctx) != effectcraft_color::BlendMode::Add {
+    if ctx.params.e("colors") == 2
+        || effectcraft_effects::glow_operation(ctx) != effectcraft_color::BlendMode::Add
+    {
         return None;
     }
     let thr = ctx.params.f("threshold") as f32 / 100.0;
@@ -318,8 +434,18 @@ fn glow(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         b.pad(e, (radius * 1.5).ceil() as u32 + 2)?;
     }
     let mut p = Params::default();
-    p.u[0] = [use_colors as u32, (ctx.params.e("based") == 0) as u32, ctx.params.e("colorLooping"), 0];
-    p.f[0] = [thr, ctx.params.f("colorLoops") as f32, (ctx.params.f("colorPhase") / 360.0) as f32, ctx.params.f("abMidpoint") as f32 / 100.0];
+    p.u[0] = [
+        use_colors as u32,
+        (ctx.params.e("based") == 0) as u32,
+        ctx.params.e("colorLooping"),
+        0,
+    ];
+    p.f[0] = [
+        thr,
+        ctx.params.f("colorLoops") as f32,
+        (ctx.params.f("colorPhase") / 360.0) as f32,
+        ctx.params.f("abMidpoint") as f32 / 100.0,
+    ];
     p.f[1] = ca;
     p.f[2] = cb;
     let bright = e.image(b.img.width, b.img.height);
@@ -357,7 +483,14 @@ fn drop_shadow(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     }
     if !only {
         let out = e.scratch(b.img.width, b.img.height);
-        e.pixels("shadow_combine", &Params::default(), &sh, Some(&b.img), &out, None);
+        e.pixels(
+            "shadow_combine",
+            &Params::default(),
+            &sh,
+            Some(&b.img),
+            &out,
+            None,
+        );
         sh = out;
     }
     b.img = sh;
@@ -372,23 +505,42 @@ fn transform(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let anchor = b.to_px(ctx.params.v2("anchor"));
     let pos = b.to_px(ctx.params.v2("position"));
     let sh = ctx.params.f("scaleHeight");
-    let sw = if ctx.params.b("uniform") { sh } else { ctx.params.f("scaleWidth") };
+    let sw = if ctx.params.b("uniform") {
+        sh
+    } else {
+        ctx.params.f("scaleWidth")
+    };
     let opacity = ctx.params.f("opacity") as f32 / 100.0;
     let m = Mat3::translate(vec2(pos.0, pos.1))
         * Mat3::rotate_deg(ctx.params.f("rotation"))
         * Mat3::skew_deg(ctx.params.f("skew"), ctx.params.f("skewAxis"))
         * Mat3::scale(vec2(sw / 100.0, sh / 100.0))
         * Mat3::translate(vec2(-anchor.0, -anchor.1));
-    let sampling = if ctx.params.e("sampling") == 1 { Sampling::Bicubic } else { Sampling::Bilinear };
+    let sampling = if ctx.params.e("sampling") == 1 {
+        Sampling::Bicubic
+    } else {
+        Sampling::Bilinear
+    };
     let empty = e.image(b.img.width, b.img.height);
-    b.img = ops::warp(e, &empty, &b.img, &m, sampling, effectcraft_color::BlendMode::Normal, opacity, 0, None);
+    b.img = ops::warp(
+        e,
+        &empty,
+        &b.img,
+        &m,
+        sampling,
+        effectcraft_color::BlendMode::Normal,
+        opacity,
+        0,
+        None,
+    );
     Some(b)
 }
 
 // ---------------------------------------------------------------- per-pixel
 
 fn curves(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let parsed = ["rgb", "red", "green", "blue", "alpha"].map(|id| effectcraft_effects::Curve::parse(ctx.params.s(id)));
+    let parsed = ["rgb", "red", "green", "blue", "alpha"]
+        .map(|id| effectcraft_effects::Curve::parse(ctx.params.s(id)));
     if parsed.iter().all(Option::is_none) {
         return Some(b);
     }
@@ -431,7 +583,11 @@ fn pointwise(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         "ec.color.brightnesscontrast" => {
             let br = f("brightness") as f32 / 100.0;
             let ct = f("contrast") as f32 / 100.0;
-            let k = if ct >= 0.0 { 1.0 / (1.0 - ct * 0.99) } else { 1.0 + ct };
+            let k = if ct >= 0.0 {
+                1.0 / (1.0 - ct * 0.99)
+            } else {
+                1.0 + ct
+            };
             let legacy = ctx.params.b("useLegacy");
             // Mode: 0 = identity, 1 = legacy linear, 2 = tone curves (see `bc_modern`).
             let mode = if br == 0.0 && ct == 0.0 {
@@ -450,8 +606,18 @@ fn pointwise(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
                 return None;
             }
             p.u[0] = [3, ctx.params.b("colorize") as u32, 0, 0];
-            p.f[0] = [f("hue") as f32 / 360.0, f("saturation") as f32 / 100.0, f("lightness") as f32 / 100.0, 0.0];
-            p.f[1] = [f("colorizeHue") as f32 / 360.0, f("colorizeSaturation") as f32 / 100.0, f("colorizeLightness") as f32 / 100.0, 0.0];
+            p.f[0] = [
+                f("hue") as f32 / 360.0,
+                f("saturation") as f32 / 100.0,
+                f("lightness") as f32 / 100.0,
+                0.0,
+            ];
+            p.f[1] = [
+                f("colorizeHue") as f32 / 360.0,
+                f("colorizeSaturation") as f32 / 100.0,
+                f("colorizeLightness") as f32 / 100.0,
+                0.0,
+            ];
         }
         "ec.color.levels" => {
             // Red / Green / Blue / Alpha controls render on the CPU.
@@ -460,7 +626,12 @@ fn pointwise(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             }
             let (clip_b, clip_w) = effectcraft_effects::levels_clip(ctx);
             p.u[0] = [4, clip_b as u32, clip_w as u32, 0];
-            p.f[0] = [f("inBlack") as f32, f("inWhite") as f32, f("gamma").max(0.01) as f32, f("outBlack") as f32];
+            p.f[0] = [
+                f("inBlack") as f32,
+                f("inWhite") as f32,
+                f("gamma").max(0.01) as f32,
+                f("outBlack") as f32,
+            ];
             p.f[1][0] = f("outWhite") as f32;
         }
         "ec.color.exposure" => {
@@ -500,7 +671,12 @@ fn pointwise(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             p.f[0] = [s.0 as f32, s.1 as f32, en.0 as f32, en.1 as f32];
             p.f[1] = rgb(ctx.params.color("startColor"));
             p.f[2] = rgb(ctx.params.color("endColor"));
-            p.f[3] = [len2 as f32, f("scatter") as f32 / 512.0, f("blend") as f32 / 100.0, 0.0];
+            p.f[3] = [
+                len2 as f32,
+                f("scatter") as f32 / 512.0,
+                f("blend") as f32 / 100.0,
+                0.0,
+            ];
         }
         "ec.noise.fractal" => {
             // The shader covers Soft Linear noise, the Basic / Turbulent Smooth / Turbulent Basic
@@ -524,14 +700,38 @@ fn pointwise(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
             let (sr, cr) = (f("transform/rotation") as f32).to_radians().sin_cos();
             let (ox, oy) = b.to_px(pr.v2("transform/offset"));
             let s = f("transform/scale");
-            let (sw, sh) = if pr.b("transform/uniformScaling") { (s, s) } else { (f("transform/scaleWidth"), f("transform/scaleHeight")) };
+            let (sw, sh) = if pr.b("transform/uniformScaling") {
+                (s, s)
+            } else {
+                (f("transform/scaleWidth"), f("transform/scaleHeight"))
+            };
             let sub = (f("subSettings/subScaling") / 100.0).clamp(0.1, 1.0);
-            p.u[0] = [10, kind, octaves.ceil() as u32, f("evolutionOptions/seed") as u32 ^ 0x51ed];
+            p.u[0] = [
+                10,
+                kind,
+                octaves.ceil() as u32,
+                f("evolutionOptions/seed") as u32 ^ 0x51ed,
+            ];
             p.u[1] = [pr.b("invert") as u32, pr.e("overflow"), mode, 0];
-            p.f[0] = [f("contrast") as f32 / 100.0, f("brightness") as f32 / 100.0, (sw * b.scale).max(1.0) as f32, (octaves - octaves.floor()) as f32];
+            p.f[0] = [
+                f("contrast") as f32 / 100.0,
+                f("brightness") as f32 / 100.0,
+                (sw * b.scale).max(1.0) as f32,
+                (octaves - octaves.floor()) as f32,
+            ];
             p.f[1] = [ox as f32, oy as f32, sr, cr];
-            p.f[2] = [f("evolution") as f32 / 360.0, f("blend") as f32 / 100.0, (f("opacity") as f32 / 100.0).clamp(0.0, 1.0), (sh * b.scale).max(1.0) as f32];
-            p.f[3] = [(f("subSettings/subInfluence") as f32 / 100.0).clamp(0.0, 1.0), 1.0 / sub as f32, 0.0, 0.0];
+            p.f[2] = [
+                f("evolution") as f32 / 360.0,
+                f("blend") as f32 / 100.0,
+                (f("opacity") as f32 / 100.0).clamp(0.0, 1.0),
+                (sh * b.scale).max(1.0) as f32,
+            ];
+            p.f[3] = [
+                (f("subSettings/subInfluence") as f32 / 100.0).clamp(0.0, 1.0),
+                1.0 / sub as f32,
+                0.0,
+                0.0,
+            ];
         }
         _ => return None,
     }

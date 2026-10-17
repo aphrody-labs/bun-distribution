@@ -3,7 +3,9 @@
 
 use crate::osc::{Osc, Waveform};
 use crate::params::{Params, choice, lin, log, param_plumbing};
-use crate::util::{Smoother, frames_in, ms_to_samples, note_hz, sane_channels, sane_sr, sort_events};
+use crate::util::{
+    Smoother, frames_in, ms_to_samples, note_hz, sane_channels, sane_sr, sort_events,
+};
 use crate::{Category, ParamInfo, Plugin, PluginInfo, Unit, db_to_gain};
 
 pub(crate) const MAX_EVENTS: usize = 512;
@@ -29,7 +31,9 @@ pub(crate) struct EventQueue {
 
 impl EventQueue {
     pub(crate) fn new() -> Self {
-        Self { ev: Vec::with_capacity(MAX_EVENTS) }
+        Self {
+            ev: Vec::with_capacity(MAX_EVENTS),
+        }
     }
 
     pub(crate) fn push(&mut self, offset: usize, kind: EventKind) {
@@ -64,20 +68,62 @@ fn wave(i: usize) -> Waveform {
 static SYNTH_PARAMS: [ParamInfo; 19] = [
     choice("osc1_wave", "Osc 1", WAVES, 0),
     choice("osc2_wave", "Osc 2", WAVES, 0),
-    lin("osc2_semitones", "Osc 2 Pitch", -24.0, 24.0, 0.0, Unit::Semitones),
-    lin("osc2_detune", "Osc 2 Detune", -100.0, 100.0, 7.0, Unit::Cents),
+    lin(
+        "osc2_semitones",
+        "Osc 2 Pitch",
+        -24.0,
+        24.0,
+        0.0,
+        Unit::Semitones,
+    ),
+    lin(
+        "osc2_detune",
+        "Osc 2 Detune",
+        -100.0,
+        100.0,
+        7.0,
+        Unit::Cents,
+    ),
     lin("osc_mix", "Osc Mix", 0.0, 100.0, 50.0, Unit::Percent),
     log("cutoff", "Cutoff", 20.0, 20000.0, 2000.0, Unit::Hz),
     lin("resonance", "Resonance", 0.0, 100.0, 20.0, Unit::Percent),
-    lin("filter_env_amount", "Filter Env", -100.0, 100.0, 30.0, Unit::Percent),
+    lin(
+        "filter_env_amount",
+        "Filter Env",
+        -100.0,
+        100.0,
+        30.0,
+        Unit::Percent,
+    ),
     log("amp_attack", "Amp Attack", 0.5, 5000.0, 5.0, Unit::Ms),
     log("amp_decay", "Amp Decay", 1.0, 5000.0, 200.0, Unit::Ms),
-    lin("amp_sustain", "Amp Sustain", 0.0, 100.0, 70.0, Unit::Percent),
+    lin(
+        "amp_sustain",
+        "Amp Sustain",
+        0.0,
+        100.0,
+        70.0,
+        Unit::Percent,
+    ),
     log("amp_release", "Amp Release", 1.0, 10000.0, 300.0, Unit::Ms),
     log("filter_attack", "Filter Attack", 0.5, 5000.0, 5.0, Unit::Ms),
     log("filter_decay", "Filter Decay", 1.0, 5000.0, 300.0, Unit::Ms),
-    lin("filter_sustain", "Filter Sustain", 0.0, 100.0, 30.0, Unit::Percent),
-    log("filter_release", "Filter Release", 1.0, 10000.0, 300.0, Unit::Ms),
+    lin(
+        "filter_sustain",
+        "Filter Sustain",
+        0.0,
+        100.0,
+        30.0,
+        Unit::Percent,
+    ),
+    log(
+        "filter_release",
+        "Filter Release",
+        1.0,
+        10000.0,
+        300.0,
+        Unit::Ms,
+    ),
     lin("glide", "Glide", 0.0, 1000.0, 0.0, Unit::Ms),
     lin("velocity", "Velocity Sens", 0.0, 100.0, 70.0, Unit::Percent),
     lin("level", "Level", -48.0, 6.0, -6.0, Unit::Db),
@@ -123,13 +169,21 @@ pub(crate) struct AdsrRates {
 impl AdsrRates {
     pub(crate) fn new(a_ms: f32, d_ms: f32, s: f32, r_ms: f32, sr: f32) -> Self {
         let exp60 = |ms: f32| (0.001f32.ln() / ms_to_samples(ms, sr).max(1.0)).exp();
-        Self { attack: 1.0 / ms_to_samples(a_ms, sr).max(1.0), decay: exp60(d_ms), sustain: s.clamp(0.0, 1.0), release: exp60(r_ms) }
+        Self {
+            attack: 1.0 / ms_to_samples(a_ms, sr).max(1.0),
+            decay: exp60(d_ms),
+            sustain: s.clamp(0.0, 1.0),
+            release: exp60(r_ms),
+        }
     }
 }
 
 impl Adsr {
     pub(crate) const fn new() -> Self {
-        Self { stage: Stage::Idle, level: 0.0 }
+        Self {
+            stage: Stage::Idle,
+            level: 0.0,
+        }
     }
 
     pub(crate) fn gate_on(&mut self) {
@@ -288,7 +342,11 @@ impl SubtractiveSynth {
         self.amp_rates = AdsrRates::new(v(8), v(9), v(10) / 100.0, v(11), sr);
         self.filt_rates = AdsrRates::new(v(12), v(13), v(14) / 100.0, v(15), sr);
         let glide = v(16);
-        self.glide_coef = if glide < 0.5 { 0.0 } else { crate::util::time_coef(glide / 3.0, sr) };
+        self.glide_coef = if glide < 0.5 {
+            0.0
+        } else {
+            crate::util::time_coef(glide / 3.0, sr)
+        };
         self.level.set(db_to_gain(v(18)));
         self.cutoff.set(v(5));
     }
@@ -320,7 +378,11 @@ impl SubtractiveSynth {
             .unwrap_or(0);
         let sens = self.p.v(17) / 100.0;
         let glide = self.glide_coef > 0.0;
-        let start = if glide { self.last_freq.unwrap_or(freq) } else { freq };
+        let start = if glide {
+            self.last_freq.unwrap_or(freq)
+        } else {
+            freq
+        };
         let counter = self.counter;
         if let Some(v) = self.voices.get_mut(idx) {
             let was_active = v.active();
@@ -423,7 +485,10 @@ impl Plugin for SubtractiveSynth {
     fn process(&mut self, io: &mut [Vec<f32>], frames: usize) {
         let ch = self.ch.min(io.len());
         let frames = frames_in(io, frames, ch);
-        let mut evs = [Event { offset: 0, kind: EventKind::AllOff }; MAX_EVENTS];
+        let mut evs = [Event {
+            offset: 0,
+            kind: EventKind::AllOff,
+        }; MAX_EVENTS];
         let count = {
             let sorted = self.events.sorted();
             for (d, s) in evs.iter_mut().zip(sorted) {

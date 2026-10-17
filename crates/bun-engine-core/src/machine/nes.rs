@@ -19,7 +19,8 @@ impl Nes {
         // Power-on RAM is zeroed, not random: runs are reproducible, so the interpreter, the
         // recompiled executable and WebAssembly builds and `re replica` replays compare frame by frame
         // (a bare wasm32 module also has no entropy source).
-        let mut deck = ControlDeck::with_config(Config::default().with_ram_state(RamState::AllZeros));
+        let mut deck =
+            ControlDeck::with_config(Config::default().with_ram_state(RamState::AllZeros));
         deck.load_rom(name, &mut std::io::Cursor::new(rom))
             .map_err(|e| format!("NES ROM: {e}"))?;
         Ok(Self {
@@ -77,7 +78,9 @@ impl Machine for Nes {
     }
 
     fn load_state(&mut self, state: &[u8]) -> Result<(), String> {
-        self.deck.load_state(state).map_err(|e| format!("NES state: {e}"))
+        self.deck
+            .load_state(state)
+            .map_err(|e| format!("NES state: {e}"))
     }
 
     fn screens(&self) -> Vec<Screen> {

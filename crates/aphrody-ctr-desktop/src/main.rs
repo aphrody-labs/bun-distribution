@@ -51,10 +51,14 @@ fn parse() -> Result<Options, String> {
                     Some("jpn") => Region::Japan,
                     Some("usa") => Region::Usa,
                     Some("eur") => Region::Europe,
-                    other => return Err(format!("--region expects jpn, usa or eur, got {other:?}")),
+                    other => {
+                        return Err(format!("--region expects jpn, usa or eur, got {other:?}"));
+                    }
                 }
             }
-            "--data" => options.data = Some(args.next().ok_or("--data expects a directory")?.into()),
+            "--data" => {
+                options.data = Some(args.next().ok_or("--data expects a directory")?.into())
+            }
             "--slider" => {
                 options.slider = args
                     .next()
@@ -63,7 +67,9 @@ fn parse() -> Result<Options, String> {
             }
             "--headless" => {
                 options.headless = Some(
-                    args.next().and_then(|v| v.parse().ok()).ok_or("--headless expects a frame count")?,
+                    args.next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--headless expects a frame count")?,
                 )
             }
             "-h" | "--help" => return Err(String::new()),
@@ -115,7 +121,12 @@ impl App {
         } else {
             None
         };
-        Input { buttons: self.buttons, circle: self.circle, touch, ..Input::default() }
+        Input {
+            buttons: self.buttons,
+            circle: self.circle,
+            touch,
+            ..Input::default()
+        }
     }
 
     fn state_path(&self) -> PathBuf {
@@ -158,7 +169,8 @@ impl App {
                         Stereo::Anaglyph => Stereo::Off,
                     };
                     gfx.renderer.set_stereo(next);
-                    self.emu.set_slider_3d(if next == Stereo::Anaglyph { 1.0 } else { 0.0 });
+                    self.emu
+                        .set_slider_3d(if next == Stereo::Anaglyph { 1.0 } else { 0.0 });
                 }
             }
             KeyCode::F5 => match self.emu.save_state() {
@@ -178,7 +190,8 @@ impl App {
             KeyCode::F11 => {
                 if let Some(gfx) = &self.gfx {
                     let on = gfx.window.fullscreen().is_none();
-                    gfx.window.set_fullscreen(on.then_some(Fullscreen::Borderless(None)));
+                    gfx.window
+                        .set_fullscreen(on.then_some(Fullscreen::Borderless(None)));
                 }
             }
             _ => {}
@@ -290,7 +303,11 @@ impl ApplicationHandler for App {
             WindowEvent::CursorMoved { position, .. } => {
                 self.cursor = (position.x as f32, position.y as f32);
             }
-            WindowEvent::MouseInput { state, button: MouseButton::Left, .. } => {
+            WindowEvent::MouseInput {
+                state,
+                button: MouseButton::Left,
+                ..
+            } => {
                 self.touch_down = state == ElementState::Pressed;
             }
             WindowEvent::Focused(false) => {
@@ -304,7 +321,11 @@ impl ApplicationHandler for App {
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
         self.step(event_loop);
-        let wake = if self.fast || self.paused { Instant::now() + Duration::from_millis(8) } else { self.next_frame };
+        let wake = if self.fast || self.paused {
+            Instant::now() + Duration::from_millis(8)
+        } else {
+            self.next_frame
+        };
         event_loop.set_control_flow(ControlFlow::WaitUntil(wake));
     }
 }

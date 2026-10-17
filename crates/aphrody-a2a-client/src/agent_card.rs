@@ -10,14 +10,19 @@ pub struct AgentCardResolver {
 
 impl AgentCardResolver {
     pub fn new(client: Option<Client>) -> Self {
-        AgentCardResolver { client: client.unwrap_or_default() }
+        AgentCardResolver {
+            client: client.unwrap_or_default(),
+        }
     }
 
     /// Resolve an agent card from the given base URL.
     ///
     /// Fetches `{base_url}/.well-known/agent-card.json`.
     pub async fn resolve(&self, base_url: &str) -> Result<AgentCard, A2AError> {
-        let url = format!("{}/.well-known/agent-card.json", base_url.trim_end_matches('/'));
+        let url = format!(
+            "{}/.well-known/agent-card.json",
+            base_url.trim_end_matches('/')
+        );
 
         let resp = self
             .client

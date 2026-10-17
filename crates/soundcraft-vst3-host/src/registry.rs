@@ -42,7 +42,11 @@ pub fn load_bundle(path: &Path) -> Result<Vec<Vst3Descriptor>, Vst3Error> {
                 category: paths::category_from_sub_categories(&subs),
                 is_instrument: paths::is_instrument(&subs),
                 class_id,
-                name: if c.name.is_empty() { "VST3 plugin".to_string() } else { c.name },
+                name: if c.name.is_empty() {
+                    "VST3 plugin".to_string()
+                } else {
+                    c.name
+                },
                 vendor: c.vendor,
                 version: c.version,
                 sdk_version: c.sdk_version,
@@ -129,7 +133,11 @@ pub(crate) fn unit_from_label(units: &str) -> Unit {
 }
 
 fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
-    let name = if p.title.is_empty() { format!("Param {}", p.id) } else { p.title.clone() };
+    let name = if p.title.is_empty() {
+        format!("Param {}", p.id)
+    } else {
+        p.title.clone()
+    };
     let base = ParamInfo {
         id: leak(p.id.to_string()),
         name: leak(name),
@@ -141,12 +149,22 @@ fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
         choices: &[],
     };
     if p.step_count == 1 {
-        return ParamInfo { unit: Unit::Toggle, default: p.default_normalized.round() as f32, ..base };
+        return ParamInfo {
+            unit: Unit::Toggle,
+            default: p.default_normalized.round() as f32,
+            ..base
+        };
     }
     if (2..=MAX_CHOICES).contains(&p.step_count) {
         let steps = f64::from(p.step_count);
-        let labels: Vec<&'static str> =
-            (0..=p.step_count).map(|i| leak(inst.value_text(p.id, f64::from(i) / steps).unwrap_or_else(|| i.to_string()))).collect();
+        let labels: Vec<&'static str> = (0..=p.step_count)
+            .map(|i| {
+                leak(
+                    inst.value_text(p.id, f64::from(i) / steps)
+                        .unwrap_or_else(|| i.to_string()),
+                )
+            })
+            .collect();
         return ParamInfo {
             max: p.step_count as f32,
             default: (p.default_normalized * steps).round() as f32,
@@ -158,8 +176,15 @@ fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
     // Continuous (or too many steps for a menu): plain range from the controller.
     let unit = unit_from_label(&p.units);
     match (inst.to_plain(p.id, 0.0), inst.to_plain(p.id, 1.0)) {
-        (Some(lo), Some(hi)) if hi > lo && (lo as f32).is_finite() && (hi as f32).is_finite() && (hi as f32) > (lo as f32) => {
-            let default = inst.to_plain(p.id, p.default_normalized).map_or(lo, |d| d.clamp(lo, hi));
+        (Some(lo), Some(hi))
+            if hi > lo
+                && (lo as f32).is_finite()
+                && (hi as f32).is_finite()
+                && (hi as f32) > (lo as f32) =>
+        {
+            let default = inst
+                .to_plain(p.id, p.default_normalized)
+                .map_or(lo, |d| d.clamp(lo, hi));
             // A logarithmic plugin mapping (frequency knobs) shows its geometric mean at mid travel.
             let taper = match inst.to_plain(p.id, 0.5) {
                 Some(mid)
@@ -171,16 +196,31 @@ fn param_info(inst: &Instance, p: &RawParam) -> ParamInfo {
                 }
                 _ => Taper::Linear,
             };
-            ParamInfo { min: lo as f32, max: hi as f32, default: default as f32, unit, taper, ..base }
+            ParamInfo {
+                min: lo as f32,
+                max: hi as f32,
+                default: default as f32,
+                unit,
+                taper,
+                ..base
+            }
         }
-        _ => ParamInfo { default: p.default_normalized as f32, unit, ..base },
+        _ => ParamInfo {
+            default: p.default_normalized as f32,
+            unit,
+            ..base
+        },
     }
 }
 
 /// Builds and leaks the `PluginInfo` for one plugin type. Called at most once per id (cached).
 fn build_info(d: &Vst3Descriptor, inst: &Instance) -> &'static PluginInfo {
-    let params: Vec<ParamInfo> =
-        inst.params().iter().filter(|p| p.flags & (PARAM_HIDDEN | PARAM_READ_ONLY | PARAM_BYPASS) == 0).map(|p| param_info(inst, p)).collect();
+    let params: Vec<ParamInfo> = inst
+        .params()
+        .iter()
+        .filter(|p| p.flags & (PARAM_HIDDEN | PARAM_READ_ONLY | PARAM_BYPASS) == 0)
+        .map(|p| param_info(inst, p))
+        .collect();
     let short: String = d.name.chars().take(8).collect();
     Box::leak(Box::new(PluginInfo {
         id: leak(d.id.clone()),
@@ -199,9 +239,16 @@ fn instantiate_raw(id: &str) -> Result<(Instance, &'static PluginInfo), Vst3Erro
     let desc = {
         let mut r = registry().lock().unwrap_or_else(PoisonError::into_inner);
         if r.failed.contains(id) {
-            return Err(Vst3Error::Instantiate(id.to_string(), "failed before".into()));
+            return Err(Vst3Error::Instantiate(
+                id.to_string(),
+                "failed before".into(),
+            ));
         }
-        ensure_scanned(&mut r).iter().find(|d| d.id == id).cloned().ok_or_else(|| Vst3Error::NotFound(id.to_string()))?
+        ensure_scanned(&mut r)
+            .iter()
+            .find(|d| d.id == id)
+            .cloned()
+            .ok_or_else(|| Vst3Error::NotFound(id.to_string()))?
     };
     let made = Bundle::load(&desc.path).and_then(|b| b.instantiate(&cid));
     let mut r = registry().lock().unwrap_or_else(PoisonError::into_inner);

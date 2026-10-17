@@ -13,8 +13,14 @@ const RECOMMENDED: [&str; 5] = ["organize", "comment", "form", "edit", "protect"
 fn card_lift(ui: &egui::Ui, t: &Tokens, rect: Rect, press: theme::Press) {
     let lift = press.hover * (1.0 - press.down);
     if lift > 0.04 {
-        let shadow = egui::Shadow { offset: [0, 3], blur: (14.0 * lift) as u8, spread: 0, color: t.page_shadow.gamma_multiply(0.85 * lift) };
-        ui.painter().add(shadow.as_shape(rect, CornerRadius::same(10)));
+        let shadow = egui::Shadow {
+            offset: [0, 3],
+            blur: (14.0 * lift) as u8,
+            spread: 0,
+            color: t.page_shadow.gamma_multiply(0.85 * lift),
+        };
+        ui.painter()
+            .add(shadow.as_shape(rect, CornerRadius::same(10)));
     }
 }
 
@@ -236,17 +242,35 @@ mod tests {
             .map(|item| crate::i18n::tr(de, item.label))
             .collect::<Vec<_>>()
             .join(" · ");
-        let output = ctx
-            .run_ui(egui::RawInput { screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(1440.0, 900.0))), ..Default::default() }, |ui| {
-                show(&mut app, ui)
-            });
+        let output = ctx.run_ui(
+            egui::RawInput {
+                screen_rect: Some(Rect::from_min_size(egui::Pos2::ZERO, vec2(1440.0, 900.0))),
+                ..Default::default()
+            },
+            |ui| show(&mut app, ui),
+        );
         crate::i18n::set_current(crate::i18n::Lang::EN);
-        let text_shapes: Vec<_> =
-            output.shapes.iter().filter_map(|shape| if let egui::Shape::Text(text) = &shape.shape { Some(text) } else { None }).collect();
-        let description = text_shapes.iter().find(|text| text.galley.job.text == blurb).unwrap();
+        let text_shapes: Vec<_> = output
+            .shapes
+            .iter()
+            .filter_map(|shape| {
+                if let egui::Shape::Text(text) = &shape.shape {
+                    Some(text)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let description = text_shapes
+            .iter()
+            .find(|text| text.galley.job.text == blurb)
+            .unwrap();
         let action = text_shapes
             .iter()
-            .find(|text| text.galley.job.text == crate::i18n::tr(de, "Use now") && (text.pos.x - description.pos.x).abs() < 0.1)
+            .find(|text| {
+                text.galley.job.text == crate::i18n::tr(de, "Use now")
+                    && (text.pos.x - description.pos.x).abs() < 0.1
+            })
             .unwrap();
         assert!(description.galley.rows.len() <= 2);
         assert!(

@@ -52,73 +52,121 @@ pub fn windows(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let playing = app.ui.timeline.playing;
     let t = Tokens::get(ctx);
 
-    crate::analysis_ui::panel_window(app, ctx, "timeline", tl!("Timeline"), vec2(0.0, 520.0), 660.0, |ui| {
-        ui.horizontal(|ui| {
-            ui.label(RichText::new(tl!("Timeline")).strong().color(t.text));
-            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                if crate::icons::button(ui, "x", 20.0, false, tl!("Close")).clicked() {
-                    close = true;
-                }
+    crate::analysis_ui::panel_window(
+        app,
+        ctx,
+        "timeline",
+        tl!("Timeline"),
+        vec2(0.0, 520.0),
+        660.0,
+        |ui| {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(tl!("Timeline")).strong().color(t.text));
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if crate::icons::button(ui, "x", 20.0, false, tl!("Close")).clicked() {
+                        close = true;
+                    }
+                });
             });
-        });
-        ui.separator();
+            ui.separator();
 
-        if !have_doc {
-            ui.weak(tl!("Open a document to use the timeline."));
-            return;
-        }
-        match &tl {
-            None => {
-                ui.add_space(8.0);
-                ui.vertical_centered(|ui| {
-                    if crate::widgets::primary_button(ui, tl!("Create Video Timeline"), 200.0).clicked() {
-                        act = Some(("timeline.create", json!({ "duration": 30, "fps": 30.0 })));
-                    }
-                    ui.add_space(4.0);
-                    ui.weak(tl!("30 frames @ 30 fps"));
-                });
+            if !have_doc {
+                ui.weak(tl!("Open a document to use the timeline."));
+                return;
             }
-            Some(tl) => {
-                ui.horizontal(|ui| {
-                    let play_icon = if playing { "pause" } else { "play" };
-                    if crate::icons::button(ui, play_icon, 22.0, playing, if playing { tl!("Pause") } else { tl!("Play") }).clicked() {
-                        toggle_play = true;
-                    }
-                    if crate::icons::button(ui, "chevron-left", 22.0, false, tl!("Previous frame")).clicked() {
-                        act = Some(("timeline.previousFrame", json!({})));
-                    }
-                    ui.label(
-                        RichText::new(crate::i18n::fmt(
-                            crate::i18n::t("Frame {current} / {total}"),
-                            &[("current", &(tl.current + 1).to_string()), ("total", &tl.duration.to_string())],
-                        ))
-                        .color(t.text)
-                        .monospace(),
-                    );
-                    if crate::icons::button(ui, "chevron-right", 22.0, false, tl!("Next frame")).clicked() {
-                        act = Some(("timeline.nextFrame", json!({})));
-                    }
-                    ui.separator();
-                    ui.label(RichText::new(format!("{:.2}s", tl.time())).color(t.text_dim).monospace());
-                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        if crate::icons::button(ui, "trash", 20.0, false, tl!("Delete Timeline")).clicked() {
-                            act = Some(("timeline.delete", json!({})));
+            match &tl {
+                None => {
+                    ui.add_space(8.0);
+                    ui.vertical_centered(|ui| {
+                        if crate::widgets::primary_button(ui, tl!("Create Video Timeline"), 200.0)
+                            .clicked()
+                        {
+                            act = Some(("timeline.create", json!({ "duration": 30, "fps": 30.0 })));
                         }
-                        ui.label(RichText::new(format!("{:.0} fps", tl.fps)).color(t.text_dim));
+                        ui.add_space(4.0);
+                        ui.weak(tl!("30 frames @ 30 fps"));
                     });
-                });
-                ui.add_space(6.0);
-                // Scrubber: frame playhead across the duration.
-                if tl.duration > 1 {
-                    let mut frame = tl.current as f64;
-                    let resp = ui.add(egui::Slider::new(&mut frame, 0.0..=(tl.duration - 1) as f64).integer().show_value(false).text("playhead"));
-                    if resp.changed() {
-                        act = Some(("timeline.setFrame", json!({ "frame": frame as u64 })));
+                }
+                Some(tl) => {
+                    ui.horizontal(|ui| {
+                        let play_icon = if playing { "pause" } else { "play" };
+                        if crate::icons::button(
+                            ui,
+                            play_icon,
+                            22.0,
+                            playing,
+                            if playing { tl!("Pause") } else { tl!("Play") },
+                        )
+                        .clicked()
+                        {
+                            toggle_play = true;
+                        }
+                        if crate::icons::button(
+                            ui,
+                            "chevron-left",
+                            22.0,
+                            false,
+                            tl!("Previous frame"),
+                        )
+                        .clicked()
+                        {
+                            act = Some(("timeline.previousFrame", json!({})));
+                        }
+                        ui.label(
+                            RichText::new(crate::i18n::fmt(
+                                crate::i18n::t("Frame {current} / {total}"),
+                                &[
+                                    ("current", &(tl.current + 1).to_string()),
+                                    ("total", &tl.duration.to_string()),
+                                ],
+                            ))
+                            .color(t.text)
+                            .monospace(),
+                        );
+                        if crate::icons::button(ui, "chevron-right", 22.0, false, tl!("Next frame"))
+                            .clicked()
+                        {
+                            act = Some(("timeline.nextFrame", json!({})));
+                        }
+                        ui.separator();
+                        ui.label(
+                            RichText::new(format!("{:.2}s", tl.time()))
+                                .color(t.text_dim)
+                                .monospace(),
+                        );
+                        ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                            if crate::icons::button(
+                                ui,
+                                "trash",
+                                20.0,
+                                false,
+                                tl!("Delete Timeline"),
+                            )
+                            .clicked()
+                            {
+                                act = Some(("timeline.delete", json!({})));
+                            }
+                            ui.label(RichText::new(format!("{:.0} fps", tl.fps)).color(t.text_dim));
+                        });
+                    });
+                    ui.add_space(6.0);
+                    // Scrubber: frame playhead across the duration.
+                    if tl.duration > 1 {
+                        let mut frame = tl.current as f64;
+                        let resp = ui.add(
+                            egui::Slider::new(&mut frame, 0.0..=(tl.duration - 1) as f64)
+                                .integer()
+                                .show_value(false)
+                                .text("playhead"),
+                        );
+                        if resp.changed() {
+                            act = Some(("timeline.setFrame", json!({ "frame": frame as u64 })));
+                        }
                     }
                 }
             }
-        }
-    });
+        },
+    );
 
     if close {
         app.ui.timeline.open = false;

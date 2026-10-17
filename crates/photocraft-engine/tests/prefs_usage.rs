@@ -40,26 +40,37 @@ fn has_ident(text: &str, prefix: &str, ident: &str) -> bool {
     text.match_indices(&needle).any(|(i, _)| {
         let before = text[..i].chars().next_back();
         let after = text[i + needle.len()..].chars().next();
-        (!prefix.is_empty() || before.is_none_or(|c| !is_ident(c))) && after.is_none_or(|c| !is_ident(c))
+        (!prefix.is_empty() || before.is_none_or(|c| !is_ident(c)))
+            && after.is_none_or(|c| !is_ident(c))
     })
 }
 
 /// Production source of a file: everything before its unit-test module.
 fn production(text: &str) -> &str {
     // Windows checkouts may use CRLF; test-only reads must stay excluded.
-    let cut = ["#[cfg(test)]\nmod ", "#[cfg(test)]\r\nmod ", "#[cfg(test)]\npub mod ", "#[cfg(test)]\r\npub mod "]
-        .into_iter()
-        .filter_map(|marker| text.find(marker))
-        .min()
-        .unwrap_or(text.len());
+    let cut = [
+        "#[cfg(test)]\nmod ",
+        "#[cfg(test)]\r\nmod ",
+        "#[cfg(test)]\npub mod ",
+        "#[cfg(test)]\r\npub mod ",
+    ]
+    .into_iter()
+    .filter_map(|marker| text.find(marker))
+    .min()
+    .unwrap_or(text.len());
     &text[..cut]
 }
 
 fn rust_sources(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
-        let name = p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        let name = p
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
         if p.is_dir() {
             if !matches!(name.as_str(), "tests" | "examples" | "benches" | "target") {
                 rust_sources(&p, out);
@@ -72,10 +83,20 @@ fn rust_sources(dir: &Path, out: &mut Vec<PathBuf>) {
 
 /// `pub struct Name { … }` field names, and the bodies of `impl Name { … }` blocks, in prefs.rs.
 fn struct_fields(src: &str, name: &str) -> Vec<String> {
-    let Some(start) = src.find(&format!("pub struct {name} {{")) else { return Vec::new() };
+    let Some(start) = src.find(&format!("pub struct {name} {{")) else {
+        return Vec::new();
+    };
     let body = &src[start..];
     let end = body.find("\n}").unwrap_or(body.len());
-    body[..end].lines().filter_map(|l| l.trim().strip_prefix("pub ")?.split_once(':').map(|(f, _)| f.trim().to_string())).collect()
+    body[..end]
+        .lines()
+        .filter_map(|l| {
+            l.trim()
+                .strip_prefix("pub ")?
+                .split_once(':')
+                .map(|(f, _)| f.trim().to_string())
+        })
+        .collect()
 }
 
 fn inherent_impls(src: &str, name: &str) -> String {
@@ -91,7 +112,8 @@ fn inherent_impls(src: &str, name: &str) -> String {
 
 #[test]
 fn every_preference_is_read_or_hidden() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/photocraft/crates");
+    let root =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../docs/libraries/photocraft/crates");
     let prefs_rs = std::fs::read_to_string(root.join("crates/engine/src/prefs.rs")).unwrap();
     let mut files = Vec::new();
     rust_sources(&root.join("crates"), &mut files);
@@ -102,7 +124,12 @@ fn every_preference_is_read_or_hidden() {
         .filter_map(|p| std::fs::read_to_string(p).ok())
         .map(|t| production(&t).to_string())
         .collect();
-    assert!(sources.len() > 100, "found only {} source files under {}", sources.len(), root.display());
+    assert!(
+        sources.len() > 100,
+        "found only {} source files under {}",
+        sources.len(),
+        root.display()
+    );
 
     // Section key → struct name, from `pub <field>: <Type>,` in `struct Preferences`.
     let section_types: Vec<(String, String)> = {
@@ -112,7 +139,10 @@ fn every_preference_is_read_or_hidden() {
             .lines()
             .filter_map(|l| {
                 let (f, ty) = l.trim().strip_prefix("pub ")?.split_once(':')?;
-                Some((f.trim().to_string(), ty.trim().trim_end_matches(',').to_string()))
+                Some((
+                    f.trim().to_string(),
+                    ty.trim().trim_end_matches(',').to_string(),
+                ))
             })
             .collect()
     };
@@ -121,7 +151,9 @@ fn every_preference_is_read_or_hidden() {
     let mut paths = Vec::new();
     for (section, v) in json.as_object().unwrap() {
         match v.as_object() {
-            Some(o) if !o.is_empty() => paths.extend(o.keys().map(|k| (section.clone(), Some(k.clone())))),
+            Some(o) if !o.is_empty() => {
+                paths.extend(o.keys().map(|k| (section.clone(), Some(k.clone()))))
+            }
             _ => paths.push((section.clone(), None)),
         }
     }
@@ -129,17 +161,32 @@ fn every_preference_is_read_or_hidden() {
     let mut unread = Vec::new();
     let mut stale = Vec::new();
     for (section, key) in &paths {
-        let section_rs = if section == "type" { "type_".to_string() } else { snake(section) };
+        let section_rs = if section == "type" {
+            "type_".to_string()
+        } else {
+            snake(section)
+        };
         let (path, read) = match key {
-            None => (section.clone(), sources.iter().any(|t| has_ident(t, ".", &section_rs))),
+            None => (
+                section.clone(),
+                sources.iter().any(|t| has_ident(t, ".", &section_rs)),
+            ),
             Some(k) => {
                 let field = snake(k);
                 let path = format!("{section}.{k}");
-                let ty = section_types.iter().find(|(f, _)| *f == section_rs).map(|(_, t)| t.clone()).unwrap_or_default();
-                let in_helpers =
-                    !ty.is_empty() && struct_fields(&prefs_rs, &ty).contains(&field) && has_ident(&inherent_impls(&prefs_rs, &ty), "self.", &field);
-                let read =
-                    in_helpers || sources.iter().any(|t| (has_ident(t, ".", &field) && has_ident(t, "", &section_rs)) || t.contains(&format!("\"{path}\"")));
+                let ty = section_types
+                    .iter()
+                    .find(|(f, _)| *f == section_rs)
+                    .map(|(_, t)| t.clone())
+                    .unwrap_or_default();
+                let in_helpers = !ty.is_empty()
+                    && struct_fields(&prefs_rs, &ty).contains(&field)
+                    && has_ident(&inherent_impls(&prefs_rs, &ty), "self.", &field);
+                let read = in_helpers
+                    || sources.iter().any(|t| {
+                        (has_ident(t, ".", &field) && has_ident(t, "", &section_rs))
+                            || t.contains(&format!("\"{path}\""))
+                    });
                 (path, read)
             }
         };
@@ -152,7 +199,9 @@ fn every_preference_is_read_or_hidden() {
     }
     for h in HIDDEN_UNTIL_IMPLEMENTED {
         assert!(
-            paths.iter().any(|(s, k)| k.as_ref().map(|k| format!("{s}.{k}")).as_deref() == Some(*h)),
+            paths
+                .iter()
+                .any(|(s, k)| k.as_ref().map(|k| format!("{s}.{k}")).as_deref() == Some(*h)),
             "HIDDEN_UNTIL_IMPLEMENTED lists `{h}`, which is not a preference"
         );
     }
@@ -160,17 +209,31 @@ fn every_preference_is_read_or_hidden() {
         unread.is_empty(),
         "these preferences are shown in Edit › Preferences but nothing reads them: wire them up or add them to prefs::HIDDEN_UNTIL_IMPLEMENTED: {unread:#?}"
     );
-    assert!(stale.is_empty(), "these preferences are read now: remove them from prefs::HIDDEN_UNTIL_IMPLEMENTED so the dialog shows them: {stale:#?}");
+    assert!(
+        stale.is_empty(),
+        "these preferences are read now: remove them from prefs::HIDDEN_UNTIL_IMPLEMENTED so the dialog shows them: {stale:#?}"
+    );
 }
 
 #[test]
 fn the_scanner_finds_reads() {
-    assert!(has_ident("p.file_handling.recent_files.clone()", ".", "recent_files"));
-    assert!(!has_ident("p.file_handling.recent_files_x", ".", "recent_files"));
+    assert!(has_ident(
+        "p.file_handling.recent_files.clone()",
+        ".",
+        "recent_files"
+    ));
+    assert!(!has_ident(
+        "p.file_handling.recent_files_x",
+        ".",
+        "recent_files"
+    ));
     assert!(has_ident("let fh = &p.file_handling;", "", "file_handling"));
     assert!(!has_ident("my_file_handling", "", "file_handling"));
     assert_eq!(snake("recentFileCount"), "recent_file_count");
-    assert_eq!(production("fn a() {}\n#[cfg(test)]\nmod tests {\n p.x.y\n}"), "fn a() {}\n");
+    assert_eq!(
+        production("fn a() {}\n#[cfg(test)]\nmod tests {\n p.x.y\n}"),
+        "fn a() {}\n"
+    );
 }
 
 #[test]
@@ -181,7 +244,11 @@ fn production_excludes_test_modules_with_lf_or_crlf() {
             let source = format!(
                 "{prefix}#[cfg(test)]{newline}{visibility}mod tests {{{newline}    #[test]{newline}    fn hidden_setting() {{ let _ = \"type.smartQuotes\"; }}{newline}}}{newline}"
             );
-            assert_eq!(production(&source), prefix, "newline={newline:?}, visibility={visibility:?}");
+            assert_eq!(
+                production(&source),
+                prefix,
+                "newline={newline:?}, visibility={visibility:?}"
+            );
         }
     }
 }

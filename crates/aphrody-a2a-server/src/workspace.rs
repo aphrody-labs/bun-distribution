@@ -58,7 +58,10 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let p = tmp.path();
         let resolved = resolve_workspace(Some(p));
-        assert_eq!(std::fs::canonicalize(&resolved).unwrap(), std::fs::canonicalize(p).unwrap());
+        assert_eq!(
+            std::fs::canonicalize(&resolved).unwrap(),
+            std::fs::canonicalize(p).unwrap()
+        );
     }
 
     #[test]

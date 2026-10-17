@@ -15,7 +15,9 @@ use vectorcraft_svg::{ExportOptions, export, import, import_with_report};
 use vectorcraft_testkit::raster::{Image, assert_similar, render_artboard};
 
 fn svg(body: &str) -> String {
-    format!(r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120">{body}</svg>"#)
+    format!(
+        r#"<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="120">{body}</svg>"#
+    )
 }
 
 fn open(body: &str) -> (Document, Vec<String>) {
@@ -38,8 +40,16 @@ fn resvg_render(svg: &str, w: u32, h: u32) -> Image {
     let tree = resvg::usvg::Tree::from_str(svg, &resvg::usvg::Options::default()).expect("parse");
     let mut pm = resvg::tiny_skia::Pixmap::new(w, h).unwrap();
     pm.fill(resvg::tiny_skia::Color::WHITE);
-    resvg::render(&tree, resvg::tiny_skia::Transform::identity(), &mut pm.as_mut());
-    Image { width: w, height: h, rgba: pm.data().to_vec() }
+    resvg::render(
+        &tree,
+        resvg::tiny_skia::Transform::identity(),
+        &mut pm.as_mut(),
+    );
+    Image {
+        width: w,
+        height: h,
+        rgba: pm.data().to_vec(),
+    }
 }
 
 /// The effects of the only object.
@@ -60,8 +70,13 @@ fn a_checker_pattern_becomes_a_pattern_swatch() {
     assert!(w.is_empty(), "{w:?}");
     assert_eq!(d.patterns.len(), 1);
     let p = &d.patterns[0];
-    assert_eq!((p.name.as_str(), p.tile), ("Checker", Rect::new(0.0, 0.0, 20.0, 20.0)));
-    assert!(matches!(art(&d)[0].appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Checker"));
+    assert_eq!(
+        (p.name.as_str(), p.tile),
+        ("Checker", Rect::new(0.0, 0.0, 20.0, 20.0))
+    );
+    assert!(
+        matches!(art(&d)[0].appearance.fill_paint(), Paint::Pattern { pattern, .. } if pattern == "Checker")
+    );
     assert_similar(
         &render_artboard(&d),
         &resvg_render(
@@ -80,12 +95,16 @@ const SYMBOL: &str = r##"<defs><symbol id="Star" data-name="Gold Star"><path d="
 
 #[test]
 fn two_uses_give_one_symbol_and_two_instances() {
-    let body = format!(r##"{SYMBOL}<use href="#Star" x="20" y="30"/><use xlink:href="#Star" transform="translate(100 50) rotate(30)"/>"##);
+    let body = format!(
+        r##"{SYMBOL}<use href="#Star" x="20" y="30"/><use xlink:href="#Star" transform="translate(100 50) rotate(30)"/>"##
+    );
     let (d, w) = open(&body);
     assert!(w.is_empty(), "{w:?}");
     assert_eq!(d.symbols.len(), 1);
     assert_eq!(d.symbols[0].name, "Gold Star");
-    assert!(matches!(&d.symbols[0].art.kind, NodeKind::Group { children, .. } if children.len() == 2));
+    assert!(
+        matches!(&d.symbols[0].art.kind, NodeKind::Group { children, .. } if children.len() == 2)
+    );
     let instances: Vec<_> = art(&d)
         .into_iter()
         .filter_map(|n| match &n.kind {
@@ -97,7 +116,12 @@ fn two_uses_give_one_symbol_and_two_instances() {
     assert!(instances.iter().all(|(s, _)| s == "Gold Star"));
     assert!((instances[0].1 * Point::ORIGIN).distance(Point::new(20.0, 30.0)) < 1e-9);
     assert!((instances[1].1 * Point::ORIGIN).distance(Point::new(100.0, 50.0)) < 1e-9);
-    assert_similar(&render_artboard(&d), &resvg_render(&svg(&body), 200, 120), 24.0, 0.003);
+    assert_similar(
+        &render_artboard(&d),
+        &resvg_render(&svg(&body), 200, 120),
+        24.0,
+        0.003,
+    );
 }
 
 #[test]
@@ -110,18 +134,34 @@ fn uses_the_symbol_cant_stand_for_stay_art() {
     let (d, _) = open(body);
     assert_eq!(d.symbols.len(), 1);
     let a = art(&d);
-    let instances = a.iter().filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. })).count();
+    let instances = a
+        .iter()
+        .filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. }))
+        .count();
     assert_eq!(instances, 2, "the red ones not scaled: {a:?}");
-    assert_similar(&render_artboard(&d), &resvg_render(&svg(body), 200, 120), 24.0, 0.003);
+    assert_similar(
+        &render_artboard(&d),
+        &resvg_render(&svg(body), 200, 120),
+        24.0,
+        0.003,
+    );
 }
 
 #[test]
 fn symbols_round_trip_through_export() {
-    let (d, _) = open(&format!(r##"{SYMBOL}<use href="#Star" x="20" y="30"/><use href="#Star" x="120" y="60"/>"##));
+    let (d, _) = open(&format!(
+        r##"{SYMBOL}<use href="#Star" x="20" y="30"/><use href="#Star" x="120" y="60"/>"##
+    ));
     let back = import(&export(&d, &ExportOptions::default())).unwrap();
     assert_eq!(back.symbols.len(), 1);
     assert_eq!(back.symbols[0].name, "Gold Star");
-    assert_eq!(art(&back).iter().filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. })).count(), 2);
+    assert_eq!(
+        art(&back)
+            .iter()
+            .filter(|n| matches!(n.kind, NodeKind::SymbolInstance { .. }))
+            .count(),
+        2
+    );
     assert_similar(&render_artboard(&d), &render_artboard(&back), 8.0, 0.001);
 }
 
@@ -133,7 +173,10 @@ fn a_gaussian_blur_becomes_the_effect_with_its_radius() {
     assert!(w.is_empty(), "{w:?}");
     let fx = effects(&d);
     assert_eq!(fx.len(), 1);
-    assert_eq!((fx[0].id.as_str(), &fx[0].params), ("blur.gaussian", &json!({"radius": 6.0})));
+    assert_eq!(
+        (fx[0].id.as_str(), &fx[0].params),
+        ("blur.gaussian", &json!({"radius": 6.0}))
+    );
     // In a scaled group, the radius scales too.
     let (d, _) = open(
         r##"<defs><filter id="b"><feGaussianBlur stdDeviation="3"/></filter></defs><g transform="scale(2)"><rect width="30" height="20" filter="url(#b)"/></g>"##,
@@ -145,7 +188,16 @@ fn a_gaussian_blur_becomes_the_effect_with_its_radius() {
 fn shadow(d: &Document) -> (f64, f64, f64, Color, f32) {
     let fx = vectorcraft_effects::raster_effects(&effects(d));
     match fx.as_slice() {
-        [RasterFx::DropShadow { dx, dy, blur, color, opacity, mode }] => {
+        [
+            RasterFx::DropShadow {
+                dx,
+                dy,
+                blur,
+                color,
+                opacity,
+                mode,
+            },
+        ] => {
             assert_eq!(*mode, BlendMode::Normal, "filters composite normally");
             (*dx, *dy, *blur, *color, (opacity * 100.0).round())
         }
@@ -167,7 +219,9 @@ fn drop_shadow_chains_become_drop_shadows() {
         r##"<feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="4" dy="5"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" result="c"/><feMerge><feMergeNode in="c"/><feMergeNode in="SourceGraphic"/></feMerge>"##,
     ];
     for chain in chains {
-        let (d, w) = open(&format!(r#"<defs><filter id="s">{chain}</filter></defs>{rect}"#));
+        let (d, w) = open(&format!(
+            r#"<defs><filter id="s">{chain}</filter></defs>{rect}"#
+        ));
         assert!(w.is_empty(), "{chain}: {w:?}");
         let (dx, dy, blur, color, opacity) = shadow(&d);
         assert_eq!((dx, dy, blur, opacity), (4.0, 5.0, 4.0, 50.0), "{chain}");
@@ -177,8 +231,9 @@ fn drop_shadow_chains_become_drop_shadows() {
 
 #[test]
 fn other_filters_are_reported() {
-    let (d, w) =
-        open(r##"<defs><filter id="t"><feTurbulence baseFrequency="0.05"/></filter></defs><rect width="60" height="40" filter="url(#t)"/>"##);
+    let (d, w) = open(
+        r##"<defs><filter id="t"><feTurbulence baseFrequency="0.05"/></filter></defs><rect width="60" height="40" filter="url(#t)"/>"##,
+    );
     assert!(w.iter().any(|w| w.contains("filter")), "{w:?}");
     assert!(effects(&d).is_empty());
 }
@@ -190,33 +245,74 @@ fn a_filter_and_a_clip_on_one_object_filter_first() {
     let (d, w) = open(body);
     assert!(w.is_empty(), "{w:?}");
     let a = art(&d);
-    assert!(matches!(a[0].kind, NodeKind::Group { clip: true, .. }) && a[0].appearance.effects.is_empty());
-    assert!(a.iter().any(|n| n.appearance.effects.iter().any(|e| e.id == "blur.gaussian")));
-    assert_similar(&render_artboard(&d), &resvg_render(&svg(body), 200, 120), 40.0, 0.02);
+    assert!(
+        matches!(a[0].kind, NodeKind::Group { clip: true, .. })
+            && a[0].appearance.effects.is_empty()
+    );
+    assert!(
+        a.iter()
+            .any(|n| n.appearance.effects.iter().any(|e| e.id == "blur.gaussian"))
+    );
+    assert_similar(
+        &render_artboard(&d),
+        &resvg_render(&svg(body), 200, 120),
+        40.0,
+        0.02,
+    );
 }
 
 #[test]
 fn exported_effects_import_as_the_same_effects() {
-    let fx = |id: &str, p: serde_json::Value| Effect { id: id.into(), params: p, visible: true };
+    let fx = |id: &str, p: serde_json::Value| Effect {
+        id: id.into(),
+        params: p,
+        visible: true,
+    };
     let cases = [
-        vec![fx("stylize.dropShadow", json!({"x": 7.0, "y": -3.0, "blur": 5.0, "opacity": 60.0, "color": "#203040"}))],
-        vec![fx("stylize.outerGlow", json!({"blur": 8.0, "color": "#ffcc00", "opacity": 80.0}))],
-        vec![fx("stylize.innerGlow", json!({"blur": 6.0, "color": "#ffffff", "source": "edge", "mode": "normal"}))],
-        vec![fx("stylize.innerGlow", json!({"blur": 6.0, "color": "#00ff00", "source": "center", "mode": "multiply"}))],
+        vec![fx(
+            "stylize.dropShadow",
+            json!({"x": 7.0, "y": -3.0, "blur": 5.0, "opacity": 60.0, "color": "#203040"}),
+        )],
+        vec![fx(
+            "stylize.outerGlow",
+            json!({"blur": 8.0, "color": "#ffcc00", "opacity": 80.0}),
+        )],
+        vec![fx(
+            "stylize.innerGlow",
+            json!({"blur": 6.0, "color": "#ffffff", "source": "edge", "mode": "normal"}),
+        )],
+        vec![fx(
+            "stylize.innerGlow",
+            json!({"blur": 6.0, "color": "#00ff00", "source": "center", "mode": "multiply"}),
+        )],
         vec![fx("stylize.feather", json!({"radius": 4.0}))],
         // Stacked: the first innermost.
-        vec![fx("blur.gaussian", json!({"radius": 3.0})), fx("stylize.dropShadow", json!({"x": 2.0, "y": 2.0, "blur": 1.0}))],
+        vec![
+            fx("blur.gaussian", json!({"radius": 3.0})),
+            fx(
+                "stylize.dropShadow",
+                json!({"x": 2.0, "y": 2.0, "blur": 1.0}),
+            ),
+        ],
     ];
     for effects in cases {
         let mut d = Document::new(200.0, 120.0);
-        let mut n = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(50.0, 30.0, 110.0, 90.0)), Appearance::default_art());
+        let mut n = Node::path(
+            d.alloc_id(),
+            shapes::rectangle(Rect::new(50.0, 30.0, 110.0, 90.0)),
+            Appearance::default_art(),
+        );
         n.appearance.effects = effects.clone();
         let l = d.layers[0].id;
         d.insert(Some(l), 0, n).unwrap();
         let (back, w) = import_with_report(&export(&d, &ExportOptions::default())).unwrap();
         assert!(w.is_empty(), "{w:?}");
         let got = vectorcraft_effects::raster_effects(&art(&back)[0].appearance.effects);
-        assert_eq!(got, vectorcraft_effects::raster_effects(&effects), "{effects:?}");
+        assert_eq!(
+            got,
+            vectorcraft_effects::raster_effects(&effects),
+            "{effects:?}"
+        );
     }
 }
 
@@ -229,23 +325,48 @@ fn symbols_and_effects_export_import_export_is_stable() {
         shapes::ellipse(Rect::new(0.0, 0.0, 20.0, 20.0)),
         Appearance::basic(Paint::solid(Color::rgb8(200, 30, 30)), Paint::None, 0.0),
     );
-    d.symbols.push(vectorcraft_doc::Symbol { name: "Dot".into(), art: Arc::new(dot) });
+    d.symbols.push(vectorcraft_doc::Symbol {
+        name: "Dot".into(),
+        art: Arc::new(dot),
+    });
     let l = d.layers[0].id;
     for x in [10.0, 60.0] {
         let id = d.alloc_id();
         d.insert(
             Some(l),
             usize::MAX,
-            Node::new(id, NodeKind::SymbolInstance { symbol: "Dot".into(), xf: vectorcraft_geom::Affine::translate((x, 40.0)) }),
+            Node::new(
+                id,
+                NodeKind::SymbolInstance {
+                    symbol: "Dot".into(),
+                    xf: vectorcraft_geom::Affine::translate((x, 40.0)),
+                },
+            ),
         )
         .unwrap();
     }
-    let mut blurred = Node::path(d.alloc_id(), shapes::rectangle(Rect::new(120.0, 30.0, 180.0, 90.0)), Appearance::default_art());
-    blurred.appearance.effects.push(Effect { id: "stylize.dropShadow".into(), params: json!({"x": 3.0, "y": 3.0, "blur": 2.0}), visible: true });
+    let mut blurred = Node::path(
+        d.alloc_id(),
+        shapes::rectangle(Rect::new(120.0, 30.0, 180.0, 90.0)),
+        Appearance::default_art(),
+    );
+    blurred.appearance.effects.push(Effect {
+        id: "stylize.dropShadow".into(),
+        params: json!({"x": 3.0, "y": 3.0, "blur": 2.0}),
+        visible: true,
+    });
     d.insert(Some(l), usize::MAX, blurred).unwrap();
-    let opts = ExportOptions { object_ids: vectorcraft_svg::ObjectIds::Minimal, ..Default::default() };
+    let opts = ExportOptions {
+        object_ids: vectorcraft_svg::ObjectIds::Minimal,
+        ..Default::default()
+    };
     let first = export(&d, &opts);
     let second = export(&import(&first).unwrap(), &opts);
-    let strip = |s: &str| s.lines().filter(|l| !l.contains("<title>")).collect::<Vec<_>>().join("\n");
+    let strip = |s: &str| {
+        s.lines()
+            .filter(|l| !l.contains("<title>"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
     assert_eq!(strip(&first), strip(&second));
 }

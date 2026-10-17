@@ -15,11 +15,31 @@ use crate::Registry;
 
 /// The ribbon's tabs in their default order. `File` opens Backstage: it is always first and
 /// isn't part of the customizable list.
-pub const TABS: [&str; 13] =
-    ["File", "Home", "Insert", "Draw", "Design", "Layout", "References", "Mailings", "Review", "View", "Developer", "Zotero", "Help"];
+pub const TABS: [&str; 13] = [
+    "File",
+    "Home",
+    "Insert",
+    "Draw",
+    "Design",
+    "Layout",
+    "References",
+    "Mailings",
+    "Review",
+    "View",
+    "Developer",
+    "Zotero",
+    "Help",
+];
 /// Tabs that come up with the selection; custom tabs can't take their names.
-pub const CONTEXTUAL_TABS: [&str; 7] =
-    ["Table Design", "Table Layout", "Picture Format", "Shape Format", "Equation", "Chart Design", "SmartArt Design"];
+pub const CONTEXTUAL_TABS: [&str; 7] = [
+    "Table Design",
+    "Table Layout",
+    "Picture Format",
+    "Shape Format",
+    "Equation",
+    "Chart Design",
+    "SmartArt Design",
+];
 /// The Quick Access Toolbar's commands until the user changes them.
 pub const DEFAULT_QAT: [&str; 3] = ["file.save", "edit.undo", "edit.redo"];
 
@@ -68,7 +88,12 @@ fn is_false(b: &bool) -> bool {
 
 /// A name the user typed: trimmed, without control characters, at most [`MAX_NAME`] characters.
 fn clean_name(s: &str) -> Option<String> {
-    let s: String = s.trim().chars().filter(|c| !c.is_control()).take(MAX_NAME).collect();
+    let s: String = s
+        .trim()
+        .chars()
+        .filter(|c| !c.is_control())
+        .take(MAX_NAME)
+        .collect();
     let s = s.trim().to_string();
     (!s.is_empty()).then_some(s)
 }
@@ -83,11 +108,21 @@ fn built_in(name: &str) -> bool {
 
 /// Names a custom tab can't have.
 fn reserved(name: &str) -> bool {
-    TABS.iter().chain(CONTEXTUAL_TABS.iter()).any(|t| same(t, name))
+    TABS.iter()
+        .chain(CONTEXTUAL_TABS.iter())
+        .any(|t| same(t, name))
 }
 
 fn default_tabs() -> Vec<TabEntry> {
-    TABS.iter().skip(1).map(|t| TabEntry { name: (*t).to_string(), custom: false, hidden: false, groups: Vec::new() }).collect()
+    TABS.iter()
+        .skip(1)
+        .map(|t| TabEntry {
+            name: (*t).to_string(),
+            custom: false,
+            hidden: false,
+            groups: Vec::new(),
+        })
+        .collect()
 }
 
 /// `base`, or `base 2`, `base 3`… whichever `taken` doesn't have yet.
@@ -95,7 +130,10 @@ fn unique(base: &str, taken: impl Fn(&str) -> bool) -> String {
     if !taken(base) {
         return base.to_string();
     }
-    (2..1000).map(|n| format!("{base} {n}")).find(|n| !taken(n)).unwrap_or_else(|| base.to_string())
+    (2..1000)
+        .map(|n| format!("{base} {n}"))
+        .find(|n| !taken(n))
+        .unwrap_or_else(|| base.to_string())
 }
 
 /// Move the item at `i` by `by` places (clamped to the list). Returns its new index.
@@ -116,25 +154,56 @@ impl RibbonLayout {
     /// Read a saved layout, keeping only well-formed entries (never fails).
     pub fn from_value(v: &Value) -> RibbonLayout {
         let mut out = RibbonLayout::default();
-        for t in v.get("tabs").and_then(Value::as_array).into_iter().flatten().take(MAX_TABS) {
-            let Some(name) = t.get("name").and_then(Value::as_str).and_then(clean_name) else { continue };
+        for t in v
+            .get("tabs")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .take(MAX_TABS)
+        {
+            let Some(name) = t.get("name").and_then(Value::as_str).and_then(clean_name) else {
+                continue;
+            };
             let custom = t.get("custom").and_then(Value::as_bool).unwrap_or(false);
             let hidden = t.get("hidden").and_then(Value::as_bool).unwrap_or(false);
             let mut groups: Vec<CustomGroup> = Vec::new();
-            for g in t.get("groups").and_then(Value::as_array).into_iter().flatten().take(MAX_GROUPS) {
-                let Some(gname) = g.get("name").and_then(Value::as_str).and_then(clean_name) else { continue };
+            for g in t
+                .get("groups")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .take(MAX_GROUPS)
+            {
+                let Some(gname) = g.get("name").and_then(Value::as_str).and_then(clean_name) else {
+                    continue;
+                };
                 if groups.iter().any(|x| same(&x.name, &gname)) {
                     continue;
                 }
                 let mut commands: Vec<String> = Vec::new();
-                for id in g.get("commands").and_then(Value::as_array).into_iter().flatten().take(MAX_COMMANDS).filter_map(Value::as_str) {
+                for id in g
+                    .get("commands")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .take(MAX_COMMANDS)
+                    .filter_map(Value::as_str)
+                {
                     if !id.is_empty() && id.len() <= MAX_ID && !commands.iter().any(|c| c == id) {
                         commands.push(id.to_string());
                     }
                 }
-                groups.push(CustomGroup { name: gname, commands });
+                groups.push(CustomGroup {
+                    name: gname,
+                    commands,
+                });
             }
-            out.tabs.push(TabEntry { name, custom, hidden, groups });
+            out.tabs.push(TabEntry {
+                name,
+                custom,
+                hidden,
+                groups,
+            });
         }
         if let Some(q) = v.get("qat").and_then(Value::as_array) {
             let mut ids: Vec<String> = Vec::new();
@@ -157,7 +226,11 @@ impl RibbonLayout {
         }
         let mut tabs: Vec<TabEntry> = Vec::new();
         for t in std::mem::take(&mut self.tabs) {
-            let ok = if t.custom { !reserved(&t.name) } else { built_in(&t.name) };
+            let ok = if t.custom {
+                !reserved(&t.name)
+            } else {
+                built_in(&t.name)
+            };
             if ok && !tabs.iter().any(|x| same(&x.name, &t.name)) {
                 tabs.push(t);
             }
@@ -167,16 +240,34 @@ impl RibbonLayout {
             if tabs.iter().any(|t| !t.custom && t.name == *name) {
                 continue;
             }
-            let at = TABS.get(1..i).and_then(|before| before.iter().rev().find_map(|b| tabs.iter().position(|t| !t.custom && t.name == *b)));
-            let entry = TabEntry { name: (*name).to_string(), custom: false, hidden: false, groups: Vec::new() };
+            let at = TABS.get(1..i).and_then(|before| {
+                before
+                    .iter()
+                    .rev()
+                    .find_map(|b| tabs.iter().position(|t| !t.custom && t.name == *b))
+            });
+            let entry = TabEntry {
+                name: (*name).to_string(),
+                custom: false,
+                hidden: false,
+                groups: Vec::new(),
+            };
             tabs.insert(at.map_or(0, |p| p + 1), entry);
         }
-        self.tabs = if tabs == default_tabs() { Vec::new() } else { tabs };
+        self.tabs = if tabs == default_tabs() {
+            Vec::new()
+        } else {
+            tabs
+        };
     }
 
     /// The tabs in order (File excluded), customized or not.
     pub fn tabs(&self) -> Cow<'_, [TabEntry]> {
-        if self.tabs.is_empty() { Cow::Owned(default_tabs()) } else { Cow::Borrowed(&self.tabs) }
+        if self.tabs.is_empty() {
+            Cow::Owned(default_tabs())
+        } else {
+            Cow::Borrowed(&self.tabs)
+        }
     }
 
     /// Whether the ribbon is the default one.
@@ -205,7 +296,10 @@ impl RibbonLayout {
     }
 
     /// Edit the tab list (customizing a default ribbon first), then tidy it up.
-    fn edit<T>(&mut self, f: impl FnOnce(&mut Vec<TabEntry>) -> Result<T, String>) -> Result<T, String> {
+    fn edit<T>(
+        &mut self,
+        f: impl FnOnce(&mut Vec<TabEntry>) -> Result<T, String>,
+    ) -> Result<T, String> {
         let mut tabs = self.tabs().into_owned();
         let r = f(&mut tabs)?;
         self.tabs = tabs;
@@ -214,11 +308,16 @@ impl RibbonLayout {
     }
 
     fn tab_index(tabs: &[TabEntry], name: &str) -> Result<usize, String> {
-        tabs.iter().position(|t| t.name == name).ok_or_else(|| format!("no tab `{name}`"))
+        tabs.iter()
+            .position(|t| t.name == name)
+            .ok_or_else(|| format!("no tab `{name}`"))
     }
 
     fn group_index(tab: &TabEntry, name: &str) -> Result<usize, String> {
-        tab.groups.iter().position(|g| g.name == name).ok_or_else(|| format!("tab `{}` has no custom group `{name}`", tab.name))
+        tab.groups
+            .iter()
+            .position(|g| g.name == name)
+            .ok_or_else(|| format!("tab `{}` has no custom group `{name}`", tab.name))
     }
 
     /// Show or hide a tab.
@@ -242,13 +341,26 @@ impl RibbonLayout {
             if tabs.len() >= MAX_TABS {
                 return Err("too many tabs".into());
             }
-            let name = unique(&name, |n| reserved(n) || tabs.iter().any(|t| same(&t.name, n)));
+            let name = unique(&name, |n| {
+                reserved(n) || tabs.iter().any(|t| same(&t.name, n))
+            });
             let at = match after {
                 Some(a) => Self::tab_index(tabs, a)? + 1,
                 None => tabs.len(),
             };
-            let group = CustomGroup { name: "New Group".into(), commands: Vec::new() };
-            tabs.insert(at, TabEntry { name: name.clone(), custom: true, hidden: false, groups: vec![group] });
+            let group = CustomGroup {
+                name: "New Group".into(),
+                commands: Vec::new(),
+            };
+            tabs.insert(
+                at,
+                TabEntry {
+                    name: name.clone(),
+                    custom: true,
+                    hidden: false,
+                    groups: vec![group],
+                },
+            );
             Ok(name)
         })
     }
@@ -266,13 +378,23 @@ impl RibbonLayout {
                 return Err("too many groups on this tab".into());
             }
             let name = unique(&name, |n| t.groups.iter().any(|g| same(&g.name, n)));
-            t.groups.push(CustomGroup { name: name.clone(), commands: Vec::new() });
+            t.groups.push(CustomGroup {
+                name: name.clone(),
+                commands: Vec::new(),
+            });
             Ok(name)
         })
     }
 
     /// Add a command to a custom group (after `after`, or at the end). False when it's already there.
-    pub fn add(&mut self, reg: &Registry, tab: &str, group: &str, id: &str, after: Option<&str>) -> Result<bool, String> {
+    pub fn add(
+        &mut self,
+        reg: &Registry,
+        tab: &str,
+        group: &str,
+        id: &str,
+        after: Option<&str>,
+    ) -> Result<bool, String> {
         if reg.get(id).is_none() {
             return Err(format!("unknown command `{id}`"));
         }
@@ -287,14 +409,21 @@ impl RibbonLayout {
             if g.commands.len() >= MAX_COMMANDS {
                 return Err("too many commands in this group".into());
             }
-            let at = after.and_then(|a| g.commands.iter().position(|c| c == a)).map_or(g.commands.len(), |p| p + 1);
+            let at = after
+                .and_then(|a| g.commands.iter().position(|c| c == a))
+                .map_or(g.commands.len(), |p| p + 1);
             g.commands.insert(at, id.to_string());
             Ok(true)
         })
     }
 
     /// Remove a command from a custom group, a custom group, or a custom tab.
-    pub fn remove(&mut self, tab: &str, group: Option<&str>, command: Option<&str>) -> Result<(), String> {
+    pub fn remove(
+        &mut self,
+        tab: &str,
+        group: Option<&str>,
+        command: Option<&str>,
+    ) -> Result<(), String> {
         self.edit(|tabs| {
             let i = Self::tab_index(tabs, tab)?;
             let Some(group) = group else {
@@ -312,7 +441,11 @@ impl RibbonLayout {
                 }
                 Some(id) => {
                     let g = t.groups.get_mut(j).ok_or("no such group")?;
-                    let k = g.commands.iter().position(|c| c == id).ok_or_else(|| format!("`{group}` doesn't have `{id}`"))?;
+                    let k = g
+                        .commands
+                        .iter()
+                        .position(|c| c == id)
+                        .ok_or_else(|| format!("`{group}` doesn't have `{id}`"))?;
                     g.commands.remove(k);
                 }
             }
@@ -330,7 +463,12 @@ impl RibbonLayout {
                     if !tabs.get(i).is_some_and(|t| t.custom) {
                         return Err(format!("`{tab}` is a built-in tab and keeps its name"));
                     }
-                    if reserved(&to) || tabs.iter().enumerate().any(|(k, t)| k != i && same(&t.name, &to)) {
+                    if reserved(&to)
+                        || tabs
+                            .iter()
+                            .enumerate()
+                            .any(|(k, t)| k != i && same(&t.name, &to))
+                    {
                         return Err(format!("there is already a tab named `{to}`"));
                     }
                     if let Some(t) = tabs.get_mut(i) {
@@ -340,7 +478,11 @@ impl RibbonLayout {
                 Some(group) => {
                     let t = tabs.get_mut(i).ok_or("no such tab")?;
                     let j = Self::group_index(t, group)?;
-                    if t.groups.iter().enumerate().any(|(k, g)| k != j && same(&g.name, &to)) {
+                    if t.groups
+                        .iter()
+                        .enumerate()
+                        .any(|(k, g)| k != j && same(&g.name, &to))
+                    {
                         return Err(format!("`{tab}` already has a group named `{to}`"));
                     }
                     if let Some(g) = t.groups.get_mut(j) {
@@ -353,7 +495,13 @@ impl RibbonLayout {
     }
 
     /// Move a tab, a custom group (within its tab) or a command (within its group) by `by` places.
-    pub fn move_by(&mut self, tab: &str, group: Option<&str>, command: Option<&str>, by: i64) -> Result<(), String> {
+    pub fn move_by(
+        &mut self,
+        tab: &str,
+        group: Option<&str>,
+        command: Option<&str>,
+        by: i64,
+    ) -> Result<(), String> {
         self.edit(|tabs| {
             let i = Self::tab_index(tabs, tab)?;
             let Some(group) = group else {
@@ -368,7 +516,11 @@ impl RibbonLayout {
                 }
                 Some(id) => {
                     let g = t.groups.get_mut(j).ok_or("no such group")?;
-                    let k = g.commands.iter().position(|c| c == id).ok_or_else(|| format!("`{group}` doesn't have `{id}`"))?;
+                    let k = g
+                        .commands
+                        .iter()
+                        .position(|c| c == id)
+                        .ok_or_else(|| format!("`{group}` doesn't have `{id}`"))?;
                     shift(&mut g.commands, k, by);
                 }
             }
@@ -388,7 +540,12 @@ impl RibbonLayout {
 
     /// Put a command on the Quick Access Toolbar (after `after`, or at the end). False when it's
     /// already there.
-    pub fn qat_add(&mut self, reg: &Registry, id: &str, after: Option<&str>) -> Result<bool, String> {
+    pub fn qat_add(
+        &mut self,
+        reg: &Registry,
+        id: &str,
+        after: Option<&str>,
+    ) -> Result<bool, String> {
         if reg.get(id).is_none() {
             return Err(format!("unknown command `{id}`"));
         }
@@ -399,7 +556,9 @@ impl RibbonLayout {
         if q.len() >= MAX_COMMANDS {
             return Err("the Quick Access Toolbar is full".into());
         }
-        let at = after.and_then(|a| q.iter().position(|c| c == a)).map_or(q.len(), |p| p + 1);
+        let at = after
+            .and_then(|a| q.iter().position(|c| c == a))
+            .map_or(q.len(), |p| p + 1);
         q.insert(at, id.to_string());
         self.qat = Some(q);
         Ok(true)
@@ -408,7 +567,9 @@ impl RibbonLayout {
     /// Take a command off the Quick Access Toolbar. False when it wasn't there.
     pub fn qat_remove(&mut self, id: &str) -> bool {
         let mut q: Vec<String> = self.qat().into_iter().map(str::to_string).collect();
-        let Some(i) = q.iter().position(|c| c == id) else { return false };
+        let Some(i) = q.iter().position(|c| c == id) else {
+            return false;
+        };
         q.remove(i);
         self.qat = Some(q);
         true
@@ -417,7 +578,10 @@ impl RibbonLayout {
     /// Move a Quick Access Toolbar command by `by` places.
     pub fn qat_move(&mut self, id: &str, by: i64) -> Result<(), String> {
         let mut q: Vec<String> = self.qat().into_iter().map(str::to_string).collect();
-        let i = q.iter().position(|c| c == id).ok_or_else(|| format!("`{id}` isn't on the Quick Access Toolbar"))?;
+        let i = q
+            .iter()
+            .position(|c| c == id)
+            .ok_or_else(|| format!("`{id}` isn't on the Quick Access Toolbar"))?;
         shift(&mut q, i, by);
         self.qat = Some(q);
         Ok(())
@@ -446,7 +610,8 @@ mod tests {
         let mut run = |v: Value| s.run("tools.customizeRibbon", &v);
         let r = run(json!({"newTab": {"name": "Mine", "after": "Home"}, "hide": "Draw"})).unwrap();
         assert_eq!(r["tab"], "Mine");
-        run(json!({"add": {"tab": "Mine", "group": "New Group", "command": "format.bold"}})).unwrap();
+        run(json!({"add": {"tab": "Mine", "group": "New Group", "command": "format.bold"}}))
+            .unwrap();
         run(json!({"newGroup": {"tab": "Insert", "name": "Extras"}})).unwrap();
         run(json!({"add": {"tab": "Insert", "group": "Extras", "command": "edit.copy"}})).unwrap();
         run(json!({"rename": {"tab": "Mine", "to": "Writing"}})).unwrap();
@@ -454,20 +619,33 @@ mod tests {
         let tabs = r["tabs"].as_array().unwrap();
         assert_eq!(tabs[0]["name"], "Writing");
         assert_eq!(tabs[0]["groups"][0]["commands"], json!(["format.bold"]));
-        assert!(tabs.iter().any(|t| t["name"] == "Draw" && t["hidden"] == true));
+        assert!(
+            tabs.iter()
+                .any(|t| t["name"] == "Draw" && t["hidden"] == true)
+        );
         assert_eq!(r["qat"], json!(["edit.undo", "edit.redo", "format.bold"]));
         // Built-in tabs keep their names and can only be hidden; reserved and unknown names fail.
         assert!(run(json!({"rename": {"tab": "Home", "to": "Start"}})).is_err());
         assert!(run(json!({"remove": {"tab": "Home"}})).is_err());
         assert!(run(json!({"rename": {"tab": "Writing", "to": "insert"}})).is_err());
-        assert!(run(json!({"add": {"tab": "Writing", "group": "New Group", "command": "no.such"}})).is_err());
+        assert!(
+            run(json!({"add": {"tab": "Writing", "group": "New Group", "command": "no.such"}}))
+                .is_err()
+        );
         assert!(run(json!({"move": {"tab": "Nope", "by": 1}})).is_err());
         drop(run);
-        assert!(s.ui_requests.is_empty(), "programmatic calls never open dialogs");
-        s.run("tools.customizeRibbon", &json!({"reset": true})).unwrap();
+        assert!(
+            s.ui_requests.is_empty(),
+            "programmatic calls never open dialogs"
+        );
+        s.run("tools.customizeRibbon", &json!({"reset": true}))
+            .unwrap();
         assert_eq!(s.ribbon, RibbonLayout::default());
         s.run("tools.customizeRibbon", &json!({})).unwrap();
-        assert_eq!(s.ui_requests.last(), Some(&json!({"open": "customizeRibbon"})));
+        assert_eq!(
+            s.ui_requests.last(),
+            Some(&json!({"open": "customizeRibbon"}))
+        );
     }
 
     #[test]
@@ -475,7 +653,8 @@ mod tests {
         let reg = crate::cmd::registry();
         let mut l = RibbonLayout::default();
         l.new_tab(None, None).unwrap();
-        l.add(&reg, "New Tab", "New Group", "format.italic", None).unwrap();
+        l.add(&reg, "New Tab", "New Group", "format.italic", None)
+            .unwrap();
         l.set_hidden("Mailings", true).unwrap();
         l.qat_add(&reg, "edit.repeat", None).unwrap();
         let back: RibbonLayout = serde_json::from_str(&serde_json::to_string(&l).unwrap()).unwrap();
@@ -496,12 +675,27 @@ mod tests {
         let mut j: RibbonLayout = serde_json::from_value(junk).unwrap();
         j.retain_known(&reg);
         let tabs = j.tabs();
-        assert_eq!(tabs.len(), TABS.len(), "11 built-in tabs and Mine: {tabs:?}");
+        assert_eq!(
+            tabs.len(),
+            TABS.len(),
+            "11 built-in tabs and Mine: {tabs:?}"
+        );
         assert_eq!(tabs[0].groups[0].commands, ["format.bold"]);
-        assert!(tabs.iter().any(|t| t.custom && t.name == "Mine" && !t.hidden));
+        assert!(
+            tabs.iter()
+                .any(|t| t.custom && t.name == "Mine" && !t.hidden)
+        );
         assert_eq!(j.qat(), ["edit.undo"]);
-        for v in [json!(null), json!(5), json!("x"), json!({"tabs": {"a": 1}, "qat": "file.save"})] {
-            assert_eq!(serde_json::from_value::<RibbonLayout>(v).unwrap(), RibbonLayout::default());
+        for v in [
+            json!(null),
+            json!(5),
+            json!("x"),
+            json!({"tabs": {"a": 1}, "qat": "file.save"}),
+        ] {
+            assert_eq!(
+                serde_json::from_value::<RibbonLayout>(v).unwrap(),
+                RibbonLayout::default()
+            );
         }
     }
 }

@@ -2,8 +2,8 @@
 //! (removing what they cover for good) or clear them.
 
 use pdfcraft_engine::{
-    Edit, Hidden, NewAnnotation, REDACT_MAX_WORDS, REDACTION_CODE_SETS, RedactPattern, RedactionCodeSet, Shape, Style, find_pattern, rect_quad,
-    redact_word_list,
+    Edit, Hidden, NewAnnotation, REDACT_MAX_WORDS, REDACTION_CODE_SETS, RedactPattern,
+    RedactionCodeSet, Shape, Style, find_pattern, rect_quad, redact_word_list,
 };
 use serde_json::{Value, json};
 
@@ -19,26 +19,49 @@ impl Automation {
             None => (0..n).collect(),
         };
         let overlay = match (a.opt_str("overlay")?, a.opt_str("code_set")?) {
-            (Some(_), Some(_)) => return Err(ToolError::InvalidArgs("pass overlay or code_set with codes, not both".into())),
+            (Some(_), Some(_)) => {
+                return Err(ToolError::InvalidArgs(
+                    "pass overlay or code_set with codes, not both".into(),
+                ));
+            }
             (Some(o), None) => o.to_string(),
             (None, Some(id)) => {
                 let set = RedactionCodeSet::from_id(id).ok_or_else(|| {
                     let ids: Vec<_> = REDACTION_CODE_SETS.iter().map(|s| s.id).collect();
-                    ToolError::InvalidArgs(format!("unknown code_set {id:?}; allowed: {}", ids.join(", ")))
+                    ToolError::InvalidArgs(format!(
+                        "unknown code_set {id:?}; allowed: {}",
+                        ids.join(", ")
+                    ))
                 })?;
                 let picked = a.strs("codes")?;
                 let allowed = || format!("allowed in {}: {}", set.id, set.codes.join(", "));
                 match set.overlay(&picked) {
                     Ok(o) if !o.is_empty() => o,
-                    Ok(_) => return Err(ToolError::InvalidArgs(format!("codes is empty; {}", allowed()))),
-                    Err(bad) => return Err(ToolError::InvalidArgs(format!("unknown code {bad:?}; {}", allowed()))),
+                    Ok(_) => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "codes is empty; {}",
+                            allowed()
+                        )));
+                    }
+                    Err(bad) => {
+                        return Err(ToolError::InvalidArgs(format!(
+                            "unknown code {bad:?}; {}",
+                            allowed()
+                        )));
+                    }
                 }
             }
-            (None, None) if a.get("codes").is_some() => return Err(ToolError::InvalidArgs("codes needs code_set".into())),
+            (None, None) if a.get("codes").is_some() => {
+                return Err(ToolError::InvalidArgs("codes needs code_set".into()));
+            }
             (None, None) => String::new(),
         };
         let author = a.opt_str("author")?.unwrap_or(DEFAULT_AUTHOR).to_string();
-        let mut style = Style::default_for(&Shape::Redact { quads: Vec::new(), overlay: String::new(), look: Default::default() });
+        let mut style = Style::default_for(&Shape::Redact {
+            quads: Vec::new(),
+            overlay: String::new(),
+            look: Default::default(),
+        });
         if let Some(c) = a.opt_str("fill")? {
             style.fill = Some(parse_color(c)?);
         }
@@ -52,31 +75,52 @@ impl Automation {
             a.opt_bool("whole_pages")?.unwrap_or(false),
         ];
         if chosen.iter().filter(|c| **c).count() != 1 {
-            return Err(ToolError::InvalidArgs("pass exactly one of rect (with page), find, words, pattern or whole_pages: true".into()));
+            return Err(ToolError::InvalidArgs(
+                "pass exactly one of rect (with page), find, words, pattern or whole_pages: true"
+                    .into(),
+            ));
         }
         let case_sensitive = a.opt_bool("case_sensitive")?.unwrap_or(false);
         let whole_words = a.opt_bool("whole_words")?.unwrap_or(false);
         if (case_sensitive || whole_words) && a.get("find").is_none() && a.get("words").is_none() {
-            return Err(ToolError::InvalidArgs("case_sensitive and whole_words apply only to find or words".into()));
+            return Err(ToolError::InvalidArgs(
+                "case_sensitive and whole_words apply only to find or words".into(),
+            ));
         }
         // Per searched word or phrase: how many marks it made.
         let mut matched_words: Vec<(String, usize)> = Vec::new();
         if a.get("rect").is_some() {
             let page = self.page(a)?;
             let info = &self.doc(a)?.info.pages[page];
-            let r: Vec<f64> = a.get("rect").and_then(Value::as_array).map(|x| x.iter().filter_map(Value::as_f64).collect()).unwrap_or_default();
-            let r = <[f64; 4]>::try_from(r).map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
+            let r: Vec<f64> = a
+                .get("rect")
+                .and_then(Value::as_array)
+                .map(|x| x.iter().filter_map(Value::as_f64).collect())
+                .unwrap_or_default();
+            let r = <[f64; 4]>::try_from(r)
+                .map_err(|_| ToolError::InvalidArgs("rect must be 4 numbers".into()))?;
             let q = info.view_rect_to_quad([r[0] as f32, r[1] as f32, r[2] as f32, r[3] as f32]);
             marks.push((page, vec![q]));
         } else if a.opt_bool("whole_pages")?.unwrap_or(false) {
             let info = &self.doc(a)?.info;
             for &p in &pages {
                 let c = info.pages[p].crop;
-                marks.push((p, vec![rect_quad([c[0] as f64, c[1] as f64, c[2] as f64, c[3] as f64])]));
+                marks.push((
+                    p,
+                    vec![rect_quad([
+                        c[0] as f64,
+                        c[1] as f64,
+                        c[2] as f64,
+                        c[3] as f64,
+                    ])],
+                ));
             }
         } else {
             let pattern = match a.opt_str("pattern")? {
-                Some(p) => Some(RedactPattern::from_id(p).ok_or_else(|| ToolError::InvalidArgs(format!("unknown pattern {p:?}")))?),
+                Some(p) => Some(
+                    RedactPattern::from_id(p)
+                        .ok_or_else(|| ToolError::InvalidArgs(format!("unknown pattern {p:?}")))?,
+                ),
                 None => None,
             };
             let needles: Vec<String> = match (a.opt_str("find")?, a.get("words")) {
@@ -84,11 +128,16 @@ impl Automation {
                 (None, Some(_)) => {
                     let raw = a.strs("words")?;
                     if raw.len() > REDACT_MAX_WORDS {
-                        return Err(ToolError::InvalidArgs(format!("words has {} entries; at most {REDACT_MAX_WORDS} are allowed", raw.len())));
+                        return Err(ToolError::InvalidArgs(format!(
+                            "words has {} entries; at most {REDACT_MAX_WORDS} are allowed",
+                            raw.len()
+                        )));
                     }
                     let list = redact_word_list(&raw.join("\n"));
                     if list.is_empty() {
-                        return Err(ToolError::InvalidArgs("words must hold at least one non-empty word or phrase".into()));
+                        return Err(ToolError::InvalidArgs(
+                            "words must hold at least one non-empty word or phrase".into(),
+                        ));
                     }
                     list
                 }
@@ -99,15 +148,27 @@ impl Automation {
             let info = self.doc(a)?.info.clone();
             for (&p, text) in pages.iter().zip(&texts) {
                 let hits: Vec<(Option<usize>, _)> = match pattern {
-                    Some(pat) => text.find_with(|chars| find_pattern(pat, chars)).into_iter().map(|h| (None, h)).collect(),
+                    Some(pat) => text
+                        .find_with(|chars| find_pattern(pat, chars))
+                        .into_iter()
+                        .map(|h| (None, h))
+                        .collect(),
                     None => needles
                         .iter()
                         .enumerate()
-                        .flat_map(|(i, w)| text.find_opts(w, case_sensitive, whole_words).into_iter().map(move |h| (Some(i), h)))
+                        .flat_map(|(i, w)| {
+                            text.find_opts(w, case_sensitive, whole_words)
+                                .into_iter()
+                                .map(move |h| (Some(i), h))
+                        })
                         .collect(),
                 };
                 for (word, h) in hits {
-                    let quads: Vec<[f64; 8]> = text.line_rects(h).into_iter().map(|r| info.pages[p].view_rect_to_quad(r)).collect();
+                    let quads: Vec<[f64; 8]> = text
+                        .line_rects(h)
+                        .into_iter()
+                        .map(|r| info.pages[p].view_rect_to_quad(r))
+                        .collect();
                     if !quads.is_empty() {
                         marks.push((p, quads));
                         if let Some(m) = word.and_then(|i| matched_words.get_mut(i)) {
@@ -124,20 +185,43 @@ impl Automation {
         let edits: Vec<Edit> = marks
             .iter()
             .map(|(page, quads)| {
-                let shape = Shape::Redact { quads: quads.clone(), overlay: overlay.clone(), look: Default::default() };
-                Edit::AddAnnotation(NewAnnotation { page: *page, shape, style: style.clone(), contents: String::new(), author: author.clone() })
+                let shape = Shape::Redact {
+                    quads: quads.clone(),
+                    overlay: overlay.clone(),
+                    look: Default::default(),
+                };
+                Edit::AddAnnotation(NewAnnotation {
+                    page: *page,
+                    shape,
+                    style: style.clone(),
+                    contents: String::new(),
+                    author: author.clone(),
+                })
             })
             .collect();
         let edit = match <[Edit; 1]>::try_from(edits) {
             Ok([one]) => one,
-            Err(edits) => Edit::Batch { label: "Mark for redaction".into(), edits },
+            Err(edits) => Edit::Batch {
+                label: "Mark for redaction".into(),
+                edits,
+            },
         };
         let mut out = self.apply(a, edit)?;
         out["marked"] = json!(count);
-        out["pages_marked"] = json!(marks.iter().map(|m| m.0 + 1).collect::<std::collections::BTreeSet<_>>());
+        out["pages_marked"] = json!(
+            marks
+                .iter()
+                .map(|m| m.0 + 1)
+                .collect::<std::collections::BTreeSet<_>>()
+        );
         out["marks_pending"] = json!(self.doc(a)?.redaction_marks());
         if a.get("words").is_some() {
-            out["matched_words"] = json!(matched_words.iter().map(|(w, n)| json!({ "word": w, "marked": n })).collect::<Vec<_>>());
+            out["matched_words"] = json!(
+                matched_words
+                    .iter()
+                    .map(|(w, n)| json!({ "word": w, "marked": n }))
+                    .collect::<Vec<_>>()
+            );
         }
         Ok(out)
     }
@@ -149,7 +233,9 @@ impl Automation {
         };
         let before = self.doc(a)?.redaction_marks();
         if before == 0 {
-            return Err(failed("there are no redaction marks to apply (see redact_mark)"));
+            return Err(failed(
+                "there are no redaction marks to apply (see redact_mark)",
+            ));
         }
         let mut out = self.apply(a, Edit::ApplyRedactions { pages })?;
         let after = self.doc(a)?.redaction_marks();
@@ -167,7 +253,11 @@ impl Automation {
 
     pub(crate) fn doc_hidden_info(&self, a: &Args) -> Result<Value> {
         let doc = self.doc(a)?;
-        let items: Vec<Value> = doc.hidden_info().into_iter().map(|(h, n)| json!({ "category": h.id(), "label": h.label(), "count": n })).collect();
+        let items: Vec<Value> = doc
+            .hidden_info()
+            .into_iter()
+            .map(|(h, n)| json!({ "category": h.id(), "label": h.label(), "count": n }))
+            .collect();
         let total: usize = doc.hidden_info().iter().map(|c| c.1).sum();
         Ok(json!({ "total": total, "categories": items }))
     }
@@ -195,7 +285,13 @@ impl Automation {
                 let which = a
                     .strs("categories")?
                     .into_iter()
-                    .map(|c| Hidden::from_id(c).ok_or_else(|| ToolError::InvalidArgs(format!("unknown category {c:?} (see doc_hidden_info)"))))
+                    .map(|c| {
+                        Hidden::from_id(c).ok_or_else(|| {
+                            ToolError::InvalidArgs(format!(
+                                "unknown category {c:?} (see doc_hidden_info)"
+                            ))
+                        })
+                    })
                     .collect::<Result<Vec<_>>>()?;
                 if which.is_empty() {
                     return Err(ToolError::InvalidArgs("categories is empty".into()));

@@ -43,7 +43,7 @@ fn test_parse_response_success_and_error() {
         Err(McpClientError::JsonRpc { code, message, .. }) => {
             assert_eq!(code, -32601);
             assert_eq!(message, "Method not found");
-        },
+        }
         other => panic!("expected JsonRpc error, got {other:?}"),
     }
 }
@@ -141,7 +141,10 @@ fn test_schema_conversion_resilience() {
     });
 
     let schema = mcp_schema_to_toolcall_schema(&raw);
-    assert_eq!(schema.description.as_deref(), Some("Scrape markdown arguments"));
+    assert_eq!(
+        schema.description.as_deref(),
+        Some("Scrape markdown arguments")
+    );
     assert_eq!(schema.required.as_deref(), Some(&["url".to_string()][..]));
     let props = schema.properties.expect("properties");
     assert!(props.contains_key("url"));
@@ -163,7 +166,10 @@ async fn test_update_plan_builtin() {
     assert!(out.content.contains("2 completed, 2 pending"));
     assert!(out.content.contains("Building MCP Client"));
 
-    assert_eq!(state.current_step().await.as_deref(), Some("Building MCP Client"));
+    assert_eq!(
+        state.current_step().await.as_deref(),
+        Some("Building MCP Client")
+    );
 }
 
 #[tokio::test]
@@ -189,12 +195,18 @@ async fn test_tool_search_builtin() {
     catalog.add(def2).await;
 
     // Search for browser:
-    let out = search_tool.handle(json!({"query": "browser"})).await.expect("search ok");
+    let out = search_tool
+        .handle(json!({"query": "browser"}))
+        .await
+        .expect("search ok");
     assert!(out.content.contains("browser_navigate"));
     assert!(!out.content.contains("fut_player_price"));
 
     // Search for fut:
-    let out_fut = search_tool.handle(json!({"query": "fut player"})).await.expect("search ok");
+    let out_fut = search_tool
+        .handle(json!({"query": "fut player"}))
+        .await
+        .expect("search ok");
     assert!(out_fut.content.contains("fut_player_price"));
 }
 

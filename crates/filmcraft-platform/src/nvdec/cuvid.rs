@@ -33,24 +33,47 @@ impl Api {
         // SAFETY: symbols have the signatures in NVIDIA's public headers. The caller
         // retains the returned library until all handles using these pointers are destroyed.
         unsafe {
-            let library = libloading::Library::new("libnvcuvid.so.1").map_err(|e| format!("no NVIDIA NVDEC library: {e}"))?;
+            let library = libloading::Library::new("libnvcuvid.so.1")
+                .map_err(|e| format!("no NVIDIA NVDEC library: {e}"))?;
             let api = Self {
-                caps: *library.get(b"cuvidGetDecoderCaps\0").map_err(|e| e.to_string())?,
-                create_decoder: *library.get(b"cuvidCreateDecoder\0").map_err(|e| e.to_string())?,
-                destroy_decoder: *library.get(b"cuvidDestroyDecoder\0").map_err(|e| e.to_string())?,
-                decode: *library.get(b"cuvidDecodePicture\0").map_err(|e| e.to_string())?,
-                map: *library.get(b"cuvidMapVideoFrame64\0").map_err(|e| e.to_string())?,
-                unmap: *library.get(b"cuvidUnmapVideoFrame64\0").map_err(|e| e.to_string())?,
-                create_parser: *library.get(b"cuvidCreateVideoParser\0").map_err(|e| e.to_string())?,
-                parse: *library.get(b"cuvidParseVideoData\0").map_err(|e| e.to_string())?,
-                destroy_parser: *library.get(b"cuvidDestroyVideoParser\0").map_err(|e| e.to_string())?,
+                caps: *library
+                    .get(b"cuvidGetDecoderCaps\0")
+                    .map_err(|e| e.to_string())?,
+                create_decoder: *library
+                    .get(b"cuvidCreateDecoder\0")
+                    .map_err(|e| e.to_string())?,
+                destroy_decoder: *library
+                    .get(b"cuvidDestroyDecoder\0")
+                    .map_err(|e| e.to_string())?,
+                decode: *library
+                    .get(b"cuvidDecodePicture\0")
+                    .map_err(|e| e.to_string())?,
+                map: *library
+                    .get(b"cuvidMapVideoFrame64\0")
+                    .map_err(|e| e.to_string())?,
+                unmap: *library
+                    .get(b"cuvidUnmapVideoFrame64\0")
+                    .map_err(|e| e.to_string())?,
+                create_parser: *library
+                    .get(b"cuvidCreateVideoParser\0")
+                    .map_err(|e| e.to_string())?,
+                parse: *library
+                    .get(b"cuvidParseVideoData\0")
+                    .map_err(|e| e.to_string())?,
+                destroy_parser: *library
+                    .get(b"cuvidDestroyVideoParser\0")
+                    .map_err(|e| e.to_string())?,
             };
             Ok((api, library))
         }
     }
 }
 fn status(code: i32, operation: &str) -> Result<(), String> {
-    if code == 0 { Ok(()) } else { Err(format!("{operation} failed ({code})")) }
+    if code == 0 {
+        Ok(())
+    } else {
+        Err(format!("{operation} failed ({code})"))
+    }
 }
 
 // Only POD structs from ffi.rs are zeroed: no Rust references or invalid enum discriminants.
@@ -63,7 +86,11 @@ fn caps(codec: i32, bits: u32) -> CUVIDDECODECAPS {
     caps
 }
 fn output_format(bits: u32) -> i32 {
-    if bits == 10 { cudaVideoSurfaceFormat_P016 } else { cudaVideoSurfaceFormat_NV12 }
+    if bits == 10 {
+        cudaVideoSurfaceFormat_P016
+    } else {
+        cudaVideoSurfaceFormat_NV12
+    }
 }
 fn validate(coded: (u32, u32), geometry: Geometry, reorder: usize) -> Result<u32, String> {
     let (w, h) = coded;
@@ -71,7 +98,12 @@ fn validate(coded: (u32, u32), geometry: Geometry, reorder: usize) -> Result<u32
     if w == 0 || h == 0 || w > 8192 || h > 8192 || !w.is_multiple_of(2) || !h.is_multiple_of(2) {
         return Err(format!("NVDEC coded size {w}x{h} is not supported"));
     }
-    if !matches!(geometry.bits, 8 | 10) || cw == 0 || ch == 0 || x.checked_add(cw).is_none_or(|end| end > w) || y.checked_add(ch).is_none_or(|end| end > h) {
+    if !matches!(geometry.bits, 8 | 10)
+        || cw == 0
+        || ch == 0
+        || x.checked_add(cw).is_none_or(|end| end > w)
+        || y.checked_add(ch).is_none_or(|end| end > h)
+    {
         return Err("NVDEC picture depth or crop is invalid".into());
     }
     let delay = u32::try_from(reorder).map_err(|_| "NVDEC reorder count overflows")?;
@@ -82,8 +114,13 @@ fn validate(coded: (u32, u32), geometry: Geometry, reorder: usize) -> Result<u32
 }
 fn check_caps(caps: &CUVIDDECODECAPS, coded: (u32, u32), bits: u32) -> Result<(), String> {
     let (w, h) = coded;
-    let blocks = w.div_ceil(16).checked_mul(h.div_ceil(16)).ok_or("NVDEC macroblock count overflows")?;
-    let mask = 1u16.checked_shl(output_format(bits) as u32).ok_or("NVDEC output format overflows")?;
+    let blocks = w
+        .div_ceil(16)
+        .checked_mul(h.div_ceil(16))
+        .ok_or("NVDEC macroblock count overflows")?;
+    let mask = 1u16
+        .checked_shl(output_format(bits) as u32)
+        .ok_or("NVDEC output format overflows")?;
     if caps.bIsSupported == 0
         || caps.nOutputFormatMask & mask == 0
         || w < u32::from(caps.nMinWidth)
@@ -92,7 +129,10 @@ fn check_caps(caps: &CUVIDDECODECAPS, coded: (u32, u32), bits: u32) -> Result<()
         || h > caps.nMaxHeight
         || blocks > caps.nMaxMBCount
     {
-        return Err(format!("GPU does not support NVDEC codec {} at {w}x{h}, {bits}-bit 4:2:0", caps.eCodecType));
+        return Err(format!(
+            "GPU does not support NVDEC codec {} at {w}x{h}, {bits}-bit 4:2:0",
+            caps.eCodecType
+        ));
     }
     Ok(())
 }
@@ -121,8 +161,13 @@ impl State {
         // 640x368): take its size, which is the mapped surface's, when it holds the stream's.
         let driver = (format.coded_width, format.coded_height);
         let fits = |d: u32, c: u32| d >= c && d - c < 64;
-        if !(fits(driver.0, self.coded.0) && fits(driver.1, self.coded.1)) || (!self.decoder.is_null() && driver != self.coded) {
-            return Err(format!("NVDEC sequence is {}x{}, the stream {}x{}", driver.0, driver.1, self.coded.0, self.coded.1));
+        if !(fits(driver.0, self.coded.0) && fits(driver.1, self.coded.1))
+            || (!self.decoder.is_null() && driver != self.coded)
+        {
+            return Err(format!(
+                "NVDEC sequence is {}x{}, the stream {}x{}",
+                driver.0, driver.1, self.coded.0, self.coded.1
+            ));
         }
         self.coded = driver;
         if format.codec != self.codec
@@ -133,7 +178,13 @@ impl State {
         {
             return Err("NVDEC sequence differs from the stream configuration".into());
         }
-        let surfaces = u32::from(format.min_num_decode_surfaces).max(self.delay.checked_add(1).ok_or("NVDEC surface count overflows")?).max(2);
+        let surfaces = u32::from(format.min_num_decode_surfaces)
+            .max(
+                self.delay
+                    .checked_add(1)
+                    .ok_or("NVDEC surface count overflows")?,
+            )
+            .max(2);
         if format.min_num_decode_surfaces == 0 || surfaces > MAX_SURFACES {
             return Err("NVDEC reported an invalid decode surface count".into());
         }
@@ -141,7 +192,8 @@ impl State {
             if surfaces > self.surfaces {
                 return Err("NVDEC sequence needs more decode surfaces".into());
             }
-            return i32::try_from(self.surfaces).map_err(|_| "NVDEC surface count overflows".into());
+            return i32::try_from(self.surfaces)
+                .map_err(|_| "NVDEC surface count overflows".into());
         }
         // SAFETY: plain C data (integers and pointers) permits an all-zero initialization.
         let mut info: CUVIDDECODECREATEINFO = unsafe { std::mem::zeroed() };
@@ -157,7 +209,12 @@ impl State {
         let right = i16::try_from(self.coded.0).map_err(|_| "NVDEC width overflows")?;
         let bottom = i16::try_from(self.coded.1).map_err(|_| "NVDEC height overflows")?;
         // Explicit full coded rectangles prevent the parser's display crop being applied twice.
-        info.display_area = ShortRect { left: 0, top: 0, right, bottom };
+        info.display_area = ShortRect {
+            left: 0,
+            top: 0,
+            right,
+            bottom,
+        };
         info.target_rect = info.display_area;
         info.OutputFormat = output_format(self.geometry.bits);
         info.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
@@ -166,7 +223,10 @@ impl State {
         info.ulNumOutputSurfaces = 1;
         // SAFETY: the context is current throughout the parser call; info and the out-pointer
         // are live. The decoder is owned by Session until explicitly destroyed.
-        status(unsafe { (self.api.create_decoder)(&mut self.decoder, &mut info) }, "cuvidCreateDecoder")?;
+        status(
+            unsafe { (self.api.create_decoder)(&mut self.decoder, &mut info) },
+            "cuvidCreateDecoder",
+        )?;
         if self.decoder.is_null() {
             return Err("NVDEC returned a null decoder".into());
         }
@@ -185,7 +245,9 @@ impl State {
         if self.pending.len() >= MAX_SURFACES as usize {
             return Err("NVDEC display queue exceeds its surface limit".into());
         }
-        self.pending.try_reserve(1).map_err(|e| format!("NVDEC display allocation failed: {e}"))?;
+        self.pending
+            .try_reserve(1)
+            .map_err(|e| format!("NVDEC display allocation failed: {e}"))?;
         self.pending.push(*info);
         Ok(1)
     }
@@ -204,13 +266,32 @@ impl State {
         let (mut address, mut pitch) = (0u64, 0u32);
         // SAFETY: the validated picture index belongs to the live decoder. Both output
         // pointers and proc are writable, and Session has pushed the context on this thread.
-        status(unsafe { (self.api.map)(self.decoder, info.picture_index, &mut address, &mut pitch, &mut proc) }, "cuvidMapVideoFrame64")?;
+        status(
+            unsafe {
+                (self.api.map)(
+                    self.decoder,
+                    info.picture_index,
+                    &mut address,
+                    &mut pitch,
+                    &mut proc,
+                )
+            },
+            "cuvidMapVideoFrame64",
+        )?;
         self.mapped.set(Some(address));
-        let mapped = Mapped { api: self.api, decoder: self.decoder, address, outstanding: &self.mapped, active: true };
+        let mapped = Mapped {
+            api: self.api,
+            decoder: self.decoder,
+            address,
+            outstanding: &self.mapped,
+            active: true,
+        };
         let frame = self.readback(address, pitch);
         mapped.unmap()?;
         let frame = frame?;
-        self.ready.try_reserve(1).map_err(|e| format!("NVDEC output allocation failed: {e}"))?;
+        self.ready
+            .try_reserve(1)
+            .map_err(|e| format!("NVDEC output allocation failed: {e}"))?;
         self.ready.push((info.timestamp, frame));
         Ok(())
     }
@@ -224,30 +305,60 @@ impl State {
             .and_then(|n| n.checked_mul(if self.geometry.bits == 10 { 3 } else { 2 }))
             .ok_or("NVDEC output size overflows")?;
         if self.ready.len() >= MAX_SURFACES as usize
-            || self.ready.len().checked_add(1).and_then(|n| n.checked_mul(picture_bytes)).is_none_or(|n| n > MAX_READY_BYTES)
+            || self
+                .ready
+                .len()
+                .checked_add(1)
+                .and_then(|n| n.checked_mul(picture_bytes))
+                .is_none_or(|n| n > MAX_READY_BYTES)
         {
             return Err("NVDEC output queue exceeds its memory limit".into());
         }
-        address.checked_add(u64::try_from(total).map_err(|_| "NVDEC mapped size overflows")?).ok_or("NVDEC mapped address overflows")?;
+        address
+            .checked_add(u64::try_from(total).map_err(|_| "NVDEC mapped size overflows")?)
+            .ok_or("NVDEC mapped address overflows")?;
         let mut host = Vec::new();
-        host.try_reserve_exact(total).map_err(|e| format!("NVDEC readback allocation failed: {e}"))?;
+        host.try_reserve_exact(total)
+            .map_err(|e| format!("NVDEC readback allocation failed: {e}"))?;
         host.resize(total, 0);
         // SAFETY: Session's separately boxed device outlives State and every synchronous callback;
         // it is immutable, and the CUDA context is current. No mutable Device references exist.
         let device = unsafe { self.device.as_ref() }.ok_or("NVDEC CUDA device is missing")?;
         device.copy_to_host(address, &mut host)?;
         let luma = host.get(..luma_size).ok_or("NVDEC luma range is invalid")?;
-        let chroma = host.get(luma_size..).ok_or("NVDEC chroma range is invalid")?;
-        to_frame(&Biplanar { luma, chroma, stride: pitch as usize, rows: self.coded.1 as usize }, &self.geometry)
+        let chroma = host
+            .get(luma_size..)
+            .ok_or("NVDEC chroma range is invalid")?;
+        to_frame(
+            &Biplanar {
+                luma,
+                chroma,
+                stride: pitch as usize,
+                rows: self.coded.1 as usize,
+            },
+            &self.geometry,
+        )
     }
 }
 fn mapped_layout(coded: (u32, u32), bits: u32, pitch: u32) -> Result<(usize, usize), String> {
-    let row_bytes = coded.0.checked_mul(if bits == 10 { 2 } else { 1 }).ok_or("NVDEC row size overflows")?;
-    if pitch < row_bytes || pitch == 0 || coded.1 == 0 || !coded.1.is_multiple_of(2) || !matches!(bits, 8 | 10) {
+    let row_bytes = coded
+        .0
+        .checked_mul(if bits == 10 { 2 } else { 1 })
+        .ok_or("NVDEC row size overflows")?;
+    if pitch < row_bytes
+        || pitch == 0
+        || coded.1 == 0
+        || !coded.1.is_multiple_of(2)
+        || !matches!(bits, 8 | 10)
+    {
         return Err("NVDEC reported an invalid mapped pitch or size".into());
     }
-    let luma = (pitch as usize).checked_mul(coded.1 as usize).ok_or("NVDEC luma size overflows")?;
-    let total = luma.checked_add(luma / 2).ok_or("NVDEC mapped size overflows")?;
+    let luma = (pitch as usize)
+        .checked_mul(coded.1 as usize)
+        .ok_or("NVDEC luma size overflows")?;
+    let total = luma
+        .checked_add(luma / 2)
+        .ok_or("NVDEC mapped size overflows")?;
     if total > MAX_FRAME_BYTES {
         return Err("NVDEC mapped frame exceeds its memory limit".into());
     }
@@ -265,7 +376,10 @@ impl Mapped<'_> {
         self.active = false;
         // SAFETY: this guard owns one successful mapping on this decoder, and the context is
         // still current. No GPU-memory references escape the synchronous host copy.
-        status(unsafe { (self.api.unmap)(self.decoder, self.address) }, "cuvidUnmapVideoFrame64")?;
+        status(
+            unsafe { (self.api.unmap)(self.decoder, self.address) },
+            "cuvidUnmapVideoFrame64",
+        )?;
         self.outstanding.set(None);
         Ok(())
     }
@@ -288,7 +402,9 @@ impl Drop for Mapped<'_> {
 unsafe fn callback(data: *mut c_void, f: impl FnOnce(&mut State) -> Result<i32, String>) -> i32 {
     // SAFETY: cuvid receives the stable, leaked State pointer at parser creation; callbacks run
     // synchronously, without a live Rust reference to State in the enclosing parse call.
-    let Some(state) = (unsafe { data.cast::<State>().as_mut() }) else { return 0 };
+    let Some(state) = (unsafe { data.cast::<State>().as_mut() }) else {
+        return 0;
+    };
     if state.error.is_some() {
         return 0;
     }
@@ -306,7 +422,11 @@ unsafe fn callback(data: *mut c_void, f: impl FnOnce(&mut State) -> Result<i32, 
 }
 unsafe extern "C" fn sequence(data: *mut c_void, format: *mut CUVIDEOFORMAT) -> i32 {
     // SAFETY: cuvid invokes this callback with its synchronous format pointer and our boxed state.
-    unsafe { callback(data, |state| state.sequence(format.as_ref().ok_or("NVDEC sequence pointer is null")?)) }
+    unsafe {
+        callback(data, |state| {
+            state.sequence(format.as_ref().ok_or("NVDEC sequence pointer is null")?)
+        })
+    }
 }
 unsafe extern "C" fn decode(data: *mut c_void, picture: *mut CUVIDPICPARAMS) -> i32 {
     // SAFETY: the picture parameters belong to cuvid for the callback's duration: their shared
@@ -325,11 +445,18 @@ unsafe extern "C" fn decode(data: *mut c_void, picture: *mut CUVIDPICPARAMS) -> 
             } else {
                 std::slice::from_raw_parts(p.pSliceDataOffsets, p.nNumSlices as usize)
             };
-            if p.pBitstreamData.is_null() || p.nBitstreamDataLen == 0 || offsets.is_empty() || offsets.iter().any(|&o| o > p.nBitstreamDataLen) {
+            if p.pBitstreamData.is_null()
+                || p.nBitstreamDataLen == 0
+                || offsets.is_empty()
+                || offsets.iter().any(|&o| o > p.nBitstreamDataLen)
+            {
                 return Err("NVDEC parser returned a picture without valid bitstream data".into());
             }
             state.drain()?;
-            status((state.api.decode)(state.decoder, picture), "cuvidDecodePicture")?;
+            status(
+                (state.api.decode)(state.decoder, picture),
+                "cuvidDecodePicture",
+            )?;
             Ok(1)
         })
     }
@@ -337,7 +464,11 @@ unsafe extern "C" fn decode(data: *mut c_void, picture: *mut CUVIDPICPARAMS) -> 
 unsafe extern "C" fn display(data: *mut c_void, picture: *mut CUVIDPARSERDISPINFO) -> i32 {
     // SAFETY: cuvid supplies display metadata valid during this synchronous callback;
     // null is only an EOS notification, which we did not request.
-    unsafe { callback(data, |state| state.display(picture.as_ref().ok_or("NVDEC display pointer is null")?)) }
+    unsafe {
+        callback(data, |state| {
+            state.display(picture.as_ref().ok_or("NVDEC display pointer is null")?)
+        })
+    }
 }
 
 /// A movable session. Each operation pushes its CUDA context on the calling thread.
@@ -356,7 +487,12 @@ pub struct Session {
 // calling thread.
 unsafe impl Send for Session {}
 impl Session {
-    pub fn new(codec: NalCodec, coded: (u32, u32), geometry: Geometry, reorder: usize) -> Result<Self, String> {
+    pub fn new(
+        codec: NalCodec,
+        coded: (u32, u32),
+        geometry: Geometry,
+        reorder: usize,
+    ) -> Result<Self, String> {
         let delay = validate(coded, geometry, reorder)?;
         if matches!(codec, NalCodec::H264) && geometry.bits != 8 {
             return Err("NVDEC only takes 8-bit H.264".into());
@@ -371,7 +507,10 @@ impl Session {
             let _current = device.push_current()?;
             let mut capabilities = caps(codec, geometry.bits);
             // SAFETY: capabilities is a live writable C struct, and the CUDA context is current.
-            status(unsafe { (api.caps)(&mut capabilities) }, "cuvidGetDecoderCaps")?;
+            status(
+                unsafe { (api.caps)(&mut capabilities) },
+                "cuvidGetDecoderCaps",
+            )?;
             check_caps(&capabilities, coded, geometry.bits)?;
         }
         let state = ptr::NonNull::new(Box::into_raw(Box::new(State {
@@ -390,7 +529,12 @@ impl Session {
         })))
         .ok_or("NVDEC state allocation is null")?;
         // From here on `Drop` frees the state, also when creating the parser fails.
-        let mut session = Self { state, parser: ptr::null_mut(), device, _library: library };
+        let mut session = Self {
+            state,
+            parser: ptr::null_mut(),
+            device,
+            _library: library,
+        };
         session.create_parser()?;
         Ok(session)
     }
@@ -420,13 +564,21 @@ impl Session {
         params.pfnDisplayPicture = Some(display);
         // SAFETY: params and output pointer are valid; the state allocation remains alive until
         // after parser destruction (Drop), and the library is retained by Session.
-        status(unsafe { (api.create_parser)(&mut self.parser, &mut params) }, "cuvidCreateVideoParser")?;
+        status(
+            unsafe { (api.create_parser)(&mut self.parser, &mut params) },
+            "cuvidCreateVideoParser",
+        )?;
         if self.parser.is_null() {
             return Err("NVDEC returned a null parser".into());
         }
         Ok(())
     }
-    fn parse(&mut self, payload: &[u8], pts: i64, flags: u64) -> Result<Vec<(i64, VideoFrame)>, String> {
+    fn parse(
+        &mut self,
+        payload: &[u8],
+        pts: i64,
+        flags: u64,
+    ) -> Result<Vec<(i64, VideoFrame)>, String> {
         if let Some(error) = &self.state().error {
             return Err(error.clone());
         }
@@ -437,8 +589,13 @@ impl Session {
         let _current = self.device.push_current()?;
         let mut packet = CUVIDSOURCEDATAPACKET {
             flags,
-            payload_size: u64::try_from(payload.len()).map_err(|_| "NVDEC packet length overflows")?,
-            payload: if payload.is_empty() { ptr::null() } else { payload.as_ptr() },
+            payload_size: u64::try_from(payload.len())
+                .map_err(|_| "NVDEC packet length overflows")?,
+            payload: if payload.is_empty() {
+                ptr::null()
+            } else {
+                payload.as_ptr()
+            },
             timestamp: pts,
         };
         // SAFETY: parser is live, payload and packet outlive this synchronous call. No reference
@@ -483,7 +640,10 @@ impl Session {
         let mut error = None;
         if let Some(address) = state.mapped.get() {
             // SAFETY: retry an outstanding map before releasing its decoder; context is current.
-            match status(unsafe { (state.api.unmap)(state.decoder, address) }, "cuvidUnmapVideoFrame64") {
+            match status(
+                unsafe { (state.api.unmap)(state.decoder, address) },
+                "cuvidUnmapVideoFrame64",
+            ) {
                 Ok(()) => state.mapped.set(None),
                 Err(e) => {
                     error = Some(e);
@@ -493,7 +653,10 @@ impl Session {
         if !keep_decoder && !state.decoder.is_null() {
             // SAFETY: owned decoder, no host views or callbacks remain; unmapping was attempted
             // first, and context and library remain live while the driver releases its resources.
-            match status(unsafe { (state.api.destroy_decoder)(state.decoder) }, "cuvidDestroyDecoder") {
+            match status(
+                unsafe { (state.api.destroy_decoder)(state.decoder) },
+                "cuvidDestroyDecoder",
+            ) {
                 Ok(()) => {
                     state.decoder = ptr::null_mut();
                     state.surfaces = 0;
@@ -506,7 +669,10 @@ impl Session {
         }
         if !parser.is_null() {
             // SAFETY: owned parser, no parse call running; user data and library are still live.
-            match status(unsafe { (state.api.destroy_parser)(parser) }, "cuvidDestroyVideoParser") {
+            match status(
+                unsafe { (state.api.destroy_parser)(parser) },
+                "cuvidDestroyVideoParser",
+            ) {
                 Ok(()) => self.parser = ptr::null_mut(),
                 Err(e) => {
                     error.get_or_insert(e);
@@ -562,23 +728,44 @@ pub fn probe() -> Result<String, String> {
 mod tests {
     use super::*;
     fn geometry() -> Geometry {
-        Geometry { crop: (0, 0, 640, 360), bits: 8, color: filmcraft_color::ColorInfo::REC709, par: (1, 1) }
+        Geometry {
+            crop: (0, 0, 640, 360),
+            bits: 8,
+            color: filmcraft_color::ColorInfo::REC709,
+            par: (1, 1),
+        }
     }
     #[test]
     fn hostile_geometry_and_driver_sizes_are_errors() {
         for size in [(0, 0), (u32::MAX, 368), (640, u32::MAX), (641, 368)] {
-            assert!(catch_unwind(|| validate(size, geometry(), 2)).unwrap().is_err());
+            assert!(
+                catch_unwind(|| validate(size, geometry(), 2))
+                    .unwrap()
+                    .is_err()
+            );
         }
         let mut g = geometry();
         g.crop = (u32::MAX, 0, 640, 360);
         assert!(validate((640, 368), g, 2).is_err());
         assert!(validate((640, 368), geometry(), usize::MAX).is_err());
         assert_eq!(validate((640, 368), geometry(), 2).unwrap(), 2);
-        for (size, bits, pitch) in [((640, 368), 8, 639), ((640, 368), 10, 1279), ((640, 368), 8, u32::MAX), ((640, u32::MAX), 10, 1280)] {
-            assert!(catch_unwind(|| mapped_layout(size, bits, pitch)).unwrap().is_err());
+        for (size, bits, pitch) in [
+            ((640, 368), 8, 639),
+            ((640, 368), 10, 1279),
+            ((640, 368), 8, u32::MAX),
+            ((640, u32::MAX), 10, 1280),
+        ] {
+            assert!(
+                catch_unwind(|| mapped_layout(size, bits, pitch))
+                    .unwrap()
+                    .is_err()
+            );
         }
         assert_eq!(mapped_layout((640, 368), 8, 640).unwrap(), (235520, 353280));
-        assert_eq!(mapped_layout((640, 368), 10, 1280).unwrap(), (471040, 706560));
+        assert_eq!(
+            mapped_layout((640, 368), 10, 1280).unwrap(),
+            (471040, 706560)
+        );
     }
     #[test]
     fn capabilities_decline_unsupported_streams() {
@@ -606,7 +793,10 @@ mod tests {
     unsafe extern "C" fn test_caps(_: *mut CUVIDDECODECAPS) -> i32 {
         999
     }
-    unsafe extern "C" fn test_create_decoder(_: *mut *mut c_void, _: *mut CUVIDDECODECREATEINFO) -> i32 {
+    unsafe extern "C" fn test_create_decoder(
+        _: *mut *mut c_void,
+        _: *mut CUVIDDECODECREATEINFO,
+    ) -> i32 {
         999
     }
     unsafe extern "C" fn test_destroy(_: *mut c_void) -> i32 {
@@ -615,7 +805,13 @@ mod tests {
     unsafe extern "C" fn test_decode(_: *mut c_void, _: *mut CUVIDPICPARAMS) -> i32 {
         999
     }
-    unsafe extern "C" fn test_map(_: *mut c_void, _: i32, _: *mut u64, _: *mut u32, _: *mut CUVIDPROCPARAMS) -> i32 {
+    unsafe extern "C" fn test_map(
+        _: *mut c_void,
+        _: i32,
+        _: *mut u64,
+        _: *mut u32,
+        _: *mut CUVIDPROCPARAMS,
+    ) -> i32 {
         999
     }
     unsafe extern "C" fn test_unmap(_: *mut c_void, _: u64) -> i32 {
@@ -658,7 +854,10 @@ mod tests {
         let mut state = test_state();
         let data = ptr::from_mut(&mut state).cast();
         // SAFETY: data points to exclusive live test state; the closure touches no driver.
-        assert_eq!(unsafe { callback(data, |_| panic!("synthetic callback panic")) }, 0);
+        assert_eq!(
+            unsafe { callback(data, |_| panic!("synthetic callback panic")) },
+            0
+        );
         assert_eq!(state.error.as_deref(), Some("NVDEC callback panicked"));
         // SAFETY: same live state. A recorded failure prevents the second closure running.
         assert_eq!(unsafe { callback(data, |_| Err("later error".into())) }, 0);
@@ -667,7 +866,10 @@ mod tests {
         let data = ptr::from_mut(&mut state).cast();
         // SAFETY: valid test user data; null metadata is deliberately tested and never dereferenced.
         assert_eq!(unsafe { sequence(data, ptr::null_mut()) }, 0);
-        assert_eq!(state.error.as_deref(), Some("NVDEC sequence pointer is null"));
+        assert_eq!(
+            state.error.as_deref(),
+            Some("NVDEC sequence pointer is null")
+        );
         // SAFETY: C may report null user data; our callback rejects it before dereferencing.
         assert_eq!(unsafe { display(ptr::null_mut(), ptr::null_mut()) }, 0);
         // SAFETY: POD C metadata can be initialized to zeros for these hostile-data tests.
@@ -696,7 +898,14 @@ mod tests {
         picture.picture_index = 1;
         picture.timestamp = -9;
         assert_eq!(state.display(&picture).unwrap(), 1);
-        assert_eq!(state.pending.iter().map(|p| (p.picture_index, p.timestamp)).collect::<Vec<_>>(), vec![(0, 17), (1, -9)]);
+        assert_eq!(
+            state
+                .pending
+                .iter()
+                .map(|p| (p.picture_index, p.timestamp))
+                .collect::<Vec<_>>(),
+            vec![(0, 17), (1, -9)]
+        );
     }
     unsafe extern "C" fn test_unmap_ok(_: *mut c_void, _: u64) -> i32 {
         0
@@ -706,12 +915,24 @@ mod tests {
         let outstanding = Cell::new(Some(123));
         let mut api = test_state().api;
         api.unmap = test_unmap_ok;
-        drop(Mapped { api, decoder: ptr::null_mut(), address: 123, outstanding: &outstanding, active: true });
+        drop(Mapped {
+            api,
+            decoder: ptr::null_mut(),
+            address: 123,
+            outstanding: &outstanding,
+            active: true,
+        });
         assert_eq!(outstanding.get(), None);
         outstanding.set(Some(123));
         assert!(
             catch_unwind(AssertUnwindSafe(|| {
-                let _mapped = Mapped { api, decoder: ptr::null_mut(), address: 123, outstanding: &outstanding, active: true };
+                let _mapped = Mapped {
+                    api,
+                    decoder: ptr::null_mut(),
+                    address: 123,
+                    outstanding: &outstanding,
+                    active: true,
+                };
                 panic!("synthetic readback panic");
             }))
             .is_err()
@@ -719,7 +940,17 @@ mod tests {
         assert_eq!(outstanding.get(), None);
         outstanding.set(Some(123));
         api.unmap = test_unmap;
-        assert!(Mapped { api, decoder: ptr::null_mut(), address: 123, outstanding: &outstanding, active: true }.unmap().is_err());
+        assert!(
+            Mapped {
+                api,
+                decoder: ptr::null_mut(),
+                address: 123,
+                outstanding: &outstanding,
+                active: true
+            }
+            .unmap()
+            .is_err()
+        );
         assert_eq!(outstanding.get(), Some(123));
     }
 }

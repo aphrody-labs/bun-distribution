@@ -15,9 +15,30 @@ fn ex(s: &mut Session, cmd: &str, p: Value) -> Value {
 
 /// A frame holding a group of a rectangle and a text layer at (60, 60); returns (group, text).
 fn scene(s: &mut Session) -> (NodeId, NodeId) {
-    let f = id_of(&ex(s, "frame.create", json!({"x": 0, "y": 0, "width": 400, "height": 300}))["id"]).unwrap();
-    let r = id_of(&ex(s, "shape.rectangle", json!({"x": 40, "y": 40, "width": 200, "height": 60, "parent": f}))["id"]).unwrap();
-    let t = id_of(&ex(s, "text.create", json!({"text": "Hi there", "x": 60, "y": 60, "parent": f, "props": {"fontSize": 16}}))["id"]).unwrap();
+    let f = id_of(
+        &ex(
+            s,
+            "frame.create",
+            json!({"x": 0, "y": 0, "width": 400, "height": 300}),
+        )["id"],
+    )
+    .unwrap();
+    let r = id_of(
+        &ex(
+            s,
+            "shape.rectangle",
+            json!({"x": 40, "y": 40, "width": 200, "height": 60, "parent": f}),
+        )["id"],
+    )
+    .unwrap();
+    let t = id_of(
+        &ex(
+            s,
+            "text.create",
+            json!({"text": "Hi there", "x": 60, "y": 60, "parent": f, "props": {"fontSize": 16}}),
+        )["id"],
+    )
+    .unwrap();
     let g = id_of(&ex(s, "object.group", json!({"ids": [r, t]}))["id"]).unwrap();
     ex(s, "select.none", json!({}));
     (g, t)
@@ -57,28 +78,64 @@ fn origin(s: &Session, id: NodeId) -> (f64, f64, f64, f64) {
 fn double_clicks_reach_and_edit_text_in_a_group_wherever_they_land() {
     // The middle of the text (a move would start there), near its edges (a resize would) and
     // with the hand moving a pixel or two between press and release.
-    for (x, y) in [(100.0, 70.0), (100.0, 61.0), (100.0, 78.0), (61.0, 70.0), (80.0, 70.0)] {
+    for (x, y) in [
+        (100.0, 70.0),
+        (100.0, 61.0),
+        (100.0, 78.0),
+        (61.0, 70.0),
+        (80.0, 70.0),
+    ] {
         for jitter in [0.0, 1.0, 2.0] {
             let mut s = Session::new();
             let (g, t) = scene(&mut s);
             let before = origin(&s, t);
             click(&mut s, x, y, jitter, 1.0);
-            assert_eq!(s.selection(), vec![g], "a click picks the group ({x}, {y}, {jitter})");
+            assert_eq!(
+                s.selection(),
+                vec![g],
+                "a click picks the group ({x}, {y}, {jitter})"
+            );
             double_click(&mut s, x, y, jitter, 1.0);
-            assert_eq!(s.selection(), vec![t], "a double-click picks the text ({x}, {y}, {jitter})");
+            assert_eq!(
+                s.selection(),
+                vec![t],
+                "a double-click picks the text ({x}, {y}, {jitter})"
+            );
             assert_eq!(editing(&s), None);
             double_click(&mut s, x, y, jitter, 1.0);
-            assert_eq!(editing(&s), Some(t), "the next one edits it ({x}, {y}, {jitter})");
-            assert_eq!(origin(&s, t), before, "and nothing was dragged ({x}, {y}, {jitter})");
+            assert_eq!(
+                editing(&s),
+                Some(t),
+                "the next one edits it ({x}, {y}, {jitter})"
+            );
+            assert_eq!(
+                origin(&s, t),
+                before,
+                "and nothing was dragged ({x}, {y}, {jitter})"
+            );
         }
     }
 }
 
 #[test]
 fn a_press_drags_only_past_the_threshold_in_screen_pixels() {
-    for (zoom, by, moves) in [(1.0, 2.0, false), (1.0, 4.0, true), (4.0, 0.5, false), (4.0, 1.0, true), (0.25, 8.0, false), (0.25, 16.0, true)] {
+    for (zoom, by, moves) in [
+        (1.0, 2.0, false),
+        (1.0, 4.0, true),
+        (4.0, 0.5, false),
+        (4.0, 1.0, true),
+        (0.25, 8.0, false),
+        (0.25, 16.0, true),
+    ] {
         let mut s = Session::new();
-        let r = id_of(&ex(&mut s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 200, "height": 200}))["id"]).unwrap();
+        let r = id_of(
+            &ex(
+                &mut s,
+                "shape.rectangle",
+                json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+            )["id"],
+        )
+        .unwrap();
         ex(&mut s, "view.snapPixel", json!({"on": false}));
         // A move from the middle.
         send(&mut s, PointerKind::Down, 100.0, 100.0, zoom);
@@ -93,12 +150,22 @@ fn a_press_drags_only_past_the_threshold_in_screen_pixels() {
         let x = origin(&s, r).0;
         send(&mut s, PointerKind::Up, 100.0 + 1.0 / zoom, 100.0, zoom);
         s.undo().unwrap();
-        assert!(x != 0.0 || !moves, "back near the start still follows at {zoom}");
+        assert!(
+            x != 0.0 || !moves,
+            "back near the start still follows at {zoom}"
+        );
     }
     // A resize from the right edge.
     for (by, resizes) in [(2.0, false), (4.0, true)] {
         let mut s = Session::new();
-        let r = id_of(&ex(&mut s, "shape.rectangle", json!({"x": 0, "y": 0, "width": 200, "height": 200}))["id"]).unwrap();
+        let r = id_of(
+            &ex(
+                &mut s,
+                "shape.rectangle",
+                json!({"x": 0, "y": 0, "width": 200, "height": 200}),
+            )["id"],
+        )
+        .unwrap();
         send(&mut s, PointerKind::Down, 200.0, 100.0, 1.0);
         send(&mut s, PointerKind::Move, 200.0 + by, 100.0, 1.0);
         send(&mut s, PointerKind::Up, 200.0 + by, 100.0, 1.0);

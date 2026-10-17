@@ -15,13 +15,21 @@ macro_rules! check_tcm_read {
             if $addr & $emu.arm9.cp15.itcm_addr_check_mask()
                 == $emu.arm9.cp15.itcm_addr_check_value()
             {
-                return $emu.arm9.cp15.itcm().read_le($addr as usize & (0x7FFF & !$align_mask));
+                return $emu
+                    .arm9
+                    .cp15
+                    .itcm()
+                    .read_le($addr as usize & (0x7FFF & !$align_mask));
             }
             if !$code
                 && $addr & $emu.arm9.cp15.dtcm_addr_check_mask()
                     == $emu.arm9.cp15.dtcm_addr_check_value()
             {
-                return $emu.arm9.cp15.dtcm().read_le($addr as usize & (0x3FFF & !$align_mask));
+                return $emu
+                    .arm9
+                    .cp15
+                    .dtcm()
+                    .read_le($addr as usize & (0x3FFF & !$align_mask));
             }
         }
     };
@@ -34,13 +42,19 @@ macro_rules! check_tcm_write {
             if $addr & $emu.arm9.cp15.itcm_addr_check_mask()
                 == $emu.arm9.cp15.itcm_addr_check_value()
             {
-                $emu.arm9.cp15.itcm().write_le($addr as usize & (0x7FFF & !$align_mask), $value);
+                $emu.arm9
+                    .cp15
+                    .itcm()
+                    .write_le($addr as usize & (0x7FFF & !$align_mask), $value);
                 return;
             }
             if $addr & $emu.arm9.cp15.dtcm_addr_check_mask()
                 == $emu.arm9.cp15.dtcm_addr_check_value()
             {
-                $emu.arm9.cp15.dtcm().write_le($addr as usize & (0x3FFF & !$align_mask), $value);
+                $emu.arm9
+                    .cp15
+                    .dtcm()
+                    .write_le($addr as usize & (0x3FFF & !$align_mask), $value);
                 return;
             }
         }
@@ -49,12 +63,19 @@ macro_rules! check_tcm_write {
 
 #[inline]
 pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
-    if let Some(ptr) =
-        if A::IS_DMA { emu.arm9.bus_ptrs.read(addr) } else { emu.arm9.cp15.ptrs.read_data(addr) }
-    {
+    if let Some(ptr) = if A::IS_DMA {
+        emu.arm9.bus_ptrs.read(addr)
+    } else {
+        emu.arm9.cp15.ptrs.read_data(addr)
+    } {
         unsafe {
             ptr.add(
-                (addr & if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK }) as usize,
+                (addr
+                    & if A::IS_DMA {
+                        SysBusPtrs::PAGE_MASK
+                    } else {
+                        Ptrs::PAGE_MASK
+                    }) as usize,
             )
             .read()
         }
@@ -70,14 +91,20 @@ pub fn read_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u8 {
 
 #[inline]
 pub fn read_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32) -> u16 {
-    if let Some(ptr) =
-        if A::IS_DMA { emu.arm9.bus_ptrs.read(addr) } else { emu.arm9.cp15.ptrs.read_data(addr) }
-    {
+    if let Some(ptr) = if A::IS_DMA {
+        emu.arm9.bus_ptrs.read(addr)
+    } else {
+        emu.arm9.cp15.ptrs.read_data(addr)
+    } {
         unsafe {
             u16::read_le_aligned(
                 ptr.add(
-                    (addr & (if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK } & !1))
-                        as usize,
+                    (addr
+                        & (if A::IS_DMA {
+                            SysBusPtrs::PAGE_MASK
+                        } else {
+                            Ptrs::PAGE_MASK
+                        } & !1)) as usize,
                 )
                 .cast(),
             )
@@ -104,8 +131,12 @@ pub fn read_32<A: AccessType, E: Engine, const CODE: bool>(emu: &mut Emu<E>, add
         unsafe {
             u32::read_le_aligned(
                 ptr.add(
-                    (addr & (if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK } & !3))
-                        as usize,
+                    (addr
+                        & (if A::IS_DMA {
+                            SysBusPtrs::PAGE_MASK
+                        } else {
+                            Ptrs::PAGE_MASK
+                        } & !3)) as usize,
                 )
                 .cast(),
             )
@@ -122,12 +153,19 @@ pub fn read_32<A: AccessType, E: Engine, const CODE: bool>(emu: &mut Emu<E>, add
 
 #[inline]
 pub fn write_8<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u8) {
-    if let Some(ptr) =
-        if A::IS_DMA { emu.arm9.bus_ptrs.write_8(addr) } else { emu.arm9.cp15.ptrs.write_8(addr) }
-    {
+    if let Some(ptr) = if A::IS_DMA {
+        emu.arm9.bus_ptrs.write_8(addr)
+    } else {
+        emu.arm9.cp15.ptrs.write_8(addr)
+    } {
         unsafe {
             ptr.add(
-                (addr & if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK }) as usize,
+                (addr
+                    & if A::IS_DMA {
+                        SysBusPtrs::PAGE_MASK
+                    } else {
+                        Ptrs::PAGE_MASK
+                    }) as usize,
             )
             .write(value);
         }
@@ -152,8 +190,12 @@ pub fn write_16<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u1
         unsafe {
             value.write_le_aligned(
                 ptr.add(
-                    (addr & (if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK } & !1))
-                        as usize,
+                    (addr
+                        & (if A::IS_DMA {
+                            SysBusPtrs::PAGE_MASK
+                        } else {
+                            Ptrs::PAGE_MASK
+                        } & !1)) as usize,
                 )
                 .cast(),
             );
@@ -179,8 +221,12 @@ pub fn write_32<A: AccessType, E: Engine>(emu: &mut Emu<E>, addr: u32, value: u3
         unsafe {
             value.write_le_aligned(
                 ptr.add(
-                    (addr & (if A::IS_DMA { SysBusPtrs::PAGE_MASK } else { Ptrs::PAGE_MASK } & !3))
-                        as usize,
+                    (addr
+                        & (if A::IS_DMA {
+                            SysBusPtrs::PAGE_MASK
+                        } else {
+                            Ptrs::PAGE_MASK
+                        } & !3)) as usize,
                 )
                 .cast(),
             );

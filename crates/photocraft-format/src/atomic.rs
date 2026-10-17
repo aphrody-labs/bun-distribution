@@ -34,7 +34,12 @@ pub trait AtomicFs {
     fn write_new(&self, tmp: &Path, bytes: &[u8]) -> io::Result<()>;
     /// [`write_new`](Self::write_new), reporting the fraction of `bytes` written so far to
     /// `progress` (a save's progress bar, #3389). By default it reports nothing.
-    fn write_new_progress(&self, tmp: &Path, bytes: &[u8], progress: &dyn Fn(f32)) -> io::Result<()> {
+    fn write_new_progress(
+        &self,
+        tmp: &Path,
+        bytes: &[u8],
+        progress: &dyn Fn(f32),
+    ) -> io::Result<()> {
         let _ = progress;
         self.write_new(tmp, bytes)
     }
@@ -60,8 +65,16 @@ impl AtomicFs for RealFs {
     fn write_new(&self, tmp: &Path, bytes: &[u8]) -> io::Result<()> {
         self.write_new_progress(tmp, bytes, &|_| {})
     }
-    fn write_new_progress(&self, tmp: &Path, bytes: &[u8], progress: &dyn Fn(f32)) -> io::Result<()> {
-        let mut f = std::fs::OpenOptions::new().write(true).create_new(true).open(tmp)?;
+    fn write_new_progress(
+        &self,
+        tmp: &Path,
+        bytes: &[u8],
+        progress: &dyn Fn(f32),
+    ) -> io::Result<()> {
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(tmp)?;
         let mut written = 0usize;
         for chunk in bytes.chunks(WRITE_CHUNK) {
             f.write_all(chunk)?;
@@ -100,7 +113,9 @@ impl AtomicFs for RealFs {
 pub fn sync_file(file: &std::fs::File) -> io::Result<()> {
     #[cfg(target_vendor = "apple")]
     {
-        or_plain_fsync(file.sync_all(), || rustix::fs::fsync(file).map_err(io::Error::from))
+        or_plain_fsync(file.sync_all(), || {
+            rustix::fs::fsync(file).map_err(io::Error::from)
+        })
     }
     #[cfg(not(target_vendor = "apple"))]
     {
@@ -109,7 +124,10 @@ pub fn sync_file(file: &std::fs::File) -> io::Result<()> {
 }
 
 /// `full`, or `fsync()` when `full` failed only because the file system can't do a full flush.
-pub fn or_plain_fsync(full: io::Result<()>, fsync: impl FnOnce() -> io::Result<()>) -> io::Result<()> {
+pub fn or_plain_fsync(
+    full: io::Result<()>,
+    fsync: impl FnOnce() -> io::Result<()>,
+) -> io::Result<()> {
     match full {
         Err(e) if full_flush_unsupported(&e) => fsync(),
         other => other,
@@ -137,7 +155,17 @@ impl RenameRetry {
     /// The platform default: retry on Windows (about 1.3 s in total), never elsewhere, where
     /// `PermissionDenied` is a real permission problem that waiting won't fix.
     pub fn platform() -> Self {
-        if cfg!(windows) { Self { attempts: 7, first_delay_ms: 10 } } else { Self { attempts: 0, first_delay_ms: 0 } }
+        if cfg!(windows) {
+            Self {
+                attempts: 7,
+                first_delay_ms: 10,
+            }
+        } else {
+            Self {
+                attempts: 0,
+                first_delay_ms: 0,
+            }
+        }
     }
 }
 
@@ -156,19 +184,36 @@ pub fn atomic_write_progress(path: &Path, bytes: &[u8], progress: &dyn Fn(f32)) 
 }
 
 /// [`atomic_write`] through an explicit file system and retry policy (the failure-injection seam).
-pub fn atomic_write_with(fs: &dyn AtomicFs, retry: RenameRetry, path: &Path, bytes: &[u8]) -> io::Result<()> {
+pub fn atomic_write_with(
+    fs: &dyn AtomicFs,
+    retry: RenameRetry,
+    path: &Path,
+    bytes: &[u8],
+) -> io::Result<()> {
     atomic_write_with_progress(fs, retry, path, bytes, &|_| {})
 }
 
 /// [`atomic_write_with`] reporting write progress (see [`atomic_write_progress`]).
-pub fn atomic_write_with_progress(fs: &dyn AtomicFs, retry: RenameRetry, path: &Path, bytes: &[u8], progress: &dyn Fn(f32)) -> io::Result<()> {
+pub fn atomic_write_with_progress(
+    fs: &dyn AtomicFs,
+    retry: RenameRetry,
+    path: &Path,
+    bytes: &[u8],
+    progress: &dyn Fn(f32),
+) -> io::Result<()> {
     let target = resolve_symlink(path);
-    let name = target.file_name().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, format!("{}: not a file path", path.display())))?;
+    let name = target.file_name().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("{}: not a file path", path.display()),
+        )
+    })?;
     let dir = match target.parent() {
         Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
         _ => PathBuf::from("."),
     };
-    std::fs::create_dir_all(&dir).map_err(|e| context(e, format!("cannot create the folder {}", dir.display())))?;
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| context(e, format!("cannot create the folder {}", dir.display())))?;
 
     // Create a fresh temporary file next to the target (same directory, so the rename never
     // crosses a device). The name is unique per process and call; retry a few on collisions.
@@ -188,7 +233,12 @@ pub fn atomic_write_with_progress(fs: &dyn AtomicFs, retry: RenameRetry, path: &
             }
         }
     }
-    let tmp = tmp.ok_or_else(|| io::Error::new(io::ErrorKind::AlreadyExists, format!("{}: could not create a temporary file", dir.display())))?;
+    let tmp = tmp.ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("{}: could not create a temporary file", dir.display()),
+        )
+    })?;
 
     // Keep the existing file's mode (e.g. 0600) instead of the process default.
     if target.exists() {
@@ -207,7 +257,10 @@ pub fn atomic_write_with_progress(fs: &dyn AtomicFs, retry: RenameRetry, path: &
 
 /// Run `rename`, retrying with backoff while it fails with `PermissionDenied` (see
 /// [`RenameRetry`]). For callers that rename through their own handles (capability directories).
-pub fn retry_rename(retry: RenameRetry, mut rename: impl FnMut() -> io::Result<()>) -> io::Result<()> {
+pub fn retry_rename(
+    retry: RenameRetry,
+    mut rename: impl FnMut() -> io::Result<()>,
+) -> io::Result<()> {
     let mut delay = retry.first_delay_ms;
     let mut left = retry.attempts;
     loop {
@@ -232,7 +285,9 @@ fn sleep_ms(_ms: u64) {}
 /// Write through a symlink to the file it points at, instead of replacing the link.
 fn resolve_symlink(path: &Path) -> PathBuf {
     match std::fs::symlink_metadata(path) {
-        Ok(m) if m.file_type().is_symlink() => std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf()),
+        Ok(m) if m.file_type().is_symlink() => {
+            std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+        }
         _ => path.to_path_buf(),
     }
 }
@@ -255,9 +310,16 @@ const UNCHANGED: &str = "the original file was not changed";
 fn write_error(e: io::Error, path: &Path, dir: &Path) -> io::Error {
     let msg = match e.kind() {
         io::ErrorKind::PermissionDenied | io::ErrorKind::ReadOnlyFilesystem => {
-            format!("cannot save {}: the folder {} is not writable ({e}); {UNCHANGED}", path.display(), dir.display())
+            format!(
+                "cannot save {}: the folder {} is not writable ({e}); {UNCHANGED}",
+                path.display(),
+                dir.display()
+            )
         }
-        io::ErrorKind::StorageFull => format!("cannot save {}: the disk is full ({e}); {UNCHANGED}", path.display()),
+        io::ErrorKind::StorageFull => format!(
+            "cannot save {}: the disk is full ({e}); {UNCHANGED}",
+            path.display()
+        ),
         _ => format!("cannot save {}: {e}; {UNCHANGED}", path.display()),
     };
     io::Error::new(e.kind(), msg)
@@ -265,9 +327,15 @@ fn write_error(e: io::Error, path: &Path, dir: &Path) -> io::Error {
 
 fn rename_error(e: io::Error, path: &Path) -> io::Error {
     let msg = if is_cross_device(&e) {
-        format!("cannot save {}: the temporary file is on a different volume than the destination ({e}); {UNCHANGED}", path.display())
+        format!(
+            "cannot save {}: the temporary file is on a different volume than the destination ({e}); {UNCHANGED}",
+            path.display()
+        )
     } else if e.kind() == io::ErrorKind::PermissionDenied {
-        format!("cannot save {}: the file is locked or read-only ({e}); {UNCHANGED}", path.display())
+        format!(
+            "cannot save {}: the file is locked or read-only ({e}); {UNCHANGED}",
+            path.display()
+        )
     } else {
         format!("cannot save {}: {e}; {UNCHANGED}", path.display())
     };
@@ -276,7 +344,9 @@ fn rename_error(e: io::Error, path: &Path) -> io::Error {
 
 fn is_cross_device(e: &io::Error) -> bool {
     // EXDEV is 18 on Linux, macOS and the BSDs; ERROR_NOT_SAME_DEVICE is 17 on Windows.
-    e.kind() == io::ErrorKind::CrossesDevices || (cfg!(unix) && e.raw_os_error() == Some(18)) || (cfg!(windows) && e.raw_os_error() == Some(17))
+    e.kind() == io::ErrorKind::CrossesDevices
+        || (cfg!(unix) && e.raw_os_error() == Some(18))
+        || (cfg!(windows) && e.raw_os_error() == Some(17))
 }
 
 #[cfg(test)]

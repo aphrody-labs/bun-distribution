@@ -26,14 +26,25 @@ const ROOM: Config = Config {
     mod_hz: 0.7,
 };
 
-const PLATE: Config =
-    Config { delays_ms: [13.71, 17.93, 21.07, 24.73, 28.31, 32.89, 36.13, 40.31], diffusers_ms: [3.13, 4.27, 7.93, 11.29], mod_ms: 0.4, mod_hz: 1.1 };
+const PLATE: Config = Config {
+    delays_ms: [13.71, 17.93, 21.07, 24.73, 28.31, 32.89, 36.13, 40.31],
+    diffusers_ms: [3.13, 4.27, 7.93, 11.29],
+    mod_ms: 0.4,
+    mod_hz: 1.1,
+};
 
 macro_rules! reverb_params {
     ($mix:expr, $pre:expr, $decay:expr, $damp:expr, $diff:expr) => {
         [
             lin("mix", "Mix", 0.0, 100.0, $mix, Unit::Percent),
-            lin("pre_delay", "Pre-Delay", 0.0, MAX_PREDELAY_MS, $pre, Unit::Ms),
+            lin(
+                "pre_delay",
+                "Pre-Delay",
+                0.0,
+                MAX_PREDELAY_MS,
+                $pre,
+                Unit::Ms,
+            ),
             log("decay", "Decay", 0.1, 20.0, $decay, Unit::Seconds),
             lin("size", "Size", 0.0, 100.0, 50.0, Unit::Percent),
             log("damping", "HF Damping", 1000.0, 20000.0, $damp, Unit::Hz),
@@ -82,7 +93,9 @@ impl Allpass {
 
     #[inline]
     fn process(&mut self, x: f32, g: f32) -> f32 {
-        let Some(slot) = self.buf.get_mut(self.pos) else { return x };
+        let Some(slot) = self.buf.get_mut(self.pos) else {
+            return x;
+        };
         let d = *slot;
         let v = x + g * d;
         *slot = flush(v);
@@ -184,7 +197,13 @@ impl Reverb {
         let lc = self.p.v(7);
         let sr = self.sr;
         for b in &mut self.lowcut {
-            b.set(FilterType::HighPass, lc, std::f32::consts::FRAC_1_SQRT_2, 0.0, sr);
+            b.set(
+                FilterType::HighPass,
+                lc,
+                std::f32::consts::FRAC_1_SQRT_2,
+                0.0,
+                sr,
+            );
         }
         self.damp = (-std::f32::consts::TAU * self.p.v(4) / sr).exp();
         self.update_gains();
@@ -279,8 +298,21 @@ impl Plugin for Reverb {
         let size = self.size.value();
         let base: [f32; LINES] = self.cfg.delays_ms.map(|ms| ms_to_samples(ms * size, sr));
         for n in 0..frames {
-            let xl = io.first().and_then(|b| b.get(n)).copied().filter(|v| v.is_finite()).unwrap_or(0.0);
-            let xr = if ch > 1 { io.get(1).and_then(|b| b.get(n)).copied().filter(|v| v.is_finite()).unwrap_or(0.0) } else { xl };
+            let xl = io
+                .first()
+                .and_then(|b| b.get(n))
+                .copied()
+                .filter(|v| v.is_finite())
+                .unwrap_or(0.0);
+            let xr = if ch > 1 {
+                io.get(1)
+                    .and_then(|b| b.get(n))
+                    .copied()
+                    .filter(|v| v.is_finite())
+                    .unwrap_or(0.0)
+            } else {
+                xl
+            };
             let pre = ms_to_samples(self.pre_ms.next(), sr);
             let mut ins = [xl, xr];
             for (side, x) in ins.iter_mut().enumerate() {

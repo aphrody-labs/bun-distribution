@@ -67,13 +67,19 @@ impl MigrationSet {
         let mut by_version = BTreeMap::new();
         for (path, sql) in files {
             let (version, name) = parse_file_name(path)?;
-            let migration =
-                Migration { version, name, sql: (*sql).to_owned(), sha256: checksum(sql) };
+            let migration = Migration {
+                version,
+                name,
+                sql: (*sql).to_owned(),
+                sha256: checksum(sql),
+            };
             if by_version.insert(version, migration).is_some() {
                 return Err(SqlError::DuplicateMigration(version));
             }
         }
-        Ok(Self { migrations: by_version.into_values().collect() })
+        Ok(Self {
+            migrations: by_version.into_values().collect(),
+        })
     }
 
     /// Migrations in ascending version order.
@@ -136,7 +142,11 @@ pub fn checksum(sql: &str) -> String {
         rest = &rest[index + 2..];
     }
     hasher.update(rest.as_bytes());
-    hasher.finalize().iter().map(|b| format!("{b:02x}")).collect::<String>()
+    hasher
+        .finalize()
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<String>()
 }
 
 /// Split `NNNN_name.sql` (after stripping any directory) into version and name.
@@ -168,7 +178,10 @@ pub struct MigrateOptions {
 
 impl Default for MigrateOptions {
     fn default() -> Self {
-        Self { schema: None, table: DEFAULT_TABLE.to_owned() }
+        Self {
+            schema: None,
+            table: DEFAULT_TABLE.to_owned(),
+        }
     }
 }
 
@@ -176,14 +189,19 @@ impl MigrateOptions {
     /// Track in `<schema>.aphrody_migrations`.
     #[must_use]
     pub fn in_schema(schema: impl Into<String>) -> Self {
-        Self { schema: Some(schema.into()), table: DEFAULT_TABLE.to_owned() }
+        Self {
+            schema: Some(schema.into()),
+            table: DEFAULT_TABLE.to_owned(),
+        }
     }
 
     fn validated(&self) -> Result<()> {
         for ident in self.schema.iter().chain(std::iter::once(&self.table)) {
             let mut chars = ident.chars();
             let valid = ident.len() <= 63
-                && chars.next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+                && chars
+                    .next()
+                    .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
                 && chars.all(|c| c.is_ascii_alphanumeric() || c == '_');
             if !valid {
                 return Err(SqlError::InvalidIdentifier(ident.clone()));
@@ -229,8 +247,9 @@ pub struct MigrationReport {
 /// [`SqlError::OutOfOrderMigration`].
 pub fn plan<'a>(set: &'a MigrationSet, applied: &[AppliedMigration]) -> Result<Vec<&'a Migration>> {
     for row in applied {
-        let migration =
-            set.get(row.version).ok_or(SqlError::UnknownAppliedMigration(row.version))?;
+        let migration = set
+            .get(row.version)
+            .ok_or(SqlError::UnknownAppliedMigration(row.version))?;
         if migration.sha256 != row.sha256 {
             return Err(SqlError::ChecksumMismatch {
                 version: row.version,
@@ -248,7 +267,10 @@ pub fn plan<'a>(set: &'a MigrationSet, applied: &[AppliedMigration]) -> Result<V
     if let (Some(newest), Some(first)) = (newest, pending.first())
         && first.version < newest
     {
-        return Err(SqlError::OutOfOrderMigration { pending: first.version, applied: newest });
+        return Err(SqlError::OutOfOrderMigration {
+            pending: first.version,
+            applied: newest,
+        });
     }
     Ok(pending)
 }
@@ -284,7 +306,9 @@ mod pg_runner {
         applied_at timestamptz NOT NULL DEFAULT now())";
 
     fn db_message(error: &tokio_postgres::Error) -> String {
-        error.as_db_error().map_or_else(|| error.to_string(), |db| db.message().to_owned())
+        error
+            .as_db_error()
+            .map_or_else(|| error.to_string(), |db| db.message().to_owned())
     }
 
     async fn read_applied(client: &Client, table: &str) -> Result<Vec<AppliedMigration>> {
@@ -308,11 +332,13 @@ mod pg_runner {
     }
 
     async fn apply(tx: &Transaction<'_>, table: &str, migration: &Migration) -> Result<()> {
-        tx.batch_execute(&migration.sql).await.map_err(|error| SqlError::MigrationFailed {
-            version: migration.version,
-            name: migration.name.clone(),
-            message: db_message(&error),
-        })?;
+        tx.batch_execute(&migration.sql)
+            .await
+            .map_err(|error| SqlError::MigrationFailed {
+                version: migration.version,
+                name: migration.name.clone(),
+                message: db_message(&error),
+            })?;
         let version = i64::from(migration.version);
         let params: [(&(dyn ToSql + Sync), Type); 3] = [
             (&version, Type::INT8),
@@ -346,23 +372,30 @@ mod pg_runner {
             let tx = client.transaction().await?;
             tx.batch_execute(&lock).await?;
             if let Some(schema) = &options.schema {
-                tx.batch_execute(&format!("CREATE SCHEMA IF NOT EXISTS {schema}")).await?;
+                tx.batch_execute(&format!("CREATE SCHEMA IF NOT EXISTS {schema}"))
+                    .await?;
             }
-            tx.batch_execute(&BOOTSTRAP.replace("{table}", &table)).await?;
+            tx.batch_execute(&BOOTSTRAP.replace("{table}", &table))
+                .await?;
             tx.commit().await?;
         }
 
         let applied = read_applied(client, &table).await?;
         let pending = plan(set, &applied)?;
-        let mut report =
-            MigrationReport { applied: Vec::new(), already_applied: set.len() - pending.len() };
+        let mut report = MigrationReport {
+            applied: Vec::new(),
+            already_applied: set.len() - pending.len(),
+        };
         for migration in pending {
             let tx = client.transaction().await?;
             tx.batch_execute(&lock).await?;
             let version = i64::from(migration.version);
             let params: [(&(dyn ToSql + Sync), Type); 1] = [(&version, Type::INT8)];
             let existing = tx
-                .query_typed(&format!("SELECT sha256 FROM {table} WHERE version = $1"), &params)
+                .query_typed(
+                    &format!("SELECT sha256 FROM {table} WHERE version = $1"),
+                    &params,
+                )
                 .await?;
             if let Some(row) = existing.first() {
                 let recorded: String = row.try_get(0)?;
@@ -381,7 +414,9 @@ mod pg_runner {
             apply(&tx, &table, migration).await?;
             tx.commit().await?;
             tracing::info!(version = migration.version, name = %migration.name, "applied migration");
-            report.applied.push((migration.version, migration.name.clone()));
+            report
+                .applied
+                .push((migration.version, migration.name.clone()));
         }
         Ok(report)
     }
@@ -422,8 +457,9 @@ pub fn migrate_sqlite(
             applied_at TEXT NOT NULL DEFAULT (datetime('now')))"
     ))?;
     let applied = {
-        let mut statement =
-            conn.prepare(&format!("SELECT version, name, sha256 FROM {table} ORDER BY version"))?;
+        let mut statement = conn.prepare(&format!(
+            "SELECT version, name, sha256 FROM {table} ORDER BY version"
+        ))?;
         let rows = statement.query_map([], |row| {
             Ok(AppliedMigration {
                 version: u32::try_from(row.get::<_, i64>(0)?).unwrap_or(u32::MAX),
@@ -434,8 +470,10 @@ pub fn migrate_sqlite(
         rows.collect::<std::result::Result<Vec<_>, _>>()?
     };
     let pending = plan(set, &applied)?;
-    let mut report =
-        MigrationReport { applied: Vec::new(), already_applied: set.len() - pending.len() };
+    let mut report = MigrationReport {
+        applied: Vec::new(),
+        already_applied: set.len() - pending.len(),
+    };
     for migration in pending {
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let existing: Option<String> = tx
@@ -461,18 +499,25 @@ pub fn migrate_sqlite(
             report.already_applied += 1;
             continue;
         }
-        tx.execute_batch(&migration.sql).map_err(|error| SqlError::MigrationFailed {
-            version: migration.version,
-            name: migration.name.clone(),
-            message: error.to_string(),
-        })?;
+        tx.execute_batch(&migration.sql)
+            .map_err(|error| SqlError::MigrationFailed {
+                version: migration.version,
+                name: migration.name.clone(),
+                message: error.to_string(),
+            })?;
         tx.execute(
             &format!("INSERT INTO {table} (version, name, sha256) VALUES (?1, ?2, ?3)"),
-            rusqlite::params![i64::from(migration.version), migration.name, migration.sha256],
+            rusqlite::params![
+                i64::from(migration.version),
+                migration.name,
+                migration.sha256
+            ],
         )?;
         tx.commit()?;
         tracing::info!(version = migration.version, name = %migration.name, "applied migration");
-        report.applied.push((migration.version, migration.name.clone()));
+        report
+            .applied
+            .push((migration.version, migration.name.clone()));
     }
     Ok(report)
 }
@@ -487,12 +532,22 @@ mod tests {
 
     #[test]
     fn file_names_are_parsed_and_validated() {
-        assert_eq!(parse_file_name("0001_registry.sql").unwrap(), (1, "registry".into()));
+        assert_eq!(
+            parse_file_name("0001_registry.sql").unwrap(),
+            (1, "registry".into())
+        );
         assert_eq!(
             parse_file_name("crates/x/migrations/00012_add_index_v2.sql").unwrap(),
             (12, "add_index_v2".into())
         );
-        for bad in ["0001.sql", "001_a.sql", "abcd_a.sql", "0001_.sql", "0001_a.txt", "0001_a"] {
+        for bad in [
+            "0001.sql",
+            "001_a.sql",
+            "abcd_a.sql",
+            "0001_.sql",
+            "0001_a.txt",
+            "0001_a",
+        ] {
             assert!(
                 matches!(parse_file_name(bad), Err(SqlError::InvalidMigrationName(_))),
                 "{bad}"
@@ -502,7 +557,11 @@ mod tests {
 
     #[test]
     fn set_is_sorted_and_rejects_duplicate_versions() {
-        let migrations = set(&[("0010_c.sql", "c"), ("0002_b.sql", "b"), ("0001_a.sql", "a")]);
+        let migrations = set(&[
+            ("0010_c.sql", "c"),
+            ("0002_b.sql", "b"),
+            ("0001_a.sql", "a"),
+        ]);
         let versions: Vec<u32> = migrations.iter().map(|m| m.version).collect();
         assert_eq!(versions, [1, 2, 10]);
         assert_eq!(migrations.latest_version(), Some(10));
@@ -516,7 +575,10 @@ mod tests {
     fn checksum_is_stable_hex_and_ignores_line_endings() {
         let lf = checksum("SELECT 1;\nSELECT 2;\n");
         assert_eq!(lf.len(), 64);
-        assert!(lf.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)));
+        assert!(
+            lf.bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+        );
         assert_eq!(lf, checksum("SELECT 1;\r\nSELECT 2;\r\n"));
         assert_ne!(lf, checksum("SELECT 1;\nSELECT 3;\n"));
         // Known SHA-256 of "abc".
@@ -539,16 +601,31 @@ mod tests {
 
     #[test]
     fn plan_returns_pending_in_order() {
-        let migrations = set(&[("0001_a.sql", "a"), ("0002_b.sql", "b"), ("0003_c.sql", "c")]);
+        let migrations = set(&[
+            ("0001_a.sql", "a"),
+            ("0002_b.sql", "b"),
+            ("0003_c.sql", "c"),
+        ]);
         let pending = plan(&migrations, &applied(&migrations, &[1])).unwrap();
-        assert_eq!(pending.iter().map(|m| m.version).collect::<Vec<_>>(), [2, 3]);
-        assert!(plan(&migrations, &applied(&migrations, &[1, 2, 3])).unwrap().is_empty());
+        assert_eq!(
+            pending.iter().map(|m| m.version).collect::<Vec<_>>(),
+            [2, 3]
+        );
+        assert!(
+            plan(&migrations, &applied(&migrations, &[1, 2, 3]))
+                .unwrap()
+                .is_empty()
+        );
         assert_eq!(plan(&migrations, &[]).unwrap().len(), 3);
     }
 
     #[test]
     fn plan_rejects_modified_ahead_and_out_of_order() {
-        let migrations = set(&[("0001_a.sql", "a"), ("0002_b.sql", "b"), ("0003_c.sql", "c")]);
+        let migrations = set(&[
+            ("0001_a.sql", "a"),
+            ("0002_b.sql", "b"),
+            ("0003_c.sql", "c"),
+        ]);
 
         let mut tampered = applied(&migrations, &[1]);
         tampered[0].sha256 = checksum("something else");
@@ -558,13 +635,23 @@ mod tests {
         ));
 
         let mut ahead = applied(&migrations, &[1]);
-        ahead.push(AppliedMigration { version: 9, name: "future".into(), sha256: checksum("f") });
-        assert!(matches!(plan(&migrations, &ahead), Err(SqlError::UnknownAppliedMigration(9))));
+        ahead.push(AppliedMigration {
+            version: 9,
+            name: "future".into(),
+            sha256: checksum("f"),
+        });
+        assert!(matches!(
+            plan(&migrations, &ahead),
+            Err(SqlError::UnknownAppliedMigration(9))
+        ));
 
         // 2 is missing while 3 is applied.
         assert!(matches!(
             plan(&migrations, &applied(&migrations, &[1, 3])),
-            Err(SqlError::OutOfOrderMigration { pending: 2, applied: 3 })
+            Err(SqlError::OutOfOrderMigration {
+                pending: 2,
+                applied: 3
+            })
         ));
     }
 
@@ -581,7 +668,10 @@ mod tests {
                 "{bad}"
             );
         }
-        let options = MigrateOptions { schema: None, table: "x; --".into() };
+        let options = MigrateOptions {
+            schema: None,
+            table: "x; --".into(),
+        };
         assert!(options.validated().is_err());
         assert_eq!(
             MigrateOptions::in_schema("training").qualified(),
@@ -591,8 +681,14 @@ mod tests {
 
     #[test]
     fn lock_key_is_stable_and_scoped() {
-        assert_eq!(lock_key("aphrody_migrations"), lock_key("aphrody_migrations"));
-        assert_ne!(lock_key("aphrody_migrations"), lock_key("training.aphrody_migrations"));
+        assert_eq!(
+            lock_key("aphrody_migrations"),
+            lock_key("aphrody_migrations")
+        );
+        assert_ne!(
+            lock_key("aphrody_migrations"),
+            lock_key("training.aphrody_migrations")
+        );
     }
 
     #[test]
@@ -604,7 +700,14 @@ mod tests {
         .unwrap();
         assert_eq!(migrations.len(), 2);
         assert_eq!(migrations.iter().next().unwrap().name, "init");
-        assert!(migrations.iter().next().unwrap().sql.contains("CREATE TABLE widgets"));
+        assert!(
+            migrations
+                .iter()
+                .next()
+                .unwrap()
+                .sql
+                .contains("CREATE TABLE widgets")
+        );
     }
 
     #[cfg(feature = "sqlite")]
@@ -618,8 +721,11 @@ mod tests {
         }
 
         fn fixtures() -> MigrationSet {
-            embed_migrations!("../tests/fixtures/0001_init.sql", "../tests/fixtures/0002_more.sql",)
-                .unwrap()
+            embed_migrations!(
+                "../tests/fixtures/0001_init.sql",
+                "../tests/fixtures/0002_more.sql",
+            )
+            .unwrap()
         }
 
         fn count(conn: &Connection, sql: &str) -> i64 {
@@ -631,18 +737,24 @@ mod tests {
             let mut conn = connection();
             let report =
                 migrate_sqlite(&mut conn, &fixtures(), &MigrateOptions::default()).unwrap();
-            assert_eq!(report.applied, [(1, "init".to_owned()), (2, "more".to_owned())]);
+            assert_eq!(
+                report.applied,
+                [(1, "init".to_owned()), (2, "more".to_owned())]
+            );
             assert_eq!(report.already_applied, 0);
             assert_eq!(count(&conn, "SELECT count(*) FROM aphrody_migrations"), 2);
-            conn.execute("INSERT INTO widgets (name, size) VALUES ('a', 3)", []).unwrap();
+            conn.execute("INSERT INTO widgets (name, size) VALUES ('a', 3)", [])
+                .unwrap();
 
             let again = migrate_sqlite(&mut conn, &fixtures(), &MigrateOptions::default()).unwrap();
             assert!(again.applied.is_empty());
             assert_eq!(again.already_applied, 2);
             let recorded: String = conn
-                .query_row("SELECT sha256 FROM aphrody_migrations WHERE version = 1", [], |r| {
-                    r.get(0)
-                })
+                .query_row(
+                    "SELECT sha256 FROM aphrody_migrations WHERE version = 1",
+                    [],
+                    |r| r.get(0),
+                )
                 .unwrap();
             assert_eq!(recorded, fixtures().iter().next().unwrap().sha256);
         }
@@ -676,7 +788,10 @@ mod tests {
                 &MigrateOptions::default(),
             )
             .unwrap_err();
-            assert!(matches!(error, SqlError::ChecksumMismatch { version: 1, .. }), "{error}");
+            assert!(
+                matches!(error, SqlError::ChecksumMismatch { version: 1, .. }),
+                "{error}"
+            );
         }
 
         #[test]
@@ -684,16 +799,29 @@ mod tests {
             let mut conn = connection();
             let broken = set(&[
                 ("0001_ok.sql", "CREATE TABLE ok (x);"),
-                ("0002_bad.sql", "CREATE TABLE half (x); INSERT INTO missing_table VALUES (1);"),
+                (
+                    "0002_bad.sql",
+                    "CREATE TABLE half (x); INSERT INTO missing_table VALUES (1);",
+                ),
                 ("0003_never.sql", "CREATE TABLE never (x);"),
             ]);
             let error = migrate_sqlite(&mut conn, &broken, &MigrateOptions::default()).unwrap_err();
-            assert!(matches!(error, SqlError::MigrationFailed { version: 2, .. }), "{error}");
+            assert!(
+                matches!(error, SqlError::MigrationFailed { version: 2, .. }),
+                "{error}"
+            );
             let tables = |name: &str| {
-                count(&conn, &format!("SELECT count(*) FROM sqlite_master WHERE name = '{name}'"))
+                count(
+                    &conn,
+                    &format!("SELECT count(*) FROM sqlite_master WHERE name = '{name}'"),
+                )
             };
             assert_eq!(tables("ok"), 1, "files before the failure stay applied");
-            assert_eq!(tables("half"), 0, "the failing file is rolled back as a whole");
+            assert_eq!(
+                tables("half"),
+                0,
+                "the failing file is rolled back as a whole"
+            );
             assert_eq!(tables("never"), 0, "later files do not run");
             assert_eq!(count(&conn, "SELECT count(*) FROM aphrody_migrations"), 1);
         }
@@ -701,10 +829,16 @@ mod tests {
         #[test]
         fn custom_tracking_table_is_validated_and_used() {
             let mut conn = connection();
-            let options = MigrateOptions { schema: None, table: "my_migrations".into() };
+            let options = MigrateOptions {
+                schema: None,
+                table: "my_migrations".into(),
+            };
             migrate_sqlite(&mut conn, &fixtures(), &options).unwrap();
             assert_eq!(count(&conn, "SELECT count(*) FROM my_migrations"), 2);
-            let bad = MigrateOptions { schema: None, table: "x; DROP TABLE widgets".into() };
+            let bad = MigrateOptions {
+                schema: None,
+                table: "x; DROP TABLE widgets".into(),
+            };
             assert!(matches!(
                 migrate_sqlite(&mut conn, &fixtures(), &bad),
                 Err(SqlError::InvalidIdentifier(_))

@@ -5,7 +5,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use effectcraft_color::Label;
-use effectcraft_project::{AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project, Solid, limits};
+use effectcraft_project::{
+    AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, LayerSource, Project, Solid, limits,
+};
 use effectcraft_time::{FrameRate, Tick};
 use serde_json::{Value, json};
 
@@ -14,26 +16,56 @@ use crate::sequence::SequenceOptions;
 use crate::{EngineError, Result, Session, cmd};
 
 fn has_footage_selection(s: &Session) -> std::result::Result<(), String> {
-    if selected_footage(s).is_empty() { Err("select footage in the Project panel".into()) } else { Ok(()) }
+    if selected_footage(s).is_empty() {
+        Err("select footage in the Project panel".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_interpretation(s: &Session) -> std::result::Result<(), String> {
     has_footage_selection(s)?;
-    if s.state.interpretation.is_none() { Err("no interpretation remembered".into()) } else { Ok(()) }
+    if s.state.interpretation.is_none() {
+        Err("no interpretation remembered".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_items(s: &Session) -> std::result::Result<(), String> {
-    if s.project.items.is_empty() { Err("the project is empty".into()) } else { Ok(()) }
+    if s.project.items.is_empty() {
+        Err("the project is empty".into())
+    } else {
+        Ok(())
+    }
 }
 
 fn has_comp_selection(s: &Session) -> std::result::Result<(), String> {
-    if s.state.project_selection.iter().any(|i| s.project.comp(*i).is_some()) { Ok(()) } else { Err("select compositions in the Project panel".into()) }
+    if s.state
+        .project_selection
+        .iter()
+        .any(|i| s.project.comp(*i).is_some())
+    {
+        Ok(())
+    } else {
+        Err("select compositions in the Project panel".into())
+    }
 }
 
 /// Selected project items that are footage (or the source of the selected layer).
 fn selected_footage(s: &Session) -> Vec<ItemId> {
-    let mut v: Vec<ItemId> =
-        s.state.project_selection.iter().copied().filter(|i| matches!(s.project.item(*i).map(|x| &x.kind), Some(ItemKind::Footage(_)))).collect();
+    let mut v: Vec<ItemId> = s
+        .state
+        .project_selection
+        .iter()
+        .copied()
+        .filter(|i| {
+            matches!(
+                s.project.item(*i).map(|x| &x.kind),
+                Some(ItemKind::Footage(_))
+            )
+        })
+        .collect();
     if v.is_empty()
         && let Some(c) = s.active_comp()
     {
@@ -42,7 +74,13 @@ fn selected_footage(s: &Session) -> Vec<ItemId> {
             .selected_layers
             .iter()
             .filter_map(|l| c.layer(*l))
-            .filter_map(|l| if let LayerSource::Footage { item } = l.source { Some(item) } else { None })
+            .filter_map(|l| {
+                if let LayerSource::Footage { item } = l.source {
+                    Some(item)
+                } else {
+                    None
+                }
+            })
             .collect();
     }
     v
@@ -58,7 +96,11 @@ fn items_p(s: &Session, p: &Value) -> Vec<ItemId> {
 
 fn new_folder(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "name").unwrap_or("Untitled Folder").to_string();
-    let parent = p.get("parent").and_then(Value::as_u64).map(ItemId).filter(|i| s.project.item(*i).is_some_and(|x| x.is_folder()));
+    let parent = p
+        .get("parent")
+        .and_then(Value::as_u64)
+        .map(ItemId)
+        .filter(|i| s.project.item(*i).is_some_and(|x| x.is_folder()));
     let id = s.edit("New Folder", None, |proj, st| {
         let id = proj.add_item(&name, Label::Yellow, parent, ItemKind::Folder);
         st.project_selection = vec![id];
@@ -79,17 +121,27 @@ fn close_project(s: &mut Session, _: &Value) -> Result<Value> {
 fn save_copy(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("file.saveCopy", "missing `path`"))?;
     let json = super::file::file_text(s, path)?;
-    s.services.write_file(path, json.as_bytes()).map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
+    s.services
+        .write_file(path, json.as_bytes())
+        .map_err(|e| EngineError::Other(format!("cannot write {path}: {e}")))?;
     Ok(json!({"path": path, "bytes": json.len()}))
 }
 
 fn rate_of(p: &Value) -> FrameRate {
-    f_p(p, "frameRate").map(|f| limits::frame_rate(FrameRate::from_f64(f), FrameRate::FPS_29_97)).unwrap_or(FrameRate::FPS_29_97)
+    f_p(p, "frameRate")
+        .map(|f| limits::frame_rate(FrameRate::from_f64(f), FrameRate::FPS_29_97))
+        .unwrap_or(FrameRate::FPS_29_97)
 }
 
 fn placeholder_footage(p: &Value) -> Footage {
-    let w = p.get("width").and_then(Value::as_u64).map_or(1920, limits::size);
-    let h = p.get("height").and_then(Value::as_u64).map_or(1080, limits::size);
+    let w = p
+        .get("width")
+        .and_then(Value::as_u64)
+        .map_or(1920, limits::size);
+    let h = p
+        .get("height")
+        .and_then(Value::as_u64)
+        .map_or(1080, limits::size);
     Footage {
         path: String::new(),
         kind: FootageKind::Video,
@@ -124,17 +176,32 @@ fn import_placeholder(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn solid_from(p: &Value, s: &Session) -> Solid {
-    let (cw, ch) = s.active_comp().map(|c| (c.width, c.height)).unwrap_or((1920, 1080));
+    let (cw, ch) = s
+        .active_comp()
+        .map(|c| (c.width, c.height))
+        .unwrap_or((1920, 1080));
     let color = match p.get("color") {
         Some(Value::String(h)) => effectcraft_color::Rgba::from_hex(h).map(|c| [c.r, c.g, c.b]),
-        Some(Value::Array(a)) => Some([0, 1, 2].map(|i| a.get(i).and_then(Value::as_f64).unwrap_or(0.0) as f32)),
+        Some(Value::Array(a)) => {
+            Some([0, 1, 2].map(|i| a.get(i).and_then(Value::as_f64).unwrap_or(0.0) as f32))
+        }
         _ => None,
     }
     .unwrap_or([0.5, 0.5, 0.5]);
     Solid {
         color,
-        width: p.get("width").and_then(Value::as_u64).map(limits::size).unwrap_or(cw).max(1),
-        height: p.get("height").and_then(Value::as_u64).map(limits::size).unwrap_or(ch).max(1),
+        width: p
+            .get("width")
+            .and_then(Value::as_u64)
+            .map(limits::size)
+            .unwrap_or(cw)
+            .max(1),
+        height: p
+            .get("height")
+            .and_then(Value::as_u64)
+            .map(limits::size)
+            .unwrap_or(ch)
+            .max(1),
         pixel_aspect: 1.0,
     }
 }
@@ -143,7 +210,9 @@ fn import_solid(s: &mut Session, p: &Value) -> Result<Value> {
     let so = solid_from(p, s);
     let name = str_p(p, "name").unwrap_or("Solid").to_string();
     let id = s.edit("Import Solid", None, |proj, st| {
-        let folder = proj.folder_named("Solids").unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
+        let folder = proj
+            .folder_named("Solids")
+            .unwrap_or_else(|| proj.add_item("Solids", Label::Yellow, None, ItemKind::Folder));
         let id = proj.add_item(&name, Label::Red, Some(folder), ItemKind::Solid(so));
         st.project_selection = vec![id];
         Ok(id)
@@ -160,14 +229,26 @@ fn import_solid(s: &mut Session, p: &Value) -> Result<Value> {
 /// duration, else 10 s).
 /// `addToRenderQueue` queues the new compositions. One undo step.
 fn new_comp_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
-    let items: Vec<ItemId> = s.state.project_selection.iter().copied().filter(|i| s.project.item(*i).is_some_and(|x| !x.is_folder())).collect();
+    let items: Vec<ItemId> = s
+        .state
+        .project_selection
+        .iter()
+        .copied()
+        .filter(|i| s.project.item(*i).is_some_and(|x| !x.is_folder()))
+        .collect();
     if items.is_empty() {
-        return Err(bad("file.newCompFromSelection", "select footage in the Project panel"));
+        return Err(bad(
+            "file.newCompFromSelection",
+            "select footage in the Project panel",
+        ));
     }
     let single = b_p(p, "single").unwrap_or(false) && items.len() > 1;
     let from = p.get("dimensionsFrom").and_then(Value::as_u64).unwrap_or(0) as usize;
     if single && from >= items.len() {
-        return Err(bad("file.newCompFromSelection", format!("`dimensionsFrom` must be below {}", items.len())));
+        return Err(bad(
+            "file.newCompFromSelection",
+            format!("`dimensionsFrom` must be below {}", items.len()),
+        ));
     }
     let still = f_p(p, "duration")
         .or((s.prefs.import.still_footage == "seconds").then_some(s.prefs.import.still_seconds))
@@ -183,12 +264,24 @@ fn new_comp_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
     });
     let queue = b_p(p, "addToRenderQueue").unwrap_or(false);
     let proj = s.project.clone();
-    let duration = |i: ItemId| proj.item(i).and_then(|it| it.duration()).filter(|d| *d > Tick::ZERO).unwrap_or(Tick::from_seconds_f64(still));
-    let groups: Vec<Vec<ItemId>> = if single { vec![items.clone()] } else { items.iter().map(|i| vec![*i]).collect() };
+    let duration = |i: ItemId| {
+        proj.item(i)
+            .and_then(|it| it.duration())
+            .filter(|d| *d > Tick::ZERO)
+            .unwrap_or(Tick::from_seconds_f64(still))
+    };
+    let groups: Vec<Vec<ItemId>> = if single {
+        vec![items.clone()]
+    } else {
+        items.iter().map(|i| vec![*i]).collect()
+    };
     super::app_more::grouped(s, "New Comp from Selection", |s| {
         let mut made = vec![];
         for g in groups {
-            let lead = g.get(if single { from } else { 0 }).and_then(|i| proj.item(*i)).ok_or(EngineError::NoComp)?;
+            let lead = g
+                .get(if single { from } else { 0 })
+                .and_then(|i| proj.item(*i))
+                .ok_or(EngineError::NoComp)?;
             let (w, h) = lead.dimensions().unwrap_or((1920, 1080));
             let rate = lead.frame_rate().unwrap_or(FrameRate::FPS_29_97);
             let pixel_aspect = match &lead.kind {
@@ -197,15 +290,35 @@ fn new_comp_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
                 ItemKind::Comp(c) => c.pixel_aspect,
                 ItemKind::Folder => 1.0,
             };
-            let overlap =
-                sequence.as_ref().filter(|q| q["overlap"] == true).map_or(Tick::ZERO, |q| Tick::from_seconds_f64(q["duration"].as_f64().unwrap_or(1.0)));
+            let overlap = sequence
+                .as_ref()
+                .filter(|q| q["overlap"] == true)
+                .map_or(Tick::ZERO, |q| {
+                    Tick::from_seconds_f64(q["duration"].as_f64().unwrap_or(1.0))
+                });
             let dur = match &sequence {
-                Some(_) if g.len() > 1 => g.iter().map(|i| duration(*i)).fold(Tick::ZERO, |a, d| a + d) - Tick(overlap.0.saturating_mul(g.len() as i64 - 1)),
-                _ => g.iter().map(|i| duration(*i)).max().unwrap_or(Tick::from_seconds_f64(still)),
+                Some(_) if g.len() > 1 => {
+                    g.iter()
+                        .map(|i| duration(*i))
+                        .fold(Tick::ZERO, |a, d| a + d)
+                        - Tick(overlap.0.saturating_mul(g.len() as i64 - 1))
+                }
+                _ => g
+                    .iter()
+                    .map(|i| duration(*i))
+                    .max()
+                    .unwrap_or(Tick::from_seconds_f64(still)),
             }
             .max(rate.frame_duration());
-            let name = lead.name.rsplit_once('.').map(|(a, _)| a.to_string()).unwrap_or(lead.name.clone());
-            let c = Comp { pixel_aspect, ..Comp::new(w.max(1), h.max(1), rate, dur) };
+            let name = lead
+                .name
+                .rsplit_once('.')
+                .map(|(a, _)| a.to_string())
+                .unwrap_or(lead.name.clone());
+            let c = Comp {
+                pixel_aspect,
+                ..Comp::new(w.max(1), h.max(1), rate, dur)
+            };
             let cid = s.edit("New Comp from Selection", None, |proj, st| {
                 let cid = proj.add_item(&name, Label::Sandstone, None, ItemKind::Comp(c.into()));
                 st.project_selection = vec![cid];
@@ -215,7 +328,13 @@ fn new_comp_from_selection(s: &mut Session, p: &Value) -> Result<Value> {
             // Added bottom first, so the first selected ends up on top.
             let mut layers = vec![];
             for item in g.iter().rev() {
-                layers.push(s.execute("layer.addItem", json!({"comp": cid.0, "item": item.0, "duration": still}))?["layer"].clone());
+                layers.push(
+                    s.execute(
+                        "layer.addItem",
+                        json!({"comp": cid.0, "item": item.0, "duration": still}),
+                    )?["layer"]
+                        .clone(),
+                );
             }
             layers.reverse();
             if let Some(q) = &sequence
@@ -257,14 +376,18 @@ fn used_items(proj: &Project, roots: &[ItemId]) -> BTreeSet<ItemId> {
 }
 
 fn referenced_sources(proj: &Project) -> BTreeSet<ItemId> {
-    proj.comps().flat_map(|(_, c)| c.layers.iter().filter_map(|l| l.source.item())).collect()
+    proj.comps()
+        .flat_map(|(_, c)| c.layers.iter().filter_map(|l| l.source.item()))
+        .collect()
 }
 
 fn remove_unused(s: &mut Session, _: &Value) -> Result<Value> {
     let used = referenced_sources(&s.project);
     let n = s.edit("Remove Unused Footage", None, |proj, _| {
         let before = proj.items.len();
-        proj.items.retain(|id, it| !matches!(it.kind, ItemKind::Footage(_) | ItemKind::Solid(_)) || used.contains(id));
+        proj.items.retain(|id, it| {
+            !matches!(it.kind, ItemKind::Footage(_) | ItemKind::Solid(_)) || used.contains(id)
+        });
         Ok(before - proj.items.len())
     })?;
     s.sanitize_state();
@@ -314,7 +437,13 @@ fn consolidate(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn reduce(s: &mut Session, _: &Value) -> Result<Value> {
-    let roots: Vec<ItemId> = s.state.project_selection.iter().copied().filter(|i| s.project.comp(*i).is_some()).collect();
+    let roots: Vec<ItemId> = s
+        .state
+        .project_selection
+        .iter()
+        .copied()
+        .filter(|i| s.project.comp(*i).is_some())
+        .collect();
     let keep = used_items(&s.project, &roots);
     let n = s.edit("Reduce Project", None, |proj, _| {
         let before = proj.items.len();
@@ -330,7 +459,13 @@ fn find_missing(s: &mut Session, p: &Value) -> Result<Value> {
     let what = str_p(p, "what").unwrap_or("footage");
     match what {
         "footage" => {
-            let ids: Vec<ItemId> = s.project.items.values().filter(|i| matches!(&i.kind, ItemKind::Footage(f) if f.missing)).map(|i| i.id).collect();
+            let ids: Vec<ItemId> = s
+                .project
+                .items
+                .values()
+                .filter(|i| matches!(&i.kind, ItemKind::Footage(f) if f.missing))
+                .map(|i| i.id)
+                .collect();
             s.state.project_selection = ids.clone();
             s.toast(format!("{} missing footage item(s)", ids.len()));
             Ok(json!({"items": ids.iter().map(|i| i.0).collect::<Vec<_>>()}))
@@ -367,35 +502,55 @@ fn find_missing(s: &mut Session, p: &Value) -> Result<Value> {
             s.toast(format!("{} layer(s) with missing fonts", found.len()));
             Ok(json!({"fonts": found}))
         }
-        w => Err(bad("file.findMissing", format!("what: footage|effects|fonts, not `{w}`"))),
+        w => Err(bad(
+            "file.findMissing",
+            format!("what: footage|effects|fonts, not `{w}`"),
+        )),
     }
 }
 
 fn collect_files(s: &mut Session, p: &Value) -> Result<Value> {
-    let folder = str_p(p, "folder").ok_or_else(|| bad("file.collectFiles", "missing `folder`"))?.trim_end_matches('/').to_string();
+    let folder = str_p(p, "folder")
+        .ok_or_else(|| bad("file.collectFiles", "missing `folder`"))?
+        .trim_end_matches('/')
+        .to_string();
     // Collect Files makes its folder (and the footage folder inside it).
     #[cfg(not(target_arch = "wasm32"))]
-    std::fs::create_dir_all(format!("{folder}/(Footage)")).map_err(|e| EngineError::Other(format!("cannot create {folder}: {e}")))?;
+    std::fs::create_dir_all(format!("{folder}/(Footage)"))
+        .map_err(|e| EngineError::Other(format!("cannot create {folder}: {e}")))?;
     let mut proj = (*s.project).clone();
     let mut copied = 0;
     let mut errors = vec![];
     let mut used_names = BTreeSet::new();
     for it in proj.items.values_mut() {
-        let ItemKind::Footage(f) = &mut it.kind else { continue };
+        let ItemKind::Footage(f) = &mut it.kind else {
+            continue;
+        };
         if f.path.is_empty() {
             continue;
         }
-        let files: Vec<String> = if f.sequence.is_empty() { vec![f.path.clone()] } else { f.sequence.clone() };
+        let files: Vec<String> = if f.sequence.is_empty() {
+            vec![f.path.clone()]
+        } else {
+            f.sequence.clone()
+        };
         let mut new_paths = vec![];
         for src in &files {
-            let mut name = std::path::Path::new(src).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "footage".into());
+            let mut name = std::path::Path::new(src)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "footage".into());
             let mut k = 2;
             while !used_names.insert(name.clone()) {
                 name = format!("{k}_{name}");
                 k += 1;
             }
             let dst = format!("{folder}/(Footage)/{name}");
-            match s.services.read_file(src).and_then(|bytes| s.services.write_file(&dst, &bytes)) {
+            match s
+                .services
+                .read_file(src)
+                .and_then(|bytes| s.services.write_file(&dst, &bytes))
+            {
                 Ok(()) => copied += 1,
                 Err(e) => errors.push(format!("{src}: {e}")),
             }
@@ -415,7 +570,9 @@ fn collect_files(s: &mut Session, p: &Value) -> Result<Value> {
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "Untitled Project".into());
     let out = format!("{folder}/{stem}.ecproj");
-    s.services.write_file(&out, proj.to_json().as_bytes()).map_err(|e| EngineError::Other(format!("cannot write {out}: {e}")))?;
+    s.services
+        .write_file(&out, proj.to_json().as_bytes())
+        .map_err(|e| EngineError::Other(format!("cannot write {out}: {e}")))?;
     s.toast(format!("Collected {copied} file(s) into {folder}"));
     Ok(json!({"project": out, "copied": copied, "errors": errors}))
 }
@@ -442,16 +599,25 @@ fn run_script(s: &mut Session, p: &Value) -> Result<Value> {
         if is_jsxbin(path) {
             return Err(bad("file.runScript", JSXBIN));
         }
-        let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+        let bytes = s
+            .services
+            .read_file(path)
+            .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
         let code = String::from_utf8_lossy(&bytes).to_string();
-        let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.to_string());
         let out = run_js(s, &code, path, false)?;
         return report_js(s, &name, out);
     }
     let steps: Vec<Value> = match (p.get("steps"), str_p(p, "path")) {
         (Some(Value::Array(a)), _) => a.clone(),
         (_, Some(path)) => {
-            let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
+            let bytes = s
+                .services
+                .read_file(path)
+                .map_err(|e| EngineError::Other(format!("cannot read {path}: {e}")))?;
             let text = String::from_utf8_lossy(&bytes).to_string();
             match serde_json::from_str::<Value>(&text) {
                 Ok(Value::Array(a)) => a,
@@ -459,7 +625,10 @@ fn run_script(s: &mut Session, p: &Value) -> Result<Value> {
                     .lines()
                     .map(str::trim)
                     .filter(|l| !l.is_empty() && !l.starts_with("//") && !l.starts_with('#'))
-                    .map(|l| serde_json::from_str(l).map_err(|e| bad("file.runScript", format!("{e}: {l}"))))
+                    .map(|l| {
+                        serde_json::from_str(l)
+                            .map_err(|e| bad("file.runScript", format!("{e}: {l}")))
+                    })
                     .collect::<Result<Vec<Value>>>()?,
             }
         }
@@ -469,18 +638,41 @@ fn run_script(s: &mut Session, p: &Value) -> Result<Value> {
     let from_file = p.get("steps").is_none();
     let mut results = vec![];
     for (i, step) in steps.iter().enumerate() {
-        let (id, params) = match (step.get("command").or(step.get("id")).and_then(Value::as_str), step.get("method").and_then(Value::as_str)) {
-            (Some(id), _) => (id.to_string(), step.get("params").cloned().unwrap_or(json!({}))),
+        let (id, params) = match (
+            step.get("command")
+                .or(step.get("id"))
+                .and_then(Value::as_str),
+            step.get("method").and_then(Value::as_str),
+        ) {
+            (Some(id), _) => (
+                id.to_string(),
+                step.get("params").cloned().unwrap_or(json!({})),
+            ),
             (None, Some("engine.execute")) => {
                 let pp = step.get("params").cloned().unwrap_or(json!({}));
-                (pp.get("id").and_then(Value::as_str).unwrap_or_default().to_string(), pp.get("params").cloned().unwrap_or(json!({})))
+                (
+                    pp.get("id")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default()
+                        .to_string(),
+                    pp.get("params").cloned().unwrap_or(json!({})),
+                )
             }
-            _ => return Err(bad("file.runScript", format!("step {}: needs `command`", i + 1))),
+            _ => {
+                return Err(bad(
+                    "file.runScript",
+                    format!("step {}: needs `command`", i + 1),
+                ));
+            }
         };
         if id == "file.runScript" || id == "script.run" {
             return Err(bad("file.runScript", "scripts can't run scripts"));
         }
-        let r = if from_file { s.execute_for_script(&id, params) } else { s.execute(&id, params) };
+        let r = if from_file {
+            s.execute_for_script(&id, params)
+        } else {
+            s.execute(&id, params)
+        };
         let r = r.map_err(|e| EngineError::Other(format!("step {} ({id}): {e}", i + 1)))?;
         results.push(r);
     }
@@ -504,9 +696,19 @@ fn is_jsxbin(name: &str) -> bool {
 /// A script error becomes a toast and a command error.
 fn report_js(s: &mut Session, name: &str, out: Value) -> Result<Value> {
     if let Some(e) = out.get("error").filter(|e| !e.is_null()) {
-        let line = e.get("line").and_then(Value::as_u64).map(|l| format!(" (line {l})")).unwrap_or_default();
-        let msg = e.get("message").and_then(Value::as_str).unwrap_or("script error");
-        s.events.push(crate::Event::Toast { message: format!("{name}{line}: {msg}"), error: true });
+        let line = e
+            .get("line")
+            .and_then(Value::as_u64)
+            .map(|l| format!(" (line {l})"))
+            .unwrap_or_default();
+        let msg = e
+            .get("message")
+            .and_then(Value::as_str)
+            .unwrap_or("script error");
+        s.events.push(crate::Event::Toast {
+            message: format!("{name}{line}: {msg}"),
+            error: true,
+        });
         return Err(EngineError::Other(format!("{name}{line}: {msg}")));
     }
     Ok(out)
@@ -520,19 +722,35 @@ pub(crate) fn run_js_named(s: &mut Session, code: &str, name: &str) -> Result<Va
 
 /// Run JavaScript through the session's scripting engine.
 fn run_js(s: &mut Session, code: &str, name: &str, console: bool) -> Result<Value> {
-    let runner = s.script.ok_or_else(|| EngineError::Other("JavaScript scripting is not available in this build".into()))?;
-    Ok(runner(s, &crate::ScriptRequest { code, name, console }))
+    let runner = s.script.ok_or_else(|| {
+        EngineError::Other("JavaScript scripting is not available in this build".into())
+    })?;
+    Ok(runner(
+        s,
+        &crate::ScriptRequest {
+            code,
+            name,
+            console,
+        },
+    ))
 }
 
 /// `script.run`: run JavaScript (the After Effects scripting object model: `app.project`, comps,
 /// layers, properties…) and report `{ok, result, output, error}`; script errors are reported in
 /// `error` (with line and column), not as a command failure.
 fn script_run(s: &mut Session, p: &Value) -> Result<Value> {
-    let code = str_p(p, "code").ok_or_else(|| bad("script.run", "missing `code` (JavaScript)"))?.to_string();
+    let code = str_p(p, "code")
+        .ok_or_else(|| bad("script.run", "missing `code` (JavaScript)"))?
+        .to_string();
     let name = str_p(p, "name").unwrap_or("script").to_string();
     // A compiled script (named `.jsxbin`, or its text starts with the format's header) would only
     // fail to parse at 1:1.
-    if is_jsxbin(&name) || code.trim_start_matches('\u{feff}').trim_start().starts_with("@JSXBIN@") {
+    if is_jsxbin(&name)
+        || code
+            .trim_start_matches('\u{feff}')
+            .trim_start()
+            .starts_with("@JSXBIN@")
+    {
         return Err(bad("script.run", JSXBIN));
     }
     run_js(s, &code, &name, super::b_p(p, "console").unwrap_or(false))
@@ -588,13 +806,18 @@ impl StartTimecode {
     }
 
     fn read(t: &str, rate: FrameRate) -> Option<i64> {
-        effectcraft_time::parse_timecode(t, rate, false, 0).ok().filter(|n| (0..=Self::MAX).contains(n))
+        effectcraft_time::parse_timecode(t, rate, false, 0)
+            .ok()
+            .filter(|n| (0..=Self::MAX).contains(n))
     }
 }
 
 impl Interpretation {
     pub(crate) fn parse(p: &Value, cmd: &str) -> Result<Interpretation> {
-        let mut it = Interpretation { rate: f_p(p, "frameRate").map(FrameRate::from_f64), ..Default::default() };
+        let mut it = Interpretation {
+            rate: f_p(p, "frameRate").map(FrameRate::from_f64),
+            ..Default::default()
+        };
         if str_p(p, "frameRate") == Some("file") {
             it.native = true;
         }
@@ -603,7 +826,12 @@ impl Interpretation {
             Some("premultiplied") => it.alpha = Some(AlphaMode::Premultiplied),
             Some("ignore") => it.alpha = Some(AlphaMode::Ignore),
             Some("guess") => it.guess = true,
-            Some(a) => return Err(bad(cmd, format!("alpha: straight|premultiplied|ignore|guess, not `{a}`"))),
+            Some(a) => {
+                return Err(bad(
+                    cmd,
+                    format!("alpha: straight|premultiplied|ignore|guess, not `{a}`"),
+                ));
+            }
             None => {}
         }
         it.guess |= super::b_p(p, "guessAlpha").unwrap_or(false);
@@ -621,10 +849,15 @@ impl Interpretation {
         };
         it.invert_alpha = super::b_p(p, "invertAlpha");
         // The Interpret Footage form sends numbers as floats (3.0), which `as_u64` rejects.
-        it.loops = f_p(p, "loop").filter(|x| x.is_finite()).map(|v| v.round().clamp(1.0, 9999.0) as u32);
+        it.loops = f_p(p, "loop")
+            .filter(|x| x.is_finite())
+            .map(|v| v.round().clamp(1.0, 9999.0) as u32);
         it.par = f_p(p, "pixelAspect").filter(|x| *x > 0.0);
         it.fields = match str_p(p, "fields") {
-            Some(f) => Some(effectcraft_project::FieldOrder::parse(f).ok_or_else(|| bad(cmd, "fields: off|upper|lower"))?),
+            Some(f) => Some(
+                effectcraft_project::FieldOrder::parse(f)
+                    .ok_or_else(|| bad(cmd, "fields: off|upper|lower"))?,
+            ),
             None => None,
         };
         // Color ▸ Assign Profile: a colour space id, or "auto"/"none" for the file's own (sRGB).
@@ -632,7 +865,12 @@ impl Interpretation {
             Some("auto" | "none" | "") => Some(None),
             Some(c) => match effectcraft_project::ColorSpace::parse(c) {
                 Some(cs) => Some(Some(cs)),
-                None => return Err(bad(cmd, format!("colorProfile: srgb|rec709|rec2020|p3|auto, not `{c}`"))),
+                None => {
+                    return Err(bad(
+                        cmd,
+                        format!("colorProfile: srgb|rec709|rec2020|p3|auto, not `{c}`"),
+                    ));
+                }
             },
             None => None,
         };
@@ -640,7 +878,12 @@ impl Interpretation {
         it.preserve_rgb = super::b_p(p, "preserveRgb");
         // Start Timecode: Use Source File Timecode (`overrideStart: false`), or Override Start
         // (timecode or a frame number).
-        let start_err = || bad(cmd, "startTimecode: timecode (0:00:41:20) or a frame number, 0 to 1e9");
+        let start_err = || {
+            bad(
+                cmd,
+                "startTimecode: timecode (0:00:41:20) or a frame number, 0 to 1e9",
+            )
+        };
         it.start = match (super::b_p(p, "overrideStart"), p.get("startTimecode")) {
             (Some(false), _) => Some(StartTimecode::Source),
             (_, None | Some(Value::Null)) => None,
@@ -650,7 +893,10 @@ impl Interpretation {
                 Some(StartTimecode::Timecode(t.clone()))
             }
             (_, Some(v)) => Some(StartTimecode::Frame(
-                v.as_f64().filter(|x| x.is_finite() && (0.0..=StartTimecode::MAX as f64).contains(x)).map(|x| x.round() as i64).ok_or_else(start_err)?,
+                v.as_f64()
+                    .filter(|x| x.is_finite() && (0.0..=StartTimecode::MAX as f64).contains(x))
+                    .map(|x| x.round() as i64)
+                    .ok_or_else(start_err)?,
             )),
         };
         Ok(it)
@@ -667,7 +913,11 @@ impl Interpretation {
         // Conforming keeps the frames and changes how long they last (12 frames at 30 fps are
         // 0.4 s; conformed to 12 fps, 1 s). Stills have no frame rate of their own.
         let (old, new) = (before.as_f64(), f.frame_rate.as_f64());
-        if matches!(f.kind, FootageKind::Video | FootageKind::Sequence) && old > 0.0 && new > 0.0 && (old - new).abs() > 1e-9 {
+        if matches!(f.kind, FootageKind::Video | FootageKind::Sequence)
+            && old > 0.0
+            && new > 0.0
+            && (old - new).abs() > 1e-9
+        {
             let frames = (f.duration.seconds() * old).round() as i64;
             f.duration = f.frame_rate.tick_of(frames);
         }
@@ -726,7 +976,11 @@ impl Interpretation {
 /// whether the file is premultiplied (every partly transparent pixel's colour within its alpha
 /// of a black or white matte) or straight. `None` when the frame has no partial alpha.
 pub(crate) fn guess_alpha(s: &Session, item: ItemId, f: &Footage) -> Option<(AlphaMode, [f32; 3])> {
-    let probe = Footage { alpha: AlphaMode::Straight, invert_alpha: false, ..f.clone() };
+    let probe = Footage {
+        alpha: AlphaMode::Straight,
+        invert_alpha: false,
+        ..f.clone()
+    };
     let img = s.footage.frame(item, &probe, Tick::ZERO)?;
     let (mut partial, mut black, mut white) = (0usize, true, true);
     let eps = 1.5 / 255.0;
@@ -770,7 +1024,9 @@ fn interpret(s: &mut Session, p: &Value) -> Result<Value> {
         .collect();
     s.edit("Interpret Footage", None, |proj, _| {
         for (i, g) in items.iter().zip(&guesses) {
-            let Some(ItemKind::Footage(f)) = proj.item_mut(*i).map(|x| &mut x.kind) else { continue };
+            let Some(ItemKind::Footage(f)) = proj.item_mut(*i).map(|x| &mut x.kind) else {
+                continue;
+            };
             let old = f.duration;
             it.apply(f, *g);
             let new = f.duration;
@@ -780,8 +1036,15 @@ fn interpret(s: &mut Session, p: &Value) -> Result<Value> {
             // Layers that ran to the footage's end still do (After Effects re-times them too).
             let ids: Vec<ItemId> = proj.comps().map(|(id, _)| *id).collect();
             for cid in ids {
-                for l in proj.comp_mut(cid).into_iter().flat_map(|c| c.layers.iter_mut()) {
-                    if l.source.item() == Some(*i) && (l.stretch - 100.0).abs() < 1e-9 && l.out_point == l.start_time + old {
+                for l in proj
+                    .comp_mut(cid)
+                    .into_iter()
+                    .flat_map(|c| c.layers.iter_mut())
+                {
+                    if l.source.item() == Some(*i)
+                        && (l.stretch - 100.0).abs() < 1e-9
+                        && l.out_point == l.start_time + old
+                    {
                         l.out_point = l.start_time + new;
                     }
                 }
@@ -805,7 +1068,9 @@ fn interpret(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn remember_interpretation(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = *items_p(s, p).first().ok_or_else(|| bad("file.rememberInterpretation", "select footage"))?;
+    let item = *items_p(s, p)
+        .first()
+        .ok_or_else(|| bad("file.rememberInterpretation", "select footage"))?;
     if let Some(ItemKind::Footage(f)) = s.project.item(item).map(|x| &x.kind) {
         s.state.interpretation = Some(f.clone());
     }
@@ -813,7 +1078,11 @@ fn remember_interpretation(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn apply_interpretation(s: &mut Session, p: &Value) -> Result<Value> {
-    let src = s.state.interpretation.clone().ok_or_else(|| bad("file.applyInterpretation", "no interpretation remembered"))?;
+    let src = s
+        .state
+        .interpretation
+        .clone()
+        .ok_or_else(|| bad("file.applyInterpretation", "no interpretation remembered"))?;
     let items = items_p(s, p);
     s.edit("Apply Interpretation", None, |proj, _| {
         for i in &items {
@@ -841,16 +1110,26 @@ fn apply_interpretation(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn replace_footage(s: &mut Session, p: &Value) -> Result<Value> {
-    let path = str_p(p, "path").ok_or_else(|| bad("file.replaceFootage", "missing `path`"))?.to_string();
-    let item = *items_p(s, p).first().ok_or_else(|| bad("file.replaceFootage", "select footage"))?;
-    let importer = s.importer.clone().ok_or_else(|| EngineError::Other("media import is not available in this build".into()))?;
+    let path = str_p(p, "path")
+        .ok_or_else(|| bad("file.replaceFootage", "missing `path`"))?
+        .to_string();
+    let item = *items_p(s, p)
+        .first()
+        .ok_or_else(|| bad("file.replaceFootage", "select footage"))?;
+    let importer = s
+        .importer
+        .clone()
+        .ok_or_else(|| EngineError::Other("media import is not available in this build".into()))?;
     // A numbered still brings its image sequence, as on import (`sequence: false` for one frame).
     let opts = SequenceOptions::from_params(p);
     let src = crate::sequence::source_of(s.services.as_ref(), &path, opts);
-    let f = crate::sequence::probe(importer.as_ref(), &src, s.sequence_rate()).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let f = crate::sequence::probe(importer.as_ref(), &src, s.sequence_rate())
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     let name = src.name();
     s.edit("Replace Footage", None, |proj, _| {
-        let it = proj.item_mut(item).ok_or_else(|| bad("file.replaceFootage", "no such item"))?;
+        let it = proj
+            .item_mut(item)
+            .ok_or_else(|| bad("file.replaceFootage", "no such item"))?;
         it.name = name;
         it.kind = ItemKind::Footage(f);
         retarget_layers(proj, item, |_| LayerSource::Footage { item });
@@ -874,9 +1153,13 @@ fn retarget_layers(proj: &mut Project, item: ItemId, src: impl Fn(&LayerSource) 
 }
 
 fn replace_with_placeholder(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = *items_p(s, p).first().ok_or_else(|| bad("file.replaceWithPlaceholder", "select footage"))?;
+    let item = *items_p(s, p)
+        .first()
+        .ok_or_else(|| bad("file.replaceWithPlaceholder", "select footage"))?;
     let base = match s.project.item(item).map(|x| &x.kind) {
-        Some(ItemKind::Footage(f)) => json!({"width": f.width, "height": f.height, "frameRate": f.frame_rate.as_f64(), "duration": f.duration.seconds()}),
+        Some(ItemKind::Footage(f)) => {
+            json!({"width": f.width, "height": f.height, "frameRate": f.frame_rate.as_f64(), "duration": f.duration.seconds()})
+        }
         _ => json!({}),
     };
     let mut merged = base;
@@ -887,7 +1170,9 @@ fn replace_with_placeholder(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let f = placeholder_footage(&merged);
     s.edit("Replace Footage", None, |proj, _| {
-        let it = proj.item_mut(item).ok_or_else(|| bad("file.replaceWithPlaceholder", "no such item"))?;
+        let it = proj
+            .item_mut(item)
+            .ok_or_else(|| bad("file.replaceWithPlaceholder", "no such item"))?;
         it.kind = ItemKind::Footage(f);
         retarget_layers(proj, item, |_| LayerSource::Footage { item });
         Ok(())
@@ -896,7 +1181,9 @@ fn replace_with_placeholder(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn replace_with_solid(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = *items_p(s, p).first().ok_or_else(|| bad("file.replaceWithSolid", "select footage"))?;
+    let item = *items_p(s, p)
+        .first()
+        .ok_or_else(|| bad("file.replaceWithSolid", "select footage"))?;
     let mut so = solid_from(p, s);
     if let Some((w, h)) = s.project.item(item).and_then(|x| x.dimensions())
         && p.get("width").is_none()
@@ -905,7 +1192,9 @@ fn replace_with_solid(s: &mut Session, p: &Value) -> Result<Value> {
         so.height = h.max(1);
     }
     s.edit("Replace Footage", None, |proj, _| {
-        let it = proj.item_mut(item).ok_or_else(|| bad("file.replaceWithSolid", "no such item"))?;
+        let it = proj
+            .item_mut(item)
+            .ok_or_else(|| bad("file.replaceWithSolid", "no such item"))?;
         it.kind = ItemKind::Solid(so);
         retarget_layers(proj, item, |_| LayerSource::Solid { item });
         Ok(())
@@ -920,7 +1209,9 @@ fn reload(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn reveal_in_finder(s: &mut Session, p: &Value) -> Result<Value> {
-    let item = *items_p(s, p).first().ok_or_else(|| bad("file.revealInFinder", "select footage"))?;
+    let item = *items_p(s, p)
+        .first()
+        .ok_or_else(|| bad("file.revealInFinder", "select footage"))?;
     let path = match s.project.item(item).map(|x| &x.kind) {
         Some(ItemKind::Footage(f)) if !f.path.is_empty() => f.path.clone(),
         _ => return Err(bad("file.revealInFinder", "the item is not a file")),
@@ -932,12 +1223,51 @@ fn reveal_in_finder(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("project.newFolder", "New Folder", ["File", "New"], Some("Cmd+Alt+Shift+N"), "{name?, parent?}", always, new_folder),
-        cmd!("file.close", "Close", ["File"], Some("Cmd+W"), "{comp?}", has_comp, close),
-        cmd!("file.closeProject", "Close Project", ["File"], None, "{}", always, close_project),
-        cmd!("file.saveCopy", "Save a Copy...", ["File", "Save As"], None, "{path}", always, save_copy),
-        cmd!("file.importMultiple", "Multiple Files...", ["File", "Import"], Some("Cmd+Alt+I"), "{paths: [string]}", always, |s, p| s
-            .execute("file.import", p.clone())),
+        cmd!(
+            "project.newFolder",
+            "New Folder",
+            ["File", "New"],
+            Some("Cmd+Alt+Shift+N"),
+            "{name?, parent?}",
+            always,
+            new_folder
+        ),
+        cmd!(
+            "file.close",
+            "Close",
+            ["File"],
+            Some("Cmd+W"),
+            "{comp?}",
+            has_comp,
+            close
+        ),
+        cmd!(
+            "file.closeProject",
+            "Close Project",
+            ["File"],
+            None,
+            "{}",
+            always,
+            close_project
+        ),
+        cmd!(
+            "file.saveCopy",
+            "Save a Copy...",
+            ["File", "Save As"],
+            None,
+            "{path}",
+            always,
+            save_copy
+        ),
+        cmd!(
+            "file.importMultiple",
+            "Multiple Files...",
+            ["File", "Import"],
+            Some("Cmd+Alt+I"),
+            "{paths: [string]}",
+            always,
+            |s, p| s.execute("file.import", p.clone())
+        ),
         cmd!(
             "file.importPlaceholder",
             "Placeholder...",
@@ -947,7 +1277,15 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             import_placeholder
         ),
-        cmd!("file.importSolid", "Solid...", ["File", "Import"], None, "{name?, color?, width?, height?}", always, import_solid),
+        cmd!(
+            "file.importSolid",
+            "Solid...",
+            ["File", "Import"],
+            None,
+            "{name?, color?, width?, height?}",
+            always,
+            import_solid
+        ),
         cmd!(
             "file.newCompFromSelection",
             "New Comp from Selection...",
@@ -957,9 +1295,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_project_selection,
             new_comp_from_selection
         ),
-        cmd!("file.collectFiles", "Collect Files...", ["File", "Dependencies"], None, "{folder}", has_items, collect_files),
-        cmd!("file.consolidateFootage", "Consolidate All Footage", ["File", "Dependencies"], None, "{}", has_items, consolidate),
-        cmd!("file.removeUnusedFootage", "Remove Unused Footage", ["File", "Dependencies"], None, "{}", has_items, remove_unused),
+        cmd!(
+            "file.collectFiles",
+            "Collect Files...",
+            ["File", "Dependencies"],
+            None,
+            "{folder}",
+            has_items,
+            collect_files
+        ),
+        cmd!(
+            "file.consolidateFootage",
+            "Consolidate All Footage",
+            ["File", "Dependencies"],
+            None,
+            "{}",
+            has_items,
+            consolidate
+        ),
+        cmd!(
+            "file.removeUnusedFootage",
+            "Remove Unused Footage",
+            ["File", "Dependencies"],
+            None,
+            "{}",
+            has_items,
+            remove_unused
+        ),
         cmd!(
             "file.reduceProject",
             "Reduce Project",
@@ -969,7 +1331,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_comp_selection,
             reduce
         ),
-        cmd!("file.findMissing", "Find Missing", [], None, "{what: footage|effects|fonts}", has_items, find_missing),
+        cmd!(
+            "file.findMissing",
+            "Find Missing",
+            [],
+            None,
+            "{what: footage|effects|fonts}",
+            has_items,
+            find_missing
+        ),
         cmd!(
             "footage.check",
             "Check Footage",
@@ -1060,7 +1430,23 @@ pub fn specs() -> Vec<CommandSpec> {
             has_footage_selection,
             replace_with_solid
         ),
-        cmd!("file.reloadFootage", "Reload Footage", ["File"], Some("Cmd+Alt+L"), "{items?}", has_footage_selection, reload),
-        cmd!("file.revealInFinder", "Reveal in Finder", ["File"], None, "{item?}", has_footage_selection, reveal_in_finder),
+        cmd!(
+            "file.reloadFootage",
+            "Reload Footage",
+            ["File"],
+            Some("Cmd+Alt+L"),
+            "{items?}",
+            has_footage_selection,
+            reload
+        ),
+        cmd!(
+            "file.revealInFinder",
+            "Reveal in Finder",
+            ["File"],
+            None,
+            "{item?}",
+            has_footage_selection,
+            reveal_in_finder
+        ),
     ]
 }

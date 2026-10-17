@@ -16,9 +16,17 @@ impl HomeDb {
     /// # Errors
     ///
     /// [`StoreError::Invalid`] for an empty scope or key, or SQLite failures.
-    pub fn set_sync(&self, scope: &str, key: &str, value: &str, blake3: Option<&str>) -> Result<()> {
+    pub fn set_sync(
+        &self,
+        scope: &str,
+        key: &str,
+        value: &str,
+        blake3: Option<&str>,
+    ) -> Result<()> {
         if scope.is_empty() || key.is_empty() {
-            return Err(StoreError::Invalid("sync scope and key must not be empty".into()));
+            return Err(StoreError::Invalid(
+                "sync scope and key must not be empty".into(),
+            ));
         }
         self.conn.execute(
             "INSERT INTO sync_state (scope, key, value, blake3, updated_at_ms)
@@ -52,8 +60,11 @@ impl HomeDb {
     ///
     /// SQLite failures.
     pub fn count_sync(&self, scope: &str) -> Result<u64> {
-        let count: i64 =
-            self.conn.query_row("SELECT count(*) FROM sync_state WHERE scope = ?1", [scope], |r| r.get(0))?;
+        let count: i64 = self.conn.query_row(
+            "SELECT count(*) FROM sync_state WHERE scope = ?1",
+            [scope],
+            |r| r.get(0),
+        )?;
         Ok(u64::try_from(count).unwrap_or(0))
     }
 }
@@ -66,9 +77,13 @@ mod tests {
     fn values_round_trip_and_are_replaced() {
         let db = HomeDb::open_in_memory().unwrap();
         assert_eq!(db.get_sync("sessions", "codex/a").unwrap(), None);
-        db.set_sync("sessions", "codex/a", "123", Some("h")).unwrap();
+        db.set_sync("sessions", "codex/a", "123", Some("h"))
+            .unwrap();
         db.set_sync("sessions", "codex/a", "456", None).unwrap();
-        assert_eq!(db.get_sync("sessions", "codex/a").unwrap(), Some(("456".into(), None)));
+        assert_eq!(
+            db.get_sync("sessions", "codex/a").unwrap(),
+            Some(("456".into(), None))
+        );
         assert_eq!(db.count_sync("sessions").unwrap(), 1);
         assert!(db.set_sync("", "k", "v", None).is_err());
     }

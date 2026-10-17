@@ -255,7 +255,11 @@ pub fn parse_soccer_suggest_config(root: &Value) -> SoccerSuggestConfig {
     }
     SoccerSuggestConfig {
         suggests: parse_list(root, "m_soccerSuggestInfoList", SuggestInfo::from_value),
-        cameras: parse_list(root, "m_soccerSuggestCameraInfoList", SuggestCameraInfo::from_value),
+        cameras: parse_list(
+            root,
+            "m_soccerSuggestCameraInfoList",
+            SuggestCameraInfo::from_value,
+        ),
         predict_mots,
         predict_phases: parse_slices(
             root,

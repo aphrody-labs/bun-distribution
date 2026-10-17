@@ -12,7 +12,13 @@ const MAX_BYTES: usize = 16 * 1024 * 1024;
 const MAX_MARKERS: usize = 100_000;
 
 fn label_name(s: &Session, color: Label) -> &str {
-    s.prefs.labels.colors.get(&crate::settings::label_id(color)).map(|c| c.name.trim()).filter(|n| !n.is_empty()).unwrap_or(color.name())
+    s.prefs
+        .labels
+        .colors
+        .get(&crate::settings::label_id(color))
+        .map(|c| c.name.trim())
+        .filter(|n| !n.is_empty())
+        .unwrap_or(color.name())
 }
 
 pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
@@ -23,7 +29,12 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
         .ok_or_else(|| bad(CMD, "need a non-empty `path` without NUL characters"))?;
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     seq.settings.validate().map_err(|e| bad(CMD, e))?;
-    let name = s.state.active_sequence.and_then(|id| s.project.item(id)).map(|i| i.name.as_str()).unwrap_or("Sequence");
+    let name = s
+        .state
+        .active_sequence
+        .and_then(|id| s.project.item(id))
+        .map(|i| i.name.as_str())
+        .unwrap_or("Sequence");
     if seq.markers.len() > MAX_MARKERS {
         return Err(bad(CMD, "too many markers (maximum 100000)"));
     }
@@ -38,20 +49,34 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
             .and_then(|n| n.checked_add(label_name(s, m.color).len()))
             .and_then(|n| n.checked_mul(2))
             .and_then(|n| n.checked_add(1024));
-        bound = row.and_then(|n| bound.checked_add(n)).filter(|n| *n <= MAX_BYTES).ok_or_else(|| bad(CMD, "marker report exceeds the 16 MiB limit"))?;
+        bound = row
+            .and_then(|n| bound.checked_add(n))
+            .filter(|n| *n <= MAX_BYTES)
+            .ok_or_else(|| bad(CMD, "marker report exceeds the 16 MiB limit"))?;
     }
     let rate = seq.settings.frame_rate;
     let mut markers: Vec<_> = seq.markers.iter().collect();
     markers.sort_by_key(|m| (m.start, m.id));
-    let mut csv =
-        String::from("Sequence,Marker ID,Name,Comment,Kind,Color,Start Timecode,End Timecode,Duration Frames,Start Ticks,Duration Ticks,Frame Rate\r\n");
+    let mut csv = String::from(
+        "Sequence,Marker ID,Name,Comment,Kind,Color,Start Timecode,End Timecode,Duration Frames,Start Ticks,Duration Ticks,Frame Rate\r\n",
+    );
     for m in markers {
         if m.start.0 < 0 || m.duration.0 < 0 {
-            return Err(bad(CMD, format!("marker {} has a negative start or duration", m.id.0)));
+            return Err(bad(
+                CMD,
+                format!("marker {} has a negative start or duration", m.id.0),
+            ));
         }
-        let end = m.start.0.checked_add(m.duration.0).ok_or_else(|| bad(CMD, format!("marker {} end overflows", m.id.0)))?;
+        let end = m
+            .start
+            .0
+            .checked_add(m.duration.0)
+            .ok_or_else(|| bad(CMD, format!("marker {} end overflows", m.id.0)))?;
         let tc = |t: Tick| -> Result<String> {
-            let frame = rate.frame_at(t).checked_add(seq.start_timecode).ok_or_else(|| bad(CMD, "sequence timecode overflows"))?;
+            let frame = rate
+                .frame_at(t)
+                .checked_add(seq.start_timecode)
+                .ok_or_else(|| bad(CMD, "sequence timecode overflows"))?;
             Ok(format_timecode_frames(frame, rate, seq.settings.drop_frame))
         };
         let fields = [
@@ -88,7 +113,9 @@ pub(crate) fn export(s: &mut Session, p: &Value) -> Result<Value> {
         }
         csv.push_str("\r\n");
     }
-    s.services.write_file(path, csv.as_bytes()).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(path, csv.as_bytes())
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!({"path": path, "markers": seq.markers.len(), "bytes": csv.len()}))
 }
 
@@ -113,13 +140,23 @@ mod tests {
             if self.fail {
                 return Err(std::io::ErrorKind::PermissionDenied.into());
             }
-            self.writes.lock().unwrap().push((path.into(), data.to_vec()));
+            self.writes
+                .lock()
+                .unwrap()
+                .push((path.into(), data.to_vec()));
             Ok(())
         }
     }
     fn session(files: Arc<Files>) -> Session {
-        let mut s = Session { services: files, ..Default::default() };
-        s.execute("file.newSequence", json!({"name":"Review, 日本語", "fps":24})).unwrap();
+        let mut s = Session {
+            services: files,
+            ..Default::default()
+        };
+        s.execute(
+            "file.newSequence",
+            json!({"name":"Review, 日本語", "fps":24}),
+        )
+        .unwrap();
         s
     }
     fn marker(id: u64, start: Tick, duration: Tick, name: &str) -> Marker {
@@ -149,7 +186,13 @@ mod tests {
         let files = Arc::new(Files::default());
         let mut s = session(files.clone());
         let rate = FrameRate::FPS_24;
-        set_markers(&mut s, vec![marker(100, rate.tick_of(48), rate.tick_of(24), "Later"), marker(101, rate.tick_of(24), Tick::ZERO, "早い")]);
+        set_markers(
+            &mut s,
+            vec![
+                marker(100, rate.tick_of(48), rate.tick_of(24), "Later"),
+                marker(101, rate.tick_of(24), Tick::ZERO, "早い"),
+            ],
+        );
         s.execute("markers.markIn", json!({"frame":12})).unwrap();
         s.state.hidden_marker_colors.push(Label::Iris);
         let before = s.project.clone();
@@ -159,9 +202,13 @@ mod tests {
         let csv = written(&files);
         assert_eq!(result["markers"], 2);
         assert_eq!(result["bytes"], csv.len());
-        assert!(csv.contains("\"Review, 日本語\",\"101\",\"早い\",\"First line\r\nSecond, \"\"quoted\"\"\""));
+        assert!(csv.contains(
+            "\"Review, 日本語\",\"101\",\"早い\",\"First line\r\nSecond, \"\"quoted\"\"\""
+        ));
         assert!(csv.find("\"101\"").unwrap() < csv.find("\"100\"").unwrap());
-        assert!(csv.contains("\"00:00:02:00\",\"00:00:03:00\",\"24\",\"508032000000\",\"254016000000\",\"24/1\"\r\n"));
+        assert!(csv.contains(
+            "\"00:00:02:00\",\"00:00:03:00\",\"24\",\"508032000000\",\"254016000000\",\"24/1\"\r\n"
+        ));
         assert_eq!(*s.project, *before);
         assert_eq!(serde_json::to_value(&s.state).unwrap(), state);
         assert_eq!(s.history.undo.len(), undo);
@@ -219,22 +266,41 @@ mod tests {
         assert_eq!(spec.menu, ["Markers"]);
         assert!(spec.params.contains("path"));
         assert!(spec.shortcut.is_none());
-        assert_eq!(s.execute(CMD, json!({"path":"empty.csv"})).unwrap()["markers"], 0);
+        assert_eq!(
+            s.execute(CMD, json!({"path":"empty.csv"})).unwrap()["markers"],
+            0
+        );
         assert_eq!(written(&files).lines().count(), 1);
         assert!((spec.enabled)(&Session::default()).is_err());
-        assert!(matches!(Session::default().execute(CMD, json!({"path":"none.csv"})), Err(EngineError::Disabled(..))));
+        assert!(matches!(
+            Session::default().execute(CMD, json!({"path":"none.csv"})),
+            Err(EngineError::Disabled(..))
+        ));
     }
 
     #[test]
     fn hostile_parameters_and_damaged_timing_fail_before_writing() {
         let files = Arc::new(Files::default());
         let mut s = session(files.clone());
-        for p in [Value::Null, json!({}), json!({"path":0}), json!({"path":" "}), json!({"path":"bad\0.csv"})] {
-            assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| s.execute(CMD, p))).unwrap().is_err());
+        for p in [
+            Value::Null,
+            json!({}),
+            json!({"path":0}),
+            json!({"path":" "}),
+            json!({"path":"bad\0.csv"}),
+        ] {
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| s.execute(CMD, p)))
+                    .unwrap()
+                    .is_err()
+            );
         }
         let id = s.state.active_sequence.unwrap();
         for (start, duration) in [(-1, 0), (0, -1), (i64::MAX, 1)] {
-            Arc::make_mut(&mut s.project).sequence_mut(id).unwrap().markers = vec![marker(100, Tick(start), Tick(duration), "Bad")];
+            Arc::make_mut(&mut s.project)
+                .sequence_mut(id)
+                .unwrap()
+                .markers = vec![marker(100, Tick(start), Tick(duration), "Bad")];
             assert!(s.execute(CMD, json!({"path":"bad.csv"})).is_err());
         }
         let q = Arc::make_mut(&mut s.project).sequence_mut(id).unwrap();
@@ -260,15 +326,36 @@ mod tests {
     fn oversized_reports_and_write_errors_are_actionable() {
         let files = Arc::new(Files::default());
         let mut s = session(files.clone());
-        set_markers(&mut s, vec![marker(100, Tick::ZERO, Tick::ZERO, &"x".repeat(MAX_BYTES / 2))]);
-        assert!(s.execute(CMD, json!({"path":"huge.csv"})).unwrap_err().to_string().contains("16 MiB"));
+        set_markers(
+            &mut s,
+            vec![marker(
+                100,
+                Tick::ZERO,
+                Tick::ZERO,
+                &"x".repeat(MAX_BYTES / 2),
+            )],
+        );
+        assert!(
+            s.execute(CMD, json!({"path":"huge.csv"}))
+                .unwrap_err()
+                .to_string()
+                .contains("16 MiB")
+        );
         assert!(files.writes.lock().unwrap().is_empty());
-        s.services = Arc::new(Files { fail: true, ..Default::default() });
+        s.services = Arc::new(Files {
+            fail: true,
+            ..Default::default()
+        });
         set_markers(&mut s, vec![]);
         s.saved_revision = s.revision;
         assert!(!s.is_dirty());
         let before = s.project.clone();
-        assert!(s.execute(CMD, json!({"path":"denied.csv"})).unwrap_err().to_string().contains("denied.csv"));
+        assert!(
+            s.execute(CMD, json!({"path":"denied.csv"}))
+                .unwrap_err()
+                .to_string()
+                .contains("denied.csv")
+        );
         assert_eq!(*s.project, *before);
         assert!(!s.is_dirty());
     }
@@ -283,8 +370,10 @@ mod tests {
             for t in q.video_tracks.iter_mut().chain(&mut q.audio_tracks) {
                 t.locked = true;
             }
-            q.markers =
-                vec![marker(101, Tick(rate.tick_of(24).0 + 1), Tick(1), "A, \"B\"\n字幕"), marker(100, Tick(rate.tick_of(24).0 + 1), Tick::ZERO, "Point")];
+            q.markers = vec![
+                marker(101, Tick(rate.tick_of(24).0 + 1), Tick(1), "A, \"B\"\n字幕"),
+                marker(100, Tick(rate.tick_of(24).0 + 1), Tick::ZERO, "Point"),
+            ];
             Ok(())
         })
         .unwrap();
@@ -304,7 +393,10 @@ mod tests {
         assert!(csv.contains("\"Review, \"\"urgent\"\"\n紫\""));
         assert!(csv.contains("\"A, \"\"B\"\"\n字幕\""));
         assert!(csv.find("\"100\"").unwrap() < csv.find("\"101\"").unwrap());
-        assert!(csv.contains(&format!("\"00:00:01:00\",\"00:00:01:00\",\"0\",\"{}\",\"1\",\"24000/1001\"", rate.tick_of(24).0 + 1)));
+        assert!(csv.contains(&format!(
+            "\"00:00:01:00\",\"00:00:01:00\",\"0\",\"{}\",\"1\",\"24000/1001\"",
+            rate.tick_of(24).0 + 1
+        )));
         assert!(!s.is_dirty());
     }
 }

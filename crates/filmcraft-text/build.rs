@@ -25,7 +25,10 @@ fn main() {
             Err(e) if std::env::var_os("CRAFT_FONTS_REQUIRED").is_some() => {
                 println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!(
+                "cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}",
+                dir.display()
+            ),
         }
     }
     src.push_str("];\n");
@@ -39,10 +42,15 @@ fn main() {
 fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
     let manifest = dir.join("fonts/manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let text = std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
+    let text =
+        std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32");
     let mut out = String::new();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
@@ -50,9 +58,15 @@ fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
         if wasm && !(*family == "BIZ UDPGothic" && *style == "Regular") {
             continue;
         }
-        let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
+        let path = dir
+            .join(file)
+            .canonicalize()
+            .map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
-        let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
+        let scripts: Vec<String> = scripts
+            .split(',')
+            .map(|s| format!("{:?}", s.trim()))
+            .collect();
         let _ = writeln!(
             out,
             "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",

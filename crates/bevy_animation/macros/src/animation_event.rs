@@ -1,7 +1,7 @@
 use bevy_macro_utils::BevyManifest;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 pub fn derive_animation_event(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);

@@ -343,12 +343,16 @@ impl Channel {
         }
         match (self.quant(), &self.track) {
             (Quant::Float32, Track::F32(v)) => Some(v.clone()),
-            (Quant::Unorm16, Track::Raw16(v)) => {
-                Some(v.iter().map(|&m| (f32::from(m) * INV_U16) * echelle).collect())
-            },
-            (Quant::Snorm16, Track::Raw16(v)) => {
-                Some(v.iter().map(|&m| (f32::from(m as i16) * INV_I16) * echelle).collect())
-            },
+            (Quant::Unorm16, Track::Raw16(v)) => Some(
+                v.iter()
+                    .map(|&m| (f32::from(m) * INV_U16) * echelle)
+                    .collect(),
+            ),
+            (Quant::Snorm16, Track::Raw16(v)) => Some(
+                v.iter()
+                    .map(|&m| (f32::from(m as i16) * INV_I16) * echelle)
+                    .collect(),
+            ),
             _ => None,
         }
     }
@@ -495,13 +499,19 @@ pub struct CameraAnim {
 fn u16_at(d: &[u8], at: usize) -> Result<u16> {
     d.get(at..at + 2)
         .map(|b| u16::from_le_bytes([b[0], b[1]]))
-        .ok_or(FormatError::TooShort { got: d.len(), need: at + 2 })
+        .ok_or(FormatError::TooShort {
+            got: d.len(),
+            need: at + 2,
+        })
 }
 
 fn u32_at(d: &[u8], at: usize) -> Result<u32> {
     d.get(at..at + 4)
         .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-        .ok_or(FormatError::TooShort { got: d.len(), need: at + 4 })
+        .ok_or(FormatError::TooShort {
+            got: d.len(),
+            need: at + 4,
+        })
 }
 
 /// `true` si le tampon commence par le magic « G4CM ».
@@ -562,10 +572,10 @@ pub fn decode(data: &[u8]) -> Result<CameraAnim> {
     for i in 0..nobj {
         let at = hs + i * CLIP_ENTRY_LEN;
         let mut tail = [0u8; 8];
-        tail.copy_from_slice(
-            data.get(at + 8..at + 16)
-                .ok_or(FormatError::TooShort { got: data.len(), need: at + 16 })?,
-        );
+        tail.copy_from_slice(data.get(at + 8..at + 16).ok_or(FormatError::TooShort {
+            got: data.len(),
+            need: at + 16,
+        })?);
         clips.push(Clip {
             start: u16_at(data, at)?,
             end: u16_at(data, at + 2)?,
@@ -594,7 +604,10 @@ pub fn decode(data: &[u8]) -> Result<CameraAnim> {
     for i in 0..nobj {
         let off = usize::from(u16_at(data, o_names_header + i * 2)?);
         let at = o_names_header + off;
-        let raw = data.get(at..).ok_or(FormatError::TooShort { got: data.len(), need: at + 1 })?;
+        let raw = data.get(at..).ok_or(FormatError::TooShort {
+            got: data.len(),
+            need: at + 1,
+        })?;
         let end = raw
             .iter()
             .position(|&b| b == 0)
@@ -648,8 +661,10 @@ pub fn decode(data: &[u8]) -> Result<CameraAnim> {
     let mut raws = Vec::with_capacity(total);
     for i in 0..total {
         let at = o_channels + i * CHANNEL_ENTRY_LEN;
-        let hdr =
-            data.get(at..at + 8).ok_or(FormatError::TooShort { got: data.len(), need: at + 8 })?;
+        let hdr = data.get(at..at + 8).ok_or(FormatError::TooShort {
+            got: data.len(),
+            need: at + 8,
+        })?;
         raws.push(RawChan {
             kind: hdr[0],
             mode: hdr[1],
@@ -682,9 +697,15 @@ pub fn decode(data: &[u8]) -> Result<CameraAnim> {
     // `gap_channels_times`, que [`encode`] réécrit verbatim.
     let granule = usize::from(header.align).max(1) * 4;
     let o_times = channels_end.div_ceil(granule) * granule;
-    let ntimes = raws.iter().map(|r| r.time_index as usize + r.count as usize).max().unwrap_or(0);
-    let gap_channels_times =
-        data.get(channels_end..o_times.min(data.len())).unwrap_or(&[]).to_vec();
+    let ntimes = raws
+        .iter()
+        .map(|r| r.time_index as usize + r.count as usize)
+        .max()
+        .unwrap_or(0);
+    let gap_channels_times = data
+        .get(channels_end..o_times.min(data.len()))
+        .unwrap_or(&[])
+        .to_vec();
     let times_end = o_times + ntimes * 2;
     if times_end > data.len() {
         return Err(FormatError::Malformed(format!(
@@ -718,22 +739,25 @@ pub fn decode(data: &[u8]) -> Result<CameraAnim> {
                     v.push(f32::from_bits(u32_at(data, base + i * 4)?));
                 }
                 Track::F32(v)
-            },
+            }
             2 => {
                 let mut v = Vec::with_capacity(n);
                 for i in 0..n {
                     v.push(u16_at(data, base + i * 2)?);
                 }
                 Track::Raw16(v)
-            },
+            }
             _ => {
                 let end = base + n;
                 Track::Raw8(
                     data.get(base..end)
-                        .ok_or(FormatError::TooShort { got: data.len(), need: end })?
+                        .ok_or(FormatError::TooShort {
+                            got: data.len(),
+                            need: end,
+                        })?
                         .to_vec(),
                 )
-            },
+            }
         };
         channels.push(Channel {
             kind: ChannelKind::from_code(r.kind),
@@ -916,12 +940,12 @@ pub fn encode(anim: &CameraAnim) -> Result<Vec<u8>> {
                 for (i, x) in v.iter().enumerate() {
                     out[at + i * 4..at + i * 4 + 4].copy_from_slice(&x.to_bits().to_le_bytes());
                 }
-            },
+            }
             Track::Raw16(v) => {
                 for (i, x) in v.iter().enumerate() {
                     out[at + i * 2..at + i * 2 + 2].copy_from_slice(&x.to_le_bytes());
                 }
-            },
+            }
             Track::Raw8(v) => out[at..at + v.len()].copy_from_slice(v),
         }
     }
@@ -949,7 +973,9 @@ impl CameraAnim {
             return &[];
         };
         let a = o.first_channel as usize;
-        let b = a.saturating_add(o.channel_count as usize).min(self.channels.len());
+        let b = a
+            .saturating_add(o.channel_count as usize)
+            .min(self.channels.len());
         self.channels.get(a..b).unwrap_or(&[])
     }
 
@@ -1037,15 +1063,31 @@ mod tests {
         let v = c.decoded(&anim).expect("mode 2 taille 2 est résolu");
         assert_eq!(v[0], 0.0);
         assert_eq!(v[1], (65535.0f32 * INV_U16) * 6.1);
-        assert!((v[1] - 6.1).abs() < 1e-4, "65535 doit rendre l'échelle, obtenu {}", v[1]);
-        assert!(v[2] > 3.0 && v[2] < 3.1, "32768 doit rendre la moitié, obtenu {}", v[2]);
+        assert!(
+            (v[1] - 6.1).abs() < 1e-4,
+            "65535 doit rendre l'échelle, obtenu {}",
+            v[1]
+        );
+        assert!(
+            v[2] > 3.0 && v[2] < 3.1,
+            "32768 doit rendre la moitié, obtenu {}",
+            v[2]
+        );
 
         // SNORM16 : le mot 0xFFFF vaut -1, pas 65535 — c'est `psrad` qui le décide.
         let c = canal(3, 2, 1, Track::Raw16(alloc::vec![0xFFFF, 0x8000, 0x7FFF]));
         let v = c.decoded(&anim).expect("mode 3 taille 2 est résolu");
-        assert!(v[0] < 0.0, "0xFFFF doit être négatif en SNORM, obtenu {}", v[0]);
+        assert!(
+            v[0] < 0.0,
+            "0xFFFF doit être négatif en SNORM, obtenu {}",
+            v[0]
+        );
         assert!(v[1] < -6.0, "0x8000 est le minimum signé, obtenu {}", v[1]);
-        assert!((v[2] - 6.1).abs() < 1e-4, "0x7FFF doit rendre l'échelle, obtenu {}", v[2]);
+        assert!(
+            (v[2] - 6.1).abs() < 1e-4,
+            "0x7FFF doit rendre l'échelle, obtenu {}",
+            v[2]
+        );
     }
 
     /// Ce qui n'est pas prouvé doit rendre `None`, jamais une valeur plausible. `mode = 1` passe
@@ -1059,7 +1101,10 @@ mod tests {
 
         // Un index d'échelle hors de la table ne panique pas : il rend `None`.
         let c = canal(2, 2, 200, Track::Raw16(alloc::vec![1, 2]));
-        assert!(c.decoded(&anim).is_none(), "un index hors table doit rendre None");
+        assert!(
+            c.decoded(&anim).is_none(),
+            "un index hors table doit rendre None"
+        );
     }
 
     /// La scission de l'ancien `index: u16` ne doit RIEN changer aux octets écrits.
@@ -1174,12 +1219,19 @@ mod tests {
         let re = encode(&a).expect("encodage");
         let b = decode(&re).expect("re-décodage");
         assert_eq!(b.channels[0].track.values(), Some(&[-10.0f32, -48.25][..]));
-        assert_eq!(re.len(), raw.len(), "l'édition d'une valeur ne change pas la taille");
+        assert_eq!(
+            re.len(),
+            raw.len(),
+            "l'édition d'une valeur ne change pas la taille"
+        );
     }
 
     #[test]
     fn rejette_magic_et_version() {
-        assert!(matches!(decode(&[0u8; 0x40]), Err(FormatError::BadMagic { .. })));
+        assert!(matches!(
+            decode(&[0u8; 0x40]),
+            Err(FormatError::BadMagic { .. })
+        ));
         let mut raw = synthetic();
         raw[6..8].copy_from_slice(&0x0066u16.to_le_bytes());
         assert!(matches!(decode(&raw), Err(FormatError::Malformed(_))));

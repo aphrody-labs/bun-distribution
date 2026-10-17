@@ -12,7 +12,9 @@
 use std::sync::OnceLock;
 
 use serde_json::{Map, Value, json};
-use vectorcraft_engine::cmd::fileio::{self, ArtboardPick, Format, FormatOption, SAVE_FORMATS, SaveMode};
+use vectorcraft_engine::cmd::fileio::{
+    self, ArtboardPick, Format, FormatOption, SAVE_FORMATS, SaveMode,
+};
 
 use super::{DialogResult, DialogSpec, form};
 use crate::state::Dialog;
@@ -22,7 +24,13 @@ use crate::{VectorcraftApp, io, widgets};
 /// Dialog kind.
 pub const KIND: &str = "saveOptions";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading, body, confirm, min_width: 380.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading,
+    body,
+    confirm,
+    min_width: 380.0,
+    ..DialogSpec::FORM
+};
 
 fn heading(d: &Dialog) -> String {
     if d.bool("__pick") {
@@ -33,18 +41,34 @@ fn heading(d: &Dialog) -> String {
         }
         .into();
     }
-    crate::i18n::fmt(tl!("{format} Options"), &[("format", fileio::format(&d.str("format")).map_or("", |f| f.label))])
+    crate::i18n::fmt(
+        tl!("{format} Options"),
+        &[(
+            "format",
+            fileio::format(&d.str("format")).map_or("", |f| f.label),
+        )],
+    )
 }
 
 /// `f`'s options with the values a save would use (`file.formatOptions`: as last saved in that
 /// format, else the defaults). Text options start empty rather than null.
 pub(crate) fn option_values(app: &mut VectorcraftApp, f: &Format) -> Map<String, Value> {
-    let v = app.session.execute("file.formatOptions", &json!({ "format": f.id })).unwrap_or_default();
+    let v = app
+        .session
+        .execute("file.formatOptions", &json!({ "format": f.id }))
+        .unwrap_or_default();
     f.options
         .iter()
         .map(|o| {
             let value = v["options"][o.name]["value"].clone();
-            (o.name.to_string(), if o.ty == "string" && value.is_null() { json!("") } else { value })
+            (
+                o.name.to_string(),
+                if o.ty == "string" && value.is_null() {
+                    json!("")
+                } else {
+                    value
+                },
+            )
         })
         .collect()
 }
@@ -91,7 +115,10 @@ fn label(o: &FormatOption) -> String {
 /// Every artboard (the All choice under Save each artboard to a separate file): `all` when set,
 /// else no range given.
 fn all_artboards(d: &Dialog) -> bool {
-    d.fields.get("all").and_then(Value::as_bool).unwrap_or_else(|| d.str("range").trim().is_empty())
+    d.fields
+        .get("all")
+        .and_then(Value::as_bool)
+        .unwrap_or_else(|| d.str("range").trim().is_empty())
 }
 
 /// All or Range, under Save each artboard to a separate file (enabled while it is on).
@@ -101,11 +128,15 @@ fn artboard_range(ui: &mut egui::Ui, d: &mut Dialog) {
         ui.horizontal(|ui| {
             ui.add_space(22.0);
             let mut all = all_artboards(d);
-            if ui.radio_value(&mut all, true, tl!("All")).changed() | ui.radio_value(&mut all, false, tl!("Range:")).changed() {
+            if ui.radio_value(&mut all, true, tl!("All")).changed()
+                | ui.radio_value(&mut all, false, tl!("Range:")).changed()
+            {
                 d.fields.insert("all".into(), json!(all));
             }
             let mut range = d.str("range");
-            let field = egui::TextEdit::singleline(&mut range).desired_width(90.0).hint_text("1-3, 5");
+            let field = egui::TextEdit::singleline(&mut range)
+                .desired_width(90.0)
+                .hint_text("1-3, 5");
             if ui.add_enabled(!all, field).changed() {
                 d.fields.insert("range".into(), json!(range));
             }
@@ -117,26 +148,38 @@ fn artboard_range(ui: &mut egui::Ui, d: &mut Dialog) {
 /// The Save As format menu (labels in [`SAVE_FORMATS`] order).
 fn save_labels() -> &'static [&'static str] {
     static LABELS: OnceLock<Vec<&'static str>> = OnceLock::new();
-    LABELS.get_or_init(|| SAVE_FORMATS.iter().filter_map(|id| fileio::format(id)).map(|f| f.label).collect())
+    LABELS.get_or_init(|| {
+        SAVE_FORMATS
+            .iter()
+            .filter_map(|id| fileio::format(id))
+            .map(|f| f.label)
+            .collect()
+    })
 }
 
 fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
-    let Some(f) = fileio::format(&d.str("format")) else { return false };
+    let Some(f) = fileio::format(&d.str("format")) else {
+        return false;
+    };
     let mut switch = None;
-    egui::Grid::new("save-options").num_columns(2).spacing([12.0, 8.0]).show(ui, |ui| {
-        if d.bool("__pick") {
-            form::field_w(ui, d, "path", tl!("File Name:"), 240.0);
-            if SaveMode::of(&d.str("__action")) != Some(SaveMode::Template) {
-                ui.label(egui::RichText::new(tl!("Format:")).color(t.text_dim));
-                switch = widgets::dropdown(ui, "save-format", f.label, save_labels(), 254.0).and_then(|i| SAVE_FORMATS.get(i).copied());
-                ui.end_row();
+    egui::Grid::new("save-options")
+        .num_columns(2)
+        .spacing([12.0, 8.0])
+        .show(ui, |ui| {
+            if d.bool("__pick") {
+                form::field_w(ui, d, "path", tl!("File Name:"), 240.0);
+                if SaveMode::of(&d.str("__action")) != Some(SaveMode::Template) {
+                    ui.label(egui::RichText::new(tl!("Format:")).color(t.text_dim));
+                    switch = widgets::dropdown(ui, "save-format", f.label, save_labels(), 254.0)
+                        .and_then(|i| SAVE_FORMATS.get(i).copied());
+                    ui.end_row();
+                }
             }
-        }
-        for o in shown(f) {
-            option_row(app, ui, d, o);
-        }
-    });
+            for o in shown(f) {
+                option_row(app, ui, d, o);
+            }
+        });
     if let Some(id) = switch.filter(|id| *id != f.id) {
         switch_format(app, d, id);
     }
@@ -164,21 +207,45 @@ fn option_row(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, o: &Forma
         form::field_w(ui, d, o.name, &label, 240.0);
         return;
     }
-    ui.label(egui::RichText::new(&label).color(t.text_dim)).on_hover_text(o.description);
-    let artboards = app.session.active().filter(|_| o.name == "artboard").map(|st| &st.doc.artboards);
+    ui.label(egui::RichText::new(&label).color(t.text_dim))
+        .on_hover_text(o.description);
+    let artboards = app
+        .session
+        .active()
+        .filter(|_| o.name == "artboard")
+        .map(|st| &st.doc.artboards);
     if let Some(boards) = artboards {
         let i = value.as_u64().unwrap_or(0) as usize;
         let names: Vec<&str> = boards.iter().map(|a| a.name.as_str()).collect();
-        if let Some(i) = widgets::dropdown_names(ui, ("save-option", o.name), names.get(i).copied().unwrap_or(""), &names, 254.0) {
+        if let Some(i) = widgets::dropdown_names(
+            ui,
+            ("save-option", o.name),
+            names.get(i).copied().unwrap_or(""),
+            &names,
+            254.0,
+        ) {
             d.fields.insert(o.name.into(), json!(i));
         }
     } else {
         let integer = o.ty == "integer";
         let x = value.as_f64().unwrap_or(0.0);
-        let field = ui.scope(|ui| widgets::range_field(ui, ("save-option", o.name), x, 0.0..=f64::MAX, "", if integer { 0 } else { 2 }, 80.0));
+        let field = ui.scope(|ui| {
+            widgets::range_field(
+                ui,
+                ("save-option", o.name),
+                x,
+                0.0..=f64::MAX,
+                "",
+                if integer { 0 } else { 2 },
+                80.0,
+            )
+        });
         field.response.on_hover_text(o.description);
         if let Some(x) = field.inner {
-            d.fields.insert(o.name.into(), if integer { json!(x as i64) } else { json!(x) });
+            d.fields.insert(
+                o.name.into(),
+                if integer { json!(x as i64) } else { json!(x) },
+            );
         }
     }
     ui.end_row();
@@ -186,13 +253,16 @@ fn option_row(app: &VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog, o: &Forma
 
 /// Web Save As: another format brings its own options and file extension.
 fn switch_format(app: &mut VectorcraftApp, d: &mut Dialog, id: &str) {
-    let (Some(old), Some(new)) = (fileio::format(&d.str("format")), fileio::format(id)) else { return };
+    let (Some(old), Some(new)) = (fileio::format(&d.str("format")), fileio::format(id)) else {
+        return;
+    };
     for o in old.options {
         d.fields.remove(o.name);
     }
     d.fields.extend(option_values(app, new));
     d.fields.insert("format".into(), json!(new.id));
-    d.fields.insert("path".into(), json!(with_extension(&d.str("path"), new)));
+    d.fields
+        .insert("path".into(), json!(with_extension(&d.str("path"), new)));
 }
 
 /// `path` ending in `f`'s extension (kept when it already names `f`).
@@ -200,7 +270,10 @@ fn with_extension(path: &str, f: &Format) -> String {
     if fileio::format_for_name(path).is_some_and(|g| g.id == f.id) {
         return path.to_string();
     }
-    std::path::Path::new(path).with_extension(f.extensions[0]).to_string_lossy().to_string()
+    std::path::Path::new(path)
+        .with_extension(f.extensions[0])
+        .to_string_lossy()
+        .to_string()
 }
 
 /// Write the file with the chosen options (blank ones fall back to the format's defaults).
@@ -210,11 +283,20 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
     if path.trim().is_empty() {
         return Err("name the file".into());
     }
-    let path = if d.bool("__pick") { with_extension(path.trim(), f) } else { path };
+    let path = if d.bool("__pick") {
+        with_extension(path.trim(), f)
+    } else {
+        path
+    };
     let mut options: Map<String, Value> = f
         .options
         .iter()
-        .filter_map(|o| d.fields.get(o.name).filter(|v| !v.is_null() && v.as_str() != Some("")).map(|v| (o.name.to_string(), v.clone())))
+        .filter_map(|o| {
+            d.fields
+                .get(o.name)
+                .filter(|v| !v.is_null() && v.as_str() != Some(""))
+                .map(|v| (o.name.to_string(), v.clone()))
+        })
         .collect();
     if separates(f) {
         if !d.bool("separateArtboards") || all_artboards(d) {
@@ -222,13 +304,22 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> DialogResult {
         } else {
             // A bad range keeps the dialog open.
             let n = app.session.active().map_or(0, |s| s.doc.artboards.len());
-            ArtboardPick { range: Some(d.str("range")), ..Default::default() }.resolve(n)?;
+            ArtboardPick {
+                range: Some(d.str("range")),
+                ..Default::default()
+            }
+            .resolve(n)?;
         }
     }
     app.ui.dialog = None;
     match SaveMode::of(&d.str("__action")) {
         Some(mode) if own_dialog(f) => io::ask_format_options(app, mode, f, &path),
-        Some(mode) => io::save(app, mode, &json!({ "path": path, "format": f.id, "options": options }), false),
+        Some(mode) => io::save(
+            app,
+            mode,
+            &json!({ "path": path, "format": f.id, "options": options }),
+            false,
+        ),
         None => Err(format!("`{}` is no save command", d.str("__action"))),
     }
 }
@@ -268,7 +359,9 @@ mod tests {
         let written = Written::default();
         let w = written.clone();
         let services = Services {
-            download: Some(Box::new(move |name: &str, b: &[u8]| w.borrow_mut().push((name.to_string(), b.to_vec())))),
+            download: Some(Box::new(move |name: &str, b: &[u8]| {
+                w.borrow_mut().push((name.to_string(), b.to_vec()))
+            })),
             ..Default::default()
         };
         (with_art(services), written)
@@ -276,8 +369,13 @@ mod tests {
 
     fn with_art(services: Services) -> VectorcraftApp {
         let mut app = VectorcraftApp::new(Session::new(), services);
-        app.run("file.new", json!({"width": 100, "height": 80})).unwrap();
-        app.run("shape.rectangle", json!({"x": 10, "y": 10, "width": 30, "height": 20})).unwrap();
+        app.run("file.new", json!({"width": 100, "height": 80}))
+            .unwrap();
+        app.run(
+            "shape.rectangle",
+            json!({"x": 10, "y": 10, "width": 30, "height": 20}),
+        )
+        .unwrap();
         app
     }
 
@@ -286,11 +384,23 @@ mod tests {
         let ctx = egui::Context::default();
         theme::install_fonts(&ctx);
         let events = if enter {
-            vec![egui::Event::Key { key: egui::Key::Enter, physical_key: None, pressed: true, repeat: false, modifiers: Default::default() }]
+            vec![egui::Event::Key {
+                key: egui::Key::Enter,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Default::default(),
+            }]
         } else {
             vec![]
         };
-        let mut out = ctx.run_ui(egui::RawInput { events, ..Default::default() }, |ui| super::super::show(app, ui.ctx()));
+        let mut out = ctx.run_ui(
+            egui::RawInput {
+                events,
+                ..Default::default()
+            },
+            |ui| super::super::show(app, ui.ctx()),
+        );
         out.textures_delta.clear();
     }
 
@@ -302,30 +412,70 @@ mod tests {
     fn save_as_svg_opens_svg_options_then_writes_svg() {
         let (mut app, written, picks) = desktop("art.svg");
         let r = app.run("file.saveAs", json!({})).unwrap();
-        assert_eq!((r["pending"].as_str(), r["path"].as_str()), (Some("svgOptions"), Some("art.svg")));
+        assert_eq!(
+            (r["pending"].as_str(), r["path"].as_str()),
+            (Some("svgOptions"), Some("art.svg"))
+        );
         // The save panel offers every save format, the document's own first.
         let pick = &picks.borrow()[0];
         let labels: Vec<&str> = pick.filters.iter().map(|f| f.0).collect();
-        assert_eq!(labels, ["VectorCraft", "VectorCraft Template", "PDF", "SVG", "SVG Compressed", "PDF-compatible .ai"]);
+        assert_eq!(
+            labels,
+            [
+                "VectorCraft",
+                "VectorCraft Template",
+                "PDF",
+                "SVG",
+                "SVG Compressed",
+                "PDF-compatible .ai"
+            ]
+        );
         assert_eq!(pick.name, "Untitled-1.vectorcraft");
         let d = dialog(&app);
-        assert_eq!((d.kind.as_str(), d.str("path").as_str(), d.str("mode").as_str()), ("svgOptions", "art.svg", "save"));
+        assert_eq!(
+            (
+                d.kind.as_str(),
+                d.str("path").as_str(),
+                d.str("mode").as_str()
+            ),
+            ("svgOptions", "art.svg", "save")
+        );
         assert!(written.borrow().is_empty(), "nothing is written before OK");
         frame(&mut app, false);
         assert!(app.ui.dialog.is_some(), "drawing keeps it open");
-        app.ui.dialog.as_mut().unwrap().fields.insert("outlineText".into(), json!(true));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("outlineText".into(), json!(true));
         frame(&mut app, true);
         assert!(app.ui.dialog.is_none());
         let (path, bytes) = written.borrow()[0].clone();
         assert_eq!(path, "art.svg");
         assert!(bytes.starts_with(b"<?xml"));
         let st = app.session.active().unwrap();
-        assert_eq!((st.path.as_deref(), st.format, st.is_dirty()), (Some("art.svg"), "svg", false));
-        assert_eq!((&st.save_options["outlineText"], &st.save_options["styling"]), (&json!(true), &json!("css")), "the SVG Options are remembered");
-        assert!(app.ui.status.contains("SVG keeps the artwork"), "{}", app.ui.status);
+        assert_eq!(
+            (st.path.as_deref(), st.format, st.is_dirty()),
+            (Some("art.svg"), "svg", false)
+        );
+        assert_eq!(
+            (&st.save_options["outlineText"], &st.save_options["styling"]),
+            (&json!(true), &json!("css")),
+            "the SVG Options are remembered"
+        );
+        assert!(
+            app.ui.status.contains("SVG keeps the artwork"),
+            "{}",
+            app.ui.status
+        );
         // Save writes it back as SVG, with the same options and no questions.
         assert!(!crate::menus::enabled(&app, "file.save"), "nothing to save");
-        app.run("shape.ellipse", json!({"x": 50, "y": 10, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "shape.ellipse",
+            json!({"x": 50, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
         assert!(crate::menus::enabled(&app, "file.save"));
         app.run("file.save", json!({})).unwrap();
         assert!(app.ui.dialog.is_none() && picks.borrow().len() == 1);
@@ -341,13 +491,26 @@ mod tests {
         assert_eq!(picks.borrow()[0].name, "Untitled-1 copy.vectorcraft");
         assert!(app.ui.dialog.is_none(), "the native format has no options");
         assert!(vectorcraft_format::sniff(&written.borrow()[0].1));
-        assert!(app.session.active().unwrap().path.is_none() && app.session.active().unwrap().is_dirty());
+        assert!(
+            app.session.active().unwrap().path.is_none()
+                && app.session.active().unwrap().is_dirty()
+        );
         app.run("file.saveAsTemplate", json!({})).unwrap();
         let pick = &picks.borrow()[1];
         assert_eq!(pick.name, "Untitled-1 template.vctemplate");
-        assert_eq!(pick.folder.as_deref().map(std::path::Path::new), Some(folder.as_path()));
-        assert_eq!(pick.filters, [("VectorCraft Template", &["vctemplate"][..])]);
-        assert_eq!(written.borrow()[1].0, "copy.vectorcraft", "the picked name is kept");
+        assert_eq!(
+            pick.folder.as_deref().map(std::path::Path::new),
+            Some(folder.as_path())
+        );
+        assert_eq!(
+            pick.filters,
+            [("VectorCraft Template", &["vctemplate"][..])]
+        );
+        assert_eq!(
+            written.borrow()[1].0,
+            "copy.vectorcraft",
+            "the picked name is kept"
+        );
     }
 
     #[test]
@@ -355,16 +518,36 @@ mod tests {
         let (mut app, written) = web();
         app.run("file.saveAs", json!({})).unwrap();
         let d = dialog(&app);
-        assert_eq!((heading(d).as_str(), d.str("path").as_str(), d.str("format").as_str()), ("Save As", "Untitled-1.vectorcraft", "vectorcraft"));
+        assert_eq!(
+            (
+                heading(d).as_str(),
+                d.str("path").as_str(),
+                d.str("format").as_str()
+            ),
+            ("Save As", "Untitled-1.vectorcraft", "vectorcraft")
+        );
         frame(&mut app, false);
         let mut d = app.ui.dialog.take().unwrap();
         switch_format(&mut app, &mut d, "pdf");
-        assert_eq!((d.str("path").as_str(), d.str("format").as_str()), ("Untitled-1.pdf", "pdf"));
-        assert_eq!(shown(fileio::format("pdf").unwrap()).count(), 0, "PDF options have their own dialog");
+        assert_eq!(
+            (d.str("path").as_str(), d.str("format").as_str()),
+            ("Untitled-1.pdf", "pdf")
+        );
+        assert_eq!(
+            shown(fileio::format("pdf").unwrap()).count(),
+            0,
+            "PDF options have their own dialog"
+        );
         app.ui.dialog = Some(d);
         frame(&mut app, true);
         // OK goes on to the Save PDF dialog, whose OK saves.
-        assert_eq!((dialog(&app).kind.as_str(), dialog(&app).str("path").as_str()), ("savePdf", "Untitled-1.pdf"));
+        assert_eq!(
+            (
+                dialog(&app).kind.as_str(),
+                dialog(&app).str("path").as_str()
+            ),
+            ("savePdf", "Untitled-1.pdf")
+        );
         assert!(written.borrow().is_empty());
         super::super::confirm(&mut app).unwrap();
         let (name, bytes) = written.borrow()[0].clone();
@@ -373,26 +556,50 @@ mod tests {
         assert_eq!(app.session.active().unwrap().format, "pdf");
         // A blank name isn't saved.
         app.run("file.saveCopy", json!({})).unwrap();
-        app.ui.dialog.as_mut().unwrap().fields.insert("path".into(), json!(" "));
+        app.ui
+            .dialog
+            .as_mut()
+            .unwrap()
+            .fields
+            .insert("path".into(), json!(" "));
         assert!(super::super::confirm(&mut app).is_err());
     }
 
     #[test]
     fn save_as_pdf_asks_with_the_save_pdf_dialog_and_remembers_its_options() {
         let (mut app, written, _) = desktop("art.pdf");
-        assert_eq!(app.run("file.saveAs", json!({})).unwrap()["pending"], "savePdf");
+        assert_eq!(
+            app.run("file.saveAs", json!({})).unwrap()["pending"],
+            "savePdf"
+        );
         let d = app.ui.dialog.as_mut().unwrap();
-        assert_eq!((d.str("path").as_str(), d.str("__save").as_str()), ("art.pdf", "file.saveAs"));
+        assert_eq!(
+            (d.str("path").as_str(), d.str("__save").as_str()),
+            ("art.pdf", "file.saveAs")
+        );
         d.fields.insert("compatibility".into(), json!("1.5"));
         d.fields.insert("createLayers".into(), json!(true));
         super::super::confirm(&mut app).unwrap();
         assert!(app.ui.dialog.is_none());
         assert!(written.borrow()[0].1.starts_with(b"%PDF-1.5"));
         let st = app.session.active().unwrap();
-        assert_eq!((st.path.as_deref(), st.format, st.is_dirty()), (Some("art.pdf"), "pdf", false));
-        assert_eq!((st.save_options["compatibility"].clone(), st.save_options["createLayers"].clone()), (json!("1.5"), json!(true)));
+        assert_eq!(
+            (st.path.as_deref(), st.format, st.is_dirty()),
+            (Some("art.pdf"), "pdf", false)
+        );
+        assert_eq!(
+            (
+                st.save_options["compatibility"].clone(),
+                st.save_options["createLayers"].clone()
+            ),
+            (json!("1.5"), json!(true))
+        );
         // Save writes the PDF again with those options, without asking.
-        app.run("shape.ellipse", json!({"x": 50, "y": 10, "width": 20, "height": 20})).unwrap();
+        app.run(
+            "shape.ellipse",
+            json!({"x": 50, "y": 10, "width": 20, "height": 20}),
+        )
+        .unwrap();
         app.run("file.save", json!({})).unwrap();
         assert!(app.ui.dialog.is_none() && written.borrow()[1].1.starts_with(b"%PDF-1.5"));
         // Save a Copy as PDF starts from them.

@@ -54,11 +54,13 @@ impl Trigger {
         match text {
             "atStartup" => return Some(Self::Boot),
             "atLogon" => return Some(Self::Logon),
-            _ => {},
+            _ => {}
         }
         if let Some(rest) = text.strip_prefix("every:") {
             let minutes: u32 = rest.strip_suffix('m')?.parse().ok()?;
-            return (1..=31 * 24 * 60).contains(&minutes).then_some(Self::Every { minutes });
+            return (1..=31 * 24 * 60)
+                .contains(&minutes)
+                .then_some(Self::Every { minutes });
         }
         let (hour, minute) = text.strip_prefix("daily@")?.split_once(':')?;
         let (hour, minute): (u8, u8) = (hour.parse().ok()?, minute.parse().ok()?);
@@ -109,7 +111,10 @@ impl Action {
     #[must_use]
     pub fn is_headless(&self) -> bool {
         self.command.to_ascii_lowercase().ends_with("conhost.exe")
-            && self.arguments.as_deref().is_some_and(|a| a.trim_start().starts_with("--headless"))
+            && self
+                .arguments
+                .as_deref()
+                .is_some_and(|a| a.trim_start().starts_with("--headless"))
     }
 
     /// Wraps the program in `conhost.exe --headless` (idempotent).
@@ -124,7 +129,10 @@ impl Action {
             None => format!("--headless {inner}"),
         };
         Self {
-            command: format!("{}\\System32\\conhost.exe", system_root.trim_end_matches('\\')),
+            command: format!(
+                "{}\\System32\\conhost.exe",
+                system_root.trim_end_matches('\\')
+            ),
             arguments: Some(arguments),
             working_directory: self.working_directory,
         }
@@ -162,7 +170,12 @@ impl Action {
     pub fn same_program(&self, other: &Self) -> bool {
         let (a, b) = (self.unwrapped(), other.unwrapped());
         let (ca, cb) = (a.command.trim_matches('"'), b.command.trim_matches('"'));
-        let file = |c: &str| c.rsplit(['\\', '/']).next().unwrap_or(c).to_ascii_lowercase();
+        let file = |c: &str| {
+            c.rsplit(['\\', '/'])
+                .next()
+                .unwrap_or(c)
+                .to_ascii_lowercase()
+        };
         let bare = |c: &str| !c.contains(['\\', '/']);
         let same_command =
             ca.eq_ignore_ascii_case(cb) || ((bare(ca) || bare(cb)) && file(ca) == file(cb));
@@ -221,7 +234,11 @@ impl TaskSpec {
 #[must_use]
 pub fn full_path(folder: &str, name: &str) -> String {
     let folder = folder.trim_matches('\\');
-    if folder.is_empty() { format!("\\{name}") } else { format!("\\{folder}\\{name}") }
+    if folder.is_empty() {
+        format!("\\{name}")
+    } else {
+        format!("\\{folder}\\{name}")
+    }
 }
 
 /// What an existing task looks like, from its XML (state and enablement come from the service).
@@ -236,8 +253,14 @@ pub struct Observation {
     pub triggers: Vec<String>,
 }
 
-const SYSTEM_SIDS: [&str; 6] =
-    ["S-1-5-18", "SYSTEM", "NT AUTHORITY\\SYSTEM", "LOCALSYSTEM", "S-1-5-19", "S-1-5-20"];
+const SYSTEM_SIDS: [&str; 6] = [
+    "S-1-5-18",
+    "SYSTEM",
+    "NT AUTHORITY\\SYSTEM",
+    "LOCALSYSTEM",
+    "S-1-5-19",
+    "S-1-5-20",
+];
 
 /// Reads the audited fields of a task definition.
 #[must_use]
@@ -245,7 +268,10 @@ pub fn observe(xml: &str) -> Observation {
     let settings = block(xml, "Settings").unwrap_or_default();
     let principal = block(xml, "Principal").unwrap_or_default();
     let user = text(principal, "UserId").unwrap_or_default();
-    let logon = if SYSTEM_SIDS.iter().any(|s| s.eq_ignore_ascii_case(user.trim())) {
+    let logon = if SYSTEM_SIDS
+        .iter()
+        .any(|s| s.eq_ignore_ascii_case(user.trim()))
+    {
         "ServiceAccount".to_owned()
     } else {
         match text(principal, "LogonType").as_deref() {
@@ -291,7 +317,7 @@ fn trigger_label(name: &str, inner: &str) -> String {
                     Some(format!("daily@{}", time.get(..5)?))
                 })
                 .unwrap_or_else(|| name.to_owned())
-        },
+        }
         other => other.to_owned(),
     }
 }
@@ -322,11 +348,15 @@ fn principal_xml(principal: Principal, highest: bool, user: &str) -> String {
             format!(
                 "<Principals><Principal id=\"Author\"><UserId>S-1-5-18</UserId><RunLevel>{level}</RunLevel></Principal></Principals>"
             )
-        },
+        }
         Principal::S4U | Principal::Interactive => format!(
             "<Principals><Principal id=\"Author\"><UserId>{}</UserId><LogonType>{}</LogonType><RunLevel>{level}</RunLevel></Principal></Principals>",
             escape(user),
-            if principal == Principal::S4U { "S4U" } else { "InteractiveToken" }
+            if principal == Principal::S4U {
+                "S4U"
+            } else {
+                "InteractiveToken"
+            }
         ),
     }
 }
@@ -349,10 +379,9 @@ pub fn task_xml(spec: &TaskSpec, user: &str, today: &str) -> String {
     } else {
         ""
     };
-    let description = spec
-        .description
-        .as_deref()
-        .map_or(String::new(), |d| format!("<Description>{}</Description>", escape(d)));
+    let description = spec.description.as_deref().map_or(String::new(), |d| {
+        format!("<Description>{}</Description>", escape(d))
+    });
     format!(
         "<?xml version=\"1.0\" encoding=\"UTF-16\"?>\n<Task version=\"1.3\" xmlns=\"http://schemas.microsoft.com/windows/2004/02/mit/task\">\
 <RegistrationInfo>{description}</RegistrationInfo>\
@@ -383,8 +412,11 @@ pub struct Patch {
 /// settings, missing triggers appended, optional action replaced.
 #[must_use]
 pub fn patch_xml(existing: &str, patch: &Patch, user: &str, today: &str) -> String {
-    let mut xml =
-        replace_block(existing, "Principals", &principal_xml(patch.principal, patch.highest, user));
+    let mut xml = replace_block(
+        existing,
+        "Principals",
+        &principal_xml(patch.principal, patch.highest, user),
+    );
     let mut settings = block(&xml, "Settings").unwrap_or_default().to_owned();
     set_child(&mut settings, "Hidden", "true");
     set_child(&mut settings, "Enabled", "true");
@@ -393,7 +425,11 @@ pub fn patch_xml(existing: &str, patch: &Patch, user: &str, today: &str) -> Stri
         set_child(&mut settings, "DisallowStartIfOnBatteries", "false");
         set_child(&mut settings, "StopIfGoingOnBatteries", "false");
         set_child(&mut settings, "StartWhenAvailable", "true");
-        set_child(&mut settings, "ExecutionTimeLimit", &time_limit(wanted.time_limit_minutes));
+        set_child(
+            &mut settings,
+            "ExecutionTimeLimit",
+            &time_limit(wanted.time_limit_minutes),
+        );
         remove_child(&mut settings, "RestartOnFailure");
         if wanted.restart {
             settings.push_str(
@@ -401,7 +437,11 @@ pub fn patch_xml(existing: &str, patch: &Patch, user: &str, today: &str) -> Stri
             );
         }
     }
-    xml = replace_block(&xml, "Settings", &format!("<Settings>{settings}</Settings>"));
+    xml = replace_block(
+        &xml,
+        "Settings",
+        &format!("<Settings>{settings}</Settings>"),
+    );
     let present = observe(&xml).triggers;
     let logon_user = (patch.principal != Principal::System).then_some(user);
     let missing: String = patch
@@ -457,15 +497,20 @@ fn element(xml: &str, tag: &str) -> Option<(usize, usize, usize, usize)> {
         let start = from + found;
         let after = start + open.len();
         match xml[after..].chars().next() {
-            Some('>' | ' ' | '/' | '\t' | '\r' | '\n') => {},
+            Some('>' | ' ' | '/' | '\t' | '\r' | '\n') => {}
             _ => {
                 from = after;
                 continue;
-            },
+            }
         }
         let close_of_open = after + xml[after..].find('>')?;
         if xml[..close_of_open].ends_with('/') {
-            return Some((start, close_of_open + 1, close_of_open + 1, close_of_open + 1));
+            return Some((
+                start,
+                close_of_open + 1,
+                close_of_open + 1,
+                close_of_open + 1,
+            ));
         }
         let close = format!("</{tag}>");
         let inner_start = close_of_open + 1;
@@ -530,12 +575,13 @@ fn child_ranges(inner: &str) -> Vec<(&str, &str, usize, usize)> {
                 Some(end) => {
                     at = start + 1 + end + 1;
                     continue;
-                },
+                }
                 None => break,
             }
         }
-        let name_len =
-            rest.find(|c: char| c == '>' || c == '/' || c.is_whitespace()).unwrap_or(rest.len());
+        let name_len = rest
+            .find(|c: char| c == '>' || c == '/' || c.is_whitespace())
+            .unwrap_or(rest.len());
         let name = &rest[..name_len];
         match element(&inner[start..], name) {
             Some((_, inner_start, inner_end, end)) => {
@@ -546,7 +592,7 @@ fn child_ranges(inner: &str) -> Vec<(&str, &str, usize, usize)> {
                     start + end,
                 ));
                 at = start + end;
-            },
+            }
             None => break,
         }
     }
@@ -555,7 +601,10 @@ fn child_ranges(inner: &str) -> Vec<(&str, &str, usize, usize)> {
 
 /// Direct child elements `(name, inner)` of `inner`.
 fn children(inner: &str) -> Vec<(&str, &str)> {
-    child_ranges(inner).into_iter().map(|(name, body, _, _)| (name, body)).collect()
+    child_ranges(inner)
+        .into_iter()
+        .map(|(name, body, _, _)| (name, body))
+        .collect()
 }
 
 /// `DOMAIN\user` of the current process.
@@ -585,14 +634,14 @@ pub fn expand_env(text: &str) -> String {
                         out.push('%');
                         out.push_str(name);
                         out.push('%');
-                    },
+                    }
                 }
                 rest = &after[end + 1..];
-            },
+            }
             _ => {
                 out.push('%');
                 rest = after;
-            },
+            }
         }
     }
     out.push_str(rest);
@@ -652,18 +701,23 @@ mod com {
                         service
                             .Connect(&empty, &empty, &empty, &empty)
                             .context("ITaskService::Connect")?;
-                        service.GetFolder(&BSTR::from("\\")).context("ITaskService::GetFolder(\\)")
+                        service
+                            .GetFolder(&BSTR::from("\\"))
+                            .context("ITaskService::GetFolder(\\)")
                     })
             };
             match root {
-                Ok(root) => Ok(Self { root: ManuallyDrop::new(root), uninitialize }),
+                Ok(root) => Ok(Self {
+                    root: ManuallyDrop::new(root),
+                    uninitialize,
+                }),
                 Err(error) => {
                     if uninitialize {
                         // SAFETY: balances the successful CoInitializeEx above; no interface is alive.
                         unsafe { CoUninitialize() };
                     }
                     Err(error)
-                },
+                }
             }
         }
 
@@ -726,7 +780,8 @@ mod com {
                     .root
                     .GetTask(&BSTR::from(path))
                     .with_context(|| format!("GetTask({path})"))?;
-                task.Run(&VARIANT::default()).with_context(|| format!("Run({path})"))?;
+                task.Run(&VARIANT::default())
+                    .with_context(|| format!("Run({path})"))?;
             }
             Ok(())
         }
@@ -820,13 +875,22 @@ mod tests {
                 Trigger::Every { minutes: 30 },
                 Trigger::Daily { hour: 6, minute: 0 },
             ],
-            settings: Settings { restart: true, time_limit_minutes: Some(15) },
+            settings: Settings {
+                restart: true,
+                time_limit_minutes: Some(15),
+            },
         }
     }
 
     #[test]
     fn triggers_parse_and_label_round_trip() {
-        for text in ["atStartup", "atLogon", "every:30m", "daily@06:00", "daily@23:59"] {
+        for text in [
+            "atStartup",
+            "atLogon",
+            "every:30m",
+            "daily@06:00",
+            "daily@23:59",
+        ] {
             assert_eq!(Trigger::parse(text).unwrap().label(), text);
         }
         for bad in ["every:0m", "every:30", "daily@24:00", "daily@6", "boot"] {
@@ -914,7 +978,10 @@ mod tests {
         assert!(action.is_headless());
         let inner = action.unwrapped();
         assert_eq!(inner.command, "C:\\Program Files\\pwsh.exe");
-        assert_eq!(inner.arguments.as_deref(), Some("-NoProfile -File \"C:\\x.ps1\""));
+        assert_eq!(
+            inner.arguments.as_deref(),
+            Some("-NoProfile -File \"C:\\x.ps1\"")
+        );
     }
 
     #[test]
@@ -951,7 +1018,10 @@ mod tests {
         let patch = Patch {
             principal: Principal::S4U,
             highest: true,
-            settings: Some(Settings { restart: true, time_limit_minutes: None }),
+            settings: Some(Settings {
+                restart: true,
+                time_limit_minutes: None,
+            }),
             add_triggers: vec![Trigger::Boot, Trigger::Logon],
             action: None,
         };
@@ -967,11 +1037,17 @@ mod tests {
 
     #[test]
     fn headless_wrap_round_trips() {
-        let bare =
-            Action { command: "C:\\a b\\x.exe".into(), arguments: None, working_directory: None };
+        let bare = Action {
+            command: "C:\\a b\\x.exe".into(),
+            arguments: None,
+            working_directory: None,
+        };
         let wrapped = bare.clone().headless("C:\\WINDOWS\\");
         assert_eq!(wrapped.command, "C:\\WINDOWS\\System32\\conhost.exe");
-        assert_eq!(wrapped.arguments.as_deref(), Some("--headless \"C:\\a b\\x.exe\""));
+        assert_eq!(
+            wrapped.arguments.as_deref(),
+            Some("--headless \"C:\\a b\\x.exe\"")
+        );
         assert_eq!(wrapped.clone().headless("C:\\WINDOWS"), wrapped);
         assert_eq!(wrapped.unwrapped(), bare);
         assert!(wrapped.same_program(&bare));
@@ -991,7 +1067,10 @@ mod tests {
             name,
             description: Some("aphrody-infra wintask test".into()),
             action: Action {
-                command: format!("{}\\System32\\cmd.exe", std::env::var("SystemRoot").unwrap()),
+                command: format!(
+                    "{}\\System32\\cmd.exe",
+                    std::env::var("SystemRoot").unwrap()
+                ),
                 arguments: Some("/d /c exit 0".into()),
                 working_directory: None,
             }
@@ -999,10 +1078,18 @@ mod tests {
             principal: Principal::Interactive,
             highest: false,
             triggers: vec![Trigger::Daily { hour: 3, minute: 7 }],
-            settings: Settings { restart: false, time_limit_minutes: Some(1) },
+            settings: Settings {
+                restart: false,
+                time_limit_minutes: Some(1),
+            },
         };
         scheduler
-            .register(&path, &task_xml(&spec, &user, "2026-10-09"), Principal::Interactive, &user)
+            .register(
+                &path,
+                &task_xml(&spec, &user, "2026-10-09"),
+                Principal::Interactive,
+                &user,
+            )
             .unwrap();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let registered = scheduler.get(&path).unwrap().unwrap();
@@ -1020,7 +1107,9 @@ mod tests {
                 action: None,
             };
             let xml = patch_xml(&registered.xml, &patch, &user, "2026-10-09");
-            scheduler.register(&path, &xml, Principal::Interactive, &user).unwrap();
+            scheduler
+                .register(&path, &xml, Principal::Interactive, &user)
+                .unwrap();
             let patched = observe(&scheduler.get(&path).unwrap().unwrap().xml);
             assert_eq!(patched.triggers, ["daily@03:07", "every:720m"]);
             scheduler.run(&path).unwrap();
@@ -1042,6 +1131,9 @@ mod tests {
             "v\\x %NOPE_UNSET_1% 50%"
         );
         assert_eq!(full_path("\\", "a"), "\\a");
-        assert_eq!(full_path("\\Aphrody\\Native\\", "site"), "\\Aphrody\\Native\\site");
+        assert_eq!(
+            full_path("\\Aphrody\\Native\\", "site"),
+            "\\Aphrody\\Native\\site"
+        );
     }
 }

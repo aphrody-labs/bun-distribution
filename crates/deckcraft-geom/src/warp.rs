@@ -101,12 +101,19 @@ impl Guide {
         } else if s >= len {
             n - 2
         } else {
-            self.cum.partition_point(|c| *c <= s).saturating_sub(1).min(n - 2)
+            self.cum
+                .partition_point(|c| *c <= s)
+                .saturating_sub(1)
+                .min(n - 2)
         };
         let (a, b, c0) = seg(i);
         let d = b - a;
         let l = d.hypot();
-        let t = if l > 1e-12 { d / l } else { Vec2::new(1.0, 0.0) };
+        let t = if l > 1e-12 {
+            d / l
+        } else {
+            Vec2::new(1.0, 0.0)
+        };
         (a + t * (s - c0), t)
     }
 
@@ -118,7 +125,10 @@ impl Guide {
             return self.clone();
         }
         let unit = |i: usize| -> Vec2 {
-            let (a, b) = (self.pts.get(i).copied().unwrap_or(Point::ZERO), self.pts.get(i + 1).copied().unwrap_or(Point::ZERO));
+            let (a, b) = (
+                self.pts.get(i).copied().unwrap_or(Point::ZERO),
+                self.pts.get(i + 1).copied().unwrap_or(Point::ZERO),
+            );
             let v = b - a;
             let l = v.hypot();
             if l > 1e-12 { v / l } else { Vec2::ZERO }
@@ -140,7 +150,11 @@ impl Guide {
             };
             let t = before + after;
             let l = t.hypot();
-            let t = if l > 1e-12 { t / l } else { Vec2::new(1.0, 0.0) };
+            let t = if l > 1e-12 {
+                t / l
+            } else {
+                Vec2::new(1.0, 0.0)
+            };
             self.pts.get(i).copied().unwrap_or(Point::ZERO) + Vec2::new(t.y, -t.x) * d
         });
         Guide::from_points(pts.collect::<Vec<_>>(), self.closed)
@@ -189,7 +203,10 @@ pub struct Warp {
 
 /// Presets whose text follows a guide at its natural size (no wrapping).
 pub fn is_follow(name: &str) -> bool {
-    matches!(name, "textArchUp" | "textArchDown" | "textCircle" | "textButton")
+    matches!(
+        name,
+        "textArchUp" | "textArchDown" | "textCircle" | "textButton"
+    )
 }
 
 /// Default adjust values of a warp preset (`adj`, or `adj1`, `adj2`); empty for unknown presets.
@@ -257,7 +274,12 @@ struct Adj<'a> {
 
 impl Adj<'_> {
     fn raw(&self, i: usize) -> f64 {
-        self.raw.get(i).copied().filter(|v| v.is_finite()).or_else(|| self.defaults.get(i).copied()).unwrap_or(0.0)
+        self.raw
+            .get(i)
+            .copied()
+            .filter(|v| v.is_finite())
+            .or_else(|| self.defaults.get(i).copied())
+            .unwrap_or(0.0)
     }
     /// Adjust `i` as a fraction (1/100 000), pinned to `lo..=hi` (fractions).
     fn frac(&self, i: usize, lo: f64, hi: f64) -> f64 {
@@ -270,7 +292,10 @@ impl Adj<'_> {
 }
 
 fn line(pts: &[(f64, f64)]) -> Vec<Seg> {
-    pts.iter().enumerate().map(|(i, &(x, y))| if i == 0 { Seg::M(x, y) } else { Seg::L(x, y) }).collect()
+    pts.iter()
+        .enumerate()
+        .map(|(i, &(x, y))| if i == 0 { Seg::M(x, y) } else { Seg::L(x, y) })
+        .collect()
 }
 
 /// Quadratic from (0, y0) through control (0.5, c) to (1, y0).
@@ -307,20 +332,41 @@ fn circle(a: f64) -> (f64, f64) {
 /// One cubic wave period from x0 to x1 at height y: up first when `k` > 0 (y decreases).
 fn wave(out: &mut Vec<Seg>, x0: f64, x1: f64, y: f64, k: f64) {
     let l = x1 - x0;
-    out.push(Seg::C(x0 + l / 3.0, y - k, x0 + 2.0 * l / 3.0, y + k, x1, y));
+    out.push(Seg::C(
+        x0 + l / 3.0,
+        y - k,
+        x0 + 2.0 * l / 3.0,
+        y + k,
+        x1,
+        y,
+    ));
 }
 
 /// Wave guides: `periods` cubic waves over the width, shifted apart by `shift` (fraction).
 fn waves(a: f64, shift: f64, periods: usize, up_first: bool) -> Spec {
     let d = 2.0 * shift;
-    let (top_x, bot_x) = if d >= 0.0 { ((0.0, 1.0 - d), (d, 1.0)) } else { ((-d, 1.0), (0.0, 1.0 + d)) };
-    let k = if up_first { a * 10.0 / 3.0 } else { -a * 10.0 / 3.0 };
+    let (top_x, bot_x) = if d >= 0.0 {
+        ((0.0, 1.0 - d), (d, 1.0))
+    } else {
+        ((-d, 1.0), (0.0, 1.0 + d))
+    };
+    let k = if up_first {
+        a * 10.0 / 3.0
+    } else {
+        -a * 10.0 / 3.0
+    };
     let guide = |(x0, x1): (f64, f64), y: f64| {
         let mut v = vec![Seg::M(x0, y)];
         let n = periods.max(1) as f64;
         for i in 0..periods.max(1) {
             let f = i as f64;
-            wave(&mut v, x0 + (x1 - x0) * f / n, x0 + (x1 - x0) * (f + 1.0) / n, y, k);
+            wave(
+                &mut v,
+                x0 + (x1 - x0) * f / n,
+                x0 + (x1 - x0) * (f + 1.0) / n,
+                y,
+                k,
+            );
         }
         v
     };
@@ -336,15 +382,24 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
         "textPlain" => {
             let d = 2.0 * (a.frac(0, 0.3, 0.7) - 0.5);
             if d < 0.0 {
-                fill(line(&[(-d, 0.0), (1.0, 0.0)]), line(&[(0.0, 1.0), (1.0 + d, 1.0)]))
+                fill(
+                    line(&[(-d, 0.0), (1.0, 0.0)]),
+                    line(&[(0.0, 1.0), (1.0 + d, 1.0)]),
+                )
             } else {
-                fill(line(&[(0.0, 0.0), (1.0 - d, 0.0)]), line(&[(d, 1.0), (1.0, 1.0)]))
+                fill(
+                    line(&[(0.0, 0.0), (1.0 - d, 0.0)]),
+                    line(&[(d, 1.0), (1.0, 1.0)]),
+                )
             }
         }
         "textStop" => {
             let y = a.frac(0, 0.14286, 0.5);
             let t = 1.0 / 3.0;
-            fill(line(&[(0.0, y), (t, 0.0), (1.0 - t, 0.0), (1.0, y)]), line(&[(0.0, 1.0 - y), (t, 1.0), (1.0 - t, 1.0), (1.0, 1.0 - y)]))
+            fill(
+                line(&[(0.0, y), (t, 0.0), (1.0 - t, 0.0), (1.0, y)]),
+                line(&[(0.0, 1.0 - y), (t, 1.0), (1.0 - t, 1.0), (1.0, 1.0 - y)]),
+            )
         }
         "textTriangle" => {
             let y = a.frac(0, 0.0, 1.0);
@@ -356,19 +411,31 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
         }
         "textChevron" => {
             let y = a.frac(0, 0.0, 0.5);
-            fill(line(&[(0.0, y), (0.5, 0.0), (1.0, y)]), line(&[(0.0, 1.0), (0.5, 1.0 - y), (1.0, 1.0)]))
+            fill(
+                line(&[(0.0, y), (0.5, 0.0), (1.0, y)]),
+                line(&[(0.0, 1.0), (0.5, 1.0 - y), (1.0, 1.0)]),
+            )
         }
         "textChevronInverted" => {
             let y = a.frac(0, 0.5, 1.0);
-            fill(line(&[(0.0, 0.0), (0.5, 1.0 - y), (1.0, 0.0)]), line(&[(0.0, y), (0.5, 1.0), (1.0, y)]))
+            fill(
+                line(&[(0.0, 0.0), (0.5, 1.0 - y), (1.0, 0.0)]),
+                line(&[(0.0, y), (0.5, 1.0), (1.0, y)]),
+            )
         }
         "textFadeRight" => {
             let y = a.frac(0, 0.0, 0.49999);
-            fill(line(&[(0.0, 0.0), (1.0, y)]), line(&[(0.0, 1.0), (1.0, 1.0 - y)]))
+            fill(
+                line(&[(0.0, 0.0), (1.0, y)]),
+                line(&[(0.0, 1.0), (1.0, 1.0 - y)]),
+            )
         }
         "textFadeLeft" => {
             let y = a.frac(0, 0.0, 0.49999);
-            fill(line(&[(0.0, y), (1.0, 0.0)]), line(&[(0.0, 1.0 - y), (1.0, 1.0)]))
+            fill(
+                line(&[(0.0, y), (1.0, 0.0)]),
+                line(&[(0.0, 1.0 - y), (1.0, 1.0)]),
+            )
         }
         "textFadeUp" => {
             let x = a.frac(0, 0.0, 0.49999);
@@ -380,19 +447,31 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
         }
         "textSlantUp" => {
             let y = a.frac(0, 0.44444, 1.0);
-            fill(line(&[(0.0, y), (1.0, 0.0)]), line(&[(0.0, 1.0), (1.0, 1.0 - y)]))
+            fill(
+                line(&[(0.0, y), (1.0, 0.0)]),
+                line(&[(0.0, 1.0), (1.0, 1.0 - y)]),
+            )
         }
         "textSlantDown" => {
             let y = a.frac(0, 0.0, 0.55556);
-            fill(line(&[(0.0, 0.0), (1.0, 1.0 - y)]), line(&[(0.0, y), (1.0, 1.0)]))
+            fill(
+                line(&[(0.0, 0.0), (1.0, 1.0 - y)]),
+                line(&[(0.0, y), (1.0, 1.0)]),
+            )
         }
         "textCascadeUp" => {
             let y = a.frac(0, 0.0, 1.0);
-            fill(line(&[(0.0, (1.0 - y) / 4.0), (1.0, 0.0)]), line(&[(0.0, 1.0), (1.0, y)]))
+            fill(
+                line(&[(0.0, (1.0 - y) / 4.0), (1.0, 0.0)]),
+                line(&[(0.0, 1.0), (1.0, y)]),
+            )
         }
         "textCascadeDown" => {
             let y = a.frac(0, 0.0, 1.0);
-            fill(line(&[(0.0, 0.0), (1.0, (1.0 - y) / 4.0)]), line(&[(0.0, y), (1.0, 1.0)]))
+            fill(
+                line(&[(0.0, 0.0), (1.0, (1.0 - y) / 4.0)]),
+                line(&[(0.0, y), (1.0, 1.0)]),
+            )
         }
         "textInflate" => {
             let y = a.frac(0, 0.0, 0.2);
@@ -423,7 +502,10 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
             // a band's height.
             let y = a.frac(0, 0.05, 0.95);
             let g = 0.05;
-            vec![Spec::Fill(top(), quad(0.5 - g, 2.0 * y - 0.5 - g)), Spec::Fill(quad(0.5 + g, 2.0 * y - 0.5 + g), bottom())]
+            vec![
+                Spec::Fill(top(), quad(0.5 - g, 2.0 * y - 0.5 - g)),
+                Spec::Fill(quad(0.5 + g, 2.0 * y - 0.5 + g), bottom()),
+            ]
         }
         "textDeflateInflateDeflate" => {
             let y = a.frac(0, 0.01, 1.0 / 3.0);
@@ -438,26 +520,55 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
         }
         "textCurveUp" | "textCurveDown" => {
             let y = a.frac(0, 0.0, 0.56818);
-            let b = vec![M(0.0, 1.0 - 3.0 * y / 8.0), C(1.0 / 3.0, 1.0 + y / 8.0, 2.0 / 3.0, 1.0 + y / 8.0, 1.0, 1.0 - 3.0 * y / 8.0)];
+            let b = vec![
+                M(0.0, 1.0 - 3.0 * y / 8.0),
+                C(
+                    1.0 / 3.0,
+                    1.0 + y / 8.0,
+                    2.0 / 3.0,
+                    1.0 + y / 8.0,
+                    1.0,
+                    1.0 - 3.0 * y / 8.0,
+                ),
+            ];
             let t = if name == "textCurveUp" {
-                vec![M(0.0, y), C(1.0 / 3.0, 1.25 * y, 2.0 / 3.0, 0.75 * y, 1.0, 0.0)]
+                vec![
+                    M(0.0, y),
+                    C(1.0 / 3.0, 1.25 * y, 2.0 / 3.0, 0.75 * y, 1.0, 0.0),
+                ]
             } else {
-                vec![M(0.0, 0.0), C(1.0 / 3.0, 0.75 * y, 2.0 / 3.0, 1.25 * y, 1.0, y)]
+                vec![
+                    M(0.0, 0.0),
+                    C(1.0 / 3.0, 0.75 * y, 2.0 / 3.0, 1.25 * y, 1.0, y),
+                ]
             };
             fill(t, b)
         }
         "textCanUp" => {
             let r = 1.0 - a.frac(0, 0.5, 1.0);
-            fill(vec![A(0.5, r, 0.5, r, 180.0, 180.0)], vec![A(0.5, 1.0, 0.5, r, 180.0, 180.0)])
+            fill(
+                vec![A(0.5, r, 0.5, r, 180.0, 180.0)],
+                vec![A(0.5, 1.0, 0.5, r, 180.0, 180.0)],
+            )
         }
         "textCanDown" => {
             let r = a.frac(0, 0.0, 0.5);
-            fill(vec![A(0.5, 0.0, 0.5, r, 180.0, -180.0)], vec![A(0.5, 1.0 - r, 0.5, r, 180.0, -180.0)])
+            fill(
+                vec![A(0.5, 0.0, 0.5, r, 180.0, -180.0)],
+                vec![A(0.5, 1.0 - r, 0.5, r, 180.0, -180.0)],
+            )
         }
         "textRingInside" | "textRingOutside" => {
             let h = a.frac(0, 0.5, 0.99);
-            let sweep = if name == "textRingInside" { 360.0 } else { -360.0 };
-            fill(vec![A(0.5, h / 2.0, 0.5, h / 2.0, 180.0, sweep)], vec![A(0.5, 1.0 - h / 2.0, 0.5, h / 2.0, 180.0, sweep)])
+            let sweep = if name == "textRingInside" {
+                360.0
+            } else {
+                -360.0
+            };
+            fill(
+                vec![A(0.5, h / 2.0, 0.5, h / 2.0, 180.0, sweep)],
+                vec![A(0.5, 1.0 - h / 2.0, 0.5, h / 2.0, 180.0, sweep)],
+            )
         }
         "textWave1" => vec![waves(a.frac(0, 0.0, 0.2), a.frac(1, -0.1, 0.1), 1, true)],
         "textWave2" => vec![waves(a.frac(0, 0.0, 0.2), a.frac(1, -0.1, 0.1), 1, false)],
@@ -481,7 +592,10 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
             let half = 0.5 * t.to_radians().cos().abs();
             vec![
                 Spec::Follow(ellipse(1.0, s, w), LineAnchor::Last),
-                Spec::Follow(line(&[(0.5 - half, 0.5), (0.5 + half, 0.5)]), LineAnchor::Middle),
+                Spec::Follow(
+                    line(&[(0.5 - half, 0.5), (0.5 + half, 0.5)]),
+                    LineAnchor::Middle,
+                ),
                 Spec::Follow(ellipse(1.0, 360.0 - s, -w), LineAnchor::First),
             ]
         }
@@ -508,7 +622,10 @@ fn spec(name: &str, a: &Adj) -> Option<Vec<Spec>> {
             let (dy, half) = (0.25 * r, 0.25 * r * 3f64.sqrt());
             vec![
                 Spec::Fill(ellipse(1.0, s, w), ellipse(r, s, w)),
-                Spec::Fill(line(&[(0.5 - half, 0.5 - dy), (0.5 + half, 0.5 - dy)]), line(&[(0.5 - half, 0.5 + dy), (0.5 + half, 0.5 + dy)])),
+                Spec::Fill(
+                    line(&[(0.5 - half, 0.5 - dy), (0.5 + half, 0.5 - dy)]),
+                    line(&[(0.5 - half, 0.5 + dy), (0.5 + half, 0.5 + dy)]),
+                ),
                 Spec::Fill(ellipse(r, 360.0 - s, -w), ellipse(1.0, 360.0 - s, -w)),
             ]
         }
@@ -546,8 +663,17 @@ fn guide(segs: &[Seg], r: Rect) -> Guide {
                 }
             }
             Seg::A(cx, cy, rx, ry, start, sweep) => {
-                let arc = Arc::new((cx, cy), (rx.max(0.0), ry.max(0.0)), start.to_radians(), sweep.to_radians(), 0.0);
-                let s0 = Point::new(cx + rx * start.to_radians().cos(), cy + ry * start.to_radians().sin());
+                let arc = Arc::new(
+                    (cx, cy),
+                    (rx.max(0.0), ry.max(0.0)),
+                    start.to_radians(),
+                    sweep.to_radians(),
+                    0.0,
+                );
+                let s0 = Point::new(
+                    cx + rx * start.to_radians().cos(),
+                    cy + ry * start.to_radians().sin(),
+                );
                 if started {
                     p.line_to(s0);
                 } else {
@@ -569,17 +695,34 @@ fn guide(segs: &[Seg], r: Rect) -> Guide {
 /// The warp `name` with adjust values `adj` (raw guide values; missing ones take the defaults)
 /// over text rectangle `rect`. `None` for unknown presets, `textNoShape` or a non-finite rect.
 pub fn warp(name: &str, adj: &[f64], rect: Rect) -> Option<Warp> {
-    if ![rect.x0, rect.y0, rect.x1, rect.y1].iter().all(|v| v.is_finite()) {
+    if ![rect.x0, rect.y0, rect.x1, rect.y1]
+        .iter()
+        .all(|v| v.is_finite())
+    {
         return None;
     }
-    let r = Rect::new(rect.x0.min(rect.x1), rect.y0.min(rect.y1), rect.x0.max(rect.x1), rect.y0.max(rect.y1));
-    let a = Adj { raw: adj, defaults: adjust_defaults(name) };
+    let r = Rect::new(
+        rect.x0.min(rect.x1),
+        rect.y0.min(rect.y1),
+        rect.x0.max(rect.x1),
+        rect.y0.max(rect.y1),
+    );
+    let a = Adj {
+        raw: adj,
+        defaults: adjust_defaults(name),
+    };
     let specs = spec(name, &a)?;
     let bands = specs
         .into_iter()
         .map(|s| match s {
-            Spec::Fill(t, b) => Band::Fill { top: guide(&t, r), bottom: guide(&b, r) },
-            Spec::Follow(p, anchor) => Band::Follow { path: guide(&p, r), anchor },
+            Spec::Fill(t, b) => Band::Fill {
+                top: guide(&t, r),
+                bottom: guide(&b, r),
+            },
+            Spec::Follow(p, anchor) => Band::Follow {
+                path: guide(&p, r),
+                anchor,
+            },
         })
         .collect();
     Some(Warp { bands })
@@ -592,7 +735,10 @@ pub fn band_of_line(line: usize, lines: usize, bands: usize) -> usize {
         return 0;
     }
     // Band b holds lines ceil(b·n/k) .. ceil((b+1)·n/k).
-    (0..bands).rev().find(|&b| (b * lines).div_ceil(bands) <= line).unwrap_or(0)
+    (0..bands)
+        .rev()
+        .find(|&b| (b * lines).div_ceil(bands) <= line)
+        .unwrap_or(0)
 }
 
 /// One laid-out line as the warp sees it (layout coordinates, points).
@@ -661,9 +807,15 @@ impl Warp {
         }
         // Every fill band maps a box as tall as the tallest band's ink, centred on its own ink, so
         // a band with fewer lines keeps them at the same size, centred between its guides.
-        let tallest = band_y.iter().flatten().map(|(y0, y1)| y1 - y0).fold(0.0, f64::max);
-        let band_y: Vec<Option<(f64, f64)>> =
-            band_y.iter().map(|r| r.map(|(y0, y1)| ((y0 + y1 - tallest) / 2.0, (y0 + y1 + tallest) / 2.0))).collect();
+        let tallest = band_y
+            .iter()
+            .flatten()
+            .map(|(y0, y1)| y1 - y0)
+            .fold(0.0, f64::max);
+        let band_y: Vec<Option<(f64, f64)>> = band_y
+            .iter()
+            .map(|r| r.map(|(y0, y1)| ((y0 + y1 - tallest) / 2.0, (y0 + y1 + tallest) / 2.0)))
+            .collect();
         for (b, band) in self.bands.iter().enumerate() {
             if let Band::Fill { top, bottom } = band {
                 let half = lines
@@ -677,7 +829,10 @@ impl Warp {
                     k_fill = k_fill.min(band.length() / (2.0 * half));
                 }
                 if let Some(Some((y0, y1))) = band_y.get(b) {
-                    let thick = [0.0, 0.25, 0.5, 0.75, 1.0].iter().map(|&u| (top.at_frac(u) - bottom.at_frac(u)).hypot()).fold(0.0, f64::max);
+                    let thick = [0.0, 0.25, 0.5, 0.75, 1.0]
+                        .iter()
+                        .map(|&u| (top.at_frac(u) - bottom.at_frac(u)).hypot())
+                        .fold(0.0, f64::max);
                     if y1 - y0 > 1e-9 {
                         zoom = zoom.max(thick / (y1 - y0));
                     }
@@ -697,13 +852,31 @@ impl Warp {
                 Some(Band::Fill { .. }) | None => {
                     let (y0, y1) = band_y.get(b).copied().flatten().unwrap_or((0.0, 1.0));
                     let len = self.bands.get(b).map(Band::length).unwrap_or(0.0);
-                    maps.push(LineMap::Fill { band: b, cx, k: k_fill, len, y0, y1 });
+                    maps.push(LineMap::Fill {
+                        band: b,
+                        cx,
+                        k: k_fill,
+                        len,
+                        y0,
+                        y1,
+                    });
                 }
                 Some(Band::Follow { path, anchor }) => {
                     let len = path.length();
-                    let widest = (0..n).filter(in_band).filter_map(|j| lines.get(j)).map(|l| l.extent.1 - l.extent.0).fold(0.0, f64::max);
-                    let k = if widest > len && widest > 1e-9 { len / widest } else { 1.0 };
-                    let members: Vec<&WarpLine> = (0..n).filter(in_band).filter_map(|j| lines.get(j)).collect();
+                    let widest = (0..n)
+                        .filter(in_band)
+                        .filter_map(|j| lines.get(j))
+                        .map(|l| l.extent.1 - l.extent.0)
+                        .fold(0.0, f64::max);
+                    let k = if widest > len && widest > 1e-9 {
+                        len / widest
+                    } else {
+                        1.0
+                    };
+                    let members: Vec<&WarpLine> = (0..n)
+                        .filter(in_band)
+                        .filter_map(|j| lines.get(j))
+                        .collect();
                     let ref_y = match anchor {
                         LineAnchor::Last => members.last().map(|l| l.ref_y),
                         LineAnchor::First => members.first().map(|l| l.ref_y),
@@ -728,11 +901,27 @@ impl Warp {
                     let (gl, gr) = ((e0 - inner.x0).max(0.0), (inner.x1 - e1).max(0.0));
                     let f = if gl + gr > 1e-9 { gl / (gl + gr) } else { 0.5 };
                     let s0 = f * (len - w);
-                    maps.push(LineMap::Follow { band: b, guide, e0, s0, k, ref_y: l.ref_y });
+                    maps.push(LineMap::Follow {
+                        band: b,
+                        guide,
+                        e0,
+                        s0,
+                        k,
+                        ref_y: l.ref_y,
+                    });
                 }
             }
         }
-        Mapper { warp: self, lines: maps, offsets, zoom: if zoom.is_finite() { zoom.clamp(1.0, 1.0e4) } else { 1.0 } }
+        Mapper {
+            warp: self,
+            lines: maps,
+            offsets,
+            zoom: if zoom.is_finite() {
+                zoom.clamp(1.0, 1.0e4)
+            } else {
+                1.0
+            },
+        }
     }
 }
 
@@ -745,15 +934,42 @@ impl Mapper<'_> {
     /// Map point `p` of line `line` (layout coordinates) onto the warp.
     pub fn map(&self, line: usize, p: Point) -> Point {
         let out = match self.lines.get(line) {
-            Some(&LineMap::Fill { band, cx, k, len, y0, y1 }) => {
-                let Some(Band::Fill { top, bottom }) = self.warp.bands.get(band) else { return p };
-                let u = if len > 1e-9 { 0.5 + (p.x - cx) * k / len } else { 0.5 };
-                let v = if y1 - y0 > 1e-9 { (p.y - y0) / (y1 - y0) } else { 0.5 };
+            Some(&LineMap::Fill {
+                band,
+                cx,
+                k,
+                len,
+                y0,
+                y1,
+            }) => {
+                let Some(Band::Fill { top, bottom }) = self.warp.bands.get(band) else {
+                    return p;
+                };
+                let u = if len > 1e-9 {
+                    0.5 + (p.x - cx) * k / len
+                } else {
+                    0.5
+                };
+                let v = if y1 - y0 > 1e-9 {
+                    (p.y - y0) / (y1 - y0)
+                } else {
+                    0.5
+                };
                 let (t, b) = (top.at_frac(u), bottom.at_frac(u));
                 t.lerp(b, v)
             }
-            Some(&LineMap::Follow { band, guide, e0, s0, k, ref_y }) => {
-                let path = match (guide.and_then(|g| self.offsets.get(g)), self.warp.bands.get(band)) {
+            Some(&LineMap::Follow {
+                band,
+                guide,
+                e0,
+                s0,
+                k,
+                ref_y,
+            }) => {
+                let path = match (
+                    guide.and_then(|g| self.offsets.get(g)),
+                    self.warp.bands.get(band),
+                ) {
                     (Some(g), _) => g,
                     (None, Some(Band::Follow { path, .. })) => path,
                     _ => return p,
@@ -765,7 +981,11 @@ impl Mapper<'_> {
             }
             None => p,
         };
-        if out.x.is_finite() && out.y.is_finite() { out } else { p }
+        if out.x.is_finite() && out.y.is_finite() {
+            out
+        } else {
+            p
+        }
     }
 }
 

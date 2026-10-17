@@ -66,7 +66,15 @@ fn result_line(ui: &mut egui::Ui, r: &Result<Value, String>) {
     match r {
         Ok(v) => {
             let s = v.to_string();
-            ui.label(egui::RichText::new(if s.len() > 160 { format!("{}…", &s[..160]) } else { s }).small().color(Tokens::current().counter_text));
+            ui.label(
+                egui::RichText::new(if s.len() > 160 {
+                    format!("{}…", &s[..160])
+                } else {
+                    s
+                })
+                .small()
+                .color(Tokens::current().counter_text),
+            );
         }
         Err(e) => {
             ui.label(egui::RichText::new(e).small().color(Tokens::current().rec));
@@ -126,15 +134,32 @@ fn beat_detective(app: &mut SoundApp, ctx: &egui::Context) {
 /// Command the Tempo Operations Apply button sends. Stretch uses `factor = start / end`
 /// so a lower end BPM lengthens the selection (`event.tempo_stretch` has no `end_bpm`).
 pub(crate) fn tempo_ops_apply(curve: &str, start_bpm: f64, end_bpm: f64) -> (&'static str, Value) {
-    let start = if start_bpm.is_finite() { start_bpm.max(1.0) } else { 1.0 };
-    let end = if end_bpm.is_finite() { end_bpm.max(1.0) } else { 1.0 };
+    let start = if start_bpm.is_finite() {
+        start_bpm.max(1.0)
+    } else {
+        1.0
+    };
+    let end = if end_bpm.is_finite() {
+        end_bpm.max(1.0)
+    } else {
+        1.0
+    };
     match curve {
         "constant" => ("event.tempo_constant", json!({"bpm": start_bpm})),
-        "parabolic" => ("event.tempo_parabolic", json!({"start_bpm": start_bpm, "end_bpm": end_bpm})),
-        "s-curve" => ("event.tempo_s_curve", json!({"start_bpm": start_bpm, "end_bpm": end_bpm})),
+        "parabolic" => (
+            "event.tempo_parabolic",
+            json!({"start_bpm": start_bpm, "end_bpm": end_bpm}),
+        ),
+        "s-curve" => (
+            "event.tempo_s_curve",
+            json!({"start_bpm": start_bpm, "end_bpm": end_bpm}),
+        ),
         "scale" => ("event.tempo_scale", json!({"factor": end / start})),
         "stretch" => ("event.tempo_stretch", json!({"factor": start / end})),
-        _ => ("event.tempo_linear", json!({"start_bpm": start_bpm, "end_bpm": end_bpm})),
+        _ => (
+            "event.tempo_linear",
+            json!({"start_bpm": start_bpm, "end_bpm": end_bpm}),
+        ),
     }
 }
 

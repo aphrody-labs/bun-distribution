@@ -1,13 +1,13 @@
 #[cfg(feature = "hotpatching")]
-use crate::{change_detection::DetectChanges, HotPatchChanges};
+use crate::{HotPatchChanges, change_detection::DetectChanges};
 use crate::{
     change_detection::Mut,
     entity::Entity,
     error::BevyError,
     prelude::{FromTemplate, Template},
     system::{
-        input::SystemInput, BoxedSystem, Commands, If, IntoSystem, Res, RunSystemError,
-        SystemParamValidationError,
+        BoxedSystem, Commands, If, IntoSystem, Res, RunSystemError, SystemParamValidationError,
+        input::SystemInput,
     },
     template::TemplateContext,
     world::World,
@@ -851,7 +851,9 @@ pub enum RegisteredSystemError<I: SystemInput = (), O = ()> {
     #[error("Cached system was not found")]
     SystemNotCached,
     /// The `RegisteredSystem` component is missing.
-    #[error("System {0:?} does not have a RegisteredSystem component. This only happens if app code removed the component.")]
+    #[error(
+        "System {0:?} does not have a RegisteredSystem component. This only happens if app code removed the component."
+    )]
     MissingRegisteredSystemComponent(SystemId<I, O>),
     /// A system tried to remove itself.
     #[error("System {0:?} tried to remove itself")]
@@ -868,7 +870,9 @@ pub enum RegisteredSystemError<I: SystemInput = (), O = ()> {
     IncorrectType(SystemId<I, O>, SystemIdMarker),
     /// System is not present in the `RegisteredSystem` component.
     // TODO: We should consider using catch_unwind to protect against the panic case.
-    #[error("The system is not present in the RegisteredSystem component. This can happen if the system was called recursively or if the system panicked on the last run.")]
+    #[error(
+        "The system is not present in the RegisteredSystem component. This can happen if the system was called recursively or if the system panicked on the last run."
+    )]
     SystemMissing(SystemId<I, O>),
 }
 
@@ -914,8 +918,8 @@ mod tests {
     use crate::{
         prelude::*,
         system::{
-            despawn_unused_registered_systems, system_value, RegisteredSystemError, SystemHandle,
-            SystemHandleTemplate, SystemId,
+            RegisteredSystemError, SystemHandle, SystemHandleTemplate, SystemId,
+            despawn_unused_registered_systems, system_value,
         },
     };
 
@@ -957,8 +961,8 @@ mod tests {
     fn local_variables() {
         // The `Local` begins at the default value of 0
         fn doubling(last_counter: Local<Counter>, mut counter: ResMut<Counter>) {
-            counter.0 += last_counter.0 .0;
-            last_counter.0 .0 = counter.0;
+            counter.0 += last_counter.0.0;
+            last_counter.0.0 = counter.0;
         }
 
         let mut world = World::new();

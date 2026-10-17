@@ -14,7 +14,10 @@ fn s(x: f64) -> Tick {
 }
 
 fn fixture() -> Transcript {
-    let mut t: Transcript = serde_json::from_str(include_str!("../../tests/fixtures/interview.transcript.json")).unwrap();
+    let mut t: Transcript = serde_json::from_str(include_str!(
+        "../../tests/fixtures/interview.transcript.json"
+    ))
+    .unwrap();
     t.normalize();
     t.check().unwrap();
     t
@@ -28,7 +31,16 @@ fn transcripts() -> Transcripts {
 
 fn seq() -> Sequence {
     let mut p = Project::new("t");
-    let id = p.new_sequence("s", SequenceSettings { frame_rate: R, ..Default::default() }, 1, 2, None);
+    let id = p.new_sequence(
+        "s",
+        SequenceSettings {
+            frame_rate: R,
+            ..Default::default()
+        },
+        1,
+        2,
+        None,
+    );
     p.sequence(id).unwrap().clone()
 }
 
@@ -82,11 +94,17 @@ fn words_map_through_the_clip() {
     // media 3.5 s – 6.5 s at timeline 2 s
     q.audio_tracks[0].items.push(clip(100, 2.0, 3.0, 3.5));
     let w = sequence_words(&q, &transcripts());
-    assert_eq!(texts(&w), ["Um,", "today", "we", "talk", "about", "rivers."]);
+    assert_eq!(
+        texts(&w),
+        ["Um,", "today", "we", "talk", "about", "rivers."]
+    );
     assert_eq!(w[0].start, s(2.2));
     assert_eq!(w[0].end, s(2.5));
     assert_eq!(w[5].end, s(4.4));
-    assert!(w.iter().all(|x| x.clip == ClipId(100) && x.item == MEDIA && x.track == 0));
+    assert!(
+        w.iter()
+            .all(|x| x.clip == ClipId(100) && x.item == MEDIA && x.track == 0)
+    );
     assert_eq!(w[0].index, 4);
     assert_eq!(w[0].speaker.as_deref(), Some("Speaker 1"));
 }
@@ -171,7 +189,12 @@ fn extract_text_closes_the_gap() {
     let w = sequence_words(&q, &transcripts());
     let r = word_range(&w, 0, 3, R).unwrap();
     let mut next = 1000;
-    let mut ctx = EditCtx { next_id: &mut next, media_duration: &media_dur, media_start: &|_| Tick::ZERO, min_duration: R.frame_duration() };
+    let mut ctx = EditCtx {
+        next_id: &mut next,
+        media_duration: &media_dur,
+        media_start: &|_| Tick::ZERO,
+        min_duration: R.frame_duration(),
+    };
     let tracks: Vec<TrackId> = q.all_tracks().map(|t| t.id).collect();
     crate::extract(&mut q, &tracks, r, &mut ctx);
     q.check().unwrap();
@@ -193,10 +216,18 @@ fn pauses_are_found_and_removed_in_one_pass() {
     let p2 = find_pauses(&w, s(0.4), s(0.1), R);
     assert_eq!(p2.len(), 3);
     let mut next = 1000;
-    let mut ctx = EditCtx { next_id: &mut next, media_duration: &media_dur, media_start: &|_| Tick::ZERO, min_duration: R.frame_duration() };
+    let mut ctx = EditCtx {
+        next_id: &mut next,
+        media_duration: &media_dur,
+        media_start: &|_| Tick::ZERO,
+        min_duration: R.frame_duration(),
+    };
     let removed = ripple_delete_ranges(&mut q, p2.clone(), &mut ctx);
     q.check().unwrap();
-    assert_eq!(removed, p2.iter().map(|r| r.duration).fold(Tick::ZERO, |a, b| a + b));
+    assert_eq!(
+        removed,
+        p2.iter().map(|r| r.duration).fold(Tick::ZERO, |a, b| a + b)
+    );
     let w2 = sequence_words(&q, &transcripts());
     assert_eq!(texts(&w2), texts(&w));
     // the long pause is now 0.2 s
@@ -218,9 +249,20 @@ fn fillers_are_found_with_phrases_and_removed() {
     assert_eq!(find_fillers(&w, &more), vec![4..5, 15..16, 18..20]);
     let ranges = filler_ranges(&w, &hits, R);
     // "Um," 3.70–4.00 → nearest frames 3.68–4.00; "uh" 8.20–8.50 → 8.20–8.48
-    assert_eq!(ranges.iter().map(|r| (r.start, r.end())).collect::<Vec<_>>(), vec![(s(3.68), s(4.00)), (s(8.20), s(8.48))]);
+    assert_eq!(
+        ranges
+            .iter()
+            .map(|r| (r.start, r.end()))
+            .collect::<Vec<_>>(),
+        vec![(s(3.68), s(4.00)), (s(8.20), s(8.48))]
+    );
     let mut next = 1000;
-    let mut ctx = EditCtx { next_id: &mut next, media_duration: &media_dur, media_start: &|_| Tick::ZERO, min_duration: R.frame_duration() };
+    let mut ctx = EditCtx {
+        next_id: &mut next,
+        media_duration: &media_dur,
+        media_start: &|_| Tick::ZERO,
+        min_duration: R.frame_duration(),
+    };
     ripple_delete_ranges(&mut q, ranges, &mut ctx);
     q.check().unwrap();
     let w2 = sequence_words(&q, &transcripts());
@@ -243,9 +285,17 @@ fn check_blocks(b: &[CaptionBlock], rules: &CaptionRules) {
         assert_eq!(R.snap(x.end), x.end);
         let lines: Vec<&str> = x.text.lines().collect();
         assert!(lines.len() <= rules.lines, "{x:?}");
-        assert!(lines.iter().all(|l| l.chars().count() <= rules.max_chars), "{x:?}");
+        assert!(
+            lines.iter().all(|l| l.chars().count() <= rules.max_chars),
+            "{x:?}"
+        );
         if i > 0 {
-            assert!(x.start >= b[i - 1].end + Tick(R.frame_duration().0 * rules.gap_frames), "{:?} overlaps {:?}", b[i - 1], x);
+            assert!(
+                x.start >= b[i - 1].end + Tick(R.frame_duration().0 * rules.gap_frames),
+                "{:?} overlaps {:?}",
+                b[i - 1],
+                x
+            );
         }
     }
 }
@@ -258,14 +308,24 @@ fn captions_follow_line_length_speaker_and_pause_rules() {
     check_blocks(&b, &rules);
     assert_eq!(
         b.iter().map(|x| x.text.as_str()).collect::<Vec<_>>(),
-        ["Welcome to the show.", "Um, today we talk about rivers.", "Thanks for having me. I uh love rivers,\nyou know."]
+        [
+            "Welcome to the show.",
+            "Um, today we talk about rivers.",
+            "Thanks for having me. I uh love rivers,\nyou know."
+        ]
     );
     assert_eq!((b[0].start, b[0].end), (s(0.48), s(1.72)));
     assert_eq!(b[2].speaker.as_deref(), Some("Speaker 2"));
     assert_eq!(b[2].words, 10..20);
 
     // single 20-character lines, two-frame gaps, 3 s minimum
-    let tight = CaptionRules { max_chars: 20, lines: 1, gap_frames: 2, min_duration: s(3.0), ..Default::default() };
+    let tight = CaptionRules {
+        max_chars: 20,
+        lines: 1,
+        gap_frames: 2,
+        min_duration: s(3.0),
+        ..Default::default()
+    };
     let b = caption_blocks(&w, &tight, R);
     check_blocks(&b, &tight);
     assert!(b.len() >= 5);
@@ -288,11 +348,18 @@ fn captions_never_overlap_with_dense_words() {
             item: MEDIA,
             index: i as usize,
             track: 0,
-            speaker: if i % 3 == 0 { Some("A".into()) } else { Some("B".into()) },
+            speaker: if i % 3 == 0 {
+                Some("A".into())
+            } else {
+                Some("B".into())
+            },
             confidence: 1.0,
         })
         .collect();
-    let rules = CaptionRules { gap_frames: 1, ..Default::default() };
+    let rules = CaptionRules {
+        gap_frames: 1,
+        ..Default::default()
+    };
     let b = caption_blocks(&words, &rules, R);
     check_blocks(&b, &rules);
 }

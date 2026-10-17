@@ -27,7 +27,10 @@ pub struct ScanOptions {
 
 impl Default for ScanOptions {
     fn default() -> Self {
-        Self { max_file_size: 2 * 1024 * 1024, policy: DenyPolicy::Repo }
+        Self {
+            max_file_size: 2 * 1024 * 1024,
+            policy: DenyPolicy::Repo,
+        }
     }
 }
 
@@ -94,11 +97,19 @@ fn is_generated(path: &str, sample: &[u8]) -> bool {
     {
         return true;
     }
-    if lower.split('/').any(|c| matches!(c, "dist" | "ui-dist" | "generated" | "__generated__" | "vendor")) {
+    if lower.split('/').any(|c| {
+        matches!(
+            c,
+            "dist" | "ui-dist" | "generated" | "__generated__" | "vendor"
+        )
+    }) {
         return true;
     }
     // Minified output: a very long first line.
-    sample.split(|b| *b == b'\n').next().is_some_and(|line| line.len() > 2000)
+    sample
+        .split(|b| *b == b'\n')
+        .next()
+        .is_some_and(|line| line.len() > 2000)
 }
 
 /// Classify a file from its path and a content sample.
@@ -132,12 +143,18 @@ impl HomeDb {
     ///
     /// SQLite failures.
     #[allow(clippy::type_complexity)]
-    pub fn stored_files(&self, source_id: i64) -> Result<BTreeMap<String, (String, i64, i64, String, Option<String>)>> {
+    pub fn stored_files(
+        &self,
+        source_id: i64,
+    ) -> Result<BTreeMap<String, (String, i64, i64, String, Option<String>)>> {
         let mut statement = self.conn.prepare(
             "SELECT rel_path, blake3, size_bytes, mtime_ms, class, lang FROM files WHERE source_id = ?1",
         )?;
         let rows = statement.query_map(params![source_id], |r| {
-            Ok((r.get::<_, String>(0)?, (r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)))
+            Ok((
+                r.get::<_, String>(0)?,
+                (r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?),
+            ))
         })?;
         Ok(rows.collect::<std::result::Result<_, _>>()?)
     }
@@ -148,7 +165,12 @@ impl HomeDb {
 /// # Errors
 ///
 /// SQLite failures (unreadable files are counted, not fatal).
-pub fn scan_tree(db: &mut HomeDb, source_id: i64, root: &Path, options: &ScanOptions) -> Result<ScanOutcome> {
+pub fn scan_tree(
+    db: &mut HomeDb,
+    source_id: i64,
+    root: &Path,
+    options: &ScanOptions,
+) -> Result<ScanOutcome> {
     let stored = db.stored_files(source_id)?;
     let mut outcome = ScanOutcome::default();
     let mut fingerprints: Vec<FileFingerprint> = Vec::new();
@@ -161,7 +183,10 @@ pub fn scan_tree(db: &mut HomeDb, source_id: i64, root: &Path, options: &ScanOpt
         .git_exclude(true)
         .add_custom_ignore_filename(".graphifyignore")
         .filter_entry(move |entry| {
-            let rel = entry.path().strip_prefix(&root_owned).unwrap_or(entry.path());
+            let rel = entry
+                .path()
+                .strip_prefix(&root_owned)
+                .unwrap_or(entry.path());
             let rel = rel.to_string_lossy().replace('\\', "/");
             rel.is_empty() || !is_denied(&rel, policy)
         })
@@ -174,7 +199,12 @@ pub fn scan_tree(db: &mut HomeDb, source_id: i64, root: &Path, options: &ScanOpt
         if !entry.file_type().is_some_and(|t| t.is_file()) {
             continue;
         }
-        let rel = entry.path().strip_prefix(root).unwrap_or(entry.path()).to_string_lossy().replace('\\', "/");
+        let rel = entry
+            .path()
+            .strip_prefix(root)
+            .unwrap_or(entry.path())
+            .to_string_lossy()
+            .replace('\\', "/");
         let Ok(meta) = entry.metadata() else {
             outcome.unreadable += 1;
             continue;
@@ -256,7 +286,10 @@ mod tests {
         let out = scan_tree(&mut db, source, dir.path(), &ScanOptions::default()).unwrap();
         let stored = db.stored_files(source).unwrap();
         let paths: Vec<&str> = stored.keys().map(String::as_str).collect();
-        assert!(paths.contains(&"src/lib.rs") && paths.contains(&"README.md"), "{paths:?}");
+        assert!(
+            paths.contains(&"src/lib.rs") && paths.contains(&"README.md"),
+            "{paths:?}"
+        );
         for hidden in [".env", "data.sqlite", "node_modules/x/i.js", "ignored.txt"] {
             assert!(!paths.contains(&hidden), "{hidden} must not be recorded");
         }
@@ -288,7 +321,16 @@ mod tests {
         let dir = tree();
         let mut db = HomeDb::open_in_memory().unwrap();
         let source = db.upsert_source("fs", "t", None).unwrap();
-        let out = scan_tree(&mut db, source, dir.path(), &ScanOptions { max_file_size: 5, ..ScanOptions::default() }).unwrap();
+        let out = scan_tree(
+            &mut db,
+            source,
+            dir.path(),
+            &ScanOptions {
+                max_file_size: 5,
+                ..ScanOptions::default()
+            },
+        )
+        .unwrap();
         assert!(out.oversized >= 1);
         assert!(!db.stored_files(source).unwrap().contains_key("src/lib.rs"));
     }
@@ -296,8 +338,14 @@ mod tests {
     #[test]
     fn minified_first_lines_are_generated() {
         let long = "a".repeat(3000);
-        assert_eq!(classify("x/app.js", long.as_bytes()).0, FileClass::Generated);
+        assert_eq!(
+            classify("x/app.js", long.as_bytes()).0,
+            FileClass::Generated
+        );
         assert_eq!(classify("x/app.js", b"let a = 1;").0, FileClass::Code);
-        assert_eq!(classify("crates/ui/app/ui-dist/app.js", b"x").0, FileClass::Generated);
+        assert_eq!(
+            classify("crates/ui/app/ui-dist/app.js", b"x").0,
+            FileClass::Generated
+        );
     }
 }

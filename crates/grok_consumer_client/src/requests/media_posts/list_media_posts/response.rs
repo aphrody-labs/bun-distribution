@@ -1,50 +1,50 @@
 use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
-pub (crate) struct PostListRawResponse {
-  pub posts: Vec<PostItem>,
+pub(crate) struct PostListRawResponse {
+    pub posts: Vec<PostItem>,
 
-  #[serde(rename = "nextCursor")]
-  pub next_cursor: Option<String>,
+    #[serde(rename = "nextCursor")]
+    pub next_cursor: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
-pub (crate) struct PostItem {
-  /// The "id" of the post.
-  /// This is how we assert video task completion
-  pub id: String,
+pub(crate) struct PostItem {
+    /// The "id" of the post.
+    /// This is how we assert video task completion
+    pub id: String,
 
-  /// Sometimes this is a VLM-generated prompt
-  /// This might become the prompt of the video if the video has no prompt.
-  pub prompt: Option<String>,
+    /// Sometimes this is a VLM-generated prompt
+    /// This might become the prompt of the video if the video has no prompt.
+    pub prompt: Option<String>,
 
-  /// eg. `MEDIA_POST_TYPE_IMAGE`
-  #[serde(rename = "mediaType")]
-  pub media_type: Option<String>,
+    /// eg. `MEDIA_POST_TYPE_IMAGE`
+    #[serde(rename = "mediaType")]
+    pub media_type: Option<String>,
 
-  /// eg. "https://imagine-public.x.ai/imagine-public/share-images/abd9331b-c5ac-49cc-8bec-c410c7efde98.jpg"
-  #[serde(rename = "mediaUrl")]
-  pub media_url: Option<String>,
+    /// eg. "https://imagine-public.x.ai/imagine-public/share-images/abd9331b-c5ac-49cc-8bec-c410c7efde98.jpg"
+    #[serde(rename = "mediaUrl")]
+    pub media_url: Option<String>,
 
-  #[serde(rename = "childPosts")]
-  pub child_posts: Vec<ChildPostItem>,
+    #[serde(rename = "childPosts")]
+    pub child_posts: Vec<ChildPostItem>,
 }
 
 #[derive(Deserialize, Debug)]
-pub (crate) struct ChildPostItem {
-  pub id: String,
+pub(crate) struct ChildPostItem {
+    pub id: String,
 
-  /// eg. `MEDIA_POST_TYPE_VIDEO`
-  #[serde(rename = "mediaType")]
-  pub media_type: Option<String>,
+    /// eg. `MEDIA_POST_TYPE_VIDEO`
+    #[serde(rename = "mediaType")]
+    pub media_type: Option<String>,
 
-  /// eg. "https://assets.grok.com/users/85980643-ffab-4984-a3de-59a608c47d7f/generated/ecec690e-15bd-4f5f-b4e9-9b8733c3fd69/generated_video.mp4"
-  #[serde(rename = "mediaUrl")]
-  pub media_url: Option<String>,
+    /// eg. "https://assets.grok.com/users/85980643-ffab-4984-a3de-59a608c47d7f/generated/ecec690e-15bd-4f5f-b4e9-9b8733c3fd69/generated_video.mp4"
+    #[serde(rename = "mediaUrl")]
+    pub media_url: Option<String>,
 
-  /// The unmodified user prompt
-  #[serde(rename = "originalPrompt")]
-  pub original_prompt: Option<String>,
+    /// The unmodified user prompt
+    #[serde(rename = "originalPrompt")]
+    pub original_prompt: Option<String>,
 }
 
 /*

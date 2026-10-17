@@ -37,33 +37,58 @@ fn update_changed_reads_changed_files_again_once() {
     let mut s = session();
     let id = place(&mut s, &path);
     // First look: remembered, nothing to read.
-    assert_eq!(s.execute("links.updateChanged", &json!({})).unwrap()["updated"], json!([]));
+    assert_eq!(
+        s.execute("links.updateChanged", &json!({})).unwrap()["updated"],
+        json!([])
+    );
     save(&path, &png(40, 40, BLUE));
-    assert_eq!(s.execute("links.updateChanged", &json!({})).unwrap()["updated"], json!([id.0]));
+    assert_eq!(
+        s.execute("links.updateChanged", &json!({})).unwrap()["updated"],
+        json!([id.0])
+    );
     assert_eq!(colour(&s), BLUE);
     // Undoing it is respected: the link stays modified until the file changes again.
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(colour(&s), RED);
-    assert_eq!(s.execute("links.updateChanged", &json!({})).unwrap()["updated"], json!([]));
+    assert_eq!(
+        s.execute("links.updateChanged", &json!({})).unwrap()["updated"],
+        json!([])
+    );
     assert_eq!(s.execute("links.check", &json!({})).unwrap()["modified"], 1);
 }
 
 #[test]
 fn a_background_look_follows_update_links() {
-    for (mode, key) in [("automatically", "updated"), ("askWhenModified", "ask"), ("manually", "modified")] {
+    for (mode, key) in [
+        ("automatically", "updated"),
+        ("askWhenModified", "ask"),
+        ("manually", "modified"),
+    ] {
         let dir = Folder::new(&format!("watch-{mode}"));
         let path = dir.file("art.png");
         std::fs::write(&path, png(40, 40, RED)).unwrap();
         let mut s = session();
         s.prefs.update_links = mode.into();
         let id = place(&mut s, &path);
-        assert_eq!(look(&mut s), json!({"updated": [], "ask": [], "modified": []}), "{mode}");
+        assert_eq!(
+            look(&mut s),
+            json!({"updated": [], "ask": [], "modified": []}),
+            "{mode}"
+        );
         save(&path, &png(40, 40, BLUE));
         let r = look(&mut s);
         assert_eq!(r[key], json!([id.0]), "{mode}: {r}");
-        assert_eq!(colour(&s), if mode == "automatically" { BLUE } else { RED }, "{mode}");
+        assert_eq!(
+            colour(&s),
+            if mode == "automatically" { BLUE } else { RED },
+            "{mode}"
+        );
         // Acted on once: the next look finds nothing new.
-        assert_eq!(look(&mut s), json!({"updated": [], "ask": [], "modified": []}), "{mode}");
+        assert_eq!(
+            look(&mut s),
+            json!({"updated": [], "ask": [], "modified": []}),
+            "{mode}"
+        );
         assert!(s.link_scan.is_none());
     }
 }

@@ -114,14 +114,22 @@ impl ModelFacts {
     /// See [`FactsError`].
     pub fn read(path: &Path) -> Result<Self, FactsError> {
         let display = path.display().to_string();
-        let io = |source| FactsError::Io { path: display.clone(), source };
+        let io = |source| FactsError::Io {
+            path: display.clone(),
+            source,
+        };
 
         let file = std::fs::File::open(path).map_err(io)?;
         let file_bytes = file.metadata().map_err(io)?.len();
         let mut prefix = Vec::new();
-        file.take(METADATA_PREFIX_BYTES).read_to_end(&mut prefix).map_err(io)?;
+        file.take(METADATA_PREFIX_BYTES)
+            .read_to_end(&mut prefix)
+            .map_err(io)?;
 
-        let hint = path.file_name().and_then(|name| name.to_str()).unwrap_or("model.gguf");
+        let hint = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("model.gguf");
         let Some(Details::Gguf(header)) = inspect_prefix(&prefix, hint).details else {
             return Err(FactsError::NotGguf { path: display });
         };
@@ -139,15 +147,21 @@ impl ModelFacts {
         metadata: &std::collections::BTreeMap<String, String>,
     ) -> Result<Self, FactsError> {
         let display = path.display().to_string();
-        let missing =
-            |key: &str| FactsError::MissingKey { path: display.clone(), key: key.to_string() };
+        let missing = |key: &str| FactsError::MissingKey {
+            path: display.clone(),
+            key: key.to_string(),
+        };
 
         let architecture = metadata
             .get("general.architecture")
             .cloned()
             .ok_or_else(|| missing("general.architecture"))?;
         let number = |suffix: &str| -> Option<u32> {
-            metadata.get(&format!("{architecture}.{suffix}"))?.trim().parse().ok()
+            metadata
+                .get(&format!("{architecture}.{suffix}"))?
+                .trim()
+                .parse()
+                .ok()
         };
         let required = |suffix: &str| {
             number(suffix).ok_or_else(|| missing(&format!("{architecture}.{suffix}")))
@@ -184,7 +198,10 @@ impl ModelFacts {
     /// Bytes of KV cache per token, across all layers, at precision `quant`.
     #[must_use]
     pub fn kv_bytes_per_token(&self, quant: KvQuant) -> f64 {
-        let per_head = self.embedding_length.checked_div(self.head_count).unwrap_or(0);
+        let per_head = self
+            .embedding_length
+            .checked_div(self.head_count)
+            .unwrap_or(0);
         let key = f64::from(self.key_length.unwrap_or(per_head));
         let value = f64::from(self.value_length.unwrap_or(per_head));
         f64::from(self.block_count)
@@ -217,7 +234,10 @@ mod tests {
     use super::*;
 
     fn metadata(pairs: &[(&str, &str)]) -> BTreeMap<String, String> {
-        pairs.iter().map(|(key, value)| ((*key).to_string(), (*value).to_string())).collect()
+        pairs
+            .iter()
+            .map(|(key, value)| ((*key).to_string(), (*value).to_string()))
+            .collect()
     }
 
     /// Qwen2.5-Coder-7B: 28 blocks, 28 heads, 4 KV heads, hidden 3584.
@@ -291,7 +311,10 @@ mod tests {
         let error = ModelFacts::from_metadata(
             Path::new("m.gguf"),
             1,
-            &metadata(&[("general.architecture", "llama"), ("llama.block_count", "32")]),
+            &metadata(&[
+                ("general.architecture", "llama"),
+                ("llama.block_count", "32"),
+            ]),
         )
         .expect_err("missing context length");
         assert!(
@@ -304,7 +327,10 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let path = dir.path().join("notes.gguf");
         std::fs::write(&path, b"definitely not gguf").expect("write");
-        assert!(matches!(ModelFacts::read(&path), Err(FactsError::NotGguf { .. })));
+        assert!(matches!(
+            ModelFacts::read(&path),
+            Err(FactsError::NotGguf { .. })
+        ));
         assert!(matches!(
             ModelFacts::read(&dir.path().join("absent.gguf")),
             Err(FactsError::Io { .. })

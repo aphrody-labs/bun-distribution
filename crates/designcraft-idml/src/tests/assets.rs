@@ -22,7 +22,9 @@ fn frame(n: usize, x: f64, crop: f64, image: &str) -> String {
 }
 
 fn image(n: usize, uri: &str, contents: Option<&[u8]>) -> String {
-    let contents = contents.map(|c| format!("<Contents><![CDATA[{}]]></Contents>", base64_encode(c))).unwrap_or_default();
+    let contents = contents
+        .map(|c| format!("<Contents><![CDATA[{}]]></Contents>", base64_encode(c)))
+        .unwrap_or_default();
     format!(
         r#"<Image Self="im{n}" ItemTransform="1 0 0 1 {n} 0">
         <Properties>{contents}<GraphicBounds Left="0" Top="0" Right="40" Bottom="30"/></Properties>
@@ -81,13 +83,21 @@ fn one_file_placed_several_times_imports_as_one_asset() {
         frame(1, 0.0, 1.0, &image(1, PHOTO, None)),
         frame(2, 100.0, 2.0, &image(2, PHOTO, None)),
         frame(3, 200.0, 3.0, &image(3, PHOTO, None)),
-        frame(4, 300.0, 4.0, &image(4, "file:/elsewhere/copy.jpg", Some(&bytes))),
+        frame(
+            4,
+            300.0,
+            4.0,
+            &image(4, "file:/elsewhere/copy.jpg", Some(&bytes)),
+        ),
     ];
     let d = import_idml_with(&package(&frames), &reader).unwrap();
     assert_eq!(reads.get(), 1, "the linked file is read once");
     assert_eq!(d.assets.len(), 2);
     let p = placements(&d);
-    assert_eq!(p.iter().map(|(_, c, _)| c[0]).collect::<Vec<_>>(), vec![1.0, 2.0, 3.0, 4.0]);
+    assert_eq!(
+        p.iter().map(|(_, c, _)| c[0]).collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
     let link = |id| d.assets.get(id).and_then(|a| a.link.as_deref());
     let links: Vec<_> = p.iter().map(|(id, _, _)| link(id)).collect();
     assert_eq!(links[..3], [Some("/photos/wedding day/couple.jpg"); 3]);
@@ -104,7 +114,13 @@ fn one_file_placed_several_times_imports_as_one_asset() {
         assert_eq!(q.len(), 4);
         for ((_, c0, x0), (_, c1, x1)) in p.iter().zip(&q) {
             assert_eq!(c0, c1);
-            assert!(x0.as_coeffs().iter().zip(x1.as_coeffs()).all(|(a, b)| (a - b).abs() < 1e-6), "{x0:?} {x1:?}");
+            assert!(
+                x0.as_coeffs()
+                    .iter()
+                    .zip(x1.as_coeffs())
+                    .all(|(a, b)| (a - b).abs() < 1e-6),
+                "{x0:?} {x1:?}"
+            );
         }
     }
 }

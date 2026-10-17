@@ -55,14 +55,14 @@ impl RelocationKindExt for RelocationKind {
                 } else {
                     Some(Self::ArmCall)
                 }
-            },
+            }
             R_ARM_THM_PC22 => {
                 if dest_thumb {
                     Some(Self::ThumbCall)
                 } else {
                     Some(Self::ThumbCallArm)
                 }
-            },
+            }
             R_ARM_ABS32 => Some(Self::Load),
             _ => None,
         }
@@ -104,7 +104,7 @@ impl RelocationModuleExt for RelocationModule {
             RelocationModule::Dtcm => Some(ModuleKind::Autoload(AutoloadKind::Dtcm)),
             RelocationModule::Autoload { index } => {
                 Some(ModuleKind::Autoload(AutoloadKind::Unknown(*index)))
-            },
+            }
         }
     }
 
@@ -113,7 +113,7 @@ impl RelocationModuleExt for RelocationModule {
         match self {
             RelocationModule::Overlays { ids } => {
                 Some(ids[1..].iter().map(|&id| ModuleKind::Overlay(id)))
-            },
+            }
             RelocationModule::None => None,
             RelocationModule::Overlay { .. } => None,
             RelocationModule::Main => None,

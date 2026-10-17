@@ -10,7 +10,7 @@ use bevy_ecs::{
     query::{With, Without},
     reflect::ReflectResource,
     resource::Resource,
-    schedule::{common_conditions::resource_changed, IntoScheduleConfigs, SystemSet},
+    schedule::{IntoScheduleConfigs, SystemSet, common_conditions::resource_changed},
     system::{Commands, Query, Res, ResMut, Single},
 };
 use bevy_picking::Pickable;
@@ -19,8 +19,8 @@ use bevy_render::storage::ShaderBuffer;
 use bevy_text::{RemSize, TextColor, TextFont, TextSpan};
 use bevy_time::common_conditions::on_timer;
 use bevy_ui::{
-    widget::{Text, TextUiWriter},
     ComputedUiRenderTargetInfo, FlexDirection, GlobalZIndex, Node, PositionType, Val,
+    widget::{Text, TextUiWriter},
 };
 #[cfg(not(all(target_arch = "wasm32", not(feature = "webgpu"))))]
 use bevy_ui_render::prelude::MaterialNode;

@@ -53,9 +53,17 @@ pub fn tangent(s: &PathSeg, t: f64) -> Vec2 {
                 v
             } else if t < 0.5 {
                 // The first control point that differs from the start gives the direction.
-                [c.p2, c.p3].into_iter().map(|p| p - c.p0).find(|v| v.hypot() > 1e-9).unwrap_or_default()
+                [c.p2, c.p3]
+                    .into_iter()
+                    .map(|p| p - c.p0)
+                    .find(|v| v.hypot() > 1e-9)
+                    .unwrap_or_default()
             } else {
-                [c.p1, c.p0].into_iter().map(|p| c.p3 - p).find(|v| v.hypot() > 1e-9).unwrap_or_default()
+                [c.p1, c.p0]
+                    .into_iter()
+                    .map(|p| c.p3 - p)
+                    .find(|v| v.hypot() > 1e-9)
+                    .unwrap_or_default()
             }
         }
     };
@@ -65,7 +73,11 @@ pub fn tangent(s: &PathSeg, t: f64) -> Vec2 {
 /// `v` normalised, or +x when it has no length.
 pub fn unit(v: Vec2) -> Vec2 {
     let h = v.hypot();
-    if h > 1e-12 { v / h } else { Vec2::new(1.0, 0.0) }
+    if h > 1e-12 {
+        v / h
+    } else {
+        Vec2::new(1.0, 0.0)
+    }
 }
 
 /// Do segments `a` and `b` (`b` following `a`) meet at a corner?

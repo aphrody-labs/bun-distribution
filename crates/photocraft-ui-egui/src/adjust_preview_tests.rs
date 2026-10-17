@@ -42,7 +42,11 @@ fn fill_noise(s: &mut photocraft_raster::Surface, r: Rect, seed: u32, min_alpha:
         for c in 0..ch {
             let v = rnd(seed + c as u32 * 7919, i);
             let alpha = fmt.alpha && c == ch - 1;
-            data.push(if alpha { min_alpha + (1.0 - min_alpha) * v } else { v });
+            data.push(if alpha {
+                min_alpha + (1.0 - min_alpha) * v
+            } else {
+                v
+            });
         }
     }
     s.write_region(r, &data);
@@ -52,7 +56,13 @@ fn fill_noise(s: &mut photocraft_raster::Surface, r: Rect, seed: u32, min_alpha:
 /// the target and a Screen layer on top: what the preview layer is inserted into.
 pub(crate) fn document(mode: ColorMode, depth: SampleType, selection: bool) -> (Document, LayerId) {
     let (w, h) = (40u32, 32u32);
-    let mut doc = Document::with_background("t", Size::new(w, h), mode, depth, Color::rgba(0.7, 0.6, 0.5, 1.0));
+    let mut doc = Document::with_background(
+        "t",
+        Size::new(w, h),
+        mode,
+        depth,
+        Color::rgba(0.7, 0.6, 0.5, 1.0),
+    );
     let fmt = doc.pixel_format();
     if let Some(s) = doc.layers[0].surface_mut() {
         fill_noise(s, Rect::from_xywh(0, 0, w, h / 2), 3, 1.0);
@@ -89,23 +99,47 @@ pub(crate) fn document(mode: ColorMode, depth: SampleType, selection: bool) -> (
 }
 
 /// The document after running the real destructive command on `target`.
-pub(crate) fn destructive(doc: &Document, target: LayerId, kind: &str, params: &Value) -> Option<Document> {
+pub(crate) fn destructive(
+    doc: &Document,
+    target: LayerId,
+    kind: &str,
+    params: &Value,
+) -> Option<Document> {
     let mut s = photocraft_engine::Session::new();
     s.add_document(doc.clone(), None);
     s.select_layer(target).ok()?;
-    s.execute(&format!("image.adjustments.{kind}"), params.clone()).ok()?;
+    s.execute(&format!("image.adjustments.{kind}"), params.clone())
+        .ok()?;
     Some((*s.active()?.doc).clone())
 }
 
 /// Largest premultiplied difference between two composites.
 pub(crate) fn max_diff(a: &Document, b: &Document) -> f32 {
-    let (ra, rb) = (photocraft_compose::render(a, a.bounds()), photocraft_compose::render(b, b.bounds()));
+    let (ra, rb) = (
+        photocraft_compose::render(a, a.bounds()),
+        photocraft_compose::render(b, b.bounds()),
+    );
     let pm = |p: &[f32; 4]| [p[0] * p[3], p[1] * p[3], p[2] * p[3], p[3]];
-    ra.px.iter().zip(&rb.px).map(|(x, y)| (0..4).map(|c| (pm(x)[c] - pm(y)[c]).abs()).fold(0.0, f32::max)).fold(0.0, f32::max)
+    ra.px
+        .iter()
+        .zip(&rb.px)
+        .map(|(x, y)| {
+            (0..4)
+                .map(|c| (pm(x)[c] - pm(y)[c]).abs())
+                .fold(0.0, f32::max)
+        })
+        .fold(0.0, f32::max)
 }
 
 /// Kinds that make colour from gray: grayscale documents preview them on the CPU proxy.
-const GRAY_COLOUR: [&str; 6] = ["vibrance", "colorBalance", "blackWhite", "photoFilter", "channelMixer", "gradientMap"];
+const GRAY_COLOUR: [&str; 6] = [
+    "vibrance",
+    "colorBalance",
+    "blackWhite",
+    "photoFilter",
+    "channelMixer",
+    "gradientMap",
+];
 
 #[test]
 fn preview_composite_matches_the_destructive_command() {
@@ -118,12 +152,17 @@ fn preview_composite_matches_the_destructive_command() {
                 let (doc, target) = document(mode, depth, selection);
                 for kind in KINDS {
                     for params in [sample(kind), json!({})] {
-                        let what = format!("{kind} {mode:?} {depth:?} selection {selection} {params}");
+                        let what =
+                            format!("{kind} {mode:?} {depth:?} selection {selection} {params}");
                         let want = destructive(&doc, target, kind, &params);
                         let got = preview_document(&doc, target, kind, &params);
-                        let gray_colour = mode == ColorMode::Grayscale && GRAY_COLOUR.contains(&kind);
+                        let gray_colour =
+                            mode == ColorMode::Grayscale && GRAY_COLOUR.contains(&kind);
                         let (Some(want), Ok(got)) = (want, got) else {
-                            assert!(gray_colour, "{what}: command and preview disagree on validity");
+                            assert!(
+                                gray_colour,
+                                "{what}: command and preview disagree on validity"
+                            );
                             continue;
                         };
                         assert!(!gray_colour, "{what}: should use the proxy preview");
@@ -132,14 +171,21 @@ fn preview_composite_matches_the_destructive_command() {
                             worst = (d, what.clone());
                         }
                         if d > tol {
-                            fails.push(format!("{what}: preview differs from the command by {:.2}/255", d * 255.0));
+                            fails.push(format!(
+                                "{what}: preview differs from the command by {:.2}/255",
+                                d * 255.0
+                            ));
                         }
                     }
                 }
             }
         }
     }
-    eprintln!("worst preview difference {:.3}/255 ({})", worst.0 * 255.0, worst.1);
+    eprintln!(
+        "worst preview difference {:.3}/255 ({})",
+        worst.0 * 255.0,
+        worst.1
+    );
     assert!(fails.is_empty(), "{}", fails.join("\n"));
 }
 
@@ -163,8 +209,14 @@ fn ineligible_targets_use_the_proxy_preview() {
     let (mut doc, target) = document(ColorMode::Rgb, SampleType::U8, false);
     let clipped = doc.layers[2].id;
     assert_eq!(unsupported(&doc, clipped), Some("the target is clipped"));
-    assert_eq!(unsupported(&doc, LayerId(u64::MAX - 1)), Some("no target layer"));
-    doc.layers.push(Layer::new("adj", LayerContent::Adjustment(photocraft_doc::Adjustment::Invert)));
+    assert_eq!(
+        unsupported(&doc, LayerId(u64::MAX - 1)),
+        Some("no target layer")
+    );
+    doc.layers.push(Layer::new(
+        "adj",
+        LayerContent::Adjustment(photocraft_doc::Adjustment::Invert),
+    ));
     let adj = doc.layers[4].id;
     assert_eq!(unsupported(&doc, adj), Some("not a pixel layer"));
     assert!(unsupported(&doc, target).is_none());
@@ -178,7 +230,15 @@ fn ineligible_targets_use_the_proxy_preview() {
         assert!(unsupported(&d, t).is_some(), "{mode:?}");
     }
     let (gray, t) = document(ColorMode::Grayscale, SampleType::U16, false);
-    assert!(preview_document(&gray, t, "hueSaturation", &json!({"colorize": true, "hue": 30, "saturation": 40})).is_err());
+    assert!(
+        preview_document(
+            &gray,
+            t,
+            "hueSaturation",
+            &json!({"colorize": true, "hue": 30, "saturation": 40})
+        )
+        .is_err()
+    );
     assert!(preview_document(&gray, t, "hueSaturation", &json!({"lightness": 20})).is_ok());
 }
 
@@ -195,7 +255,10 @@ fn preview_changes_nothing_outside_its_region() {
             for (i, (a, b)) in before.px.iter().zip(&after.px).enumerate() {
                 let (x, y) = ((i % 40) as i32, (i / 40) as i32);
                 if !r.contains(x, y) {
-                    assert_eq!(a, b, "{kind} selection {selection}: ({x}, {y}) outside {r:?}");
+                    assert_eq!(
+                        a, b,
+                        "{kind} selection {selection}: ({x}, {y}) outside {r:?}"
+                    );
                 }
             }
         }
@@ -216,10 +279,15 @@ fn dialog_previews_through_the_layer() {
     use egui_kittest::Harness;
     for confirm in [false, true] {
         let (doc, target) = document(ColorMode::Rgb, SampleType::U16, true);
-        let mut harness =
-            Harness::builder().with_size(egui::vec2(1200.0, 900.0)).build_ui_state(|ui, app| crate::dialogs::show(app, ui.ctx()), app_with(doc, target));
+        let mut harness = Harness::builder()
+            .with_size(egui::vec2(1200.0, 900.0))
+            .build_ui_state(
+                |ui, app| crate::dialogs::show(app, ui.ctx()),
+                app_with(doc, target),
+            );
         PhotocraftApp::setup_context(&harness.ctx, crate::theme::ThemeKind::ALL[0]);
-        let id = crate::adjust_dialog::open(harness.state_mut(), "image.adjustments.levels").unwrap();
+        let id =
+            crate::adjust_dialog::open(harness.state_mut(), "image.adjustments.levels").unwrap();
         harness.run_steps(2);
         let committed = harness.state().session.active().unwrap().doc.clone();
         let steps = harness.state().session.active().unwrap().history.past_len();
@@ -237,30 +305,58 @@ fn dialog_previews_through_the_layer() {
         assert_ne!(k1, k2);
         let rev = app.session.active().unwrap().revision;
         let doc_id = committed.id;
-        assert_eq!(switch_region(app, doc_id, rev, k1, k2), Some(Rect::from_xywh(8, 4, 24, 20)));
-        assert_eq!(switch_region(app, doc_id, rev, 0, k2), Some(Rect::from_xywh(8, 4, 24, 20)));
-        assert_eq!(switch_region(app, doc_id, rev, 1 << 41, k2), None, "another preview kind");
-        assert_eq!(switch_region(app, doc_id, rev + 1, k1, k2), None, "another revision");
+        assert_eq!(
+            switch_region(app, doc_id, rev, k1, k2),
+            Some(Rect::from_xywh(8, 4, 24, 20))
+        );
+        assert_eq!(
+            switch_region(app, doc_id, rev, 0, k2),
+            Some(Rect::from_xywh(8, 4, 24, 20))
+        );
+        assert_eq!(
+            switch_region(app, doc_id, rev, 1 << 41, k2),
+            None,
+            "another preview kind"
+        );
+        assert_eq!(
+            switch_region(app, doc_id, rev + 1, k1, k2),
+            None,
+            "another revision"
+        );
         // Only the visible part composites now; the rest when the view gets there.
         let region = Rect::from_xywh(8, 4, 24, 20);
         let (corner, all) = (Rect::from_xywh(0, 0, 16, 16), Rect::from_xywh(0, 0, 40, 32));
-        assert_eq!(switch_damage(app, k2, region, corner), Rect::new(8, 4, 16, 16));
+        assert_eq!(
+            switch_damage(app, k2, region, corner),
+            Rect::new(8, 4, 16, 16)
+        );
         assert_eq!(uncovered(app, doc_id, k2, corner), None);
         assert_eq!(uncovered(app, doc_id, k1, all), None, "another preview");
         assert_eq!(uncovered(app, doc_id, k2, all), Some(region));
         assert_eq!(uncovered(app, doc_id, k2, all), None);
-        assert_eq!(switch_damage(app, 0, region, corner), region, "back to the document: everything");
+        assert_eq!(
+            switch_damage(app, 0, region, corner),
+            region,
+            "back to the document: everything"
+        );
         assert_eq!(uncovered(app, doc_id, k2, all), None);
         // The preview equals the command with the dialog's settings.
         let params = crate::filter_dialog::params_of(&app.ui.dialog_mut(id).unwrap().fields);
         let want = destructive(&committed, target, "levels", &params).unwrap();
         assert!(max_diff(&second, &want) <= 1.0 / 255.0);
         // Preview off: the committed document.
-        app.ui.dialog_mut(id).unwrap().fields.insert("__preview".into(), json!(false));
+        app.ui
+            .dialog_mut(id)
+            .unwrap()
+            .fields
+            .insert("__preview".into(), json!(false));
         assert!(display_doc(app, 0).is_none());
         assert!(on_layer(app, 0), "still the layer path, just hidden");
         harness.run_steps(2);
-        assert!(Arc::ptr_eq(&harness.state().session.active().unwrap().doc, &committed), "previewing leaves the document alone");
+        assert!(
+            Arc::ptr_eq(&harness.state().session.active().unwrap().doc, &committed),
+            "previewing leaves the document alone"
+        );
         if confirm {
             crate::dialogs::confirm(harness.state_mut(), id).unwrap();
             let st = harness.state().session.active().unwrap();
@@ -271,7 +367,10 @@ fn dialog_previews_through_the_layer() {
             harness.state_mut().ui.close_dialog(id);
             harness.run_steps(2);
             let st = harness.state().session.active().unwrap();
-            assert!(Arc::ptr_eq(&st.doc, &committed), "Cancel leaves the document untouched");
+            assert!(
+                Arc::ptr_eq(&st.doc, &committed),
+                "Cancel leaves the document untouched"
+            );
             assert_eq!(st.history.past_len(), steps);
         }
         let app = harness.state_mut();
@@ -292,7 +391,9 @@ fn ineligible_dialogs_keep_the_proxy_preview() {
     let (doc, target) = document(ColorMode::Rgb, SampleType::U8, false);
     let mut app = app_with(doc, target);
     app.session.execute("select.all", json!({})).unwrap();
-    app.session.execute("select.saveSelection", json!({})).unwrap();
+    app.session
+        .execute("select.saveSelection", json!({}))
+        .unwrap();
     if let Some(st) = app.session.active_mut() {
         st.channel_view.target = photocraft_engine::channel_cmds::ChannelTarget::Alpha(0);
     }
@@ -320,15 +421,26 @@ fn proxy_preview_has_its_own_ids() {
     let proxy = proxy_base(&base, 2);
     assert_eq!((proxy.size.width, proxy.size.height), (20, 16));
     assert_ne!(proxy.id, doc.id);
-    assert!(proxy.walk().iter().all(|(_, _, l)| doc.layer(l.id).is_none() && l.id != PREVIEW_LAYER));
+    assert!(
+        proxy
+            .walk()
+            .iter()
+            .all(|(_, _, l)| doc.layer(l.id).is_none() && l.id != PREVIEW_LAYER)
+    );
     let p = proxy_with_settings(&proxy, "curves", &sample("curves")).unwrap();
     let full = with_settings(&base, "curves", &sample("curves")).unwrap();
-    let (a, b) = (photocraft_compose::render(&p, p.bounds()), photocraft_compose::render(&full, full.bounds()));
+    let (a, b) = (
+        photocraft_compose::render(&p, p.bounds()),
+        photocraft_compose::render(&full, full.bounds()),
+    );
     // Nearest-neighbour proxy: pixel (x, y) shows the full composite at (2x, 2y).
     for y in 0..16 {
         for x in 0..20 {
             let (pa, pb) = (a.px[y * 20 + x], b.px[y * 2 * 40 + x * 2]);
-            assert!((0..4).all(|c| (pa[c] - pb[c]).abs() < 2.0 / 255.0), "({x}, {y}) {pa:?} vs {pb:?}");
+            assert!(
+                (0..4).all(|c| (pa[c] - pb[c]).abs() < 2.0 / 255.0),
+                "({x}, {y}) {pa:?} vs {pb:?}"
+            );
         }
     }
     assert!(proxy_with_settings(&proxy, "levels", &json!({"gamma": "x"})).is_err());

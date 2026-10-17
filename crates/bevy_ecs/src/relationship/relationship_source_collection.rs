@@ -1,4 +1,4 @@
-use alloc::collections::{btree_set, BTreeSet};
+use alloc::collections::{BTreeSet, btree_set};
 use core::{
     hash::BuildHasher,
     ops::{Deref, DerefMut},

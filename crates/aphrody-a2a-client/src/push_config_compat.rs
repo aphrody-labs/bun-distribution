@@ -8,7 +8,9 @@ pub(crate) fn serialize_create_task_push_notification_config_request(
     request: &TaskPushNotificationConfig,
 ) -> Result<Value, A2AError> {
     serde_json::to_value(request).map_err(|error| {
-        A2AError::internal(format!("failed to serialize create-push-config request: {error}"))
+        A2AError::internal(format!(
+            "failed to serialize create-push-config request: {error}"
+        ))
     })
 }
 

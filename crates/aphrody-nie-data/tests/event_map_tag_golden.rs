@@ -32,7 +32,11 @@ fn dispatch_typed() {
     use aphrody_nie_data::typed::{decode_by_key, family_key};
     let Some(root) = load() else { return };
     assert_eq!(
-        family_key("event_map_tag_config_0.00.00.cfg.bin.json".strip_suffix(".json").unwrap()),
+        family_key(
+            "event_map_tag_config_0.00.00.cfg.bin.json"
+                .strip_suffix(".json")
+                .unwrap()
+        ),
         "event_map_tag_config"
     );
     let (label, _j) = decode_by_key("event_map_tag_config", &root).expect("câblé");

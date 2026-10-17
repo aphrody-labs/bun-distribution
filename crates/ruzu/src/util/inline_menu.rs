@@ -341,9 +341,10 @@ fn close_inner(inner: &Rc<Inner>) {
 // Cancellation returns to the originating menu. Other closure paths (action
 // activation, outside click, unmap) must not steal focus from their destination.
 fn cancel_inner(inner: &Rc<Inner>) {
-    let button = inner.open.get().and_then(|index| {
-        inner.buttons.borrow().get(index).cloned()
-    });
+    let button = inner
+        .open
+        .get()
+        .and_then(|index| inner.buttons.borrow().get(index).cloned());
     close_inner(inner);
     if let Some(button) = button {
         button.grab_focus();
@@ -992,8 +993,10 @@ mod tests {
         };
         settle();
         assert!(focus_bar(window.upcast_ref()));
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&window),
-            Some(bar.inner.buttons.borrow()[0].clone().upcast()));
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&window),
+            Some(bar.inner.buttons.borrow()[0].clone().upcast())
+        );
         assert_eq!(bar.inner.open.get(), None);
         open_inner(&bar.inner, 0);
         settle();
@@ -1042,8 +1045,11 @@ mod tests {
         ));
         settle();
         assert_eq!(bar.inner.open.get(), None);
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&window),
-            Some(tools_button.upcast()), "cancel must return to the originating menu");
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&window),
+            Some(tools_button.upcast()),
+            "cancel must return to the originating menu"
+        );
         assert_eq!(invoked.get(), 1, "cancel must not activate an entry");
         let local = gtk::gio::SimpleActionGroup::new();
         local.add_action(&action);
@@ -1118,7 +1124,10 @@ mod tests {
         assert!(!scroll.is_visible());
         // Assert this window's focus target, not desktop activation: another
         // application may remain active while this isolated display test runs.
-        assert_eq!(gtk::prelude::GtkWindowExt::focus(&window), Some(choice_button.clone().upcast()));
+        assert_eq!(
+            gtk::prelude::GtkWindowExt::focus(&window),
+            Some(choice_button.clone().upcast())
+        );
         dropdown.set_model(Some(&gtk::StringList::new(&["New one", "New two"])));
         dropdown.set_selected(1);
         assert_eq!(choice_button.label().as_deref(), Some("New two"));

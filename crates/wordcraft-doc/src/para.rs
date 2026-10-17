@@ -267,13 +267,22 @@ impl Float {
     /// rotated object takes beyond its frame (zero unrotated; negative where the turned object
     /// is narrower than its frame, as a wide picture turned 90° is).
     pub fn spin_pad(&self, w: f32, h: f32) -> (f32, f32) {
-        let (w, h) = (wordcraft_geom::finite(w).clamp(0.0, 4000.0), wordcraft_geom::finite(h).clamp(0.0, 4000.0));
+        let (w, h) = (
+            wordcraft_geom::finite(w).clamp(0.0, 4000.0),
+            wordcraft_geom::finite(h).clamp(0.0, 4000.0),
+        );
         let (bw, bh) = self.spin().extent(w, h);
         ((bw - w) / 2.0, (bh - h) / 2.0)
     }
     /// The effect extents, finite and clamped (left, top, right, bottom).
     pub fn effect_extent(&self) -> [f32; 4] {
-        self.effect.map(|v| if v.is_finite() { v.clamp(0.0, 1584.0) } else { 0.0 })
+        self.effect.map(|v| {
+            if v.is_finite() {
+                v.clamp(0.0, 1584.0)
+            } else {
+                0.0
+            }
+        })
     }
 }
 
@@ -325,8 +334,14 @@ pub enum RubyAlign {
 }
 
 impl RubyAlign {
-    pub const ALL: [RubyAlign; 6] =
-        [RubyAlign::Center, RubyAlign::DistributeLetter, RubyAlign::DistributeSpace, RubyAlign::Left, RubyAlign::Right, RubyAlign::RightVertical];
+    pub const ALL: [RubyAlign; 6] = [
+        RubyAlign::Center,
+        RubyAlign::DistributeLetter,
+        RubyAlign::DistributeSpace,
+        RubyAlign::Left,
+        RubyAlign::Right,
+        RubyAlign::RightVertical,
+    ];
 
     /// The OOXML name (`center`, `distributeLetter`…), also used by commands.
     pub fn ooxml(self) -> &'static str {
@@ -406,10 +421,16 @@ pub enum InlineObject {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         freeform: Option<std::sync::Arc<crate::freeform::Freeform>>,
         /// Shadow, glow and soft edges.
-        #[serde(default, skip_serializing_if = "crate::effects::ShapeEffects::is_empty")]
+        #[serde(
+            default,
+            skip_serializing_if = "crate::effects::ShapeEffects::is_empty"
+        )]
         effects: crate::effects::ShapeEffects,
         /// Drawing id, text warp, connector ends and arrowheads.
-        #[serde(default, skip_serializing_if = "crate::connector::ShapeExtra::is_empty")]
+        #[serde(
+            default,
+            skip_serializing_if = "crate::connector::ShapeExtra::is_empty"
+        )]
         extra: crate::connector::ShapeExtra,
     },
     /// Pictures, shapes and text boxes grouped into one object (Layout › Arrange › Group): it
@@ -564,7 +585,13 @@ pub struct CanvasStyle {
 impl InlineObject {
     /// A picture, chart or diagram, shape, text box or group: something drawn with a frame, sized and wrapped.
     pub fn is_drawing(&self) -> bool {
-        matches!(self, InlineObject::Image { .. } | InlineObject::Graphic { .. } | InlineObject::Shape { .. } | InlineObject::Group { .. })
+        matches!(
+            self,
+            InlineObject::Image { .. }
+                | InlineObject::Graphic { .. }
+                | InlineObject::Shape { .. }
+                | InlineObject::Group { .. }
+        )
     }
     /// A drawing's size and placement.
     pub fn frame(&self) -> Option<(f32, f32, &Float)> {
@@ -596,7 +623,13 @@ impl InlineObject {
             *w = nw;
             *h = nh;
         }
-        if let InlineObject::Group { ch_w, ch_h, canvas: Some(_), .. } = self {
+        if let InlineObject::Group {
+            ch_w,
+            ch_h,
+            canvas: Some(_),
+            ..
+        } = self
+        {
             *ch_w = nw;
             *ch_h = nh;
         }
@@ -622,8 +655,12 @@ impl InlineObject {
     /// The text box stories this object shows: a text box's, or its group members'.
     pub fn text_boxes(&self) -> Vec<u32> {
         match self {
-            InlineObject::Shape { story: Some(id), .. } => vec![*id],
-            InlineObject::Group { children, .. } => children.iter().filter_map(|c| c.obj.text_box()).collect(),
+            InlineObject::Shape {
+                story: Some(id), ..
+            } => vec![*id],
+            InlineObject::Group { children, .. } => {
+                children.iter().filter_map(|c| c.obj.text_box()).collect()
+            }
             _ => Vec::new(),
         }
     }
@@ -644,7 +681,15 @@ impl InlineObject {
     /// A group's members placed in a `w` × `h` box at (`x`, `y`): each member's rectangle
     /// (x, y, w, h) and the member. Empty for anything else.
     pub fn group_rects(&self, x: f32, y: f32, w: f32, h: f32) -> Vec<([f32; 4], &InlineObject)> {
-        let InlineObject::Group { ch_w, ch_h, children, .. } = self else { return Vec::new() };
+        let InlineObject::Group {
+            ch_w,
+            ch_h,
+            children,
+            ..
+        } = self
+        else {
+            return Vec::new();
+        };
         let fin = |v: f32| if v.is_finite() { v } else { 0.0 };
         let sx = if fin(*ch_w) > 0.0 { fin(w) / ch_w } else { 1.0 };
         let sy = if fin(*ch_h) > 0.0 { fin(h) / ch_h } else { 1.0 };
@@ -653,7 +698,12 @@ impl InlineObject {
             .take(MAX_GROUP_CHILDREN)
             .filter_map(|c| {
                 let (cw, chh, _) = c.obj.frame()?;
-                let r = [x + fin(c.x) * sx, y + fin(c.y) * sy, (fin(cw) * sx).clamp(0.0, 4000.0), (fin(chh) * sy).clamp(0.0, 4000.0)];
+                let r = [
+                    x + fin(c.x) * sx,
+                    y + fin(c.y) * sy,
+                    (fin(cw) * sx).clamp(0.0, 4000.0),
+                    (fin(chh) * sy).clamp(0.0, 4000.0),
+                ];
                 (!matches!(c.obj, InlineObject::Group { .. })).then_some((r, &c.obj))
             })
             .collect()
@@ -678,7 +728,9 @@ impl InlineObject {
     pub fn alt_text(&self) -> &str {
         match self {
             InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. } => alt,
-            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => &float.alt.text,
+            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => {
+                &float.alt.text
+            }
             _ => "",
         }
     }
@@ -687,7 +739,9 @@ impl InlineObject {
         let text = cap_alt(text);
         match self {
             InlineObject::Image { alt, .. } | InlineObject::Graphic { alt, .. } => *alt = text,
-            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => float.alt.text = text,
+            InlineObject::Shape { float, .. } | InlineObject::Group { float, .. } => {
+                float.alt.text = text
+            }
             _ => return false,
         }
         true
@@ -708,7 +762,9 @@ impl InlineObject {
     /// The geometry of an ink stroke (a freeform shape drawn with a pen), if this is one.
     pub fn ink(&self) -> Option<&crate::freeform::Freeform> {
         match self {
-            InlineObject::Shape { freeform: Some(f), .. } if f.is_ink() => Some(f),
+            InlineObject::Shape {
+                freeform: Some(f), ..
+            } if f.is_ink() => Some(f),
             _ => None,
         }
     }
@@ -716,8 +772,16 @@ impl InlineObject {
     /// `w:continuationSeparator` run elements): a short line, or with `continuation` one across
     /// the column. Kept as the run element itself.
     pub fn note_separator(continuation: bool) -> InlineObject {
-        let el = if continuation { "w:continuationSeparator" } else { "w:separator" };
-        InlineObject::Opaque { format: "docx".into(), xml: format!("<w:r><{el}/></w:r>"), text: String::new() }
+        let el = if continuation {
+            "w:continuationSeparator"
+        } else {
+            "w:separator"
+        };
+        InlineObject::Opaque {
+            format: "docx".into(),
+            xml: format!("<w:r><{el}/></w:r>"),
+            text: String::new(),
+        }
     }
     /// For a [`InlineObject::note_separator`]: whether it is the continuation separator.
     pub fn as_note_separator(&self) -> Option<bool> {
@@ -796,7 +860,10 @@ impl Paragraph {
         let mut p = Paragraph::new();
         let clean: String = text.chars().filter(|c| *c != OBJ).collect();
         if !clean.is_empty() {
-            p.runs.push(Run { len: clean.len(), props: props.clone() });
+            p.runs.push(Run {
+                len: clean.len(),
+                props: props.clone(),
+            });
         }
         p.text = clean;
         p.mark = props;
@@ -850,8 +917,14 @@ impl Paragraph {
                 k += 1;
                 continue;
             }
-            let font = runs.peek().filter(|(r, _)| r.contains(&i)).and_then(|(_, p)| p.font.as_deref());
-            out.push(font.and_then(|f| crate::symbol_fonts::symbol_char(f, c)).unwrap_or(c));
+            let font = runs
+                .peek()
+                .filter(|(r, _)| r.contains(&i))
+                .and_then(|(_, p)| p.font.as_deref());
+            out.push(
+                font.and_then(|f| crate::symbol_fonts::symbol_char(f, c))
+                    .unwrap_or(c),
+            );
         }
         out
     }
@@ -861,7 +934,10 @@ impl Paragraph {
     }
     /// The byte ranges of the tracked deletions.
     pub fn deleted_ranges(&self) -> Vec<std::ops::Range<usize>> {
-        self.run_ranges().filter(|(_, c)| c.del.is_some()).map(|(r, _)| r).collect()
+        self.run_ranges()
+            .filter(|(_, c)| c.del.is_some())
+            .map(|(r, _)| r)
+            .collect()
     }
     /// [`Self::plain_text`] without the text in the byte ranges `dropped` (in any order, overlapping
     /// or not).
@@ -923,7 +999,10 @@ impl Paragraph {
         if off == 0 {
             return self.runs.first().map(|r| &r.props).unwrap_or(&self.mark);
         }
-        self.run_at(off).and_then(|(i, _)| self.runs.get(i)).map(|r| &r.props).unwrap_or(&self.mark)
+        self.run_at(off)
+            .and_then(|(i, _)| self.runs.get(i))
+            .map(|r| &r.props)
+            .unwrap_or(&self.mark)
     }
 
     /// Formatting of the character starting at `off`.
@@ -950,7 +1029,10 @@ impl Paragraph {
 
     /// Number of objects in `text[..off]`.
     fn objects_before(&self, off: usize) -> usize {
-        self.text.get(..off).map(|t| t.chars().filter(|c| *c == OBJ).count()).unwrap_or(0)
+        self.text
+            .get(..off)
+            .map(|t| t.chars().filter(|c| *c == OBJ).count())
+            .unwrap_or(0)
     }
 
     /// The object at byte `off` (which must hold U+FFFC).
@@ -969,13 +1051,21 @@ impl Paragraph {
     }
     /// Byte offsets of all objects, in order.
     pub fn object_offsets(&self) -> Vec<usize> {
-        self.text.char_indices().filter(|(_, c)| *c == OBJ).map(|(i, _)| i).collect()
+        self.text
+            .char_indices()
+            .filter(|(_, c)| *c == OBJ)
+            .map(|(i, _)| i)
+            .collect()
     }
 
     /// Insert plain text (U+FFFC is dropped) at `off` with `props`. Returns the inserted length.
     pub fn insert_text(&mut self, off: usize, s: &str, props: &CharProps) -> Result<usize> {
         self.check(off)?;
-        let clean: std::borrow::Cow<str> = if s.contains(OBJ) { s.chars().filter(|c| *c != OBJ).collect::<String>().into() } else { s.into() };
+        let clean: std::borrow::Cow<str> = if s.contains(OBJ) {
+            s.chars().filter(|c| *c != OBJ).collect::<String>().into()
+        } else {
+            s.into()
+        };
         if clean.is_empty() {
             return Ok(0);
         }
@@ -986,7 +1076,12 @@ impl Paragraph {
     }
 
     /// Insert an object at `off`.
-    pub fn insert_object(&mut self, off: usize, obj: InlineObject, props: &CharProps) -> Result<()> {
+    pub fn insert_object(
+        &mut self,
+        off: usize,
+        obj: InlineObject,
+        props: &CharProps,
+    ) -> Result<()> {
         self.check(off)?;
         let k = self.objects_before(off);
         self.text.insert(off, OBJ);
@@ -1013,13 +1108,20 @@ impl Paragraph {
                 if let Some(r) = self.runs.get_mut(i) {
                     r.len = left;
                 }
-                self.runs.insert(i + 1, Run { len: right, props: p });
+                self.runs.insert(
+                    i + 1,
+                    Run {
+                        len: right,
+                        props: p,
+                    },
+                );
                 idx = i + 1;
                 break;
             }
             start += r.len;
         }
-        self.runs.insert(idx.min(self.runs.len()), Run { len, props });
+        self.runs
+            .insert(idx.min(self.runs.len()), Run { len, props });
         self.normalize();
     }
 
@@ -1040,8 +1142,15 @@ impl Paragraph {
         let total: usize = self.runs.iter().map(|r| r.len).sum();
         if total != self.text.len() {
             if total < self.text.len() {
-                let p = self.runs.last().map(|r| r.props.clone()).unwrap_or_else(|| self.mark.clone());
-                self.runs.push(Run { len: self.text.len() - total, props: p });
+                let p = self
+                    .runs
+                    .last()
+                    .map(|r| r.props.clone())
+                    .unwrap_or_else(|| self.mark.clone());
+                self.runs.push(Run {
+                    len: self.text.len() - total,
+                    props: p,
+                });
             } else {
                 let mut keep = self.text.len();
                 for r in &mut self.runs {
@@ -1094,8 +1203,15 @@ impl Paragraph {
     /// markers a deletion leaves in place).
     pub fn delete_except(&mut self, a: usize, b: usize, keep: &[usize]) -> Result<()> {
         let (a, b) = (a.min(b), a.max(b));
-        let mut keep: Vec<usize> =
-            keep.iter().copied().filter(|k| *k >= a && k + OBJ.len_utf8() <= b && self.text.get(*k..).is_some_and(|t| t.starts_with(OBJ))).collect();
+        let mut keep: Vec<usize> = keep
+            .iter()
+            .copied()
+            .filter(|k| {
+                *k >= a
+                    && k + OBJ.len_utf8() <= b
+                    && self.text.get(*k..).is_some_and(|t| t.starts_with(OBJ))
+            })
+            .collect();
         if keep.is_empty() {
             return self.delete(a, b);
         }
@@ -1140,7 +1256,10 @@ impl Paragraph {
                 if x >= a && y <= b {
                     f(&mut p);
                 }
-                out.push(Run { len: y - x, props: p });
+                out.push(Run {
+                    len: y - x,
+                    props: p,
+                });
             }
         }
         self.runs = out;
@@ -1155,7 +1274,11 @@ impl Paragraph {
         self.check(off)?;
         let k = self.objects_before(off);
         let tail_text = self.text.split_off(off);
-        let tail_objs = if k <= self.objects.len() { self.objects.split_off(k) } else { Vec::new() };
+        let tail_objs = if k <= self.objects.len() {
+            self.objects.split_off(k)
+        } else {
+            Vec::new()
+        };
         let mut tail_runs = Vec::new();
         let mut start = 0;
         let mut keep = Vec::new();
@@ -1167,8 +1290,14 @@ impl Paragraph {
             } else if rs >= off {
                 tail_runs.push(r);
             } else {
-                keep.push(Run { len: off - rs, props: r.props.clone() });
-                tail_runs.push(Run { len: re - off, props: r.props });
+                keep.push(Run {
+                    len: off - rs,
+                    props: r.props.clone(),
+                });
+                tail_runs.push(Run {
+                    len: re - off,
+                    props: r.props,
+                });
             }
         }
         self.runs = keep;
@@ -1178,7 +1307,11 @@ impl Paragraph {
             text: tail_text,
             runs: tail_runs,
             props: self.props.clone(),
-            mark: if self.text.is_empty() && off == 0 { self.mark.clone() } else { carry },
+            mark: if self.text.is_empty() && off == 0 {
+                self.mark.clone()
+            } else {
+                carry
+            },
             objects: tail_objs,
             section: self.section.take(),
             rev: next_rev(),
@@ -1194,7 +1327,13 @@ impl Paragraph {
 
     /// Append `other`'s content (its paragraph properties are dropped; its section break kept).
     pub fn append(&mut self, other: Paragraph) {
-        let Paragraph { text, runs, objects, section, .. } = other;
+        let Paragraph {
+            text,
+            runs,
+            objects,
+            section,
+            ..
+        } = other;
         self.text.push_str(&text);
         self.runs.extend(runs);
         self.objects.extend(objects);
@@ -1219,7 +1358,11 @@ impl Paragraph {
     /// at a time, otherwise the previous caret stop.
     pub fn backspace_from(&self, off: usize) -> usize {
         let off = self.clamp(off);
-        match self.text.get(..off).and_then(|t| t.char_indices().next_back()) {
+        match self
+            .text
+            .get(..off)
+            .and_then(|t| t.char_indices().next_back())
+        {
             Some((i, c)) if crate::cluster::backspaces_by_char(c) => i,
             _ => self.prev_boundary(off),
         }
@@ -1227,7 +1370,9 @@ impl Paragraph {
     /// Start of the word at or before `off` (Ctrl+Left).
     pub fn word_start(&self, off: usize) -> usize {
         let off = self.clamp(off);
-        let Some(before) = self.text.get(..off) else { return 0 };
+        let Some(before) = self.text.get(..off) else {
+            return 0;
+        };
         let mut idx = off;
         let mut seen_word = false;
         for (i, c) in before.char_indices().rev() {
@@ -1246,10 +1391,15 @@ impl Paragraph {
     /// End of the word after `off`, including trailing spaces (Ctrl+Right, like Word).
     pub fn word_end(&self, off: usize) -> usize {
         let off = self.clamp(off);
-        let Some(after) = self.text.get(off..) else { return self.text.len() };
+        let Some(after) = self.text.get(off..) else {
+            return self.text.len();
+        };
         let it = after.char_indices().peekable();
         let mut end = self.text.len();
-        let first_word = after.chars().next().is_some_and(|c| crate::bidi::is_word_char(c) && c != '\'');
+        let first_word = after
+            .chars()
+            .next()
+            .is_some_and(|c| crate::bidi::is_word_char(c) && c != '\'');
         let mut in_space = false;
         for (i, c) in it {
             let w = crate::bidi::is_word_char(c);
@@ -1334,15 +1484,27 @@ mod tests {
     use super::*;
 
     fn bold() -> CharProps {
-        CharProps { bold: Some(true), ..Default::default() }
+        CharProps {
+            bold: Some(true),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn text_without_takes_ranges_in_any_order() {
         // Multi-byte chars at range edges, an object, and ranges unsorted, overlapping, nested and empty.
         let mut p = Paragraph::with_text("añb€c", CharProps::default());
-        p.insert_object(3, InlineObject::Field { instr: "PAGE".into(), result: "7".into(), locked: false, code: false }, &CharProps::default())
-            .unwrap();
+        p.insert_object(
+            3,
+            InlineObject::Field {
+                instr: "PAGE".into(),
+                result: "7".into(),
+                locked: false,
+                code: false,
+            },
+            &CharProps::default(),
+        )
+        .unwrap();
         let text = p.text.clone();
         let naive = |dropped: &[std::ops::Range<usize>]| {
             let mut out = String::new();
@@ -1361,10 +1523,21 @@ mod tests {
             out
         };
         let n = text.len();
-        let cases: Vec<Vec<std::ops::Range<usize>>> =
-            vec![vec![], vec![1..3], vec![5..n, 0..1], vec![0..4, 2..3, 3..6], vec![2..9, 1..2, 4..4, 0..n], vec![6..6, 9..n, 0..0], vec![3..n + 10]];
+        let cases: Vec<Vec<std::ops::Range<usize>>> = vec![
+            vec![],
+            vec![1..3],
+            vec![5..n, 0..1],
+            vec![0..4, 2..3, 3..6],
+            vec![2..9, 1..2, 4..4, 0..n],
+            vec![6..6, 9..n, 0..0],
+            vec![3..n + 10],
+        ];
         for dropped in cases {
-            assert_eq!(p.text_without(&dropped), naive(&dropped), "{dropped:?} of {text:?}");
+            assert_eq!(
+                p.text_without(&dropped),
+                naive(&dropped),
+                "{dropped:?} of {text:?}"
+            );
         }
         assert_eq!(p.text_without(std::slice::from_ref(&(1..3))), "a7b€c");
     }
@@ -1391,7 +1564,10 @@ mod tests {
     fn format_splits_runs() {
         let mut p = Paragraph::with_text("abcdef", CharProps::default());
         p.format(2, 4, &|c| c.bold = Some(true)).unwrap();
-        assert_eq!(p.runs.iter().map(|r| r.len).collect::<Vec<_>>(), vec![2, 2, 2]);
+        assert_eq!(
+            p.runs.iter().map(|r| r.len).collect::<Vec<_>>(),
+            vec![2, 2, 2]
+        );
         assert_eq!(p.props_of_char(2).bold, Some(true));
         p.format(0, 6, &|c| c.bold = Some(true)).unwrap();
         assert_eq!(p.runs.len(), 1);
@@ -1411,11 +1587,28 @@ mod tests {
     #[test]
     fn objects_track_text() {
         let mut p = Paragraph::with_text("ab", CharProps::default());
-        p.insert_object(1, InlineObject::Field { instr: "PAGE".into(), result: "1".into(), locked: false, code: false }, &CharProps::default())
-            .unwrap();
-        p.insert_object(0, InlineObject::BookmarkStart { name: "x".into() }, &CharProps::default()).unwrap();
+        p.insert_object(
+            1,
+            InlineObject::Field {
+                instr: "PAGE".into(),
+                result: "1".into(),
+                locked: false,
+                code: false,
+            },
+            &CharProps::default(),
+        )
+        .unwrap();
+        p.insert_object(
+            0,
+            InlineObject::BookmarkStart { name: "x".into() },
+            &CharProps::default(),
+        )
+        .unwrap();
         assert_eq!(p.objects.len(), 2);
-        assert!(matches!(p.object_at(0), Some(InlineObject::BookmarkStart { .. })));
+        assert!(matches!(
+            p.object_at(0),
+            Some(InlineObject::BookmarkStart { .. })
+        ));
         let off = p.object_offsets()[1];
         assert!(matches!(p.object_at(off), Some(InlineObject::Field { .. })));
         assert_eq!(p.plain_text(), "a1b");

@@ -26,19 +26,27 @@ pub(crate) fn preset_kind(prst: &str) -> ShapeKind {
         | "flowChartAlternateProcess"
         | "flowChartTerminator"
         | "plaque" => ShapeKind::RoundedRectangle,
-        "ellipse" | "wedgeEllipseCallout" | "cloudCallout" | "cloud" | "flowChartConnector" | "donut" | "flowChartOnlineStorage" => {
-            ShapeKind::Ellipse
-        }
+        "ellipse"
+        | "wedgeEllipseCallout"
+        | "cloudCallout"
+        | "cloud"
+        | "flowChartConnector"
+        | "donut"
+        | "flowChartOnlineStorage" => ShapeKind::Ellipse,
         "triangle" | "rtTriangle" | "flowChartExtract" | "flowChartMerge" => ShapeKind::Triangle,
         "diamond" | "flowChartDecision" => ShapeKind::Diamond,
         "line" | "lineInv" => ShapeKind::Line,
         "straightConnector1" => ShapeKind::StraightConnector,
-        "bentConnector2" | "bentConnector3" | "bentConnector4" | "bentConnector5" => ShapeKind::ElbowConnector,
-        "curvedConnector2" | "curvedConnector3" | "curvedConnector4" | "curvedConnector5" => ShapeKind::CurvedConnector,
-        "rightArrow" | "leftArrow" | "upArrow" | "downArrow" | "leftRightArrow" | "upDownArrow" | "notchedRightArrow" | "stripedRightArrow" => {
-            ShapeKind::Arrow
+        "bentConnector2" | "bentConnector3" | "bentConnector4" | "bentConnector5" => {
+            ShapeKind::ElbowConnector
         }
-        "star4" | "star5" | "star6" | "star7" | "star8" | "star10" | "star12" | "star16" | "star24" | "star32" => ShapeKind::Star,
+        "curvedConnector2" | "curvedConnector3" | "curvedConnector4" | "curvedConnector5" => {
+            ShapeKind::CurvedConnector
+        }
+        "rightArrow" | "leftArrow" | "upArrow" | "downArrow" | "leftRightArrow" | "upDownArrow"
+        | "notchedRightArrow" | "stripedRightArrow" => ShapeKind::Arrow,
+        "star4" | "star5" | "star6" | "star7" | "star8" | "star10" | "star12" | "star16"
+        | "star24" | "star32" => ShapeKind::Star,
         "heart" => ShapeKind::Heart,
         _ => ShapeKind::Rectangle,
     }
@@ -63,17 +71,35 @@ pub(crate) fn shape_paint(sppr: Option<&El>, style: Option<&El>, theme: &[Rgb]) 
     };
     let fill = match sppr {
         Some(s) if s.child("a:noFill").is_some() || s.child("a:blipFill").is_some() => None,
-        Some(s) if s.els().any(|c| matches!(c.name.as_str(), "a:solidFill" | "a:gradFill" | "a:pattFill")) => fill_colour(s, theme),
-        _ => style_ref("a:fillRef").filter(|(idx, _)| *idx > 0).and_then(|(_, r)| color(r, theme)),
+        Some(s)
+            if s.els().any(|c| {
+                matches!(c.name.as_str(), "a:solidFill" | "a:gradFill" | "a:pattFill")
+            }) =>
+        {
+            fill_colour(s, theme)
+        }
+        _ => style_ref("a:fillRef")
+            .filter(|(idx, _)| *idx > 0)
+            .and_then(|(_, r)| color(r, theme)),
     };
     let ln = sppr.and_then(|s| s.child("a:ln"));
     let line_ref = style_ref("a:lnRef").filter(|(idx, _)| *idx > 0);
     let stroke = match ln {
         Some(l) if l.child("a:noFill").is_some() => None,
-        Some(l) if l.els().any(|c| matches!(c.name.as_str(), "a:solidFill" | "a:gradFill" | "a:pattFill")) => fill_colour(l, theme),
+        Some(l)
+            if l.els().any(|c| {
+                matches!(c.name.as_str(), "a:solidFill" | "a:gradFill" | "a:pattFill")
+            }) =>
+        {
+            fill_colour(l, theme)
+        }
         _ => line_ref.and_then(|(_, r)| color(r, theme)),
     };
-    let themed_width = line_ref.and_then(|(idx, _)| THEME_LINE_WIDTHS.get(usize::try_from(idx.clamp(1, 3) - 1).unwrap_or(0)).copied());
+    let themed_width = line_ref.and_then(|(idx, _)| {
+        THEME_LINE_WIDTHS
+            .get(usize::try_from(idx.clamp(1, 3) - 1).unwrap_or(0))
+            .copied()
+    });
     let stroke_width = ln
         .and_then(|l| l.attr("w"))
         .and_then(|v| measure(v, 12_700.0))
@@ -81,7 +107,11 @@ pub(crate) fn shape_paint(sppr: Option<&El>, style: Option<&El>, theme: &[Rgb]) 
         // Word's default outline when the file names none (no outline: no width).
         .unwrap_or(if stroke.is_some() { 0.75 } else { 0.0 })
         .clamp(0.0, 100.0);
-    ShapePaint { fill, stroke, stroke_width }
+    ShapePaint {
+        fill,
+        stroke,
+        stroke_width,
+    }
 }
 
 /// A VML colour (`strokecolor`, `fillcolor`): `#rrggbb` or `#rgb` (Word follows it with the
@@ -112,7 +142,9 @@ mod tests {
     fn theme_styled_connector_gets_its_line_from_the_style() {
         // A connector with no colour of its own (what Word writes for Insert › Shapes › Line):
         // its outline comes from `a:lnRef`, its width from the theme's first line style.
-        let sp = el(r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:prstGeom prst="line"/><a:ln><a:tailEnd type="triangle"/></a:ln></wps:spPr>"#);
+        let sp = el(
+            r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:prstGeom prst="line"/><a:ln><a:tailEnd type="triangle"/></a:ln></wps:spPr>"#,
+        );
         let st = el(
             r#"<wps:style xmlns:wps="w" xmlns:a="a"><a:lnRef idx="1"><a:schemeClr val="accent4"/></a:lnRef><a:fillRef idx="0"><a:schemeClr val="accent4"/></a:fillRef></wps:style>"#,
         );
@@ -124,18 +156,26 @@ mod tests {
 
     #[test]
     fn explicit_paint_wins_over_the_style() {
-        let sp = el(r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:noFill/><a:ln><a:solidFill><a:srgbClr val="EE0000"/></a:solidFill></a:ln></wps:spPr>"#);
+        let sp = el(
+            r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:noFill/><a:ln><a:solidFill><a:srgbClr val="EE0000"/></a:solidFill></a:ln></wps:spPr>"#,
+        );
         let st = el(
             r#"<wps:style xmlns:wps="w" xmlns:a="a"><a:lnRef idx="2"><a:schemeClr val="accent1"><a:shade val="15000"/></a:schemeClr></a:lnRef><a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef></wps:style>"#,
         );
         let p = shape_paint(Some(&sp), Some(&st), &THEME_COLORS);
-        assert_eq!((p.fill, p.stroke, p.stroke_width), (None, Some(Rgb(0xEE, 0, 0)), 1.0));
+        assert_eq!(
+            (p.fill, p.stroke, p.stroke_width),
+            (None, Some(Rgb(0xEE, 0, 0)), 1.0)
+        );
         // Preset and scheme colours as the box's own fill and outline.
         let sp = el(
             r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:solidFill><a:schemeClr val="lt1"/></a:solidFill><a:ln w="6350"><a:solidFill><a:prstClr val="black"/></a:solidFill></a:ln></wps:spPr>"#,
         );
         let p = shape_paint(Some(&sp), None, &THEME_COLORS);
-        assert_eq!((p.fill, p.stroke, p.stroke_width), (Some(THEME_COLORS[1]), Some(Rgb(0, 0, 0)), 0.5));
+        assert_eq!(
+            (p.fill, p.stroke, p.stroke_width),
+            (Some(THEME_COLORS[1]), Some(Rgb(0, 0, 0)), 0.5)
+        );
         // A style fill with index 0 is none; an outline set to no fill is none.
         let sp = el(r#"<wps:spPr xmlns:wps="w" xmlns:a="a"><a:ln><a:noFill/></a:ln></wps:spPr>"#);
         let st = el(
@@ -152,15 +192,23 @@ mod tests {
         );
         let p = shape_paint(None, Some(&st), &[]);
         assert_eq!((p.fill, p.stroke), (None, None));
-        let st = el(r#"<wps:style xmlns:wps="w" xmlns:a="a"><a:lnRef idx="77"><a:srgbClr val="010203"/></a:lnRef></wps:style>"#);
+        let st = el(
+            r#"<wps:style xmlns:wps="w" xmlns:a="a"><a:lnRef idx="77"><a:srgbClr val="010203"/></a:lnRef></wps:style>"#,
+        );
         assert_eq!(shape_paint(None, Some(&st), &[]).stroke_width, 1.5);
     }
 
     #[test]
     fn presets_map_to_the_nearest_shape() {
-        assert_eq!(preset_kind("straightConnector1"), ShapeKind::StraightConnector);
+        assert_eq!(
+            preset_kind("straightConnector1"),
+            ShapeKind::StraightConnector
+        );
         assert_eq!(preset_kind("bentConnector3"), ShapeKind::ElbowConnector);
-        assert_eq!(preset_kind("wedgeRoundRectCallout"), ShapeKind::RoundedRectangle);
+        assert_eq!(
+            preset_kind("wedgeRoundRectCallout"),
+            ShapeKind::RoundedRectangle
+        );
         assert_eq!(preset_kind("wedgeEllipseCallout"), ShapeKind::Ellipse);
         assert_eq!(preset_kind("wedgeRectCallout"), ShapeKind::Rectangle);
         assert_eq!(preset_kind("flowChartDecision"), ShapeKind::Diamond);

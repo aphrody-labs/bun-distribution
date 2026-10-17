@@ -38,7 +38,11 @@ pub(crate) fn var(env: EnvLookup<'_>, key: &str) -> Option<OsString> {
 /// `WSLENV`) is never mistaken for a Linux path. `HOME` follows on every platform, which also
 /// covers MSYS and Git Bash shells on Windows.
 pub(crate) fn home_dir_from(env: EnvLookup<'_>, windows: bool) -> Option<PathBuf> {
-    let profile = if windows { var(env, "USERPROFILE") } else { None };
+    let profile = if windows {
+        var(env, "USERPROFILE")
+    } else {
+        None
+    };
     profile.or_else(|| var(env, "HOME")).map(PathBuf::from)
 }
 
@@ -119,20 +123,35 @@ mod tests {
 
     #[test]
     fn home_reads_userprofile_only_on_windows() {
-        let both = table([("USERPROFILE", r"C:\Users\someone"), ("HOME", "/home/someone")]);
-        assert_eq!(home_dir_from(&both, true), Some(PathBuf::from(r"C:\Users\someone")));
-        assert_eq!(home_dir_from(&both, false), Some(PathBuf::from("/home/someone")));
+        let both = table([
+            ("USERPROFILE", r"C:\Users\someone"),
+            ("HOME", "/home/someone"),
+        ]);
+        assert_eq!(
+            home_dir_from(&both, true),
+            Some(PathBuf::from(r"C:\Users\someone"))
+        );
+        assert_eq!(
+            home_dir_from(&both, false),
+            Some(PathBuf::from("/home/someone"))
+        );
 
         // A Windows profile leaked into a Linux/WSL environment is never a Linux home.
         let leaked = table([("USERPROFILE", r"C:\Users\someone")]);
         assert_eq!(home_dir_from(&leaked, false), None);
-        assert_eq!(home_dir_from(&leaked, true), Some(PathBuf::from(r"C:\Users\someone")));
+        assert_eq!(
+            home_dir_from(&leaked, true),
+            Some(PathBuf::from(r"C:\Users\someone"))
+        );
     }
 
     #[test]
     fn windows_without_a_profile_falls_back_to_home() {
         let msys = table([("HOME", "/c/Users/someone")]);
-        assert_eq!(home_dir_from(&msys, true), Some(PathBuf::from("/c/Users/someone")));
+        assert_eq!(
+            home_dir_from(&msys, true),
+            Some(PathBuf::from("/c/Users/someone"))
+        );
         let empty = table([("USERPROFILE", ""), ("HOME", "")]);
         assert_eq!(home_dir_from(&empty, true), None);
         assert_eq!(home_dir_from(&empty, false), None);
@@ -169,8 +188,10 @@ mod tests {
         ]);
         let directories = binary_search_directories(&env, None, Some(Path::new("/h")));
         // An empty PATH is split like the platform does (one empty entry), exactly as before.
-        let relocated: Vec<_> =
-            directories.iter().skip_while(|path| path.as_os_str().is_empty()).collect();
+        let relocated: Vec<_> = directories
+            .iter()
+            .skip_while(|path| path.as_os_str().is_empty())
+            .collect();
         assert_eq!(
             relocated,
             [

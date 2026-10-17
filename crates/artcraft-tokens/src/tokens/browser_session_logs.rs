@@ -12,6 +12,11 @@ use crate::prefixes::TokenPrefix;
 #[cfg_attr(feature = "database", sqlx(transparent))]
 pub struct BrowserSessionLogToken(pub String);
 
-impl_crockford_generator!(BrowserSessionLogToken, 32usize, TokenPrefix::BrowserSessionLog, CrockfordLower);
+impl_crockford_generator!(
+    BrowserSessionLogToken,
+    32usize,
+    TokenPrefix::BrowserSessionLog,
+    CrockfordLower
+);
 impl_mysql_token_from_row!(BrowserSessionLogToken);
 impl_string_token!(BrowserSessionLogToken);

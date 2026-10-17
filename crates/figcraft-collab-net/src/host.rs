@@ -53,7 +53,10 @@ impl Backend for OneFile {
         if !same_secret(token, &self.token) {
             return Err("wrong session token".into());
         }
-        Ok(Admission { access: Access::Edit, link: None })
+        Ok(Admission {
+            access: Access::Edit,
+            link: None,
+        })
     }
 
     fn open(&mut self, _: &str) -> Result<Server, String> {
@@ -70,7 +73,9 @@ impl Host {
     pub fn start(cfg: HostConfig, inbox: Inbox) -> io::Result<Host> {
         let listener = match TcpListener::bind(cfg.addr) {
             Ok(l) => l,
-            Err(e) if e.kind() == io::ErrorKind::AddrInUse && cfg.any_port_if_taken => TcpListener::bind(SocketAddr::new(cfg.addr.ip(), 0))?,
+            Err(e) if e.kind() == io::ErrorKind::AddrInUse && cfg.any_port_if_taken => {
+                TcpListener::bind(SocketAddr::new(cfg.addr.ip(), 0))?
+            }
             Err(e) => return Err(e),
         };
         // The hub checks the token; the session itself keeps none.
@@ -88,18 +93,36 @@ impl Host {
             client_version: figcraft_collab::message::client_version(),
             resume: None,
         };
-        let (me, outs) = server.join(hello).map_err(|r| io::Error::other(format!("{r:?}")))?;
+        let (me, outs) = server
+            .join(hello)
+            .map_err(|r| io::Error::other(format!("{r:?}")))?;
         // The host's window syncs through its own client too: its welcome carries the document.
         for o in outs {
             match o {
-                Outgoing::To(id, w @ ServerMsg::Welcome { .. }) if id == me => inbox.push(Event::Sync(w)),
-                Outgoing::To(id, ref m @ ServerMsg::Signal { .. }) if id == me => to_local(&inbox, me, m),
+                Outgoing::To(id, w @ ServerMsg::Welcome { .. }) if id == me => {
+                    inbox.push(Event::Sync(w))
+                }
+                Outgoing::To(id, ref m @ ServerMsg::Signal { .. }) if id == me => {
+                    to_local(&inbox, me, m)
+                }
                 _ => {}
             }
         }
-        let me = server.peers().find(|p| p.client_id == me).cloned().ok_or_else(|| io::Error::other("the host didn't join its own session"))?;
-        let backend = OneFile { file: cfg.file.clone(), token: cfg.token };
-        let local = Local { file: cfg.file, server, id: me.client_id, inbox };
+        let me = server
+            .peers()
+            .find(|p| p.client_id == me)
+            .cloned()
+            .ok_or_else(|| io::Error::other("the host didn't join its own session"))?;
+        let backend = OneFile {
+            file: cfg.file.clone(),
+            token: cfg.token,
+        };
+        let local = Local {
+            file: cfg.file,
+            server,
+            id: me.client_id,
+            inbox,
+        };
         let hosting = Hosting::start(listener, backend, cfg.limits, Some(local))?;
         Ok(Host { hosting, me })
     }

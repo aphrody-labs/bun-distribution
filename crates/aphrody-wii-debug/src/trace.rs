@@ -21,7 +21,14 @@ pub fn format_trace_line<const SYSTEM: SystemId>(emulator: &System<SYSTEM>) -> S
         if comment.is_empty() {
             format!("{:08X}  {:08X}  {}", pc, raw, text)
         } else {
-            format!("{:08X}  {:08X}  {}{}; {}", pc, raw, text, " ".repeat(pad), comment)
+            format!(
+                "{:08X}  {:08X}  {}{}; {}",
+                pc,
+                raw,
+                text,
+                " ".repeat(pad),
+                comment
+            )
         }
     } else {
         format!("{:08X}  {:08X}  <unknown>", pc, raw)
@@ -45,15 +52,15 @@ pub fn reg_comment(disasm_text: &str, gprs: &[u32; 32], fprs: &[f64; 32]) -> Str
                     gpr_seen[n] = true;
                     parts.push(format!("r{}={:08X}", n, gprs[n]));
                 }
-            },
+            }
             AsmToken::Fpr(n) => {
                 let n = *n as usize;
                 if !fpr_seen[n] {
                     fpr_seen[n] = true;
                     parts.push(format!("f{}={:.6e}", n, fprs[n]));
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     parts.join(", ")
@@ -80,7 +87,7 @@ pub fn format_dsp_trace_line(dsp: &Dsp) -> String {
             } else {
                 format!("{:04X}  {}  {:<30}; {}", pc, raw, text, comment)
             }
-        },
+        }
         None => format!("{:04X}  {:04X}       <unknown>", pc, w0),
     }
 }

@@ -142,7 +142,11 @@ enum Drag {
 }
 
 /// Shape-gallery names that draw a freeform path instead of a preset.
-pub const FREEFORM_TOOLS: [(&str, &str); 3] = [("curve", "Curve"), ("freeform", "Freeform: Shape"), ("scribble", "Freeform: Scribble")];
+pub const FREEFORM_TOOLS: [(&str, &str); 3] = [
+    ("curve", "Curve"),
+    ("freeform", "Freeform: Shape"),
+    ("scribble", "Freeform: Scribble"),
+];
 
 pub fn is_freeform_tool(name: &str) -> bool {
     FREEFORM_TOOLS.iter().any(|f| f.0 == name)
@@ -195,12 +199,22 @@ impl ToolState {
 pub fn box_handles(x: &Xfrm) -> ([Point; 8], Point) {
     let a = x.affine();
     let (w, h) = (x.w, x.h);
-    let local = [(0.0, 0.0), (w / 2.0, 0.0), (w, 0.0), (w, h / 2.0), (w, h), (w / 2.0, h), (0.0, h), (0.0, h / 2.0)];
+    let local = [
+        (0.0, 0.0),
+        (w / 2.0, 0.0),
+        (w, 0.0),
+        (w, h / 2.0),
+        (w, h),
+        (w / 2.0, h),
+        (0.0, h),
+        (0.0, h / 2.0),
+    ];
     let pts = local.map(|(px, py)| a * Point::new(px, py));
     // The rotation handle sits above the top edge (in the shape's rotated frame).
     let up = if x.flip_v { 1.0 } else { -1.0 };
-    let rot =
-        Affine::translate(Vec2::new(x.x + w / 2.0, x.y + h / 2.0)) * Affine::rotate(x.rot.to_radians()) * Point::new(0.0, up * (h / 2.0 + 20.0));
+    let rot = Affine::translate(Vec2::new(x.x + w / 2.0, x.y + h / 2.0))
+        * Affine::rotate(x.rot.to_radians())
+        * Point::new(0.0, up * (h / 2.0 + 20.0));
     (pts, rot)
 }
 
@@ -226,7 +240,10 @@ impl Session {
                 let x = xfrm_of(&st.doc, &st.selection, sh);
                 if sh.is_line() {
                     let a = x.affine();
-                    for (end, q) in [(0u8, a * Point::new(0.0, 0.0)), (1u8, a * Point::new(x.w, x.h))] {
+                    for (end, q) in [
+                        (0u8, a * Point::new(0.0, 0.0)),
+                        (1u8, a * Point::new(x.w, x.h)),
+                    ] {
                         if (q - p).hypot() <= tol * 1.6 {
                             return Some(Hit::LineEnd { id: *id, end });
                         }
@@ -236,7 +253,10 @@ impl Session {
                 let geo = deckcraft_render::shape_geometry(sh, x.w, x.h);
                 for hd in &geo.handles {
                     if (x.affine() * hd.pos - p).hypot() <= tol * 1.6 {
-                        return Some(Hit::Adjust { id: *id, index: hd.index });
+                        return Some(Hit::Adjust {
+                            id: *id,
+                            index: hd.index,
+                        });
                     }
                 }
                 let (pts, rot) = box_handles(&x);
@@ -245,7 +265,10 @@ impl Session {
                 }
                 for (i, q) in pts.iter().enumerate() {
                     if (*q - p).hypot() <= tol * 1.6 {
-                        return Some(Hit::Resize { id: *id, handle: i as u8 });
+                        return Some(Hit::Resize {
+                            id: *id,
+                            handle: i as u8,
+                        });
                     }
                 }
             }
@@ -277,7 +300,10 @@ impl Session {
         match ev.kind {
             PointerKind::Move => {
                 if let Some(Drag::Freeform { points, mode, .. }) = &self.tool.drag {
-                    let closing = points.len() > 2 && points.first().is_some_and(|s| (*s - p).hypot() <= tol * 2.0);
+                    let closing = points.len() > 2
+                        && points
+                            .first()
+                            .is_some_and(|s| (*s - p).hypot() <= tol * 2.0);
                     let mut v = points.clone();
                     v.push(p);
                     self.tool.path_preview = v;
@@ -313,7 +339,11 @@ impl Session {
         if let Some(st) = self.active_mut()
             && st.interaction.is_none()
         {
-            st.interaction = Some(crate::Interaction { label: label.into(), doc: st.doc.clone(), selection: st.selection.clone() });
+            st.interaction = Some(crate::Interaction {
+                label: label.into(),
+                doc: st.doc.clone(),
+                selection: st.selection.clone(),
+            });
         }
     }
 
@@ -322,25 +352,51 @@ impl Session {
             && let Some(i) = st.interaction.take()
             && !Arc::ptr_eq(&i.doc, &st.doc)
         {
-            crate::push_undo(st, HistoryEntry { label: i.label, doc: i.doc, selection: i.selection });
+            crate::push_undo(
+                st,
+                HistoryEntry {
+                    label: i.label,
+                    doc: i.doc,
+                    selection: i.selection,
+                },
+            );
         }
     }
 
     fn down(&mut self, p: Point, mods: Mods, tol: f64) -> Result<Value> {
-        if let Some(Drag::Freeform { mode, mut points, .. }) = self.tool.drag.clone() {
+        if let Some(Drag::Freeform {
+            mode, mut points, ..
+        }) = self.tool.drag.clone()
+        {
             // Next click of a freeform: close on the start point, else add a vertex.
-            if points.len() > 2 && points.first().is_some_and(|s| (*s - p).hypot() <= tol * 2.0) {
-                self.tool.drag = Some(Drag::Freeform { mode, points, pressed: false });
+            if points.len() > 2
+                && points
+                    .first()
+                    .is_some_and(|s| (*s - p).hypot() <= tol * 2.0)
+            {
+                self.tool.drag = Some(Drag::Freeform {
+                    mode,
+                    points,
+                    pressed: false,
+                });
                 return self.finish_freeform(true);
             }
             points.push(p);
             self.tool.path_preview = points.clone();
-            self.tool.drag = Some(Drag::Freeform { mode, points, pressed: true });
+            self.tool.drag = Some(Drag::Freeform {
+                mode,
+                points,
+                pressed: true,
+            });
             return Ok(Value::Null);
         }
         match self.tool.kind.clone() {
             ToolKind::Shape { preset } if is_freeform_tool(&preset) => {
-                self.tool.drag = Some(Drag::Freeform { mode: preset.clone(), points: vec![p], pressed: true });
+                self.tool.drag = Some(Drag::Freeform {
+                    mode: preset.clone(),
+                    points: vec![p],
+                    pressed: true,
+                });
                 self.tool.path_preview = vec![p];
                 self.tool.path_smooth = preset == "curve";
                 self.tool.path_closing = false;
@@ -355,7 +411,9 @@ impl Session {
                 if mode == "eraser" {
                     return self.erase_at(p, tol);
                 }
-                self.tool.drag = Some(Drag::Ink { points: vec![(p.x, p.y, 0.5)] });
+                self.tool.drag = Some(Drag::Ink {
+                    points: vec![(p.x, p.y, 0.5)],
+                });
                 self.tool.ink_preview = vec![(p.x, p.y, 0.5)];
                 return Ok(Value::Null);
             }
@@ -370,7 +428,10 @@ impl Session {
         {
             let x = xfrm_of(&st.doc, &st.selection, sh);
             if x.bounds().inflate(tol, tol).contains(p)
-                && !matches!(self.hit_test(p, tol), Some(Hit::Resize { .. } | Hit::Rotate { .. } | Hit::Adjust { .. }))
+                && !matches!(
+                    self.hit_test(p, tol),
+                    Some(Hit::Resize { .. } | Hit::Rotate { .. } | Hit::Adjust { .. })
+                )
             {
                 let pos = text_pos(st, sh, p);
                 let shift = mods.shift;
@@ -390,25 +451,57 @@ impl Session {
         let st = self.doc()?;
         match hit {
             Some(Hit::Resize { id, handle }) => {
-                let orig = st.shape(id).map(|s| xfrm_of(&st.doc, &st.selection, s)).unwrap_or_default();
+                let orig = st
+                    .shape(id)
+                    .map(|s| xfrm_of(&st.doc, &st.selection, s))
+                    .unwrap_or_default();
                 self.begin("Size");
-                self.tool.drag = Some(Drag::Resize { id, handle, orig, start: p });
+                self.tool.drag = Some(Drag::Resize {
+                    id,
+                    handle,
+                    orig,
+                    start: p,
+                });
             }
             Some(Hit::LineEnd { id, end }) => {
-                let orig = st.shape(id).map(|s| xfrm_of(&st.doc, &st.selection, s)).unwrap_or_default();
+                let orig = st
+                    .shape(id)
+                    .map(|s| xfrm_of(&st.doc, &st.selection, s))
+                    .unwrap_or_default();
                 self.begin("Size");
                 self.tool.drag = Some(Drag::LineEnd { id, end, orig });
             }
             Some(Hit::Rotate { id }) => {
-                let ids: Vec<ShapeId> = if st.selection.shapes.contains(&id) { st.selection.shapes.clone() } else { vec![id] };
-                let origs: Vec<(ShapeId, Xfrm)> = ids.iter().filter_map(|i| st.shape(*i).map(|s| (*i, xfrm_of(&st.doc, &st.selection, s)))).collect();
-                let center = st.shape(id).map(|s| xfrm_of(&st.doc, &st.selection, s).center()).unwrap_or(p);
+                let ids: Vec<ShapeId> = if st.selection.shapes.contains(&id) {
+                    st.selection.shapes.clone()
+                } else {
+                    vec![id]
+                };
+                let origs: Vec<(ShapeId, Xfrm)> = ids
+                    .iter()
+                    .filter_map(|i| {
+                        st.shape(*i)
+                            .map(|s| (*i, xfrm_of(&st.doc, &st.selection, s)))
+                    })
+                    .collect();
+                let center = st
+                    .shape(id)
+                    .map(|s| xfrm_of(&st.doc, &st.selection, s).center())
+                    .unwrap_or(p);
                 let start = (p.y - center.y).atan2(p.x - center.x);
                 self.begin("Rotate");
-                self.tool.drag = Some(Drag::Rotate { ids, center, start, origs });
+                self.tool.drag = Some(Drag::Rotate {
+                    ids,
+                    center,
+                    start,
+                    origs,
+                });
             }
             Some(Hit::Adjust { id, index }) => {
-                let orig = st.shape(id).map(|s| xfrm_of(&st.doc, &st.selection, s)).unwrap_or_default();
+                let orig = st
+                    .shape(id)
+                    .map(|s| xfrm_of(&st.doc, &st.selection, s))
+                    .unwrap_or_default();
                 self.begin("Adjust Shape");
                 self.tool.drag = Some(Drag::Adjust { id, index, orig });
             }
@@ -429,11 +522,18 @@ impl Session {
                     vec![id]
                 };
                 // Locked objects stay put when the selection is dragged.
-                let origs: Vec<(ShapeId, Xfrm)> =
-                    ids.iter().filter_map(|i| st.shape(*i).filter(|s| !s.locked).map(|s| (*i, xfrm_of(&st.doc, &st.selection, s)))).collect();
+                let origs: Vec<(ShapeId, Xfrm)> = ids
+                    .iter()
+                    .filter_map(|i| {
+                        st.shape(*i)
+                            .filter(|s| !s.locked)
+                            .map(|s| (*i, xfrm_of(&st.doc, &st.selection, s)))
+                    })
+                    .collect();
                 // A click (no drag) on text puts the caret there; unselected text boxes and
                 // placeholders take the caret straight away like PowerPoint.
-                let enter_text = (text && !toggle && (selected || is_text_first(st, id))).then_some((id, p));
+                let enter_text =
+                    (text && !toggle && (selected || is_text_first(st, id))).then_some((id, p));
                 let ids2 = ids.clone();
                 self.select(|_, sel| {
                     sel.shapes = ids2;
@@ -441,7 +541,14 @@ impl Session {
                     sel.cells = None;
                 })?;
                 let duplicate = mods.alt && origs.len() == ids.len();
-                self.tool.drag = Some(Drag::Move { ids, start: p, origs, moved: false, duplicate, enter_text });
+                self.tool.drag = Some(Drag::Move {
+                    ids,
+                    start: p,
+                    origs,
+                    moved: false,
+                    duplicate,
+                    enter_text,
+                });
                 // Format Painter applies on click.
                 if self.painter.is_some() && !toggle {
                     let _ = self.execute("format.painterApply", &json!({"ids": [id]}));
@@ -468,9 +575,18 @@ impl Session {
     }
 
     fn drag(&mut self, p: Point, mods: Mods, tol: f64) -> Result<Value> {
-        let Some(drag) = self.tool.drag.clone() else { return Ok(Value::Null) };
+        let Some(drag) = self.tool.drag.clone() else {
+            return Ok(Value::Null);
+        };
         match drag {
-            Drag::Move { ids, start, origs, moved, duplicate, enter_text } => {
+            Drag::Move {
+                ids,
+                start,
+                origs,
+                moved,
+                duplicate,
+                enter_text,
+            } => {
                 let mut d = p - start;
                 if !moved && (d.hypot() < tol.max(1.0) || origs.is_empty()) {
                     return Ok(Value::Null);
@@ -482,7 +598,11 @@ impl Session {
                         self.execute_dup_in_place(&ids)?;
                     }
                 }
-                let ids_now = if duplicate { self.doc()?.selection.shapes.clone() } else { ids.clone() };
+                let ids_now = if duplicate {
+                    self.doc()?.selection.shapes.clone()
+                } else {
+                    ids.clone()
+                };
                 if mods.shift {
                     if d.x.abs() > d.y.abs() {
                         d.y = 0.0;
@@ -491,18 +611,34 @@ impl Session {
                     }
                 }
                 // Smart guides on the moved group's bounds.
-                let bounds = origs.iter().map(|(_, x)| x.bounds()).reduce(|a, b| a.union(b)).unwrap_or_default();
+                let bounds = origs
+                    .iter()
+                    .map(|(_, x)| x.bounds())
+                    .reduce(|a, b| a.union(b))
+                    .unwrap_or_default();
                 let moved_b = bounds + d;
                 let (snap, guides) = self.snap_rect(moved_b, &ids_now, tol * 1.5, !mods.cmd);
                 d += snap;
                 self.tool.guides = guides;
-                let origs2: Vec<(ShapeId, Xfrm)> =
-                    if duplicate { ids_now.iter().copied().zip(origs.iter().map(|o| o.1)).collect() } else { origs.clone() };
+                let origs2: Vec<(ShapeId, Xfrm)> = if duplicate {
+                    ids_now
+                        .iter()
+                        .copied()
+                        .zip(origs.iter().map(|o| o.1))
+                        .collect()
+                } else {
+                    origs.clone()
+                };
                 self.edit(|doc, sel| {
-                    let list = crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("move", "no slide"))?;
+                    let list =
+                        crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("move", "no slide"))?;
                     for (id, o) in &origs2 {
                         if let Some(sh) = deckcraft_model::find_shape_mut(list, *id) {
-                            sh.xfrm = Some(Xfrm { x: o.x + d.x, y: o.y + d.y, ..*o });
+                            sh.xfrm = Some(Xfrm {
+                                x: o.x + d.x,
+                                y: o.y + d.y,
+                                ..*o
+                            });
                         }
                     }
                     // A connector dragged away from shapes that stay put comes unglued at those ends.
@@ -518,11 +654,28 @@ impl Session {
                     }
                     Ok(())
                 })?;
-                self.tool.drag =
-                    Some(Drag::Move { ids: ids_now, start, origs: origs2, moved: true, duplicate: false, enter_text: enter_text.filter(|_| false) });
+                self.tool.drag = Some(Drag::Move {
+                    ids: ids_now,
+                    start,
+                    origs: origs2,
+                    moved: true,
+                    duplicate: false,
+                    enter_text: enter_text.filter(|_| false),
+                });
             }
-            Drag::Resize { id, handle, orig, start } => {
-                let nx = resize_box(&orig, handle, p - start, mods.shift || self.is_picture(id), mods.alt);
+            Drag::Resize {
+                id,
+                handle,
+                orig,
+                start,
+            } => {
+                let nx = resize_box(
+                    &orig,
+                    handle,
+                    p - start,
+                    mods.shift || self.is_picture(id),
+                    mods.alt,
+                );
                 let nx = self.snap_resize(nx, &orig, handle, id, tol);
                 self.set_xfrm(id, nx)?;
             }
@@ -547,7 +700,12 @@ impl Session {
                     Ok(())
                 })?;
             }
-            Drag::Rotate { ids, center, start, origs } => {
+            Drag::Rotate {
+                ids,
+                center,
+                start,
+                origs,
+            } => {
                 let ang = (p.y - center.y).atan2(p.x - center.x);
                 let mut delta = (ang - start).to_degrees();
                 for (id, o) in &origs {
@@ -561,7 +719,10 @@ impl Session {
                     if ids.len() > 1 {
                         // Rotate positions around the common centre too.
                         let c = o.center();
-                        let rc = Affine::translate(center.to_vec2()) * Affine::rotate(delta.to_radians()) * Affine::translate(-center.to_vec2()) * c;
+                        let rc = Affine::translate(center.to_vec2())
+                            * Affine::rotate(delta.to_radians())
+                            * Affine::translate(-center.to_vec2())
+                            * c;
                         nx.x = rc.x - o.w / 2.0;
                         nx.y = rc.y - o.h / 2.0;
                     }
@@ -570,10 +731,14 @@ impl Session {
             }
             Drag::Adjust { id, index, orig } => {
                 let st = self.doc()?;
-                let Some(sh) = st.shape(id).cloned() else { return Ok(Value::Null) };
+                let Some(sh) = st.shape(id).cloned() else {
+                    return Ok(Value::Null);
+                };
                 let local = orig.affine().inverse() * p;
                 let geo = deckcraft_render::shape_geometry(&sh, orig.w, orig.h);
-                let Some(h) = geo.handles.iter().find(|h| h.index == index) else { return Ok(Value::Null) };
+                let Some(h) = geo.handles.iter().find(|h| h.index == index) else {
+                    return Ok(Value::Null);
+                };
                 let free2d = matches!(sh.geom.preset_name(), Some(n) if n.contains("Callout") && !n.contains("Arrow"));
                 let vals: Vec<(usize, f64)> = if free2d {
                     let dx = (local.x - orig.w / 2.0) / orig.w.max(1e-6) * 1e5;
@@ -583,11 +748,14 @@ impl Session {
                     vec![(index, h.value_at(local))]
                 };
                 self.edit(|doc, sel| {
-                    let list = crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("adjust", "no slide"))?;
+                    let list = crate::shapes_mut(doc, sel)
+                        .ok_or_else(|| cmd::bad("adjust", "no slide"))?;
                     if let Some(sh) = deckcraft_model::find_shape_mut(list, id)
                         && let deckcraft_model::Geom::Preset { name, adj } = &mut sh.geom
                     {
-                        let defaults = deckcraft_geom::preset::info(name).map(|x| x.defaults).unwrap_or(&[]);
+                        let defaults = deckcraft_geom::preset::info(name)
+                            .map(|x| x.defaults)
+                            .unwrap_or(&[]);
                         for (i, v) in &vals {
                             while adj.len() <= *i {
                                 let k = adj.len();
@@ -607,7 +775,11 @@ impl Session {
             Drag::Create { start } => {
                 let line = matches!(&self.tool.kind, ToolKind::Shape { preset } if deckcraft_geom::preset::is_line_like(preset));
                 let x = if line {
-                    let mut q = if mods.shift { constrain_45(start, p) } else { p };
+                    let mut q = if mods.shift {
+                        constrain_45(start, p)
+                    } else {
+                        p
+                    };
                     if let Some((_, _, at)) = self.update_sites(q, tol, None) {
                         q = at;
                     }
@@ -623,7 +795,12 @@ impl Session {
                     }
                     if mods.alt {
                         let d = p - start;
-                        r = Rect::new(start.x - d.x.abs(), start.y - d.y.abs(), start.x + d.x.abs(), start.y + d.y.abs());
+                        r = Rect::new(
+                            start.x - d.x.abs(),
+                            start.y - d.y.abs(),
+                            start.x + d.x.abs(),
+                            start.y + d.y.abs(),
+                        );
                     }
                     Xfrm::new(r.x0, r.y0, r.width(), r.height())
                 };
@@ -640,9 +817,16 @@ impl Session {
                     })?;
                 }
             }
-            Drag::Freeform { mode, mut points, pressed } => {
+            Drag::Freeform {
+                mode,
+                mut points,
+                pressed,
+            } => {
                 // Dragging scribbles (except for curves, which only take clicked points).
-                if pressed && mode != "curve" && points.last().is_none_or(|l| (*l - p).hypot() >= 1.5) {
+                if pressed
+                    && mode != "curve"
+                    && points.last().is_none_or(|l| (*l - p).hypot() >= 1.5)
+                {
                     points.push(p);
                 }
                 let mut v = points.clone();
@@ -650,7 +834,11 @@ impl Session {
                     v.push(p);
                 }
                 self.tool.path_preview = v;
-                self.tool.drag = Some(Drag::Freeform { mode, points, pressed });
+                self.tool.drag = Some(Drag::Freeform {
+                    mode,
+                    points,
+                    pressed,
+                });
             }
             Drag::Ink { mut points } => {
                 points.push((p.x, p.y, 0.5));
@@ -668,7 +856,11 @@ impl Session {
         self.tool.glue = None;
         let mut out = Value::Null;
         match drag {
-            Some(Drag::Move { moved: false, enter_text: Some((id, at)), .. }) => {
+            Some(Drag::Move {
+                moved: false,
+                enter_text: Some((id, at)),
+                ..
+            }) => {
                 // Plain click on text: caret at the click.
                 let st = self.doc()?;
                 if let Some(sh) = st.shape(id) {
@@ -716,7 +908,10 @@ impl Session {
                             None => Xfrm::new(start.x, start.y, 72.0, 72.0),
                         };
                         let r = self.execute("shape.insert", &json!({"preset": preset, "rect": [rect.x, rect.y, rect.w, rect.h], "flip": format!("{}{}", if rect.flip_h { "h" } else { "" }, if rect.flip_v { "v" } else { "" })}))?;
-                        if let (Some(id), Some(x)) = (r.get("id").and_then(Value::as_u64), preview.filter(|_| dragged && line)) {
+                        if let (Some(id), Some(x)) = (
+                            r.get("id").and_then(Value::as_u64),
+                            preview.filter(|_| dragged && line),
+                        ) {
                             let id = ShapeId(id as u32);
                             let _ = self.set_xfrm_cmd(id, x);
                             // Glue the ends that landed on connection sites.
@@ -725,8 +920,18 @@ impl Session {
                             if g0.is_some() || g1.is_some() {
                                 let _ = self.edit(|doc, sel| {
                                     if let Some(list) = crate::shapes_mut(doc, sel) {
-                                        crate::connect::set_glue(list, id, 0, g0.map(|g| (g.0, g.1)));
-                                        crate::connect::set_glue(list, id, 1, g1.map(|g| (g.0, g.1)));
+                                        crate::connect::set_glue(
+                                            list,
+                                            id,
+                                            0,
+                                            g0.map(|g| (g.0, g.1)),
+                                        );
+                                        crate::connect::set_glue(
+                                            list,
+                                            id,
+                                            1,
+                                            g1.map(|g| (g.0, g.1)),
+                                        );
                                     }
                                     Ok(())
                                 });
@@ -736,7 +941,10 @@ impl Session {
                     }
                     ToolKind::TextBox => {
                         let w = preview.filter(|_| dragged).map(|x| x.w).unwrap_or(0.0);
-                        let at = preview.filter(|_| dragged).map(|x| Point::new(x.x, x.y)).unwrap_or(start);
+                        let at = preview
+                            .filter(|_| dragged)
+                            .map(|x| Point::new(x.x, x.y))
+                            .unwrap_or(start);
                         self.execute("insert.textBox", &json!({"rect": [at.x, at.y, w, 30.0]}))?
                     }
                     _ => Value::Null,
@@ -749,12 +957,24 @@ impl Session {
             Some(Drag::Freeform { mode, points, .. }) => {
                 if mode == "scribble" {
                     // A scribble ending back at its start closes into a filled shape.
-                    let closed = points.len() > 3 && points.first().zip(points.last()).is_some_and(|(a, b)| (*a - *b).hypot() <= 6.0);
-                    self.tool.drag = Some(Drag::Freeform { mode, points, pressed: false });
+                    let closed = points.len() > 3
+                        && points
+                            .first()
+                            .zip(points.last())
+                            .is_some_and(|(a, b)| (*a - *b).hypot() <= 6.0);
+                    self.tool.drag = Some(Drag::Freeform {
+                        mode,
+                        points,
+                        pressed: false,
+                    });
                     return self.finish_freeform(closed);
                 }
                 // Polygon / curve: keep going until double-click, Enter or a click on the start.
-                self.tool.drag = Some(Drag::Freeform { mode, points, pressed: false });
+                self.tool.drag = Some(Drag::Freeform {
+                    mode,
+                    points,
+                    pressed: false,
+                });
                 return Ok(Value::Null);
             }
             Some(Drag::Ink { points }) => {
@@ -779,12 +999,24 @@ impl Session {
     }
 
     fn double_click(&mut self, p: Point, tol: f64) -> Result<Value> {
-        if let Some(Drag::Freeform { mode, mut points, .. }) = self.tool.drag.clone() {
+        if let Some(Drag::Freeform {
+            mode, mut points, ..
+        }) = self.tool.drag.clone()
+        {
             // The double-click's own click added a duplicate vertex.
-            while points.len() > 2 && points.last().zip(points.get(points.len() - 2)).is_some_and(|(a, b)| (*a - *b).hypot() <= tol) {
+            while points.len() > 2
+                && points
+                    .last()
+                    .zip(points.get(points.len() - 2))
+                    .is_some_and(|(a, b)| (*a - *b).hypot() <= tol)
+            {
                 points.pop();
             }
-            self.tool.drag = Some(Drag::Freeform { mode, points, pressed: false });
+            self.tool.drag = Some(Drag::Freeform {
+                mode,
+                points,
+                pressed: false,
+            });
             return self.finish_freeform(false);
         }
         if !matches!(self.tool.kind, ToolKind::Select) {
@@ -799,14 +1031,19 @@ impl Session {
         match self.hit_test(p, tol) {
             Some(Hit::Shape { id, .. }) => {
                 let st = self.doc()?;
-                let Some(sh) = st.shape(id).cloned() else { return Ok(Value::Null) };
+                let Some(sh) = st.shape(id).cloned() else {
+                    return Ok(Value::Null);
+                };
                 match &sh.kind {
                     ShapeKind::Table(_) => {
                         let x = xfrm_of(&st.doc, &st.selection, &sh);
                         let local = x.affine().inverse() * p;
                         if let ShapeKind::Table(t) = &sh.kind {
                             let cell = deckcraft_render_cell(t, &table_rows(st, t), local);
-                            return self.execute("text.edit", &json!({"id": id, "cell": [cell.0, cell.1]}));
+                            return self.execute(
+                                "text.edit",
+                                &json!({"id": id, "cell": [cell.0, cell.1]}),
+                            );
                         }
                         Ok(Value::Null)
                     }
@@ -817,7 +1054,9 @@ impl Session {
                     }
                     ShapeKind::Group { .. } => Ok(Value::Null),
                     _ => {
-                        self.ui_requests.push(crate::UiRequest::Pane { id: "format".into() });
+                        self.ui_requests.push(crate::UiRequest::Pane {
+                            id: "format".into(),
+                        });
                         Ok(Value::Null)
                     }
                 }
@@ -827,12 +1066,16 @@ impl Session {
     }
 
     fn is_picture(&self, id: ShapeId) -> bool {
-        self.active().and_then(|d| d.shape(id)).is_some_and(|s| matches!(s.kind, ShapeKind::Picture { .. } | ShapeKind::Media(_)))
+        self.active()
+            .and_then(|d| d.shape(id))
+            .is_some_and(|s| matches!(s.kind, ShapeKind::Picture { .. } | ShapeKind::Media(_)))
     }
 
     /// End the freeform being drawn: create the shape (if it has at least two points).
     pub fn finish_freeform(&mut self, closed: bool) -> Result<Value> {
-        let Some(Drag::Freeform { mode, points, .. }) = self.tool.drag.take() else { return Ok(Value::Null) };
+        let Some(Drag::Freeform { mode, points, .. }) = self.tool.drag.take() else {
+            return Ok(Value::Null);
+        };
         self.tool.path_preview.clear();
         self.tool.path_closing = false;
         if !self.tool.sticky {
@@ -842,26 +1085,58 @@ impl Session {
             return Ok(Value::Null);
         }
         let pts: Vec<[f64; 2]> = points.iter().map(|q| [q.x, q.y]).collect();
-        self.execute("shape.freeform", &json!({"points": pts, "closed": closed, "smooth": mode == "curve"}))
+        self.execute(
+            "shape.freeform",
+            &json!({"points": pts, "closed": closed, "smooth": mode == "curve"}),
+        )
     }
 
     /// The connection site within glue range of `p` (excluding shape `exclude`).
     fn glue_at(&self, p: Point, tol: f64) -> Option<(ShapeId, u32, Point)> {
         let st = self.active()?;
-        crate::connect::nearest_site(&st.doc, &st.selection, st.shapes(), p, (tol * 2.0).max(6.0), None)
+        crate::connect::nearest_site(
+            &st.doc,
+            &st.selection,
+            st.shapes(),
+            p,
+            (tol * 2.0).max(6.0),
+            None,
+        )
     }
 
     /// Show the sites of the shape near `p` and return the site an end at `p` would glue to.
-    fn update_sites(&mut self, p: Point, tol: f64, exclude: Option<ShapeId>) -> Option<(ShapeId, u32, Point)> {
+    fn update_sites(
+        &mut self,
+        p: Point,
+        tol: f64,
+        exclude: Option<ShapeId>,
+    ) -> Option<(ShapeId, u32, Point)> {
         let (sites, glue) = match self.active() {
             Some(st) => {
                 let shapes = st.shapes();
-                let near = crate::connect::site_shape_at(&st.doc, &st.selection, shapes, p, tol * 3.0, exclude);
+                let near = crate::connect::site_shape_at(
+                    &st.doc,
+                    &st.selection,
+                    shapes,
+                    p,
+                    tol * 3.0,
+                    exclude,
+                );
                 let sites = near
                     .and_then(|id| shapes.iter().find(|s| s.id == id))
                     .map(|s| crate::connect::sites(&st.doc, &st.selection, s))
                     .unwrap_or_default();
-                (sites, crate::connect::nearest_site(&st.doc, &st.selection, shapes, p, (tol * 2.0).max(6.0), exclude))
+                (
+                    sites,
+                    crate::connect::nearest_site(
+                        &st.doc,
+                        &st.selection,
+                        shapes,
+                        p,
+                        (tol * 2.0).max(6.0),
+                        exclude,
+                    ),
+                )
             }
             None => (vec![], None),
         };
@@ -886,12 +1161,18 @@ impl Session {
                         Some(d) if d.len() == t.rows.len() => d.clone(),
                         _ => t.rows.iter().map(|r| r.height).collect(),
                     };
-                    let (tw, th) = (t.width().max(1e-6), heights.iter().map(|h| h.max(0.0)).sum::<f64>());
+                    let (tw, th) = (
+                        t.width().max(1e-6),
+                        heights.iter().map(|h| h.max(0.0)).sum::<f64>(),
+                    );
                     let kx = x.w / tw;
                     t.cols.iter_mut().for_each(|c| *c *= kx);
                     if th > 1e-6 {
                         let ky = x.h / th;
-                        t.rows.iter_mut().zip(&heights).for_each(|(r, h)| r.height = h.max(0.0) * ky);
+                        t.rows
+                            .iter_mut()
+                            .zip(&heights)
+                            .for_each(|(r, h)| r.height = h.max(0.0) * ky);
                     }
                 }
             }
@@ -900,10 +1181,14 @@ impl Session {
     }
 
     fn set_xfrm_cmd(&mut self, id: ShapeId, x: Xfrm) -> Result<Value> {
-        self.execute("shape.setBounds", &json!({"id": id, "x": x.x, "y": x.y, "w": x.w, "h": x.h}))?;
+        self.execute(
+            "shape.setBounds",
+            &json!({"id": id, "x": x.x, "y": x.y, "w": x.w, "h": x.h}),
+        )?;
         if x.flip_h || x.flip_v {
             self.edit(|doc, sel| {
-                if let Some(sh) = crate::shapes_mut(doc, sel).and_then(|l| deckcraft_model::find_shape_mut(l, id))
+                if let Some(sh) =
+                    crate::shapes_mut(doc, sel).and_then(|l| deckcraft_model::find_shape_mut(l, id))
                     && let Some(xx) = sh.xfrm.as_mut()
                 {
                     xx.flip_h = x.flip_h;
@@ -927,7 +1212,11 @@ impl Session {
     fn execute_dup_in_place(&mut self, ids: &[ShapeId]) -> Result<()> {
         self.edit(|doc, sel| {
             let list = cmd::current_shapes(doc, sel).cloned().unwrap_or_default();
-            let mut copies: Vec<Shape> = list.iter().filter(|x| ids.contains(&x.id)).cloned().collect();
+            let mut copies: Vec<Shape> = list
+                .iter()
+                .filter(|x| ids.contains(&x.id))
+                .cloned()
+                .collect();
             let boxes: Vec<Xfrm> = copies.iter().map(|c| xfrm_of(doc, sel, c)).collect();
             cmd::edit::reid(doc, &mut copies);
             for (c, b) in copies.iter_mut().zip(boxes) {
@@ -935,7 +1224,8 @@ impl Session {
                 c.ph = None;
             }
             let new_ids: Vec<ShapeId> = copies.iter().map(|c| c.id).collect();
-            let shapes = crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("duplicate", "no slide"))?;
+            let shapes =
+                crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("duplicate", "no slide"))?;
             shapes.extend(copies);
             sel.shapes = new_ids;
             Ok(())
@@ -944,21 +1234,41 @@ impl Session {
 
     /// Smart guides: snap `r` edges/centres to the slide and other shapes. Returns the offset to
     /// apply and the guides to draw.
-    fn snap_rect(&self, r: Rect, exclude: &[ShapeId], tol: f64, enabled: bool) -> (Vec2, Vec<Guide>) {
-        let Some(st) = self.active() else { return (Vec2::ZERO, vec![]) };
+    fn snap_rect(
+        &self,
+        r: Rect,
+        exclude: &[ShapeId],
+        tol: f64,
+        enabled: bool,
+    ) -> (Vec2, Vec<Guide>) {
+        let Some(st) = self.active() else {
+            return (Vec2::ZERO, vec![]);
+        };
         if !enabled || !self.prefs.smart_guides {
             return (Vec2::ZERO, vec![]);
         }
         let size = st.doc.slide_size;
         let mut xs: Vec<(f64, Rect)> = vec![
             (0.0, Rect::new(0.0, 0.0, 0.0, size.height)),
-            (size.width / 2.0, Rect::new(size.width / 2.0, 0.0, size.width / 2.0, size.height)),
-            (size.width, Rect::new(size.width, 0.0, size.width, size.height)),
+            (
+                size.width / 2.0,
+                Rect::new(size.width / 2.0, 0.0, size.width / 2.0, size.height),
+            ),
+            (
+                size.width,
+                Rect::new(size.width, 0.0, size.width, size.height),
+            ),
         ];
         let mut ys: Vec<(f64, Rect)> = vec![
             (0.0, Rect::new(0.0, 0.0, size.width, 0.0)),
-            (size.height / 2.0, Rect::new(0.0, size.height / 2.0, size.width, size.height / 2.0)),
-            (size.height, Rect::new(0.0, size.height, size.width, size.height)),
+            (
+                size.height / 2.0,
+                Rect::new(0.0, size.height / 2.0, size.width, size.height / 2.0),
+            ),
+            (
+                size.height,
+                Rect::new(0.0, size.height, size.width, size.height),
+            ),
         ];
         for sh in st.shapes() {
             if exclude.contains(&sh.id) || sh.hidden {
@@ -995,14 +1305,24 @@ impl Session {
         if let Some((d, x, b)) = best_x {
             off.x = d;
             let rr = r + Vec2::new(d, 0.0);
-            guides.push(Guide { vertical: true, pos: x, from: b.y0.min(rr.y0), to: b.y1.max(rr.y1) });
+            guides.push(Guide {
+                vertical: true,
+                pos: x,
+                from: b.y0.min(rr.y0),
+                to: b.y1.max(rr.y1),
+            });
         } else if self.prefs.snap_to_grid {
             off.x = deckcraft_geom::snap(r.x0, self.prefs.grid_spacing) - r.x0;
         }
         if let Some((d, y, b)) = best_y {
             off.y = d;
             let rr = r + Vec2::new(0.0, d);
-            guides.push(Guide { vertical: false, pos: y, from: b.x0.min(rr.x0), to: b.x1.max(rr.x1) });
+            guides.push(Guide {
+                vertical: false,
+                pos: y,
+                from: b.x0.min(rr.x0),
+                to: b.x1.max(rr.x1),
+            });
         } else if self.prefs.snap_to_grid {
             off.y = deckcraft_geom::snap(r.y0, self.prefs.grid_spacing) - r.y0;
         }
@@ -1041,17 +1361,31 @@ impl Session {
     }
 
     fn add_ink(&mut self, points: Vec<(f64, f64, f32)>) -> Result<Value> {
-        let ToolKind::Ink { mode, color, width } = self.tool.kind.clone() else { return Ok(Value::Null) };
-        let stroke = deckcraft_model::InkStroke { points, color, width, highlighter: mode == "highlighter" };
+        let ToolKind::Ink { mode, color, width } = self.tool.kind.clone() else {
+            return Ok(Value::Null);
+        };
+        let stroke = deckcraft_model::InkStroke {
+            points,
+            color,
+            width,
+            highlighter: mode == "highlighter",
+        };
         // Strokes join the slide's ink layer (one ink shape per slide).
-        let existing = self.doc()?.shapes().iter().rev().find(|s| matches!(s.kind, ShapeKind::Ink { .. })).map(|s| s.id);
+        let existing = self
+            .doc()?
+            .shapes()
+            .iter()
+            .rev()
+            .find(|s| matches!(s.kind, ShapeKind::Ink { .. }))
+            .map(|s| s.id);
         self.edit(|doc, sel| {
             let id = match existing {
                 Some(id) => id,
                 None => {
                     let id = ShapeId(doc.alloc_id());
                     let size = doc.slide_size;
-                    let list = crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("ink", "no slide"))?;
+                    let list =
+                        crate::shapes_mut(doc, sel).ok_or_else(|| cmd::bad("ink", "no slide"))?;
                     list.push(Shape {
                         id,
                         name: "Ink".into(),
@@ -1074,7 +1408,15 @@ impl Session {
 
     fn erase_at(&mut self, p: Point, tol: f64) -> Result<Value> {
         let st = self.doc()?;
-        let Some(ink) = st.shapes().iter().rev().find(|s| matches!(s.kind, ShapeKind::Ink { .. })).map(|s| s.id) else { return Ok(Value::Null) };
+        let Some(ink) = st
+            .shapes()
+            .iter()
+            .rev()
+            .find(|s| matches!(s.kind, ShapeKind::Ink { .. }))
+            .map(|s| s.id)
+        else {
+            return Ok(Value::Null);
+        };
         let before = st.doc.clone();
         let sel_before = st.selection.clone();
         self.edit(|doc, sel| {
@@ -1082,12 +1424,23 @@ impl Session {
             if let Some(sh) = deckcraft_model::find_shape_mut(list, ink)
                 && let ShapeKind::Ink { strokes } = &mut sh.kind
             {
-                strokes.retain(|s| !s.points.iter().any(|(x, y, _)| (Point::new(*x, *y) - p).hypot() <= tol * 2.0 + s.width));
+                strokes.retain(|s| {
+                    !s.points
+                        .iter()
+                        .any(|(x, y, _)| (Point::new(*x, *y) - p).hypot() <= tol * 2.0 + s.width)
+                });
             }
             Ok(())
         })?;
         if let Some(st) = self.active_mut() {
-            crate::push_undo(st, HistoryEntry { label: "Erase".into(), doc: before, selection: sel_before });
+            crate::push_undo(
+                st,
+                HistoryEntry {
+                    label: "Erase".into(),
+                    doc: before,
+                    selection: sel_before,
+                },
+            );
         }
         Ok(Value::Null)
     }
@@ -1112,7 +1465,15 @@ fn constrain_45(a: Point, b: Point) -> Point {
 /// A line-like shape's box for endpoints `a` → `b` (flips encode direction).
 pub fn line_xfrm(a: Point, b: Point, _rot: f64) -> Xfrm {
     let r = Rect::from_points(a, b);
-    Xfrm { x: r.x0, y: r.y0, w: r.width(), h: r.height(), rot: 0.0, flip_h: b.x < a.x, flip_v: b.y < a.y }
+    Xfrm {
+        x: r.x0,
+        y: r.y0,
+        w: r.width(),
+        h: r.height(),
+        rot: 0.0,
+        flip_h: b.x < a.x,
+        flip_v: b.y < a.y,
+    }
 }
 
 /// New box when dragging resize handle `h` by `d` (slide space), keeping the shape's rotation.
@@ -1121,7 +1482,10 @@ pub fn resize_box(o: &Xfrm, h: u8, d: Vec2, keep_aspect: bool, from_center: bool
     let rot = Affine::rotate(-o.rot.to_radians());
     let ld = rot * Point::new(d.x, d.y);
     let (mut l, mut t, mut r, mut b) = (0.0, 0.0, o.w, o.h);
-    let (sx, sy) = (if o.flip_h { -1.0 } else { 1.0 }, if o.flip_v { -1.0 } else { 1.0 });
+    let (sx, sy) = (
+        if o.flip_h { -1.0 } else { 1.0 },
+        if o.flip_v { -1.0 } else { 1.0 },
+    );
     let (dx, dy) = (ld.x * sx, ld.y * sy);
     match h {
         0 => {
@@ -1201,9 +1565,24 @@ pub fn resize_box(o: &Xfrm, h: u8, d: Vec2, keep_aspect: bool, from_center: bool
     }
     let (nw, nh) = (r - l, b - t);
     // New centre in slide space: old centre + rotated offset of the local centre change.
-    let local_c = Point::new((l + r) / 2.0 * sx + if sx < 0.0 { o.w } else { 0.0 }, (t + b) / 2.0 * sy + if sy < 0.0 { o.h } else { 0.0 });
-    let c = o.affine() * Point::new(if o.flip_h { o.w - local_c.x } else { local_c.x }, if o.flip_v { o.h - local_c.y } else { local_c.y });
-    Xfrm { x: c.x - nw / 2.0, y: c.y - nh / 2.0, w: nw, h: nh, rot: o.rot, flip_h: fh, flip_v: fv }
+    let local_c = Point::new(
+        (l + r) / 2.0 * sx + if sx < 0.0 { o.w } else { 0.0 },
+        (t + b) / 2.0 * sy + if sy < 0.0 { o.h } else { 0.0 },
+    );
+    let c = o.affine()
+        * Point::new(
+            if o.flip_h { o.w - local_c.x } else { local_c.x },
+            if o.flip_v { o.h - local_c.y } else { local_c.y },
+        );
+    Xfrm {
+        x: c.x - nw / 2.0,
+        y: c.y - nh / 2.0,
+        w: nw,
+        h: nh,
+        rot: o.rot,
+        flip_h: fh,
+        flip_v: fv,
+    }
 }
 
 fn hit_shape(st: &crate::DocState, sh: &Shape, p: Point, tol: f64) -> Option<Hit> {
@@ -1220,7 +1599,10 @@ fn hit_shape(st: &crate::DocState, sh: &Shape, p: Point, tol: f64) -> Option<Hit
                 if let Some(cx) = c.xfrm {
                     let cl = cx.affine().inverse() * q;
                     if cl.x >= -tol && cl.y >= -tol && cl.x <= cx.w + tol && cl.y <= cx.h + tol {
-                        return Some(Hit::Shape { id: sh.id, text: false });
+                        return Some(Hit::Shape {
+                            id: sh.id,
+                            text: false,
+                        });
                     }
                 }
             }
@@ -1228,8 +1610,14 @@ fn hit_shape(st: &crate::DocState, sh: &Shape, p: Point, tol: f64) -> Option<Hit
         }
         ShapeKind::Ink { strokes } => {
             for s in strokes {
-                if s.points.iter().any(|(px, py, _)| (Point::new(*px, *py) - p).hypot() <= tol + s.width) {
-                    return Some(Hit::Shape { id: sh.id, text: false });
+                if s.points
+                    .iter()
+                    .any(|(px, py, _)| (Point::new(*px, *py) - p).hypot() <= tol + s.width)
+                {
+                    return Some(Hit::Shape {
+                        id: sh.id,
+                        text: false,
+                    });
                 }
             }
             None
@@ -1239,32 +1627,48 @@ fn hit_shape(st: &crate::DocState, sh: &Shape, p: Point, tol: f64) -> Option<Hit
                 let geo = deckcraft_render::shape_geometry(sh, x.w, x.h);
                 let lw = sh.line.as_ref().and_then(|l| l.width).unwrap_or(1.0);
                 if deckcraft_geom::near_path(&geo.outline(), local, tol.max(lw)) {
-                    return Some(Hit::Shape { id: sh.id, text: false });
+                    return Some(Hit::Shape {
+                        id: sh.id,
+                        text: false,
+                    });
                 }
                 return None;
             }
-            let inside = local.x >= -tol && local.y >= -tol && local.x <= x.w + tol && local.y <= x.h + tol;
+            let inside =
+                local.x >= -tol && local.y >= -tol && local.x <= x.w + tol && local.y <= x.h + tol;
             if !inside {
                 return None;
             }
-            let has_text = matches!(sh.kind, ShapeKind::Shape) && (sh.text.as_ref().is_some_and(|t| !t.is_empty()) || sh.ph.is_some() || sh.text_box);
+            let has_text = matches!(sh.kind, ShapeKind::Shape)
+                && (sh.text.as_ref().is_some_and(|t| !t.is_empty())
+                    || sh.ph.is_some()
+                    || sh.text_box);
             // Empty interiors of unfilled, text-less shapes don't catch clicks.
-            let filled = !matches!(sh.fill, Some(deckcraft_model::Fill::None)) || sh.style.is_some();
+            let filled =
+                !matches!(sh.fill, Some(deckcraft_model::Fill::None)) || sh.style.is_some();
             let geo = deckcraft_render::shape_geometry(sh, x.w, x.h);
             let in_geo = {
                 use deckcraft_geom::KurboShape;
-                geo.outline().winding(local) != 0 || deckcraft_geom::near_path(&geo.outline(), local, tol)
+                geo.outline().winding(local) != 0
+                    || deckcraft_geom::near_path(&geo.outline(), local, tol)
             };
             if has_text
                 || sh.ph.is_some()
                 || matches!(
                     sh.kind,
-                    ShapeKind::Picture { .. } | ShapeKind::Table(_) | ShapeKind::Chart(_) | ShapeKind::Media(_) | ShapeKind::Opaque { .. }
+                    ShapeKind::Picture { .. }
+                        | ShapeKind::Table(_)
+                        | ShapeKind::Chart(_)
+                        | ShapeKind::Media(_)
+                        | ShapeKind::Opaque { .. }
                 )
                 || (filled && in_geo)
                 || deckcraft_geom::near_path(&geo.outline(), local, tol)
             {
-                return Some(Hit::Shape { id: sh.id, text: has_text || matches!(sh.kind, ShapeKind::Shape) });
+                return Some(Hit::Shape {
+                    id: sh.id,
+                    text: has_text || matches!(sh.kind, ShapeKind::Shape),
+                });
             }
             None
         }
@@ -1274,7 +1678,10 @@ fn hit_shape(st: &crate::DocState, sh: &Shape, p: Point, tol: f64) -> Option<Hit
 /// Text position under slide point `p` in shape `sh`.
 pub fn text_pos(st: &crate::DocState, sh: &Shape, p: Point) -> (usize, usize) {
     let x = xfrm_of(&st.doc, &st.selection, sh);
-    let t = TextSel { shape: sh.id, ..Default::default() };
+    let t = TextSel {
+        shape: sh.id,
+        ..Default::default()
+    };
     match cmd::text::layout_for(st, &t) {
         Some(l) => {
             // The text's own transform: flips don't mirror text, vertical text is turned.
@@ -1323,7 +1730,9 @@ mod tests {
     fn resize_corner_and_flip() {
         let o = Xfrm::new(100.0, 100.0, 100.0, 50.0);
         let n = resize_box(&o, 4, Vec2::new(20.0, 10.0), false, false);
-        assert!((n.x - 100.0).abs() < 1e-9 && (n.w - 120.0).abs() < 1e-9 && (n.h - 60.0).abs() < 1e-9);
+        assert!(
+            (n.x - 100.0).abs() < 1e-9 && (n.w - 120.0).abs() < 1e-9 && (n.h - 60.0).abs() < 1e-9
+        );
         let n = resize_box(&o, 0, Vec2::new(10.0, 10.0), false, false);
         assert!((n.x - 110.0).abs() < 1e-9 && (n.w - 90.0).abs() < 1e-9);
         let n = resize_box(&o, 3, Vec2::new(-150.0, 0.0), false, false);
@@ -1336,7 +1745,14 @@ mod tests {
 
     #[test]
     fn resize_rotated_keeps_opposite_corner() {
-        let o = Xfrm { x: 100.0, y: 100.0, w: 100.0, h: 50.0, rot: 90.0, ..Default::default() };
+        let o = Xfrm {
+            x: 100.0,
+            y: 100.0,
+            w: 100.0,
+            h: 50.0,
+            rot: 90.0,
+            ..Default::default()
+        };
         let anchor = o.affine() * Point::new(0.0, 0.0);
         let n = resize_box(&o, 4, Vec2::new(-10.0, 30.0), false, false);
         let anchor2 = n.affine() * Point::new(0.0, 0.0);

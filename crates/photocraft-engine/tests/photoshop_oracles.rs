@@ -24,12 +24,18 @@ const PASS_TOL: f32 = 2.0 / 255.0;
 const PASS_FLOOR: usize = 5;
 
 fn collect(dir: &Path, out: &mut Vec<PathBuf>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         if p.is_dir() {
             collect(&p, out);
-        } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("psd")) {
+        } else if p
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| e.eq_ignore_ascii_case("psd"))
+        {
             out.push(p);
         }
     }
@@ -44,7 +50,11 @@ fn max_diff(a: &[[f32; 4]], b: &[[f32; 4]]) -> (f32, f32) {
     for (p, q) in a.iter().zip(b) {
         let mut pm = 0.0f32;
         for c in 0..4 {
-            let (x, y) = if c < 3 { (p[c] * p[3], q[c] * q[3]) } else { (p[c], q[c]) };
+            let (x, y) = if c < 3 {
+                (p[c] * p[3], q[c] * q[3])
+            } else {
+                (p[c], q[c])
+            };
             pm = pm.max((x - y).abs());
         }
         if pm > PASS_TOL {
@@ -64,7 +74,9 @@ fn rerender(doc: &mut Document) -> Result<usize, String> {
         let Some(l) = doc.layer_mut(id) else { continue };
         match &mut l.content {
             LayerContent::Smart(_) => {
-                if photocraft_engine::smart_cmds::refresh_layer(&snapshot, l).map_err(|e| e.to_string())? {
+                if photocraft_engine::smart_cmds::refresh_layer(&snapshot, l)
+                    .map_err(|e| e.to_string())?
+                {
                     n += 1;
                 } else {
                     return Err("smart object source unavailable".into());
@@ -83,17 +95,26 @@ fn rerender(doc: &mut Document) -> Result<usize, String> {
 #[test]
 fn photoshop_oracles_rerendered() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/photoshop");
-    assert!(root.is_dir(), "{} is missing: run `cargo xtask corpus --all`", root.display());
+    assert!(
+        root.is_dir(),
+        "{} is missing: run `cargo xtask corpus --all`",
+        root.display()
+    );
     let mut files = Vec::new();
     collect(&root, &mut files);
     files.sort();
     let mut groups: std::collections::BTreeMap<String, (usize, usize)> = Default::default();
     let (mut pass, mut total, mut errors) = (0, 0, 0);
-    eprintln!("{:<60} {:>7} {:>9} {:>8}  status", "file (re-rendered)", "layers", "max_err", "bad_px%");
+    eprintln!(
+        "{:<60} {:>7} {:>9} {:>8}  status",
+        "file (re-rendered)", "layers", "max_err", "bad_px%"
+    );
     for p in &files {
         let name = p.strip_prefix(&root).unwrap_or(p).display().to_string();
         let bytes = std::fs::read(p).unwrap_or_default();
-        let Ok(file) = PsdFile::from_bytes(&bytes) else { continue };
+        let Ok(file) = PsdFile::from_bytes(&bytes) else {
+            continue;
+        };
         let Ok(imp) = photocraft_io::import(&name, &bytes) else {
             eprintln!("{name:<60} IMPORT-ERROR");
             errors += 1;
@@ -109,7 +130,9 @@ fn photoshop_oracles_rerendered() {
                 continue;
             }
         };
-        let Ok(merged) = photocraft_io::merged_composite(&file) else { continue };
+        let Ok(merged) = photocraft_io::merged_composite(&file) else {
+            continue;
+        };
         let ours = photocraft_compose::flatten(&doc).px;
         let (m, bad) = max_diff(&ours, &merged);
         let group = name.split(['/', '\\']).next().unwrap_or(".").to_string();
@@ -125,9 +148,14 @@ fn photoshop_oracles_rerendered() {
         };
         eprintln!("{name:<60} {n:>7} {m:>9.4} {bad:>7.2}%  {status}");
     }
-    eprintln!("photoshop re-render: {total} files with smart objects or type: {pass} pass (<= 2/255), {errors} errors");
+    eprintln!(
+        "photoshop re-render: {total} files with smart objects or type: {pass} pass (<= 2/255), {errors} errors"
+    );
     for (g, (p, n)) in &groups {
         eprintln!("photoshop re-render:   {g:<16} {p:>4} / {n:<4} pass");
     }
-    assert!(pass >= PASS_FLOOR, "re-render oracle pass count {pass} fell below the floor {PASS_FLOOR}");
+    assert!(
+        pass >= PASS_FLOOR,
+        "re-render oracle pass count {pass} fell below the floor {PASS_FLOOR}"
+    );
 }

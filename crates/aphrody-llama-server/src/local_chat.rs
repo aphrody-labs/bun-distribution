@@ -45,7 +45,10 @@ impl ArtifactSpec {
     /// A spec without a caller-side digest.
     #[must_use]
     pub fn new(spec: impl Into<String>) -> Self {
-        Self { spec: spec.into(), sha256: None }
+        Self {
+            spec: spec.into(),
+            sha256: None,
+        }
     }
 }
 
@@ -142,14 +145,17 @@ pub async fn provision_chat(
         Some(root) => {
             std::fs::create_dir_all(root)?;
             ModelStore::with_root(root)?
-        },
+        }
         None => ModelStore::open()?,
     };
     let downloader = Downloader::new()?;
     let builtin = Catalog::builtin();
     let declared = request.declared.as_ref();
 
-    let base = request.model.clone().unwrap_or_else(|| ArtifactSpec::new(DEFAULT_CHAT_MODEL));
+    let base = request
+        .model
+        .clone()
+        .unwrap_or_else(|| ArtifactSpec::new(DEFAULT_CHAT_MODEL));
     let resolved = builtin.resolve_with(declared, &base.spec)?;
     let base_files = files_of(&resolved, &base, None);
     let mut artifacts = Vec::new();
@@ -173,7 +179,9 @@ pub async fn provision_chat(
         .find(|artifact| artifact.role == "weights")
         .or_else(|| artifacts.first())
         .map(|artifact| artifact.path.clone())
-        .ok_or_else(|| ManagedError::MissingWeights { model: base.spec.clone() })?;
+        .ok_or_else(|| ManagedError::MissingWeights {
+            model: base.spec.clone(),
+        })?;
     let mmproj = artifacts
         .iter()
         .find(|artifact| artifact.role == "mmproj")
@@ -184,7 +192,9 @@ pub async fn provision_chat(
         let resolved = builtin.resolve_with(declared, &adapter.artifact.spec)?;
         let files = files_of(&resolved, &adapter.artifact, Some(LORA_ROLES));
         let Some((role, reference, sha256)) = files.into_iter().next() else {
-            return Err(ManagedError::MissingWeights { model: adapter.artifact.spec.clone() });
+            return Err(ManagedError::MissingWeights {
+                model: adapter.artifact.spec.clone(),
+            });
         };
         let artifact = pull_one(
             &store,
@@ -198,11 +208,20 @@ pub async fn provision_chat(
             &mut on_progress,
         )
         .await?;
-        lora.push(LoraAdapter { path: artifact.path.clone(), scale: adapter.scale });
+        lora.push(LoraAdapter {
+            path: artifact.path.clone(),
+            scale: adapter.scale,
+        });
         artifacts.push(artifact);
     }
 
-    Ok(ProvisionedChat { model_id: base.spec, weights, mmproj, lora, artifacts })
+    Ok(ProvisionedChat {
+        model_id: base.spec,
+        weights,
+        mmproj,
+        lora,
+        artifacts,
+    })
 }
 
 /// Whether every artefact of `request` is already on disk, without hashing or
@@ -219,11 +238,18 @@ pub fn chat_present(request: &ChatProvisionRequest) -> Result<bool, ManagedError
     };
     let builtin = Catalog::builtin();
     let declared = request.declared.as_ref();
-    let base = request.model.clone().unwrap_or_else(|| ArtifactSpec::new(DEFAULT_CHAT_MODEL));
+    let base = request
+        .model
+        .clone()
+        .unwrap_or_else(|| ArtifactSpec::new(DEFAULT_CHAT_MODEL));
     let mut wanted = files_of(&builtin.resolve_with(declared, &base.spec)?, &base, None);
     for adapter in &request.lora {
         let resolved = builtin.resolve_with(declared, &adapter.artifact.spec)?;
-        wanted.extend(files_of(&resolved, &adapter.artifact, Some(LORA_ROLES)).into_iter().take(1));
+        wanted.extend(
+            files_of(&resolved, &adapter.artifact, Some(LORA_ROLES))
+                .into_iter()
+                .take(1),
+        );
     }
     Ok(wanted.iter().all(|(_, reference, _)| match reference {
         ModelRef::Local(path) => path.is_file(),
@@ -246,22 +272,34 @@ fn files_of(
                 .files
                 .iter()
                 .filter(|file| only.is_none_or(|roles| roles.contains(&file.role.as_str())))
-                .map(|file| (file.role.clone(), file.reference.clone(), file.sha256.clone()))
+                .map(|file| {
+                    (
+                        file.role.clone(),
+                        file.reference.clone(),
+                        file.sha256.clone(),
+                    )
+                })
                 .collect();
             if selected.is_empty() {
                 entry
                     .primary()
-                    .map(|file| (file.role.clone(), file.reference.clone(), file.sha256.clone()))
+                    .map(|file| {
+                        (
+                            file.role.clone(),
+                            file.reference.clone(),
+                            file.sha256.clone(),
+                        )
+                    })
                     .into_iter()
                     .collect()
             } else {
                 selected
             }
-        },
+        }
         Resolved::Direct(reference) => {
             let role = if only.is_some() { "lora" } else { "weights" };
             vec![(role.to_owned(), reference.clone(), spec.sha256.clone())]
-        },
+        }
     }
 }
 
@@ -328,8 +366,12 @@ struct Throttle {
 
 impl Throttle {
     fn due(&mut self, progress: Progress) -> bool {
-        let step = progress.total.map_or(16 << 20, |total| (total / 100).max(1));
-        let due = self.last.is_none_or(|last| progress.downloaded >= last + step)
+        let step = progress
+            .total
+            .map_or(16 << 20, |total| (total / 100).max(1));
+        let due = self
+            .last
+            .is_none_or(|last| progress.downloaded >= last + step)
             || progress.total == Some(progress.downloaded);
         if due {
             self.last = Some(progress.downloaded);
@@ -405,7 +447,10 @@ pub async fn launch_chat(
     .await
     .map_err(|error| ManagedError::Task(error.to_string()))??;
 
-    let alias = options.alias.clone().unwrap_or_else(|| model.model_id.clone());
+    let alias = options
+        .alias
+        .clone()
+        .unwrap_or_else(|| model.model_id.clone());
     let mut request = PlanRequest::new(Role::Chat, alias);
     request.ctx = options.ctx;
     request.parallel = options.parallel.max(1);
@@ -426,7 +471,11 @@ pub async fn launch_chat(
     } else {
         endpoint.client().lora_adapters().await.unwrap_or_default()
     };
-    Ok(ChatEndpoint { plan, endpoint, lora })
+    Ok(ChatEndpoint {
+        plan,
+        endpoint,
+        lora,
+    })
 }
 
 /// Find a `llama-server` executable.
@@ -439,12 +488,20 @@ pub async fn launch_chat(
 pub fn locate_llama_server(explicit: Option<&Path>, extra_dirs: &[PathBuf]) -> Option<PathBuf> {
     let name = format!("llama-server{}", std::env::consts::EXE_SUFFIX);
     let in_dir = |dir: &Path| {
-        [dir.join(&name), dir.join("bin").join(&name), dir.join("llama").join(&name)]
-            .into_iter()
-            .find(|path| path.is_file())
+        [
+            dir.join(&name),
+            dir.join("bin").join(&name),
+            dir.join("llama").join(&name),
+        ]
+        .into_iter()
+        .find(|path| path.is_file())
     };
     let named = |path: &Path| {
-        if path.is_file() { Some(path.to_path_buf()) } else { in_dir(path) }
+        if path.is_file() {
+            Some(path.to_path_buf())
+        } else {
+            in_dir(path)
+        }
     };
     if let Some(found) = explicit.and_then(named) {
         return Some(found);
@@ -467,7 +524,9 @@ pub fn locate_llama_server(explicit: Option<&Path>, extra_dirs: &[PathBuf]) -> O
             .map(|entry| entry.path())
             .filter(|path| {
                 path.is_dir()
-                    && path.file_name().is_some_and(|n| n.to_string_lossy().starts_with("llama-"))
+                    && path
+                        .file_name()
+                        .is_some_and(|n| n.to_string_lossy().starts_with("llama-"))
             })
             .collect();
         dirs.sort_by(|left, right| right.file_name().cmp(&left.file_name()));
@@ -476,7 +535,9 @@ pub fn locate_llama_server(explicit: Option<&Path>, extra_dirs: &[PathBuf]) -> O
         }
     }
     std::env::var_os("PATH").and_then(|path| {
-        std::env::split_paths(&path).map(|dir| dir.join(&name)).find(|path| path.is_file())
+        std::env::split_paths(&path)
+            .map(|dir| dir.join(&name))
+            .find(|path| path.is_file())
     })
 }
 
@@ -486,7 +547,9 @@ mod tests {
 
     #[test]
     fn default_chat_model_is_a_catalogued_llama_model() {
-        let entry = Catalog::builtin().get(DEFAULT_CHAT_MODEL).expect("catalog entry");
+        let entry = Catalog::builtin()
+            .get(DEFAULT_CHAT_MODEL)
+            .expect("catalog entry");
         assert_eq!(entry.backend, aphrody_models::Backend::LlamaCpp);
         assert_eq!(entry.task, aphrody_models::ModelTask::TextGeneration);
     }
@@ -516,7 +579,9 @@ mod tests {
         )
         .unwrap();
         let spec = ArtifactSpec::new("chat-lora");
-        let resolved = Catalog::builtin().resolve_with(Some(&declared), &spec.spec).unwrap();
+        let resolved = Catalog::builtin()
+            .resolve_with(Some(&declared), &spec.spec)
+            .unwrap();
         let files = files_of(&resolved, &spec, Some(LORA_ROLES));
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].1.to_string(), "file:/m/lora.gguf");
@@ -561,13 +626,19 @@ mod tests {
             &mut |_| {},
         )
         .await;
-        assert!(matches!(bad, Err(ManagedError::Model(ModelError::ChecksumMismatch { .. }))));
+        assert!(matches!(
+            bad,
+            Err(ManagedError::Model(ModelError::ChecksumMismatch { .. }))
+        ));
     }
 
     #[test]
     fn throttle_reports_each_percent_and_the_end() {
         let mut throttle = Throttle::default();
-        let at = |downloaded| Progress { downloaded, total: Some(1000) };
+        let at = |downloaded| Progress {
+            downloaded,
+            total: Some(1000),
+        };
         assert!(throttle.due(at(1)));
         assert!(!throttle.due(at(5)));
         assert!(throttle.due(at(11)));
@@ -581,7 +652,13 @@ mod tests {
         std::fs::create_dir_all(&bin).unwrap();
         let name = format!("llama-server{}", std::env::consts::EXE_SUFFIX);
         std::fs::write(bin.join(&name), b"").unwrap();
-        assert_eq!(locate_llama_server(Some(dir.path()), &[]), Some(bin.join(&name)));
-        assert_eq!(locate_llama_server(None, &[dir.path().to_path_buf()]), Some(bin.join(&name)));
+        assert_eq!(
+            locate_llama_server(Some(dir.path()), &[]),
+            Some(bin.join(&name))
+        );
+        assert_eq!(
+            locate_llama_server(None, &[dir.path().to_path_buf()]),
+            Some(bin.join(&name))
+        );
     }
 }

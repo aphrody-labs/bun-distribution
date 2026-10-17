@@ -38,10 +38,10 @@ pub mod prelude {
     pub use crate::{DelayedCommandsExt, Fixed, Real, Time, Timer, TimerMode, Virtual};
 }
 
-use bevy_app::{prelude::*, OnAppExitSystems, RunFixedMainLoop};
+use bevy_app::{OnAppExitSystems, RunFixedMainLoop, prelude::*};
 use bevy_ecs::{
     message::{
-        message_update_system, signal_message_update_system, MessageRegistry, ShouldUpdateMessages,
+        MessageRegistry, ShouldUpdateMessages, message_update_system, signal_message_update_system,
     },
     prelude::*,
 };
@@ -167,7 +167,9 @@ pub fn time_system(
         }
         Some(Err(_)) => {
             if *has_received_time {
-                log::warn!("time_system did not receive the time from the render world! Calculations depending on the time may be incorrect.");
+                log::warn!(
+                    "time_system did not receive the time from the render world! Calculations depending on the time may be incorrect."
+                );
             }
             None
         }
@@ -377,7 +379,9 @@ mod tests {
             let message_registry = app.world().resource::<MessageRegistry>();
             let should_update = message_registry.should_update;
 
-            println!("Frame {frame}, {fixed_updates_seen} fixed updates seen. Should update: {should_update:?}");
+            println!(
+                "Frame {frame}, {fixed_updates_seen} fixed updates seen. Should update: {should_update:?}"
+            );
             println!("Total messages: {n_total_messages} | Current messages: {n_current_messages}",);
 
             match frame {

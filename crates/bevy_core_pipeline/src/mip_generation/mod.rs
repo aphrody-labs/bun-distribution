@@ -13,14 +13,14 @@
 use crate::core_3d::prepare_core_3d_depth_textures;
 use crate::deferred::node::early_deferred_prepass;
 use crate::mip_generation::experimental::depth::{
-    self, early_downsample_depth, late_downsample_depth, DownsampleDepthPipeline,
-    DownsampleDepthPipelines,
+    self, DownsampleDepthPipeline, DownsampleDepthPipelines, early_downsample_depth,
+    late_downsample_depth,
 };
 use crate::prepass::node::late_prepass;
 use crate::schedule::{Core3d, Core3dSystems};
 
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, load_embedded_asset, AssetId, Handle};
+use bevy_asset::{AssetId, Handle, embedded_asset, load_embedded_asset};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     prelude::resource_exists,
@@ -31,16 +31,14 @@ use bevy_ecs::{
 };
 use bevy_image::Image;
 use bevy_log::error;
-use bevy_math::{vec2, Vec2};
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_math::{Vec2, vec2};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
+use bevy_render::{GpuResourceAppExt, Render, RenderApp, RenderSystems};
 use bevy_render::{
+    RenderStartup,
     diagnostic::RecordDiagnostics as _,
     render_asset::RenderAssets,
     render_resource::{
-        binding_types::{
-            sampler, texture_2d, texture_2d_array, texture_storage_2d, texture_storage_2d_array,
-            uniform_buffer,
-        },
         BindGroup, BindGroupEntries, BindGroupLayoutDescriptor, BindGroupLayoutEntries,
         CachedComputePipelineId, ComputePassDescriptor, ComputePipelineDescriptor, Extent3d,
         FilterMode, MipmapFilterMode, PipelineCache, Sampler, SamplerBindingType,
@@ -48,13 +46,15 @@ use bevy_render::{
         SpecializedComputePipelines, StorageTextureAccess, TextureAspect, TextureDescriptor,
         TextureDimension, TextureFormat, TextureFormatFeatureFlags, TextureUsages, TextureView,
         TextureViewDescriptor, TextureViewDimension, UniformBuffer,
+        binding_types::{
+            sampler, texture_2d, texture_2d_array, texture_storage_2d, texture_storage_2d_array,
+            uniform_buffer,
+        },
     },
     renderer::{RenderAdapter, RenderContext, RenderDevice, RenderQueue},
     settings::WgpuFeatures,
     texture::GpuImage,
-    RenderStartup,
 };
-use bevy_render::{GpuResourceAppExt, Render, RenderApp, RenderSystems};
 use bevy_shader::{Shader, ShaderDefVal};
 use bevy_utils::default;
 

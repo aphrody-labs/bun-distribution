@@ -31,14 +31,19 @@ pub(crate) enum ChunkPx {
 pub fn check_image(data: &[u8], info: &ImageInfo) -> Result<usize> {
     let (w, h) = (info.width as usize, info.height as usize);
     let cpp = info.samples_per_pixel as usize;
-    let total = w.checked_mul(h).and_then(|v| v.checked_mul(cpp)).ok_or(RawError::Limit("image too large"))?;
+    let total = w
+        .checked_mul(h)
+        .and_then(|v| v.checked_mul(cpp))
+        .ok_or(RawError::Limit("image too large"))?;
     if total > MAX_SAMPLES || total == 0 {
         return Err(RawError::Limit("image too large"));
     }
     let bits = info.bits() as u32;
     let float = info.sample_format == 3;
     if float && !matches!(bits, 16 | 24 | 32) {
-        return Err(RawError::Unsupported(format!("{bits}-bit floating point samples")));
+        return Err(RawError::Unsupported(format!(
+            "{bits}-bit floating point samples"
+        )));
     }
     if !float && !(1..=16).contains(&bits) {
         return Err(RawError::Unsupported(format!("{bits}-bit integer samples")));
@@ -49,16 +54,27 @@ pub fn check_image(data: &[u8], info: &ImageInfo) -> Result<usize> {
     }
     // Plausibility bound before allocating: no supported coding stores more than ~2000 samples per byte
     // (Deflate of constant data is the extreme), so tiny files cannot trigger huge allocations.
-    let available: u64 = chunks.iter().map(|c| chunk_bytes(data, c).map_or(0, |s| s.len() as u64)).sum();
+    let available: u64 = chunks
+        .iter()
+        .map(|c| chunk_bytes(data, c).map_or(0, |s| s.len() as u64))
+        .sum();
     if available.saturating_mul(2048) < total as u64 {
-        return Err(RawError::Corrupt(format!("{available} bytes of image data cannot hold {total} samples")));
+        return Err(RawError::Corrupt(format!(
+            "{available} bytes of image data cannot hold {total} samples"
+        )));
     }
     Ok(total)
 }
 
 /// Read the samples of `info` in `mode`: [`Mode::Header`] only checks them ([`check_image`]) and
 /// returns no samples (floating-point data as an empty `F32`).
-pub(crate) fn read_image_in(mode: crate::Mode, data: &[u8], info: &ImageInfo, order: ByteOrder, packing: Packing) -> Result<RawData> {
+pub(crate) fn read_image_in(
+    mode: crate::Mode,
+    data: &[u8],
+    info: &ImageInfo,
+    order: ByteOrder,
+    packing: Packing,
+) -> Result<RawData> {
     match mode {
         crate::Mode::Full => read_image(data, info, order, packing),
         crate::Mode::Header => {
@@ -76,20 +92,42 @@ pub(crate) fn read_image_in(mode: crate::Mode, data: &[u8], info: &ImageInfo, or
                     }
                     comp::JPEG_XL => {
                         let planar = info.planar == 2 && info.samples_per_pixel > 1;
-                        let cpp = if planar { 1 } else { info.samples_per_pixel as usize };
+                        let cpp = if planar {
+                            1
+                        } else {
+                            info.samples_per_pixel as usize
+                        };
                         let (cw, ch, vw, vh) = chunk_dims(info, &c);
-                        jxl_chunk_check(src, cw, ch, vw, vh, cpp, info.bits() as u32, info.sample_format == 3)?;
+                        jxl_chunk_check(
+                            src,
+                            cw,
+                            ch,
+                            vw,
+                            vh,
+                            cpp,
+                            info.bits() as u32,
+                            info.sample_format == 3,
+                        )?;
                     }
                     _ => {}
                 }
             }
-            Ok(if info.sample_format == 3 { RawData::F32(Vec::new()) } else { RawData::U16(Vec::new()) })
+            Ok(if info.sample_format == 3 {
+                RawData::F32(Vec::new())
+            } else {
+                RawData::U16(Vec::new())
+            })
         }
     }
 }
 
 /// Decode all chunks of `info` into one buffer of `width × height × cpp` samples.
-pub fn read_image(data: &[u8], info: &ImageInfo, order: ByteOrder, packing: Packing) -> Result<RawData> {
+pub fn read_image(
+    data: &[u8],
+    info: &ImageInfo,
+    order: ByteOrder,
+    packing: Packing,
+) -> Result<RawData> {
     let (w, h) = (info.width as usize, info.height as usize);
     let total = check_image(data, info)?;
     let cpp = info.samples_per_pixel as usize;
@@ -98,8 +136,10 @@ pub fn read_image(data: &[u8], info: &ImageInfo, order: ByteOrder, packing: Pack
     let chunks = info.chunks(data.len() as u64);
     let planar = info.planar == 2 && cpp > 1;
     let ccpp = if planar { 1 } else { cpp };
-    let decoded: Vec<Result<(Chunk, ChunkPx)>> =
-        chunks.par_iter().map(|c| decode_chunk(data, info, c, order, packing, ccpp, bits, float).map(|p| (*c, p))).collect();
+    let decoded: Vec<Result<(Chunk, ChunkPx)>> = chunks
+        .par_iter()
+        .map(|c| decode_chunk(data, info, c, order, packing, ccpp, bits, float).map(|p| (*c, p)))
+        .collect();
     let mut out_u16 = if float { Vec::new() } else { vec![0u16; total] };
     let mut out_f32 = if float { vec![0f32; total] } else { Vec::new() };
     let mut ok = 0usize;
@@ -152,14 +192,31 @@ pub fn read_image(data: &[u8], info: &ImageInfo, order: ByteOrder, packing: Pack
     if ok == 0 {
         return Err(first_err.unwrap_or_else(|| RawError::Corrupt("no decodable chunks".into())));
     }
-    Ok(if float { RawData::F32(out_f32) } else { RawData::U16(out_u16) })
+    Ok(if float {
+        RawData::F32(out_f32)
+    } else {
+        RawData::U16(out_u16)
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
-fn decode_chunk(data: &[u8], info: &ImageInfo, c: &Chunk, order: ByteOrder, packing: Packing, cpp: usize, bits: u32, float: bool) -> Result<ChunkPx> {
-    let src = chunk_bytes(data, c).ok_or_else(|| RawError::Corrupt("chunk offset past end of file".into()))?;
+fn decode_chunk(
+    data: &[u8],
+    info: &ImageInfo,
+    c: &Chunk,
+    order: ByteOrder,
+    packing: Packing,
+    cpp: usize,
+    bits: u32,
+    float: bool,
+) -> Result<ChunkPx> {
+    let src = chunk_bytes(data, c)
+        .ok_or_else(|| RawError::Corrupt("chunk offset past end of file".into()))?;
     let (cw, ch, vw, vh) = chunk_dims(info, c);
-    let n = cw.checked_mul(ch).and_then(|v| v.checked_mul(cpp)).ok_or(RawError::Limit("chunk too large"))?;
+    let n = cw
+        .checked_mul(ch)
+        .and_then(|v| v.checked_mul(cpp))
+        .ok_or(RawError::Limit("chunk too large"))?;
     if n > MAX_SAMPLES {
         return Err(RawError::Limit("chunk too large"));
     }
@@ -170,7 +227,10 @@ fn decode_chunk(data: &[u8], info: &ImageInfo, c: &Chunk, order: ByteOrder, pack
             if f.data.len() < n {
                 // Some writers encode edge tiles smaller than nominal: accept a frame that covers the rows it has.
                 if f.data.is_empty() || f.data.len() % (cw * cpp) != 0 {
-                    return Err(RawError::Corrupt(format!("lossless JPEG tile has {} samples, expected {n}", f.data.len())));
+                    return Err(RawError::Corrupt(format!(
+                        "lossless JPEG tile has {} samples, expected {n}",
+                        f.data.len()
+                    )));
                 }
             }
             let mut v = f.data;
@@ -192,9 +252,23 @@ fn decode_chunk(data: &[u8], info: &ImageInfo, c: &Chunk, order: ByteOrder, pack
         }
         comp::ADOBE_DEFLATE | comp::DEFLATE => {
             let bytes_per = if float { bits.div_ceil(8) as usize } else { 0 };
-            let row_bytes = if float { cw * cpp * bytes_per } else { (cw * cpp * bits as usize).div_ceil(8) };
+            let row_bytes = if float {
+                cw * cpp * bytes_per
+            } else {
+                (cw * cpp * bits as usize).div_ceil(8)
+            };
             let raw = inflate(src, row_bytes * ch)?;
-            unpack_chunk(&raw, order, packing, cw, ch, cpp, bits, float, info.predictor)
+            unpack_chunk(
+                &raw,
+                order,
+                packing,
+                cw,
+                ch,
+                cpp,
+                bits,
+                float,
+                info.predictor,
+            )
         }
         comp::JPEG_XL => jxl_chunk(src, cw, ch, vw, vh, cpp, bits, float),
         other => Err(RawError::Unsupported(format!("TIFF compression {other}"))),
@@ -214,13 +288,33 @@ use crate::jxl::{check as jxl_chunk_check, decode as jxl_chunk};
 
 #[cfg(not(feature = "jxl"))]
 #[allow(clippy::too_many_arguments)]
-fn jxl_chunk(_: &[u8], _: usize, _: usize, _: usize, _: usize, _: usize, _: u32, _: bool) -> Result<ChunkPx> {
-    Err(RawError::Unsupported("JPEG XL DNG (built without the `jxl` feature)".into()))
+fn jxl_chunk(
+    _: &[u8],
+    _: usize,
+    _: usize,
+    _: usize,
+    _: usize,
+    _: usize,
+    _: u32,
+    _: bool,
+) -> Result<ChunkPx> {
+    Err(RawError::Unsupported(
+        "JPEG XL DNG (built without the `jxl` feature)".into(),
+    ))
 }
 
 #[cfg(not(feature = "jxl"))]
 #[allow(clippy::too_many_arguments)]
-fn jxl_chunk_check(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits: u32, float: bool) -> Result<()> {
+fn jxl_chunk_check(
+    src: &[u8],
+    cw: usize,
+    ch: usize,
+    vw: usize,
+    vh: usize,
+    cpp: usize,
+    bits: u32,
+    float: bool,
+) -> Result<()> {
     jxl_chunk(src, cw, ch, vw, vh, cpp, bits, float).map(|_| ())
 }
 
@@ -229,11 +323,23 @@ fn lossy_jpeg(src: &[u8], cpp: usize) -> Result<(Vec<u8>, usize, usize, usize)> 
     use zune_core::bytestream::ZCursor;
     use zune_core::colorspace::ColorSpace;
     use zune_core::options::DecoderOptions;
-    let cs = if cpp == 1 { ColorSpace::Luma } else { ColorSpace::RGB };
-    let opts = DecoderOptions::default().set_max_width(1 << 16).set_max_height(1 << 16).set_strict_mode(false).jpeg_set_out_colorspace(cs);
+    let cs = if cpp == 1 {
+        ColorSpace::Luma
+    } else {
+        ColorSpace::RGB
+    };
+    let opts = DecoderOptions::default()
+        .set_max_width(1 << 16)
+        .set_max_height(1 << 16)
+        .set_strict_mode(false)
+        .jpeg_set_out_colorspace(cs);
     let mut d = zune_jpeg::JpegDecoder::new_with_options(ZCursor::new(src), opts);
-    let px = d.decode().map_err(|e| RawError::Corrupt(format!("lossy JPEG tile: {e}")))?;
-    let info = d.info().ok_or_else(|| RawError::Corrupt("lossy JPEG tile without a header".into()))?;
+    let px = d
+        .decode()
+        .map_err(|e| RawError::Corrupt(format!("lossy JPEG tile: {e}")))?;
+    let info = d
+        .info()
+        .ok_or_else(|| RawError::Corrupt("lossy JPEG tile without a header".into()))?;
     let (w, h) = (info.width as usize, info.height as usize);
     let c = if cpp == 1 { 1 } else { 3 };
     if w == 0 || h == 0 || px.len() < w * h * c {
@@ -280,7 +386,9 @@ fn unpack_chunk(
                 true
             } else {
                 if factor > 0 {
-                    return Err(RawError::Unsupported("integer predictor on float data".into()));
+                    return Err(RawError::Unsupported(
+                        "integer predictor on float data".into(),
+                    ));
                 }
                 order == ByteOrder::Big
             };
@@ -299,7 +407,9 @@ fn unpack_chunk(
         return Ok(ChunkPx::F32(out));
     }
     if fp {
-        return Err(RawError::Unsupported("floating-point predictor on integer data".into()));
+        return Err(RawError::Unsupported(
+            "floating-point predictor on integer data".into(),
+        ));
     }
     let mut out = vec![0u16; row_n * ch];
     let (row_bytes, kind) = match (bits, packing) {
@@ -344,9 +454,13 @@ mod lossy_tests {
     fn lossy_jpeg_tiles_decode() {
         let (tw, th) = (16usize, 8usize);
         let tile = |shade: u8| {
-            let px: Vec<u8> = (0..tw * th).flat_map(|i| [shade, (i % tw * 15) as u8, 200]).collect();
+            let px: Vec<u8> = (0..tw * th)
+                .flat_map(|i| [shade, (i % tw * 15) as u8, 200])
+                .collect();
             let mut out = Vec::new();
-            jpeg_encoder::Encoder::new(&mut out, 100).encode(&px, tw as u16, th as u16, jpeg_encoder::ColorType::Rgb).unwrap();
+            jpeg_encoder::Encoder::new(&mut out, 100)
+                .encode(&px, tw as u16, th as u16, jpeg_encoder::ColorType::Rgb)
+                .unwrap();
             out
         };
         let (a, b) = (tile(40), tile(220));
@@ -366,15 +480,33 @@ mod lossy_tests {
             predictor: 1,
             sample_format: 1,
             new_subfile_type: 0,
-            layout: Layout::Tiles { tile_width: tw as u32, tile_height: th as u32 },
+            layout: Layout::Tiles {
+                tile_width: tw as u32,
+                tile_height: th as u32,
+            },
             offsets: vec![oa, ob],
             byte_counts: vec![a.len() as u64, b.len() as u64],
         };
-        let RawData::U16(v) = read_image(&file, &info, ByteOrder::Little, Packing::Msb).unwrap() else { panic!("integer samples") };
+        let RawData::U16(v) = read_image(&file, &info, ByteOrder::Little, Packing::Msb).unwrap()
+        else {
+            panic!("integer samples")
+        };
         assert_eq!(v.len(), 24 * 8 * 3);
         let px = |x: usize, y: usize| &v[(y * 24 + x) * 3..(y * 24 + x) * 3 + 3];
-        assert!((px(2, 3)[0] as i32 - 40).abs() <= 3 && (px(2, 3)[2] as i32 - 200).abs() <= 3, "{:?}", px(2, 3));
-        assert!((px(20, 3)[0] as i32 - 220).abs() <= 3, "second tile: {:?}", px(20, 3));
-        assert!((px(10, 5)[1] as i32 - 150).abs() <= 6, "green ramp: {:?}", px(10, 5));
+        assert!(
+            (px(2, 3)[0] as i32 - 40).abs() <= 3 && (px(2, 3)[2] as i32 - 200).abs() <= 3,
+            "{:?}",
+            px(2, 3)
+        );
+        assert!(
+            (px(20, 3)[0] as i32 - 220).abs() <= 3,
+            "second tile: {:?}",
+            px(20, 3)
+        );
+        assert!(
+            (px(10, 5)[1] as i32 - 150).abs() <= 6,
+            "green ramp: {:?}",
+            px(10, 5)
+        );
     }
 }

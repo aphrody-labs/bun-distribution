@@ -13,11 +13,19 @@ use super::{delete_selection, sel_result, split_para};
 use crate::{CmdError, CmdResult, CommandSpec, MathEdit, Selection, Session, p};
 
 fn editing(s: &Session) -> Option<&'static str> {
-    if s.math.is_none() { Some("not editing an equation") } else { None }
+    if s.math.is_none() {
+        Some("not editing an equation")
+    } else {
+        None
+    }
 }
 
 fn near_equation(s: &Session) -> Option<&'static str> {
-    if s.math.is_some() || equation_at_caret(s).is_some() { None } else { Some("no equation at the caret") }
+    if s.math.is_some() || equation_at_caret(s).is_some() {
+        None
+    } else {
+        Some("no equation at the caret")
+    }
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -90,7 +98,10 @@ fn equation_at_caret(s: &Session) -> Option<Pos> {
     }
     let before = f.off.checked_sub(OBJ.len_utf8())?;
     if is_eq(before) {
-        return Some(Pos { off: before, ..f.clone() });
+        return Some(Pos {
+            off: before,
+            ..f.clone()
+        });
     }
     // A selection holding exactly one equation.
     let (a, b) = s.sel.ordered();
@@ -102,16 +113,29 @@ fn equation_at_caret(s: &Session) -> Option<Pos> {
 
 /// Run `f` on the equation at `at`; keeps its linear text in step and drops the source OMML
 /// (it no longer matches).
-fn with_eq<R>(s: &mut Session, at: &Pos, f: impl FnOnce(&mut Math, &mut bool) -> R) -> Result<R, CmdError> {
+fn with_eq<R>(
+    s: &mut Session,
+    at: &Pos,
+    f: impl FnOnce(&mut Math, &mut bool) -> R,
+) -> Result<R, CmdError> {
     let para = s.doc.para_mut(at.story, &at.path)?;
-    let Some(InlineObject::Equation { linear, display, math }) = para.object_at_mut(at.off) else {
+    let Some(InlineObject::Equation {
+        linear,
+        display,
+        math,
+    }) = para.object_at_mut(at.off)
+    else {
         return Err(CmdError::Failed("no equation there".into()));
     };
     if math.nodes.is_empty() && !linear.is_empty() && !math.linear {
         math.nodes = parse_linear(linear);
     }
     let r = f(math, display);
-    *linear = if math.linear { plain(&math.nodes) } else { to_linear(&math.nodes) };
+    *linear = if math.linear {
+        plain(&math.nodes)
+    } else {
+        to_linear(&math.nodes)
+    };
     math.omml.clear();
     para.touch();
     Ok(r)
@@ -129,13 +153,22 @@ fn plain(nodes: &[MNode]) -> String {
 }
 
 fn result(s: &Session) -> CmdResult {
-    let Some(m) = &s.math else { return sel_result(s) };
-    let info = s.doc.para_at(&m.at).and_then(|p| match p.object_at(m.at.off) {
-        Some(InlineObject::Equation { linear, display, .. }) => Some((linear.clone(), *display)),
-        _ => None,
-    });
+    let Some(m) = &s.math else {
+        return sel_result(s);
+    };
+    let info = s
+        .doc
+        .para_at(&m.at)
+        .and_then(|p| match p.object_at(m.at.off) {
+            Some(InlineObject::Equation {
+                linear, display, ..
+            }) => Some((linear.clone(), *display)),
+            _ => None,
+        });
     let (linear, display) = info.unwrap_or_default();
-    Ok(json!({"editing": true, "linear": linear, "display": display, "pos": serde_json::to_value(&m.pos).unwrap_or(Value::Null)}))
+    Ok(
+        json!({"editing": true, "linear": linear, "display": display, "pos": serde_json::to_value(&m.pos).unwrap_or(Value::Null)}),
+    )
 }
 
 /// Nodes from `linear`, `latex` or a gallery `id` / `builtin` parameter.
@@ -144,7 +177,10 @@ fn nodes_from(v: &Value) -> Option<Arg> {
         return crate::math_gallery::template(id).map(|t| t.nodes());
     }
     if let Some(b) = p::str(v, "builtin") {
-        return crate::math_gallery::BUILT_INS.iter().find(|(id, _, _)| *id == b).map(|(_, _, lin)| parse_linear(lin));
+        return crate::math_gallery::BUILT_INS
+            .iter()
+            .find(|(id, _, _)| *id == b)
+            .map(|(_, _, lin)| parse_linear(lin));
     }
     if let Some(l) = p::str(v, "latex") {
         return Some(parse_latex(l));
@@ -153,10 +189,16 @@ fn nodes_from(v: &Value) -> Option<Arg> {
 }
 
 fn insert(s: &mut Session, v: &Value) -> CmdResult {
-    let selected = if s.sel.is_collapsed() { String::new() } else { s.selected_text() };
+    let selected = if s.sel.is_collapsed() {
+        String::new()
+    } else {
+        s.selected_text()
+    };
     let nodes = match nodes_from(v) {
         Some(n) => n,
-        None if p::str(v, "id").is_some() || p::str(v, "builtin").is_some() => return Err(CmdError::Params("unknown equation".into())),
+        None if p::str(v, "id").is_some() || p::str(v, "builtin").is_some() => {
+            return Err(CmdError::Params("unknown equation".into()));
+        }
         // Selected text becomes the equation (Word converts it).
         None => parse_linear(selected.trim()),
     };
@@ -175,7 +217,14 @@ fn insert_nodes_as_equation(s: &mut Session, nodes: Arg, v: &Value) -> CmdResult
         Some(p) if !nodes.is_empty() => p,
         _ => MathPos::new(Vec::new(), me::units(&nodes)),
     };
-    let obj = InlineObject::Equation { linear, display, math: Math { nodes, ..Default::default() } };
+    let obj = InlineObject::Equation {
+        linear,
+        display,
+        math: Math {
+            nodes,
+            ..Default::default()
+        },
+    };
     let end = s.doc.insert_object(&at, obj, &props)?;
     if p::bool(v, "edit").unwrap_or(true) {
         s.sel = Selection::caret(at.clone());
@@ -187,7 +236,8 @@ fn insert_nodes_as_equation(s: &mut Session, nodes: Arg, v: &Value) -> CmdResult
 }
 
 fn edit(s: &mut Session, v: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
     let nodes = match s.doc.para_at(&at).and_then(|p| p.object_at(at.off)) {
         Some(InlineObject::Equation { math, linear, .. }) => {
             if math.nodes.is_empty() && !math.linear {
@@ -198,31 +248,44 @@ fn edit(s: &mut Session, v: &Value) -> CmdResult {
         }
         _ => return Err(CmdError::Failed("no equation there".into())),
     };
-    let pos =
-        v.get("pos").and_then(|p| serde_json::from_value::<MathPos>(p.clone()).ok()).unwrap_or_else(|| MathPos::new(Vec::new(), me::units(&nodes)));
+    let pos = v
+        .get("pos")
+        .and_then(|p| serde_json::from_value::<MathPos>(p.clone()).ok())
+        .unwrap_or_else(|| MathPos::new(Vec::new(), me::units(&nodes)));
     s.sel = Selection::caret(at.clone());
-    s.math = Some(MathEdit { pos: me::clamp(&nodes, &pos), at });
+    s.math = Some(MathEdit {
+        pos: me::clamp(&nodes, &pos),
+        at,
+    });
     result(s)
 }
 
 fn exit(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(m) = s.math.take() {
         let before = p::bool(v, "before").unwrap_or(false);
-        let off = if before { m.at.off } else { m.at.off + OBJ.len_utf8() };
+        let off = if before {
+            m.at.off
+        } else {
+            m.at.off + OBJ.len_utf8()
+        };
         s.sel = Selection::caret(Pos { off, ..m.at });
     }
     sel_result(s)
 }
 
 fn current(s: &Session) -> Result<MathEdit, CmdError> {
-    s.math.clone().ok_or_else(|| CmdError::Disabled("not editing an equation".into()))
+    s.math
+        .clone()
+        .ok_or_else(|| CmdError::Disabled("not editing an equation".into()))
 }
 
 fn type_text(s: &mut Session, v: &Value) -> CmdResult {
     let text = p::req_str(v, "text")?.to_string();
     let m = current(s)?;
     let latex = s.math_latex;
-    let style = TypeStyle { nor: s.math_normal_text };
+    let style = TypeStyle {
+        nor: s.math_normal_text,
+    };
     let mut pos = m.pos.clone();
     with_eq(s, &m.at, |math, _| {
         if math.linear {
@@ -232,7 +295,10 @@ fn type_text(s: &mut Session, v: &Value) -> CmdResult {
             return;
         }
         for c in text.chars().take(10_000) {
-            let rel = matches!(wordcraft_doc::math::math_class(c), wordcraft_doc::math::MClass::Rel);
+            let rel = matches!(
+                wordcraft_doc::math::math_class(c),
+                wordcraft_doc::math::MClass::Rel
+            );
             if !style.nor && (c == ' ' || c == '\t' || rel) {
                 let mut changed = false;
                 if let Some(p) = me::autocorrect(&mut math.nodes, &pos) {
@@ -266,7 +332,8 @@ fn set_literal(nodes: &mut Arg) {
 }
 
 fn insert_structure(s: &mut Session, v: &Value) -> CmdResult {
-    let nodes = nodes_from(v).ok_or_else(|| CmdError::Params("give an id, linear or latex".into()))?;
+    let nodes =
+        nodes_from(v).ok_or_else(|| CmdError::Params("give an id, linear or latex".into()))?;
     let Some(m) = s.math.clone() else {
         // Outside an equation: a new equation holding the structure.
         return insert_nodes_as_equation(s, nodes, &json!({}));
@@ -274,7 +341,12 @@ fn insert_structure(s: &mut Session, v: &Value) -> CmdResult {
     let mut pos = m.pos.clone();
     with_eq(s, &m.at, |math, _| {
         if math.linear {
-            pos = me::insert_text(&mut math.nodes, &pos, &to_linear(&nodes), TypeStyle::default());
+            pos = me::insert_text(
+                &mut math.nodes,
+                &pos,
+                &to_linear(&nodes),
+                TypeStyle::default(),
+            );
             set_literal(&mut math.nodes);
         } else {
             pos = me::insert_nodes(&mut math.nodes, &pos, nodes);
@@ -295,7 +367,9 @@ fn insert_symbol(s: &mut Session, v: &Value) -> CmdResult {
         return insert_nodes_as_equation(s, parse_linear(&c), &json!({}));
     };
     let mut pos = m.pos.clone();
-    let style = TypeStyle { nor: s.math_normal_text };
+    let style = TypeStyle {
+        nor: s.math_normal_text,
+    };
     with_eq(s, &m.at, |math, _| {
         pos = me::insert_text(&mut math.nodes, &pos, &c, style);
         if math.linear {
@@ -311,7 +385,11 @@ fn insert_symbol(s: &mut Session, v: &Value) -> CmdResult {
 fn nodes_of(s: &Session, at: &Pos) -> Option<Arg> {
     match s.doc.para_at(at)?.object_at(at.off)? {
         InlineObject::Equation { math, linear, .. } => {
-            Some(if math.nodes.is_empty() && !math.linear { parse_linear(linear) } else { math.nodes.clone() })
+            Some(if math.nodes.is_empty() && !math.linear {
+                parse_linear(linear)
+            } else {
+                math.nodes.clone()
+            })
         }
         _ => None,
     }
@@ -320,7 +398,10 @@ fn nodes_of(s: &Session, at: &Pos) -> Option<Arg> {
 fn move_caret(s: &mut Session, v: &Value) -> CmdResult {
     let m = current(s)?;
     let dir = p::str(v, "dir").unwrap_or("right");
-    if !matches!(dir, "left" | "right" | "up" | "down" | "home" | "end" | "next" | "prev") {
+    if !matches!(
+        dir,
+        "left" | "right" | "up" | "down" | "home" | "end" | "next" | "prev"
+    ) {
         return Err(CmdError::Params(format!("unknown direction {dir}")));
     }
     // Leaving a slot finishes what was typed there (AutoCorrect names, build-up). That is worked
@@ -365,7 +446,9 @@ fn move_caret(s: &mut Session, v: &Value) -> CmdResult {
         "down" => Some(me::move_vertical(&nodes, &m.pos, false).unwrap_or(m.pos.clone())),
         "home" => Some(me::home_end(&nodes, &m.pos, false)),
         "end" => Some(me::home_end(&nodes, &m.pos, true)),
-        "next" | "prev" => Some(me::next_placeholder(&nodes, &m.pos, dir == "prev").unwrap_or(m.pos.clone())),
+        "next" | "prev" => {
+            Some(me::next_placeholder(&nodes, &m.pos, dir == "prev").unwrap_or(m.pos.clone()))
+        }
         other => return Err(CmdError::Params(format!("unknown direction {other}"))),
     };
     match next {
@@ -386,14 +469,24 @@ fn delete(s: &mut Session, back: bool) -> CmdResult {
     // An empty equation goes away entirely.
     if nodes.is_empty() {
         s.math = None;
-        s.sel = Selection { anchor: m.at.clone(), focus: Pos { off: m.at.off + OBJ.len_utf8(), ..m.at.clone() } };
+        s.sel = Selection {
+            anchor: m.at.clone(),
+            focus: Pos {
+                off: m.at.off + OBJ.len_utf8(),
+                ..m.at.clone()
+            },
+        };
         let at = delete_selection(s)?;
         s.sel = Selection::caret(at);
         return sel_result(s);
     }
     let mut pos = m.pos.clone();
     with_eq(s, &m.at, |math, _| {
-        pos = if back { me::delete_back(&mut math.nodes, &pos) } else { me::delete_forward(&mut math.nodes, &pos) };
+        pos = if back {
+            me::delete_back(&mut math.nodes, &pos)
+        } else {
+            me::delete_forward(&mut math.nodes, &pos)
+        };
     })?;
     if let Some(m) = s.math.as_mut() {
         m.pos = pos;
@@ -431,7 +524,10 @@ fn enter(s: &mut Session, _: &Value) -> CmdResult {
     }
     // Nothing to build: Enter ends the equation and starts a new paragraph.
     s.math = None;
-    let after = Pos { off: m.at.off + OBJ.len_utf8(), ..m.at };
+    let after = Pos {
+        off: m.at.off + OBJ.len_utf8(),
+        ..m.at
+    };
     let new = split_para(s, &after)?;
     s.sel = Selection::caret(new);
     sel_result(s)
@@ -442,32 +538,63 @@ fn convert_math(math: &mut Math, professional: bool, latex: bool) {
     if professional {
         if math.linear {
             let text = plain(&math.nodes);
-            math.nodes = if latex { parse_latex(&text) } else { parse_linear(&text) };
+            math.nodes = if latex {
+                parse_latex(&text)
+            } else {
+                parse_linear(&text)
+            };
             math.linear = false;
         }
     } else if !math.linear {
-        let text = if latex { to_latex(&math.nodes) } else { to_linear(&math.nodes) };
-        math.nodes = vec![MNode::Run(wordcraft_doc::math::MRun { text, lit: true, ..Default::default() })];
+        let text = if latex {
+            to_latex(&math.nodes)
+        } else {
+            to_linear(&math.nodes)
+        };
+        math.nodes = vec![MNode::Run(wordcraft_doc::math::MRun {
+            text,
+            lit: true,
+            ..Default::default()
+        })];
         math.linear = true;
     }
 }
 
 fn convert(s: &mut Session, v: &Value) -> CmdResult {
-    let professional = p::str(v, "to").map(|t| !t.eq_ignore_ascii_case("linear")).unwrap_or(true);
+    let professional = p::str(v, "to")
+        .map(|t| !t.eq_ignore_ascii_case("linear"))
+        .unwrap_or(true);
     let latex = s.math_latex;
     if p::bool(v, "all").unwrap_or(false) {
         let mut n = 0;
-        let stories: Vec<wordcraft_doc::StoryRef> =
-            std::iter::once(wordcraft_doc::StoryRef::Body).chain(s.doc.parts.keys().map(|k| wordcraft_doc::StoryRef::Part(*k))).collect();
+        let stories: Vec<wordcraft_doc::StoryRef> = std::iter::once(wordcraft_doc::StoryRef::Body)
+            .chain(
+                s.doc
+                    .parts
+                    .keys()
+                    .map(|k| wordcraft_doc::StoryRef::Part(*k)),
+            )
+            .collect();
         for story in stories {
             for path in s.doc.para_paths(story) {
                 let offs: Vec<usize> = s
                     .doc
                     .para(story, &path)
-                    .map(|p| p.object_offsets().into_iter().filter(|o| matches!(p.object_at(*o), Some(InlineObject::Equation { .. }))).collect())
+                    .map(|p| {
+                        p.object_offsets()
+                            .into_iter()
+                            .filter(|o| {
+                                matches!(p.object_at(*o), Some(InlineObject::Equation { .. }))
+                            })
+                            .collect()
+                    })
                     .unwrap_or_default();
                 for off in offs {
-                    let at = Pos { story, path: path.clone(), off };
+                    let at = Pos {
+                        story,
+                        path: path.clone(),
+                        off,
+                    };
                     with_eq(s, &at, |math, _| convert_math(math, professional, latex))?;
                     n += 1;
                 }
@@ -479,7 +606,8 @@ fn convert(s: &mut Session, v: &Value) -> CmdResult {
         s.clamp_selection();
         return Ok(json!({"converted": n}));
     }
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
     let mut end = 0;
     with_eq(s, &at, |math, _| {
         convert_math(math, professional, latex);
@@ -492,13 +620,17 @@ fn convert(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn set_display(s: &mut Session, v: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
-    with_eq(s, &at, |_, display| *display = p::bool(v, "value").unwrap_or(!*display))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    with_eq(s, &at, |_, display| {
+        *display = p::bool(v, "value").unwrap_or(!*display)
+    })?;
     result(s)
 }
 
 fn justify(s: &mut Session, v: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
     let jc = match p::str(v, "jc").unwrap_or("centerGroup") {
         "left" => MathJc::Left,
         "right" => MathJc::Right,
@@ -514,7 +646,8 @@ fn justify(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Add (or remove) an automatic equation number: `#` with nothing after it.
 fn number(s: &mut Session, v: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
     let mut pos_reset = false;
     with_eq(s, &at, |math, display| {
         let numbered = matches!(math.nodes.as_slice(), [MNode::EqArr { rows }] if rows.iter().any(|r| wordcraft_doc::math::has_number_mark(r)));
@@ -529,8 +662,15 @@ fn number(s: &mut Session, v: &Value) -> CmdResult {
             // Every row loses its number; a single row stands alone again, several stay an
             // array (#444).
             if let [MNode::EqArr { rows }] = math.nodes.as_mut_slice() {
-                let mut rows: Vec<Arg> = std::mem::take(rows).into_iter().map(without_number).collect();
-                math.nodes = if rows.len() == 1 { rows.pop().unwrap_or_default() } else { vec![MNode::EqArr { rows }] };
+                let mut rows: Vec<Arg> = std::mem::take(rows)
+                    .into_iter()
+                    .map(without_number)
+                    .collect();
+                math.nodes = if rows.len() == 1 {
+                    rows.pop().unwrap_or_default()
+                } else {
+                    vec![MNode::EqArr { rows }]
+                };
             }
             pos_reset = true;
         }
@@ -563,7 +703,8 @@ fn without_number(row: Arg) -> Arg {
 }
 
 fn set(s: &mut Session, v: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
     let nodes = nodes_from(v).ok_or_else(|| CmdError::Params("give linear or latex".into()))?;
     let end = me::units(&nodes);
     with_eq(s, &at, |math, _| {
@@ -577,11 +718,21 @@ fn set(s: &mut Session, v: &Value) -> CmdResult {
 }
 
 fn get(s: &mut Session, _: &Value) -> CmdResult {
-    let at = equation_at_caret(s).ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
-    let Some(InlineObject::Equation { linear, display, math }) = s.doc.para_at(&at).and_then(|p| p.object_at(at.off)) else {
+    let at = equation_at_caret(s)
+        .ok_or_else(|| CmdError::Disabled("no equation at the caret".into()))?;
+    let Some(InlineObject::Equation {
+        linear,
+        display,
+        math,
+    }) = s.doc.para_at(&at).and_then(|p| p.object_at(at.off))
+    else {
         return Err(CmdError::Failed("no equation there".into()));
     };
-    let nodes = if math.nodes.is_empty() && !math.linear { parse_linear(linear) } else { math.nodes.clone() };
+    let nodes = if math.nodes.is_empty() && !math.linear {
+        parse_linear(linear)
+    } else {
+        math.nodes.clone()
+    };
     Ok(json!({
         "linear": linear,
         "latex": to_latex(&nodes),
@@ -596,8 +747,10 @@ fn get(s: &mut Session, _: &Value) -> CmdResult {
 fn structure_actions(s: &mut Session, _: &Value) -> CmdResult {
     let m = current(s)?;
     let nodes = nodes_of(s, &m.at).ok_or_else(|| CmdError::Failed("no equation there".into()))?;
-    let acts: Vec<Value> =
-        me::structure_actions(&nodes, &m.pos).into_iter().map(|(l, a, label)| json!({"level": l, "action": a, "label": label})).collect();
+    let acts: Vec<Value> = me::structure_actions(&nodes, &m.pos)
+        .into_iter()
+        .map(|(l, a, label)| json!({"level": l, "action": a, "label": label}))
+        .collect();
     Ok(json!({"actions": acts}))
 }
 
@@ -614,7 +767,9 @@ fn structure(s: &mut Session, v: &Value) -> CmdResult {
             .ok_or_else(|| CmdError::Params(format!("{action} doesn't apply here")))?,
     };
     let mut pos = None;
-    with_eq(s, &m.at, |math, _| pos = me::apply_structure(&mut math.nodes, &m.pos, level, &action))?;
+    with_eq(s, &m.at, |math, _| {
+        pos = me::apply_structure(&mut math.nodes, &m.pos, level, &action)
+    })?;
     let pos = pos.ok_or_else(|| CmdError::Params(format!("{action} doesn't apply here")))?;
     if let Some(m) = s.math.as_mut() {
         m.pos = pos;
@@ -636,8 +791,14 @@ fn gallery(_: &mut Session, _: &Value) -> CmdResult {
             })
         })
         .collect();
-    let symbols: Vec<Value> = crate::math_gallery::SYMBOL_SETS.iter().map(|(n, chars)| json!({"name": n, "chars": chars})).collect();
-    let builtins: Vec<Value> = crate::math_gallery::BUILT_INS.iter().map(|(id, l, lin)| json!({"id": id, "label": l, "linear": lin})).collect();
+    let symbols: Vec<Value> = crate::math_gallery::SYMBOL_SETS
+        .iter()
+        .map(|(n, chars)| json!({"name": n, "chars": chars}))
+        .collect();
+    let builtins: Vec<Value> = crate::math_gallery::BUILT_INS
+        .iter()
+        .map(|(id, l, lin)| json!({"id": id, "label": l, "linear": lin}))
+        .collect();
     Ok(json!({"structures": structures, "symbols": symbols, "builtins": builtins}))
 }
 
@@ -654,7 +815,11 @@ mod tests {
     }
 
     fn linear(s: &Session) -> String {
-        s.math.as_ref().and_then(|m| s.doc.para_at(&m.at).and_then(|p| p.object_at(m.at.off))).map(|o| o.plain_text().to_string()).unwrap_or_default()
+        s.math
+            .as_ref()
+            .and_then(|m| s.doc.para_at(&m.at).and_then(|p| p.object_at(m.at.off)))
+            .map(|o| o.plain_text().to_string())
+            .unwrap_or_default()
     }
 
     #[test]
@@ -663,13 +828,31 @@ mod tests {
         s.run("insert.equation", &json!({})).unwrap();
         assert!(s.math.is_some(), "editing the new equation");
         // An empty line gives a display equation.
-        assert!(matches!(s.doc.para_at(&s.math.as_ref().unwrap().at).unwrap().object_at(0), Some(InlineObject::Equation { display: true, .. })));
-        for t in ["x", "=", "(-b\\pm", " ", "\\sqrt", " ", "(b^2-4ac))/2a", " "] {
+        assert!(matches!(
+            s.doc
+                .para_at(&s.math.as_ref().unwrap().at)
+                .unwrap()
+                .object_at(0),
+            Some(InlineObject::Equation { display: true, .. })
+        ));
+        for t in [
+            "x",
+            "=",
+            "(-b\\pm",
+            " ",
+            "\\sqrt",
+            " ",
+            "(b^2-4ac))/2a",
+            " ",
+        ] {
             s.run("equation.type", &json!({"text": t})).unwrap();
         }
         assert_eq!(linear(&s), "x=(-b±√(b^2-4ac))/2a");
         let nodes = nodes_of(&s, &s.math.as_ref().unwrap().at).unwrap();
-        assert!(matches!(nodes.get(1), Some(MNode::Frac { .. })), "{nodes:#?}");
+        assert!(
+            matches!(nodes.get(1), Some(MNode::Frac { .. })),
+            "{nodes:#?}"
+        );
         // One undo step for the typing.
         s.run("equation.exit", &json!({})).unwrap();
         s.run("edit.undo", &json!({})).unwrap();
@@ -679,13 +862,16 @@ mod tests {
     #[test]
     fn structures_symbols_and_navigation() {
         let mut s = session();
-        s.run("equation.insertStructure", &json!({"id": "frac.stacked"})).unwrap();
+        s.run("equation.insertStructure", &json!({"id": "frac.stacked"}))
+            .unwrap();
         s.run("equation.type", &json!({"text": "1"})).unwrap();
         s.run("equation.move", &json!({"dir": "down"})).unwrap();
-        s.run("equation.insertSymbol", &json!({"char": "π"})).unwrap();
+        s.run("equation.insertSymbol", &json!({"char": "π"}))
+            .unwrap();
         assert_eq!(linear(&s), "1/π");
         s.run("equation.move", &json!({"dir": "right"})).unwrap();
-        s.run("equation.insertStructure", &json!({"id": "nary.sumLimits"})).unwrap();
+        s.run("equation.insertStructure", &json!({"id": "nary.sumLimits"}))
+            .unwrap();
         s.run("equation.type", &json!({"text": "k=1"})).unwrap();
         s.run("equation.move", &json!({"dir": "next"})).unwrap();
         s.run("equation.type", &json!({"text": "n"})).unwrap();
@@ -707,7 +893,8 @@ mod tests {
     #[test]
     fn numbering_conversion_and_display() {
         let mut s = session();
-        s.run("insert.equation", &json!({"linear": "E=mc^2"})).unwrap();
+        s.run("insert.equation", &json!({"linear": "E=mc^2"}))
+            .unwrap();
         s.run("equation.type", &json!({"text": "#(1)"})).unwrap();
         s.run("equation.enter", &json!({})).unwrap();
         assert_eq!(linear(&s), "E=mc^2#(1)");
@@ -716,13 +903,15 @@ mod tests {
         s.run("equation.number", &json!({})).unwrap();
         assert_eq!(linear(&s), "E=mc^2#");
         s.run("equation.convert", &json!({"to": "linear"})).unwrap();
-        s.run("equation.convert", &json!({"to": "professional"})).unwrap();
+        s.run("equation.convert", &json!({"to": "professional"}))
+            .unwrap();
         assert_eq!(linear(&s), "E=mc^2#");
         s.run("equation.display", &json!({"value": false})).unwrap();
         let r = s.run("equation.get", &json!({})).unwrap();
         assert_eq!(r["display"], false);
         // LaTeX input.
-        s.run("equation.set", &json!({"latex": "\\frac{a}{b}"})).unwrap();
+        s.run("equation.set", &json!({"latex": "\\frac{a}{b}"}))
+            .unwrap();
         assert_eq!(linear(&s), "a/b");
         // Backspacing an equation empty, then once more, removes it.
         let mut n = 0;
@@ -742,7 +931,8 @@ mod tests {
         assert!(g["symbols"].as_array().unwrap().len() >= 8);
         for b in crate::math_gallery::BUILT_INS {
             let mut s = session();
-            s.run("insert.equation", &json!({"builtin": b.0, "edit": false})).unwrap();
+            s.run("insert.equation", &json!({"builtin": b.0, "edit": false}))
+                .unwrap();
         }
     }
 
@@ -764,7 +954,8 @@ mod tests {
         ];
         let mut zw = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
         for (name, xml) in parts {
-            zw.start_file(name, zip::write::SimpleFileOptions::default()).unwrap();
+            zw.start_file(name, zip::write::SimpleFileOptions::default())
+                .unwrap();
             zw.write_all(xml.as_bytes()).unwrap();
         }
         let bytes = zw.finish().unwrap().into_inner();
@@ -778,7 +969,10 @@ mod tests {
         let bytes = wordcraft_docx::write(&s.doc).unwrap();
         let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
         let mut xml = String::new();
-        z.by_name("word/document.xml").unwrap().read_to_string(&mut xml).unwrap();
+        z.by_name("word/document.xml")
+            .unwrap()
+            .read_to_string(&mut xml)
+            .unwrap();
         xml
     }
 
@@ -787,17 +981,25 @@ mod tests {
         // #444: a numbered two-row array lost its second row when its numbers were removed.
         for numbered in ["█(a#(1)@b#(2))", "█(a@b#(2))"] {
             let mut s = session();
-            s.run("insert.equation", &json!({"linear": numbered})).unwrap();
+            s.run("insert.equation", &json!({"linear": numbered}))
+                .unwrap();
             s.run("equation.number", &json!({"value": false})).unwrap();
             assert_eq!(linear(&s), "█(a@b)", "{numbered}");
-            let mut back = Session::new(wordcraft_docx::read(&wordcraft_docx::write(&s.doc).unwrap()).unwrap());
-            assert_eq!(back.run("equation.get", &json!({})).unwrap()["linear"], "█(a@b)", "{numbered} after save and reopen");
+            let mut back = Session::new(
+                wordcraft_docx::read(&wordcraft_docx::write(&s.doc).unwrap()).unwrap(),
+            );
+            assert_eq!(
+                back.run("equation.get", &json!({})).unwrap()["linear"],
+                "█(a@b)",
+                "{numbered} after save and reopen"
+            );
             s.run("edit.undo", &json!({})).unwrap();
             assert_eq!(linear(&s), numbered, "Undo restores the numbers");
         }
         // A single numbered row stands alone again.
         let mut s = session();
-        s.run("insert.equation", &json!({"linear": "a#(1)"})).unwrap();
+        s.run("insert.equation", &json!({"linear": "a#(1)"}))
+            .unwrap();
         s.run("equation.number", &json!({"value": false})).unwrap();
         assert_eq!(linear(&s), "a");
     }
@@ -808,7 +1010,10 @@ mod tests {
         let red = r#"<m:f><m:fPr><m:ctrlPr><w:rPr><w:color w:val="FF0000"/></w:rPr></m:ctrlPr></m:fPr><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f>"#;
         let mut s = imported(red);
         s.run("equation.move", &json!({"dir": "left"})).unwrap();
-        assert!(document_xml(&s).contains(r#"w:val="FF0000""#), "the control colour survives navigation");
+        assert!(
+            document_xml(&s).contains(r#"w:val="FF0000""#),
+            "the control colour survives navigation"
+        );
         // A genuine edit still writes the new content.
         s.run("equation.type", &json!({"text": "x"})).unwrap();
         assert_eq!(linear(&s), "a/bx");
@@ -821,11 +1026,18 @@ mod tests {
         let mut s = imported("<m:r><m:t>a/b</m:t></m:r>");
         assert!(!s.dirty);
         s.run("equation.move", &json!({"dir": "left"})).unwrap();
-        assert_eq!(s.run("equation.get", &json!({})).unwrap()["latex"], "\\frac{a}{b}");
+        assert_eq!(
+            s.run("equation.get", &json!({})).unwrap()["latex"],
+            "\\frac{a}{b}"
+        );
         assert!(s.dirty, "build-up marks the document dirty");
         s.run("edit.undo", &json!({})).unwrap();
         s.run("equation.edit", &json!({})).unwrap();
-        assert_eq!(s.run("equation.get", &json!({})).unwrap()["latex"], "a/b", "Undo restores the plain run");
+        assert_eq!(
+            s.run("equation.get", &json!({})).unwrap()["latex"],
+            "a/b",
+            "Undo restores the plain run"
+        );
         // Plain navigation is no edit.
         let mut s = imported("<m:r><m:t>abc</m:t></m:r>");
         s.run("equation.move", &json!({"dir": "left"})).unwrap();
@@ -845,7 +1057,11 @@ mod tests {
         ] {
             let mut s = session();
             s.run("insert.equation", &json!({"latex": tex})).unwrap();
-            assert_eq!(s.run("equation.get", &json!({})).unwrap()["latex"], want, "{tex}");
+            assert_eq!(
+                s.run("equation.get", &json!({})).unwrap()["latex"],
+                want,
+                "{tex}"
+            );
         }
     }
 }

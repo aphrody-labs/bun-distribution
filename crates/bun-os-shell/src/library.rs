@@ -148,7 +148,10 @@ fn steam_names(steam: &Path) -> HashMap<u32, (String, String)> {
 
 /// Steam library art: the client cache first, then the public Steam CDN (cached locally).
 fn steam_art(steam: &Path, cache: &Path, app_id: u32) -> (ArtRef, ArtRef) {
-    let local = steam.join("appcache").join("librarycache").join(app_id.to_string());
+    let local = steam
+        .join("appcache")
+        .join("librarycache")
+        .join(app_id.to_string());
     let source = |file: &str| {
         let mut refs = vec![ArtSource::File(local.join(file))];
         refs.push(ArtSource::Remote {
@@ -195,10 +198,18 @@ fn libretro_art(paths: &Paths, cache: &Path, dat: &str, title: &str, kinds: &[&s
     let name = format!("{}.png", libretro_name(title));
     let local_root = std::env::var_os("LIBRETRO_THUMBNAILS")
         .map(PathBuf::from)
-        .unwrap_or_else(|| paths.usr.join("share").join("bun-engine").join("thumbnails"));
+        .unwrap_or_else(|| {
+            paths
+                .usr
+                .join("share")
+                .join("bun-engine")
+                .join("thumbnails")
+        });
     let mut refs = Vec::new();
     for kind in kinds {
-        refs.push(ArtSource::File(local_root.join(&playlist).join(kind).join(&name)));
+        refs.push(ArtSource::File(
+            local_root.join(&playlist).join(kind).join(&name),
+        ));
         refs.push(ArtSource::Remote {
             url: format!(
                 "https://thumbnails.libretro.com/{}/{}/{}",
@@ -206,7 +217,11 @@ fn libretro_art(paths: &Paths, cache: &Path, dat: &str, title: &str, kinds: &[&s
                 kind,
                 percent(&name)
             ),
-            cache: cache.join("libretro").join(&playlist).join(kind).join(&name),
+            cache: cache
+                .join("libretro")
+                .join(&playlist)
+                .join(kind)
+                .join(&name),
         });
     }
     ArtRef(refs)
@@ -456,7 +471,10 @@ impl Library {
     pub fn load(paths: &Paths) -> Self {
         let mut library = Self::default();
         load_bep(&mut library, paths);
-        load_steam(&mut library, &paths.usr.join("var").join("cache").join("bun-os-shell"));
+        load_steam(
+            &mut library,
+            &paths.usr.join("var").join("cache").join("bun-os-shell"),
+        );
         load_web(&mut library, paths);
         // Played first (bep order already carries it), then installed Steam games, then the rest.
         library.games.sort_by_key(|g| match &g.kind {

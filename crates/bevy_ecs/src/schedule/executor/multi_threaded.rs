@@ -8,19 +8,19 @@ use fixedbitset::FixedBitSet;
 use std::sync::{Mutex, MutexGuard};
 
 #[cfg(feature = "trace")]
-use tracing::{info_span, Span};
+use tracing::{Span, info_span};
 
+#[cfg(feature = "hotpatching")]
+use crate::{HotPatchChanges, prelude::DetectChanges};
 use crate::{
     error::{BevyError, ErrorContext, ErrorHandler, Result},
     prelude::Resource,
     schedule::{
-        is_apply_deferred, ConditionWithAccess, SystemExecutor, SystemSchedule, SystemWithAccess,
+        ConditionWithAccess, SystemExecutor, SystemSchedule, SystemWithAccess, is_apply_deferred,
     },
     system::{BoxedSystem, RunSystemError, ScheduleSystem},
-    world::{unsafe_world_cell::UnsafeWorldCell, World},
+    world::{World, unsafe_world_cell::UnsafeWorldCell},
 };
-#[cfg(feature = "hotpatching")]
-use crate::{prelude::DetectChanges, HotPatchChanges};
 
 use super::__rust_begin_short_backtrace;
 
@@ -913,7 +913,7 @@ mod tests {
         system::{
             Commands, NonSendMut, SystemAccess, SystemMeta, SystemParam, SystemParamValidationError,
         },
-        world::{unsafe_world_cell::UnsafeWorldCell, World},
+        world::{World, unsafe_world_cell::UnsafeWorldCell},
     };
 
     #[derive(Resource)]

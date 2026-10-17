@@ -101,7 +101,9 @@ fn zoom(e: &mut Engine, f: f64, x: Option<f64>) -> Result<Value> {
     let z = e.zoom_mut();
     let (old, scroll) = (z.samples_per_px, z.scroll as f64);
     let new = (old * f).clamp(MIN_SPP, MAX_SPP);
-    if let Some(x) = x.or_else(|| Some((insertion - scroll) / old).filter(|x| (0.0..4000.0).contains(x))) {
+    if let Some(x) =
+        x.or_else(|| Some((insertion - scroll) / old).filter(|x| (0.0..4000.0).contains(x)))
+    {
         z.scroll = soundcraft_time::to_samples(scroll + x * (old - new)).clamp(0, MAX_POSITION);
     }
     z.samples_per_px = new;
@@ -109,15 +111,31 @@ fn zoom(e: &mut Engine, f: f64, x: Option<f64>) -> Result<Value> {
 }
 
 fn ruler(e: &mut Engine, p: &Value) -> Result<Value> {
-    const ALL: [&str; 10] = ["bars_beats", "min_secs", "timecode", "feet_frames", "samples", "tempo", "meter", "markers", "key", "chords"];
-    let r = str_param(p, "ruler").filter(|r| ALL.contains(r)).ok_or_else(|| bad("view.ruler", "unknown ruler"))?.to_string();
+    const ALL: [&str; 10] = [
+        "bars_beats",
+        "min_secs",
+        "timecode",
+        "feet_frames",
+        "samples",
+        "tempo",
+        "meter",
+        "markers",
+        "key",
+        "chords",
+    ];
+    let r = str_param(p, "ruler")
+        .filter(|r| ALL.contains(r))
+        .ok_or_else(|| bad("view.ruler", "unknown ruler"))?
+        .to_string();
     let s = e.session_mut();
     let shown = s.edit.rulers.contains(&r);
     let vis = p.get("visible").and_then(Value::as_bool).unwrap_or(!shown);
     s.edit.rulers.retain(|x| x != &r);
     if vis {
         s.edit.rulers.push(r.clone());
-        s.edit.rulers.sort_by_key(|x| ALL.iter().position(|a| a == x));
+        s.edit
+            .rulers
+            .sort_by_key(|x| ALL.iter().position(|a| a == x));
     }
     Ok(json!({"ruler": r, "visible": vis}))
 }
@@ -126,7 +144,9 @@ fn ruler(e: &mut Engine, p: &Value) -> Result<Value> {
 pub fn grid_param(p: &Value, key: &str) -> Option<GridValue> {
     let v = p.get(key)?;
     if let Some(sec) = v.get("seconds").and_then(Value::as_f64) {
-        return sec.is_finite().then_some(GridValue::Seconds(sec.clamp(0.000_01, 3600.0)));
+        return sec
+            .is_finite()
+            .then_some(GridValue::Seconds(sec.clamp(0.000_01, 3600.0)));
     }
     if let Some(f) = v.get("frames").and_then(Value::as_i64) {
         return Some(GridValue::Frames(f.clamp(1, 100_000)));
@@ -137,7 +157,12 @@ pub fn grid_param(p: &Value, key: &str) -> Option<GridValue> {
     let s = v.as_str()?.trim().to_ascii_lowercase();
     let triplet = s.ends_with('t') || s.contains("triplet");
     let dotted = s.ends_with('.') || s.contains("dotted");
-    let core: String = s.chars().take_while(|c| c.is_ascii_digit() || *c == '/' || *c == ' ' || c.is_ascii_alphabetic() && *c != 't').collect();
+    let core: String = s
+        .chars()
+        .take_while(|c| {
+            c.is_ascii_digit() || *c == '/' || *c == ' ' || c.is_ascii_alphabetic() && *c != 't'
+        })
+        .collect();
     let value = match core.trim() {
         "1 bar" | "bar" | "1/1" | "1" => NoteValue::Bar,
         "1/2" => NoteValue::Half,
@@ -148,7 +173,11 @@ pub fn grid_param(p: &Value, key: &str) -> Option<GridValue> {
         "1/64" => NoteValue::SixtyFourth,
         _ => return None,
     };
-    Some(GridValue::Note { value, dotted, triplet })
+    Some(GridValue::Note {
+        value,
+        dotted,
+        triplet,
+    })
 }
 
 #[cfg(test)]
@@ -157,40 +186,79 @@ mod tests {
 
     #[test]
     fn grid_values_parse() {
-        assert_eq!(grid_param(&json!({"v": "1/16"}), "v"), Some(GridValue::Note { value: NoteValue::Sixteenth, dotted: false, triplet: false }));
-        assert_eq!(grid_param(&json!({"v": "1/8t"}), "v"), Some(GridValue::Note { value: NoteValue::Eighth, dotted: false, triplet: true }));
-        assert_eq!(grid_param(&json!({"v": "1/4."}), "v"), Some(GridValue::Note { value: NoteValue::Quarter, dotted: true, triplet: false }));
-        assert_eq!(grid_param(&json!({"v": {"seconds": 0.5}}), "v"), Some(GridValue::Seconds(0.5)));
+        assert_eq!(
+            grid_param(&json!({"v": "1/16"}), "v"),
+            Some(GridValue::Note {
+                value: NoteValue::Sixteenth,
+                dotted: false,
+                triplet: false
+            })
+        );
+        assert_eq!(
+            grid_param(&json!({"v": "1/8t"}), "v"),
+            Some(GridValue::Note {
+                value: NoteValue::Eighth,
+                dotted: false,
+                triplet: true
+            })
+        );
+        assert_eq!(
+            grid_param(&json!({"v": "1/4."}), "v"),
+            Some(GridValue::Note {
+                value: NoteValue::Quarter,
+                dotted: true,
+                triplet: false
+            })
+        );
+        assert_eq!(
+            grid_param(&json!({"v": {"seconds": 0.5}}), "v"),
+            Some(GridValue::Seconds(0.5))
+        );
         assert_eq!(grid_param(&json!({"v": "nonsense"}), "v"), None);
     }
 
     fn view(e: &Engine) -> (f64, Samples) {
-        (e.session().edit.zoom.samples_per_px, e.session().edit.zoom.scroll)
+        (
+            e.session().edit.zoom.samples_per_px,
+            e.session().edit.zoom.scroll,
+        )
     }
 
     #[test]
     fn zoom_by_holds_the_position_under_the_pointer() {
         let mut e = Engine::default();
-        e.execute("view.zoom_set", &json!({"samples_per_px": 100.0})).unwrap();
+        e.execute("view.zoom_set", &json!({"samples_per_px": 100.0}))
+            .unwrap();
         e.execute("view.scroll", &json!({"to": 48_000})).unwrap();
-        e.execute("view.zoom_by", &json!({"factor": 2.0, "x": 300.0})).unwrap();
+        e.execute("view.zoom_by", &json!({"factor": 2.0, "x": 300.0}))
+            .unwrap();
         assert_eq!(view(&e), (50.0, 78_000 - 300 * 50));
-        e.execute("view.zoom_by", &json!({"factor": 0.5, "x": 300.0})).unwrap();
+        e.execute("view.zoom_by", &json!({"factor": 0.5, "x": 300.0}))
+            .unwrap();
         assert_eq!(view(&e), (100.0, 48_000));
     }
 
     #[test]
     fn zoom_and_scroll_stay_in_range() {
         let mut e = Engine::default();
-        e.execute("edit.select", &json!({"start": 0, "end": 4_000_000_000_i64})).unwrap();
+        e.execute(
+            "edit.select",
+            &json!({"start": 0, "end": 4_000_000_000_i64}),
+        )
+        .unwrap();
         e.execute("view.zoom_to_selection", &json!({})).unwrap();
         assert_eq!(view(&e).0, MAX_SPP);
-        e.execute("view.zoom_by", &json!({"factor": 1e12, "x": 0.0})).unwrap();
+        e.execute("view.zoom_by", &json!({"factor": 1e12, "x": 0.0}))
+            .unwrap();
         assert_eq!(view(&e).0, MIN_SPP);
-        e.execute("view.zoom_by", &json!({"factor": 1e-300, "x": 1e300})).unwrap();
+        e.execute("view.zoom_by", &json!({"factor": 1e-300, "x": 1e300}))
+            .unwrap();
         assert_eq!(view(&e), (MAX_SPP, 0));
         for bad in [json!(0.0), json!(-2.0), json!("2"), json!(null)] {
-            assert!(e.execute("view.zoom_by", &json!({"factor": bad})).is_err(), "{bad}");
+            assert!(
+                e.execute("view.zoom_by", &json!({"factor": bad})).is_err(),
+                "{bad}"
+            );
         }
         e.execute("view.scroll", &json!({"by_px": 1e300})).unwrap();
         assert_eq!(view(&e).1, MAX_POSITION);
@@ -204,7 +272,8 @@ mod tests {
         let t = e.execute("track.new", &json!({})).unwrap()["tracks"][0].clone();
         let steps = e.undo_history().len();
         for db in [-1.0, -2.0] {
-            e.execute_merged("mix.volume", &json!({"track": t, "db": db}), "fader").unwrap();
+            e.execute_merged("mix.volume", &json!({"track": t, "db": db}), "fader")
+                .unwrap();
             e.execute("view.scroll", &json!({"by_px": 5.0})).unwrap();
         }
         assert_eq!(e.undo_history().len(), steps + 1);

@@ -267,15 +267,22 @@ mod tests {
 
     #[test]
     fn explicit_storage_lookup_does_not_lock_the_content_union() {
-        for storage in [StorageId::NandSystem, StorageId::NandUser, StorageId::SdCard,
-            StorageId::Host, StorageId::GameCard] {
+        for storage in [
+            StorageId::NandSystem,
+            StorageId::NandUser,
+            StorageId::SdCard,
+            StorageId::Host,
+            StorageId::GameCard,
+        ] {
             let provider = Arc::new(Mutex::new(ContentProviderUnion::new()));
             let guard = provider.lock().unwrap();
             let worker_provider = provider.clone();
             let (sender, receiver) = std::sync::mpsc::channel();
             let worker = std::thread::spawn(move || {
                 let factory = RomFSFactory::new_with_file(None, false, Some(worker_provider), None);
-                let missing = factory.get_entry(42, storage, ContentRecordType::Data).is_none();
+                let missing = factory
+                    .get_entry(42, storage, ContentRecordType::Data)
+                    .is_none();
                 sender.send(missing).unwrap();
             });
             let result = receiver.recv_timeout(std::time::Duration::from_secs(2));
@@ -283,7 +290,11 @@ mod tests {
             // on the old implementation instead of hanging the test suite.
             drop(guard);
             worker.join().unwrap();
-            assert_eq!(result, Ok(true), "storage {storage:?} must not wait on the union");
+            assert_eq!(
+                result,
+                Ok(true),
+                "storage {storage:?} must not wait on the union"
+            );
         }
     }
 

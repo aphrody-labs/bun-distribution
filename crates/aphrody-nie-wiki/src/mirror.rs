@@ -153,7 +153,7 @@ pub fn merge_data_sheet(data: Option<&str>, sheet_data: Option<&str>) -> serde_j
                 b.insert(k, v);
             }
             serde_json::Value::Object(b)
-        },
+        }
         // Si l'un n'est pas un objet, sheet_data gagne entièrement si présent.
         (_b, serde_json::Value::Object(o)) if !o.is_empty() => serde_json::Value::Object(o),
         (b, _) => b,
@@ -196,9 +196,9 @@ pub fn entier_souple(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<
         ValueRef::Integer(v) => Some(v),
         #[allow(clippy::cast_possible_truncation)]
         ValueRef::Real(v) => Some(v as i64),
-        ValueRef::Text(bytes) => {
-            std::str::from_utf8(bytes).ok().and_then(|s| s.trim().parse::<i64>().ok())
-        },
+        ValueRef::Text(bytes) => std::str::from_utf8(bytes)
+            .ok()
+            .and_then(|s| s.trim().parse::<i64>().ok()),
         ValueRef::Blob(_) => None,
     })
 }

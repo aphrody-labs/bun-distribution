@@ -86,10 +86,20 @@ impl Counting {
 
 const CN_DIGITS: [char; 10] = ['〇', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
 
-const CHINESE: Counting =
-    Counting { digits: CN_DIGITS, units: ['十', '百', '千'], myriads: ['万', '亿'], zero: Some('零'), omit_one: OmitOne::LeadingTen };
-const TAIWANESE: Counting =
-    Counting { digits: CN_DIGITS, units: ['十', '百', '千'], myriads: ['萬', '億'], zero: Some('零'), omit_one: OmitOne::LeadingTen };
+const CHINESE: Counting = Counting {
+    digits: CN_DIGITS,
+    units: ['十', '百', '千'],
+    myriads: ['万', '亿'],
+    zero: Some('零'),
+    omit_one: OmitOne::LeadingTen,
+};
+const TAIWANESE: Counting = Counting {
+    digits: CN_DIGITS,
+    units: ['十', '百', '千'],
+    myriads: ['萬', '億'],
+    zero: Some('零'),
+    omit_one: OmitOne::LeadingTen,
+};
 const CHINESE_LEGAL: Counting = Counting {
     digits: ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'],
     units: ['拾', '佰', '仟'],
@@ -104,8 +114,13 @@ const TRADITIONAL_LEGAL: Counting = Counting {
     zero: Some('零'),
     omit_one: OmitOne::Never,
 };
-const JAPANESE: Counting =
-    Counting { digits: CN_DIGITS, units: ['十', '百', '千'], myriads: ['万', '億'], zero: None, omit_one: OmitOne::Units };
+const JAPANESE: Counting = Counting {
+    digits: CN_DIGITS,
+    units: ['十', '百', '千'],
+    myriads: ['万', '億'],
+    zero: None,
+    omit_one: OmitOne::Units,
+};
 const JAPANESE_LEGAL: Counting = Counting {
     digits: ['〇', '壱', '弐', '参', '四', '伍', '六', '七', '八', '九'],
     units: ['拾', '百', '阡'],
@@ -123,7 +138,11 @@ const KOREAN: Counting = Counting {
 
 /// 一, 二 … 十, 十一 … 九十九 (Chinese counting); from 100 on, digit by digit (一〇〇).
 pub(crate) fn chinese_counting(n: u32) -> String {
-    if n < 100 { CHINESE.format(n) } else { digits(n, &CN_DIGITS) }
+    if n < 100 {
+        CHINESE.format(n)
+    } else {
+        digits(n, &CN_DIGITS)
+    }
 }
 
 /// Chinese counting with every unit: 一百零一, 一千, 一万.
@@ -143,7 +162,11 @@ pub(crate) fn ideograph_legal_traditional(n: u32) -> String {
 
 /// Taiwanese counting: like Chinese counting below 100, digit by digit above.
 pub(crate) fn taiwanese_counting(n: u32) -> String {
-    if n < 100 { TAIWANESE.format(n) } else { digits(n, &CN_DIGITS) }
+    if n < 100 {
+        TAIWANESE.format(n)
+    } else {
+        digits(n, &CN_DIGITS)
+    }
 }
 
 /// Taiwanese counting with every unit: 一百零一, 一千, 一萬.
@@ -163,7 +186,11 @@ pub(crate) fn japanese_legal(n: u32) -> String {
 
 /// Japanese digits with 万/億 marking each group of four: 一二, 一万二三四五.
 pub(crate) fn japanese_digital_ten_thousand(n: u32) -> String {
-    let groups = [(n / 100_000_000, Some('億')), ((n / 10_000) % 10_000, Some('万')), (n % 10_000, None)];
+    let groups = [
+        (n / 100_000_000, Some('億')),
+        ((n / 10_000) % 10_000, Some('万')),
+        (n % 10_000, None),
+    ];
     let mut out = String::new();
     for (g, mark) in groups {
         let s = digits(g, &CN_DIGITS);
@@ -173,7 +200,10 @@ pub(crate) fn japanese_digital_ten_thousand(n: u32) -> String {
             }
         } else {
             // Inner groups keep their four places: 一万〇〇〇一.
-            out.extend(std::iter::repeat_n('〇', 4usize.saturating_sub(s.chars().count())));
+            out.extend(std::iter::repeat_n(
+                '〇',
+                4usize.saturating_sub(s.chars().count()),
+            ));
         }
         out.push_str(&s);
         out.extend(mark);
@@ -191,8 +221,12 @@ pub(crate) fn korean_digital(n: u32) -> String {
     digits(n, &KOREAN.digits)
 }
 
-const KO_ONES: [&str; 10] = ["", "하나", "둘", "셋", "넷", "다섯", "여섯", "일곱", "여덟", "아홉"];
-const KO_TENS: [&str; 10] = ["", "열", "스물", "서른", "마흔", "쉰", "예순", "일흔", "여든", "아흔"];
+const KO_ONES: [&str; 10] = [
+    "", "하나", "둘", "셋", "넷", "다섯", "여섯", "일곱", "여덟", "아홉",
+];
+const KO_TENS: [&str; 10] = [
+    "", "열", "스물", "서른", "마흔", "쉰", "예순", "일흔", "여든", "아흔",
+];
 
 /// Native Korean numbers: 하나, 둘, 셋 … 열, 열하나 … 아흔아홉 (decimal from 100 on).
 pub(crate) fn korean_legal(n: u32) -> String {
@@ -200,7 +234,11 @@ pub(crate) fn korean_legal(n: u32) -> String {
         return n.to_string();
     }
     let (t, o) = ((n / 10) as usize, (n % 10) as usize);
-    format!("{}{}", KO_TENS.get(t).copied().unwrap_or(""), KO_ONES.get(o).copied().unwrap_or(""))
+    format!(
+        "{}{}",
+        KO_TENS.get(t).copied().unwrap_or(""),
+        KO_ONES.get(o).copied().unwrap_or("")
+    )
 }
 
 /// One ideograph per decimal digit: 一, 一〇, 一〇一.
@@ -209,11 +247,20 @@ pub(crate) fn ideograph_digital(n: u32) -> String {
 }
 
 fn digits(n: u32, set: &[char; 10]) -> String {
-    n.to_string().bytes().map(|b| set.get(b.saturating_sub(b'0') as usize).copied().unwrap_or('?')).collect()
+    n.to_string()
+        .bytes()
+        .map(|b| {
+            set.get(b.saturating_sub(b'0') as usize)
+                .copied()
+                .unwrap_or('?')
+        })
+        .collect()
 }
 
 const STEMS: [char; 10] = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
-const BRANCHES: [char; 12] = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+const BRANCHES: [char; 12] = [
+    '子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥',
+];
 
 /// The ten heavenly stems: 甲, 乙, 丙 … 癸.
 pub(crate) fn ideograph_traditional(n: u32) -> String {
@@ -231,12 +278,18 @@ pub(crate) fn ideograph_zodiac_traditional(n: u32) -> String {
         return n.to_string();
     }
     let i = (n - 1) as usize;
-    [STEMS.get(i % 10), BRANCHES.get(i % 12)].into_iter().flatten().collect()
+    [STEMS.get(i % 10), BRANCHES.get(i % 12)]
+        .into_iter()
+        .flatten()
+        .collect()
 }
 
 /// The `n`th (1-based) item of a sequence, or decimal past its end.
 fn nth(set: &[char], n: u32) -> String {
-    n.checked_sub(1).and_then(|i| set.get(i as usize)).map(|c| c.to_string()).unwrap_or_else(|| n.to_string())
+    n.checked_sub(1)
+        .and_then(|i| set.get(i as usize))
+        .map(|c| c.to_string())
+        .unwrap_or_else(|| n.to_string())
 }
 
 /// Code points `first..` enclosing 1 to `count`, decimal beyond.
@@ -276,10 +329,18 @@ pub(crate) fn ideograph_enclosed_circle(n: u32) -> String {
 
 /// Full-width digits: １, ２ … １０.
 pub(crate) fn decimal_full_width(n: u32) -> String {
-    n.to_string().chars().map(|c| c.to_digit(10).and_then(|d| char::from_u32(0xFF10 + d)).unwrap_or(c)).collect()
+    n.to_string()
+        .chars()
+        .map(|c| {
+            c.to_digit(10)
+                .and_then(|d| char::from_u32(0xFF10 + d))
+                .unwrap_or(c)
+        })
+        .collect()
 }
 
-const AIUEO: &str = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+const AIUEO: &str =
+    "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
 const AIUEO_HALF: &str = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜｦﾝ";
 const IROHA: &str = "イロハニホヘトチリヌルヲワカヨタレソツネナラムウヰノオクヤマケフコエテアサキユメミシヱヒモセス";
 const IROHA_HALF: &str = "ｲﾛﾊﾆﾎﾍﾄﾁﾘﾇﾙｦﾜｶﾖﾀﾚｿﾂﾈﾅﾗﾑｳヰﾉｵｸﾔﾏｹﾌｺｴﾃｱｻｷﾕﾒﾐｼヱﾋﾓｾｽ";
@@ -287,7 +348,10 @@ const GANADA: &str = "가나다라마바사아자차카타파하";
 const CHOSUNG: &str = "ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ";
 
 fn nth_of(set: &str, n: u32) -> String {
-    n.checked_sub(1).and_then(|i| set.chars().nth(i as usize)).map(|c| c.to_string()).unwrap_or_else(|| n.to_string())
+    n.checked_sub(1)
+        .and_then(|i| set.chars().nth(i as usize))
+        .map(|c| c.to_string())
+        .unwrap_or_else(|| n.to_string())
 }
 
 /// Half-width katakana in gojūon order: ｱ, ｲ, ｳ …
@@ -327,47 +391,173 @@ mod tests {
     #[test]
     fn chinese_counting_systems() {
         let c = |n| chinese_counting(n);
-        assert_eq!([c(1), c(2), c(3), c(10), c(11), c(20), c(21), c(99)], ["一", "二", "三", "十", "十一", "二十", "二十一", "九十九"]);
+        assert_eq!(
+            [c(1), c(2), c(3), c(10), c(11), c(20), c(21), c(99)],
+            ["一", "二", "三", "十", "十一", "二十", "二十一", "九十九"]
+        );
         assert_eq!([c(100), c(101), c(1000)], ["一〇〇", "一〇一", "一〇〇〇"]);
         let t = |n| chinese_counting_thousand(n);
         assert_eq!(
-            [t(10), t(11), t(20), t(101), t(110), t(111), t(1000), t(1010)],
-            ["十", "十一", "二十", "一百零一", "一百一十", "一百一十一", "一千", "一千零一十"]
+            [
+                t(10),
+                t(11),
+                t(20),
+                t(101),
+                t(110),
+                t(111),
+                t(1000),
+                t(1010)
+            ],
+            [
+                "十",
+                "十一",
+                "二十",
+                "一百零一",
+                "一百一十",
+                "一百一十一",
+                "一千",
+                "一千零一十"
+            ]
         );
-        assert_eq!([t(10_000), t(10_001), t(100_100), t(1_000_000), t(100_000_001)], ["一万", "一万零一", "十万零一百", "一百万", "一亿零一"]);
+        assert_eq!(
+            [
+                t(10_000),
+                t(10_001),
+                t(100_100),
+                t(1_000_000),
+                t(100_000_001)
+            ],
+            ["一万", "一万零一", "十万零一百", "一百万", "一亿零一"]
+        );
         assert_eq!(t(u32::MAX), "四十二亿九千四百九十六万七千二百九十五");
         let l = |n| chinese_legal_simplified(n);
-        assert_eq!([l(1), l(3), l(10), l(11), l(101), l(1000)], ["壹", "叁", "壹拾", "壹拾壹", "壹佰零壹", "壹仟"]);
-        assert_eq!([taiwanese_counting_thousand(10_001), ideograph_legal_traditional(20)], ["一萬零一", "貳拾"]);
-        assert_eq!([ideograph_digital(10), ideograph_digital(101)], ["一〇", "一〇一"]);
+        assert_eq!(
+            [l(1), l(3), l(10), l(11), l(101), l(1000)],
+            ["壹", "叁", "壹拾", "壹拾壹", "壹佰零壹", "壹仟"]
+        );
+        assert_eq!(
+            [
+                taiwanese_counting_thousand(10_001),
+                ideograph_legal_traditional(20)
+            ],
+            ["一萬零一", "貳拾"]
+        );
+        assert_eq!(
+            [ideograph_digital(10), ideograph_digital(101)],
+            ["一〇", "一〇一"]
+        );
     }
 
     #[test]
     fn japanese_and_korean() {
         let j = |n| japanese_counting(n);
-        assert_eq!([j(10), j(11), j(20), j(101), j(1000), j(10_000), j(10_001)], ["十", "十一", "二十", "百一", "千", "一万", "一万一"]);
+        assert_eq!(
+            [j(10), j(11), j(20), j(101), j(1000), j(10_000), j(10_001)],
+            ["十", "十一", "二十", "百一", "千", "一万", "一万一"]
+        );
         assert_eq!([japanese_legal(10), japanese_legal(1000)], ["壱拾", "壱阡"]);
         let d = |n| japanese_digital_ten_thousand(n);
-        assert_eq!([d(12), d(10_000), d(12_345), d(100_000_000)], ["一二", "一万〇〇〇〇", "一万二三四五", "一億〇〇〇〇万〇〇〇〇"]);
-        assert_eq!([korean_counting(11), korean_counting(20), korean_counting(101)], ["십일", "이십", "백일"]);
         assert_eq!(
-            [korean_digital(10), korean_legal(1), korean_legal(11), korean_legal(20), korean_legal(100)],
+            [d(12), d(10_000), d(12_345), d(100_000_000)],
+            [
+                "一二",
+                "一万〇〇〇〇",
+                "一万二三四五",
+                "一億〇〇〇〇万〇〇〇〇"
+            ]
+        );
+        assert_eq!(
+            [
+                korean_counting(11),
+                korean_counting(20),
+                korean_counting(101)
+            ],
+            ["십일", "이십", "백일"]
+        );
+        assert_eq!(
+            [
+                korean_digital(10),
+                korean_legal(1),
+                korean_legal(11),
+                korean_legal(20),
+                korean_legal(100)
+            ],
             ["일영", "하나", "열하나", "스물", "100"]
         );
     }
 
     #[test]
     fn sequences_and_enclosed_numbers() {
-        assert_eq!([ideograph_traditional(1), ideograph_traditional(10), ideograph_traditional(11)], ["甲", "癸", "11"]);
-        assert_eq!([ideograph_zodiac(1), ideograph_zodiac(12), ideograph_zodiac(13)], ["子", "亥", "13"]);
-        assert_eq!([ideograph_zodiac_traditional(1), ideograph_zodiac_traditional(11), ideograph_zodiac_traditional(60)], ["甲子", "甲戌", "癸亥"]);
-        assert_eq!([decimal_enclosed_circle(1), decimal_enclosed_circle(20), decimal_enclosed_circle(21)], ["①", "⑳", "21"]);
-        assert_eq!([decimal_enclosed_circle_chinese(10), decimal_enclosed_circle_chinese(11)], ["⑩", "11"]);
-        assert_eq!([decimal_enclosed_fullstop(1), decimal_enclosed_paren(20), ideograph_enclosed_circle(1)], ["⒈", "⒇", "㊀"]);
+        assert_eq!(
+            [
+                ideograph_traditional(1),
+                ideograph_traditional(10),
+                ideograph_traditional(11)
+            ],
+            ["甲", "癸", "11"]
+        );
+        assert_eq!(
+            [
+                ideograph_zodiac(1),
+                ideograph_zodiac(12),
+                ideograph_zodiac(13)
+            ],
+            ["子", "亥", "13"]
+        );
+        assert_eq!(
+            [
+                ideograph_zodiac_traditional(1),
+                ideograph_zodiac_traditional(11),
+                ideograph_zodiac_traditional(60)
+            ],
+            ["甲子", "甲戌", "癸亥"]
+        );
+        assert_eq!(
+            [
+                decimal_enclosed_circle(1),
+                decimal_enclosed_circle(20),
+                decimal_enclosed_circle(21)
+            ],
+            ["①", "⑳", "21"]
+        );
+        assert_eq!(
+            [
+                decimal_enclosed_circle_chinese(10),
+                decimal_enclosed_circle_chinese(11)
+            ],
+            ["⑩", "11"]
+        );
+        assert_eq!(
+            [
+                decimal_enclosed_fullstop(1),
+                decimal_enclosed_paren(20),
+                ideograph_enclosed_circle(1)
+            ],
+            ["⒈", "⒇", "㊀"]
+        );
         assert_eq!(decimal_full_width(10), "１０");
-        assert_eq!([aiueo_full_width(1), aiueo_full_width(46), aiueo_full_width(47), aiueo(2)], ["ア", "ン", "47", "ｲ"]);
-        assert_eq!([iroha_full_width(1), iroha_full_width(47), iroha(3)], ["イ", "ス", "ﾊ"]);
+        assert_eq!(
+            [
+                aiueo_full_width(1),
+                aiueo_full_width(46),
+                aiueo_full_width(47),
+                aiueo(2)
+            ],
+            ["ア", "ン", "47", "ｲ"]
+        );
+        assert_eq!(
+            [iroha_full_width(1), iroha_full_width(47), iroha(3)],
+            ["イ", "ス", "ﾊ"]
+        );
         assert_eq!([ganada(1), chosung(14), ganada(0)], ["가", "ㅎ", "0"]);
-        assert_eq!([AIUEO.chars().count(), AIUEO_HALF.chars().count(), IROHA.chars().count(), IROHA_HALF.chars().count()], [46, 46, 47, 47]);
+        assert_eq!(
+            [
+                AIUEO.chars().count(),
+                AIUEO_HALF.chars().count(),
+                IROHA.chars().count(),
+                IROHA_HALF.chars().count()
+            ],
+            [46, 46, 47, 47]
+        );
     }
 }

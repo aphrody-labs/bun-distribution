@@ -256,14 +256,18 @@ pub fn is_depot_eligible(depot: &DepotRecord, selection: &DepotSelection) -> boo
     }
 
     if !depot.operating_systems.is_empty()
-        && !depot.operating_systems.iter().any(|value| value.trim() == selection.operating_system)
+        && !depot
+            .operating_systems
+            .iter()
+            .any(|value| value.trim() == selection.operating_system)
     {
         return false;
     }
 
-    if let (Some(required), Some(selected)) =
-        (depot.architecture.as_deref(), selection.architecture.as_deref())
-        && !required.trim().is_empty()
+    if let (Some(required), Some(selected)) = (
+        depot.architecture.as_deref(),
+        selection.architecture.as_deref(),
+    ) && !required.trim().is_empty()
         && required.trim() != selected
     {
         return false;
@@ -288,7 +292,11 @@ pub fn select_depot_ids(
     check_count("depots", depots.len(), limits.max_depots)?;
 
     if !selection.explicit_depots.is_empty() {
-        check_count("explicitDepots", selection.explicit_depots.len(), limits.max_depots)?;
+        check_count(
+            "explicitDepots",
+            selection.explicit_depots.len(),
+            limits.max_depots,
+        )?;
         let mut seen = HashSet::new();
         return Ok(selection
             .explicit_depots
@@ -307,12 +315,19 @@ pub fn select_depot_ids(
 
 /// Read a depot's manifest GID for a branch.
 pub fn manifest_id_for_branch(depot: &DepotRecord, branch: &str) -> u64 {
-    depot.manifests.get(branch).map(|id| id.0).unwrap_or(INVALID_MANIFEST)
+    depot
+        .manifests
+        .get(branch)
+        .map(|id| id.0)
+        .unwrap_or(INVALID_MANIFEST)
 }
 
 /// Return the source app for a proxied depot with no local manifests.
 pub fn proxy_app_id(depot: &DepotRecord) -> Option<u32> {
-    (!depot.has_manifest_section).then_some(depot.proxy_app_id).flatten().filter(|id| *id != 0)
+    (!depot.has_manifest_section)
+        .then_some(depot.proxy_app_id)
+        .flatten()
+        .filter(|id| *id != 0)
 }
 
 /// Return whether raw Steam flags describe a directory.
@@ -330,8 +345,16 @@ pub fn plan_manifest_application(
     existing_paths: &[ExistingPath],
     limits: PlanningLimits,
 ) -> Result<CollisionPlan, PlanningError> {
-    check_count("manifestEntries", entries.len(), limits.max_manifest_entries)?;
-    check_count("existingPaths", existing_paths.len(), limits.max_existing_paths)?;
+    check_count(
+        "manifestEntries",
+        entries.len(),
+        limits.max_manifest_entries,
+    )?;
+    check_count(
+        "existingPaths",
+        existing_paths.len(),
+        limits.max_existing_paths,
+    )?;
 
     let mut existing = HashMap::with_capacity(existing_paths.len());
     for item in existing_paths {
@@ -352,10 +375,10 @@ pub fn plan_manifest_application(
             existing.get(&path).and_then(|kind| match kind {
                 ExistingPathKind::Directory if !manifest_is_directory => {
                     Some(CollisionReason::DirectoryOnDisk)
-                },
+                }
                 ExistingPathKind::File if manifest_is_directory => {
                     Some(CollisionReason::FileOnDisk)
-                },
+                }
                 _ => None,
             })
         };
@@ -376,7 +399,11 @@ pub fn plan_manifest_application(
         }
     }
 
-    Ok(CollisionPlan { inspected_entries: entries.len(), collisions, omitted_collisions })
+    Ok(CollisionPlan {
+        inspected_entries: entries.len(),
+        collisions,
+        omitted_collisions,
+    })
 }
 
 fn normalize_path(path: &str) -> String {
@@ -385,14 +412,22 @@ fn normalize_path(path: &str) -> String {
 
 fn check_count(field: &'static str, actual: usize, limit: usize) -> Result<(), PlanningError> {
     if actual > limit {
-        return Err(PlanningError::TooManyItems { field, actual, limit });
+        return Err(PlanningError::TooManyItems {
+            field,
+            actual,
+            limit,
+        });
     }
     Ok(())
 }
 
 fn check_path(field: &'static str, path: &str, limit: usize) -> Result<(), PlanningError> {
     if path.len() > limit {
-        return Err(PlanningError::PathTooLong { field, actual: path.len(), limit });
+        return Err(PlanningError::PathTooLong {
+            field,
+            actual: path.len(),
+            limit,
+        });
     }
     Ok(())
 }
@@ -460,20 +495,39 @@ mod tests {
     #[test]
     fn collision_plan_normalizes_paths_and_caps_output() {
         let entries = [
-            ManifestEntry { path: String::new(), flags: 0, size: 0, chunk_count: 0 },
+            ManifestEntry {
+                path: String::new(),
+                flags: 0,
+                size: 0,
+                chunk_count: 0,
+            },
             ManifestEntry {
                 path: "data\\packs".to_owned(),
                 flags: STEAM_FLAG_DIRECTORY,
                 size: 0,
                 chunk_count: 0,
             },
-            ManifestEntry { path: "game.exe".to_owned(), flags: 0, size: 12, chunk_count: 1 },
+            ManifestEntry {
+                path: "game.exe".to_owned(),
+                flags: 0,
+                size: 12,
+                chunk_count: 1,
+            },
         ];
         let existing = [
-            ExistingPath { path: "data/packs".to_owned(), kind: ExistingPathKind::File },
-            ExistingPath { path: "game.exe".to_owned(), kind: ExistingPathKind::Directory },
+            ExistingPath {
+                path: "data/packs".to_owned(),
+                kind: ExistingPathKind::File,
+            },
+            ExistingPath {
+                path: "game.exe".to_owned(),
+                kind: ExistingPathKind::Directory,
+            },
         ];
-        let limits = PlanningLimits { max_collisions: 2, ..PlanningLimits::default() };
+        let limits = PlanningLimits {
+            max_collisions: 2,
+            ..PlanningLimits::default()
+        };
 
         let plan = plan_manifest_application(2799861, &entries, &existing, limits).unwrap();
         assert_eq!(plan.inspected_entries, 3);
@@ -485,12 +539,23 @@ mod tests {
 
     #[test]
     fn rejects_oversized_input_before_planning() {
-        let entries =
-            [ManifestEntry { path: "game.exe".to_owned(), flags: 0, size: 12, chunk_count: 1 }];
-        let limits = PlanningLimits { max_manifest_entries: 0, ..PlanningLimits::default() };
+        let entries = [ManifestEntry {
+            path: "game.exe".to_owned(),
+            flags: 0,
+            size: 12,
+            chunk_count: 1,
+        }];
+        let limits = PlanningLimits {
+            max_manifest_entries: 0,
+            ..PlanningLimits::default()
+        };
         assert!(matches!(
             plan_manifest_application(1, &entries, &[], limits),
-            Err(PlanningError::TooManyItems { field: "manifestEntries", actual: 1, limit: 0 })
+            Err(PlanningError::TooManyItems {
+                field: "manifestEntries",
+                actual: 1,
+                limit: 0
+            })
         ));
     }
 

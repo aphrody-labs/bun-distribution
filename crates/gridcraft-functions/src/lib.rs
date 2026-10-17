@@ -9,7 +9,14 @@
 //! Special forms that need references, laziness or hidden-row information (ROW, OFFSET,
 //! INDIRECT, LET, LAMBDA, SUBTOTAL, AGGREGATE, TEXT…) are evaluated by the host; this crate
 //! exports [`aggregate_values`] for SUBTOTAL/AGGREGATE.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use std::collections::HashMap;
@@ -90,11 +97,17 @@ pub struct Arg {
 impl Arg {
     /// A literal (non-reference) argument.
     pub fn val(value: impl Into<Value>) -> Arg {
-        Arg { value: value.into(), from_ref: false }
+        Arg {
+            value: value.into(),
+            from_ref: false,
+        }
     }
     /// An argument that came from a cell or range reference.
     pub fn reference(value: impl Into<Value>) -> Arg {
-        Arg { value: value.into(), from_ref: true }
+        Arg {
+            value: value.into(),
+            from_ref: true,
+        }
     }
 }
 
@@ -108,7 +121,13 @@ pub trait Ctx {
     /// For the database functions: whether the formula in the criteria cell at (`row`, `col`) holds
     /// for `record` (a row of `db` below its labels). `None` when that cell holds no formula or the
     /// criteria didn't come from a reference.
-    fn computed_criterion(&mut self, _row: usize, _col: usize, _db: &Array, _record: usize) -> Option<bool> {
+    fn computed_criterion(
+        &mut self,
+        _row: usize,
+        _col: usize,
+        _db: &Array,
+        _record: usize,
+    ) -> Option<bool> {
         None
     }
 }
@@ -154,7 +173,11 @@ pub struct FnSpec {
 
 impl std::fmt::Debug for FnSpec {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("FnSpec").field("name", &self.name).field("min_args", &self.min_args).field("max_args", &self.max_args).finish()
+        f.debug_struct("FnSpec")
+            .field("name", &self.name)
+            .field("min_args", &self.min_args)
+            .field("max_args", &self.max_args)
+            .finish()
     }
 }
 
@@ -242,16 +265,28 @@ mod tests {
         let mut seen = std::collections::HashSet::new();
         for s in all() {
             assert!(seen.insert(s.name), "duplicate function {}", s.name);
-            assert_eq!(s.name, s.name.to_ascii_uppercase(), "{} not upper-case", s.name);
+            assert_eq!(
+                s.name,
+                s.name.to_ascii_uppercase(),
+                "{} not upper-case",
+                s.name
+            );
             assert!(s.min_args <= s.max_args, "{} arity", s.name);
-            assert!(!s.description.is_empty() && !s.signature.is_empty(), "{} docs", s.name);
+            assert!(
+                !s.description.is_empty() && !s.signature.is_empty(),
+                "{} docs",
+                s.name
+            );
         }
         println!("registered functions: {}", all().len());
         assert!(all().len() >= 400);
         assert!(lookup("_xlfn._xlws.sort").is_some_and(|s| s.name == "SORT"));
         assert!(lookup("nosuchfn").is_none());
         for s in all() {
-            assert!(lookup(&format!("_xlfn.{}", s.name.to_ascii_lowercase())).is_some_and(|x| x.name == s.name));
+            assert!(
+                lookup(&format!("_xlfn.{}", s.name.to_ascii_lowercase()))
+                    .is_some_and(|x| x.name == s.name)
+            );
         }
     }
 
@@ -260,8 +295,19 @@ mod tests {
         use crate::util::testutil::*;
         use gridcraft_core::{Array, CellError};
         let mixed = Value::from(
-            Array::new(2, 3, vec![Value::Number(1.0), Value::from("x"), Value::Empty, Value::Bool(true), Value::Number(-1e300), Value::Number(0.5)])
-                .unwrap(),
+            Array::new(
+                2,
+                3,
+                vec![
+                    Value::Number(1.0),
+                    Value::from("x"),
+                    Value::Empty,
+                    Value::Bool(true),
+                    Value::Number(-1e300),
+                    Value::Number(0.5),
+                ],
+            )
+            .unwrap(),
         );
         let patterns: Vec<Arg> = vec![
             n(0.0),
@@ -288,7 +334,9 @@ mod tests {
                     let _ = call(spec, &args, &mut TestCtx::default());
                 }
                 // Mixed: cycle through patterns.
-                let args: Vec<Arg> = (0..count).map(|i| patterns[(i * 7 + count) % patterns.len()].clone()).collect();
+                let args: Vec<Arg> = (0..count)
+                    .map(|i| patterns[(i * 7 + count) % patterns.len()].clone())
+                    .collect();
                 let _ = call(spec, &args, &mut TestCtx::default());
             }
         }

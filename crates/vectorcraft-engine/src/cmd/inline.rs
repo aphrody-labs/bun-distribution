@@ -39,7 +39,9 @@ fn insert_inline(s: &mut Session, p: &Value) -> Result<Value> {
     let tool = s.tool_options();
     let editing = tool.get("editing").and_then(Value::as_u64).map(NodeId);
     let id = match p.get("id") {
-        None | Some(Value::Null) => editing.ok_or_else(|| bad(C, "give `id` (no text is being edited)"))?,
+        None | Some(Value::Null) => {
+            editing.ok_or_else(|| bad(C, "give `id` (no text is being edited)"))?
+        }
         Some(_) => id_param(p, "id").ok_or_else(|| bad(C, "`id` must be a node id"))?,
     };
     let doc = &s.doc()?.doc;
@@ -50,21 +52,31 @@ fn insert_inline(s: &mut Session, p: &Value) -> Result<Value> {
     let from_tool = editing == Some(id);
     let (a, b) = match p.get("at") {
         None | Some(Value::Null) if from_tool => {
-            let g = |k: &str| tool.get(k).and_then(Value::as_u64).map_or(len, |v| (v as usize).min(len));
+            let g = |k: &str| {
+                tool.get(k)
+                    .and_then(Value::as_u64)
+                    .map_or(len, |v| (v as usize).min(len))
+            };
             let (x, y) = (g("start"), g("end"));
             (x.min(y), x.max(y))
         }
         None | Some(Value::Null) => (len, len),
         Some(v) => {
-            let at = v.as_u64().ok_or_else(|| bad(C, "`at` must be a byte offset"))?.min(len as u64) as usize;
+            let at = v
+                .as_u64()
+                .ok_or_else(|| bad(C, "`at` must be a byte offset"))?
+                .min(len as u64) as usize;
             (at, at)
         }
     };
     let symbol = match str_param(p, "symbol") {
         Some(n) if doc.symbols.iter().any(|s| s.name == n) => n.to_string(),
         Some(n) => return Err(bad(C, format!("no symbol named `{n}`"))),
-        None if p.get("symbol").is_some_and(|v| !v.is_null()) => return Err(bad(C, "`symbol` must be a symbol name")),
-        None => current_symbol(doc).ok_or_else(|| EngineError::Other("the document has no symbols".into()))?,
+        None if p.get("symbol").is_some_and(|v| !v.is_null()) => {
+            return Err(bad(C, "`symbol` must be a symbol name"));
+        }
+        None => current_symbol(doc)
+            .ok_or_else(|| EngineError::Other("the document has no symbols".into()))?,
     };
     let scale = match p.get("scale") {
         None | Some(Value::Null) => 1.0,
@@ -75,7 +87,10 @@ fn insert_inline(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let shift = match p.get("shift") {
         None | Some(Value::Null) => 0.0,
-        Some(v) => v.as_f64().filter(|k| k.is_finite() && k.abs() <= 1e5).ok_or_else(|| bad(C, "`shift` must be a number of points"))?,
+        Some(v) => v
+            .as_f64()
+            .filter(|k| k.is_finite() && k.abs() <= 1e5)
+            .ok_or_else(|| bad(C, "`shift` must be a number of points"))?,
     };
     // A typing session ends first: the insertion is a step of its own.
     let typing = tool.get("typing").and_then(Value::as_bool) == Some(true);
@@ -84,9 +99,15 @@ fn insert_inline(s: &mut Session, p: &Value) -> Result<Value> {
         s.commit_interaction()?;
     }
     let caret = s.edit("Insert Inline Symbol", |d, _| {
-        let mut art = InlineArt { scale, baseline_shift: shift, ..InlineArt::new(symbol.clone()) };
+        let mut art = InlineArt {
+            scale,
+            baseline_shift: shift,
+            ..InlineArt::new(symbol.clone())
+        };
         art.bounds = d.symbol_art_bounds(&symbol);
-        let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else { return Err(EngineError::NoNode(id)) };
+        let Some(NodeKind::Text(t)) = d.node_mut(id).map(|n| &mut n.kind) else {
+            return Err(EngineError::NoNode(id));
+        };
         let style = edit::insertion_style(&t.runs, a, b);
         let caret = edit::replace_range_styled(&mut t.runs, a, b, &[TextRun::inline(art, style)]);
         refresh_bounds(t);

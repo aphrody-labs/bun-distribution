@@ -240,12 +240,19 @@ mod tests {
                 let decoded = decode(0x5e000420 | (imm5 << 16)).unwrap();
                 let location = A64LocationDescriptor::new(0x1000, 0, false);
                 let mut block = Block::new(location.to_location());
-                let mut visitor = TranslatorVisitor::new(&mut block, location, TranslationOptions::default());
+                let mut visitor =
+                    TranslatorVisitor::new(&mut block, location, TranslationOptions::default());
                 assert!(visitor.dispatch(&decoded));
                 drop(visitor);
                 assert_eq!(block.instructions.last().unwrap().opcode, Opcode::A64SetQ);
-                assert!(block.instructions.iter().any(|i| i.opcode == Opcode::ZeroExtendLongToQuad));
-                assert!(!block.instructions.iter().any(|i| matches!(i.opcode, Opcode::A64SetS | Opcode::A64SetD)));
+                assert!(block
+                    .instructions
+                    .iter()
+                    .any(|i| i.opcode == Opcode::ZeroExtendLongToQuad));
+                assert!(!block
+                    .instructions
+                    .iter()
+                    .any(|i| matches!(i.opcode, Opcode::A64SetS | Opcode::A64SetD)));
             }
         }
     }
@@ -254,9 +261,13 @@ mod tests {
     fn zero_immediate_is_reserved_in_scalar_dup() {
         let location = A64LocationDescriptor::new(0x1000, 0, false);
         let mut block = Block::new(location.to_location());
-        let mut visitor = TranslatorVisitor::new(&mut block, location, TranslationOptions::default());
+        let mut visitor =
+            TranslatorVisitor::new(&mut block, location, TranslationOptions::default());
         assert!(!visitor.dispatch(&decode(0x5e000420).unwrap()));
         drop(visitor);
-        assert!(!block.instructions.iter().any(|i| i.opcode == Opcode::A64SetQ));
+        assert!(!block
+            .instructions
+            .iter()
+            .any(|i| i.opcode == Opcode::A64SetQ));
     }
 }

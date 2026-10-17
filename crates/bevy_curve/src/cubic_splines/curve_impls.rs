@@ -1,7 +1,7 @@
 use super::{CubicSegment, RationalSegment};
 use crate::{
-    derivatives::{SampleDerivative, SampleTwoDerivatives},
     Curve, Interval,
+    derivatives::{SampleDerivative, SampleTwoDerivatives},
 };
 use bevy_math::common_traits::{VectorSpace, WithDerivative, WithTwoDerivatives};
 

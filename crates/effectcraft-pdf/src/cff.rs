@@ -292,7 +292,10 @@ fn dict(d: &[u8]) -> Vec<(u16, Vec<f64>)> {
                 i += 1;
             }
             28 => {
-                ops.push(i16::from_be_bytes([*d.get(i + 1).unwrap_or(&0), *d.get(i + 2).unwrap_or(&0)]) as f64);
+                ops.push(i16::from_be_bytes([
+                    *d.get(i + 1).unwrap_or(&0),
+                    *d.get(i + 2).unwrap_or(&0),
+                ]) as f64);
                 i += 3;
             }
             29 => {
@@ -392,13 +395,21 @@ impl Cff {
             _ => [0.001, 0.0, 0.0, 0.001, 0.0, 0.0],
         };
         let private = |pd: &[(u16, Vec<f64>)]| -> (Vec<std::ops::Range<usize>>, (f64, f64)) {
-            let Some(pv) = get(pd, 18).filter(|v| v.len() == 2) else { return (vec![], (0.0, 0.0)) };
+            let Some(pv) = get(pd, 18).filter(|v| v.len() == 2) else {
+                return (vec![], (0.0, 0.0));
+            };
             let (size, off) = (pv[0] as usize, pv[1] as usize);
-            let Some(bytes) = d.get(off..off + size) else { return (vec![], (0.0, 0.0)) };
+            let Some(bytes) = d.get(off..off + size) else {
+                return (vec![], (0.0, 0.0));
+            };
             let pr = dict(bytes);
             let nominal = get(&pr, 21).and_then(|v| v.first().copied()).unwrap_or(0.0);
             let default = get(&pr, 20).and_then(|v| v.first().copied()).unwrap_or(0.0);
-            let subrs = get(&pr, 19).and_then(|v| v.first().copied()).and_then(|s| index(d, off + s as usize)).map(|x| x.0).unwrap_or_default();
+            let subrs = get(&pr, 19)
+                .and_then(|v| v.first().copied())
+                .and_then(|s| index(d, off + s as usize))
+                .map(|x| x.0)
+                .unwrap_or_default();
             (subrs, (default, nominal))
         };
         let mut lsubrs = vec![];
@@ -426,12 +437,29 @@ impl Cff {
             lsubrs.push(vec![]);
             widths.push((0.0, 0.0));
         }
-        let charset = match get(&top, 15).and_then(|v| v.first().copied()).unwrap_or(0.0) as usize {
+        let charset = match get(&top, 15)
+            .and_then(|v| v.first().copied())
+            .unwrap_or(0.0) as usize
+        {
             0..=2 => (0..n as u16).collect(),
             off => read_charset(d, off, n).unwrap_or_else(|| (0..n as u16).collect()),
         };
-        let mut cff = Cff { data: data.to_vec(), charstrings, gsubrs, lsubrs, widths, fdselect, charset, strings, cid, font_matrix, encoding: [0; 256] };
-        let enc_off = get(&top, 16).and_then(|v| v.first().copied()).unwrap_or(0.0) as usize;
+        let mut cff = Cff {
+            data: data.to_vec(),
+            charstrings,
+            gsubrs,
+            lsubrs,
+            widths,
+            fdselect,
+            charset,
+            strings,
+            cid,
+            font_matrix,
+            encoding: [0; 256],
+        };
+        let enc_off = get(&top, 16)
+            .and_then(|v| v.first().copied())
+            .unwrap_or(0.0) as usize;
         cff.encoding = cff.read_encoding(enc_off);
         Some(cff)
     }
@@ -471,7 +499,9 @@ impl Cff {
                 p += 1;
                 let mut g = 1u16;
                 for _ in 0..n {
-                    let (Some(&first), Some(&left)) = (d.get(p), d.get(p + 1)) else { break };
+                    let (Some(&first), Some(&left)) = (d.get(p), d.get(p + 1)) else {
+                        break;
+                    };
                     for k in 0..=left as usize {
                         if let Some(e) = enc.get_mut(first as usize + k) {
                             *e = g;
@@ -487,7 +517,9 @@ impl Cff {
             let n = *d.get(p).unwrap_or(&0) as usize;
             p += 1;
             for _ in 0..n {
-                let (Some(&c), Some(&a), Some(&b)) = (d.get(p), d.get(p + 1), d.get(p + 2)) else { break };
+                let (Some(&c), Some(&a), Some(&b)) = (d.get(p), d.get(p + 1), d.get(p + 2)) else {
+                    break;
+                };
                 let sid = u16::from_be_bytes([a, b]);
                 if let Some(g) = self.charset.iter().position(|s| *s == sid) {
                     enc[c as usize] = g as u16;
@@ -520,7 +552,10 @@ impl Cff {
         if self.cid {
             return None;
         }
-        self.charset.iter().position(|&sid| self.sid_name(sid) == Some(name)).map(|g| g as u16)
+        self.charset
+            .iter()
+            .position(|&sid| self.sid_name(sid) == Some(name))
+            .map(|g| g as u16)
     }
 
     /// A glyph by CID (CID-keyed fonts; name-keyed fonts take the CID as the glyph index).
@@ -528,7 +563,10 @@ impl Cff {
         if !self.cid {
             return ((cid as usize) < self.charstrings.len()).then_some(cid);
         }
-        self.charset.iter().position(|&c| c == cid).map(|g| g as u16)
+        self.charset
+            .iter()
+            .position(|&c| c == cid)
+            .map(|g| g as u16)
     }
 
     /// A glyph's outline in glyph space (`font_matrix` maps it to text space) and its advance.
@@ -536,8 +574,20 @@ impl Cff {
         let r = self.charstrings.get(gid as usize)?.clone();
         let fd = self.fdselect.get(gid as usize).copied().unwrap_or(0) as usize;
         let fd = fd.min(self.lsubrs.len() - 1);
-        let mut st =
-            T2 { cff: self, fd, path: BezPath::new(), x: 0.0, y: 0.0, stack: vec![], stems: 0, width: None, open: false, done: false, depth: 0, seac: None };
+        let mut st = T2 {
+            cff: self,
+            fd,
+            path: BezPath::new(),
+            x: 0.0,
+            y: 0.0,
+            stack: vec![],
+            stems: 0,
+            width: None,
+            open: false,
+            done: false,
+            depth: 0,
+            seac: None,
+        };
         st.run(&self.data[r]);
         if st.open {
             st.path.close_path();
@@ -549,7 +599,11 @@ impl Cff {
         let mut path = st.path;
         // endchar seac: base and accent glyphs by standard code.
         if let Some((adx, ady, b, a)) = st.seac {
-            let find = |code: u8| crate::encoding::Base::Standard.name(code).and_then(|n| self.gid_by_name(&n));
+            let find = |code: u8| {
+                crate::encoding::Base::Standard
+                    .name(code)
+                    .and_then(|n| self.gid_by_name(&n))
+            };
             if let Some((bp, _)) = find(b).and_then(|g| self.outline(g)) {
                 path.extend(bp);
             }
@@ -565,7 +619,8 @@ fn read_charset(d: &[u8], off: usize, n: usize) -> Option<Vec<u16>> {
     let fmt = *d.get(off)?;
     let mut out = vec![0u16];
     let mut p = off + 1;
-    let u16at = |p: usize| -> Option<u16> { Some(u16::from_be_bytes([*d.get(p)?, *d.get(p + 1)?])) };
+    let u16at =
+        |p: usize| -> Option<u16> { Some(u16::from_be_bytes([*d.get(p)?, *d.get(p + 1)?])) };
     while out.len() < n {
         match fmt {
             0 => {
@@ -574,7 +629,11 @@ fn read_charset(d: &[u8], off: usize, n: usize) -> Option<Vec<u16>> {
             }
             1 | 2 => {
                 let first = u16at(p)?;
-                let left = if fmt == 1 { *d.get(p + 2)? as u16 } else { u16at(p + 2)? };
+                let left = if fmt == 1 {
+                    *d.get(p + 2)? as u16
+                } else {
+                    u16at(p + 2)?
+                };
                 p += if fmt == 1 { 3 } else { 4 };
                 for k in 0..=left {
                     if out.len() >= n {
@@ -690,20 +749,28 @@ impl T2<'_> {
             match b0 {
                 32..=246 => self.stack.push(b0 as f64 - 139.0),
                 247..=250 => {
-                    self.stack.push((b0 as f64 - 247.0) * 256.0 + *cs.get(i).unwrap_or(&0) as f64 + 108.0);
+                    self.stack.push(
+                        (b0 as f64 - 247.0) * 256.0 + *cs.get(i).unwrap_or(&0) as f64 + 108.0,
+                    );
                     i += 1;
                 }
                 251..=254 => {
-                    self.stack.push(-(b0 as f64 - 251.0) * 256.0 - *cs.get(i).unwrap_or(&0) as f64 - 108.0);
+                    self.stack.push(
+                        -(b0 as f64 - 251.0) * 256.0 - *cs.get(i).unwrap_or(&0) as f64 - 108.0,
+                    );
                     i += 1;
                 }
                 28 => {
-                    self.stack.push(i16::from_be_bytes([*cs.get(i).unwrap_or(&0), *cs.get(i + 1).unwrap_or(&0)]) as f64);
+                    self.stack.push(i16::from_be_bytes([
+                        *cs.get(i).unwrap_or(&0),
+                        *cs.get(i + 1).unwrap_or(&0),
+                    ]) as f64);
                     i += 2;
                 }
                 255 => {
                     let b = |k: usize| *cs.get(i + k).unwrap_or(&0);
-                    self.stack.push(i32::from_be_bytes([b(0), b(1), b(2), b(3)]) as f64 / 65536.0);
+                    self.stack
+                        .push(i32::from_be_bytes([b(0), b(1), b(2), b(3)]) as f64 / 65536.0);
                     i += 4;
                 }
                 1 | 3 | 18 | 23 => {
@@ -729,7 +796,11 @@ impl T2<'_> {
                     self.take_width(false);
                     let s = self.args();
                     let v = s.last().copied().unwrap_or(0.0);
-                    if b0 == 22 { self.move_to(v, 0.0) } else { self.move_to(0.0, v) }
+                    if b0 == 22 {
+                        self.move_to(v, 0.0)
+                    } else {
+                        self.move_to(0.0, v)
+                    }
                 }
                 5 => {
                     let s = self.args();
@@ -823,8 +894,14 @@ impl T2<'_> {
                     }
                 }
                 10 | 29 => {
-                    let Some(idx) = self.stack.pop() else { continue };
-                    let subrs = if b0 == 10 { &self.cff.lsubrs[self.fd] } else { &self.cff.gsubrs };
+                    let Some(idx) = self.stack.pop() else {
+                        continue;
+                    };
+                    let subrs = if b0 == 10 {
+                        &self.cff.lsubrs[self.fd]
+                    } else {
+                        &self.cff.gsubrs
+                    };
                     let k = idx as i64 + bias(subrs.len());
                     if let Some(r) = usize::try_from(k).ok().and_then(|k| subrs.get(k)).cloned() {
                         self.depth += 1;
@@ -893,7 +970,11 @@ impl T2<'_> {
                     let dx: f64 = s[0] + s[2] + s[4] + s[6] + s[8];
                     let dy: f64 = s[1] + s[3] + s[5] + s[7] + s[9];
                     self.curve([s[0], s[1], s[2], s[3], s[4], s[5]]);
-                    let (lx, ly) = if dx.abs() > dy.abs() { (s[10], y0 - (self.y + s[7] + s[9])) } else { (x0 - (self.x + s[6] + s[8]), s[10]) };
+                    let (lx, ly) = if dx.abs() > dy.abs() {
+                        (s[10], y0 - (self.y + s[7] + s[9]))
+                    } else {
+                        (x0 - (self.x + s[6] + s[8]), s[10])
+                    };
                     self.curve([s[6], s[7], s[8], s[9], lx, ly]);
                 }
             }
@@ -966,7 +1047,11 @@ pub(crate) fn write_test_cff(glyphs: &[(&str, Vec<u8>)]) -> Vec<u8> {
         o
     };
     let names = idx(&[b"Test".to_vec()]);
-    let strings: Vec<Vec<u8>> = glyphs.iter().skip(1).map(|(n, _)| n.as_bytes().to_vec()).collect();
+    let strings: Vec<Vec<u8>> = glyphs
+        .iter()
+        .skip(1)
+        .map(|(n, _)| n.as_bytes().to_vec())
+        .collect();
     let strings_idx = idx(&strings);
     let gsubrs = idx(&[]);
     let cs = idx(&glyphs.iter().map(|(_, c)| c.clone()).collect::<Vec<_>>());

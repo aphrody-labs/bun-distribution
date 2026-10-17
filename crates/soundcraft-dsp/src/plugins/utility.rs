@@ -2,7 +2,9 @@
 
 use crate::osc::{Osc, Waveform};
 use crate::params::{Params, choice, lin, log, param_plumbing, toggle};
-use crate::util::{DcBlocker, DelayLine, Rng, Smoother, frames_in, ms_to_samples, sane_channels, sane_sr};
+use crate::util::{
+    DcBlocker, DelayLine, Rng, Smoother, frames_in, ms_to_samples, sane_channels, sane_sr,
+};
 use crate::{Category, ParamInfo, Plugin, PluginInfo, Unit, db_to_gain};
 
 /// Gain parameter floor that means "-inf".
@@ -21,7 +23,9 @@ fn apply_gain(io: &mut [Vec<f32>], frames: usize, ch: usize, g: &mut Smoother) {
         if v == 1.0 {
             return;
         }
-        io.iter_mut().take(ch).for_each(|b| b.iter_mut().take(frames).for_each(|x| *x *= v));
+        io.iter_mut()
+            .take(ch)
+            .for_each(|b| b.iter_mut().take(frames).for_each(|x| *x *= v));
         return;
     }
     for n in 0..frames {
@@ -40,8 +44,17 @@ const MAX_SHIFT_MS: f32 = 1000.0;
 const MAX_SHIFT_SAMPLES: f32 = 10_000.0;
 const XFADE: usize = 256;
 
-static SHIFT_PARAMS: [ParamInfo; 2] =
-    [lin("delay_ms", "Delay", 0.0, MAX_SHIFT_MS, 0.0, Unit::Ms), lin("delay_samples", "Samples", 0.0, MAX_SHIFT_SAMPLES, 0.0, Unit::None)];
+static SHIFT_PARAMS: [ParamInfo; 2] = [
+    lin("delay_ms", "Delay", 0.0, MAX_SHIFT_MS, 0.0, Unit::Ms),
+    lin(
+        "delay_samples",
+        "Samples",
+        0.0,
+        MAX_SHIFT_SAMPLES,
+        0.0,
+        Unit::None,
+    ),
+];
 
 pub static SHIFT_INFO: PluginInfo = PluginInfo {
     id: "time_shift",
@@ -71,11 +84,23 @@ impl Default for TimeShift {
 
 impl TimeShift {
     pub fn new() -> Self {
-        Self { p: Params::new(&SHIFT_PARAMS), sr: 48_000.0, lines: Vec::new(), cur: 0, target: 0, fade: 0 }
+        Self {
+            p: Params::new(&SHIFT_PARAMS),
+            sr: 48_000.0,
+            lines: Vec::new(),
+            cur: 0,
+            target: 0,
+            fade: 0,
+        }
     }
 
     fn delay_samples(&self) -> usize {
-        let max = self.lines.first().map(|l| l.max_delay() as usize).unwrap_or(1).saturating_sub(2);
+        let max = self
+            .lines
+            .first()
+            .map(|l| l.max_delay() as usize)
+            .unwrap_or(1)
+            .saturating_sub(2);
         ((ms_to_samples(self.p.v(0), self.sr) + self.p.v(1).max(0.0)).round() as usize).min(max)
     }
 
@@ -117,13 +142,23 @@ impl Plugin for TimeShift {
         let ch = self.lines.len().min(io.len());
         let frames = frames_in(io, frames, ch);
         for n in 0..frames {
-            let t = if self.fade > 0 { 1.0 - self.fade as f32 / XFADE as f32 } else { 1.0 };
+            let t = if self.fade > 0 {
+                1.0 - self.fade as f32 / XFADE as f32
+            } else {
+                1.0
+            };
             for c in 0..ch {
-                let (Some(buf), Some(line)) = (io.get_mut(c), self.lines.get_mut(c)) else { continue };
+                let (Some(buf), Some(line)) = (io.get_mut(c), self.lines.get_mut(c)) else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 line.push(if x.is_finite() { *x } else { 0.0 });
                 let new = line.tap(self.target + 1);
-                *x = if self.fade > 0 { line.tap(self.cur + 1) * (1.0 - t) + new * t } else { new };
+                *x = if self.fade > 0 {
+                    line.tap(self.cur + 1) * (1.0 - t) + new * t
+                } else {
+                    new
+                };
             }
             if self.fade > 0 {
                 self.fade -= 1;
@@ -168,7 +203,11 @@ impl Default for Gain {
 
 impl Gain {
     pub fn new() -> Self {
-        Self { p: Params::new(&GAIN_PARAMS), ch: 0, g: Smoother::new(1.0) }
+        Self {
+            p: Params::new(&GAIN_PARAMS),
+            ch: 0,
+            g: Smoother::new(1.0),
+        }
     }
 
     fn update(&mut self) {
@@ -197,7 +236,10 @@ impl Plugin for Gain {
 
 // ---------------------------------------------------------------------------------------------
 
-static TRIM_PARAMS: [ParamInfo; 2] = [lin("gain", "Trim", OFF_DB, 12.0, 0.0, Unit::Db), toggle("invert", "Phase Invert", false)];
+static TRIM_PARAMS: [ParamInfo; 2] = [
+    lin("gain", "Trim", OFF_DB, 12.0, 0.0, Unit::Db),
+    toggle("invert", "Phase Invert", false),
+];
 
 pub static TRIM_INFO: PluginInfo = PluginInfo {
     id: "trim",
@@ -224,7 +266,11 @@ impl Default for Trim {
 
 impl Trim {
     pub fn new() -> Self {
-        Self { p: Params::new(&TRIM_PARAMS), ch: 0, g: Smoother::new(1.0) }
+        Self {
+            p: Params::new(&TRIM_PARAMS),
+            ch: 0,
+            g: Smoother::new(1.0),
+        }
     }
 
     fn update(&mut self) {
@@ -254,8 +300,15 @@ impl Plugin for Trim {
 
 // ---------------------------------------------------------------------------------------------
 
-pub static INVERT_INFO: PluginInfo =
-    PluginInfo { id: "invert", name: "Invert", short_name: "Invert", category: Category::Other, params: &[], is_instrument: false, audiosuite: true };
+pub static INVERT_INFO: PluginInfo = PluginInfo {
+    id: "invert",
+    name: "Invert",
+    short_name: "Invert",
+    category: Category::Other,
+    params: &[],
+    is_instrument: false,
+    audiosuite: true,
+};
 
 /// Polarity inversion.
 #[derive(Default)]
@@ -285,7 +338,9 @@ impl Plugin for Invert {
     fn process(&mut self, io: &mut [Vec<f32>], frames: usize) {
         let ch = self.ch.min(io.len());
         let frames = frames_in(io, frames, ch);
-        io.iter_mut().take(ch).for_each(|b| b.iter_mut().take(frames).for_each(|x| *x = -*x));
+        io.iter_mut()
+            .take(ch)
+            .for_each(|b| b.iter_mut().take(frames).for_each(|x| *x = -*x));
     }
 }
 
@@ -318,7 +373,11 @@ impl Default for DcRemoval {
 
 impl DcRemoval {
     pub fn new() -> Self {
-        Self { p: Params::new(&DC_PARAMS), sr: 48_000.0, f: Vec::new() }
+        Self {
+            p: Params::new(&DC_PARAMS),
+            sr: 48_000.0,
+            f: Vec::new(),
+        }
     }
 
     fn update(&mut self) {
@@ -352,7 +411,14 @@ impl Plugin for DcRemoval {
 
 // ---------------------------------------------------------------------------------------------
 
-const WAVE_NAMES: &[&str] = &["Sine", "Square", "Saw", "Triangle", "White Noise", "Pink Noise"];
+const WAVE_NAMES: &[&str] = &[
+    "Sine",
+    "Square",
+    "Saw",
+    "Triangle",
+    "White Noise",
+    "Pink Noise",
+];
 
 static GEN_PARAMS: [ParamInfo; 3] = [
     choice("waveform", "Waveform", WAVE_NAMES, 0),
@@ -443,7 +509,10 @@ impl Plugin for SignalGenerator {
 
 // ---------------------------------------------------------------------------------------------
 
-static DITHER_PARAMS: [ParamInfo; 2] = [choice("bits", "Bit Depth", &["16", "20", "24"], 0), toggle("noise_shaping", "Noise Shaping", false)];
+static DITHER_PARAMS: [ParamInfo; 2] = [
+    choice("bits", "Bit Depth", &["16", "20", "24"], 0),
+    toggle("noise_shaping", "Noise Shaping", false),
+];
 
 pub static DITHER_INFO: PluginInfo = PluginInfo {
     id: "dither",
@@ -471,7 +540,11 @@ impl Default for Dither {
 
 impl Dither {
     pub fn new() -> Self {
-        Self { p: Params::new(&DITHER_PARAMS), rng: Rng::new(0xD17E), err: Vec::new() }
+        Self {
+            p: Params::new(&DITHER_PARAMS),
+            rng: Rng::new(0xD17E),
+            err: Vec::new(),
+        }
     }
 
     fn update(&mut self) {}
@@ -491,7 +564,10 @@ impl Plugin for Dither {
     fn process(&mut self, io: &mut [Vec<f32>], frames: usize) {
         let ch = self.err.len().min(io.len());
         let frames = frames_in(io, frames, ch);
-        let bits = [16.0f32, 20.0, 24.0].get(self.p.choice(0)).copied().unwrap_or(16.0);
+        let bits = [16.0f32, 20.0, 24.0]
+            .get(self.p.choice(0))
+            .copied()
+            .unwrap_or(16.0);
         let lsb = 2f32.powf(1.0 - bits);
         let shape = self.p.on(1);
         for (b, e) in io.iter_mut().zip(self.err.iter_mut()) {

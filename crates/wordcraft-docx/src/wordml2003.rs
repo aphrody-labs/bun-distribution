@@ -79,21 +79,33 @@ pub(crate) fn convert(bytes: &[u8]) -> Result<Package, DocxError> {
     c.collect_media(&root, 0, &mut total)?;
 
     // Body: `wx:sect` / `wx:sub-section` wrappers unwrapped; the last section's properties last.
-    let mut body = El { name: "w:body".into(), ..El::default() };
+    let mut body = El {
+        name: "w:body".into(),
+        ..El::default()
+    };
     if let Some(b) = root.child("w:body") {
         body.kids = c.kids(b, DOC, 1);
     }
-    let last_sect = body.kids.iter().rposition(|n| matches!(n, Node::El(e) if e.name == "w:sectPr"));
+    let last_sect = body
+        .kids
+        .iter()
+        .rposition(|n| matches!(n, Node::El(e) if e.name == "w:sectPr"));
     if let Some(i) = last_sect {
         let s = body.kids.remove(i);
-        body.kids.retain(|n| !matches!(n, Node::El(e) if e.name == "w:sectPr"));
+        body.kids
+            .retain(|n| !matches!(n, Node::El(e) if e.name == "w:sectPr"));
         body.kids.push(s);
     }
-    let mut document = El { name: "w:document".into(), attrs: xml::body_ns(), kids: Vec::new() };
+    let mut document = El {
+        name: "w:document".into(),
+        attrs: xml::body_ns(),
+        kids: Vec::new(),
+    };
     document.kids.push(Node::El(body));
 
     let mut overrides: Vec<(String, &str)> = Vec::new();
-    let wml = |s: &str| format!("application/vnd.openxmlformats-officedocument.wordprocessingml.{s}+xml");
+    let wml =
+        |s: &str| format!("application/vnd.openxmlformats-officedocument.wordprocessingml.{s}+xml");
     let styles = c.styles(&root);
     c.put("word/styles.xml", &styles);
     c.rels[DOC].add(rt::STYLES, "styles.xml", false);
@@ -104,15 +116,40 @@ pub(crate) fn convert(bytes: &[u8]) -> Result<Package, DocxError> {
         overrides.push(("/word/numbering.xml".into(), "numbering"));
     }
     for (part, root_name, kids, rel, ct) in [
-        (FOOTNOTES, "w:footnotes", std::mem::take(&mut c.footnotes), rt::FOOTNOTES, "footnotes"),
-        (ENDNOTES, "w:endnotes", std::mem::take(&mut c.endnotes), rt::ENDNOTES, "endnotes"),
-        (COMMENTS, "w:comments", std::mem::take(&mut c.comments), rt::COMMENTS, "comments"),
+        (
+            FOOTNOTES,
+            "w:footnotes",
+            std::mem::take(&mut c.footnotes),
+            rt::FOOTNOTES,
+            "footnotes",
+        ),
+        (
+            ENDNOTES,
+            "w:endnotes",
+            std::mem::take(&mut c.endnotes),
+            rt::ENDNOTES,
+            "endnotes",
+        ),
+        (
+            COMMENTS,
+            "w:comments",
+            std::mem::take(&mut c.comments),
+            rt::COMMENTS,
+            "comments",
+        ),
     ] {
         if kids.is_empty() {
             continue;
         }
         let file = format!("{ct}.xml");
-        c.put(&format!("word/{file}"), &El { name: root_name.into(), attrs: xml::body_ns(), kids });
+        c.put(
+            &format!("word/{file}"),
+            &El {
+                name: root_name.into(),
+                attrs: xml::body_ns(),
+                kids,
+            },
+        );
         c.put_rels(&file, part);
         c.rels[DOC].add(rel, &file, false);
         overrides.push((format!("/word/{file}"), ct));
@@ -120,7 +157,14 @@ pub(crate) fn convert(bytes: &[u8]) -> Result<Package, DocxError> {
     for (i, (file, story)) in std::mem::take(&mut c.stories).into_iter().enumerate() {
         c.put(&format!("word/{file}"), &story);
         c.put_rels(&file, i + 4);
-        overrides.push((format!("/word/{file}"), if story.name == "w:ftr" { "footer" } else { "header" }));
+        overrides.push((
+            format!("/word/{file}"),
+            if story.name == "w:ftr" {
+                "footer"
+            } else {
+                "header"
+            },
+        ));
     }
     c.put("word/document.xml", &document);
     c.put_rels("document.xml", DOC);
@@ -134,21 +178,64 @@ pub(crate) fn convert(bytes: &[u8]) -> Result<Package, DocxError> {
     c.files.insert("_rels/.rels".into(), root_rels.xml());
 
     let mut w = W::new();
-    w.open("Types", &[("xmlns", "http://schemas.openxmlformats.org/package/2006/content-types")]);
-    w.empty("Default", &[("Extension", "rels"), ("ContentType", "application/vnd.openxmlformats-package.relationships+xml")]);
-    w.empty("Default", &[("Extension", "xml"), ("ContentType", "application/xml")]);
-    let mut exts: Vec<&str> = c.media.values().filter_map(|t| t.rsplit_once('.').map(|(_, e)| e)).collect();
+    w.open(
+        "Types",
+        &[(
+            "xmlns",
+            "http://schemas.openxmlformats.org/package/2006/content-types",
+        )],
+    );
+    w.empty(
+        "Default",
+        &[
+            ("Extension", "rels"),
+            (
+                "ContentType",
+                "application/vnd.openxmlformats-package.relationships+xml",
+            ),
+        ],
+    );
+    w.empty(
+        "Default",
+        &[("Extension", "xml"), ("ContentType", "application/xml")],
+    );
+    let mut exts: Vec<&str> = c
+        .media
+        .values()
+        .filter_map(|t| t.rsplit_once('.').map(|(_, e)| e))
+        .collect();
     exts.sort_unstable();
     exts.dedup();
     for ext in exts {
-        w.empty("Default", &[("Extension", ext), ("ContentType", media_type(ext))]);
+        w.empty(
+            "Default",
+            &[("Extension", ext), ("ContentType", media_type(ext))],
+        );
     }
-    w.empty("Override", &[("PartName", "/word/document.xml"), ("ContentType", &wml("document.main"))]);
+    w.empty(
+        "Override",
+        &[
+            ("PartName", "/word/document.xml"),
+            ("ContentType", &wml("document.main")),
+        ],
+    );
     for (part, kind) in &overrides {
-        w.empty("Override", &[("PartName", part), ("ContentType", &wml(kind))]);
+        w.empty(
+            "Override",
+            &[("PartName", part), ("ContentType", &wml(kind))],
+        );
     }
     if c.files.contains_key("docProps/core.xml") {
-        w.empty("Override", &[("PartName", "/docProps/core.xml"), ("ContentType", "application/vnd.openxmlformats-package.core-properties+xml")]);
+        w.empty(
+            "Override",
+            &[
+                ("PartName", "/docProps/core.xml"),
+                (
+                    "ContentType",
+                    "application/vnd.openxmlformats-package.core-properties+xml",
+                ),
+            ],
+        );
     }
     w.close("Types");
     c.files.insert("[Content_Types].xml".into(), w.into_bytes());
@@ -178,22 +265,30 @@ impl Conv {
         }
         for k in e.els() {
             if k.name == "w:binData" {
-                let Some(name) = k.attr("w:name").filter(|n| !self.media.contains_key(*n)) else { continue };
+                let Some(name) = k.attr("w:name").filter(|n| !self.media.contains_key(*n)) else {
+                    continue;
+                };
                 if self.media.len() >= MAX_MEDIA {
                     continue;
                 }
                 let text = k.text();
                 let b64: String = text.chars().filter(|c| !c.is_ascii_whitespace()).collect();
                 if (b64.len() / 4 * 3) as u64 > MAX_PART {
-                    return Err(DocxError::Limit(format!("picture {name} is larger than the size limit")));
+                    return Err(DocxError::Limit(format!(
+                        "picture {name} is larger than the size limit"
+                    )));
                 }
-                let Ok(bytes) = base64::engine::general_purpose::STANDARD_NO_PAD.decode(b64.trim_end_matches('=')) else {
+                let Ok(bytes) = base64::engine::general_purpose::STANDARD_NO_PAD
+                    .decode(b64.trim_end_matches('='))
+                else {
                     log::warn!("wordml2003: skipping picture {name}: invalid base64");
                     continue;
                 };
                 *total = total.saturating_add(bytes.len() as u64);
                 if *total > MAX_TOTAL {
-                    return Err(DocxError::Limit("pictures larger than the size limit".into()));
+                    return Err(DocxError::Limit(
+                        "pictures larger than the size limit".into(),
+                    ));
                 }
                 let ext = picture_ext(&bytes, name);
                 let target = format!("media/image{}.{ext}", self.media.len() + 1);
@@ -225,10 +320,18 @@ impl Conv {
         }
         match e.name.as_str() {
             "wx:sect" | "wx:sub-section" | "wx:pBdrGroup" => return self.kids(e, part, depth),
-            "w:binData" | "w:fonts" | "w:docPr" | "w:lists" | "w:styles" | "w:latentStyles" | "w:versionOfBuiltInStyleNames" => return Vec::new(),
+            "w:binData"
+            | "w:fonts"
+            | "w:docPr"
+            | "w:lists"
+            | "w:styles"
+            | "w:latentStyles"
+            | "w:versionOfBuiltInStyleNames" => return Vec::new(),
             "w:hlink" => return vec![Node::El(self.hyperlink(e, part, depth))],
             "w:listPr" => return vec![Node::El(list_pr(e))],
-            "w:footnote" | "w:endnote" => return self.note(e, depth).into_iter().map(Node::El).collect(),
+            "w:footnote" | "w:endnote" => {
+                return self.note(e, depth).into_iter().map(Node::El).collect();
+            }
             "aml:annotation" => return self.annotation(e, part, depth),
             "w:sectPr" => return vec![Node::El(self.section(e, part, depth))],
             "w:nfc" => return vec![Node::El(num_fmt(e))],
@@ -237,7 +340,11 @@ impl Conv {
         if !keep(&e.name) {
             return Vec::new();
         }
-        let mut el = El { name: rename(&e.name), attrs: attrs(e), kids: self.kids(e, part, depth) };
+        let mut el = El {
+            name: rename(&e.name),
+            attrs: attrs(e),
+            kids: self.kids(e, part, depth),
+        };
         if el.name == "v:imagedata"
             && let Some(target) = e.attr("src").and_then(|s| self.media.get(s)).cloned()
             && let Some(r) = self.rels.get_mut(part)
@@ -264,12 +371,20 @@ impl Conv {
         {
             attrs.push(("r:id".into(), r.add(rt::HYPERLINK, dest, true)));
         }
-        for (from, to) in [("w:bookmark", "w:anchor"), ("w:screenTip", "w:tooltip"), ("w:target", "w:tgtFrame")] {
+        for (from, to) in [
+            ("w:bookmark", "w:anchor"),
+            ("w:screenTip", "w:tooltip"),
+            ("w:target", "w:tgtFrame"),
+        ] {
             if let Some(v) = e.attr(from) {
                 attrs.push((to.into(), v.to_string()));
             }
         }
-        El { name: "w:hyperlink".into(), attrs, kids: self.kids(e, part, depth) }
+        El {
+            name: "w:hyperlink".into(),
+            attrs,
+            kids: self.kids(e, part, depth),
+        }
     }
 
     /// A footnote or endnote written inline in its run → a reference, the note in its part.
@@ -284,20 +399,42 @@ impl Conv {
         self.next_note = self.next_note.saturating_add(1);
         let part = if foot { FOOTNOTES } else { ENDNOTES };
         let kids = self.kids(e, part, depth);
-        let note = El { name: e.name.clone(), attrs: vec![("w:id".into(), id.clone())], kids };
+        let note = El {
+            name: e.name.clone(),
+            attrs: vec![("w:id".into(), id.clone())],
+            kids,
+        };
         if foot {
             self.footnotes.push(Node::El(note));
         } else {
             self.endnotes.push(Node::El(note));
         }
-        let name = if foot { "w:footnoteReference" } else { "w:endnoteReference" };
-        Some(El { name: name.into(), attrs: vec![("w:id".into(), id)], kids: Vec::new() })
+        let name = if foot {
+            "w:footnoteReference"
+        } else {
+            "w:endnoteReference"
+        };
+        Some(El {
+            name: name.into(),
+            attrs: vec![("w:id".into(), id)],
+            kids: Vec::new(),
+        })
     }
 
     /// `aml:annotation`: bookmarks, comments and tracked insertions/deletions.
     fn annotation(&mut self, e: &El, part: usize, depth: usize) -> Vec<Node> {
-        let id = e.attr("aml:id").filter(|v| v.parse::<i64>().is_ok()).unwrap_or("0").to_string();
-        let el = |name: &str, attrs: Vec<(String, String)>| vec![Node::El(El { name: name.into(), attrs, kids: Vec::new() })];
+        let id = e
+            .attr("aml:id")
+            .filter(|v| v.parse::<i64>().is_ok())
+            .unwrap_or("0")
+            .to_string();
+        let el = |name: &str, attrs: Vec<(String, String)>| {
+            vec![Node::El(El {
+                name: name.into(),
+                attrs,
+                kids: Vec::new(),
+            })]
+        };
         let author_date = |e: &El| {
             let mut a = vec![("w:id".to_string(), id.clone())];
             if let Some(v) = e.attr("aml:author") {
@@ -308,11 +445,19 @@ impl Conv {
             }
             a
         };
-        let content = |c: &mut Conv, part: usize| e.child("aml:content").map(|k| c.kids(k, part, depth + 1)).unwrap_or_default();
+        let content = |c: &mut Conv, part: usize| {
+            e.child("aml:content")
+                .map(|k| c.kids(k, part, depth + 1))
+                .unwrap_or_default()
+        };
         match e.attr("w:type").unwrap_or("") {
-            "Word.Bookmark.Start" => {
-                el("w:bookmarkStart", vec![("w:id".into(), id.clone()), ("w:name".into(), e.attr("w:name").unwrap_or("").to_string())])
-            }
+            "Word.Bookmark.Start" => el(
+                "w:bookmarkStart",
+                vec![
+                    ("w:id".into(), id.clone()),
+                    ("w:name".into(), e.attr("w:name").unwrap_or("").to_string()),
+                ],
+            ),
             "Word.Bookmark.End" => el("w:bookmarkEnd", vec![("w:id".into(), id)]),
             "Word.Comment.Start" => el("w:commentRangeStart", vec![("w:id".into(), id)]),
             "Word.Comment.End" => el("w:commentRangeEnd", vec![("w:id".into(), id)]),
@@ -326,12 +471,24 @@ impl Conv {
                     attrs.push(("w:initials".into(), v.to_string()));
                 }
                 let kids = content(self, COMMENTS);
-                self.comments.push(Node::El(El { name: "w:comment".into(), attrs, kids }));
+                self.comments.push(Node::El(El {
+                    name: "w:comment".into(),
+                    attrs,
+                    kids,
+                }));
                 el("w:commentReference", vec![("w:id".into(), id)])
             }
             t @ ("Word.Insertion" | "Word.Deletion") => {
-                let name = if t == "Word.Insertion" { "w:ins" } else { "w:del" };
-                vec![Node::El(El { name: name.into(), attrs: author_date(e), kids: content(self, part) })]
+                let name = if t == "Word.Insertion" {
+                    "w:ins"
+                } else {
+                    "w:del"
+                };
+                vec![Node::El(El {
+                    name: name.into(),
+                    attrs: author_date(e),
+                    kids: content(self, part),
+                })]
             }
             _ => Vec::new(),
         }
@@ -354,42 +511,98 @@ impl Conv {
                 let idx = self.stories.len() + 4;
                 self.rels.push(PartRels::default());
                 let kids = self.kids(k, idx, depth + 1);
-                let file = format!("{}{}.xml", if footer { "footer" } else { "header" }, self.stories.len() + 1);
-                self.stories.push((file.clone(), El { name: k.name.clone(), attrs: xml::body_ns(), kids }));
-                let id = self.rels.get_mut(part).map(|r| r.add(if footer { rt::FOOTER } else { rt::HEADER }, &file, false)).unwrap_or_default();
-                let name = if footer { "w:footerReference" } else { "w:headerReference" };
-                refs.push(Node::El(El { name: name.into(), attrs: vec![("w:type".into(), kind.into()), ("r:id".into(), id)], kids: Vec::new() }));
+                let file = format!(
+                    "{}{}.xml",
+                    if footer { "footer" } else { "header" },
+                    self.stories.len() + 1
+                );
+                self.stories.push((
+                    file.clone(),
+                    El {
+                        name: k.name.clone(),
+                        attrs: xml::body_ns(),
+                        kids,
+                    },
+                ));
+                let id = self
+                    .rels
+                    .get_mut(part)
+                    .map(|r| r.add(if footer { rt::FOOTER } else { rt::HEADER }, &file, false))
+                    .unwrap_or_default();
+                let name = if footer {
+                    "w:footerReference"
+                } else {
+                    "w:headerReference"
+                };
+                refs.push(Node::El(El {
+                    name: name.into(),
+                    attrs: vec![("w:type".into(), kind.into()), ("r:id".into(), id)],
+                    kids: Vec::new(),
+                }));
             } else if k.name != "w:hdr" && k.name != "w:ftr" {
                 rest.extend(self.node(k, part, depth + 1));
             }
         }
         refs.extend(rest);
-        El { name: "w:sectPr".into(), attrs: attrs(e), kids: refs }
+        El {
+            name: "w:sectPr".into(),
+            attrs: attrs(e),
+            kids: refs,
+        }
     }
 
     /// `w:styles` → `styles.xml`, with the document's default fonts (`w:fonts/w:defaultFonts`).
     fn styles(&mut self, root: &El) -> El {
         let mut kids = Vec::new();
-        if let Some(f) = root.child("w:fonts").and_then(|f| f.child("w:defaultFonts")) {
-            let fonts = El { name: "w:rFonts".into(), attrs: attrs(f), kids: Vec::new() };
-            let rpr = El { name: "w:rPr".into(), attrs: Vec::new(), kids: vec![Node::El(fonts)] };
-            let rpr_default = El { name: "w:rPrDefault".into(), attrs: Vec::new(), kids: vec![Node::El(rpr)] };
-            kids.push(Node::El(El { name: "w:docDefaults".into(), attrs: Vec::new(), kids: vec![Node::El(rpr_default)] }));
+        if let Some(f) = root
+            .child("w:fonts")
+            .and_then(|f| f.child("w:defaultFonts"))
+        {
+            let fonts = El {
+                name: "w:rFonts".into(),
+                attrs: attrs(f),
+                kids: Vec::new(),
+            };
+            let rpr = El {
+                name: "w:rPr".into(),
+                attrs: Vec::new(),
+                kids: vec![Node::El(fonts)],
+            };
+            let rpr_default = El {
+                name: "w:rPrDefault".into(),
+                attrs: Vec::new(),
+                kids: vec![Node::El(rpr)],
+            };
+            kids.push(Node::El(El {
+                name: "w:docDefaults".into(),
+                attrs: Vec::new(),
+                kids: vec![Node::El(rpr_default)],
+            }));
         }
         if let Some(s) = root.child("w:styles") {
             for st in s.children("w:style") {
                 kids.extend(self.node(st, DOC, 2));
             }
         }
-        El { name: "w:styles".into(), attrs: xml::body_ns(), kids }
+        El {
+            name: "w:styles".into(),
+            attrs: xml::body_ns(),
+            kids,
+        }
     }
 
     /// `w:lists` → `numbering.xml`: `w:listDef` → `w:abstractNum`, `w:list` → `w:num`.
     fn numbering(&mut self, lists: &El) -> El {
         let mut kids = Vec::new();
         for def in lists.children("w:listDef") {
-            let Some(id) = def.attr("w:listDefId") else { continue };
-            let mut a = El { name: "w:abstractNum".into(), attrs: vec![("w:abstractNumId".into(), id.to_string())], kids: Vec::new() };
+            let Some(id) = def.attr("w:listDefId") else {
+                continue;
+            };
+            let mut a = El {
+                name: "w:abstractNum".into(),
+                attrs: vec![("w:abstractNumId".into(), id.to_string())],
+                kids: Vec::new(),
+            };
             for k in def.els() {
                 let converted = match k.name.as_str() {
                     "w:plt" => {
@@ -401,7 +614,10 @@ impl Conv {
                         vec![Node::El(val_el("w:multiLevelType", v))]
                     }
                     "w:lsid" => vec![Node::El(val_el("w:nsid", k.attr("w:val").unwrap_or("")))],
-                    "w:listStyleLink" => vec![Node::El(val_el("w:numStyleLink", k.attr("w:val").unwrap_or("")))],
+                    "w:listStyleLink" => vec![Node::El(val_el(
+                        "w:numStyleLink",
+                        k.attr("w:val").unwrap_or(""),
+                    ))],
                     _ => self.node(k, DOC, 2),
                 };
                 a.kids.extend(converted);
@@ -409,22 +625,37 @@ impl Conv {
             kids.push(Node::El(a));
         }
         for list in lists.children("w:list") {
-            let Some(id) = list.attr("w:ilfo") else { continue };
-            let Some(abs) = list.child_val("w:ilst") else { continue };
-            let mut n =
-                El { name: "w:num".into(), attrs: vec![("w:numId".into(), id.to_string())], kids: vec![Node::El(val_el("w:abstractNumId", abs))] };
+            let Some(id) = list.attr("w:ilfo") else {
+                continue;
+            };
+            let Some(abs) = list.child_val("w:ilst") else {
+                continue;
+            };
+            let mut n = El {
+                name: "w:num".into(),
+                attrs: vec![("w:numId".into(), id.to_string())],
+                kids: vec![Node::El(val_el("w:abstractNumId", abs))],
+            };
             for o in list.children("w:lvlOverride") {
                 n.kids.extend(self.node(o, DOC, 2));
             }
             kids.push(Node::El(n));
         }
-        El { name: "w:numbering".into(), attrs: xml::body_ns(), kids }
+        El {
+            name: "w:numbering".into(),
+            attrs: xml::body_ns(),
+            kids,
+        }
     }
 }
 
 /// `<name w:val="v"/>`.
 fn val_el(name: &str, v: &str) -> El {
-    El { name: name.into(), attrs: vec![("w:val".into(), v.into())], kids: Vec::new() }
+    El {
+        name: name.into(),
+        attrs: vec![("w:val".into(), v.into())],
+        kids: Vec::new(),
+    }
 }
 
 /// `w:listPr` (`w:ilvl`, `w:ilfo`) → `w:numPr` (`w:ilvl`, `w:numId`).
@@ -436,12 +667,20 @@ fn list_pr(e: &El) -> El {
     if let Some(v) = e.child_val("w:ilfo") {
         kids.push(Node::El(val_el("w:numId", v)));
     }
-    El { name: "w:numPr".into(), attrs: Vec::new(), kids }
+    El {
+        name: "w:numPr".into(),
+        attrs: Vec::new(),
+        kids,
+    }
 }
 
 /// `w:nfc` (a number format code) → `w:numFmt`.
 fn num_fmt(e: &El) -> El {
-    let f = match e.attr("w:val").and_then(|v| v.trim().parse::<u32>().ok()).unwrap_or(0) {
+    let f = match e
+        .attr("w:val")
+        .and_then(|v| v.trim().parse::<u32>().ok())
+        .unwrap_or(0)
+    {
         1 => "upperRoman",
         2 => "lowerRoman",
         3 => "upperLetter",
@@ -477,7 +716,9 @@ fn keep(name: &str) -> bool {
 /// A WordprocessingML 2003 name in its ECMA-376 spelling: `w:sz-cs` → `w:szCs`, `w:first-line`
 /// → `w:firstLine`, `w:fareast` → `w:eastAsia`, `w:vmerge` → `w:vMerge`.
 fn rename(name: &str) -> String {
-    let Some(local) = name.strip_prefix("w:") else { return name.to_string() };
+    let Some(local) = name.strip_prefix("w:") else {
+        return name.to_string();
+    };
     match local {
         "fareast" => return "w:eastAsia".into(),
         "vmerge" => return "w:vMerge".into(),
@@ -501,7 +742,11 @@ fn rename(name: &str) -> String {
 
 /// The attributes of `e` that the package keeps, renamed.
 fn attrs(e: &El) -> Vec<(String, String)> {
-    e.attrs.iter().filter(|(k, _)| keep(k)).map(|(k, v)| (rename(k), v.clone())).collect()
+    e.attrs
+        .iter()
+        .filter(|(k, _)| keep(k))
+        .map(|(k, v)| (rename(k), v.clone()))
+        .collect()
 }
 
 /// A picture's file extension: from its bytes, else from its `wordml://` name.
@@ -524,8 +769,16 @@ fn picture_ext(b: &[u8], name: &str) -> String {
     if !sniffed.is_empty() {
         return sniffed.into();
     }
-    let ext = name.rsplit_once('.').map(|(_, e)| e.to_ascii_lowercase()).unwrap_or_default();
-    if !ext.is_empty() && ext.len() <= 5 && ext.chars().all(|c| c.is_ascii_alphanumeric()) && ext != "xml" && ext != "rels" {
+    let ext = name
+        .rsplit_once('.')
+        .map(|(_, e)| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    if !ext.is_empty()
+        && ext.len() <= 5
+        && ext.chars().all(|c| c.is_ascii_alphanumeric())
+        && ext != "xml"
+        && ext != "rels"
+    {
         ext
     } else {
         "bin".into()
@@ -550,7 +803,10 @@ fn core_xml(props: &El) -> Vec<u8> {
     w.open(
         "cp:coreProperties",
         &[
-            ("xmlns:cp", "http://schemas.openxmlformats.org/package/2006/metadata/core-properties"),
+            (
+                "xmlns:cp",
+                "http://schemas.openxmlformats.org/package/2006/metadata/core-properties",
+            ),
             ("xmlns:dc", "http://purl.org/dc/elements/1.1/"),
             ("xmlns:dcterms", "http://purl.org/dc/terms/"),
         ],
@@ -567,7 +823,11 @@ fn core_xml(props: &El) -> Vec<u8> {
         ("o:Created", "dcterms:created"),
         ("o:LastSaved", "dcterms:modified"),
     ] {
-        if let Some(t) = props.child(from).map(El::text).filter(|t| !t.trim().is_empty()) {
+        if let Some(t) = props
+            .child(from)
+            .map(El::text)
+            .filter(|t| !t.trim().is_empty())
+        {
             w.leaf(to, &[], t.trim());
         }
     }

@@ -66,7 +66,11 @@ pub enum Famille {
 pub const FAMILLES: [(&str, Famille, &str); 9] = [
     (".g4pk", Famille::G4pk, "table des sous-fichiers"),
     (".g4mg", Famille::G4mg, "sous-mailles, sommets et triangles"),
-    (".objbin", Famille::Objbin, "objet de menu et ses composants"),
+    (
+        ".objbin",
+        Famille::Objbin,
+        "objet de menu et ses composants",
+    ),
     (".g4pkm", Famille::G4pkm, "squelette 2D et poses de liaison"),
     (".g4cm", Famille::G4cm, "clips, objets et canaux de camera"),
     (".col", Famille::Col, "en-tete du conteneur PXCL"),
@@ -118,9 +122,15 @@ impl Compagnon {
     #[must_use]
     pub fn depuis(chemin: &str, octets: Vec<u8>) -> Option<Self> {
         if chemin.ends_with(".g4md") {
-            return Some(Self { source: "g4md", octets });
+            return Some(Self {
+                source: "g4md",
+                octets,
+            });
         }
-        g4pkm::extract_g4md(&octets).map(|md| Self { source: "g4pkm", octets: md.to_vec() })
+        g4pkm::extract_g4md(&octets).map(|md| Self {
+            source: "g4pkm",
+            octets: md.to_vec(),
+        })
     }
 }
 
@@ -206,7 +216,10 @@ pub fn conteneur_level5(octets: &[u8]) -> Option<Conteneur> {
         return None;
     }
     let magic = &octets[..4];
-    if !magic.iter().all(|b| b.is_ascii_uppercase() || b.is_ascii_digit()) {
+    if !magic
+        .iter()
+        .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit())
+    {
         return None;
     }
     let u16_a = |o: usize| u16::from_le_bytes([octets[o], octets[o + 1]]);
@@ -238,7 +251,9 @@ impl Famille {
     #[must_use]
     pub fn depuis_chemin(chemin: &str) -> Option<Self> {
         let bas = chemin.to_ascii_lowercase();
-        FAMILLES.into_iter().find_map(|(s, f, _)| bas.ends_with(s).then_some(f))
+        FAMILLES
+            .into_iter()
+            .find_map(|(s, f, _)| bas.ends_with(s).then_some(f))
     }
 
     /// Le suffixe de la famille, point compris.
@@ -260,7 +275,10 @@ impl Famille {
     }
 
     fn ligne(self) -> (&'static str, Self, &'static str) {
-        FAMILLES.into_iter().find(|(_, f, _)| *f == self).unwrap_or((".inconnu", self, "inconnu"))
+        FAMILLES
+            .into_iter()
+            .find(|(_, f, _)| *f == self)
+            .unwrap_or((".inconnu", self, "inconnu"))
     }
 }
 
@@ -534,7 +552,7 @@ pub fn decoder(
                 }));
             }
             resume
-        },
+        }
         Famille::G4pk => {
             let a = g4pk::parse(octets).map_err(|e| illisible(famille, &e))?;
             if complet {
@@ -550,7 +568,7 @@ pub fn decoder(
                 sous_fichiers_octets: a.files.iter().map(|f| f.size).sum(),
                 noms_resolus: a.files.iter().filter(|f| !f.name.is_empty()).count(),
             }
-        },
+        }
         Famille::G4pkm => {
             let l = g4pkm::parse(octets).map_err(|e| illisible(famille, &e))?;
             if complet {
@@ -562,7 +580,7 @@ pub fn decoder(
                 racines: l.bones.iter().filter(|b| b.parent_index < 0).count(),
                 porte_un_g4md: g4pkm::extract_g4md(octets).is_some(),
             }
-        },
+        }
         Famille::Objbin => {
             let o = objbin::parse(octets).map_err(|e| illisible(famille, &e))?;
             let mut par_type: Vec<CompteType> = Vec::new();
@@ -571,7 +589,10 @@ pub fn decoder(
                 if let Some(e) = par_type.iter_mut().find(|e| e.type_composant == t) {
                     e.nombre += 1;
                 } else {
-                    par_type.push(CompteType { type_composant: t, nombre: 1 });
+                    par_type.push(CompteType {
+                        type_composant: t,
+                        nombre: 1,
+                    });
                 }
             }
             let references = [
@@ -581,7 +602,12 @@ pub fn decoder(
                 ("anime", o.anime_path.as_ref()),
             ]
             .into_iter()
-            .filter_map(|(role, c)| c.map(|chemin| Reference { role, chemin: chemin.clone() }))
+            .filter_map(|(role, c)| {
+                c.map(|chemin| Reference {
+                    role,
+                    chemin: chemin.clone(),
+                })
+            })
             .collect();
             let resume = Resume::Objbin {
                 nom: o.name.clone(),
@@ -594,7 +620,7 @@ pub fn decoder(
                 donnees = Some(en_valeur(&o)?);
             }
             resume
-        },
+        }
         Famille::G4cm => {
             let a = g4cm::decode(octets).map_err(|e| illisible(famille, &e))?;
             let resume = Resume::G4cm {
@@ -608,7 +634,7 @@ pub fn decoder(
                 donnees = Some(en_valeur(&a)?);
             }
             resume
-        },
+        }
         Famille::Col => {
             let c = col::parse(octets).map_err(|e| illisible(famille, &e))?;
             let resume = Resume::Col {
@@ -621,7 +647,7 @@ pub fn decoder(
                 donnees = Some(en_valeur(&c)?);
             }
             resume
-        },
+        }
         Famille::G4sk => {
             let entete = g4sk::parse_header(octets).map_err(|e| illisible(famille, &e))?;
             let h = g4sk::parse_hierarchy(octets, &entete);
@@ -635,7 +661,7 @@ pub fn decoder(
                 donnees = Some(en_valeur(&h)?);
             }
             resume
-        },
+        }
         Famille::Mevbin => {
             let d = mevbin::parse(octets).map_err(|e| illisible(famille, &e))?;
             let motions = d.motion_count();
@@ -652,7 +678,7 @@ pub fn decoder(
                 donnees = Some(en_valeur(&d)?);
             }
             resume
-        },
+        }
         Famille::G4mt => {
             // L'en-tête d'abord : il tranche entre « ce n'est pas un G4MT » (400) et « c'est
             // un G4MT dont l'animation ne se décode pas » (200, dit tel quel).
@@ -670,7 +696,7 @@ pub fn decoder(
                         donnees = Some(en_valeur(&m)?);
                     }
                     resume
-                },
+                }
                 None => {
                     if complet {
                         donnees = Some(en_valeur(&entete)?);
@@ -682,9 +708,9 @@ pub fn decoder(
                         frames: 0,
                         clips_additifs: 0,
                     }
-                },
+                }
             }
-        },
+        }
     };
 
     Ok(Decodage {
@@ -725,11 +751,20 @@ mod tests {
 
     #[test]
     fn la_famille_se_reconnait_au_suffixe_sans_casse() {
-        assert_eq!(Famille::depuis_chemin("data/common/chr/a.g4pk"), Some(Famille::G4pk));
-        assert_eq!(Famille::depuis_chemin("data/common/chr/A.OBJBIN"), Some(Famille::Objbin));
+        assert_eq!(
+            Famille::depuis_chemin("data/common/chr/a.g4pk"),
+            Some(Famille::G4pk)
+        );
+        assert_eq!(
+            Famille::depuis_chemin("data/common/chr/A.OBJBIN"),
+            Some(Famille::Objbin)
+        );
         // `.g4pkm` ne doit pas être happé par `.g4pk` : les deux sont dans la table, et
         // l'ordre de déclaration met `.g4pk` en premier. Le suffixe complet tranche.
-        assert_eq!(Famille::depuis_chemin("data/common/menu/a.g4pkm"), Some(Famille::G4pkm));
+        assert_eq!(
+            Famille::depuis_chemin("data/common/menu/a.g4pkm"),
+            Some(Famille::G4pkm)
+        );
         assert_eq!(Famille::depuis_chemin("data/common/a.cfg.bin"), None);
         assert_eq!(Famille::depuis_chemin("data/common/a"), None);
     }
@@ -849,10 +884,14 @@ mod tests {
         assert_eq!(d.octets, 32);
         assert!(d.donnees.is_none(), "le resume ne porte pas les donnees");
         match d.resume {
-            Resume::Col { interieur_interprete, entete_octets, .. } => {
+            Resume::Col {
+                interieur_interprete,
+                entete_octets,
+                ..
+            } => {
                 assert!(!interieur_interprete);
                 assert_eq!(entete_octets, 16);
-            },
+            }
             autre => panic!("mauvaise variante: {autre:?}"),
         }
     }

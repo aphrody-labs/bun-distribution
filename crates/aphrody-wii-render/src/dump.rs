@@ -6,8 +6,10 @@ use crate::{GxRenderer, align_up};
 
 impl GxRenderer {
     pub(crate) fn dump_textures(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, dir: &Path) {
-        let millis =
-            SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+        let millis = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0);
 
         if let Err(err) = std::fs::create_dir_all(dir) {
             tracing::error!(dir = %dir.display(), ?err, "dump_textures: failed to create dir");
@@ -59,7 +61,11 @@ impl GxRenderer {
                         rows_per_image: Some(height),
                     },
                 },
-                wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+                wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
             );
             queue.submit([encoder.finish()]);
 
@@ -95,7 +101,15 @@ impl GxRenderer {
                 variant = cache_id.variant,
             );
             let path: PathBuf = dir.join(filename);
-            capture::save_png_async(path, CapturedFrame { width, height, rgba }, false);
+            capture::save_png_async(
+                path,
+                CapturedFrame {
+                    width,
+                    height,
+                    rgba,
+                },
+                false,
+            );
             saved += 1;
         }
 

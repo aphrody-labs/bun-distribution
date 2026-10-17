@@ -29,16 +29,25 @@ pub(crate) fn luminance(c: &Color) -> f32 {
 /// A rectangle (at most 6 path elements, its area that of its bounds).
 pub(crate) fn is_rectangle(p: &kurbo::BezPath) -> bool {
     let b = p.bounding_box();
-    p.elements().len() <= 6 && b.area() > 0.0 && (p.area().abs() - b.area()).abs() <= b.area() * 1e-3
+    p.elements().len() <= 6
+        && b.area() > 0.0
+        && (p.area().abs() - b.area()).abs() <= b.area() * 1e-3
 }
 
 /// A path covering `page` filled with one solid colour and no stroke → its colour and opacity.
 fn cover(n: &Node, page: Rect) -> Option<(Color, f32)> {
-    let NodeKind::Path { path, .. } = &n.kind else { return None };
-    let [AppearanceItem::Fill(f)] = n.appearance.items.as_slice() else { return None };
-    let Paint::Solid { color, .. } = &f.paint else { return None };
+    let NodeKind::Path { path, .. } = &n.kind else {
+        return None;
+    };
+    let [AppearanceItem::Fill(f)] = n.appearance.items.as_slice() else {
+        return None;
+    };
+    let Paint::Solid { color, .. } = &f.paint else {
+        return None;
+    };
     let b = path.to_bezpath();
-    let covers = page.area() > 1.0 && contains(b.bounding_box(), page.inset(-0.5)) && is_rectangle(&b);
+    let covers =
+        page.area() > 1.0 && contains(b.bounding_box(), page.inset(-0.5)) && is_rectangle(&b);
     (covers && n.extras().mask.is_none()).then_some((*color, f.opacity * n.opacity))
 }
 
@@ -56,7 +65,11 @@ pub(crate) fn contains(outer: Rect, inner: Rect) -> bool {
 /// luminosity mask's.
 fn whiten(n: &mut Node) {
     let white = |p: &mut Paint| match p {
-        Paint::Solid { color, swatch, tint } => {
+        Paint::Solid {
+            color,
+            swatch,
+            tint,
+        } => {
             (*color, *swatch, *tint) = (Color::WHITE, None, 1.0);
         }
         Paint::Gradient(g) => {
@@ -129,5 +142,8 @@ pub(crate) fn mask_spec(
         Ok([one]) => Arc::unwrap_or_clone(one),
         Err(all) => group(all),
     };
-    MaskSpec::Mask(OpacityMask { invert, ..OpacityMask::new(art, clip) })
+    MaskSpec::Mask(OpacityMask {
+        invert,
+        ..OpacityMask::new(art, clip)
+    })
 }

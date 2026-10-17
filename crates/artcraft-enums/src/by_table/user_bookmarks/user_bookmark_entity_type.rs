@@ -86,13 +86,13 @@ impl UserBookmarkEntityType {
 
 #[cfg(test)]
 mod tests {
-  use crate::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
-  use crate::test_helpers::assert_serialization;
+    use crate::by_table::user_bookmarks::user_bookmark_entity_type::UserBookmarkEntityType;
+    use crate::test_helpers::assert_serialization;
 
-  mod serde {
-    use super::*;
+    mod serde {
+        use super::*;
 
-    #[test]
+        #[test]
         fn test_serialization() {
             assert_serialization(UserBookmarkEntityType::User, "user");
             assert_serialization(UserBookmarkEntityType::TtsModel, "tts_model");
@@ -101,15 +101,18 @@ mod tests {
             assert_serialization(UserBookmarkEntityType::W2lResult, "w2l_result");
             assert_serialization(UserBookmarkEntityType::MediaFile, "media_file");
             assert_serialization(UserBookmarkEntityType::ModelWeight, "model_weight");
-            assert_serialization(UserBookmarkEntityType::VoiceConversionModel, "voice_conversion_model");
+            assert_serialization(
+                UserBookmarkEntityType::VoiceConversionModel,
+                "voice_conversion_model",
+            );
             assert_serialization(UserBookmarkEntityType::ZsVoice, "zs_voice");
         }
     }
 
     mod impl_methods {
-      use super::*;
+        use super::*;
 
-      #[test]
+        #[test]
         fn test_to_str() {
             assert_eq!(UserBookmarkEntityType::User.to_str(), "user");
             assert_eq!(UserBookmarkEntityType::TtsModel.to_str(), "tts_model");
@@ -118,21 +121,51 @@ mod tests {
             assert_eq!(UserBookmarkEntityType::W2lResult.to_str(), "w2l_result");
             assert_eq!(UserBookmarkEntityType::MediaFile.to_str(), "media_file");
             assert_eq!(UserBookmarkEntityType::ModelWeight.to_str(), "model_weight");
-            assert_eq!(UserBookmarkEntityType::VoiceConversionModel.to_str(), "voice_conversion_model");
+            assert_eq!(
+                UserBookmarkEntityType::VoiceConversionModel.to_str(),
+                "voice_conversion_model"
+            );
             assert_eq!(UserBookmarkEntityType::ZsVoice.to_str(), "zs_voice");
         }
 
         #[test]
         fn test_from_str() {
-            assert_eq!(UserBookmarkEntityType::from_str("user").unwrap(), UserBookmarkEntityType::User);
-            assert_eq!(UserBookmarkEntityType::from_str("tts_model").unwrap(), UserBookmarkEntityType::TtsModel);
-            assert_eq!(UserBookmarkEntityType::from_str("tts_result").unwrap(), UserBookmarkEntityType::TtsResult);
-            assert_eq!(UserBookmarkEntityType::from_str("w2l_template").unwrap(), UserBookmarkEntityType::W2lTemplate);
-            assert_eq!(UserBookmarkEntityType::from_str("w2l_result").unwrap(), UserBookmarkEntityType::W2lResult);
-            assert_eq!(UserBookmarkEntityType::from_str("media_file").unwrap(), UserBookmarkEntityType::MediaFile);
-            assert_eq!(UserBookmarkEntityType::from_str("model_weight").unwrap(), UserBookmarkEntityType::ModelWeight);
-            assert_eq!(UserBookmarkEntityType::from_str("voice_conversion_model").unwrap(), UserBookmarkEntityType::VoiceConversionModel);
-            assert_eq!(UserBookmarkEntityType::from_str("zs_voice").unwrap(), UserBookmarkEntityType::ZsVoice);
+            assert_eq!(
+                UserBookmarkEntityType::from_str("user").unwrap(),
+                UserBookmarkEntityType::User
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("tts_model").unwrap(),
+                UserBookmarkEntityType::TtsModel
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("tts_result").unwrap(),
+                UserBookmarkEntityType::TtsResult
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("w2l_template").unwrap(),
+                UserBookmarkEntityType::W2lTemplate
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("w2l_result").unwrap(),
+                UserBookmarkEntityType::W2lResult
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("media_file").unwrap(),
+                UserBookmarkEntityType::MediaFile
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("model_weight").unwrap(),
+                UserBookmarkEntityType::ModelWeight
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("voice_conversion_model").unwrap(),
+                UserBookmarkEntityType::VoiceConversionModel
+            );
+            assert_eq!(
+                UserBookmarkEntityType::from_str("zs_voice").unwrap(),
+                UserBookmarkEntityType::ZsVoice
+            );
             assert!(UserBookmarkEntityType::from_str("foo").is_err());
         }
     }

@@ -4,7 +4,9 @@
 
 use effectcraft_keyframe::{ShapePath, Value as KV};
 use effectcraft_project::build::{self, Ids};
-use effectcraft_project::{FeatherFalloff, GroupKind, ItemId, LayerId, LayerSource, MaskMotionBlur, Node, PropGroup, Uid};
+use effectcraft_project::{
+    FeatherFalloff, GroupKind, ItemId, LayerId, LayerSource, MaskMotionBlur, Node, PropGroup, Uid,
+};
 use serde_json::{Value, json};
 
 use super::layer_menu::target_masks;
@@ -38,7 +40,13 @@ pub(crate) fn roto_smooth(sp: &mut ShapePath) {
 
 /// Whether a mask uses RotoBezier tangents.
 pub(crate) fn is_roto(g: &PropGroup) -> bool {
-    matches!(g.kind, GroupKind::Mask { roto_bezier: true, .. })
+    matches!(
+        g.kind,
+        GroupKind::Mask {
+            roto_bezier: true,
+            ..
+        }
+    )
 }
 
 /// Apply `f` to a mask path's static value and every key.
@@ -56,9 +64,15 @@ fn map_path(g: &mut PropGroup, f: &dyn Fn(&mut ShapePath)) {
 
 /// Mask targets: masks of the selected vertices, else [`target_masks`].
 fn masks_for(s: &Session, p: &Value) -> Result<(ItemId, Vec<(LayerId, Uid)>)> {
-    if p.get("mask").is_none() && p.get("layer").is_none() && !s.state.selected_vertices.is_empty() {
+    if p.get("mask").is_none() && p.get("layer").is_none() && !s.state.selected_vertices.is_empty()
+    {
         let cid = s.active_comp_id().ok_or(EngineError::NoComp)?;
-        let mut v: Vec<(LayerId, Uid)> = s.state.selected_vertices.iter().map(|v| (v.layer, v.mask)).collect();
+        let mut v: Vec<(LayerId, Uid)> = s
+            .state
+            .selected_vertices
+            .iter()
+            .map(|v| (v.layer, v.mask))
+            .collect();
         v.sort();
         v.dedup();
         return Ok((cid, v));
@@ -66,23 +80,40 @@ fn masks_for(s: &Session, p: &Value) -> Result<(ItemId, Vec<(LayerId, Uid)>)> {
     // A shape layer's Path item by uid.
     if let Some(uid) = p.get("mask").and_then(Value::as_u64) {
         let (cid, lid) = layer_p(s, p, "path")?;
-        if s.project.comp(cid).and_then(|c| c.layer(lid)).and_then(|l| l.props.find_group(uid)).is_some_and(|g| g.match_id == "path") {
+        if s.project
+            .comp(cid)
+            .and_then(|c| c.layer(lid))
+            .and_then(|l| l.props.find_group(uid))
+            .is_some_and(|g| g.match_id == "path")
+        {
             return Ok((cid, vec![(lid, uid)]));
         }
     }
     target_masks(s, p)
 }
 
-fn edit_mask_groups(s: &mut Session, p: &Value, label: &str, f: impl Fn(&mut PropGroup) -> Result<()>) -> Result<Value> {
+fn edit_mask_groups(
+    s: &mut Session,
+    p: &Value,
+    label: &str,
+    f: impl Fn(&mut PropGroup) -> Result<()>,
+) -> Result<Value> {
     let (cid, targets) = masks_for(s, p)?;
     if targets.is_empty() {
-        return Err(bad(label, "no masks: select a layer with masks (or mask vertices)"));
+        return Err(bad(
+            label,
+            "no masks: select a layer with masks (or mask vertices)",
+        ));
     }
     let n = targets.len();
     s.edit(label, None, |proj, _| {
         for (lid, uid) in &targets {
             let l = layer_mut(proj, cid, *lid)?;
-            if let Some(g) = l.props.sub_mut("masks").and_then(|m| m.find_group_mut(*uid)) {
+            if let Some(g) = l
+                .props
+                .sub_mut("masks")
+                .and_then(|m| m.find_group_mut(*uid))
+            {
                 f(g)?;
             }
         }
@@ -94,7 +125,12 @@ fn edit_mask_groups(s: &mut Session, p: &Value, label: &str, f: impl Fn(&mut Pro
 fn roto_bezier(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, targets) = masks_for(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let all_on = targets.iter().all(|(l, u)| comp.layer(*l).and_then(|l| l.masks()).and_then(|m| m.find_group(*u)).is_some_and(is_roto));
+    let all_on = targets.iter().all(|(l, u)| {
+        comp.layer(*l)
+            .and_then(|l| l.masks())
+            .and_then(|m| m.find_group(*u))
+            .is_some_and(is_roto)
+    });
     let on = b_p(p, "value").unwrap_or(!all_on);
     edit_mask_groups(s, p, "RotoBezier", |g| {
         if let GroupKind::Mask { roto_bezier, .. } = &mut g.kind {
@@ -141,7 +177,10 @@ fn feather_falloff(s: &mut Session, p: &Value) -> Result<Value> {
         _ => return Err(bad("layer.mask.featherFalloff", "mode: smooth|linear")),
     };
     edit_mask_groups(s, p, "Mask Feather Falloff", |g| {
-        if let GroupKind::Mask { feather_falloff, .. } = &mut g.kind {
+        if let GroupKind::Mask {
+            feather_falloff, ..
+        } = &mut g.kind
+        {
             *feather_falloff = mode;
         }
         Ok(())
@@ -157,15 +196,29 @@ fn hide_locked(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn has_one_vertex(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_vertices.len() == 1 { Ok(()) } else { Err("select one mask vertex".into()) }
+    if s.state.selected_vertices.len() == 1 {
+        Ok(())
+    } else {
+        Err("select one mask vertex".into())
+    }
 }
 
 fn set_first_vertex(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = match (p.get("layer"), p.get("mask"), p.get("index").and_then(Value::as_u64)) {
+    let v = match (
+        p.get("layer"),
+        p.get("mask"),
+        p.get("index").and_then(Value::as_u64),
+    ) {
         (Some(_), Some(m), Some(i)) => {
             let (_, lid) = layer_p(s, p, "path.setFirstVertex")?;
-            let mask = m.as_u64().ok_or_else(|| bad("path.setFirstVertex", "`mask` is the mask uid"))?;
-            VertexRef { layer: lid, mask, index: i as usize }
+            let mask = m
+                .as_u64()
+                .ok_or_else(|| bad("path.setFirstVertex", "`mask` is the mask uid"))?;
+            VertexRef {
+                layer: lid,
+                mask,
+                index: i as usize,
+            }
         }
         _ => *s
             .state
@@ -177,7 +230,11 @@ fn set_first_vertex(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = s.active_comp_id().ok_or(EngineError::NoComp)?;
     s.edit("Set First Vertex", None, |proj, st| {
         let l = layer_mut(proj, cid, v.layer)?;
-        let g = l.props.sub_mut("masks").and_then(|m| m.find_group_mut(v.mask)).ok_or_else(|| bad("path.setFirstVertex", "no such mask"))?;
+        let g = l
+            .props
+            .sub_mut("masks")
+            .and_then(|m| m.find_group_mut(v.mask))
+            .ok_or_else(|| bad("path.setFirstVertex", "no such mask"))?;
         let k = v.index;
         let mut err = None;
         map_path(g, &|sp| {
@@ -192,7 +249,10 @@ fn set_first_vertex(s: &mut Session, p: &Value) -> Result<Value> {
         if let Some(KV::Path(sp)) = g.get("path").map(|p| &p.value)
             && !sp.closed
         {
-            err = Some(bad("path.setFirstVertex", "open paths always start at their first vertex"));
+            err = Some(bad(
+                "path.setFirstVertex",
+                "open paths always start at their first vertex",
+            ));
         }
         if let Some(e) = err {
             return Err(e);
@@ -211,17 +271,31 @@ fn free_transform(s: &mut Session, p: &Value) -> Result<Value> {
             let k = n.as_f64().unwrap_or(100.0) / 100.0;
             [k, k]
         }
-        Some(Value::Array(a)) if a.len() >= 2 => [a[0].as_f64().unwrap_or(100.0) / 100.0, a[1].as_f64().unwrap_or(100.0) / 100.0],
+        Some(Value::Array(a)) if a.len() >= 2 => [
+            a[0].as_f64().unwrap_or(100.0) / 100.0,
+            a[1].as_f64().unwrap_or(100.0) / 100.0,
+        ],
         _ => [1.0, 1.0],
     };
     let rot = f_p(p, "rotation").unwrap_or(0.0).to_radians();
-    let off =
-        p.get("offset").and_then(Value::as_array).map(|a| [a.first().and_then(Value::as_f64).unwrap_or(0.0), a.get(1).and_then(Value::as_f64).unwrap_or(0.0)]);
+    let off = p.get("offset").and_then(Value::as_array).map(|a| {
+        [
+            a.first().and_then(Value::as_f64).unwrap_or(0.0),
+            a.get(1).and_then(Value::as_f64).unwrap_or(0.0),
+        ]
+    });
     let off = off.unwrap_or([0.0; 2]);
-    let anchor =
-        p.get("anchor").and_then(Value::as_array).map(|a| [a.first().and_then(Value::as_f64).unwrap_or(0.0), a.get(1).and_then(Value::as_f64).unwrap_or(0.0)]);
+    let anchor = p.get("anchor").and_then(Value::as_array).map(|a| {
+        [
+            a.first().and_then(Value::as_f64).unwrap_or(0.0),
+            a.get(1).and_then(Value::as_f64).unwrap_or(0.0),
+        ]
+    });
     if scale == [1.0, 1.0] && rot == 0.0 && off == [0.0, 0.0] {
-        return Err(bad("path.freeTransform", "pass scale (% or [x%, y%]), rotation (deg) and/or offset [dx, dy]; anchor? [x, y]"));
+        return Err(bad(
+            "path.freeTransform",
+            "pass scale (% or [x%, y%]), rotation (deg) and/or offset [dx, dy]; anchor? [x, y]",
+        ));
     }
     let (cid, targets) = masks_for(s, p)?;
     let selected: Vec<VertexRef> = s.state.selected_vertices.clone();
@@ -237,14 +311,32 @@ fn free_transform(s: &mut Session, p: &Value) -> Result<Value> {
         for (lid, uid) in &targets {
             let l = layer_mut(proj, cid, *lid)?;
             let lt = l.layer_time(t);
-            let Some(g) = l.props.find_group_mut(*uid).filter(|g| super::mask::is_path_group(g)) else { continue };
+            let Some(g) = l
+                .props
+                .find_group_mut(*uid)
+                .filter(|g| super::mask::is_path_group(g))
+            else {
+                continue;
+            };
             let roto = is_roto(g);
-            let Some(pr) = g.get_mut("path") else { continue };
-            let KV::Path(mut sp) = pr.value_at(lt) else { continue };
+            let Some(pr) = g.get_mut("path") else {
+                continue;
+            };
+            let KV::Path(mut sp) = pr.value_at(lt) else {
+                continue;
+            };
             let idx: Vec<usize> = {
-                let sel: Vec<usize> =
-                    selected.iter().filter(|v| v.layer == *lid && v.mask == *uid).map(|v| v.index).filter(|i| *i < sp.vertices.len()).collect();
-                if sel.is_empty() { (0..sp.vertices.len()).collect() } else { sel }
+                let sel: Vec<usize> = selected
+                    .iter()
+                    .filter(|v| v.layer == *lid && v.mask == *uid)
+                    .map(|v| v.index)
+                    .filter(|i| *i < sp.vertices.len())
+                    .collect();
+                if sel.is_empty() {
+                    (0..sp.vertices.len()).collect()
+                } else {
+                    sel
+                }
             };
             if idx.is_empty() {
                 continue;
@@ -283,8 +375,9 @@ fn free_transform(s: &mut Session, p: &Value) -> Result<Value> {
 // ---------------------------------------------------------------- shape groups
 
 const SHAPE_ITEMS: &[&str] = &[
-    "group", "rect", "ellipse", "star", "path", "fill", "stroke", "gfill", "gstroke", "trim", "repeater", "round", "offset", "pucker", "twist", "zigzag",
-    "wiggle", "merge", "front", "bevel", "side", "back",
+    "group", "rect", "ellipse", "star", "path", "fill", "stroke", "gfill", "gstroke", "trim",
+    "repeater", "round", "offset", "pucker", "twist", "zigzag", "wiggle", "merge", "front",
+    "bevel", "side", "back",
 ];
 
 /// Selected shape items (contents entries) of shape layers: (layer, uid).
@@ -297,11 +390,19 @@ fn selected_shape_items(s: &Session, p: &Value) -> Result<(ItemId, Vec<(LayerId,
         out.extend(a.iter().filter_map(Value::as_u64).map(|u| (lid, u)));
     } else {
         for (lid, uid) in &s.state.selected_props {
-            let Some(l) = comp.layer(*lid).filter(|l| matches!(l.source, LayerSource::Shape)) else { continue };
+            let Some(l) = comp
+                .layer(*lid)
+                .filter(|l| matches!(l.source, LayerSource::Shape))
+            else {
+                continue;
+            };
             if l.props
                 .sub("contents")
                 .and_then(|c| c.find_group(*uid))
-                .is_some_and(|g| g.uid != l.props.sub("contents").map(|c| c.uid).unwrap_or(0) && SHAPE_ITEMS.contains(&g.match_id.as_str()))
+                .is_some_and(|g| {
+                    g.uid != l.props.sub("contents").map(|c| c.uid).unwrap_or(0)
+                        && SHAPE_ITEMS.contains(&g.match_id.as_str())
+                })
             {
                 out.push((*lid, *uid));
             }
@@ -314,24 +415,52 @@ fn has_shape_items(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let comp = s.active_comp().ok_or("no composition")?;
     let ok = s.state.selected_props.iter().any(|(l, u)| {
-        comp.layer(*l).and_then(|l| l.props.sub("contents")).and_then(|c| c.find_group(*u)).is_some_and(|g| SHAPE_ITEMS.contains(&g.match_id.as_str()))
+        comp.layer(*l)
+            .and_then(|l| l.props.sub("contents"))
+            .and_then(|c| c.find_group(*u))
+            .is_some_and(|g| SHAPE_ITEMS.contains(&g.match_id.as_str()))
     });
-    if ok { Ok(()) } else { Err("select shape items (Contents ▸ …) in the timeline".into()) }
+    if ok {
+        Ok(())
+    } else {
+        Err("select shape items (Contents ▸ …) in the timeline".into())
+    }
 }
 
 fn group_shapes(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, items) = selected_shape_items(s, p)?;
-    let Some(lid) = items.first().map(|x| x.0) else { return Err(bad("path.groupShapes", "select shape items to group")) };
-    let uids: Vec<Uid> = items.iter().filter(|(l, _)| *l == lid).map(|(_, u)| *u).collect();
+    let Some(lid) = items.first().map(|x| x.0) else {
+        return Err(bad("path.groupShapes", "select shape items to group"));
+    };
+    let uids: Vec<Uid> = items
+        .iter()
+        .filter(|(l, _)| *l == lid)
+        .map(|(_, u)| *u)
+        .collect();
     let g = s.edit("Group Shapes", None, |proj, st| {
         let mut next = proj.next_id;
         let l = layer_mut(proj, cid, lid)?;
-        let contents = l.props.sub_mut("contents").ok_or_else(|| bad("path.groupShapes", "not a shape layer"))?;
-        let parent = contents.parent_of_mut(uids[0]).ok_or_else(|| bad("path.groupShapes", "no such shape item"))?;
-        if !uids.iter().all(|u| parent.children.iter().any(|c| c.uid() == *u)) {
-            return Err(bad("path.groupShapes", "the shape items must be in the same group"));
+        let contents = l
+            .props
+            .sub_mut("contents")
+            .ok_or_else(|| bad("path.groupShapes", "not a shape layer"))?;
+        let parent = contents
+            .parent_of_mut(uids[0])
+            .ok_or_else(|| bad("path.groupShapes", "no such shape item"))?;
+        if !uids
+            .iter()
+            .all(|u| parent.children.iter().any(|c| c.uid() == *u))
+        {
+            return Err(bad(
+                "path.groupShapes",
+                "the shape items must be in the same group",
+            ));
         }
-        let at = parent.children.iter().position(|c| uids.contains(&c.uid())).unwrap_or(0);
+        let at = parent
+            .children
+            .iter()
+            .position(|c| uids.contains(&c.uid()))
+            .unwrap_or(0);
         let mut moved = vec![];
         parent.children.retain(|c| {
             if uids.contains(&c.uid()) {
@@ -341,11 +470,27 @@ fn group_shapes(s: &mut Session, p: &Value) -> Result<Value> {
                 true
             }
         });
-        let n = parent.children.iter().filter(|c| c.match_id() == "group").count() + 1;
-        let groups: Vec<PropGroup> = moved.into_iter().filter_map(|c| if let Node::Group(g) = c { Some(g) } else { None }).collect();
+        let n = parent
+            .children
+            .iter()
+            .filter(|c| c.match_id() == "group")
+            .count()
+            + 1;
+        let groups: Vec<PropGroup> = moved
+            .into_iter()
+            .filter_map(|c| {
+                if let Node::Group(g) = c {
+                    Some(g)
+                } else {
+                    None
+                }
+            })
+            .collect();
         let g = build::shape_group(&mut Ids(&mut next), &format!("Group {n}"), groups);
         let uid = g.uid;
-        parent.children.insert(at.min(parent.children.len()), Node::Group(g));
+        parent
+            .children
+            .insert(at.min(parent.children.len()), Node::Group(g));
         proj.next_id = next;
         st.selected_props = vec![(lid, uid)];
         Ok(uid)
@@ -399,7 +544,12 @@ fn ungroup_shapes(s: &mut Session, p: &Value) -> Result<Value> {
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let groups: Vec<(LayerId, Uid)> = items
         .into_iter()
-        .filter(|(l, u)| comp.layer(*l).and_then(|l| l.props.sub("contents")).and_then(|c| c.find_group(*u)).is_some_and(|g| g.match_id == "group"))
+        .filter(|(l, u)| {
+            comp.layer(*l)
+                .and_then(|l| l.props.sub("contents"))
+                .and_then(|c| c.find_group(*u))
+                .is_some_and(|g| g.match_id == "group")
+        })
         .collect();
     if groups.is_empty() {
         return Err(bad("path.ungroupShapes", "select a shape group to ungroup"));
@@ -448,10 +598,42 @@ fn ungroup_shapes(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("path.rotoBezier", "RotoBezier", ["Layer", "Mask and Shape Path"], None, "{layer?, mask?, value?}", has_layers, roto_bezier),
-        cmd!("path.convertToBezier", "Convert To Bezier Path", ["Layer", "Mask and Shape Path"], None, "{layer?, mask?}", has_layers, convert_to_bezier),
-        cmd!("path.groupShapes", "Group Shapes", ["Layer"], Some("Cmd+G"), "{layer?, items?: [uid]}", has_shape_items, group_shapes),
-        cmd!("path.ungroupShapes", "Ungroup Shapes", ["Layer"], Some("Cmd+Shift+G"), "{layer?, items?: [group uid]}", has_shape_items, ungroup_shapes),
+        cmd!(
+            "path.rotoBezier",
+            "RotoBezier",
+            ["Layer", "Mask and Shape Path"],
+            None,
+            "{layer?, mask?, value?}",
+            has_layers,
+            roto_bezier
+        ),
+        cmd!(
+            "path.convertToBezier",
+            "Convert To Bezier Path",
+            ["Layer", "Mask and Shape Path"],
+            None,
+            "{layer?, mask?}",
+            has_layers,
+            convert_to_bezier
+        ),
+        cmd!(
+            "path.groupShapes",
+            "Group Shapes",
+            ["Layer"],
+            Some("Cmd+G"),
+            "{layer?, items?: [uid]}",
+            has_shape_items,
+            group_shapes
+        ),
+        cmd!(
+            "path.ungroupShapes",
+            "Ungroup Shapes",
+            ["Layer"],
+            Some("Cmd+Shift+G"),
+            "{layer?, items?: [group uid]}",
+            has_shape_items,
+            ungroup_shapes
+        ),
         cmd!(
             "path.setFirstVertex",
             "Set First Vertex",
@@ -470,8 +652,32 @@ pub fn specs() -> Vec<CommandSpec> {
             has_layers,
             free_transform
         ),
-        cmd!("layer.mask.motionBlur", "Motion Blur", [], None, "{layer?, mask?, mode: sameAsLayer|on|off}", has_layers, mask_motion_blur),
-        cmd!("layer.mask.featherFalloff", "Feather Falloff", [], None, "{layer?, mask?, mode: smooth|linear}", has_layers, feather_falloff),
-        cmd!("layer.mask.hideLocked", "Hide Locked Masks", ["Layer", "Mask"], None, "{value?}", has_comp, hide_locked),
+        cmd!(
+            "layer.mask.motionBlur",
+            "Motion Blur",
+            [],
+            None,
+            "{layer?, mask?, mode: sameAsLayer|on|off}",
+            has_layers,
+            mask_motion_blur
+        ),
+        cmd!(
+            "layer.mask.featherFalloff",
+            "Feather Falloff",
+            [],
+            None,
+            "{layer?, mask?, mode: smooth|linear}",
+            has_layers,
+            feather_falloff
+        ),
+        cmd!(
+            "layer.mask.hideLocked",
+            "Hide Locked Masks",
+            ["Layer", "Mask"],
+            None,
+            "{value?}",
+            has_comp,
+            hide_locked
+        ),
     ]
 }

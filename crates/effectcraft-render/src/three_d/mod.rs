@@ -16,7 +16,10 @@ mod tests;
 #[cfg(test)]
 mod tests_orient;
 
-pub use camera::{CameraState, Dof, Rig, View3D, ViewCam, Views3D, active_camera, default_camera, default_view_cam};
+pub use camera::{
+    CameraState, Dof, Rig, View3D, ViewCam, Views3D, active_camera, default_camera,
+    default_view_cam,
+};
 pub use compose::{Geo as PlaneGeo, Plane3d, PlaneDof, Run3d, SkyDraw};
 pub use light::{LightState, Material, lights_at};
 
@@ -37,5 +40,6 @@ pub fn layer_to_view(ctx: &EvalCtx, layer: &Layer, cam: &CameraState) -> Mat3 {
 
 /// Project a world point into comp pixels through `cam` (None behind a perspective camera).
 pub fn project_point(ctx: &EvalCtx, cam: &CameraState, p: [f64; 3]) -> Option<[f64; 2]> {
-    cam.project(ctx.comp.width as f64, ctx.comp.height as f64, p.into()).map(|v| [v.x, v.y])
+    cam.project(ctx.comp.width as f64, ctx.comp.height as f64, p.into())
+        .map(|v| [v.x, v.y])
 }

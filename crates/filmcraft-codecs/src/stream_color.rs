@@ -30,7 +30,12 @@ impl ColorCodes {
     /// fit a byte is no H.273 code point, so it counts as unspecified.
     pub fn from_wide(primaries: u64, transfer: u64, matrix: u64, full_range: Option<bool>) -> Self {
         let code = |v: u64| u8::try_from(v).unwrap_or(UNSPECIFIED);
-        Self { primaries: code(primaries), transfer: code(transfer), matrix: code(matrix), full_range }
+        Self {
+            primaries: code(primaries),
+            transfer: code(transfer),
+            matrix: code(matrix),
+            full_range,
+        }
     }
 }
 
@@ -43,32 +48,65 @@ pub fn from_codec_config(codec: &CodecConfig) -> Option<ColorCodes> {
         CodecConfig::Hevc(c) => hevc(c),
         CodecConfig::Av1(c) => av1(&c.config_obus),
         // VP8 has no colour signalling: its one colour space is BT.601 YUV, studio swing (RFC 6386 9.2)
-        CodecConfig::Unknown { fourcc, .. } if fourcc.0 == *b"vp08" => Some(ColorCodes { primaries: 2, transfer: 2, matrix: 6, full_range: Some(false) }),
+        CodecConfig::Unknown { fourcc, .. } if fourcc.0 == *b"vp08" => Some(ColorCodes {
+            primaries: 2,
+            transfer: 2,
+            matrix: 6,
+            full_range: Some(false),
+        }),
         _ => None,
     }
 }
 
 fn avc(c: &AvcConfig) -> Option<ColorCodes> {
     // NAL header byte: nal_unit_type 7 is an SPS
-    let nal = c.sps.iter().find(|n| n.first().is_some_and(|h| h & 0x1f == 7))?;
-    let sps = filmcraft_h264::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(nal.get(1..)?)).ok()?;
+    let nal = c
+        .sps
+        .iter()
+        .find(|n| n.first().is_some_and(|h| h & 0x1f == 7))?;
+    let sps =
+        filmcraft_h264::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(nal.get(1..)?))
+            .ok()?;
     let v = sps.vui?;
-    Some(ColorCodes { primaries: v.colour_primaries, transfer: v.transfer_characteristics, matrix: v.matrix_coefficients, full_range: Some(v.full_range) })
+    Some(ColorCodes {
+        primaries: v.colour_primaries,
+        transfer: v.transfer_characteristics,
+        matrix: v.matrix_coefficients,
+        full_range: Some(v.full_range),
+    })
 }
 
 fn hevc(c: &HevcConfig) -> Option<ColorCodes> {
     // two-byte NAL header: nal_unit_type 33 is an SPS (whatever array the record files it under)
-    let nal = c.arrays.iter().flat_map(|a| &a.nalus).find(|n| n.first().is_some_and(|h| (h >> 1) & 0x3f == 33))?;
-    let sps = filmcraft_hevc::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(nal.get(2..)?)).ok()?;
+    let nal = c
+        .arrays
+        .iter()
+        .flat_map(|a| &a.nalus)
+        .find(|n| n.first().is_some_and(|h| (h >> 1) & 0x3f == 33))?;
+    let sps =
+        filmcraft_hevc::params::Sps::parse(&filmcraft_bitstream::unescape_rbsp(nal.get(2..)?))
+            .ok()?;
     let v = sps.vui?;
-    Some(ColorCodes { primaries: v.colour_primaries, transfer: v.transfer_characteristics, matrix: v.matrix_coefficients, full_range: Some(v.full_range) })
+    Some(ColorCodes {
+        primaries: v.colour_primaries,
+        transfer: v.transfer_characteristics,
+        matrix: v.matrix_coefficients,
+        full_range: Some(v.full_range),
+    })
 }
 
 fn av1(config_obus: &[u8]) -> Option<ColorCodes> {
     // OBU type 1: the sequence header
-    let (_, payload) = crate::hw_frame::obus(config_obus).into_iter().find(|(t, _)| *t == 1)?;
+    let (_, payload) = crate::hw_frame::obus(config_obus)
+        .into_iter()
+        .find(|(t, _)| *t == 1)?;
     let c = filmcraft_av1::SequenceHeader::parse(payload).ok()?.color;
-    Some(ColorCodes { primaries: c.color_primaries, transfer: c.transfer_characteristics, matrix: c.matrix_coefficients, full_range: Some(c.color_range) })
+    Some(ColorCodes {
+        primaries: c.color_primaries,
+        transfer: c.transfer_characteristics,
+        matrix: c.matrix_coefficients,
+        full_range: Some(c.color_range),
+    })
 }
 
 /// Colour from the code points a file signals, most authoritative first (the container's colour
@@ -77,14 +115,20 @@ fn av1(config_obus: &[u8]) -> Option<ColorCodes> {
 /// frame size ([`filmcraft_frame::default_matrix`]: BT.601 for SD, BT.709 otherwise), BT.709
 /// transfer and primaries, limited range.
 pub fn resolve(width: u32, height: u32, sources: &[ColorCodes]) -> ColorInfo {
-    let mut c = ColorInfo { matrix: filmcraft_frame::default_matrix(width, height), ..ColorInfo::REC709 };
+    let mut c = ColorInfo {
+        matrix: filmcraft_frame::default_matrix(width, height),
+        ..ColorInfo::REC709
+    };
     if let Some(m) = sources.iter().find_map(|s| Matrix::from_code(s.matrix)) {
         c.matrix = m;
     }
     if let Some(t) = sources.iter().find_map(|s| Transfer::from_code(s.transfer)) {
         c.transfer = t;
     }
-    if let Some(p) = sources.iter().find_map(|s| primaries_from_code(s.primaries)) {
+    if let Some(p) = sources
+        .iter()
+        .find_map(|s| primaries_from_code(s.primaries))
+    {
         c.primaries = p;
     }
     if sources.iter().find_map(|s| s.full_range) == Some(true) {

@@ -124,18 +124,26 @@ pub struct HandheldPlugin {
 impl HandheldPlugin {
     /// Boot the image at `path`; DS saves go to `<path>.sav` unless `options.save_path` is set.
     pub fn from_path(path: impl Into<PathBuf>, options: Options) -> Self {
-        Self { source: Mutex::new(Some(Source_::Path(path.into()))), options }
+        Self {
+            source: Mutex::new(Some(Source_::Path(path.into()))),
+            options,
+        }
     }
 
     /// Boot an image held in memory.
     pub fn from_bytes(name: impl Into<String>, image: Vec<u8>, options: Options) -> Self {
-        Self { source: Mutex::new(Some(Source_::Bytes(name.into(), image))), options }
+        Self {
+            source: Mutex::new(Some(Source_::Bytes(name.into(), image))),
+            options,
+        }
     }
 }
 
 impl Plugin for HandheldPlugin {
     fn build(&self, app: &mut App) {
-        let Some(source) = self.source.lock().unwrap().take() else { return };
+        let Some(source) = self.source.lock().unwrap().take() else {
+            return;
+        };
         let machine = match source {
             Source_::Path(path) => crate::open(&path, &self.options),
             Source_::Bytes(name, image) => crate::boot(&name, &image, &self.options),
@@ -152,7 +160,11 @@ pub fn install(app: &mut App, machine: Box<dyn Handheld>) {
     let sample_rate = machine.sample_rate();
     let make = |w: u32, h: u32| {
         let mut image = Image::new_fill(
-            Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+            Extent3d {
+                width: w,
+                height: h,
+                depth_or_array_layers: 1,
+            },
             TextureDimension::D2,
             &[0, 0, 0, 255],
             TextureFormat::Rgba8UnormSrgb,
@@ -169,7 +181,12 @@ pub fn install(app: &mut App, machine: Box<dyn Handheld>) {
         bottom_size: (bottom.width, bottom.height),
     };
     app.insert_resource(screens)
-        .insert_resource(HandheldStatus { frames: 0, paused: false, stopped: false, refresh_rate: refresh })
+        .insert_resource(HandheldStatus {
+            frames: 0,
+            paused: false,
+            stopped: false,
+            refresh_rate: refresh,
+        })
         .init_resource::<HandheldInput>()
         .init_resource::<HandheldKeyMap>()
         .add_message::<HandheldEvent>()
@@ -182,12 +199,16 @@ pub fn install(app: &mut App, machine: Box<dyn Handheld>) {
     if app.is_plugin_added::<AudioPlugin>() {
         app.add_audio_source::<HandheldAudio>();
         let queue = HandheldAudioQueue::new(sample_rate);
-        let handle = app.world_mut().resource_mut::<Assets<HandheldAudio>>().add(HandheldAudio {
-            shared: queue.shared.clone(),
-            sample_rate,
-        });
+        let handle = app
+            .world_mut()
+            .resource_mut::<Assets<HandheldAudio>>()
+            .add(HandheldAudio {
+                shared: queue.shared.clone(),
+                sample_rate,
+            });
         app.insert_resource(queue);
-        app.world_mut().spawn((AudioPlayer::<HandheldAudio>(handle), PlaybackSettings::ONCE));
+        app.world_mut()
+            .spawn((AudioPlayer::<HandheldAudio>(handle), PlaybackSettings::ONCE));
     }
 }
 
@@ -224,7 +245,10 @@ fn run(
         Step::Frame => {
             status.frames += 1;
             events.write(HandheldEvent::Frame(status.frames));
-            for (id, handle) in [(ScreenId::Top, &screens.top), (ScreenId::Bottom, &screens.bottom)] {
+            for (id, handle) in [
+                (ScreenId::Top, &screens.top),
+                (ScreenId::Bottom, &screens.bottom),
+            ] {
                 let picture = machine.image(id);
                 if let Some(mut image) = images.get_mut(handle) {
                     match image.data.as_mut() {
@@ -296,7 +320,12 @@ pub struct HandheldAudioQueue {
 impl HandheldAudioQueue {
     fn new(sample_rate: u32) -> Self {
         let max = (sample_rate as usize * 2 * MAX_LATENCY_MS / 1000).max(512);
-        Self { shared: Arc::new(Shared { samples: Mutex::new(VecDeque::with_capacity(max * 2)), max }) }
+        Self {
+            shared: Arc::new(Shared {
+                samples: Mutex::new(VecDeque::with_capacity(max * 2)),
+                max,
+            }),
+        }
     }
 
     /// Append interleaved stereo samples; the oldest are dropped past the latency bound.

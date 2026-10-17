@@ -99,7 +99,11 @@ fn cluster(frames: &mut [Frame]) -> Vec<u8> {
     for f in frames.iter() {
         let rel = (f.ms - base).clamp(i16::MIN as i64, i16::MAX as i64) as i16;
         match &f.alpha {
-            None => el(&mut body, 0xA3, &block(f.track, rel, if f.key { 0x80 } else { 0x00 }, &f.data)),
+            None => el(
+                &mut body,
+                0xA3,
+                &block(f.track, rel, if f.key { 0x80 } else { 0x00 }, &f.data),
+            ),
             Some(a) => {
                 let mut g = vec![];
                 el(&mut g, 0xA1, &block(f.track, rel, 0x00, &f.data));
@@ -127,19 +131,37 @@ fn cluster(frames: &mut [Frame]) -> Vec<u8> {
 pub(crate) fn opus_encoder(job: &Cx) -> effectcraft_opusenc::OpusEncoder {
     let channels = if job.output.audio_channels == 1 { 1 } else { 2 };
     let app = match job.output.opus_application {
-        effectcraft_project::render_queue::OpusApplication::Audio => effectcraft_opusenc::Application::Audio,
-        effectcraft_project::render_queue::OpusApplication::Voip => effectcraft_opusenc::Application::Voip,
+        effectcraft_project::render_queue::OpusApplication::Audio => {
+            effectcraft_opusenc::Application::Audio
+        }
+        effectcraft_project::render_queue::OpusApplication::Voip => {
+            effectcraft_opusenc::Application::Voip
+        }
     };
-    effectcraft_opusenc::OpusEncoder::with_application(channels, job.output.opus_bitrate_kbps.clamp(6, 510) * 1000, app)
+    effectcraft_opusenc::OpusEncoder::with_application(
+        channels,
+        job.output.opus_bitrate_kbps.clamp(6, 510) * 1000,
+        app,
+    )
 }
 
-pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut State<'_>) -> Result<Report> {
+pub(crate) async fn webm(
+    job: &Cx<'_>,
+    comp: &Comp,
+    w: u32,
+    h: u32,
+    st: &mut State<'_>,
+) -> Result<Report> {
     if job.output.webm_codec == effectcraft_project::render_queue::WebmVideoCodec::Av1 {
         return crate::webm_av1::webm_av1(job, comp, w, h, st).await;
     }
     let rate = job.settings.rate(comp);
     let alpha = job.output.channels == Channels::Rgba;
-    let colour_channels = if job.output.channels == Channels::Alpha { Channels::Alpha } else { Channels::Rgb };
+    let colour_channels = if job.output.channels == Channels::Alpha {
+        Channels::Alpha
+    } else {
+        Channels::Rgb
+    };
     let quality = job.output.quality.clamp(1, 100);
     let fps = rate.as_f64().max(1.0);
     let cfg = effectcraft_vp9enc::EncoderConfig {
@@ -147,18 +169,31 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
         height: h,
         quality,
         full_range: false,
-        keyframe_interval: if job.output.keyframe_interval > 0 { job.output.keyframe_interval } else { (fps * 2.0).round().max(1.0) as u32 },
-        target_kbps: job.output.webm_bitrate.then_some(job.output.bitrate_kbps.max(50)),
+        keyframe_interval: if job.output.keyframe_interval > 0 {
+            job.output.keyframe_interval
+        } else {
+            (fps * 2.0).round().max(1.0) as u32
+        },
+        target_kbps: job
+            .output
+            .webm_bitrate
+            .then_some(job.output.bitrate_kbps.max(50)),
         frame_rate: fps,
         loop_filter: true,
     };
     let mut color_enc = effectcraft_vp9enc::Vp9Encoder::new(cfg.clone());
     let mut alpha_enc = alpha.then(|| effectcraft_vp9enc::Vp9Encoder::new(cfg.clone()));
     let with_audio = wants_audio(job);
-    let opus_channels = if job.output.audio_channels == 1 { 1usize } else { 2 };
+    let opus_channels = if job.output.audio_channels == 1 {
+        1usize
+    } else {
+        2
+    };
     let mut opus = with_audio.then(|| opus_encoder(job));
     let total = st.total;
-    let frame_ms = |k: u64| -> i64 { ((k as i128 * 1000 * rate.den as i128 + rate.num as i128 / 2) / rate.num as i128) as i64 };
+    let frame_ms = |k: u64| -> i64 {
+        ((k as i128 * 1000 * rate.den as i128 + rate.num as i128 / 2) / rate.num as i128) as i64
+    };
     let duration_ms = frame_ms(total) as f64;
 
     let path = job.place(job.path, 1);
@@ -192,7 +227,11 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
     el_uint(&mut v, 0x83, 1);
     el_uint(&mut v, 0x9C, 0);
     el_str(&mut v, 0x86, "V_VP9");
-    el_uint(&mut v, 0x23E383, (1_000_000_000u128 * rate.den as u128 / rate.num.max(1) as u128) as u64);
+    el_uint(
+        &mut v,
+        0x23E383,
+        (1_000_000_000u128 * rate.den as u128 / rate.num.max(1) as u128) as u64,
+    );
     if alpha {
         el_uint(&mut v, 0x55EE, 1);
     }
@@ -212,7 +251,11 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
         el_uint(&mut a, 0x9C, 0);
         el_str(&mut a, 0x86, "A_OPUS");
         el(&mut a, 0x63A2, &o.opus_head());
-        el_uint(&mut a, 0x56AA, o.pre_skip() as u64 * 1_000_000_000 / OPUS_RATE as u64);
+        el_uint(
+            &mut a,
+            0x56AA,
+            o.pre_skip() as u64 * 1_000_000_000 / OPUS_RATE as u64,
+        );
         el_uint(&mut a, 0x56BB, 80_000_000);
         let mut au = vec![];
         el_float(&mut au, 0xB5, OPUS_RATE as f64);
@@ -234,7 +277,8 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
         let end = until.to_units_floor(OPUS_RATE as i64);
         if end > cursor {
             let n = (end - cursor) as usize;
-            let start = Tick(((cursor as i128 * TICKS_PER_SECOND as i128) / OPUS_RATE as i128) as i64);
+            let start =
+                Tick(((cursor as i128 * TICKS_PER_SECOND as i128) / OPUS_RATE as i128) as i64);
             pcm_left.extend(mix(job, start, n, OPUS_RATE));
             cursor = end;
         }
@@ -247,7 +291,14 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
         while pcm_left.len() >= fs {
             let pkt = enc.encode_float(&pcm_left[..fs]);
             pcm_left.drain(..fs);
-            frames.push(Frame { ms: packets as i64 * 20, track: 2, key: true, prev_ms: None, data: pkt, alpha: None });
+            frames.push(Frame {
+                ms: packets as i64 * 20,
+                track: 2,
+                key: true,
+                prev_ms: None,
+                data: pkt,
+                alpha: None,
+            });
             packets += 1;
         }
     };
@@ -258,8 +309,21 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
         let end = (i + batch).min(total);
         // Frames render in parallel; the VP9 streams (inter-coded) encode in order, colour and
         // alpha side by side.
-        let pixels: Vec<Vec<u8>> =
-            job.frames(comp, (i..end).collect(), |_, img| job.pixels(&img, comp, if alpha { Channels::Rgba } else { colour_channels }, w, h)).await;
+        let pixels: Vec<Vec<u8>> = job
+            .frames(comp, (i..end).collect(), |_, img| {
+                job.pixels(
+                    &img,
+                    comp,
+                    if alpha {
+                        Channels::Rgba
+                    } else {
+                        colour_channels
+                    },
+                    w,
+                    h,
+                )
+            })
+            .await;
         let mut frames: Vec<Frame> = Vec::with_capacity(pixels.len());
         for (j, px) in pixels.iter().enumerate() {
             let (color, a) = rayon::join(
@@ -275,10 +339,21 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
                 },
             );
             let k = i + j as u64;
-            frames.push(Frame { ms: frame_ms(k), track: 1, key: color.key, prev_ms: (k > 0).then(|| frame_ms(k - 1)), data: color.data, alpha: a });
+            frames.push(Frame {
+                ms: frame_ms(k),
+                track: 1,
+                key: color.key,
+                prev_ms: (k > 0).then(|| frame_ms(k - 1)),
+                data: color.data,
+                alpha: a,
+            });
         }
         drop(pixels);
-        let t_end = if end >= total { span_end } else { job.settings.frame_time(comp, end) };
+        let t_end = if end >= total {
+            span_end
+        } else {
+            job.settings.frame_time(comp, end)
+        };
         audio_until(t_end, &mut frames, end >= total);
         let c = cluster(&mut frames);
         file.write_all(&c).map_err(io)?;
@@ -303,7 +378,17 @@ pub(crate) async fn webm(job: &Cx<'_>, comp: &Comp, w: u32, h: u32, st: &mut Sta
     file.write_all(&size).map_err(io)?;
     file.seek(SeekFrom::End(0)).map_err(io)?;
     let bytes = file.finish()?;
-    Ok(Report { path, frames: 0, width: w, height: h, seconds: 0.0, bytes, audio: with_audio, log: None, overflow: vec![] })
+    Ok(Report {
+        path,
+        frames: 0,
+        width: w,
+        height: h,
+        seconds: 0.0,
+        bytes,
+        audio: with_audio,
+        log: None,
+        overflow: vec![],
+    })
 }
 
 // ---------------------------------------------------------------- audio-only outputs
@@ -325,7 +410,11 @@ fn ieee_extended(v: f64) -> [u8; 10] {
 /// 16/24-bit integer or 32-bit float; plain AIFF has no float, so 32-bit float is AIFF-C `fl32`).
 pub(crate) fn audio_file(job: &Cx, comp: &Comp, aiff: bool, st: &mut State) -> Result<Report> {
     let sr = job.output.audio_sample_rate.clamp(8_000, 192_000);
-    let channels = if job.output.audio_channels == 1 { 1u16 } else { 2 };
+    let channels = if job.output.audio_channels == 1 {
+        1u16
+    } else {
+        2
+    };
     let fmt = job.output.audio_format;
     let bytes_per_sample: u16 = match fmt {
         AudioFormat::S16 => 2,
@@ -346,7 +435,11 @@ pub(crate) fn audio_file(job: &Cx, comp: &Comp, aiff: bool, st: &mut State) -> R
         let k = block.min(n - done);
         let sample = start + done as i64;
         let t = Tick::from_units(sample, i64::from(sr));
-        let t = if t.to_units_floor(i64::from(sr)) < sample { Tick(t.0.saturating_add(1)) } else { t };
+        let t = if t.to_units_floor(i64::from(sr)) < sample {
+            Tick(t.0.saturating_add(1))
+        } else {
+            t
+        };
         pcm.extend(pcm_bytes(&mix(job, t, k, sr), fmt, aiff));
         done += k;
         let now = (done as u64 * total_frames / n.max(1) as u64).min(total_frames);
@@ -386,7 +479,9 @@ pub(crate) fn audio_file(job: &Cx, comp: &Comp, aiff: bool, st: &mut State) -> R
         }
         let ssnd_len = 8 + pcm.len();
         out.extend_from_slice(b"FORM");
-        out.extend_from_slice(&((4 + fver.len() + 8 + comm.len() + 8 + ssnd_len + ssnd_len % 2) as u32).to_be_bytes());
+        out.extend_from_slice(
+            &((4 + fver.len() + 8 + comm.len() + 8 + ssnd_len + ssnd_len % 2) as u32).to_be_bytes(),
+        );
         out.extend_from_slice(if float { b"AIFC" } else { b"AIFF" });
         out.extend_from_slice(&fver);
         out.extend_from_slice(b"COMM");
@@ -423,7 +518,17 @@ pub(crate) fn audio_file(job: &Cx, comp: &Comp, aiff: bool, st: &mut State) -> R
     let mut file = job.create(&path)?;
     file.write_all(&out).map_err(io)?;
     let bytes = file.finish()?;
-    Ok(Report { path, frames: 0, width: 0, height: 0, seconds: 0.0, bytes, audio: true, log: None, overflow: vec![] })
+    Ok(Report {
+        path,
+        frames: 0,
+        width: 0,
+        height: 0,
+        seconds: 0.0,
+        bytes,
+        audio: true,
+        log: None,
+        overflow: vec![],
+    })
 }
 
 #[cfg(test)]
@@ -437,7 +542,10 @@ mod tests {
         assert_eq!(vint(127), vec![0x40, 0x7F]);
         assert_eq!(id_bytes(0xA3), vec![0xA3]);
         assert_eq!(id_bytes(EBML), vec![0x1A, 0x45, 0xDF, 0xA3]);
-        assert_eq!(ieee_extended(44100.0), [0x40, 0x0E, 0xAC, 0x44, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            ieee_extended(44100.0),
+            [0x40, 0x0E, 0xAC, 0x44, 0, 0, 0, 0, 0, 0]
+        );
         assert_eq!(ieee_extended(48000.0)[..4], [0x40, 0x0E, 0xBB, 0x80]);
     }
 }

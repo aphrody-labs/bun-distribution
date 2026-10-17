@@ -4,7 +4,10 @@
 
 use std::sync::Arc;
 
-use pdfcraft_cos::{Algorithm, Auth, CosError, Document, NewEncryption, ObjRef, Object, PdfString, SaveOptions, write_full, write_incremental};
+use pdfcraft_cos::{
+    Algorithm, Auth, CosError, Document, NewEncryption, ObjRef, Object, PdfString, SaveOptions,
+    write_full, write_incremental,
+};
 
 const SECRET: &str = "BT /F1 18 Tf 20 100 Td (Secret page) Tj ET";
 
@@ -29,7 +32,13 @@ fn fixture() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R /Info 7 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R /Info 7 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
@@ -49,45 +58,91 @@ fn protect(alg: Algorithm, user: &str, owner: &str, permissions: i32) -> Vec<u8>
 
 fn content(doc: &Document) -> String {
     let catalog = doc.get(doc.root().unwrap()).as_dict().cloned().unwrap();
-    let pages = doc.get(catalog.reference(b"Pages").unwrap()).as_dict().cloned().unwrap();
-    let page = doc.resolve(&pages.get(b"Kids").unwrap().as_array().unwrap()[0]).as_dict().cloned().unwrap();
+    let pages = doc
+        .get(catalog.reference(b"Pages").unwrap())
+        .as_dict()
+        .cloned()
+        .unwrap();
+    let page = doc
+        .resolve(&pages.get(b"Kids").unwrap().as_array().unwrap()[0])
+        .as_dict()
+        .cloned()
+        .unwrap();
     match doc.resolve(page.get(b"Contents").unwrap()).as_ref() {
-        Object::Stream(s) => String::from_utf8_lossy(&s.decoded().unwrap()).trim().to_string(),
+        Object::Stream(s) => String::from_utf8_lossy(&s.decoded().unwrap())
+            .trim()
+            .to_string(),
         _ => panic!("no content stream"),
     }
 }
 
 fn title(doc: &Document) -> Option<String> {
     let info = doc.resolve(doc.trailer().get(b"Info")?);
-    info.as_dict()?.get(b"Title").and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text()))
+    info.as_dict()?
+        .get(b"Title")
+        .and_then(|t| doc.resolve(t).as_string().map(|s| s.to_text()))
 }
 
-const ALL: [Algorithm; 4] = [Algorithm::Rc4_40, Algorithm::Rc4_128, Algorithm::Aes128, Algorithm::Aes256];
+const ALL: [Algorithm; 4] = [
+    Algorithm::Rc4_40,
+    Algorithm::Rc4_128,
+    Algorithm::Aes128,
+    Algorithm::Aes256,
+];
 
 #[test]
 fn every_algorithm_round_trips_and_hides_the_content() {
     for alg in ALL {
         let bytes = protect(alg, "user", "owner", -1);
         let raw = String::from_utf8_lossy(&bytes);
-        assert!(!raw.contains("Secret page") && !raw.contains("Quarterly"), "{alg:?}: plaintext leaked");
+        assert!(
+            !raw.contains("Secret page") && !raw.contains("Quarterly"),
+            "{alg:?}: plaintext leaked"
+        );
         let bytes = Arc::new(bytes);
-        assert!(matches!(Document::open(bytes.clone()), Err(CosError::NeedsPassword)), "{alg:?}");
-        assert!(matches!(Document::open_with_password(bytes.clone(), Some("guess")), Err(CosError::WrongPassword)), "{alg:?}");
+        assert!(
+            matches!(Document::open(bytes.clone()), Err(CosError::NeedsPassword)),
+            "{alg:?}"
+        );
+        assert!(
+            matches!(
+                Document::open_with_password(bytes.clone(), Some("guess")),
+                Err(CosError::WrongPassword)
+            ),
+            "{alg:?}"
+        );
         let user = Document::open_with_password(bytes.clone(), Some("user")).unwrap();
         assert_eq!(user.security().unwrap().auth(), Auth::User);
         assert_eq!(content(&user), SECRET, "{alg:?}");
-        assert_eq!(title(&user).as_deref(), Some("Quarterly numbers"), "{alg:?}");
+        assert_eq!(
+            title(&user).as_deref(),
+            Some("Quarterly numbers"),
+            "{alg:?}"
+        );
         let owner = Document::open_with_password(bytes.clone(), Some("owner")).unwrap();
         assert_eq!(owner.security().unwrap().auth(), Auth::Owner);
         // Independent check: hayro decrypts our output. hayro-syntax 0.7 has no owner-password
         // authentication for R2–R4 (Algorithm 7), so for those qpdf is the owner-password oracle
         // (`qpdf_agrees`); hayro checks every user password and R6 owner passwords.
-        for pw in if alg == Algorithm::Aes256 { &["user", "owner"][..] } else { &["user"][..] } {
-            let hay = hayro_syntax::Pdf::new_with_password(bytes.as_ref().clone(), pw).unwrap_or_else(|e| panic!("{alg:?}/{pw}: {e:?}"));
-            let page = hay.pages().first().unwrap().page_stream().map(|s| String::from_utf8_lossy(s).trim().to_string());
+        for pw in if alg == Algorithm::Aes256 {
+            &["user", "owner"][..]
+        } else {
+            &["user"][..]
+        } {
+            let hay = hayro_syntax::Pdf::new_with_password(bytes.as_ref().clone(), pw)
+                .unwrap_or_else(|e| panic!("{alg:?}/{pw}: {e:?}"));
+            let page = hay
+                .pages()
+                .first()
+                .unwrap()
+                .page_stream()
+                .map(|s| String::from_utf8_lossy(s).trim().to_string());
             assert_eq!(page.as_deref(), Some(SECRET), "{alg:?}/{pw}");
         }
-        assert!(hayro_syntax::Pdf::new(bytes.as_ref().clone()).is_err(), "{alg:?}: hayro must not open it without a password");
+        assert!(
+            hayro_syntax::Pdf::new(bytes.as_ref().clone()).is_err(),
+            "{alg:?}: hayro must not open it without a password"
+        );
     }
 }
 
@@ -98,8 +153,17 @@ fn empty_user_password_opens_but_reports_restrictions() {
     let p = doc.permissions().unwrap();
     assert!(p.print() && !p.modify() && !p.copy() && !p.assemble());
     let owner = Document::open_with_password(bytes, Some("owner")).unwrap();
-    assert!(owner.permissions().unwrap().modify(), "the owner may do everything");
-    assert!(Document::open(Arc::new(fixture())).unwrap().permissions().is_none(), "unencrypted: no restrictions");
+    assert!(
+        owner.permissions().unwrap().modify(),
+        "the owner may do everything"
+    );
+    assert!(
+        Document::open(Arc::new(fixture()))
+            .unwrap()
+            .permissions()
+            .is_none(),
+        "unencrypted: no restrictions"
+    );
 }
 
 #[test]
@@ -109,9 +173,20 @@ fn the_permissions_password_unlocks_an_open_document() {
         let mut doc = Document::open(Arc::new(protect(alg, "", "perms", 0b0100))).unwrap();
         // Read something before unlocking: it must stay readable afterwards.
         assert_eq!(content(&doc), SECRET, "{alg:?}");
-        assert_eq!(doc.unlock("").unwrap_err(), CosError::WrongPassword, "{alg:?}");
-        assert_eq!(doc.unlock("nope").unwrap_err(), CosError::WrongPassword, "{alg:?}");
-        assert!(!doc.permissions().unwrap().modify(), "{alg:?}: still restricted");
+        assert_eq!(
+            doc.unlock("").unwrap_err(),
+            CosError::WrongPassword,
+            "{alg:?}"
+        );
+        assert_eq!(
+            doc.unlock("nope").unwrap_err(),
+            CosError::WrongPassword,
+            "{alg:?}"
+        );
+        assert!(
+            !doc.permissions().unwrap().modify(),
+            "{alg:?}: still restricted"
+        );
         doc.unlock("perms").unwrap();
         assert_eq!(doc.security().unwrap().auth(), Auth::Owner, "{alg:?}");
         assert!(doc.permissions().unwrap().modify(), "{alg:?}");
@@ -120,15 +195,28 @@ fn the_permissions_password_unlocks_an_open_document() {
         // Unlocked, security can be removed.
         doc.remove_encryption();
         let plain = write_full(&doc, &SaveOptions::default()).unwrap();
-        assert!(Document::open(Arc::new(plain)).unwrap().security().is_none(), "{alg:?}");
+        assert!(
+            Document::open(Arc::new(plain))
+                .unwrap()
+                .security()
+                .is_none(),
+            "{alg:?}"
+        );
     }
     // Opened with a separate open password: that password doesn't unlock.
-    let mut doc = Document::open_with_password(Arc::new(protect(Algorithm::Aes256, "open", "perms", 0b0100)), Some("open")).unwrap();
+    let mut doc = Document::open_with_password(
+        Arc::new(protect(Algorithm::Aes256, "open", "perms", 0b0100)),
+        Some("open"),
+    )
+    .unwrap();
     assert_eq!(doc.unlock("open").unwrap_err(), CosError::WrongPassword);
     doc.unlock("perms").unwrap();
     assert!(doc.permissions().unwrap().modify());
     // Nothing to unlock: unencrypted, or already the owner.
-    Document::open(Arc::new(fixture())).unwrap().unlock("anything").unwrap();
+    Document::open(Arc::new(fixture()))
+        .unwrap()
+        .unlock("anything")
+        .unwrap();
     doc.unlock("anything").unwrap();
 }
 
@@ -136,16 +224,33 @@ fn the_permissions_password_unlocks_an_open_document() {
 fn incremental_edits_of_encrypted_documents_stay_encrypted() {
     for alg in ALL {
         let original = protect(alg, "user", "owner", -1);
-        let mut doc = Document::open_with_password(Arc::new(original.clone()), Some("user")).unwrap();
+        let mut doc =
+            Document::open_with_password(Arc::new(original.clone()), Some("user")).unwrap();
         let info = doc.trailer().reference(b"Info").unwrap();
-        doc.update_dict(info, |d| d.set(b"Title".to_vec(), Object::String(PdfString::text("Revised figures")))).unwrap();
+        doc.update_dict(info, |d| {
+            d.set(
+                b"Title".to_vec(),
+                Object::String(PdfString::text("Revised figures")),
+            )
+        })
+        .unwrap();
         let saved = write_incremental(&doc, &SaveOptions::default()).unwrap();
-        assert_eq!(&saved[..original.len()], &original[..], "{alg:?}: incremental");
-        assert!(!String::from_utf8_lossy(&saved).contains("Revised"), "{alg:?}: new string encrypted");
+        assert_eq!(
+            &saved[..original.len()],
+            &original[..],
+            "{alg:?}: incremental"
+        );
+        assert!(
+            !String::from_utf8_lossy(&saved).contains("Revised"),
+            "{alg:?}: new string encrypted"
+        );
         let again = Document::open_with_password(Arc::new(saved.clone()), Some("user")).unwrap();
         assert_eq!(title(&again).as_deref(), Some("Revised figures"), "{alg:?}");
         assert_eq!(content(&again), SECRET);
-        assert!(hayro_syntax::Pdf::new_with_password(saved, "user").is_ok(), "{alg:?}");
+        assert!(
+            hayro_syntax::Pdf::new_with_password(saved, "user").is_ok(),
+            "{alg:?}"
+        );
     }
 }
 
@@ -192,12 +297,17 @@ fn unencrypted_metadata_is_left_readable() {
     })
     .unwrap();
     let bytes = write_full(&doc, &SaveOptions::default()).unwrap();
-    assert!(String::from_utf8_lossy(&bytes).contains("<x:xmpmeta>meta</x:xmpmeta>"), "search engines can read XMP");
+    assert!(
+        String::from_utf8_lossy(&bytes).contains("<x:xmpmeta>meta</x:xmpmeta>"),
+        "search engines can read XMP"
+    );
     assert!(!String::from_utf8_lossy(&bytes).contains("Secret page"));
     let doc = Document::open(Arc::new(bytes)).unwrap();
     let catalog = doc.get(doc.root().unwrap()).as_dict().cloned().unwrap();
     let meta = doc.get(catalog.reference(b"Metadata").unwrap());
-    let Object::Stream(s) = meta.as_ref() else { panic!() };
+    let Object::Stream(s) = meta.as_ref() else {
+        panic!()
+    };
     assert_eq!(s.decoded().unwrap(), b"<x:xmpmeta>meta</x:xmpmeta>");
     let _ = ObjRef::new(1, 0);
 }
@@ -206,7 +316,11 @@ fn unencrypted_metadata_is_left_readable() {
 /// the owner password, and find no structural errors.
 #[test]
 fn qpdf_agrees() {
-    if std::process::Command::new("qpdf").arg("--version").output().is_err() {
+    if std::process::Command::new("qpdf")
+        .arg("--version")
+        .output()
+        .is_err()
+    {
         eprintln!("qpdf not installed; skipping");
         return;
     }
@@ -216,11 +330,28 @@ fn qpdf_agrees() {
         let path = dir.join(format!("{alg:?}.pdf"));
         std::fs::write(&path, protect(alg, "user", "owner", -1)).unwrap();
         for (pw, expect) in [("user", "user password"), ("owner", "owner password")] {
-            let out = std::process::Command::new("qpdf").arg(format!("--password={pw}")).arg("--show-encryption").arg(&path).output().unwrap();
+            let out = std::process::Command::new("qpdf")
+                .arg(format!("--password={pw}"))
+                .arg("--show-encryption")
+                .arg(&path)
+                .output()
+                .unwrap();
             let text = String::from_utf8_lossy(&out.stdout);
-            assert!(text.contains(&format!("Supplied password is {expect}")), "{alg:?}/{pw}: {text}");
-            let check = std::process::Command::new("qpdf").arg(format!("--password={pw}")).arg("--check").arg(&path).output().unwrap();
-            assert!(check.status.success(), "{alg:?}/{pw}: {}", String::from_utf8_lossy(&check.stdout));
+            assert!(
+                text.contains(&format!("Supplied password is {expect}")),
+                "{alg:?}/{pw}: {text}"
+            );
+            let check = std::process::Command::new("qpdf")
+                .arg(format!("--password={pw}"))
+                .arg("--check")
+                .arg(&path)
+                .output()
+                .unwrap();
+            assert!(
+                check.status.success(),
+                "{alg:?}/{pw}: {}",
+                String::from_utf8_lossy(&check.stdout)
+            );
         }
     }
     let _ = std::fs::remove_dir_all(dir);
@@ -233,13 +364,21 @@ fn qpdf_agrees() {
 fn signature_contents_stay_unencrypted() {
     for alg in ALL {
         let mut doc = Document::open(Arc::new(fixture())).unwrap();
-        let hex = |b: &[u8]| Object::String(PdfString { bytes: b.to_vec(), hex: true });
+        let hex = |b: &[u8]| {
+            Object::String(PdfString {
+                bytes: b.to_vec(),
+                hex: true,
+            })
+        };
         let byte_range = Object::Array([0, 10, 20, 30].into_iter().map(Object::Int).collect());
         let mut sig = pdfcraft_cos::Dict::new();
         sig.set(b"Type".to_vec(), Object::name("Sig"));
         sig.set(b"Contents".to_vec(), hex(&[0x30, 0x82, 0xDE, 0xAD]));
         sig.set(b"ByteRange".to_vec(), byte_range.clone());
-        sig.set(b"Name".to_vec(), PdfString::literal(b"Signer Name".to_vec()));
+        sig.set(
+            b"Name".to_vec(),
+            PdfString::literal(b"Signer Name".to_vec()),
+        );
         let sig = doc.add(Object::Dict(sig));
         // No /Type: still a signature dictionary by its /Contents and /ByteRange.
         let mut untyped = pdfcraft_cos::Dict::new();
@@ -248,10 +387,20 @@ fn signature_contents_stay_unencrypted() {
         let untyped = doc.add(Object::Dict(untyped));
         let mut note = pdfcraft_cos::Dict::new();
         note.set(b"Type".to_vec(), Object::name("Annot"));
-        note.set(b"Contents".to_vec(), PdfString::literal(b"Private note".to_vec()));
+        note.set(
+            b"Contents".to_vec(),
+            PdfString::literal(b"Private note".to_vec()),
+        );
         let note = doc.add(Object::Dict(note));
         doc.update_dict(doc.root().unwrap(), |c| {
-            c.set(b"Test".to_vec(), Object::Array(vec![Object::Ref(sig), Object::Ref(untyped), Object::Ref(note)]))
+            c.set(
+                b"Test".to_vec(),
+                Object::Array(vec![
+                    Object::Ref(sig),
+                    Object::Ref(untyped),
+                    Object::Ref(note),
+                ]),
+            )
         })
         .unwrap();
         doc.set_encryption(&NewEncryption {
@@ -263,17 +412,49 @@ fn signature_contents_stay_unencrypted() {
             seed: [3; 32],
         })
         .unwrap();
-        let bytes = write_full(&doc, &SaveOptions { object_streams: false, ..SaveOptions::default() }).unwrap();
+        let bytes = write_full(
+            &doc,
+            &SaveOptions {
+                object_streams: false,
+                ..SaveOptions::default()
+            },
+        )
+        .unwrap();
         let raw = String::from_utf8_lossy(&bytes);
-        assert!(raw.contains("<3082DEAD>") && raw.contains("<3082BEEF>"), "{alg:?}: signature /Contents written as is");
-        assert!(!raw.contains("Signer Name") && !raw.contains("Private note"), "{alg:?}: other strings are encrypted");
+        assert!(
+            raw.contains("<3082DEAD>") && raw.contains("<3082BEEF>"),
+            "{alg:?}: signature /Contents written as is"
+        );
+        assert!(
+            !raw.contains("Signer Name") && !raw.contains("Private note"),
+            "{alg:?}: other strings are encrypted"
+        );
         let back = Document::open(Arc::new(bytes)).unwrap();
-        let test = back.get(back.root().unwrap()).as_dict().unwrap().get(b"Test").unwrap().as_array().unwrap().clone();
+        let test = back
+            .get(back.root().unwrap())
+            .as_dict()
+            .unwrap()
+            .get(b"Test")
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .clone();
         let string = |i: usize, key: &[u8]| {
             let o = back.resolve(&test[i]);
-            o.as_dict().unwrap().get(key).unwrap().as_string().unwrap().bytes.clone()
+            o.as_dict()
+                .unwrap()
+                .get(key)
+                .unwrap()
+                .as_string()
+                .unwrap()
+                .bytes
+                .clone()
         };
-        assert_eq!(string(0, b"Contents"), [0x30, 0x82, 0xDE, 0xAD], "{alg:?}: read back without decrypting");
+        assert_eq!(
+            string(0, b"Contents"),
+            [0x30, 0x82, 0xDE, 0xAD],
+            "{alg:?}: read back without decrypting"
+        );
         assert_eq!(string(0, b"Name"), b"Signer Name", "{alg:?}");
         assert_eq!(string(1, b"Contents"), [0x30, 0x82, 0xBE, 0xEF], "{alg:?}");
         assert_eq!(string(2, b"Contents"), b"Private note", "{alg:?}");

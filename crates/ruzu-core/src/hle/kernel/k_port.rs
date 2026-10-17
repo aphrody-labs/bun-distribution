@@ -206,20 +206,26 @@ impl KPort {
 
     /// Shared-owner counterpart of EnqueueSession. Eden's KPort has no wrapper
     /// mutex; drop Rust's mutex before scheduler unlock can switch a fiber.
-    pub fn enqueue_session_arc(port: &std::sync::Arc<std::sync::Mutex<Self>>, session_id: u64) -> ResultCode {
+    pub fn enqueue_session_arc(
+        port: &std::sync::Arc<std::sync::Mutex<Self>>,
+        session_id: u64,
+    ) -> ResultCode {
         let mut port = port.lock().unwrap();
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         let result = port.enqueue_session(session_id);
         drop(port);
         result
     }
 
     /// The light-session overload has the same wrapper/scheduler lifetime.
-    pub fn enqueue_light_session_arc(port: &std::sync::Arc<std::sync::Mutex<Self>>, session_id: u64) -> ResultCode {
+    pub fn enqueue_light_session_arc(
+        port: &std::sync::Arc<std::sync::Mutex<Self>>,
+        session_id: u64,
+    ) -> ResultCode {
         let mut port = port.lock().unwrap();
-        let _scheduler_guard = super::kernel::scheduler_lock()
-            .map(super::k_scheduler_lock::KScopedSchedulerLock::new);
+        let _scheduler_guard =
+            super::kernel::scheduler_lock().map(super::k_scheduler_lock::KScopedSchedulerLock::new);
         let result = port.enqueue_light_session(session_id);
         drop(port);
         result

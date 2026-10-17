@@ -27,7 +27,7 @@ impl IosDevice for Immediate {
                     "STM_Immediate: unimplemented ioctl"
                 );
                 IPC_EINVAL
-            },
+            }
         }
     }
 }

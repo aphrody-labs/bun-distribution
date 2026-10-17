@@ -215,9 +215,11 @@ mod kind_tests {
 
     #[test]
     fn kind_display_matches_as_str() {
-        for k in
-            [TransportKind::NativeHyper, TransportKind::BrowserFetch, TransportKind::Unsupported]
-        {
+        for k in [
+            TransportKind::NativeHyper,
+            TransportKind::BrowserFetch,
+            TransportKind::Unsupported,
+        ] {
             assert_eq!(k.to_string(), k.as_str());
         }
     }

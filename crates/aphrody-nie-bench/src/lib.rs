@@ -87,7 +87,12 @@ mod tests {
         fill_xorshift(&mut first);
         fill_xorshift(&mut second);
         assert_eq!(first, second);
-        assert_eq!(first, [212, 69, 93, 76, 11, 182, 93, 173, 110, 144, 7, 135, 93, 246, 218, 190]);
+        assert_eq!(
+            first,
+            [
+                212, 69, 93, 76, 11, 182, 93, 173, 110, 144, 7, 135, 93, 246, 218, 190
+            ]
+        );
     }
 
     #[test]
@@ -110,6 +115,9 @@ mod tests {
     fn median_rejects_invalid_samples() {
         assert_eq!(median(vec![3.0, 1.0, 2.0]), Ok(2.0));
         assert_eq!(median(Vec::new()), Err(BenchmarkInputError::EmptySample));
-        assert_eq!(median(vec![1.0, f64::NAN]), Err(BenchmarkInputError::NonFiniteSample));
+        assert_eq!(
+            median(vec![1.0, f64::NAN]),
+            Err(BenchmarkInputError::NonFiniteSample)
+        );
     }
 }

@@ -20,9 +20,18 @@ fn rr(a: &str) -> RangeRef {
 fn sample() -> Workbook {
     let mut wb = Workbook::new();
     wb.date_system = DateSystem::D1904;
-    wb.calc = CalcSettings { mode: CalcMode::Manual, iterative: true, max_iterations: 42, max_change: 0.5, precision_as_displayed: true };
+    wb.calc = CalcSettings {
+        mode: CalcMode::Manual,
+        iterative: true,
+        max_iterations: 42,
+        max_change: 0.5,
+        precision_as_displayed: true,
+    };
     wb.protected_structure = true;
-    wb.structure_password = Some(gridcraft_model::PasswordHash::new_sha512("s3cret", b"0123456789abcdef"));
+    wb.structure_password = Some(gridcraft_model::PasswordHash::new_sha512(
+        "s3cret",
+        b"0123456789abcdef",
+    ));
     wb.props = DocProps {
         title: "T & <x>".into(),
         subject: "S".into(),
@@ -38,12 +47,24 @@ fn sample() -> Workbook {
         s.font.bold = true;
         s.font.color = Color::Theme(4, 400);
         s.fill = Fill::solid(Color::Rgb(0xFFEE00));
-        s.borders.bottom = BorderLine { style: BorderStyle::Double, color: Color::Rgb(0xFF0000) };
+        s.borders.bottom = BorderLine {
+            style: BorderStyle::Double,
+            color: Color::Rgb(0xFF0000),
+        };
         s.borders.diag_down = BorderLine::thin();
-        s.align = Alignment { h: HAlign::Center, v: VAlign::Top, wrap: true, shrink: false, indent: 1, rotation: -30 };
+        s.align = Alignment {
+            h: HAlign::Center,
+            v: VAlign::Top,
+            wrap: true,
+            shrink: false,
+            indent: 1,
+            rotation: -30,
+        };
         s.protection.locked = false;
     });
-    let money = wb.styles.derive(StyleId::DEFAULT, |s| s.num_fmt = NumFmt::new("#,##0.00 \"€\""));
+    let money = wb.styles.derive(StyleId::DEFAULT, |s| {
+        s.num_fmt = NumFmt::new("#,##0.00 \"€\"")
+    });
     let pct = wb.styles.derive(StyleId::DEFAULT, |s| {
         s.num_fmt = NumFmt::new("0.00%");
         s.font = Font {
@@ -55,19 +76,41 @@ fn sample() -> Workbook {
             vert: VertAlign::Subscript,
             ..Font::default()
         };
-        s.fill = Fill { pattern: PatternType::LightTrellis, fg: Color::Theme(5, -250), bg: Color::Rgb(0x00FF00) };
+        s.fill = Fill {
+            pattern: PatternType::LightTrellis,
+            fg: Color::Theme(5, -250),
+            bg: Color::Rgb(0x00FF00),
+        };
     });
     let red = Style {
-        font: Font { color: Color::Rgb(0x9C0006), bold: true, ..Font::default() },
+        font: Font {
+            color: Color::Rgb(0x9C0006),
+            bold: true,
+            ..Font::default()
+        },
         fill: Fill::solid(Color::Rgb(0xFFC7CE)),
         ..Style::default()
     };
 
     let mut s = Sheet::new("Data & Stuff");
-    let set = |s: &mut Sheet, a: &str, v: Value, style: StyleId| s.cells.set(at(a), Cell { value: v, formula: None, style });
+    let set = |s: &mut Sheet, a: &str, v: Value, style: StyleId| {
+        s.cells.set(
+            at(a),
+            Cell {
+                value: v,
+                formula: None,
+                style,
+            },
+        )
+    };
     set(&mut s, "A1", Value::text("Region"), bold);
     set(&mut s, "B1", Value::text("Amount"), bold);
-    set(&mut s, "C1", Value::text("  spaced\nline _x0041_ \u{1} "), StyleId::DEFAULT);
+    set(
+        &mut s,
+        "C1",
+        Value::text("  spaced\nline _x0041_ \u{1} "),
+        StyleId::DEFAULT,
+    );
     set(&mut s, "A2", Value::text("North"), StyleId::DEFAULT);
     set(&mut s, "B2", Value::Number(1234.5), money);
     set(&mut s, "A3", Value::text("South"), StyleId::DEFAULT);
@@ -79,7 +122,9 @@ fn sample() -> Workbook {
     let mut f = Cell::formula(Formula::new("=SUM(B2:B3)*2"));
     f.value = Value::Number(2468.9);
     s.cells.set(at("B4"), f);
-    let mut f = Cell::formula(Formula::new("XLOOKUP(\"North\",A2:A3,B2:B3)&TEXTJOIN(\",\",TRUE,A2:A3)"));
+    let mut f = Cell::formula(Formula::new(
+        "XLOOKUP(\"North\",A2:A3,B2:B3)&TEXTJOIN(\",\",TRUE,A2:A3)",
+    ));
     f.value = Value::text("x");
     s.cells.set(at("C4"), f);
     let mut f = Cell::formula(Formula::new("ISNUMBER(B2)"));
@@ -102,13 +147,58 @@ fn sample() -> Workbook {
     s.spill.insert(at("H2"), Value::Number(2.0));
     s.spill.insert(at("H3"), Value::Number(3.0));
 
-    s.cols.insert(0, LineInfo { size: Some(100.0), ..Default::default() });
-    s.cols.insert(1, LineInfo { size: Some(100.0), ..Default::default() });
-    s.cols.insert(3, LineInfo { hidden: true, outline: 1, ..Default::default() });
-    s.cols.insert(5, LineInfo { style: Some(money), ..Default::default() });
-    s.rows.insert(0, LineInfo { size: Some(30.0), ..Default::default() });
-    s.rows.insert(9, LineInfo { hidden: true, outline: 2, collapsed: true, ..Default::default() });
-    s.rows.insert(10, LineInfo { style: Some(bold), ..Default::default() });
+    s.cols.insert(
+        0,
+        LineInfo {
+            size: Some(100.0),
+            ..Default::default()
+        },
+    );
+    s.cols.insert(
+        1,
+        LineInfo {
+            size: Some(100.0),
+            ..Default::default()
+        },
+    );
+    s.cols.insert(
+        3,
+        LineInfo {
+            hidden: true,
+            outline: 1,
+            ..Default::default()
+        },
+    );
+    s.cols.insert(
+        5,
+        LineInfo {
+            style: Some(money),
+            ..Default::default()
+        },
+    );
+    s.rows.insert(
+        0,
+        LineInfo {
+            size: Some(30.0),
+            ..Default::default()
+        },
+    );
+    s.rows.insert(
+        9,
+        LineInfo {
+            hidden: true,
+            outline: 2,
+            collapsed: true,
+            ..Default::default()
+        },
+    );
+    s.rows.insert(
+        10,
+        LineInfo {
+            style: Some(bold),
+            ..Default::default()
+        },
+    );
     s.default_row_height = 24.0;
     s.default_col_width = 72.0;
     s.merges.push(rr("A20:C21"));
@@ -124,21 +214,66 @@ fn sample() -> Workbook {
 
     let red_b = Box::new(red.clone());
     let cfs = vec![
-        CfRule::CellIs { op: CfOperator::Between, a: "1".into(), b: Some("10".into()), style: red_b.clone() },
-        CfRule::Expression { formula: "MOD(ROW(),2)=0".into(), style: red_b.clone() },
-        CfRule::ContainsText { text: "a\"b".into(), style: red_b.clone() },
-        CfRule::NotContainsText { text: "zz".into(), style: red_b.clone() },
-        CfRule::BeginsWith { text: "No".into(), style: red_b.clone() },
-        CfRule::EndsWith { text: "th".into(), style: red_b.clone() },
-        CfRule::Blanks { style: red_b.clone() },
-        CfRule::NoBlanks { style: red_b.clone() },
-        CfRule::Errors { style: red_b.clone() },
-        CfRule::NoErrors { style: red_b.clone() },
-        CfRule::Duplicate { style: red_b.clone() },
-        CfRule::Unique { style: red_b.clone() },
-        CfRule::Top10 { bottom: true, percent: true, rank: 5, style: red_b.clone() },
-        CfRule::AboveAverage { below: true, equal: true, std_dev: 1, style: red_b.clone() },
-        CfRule::TimePeriod { period: "last7Days".into(), style: red_b.clone() },
+        CfRule::CellIs {
+            op: CfOperator::Between,
+            a: "1".into(),
+            b: Some("10".into()),
+            style: red_b.clone(),
+        },
+        CfRule::Expression {
+            formula: "MOD(ROW(),2)=0".into(),
+            style: red_b.clone(),
+        },
+        CfRule::ContainsText {
+            text: "a\"b".into(),
+            style: red_b.clone(),
+        },
+        CfRule::NotContainsText {
+            text: "zz".into(),
+            style: red_b.clone(),
+        },
+        CfRule::BeginsWith {
+            text: "No".into(),
+            style: red_b.clone(),
+        },
+        CfRule::EndsWith {
+            text: "th".into(),
+            style: red_b.clone(),
+        },
+        CfRule::Blanks {
+            style: red_b.clone(),
+        },
+        CfRule::NoBlanks {
+            style: red_b.clone(),
+        },
+        CfRule::Errors {
+            style: red_b.clone(),
+        },
+        CfRule::NoErrors {
+            style: red_b.clone(),
+        },
+        CfRule::Duplicate {
+            style: red_b.clone(),
+        },
+        CfRule::Unique {
+            style: red_b.clone(),
+        },
+        CfRule::Top10 {
+            bottom: true,
+            percent: true,
+            rank: 5,
+            style: red_b.clone(),
+        },
+        CfRule::AboveAverage {
+            below: true,
+            equal: true,
+            std_dev: 1,
+            style: red_b.clone(),
+        },
+        CfRule::TimePeriod {
+            period: "last7Days".into(),
+            style: red_b.clone(),
+        },
         CfRule::ColorScale {
             stops: vec![
                 (CfValueKind::Min, Color::Rgb(0xF8696B)),
@@ -155,13 +290,22 @@ fn sample() -> Workbook {
         },
         CfRule::IconSet {
             set: "3Arrows".into(),
-            thresholds: vec![CfValueKind::Percent(0.0), CfValueKind::Percent(33.0), CfValueKind::Percent(67.0)],
+            thresholds: vec![
+                CfValueKind::Percent(0.0),
+                CfValueKind::Percent(33.0),
+                CfValueKind::Percent(67.0),
+            ],
             reverse: true,
             show_value: false,
         },
     ];
     for (i, rule) in cfs.into_iter().enumerate() {
-        s.cond_formats.push(CondFormat { ranges: vec![rr("B2:B10"), rr("D2")], rule, priority: i as u32 + 1, stop_if_true: i == 0 });
+        s.cond_formats.push(CondFormat {
+            ranges: vec![rr("B2:B10"), rr("D2")],
+            rule,
+            priority: i as u32 + 1,
+            stop_if_true: i == 0,
+        });
     }
     s.validations.push(Validation {
         ranges: vec![rr("A2:A10")],
@@ -190,7 +334,12 @@ fn sample() -> Workbook {
         ..Default::default()
     });
     s.edit_ranges = vec![
-        EditRange { title: "Open & <free>".into(), ranges: vec![rr("A1:B2"), rr("D4")], password: None, security_descriptor: None },
+        EditRange {
+            title: "Open & <free>".into(),
+            ranges: vec![rr("A1:B2"), rr("D4")],
+            password: None,
+            security_descriptor: None,
+        },
         EditRange {
             title: "Old".into(),
             ranges: vec![rr("C1:C9")],
@@ -204,9 +353,30 @@ fn sample() -> Workbook {
             security_descriptor: None,
         },
     ];
-    s.hyperlinks.insert(at("A2"), Hyperlink { target: "https://example.com/?a=1&b=2".into(), tooltip: Some("go".into()), external: true });
-    s.hyperlinks.insert(at("A3"), Hyperlink { target: "'Data & Stuff'!B2".into(), tooltip: None, external: false });
-    s.hyperlinks.insert(at("A4"), Hyperlink { target: "mailto:me@example.com".into(), tooltip: None, external: true });
+    s.hyperlinks.insert(
+        at("A2"),
+        Hyperlink {
+            target: "https://example.com/?a=1&b=2".into(),
+            tooltip: Some("go".into()),
+            external: true,
+        },
+    );
+    s.hyperlinks.insert(
+        at("A3"),
+        Hyperlink {
+            target: "'Data & Stuff'!B2".into(),
+            tooltip: None,
+            external: false,
+        },
+    );
+    s.hyperlinks.insert(
+        at("A4"),
+        Hyperlink {
+            target: "mailto:me@example.com".into(),
+            tooltip: None,
+            external: true,
+        },
+    );
     s.comments.insert(
         at("B2"),
         Comment {
@@ -221,30 +391,73 @@ fn sample() -> Workbook {
     );
     s.comments.insert(
         at("C3"),
-        Comment { author: "Bob".into(), text: "second".into(), replies: vec![], threaded: false, resolved: false, visible: true, dates: vec![] },
+        Comment {
+            author: "Bob".into(),
+            text: "second".into(),
+            replies: vec![],
+            threaded: false,
+            resolved: false,
+            visible: true,
+            dates: vec![],
+        },
     );
     s.comments.insert(
         at("D4"),
         Comment {
             author: "Ann & Co".into(),
             text: "Threaded <one>\nsecond line".into(),
-            replies: vec![("Bob".into(), "first reply".into()), ("Ann & Co".into(), "second reply".into())],
+            replies: vec![
+                ("Bob".into(), "first reply".into()),
+                ("Ann & Co".into(), "second reply".into()),
+            ],
             threaded: true,
             resolved: true,
             visible: false,
-            dates: vec!["2026-10-11T09:30:00.00".into(), String::new(), "2026-10-11T10:15:00.00".into()],
+            dates: vec![
+                "2026-10-11T09:30:00.00".into(),
+                String::new(),
+                "2026-10-11T10:15:00.00".into(),
+            ],
         },
     );
     s.comments.insert(
         at("E5"),
-        Comment { author: "Cy".into(), text: "open thread".into(), replies: vec![], threaded: true, resolved: false, visible: false, dates: vec![] },
+        Comment {
+            author: "Cy".into(),
+            text: "open thread".into(),
+            replies: vec![],
+            threaded: true,
+            resolved: false,
+            visible: false,
+            dates: vec![],
+        },
     );
     s.autofilter = Some(AutoFilter {
         range: rr("K1:N20"),
         criteria: vec![
-            (0, FilterCriterion::Values { values: vec!["a".into(), "b".into()], blanks: true }),
-            (1, FilterCriterion::Custom { a: (">=".into(), "5".into()), b: Some(("<".into(), "9".into())), and: true }),
-            (2, FilterCriterion::Top10 { bottom: true, percent: false, count: 3 }),
+            (
+                0,
+                FilterCriterion::Values {
+                    values: vec!["a".into(), "b".into()],
+                    blanks: true,
+                },
+            ),
+            (
+                1,
+                FilterCriterion::Custom {
+                    a: (">=".into(), "5".into()),
+                    b: Some(("<".into(), "9".into())),
+                    and: true,
+                },
+            ),
+            (
+                2,
+                FilterCriterion::Top10 {
+                    bottom: true,
+                    percent: false,
+                    count: 3,
+                },
+            ),
             (3, FilterCriterion::FillColor(Color::Rgb(0xFF0000))),
         ],
     });
@@ -253,7 +466,10 @@ fn sample() -> Workbook {
         sort: true,
         select_locked: true,
         select_unlocked: true,
-        password: Some(gridcraft_model::PasswordHash::new_sha512("sheet pw", b"fedcba9876543210")),
+        password: Some(gridcraft_model::PasswordHash::new_sha512(
+            "sheet pw",
+            b"fedcba9876543210",
+        )),
         ..Default::default()
     });
     s.print = PrintSettings {
@@ -282,7 +498,13 @@ fn sample() -> Workbook {
         hf_scale_with_doc: false,
         hf_align_with_margins: true,
     };
-    s.sparklines.push(Sparkline { cell: at("J2"), source: "B2:B3".into(), kind: SparklineKind::WinLoss, color: Color::Rgb(0x112233), markers: true });
+    s.sparklines.push(Sparkline {
+        cell: at("J2"),
+        source: "B2:B3".into(),
+        kind: SparklineKind::WinLoss,
+        color: Color::Rgb(0x112233),
+        markers: true,
+    });
     s.tables.push(Table {
         id: 1,
         name: "Sales Table".into(),
@@ -298,7 +520,14 @@ fn sample() -> Workbook {
                 unique_name: None,
                 xml: None,
             },
-            TableColumn { name: "Amount".into(), totals: TotalsFn::Sum, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "Amount".into(),
+                totals: TotalsFn::Sum,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
             TableColumn {
                 name: "Tax".into(),
                 totals: TotalsFn::Custom,
@@ -315,8 +544,20 @@ fn sample() -> Workbook {
         last_col: false,
         filter_button: true,
         filter: vec![
-            (0, FilterCriterion::Values { values: vec!["East".into()], blanks: false }),
-            (1, FilterCriterion::Icon { set: "3TrafficLights1".into(), id: Some(1) }),
+            (
+                0,
+                FilterCriterion::Values {
+                    values: vec!["East".into()],
+                    blanks: false,
+                },
+            ),
+            (
+                1,
+                FilterCriterion::Icon {
+                    set: "3TrafficLights1".into(),
+                    id: Some(1),
+                },
+            ),
         ],
         table_type: None,
         connection_id: None,
@@ -325,7 +566,14 @@ fn sample() -> Workbook {
     s.images.push(Image {
         id: 10,
         // A non-default anchor mode, to prove it survives an xlsx round-trip.
-        anchor: Anchor { cell: at("C10"), dx: 5.0, dy: 4.0, width: 120.0, height: 80.0, mode: AnchorMode::MoveOnly },
+        anchor: Anchor {
+            cell: at("C10"),
+            dx: 5.0,
+            dy: 4.0,
+            width: 120.0,
+            height: 80.0,
+            mode: AnchorMode::MoveOnly,
+        },
         data: png,
         mime: "image/png".into(),
         alt: "Logo \"x\"".into(),
@@ -333,7 +581,14 @@ fn sample() -> Workbook {
     s.shapes.push(Shape {
         id: 11,
         kind: ShapeKind::Ellipse,
-        anchor: Anchor { cell: at("E10"), dx: 0.0, dy: 0.0, width: 64.0, height: 40.0, mode: AnchorMode::Absolute },
+        anchor: Anchor {
+            cell: at("E10"),
+            dx: 0.0,
+            dy: 0.0,
+            width: 64.0,
+            height: 40.0,
+            mode: AnchorMode::Absolute,
+        },
         fill: Color::Rgb(0x4472C4),
         line: Color::Rgb(0x000000),
         text: "Hi\nthere".into(),
@@ -342,7 +597,14 @@ fn sample() -> Workbook {
     s.shapes.push(Shape {
         id: 12,
         kind: ShapeKind::Arrow,
-        anchor: Anchor { cell: at("E14"), dx: 0.0, dy: 0.0, width: 64.0, height: 0.0, ..Default::default() },
+        anchor: Anchor {
+            cell: at("E14"),
+            dx: 0.0,
+            dy: 0.0,
+            width: 64.0,
+            height: 0.0,
+            ..Default::default()
+        },
         fill: Color::Auto,
         line: Color::Rgb(0xFF0000),
         text: String::new(),
@@ -351,7 +613,14 @@ fn sample() -> Workbook {
     s.shapes.push(Shape {
         id: 13,
         kind: ShapeKind::TextBox,
-        anchor: Anchor { cell: at("E16"), dx: 0.0, dy: 0.0, width: 64.0, height: 40.0, ..Default::default() },
+        anchor: Anchor {
+            cell: at("E16"),
+            dx: 0.0,
+            dy: 0.0,
+            width: 64.0,
+            height: 40.0,
+            ..Default::default()
+        },
         fill: Color::Auto,
         line: Color::Auto,
         text: "box".into(),
@@ -370,7 +639,14 @@ fn sample() -> Workbook {
     let base_chart = Chart {
         id: 20,
         kind: ChartKind::ColumnClustered,
-        anchor: Anchor { cell: at("J5"), dx: 0.0, dy: 0.0, width: 480.0, height: 288.0, ..Default::default() },
+        anchor: Anchor {
+            cell: at("J5"),
+            dx: 0.0,
+            dy: 0.0,
+            width: 480.0,
+            height: 288.0,
+            ..Default::default()
+        },
         title: Some("Sales".into()),
         series: vec![Series {
             name: Some("'Data & Stuff'!$B$1".into()),
@@ -412,9 +688,16 @@ fn sample() -> Workbook {
         ChartKind::Bubble,
         ChartKind::Radar,
     ] {
-        s.charts.push(Chart { kind, ..base_chart.clone() });
+        s.charts.push(Chart {
+            kind,
+            ..base_chart.clone()
+        });
     }
-    let mut combo = Chart { kind: ChartKind::Combo, legend: LegendPos::Right, ..base_chart.clone() };
+    let mut combo = Chart {
+        kind: ChartKind::Combo,
+        legend: LegendPos::Right,
+        ..base_chart.clone()
+    };
     combo.series.push(Series {
         name: Some("Literal".into()),
         kind: Some(ChartKind::Line),
@@ -424,7 +707,12 @@ fn sample() -> Workbook {
         ..base_chart.series[0].clone()
     });
     s.charts.push(combo);
-    s.charts.push(Chart { kind: ChartKind::Waterfall, legend: LegendPos::None, title: None, ..base_chart.clone() });
+    s.charts.push(Chart {
+        kind: ChartKind::Waterfall,
+        legend: LegendPos::None,
+        title: None,
+        ..base_chart.clone()
+    });
 
     wb.sheets = vec![Arc::new(s)];
     let mut s2 = Sheet::new("Hidden");
@@ -435,11 +723,31 @@ fn sample() -> Workbook {
     s3.visibility = Visibility::VeryHidden;
     s3.comments.insert(
         at("A1"),
-        Comment { author: "Bob".into(), text: "other sheet".into(), replies: vec![], threaded: true, resolved: false, visible: false, dates: vec![] },
+        Comment {
+            author: "Bob".into(),
+            text: "other sheet".into(),
+            replies: vec![],
+            threaded: true,
+            resolved: false,
+            visible: false,
+            dates: vec![],
+        },
     );
     wb.sheets.push(Arc::new(s3));
-    wb.names.push(DefinedName { name: "Rate".into(), scope: None, formula: "0.07".into(), comment: "c".into(), hidden: false });
-    wb.names.push(DefinedName { name: "Local".into(), scope: Some(1), formula: "Hidden!$A$1".into(), comment: String::new(), hidden: true });
+    wb.names.push(DefinedName {
+        name: "Rate".into(),
+        scope: None,
+        formula: "0.07".into(),
+        comment: "c".into(),
+        hidden: false,
+    });
+    wb.names.push(DefinedName {
+        name: "Local".into(),
+        scope: Some(1),
+        formula: "Hidden!$A$1".into(),
+        comment: String::new(),
+        hidden: true,
+    });
     wb.names.push(DefinedName {
         name: "Pick".into(),
         scope: None,
@@ -457,13 +765,25 @@ fn full_roundtrip() {
     let bytes = write_xlsx(&wb).unwrap();
     assert_eq!(write_xlsx(&wb).unwrap(), bytes, "output is deterministic");
     let (back, rep) = read_xlsx(&bytes).unwrap();
-    assert!(rep.warnings.iter().all(|w| !w.contains("skipped") || w.contains("chart")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings
+            .iter()
+            .all(|w| !w.contains("skipped") || w.contains("chart")),
+        "{:?}",
+        rep.warnings
+    );
 
     assert_eq!(back.date_system, wb.date_system);
     assert_eq!(back.calc, wb.calc);
     assert!(back.protected_structure);
     assert_eq!(back.structure_password, wb.structure_password);
-    assert!(back.structure_password.as_ref().unwrap().verify("s3cret").unwrap());
+    assert!(
+        back.structure_password
+            .as_ref()
+            .unwrap()
+            .verify("s3cret")
+            .unwrap()
+    );
     assert_eq!(back.props, wb.props);
     assert_eq!(back.theme, wb.theme);
     assert_eq!(back.names, wb.names);
@@ -481,11 +801,24 @@ fn full_roundtrip() {
     for (c, cell) in a.cells.iter() {
         let got = b.cell(c).unwrap_or_else(|| panic!("missing {c}"));
         assert_eq!(got.value, cell.value, "value at {c}");
-        assert_eq!(got.formula.as_ref().map(|f| (&f.text, f.array)), cell.formula.as_ref().map(|f| (&f.text, f.array)), "formula at {c}");
-        assert_eq!(back.styles.get(got.style), wb.styles.get(cell.style), "style at {c}");
+        assert_eq!(
+            got.formula.as_ref().map(|f| (&f.text, f.array)),
+            cell.formula.as_ref().map(|f| (&f.text, f.array)),
+            "formula at {c}"
+        );
+        assert_eq!(
+            back.styles.get(got.style),
+            wb.styles.get(cell.style),
+            "style at {c}"
+        );
     }
     for (c, _) in b.cells.iter() {
-        assert!(a.cell(c).is_some() || skip.contains(&c) || a.tables.iter().any(|t| t.range.contains(c)), "extra {c}");
+        assert!(
+            a.cell(c).is_some()
+                || skip.contains(&c)
+                || a.tables.iter().any(|t| t.range.contains(c)),
+            "extra {c}"
+        );
     }
     // Spilled cells are written as cached values and dropped again on read.
     assert!(b.cell(at("H2")).is_none());
@@ -496,9 +829,22 @@ fn full_roundtrip() {
     assert_eq!(b.merges, a.merges);
     assert_eq!(b.freeze, a.freeze);
     assert_eq!(b.tab_color, a.tab_color);
-    assert_eq!((b.show_gridlines, b.show_headings, b.show_zeros, b.right_to_left, b.zoom), (false, false, false, true, 125));
+    assert_eq!(
+        (
+            b.show_gridlines,
+            b.show_headings,
+            b.show_zeros,
+            b.right_to_left,
+            b.zoom
+        ),
+        (false, false, false, true, 125)
+    );
     assert_eq!(b.view_active, a.view_active);
-    assert_eq!(b.view, gridcraft_model::SheetViewMode::PageLayout, "sheetView view=\"pageLayout\" round-trips");
+    assert_eq!(
+        b.view,
+        gridcraft_model::SheetViewMode::PageLayout,
+        "sheetView view=\"pageLayout\" round-trips"
+    );
     assert_eq!(b.cond_formats, a.cond_formats);
     assert_eq!(b.validations, a.validations);
     assert_eq!(b.hyperlinks, a.hyperlinks);
@@ -513,10 +859,41 @@ fn full_roundtrip() {
     // Tables: name sanitized, ids reassigned.
     let (ta, tb) = (&a.tables[0], &b.tables[0]);
     assert_eq!(tb.name, "Sales_Table");
-    assert_eq!((tb.range, tb.header_row, tb.totals_row, &tb.columns, &tb.style), (ta.range, ta.header_row, ta.totals_row, &ta.columns, &ta.style));
-    assert_eq!((tb.banded_rows, tb.banded_cols, tb.first_col, tb.last_col, tb.filter_button), (true, true, true, false, true));
-    assert_eq!(tb.filter, ta.filter, "the table's filter criteria survive (SUBTOTAL tells filtered rows apart)");
-    assert_eq!(b.value(at("P1")), Value::text("Region"), "header cells carry the column names");
+    assert_eq!(
+        (
+            tb.range,
+            tb.header_row,
+            tb.totals_row,
+            &tb.columns,
+            &tb.style
+        ),
+        (
+            ta.range,
+            ta.header_row,
+            ta.totals_row,
+            &ta.columns,
+            &ta.style
+        )
+    );
+    assert_eq!(
+        (
+            tb.banded_rows,
+            tb.banded_cols,
+            tb.first_col,
+            tb.last_col,
+            tb.filter_button
+        ),
+        (true, true, true, false, true)
+    );
+    assert_eq!(
+        tb.filter, ta.filter,
+        "the table's filter criteria survive (SUBTOTAL tells filtered rows apart)"
+    );
+    assert_eq!(
+        b.value(at("P1")),
+        Value::text("Region"),
+        "header cells carry the column names"
+    );
     // Drawings.
     assert_eq!(b.images.len(), 1);
     assert_eq!(b.images[0].data, a.images[0].data);
@@ -524,16 +901,31 @@ fn full_roundtrip() {
     let close = |x: f32, y: f32| (x - y).abs() < 0.01;
     let (ia, ib) = (a.images[0].anchor, b.images[0].anchor);
     assert!(
-        ia.cell == ib.cell && close(ia.dx, ib.dx) && close(ia.dy, ib.dy) && close(ia.width, ib.width) && close(ia.height, ib.height),
+        ia.cell == ib.cell
+            && close(ia.dx, ib.dx)
+            && close(ia.dy, ib.dy)
+            && close(ia.width, ib.width)
+            && close(ia.height, ib.height),
         "{ia:?} {ib:?}"
     );
     // The anchor mode (Excel's editAs) survives the round-trip.
     assert_eq!(ib.mode, AnchorMode::MoveOnly, "image anchor mode");
-    assert_eq!(b.shapes[0].anchor.mode, AnchorMode::Absolute, "shape anchor mode");
-    assert_eq!(b.shapes[1].anchor.mode, AnchorMode::MoveAndSize, "default anchor mode");
+    assert_eq!(
+        b.shapes[0].anchor.mode,
+        AnchorMode::Absolute,
+        "shape anchor mode"
+    );
+    assert_eq!(
+        b.shapes[1].anchor.mode,
+        AnchorMode::MoveAndSize,
+        "default anchor mode"
+    );
     assert_eq!(b.shapes.len(), 3);
     for (x, y) in a.shapes.iter().zip(&b.shapes) {
-        assert_eq!((x.kind, &x.text, x.fill, x.line, &x.format), (y.kind, &y.text, y.fill, y.line, &y.format));
+        assert_eq!(
+            (x.kind, &x.text, x.fill, x.line, &x.format),
+            (y.kind, &y.text, y.fill, y.line, &y.format)
+        );
     }
     assert_eq!(b.charts.len(), a.charts.len());
     for (x, y) in a.charts.iter().zip(&b.charts) {
@@ -562,7 +954,9 @@ fn full_roundtrip() {
 fn package_structure() {
     let bytes = write_xlsx(&sample()).unwrap();
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
-    let names: Vec<String> = (0..z.len()).map(|i| z.name_for_index(i).unwrap().to_string()).collect();
+    let names: Vec<String> = (0..z.len())
+        .map(|i| z.name_for_index(i).unwrap().to_string())
+        .collect();
     assert_eq!(names[0], "[Content_Types].xml");
     for n in [
         "_rels/.rels",
@@ -608,9 +1002,15 @@ fn package_structure() {
         if !n.ends_with(".rels") {
             continue;
         }
-        let src = n.replace("_rels/", "").trim_end_matches(".rels").to_string();
+        let src = n
+            .replace("_rels/", "")
+            .trim_end_matches(".rels")
+            .to_string();
         let dir = crate::package::split_dir(&src).0;
-        for r in crate::xml::parse(t.as_bytes()).unwrap().kids("Relationship") {
+        for r in crate::xml::parse(t.as_bytes())
+            .unwrap()
+            .kids("Relationship")
+        {
             if r.attr("TargetMode") == Some("External") {
                 continue;
             }
@@ -632,13 +1032,23 @@ fn iterative_calculation_settings_roundtrip() {
         let mut pkg = Package::open(&bytes).unwrap();
         let book = pkg.read_xml("xl/workbook.xml").unwrap().unwrap();
         let c = book.child("calcPr").unwrap();
-        let attrs = ["calcMode", "iterate", "iterateCount", "iterateDelta", "fullPrecision"].map(|a| c.attr(a).map(str::to_string));
+        let attrs = [
+            "calcMode",
+            "iterate",
+            "iterateCount",
+            "iterateDelta",
+            "fullPrecision",
+        ]
+        .map(|a| c.attr(a).map(str::to_string));
         (attrs, read_xlsx(&bytes).unwrap().0.calc)
     };
     let s = |v: &str| Some(v.to_string());
     // Defaults: nothing written.
     let mut wb = Workbook::new();
-    assert_eq!(calc_pr(&wb), ([None, None, None, None, None], CalcSettings::default()));
+    assert_eq!(
+        calc_pr(&wb),
+        ([None, None, None, None, None], CalcSettings::default())
+    );
     // On: the switch and both limits, beside the other calculation settings.
     wb.calc.mode = CalcMode::Manual;
     wb.calc.iterative = true;
@@ -661,7 +1071,11 @@ fn iterative_calculation_settings_roundtrip() {
     };
     for (attrs, count, change) in [
         (r#"iterate="1" iterateCount="0" iterateDelta="-2""#, 1, 2.0),
-        (r#"iterate="true" iterateCount="99999" iterateDelta="NaN""#, CalcSettings::MAX_ITERATIONS, CalcSettings::DEFAULT_CHANGE),
+        (
+            r#"iterate="true" iterateCount="99999" iterateDelta="NaN""#,
+            CalcSettings::MAX_ITERATIONS,
+            CalcSettings::DEFAULT_CHANGE,
+        ),
     ] {
         let wbx = xml(attrs);
         let rels = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>"#;
@@ -675,7 +1089,11 @@ fn iterative_calculation_settings_roundtrip() {
         ]);
         let calc = read_xlsx(&bytes).unwrap().0.calc;
         assert!(calc.iterative, "{attrs}");
-        assert_eq!((calc.max_iterations, calc.max_change), (count, change), "{attrs}");
+        assert_eq!(
+            (calc.max_iterations, calc.max_change),
+            (count, change),
+            "{attrs}"
+        );
     }
 }
 
@@ -707,8 +1125,22 @@ fn writing_repairs_invalid_models() {
         header_row: true,
         totals_row: false,
         columns: vec![
-            TableColumn { name: "X".into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None },
-            TableColumn { name: "x".into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "X".into(),
+                totals: TotalsFn::None,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
+            TableColumn {
+                name: "x".into(),
+                totals: TotalsFn::None,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
         ],
         style: String::new(),
         banded_rows: true,
@@ -720,11 +1152,26 @@ fn writing_repairs_invalid_models() {
         table_type: None,
         connection_id: None,
     });
-    s.cells.set(at("B2"), Cell { value: Value::Number(1.0), formula: None, style: StyleId(9999) });
+    s.cells.set(
+        at("B2"),
+        Cell {
+            value: Value::Number(1.0),
+            formula: None,
+            style: StyleId(9999),
+        },
+    );
     let (back, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
     let s = back.sheet(0).unwrap();
-    assert_eq!(s.visibility, Visibility::Visible, "at least one sheet stays visible");
-    let names: Vec<&str> = s.tables[0].columns.iter().map(|c| c.name.as_str()).collect();
+    assert_eq!(
+        s.visibility,
+        Visibility::Visible,
+        "at least one sheet stays visible"
+    );
+    let names: Vec<&str> = s.tables[0]
+        .columns
+        .iter()
+        .map(|c| c.name.as_str())
+        .collect();
     assert_eq!(names, ["X", "x2", "Column3"]);
     assert_eq!(s.value(at("A1")), Value::text("X"));
     assert_eq!(s.tables[0].name, "Table1");
@@ -742,27 +1189,62 @@ fn vba_project_roundtrip() {
     assert_eq!(write_xlsx(&wb).unwrap(), bytes, "output is deterministic");
 
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes.clone())).unwrap();
-    let names: Vec<String> = (0..z.len()).map(|i| z.name_for_index(i).unwrap().to_string()).collect();
-    assert!(names.iter().any(|x| x == "xl/vbaProject.bin"), "missing vbaProject.bin");
+    let names: Vec<String> = (0..z.len())
+        .map(|i| z.name_for_index(i).unwrap().to_string())
+        .collect();
+    assert!(
+        names.iter().any(|x| x == "xl/vbaProject.bin"),
+        "missing vbaProject.bin"
+    );
     let mut bin = vec![];
-    z.by_name("xl/vbaProject.bin").unwrap().read_to_end(&mut bin).unwrap();
+    z.by_name("xl/vbaProject.bin")
+        .unwrap()
+        .read_to_end(&mut bin)
+        .unwrap();
     assert_eq!(bin, vba, "vbaProject.bin written byte-identically");
     let mut ct = String::new();
-    z.by_name("[Content_Types].xml").unwrap().read_to_string(&mut ct).unwrap();
-    assert!(ct.contains("macroEnabled.main+xml"), "macro-enabled main content type: {ct}");
-    assert!(ct.contains("/xl/vbaProject.bin"), "vbaProject content type override: {ct}");
+    z.by_name("[Content_Types].xml")
+        .unwrap()
+        .read_to_string(&mut ct)
+        .unwrap();
+    assert!(
+        ct.contains("macroEnabled.main+xml"),
+        "macro-enabled main content type: {ct}"
+    );
+    assert!(
+        ct.contains("/xl/vbaProject.bin"),
+        "vbaProject content type override: {ct}"
+    );
     let mut rels = String::new();
-    z.by_name("xl/_rels/workbook.xml.rels").unwrap().read_to_string(&mut rels).unwrap();
-    assert!(rels.contains("relationships/vbaProject"), "vbaProject relationship: {rels}");
+    z.by_name("xl/_rels/workbook.xml.rels")
+        .unwrap()
+        .read_to_string(&mut rels)
+        .unwrap();
+    assert!(
+        rels.contains("relationships/vbaProject"),
+        "vbaProject relationship: {rels}"
+    );
 
     let (back, rep) = read_xlsx(&bytes).unwrap();
-    assert_eq!(back.vba_project.as_deref(), Some(vba.as_slice()), "vbaProject survives the read");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert_eq!(
+        back.vba_project.as_deref(),
+        Some(vba.as_slice()),
+        "vbaProject survives the read"
+    );
+    assert!(
+        rep.warnings.iter().any(|w| w.contains("not executed")),
+        "{:?}",
+        rep.warnings
+    );
 
     // A workbook without macros stays macro-free and free of VBA warnings.
     let (plain, rp) = read_xlsx(&write_xlsx(&Workbook::new()).unwrap()).unwrap();
     assert_eq!(plain.vba_project, None);
-    assert!(rp.warnings.iter().all(|w| !w.contains("VBA")), "{:?}", rp.warnings);
+    assert!(
+        rp.warnings.iter().all(|w| !w.contains("VBA")),
+        "{:?}",
+        rp.warnings
+    );
 }
 
 #[test]
@@ -777,14 +1259,21 @@ fn vba_project_read_from_foreign_file() {
     );
     let (wb, rep) = read_xlsx(&bytes).unwrap();
     assert!(wb.vba_project.is_some(), "VBA blob captured");
-    assert!(rep.warnings.iter().any(|w| w.contains("not executed")), "{:?}", rep.warnings);
+    assert!(
+        rep.warnings.iter().any(|w| w.contains("not executed")),
+        "{:?}",
+        rep.warnings
+    );
     let _ = vba;
 }
 
 fn sheet1_xml(bytes: &[u8]) -> (String, bool) {
     let mut z = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
     let mut s = String::new();
-    z.by_name("xl/worksheets/sheet1.xml").unwrap().read_to_string(&mut s).unwrap();
+    z.by_name("xl/worksheets/sheet1.xml")
+        .unwrap()
+        .read_to_string(&mut s)
+        .unwrap();
     let metadata = z.by_name("xl/metadata.xml").is_ok();
     (s, metadata)
 }
@@ -795,16 +1284,44 @@ fn spill_and_calc_errors_are_cached_as_value_errors() {
     let mut wb = Workbook::new();
     let s = wb.sheet_mut(0).unwrap();
     s.set_value(at("A1"), Value::Number(1.0));
-    s.cells.set(at("C1"), Cell { value: Value::Error(CellError::Spill), ..Cell::formula(Formula::new("A1:A3*2")) });
-    s.cells.set(at("C2"), Cell { value: Value::Error(CellError::Calc), ..Cell::formula(Formula::new("FILTER(A1:A3,A1:A3>5)")) });
-    s.cells.set(at("C3"), Cell { value: Value::Error(CellError::NA), ..Cell::formula(Formula::new("NA()")) });
+    s.cells.set(
+        at("C1"),
+        Cell {
+            value: Value::Error(CellError::Spill),
+            ..Cell::formula(Formula::new("A1:A3*2"))
+        },
+    );
+    s.cells.set(
+        at("C2"),
+        Cell {
+            value: Value::Error(CellError::Calc),
+            ..Cell::formula(Formula::new("FILTER(A1:A3,A1:A3>5)"))
+        },
+    );
+    s.cells.set(
+        at("C3"),
+        Cell {
+            value: Value::Error(CellError::NA),
+            ..Cell::formula(Formula::new("NA()"))
+        },
+    );
     let bytes = write_xlsx(&wb).unwrap();
     let (xml, _) = sheet1_xml(&bytes);
     assert!(!xml.contains("#SPILL!") && !xml.contains("#CALC!"), "{xml}");
     let mut pkg = Package::open(&bytes).unwrap();
     let sheet = pkg.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
-    for (address, text, value) in [("C1", "A1:A3*2", "#VALUE!"), ("C2", "_xlfn._xlws.FILTER(A1:A3,A1:A3>5)", "#VALUE!"), ("C3", "NA()", "#N/A")] {
-        let cell = sheet.child("sheetData").unwrap().kids("row").flat_map(|row| row.kids("c")).find(|cell| cell.attr("r") == Some(address)).unwrap();
+    for (address, text, value) in [
+        ("C1", "A1:A3*2", "#VALUE!"),
+        ("C2", "_xlfn._xlws.FILTER(A1:A3,A1:A3>5)", "#VALUE!"),
+        ("C3", "NA()", "#N/A"),
+    ] {
+        let cell = sheet
+            .child("sheetData")
+            .unwrap()
+            .kids("row")
+            .flat_map(|row| row.kids("c"))
+            .find(|cell| cell.attr("r") == Some(address))
+            .unwrap();
         assert_eq!(cell.attr("t"), Some("e"));
         assert_eq!(cell.child("f").unwrap().text, text);
         assert_eq!(cell.child("v").unwrap().text, value);
@@ -819,7 +1336,14 @@ fn icon_sets_always_write_one_cfvo_per_icon() {
     let s = wb.sheet_mut(0).unwrap();
     for (i, (set, thresholds)) in [
         ("3Arrows", vec![]),
-        ("4Rating", vec![CfValueKind::Number(2.0), CfValueKind::Number(5.0), CfValueKind::Number(8.0)]),
+        (
+            "4Rating",
+            vec![
+                CfValueKind::Number(2.0),
+                CfValueKind::Number(5.0),
+                CfValueKind::Number(8.0),
+            ],
+        ),
         ("9Bogus", vec![CfValueKind::Percent(50.0)]),
     ]
     .into_iter()
@@ -827,7 +1351,12 @@ fn icon_sets_always_write_one_cfvo_per_icon() {
     {
         s.cond_formats.push(CondFormat {
             ranges: vec![rr(&format!("A{}", i + 1))],
-            rule: CfRule::IconSet { set: set.into(), thresholds, reverse: false, show_value: true },
+            rule: CfRule::IconSet {
+                set: set.into(),
+                thresholds,
+                reverse: false,
+                show_value: true,
+            },
             priority: i as u32 + 1,
             stop_if_true: false,
         });
@@ -844,7 +1373,10 @@ fn icon_sets_always_write_one_cfvo_per_icon() {
         xml.contains("<iconSet iconSet=\"4Rating\"><cfvo type=\"percent\" val=\"0\"/><cfvo type=\"num\" val=\"2\"/><cfvo type=\"num\" val=\"5\"/><cfvo type=\"num\" val=\"8\"/></iconSet>"),
         "{xml}"
     );
-    assert!(xml.contains("<iconSet iconSet=\"9Bogus\"><cfvo type=\"percent\" val=\"0\"/>"), "{xml}");
+    assert!(
+        xml.contains("<iconSet iconSet=\"9Bogus\"><cfvo type=\"percent\" val=\"0\"/>"),
+        "{xml}"
+    );
     let (back, _) = read_xlsx(&bytes).unwrap();
     let rules: Vec<usize> = back
         .sheet(0)
@@ -868,18 +1400,45 @@ fn implicit_intersection_is_written_as_single() {
     for (r, n) in [(0, 1.0), (1, 3.0), (2, 5.0)] {
         s.set_value(CellRef::new(r, 0), Value::Number(n));
     }
-    s.cells.set(at("D3"), Cell { value: Value::Number(10.0), ..Cell::formula(Formula::new("@A1:A3*2")) });
-    s.cells.set(at("D4"), Cell { value: Value::Number(2.0), ..Cell::formula(Formula::new("A1*2")) });
+    s.cells.set(
+        at("D3"),
+        Cell {
+            value: Value::Number(10.0),
+            ..Cell::formula(Formula::new("@A1:A3*2"))
+        },
+    );
+    s.cells.set(
+        at("D4"),
+        Cell {
+            value: Value::Number(2.0),
+            ..Cell::formula(Formula::new("A1*2"))
+        },
+    );
     let bytes = write_xlsx(&wb).unwrap();
     let (xml, metadata) = sheet1_xml(&bytes);
-    assert!(xml.contains("<c r=\"D3\" cm=\"1\"><f t=\"array\" ref=\"D3\">_xlfn.SINGLE(A1:A3)*2</f><v>10</v>"), "{xml}");
+    assert!(
+        xml.contains(
+            "<c r=\"D3\" cm=\"1\"><f t=\"array\" ref=\"D3\">_xlfn.SINGLE(A1:A3)*2</f><v>10</v>"
+        ),
+        "{xml}"
+    );
     assert!(xml.contains("<c r=\"D4\"><f>A1*2</f>"), "{xml}");
     assert!(!xml.contains('@'), "{xml}");
     assert!(metadata);
     let (back, _) = read_xlsx(&bytes).unwrap();
     let sh = back.sheet(0).unwrap();
-    assert_eq!(sh.cell(at("D3")).and_then(|c| c.formula.as_ref()).map(|f| f.text.as_str()), Some("@A1:A3*2"));
-    assert_eq!(sh.cell(at("D3")).and_then(|c| c.formula.as_ref()).and_then(|f| f.array), None);
+    assert_eq!(
+        sh.cell(at("D3"))
+            .and_then(|c| c.formula.as_ref())
+            .map(|f| f.text.as_str()),
+        Some("@A1:A3*2")
+    );
+    assert_eq!(
+        sh.cell(at("D3"))
+            .and_then(|c| c.formula.as_ref())
+            .and_then(|f| f.array),
+        None
+    );
 }
 
 #[test]
@@ -887,21 +1446,35 @@ fn threaded_comments_write_persons_and_linked_legacy_notes() {
     let wb = sample();
     let bytes = write_xlsx(&wb).unwrap();
     let mut pkg = Package::open(&bytes).unwrap();
-    let text = |pkg: &mut Package, part: &str| String::from_utf8(pkg.read(part).unwrap().unwrap()).unwrap();
+    let text = |pkg: &mut Package, part: &str| {
+        String::from_utf8(pkg.read(part).unwrap().unwrap()).unwrap()
+    };
     // One person per author across the workbook, ids unique.
     let persons = text(&mut pkg, "xl/persons/person.xml");
     assert_eq!(persons.matches("<person ").count(), 3, "{persons}");
     assert!(persons.contains("displayName=\"Ann &amp; Co\""));
     let ct = text(&mut pkg, "[Content_Types].xml");
-    assert!(ct.contains("application/vnd.ms-excel.threadedcomments+xml") && ct.contains("application/vnd.ms-excel.person+xml"));
+    assert!(
+        ct.contains("application/vnd.ms-excel.threadedcomments+xml")
+            && ct.contains("application/vnd.ms-excel.person+xml")
+    );
     let tc = text(&mut pkg, "xl/threadedComments/threadedComment1.xml");
     assert_eq!(tc.matches("<threadedComment ").count(), 4, "{tc}");
     assert_eq!(tc.matches("parentId=").count(), 2);
     assert_eq!(tc.matches("done=\"1\"").count(), 1);
     // The legacy note of each thread points at it.
     let legacy = text(&mut pkg, "xl/comments1.xml");
-    for id in tc.split("id=\"{").skip(1).filter_map(|s| s.split('}').next()).take(1) {
-        assert!(legacy.contains(&format!("<author>tc={{{id}}}</author>")) && legacy.contains(&format!("xr:uid=\"{{{id}}}\"")), "{legacy}");
+    for id in tc
+        .split("id=\"{")
+        .skip(1)
+        .filter_map(|s| s.split('}').next())
+        .take(1)
+    {
+        assert!(
+            legacy.contains(&format!("<author>tc={{{id}}}</author>"))
+                && legacy.contains(&format!("xr:uid=\"{{{id}}}\"")),
+            "{legacy}"
+        );
     }
 }
 
@@ -938,7 +1511,10 @@ fn scroll_position_round_trips_with_and_without_frozen_panes() {
     s.view_top_left = at("C40");
     let bytes = write_xlsx(&wb).unwrap();
     let (xml, _) = sheet1_xml(&bytes);
-    assert!(xml.contains(r#"<pane ySplit="1" topLeftCell="C40""#), "{xml}");
+    assert!(
+        xml.contains(r#"<pane ySplit="1" topLeftCell="C40""#),
+        "{xml}"
+    );
     let (back, _) = read_xlsx(&bytes).unwrap();
     assert_eq!(back.sheet(0).unwrap().view_top_left, at("C40"));
     assert_eq!(back.sheet(0).unwrap().freeze, Some((1, 0)));
@@ -954,8 +1530,20 @@ fn scroll_position_round_trips_with_and_without_frozen_panes() {
 fn let_lambda_parameters_drop_xlpm_on_read() {
     let mut wb = Workbook::new();
     let s = wb.sheet_mut(0).unwrap();
-    s.cells.set(at("A1"), Cell { value: Value::Number(2.0), ..Cell::formula(Formula::new("LET(x,1,x+1)")) });
-    s.cells.set(at("A2"), Cell { value: Value::Number(6.0), ..Cell::formula(Formula::new("LAMBDA(a,a*2)(3)")) });
+    s.cells.set(
+        at("A1"),
+        Cell {
+            value: Value::Number(2.0),
+            ..Cell::formula(Formula::new("LET(x,1,x+1)"))
+        },
+    );
+    s.cells.set(
+        at("A2"),
+        Cell {
+            value: Value::Number(6.0),
+            ..Cell::formula(Formula::new("LAMBDA(a,a*2)(3)"))
+        },
+    );
     let mut arr = Formula::new("MAP(B1:B2,LAMBDA(v,v+1))");
     arr.array = Some(rr("C1:C2"));
     s.cells.set(at("C1"), Cell::formula(arr));
@@ -965,7 +1553,11 @@ fn let_lambda_parameters_drop_xlpm_on_read() {
     assert!(xml.contains("_xlpm.v"), "{xml}");
     let (back, _) = read_xlsx(&bytes).unwrap();
     let sh = back.sheet(0).unwrap();
-    let text = |a: &str| sh.cell(at(a)).and_then(|c| c.formula.as_ref()).map(|f| f.text.clone());
+    let text = |a: &str| {
+        sh.cell(at(a))
+            .and_then(|c| c.formula.as_ref())
+            .map(|f| f.text.clone())
+    };
     assert_eq!(text("A1").as_deref(), Some("LET(x,1,x+1)"));
     assert_eq!(text("A2").as_deref(), Some("LAMBDA(a,a*2)(3)"));
     assert_eq!(text("C1").as_deref(), Some("MAP(B1:B2,LAMBDA(v,v+1))"));
@@ -980,7 +1572,14 @@ fn table_newline_column_and_backslash_name_survive() {
     s.set_value(at("A1"), Value::text("Handle\nBars"));
     s.set_value(at("B1"), Value::text("Name"));
     s.set_value(at("B2"), Value::text("x"));
-    let col = |n: &str| TableColumn { name: n.into(), totals: TotalsFn::None, totals_label: None, formula: None, unique_name: None, xml: None };
+    let col = |n: &str| TableColumn {
+        name: n.into(),
+        totals: TotalsFn::None,
+        totals_label: None,
+        formula: None,
+        unique_name: None,
+        xml: None,
+    };
     s.tables.push(Table {
         id: 1,
         name: "\\_Prime.1".into(),
@@ -998,14 +1597,25 @@ fn table_newline_column_and_backslash_name_survive() {
         table_type: None,
         connection_id: None,
     });
-    s.cells.set(at("D1"), Cell::formula(Formula::new("COUNTA(\\_Prime.1[Name])")));
+    s.cells.set(
+        at("D1"),
+        Cell::formula(Formula::new("COUNTA(\\_Prime.1[Name])")),
+    );
     let (back, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
     let s = back.sheet(0).unwrap();
     assert_eq!(s.tables[0].name, "\\_Prime.1");
     assert_eq!(s.tables[0].columns[0].name, "Handle\nBars");
     assert_eq!(s.value(at("A1")), Value::text("Handle\nBars"));
-    assert_eq!(s.cell(at("D1")).and_then(|c| c.formula.as_ref()).map(|f| f.text.as_str()), Some("COUNTA(\\_Prime.1[Name])"));
-    assert!(gridcraft_formula::parse("COUNTA(\\_Prime.1[Name])").is_ok(), "backslash table name parses as a structured reference");
+    assert_eq!(
+        s.cell(at("D1"))
+            .and_then(|c| c.formula.as_ref())
+            .map(|f| f.text.as_str()),
+        Some("COUNTA(\\_Prime.1[Name])")
+    );
+    assert!(
+        gridcraft_formula::parse("COUNTA(\\_Prime.1[Name])").is_ok(),
+        "backslash table name parses as a structured reference"
+    );
 }
 
 /// A table that is only a header row and a totals row (Insert Table on one row, then Total
@@ -1029,7 +1639,14 @@ fn header_and_totals_table_without_data_row_survives() {
                 unique_name: None,
                 xml: None,
             },
-            TableColumn { name: "Amount".into(), totals: TotalsFn::Sum, totals_label: None, formula: None, unique_name: None, xml: None },
+            TableColumn {
+                name: "Amount".into(),
+                totals: TotalsFn::Sum,
+                totals_label: None,
+                formula: None,
+                unique_name: None,
+                xml: None,
+            },
         ],
         style: "TableStyleMedium2".into(),
         banded_rows: true,
@@ -1046,8 +1663,14 @@ fn header_and_totals_table_without_data_row_survives() {
     let tables = &back.sheet(0).unwrap().tables;
     assert_eq!(tables.len(), 1);
     let t = &tables[0];
-    assert_eq!((t.name.as_str(), t.range.a1(), t.header_row, t.totals_row), ("Table1", "A1:B2".to_string(), true, true));
-    assert_eq!((t.style.as_str(), t.banded_rows, t.first_col, t.last_col), ("TableStyleMedium2", true, true, true));
+    assert_eq!(
+        (t.name.as_str(), t.range.a1(), t.header_row, t.totals_row),
+        ("Table1", "A1:B2".to_string(), true, true)
+    );
+    assert_eq!(
+        (t.style.as_str(), t.banded_rows, t.first_col, t.last_col),
+        ("TableStyleMedium2", true, true, true)
+    );
     assert_eq!(t.columns[0].totals_label.as_deref(), Some("Total"));
     assert_eq!(t.columns[1].totals, TotalsFn::Sum);
     assert_eq!(back.sheet(0).unwrap().value(at("A1")), Value::text("Name"));
@@ -1058,26 +1681,50 @@ fn header_and_totals_table_without_data_row_survives() {
 #[test]
 fn package_kind_sets_workbook_content_type() {
     let mut wb = Workbook::new();
-    wb.sheet_mut(0).unwrap().set_value(at("A1"), Value::Number(7.0));
+    wb.sheet_mut(0)
+        .unwrap()
+        .set_value(at("A1"), Value::Number(7.0));
     for (path, kind, ct) in [
-        ("a.xlsx", crate::XlsxKind::Workbook, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"),
-        ("a.XLTX", crate::XlsxKind::Template, "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml"),
-        ("a.xlsm", crate::XlsxKind::MacroWorkbook, "application/vnd.ms-excel.sheet.macroEnabled.main+xml"),
-        ("dir.x/a.xltm", crate::XlsxKind::MacroTemplate, "application/vnd.ms-excel.template.macroEnabled.main+xml"),
+        (
+            "a.xlsx",
+            crate::XlsxKind::Workbook,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        ),
+        (
+            "a.XLTX",
+            crate::XlsxKind::Template,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml",
+        ),
+        (
+            "a.xlsm",
+            crate::XlsxKind::MacroWorkbook,
+            "application/vnd.ms-excel.sheet.macroEnabled.main+xml",
+        ),
+        (
+            "dir.x/a.xltm",
+            crate::XlsxKind::MacroTemplate,
+            "application/vnd.ms-excel.template.macroEnabled.main+xml",
+        ),
     ] {
         assert_eq!(crate::XlsxKind::from_path(path), kind);
         let bytes = crate::write_xlsx_as(&wb, kind).unwrap();
         let mut pkg = Package::open(&bytes).unwrap();
         let types = pkg.read_xml("[Content_Types].xml").unwrap().unwrap();
-        let main: Vec<_> =
-            types.kids("Override").filter(|e| e.attr("PartName") == Some("/xl/workbook.xml")).filter_map(|e| e.attr("ContentType")).collect();
+        let main: Vec<_> = types
+            .kids("Override")
+            .filter(|e| e.attr("PartName") == Some("/xl/workbook.xml"))
+            .filter_map(|e| e.attr("ContentType"))
+            .collect();
         assert_eq!(main, [ct], "{path}");
         // Every kind reads back.
         let (back, report) = read_xlsx(&bytes).unwrap();
         assert!(report.warnings.is_empty(), "{path}: {:?}", report.warnings);
         assert_eq!(back.sheet(0).unwrap().value(at("A1")), Value::Number(7.0));
     }
-    assert_eq!(crate::XlsxKind::from_path("noext"), crate::XlsxKind::Workbook);
+    assert_eq!(
+        crate::XlsxKind::from_path("noext"),
+        crate::XlsxKind::Workbook
+    );
 }
 
 /// The workbook's default font (`fonts[0]`, the Normal style's) is what every default-formatted
@@ -1098,33 +1745,74 @@ fn default_font_survives_a_round_trip() {
     let font0 = |bytes: &[u8]| {
         let mut pkg = Package::open(bytes).unwrap();
         let st = pkg.read_xml("xl/styles.xml").unwrap().unwrap();
-        let f = st.child("fonts").unwrap().kids("font").next().unwrap().clone();
+        let f = st
+            .child("fonts")
+            .unwrap()
+            .kids("font")
+            .next()
+            .unwrap()
+            .clone();
         let val = |n: &str| f.child(n).and_then(|e| e.attr("val")).map(str::to_string);
         (val("sz"), val("name"), val("family"), val("scheme"))
     };
 
-    let file =
-        super::minimal(body, &[("xl/styles.xml", &styles(r#"<sz val="10"/><color theme="1"/><name val="Arial"/><family val="2"/>"#))], rels, "");
+    let file = super::minimal(
+        body,
+        &[(
+            "xl/styles.xml",
+            &styles(r#"<sz val="10"/><color theme="1"/><name val="Arial"/><family val="2"/>"#),
+        )],
+        rels,
+        "",
+    );
     let (wb, _) = read_xlsx(&file).unwrap();
     let saved = write_xlsx(&wb).unwrap();
-    assert_eq!(font0(&saved), (Some("10".into()), Some("Arial".into()), Some("2".into()), None));
+    assert_eq!(
+        font0(&saved),
+        (
+            Some("10".into()),
+            Some("Arial".into()),
+            Some("2".into()),
+            None
+        )
+    );
     let (back, _) = read_xlsx(&saved).unwrap();
     let normal = &back.styles.get(StyleId::DEFAULT).font;
-    assert_eq!((normal.name.as_str(), normal.size), ("Arial", 10.0), "empty cells and new input take the Normal font");
+    assert_eq!(
+        (normal.name.as_str(), normal.size),
+        ("Arial", 10.0),
+        "empty cells and new input take the Normal font"
+    );
     let s = back.sheet(0).unwrap();
     assert_eq!(s.cell(at("A1")).unwrap().style, StyleId::DEFAULT);
     let b1 = &back.styles.get(s.cell(at("B1")).unwrap().style).font;
-    assert!(b1.bold && b1.size == 14.0, "an explicit font is still its own: {b1:?}");
+    assert!(
+        b1.bold && b1.size == 14.0,
+        "an explicit font is still its own: {b1:?}"
+    );
 
     // Excel's own Normal font follows the theme's body font; the scheme link survives too.
     let file = super::minimal(
         body,
-        &[("xl/styles.xml", &styles(r#"<name val="Calibri"/><family val="2"/><color theme="1"/><sz val="12"/><scheme val="minor"/>"#))],
+        &[(
+            "xl/styles.xml",
+            &styles(
+                r#"<name val="Calibri"/><family val="2"/><color theme="1"/><sz val="12"/><scheme val="minor"/>"#,
+            ),
+        )],
         rels,
         "",
     );
     let saved = write_xlsx(&read_xlsx(&file).unwrap().0).unwrap();
-    assert_eq!(font0(&saved), (Some("12".into()), Some("Calibri".into()), Some("2".into()), Some("minor".into())));
+    assert_eq!(
+        font0(&saved),
+        (
+            Some("12".into()),
+            Some("Calibri".into()),
+            Some("2".into()),
+            Some("minor".into())
+        )
+    );
 }
 
 #[test]
@@ -1132,17 +1820,40 @@ fn solid_data_bar_survives_with_sparklines_and_gradient_neighbours() {
     let mut wb = Workbook::new();
     let s = wb.sheet_mut(0).unwrap();
     s.set_value(at("A1"), Value::Number(1.0));
-    let bar =
-        |gradient: bool, max: CfValueKind| CfRule::DataBar { min: CfValueKind::Min, max, color: Color::Rgb(0x638EC6), gradient, show_value: true };
-    let rules = [(true, "A1", CfValueKind::Max), (false, "B1", CfValueKind::Formula("$C$1".into())), (false, "D1:D3", CfValueKind::Number(9.0))];
+    let bar = |gradient: bool, max: CfValueKind| CfRule::DataBar {
+        min: CfValueKind::Min,
+        max,
+        color: Color::Rgb(0x638EC6),
+        gradient,
+        show_value: true,
+    };
+    let rules = [
+        (true, "A1", CfValueKind::Max),
+        (false, "B1", CfValueKind::Formula("$C$1".into())),
+        (false, "D1:D3", CfValueKind::Number(9.0)),
+    ];
     for (i, (gradient, range, max)) in rules.into_iter().enumerate() {
-        s.cond_formats.push(CondFormat { ranges: vec![rr(range)], rule: bar(gradient, max), priority: i as u32 + 1, stop_if_true: false });
+        s.cond_formats.push(CondFormat {
+            ranges: vec![rr(range)],
+            rule: bar(gradient, max),
+            priority: i as u32 + 1,
+            stop_if_true: false,
+        });
     }
-    s.sparklines.push(Sparkline { cell: at("F1"), source: "A1:C1".into(), kind: SparklineKind::Line, color: Color::Rgb(0x376092), markers: false });
+    s.sparklines.push(Sparkline {
+        cell: at("F1"),
+        source: "A1:C1".into(),
+        kind: SparklineKind::Line,
+        color: Color::Rgb(0x376092),
+        markers: false,
+    });
     let bytes = write_xlsx(&wb).unwrap();
     // x14 cfvo values are `xm:f` children; a `val` attribute there is not valid x14.
     let (xml, _) = sheet1_xml(&bytes);
-    assert!(xml.contains("<x14:cfvo type=\"num\"><xm:f>9</xm:f></x14:cfvo>"), "{xml}");
+    assert!(
+        xml.contains("<x14:cfvo type=\"num\"><xm:f>9</xm:f></x14:cfvo>"),
+        "{xml}"
+    );
     let (back, rep) = read_xlsx(&bytes).unwrap();
     assert!(rep.warnings.is_empty(), "{:?}", rep.warnings);
     let b = &back.sheets[0];

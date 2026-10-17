@@ -12,7 +12,17 @@ use crate::header::{self, EOF_SIGNATURE, FieldCode, FrameHeader, SCAN_INDEX_OFFS
 use crate::tables::{ZIGZAG, cid_info, vlc};
 use crate::{ChromaFormat, ColorVolume};
 
-fn stream_cid(cid: u32, w: u32, h: u32, depth: u8, q: u32, pos: usize, amp: u32, neg: bool, blk: usize) -> Vec<u8> {
+fn stream_cid(
+    cid: u32,
+    w: u32,
+    h: u32,
+    depth: u8,
+    q: u32,
+    pos: usize,
+    amp: u32,
+    neg: bool,
+    blk: usize,
+) -> Vec<u8> {
     let info = cid_info(cid).unwrap();
     let v = vlc(info.vlc);
     let p_bits = if depth == 8 { 4 } else { 6 };
@@ -73,7 +83,8 @@ fn stream_cid(cid: u32, w: u32, h: u32, depth: u8, q: u32, pos: usize, amp: u32,
     let mut out = header::write(&hdr);
     let mut off = 0u32;
     for (s, r) in rows.iter().enumerate() {
-        out[SCAN_INDEX_OFFSET + 4 * s..SCAN_INDEX_OFFSET + 4 * s + 4].copy_from_slice(&off.to_be_bytes());
+        out[SCAN_INDEX_OFFSET + 4 * s..SCAN_INDEX_OFFSET + 4 * s + 4]
+            .copy_from_slice(&off.to_be_bytes());
         off += r.len() as u32;
     }
     for r in rows {
@@ -103,12 +114,21 @@ fn probe_weights() {
         c => {
             let i = cid_info(c).unwrap();
             match i.kind {
-                crate::tables::Kind::Hd { width, height, depth, .. } => (width as u32, height as u32, depth),
+                crate::tables::Kind::Hd {
+                    width,
+                    height,
+                    depth,
+                    ..
+                } => (width as u32, height as u32, depth),
                 _ => panic!(),
             }
         }
     };
-    let pix = if depth == 10 { "yuv422p10le" } else { "yuv422p" };
+    let pix = if depth == 10 {
+        "yuv422p10le"
+    } else {
+        "yuv422p"
+    };
     let prof = cid;
     let amp = 20u32;
     let q = 4u32;
@@ -127,9 +147,18 @@ fn probe_weights() {
             let px: Vec<f64> = if depth == 8 {
                 out.stdout.iter().map(|&b| b as f64).collect()
             } else {
-                out.stdout.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes([c[0], c[1]]) as f64).collect()
+                out.stdout
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_le_bytes([c[0], c[1]]) as f64)
+                    .collect()
             };
-            let (off, stride) = if blk == 0 { (0, w as usize) } else { ((w * h) as usize, w as usize / 2) };
+            let (off, stride) = if blk == 0 {
+                (0, w as usize)
+            } else {
+                ((w * h) as usize, w as usize / 2)
+            };
             let mid = (1 << (depth - 1)) as f64;
             let z = ZIGZAG[pos] as usize;
             let (u, vv) = (z % 8, z / 8);
@@ -168,7 +197,10 @@ fn probe_weights() {
                     for i in 1..64 {
                         e += (grid[i / 8][i % 8] - t[c][i - 1] as f64).powi(2);
                     }
-                    res.push(((e / 63.0).sqrt(), format!("{n}{}", if c == 0 { "L" } else { "C" })));
+                    res.push((
+                        (e / 63.0).sqrt(),
+                        format!("{n}{}", if c == 0 { "L" } else { "C" }),
+                    ));
                 }
             }
             res.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
@@ -207,7 +239,11 @@ fn probe_reconstruction() {
         1271 => (256, 128, 10),
         _ => (256, 128, 8),
     };
-    let pix = if depth == 10 { "yuv422p10le" } else { "yuv422p" };
+    let pix = if depth == 10 {
+        "yuv422p10le"
+    } else {
+        "yuv422p"
+    };
     let p = cid_info(cid).unwrap().p as f64;
     for q in [1u32, 2, 3, 4, 8, 16] {
         let mut xs = vec![];
@@ -224,13 +260,21 @@ fn probe_reconstruction() {
             let px: Vec<f64> = if depth == 8 {
                 out.stdout.iter().map(|&b| b as f64).collect()
             } else {
-                out.stdout.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes([c[0], c[1]]) as f64).collect()
+                out.stdout
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
+                    .map(|c| u16::from_le_bytes([c[0], c[1]]) as f64)
+                    .collect()
             };
             let mid = (1 << (depth - 1)) as f64;
             let mut sum = 0f64;
             for j in 0..8 {
                 for i in 0..8 {
-                    sum += 0.25 * (px[j * w as usize + i] - mid) * ((2 * i + 1) as f64 * std::f64::consts::PI / 16.0).cos() * std::f64::consts::FRAC_1_SQRT_2;
+                    sum += 0.25
+                        * (px[j * w as usize + i] - mid)
+                        * ((2 * i + 1) as f64 * std::f64::consts::PI / 16.0).cos()
+                        * std::f64::consts::FRAC_1_SQRT_2;
                 }
             }
             xs.push((amp as f64, sum));
@@ -243,6 +287,10 @@ fn probe_reconstruction() {
         let a = (n * sxy - sx * sy) / (n * sxx - sx * sx);
         let b = (sy - a * sx) / n;
         let step = 32.0 * q as f64 / p;
-        println!("cid {cid} q {q}: step {step} slope {a:.4} ({:.4} steps) intercept {b:.3} ({:.4} steps)", a / step, b / step);
+        println!(
+            "cid {cid} q {q}: step {step} slope {a:.4} ({:.4} steps) intercept {b:.3} ({:.4} steps)",
+            a / step,
+            b / step
+        );
     }
 }

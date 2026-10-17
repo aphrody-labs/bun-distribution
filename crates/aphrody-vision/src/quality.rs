@@ -92,10 +92,14 @@ pub fn classify(raw: &str) -> Answer {
         return Answer::Unusable(Unusable::Empty);
     }
     if doctags::looks_like_filler(&cleaned) {
-        return Answer::Unusable(Unusable::Filler { sample: sample(&cleaned) });
+        return Answer::Unusable(Unusable::Filler {
+            sample: sample(&cleaned),
+        });
     }
     if let Some(finding) = audit_text(&cleaned).into_iter().find(Finding::is_blocking) {
-        return Answer::Unusable(Unusable::Degenerate { detail: render(&finding) });
+        return Answer::Unusable(Unusable::Degenerate {
+            detail: render(&finding),
+        });
     }
     Answer::Ok { text: cleaned }
 }
@@ -124,7 +128,10 @@ mod tests {
     fn ordinary_prose_is_usable() {
         let answer = classify("A screenshot of a code editor with a terminal panel.");
         assert!(answer.is_ok());
-        assert_eq!(answer.text().unwrap(), "A screenshot of a code editor with a terminal panel.");
+        assert_eq!(
+            answer.text().unwrap(),
+            "A screenshot of a code editor with a terminal panel."
+        );
     }
 
     #[test]
@@ -134,7 +141,7 @@ mod tests {
         match answer {
             Answer::Unusable(Unusable::Degenerate { detail }) => {
                 assert!(detail.contains("repeated"), "{detail}");
-            },
+            }
             other => panic!("{other:?}"),
         }
     }

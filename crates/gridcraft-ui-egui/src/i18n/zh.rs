@@ -272,7 +272,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "编辑",
         "Point" => "指向",
         "Calculate" => "计算",
-        "Select destination and press Enter or choose Paste" => "选择目标位置并按 Enter，或选择“粘贴”",
+        "Select destination and press Enter or choose Paste" => {
+            "选择目标位置并按 Enter，或选择“粘贴”"
+        }
         "General" => "常规",
         "Number" => "数值",
         "Currency" => "货币",
@@ -297,7 +299,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Page Layout|Orientation" => "纸张方向",
         "Display theme" => "显示主题",
         "Animations" => "动画",
-        "Glide the selection outline to the cell you move to instead of jumping there" => "选择框平滑滑动到新的单元格，而不是直接跳过去",
+        "Glide the selection outline to the cell you move to instead of jumping there" => {
+            "选择框平滑滑动到新的单元格，而不是直接跳过去"
+        }
         "System" => "系统",
         "Light" => "浅色",
         "Dark" => "深色",
@@ -361,8 +365,12 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Location" => "位置",
         "Sheets" => "工作表",
         "Protect Workbook" => "保护工作簿",
-        "Sheet structure is locked: sheets can't be added, moved, renamed or deleted." => "工作表结构已锁定：无法添加、移动、重命名或删除工作表。",
-        "Lock the sheet structure so sheets can't be added, moved, renamed or deleted." => "锁定工作表结构，使工作表无法被添加、移动、重命名或删除。",
+        "Sheet structure is locked: sheets can't be added, moved, renamed or deleted." => {
+            "工作表结构已锁定：无法添加、移动、重命名或删除工作表。"
+        }
+        "Lock the sheet structure so sheets can't be added, moved, renamed or deleted." => {
+            "锁定工作表结构，使工作表无法被添加、移动、重命名或删除。"
+        }
         "Properties" => "属性",
         "Title" => "标题",
         "Subject" => "主题",
@@ -377,8 +385,12 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Web Page (*.html)" => "网页 (*.html)",
         "PDF (*.pdf)" => "PDF 文件 (*.pdf)",
         "Download" => "下载",
-        "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => "CSV 文件、网页或 PDF 只是副本：工作簿仍保留其原文件。",
-        "Save the workbook under another name or in another folder." => "以其他名称或在其他文件夹中保存工作簿。",
+        "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
+            "CSV 文件、网页或 PDF 只是副本：工作簿仍保留其原文件。"
+        }
+        "Save the workbook under another name or in another folder." => {
+            "以其他名称或在其他文件夹中保存工作簿。"
+        }
         "Print Active Sheets" => "打印活动工作表",
         "Print Entire Workbook" => "打印整个工作簿",
         "Fit Sheet on One Page" => "将工作表调整为一页",
@@ -388,7 +400,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "上一页",
         "Next page" => "下一页",
         "Create PDF" => "创建 PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "将工作表另存为保留页面布局的 PDF 文档。",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "将工作表另存为保留页面布局的 PDF 文档。"
+        }
         "Change File Type" => "更改文件类型",
         "CSV (Comma delimited)" => "CSV (逗号分隔)",
         "Save the active sheet as comma-separated text." => "将活动工作表另存为逗号分隔的文本。",
@@ -398,7 +412,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Options|Save" => "保存",
         "Show formula bar" => "显示编辑栏",
         "Enable AutoComplete for cell values" => "为单元格值启用记忆式键入",
-        "Save .xlsx workbooks automatically after every change" => "每次更改后自动保存 .xlsx 工作簿",
+        "Save .xlsx workbooks automatically after every change" => {
+            "每次更改后自动保存 .xlsx 工作簿"
+        }
         "Workbook calculation" => "工作簿计算",
         "Enable iterative calculation" => "启用迭代计算",
         "Calculation settings are saved with the workbook." => "计算设置随工作簿一起保存。",

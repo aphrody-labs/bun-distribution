@@ -53,11 +53,23 @@ thread_local! {
 
 impl Cache {
     /// Upload image `r` showing `key` over `region`.
-    fn upload(&mut self, ctx: &egui::Context, key: ImageKey, region: DRect, r: &vectorcraft_render::Rendered, ms: f64) {
-        let img = egui::ColorImage::from_rgba_premultiplied([r.width as usize, r.height as usize], &r.pixels);
+    fn upload(
+        &mut self,
+        ctx: &egui::Context,
+        key: ImageKey,
+        region: DRect,
+        r: &vectorcraft_render::Rendered,
+        ms: f64,
+    ) {
+        let img = egui::ColorImage::from_rgba_premultiplied(
+            [r.width as usize, r.height as usize],
+            &r.pixels,
+        );
         match &mut self.tex {
             Some(tx) => tx.set(img, egui::TextureOptions::LINEAR),
-            None => self.tex = Some(ctx.load_texture("navigator", img, egui::TextureOptions::LINEAR)),
+            None => {
+                self.tex = Some(ctx.load_texture("navigator", img, egui::TextureOptions::LINEAR))
+            }
         }
         self.shown = Some((key, region));
         self.last_ms = ms;
@@ -67,14 +79,26 @@ impl Cache {
     /// The region (artboards, and the art unless `artboard_only`, with a margin) to show
     /// `doc` (`uid` at `revision`) in. While `busy` (a drag) the last one of the document stays,
     /// rather than walking the whole document every frame.
-    fn region(&mut self, doc: &vectorcraft_doc::Document, uid: u64, revision: u64, artboard_only: bool, busy: bool) -> DRect {
+    fn region(
+        &mut self,
+        doc: &vectorcraft_doc::Document,
+        uid: u64,
+        revision: u64,
+        artboard_only: bool,
+        busy: bool,
+    ) -> DRect {
         let key = (uid, revision, artboard_only);
         if let Some((k, r)) = self.region
             && (k == key || (busy && k.0 == uid && k.2 == artboard_only))
         {
             return r;
         }
-        let mut region = doc.artboards.iter().map(|a| a.rect).reduce(|a, b| a.union(b)).unwrap_or(DRect::new(0.0, 0.0, 612.0, 792.0));
+        let mut region = doc
+            .artboards
+            .iter()
+            .map(|a| a.rect)
+            .reduce(|a, b| a.union(b))
+            .unwrap_or(DRect::new(0.0, 0.0, 612.0, 792.0));
         if !artboard_only && let Some(b) = doc.art_bounds() {
             region = region.union(b);
         }
@@ -86,7 +110,14 @@ impl Cache {
     /// Bring the image up to `key` (`doc` over `region`): heavy documents render on the worker
     /// while the last image stays, and nothing renders during a drag (`busy`) or before the
     /// document has settled, unless there's no image of it yet.
-    fn update(&mut self, ctx: &egui::Context, doc: &Arc<vectorcraft_doc::Document>, key: ImageKey, region: DRect, busy: bool) {
+    fn update(
+        &mut self,
+        ctx: &egui::Context,
+        doc: &Arc<vectorcraft_doc::Document>,
+        key: ImageKey,
+        region: DRect,
+        busy: bool,
+    ) {
         if !self.worker_started {
             self.worker_started = true;
             self.worker = ThumbWorker::spawn(ctx, "navigator");
@@ -120,11 +151,19 @@ impl Cache {
         let s = (key.w as f64 / region.width()).min(key.h as f64 / region.height());
         // As exported (template layers and guides left out), transparent; images far smaller than
         // they are sample their mip levels.
-        let opts = vectorcraft_render::RenderOptions { skip_templates: true, image_mips: true, ..Default::default() };
+        let opts = vectorcraft_render::RenderOptions {
+            skip_templates: true,
+            image_mips: true,
+            ..Default::default()
+        };
         let heavy = self.last_ms > HEAVY_MS && have;
         if heavy && let Some(w) = &self.worker {
             let (doc, opts) = (doc.clone(), opts.clone());
-            if w.submit((), (key, region), Box::new(move |r| Some(r.render_region_with(&doc, region, s, &opts)))) {
+            if w.submit(
+                (),
+                (key, region),
+                Box::new(move |r| Some(r.render_region_with(&doc, region, s, &opts))),
+            ) {
                 self.pending = Some(key);
                 return;
             }
@@ -146,7 +185,10 @@ pub fn doc_to_thumb(region: DRect, thumb: Rect, p: Point) -> egui::Pos2 {
     let s = (thumb.width() as f64 / region.width()).min(thumb.height() as f64 / region.height());
     let ox = thumb.left() as f64 + (thumb.width() as f64 - region.width() * s) / 2.0;
     let oy = thumb.top() as f64 + (thumb.height() as f64 - region.height() * s) / 2.0;
-    pos2((ox + (p.x - region.x0) * s) as f32, (oy + (p.y - region.y0) * s) as f32)
+    pos2(
+        (ox + (p.x - region.x0) * s) as f32,
+        (oy + (p.y - region.y0) * s) as f32,
+    )
 }
 
 /// Inverse of [`doc_to_thumb`].
@@ -154,7 +196,10 @@ pub fn thumb_to_doc(region: DRect, thumb: Rect, p: egui::Pos2) -> Point {
     let s = (thumb.width() as f64 / region.width()).min(thumb.height() as f64 / region.height());
     let ox = thumb.left() as f64 + (thumb.width() as f64 - region.width() * s) / 2.0;
     let oy = thumb.top() as f64 + (thumb.height() as f64 - region.height() * s) / 2.0;
-    Point::new(region.x0 + (p.x as f64 - ox) / s, region.y0 + (p.y as f64 - oy) / s)
+    Point::new(
+        region.x0 + (p.x as f64 - ox) / s,
+        region.y0 + (p.y as f64 - oy) / s,
+    )
 }
 
 /// Slider position (0..1) ↔ zoom percent on Illustrator's log range 3.13 %–64 000 %.
@@ -168,7 +213,12 @@ pub fn slider_to_zoom(t: f64) -> f64 {
 pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     let Some(st) = app.session.active() else {
-        super::empty_state(ui, "map", tl!("No document"), tl!("Open a document to navigate it."));
+        super::empty_state(
+            ui,
+            "map",
+            tl!("No document"),
+            tl!("Open a document to navigate it."),
+        );
         return;
     };
     let artboard_only: bool = pstate(ui.ctx(), "nav-ab-only");
@@ -176,14 +226,23 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     let (uid, revision) = (st.uid, st.revision);
     // A drag in progress: every pointer move makes a new revision. The image waits for its end.
     let busy = st.interaction.is_some() || app.session.tool_busy();
-    let region = CACHE.with(|c| c.borrow_mut().region(&doc, uid, revision, artboard_only, busy));
+    let region = CACHE.with(|c| {
+        c.borrow_mut()
+            .region(&doc, uid, revision, artboard_only, busy)
+    });
     let w = ui.available_width();
     let h = (w * 0.72).clamp(100.0, 200.0);
     let (thumb, resp) = ui.allocate_exact_size(vec2(w, h), Sense::click_and_drag());
     ui.painter().rect_filled(thumb, 0.0, t.pasteboard);
     let ppp = ui.ctx().pixels_per_point();
     let (pw, ph) = ((w * ppp) as u32, (h * ppp) as u32);
-    let key = ImageKey { uid, revision, w: pw, h: ph, artboard_only };
+    let key = ImageKey {
+        uid,
+        revision,
+        w: pw,
+        h: ph,
+        artboard_only,
+    };
     let (tex, tex_region) = CACHE.with(|c| {
         let mut c = c.borrow_mut();
         c.update(ui.ctx(), &doc, key, region, busy);
@@ -195,13 +254,21 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
     });
     // Artboards (white) under the art thumbnail, like the canvas.
     for a in &doc.artboards {
-        let r = Rect::from_min_max(doc_to_thumb(region, thumb, a.rect.origin()), doc_to_thumb(region, thumb, Point::new(a.rect.x1, a.rect.y1)));
+        let r = Rect::from_min_max(
+            doc_to_thumb(region, thumb, a.rect.origin()),
+            doc_to_thumb(region, thumb, Point::new(a.rect.x1, a.rect.y1)),
+        );
         ui.painter().rect_filled(r, 0.0, Color32::WHITE);
     }
     if let Some(tex) = tex {
         let tl = doc_to_thumb(region, thumb, tex_region.origin());
         let br = doc_to_thumb(region, thumb, Point::new(tex_region.x1, tex_region.y1));
-        ui.painter().image(tex.id(), Rect::from_min_max(tl, br), Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        ui.painter().image(
+            tex.id(),
+            Rect::from_min_max(tl, br),
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
     // The view box.
     let view = app.view().copied();
@@ -211,15 +278,25 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         let a = doc_to_thumb(region, thumb, Point::new(v.center.x - hw, v.center.y - hh));
         let b = doc_to_thumb(region, thumb, Point::new(v.center.x + hw, v.center.y + hh));
         let vr = Rect::from_min_max(a, b).intersect(thumb.expand(1.0));
-        ui.painter().with_clip_rect(thumb).rect_stroke(vr, 0.0, Stroke::new(1.5, Color32::from_rgb(0xff, 0x30, 0x30)), StrokeKind::Middle);
+        ui.painter().with_clip_rect(thumb).rect_stroke(
+            vr,
+            0.0,
+            Stroke::new(1.5, Color32::from_rgb(0xff, 0x30, 0x30)),
+            StrokeKind::Middle,
+        );
         if (resp.dragged() || resp.clicked())
             && let Some(p) = resp.interact_pointer_pos()
         {
             let c = thumb_to_doc(region, thumb, p);
-            app.run("view.setZoom", json!({"zoom": v.zoom * 100.0, "center": [c.x, c.y]})).ok();
+            app.run(
+                "view.setZoom",
+                json!({"zoom": v.zoom * 100.0, "center": [c.x, c.y]}),
+            )
+            .ok();
         }
     }
-    ui.painter().rect_stroke(thumb, 0.0, Stroke::new(1.0, t.border), StrokeKind::Outside);
+    ui.painter()
+        .rect_stroke(thumb, 0.0, Stroke::new(1.0, t.border), StrokeKind::Outside);
     // Zoom controls.
     let zoom = view.map(|v| v.zoom * 100.0).unwrap_or(100.0);
     ui.horizontal(|ui| {
@@ -233,7 +310,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
         }
         let sw = (ui.available_width() - 30.0).max(40.0);
         let track = |_: f32| t.input_border;
-        if let (Some(v), phase) = widgets::color_slider(ui, "nav-slider", zoom_to_slider(zoom) as f32, sw, &track)
+        if let (Some(v), phase) =
+            widgets::color_slider(ui, "nav-slider", zoom_to_slider(zoom) as f32, sw, &track)
             && phase != widgets::Live::Idle
         {
             z = Some(slider_to_zoom(v as f64));
@@ -242,7 +320,8 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
             app.run("view.zoomIn", json!({})).ok();
         }
         if let Some(z) = z {
-            app.run("view.setZoom", json!({"zoom": z.clamp(3.13, 64000.0)})).ok();
+            app.run("view.setZoom", json!({"zoom": z.clamp(3.13, 64000.0)}))
+                .ok();
         }
     });
 }
@@ -285,8 +364,15 @@ mod tests {
     fn no_image_is_rendered_during_a_drag_and_one_is_after_it() {
         use vectorcraft_engine::Session;
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.session.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
-        app.session.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 50, "height": 50})).unwrap();
+        app.session
+            .execute("file.new", &json!({"width": 200, "height": 200}))
+            .unwrap();
+        app.session
+            .execute(
+                "shape.rectangle",
+                &json!({"x": 10, "y": 10, "width": 50, "height": 50}),
+            )
+            .unwrap();
         // One context, so its clock runs on (1/60 s a pass) and the document can settle.
         let ctx = egui::Context::default();
         let frame = |app: &mut VectorcraftApp| {
@@ -299,7 +385,9 @@ mod tests {
         // A move drag: every preview is a new revision.
         app.session.begin_interaction("Move").unwrap();
         for i in 1..=20 {
-            app.session.preview("object.transform", &json!({"matrix": [1, 0, 0, 1, i, 0]})).unwrap();
+            app.session
+                .preview("object.transform", &json!({"matrix": [1, 0, 0, 1, i, 0]}))
+                .unwrap();
             frame(&mut app);
         }
         assert_eq!(renders(), first, "nothing renders while the drag goes on");

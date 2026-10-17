@@ -8,46 +8,46 @@ use serde::{Deserialize, Serialize};
 /// expose `negative_prompt` or `seed`.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Veo3p1ReferenceToVideoInput {
-  pub prompt: String,
+    pub prompt: String,
 
-  /// URLs of the reference images used for consistent subject appearance.
-  pub image_urls: Vec<String>,
+    /// URLs of the reference images used for consistent subject appearance.
+    pub image_urls: Vec<String>,
 
-  /// Aspect ratio.
-  /// Possible values: "16:9", "9:16". fal default: "16:9".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub aspect_ratio: Option<String>,
+    /// Aspect ratio.
+    /// Possible values: "16:9", "9:16". fal default: "16:9".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aspect_ratio: Option<String>,
 
-  /// Duration in seconds (as a string).
-  /// Possible values: "4s", "6s", "8s". fal default: "8s".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub duration: Option<String>,
+    /// Duration in seconds (as a string).
+    /// Possible values: "4s", "6s", "8s". fal default: "8s".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
 
-  /// Output resolution.
-  /// Possible values: "720p", "1080p", "4k". fal default: "720p".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub resolution: Option<String>,
+    /// Output resolution.
+    /// Possible values: "720p", "1080p", "4k". fal default: "720p".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
 
-  /// Whether to generate native audio for the video. fal default: true.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub generate_audio: Option<bool>,
+    /// Whether to generate native audio for the video. fal default: true.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub generate_audio: Option<bool>,
 
-  /// Whether to automatically rewrite prompts that fail moderation.
-  /// fal default: false.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub auto_fix: Option<bool>,
+    /// Whether to automatically rewrite prompts that fail moderation.
+    /// fal default: false.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub auto_fix: Option<bool>,
 
-  /// Safety tolerance, "1" (strictest) .. "6" (least strict). fal default: "4".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub safety_tolerance: Option<String>,
+    /// Safety tolerance, "1" (strictest) .. "6" (least strict). fal default: "4".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub safety_tolerance: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Veo3p1ReferenceToVideoVideoFile {
-  pub url: String,
+    pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Veo3p1ReferenceToVideoOutput {
-  pub video: Veo3p1ReferenceToVideoVideoFile,
+    pub video: Veo3p1ReferenceToVideoVideoFile,
 }

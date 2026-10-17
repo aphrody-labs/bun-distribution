@@ -32,9 +32,20 @@ fn layout(p: &Params) -> Result<Layout, String> {
         return Err(format!("invalid Columns {}", p.columns));
     }
     let colors = p.colors as usize;
-    let samples = usize::try_from(p.columns).ok().and_then(|c| c.checked_mul(colors)).ok_or_else(|| format!("Columns {} too large", p.columns))?;
-    let bits = samples.checked_mul(bpc).ok_or_else(|| format!("Columns {} too large", p.columns))?;
-    Ok(Layout { bpc, colors, bpp: (colors * bpc).div_ceil(8), row: bits.div_ceil(8), samples })
+    let samples = usize::try_from(p.columns)
+        .ok()
+        .and_then(|c| c.checked_mul(colors))
+        .ok_or_else(|| format!("Columns {} too large", p.columns))?;
+    let bits = samples
+        .checked_mul(bpc)
+        .ok_or_else(|| format!("Columns {} too large", p.columns))?;
+    Ok(Layout {
+        bpc,
+        colors,
+        bpp: (colors * bpc).div_ceil(8),
+        row: bits.div_ceil(8),
+        samples,
+    })
 }
 
 /// Undoes the predictor named by `p.predictor` (1 = identity).
@@ -43,9 +54,17 @@ pub(crate) fn decode(p: &Params, data: Vec<u8>, name: &'static str) -> Step {
         1 => Ok(data),
         2 | 10..=15 => {
             let l = layout(p).map_err(|e| Failure::corrupt(name, e, Vec::new()))?;
-            if p.predictor == 2 { Ok(tiff_decode(&l, data)) } else { png_decode(&l, &data, name) }
+            if p.predictor == 2 {
+                Ok(tiff_decode(&l, data))
+            } else {
+                png_decode(&l, &data, name)
+            }
         }
-        other => Err(Failure::corrupt(name, format!("invalid Predictor {other}"), Vec::new())),
+        other => Err(Failure::corrupt(
+            name,
+            format!("invalid Predictor {other}"),
+            Vec::new(),
+        )),
     }
 }
 
@@ -55,7 +74,11 @@ pub(crate) fn encode(p: &Params, data: &[u8]) -> Result<Vec<u8>, FilterError> {
         1 => Ok(data.to_vec()),
         2 | 10..=15 => {
             let l = layout(p).map_err(FilterError::Unsupported)?;
-            Ok(if p.predictor == 2 { tiff_encode(&l, data) } else { png_encode(&l, data, p.predictor) })
+            Ok(if p.predictor == 2 {
+                tiff_encode(&l, data)
+            } else {
+                png_encode(&l, data, p.predictor)
+            })
         }
         other => Err(FilterError::Unsupported(format!("Predictor {other}"))),
     }
@@ -94,7 +117,11 @@ fn samples_in(l: &Layout, row_len: usize) -> usize {
 }
 
 fn tiff_decode(l: &Layout, mut data: Vec<u8>) -> Vec<u8> {
-    let mask = if l.bpc == 16 { u16::MAX } else { (1u16 << l.bpc) - 1 };
+    let mask = if l.bpc == 16 {
+        u16::MAX
+    } else {
+        (1u16 << l.bpc) - 1
+    };
     for row in data.chunks_mut(l.row) {
         for i in l.colors..samples_in(l, row.len()) {
             let v = get(row, i, l.bpc).wrapping_add(get(row, i - l.colors, l.bpc)) & mask;
@@ -105,7 +132,11 @@ fn tiff_decode(l: &Layout, mut data: Vec<u8>) -> Vec<u8> {
 }
 
 fn tiff_encode(l: &Layout, data: &[u8]) -> Vec<u8> {
-    let mask = if l.bpc == 16 { u16::MAX } else { (1u16 << l.bpc) - 1 };
+    let mask = if l.bpc == 16 {
+        u16::MAX
+    } else {
+        (1u16 << l.bpc) - 1
+    };
     let mut out = data.to_vec();
     for row in out.chunks_mut(l.row) {
         // Descending, so the left neighbour still holds its original value.
@@ -121,7 +152,11 @@ fn tiff_encode(l: &Layout, data: &[u8]) -> Vec<u8> {
 
 fn paeth(a: u8, b: u8, c: u8) -> u8 {
     let p = i16::from(a) + i16::from(b) - i16::from(c);
-    let (pa, pb, pc) = ((p - i16::from(a)).abs(), (p - i16::from(b)).abs(), (p - i16::from(c)).abs());
+    let (pa, pb, pc) = (
+        (p - i16::from(a)).abs(),
+        (p - i16::from(b)).abs(),
+        (p - i16::from(c)).abs(),
+    );
     if pa <= pb && pa <= pc {
         a
     } else if pb <= pc {
@@ -153,7 +188,11 @@ fn png_decode(l: &Layout, data: &[u8], name: &'static str) -> Step {
     for chunk in data.chunks(l.row.saturating_add(1)) {
         let (tag, src) = (chunk[0], &chunk[1..]);
         if tag > 4 {
-            return Err(Failure::corrupt(name, format!("invalid PNG filter type {tag}"), out));
+            return Err(Failure::corrupt(
+                name,
+                format!("invalid PNG filter type {tag}"),
+                out,
+            ));
         }
         let start = out.len();
         for (i, &x) in src.iter().enumerate() {
@@ -168,12 +207,19 @@ fn png_decode(l: &Layout, data: &[u8], name: &'static str) -> Step {
 fn png_filter(tag: u8, cur: &[u8], up: &[u8], bpp: usize, dst: &mut Vec<u8>) {
     dst.clear();
     dst.push(tag);
-    dst.extend(cur.iter().enumerate().map(|(i, &x)| x.wrapping_sub(predict(tag, cur, up, i, bpp))));
+    dst.extend(
+        cur.iter()
+            .enumerate()
+            .map(|(i, &x)| x.wrapping_sub(predict(tag, cur, up, i, bpp))),
+    );
 }
 
 /// Sum of residuals as signed bytes: the usual heuristic for choosing a PNG filter.
 fn cost(filtered: &[u8]) -> u64 {
-    filtered[1..].iter().map(|&b| u64::from((b as i8).unsigned_abs())).sum()
+    filtered[1..]
+        .iter()
+        .map(|&b| u64::from((b as i8).unsigned_abs()))
+        .sum()
 }
 
 fn png_encode(l: &Layout, data: &[u8], predictor: i64) -> Vec<u8> {
@@ -209,7 +255,13 @@ mod tests {
     use super::*;
 
     fn p(predictor: i64, colors: i64, bpc: i64, columns: i64) -> Params {
-        Params { predictor, colors, bits_per_component: bpc, columns, early_change: 1 }
+        Params {
+            predictor,
+            colors,
+            bits_per_component: bpc,
+            columns,
+            early_change: 1,
+        }
     }
 
     fn dec(params: &Params, data: &[u8]) -> Result<Vec<u8>, FilterError> {
@@ -257,7 +309,10 @@ mod tests {
         let enc = [0, 1, 2, 3, 4, 2, 1, 1];
         assert_eq!(dec(&p(12, 1, 8, 4), &enc).unwrap(), [1, 2, 3, 4, 2, 3]);
         // A lone tag byte at the end yields nothing.
-        assert_eq!(dec(&p(12, 1, 8, 4), &[0, 1, 2, 3, 4, 2]).unwrap(), [1, 2, 3, 4]);
+        assert_eq!(
+            dec(&p(12, 1, 8, 4), &[0, 1, 2, 3, 4, 2]).unwrap(),
+            [1, 2, 3, 4]
+        );
     }
 
     #[test]
@@ -272,13 +327,19 @@ mod tests {
     fn tiff_8bit() {
         // 2 colors, 3 columns: differences per component.
         let enc = [10, 20, 1, 2, 3, 4, /* row 2 */ 5, 5, 250, 10, 1, 1];
-        assert_eq!(dec(&p(2, 2, 8, 3), &enc).unwrap(), [10, 20, 11, 22, 14, 26, 5, 5, 255, 15, 0, 16]);
+        assert_eq!(
+            dec(&p(2, 2, 8, 3), &enc).unwrap(),
+            [10, 20, 11, 22, 14, 26, 5, 5, 255, 15, 0, 16]
+        );
     }
 
     #[test]
     fn tiff_16bit() {
         let enc = [0x01, 0x00, 0xff, 0xff, 0x00, 0x02];
-        assert_eq!(dec(&p(2, 1, 16, 3), &enc).unwrap(), [0x01, 0x00, 0x00, 0xff, 0x01, 0x01]);
+        assert_eq!(
+            dec(&p(2, 1, 16, 3), &enc).unwrap(),
+            [0x01, 0x00, 0x00, 0xff, 0x01, 0x01]
+        );
     }
 
     #[test]
@@ -286,7 +347,10 @@ mod tests {
         // 1 bpc, 1 color, 10 columns: bits 1 0 0 1 1 0 0 0 | 1 1 (pad 000000)
         // Cumulative XOR: 1 1 1 0 1 1 1 1 | 0 1
         let enc = [0b1001_1000, 0b1100_0000];
-        assert_eq!(dec(&p(2, 1, 1, 10), &enc).unwrap(), [0b1110_1111, 0b0100_0000]);
+        assert_eq!(
+            dec(&p(2, 1, 1, 10), &enc).unwrap(),
+            [0b1110_1111, 0b0100_0000]
+        );
         // 4 bpc, 1 color, 3 columns: samples 5, 15, 3 -> 5, 4, 7 (mod 16).
         assert_eq!(dec(&p(2, 1, 4, 3), &[0x5f, 0x30]).unwrap(), [0x54, 0x70]);
         // 2 bpc, 2 colors, 2 columns: samples 1 2 3 3 -> 1 2 0 1.
@@ -298,14 +362,30 @@ mod tests {
     #[test]
     fn tiff_partial_rows() {
         // 16-bit with an odd trailing byte: the lone byte is left as is.
-        assert_eq!(dec(&p(2, 1, 16, 4), &[0, 1, 0, 1, 9]).unwrap(), [0, 1, 0, 2, 9]);
-        assert_eq!(dec(&p(2, 1, 8, 4), &[1, 1, 1, 1, 2, 2]).unwrap(), [1, 2, 3, 4, 2, 4]);
+        assert_eq!(
+            dec(&p(2, 1, 16, 4), &[0, 1, 0, 1, 9]).unwrap(),
+            [0, 1, 0, 2, 9]
+        );
+        assert_eq!(
+            dec(&p(2, 1, 8, 4), &[1, 1, 1, 1, 2, 2]).unwrap(),
+            [1, 2, 3, 4, 2, 4]
+        );
     }
 
     #[test]
     fn invalid_params() {
-        for bad in [p(2, 1, 3, 1), p(12, 0, 8, 1), p(12, 1, 8, 0), p(3, 1, 8, 1), p(12, 1, 8, i64::MAX), p(2, 300, 8, 1)] {
-            assert!(matches!(dec(&bad, &[0, 1, 2]), Err(FilterError::Corrupt { .. })), "{bad:?}");
+        for bad in [
+            p(2, 1, 3, 1),
+            p(12, 0, 8, 1),
+            p(12, 1, 8, 0),
+            p(3, 1, 8, 1),
+            p(12, 1, 8, i64::MAX),
+            p(2, 300, 8, 1),
+        ] {
+            assert!(
+                matches!(dec(&bad, &[0, 1, 2]), Err(FilterError::Corrupt { .. })),
+                "{bad:?}"
+            );
             assert!(encode(&bad, &[1, 2]).is_err());
         }
         // Huge but representable Columns does not allocate a huge row.

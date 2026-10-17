@@ -106,9 +106,15 @@ impl VllmApi {
     pub async fn health(&self) -> Result<(), ModelError> {
         let url = self.runtime.endpoint_path("health");
         tokio::time::timeout(self.request_timeout, async {
-            let response =
-                send_request(&self.http, &self.runtime, reqwest::Method::GET, &url, None, "*/*")
-                    .await?;
+            let response = send_request(
+                &self.http,
+                &self.runtime,
+                reqwest::Method::GET,
+                &url,
+                None,
+                "*/*",
+            )
+            .await?;
             response.bytes().await?;
             Ok(())
         })
@@ -140,7 +146,8 @@ impl VllmApi {
         model: &str,
         prompt: &str,
     ) -> Result<TokenizeResponse, ModelError> {
-        self.tokenize_request(&json!({"model": model, "prompt": prompt})).await
+        self.tokenize_request(&json!({"model": model, "prompt": prompt}))
+            .await
     }
 
     /// Completion or chat tokenization, preserving template/tools/multimodal
@@ -149,9 +156,14 @@ impl VllmApi {
         let response: TokenizeResponse = self.post("tokenize", request).await?;
         if response.count != response.tokens.len()
             || response.tokens.iter().any(|token| *token > i64::MAX as u64)
-            || response.token_strs.as_ref().is_some_and(|strings| strings.len() != response.count)
+            || response
+                .token_strs
+                .as_ref()
+                .is_some_and(|strings| strings.len() != response.count)
         {
-            return Err(ModelError::Stream("vLLM returned inconsistent tokenization data".into()));
+            return Err(ModelError::Stream(
+                "vLLM returned inconsistent tokenization data".into(),
+            ));
         }
         Ok(response)
     }
@@ -166,8 +178,9 @@ impl VllmApi {
         struct DetokenizeResponse {
             prompt: String,
         }
-        let response: DetokenizeResponse =
-            self.post("detokenize", &json!({"model": model, "tokens": tokens})).await?;
+        let response: DetokenizeResponse = self
+            .post("detokenize", &json!({"model": model, "tokens": tokens}))
+            .await?;
         Ok(response.prompt)
     }
 
@@ -202,7 +215,9 @@ impl VllmApi {
             Some(documents.as_array().map_or(1, Vec::len))
         });
         if expected.is_some_and(|expected| response.data.len() != expected) {
-            return Err(ModelError::Stream("vLLM returned an incomplete score result".into()));
+            return Err(ModelError::Stream(
+                "vLLM returned an incomplete score result".into(),
+            ));
         }
         response.data.sort_by_key(|item| item.index);
         if response
@@ -211,7 +226,9 @@ impl VllmApi {
             .enumerate()
             .any(|(index, item)| item.index != index || !item.score.is_finite())
         {
-            return Err(ModelError::Stream("vLLM returned invalid score indices or values".into()));
+            return Err(ModelError::Stream(
+                "vLLM returned invalid score indices or values".into(),
+            ));
         }
         Ok(response)
     }

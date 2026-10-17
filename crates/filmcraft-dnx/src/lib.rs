@@ -11,7 +11,17 @@
 //!
 //! See the crate README for accuracy, performance and limitations.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod bits;
 mod dct;
@@ -117,7 +127,15 @@ impl Profile {
         }
     }
     pub fn from_cid(cid: u32) -> Option<Profile> {
-        [Profile::Lb, Profile::Sq, Profile::Hq, Profile::Hqx, Profile::R444].into_iter().find(|p| p.cid() == cid)
+        [
+            Profile::Lb,
+            Profile::Sq,
+            Profile::Hq,
+            Profile::Hqx,
+            Profile::R444,
+        ]
+        .into_iter()
+        .find(|p| p.cid() == cid)
     }
     pub fn name(self) -> &'static str {
         match self {
@@ -193,7 +211,13 @@ pub struct Frame {
 
 impl Frame {
     /// A black (video-range) frame.
-    pub fn new(width: u32, height: u32, chroma: ChromaFormat, bit_depth: u8, with_alpha: bool) -> Frame {
+    pub fn new(
+        width: u32,
+        height: u32,
+        chroma: ChromaFormat,
+        bit_depth: u8,
+        with_alpha: bool,
+    ) -> Frame {
         let n = width as usize * height as usize;
         let cn = chroma.chroma_width(width) as usize * chroma.chroma_height(height) as usize;
         let s = bit_depth.saturating_sub(8) as u32;

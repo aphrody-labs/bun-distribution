@@ -195,7 +195,11 @@ impl ILibraryAppletSelfAccessor {
                 Some(Self::should_set_gpu_time_slice_manually_handler),
                 "ShouldSetGpuTimeSliceManually",
             ),
-            (160, Some(Self::get_library_applet_info_ex_handler), "GetLibraryAppletInfoEx"),
+            (
+                160,
+                Some(Self::get_library_applet_info_ex_handler),
+                "GetLibraryAppletInfoEx",
+            ),
         ]);
         Self {
             system,
@@ -607,7 +611,10 @@ impl ILibraryAppletSelfAccessor {
         rb.push_bool(false);
     }
 
-    fn get_library_applet_info_ex_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_library_applet_info_ex_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service =
             unsafe { &*(this as *const dyn ServiceFramework as *const ILibraryAppletSelfAccessor) };
         log::info!("ILibraryAppletSelfAccessor::GetLibraryAppletInfoEx called");
@@ -649,12 +656,15 @@ mod tests {
     #[test]
     fn extended_info_returns_actual_applet_identity_and_mode() {
         let mut applet = crate::hle::service::am::applet::Applet::new(
-            SystemRef::null(), crate::hle::service::os::process::Process::new(), false,
+            SystemRef::null(),
+            crate::hle::service::os::process::Process::new(),
+            false,
         );
         applet.applet_id = AppletId::PhotoViewer;
         applet.library_applet_mode = LibraryAppletMode::PartialForeground;
         applet.caller_applet_broker = Some(Arc::new(AppletDataBroker::new()));
-        let service = ILibraryAppletSelfAccessor::new(SystemRef::null(), Arc::new(Mutex::new(applet)));
+        let service =
+            ILibraryAppletSelfAccessor::new(SystemRef::null(), Arc::new(Mutex::new(applet)));
         let mut ctx = HLERequestContext::new();
         service.handlers()[&160].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.cmd_buf[6], RESULT_SUCCESS.get_inner_value());

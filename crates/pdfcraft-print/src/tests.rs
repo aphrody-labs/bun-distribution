@@ -8,7 +8,13 @@ use crate::spool::{Duplex, Job, Printer, lp_args, parse_lpstat, parse_windows_pr
 fn fixture(n: usize) -> Document {
     let mut objs: Vec<Vec<u8>> = vec![b"<< /Type /Catalog /Pages 2 0 R >>".to_vec()];
     let kids: Vec<String> = (0..n).map(|i| format!("{} 0 R", 6 + 2 * i)).collect();
-    objs.push(format!("<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>", kids.join(" ")).into_bytes());
+    objs.push(
+        format!(
+            "<< /Type /Pages /Kids [{}] /Count {n} /MediaBox [0 0 200 300] >>",
+            kids.join(" ")
+        )
+        .into_bytes(),
+    );
     objs.push(b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>".to_vec());
     // 4: an appearance stream; 5: unused.
     let ap = b"0 0 1 rg 0 0 10 10 re f";
@@ -23,7 +29,11 @@ fn fixture(n: usize) -> Document {
         } else {
             ""
         };
-        let mb = if i == 2 { " /MediaBox [0 0 300 200]" } else { "" };
+        let mb = if i == 2 {
+            " /MediaBox [0 0 300 200]"
+        } else {
+            ""
+        };
         objs.push(
             format!("<< /Type /Page /Parent 2 0 R /Contents {} 0 R /Resources << /Font << /F1 3 0 R >> >>{mb}{annots} >>", 7 + 2 * i).into_bytes(),
         );
@@ -43,12 +53,23 @@ fn fixture(n: usize) -> Document {
     for o in offs {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     Document::open(Arc::new(out)).unwrap()
 }
 
 fn settings(pages: Vec<usize>, layout: Layout) -> Settings {
-    Settings { pages, paper: (612.0, 792.0), layout, ..Settings::default() }
+    Settings {
+        pages,
+        paper: (612.0, 792.0),
+        layout,
+        ..Settings::default()
+    }
 }
 
 fn close(a: f64, b: f64) -> bool {
@@ -57,71 +78,176 @@ fn close(a: f64, b: f64) -> bool {
 
 #[test]
 fn page_selection() {
-    let labels: Vec<String> = ["i", "ii", "1", "2", "A-1"].iter().map(|s| s.to_string()).collect();
-    assert_eq!(select_pages(5, None, &labels, Subset::All, false).unwrap(), [0, 1, 2, 3, 4]);
-    assert_eq!(select_pages(5, Some("1-2, 5"), &[], Subset::All, false).unwrap(), [0, 1, 4]);
-    assert_eq!(select_pages(5, Some("4-"), &[], Subset::All, false).unwrap(), [3, 4]);
-    assert_eq!(select_pages(5, Some("-2"), &[], Subset::All, false).unwrap(), [0, 1]);
-    assert_eq!(select_pages(5, Some("ii-2, A-1"), &labels, Subset::All, false).unwrap(), [1, 2, 3, 4], "labels, even with a dash");
-    assert_eq!(select_pages(5, None, &[], Subset::Even, true).unwrap(), [3, 1]);
-    assert_eq!(select_pages(5, None, &[], Subset::Odd, false).unwrap(), [0, 2, 4]);
-    assert_eq!(select_pages(5, Some("7"), &[], Subset::All, false), Err(PrintError::OutOfRange(7, 5)));
-    assert_eq!(select_pages(5, Some("x"), &[], Subset::All, false), Err(PrintError::NotAPage("x".into())));
-    assert_eq!(select_pages(5, Some("7"), &[], Subset::All, false).unwrap_err().to_string(), "page 7 is out of range (1–5)");
-    assert_eq!(select_pages(1, None, &[], Subset::Even, false), Err(PrintError::NoPages));
+    let labels: Vec<String> = ["i", "ii", "1", "2", "A-1"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    assert_eq!(
+        select_pages(5, None, &labels, Subset::All, false).unwrap(),
+        [0, 1, 2, 3, 4]
+    );
+    assert_eq!(
+        select_pages(5, Some("1-2, 5"), &[], Subset::All, false).unwrap(),
+        [0, 1, 4]
+    );
+    assert_eq!(
+        select_pages(5, Some("4-"), &[], Subset::All, false).unwrap(),
+        [3, 4]
+    );
+    assert_eq!(
+        select_pages(5, Some("-2"), &[], Subset::All, false).unwrap(),
+        [0, 1]
+    );
+    assert_eq!(
+        select_pages(5, Some("ii-2, A-1"), &labels, Subset::All, false).unwrap(),
+        [1, 2, 3, 4],
+        "labels, even with a dash"
+    );
+    assert_eq!(
+        select_pages(5, None, &[], Subset::Even, true).unwrap(),
+        [3, 1]
+    );
+    assert_eq!(
+        select_pages(5, None, &[], Subset::Odd, false).unwrap(),
+        [0, 2, 4]
+    );
+    assert_eq!(
+        select_pages(5, Some("7"), &[], Subset::All, false),
+        Err(PrintError::OutOfRange(7, 5))
+    );
+    assert_eq!(
+        select_pages(5, Some("x"), &[], Subset::All, false),
+        Err(PrintError::NotAPage("x".into()))
+    );
+    assert_eq!(
+        select_pages(5, Some("7"), &[], Subset::All, false)
+            .unwrap_err()
+            .to_string(),
+        "page 7 is out of range (1–5)"
+    );
+    assert_eq!(
+        select_pages(1, None, &[], Subset::Even, false),
+        Err(PrintError::NoPages)
+    );
     // An explicit list (selected thumbnails): positions, never labels, in the order given.
-    assert_eq!(select_listed(5, &[1, 3], Subset::All, false).unwrap(), [1, 3]);
-    assert_eq!(select_listed(5, &[0, 2, 4], Subset::Even, false).unwrap(), [2]);
-    assert_eq!(select_listed(5, &[0, 2, 4], Subset::Odd, true).unwrap(), [4, 0]);
-    assert_eq!(select_listed(5, &[1, 5], Subset::All, false), Err(PrintError::OutOfRange(6, 5)));
-    assert!(matches!(select_listed(0, &[usize::MAX], Subset::All, false), Err(PrintError::OutOfRange(_, 0))));
-    assert_eq!(select_listed(5, &[], Subset::All, false), Err(PrintError::NoPages));
+    assert_eq!(
+        select_listed(5, &[1, 3], Subset::All, false).unwrap(),
+        [1, 3]
+    );
+    assert_eq!(
+        select_listed(5, &[0, 2, 4], Subset::Even, false).unwrap(),
+        [2]
+    );
+    assert_eq!(
+        select_listed(5, &[0, 2, 4], Subset::Odd, true).unwrap(),
+        [4, 0]
+    );
+    assert_eq!(
+        select_listed(5, &[1, 5], Subset::All, false),
+        Err(PrintError::OutOfRange(6, 5))
+    );
+    assert!(matches!(
+        select_listed(0, &[usize::MAX], Subset::All, false),
+        Err(PrintError::OutOfRange(_, 0))
+    ));
+    assert_eq!(
+        select_listed(5, &[], Subset::All, false),
+        Err(PrintError::NoPages)
+    );
 }
 
 /// Every mistake a person can make about what to print says itself out of a wording on the list
 /// and the numbers apart from it, and says itself in English exactly as the error prints itself.
 #[test]
 fn wordings_are_said() {
-    let mistakes = [PrintError::NoPages, PrintError::OutOfRange(7, 5), PrintError::NotAPage("x".into())];
+    let mistakes = [
+        PrintError::NoPages,
+        PrintError::OutOfRange(7, 5),
+        PrintError::NotAPage("x".into()),
+    ];
     for e in &mistakes {
-        assert_eq!(e.said(&in_english), e.to_string(), "{e:?} says itself in English the way it prints itself");
+        assert_eq!(
+            e.said(&in_english),
+            e.to_string(),
+            "{e:?} says itself in English the way it prints itself"
+        );
     }
     // Each wording is one of a mistake's, and each mistake's is on the list: the hole names and
     // all, so a catalog that translates the list translates every sentence a person can be shown.
     let said: Vec<String> = WORDINGS.iter().map(|w| w.to_string()).collect();
     assert_eq!(said.len(), mistakes.len(), "one wording per mistake");
     for w in WORDINGS {
-        assert!(!w.is_empty() && w.ends_with(|c: char| c.is_alphanumeric() || c == ')'), "a whole sentence, not a fragment: {w:?}");
+        assert!(
+            !w.is_empty() && w.ends_with(|c: char| c.is_alphanumeric() || c == ')'),
+            "a whole sentence, not a fragment: {w:?}"
+        );
     }
     // A fault is not a mistake: it carries its own text and is not on the list.
     let fault = PrintError::Spool("lp: no such printer".into());
     assert_eq!(fault.said(&in_english), "lp: no such printer");
-    assert_eq!(fault.said(&|_| "traducido".to_string()), "lp: no such printer", "nothing to translate");
+    assert_eq!(
+        fault.said(&|_| "traducido".to_string()),
+        "lp: no such printer",
+        "nothing to translate"
+    );
     // Said in another language, the numbers still go in, and in that language's own order.
     let other = |w: &str| match w {
-        "page {n} is out of range (1–{count})" => "el documento tiene {count} páginas, no {n}".to_string(),
+        "page {n} is out of range (1–{count})" => {
+            "el documento tiene {count} páginas, no {n}".to_string()
+        }
         w => w.to_string(),
     };
-    assert_eq!(PrintError::OutOfRange(7, 5).said(&other), "el documento tiene 5 páginas, no 7");
+    assert_eq!(
+        PrintError::OutOfRange(7, 5).said(&other),
+        "el documento tiene 5 páginas, no 7"
+    );
     // What was typed goes in as it stands, braces and all, and is never read as a hole.
-    assert_eq!(PrintError::NotAPage("{count}".into()).said(&other), "\"{count}\" is not a page number or label");
+    assert_eq!(
+        PrintError::NotAPage("{count}".into()).said(&other),
+        "\"{count}\" is not a page number or label"
+    );
 }
 
 #[test]
 fn page_selection_handles_ranges_between_hyphenated_labels() {
-    let labels: Vec<String> = ["A-1", "A-2", "A-3", "B-1", "B-2"].iter().map(|s| s.to_string()).collect();
+    let labels: Vec<String> = ["A-1", "A-2", "A-3", "B-1", "B-2"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
     let pages = |range| select_pages(5, Some(range), &labels, Subset::All, false).unwrap();
-    assert_eq!(pages("A-1"), [0], "the complete label takes precedence over a range");
+    assert_eq!(
+        pages("A-1"),
+        [0],
+        "the complete label takes precedence over a range"
+    );
     assert_eq!(pages("A-1-A-3"), [0, 1, 2]);
     assert_eq!(pages("A-3-A-1"), [2, 1, 0], "reverse logical ranges");
-    assert_eq!(pages("A-2-"), [1, 2, 3, 4], "an open-ended range starting at a hyphenated label");
-    assert_eq!(pages("-A-2"), [0, 1], "an open-ended range ending at a hyphenated label");
-    assert_eq!(pages("A-2-5"), [1, 2, 3, 4], "a label followed by a numeric endpoint");
+    assert_eq!(
+        pages("A-2-"),
+        [1, 2, 3, 4],
+        "an open-ended range starting at a hyphenated label"
+    );
+    assert_eq!(
+        pages("-A-2"),
+        [0, 1],
+        "an open-ended range ending at a hyphenated label"
+    );
+    assert_eq!(
+        pages("A-2-5"),
+        [1, 2, 3, 4],
+        "a label followed by a numeric endpoint"
+    );
     assert_eq!(pages("B-1-B-2"), [3, 4]);
     // If an earlier dash yields one known label but an unknown endpoint, continue
     // checking later dashes instead of rejecting the whole range.
-    let ambiguous: Vec<String> = ["A-1", "A-1-B", "C"].iter().map(|s| s.to_string()).collect();
-    assert_eq!(select_pages(3, Some("A-1-B-C"), &ambiguous, Subset::All, false).unwrap(), [1, 2]);
+    let ambiguous: Vec<String> = ["A-1", "A-1-B", "C"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    assert_eq!(
+        select_pages(3, Some("A-1-B-C"), &ambiguous, Subset::All, false).unwrap(),
+        [1, 2]
+    );
 }
 
 #[test]
@@ -131,14 +257,33 @@ fn size_modes() {
     let s0 = fit[0].placed[0].matrix.0[0];
     assert!(close(s0, 2.52), "min(576 / 200, 756 / 300): {s0}");
     let actual = layout(&sizes, &settings(vec![0], Layout::Size(SizeMode::Actual))).unwrap();
-    assert_eq!(actual[0].placed[0].matrix.0, [1.0, 0.0, 0.0, 1.0, 206.0, 246.0], "centred at 100%");
-    let shrink = layout(&sizes, &settings(vec![0, 1], Layout::Size(SizeMode::Shrink))).unwrap();
-    assert_eq!(shrink[0].placed[0].matrix.0[0], 1.0, "small pages stay at 100%");
+    assert_eq!(
+        actual[0].placed[0].matrix.0,
+        [1.0, 0.0, 0.0, 1.0, 206.0, 246.0],
+        "centred at 100%"
+    );
+    let shrink = layout(
+        &sizes,
+        &settings(vec![0, 1], Layout::Size(SizeMode::Shrink)),
+    )
+    .unwrap();
+    assert_eq!(
+        shrink[0].placed[0].matrix.0[0], 1.0,
+        "small pages stay at 100%"
+    );
     assert!(shrink[1].placed[0].matrix.0[0] < 1.0, "big pages shrink");
-    let custom = layout(&sizes, &settings(vec![0], Layout::Size(SizeMode::Custom(50.0)))).unwrap();
+    let custom = layout(
+        &sizes,
+        &settings(vec![0], Layout::Size(SizeMode::Custom(50.0))),
+    )
+    .unwrap();
     assert_eq!(custom[0].placed[0].matrix.0[0], 0.5);
     // Auto orientation turns the sheet for landscape pages.
-    let land = layout(&[(300.0, 200.0)], &settings(vec![0], Layout::Size(SizeMode::Fit))).unwrap();
+    let land = layout(
+        &[(300.0, 200.0)],
+        &settings(vec![0], Layout::Size(SizeMode::Fit)),
+    )
+    .unwrap();
     assert_eq!(land[0].size, (792.0, 612.0));
 }
 
@@ -148,7 +293,12 @@ fn multiple_pages_per_sheet() {
     let sheets = layout(&sizes, &settings((0..5).collect(), Layout::multiple(4))).unwrap();
     assert_eq!(sheet_pages(&sheets), [vec![0, 1, 2, 3], vec![4]]);
     // Horizontal order: 0 top-left, 1 top-right, 2 bottom-left.
-    let o = |k: usize| (sheets[0].placed[k].matrix.0[4], sheets[0].placed[k].matrix.0[5]);
+    let o = |k: usize| {
+        (
+            sheets[0].placed[k].matrix.0[4],
+            sheets[0].placed[k].matrix.0[5],
+        )
+    };
     assert!(o(1).0 > o(0).0 && close(o(1).1, o(0).1) && o(2).1 < o(0).1 && close(o(2).0, o(0).0));
     // Two per sheet prints side by side on landscape paper.
     let two = layout(&sizes, &settings(vec![0, 1], Layout::multiple(2))).unwrap();
@@ -157,13 +307,30 @@ fn multiple_pages_per_sheet() {
     // Vertical order and borders.
     let v = layout(
         &sizes,
-        &settings(vec![0, 1, 2], Layout::Multiple { cols: 2, rows: 2, per_sheet: 4, order: PageOrder::Vertical, border: true, auto_rotate: false }),
+        &settings(
+            vec![0, 1, 2],
+            Layout::Multiple {
+                cols: 2,
+                rows: 2,
+                per_sheet: 4,
+                order: PageOrder::Vertical,
+                border: true,
+                auto_rotate: false,
+            },
+        ),
     )
     .unwrap();
-    assert!(close(v[0].placed[1].matrix.0[4], v[0].placed[0].matrix.0[4]) && v[0].placed[1].matrix.0[5] < v[0].placed[0].matrix.0[5]);
+    assert!(
+        close(v[0].placed[1].matrix.0[4], v[0].placed[0].matrix.0[4])
+            && v[0].placed[1].matrix.0[5] < v[0].placed[0].matrix.0[5]
+    );
     assert_eq!(v[0].borders.len(), 3);
     // Auto-rotate turns a landscape page in a portrait cell.
-    let r = layout(&[(300.0, 200.0), (200.0, 300.0)], &settings(vec![0, 1], Layout::multiple(4))).unwrap();
+    let r = layout(
+        &[(300.0, 200.0), (200.0, 300.0)],
+        &settings(vec![0, 1], Layout::multiple(4)),
+    )
+    .unwrap();
     // The first (landscape) page sets a landscape sheet; the portrait page is turned to fit.
     assert_eq!(r[0].size, (792.0, 612.0));
     assert!(r[0].placed[0].matrix.0[0] > 0.0);
@@ -174,55 +341,153 @@ fn multiple_pages_per_sheet() {
 fn custom_pages_per_sheet_never_overfill_the_grid() {
     // Three per sheet draws on a 2 × 2 grid, five on 3 × 2: the spare cells stay blank (#1336).
     let sizes = vec![(200.0, 300.0); 7];
-    let pages = |per: usize| sheet_pages(&layout(&sizes, &settings((0..7).collect(), Layout::multiple(per))).unwrap());
+    let pages = |per: usize| {
+        sheet_pages(&layout(&sizes, &settings((0..7).collect(), Layout::multiple(per))).unwrap())
+    };
     assert_eq!(pages(3), [vec![0, 1, 2], vec![3, 4, 5], vec![6]]);
     assert_eq!(pages(5), [vec![0, 1, 2, 3, 4], vec![5, 6]]);
     assert_eq!(pages(7), [vec![0, 1, 2, 3, 4, 5, 6]]);
     assert_eq!(pages(4), [vec![0, 1, 2, 3], vec![4, 5, 6]]);
     assert_eq!(pages(2), [vec![0, 1], vec![2, 3], vec![4, 5], vec![6]]);
     // Cut-stack piles take the requested count too.
-    let stacked = Layout::Multiple { cols: 2, rows: 2, per_sheet: 3, order: PageOrder::CutStack, border: false, auto_rotate: false };
-    assert_eq!(sheet_pages(&layout(&sizes, &settings((0..7).collect(), stacked)).unwrap()), [vec![0, 3, 6], vec![1, 4], vec![2, 5]]);
+    let stacked = Layout::Multiple {
+        cols: 2,
+        rows: 2,
+        per_sheet: 3,
+        order: PageOrder::CutStack,
+        border: false,
+        auto_rotate: false,
+    };
+    assert_eq!(
+        sheet_pages(&layout(&sizes, &settings((0..7).collect(), stacked)).unwrap()),
+        [vec![0, 3, 6], vec![1, 4], vec![2, 5]]
+    );
     // A count larger than the grid is capped by the grid; no pages per sheet is refused.
-    let grid = |per_sheet| Layout::Multiple { cols: 2, rows: 1, per_sheet, order: PageOrder::Horizontal, border: false, auto_rotate: false };
-    assert_eq!(sheet_pages(&layout(&sizes[..3], &settings(vec![0, 1, 2], grid(9))).unwrap()), [vec![0, 1], vec![2]]);
-    assert!(matches!(layout(&sizes, &settings(vec![0], grid(0))), Err(PrintError::Invalid(_))));
+    let grid = |per_sheet| Layout::Multiple {
+        cols: 2,
+        rows: 1,
+        per_sheet,
+        order: PageOrder::Horizontal,
+        border: false,
+        auto_rotate: false,
+    };
+    assert_eq!(
+        sheet_pages(&layout(&sizes[..3], &settings(vec![0, 1, 2], grid(9))).unwrap()),
+        [vec![0, 1], vec![2]]
+    );
+    assert!(matches!(
+        layout(&sizes, &settings(vec![0], grid(0))),
+        Err(PrintError::Invalid(_))
+    ));
     // The imposed PDF has one page per sheet.
-    let out = impose(&fixture(7), &settings((0..7).collect(), Layout::multiple(3))).unwrap();
-    assert_eq!(pdfcraft_model::pages(&Document::open(Arc::new(out)).unwrap()).len(), 3);
+    let out = impose(
+        &fixture(7),
+        &settings((0..7).collect(), Layout::multiple(3)),
+    )
+    .unwrap();
+    assert_eq!(
+        pdfcraft_model::pages(&Document::open(Arc::new(out)).unwrap()).len(),
+        3
+    );
 }
 
 #[test]
 fn booklets_pair_pages_for_folding() {
     let sizes = vec![(200.0, 300.0); 6];
-    let sheets = layout(&sizes, &settings((0..6).collect(), Layout::Booklet { subset: BookletSubset::BothSides, binding: Binding::Left })).unwrap();
+    let sheets = layout(
+        &sizes,
+        &settings(
+            (0..6).collect(),
+            Layout::Booklet {
+                subset: BookletSubset::BothSides,
+                binding: Binding::Left,
+            },
+        ),
+    )
+    .unwrap();
     // 6 pages pad to 8: sheet 1 front [8,1] → [blank, 0], back [1, 6]; sheet 2 front [5, 2], back [3, 4].
-    assert_eq!(sheet_pages(&sheets), [vec![0], vec![1], vec![5, 2], vec![3, 4]]);
-    assert!(sheets[0].placed[0].matrix.0[4] >= 395.9, "page 1 on the right half");
+    assert_eq!(
+        sheet_pages(&sheets),
+        [vec![0], vec![1], vec![5, 2], vec![3, 4]]
+    );
+    assert!(
+        sheets[0].placed[0].matrix.0[4] >= 395.9,
+        "page 1 on the right half"
+    );
     assert_eq!(sheets[0].size, (792.0, 612.0));
-    let front = layout(&sizes, &settings((0..6).collect(), Layout::Booklet { subset: BookletSubset::FrontOnly, binding: Binding::Right })).unwrap();
-    assert_eq!(sheet_pages(&front), [vec![0], vec![2, 5]], "right binding mirrors the spread");
+    let front = layout(
+        &sizes,
+        &settings(
+            (0..6).collect(),
+            Layout::Booklet {
+                subset: BookletSubset::FrontOnly,
+                binding: Binding::Right,
+            },
+        ),
+    )
+    .unwrap();
+    assert_eq!(
+        sheet_pages(&front),
+        [vec![0], vec![2, 5]],
+        "right binding mirrors the spread"
+    );
 }
 
 #[test]
 fn posters_tile_with_overlap() {
     // A 200×300 page at 400% = 800×1200 on Letter with 18 pt margins (576×756 tiles), overlap 36.
-    let sheets = layout(&[(200.0, 300.0)], &settings(vec![0], Layout::Poster { scale: 400.0, overlap: 36.0, cut_marks: true })).unwrap();
+    let sheets = layout(
+        &[(200.0, 300.0)],
+        &settings(
+            vec![0],
+            Layout::Poster {
+                scale: 400.0,
+                overlap: 36.0,
+                cut_marks: true,
+            },
+        ),
+    )
+    .unwrap();
     assert_eq!(sheets.len(), 4, "2 × 2 tiles");
     assert_eq!(sheets[0].lines.len(), 8, "cut marks");
     let c0 = sheets[0].placed[0].clip;
     let c1 = sheets[1].placed[0].clip;
-    assert!(close(c0[2] - c1[0], 36.0 / 4.0), "neighbouring tiles share the overlap");
-    assert!(layout(&[(200.0, 300.0)], &settings(vec![0], Layout::Poster { scale: 400.0, overlap: 400.0, cut_marks: false })).is_err());
+    assert!(
+        close(c0[2] - c1[0], 36.0 / 4.0),
+        "neighbouring tiles share the overlap"
+    );
+    assert!(
+        layout(
+            &[(200.0, 300.0)],
+            &settings(
+                vec![0],
+                Layout::Poster {
+                    scale: 400.0,
+                    overlap: 400.0,
+                    cut_marks: false
+                }
+            )
+        )
+        .is_err()
+    );
 }
 
 /// Issue #1335: a scale so large that the tile counts saturate is refused with the sheet-limit
 /// error, not an overflow in counting the sheets.
 #[test]
 fn huge_posters_are_refused_at_the_sheet_limit() {
-    let refused = Err(PrintError::Invalid("the poster would need more than 1024 sheets".into()));
+    let refused = Err(PrintError::Invalid(
+        "the poster would need more than 1024 sheets".into(),
+    ));
     for scale in [100_000.0, 1e22, f64::MAX] {
-        let poster = settings(vec![0], Layout::Poster { scale, overlap: 18.0, cut_marks: true });
+        let poster = settings(
+            vec![0],
+            Layout::Poster {
+                scale,
+                overlap: 18.0,
+                cut_marks: true,
+            },
+        );
         assert_eq!(layout(&[(200.0, 300.0)], &poster), refused, "scale {scale}");
     }
 }
@@ -240,7 +505,10 @@ fn imposed_pdf_has_the_sheets_and_honours_comments_and_forms() {
         d.object_numbers()
             .into_iter()
             .filter_map(|n| match &*d.get(ObjRef::new(n, d.generation(n))) {
-                Object::Stream(s) => s.decoded().ok().map(|b| String::from_utf8_lossy(&b).into_owned()),
+                Object::Stream(s) => s
+                    .decoded()
+                    .ok()
+                    .map(|b| String::from_utf8_lossy(&b).into_owned()),
                 _ => None,
             })
             .collect()
@@ -248,16 +516,50 @@ fn imposed_pdf_has_the_sheets_and_honours_comments_and_forms() {
     let all = streams(&printed).join("\n");
     assert!(all.contains("(Page 1)") && all.contains("(Page 3)"));
     // Markups: the printable square and the stamp, not the note without the Print flag.
-    let page1 = streams(&printed).into_iter().find(|s| s.contains("(Page 1)")).unwrap();
+    let page1 = streams(&printed)
+        .into_iter()
+        .find(|s| s.contains("(Page 1)"))
+        .unwrap();
     assert_eq!(page1.matches(" Do Q").count(), 2, "{page1}");
-    let doc_only = impose(&doc, &Settings { content: Content::Document, ..settings(vec![0], Layout::Size(SizeMode::Fit)) }).unwrap();
-    let p = streams(&Document::open(Arc::new(doc_only)).unwrap()).into_iter().find(|s| s.contains("(Page 1)")).unwrap();
+    let doc_only = impose(
+        &doc,
+        &Settings {
+            content: Content::Document,
+            ..settings(vec![0], Layout::Size(SizeMode::Fit))
+        },
+    )
+    .unwrap();
+    let p = streams(&Document::open(Arc::new(doc_only)).unwrap())
+        .into_iter()
+        .find(|s| s.contains("(Page 1)"))
+        .unwrap();
     assert_eq!(p.matches(" Do Q").count(), 0);
-    let stamps = impose(&doc, &Settings { content: Content::DocumentAndStamps, ..settings(vec![0], Layout::Size(SizeMode::Fit)) }).unwrap();
-    let p = streams(&Document::open(Arc::new(stamps)).unwrap()).into_iter().find(|s| s.contains("(Page 1)")).unwrap();
+    let stamps = impose(
+        &doc,
+        &Settings {
+            content: Content::DocumentAndStamps,
+            ..settings(vec![0], Layout::Size(SizeMode::Fit))
+        },
+    )
+    .unwrap();
+    let p = streams(&Document::open(Arc::new(stamps)).unwrap())
+        .into_iter()
+        .find(|s| s.contains("(Page 1)"))
+        .unwrap();
     assert_eq!(p.matches(" Do Q").count(), 1);
-    let fields = impose(&doc, &Settings { content: Content::FormFieldsOnly, ..settings(vec![1], Layout::Size(SizeMode::Fit)) }).unwrap();
-    assert!(!streams(&Document::open(Arc::new(fields)).unwrap()).join("").contains("(Page 2)"));
+    let fields = impose(
+        &doc,
+        &Settings {
+            content: Content::FormFieldsOnly,
+            ..settings(vec![1], Layout::Size(SizeMode::Fit))
+        },
+    )
+    .unwrap();
+    assert!(
+        !streams(&Document::open(Arc::new(fields)).unwrap())
+            .join("")
+            .contains("(Page 2)")
+    );
     // The output is a fresh file: the unused source pages are gone.
     let one = impose(&doc, &settings(vec![1], Layout::Size(SizeMode::Fit))).unwrap();
     let s = streams(&Document::open(Arc::new(one)).unwrap()).join("\n");
@@ -270,11 +572,21 @@ fn spooler_arguments_and_printer_list() {
     assert_eq!(
         parse_lpstat(out),
         [
-            spool::Printer { name: "Office_Laser".into(), default: true, two_sided: None },
-            spool::Printer { name: "Label_Writer".into(), default: false, two_sided: None }
+            spool::Printer {
+                name: "Office_Laser".into(),
+                default: true,
+                two_sided: None
+            },
+            spool::Printer {
+                name: "Label_Writer".into(),
+                default: false,
+                two_sided: None
+            }
         ]
     );
-    assert!(parse_lpstat("lpstat: No destinations added.\nno system default destination\n").is_empty());
+    assert!(
+        parse_lpstat("lpstat: No destinations added.\nno system default destination\n").is_empty()
+    );
     let job = Job {
         printer: Some("Office_Laser".into()),
         copies: 3,
@@ -289,20 +601,44 @@ fn spooler_arguments_and_printer_list() {
         lp_args(&job).join(" "),
         "-d Office_Laser -n 3 -t memo.pdf -o collate=false -o sides=two-sided-long-edge -o print-color-mode=monochrome -o fit-to-page=false"
     );
-    assert_eq!(lp_args(&Job::default())[0], "-n", "no -d: the default printer");
+    assert_eq!(
+        lp_args(&Job::default())[0],
+        "-n",
+        "no -d: the default printer"
+    );
 }
 
 #[test]
 fn lpstat_output_is_untranslated() {
     // A localized lpstat (here Polish) is unreadable to parse_lpstat...
-    assert!(parse_lpstat("drukarka Office_Laser jest bezczynna.\ndomyślny cel systemowy: Office_Laser\n").is_empty());
+    assert!(
+        parse_lpstat(
+            "drukarka Office_Laser jest bezczynna.\ndomyślny cel systemowy: Office_Laser\n"
+        )
+        .is_empty()
+    );
     // ...so the command must force the C locale, including the SOFTWARE switch macOS CUPS needs.
     let cmd = spool::lpstat_command();
-    let envs: Vec<_> = cmd.get_envs().map(|(k, v)| (k.to_string_lossy().into_owned(), v.map(|v| v.to_string_lossy().into_owned()))).collect();
+    let envs: Vec<_> = cmd
+        .get_envs()
+        .map(|(k, v)| {
+            (
+                k.to_string_lossy().into_owned(),
+                v.map(|v| v.to_string_lossy().into_owned()),
+            )
+        })
+        .collect();
     for key in ["LC_ALL", "LANG"] {
-        assert!(envs.contains(&(key.into(), Some("C".into()))), "{key}=C missing: {envs:?}");
+        assert!(
+            envs.contains(&(key.into(), Some("C".into()))),
+            "{key}=C missing: {envs:?}"
+        );
     }
-    assert!(envs.iter().any(|(k, v)| k == "SOFTWARE" && v.as_deref().is_some_and(|v| !v.is_empty())), "SOFTWARE missing: {envs:?}");
+    assert!(
+        envs.iter()
+            .any(|(k, v)| k == "SOFTWARE" && v.as_deref().is_some_and(|v| !v.is_empty())),
+        "SOFTWARE missing: {envs:?}"
+    );
 }
 
 #[test]
@@ -314,35 +650,77 @@ fn driverless_printers_join_the_list_without_a_queue() {
     assert_eq!(
         spool::printers_parsed(queues, Some("Basement_Color\nOffice_Laser\n")),
         [
-            spool::Printer { name: "Office_Laser".into(), default: true, two_sided: None },
-            spool::Printer { name: "Basement_Color".into(), default: false, two_sided: None },
+            spool::Printer {
+                name: "Office_Laser".into(),
+                default: true,
+                two_sided: None
+            },
+            spool::Printer {
+                name: "Basement_Color".into(),
+                default: false,
+                two_sided: None
+            },
         ],
         "queues first, then the driverless destination; the queue listed twice is not doubled"
     );
     // An old spooler without `-e` (CUPS < 1.7) keeps its queues; only the driverless names are lost.
-    assert_eq!(spool::printers_parsed(queues, None), [spool::Printer { name: "Office_Laser".into(), default: true, two_sided: None }]);
+    assert_eq!(
+        spool::printers_parsed(queues, None),
+        [spool::Printer {
+            name: "Office_Laser".into(),
+            default: true,
+            two_sided: None
+        }]
+    );
     // The default can itself be driverless (`lpoptions -d` names a destination no queue exists
     // for): it keeps its marker, so the dialog preselects the user's default, not the first queue.
     assert_eq!(
-        spool::printers_parsed("system default destination: Basement_Color\n", Some("Basement_Color\n")),
-        [spool::Printer { name: "Basement_Color".into(), default: true, two_sided: None }],
+        spool::printers_parsed(
+            "system default destination: Basement_Color\n",
+            Some("Basement_Color\n")
+        ),
+        [spool::Printer {
+            name: "Basement_Color".into(),
+            default: true,
+            two_sided: None
+        }],
         "a default destination without a queue is still the default"
     );
-    assert!(spool::parse_lpstat_e("\n \n").is_empty(), "no destinations is empty, not [\"\"]");
-    assert_eq!(spool::parse_lpstat_e("A\r\nB \n"), ["A".to_string(), "B".to_string()], "CRLF and stray spaces are trimmed");
+    assert!(
+        spool::parse_lpstat_e("\n \n").is_empty(),
+        "no destinations is empty, not [\"\"]"
+    );
+    assert_eq!(
+        spool::parse_lpstat_e("A\r\nB \n"),
+        ["A".to_string(), "B".to_string()],
+        "CRLF and stray spaces are trimmed"
+    );
 }
 
 fn cut_stack(cols: usize, rows: usize) -> Layout {
-    Layout::Multiple { cols, rows, per_sheet: cols.saturating_mul(rows), order: PageOrder::CutStack, border: false, auto_rotate: false }
+    Layout::Multiple {
+        cols,
+        rows,
+        per_sheet: cols.saturating_mul(rows),
+        order: PageOrder::CutStack,
+        border: false,
+        auto_rotate: false,
+    }
 }
 
 #[test]
 fn cut_stack_keeps_piles_in_order_and_blanks_in_place() {
     let sizes = vec![(200.0, 300.0); 10];
     let sheets = layout(&sizes, &settings((0..10).collect(), cut_stack(2, 2))).unwrap();
-    assert_eq!(sheet_pages(&sheets), [vec![0, 3, 6, 9], vec![1, 4, 7], vec![2, 5, 8]]);
+    assert_eq!(
+        sheet_pages(&sheets),
+        [vec![0, 3, 6, 9], vec![1, 4, 7], vec![2, 5, 8]]
+    );
     for s in &sheets {
-        assert_eq!(s.lines, sheets[0].lines, "identical cuts even with blank cells");
+        assert_eq!(
+            s.lines, sheets[0].lines,
+            "identical cuts even with blank cells"
+        );
         assert_eq!(s.lines.len(), 4);
         for (pl, first) in s.placed.iter().zip(&sheets[0].placed) {
             assert_eq!(pl.matrix, first.matrix, "every pile stays in its cell");
@@ -361,22 +739,36 @@ fn cut_stack_keeps_piles_in_order_and_blanks_in_place() {
 fn cutting_and_stacking_recovers_every_selected_page() {
     // Simulate the actual operation using cell positions, not the imposition formula.
     for (cols, rows) in [(1, 1), (1, 2), (2, 2), (2, 3), (3, 3), (4, 4)] {
-        for orientation in [Orientation::Auto, Orientation::Portrait, Orientation::Landscape] {
+        for orientation in [
+            Orientation::Auto,
+            Orientation::Portrait,
+            Orientation::Landscape,
+        ] {
             for n in 1..=37 {
                 let sizes = vec![(200.0, 300.0); n];
                 let selected: Vec<usize> = (0..n).rev().collect();
-                let s = Settings { orientation, ..settings(selected.clone(), cut_stack(cols, rows)) };
+                let s = Settings {
+                    orientation,
+                    ..settings(selected.clone(), cut_stack(cols, rows))
+                };
                 let sheets = layout(&sizes, &s).unwrap();
-                let mut piles: std::collections::BTreeMap<(i64, i64), Vec<usize>> = Default::default();
+                let mut piles: std::collections::BTreeMap<(i64, i64), Vec<usize>> =
+                    Default::default();
                 for sheet in &sheets {
                     for pl in &sheet.placed {
                         // Equal source sizes, so the page origins identify row/column.
                         let [_, _, _, _, x, y] = pl.matrix.0;
-                        piles.entry((-(y * 100.0).round() as i64, (x * 100.0).round() as i64)).or_default().push(pl.page);
+                        piles
+                            .entry((-(y * 100.0).round() as i64, (x * 100.0).round() as i64))
+                            .or_default()
+                            .push(pl.page);
                     }
                 }
                 let restacked: Vec<usize> = piles.into_values().flatten().collect();
-                assert_eq!(restacked, selected, "{cols}x{rows}, {n} pages, {orientation:?}");
+                assert_eq!(
+                    restacked, selected,
+                    "{cols}x{rows}, {n} pages, {orientation:?}"
+                );
             }
         }
     }
@@ -386,13 +778,34 @@ fn cutting_and_stacking_recovers_every_selected_page() {
 fn multiple_rejects_hostile_grids_without_panicking() {
     let sizes = [(200.0, 300.0)];
     for (cols, rows) in [(usize::MAX, 2), (2, usize::MAX), (0, 2), (1, 0), (257, 1)] {
-        let mode = Layout::Multiple { cols, rows, per_sheet: 1, order: PageOrder::Horizontal, border: false, auto_rotate: false };
-        assert!(matches!(layout(&sizes, &settings(vec![0], mode)), Err(PrintError::Invalid(_))));
+        let mode = Layout::Multiple {
+            cols,
+            rows,
+            per_sheet: 1,
+            order: PageOrder::Horizontal,
+            border: false,
+            auto_rotate: false,
+        };
+        assert!(matches!(
+            layout(&sizes, &settings(vec![0], mode)),
+            Err(PrintError::Invalid(_))
+        ));
     }
-    let tiny = Settings { paper: (72.0, 72.0), ..settings(vec![0], cut_stack(16, 16)) };
+    let tiny = Settings {
+        paper: (72.0, 72.0),
+        ..settings(vec![0], cut_stack(16, 16))
+    };
     assert!(matches!(layout(&sizes, &tiny), Err(PrintError::Invalid(_))));
-    for size in [(0.0, 300.0), (200.0, f64::NAN), (f64::INFINITY, 300.0), (f64::from_bits(1), f64::from_bits(1))] {
-        assert!(matches!(layout(&[size], &settings(vec![0], cut_stack(2, 2))), Err(PrintError::Invalid(_))));
+    for size in [
+        (0.0, 300.0),
+        (200.0, f64::NAN),
+        (f64::INFINITY, 300.0),
+        (f64::from_bits(1), f64::from_bits(1)),
+    ] {
+        assert!(matches!(
+            layout(&[size], &settings(vec![0], cut_stack(2, 2))),
+            Err(PrintError::Invalid(_))
+        ));
     }
 }
 
@@ -400,18 +813,69 @@ fn multiple_rejects_hostile_grids_without_panicking() {
 fn windows_printers_carry_one_default_and_keep_their_names() {
     // Windows marks the system default with a `*` no queue name may contain; names hold spaces,
     // parentheses and non-ASCII letters, and the lines end with CRLF.
-    let printers = parse_windows_printers("*Microsoft Print to PDF\r\nHP LaserJet 400 (Copy 2)\r\nКопир Canon iR\r\n\r\n*XPS via USB\r\n");
-    assert_eq!(printers[0], Printer { name: "Microsoft Print to PDF".into(), default: true, two_sided: None });
-    assert_eq!(printers[1], Printer { name: "HP LaserJet 400 (Copy 2)".into(), default: false, two_sided: None });
-    assert_eq!(printers[2], Printer { name: "Копир Canon iR".into(), default: false, two_sided: None });
+    let printers = parse_windows_printers(
+        "*Microsoft Print to PDF\r\nHP LaserJet 400 (Copy 2)\r\nКопир Canon iR\r\n\r\n*XPS via USB\r\n",
+    );
+    assert_eq!(
+        printers[0],
+        Printer {
+            name: "Microsoft Print to PDF".into(),
+            default: true,
+            two_sided: None
+        }
+    );
+    assert_eq!(
+        printers[1],
+        Printer {
+            name: "HP LaserJet 400 (Copy 2)".into(),
+            default: false,
+            two_sided: None
+        }
+    );
+    assert_eq!(
+        printers[2],
+        Printer {
+            name: "Копир Canon iR".into(),
+            default: false,
+            two_sided: None
+        }
+    );
     // A spooler marking two defaults: the first still wins, so the dialog has one to preselect.
-    assert_eq!(printers[3], Printer { name: "XPS via USB".into(), default: false, two_sided: None });
+    assert_eq!(
+        printers[3],
+        Printer {
+            name: "XPS via USB".into(),
+            default: false,
+            two_sided: None
+        }
+    );
     assert_eq!(parse_windows_printers("\r\n"), Vec::new());
     // After a tab, whether the driver reports two-sided printing; a tab inside a name stays.
     let sided = parse_windows_printers("*Office PCL\t2\r\nOffice PS\t1\r\nTab\tName\t2\r\n");
-    assert_eq!(sided[0], Printer { name: "Office PCL".into(), default: true, two_sided: Some(true) });
-    assert_eq!(sided[1], Printer { name: "Office PS".into(), default: false, two_sided: Some(false) });
-    assert_eq!(sided[2], Printer { name: "Tab\tName".into(), default: false, two_sided: Some(true) });
+    assert_eq!(
+        sided[0],
+        Printer {
+            name: "Office PCL".into(),
+            default: true,
+            two_sided: Some(true)
+        }
+    );
+    assert_eq!(
+        sided[1],
+        Printer {
+            name: "Office PS".into(),
+            default: false,
+            two_sided: Some(false)
+        }
+    );
+    assert_eq!(
+        sided[2],
+        Printer {
+            name: "Tab\tName".into(),
+            default: false,
+            two_sided: Some(true)
+        }
+    );
 }
 
 /// A PPD shaped like a Fiery's: installable options, multi-line PostScript in the choices, Latin-1
@@ -459,25 +923,59 @@ userdict /XJXEFIsetpageproperties known\n\
 fn printer_options_come_from_the_ppd() {
     let options = spool::parse_ppd(&spool::ppd_text(FIERY_PPD));
     let keys: Vec<&str> = options.iter().map(|o| o.key.as_str()).collect();
-    assert_eq!(keys, ["InputSlot", "EFMediaType", "EFRaster"], "no installable options, no PageSize");
+    assert_eq!(
+        keys,
+        ["InputSlot", "EFMediaType", "EFRaster"],
+        "no installable options, no PageSize"
+    );
     let tray = &options[0];
-    assert_eq!((tray.label.as_str(), tray.group.as_str(), tray.default.as_str()), ("Paper tray", "Media", "AutoSelect"));
+    assert_eq!(
+        (
+            tray.label.as_str(),
+            tray.group.as_str(),
+            tray.default.as_str()
+        ),
+        ("Paper tray", "Media", "AutoSelect")
+    );
     assert_eq!(
         tray.choices,
-        [("AutoSelect".into(), "Auto tray select".into()), ("ManualFeed".into(), "Bypass tray".into()), ("Tray2".into(), "Tray 2".into())],
+        [
+            ("AutoSelect".into(), "Auto tray select".into()),
+            ("ManualFeed".into(), "Bypass tray".into()),
+            ("Tray2".into(), "Tray 2".into())
+        ],
         "PostScript lines and translations (*fr.InputSlot) are not choices"
     );
-    assert_eq!(options[1].choices[1].1, "Thick 1 (106\u{ad}163 g/m²)", "Latin-1 labels");
+    assert_eq!(
+        options[1].choices[1].1, "Thick 1 (106\u{ad}163 g/m²)",
+        "Latin-1 labels"
+    );
     // A default that isn't one of the choices falls back to the first; a choice without a label shows its keyword.
-    assert_eq!((options[2].default.as_str(), options[2].choices[1].1.as_str()), ("False", "Hold"));
-    assert!(spool::parse_ppd("*OpenUI *Broken\n*Broken A/B\n").is_empty(), "unclosed or malformed blocks are skipped");
+    assert_eq!(
+        (
+            options[2].default.as_str(),
+            options[2].choices[1].1.as_str()
+        ),
+        ("False", "Hold")
+    );
+    assert!(
+        spool::parse_ppd("*OpenUI *Broken\n*Broken A/B\n").is_empty(),
+        "unclosed or malformed blocks are skipped"
+    );
 }
 
 #[test]
 fn printer_option_defaults_and_job_arguments() {
-    let current =
-        spool::parse_lpoptions("InputSlot/Paper tray: AutoSelect *Tray2 ManualFeed\nEFRaster/Print queue action: *False Hold\nbroken line\n");
-    assert_eq!(current, [("InputSlot".to_string(), "Tray2".to_string()), ("EFRaster".to_string(), "False".to_string())]);
+    let current = spool::parse_lpoptions(
+        "InputSlot/Paper tray: AutoSelect *Tray2 ManualFeed\nEFRaster/Print queue action: *False Hold\nbroken line\n",
+    );
+    assert_eq!(
+        current,
+        [
+            ("InputSlot".to_string(), "Tray2".to_string()),
+            ("EFRaster".to_string(), "False".to_string())
+        ]
+    );
     let job = Job {
         options: vec![
             ("InputSlot".into(), "Tray2".into()),
@@ -489,8 +987,14 @@ fn printer_option_defaults_and_job_arguments() {
         ..Job::default()
     };
     let args = lp_args(&job).join(" ");
-    assert!(args.ends_with("-o fit-to-page=false -o InputSlot=Tray2 -o EFMediaType=Heavy1"), "{args}");
-    assert!(spool::printer_options("../../etc/passwd").is_empty(), "not a queue name");
+    assert!(
+        args.ends_with("-o fit-to-page=false -o InputSlot=Tray2 -o EFMediaType=Heavy1"),
+        "{args}"
+    );
+    assert!(
+        spool::printer_options("../../etc/passwd").is_empty(),
+        "not a queue name"
+    );
 }
 
 #[cfg(all(unix, not(target_arch = "wasm32")))]
@@ -503,7 +1007,9 @@ mod cups_options {
     /// The child process stands in for lpoptions, recording its real arguments.
     #[test]
     fn stand_in_for_lpoptions() {
-        let Some(record) = std::env::var_os(RECORD) else { return };
+        let Some(record) = std::env::var_os(RECORD) else {
+            return;
+        };
         let args: Vec<String> = std::env::args().skip_while(|a| a != "--").skip(1).collect();
         std::fs::write(std::path::Path::new(&record).join("args"), args.join("\n")).unwrap();
         println!("{}", std::env::var(ANSWER).unwrap());
@@ -511,7 +1017,14 @@ mod cups_options {
 
     fn command(record: &std::path::Path, answer: &str) -> std::process::Command {
         let mut c = std::process::Command::new(std::env::current_exe().unwrap());
-        c.args(["--exact", "tests::cups_options::stand_in_for_lpoptions", "--nocapture", "--"]).env(RECORD, record).env(ANSWER, answer);
+        c.args([
+            "--exact",
+            "tests::cups_options::stand_in_for_lpoptions",
+            "--nocapture",
+            "--",
+        ])
+        .env(RECORD, record)
+        .env(ANSWER, answer);
         c
     }
 
@@ -522,7 +1035,10 @@ mod cups_options {
         for _ in 0..32 {
             let mut nonce = [0; 16];
             random.read_exact(&mut nonce).unwrap();
-            let path = std::env::temp_dir().join(format!("pdfcraft-cups-options-{:032x}", u128::from_be_bytes(nonce)));
+            let path = std::env::temp_dir().join(format!(
+                "pdfcraft-cups-options-{:032x}",
+                u128::from_be_bytes(nonce)
+            ));
             // Atomic creation, private permissions from the outset; never reuse an existing
             // path (including a symlink) in the shared temporary directory.
             match std::fs::DirBuilder::new().mode(0o700).create(&path) {
@@ -538,7 +1054,10 @@ mod cups_options {
     fn instances_read_the_queue_ppd_and_their_own_defaults() {
         use std::os::unix::fs::PermissionsExt as _;
         let dir = folder();
-        assert_eq!(std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777, 0o700);
+        assert_eq!(
+            std::fs::metadata(&dir).unwrap().permissions().mode() & 0o777,
+            0o700
+        );
         // One synthetic queue PPD; there is deliberately no Office/ subdirectory.
         std::fs::write(
             dir.join("Office.ppd"),
@@ -547,7 +1066,11 @@ mod cups_options {
         .unwrap();
         let boundary_queue = "Q".repeat(64);
         let boundary_instance = format!("Office/{}", "I".repeat(64));
-        std::fs::copy(dir.join("Office.ppd"), dir.join(format!("{boundary_queue}.ppd"))).unwrap();
+        std::fs::copy(
+            dir.join("Office.ppd"),
+            dir.join(format!("{boundary_queue}.ppd")),
+        )
+        .unwrap();
         for (destination, current, expected) in [
             ("Office", "Auto", "Auto"),
             ("Office/duplex", "Tray2", "Tray2"),
@@ -556,13 +1079,36 @@ mod cups_options {
             (boundary_queue.as_str(), "Tray2", "Tray2"),
             (boundary_instance.as_str(), "Tray2", "Tray2"),
         ] {
-            let options = spool::printer_options_via(destination, &dir, command(&dir, &format!("InputSlot/Paper tray: *{current}")));
-            assert_eq!(options.len(), 1, "{destination}: the queue's PPD must be read");
-            assert_eq!(options[0].default, expected, "{destination}: only valid instance choices override the PPD default");
-            assert_eq!(options[0].choices, [("Auto".into(), "Automatic".into()), ("Tray2".into(), "Tray 2".into())]);
-            assert_eq!(std::fs::read_to_string(dir.join("args")).unwrap(), format!("-p\n{destination}\n-l"));
+            let options = spool::printer_options_via(
+                destination,
+                &dir,
+                command(&dir, &format!("InputSlot/Paper tray: *{current}")),
+            );
+            assert_eq!(
+                options.len(),
+                1,
+                "{destination}: the queue's PPD must be read"
+            );
+            assert_eq!(
+                options[0].default, expected,
+                "{destination}: only valid instance choices override the PPD default"
+            );
+            assert_eq!(
+                options[0].choices,
+                [
+                    ("Auto".into(), "Automatic".into()),
+                    ("Tray2".into(), "Tray 2".into())
+                ]
+            );
+            assert_eq!(
+                std::fs::read_to_string(dir.join("args")).unwrap(),
+                format!("-p\n{destination}\n-l")
+            );
         }
-        let job = spool::Job { printer: Some("Office/duplex".into()), ..Default::default() };
+        let job = spool::Job {
+            printer: Some("Office/duplex".into()),
+            ..Default::default()
+        };
         assert_eq!(&spool::lp_args(&job)[..2], ["-d", "Office/duplex"]);
         std::fs::remove_dir_all(dir).unwrap();
     }
@@ -597,8 +1143,15 @@ mod cups_options {
             long_queue_instance.as_str(),
             long_instance.as_str(),
         ] {
-            assert!(spool::printer_options_via(destination, &dir, command(&dir, "InputSlot: *Auto")).is_empty(), "{destination:?}");
-            assert!(!dir.join("args").exists(), "{destination:?}: rejected before spawning");
+            assert!(
+                spool::printer_options_via(destination, &dir, command(&dir, "InputSlot: *Auto"))
+                    .is_empty(),
+                "{destination:?}"
+            );
+            assert!(
+                !dir.join("args").exists(),
+                "{destination:?}: rejected before spawning"
+            );
         }
         std::fs::remove_dir_all(dir).unwrap();
     }
@@ -609,7 +1162,15 @@ fn a_scaled_appearance_is_not_scaled_twice() {
     let doc = fixture(1);
     let nums = |v: [f64; 6]| Object::Array(v.iter().map(|x| Object::Real(*x)).collect());
     let mut form = Dict::new();
-    form.set(b"BBox".to_vec(), Object::Array([0.0, 0.0, 10.0, 10.0].iter().map(|x| Object::Real(*x)).collect()));
+    form.set(
+        b"BBox".to_vec(),
+        Object::Array(
+            [0.0, 0.0, 10.0, 10.0]
+                .iter()
+                .map(|x| Object::Real(*x))
+                .collect(),
+        ),
+    );
     form.set(b"Matrix".to_vec(), nums([2.0, 0.0, 0.0, 2.0, 0.0, 0.0]));
     // The form's own /Matrix doubles it to 20x20 when drawn; the placement only has to map 20x20 onto the 40x40 rect.
     let m = appearance_matrix(&doc, &form, [10.0, 10.0, 50.0, 50.0]).unwrap();
@@ -623,12 +1184,27 @@ fn architectural_sheets_preserve_full_scale() {
     assert_eq!(PAPERS[index].0, "ARCH D (24 x 36 in)");
     assert_eq!(matching_paper((1728.0, 2592.0)), Some(index));
     assert_eq!(matching_paper((f64::NAN, 2592.0)), None);
-    let s = Settings { pages: vec![0], paper: PAPERS[index].1, layout: Layout::Size(SizeMode::Actual), ..Settings::default() };
+    let s = Settings {
+        pages: vec![0],
+        paper: PAPERS[index].1,
+        layout: Layout::Size(SizeMode::Actual),
+        ..Settings::default()
+    };
     let sheets = layout(&[(2592.0, 1728.0)], &s).unwrap();
     assert_eq!(sheets[0].size, (2592.0, 1728.0));
     assert_eq!(sheets[0].placed[0].matrix.0, [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
-    let fit = layout(&[(2592.0, 1728.0)], &Settings { layout: Layout::Size(SizeMode::Fit), ..s }).unwrap();
-    assert!(fit[0].placed[0].matrix.0[0] < 1.0, "Fit adds margins and must not masquerade as full scale");
+    let fit = layout(
+        &[(2592.0, 1728.0)],
+        &Settings {
+            layout: Layout::Size(SizeMode::Fit),
+            ..s
+        },
+    )
+    .unwrap();
+    assert!(
+        fit[0].placed[0].matrix.0[0] < 1.0,
+        "Fit adds margins and must not masquerade as full scale"
+    );
 }
 
 #[test]
@@ -639,7 +1215,13 @@ fn paper_matching_accepts_rounded_metric_sizes_but_not_custom_or_invalid_sizes()
         assert_eq!(matching_paper((w.round(), h.round())), Some(i));
         assert_eq!(matching_paper((w + 0.51, *h)), None);
     }
-    for size in [(0.0, 0.0), (-1728.0, 2592.0), (f64::INFINITY, 2592.0), (1728.0, f64::NAN), (1000.0, 1000.0)] {
+    for size in [
+        (0.0, 0.0),
+        (-1728.0, 2592.0),
+        (f64::INFINITY, 2592.0),
+        (1728.0, f64::NAN),
+        (1000.0, 1000.0),
+    ] {
         assert_eq!(matching_paper(size), None);
     }
 }

@@ -125,8 +125,7 @@ impl DescriptorBufferRing {
             device.set_buffer_name(buffer.buffer(), "Descriptor buffer");
             let raw_address = unsafe {
                 device.get_logical().get_buffer_device_address(
-                    &vk::BufferDeviceAddressInfo::default()
-                        .buffer(buffer.buffer()),
+                    &vk::BufferDeviceAddressInfo::default().buffer(buffer.buffer()),
                 )
             };
             let address = align_up(raw_address, ring.alignment);
@@ -212,7 +211,6 @@ impl DescriptorBufferRing {
                 vk::BufferUsageFlags::RESOURCE_DESCRIPTOR_BUFFER_EXT
                     | vk::BufferUsageFlags::SAMPLER_DESCRIPTOR_BUFFER_EXT,
             )
-            
     }
 
     pub fn is_valid(&self) -> bool {

@@ -11,7 +11,17 @@
 //!
 //! See the crate README for specification edition, accuracy against external oracles, and design notes.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod dct;
 mod decode;
@@ -131,8 +141,15 @@ pub enum Profile {
 }
 
 impl Profile {
-    pub const ALL: [Profile; 7] =
-        [Profile::P422_10, Profile::P422_12, Profile::P444_10, Profile::P444_12, Profile::P4444_10, Profile::P4444_12, Profile::P400_10];
+    pub const ALL: [Profile; 7] = [
+        Profile::P422_10,
+        Profile::P422_12,
+        Profile::P444_10,
+        Profile::P444_12,
+        Profile::P4444_10,
+        Profile::P4444_12,
+        Profile::P400_10,
+    ];
 
     pub fn idc(self) -> u8 {
         match self {
@@ -228,7 +245,9 @@ impl Profile {
 
 /// Human-readable profile name from `profile_idc` (e.g. `"APV 422-10"`).
 pub fn profile_name(profile_idc: u8) -> String {
-    Profile::from_idc(profile_idc).map(|p| p.name().to_string()).unwrap_or_else(|| format!("APV (profile {profile_idc})"))
+    Profile::from_idc(profile_idc)
+        .map(|p| p.name().to_string())
+        .unwrap_or_else(|| format!("APV (profile {profile_idc})"))
 }
 
 /// Colour description from `frame_header()` (ITU-T H.273 code points, RFC 9924 §5.3.5).
@@ -243,14 +262,34 @@ pub struct ColorInfo {
 impl Default for ColorInfo {
     /// Inferred values when `color_description_present_flag == 0` (RFC 9924 §5.3.5: 2, 2, 2, 0).
     fn default() -> Self {
-        Self { primaries: 2, transfer: 2, matrix: 2, full_range: false }
+        Self {
+            primaries: 2,
+            transfer: 2,
+            matrix: 2,
+            full_range: false,
+        }
     }
 }
 
 impl ColorInfo {
-    pub const BT709: Self = Self { primaries: 1, transfer: 1, matrix: 1, full_range: false };
-    pub const BT2020_PQ: Self = Self { primaries: 9, transfer: 16, matrix: 9, full_range: false };
-    pub const BT2020_HLG: Self = Self { primaries: 9, transfer: 18, matrix: 9, full_range: false };
+    pub const BT709: Self = Self {
+        primaries: 1,
+        transfer: 1,
+        matrix: 1,
+        full_range: false,
+    };
+    pub const BT2020_PQ: Self = Self {
+        primaries: 9,
+        transfer: 16,
+        matrix: 9,
+        full_range: false,
+    };
+    pub const BT2020_HLG: Self = Self {
+        primaries: 9,
+        transfer: 18,
+        matrix: 9,
+        full_range: false,
+    };
 }
 
 /// Mastering Display Color Volume metadata (`payloadType == 5`, RFC 9924 §8.2.3).
@@ -294,7 +333,13 @@ pub struct Frame {
 
 impl Frame {
     /// Allocate a black video-range frame.
-    pub fn new(width: u32, height: u32, chroma: ChromaFormat, bit_depth: u8, with_alpha: bool) -> Self {
+    pub fn new(
+        width: u32,
+        height: u32,
+        chroma: ChromaFormat,
+        bit_depth: u8,
+        with_alpha: bool,
+    ) -> Self {
         let n = (width as usize) * (height as usize);
         let cw = chroma.chroma_width(width) as usize;
         let ch = chroma.chroma_height(height) as usize;

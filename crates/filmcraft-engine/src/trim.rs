@@ -89,13 +89,24 @@ fn kind_p(p: &Value) -> Option<TrimKind> {
 
 /// `trim.selectEditPoint {clip, edge: "in"|"out", kind, add?}`
 pub fn select(s: &mut Session, p: &Value) -> Result<Value> {
-    let clip = p.get("clip").and_then(Value::as_u64).map(ClipId).ok_or_else(|| EngineError::Other("need `clip`".into()))?;
+    let clip = p
+        .get("clip")
+        .and_then(Value::as_u64)
+        .map(ClipId)
+        .ok_or_else(|| EngineError::Other("need `clip`".into()))?;
     let out = p.get("edge").and_then(Value::as_str) != Some("in");
     let kind = kind_p(p).unwrap_or(TrimKind::Trim);
-    s.active_sequence().and_then(|q| q.find_item(clip)).ok_or_else(|| EngineError::Other(format!("no clip {}", clip.0)))?;
+    s.active_sequence()
+        .and_then(|q| q.find_item(clip))
+        .ok_or_else(|| EngineError::Other(format!("no clip {}", clip.0)))?;
     let ep = EditPoint { clip, out, kind };
     if p.get("add").and_then(Value::as_bool).unwrap_or(false) {
-        if let Some(i) = s.state.edit_points.iter().position(|e| e.clip == clip && e.out == out) {
+        if let Some(i) = s
+            .state
+            .edit_points
+            .iter()
+            .position(|e| e.clip == clip && e.out == out)
+        {
             s.state.edit_points.remove(i);
         } else {
             s.state.edit_points.push(ep);
@@ -122,7 +133,12 @@ pub fn select_nearest(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let ph = s.playhead();
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let targeted = s.state.active_sequence.and_then(|id| s.state.targeting.get(&id)).map(|t| t.targeted.clone()).unwrap_or_default();
+    let targeted = s
+        .state
+        .active_sequence
+        .and_then(|id| s.state.targeting.get(&id))
+        .map(|t| t.targeted.clone())
+        .unwrap_or_default();
     let mut points = Vec::new();
     for tr in seq.video_tracks.iter().chain(seq.audio_tracks.iter()) {
         if !targeted.is_empty() && !targeted.contains(&tr.id) {
@@ -136,7 +152,11 @@ pub fn select_nearest(s: &mut Session, p: &Value) -> Result<Value> {
                     continue;
                 }
                 let t = if out { it.end() } else { it.start };
-                let ep = EditPoint { clip: it.id, out, kind };
+                let ep = EditPoint {
+                    clip: it.id,
+                    out,
+                    kind,
+                };
                 if kind == TrimKind::Roll && roll_pair(seq, &ep).is_none() {
                     continue;
                 }
@@ -148,7 +168,11 @@ pub fn select_nearest(s: &mut Session, p: &Value) -> Result<Value> {
         }
         if let Some((_, ep)) = best {
             // one roll point per edge: skip the partner's mirror of an edge already chosen
-            if kind == TrimKind::Roll && points.iter().any(|e: &EditPoint| roll_pair(seq, e) == roll_pair(seq, &ep)) {
+            if kind == TrimKind::Roll
+                && points
+                    .iter()
+                    .any(|e: &EditPoint| roll_pair(seq, e) == roll_pair(seq, &ep))
+            {
                 continue;
             }
             points.push(ep);
@@ -174,14 +198,20 @@ fn trim_all(s: &mut Session, delta: Tick) -> Result<Value> {
     let n0 = s.history.undo.len();
     let applied = trim_all_raw(s, &|_, _| Some(delta))?;
     crate::clip_ops::collapse_history(s, n0, "Trim by Frames");
-    let first = applied.first().and_then(Value::as_i64).map(Tick).unwrap_or_default();
+    let first = applied
+        .first()
+        .and_then(Value::as_i64)
+        .map(Tick)
+        .unwrap_or_default();
     add_shift(s, first);
     Ok(json!({"applied": applied}))
 }
 
 /// Add an applied movement of the primary edit point to the Trim Monitor's shift counters.
 fn add_shift(s: &mut Session, d: Tick) {
-    let Some(ep) = s.state.edit_points.first() else { return };
+    let Some(ep) = s.state.edit_points.first() else {
+        return;
+    };
     match (ep.kind, ep.out) {
         (TrimKind::Roll, _) => {
             s.state.trim_shift.out_shift += d;
@@ -198,7 +228,10 @@ fn reset_shift(s: &mut Session) {
 }
 
 /// Trim every selected edit point; `delta_for` gives each point's own movement, read from the sequence as it is when that point is reached.
-fn trim_all_raw(s: &mut Session, delta_for: &dyn Fn(&Sequence, &EditPoint) -> Option<Tick>) -> Result<Vec<Value>> {
+fn trim_all_raw(
+    s: &mut Session,
+    delta_for: &dyn Fn(&Sequence, &EditPoint) -> Option<Tick>,
+) -> Result<Vec<Value>> {
     if s.state.edit_points.is_empty() {
         return Err(EngineError::Other("no edit points selected".into()));
     }
@@ -206,7 +239,9 @@ fn trim_all_raw(s: &mut Session, delta_for: &dyn Fn(&Sequence, &EditPoint) -> Op
     let mut applied = Vec::new();
     for ep in &pts {
         let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-        let Some(delta) = delta_for(seq, ep) else { continue };
+        let Some(delta) = delta_for(seq, ep) else {
+            continue;
+        };
         let r = match ep.kind {
             TrimKind::Roll => {
                 let Some((l, r)) = roll_pair(seq, ep) else { continue };
@@ -235,7 +270,11 @@ pub fn extend_to_playhead(s: &mut Session) -> Result<Value> {
     let n0 = s.history.undo.len();
     let applied = trim_all_raw(s, &|seq, e| edit_time(seq, e).map(|t| ph - t))?;
     crate::clip_ops::collapse_history(s, n0, "Extend Edit to Playhead");
-    let first = applied.first().and_then(Value::as_i64).map(Tick).unwrap_or_default();
+    let first = applied
+        .first()
+        .and_then(Value::as_i64)
+        .map(Tick)
+        .unwrap_or_default();
     add_shift(s, first);
     Ok(json!({"applied": applied}))
 }
@@ -248,27 +287,55 @@ pub fn to_playhead(s: &mut Session, p: &Value) -> Result<Value> {
     let ripple = p.get("ripple").and_then(Value::as_bool).unwrap_or(true);
     let ph = s.playhead();
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let under = |t: &filmcraft_project::Track, keep: &dyn Fn(ClipId) -> bool| t.items.iter().any(|i| i.start < ph && ph < i.end() && keep(i.id));
+    let under = |t: &filmcraft_project::Track, keep: &dyn Fn(ClipId) -> bool| {
+        t.items
+            .iter()
+            .any(|i| i.start < ph && ph < i.end() && keep(i.id))
+    };
     // Like Add Edit: selected clips under the playhead (and their linked partners) are trimmed,
     // and only their tracks (#164); with none, the targeted tracks are.
     let sel = crate::commands::with_links(s, &s.state.selection);
-    let selected: Vec<TrackId> =
-        seq.video_tracks.iter().chain(seq.audio_tracks.iter()).filter(|t| !t.locked && under(t, &|c| sel.contains(&c))).map(|t| t.id).collect();
+    let selected: Vec<TrackId> = seq
+        .video_tracks
+        .iter()
+        .chain(seq.audio_tracks.iter())
+        .filter(|t| !t.locked && under(t, &|c| sel.contains(&c)))
+        .map(|t| t.id)
+        .collect();
     let tracks = if selected.is_empty() {
         let targeted = s.targeting().targeted;
-        seq.video_tracks.iter().chain(seq.audio_tracks.iter()).filter(|t| targeted.contains(&t.id) && !t.locked && under(t, &|_| true)).map(|t| t.id).collect()
+        seq.video_tracks
+            .iter()
+            .chain(seq.audio_tracks.iter())
+            .filter(|t| targeted.contains(&t.id) && !t.locked && under(t, &|_| true))
+            .map(|t| t.id)
+            .collect()
     } else {
         selected
     };
     if tracks.is_empty() {
-        return Err(EngineError::Other("no clip under the playhead on the targeted tracks".into()));
+        return Err(EngineError::Other(
+            "no clip under the playhead on the targeted tracks".into(),
+        ));
     }
     // nearest edit point on those tracks
-    let edits =
-        seq.video_tracks.iter().chain(seq.audio_tracks.iter()).filter(|t| tracks.contains(&t.id)).flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()]));
-    let edge = if next { edits.filter(|e| *e > ph).min() } else { edits.filter(|e| *e < ph).max() };
+    let edits = seq
+        .video_tracks
+        .iter()
+        .chain(seq.audio_tracks.iter())
+        .filter(|t| tracks.contains(&t.id))
+        .flat_map(|t| t.items.iter().flat_map(|i| [i.start, i.end()]));
+    let edge = if next {
+        edits.filter(|e| *e > ph).min()
+    } else {
+        edits.filter(|e| *e < ph).max()
+    };
     let edge = edge.ok_or_else(|| EngineError::Other("no edit point".into()))?;
-    let range = if next { TimeRange::from_bounds(ph, edge) } else { TimeRange::from_bounds(edge, ph) };
+    let range = if next {
+        TimeRange::from_bounds(ph, edge)
+    } else {
+        TimeRange::from_bounds(edge, ph)
+    };
     let label = match (next, ripple) {
         (true, true) => "Ripple Trim Next Edit to Playhead",
         (false, true) => "Ripple Trim Previous Edit to Playhead",
@@ -302,8 +369,19 @@ fn side_json(s: &Session, seq: &Sequence, clip: ClipId, outgoing: bool) -> Optio
     let track = seq.track(tid)?;
     let tracks = seq.tracks(track.kind);
     let idx = tracks.iter().position(|x| x.id == tid).unwrap_or(0) + 1;
-    let track_name = format!("{}{idx}", if track.kind == TrackKind::Video { "V" } else { "A" });
-    let item_rate = s.project.item(it.item).map(|i| i.frame_rate()).unwrap_or(rate);
+    let track_name = format!(
+        "{}{idx}",
+        if track.kind == TrackKind::Video {
+            "V"
+        } else {
+            "A"
+        }
+    );
+    let item_rate = s
+        .project
+        .item(it.item)
+        .map(|i| i.frame_rate())
+        .unwrap_or(rate);
     Some(json!({
         "clip": it.id.0, "item": it.item.0, "name": it.name, "track": track_name, "video": track.kind == TrackKind::Video,
         "time": t.0, "mediaTime": media_time.0, "mediaFrame": item_rate.frame_at(media_time),
@@ -322,8 +400,12 @@ pub fn sides(seq: &Sequence, ep: &EditPoint) -> (Option<ClipId>, Option<ClipId>)
 
 /// `trim.monitor`: everything the Trim Monitor shows, for the primary (first) edit point.
 pub fn monitor_info(s: &Session) -> Value {
-    let Some(seq) = s.active_sequence() else { return Value::Null };
-    let Some(ep) = s.state.edit_points.first() else { return json!({"active": false}) };
+    let Some(seq) = s.active_sequence() else {
+        return Value::Null;
+    };
+    let Some(ep) = s.state.edit_points.first() else {
+        return json!({"active": false});
+    };
     let rate = seq.settings.frame_rate;
     let (out_c, in_c) = sides(seq, ep);
     let tp = &s.trim_play;
@@ -351,15 +433,26 @@ pub fn apply_default_transitions(s: &mut Session) -> Result<Value> {
     let mut ids = Vec::new();
     for ep in &pts {
         let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-        let Some((tid, _)) = seq.find_item(ep.clip) else { continue };
+        let Some((tid, _)) = seq.find_item(ep.clip) else {
+            continue;
+        };
         let video = seq.track(tid).is_some_and(|t| t.kind == TrackKind::Video);
-        let cmd = if video { "sequence.applyVideoTransition" } else { "sequence.applyAudioTransition" };
-        if let Ok(r) = s.execute(cmd, json!({"clip": ep.clip.0, "edge": if ep.out { "out" } else { "in" }})) {
+        let cmd = if video {
+            "sequence.applyVideoTransition"
+        } else {
+            "sequence.applyAudioTransition"
+        };
+        if let Ok(r) = s.execute(
+            cmd,
+            json!({"clip": ep.clip.0, "edge": if ep.out { "out" } else { "in" }}),
+        ) {
             ids.push(r["transition"].clone());
         }
     }
     if ids.is_empty() {
-        return Err(EngineError::Other("no transition could be applied at the selected edit points".into()));
+        return Err(EngineError::Other(
+            "no transition could be applied at the selected edit points".into(),
+        ));
     }
     crate::clip_ops::collapse_history(s, n0, "Apply Default Transitions");
     Ok(json!({"transitions": ids}))
@@ -412,7 +505,11 @@ fn clock_p(p: &Value) -> f64 {
 
 fn direction_p(p: &Value) -> f64 {
     match p.get("direction") {
-        Some(Value::String(d)) if d.starts_with('r') || d.starts_with('b') || d.eq_ignore_ascii_case("j") => -1.0,
+        Some(Value::String(d))
+            if d.starts_with('r') || d.starts_with('b') || d.eq_ignore_ascii_case("j") =>
+        {
+            -1.0
+        }
         Some(v) if v.as_f64().is_some_and(|x| x < 0.0) => -1.0,
         _ => 1.0,
     }
@@ -448,7 +545,11 @@ pub fn shuttle(s: &mut Session, p: &Value) -> Result<Value> {
         tick(s, clock)?;
     }
     let rate = s.sequence_rate();
-    let d = s.trim_play.dynamic.as_mut().ok_or_else(|| EngineError::Other("dynamic trimming is not active".into()))?;
+    let d = s
+        .trim_play
+        .dynamic
+        .as_mut()
+        .ok_or_else(|| EngineError::Other("dynamic trimming is not active".into()))?;
     let speed = if slow {
         0.25 * dir
     } else if d.speed * dir > 0.0 && !d.at_limit {
@@ -508,14 +609,24 @@ fn status(s: &Session) -> Value {
 /// Re-apply `offset` to the project as it was before the dynamic trim, without touching the undo
 /// history or the journal. Returns the offset that could actually be applied.
 fn apply_dynamic(s: &mut Session, offset: Tick) -> Result<Tick> {
-    let Some(d) = s.trim_play.dynamic.clone() else { return Ok(Tick::ZERO) };
+    let Some(d) = s.trim_play.dynamic.clone() else {
+        return Ok(Tick::ZERO);
+    };
     let (undo_len, journal_len, limit) = (s.history.undo.len(), s.journal.len(), s.history.limit);
     let redo = std::mem::take(&mut s.history.redo);
     s.history.limit = usize::MAX;
     s.project = d.before.clone();
-    let r = if offset == Tick::ZERO { Ok(vec![json!(0)]) } else { trim_all_raw(s, &|_, _| Some(offset)) };
+    let r = if offset == Tick::ZERO {
+        Ok(vec![json!(0)])
+    } else {
+        trim_all_raw(s, &|_, _| Some(offset))
+    };
     let applied = match r {
-        Ok(a) => a.first().and_then(Value::as_i64).map(Tick).unwrap_or_default(),
+        Ok(a) => a
+            .first()
+            .and_then(Value::as_i64)
+            .map(Tick)
+            .unwrap_or_default(),
         Err(_) => {
             // refused outright (e.g. it would break sync): stay where we were
             s.project = d.before.clone();
@@ -532,7 +643,10 @@ fn apply_dynamic(s: &mut Session, offset: Tick) -> Result<Tick> {
     s.state.trim_shift = d.shift_before;
     add_shift(s, applied);
     // the Program monitor follows the moving edit
-    if let Some(t) = s.active_sequence().and_then(|q| s.state.edit_points.first().and_then(|e| edit_time(q, e))) {
+    if let Some(t) = s
+        .active_sequence()
+        .and_then(|q| s.state.edit_points.first().and_then(|e| edit_time(q, e)))
+    {
         s.set_playhead(t);
     }
     Ok(applied)
@@ -552,7 +666,9 @@ pub fn stop(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Commit a dynamic trim in progress (one undo step labelled after the trim kind).
 pub fn commit(s: &mut Session) -> Value {
-    let Some(d) = s.trim_play.dynamic.take() else { return json!({"committed": false}) };
+    let Some(d) = s.trim_play.dynamic.take() else {
+        return json!({"committed": false});
+    };
     let rate = s.sequence_rate();
     if d.offset == Tick::ZERO || Arc::ptr_eq(&d.before, &s.project) {
         s.project = d.before;
@@ -579,11 +695,16 @@ pub fn cancel(s: &mut Session) -> Result<Value> {
         s.project = d.before;
         s.state.trim_shift = d.shift_before;
         s.fix_state();
-        if let Some(t) = s.active_sequence().and_then(|q| s.state.edit_points.first().and_then(|e| edit_time(q, e))) {
+        if let Some(t) = s
+            .active_sequence()
+            .and_then(|q| s.state.edit_points.first().and_then(|e| edit_time(q, e)))
+        {
             s.set_playhead(t);
         }
         s.revision += 1;
-        s.events.push(crate::Event::ProjectChanged { revision: s.revision });
+        s.events.push(crate::Event::ProjectChanged {
+            revision: s.revision,
+        });
     }
     Ok(Value::Null)
 }
@@ -606,11 +727,20 @@ pub fn play_around(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let rate = seq.settings.frame_rate;
     let dur = seq.duration();
-    let start = rate.snap((center - Tick::from_seconds_f64(s.prefs.playback.preroll_seconds)).max(Tick::ZERO));
-    let end = rate.snap((center + Tick::from_seconds_f64(s.prefs.playback.postroll_seconds)).min(dur.max(center + rate.frame_duration())));
+    let start = rate
+        .snap((center - Tick::from_seconds_f64(s.prefs.playback.preroll_seconds)).max(Tick::ZERO));
+    let end = rate.snap(
+        (center + Tick::from_seconds_f64(s.prefs.playback.postroll_seconds))
+            .min(dur.max(center + rate.frame_duration())),
+    );
     let end = end.max(start + rate.frame_duration());
     let looping = p.get("loop").and_then(Value::as_bool).unwrap_or(true);
-    s.trim_play.around = Some(PlayAround { start, end, looping, clock0: clock_p(p) });
+    s.trim_play.around = Some(PlayAround {
+        start,
+        end,
+        looping,
+        clock0: clock_p(p),
+    });
     s.set_playhead(start);
     Ok(json!({"start": start.0, "end": end.0, "loop": looping}))
 }

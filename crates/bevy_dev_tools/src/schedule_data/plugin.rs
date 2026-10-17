@@ -7,7 +7,7 @@ use bevy_ecs::{
     intern::Interned,
     resource::Resource,
     schedule::{
-        common_conditions::run_once, IntoScheduleConfigs, ScheduleLabel, Schedules, SystemSet,
+        IntoScheduleConfigs, ScheduleLabel, Schedules, SystemSet, common_conditions::run_once,
     },
     world::World,
 };

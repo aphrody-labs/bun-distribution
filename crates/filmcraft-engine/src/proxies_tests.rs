@@ -38,18 +38,37 @@ fn create_attach_toggle_renders_the_same_picture() {
     add_effects(&mut s);
     let full = frame_rgba(&mut s, 5, 1.0);
     let full_half = frame_rgba(&mut s, 5, 0.5);
-    let r = s.execute("media.createProxies", json!({"items": [items[0].0], "preset": "prores_proxy_half", "wait": true})).unwrap();
+    let r = s
+        .execute(
+            "media.createProxies",
+            json!({"items": [items[0].0], "preset": "prores_proxy_half", "wait": true}),
+        )
+        .unwrap();
     let out = r["outputs"][0]["path"].as_str().unwrap().to_string();
-    assert!(std::path::Path::new(&out).ends_with(std::path::Path::new("Proxies").join("a_Proxy.mov")), "{out}");
+    assert!(
+        std::path::Path::new(&out).ends_with(std::path::Path::new("Proxies").join("a_Proxy.mov")),
+        "{out}"
+    );
     let job = s.execute("jobs.list", json!({})).unwrap();
     assert_eq!(job[0]["finished"], json!(true), "{job}");
-    let m = s.project.item(items[0]).unwrap().as_media().unwrap().clone();
-    assert_eq!(m.proxy, Some(filmcraft_project::MediaRef::File { path: out.clone() }), "attached when the job finished");
+    let m = s
+        .project
+        .item(items[0])
+        .unwrap()
+        .as_media()
+        .unwrap()
+        .clone();
+    assert_eq!(
+        m.proxy,
+        Some(filmcraft_project::MediaRef::File { path: out.clone() }),
+        "attached when the job finished"
+    );
     // proxies off: unchanged
     assert_eq!(frame_rgba(&mut s, 5, 1.0), full);
     let rev = s.revision;
     let dirty = s.is_dirty();
-    s.execute("media.toggleProxies", json!({"enabled": true})).unwrap();
+    s.execute("media.toggleProxies", json!({"enabled": true}))
+        .unwrap();
     assert!(s.revision > rev, "frame caches refresh");
     assert_eq!(s.is_dirty(), dirty, "toggling proxies is not an edit");
     let px = frame_rgba(&mut s, 5, 1.0);
@@ -58,8 +77,14 @@ fn create_attach_toggle_renders_the_same_picture() {
     let q = psnr(&px.2, &full.2);
     let q_half = psnr(&frame_rgba(&mut s, 5, 0.5).2, &full_half.2);
     eprintln!("proxy vs full: {q:.1} dB at full scale, {q_half:.1} dB at ½");
-    assert!(q > 30.0, "proxy composite matches full res modulo resolution: {q:.1} dB");
-    assert!(q_half > 33.0, "at ½ playback resolution the proxy is near-identical: {q_half:.1} dB");
+    assert!(
+        q > 30.0,
+        "proxy composite matches full res modulo resolution: {q:.1} dB"
+    );
+    assert!(
+        q_half > 33.0,
+        "at ½ playback resolution the proxy is near-identical: {q_half:.1} dB"
+    );
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -74,19 +99,48 @@ fn attach_checks_duration_and_export_ignores_proxies() {
     let other = root.join("other.mp4");
     make_movie(&other, DemoScene::Plasma, W / 4, H / 4, 12);
     let (mut s, items, _) = session_with(&[&a]);
-    let e = s.execute("media.attachProxies", json!({"item": items[0].0, "path": short.to_string_lossy()})).unwrap_err().to_string();
+    let e = s
+        .execute(
+            "media.attachProxies",
+            json!({"item": items[0].0, "path": short.to_string_lossy()}),
+        )
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("long"), "{e}");
-    s.execute("media.attachProxies", json!({"item": items[0].0, "path": other.to_string_lossy()})).unwrap();
+    s.execute(
+        "media.attachProxies",
+        json!({"item": items[0].0, "path": other.to_string_lossy()}),
+    )
+    .unwrap();
     let full = frame_rgba(&mut s, 4, 1.0);
-    s.execute("media.toggleProxies", json!({"enabled": true})).unwrap();
-    assert!(psnr(&frame_rgba(&mut s, 4, 1.0).2, &full.2) < 20.0, "monitors show the (different) proxy");
+    s.execute("media.toggleProxies", json!({"enabled": true}))
+        .unwrap();
+    assert!(
+        psnr(&frame_rgba(&mut s, 4, 1.0).2, &full.2) < 20.0,
+        "monitors show the (different) proxy"
+    );
     let png = root.join("out.png").to_string_lossy().into_owned();
-    s.execute("file.exportMedia", json!({"path": png, "format": "png", "wait": true})).unwrap();
+    s.execute(
+        "file.exportMedia",
+        json!({"path": png, "format": "png", "wait": true}),
+    )
+    .unwrap();
     let jobs = s.execute("jobs.list", json!({})).unwrap();
-    assert!(jobs.as_array().unwrap().iter().all(|j| j["result"].get("error").is_none()), "{jobs}");
+    assert!(
+        jobs.as_array()
+            .unwrap()
+            .iter()
+            .all(|j| j["result"].get("error").is_none()),
+        "{jobs}"
+    );
     let f = image::open(root.join("out004.png")).unwrap().to_rgba8();
-    assert_eq!(psnr(f.as_raw(), &full.2), f64::INFINITY, "export renders full-resolution media");
-    s.execute("media.detachProxies", json!({"items": [items[0].0]})).unwrap();
+    assert_eq!(
+        psnr(f.as_raw(), &full.2),
+        f64::INFINITY,
+        "export renders full-resolution media"
+    );
+    s.execute("media.detachProxies", json!({"items": [items[0].0]}))
+        .unwrap();
     assert_eq!(frame_rgba(&mut s, 4, 1.0), full);
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -105,12 +159,21 @@ fn ingest_copies_and_creates_proxies_on_import() {
         json!({"enabled": true, "action": "copyAndCreateProxies", "destination": dest.to_string_lossy(), "preset": "h264_quarter"}),
     )
     .unwrap();
-    let r = s.execute("file.import", json!({"paths": [a.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute("file.import", json!({"paths": [a.to_string_lossy()]}))
+        .unwrap();
     let item = filmcraft_project::ItemId(r["items"][0].as_u64().unwrap());
-    let job = r["ingest"]["job"]["job"].as_u64().unwrap_or_else(|| panic!("{r}"));
+    let job = r["ingest"]["job"]["job"]
+        .as_u64()
+        .unwrap_or_else(|| panic!("{r}"));
     // wait for the background proxy job, then let the session apply it
     for _ in 0..600 {
-        if s.jobs.iter().any(|j| j.id == job && j.progress.finished.load(std::sync::atomic::Ordering::Relaxed)) {
+        if s.jobs.iter().any(|j| {
+            j.id == job
+                && j.progress
+                    .finished
+                    .load(std::sync::atomic::Ordering::Relaxed)
+        }) {
             break;
         }
         std::thread::sleep(std::time::Duration::from_millis(50));
@@ -118,9 +181,21 @@ fn ingest_copies_and_creates_proxies_on_import() {
     s.poll_persistence();
     let m = s.project.item(item).unwrap().as_media().unwrap();
     let copy = dest.join("A001.mov").to_string_lossy().into_owned();
-    assert_eq!(m.media, filmcraft_project::MediaRef::File { path: copy.clone() }, "the clip uses the verified copy");
-    assert_eq!(m.identity, Some(crate::relink::identity_of(&crate::FsServices, &a.to_string_lossy()).unwrap()));
-    assert_eq!(m.proxy, Some(filmcraft_project::MediaRef::File { path: dest.join("A001_Proxy.mp4").to_string_lossy().into_owned() }));
+    assert_eq!(
+        m.media,
+        filmcraft_project::MediaRef::File { path: copy.clone() },
+        "the clip uses the verified copy"
+    );
+    assert_eq!(
+        m.identity,
+        Some(crate::relink::identity_of(&crate::FsServices, &a.to_string_lossy()).unwrap())
+    );
+    assert_eq!(
+        m.proxy,
+        Some(filmcraft_project::MediaRef::File {
+            path: dest.join("A001_Proxy.mp4").to_string_lossy().into_owned()
+        })
+    );
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -150,56 +225,130 @@ fn check_ingest_collision(action: &str) {
     let mut s = Session::default();
     s.execute("project.ingestSettings", json!({"enabled": true, "action": action, "destination": dest.to_string_lossy(), "preset": "prores_proxy_half"}))
         .unwrap();
-    let result = s.execute("file.import", json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>()})).unwrap();
+    let result = s
+        .execute(
+            "file.import",
+            json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>()}),
+        )
+        .unwrap();
     assert_eq!(result["errors"], json!([]), "{result}");
-    let items: Vec<ItemId> = result["items"].as_array().unwrap().iter().map(|i| ItemId(i.as_u64().unwrap())).collect();
+    let items: Vec<ItemId> = result["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| ItemId(i.as_u64().unwrap()))
+        .collect();
     assert_eq!(items.len(), 2, "both takes imported");
     if let Some(id) = result["ingest"]["job"]["job"].as_u64() {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
         loop {
             let job = s.jobs.iter().find(|j| j.id == id).unwrap();
-            if job.progress.finished.load(Ordering::Relaxed) && job.result.lock().unwrap().is_some() {
-                assert!(job.result.lock().unwrap().as_ref().unwrap().is_ok(), "ingest job failed");
+            if job.progress.finished.load(Ordering::Relaxed) && job.result.lock().unwrap().is_some()
+            {
+                assert!(
+                    job.result.lock().unwrap().as_ref().unwrap().is_ok(),
+                    "ingest job failed"
+                );
                 break;
             }
-            assert!(std::time::Instant::now() < deadline, "ingest job did not finish");
+            assert!(
+                std::time::Instant::now() < deadline,
+                "ingest job did not finish"
+            );
             std::thread::sleep(std::time::Duration::from_millis(25));
         }
         s.poll_persistence();
     }
-    assert_eq!(std::fs::read(&existing).unwrap(), existing_bytes, "ingest must preserve existing destination files");
+    assert_eq!(
+        std::fs::read(&existing).unwrap(),
+        existing_bytes,
+        "ingest must preserve existing destination files"
+    );
     let project_path = root.join("ingested.fcproj");
-    s.execute("file.save", json!({"path": project_path.to_string_lossy()})).unwrap();
+    s.execute("file.save", json!({"path": project_path.to_string_lossy()}))
+        .unwrap();
     let mut reopened = Session::default();
-    reopened.execute("file.open", json!({"path": project_path.to_string_lossy()})).unwrap();
-    let request = FrameRequest { time: FrameRate::FPS_24.tick_of(2), scale: 1.0 };
+    reopened
+        .execute("file.open", json!({"path": project_path.to_string_lossy()}))
+        .unwrap();
+    let request = FrameRequest {
+        time: FrameRate::FPS_24.tick_of(2),
+        scale: 1.0,
+    };
     let mut linked = BTreeSet::new();
     let mut proxies = BTreeSet::new();
     for (index, item) in items.iter().enumerate() {
         let media = reopened.project.item(*item).unwrap().as_media().unwrap();
-        let MediaRef::File { path } = &media.media else { panic!("ingest must retain file media") };
-        assert!(linked.insert(path.clone()), "different takes must have different ingest paths");
+        let MediaRef::File { path } = &media.media else {
+            panic!("ingest must retain file media")
+        };
+        assert!(
+            linked.insert(path.clone()),
+            "different takes must have different ingest paths"
+        );
         assert_eq!(std::path::Path::new(path).parent(), Some(dest.as_path()));
-        assert_eq!(std::fs::read(&paths[index]).unwrap(), original[index], "source card is unchanged");
+        assert_eq!(
+            std::fs::read(&paths[index]).unwrap(),
+            original[index],
+            "source card is unchanged"
+        );
         if action != "transcode" {
-            assert_eq!(std::fs::read(path).unwrap(), original[index], "each copy retains its own take");
-            assert_eq!(media.identity, Some(crate::relink::identity_of_bytes(&original[index])));
+            assert_eq!(
+                std::fs::read(path).unwrap(),
+                original[index],
+                "each copy retains its own take"
+            );
+            assert_eq!(
+                media.identity,
+                Some(crate::relink::identity_of_bytes(&original[index]))
+            );
         }
-        let source = reopened.media.open_file(&paths[index].to_string_lossy(), &*reopened.services).unwrap();
+        let source = reopened
+            .media
+            .open_file(&paths[index].to_string_lossy(), &*reopened.services)
+            .unwrap();
         let expected = source.video_frame(request).unwrap();
-        let ingested = reopened.source(*item).unwrap().video_frame(request).unwrap();
+        let ingested = reopened
+            .source(*item)
+            .unwrap()
+            .video_frame(request)
+            .unwrap();
         let quality = |frame: &filmcraft_frame::VideoFrame| {
-            let rgba = image::RgbaImage::from_raw(frame.width, frame.height, frame.to_rgba8()).unwrap();
-            let expected = image::RgbaImage::from_raw(expected.width, expected.height, expected.to_rgba8()).unwrap();
-            let expected = image::imageops::resize(&expected, frame.width, frame.height, image::imageops::FilterType::Triangle);
+            let rgba =
+                image::RgbaImage::from_raw(frame.width, frame.height, frame.to_rgba8()).unwrap();
+            let expected =
+                image::RgbaImage::from_raw(expected.width, expected.height, expected.to_rgba8())
+                    .unwrap();
+            let expected = image::imageops::resize(
+                &expected,
+                frame.width,
+                frame.height,
+                image::imageops::FilterType::Triangle,
+            );
             psnr(rgba.as_raw(), expected.as_raw())
         };
-        assert!(quality(&ingested) > 30.0, "saved project retains the correct picture for take {index}");
+        assert!(
+            quality(&ingested) > 30.0,
+            "saved project retains the correct picture for take {index}"
+        );
         if action == "copyAndCreateProxies" {
-            let Some(MediaRef::File { path }) = &media.proxy else { panic!("copy should have its proxy attached") };
-            assert!(proxies.insert(path.clone()), "different takes must have different proxy paths");
-            let proxy = reopened.media.open_file(path, &*reopened.services).unwrap().video_frame(request).unwrap();
-            assert!(quality(&proxy) > 30.0, "proxy retains the correct picture for take {index}");
+            let Some(MediaRef::File { path }) = &media.proxy else {
+                panic!("copy should have its proxy attached")
+            };
+            assert!(
+                proxies.insert(path.clone()),
+                "different takes must have different proxy paths"
+            );
+            let proxy = reopened
+                .media
+                .open_file(path, &*reopened.services)
+                .unwrap()
+                .video_frame(request)
+                .unwrap();
+            assert!(
+                quality(&proxy) > 30.0,
+                "proxy retains the correct picture for take {index}"
+            );
         }
     }
     let _ = std::fs::remove_dir_all(root);
@@ -231,24 +380,49 @@ fn ingest_copy_keeps_sources_already_at_destination_and_extensionless_names() {
         std::fs::create_dir_all(&dest).unwrap();
         std::fs::create_dir_all(&card).unwrap();
         let paths = [dest.join(name), card.join(name)];
-        let takes = [filmcraft_media::wav::write_wav16(&[0.25; 960], 1, 48_000), filmcraft_media::wav::write_wav16(&[-0.25; 960], 1, 48_000)];
+        let takes = [
+            filmcraft_media::wav::write_wav16(&[0.25; 960], 1, 48_000),
+            filmcraft_media::wav::write_wav16(&[-0.25; 960], 1, 48_000),
+        ];
         for (path, bytes) in paths.iter().zip(&takes) {
             std::fs::write(path, bytes).unwrap();
         }
         let mut s = Session::default();
-        s.execute("project.ingestSettings", json!({"enabled": true, "action": "copy", "destination": dest.to_string_lossy()})).unwrap();
-        let result = s.execute("file.import", json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>()})).unwrap();
+        s.execute(
+            "project.ingestSettings",
+            json!({"enabled": true, "action": "copy", "destination": dest.to_string_lossy()}),
+        )
+        .unwrap();
+        let result = s
+            .execute(
+                "file.import",
+                json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>()}),
+            )
+            .unwrap();
         assert_eq!(result["errors"], json!([]), "{result}");
         assert_eq!(result["items"].as_array().unwrap().len(), 2);
-        assert_eq!(result["ingest"]["copied"].as_array().unwrap().len(), 1, "source already at destination is kept");
+        assert_eq!(
+            result["ingest"]["copied"].as_array().unwrap().len(),
+            1,
+            "source already at destination is kept"
+        );
         for (index, path) in [dest.join(name), dest.join(numbered)].iter().enumerate() {
             let item = ItemId(result["items"][index].as_u64().unwrap());
             let media = s.project.item(item).unwrap().as_media().unwrap();
-            assert_eq!(media.media, MediaRef::File { path: path.to_string_lossy().into_owned() });
+            assert_eq!(
+                media.media,
+                MediaRef::File {
+                    path: path.to_string_lossy().into_owned()
+                }
+            );
             assert_eq!(std::fs::read(path).unwrap(), takes[index]);
             assert_eq!(std::fs::read(&paths[index]).unwrap(), takes[index]);
         }
-        assert_eq!(std::fs::read_dir(&dest).unwrap().count(), 2, "no unnecessary copies or trailing-dot filenames");
+        assert_eq!(
+            std::fs::read_dir(&dest).unwrap().count(),
+            2,
+            "no unnecessary copies or trailing-dot filenames"
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 }
@@ -259,17 +433,30 @@ fn ingest_copy_does_not_create_a_destination_when_the_source_is_missing() {
 
     let root = tmp_dir("ingest-copy-missing-source");
     let source = root.join("Take.wav");
-    std::fs::write(&source, filmcraft_media::wav::write_wav16(&[0.25; 960], 1, 48_000)).unwrap();
+    std::fs::write(
+        &source,
+        filmcraft_media::wav::write_wav16(&[0.25; 960], 1, 48_000),
+    )
+    .unwrap();
     let mut s = Session::default();
-    let imported = s.execute("file.import", json!({"paths": [source.to_string_lossy()]})).unwrap();
+    let imported = s
+        .execute("file.import", json!({"paths": [source.to_string_lossy()]}))
+        .unwrap();
     let item = ItemId(imported["items"][0].as_u64().unwrap());
     let dest = root.join("Ingest");
-    s.execute("project.ingestSettings", json!({"enabled": true, "action": "copy", "destination": dest.to_string_lossy()})).unwrap();
+    s.execute(
+        "project.ingestSettings",
+        json!({"enabled": true, "action": "copy", "destination": dest.to_string_lossy()}),
+    )
+    .unwrap();
     let before = s.project.clone();
     std::fs::rename(&source, root.join("Moved.wav")).unwrap();
     assert!(crate::proxies::ingest(&mut s, &[item]).is_err());
     assert_eq!(s.project, before, "failed copy does not relink the item");
-    assert!(!dest.exists(), "no destination is created before the source can be opened");
+    assert!(
+        !dest.exists(),
+        "no destination is created before the source can be opened"
+    );
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -279,7 +466,9 @@ fn ingest_copy_does_not_create_a_destination_when_the_source_is_missing() {
 #[test]
 #[ignore = "benchmark: 4K fixture via ffmpeg"]
 fn proxy_playback_perf_4k() {
-    let Some(ffmpeg) = filmcraft_testkit::oracle::ffmpeg_or_skip("proxy_playback_perf_4k") else { return };
+    let Some(ffmpeg) = filmcraft_testkit::oracle::ffmpeg_or_skip("proxy_playback_perf_4k") else {
+        return;
+    };
     let out = filmcraft_testkit::fixtures_dir("proxies").join("uhd_h264.mp4");
     let src = filmcraft_testkit::fixtures::generate(&out, |tmp| {
         std::process::Command::new(&ffmpeg)
@@ -314,10 +503,18 @@ fn proxy_playback_perf_4k() {
     let measure = |s: &mut Session| {
         let rate = s.sequence_rate();
         let src = s.source(items[0]).unwrap();
-        let _ = src.video_frame(filmcraft_media::FrameRequest { time: rate.tick_of(0), scale: 0.5 });
+        let _ = src.video_frame(filmcraft_media::FrameRequest {
+            time: rate.tick_of(0),
+            scale: 0.5,
+        });
         let t0 = std::time::Instant::now();
         for f in 1..n {
-            let _ = src.video_frame(filmcraft_media::FrameRequest { time: rate.tick_of(f), scale: 0.5 }).unwrap();
+            let _ = src
+                .video_frame(filmcraft_media::FrameRequest {
+                    time: rate.tick_of(f),
+                    scale: 0.5,
+                })
+                .unwrap();
         }
         let decode = t0.elapsed().as_secs_f64() * 1000.0 / (n - 1) as f64;
         let mut comp = [0.0; 2];
@@ -333,14 +530,23 @@ fn proxy_playback_perf_4k() {
         (decode, comp[0], comp[1])
     };
     let full = measure(&mut s);
-    eprintln!("4K H.264, full res: decode {:.1} ms/frame; CPU composite {:.1} ms/frame at 1/2, {:.1} at 1/4", full.0, full.1, full.2);
+    eprintln!(
+        "4K H.264, full res: decode {:.1} ms/frame; CPU composite {:.1} ms/frame at 1/2, {:.1} at 1/4",
+        full.0, full.1, full.2
+    );
     for preset in ["prores_proxy_quarter", "h264_quarter"] {
         let t0 = std::time::Instant::now();
-        s.execute("media.createProxies", json!({"items": [items[0].0], "preset": preset, "wait": true})).unwrap();
+        s.execute(
+            "media.createProxies",
+            json!({"items": [items[0].0], "preset": preset, "wait": true}),
+        )
+        .unwrap();
         let make = t0.elapsed().as_secs_f64();
-        s.execute("media.toggleProxies", json!({"enabled": true})).unwrap();
+        s.execute("media.toggleProxies", json!({"enabled": true}))
+            .unwrap();
         let px = measure(&mut s);
-        s.execute("media.toggleProxies", json!({"enabled": false})).unwrap();
+        s.execute("media.toggleProxies", json!({"enabled": false}))
+            .unwrap();
         eprintln!(
             "{preset} proxy (made in {make:.1}s): decode {:.1} ms/frame ({:.1}x less); CPU composite {:.1} ms/frame at 1/2 ({:.1}x less), {:.1} at 1/4 ({:.1}x less)",
             px.0,
@@ -366,12 +572,24 @@ fn render_previews_ignore_proxies() {
     let (mut s, items, _) = session_with(&[&a]);
     add_effects(&mut s);
     let full = frame_rgba(&mut s, 4, 1.0);
-    s.execute("media.attachProxies", json!({"item": items[0].0, "path": other.to_string_lossy()})).unwrap();
-    s.execute("media.toggleProxies", json!({"enabled": true})).unwrap();
-    s.execute("sequence.renderInToOut", json!({"wait": true})).unwrap();
+    s.execute(
+        "media.attachProxies",
+        json!({"item": items[0].0, "path": other.to_string_lossy()}),
+    )
+    .unwrap();
+    s.execute("media.toggleProxies", json!({"enabled": true}))
+        .unwrap();
+    s.execute("sequence.renderInToOut", json!({"wait": true}))
+        .unwrap();
     let seq = s.state.active_sequence.unwrap();
-    let f = s.previews.frame(&s.media, &s.project, seq, 4, 1.0).expect("frame 4 has a preview");
+    let f = s
+        .previews
+        .frame(&s.media, &s.project, seq, 4, 1.0)
+        .expect("frame 4 has a preview");
     let q = psnr(&f.to_rgba8(), &full.2);
-    assert!(q > 30.0, "preview rendered from full-resolution media, not the (different) proxy: {q:.1} dB");
+    assert!(
+        q > 30.0,
+        "preview rendered from full-resolution media, not the (different) proxy: {q:.1} dB"
+    );
     let _ = std::fs::remove_dir_all(&root);
 }

@@ -30,26 +30,39 @@ const MAX_BOXES: usize = 512;
 /// A distance as shown on a label: up to two decimals, no trailing zeros.
 pub fn label(d: f64) -> String {
     let v = (d.abs() * 100.0).round() / 100.0;
-    if v.fract() == 0.0 && v < 1e15 { format!("{}", v as i64) } else { format!("{v}") }
+    if v.fract() == 0.0 && v < 1e15 {
+        format!("{}", v as i64)
+    } else {
+        format!("{v}")
+    }
 }
 
 /// A labelled distance line, unless it has no length.
 fn measured(out: &mut Vec<Guide>, a: Point, b: Point) {
     let d = (b - a).hypot();
     if d > EPS && d.is_finite() {
-        out.push(Guide { label: Some(label(d)), ..Guide::new(a, b) });
+        out.push(Guide {
+            label: Some(label(d)),
+            ..Guide::new(a, b)
+        });
     }
 }
 
 /// A dashed extension line (no label), unless it has no length.
 fn extension(out: &mut Vec<Guide>, a: Point, b: Point) {
     if (b - a).hypot() > EPS {
-        out.push(Guide { dashed: true, ..Guide::new(a, b) });
+        out.push(Guide {
+            dashed: true,
+            ..Guide::new(a, b)
+        });
     }
 }
 
 fn contains(outer: Rect, inner: Rect) -> bool {
-    outer.x0 <= inner.x0 + EPS && outer.y0 <= inner.y0 + EPS && outer.x1 >= inner.x1 - EPS && outer.y1 >= inner.y1 - EPS
+    outer.x0 <= inner.x0 + EPS
+        && outer.y0 <= inner.y0 + EPS
+        && outer.x1 >= inner.x1 - EPS
+        && outer.y1 >= inner.y1 - EPS
 }
 
 /// The middle of the overlap of two spans, if they overlap.
@@ -96,7 +109,11 @@ pub fn between(a: Rect, b: Rect) -> Vec<Guide> {
         let y = oy.unwrap_or(c.y);
         measured(&mut out, Point::new(from, y), Point::new(to, y));
         if oy.is_none() {
-            extension(&mut out, Point::new(to, y), Point::new(to, if y < b.y0 { b.y0 } else { b.y1 }));
+            extension(
+                &mut out,
+                Point::new(to, y),
+                Point::new(to, if y < b.y0 { b.y0 } else { b.y1 }),
+            );
         }
     }
     let gap_y = if b.y0 >= a.y1 {
@@ -110,7 +127,11 @@ pub fn between(a: Rect, b: Rect) -> Vec<Guide> {
         let x = ox.unwrap_or(c.x);
         measured(&mut out, Point::new(x, from), Point::new(x, to));
         if ox.is_none() {
-            extension(&mut out, Point::new(x, to), Point::new(if x < b.x0 { b.x0 } else { b.x1 }, to));
+            extension(
+                &mut out,
+                Point::new(x, to),
+                Point::new(if x < b.x0 { b.x0 } else { b.x1 }, to),
+            );
         }
     }
     out
@@ -134,7 +155,13 @@ pub fn to_guide(a: Rect, vertical: bool, at: f64) -> Vec<Guide> {
     }
     let c = a.center();
     let (lo, hi) = if vertical { (a.x0, a.x1) } else { (a.y0, a.y1) };
-    let pt = |v: f64| if vertical { Point::new(v, c.y) } else { Point::new(c.x, v) };
+    let pt = |v: f64| {
+        if vertical {
+            Point::new(v, c.y)
+        } else {
+            Point::new(c.x, v)
+        }
+    };
     if at >= hi {
         measured(&mut out, pt(hi), pt(at));
     } else if at <= lo {
@@ -151,9 +178,20 @@ pub fn to_guide(a: Rect, vertical: bool, at: f64) -> Vec<Guide> {
 /// or the frame itself, across the middle of what each measures to. Nothing when it misses the frame.
 pub fn from_guide(doc: &Document, frame: NodeId, vertical: bool, at: f64) -> Vec<Guide> {
     let mut out = Vec::new();
-    let Some(f) = doc.world_bounds(frame).filter(|f| f.is_finite() && at.is_finite()) else { return out };
+    let Some(f) = doc
+        .world_bounds(frame)
+        .filter(|f| f.is_finite() && at.is_finite())
+    else {
+        return out;
+    };
     // Along the guide's normal: (start, end, middle across) of a box.
-    let span = |b: Rect| if vertical { (b.x0, b.x1, b.center().y) } else { (b.y0, b.y1, b.center().x) };
+    let span = |b: Rect| {
+        if vertical {
+            (b.x0, b.x1, b.center().y)
+        } else {
+            (b.y0, b.y1, b.center().x)
+        }
+    };
     let (lo, hi, mid) = span(f);
     if !(at > lo && at < hi) {
         return out;
@@ -170,7 +208,13 @@ pub fn from_guide(doc: &Document, frame: NodeId, vertical: bool, at: f64) -> Vec
             }
         }
     }
-    let pt = |along: f64, across: f64| if vertical { Point::new(along, across) } else { Point::new(across, along) };
+    let pt = |along: f64, across: f64| {
+        if vertical {
+            Point::new(along, across)
+        } else {
+            Point::new(across, along)
+        }
+    };
     measured(&mut out, pt(before.0, before.1), pt(at, before.1));
     measured(&mut out, pt(at, after.1), pt(after.0, after.1));
     out
@@ -178,7 +222,13 @@ pub fn from_guide(doc: &Document, frame: NodeId, vertical: bool, at: f64) -> Vec
 
 /// The ruler guides near page point `p` (within `tol`): the page's and those of the top-level
 /// frames around `around` (those that run along the page's axes), as (vertical, page offset).
-pub fn guide_at(doc: &Document, page: NodeId, around: &[NodeId], p: Point, tol: f64) -> Option<(bool, f64)> {
+pub fn guide_at(
+    doc: &Document,
+    page: NodeId,
+    around: &[NodeId],
+    p: Point,
+    tol: f64,
+) -> Option<(bool, f64)> {
     let mut lines: Vec<(bool, f64)> = Vec::new();
     if let Some(n) = doc.node(page) {
         lines.extend(n.guides().iter().map(|g| (g.vertical, g.offset)));
@@ -190,19 +240,31 @@ pub fn guide_at(doc: &Document, page: NodeId, around: &[NodeId], p: Point, tol: 
         }
     }
     for f in frames {
-        let Some(n) = doc.node(f).filter(|n| !n.guides.is_empty()) else { continue };
+        let Some(n) = doc.node(f).filter(|n| !n.guides.is_empty()) else {
+            continue;
+        };
         let w = doc.world_transform(f);
-        lines.extend(n.guides.iter().filter_map(|g| crate::guides::line_in(w, g.vertical, g.offset)));
+        lines.extend(
+            n.guides
+                .iter()
+                .filter_map(|g| crate::guides::line_in(w, g.vertical, g.offset)),
+        );
     }
     lines
         .into_iter()
         .filter(|(v, at)| at.is_finite() && (if *v { p.x } else { p.y } - at).abs() <= tol)
-        .min_by(|a, b| (if a.0 { p.x } else { p.y } - a.1).abs().total_cmp(&(if b.0 { p.x } else { p.y } - b.1).abs()))
+        .min_by(|a, b| {
+            (if a.0 { p.x } else { p.y } - a.1)
+                .abs()
+                .total_cmp(&(if b.0 { p.x } else { p.y } - b.1).abs())
+        })
 }
 
 /// The visible layers in `parent` other than `moving` (and not inside them), by their bounds.
 fn sibling_boxes(doc: &Document, parent: NodeId, moving: &[NodeId]) -> Vec<Rect> {
-    let Some(p) = doc.node(parent) else { return Vec::new() };
+    let Some(p) = doc.node(parent) else {
+        return Vec::new();
+    };
     p.children
         .iter()
         .filter(|c| !moving.contains(c) && doc.node(**c).is_some_and(|n| n.visible))
@@ -219,9 +281,16 @@ pub fn neighbours(doc: &Document, page: NodeId, moving: &[NodeId], a: Rect) -> V
     if !a.is_finite() {
         return out;
     }
-    let parent = moving.first().and_then(|m| doc.node(*m)).and_then(|n| n.parent).unwrap_or(page);
+    let parent = moving
+        .first()
+        .and_then(|m| doc.node(*m))
+        .and_then(|n| n.parent)
+        .unwrap_or(page);
     let boxes = sibling_boxes(doc, parent, moving);
-    let frame = (parent != page).then(|| doc.world_bounds(parent)).flatten().filter(|f| f.is_finite());
+    let frame = (parent != page)
+        .then(|| doc.world_bounds(parent))
+        .flatten()
+        .filter(|f| f.is_finite());
     let c = a.center();
     // For each side: the nearest facing box edge (its position and the shared span's middle).
     let nearest = |side: u8| -> Option<(f64, f64)> {
@@ -267,7 +336,9 @@ pub fn padding_frame(doc: &Document, target: NodeId) -> Option<NodeId> {
     if has_layout(target) {
         return Some(target);
     }
-    doc.node(target).and_then(|n| n.parent).filter(|p| has_layout(*p))
+    doc.node(target)
+        .and_then(|n| n.parent)
+        .filter(|p| has_layout(*p))
 }
 
 /// An auto layout frame's padding (from each edge, across the middle of the content) and the
@@ -275,7 +346,9 @@ pub fn padding_frame(doc: &Document, target: NodeId) -> Option<NodeId> {
 pub fn padding(doc: &Document, frame: NodeId) -> Vec<Guide> {
     let mut out = Vec::new();
     let Some(n) = doc.node(frame) else { return out };
-    let Some(l) = n.layout.as_ref() else { return out };
+    let Some(l) = n.layout.as_ref() else {
+        return out;
+    };
     let w = doc.world_transform(frame);
     // Flow children in the frame's own space.
     let kids: Vec<Rect> = n
@@ -288,8 +361,12 @@ pub fn padding(doc: &Document, frame: NodeId) -> Vec<Guide> {
         .filter(|r| r.is_finite())
         .collect();
     let content = kids.iter().copied().reduce(|a, b| a.union(b));
-    let (cx, cy) = content.map_or((n.width / 2.0, n.height / 2.0), |r| (r.center().x, r.center().y));
-    let [top, right, bottom, left] = l.padding.map(|v| if v.is_finite() { v.max(0.0) } else { 0.0 });
+    let (cx, cy) = content.map_or((n.width / 2.0, n.height / 2.0), |r| {
+        (r.center().x, r.center().y)
+    });
+    let [top, right, bottom, left] = l
+        .padding
+        .map(|v| if v.is_finite() { v.max(0.0) } else { 0.0 });
     let mut push = |a: Point, b: Point| measured(&mut out, w * a, w * b);
     push(Point::new(0.0, cy), Point::new(left, cy));
     push(Point::new(n.width - right, cy), Point::new(n.width, cy));
@@ -300,7 +377,9 @@ pub fn padding(doc: &Document, frame: NodeId) -> Vec<Guide> {
         let right = kids
             .iter()
             .enumerate()
-            .filter(|(j, b)| *j != i && b.x0 >= a.x1 - EPS && overlap_mid(a.y0, a.y1, b.y0, b.y1).is_some())
+            .filter(|(j, b)| {
+                *j != i && b.x0 >= a.x1 - EPS && overlap_mid(a.y0, a.y1, b.y0, b.y1).is_some()
+            })
             .min_by(|x, y| x.1.x0.total_cmp(&y.1.x0));
         if let Some((_, b)) = right
             && let Some(my) = overlap_mid(a.y0, a.y1, b.y0, b.y1)
@@ -310,7 +389,9 @@ pub fn padding(doc: &Document, frame: NodeId) -> Vec<Guide> {
         let below = kids
             .iter()
             .enumerate()
-            .filter(|(j, b)| *j != i && b.y0 >= a.y1 - EPS && overlap_mid(a.x0, a.x1, b.x0, b.x1).is_some())
+            .filter(|(j, b)| {
+                *j != i && b.y0 >= a.y1 - EPS && overlap_mid(a.x0, a.x1, b.x0, b.x1).is_some()
+            })
             .min_by(|x, y| x.1.y0.total_cmp(&y.1.y0));
         if let Some((_, b)) = below
             && let Some(mx) = overlap_mid(a.x0, a.x1, b.x0, b.x1)
@@ -332,14 +413,30 @@ pub enum Hover {
 
 /// The measurement lines for `hover` from the selection `sel` and the box to outline (the
 /// measured-to layer or frame).
-pub fn hover_lines(doc: &Document, page: NodeId, sel: &[NodeId], hover: Hover) -> (Vec<Guide>, Option<Rect>) {
+pub fn hover_lines(
+    doc: &Document,
+    page: NodeId,
+    sel: &[NodeId],
+    hover: Hover,
+) -> (Vec<Guide>, Option<Rect>) {
     match hover {
         Hover::Padding(f) => (padding(doc, f), doc.world_bounds(f)),
-        Hover::Guide { vertical, at } => (doc.bounds_of(sel).map(|a| to_guide(a, vertical, at)).unwrap_or_default(), None),
+        Hover::Guide { vertical, at } => (
+            doc.bounds_of(sel)
+                .map(|a| to_guide(a, vertical, at))
+                .unwrap_or_default(),
+            None,
+        ),
         Hover::Layer(t) => {
-            let Some(a) = doc.bounds_of(sel) else { return (Vec::new(), None) };
+            let Some(a) = doc.bounds_of(sel) else {
+                return (Vec::new(), None);
+            };
             // Over the selection itself: to its parent.
-            let t = if sel.contains(&t) { parent_of(doc, page, sel).unwrap_or(t) } else { t };
+            let t = if sel.contains(&t) {
+                parent_of(doc, page, sel).unwrap_or(t)
+            } else {
+                t
+            };
             if sel.contains(&t) {
                 return (Vec::new(), None);
             }
@@ -353,7 +450,10 @@ pub fn hover_lines(doc: &Document, page: NodeId, sel: &[NodeId], hover: Hover) -
 
 /// The selection's parent when it isn't the page.
 pub fn parent_of(doc: &Document, page: NodeId, sel: &[NodeId]) -> Option<NodeId> {
-    sel.first().and_then(|i| doc.node(*i)).and_then(|n| n.parent).filter(|p| *p != page && !doc.node(*p).is_some_and(|n| n.is_page()))
+    sel.first()
+        .and_then(|i| doc.node(*i))
+        .and_then(|n| n.parent)
+        .filter(|p| *p != page && !doc.node(*p).is_some_and(|n| n.is_page()))
 }
 
 fn lines_json(lines: &[Guide]) -> Value {
@@ -375,7 +475,12 @@ fn measure_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let to = match id(p, "to") {
         Some(t) if doc.contains(t) => t,
         Some(t) => return Err(crate::EngineError::NoNode(t)),
-        None => parent_of(doc, page, &sel).ok_or_else(|| bad("measure.distances", "pass `to` (the selection is at the top level)"))?,
+        None => parent_of(doc, page, &sel).ok_or_else(|| {
+            bad(
+                "measure.distances",
+                "pass `to` (the selection is at the top level)",
+            )
+        })?,
     };
     let (lines, _) = hover_lines(doc, page, &sel, Hover::Layer(to));
     Ok(lines_json(&lines))
@@ -383,8 +488,14 @@ fn measure_cmd(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn padding_cmd(s: &mut Session, p: &Value) -> Result<Value> {
     let doc = s.doc()?;
-    let target = targets(s, p).first().copied().ok_or_else(|| bad("measure.padding", "pass `id` (an auto layout frame or one of its children)"))?;
-    let frame = padding_frame(doc, target).ok_or_else(|| bad("measure.padding", "not in an auto layout frame"))?;
+    let target = targets(s, p).first().copied().ok_or_else(|| {
+        bad(
+            "measure.padding",
+            "pass `id` (an auto layout frame or one of its children)",
+        )
+    })?;
+    let frame = padding_frame(doc, target)
+        .ok_or_else(|| bad("measure.padding", "not in an auto layout frame"))?;
     Ok(json!({"frame": frame, "lines": padding(doc, frame)}))
 }
 

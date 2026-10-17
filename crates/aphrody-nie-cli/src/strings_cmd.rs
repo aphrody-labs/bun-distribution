@@ -294,7 +294,11 @@ impl StrIndex {
     fn new(found: &[FoundStr]) -> Self {
         Self {
             starts: found.iter().map(|f| f.vaddr).collect(),
-            spans: found.iter().enumerate().map(|(i, f)| (f.vaddr + f.len as u64, i)).collect(),
+            spans: found
+                .iter()
+                .enumerate()
+                .map(|(i, f)| (f.vaddr + f.len as u64, i))
+                .collect(),
             exact: found.iter().map(|f| f.vaddr).collect(),
         }
     }
@@ -331,7 +335,13 @@ fn suffix_str(src: &FoundStr, vaddr: u64, off: usize) -> FoundStr {
         Enc::Ascii => src.value[off..].to_string(),
         Enc::Utf16 => src.value.chars().skip(off / 2).collect(),
     };
-    FoundStr { vaddr, len: src.len - off, sec: src.sec, enc: src.enc, value }
+    FoundStr {
+        vaddr,
+        len: src.len - off,
+        sec: src.sec,
+        enc: src.enc,
+        value,
+    }
 }
 
 /// Géométrie d'une section chargée.
@@ -381,9 +391,11 @@ fn resolve_binary(
     }
     let pdata_key = format!("{sha}-pdata");
     for key in [pdata_key.as_str(), sha] {
-        let row = conn.query_row("SELECT id, path FROM binary WHERE sha256 = ?1", [key], |r| {
-            Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?))
-        });
+        let row = conn.query_row(
+            "SELECT id, path FROM binary WHERE sha256 = ?1",
+            [key],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
+        );
         if let Ok(found) = row {
             return Ok(found);
         }
@@ -497,7 +509,12 @@ pub fn run(db: &aphrody_nie_index::Db, exe: &Path, opts: &Options) -> Result<Sta
         opts.sections.clone()
     };
 
-    let mut stats = Stats { binary_id, binary_path, dry_run: opts.dry_run, ..Stats::default() };
+    let mut stats = Stats {
+        binary_id,
+        binary_path,
+        dry_run: opts.dry_run,
+        ..Stats::default()
+    };
 
     // --- 1. Chaînes ---------------------------------------------------------
     let mut found: Vec<FoundStr> = Vec::new();
@@ -516,9 +533,19 @@ pub fn run(db: &aphrody_nie_index::Db, exe: &Path, opts: &Options) -> Result<Sta
         );
         stats.ascii += found.len() - n;
         n = found.len();
-        scan_utf16(sec.data, sec.va, idx, opts.min_len, &mut found, &covered, &mut stats.oversized);
+        scan_utf16(
+            sec.data,
+            sec.va,
+            idx,
+            opts.min_len,
+            &mut found,
+            &covered,
+            &mut stats.oversized,
+        );
         stats.utf16 += found.len() - n;
-        stats.par_section.push((sec.name, stats.ascii - before.0, stats.utf16 - before.1));
+        stats
+            .par_section
+            .push((sec.name, stats.ascii - before.0, stats.utf16 - before.1));
     }
     found.sort_unstable_by_key(|f| f.vaddr);
     found.dedup_by_key(|f| f.vaddr);
@@ -546,8 +573,11 @@ pub fn run(db: &aphrody_nie_index::Db, exe: &Path, opts: &Options) -> Result<Sta
                 fid.insert(v, id);
             }
         }
-        let mapped: HashSet<u64> =
-            roots.iter().map(|r| r.start).filter(|s| fid.contains_key(s)).collect();
+        let mapped: HashSet<u64> = roots
+            .iter()
+            .map(|r| r.start)
+            .filter(|s| fid.contains_key(s))
+            .collect();
         stats.roots_mapped = mapped.len();
 
         let text = pe
@@ -557,7 +587,9 @@ pub fn run(db: &aphrody_nie_index::Db, exe: &Path, opts: &Options) -> Result<Sta
             .context("section .text introuvable")?;
         let toff = text.pointer_to_raw_data as usize;
         let tlen = text.virtual_size.min(text.size_of_raw_data) as usize;
-        let tbytes = bytes.get(toff..toff + tlen).context(".text hors des limites du fichier")?;
+        let tbytes = bytes
+            .get(toff..toff + tlen)
+            .context(".text hors des limites du fichier")?;
         let tva = pe.image_base + u64::from(text.virtual_address);
 
         let index = StrIndex::new(&found);

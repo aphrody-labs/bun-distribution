@@ -82,7 +82,11 @@ impl super::nfp_interface::Interface {
                 Some(Self::initialize_handler),
                 "Initialize",
             ),
-            (interface_commands::FINALIZE, Some(Self::finalize_handler), "Finalize"),
+            (
+                interface_commands::FINALIZE,
+                Some(Self::finalize_handler),
+                "Finalize",
+            ),
             (
                 interface_commands::LIST_DEVICES,
                 Some(Self::list_devices_handler),
@@ -98,8 +102,16 @@ impl super::nfp_interface::Interface {
                 Some(Self::stop_detection_handler),
                 "StopDetection",
             ),
-            (interface_commands::MOUNT, Some(Self::mount_handler), "Mount"),
-            (interface_commands::UNMOUNT, Some(Self::unmount_handler), "Unmount"),
+            (
+                interface_commands::MOUNT,
+                Some(Self::mount_handler),
+                "Mount",
+            ),
+            (
+                interface_commands::UNMOUNT,
+                Some(Self::unmount_handler),
+                "Unmount",
+            ),
             (
                 interface_commands::OPEN_APPLICATION_AREA,
                 Some(Self::open_application_area_handler),
@@ -115,8 +127,16 @@ impl super::nfp_interface::Interface {
                 Some(Self::set_application_area_handler),
                 "SetApplicationArea",
             ),
-            (interface_commands::FLUSH, Some(Self::flush_handler), "Flush"),
-            (interface_commands::RESTORE, Some(Self::restore_handler), "Restore"),
+            (
+                interface_commands::FLUSH,
+                Some(Self::flush_handler),
+                "Flush",
+            ),
+            (
+                interface_commands::RESTORE,
+                Some(Self::restore_handler),
+                "Restore",
+            ),
             (
                 interface_commands::CREATE_APPLICATION_AREA,
                 Some(Self::create_application_area_handler),
@@ -182,7 +202,11 @@ impl super::nfp_interface::Interface {
                 Some(Self::recreate_application_area_handler),
                 "RecreateApplicationArea",
             ),
-            (interface_commands::START_DETECTION_WITH_FILTER, Some(Self::start_detection_handler), "StartDetectionWithFilter"),
+            (
+                interface_commands::START_DETECTION_WITH_FILTER,
+                Some(Self::start_detection_handler),
+                "StartDetectionWithFilter",
+            ),
         ])
     }
 }
@@ -558,7 +582,10 @@ mod tests {
             let original = interface.handlers()[&3].handler_callback.unwrap();
             let filtered = &interface.handlers()[&25];
             assert_eq!(filtered.name, "StartDetectionWithFilter");
-            assert!(std::ptr::fn_addr_eq(original, filtered.handler_callback.unwrap()));
+            assert!(std::ptr::fn_addr_eq(
+                original,
+                filtered.handler_callback.unwrap()
+            ));
         }
     }
 

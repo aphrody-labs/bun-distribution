@@ -1,9 +1,13 @@
 //! Formatting and parsing positions in the five timebases.
 
-use crate::{BarBeat, FrameRate, SampleRate, Samples, TempoMap, TimeError, Timecode, timecode::feet_frames};
+use crate::{
+    BarBeat, FrameRate, SampleRate, Samples, TempoMap, TimeError, Timecode, timecode::feet_frames,
+};
 
 /// The counters' and rulers' timebases.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, serde::Serialize, serde::Deserialize,
+)]
 pub enum TimeFormat {
     BarsBeats,
     #[default]
@@ -14,7 +18,13 @@ pub enum TimeFormat {
 }
 
 impl TimeFormat {
-    pub const ALL: [TimeFormat; 5] = [TimeFormat::BarsBeats, TimeFormat::MinSecs, TimeFormat::Timecode, TimeFormat::FeetFrames, TimeFormat::Samples];
+    pub const ALL: [TimeFormat; 5] = [
+        TimeFormat::BarsBeats,
+        TimeFormat::MinSecs,
+        TimeFormat::Timecode,
+        TimeFormat::FeetFrames,
+        TimeFormat::Samples,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -37,7 +47,9 @@ impl TimeFormat {
     }
 
     pub fn from_id(id: &str) -> Option<TimeFormat> {
-        TimeFormat::ALL.into_iter().find(|f| f.id() == id || f.label().eq_ignore_ascii_case(id))
+        TimeFormat::ALL
+            .into_iter()
+            .find(|f| f.id() == id || f.label().eq_ignore_ascii_case(id))
     }
 }
 
@@ -51,11 +63,20 @@ fn min_secs(s: Samples, sr: SampleRate) -> String {
 }
 
 /// Format an absolute position.
-pub fn format_position(s: Samples, fmt: TimeFormat, sr: SampleRate, map: &TempoMap, rate: FrameRate, tc_start: Samples) -> String {
+pub fn format_position(
+    s: Samples,
+    fmt: TimeFormat,
+    sr: SampleRate,
+    map: &TempoMap,
+    rate: FrameRate,
+    tc_start: Samples,
+) -> String {
     match fmt {
         TimeFormat::Samples => s.to_string(),
         TimeFormat::MinSecs => min_secs(s, sr),
-        TimeFormat::Timecode => Timecode::from_samples(s.saturating_add(tc_start), rate, sr).format(rate),
+        TimeFormat::Timecode => {
+            Timecode::from_samples(s.saturating_add(tc_start), rate, sr).format(rate)
+        }
         TimeFormat::FeetFrames => {
             let (ft, fr) = feet_frames(s, rate, sr);
             format!("{ft}+{fr:02}")
@@ -68,7 +89,14 @@ pub fn format_position(s: Samples, fmt: TimeFormat, sr: SampleRate, map: &TempoM
 }
 
 /// Format a length starting at `start` (Bars|Beats lengths count from 0|0|000).
-pub fn format_length(start: Samples, len: Samples, fmt: TimeFormat, sr: SampleRate, map: &TempoMap, rate: FrameRate) -> String {
+pub fn format_length(
+    start: Samples,
+    len: Samples,
+    fmt: TimeFormat,
+    sr: SampleRate,
+    map: &TempoMap,
+    rate: FrameRate,
+) -> String {
     match fmt {
         TimeFormat::BarsBeats => {
             let t0 = map.samples_to_ticks(start, sr);
@@ -77,7 +105,11 @@ pub fn format_length(start: Samples, len: Samples, fmt: TimeFormat, sr: SampleRa
             let d = (t1 - t0).max(0);
             let bars = d / m.ticks_per_bar().max(1);
             let rem = d % m.ticks_per_bar().max(1);
-            format!("{bars}| {}| {:03}", rem / m.ticks_per_beat().max(1), rem % m.ticks_per_beat().max(1))
+            format!(
+                "{bars}| {}| {:03}",
+                rem / m.ticks_per_beat().max(1),
+                rem % m.ticks_per_beat().max(1)
+            )
         }
         TimeFormat::Timecode => Timecode::from_samples(len, rate, sr).format(rate),
         other => format_position(len, other, sr, map, rate, 0),
@@ -85,7 +117,14 @@ pub fn format_length(start: Samples, len: Samples, fmt: TimeFormat, sr: SampleRa
 }
 
 /// Parse a position typed into a counter or dialog.
-pub fn parse_position(text: &str, fmt: TimeFormat, sr: SampleRate, map: &TempoMap, rate: FrameRate, tc_start: Samples) -> Result<Samples, TimeError> {
+pub fn parse_position(
+    text: &str,
+    fmt: TimeFormat,
+    sr: SampleRate,
+    map: &TempoMap,
+    rate: FrameRate,
+    tc_start: Samples,
+) -> Result<Samples, TimeError> {
     let t = text.trim();
     let err = || TimeError::Parse(t.to_string(), fmt.label());
     match fmt {
@@ -96,7 +135,10 @@ pub fn parse_position(text: &str, fmt: TimeFormat, sr: SampleRate, map: &TempoMa
                 None => (false, t),
             };
             let (m, s) = match body.split_once(':') {
-                Some((m, s)) => (m.trim().parse::<f64>().map_err(|_| err())?, s.trim().parse::<f64>().map_err(|_| err())?),
+                Some((m, s)) => (
+                    m.trim().parse::<f64>().map_err(|_| err())?,
+                    s.trim().parse::<f64>().map_err(|_| err())?,
+                ),
                 None => (0.0, body.parse::<f64>().map_err(|_| err())?),
             };
             if !m.is_finite() || !s.is_finite() || m < 0.0 || s < 0.0 {
@@ -105,7 +147,9 @@ pub fn parse_position(text: &str, fmt: TimeFormat, sr: SampleRate, map: &TempoMa
             let v = sr.samples(m * 60.0 + s);
             Ok(if neg { -v } else { v })
         }
-        TimeFormat::Timecode => Ok(Timecode::parse(t)?.to_samples(rate, sr).saturating_sub(tc_start)),
+        TimeFormat::Timecode => Ok(Timecode::parse(t)?
+            .to_samples(rate, sr)
+            .saturating_sub(tc_start)),
         TimeFormat::FeetFrames => {
             let (ft, fr) = t.split_once('+').ok_or_else(err)?;
             let ft: i64 = ft.trim().parse().map_err(|_| err())?;
@@ -113,8 +157,12 @@ pub fn parse_position(text: &str, fmt: TimeFormat, sr: SampleRate, map: &TempoMa
             Ok(rate.samples_at_frame(ft.saturating_mul(16).saturating_add(fr), sr))
         }
         TimeFormat::BarsBeats => {
-            let parts: Vec<i64> =
-                t.split(['|', '.', ' ']).filter(|p| !p.is_empty()).map(|p| p.parse::<i64>()).collect::<Result<_, _>>().map_err(|_| err())?;
+            let parts: Vec<i64> = t
+                .split(['|', '.', ' '])
+                .filter(|p| !p.is_empty())
+                .map(|p| p.parse::<i64>())
+                .collect::<Result<_, _>>()
+                .map_err(|_| err())?;
             let bb = BarBeat {
                 bar: *parts.first().ok_or_else(err)?,
                 beat: parts.get(1).copied().unwrap_or(1).max(1),
@@ -136,11 +184,26 @@ mod tests {
     #[test]
     fn formats_like_pro_tools_counters() {
         let (sr, map, rate) = ctx();
-        assert_eq!(format_position(0, TimeFormat::MinSecs, sr, &map, rate, 0), "0:00.000");
-        assert_eq!(format_position(48_000 * 75 + 24_000, TimeFormat::MinSecs, sr, &map, rate, 0), "1:15.500");
-        assert_eq!(format_position(0, TimeFormat::BarsBeats, sr, &map, rate, 0), "1| 1| 000");
-        assert_eq!(format_position(48_000, TimeFormat::Timecode, sr, &map, rate, 0), "00:00:01:00");
-        assert_eq!(format_position(12345, TimeFormat::Samples, sr, &map, rate, 0), "12345");
+        assert_eq!(
+            format_position(0, TimeFormat::MinSecs, sr, &map, rate, 0),
+            "0:00.000"
+        );
+        assert_eq!(
+            format_position(48_000 * 75 + 24_000, TimeFormat::MinSecs, sr, &map, rate, 0),
+            "1:15.500"
+        );
+        assert_eq!(
+            format_position(0, TimeFormat::BarsBeats, sr, &map, rate, 0),
+            "1| 1| 000"
+        );
+        assert_eq!(
+            format_position(48_000, TimeFormat::Timecode, sr, &map, rate, 0),
+            "00:00:01:00"
+        );
+        assert_eq!(
+            format_position(12345, TimeFormat::Samples, sr, &map, rate, 0),
+            "12345"
+        );
     }
 
     #[test]
@@ -166,6 +229,9 @@ mod tests {
     #[test]
     fn bar_lengths() {
         let (sr, map, rate) = ctx();
-        assert_eq!(format_length(0, 96_000 + 24_000, TimeFormat::BarsBeats, sr, &map, rate), "1| 1| 000");
+        assert_eq!(
+            format_length(0, 96_000 + 24_000, TimeFormat::BarsBeats, sr, &map, rate),
+            "1| 1| 000"
+        );
     }
 }

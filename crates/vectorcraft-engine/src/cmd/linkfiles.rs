@@ -75,7 +75,11 @@ impl LinkFiles {
         for (i, l) in links.iter().enumerate() {
             names.entry(l.name.to_lowercase()).or_default().push(i);
         }
-        Self { names, saved: links.iter().map(|l| (l.size, l.hash.clone())).collect(), sizes }
+        Self {
+            names,
+            saved: links.iter().map(|l| (l.size, l.hash.clone())).collect(),
+            sizes,
+        }
     }
 }
 
@@ -84,8 +88,16 @@ impl Visitor for LinkFiles {
         self.names.contains_key(&name.to_lowercase())
     }
     fn items(&self, path: &Path) -> Vec<usize> {
-        let Some(of_name) = path.file_name().and_then(|n| n.to_str()).and_then(|n| self.names.get(&n.to_lowercase())) else { return vec![] };
-        let Ok(meta) = std::fs::symlink_metadata(path) else { return vec![] };
+        let Some(of_name) = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .and_then(|n| self.names.get(&n.to_lowercase()))
+        else {
+            return vec![];
+        };
+        let Ok(meta) = std::fs::symlink_metadata(path) else {
+            return vec![];
+        };
         let size = meta.len();
         let n = self.saved.len();
         // Read once, for the first linked file of its name saved with this size and a hash.
@@ -96,7 +108,13 @@ impl Visitor for LinkFiles {
             if let Some((Some(saved_size), Some(saved_hash))) = self.saved.get(i)
                 && *saved_size == size
                 && size <= MAX_HASHED
-                && hash.get_or_insert_with(|| std::fs::File::open(path).and_then(vectorcraft_doc::links::hash_reader).ok()).as_ref()
+                && hash
+                    .get_or_insert_with(|| {
+                        std::fs::File::open(path)
+                            .and_then(vectorcraft_doc::links::hash_reader)
+                            .ok()
+                    })
+                    .as_ref()
                     == Some(saved_hash)
             {
                 items.push(n + i);
@@ -109,7 +127,9 @@ impl Visitor for LinkFiles {
 
 /// The sizes map, also when a thread that held it panicked (entries are only inserted).
 fn lock(sizes: &Mutex<HashMap<PathBuf, u64>>) -> MutexGuard<'_, HashMap<PathBuf, u64>> {
-    sizes.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    sizes
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
 }
 
 fn find(s: &mut Session, p: &Value) -> Result<Value> {
@@ -121,22 +141,44 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
         }
         return Ok(state(s));
     }
-    let Some(folder) = p.get("folder").filter(|f| !f.is_null()) else { return Ok(state(s)) };
-    let seconds = p.get("maxSeconds").and_then(Value::as_f64).filter(|x| x.is_finite()).unwrap_or(60.0).clamp(1.0, 600.0);
+    let Some(folder) = p.get("folder").filter(|f| !f.is_null()) else {
+        return Ok(state(s));
+    };
+    let seconds = p
+        .get("maxSeconds")
+        .and_then(Value::as_f64)
+        .filter(|x| x.is_finite())
+        .unwrap_or(60.0)
+        .clamp(1.0, 600.0);
     // Only checked here: the folder is read on a walker thread.
     let folder = folder
         .as_str()
-        .filter(|f| !f.is_empty() && f.len() <= MAX_PATH && !f.contains(['\0', '\u{FFFD}']) && Path::new(f).is_absolute())
+        .filter(|f| {
+            !f.is_empty()
+                && f.len() <= MAX_PATH
+                && !f.contains(['\0', '\u{FFFD}'])
+                && Path::new(f).is_absolute()
+        })
         .ok_or_else(|| bad(C, "`folder` must be an absolute folder path"))?
         .to_string();
-    let st = s.active().ok_or_else(|| bad(C, "open a document to look for its linked files"))?;
+    let st = s
+        .active()
+        .ok_or_else(|| bad(C, "open a document to look for its linked files"))?;
     let ids = match p.get("ids") {
         None | Some(Value::Null) => None,
         Some(_) => {
             let ids = checked_ids_param(s, p, "ids", C)?;
-            let linkable = |id: &NodeId| matches!(st.doc.node(*id).map(|n| &n.kind), Some(NodeKind::Image(_) | NodeKind::PlacedDocument(_)));
+            let linkable = |id: &NodeId| {
+                matches!(
+                    st.doc.node(*id).map(|n| &n.kind),
+                    Some(NodeKind::Image(_) | NodeKind::PlacedDocument(_))
+                )
+            };
             if let Some(id) = ids.iter().find(|id| !linkable(id)) {
-                return Err(bad(C, format!("object {} is not an image or a linked file", id.0)));
+                return Err(bad(
+                    C,
+                    format!("object {} is not an image or a linked file", id.0),
+                ));
             }
             Some(ids)
         }
@@ -153,17 +195,40 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
         })
         .collect();
     if links.is_empty() {
-        return Err(bad(C, if ids.is_some() { "these objects show no linked files" } else { "no linked files are missing" }));
+        return Err(bad(
+            C,
+            if ids.is_some() {
+                "these objects show no linked files"
+            } else {
+                "no linked files are missing"
+            },
+        ));
     }
     // A new search stops the last one.
     s.link_search = None;
     let threads = s.search_threads.unwrap_or_else(findfiles::threads);
-    let limits = Limits { seconds, ..Limits::default() };
+    let limits = Limits {
+        seconds,
+        ..Limits::default()
+    };
     let sizes = Arc::new(Mutex::new(HashMap::new()));
     let visitor = Arc::new(LinkFiles::new(&links, sizes.clone()));
-    let search =
-        findfiles::start(PathBuf::from(&folder), s.search_rules.clone(), limits, threads, 2 * links.len(), visitor).map_err(EngineError::Other)?;
-    s.link_search = Some(LinkSearch { id: NEXT.fetch_add(1, Ordering::Relaxed), folder, links, sizes, search });
+    let search = findfiles::start(
+        PathBuf::from(&folder),
+        s.search_rules.clone(),
+        limits,
+        threads,
+        2 * links.len(),
+        visitor,
+    )
+    .map_err(EngineError::Other)?;
+    s.link_search = Some(LinkSearch {
+        id: NEXT.fetch_add(1, Ordering::Relaxed),
+        folder,
+        links,
+        sizes,
+        search,
+    });
     Ok(state(s))
 }
 
@@ -172,16 +237,25 @@ fn find(s: &mut Session, p: &Value) -> Result<Value> {
 /// compared in lowercase.
 fn shared_folders(saved: &str, found: &Path) -> usize {
     let saved = saved.rsplit(['/', '\\']).skip(1).filter(|c| !c.is_empty());
-    let found = found.parent().into_iter().flat_map(|p| p.components().rev()).map_while(|c| match c {
-        Component::Normal(n) => n.to_str(),
-        _ => None,
-    });
-    saved.zip(found).take_while(|(a, b)| a.to_lowercase() == b.to_lowercase()).count()
+    let found = found
+        .parent()
+        .into_iter()
+        .flat_map(|p| p.components().rev())
+        .map_while(|c| match c {
+            Component::Normal(n) => n.to_str(),
+            _ => None,
+        });
+    saved
+        .zip(found)
+        .take_while(|(a, b)| a.to_lowercase() == b.to_lowercase())
+        .count()
 }
 
 /// Where the session's last search stands (`links.findFiles` without `folder`).
 fn state(s: &Session) -> Value {
-    let Some(l) = &s.link_search else { return json!({ "state": "idle", "links": [] }) };
+    let Some(l) = &s.link_search else {
+        return json!({ "state": "idle", "links": [] });
+    };
     let p = l.search.progress();
     let n = l.links.len();
     let sizes = lock(&l.sizes).clone();
@@ -220,11 +294,23 @@ fn state(s: &Session) -> Value {
                     } else {
                         2
                     };
-                    let case_differs = path.file_name().and_then(|f| f.to_str()) != Some(link.name.as_str());
-                    (rank, case_differs, shared_folders(&link.path, path), path, size)
+                    let case_differs =
+                        path.file_name().and_then(|f| f.to_str()) != Some(link.name.as_str());
+                    (
+                        rank,
+                        case_differs,
+                        shared_folders(&link.path, path),
+                        path,
+                        size,
+                    )
                 })
                 .collect();
-            files.sort_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)).then(b.2.cmp(&a.2)).then(a.3.cmp(b.3)));
+            files.sort_by(|a, b| {
+                a.0.cmp(&b.0)
+                    .then(a.1.cmp(&b.1))
+                    .then(b.2.cmp(&a.2))
+                    .then(a.3.cmp(b.3))
+            });
             let files: Vec<Value> = files
                 .into_iter()
                 .map(|(rank, case_differs, _, path, size)| {
@@ -233,7 +319,8 @@ fn state(s: &Session) -> Value {
                         1 => "size",
                         _ => "name",
                     };
-                    let mut f = json!({ "path": path.to_string_lossy(), "size": size, "match": kind });
+                    let mut f =
+                        json!({ "path": path.to_string_lossy(), "size": size, "match": kind });
                     if case_differs {
                         f["caseDiffers"] = json!(true);
                     }
@@ -243,7 +330,11 @@ fn state(s: &Session) -> Value {
             json!({ "name": link.name, "path": link.path, "ids": link.ids, "files": files })
         })
         .collect();
-    let folder = if p.folder.as_os_str().is_empty() { l.folder.clone() } else { p.folder.to_string_lossy().into_owned() };
+    let folder = if p.folder.as_os_str().is_empty() {
+        l.folder.clone()
+    } else {
+        p.folder.to_string_lossy().into_owned()
+    };
     let mut out = json!({
         "id": l.id, "state": p.state(), "folder": folder, "links": links,
         "searched": { "folders": p.folders, "files": p.files, "read": p.read },

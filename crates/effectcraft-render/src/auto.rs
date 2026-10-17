@@ -28,7 +28,11 @@ pub struct AutoKey {
 
 impl AutoKey {
     pub fn new(comp: ItemId, scale: f64, display: bool) -> AutoKey {
-        AutoKey { comp, scale: scale.to_bits(), display }
+        AutoKey {
+            comp,
+            scale: scale.to_bits(),
+            display,
+        }
     }
 }
 
@@ -69,7 +73,9 @@ impl AutoPick {
 
     /// Render the frame for `key` on the GPU?
     pub fn choose(&self, key: AutoKey) -> bool {
-        let Ok(mut m) = self.stats.lock() else { return true };
+        let Ok(mut m) = self.stats.lock() else {
+            return true;
+        };
         if m.len() > Self::MAX_KEYS && !m.contains_key(&key) {
             m.clear();
         }
@@ -104,7 +110,11 @@ impl AutoPick {
     pub fn record(&self, key: AutoKey, gpu: bool, ms: f64) {
         let Ok(mut m) = self.stats.lock() else { return };
         let s = m.entry(key).or_default();
-        let (avg, frames) = if gpu { (&mut s.gpu_ms, &mut s.gpu_frames) } else { (&mut s.cpu_ms, &mut s.cpu_frames) };
+        let (avg, frames) = if gpu {
+            (&mut s.gpu_ms, &mut s.gpu_frames)
+        } else {
+            (&mut s.cpu_ms, &mut s.cpu_frames)
+        };
         *frames = frames.saturating_add(1);
         if gpu {
             s.declined = false;

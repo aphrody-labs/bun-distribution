@@ -133,7 +133,9 @@ impl UpdateTimingInfo {
     /// Parse une entrée de `m_updateTimingInfoList`. `None` si `updateTimingId` absent.
     #[must_use]
     pub fn from_value(v: &Value) -> Option<Self> {
-        Some(Self { update_timing_id: field_i64(v, "updateTimingId")? })
+        Some(Self {
+            update_timing_id: field_i64(v, "updateTimingId")?,
+        })
     }
 }
 
@@ -164,7 +166,11 @@ impl AiCmdInfo {
     pub fn from_value(v: &Value) -> Option<Self> {
         let condition_id = field_i64(v, "conditionId")?;
         let (timing_offset, timing_count) = array2_i64(v, "updateTimingInfo");
-        Some(Self { condition_id, timing_offset, timing_count })
+        Some(Self {
+            condition_id,
+            timing_offset,
+            timing_count,
+        })
     }
 }
 
@@ -201,7 +207,9 @@ impl SoccerAiCmdConfig {
     /// Recherche une condition par son `condition_id`. `None` si absente.
     #[must_use]
     pub fn find_condition(&self, condition_id: i64) -> Option<&AiCmdInfo> {
-        self.conditions.iter().find(|c| c.condition_id == condition_id)
+        self.conditions
+            .iter()
+            .find(|c| c.condition_id == condition_id)
     }
 }
 
@@ -240,7 +248,10 @@ impl SoccerUserAiParam {
     /// Parse une entrée de `m_userParam`. `None` si `id` absent.
     #[must_use]
     pub fn from_value(v: &Value) -> Option<Self> {
-        Some(Self { id: field_i64(v, "id")?, param: field_f32(v, "param") })
+        Some(Self {
+            id: field_i64(v, "id")?,
+            param: field_f32(v, "param"),
+        })
     }
 }
 
@@ -365,7 +376,12 @@ impl SoccerCoachAiInfo {
             return None;
         }
         let (choise_offset, choise_count) = array2_i64(v, "choise");
-        Some(Self { id, text_id: field_hash(v, "textId"), choise_offset, choise_count })
+        Some(Self {
+            id,
+            text_id: field_hash(v, "textId"),
+            choise_offset,
+            choise_count,
+        })
     }
 }
 
@@ -581,7 +597,10 @@ impl StrategyAiTacticsInfo {
         if tactics_id.is_zero() {
             return None;
         }
-        Some(Self { tactics_id, tactics_param: field_i64(v, "tacticsParam").unwrap_or(0) })
+        Some(Self {
+            tactics_id,
+            tactics_param: field_i64(v, "tacticsParam").unwrap_or(0),
+        })
     }
 }
 
@@ -717,8 +736,16 @@ impl PhaseCheckInfo {
         Some(Self {
             phase_id,
             phase_state_id: field_i64(v, "phaseStateId").unwrap_or(0),
-            condition: owned(if condition != "0xFFFFFFFF" { condition } else { "" }),
-            condition2: owned(if condition2 != "0xFFFFFFFF" { condition2 } else { "" }),
+            condition: owned(if condition != "0xFFFFFFFF" {
+                condition
+            } else {
+                ""
+            }),
+            condition2: owned(if condition2 != "0xFFFFFFFF" {
+                condition2
+            } else {
+                ""
+            }),
             cond_id_list_offset,
             cond_id_list_count,
             cond_id_list2_offset,
@@ -786,7 +813,11 @@ impl EvaluationAdjustInfo {
             return None;
         }
         let (adjust_offset, adjust_count) = array2_i64(v, "adjustInfo");
-        Some(Self { evaluation_adjust_id, adjust_offset, adjust_count })
+        Some(Self {
+            evaluation_adjust_id,
+            adjust_offset,
+            adjust_count,
+        })
     }
 }
 
@@ -814,7 +845,10 @@ impl TeamStrategyAiDataInfo {
         if strategy_id.is_zero() {
             return None;
         }
-        Some(Self { strategy_id, enable_lv: field_i64(v, "enableLv").unwrap_or(0) })
+        Some(Self {
+            strategy_id,
+            enable_lv: field_i64(v, "enableLv").unwrap_or(0),
+        })
     }
 }
 
@@ -847,7 +881,11 @@ impl TeamStrategyAiInfo {
             return None;
         }
         let (strategy_offset, strategy_count) = array2_i64(v, "strategyInfo");
-        Some(Self { group_id, strategy_offset, strategy_count })
+        Some(Self {
+            group_id,
+            strategy_offset,
+            strategy_count,
+        })
     }
 }
 
@@ -894,7 +932,9 @@ impl StrategyAiConfig {
     /// Recherche une stratégie par son `strategy_id`. `None` si absente.
     #[must_use]
     pub fn find_strategy(&self, strategy_id: HashId) -> Option<&StrategyAiInfo> {
-        self.strategy_infos.iter().find(|s| s.strategy_id == strategy_id)
+        self.strategy_infos
+            .iter()
+            .find(|s| s.strategy_id == strategy_id)
     }
 
     /// Renvoie les paramètres d'un groupe d'ajustements (tranche dans `eval_adjust_params`).
@@ -1005,7 +1045,10 @@ impl TacticsAiTargetInfo {
         if target_id.is_zero() {
             return None;
         }
-        Some(Self { target_id, func_name: owned(field_str(v, "funcName").unwrap_or("")) })
+        Some(Self {
+            target_id,
+            func_name: owned(field_str(v, "funcName").unwrap_or("")),
+        })
     }
 }
 
@@ -1112,7 +1155,10 @@ impl CharaTacticsAiDataInfo {
         if tactics_id.is_zero() {
             return None;
         }
-        Some(Self { tactics_id, enable_lv: field_i64(v, "enableLv").unwrap_or(0) })
+        Some(Self {
+            tactics_id,
+            enable_lv: field_i64(v, "enableLv").unwrap_or(0),
+        })
     }
 }
 
@@ -1145,7 +1191,11 @@ impl CharaTacticsAiInfo {
             return None;
         }
         let (tactics_offset, tactics_count) = array2_i64(v, "tacticsInfo");
-        Some(Self { group_id, tactics_offset, tactics_count })
+        Some(Self {
+            group_id,
+            tactics_offset,
+            tactics_count,
+        })
     }
 }
 
@@ -1190,7 +1240,9 @@ impl TacticsAiConfig {
     /// Recherche une tactique par son `tactics_id`. `None` si absente.
     #[must_use]
     pub fn find_tactics(&self, tactics_id: HashId) -> Option<&TacticsAiInfo> {
-        self.tactics_infos.iter().find(|t| t.tactics_id == tactics_id)
+        self.tactics_infos
+            .iter()
+            .find(|t| t.tactics_id == tactics_id)
     }
 
     /// Renvoie les tactiques d'un groupe personnage (tranche dans `chara_tactics_data`).

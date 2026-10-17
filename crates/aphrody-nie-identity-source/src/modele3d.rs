@@ -158,7 +158,10 @@ mod tests {
         assert_eq!(a.role, Role3d::Ailes);
         assert_eq!(a.code, AILES_EVENT);
         assert_eq!(a.g4mg, "data/common/chr/_waza/ev60_00340/ev60_00340.g4mg");
-        assert_eq!(a.g4pkm.as_deref(), Some("data/common/chr/_waza/ev60_00340/ev60_00340.g4pkm"));
+        assert_eq!(
+            a.g4pkm.as_deref(),
+            Some("data/common/chr/_waza/ev60_00340/ev60_00340.g4pkm")
+        );
         assert_eq!(a.g4tx, "data/dx11/chr/_waza/ev60_00340/ev60_00340.g4tx");
         assert!(
             a.g4md.is_none(),
@@ -172,8 +175,14 @@ mod tests {
         // passthrough CPK est sensible à la casse là où le proxy de redimensionnement ne l'est pas.
         let p = pieces_primaires();
         let visage = p.iter().find(|x| x.role == Role3d::Visage).expect("visage");
-        assert_eq!(visage.g4mg, "data/common/chr/_face/01_IE1/c01001900/c01001900.g4mg");
-        assert_eq!(visage.g4tx, "data/dx11/chr/_face/01_IE1/c01001900/c01001900.g4tx");
+        assert_eq!(
+            visage.g4mg,
+            "data/common/chr/_face/01_IE1/c01001900/c01001900.g4mg"
+        );
+        assert_eq!(
+            visage.g4tx,
+            "data/dx11/chr/_face/01_IE1/c01001900/c01001900.g4tx"
+        );
         assert!(visage.g4md.is_some(), "le visage, lui, a un .g4md libre");
     }
 

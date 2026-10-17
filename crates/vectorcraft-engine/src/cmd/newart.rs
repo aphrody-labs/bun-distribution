@@ -12,7 +12,9 @@ use std::borrow::Cow;
 
 use serde_json::{Value, json};
 use vectorcraft_color::{BlendMode, Paint};
-use vectorcraft_doc::{Appearance, AppearanceItem, FillLayer, GraphicStyle, Node, NodeKind, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, FillLayer, GraphicStyle, Node, NodeKind, StrokeLayer,
+};
 use vectorcraft_tools::PaintDefaults;
 
 use super::gradient::unplaced;
@@ -46,9 +48,18 @@ pub fn specs() -> Vec<CommandSpec> {
 fn basic_of(t: &Appearance) -> Appearance {
     let mut items = vec![AppearanceItem::Fill(FillLayer::new(Paint::None))];
     if let Some(st) = t.stroke() {
-        items.push(AppearanceItem::Stroke(StrokeLayer { opacity: 1.0, blend: BlendMode::Normal, visible: true, effects: vec![], ..st.clone() }));
+        items.push(AppearanceItem::Stroke(StrokeLayer {
+            opacity: 1.0,
+            blend: BlendMode::Normal,
+            visible: true,
+            effects: vec![],
+            ..st.clone()
+        }));
     }
-    Appearance { items, ..Default::default() }
+    Appearance {
+        items,
+        ..Default::default()
+    }
 }
 
 /// Paint `p` on the top fill (`fill`) or stroke of `ap`, creating it unless `p` is None. A paint
@@ -88,7 +99,13 @@ pub(crate) struct NewArt {
 impl NewArt {
     /// A plain look: `appearance`, full opacity, no link.
     pub(crate) fn plain(appearance: Appearance) -> Self {
-        Self { appearance, opacity: 1.0, blend: BlendMode::Normal, style: None, unit_box: false }
+        Self {
+            appearance,
+            opacity: 1.0,
+            blend: BlendMode::Normal,
+            style: None,
+            unit_box: false,
+        }
     }
 
     /// Give new object `n` (in `d`) this look: its placed gradients land relative to its bounds, and
@@ -105,7 +122,11 @@ impl NewArt {
             return;
         }
         (n.opacity, n.blend) = (self.opacity, self.blend);
-        n.extras_mut().graphic_style = self.style.as_deref().and_then(|name| d.graphic_style_index(name)).map(|i| d.graphic_style_id(i));
+        n.extras_mut().graphic_style = self
+            .style
+            .as_deref()
+            .and_then(|name| d.graphic_style_index(name))
+            .map(|i| d.graphic_style_id(i));
     }
 }
 
@@ -114,7 +135,11 @@ impl Session {
     /// Basic Appearance is on).
     fn template(&self) -> Option<Cow<'_, Appearance>> {
         let t = self.paint.appearance.as_ref()?;
-        Some(if self.basic_only() { Cow::Owned(basic_of(t)) } else { Cow::Borrowed(t) })
+        Some(if self.basic_only() {
+            Cow::Owned(basic_of(t))
+        } else {
+            Cow::Borrowed(t)
+        })
     }
 
     /// Does an inherited template give new art only its basic fill and stroke?
@@ -125,7 +150,9 @@ impl Session {
     /// The look of new art painted with `fill` and `stroke` (weight `width`) on its top fill and
     /// stroke: the template's, else one plain fill and stroke.
     pub(crate) fn new_art_look(&self, fill: Paint, stroke: Paint, width: f64) -> NewArt {
-        let Some(t) = self.template() else { return NewArt::plain(Appearance::basic(fill, stroke, width)) };
+        let Some(t) = self.template() else {
+            return NewArt::plain(Appearance::basic(fill, stroke, width));
+        };
         let mut appearance = t.into_owned();
         repaint(&mut appearance, true, fill);
         repaint(&mut appearance, false, stroke);
@@ -133,24 +160,45 @@ impl Session {
             st.width = width;
         }
         let (opacity, blend, style) = self.new_art_transparency();
-        NewArt { appearance, opacity, blend, style: style.map(str::to_string), unit_box: true }
+        NewArt {
+            appearance,
+            opacity,
+            blend,
+            style: style.map(str::to_string),
+            unit_box: true,
+        }
     }
 
     /// The appearance of the next object drawn (the Appearance panel shows it with nothing
     /// selected). Placed gradients are relative to the unit box.
     pub fn new_art(&self) -> Appearance {
-        self.new_art_look(self.paint.fill.clone(), self.paint.stroke.clone(), self.paint.stroke_width).appearance
+        self.new_art_look(
+            self.paint.fill.clone(),
+            self.paint.stroke.clone(),
+            self.paint.stroke_width,
+        )
+        .appearance
     }
 
     /// The opacity, blend mode and graphic style (name) of the next object drawn.
     pub fn new_art_transparency(&self) -> (f32, BlendMode, Option<&str>) {
-        if self.basic_only() { (1.0, BlendMode::Normal, None) } else { (self.paint.opacity, self.paint.blend, self.paint.style.as_deref()) }
+        if self.basic_only() {
+            (1.0, BlendMode::Normal, None)
+        } else {
+            (
+                self.paint.opacity,
+                self.paint.blend,
+                self.paint.style.as_deref(),
+            )
+        }
     }
 
     /// The stroke of the next object drawn (the Stroke panel shows it with nothing selected).
     pub fn new_art_stroke(&self) -> StrokeLayer {
         let template = self.paint.appearance.as_ref().and_then(Appearance::stroke);
-        let mut st = template.cloned().unwrap_or_else(|| StrokeLayer::new(Paint::None, 0.0));
+        let mut st = template
+            .cloned()
+            .unwrap_or_else(|| StrokeLayer::new(Paint::None, 0.0));
         (st.paint, st.width) = (self.paint.stroke.clone(), self.paint.stroke_width);
         st
     }
@@ -160,10 +208,14 @@ impl Session {
     fn new_art_template_mut(&mut self) -> &mut Appearance {
         let own = self.template().map(Cow::into_owned);
         if self.basic_only() {
-            (self.paint.opacity, self.paint.blend, self.paint.style) = (1.0, BlendMode::Normal, None);
+            (self.paint.opacity, self.paint.blend, self.paint.style) =
+                (1.0, BlendMode::Normal, None);
         }
         self.paint.inherited = false;
-        let t = self.paint.appearance.insert(own.unwrap_or_else(|| Appearance::basic(Paint::None, Paint::None, 0.0)));
+        let t = self
+            .paint
+            .appearance
+            .insert(own.unwrap_or_else(|| Appearance::basic(Paint::None, Paint::None, 0.0)));
         if t.stroke().is_none() {
             t.set_stroke(Paint::None);
         }
@@ -179,7 +231,11 @@ impl Session {
     /// A graphic style clicked with nothing selected: new art takes it (`add`: its fills, strokes
     /// and effects on top of the template's, unlinked).
     pub(crate) fn new_art_style(&mut self, g: &GraphicStyle, add: bool) {
-        let ap = if g.unit_box { g.appearance.clone() } else { unplace_all(g.appearance.clone()) };
+        let ap = if g.unit_box {
+            g.appearance.clone()
+        } else {
+            unplace_all(g.appearance.clone())
+        };
         if add {
             let t = self.new_art_template_mut();
             t.items.extend(ap.items);
@@ -192,13 +248,21 @@ impl Session {
 
     /// Make `ap` (placed gradients relative to the unit box) and this transparency the template,
     /// and its top fill, stroke and weight the proxies.
-    fn take_new_art(&mut self, ap: Appearance, opacity: f32, blend: BlendMode, style: Option<String>, inherited: bool) {
+    fn take_new_art(
+        &mut self,
+        ap: Appearance,
+        opacity: f32,
+        blend: BlendMode,
+        style: Option<String>,
+        inherited: bool,
+    ) {
         let p = &mut self.paint;
         (p.fill, p.stroke) = (unplaced(&ap.fill_paint()), unplaced(&ap.stroke_paint()));
         if let Some(st) = ap.stroke() {
             p.stroke_width = st.width;
         }
-        (p.appearance, p.opacity, p.blend, p.style, p.inherited) = (Some(ap), opacity, blend, style, inherited);
+        (p.appearance, p.opacity, p.blend, p.style, p.inherited) =
+            (Some(ap), opacity, blend, style, inherited);
     }
 
     /// After each command: with New Art Has Basic Appearance off, new art takes the appearance of
@@ -208,7 +272,14 @@ impl Session {
             return;
         }
         let Some(st) = self.active() else { return };
-        let Some(n) = st.selection.subjects().first().and_then(|id| st.doc.node(*id)) else { return };
+        let Some(n) = st
+            .selection
+            .subjects()
+            .first()
+            .and_then(|id| st.doc.node(*id))
+        else {
+            return;
+        };
         let style = super::style::linked_style(&st.doc, n).map(|g| g.name.clone());
         let (ap, opacity, blend) = (super::style::captured(n), n.opacity, n.blend);
         self.take_new_art(ap, opacity, blend, style, true);
@@ -216,7 +287,10 @@ impl Session {
 }
 
 fn set_basic(s: &mut Session, p: &Value) -> Result<Value> {
-    let on = p.get("on").and_then(Value::as_bool).unwrap_or(!s.prefs.new_art_basic);
+    let on = p
+        .get("on")
+        .and_then(Value::as_bool)
+        .unwrap_or(!s.prefs.new_art_basic);
     s.prefs.new_art_basic = on;
     Ok(json!({ "on": on }))
 }

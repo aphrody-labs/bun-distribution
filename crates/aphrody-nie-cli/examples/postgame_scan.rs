@@ -102,7 +102,12 @@ fn lire_registre(entries: &[CfgEntry], registre: &'static str) -> Vec<(Emplaceme
                         continue;
                     }
                     out.push((
-                        Emplacement { registre, categorie: categorie.clone(), groupe, index },
+                        Emplacement {
+                            registre,
+                            categorie: categorie.clone(),
+                            groupe,
+                            index,
+                        },
                         hash as u32,
                     ));
                 }
@@ -149,7 +154,7 @@ fn main() {
         Err(e) => {
             eprintln!("VFS indisponible : {e}");
             std::process::exit(1);
-        },
+        }
     };
     println!(
         "VFS      {} — {} entrées",
@@ -178,7 +183,10 @@ fn main() {
         }
     }
     for (c, n) in &sources {
-        println!("registre {}  {n} entrée(s)", c.trim_start_matches("data/common/gamedata/"));
+        println!(
+            "registre {}  {n} entrée(s)",
+            c.trim_start_matches("data/common/gamedata/")
+        );
     }
     println!("flags    {} hash distincts au registre", registre.len());
 
@@ -280,8 +288,10 @@ fn main() {
             .filter(|s| chapitre_etape(**s).0 == *ch)
             .map(|s| chapitre_etape(*s).1)
             .collect();
-        let (mini, maxi) =
-            (etapes.iter().min().copied().unwrap_or(0), etapes.iter().max().copied().unwrap_or(0));
+        let (mini, maxi) = (
+            etapes.iter().min().copied().unwrap_or(0),
+            etapes.iter().max().copied().unwrap_or(0),
+        );
         println!(
             "  chapitre {ch:>2}  {n:>5} condition(s)  {:>2} seuil(s) distinct(s), étapes {mini}→{maxi}",
             etapes.len()
@@ -307,7 +317,10 @@ fn main() {
     println!("  usages    {occ} conditions dans tout le corpus");
     println!(
         "  namespace {}",
-        ns.keys().map(|n| format!("0x{n:08X}")).collect::<Vec<_>>().join(", ")
+        ns.keys()
+            .map(|n| format!("0x{n:08X}"))
+            .collect::<Vec<_>>()
+            .join(", ")
     );
     match registre.get(&pivot) {
         Some(v) => {
@@ -317,12 +330,14 @@ fn main() {
                     e.registre, e.categorie, e.groupe, e.index
                 );
             }
-        },
+        }
         None => println!("  registre  non trouvé (flag hors des registres chargés)"),
     }
 
-    let post: Vec<&Trouvee> =
-        trouvees.iter().filter(|t| t.cond.required_events.iter().any(|e| e.crc == pivot)).collect();
+    let post: Vec<&Trouvee> = trouvees
+        .iter()
+        .filter(|t| t.cond.required_events.iter().any(|e| e.crc == pivot))
+        .collect();
 
     let mut par_fichier: BTreeMap<&str, usize> = BTreeMap::new();
     for t in &post {
@@ -336,7 +351,10 @@ fn main() {
     let mut classe: Vec<(&&str, &usize)> = par_fichier.iter().collect();
     classe.sort_by(|a, b| b.1.cmp(a.1).then(a.0.cmp(b.0)));
     for (f, n) in classe.iter().take(top) {
-        println!("  {n:>4}×  {}", f.trim_start_matches("data/common/gamedata/"));
+        println!(
+            "  {n:>4}×  {}",
+            f.trim_start_matches("data/common/gamedata/")
+        );
     }
     if classe.len() > top {
         println!("  … {} fichier(s) de plus", classe.len() - top);
@@ -346,7 +364,10 @@ fn main() {
     let mut top_flags: Vec<(&u32, &Usage)> = flags.iter().filter(|(h, _)| **h != 0).collect();
     top_flags.sort_by_key(|e| std::cmp::Reverse(e.1.0));
     let situes = flags.keys().filter(|h| registre.contains_key(h)).count();
-    println!("\n── Flags référencés : {} distincts, {situes} situés au registre ──", flags.len());
+    println!(
+        "\n── Flags référencés : {} distincts, {situes} situés au registre ──",
+        flags.len()
+    );
     for (h, (n, _)) in top_flags.iter().take(top) {
         let ou = registre
             .get(h)
@@ -420,7 +441,10 @@ fn main() {
     if let Some(parent) = std::path::Path::new(&sortie_json).parent() {
         let _ = std::fs::create_dir_all(parent);
     }
-    match std::fs::write(&sortie_json, serde_json::to_vec_pretty(&doc).expect("sérialisation")) {
+    match std::fs::write(
+        &sortie_json,
+        serde_json::to_vec_pretty(&doc).expect("sérialisation"),
+    ) {
         Ok(()) => println!("\nJSON     {sortie_json}"),
         Err(e) => eprintln!("\nécriture JSON impossible ({sortie_json}) : {e}"),
     }

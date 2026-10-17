@@ -272,7 +272,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "편집",
         "Point" => "가리키기",
         "Calculate" => "계산",
-        "Select destination and press Enter or choose Paste" => "대상을 선택하고 Enter 키를 누르거나 [붙여넣기]를 선택하세요",
+        "Select destination and press Enter or choose Paste" => {
+            "대상을 선택하고 Enter 키를 누르거나 [붙여넣기]를 선택하세요"
+        }
         "General" => "일반",
         "Number" => "숫자",
         "Currency" => "통화",
@@ -386,7 +388,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "CSV 파일, 웹 페이지 또는 PDF는 사본이며 통합 문서는 원래 파일을 유지합니다."
         }
-        "Save the workbook under another name or in another folder." => "통합 문서를 다른 이름 또는 다른 폴더에 저장합니다.",
+        "Save the workbook under another name or in another folder." => {
+            "통합 문서를 다른 이름 또는 다른 폴더에 저장합니다."
+        }
         "Print Active Sheets" => "활성 시트 인쇄",
         "Print Entire Workbook" => "전체 통합 문서 인쇄",
         "Fit Sheet on One Page" => "한 페이지에 시트 맞추기",
@@ -396,20 +400,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "이전 페이지",
         "Next page" => "다음 페이지",
         "Create PDF" => "PDF 만들기",
-        "Save the sheet as a PDF document that keeps its page layout." => "페이지 레이아웃을 유지한 채 시트를 PDF 문서로 저장합니다.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "페이지 레이아웃을 유지한 채 시트를 PDF 문서로 저장합니다."
+        }
         "Change File Type" => "파일 형식 변경",
         "CSV (Comma delimited)" => "CSV(쉼표로 분리)",
-        "Save the active sheet as comma-separated text." => "활성 시트를 쉼표로 구분된 텍스트로 저장합니다.",
+        "Save the active sheet as comma-separated text." => {
+            "활성 시트를 쉼표로 구분된 텍스트로 저장합니다."
+        }
         "Web Page (.html)" => "웹 페이지(.html)",
         "Save the workbook as a web page." => "통합 문서를 웹 페이지로 저장합니다.",
         "Options|General" => "일반",
         "Options|Save" => "저장",
         "Show formula bar" => "수식 입력줄 표시",
         "Enable AutoComplete for cell values" => "셀 값에 자동 완성 사용",
-        "Save .xlsx workbooks automatically after every change" => "변경할 때마다 .xlsx 통합 문서를 자동으로 저장",
+        "Save .xlsx workbooks automatically after every change" => {
+            "변경할 때마다 .xlsx 통합 문서를 자동으로 저장"
+        }
         "Workbook calculation" => "통합 문서 계산",
         "Enable iterative calculation" => "반복 계산 사용",
-        "Calculation settings are saved with the workbook." => "계산 설정은 통합 문서와 함께 저장됩니다.",
+        "Calculation settings are saved with the workbook." => {
+            "계산 설정은 통합 문서와 함께 저장됩니다."
+        }
         _ => return None,
     })
 }

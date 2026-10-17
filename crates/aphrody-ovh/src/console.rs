@@ -39,13 +39,21 @@ fn run(script: &Path, url: &str, input: &ConsoleInput) -> Result<String> {
     if let Some(shot) = &input.screenshot {
         cmd.env("APHRODY_CONSOLE_SCREENSHOT", shot);
     }
-    let out = cmd.output().context("launch bun for the Bun.WebView console driver")?;
+    let out = cmd
+        .output()
+        .context("launch bun for the Bun.WebView console driver")?;
     if !out.status.success() {
         // stderr may echo the navigated URL: strip query strings before surfacing it.
         let err = String::from_utf8_lossy(&out.stderr);
         let safe: String = err
             .split_whitespace()
-            .map(|w| if w.contains("://") { crate::vps::redact_console_url(w) } else { w.into() })
+            .map(|w| {
+                if w.contains("://") {
+                    crate::vps::redact_console_url(w)
+                } else {
+                    w.into()
+                }
+            })
             .collect::<Vec<_>>()
             .join(" ");
         bail!("console driver failed ({}): {safe}", out.status);

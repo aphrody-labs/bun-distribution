@@ -111,7 +111,10 @@ struct Pen<'a> {
 impl Pen<'_> {
     fn pt(&self, x: f32, y: f32) -> Pos2 {
         let (x, y) = match self.turn {
-            Some((c, s)) => (10.0 + (x - 10.0) * c - (y - 10.0) * s, 10.0 + (x - 10.0) * s + (y - 10.0) * c),
+            Some((c, s)) => (
+                10.0 + (x - 10.0) * c - (y - 10.0) * s,
+                10.0 + (x - 10.0) * s + (y - 10.0) * c,
+            ),
             None => (x, y),
         };
         pos2(self.r.min.x + x * self.k, self.r.min.y + y * self.k)
@@ -132,13 +135,23 @@ impl Pen<'_> {
         self.p.circle_stroke(self.pt(x, y), r * self.k, self.s);
     }
     fn dot(&self, x: f32, y: f32, r: f32) {
-        self.p.circle_filled(self.pt(x, y), r * self.k, self.s.color);
+        self.p
+            .circle_filled(self.pt(x, y), r * self.k, self.s.color);
     }
     fn rect(&self, x0: f32, y0: f32, x1: f32, y1: f32, round: f32) {
-        self.p.rect_stroke(Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)), round * self.k, self.s, egui::StrokeKind::Middle);
+        self.p.rect_stroke(
+            Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)),
+            round * self.k,
+            self.s,
+            egui::StrokeKind::Middle,
+        );
     }
     fn rect_fill(&self, x0: f32, y0: f32, x1: f32, y1: f32, round: f32) {
-        self.p.rect_filled(Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)), round * self.k, self.s.color);
+        self.p.rect_filled(
+            Rect::from_min_max(self.pt(x0, y0), self.pt(x1, y1)),
+            round * self.k,
+            self.s.color,
+        );
     }
     fn arc(&self, cx: f32, cy: f32, r: f32, a0: f32, a1: f32) {
         let n = 24;
@@ -177,7 +190,13 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
     let side = rect.width().min(rect.height());
     let r = Rect::from_center_size(rect.center(), vec2(side, side));
     let k = side / 20.0;
-    let pen = Pen { p, r, s: Stroke::new((1.5 * k).max(1.0), color), k, turn };
+    let pen = Pen {
+        p,
+        r,
+        s: Stroke::new((1.5 * k).max(1.0), color),
+        k,
+        turn,
+    };
     use Icon::*;
     match icon {
         Sidebar => {
@@ -202,7 +221,10 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             for i in 0..8 {
                 let a = (i as f32 * 45.0).to_radians();
                 let (c, s) = (a.cos(), a.sin());
-                pen.line(&[(10.0 + 5.4 * c, 10.0 + 5.4 * s), (10.0 + 7.4 * c, 10.0 + 7.4 * s)]);
+                pen.line(&[
+                    (10.0 + 5.4 * c, 10.0 + 5.4 * s),
+                    (10.0 + 7.4 * c, 10.0 + 7.4 * s),
+                ]);
             }
         }
         Moon => {
@@ -214,7 +236,14 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.circle(8.5, 8.5, 5.0);
             pen.line(&[(12.2, 12.2), (16.5, 16.5)]);
         }
-        Filter => pen.closed(&[(3.0, 4.0), (17.0, 4.0), (11.5, 10.5), (11.5, 16.0), (8.5, 14.5), (8.5, 10.5)]),
+        Filter => pen.closed(&[
+            (3.0, 4.0),
+            (17.0, 4.0),
+            (11.5, 10.5),
+            (11.5, 16.0),
+            (8.5, 14.5),
+            (8.5, 10.5),
+        ]),
         Bell => {
             pen.line(&[(5.0, 14.0), (5.0, 9.0)]);
             pen.arc(10.0, 9.0, 5.0, 180.0, 360.0);
@@ -223,7 +252,14 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.arc(10.0, 15.5, 1.8, 0.0, 180.0);
         }
         Share => {
-            pen.line(&[(6.0, 8.0), (4.0, 8.0), (4.0, 17.0), (16.0, 17.0), (16.0, 8.0), (14.0, 8.0)]);
+            pen.line(&[
+                (6.0, 8.0),
+                (4.0, 8.0),
+                (4.0, 17.0),
+                (16.0, 17.0),
+                (16.0, 8.0),
+                (14.0, 8.0),
+            ]);
             pen.line(&[(10.0, 12.0), (10.0, 2.5)]);
             pen.line(&[(6.5, 6.0), (10.0, 2.5), (13.5, 6.0)]);
         }
@@ -252,7 +288,13 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.line(&[(15.5, 2.0), (17.5, 4.0), (15.5, 6.0)]);
         }
         Eraser => {
-            pen.closed(&[(3.0, 12.0), (10.0, 5.0), (16.0, 11.0), (11.0, 16.0), (7.0, 16.0)]);
+            pen.closed(&[
+                (3.0, 12.0),
+                (10.0, 5.0),
+                (16.0, 11.0),
+                (11.0, 16.0),
+                (7.0, 16.0),
+            ]);
             pen.line(&[(6.5, 8.5), (12.5, 14.5)]);
             pen.line(&[(7.0, 17.5), (17.0, 17.5)]);
         }
@@ -295,7 +337,10 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.circle(10.0, 10.0, 4.0);
             for i in 0..8 {
                 let a = (i as f32 * 45.0).to_radians();
-                pen.line(&[(10.0 + 6.0 * a.cos(), 10.0 + 6.0 * a.sin()), (10.0 + 8.0 * a.cos(), 10.0 + 8.0 * a.sin())]);
+                pen.line(&[
+                    (10.0 + 6.0 * a.cos(), 10.0 + 6.0 * a.sin()),
+                    (10.0 + 8.0 * a.cos(), 10.0 + 8.0 * a.sin()),
+                ]);
             }
         }
         EyeOff => {
@@ -322,7 +367,13 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             }
         }
         Tag => {
-            pen.closed(&[(3.0, 3.5), (10.0, 3.5), (17.0, 10.5), (10.5, 17.0), (3.0, 10.0)]);
+            pen.closed(&[
+                (3.0, 3.5),
+                (10.0, 3.5),
+                (17.0, 10.5),
+                (10.5, 17.0),
+                (3.0, 10.0),
+            ]);
             pen.dot(7.0, 7.5, 1.2);
         }
         Info => {
@@ -371,11 +422,23 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
         Circle => pen.circle(10.0, 10.0, 6.0),
         FlagPick => {
             pen.line(&[(5.0, 17.0), (5.0, 3.5)]);
-            pen.closed(&[(5.0, 3.5), (15.0, 3.5), (12.5, 7.0), (15.0, 10.5), (5.0, 10.5)]);
+            pen.closed(&[
+                (5.0, 3.5),
+                (15.0, 3.5),
+                (12.5, 7.0),
+                (15.0, 10.5),
+                (5.0, 10.5),
+            ]);
         }
         FlagReject => {
             pen.line(&[(5.0, 17.0), (5.0, 3.5)]);
-            pen.closed(&[(5.0, 3.5), (15.0, 3.5), (12.5, 7.0), (15.0, 10.5), (5.0, 10.5)]);
+            pen.closed(&[
+                (5.0, 3.5),
+                (15.0, 3.5),
+                (12.5, 7.0),
+                (15.0, 10.5),
+                (5.0, 10.5),
+            ]);
             pen.line(&[(8.0, 5.0), (12.0, 9.0)]);
             pen.line(&[(12.0, 5.0), (8.0, 9.0)]);
         }
@@ -383,7 +446,10 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.circle(10.0, 10.0, 2.5);
             for i in 0..8 {
                 let a = (i as f32 * 45.0f32).to_radians();
-                pen.line(&[(10.0 + 5.2 * a.cos(), 10.0 + 5.2 * a.sin()), (10.0 + 7.5 * a.cos(), 10.0 + 7.5 * a.sin())]);
+                pen.line(&[
+                    (10.0 + 5.2 * a.cos(), 10.0 + 5.2 * a.sin()),
+                    (10.0 + 7.5 * a.cos(), 10.0 + 7.5 * a.sin()),
+                ]);
             }
             pen.circle(10.0, 10.0, 5.2);
         }
@@ -420,16 +486,42 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.rect(3.0, 5.0, 15.0, 17.0, 1.0);
             pen.line(&[(6.0, 2.5), (17.5, 2.5), (17.5, 14.0)]);
             // a small funnel: the album is a saved filter
-            pen.closed(&[(5.5, 8.5), (12.5, 8.5), (10.0, 11.5), (10.0, 14.5), (8.0, 13.5), (8.0, 11.5)]);
+            pen.closed(&[
+                (5.5, 8.5),
+                (12.5, 8.5),
+                (10.0, 11.5),
+                (10.0, 14.5),
+                (8.0, 13.5),
+                (8.0, 11.5),
+            ]);
         }
-        Folder => pen.closed(&[(2.5, 5.0), (8.0, 5.0), (9.5, 7.0), (17.5, 7.0), (17.5, 15.5), (2.5, 15.5)]),
+        Folder => pen.closed(&[
+            (2.5, 5.0),
+            (8.0, 5.0),
+            (9.5, 7.0),
+            (17.5, 7.0),
+            (17.5, 15.5),
+            (2.5, 15.5),
+        ]),
         Pencil => {
-            pen.closed(&[(4.0, 16.0), (4.5, 12.5), (13.5, 3.5), (16.5, 6.5), (7.5, 15.5)]);
+            pen.closed(&[
+                (4.0, 16.0),
+                (4.5, 12.5),
+                (13.5, 3.5),
+                (16.5, 6.5),
+                (7.5, 15.5),
+            ]);
             pen.line(&[(11.5, 5.5), (14.5, 8.5)]);
         }
         Photos => {
             pen.rect(2.5, 4.0, 17.5, 16.0, 1.5);
-            pen.line(&[(2.5, 13.5), (7.0, 9.5), (11.0, 13.0), (13.5, 11.0), (17.5, 14.5)]);
+            pen.line(&[
+                (2.5, 13.5),
+                (7.0, 9.5),
+                (11.0, 13.0),
+                (13.5, 11.0),
+                (17.5, 14.5),
+            ]);
             pen.dot(13.5, 7.5, 1.3);
         }
         Clock => {
@@ -474,17 +566,31 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
         Check => pen.line(&[(4.0, 10.5), (8.5, 15.0), (16.0, 5.5)]),
         Brush => {
             pen.line(&[(16.5, 3.5), (9.0, 11.0)]);
-            pen.closed(&[(9.0, 11.0), (6.0, 11.5), (4.0, 14.5), (3.5, 17.0), (6.0, 16.5), (8.5, 14.0)]);
+            pen.closed(&[
+                (9.0, 11.0),
+                (6.0, 11.5),
+                (4.0, 14.5),
+                (3.5, 17.0),
+                (6.0, 16.5),
+                (8.5, 14.0),
+            ]);
         }
         Linear => {
             for (i, x) in [4.0, 7.5, 11.0, 14.5].iter().enumerate() {
                 let a = 1.0 - i as f32 * 0.22;
-                pen.p.line_segment([pen.pt(*x, 3.0), pen.pt(*x, 17.0)], Stroke::new(pen.s.width, color.gamma_multiply(a)));
+                pen.p.line_segment(
+                    [pen.pt(*x, 3.0), pen.pt(*x, 17.0)],
+                    Stroke::new(pen.s.width, color.gamma_multiply(a)),
+                );
             }
         }
         Radial => {
             pen.circle(10.0, 10.0, 7.0);
-            pen.p.circle_stroke(pen.pt(10.0, 10.0), 3.5 * k, Stroke::new(pen.s.width, color.gamma_multiply(0.5)));
+            pen.p.circle_stroke(
+                pen.pt(10.0, 10.0),
+                3.5 * k,
+                Stroke::new(pen.s.width, color.gamma_multiply(0.5)),
+            );
         }
         Sky => {
             pen.arc(8.0, 11.0, 3.2, 150.0, 300.0);
@@ -543,7 +649,16 @@ fn paint_with(p: &Painter, rect: Rect, icon: Icon, color: Color32, turn: Option<
             pen.rect(2.5, 5.0, 13.0, 15.0, 1.5);
             pen.closed(&[(13.0, 8.5), (17.5, 6.0), (17.5, 14.0), (13.0, 11.5)]);
         }
-        Heart => pen.closed(&[(10.0, 16.5), (3.5, 9.5), (4.0, 5.5), (7.5, 4.0), (10.0, 6.5), (12.5, 4.0), (16.0, 5.5), (16.5, 9.5)]),
+        Heart => pen.closed(&[
+            (10.0, 16.5),
+            (3.5, 9.5),
+            (4.0, 5.5),
+            (7.5, 4.0),
+            (10.0, 6.5),
+            (12.5, 4.0),
+            (16.0, 5.5),
+            (16.5, 9.5),
+        ]),
         Edited => {
             pen.circle(10.0, 10.0, 7.0);
             pen.line(&[(7.0, 13.0), (13.0, 7.0)]);
@@ -586,17 +701,32 @@ mod tests {
         for icon in [Icon::Back, Icon::Forward] {
             for scale in [1.0, 2.0] {
                 let mut view = crate::headless::HeadlessView::new();
-                let raw = crate::headless::HeadlessView::raw_input(vec2(64.0, 64.0), scale, 0.0, vec![]);
+                let raw =
+                    crate::headless::HeadlessView::raw_input(vec2(64.0, 64.0), scale, 0.0, vec![]);
                 view.run(raw, |ui| {
                     ui.painter().rect_filled(ui.max_rect(), 0.0, Color32::BLACK);
-                    paint(ui.painter(), Rect::from_center_size(pos2(32.0, 32.0), vec2(18.6, 18.6)), icon, Color32::WHITE);
+                    paint(
+                        ui.painter(),
+                        Rect::from_center_size(pos2(32.0, 32.0), vec2(18.6, 18.6)),
+                        icon,
+                        Color32::WHITE,
+                    );
                 });
                 let image = view.paint(&Default::default());
                 let middle = image.pixels.len() / 2;
-                let upper: u64 = image.pixels[..middle].iter().map(|p| u64::from(p.r())).sum();
-                let lower: u64 = image.pixels[middle..].iter().map(|p| u64::from(p.r())).sum();
+                let upper: u64 = image.pixels[..middle]
+                    .iter()
+                    .map(|p| u64::from(p.r()))
+                    .sum();
+                let lower: u64 = image.pixels[middle..]
+                    .iter()
+                    .map(|p| u64::from(p.r()))
+                    .sum();
                 assert!(upper > 0 && lower > 0, "the arrow must render");
-                assert!(upper.abs_diff(lower) < upper / 20, "arrowhead must be symmetric at scale {scale}: {upper} above, {lower} below");
+                assert!(
+                    upper.abs_diff(lower) < upper / 20,
+                    "arrowhead must be symmetric at scale {scale}: {upper} above, {lower} below"
+                );
             }
         }
     }

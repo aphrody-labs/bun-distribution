@@ -32,16 +32,24 @@ const MAX_SHEETS: usize = 1024;
 /// Reads only the small, exact mimetype entry, including when the ZIP uses compression.
 /// Looking at a filename or at arbitrary bytes inside the archive is not sufficient.
 pub(crate) fn has_mimetype(bytes: &[u8]) -> bool {
-    let Ok(mut zip) = zip::ZipArchive::new(Cursor::new(bytes)) else { return false };
+    let Ok(mut zip) = zip::ZipArchive::new(Cursor::new(bytes)) else {
+        return false;
+    };
     if zip.len() > MAX_ENTRIES {
         return false;
     }
-    let Ok(mut file) = zip.by_name("mimetype") else { return false };
+    let Ok(mut file) = zip.by_name("mimetype") else {
+        return false;
+    };
     if file.size() != MIME.len() as u64 {
         return false;
     }
     let mut value = Vec::new();
-    (&mut file).take(MIME.len() as u64 + 1).read_to_end(&mut value).is_ok() && value == MIME
+    (&mut file)
+        .take(MIME.len() as u64 + 1)
+        .read_to_end(&mut value)
+        .is_ok()
+        && value == MIME
 }
 
 /// Imports ODS sheets, typed values, displayed text and merges. Cached formula results are
@@ -55,7 +63,9 @@ pub fn read_ods(bytes: &[u8]) -> Result<(Workbook, ReadReport), IoError> {
     if let Some(manifest) = package.read("META-INF/manifest.xml")? {
         check_manifest(&manifest)?;
     }
-    let content = package.read("content.xml")?.ok_or_else(|| IoError::Format("ODS content.xml is missing".into()))?;
+    let content = package
+        .read("content.xml")?
+        .ok_or_else(|| IoError::Format("ODS content.xml is missing".into()))?;
     let mut import = Import::new();
     import.parse(&content)?;
     if import.wb.sheets.is_empty() {
@@ -68,13 +78,20 @@ fn is_ns(ns: ResolveResult<'_>, expected: &[u8]) -> bool {
     matches!(ns, ResolveResult::Bound(n) if n.as_ref() == expected)
 }
 
-fn attr(reader: &mut NsReader<&[u8]>, e: &BytesStart<'_>, ns: &[u8], name: &[u8]) -> Result<Option<String>, IoError> {
+fn attr(
+    reader: &mut NsReader<&[u8]>,
+    e: &BytesStart<'_>,
+    ns: &[u8],
+    name: &[u8],
+) -> Result<Option<String>, IoError> {
     let mut found = None;
     for a in e.attributes() {
         let a = a.map_err(|e| IoError::Xml(e.to_string()))?;
         let (resolved, local) = reader.resolver_mut().resolve_attribute(a.key);
         if is_ns(resolved, ns) && local.as_ref() == name {
-            let value = a.normalized_value(XmlVersion::Explicit1_0).map_err(|e| IoError::Xml(e.to_string()))?;
+            let value = a
+                .normalized_value(XmlVersion::Explicit1_0)
+                .map_err(|e| IoError::Xml(e.to_string()))?;
             if value.len() > MAX_CELL_TEXT {
                 return Err(IoError::TooLarge("ODS attribute exceeds 1 MiB".into()));
             }
@@ -86,11 +103,15 @@ fn attr(reader: &mut NsReader<&[u8]>, e: &BytesStart<'_>, ns: &[u8], name: &[u8]
 
 fn positive(value: Option<String>, default: u32, limit: u32) -> Result<u32, IoError> {
     let n = match value {
-        Some(s) => s.parse::<u32>().map_err(|_| IoError::Format("invalid ODS repeat or span count".into()))?,
+        Some(s) => s
+            .parse::<u32>()
+            .map_err(|_| IoError::Format("invalid ODS repeat or span count".into()))?,
         None => default,
     };
     if n == 0 || n > limit {
-        return Err(IoError::TooLarge("ODS repeat or span exceeds worksheet bounds".into()));
+        return Err(IoError::TooLarge(
+            "ODS repeat or span exceeds worksheet bounds".into(),
+        ));
     }
     Ok(n)
 }
@@ -109,7 +130,9 @@ fn check_manifest(bytes: &[u8]) -> Result<(), IoError> {
             Event::Start(e) | Event::Empty(e) => {
                 let (ns, name) = reader.resolver_mut().resolve_element(e.name());
                 if is_ns(ns.clone(), MANIFEST) && name.as_ref() == b"encryption-data" {
-                    return Err(IoError::Format("encrypted ODS files are not supported".into()));
+                    return Err(IoError::Format(
+                        "encrypted ODS files are not supported".into(),
+                    ));
                 }
                 if depth == 0 {
                     if root_seen || !is_ns(ns, MANIFEST) || name.as_ref() != b"manifest" {
@@ -124,7 +147,11 @@ fn check_manifest(bytes: &[u8]) -> Result<(), IoError> {
                     }
                 }
             }
-            Event::End(_) => depth = depth.checked_sub(1).ok_or_else(|| xml_error("unexpected manifest closing element"))?,
+            Event::End(_) => {
+                depth = depth
+                    .checked_sub(1)
+                    .ok_or_else(|| xml_error("unexpected manifest closing element"))?
+            }
             Event::DocType(_) => return Err(xml_error("DOCTYPE is not supported")),
             Event::Eof => break,
             _ => {}
@@ -241,7 +268,19 @@ impl Import {
         wb.sheets.clear();
         let mut report = ReadReport::default();
         report.warn("ODS data-only import: formulas become their saved results and will not recalculate. Source formatting, charts, images and other features are not imported. Save a new .xlsx file; ODS saving is not supported.");
-        Self { wb, report, stack: vec![], sheet: None, row: None, cell: None, cells: 0, merges: 0, text: 0, formats: vec![], spreadsheet_seen: false }
+        Self {
+            wb,
+            report,
+            stack: vec![],
+            sheet: None,
+            row: None,
+            cell: None,
+            cells: 0,
+            merges: 0,
+            text: 0,
+            formats: vec![],
+            spreadsheet_seen: false,
+        }
     }
 
     fn parse(&mut self, bytes: &[u8]) -> Result<(), IoError> {
@@ -263,7 +302,9 @@ impl Import {
                 }
                 Event::Empty(e) => {
                     if self.stack.is_empty() {
-                        return Err(xml_error("expected office:document-content with a spreadsheet"));
+                        return Err(xml_error(
+                            "expected office:document-content with a spreadsheet",
+                        ));
                     }
                     self.start(&mut reader, &e)?;
                     self.end()?;
@@ -314,24 +355,49 @@ impl Import {
             }
             Tag::Table if self.stack == [Tag::Document, Tag::Body, Tag::Spreadsheet] => {
                 if self.wb.sheets.len() >= MAX_SHEETS {
-                    return Err(IoError::TooLarge("ODS contains more than 1024 sheets".into()));
+                    return Err(IoError::TooLarge(
+                        "ODS contains more than 1024 sheets".into(),
+                    ));
                 }
                 let original = attr(reader, e, TABLE, b"name")?.unwrap_or_default();
-                let mut name = crate::read::unique_name(&self.wb, original.trim_matches('\''), self.wb.sheets.len());
+                let mut name = crate::read::unique_name(
+                    &self.wb,
+                    original.trim_matches('\''),
+                    self.wb.sheets.len(),
+                );
                 if self.wb.check_sheet_name(&name, None).is_err() {
                     name = self.wb.next_sheet_name();
                 }
                 if name != original {
                     self.report.warn("Some ODS sheet names were shortened or renamed to valid, unique XLSX sheet names.");
                 }
-                self.sheet = Some(SheetDraft { sheet: Sheet::new(name), depth, row: 0 });
+                self.sheet = Some(SheetDraft {
+                    sheet: Sheet::new(name),
+                    depth,
+                    row: 0,
+                });
             }
-            Tag::Row if self.sheet.as_ref().is_some_and(|s| self.stack.get(s.depth + 1..).is_some_and(|p| p.iter().all(|t| *t == Tag::Rows))) => {
-                self.row =
-                    Some(RowDraft { depth, repeat: positive(attr(reader, e, TABLE, b"number-rows-repeated")?, 1, u32::MAX)?, col: 0, cells: vec![] });
+            Tag::Row
+                if self.sheet.as_ref().is_some_and(|s| {
+                    self.stack
+                        .get(s.depth + 1..)
+                        .is_some_and(|p| p.iter().all(|t| *t == Tag::Rows))
+                }) =>
+            {
+                self.row = Some(RowDraft {
+                    depth,
+                    repeat: positive(
+                        attr(reader, e, TABLE, b"number-rows-repeated")?,
+                        1,
+                        u32::MAX,
+                    )?,
+                    col: 0,
+                    cells: vec![],
+                });
             }
             Tag::Cell | Tag::Covered if self.row.as_ref().is_some_and(|r| depth == r.depth + 1) => {
-                let kind = if attr(reader, e, CALC_EXT, b"value-type")?.as_deref() == Some("error") {
+                let kind = if attr(reader, e, CALC_EXT, b"value-type")?.as_deref() == Some("error")
+                {
                     Some("error".into())
                 } else {
                     attr(reader, e, OFFICE, b"value-type")?
@@ -345,8 +411,16 @@ impl Import {
                 };
                 self.cell = Some(CellDraft {
                     depth,
-                    repeat: positive(attr(reader, e, TABLE, b"number-columns-repeated")?, 1, u32::MAX)?,
-                    width: positive(attr(reader, e, TABLE, b"number-columns-spanned")?, 1, MAX_COLS)?,
+                    repeat: positive(
+                        attr(reader, e, TABLE, b"number-columns-repeated")?,
+                        1,
+                        u32::MAX,
+                    )?,
+                    width: positive(
+                        attr(reader, e, TABLE, b"number-columns-spanned")?,
+                        1,
+                        MAX_COLS,
+                    )?,
                     height: positive(attr(reader, e, TABLE, b"number-rows-spanned")?, 1, MAX_ROWS)?,
                     covered: t == Tag::Covered,
                     kind,
@@ -372,7 +446,11 @@ impl Import {
             }
             Tag::Space | Tag::Tab | Tag::Break if self.captures_text() => {
                 let count = if t == Tag::Space {
-                    let n = attr(reader, e, TEXT, b"c")?.map(|s| s.parse::<u32>()).transpose().map_err(xml_error)?.unwrap_or(1);
+                    let n = attr(reader, e, TEXT, b"c")?
+                        .map(|s| s.parse::<u32>())
+                        .transpose()
+                        .map_err(xml_error)?
+                        .unwrap_or(1);
                     if n as usize > MAX_CELL_TEXT {
                         return Err(IoError::TooLarge("ODS repeated spaces exceed 1 MiB".into()));
                     }
@@ -409,7 +487,11 @@ impl Import {
         self.cell
             .as_ref()
             .and_then(|c| c.paragraph)
-            .is_some_and(|depth| self.stack.get(depth..).is_some_and(|p| p.iter().all(|t| matches!(t, Tag::Paragraph | Tag::Inline))))
+            .is_some_and(|depth| {
+                self.stack
+                    .get(depth..)
+                    .is_some_and(|p| p.iter().all(|t| matches!(t, Tag::Paragraph | Tag::Inline)))
+            })
     }
 
     fn append(&mut self, text: &str) -> Result<(), IoError> {
@@ -435,7 +517,9 @@ impl Import {
     }
 
     fn end(&mut self) -> Result<(), IoError> {
-        self.stack.pop().ok_or_else(|| xml_error("unexpected closing element"))?;
+        self.stack
+            .pop()
+            .ok_or_else(|| xml_error("unexpected closing element"))?;
         let depth = self.stack.len();
         if let Some(cell) = self.cell.as_mut()
             && cell.paragraph == Some(depth)
@@ -457,10 +541,18 @@ impl Import {
     }
 
     fn finish_cell(&mut self) -> Result<(), IoError> {
-        let Some(draft) = self.cell.take() else { return Ok(()) };
+        let Some(draft) = self.cell.take() else {
+            return Ok(());
+        };
         let cell = self.convert(&draft);
-        let (width, height) = if draft.covered { (1, 1) } else { (draft.width, draft.height) };
-        let Some(row) = self.row.as_mut() else { return Ok(()) };
+        let (width, height) = if draft.covered {
+            (1, 1)
+        } else {
+            (draft.width, draft.height)
+        };
+        let Some(row) = self.row.as_mut() else {
+            return Ok(());
+        };
         let kept = !cell.is_blank() || width > 1 || height > 1;
         // Writers pad rows with blank repeats up to their own (possibly wider) sheet edge;
         // blank cells past ours carry no data, so clip them instead of rejecting the file.
@@ -470,7 +562,13 @@ impl Import {
             None => return Err(IoError::TooLarge("ODS row exceeds worksheet width".into())),
         };
         if kept {
-            row.cells.push(RepeatedCell { col: row.col, repeat: draft.repeat, width, height, cell });
+            row.cells.push(RepeatedCell {
+                col: row.col,
+                repeat: draft.repeat,
+                width,
+                height,
+                cell,
+            });
         }
         row.col = end;
         Ok(())
@@ -480,18 +578,23 @@ impl Import {
         let raw = draft.raw.as_deref();
         let mut format = None;
         let value = match draft.kind.as_deref() {
-            Some("float" | "percentage" | "currency") => raw.and_then(|s| s.parse::<f64>().ok()).filter(|n| n.is_finite()).map(|n| {
-                if draft.kind.as_deref() == Some("percentage") {
-                    format = Some("0.00%");
-                }
-                Value::Number(n)
-            }),
+            Some("float" | "percentage" | "currency") => raw
+                .and_then(|s| s.parse::<f64>().ok())
+                .filter(|n| n.is_finite())
+                .map(|n| {
+                    if draft.kind.as_deref() == Some("percentage") {
+                        format = Some("0.00%");
+                    }
+                    Value::Number(n)
+                }),
             Some("boolean") => match raw {
                 Some("true" | "1") => Some(Value::Bool(true)),
                 Some("false" | "0") => Some(Value::Bool(false)),
                 _ => None,
             },
-            Some("string") if raw.is_some() || draft.paragraphs > 0 || !draft.formula => Some(Value::Text(Arc::from(raw.unwrap_or(&draft.text)))),
+            Some("string") if raw.is_some() || draft.paragraphs > 0 || !draft.formula => {
+                Some(Value::Text(Arc::from(raw.unwrap_or(&draft.text))))
+            }
             Some("void") if !draft.formula => Some(Value::Empty),
             Some("date") => raw.and_then(parse_date).map(|(n, f)| {
                 format = Some(f);
@@ -501,7 +604,11 @@ impl Import {
                 format = Some("[h]:mm:ss.000");
                 Value::Number(n)
             }),
-            None if !draft.formula => Some(if draft.text.is_empty() { Value::Empty } else { Value::Text(Arc::from(draft.text.as_str())) }),
+            None if !draft.formula => Some(if draft.text.is_empty() {
+                Value::Empty
+            } else {
+                Value::Text(Arc::from(draft.text.as_str()))
+            }),
             _ => None,
         };
         let value = value.unwrap_or_else(|| {
@@ -513,19 +620,29 @@ impl Import {
             Some(code) => match self.formats.iter().find(|(f, _)| *f == code) {
                 Some((_, id)) => *id,
                 None => {
-                    let id = self.wb.styles.derive(StyleId::DEFAULT, |s| s.num_fmt = NumFmt::new(code));
+                    let id = self
+                        .wb
+                        .styles
+                        .derive(StyleId::DEFAULT, |s| s.num_fmt = NumFmt::new(code));
                     self.formats.push((code, id));
                     id
                 }
             },
             None => StyleId::DEFAULT,
         };
-        Cell { style, ..Cell::value(value) }
+        Cell {
+            style,
+            ..Cell::value(value)
+        }
     }
 
     fn finish_row(&mut self) -> Result<(), IoError> {
-        let Some(row) = self.row.take() else { return Ok(()) };
-        let Some(sheet) = self.sheet.as_mut() else { return Ok(()) };
+        let Some(row) = self.row.take() else {
+            return Ok(());
+        };
+        let Some(sheet) = self.sheet.as_mut() else {
+            return Ok(());
+        };
         // Blank trailing row repeats past the sheet edge (e.g. from larger-sheet writers) are clipped.
         let end = match sheet.row.checked_add(row.repeat).filter(|n| *n <= MAX_ROWS) {
             Some(end) => end,
@@ -537,7 +654,9 @@ impl Import {
             if !entry.cell.is_blank() {
                 self.cells = self.cells.saturating_add(count);
                 if let Value::Text(t) = &entry.cell.value {
-                    self.text = self.text.saturating_add(count.saturating_mul(t.len() as u64));
+                    self.text = self
+                        .text
+                        .saturating_add(count.saturating_mul(t.len() as u64));
                 }
             }
             let merged = entry.width > 1 || entry.height > 1;
@@ -547,13 +666,22 @@ impl Import {
             if self.cells > MAX_CELLS || self.merges > MAX_MERGES || self.text > MAX_TEXT {
                 return Err(IoError::TooLarge("ODS expands beyond the import limit (1 million cells, 100000 merges or 64 MiB of text)".into()));
             }
-            let last_col = entry.col.checked_add(entry.repeat - 1).and_then(|c| c.checked_add(entry.width - 1));
+            let last_col = entry
+                .col
+                .checked_add(entry.repeat - 1)
+                .and_then(|c| c.checked_add(entry.width - 1));
             let last_row = end.checked_add(entry.height - 1);
             if last_col.is_none_or(|c| c >= MAX_COLS) || last_row.is_none_or(|r| r > MAX_ROWS) {
-                return Err(IoError::TooLarge("ODS merged cell exceeds worksheet bounds".into()));
+                return Err(IoError::TooLarge(
+                    "ODS merged cell exceeds worksheet bounds".into(),
+                ));
             }
-            if merged && ((entry.repeat > 1 && entry.width > 1) || (row.repeat > 1 && entry.height > 1)) {
-                return Err(IoError::Format("repeated ODS cells have overlapping merges".into()));
+            if merged
+                && ((entry.repeat > 1 && entry.width > 1) || (row.repeat > 1 && entry.height > 1))
+            {
+                return Err(IoError::Format(
+                    "repeated ODS cells have overlapping merges".into(),
+                ));
             }
             for r in sheet.row..end {
                 for c in entry.col..entry.col + entry.repeat {
@@ -562,7 +690,10 @@ impl Import {
                         sheet.sheet.cells.set(pos, entry.cell.clone());
                     }
                     if merged {
-                        sheet.sheet.merges.push(RangeRef::new(pos, CellRef::new(r + entry.height - 1, c + entry.width - 1)));
+                        sheet.sheet.merges.push(RangeRef::new(
+                            pos,
+                            CellRef::new(r + entry.height - 1, c + entry.width - 1),
+                        ));
                     }
                 }
             }
@@ -590,11 +721,17 @@ fn parse_date(s: &str) -> Option<(f64, &'static str)> {
     let year: i32 = digits(date.get(..4)?)?.parse().ok()?;
     let month: u32 = digits(date.get(5..7)?)?.parse().ok()?;
     let day: u32 = digits(date.get(8..10)?)?.parse().ok()?;
-    if !(1900..=9999).contains(&year) || !(1..=12).contains(&month) || day == 0 || day > days_in_month(year, month) {
+    if !(1900..=9999).contains(&year)
+        || !(1..=12).contains(&month)
+        || day == 0
+        || day > days_in_month(year, month)
+    {
         return None;
     }
     let day = serial_from_ymd(DateSystem::D1900, year.into(), month.into(), day.into())?;
-    let Some(time) = time else { return Some((day, "yyyy-mm-dd")) };
+    let Some(time) = time else {
+        return Some((day, "yyyy-mm-dd"));
+    };
     let mut parts = time.split(':');
     let h = parts.next()?;
     let m = parts.next()?;
@@ -608,7 +745,10 @@ fn parse_date(s: &str) -> Option<(f64, &'static str)> {
     if h >= 24 || m >= 60 || sec >= 60.0 {
         return None;
     }
-    Some((day + (h as f64 * 3600.0 + m as f64 * 60.0 + sec) / 86400.0, "yyyy-mm-dd hh:mm:ss.000"))
+    Some((
+        day + (h as f64 * 3600.0 + m as f64 * 60.0 + sec) / 86400.0,
+        "yyyy-mm-dd hh:mm:ss.000",
+    ))
 }
 
 fn digits(s: &str) -> Option<&str> {
@@ -642,7 +782,11 @@ fn parse_duration(s: &str) -> Option<f64> {
         let mut time_any = false;
         for (unit, factor) in [('H', 3600.0), ('M', 60.0), ('S', 1.0)] {
             if let Some((n, tail)) = time.split_once(unit) {
-                let value = if unit == 'S' { decimal(n)? } else { digits(n)?.parse::<f64>().ok()? };
+                let value = if unit == 'S' {
+                    decimal(n)?
+                } else {
+                    digits(n)?.parse::<f64>().ok()?
+                };
                 total += value * factor;
                 time = tail;
                 time_any = true;

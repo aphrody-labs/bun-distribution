@@ -16,10 +16,17 @@ pub(crate) fn set_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Fr
             ctx.set_paint(f.ink.color(c, 1.0));
             true
         }
-        Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => crate::freeform::set_freeform_paint(ctx, g, bounds, f.ink),
+        Paint::Gradient(g) if g.gradient.kind == GradientKind::Freeform => {
+            crate::freeform::set_freeform_paint(ctx, g, bounds, f.ink)
+        }
         Paint::Gradient(g) => {
             let geom = g.resolve(bounds);
-            let stops: Vec<ColorStop> = g.gradient.expanded_stops().iter().map(|(o, c, a)| ColorStop::from((*o, f.ink.color(c, *a)))).collect();
+            let stops: Vec<ColorStop> = g
+                .gradient
+                .expanded_stops()
+                .iter()
+                .map(|(o, c, a)| ColorStop::from((*o, f.ink.color(c, *a))))
+                .collect();
             if stops.is_empty() {
                 return false;
             }
@@ -31,21 +38,33 @@ pub(crate) fn set_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Fr
                     ctx.set_paint_transform(squash);
                     let g = match geom.focal {
                         // An off-centre focal point: a two-point radial from it to the extent circle.
-                        Some(f) => peniko::Gradient::new_two_point_radial(squash.inverse() * f, 0.0, geom.start, r),
+                        Some(f) => peniko::Gradient::new_two_point_radial(
+                            squash.inverse() * f,
+                            0.0,
+                            geom.start,
+                            r,
+                        ),
                         None => peniko::Gradient::new_radial(geom.start, r),
                     };
                     g.with_stops(stops.as_slice())
                 }
                 _ => {
                     ctx.reset_paint_transform();
-                    let (s, e) =
-                        if geom.start.distance(geom.end) < 1e-9 { (geom.start, geom.start + Vec2::new(1.0, 0.0)) } else { (geom.start, geom.end) };
+                    let (s, e) = if geom.start.distance(geom.end) < 1e-9 {
+                        (geom.start, geom.start + Vec2::new(1.0, 0.0))
+                    } else {
+                        (geom.start, geom.end)
+                    };
                     peniko::Gradient::new_linear(s, e).with_stops(stops.as_slice())
                 }
             };
             // Colour and opacity blend each on its own, as the model samples them and as the PDF
             // and SVG exports draw them (peniko's default premultiplies).
-            ctx.set_paint(grad.with_interpolation_alpha_space(peniko::InterpolationAlphaSpace::Unpremultiplied));
+            ctx.set_paint(
+                grad.with_interpolation_alpha_space(
+                    peniko::InterpolationAlphaSpace::Unpremultiplied,
+                ),
+            );
             true
         }
         Paint::Pattern { pattern, xf } => crate::pattern::set_pattern_paint(ctx, pattern, *xf, f),
@@ -54,7 +73,11 @@ pub(crate) fn set_paint(ctx: &mut RenderContext, p: &Paint, bounds: Rect, f: &Fr
 
 /// The most memory decoding one image may take: print rasters run to gigabytes (a 300 ppi roll,
 /// 6614 x 59055 px, is 1.56 GB as RGBA), past the decoder's 512 MB default. The web keeps it.
-const MAX_DECODE_ALLOC: u64 = if cfg!(target_arch = "wasm32") { 512 << 20 } else { 2 << 30 };
+const MAX_DECODE_ALLOC: u64 = if cfg!(target_arch = "wasm32") {
+    512 << 20
+} else {
+    2 << 30
+};
 
 /// Images that couldn't be decoded (and so drew nothing), counted for exports to report.
 static DECODE_FAILURES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -67,12 +90,15 @@ pub fn decode_failures() -> u64 {
 
 /// `bytes` decoded within [`MAX_DECODE_ALLOC`]; a failure is counted in [`decode_failures`].
 fn decode(bytes: &[u8]) -> Option<image::DynamicImage> {
-    let img = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok().and_then(|mut r| {
-        let mut limits = image::Limits::default();
-        limits.max_alloc = Some(MAX_DECODE_ALLOC);
-        r.limits(limits);
-        r.decode().ok()
-    });
+    let img = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()
+        .and_then(|mut r| {
+            let mut limits = image::Limits::default();
+            limits.max_alloc = Some(MAX_DECODE_ALLOC);
+            r.limits(limits);
+            r.decode().ok()
+        });
     if img.is_none() {
         DECODE_FAILURES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
@@ -87,7 +113,10 @@ fn fit_pixmap(img: image::DynamicImage) -> image::DynamicImage {
         return img;
     }
     let s = max as f64 / w.max(h) as f64;
-    let (nw, nh) = (((w as f64 * s).round() as u32).clamp(1, max), ((h as f64 * s).round() as u32).clamp(1, max));
+    let (nw, nh) = (
+        ((w as f64 * s).round() as u32).clamp(1, max),
+        ((h as f64 * s).round() as u32).clamp(1, max),
+    );
     img.resize_exact(nw, nh, image::imageops::FilterType::Triangle)
 }
 
@@ -118,7 +147,12 @@ fn pixmap_of(img: image::RgbaImage) -> Option<vello_cpu::Pixmap> {
         .map(|p| {
             let a = p[3] as u16;
             let m = |c: u8| ((c as u16 * a + 127) / 255) as u8;
-            vello_cpu::color::PremulRgba8 { r: m(p[0]), g: m(p[1]), b: m(p[2]), a: p[3] }
+            vello_cpu::color::PremulRgba8 {
+                r: m(p[0]),
+                g: m(p[1]),
+                b: m(p[2]),
+                a: p[3],
+            }
         })
         .collect();
     Some(vello_cpu::Pixmap::from_parts(data, w as u16, h as u16))

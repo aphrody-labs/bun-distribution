@@ -1,6 +1,6 @@
 use ::alloc::boxed::Box;
 use bevy_reflect::TypeRegistration;
-use downcast_rs::{impl_downcast, Downcast};
+use downcast_rs::{Downcast, impl_downcast};
 
 /// A trait for representing type metadata.
 ///

@@ -15,7 +15,10 @@ use std::sync::{Arc, OnceLock};
 use photocraft_color::blend::BlendMode;
 use photocraft_color::{Color, ColorMode, PixelFormat, SampleType};
 use photocraft_doc::effects::GradientStyle;
-use photocraft_doc::vector::{FillRule, Knot, LineCap, LineJoin, Path, PathOp, ShapeLayer, ShapeStroke, StrokeAlign, Subpath, VectorMask};
+use photocraft_doc::vector::{
+    FillRule, Knot, LineCap, LineJoin, Path, PathOp, ShapeLayer, ShapeStroke, StrokeAlign, Subpath,
+    VectorMask,
+};
 use photocraft_doc::{Document, Fill, Group, Layer, LayerContent, MAX_GROUP_DEPTH};
 use photocraft_geom::{Point, Rect, Size};
 use photocraft_raster::Surface;
@@ -47,7 +50,8 @@ pub fn is_svg(bytes: &[u8]) -> bool {
     if t.starts_with("<svg") {
         return true;
     }
-    (t.starts_with("<?xml") || t.starts_with("<!DOCTYPE") || t.starts_with("<!--")) && t.contains("<svg")
+    (t.starts_with("<?xml") || t.starts_with("<!DOCTYPE") || t.starts_with("<!--"))
+        && t.contains("<svg")
 }
 
 /// The fonts text runs are shaped with: the bundled craft fonts plus, on the desktop, the
@@ -73,7 +77,10 @@ fn fonts() -> Arc<usvg::fontdb::Database> {
 fn options(fontdb: Arc<usvg::fontdb::Database>) -> usvg::Options<'static> {
     usvg::Options {
         resources_dir: None,
-        image_href_resolver: usvg::ImageHrefResolver { resolve_data: usvg::ImageHrefResolver::default_data_resolver(), resolve_string: Box::new(|_, _| None) },
+        image_href_resolver: usvg::ImageHrefResolver {
+            resolve_data: usvg::ImageHrefResolver::default_data_resolver(),
+            resolve_string: Box::new(|_, _| None),
+        },
         fontdb,
         ..usvg::Options::default()
     }
@@ -100,14 +107,23 @@ fn parse(bytes: &[u8]) -> Result<Parsed, IoError> {
 fn parse_with(bytes: &[u8], fonts: fn() -> Arc<usvg::fontdb::Database>) -> Result<Parsed, IoError> {
     let xml = inflate(bytes)?;
     if nesting_depth(&xml, MAX_XML_DEPTH) > MAX_XML_DEPTH {
-        return Err(IoError::Svg(format!("elements are nested more than {MAX_XML_DEPTH} levels deep")));
+        return Err(IoError::Svg(format!(
+            "elements are nested more than {MAX_XML_DEPTH} levels deep"
+        )));
     }
     let has_text = xml.windows(4).any(|w| w == b"text");
-    let fontdb = if has_text { fonts() } else { Arc::new(usvg::fontdb::Database::new()) };
+    let fontdb = if has_text {
+        fonts()
+    } else {
+        Arc::new(usvg::fontdb::Database::new())
+    };
     let fontless_text = has_text && fontdb.faces().next().is_none();
     let opt = options(fontdb);
     let tree = usvg::Tree::from_data(&xml, &opt).map_err(|e| IoError::Svg(e.to_string()))?;
-    Ok(Parsed { tree, fontless_text })
+    Ok(Parsed {
+        tree,
+        fontless_text,
+    })
 }
 
 /// The plain XML of `bytes`: itself, or the inflated content of a gzip `.svgz`, refused past
@@ -118,10 +134,16 @@ fn inflate(bytes: &[u8]) -> Result<std::borrow::Cow<'_, [u8]>, IoError> {
         return Ok(std::borrow::Cow::Borrowed(bytes));
     }
     let mut out = Vec::new();
-    let mut reader = flate2::read::MultiGzDecoder::new(bytes).take(MAX_INFLATED_BYTES.saturating_add(1));
-    reader.read_to_end(&mut out).map_err(|e| IoError::Svg(format!("the compressed SVG couldn't be inflated: {e}")))?;
+    let mut reader =
+        flate2::read::MultiGzDecoder::new(bytes).take(MAX_INFLATED_BYTES.saturating_add(1));
+    reader
+        .read_to_end(&mut out)
+        .map_err(|e| IoError::Svg(format!("the compressed SVG couldn't be inflated: {e}")))?;
     if u64::try_from(out.len()).unwrap_or(u64::MAX) > MAX_INFLATED_BYTES {
-        return Err(IoError::Svg(format!("the compressed SVG inflates past {} MB", MAX_INFLATED_BYTES >> 20)));
+        return Err(IoError::Svg(format!(
+            "the compressed SVG inflates past {} MB",
+            MAX_INFLATED_BYTES >> 20
+        )));
     }
     Ok(std::borrow::Cow::Owned(out))
 }
@@ -132,7 +154,11 @@ fn inflate(bytes: &[u8]) -> Result<std::borrow::Cow<'_, [u8]>, IoError> {
 /// loosely: the parser rejects it afterwards.
 fn nesting_depth(xml: &[u8], limit: usize) -> usize {
     let after = |from: usize, pat: &[u8]| -> usize {
-        xml.get(from..).and_then(|s| s.windows(pat.len()).position(|w| w == pat)).map_or(xml.len(), |p| from.saturating_add(p).saturating_add(pat.len()))
+        xml.get(from..)
+            .and_then(|s| s.windows(pat.len()).position(|w| w == pat))
+            .map_or(xml.len(), |p| {
+                from.saturating_add(p).saturating_add(pat.len())
+            })
     };
     // The byte after a tag's closing `>` (outside quotes) and whether the tag ended in `/>`.
     let tag_end = |from: usize| -> (usize, bool) {
@@ -194,10 +220,15 @@ fn canvas(tree: &usvg::Tree, warnings: &mut Vec<String>) -> Canvas {
     let limit = MAX_SIDE as f32;
     let scale = (limit / w).min(limit / h).min(1.0);
     if scale < 1.0 {
-        warnings.push(format!("SVG: the {w:.0} × {h:.0} px drawing was scaled down to fit {MAX_SIDE} px"));
+        warnings.push(format!(
+            "SVG: the {w:.0} × {h:.0} px drawing was scaled down to fit {MAX_SIDE} px"
+        ));
     }
     let side = |v: f32| ((v * scale).round() as u32).clamp(1, MAX_SIDE);
-    Canvas { size: Size::new(side(w), side(h)), scale }
+    Canvas {
+        size: Size::new(side(w), side(h)),
+        scale,
+    }
 }
 
 /// Opens an SVG as a document of shape layers (see the module docs for what is rasterised).
@@ -207,36 +238,70 @@ pub fn import_svg(name: &str, bytes: &[u8]) -> Result<ImportResult, IoError> {
 
 /// Opens an SVG while rasterising any subtrees deeper than `max_group_depth` into single pixel
 /// layers. The document's hard nesting limit remains [`MAX_GROUP_DEPTH`].
-pub fn import_svg_with_group_depth(name: &str, bytes: &[u8], max_group_depth: usize) -> Result<ImportResult, IoError> {
+pub fn import_svg_with_group_depth(
+    name: &str,
+    bytes: &[u8],
+    max_group_depth: usize,
+) -> Result<ImportResult, IoError> {
     import_parsed(name, parse(bytes)?, max_group_depth)
 }
 
-fn import_parsed(name: &str, parsed: Parsed, max_group_depth: usize) -> Result<ImportResult, IoError> {
-    let Parsed { tree, fontless_text } = parsed;
+fn import_parsed(
+    name: &str,
+    parsed: Parsed,
+    max_group_depth: usize,
+) -> Result<ImportResult, IoError> {
+    let Parsed {
+        tree,
+        fontless_text,
+    } = parsed;
     let mut warnings = Vec::new();
     if fontless_text {
-        warnings.push("SVG: the text needs a font and none is installed, so it was dropped".to_string());
+        warnings.push(
+            "SVG: the text needs a font and none is installed, so it was dropped".to_string(),
+        );
     }
     let cv = canvas(&tree, &mut warnings);
     let mut doc = Document::new(name, cv.size, ColorMode::Rgb, SampleType::U8);
     let fmt = doc.pixel_format();
     let global = tiny_skia::Transform::from_scale(cv.scale, cv.scale);
-    let max_group_depth = (max_group_depth != 0).then_some(max_group_depth.clamp(1, MAX_GROUP_DEPTH));
-    let mut conv = Conv { fmt, canvas: doc.bounds(), global, max_group_depth, warnings, noted: Vec::new(), counts: [0; 4] };
+    let max_group_depth =
+        (max_group_depth != 0).then_some(max_group_depth.clamp(1, MAX_GROUP_DEPTH));
+    let mut conv = Conv {
+        fmt,
+        canvas: doc.bounds(),
+        global,
+        max_group_depth,
+        warnings,
+        noted: Vec::new(),
+        counts: [0; 4],
+    };
     if count_nodes(tree.root()) > MAX_NODES {
-        conv.warnings.push(format!("SVG: more than {MAX_NODES} elements; opened as one pixel layer instead of shapes"));
+        conv.warnings.push(format!(
+            "SVG: more than {MAX_NODES} elements; opened as one pixel layer instead of shapes"
+        ));
         let (w, h) = (cv.size.width, cv.size.height);
         if let Some(mut pixmap) = pixmap(w, h) {
             resvg::render(&tree, global, &mut pixmap.as_mut());
-            doc.layers.push(Layer::new("Background", LayerContent::Raster(surface(&pixmap, doc.bounds(), fmt))));
+            doc.layers.push(Layer::new(
+                "Background",
+                LayerContent::Raster(surface(&pixmap, doc.bounds(), fmt)),
+            ));
         }
     } else {
-        doc.layers = conv.convert_children(tree.root().children(), 0, 0, tree.root().abs_transform());
+        doc.layers =
+            conv.convert_children(tree.root().children(), 0, 0, tree.root().abs_transform());
     }
     if doc.layers.is_empty() {
-        conv.warnings.push("SVG: nothing to draw (an empty drawing)".to_string());
+        conv.warnings
+            .push("SVG: nothing to draw (an empty drawing)".to_string());
     }
-    Ok(ImportResult { document: doc, warnings: conv.warnings, source_read_only: false, preview_only: false })
+    Ok(ImportResult {
+        document: doc,
+        warnings: conv.warnings,
+        source_read_only: false,
+        preview_only: false,
+    })
 }
 
 /// The whole drawing rendered at `scale` (1 = its own size), as a straight-alpha RGBA buffer at
@@ -247,10 +312,19 @@ pub fn rasterize(bytes: &[u8], scale: f32) -> Result<photocraft_compose::Buffer,
     let k = cv.scale * scale.clamp(1.0 / 64.0, 64.0);
     let side = |v: f32| ((v * k).ceil() as u32).max(1);
     let (w, h) = (side(tree.size().width()), side(tree.size().height()));
-    let mut pixmap = pixmap(w, h).ok_or_else(|| IoError::Svg(format!("{w} × {h} px is too large to rasterise")))?;
-    resvg::render(&tree, tiny_skia::Transform::from_scale(k, k), &mut pixmap.as_mut());
+    let mut pixmap = pixmap(w, h)
+        .ok_or_else(|| IoError::Svg(format!("{w} × {h} px is too large to rasterise")))?;
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::from_scale(k, k),
+        &mut pixmap.as_mut(),
+    );
     let rect = Rect::new(0, 0, w as i32, h as i32);
-    let px = pixmap.pixels().iter().map(|p| rgba(p.demultiply())).collect();
+    let px = pixmap
+        .pixels()
+        .iter()
+        .map(|p| rgba(p.demultiply()))
+        .collect();
     Ok(photocraft_compose::Buffer { rect, px })
 }
 
@@ -263,7 +337,12 @@ fn pixmap(w: u32, h: u32) -> Option<tiny_skia::Pixmap> {
 }
 
 fn rgba(c: tiny_skia::ColorU8) -> [f32; 4] {
-    [f32::from(c.red()) / 255.0, f32::from(c.green()) / 255.0, f32::from(c.blue()) / 255.0, f32::from(c.alpha()) / 255.0]
+    [
+        f32::from(c.red()) / 255.0,
+        f32::from(c.green()) / 255.0,
+        f32::from(c.blue()) / 255.0,
+        f32::from(c.alpha()) / 255.0,
+    ]
 }
 
 /// A pixmap as a surface covering `rect` in `fmt`.
@@ -326,7 +405,10 @@ impl Conv {
         if !id.is_empty() {
             return id.to_string();
         }
-        let label = ["Shape", "Group", "Image", "Text"].get(kind).copied().unwrap_or("Layer");
+        let label = ["Shape", "Group", "Image", "Text"]
+            .get(kind)
+            .copied()
+            .unwrap_or("Layer");
         let n = self.counts.get_mut(kind).map(|c| {
             *c += 1;
             *c
@@ -337,7 +419,13 @@ impl Conv {
     /// `nodes` in paint order (first = bottom), as layers in the same order. `parent` is the
     /// absolute transform of the group holding them (what resvg needs to render one of them
     /// alone, since a node's own data is in its parent's space).
-    fn convert_children(&mut self, nodes: &[usvg::Node], depth: usize, rec: usize, parent: tiny_skia::Transform) -> Vec<Layer> {
+    fn convert_children(
+        &mut self,
+        nodes: &[usvg::Node],
+        depth: usize,
+        rec: usize,
+        parent: tiny_skia::Transform,
+    ) -> Vec<Layer> {
         let mut out = Vec::new();
         for node in nodes {
             self.convert_node(node, &mut out, depth, rec, parent);
@@ -345,15 +433,27 @@ impl Conv {
         out
     }
 
-    fn convert_node(&mut self, node: &usvg::Node, out: &mut Vec<Layer>, depth: usize, rec: usize, parent: tiny_skia::Transform) {
+    fn convert_node(
+        &mut self,
+        node: &usvg::Node,
+        out: &mut Vec<Layer>,
+        depth: usize,
+        rec: usize,
+        parent: tiny_skia::Transform,
+    ) {
         match node {
             usvg::Node::Group(g) => {
                 // A clip-path of one plain path becomes the group's vector mask (#4266); others
                 // are rasterised with the group.
                 let clip = g.clip_path().and_then(|cp| self.clip_mask(g, cp));
-                let dropped: [(bool, &'static str); 3] =
-                    [(!g.filters().is_empty(), "filter"), (g.clip_path().is_some() && clip.is_none(), "clip-path"), (g.mask().is_some(), "mask")];
-                let too_deep = self.max_group_depth.is_some_and(|limit| depth >= limit) || depth >= MAX_GROUP_DEPTH || rec >= MAX_RECURSION;
+                let dropped: [(bool, &'static str); 3] = [
+                    (!g.filters().is_empty(), "filter"),
+                    (g.clip_path().is_some() && clip.is_none(), "clip-path"),
+                    (g.mask().is_some(), "mask"),
+                ];
+                let too_deep = self.max_group_depth.is_some_and(|limit| depth >= limit)
+                    || depth >= MAX_GROUP_DEPTH
+                    || rec >= MAX_RECURSION;
                 if dropped.iter().any(|d| d.0) || too_deep {
                     for (yes, what) in dropped {
                         if yes {
@@ -361,7 +461,10 @@ impl Conv {
                         }
                     }
                     if too_deep {
-                        self.note("depth", "SVG: groups nested too deeply were rasterised".to_string());
+                        self.note(
+                            "depth",
+                            "SVG: groups nested too deeply were rasterised".to_string(),
+                        );
                     }
                     let name = self.name(g.id(), 1);
                     out.extend(self.raster_layer(node, name, parent));
@@ -369,8 +472,16 @@ impl Conv {
                 }
                 // A group that only carries a transform (baked into its paths by usvg) or that
                 // usvg inserted for its own bookkeeping adds nothing to the layer tree.
-                let plain = clip.is_none() && g.id().is_empty() && g.opacity().get() >= 1.0 && g.blend_mode() == usvg::BlendMode::Normal;
-                let children = self.convert_children(g.children(), if plain { depth } else { depth + 1 }, rec + 1, g.abs_transform());
+                let plain = clip.is_none()
+                    && g.id().is_empty()
+                    && g.opacity().get() >= 1.0
+                    && g.blend_mode() == usvg::BlendMode::Normal;
+                let children = self.convert_children(
+                    g.children(),
+                    if plain { depth } else { depth + 1 },
+                    rec + 1,
+                    g.abs_transform(),
+                );
                 if children.is_empty() {
                     return;
                 }
@@ -381,7 +492,10 @@ impl Conv {
                 let only_id = g.opacity().get() >= 1.0 && g.blend_mode() == usvg::BlendMode::Normal;
                 // A lone child takes the group's name (and its clip, when it has no vector mask of
                 // its own).
-                if only_id && children.len() == 1 && (clip.is_none() || children.iter().all(|c| c.vector_mask.is_none())) {
+                if only_id
+                    && children.len() == 1
+                    && (clip.is_none() || children.iter().all(|c| c.vector_mask.is_none()))
+                {
                     if let Some(mut child) = children.into_iter().next() {
                         if !g.id().is_empty() {
                             child.name = g.id().to_string();
@@ -391,7 +505,14 @@ impl Conv {
                     }
                     return;
                 }
-                let mut l = Layer::new(self.name(g.id(), 1), LayerContent::Group(Group { children, expanded: false, artboard: None }));
+                let mut l = Layer::new(
+                    self.name(g.id(), 1),
+                    LayerContent::Group(Group {
+                        children,
+                        expanded: false,
+                        artboard: None,
+                    }),
+                );
                 l.opacity = g.opacity().get();
                 l.blend = blend(g.blend_mode());
                 l.vector_mask = clip;
@@ -404,19 +525,40 @@ impl Conv {
                 out.extend(self.raster_layer(node, name, parent));
             }
             usvg::Node::Text(t) => {
-                let children = self.convert_children(t.flattened().children(), depth + 1, rec + 1, t.flattened().abs_transform());
+                let children = self.convert_children(
+                    t.flattened().children(),
+                    depth + 1,
+                    rec + 1,
+                    t.flattened().abs_transform(),
+                );
                 if children.is_empty() {
                     self.note("text", "SVG: text needs a font the drawing can use; none matched, so it was dropped".to_string());
                     return;
                 }
                 let name = if t.id().is_empty() {
-                    let content: String = t.chunks().iter().map(|c| c.text()).collect::<Vec<_>>().join("");
+                    let content: String = t
+                        .chunks()
+                        .iter()
+                        .map(|c| c.text())
+                        .collect::<Vec<_>>()
+                        .join("");
                     let content = content.trim();
-                    if content.is_empty() { self.name("", 3) } else { content.chars().take(31).collect() }
+                    if content.is_empty() {
+                        self.name("", 3)
+                    } else {
+                        content.chars().take(31).collect()
+                    }
                 } else {
                     t.id().to_string()
                 };
-                out.push(Layer::new(name, LayerContent::Group(Group { children, expanded: false, artboard: None })));
+                out.push(Layer::new(
+                    name,
+                    LayerContent::Group(Group {
+                        children,
+                        expanded: false,
+                        artboard: None,
+                    }),
+                ));
             }
         }
     }
@@ -428,11 +570,16 @@ impl Conv {
         if cp.clip_path().is_some() {
             return None;
         }
-        let [usvg::Node::Path(p)] = cp.root().children() else { return None };
+        let [usvg::Node::Path(p)] = cp.root().children() else {
+            return None;
+        };
         if !p.is_visible() {
             return None;
         }
-        let ts = g.abs_transform().pre_concat(cp.transform()).post_concat(self.global);
+        let ts = g
+            .abs_transform()
+            .pre_concat(cp.transform())
+            .post_concat(self.global);
         let subpaths = knots(&(*p.data()).clone().transform(ts)?);
         if subpaths.is_empty() {
             return None;
@@ -441,17 +588,31 @@ impl Conv {
             Some(usvg::FillRule::EvenOdd) => FillRule::EvenOdd,
             _ => FillRule::NonZero,
         };
-        Some(VectorMask::new(Path { subpaths, fill_rule, inverted: false }))
+        Some(VectorMask::new(Path {
+            subpaths,
+            fill_rule,
+            inverted: false,
+        }))
     }
 
     /// A path as a shape layer, or a pixel layer when its paint is a pattern.
-    fn shape_layer(&mut self, node: &usvg::Node, p: &usvg::Path, parent: tiny_skia::Transform) -> Option<Layer> {
+    fn shape_layer(
+        &mut self,
+        node: &usvg::Node,
+        p: &usvg::Path,
+        parent: tiny_skia::Transform,
+    ) -> Option<Layer> {
         if !p.is_visible() {
             return None;
         }
         let is_pattern = |paint: &usvg::Paint| matches!(paint, usvg::Paint::Pattern(_));
-        if p.fill().is_some_and(|f| is_pattern(f.paint())) || p.stroke().is_some_and(|s| is_pattern(s.paint())) {
-            self.note("pattern", "SVG: pattern paints were rasterised, so those shapes are not editable".to_string());
+        if p.fill().is_some_and(|f| is_pattern(f.paint()))
+            || p.stroke().is_some_and(|s| is_pattern(s.paint()))
+        {
+            self.note(
+                "pattern",
+                "SVG: pattern paints were rasterised, so those shapes are not editable".to_string(),
+            );
             let name = self.name(p.id(), 0);
             return self.raster_layer(node, name, parent);
         }
@@ -461,13 +622,21 @@ impl Conv {
         if subpaths.is_empty() {
             return None;
         }
-        let fill = p.fill().map(|f| self.paint(f.paint(), f.opacity().get(), ts));
+        let fill = p
+            .fill()
+            .map(|f| self.paint(f.paint(), f.opacity().get(), ts));
         let stroke = p.stroke().map(|s| {
             // Stroke widths are in drawing units; under a non-uniform scale they take the
             // geometric mean, the one width the shape model has.
-            let (kx, ky) = ((ts.sx * ts.sx + ts.ky * ts.ky).sqrt(), (ts.kx * ts.kx + ts.sy * ts.sy).sqrt());
+            let (kx, ky) = (
+                (ts.sx * ts.sx + ts.ky * ts.ky).sqrt(),
+                (ts.kx * ts.kx + ts.sy * ts.sy).sqrt(),
+            );
             if (kx - ky).abs() > 0.01 * kx.max(ky) {
-                self.note("stroke-scale", "SVG: strokes under a non-uniform scale keep one averaged width".to_string());
+                self.note(
+                    "stroke-scale",
+                    "SVG: strokes under a non-uniform scale keep one averaged width".to_string(),
+                );
             }
             let k = (ts.sx * ts.sy - ts.kx * ts.ky).abs().sqrt().max(1e-6);
             let width = (s.width().get() * k).max(0.01);
@@ -487,7 +656,10 @@ impl Conv {
                     usvg::LineJoin::Miter | usvg::LineJoin::MiterClip => LineJoin::Miter,
                 },
                 miter_limit: s.miterlimit().get(),
-                dashes: s.dasharray().map(|d| d.iter().map(|v| v * k / width).collect()).unwrap_or_default(),
+                dashes: s
+                    .dasharray()
+                    .map(|d| d.iter().map(|v| v * k / width).collect())
+                    .unwrap_or_default(),
                 dash_offset: s.dashoffset() * k / width,
             }
         });
@@ -495,7 +667,16 @@ impl Conv {
             Some(usvg::FillRule::EvenOdd) => FillRule::EvenOdd,
             _ => FillRule::NonZero,
         };
-        let mut sh = ShapeLayer { path: Path { subpaths, fill_rule, inverted: false }, fill, stroke, ..Default::default() };
+        let mut sh = ShapeLayer {
+            path: Path {
+                subpaths,
+                fill_rule,
+                inverted: false,
+            },
+            fill,
+            stroke,
+            ..Default::default()
+        };
         sh.cache = Some(photocraft_vector::render_shape(&sh, self.fmt, self.canvas));
         Some(Layer::new(self.name(p.id(), 0), LayerContent::Shape(sh)))
     }
@@ -503,24 +684,37 @@ impl Conv {
     /// A paint as a layer fill. `ts` maps the paint's space onto the canvas.
     fn paint(&mut self, paint: &usvg::Paint, opacity: f32, ts: tiny_skia::Transform) -> Fill {
         let stops = |g: &usvg::BaseGradient| -> Vec<(f32, Color)> {
-            g.stops().iter().map(|s| (s.offset().get(), color(s.color(), s.opacity().get() * opacity))).collect()
+            g.stops()
+                .iter()
+                .map(|s| {
+                    (
+                        s.offset().get(),
+                        color(s.color(), s.opacity().get() * opacity),
+                    )
+                })
+                .collect()
         };
-        let gradient = |stops: Vec<(f32, Color)>, angle: f32, style: GradientStyle| Fill::Gradient {
-            stops,
-            angle,
-            scale: 1.0,
-            style,
-            reverse: false,
-            opacity_stops: Vec::new(),
-            midpoints: Vec::new(),
-            offset: (0.0, 0.0),
-            dither: false,
-            align: true,
-        };
+        let gradient =
+            |stops: Vec<(f32, Color)>, angle: f32, style: GradientStyle| Fill::Gradient {
+                stops,
+                angle,
+                scale: 1.0,
+                style,
+                reverse: false,
+                opacity_stops: Vec::new(),
+                midpoints: Vec::new(),
+                offset: (0.0, 0.0),
+                dither: false,
+                align: true,
+            };
         match paint {
             usvg::Paint::Color(c) => Fill::Solid(color(*c, opacity)),
             usvg::Paint::LinearGradient(g) => {
-                self.note("gradient", "SVG: gradient paints keep their stops and direction, not their exact geometry".to_string());
+                self.note(
+                    "gradient",
+                    "SVG: gradient paints keep their stops and direction, not their exact geometry"
+                        .to_string(),
+                );
                 let gt = g.transform().post_concat(ts);
                 let mut a = tiny_skia::Point::from_xy(g.x1(), g.y1());
                 let mut b = tiny_skia::Point::from_xy(g.x2(), g.y2());
@@ -528,10 +722,18 @@ impl Conv {
                 gt.map_point(&mut b);
                 // Photoshop's angle: 0° left → right, counter-clockwise positive (y points down).
                 let angle = (-(b.y - a.y)).atan2(b.x - a.x).to_degrees();
-                gradient(stops(g), if angle.is_finite() { angle } else { 0.0 }, GradientStyle::Linear)
+                gradient(
+                    stops(g),
+                    if angle.is_finite() { angle } else { 0.0 },
+                    GradientStyle::Linear,
+                )
             }
             usvg::Paint::RadialGradient(g) => {
-                self.note("gradient", "SVG: gradient paints keep their stops and direction, not their exact geometry".to_string());
+                self.note(
+                    "gradient",
+                    "SVG: gradient paints keep their stops and direction, not their exact geometry"
+                        .to_string(),
+                );
                 gradient(stops(g), 0.0, GradientStyle::Radial)
             }
             // Pattern paints are rasterised before we get here.
@@ -541,7 +743,12 @@ impl Conv {
 
     /// The node rendered by resvg into a pixel layer over its bounding box, clipped to the canvas.
     /// `parent` is the absolute transform of the node's parent group.
-    fn raster_layer(&mut self, node: &usvg::Node, name: String, parent: tiny_skia::Transform) -> Option<Layer> {
+    fn raster_layer(
+        &mut self,
+        node: &usvg::Node,
+        name: String,
+        parent: tiny_skia::Transform,
+    ) -> Option<Layer> {
         let bb = node.abs_layer_bounding_box()?;
         let k = self.global.sx;
         let x0 = ((bb.x() * k).floor() as i32).max(self.canvas.x0);
@@ -552,7 +759,10 @@ impl Conv {
             return None;
         }
         let Some(mut pixmap) = pixmap((x1 - x0) as u32, (y1 - y0) as u32) else {
-            self.note("raster-size", "SVG: an element too large to rasterise was dropped".to_string());
+            self.note(
+                "raster-size",
+                "SVG: an element too large to rasterise was dropped".to_string(),
+            );
             return None;
         };
         // resvg renders the node in its parent's space after shifting its absolute bounding box
@@ -561,12 +771,20 @@ impl Conv {
         let canvas = tiny_skia::Transform::from_row(k, 0.0, 0.0, k, -(x0 as f32), -(y0 as f32));
         let ts = canvas.pre_concat(parent).pre_translate(bb.x(), bb.y());
         resvg::render_node(node, ts, &mut pixmap.as_mut())?;
-        Some(Layer::new(name, LayerContent::Raster(surface(&pixmap, Rect::new(x0, y0, x1, y1), self.fmt))))
+        Some(Layer::new(
+            name,
+            LayerContent::Raster(surface(&pixmap, Rect::new(x0, y0, x1, y1), self.fmt)),
+        ))
     }
 }
 
 fn color(c: usvg::Color, alpha: f32) -> Color {
-    Color::rgba(f32::from(c.red) / 255.0, f32::from(c.green) / 255.0, f32::from(c.blue) / 255.0, alpha.clamp(0.0, 1.0))
+    Color::rgba(
+        f32::from(c.red) / 255.0,
+        f32::from(c.green) / 255.0,
+        f32::from(c.blue) / 255.0,
+        alpha.clamp(0.0, 1.0),
+    )
 }
 
 fn blend(b: usvg::BlendMode) -> BlendMode {
@@ -607,7 +825,10 @@ fn knots(path: &tiny_skia::Path) -> Vec<Subpath> {
         let Some(mut sp) = cur.take() else { return };
         sp.closed = closed;
         if closed && sp.knots.len() > 1 {
-            let (first, last) = (sp.knots.first().map(|k| k.anchor), sp.knots.last().map(|k| (k.anchor, k.in_ctrl)));
+            let (first, last) = (
+                sp.knots.first().map(|k| k.anchor),
+                sp.knots.last().map(|k| (k.anchor, k.in_ctrl)),
+            );
             if let (Some(a), Some((b, in_ctrl))) = (first, last)
                 && (a.x - b.x).abs() < 1e-6
                 && (a.y - b.y).abs() < 1e-6
@@ -629,13 +850,21 @@ fn knots(path: &tiny_skia::Path) -> Vec<Subpath> {
         if let Some(last) = sp.knots.last_mut() {
             last.out_ctrl = c1;
         }
-        sp.knots.push(Knot { anchor: p, in_ctrl: c2, out_ctrl: p, smooth: false });
+        sp.knots.push(Knot {
+            anchor: p,
+            in_ctrl: c2,
+            out_ctrl: p,
+            smooth: false,
+        });
     }
     for seg in path.segments() {
         match seg {
             S::MoveTo(p) => {
                 flush(&mut cur, &mut out, false);
-                cur = Some(Subpath { knots: vec![Knot::corner(f64::from(p.x), f64::from(p.y))], ..Default::default() });
+                cur = Some(Subpath {
+                    knots: vec![Knot::corner(f64::from(p.x), f64::from(p.y))],
+                    ..Default::default()
+                });
             }
             S::LineTo(p) => {
                 if let Some(sp) = cur.as_mut() {
@@ -646,8 +875,12 @@ fn knots(path: &tiny_skia::Path) -> Vec<Subpath> {
                 if let Some(sp) = cur.as_mut() {
                     let (c, p) = (pt(c), pt(p));
                     let p0 = sp.knots.last().map_or(p, |k| k.anchor);
-                    let c1 = Point::new(p0.x + 2.0 / 3.0 * (c.x - p0.x), p0.y + 2.0 / 3.0 * (c.y - p0.y));
-                    let c2 = Point::new(p.x + 2.0 / 3.0 * (c.x - p.x), p.y + 2.0 / 3.0 * (c.y - p.y));
+                    let c1 = Point::new(
+                        p0.x + 2.0 / 3.0 * (c.x - p0.x),
+                        p0.y + 2.0 / 3.0 * (c.y - p0.y),
+                    );
+                    let c2 =
+                        Point::new(p.x + 2.0 / 3.0 * (c.x - p.x), p.y + 2.0 / 3.0 * (c.y - p.y));
                     curve(sp, c1, c2, p);
                 }
             }
@@ -670,9 +903,15 @@ mod tests {
     #[test]
     fn sniffing_accepts_svg_and_rejects_other_xml() {
         assert!(is_svg(b"<svg xmlns=\"http://www.w3.org/2000/svg\"/>"));
-        assert!(is_svg("\u{feff}<?xml version=\"1.0\"?>\n<!-- hi -->\n<svg/>".as_bytes()));
-        assert!(is_svg(b"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"x\"><svg/>"));
-        assert!(!is_svg(b"<?xml version=\"1.0\"?><x:xmpmeta xmlns:x=\"adobe:ns:meta/\"/>"));
+        assert!(is_svg(
+            "\u{feff}<?xml version=\"1.0\"?>\n<!-- hi -->\n<svg/>".as_bytes()
+        ));
+        assert!(is_svg(
+            b"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"x\"><svg/>"
+        ));
+        assert!(!is_svg(
+            b"<?xml version=\"1.0\"?><x:xmpmeta xmlns:x=\"adobe:ns:meta/\"/>"
+        ));
         assert!(!is_svg(b"\x89PNG\r\n"));
         assert!(!is_svg(b""));
     }
@@ -693,7 +932,9 @@ mod tests {
         // The explicit line back to the start was merged into the first knot.
         assert_eq!(sp[0].knots.len(), 2);
         let (a, b) = (&sp[0].knots[0], &sp[0].knots[1]);
-        assert!((a.out_ctrl.x - 10.0 / 3.0).abs() < 1e-9 && (a.out_ctrl.y - 20.0 / 3.0).abs() < 1e-9);
+        assert!(
+            (a.out_ctrl.x - 10.0 / 3.0).abs() < 1e-9 && (a.out_ctrl.y - 20.0 / 3.0).abs() < 1e-9
+        );
         assert!((b.in_ctrl.x - 20.0 / 3.0).abs() < 1e-9 && (b.in_ctrl.y - 20.0 / 3.0).abs() < 1e-9);
         assert_eq!(b.anchor, Point::new(10.0, 0.0));
         assert_eq!(sp[1].knots.len(), 2);
@@ -711,13 +952,21 @@ mod tests {
         assert!(parsed.fontless_text);
         let r = import_parsed("t", parsed, MAX_GROUP_DEPTH).unwrap();
         assert!(r.document.layers.is_empty());
-        assert!(r.warnings.iter().any(|w| w.contains("font")), "{:?}", r.warnings);
+        assert!(
+            r.warnings.iter().any(|w| w.contains("font")),
+            "{:?}",
+            r.warnings
+        );
         // A drawing without text never loads or misses fonts.
         let parsed =
             parse_with(b"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"10\" height=\"10\"><rect width=\"10\" height=\"10\"/></svg>", no_fonts).unwrap();
         assert!(!parsed.fontless_text);
         let r = import_parsed("t", parsed, MAX_GROUP_DEPTH).unwrap();
-        assert!(r.warnings.iter().all(|w| !w.contains("font")), "{:?}", r.warnings);
+        assert!(
+            r.warnings.iter().all(|w| !w.contains("font")),
+            "{:?}",
+            r.warnings
+        );
     }
 
     /// #4266: a group clipped by one path (the PhotoCraft icon's rounded square) stays editable
@@ -732,15 +981,42 @@ mod tests {
               <circle cx="40" cy="40" r="20" fill="#efe9dc"/>
             </g></svg>"##;
         let r = import_svg("t", svg).unwrap();
-        assert!(r.warnings.iter().all(|w| !w.contains("clip-path")), "{:?}", r.warnings);
-        let [group] = r.document.layers.as_slice() else { panic!("one group: {:?}", r.document.layers.len()) };
-        let LayerContent::Group(g) = &group.content else { panic!("a group") };
+        assert!(
+            r.warnings.iter().all(|w| !w.contains("clip-path")),
+            "{:?}",
+            r.warnings
+        );
+        let [group] = r.document.layers.as_slice() else {
+            panic!("one group: {:?}", r.document.layers.len())
+        };
+        let LayerContent::Group(g) = &group.content else {
+            panic!("a group")
+        };
         assert_eq!(g.children.len(), 2);
-        assert!(g.children.iter().all(|c| matches!(c.content, LayerContent::Shape(_))), "editable shapes");
-        let mask = group.vector_mask.as_ref().expect("the clip as a vector mask");
-        let xs: Vec<f64> = mask.path.subpaths.iter().flat_map(|s| s.knots.iter().map(|k| k.anchor.x)).collect();
-        let (lo, hi) = (xs.iter().copied().fold(f64::MAX, f64::min), xs.iter().copied().fold(f64::MIN, f64::max));
-        assert!((lo - 12.0).abs() < 1e-3 && (hi - 52.0).abs() < 1e-3, "in the group's space: {lo}..{hi}");
+        assert!(
+            g.children
+                .iter()
+                .all(|c| matches!(c.content, LayerContent::Shape(_))),
+            "editable shapes"
+        );
+        let mask = group
+            .vector_mask
+            .as_ref()
+            .expect("the clip as a vector mask");
+        let xs: Vec<f64> = mask
+            .path
+            .subpaths
+            .iter()
+            .flat_map(|s| s.knots.iter().map(|k| k.anchor.x))
+            .collect();
+        let (lo, hi) = (
+            xs.iter().copied().fold(f64::MAX, f64::min),
+            xs.iter().copied().fold(f64::MIN, f64::max),
+        );
+        assert!(
+            (lo - 12.0).abs() < 1e-3 && (hi - 52.0).abs() < 1e-3,
+            "in the group's space: {lo}..{hi}"
+        );
         // Pixel for pixel what resvg draws, but for anti-aliasing along the edges.
         let ours = photocraft_compose::flatten(&r.document).to_rgba8().pixels;
         let tree = parse(svg).unwrap().tree;
@@ -754,23 +1030,45 @@ mod tests {
                 [c.red(), c.green(), c.blue(), c.alpha()]
             })
             .collect();
-        let off = ours.chunks(4).zip(theirs.chunks(4)).filter(|(a, b)| a.iter().zip(*b).any(|(x, y)| x.abs_diff(*y) > 48)).count();
+        let off = ours
+            .chunks(4)
+            .zip(theirs.chunks(4))
+            .filter(|(a, b)| a.iter().zip(*b).any(|(x, y)| x.abs_diff(*y) > 48))
+            .count();
         assert!(off < 64, "{off} pixels differ");
         // The report's file: PhotoCraft's own icon opens without the clip-path warning.
-        let icon = import_svg("photocraft.svg", include_bytes!("../../../assets/photocraft/app-icon/photocraft.svg")).unwrap();
-        assert!(icon.warnings.iter().all(|w| !w.contains("clip-path")), "{:?}", icon.warnings);
-        assert!(icon.document.layers.iter().any(|l| l.vector_mask.is_some()), "its rounded square is a vector mask");
+        let icon = import_svg(
+            "photocraft.svg",
+            include_bytes!("../../../assets/photocraft/app-icon/photocraft.svg"),
+        )
+        .unwrap();
+        assert!(
+            icon.warnings.iter().all(|w| !w.contains("clip-path")),
+            "{:?}",
+            icon.warnings
+        );
+        assert!(
+            icon.document.layers.iter().any(|l| l.vector_mask.is_some()),
+            "its rounded square is a vector mask"
+        );
         // Two shapes in the clip: rasterised, and said so.
         let two = br##"<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64">
             <defs><clipPath id="c"><rect width="20" height="20"/><rect x="30" width="20" height="20"/></clipPath></defs>
             <g clip-path="url(#c)"><rect width="64" height="64"/><rect width="9" height="9" fill="red"/></g></svg>"##;
         let r = import_svg("t", two).unwrap();
-        assert!(r.warnings.iter().any(|w| w.contains("clip-path")), "{:?}", r.warnings);
+        assert!(
+            r.warnings.iter().any(|w| w.contains("clip-path")),
+            "{:?}",
+            r.warnings
+        );
     }
 
     #[test]
     fn huge_drawings_scale_to_the_side_limit() {
-        let tree = parse(b"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100000 50000\"/>").unwrap().tree;
+        let tree =
+            parse(b"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100000 50000\"/>")
+                .unwrap()
+                .tree;
         let mut w = Vec::new();
         let cv = canvas(&tree, &mut w);
         assert_eq!((cv.size.width, cv.size.height), (MAX_SIDE, MAX_SIDE / 2));

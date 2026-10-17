@@ -8,7 +8,14 @@
 //!
 //! The public API below is the contract `crates/export` codes against; keep it stable.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod bitw;
 mod cdf;
@@ -55,7 +62,17 @@ pub struct EncoderConfig {
 
 impl EncoderConfig {
     pub fn new(width: u32, height: u32, fps_num: u32, fps_den: u32) -> Self {
-        EncoderConfig { width, height, fps_num, fps_den, bit_depth: 8, level_idx: None, rate: RateControl::ConstantQ(100), keyint: 60, full_range: false }
+        EncoderConfig {
+            width,
+            height,
+            fps_num,
+            fps_den,
+            bit_depth: 8,
+            level_idx: None,
+            rate: RateControl::ConstantQ(100),
+            keyint: 60,
+            full_range: false,
+        }
     }
 }
 
@@ -123,7 +140,12 @@ fn pick_level(cfg: &EncoderConfig) -> u8 {
         RateControl::ConstantQ(_) => 0,
     };
     for &(idx, max_pic, max_h, max_v, max_rate, max_br) in LEVELS.iter() {
-        if pic <= max_pic && cfg.width <= max_h && cfg.height <= max_v && rate <= max_rate && bitrate <= max_br {
+        if pic <= max_pic
+            && cfg.width <= max_h
+            && cfg.height <= max_v
+            && rate <= max_rate
+            && bitrate <= max_br
+        {
             return idx;
         }
     }
@@ -157,17 +179,26 @@ impl Encoder {
             return Err(Error::InvalidConfig("empty frame".into()));
         }
         if cfg.width > 4096 || cfg.height > 4096 {
-            return Err(Error::InvalidConfig(format!("{}x{} exceeds the single-tile limit (4096 samples per side)", cfg.width, cfg.height)));
+            return Err(Error::InvalidConfig(format!(
+                "{}x{} exceeds the single-tile limit (4096 samples per side)",
+                cfg.width, cfg.height
+            )));
         }
         if cfg.bit_depth != 8 && cfg.bit_depth != 10 {
-            return Err(Error::InvalidConfig(format!("bit depth {} (8 or 10 supported)", cfg.bit_depth)));
+            return Err(Error::InvalidConfig(format!(
+                "bit depth {} (8 or 10 supported)",
+                cfg.bit_depth
+            )));
         }
         if cfg.fps_num == 0 || cfg.fps_den == 0 {
             return Err(Error::InvalidConfig("frame rate".into()));
         }
         let geom = FrameGeom::new(cfg.width as usize, cfg.height as usize);
         if geom.sb_cols * geom.sb_rows > 2304 {
-            return Err(Error::InvalidConfig(format!("{}x{} exceeds the single-tile area limit (MAX_TILE_AREA)", cfg.width, cfg.height)));
+            return Err(Error::InvalidConfig(format!(
+                "{}x{} exceeds the single-tile area limit (MAX_TILE_AREA)",
+                cfg.width, cfg.height
+            )));
         }
         if let RateControl::Bitrate { kbps } = cfg.rate
             && kbps == 0
@@ -185,10 +216,22 @@ impl Encoder {
                 // initial guess from the bits per sample
                 let bpp = frame_bits / (cfg.width as f64 * cfg.height as f64);
                 let q = (110.0 - 40.0 * (bpp / 0.1).log2()).clamp(20.0, 230.0);
-                Some(RateState { frame_bits, q, debt: 0.0 })
+                Some(RateState {
+                    frame_bits,
+                    q,
+                    debt: 0.0,
+                })
             }
         };
-        let mut enc = Encoder { cfg, geom, level, seq_obu: Vec::new(), frame_num: 0, refr: None, rc };
+        let mut enc = Encoder {
+            cfg,
+            geom,
+            level,
+            seq_obu: Vec::new(),
+            frame_num: 0,
+            refr: None,
+            rc,
+        };
         let payload = enc.sequence_header_payload();
         obu(OBU_SEQUENCE_HEADER, &payload, &mut enc.seq_obu);
         Ok(enc)
@@ -347,7 +390,10 @@ impl Encoder {
                 1 => (frame.u, frame.uv_stride),
                 _ => (frame.v, frame.uv_stride),
             };
-            assert!(stride >= vw && data.len() >= stride * (vh - 1) + vw, "plane {p} is too small for {vw}x{vh}");
+            assert!(
+                stride >= vw && data.len() >= stride * (vh - 1) + vw,
+                "plane {p} is too small for {vw}x{vh}"
+            );
             let mut pl = Plane::new(pw, ph);
             for y in 0..ph {
                 let sy = y.min(vh - 1);
@@ -375,7 +421,14 @@ impl Encoder {
             }
         }
         let lf_level = self.pick_filter_level(&dec.rec, &tw.lf_info(), src, qidx);
-        loop_filter(&mut dec.rec, &tw.lf_info(), [lf_level; 4], self.cfg.bit_depth as u32, false, 1);
+        loop_filter(
+            &mut dec.rec,
+            &tw.lf_info(),
+            [lf_level; 4],
+            self.cfg.bit_depth as u32,
+            false,
+            1,
+        );
         let (tile, cdfs) = tw.finish();
         let mut w = BitWriter::new();
         self.frame_header(&mut w, key, qidx, lf_level);
@@ -385,13 +438,24 @@ impl Encoder {
         payload.extend_from_slice(&tile);
         let mut out = Vec::with_capacity(payload.len() + 8);
         obu(OBU_FRAME, &payload, &mut out);
-        let rf = RefFrame { planes: dec.rec, mvs: dec.mvs, lf_level, cdfs };
+        let rf = RefFrame {
+            planes: dec.rec,
+            mvs: dec.mvs,
+            lf_level,
+            cdfs,
+        };
         (out, rf)
     }
 
     /// The loop filter level minimising the luma error (searched around a guess from the
     /// quantizer, on the luma of a subset of the superblock rows).
-    fn pick_filter_level(&self, rec: &[Plane; 3], info: &LfInfo, src: &[Plane; 3], qidx: u8) -> u32 {
+    fn pick_filter_level(
+        &self,
+        rec: &[Plane; 3],
+        info: &LfInfo,
+        src: &[Plane; 3],
+        qidx: u8,
+    ) -> u32 {
         let (w, h) = (self.geom.width, self.geom.height);
         let sb_row_step = if self.geom.sb_rows >= 9 { 3 } else { 1 };
         let sse = |pl: &Plane| -> u64 {
@@ -464,15 +528,27 @@ impl Encoder {
             data.extend_from_slice(&self.seq_obu);
         }
         data.extend_from_slice(&frame_obu);
-        Packet { data, keyframe: key }
+        Packet {
+            data,
+            keyframe: key,
+        }
     }
 
-    fn encode_rate_controlled(&mut self, src: &[Plane; 3], key: bool, rc: &mut RateState) -> (Vec<u8>, RefFrame) {
+    fn encode_rate_controlled(
+        &mut self,
+        src: &[Plane; 3],
+        key: bool,
+        rc: &mut RateState,
+    ) -> (Vec<u8>, RefFrame) {
         let first = self.frame_num == 0;
         let (frame_bits, debt, q_inter) = (rc.frame_bits, rc.debt, rc.q);
         // key frames get a lower quantizer and a larger share of the budget
         let key_boost = 1.0 + (self.cfg.keyint.clamp(1, 60) as f64 - 1.0).sqrt() * 0.75;
-        let budget = if key { frame_bits * key_boost } else { frame_bits };
+        let budget = if key {
+            frame_bits * key_boost
+        } else {
+            frame_bits
+        };
         // pay back a fraction of the accumulated deviation
         let target = (budget - debt * 0.25).max(budget * 0.25);
         let mut q = if key { q_inter - 24.0 } else { q_inter };
@@ -483,7 +559,9 @@ impl Encoder {
             let (obu, rf) = self.encode_frame(src, key, qi);
             let bits = obu.len() as f64 * 8.0;
             let err = (bits / target).log2();
-            let better = best.as_ref().is_none_or(|b| err.abs() < (b.2 / target).log2().abs());
+            let better = best
+                .as_ref()
+                .is_none_or(|b| err.abs() < (b.2 / target).log2().abs());
             if better {
                 best = Some((obu, rf, bits));
             }
@@ -492,7 +570,9 @@ impl Encoder {
             }
         }
         // At least one pass ran, so `best` is set.
-        let Some((obu, rf, bits)) = best else { return self.encode_frame(src, key, q.round().clamp(1.0, 255.0) as u8) };
+        let Some((obu, rf, bits)) = best else {
+            return self.encode_frame(src, key, q.round().clamp(1.0, 255.0) as u8);
+        };
         rc.debt += bits - budget;
         // adapt the inter quantizer: about 30 index steps per doubling of the rate
         let err = (bits / target).log2().clamp(-1.0, 1.0);

@@ -2,11 +2,17 @@
 //! layers, markers, track matte shortcuts, open/reveal, and Keyframe Assistant ▸ Sequence Layers.
 
 use effectcraft_keyframe::{Keyframe, ShapePath, Value as KV};
-use effectcraft_project::{FrameBlend, GroupKind, ItemId, LayerId, LayerSource, Marker, MaskMode, MatteKind, Node, Quality, Sampling, TrackMatte, Uid};
+use effectcraft_project::{
+    FrameBlend, GroupKind, ItemId, LayerId, LayerSource, Marker, MaskMode, MatteKind, Node,
+    Quality, Sampling, TrackMatte, Uid,
+};
 use effectcraft_time::Tick;
 use serde_json::{Value, json};
 
-use super::{CommandSpec, b_p, bad, comp_id, f_p, frontend, has_comp, has_layers, layer_mut, layer_p, layers_p, merge_p, str_p};
+use super::{
+    CommandSpec, b_p, bad, comp_id, f_p, frontend, has_comp, has_layers, layer_mut, layer_p,
+    layers_p, merge_p, str_p,
+};
 use crate::{EngineError, Result, Session, cmd};
 
 // ---------------------------------------------------------------- enablement
@@ -14,14 +20,28 @@ use crate::{EngineError, Result, Session, cmd};
 fn has_masks(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let c = s.active_comp().ok_or("no composition")?;
-    let any = s.state.selected_layers.iter().filter_map(|l| c.layer(*l)).any(|l| l.masks().is_some_and(|m| !m.children.is_empty()));
-    if any { Ok(()) } else { Err("the selected layers have no masks".into()) }
+    let any = s
+        .state
+        .selected_layers
+        .iter()
+        .filter_map(|l| c.layer(*l))
+        .any(|l| l.masks().is_some_and(|m| !m.children.is_empty()));
+    if any {
+        Ok(())
+    } else {
+        Err("the selected layers have no masks".into())
+    }
 }
 
 fn has_markers(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let c = s.active_comp().ok_or("no composition")?;
-    if s.state.selected_layers.iter().filter_map(|l| c.layer(*l)).any(|l| !l.markers.is_empty()) {
+    if s.state
+        .selected_layers
+        .iter()
+        .filter_map(|l| c.layer(*l))
+        .any(|l| !l.markers.is_empty())
+    {
         Ok(())
     } else {
         Err("the selected layers have no markers".into())
@@ -31,7 +51,12 @@ fn has_markers(s: &Session) -> std::result::Result<(), String> {
 fn has_source_item(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let c = s.active_comp().ok_or("no composition")?;
-    if s.state.selected_layers.iter().filter_map(|l| c.layer(*l)).any(|l| l.source.item().is_some()) {
+    if s.state
+        .selected_layers
+        .iter()
+        .filter_map(|l| c.layer(*l))
+        .any(|l| l.source.item().is_some())
+    {
         Ok(())
     } else {
         Err("the selected layer has no source item".into())
@@ -41,27 +66,55 @@ fn has_source_item(s: &Session) -> std::result::Result<(), String> {
 fn has_footage_layer(s: &Session) -> std::result::Result<(), String> {
     has_layers(s)?;
     let c = s.active_comp().ok_or("no composition")?;
-    let any = s.state.selected_layers.iter().filter_map(|l| c.layer(*l)).any(|l| matches!(l.source, LayerSource::Footage { .. }));
-    if any { Ok(()) } else { Err("select a footage layer".into()) }
+    let any = s
+        .state
+        .selected_layers
+        .iter()
+        .filter_map(|l| c.layer(*l))
+        .any(|l| matches!(l.source, LayerSource::Footage { .. }));
+    if any {
+        Ok(())
+    } else {
+        Err("select a footage layer".into())
+    }
 }
 
 fn has_multiple_layers(s: &Session) -> std::result::Result<(), String> {
     has_comp(s)?;
-    if s.state.selected_layers.len() >= 2 { Ok(()) } else { Err("select two or more layers".into()) }
+    if s.state.selected_layers.len() >= 2 {
+        Ok(())
+    } else {
+        Err("select two or more layers".into())
+    }
 }
 
 // ---------------------------------------------------------------- quality / sampling / blending
 
 fn quality(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
-    let q = match str_p(p, "quality").unwrap_or("best").to_ascii_lowercase().as_str() {
+    let q = match str_p(p, "quality")
+        .unwrap_or("best")
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "best" => Quality::Best,
         "draft" => Quality::Draft,
         "wireframe" => Quality::Wireframe,
-        q => return Err(bad("layer.quality", format!("quality must be best|draft|wireframe, not `{q}`"))),
+        q => {
+            return Err(bad(
+                "layer.quality",
+                format!("quality must be best|draft|wireframe, not `{q}`"),
+            ));
+        }
     };
     s.edit("Layer Quality", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut().filter(|l| ids.contains(&l.id)) {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+            .filter(|l| ids.contains(&l.id))
+        {
             l.switches.quality = q;
         }
         Ok(())
@@ -71,13 +124,28 @@ fn quality(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn sampling(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
-    let q = match str_p(p, "sampling").unwrap_or("bilinear").to_ascii_lowercase().as_str() {
+    let q = match str_p(p, "sampling")
+        .unwrap_or("bilinear")
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "bilinear" => Sampling::Bilinear,
         "bicubic" => Sampling::Bicubic,
-        q => return Err(bad("layer.sampling", format!("sampling must be bilinear|bicubic, not `{q}`"))),
+        q => {
+            return Err(bad(
+                "layer.sampling",
+                format!("sampling must be bilinear|bicubic, not `{q}`"),
+            ));
+        }
     };
     s.edit("Layer Sampling", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut().filter(|l| ids.contains(&l.id)) {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+            .filter(|l| ids.contains(&l.id))
+        {
             l.switches.sampling = q;
         }
         Ok(())
@@ -91,10 +159,21 @@ fn frame_blending(s: &mut Session, p: &Value) -> Result<Value> {
         "off" => FrameBlend::Off,
         "frameMix" => FrameBlend::FrameMix,
         "pixelMotion" => FrameBlend::PixelMotion,
-        m => return Err(bad("layer.frameBlending", format!("mode must be off|frameMix|pixelMotion, not `{m}`"))),
+        m => {
+            return Err(bad(
+                "layer.frameBlending",
+                format!("mode must be off|frameMix|pixelMotion, not `{m}`"),
+            ));
+        }
     };
     s.edit("Frame Blending", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut().filter(|l| ids.contains(&l.id)) {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+            .filter(|l| ids.contains(&l.id))
+        {
             l.switches.frame_blend = m;
         }
         Ok(())
@@ -107,7 +186,12 @@ fn frame_blending(s: &mut Session, p: &Value) -> Result<Value> {
 fn hide_other_video(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     s.edit("Hide Other Video", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut() {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+        {
             if !ids.contains(&l.id) && l.source.is_av() {
                 l.switches.video = false;
             }
@@ -122,7 +206,11 @@ fn show_all_video(s: &mut Session, p: &Value) -> Result<Value> {
     s.edit("Show All Video", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
         // Track mattes stay hidden (their video switch is off by design).
-        let mattes: Vec<LayerId> = c.layers.iter().filter_map(|l| l.track_matte.map(|m| m.layer)).collect();
+        let mattes: Vec<LayerId> = c
+            .layers
+            .iter()
+            .filter_map(|l| l.track_matte.map(|m| m.layer))
+            .collect();
         for l in c.layers.iter_mut().filter(|l| !mattes.contains(&l.id)) {
             l.switches.video = true;
         }
@@ -134,7 +222,12 @@ fn show_all_video(s: &mut Session, p: &Value) -> Result<Value> {
 fn unlock_all(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     s.edit("Unlock All Layers", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut() {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+        {
             l.switches.locked = false;
         }
         Ok(())
@@ -145,18 +238,32 @@ fn unlock_all(s: &mut Session, p: &Value) -> Result<Value> {
 fn expressions(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     let on = b_p(p, "enabled").unwrap_or(true);
-    let n = s.edit(if on { "Enable Expressions" } else { "Disable Expressions" }, None, |proj, _| {
-        let mut n = 0;
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut().filter(|l| ids.contains(&l.id)) {
-            l.props.walk_mut(&mut |pr| {
-                if let Some(e) = &mut pr.expr {
-                    e.enabled = on;
-                    n += 1;
-                }
-            });
-        }
-        Ok(n)
-    })?;
+    let n = s.edit(
+        if on {
+            "Enable Expressions"
+        } else {
+            "Disable Expressions"
+        },
+        None,
+        |proj, _| {
+            let mut n = 0;
+            for l in proj
+                .comp_mut(cid)
+                .ok_or(EngineError::NoComp)?
+                .layers
+                .iter_mut()
+                .filter(|l| ids.contains(&l.id))
+            {
+                l.props.walk_mut(&mut |pr| {
+                    if let Some(e) = &mut pr.expr {
+                        e.enabled = on;
+                        n += 1;
+                    }
+                });
+            }
+            Ok(n)
+        },
+    )?;
     Ok(json!({"expressions": n}))
 }
 
@@ -177,8 +284,16 @@ fn transform_member(prop: &str) -> Option<&'static str> {
 fn set_transform(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     let prop = str_p(p, "prop").ok_or_else(|| bad("layer.setTransform", "missing `prop`"))?;
-    let m = transform_member(prop).ok_or_else(|| bad("layer.setTransform", "prop: anchor|position|scale|orientation|rotation|opacity"))?;
-    let v = p.get("value").ok_or_else(|| bad("layer.setTransform", "missing `value`"))?.clone();
+    let m = transform_member(prop).ok_or_else(|| {
+        bad(
+            "layer.setTransform",
+            "prop: anchor|position|scale|orientation|rotation|opacity",
+        )
+    })?;
+    let v = p
+        .get("value")
+        .ok_or_else(|| bad("layer.setTransform", "missing `value`"))?
+        .clone();
     let t = s.time();
     let label = match m {
         "anchor" => "Anchor Point",
@@ -193,14 +308,23 @@ fn set_transform(s: &mut Session, p: &Value) -> Result<Value> {
             let l = layer_mut(proj, cid, *lid)?;
             let lt = l.layer_time(t);
             // Separate Dimensions: the picture follows X/Y/Z Position, not the combined property.
-            if m == "position" && l.transform().is_some_and(|tr| tr.get("positionX").is_some()) {
+            if m == "position"
+                && l.transform()
+                    .is_some_and(|tr| tr.get("positionX").is_some())
+            {
                 let cur = l
                     .transform()
                     .map(|tr| {
                         [
-                            tr.get("positionX").map(|p| p.value_at(lt).as_f64()).unwrap_or(0.0),
-                            tr.get("positionY").map(|p| p.value_at(lt).as_f64()).unwrap_or(0.0),
-                            tr.get("positionZ").map(|p| p.value_at(lt).as_f64()).unwrap_or(0.0),
+                            tr.get("positionX")
+                                .map(|p| p.value_at(lt).as_f64())
+                                .unwrap_or(0.0),
+                            tr.get("positionY")
+                                .map(|p| p.value_at(lt).as_f64())
+                                .unwrap_or(0.0),
+                            tr.get("positionZ")
+                                .map(|p| p.value_at(lt).as_f64())
+                                .unwrap_or(0.0),
                         ]
                     })
                     .unwrap_or([0.0; 3]);
@@ -209,23 +333,31 @@ fn set_transform(s: &mut Session, p: &Value) -> Result<Value> {
                     Value::Array(a) if a.len() == 2 => json!([a[0], a[1], cur[2]]),
                     _ => v.clone(),
                 };
-                let nv = KV::Vec3(cur).coerce_json(&j).ok_or_else(|| bad("layer.setTransform", format!("can't use {v} for {label}")))?;
+                let nv = KV::Vec3(cur).coerce_json(&j).ok_or_else(|| {
+                    bad("layer.setTransform", format!("can't use {v} for {label}"))
+                })?;
                 let xyz = nv.as_vec3();
-                let Some(tr) = l.transform_mut() else { continue };
+                let Some(tr) = l.transform_mut() else {
+                    continue;
+                };
                 super::layer::update_position(tr, lt, |_| xyz);
                 if let Some(pr) = tr.get_mut("position") {
                     pr.set_value_at(lt, KV::Vec3(xyz));
                 }
                 continue;
             }
-            let Some(pr) = l.transform_mut().and_then(|tr| tr.get_mut(m)) else { continue };
+            let Some(pr) = l.transform_mut().and_then(|tr| tr.get_mut(m)) else {
+                continue;
+            };
             let cur = pr.value_at(lt);
             // Two numbers for a 3D value keep the current z.
             let j = match (&cur, &v) {
                 (KV::Vec3(c), Value::Array(a)) if a.len() == 2 => json!([a[0], a[1], c[2]]),
                 _ => v.clone(),
             };
-            let nv = cur.coerce_json(&j).ok_or_else(|| bad("layer.setTransform", format!("can't use {v} for {label}")))?;
+            let nv = cur
+                .coerce_json(&j)
+                .ok_or_else(|| bad("layer.setTransform", format!("can't use {v} for {label}")))?;
             pr.set_value_at(lt, nv);
         }
         Ok(())
@@ -250,12 +382,23 @@ fn center_anchor(s: &mut Session, p: &Value) -> Result<Value> {
         for (lid, c) in &centers {
             let l = layer_mut(proj, cid, *lid)?;
             let lt = l.layer_time(t);
-            let Some(tr) = l.transform_mut() else { continue };
-            let get = |tr: &effectcraft_project::PropGroup, m: &str, d: [f64; 3]| tr.get(m).map(|p| p.value_at(lt).as_vec3()).unwrap_or(d);
+            let Some(tr) = l.transform_mut() else {
+                continue;
+            };
+            let get = |tr: &effectcraft_project::PropGroup, m: &str, d: [f64; 3]| {
+                tr.get(m).map(|p| p.value_at(lt).as_vec3()).unwrap_or(d)
+            };
             let anchor = get(tr, "anchor", [0.0; 3]);
             let scale = get(tr, "scale", [100.0; 3]);
-            let rot = tr.get("rotation").map(|p| p.value_at(lt).as_f64()).unwrap_or(0.0).to_radians();
-            let (dx, dy) = ((c[0] - anchor[0]) * scale[0] / 100.0, (c[1] - anchor[1]) * scale[1] / 100.0);
+            let rot = tr
+                .get("rotation")
+                .map(|p| p.value_at(lt).as_f64())
+                .unwrap_or(0.0)
+                .to_radians();
+            let (dx, dy) = (
+                (c[0] - anchor[0]) * scale[0] / 100.0,
+                (c[1] - anchor[1]) * scale[1] / 100.0,
+            );
             let (sn, cs) = rot.sin_cos();
             let shift = [dx * cs - dy * sn, dx * sn + dy * cs];
             if let Some(a) = tr.get_mut("anchor") {
@@ -297,11 +440,17 @@ pub(crate) fn target_masks(s: &Session, p: &Value) -> Result<(ItemId, Vec<(Layer
     let mut out = vec![];
     if let Some(m) = p.get("mask") {
         for lid in &ids {
-            let Some(masks) = comp.layer(*lid).and_then(|l| l.masks()) else { continue };
+            let Some(masks) = comp.layer(*lid).and_then(|l| l.masks()) else {
+                continue;
+            };
             let g = match m {
                 Value::Number(n) => {
                     let n = n.as_u64().unwrap_or(1);
-                    masks.children.iter().find(|c| c.uid() == n).or_else(|| masks.children.get(n.saturating_sub(1) as usize))
+                    masks
+                        .children
+                        .iter()
+                        .find(|c| c.uid() == n)
+                        .or_else(|| masks.children.get(n.saturating_sub(1) as usize))
                 }
                 Value::String(name) => masks.children.iter().find(|c| c.name() == name),
                 _ => None,
@@ -313,7 +462,9 @@ pub(crate) fn target_masks(s: &Session, p: &Value) -> Result<(ItemId, Vec<(Layer
         return Ok((cid, out));
     }
     for (lid, uid) in &s.state.selected_props {
-        let Some(masks) = comp.layer(*lid).and_then(|l| l.masks()) else { continue };
+        let Some(masks) = comp.layer(*lid).and_then(|l| l.masks()) else {
+            continue;
+        };
         for g in masks.groups() {
             if g.uid == *uid || g.find(*uid).is_some() {
                 out.push((*lid, g.uid));
@@ -346,16 +497,31 @@ fn edit_masks(
     let t = s.time();
     let sizes: Vec<(LayerId, (f64, f64))> = targets
         .iter()
-        .filter_map(|(lid, _)| s.project.comp(cid)?.layer(*lid).map(|l| (*lid, effectcraft_render::source_size(&s.project, l))))
+        .filter_map(|(lid, _)| {
+            s.project
+                .comp(cid)?
+                .layer(*lid)
+                .map(|l| (*lid, effectcraft_render::source_size(&s.project, l)))
+        })
         .map(|(l, (w, h))| (l, (w as f64, h as f64)))
         .collect();
     let n = targets.len();
     s.edit(label, merge_p(p), |proj, _| {
         for (lid, uid) in &targets {
-            let size = sizes.iter().find(|(l, _)| l == lid).map(|x| x.1).unwrap_or((0.0, 0.0));
+            let size = sizes
+                .iter()
+                .find(|(l, _)| l == lid)
+                .map(|x| x.1)
+                .unwrap_or((0.0, 0.0));
             let l = layer_mut(proj, cid, *lid)?;
             let lt = l.layer_time(t);
-            let Some(g) = l.props.sub_mut("masks").and_then(|m| m.find_group_mut(*uid)) else { continue };
+            let Some(g) = l
+                .props
+                .sub_mut("masks")
+                .and_then(|m| m.find_group_mut(*uid))
+            else {
+                continue;
+            };
             f(g, size, lt)?;
         }
         Ok(())
@@ -363,44 +529,78 @@ fn edit_masks(
     Ok(json!({"masks": n}))
 }
 
-fn mask_kind(g: &mut effectcraft_project::PropGroup) -> Option<(&mut MaskMode, &mut bool, &mut bool)> {
+fn mask_kind(
+    g: &mut effectcraft_project::PropGroup,
+) -> Option<(&mut MaskMode, &mut bool, &mut bool)> {
     match &mut g.kind {
-        GroupKind::Mask { mode, inverted, locked, .. } => Some((mode, inverted, locked)),
+        GroupKind::Mask {
+            mode,
+            inverted,
+            locked,
+            ..
+        } => Some((mode, inverted, locked)),
         _ => None,
     }
 }
 
 fn mask_set(s: &mut Session, p: &Value) -> Result<Value> {
-    let field = str_p(p, "field").ok_or_else(|| bad("layer.mask.set", "missing `field` (feather|opacity|expansion)"))?.to_string();
+    let field = str_p(p, "field")
+        .ok_or_else(|| {
+            bad(
+                "layer.mask.set",
+                "missing `field` (feather|opacity|expansion)",
+            )
+        })?
+        .to_string();
     if !matches!(field.as_str(), "feather" | "opacity" | "expansion") {
         return Err(bad("layer.mask.set", "field: feather|opacity|expansion"));
     }
-    let v = p.get("value").ok_or_else(|| bad("layer.mask.set", "missing `value`"))?.clone();
+    let v = p
+        .get("value")
+        .ok_or_else(|| bad("layer.mask.set", "missing `value`"))?
+        .clone();
     let label = match field.as_str() {
         "feather" => "Mask Feather",
         "opacity" => "Mask Opacity",
         _ => "Mask Expansion",
     };
     edit_masks(s, p, label, |g, _, lt| {
-        let pr = g.get_mut(&field).ok_or_else(|| bad("layer.mask.set", "mask has no such property"))?;
+        let pr = g
+            .get_mut(&field)
+            .ok_or_else(|| bad("layer.mask.set", "mask has no such property"))?;
         let cur = pr.value_at(lt);
         let j = match (&cur, &v) {
             (KV::Vec2(_), Value::Number(n)) => json!([n, n]),
             _ => v.clone(),
         };
-        let nv = cur.coerce_json(&j).ok_or_else(|| bad("layer.mask.set", format!("can't use {v} for {label}")))?;
+        let nv = cur
+            .coerce_json(&j)
+            .ok_or_else(|| bad("layer.mask.set", format!("can't use {v} for {label}")))?;
         pr.set_value_at(lt, nv);
         Ok(())
     })
 }
 
 fn mask_shape(s: &mut Session, p: &Value) -> Result<Value> {
-    let r = p.get("rect").and_then(Value::as_array).filter(|a| a.len() == 4).map(|a| [0, 1, 2, 3].map(|i| a[i].as_f64().unwrap_or(0.0)));
-    let r = r.ok_or_else(|| bad("layer.mask.shape", "missing `rect` [left, top, width, height] (layer px)"))?;
+    let r = p
+        .get("rect")
+        .and_then(Value::as_array)
+        .filter(|a| a.len() == 4)
+        .map(|a| [0, 1, 2, 3].map(|i| a[i].as_f64().unwrap_or(0.0)));
+    let r = r.ok_or_else(|| {
+        bad(
+            "layer.mask.shape",
+            "missing `rect` [left, top, width, height] (layer px)",
+        )
+    })?;
     let ellipse = str_p(p, "shape") == Some("ellipse");
     edit_masks(s, p, "Mask Shape", |g, _, lt| {
         let (cx, cy) = (r[0] + r[2] / 2.0, r[1] + r[3] / 2.0);
-        let path = if ellipse { ShapePath::ellipse([cx, cy], r[2], r[3]) } else { ShapePath::rect([cx, cy], r[2], r[3]) };
+        let path = if ellipse {
+            ShapePath::ellipse([cx, cy], r[2], r[3])
+        } else {
+            ShapePath::rect([cx, cy], r[2], r[3])
+        };
         if let Some(pr) = g.get_mut("path") {
             pr.set_value_at(lt, KV::Path(path));
         }
@@ -418,7 +618,11 @@ fn mask_reset(s: &mut Session, p: &Value) -> Result<Value> {
                 pr.value = v;
             }
         };
-        reset(g, "path", KV::Path(ShapePath::rect([w / 2.0, h / 2.0], w, h)));
+        reset(
+            g,
+            "path",
+            KV::Path(ShapePath::rect([w / 2.0, h / 2.0], w, h)),
+        );
         reset(g, "feather", KV::Vec2([0.0, 0.0]));
         reset(g, "opacity", KV::Scalar(100.0));
         reset(g, "expansion", KV::Scalar(0.0));
@@ -440,15 +644,28 @@ fn mask_remove(s: &mut Session, p: &Value) -> Result<Value> {
             p.get("mask").is_some()
                 || s.state.selected_props.iter().any(|(sl, su)| {
                     sl == l
-                        && (su == u || s.active_comp().and_then(|c| c.layer(*l)).and_then(|ly| ly.props.find_group(*u)).is_some_and(|g| g.find(*su).is_some()))
+                        && (su == u
+                            || s.active_comp()
+                                .and_then(|c| c.layer(*l))
+                                .and_then(|ly| ly.props.find_group(*u))
+                                .is_some_and(|g| g.find(*su).is_some()))
                 })
         })
         .collect();
-    let remove = if selected.is_empty() { targets.into_iter().take(1).collect() } else { selected };
+    let remove = if selected.is_empty() {
+        targets.into_iter().take(1).collect()
+    } else {
+        selected
+    };
     remove_masks(s, cid, remove, "Remove Mask")
 }
 
-fn remove_masks(s: &mut Session, cid: ItemId, remove: Vec<(LayerId, Uid)>, label: &str) -> Result<Value> {
+fn remove_masks(
+    s: &mut Session,
+    cid: ItemId,
+    remove: Vec<(LayerId, Uid)>,
+    label: &str,
+) -> Result<Value> {
     let n = remove.len();
     s.edit(label, None, |proj, st| {
         for (lid, uid) in &remove {
@@ -456,7 +673,8 @@ fn remove_masks(s: &mut Session, cid: ItemId, remove: Vec<(LayerId, Uid)>, label
                 m.children.retain(|c| c.uid() != *uid);
             }
         }
-        st.selected_props.retain(|(l, u)| !remove.iter().any(|(rl, ru)| rl == l && ru == u));
+        st.selected_props
+            .retain(|(l, u)| !remove.iter().any(|(rl, ru)| rl == l && ru == u));
         Ok(())
     })?;
     Ok(json!({"removed": n}))
@@ -465,14 +683,27 @@ fn remove_masks(s: &mut Session, cid: ItemId, remove: Vec<(LayerId, Uid)>, label
 fn mask_remove_all(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     let comp = s.project.comp(cid).ok_or(EngineError::NoComp)?;
-    let all: Vec<(LayerId, Uid)> =
-        ids.iter().filter_map(|l| comp.layer(*l)).flat_map(|l| l.masks().into_iter().flat_map(|m| m.groups().map(|g| (l.id, g.uid)))).collect();
+    let all: Vec<(LayerId, Uid)> = ids
+        .iter()
+        .filter_map(|l| comp.layer(*l))
+        .flat_map(|l| {
+            l.masks()
+                .into_iter()
+                .flat_map(|m| m.groups().map(|g| (l.id, g.uid)))
+        })
+        .collect();
     remove_masks(s, cid, all, "Remove All Masks")
 }
 
 fn mask_mode(s: &mut Session, p: &Value) -> Result<Value> {
-    let m =
-        str_p(p, "mode").and_then(MaskMode::from_name).ok_or_else(|| bad("layer.mask.mode", "mode: None|Add|Subtract|Intersect|Lighten|Darken|Difference"))?;
+    let m = str_p(p, "mode")
+        .and_then(MaskMode::from_name)
+        .ok_or_else(|| {
+            bad(
+                "layer.mask.mode",
+                "mode: None|Add|Subtract|Intersect|Lighten|Darken|Difference",
+            )
+        })?;
     edit_masks(s, p, "Mask Mode", |g, _, _| {
         if let Some((mode, ..)) = mask_kind(g) {
             *mode = m;
@@ -548,7 +779,9 @@ fn add_marker(s: &mut Session, p: &Value) -> Result<Value> {
     if ids.is_empty() {
         return Err(bad("layer.addMarker", "no layer"));
     }
-    let t = f_p(p, "time").map(Tick::from_seconds_f64).unwrap_or(s.time());
+    let t = f_p(p, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or(s.time());
     let comment = str_p(p, "comment").unwrap_or_default().to_string();
     s.edit("Add Marker", None, |proj, _| {
         for lid in &ids {
@@ -559,7 +792,11 @@ fn add_marker(s: &mut Session, p: &Value) -> Result<Value> {
             // Layer markers are stored in layer time.
             let lt = l.layer_time(t);
             l.markers.retain(|m| m.time != lt);
-            l.markers.push(Marker { time: lt, comment: comment.clone(), ..Default::default() });
+            l.markers.push(Marker {
+                time: lt,
+                comment: comment.clone(),
+                ..Default::default()
+            });
             l.markers.sort_by_key(|m| m.time);
         }
         Ok(())
@@ -572,7 +809,12 @@ fn markers_lock(s: &mut Session, p: &Value) -> Result<Value> {
     let v = b_p(p, "value");
     let r = s.edit("Lock Markers", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
-        let target = v.unwrap_or_else(|| !c.layers.iter().find(|l| ids.contains(&l.id)).is_some_and(|l| l.markers_locked));
+        let target = v.unwrap_or_else(|| {
+            !c.layers
+                .iter()
+                .find(|l| ids.contains(&l.id))
+                .is_some_and(|l| l.markers_locked)
+        });
         for l in c.layers.iter_mut().filter(|l| ids.contains(&l.id)) {
             l.markers_locked = target;
         }
@@ -584,7 +826,13 @@ fn markers_lock(s: &mut Session, p: &Value) -> Result<Value> {
 fn delete_all_markers(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
     s.edit("Delete All Markers", None, |proj, _| {
-        for l in proj.comp_mut(cid).ok_or(EngineError::NoComp)?.layers.iter_mut().filter(|l| ids.contains(&l.id) && !l.markers_locked) {
+        for l in proj
+            .comp_mut(cid)
+            .ok_or(EngineError::NoComp)?
+            .layers
+            .iter_mut()
+            .filter(|l| ids.contains(&l.id) && !l.markers_locked)
+        {
             l.markers.clear();
         }
         Ok(())
@@ -596,14 +844,21 @@ fn delete_all_markers(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn track_matte_op(s: &mut Session, p: &Value) -> Result<Value> {
     let (cid, ids) = layers_p(s, p)?;
-    let op = str_p(p, "op").ok_or_else(|| bad("layer.trackMatte", "missing `op`"))?.to_string();
+    let op = str_p(p, "op")
+        .ok_or_else(|| bad("layer.trackMatte", "missing `op`"))?
+        .to_string();
     let kind = match op.as_str() {
         "alpha" => Some(MatteKind::Alpha),
         "alphaInverted" => Some(MatteKind::AlphaInverted),
         "luma" => Some(MatteKind::Luma),
         "lumaInverted" => Some(MatteKind::LumaInverted),
         "none" | "above" | "below" => None,
-        o => return Err(bad("layer.trackMatte", format!("op: none|alpha|alphaInverted|luma|lumaInverted|above|below, not `{o}`"))),
+        o => {
+            return Err(bad(
+                "layer.trackMatte",
+                format!("op: none|alpha|alphaInverted|luma|lumaInverted|above|below, not `{o}`"),
+            ));
+        }
     };
     s.edit("Track Matte", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
@@ -616,16 +871,36 @@ fn track_matte_op(s: &mut Session, p: &Value) -> Result<Value> {
             l.track_matte = match op.as_str() {
                 "none" => None,
                 "above" | "below" => {
-                    let j = if op == "above" { i.checked_sub(1) } else { Some(i + 1) };
+                    let j = if op == "above" {
+                        i.checked_sub(1)
+                    } else {
+                        Some(i + 1)
+                    };
                     match j.and_then(|j| order.get(j)) {
-                        Some(m) => Some(TrackMatte { layer: *m, kind: cur_kind }),
-                        None => return Err(bad("layer.trackMatte", format!("there is no layer {op}"))),
+                        Some(m) => Some(TrackMatte {
+                            layer: *m,
+                            kind: cur_kind,
+                        }),
+                        None => {
+                            return Err(bad("layer.trackMatte", format!("there is no layer {op}")));
+                        }
                     }
                 }
                 _ => match (l.track_matte, i.checked_sub(1).and_then(|j| order.get(j))) {
-                    (Some(m), _) => Some(TrackMatte { layer: m.layer, kind: kind.unwrap_or_default() }),
-                    (None, Some(above)) => Some(TrackMatte { layer: *above, kind: kind.unwrap_or_default() }),
-                    (None, None) => return Err(bad("layer.trackMatte", "the top layer has no layer above to use as a matte")),
+                    (Some(m), _) => Some(TrackMatte {
+                        layer: m.layer,
+                        kind: kind.unwrap_or_default(),
+                    }),
+                    (None, Some(above)) => Some(TrackMatte {
+                        layer: *above,
+                        kind: kind.unwrap_or_default(),
+                    }),
+                    (None, None) => {
+                        return Err(bad(
+                            "layer.trackMatte",
+                            "the top layer has no layer above to use as a matte",
+                        ));
+                    }
                 },
             };
             if let Some(m) = l.track_matte {
@@ -646,7 +921,11 @@ fn track_matte_op(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn source_item(s: &Session, p: &Value, cmd: &str) -> Result<ItemId> {
     let (cid, lid) = layer_p(s, p, cmd)?;
-    s.project.comp(cid).and_then(|c| c.layer(lid)).and_then(|l| l.source.item()).ok_or_else(|| bad(cmd, "the layer has no source item"))
+    s.project
+        .comp(cid)
+        .and_then(|c| c.layer(lid))
+        .and_then(|l| l.source.item())
+        .ok_or_else(|| bad(cmd, "the layer has no source item"))
 }
 
 fn open_source(s: &mut Session, p: &Value) -> Result<Value> {
@@ -660,7 +939,10 @@ fn open_source(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// Folder containing a file as a `file://` URL.
 pub(crate) fn folder_url(path: &str) -> String {
-    let dir = std::path::Path::new(path).parent().map(|d| d.to_string_lossy().to_string()).unwrap_or_default();
+    let dir = std::path::Path::new(path)
+        .parent()
+        .map(|d| d.to_string_lossy().to_string())
+        .unwrap_or_default();
     file_url(&dir)
 }
 
@@ -670,7 +952,11 @@ pub(crate) fn folder_url(path: &str) -> String {
 pub(crate) fn file_url(path: &str) -> String {
     use std::fmt::Write as _;
     let path = path.replace('\\', "/");
-    let mut url = String::from(if path.starts_with('/') { "file://" } else { "file:///" });
+    let mut url = String::from(if path.starts_with('/') {
+        "file://"
+    } else {
+        "file:///"
+    });
     for b in path.bytes() {
         if b.is_ascii_alphanumeric() || b"/-._~:@!$&'()*+,;=".contains(&b) {
             url.push(char::from(b));
@@ -685,7 +971,12 @@ fn reveal_in_finder(s: &mut Session, p: &Value) -> Result<Value> {
     let item = source_item(s, p, "layer.revealInFinder")?;
     let path = match s.project.item(item).map(|i| &i.kind) {
         Some(effectcraft_project::ItemKind::Footage(f)) if !f.path.is_empty() => f.path.clone(),
-        _ => return Err(bad("layer.revealInFinder", "the layer's source is not a file")),
+        _ => {
+            return Err(bad(
+                "layer.revealInFinder",
+                "the layer's source is not a file",
+            ));
+        }
     };
     let url = folder_url(&path);
     s.events.push(crate::Event::OpenUrl(url.clone()));
@@ -711,8 +1002,12 @@ impl Session {
     /// error}` (Reveal Expression Errors, the viewer's expression error banner).
     pub fn expression_errors(&self, cid: effectcraft_project::ItemId) -> Vec<Value> {
         let t = self.time_of(cid);
-        let Some(comp) = self.project.comp(cid) else { return vec![] };
-        let Some(host) = &self.expr else { return vec![] };
+        let Some(comp) = self.project.comp(cid) else {
+            return vec![];
+        };
+        let Some(host) = &self.expr else {
+            return vec![];
+        };
         let mut errors = vec![];
         for l in &comp.layers {
             let mut has = vec![];
@@ -738,7 +1033,10 @@ fn reveal_expression_errors(s: &mut Session, p: &Value) -> Result<Value> {
     let cid = comp_id(s, p)?;
     s.project.comp(cid).ok_or(EngineError::NoComp)?;
     let errors = s.expression_errors(cid);
-    let props: Vec<Value> = errors.iter().map(|e| json!({"layer": e["layer"], "prop": e["prop"]})).collect();
+    let props: Vec<Value> = errors
+        .iter()
+        .map(|e| json!({"layer": e["layer"], "prop": e["prop"]}))
+        .collect();
     frontend(s, "timeline.revealProps", &json!({"props": props}))?;
     if errors.is_empty() {
         s.toast("No expression errors");
@@ -759,7 +1057,11 @@ fn sequence(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("layer.sequence", "select two or more layers"));
     }
     let overlap = b_p(p, "overlap").unwrap_or(false);
-    let dur = if overlap { Tick::from_seconds_f64(f_p(p, "duration").unwrap_or(1.0)) } else { Tick::ZERO };
+    let dur = if overlap {
+        Tick::from_seconds_f64(f_p(p, "duration").unwrap_or(1.0))
+    } else {
+        Tick::ZERO
+    };
     let transition = str_p(p, "transition").unwrap_or("off").to_string();
     s.edit("Sequence Layers", None, |proj, _| {
         let c = proj.comp_mut(cid).ok_or(EngineError::NoComp)?;
@@ -799,13 +1101,69 @@ fn sequence(s: &mut Session, p: &Value) -> Result<Value> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        cmd!("layer.quality", "Quality", [], None, "{layers?, quality: best|draft|wireframe}", has_layers, quality),
-        cmd!("layer.sampling", "Sampling", [], None, "{layers?, sampling: bilinear|bicubic}", has_layers, sampling),
-        cmd!("layer.frameBlending", "Frame Blending", [], None, "{layers?, mode: off|frameMix|pixelMotion}", has_layers, frame_blending),
-        cmd!("layer.hideOtherVideo", "Hide Other Video", ["Layer", "Switches"], Some("Cmd+Alt+Shift+V"), "{layers?}", has_layers, hide_other_video),
-        cmd!("layer.showAllVideo", "Show All Video", ["Layer", "Switches"], None, "{comp?}", has_comp, show_all_video),
-        cmd!("layer.unlockAll", "Unlock All Layers", ["Layer", "Switches"], Some("Cmd+Shift+L"), "{comp?}", has_comp, unlock_all),
-        cmd!("layer.expressions", "Enable/Disable Expressions", [], None, "{layers?, enabled: bool}", has_layers, expressions),
+        cmd!(
+            "layer.quality",
+            "Quality",
+            [],
+            None,
+            "{layers?, quality: best|draft|wireframe}",
+            has_layers,
+            quality
+        ),
+        cmd!(
+            "layer.sampling",
+            "Sampling",
+            [],
+            None,
+            "{layers?, sampling: bilinear|bicubic}",
+            has_layers,
+            sampling
+        ),
+        cmd!(
+            "layer.frameBlending",
+            "Frame Blending",
+            [],
+            None,
+            "{layers?, mode: off|frameMix|pixelMotion}",
+            has_layers,
+            frame_blending
+        ),
+        cmd!(
+            "layer.hideOtherVideo",
+            "Hide Other Video",
+            ["Layer", "Switches"],
+            Some("Cmd+Alt+Shift+V"),
+            "{layers?}",
+            has_layers,
+            hide_other_video
+        ),
+        cmd!(
+            "layer.showAllVideo",
+            "Show All Video",
+            ["Layer", "Switches"],
+            None,
+            "{comp?}",
+            has_comp,
+            show_all_video
+        ),
+        cmd!(
+            "layer.unlockAll",
+            "Unlock All Layers",
+            ["Layer", "Switches"],
+            Some("Cmd+Shift+L"),
+            "{comp?}",
+            has_comp,
+            unlock_all
+        ),
+        cmd!(
+            "layer.expressions",
+            "Enable/Disable Expressions",
+            [],
+            None,
+            "{layers?, enabled: bool}",
+            has_layers,
+            expressions
+        ),
         cmd!(
             "layer.setTransform",
             "Transform Value",
@@ -833,24 +1191,168 @@ pub fn specs() -> Vec<CommandSpec> {
             has_masks,
             mask_shape
         ),
-        cmd!("layer.mask.set", "Mask Settings", [], None, "{layer?, mask?, field: feather|opacity|expansion, value}", has_masks, mask_set),
-        cmd!("layer.mask.reset", "Reset Mask", ["Layer", "Mask"], None, "{layer?, mask?}", has_masks, mask_reset),
-        cmd!("layer.mask.remove", "Remove Mask", ["Layer", "Mask"], None, "{layer?, mask?}", has_masks, mask_remove),
-        cmd!("layer.mask.removeAll", "Remove All Masks", ["Layer", "Mask"], None, "{layers?}", has_masks, mask_remove_all),
-        cmd!("layer.mask.mode", "Mask Mode", [], None, "{layer?, mask?, mode: None|Add|Subtract|Intersect|Lighten|Darken|Difference}", has_masks, mask_mode),
-        cmd!("layer.mask.invert", "Inverted", ["Layer", "Mask"], Some("Cmd+Shift+I"), "{layer?, mask?, value?}", has_masks, mask_invert),
-        cmd!("layer.mask.lock", "Locked", ["Layer", "Mask"], None, "{layer?, mask?, value?}", has_masks, mask_lock),
-        cmd!("layer.mask.unlockAll", "Unlock All Masks", ["Layer", "Mask"], None, "{layers?}", has_masks, mask_unlock_all),
-        cmd!("layer.mask.lockOthers", "Lock Other Masks", ["Layer", "Mask"], None, "{layer?, mask?}", has_masks, mask_lock_others),
-        cmd!("layer.addMarker", "Add Marker", ["Layer", "Markers"], None, "{layers?, time?, comment?}", has_layers, add_marker),
-        cmd!("layer.markersLock", "Lock Markers", ["Layer", "Markers"], None, "{layers?, value?}", has_layers, markers_lock),
-        cmd!("layer.deleteAllMarkers", "Delete All Markers", ["Layer", "Markers"], None, "{layers?}", has_markers, delete_all_markers),
-        cmd!("layer.trackMatte", "Track Matte", [], None, "{layers?, op: none|alpha|alphaInverted|luma|lumaInverted|above|below}", has_layers, track_matte_op),
-        cmd!("layer.openSource", "Open Layer Source", ["Layer"], None, "{layer?}", has_source_item, open_source),
-        cmd!("layer.revealInFinder", "Reveal in Finder", ["Layer"], None, "{layer?}", has_footage_layer, reveal_in_finder),
-        cmd!("layer.revealSource", "Reveal Layer Source in Project", ["Layer", "Reveal"], None, "{layer?}", has_source_item, reveal_source),
-        cmd!("comp.revealInProject", "Reveal Composition in Project", ["Layer", "Reveal"], None, "{comp?}", has_comp, reveal_comp),
-        cmd!("layer.revealExpressionErrors", "Reveal Expression Errors", ["Layer", "Reveal"], None, "{comp?}", has_comp, reveal_expression_errors),
+        cmd!(
+            "layer.mask.set",
+            "Mask Settings",
+            [],
+            None,
+            "{layer?, mask?, field: feather|opacity|expansion, value}",
+            has_masks,
+            mask_set
+        ),
+        cmd!(
+            "layer.mask.reset",
+            "Reset Mask",
+            ["Layer", "Mask"],
+            None,
+            "{layer?, mask?}",
+            has_masks,
+            mask_reset
+        ),
+        cmd!(
+            "layer.mask.remove",
+            "Remove Mask",
+            ["Layer", "Mask"],
+            None,
+            "{layer?, mask?}",
+            has_masks,
+            mask_remove
+        ),
+        cmd!(
+            "layer.mask.removeAll",
+            "Remove All Masks",
+            ["Layer", "Mask"],
+            None,
+            "{layers?}",
+            has_masks,
+            mask_remove_all
+        ),
+        cmd!(
+            "layer.mask.mode",
+            "Mask Mode",
+            [],
+            None,
+            "{layer?, mask?, mode: None|Add|Subtract|Intersect|Lighten|Darken|Difference}",
+            has_masks,
+            mask_mode
+        ),
+        cmd!(
+            "layer.mask.invert",
+            "Inverted",
+            ["Layer", "Mask"],
+            Some("Cmd+Shift+I"),
+            "{layer?, mask?, value?}",
+            has_masks,
+            mask_invert
+        ),
+        cmd!(
+            "layer.mask.lock",
+            "Locked",
+            ["Layer", "Mask"],
+            None,
+            "{layer?, mask?, value?}",
+            has_masks,
+            mask_lock
+        ),
+        cmd!(
+            "layer.mask.unlockAll",
+            "Unlock All Masks",
+            ["Layer", "Mask"],
+            None,
+            "{layers?}",
+            has_masks,
+            mask_unlock_all
+        ),
+        cmd!(
+            "layer.mask.lockOthers",
+            "Lock Other Masks",
+            ["Layer", "Mask"],
+            None,
+            "{layer?, mask?}",
+            has_masks,
+            mask_lock_others
+        ),
+        cmd!(
+            "layer.addMarker",
+            "Add Marker",
+            ["Layer", "Markers"],
+            None,
+            "{layers?, time?, comment?}",
+            has_layers,
+            add_marker
+        ),
+        cmd!(
+            "layer.markersLock",
+            "Lock Markers",
+            ["Layer", "Markers"],
+            None,
+            "{layers?, value?}",
+            has_layers,
+            markers_lock
+        ),
+        cmd!(
+            "layer.deleteAllMarkers",
+            "Delete All Markers",
+            ["Layer", "Markers"],
+            None,
+            "{layers?}",
+            has_markers,
+            delete_all_markers
+        ),
+        cmd!(
+            "layer.trackMatte",
+            "Track Matte",
+            [],
+            None,
+            "{layers?, op: none|alpha|alphaInverted|luma|lumaInverted|above|below}",
+            has_layers,
+            track_matte_op
+        ),
+        cmd!(
+            "layer.openSource",
+            "Open Layer Source",
+            ["Layer"],
+            None,
+            "{layer?}",
+            has_source_item,
+            open_source
+        ),
+        cmd!(
+            "layer.revealInFinder",
+            "Reveal in Finder",
+            ["Layer"],
+            None,
+            "{layer?}",
+            has_footage_layer,
+            reveal_in_finder
+        ),
+        cmd!(
+            "layer.revealSource",
+            "Reveal Layer Source in Project",
+            ["Layer", "Reveal"],
+            None,
+            "{layer?}",
+            has_source_item,
+            reveal_source
+        ),
+        cmd!(
+            "comp.revealInProject",
+            "Reveal Composition in Project",
+            ["Layer", "Reveal"],
+            None,
+            "{comp?}",
+            has_comp,
+            reveal_comp
+        ),
+        cmd!(
+            "layer.revealExpressionErrors",
+            "Reveal Expression Errors",
+            ["Layer", "Reveal"],
+            None,
+            "{comp?}",
+            has_comp,
+            reveal_expression_errors
+        ),
         cmd!(
             "layer.sequence",
             "Sequence Layers...",
@@ -869,14 +1371,30 @@ mod tests {
 
     #[test]
     fn file_urls_are_well_formed() {
-        assert_eq!(file_url("C:\\Users\\Ann\\Footage\\clip 1.mov"), "file:///C:/Users/Ann/Footage/clip%201.mov");
-        assert_eq!(file_url("/home/ann/a#b%c?d.mov"), "file:///home/ann/a%23b%25c%3Fd.mov");
-        assert_eq!(file_url("/Users/ann/Café/x.mov"), "file:///Users/ann/Caf%C3%A9/x.mov");
-        assert_eq!(file_url("/plain/path-1_2.~(x).mov"), "file:///plain/path-1_2.~(x).mov", "plain characters stay");
+        assert_eq!(
+            file_url("C:\\Users\\Ann\\Footage\\clip 1.mov"),
+            "file:///C:/Users/Ann/Footage/clip%201.mov"
+        );
+        assert_eq!(
+            file_url("/home/ann/a#b%c?d.mov"),
+            "file:///home/ann/a%23b%25c%3Fd.mov"
+        );
+        assert_eq!(
+            file_url("/Users/ann/Café/x.mov"),
+            "file:///Users/ann/Caf%C3%A9/x.mov"
+        );
+        assert_eq!(
+            file_url("/plain/path-1_2.~(x).mov"),
+            "file:///plain/path-1_2.~(x).mov",
+            "plain characters stay"
+        );
     }
 
     #[test]
     fn folder_url_names_the_containing_folder() {
-        assert_eq!(folder_url("/media/My Clips/a.mov"), "file:///media/My%20Clips");
+        assert_eq!(
+            folder_url("/media/My Clips/a.mov"),
+            "file:///media/My%20Clips"
+        );
     }
 }

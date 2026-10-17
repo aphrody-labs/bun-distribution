@@ -30,7 +30,14 @@ pub enum CropOverlay {
 
 impl CropOverlay {
     /// In Photoshop's menu order (the order O cycles through).
-    pub const ALL: [CropOverlay; 6] = [Self::Thirds, Self::Grid, Self::Diagonal, Self::Triangle, Self::GoldenRatio, Self::GoldenSpiral];
+    pub const ALL: [CropOverlay; 6] = [
+        Self::Thirds,
+        Self::Grid,
+        Self::Diagonal,
+        Self::Triangle,
+        Self::GoldenRatio,
+        Self::GoldenSpiral,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
@@ -72,7 +79,10 @@ impl CropOverlay {
     /// The next overlay (O).
     pub fn next(self) -> Self {
         let i = Self::ALL.iter().position(|k| *k == self).unwrap_or(0);
-        Self::ALL.get((i + 1) % Self::ALL.len()).copied().unwrap_or_default()
+        Self::ALL
+            .get((i + 1) % Self::ALL.len())
+            .copied()
+            .unwrap_or_default()
     }
 }
 
@@ -138,7 +148,11 @@ pub fn guides(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Polyline> {
         return Vec::new();
     }
     let seg = |a: [f32; 2], b: [f32; 2]| vec![a, b];
-    let cross = |fs: &[f32]| -> Vec<Polyline> { fs.iter().flat_map(|&f| [seg([f, 0.0], [f, 1.0]), seg([0.0, f], [1.0, f])]).collect() };
+    let cross = |fs: &[f32]| -> Vec<Polyline> {
+        fs.iter()
+            .flat_map(|&f| [seg([f, 0.0], [f, 1.0]), seg([0.0, f], [1.0, f])])
+            .collect()
+    };
     let lines = match kind {
         CropOverlay::Thirds => cross(&[1.0 / 3.0, 2.0 / 3.0]),
         CropOverlay::GoldenRatio => cross(&[1.0 - INV_PHI, INV_PHI]),
@@ -149,7 +163,11 @@ pub fn guides(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Polyline> {
                 (1..n)
                     .map(|i| {
                         let f = i as f32 / n as f32;
-                        if vertical { seg([f, 0.0], [f, 1.0]) } else { seg([0.0, f], [1.0, f]) }
+                        if vertical {
+                            seg([f, 0.0], [f, 1.0])
+                        } else {
+                            seg([0.0, f], [1.0, f])
+                        }
                     })
                     .collect()
             };
@@ -161,7 +179,12 @@ pub fn guides(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Polyline> {
             // 45° on screen from each corner until the line meets the far edge.
             let m = w.min(h);
             let (u, v) = (m / w, m / h);
-            vec![seg([0.0, 0.0], [u, v]), seg([1.0, 0.0], [1.0 - u, v]), seg([0.0, 1.0], [u, 1.0 - v]), seg([1.0, 1.0], [1.0 - u, 1.0 - v])]
+            vec![
+                seg([0.0, 0.0], [u, v]),
+                seg([1.0, 0.0], [1.0 - u, v]),
+                seg([0.0, 1.0], [u, 1.0 - v]),
+                seg([1.0, 1.0], [1.0 - u, 1.0 - v]),
+            ]
         }
         CropOverlay::Triangle => {
             // The top-left to bottom-right diagonal, and the perpendiculars to it (on screen) from
@@ -174,13 +197,24 @@ pub fn guides(kind: CropOverlay, orient: u8, w: f32, h: f32) -> Vec<Polyline> {
                 let s = 1.0 / (1.0 + (w / h).powi(2));
                 (1.0 - s, s)
             };
-            vec![seg([0.0, 0.0], [1.0, 1.0]), seg([1.0, 0.0], [t, t]), seg([0.0, 1.0], [s, s])]
+            vec![
+                seg([0.0, 0.0], [1.0, 1.0]),
+                seg([1.0, 0.0], [t, t]),
+                seg([0.0, 1.0], [s, s]),
+            ]
         }
         CropOverlay::GoldenSpiral => vec![golden_spiral()],
     };
     let o = orient % kind.orientations().max(1);
     let (fx, fy) = (o & 1 != 0, o & 2 != 0);
-    lines.into_iter().map(|l| l.into_iter().map(|[x, y]| [if fx { 1.0 - x } else { x }, if fy { 1.0 - y } else { y }]).collect()).collect()
+    lines
+        .into_iter()
+        .map(|l| {
+            l.into_iter()
+                .map(|[x, y]| [if fx { 1.0 - x } else { x }, if fy { 1.0 - y } else { y }])
+                .collect()
+        })
+        .collect()
 }
 
 /// The golden spiral: quarter arcs through nested golden rectangles, squares cut off the left,
@@ -231,7 +265,9 @@ fn golden_spiral() -> Polyline {
         }
         p = end;
     }
-    pts.into_iter().map(|[x, y]| [(x / PHI).clamp(0.0, 1.0), y.clamp(0.0, 1.0)]).collect()
+    pts.into_iter()
+        .map(|[x, y]| [(x / PHI).clamp(0.0, 1.0), y.clamp(0.0, 1.0)])
+        .collect()
 }
 
 /// The guides the pending crop box shows now: none when the options say not to.
@@ -275,8 +311,17 @@ pub fn keys(app: &mut PhotocraftApp, ctx: &egui::Context) -> bool {
 /// The options bar's overlay button and its menu (Photoshop's "Set the overlay options for the
 /// Crop tool").
 pub fn options_button(o: &mut ToolOptions, ui: &mut egui::Ui) {
-    let r =
-        crate::icons::button(ui, "grid-3x3", 24.0, false, &format!("{}  ({})", tl!("Set the overlay options for the Crop tool"), tl!(o.crop_overlay.label())));
+    let r = crate::icons::button(
+        ui,
+        "grid-3x3",
+        24.0,
+        false,
+        &format!(
+            "{}  ({})",
+            tl!("Set the overlay options for the Crop tool"),
+            tl!(o.crop_overlay.label())
+        ),
+    );
     egui::Popup::menu(&r).show(|ui| {
         ui.set_min_width(220.0);
         let item = |ui: &mut egui::Ui, on: bool, label: &str, key: Option<&str>| {
@@ -308,7 +353,8 @@ pub fn options_button(o: &mut ToolOptions, ui: &mut egui::Ui) {
             ui.close();
         }
         let turns = o.crop_overlay.orientations() > 1;
-        let b = egui::Button::new(format!("   {}", tl!("Cycle Orientation"))).shortcut_text(crate::shortcuts::pretty("Shift+O"));
+        let b = egui::Button::new(format!("   {}", tl!("Cycle Orientation")))
+            .shortcut_text(crate::shortcuts::pretty("Shift+O"));
         if ui.add_enabled(turns, b).clicked() {
             cycle_orientation(o);
             ui.close();
@@ -328,11 +374,23 @@ mod tests {
     fn every_guide_stays_in_the_unit_square() {
         for kind in CropOverlay::ALL {
             for o in 0..8 {
-                for (w, h) in [(1.0, 1.0), (300.0, 200.0), (200.0, 300.0), (5000.0, 3.0), (3.0, 5000.0), (1e7, 1e7), (1e30, 2.0)] {
+                for (w, h) in [
+                    (1.0, 1.0),
+                    (300.0, 200.0),
+                    (200.0, 300.0),
+                    (5000.0, 3.0),
+                    (3.0, 5000.0),
+                    (1e7, 1e7),
+                    (1e30, 2.0),
+                ] {
                     let g = guides(kind, o, w, h);
                     assert!(!g.is_empty(), "{kind:?} {w}x{h}");
                     for p in all_points(&g) {
-                        assert!(p.iter().all(|v| v.is_finite() && (-1e-5..=1.0 + 1e-5).contains(v)), "{kind:?} o{o} {w}x{h}: {p:?}");
+                        assert!(
+                            p.iter()
+                                .all(|v| v.is_finite() && (-1e-5..=1.0 + 1e-5).contains(v)),
+                            "{kind:?} o{o} {w}x{h}: {p:?}"
+                        );
                     }
                     assert!(g.iter().all(|l| l.len() >= 2));
                 }
@@ -343,7 +401,14 @@ mod tests {
     #[test]
     fn degenerate_frames_have_no_guides() {
         for kind in CropOverlay::ALL {
-            for (w, h) in [(0.0, 10.0), (10.0, 0.0), (f32::NAN, 10.0), (f32::INFINITY, 10.0), (-5.0, -5.0), (0.5, 100.0)] {
+            for (w, h) in [
+                (0.0, 10.0),
+                (10.0, 0.0),
+                (f32::NAN, 10.0),
+                (f32::INFINITY, 10.0),
+                (-5.0, -5.0),
+                (0.5, 100.0),
+            ] {
                 assert!(guides(kind, 0, w, h).is_empty(), "{kind:?} {w}x{h}");
             }
         }
@@ -351,12 +416,20 @@ mod tests {
 
     #[test]
     fn thirds_and_golden_ratio_positions() {
-        let xs = |g: Vec<Polyline>| -> Vec<f32> { g.iter().filter(|l| l[0][1] == 0.0 && l[1][1] == 1.0).map(|l| l[0][0]).collect() };
+        let xs = |g: Vec<Polyline>| -> Vec<f32> {
+            g.iter()
+                .filter(|l| l[0][1] == 0.0 && l[1][1] == 1.0)
+                .map(|l| l[0][0])
+                .collect()
+        };
         let t = xs(guides(CropOverlay::Thirds, 0, 300.0, 200.0));
         assert_eq!(t.len(), 2);
         assert!((t[0] - 1.0 / 3.0).abs() < 1e-6 && (t[1] - 2.0 / 3.0).abs() < 1e-6);
         let g = xs(guides(CropOverlay::GoldenRatio, 0, 300.0, 200.0));
-        assert!((g[0] - 0.381_966).abs() < 1e-5 && (g[1] - 0.618_034).abs() < 1e-5, "{g:?}");
+        assert!(
+            (g[0] - 0.381_966).abs() < 1e-5 && (g[1] - 0.618_034).abs() < 1e-5,
+            "{g:?}"
+        );
         assert_eq!(guides(CropOverlay::GoldenRatio, 0, 300.0, 200.0).len(), 4);
     }
 
@@ -366,7 +439,10 @@ mod tests {
             let g = guides(CropOverlay::Grid, 0, w, h);
             let v = g.iter().filter(|l| l[0][0] == l[1][0]).count();
             let hz = g.len() - v;
-            assert!((1..GRID_MAX).contains(&v) && (1..GRID_MAX).contains(&hz), "{w}x{h}: {v} {hz}");
+            assert!(
+                (1..GRID_MAX).contains(&v) && (1..GRID_MAX).contains(&hz),
+                "{w}x{h}: {v} {hz}"
+            );
         }
         // About one line per GRID_PX on screen.
         let g = guides(CropOverlay::Grid, 0, 640.0, 320.0);
@@ -379,7 +455,10 @@ mod tests {
         let (w, h) = (300.0f32, 200.0f32);
         for l in guides(CropOverlay::Diagonal, 0, w, h) {
             let (dx, dy) = ((l[1][0] - l[0][0]) * w, (l[1][1] - l[0][1]) * h);
-            assert!((dx.abs() - dy.abs()).abs() < 1e-3 && (dx.abs() - 200.0).abs() < 1e-3, "{l:?}");
+            assert!(
+                (dx.abs() - dy.abs()).abs() < 1e-3 && (dx.abs() - 200.0).abs() < 1e-3,
+                "{l:?}"
+            );
         }
         // A square frame: corner to corner.
         let g = guides(CropOverlay::Diagonal, 0, 100.0, 100.0);
@@ -394,7 +473,10 @@ mod tests {
         for l in &g[1..] {
             let d = [(l[1][0] - l[0][0]) * w, (l[1][1] - l[0][1]) * h];
             assert!((d[0] * diag[0] + d[1] * diag[1]).abs() < 1e-2, "{l:?}");
-            assert!((l[1][0] - l[1][1]).abs() < 1e-6, "foot on the diagonal: {l:?}");
+            assert!(
+                (l[1][0] - l[1][1]).abs() < 1e-6,
+                "foot on the diagonal: {l:?}"
+            );
         }
         // The other orientation mirrors it: the diagonal runs top-right to bottom-left.
         let m = guides(CropOverlay::Triangle, 1, w, h);
@@ -416,7 +498,10 @@ mod tests {
         // It starts at the bottom-left corner and winds in towards the golden point (lower right).
         assert_eq!(pts[0], [0.0, 1.0]);
         let end = pts[pts.len() - 1];
-        assert!((end[0] - 0.7236).abs() < 0.02 && (end[1] - 0.7236).abs() < 0.02, "{end:?}");
+        assert!(
+            (end[0] - 0.7236).abs() < 0.02 && (end[1] - 0.7236).abs() < 0.02,
+            "{end:?}"
+        );
         for o in 1..4u8 {
             let g = guides(CropOverlay::GoldenSpiral, o, 300.0, 200.0);
             for (p, q) in pts.iter().zip(&g[0]) {
@@ -427,13 +512,23 @@ mod tests {
         }
         assert_eq!(guides(CropOverlay::GoldenSpiral, 4, 300.0, 200.0), base);
         // Symmetric overlays ignore the orientation.
-        assert_eq!(guides(CropOverlay::Thirds, 3, 300.0, 200.0), guides(CropOverlay::Thirds, 0, 300.0, 200.0));
+        assert_eq!(
+            guides(CropOverlay::Thirds, 3, 300.0, 200.0),
+            guides(CropOverlay::Thirds, 0, 300.0, 200.0)
+        );
     }
 
     #[test]
     fn cycling_overlays_and_orientations() {
         let mut o = ToolOptions::default();
-        assert_eq!((o.crop_overlay, o.crop_overlay_show, o.crop_overlay_orientation), (CropOverlay::Thirds, OverlayShow::Auto, 0));
+        assert_eq!(
+            (
+                o.crop_overlay,
+                o.crop_overlay_show,
+                o.crop_overlay_orientation
+            ),
+            (CropOverlay::Thirds, OverlayShow::Auto, 0)
+        );
         let mut seen = vec![o.crop_overlay];
         for _ in 0..6 {
             cycle(&mut o);
@@ -452,7 +547,10 @@ mod tests {
             .collect();
         assert_eq!(turns, [1, 2, 3, 0, 1]);
         cycle(&mut o);
-        assert_eq!((o.crop_overlay, o.crop_overlay_orientation), (CropOverlay::Thirds, 0));
+        assert_eq!(
+            (o.crop_overlay, o.crop_overlay_orientation),
+            (CropOverlay::Thirds, 0)
+        );
         // A stray orientation (an old or hand-edited state) still cycles in range.
         o.crop_overlay = CropOverlay::Triangle;
         o.crop_overlay_orientation = 200;
@@ -479,14 +577,24 @@ mod tests {
         let ctx = egui::Context::default();
         ctx.input_mut(|i| {
             i.modifiers = mods;
-            i.events.push(egui::Event::Key { key: Key::O, physical_key: None, pressed: true, repeat: false, modifiers: mods });
+            i.events.push(egui::Event::Key {
+                key: Key::O,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: mods,
+            });
         });
         crate::shortcuts::handle(app, &ctx);
     }
 
     fn crop_app() -> PhotocraftApp {
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
-        app.run("file.new", serde_json::json!({"width": 200, "height": 120})).unwrap();
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
+        app.run("file.new", serde_json::json!({"width": 200, "height": 120}))
+            .unwrap();
         app.ui.tool = Tool::Crop;
         crate::crop_ui::ensure_frame(&mut app);
         assert!(app.ui.crop_rect.is_some());
@@ -497,10 +605,20 @@ mod tests {
     fn o_cycles_the_overlay_while_the_crop_tool_shows_a_box() {
         let mut app = crop_app();
         press(&mut app, Modifiers::NONE);
-        assert_eq!((app.ui.tool, app.ui.tool_options.crop_overlay), (Tool::Crop, CropOverlay::Grid));
+        assert_eq!(
+            (app.ui.tool, app.ui.tool_options.crop_overlay),
+            (Tool::Crop, CropOverlay::Grid)
+        );
         // ⇧O on a symmetric overlay changes nothing, and doesn't switch tools either.
         press(&mut app, Modifiers::SHIFT);
-        assert_eq!((app.ui.tool, app.ui.tool_options.crop_overlay, app.ui.tool_options.crop_overlay_orientation), (Tool::Crop, CropOverlay::Grid, 0));
+        assert_eq!(
+            (
+                app.ui.tool,
+                app.ui.tool_options.crop_overlay,
+                app.ui.tool_options.crop_overlay_orientation
+            ),
+            (Tool::Crop, CropOverlay::Grid, 0)
+        );
         press(&mut app, Modifiers::NONE);
         press(&mut app, Modifiers::NONE);
         assert_eq!(app.ui.tool_options.crop_overlay, CropOverlay::Triangle);
@@ -512,7 +630,10 @@ mod tests {
     #[test]
     fn o_stays_the_dodge_key_without_a_crop_box() {
         // No document: the Crop tool shows no box, so O picks the Dodge tool.
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.tool = Tool::Crop;
         press(&mut app, Modifiers::NONE);
         assert_eq!(app.ui.tool, Tool::Dodge);
@@ -521,12 +642,26 @@ mod tests {
         let mut app = crop_app();
         app.ui.tool = Tool::Brush;
         press(&mut app, Modifiers::NONE);
-        assert_eq!((app.ui.tool, app.ui.tool_options.crop_overlay), (Tool::Dodge, CropOverlay::Thirds));
+        assert_eq!(
+            (app.ui.tool, app.ui.tool_options.crop_overlay),
+            (Tool::Dodge, CropOverlay::Thirds)
+        );
         // A crop drag in progress leaves the overlay alone.
         let mut app = crop_app();
-        app.crop.drag = Some(crate::crop_ui::CropDrag::Move { start: [0.0, 0.0], rect: [0.0, 0.0, 10.0, 10.0] });
+        app.crop.drag = Some(crate::crop_ui::CropDrag::Move {
+            start: [0.0, 0.0],
+            rect: [0.0, 0.0, 10.0, 10.0],
+        });
         let ctx = egui::Context::default();
-        ctx.input_mut(|i| i.events.push(egui::Event::Key { key: Key::O, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE }));
+        ctx.input_mut(|i| {
+            i.events.push(egui::Event::Key {
+                key: Key::O,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: Modifiers::NONE,
+            })
+        });
         assert!(!keys(&mut app, &ctx));
         assert_eq!(app.ui.tool_options.crop_overlay, CropOverlay::Thirds);
     }
@@ -534,9 +669,19 @@ mod tests {
     #[test]
     fn the_overlay_shows_by_mode_and_gesture() {
         let mut app = crop_app();
-        assert!(current_guides(&app, 300.0, 200.0).is_empty(), "Auto: no guides without a drag");
-        app.crop.drag = Some(crate::crop_ui::CropDrag::Move { start: [0.0, 0.0], rect: [0.0, 0.0, 10.0, 10.0] });
-        assert_eq!(current_guides(&app, 300.0, 200.0).len(), 4, "Auto: the thirds while dragging");
+        assert!(
+            current_guides(&app, 300.0, 200.0).is_empty(),
+            "Auto: no guides without a drag"
+        );
+        app.crop.drag = Some(crate::crop_ui::CropDrag::Move {
+            start: [0.0, 0.0],
+            rect: [0.0, 0.0, 10.0, 10.0],
+        });
+        assert_eq!(
+            current_guides(&app, 300.0, 200.0).len(),
+            4,
+            "Auto: the thirds while dragging"
+        );
         app.ui.tool_options.crop_overlay_show = OverlayShow::Never;
         assert!(current_guides(&app, 300.0, 200.0).is_empty());
         app.crop.drag = None;
@@ -544,14 +689,31 @@ mod tests {
         app.ui.tool_options.crop_overlay = CropOverlay::Triangle;
         assert_eq!(current_guides(&app, 300.0, 200.0).len(), 3);
         app.ui.tool = Tool::Brush;
-        assert!(current_guides(&app, 300.0, 200.0).is_empty(), "a pending frame under another tool shows no guide");
+        assert!(
+            current_guides(&app, 300.0, 200.0).is_empty(),
+            "a pending frame under another tool shows no guide"
+        );
     }
 
     #[test]
     fn old_state_files_get_photoshops_defaults() {
         let o: ToolOptions = serde_json::from_str(r#"{"crop_ratio": "1:1"}"#).unwrap();
-        assert_eq!((o.crop_overlay, o.crop_overlay_show, o.crop_overlay_orientation), (CropOverlay::Thirds, OverlayShow::Auto, 0));
+        assert_eq!(
+            (
+                o.crop_overlay,
+                o.crop_overlay_show,
+                o.crop_overlay_orientation
+            ),
+            (CropOverlay::Thirds, OverlayShow::Auto, 0)
+        );
         let o: ToolOptions = serde_json::from_str(r#"{"crop_overlay": "goldenSpiral", "crop_overlay_show": "always", "crop_overlay_orientation": 3}"#).unwrap();
-        assert_eq!((o.crop_overlay, o.crop_overlay_show, o.crop_overlay_orientation), (CropOverlay::GoldenSpiral, OverlayShow::Always, 3));
+        assert_eq!(
+            (
+                o.crop_overlay,
+                o.crop_overlay_show,
+                o.crop_overlay_orientation
+            ),
+            (CropOverlay::GoldenSpiral, OverlayShow::Always, 3)
+        );
     }
 }

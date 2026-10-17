@@ -68,7 +68,14 @@ pub struct SelectionGlide {
 
 impl Default for SelectionGlide {
     fn default() -> Self {
-        SelectionGlide { last: None, drawn: Rect::ZERO, offset: [0.0; 4], started: 0.0, gliding: false, frame_nr: 0 }
+        SelectionGlide {
+            last: None,
+            drawn: Rect::ZERO,
+            offset: [0.0; 4],
+            started: 0.0,
+            gliding: false,
+            frame_nr: 0,
+        }
     }
 }
 
@@ -81,7 +88,11 @@ impl SelectionGlide {
         if self.last != key {
             // A new destination: set off from where the outline is drawn now (mid-glide or at rest).
             let same_sheet = self.last.is_some_and(|(place, _)| place == f.place);
-            self.offset = if same_sheet && fresh { offset_between(self.drawn, f.target, f.view) } else { [0.0; 4] };
+            self.offset = if same_sheet && fresh {
+                offset_between(self.drawn, f.target, f.view)
+            } else {
+                [0.0; 4]
+            };
             self.started = f.now;
             self.last = key;
         }
@@ -91,9 +102,16 @@ impl SelectionGlide {
         // Arrived when the time is up (or the clock went backwards).
         let progress = (f.now - self.started) / GLIDE_SECS;
         self.gliding = self.offset != [0.0; 4] && (0.0..1.0).contains(&progress);
-        let left = if self.gliding { 1.0 - ease_out(progress as f32) } else { 0.0 };
+        let left = if self.gliding {
+            1.0 - ease_out(progress as f32)
+        } else {
+            0.0
+        };
         let [l, t, r, b] = self.offset.map(|o| o * left);
-        self.drawn = Rect::from_min_max(pos2(f.target.min.x + l, f.target.min.y + t), pos2(f.target.max.x + r, f.target.max.y + b));
+        self.drawn = Rect::from_min_max(
+            pos2(f.target.min.x + l, f.target.min.y + t),
+            pos2(f.target.max.x + r, f.target.max.y + b),
+        );
         self.drawn
     }
 
@@ -130,7 +148,11 @@ fn offset_between(from: Rect, to: Rect, view: Rect) -> [f32; 4] {
         (from.max.x - to.max.x).clamp(-lx, lx),
         (from.max.y - to.max.y).clamp(-ly, ly),
     ];
-    if offset.iter().all(|o| o.is_finite()) { offset } else { [0.0; 4] }
+    if offset.iter().all(|o| o.is_finite()) {
+        offset
+    } else {
+        [0.0; 4]
+    }
 }
 
 /// The marching ants' dash offset around a copied range, by egui's clock: half a point every
@@ -173,8 +195,19 @@ mod tests {
 
     impl Rig {
         fn new(range: RangeRef, target: Rect) -> Self {
-            let f = Frame { place: PLACE, range, target, view: VIEW, now: 10.0, frame_nr: 100, animate: true };
-            let mut rig = Rig { glide: SelectionGlide::default(), f };
+            let f = Frame {
+                place: PLACE,
+                range,
+                target,
+                view: VIEW,
+                now: 10.0,
+                frame_nr: 100,
+                animate: true,
+            };
+            let mut rig = Rig {
+                glide: SelectionGlide::default(),
+                f,
+            };
             rig.step(0.0);
             rig
         }
@@ -217,11 +250,21 @@ mod tests {
         let drawn = r.settle(DT);
         assert_eq!(drawn.first(), Some(&a), "it sets off from where it was");
         assert_eq!(drawn.last(), Some(&b), "and lands exactly on the cells");
-        assert!(drawn.len() > 20, "over about {GLIDE_SECS} s, not in one frame: {} frames", drawn.len());
+        assert!(
+            drawn.len() > 20,
+            "over about {GLIDE_SECS} s, not in one frame: {} frames",
+            drawn.len()
+        );
         for w in drawn.windows(2) {
-            assert!(w[0].min.x <= w[1].min.x && w[0].min.y <= w[1].min.y, "never backwards or past the cells: {w:?}");
+            assert!(
+                w[0].min.x <= w[1].min.x && w[0].min.y <= w[1].min.y,
+                "never backwards or past the cells: {w:?}"
+            );
             assert!(w[1].min.x <= b.min.x && w[1].min.y <= b.min.y);
-            assert!((w[1].width() - 64.0).abs() < 1e-3 && (w[1].height() - 16.0).abs() < 1e-3, "it keeps its shape on the way");
+            assert!(
+                (w[1].width() - 64.0).abs() < 1e-3 && (w[1].height() - 16.0).abs() < 1e-3,
+                "it keeps its shape on the way"
+            );
         }
         // Decelerating: more than half of the way in the first third of the time.
         let third = drawn[drawn.len() / 3];
@@ -238,7 +281,10 @@ mod tests {
         };
         // 60 ms into the glide at 50, 100 and 200 frames a second.
         let (slow, mid, fast) = (at_time(0.02, 3), at_time(0.01, 6), at_time(0.005, 12));
-        assert!(near(slow, mid) && near(mid, fast), "{slow:?} {mid:?} {fast:?}");
+        assert!(
+            near(slow, mid) && near(mid, fast),
+            "{slow:?} {mid:?} {fast:?}"
+        );
         assert!(slow.min.x > 0.0 && slow.min.x < 320.0);
     }
 
@@ -251,7 +297,10 @@ mod tests {
         r.step(0.0);
         let mid = r.step(GLIDE_SECS / 2.0);
         assert_eq!(mid.min, one.min, "the anchored corner stays put");
-        assert!(mid.max.x > one.max.x && mid.max.x < two.max.x && mid.max.y == two.max.y, "{mid:?}");
+        assert!(
+            mid.max.x > one.max.x && mid.max.x < two.max.x && mid.max.y == two.max.y,
+            "{mid:?}"
+        );
     }
 
     #[test]
@@ -264,7 +313,10 @@ mod tests {
         // The next arrow key lands before the first glide is over.
         r.select(cell(0, 2), at(128.0, 0.0));
         let next = r.step(0.0);
-        assert!(near(next, mid), "no jump when the destination changes: {next:?} vs {mid:?}");
+        assert!(
+            near(next, mid),
+            "no jump when the destination changes: {next:?} vs {mid:?}"
+        );
         assert_eq!(r.settle(DT).last(), Some(&at(128.0, 0.0)));
     }
 
@@ -283,7 +335,10 @@ mod tests {
         let before = r.step(GLIDE_SECS / 4.0);
         r.f.target = at(0.0, 300.0);
         let after = r.step(0.0);
-        assert!(near(after, before.translate(vec2(0.0, 100.0))), "{after:?} vs {before:?}");
+        assert!(
+            near(after, before.translate(vec2(0.0, 100.0))),
+            "{after:?} vs {before:?}"
+        );
         // An arrow key held at the window's edge: the sheet scrolls and the next cell is drawn
         // where the last one was. Nothing to glide.
         let mut r = Rig::new(cell(30, 0), at(0.0, 580.0));
@@ -325,7 +380,11 @@ mod tests {
         r.select(cell(3, 0), at(0.0, 48.0));
         let first = r.step(DT);
         assert_eq!(first.min, column.min);
-        assert_eq!(first.max.y, 64.0 + VIEW.height(), "from the window's height below, not from row 1,048,576");
+        assert_eq!(
+            first.max.y,
+            64.0 + VIEW.height(),
+            "from the window's height below, not from row 1,048,576"
+        );
         assert_eq!(r.settle(DT).last(), Some(&at(0.0, 48.0)));
         // And back: the far edge leaves the same way.
         r.select(RangeRef::cols(0, 0), column);
@@ -350,14 +409,25 @@ mod tests {
         assert!(!r.glide.is_gliding());
         // Geometry and clocks that make no sense: whatever is drawn meanwhile, nothing panics,
         // and a sane selection afterwards is drawn on its cells once its glide is over.
-        for v in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, f32::MAX, f32::MIN, -1.0, 0.0] {
+        for v in [
+            f32::NAN,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::MAX,
+            f32::MIN,
+            -1.0,
+            0.0,
+        ] {
             for now in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -1.0e300, 0.0] {
                 let mut r = Rig::new(cell(0, 0), at(0.0, 0.0));
                 r.f.view = Rect::from_min_max(pos2(v, 0.0), pos2(1000.0, v));
                 r.select(cell(0, 1), Rect::from_min_max(pos2(v, v), pos2(64.0, 16.0)));
                 r.step(DT);
                 r.f.now = now;
-                r.select(cell(0, 2), Rect::from_min_size(pos2(64.0, 0.0), egui::Vec2::splat(v)));
+                r.select(
+                    cell(0, 2),
+                    Rect::from_min_size(pos2(64.0, 0.0), egui::Vec2::splat(v)),
+                );
                 r.step(DT);
                 r.step(DT);
                 r.f.view = VIEW;
@@ -367,15 +437,31 @@ mod tests {
                 assert_eq!(r.step(1.0), at(192.0, 0.0), "view {v}, clock {now}");
             }
         }
-        assert_eq!((ease_out(-3.0), ease_out(0.0), ease_out(1.0), ease_out(7.0)), (0.0, 0.0, 1.0, 1.0));
+        assert_eq!(
+            (ease_out(-3.0), ease_out(0.0), ease_out(1.0), ease_out(7.0)),
+            (0.0, 0.0, 1.0, 1.0)
+        );
     }
 
     #[test]
     fn the_ants_march_by_the_clock() {
         assert_eq!(ants_phase(0.0), 0.0);
-        assert!((ants_phase(0.06) - 0.5).abs() < 1e-4, "half a point every 60 ms");
-        assert!((ants_phase(0.96 + 0.06) - 0.5).abs() < 1e-4, "wrapping with the dash pattern");
-        for now in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -12.3, 1.0e300, 7.77] {
+        assert!(
+            (ants_phase(0.06) - 0.5).abs() < 1e-4,
+            "half a point every 60 ms"
+        );
+        assert!(
+            (ants_phase(0.96 + 0.06) - 0.5).abs() < 1e-4,
+            "wrapping with the dash pattern"
+        );
+        for now in [
+            f64::NAN,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            -12.3,
+            1.0e300,
+            7.77,
+        ] {
             let p = ants_phase(now);
             assert!((0.0..=8.0).contains(&p), "{now}: {p}");
         }

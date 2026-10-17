@@ -24,8 +24,8 @@ use crate::control::channel_state_cache::ChannelCacheAccessor;
 use crate::engines::maxwell_3d::{PrimitiveTopology, NUM_TRANSFORM_FEEDBACK_BUFFERS};
 use crate::query_cache::bank_base::{BankBase, BankLike, BankPool};
 use crate::query_cache::query_cache::{
-    DeviceMemoryWriter, GpuAddressTranslator, GpuTickSource, GuestStreamer, QueryCacheRuntimeHandle, StubStreamer,
-    SyncValuesRuntime, SyncValuesStruct,
+    DeviceMemoryWriter, GpuAddressTranslator, GpuTickSource, GuestStreamer,
+    QueryCacheRuntimeHandle, StubStreamer, SyncValuesRuntime, SyncValuesStruct,
 };
 use crate::query_cache::query_cache_base::{LookupData, QueryCacheBase};
 use crate::query_cache::types::{QueryPropertiesFlags, QueryType};
@@ -2663,7 +2663,9 @@ pub struct QueryCache {
 struct QueryGpuTickAdapter(Arc<dyn Fn() -> u64 + Send + Sync>);
 
 impl GpuTickSource for QueryGpuTickAdapter {
-    fn get_ticks(&self) -> u64 { (self.0)() }
+    fn get_ticks(&self) -> u64 {
+        (self.0)()
+    }
 }
 
 struct QueryGpuMemoryAdapter(Arc<parking_lot::Mutex<crate::memory_manager::MemoryManager>>);
@@ -3073,15 +3075,21 @@ impl QueryCache {
         // alive and allows later FlushRegion to overwrite recycled guest data.
         let shared_type = if effective_query_type == QueryType::Payload as u32 {
             Some(QueryType::Payload)
-        } else if effective_query_type == QueryType::StreamingPrimitivesNeededMinusSucceeded as u32 {
+        } else if effective_query_type == QueryType::StreamingPrimitivesNeededMinusSucceeded as u32
+        {
             Some(QueryType::StreamingPrimitivesNeededMinusSucceeded)
         } else {
             None
         };
         if let Some(counter_type) = shared_type {
             self.base.counter_report_with_callbacks(
-                gpu_addr, counter_type, flags, effective_payload, subreport,
-                signal_fence, sync_operation,
+                gpu_addr,
+                counter_type,
+                flags,
+                effective_payload,
+                subreport,
+                signal_fence,
+                sync_operation,
             );
             return;
         }
@@ -3422,10 +3430,7 @@ mod tests {
             true,
             GpuFenceBehavior::Immediate
         ));
-        for behavior in [
-            GpuFenceBehavior::Balanced,
-            GpuFenceBehavior::Accurate,
-        ] {
+        for behavior in [GpuFenceBehavior::Balanced, GpuFenceBehavior::Accurate] {
             assert!(is_host_query_report_synchronized(true, false, behavior));
         }
         assert!(is_host_query_report_synchronized(

@@ -19,14 +19,22 @@ fn col(i: usize) -> String {
 }
 
 fn fmt_num(v: f64) -> String {
-    if v == v.trunc() && v.abs() < 1e15 { format!("{}", v as i64) } else { format!("{v}") }
+    if v == v.trunc() && v.abs() < 1e15 {
+        format!("{}", v as i64)
+    } else {
+        format!("{v}")
+    }
 }
 
 fn simple_fill(w: &mut W, f: &Fill) {
     match f {
         Fill::None => w.empty0("a:noFill"),
         Fill::Solid { color } => super::dml::solid(w, color),
-        Fill::Gradient(_) | Fill::Picture(_) | Fill::Pattern(_) | Fill::Group | Fill::Background => {
+        Fill::Gradient(_)
+        | Fill::Picture(_)
+        | Fill::Pattern(_)
+        | Fill::Group
+        | Fill::Background => {
             if let Fill::Gradient(g) = f
                 && let Some(s) = g.stops.first()
             {
@@ -122,7 +130,9 @@ enum Group {
 
 fn group_of(k: ChartType) -> Group {
     match k {
-        ChartType::Line | ChartType::LineMarkers | ChartType::StackedLine | ChartType::Stock => Group::Line,
+        ChartType::Line | ChartType::LineMarkers | ChartType::StackedLine | ChartType::Stock => {
+            Group::Line
+        }
         ChartType::Area | ChartType::StackedArea | ChartType::Surface => Group::Area,
         ChartType::Pie => Group::Pie,
         ChartType::Doughnut | ChartType::Sunburst => Group::Doughnut,
@@ -138,7 +148,11 @@ fn series(w: &mut W, c: &Chart, s: &Series, i: usize, kind: ChartType, g: Group)
     w.val("c:idx", i);
     w.val("c:order", i);
     w.open0("c:tx");
-    str_cache(w, &format!("Sheet1!${}$1", col(i + 1)), std::slice::from_ref(&s.name));
+    str_cache(
+        w,
+        &format!("Sheet1!${}$1", col(i + 1)),
+        std::slice::from_ref(&s.name),
+    );
     w.close("c:tx");
     sp_pr(w, s.fill.as_ref(), s.line.as_ref());
     if g == Group::Bar {
@@ -177,15 +191,27 @@ fn series(w: &mut W, c: &Chart, s: &Series, i: usize, kind: ChartType, g: Group)
     let n = c.categories.len().max(s.values.len());
     let last = n + 1;
     if matches!(g, Group::Scatter | Group::Bubble) {
-        let xs: Vec<Option<f64>> = if s.x_values.is_empty() { (1..=s.values.len()).map(|v| Some(v as f64)).collect() } else { s.x_values.clone() };
+        let xs: Vec<Option<f64>> = if s.x_values.is_empty() {
+            (1..=s.values.len()).map(|v| Some(v as f64)).collect()
+        } else {
+            s.x_values.clone()
+        };
         w.open0("c:xVal");
         num_cache(w, &format!("Sheet1!$A$2:$A${last}"), &xs);
         w.close("c:xVal");
         w.open0("c:yVal");
-        num_cache(w, &format!("Sheet1!${0}$2:${0}${last}", col(i + 1)), &s.values);
+        num_cache(
+            w,
+            &format!("Sheet1!${0}$2:${0}${last}", col(i + 1)),
+            &s.values,
+        );
         w.close("c:yVal");
         if g == Group::Bubble {
-            let sizes: Vec<Option<f64>> = if s.sizes.is_empty() { s.values.iter().map(|_| Some(1.0)).collect() } else { s.sizes.clone() };
+            let sizes: Vec<Option<f64>> = if s.sizes.is_empty() {
+                s.values.iter().map(|_| Some(1.0)).collect()
+            } else {
+                s.sizes.clone()
+            };
             w.open0("c:bubbleSize");
             num_cache(w, &format!("Sheet1!${0}$2:${0}${last}", col(i + 2)), &sizes);
             w.close("c:bubbleSize");
@@ -198,7 +224,11 @@ fn series(w: &mut W, c: &Chart, s: &Series, i: usize, kind: ChartType, g: Group)
         str_cache(w, &format!("Sheet1!$A$2:$A${last}"), &c.categories);
         w.close("c:cat");
         w.open0("c:val");
-        num_cache(w, &format!("Sheet1!${0}$2:${0}${last}", col(i + 1)), &s.values);
+        num_cache(
+            w,
+            &format!("Sheet1!${0}$2:${0}${last}", col(i + 1)),
+            &s.values,
+        );
         w.close("c:val");
         if g == Group::Line {
             w.val("c:smooth", if s.smooth { 1 } else { 0 });
@@ -239,7 +269,10 @@ fn axes(w: &mut W, c: &Chart, g: Group) {
         if let Some(t) = &c.axis_titles.0 {
             title(w, t);
         }
-        w.empty("c:numFmt", A::new().a("formatCode", "General").a("sourceLinked", 1));
+        w.empty(
+            "c:numFmt",
+            A::new().a("formatCode", "General").a("sourceLinked", 1),
+        );
         w.val("c:majorTickMark", "out");
         w.val("c:minorTickMark", "none");
         w.val("c:tickLblPos", "nextTo");
@@ -258,7 +291,10 @@ fn axes(w: &mut W, c: &Chart, g: Group) {
         if let Some(t) = &c.axis_titles.0 {
             title(w, t);
         }
-        w.empty("c:numFmt", A::new().a("formatCode", "General").a("sourceLinked", 1));
+        w.empty(
+            "c:numFmt",
+            A::new().a("formatCode", "General").a("sourceLinked", 1),
+        );
         w.val("c:majorTickMark", "none");
         w.val("c:minorTickMark", "none");
         w.val("c:tickLblPos", "nextTo");
@@ -289,13 +325,28 @@ fn axes(w: &mut W, c: &Chart, g: Group) {
     if let Some(t) = &c.axis_titles.1 {
         title(w, t);
     }
-    w.empty("c:numFmt", A::new().a("formatCode", if c.kind.percent() { "0%" } else { "General" }).a("sourceLinked", 1));
+    w.empty(
+        "c:numFmt",
+        A::new()
+            .a(
+                "formatCode",
+                if c.kind.percent() { "0%" } else { "General" },
+            )
+            .a("sourceLinked", 1),
+    );
     w.val("c:majorTickMark", "none");
     w.val("c:minorTickMark", "none");
     w.val("c:tickLblPos", "nextTo");
     w.val("c:crossAx", AX_CAT);
     w.val("c:crosses", "autoZero");
-    w.val("c:crossBetween", if g == Group::Area || g == Group::Scatter { "midCat" } else { "between" });
+    w.val(
+        "c:crossBetween",
+        if g == Group::Area || g == Group::Scatter {
+            "midCat"
+        } else {
+            "between"
+        },
+    );
     w.close("c:valAx");
 }
 
@@ -329,7 +380,14 @@ fn plot_group(w: &mut W, c: &Chart, kind: ChartType, list: &[(usize, &Series)]) 
         }
         Group::Line | Group::Area => w.val("c:grouping", grouping),
         Group::Scatter => w.val("c:scatterStyle", "lineMarker"),
-        Group::Radar => w.val("c:radarStyle", if kind == ChartType::FilledRadar { "filled" } else { "marker" }),
+        Group::Radar => w.val(
+            "c:radarStyle",
+            if kind == ChartType::FilledRadar {
+                "filled"
+            } else {
+                "marker"
+            },
+        ),
         _ => {}
     }
     w.val("c:varyColors", vary);
@@ -341,8 +399,15 @@ fn plot_group(w: &mut W, c: &Chart, kind: ChartType, list: &[(usize, &Series)]) 
     }
     match g {
         Group::Bar => {
-            w.val("c:gapWidth", (c.gap_width.clamp(0.0, 5.0) * 100.0).round() as i64);
-            let ov = if kind.stacked() { 100 } else { (c.overlap.clamp(-1.0, 1.0) * 100.0).round() as i64 };
+            w.val(
+                "c:gapWidth",
+                (c.gap_width.clamp(0.0, 5.0) * 100.0).round() as i64,
+            );
+            let ov = if kind.stacked() {
+                100
+            } else {
+                (c.overlap.clamp(-1.0, 1.0) * 100.0).round() as i64
+            };
             if ov != 0 {
                 w.val("c:overlap", ov);
             }
@@ -351,7 +416,10 @@ fn plot_group(w: &mut W, c: &Chart, kind: ChartType, list: &[(usize, &Series)]) 
         Group::Pie => w.val("c:firstSliceAng", 0),
         Group::Doughnut => {
             w.val("c:firstSliceAng", 0);
-            w.val("c:holeSize", (c.hole_size.clamp(0.1, 0.9) * 100.0).round() as i64);
+            w.val(
+                "c:holeSize",
+                (c.hole_size.clamp(0.1, 0.9) * 100.0).round() as i64,
+            );
         }
         _ => {}
     }
@@ -384,7 +452,13 @@ pub fn chart_xml(c: &Chart) -> Vec<u8> {
         }
     }
     let mut w = W::new();
-    w.open("c:chartSpace", A::new().a("xmlns:c", NS_C).a("xmlns:a", NS_A).a("xmlns:r", NS_R));
+    w.open(
+        "c:chartSpace",
+        A::new()
+            .a("xmlns:c", NS_C)
+            .a("xmlns:a", NS_A)
+            .a("xmlns:r", NS_R),
+    );
     w.val("c:date1904", 0);
     w.val("c:roundedCorners", 0);
     w.val("c:style", c.style.clamp(1, 48));
@@ -400,7 +474,11 @@ pub fn chart_xml(c: &Chart) -> Vec<u8> {
     w.empty0("c:layout");
     let indexed: Vec<(usize, &Series)> = c.series.iter().enumerate().collect();
     let main = match c.kind {
-        ChartType::Combo => c.series.first().and_then(|s| s.kind).unwrap_or(ChartType::Column),
+        ChartType::Combo => c
+            .series
+            .first()
+            .and_then(|s| s.kind)
+            .unwrap_or(ChartType::Column),
         k => k,
     };
     if c.kind == ChartType::Combo {
@@ -408,7 +486,14 @@ pub fn chart_xml(c: &Chart) -> Vec<u8> {
         let mut kinds: Vec<ChartType> = vec![];
         for s in &c.series {
             let k = s.kind.unwrap_or(main);
-            let k = if matches!(group_of(k), Group::Pie | Group::Doughnut | Group::Scatter | Group::Bubble) { ChartType::Column } else { k };
+            let k = if matches!(
+                group_of(k),
+                Group::Pie | Group::Doughnut | Group::Scatter | Group::Bubble
+            ) {
+                ChartType::Column
+            } else {
+                k
+            };
             if !kinds.contains(&k) {
                 kinds.push(k);
             }
@@ -418,8 +503,14 @@ pub fn chart_xml(c: &Chart) -> Vec<u8> {
                 .iter()
                 .filter(|(_, s)| {
                     let sk = s.kind.unwrap_or(main);
-                    let sk =
-                        if matches!(group_of(sk), Group::Pie | Group::Doughnut | Group::Scatter | Group::Bubble) { ChartType::Column } else { sk };
+                    let sk = if matches!(
+                        group_of(sk),
+                        Group::Pie | Group::Doughnut | Group::Scatter | Group::Bubble
+                    ) {
+                        ChartType::Column
+                    } else {
+                        sk
+                    };
                     sk == k
                 })
                 .copied()

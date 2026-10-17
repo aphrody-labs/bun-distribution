@@ -65,7 +65,9 @@ fn nal_headers(sample: &[u8], length_size: usize) -> impl Iterator<Item = (u8, u
         if length_size == 0 || length_size > 4 || pos + length_size > sample.len() {
             return None;
         }
-        let len = sample[pos..pos + length_size].iter().fold(0usize, |a, &b| (a << 8) | b as usize);
+        let len = sample[pos..pos + length_size]
+            .iter()
+            .fold(0usize, |a, &b| (a << 8) | b as usize);
         pos += length_size;
         if len == 0 || pos + len > sample.len() {
             return None;
@@ -143,8 +145,18 @@ pub(crate) fn tight_plane<T: Copy>(src: Vec<T>, stride: usize, w: usize, h: usiz
 /// report it: BT.709 by default with the matrix guessed from the size, the signalled primaries,
 /// matrix and transfer when known, and full range when flagged. Shared by the software and
 /// hardware decoders so the two are interchangeable.
-pub fn vui_color(width: u32, height: u32, primaries: u8, matrix: u8, transfer: u8, full_range: bool) -> filmcraft_color::ColorInfo {
-    let mut color = filmcraft_color::ColorInfo { matrix: filmcraft_frame::default_matrix(width, height), ..filmcraft_color::ColorInfo::REC709 };
+pub fn vui_color(
+    width: u32,
+    height: u32,
+    primaries: u8,
+    matrix: u8,
+    transfer: u8,
+    full_range: bool,
+) -> filmcraft_color::ColorInfo {
+    let mut color = filmcraft_color::ColorInfo {
+        matrix: filmcraft_frame::default_matrix(width, height),
+        ..filmcraft_color::ColorInfo::REC709
+    };
     if let Some(p) = primaries_from_code(primaries) {
         color.primaries = p;
     }
@@ -162,7 +174,11 @@ pub fn vui_color(width: u32, height: u32, primaries: u8, matrix: u8, transfer: u
 
 /// Pixel aspect ratio from a VUI sample aspect ratio ((0, 0) = unspecified = square).
 pub fn sar_par(sar: (u16, u16)) -> (u32, u32) {
-    if sar.0 > 0 && sar.1 > 0 { (sar.0 as u32, sar.1 as u32) } else { (1, 1) }
+    if sar.0 > 0 && sar.1 > 0 {
+        (sar.0 as u32, sar.1 as u32)
+    } else {
+        (1, 1)
+    }
 }
 
 /// NAL length-prefix size of an `avcC` record (byte 4: lengthSizeMinusOne).
@@ -174,7 +190,11 @@ pub fn avcc_length_size(avcc: &[u8]) -> usize {
 pub fn hvcc_length_size_and_tid(hvcc: &[u8]) -> (usize, Option<u8>) {
     // hvcC byte 21: constantFrameRate(2) numTemporalLayers(3) temporalIdNested(1) lengthSizeMinusOne(2)
     let length_size = hvcc.get(21).map_or(4, |b| (b & 3) as usize + 1);
-    let highest_tid = hvcc.get(21).map(|b| (b >> 3) & 7).filter(|&n| n > 0).map(|n| n - 1);
+    let highest_tid = hvcc
+        .get(21)
+        .map(|b| (b >> 3) & 7)
+        .filter(|&n| n > 0)
+        .map(|n| n - 1);
     (length_size, highest_tid)
 }
 
@@ -186,24 +206,40 @@ pub type VideoDecoderFactory = fn(&SampleEntry) -> Option<Result<Box<dyn VideoDe
 /// "MJPG", the AVI1 convention of capture cards and cameras).
 const DEFAULT_DHT: &[u8] = &[
     0xFF, 0xC4, 0x01, 0xA2, //
-    0x00, 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, //
-    0x01, 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, //
+    0x00, 0, 1, 5, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    11, //
+    0x01, 0, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    11, //
     0x10, 0, 2, 1, 3, 3, 2, 4, 3, 5, 5, 4, 4, 0, 0, 1, 0x7D, //
-    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07, 0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08, //
-    0x23, 0x42, 0xB1, 0xC1, 0x15, 0x52, 0xD1, 0xF0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x25, 0x26, 0x27, 0x28, //
-    0x29, 0x2A, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, //
-    0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, //
-    0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, //
-    0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2, //
-    0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, //
+    0x01, 0x02, 0x03, 0x00, 0x04, 0x11, 0x05, 0x12, 0x21, 0x31, 0x41, 0x06, 0x13, 0x51, 0x61, 0x07,
+    0x22, 0x71, 0x14, 0x32, 0x81, 0x91, 0xA1, 0x08, //
+    0x23, 0x42, 0xB1, 0xC1, 0x15, 0x52, 0xD1, 0xF0, 0x24, 0x33, 0x62, 0x72, 0x82, 0x09, 0x0A, 0x16,
+    0x17, 0x18, 0x19, 0x1A, 0x25, 0x26, 0x27, 0x28, //
+    0x29, 0x2A, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49,
+    0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, //
+    0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79,
+    0x7A, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88, 0x89, //
+    0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7,
+    0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, //
+    0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3, 0xD4,
+    0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, 0xE1, 0xE2, //
+    0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
+    0xF9, 0xFA, //
     0x11, 0, 2, 1, 2, 4, 4, 3, 4, 7, 5, 4, 4, 0, 1, 2, 0x77, //
-    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71, 0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, //
-    0xA1, 0xB1, 0xC1, 0x09, 0x23, 0x33, 0x52, 0xF0, 0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24, 0x34, 0xE1, 0x25, 0xF1, 0x17, 0x18, 0x19, 0x1A, 0x26, //
-    0x27, 0x28, 0x29, 0x2A, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, //
-    0x59, 0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, //
-    0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, //
-    0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, //
-    0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA,
+    0x00, 0x01, 0x02, 0x03, 0x11, 0x04, 0x05, 0x21, 0x31, 0x06, 0x12, 0x41, 0x51, 0x07, 0x61, 0x71,
+    0x13, 0x22, 0x32, 0x81, 0x08, 0x14, 0x42, 0x91, //
+    0xA1, 0xB1, 0xC1, 0x09, 0x23, 0x33, 0x52, 0xF0, 0x15, 0x62, 0x72, 0xD1, 0x0A, 0x16, 0x24, 0x34,
+    0xE1, 0x25, 0xF1, 0x17, 0x18, 0x19, 0x1A, 0x26, //
+    0x27, 0x28, 0x29, 0x2A, 0x35, 0x36, 0x37, 0x38, 0x39, 0x3A, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+    0x49, 0x4A, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, //
+    0x59, 0x5A, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78,
+    0x79, 0x7A, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, //
+    0x88, 0x89, 0x8A, 0x92, 0x93, 0x94, 0x95, 0x96, 0x97, 0x98, 0x99, 0x9A, 0xA2, 0xA3, 0xA4, 0xA5,
+    0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xB2, 0xB3, 0xB4, //
+    0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9, 0xCA, 0xD2,
+    0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8, 0xD9, 0xDA, //
+    0xE2, 0xE3, 0xE4, 0xE5, 0xE6, 0xE7, 0xE8, 0xE9, 0xEA, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8,
+    0xF9, 0xFA,
 ];
 
 /// A JPEG with the [`DEFAULT_DHT`] inserted before its first scan when it defines no Huffman
@@ -228,7 +264,12 @@ pub fn with_default_huffman(jpeg: &[u8]) -> std::borrow::Cow<'_, [u8]> {
             }
             0xD0..=0xD9 | 0x01 => at += 2,
             _ => {
-                let Some(len) = jpeg.get(at + 2..at + 4).map(|b| usize::from(u16::from_be_bytes([b[0], b[1]]))) else { break };
+                let Some(len) = jpeg
+                    .get(at + 2..at + 4)
+                    .map(|b| usize::from(u16::from_be_bytes([b[0], b[1]])))
+                else {
+                    break;
+                };
                 at += 2 + len;
             }
         }
@@ -243,10 +284,15 @@ impl VideoDecoder for MjpegDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
         let sample = with_default_huffman(sample);
         // mjpa samples may contain two fields; decode the first image (field-merging lands with interlace support).
-        let img = image::load_from_memory_with_format(&sample, image::ImageFormat::Jpeg).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let img = image::load_from_memory_with_format(&sample, image::ImageFormat::Jpeg)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         let rgba = img.to_rgba8();
         let (w, h) = rgba.dimensions();
-        Ok(vec![DecodedFrame { pts, frame: VideoFrame::rgba8(w, h, rgba.into_raw()), draft: false }])
+        Ok(vec![DecodedFrame {
+            pts,
+            frame: VideoFrame::rgba8(w, h, rgba.into_raw()),
+            draft: false,
+        }])
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
         Vec::new()
@@ -261,7 +307,8 @@ impl VideoDecoder for MjpegDecoder {
 }
 
 pub fn mjpeg_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
-    matches!(e.codec, CodecConfig::Jpeg { .. }).then(|| Ok(Box::new(MjpegDecoder) as Box<dyn VideoDecoder>))
+    matches!(e.codec, CodecConfig::Jpeg { .. })
+        .then(|| Ok(Box::new(MjpegDecoder) as Box<dyn VideoDecoder>))
 }
 
 /// Our pure-Rust H.264 decoder (frame-threaded).
@@ -277,7 +324,11 @@ pub struct H264Decoder {
 impl H264Decoder {
     /// The worker threads for a decoder made now.
     fn threads_now() -> usize {
-        if filmcraft_media::cancel::background() { BACKGROUND_H264_THREADS.min(h264_threads()) } else { h264_threads() }
+        if filmcraft_media::cancel::background() {
+            BACKGROUND_H264_THREADS.min(h264_threads())
+        } else {
+            h264_threads()
+        }
     }
 
     fn make_inner(avcc: &[u8], threads: usize) -> Result<filmcraft_h264::Decoder> {
@@ -293,13 +344,25 @@ impl H264Decoder {
         let threads = Self::threads_now();
         let dec = Self::make_inner(&avcc, threads)?;
         let length_size = avcc_length_size(&avcc);
-        Ok(Self { avcc, dec, length_size, draft: false, threads })
+        Ok(Self {
+            avcc,
+            dec,
+            length_size,
+            draft: false,
+            threads,
+        })
     }
     /// A decoder for Annex B byte-stream samples (start codes, in-band parameter sets: MXF, TS).
     pub fn annexb() -> Self {
         recycle_h264_planes();
         let threads = Self::threads_now();
-        Self { avcc: Vec::new(), dec: filmcraft_h264::Decoder::with_threads(threads), length_size: 0, draft: false, threads }
+        Self {
+            avcc: Vec::new(),
+            dec: filmcraft_h264::Decoder::with_threads(threads),
+            length_size: 0,
+            draft: false,
+            threads,
+        }
     }
     fn convert(p: filmcraft_h264::Picture) -> DecodedFrame {
         use std::sync::Arc;
@@ -309,17 +372,32 @@ impl H264Decoder {
         let y = tight_plane(p.y, p.y_stride, w, h);
         let u = tight_plane(p.u, p.uv_stride, cw, ch);
         let v = tight_plane(p.v, p.uv_stride, cw, ch);
-        let color = vui_color(p.width, p.height, p.color.primaries, p.color.matrix, p.color.transfer, p.color.full_range);
+        let color = vui_color(
+            p.width,
+            p.height,
+            p.color.primaries,
+            p.color.matrix,
+            p.color.transfer,
+            p.color.full_range,
+        );
         let par = sar_par(p.sar);
         let frame = VideoFrame {
             width: p.width,
             height: p.height,
-            data: filmcraft_frame::PixelData::Yuv8 { planes: [Arc::new(y), Arc::new(u), Arc::new(v)], chroma: filmcraft_frame::Chroma::C420, alpha: None },
+            data: filmcraft_frame::PixelData::Yuv8 {
+                planes: [Arc::new(y), Arc::new(u), Arc::new(v)],
+                chroma: filmcraft_frame::Chroma::C420,
+                alpha: None,
+            },
             color,
             par,
             pts: filmcraft_time::Tick::ZERO,
         };
-        DecodedFrame { pts: p.pts, frame, draft }
+        DecodedFrame {
+            pts: p.pts,
+            frame,
+            draft,
+        }
     }
 }
 
@@ -328,7 +406,9 @@ impl H264Decoder {
 /// unreadable slate instead of a black picture (#626); anything else is a decode error.
 fn h264_error(e: filmcraft_h264::Error) -> CodecError {
     match e {
-        filmcraft_h264::Error::Unsupported(what) => CodecError::Unsupported(format!("H.264: {what}")),
+        filmcraft_h264::Error::Unsupported(what) => {
+            CodecError::Unsupported(format!("H.264: {what}"))
+        }
         e => CodecError::Decode(e.to_string()),
     }
 }
@@ -365,7 +445,11 @@ impl VideoDecoder for H264Decoder {
     }
     fn is_random_access(&self, sample: &[u8]) -> Option<bool> {
         // Annex B samples carry their parameter sets: an IDR access unit is a starting point.
-        (self.length_size == 0).then(|| filmcraft_bitstream::annexb_nals(sample).iter().any(|n| n.first().is_some_and(|h| h & 0x1f == 5)))
+        (self.length_size == 0).then(|| {
+            filmcraft_bitstream::annexb_nals(sample)
+                .iter()
+                .any(|n| n.first().is_some_and(|h| h & 0x1f == 5))
+        })
     }
 }
 
@@ -382,7 +466,9 @@ pub fn h264_threads() -> usize {
 
 pub fn h264_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
     match &e.codec {
-        CodecConfig::Avc(a) => Some(H264Decoder::new(a.to_bytes()).map(|d| Box::new(d) as Box<dyn VideoDecoder>)),
+        CodecConfig::Avc(a) => {
+            Some(H264Decoder::new(a.to_bytes()).map(|d| Box::new(d) as Box<dyn VideoDecoder>))
+        }
         _ => None,
     }
 }
@@ -399,11 +485,21 @@ impl HevcDecoder {
     pub fn new(hvcc: Vec<u8>) -> Result<Self> {
         let dec = filmcraft_hevc::Decoder::from_hvcc(&hvcc).map_err(hevc_error)?;
         let (length_size, highest_tid) = hvcc_length_size_and_tid(&hvcc);
-        Ok(Self { hvcc, dec, length_size, highest_tid })
+        Ok(Self {
+            hvcc,
+            dec,
+            length_size,
+            highest_tid,
+        })
     }
     /// A decoder for Annex B byte-stream samples (start codes, in-band parameter sets: TS).
     pub fn annexb() -> Self {
-        Self { hvcc: Vec::new(), dec: filmcraft_hevc::Decoder::new(), length_size: 0, highest_tid: None }
+        Self {
+            hvcc: Vec::new(),
+            dec: filmcraft_hevc::Decoder::new(),
+            length_size: 0,
+            highest_tid: None,
+        }
     }
     fn convert(p: filmcraft_hevc::Picture) -> DecodedFrame {
         use filmcraft_hevc::Plane;
@@ -419,28 +515,56 @@ impl HevcDecoder {
         };
         let data = match (p.y, p.u, p.v) {
             (Plane::U8(y), Plane::U8(u), Plane::U8(v)) => filmcraft_frame::PixelData::Yuv8 {
-                planes: [Arc::new(tight_plane(y, ys, w, h)), Arc::new(tight_plane(u, uvs, cw, ch)), Arc::new(tight_plane(v, uvs, cw, ch))],
+                planes: [
+                    Arc::new(tight_plane(y, ys, w, h)),
+                    Arc::new(tight_plane(u, uvs, cw, ch)),
+                    Arc::new(tight_plane(v, uvs, cw, ch)),
+                ],
                 chroma: filmcraft_frame::Chroma::C420,
                 alpha: None,
             },
             (y, u, v) => filmcraft_frame::PixelData::Yuv16 {
-                planes: [Arc::new(tight_plane(wide(y), ys, w, h)), Arc::new(tight_plane(wide(u), uvs, cw, ch)), Arc::new(tight_plane(wide(v), uvs, cw, ch))],
+                planes: [
+                    Arc::new(tight_plane(wide(y), ys, w, h)),
+                    Arc::new(tight_plane(wide(u), uvs, cw, ch)),
+                    Arc::new(tight_plane(wide(v), uvs, cw, ch)),
+                ],
                 chroma: filmcraft_frame::Chroma::C420,
                 bits: p.bit_depth,
                 alpha: None,
             },
         };
-        let color = vui_color(p.width, p.height, p.color.primaries, p.color.matrix, p.color.transfer, p.color.full_range);
+        let color = vui_color(
+            p.width,
+            p.height,
+            p.color.primaries,
+            p.color.matrix,
+            p.color.transfer,
+            p.color.full_range,
+        );
         let par = sar_par(p.sar);
-        let frame = VideoFrame { width: p.width, height: p.height, data, color, par, pts: filmcraft_time::Tick::ZERO };
-        DecodedFrame { pts: p.pts, frame, draft: p.draft }
+        let frame = VideoFrame {
+            width: p.width,
+            height: p.height,
+            data,
+            color,
+            par,
+            pts: filmcraft_time::Tick::ZERO,
+        };
+        DecodedFrame {
+            pts: p.pts,
+            frame,
+            draft: p.draft,
+        }
     }
 }
 
 /// An HEVC decoder error as a [`CodecError`] (see [`h264_error`]).
 fn hevc_error(e: filmcraft_hevc::Error) -> CodecError {
     match e {
-        filmcraft_hevc::Error::Unsupported(what) => CodecError::Unsupported(format!("HEVC: {what}")),
+        filmcraft_hevc::Error::Unsupported(what) => {
+            CodecError::Unsupported(format!("HEVC: {what}"))
+        }
         e => CodecError::Decode(e.to_string()),
     }
 }
@@ -472,14 +596,20 @@ impl VideoDecoder for HevcDecoder {
     fn is_random_access(&self, sample: &[u8]) -> Option<bool> {
         // Annex B samples carry their parameter sets: an IDR / CRA / BLA access unit is a
         // starting point.
-        (self.length_size == 0)
-            .then(|| filmcraft_bitstream::annexb_nals(sample).iter().any(|n| n.first().is_some_and(|h| (16..=21).contains(&((h >> 1) & 0x3F)))))
+        (self.length_size == 0).then(|| {
+            filmcraft_bitstream::annexb_nals(sample).iter().any(|n| {
+                n.first()
+                    .is_some_and(|h| (16..=21).contains(&((h >> 1) & 0x3F)))
+            })
+        })
     }
 }
 
 pub fn hevc_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
     match &e.codec {
-        CodecConfig::Hevc(c) => Some(HevcDecoder::new(c.to_bytes()).map(|d| Box::new(d) as Box<dyn VideoDecoder>)),
+        CodecConfig::Hevc(c) => {
+            Some(HevcDecoder::new(c.to_bytes()).map(|d| Box::new(d) as Box<dyn VideoDecoder>))
+        }
         _ => None,
     }
 }
@@ -511,7 +641,8 @@ impl Vp9Decoder {
     pub fn new(cfg: Option<&filmcraft_isobmff::VpcConfig>) -> Self {
         Self {
             dec: filmcraft_vp9::Decoder::new(),
-            transfer: cfg.and_then(|c| filmcraft_color::Transfer::from_code(c.transfer_characteristics)),
+            transfer: cfg
+                .and_then(|c| filmcraft_color::Transfer::from_code(c.transfer_characteristics)),
             primaries: cfg.and_then(|c| primaries_from_code(c.colour_primaries)),
         }
     }
@@ -525,17 +656,33 @@ impl Vp9Decoder {
         let (w, h) = (p.width as usize, p.height as usize);
         let (cw, ch) = (p.chroma_width as usize, p.chroma_height as usize);
         // (shared with the hardware decoders: `hw_frame::vp9_color`)
-        let color = crate::hw_frame::vp9_color(p.width, p.height, p.color.color_space, p.color.full_range, self.transfer, self.primaries);
+        let color = crate::hw_frame::vp9_color(
+            p.width,
+            p.height,
+            p.color.color_space,
+            p.color.full_range,
+            self.transfer,
+            self.primaries,
+        );
         let (pts, draft) = (p.pts, p.draft);
         if p.color.color_space == 7 {
             // RGB (profiles 1 / 3, 4:4:4): the planes carry G, B, R.
             let shift = p.bit_depth - 8;
             let mut rgba = Vec::with_capacity(w * h * 4);
             for i in 0..w * h {
-                rgba.extend_from_slice(&[(p.v.get(i) >> shift) as u8, (p.y.get(i) >> shift) as u8, (p.u.get(i) >> shift) as u8, 255]);
+                rgba.extend_from_slice(&[
+                    (p.v.get(i) >> shift) as u8,
+                    (p.y.get(i) >> shift) as u8,
+                    (p.u.get(i) >> shift) as u8,
+                    255,
+                ]);
             }
             let mut frame = VideoFrame::rgba8(p.width, p.height, rgba);
-            frame.color = filmcraft_color::ColorInfo { range: Range::Full, transfer: filmcraft_color::Transfer::Srgb, ..color };
+            frame.color = filmcraft_color::ColorInfo {
+                range: Range::Full,
+                transfer: filmcraft_color::Transfer::Srgb,
+                ..color
+            };
             return Some(DecodedFrame { pts, frame, draft });
         }
         // 4:4:0 has no frame format of its own: chroma rows are repeated to 4:4:4.
@@ -558,12 +705,20 @@ impl Vp9Decoder {
         }
         let data = match (p.y, p.u, p.v) {
             (Plane::U8(y), Plane::U8(u), Plane::U8(v)) => PixelData::Yuv8 {
-                planes: [Arc::new(tight_plane(y, w, w, h)), Arc::new(expand(u, cw, ch, h, rows_440)), Arc::new(expand(v, cw, ch, h, rows_440))],
+                planes: [
+                    Arc::new(tight_plane(y, w, w, h)),
+                    Arc::new(expand(u, cw, ch, h, rows_440)),
+                    Arc::new(expand(v, cw, ch, h, rows_440)),
+                ],
                 chroma,
                 alpha: None,
             },
             (Plane::U16(y), Plane::U16(u), Plane::U16(v)) => PixelData::Yuv16 {
-                planes: [Arc::new(tight_plane(y, w, w, h)), Arc::new(expand(u, cw, ch, h, rows_440)), Arc::new(expand(v, cw, ch, h, rows_440))],
+                planes: [
+                    Arc::new(tight_plane(y, w, w, h)),
+                    Arc::new(expand(u, cw, ch, h, rows_440)),
+                    Arc::new(expand(v, cw, ch, h, rows_440)),
+                ],
                 chroma,
                 bits: p.bit_depth,
                 alpha: None,
@@ -573,17 +728,35 @@ impl Vp9Decoder {
         // render_size (the intended display size) is not applied: the container's display
         // dimensions / pixel aspect describe the presentation.
         let par = (1, 1);
-        Some(DecodedFrame { pts, frame: VideoFrame { width: p.width, height: p.height, data, color, par, pts: filmcraft_time::Tick::ZERO }, draft })
+        Some(DecodedFrame {
+            pts,
+            frame: VideoFrame {
+                width: p.width,
+                height: p.height,
+                data,
+                color,
+                par,
+                pts: filmcraft_time::Tick::ZERO,
+            },
+            draft,
+        })
     }
 }
 
 impl VideoDecoder for Vp9Decoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        let pics = self.dec.decode(sample, pts).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let pics = self
+            .dec
+            .decode(sample, pts)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         Ok(pics.into_iter().filter_map(|p| self.convert(p)).collect())
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
-        self.dec.flush().into_iter().filter_map(|p| self.convert(p)).collect()
+        self.dec
+            .flush()
+            .into_iter()
+            .filter_map(|p| self.convert(p))
+            .collect()
     }
     fn reset(&mut self) {
         self.dec.reset();
@@ -601,7 +774,9 @@ impl VideoDecoder for Vp9Decoder {
 
 pub fn vp9_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
     match &e.codec {
-        CodecConfig::Vp9(c) => Some(Ok(Box::new(Vp9Decoder::new(Some(c))) as Box<dyn VideoDecoder>)),
+        CodecConfig::Vp9(c) => Some(Ok(
+            Box::new(Vp9Decoder::new(Some(c))) as Box<dyn VideoDecoder>
+        )),
         _ => None,
     }
 }
@@ -619,23 +794,46 @@ impl Default for Vp8Decoder {
 
 impl Vp8Decoder {
     pub fn new() -> Self {
-        Self { dec: filmcraft_vp8::Decoder::new() }
+        Self {
+            dec: filmcraft_vp8::Decoder::new(),
+        }
     }
 
     fn convert(p: filmcraft_vp8::Picture) -> DecodedFrame {
         use filmcraft_frame::{Chroma, PixelData};
         use std::sync::Arc;
         // color_space 0 is BT.601 YUV (RFC 6386 9.2), studio swing; a container's Colour wins
-        let color = filmcraft_color::ColorInfo { matrix: filmcraft_color::Matrix::Bt601, ..filmcraft_color::ColorInfo::REC709 };
-        let data = PixelData::Yuv8 { planes: [Arc::new(p.y), Arc::new(p.u), Arc::new(p.v)], chroma: Chroma::C420, alpha: None };
-        let frame = VideoFrame { width: p.width, height: p.height, data, color, par: (1, 1), pts: filmcraft_time::Tick::ZERO };
-        DecodedFrame { pts: p.pts, frame, draft: false }
+        let color = filmcraft_color::ColorInfo {
+            matrix: filmcraft_color::Matrix::Bt601,
+            ..filmcraft_color::ColorInfo::REC709
+        };
+        let data = PixelData::Yuv8 {
+            planes: [Arc::new(p.y), Arc::new(p.u), Arc::new(p.v)],
+            chroma: Chroma::C420,
+            alpha: None,
+        };
+        let frame = VideoFrame {
+            width: p.width,
+            height: p.height,
+            data,
+            color,
+            par: (1, 1),
+            pts: filmcraft_time::Tick::ZERO,
+        };
+        DecodedFrame {
+            pts: p.pts,
+            frame,
+            draft: false,
+        }
     }
 }
 
 impl VideoDecoder for Vp8Decoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        let pic = self.dec.decode(sample, pts).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let pic = self
+            .dec
+            .decode(sample, pts)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         Ok(pic.into_iter().map(Self::convert).collect())
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
@@ -670,7 +868,11 @@ pub struct Av1Decoder {
 
 impl Av1Decoder {
     pub fn new(config_obus: Vec<u8>) -> Av1Decoder {
-        Av1Decoder { dec: filmcraft_av1::Decoder::new(), config_obus, primed: false }
+        Av1Decoder {
+            dec: filmcraft_av1::Decoder::new(),
+            config_obus,
+            primed: false,
+        }
     }
 
     fn convert(p: filmcraft_av1::Picture, pts: i64) -> DecodedFrame {
@@ -679,7 +881,14 @@ impl Av1Decoder {
         let w = p.width as usize;
         let h = p.height as usize;
         // (shared with the hardware decoders: `hw_frame::av1_color`)
-        let color = crate::hw_frame::av1_color(p.width, p.height, p.matrix_coefficients, p.transfer_characteristics, p.color_primaries, p.full_range);
+        let color = crate::hw_frame::av1_color(
+            p.width,
+            p.height,
+            p.matrix_coefficients,
+            p.transfer_characteristics,
+            p.color_primaries,
+            p.full_range,
+        );
         let chroma = match (p.subsampling_x, p.subsampling_y) {
             (1, 1) => filmcraft_frame::Chroma::C420,
             (1, 0) => filmcraft_frame::Chroma::C422,
@@ -694,11 +903,31 @@ impl Av1Decoder {
         }
         let data = if p.bit_depth == 8 {
             let to8 = |p: Vec<u16>| Arc::new(p.into_iter().map(|v| v as u8).collect::<Vec<u8>>());
-            filmcraft_frame::PixelData::Yuv8 { planes: [to8(y), to8(u), to8(v)], chroma, alpha: None }
+            filmcraft_frame::PixelData::Yuv8 {
+                planes: [to8(y), to8(u), to8(v)],
+                chroma,
+                alpha: None,
+            }
         } else {
-            filmcraft_frame::PixelData::Yuv16 { planes: [Arc::new(y), Arc::new(u), Arc::new(v)], chroma, bits: p.bit_depth as u32, alpha: None }
+            filmcraft_frame::PixelData::Yuv16 {
+                planes: [Arc::new(y), Arc::new(u), Arc::new(v)],
+                chroma,
+                bits: p.bit_depth as u32,
+                alpha: None,
+            }
         };
-        DecodedFrame { pts, frame: VideoFrame { width: p.width, height: p.height, data, color, par: (1, 1), pts: filmcraft_time::Tick::ZERO }, draft }
+        DecodedFrame {
+            pts,
+            frame: VideoFrame {
+                width: p.width,
+                height: p.height,
+                data,
+                color,
+                par: (1, 1),
+                pts: filmcraft_time::Tick::ZERO,
+            },
+            draft,
+        }
     }
 }
 
@@ -707,11 +936,16 @@ impl VideoDecoder for Av1Decoder {
         if !self.primed {
             self.primed = true;
             if !self.config_obus.is_empty() {
-                self.dec.decode(&self.config_obus).map_err(|e| CodecError::Decode(e.to_string()))?;
+                self.dec
+                    .decode(&self.config_obus)
+                    .map_err(|e| CodecError::Decode(e.to_string()))?;
             }
         }
         // With frame threads pictures can come out of a later call; each carries its own pts.
-        let pics = self.dec.decode_pts(sample, pts).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let pics = self
+            .dec
+            .decode_pts(sample, pts)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         Ok(pics
             .into_iter()
             .map(|p| {
@@ -747,7 +981,9 @@ impl VideoDecoder for Av1Decoder {
 
 pub fn av1_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
     match &e.codec {
-        CodecConfig::Av1(c) => Some(Ok(Box::new(Av1Decoder::new(c.config_obus.clone())) as Box<dyn VideoDecoder>)),
+        CodecConfig::Av1(c) => Some(Ok(
+            Box::new(Av1Decoder::new(c.config_obus.clone())) as Box<dyn VideoDecoder>
+        )),
         _ => None,
     }
 }
@@ -758,7 +994,8 @@ pub struct ProResDecoder;
 impl VideoDecoder for ProResDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
         use std::sync::Arc;
-        let f = filmcraft_prores::decode_frame(sample).map_err(|e| CodecError::Decode(e.to_string()))?;
+        let f = filmcraft_prores::decode_frame(sample)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
         let chroma = match f.chroma {
             filmcraft_prores::ChromaFormat::Yuv422 => filmcraft_frame::Chroma::C422,
             filmcraft_prores::ChromaFormat::Yuv444 => filmcraft_frame::Chroma::C444,
@@ -783,7 +1020,11 @@ impl VideoDecoder for ProResDecoder {
             par: (1, 1),
             pts: filmcraft_time::Tick::ZERO,
         };
-        Ok(vec![DecodedFrame { pts, frame, draft: false }])
+        Ok(vec![DecodedFrame {
+            pts,
+            frame,
+            draft: false,
+        }])
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
         Vec::new()
@@ -798,7 +1039,8 @@ impl VideoDecoder for ProResDecoder {
 }
 
 pub fn prores_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
-    matches!(e.codec, CodecConfig::ProRes { .. }).then(|| Ok(Box::new(ProResDecoder) as Box<dyn VideoDecoder>))
+    matches!(e.codec, CodecConfig::ProRes { .. })
+        .then(|| Ok(Box::new(ProResDecoder) as Box<dyn VideoDecoder>))
 }
 
 /// Our APV (Advanced Professional Video, RFC 9924) decoder (every frame is intra; tiles decode in
@@ -810,9 +1052,14 @@ pub fn apv_to_video_frame(f: filmcraft_apv::Frame) -> VideoFrame {
     use std::sync::Arc;
     let chroma = match f.chroma {
         filmcraft_apv::ChromaFormat::Yuv422 => filmcraft_frame::Chroma::C422,
-        filmcraft_apv::ChromaFormat::Monochrome | filmcraft_apv::ChromaFormat::Yuv444 | filmcraft_apv::ChromaFormat::Yuv4444 => filmcraft_frame::Chroma::C444,
+        filmcraft_apv::ChromaFormat::Monochrome
+        | filmcraft_apv::ChromaFormat::Yuv444
+        | filmcraft_apv::ChromaFormat::Yuv4444 => filmcraft_frame::Chroma::C444,
     };
-    let mut color = filmcraft_color::ColorInfo { matrix: filmcraft_frame::default_matrix(f.width, f.height), ..filmcraft_color::ColorInfo::REC709 };
+    let mut color = filmcraft_color::ColorInfo {
+        matrix: filmcraft_frame::default_matrix(f.width, f.height),
+        ..filmcraft_color::ColorInfo::REC709
+    };
     if let Some(m) = filmcraft_color::Matrix::from_code(f.color.matrix) {
         color.matrix = m;
     }
@@ -834,7 +1081,11 @@ pub fn apv_to_video_frame(f: filmcraft_apv::Frame) -> VideoFrame {
     };
     let data = if f.bit_depth == 8 {
         let to8 = |p: Vec<u16>| Arc::new(p.into_iter().map(|v| v as u8).collect::<Vec<u8>>());
-        filmcraft_frame::PixelData::Yuv8 { planes: [to8(f.y), to8(cb), to8(cr)], chroma, alpha: f.alpha.map(to8) }
+        filmcraft_frame::PixelData::Yuv8 {
+            planes: [to8(f.y), to8(cb), to8(cr)],
+            chroma,
+            alpha: f.alpha.map(to8),
+        }
     } else {
         filmcraft_frame::PixelData::Yuv16 {
             planes: [Arc::new(f.y), Arc::new(cb), Arc::new(cr)],
@@ -843,13 +1094,25 @@ pub fn apv_to_video_frame(f: filmcraft_apv::Frame) -> VideoFrame {
             alpha: f.alpha.map(Arc::new),
         }
     };
-    VideoFrame { width: f.width, height: f.height, data, color, par: (1, 1), pts: filmcraft_time::Tick::ZERO }
+    VideoFrame {
+        width: f.width,
+        height: f.height,
+        data,
+        color,
+        par: (1, 1),
+        pts: filmcraft_time::Tick::ZERO,
+    }
 }
 
 impl VideoDecoder for ApvDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        let f = filmcraft_apv::decode_frame(sample).map_err(|e| CodecError::Decode(e.to_string()))?;
-        Ok(vec![DecodedFrame { pts, frame: apv_to_video_frame(f), draft: false }])
+        let f =
+            filmcraft_apv::decode_frame(sample).map_err(|e| CodecError::Decode(e.to_string()))?;
+        Ok(vec![DecodedFrame {
+            pts,
+            frame: apv_to_video_frame(f),
+            draft: false,
+        }])
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
         Vec::new()
@@ -864,7 +1127,8 @@ impl VideoDecoder for ApvDecoder {
 }
 
 pub fn apv_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
-    matches!(e.codec, CodecConfig::Apv(_)).then(|| Ok(Box::new(ApvDecoder) as Box<dyn VideoDecoder>))
+    matches!(e.codec, CodecConfig::Apv(_))
+        .then(|| Ok(Box::new(ApvDecoder) as Box<dyn VideoDecoder>))
 }
 
 /// Our DNxHD / DNxHR (VC-3) decoder (every frame is intra; macroblock rows decode in parallel).
@@ -880,7 +1144,10 @@ pub fn dnx_to_video_frame(f: filmcraft_dnx::Frame) -> VideoFrame {
         filmcraft_dnx::ChromaFormat::Yuv444 => filmcraft_frame::Chroma::C444,
     };
     let mut color = filmcraft_color::ColorInfo::REC709;
-    if matches!(f.color_volume, filmcraft_dnx::ColorVolume::Bt2020Ncl | filmcraft_dnx::ColorVolume::Bt2020Cl) {
+    if matches!(
+        f.color_volume,
+        filmcraft_dnx::ColorVolume::Bt2020Ncl | filmcraft_dnx::ColorVolume::Bt2020Cl
+    ) {
         color.matrix = filmcraft_color::Matrix::Bt2020Ncl;
         color.primaries = filmcraft_color::Primaries::Bt2020;
     }
@@ -911,17 +1178,38 @@ pub fn dnx_to_video_frame(f: filmcraft_dnx::Frame) -> VideoFrame {
     };
     let data = if f.bit_depth == 8 {
         let to8 = |p: Vec<u16>| Arc::new(p.into_iter().map(|v| v as u8).collect::<Vec<u8>>());
-        filmcraft_frame::PixelData::Yuv8 { planes: [to8(y), to8(cb), to8(cr)], chroma, alpha: f.alpha.map(to8) }
+        filmcraft_frame::PixelData::Yuv8 {
+            planes: [to8(y), to8(cb), to8(cr)],
+            chroma,
+            alpha: f.alpha.map(to8),
+        }
     } else {
-        filmcraft_frame::PixelData::Yuv16 { planes: [Arc::new(y), Arc::new(cb), Arc::new(cr)], chroma, bits: f.bit_depth as u32, alpha: f.alpha.map(Arc::new) }
+        filmcraft_frame::PixelData::Yuv16 {
+            planes: [Arc::new(y), Arc::new(cb), Arc::new(cr)],
+            chroma,
+            bits: f.bit_depth as u32,
+            alpha: f.alpha.map(Arc::new),
+        }
     };
-    VideoFrame { width: f.width, height: f.height, data, color, par, pts: filmcraft_time::Tick::ZERO }
+    VideoFrame {
+        width: f.width,
+        height: f.height,
+        data,
+        color,
+        par,
+        pts: filmcraft_time::Tick::ZERO,
+    }
 }
 
 impl VideoDecoder for DnxDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        let f = filmcraft_dnx::decode_frame(sample).map_err(|e| CodecError::Decode(e.to_string()))?;
-        Ok(vec![DecodedFrame { pts, frame: dnx_to_video_frame(f), draft: false }])
+        let f =
+            filmcraft_dnx::decode_frame(sample).map_err(|e| CodecError::Decode(e.to_string()))?;
+        Ok(vec![DecodedFrame {
+            pts,
+            frame: dnx_to_video_frame(f),
+            draft: false,
+        }])
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
         Vec::new()
@@ -936,7 +1224,8 @@ impl VideoDecoder for DnxDecoder {
 }
 
 pub fn dnx_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
-    matches!(e.codec, CodecConfig::Dnx { .. }).then(|| Ok(Box::new(DnxDecoder) as Box<dyn VideoDecoder>))
+    matches!(e.codec, CodecConfig::Dnx { .. })
+        .then(|| Ok(Box::new(DnxDecoder) as Box<dyn VideoDecoder>))
 }
 
 /// Our MPEG-1 / MPEG-2 video decoder (Main / 4:2:2 profile, field and frame pictures).
@@ -949,7 +1238,10 @@ pub struct Mpeg2Decoder {
 
 impl Mpeg2Decoder {
     pub fn new(header: Vec<u8>) -> Self {
-        let mut d = Self { dec: filmcraft_mpeg2v::Decoder::new(), header };
+        let mut d = Self {
+            dec: filmcraft_mpeg2v::Decoder::new(),
+            header,
+        };
         d.prime();
         d
     }
@@ -965,7 +1257,10 @@ impl Mpeg2Decoder {
 pub fn mpeg2_sequence_header(sample: &[u8]) -> Option<Vec<u8>> {
     let codes = filmcraft_mpeg2v::start_codes(sample);
     let (start, _) = *codes.iter().find(|c| c.1 == 0xB3)?;
-    let end = codes.iter().find(|c| c.0 > start && matches!(c.1, 0x00 | 0xB8 | 0x01..=0xAF)).map_or(sample.len(), |c| c.0);
+    let end = codes
+        .iter()
+        .find(|c| c.0 > start && matches!(c.1, 0x00 | 0xB8 | 0x01..=0xAF))
+        .map_or(sample.len(), |c| c.0);
     Some(sample[start..end].to_vec())
 }
 
@@ -974,9 +1269,16 @@ pub fn mpeg2_sequence_header(sample: &[u8]) -> Option<Vec<u8>> {
 pub fn mpeg2_to_video_frame(p: filmcraft_mpeg2v::Picture) -> VideoFrame {
     use std::sync::Arc;
     let info = &p.info;
-    let mut color = filmcraft_color::ColorInfo { matrix: filmcraft_frame::default_matrix(p.width, p.height), ..filmcraft_color::ColorInfo::REC709 };
+    let mut color = filmcraft_color::ColorInfo {
+        matrix: filmcraft_frame::default_matrix(p.width, p.height),
+        ..filmcraft_color::ColorInfo::REC709
+    };
     if info.width <= 1024 && info.height <= 576 {
-        color.primaries = if info.height == 576 || info.height == 608 { filmcraft_color::Primaries::Bt601_625 } else { filmcraft_color::Primaries::Bt601_525 };
+        color.primaries = if info.height == 576 || info.height == 608 {
+            filmcraft_color::Primaries::Bt601_625
+        } else {
+            filmcraft_color::Primaries::Bt601_525
+        };
     }
     if let Some((prim, transfer, matrix)) = info.colour {
         if let Some(m) = filmcraft_color::Matrix::from_code(matrix) {
@@ -998,7 +1300,11 @@ pub fn mpeg2_to_video_frame(p: filmcraft_mpeg2v::Picture) -> VideoFrame {
     VideoFrame {
         width: p.width,
         height: p.height,
-        data: filmcraft_frame::PixelData::Yuv8 { planes: [Arc::new(p.y), Arc::new(p.cb), Arc::new(p.cr)], chroma, alpha: None },
+        data: filmcraft_frame::PixelData::Yuv8 {
+            planes: [Arc::new(p.y), Arc::new(p.cb), Arc::new(p.cr)],
+            chroma,
+            alpha: None,
+        },
         color,
         par: if par.0 > 0 && par.1 > 0 { par } else { (1, 1) },
         pts: filmcraft_time::Tick::ZERO,
@@ -1006,7 +1312,10 @@ pub fn mpeg2_to_video_frame(p: filmcraft_mpeg2v::Picture) -> VideoFrame {
 }
 
 /// "YUV 4:2:2 8-bit, interlaced (upper field first)" for the media info.
-pub fn mpeg2_pixel_format(info: &filmcraft_mpeg2v::SequenceInfo, field_order: Option<filmcraft_mpeg2v::FieldOrder>) -> String {
+pub fn mpeg2_pixel_format(
+    info: &filmcraft_mpeg2v::SequenceInfo,
+    field_order: Option<filmcraft_mpeg2v::FieldOrder>,
+) -> String {
     let sub = match info.chroma {
         filmcraft_mpeg2v::ChromaFormat::Yuv420 => "4:2:0",
         filmcraft_mpeg2v::ChromaFormat::Yuv422 => "4:2:2",
@@ -1022,11 +1331,29 @@ pub fn mpeg2_pixel_format(info: &filmcraft_mpeg2v::SequenceInfo, field_order: Op
 
 impl VideoDecoder for Mpeg2Decoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        let pics = self.dec.decode(sample, pts).map_err(|e| CodecError::Decode(e.to_string()))?;
-        Ok(pics.into_iter().map(|p| DecodedFrame { pts: p.pts, frame: mpeg2_to_video_frame(p), draft: false }).collect())
+        let pics = self
+            .dec
+            .decode(sample, pts)
+            .map_err(|e| CodecError::Decode(e.to_string()))?;
+        Ok(pics
+            .into_iter()
+            .map(|p| DecodedFrame {
+                pts: p.pts,
+                frame: mpeg2_to_video_frame(p),
+                draft: false,
+            })
+            .collect())
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
-        self.dec.flush().into_iter().map(|p| DecodedFrame { pts: p.pts, frame: mpeg2_to_video_frame(p), draft: false }).collect()
+        self.dec
+            .flush()
+            .into_iter()
+            .map(|p| DecodedFrame {
+                pts: p.pts,
+                frame: mpeg2_to_video_frame(p),
+                draft: false,
+            })
+            .collect()
     }
     fn reset(&mut self) {
         self.dec.reset();
@@ -1047,7 +1374,8 @@ impl VideoDecoder for Mpeg2Decoder {
 /// generic `mp2v`/`mpg2`, and `mp4v` whose `esds` object type is MPEG-1/2 video (0x60-0x65, 0x6A).
 fn is_mpeg2_entry(fourcc: &[u8; 4], raw: &[u8]) -> bool {
     match fourcc {
-        b"mp2v" | b"mpg2" | b"m2v1" | b"mpg1" | b"m1v " | b"m1v1" | b"mx3n" | b"mx4n" | b"mx5n" | b"mx3p" | b"mx4p" | b"mx5p" | b"xdhd" | b"xdh2" => true,
+        b"mp2v" | b"mpg2" | b"m2v1" | b"mpg1" | b"m1v " | b"m1v1" | b"mx3n" | b"mx4n" | b"mx5n"
+        | b"mx3p" | b"mx4p" | b"mx5p" | b"xdhd" | b"xdh2" => true,
         [b'x', b'd', b'v' | b'5', _] | [b'h', b'd', b'v', _] => true,
         b"mp4v" => esds_object_type(raw).is_some_and(|t| (0x60..=0x65).contains(&t) || t == 0x6A),
         _ => false,
@@ -1098,8 +1426,14 @@ pub fn mpeg2_factory(e: &SampleEntry) -> Option<Result<Box<dyn VideoDecoder>>> {
     match &e.codec {
         CodecConfig::Unknown { fourcc, raw } if is_mpeg2_entry(&fourcc.0, raw) => {
             // MKV puts the sequence header in CodecPrivate (passed as `raw` for `mp2v`)
-            let header = if fourcc.0 == *b"mp2v" { mpeg2_sequence_header(raw).unwrap_or_default() } else { Vec::new() };
-            Some(Ok(Box::new(Mpeg2Decoder::new(header)) as Box<dyn VideoDecoder>))
+            let header = if fourcc.0 == *b"mp2v" {
+                mpeg2_sequence_header(raw).unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            Some(Ok(
+                Box::new(Mpeg2Decoder::new(header)) as Box<dyn VideoDecoder>
+            ))
         }
         _ => None,
     }
@@ -1122,11 +1456,17 @@ mod disposable_tests {
     #[test]
     fn h264_non_reference_access_units() {
         // nal_ref_idc 0 slice (type 1), with an SEI (type 6) before it
-        assert!(h264_disposable(&sample(&[&[0x06, 5, 1], &[0x01, 0x9a, 0]]), 4));
+        assert!(h264_disposable(
+            &sample(&[&[0x06, 5, 1], &[0x01, 0x9a, 0]]),
+            4
+        ));
         // reference P slice (nal_ref_idc 2), IDR, mixed reference / non-reference slices
         assert!(!h264_disposable(&sample(&[&[0x41, 0x9a]]), 4));
         assert!(!h264_disposable(&sample(&[&[0x65, 0x88]]), 4));
-        assert!(!h264_disposable(&sample(&[&[0x01, 0x9a], &[0x21, 0x9a]]), 4));
+        assert!(!h264_disposable(
+            &sample(&[&[0x01, 0x9a], &[0x21, 0x9a]]),
+            4
+        ));
         // no slice at all, truncated data
         assert!(!h264_disposable(&sample(&[&[0x06, 5]]), 4));
         assert!(!h264_disposable(&[0, 0, 0, 9, 1], 4));
@@ -1136,10 +1476,17 @@ mod disposable_tests {
     fn hevc_sub_layer_non_reference_pictures_of_the_top_layer() {
         let nal = |t: u8, tid1: u8| [t << 1, tid1, 0xaf];
         // TRAIL_N (0) at TemporalId 0 with one temporal layer
-        assert!(hevc_disposable(&sample(&[&nal(39, 1), &nal(0, 1)]), 4, Some(0)));
+        assert!(hevc_disposable(
+            &sample(&[&nal(39, 1), &nal(0, 1)]),
+            4,
+            Some(0)
+        ));
         // TRAIL_R (1), CRA (21), IDR (19) are referenced
         for t in [1u8, 19, 21] {
-            assert!(!hevc_disposable(&sample(&[&nal(t, 1)]), 4, Some(0)), "type {t}");
+            assert!(
+                !hevc_disposable(&sample(&[&nal(t, 1)]), 4, Some(0)),
+                "type {t}"
+            );
         }
         // RASL_N (8) at the top layer of two; at a lower layer it may be referenced
         assert!(hevc_disposable(&sample(&[&nal(8, 2)]), 4, Some(1)));
@@ -1216,9 +1563,16 @@ pub struct RawVideoDecoder {
 impl RawVideoDecoder {
     pub fn new(format: RawFormat, width: u32, height: u32, bottom_up: bool) -> Result<Self> {
         if width == 0 || height == 0 || width > 16_384 || height > 16_384 {
-            return Err(CodecError::Unsupported(format!("{width}x{height} uncompressed video")));
+            return Err(CodecError::Unsupported(format!(
+                "{width}x{height} uncompressed video"
+            )));
         }
-        Ok(Self { format, width, height, bottom_up })
+        Ok(Self {
+            format,
+            width,
+            height,
+            bottom_up,
+        })
     }
 
     fn yuv(&self, planes: [Vec<u8>; 3], chroma: filmcraft_frame::Chroma) -> VideoFrame {
@@ -1227,7 +1581,11 @@ impl RawVideoDecoder {
         VideoFrame {
             width: self.width,
             height: self.height,
-            data: filmcraft_frame::PixelData::Yuv8 { planes: [Arc::new(y), Arc::new(u), Arc::new(v)], chroma, alpha: None },
+            data: filmcraft_frame::PixelData::Yuv8 {
+                planes: [Arc::new(y), Arc::new(u), Arc::new(v)],
+                chroma,
+                alpha: None,
+            },
             color: vui_color(self.width, self.height, 2, 2, 2, false),
             par: (1, 1),
             pts: filmcraft_time::Tick::ZERO,
@@ -1236,11 +1594,21 @@ impl RawVideoDecoder {
 
     fn picture(&self, s: &[u8]) -> Result<VideoFrame> {
         let (w, h) = (self.width as usize, self.height as usize);
-        let short = || CodecError::Decode(format!("{} frame of {} bytes is too short for {w}x{h}", self.format.label(), s.len()));
+        let short = || {
+            CodecError::Decode(format!(
+                "{} frame of {} bytes is too short for {w}x{h}",
+                self.format.label(),
+                s.len()
+            ))
+        };
         let (cw, ch) = (w.div_ceil(2), h.div_ceil(2));
         Ok(match self.format {
             RawFormat::Bgr24 | RawFormat::Bgrx32 => {
-                let bpp = if self.format == RawFormat::Bgr24 { 3 } else { 4 };
+                let bpp = if self.format == RawFormat::Bgr24 {
+                    3
+                } else {
+                    4
+                };
                 let stride = (w * bpp).div_ceil(4) * 4;
                 if s.len() < stride * h {
                     return Err(short());
@@ -1248,7 +1616,11 @@ impl RawVideoDecoder {
                 let mut rgba = Vec::with_capacity(w * h * 4);
                 for row in 0..h {
                     let src = if self.bottom_up { h - 1 - row } else { row };
-                    for px in s.get(src * stride..src * stride + w * bpp).unwrap_or_default().chunks_exact(bpp) {
+                    for px in s
+                        .get(src * stride..src * stride + w * bpp)
+                        .unwrap_or_default()
+                        .chunks_exact(bpp)
+                    {
                         rgba.extend_from_slice(&[px[2], px[1], px[0], 255]);
                     }
                 }
@@ -1259,8 +1631,16 @@ impl RawVideoDecoder {
                 if s.len() < stride * h {
                     return Err(short());
                 }
-                let (yo, uo, vo, y2) = if self.format == RawFormat::Yuy2 { (0, 1, 3, 2) } else { (1, 0, 2, 3) };
-                let (mut y, mut u, mut v) = (Vec::with_capacity(w * h), Vec::with_capacity(cw * h), Vec::with_capacity(cw * h));
+                let (yo, uo, vo, y2) = if self.format == RawFormat::Yuy2 {
+                    (0, 1, 3, 2)
+                } else {
+                    (1, 0, 2, 3)
+                };
+                let (mut y, mut u, mut v) = (
+                    Vec::with_capacity(w * h),
+                    Vec::with_capacity(cw * h),
+                    Vec::with_capacity(cw * h),
+                );
                 for row in s.chunks_exact(stride).take(h) {
                     for (k, q) in row.as_chunks::<4>().0.iter().enumerate() {
                         y.push(q[yo]);
@@ -1275,18 +1655,36 @@ impl RawVideoDecoder {
             }
             RawFormat::I420 | RawFormat::Yv12 | RawFormat::Nv12 | RawFormat::Gray8 => {
                 let luma = w * h;
-                let need = if self.format == RawFormat::Gray8 { luma } else { luma + 2 * cw * ch };
+                let need = if self.format == RawFormat::Gray8 {
+                    luma
+                } else {
+                    luma + 2 * cw * ch
+                };
                 if s.len() < need {
                     return Err(short());
                 }
                 let y = s.get(..luma).unwrap_or_default().to_vec();
                 let (u, v) = match self.format {
                     RawFormat::Gray8 => (vec![128; cw * ch], vec![128; cw * ch]),
-                    RawFormat::Nv12 => s.get(luma..luma + 2 * cw * ch).unwrap_or_default().as_chunks::<2>().0.iter().map(|p| (p[0], p[1])).unzip(),
+                    RawFormat::Nv12 => s
+                        .get(luma..luma + 2 * cw * ch)
+                        .unwrap_or_default()
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|p| (p[0], p[1]))
+                        .unzip(),
                     _ => {
                         let a = s.get(luma..luma + cw * ch).unwrap_or_default().to_vec();
-                        let b = s.get(luma + cw * ch..luma + 2 * cw * ch).unwrap_or_default().to_vec();
-                        if self.format == RawFormat::Yv12 { (b, a) } else { (a, b) }
+                        let b = s
+                            .get(luma + cw * ch..luma + 2 * cw * ch)
+                            .unwrap_or_default()
+                            .to_vec();
+                        if self.format == RawFormat::Yv12 {
+                            (b, a)
+                        } else {
+                            (a, b)
+                        }
                     }
                 };
                 self.yuv([y, u, v], filmcraft_frame::Chroma::C420)
@@ -1297,7 +1695,11 @@ impl RawVideoDecoder {
 
 impl VideoDecoder for RawVideoDecoder {
     fn decode(&mut self, sample: &[u8], pts: i64) -> Result<Vec<DecodedFrame>> {
-        Ok(vec![DecodedFrame { pts, frame: self.picture(sample)?, draft: false }])
+        Ok(vec![DecodedFrame {
+            pts,
+            frame: self.picture(sample)?,
+            draft: false,
+        }])
     }
     fn flush(&mut self) -> Vec<DecodedFrame> {
         Vec::new()

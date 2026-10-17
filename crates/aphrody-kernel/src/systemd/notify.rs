@@ -96,7 +96,9 @@ pub fn notify_reloading() -> std::io::Result<bool> {
 /// Read the configured watchdog timeout from `WATCHDOG_USEC` environment variable.
 #[must_use]
 pub fn watchdog_usec() -> Option<u64> {
-    std::env::var("WATCHDOG_USEC").ok().and_then(|val| val.parse::<u64>().ok())
+    std::env::var("WATCHDOG_USEC")
+        .ok()
+        .and_then(|val| val.parse::<u64>().ok())
 }
 
 /// Spawns a background Tokio task to send periodic `WATCHDOG=1` heartbeats.
@@ -125,8 +127,14 @@ mod tests {
 
     #[test]
     fn priority_formatting() {
-        assert_eq!(priority::format(priority::INFO, "service started"), "<6>service started");
-        assert_eq!(priority::format(priority::ERR, "fatal failure"), "<3>fatal failure");
+        assert_eq!(
+            priority::format(priority::INFO, "service started"),
+            "<6>service started"
+        );
+        assert_eq!(
+            priority::format(priority::ERR, "fatal failure"),
+            "<3>fatal failure"
+        );
     }
 
     #[test]

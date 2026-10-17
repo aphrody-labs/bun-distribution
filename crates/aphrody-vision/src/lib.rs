@@ -149,7 +149,11 @@ mod tests {
             model_id: "smolvlm-500m-q8".into(),
             command: pull_command("smolvlm-500m-q8"),
         };
-        assert!(error.to_string().contains("aphrody model pull smolvlm-500m-q8"));
+        assert!(
+            error
+                .to_string()
+                .contains("aphrody model pull smolvlm-500m-q8")
+        );
     }
 
     #[test]

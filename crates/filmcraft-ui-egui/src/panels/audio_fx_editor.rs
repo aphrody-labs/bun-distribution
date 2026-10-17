@@ -34,7 +34,15 @@ pub enum FxTarget {
 
 /// Effects that have a graphical editor.
 pub fn has_editor(effect: &str) -> bool {
-    matches!(effect, "parametric_eq" | "graphic_eq" | "graphic_eq_20" | "graphic_eq_30" | "multiband_compressor" | "dynamics_rack")
+    matches!(
+        effect,
+        "parametric_eq"
+            | "graphic_eq"
+            | "graphic_eq_20"
+            | "graphic_eq_30"
+            | "multiband_compressor"
+            | "dynamics_rack"
+    )
 }
 
 /// Open (or raise) the editor for a target.
@@ -75,8 +83,14 @@ fn key(target: &FxTarget) -> String {
 /// Command that sets one parameter on the target.
 fn set_cmd(target: &FxTarget, pid: &str, v: Value) -> (String, Value) {
     match target {
-        FxTarget::Clip { clip, index } => ("effects.setParam".into(), json!({"clip": clip, "effect": index, "param": pid, "value": v})),
-        FxTarget::Insert { strip, slot } => ("mixer.setInsert".into(), json!({"strip": strip, "slot": slot, "params": {pid: v}})),
+        FxTarget::Clip { clip, index } => (
+            "effects.setParam".into(),
+            json!({"clip": clip, "effect": index, "param": pid, "value": v}),
+        ),
+        FxTarget::Insert { strip, slot } => (
+            "mixer.setInsert".into(),
+            json!({"strip": strip, "slot": slot, "params": {pid: v}}),
+        ),
     }
 }
 
@@ -95,7 +109,10 @@ struct Ed<'a> {
 
 impl Ed<'_> {
     fn v(&self, pid: &str) -> f64 {
-        self.drafts.get(pid).copied().unwrap_or_else(|| self.inst.f64_at(pid, self.mt))
+        self.drafts
+            .get(pid)
+            .copied()
+            .unwrap_or_else(|| self.inst.f64_at(pid, self.mt))
     }
     fn on(&self, pid: &str) -> bool {
         self.v(pid) >= 0.5
@@ -107,7 +124,10 @@ impl Ed<'_> {
         }
     }
     fn commit(&mut self, pid: &str, v: f64) {
-        let is_bool = matches!(self.inst.def().and_then(|d| d.param(pid)).map(|p| &p.kind), Some(ParamKind::Bool));
+        let is_bool = matches!(
+            self.inst.def().and_then(|d| d.param(pid)).map(|p| &p.kind),
+            Some(ParamKind::Bool)
+        );
         let val = if is_bool { json!(v >= 0.5) } else { json!(v) };
         self.acts.push(set_cmd(self.target, pid, val));
         // keep showing the new value until the project catches up this frame
@@ -152,7 +172,12 @@ impl Ed<'_> {
     fn slider(&mut self, ui: &mut egui::Ui, pid: &str, label: &str, log: bool) {
         let (min, max, unit) = self.range(pid);
         let mut v = self.v(pid);
-        let r = ui.add(egui::Slider::new(&mut v, min..=max).text(format!("{label} {unit}").trim().to_string()).logarithmic(log && min > 0.0).max_decimals(2));
+        let r = ui.add(
+            egui::Slider::new(&mut v, min..=max)
+                .text(format!("{label} {unit}").trim().to_string())
+                .logarithmic(log && min > 0.0)
+                .max_decimals(2),
+        );
         self.auto(format!("fxEditor.{}.param.{pid}", self.fx), r.rect, label);
         if r.dragged() {
             self.drafts.insert(pid.to_string(), v);
@@ -188,31 +213,49 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
             continue;
         }
         let name = inst.def().map_or(tl!("Effect"), |d| crate::i18n::t(d.name));
-        let kind = if matches!(target, FxTarget::Clip { .. }) { tl!("Clip Fx Editor") } else { tl!("Track Fx Editor") };
+        let kind = if matches!(target, FxTarget::Clip { .. }) {
+            tl!("Clip Fx Editor")
+        } else {
+            tl!("Track Fx Editor")
+        };
         let title = format!("{kind} - {name}: {place}");
         let k = key(&target);
         let drafts_id = egui::Id::new(("fx-editor-drafts", &k));
         let drafts: HashMap<String, f64> = ctx.data(|d| d.get_temp(drafts_id)).unwrap_or_default();
         let fx_id = inst.effect.clone();
-        let mut ed = Ed { t: app.tokens, fx: &fx_id, target: &target, inst, mt, drafts, acts: Vec::new(), autos: Vec::new() };
+        let mut ed = Ed {
+            t: app.tokens,
+            fx: &fx_id,
+            target: &target,
+            inst,
+            mt,
+            drafts,
+            acts: Vec::new(),
+            autos: Vec::new(),
+        };
         let mut open = true;
         let mut closed = false;
-        egui::Window::new(title).id(egui::Id::new(("fx-editor", &k))).open(&mut open).collapsible(false).resizable(false).show(ctx, |ui| {
-            match ed.fx {
-                "parametric_eq" => parametric(ui, &mut ed),
-                "graphic_eq" | "graphic_eq_20" | "graphic_eq_30" => graphic(ui, &mut ed),
-                "multiband_compressor" => multiband(ui, &mut ed),
-                _ => dynamics(ui, &mut ed),
-            }
-            ui.separator();
-            ui.horizontal(|ui| {
-                let r = ui.button(tl!("Close"));
-                ed.auto(format!("fxEditor.{}.close", ed.fx), r.rect, "Close");
-                if r.clicked() {
-                    closed = true;
+        egui::Window::new(title)
+            .id(egui::Id::new(("fx-editor", &k)))
+            .open(&mut open)
+            .collapsible(false)
+            .resizable(false)
+            .show(ctx, |ui| {
+                match ed.fx {
+                    "parametric_eq" => parametric(ui, &mut ed),
+                    "graphic_eq" | "graphic_eq_20" | "graphic_eq_30" => graphic(ui, &mut ed),
+                    "multiband_compressor" => multiband(ui, &mut ed),
+                    _ => dynamics(ui, &mut ed),
                 }
+                ui.separator();
+                ui.horizontal(|ui| {
+                    let r = ui.button(tl!("Close"));
+                    ed.auto(format!("fxEditor.{}.close", ed.fx), r.rect, "Close");
+                    if r.clicked() {
+                        closed = true;
+                    }
+                });
             });
-        });
         // drafts that were committed are dropped once the project shows them
         let committed: Vec<String> = ed
             .acts
@@ -221,7 +264,11 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
                 p.get("param")
                     .and_then(Value::as_str)
                     .map(str::to_string)
-                    .or_else(|| p.get("params").and_then(Value::as_object).and_then(|o| o.keys().next().cloned()))
+                    .or_else(|| {
+                        p.get("params")
+                            .and_then(Value::as_object)
+                            .and_then(|o| o.keys().next().cloned())
+                    })
             })
             .collect();
         let mut keep = ed.drafts.clone();
@@ -264,24 +311,52 @@ fn db_of(y: f32, r: Rect, range: f64) -> f64 {
 }
 
 /// Frequency-response plot with a log-frequency grid; returns the plot rect and response.
-fn response_plot(ui: &mut egui::Ui, ed: &mut Ed, size: egui::Vec2, range: f64) -> (Rect, egui::Response) {
+fn response_plot(
+    ui: &mut egui::Ui,
+    ed: &mut Ed,
+    size: egui::Vec2,
+    range: f64,
+) -> (Rect, egui::Response) {
     let (r, resp) = ui.allocate_exact_size(size, Sense::click_and_drag());
     let p = ui.painter_at(r);
     let t = &ed.t;
     p.rect_filled(r, 2.0, ed.t.plot_bg);
     for f in [50.0, 100.0, 200.0, 500.0, 1000.0, 2000.0, 5000.0, 10000.0] {
         let x = x_of(f, r);
-        p.line_segment([pos2(x, r.min.y), pos2(x, r.max.y)], Stroke::new(1.0, ed.t.plot_grid));
-        let label = if f >= 1000.0 { format!("{}k", f / 1000.0) } else { format!("{f}") };
-        p.text(pos2(x + 2.0, r.max.y - 2.0), Align2::LEFT_BOTTOM, label, Tokens::ui(9.0), t.text_faint);
+        p.line_segment(
+            [pos2(x, r.min.y), pos2(x, r.max.y)],
+            Stroke::new(1.0, ed.t.plot_grid),
+        );
+        let label = if f >= 1000.0 {
+            format!("{}k", f / 1000.0)
+        } else {
+            format!("{f}")
+        };
+        p.text(
+            pos2(x + 2.0, r.max.y - 2.0),
+            Align2::LEFT_BOTTOM,
+            label,
+            Tokens::ui(9.0),
+            t.text_faint,
+        );
     }
     let step = if range > 30.0 { 12.0 } else { 6.0 };
     let mut d = -range;
     while d <= range + 1e-9 {
         let y = y_of(d, r, range);
-        let col = if d.abs() < 1e-9 { ed.t.plot_axis } else { ed.t.plot_grid };
+        let col = if d.abs() < 1e-9 {
+            ed.t.plot_axis
+        } else {
+            ed.t.plot_grid
+        };
         p.line_segment([pos2(r.min.x, y), pos2(r.max.x, y)], Stroke::new(1.0, col));
-        p.text(pos2(r.min.x + 2.0, y - 1.0), Align2::LEFT_BOTTOM, format!("{d:+.0}"), Tokens::ui(9.0), t.text_faint);
+        p.text(
+            pos2(r.min.x + 2.0, y - 1.0),
+            Align2::LEFT_BOTTOM,
+            format!("{d:+.0}"),
+            Tokens::ui(9.0),
+            t.text_faint,
+        );
         d += step;
     }
     // curve from the DSP
@@ -289,10 +364,14 @@ fn response_plot(ui: &mut egui::Ui, ed: &mut Ed, size: egui::Vec2, range: f64) -
         let pts: Vec<Pos2> = (0..=240)
             .filter_map(|i| {
                 let x = r.min.x + r.width() * i as f32 / 240.0;
-                dsp.response_db(fx_of(x, r)).map(|db| pos2(x, y_of(db, r, range)))
+                dsp.response_db(fx_of(x, r))
+                    .map(|db| pos2(x, y_of(db, r, range)))
             })
             .collect();
-        p.add(egui::Shape::line(pts, Stroke::new(1.5, Color32::from_rgb(0x4d, 0xa3, 0xff))));
+        p.add(egui::Shape::line(
+            pts,
+            Stroke::new(1.5, Color32::from_rgb(0x4d, 0xa3, 0xff)),
+        ));
     }
     ed.auto(format!("fxEditor.{}.plot", ed.fx), r, "Response");
     (r, resp)
@@ -317,7 +396,12 @@ fn parametric(ui: &mut egui::Ui, ed: &mut Ed) {
     let range = 30.0;
     let (r, _) = response_plot(ui, ed, vec2(620.0, 260.0), range);
     for (label, pre, gain) in PEQ_NODES {
-        let (on_id, f_id, g_id, q_id) = (format!("{pre}_on"), format!("{pre}_freq"), format!("{pre}_gain"), format!("{pre}_q"));
+        let (on_id, f_id, g_id, q_id) = (
+            format!("{pre}_on"),
+            format!("{pre}_freq"),
+            format!("{pre}_gain"),
+            format!("{pre}_q"),
+        );
         let f = ed.v(&f_id);
         let g = if gain { ed.v(&g_id) } else { 0.0 };
         let c = pos2(x_of(f, r), y_of(g, r, range));
@@ -327,7 +411,8 @@ fn parametric(ui: &mut egui::Ui, ed: &mut Ed) {
         let on = ed.on(&on_id);
         let col = if on { ed.t.eq_node } else { ed.t.eq_node_off };
         ui.painter().circle_stroke(c, 7.0, Stroke::new(1.5, col));
-        ui.painter().text(c, Align2::CENTER_CENTER, label, Tokens::ui(8.5), col);
+        ui.painter()
+            .text(c, Align2::CENTER_CENTER, label, Tokens::ui(8.5), col);
         ed.auto(format!("fxEditor.{}.node.{pre}", ed.fx), nr, label);
         if resp.dragged()
             && let Some(pos) = resp.interact_pointer_pos()
@@ -335,11 +420,21 @@ fn parametric(ui: &mut egui::Ui, ed: &mut Ed) {
             ed.drafts.insert(f_id.clone(), fx_of(pos.x, r).round());
             if gain {
                 let (lo, hi, _) = ed.range(&g_id);
-                ed.drafts.insert(g_id.clone(), (db_of(pos.y, r, range) * 10.0).round().clamp(lo * 10.0, hi * 10.0) / 10.0);
+                ed.drafts.insert(
+                    g_id.clone(),
+                    (db_of(pos.y, r, range) * 10.0)
+                        .round()
+                        .clamp(lo * 10.0, hi * 10.0)
+                        / 10.0,
+                );
             }
         }
         if resp.drag_stopped() {
-            let pids = if gain { vec![f_id.as_str(), g_id.as_str()] } else { vec![f_id.as_str()] };
+            let pids = if gain {
+                vec![f_id.as_str(), g_id.as_str()]
+            } else {
+                vec![f_id.as_str()]
+            };
             ed.release(ui, &pids);
         }
         // scroll over a node changes its Q
@@ -386,21 +481,52 @@ fn graphic(ui: &mut egui::Ui, ed: &mut Ed) {
         let x = area.min.x + colw * (i as f32 + 0.5);
         let track = Rect::from_center_size(pos2(x, area.min.y + 70.0), vec2(6.0, 130.0));
         ui.painter().rect_filled(track, 2.0, ed.t.eq_track);
-        ui.painter().line_segment([pos2(x - 5.0, track.center().y), pos2(x + 5.0, track.center().y)], Stroke::new(1.0, ed.t.eq_tick));
+        ui.painter().line_segment(
+            [
+                pos2(x - 5.0, track.center().y),
+                pos2(x + 5.0, track.center().y),
+            ],
+            Stroke::new(1.0, ed.t.eq_tick),
+        );
         let v = ed.v(&pid);
         let ky = track.center().y - (v / 24.0) as f32 * track.height() * 0.5;
         let knob = Rect::from_center_size(pos2(x, ky), vec2(colw.min(18.0), 8.0));
         let id = egui::Id::new(("geq-band", ed.target.clone(), i));
         let resp = ui.interact(knob.union(track).expand(3.0), id, Sense::click_and_drag());
-        ui.painter().rect_filled(knob, 2.0, if resp.hovered() || resp.dragged() { ed.t.eq_knob_active } else { ed.t.eq_knob });
-        ui.painter().text(pos2(x, area.max.y - 22.0), Align2::CENTER_CENTER, format!("{v:+.0}"), Tokens::ui(8.5), ed.t.text_dim);
+        ui.painter().rect_filled(
+            knob,
+            2.0,
+            if resp.hovered() || resp.dragged() {
+                ed.t.eq_knob_active
+            } else {
+                ed.t.eq_knob
+            },
+        );
+        ui.painter().text(
+            pos2(x, area.max.y - 22.0),
+            Align2::CENTER_CENTER,
+            format!("{v:+.0}"),
+            Tokens::ui(8.5),
+            ed.t.text_dim,
+        );
         let short = label.replace(" Hz", "").replace(" kHz", "k");
-        ui.painter().text(pos2(x, area.max.y - 8.0), Align2::CENTER_CENTER, short, Tokens::ui(8.5), ed.t.text_faint);
-        ed.auto(format!("fxEditor.{}.param.{pid}", ed.fx), track.union(knob), label);
+        ui.painter().text(
+            pos2(x, area.max.y - 8.0),
+            Align2::CENTER_CENTER,
+            short,
+            Tokens::ui(8.5),
+            ed.t.text_faint,
+        );
+        ed.auto(
+            format!("fxEditor.{}.param.{pid}", ed.fx),
+            track.union(knob),
+            label,
+        );
         if resp.dragged()
             && let Some(pos) = resp.interact_pointer_pos()
         {
-            let db = (((track.center().y - pos.y) / (track.height() * 0.5)) as f64 * 24.0).clamp(-24.0, 24.0);
+            let db = (((track.center().y - pos.y) / (track.height() * 0.5)) as f64 * 24.0)
+                .clamp(-24.0, 24.0);
             ed.drafts.insert(pid.clone(), (db * 2.0).round() / 2.0);
         }
         if resp.drag_stopped() {
@@ -432,12 +558,20 @@ fn transfer_plot(ui: &mut egui::Ui, ed: &mut Ed, size: f32, band: usize, auto: S
     let p = ui.painter_at(r);
     p.rect_filled(r, 2.0, ed.t.plot_bg);
     let lo = -60.0;
-    let map = |x: f64, y: f64| pos2(r.min.x + ((x - lo) / -lo) as f32 * r.width(), r.max.y - (((y - lo) / -lo).clamp(-0.05, 1.05)) as f32 * r.height());
+    let map = |x: f64, y: f64| {
+        pos2(
+            r.min.x + ((x - lo) / -lo) as f32 * r.width(),
+            r.max.y - (((y - lo) / -lo).clamp(-0.05, 1.05)) as f32 * r.height(),
+        )
+    };
     for d in [-48.0, -36.0, -24.0, -12.0] {
         p.line_segment([map(d, lo), map(d, 0.0)], Stroke::new(1.0, ed.t.plot_grid));
         p.line_segment([map(lo, d), map(0.0, d)], Stroke::new(1.0, ed.t.plot_grid));
     }
-    p.line_segment([map(lo, lo), map(0.0, 0.0)], Stroke::new(1.0, ed.t.plot_axis));
+    p.line_segment(
+        [map(lo, lo), map(0.0, 0.0)],
+        Stroke::new(1.0, ed.t.plot_axis),
+    );
     if let Some(dsp) = filmcraft_render::audio_fx::configured(&ed.preview(), ed.mt, 48000) {
         let pts: Vec<Pos2> = (0..=120)
             .filter_map(|i| {
@@ -445,10 +579,25 @@ fn transfer_plot(ui: &mut egui::Ui, ed: &mut Ed, size: f32, band: usize, auto: S
                 dsp.transfer_db(band, x as f32).map(|y| map(x, y as f64))
             })
             .collect();
-        p.add(egui::Shape::line(pts, Stroke::new(1.5, Color32::from_rgb(0xff, 0xb3, 0x47))));
+        p.add(egui::Shape::line(
+            pts,
+            Stroke::new(1.5, Color32::from_rgb(0xff, 0xb3, 0x47)),
+        ));
     }
-    p.text(r.left_top() + vec2(3.0, 2.0), Align2::LEFT_TOP, tl!("out"), Tokens::ui(8.5), ed.t.text_faint);
-    p.text(r.right_bottom() - vec2(3.0, 2.0), Align2::RIGHT_BOTTOM, tl!("in"), Tokens::ui(8.5), ed.t.text_faint);
+    p.text(
+        r.left_top() + vec2(3.0, 2.0),
+        Align2::LEFT_TOP,
+        tl!("out"),
+        Tokens::ui(8.5),
+        ed.t.text_faint,
+    );
+    p.text(
+        r.right_bottom() - vec2(3.0, 2.0),
+        Align2::RIGHT_BOTTOM,
+        tl!("in"),
+        Tokens::ui(8.5),
+        ed.t.text_faint,
+    );
     ed.auto(auto, r, "Transfer curve");
 }
 
@@ -458,28 +607,68 @@ fn multiband(ui: &mut egui::Ui, ed: &mut Ed) {
     // Spectrum strip with draggable crossover handles.
     let (r, _) = ui.allocate_exact_size(vec2(640.0, 70.0), Sense::hover());
     ui.painter().rect_filled(r, 2.0, ed.t.plot_bg);
-    let cols =
-        [Color32::from_rgb(0x3d, 0x6e, 0xb4), Color32::from_rgb(0x3d, 0xa0, 0x6e), Color32::from_rgb(0xb4, 0x9a, 0x3d), Color32::from_rgb(0xb4, 0x4f, 0x3d)];
+    let cols = [
+        Color32::from_rgb(0x3d, 0x6e, 0xb4),
+        Color32::from_rgb(0x3d, 0xa0, 0x6e),
+        Color32::from_rgb(0xb4, 0x9a, 0x3d),
+        Color32::from_rgb(0xb4, 0x4f, 0x3d),
+    ];
     let xo = [ed.v("xo1"), ed.v("xo2"), ed.v("xo3")];
-    let edges = [r.min.x, x_of(xo[0], r), x_of(xo[1], r), x_of(xo[2], r), r.max.x];
+    let edges = [
+        r.min.x,
+        x_of(xo[0], r),
+        x_of(xo[1], r),
+        x_of(xo[2], r),
+        r.max.x,
+    ];
     for b in 0..4 {
         let br = Rect::from_min_max(pos2(edges[b], r.min.y), pos2(edges[b + 1], r.max.y));
-        ui.painter().rect_filled(br.shrink2(vec2(0.0, 8.0)), 0.0, cols[b].gamma_multiply(0.35));
-        ui.painter().text(br.center(), Align2::CENTER_CENTER, tlf!("Band {n}", n = b + 1), Tokens::ui(10.0), ed.t.text);
+        ui.painter().rect_filled(
+            br.shrink2(vec2(0.0, 8.0)),
+            0.0,
+            cols[b].gamma_multiply(0.35),
+        );
+        ui.painter().text(
+            br.center(),
+            Align2::CENTER_CENTER,
+            tlf!("Band {n}", n = b + 1),
+            Tokens::ui(10.0),
+            ed.t.text,
+        );
     }
     for (k, pid) in ["xo1", "xo2", "xo3"].iter().enumerate() {
         let x = edges[k + 1];
         let hr = Rect::from_center_size(pos2(x, r.center().y), vec2(10.0, r.height()));
-        let resp = ui.interact(hr, egui::Id::new(("mb-xo", ed.target.clone(), k)), Sense::drag());
-        ui.painter()
-            .line_segment([pos2(x, r.min.y), pos2(x, r.max.y)], Stroke::new(if resp.hovered() || resp.dragged() { 2.5 } else { 1.5 }, ed.t.crossover_handle));
-        ui.painter().text(pos2(x + 3.0, r.min.y + 2.0), Align2::LEFT_TOP, format!("{:.0} Hz", xo[k]), Tokens::ui(9.0), ed.t.text_dim);
+        let resp = ui.interact(
+            hr,
+            egui::Id::new(("mb-xo", ed.target.clone(), k)),
+            Sense::drag(),
+        );
+        ui.painter().line_segment(
+            [pos2(x, r.min.y), pos2(x, r.max.y)],
+            Stroke::new(
+                if resp.hovered() || resp.dragged() {
+                    2.5
+                } else {
+                    1.5
+                },
+                ed.t.crossover_handle,
+            ),
+        );
+        ui.painter().text(
+            pos2(x + 3.0, r.min.y + 2.0),
+            Align2::LEFT_TOP,
+            format!("{:.0} Hz", xo[k]),
+            Tokens::ui(9.0),
+            ed.t.text_dim,
+        );
         ed.auto(format!("fxEditor.{}.{pid}", ed.fx), hr, "Crossover");
         if resp.dragged()
             && let Some(pos) = resp.interact_pointer_pos()
         {
             let (lo, hi, _) = ed.range(pid);
-            ed.drafts.insert(pid.to_string(), fx_of(pos.x, r).clamp(lo, hi).round());
+            ed.drafts
+                .insert(pid.to_string(), fx_of(pos.x, r).clamp(lo, hi).round());
         }
         if resp.drag_stopped() {
             ed.release(ui, &[pid]);
@@ -491,7 +680,13 @@ fn multiband(ui: &mut egui::Ui, ed: &mut Ed) {
             ui.vertical(|ui| {
                 ui.set_width(150.0);
                 ui.label(egui::RichText::new(tlf!("Band {n}", n = b)).strong());
-                transfer_plot(ui, ed, 110.0, b - 1, format!("fxEditor.{}.curve.{b}", ed.fx));
+                transfer_plot(
+                    ui,
+                    ed,
+                    110.0,
+                    b - 1,
+                    format!("fxEditor.{}.curve.{b}", ed.fx),
+                );
                 ui.horizontal(|ui| {
                     ed.toggle(ui, &format!("b{b}_solo"), tl!("Solo"));
                     ed.toggle(ui, &format!("b{b}_bypass"), tl!("Bypass"));

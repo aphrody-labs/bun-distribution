@@ -7,7 +7,10 @@ use kurbo::{BezPath, ParamCurve, ParamCurveNearest, Point, Shape as _};
 use linesweeper::topology::ContourIdx;
 use vectorcraft_geom::{FillRule, PathData};
 
-use crate::boolean::{Arrangement, Multi, Seg, all_contours_to_path, contours_to_path, fill_bezpath, normalize_bez, segs_to_subpath, unite_all};
+use crate::boolean::{
+    Arrangement, Multi, Seg, all_contours_to_path, contours_to_path, fill_bezpath, normalize_bez,
+    segs_to_subpath, unite_all,
+};
 
 /// A filled shape in a Pathfinder stack. `key` identifies its paint (e.g. a hashed fill colour);
 /// results carry the key of the object whose paint they keep.
@@ -71,7 +74,10 @@ impl Region {
 }
 
 fn arrangement(shapes: &[Shape]) -> Option<Arrangement> {
-    let bps: Vec<(BezPath, FillRule)> = shapes.iter().map(|s| (fill_bezpath(&s.path), s.rule)).collect();
+    let bps: Vec<(BezPath, FillRule)> = shapes
+        .iter()
+        .map(|s| (fill_bezpath(&s.path), s.rule))
+        .collect();
     Arrangement::new(bps).ok()
 }
 
@@ -82,7 +88,11 @@ fn only(mut it: impl Iterator<Item = usize>) -> Option<usize> {
 }
 
 fn one(path: PathData, key: u64) -> Vec<Shape> {
-    if path.is_empty() { Vec::new() } else { vec![Shape::new(path, FillRule::NonZero, key)] }
+    if path.is_empty() {
+        Vec::new()
+    } else {
+        vec![Shape::new(path, FillRule::NonZero, key)]
+    }
 }
 
 /// Run a Pathfinder operation over `shapes` (back → front).
@@ -102,7 +112,12 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
     }
     // Open paths are cutting edges for Divide; the filled-only operations keep their
     // implicit closure. Reuse Shape Builder's bounded planar map and its fallback.
-    if op == PathfinderOp::Divide && shapes.iter().flat_map(|s| &s.path.subpaths).any(|sp| !sp.closed && sp.anchors.len() >= 2) {
+    if op == PathfinderOp::Divide
+        && shapes
+            .iter()
+            .flat_map(|s| &s.path.subpaths)
+            .any(|sp| !sp.closed && sp.anchors.len() >= 2)
+    {
         return crate::shape_builder(shapes, false)
             .regions
             .into_iter()
@@ -112,20 +127,37 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
             })
             .collect();
     }
-    let Some(arr) = arrangement(shapes) else { return Vec::new() };
+    let Some(arr) = arrangement(shapes) else {
+        return Vec::new();
+    };
     let p = &arr.tidy;
     match op {
         PathfinderOp::Unite => unite(),
         // The tests read the covering inputs straight off the windings ([`Arrangement::covered`]);
         // each is the coverage-mask test in its comment.
         // m[0] && !m[1..].any()
-        PathfinderOp::MinusFront => one(all_contours_to_path(&arr.contours_where(|w| only(arr.covered(w)) == Some(0)), p), shapes[0].key),
+        PathfinderOp::MinusFront => one(
+            all_contours_to_path(&arr.contours_where(|w| only(arr.covered(w)) == Some(0)), p),
+            shapes[0].key,
+        ),
         // m[n - 1] && !m[..n - 1].any()
-        PathfinderOp::MinusBack => one(all_contours_to_path(&arr.contours_where(|w| only(arr.covered(w)) == Some(n - 1)), p), front_key),
+        PathfinderOp::MinusBack => one(
+            all_contours_to_path(
+                &arr.contours_where(|w| only(arr.covered(w)) == Some(n - 1)),
+                p,
+            ),
+            front_key,
+        ),
         // m.all()
-        PathfinderOp::Intersect => one(all_contours_to_path(&arr.contours_where(|w| arr.covered(w).count() == n), p), front_key),
+        PathfinderOp::Intersect => one(
+            all_contours_to_path(&arr.contours_where(|w| arr.covered(w).count() == n), p),
+            front_key,
+        ),
         // m.count() is odd
-        PathfinderOp::Exclude => one(all_contours_to_path(&arr.contours_where(|w| arr.covered(w).count() % 2 == 1), p), front_key),
+        PathfinderOp::Exclude => one(
+            all_contours_to_path(&arr.contours_where(|w| arr.covered(w).count() % 2 == 1), p),
+            front_key,
+        ),
         PathfinderOp::Divide => regions_of(&arr)
             .into_iter()
             .filter_map(|r| {
@@ -134,9 +166,17 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
             })
             .collect(),
         // topmost(m) == Some(i)
-        PathfinderOp::Trim => {
-            (0..n).flat_map(|i| one(all_contours_to_path(&arr.contours_where(|w| arr.covered(w).next_back() == Some(i)), p), shapes[i].key)).collect()
-        }
+        PathfinderOp::Trim => (0..n)
+            .flat_map(|i| {
+                one(
+                    all_contours_to_path(
+                        &arr.contours_where(|w| arr.covered(w).next_back() == Some(i)),
+                        p,
+                    ),
+                    shapes[i].key,
+                )
+            })
+            .collect(),
         PathfinderOp::Merge => {
             let mut keys: Vec<u64> = Vec::new();
             for s in shapes {
@@ -147,7 +187,11 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
             let mut out = Vec::new();
             for k in keys {
                 // topmost(m) is a shape with key k
-                let c = arr.contours_where(|w| arr.covered(w).next_back().is_some_and(|t| shapes[t].key == k));
+                let c = arr.contours_where(|w| {
+                    arr.covered(w)
+                        .next_back()
+                        .is_some_and(|t| shapes[t].key == k)
+                });
                 for g in c.grouped() {
                     out.extend(one(contours_to_path(&c, g, p), k));
                 }
@@ -183,16 +227,25 @@ pub fn pathfinder(op: PathfinderOp, shapes: &[Shape]) -> Vec<Shape> {
 /// point.
 fn regions_of(arr: &Arrangement) -> Vec<Region> {
     let masks = arr.distinct_masks();
-    let ids: HashMap<&[bool], usize> = masks.iter().enumerate().map(|(i, m)| (m.as_slice(), i)).collect();
+    let ids: HashMap<&[bool], usize> = masks
+        .iter()
+        .enumerate()
+        .map(|(i, m)| (m.as_slice(), i))
+        .collect();
     let id = |w: &Multi| ids.get(arr.mask(w).as_slice()).copied();
     let top = &arr.top;
     // The masks of the faces around each vertex.
     let mut around: HashMap<(u64, u64), Vec<usize>> = HashMap::new();
     for s in top.segment_indices() {
         let h = s.first_half();
-        let sides = [id(top.winding_clockwise(h)), id(top.winding_counter_clockwise(h))];
+        let sides = [
+            id(top.winding_clockwise(h)),
+            id(top.winding_counter_clockwise(h)),
+        ];
         for end in [h, s.second_half()] {
-            let at = around.entry(vertex_key(top.point(end).to_kurbo())).or_default();
+            let at = around
+                .entry(vertex_key(top.point(end).to_kurbo()))
+                .or_default();
             for m in sides.into_iter().flatten() {
                 if !at.contains(&m) {
                     at.push(m);
@@ -225,8 +278,14 @@ fn regions_of(arr: &Arrangement) -> Vec<Region> {
         let owner: Option<Vec<usize>> = c
             .contours()
             .map(|ct| {
-                let Some(kurbo::PathEl::MoveTo(p)) = ct.path.elements().first() else { return None };
-                around.get(&vertex_key(*p))?.iter().copied().find(|&m| batch[m] == b)
+                let Some(kurbo::PathEl::MoveTo(p)) = ct.path.elements().first() else {
+                    return None;
+                };
+                around
+                    .get(&vertex_key(*p))?
+                    .iter()
+                    .copied()
+                    .find(|&m| batch[m] == b)
             })
             .collect();
         let Some(owner) = owner else {
@@ -234,7 +293,11 @@ fn regions_of(arr: &Arrangement) -> Vec<Region> {
             // pass per mask for this batch.
             for (m, mask) in masks.iter().enumerate().filter(|(m, _)| batch[*m] == b) {
                 let c = arr.contours(|k| k == mask.as_slice());
-                faces[m].extend(c.grouped().into_iter().map(|g| contours_to_path(&c, g, &arr.tidy)));
+                faces[m].extend(
+                    c.grouped()
+                        .into_iter()
+                        .map(|g| contours_to_path(&c, g, &arr.tidy)),
+                );
             }
             continue;
         };
@@ -264,8 +327,21 @@ fn regions_of(arr: &Arrangement) -> Vec<Region> {
     }
     let mut out = Vec::new();
     for (mask, paths) in masks.iter().zip(faces) {
-        let sources: Vec<usize> = mask.iter().enumerate().filter(|(_, b)| **b).map(|(i, _)| i).collect();
-        out.extend(paths.into_iter().filter(|p| !p.is_empty()).map(|path| Region { path, sources: sources.clone() }));
+        let sources: Vec<usize> = mask
+            .iter()
+            .enumerate()
+            .filter(|(_, b)| **b)
+            .map(|(i, _)| i)
+            .collect();
+        out.extend(
+            paths
+                .into_iter()
+                .filter(|p| !p.is_empty())
+                .map(|path| Region {
+                    path,
+                    sources: sources.clone(),
+                }),
+        );
     }
     out
 }
@@ -278,7 +354,9 @@ fn vertex_key(p: Point) -> (u64, u64) {
 /// All faces of the planar arrangement of `shapes` (every area covered by at least one shape,
 /// split wherever coverage changes).
 pub fn regions(shapes: &[Shape]) -> Vec<Region> {
-    arrangement(shapes).map(|a| regions_of(&a)).unwrap_or_default()
+    arrangement(shapes)
+        .map(|a| regions_of(&a))
+        .unwrap_or_default()
 }
 
 /// The face under `point`, if any (Shape Builder hover/click).
@@ -288,7 +366,10 @@ pub fn region_at(shapes: &[Shape], point: Point) -> Option<Region> {
 
 /// Merge Shape Builder regions into one path (their union).
 pub fn merge_regions(regions: &[&Region]) -> PathData {
-    let v: Vec<(&PathData, FillRule)> = regions.iter().map(|r| (&r.path, FillRule::NonZero)).collect();
+    let v: Vec<(&PathData, FillRule)> = regions
+        .iter()
+        .map(|r| (&r.path, FillRule::NonZero))
+        .collect();
     unite_all(&v)
 }
 
@@ -309,16 +390,31 @@ pub struct FaceMerger {
 
 impl FaceMerger {
     pub fn new(shapes: &[Shape]) -> Self {
-        let has_open = shapes.iter().flat_map(|s| &s.path.subpaths).any(|sp| !sp.closed && sp.anchors.len() >= 2);
+        let has_open = shapes
+            .iter()
+            .flat_map(|s| &s.path.subpaths)
+            .any(|sp| !sp.closed && sp.anchors.len() >= 2);
         // The Shape Builder's faces come from the planar map only up to its cap.
-        let segments: usize = shapes.iter().flat_map(|s| &s.path.subpaths).map(|sp| sp.segment_count()).sum();
-        let lines = (has_open && segments <= crate::SHAPE_BUILDER_MAX_SEGMENTS).then(|| (shapes.to_vec(), std::cell::OnceCell::new()));
-        Self { arr: if has_open { None } else { arrangement(shapes) }, shapes: shapes.len(), lines }
+        let segments: usize = shapes
+            .iter()
+            .flat_map(|s| &s.path.subpaths)
+            .map(|sp| sp.segment_count())
+            .sum();
+        let lines = (has_open && segments <= crate::SHAPE_BUILDER_MAX_SEGMENTS)
+            .then(|| (shapes.to_vec(), std::cell::OnceCell::new()));
+        Self {
+            arr: if has_open { None } else { arrangement(shapes) },
+            shapes: shapes.len(),
+            lines,
+        }
     }
 
     /// The union of `faces`.
     pub fn merge(&self, faces: &[&Region]) -> PathData {
-        self.exact(faces).or_else(|| self.planar(faces)).filter(|p| !p.is_empty()).unwrap_or_else(|| merge_regions(faces))
+        self.exact(faces)
+            .or_else(|| self.planar(faces))
+            .filter(|p| !p.is_empty())
+            .unwrap_or_else(|| merge_regions(faces))
     }
 
     /// `faces` merged in the planar map of shapes with open paths: each face found again by a
@@ -326,12 +422,23 @@ impl FaceMerger {
     fn planar(&self, faces: &[&Region]) -> Option<PathData> {
         let (shapes, map) = self.lines.as_ref()?;
         let map = map.get_or_init(|| crate::planar::map(shapes)).as_ref()?;
-        let inside: Vec<Point> = faces.iter().map(|r| crate::planar::interior_point(&r.path)).collect::<Option<_>>()?;
+        let inside: Vec<Point> = faces
+            .iter()
+            .map(|r| crate::planar::interior_point(&r.path))
+            .collect::<Option<_>>()?;
         let merged = map.merge(&inside)?;
         // A face not found as itself (two points in one face of the map) shows in the area.
-        let want: f64 = faces.iter().map(|r| crate::area(&r.path, FillRule::NonZero)).sum();
-        let outlines: f64 = faces.iter().map(|r| r.path.to_bezpath().perimeter(1e-6)).sum();
-        ((crate::area(&merged, FillRule::NonZero) - want).abs() <= 1e-9 * want.max(1.0) + crate::DEFAULT_PRECISION * outlines).then_some(merged)
+        let want: f64 = faces
+            .iter()
+            .map(|r| crate::area(&r.path, FillRule::NonZero))
+            .sum();
+        let outlines: f64 = faces
+            .iter()
+            .map(|r| r.path.to_bezpath().perimeter(1e-6))
+            .sum();
+        ((crate::area(&merged, FillRule::NonZero) - want).abs()
+            <= 1e-9 * want.max(1.0) + crate::DEFAULT_PRECISION * outlines)
+            .then_some(merged)
     }
 
     fn exact(&self, faces: &[&Region]) -> Option<PathData> {
@@ -358,7 +465,10 @@ impl FaceMerger {
                 for i in group {
                     face.extend(c[i].path.iter());
                 }
-                if picks.iter().any(|(m, p)| m == mask && face.winding(*p) != 0) {
+                if picks
+                    .iter()
+                    .any(|(m, p)| m == mask && face.winding(*p) != 0)
+                {
                     raw.extend(face.iter());
                 }
             }
@@ -372,7 +482,11 @@ impl FaceMerger {
 fn outline_edges(arr: &Arrangement, shapes: &[Shape]) -> Vec<Shape> {
     // Sorted by x (then y), so a segment needs only the junctions inside its control box.
     let junctions = arr.junctions();
-    let scale = shapes.iter().filter_map(|s| s.path.control_bounds()).map(|r| r.width().max(r.height())).fold(1.0, f64::max);
+    let scale = shapes
+        .iter()
+        .filter_map(|s| s.path.control_bounds())
+        .map(|r| r.width().max(r.height()))
+        .fold(1.0, f64::max);
     let tol = scale * 1e-7;
     let reach = tol.max(1e-6);
     // (chain, key, source index)
@@ -391,7 +505,9 @@ fn outline_edges(arr: &Arrangement, shapes: &[Shape]) -> Vec<Shape> {
                 let line = sp.segment_is_line(i);
                 // A point within `reach` of the curve is within `reach` of its control box (the
                 // curve stays inside its control points' hull), so the other junctions can't match.
-                let b = kurbo::Shape::bounding_box(&c).union(kurbo::Rect::from_points(c.p1, c.p2)).inflate(reach, reach);
+                let b = kurbo::Shape::bounding_box(&c)
+                    .union(kurbo::Rect::from_points(c.p1, c.p2))
+                    .inflate(reach, reach);
                 let lo = junctions.partition_point(|j| j.x < b.x0);
                 let mut ts: Vec<f64> = junctions
                     .get(lo..)
@@ -412,7 +528,14 @@ fn outline_edges(arr: &Arrangement, shapes: &[Shape]) -> Vec<Shape> {
                 cuts.dedup_by(|a, b| (*a - *b).abs() < 1e-9);
                 for (k, w) in cuts.windows(2).enumerate() {
                     let sub = c.subsegment(w[0]..w[1]);
-                    let seg = if line { Seg::line(sub.p0, sub.p3) } else { Seg { c: sub, line: false } };
+                    let seg = if line {
+                        Seg::line(sub.p0, sub.p3)
+                    } else {
+                        Seg {
+                            c: sub,
+                            line: false,
+                        }
+                    };
                     pieces.push((seg, if k == 0 { start_is_junction } else { true }));
                 }
             }
@@ -486,7 +609,10 @@ fn outline_edges(arr: &Arrangement, shapes: &[Shape]) -> Vec<Shape> {
 }
 
 fn mid_point(c: &[Seg]) -> Point {
-    let lens: Vec<f64> = c.iter().map(|s| kurbo::ParamCurveArclen::arclen(&s.c, 1e-6)).collect();
+    let lens: Vec<f64> = c
+        .iter()
+        .map(|s| kurbo::ParamCurveArclen::arclen(&s.c, 1e-6))
+        .collect();
     let total: f64 = lens.iter().sum();
     let mut acc = 0.0;
     for (s, l) in c.iter().zip(&lens) {
@@ -510,11 +636,19 @@ mod tests {
         let mut out = Vec::new();
         for mask in arr.distinct_masks() {
             let c = arr.contours(|m| m == mask.as_slice());
-            let sources: Vec<usize> = mask.iter().enumerate().filter(|(_, b)| **b).map(|(i, _)| i).collect();
+            let sources: Vec<usize> = mask
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| **b)
+                .map(|(i, _)| i)
+                .collect();
             for g in c.grouped() {
                 let path = contours_to_path(&c, g, &arr.tidy);
                 if !path.is_empty() {
-                    out.push(Region { path, sources: sources.clone() });
+                    out.push(Region {
+                        path,
+                        sources: sources.clone(),
+                    });
                 }
             }
         }
@@ -534,13 +668,15 @@ mod tests {
     /// a hole, ellipses and polygons that may cross themselves, under either fill rule.
     fn arb_shape() -> impl Strategy<Value = Shape> {
         let c = || (0..12i32).prop_map(|v| f64::from(v) * 10.0);
-        let r = (c(), c(), 1..6i32, 1..6i32).prop_map(|(x, y, w, h)| (x, y, x + f64::from(w) * 10.0, y + f64::from(h) * 10.0));
+        let r = (c(), c(), 1..6i32, 1..6i32)
+            .prop_map(|(x, y, w, h)| (x, y, x + f64::from(w) * 10.0, y + f64::from(h) * 10.0));
         let path = prop_oneof![
             r.clone().prop_map(|(x0, y0, x1, y1)| rect(x0, y0, x1, y1)),
             r.clone().prop_map(|(x0, y0, x1, y1)| {
                 let (cx, cy) = ((x0 + x1) / 2.0, (y0 + y1) / 2.0);
                 let mut p = rect(x0 - 10.0, y0 - 10.0, x1 + 10.0, y1 + 10.0);
-                p.subpaths.extend(rect(x0, y0, cx.max(x0 + 5.0), cy.max(y0 + 5.0)).subpaths);
+                p.subpaths
+                    .extend(rect(x0, y0, cx.max(x0 + 5.0), cy.max(y0 + 5.0)).subpaths);
                 p
             }),
             r.prop_map(|(x0, y0, x1, y1)| shapes::ellipse(Rect::new(x0, y0, x1, y1))),
@@ -549,8 +685,17 @@ mod tests {
                 PathData::single(SubPath::polyline(&pts, true))
             }),
         ];
-        (path, any::<bool>(), any::<u64>())
-            .prop_map(|(p, even_odd, key)| Shape::new(p, if even_odd { FillRule::EvenOdd } else { FillRule::NonZero }, key))
+        (path, any::<bool>(), any::<u64>()).prop_map(|(p, even_odd, key)| {
+            Shape::new(
+                p,
+                if even_odd {
+                    FillRule::EvenOdd
+                } else {
+                    FillRule::NonZero
+                },
+                key,
+            )
+        })
     }
 
     #[test]
@@ -558,8 +703,16 @@ mod tests {
         let mut v = Vec::new();
         for i in 0..12 {
             let x = 10.0 + 20.0 * f64::from(i);
-            v.push(Shape::new(rect(x, 0.0, x + 4.0, 250.0), FillRule::NonZero, 1));
-            v.push(Shape::new(rect(0.0, x, 250.0, x + 4.0), FillRule::NonZero, 2));
+            v.push(Shape::new(
+                rect(x, 0.0, x + 4.0, 250.0),
+                FillRule::NonZero,
+                1,
+            ));
+            v.push(Shape::new(
+                rect(0.0, x, 250.0, x + 4.0),
+                FillRule::NonZero,
+                2,
+            ));
         }
         same_as_one_mask_at_a_time(&v);
         // Every crossing, and each strip in 13 pieces.
@@ -585,7 +738,14 @@ mod tests {
             ("reverse", vec![line((110.0, 50.0), (-10.0, 50.0))], 2),
             ("vertical", vec![line((50.0, -10.0), (50.0, 110.0))], 2),
             ("diagonal", vec![line((-10.0, -10.0), (110.0, 110.0))], 2),
-            ("crossed", vec![line((-10.0, 50.0), (110.0, 50.0)), line((50.0, -10.0), (50.0, 110.0))], 4),
+            (
+                "crossed",
+                vec![
+                    line((-10.0, 50.0), (110.0, 50.0)),
+                    line((50.0, -10.0), (50.0, 110.0)),
+                ],
+                4,
+            ),
             ("outside", vec![line((-10.0, 150.0), (110.0, 150.0))], 1),
             ("dangling", vec![line((-10.0, 50.0), (50.0, 50.0))], 1),
             ("boundary", vec![line((-10.0, 0.0), (110.0, 0.0))], 1),
@@ -601,22 +761,53 @@ mod tests {
         bent.line_to((110.0, 25.0));
         cases.push(("bent", vec![PathData::from_bezpath(&bent)], 2));
         for (label, cutters, count) in cases {
-            let mut inputs = vec![Shape::new(rect(0.0, 0.0, 100.0, 100.0), FillRule::NonZero, 7)];
-            inputs.extend(cutters.into_iter().map(|p| Shape::new(p, FillRule::NonZero, 99)));
+            let mut inputs = vec![Shape::new(
+                rect(0.0, 0.0, 100.0, 100.0),
+                FillRule::NonZero,
+                7,
+            )];
+            inputs.extend(
+                cutters
+                    .into_iter()
+                    .map(|p| Shape::new(p, FillRule::NonZero, 99)),
+            );
             let divided = pathfinder(PathfinderOp::Divide, &inputs);
             assert_eq!(divided.len(), count, "{label}");
-            assert!(divided.iter().all(|s| s.key == 7 && s.path.subpaths.iter().all(|sp| sp.closed)), "{label}");
+            assert!(
+                divided
+                    .iter()
+                    .all(|s| s.key == 7 && s.path.subpaths.iter().all(|sp| sp.closed)),
+                "{label}"
+            );
             let total: f64 = divided.iter().map(|s| crate::area(&s.path, s.rule)).sum();
             assert!((total - 10000.0).abs() < 0.01, "{label}: area {total}");
-            for p in [Point::new(20.0, 31.0), Point::new(79.0, 37.0), Point::new(81.0, 68.0), Point::new(17.0, 85.0)] {
-                assert_eq!(divided.iter().filter(|s| s.path.to_bezpath().winding(p) != 0).count(), 1, "{label}: {p:?}");
+            for p in [
+                Point::new(20.0, 31.0),
+                Point::new(79.0, 37.0),
+                Point::new(81.0, 68.0),
+                Point::new(17.0, 85.0),
+            ] {
+                assert_eq!(
+                    divided
+                        .iter()
+                        .filter(|s| s.path.to_bezpath().winding(p) != 0)
+                        .count(),
+                    1,
+                    "{label}: {p:?}"
+                );
             }
         }
     }
 
     #[test]
     fn divide_open_paths_preserve_frontmost_fills_and_holes() {
-        let cutter = || Shape::new(shapes::line(Point::new(-10.0, 50.0), Point::new(160.0, 50.0)), FillRule::NonZero, 99);
+        let cutter = || {
+            Shape::new(
+                shapes::line(Point::new(-10.0, 50.0), Point::new(160.0, 50.0)),
+                FillRule::NonZero,
+                99,
+            )
+        };
         let inputs = [
             Shape::new(rect(0.0, 0.0, 100.0, 100.0), FillRule::NonZero, 7),
             Shape::new(rect(50.0, 0.0, 150.0, 100.0), FillRule::NonZero, 8),
@@ -630,17 +821,34 @@ mod tests {
         assert!((total - 15000.0).abs() < 1e-6);
         let mut ring = rect(0.0, 0.0, 100.0, 100.0);
         ring.subpaths.extend(rect(30.0, 30.0, 70.0, 70.0).subpaths);
-        let faces = pathfinder(PathfinderOp::Divide, &[Shape::new(ring, FillRule::EvenOdd, 7), cutter()]);
+        let faces = pathfinder(
+            PathfinderOp::Divide,
+            &[Shape::new(ring, FillRule::EvenOdd, 7), cutter()],
+        );
         assert_eq!(faces.len(), 2);
-        assert!(faces.iter().all(|s| s.key == 7 && s.path.to_bezpath().winding(Point::new(50.0, 40.0)) == 0));
+        assert!(
+            faces
+                .iter()
+                .all(|s| s.key == 7 && s.path.to_bezpath().winding(Point::new(50.0, 40.0)) == 0)
+        );
         let total: f64 = faces.iter().map(|s| crate::area(&s.path, s.rule)).sum();
         assert!((total - 8400.0).abs() < 1e-6);
     }
 
     #[test]
     fn divide_open_paths_retains_the_existing_segment_cap() {
-        let mut inputs = vec![Shape::new(rect(0.0, 0.0, 100.0, 100.0), FillRule::NonZero, 7)];
-        inputs.extend((0..4093).map(|_| Shape::new(shapes::line(Point::new(-10.0, 50.0), Point::new(110.0, 50.0)), FillRule::NonZero, 99)));
+        let mut inputs = vec![Shape::new(
+            rect(0.0, 0.0, 100.0, 100.0),
+            FillRule::NonZero,
+            7,
+        )];
+        inputs.extend((0..4093).map(|_| {
+            Shape::new(
+                shapes::line(Point::new(-10.0, 50.0), Point::new(110.0, 50.0)),
+                FillRule::NonZero,
+                99,
+            )
+        }));
         let faces = pathfinder(PathfinderOp::Divide, &inputs);
         assert_eq!(faces.len(), 1, "4097 segments fall back to filled areas");
         assert_eq!(faces[0].key, 7);

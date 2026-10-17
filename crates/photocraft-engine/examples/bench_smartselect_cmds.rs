@@ -9,10 +9,14 @@ use photocraft_geom::Rect;
 use serde_json::json;
 
 fn main() {
-    let n: i32 = std::env::args().nth(1).and_then(|v| v.parse().ok()).unwrap_or(6016);
+    let n: i32 = std::env::args()
+        .nth(1)
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(6016);
     let (c, rad) = (n as f32 / 2.0, n as f32 / 3.0);
     let mut s = Session::new();
-    s.execute("file.new", json!({"width": n, "height": n})).unwrap();
+    s.execute("file.new", json!({"width": n, "height": n}))
+        .unwrap();
     s.edit("fill", |doc, _| {
         let bg = doc.layers[0].surface_mut().unwrap();
         let ch = bg.channels();
@@ -47,13 +51,38 @@ fn main() {
         println!("{label}: {:.2?}  {r}", t.elapsed());
     };
     let x = c + rad - 60.0;
-    time(&mut s, "select.quick (brush 30)", "select.quick", json!({"points": [[x, c - 30.0], [x, c + 30.0]], "size": 30}));
-    time(&mut s, "select.quick (brush 30, add)", "select.quick", json!({"points": [[x - 100.0, c]], "size": 30}));
+    time(
+        &mut s,
+        "select.quick (brush 30)",
+        "select.quick",
+        json!({"points": [[x, c - 30.0], [x, c + 30.0]], "size": 30}),
+    );
+    time(
+        &mut s,
+        "select.quick (brush 30, add)",
+        "select.quick",
+        json!({"points": [[x - 100.0, c]], "size": 30}),
+    );
     let m = (rad * 1.15) as i32;
-    time(&mut s, "select.object", "select.object", json!({"rect": [c as i32 - m, c as i32 - m, 2 * m, 2 * m]}));
-    time(&mut s, "select.refineEdge (radius 20)", "select.refineEdge", json!({"radius": 20}));
+    time(
+        &mut s,
+        "select.object",
+        "select.object",
+        json!({"rect": [c as i32 - m, c as i32 - m, 2 * m, 2 * m]}),
+    );
+    time(
+        &mut s,
+        "select.refineEdge (radius 20)",
+        "select.refineEdge",
+        json!({"radius": 20}),
+    );
     s.execute("edit.undo", json!({})).unwrap();
-    time(&mut s, "select.refineEdge (radius 20, newLayerWithMask + decontaminate)", "select.refineEdge", json!({"radius": 20, "decontaminate": true}));
+    time(
+        &mut s,
+        "select.refineEdge (radius 20, newLayerWithMask + decontaminate)",
+        "select.refineEdge",
+        json!({"radius": 20, "decontaminate": true}),
+    );
     time(&mut s, "select.subject", "select.subject", json!({}));
     time(&mut s, "select.focusArea", "select.focusArea", json!({}));
 }

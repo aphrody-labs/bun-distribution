@@ -45,7 +45,13 @@ pub struct CompareView {
 
 impl CompareView {
     pub fn new(id: NodeId) -> Self {
-        Self { id, mode: Mode::default(), split: 0.5, hovered: None, cache: None }
+        Self {
+            id,
+            mode: Mode::default(),
+            split: 0.5,
+            hovered: None,
+            cache: None,
+        }
     }
 }
 
@@ -66,21 +72,45 @@ pub(crate) struct Shot {
 
 impl Shot {
     /// Layer `id` of `doc` rendered, the layers `marks` outlined.
-    pub(crate) fn new(ctx: &egui::Context, doc: &Document, id: NodeId, marks: impl Iterator<Item = (NodeId, ChangeKind)>) -> Option<Self> {
+    pub(crate) fn new(
+        ctx: &egui::Context,
+        doc: &Document,
+        id: NodeId,
+        marks: impl Iterator<Item = (NodeId, ChangeKind)>,
+    ) -> Option<Self> {
         let area = figcraft_render::export_bounds(doc, id)?;
         let tex = crate::assets_panel::thumbnail(ctx, doc, id, TEXTURE_SIDE)?;
-        let boxes = marks.filter_map(|(c, kind)| doc.world_bounds(c).map(|b| (c, kind, b))).collect();
+        let boxes = marks
+            .filter_map(|(c, kind)| doc.world_bounds(c).map(|b| (c, kind, b)))
+            .collect();
         Some(Self { tex, area, boxes })
     }
 
     /// The old version outlines what was removed, the new one what was added or changed.
-    fn of_changes(ctx: &egui::Context, doc: &Document, id: NodeId, changes: &[LayerChange], old: bool) -> Option<Self> {
-        Self::new(ctx, doc, id, changes.iter().filter(|c| c.depth > 0 && (c.change == ChangeKind::Removed) == old).map(|c| (c.id, c.change)))
+    fn of_changes(
+        ctx: &egui::Context,
+        doc: &Document,
+        id: NodeId,
+        changes: &[LayerChange],
+        old: bool,
+    ) -> Option<Self> {
+        Self::new(
+            ctx,
+            doc,
+            id,
+            changes
+                .iter()
+                .filter(|c| c.depth > 0 && (c.change == ChangeKind::Removed) == old)
+                .map(|c| (c.id, c.change)),
+        )
     }
 
     /// Its size in page units.
     fn size(&self) -> egui::Vec2 {
-        vec2(self.area.width().max(1e-6) as f32, self.area.height().max(1e-6) as f32)
+        vec2(
+            self.area.width().max(1e-6) as f32,
+            self.area.height().max(1e-6) as f32,
+        )
     }
 }
 
@@ -94,8 +124,13 @@ struct Place {
 impl Place {
     /// A `size` (page units) fitted and centred in `r`, at most 200%.
     fn fit(r: Rect, size: egui::Vec2) -> Self {
-        let scale = (r.width() / size.x).min(r.height() / size.y).clamp(1e-3, 2.0);
-        Self { min: r.center() - size * scale / 2.0, scale }
+        let scale = (r.width() / size.x)
+            .min(r.height() / size.y)
+            .clamp(1e-3, 2.0);
+        Self {
+            min: r.center() - size * scale / 2.0,
+            scale,
+        }
     }
 
     fn image(self, shot: &Shot) -> Rect {
@@ -119,28 +154,45 @@ pub(crate) fn kind_color(t: &Tokens, k: ChangeKind) -> Color32 {
 
 /// Escape closes the view (before the canvas's shortcuts see it).
 pub fn keys(app: &mut FigApp, ctx: &egui::Context) {
-    if app.ui.dev.compare.is_some() && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+    if app.ui.dev.compare.is_some()
+        && ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape))
+    {
         app.ui.dev.compare = None;
     }
 }
 
 /// The compare view window, while open.
 pub fn show(app: &mut FigApp, ctx: &egui::Context) {
-    let Some(mut view) = app.ui.dev.compare.take() else { return };
+    let Some(mut view) = app.ui.dev.compare.take() else {
+        return;
+    };
     let Ok(ds) = app.session.ds() else { return };
     let doc = ds.doc.clone();
     if doc.node(view.id).is_none() {
         return;
     }
-    if view.cache.as_ref().is_none_or(|c| !Arc::ptr_eq(&c.doc, &doc)) {
+    if view
+        .cache
+        .as_ref()
+        .is_none_or(|c| !Arc::ptr_eq(&c.doc, &doc))
+    {
         let cmp = devcompare::compare(&doc, view.id);
-        let before = devcompare::before_doc(&doc, view.id).and_then(|b| Shot::of_changes(ctx, &b, view.id, &cmp.changes, true));
+        let before = devcompare::before_doc(&doc, view.id)
+            .and_then(|b| Shot::of_changes(ctx, &b, view.id, &cmp.changes, true));
         let after = Shot::of_changes(ctx, &doc, view.id, &cmp.changes, false);
-        view.cache = Some(Cached { doc: doc.clone(), cmp, before, after });
+        view.cache = Some(Cached {
+            doc: doc.clone(),
+            cmp,
+            before,
+            after,
+        });
     }
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
-    let size = vec2(1120.0_f32.min(screen.width() - 64.0).max(560.0), 700.0_f32.min(screen.height() - 96.0).max(320.0));
+    let size = vec2(
+        1120.0_f32.min(screen.width() - 64.0).max(560.0),
+        700.0_f32.min(screen.height() - 96.0).max(320.0),
+    );
     let mut open = true;
     let mut action = None;
     egui::Window::new("Compare changes")
@@ -191,7 +243,10 @@ pub fn show(app: &mut FigApp, ctx: &egui::Context) {
             app.run("select.set", json!({"ids": [id]}));
         }
         Some(Action::Resolve) => {
-            if app.run("dev.resolveChange", json!({"ids": [view.id]})).is_some() {
+            if app
+                .run("dev.resolveChange", json!({"ids": [view.id]}))
+                .is_some()
+            {
                 app.toast(tr("Change resolved"));
                 open = false;
             }
@@ -211,30 +266,66 @@ enum Action {
 }
 
 /// The title row: `title` and `name`, the side by side / overlay switch and the close button.
-pub(crate) fn header(ui: &mut Ui, t: &Tokens, title: &str, name: &str, mode: &mut Mode, open: &mut bool) {
+pub(crate) fn header(
+    ui: &mut Ui,
+    t: &Tokens,
+    title: &str,
+    name: &str,
+    mode: &mut Mode,
+    open: &mut bool,
+) {
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), BAR_H), Sense::hover());
     let p = ui.painter();
     let title = p.layout_no_wrap(title.into(), semibold(13.0), t.text);
     let tw = title.size().x;
-    p.galley(pos2(r.min.x + 16.0, r.center().y - title.size().y / 2.0), title, t.text);
+    p.galley(
+        pos2(r.min.x + 16.0, r.center().y - title.size().y / 2.0),
+        title,
+        t.text,
+    );
     let name = widgets::elide(ui, name, 320.0);
-    ui.painter().text(pos2(r.min.x + 28.0 + tw, r.center().y), Align2::LEFT_CENTER, name, regular(12.0), t.text_secondary);
+    ui.painter().text(
+        pos2(r.min.x + 28.0 + tw, r.center().y),
+        Align2::LEFT_CENTER,
+        name,
+        regular(12.0),
+        t.text_secondary,
+    );
     // Side by side / overlay, as a two-way switch left of the close button.
-    let modes = [(Mode::SideBySide, tr("Side by side")), (Mode::Overlay, tr("Overlay"))];
+    let modes = [
+        (Mode::SideBySide, tr("Side by side")),
+        (Mode::Overlay, tr("Overlay")),
+    ];
     let mut x = r.max.x - 48.0;
     for (m, label) in modes.iter().rev() {
-        let g = ui.painter().layout_no_wrap((*label).into(), regular(11.0), t.text);
-        let cell = Rect::from_min_max(pos2(x - g.size().x - 20.0, r.center().y - 12.0), pos2(x, r.center().y + 12.0));
+        let g = ui
+            .painter()
+            .layout_no_wrap((*label).into(), regular(11.0), t.text);
+        let cell = Rect::from_min_max(
+            pos2(x - g.size().x - 20.0, r.center().y - 12.0),
+            pos2(x, r.center().y + 12.0),
+        );
         let resp = ui.interact(cell, Id::new(("compare_mode", label)), Sense::click());
         let on = *mode == *m;
         crate::a11y::tab(&resp, label, on);
         if on {
-            ui.painter().rect_filled(cell, CornerRadius::same(5), t.field);
-            ui.painter().rect_stroke(cell, CornerRadius::same(5), Stroke::new(1.0, t.border), StrokeKind::Inside);
+            ui.painter()
+                .rect_filled(cell, CornerRadius::same(5), t.field);
+            ui.painter().rect_stroke(
+                cell,
+                CornerRadius::same(5),
+                Stroke::new(1.0, t.border),
+                StrokeKind::Inside,
+            );
         } else if resp.hovered() {
-            ui.painter().rect_filled(cell, CornerRadius::same(5), t.hover);
+            ui.painter()
+                .rect_filled(cell, CornerRadius::same(5), t.hover);
         }
-        ui.painter().galley(cell.center() - g.size() / 2.0, g, if on { t.text } else { t.text_secondary });
+        ui.painter().galley(
+            cell.center() - g.size() / 2.0,
+            g,
+            if on { t.text } else { t.text_secondary },
+        );
         if resp.clicked() {
             *mode = *m;
         }
@@ -257,12 +348,25 @@ pub(crate) fn header(ui: &mut Ui, t: &Tokens, title: &str, name: &str, mode: &mu
 pub(crate) fn message(ui: &Ui, t: &Tokens, r: Rect, msg: &str) {
     let p = ui.painter_at(r);
     p.rect_filled(r, CornerRadius::ZERO, t.canvas);
-    let g = p.layout(msg.into(), regular(12.0), t.text_secondary, (r.width() - 120.0).max(120.0));
+    let g = p.layout(
+        msg.into(),
+        regular(12.0),
+        t.text_secondary,
+        (r.width() - 120.0).max(120.0),
+    );
     p.galley(r.center() - g.size() / 2.0, g, t.text_secondary);
 }
 
 /// The two versions (`[(old, its label), (new, its label)]`) in `r`.
-pub(crate) fn images(ui: &mut Ui, t: &Tokens, r: Rect, shots: [(&Shot, &str); 2], mode: Mode, split: &mut f32, hovered: Option<NodeId>) {
+pub(crate) fn images(
+    ui: &mut Ui,
+    t: &Tokens,
+    r: Rect,
+    shots: [(&Shot, &str); 2],
+    mode: Mode,
+    split: &mut f32,
+    hovered: Option<NodeId>,
+) {
     let p = ui.painter_at(r);
     p.rect_filled(r, CornerRadius::ZERO, t.canvas);
     let [(before, before_label), (after, after_label)] = shots;
@@ -274,10 +378,17 @@ pub(crate) fn images(ui: &mut Ui, t: &Tokens, r: Rect, shots: [(&Shot, &str); 2]
         Mode::SideBySide => {
             let w = (area.width() - 24.0) / 2.0;
             let left = Rect::from_min_size(area.min, vec2(w, area.height()));
-            let right = Rect::from_min_size(pos2(left.max.x + 24.0, area.min.y), vec2(w, area.height()));
+            let right =
+                Rect::from_min_size(pos2(left.max.x + 24.0, area.min.y), vec2(w, area.height()));
             for (shot, half, label) in [(before, left, before_label), (after, right, after_label)] {
                 let place = Place::fit(half, shot.size());
-                p.text(pos2(place.min.x, label_y), Align2::LEFT_CENTER, label, semibold(11.0), t.text_secondary);
+                p.text(
+                    pos2(place.min.x, label_y),
+                    Align2::LEFT_CENTER,
+                    label,
+                    semibold(11.0),
+                    t.text_secondary,
+                );
                 pane(&p, t, place, shot, hovered);
             }
         }
@@ -288,21 +399,50 @@ pub(crate) fn images(ui: &mut Ui, t: &Tokens, r: Rect, shots: [(&Shot, &str); 2]
             let img = Rect::from_min_size(place.min, size * place.scale);
             let split_x = img.min.x + img.width() * *split;
             pane(&p, t, place, after, hovered);
-            pane(&p.with_clip_rect(Rect::from_min_max(r.min, pos2(split_x, r.max.y))), t, place, before, hovered);
-            p.text(pos2(img.min.x, label_y), Align2::LEFT_CENTER, before_label, semibold(11.0), t.text_secondary);
-            p.text(pos2(img.max.x, label_y), Align2::RIGHT_CENTER, after_label, semibold(11.0), t.text_secondary);
+            pane(
+                &p.with_clip_rect(Rect::from_min_max(r.min, pos2(split_x, r.max.y))),
+                t,
+                place,
+                before,
+                hovered,
+            );
+            p.text(
+                pos2(img.min.x, label_y),
+                Align2::LEFT_CENTER,
+                before_label,
+                semibold(11.0),
+                t.text_secondary,
+            );
+            p.text(
+                pos2(img.max.x, label_y),
+                Align2::RIGHT_CENTER,
+                after_label,
+                semibold(11.0),
+                t.text_secondary,
+            );
             // The slider: a line with a knob, dragged (or clicked) anywhere over the images.
             let resp = ui.interact(img, Id::new("compare_split"), Sense::click_and_drag());
-            if let Some(pos) = resp.interact_pointer_pos().filter(|_| resp.dragged() || resp.clicked()) {
+            if let Some(pos) = resp
+                .interact_pointer_pos()
+                .filter(|_| resp.dragged() || resp.clicked())
+            {
                 *split = ((pos.x - img.min.x) / img.width().max(1.0)).clamp(0.0, 1.0);
             }
             if resp.hovered() || resp.dragged() {
                 ui.ctx().set_cursor_icon(egui::CursorIcon::ResizeHorizontal);
             }
-            p.line_segment([pos2(split_x, img.min.y), pos2(split_x, img.max.y)], Stroke::new(2.0, ACCENT));
+            p.line_segment(
+                [pos2(split_x, img.min.y), pos2(split_x, img.max.y)],
+                Stroke::new(2.0, ACCENT),
+            );
             let knob = pos2(split_x, img.center().y);
             p.circle_filled(knob, 10.0, ACCENT);
-            crate::icons::paint(&p, Rect::from_center_size(knob, vec2(12.0, 12.0)), Icon::DistributeH, Color32::WHITE);
+            crate::icons::paint(
+                &p,
+                Rect::from_center_size(knob, vec2(12.0, 12.0)),
+                Icon::DistributeH,
+                Color32::WHITE,
+            );
         }
     }
 }
@@ -311,16 +451,32 @@ pub(crate) fn images(ui: &mut Ui, t: &Tokens, r: Rect, shots: [(&Shot, &str); 2]
 fn pane(p: &egui::Painter, t: &Tokens, place: Place, shot: &Shot, hovered: Option<NodeId>) {
     let img = place.image(shot);
     widgets::checker(p, img, 8.0);
-    p.image(shot.tex.id(), img, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-    p.rect_stroke(img, CornerRadius::ZERO, Stroke::new(1.0, t.border), StrokeKind::Outside);
+    p.image(
+        shot.tex.id(),
+        img,
+        Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+        Color32::WHITE,
+    );
+    p.rect_stroke(
+        img,
+        CornerRadius::ZERO,
+        Stroke::new(1.0, t.border),
+        StrokeKind::Outside,
+    );
     for (id, kind, b) in &shot.boxes {
-        let box_r = Rect::from_two_pos(place.at(shot, b.x0, b.y0), place.at(shot, b.x1, b.y1)).expand(1.0);
+        let box_r =
+            Rect::from_two_pos(place.at(shot, b.x0, b.y0), place.at(shot, b.x1, b.y1)).expand(1.0);
         let col = kind_color(t, *kind);
         let hot = hovered == Some(*id);
         if hot {
             p.rect_filled(box_r, CornerRadius::ZERO, col.gamma_multiply(0.18));
         }
-        p.rect_stroke(box_r, CornerRadius::ZERO, Stroke::new(if hot { 2.0 } else { 1.0 }, col), StrokeKind::Outside);
+        p.rect_stroke(
+            box_r,
+            CornerRadius::ZERO,
+            Stroke::new(if hot { 2.0 } else { 1.0 }, col),
+            StrokeKind::Outside,
+        );
     }
 }
 
@@ -332,33 +488,66 @@ fn list(ui: &mut Ui, t: &Tokens, cmp: &Comparison, hovered: &mut Option<NodeId>)
     } else if cmp.changes.is_empty() {
         tr("No changes").to_string()
     } else {
-        let parts: Vec<String> = [(cmp.modified, tr_noop("{n} changed")), (cmp.added, tr_noop("{n} added")), (cmp.removed, tr_noop("{n} removed"))]
-            .iter()
-            .filter(|(n, _)| *n > 0)
-            .map(|(n, key)| trn(key, *n, &[]))
-            .collect();
-        trn("{n} layers · {parts}", cmp.changes.len(), &[("parts", &parts.join(", "))])
+        let parts: Vec<String> = [
+            (cmp.modified, tr_noop("{n} changed")),
+            (cmp.added, tr_noop("{n} added")),
+            (cmp.removed, tr_noop("{n} removed")),
+        ]
+        .iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, key)| trn(key, *n, &[]))
+        .collect();
+        trn(
+            "{n} layers · {parts}",
+            cmp.changes.len(),
+            &[("parts", &parts.join(", "))],
+        )
     };
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 36.0), Sense::hover());
-    ui.painter().text(pos2(r.min.x + 16.0, r.center().y), Align2::LEFT_CENTER, summary, semibold(11.0), t.text);
+    ui.painter().text(
+        pos2(r.min.x + 16.0, r.center().y),
+        Align2::LEFT_CENTER,
+        summary,
+        semibold(11.0),
+        t.text,
+    );
     let mut now_hovered = None;
-    egui::ScrollArea::vertical().id_salt("compare_list").auto_shrink([false, false]).show(ui, |ui| {
-        ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
-        for c in &cmp.changes {
-            let tip = if c.change == ChangeKind::Removed { tr("Removed since it was marked") } else { tr("Select layer") };
-            let resp = change_row(ui, t, c.change, &c.name, c.depth, c.layers, false, tip);
-            if resp.hovered() {
-                now_hovered = Some(c.id);
+    egui::ScrollArea::vertical()
+        .id_salt("compare_list")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.spacing_mut().item_spacing = vec2(0.0, 0.0);
+            for c in &cmp.changes {
+                let tip = if c.change == ChangeKind::Removed {
+                    tr("Removed since it was marked")
+                } else {
+                    tr("Select layer")
+                };
+                let resp = change_row(ui, t, c.change, &c.name, c.depth, c.layers, false, tip);
+                if resp.hovered() {
+                    now_hovered = Some(c.id);
+                }
+                if resp.clicked() && c.change != ChangeKind::Removed {
+                    out = Some(Action::Select(c.id));
+                }
+                property_lines(
+                    ui,
+                    t,
+                    c.depth,
+                    c.properties.iter().map(|pc| pc.text.as_str()),
+                );
             }
-            if resp.clicked() && c.change != ChangeKind::Removed {
-                out = Some(Action::Select(c.id));
+            if cmp.truncated {
+                widgets::note(
+                    ui,
+                    &trf(
+                        "Only the first {n} changed layers are listed.",
+                        &[("n", &devcompare::MAX_CHANGES)],
+                    ),
+                    t.text_secondary,
+                );
             }
-            property_lines(ui, t, c.depth, c.properties.iter().map(|pc| pc.text.as_str()));
-        }
-        if cmp.truncated {
-            widgets::note(ui, &trf("Only the first {n} changed layers are listed.", &[("n", &devcompare::MAX_CHANGES)]), t.text_secondary);
-        }
-    });
+        });
     *hovered = now_hovered;
     out
 }
@@ -380,39 +569,88 @@ pub(crate) fn change_row(
     let resp = resp.on_hover_text(tip);
     crate::a11y::list_item(&resp, &format!("{} {name}", tr(kind.label())), selected);
     if selected {
-        ui.painter().rect_filled(row.shrink2(vec2(8.0, 1.0)), CornerRadius::same(5), t.selected_row);
+        ui.painter().rect_filled(
+            row.shrink2(vec2(8.0, 1.0)),
+            CornerRadius::same(5),
+            t.selected_row,
+        );
     } else if resp.hovered() {
-        ui.painter().rect_filled(row.shrink2(vec2(8.0, 1.0)), CornerRadius::same(5), t.hover);
+        ui.painter()
+            .rect_filled(row.shrink2(vec2(8.0, 1.0)), CornerRadius::same(5), t.hover);
     }
     let col = kind_color(t, kind);
-    let tag = ui.painter().layout_no_wrap(tr(kind.label()).into(), semibold(9.0), col);
-    let tag_r = Rect::from_min_size(pos2(row.max.x - 16.0 - tag.size().x - 10.0, row.center().y - 8.0), vec2(tag.size().x + 10.0, 16.0));
-    ui.painter().rect_filled(tag_r, CornerRadius::same(4), col.gamma_multiply(0.15));
-    ui.painter().galley(tag_r.center() - tag.size() / 2.0, tag, col);
-    ui.painter().circle_filled(pos2(row.min.x + indent + 3.0, row.center().y), 3.0, col);
-    let name = if layers > 1 { trf("{name} ({layers} layers)", &[("name", &name), ("layers", &layers)]) } else { name.to_string() };
-    let name = widgets::elide(ui, &name, (tag_r.min.x - row.min.x - indent - 20.0).max(20.0));
+    let tag = ui
+        .painter()
+        .layout_no_wrap(tr(kind.label()).into(), semibold(9.0), col);
+    let tag_r = Rect::from_min_size(
+        pos2(row.max.x - 16.0 - tag.size().x - 10.0, row.center().y - 8.0),
+        vec2(tag.size().x + 10.0, 16.0),
+    );
+    ui.painter()
+        .rect_filled(tag_r, CornerRadius::same(4), col.gamma_multiply(0.15));
+    ui.painter()
+        .galley(tag_r.center() - tag.size() / 2.0, tag, col);
+    ui.painter()
+        .circle_filled(pos2(row.min.x + indent + 3.0, row.center().y), 3.0, col);
+    let name = if layers > 1 {
+        trf(
+            "{name} ({layers} layers)",
+            &[("name", &name), ("layers", &layers)],
+        )
+    } else {
+        name.to_string()
+    };
+    let name = widgets::elide(
+        ui,
+        &name,
+        (tag_r.min.x - row.min.x - indent - 20.0).max(20.0),
+    );
     let strike = kind == ChangeKind::Removed;
-    let galley = ui.painter().layout_no_wrap(name, regular(11.0), if strike { t.text_secondary } else { t.text });
-    let at = pos2(row.min.x + indent + 12.0, row.center().y - galley.size().y / 2.0);
+    let galley = ui.painter().layout_no_wrap(
+        name,
+        regular(11.0),
+        if strike { t.text_secondary } else { t.text },
+    );
+    let at = pos2(
+        row.min.x + indent + 12.0,
+        row.center().y - galley.size().y / 2.0,
+    );
     if strike {
         let y = at.y + galley.size().y / 2.0;
-        ui.painter().line_segment([pos2(at.x, y), pos2(at.x + galley.size().x, y)], Stroke::new(1.0, t.text_secondary));
+        ui.painter().line_segment(
+            [pos2(at.x, y), pos2(at.x + galley.size().x, y)],
+            Stroke::new(1.0, t.text_secondary),
+        );
     }
     ui.painter().galley(at, galley, t.text);
     resp
 }
 
 /// The property changes under a [`change_row`] (`width 120 → 136`).
-pub(crate) fn property_lines<'a>(ui: &mut Ui, t: &Tokens, depth: usize, lines: impl Iterator<Item = &'a str>) {
+pub(crate) fn property_lines<'a>(
+    ui: &mut Ui,
+    t: &Tokens,
+    depth: usize,
+    lines: impl Iterator<Item = &'a str>,
+) {
     let indent = 16.0 + (depth.min(6) as f32) * 10.0;
     let mut any = false;
     for text in lines {
         any = true;
         let width = ui.available_width() - indent - 28.0;
-        let g = ui.painter().layout(text.to_string(), regular(10.0), t.text_secondary, width.max(40.0));
-        let (pr, _) = ui.allocate_exact_size(vec2(ui.available_width(), g.size().y + 4.0), Sense::hover());
-        ui.painter().galley(pos2(pr.min.x + indent + 12.0, pr.min.y + 2.0), g, t.text_secondary);
+        let g = ui.painter().layout(
+            text.to_string(),
+            regular(10.0),
+            t.text_secondary,
+            width.max(40.0),
+        );
+        let (pr, _) =
+            ui.allocate_exact_size(vec2(ui.available_width(), g.size().y + 4.0), Sense::hover());
+        ui.painter().galley(
+            pos2(pr.min.x + indent + 12.0, pr.min.y + 2.0),
+            g,
+            t.text_secondary,
+        );
     }
     if any {
         ui.add_space(4.0);
@@ -421,19 +659,33 @@ pub(crate) fn property_lines<'a>(ui: &mut Ui, t: &Tokens, depth: usize, lines: i
 
 fn footer(ui: &mut Ui, t: &Tokens, cmp: &Comparison) -> Option<Action> {
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), BAR_H + 1.0), Sense::hover());
-    ui.painter().rect_filled(Rect::from_min_size(r.min, vec2(r.width(), 1.0)), CornerRadius::ZERO, t.border);
+    ui.painter().rect_filled(
+        Rect::from_min_size(r.min, vec2(r.width(), 1.0)),
+        CornerRadius::ZERO,
+        t.border,
+    );
     let mut out = None;
-    let inner = Rect::from_min_max(pos2(r.min.x + 16.0, r.min.y + 1.0), pos2(r.max.x - 16.0, r.max.y));
-    ui.scope_builder(egui::UiBuilder::new().max_rect(inner).layout(egui::Layout::right_to_left(egui::Align::Center)), |ui| {
-        ui.spacing_mut().item_spacing.x = 8.0;
-        let resolve = widgets::button(ui, tr("Resolve change"), true, cmp.changed)
-            .on_hover_text(tr("Back to Ready for dev: the next change compares with how it is now"));
-        if resolve.clicked() {
-            out = Some(Action::Resolve);
-        }
-        if widgets::button(ui, tr("Close"), false, true).clicked() {
-            out = Some(Action::Close);
-        }
-    });
+    let inner = Rect::from_min_max(
+        pos2(r.min.x + 16.0, r.min.y + 1.0),
+        pos2(r.max.x - 16.0, r.max.y),
+    );
+    ui.scope_builder(
+        egui::UiBuilder::new()
+            .max_rect(inner)
+            .layout(egui::Layout::right_to_left(egui::Align::Center)),
+        |ui| {
+            ui.spacing_mut().item_spacing.x = 8.0;
+            let resolve = widgets::button(ui, tr("Resolve change"), true, cmp.changed)
+                .on_hover_text(tr(
+                    "Back to Ready for dev: the next change compares with how it is now",
+                ));
+            if resolve.clicked() {
+                out = Some(Action::Resolve);
+            }
+            if widgets::button(ui, tr("Close"), false, true).clicked() {
+                out = Some(Action::Close);
+            }
+        },
+    );
     out
 }

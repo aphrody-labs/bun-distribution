@@ -112,7 +112,11 @@ impl Lz77 {
         let write_offset: u32 = (bytes.len() - total_size) as u32;
         let total_size = total_size - num_identical - start;
         let total_size_bytes = total_size.to_le_bytes();
-        compressed.write_all(&[total_size_bytes[0], total_size_bytes[1], total_size_bytes[2]])?;
+        compressed.write_all(&[
+            total_size_bytes[0],
+            total_size_bytes[1],
+            total_size_bytes[2],
+        ])?;
         compressed.push(read_offset);
         compressed.write_all(&write_offset.to_le_bytes())?;
         Ok(())
@@ -307,14 +311,21 @@ impl<'a> Tokens<'a> {
             if let Some(pair) = Self::find_match(bytes, read - 1) {
                 read -= pair.length;
                 bytes_saved += pair.bytes_saved() as isize;
-                tokens.push(Token::Pair((pair, Cow::Borrowed(&bytes[read..read + pair.length]))));
+                tokens.push(Token::Pair((
+                    pair,
+                    Cow::Borrowed(&bytes[read..read + pair.length]),
+                )));
             } else {
                 read -= 1;
                 tokens.push(Token::Literal(bytes[read]));
             }
         }
 
-        Self { tokens, bytes_saved, dropped_tokens: 0 }
+        Self {
+            tokens,
+            bytes_saved,
+            dropped_tokens: 0,
+        }
     }
 
     fn drop_wasteful_tokens(&mut self) -> Result<(), io::Error> {
@@ -345,8 +356,9 @@ impl<'a> Tokens<'a> {
     }
 
     fn make_flags_for_chunk(chunk: &[Token]) -> u8 {
-        chunk.iter().fold(0u8, |acc, token| (acc << 1) | matches!(token, Token::Pair(_)) as u8)
-            << (8 - chunk.len() as u8)
+        chunk.iter().fold(0u8, |acc, token| {
+            (acc << 1) | matches!(token, Token::Pair(_)) as u8
+        }) << (8 - chunk.len() as u8)
     }
 
     fn write(self, compressed: &mut Vec<u8>) -> Result<usize, io::Error> {
@@ -369,7 +381,7 @@ impl<'a> Tokens<'a> {
                     Token::Literal(byte) => compressed.push(*byte),
                     Token::Pair((pair, _)) => {
                         compressed.write_all(&pair.to_be_bytes())?;
-                    },
+                    }
                 }
             }
         }
@@ -380,13 +392,13 @@ impl<'a> Tokens<'a> {
                 Token::Literal(byte) => {
                     num_identical += 1;
                     compressed.push(*byte);
-                },
+                }
                 Token::Pair((_, bytes)) => {
                     num_identical += bytes.len();
                     for &byte in bytes.iter().rev() {
                         compressed.push(byte);
                     }
-                },
+                }
             }
         }
 
@@ -399,23 +411,34 @@ impl<'a> Tokens<'a> {
         decompressed: &mut Vec<u8>,
     ) -> Result<Self, Lz77ParseError> {
         let mut tokens = vec![];
-        let mut iter = bytes.iter().copied().enumerate().skip(start).rev().peekable();
+        let mut iter = bytes
+            .iter()
+            .copied()
+            .enumerate()
+            .skip(start)
+            .rev()
+            .peekable();
         let mut bytes_saved = 0;
 
         while let Some((offset, mut flags)) = iter.next() {
             bytes_saved -= 1;
             for _ in 0..8 {
                 if (flags & 0x80) == 0 {
-                    let literal =
-                        iter.next().ok_or_else(|| NoLiteralSnafu { offset, flags }.build())?.1;
+                    let literal = iter
+                        .next()
+                        .ok_or_else(|| NoLiteralSnafu { offset, flags }.build())?
+                        .1;
                     decompressed.push(literal);
                     tokens.push(Token::Literal(literal));
                 } else {
-                    let (offset, first) =
-                        iter.next().ok_or_else(|| NoPairSnafu { offset, flags }.build())?;
+                    let (offset, first) = iter
+                        .next()
+                        .ok_or_else(|| NoPairSnafu { offset, flags }.build())?;
                     let pair = [
                         first,
-                        iter.next().ok_or_else(|| IncompletePairSnafu { offset }.build())?.1,
+                        iter.next()
+                            .ok_or_else(|| IncompletePairSnafu { offset }.build())?
+                            .1,
                     ];
                     let pair = Pair::from_be_bytes(pair);
 
@@ -443,7 +466,11 @@ impl<'a> Tokens<'a> {
             }
         }
 
-        Ok(Self { tokens, bytes_saved, dropped_tokens: 0 })
+        Ok(Self {
+            tokens,
+            bytes_saved,
+            dropped_tokens: 0,
+        })
     }
 }
 

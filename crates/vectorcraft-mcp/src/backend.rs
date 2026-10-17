@@ -27,7 +27,11 @@ pub struct Remote {
 impl Remote {
     /// Connect to `addr` (e.g. `127.0.0.1:7979`), failing fast when nothing is listening.
     pub fn connect(addr: &str) -> std::io::Result<Self> {
-        let mut r = Self { addr: addr.to_string(), conn: None, next_id: 1 };
+        let mut r = Self {
+            addr: addr.to_string(),
+            conn: None,
+            next_id: 1,
+        };
         r.reconnect()?;
         Ok(r)
     }
@@ -38,7 +42,10 @@ impl Remote {
 
     fn reconnect(&mut self) -> std::io::Result<()> {
         self.conn = None;
-        let mut last = std::io::Error::new(std::io::ErrorKind::NotFound, format!("cannot resolve {}", self.addr));
+        let mut last = std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("cannot resolve {}", self.addr),
+        );
         for sa in self.addr.to_socket_addrs()? {
             match TcpStream::connect_timeout(&sa, Duration::from_millis(800)) {
                 Ok(s) => {
@@ -60,14 +67,20 @@ impl Remote {
             self.reconnect()?;
         }
         let Some((reader, writer)) = self.conn.as_mut() else {
-            return Err(std::io::Error::new(std::io::ErrorKind::NotConnected, "not connected to the app"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotConnected,
+                "not connected to the app",
+            ));
         };
         writer.write_all(line.as_bytes())?;
         writer.write_all(b"\n")?;
         writer.flush()?;
         let mut reply = String::new();
         if reader.read_line(&mut reply)? == 0 {
-            return Err(std::io::Error::new(std::io::ErrorKind::UnexpectedEof, "control channel closed"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                "control channel closed",
+            ));
         }
         Ok(reply)
     }
@@ -82,11 +95,16 @@ impl Backend for Remote {
             self.conn = None;
             format!("VectorCraft app at {}: `{method}` failed: {e}; operation may have completed; inspect state before retrying", self.addr)
         })?;
-        let v: Value = serde_json::from_str(reply.trim()).map_err(|e| format!("bad reply from app: {e}"))?;
+        let v: Value =
+            serde_json::from_str(reply.trim()).map_err(|e| format!("bad reply from app: {e}"))?;
         if v.get("ok").and_then(Value::as_bool) == Some(true) {
             Ok(v.get("result").cloned().unwrap_or(Value::Null))
         } else {
-            Err(v.get("error").and_then(Value::as_str).unwrap_or("unknown error").to_string())
+            Err(v
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown error")
+                .to_string())
         }
     }
 

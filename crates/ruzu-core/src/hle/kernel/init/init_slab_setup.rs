@@ -179,10 +179,14 @@ mod tests {
         let mut counts = KSlabResourceCounts::create_default();
         initialize_slab_resource_counts(&mut counts);
         let slab_size = calculate_total_slab_heap_size(&counts);
-        let resource_size = crate::hle::kernel::k_memory_layout::KMemoryLayout::
-            get_resource_region_size_for_init(true);
-        assert!(slab_size <= resource_size,
-            "slab size {slab_size:#x} exceeds resource reservation {resource_size:#x}");
+        let resource_size =
+            crate::hle::kernel::k_memory_layout::KMemoryLayout::get_resource_region_size_for_init(
+                true,
+            );
+        assert!(
+            slab_size <= resource_size,
+            "slab size {slab_size:#x} exceeds resource reservation {resource_size:#x}"
+        );
     }
 
     #[test]

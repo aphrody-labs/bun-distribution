@@ -170,7 +170,8 @@ mod tests {
         {
             let mut code = rhazel::CodeGenerator::new(&mut block_code);
             code.mov_imm(rhazel::W0, 0x42).unwrap();
-            code.mov_imm(rhazel::X16, return_address as usize as u64).unwrap();
+            code.mov_imm(rhazel::X16, return_address as usize as u64)
+                .unwrap();
             code.br(rhazel::X16).unwrap();
         }
         block_code.seal();

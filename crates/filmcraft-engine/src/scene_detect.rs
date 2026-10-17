@@ -43,8 +43,15 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
 fn has_video_selection(s: &Session) -> std::result::Result<(), String> {
     has_seq(s)?;
     let q = s.active_sequence().ok_or("no sequence is open")?;
-    let any = s.state.selection.iter().any(|c| q.find_item(*c).is_some_and(|(t, _)| q.track(t).is_some_and(|t| t.kind == TrackKind::Video)));
-    if any { Ok(()) } else { Err("select a video clip in the timeline".into()) }
+    let any = s.state.selection.iter().any(|c| {
+        q.find_item(*c)
+            .is_some_and(|(t, _)| q.track(t).is_some_and(|t| t.kind == TrackKind::Video))
+    });
+    if any {
+        Ok(())
+    } else {
+        Err("select a video clip in the timeline".into())
+    }
 }
 
 /// What to do with the cuts found.
@@ -110,20 +117,33 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
         markers: bool_p(p, "generateMarkers").unwrap_or(false),
     };
     if !(apply.cuts || apply.subclips || apply.markers) {
-        return Err(bad("clip.sceneEditDetection", "choose at least one of applyCuts, createSubclips, generateMarkers"));
+        return Err(bad(
+            "clip.sceneEditDetection",
+            "choose at least one of applyCuts, createSubclips, generateMarkers",
+        ));
     }
     if s.scene_jobs.iter().any(|j| j.seq == seq_id) {
-        return Err(EngineError::Other("Scene Edit Detection is already running on this sequence".into()));
+        return Err(EngineError::Other(
+            "Scene Edit Detection is already running on this sequence".into(),
+        ));
     }
     let mut work = Vec::new();
     for c in clips_p(s, p) {
-        let Some((tid, it)) = q.find_item(c) else { continue };
+        let Some((tid, it)) = q.find_item(c) else {
+            continue;
+        };
         if q.track(tid).is_none_or(|t| t.kind != TrackKind::Video) {
             continue;
         }
-        let Some(media_item) = media_root(&s.project, it.item) else { continue };
-        let Some(src) = s.source(it.item) else { continue };
-        let Some(v) = src.info().video.clone() else { continue };
+        let Some(media_item) = media_root(&s.project, it.item) else {
+            continue;
+        };
+        let Some(src) = s.source(it.item) else {
+            continue;
+        };
+        let Some(v) = src.info().video.clone() else {
+            continue;
+        };
         let n = (it.duration.0 / fd.0.max(1)).max(1);
         let frames: Vec<(Tick, Tick)> = (0..n)
             .map(|j| {
@@ -131,16 +151,36 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
                 (t, it.source_time_at(t))
             })
             .collect();
-        work.push(Work { clip: c, name: it.name.clone(), media_item, src, scale: (ANALYSIS_WIDTH / v.width.max(1) as f64).min(1.0) as f32, frames });
+        work.push(Work {
+            clip: c,
+            name: it.name.clone(),
+            media_item,
+            src,
+            scale: (ANALYSIS_WIDTH / v.width.max(1) as f64).min(1.0) as f32,
+            frames,
+        });
     }
     if work.is_empty() {
-        return Err(EngineError::Other("none of the selected clips is a video clip with media to analyse".into()));
+        return Err(EngineError::Other(
+            "none of the selected clips is a video clip with media to analyse".into(),
+        ));
     }
     let total: usize = work.iter().map(|w| w.frames.len()).sum();
     let id = s.jobs.iter().map(|j| j.id).max().unwrap_or(0) + 1;
-    let label = format!("Scene Edit Detection ({} clip{})", work.len(), if work.len() == 1 { "" } else { "s" });
-    let job = crate::Job { id, label, progress: Default::default(), result: Default::default() };
-    job.progress.total.store(total as u64, std::sync::atomic::Ordering::Relaxed);
+    let label = format!(
+        "Scene Edit Detection ({} clip{})",
+        work.len(),
+        if work.len() == 1 { "" } else { "s" }
+    );
+    let job = crate::Job {
+        id,
+        label,
+        progress: Default::default(),
+        result: Default::default(),
+    };
+    job.progress
+        .total
+        .store(total as u64, std::sync::atomic::Ordering::Relaxed);
     let results: Arc<Mutex<Option<Vec<ClipScenes>>>> = Arc::default();
     let (prog, res, out) = (job.progress.clone(), job.result.clone(), results.clone());
     let run = move || {
@@ -156,7 +196,10 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
                     err = Some("stopped".to_string());
                     break 'clips;
                 }
-                match w.src.video_frame(filmcraft_media::FrameRequest { time: *mt, scale: w.scale }) {
+                match w.src.video_frame(filmcraft_media::FrameRequest {
+                    time: *mt,
+                    scale: w.scale,
+                }) {
                     Ok(f) => {
                         det.push_rgba(&f.to_rgba8(), f.width as usize, f.height as usize);
                     }
@@ -169,9 +212,18 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
                 prog.done.store(done, Ordering::Relaxed);
                 *lock(&prog.status) = format!("{}: frame {} of {}", w.name, k + 1, w.frames.len());
             }
-            let cuts: Vec<(Tick, Tick)> = det.cuts(&opts).into_iter().map(|i| w.frames[i]).collect();
-            let (a, b) = (w.frames.first().map(|f| f.1).unwrap_or_default(), w.frames.last().map(|f| f.1).unwrap_or_default());
-            let fdm = w.frames.get(1).map(|f| (f.1 - w.frames[0].1).abs()).unwrap_or(Tick(1)).max(Tick(1));
+            let cuts: Vec<(Tick, Tick)> =
+                det.cuts(&opts).into_iter().map(|i| w.frames[i]).collect();
+            let (a, b) = (
+                w.frames.first().map(|f| f.1).unwrap_or_default(),
+                w.frames.last().map(|f| f.1).unwrap_or_default(),
+            );
+            let fdm = w
+                .frames
+                .get(1)
+                .map(|f| (f.1 - w.frames[0].1).abs())
+                .unwrap_or(Tick(1))
+                .max(Tick(1));
             found.push(ClipScenes {
                 clip: w.clip,
                 name: w.name.clone(),
@@ -206,7 +258,12 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
     };
     let run = crate::export_tools::guard_job(job.progress.clone(), job.result.clone(), run);
     s.jobs.push(job);
-    s.scene_jobs.push(PendingScene { job: id, seq: seq_id, apply, results: results.clone() });
+    s.scene_jobs.push(PendingScene {
+        job: id,
+        seq: seq_id,
+        apply,
+        results: results.clone(),
+    });
     let wait = bool_p(p, "wait").unwrap_or(false);
     let mut out = json!({"job": id, "frames": total});
     if wait || cfg!(target_arch = "wasm32") {
@@ -220,9 +277,17 @@ fn detect(s: &mut Session, p: &Value) -> Result<Value> {
         }
         poll(s);
     } else {
-        std::thread::Builder::new().name("filmcraft-scene-detect".into()).spawn(run).map_err(|e| EngineError::Other(e.to_string()))?;
+        std::thread::Builder::new()
+            .name("filmcraft-scene-detect".into())
+            .spawn(run)
+            .map_err(|e| EngineError::Other(e.to_string()))?;
     }
-    if let Some(Err(e)) = s.jobs.iter().find(|j| j.id == id).and_then(|j| lock(&j.result).clone()) {
+    if let Some(Err(e)) = s
+        .jobs
+        .iter()
+        .find(|j| j.id == id)
+        .and_then(|j| lock(&j.result).clone())
+    {
         return Err(EngineError::Other(e));
     }
     Ok(out)
@@ -243,14 +308,24 @@ pub fn poll(s: &mut Session) {
             continue;
         }
         let pj = s.scene_jobs.remove(i);
-        let Some(results) = lock(&pj.results).take().filter(|_| !cancelled) else { continue };
+        let Some(results) = lock(&pj.results).take().filter(|_| !cancelled) else {
+            continue;
+        };
         if let Err(e) = apply_results(s, pj.seq, pj.apply, results) {
-            s.error_toast("clip.sceneEditDetection", format!("Scene Edit Detection: {e}"));
+            s.error_toast(
+                "clip.sceneEditDetection",
+                format!("Scene Edit Detection: {e}"),
+            );
         }
     }
 }
 
-fn apply_results(s: &mut Session, seq_id: ItemId, apply: SceneApply, results: Vec<ClipScenes>) -> Result<Value> {
+fn apply_results(
+    s: &mut Session,
+    seq_id: ItemId,
+    apply: SceneApply,
+    results: Vec<ClipScenes>,
+) -> Result<Value> {
     let n_cuts: usize = results.iter().map(|r| r.cuts.len()).sum();
     if n_cuts == 0 {
         s.toast("Scene Edit Detection found no cut points");
@@ -262,21 +337,37 @@ fn apply_results(s: &mut Session, seq_id: ItemId, apply: SceneApply, results: Ve
         let durations = move |id: ItemId| crate::media_duration(&snapshot, &media, id);
         for r in &results {
             if apply.cuts {
-                let min = pr.sequence(seq_id).map(|q| q.settings.frame_rate.frame_duration()).unwrap_or(Tick(1));
+                let min = pr
+                    .sequence(seq_id)
+                    .map(|q| q.settings.frame_rate.frame_duration())
+                    .unwrap_or(Tick(1));
                 let mut next = pr.next_id;
                 let q = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
-                let mut ctx = filmcraft_edit::EditCtx { next_id: &mut next, media_duration: &durations, media_start: &|_| Tick::ZERO, min_duration: min };
+                let mut ctx = filmcraft_edit::EditCtx {
+                    next_id: &mut next,
+                    media_duration: &durations,
+                    media_start: &|_| Tick::ZERO,
+                    min_duration: min,
+                };
                 // latest cut first: the left piece keeps the clip's id for the earlier cuts
                 for (t, _) in r.cuts.iter().rev() {
                     let link = q.find_item(r.clip).and_then(|(_, it)| it.link);
                     let mut items = vec![r.clip];
                     if let Some(l) = link {
-                        items.extend(q.all_tracks().flat_map(|tr| tr.items.iter()).filter(|it| it.link == Some(l) && it.id != r.clip).map(|it| it.id));
+                        items.extend(
+                            q.all_tracks()
+                                .flat_map(|tr| tr.items.iter())
+                                .filter(|it| it.link == Some(l) && it.id != r.clip)
+                                .map(|it| it.id),
+                        );
                     }
                     filmcraft_edit::razor_items(q, &items, *t, &mut ctx);
                 }
                 pr.next_id = next;
-                pr.sequence(seq_id).ok_or(EngineError::NoSequence)?.check().map_err(EngineError::Other)?;
+                pr.sequence(seq_id)
+                    .ok_or(EngineError::NoSequence)?
+                    .check()
+                    .map_err(EngineError::Other)?;
             }
             if apply.markers {
                 let ids: Vec<u64> = r.cuts.iter().map(|_| pr.alloc_id()).collect();
@@ -299,17 +390,37 @@ fn apply_results(s: &mut Session, seq_id: ItemId, apply: SceneApply, results: Ve
                 }
             }
             if apply.subclips {
-                let base = pr.item(r.media_item).map(|i| i.name.clone()).unwrap_or_else(|| r.name.clone());
-                let label = pr.item(r.media_item).map(|i| i.label).unwrap_or(Label::Iris);
+                let base = pr
+                    .item(r.media_item)
+                    .map(|i| i.name.clone())
+                    .unwrap_or_else(|| r.name.clone());
+                let label = pr
+                    .item(r.media_item)
+                    .map(|i| i.label)
+                    .unwrap_or(Label::Iris);
                 let bin = pr.add_bin(&format!("{base} Scenes"), None);
                 let mut bounds: Vec<Tick> = vec![r.media_range.start];
-                bounds.extend(r.cuts.iter().map(|c| c.1).filter(|t| *t > r.media_range.start && *t < r.media_range.end()));
+                bounds.extend(
+                    r.cuts
+                        .iter()
+                        .map(|c| c.1)
+                        .filter(|t| *t > r.media_range.start && *t < r.media_range.end()),
+                );
                 bounds.push(r.media_range.end());
                 bounds.sort();
                 bounds.dedup();
                 for (k, w) in bounds.windows(2).enumerate() {
-                    let kind = ItemKind::Subclip { parent: r.media_item, range: TimeRange::from_bounds(w[0], w[1]), restrict_trims: false };
-                    pr.add_item(&format!("{base} Scene {:02}", k + 1), label, kind, Some(bin));
+                    let kind = ItemKind::Subclip {
+                        parent: r.media_item,
+                        range: TimeRange::from_bounds(w[0], w[1]),
+                        restrict_trims: false,
+                    };
+                    pr.add_item(
+                        &format!("{base} Scene {:02}", k + 1),
+                        label,
+                        kind,
+                        Some(bin),
+                    );
                 }
             }
         }

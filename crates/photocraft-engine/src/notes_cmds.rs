@@ -10,16 +10,25 @@ use crate::commands::CommandSpec;
 use crate::{EngineError, Result, Session};
 
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 fn has_notes(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.doc.notes.is_empty()) { Ok(()) } else { Err("the document has no notes".into()) }
+    if s.active().is_some_and(|d| !d.doc.notes.is_empty()) {
+        Ok(())
+    } else {
+        Err("the document has no notes".into())
+    }
 }
 
 /// PDF-style date (`D:YYYYMMDDhhmmssZ`) as Photoshop stores in notes; empty without a clock.
@@ -48,20 +57,41 @@ fn color_of(p: &Value) -> Option<Color> {
 
 fn index_of(s: &Session, p: &Value, cmd: &str) -> Result<usize> {
     let n = s.active().ok_or(EngineError::NoDocument)?.doc.notes.len();
-    let i = p.get("index").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "pass `index`"))? as usize;
-    if i < n { Ok(i) } else { Err(bad(cmd, format!("no note {i} (the document has {n})"))) }
+    let i = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(cmd, "pass `index`"))? as usize;
+    if i < n {
+        Ok(i)
+    } else {
+        Err(bad(cmd, format!("no note {i} (the document has {n})")))
+    }
 }
 
 fn add(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "notes.add";
-    let x = p.get("x").and_then(Value::as_f64).ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
-    let y = p.get("y").and_then(Value::as_f64).ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
+    let x = p
+        .get("x")
+        .and_then(Value::as_f64)
+        .ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
+    let y = p
+        .get("y")
+        .and_then(Value::as_f64)
+        .ok_or_else(|| bad(CMD, "pass `x` and `y`"))?;
     if !x.is_finite() || !y.is_finite() {
         return Err(bad(CMD, "coordinates must be finite"));
     }
     let mut n = Note {
-        author: p.get("author").and_then(Value::as_str).unwrap_or("").to_string(),
-        text: p.get("text").and_then(Value::as_str).unwrap_or("").to_string(),
+        author: p
+            .get("author")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string(),
+        text: p
+            .get("text")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string(),
         position: [x, y],
         popup: [x + 20.0, y + 20.0, x + 260.0, y + 160.0],
         open: p.get("open").and_then(Value::as_bool).unwrap_or(true),
@@ -96,7 +126,10 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     if let Some(o) = p.get("open").and_then(Value::as_bool) {
         n.open = o;
     }
-    let (x, y) = (p.get("x").and_then(Value::as_f64), p.get("y").and_then(Value::as_f64));
+    let (x, y) = (
+        p.get("x").and_then(Value::as_f64),
+        p.get("y").and_then(Value::as_f64),
+    );
     if x.is_some() || y.is_some() {
         let (nx, ny) = (x.unwrap_or(n.position[0]), y.unwrap_or(n.position[1]));
         if !nx.is_finite() || !ny.is_finite() {
@@ -105,7 +138,12 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
         let (dx, dy) = (nx - n.position[0], ny - n.position[1]);
         n.position = [nx, ny];
         // The popup travels with its icon.
-        n.popup = [n.popup[0] + dx, n.popup[1] + dy, n.popup[2] + dx, n.popup[3] + dy];
+        n.popup = [
+            n.popup[0] + dx,
+            n.popup[1] + dy,
+            n.popup[2] + dx,
+            n.popup[3] + dy,
+        ];
     }
     if n == d.notes[i] {
         return Ok(json!({"index": i, "note": note_json(i, &n), "changed": false}));
@@ -114,7 +152,11 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     if n.text != d.notes[i].text || n.author != d.notes[i].author {
         n.modified = pdf_date();
     }
-    let label = if n.position != d.notes[i].position { "Move Note" } else { "Edit Note" };
+    let label = if n.position != d.notes[i].position {
+        "Move Note"
+    } else {
+        "Edit Note"
+    };
     let out = note_json(i, &n);
     s.edit(label, |d, _| {
         d.notes[i] = n;
@@ -150,16 +192,24 @@ fn read(path: &str) -> Result<Vec<u8>> {
 }
 #[cfg(target_arch = "wasm32")]
 fn read(path: &str) -> Result<Vec<u8>> {
-    Err(EngineError::Other(format!("cannot read {path}: no file system on the web")))
+    Err(EngineError::Other(format!(
+        "cannot read {path}: no file system on the web"
+    )))
 }
 
 /// File › Import › Notes…: append the notes of another PSD or `.pcraft` file. Notes outside the
 /// canvas are pulled inside, as Photoshop does when sizes differ.
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "file.import.notes";
-    let path = p.get("path").and_then(Value::as_str).ok_or_else(|| bad(CMD, "pass `path` (.psd, .psb or .pcraft)"))?;
+    let path = p
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or_else(|| bad(CMD, "pass `path` (.psd, .psb or .pcraft)"))?;
     let bytes = read(path)?;
-    let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.to_string());
     import_notes_from(s, &name, &bytes)
 }
 
@@ -173,10 +223,18 @@ pub fn import_notes_from(s: &mut Session, name: &str, bytes: &[u8]) -> Result<Va
     let (w, h) = (f64::from(d.size.width), f64::from(d.size.height));
     let mut notes = src.notes;
     for n in &mut notes {
-        let (nx, ny) = (n.position[0].clamp(0.0, (w - 16.0).max(0.0)), n.position[1].clamp(0.0, (h - 20.0).max(0.0)));
+        let (nx, ny) = (
+            n.position[0].clamp(0.0, (w - 16.0).max(0.0)),
+            n.position[1].clamp(0.0, (h - 20.0).max(0.0)),
+        );
         let (dx, dy) = (nx - n.position[0], ny - n.position[1]);
         n.position = [nx, ny];
-        n.popup = [n.popup[0] + dx, n.popup[1] + dy, n.popup[2] + dx, n.popup[3] + dy];
+        n.popup = [
+            n.popup[0] + dx,
+            n.popup[1] + dy,
+            n.popup[2] + dx,
+            n.popup[3] + dy,
+        ];
     }
     let count = notes.len();
     s.edit("Import Notes", |d, _| {
@@ -249,7 +307,8 @@ mod tests {
 
     fn session() -> Session {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 100, "height": 80})).unwrap();
+        s.execute("file.new", json!({"width": 100, "height": 80}))
+            .unwrap();
         s
     }
 
@@ -257,21 +316,37 @@ mod tests {
     fn add_edit_move_delete_with_undo() {
         let mut s = session();
         assert!(!s.is_enabled("notes.delete"));
-        let r = s.execute("notes.add", json!({"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"})).unwrap();
+        let r = s
+            .execute(
+                "notes.add",
+                json!({"x": 10, "y": 12, "text": "fix this", "author": "QA", "color": "#ff0000"}),
+            )
+            .unwrap();
         assert_eq!(r["index"], 0);
         assert_eq!(r["note"]["color"], json!([1.0, 0.0, 0.0]));
         s.execute("notes.add", json!({"x": 50, "y": 40})).unwrap();
-        s.execute("notes.set", json!({"index": 0, "text": "fixed", "x": 20})).unwrap();
+        s.execute("notes.set", json!({"index": 0, "text": "fixed", "x": 20}))
+            .unwrap();
         let d = s.active().unwrap().doc.clone();
         assert_eq!(d.notes[0].text, "fixed");
         assert_eq!(d.notes[0].position, [20.0, 12.0]);
         assert_eq!(d.notes[0].popup[0], 40.0);
         // Unchanged edits don't add history.
         let before = s.active().unwrap().history.past_len();
-        assert_eq!(s.execute("notes.set", json!({"index": 0, "text": "fixed"})).unwrap()["changed"], false);
+        assert_eq!(
+            s.execute("notes.set", json!({"index": 0, "text": "fixed"}))
+                .unwrap()["changed"],
+            false
+        );
         assert_eq!(s.active().unwrap().history.past_len(), before);
         s.execute("notes.delete", json!({"index": 1})).unwrap();
-        assert_eq!(s.execute("notes.list", json!({})).unwrap()["notes"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            s.execute("notes.list", json!({})).unwrap()["notes"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
         assert!(s.undo());
         assert_eq!(s.active().unwrap().doc.notes.len(), 2);
         s.execute("notes.delete", json!({"all": true})).unwrap();
@@ -284,10 +359,16 @@ mod tests {
         let mut s = session();
         assert!(s.execute("notes.add", json!({"x": 1})).is_err());
         s.execute("notes.add", json!({"x": 1, "y": 1})).unwrap();
-        assert!(s.execute("notes.set", json!({"index": 5, "text": "x"})).is_err());
+        assert!(
+            s.execute("notes.set", json!({"index": 5, "text": "x"}))
+                .is_err()
+        );
         assert!(s.execute("notes.set", json!({})).is_err());
         assert!(s.execute("file.import.notes", json!({})).is_err());
-        assert!(s.execute("file.import.notes", json!({"path": "/nonexistent/x.psd"})).is_err());
+        assert!(
+            s.execute("file.import.notes", json!({"path": "/nonexistent/x.psd"}))
+                .is_err()
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -295,12 +376,27 @@ mod tests {
     fn import_notes_from_pcraft_and_psd() {
         let dir = std::env::temp_dir().join(format!("pc-notes-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let mut src = Document::new("src", photocraft_doc::Size::new(400, 400), photocraft_color::ColorMode::Rgb, photocraft_color::SampleType::U8);
-        src.notes.push(Note { text: "from pcraft".into(), position: [300.0, 300.0], ..Default::default() });
+        let mut src = Document::new(
+            "src",
+            photocraft_doc::Size::new(400, 400),
+            photocraft_color::ColorMode::Rgb,
+            photocraft_color::SampleType::U8,
+        );
+        src.notes.push(Note {
+            text: "from pcraft".into(),
+            position: [300.0, 300.0],
+            ..Default::default()
+        });
         let pc = dir.join("a.pcraft");
-        std::fs::write(&pc, photocraft_format::save_to_bytes(&src, &Default::default()).unwrap()).unwrap();
+        std::fs::write(
+            &pc,
+            photocraft_format::save_to_bytes(&src, &Default::default()).unwrap(),
+        )
+        .unwrap();
         let mut s = session();
-        let r = s.execute("file.import.notes", json!({"path": pc.to_str().unwrap()})).unwrap();
+        let r = s
+            .execute("file.import.notes", json!({"path": pc.to_str().unwrap()}))
+            .unwrap();
         assert_eq!(r["imported"], 1);
         // Pulled inside the 100×80 canvas.
         let n = &s.active().unwrap().doc.notes[0];
@@ -309,16 +405,33 @@ mod tests {
         // A PSD with notes (corpus sample, feature `corpus`) appends two more.
         #[cfg(feature = "corpus")]
         {
-            let psd = concat!(env!("CARGO_MANIFEST_DIR"), "/../../corpus/psd/ag-psd/read-write/annotations/src.psd");
-            assert!(std::path::Path::new(psd).exists(), "{psd} is missing: run `cargo xtask corpus --all`");
-            s.execute("file.import.notes", json!({"path": psd})).unwrap();
+            let psd = concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../corpus/psd/ag-psd/read-write/annotations/src.psd"
+            );
+            assert!(
+                std::path::Path::new(psd).exists(),
+                "{psd} is missing: run `cargo xtask corpus --all`"
+            );
+            s.execute("file.import.notes", json!({"path": psd}))
+                .unwrap();
             assert_eq!(s.active().unwrap().doc.notes.len(), 3);
         }
         // A file without notes is an error.
         let empty = dir.join("b.pcraft");
         src.notes.clear();
-        std::fs::write(&empty, photocraft_format::save_to_bytes(&src, &Default::default()).unwrap()).unwrap();
-        assert!(s.execute("file.import.notes", json!({"path": empty.to_str().unwrap()})).is_err());
+        std::fs::write(
+            &empty,
+            photocraft_format::save_to_bytes(&src, &Default::default()).unwrap(),
+        )
+        .unwrap();
+        assert!(
+            s.execute(
+                "file.import.notes",
+                json!({"path": empty.to_str().unwrap()})
+            )
+            .is_err()
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -50,7 +50,19 @@ impl Store for Torn {
 
 fn add_photo(c: &mut Catalog) -> Op {
     let id = c.alloc_photo_id();
-    Op::AddPhoto { photo: Box::new(Photo::new(id, Source::File { path: format!("/p/{}.jpg", id.0) }, "p.jpg", "JPEG", 4, 3, "2026-01-01")) }
+    Op::AddPhoto {
+        photo: Box::new(Photo::new(
+            id,
+            Source::File {
+                path: format!("/p/{}.jpg", id.0),
+            },
+            "p.jpg",
+            "JPEG",
+            4,
+            3,
+            "2026-01-01",
+        )),
+    }
 }
 
 /// Apply `ops` to the live catalog (like a command) and return them for the journal.
@@ -71,7 +83,17 @@ fn partial_append_then_retry_loads_cleanly() {
     let first = apply(&mut c, vec![add]);
     j.append(&first).unwrap();
     let id = c.photos().next().unwrap().id;
-    let batch = apply(&mut c, vec![Op::SetRating { id, rating: 3 }, Op::SetFlag { id, flag: Flag::Pick }, Op::SetRating { id, rating: 4 }]);
+    let batch = apply(
+        &mut c,
+        vec![
+            Op::SetRating { id, rating: 3 },
+            Op::SetFlag {
+                id,
+                flag: Flag::Pick,
+            },
+            Op::SetRating { id, rating: 4 },
+        ],
+    );
     let before = probe.get(LOG).unwrap().len();
     j.append(&batch).unwrap();
     let batch_len = probe.get(LOG).unwrap().len() - before;
@@ -83,19 +105,39 @@ fn partial_append_then_retry_loads_cleanly() {
         let first = apply(&mut c, vec![add]);
         j.append(&first).unwrap();
         let good_len = t.files.get(LOG).unwrap().len();
-        let batch = apply(&mut c, vec![Op::SetRating { id, rating: 3 }, Op::SetFlag { id, flag: Flag::Pick }, Op::SetRating { id, rating: 4 }]);
+        let batch = apply(
+            &mut c,
+            vec![
+                Op::SetRating { id, rating: 3 },
+                Op::SetFlag {
+                    id,
+                    flag: Flag::Pick,
+                },
+                Op::SetRating { id, rating: 4 },
+            ],
+        );
         t.tear_next_append(tear);
         assert!(j.append(&batch).is_err(), "tear at {tear}");
         // cut back to the last whole record
         assert_eq!(t.files.get(LOG).unwrap().len(), good_len, "tear at {tear}");
         j.append(&batch).unwrap();
-        let more = apply(&mut c, vec![Op::SetLabel { id, label: Some(ColorLabel::ALL[0]) }]);
+        let more = apply(
+            &mut c,
+            vec![Op::SetLabel {
+                id,
+                label: Some(ColorLabel::ALL[0]),
+            }],
+        );
         j.append(&more).unwrap();
         drop(j);
 
         let (_, loaded, r) = Journal::open(Box::new(t.clone())).unwrap();
         assert!(r.damaged.is_none(), "tear at {tear}: {r:?}");
-        assert_eq!((r.torn_bytes, r.torn_fragments, r.replayed), (0, 0, 5), "tear at {tear}");
+        assert_eq!(
+            (r.torn_bytes, r.torn_fragments, r.replayed),
+            (0, 0, 5),
+            "tear at {tear}"
+        );
         assert_eq!(loaded.to_snapshot(), c.to_snapshot(), "tear at {tear}");
     }
 }
@@ -111,11 +153,21 @@ fn failed_cut_back_is_done_before_the_next_append() {
     j.append(&first).unwrap();
     let good_len = t.files.get(LOG).unwrap().len();
     let id = c.photos().next().unwrap().id;
-    let batch = apply(&mut c, vec![Op::SetRating { id, rating: 2 }, Op::SetRating { id, rating: 5 }]);
+    let batch = apply(
+        &mut c,
+        vec![
+            Op::SetRating { id, rating: 2 },
+            Op::SetRating { id, rating: 5 },
+        ],
+    );
     t.truncate_fails.store(true, Ordering::SeqCst);
     t.tear_next_append(30);
     assert!(j.append(&batch).is_err());
-    assert_eq!(t.files.get(LOG).unwrap().len(), good_len + 30, "the fragment is still there");
+    assert_eq!(
+        t.files.get(LOG).unwrap().len(),
+        good_len + 30,
+        "the fragment is still there"
+    );
     // still unreachable: the retry fails without writing anything after the fragment
     assert!(j.append(&batch).is_err());
     assert_eq!(t.files.get(LOG).unwrap().len(), good_len + 30);
@@ -144,8 +196,14 @@ fn legacy_fragment_glued_to_the_retry_is_skipped() {
         &mut c,
         vec![
             Op::SetRating { id, rating: 3 },
-            Op::SetFlag { id, flag: Flag::Pick },
-            Op::SetLabelName { label: ColorLabel::ALL[1], name: Some("Größe ✓".into()) },
+            Op::SetFlag {
+                id,
+                flag: Flag::Pick,
+            },
+            Op::SetLabelName {
+                label: ColorLabel::ALL[1],
+                name: Some("Größe ✓".into()),
+            },
         ],
     );
     j.append(&batch).unwrap();
@@ -194,7 +252,16 @@ fn snapshot_with_unlogged_ops_saves_them() {
     let first = apply(&mut c, vec![add]);
     j.append(&first).unwrap();
     let id = c.photos().next().unwrap().id;
-    let queued = apply(&mut c, vec![Op::SetRating { id, rating: 2 }, Op::SetFlag { id, flag: Flag::Reject }]);
+    let queued = apply(
+        &mut c,
+        vec![
+            Op::SetRating { id, rating: 2 },
+            Op::SetFlag {
+                id,
+                flag: Flag::Reject,
+            },
+        ],
+    );
     t.tear_next_append(10);
     assert!(j.append(&queued).is_err());
     j.snapshot_with_unlogged(&c, queued.len() as u64).unwrap();

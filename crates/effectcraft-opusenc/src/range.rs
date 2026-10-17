@@ -264,7 +264,8 @@ pub(crate) mod dec {
                 end_offs: 0,
                 end_window: 0,
                 nend_bits: 0,
-                nbits_total: (CODE_BITS + 1 - ((CODE_BITS - CODE_EXTRA) / SYM_BITS) * SYM_BITS) as i32,
+                nbits_total: (CODE_BITS + 1 - ((CODE_BITS - CODE_EXTRA) / SYM_BITS) * SYM_BITS)
+                    as i32,
                 rng: 1 << CODE_EXTRA,
                 val: 0,
                 rem: 0,
@@ -312,7 +313,11 @@ pub(crate) mod dec {
             let ext = self.rng / ft;
             let s = ext * (ft - fh);
             self.val = self.val.wrapping_sub(s);
-            self.rng = if fl > 0 { ext * (fh - fl) } else { self.rng - s };
+            self.rng = if fl > 0 {
+                ext * (fh - fl)
+            } else {
+                self.rng - s
+            };
             self.normalize();
         }
         pub fn bit_logp(&mut self, logp: u32) -> bool {

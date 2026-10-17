@@ -43,8 +43,9 @@ use vectorcraft_color::gradient::Gradient;
 use vectorcraft_color::swatch::Swatch;
 use vectorcraft_color::{BlendMode, Paint};
 use vectorcraft_doc::{
-    Appearance, AppearanceItem, Artboard, ColorMode, Dash, Document, FillLayer, ImageBlob, ImageObject, Knockout, LayerColor, LineCap, LineJoin,
-    LinkInfo, Node, NodeId, NodeKind, PatternDef, StrokeLayer,
+    Appearance, AppearanceItem, Artboard, ColorMode, Dash, Document, FillLayer, ImageBlob,
+    ImageObject, Knockout, LayerColor, LineCap, LineJoin, LinkInfo, Node, NodeId, NodeKind,
+    PatternDef, StrokeLayer,
 };
 use vectorcraft_geom::{FillRule, PathData};
 
@@ -98,12 +99,17 @@ pub(crate) const TEXT_SLOT: &str = "\u{0}text";
 
 /// Is `name` that of a text slot, and which story is it of?
 pub(crate) fn slot_of(name: Option<&str>) -> Option<Option<u32>> {
-    name?.strip_prefix(TEXT_SLOT).map(|rest| rest.split(':').next().and_then(|s| s.parse().ok()))
+    name?
+        .strip_prefix(TEXT_SLOT)
+        .map(|rest| rest.split(':').next().and_then(|s| s.parse().ok()))
 }
 
 /// Which of its story's frames a text slot named `name` is (0 when it doesn't say).
 pub(crate) fn slot_frame(name: Option<&str>) -> usize {
-    name.and_then(|n| n.strip_prefix(TEXT_SLOT)).and_then(|rest| rest.split_once(':')).and_then(|(_, f)| f.parse().ok()).unwrap_or(0)
+    name.and_then(|n| n.strip_prefix(TEXT_SLOT))
+        .and_then(|rest| rest.split_once(':'))
+        .and_then(|(_, f)| f.parse().ok())
+        .unwrap_or(0)
 }
 
 /// Read the structure of the editing data `data`.
@@ -140,7 +146,11 @@ fn artboard_array(data: &[u8]) -> Option<&[u8]> {
     let mut depth = 0usize;
     let mut line_end = head.len();
     loop {
-        let line_start = head.get(..line_end)?.iter().rposition(|&b| b == b'\n' || b == b'\r').map_or(0, |at| at + 1);
+        let line_start = head
+            .get(..line_end)?
+            .iter()
+            .rposition(|&b| b == b'\n' || b == b'\r')
+            .map_or(0, |at| at + 1);
         if let Some(text) = head.get(line_start..line_end)?.strip_prefix(b"%_") {
             if text.starts_with(b";") || text.starts_with(b"/Def ;") {
                 depth += 1;
@@ -160,7 +170,17 @@ fn artboard_array(data: &[u8]) -> Option<&[u8]> {
 fn artboards_read(data: &[u8]) -> Vec<(String, Rect)> {
     let mut r = Reader::new(data);
     let _ = r.run();
-    let open: Vec<Obj> = r.frames.iter().filter_map(|f| if let Kind::Obj(o) = &f.kind { Some((**o).clone()) } else { None }).collect();
+    let open: Vec<Obj> = r
+        .frames
+        .iter()
+        .filter_map(|f| {
+            if let Kind::Obj(o) = &f.kind {
+                Some((**o).clone())
+            } else {
+                None
+            }
+        })
+        .collect();
     for o in &open {
         if r.artboards.is_empty() {
             r.document(o);
@@ -306,8 +326,7 @@ struct Place {
 }
 
 /// What the open result says of placed files: they show the preview the file keeps of them.
-const LINKED_PREVIEWS: &str =
-    "linked pictures show the low-resolution preview saved in the file until their files are found: relink them in the Links panel";
+const LINKED_PREVIEWS: &str = "linked pictures show the low-resolution preview saved in the file until their files are found: relink them in the Links panel";
 
 struct Reader<'a> {
     lex: Lexer<'a>,
@@ -446,15 +465,22 @@ const SKIPPED: &[(&str, &str)] = &[
 
 /// The note for a `/ForeignObject` (non-native art, the content of a placed PDF, which the editor
 /// shows but doesn't edit) whose PDF can't be read.
-pub const NON_NATIVE_ART_UNREAD: &str = "non-native art (a placed PDF's content) that VectorCraft can't read is left out";
+pub const NON_NATIVE_ART_UNREAD: &str =
+    "non-native art (a placed PDF's content) that VectorCraft can't read is left out";
 /// The name of the group a `/ForeignObject`'s art comes in as.
 pub const NON_NATIVE_ART: &str = "Non-native art";
 
 /// A section comment's marker without its `AI<version>_` prefix and value (`AI14_BeginSymbol` →
 /// `BeginSymbol`); DSC comments (`%%BeginProlog`) keep their `%`.
 fn marker(c: &str) -> &str {
-    let word = c.split(|ch: char| ch == ':' || ch.is_whitespace()).next().unwrap_or(c);
-    word.strip_prefix("AI").map(|r| r.trim_start_matches(|ch: char| ch.is_ascii_digit())).and_then(|r| r.strip_prefix('_')).unwrap_or(word)
+    let word = c
+        .split(|ch: char| ch == ':' || ch.is_whitespace())
+        .next()
+        .unwrap_or(c);
+    word.strip_prefix("AI")
+        .map(|r| r.trim_start_matches(|ch: char| ch.is_ascii_digit()))
+        .and_then(|r| r.strip_prefix('_'))
+        .unwrap_or(word)
 }
 
 impl<'a> Reader<'a> {
@@ -553,7 +579,11 @@ impl<'a> Reader<'a> {
 
     /// The operands of the operator being run (above the innermost dictionary's), taken off.
     fn operands(&mut self) -> Vec<V> {
-        let base = self.frames.last().map_or(0, |f| f.base).min(self.stack.len());
+        let base = self
+            .frames
+            .last()
+            .map_or(0, |f| f.base)
+            .min(self.stack.len());
         self.stack.split_off(base)
     }
 
@@ -614,7 +644,10 @@ impl<'a> Reader<'a> {
         {
             self.bbox = four(v).or(self.bbox);
         } else if let Some(v) = line.strip_prefix("AI3_Cropmarks:") {
-            let n: Vec<f64> = v.split_whitespace().filter_map(|w| w.parse().ok()).collect();
+            let n: Vec<f64> = v
+                .split_whitespace()
+                .filter_map(|w| w.parse().ok())
+                .collect();
             if let [x0, y0, x1, y1] = n.as_slice() {
                 let r = Rect::new(*x0, *y0, *x1, *y1);
                 if sane(r) {
@@ -640,13 +673,22 @@ impl<'a> Reader<'a> {
 
     /// [`Self::skip_to`] → what was skipped, up to the comment that ends it.
     fn section(&mut self, end: &str) -> Result<&'a [u8], String> {
-        let begin = SKIPPED.iter().find(|(_, e)| *e == end).map_or("", |(b, _)| *b);
-        let begin = if end == "End_Versioned_Content" { "Begin_Content_if_version_gt" } else { begin };
+        let begin = SKIPPED
+            .iter()
+            .find(|(_, e)| *e == end)
+            .map_or("", |(b, _)| *b);
+        let begin = if end == "End_Versioned_Content" {
+            "Begin_Content_if_version_gt"
+        } else {
+            begin
+        };
         let start = self.lex.offset();
         let mut depth = 0usize;
         loop {
             let before = self.lex.offset();
-            let Some(t) = self.lex.next_token() else { break };
+            let Some(t) = self.lex.next_token() else {
+                break;
+            };
             if let Tok::Comment(c) = t.tok {
                 let line = String::from_utf8_lossy(c);
                 let m = marker(&line);
@@ -679,15 +721,30 @@ impl<'a> Reader<'a> {
         let read = sub.open(Kind::Group, false).and_then(|()| sub.run());
         self.nodes = sub.nodes;
         self.gradients = std::mem::take(&mut sub.gradients);
-        let whole = read.is_ok() && sub.unsupported.is_empty() && sub.unknown.is_empty() && sub.frames.len() == 1;
-        let (Some(head), Some(frame)) = (sub.pattern.take(), sub.frames.pop()) else { return };
-        let Some(tile) = head.tile.filter(|t| whole && sane(*t) && t.width() > 0.0 && t.height() > 0.0 && !frame.children.is_empty()) else {
+        let whole = read.is_ok()
+            && sub.unsupported.is_empty()
+            && sub.unknown.is_empty()
+            && sub.frames.len() == 1;
+        let (Some(head), Some(frame)) = (sub.pattern.take(), sub.frames.pop()) else {
             return;
         };
-        let art: Vec<Arc<Node>> = frame.children.iter().map(|n| Arc::new(self.doc.reid(n))).collect();
+        let Some(tile) = head.tile.filter(|t| {
+            whole && sane(*t) && t.width() > 0.0 && t.height() > 0.0 && !frame.children.is_empty()
+        }) else {
+            return;
+        };
+        let art: Vec<Arc<Node>> = frame
+            .children
+            .iter()
+            .map(|n| Arc::new(self.doc.reid(n)))
+            .collect();
         let mut def = PatternDef::new(&head.name, art);
         def.tile = FLIP.transform_rect_bbox(tile);
-        if self.pattern_tiles.insert(def.name.clone(), def.tile.origin()).is_some() {
+        if self
+            .pattern_tiles
+            .insert(def.name.clone(), def.tile.origin())
+            .is_some()
+        {
             self.doc.patterns.retain(|p| p.name != def.name);
         }
         self.doc.patterns.push(def);
@@ -705,11 +762,18 @@ impl<'a> Reader<'a> {
     /// In a pattern's definition, the operands of its first operator start with its head,
     /// `(name) llx lly urx ury`: taken off them.
     fn take_head(&mut self, mut vals: Vec<V>) -> Vec<V> {
-        let Some(head) = self.pattern.as_mut().filter(|h| !h.taken) else { return vals };
+        let Some(head) = self.pattern.as_mut().filter(|h| !h.taken) else {
+            return vals;
+        };
         head.taken = true;
-        let Some(at) = vals.iter().position(|v| matches!(v, V::Str(_))) else { return vals };
+        let Some(at) = vals.iter().position(|v| matches!(v, V::Str(_))) else {
+            return vals;
+        };
         let tile = Self::nums(vals.get(at + 1..at + 5).unwrap_or_default());
-        let ([x0, y0, x1, y1], Some(name)) = (tile.as_slice(), vals.get(at).and_then(V::text)) else { return vals };
+        let ([x0, y0, x1, y1], Some(name)) = (tile.as_slice(), vals.get(at).and_then(V::text))
+        else {
+            return vals;
+        };
         head.name = name;
         head.tile = Some(Rect::new(*x0, *y0, *x1, *y1));
         vals.split_off(at + 5)
@@ -724,8 +788,20 @@ impl<'a> Reader<'a> {
         if matches!(kind, Kind::Layer(_)) {
             self.ensure_space();
         }
-        let base = if matches!(kind, Kind::Obj(_)) { self.stack.len() } else { self.frames.last().map_or(0, |f| f.base) };
-        self.frames.push(Frame { kind, children: Vec::new(), hidden, after: self.after_object, gs: self.gs.clone(), base, clips: Vec::new() });
+        let base = if matches!(kind, Kind::Obj(_)) {
+            self.stack.len()
+        } else {
+            self.frames.last().map_or(0, |f| f.base)
+        };
+        self.frames.push(Frame {
+            kind,
+            children: Vec::new(),
+            hidden,
+            after: self.after_object,
+            gs: self.gs.clone(),
+            base,
+            clips: Vec::new(),
+        });
         self.after_object = false;
         Ok(())
     }
@@ -733,7 +809,10 @@ impl<'a> Reader<'a> {
     /// Close the innermost frame, which must be of the kind `is` accepts.
     fn close(&mut self, what: &str, is: impl Fn(&Kind) -> bool) -> Result<Frame, String> {
         match self.frames.last() {
-            Some(f) if is(&f.kind) => self.frames.pop().ok_or_else(|| format!("`{what}` closes nothing")),
+            Some(f) if is(&f.kind) => self
+                .frames
+                .pop()
+                .ok_or_else(|| format!("`{what}` closes nothing")),
             _ => Err(format!("`{what}` closes something it didn't open")),
         }
     }
@@ -776,7 +855,14 @@ impl<'a> Reader<'a> {
             "*U" => self.close(what, |k| matches!(k, Kind::Compound))?,
             _ => self.close(what, |k| matches!(k, Kind::Clip))?,
         };
-        let Frame { kind, children: kids, gs, clips, hidden: opened_hidden, .. } = f;
+        let Frame {
+            kind,
+            children: kids,
+            gs,
+            clips,
+            hidden: opened_hidden,
+            ..
+        } = f;
         // A compound path of clipping paths clips its clipping group.
         let clipping = matches!(kind, Kind::Compound) && !clips.is_empty();
         self.group_ended = !matches!(kind, Kind::Compound);
@@ -790,9 +876,13 @@ impl<'a> Reader<'a> {
             Kind::Compound => {
                 // A group in a compound path (`*u u … U *U`) only holds its paths. Clipping subpaths'
                 // painted copies make a compound of their own, under what it clips.
-                let (fills, kids): (Vec<Node>, Vec<Node>) = ungrouped(kids).into_iter().partition(|n| self.clip_fills.contains(&n.id));
+                let (fills, kids): (Vec<Node>, Vec<Node>) = ungrouped(kids)
+                    .into_iter()
+                    .partition(|n| self.clip_fills.contains(&n.id));
                 painted = self.compound(fills, &gs);
-                let Some(n) = self.compound(kids, &gs) else { return Ok(()) };
+                let Some(n) = self.compound(kids, &gs) else {
+                    return Ok(());
+                };
                 n
             }
             // A group with a clipping path (`q` … `Q`, or a `W` path in a group) is a clipping group.
@@ -816,15 +906,30 @@ impl<'a> Reader<'a> {
     fn compound(&mut self, mut kids: Vec<Node>, gs: &GState) -> Option<Node> {
         // The compound path's paint is its last path's (a gradient's instance wraps only
         // that one); the last painted one, should the last have none.
-        let shown = kids.iter().rev().find(|k| !k.appearance.items.is_empty()).or(kids.last())?;
-        let (appearance, opacity, blend, rule) = (shown.appearance.clone(), shown.opacity, shown.blend, path_rule(shown));
+        let shown = kids
+            .iter()
+            .rev()
+            .find(|k| !k.appearance.items.is_empty())
+            .or(kids.last())?;
+        let (appearance, opacity, blend, rule) = (
+            shown.appearance.clone(),
+            shown.opacity,
+            shown.blend,
+            path_rule(shown),
+        );
         for k in &mut kids {
             k.opacity = 1.0;
             k.blend = BlendMode::Normal;
             k.visible = true;
             k.locked = false;
         }
-        let mut n = self.new_node(NodeKind::Compound { children: kids.into_iter().map(Arc::new).collect(), rule }, gs);
+        let mut n = self.new_node(
+            NodeKind::Compound {
+                children: kids.into_iter().map(Arc::new).collect(),
+                rule,
+            },
+            gs,
+        );
         n.appearance = appearance;
         n.opacity = opacity;
         n.blend = blend;
@@ -834,31 +939,55 @@ impl<'a> Reader<'a> {
     /// `kids` with the clipping paths among them (indexes `clips`) first, several as one compound
     /// path → the children and whether they clip.
     fn clip_first(&mut self, kids: Vec<Node>, clips: &[usize]) -> (Vec<Arc<Node>>, bool) {
-        let (mut clip, rest): (Vec<Indexed>, Vec<Indexed>) = kids.into_iter().enumerate().partition(|(i, _)| clips.contains(i));
+        let (mut clip, rest): (Vec<Indexed>, Vec<Indexed>) = kids
+            .into_iter()
+            .enumerate()
+            .partition(|(i, _)| clips.contains(i));
         let clip_node = match clip.len() {
             0 => None,
             1 => clip.pop().map(|(_, n)| n),
             _ => {
-                let rule = clip.first().map_or(FillRule::NonZero, |(_, n)| path_rule(n));
+                let rule = clip
+                    .first()
+                    .map_or(FillRule::NonZero, |(_, n)| path_rule(n));
                 let children = clip.into_iter().map(|(_, n)| Arc::new(n)).collect();
-                Some(Node::new(self.doc.alloc_id(), NodeKind::Compound { children, rule }))
+                Some(Node::new(
+                    self.doc.alloc_id(),
+                    NodeKind::Compound { children, rule },
+                ))
             }
         };
         let clips = clip_node.is_some();
         // A clipping path's own fill paints under the art it clips.
-        let (fills, rest): (Vec<Indexed>, Vec<Indexed>) = rest.into_iter().partition(|(_, n)| self.clip_fills.contains(&n.id));
-        let children = clip_node.into_iter().chain(fills.into_iter().chain(rest).map(|(_, n)| n)).map(Arc::new).collect();
+        let (fills, rest): (Vec<Indexed>, Vec<Indexed>) = rest
+            .into_iter()
+            .partition(|(_, n)| self.clip_fills.contains(&n.id));
+        let children = clip_node
+            .into_iter()
+            .chain(fills.into_iter().chain(rest).map(|(_, n)| n))
+            .map(Arc::new)
+            .collect();
         (children, clips)
     }
 
     fn end_layer(&mut self) -> Result<(), String> {
         let f = self.close("LB", |k| matches!(k, Kind::Layer(_)))?;
-        let Kind::Layer(a) = f.kind else { return Ok(()) };
+        let Kind::Layer(a) = f.kind else {
+            return Ok(());
+        };
         let (children, clip) = self.clip_first(f.children, &f.clips);
         let color = a.color.unwrap_or(LayerColor::Preset(0));
         let mut layer = Node::new(
             self.doc.alloc_id(),
-            NodeKind::Layer { color, template: false, printable: a.printable, children, clip, preview: a.preview, dim_images: a.dim },
+            NodeKind::Layer {
+                color,
+                template: false,
+                printable: a.printable,
+                children,
+                clip,
+                preview: a.preview,
+                dim_images: a.dim,
+            },
         );
         layer.name = Some(a.name.clone());
         layer.visible = a.visible;
@@ -898,7 +1027,12 @@ impl<'a> Reader<'a> {
             }
             ":" => return self.begin_obj(hidden),
             "," => {
-                if let Some(Frame { kind: Kind::Obj(o), base, .. }) = self.frames.last_mut() {
+                if let Some(Frame {
+                    kind: Kind::Obj(o),
+                    base,
+                    ..
+                }) = self.frames.last_mut()
+                {
                     obj::add_entry(o, &mut self.stack, *base);
                     // Binary data in ASCII85 follows, up to its `~>`: a `/Binary` dictionary's
                     // (`/ASCII85Decode ,`) or a non-native art object's (`/ForeignObject`'s
@@ -928,7 +1062,8 @@ impl<'a> Reader<'a> {
             match w {
                 "Bs" => d.stop(&vals, &mut self.spots),
                 "BD" => {
-                    if let Some((name, g)) = self.gradient_def.take().and_then(GradientDef::finish) {
+                    if let Some((name, g)) = self.gradient_def.take().and_then(GradientDef::finish)
+                    {
                         self.gradients.insert(name, g);
                     }
                 }
@@ -937,7 +1072,13 @@ impl<'a> Reader<'a> {
             return Ok(());
         }
         if w == "X!" || self.mesh.is_some() {
-            let name = vals.iter().rev().find_map(|v| if let V::Name(n) = v { Some(n.as_str()) } else { None });
+            let name = vals.iter().rev().find_map(|v| {
+                if let V::Name(n) = v {
+                    Some(n.as_str())
+                } else {
+                    None
+                }
+            });
             match (w, name) {
                 ("X!", Some("Mesh")) => {
                     self.end_path_quietly();
@@ -973,7 +1114,11 @@ impl<'a> Reader<'a> {
             "U" | "*U" | "Q" => self.end_container(w, hidden)?,
             "Lb" => self.layer_attrs(&vals),
             "Ln" => {
-                if let Some(Frame { kind: Kind::Layer(a), .. }) = self.frames.last_mut() {
+                if let Some(Frame {
+                    kind: Kind::Layer(a),
+                    ..
+                }) = self.frames.last_mut()
+                {
                     a.name = vals.iter().rev().find_map(V::text).unwrap_or_default();
                 }
             }
@@ -986,19 +1131,34 @@ impl<'a> Reader<'a> {
             "W" => self.clip_next = true,
             "N" | "n" | "F" | "f" | "S" | "s" | "B" | "b" => self.paint(w, hidden, false)?,
             "*" => {
-                let op = vals.iter().rev().find_map(V::text).unwrap_or_else(|| "N".into());
+                let op = vals
+                    .iter()
+                    .rev()
+                    .find_map(V::text)
+                    .unwrap_or_else(|| "N".into());
                 self.paint(&op, hidden, true)?;
             }
             // Colours.
-            "g" | "G" | "k" | "K" | "x" | "X" | "Xa" | "XA" | "Xx" | "XX" | "Xk" | "XK" => self.color(w, &vals),
+            "g" | "G" | "k" | "K" | "x" | "X" | "Xa" | "XA" | "Xx" | "XX" | "Xk" | "XK" => {
+                self.color(w, &vals)
+            }
             "p" | "P" => self.pattern_paint(w, &vals),
             // A pattern's definition ends.
             "E" if self.pattern.is_some() => self.done = true,
             "O" => self.gs.overprint_fill = Self::nums(&vals).last() == Some(&1.0),
             "R" => self.gs.overprint_stroke = Self::nums(&vals).last() == Some(&1.0),
-            "XR" => self.gs.rule = if Self::nums(&vals).last() == Some(&1.0) { FillRule::EvenOdd } else { FillRule::NonZero },
+            "XR" => {
+                self.gs.rule = if Self::nums(&vals).last() == Some(&1.0) {
+                    FillRule::EvenOdd
+                } else {
+                    FillRule::NonZero
+                }
+            }
             "w" => {
-                if let Some(v) = Self::nums(&vals).last().filter(|v| v.is_finite() && **v >= 0.0) {
+                if let Some(v) = Self::nums(&vals)
+                    .last()
+                    .filter(|v| v.is_finite() && **v >= 0.0)
+                {
                     self.gs.width = *v;
                 }
             }
@@ -1017,7 +1177,10 @@ impl<'a> Reader<'a> {
                 }
             }
             "M" => {
-                if let Some(v) = Self::nums(&vals).last().filter(|v| v.is_finite() && **v >= 1.0) {
+                if let Some(v) = Self::nums(&vals)
+                    .last()
+                    .filter(|v| v.is_finite() && **v >= 1.0)
+                {
                     self.gs.miter = v.min(500.0);
                 }
             }
@@ -1028,8 +1191,12 @@ impl<'a> Reader<'a> {
             // the file's PDF part draws it. A look's group (`9 () XW`) has no state of its own.
             "Xd" if group_ended => {
                 let gs = self.gs.clone();
-                if let Some(n) = self.last_object().filter(|n| matches!(n.kind, NodeKind::Group { .. })) {
-                    (n.opacity, n.blend, n.isolate, n.knockout) = (gs.opacity, gs.blend, gs.isolate, gs.knockout);
+                if let Some(n) = self
+                    .last_object()
+                    .filter(|n| matches!(n.kind, NodeKind::Group { .. }))
+                {
+                    (n.opacity, n.blend, n.isolate, n.knockout) =
+                        (gs.opacity, gs.blend, gs.isolate, gs.knockout);
                 }
             }
             "Xw" => self.gs.hidden = Self::nums(&vals).last() == Some(&1.0),
@@ -1076,18 +1243,30 @@ impl<'a> Reader<'a> {
             }
             // Placed files.
             "`" if self.place.is_some() => {
-                let matrix = vals.iter().find_map(|v| if let V::Arr(a) = v { Some(Self::nums(a)) } else { None });
+                let matrix = vals.iter().find_map(|v| {
+                    if let V::Arr(a) = v {
+                        Some(Self::nums(a))
+                    } else {
+                        None
+                    }
+                });
                 let path = vals.iter().rev().find_map(V::text).unwrap_or_default();
                 if let Some(p) = self.place.as_mut() {
-                    p.matrix = matrix.and_then(|m| <[f64; 6]>::try_from(m).ok()).map(Affine::new);
-                    p.bounds =
-                        Self::nums(&vals).get(..4).and_then(|b| <[f64; 4]>::try_from(b).ok()).map(|[x0, y0, x1, y1]| Rect::new(x0, y0, x1, y1));
+                    p.matrix = matrix
+                        .and_then(|m| <[f64; 6]>::try_from(m).ok())
+                        .map(Affine::new);
+                    p.bounds = Self::nums(&vals)
+                        .get(..4)
+                        .and_then(|b| <[f64; 4]>::try_from(b).ok())
+                        .map(|[x0, y0, x1, y1]| Rect::new(x0, y0, x1, y1));
                     p.path = path;
                 }
             }
             "~" if self.place.is_some() => self.end_place(hidden)?,
             // Type in the legacy format.
-            "To" | "TO" | "Tp" | "TP" | "Tx" | "TX" | "Tj" | "Tk" => self.unreadable("type in the legacy format"),
+            "To" | "TO" | "Tp" | "TP" | "Tx" | "TX" | "Tj" | "Tk" => {
+                self.unreadable("type in the legacy format")
+            }
             _ if IGNORED.contains(&w) => {}
             // Before the art, the setup runs procedures of the printing format.
             _ if self.frames.is_empty() => {}
@@ -1115,7 +1294,13 @@ impl<'a> Reader<'a> {
             }
             None => String::new(),
         };
-        self.open(Kind::Obj(Box::new(Obj { ty, ..Obj::default() })), hidden)?;
+        self.open(
+            Kind::Obj(Box::new(Obj {
+                ty,
+                ..Obj::default()
+            })),
+            hidden,
+        )?;
         // A dictionary's state starts afresh (styles set theirs inside).
         self.gs = GState::default();
         Ok(())
@@ -1123,17 +1308,33 @@ impl<'a> Reader<'a> {
 
     /// `;`: the innermost dictionary closes.
     fn end_obj(&mut self) -> Result<(), String> {
-        if !matches!(self.frames.last(), Some(Frame { kind: Kind::Obj(_), .. })) {
+        if !matches!(
+            self.frames.last(),
+            Some(Frame {
+                kind: Kind::Obj(_),
+                ..
+            })
+        ) {
             return Ok(());
         }
-        let Some(f) = self.frames.pop() else { return Ok(()) };
-        let Kind::Obj(mut o) = f.kind else { return Ok(()) };
+        let Some(f) = self.frames.pop() else {
+            return Ok(());
+        };
+        let Kind::Obj(mut o) = f.kind else {
+            return Ok(());
+        };
         obj::close(&mut o, &mut self.stack, f.base);
         self.obj_hidden = f.hidden;
         // Art made inside a dictionary (type's paths) isn't kept.
         self.gs = f.gs;
         self.after_object = f.after;
-        if matches!(self.frames.last(), Some(Frame { kind: Kind::Obj(_), .. })) {
+        if matches!(
+            self.frames.last(),
+            Some(Frame {
+                kind: Kind::Obj(_),
+                ..
+            })
+        ) {
             return self.push(V::Obj(Rc::new(*o)));
         }
         match o.ty.as_str() {
@@ -1158,11 +1359,26 @@ impl<'a> Reader<'a> {
         if o.nums("FreeUndo").first() == Some(&1.0) {
             return Ok(());
         }
-        let index = |key: &str| o.nums(key).first().copied().filter(|v| (0.0..f64::from(u32::MAX)).contains(v)).map(|v| v as u32);
+        let index = |key: &str| {
+            o.nums(key)
+                .first()
+                .copied()
+                .filter(|v| (0.0..f64::from(u32::MAX)).contains(v))
+                .map(|v| v as u32)
+        };
         let (story, frame) = (index("StoryIndex"), index("FrameIndex").unwrap_or(0));
         let gs = self.gs.clone();
-        let mut n = self.new_node(NodeKind::Group { children: vec![], clip: false }, &gs);
-        n.name = Some(story.map_or_else(|| TEXT_SLOT.to_string(), |s| format!("{TEXT_SLOT}{s}:{frame}")));
+        let mut n = self.new_node(
+            NodeKind::Group {
+                children: vec![],
+                clip: false,
+            },
+            &gs,
+        );
+        n.name = Some(story.map_or_else(
+            || TEXT_SLOT.to_string(),
+            |s| format!("{TEXT_SLOT}{s}:{frame}"),
+        ));
         let hidden = self.obj_hidden;
         self.add(n, hidden)
     }
@@ -1174,29 +1390,43 @@ impl<'a> Reader<'a> {
     /// around it). The PDF importer reads the PDF, and its art is fitted to the box, as one
     /// group. Without data, or with a PDF that can't be read, nothing is drawn.
     fn foreign_art(&mut self, o: &Obj) -> Result<(), String> {
-        let Some(text) = self.foreign_data.take() else { return Ok(()) };
+        let Some(text) = self.foreign_data.take() else {
+            return Ok(());
+        };
         // One `%` starts each line; the rest, `_` included, is data.
         let mut encoded = String::with_capacity(text.len());
         for line in text.split(|b| matches!(b, b'\r' | b'\n')) {
-            encoded.push_str(&String::from_utf8_lossy(line.strip_prefix(b"%").unwrap_or(line)));
+            encoded.push_str(&String::from_utf8_lossy(
+                line.strip_prefix(b"%").unwrap_or(line),
+            ));
         }
         let Some(pdf) = ps::ascii85_decode(&encoded) else {
             self.warn(NON_NATIVE_ART_UNREAD);
             return Ok(());
         };
-        let (rt, origin, bounds) = (o.get("RTransform").map(Self::nums), o.get("Origin").map(Self::nums), o.get("Bounds").map(Self::nums));
-        let (Some([a, b, c, d, tx, ty]), Some([ox, oy]), Some([x0, y0, x1, y1])) = (rt.as_deref(), origin.as_deref(), bounds.as_deref()) else {
+        let (rt, origin, bounds) = (
+            o.get("RTransform").map(Self::nums),
+            o.get("Origin").map(Self::nums),
+            o.get("Bounds").map(Self::nums),
+        );
+        let (Some([a, b, c, d, tx, ty]), Some([ox, oy]), Some([x0, y0, x1, y1])) =
+            (rt.as_deref(), origin.as_deref(), bounds.as_deref())
+        else {
             self.warn(NON_NATIVE_ART_UNREAD);
             return Ok(());
         };
-        let place = Affine::new([*a, *b, *c, *d, *tx, *ty]) * Affine::new([1.0, 0.0, 0.0, -1.0, *ox, *oy]);
+        let place =
+            Affine::new([*a, *b, *c, *d, *tx, *ty]) * Affine::new([1.0, 0.0, 0.0, -1.0, *ox, *oy]);
         let art_box = place.transform_rect_bbox(Rect::new(*x0, *y0, *x1, *y1));
         if !sane(art_box) || art_box.width() <= 0.0 || art_box.height() <= 0.0 {
             self.warn(NON_NATIVE_ART_UNREAD);
             return Ok(());
         }
         let target = self.space().transform_rect_bbox(art_box);
-        let opts = vectorcraft_pdf::ImportOptions { layers: false, ..Default::default() };
+        let opts = vectorcraft_pdf::ImportOptions {
+            layers: false,
+            ..Default::default()
+        };
         let read = match vectorcraft_pdf::import_with_report(&pdf, &opts) {
             Ok(r) => r,
             Err(e) => {
@@ -1204,8 +1434,19 @@ impl<'a> Reader<'a> {
                 return Ok(());
             }
         };
-        let mut art: Vec<Node> = read.document.layers.iter().filter_map(|l| l.children()).flatten().map(|n| n.as_ref().clone()).collect();
-        let Some(bbox) = art.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.geometric_bounds())) else { return Ok(()) };
+        let mut art: Vec<Node> = read
+            .document
+            .layers
+            .iter()
+            .filter_map(|l| l.children())
+            .flatten()
+            .map(|n| n.as_ref().clone())
+            .collect();
+        let Some(bbox) = art.iter().fold(None, |acc, n| {
+            vectorcraft_geom::union_opt(acc, n.geometric_bounds())
+        }) else {
+            return Ok(());
+        };
         if bbox.width() <= 0.0 || bbox.height() <= 0.0 {
             return Ok(());
         }
@@ -1213,7 +1454,10 @@ impl<'a> Reader<'a> {
         // the object's space has y down, and the PDF's content is kept in its own y-up
         // coordinates, so the PDF's bottom is the top of the box.
         let fit = Affine::translate((target.x0, target.y1))
-            * Affine::scale_non_uniform(target.width() / bbox.width(), -target.height() / bbox.height())
+            * Affine::scale_non_uniform(
+                target.width() / bbox.width(),
+                -target.height() / bbox.height(),
+            )
             * Affine::translate((-bbox.x0, -bbox.y0));
         for n in &mut art {
             n.transform(fit, true);
@@ -1224,7 +1468,13 @@ impl<'a> Reader<'a> {
             self.doc.images.entry(key).or_insert(blob);
         }
         let gs = self.gs.clone();
-        let mut group = self.new_node(NodeKind::Group { children: art.into_iter().map(Arc::new).collect(), clip: false }, &gs);
+        let mut group = self.new_node(
+            NodeKind::Group {
+                children: art.into_iter().map(Arc::new).collect(),
+                clip: false,
+            },
+            &gs,
+        );
         group.name = Some(NON_NATIVE_ART.into());
         self.add(group, self.obj_hidden)
     }
@@ -1267,7 +1517,9 @@ impl<'a> Reader<'a> {
 
     /// Do the layers being read show?
     fn shown(&self) -> bool {
-        self.frames.iter().all(|f| !matches!(&f.kind, Kind::Layer(a) if !a.visible))
+        self.frames
+            .iter()
+            .all(|f| !matches!(&f.kind, Kind::Layer(a) if !a.visible))
     }
 
     /// An object's dictionary: its name (`AIArtName`, or the XML id `AI10_ArtUID`).
@@ -1279,7 +1531,12 @@ impl<'a> Reader<'a> {
                 None => return,
             },
         };
-        let Some(n) = self.last_object().filter(|n| !matches!(n.kind, NodeKind::Layer { .. }) && !name.is_empty()) else { return };
+        let Some(n) = self
+            .last_object()
+            .filter(|n| !matches!(n.kind, NodeKind::Layer { .. }) && !name.is_empty())
+        else {
+            return;
+        };
         if slot_of(n.name.as_deref()).is_some() {
             let id = n.id;
             self.slot_names.insert(id, name);
@@ -1290,15 +1547,21 @@ impl<'a> Reader<'a> {
 
     /// The `/Document` dictionary: the artboards.
     fn document(&mut self, o: &Obj) {
-        let Some(list) = find_entry(o, "ArtboardArray", 0) else { return };
+        let Some(list) = find_entry(o, "ArtboardArray", 0) else {
+            return;
+        };
         for (i, ab) in list.items().enumerate().take(1000) {
             let (p1, p2) = (ab.nums("PositionPoint1"), ab.nums("PositionPoint2"));
-            let ([x0, y0, ..], [x1, y1, ..]) = (p1.as_slice(), p2.as_slice()) else { continue };
+            let ([x0, y0, ..], [x1, y1, ..]) = (p1.as_slice(), p2.as_slice()) else {
+                continue;
+            };
             let r = Rect::new(*x0, *y0, *x1, *y1).abs();
             if !sane(r) || r.area() <= 0.0 {
                 continue;
             }
-            let name = ab.text("Name").unwrap_or_else(|| format!("Artboard {}", i + 1));
+            let name = ab
+                .text("Name")
+                .unwrap_or_else(|| format!("Artboard {}", i + 1));
             self.artboards.push((name, r));
         }
     }
@@ -1307,22 +1570,37 @@ impl<'a> Reader<'a> {
     /// earlier (`visible preview unlocked printing dimmed masks colorIndex r g b`).
     fn layer_attrs(&mut self, vals: &[V]) {
         let n = Self::nums(vals);
-        let Some(Frame { kind: Kind::Layer(a), .. }) = self.frames.last_mut() else { return };
+        let Some(Frame {
+            kind: Kind::Layer(a),
+            ..
+        }) = self.frames.last_mut()
+        else {
+            return;
+        };
         let flag = |i: usize, default: bool| n.get(i).map_or(default, |v| *v != 0.0);
         a.visible = flag(0, true);
         a.preview = flag(1, true);
         a.locked = !flag(2, true);
         a.printable = flag(3, true);
-        let dim_pct = n.get(12).copied().filter(|v| v.is_finite()).unwrap_or(50.0).clamp(0.0, 100.0);
+        let dim_pct = n
+            .get(12)
+            .copied()
+            .filter(|v| v.is_finite())
+            .unwrap_or(50.0)
+            .clamp(0.0, 100.0);
         a.dim = flag(4, false).then_some(dim_pct.round() as u8);
         let at = if n.len() <= 10 { 6 } else { 7 };
         let index = n.get(at).copied().unwrap_or(0.0);
         let rgb = |i: usize| n.get(at + i).map_or(0, |v| v.clamp(0.0, 255.0) as u8);
-        a.color = Some(if (0.0..vectorcraft_doc::LAYER_COLORS.len() as f64).contains(&index) && index.fract() == 0.0 {
-            LayerColor::Preset(index as u8)
-        } else {
-            LayerColor::Custom([rgb(1), rgb(2), rgb(3)])
-        });
+        a.color = Some(
+            if (0.0..vectorcraft_doc::LAYER_COLORS.len() as f64).contains(&index)
+                && index.fract() == 0.0
+            {
+                LayerColor::Preset(index as u8)
+            } else {
+                LayerColor::Custom([rgb(1), rgb(2), rgb(3)])
+            },
+        );
     }
 
     /// `(name) x y scaleX scaleY angle reflect axis shear shearAxis [matrix] p` (`P`: the stroke's):
@@ -1333,19 +1611,35 @@ impl<'a> Reader<'a> {
         if self.frames.is_empty() {
             return;
         }
-        let name = vals.iter().find_map(|v| if let V::Str(_) = v { v.text() } else { None });
-        let Some(origin) = name.as_deref().and_then(|n| self.pattern_tiles.get(n)).map(|p| p.to_vec2()) else {
+        let name = vals
+            .iter()
+            .find_map(|v| if let V::Str(_) = v { v.text() } else { None });
+        let Some(origin) = name
+            .as_deref()
+            .and_then(|n| self.pattern_tiles.get(n))
+            .map(|p| p.to_vec2())
+        else {
             self.unreadable("pattern fills");
             return;
         };
-        let matrix = vals.iter().rev().find_map(|v| if let V::Arr(a) = v { paint::affine(&Self::nums(a)) } else { None });
+        let matrix = vals.iter().rev().find_map(|v| {
+            if let V::Arr(a) = v {
+                paint::affine(&Self::nums(a))
+            } else {
+                None
+            }
+        });
         // The tile's art (y down from the tile's top left) → the pattern's space → art space.
-        let xf = self.space() * matrix.unwrap_or(Affine::IDENTITY) * FLIP * Affine::translate(origin);
+        let xf =
+            self.space() * matrix.unwrap_or(Affine::IDENTITY) * FLIP * Affine::translate(origin);
         if xf.determinant().abs() < 1e-12 || !xf.as_coeffs().iter().all(|v| v.is_finite()) {
             self.unreadable("pattern fills");
             return;
         }
-        let p = Paint::Pattern { pattern: name.unwrap_or_default(), xf };
+        let p = Paint::Pattern {
+            pattern: name.unwrap_or_default(),
+            xf,
+        };
         if w == "p" {
             self.gs.fill = p;
         } else {
@@ -1354,7 +1648,9 @@ impl<'a> Reader<'a> {
     }
 
     fn color(&mut self, w: &str, vals: &[V]) {
-        let Some((p, named)) = paint::color_op(w, vals) else { return };
+        let Some((p, named)) = paint::color_op(w, vals) else {
+            return;
+        };
         match p.color() {
             Some(vectorcraft_color::Color::Rgb { .. }) => self.rgb_colors += 1,
             Some(vectorcraft_color::Color::Cmyk { .. }) => self.cmyk_colors += 1,
@@ -1376,9 +1672,22 @@ impl<'a> Reader<'a> {
 
     /// `[dashes] phase d`.
     fn dash(&mut self, vals: &[V]) {
-        let pattern: Vec<f64> = vals.iter().rev().find_map(|v| if let V::Arr(a) = v { Some(Self::nums(a)) } else { None }).unwrap_or_default();
+        let pattern: Vec<f64> = vals
+            .iter()
+            .rev()
+            .find_map(|v| {
+                if let V::Arr(a) = v {
+                    Some(Self::nums(a))
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_default();
         let offset = Self::nums(vals).last().copied().unwrap_or(0.0);
-        self.gs.dash = (!pattern.is_empty() && pattern.len() <= 64 && pattern.iter().all(|v| v.is_finite() && *v >= 0.0)).then(|| Dash {
+        self.gs.dash = (!pattern.is_empty()
+            && pattern.len() <= 64
+            && pattern.iter().all(|v| v.is_finite() && *v >= 0.0))
+        .then(|| Dash {
             pattern,
             offset: if offset.is_finite() { offset } else { 0.0 },
             align_corners: false,
@@ -1388,10 +1697,20 @@ impl<'a> Reader<'a> {
     /// `mode opacity isolate knockout shape Xy`; after a group's end, the group's too.
     fn transparency(&mut self, vals: &[V]) {
         let n = Self::nums(vals);
-        let [mode, opacity, rest @ ..] = n.as_slice() else { return };
+        let [mode, opacity, rest @ ..] = n.as_slice() else {
+            return;
+        };
         let gs = &mut self.gs;
-        gs.blend = BLENDS.get(*mode as usize).copied().filter(|_| *mode >= 0.0).unwrap_or(BlendMode::Normal);
-        gs.opacity = if opacity.is_finite() { opacity.clamp(0.0, 1.0) as f32 } else { 1.0 };
+        gs.blend = BLENDS
+            .get(*mode as usize)
+            .copied()
+            .filter(|_| *mode >= 0.0)
+            .unwrap_or(BlendMode::Normal);
+        gs.opacity = if opacity.is_finite() {
+            opacity.clamp(0.0, 1.0) as f32
+        } else {
+            1.0
+        };
         gs.isolate = rest.first().is_some_and(|v| *v != 0.0);
         gs.knockout = match rest.get(1).map(|v| *v as i64) {
             Some(1) => Knockout::On,
@@ -1418,16 +1737,25 @@ impl<'a> Reader<'a> {
         let style = vals.iter().rev().find_map(V::text).unwrap_or_default();
         let after = std::mem::take(&mut self.after_object);
         if code == 9.0
-            && let Some(look) = self.frames.last().and_then(|f| f.children.last()).filter(|n| matches!(n.kind, NodeKind::Group { .. }))
+            && let Some(look) = self
+                .frames
+                .last()
+                .and_then(|f| f.children.last())
+                .filter(|n| matches!(n.kind, NodeKind::Group { .. }))
         {
             self.looks.insert(look.id);
         }
         if code != 1.0 || style.is_empty() || !after {
             return;
         }
-        let Some(f) = self.frames.last_mut() else { return };
+        let Some(f) = self.frames.last_mut() else {
+            return;
+        };
         let n = f.children.len();
-        let (Some(object), Some(look)) = (n.checked_sub(1).and_then(|i| f.children.get(i)), n.checked_sub(2).and_then(|i| f.children.get(i))) else {
+        let (Some(object), Some(look)) = (
+            n.checked_sub(1).and_then(|i| f.children.get(i)),
+            n.checked_sub(2).and_then(|i| f.children.get(i)),
+        ) else {
             return;
         };
         if !self.hidden_ids.contains(&object.id)
@@ -1438,7 +1766,9 @@ impl<'a> Reader<'a> {
         }
         // A style read here: the object, painted as it says.
         if let Some(appearance) = self.styles.get(&style).and_then(|st| styled(object, st)) {
-            let Some(mut object) = f.children.pop() else { return };
+            let Some(mut object) = f.children.pop() else {
+                return;
+            };
             f.children.pop();
             object.appearance = appearance.into();
             // Now the object itself, not a copy an enclosing look's `strip` would remove.
@@ -1447,8 +1777,12 @@ impl<'a> Reader<'a> {
             return;
         }
         let is_text = slot_of(object.name.as_deref()).is_some();
-        let Some(object) = f.children.pop() else { return };
-        let Some(look) = f.children.last_mut() else { return };
+        let Some(object) = f.children.pop() else {
+            return;
+        };
+        let Some(look) = f.children.last_mut() else {
+            return;
+        };
         // Inside a copy on `%_` lines everything is, so nothing tells the look's own copies apart.
         if !hidden {
             strip(look, &self.hidden_ids);
@@ -1561,9 +1895,19 @@ impl<'a> Reader<'a> {
             st.overprint = gs.overprint_stroke;
             items.push(AppearanceItem::Stroke(st));
         }
-        let kind = NodeKind::Path { path, rule: gs.rule, live: None, clipping: clip, guide };
+        let kind = NodeKind::Path {
+            path,
+            rule: gs.rule,
+            live: None,
+            clipping: clip,
+            guide,
+        };
         let mut node = self.new_node(kind, &gs);
-        node.appearance = Appearance { items, ..Appearance::default() }.into();
+        node.appearance = Appearance {
+            items,
+            ..Appearance::default()
+        }
+        .into();
         node.opacity = gs.opacity;
         node.blend = gs.blend;
         node.knockout_shape = gs.knockout_shape;
@@ -1580,7 +1924,10 @@ impl<'a> Reader<'a> {
             }
             let paint = fill_paint.clone().unwrap_or_else(|| gs.fill.clone());
             copy.appearance = Appearance {
-                items: vec![AppearanceItem::Fill(FillLayer { overprint: gs.overprint_fill, ..FillLayer::new(paint) })],
+                items: vec![AppearanceItem::Fill(FillLayer {
+                    overprint: gs.overprint_fill,
+                    ..FillLayer::new(paint)
+                })],
                 ..Appearance::default()
             }
             .into();
@@ -1596,16 +1943,36 @@ impl<'a> Reader<'a> {
 
     /// `/End X!`: the gradient mesh read, as one object.
     fn end_mesh(&mut self) -> Result<(), String> {
-        let Some((m, hidden)) = self.mesh.take() else { return Ok(()) };
+        let Some((m, hidden)) = self.mesh.take() else {
+            return Ok(());
+        };
         if m.unread || m.patches.is_empty() {
             self.unreadable("gradient meshes it can't read");
             return Ok(());
         }
         let gs = self.gs.clone();
-        let mut patches: Vec<Node> = m.patches.into_iter().map(|p| self.new_node(NodeKind::Mesh(p), &gs)).collect();
+        let mut patches: Vec<Node> = m
+            .patches
+            .into_iter()
+            .map(|p| self.new_node(NodeKind::Mesh(p), &gs))
+            .collect();
         let mut node = match patches.len() {
-            1 => patches.pop().unwrap_or_else(|| self.new_node(NodeKind::Group { children: vec![], clip: false }, &gs)),
-            _ => self.new_node(NodeKind::Group { children: patches.into_iter().map(Arc::new).collect(), clip: false }, &gs),
+            1 => patches.pop().unwrap_or_else(|| {
+                self.new_node(
+                    NodeKind::Group {
+                        children: vec![],
+                        clip: false,
+                    },
+                    &gs,
+                )
+            }),
+            _ => self.new_node(
+                NodeKind::Group {
+                    children: patches.into_iter().map(Arc::new).collect(),
+                    clip: false,
+                },
+                &gs,
+            ),
         };
         node.opacity = gs.opacity;
         node.blend = gs.blend;
@@ -1619,7 +1986,9 @@ impl<'a> Reader<'a> {
             Some(p) => self.pending_fill = Some(p),
             None => {
                 let name = i.name.clone().unwrap_or_default();
-                self.warn(&format!("gradient “{name}” isn't defined in the file: a plain colour stands in for it"));
+                self.warn(&format!(
+                    "gradient “{name}” isn't defined in the file: a plain colour stands in for it"
+                ));
             }
         }
     }
@@ -1629,10 +1998,24 @@ impl<'a> Reader<'a> {
     /// The samples after `XI`, its operands on the stack.
     fn image(&mut self, data: &[u8]) -> Result<(), String> {
         let vals = self.operands();
-        let space = self.raster.as_ref().and_then(|r| r.space.clone()).unwrap_or_default();
-        let Some(m) = vals.iter().find_map(|v| if let V::Arr(a) = v { Some(Self::nums(a)) } else { None }) else { return Ok(()) };
+        let space = self
+            .raster
+            .as_ref()
+            .and_then(|r| r.space.clone())
+            .unwrap_or_default();
+        let Some(m) = vals.iter().find_map(|v| {
+            if let V::Arr(a) = v {
+                Some(Self::nums(a))
+            } else {
+                None
+            }
+        }) else {
+            return Ok(());
+        };
         let n = Self::nums(&vals);
-        let [_, _, _, _, w, h, bits, kind, alpha, _, binary, ..] = n.as_slice() else { return Ok(()) };
+        let [_, _, _, _, w, h, bits, kind, alpha, _, binary, ..] = n.as_slice() else {
+            return Ok(());
+        };
         let (w, h) = (*w as u64, *h as u64);
         if w == 0 || h == 0 || w.saturating_mul(h) > MAX_PIXELS || ![1.0, 8.0].contains(bits) {
             self.warn("an image VectorCraft can't read was left out");
@@ -1650,17 +2033,28 @@ impl<'a> Reader<'a> {
         };
         let decoded;
         let data = if *binary == 0.0 {
-            let digits: Vec<u8> = data.iter().copied().filter(|b| b.is_ascii_hexdigit()).collect();
+            let digits: Vec<u8> = data
+                .iter()
+                .copied()
+                .filter(|b| b.is_ascii_hexdigit())
+                .collect();
             decoded = super::super::lex::hex_decode(&digits).unwrap_or_default();
             decoded.as_slice()
         } else {
             data
         };
-        let row = if *bits == 1.0 { (w as usize * channels).div_ceil(8) } else { w as usize * channels };
+        let row = if *bits == 1.0 {
+            (w as usize * channels).div_ceil(8)
+        } else {
+            w as usize * channels
+        };
         let need = row.saturating_mul(h as usize);
         // An alpha channel follows the colour samples, one byte a pixel.
         let alpha_len = if *alpha > 0.0 { (w * h) as usize } else { 0 };
-        let (Some(samples), opacity) = (data.get(..need), data.get(need..need.saturating_add(alpha_len))) else {
+        let (Some(samples), opacity) = (
+            data.get(..need),
+            data.get(need..need.saturating_add(alpha_len)),
+        ) else {
             self.warn("an image whose data is cut short was left out");
             return Ok(());
         };
@@ -1687,18 +2081,28 @@ impl<'a> Reader<'a> {
                         _ => [s(0), s(1), s(2)],
                     }
                 };
-                let a = opacity.and_then(|o| o.get(y * w as usize + x)).copied().unwrap_or(255);
+                let a = opacity
+                    .and_then(|o| o.get(y * w as usize + x))
+                    .copied()
+                    .unwrap_or(255);
                 rgba.extend_from_slice(&[px[0], px[1], px[2], a]);
             }
         }
-        let Some(img) = image::RgbaImage::from_raw(w as u32, h as u32, rgba) else { return Ok(()) };
+        let Some(img) = image::RgbaImage::from_raw(w as u32, h as u32, rgba) else {
+            return Ok(());
+        };
         let mut png = vec![];
-        if img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).is_err() {
+        if img
+            .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+            .is_err()
+        {
             self.warn("an image VectorCraft can't read was left out");
             return Ok(());
         }
         // The matrix maps pixels (y down) into art space with its y flipped.
-        let [a, b, c, d, tx, ty] = m.as_slice() else { return Ok(()) };
+        let [a, b, c, d, tx, ty] = m.as_slice() else {
+            return Ok(());
+        };
         let to_doc = self.space();
         let xf = to_doc * FLIP * Affine::new([*a, *b, *c, *d, *tx, -*ty]);
         if !xf.as_coeffs().iter().all(|v| v.is_finite()) || xf.determinant().abs() < 1e-12 {
@@ -1707,7 +2111,17 @@ impl<'a> Reader<'a> {
         let blob = ImageBlob::new("image/png", png);
         let key = blob.content_key();
         self.doc.images.entry(key.clone()).or_insert(blob);
-        self.add_image(ImageObject { key, width: w as u32, height: h as u32, xf, link: None, placement: Default::default() }, false)
+        self.add_image(
+            ImageObject {
+                key,
+                width: w as u32,
+                height: h as u32,
+                xf,
+                link: None,
+                placement: Default::default(),
+            },
+            false,
+        )
     }
 
     /// Add an image object with the state's transparency.
@@ -1723,16 +2137,26 @@ impl<'a> Reader<'a> {
     /// shows the preview the data keeps of it, as a linked image whose file is missing does. One
     /// without a preview, a path or a matrix isn't read.
     fn end_place(&mut self, hidden: bool) -> Result<(), String> {
-        let Some(Place { matrix: Some(m), bounds: Some(b), path, preview: Some((png, w, h)) }) = self.place.take().filter(|p| !p.path.is_empty())
+        let Some(Place {
+            matrix: Some(m),
+            bounds: Some(b),
+            path,
+            preview: Some((png, w, h)),
+        }) = self.place.take().filter(|p| !p.path.is_empty())
         else {
             self.unreadable("placed files");
             return Ok(());
         };
         // The file's pixels (y down) start at the canvas point of art space's origin (the box's own
         // corner when the file doesn't say where the canvas is); the preview's are spread over them.
-        let centre = self.template.map(|t| ((t[0] + t[2]) / 2.0, (t[1] + t[3]) / 2.0));
-        let origin = centre.map_or(b.origin(), |(x, y)| Point::new(CANVAS_CENTRE - x, CANVAS_CENTRE + y));
-        let over_file = Affine::translate(origin.to_vec2()) * Affine::scale_non_uniform(b.width() / f64::from(w), b.height() / f64::from(h));
+        let centre = self
+            .template
+            .map(|t| ((t[0] + t[2]) / 2.0, (t[1] + t[3]) / 2.0));
+        let origin = centre.map_or(b.origin(), |(x, y)| {
+            Point::new(CANVAS_CENTRE - x, CANVAS_CENTRE + y)
+        });
+        let over_file = Affine::translate(origin.to_vec2())
+            * Affine::scale_non_uniform(b.width() / f64::from(w), b.height() / f64::from(h));
         let xf = self.space() * m * over_file;
         if !xf.as_coeffs().iter().all(|v| v.is_finite()) || xf.determinant().abs() < 1e-12 {
             self.unreadable("placed files");
@@ -1740,11 +2164,25 @@ impl<'a> Reader<'a> {
         }
         // The preview is all the document has of the file: what a missing link shows.
         let bytes = Arc::new(png);
-        let blob = ImageBlob { mime: "image/png".into(), bytes: bytes.clone(), proxy: Some(bytes) };
+        let blob = ImageBlob {
+            mime: "image/png".into(),
+            bytes: bytes.clone(),
+            proxy: Some(bytes),
+        };
         let key = blob.content_key();
         self.doc.images.entry(key.clone()).or_insert(blob);
         self.warn(LINKED_PREVIEWS);
-        self.add_image(ImageObject { key, width: w, height: h, xf, link: Some(LinkInfo::new(path)), placement: Default::default() }, hidden)
+        self.add_image(
+            ImageObject {
+                key,
+                width: w,
+                height: h,
+                xf,
+                link: Some(LinkInfo::new(path)),
+                placement: Default::default(),
+            },
+            hidden,
+        )
     }
 
     // ---- the document ----------------------------------------------------------------------
@@ -1760,7 +2198,11 @@ impl<'a> Reader<'a> {
 
     /// The first artboard: the `/Document`'s first, else the crop marks, else [`Self::sized_board`].
     fn first_board(&self) -> Option<Rect> {
-        self.artboards.first().map(|(_, r)| *r).or(self.cropmarks).or_else(|| self.sized_board())
+        self.artboards
+            .first()
+            .map(|(_, r)| *r)
+            .or(self.cropmarks)
+            .or_else(|| self.sized_board())
     }
 
     /// The page of a file that says nothing of its artboard (the legacy format as other apps write
@@ -1785,7 +2227,11 @@ impl<'a> Reader<'a> {
     /// Art space → where the art being read goes: the document, or while a pattern's definition is
     /// read, the pattern's space (y down).
     fn space(&mut self) -> Affine {
-        if self.pattern.is_some() { FLIP } else { self.ensure_space() }
+        if self.pattern.is_some() {
+            FLIP
+        } else {
+            self.ensure_space()
+        }
     }
 
     fn warn(&mut self, w: &str) {
@@ -1797,11 +2243,17 @@ impl<'a> Reader<'a> {
     fn finish(mut self) -> Result<Structure, String> {
         if !self.unknown.is_empty() {
             let ops: Vec<String> = self.unknown.iter().map(|o| format!("`{o}`")).collect();
-            self.unsupported.insert(format!("operators VectorCraft doesn't know ({})", ops.join(", ")));
+            self.unsupported.insert(format!(
+                "operators VectorCraft doesn't know ({})",
+                ops.join(", ")
+            ));
         }
         if !self.unsupported.is_empty() {
             let list: Vec<&str> = self.unsupported.iter().map(String::as_str).collect();
-            return Err(format!("it has {}, which VectorCraft doesn't read from it yet", join_and(&list)));
+            return Err(format!(
+                "it has {}, which VectorCraft doesn't read from it yet",
+                join_and(&list)
+            ));
         }
         if self.doc.layers.is_empty() {
             return Err("it has no layers".into());
@@ -1811,7 +2263,10 @@ impl<'a> Reader<'a> {
         drop_commented_copies(&mut self.doc.layers, &self.hidden_ids);
         let mut doc = std::mem::replace(&mut self.doc, Document::new(1.0, 1.0));
         let boards: Vec<(String, Rect)> = if self.artboards.is_empty() {
-            artboard.or_else(|| self.bbox_board()).map(|r| vec![("Artboard 1".to_string(), r)]).unwrap_or_default()
+            artboard
+                .or_else(|| self.bbox_board())
+                .map(|r| vec![("Artboard 1".to_string(), r)])
+                .unwrap_or_default()
         } else {
             self.artboards.clone()
         };
@@ -1827,22 +2282,52 @@ impl<'a> Reader<'a> {
             })
             .collect();
         if doc.artboards.is_empty() {
-            let rect = doc.art_bounds().filter(|r| sane(*r) && r.area() > 0.0).unwrap_or(Rect::new(0.0, 0.0, 612.0, 792.0));
-            doc.artboards = vec![Artboard { id: 1, name: "Artboard 1".into(), rect, show_center_mark: false, show_cross_hairs: false }];
+            let rect = doc
+                .art_bounds()
+                .filter(|r| sane(*r) && r.area() > 0.0)
+                .unwrap_or(Rect::new(0.0, 0.0, 612.0, 792.0));
+            doc.artboards = vec![Artboard {
+                id: 1,
+                name: "Artboard 1".into(),
+                rect,
+                show_center_mark: false,
+                show_cross_hairs: false,
+            }];
         }
-        if self.color_model.unwrap_or(self.cmyk_colors > self.rgb_colors) {
+        if self
+            .color_model
+            .unwrap_or(self.cmyk_colors > self.rgb_colors)
+        {
             doc.color_mode = ColorMode::Cmyk;
             let (swatches, groups) = vectorcraft_color::default_swatches(ColorMode::Cmyk.model());
             (doc.swatches, doc.swatch_groups) = (swatches.into(), groups.into());
         }
         for n in &self.spots {
             if doc.swatch(&n.name).is_none() {
-                doc.swatches.push(Swatch { name: n.name.clone(), paint: Paint::solid(n.color), global: true, spot: n.spot });
+                doc.swatches.push(Swatch {
+                    name: n.name.clone(),
+                    paint: Paint::solid(n.color),
+                    global: true,
+                    spot: n.spot,
+                });
             }
         }
-        for name in doc.patterns.iter().map(|p| p.name.clone()).collect::<Vec<_>>() {
+        for name in doc
+            .patterns
+            .iter()
+            .map(|p| p.name.clone())
+            .collect::<Vec<_>>()
+        {
             if doc.swatch(&name).is_none() {
-                doc.swatches.push(Swatch { paint: Paint::Pattern { pattern: name.clone(), xf: Affine::IDENTITY }, name, global: false, spot: false });
+                doc.swatches.push(Swatch {
+                    paint: Paint::Pattern {
+                        pattern: name.clone(),
+                        xf: Affine::IDENTITY,
+                    },
+                    name,
+                    global: false,
+                    spot: false,
+                });
             }
         }
         let mut warnings = self.warnings;
@@ -1883,7 +2368,12 @@ fn drop_commented_copies(layers: &mut [Arc<Node>], hidden: &HashSet<NodeId>) {
         }
     }
     fn drop(nodes: &mut Vec<Arc<Node>>, hidden: &HashSet<NodeId>, plain: &HashSet<u32>) {
-        nodes.retain(|n| !(hidden.contains(&n.id) && slot_of(n.name.as_deref()).flatten().is_some_and(|s| plain.contains(&s))));
+        nodes.retain(|n| {
+            !(hidden.contains(&n.id)
+                && slot_of(n.name.as_deref())
+                    .flatten()
+                    .is_some_and(|s| plain.contains(&s)))
+        });
         for n in nodes.iter_mut() {
             if n.children().is_some_and(|c| !c.is_empty())
                 && let Some(c) = Arc::make_mut(n).children_mut()
@@ -1909,7 +2399,11 @@ type Indexed = (usize, Node);
 
 /// Close the subpath `bp` ends with, if it has one open.
 fn close(bp: &mut BezPath) {
-    if bp.elements().last().is_some_and(|e| !matches!(e, PathEl::ClosePath)) {
+    if bp
+        .elements()
+        .last()
+        .is_some_and(|e| !matches!(e, PathEl::ClosePath))
+    {
         bp.close_path();
     }
 }
@@ -1920,7 +2414,12 @@ fn ungrouped(kids: Vec<Node>) -> Vec<Node> {
     let mut out = Vec::with_capacity(kids.len());
     for k in kids {
         match k.kind {
-            NodeKind::Group { children, clip: false } => out.extend(ungrouped(children.into_iter().map(Arc::unwrap_or_clone).collect())),
+            NodeKind::Group {
+                children,
+                clip: false,
+            } => out.extend(ungrouped(
+                children.into_iter().map(Arc::unwrap_or_clone).collect(),
+            )),
             _ => out.push(k),
         }
     }
@@ -1938,22 +2437,50 @@ fn path_rule(n: &Node) -> FillRule {
 /// group for fills or strokes.
 fn styled(object: &Node, st: &super::style::ArtStyle) -> Option<Appearance> {
     use super::style::StyleItem;
-    if !st.plain || (object.is_container() && !matches!(object.kind, NodeKind::Compound { .. }) && !st.items.is_empty()) {
+    if !st.plain
+        || (object.is_container()
+            && !matches!(object.kind, NodeKind::Compound { .. })
+            && !st.items.is_empty())
+    {
         return None;
     }
     let mut items = vec![];
     for item in &st.items {
         items.push(match item {
             StyleItem::Fill(paint) => AppearanceItem::Fill(FillLayer::new(paint.clone())),
-            StyleItem::ObjectFill => AppearanceItem::Fill(object.appearance.fill().filter(|f| matches!(f.paint, Paint::Gradient(_)))?.clone()),
-            StyleItem::Stroke { paint, width, cap, join, miter, dash, profile } => {
+            StyleItem::ObjectFill => AppearanceItem::Fill(
+                object
+                    .appearance
+                    .fill()
+                    .filter(|f| matches!(f.paint, Paint::Gradient(_)))?
+                    .clone(),
+            ),
+            StyleItem::Stroke {
+                paint,
+                width,
+                cap,
+                join,
+                miter,
+                dash,
+                profile,
+            } => {
                 let mut layer = StrokeLayer::new(paint.clone(), *width);
-                (layer.cap, layer.join, layer.miter_limit, layer.dash, layer.profile) = (*cap, *join, *miter, dash.clone(), profile.clone());
+                (
+                    layer.cap,
+                    layer.join,
+                    layer.miter_limit,
+                    layer.dash,
+                    layer.profile,
+                ) = (*cap, *join, *miter, dash.clone(), profile.clone());
                 AppearanceItem::Stroke(layer)
             }
         });
     }
-    Some(Appearance { items, effects: st.effects.clone(), ..(*object.appearance).clone() })
+    Some(Appearance {
+        items,
+        effects: st.effects.clone(),
+        ..(*object.appearance).clone()
+    })
 }
 
 /// Remove from `n` the children read from `%_` lines (`hidden`: the object itself, not its look).
@@ -1971,7 +2498,13 @@ fn find_entry<'o>(o: &'o Obj, key: &str, depth: usize) -> Option<&'o Obj> {
     if depth > 8 {
         return None;
     }
-    o.obj(key).or_else(|| o.entries.iter().flat_map(|(_, v)| v.iter()).filter_map(V::obj).find_map(|c| find_entry(c, key, depth + 1)))
+    o.obj(key).or_else(|| {
+        o.entries
+            .iter()
+            .flat_map(|(_, v)| v.iter())
+            .filter_map(V::obj)
+            .find_map(|c| find_entry(c, key, depth + 1))
+    })
 }
 
 /// A placed file's preview as a PNG, with its size: `w h rowBytes 32 n ` (each number followed by
@@ -1987,7 +2520,12 @@ fn preview_png(data: &[u8]) -> Option<(Vec<u8>, u32, u32)> {
     }
     let [w, h, row, bits, _] = head;
     let (width, height) = (u32::try_from(w).ok()?, u32::try_from(h).ok()?);
-    if w == 0 || h == 0 || u64::from(width) * u64::from(height) > MAX_PIXELS || bits != 32 || row < w * 4 {
+    if w == 0
+        || h == 0
+        || u64::from(width) * u64::from(height) > MAX_PIXELS
+        || bits != 32
+        || row < w * 4
+    {
         return None;
     }
     // Every row is there before anything is allocated for them.
@@ -1997,29 +2535,51 @@ fn preview_png(data: &[u8]) -> Option<(Vec<u8>, u32, u32)> {
     let mut rgba = Vec::with_capacity(w * h * 4);
     for line in rest.chunks(row).take(h) {
         for &[a, r, g, b] in line.get(..w * 4)?.as_chunks::<4>().0 {
-            let straight = |c: u8| if a == 0 { 0 } else { (u32::from(c) * 255 / u32::from(a)).min(255) as u8 };
+            let straight = |c: u8| {
+                if a == 0 {
+                    0
+                } else {
+                    (u32::from(c) * 255 / u32::from(a)).min(255) as u8
+                }
+            };
             rgba.extend_from_slice(&[straight(r), straight(g), straight(b), a]);
         }
     }
     let mut png = vec![];
-    image::RgbaImage::from_raw(width, height, rgba)?.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).ok()?;
+    image::RgbaImage::from_raw(width, height, rgba)?
+        .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+        .ok()?;
     Some((png, width, height))
 }
 
 fn sane(r: Rect) -> bool {
-    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= MAX_SIDE)
+    [r.x0, r.y0, r.x1, r.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= MAX_SIDE)
 }
 
 /// The four numbers of a comment's value (a box that may be a point).
 fn four(v: &str) -> Option<[f64; 4]> {
-    let n: Vec<f64> = v.split_whitespace().map_while(|w| w.parse::<f64>().ok()).collect();
-    let [a, b, c, d] = n.as_slice() else { return None };
-    [a, b, c, d].iter().all(|v| v.is_finite() && v.abs() <= MAX_SIDE).then_some([*a, *b, *c, *d])
+    let n: Vec<f64> = v
+        .split_whitespace()
+        .map_while(|w| w.parse::<f64>().ok())
+        .collect();
+    let [a, b, c, d] = n.as_slice() else {
+        return None;
+    };
+    [a, b, c, d]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= MAX_SIDE)
+        .then_some([*a, *b, *c, *d])
 }
 
 /// The first two numbers of a comment's value.
 fn two(v: &str) -> Option<(f64, f64)> {
-    let n: Vec<f64> = v.split_whitespace().filter_map(|w| w.parse().ok()).filter(|v: &f64| v.is_finite()).collect();
+    let n: Vec<f64> = v
+        .split_whitespace()
+        .filter_map(|w| w.parse().ok())
+        .filter(|v: &f64| v.is_finite())
+        .collect();
     match n.as_slice() {
         [a, b, ..] => Some((*a, *b)),
         _ => None,

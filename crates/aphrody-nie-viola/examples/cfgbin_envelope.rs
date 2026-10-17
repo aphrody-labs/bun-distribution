@@ -14,7 +14,10 @@ fn main() {
         out_dir = args.get(i + 1).cloned();
         args.drain(i..=i + 1);
     }
-    assert!(!args.is_empty(), "usage: cfgbin_envelope <f.cfg.bin>… [--out-dir <d>]");
+    assert!(
+        !args.is_empty(),
+        "usage: cfgbin_envelope <f.cfg.bin>… [--out-dir <d>]"
+    );
 
     for path in &args {
         let brut = match std::fs::read(path) {
@@ -22,7 +25,7 @@ fn main() {
             Err(e) => {
                 println!("{path}\n  illisible : {e}");
                 continue;
-            },
+            }
         };
         let nom = std::path::Path::new(path)
             .file_name()
@@ -52,8 +55,11 @@ fn main() {
 
         match trouve {
             None => {
-                println!("{nom}\n  {} o — AUCUNE enveloppe connue ne le rend lisible", brut.len())
-            },
+                println!(
+                    "{nom}\n  {} o — AUCUNE enveloppe connue ne le rend lisible",
+                    brut.len()
+                )
+            }
             Some((quoi, clair)) => {
                 let cfg = aphrody_nie_formats::cfgbin::cfgbin_parse(&clair).expect("déjà validé");
                 let enfants = cfg.entries.first().map_or(0, |e| e.children.len());
@@ -68,7 +74,7 @@ fn main() {
                     std::fs::write(&p, &clair).expect("écriture du clair");
                     println!("  clair écrit dans {}", p.display());
                 }
-            },
+            }
         }
     }
 }

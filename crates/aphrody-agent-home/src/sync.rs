@@ -24,7 +24,9 @@ const CONTRACT: &str = include_str!("../sync-contract.json");
 pub fn sync_defaults() -> Result<Vec<BootstrapFile>, HomeError> {
     let names: Vec<String> = serde_json::from_str(CONTRACT)?;
     if names.len() != 7 {
-        return Err(HomeError::SyncContract("expected exactly seven documents".into()));
+        return Err(HomeError::SyncContract(
+            "expected exactly seven documents".into(),
+        ));
     }
     let mut files = Vec::with_capacity(7);
     for name in names {
@@ -81,7 +83,9 @@ impl SyncSnapshot {
             let path = guard.resolve(name)?;
             let metadata = std::fs::symlink_metadata(&path).map_err(|e| HomeError::io(&path, e))?;
             if !metadata.file_type().is_file() {
-                return Err(HomeError::SyncContract(format!("{name} must be a regular file")));
+                return Err(HomeError::SyncContract(format!(
+                    "{name} must be a regular file"
+                )));
             }
             let content = guard
                 .read_to_string(name)?
@@ -96,7 +100,11 @@ impl SyncSnapshot {
             hasher.update(name.as_bytes());
             hasher.update(&[0]);
             hasher.update(hash.as_bytes());
-            documents.push(SyncDocument { filename: name.into(), hash, content });
+            documents.push(SyncDocument {
+                filename: name.into(),
+                hash,
+                content,
+            });
         }
         // An editor may save during capture. Refuse a mixed revision and
         // let the next watcher or cron pass capture a coherent set.
@@ -140,7 +148,11 @@ mod tests {
         let mut manifest = String::new();
         for name in sync_defaults().unwrap() {
             let bytes = std::fs::read(td.path().join(name.filename())).unwrap();
-            let line = [sha256_hex(&bytes), bytes.len().to_string(), name.filename().to_string()];
+            let line = [
+                sha256_hex(&bytes),
+                bytes.len().to_string(),
+                name.filename().to_string(),
+            ];
             manifest.push_str(&line.join(" "));
             manifest.push('\n');
         }

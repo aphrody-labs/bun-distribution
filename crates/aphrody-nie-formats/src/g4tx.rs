@@ -200,14 +200,20 @@ pub fn select_main_texture<'a>(g4tx: &'a G4tx, basename: &str) -> Option<&'a G4t
 
     // 2. Plus grande texture DDS non-dummy par aire.
     let by_area = |t: &&G4txTexture| (t.width as i64) * (t.height as i64);
-    if let Some(t) =
-        g4tx.textures.iter().filter(|t| t.is_dds && !is_dummy_texture(t)).max_by_key(by_area)
+    if let Some(t) = g4tx
+        .textures
+        .iter()
+        .filter(|t| t.is_dds && !is_dummy_texture(t))
+        .max_by_key(by_area)
     {
         return Some(t);
     }
 
     // 3. Plus grande texture DDS quelconque (dernier recours : tout est dummy).
-    g4tx.textures.iter().filter(|t| t.is_dds).max_by_key(by_area)
+    g4tx.textures
+        .iter()
+        .filter(|t| t.is_dds)
+        .max_by_key(by_area)
 }
 
 /// Cherche une **région d'atlas** par son nom dans tout le conteneur.
@@ -225,7 +231,10 @@ pub fn find_sub_texture<'a>(
     region_name: &str,
 ) -> Option<(&'a G4txTexture, &'a G4txSubTexture)> {
     g4tx.textures.iter().find_map(|t| {
-        t.sub_textures.iter().find(|s| s.name.eq_ignore_ascii_case(region_name)).map(|s| (t, s))
+        t.sub_textures
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case(region_name))
+            .map(|s| (t, s))
     })
 }
 
@@ -257,7 +266,11 @@ pub enum NamedTarget<'a> {
 /// quoi les métadonnées d'un rendu ne décriraient pas ce que le décodeur produit.
 #[must_use]
 pub fn find_named<'a>(g4tx: &'a G4tx, nom: &str) -> Option<NamedTarget<'a>> {
-    if let Some(tex) = g4tx.textures.iter().find(|t| t.name.eq_ignore_ascii_case(nom)) {
+    if let Some(tex) = g4tx
+        .textures
+        .iter()
+        .find(|t| t.name.eq_ignore_ascii_case(nom))
+    {
         return Some(NamedTarget::Texture(tex));
     }
     find_sub_texture(g4tx, nom).map(|(texture, sub)| NamedTarget::Region { texture, sub })
@@ -284,9 +297,12 @@ impl G4tx {
     #[must_use]
     pub fn named_rect(&self, nom: &str) -> Option<(i16, i16, i16, i16)> {
         match self.named(nom)? {
-            NamedTarget::Texture(t) => {
-                Some((0, 0, i16::try_from(t.width).ok()?, i16::try_from(t.height).ok()?))
-            },
+            NamedTarget::Texture(t) => Some((
+                0,
+                0,
+                i16::try_from(t.width).ok()?,
+                i16::try_from(t.height).ok()?,
+            )),
             NamedTarget::Region { sub, .. } => Some((sub.x, sub.y, sub.width, sub.height)),
         }
     }
@@ -297,7 +313,8 @@ impl G4tx {
     /// coordonnées brutes telles que stockées, prêtes à être passées au compositeur de rendu.
     #[must_use]
     pub fn region_rect(&self, region_name: &str) -> Option<(i16, i16, i16, i16)> {
-        self.region(region_name).map(|(_, s)| (s.x, s.y, s.width, s.height))
+        self.region(region_name)
+            .map(|(_, s)| (s.x, s.y, s.width, s.height))
     }
 }
 
@@ -369,7 +386,10 @@ pub fn base_color_texture_name(data: &[u8]) -> Option<alloc::string::String> {
 /// - [`FormatError::Corrupt`] si une table déborde du tampon.
 pub fn parse(data: &[u8]) -> Result<G4tx, FormatError> {
     if data.len() < HEADER_SIZE {
-        return Err(FormatError::TooShort { got: data.len(), need: HEADER_SIZE });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: HEADER_SIZE,
+        });
     }
     if !is_g4tx(data) {
         return Err(FormatError::BadMagic { format: "G4TX" });
@@ -437,7 +457,7 @@ pub fn parse(data: &[u8]) -> Result<G4tx, FormatError> {
                 let h = read_i32_le(data, data_offset + 0x0C)?;
                 let w = read_i32_le(data, data_offset + 0x10)?;
                 (true, w, h)
-            },
+            }
             _ => (false, entry.width as i32, entry.height as i32),
         };
 
@@ -448,10 +468,10 @@ pub fn parse(data: &[u8]) -> Result<G4tx, FormatError> {
         for (sub_idx, sub) in sub_entries.iter().enumerate() {
             if sub.entry_id as usize == i {
                 let absolute_id = tex_count + sub_idx;
-                let sub_name = string_offsets
-                    .get(absolute_id)
-                    .copied()
-                    .map_or_else(|| Ok(String::new()), |so| read_name(data, string_offset, so))?;
+                let sub_name = string_offsets.get(absolute_id).copied().map_or_else(
+                    || Ok(String::new()),
+                    |so| read_name(data, string_offset, so),
+                )?;
                 let id = ids.get(absolute_id).copied().unwrap_or(0);
                 sub_textures.push(G4txSubTexture {
                     id,
@@ -660,7 +680,7 @@ mod tests {
             NamedTarget::Region { texture, sub } => {
                 assert_eq!(texture.name, "avatar01_13");
                 assert_eq!(sub.name, "edit_bar_icon14_off");
-            },
+            }
             NamedTarget::Texture(_) => panic!("attendu une région"),
         }
 
@@ -668,7 +688,14 @@ mod tests {
     }
 
     fn sub(name: &str, x: i16, y: i16, w: i16, h: i16) -> G4txSubTexture {
-        G4txSubTexture { id: 0, name: String::from(name), x, y, width: w, height: h }
+        G4txSubTexture {
+            id: 0,
+            name: String::from(name),
+            x,
+            y,
+            width: w,
+            height: h,
+        }
     }
 
     /// `find_sub_texture` / `region` / `region_rect` : résout `nom de région` → `(texture, rect)`.
@@ -766,7 +793,10 @@ mod tests {
 
     #[test]
     fn rejette_petit_et_mauvais_magic() {
-        assert!(matches!(parse(&[0u8; 8]), Err(FormatError::TooShort { .. })));
+        assert!(matches!(
+            parse(&[0u8; 8]),
+            Err(FormatError::TooShort { .. })
+        ));
         let mut buf = [0u8; HEADER_SIZE];
         buf[..4].copy_from_slice(b"XXXX");
         assert!(matches!(parse(&buf), Err(FormatError::BadMagic { .. })));

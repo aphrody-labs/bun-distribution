@@ -33,7 +33,12 @@
 //!
 //! FFI module (docs/adr/0001-platform-ffi.md): plain `repr(C)` data, no logic.
 
-#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code)]
+#![allow(
+    non_snake_case,
+    non_camel_case_types,
+    non_upper_case_globals,
+    dead_code
+)]
 
 use std::ffi::{c_char, c_int, c_uint, c_void};
 
@@ -53,7 +58,8 @@ pub type VAEntrypoint = c_int;
 pub type VABufferType = c_int;
 /// `VAConfigAttribType` (a C enum: `int`).
 pub type VAConfigAttribType = c_int;
-pub type VAMessageCallback = Option<unsafe extern "C" fn(user_context: *mut c_void, message: *const c_char)>;
+pub type VAMessageCallback =
+    Option<unsafe extern "C" fn(user_context: *mut c_void, message: *const c_char)>;
 
 pub const VA_STATUS_SUCCESS: VAStatus = 0;
 pub const VA_STATUS_ERROR_UNSUPPORTED_PROFILE: VAStatus = 0x0c;
@@ -247,7 +253,12 @@ pub struct VAPictureHEVC {
 
 impl VAPictureHEVC {
     /// An unused entry (`VA_INVALID_SURFACE`, `VA_PICTURE_HEVC_INVALID`).
-    pub const INVALID: Self = Self { picture_id: VA_INVALID_SURFACE, pic_order_cnt: 0, flags: VA_PICTURE_HEVC_INVALID, va_reserved: [0; VA_PADDING_LOW] };
+    pub const INVALID: Self = Self {
+        picture_id: VA_INVALID_SURFACE,
+        pic_order_cnt: 0,
+        flags: VA_PICTURE_HEVC_INVALID,
+        va_reserved: [0; VA_PADDING_LOW],
+    };
 }
 
 /// `VAPictureParameterBufferHEVC`; `pic_fields` and `slice_parsing_fields` are C bit-field unions
@@ -441,14 +452,28 @@ pub struct VAImage {
 }
 
 /// The `libva.so.2` entry points used (all `VAStatus`-returning unless noted).
-pub type vaInitialize = unsafe extern "C" fn(dpy: VADisplay, major: *mut c_int, minor: *mut c_int) -> VAStatus;
+pub type vaInitialize =
+    unsafe extern "C" fn(dpy: VADisplay, major: *mut c_int, minor: *mut c_int) -> VAStatus;
 pub type vaTerminate = unsafe extern "C" fn(dpy: VADisplay) -> VAStatus;
 pub type vaErrorStr = unsafe extern "C" fn(status: VAStatus) -> *const c_char;
 pub type vaQueryVendorString = unsafe extern "C" fn(dpy: VADisplay) -> *const c_char;
-pub type vaSetInfoCallback = unsafe extern "C" fn(dpy: VADisplay, callback: VAMessageCallback, user_context: *mut c_void) -> VAMessageCallback;
-pub type vaSetErrorCallback = unsafe extern "C" fn(dpy: VADisplay, callback: VAMessageCallback, user_context: *mut c_void) -> VAMessageCallback;
-pub type vaGetConfigAttributes =
-    unsafe extern "C" fn(dpy: VADisplay, profile: VAProfile, entrypoint: VAEntrypoint, attrib_list: *mut VAConfigAttrib, num_attribs: c_int) -> VAStatus;
+pub type vaSetInfoCallback = unsafe extern "C" fn(
+    dpy: VADisplay,
+    callback: VAMessageCallback,
+    user_context: *mut c_void,
+) -> VAMessageCallback;
+pub type vaSetErrorCallback = unsafe extern "C" fn(
+    dpy: VADisplay,
+    callback: VAMessageCallback,
+    user_context: *mut c_void,
+) -> VAMessageCallback;
+pub type vaGetConfigAttributes = unsafe extern "C" fn(
+    dpy: VADisplay,
+    profile: VAProfile,
+    entrypoint: VAEntrypoint,
+    attrib_list: *mut VAConfigAttrib,
+    num_attribs: c_int,
+) -> VAStatus;
 pub type vaCreateConfig = unsafe extern "C" fn(
     dpy: VADisplay,
     profile: VAProfile,
@@ -470,7 +495,11 @@ pub type vaCreateSurfaces = unsafe extern "C" fn(
     attrib_list: *mut c_void,
     num_attribs: c_uint,
 ) -> VAStatus;
-pub type vaDestroySurfaces = unsafe extern "C" fn(dpy: VADisplay, surfaces: *mut VASurfaceID, num_surfaces: c_int) -> VAStatus;
+pub type vaDestroySurfaces = unsafe extern "C" fn(
+    dpy: VADisplay,
+    surfaces: *mut VASurfaceID,
+    num_surfaces: c_int,
+) -> VAStatus;
 pub type vaCreateContext = unsafe extern "C" fn(
     dpy: VADisplay,
     config_id: VAConfigID,
@@ -492,14 +521,37 @@ pub type vaCreateBuffer = unsafe extern "C" fn(
     buf_id: *mut VABufferID,
 ) -> VAStatus;
 pub type vaDestroyBuffer = unsafe extern "C" fn(dpy: VADisplay, buffer_id: VABufferID) -> VAStatus;
-pub type vaBeginPicture = unsafe extern "C" fn(dpy: VADisplay, context: VAContextID, render_target: VASurfaceID) -> VAStatus;
-pub type vaRenderPicture = unsafe extern "C" fn(dpy: VADisplay, context: VAContextID, buffers: *mut VABufferID, num_buffers: c_int) -> VAStatus;
+pub type vaBeginPicture = unsafe extern "C" fn(
+    dpy: VADisplay,
+    context: VAContextID,
+    render_target: VASurfaceID,
+) -> VAStatus;
+pub type vaRenderPicture = unsafe extern "C" fn(
+    dpy: VADisplay,
+    context: VAContextID,
+    buffers: *mut VABufferID,
+    num_buffers: c_int,
+) -> VAStatus;
 pub type vaEndPicture = unsafe extern "C" fn(dpy: VADisplay, context: VAContextID) -> VAStatus;
-pub type vaSyncSurface = unsafe extern "C" fn(dpy: VADisplay, render_target: VASurfaceID) -> VAStatus;
-pub type vaCreateImage = unsafe extern "C" fn(dpy: VADisplay, format: *mut VAImageFormat, width: c_int, height: c_int, image: *mut VAImage) -> VAStatus;
+pub type vaSyncSurface =
+    unsafe extern "C" fn(dpy: VADisplay, render_target: VASurfaceID) -> VAStatus;
+pub type vaCreateImage = unsafe extern "C" fn(
+    dpy: VADisplay,
+    format: *mut VAImageFormat,
+    width: c_int,
+    height: c_int,
+    image: *mut VAImage,
+) -> VAStatus;
 pub type vaDestroyImage = unsafe extern "C" fn(dpy: VADisplay, image: VAImageID) -> VAStatus;
-pub type vaGetImage =
-    unsafe extern "C" fn(dpy: VADisplay, surface: VASurfaceID, x: c_int, y: c_int, width: c_uint, height: c_uint, image: VAImageID) -> VAStatus;
+pub type vaGetImage = unsafe extern "C" fn(
+    dpy: VADisplay,
+    surface: VASurfaceID,
+    x: c_int,
+    y: c_int,
+    width: c_uint,
+    height: c_uint,
+    image: VAImageID,
+) -> VAStatus;
 pub type vaPutImage = unsafe extern "C" fn(
     dpy: VADisplay,
     surface: VASurfaceID,
@@ -513,7 +565,8 @@ pub type vaPutImage = unsafe extern "C" fn(
     dest_width: c_uint,
     dest_height: c_uint,
 ) -> VAStatus;
-pub type vaMapBuffer = unsafe extern "C" fn(dpy: VADisplay, buf_id: VABufferID, pbuf: *mut *mut c_void) -> VAStatus;
+pub type vaMapBuffer =
+    unsafe extern "C" fn(dpy: VADisplay, buf_id: VABufferID, pbuf: *mut *mut c_void) -> VAStatus;
 pub type vaUnmapBuffer = unsafe extern "C" fn(dpy: VADisplay, buf_id: VABufferID) -> VAStatus;
 /// `libva-drm.so.2`: the display of a DRM device (render node) file descriptor.
 pub type vaGetDisplayDRM = unsafe extern "C" fn(fd: c_int) -> VADisplay;

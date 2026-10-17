@@ -78,7 +78,10 @@ fn quoted_after(src: &str, prefixes: &[&str]) -> HashSet<String> {
         while let Some(i) = src[from..].find(&pat).map(|i| i + from) {
             from = i + pat.len();
             // Whole identifiers only: `t(` must not match inside `ct(`.
-            let boundary = src[..i].chars().next_back().is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
+            let boundary = src[..i]
+                .chars()
+                .next_back()
+                .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
             // The id may start on the next line (`t(\n    "doc_save",`).
             let rest = src[from..].trim_start();
             if boundary
@@ -93,19 +96,33 @@ fn quoted_after(src: &str, prefixes: &[&str]) -> HashSet<String> {
 }
 
 fn valid_id(id: &str) -> bool {
-    let Some((area, name)) = id.split_once('.') else { return false };
+    let Some((area, name)) = id.split_once('.') else {
+        return false;
+    };
     !area.is_empty()
-        && area.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
+        && area
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
         && !name.is_empty()
-        && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-' || c == '.')
 }
 
 fn valid_milestone(m: &str) -> bool {
-    m == "none" || m.strip_prefix('M').and_then(|n| n.parse::<u32>().ok()).is_some_and(|n| n <= 14)
+    m == "none"
+        || m.strip_prefix('M')
+            .and_then(|n| n.parse::<u32>().ok())
+            .is_some_and(|n| n <= 14)
 }
 
 /// Validate features against the registry, tool table and source tree; returns the errors.
-pub fn validate(features: &[Feature], commands: &HashSet<String>, tools: &HashSet<String>, repo: &Path) -> Vec<String> {
+pub fn validate(
+    features: &[Feature],
+    commands: &HashSet<String>,
+    tools: &HashSet<String>,
+    repo: &Path,
+) -> Vec<String> {
     let mut errors = Vec::new();
     let mut ids = HashSet::new();
     for f in features {
@@ -129,7 +146,10 @@ pub fn validate(features: &[Feature], commands: &HashSet<String>, tools: &HashSe
             errors.push(e(format!("unknown status {:?}", f.status)));
         }
         if !valid_milestone(&f.milestone) {
-            errors.push(e(format!("milestone {:?} must be M0–M14 or none", f.milestone)));
+            errors.push(e(format!(
+                "milestone {:?} must be M0–M14 or none",
+                f.milestone
+            )));
         }
         if matches!(f.status.as_str(), "shipped" | "partial") {
             for c in f.commands.iter().filter(|c| !commands.contains(*c)) {
@@ -140,7 +160,9 @@ pub fn validate(features: &[Feature], commands: &HashSet<String>, tools: &HashSe
             }
         }
         if f.status == "shipped" && f.evidence.is_empty() {
-            errors.push(e("shipped features must cite at least one test in `evidence`".into()));
+            errors.push(e(
+                "shipped features must cite at least one test in `evidence`".into(),
+            ));
         }
         for ev in &f.evidence {
             let Some((path, func)) = ev.split_once("::") else {
@@ -160,22 +182,46 @@ pub fn validate(features: &[Feature], commands: &HashSet<String>, tools: &HashSe
 pub fn run(args: &[String]) -> Result<()> {
     let repo = root();
     let path = repo.join("parity/acrobat-features.toml");
-    let text = std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-    let file: File = toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
+    let text =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
+    let file: File =
+        toml::from_str(&text).with_context(|| format!("parsing {}", path.display()))?;
     if file.schema.version != 1 {
         bail!("unsupported parity schema version {}", file.schema.version);
     }
-    let commands = quoted_after(&std::fs::read_to_string(repo.join("crates/engine/src/commands.rs"))?, &["c", "ct"]);
-    let tools = quoted_after(&std::fs::read_to_string(repo.join("crates/automation/src/tools.rs"))?, &["t"]);
+    let commands = quoted_after(
+        &std::fs::read_to_string(repo.join("crates/engine/src/commands.rs"))?,
+        &["c", "ct"],
+    );
+    let tools = quoted_after(
+        &std::fs::read_to_string(repo.join("crates/automation/src/tools.rs"))?,
+        &["t"],
+    );
     let errors = validate(&file.features, &commands, &tools, &repo);
 
     // Progress: per tier and per area. N/A tier and `na` status are excluded from percentages.
-    let counted: Vec<&Feature> = file.features.iter().filter(|f| f.status != "na" && f.tier != "N/A").collect();
+    let counted: Vec<&Feature> = file
+        .features
+        .iter()
+        .filter(|f| f.status != "na" && f.tier != "N/A")
+        .collect();
     let score = |fs: &[&Feature]| {
         let shipped = fs.iter().filter(|f| f.status == "shipped").count();
         let partial = fs.iter().filter(|f| f.status == "partial").count();
-        let pct = |x: f64| if fs.is_empty() { 0.0 } else { 100.0 * x / fs.len() as f64 };
-        (fs.len(), shipped, partial, pct(shipped as f64), pct(shipped as f64 + partial as f64 / 2.0))
+        let pct = |x: f64| {
+            if fs.is_empty() {
+                0.0
+            } else {
+                100.0 * x / fs.len() as f64
+            }
+        };
+        (
+            fs.len(),
+            shipped,
+            partial,
+            pct(shipped as f64),
+            pct(shipped as f64 + partial as f64 / 2.0),
+        )
     };
     let mut by_tier = BTreeMap::new();
     for t in TIERS.iter().filter(|t| **t != "N/A") {
@@ -188,7 +234,12 @@ pub fn run(args: &[String]) -> Result<()> {
         by_area.push((*a, *name, score(&fs)));
     }
     let total = score(&counted);
-    let without_headless: Vec<&str> = file.features.iter().filter(|f| f.status == "shipped" && f.tools.is_empty()).map(|f| f.id.as_str()).collect();
+    let without_headless: Vec<&str> = file
+        .features
+        .iter()
+        .filter(|f| f.status == "shipped" && f.tools.is_empty())
+        .map(|f| f.id.as_str())
+        .collect();
 
     if args.iter().any(|a| a == "--json") {
         let json = serde_json::json!({
@@ -199,15 +250,29 @@ pub fn run(args: &[String]) -> Result<()> {
         });
         println!("{}", serde_json::to_string_pretty(&json)?);
     } else {
-        println!("parity: {} features ({} counted; {} na)", file.features.len(), counted.len(), file.features.len() - counted.len());
+        println!(
+            "parity: {} features ({} counted; {} na)",
+            file.features.len(),
+            counted.len(),
+            file.features.len() - counted.len()
+        );
         println!("\n  tier  features  shipped  partial  shipped%  weighted%");
         for (t, s) in &by_tier {
-            println!("  {t:<4}  {:>8}  {:>7}  {:>7}  {:>7.1}%  {:>8.1}%", s.0, s.1, s.2, s.3, s.4);
+            println!(
+                "  {t:<4}  {:>8}  {:>7}  {:>7}  {:>7.1}%  {:>8.1}%",
+                s.0, s.1, s.2, s.3, s.4
+            );
         }
-        println!("  all   {:>8}  {:>7}  {:>7}  {:>7.1}%  {:>8.1}%", total.0, total.1, total.2, total.3, total.4);
+        println!(
+            "  all   {:>8}  {:>7}  {:>7}  {:>7.1}%  {:>8.1}%",
+            total.0, total.1, total.2, total.3, total.4
+        );
         println!("\n  area                                features  shipped  partial  weighted%");
         for (a, name, s) in &by_area {
-            println!("  {a} {name:<33} {:>8}  {:>7}  {:>7}  {:>8.1}%", s.0, s.1, s.2, s.4);
+            println!(
+                "  {a} {name:<33} {:>8}  {:>7}  {:>7}  {:>8.1}%",
+                s.0, s.1, s.2, s.4
+            );
         }
         if args.iter().any(|a| a == "--partial") {
             println!("\npartial features and what is missing:");
@@ -255,15 +320,21 @@ mod tests {
     fn committed_manifest_is_well_formed() {
         let path = root().join("parity/acrobat-features.toml");
         let text = std::fs::read_to_string(&path).expect("read the committed parity manifest");
-        let _: File = toml::from_str(&text).expect("the committed parity manifest must be valid TOML");
+        let _: File =
+            toml::from_str(&text).expect("the committed parity manifest must be valid TOML");
     }
 
     #[test]
     fn registry_ids_are_extracted_from_source() {
-        let src =
-            "c(\"file.open\", \"Open…\", FILE, None), ct(\"edit.undo\", \"Undo\"), t(\"doc_open\", \"Open\"), t(\n    \"doc_save\",), format(x)";
-        assert_eq!(quoted_after(src, &["c", "ct"]), HashSet::from(["file.open".to_string(), "edit.undo".to_string()]));
-        assert_eq!(quoted_after(src, &["t"]), HashSet::from(["doc_open".to_string(), "doc_save".to_string()]));
+        let src = "c(\"file.open\", \"Open…\", FILE, None), ct(\"edit.undo\", \"Undo\"), t(\"doc_open\", \"Open\"), t(\n    \"doc_save\",), format(x)";
+        assert_eq!(
+            quoted_after(src, &["c", "ct"]),
+            HashSet::from(["file.open".to_string(), "edit.undo".to_string()])
+        );
+        assert_eq!(
+            quoted_after(src, &["t"]),
+            HashSet::from(["doc_open".to_string(), "doc_save".to_string()])
+        );
     }
 
     #[test]
@@ -279,12 +350,32 @@ mod tests {
 
         let mut bad = f("organize.Rotate", "shipped");
         bad.commands = vec!["page.spin".into()];
-        bad.evidence = vec!["xtask/src/parity.rs::no_such_test".into(), "nowhere.rs::x".into(), "nopath".into()];
-        let errs = validate(&[bad, f("organize.x", "planned"), f("organize.x", "bogus")], &cmds, &tools, &repo);
+        bad.evidence = vec![
+            "xtask/src/parity.rs::no_such_test".into(),
+            "nowhere.rs::x".into(),
+            "nopath".into(),
+        ];
+        let errs = validate(
+            &[bad, f("organize.x", "planned"), f("organize.x", "bogus")],
+            &cmds,
+            &tools,
+            &repo,
+        );
         let all = errs.join("\n");
-        for needle in ["kebab", "registry", "no `fn no_such_test`", "does not exist", "path.rs::test_fn", "duplicate id", "unknown status"] {
+        for needle in [
+            "kebab",
+            "registry",
+            "no `fn no_such_test`",
+            "does not exist",
+            "path.rs::test_fn",
+            "duplicate id",
+            "unknown status",
+        ] {
             assert!(all.contains(needle), "missing {needle:?} in:\n{all}");
         }
-        assert!(validate(&[f("organize.y", "shipped")], &cmds, &tools, &repo)[0].contains("at least one test"));
+        assert!(
+            validate(&[f("organize.y", "shipped")], &cmds, &tools, &repo)[0]
+                .contains("at least one test")
+        );
     }
 }

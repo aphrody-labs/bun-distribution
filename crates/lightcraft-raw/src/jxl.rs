@@ -46,8 +46,10 @@ const BT2100: [[f64; 2]; 3] = [[0.708, 0.292], [0.170, 0.797], [0.131, 0.046]];
 const P3: [[f64; 2]; 3] = [[0.680, 0.320], [0.265, 0.690], [0.150, 0.060]];
 
 fn inverse(m: Matrix) -> Matrix {
-    let c =
-        |i: usize, j: usize| m[(i + 1) % 3][(j + 1) % 3] * m[(i + 2) % 3][(j + 2) % 3] - m[(i + 1) % 3][(j + 2) % 3] * m[(i + 2) % 3][(j + 1) % 3];
+    let c = |i: usize, j: usize| {
+        m[(i + 1) % 3][(j + 1) % 3] * m[(i + 2) % 3][(j + 2) % 3]
+            - m[(i + 1) % 3][(j + 2) % 3] * m[(i + 2) % 3][(j + 1) % 3]
+    };
     let det = m[0][0] * c(0, 0) + m[0][1] * c(0, 1) + m[0][2] * c(0, 2);
     let mut out = [[0.0; 3]; 3];
     for (i, row) in out.iter_mut().enumerate() {
@@ -72,7 +74,11 @@ fn mul(a: Matrix, b: Matrix) -> Matrix {
 fn rgb_to_xyz(p: [[f64; 2]; 3]) -> Matrix {
     let xyz = |[x, y]: [f64; 2]| [x / y, 1.0, (1.0 - x - y) / y];
     let cols = [xyz(p[0]), xyz(p[1]), xyz(p[2])];
-    let prim = [[cols[0][0], cols[1][0], cols[2][0]], [1.0, 1.0, 1.0], [cols[0][2], cols[1][2], cols[2][2]]];
+    let prim = [
+        [cols[0][0], cols[1][0], cols[2][0]],
+        [1.0, 1.0, 1.0],
+        [cols[0][2], cols[1][2], cols[2][2]],
+    ];
     let w = xyz(D65);
     let inv = inverse(prim);
     let s: [f64; 3] = std::array::from_fn(|i| (0..3).map(|k| inv[i][k] * w[k]).sum());
@@ -93,7 +99,12 @@ enum Output {
 /// encoding and the intensity target. Lossy data is only accepted when the declared encoding is a
 /// linear RGB one with a D65 white point (what a raw DNG writer signals) and no HDR tone mapping would
 /// apply, otherwise the samples cannot be restored faithfully.
-fn output_for(xyb: bool, encoding: &ColourEncoding, intensity_target: f32, planes: usize) -> Result<Output> {
+fn output_for(
+    xyb: bool,
+    encoding: &ColourEncoding,
+    intensity_target: f32,
+    planes: usize,
+) -> Result<Output> {
     if !xyb {
         return Ok(Output::AsCoded);
     }
@@ -117,7 +128,9 @@ fn output_for(xyb: bool, encoding: &ColourEncoding, intensity_target: f32, plane
         Primaries::Srgb => return Ok(Output::FromXyb(None)),
         Primaries::Bt2100 => BT2100,
         Primaries::P3 => P3,
-        Primaries::Custom { red, green, blue } => [red, green, blue].map(|c| c.as_float().map(f64::from)),
+        Primaries::Custom { red, green, blue } => {
+            [red, green, blue].map(|c| c.as_float().map(f64::from))
+        }
     };
     if primaries.iter().any(|p| p[1] <= 0.0) {
         return Err(unsupported("invalid primaries"));
@@ -137,17 +150,35 @@ fn corrupt(e: impl std::fmt::Display) -> RawError {
 /// nominal `cw × ch`, or the part of it inside the image `vw × vh` (edge tiles), `cpp` colour planes,
 /// a sample type matching the IFD. Returns the decoder and the codestream's integer maximum (0 for float).
 #[allow(clippy::too_many_arguments)]
-fn open(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits: u32, float: bool) -> Result<(JxlImage, f32, Output)> {
+fn open(
+    src: &[u8],
+    cw: usize,
+    ch: usize,
+    vw: usize,
+    vh: usize,
+    cpp: usize,
+    bits: u32,
+    float: bool,
+) -> Result<(JxlImage, f32, Output)> {
     if !matches!(cpp, 1 | 3) {
-        return Err(RawError::Unsupported(format!("JPEG XL with {cpp} samples per pixel")));
+        return Err(RawError::Unsupported(format!(
+            "JPEG XL with {cpp} samples per pixel"
+        )));
     }
     if float && bits != 16 || !float && !(8..=16).contains(&bits) {
-        return Err(RawError::Unsupported(format!("JPEG XL with {bits}-bit {} samples", if float { "float" } else { "integer" })));
+        return Err(RawError::Unsupported(format!(
+            "JPEG XL with {bits}-bit {} samples",
+            if float { "float" } else { "integer" }
+        )));
     }
     // The decoder's memory is bounded by the tile itself: a codestream that needs more (extra
     // channels, layers, …) fails to decode instead of allocating what its header asks for.
     let pixels = cw.saturating_mul(ch);
-    let budget = |planes: usize| pixels.saturating_mul(planes).saturating_mul(BYTES_PER_SAMPLE);
+    let budget = |planes: usize| {
+        pixels
+            .saturating_mul(planes)
+            .saturating_mul(BYTES_PER_SAMPLE)
+    };
     let tracker = AllocTracker::with_limit(budget(cpp).saturating_add(MARGIN_BYTES));
     let mut img = JxlImage::builder()
         .pool(JxlThreadPool::none()) // chunks are already decoded in parallel
@@ -156,27 +187,50 @@ fn open(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits
         .read(std::io::Cursor::new(src))
         .map_err(corrupt)?;
     // lossy (VarDCT) decoding always works on three colour channels, even for a grey tile
-    if cpp == 1 && img.frame_header(0).is_some_and(|f| f.encoding == Encoding::VarDct) {
+    if cpp == 1
+        && img
+            .frame_header(0)
+            .is_some_and(|f| f.encoding == Encoding::VarDct)
+    {
         tracker.expand_limit(budget(2));
     }
     let header = img.image_header();
     let (jw, jh) = (img.width() as usize, img.height() as usize);
     if (jw, jh) != (cw, ch) && (jw, jh) != (vw, vh) {
-        return Err(RawError::Corrupt(format!("JPEG XL tile is {jw}×{jh}, expected {cw}×{ch} (or {vw}×{vh} at the image edge)")));
+        return Err(RawError::Corrupt(format!(
+            "JPEG XL tile is {jw}×{jh}, expected {cw}×{ch} (or {vw}×{vh} at the image edge)"
+        )));
     }
     if header.metadata.orientation != 1 {
-        return Err(RawError::Corrupt("JPEG XL tile with a non-identity orientation".into()));
+        return Err(RawError::Corrupt(
+            "JPEG XL tile with a non-identity orientation".into(),
+        ));
     }
     let planes = if header.metadata.grayscale() { 1 } else { 3 };
     if planes != cpp {
-        return Err(RawError::Corrupt(format!("JPEG XL tile has {planes} colour planes, the IFD {cpp} samples per pixel")));
+        return Err(RawError::Corrupt(format!(
+            "JPEG XL tile has {planes} colour planes, the IFD {cpp} samples per pixel"
+        )));
     }
     let max = match header.metadata.bit_depth {
-        BitDepth::IntegerSample { bits_per_sample } if !float && (1..=16).contains(&bits_per_sample) => ((1u32 << bits_per_sample) - 1) as f32,
+        BitDepth::IntegerSample { bits_per_sample }
+            if !float && (1..=16).contains(&bits_per_sample) =>
+        {
+            ((1u32 << bits_per_sample) - 1) as f32
+        }
         BitDepth::FloatSample { .. } if float => 0.0,
-        d => return Err(RawError::Corrupt(format!("JPEG XL tile sample type {d:?} does not match the IFD"))),
+        d => {
+            return Err(RawError::Corrupt(format!(
+                "JPEG XL tile sample type {d:?} does not match the IFD"
+            )));
+        }
     };
-    let output = output_for(header.metadata.xyb_encoded, &header.metadata.colour_encoding, header.metadata.tone_mapping.intensity_target, planes)?;
+    let output = output_for(
+        header.metadata.xyb_encoded,
+        &header.metadata.colour_encoding,
+        header.metadata.tone_mapping.intensity_target,
+        planes,
+    )?;
     if matches!(output, Output::FromXyb(_)) {
         img.request_color_encoding(EnumColourEncoding::srgb_linear(RenderingIntent::Relative));
     }
@@ -185,14 +239,32 @@ fn open(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits
 
 /// Check the first chunk's headers ([`open`]) without decoding pixels (header-only probing).
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn check(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits: u32, float: bool) -> Result<()> {
+pub(crate) fn check(
+    src: &[u8],
+    cw: usize,
+    ch: usize,
+    vw: usize,
+    vh: usize,
+    cpp: usize,
+    bits: u32,
+    float: bool,
+) -> Result<()> {
     open(src, cw, ch, vw, vh, cpp, bits, float).map(|_| ())
 }
 
 /// Decode one chunk into `cw × ch × cpp` samples (row-major, interleaved); a chunk coded at its
 /// in-image size `vw × vh` fills the top-left of that, the rest stays 0.
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn decode(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp: usize, bits: u32, float: bool) -> Result<ChunkPx> {
+pub(crate) fn decode(
+    src: &[u8],
+    cw: usize,
+    ch: usize,
+    vw: usize,
+    vh: usize,
+    cpp: usize,
+    bits: u32,
+    float: bool,
+) -> Result<ChunkPx> {
     let (img, max, output) = open(src, cw, ch, vw, vh, cpp, bits, float)?;
     if img.num_loaded_keyframes() == 0 {
         return Err(corrupt("no complete frame"));
@@ -201,7 +273,9 @@ pub(crate) fn decode(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp
     let fb = render.image_all_channels();
     let (jw, jh, fc) = (fb.width(), fb.height(), fb.channels());
     if jw == 0 || jh == 0 || jw > cw || jh > ch || fc < cpp {
-        return Err(corrupt(format!("rendered {jw}×{jh}×{fc}, expected {cw}×{ch}×{cpp}")));
+        return Err(corrupt(format!(
+            "rendered {jw}×{jh}×{fc}, expected {cw}×{ch}×{cpp}"
+        )));
     }
     let n = cw.saturating_mul(ch).saturating_mul(cpp);
     let rows = fb.buf().chunks_exact(jw * fc);
@@ -233,7 +307,9 @@ pub(crate) fn decode(src: &[u8], cw: usize, ch: usize, vw: usize, vh: usize, cpp
             for (d, s) in dst.chunks_exact_mut(cpp).zip(src.chunks_exact(fc)) {
                 restore(s, &mut px[..cpp]);
                 // `as` saturates (NaN → 0): lossy overshoot clips to the integer range
-                d.iter_mut().zip(&px).for_each(|(d, s)| *d = (s * max).round() as u16);
+                d.iter_mut()
+                    .zip(&px)
+                    .for_each(|(d, s)| *d = (s * max).round() as u16);
             }
         }
         ChunkPx::U16(out)
@@ -265,9 +341,11 @@ mod tests {
     #[test]
     fn data_that_is_not_xyb_is_rendered_as_coded() {
         // lossless tiles: whatever the header declares, the decoder must not convert anything
-        for e in
-            [linear(Primaries::Srgb), linear(Primaries::Bt2100), ColourEncoding::Enum(EnumColourEncoding::srgb_gamma22(RenderingIntent::Relative))]
-        {
+        for e in [
+            linear(Primaries::Srgb),
+            linear(Primaries::Bt2100),
+            ColourEncoding::Enum(EnumColourEncoding::srgb_gamma22(RenderingIntent::Relative)),
+        ] {
             assert_eq!(output_for(false, &e, 255.0, 3).unwrap(), Output::AsCoded);
             assert_eq!(output_for(false, &e, 10_000.0, 1).unwrap(), Output::AsCoded);
         }
@@ -275,13 +353,20 @@ mod tests {
 
     #[test]
     fn lossy_data_with_srgb_primaries_needs_no_matrix() {
-        assert_eq!(output_for(true, &linear(Primaries::Srgb), 255.0, 3).unwrap(), Output::FromXyb(None));
+        assert_eq!(
+            output_for(true, &linear(Primaries::Srgb), 255.0, 3).unwrap(),
+            Output::FromXyb(None)
+        );
     }
 
     #[test]
     fn lossy_data_is_restored_to_the_declared_primaries() {
         // linear sRGB to linear BT.2020/BT.2100 primaries (D65), as published in ITU-R BT.2087
-        let expect = [[0.6274, 0.3293, 0.0433], [0.0691, 0.9195, 0.0114], [0.0164, 0.0880, 0.8956]];
+        let expect = [
+            [0.6274, 0.3293, 0.0433],
+            [0.0691, 0.9195, 0.0114],
+            [0.0164, 0.0880, 0.8956],
+        ];
         let m = matrix(output_for(true, &linear(Primaries::Bt2100), 255.0, 3).unwrap());
         for (r, e) in m.iter().zip(&expect) {
             for (v, e) in r.iter().zip(e) {
@@ -291,30 +376,79 @@ mod tests {
             assert!((r.iter().sum::<f32>() - 1.0).abs() < 1e-5, "{m:?}");
         }
         // custom primaries equal to the named ones give the same matrix
-        let xy = |[x, y]: [f64; 2]| Customxy { x: (x * 1e6) as i32, y: (y * 1e6) as i32 };
-        let custom = Primaries::Custom { red: xy(BT2100[0]), green: xy(BT2100[1]), blue: xy(BT2100[2]) };
+        let xy = |[x, y]: [f64; 2]| Customxy {
+            x: (x * 1e6) as i32,
+            y: (y * 1e6) as i32,
+        };
+        let custom = Primaries::Custom {
+            red: xy(BT2100[0]),
+            green: xy(BT2100[1]),
+            blue: xy(BT2100[2]),
+        };
         let c = matrix(output_for(true, &linear(custom), 255.0, 3).unwrap());
-        assert!(c.iter().flatten().zip(m.iter().flatten()).all(|(a, b)| (a - b).abs() < 1e-5), "{c:?} {m:?}");
+        assert!(
+            c.iter()
+                .flatten()
+                .zip(m.iter().flatten())
+                .all(|(a, b)| (a - b).abs() < 1e-5),
+            "{c:?} {m:?}"
+        );
         // the sRGB primaries lie inside the wider P3 gamut: the full-saturation sRGB green is a valid P3 colour
         let inv = matrix(output_for(true, &linear(Primaries::P3), 255.0, 3).unwrap());
         let srgb_green_in_p3 = [inv[0][1], inv[1][1], inv[2][1]];
-        assert!(srgb_green_in_p3.iter().all(|v| (0.0..=1.0).contains(v)), "sRGB green lies inside P3");
+        assert!(
+            srgb_green_in_p3.iter().all(|v| (0.0..=1.0).contains(v)),
+            "sRGB green lies inside P3"
+        );
     }
 
     #[test]
     fn lossy_data_that_cannot_be_restored_is_unsupported() {
-        let bad = |xyb_planes: usize, e: ColourEncoding, it: f32| matches!(output_for(true, &e, it, xyb_planes), Err(RawError::Unsupported(_)));
+        let bad = |xyb_planes: usize, e: ColourEncoding, it: f32| {
+            matches!(
+                output_for(true, &e, it, xyb_planes),
+                Err(RawError::Unsupported(_))
+            )
+        };
         assert!(bad(1, linear(Primaries::Srgb), 255.0), "grey");
-        assert!(bad(3, linear(Primaries::Srgb), 10_000.0), "HDR intensity target would tone-map");
-        assert!(bad(3, ColourEncoding::Enum(EnumColourEncoding::srgb_gamma22(RenderingIntent::Relative)), 255.0), "non-linear");
+        assert!(
+            bad(3, linear(Primaries::Srgb), 10_000.0),
+            "HDR intensity target would tone-map"
+        );
+        assert!(
+            bad(
+                3,
+                ColourEncoding::Enum(EnumColourEncoding::srgb_gamma22(RenderingIntent::Relative)),
+                255.0
+            ),
+            "non-linear"
+        );
         let mut e = EnumColourEncoding::srgb_linear(RenderingIntent::Relative);
         e.white_point = WhitePoint::Dci;
-        assert!(bad(3, ColourEncoding::Enum(e.clone()), 255.0), "white point");
+        assert!(
+            bad(3, ColourEncoding::Enum(e.clone()), 255.0),
+            "white point"
+        );
         e.white_point = WhitePoint::D65;
-        e.primaries =
-            Primaries::Custom { red: Customxy { x: 0, y: 0 }, green: Customxy { x: 300_000, y: 600_000 }, blue: Customxy { x: 150_000, y: 60_000 } };
-        assert!(bad(3, ColourEncoding::Enum(e.clone()), 255.0), "degenerate primaries");
+        e.primaries = Primaries::Custom {
+            red: Customxy { x: 0, y: 0 },
+            green: Customxy {
+                x: 300_000,
+                y: 600_000,
+            },
+            blue: Customxy {
+                x: 150_000,
+                y: 60_000,
+            },
+        };
+        assert!(
+            bad(3, ColourEncoding::Enum(e.clone()), 255.0),
+            "degenerate primaries"
+        );
         e.colour_space = ColourSpace::Grey;
-        assert!(bad(3, ColourEncoding::Enum(e.clone()), 255.0), "grey declared");
+        assert!(
+            bad(3, ColourEncoding::Enum(e.clone()), 255.0),
+            "grey declared"
+        );
     }
 }

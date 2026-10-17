@@ -124,12 +124,24 @@ fn to_jsonl_roundtrip() {
     let original_call = s
         .events
         .iter()
-        .find_map(|e| if let SessionEvent::ToolCall(c) = e { Some(c) } else { None })
+        .find_map(|e| {
+            if let SessionEvent::ToolCall(c) = e {
+                Some(c)
+            } else {
+                None
+            }
+        })
         .unwrap();
     let parsed_call = back
         .events
         .iter()
-        .find_map(|e| if let SessionEvent::ToolCall(c) = e { Some(c) } else { None })
+        .find_map(|e| {
+            if let SessionEvent::ToolCall(c) = e {
+                Some(c)
+            } else {
+                None
+            }
+        })
         .unwrap();
     assert_eq!(original_call, parsed_call);
 }
@@ -153,8 +165,9 @@ async fn jsonl_store_save_load_roundtrip() {
 async fn jsonl_store_list_returns_all_session_ids() {
     let dir = TempDir::new().unwrap();
     let store = JsonlFileStore::new(dir.path());
-    let ids: Vec<SessionId> =
-        (0..3).map(|i| SessionId::new(format!("list-test-{i:02}")).unwrap()).collect();
+    let ids: Vec<SessionId> = (0..3)
+        .map(|i| SessionId::new(format!("list-test-{i:02}")).unwrap())
+        .collect();
     for id in &ids {
         let mut s = Session::new(id.clone(), serde_json::json!({}));
         s.add_turn(Turn {
@@ -170,7 +183,9 @@ async fn jsonl_store_list_returns_all_session_ids() {
     }
     // Drop a non-jsonl file alongside the sessions to ensure the lister
     // ignores it.
-    tokio::fs::write(dir.path().join("README.md"), b"ignore me").await.unwrap();
+    tokio::fs::write(dir.path().join("README.md"), b"ignore me")
+        .await
+        .unwrap();
     let listed = store.list_sessions().await.expect("list");
     // Sorted lexicographically by `JsonlFileStore::list_sessions`.
     let mut expected = ids.clone();
@@ -217,7 +232,10 @@ fn replay_visits_all_events_in_order() {
         seen_for_cb.lock().unwrap().push(tag);
     });
     assert_eq!(count, s.events.len());
-    assert_eq!(*seen.lock().unwrap(), vec!["start", "turn", "turn", "tool", "end"],);
+    assert_eq!(
+        *seen.lock().unwrap(),
+        vec!["start", "turn", "turn", "tool", "end"],
+    );
 }
 
 #[test]
@@ -239,8 +257,11 @@ fn corrupt_jsonl_line_returns_invalid_jsonl_error() {
     let err = Session::from_jsonl(&jsonl).unwrap_err();
     match err {
         SessionError::InvalidJsonl(msg) => {
-            assert!(msg.contains("line"), "expected 'line N' in error, got: {msg}");
-        },
+            assert!(
+                msg.contains("line"),
+                "expected 'line N' in error, got: {msg}"
+            );
+        }
         other => panic!("unexpected error: {other:?}"),
     }
 }

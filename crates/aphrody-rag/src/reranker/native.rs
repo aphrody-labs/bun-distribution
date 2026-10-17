@@ -46,11 +46,18 @@ impl NativeReranker {
         let spec = find_reranker(model)
             .ok_or_else(|| RagError::RerankFailed(format!("unknown native reranker `{model}`")))?;
         let dir = spec.default_dir();
-        let dir = if install { ensure_model(&spec, &dir) } else { require_installed(&spec, &dir) }
-            .map_err(|error| RagError::RerankFailed(error.to_string()))?;
+        let dir = if install {
+            ensure_model(&spec, &dir)
+        } else {
+            require_installed(&spec, &dir)
+        }
+        .map_err(|error| RagError::RerankFailed(error.to_string()))?;
         let engine = NativeEngine::load(&dir, &spec, EmbedOptions::default())
             .map_err(|error| RagError::RerankFailed(error.to_string()))?;
-        Ok(Self { engine: Arc::new(engine), model_id: format!("native:{}", spec.versioned_id()) })
+        Ok(Self {
+            engine: Arc::new(engine),
+            model_id: format!("native:{}", spec.versioned_id()),
+        })
     }
 }
 
@@ -75,7 +82,9 @@ impl Reranker for NativeReranker {
         .map_err(|error| RagError::RerankFailed(format!("rerank worker failed: {error}")))?
         .map_err(|error| RagError::RerankFailed(error.to_string()))?;
         if scores.len() != candidates.len() {
-            return Err(RagError::RerankFailed("score count differs from candidates".into()));
+            return Err(RagError::RerankFailed(
+                "score count differs from candidates".into(),
+            ));
         }
         for (candidate, score) in candidates.iter_mut().zip(scores) {
             candidate.score = f64::from(score);

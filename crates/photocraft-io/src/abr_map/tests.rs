@@ -4,25 +4,43 @@ use photocraft_psd::descriptor::{Id, UnicodeString};
 
 fn sample(id: &str, w: u32, h: u32, depth: u16) -> AbrSample {
     let bpp = usize::from(depth / 8);
-    let data = (0..w as usize * h as usize).flat_map(|i| std::iter::repeat_n(if i % 2 == 0 { 255u8 } else { 0 }, bpp)).collect();
-    AbrSample { id: id.into(), width: w, height: h, depth, data }
+    let data = (0..w as usize * h as usize)
+        .flat_map(|i| std::iter::repeat_n(if i % 2 == 0 { 255u8 } else { 0 }, bpp))
+        .collect();
+    AbrSample {
+        id: id.into(),
+        width: w,
+        height: h,
+        depth,
+        data,
+    }
 }
 
 fn t(s: &str) -> Value {
     Value::Text(UnicodeString::new_nul(s))
 }
 fn u(unit: &[u8; 4], v: f64) -> Value {
-    Value::UnitFloat { unit: *unit, value: v }
+    Value::UnitFloat {
+        unit: *unit,
+        value: v,
+    }
 }
 fn prc(v: f64) -> Value {
     u(b"#Prc", v)
 }
 fn en(ty: &str, v: &str) -> Value {
-    Value::Enumerated { type_id: Id::new(ty), value: Id::new(v) }
+    Value::Enumerated {
+        type_id: Id::new(ty),
+        value: Id::new(v),
+    }
 }
 fn var(control: i32, jitter: f64, minimum: f64) -> Value {
     Value::Descriptor(
-        Descriptor::new("brVr").with("bVTy", Value::Integer(control)).with("fStp", Value::Integer(40)).with("jitter", prc(jitter)).with("Mnm ", prc(minimum)),
+        Descriptor::new("brVr")
+            .with("bVTy", Value::Integer(control))
+            .with("fStp", Value::Integer(40))
+            .with("jitter", prc(jitter))
+            .with("Mnm ", prc(minimum)),
     )
 }
 
@@ -67,14 +85,28 @@ fn full_preset() -> Descriptor {
         .with("textureDepth", prc(60.0))
         .with("minimumDepth", prc(20.0))
         .with("textureDepthDynamics", var(2, 30.0, 0.0))
-        .with("Txtr", Value::Descriptor(Descriptor::new("Ptrn").with("Nm  ", t("Grit")).with("Idnt", t("pat-uuid"))))
+        .with(
+            "Txtr",
+            Value::Descriptor(
+                Descriptor::new("Ptrn")
+                    .with("Nm  ", t("Grit"))
+                    .with("Idnt", t("pat-uuid")),
+            ),
+        )
         .with(
             "dualBrush",
             Value::Descriptor(
                 Descriptor::new("dualBrush")
                     .with("useDualBrush", Value::Boolean(true))
                     .with("Flip", Value::Boolean(true))
-                    .with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 12.0)).with("Hrdn", prc(50.0))))
+                    .with(
+                        "Brsh",
+                        Value::Descriptor(
+                            Descriptor::new("computedBrush")
+                                .with("Dmtr", u(b"#Pxl", 12.0))
+                                .with("Hrdn", prc(50.0)),
+                        ),
+                    )
                     .with("BlnM", en("BlnM", "hardMix"))
                     .with("Spcn", prc(30.0))
                     .with("Cnt ", Value::Integer(2))
@@ -133,66 +165,176 @@ fn v6_settings_map_onto_brush_sections() {
     for sub in [1, 2] {
         let computed = Descriptor::new("brushPreset")
             .with("Nm  ", t("Round 19"))
-            .with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 19.0)).with("Hrdn", prc(0.0)).with("Spcn", prc(10.0))));
-        let bytes = write_v6(sub, &[sample("$tip-1", 16, 8, 8)], &[grit_pattern()], &[full_preset(), computed], true).unwrap();
+            .with(
+                "Brsh",
+                Value::Descriptor(
+                    Descriptor::new("computedBrush")
+                        .with("Dmtr", u(b"#Pxl", 19.0))
+                        .with("Hrdn", prc(0.0))
+                        .with("Spcn", prc(10.0)),
+                ),
+            );
+        let bytes = write_v6(
+            sub,
+            &[sample("$tip-1", 16, 8, 8)],
+            &[grit_pattern()],
+            &[full_preset(), computed],
+            true,
+        )
+        .unwrap();
         let imp = read_abr(&bytes, "Test").unwrap();
         assert_eq!(imp.presets.len(), 2);
         let p = &imp.presets[0];
-        assert_eq!((p.name.as_str(), p.group.as_str(), p.builtin), ("Kitchen Sink", "Test", false));
+        assert_eq!(
+            (p.name.as_str(), p.group.as_str(), p.builtin),
+            ("Kitchen Sink", "Test", false)
+        );
         let b = &p.brush;
-        let TipShape::Sampled(tile) = &b.tip else { panic!("sampled tip expected") };
+        let TipShape::Sampled(tile) = &b.tip else {
+            panic!("sampled tip expected")
+        };
         assert_eq!((tile.width, tile.height), (16, 8));
         assert_eq!((tile.data[0], tile.data[1]), (65535, 0));
-        assert_eq!((b.size, b.angle, b.roundness, b.spacing, b.flip_x, b.flip_y), (64.0, 30.0, 0.8, 0.4, true, false));
+        assert_eq!(
+            (b.size, b.angle, b.roundness, b.spacing, b.flip_x, b.flip_y),
+            (64.0, 30.0, 0.8, 0.4, true, false)
+        );
         let sd = &b.shape_dynamics;
         assert!(sd.enabled && sd.flip_x_jitter && !sd.flip_y_jitter);
-        assert_eq!((sd.size.control, sd.size.jitter, sd.size.minimum), (Control::PenPressure, 0.2, 0.25));
-        assert_eq!((sd.angle.control, sd.roundness.control, sd.roundness.minimum), (Control::Direction, Control::PenTilt, 0.1));
+        assert_eq!(
+            (sd.size.control, sd.size.jitter, sd.size.minimum),
+            (Control::PenPressure, 0.2, 0.25)
+        );
+        assert_eq!(
+            (sd.angle.control, sd.roundness.control, sd.roundness.minimum),
+            (Control::Direction, Control::PenTilt, 0.1)
+        );
         let sc = &b.scattering;
         assert!(sc.enabled && sc.both_axes);
-        assert_eq!((sc.count, sc.scatter.jitter, sc.scatter.control, sc.scatter.fade_steps, sc.count_jitter.jitter), (3, 2.5, Control::Fade, 40, 0.5));
+        assert_eq!(
+            (
+                sc.count,
+                sc.scatter.jitter,
+                sc.scatter.control,
+                sc.scatter.fade_steps,
+                sc.count_jitter.jitter
+            ),
+            (3, 2.5, Control::Fade, 40, 0.5)
+        );
         let tx = &b.texture;
         assert!(tx.enabled && tx.each_tip && tx.invert);
-        assert_eq!((tx.scale, tx.brightness, tx.contrast, tx.mode, tx.depth), (1.5, -0.5, 0.25, MaskMode::ColorBurn, 0.6));
-        assert_eq!((tx.depth_jitter.jitter, tx.depth_jitter.minimum), (0.3, 0.2));
-        let Pattern::Tile(pt) = &tx.pattern else { panic!("embedded pattern expected, got {:?}", tx.pattern) };
+        assert_eq!(
+            (tx.scale, tx.brightness, tx.contrast, tx.mode, tx.depth),
+            (1.5, -0.5, 0.25, MaskMode::ColorBurn, 0.6)
+        );
+        assert_eq!(
+            (tx.depth_jitter.jitter, tx.depth_jitter.minimum),
+            (0.3, 0.2)
+        );
+        let Pattern::Tile(pt) = &tx.pattern else {
+            panic!("embedded pattern expected, got {:?}", tx.pattern)
+        };
         assert_eq!((pt.width, pt.height, pt.data[3]), (4, 2, 65535));
         let db = &b.dual_brush;
         assert!(db.enabled && db.flip && db.both_axes && db.tip == TipShape::Round);
-        assert_eq!((db.size, db.hardness, db.mode, db.spacing, db.count, db.scatter), (12.0, 0.5, MaskMode::HardMix, 0.3, 2, 1.2));
+        assert_eq!(
+            (
+                db.size,
+                db.hardness,
+                db.mode,
+                db.spacing,
+                db.count,
+                db.scatter
+            ),
+            (12.0, 0.5, MaskMode::HardMix, 0.3, 2, 1.2)
+        );
         let cd = &b.color_dynamics;
         assert!(cd.enabled && !cd.per_tip);
-        assert_eq!((cd.fg_bg.jitter, cd.hue_jitter, cd.saturation_jitter, cd.brightness_jitter, cd.purity), (0.4, 0.1, 0.2, 0.3, -0.5));
+        assert_eq!(
+            (
+                cd.fg_bg.jitter,
+                cd.hue_jitter,
+                cd.saturation_jitter,
+                cd.brightness_jitter,
+                cd.purity
+            ),
+            (0.4, 0.1, 0.2, 0.3, -0.5)
+        );
         assert!(b.transfer.enabled);
-        assert_eq!((b.transfer.opacity.control, b.transfer.opacity.minimum), (Control::PenPressure, 0.1));
-        assert_eq!((b.transfer.flow.control, b.transfer.flow.jitter), (Control::Fade, 0.15));
+        assert_eq!(
+            (b.transfer.opacity.control, b.transfer.opacity.minimum),
+            (Control::PenPressure, 0.1)
+        );
+        assert_eq!(
+            (b.transfer.flow.control, b.transfer.flow.jitter),
+            (Control::Fade, 0.15)
+        );
         assert!(b.pose.enabled && b.pose.override_rotation && !b.pose.override_tilt);
         assert_eq!((b.pose.tilt_x, b.pose.rotation), (45.0, 90.0));
         assert!(b.wet_edges && b.noise && b.build_up);
-        assert_eq!((b.opacity, b.flow, b.smoothing.amount, b.pressure_size), (0.8, 0.6, 0.4, true));
-        assert!(imp.warnings.iter().any(|w| w.contains("someFutureKey")), "{:?}", imp.warnings);
+        assert_eq!(
+            (b.opacity, b.flow, b.smoothing.amount, b.pressure_size),
+            (0.8, 0.6, 0.4, true)
+        );
+        assert!(
+            imp.warnings.iter().any(|w| w.contains("someFutureKey")),
+            "{:?}",
+            imp.warnings
+        );
         // The computed preset.
         let r = &imp.presets[1].brush;
-        assert_eq!((r.tip.clone(), r.size, r.hardness, r.spacing, r.pressure_size), (TipShape::Round, 19.0, 0.0, 0.1, false));
+        assert_eq!(
+            (
+                r.tip.clone(),
+                r.size,
+                r.hardness,
+                r.spacing,
+                r.pressure_size
+            ),
+            (TipShape::Round, 19.0, 0.0, 0.1, false)
+        );
     }
 }
 
 #[test]
 fn missing_pattern_and_tip_are_reported() {
-    let orphan = Descriptor::new("brushPreset").with("Nm  ", t("Orphan")).with("Brsh", Value::Descriptor(sampled_tip("$nowhere")));
-    let bytes = write_v6(2, &[sample("$tip-1", 4, 4, 16), sample("$tip-2", 4, 4, 8)], &[], &[full_preset(), orphan], false).unwrap();
+    let orphan = Descriptor::new("brushPreset")
+        .with("Nm  ", t("Orphan"))
+        .with("Brsh", Value::Descriptor(sampled_tip("$nowhere")));
+    let bytes = write_v6(
+        2,
+        &[sample("$tip-1", 4, 4, 16), sample("$tip-2", 4, 4, 8)],
+        &[],
+        &[full_preset(), orphan],
+        false,
+    )
+    .unwrap();
     let imp = read_abr(&bytes, "x").unwrap();
     assert_eq!(imp.presets.len(), 1);
-    assert!(matches!(imp.presets[0].brush.texture.pattern, Pattern::Procedural { .. }));
-    assert!(imp.warnings.iter().any(|w| w.contains("Grit")), "{:?}", imp.warnings);
-    assert!(imp.warnings.iter().any(|w| w.contains("Orphan")), "{:?}", imp.warnings);
+    assert!(matches!(
+        imp.presets[0].brush.texture.pattern,
+        Pattern::Procedural { .. }
+    ));
+    assert!(
+        imp.warnings.iter().any(|w| w.contains("Grit")),
+        "{:?}",
+        imp.warnings
+    );
+    assert!(
+        imp.warnings.iter().any(|w| w.contains("Orphan")),
+        "{:?}",
+        imp.warnings
+    );
 }
 
 #[test]
 fn disabled_smoothing_tool_options_keep_the_amount_and_mode() {
     let preset = Descriptor::new("brushPreset")
         .with("Nm  ", t("Smoothing off"))
-        .with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 19.0))))
+        .with(
+            "Brsh",
+            Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 19.0))),
+        )
         .with(
             "toolOptions",
             Value::Descriptor(
@@ -213,28 +355,82 @@ fn disabled_smoothing_tool_options_keep_the_amount_and_mode() {
 #[test]
 fn file_folders_nest_inside_the_import_group() {
     let named = |n: &str| Descriptor::new("brushPreset").with("Nm  ", t(n));
-    let orphan = Descriptor::new("brushPreset").with("Nm  ", t("Orphan")).with("Brsh", Value::Descriptor(sampled_tip("$nowhere")));
-    let presets = [named("Top"), named("Pen"), orphan, named("Nib"), named("Chalk")];
+    let orphan = Descriptor::new("brushPreset")
+        .with("Nm  ", t("Orphan"))
+        .with("Brsh", Value::Descriptor(sampled_tip("$nowhere")));
+    let presets = [
+        named("Top"),
+        named("Pen"),
+        orphan,
+        named("Nib"),
+        named("Chalk"),
+    ];
     let path = |p: &[&str]| p.iter().map(|s| s.to_string()).collect::<Vec<String>>();
-    let folders = [path(&[]), path(&["Inks"]), path(&["Inks"]), path(&["Inks", "Fine"]), path(&["Dry"])];
-    let bytes = write_v6_folders(2, &[sample("$a", 4, 4, 8), sample("$b", 4, 4, 8)], &[], &presets, &folders, false).unwrap();
+    let folders = [
+        path(&[]),
+        path(&["Inks"]),
+        path(&["Inks"]),
+        path(&["Inks", "Fine"]),
+        path(&["Dry"]),
+    ];
+    let bytes = write_v6_folders(
+        2,
+        &[sample("$a", 4, 4, 8), sample("$b", 4, 4, 8)],
+        &[],
+        &presets,
+        &folders,
+        false,
+    )
+    .unwrap();
     let imp = read_abr(&bytes, "My Set").unwrap();
     // The skipped preset (missing tip) doesn't shift the others' folders.
-    let got: Vec<(&str, &str, String)> = imp.presets.iter().map(|p| (p.name.as_str(), p.group.as_str(), p.folder.join("/"))).collect();
+    let got: Vec<(&str, &str, String)> = imp
+        .presets
+        .iter()
+        .map(|p| (p.name.as_str(), p.group.as_str(), p.folder.join("/")))
+        .collect();
     assert_eq!(
         got,
-        [("Top", "My Set", String::new()), ("Pen", "My Set", "Inks".into()), ("Nib", "My Set", "Inks/Fine".into()), ("Chalk", "My Set", "Dry".into())]
+        [
+            ("Top", "My Set", String::new()),
+            ("Pen", "My Set", "Inks".into()),
+            ("Nib", "My Set", "Inks/Fine".into()),
+            ("Chalk", "My Set", "Dry".into())
+        ]
     );
     // Without a hierarchy every preset is directly in the group.
-    let flat = read_abr(&write_v6(2, &[], &[], &[named("A")], false).unwrap(), "Flat").unwrap();
-    assert!(flat.presets.iter().all(|p| p.group == "Flat" && p.folder.is_empty()));
+    let flat = read_abr(
+        &write_v6(2, &[], &[], &[named("A")], false).unwrap(),
+        "Flat",
+    )
+    .unwrap();
+    assert!(
+        flat.presets
+            .iter()
+            .all(|p| p.group == "Flat" && p.folder.is_empty())
+    );
 }
 
 #[test]
 fn v1_v2_brushes_become_presets() {
     let brushes = vec![
-        LegacyBrush { name: String::new(), spacing: 25, anti_alias: true, tip: LegacyTip::Computed { diameter: 13, hardness: 50, angle: 20, roundness: 60 } },
-        LegacyBrush { name: "Dune Grass".into(), spacing: 0, anti_alias: false, tip: LegacyTip::Sampled(sample("", 30, 10, 8)) },
+        LegacyBrush {
+            name: String::new(),
+            spacing: 25,
+            anti_alias: true,
+            tip: LegacyTip::Computed {
+                diameter: 13,
+                hardness: 50,
+                angle: 20,
+                roundness: 60,
+            },
+        },
+        LegacyBrush {
+            name: "Dune Grass".into(),
+            spacing: 0,
+            anti_alias: false,
+            tip: LegacyTip::Sampled(sample("", 30, 10, 8)),
+        },
     ];
     for version in [1, 2] {
         let imp = read_abr(&write_v12(version, &brushes, true).unwrap(), "Old").unwrap();
@@ -242,27 +438,64 @@ fn v1_v2_brushes_become_presets() {
         assert_eq!(imp.presets.len(), 2);
         let c = &imp.presets[0];
         assert_eq!(c.name, "13 px Round");
-        assert_eq!((c.brush.size, c.brush.hardness, c.brush.angle, c.brush.roundness, c.brush.spacing), (13.0, 0.5, 20.0, 0.6, 0.25));
+        assert_eq!(
+            (
+                c.brush.size,
+                c.brush.hardness,
+                c.brush.angle,
+                c.brush.roundness,
+                c.brush.spacing
+            ),
+            (13.0, 0.5, 20.0, 0.6, 0.25)
+        );
         let s = &imp.presets[1];
-        assert_eq!(s.name, if version == 2 { "Dune Grass" } else { "Sampled Brush 2" });
-        assert_eq!((s.brush.size, s.brush.spacing, s.brush.aliased), (30.0, 0.25, true));
+        assert_eq!(
+            s.name,
+            if version == 2 {
+                "Dune Grass"
+            } else {
+                "Sampled Brush 2"
+            }
+        );
+        assert_eq!(
+            (s.brush.size, s.brush.spacing, s.brush.aliased),
+            (30.0, 0.25, true)
+        );
     }
 }
 
 #[test]
 fn v6_without_settings_lists_tips() {
-    let bytes = write_v6(1, &[sample("$a", 8, 8, 8), sample("$b", 3, 9, 16)], &[], &[], true).unwrap();
+    let bytes = write_v6(
+        1,
+        &[sample("$a", 8, 8, 8), sample("$b", 3, 9, 16)],
+        &[],
+        &[],
+        true,
+    )
+    .unwrap();
     // An empty `Brsh` list: presets come from the tips.
     let imp = read_abr(&bytes, "g").unwrap();
-    assert_eq!(imp.presets.iter().map(|p| p.brush.size).collect::<Vec<_>>(), vec![8.0, 9.0]);
+    assert_eq!(
+        imp.presets.iter().map(|p| p.brush.size).collect::<Vec<_>>(),
+        vec![8.0, 9.0]
+    );
 }
 
 #[test]
 fn big_tips_are_downsampled() {
-    let s = AbrSample { id: "$big".into(), width: 3000, height: 1500, depth: 8, data: vec![200; 3000 * 1500] };
+    let s = AbrSample {
+        id: "$big".into(),
+        width: 3000,
+        height: 1500,
+        depth: 8,
+        data: vec![200; 3000 * 1500],
+    };
     let bytes = write_v6(2, &[s], &[], &[], true).unwrap();
     let imp = read_abr(&bytes, "g").unwrap();
-    let TipShape::Sampled(t) = &imp.presets[0].brush.tip else { panic!() };
+    let TipShape::Sampled(t) = &imp.presets[0].brush.tip else {
+        panic!()
+    };
     assert_eq!((t.width, t.height), (MAX_TIP_EDGE, 1250));
     assert_eq!(imp.presets[0].brush.size, 3000.0);
     assert!(imp.warnings.iter().any(|w| w.contains("downsampled")));
@@ -270,7 +503,10 @@ fn big_tips_are_downsampled() {
 
 #[test]
 fn tilt_scale_projection_spacing_and_mixer_fields_map() {
-    let tip = Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 30.0)).with("Spcn", prc(35.0)).with("Intr", Value::Boolean(false));
+    let tip = Descriptor::new("computedBrush")
+        .with("Dmtr", u(b"#Pxl", 30.0))
+        .with("Spcn", prc(35.0))
+        .with("Intr", Value::Boolean(false));
     let preset = Descriptor::new("brushPreset")
         .with("Nm  ", t("Wet Pen"))
         .with("Brsh", Value::Descriptor(tip))
@@ -292,25 +528,55 @@ fn tilt_scale_projection_spacing_and_mixer_fields_map() {
                     .with("sampleMerged", Value::Boolean(true)),
             ),
         );
-    let plain =
-        Descriptor::new("brushPreset").with("Nm  ", t("Plain")).with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 9.0))));
+    let plain = Descriptor::new("brushPreset")
+        .with("Nm  ", t("Plain"))
+        .with(
+            "Brsh",
+            Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 9.0))),
+        );
     let bytes = write_v6(2, &[], &[], &[preset, plain], true).unwrap();
     let imp = read_abr(&bytes, "Mixer").unwrap();
     let b = &imp.presets[0].brush;
-    assert!(!b.spacing_enabled && (b.spacing - 0.35).abs() < 1e-6, "Intr off = Spacing unchecked, the value kept");
+    assert!(
+        !b.spacing_enabled && (b.spacing - 0.35).abs() < 1e-6,
+        "Intr off = Spacing unchecked, the value kept"
+    );
     let sd = &b.shape_dynamics;
-    assert!(sd.brush_projection && (sd.tilt_scale - 1.5).abs() < 1e-6 && sd.size.control == Control::PenTilt);
+    assert!(
+        sd.brush_projection
+            && (sd.tilt_scale - 1.5).abs() < 1e-6
+            && sd.size.control == Control::PenTilt
+    );
     let tr = &b.transfer;
-    assert_eq!((tr.wetness.control, tr.wetness.jitter, tr.wetness.minimum), (Control::PenPressure, 0.3, 0.1));
+    assert_eq!(
+        (tr.wetness.control, tr.wetness.jitter, tr.wetness.minimum),
+        (Control::PenPressure, 0.3, 0.1)
+    );
     assert_eq!((tr.mix.control, tr.mix.jitter), (Control::Fade, 0.45));
     let m = &b.mixer;
-    assert_eq!((m.wet, m.load, m.mix, m.flow, m.sample_all_layers), (0.8, 0.2, 0.65, 0.7, true));
-    assert!(!imp.warnings.iter().any(|w| w.contains("Tilt Scale") || w.contains("Projection") || w.contains("Mixer")), "{:?}", imp.warnings);
+    assert_eq!(
+        (m.wet, m.load, m.mix, m.flow, m.sample_all_layers),
+        (0.8, 0.2, 0.65, 0.7, true)
+    );
+    assert!(
+        !imp.warnings
+            .iter()
+            .any(|w| w.contains("Tilt Scale") || w.contains("Projection") || w.contains("Mixer")),
+        "{:?}",
+        imp.warnings
+    );
     // Defaults when the file says nothing.
     let p = &imp.presets[1].brush;
-    assert!(p.spacing_enabled && !p.shape_dynamics.brush_projection && p.shape_dynamics.tilt_scale == 0.0);
+    assert!(
+        p.spacing_enabled
+            && !p.shape_dynamics.brush_projection
+            && p.shape_dynamics.tilt_scale == 0.0
+    );
     assert_eq!(p.mixer, photocraft_paint::MixerSettings::default());
-    assert_eq!((p.transfer.wetness, p.transfer.mix), (Dynamic::default(), Dynamic::default()));
+    assert_eq!(
+        (p.transfer.wetness, p.transfer.mix),
+        (Dynamic::default(), Dynamic::default())
+    );
 }
 
 #[test]
@@ -330,27 +596,45 @@ fn sampled_tip_paints_the_brush_colour_never_black() {
     use photocraft_paint::render::render_stroke;
     use photocraft_raster::Surface;
 
-    let preset = Descriptor::new("brushPreset").with("Nm  ", t("Tip")).with("Brsh", Value::Descriptor(sampled_tip("$tip-1")));
+    let preset = Descriptor::new("brushPreset")
+        .with("Nm  ", t("Tip"))
+        .with("Brsh", Value::Descriptor(sampled_tip("$tip-1")));
     let bytes = write_v6(2, &[sample("$tip-1", 8, 8, 8)], &[], &[preset], false).unwrap();
     let imp = read_abr(&bytes, "Test").unwrap();
     let mut b = imp.presets[0].brush.clone();
     b.pressure_size = false;
     b.color = [0.8, 0.1, 0.1, 1.0];
     let mut s = Surface::new(PixelFormat::RGBA32F);
-    render_stroke(&mut s, &b, &[StrokePoint::new(30.0, 32.5, 1.0), StrokePoint::new(34.0, 32.5, 1.0)], None, false, 1.0);
+    render_stroke(
+        &mut s,
+        &b,
+        &[
+            StrokePoint::new(30.0, 32.5, 1.0),
+            StrokePoint::new(34.0, 32.5, 1.0),
+        ],
+        None,
+        false,
+        1.0,
+    );
     let mut painted = 0;
     for y in 0..64 {
         for x in 0..64 {
             let p = s.rgba(x, y);
             if p[3] > 0.5 {
                 painted += 1;
-                assert!((p[0] - 0.8).abs() < 0.05 && (p[1] - 0.1).abs() < 0.05, "not the brush colour at ({x},{y}): {p:?}");
+                assert!(
+                    (p[0] - 0.8).abs() < 0.05 && (p[1] - 0.1).abs() < 0.05,
+                    "not the brush colour at ({x},{y}): {p:?}"
+                );
             }
         }
     }
     // The helper writes an alternating 255/0 tip, so both painted and unpainted pixels exist.
     assert!(painted > 0, "the imported tip painted nothing");
-    assert!(painted < 64 * 64, "the tip covered everything - coverage was treated as solid colour");
+    assert!(
+        painted < 64 * 64,
+        "the tip covered everything - coverage was treated as solid colour"
+    );
 }
 
 /// #3340: Photoshop's texture Contrast runs -50..100; the model maps -50..0 and 0..100 onto
@@ -360,7 +644,10 @@ fn texture_contrast_maps_both_halves() {
     for (c, want) in [(24, 0.24), (100, 1.0), (-30, -0.6), (-50, -1.0), (0, 0.0)] {
         let preset = Descriptor::new("brushPreset")
             .with("Nm  ", t("C"))
-            .with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 20.0))))
+            .with(
+                "Brsh",
+                Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 20.0))),
+            )
             .with("useTexture", Value::Boolean(true))
             .with("textureContrast", Value::Integer(c));
         let bytes = write_v6(2, &[], &[], &[preset], false).unwrap();
@@ -382,20 +669,48 @@ fn low_depth_height_texture_brush_paints() {
     for mode in ["Hght", "linearHeight"] {
         let preset = Descriptor::new("brushPreset")
             .with("Nm  ", t("Pen"))
-            .with("Brsh", Value::Descriptor(Descriptor::new("computedBrush").with("Dmtr", u(b"#Pxl", 20.0)).with("Hrdn", prc(100.0)).with("Spcn", prc(5.0))))
+            .with(
+                "Brsh",
+                Value::Descriptor(
+                    Descriptor::new("computedBrush")
+                        .with("Dmtr", u(b"#Pxl", 20.0))
+                        .with("Hrdn", prc(100.0))
+                        .with("Spcn", prc(5.0)),
+                ),
+            )
             .with("useTexture", Value::Boolean(true))
             .with("textureBlendMode", en("BlnM", mode))
             .with("textureDepth", prc(13.0))
             .with("textureBrightness", Value::Integer(-87))
             .with("textureContrast", Value::Integer(5))
-            .with("Txtr", Value::Descriptor(Descriptor::new("Ptrn").with("Nm  ", t("Grit")).with("Idnt", t("pat-uuid"))));
+            .with(
+                "Txtr",
+                Value::Descriptor(
+                    Descriptor::new("Ptrn")
+                        .with("Nm  ", t("Grit"))
+                        .with("Idnt", t("pat-uuid")),
+                ),
+            );
         let bytes = write_v6(2, &[], &[grit_pattern()], &[preset], false).unwrap();
         let imp = read_abr(&bytes, "Test").unwrap();
         let b = imp.presets[0].brush.clone();
         let mut s = Surface::new(PixelFormat::RGBA32F);
-        render_stroke(&mut s, &b, &[StrokePoint::new(10.0, 20.0, 1.0), StrokePoint::new(50.0, 20.0, 1.0)], None, false, 1.0);
+        render_stroke(
+            &mut s,
+            &b,
+            &[
+                StrokePoint::new(10.0, 20.0, 1.0),
+                StrokePoint::new(50.0, 20.0, 1.0),
+            ],
+            None,
+            false,
+            1.0,
+        );
         let covered = (12..48).filter(|&x| s.rgba(x, 20)[3] > 0.5).count();
         // 13 % depth reaches 1.55 pattern ranges: above the whole darkened Grit pattern.
-        assert_eq!(covered, 36, "{mode}: the stroke painted {covered} of 36 pixels");
+        assert_eq!(
+            covered, 36,
+            "{mode}: the stroke painted {covered} of 36 pixels"
+        );
     }
 }

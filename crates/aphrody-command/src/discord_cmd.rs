@@ -114,18 +114,30 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
             }
             println!(
                 "   Public Key:    {}",
-                if status.public_key_configured { "Configured".green() } else { "None".yellow() }
+                if status.public_key_configured {
+                    "Configured".green()
+                } else {
+                    "None".yellow()
+                }
             );
             Ok(())
-        },
-        DiscordAction::Send { channel_id, message, file, env_file } => {
+        }
+        DiscordAction::Send {
+            channel_id,
+            message,
+            file,
+            env_file,
+        } => {
             let bot = load_bot(env_file.as_ref())?;
             let message = match message.as_deref() {
                 Some("-") => Some(std::io::read_to_string(std::io::stdin()).into_diagnostic()?),
                 _ => message,
             };
             if let Some(file_path) = file {
-                let filename = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("file.dat");
+                let filename = file_path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("file.dat");
                 let bytes = std::fs::read(&file_path).into_diagnostic()?;
                 println!("📤 Uploading file `{filename}` to channel `{channel_id}`...");
                 let msg = bot
@@ -141,25 +153,34 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
                 miette::bail!("Either --message or --file must be specified");
             }
             Ok(())
-        },
+        }
         DiscordAction::Web { channel_id, url } => {
             let bot = load_bot(None)?;
             println!("🌐 Extracting web content from `{url}` via Aphrody Obscura...");
             let summary = fetch_and_extract_web(&url).await.map_err(diag)?;
             let embed = build_web_embed(&summary);
             let msg = bot.send_embed(&channel_id, embed).await.map_err(diag)?;
-            println!("✅ Web extraction embed posted to Discord! ID: {}", msg.id.green().bold());
+            println!(
+                "✅ Web extraction embed posted to Discord! ID: {}",
+                msg.id.green().bold()
+            );
             Ok(())
-        },
-        DiscordAction::Exec { channel_id, command } => {
+        }
+        DiscordAction::Exec {
+            channel_id,
+            command,
+        } => {
             let bot = load_bot(None)?;
             println!("⚡ Executing bounded shell command: `{command}`...");
             let res = run_bounded_shell(&command).await.map_err(diag)?;
             let embed = build_shell_embed(&res);
             let msg = bot.send_embed(&channel_id, embed).await.map_err(diag)?;
-            println!("✅ Shell execution receipt posted to Discord! ID: {}", msg.id.green().bold());
+            println!(
+                "✅ Shell execution receipt posted to Discord! ID: {}",
+                msg.id.green().bold()
+            );
             Ok(())
-        },
+        }
         DiscordAction::Compile {
             target,
             smoke,
@@ -184,7 +205,7 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
                 compiler.compile(&BotTarget::Custom(PathBuf::from(&target)), &options)?;
             }
             Ok(())
-        },
+        }
         DiscordAction::Inspect { target, json } => {
             let compiler = DiscordCompiler::new()?;
             let bot_target =
@@ -193,20 +214,38 @@ pub(crate) async fn run_discord(action: DiscordAction) -> Result<()> {
             if json {
                 println!("{}", serde_json::to_string_pretty(&inspection).unwrap());
             } else {
-                println!("\n🔍 {}", format!("Bot Inspection: {}", inspection.bot_name).bold());
+                println!(
+                    "\n🔍 {}",
+                    format!("Bot Inspection: {}", inspection.bot_name).bold()
+                );
                 println!("   Directory:                {}", inspection.dir.display());
-                println!("   package.json:             {}", inspection.package_json_exists);
-                println!("   tsconfig.json:            {}", inspection.tsconfig_json_exists);
-                println!("   Standalone entry:         {}", inspection.has_standalone_entry);
-                println!("   Uses @aphrody/discord-kit: {}", inspection.uses_discord_kit);
+                println!(
+                    "   package.json:             {}",
+                    inspection.package_json_exists
+                );
+                println!(
+                    "   tsconfig.json:            {}",
+                    inspection.tsconfig_json_exists
+                );
+                println!(
+                    "   Standalone entry:         {}",
+                    inspection.has_standalone_entry
+                );
+                println!(
+                    "   Uses @aphrody/discord-kit: {}",
+                    inspection.uses_discord_kit
+                );
                 println!("   Command files scanned:    {}", inspection.commands_count);
-                println!("   Oxc diagnostics errors:   {}", inspection.oxc_diagnostics_errors);
+                println!(
+                    "   Oxc diagnostics errors:   {}",
+                    inspection.oxc_diagnostics_errors
+                );
             }
             Ok(())
-        },
+        }
         DiscordAction::Verify => {
             let compiler = DiscordCompiler::new()?;
             compiler.verify_monorepo()
-        },
+        }
     }
 }

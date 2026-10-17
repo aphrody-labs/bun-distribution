@@ -21,21 +21,48 @@ fn imported_svg_is_editable_centred_and_reports_what_it_left_out() {
     assert_eq!(s.selection(), [id]);
     let doc = s.doc().unwrap();
     let frame = doc.node(id).unwrap();
-    assert_eq!((frame.name.as_str(), frame.width, frame.height), ("Pasted SVG", 40.0, 20.0));
+    assert_eq!(
+        (frame.name.as_str(), frame.width, frame.height),
+        ("Pasted SVG", 40.0, 20.0)
+    );
     let o = doc.world_transform(id).translation();
     assert_eq!((o.x, o.y), (80.0, 40.0), "centred on the point");
-    let card = doc.subtree(id).into_iter().filter_map(|i| doc.node(i)).find(|n| n.name == "Card").unwrap();
-    assert_eq!((card.kind.type_name(), card.corners.radii[0]), ("RECTANGLE", 4.0));
-    assert!(r["warnings"][0].as_str().is_some_and(|w| w.contains("noise")), "{r}");
+    let card = doc
+        .subtree(id)
+        .into_iter()
+        .filter_map(|i| doc.node(i))
+        .find(|n| n.name == "Card")
+        .unwrap();
+    assert_eq!(
+        (card.kind.type_name(), card.corners.radii[0]),
+        ("RECTANGLE", 4.0)
+    );
+    assert!(
+        r["warnings"][0]
+            .as_str()
+            .is_some_and(|w| w.contains("noise")),
+        "{r}"
+    );
     // Top-left at the point without `center`; one undo takes it away.
-    let r = s.execute("file.import", &json!({"data": data(SVG), "name": "x.svg", "x": 100, "y": 50})).unwrap();
+    let r = s
+        .execute(
+            "file.import",
+            &json!({"data": data(SVG), "name": "x.svg", "x": 100, "y": 50}),
+        )
+        .unwrap();
     let id2 = id_of(&r["id"]).unwrap();
     assert_eq!(s.doc().unwrap().world_transform(id2).translation().x, 100.0);
     s.execute("edit.undo", &json!({})).unwrap();
     assert!(s.doc().unwrap().node(id2).is_none());
     // Not SVG: an error, nothing added.
     let before = s.doc().unwrap().node_count();
-    assert!(s.execute("file.import", &json!({"data": data("<svg"), "name": "bad.svg"})).is_err());
+    assert!(
+        s.execute(
+            "file.import",
+            &json!({"data": data("<svg"), "name": "bad.svg"})
+        )
+        .is_err()
+    );
     assert_eq!(s.doc().unwrap().node_count(), before);
 }
 
@@ -46,8 +73,13 @@ fn opened_svg_lists_its_warnings() {
     let path = dir.join("icon.svg");
     std::fs::write(&path, SVG).unwrap();
     let mut s = Session::new();
-    let r = s.execute("file.open", &json!({"path": path.to_string_lossy()})).unwrap();
-    assert!(r["warnings"].as_array().is_some_and(|w| w.len() == 1), "{r}");
+    let r = s
+        .execute("file.open", &json!({"path": path.to_string_lossy()}))
+        .unwrap();
+    assert!(
+        r["warnings"].as_array().is_some_and(|w| w.len() == 1),
+        "{r}"
+    );
     assert!(r.get("repairs").is_none(), "{r}");
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -61,7 +93,14 @@ fn clipboard_text_is_recognised_as_svg() {
     ] {
         assert!(crate::looks_like_svg(yes), "{yes}");
     }
-    for no in ["", "svg", "<html><svg/></html>", "<?xml version=\"1.0\"?><note/>", "<!-- unclosed", "Hello <svg>"] {
+    for no in [
+        "",
+        "svg",
+        "<html><svg/></html>",
+        "<?xml version=\"1.0\"?><note/>",
+        "<!-- unclosed",
+        "Hello <svg>",
+    ] {
         assert!(!crate::looks_like_svg(no), "{no}");
     }
 }

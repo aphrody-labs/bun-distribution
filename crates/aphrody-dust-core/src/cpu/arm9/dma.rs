@@ -106,8 +106,9 @@ impl<E: Engine> Arm9<E> {
         let channel = &mut self.dma.channels[i.get() as usize];
         channel.next_access_is_nseq = true;
         if TIMING == Timing::GxFifo {
-            channel.remaining_batch_units =
-                channel.remaining_units.min(112 << channel.control.is_32_bit() as u8);
+            channel.remaining_batch_units = channel
+                .remaining_units
+                .min(112 << channel.control.is_32_bit() as u8);
             channel.remaining_units -= channel.remaining_batch_units;
         }
         self.dma.running_channels |= 1 << i.get();
@@ -185,15 +186,19 @@ impl<E: Engine> Arm9<E> {
                 let value = bus::read_32::<DmaAccess, _, false>(emu, src_addr);
                 bus::write_32::<DmaAccess, _>(emu, dst_addr, value);
 
-                emu.arm9.schedule.set_cur_time(emu.arm9.schedule.cur_time() + unit_timing);
+                emu.arm9
+                    .schedule
+                    .set_cur_time(emu.arm9.schedule.cur_time() + unit_timing);
 
                 let channel = &mut emu.arm9.dma.channels[i.get() as usize];
                 let prev_src_addr = channel.cur_src_addr;
                 let prev_dst_addr = channel.cur_dst_addr;
-                channel.cur_src_addr =
-                    channel.cur_src_addr.wrapping_add(channel.src_addr_incr as u32);
-                channel.cur_dst_addr =
-                    channel.cur_dst_addr.wrapping_add(channel.dst_addr_incr as u32);
+                channel.cur_src_addr = channel
+                    .cur_src_addr
+                    .wrapping_add(channel.src_addr_incr as u32);
+                channel.cur_dst_addr = channel
+                    .cur_dst_addr
+                    .wrapping_add(channel.dst_addr_incr as u32);
 
                 if ((channel.cur_src_addr ^ prev_src_addr) | (channel.cur_dst_addr ^ prev_dst_addr))
                     >> Timings::PAGE_SHIFT
@@ -243,15 +248,19 @@ impl<E: Engine> Arm9<E> {
                 let value = bus::read_16::<DmaAccess, _>(emu, src_addr);
                 bus::write_16::<DmaAccess, _>(emu, dst_addr, value);
 
-                emu.arm9.schedule.set_cur_time(emu.arm9.schedule.cur_time() + unit_timing);
+                emu.arm9
+                    .schedule
+                    .set_cur_time(emu.arm9.schedule.cur_time() + unit_timing);
 
                 let channel = &mut emu.arm9.dma.channels[i.get() as usize];
                 let prev_src_addr = channel.cur_src_addr;
                 let prev_dst_addr = channel.cur_dst_addr;
-                channel.cur_src_addr =
-                    channel.cur_src_addr.wrapping_add(channel.src_addr_incr as u32);
-                channel.cur_dst_addr =
-                    channel.cur_dst_addr.wrapping_add(channel.dst_addr_incr as u32);
+                channel.cur_src_addr = channel
+                    .cur_src_addr
+                    .wrapping_add(channel.src_addr_incr as u32);
+                channel.cur_dst_addr = channel
+                    .cur_dst_addr
+                    .wrapping_add(channel.dst_addr_incr as u32);
 
                 if ((channel.cur_src_addr ^ prev_src_addr) | (channel.cur_dst_addr ^ prev_dst_addr))
                     >> Timings::PAGE_SHIFT

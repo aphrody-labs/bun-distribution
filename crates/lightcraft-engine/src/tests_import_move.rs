@@ -17,14 +17,29 @@ fn temp_dir(tag: &str) -> PathBuf {
 
 fn write_png(path: &Path, seed: u8) {
     let (w, h) = (40usize, 24usize);
-    let data: Vec<[u8; 4]> = (0..w * h).map(|i| [(i % w * 5) as u8, (i / w * 7) as u8, seed, 255]).collect();
-    let img = lightcraft_raster::Rgba8 { width: w, height: h, data };
-    let bytes = lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&img), &lightcraft_codecs::EncodeMeta::default()).unwrap();
+    let data: Vec<[u8; 4]> = (0..w * h)
+        .map(|i| [(i % w * 5) as u8, (i / w * 7) as u8, seed, 255])
+        .collect();
+    let img = lightcraft_raster::Rgba8 {
+        width: w,
+        height: h,
+        data,
+    };
+    let bytes = lightcraft_codecs::encode_png(
+        &lightcraft_codecs::EncodeImage::rgba8(&img),
+        &lightcraft_codecs::EncodeMeta::default(),
+    )
+    .unwrap();
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(path, bytes).unwrap();
     // undated files take the file's date: the tests' clock time (2026-01-14T05:58:48)
     let t = std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_768_370_328);
-    std::fs::File::options().write(true).open(path).unwrap().set_modified(t).unwrap();
+    std::fs::File::options()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_modified(t)
+        .unwrap();
 }
 
 fn xmp(rating: u8) -> String {
@@ -41,8 +56,7 @@ fn session() -> Session {
 }
 
 fn import_move(s: &mut Session, paths: &[&Path], dest: &Path, extra: Value) -> Value {
-    let mut p =
-        json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>(), "mode": "move", "destination": dest.to_string_lossy()});
+    let mut p = json!({"paths": paths.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>(), "mode": "move", "destination": dest.to_string_lossy()});
     if let (Some(o), Some(e)) = (p.as_object_mut(), extra.as_object()) {
         o.extend(e.clone());
     }
@@ -73,7 +87,12 @@ fn files_under(d: &Path) -> Vec<String> {
             if p.is_dir() {
                 walk(&p, base, out);
             } else {
-                out.push(p.strip_prefix(base).unwrap().to_string_lossy().replace('\\', "/"));
+                out.push(
+                    p.strip_prefix(base)
+                        .unwrap()
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                );
             }
         }
     }
@@ -95,22 +114,48 @@ fn move_into_a_folder_template_with_sidecars() {
     std::fs::write(card.join("b.png.xmp"), xmp(4)).unwrap();
     let a_bytes = std::fs::read(card.join("a.png")).unwrap();
     let mut s = session();
-    let r = import_move(&mut s, &[&card], &dest, json!({"organize": "{date:%Y}/{date:%Y%m%d}", "rename": "{date:%Y%m%d}_{seq:3}"}));
+    let r = import_move(
+        &mut s,
+        &[&card],
+        &dest,
+        json!({"organize": "{date:%Y}/{date:%Y%m%d}", "rename": "{date:%Y%m%d}_{seq:3}"}),
+    );
     assert_eq!(len(&r, "imported"), 2, "{r}");
     assert_eq!(len(&r, "moved"), 2, "{r}");
     assert_eq!(len(&r, "kept"), 0, "{r}");
     assert_eq!(
         files_under(&dest),
-        ["2026/20260114/20260114_001.png", "2026/20260114/20260114_001.xmp", "2026/20260114/20260114_002.png", "2026/20260114/20260114_002.png.xmp"]
+        [
+            "2026/20260114/20260114_001.png",
+            "2026/20260114/20260114_001.xmp",
+            "2026/20260114/20260114_002.png",
+            "2026/20260114/20260114_002.png.xmp"
+        ]
     );
-    assert_eq!(files_under(&card), Vec::<String>::new(), "the card is empty");
-    assert_eq!(std::fs::read(dest.join("2026/20260114/20260114_001.png")).unwrap(), a_bytes);
+    assert_eq!(
+        files_under(&card),
+        Vec::<String>::new(),
+        "the card is empty"
+    );
+    assert_eq!(
+        std::fs::read(dest.join("2026/20260114/20260114_001.png")).unwrap(),
+        a_bytes
+    );
     let day = dest.join("2026").join("20260114");
-    assert_eq!(photo_paths(&s), [day.join("20260114_001.png").to_string_lossy(), day.join("20260114_002.png").to_string_lossy()]);
+    assert_eq!(
+        photo_paths(&s),
+        [
+            day.join("20260114_001.png").to_string_lossy(),
+            day.join("20260114_002.png").to_string_lossy()
+        ]
+    );
     let mut ratings: Vec<u8> = s.catalog.photos().map(|p| p.rating).collect();
     ratings.sort();
     assert_eq!(ratings, [3, 4], "the sidecars were read");
-    assert_eq!(r["moved"][0]["sidecars"][0], day.join("20260114_001.xmp").to_string_lossy().as_ref());
+    assert_eq!(
+        r["moved"][0]["sidecars"][0],
+        day.join("20260114_001.xmp").to_string_lossy().as_ref()
+    );
     // undo: the photos leave the library, the moved files stay where they are now
     s.execute("edit.undo", &json!({})).unwrap();
     assert_eq!(s.catalog.len(), 0);
@@ -136,7 +181,11 @@ fn move_across_volumes_copies_then_removes() {
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
-        assert_eq!(std::fs::metadata(dest.join("a.png")).unwrap().nlink(), 1, "a real copy, not a link");
+        assert_eq!(
+            std::fs::metadata(dest.join("a.png")).unwrap().nlink(),
+            1,
+            "a real copy, not a link"
+        );
     }
     assert!(!card.join("a.png").exists() && !card.join("a.xmp").exists());
     let _ = std::fs::remove_dir_all(&base);
@@ -159,9 +208,17 @@ fn a_failed_or_corrupt_copy_keeps_the_source() {
         assert_eq!(len(&r, "failed"), 1, "{fault:?}: {r}");
         assert_eq!(len(&r, "moved"), 0, "{fault:?}: {r}");
         assert_eq!(s.catalog.len(), 0);
-        assert_eq!(std::fs::read(card.join("a.png")).unwrap(), bytes, "{fault:?}: source intact");
+        assert_eq!(
+            std::fs::read(card.join("a.png")).unwrap(),
+            bytes,
+            "{fault:?}: source intact"
+        );
         assert!(card.join("a.xmp").is_file());
-        assert_eq!(files_under(&dest), Vec::<String>::new(), "{fault:?}: no partial copy left");
+        assert_eq!(
+            files_under(&dest),
+            Vec::<String>::new(),
+            "{fault:?}: no partial copy left"
+        );
         let _ = std::fs::remove_dir_all(&base);
     }
 }
@@ -192,8 +249,16 @@ fn copy_import_verifies_each_copy() {
         assert_eq!(len(&r, "imported"), 0, "{fault:?}: {r}");
         assert!(r.to_string().contains("the original is untouched"), "{r}");
         assert_eq!(s.catalog.len(), 0);
-        assert_eq!(std::fs::read(card.join("a.png")).unwrap(), bytes, "{fault:?}: source intact");
-        assert_eq!(files_under(&dest), Vec::<String>::new(), "{fault:?}: no bad copy left");
+        assert_eq!(
+            std::fs::read(card.join("a.png")).unwrap(),
+            bytes,
+            "{fault:?}: source intact"
+        );
+        assert_eq!(
+            files_under(&dest),
+            Vec::<String>::new(),
+            "{fault:?}: no bad copy left"
+        );
         let _ = std::fs::remove_dir_all(&base);
     }
     // a good copy: verified, and a taken name gets -1 instead of being replaced
@@ -205,8 +270,14 @@ fn copy_import_verifies_each_copy() {
     let mut s = session();
     let r = import_copy(&mut s, &card, &dest);
     assert_eq!(len(&r, "imported"), 1, "{r}");
-    assert_eq!(std::fs::read(dest.join("a.png")).unwrap(), b"someone else's file");
-    assert_eq!(std::fs::read(dest.join("a-1.png")).unwrap(), std::fs::read(card.join("a.png")).unwrap());
+    assert_eq!(
+        std::fs::read(dest.join("a.png")).unwrap(),
+        b"someone else's file"
+    );
+    assert_eq!(
+        std::fs::read(dest.join("a-1.png")).unwrap(),
+        std::fs::read(card.join("a.png")).unwrap()
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -219,7 +290,9 @@ fn copy_is_verified_against_the_probe_hash() {
     let base = temp_dir("copyhash");
     let src = base.join("src.bin");
     // larger than one 1 MB read, not a multiple of it
-    let bytes: Vec<u8> = (0..(3 << 20) + 12_345u32).map(|i| (i.wrapping_mul(2_654_435_761) >> 13) as u8).collect();
+    let bytes: Vec<u8> = (0..(3 << 20) + 12_345u32)
+        .map(|i| (i.wrapping_mul(2_654_435_761) >> 13) as u8)
+        .collect();
     std::fs::write(&src, &bytes).unwrap();
     let good = lightcraft_preview::hash_bytes(&bytes);
     copy_verified(&src, &base.join("ok.bin"), Some(good)).unwrap();
@@ -228,14 +301,21 @@ fn copy_is_verified_against_the_probe_hash() {
     let stale = lightcraft_preview::hash_bytes(b"what the probe read earlier");
     let e = copy_verified(&src, &base.join("stale.bin"), Some(stale)).unwrap_err();
     assert!(e.to_string().contains("differs"), "{e}");
-    assert!(!base.join("stale.bin").exists(), "the refused copy is removed");
+    assert!(
+        !base.join("stale.bin").exists(),
+        "the refused copy is removed"
+    );
     // a copy that comes out different: caught by the hash
     inject(Fault::Corrupt);
     let r = copy_verified(&src, &base.join("bad.bin"), Some(good));
     inject(Fault::None);
     assert!(r.is_err());
     assert!(!base.join("bad.bin").exists());
-    assert_eq!(std::fs::read(&src).unwrap(), bytes, "the source is untouched");
+    assert_eq!(
+        std::fs::read(&src).unwrap(),
+        bytes,
+        "the source is untouched"
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -247,7 +327,12 @@ fn copy_import_refuses_a_file_changed_since_the_review() {
     let (card, dest) = (base.join("card"), base.join("out"));
     write_png(&card.join("a.png"), 3);
     let mut s = session();
-    let r = s.execute("library.importPreview", &json!({"paths": [card.to_string_lossy()]})).unwrap();
+    let r = s
+        .execute(
+            "library.importPreview",
+            &json!({"paths": [card.to_string_lossy()]}),
+        )
+        .unwrap();
     assert_eq!(r["scanned"], 1, "{r}");
     write_png(&card.join("a.png"), 9); // other pixels
     let r = s
@@ -285,7 +370,13 @@ fn a_source_that_cannot_be_removed_is_kept_and_reported() {
     assert_eq!(len(&r, "imported"), 1, "{r}");
     assert_eq!(len(&r, "moved"), 0, "{r}");
     assert_eq!(len(&r, "kept"), 1, "{r}");
-    assert!(r["kept"][0]["reason"].as_str().unwrap().contains("could not remove"), "{r}");
+    assert!(
+        r["kept"][0]["reason"]
+            .as_str()
+            .unwrap()
+            .contains("could not remove"),
+        "{r}"
+    );
     assert!(card.join("a.png").is_file() && dest.join("a.png").is_file());
     assert_eq!(photo_paths(&s), [dest.join("a.png").to_string_lossy()]);
     let _ = std::fs::remove_dir_all(&base);
@@ -299,7 +390,11 @@ fn duplicates_and_failures_keep_their_sources() {
     let (lib_src, card, dest) = (base.join("old"), base.join("card"), base.join("out"));
     write_png(&lib_src.join("known.png"), 7);
     let mut s = session();
-    s.execute("library.import", &json!({"paths": [lib_src.to_string_lossy()]})).unwrap();
+    s.execute(
+        "library.import",
+        &json!({"paths": [lib_src.to_string_lossy()]}),
+    )
+    .unwrap();
     std::fs::create_dir_all(&card).unwrap();
     std::fs::copy(lib_src.join("known.png"), card.join("same.png")).unwrap(); // same bytes
     write_png(&card.join("a.png"), 1);
@@ -312,10 +407,24 @@ fn duplicates_and_failures_keep_their_sources() {
     assert_eq!(len(&r, "duplicates"), 1, "{r}");
     assert_eq!(len(&r, "failed"), 2, "{r}"); // broken.jpg (unreadable) and a.png (sidecar clash)
     assert_eq!(len(&r, "moved"), 1, "{r}");
-    assert_eq!(r["moved"][0]["from"], card.join("b.png").to_string_lossy().as_ref());
-    assert_eq!(files_under(&card), ["a.png", "a.xmp", "broken.jpg", "same.png"]);
-    assert_eq!(files_under(&dest), ["a.xmp", "b.png"], "a.png's copy was taken back");
-    assert_eq!(std::fs::read_to_string(dest.join("a.xmp")).unwrap(), xmp(5), "never overwritten");
+    assert_eq!(
+        r["moved"][0]["from"],
+        card.join("b.png").to_string_lossy().as_ref()
+    );
+    assert_eq!(
+        files_under(&card),
+        ["a.png", "a.xmp", "broken.jpg", "same.png"]
+    );
+    assert_eq!(
+        files_under(&dest),
+        ["a.xmp", "b.png"],
+        "a.png's copy was taken back"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dest.join("a.xmp")).unwrap(),
+        xmp(5),
+        "never overwritten"
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -331,13 +440,29 @@ fn collisions_are_numbered_and_files_in_the_destination_stay() {
     let theirs = std::fs::read(dest.join("a.png")).unwrap();
     write_png(&dest.join("inbox/c.png"), 3);
     let mut s = session();
-    let r = import_move(&mut s, &[&card, &dest.join("inbox")], &dest, json!({"organize": "flat"}));
+    let r = import_move(
+        &mut s,
+        &[&card, &dest.join("inbox")],
+        &dest,
+        json!({"organize": "flat"}),
+    );
     assert_eq!(len(&r, "imported"), 2, "{r}");
     assert_eq!(len(&r, "moved"), 1, "{r}");
     assert_eq!(len(&r, "kept"), 1, "{r}");
-    assert_eq!(files_under(&dest), ["a-1.png", "a-1.xmp", "a.png", "inbox/c.png"]);
+    assert_eq!(
+        files_under(&dest),
+        ["a-1.png", "a-1.xmp", "a.png", "inbox/c.png"]
+    );
     assert_eq!(std::fs::read(dest.join("a.png")).unwrap(), theirs);
-    assert!(photo_paths(&s).contains(&dest.join("inbox").join("c.png").to_string_lossy().to_string()));
+    assert!(
+        photo_paths(&s).contains(
+            &dest
+                .join("inbox")
+                .join("c.png")
+                .to_string_lossy()
+                .to_string()
+        )
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -351,11 +476,19 @@ fn a_shared_sidecar_stays_with_the_photo_left_behind() {
     std::fs::write(card.join("x.tif"), "the other half (not imported)").unwrap();
     std::fs::write(card.join("x.xmp"), xmp(2)).unwrap();
     let mut s = session();
-    let r = import_move(&mut s, &[&card.join("x.png")], &dest, json!({"organize": "flat"}));
+    let r = import_move(
+        &mut s,
+        &[&card.join("x.png")],
+        &dest,
+        json!({"organize": "flat"}),
+    );
     assert_eq!(len(&r, "moved"), 1, "{r}");
     assert_eq!(files_under(&dest), ["x.png", "x.xmp"]);
     assert_eq!(files_under(&card), ["x.tif", "x.xmp"]);
-    assert!(r["kept"][0]["reason"].as_str().unwrap().contains("x.tif"), "{r}");
+    assert!(
+        r["kept"][0]["reason"].as_str().unwrap().contains("x.tif"),
+        "{r}"
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -368,15 +501,25 @@ fn move_into_the_library_is_saved_before_sources_go() {
     write_png(&card.join("a.png"), 1);
     let mut s = session();
     let p = json!({"paths": [card.to_string_lossy()], "mode": "move"});
-    assert!(s.execute("library.import", &p).is_err(), "no destination, no library");
+    assert!(
+        s.execute("library.import", &p).is_err(),
+        "no destination, no library"
+    );
     let browse = json!({"paths": [card.to_string_lossy()], "mode": "move", "local": true, "destination": base.join("x").to_string_lossy()});
-    assert!(s.execute("library.import", &browse).is_err(), "browsing never moves");
+    assert!(
+        s.execute("library.import", &browse).is_err(),
+        "browsing never moves"
+    );
     assert!(card.join("a.png").is_file());
     s.open_library(&lib, false).unwrap();
     let r = s.execute("library.import", &p).unwrap();
     assert_eq!(len(&r, "moved"), 1, "{r}");
     assert!(!card.join("a.png").exists());
-    let want = lib.join("Originals").join("2026").join("2026-01-14").join("a.png");
+    let want = lib
+        .join("Originals")
+        .join("2026")
+        .join("2026-01-14")
+        .join("a.png");
     assert!(want.is_file());
     drop(s);
     let mut again = Session::new().with_fs();
@@ -396,11 +539,17 @@ fn write_policy_timing() {
     use crate::import_move::copy_verified;
     use lightcraft_catalog::safe_file::{write_atomic, write_atomic_nosync};
     use std::time::{Duration, Instant};
-    let root = std::env::var_os("LIGHTCRAFT_BENCH_DIR").map(PathBuf::from).unwrap_or_else(std::env::temp_dir);
+    let root = std::env::var_os("LIGHTCRAFT_BENCH_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(std::env::temp_dir);
     let base = root.join(format!("lc-write-policy-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&base);
     std::fs::create_dir_all(&base).unwrap();
-    let data = |n: usize, seed: u32| -> Vec<u8> { (0..n as u32).map(|i| (i.wrapping_add(seed).wrapping_mul(2_654_435_761) >> 11) as u8).collect() };
+    let data = |n: usize, seed: u32| -> Vec<u8> {
+        (0..n as u32)
+            .map(|i| (i.wrapping_add(seed).wrapping_mul(2_654_435_761) >> 11) as u8)
+            .collect()
+    };
     let (n, size) = (200usize, 300 << 10);
     let (mut synced, mut unsynced) = (Duration::ZERO, Duration::ZERO);
     for i in 0..n {
@@ -412,7 +561,10 @@ fn write_policy_timing() {
         write_atomic_nosync(&base.join(format!("nosync-{i}.jpg")), &b).unwrap();
         unsynced += t.elapsed();
     }
-    println!("export {n} × {} KB: write_atomic (synced) {synced:?}, write_atomic_nosync {unsynced:?}", size >> 10);
+    println!(
+        "export {n} × {} KB: write_atomic (synced) {synced:?}, write_atomic_nosync {unsynced:?}",
+        size >> 10
+    );
     let (n, size) = (40usize, 8 << 20);
     let card = base.join("card");
     std::fs::create_dir_all(&card).unwrap();
@@ -433,7 +585,10 @@ fn write_policy_timing() {
         copy_verified(&src, &base.join(format!("hash-{i}.raw")), Some(*h)).unwrap();
         hashed += t.elapsed();
     }
-    println!("copy {n} × {} MB: byte compare with the source {bytewise:?}, probe hash {hashed:?}", size >> 20);
+    println!(
+        "copy {n} × {} MB: byte compare with the source {bytewise:?}, probe hash {hashed:?}",
+        size >> 20
+    );
     let _ = std::fs::remove_dir_all(&base);
 }
 
@@ -469,16 +624,27 @@ fn copies_run_side_by_side_with_the_same_outcome() {
         )
         .unwrap();
     inject(Fault::None);
-    let threads: std::collections::HashSet<_> = crate::import_move::copy_threads().into_iter().collect();
+    let threads: std::collections::HashSet<_> =
+        crate::import_move::copy_threads().into_iter().collect();
     if std::thread::available_parallelism().map_or(1, |n| n.get()) > 1 {
-        assert!(threads.len() > 1, "copies ran on {} thread(s)", threads.len());
+        assert!(
+            threads.len() > 1,
+            "copies ran on {} thread(s)",
+            threads.len()
+        );
     }
 
     assert_eq!(len(&r, "imported"), 13, "{r}");
     assert_eq!(len(&r, "failed"), 0, "{r}");
     assert_eq!(len(&r, "duplicates"), 1, "{r}");
     assert_eq!(r["duplicates"][0]["reason"], "content");
-    assert!(r["duplicates"][0]["path"].as_str().unwrap().ends_with("dup.png"), "{r}");
+    assert!(
+        r["duplicates"][0]["path"]
+            .as_str()
+            .unwrap()
+            .ends_with("dup.png"),
+        "{r}"
+    );
     // the order of a one-by-one copy (files in name order), each verified
     let expect = [
         ("a/IMG_1.png", "IMG_1.png"),
@@ -488,18 +654,36 @@ fn copies_run_side_by_side_with_the_same_outcome() {
         ("c/IMG_1.png", "IMG_1-3.png"),
     ];
     for (src, dst) in expect {
-        assert_eq!(std::fs::read(dest.join(dst)).unwrap(), std::fs::read(card.join(src)).unwrap(), "{src} → {dst}");
+        assert_eq!(
+            std::fs::read(dest.join(dst)).unwrap(),
+            std::fs::read(card.join(src)).unwrap(),
+            "{src} → {dst}"
+        );
     }
     for i in 0..8 {
-        assert_eq!(std::fs::read(dest.join(format!("p{i}.png"))).unwrap(), std::fs::read(card.join(format!("d/p{i}.png"))).unwrap());
+        assert_eq!(
+            std::fs::read(dest.join(format!("p{i}.png"))).unwrap(),
+            std::fs::read(card.join(format!("d/p{i}.png"))).unwrap()
+        );
     }
-    assert_eq!(std::fs::read(dest.join("IMG_2.png")).unwrap(), b"someone else's file");
+    assert_eq!(
+        std::fs::read(dest.join("IMG_2.png")).unwrap(),
+        b"someone else's file"
+    );
     assert_eq!(files_under(&dest).len(), 14, "{:?}", files_under(&dest));
     // the duplicate names the photo copied from the same content (d/p3); ids follow the file order
-    let ids: Vec<u64> = r["imported"].as_array().unwrap().iter().map(|v| v.as_u64().unwrap()).collect();
+    let ids: Vec<u64> = r["imported"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap())
+        .collect();
     assert!(ids.windows(2).all(|w| w[0] < w[1]), "{ids:?}");
     assert_eq!(r["duplicates"][0]["existing"], ids[8], "{r}");
-    let first = s.catalog.photo(lightcraft_catalog::PhotoId(ids[0])).unwrap();
+    let first = s
+        .catalog
+        .photo(lightcraft_catalog::PhotoId(ids[0]))
+        .unwrap();
     assert_eq!(first.file_name, "IMG_1.png");
     let _ = std::fs::remove_dir_all(&base);
 }

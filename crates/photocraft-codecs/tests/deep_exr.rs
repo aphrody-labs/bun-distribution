@@ -139,12 +139,20 @@ fn gen_deep(
     attr(&mut out, "channels", "chlist", &chlist);
     attr(&mut out, "compression", "compression", &[compression]);
     // box2i is inclusive: the data window of a w×h image at the origin ends at (w-1, h-1).
-    let dw: Vec<u8> = [0i32, 0, w as i32 - 1, h as i32 - 1].iter().flat_map(|v| v.to_le_bytes()).collect();
+    let dw: Vec<u8> = [0i32, 0, w as i32 - 1, h as i32 - 1]
+        .iter()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
     attr(&mut out, "dataWindow", "box2i", &dw);
     attr(&mut out, "displayWindow", "box2i", &dw);
     attr(&mut out, "lineOrder", "lineOrder", &[0]);
     attr(&mut out, "pixelAspectRatio", "float", &1f32.to_le_bytes());
-    attr(&mut out, "screenWindowCenter", "v2f", &[0f32.to_le_bytes(), 0f32.to_le_bytes()].concat());
+    attr(
+        &mut out,
+        "screenWindowCenter",
+        "v2f",
+        &[0f32.to_le_bytes(), 0f32.to_le_bytes()].concat(),
+    );
     attr(&mut out, "screenWindowWidth", "float", &1f32.to_le_bytes());
     if let Some((tw, th)) = tile {
         let mut td = Vec::new();
@@ -153,7 +161,16 @@ fn gen_deep(
         td.push(0); // one level, round down
         attr(&mut out, "tiles", "tiledesc", &td);
     }
-    attr(&mut out, "type", "string", if tile.is_some() { b"deeptile" } else { b"deepscanline" });
+    attr(
+        &mut out,
+        "type",
+        "string",
+        if tile.is_some() {
+            b"deeptile"
+        } else {
+            b"deepscanline"
+        },
+    );
     attr(&mut out, "version", "int", &1i32.to_le_bytes());
     out.push(0); // end of the header
 
@@ -164,7 +181,12 @@ fn gen_deep(
         row_w: usize,
     }
     let blocks: Vec<Block> = match tile {
-        None => (0..h).map(|y| Block { pixels: (y * w..y * w + w).collect(), row_w: w }).collect(),
+        None => (0..h)
+            .map(|y| Block {
+                pixels: (y * w..y * w + w).collect(),
+                row_w: w,
+            })
+            .collect(),
         Some((tw, th)) => {
             let tx = w.div_ceil(tw);
             let ty = h.div_ceil(th);
@@ -177,7 +199,10 @@ fn gen_deep(
                             px.push(yy * w + xx);
                         }
                     }
-                    v.push(Block { pixels: px, row_w: (bx * tw + tw).min(w) - bx * tw });
+                    v.push(Block {
+                        pixels: px,
+                        row_w: (bx * tw + tw).min(w) - bx * tw,
+                    });
                 }
             }
             v
@@ -187,7 +212,10 @@ fn gen_deep(
     let table_len = |b: &Block| b.pixels.len() * 4;
     let data_len = |b: &Block| -> usize {
         let samples: u64 = b.pixels.iter().map(|&p| counts[p] as u64).sum();
-        channels.iter().map(|c| samples as usize * if c.ty == 1 { 2 } else { 4 }).sum()
+        channels
+            .iter()
+            .map(|c| samples as usize * if c.ty == 1 { 2 } else { 4 })
+            .sum()
     };
 
     // Build every chunk, remember the offsets, then write the offset table first.
@@ -255,8 +283,13 @@ fn gen_deep(
 }
 
 /// RGBA(Z) float channels in chlist (alphabetical) order.
-const RGBAZ: [Chan; 5] =
-    [Chan { name: "A", ty: 2 }, Chan { name: "B", ty: 2 }, Chan { name: "G", ty: 2 }, Chan { name: "R", ty: 2 }, Chan { name: "Z", ty: 2 }];
+const RGBAZ: [Chan; 5] = [
+    Chan { name: "A", ty: 2 },
+    Chan { name: "B", ty: 2 },
+    Chan { name: "G", ty: 2 },
+    Chan { name: "R", ty: 2 },
+    Chan { name: "Z", ty: 2 },
+];
 
 fn sample_rgba(p: usize, ci: usize) -> Vec<f32> {
     // One sample per pixel: a small checkerboard-ish pattern with varying depth. Deep
@@ -278,7 +311,11 @@ fn rgba_flat(bytes: &[u8]) -> Vec<f32> {
     let s = img.to_f32_samples().expect("f32");
     assert_eq!(img.layout(), photocraft_codecs::ChannelLayout::Rgba);
     assert_eq!(img.sample_type(), photocraft_codecs::SampleType::F32);
-    assert!(img.warnings.iter().any(|w| matches!(w, photocraft_codecs::DecodeWarning::DeepFlattened { .. })));
+    assert!(
+        img.warnings
+            .iter()
+            .any(|w| matches!(w, photocraft_codecs::DecodeWarning::DeepFlattened { .. }))
+    );
     s
 }
 
@@ -350,7 +387,10 @@ fn opaque_front_hides_back() {
     let bytes = gen_deep(4, 4, &RGBAZ, 0, None, &counts, &sample);
     let px = rgba_flat(&bytes);
     let (r, g, b, a) = (px[4], px[5], px[6], px[7]);
-    assert!((r - 1.0).abs() < 1e-6 && (g - 1.0).abs() < 1e-6 && (b - 0.0).abs() < 1e-6, "colour ({r},{g},{b})");
+    assert!(
+        (r - 1.0).abs() < 1e-6 && (g - 1.0).abs() < 1e-6 && (b - 0.0).abs() < 1e-6,
+        "colour ({r},{g},{b})"
+    );
     assert!((a - 1.0).abs() < 1e-6, "alpha {a}");
 }
 
@@ -360,14 +400,37 @@ fn opaque_front_hides_back() {
 fn hdr_colour_is_kept_and_edge_tiles_match_scanlines() {
     let (w, h) = (7, 5);
     let counts: Vec<u32> = (0..w * h).map(|p| (p as u32 * 3) % 4).collect();
-    let sample =
-        |p: usize, ci: usize| -> Vec<f32> { (0..(p as u32 * 3) % 4).map(|k| [1.0, 0.25 * k as f32, 0.5, 2.0 + p as f32 / 8.0, 10.0 - k as f32][ci]).collect() };
+    let sample = |p: usize, ci: usize| -> Vec<f32> {
+        (0..(p as u32 * 3) % 4)
+            .map(|k| {
+                [
+                    1.0,
+                    0.25 * k as f32,
+                    0.5,
+                    2.0 + p as f32 / 8.0,
+                    10.0 - k as f32,
+                ][ci]
+            })
+            .collect()
+    };
     for compression in [0u8, 1, 2] {
         let scan = rgba_flat(&gen_deep(w, h, &RGBAZ, compression, None, &counts, &sample));
-        let tiled = rgba_flat(&gen_deep(w, h, &RGBAZ, compression, Some((3, 2)), &counts, &sample));
+        let tiled = rgba_flat(&gen_deep(
+            w,
+            h,
+            &RGBAZ,
+            compression,
+            Some((3, 2)),
+            &counts,
+            &sample,
+        ));
         assert_eq!(scan, tiled, "compression {compression}");
         // Pixel 1 has 3 opaque samples; the front one (k = 2, Z = 8) has R = 2.125.
-        assert!((scan[4] - 2.125).abs() < 1e-5, "compression {compression}: R {}", scan[4]);
+        assert!(
+            (scan[4] - 2.125).abs() < 1e-5,
+            "compression {compression}: R {}",
+            scan[4]
+        );
     }
 }
 
@@ -377,7 +440,11 @@ fn empty_pixels_are_transparent() {
     let mut counts = vec![0u32; 16];
     counts[5] = 1;
     let bytes = gen_deep(4, 4, &RGBAZ, 0, None, &counts, &|p, ci| {
-        if p == 5 { vec![[1.0f32, 0.5, 0.5, 0.5, 1.0][ci]] } else { Vec::new() }
+        if p == 5 {
+            vec![[1.0f32, 0.5, 0.5, 0.5, 1.0][ci]]
+        } else {
+            Vec::new()
+        }
     });
     let px = rgba_flat(&bytes);
     for p in 0..16 {
@@ -385,7 +452,10 @@ fn empty_pixels_are_transparent() {
         if p == 5 {
             assert!((px[base + 3] - 1.0).abs() < 1e-6);
         } else {
-            assert!(px[base..base + 4].iter().all(|v| *v == 0.0), "pixel {p} not empty");
+            assert!(
+                px[base..base + 4].iter().all(|v| *v == 0.0),
+                "pixel {p} not empty"
+            );
         }
     }
     let deep = decode_deep_exr(&bytes, &Limits::none()).expect("deep");
@@ -417,7 +487,10 @@ fn rle_and_zips_match_uncompressed() {
         let bytes = gen_deep(4, 4, &RGBAZ, kind, None, &counts, &sample);
         let other = rgba_flat(&bytes);
         for (i, (a, b)) in px.iter().zip(other.iter()).enumerate() {
-            assert!((a - b).abs() < 1e-6, "compression {kind}, sample {i}: {a} vs {b}");
+            assert!(
+                (a - b).abs() < 1e-6,
+                "compression {kind}, sample {i}: {a} vs {b}"
+            );
         }
         let deep = decode_deep_exr(&bytes, &Limits::none()).expect("deep");
         assert_eq!(deep.counts, deep_base.counts);
@@ -459,7 +532,13 @@ fn tiles_match_scanlines() {
 /// Half-float channels come back as F16 samples with exact values.
 #[test]
 fn half_channels_round_trip() {
-    let channels = [Chan { name: "A", ty: 1 }, Chan { name: "B", ty: 1 }, Chan { name: "G", ty: 1 }, Chan { name: "R", ty: 1 }, Chan { name: "Z", ty: 1 }];
+    let channels = [
+        Chan { name: "A", ty: 1 },
+        Chan { name: "B", ty: 1 },
+        Chan { name: "G", ty: 1 },
+        Chan { name: "R", ty: 1 },
+        Chan { name: "Z", ty: 1 },
+    ];
     let bytes = gen_deep(4, 4, &channels, 2, None, COUNTS_ONE, &|p, _ci| {
         let v = f16::from_f32(0.5).to_f32();
         vec![v * (p as f32 + 1.0) / 4.0]
@@ -475,7 +554,12 @@ fn half_channels_round_trip() {
 /// Without an alpha channel the front-most sample wins, opaque; luminance maps to gray.
 #[test]
 fn without_alpha_front_sample_is_opaque() {
-    let channels = [Chan { name: "B", ty: 2 }, Chan { name: "G", ty: 2 }, Chan { name: "R", ty: 2 }, Chan { name: "Z", ty: 2 }];
+    let channels = [
+        Chan { name: "B", ty: 2 },
+        Chan { name: "G", ty: 2 },
+        Chan { name: "R", ty: 2 },
+        Chan { name: "Z", ty: 2 },
+    ];
     let counts = vec![2u32; 16];
     let bytes = gen_deep(4, 4, &channels, 0, None, &counts, &|p, ci| {
         if p % 2 == 0 {
@@ -500,7 +584,11 @@ fn without_alpha_front_sample_is_opaque() {
 /// must land in the GrayA alpha slot, not a luminance copy (that was the bug).
 #[test]
 fn grayscale_deep_keeps_its_alpha() {
-    let channels = [Chan { name: "A", ty: 2 }, Chan { name: "Y", ty: 2 }, Chan { name: "Z", ty: 2 }];
+    let channels = [
+        Chan { name: "A", ty: 2 },
+        Chan { name: "Y", ty: 2 },
+        Chan { name: "Z", ty: 2 },
+    ];
     let bytes = gen_deep(4, 4, &channels, 0, None, COUNTS_ONE, &|p, ci| {
         match ci {
             0 => vec![0.5],      // A
@@ -514,7 +602,10 @@ fn grayscale_deep_keeps_its_alpha() {
     for (p, s) in px.chunks(2).enumerate() {
         let (y, a) = (s[0], s[1]);
         assert!((a - 0.5).abs() < 1e-6, "pixel {p}: alpha {a}, want 0.5");
-        assert!((y - 1.0).abs() < 1e-6, "pixel {p}: luminance {y}, want the un-premultiplied 1.0");
+        assert!(
+            (y - 1.0).abs() < 1e-6,
+            "pixel {p}: luminance {y}, want the un-premultiplied 1.0"
+        );
     }
 
     // Without an alpha channel the same file is opaque gray.
@@ -537,7 +628,13 @@ fn decode_deep_structure() {
     let bytes = gen_deep(4, 4, &RGBAZ, 0, None, COUNTS_ONE, &sample_rgba);
     let deep = decode_deep_exr(&bytes, &Limits::none()).expect("deep");
     assert_eq!((deep.width, deep.height), (4, 4));
-    assert_eq!(deep.channels.iter().map(|c| c.name.as_str()).collect::<Vec<_>>(), ["A", "B", "G", "R", "Z"]);
+    assert_eq!(
+        deep.channels
+            .iter()
+            .map(|c| c.name.as_str())
+            .collect::<Vec<_>>(),
+        ["A", "B", "G", "R", "Z"]
+    );
     assert_eq!(deep.counts.len(), 17);
     assert_eq!(deep.counts[0], 0);
     assert_eq!(deep.total_samples(), 16);
@@ -576,20 +673,39 @@ fn truncated_files_error_never_panic() {
 fn hostile_sizes_and_offsets_error() {
     let bytes = gen_deep(4, 4, &RGBAZ, 0, None, COUNTS_ONE, &sample_rgba);
     // A tiny sample-data budget rejects the file.
-    let tight = Limits { max_alloc: 64, ..Limits::none() };
-    assert!(matches!(decode_deep_exr(&bytes, &tight), Err(CodecError::LimitExceeded(_))));
+    let tight = Limits {
+        max_alloc: 64,
+        ..Limits::none()
+    };
+    assert!(matches!(
+        decode_deep_exr(&bytes, &tight),
+        Err(CodecError::LimitExceeded(_))
+    ));
     // A non-deep file is unsupported for decode_deep.
     let flat = photocraft_codecs::encode(
-        &photocraft_codecs::Image::from_u8(2, 2, photocraft_codecs::ChannelLayout::Rgba, [128; 16].to_vec()).expect("img"),
+        &photocraft_codecs::Image::from_u8(
+            2,
+            2,
+            photocraft_codecs::ChannelLayout::Rgba,
+            [128; 16].to_vec(),
+        )
+        .expect("img"),
         photocraft_codecs::Format::OpenExr,
         &Default::default(),
     )
     .expect("encode");
-    assert!(matches!(decode_deep_exr(&flat, &Limits::none()), Err(CodecError::Unsupported { .. })));
+    assert!(matches!(
+        decode_deep_exr(&flat, &Limits::none()),
+        Err(CodecError::Unsupported { .. })
+    ));
     // The last chunk's y coordinate destroyed: out of the data window.
     let mut broken = bytes.clone();
     let header_end = header_end_of(&broken);
-    let last_off = u64::from_le_bytes(broken[header_end + 24..header_end + 32].try_into().expect("8")) as usize;
+    let last_off = u64::from_le_bytes(
+        broken[header_end + 24..header_end + 32]
+            .try_into()
+            .expect("8"),
+    ) as usize;
     broken[last_off..last_off + 4].copy_from_slice(&i32::MAX.to_le_bytes());
     assert!(decode_deep_exr(&broken, &Limits::none()).is_err());
     assert!(decode(&broken).is_err());
@@ -598,11 +714,17 @@ fn hostile_sizes_and_offsets_error() {
     let header_end = header_end_of(&dup);
     let first: [u8; 8] = dup[header_end..header_end + 8].try_into().expect("8");
     dup[header_end + 8..header_end + 16].copy_from_slice(&first);
-    assert!(matches!(decode_deep_exr(&dup, &Limits::none()), Err(CodecError::Malformed { .. })));
+    assert!(matches!(
+        decode_deep_exr(&dup, &Limits::none()),
+        Err(CodecError::Malformed { .. })
+    ));
     // An offset pointing past the file.
     let mut far = bytes.clone();
     far[header_end..header_end + 8].copy_from_slice(&u64::MAX.to_le_bytes());
-    assert!(matches!(decode_deep_exr(&far, &Limits::none()), Err(CodecError::Malformed { .. })));
+    assert!(matches!(
+        decode_deep_exr(&far, &Limits::none()),
+        Err(CodecError::Malformed { .. })
+    ));
 }
 
 /// Walk the attributes like the format prescribes: the offset table starts after the
@@ -610,12 +732,16 @@ fn hostile_sizes_and_offsets_error() {
 fn header_end_of(bytes: &[u8]) -> usize {
     let mut p = 8usize; // magic + version
     loop {
-        let Some(nul) = bytes[p..].iter().position(|&b| b == 0) else { panic!("unterminated attribute name") };
+        let Some(nul) = bytes[p..].iter().position(|&b| b == 0) else {
+            panic!("unterminated attribute name")
+        };
         if nul == 0 {
             return p + 1; // the empty name terminates the header
         }
         p += nul + 1;
-        let Some(t) = bytes[p..].iter().position(|&b| b == 0) else { panic!("unterminated attribute type") };
+        let Some(t) = bytes[p..].iter().position(|&b| b == 0) else {
+            panic!("unterminated attribute type")
+        };
         p += t + 1;
         let size = i32::from_le_bytes(bytes[p..p + 4].try_into().expect("size")) as usize;
         p += 4 + size;
@@ -628,12 +754,16 @@ fn inconsistent_count_table_errors() {
     let mut bytes = gen_deep(4, 4, &RGBAZ, 0, None, COUNTS_ONE, &sample_rgba);
     // Find the first chunk: the offset table follows the header (find the "version" attr end).
     let header_end = header_end_of(&bytes);
-    let first_chunk = u64::from_le_bytes(bytes[header_end..header_end + 8].try_into().expect("8")) as usize;
+    let first_chunk =
+        u64::from_le_bytes(bytes[header_end..header_end + 8].try_into().expect("8")) as usize;
     // Scanline chunk: y (4), three u64s (24); bump the unpacked size by one.
     let at = first_chunk + 4 + 16;
     let v = u64::from_le_bytes(bytes[at..at + 8].try_into().expect("8"));
     bytes[at..at + 8].copy_from_slice(&(v + 1).to_le_bytes());
-    assert!(matches!(decode_deep_exr(&bytes, &Limits::none()), Err(CodecError::Malformed { .. })));
+    assert!(matches!(
+        decode_deep_exr(&bytes, &Limits::none()),
+        Err(CodecError::Malformed { .. })
+    ));
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -645,13 +775,20 @@ fn inconsistent_count_table_errors() {
 /// One pinned file: name, total samples, most samples in one pixel, and per ID channel the
 /// manifest IDs its sidecar lists.
 #[cfg(feature = "corpus")]
-type RealFile = (&'static str, u64, u64, &'static [(&'static str, &'static [u32])]);
+type RealFile = (
+    &'static str,
+    u64,
+    u64,
+    &'static [(&'static str, &'static [u32])],
+);
 
 #[cfg(feature = "corpus")]
 const MULTIVARIATE_IDS: &[u32] = &[
-    127035619, 147085119, 319332210, 409096490, 523461226, 678492822, 683859976, 1058109025, 1193275200, 1503246798, 1552124883, 1613501244, 1672208113,
-    1687665471, 1741895317, 1841370478, 1863854195, 1865183722, 2056745377, 2202049807, 2303547305, 2369798380, 2433329986, 2439705590, 2505186565, 2698909330,
-    2862333315, 2898564507, 2979371527, 3007860936, 3182339638, 3236172513, 3497437340, 3626859046, 3656820528, 3693645783, 3739501011, 3936563811, 4048943790,
+    127035619, 147085119, 319332210, 409096490, 523461226, 678492822, 683859976, 1058109025,
+    1193275200, 1503246798, 1552124883, 1613501244, 1672208113, 1687665471, 1741895317, 1841370478,
+    1863854195, 1865183722, 2056745377, 2202049807, 2303547305, 2369798380, 2433329986, 2439705590,
+    2505186565, 2698909330, 2862333315, 2898564507, 2979371527, 3007860936, 3182339638, 3236172513,
+    3497437340, 3626859046, 3656820528, 3693645783, 3739501011, 3936563811, 4048943790,
 ];
 
 #[cfg(feature = "corpus")]
@@ -660,20 +797,42 @@ const REAL_FILES: &[RealFile] = &[
         "11.deep.exr",
         6056,
         2,
-        &[("id", &[523461226, 683859976, 1552124883, 2202049807, 2303547305, 2433329986, 2698909330, 3182339638, 3236172513, 3626859046, 3739501011])],
+        &[(
+            "id",
+            &[
+                523461226, 683859976, 1552124883, 2202049807, 2303547305, 2433329986, 2698909330,
+                3182339638, 3236172513, 3626859046, 3739501011,
+            ],
+        )],
     ),
     (
         "42.deep.exr",
         67605,
         8,
         &[
-            ("modelid", &[147148503, 1252544961, 1917926828, 3170049167, 3338960663, 3411631724]),
-            ("materialid", &[489905694, 507819813, 2340321182, 3683581971, 3905155331, 3947898621, 4179825792]),
+            (
+                "modelid",
+                &[
+                    147148503, 1252544961, 1917926828, 3170049167, 3338960663, 3411631724,
+                ],
+            ),
+            (
+                "materialid",
+                &[
+                    489905694, 507819813, 2340321182, 3683581971, 3905155331, 3947898621,
+                    4179825792,
+                ],
+            ),
         ],
     ),
     // 64-bit IDs split over `.id0`/`.id1`: only the sample counts are checked.
     ("64.deep.exr", 64543, 6, &[]),
-    ("multivariate.deep.exr", 64543, 6, &[("id", MULTIVARIATE_IDS)]),
+    (
+        "multivariate.deep.exr",
+        64543,
+        6,
+        &[("id", MULTIVARIATE_IDS)],
+    ),
     // The same samples as multivariate; its sidecar has no manifest.
     ("objectid.deep.exr", 64543, 6, &[]),
 ];
@@ -684,28 +843,54 @@ fn real_deep_files_decode() {
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../corpus/exr");
     for &(name, total, max_per_pixel, ids) in REAL_FILES {
         let path = dir.join(name);
-        let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("{}: {e} (run `cargo xtask corpus --exr`)", path.display()));
-        let deep = decode_deep_exr(&bytes, &Limits::none()).unwrap_or_else(|e| panic!("{name}: {e}"));
+        let bytes = std::fs::read(&path)
+            .unwrap_or_else(|e| panic!("{}: {e} (run `cargo xtask corpus --exr`)", path.display()));
+        let deep =
+            decode_deep_exr(&bytes, &Limits::none()).unwrap_or_else(|e| panic!("{name}: {e}"));
         assert_eq!((deep.width, deep.height), (256, 256), "{name}");
         assert_eq!(deep.total_samples(), total, "{name}");
         assert_eq!(deep.counts.len(), 256 * 256 + 1, "{name}");
-        assert!(deep.counts.windows(2).all(|w| w[0] <= w[1]), "{name}: counts must be cumulative");
-        assert_eq!(deep.counts.windows(2).map(|w| w[1] - w[0]).max(), Some(max_per_pixel), "{name}");
+        assert!(
+            deep.counts.windows(2).all(|w| w[0] <= w[1]),
+            "{name}: counts must be cumulative"
+        );
+        assert_eq!(
+            deep.counts.windows(2).map(|w| w[1] - w[0]).max(),
+            Some(max_per_pixel),
+            "{name}"
+        );
         for c in &deep.channels {
             assert_eq!(c.samples.len() as u64, total, "{name}: channel {}", c.name);
         }
         // Every decoded ID is one the sidecar lists, and every listed ID occurs. Samples hold
         // u32 IDs as f32 (exact only to 2^24), so compare at f32 precision.
         for &(channel, manifest) in ids {
-            let c = deep.channel(channel).unwrap_or_else(|| panic!("{name}: no channel {channel}"));
-            let want: std::collections::BTreeSet<u32> = manifest.iter().map(|&id| (id as f32).to_bits()).collect();
-            let got: std::collections::BTreeSet<u32> = c.samples.iter().map(|v| v.to_bits()).collect();
+            let c = deep
+                .channel(channel)
+                .unwrap_or_else(|| panic!("{name}: no channel {channel}"));
+            let want: std::collections::BTreeSet<u32> =
+                manifest.iter().map(|&id| (id as f32).to_bits()).collect();
+            let got: std::collections::BTreeSet<u32> =
+                c.samples.iter().map(|v| v.to_bits()).collect();
             assert_eq!(got, want, "{name}: channel {channel}");
         }
         // The flat decode composites the same samples.
         let img = decode(&bytes).unwrap_or_else(|e| panic!("{name}: {e}"));
-        assert_eq!((img.width(), img.height()), (deep.width, deep.height), "{name}");
-        assert_eq!(img.to_f32_samples().expect("f32").len(), 256 * 256 * 4, "{name}");
-        assert!(img.warnings.iter().any(|w| matches!(w, photocraft_codecs::DecodeWarning::DeepFlattened { .. })), "{name}");
+        assert_eq!(
+            (img.width(), img.height()),
+            (deep.width, deep.height),
+            "{name}"
+        );
+        assert_eq!(
+            img.to_f32_samples().expect("f32").len(),
+            256 * 256 * 4,
+            "{name}"
+        );
+        assert!(
+            img.warnings
+                .iter()
+                .any(|w| matches!(w, photocraft_codecs::DecodeWarning::DeepFlattened { .. })),
+            "{name}"
+        );
     }
 }

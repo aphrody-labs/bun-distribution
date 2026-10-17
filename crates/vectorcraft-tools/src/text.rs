@@ -99,7 +99,11 @@ impl TypeTool {
             "typeOnPath" | "verticalTypeOnPath" => Mode::OnPath,
             _ => Mode::Type,
         };
-        Self { mode, vertical: id.starts_with("vertical"), ..Default::default() }
+        Self {
+            mode,
+            vertical: id.starts_with("vertical"),
+            ..Default::default()
+        }
     }
 
     fn text<'a>(cx: &'a ToolContext, id: NodeId) -> Option<&'a TextObject> {
@@ -128,7 +132,11 @@ impl TypeTool {
     fn plain(&self, cx: &ToolContext) -> String {
         match &self.typing {
             Some(ty) => ty.cur.iter().map(|r| r.text.as_str()).collect(),
-            None => self.editing.and_then(|id| Self::text(cx, id)).map(|t| t.plain_text()).unwrap_or_default(),
+            None => self
+                .editing
+                .and_then(|id| Self::text(cx, id))
+                .map(|t| t.plain_text())
+                .unwrap_or_default(),
         }
     }
 
@@ -149,7 +157,11 @@ impl TypeTool {
     /// clicking away from a composition does in macOS text views); the UI interrupts the IME.
     fn commit(&mut self) -> Vec<Action> {
         self.preedit = None;
-        if self.typing.take().is_some() { vec![Action::Commit] } else { vec![] }
+        if self.typing.take().is_some() {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
 
     /// Stop editing. Point type a click placed that is still empty is discarded, with the steps
@@ -158,9 +170,13 @@ impl TypeTool {
         let mut out = self.commit();
         if let Some(id) = self.fresh.take()
             && self.editing == Some(id)
-            && Self::text(cx, id).is_some_and(|t| matches!(t.kind, TextKind::Point) && edit::runs_len(&t.runs) == 0)
+            && Self::text(cx, id)
+                .is_some_and(|t| matches!(t.kind, TextKind::Point) && edit::runs_len(&t.runs) == 0)
         {
-            out.push(Action::Exec("text.discardEmpty".into(), json!({"id": id.0})));
+            out.push(Action::Exec(
+                "text.discardEmpty".into(),
+                json!({"id": id.0}),
+            ));
         }
         self.editing = None;
         self.selecting = false;
@@ -169,8 +185,15 @@ impl TypeTool {
     }
 
     /// Replace the selection with `insert` (styled `runs` when given) inside the typing session.
-    fn replace(&mut self, cx: &ToolContext, insert: &str, styled: Option<Vec<TextRun>>) -> Vec<Action> {
-        let Some(id) = self.editing else { return vec![] };
+    fn replace(
+        &mut self,
+        cx: &ToolContext,
+        insert: &str,
+        styled: Option<Vec<TextRun>>,
+    ) -> Vec<Action> {
+        let Some(id) = self.editing else {
+            return vec![];
+        };
         let Some(t) = Self::text(cx, id) else {
             self.editing = None;
             return vec![];
@@ -184,9 +207,16 @@ impl TypeTool {
         if self.typing.is_none() {
             out.push(Action::Begin("Typing".into()));
         }
-        let ty = self.typing.get_or_insert_with(|| Typing { base: t.runs.clone(), cur: t.runs.clone(), lo: usize::MAX });
+        let ty = self.typing.get_or_insert_with(|| Typing {
+            base: t.runs.clone(),
+            cur: t.runs.clone(),
+            lo: usize::MAX,
+        });
         let len = edit::runs_len(&ty.cur);
-        let (a, b) = (self.caret.min(self.anchor).min(len), self.caret.max(self.anchor).min(len));
+        let (a, b) = (
+            self.caret.min(self.anchor).min(len),
+            self.caret.max(self.anchor).min(len),
+        );
         ty.lo = ty.lo.min(a);
         let caret = match &styled {
             Some(r) => edit::replace_range_styled(&mut ty.cur, a, b, r),
@@ -200,8 +230,15 @@ impl TypeTool {
         let cur: String = ty.cur.iter().map(|r| r.text.as_str()).collect();
         let (p, s) = common_affixes(&base, &cur, ty.lo);
         let runs = edit::slice_runs(&ty.cur, p, cur.len() - s);
-        let runs = if runs.is_empty() { json!([]) } else { serde_json::to_value(&runs).unwrap_or(json!([])) };
-        out.push(Action::Preview("text.editRange".into(), json!({"id": id.0, "start": p, "end": base.len() - s, "runs": runs})));
+        let runs = if runs.is_empty() {
+            json!([])
+        } else {
+            serde_json::to_value(&runs).unwrap_or(json!([]))
+        };
+        out.push(Action::Preview(
+            "text.editRange".into(),
+            json!({"id": id.0, "start": p, "end": base.len() - s, "runs": runs}),
+        ));
         out
     }
 
@@ -232,7 +269,9 @@ impl TypeTool {
         let local = t.xf.inverse() * p;
         let tol = cx.tol(4.0);
         let inside = match &t.kind {
-            TextKind::Area { frame } => frame.bounds().is_some_and(|b| b.inflate(tol, tol).contains(local)),
+            TextKind::Area { frame } => frame
+                .bounds()
+                .is_some_and(|b| b.inflate(tol, tol).contains(local)),
             _ => lay.bounds.inflate(tol, tol).contains(local),
         };
         inside.then(|| vectorcraft_text::hit_byte(&lay, local))
@@ -240,14 +279,26 @@ impl TypeTool {
 
     fn select_word_or_para(&mut self, cx: &ToolContext, para: bool) {
         let s = self.plain(cx);
-        let r = if para { edit::paragraph_at(&s, self.caret) } else { edit::word_at(&s, self.caret) };
+        let r = if para {
+            edit::paragraph_at(&s, self.caret)
+        } else {
+            edit::word_at(&s, self.caret)
+        };
         self.anchor = r.start;
         self.caret = r.end;
     }
 
     /// Path under `p` for the Area Type / Type on a Path tools.
     fn path_at(cx: &ToolContext, p: Point, closed: bool) -> Option<NodeId> {
-        let h = hit_test(cx.doc, p, vectorcraft_doc::hit::HitOptions { tol: cx.tol(4.0), outline: true, ..Default::default() })?;
+        let h = hit_test(
+            cx.doc,
+            p,
+            vectorcraft_doc::hit::HitOptions {
+                tol: cx.tol(4.0),
+                outline: true,
+                ..Default::default()
+            },
+        )?;
         match &cx.doc.node(h.leaf)?.kind {
             NodeKind::Path { path, .. } if !closed || path.is_closed() => Some(h.leaf),
             _ => None,
@@ -258,14 +309,26 @@ impl TypeTool {
     /// edit, selecting the type); None when no type is under `p`. A click among the characters
     /// edits them, whatever Type Object Selection by Path Only says.
     fn edit_at(&mut self, cx: &ToolContext, p: Point) -> Option<Vec<Action>> {
-        let h = hit_test(cx.doc, p, vectorcraft_doc::hit::HitOptions { type_path_only: false, ..cx.hit_options() })?;
-        let Some(NodeKind::Text(t)) = cx.doc.node(h.leaf).map(|n| &n.kind) else { return None };
+        let h = hit_test(
+            cx.doc,
+            p,
+            vectorcraft_doc::hit::HitOptions {
+                type_path_only: false,
+                ..cx.hit_options()
+            },
+        )?;
+        let Some(NodeKind::Text(t)) = cx.doc.node(h.leaf).map(|n| &n.kind) else {
+            return None;
+        };
         let lay = self.layout(t);
         let byte = vectorcraft_text::hit_byte(&lay, t.xf.inverse() * p);
         let mut out = self.finish(cx);
         self.start_editing(h.leaf, byte);
         self.clicks = (Some(p), 1);
-        out.push(Action::Exec("select.set".into(), json!({"ids": [h.leaf.0]})));
+        out.push(Action::Exec(
+            "select.set".into(),
+            json!({"ids": [h.leaf.0]}),
+        ));
         Some(out)
     }
 
@@ -290,9 +353,13 @@ impl TypeTool {
                 return out;
             }
         }
-        let area = drag.map(|d| Rect::from_points(at, d)).filter(|r| r.width() > cx.tol(6.0) && r.height() > cx.tol(6.0));
+        let area = drag
+            .map(|d| Rect::from_points(at, d))
+            .filter(|r| r.width() > cx.tol(6.0) && r.height() > cx.tol(6.0));
         let mut params = match area {
-            Some(r) => json!({"x": r.x0, "y": r.y0, "text": "", "area": {"width": r.width(), "height": r.height()}}),
+            Some(r) => {
+                json!({"x": r.x0, "y": r.y0, "text": "", "area": {"width": r.width(), "height": r.height()}})
+            }
             None => json!({"x": at.x, "y": at.y, "text": ""}),
         };
         params["vertical"] = json!(self.vertical);
@@ -309,17 +376,36 @@ impl TypeTool {
         // The out port: bottom-right of the frame (end of the path for type on a path).
         let port = match &t.kind {
             TextKind::Area { frame } => frame.bounds().map(|b| t.xf * Point::new(b.x1, b.y1)),
-            TextKind::OnPath { path, .. } => path.to_bezpath().segments().last().map(|s| t.xf * vectorcraft_geom::ParamCurve::end(&s)),
+            TextKind::OnPath { path, .. } => path
+                .to_bezpath()
+                .segments()
+                .last()
+                .map(|s| t.xf * vectorcraft_geom::ParamCurve::end(&s)),
             TextKind::Point => None,
         };
         let Some(c) = port else { return };
         let h = cx.tol(4.5);
         let r = Rect::new(c.x - h, c.y - h, c.x + h, c.y + h);
         let red = [230, 30, 30];
-        o.push(Overlay::Path { path: r.to_path(0.1), color: red, width: 1.0, dashed: false });
+        o.push(Overlay::Path {
+            path: r.to_path(0.1),
+            color: red,
+            width: 1.0,
+            dashed: false,
+        });
         let (k, m) = (cx.tol(2.5), r.center());
-        o.push(Overlay::Line { a: Point::new(m.x - k, m.y), b: Point::new(m.x + k, m.y), color: red, dashed: false });
-        o.push(Overlay::Line { a: Point::new(m.x, m.y - k), b: Point::new(m.x, m.y + k), color: red, dashed: false });
+        o.push(Overlay::Line {
+            a: Point::new(m.x - k, m.y),
+            b: Point::new(m.x + k, m.y),
+            color: red,
+            dashed: false,
+        });
+        o.push(Overlay::Line {
+            a: Point::new(m.x, m.y - k),
+            b: Point::new(m.x, m.y + k),
+            color: red,
+            dashed: false,
+        });
     }
 }
 
@@ -330,7 +416,10 @@ impl TypeTool {
 fn step_key(key: ToolKey, shift: bool, caret: bool) -> Option<(&'static str, f64)> {
     let sign = |up: bool| if up { 1.0 } else { -1.0 };
     Some(match (key, shift) {
-        (ToolKey::Left | ToolKey::Right, false) => (if caret { "kerning" } else { "tracking" }, sign(key == ToolKey::Right)),
+        (ToolKey::Left | ToolKey::Right, false) => (
+            if caret { "kerning" } else { "tracking" },
+            sign(key == ToolKey::Right),
+        ),
         (ToolKey::Up | ToolKey::Down, false) => ("leading", sign(key == ToolKey::Down)),
         (ToolKey::Up | ToolKey::Down, true) => ("baselineShift", sign(key == ToolKey::Up)),
         _ => return None,
@@ -338,7 +427,13 @@ fn step_key(key: ToolKey, shift: bool, caret: bool) -> Option<(&'static str, f64
 }
 
 fn char_range_to_bytes(s: &str, r: Range<usize>) -> Option<Range<usize>> {
-    let byte = |c: usize| if c == s.chars().count() { Some(s.len()) } else { s.char_indices().nth(c).map(|(i, _)| i) };
+    let byte = |c: usize| {
+        if c == s.chars().count() {
+            Some(s.len())
+        } else {
+            s.char_indices().nth(c).map(|(i, _)| i)
+        }
+    };
     let (a, b) = (byte(r.start)?, byte(r.end)?);
     (a <= b).then_some(a..b)
 }
@@ -385,7 +480,10 @@ impl Tool for TypeTool {
         match ev.kind {
             PointerKind::Down => {
                 if let Some(byte) = self.hit_edited(cx, ev.pos) {
-                    let same = self.clicks.0.is_some_and(|q| (q - ev.pos).hypot() <= cx.tol(4.0));
+                    let same = self
+                        .clicks
+                        .0
+                        .is_some_and(|q| (q - ev.pos).hypot() <= cx.tol(4.0));
                     let n = if same { self.clicks.1 + 1 } else { 1 };
                     self.clicks = (Some(ev.pos), n);
                     let out = self.move_to(byte, ev.mods.shift);
@@ -405,7 +503,10 @@ impl Tool for TypeTool {
                     self.selecting = true;
                     return out;
                 }
-                self.press = Some((ev.pos, self.snap.press(cx, ev.pos, self.editing.as_slice(), None)));
+                self.press = Some((
+                    ev.pos,
+                    self.snap.press(cx, ev.pos, self.editing.as_slice(), None),
+                ));
                 self.drag = None;
                 vec![]
             }
@@ -427,7 +528,9 @@ impl Tool for TypeTool {
                     return vec![];
                 }
                 self.snap.clear();
-                let Some((start, at)) = self.press.take() else { return vec![] };
+                let Some((start, at)) = self.press.take() else {
+                    return vec![];
+                };
                 self.on_up(cx, start, at)
             }
             PointerKind::DoubleClick => {
@@ -448,7 +551,11 @@ impl Tool for TypeTool {
         if self.editing.is_none() {
             return vec![];
         }
-        let s: String = s.chars().filter(|c| !c.is_control() || matches!(c, '\n' | '\t')).map(|c| if c == '\r' { '\n' } else { c }).collect();
+        let s: String = s
+            .chars()
+            .filter(|c| !c.is_control() || matches!(c, '\n' | '\t'))
+            .map(|c| if c == '\r' { '\n' } else { c })
+            .collect();
         // An IME commit replaces its marked text (an empty commit just removes it).
         let committing = self.preedit.is_some();
         if committing && s.is_empty() {
@@ -466,7 +573,9 @@ impl Tool for TypeTool {
         let setup = &cx.doc.setup;
         let s = if setup.typographers_quotes && matches!(s.as_str(), "\"" | "'") {
             let text = self.plain(cx);
-            let mut prev = text.get(..self.caret.min(self.anchor)).and_then(|b| b.chars().next_back());
+            let mut prev = text
+                .get(..self.caret.min(self.anchor))
+                .and_then(|b| b.chars().next_back());
             setup.quotes.apply(&s, &mut prev)
         } else {
             s
@@ -501,7 +610,10 @@ impl Tool for TypeTool {
         {
             let mut out = self.commit();
             let by = if mods.cmd { by * 5.0 } else { by };
-            out.push(Action::Exec("type.step".into(), json!({"id": id.0, "start": a, "end": b, "attribute": attribute, "by": by})));
+            out.push(Action::Exec(
+                "type.step".into(),
+                json!({"id": id.0, "start": a, "end": b, "attribute": attribute, "by": by}),
+            ));
             return out;
         }
         let word = mods.cmd || mods.alt;
@@ -527,19 +639,28 @@ impl Tool for TypeTool {
             ToolKey::Tab => self.replace(cx, "\t", None),
             ToolKey::Backspace | ToolKey::Delete if a != b => self.replace(cx, "", None),
             ToolKey::Backspace if self.caret > 0 => {
-                self.anchor = if word { edit::prev_word(&text, self.caret) } else { edit::prev_char(&text, self.caret) };
+                self.anchor = if word {
+                    edit::prev_word(&text, self.caret)
+                } else {
+                    edit::prev_char(&text, self.caret)
+                };
                 self.replace(cx, "", None)
             }
             // Backspace takes back one character (a mistyped Thai tone mark, say); Delete, the
             // Left and Right arrows a whole cluster.
             ToolKey::Delete if self.caret < len => {
-                self.anchor = if word { edit::next_word(&text, self.caret) } else { edit::next_cluster(&text, self.caret) };
+                self.anchor = if word {
+                    edit::next_word(&text, self.caret)
+                } else {
+                    edit::next_cluster(&text, self.caret)
+                };
                 self.replace(cx, "", None)
             }
             ToolKey::Left => {
                 let to = if a != b && !mods.shift {
                     if lay.glyphs.iter().any(|g| g.rtl)
-                        && vectorcraft_text::caret_position(&lay, a).0.x > vectorcraft_text::caret_position(&lay, b).0.x
+                        && vectorcraft_text::caret_position(&lay, a).0.x
+                            > vectorcraft_text::caret_position(&lay, b).0.x
                     {
                         b
                     } else {
@@ -559,7 +680,8 @@ impl Tool for TypeTool {
             ToolKey::Right => {
                 let to = if a != b && !mods.shift {
                     if lay.glyphs.iter().any(|g| g.rtl)
-                        && vectorcraft_text::caret_position(&lay, a).0.x > vectorcraft_text::caret_position(&lay, b).0.x
+                        && vectorcraft_text::caret_position(&lay, a).0.x
+                            > vectorcraft_text::caret_position(&lay, b).0.x
                     {
                         a
                     } else {
@@ -578,13 +700,24 @@ impl Tool for TypeTool {
             }
             ToolKey::Up | ToolKey::Down => {
                 let d = if key == ToolKey::Up { -1 } else { 1 };
-                let from = if a != b && !mods.shift { if d < 0 { a } else { b } } else { self.caret };
-                let x = self.goal_x.unwrap_or_else(|| lay.logical_point(vectorcraft_text::caret_position(&lay, from).0).x);
+                let from = if a != b && !mods.shift {
+                    if d < 0 { a } else { b }
+                } else {
+                    self.caret
+                };
+                let x = self.goal_x.unwrap_or_else(|| {
+                    lay.logical_point(vectorcraft_text::caret_position(&lay, from).0)
+                        .x
+                });
                 let to = if mods.cmd {
                     // Cmd+Up/Down: paragraph start / end.
                     let p = edit::paragraph_at(&text, from);
                     if d < 0 {
-                        if from == p.start { edit::paragraph_at(&text, p.start.saturating_sub(1)).start } else { p.start }
+                        if from == p.start {
+                            edit::paragraph_at(&text, p.start.saturating_sub(1)).start
+                        } else {
+                            p.start
+                        }
                     } else if from == p.end {
                         edit::paragraph_at(&text, (p.end + 1).min(len)).end
                     } else {
@@ -598,17 +731,30 @@ impl Tool for TypeTool {
                 out
             }
             ToolKey::Home => {
-                let to = if mods.cmd { 0 } else { vectorcraft_text::line_home(&lay, self.caret) };
+                let to = if mods.cmd {
+                    0
+                } else {
+                    vectorcraft_text::line_home(&lay, self.caret)
+                };
                 self.move_to(to, mods.shift)
             }
             ToolKey::End => {
-                let to = if mods.cmd { len } else { vectorcraft_text::line_end_of(&lay, self.caret) };
+                let to = if mods.cmd {
+                    len
+                } else {
+                    vectorcraft_text::line_end_of(&lay, self.caret)
+                };
                 self.move_to(to, mods.shift)
             }
             _ => vec![],
         }
     }
-    fn ime_preedit(&mut self, cx: &ToolContext, text: &str, active_chars: Option<Range<usize>>) -> Vec<Action> {
+    fn ime_preedit(
+        &mut self,
+        cx: &ToolContext,
+        text: &str,
+        active_chars: Option<Range<usize>>,
+    ) -> Vec<Action> {
         if self.editing.is_none() {
             return vec![];
         }
@@ -635,7 +781,10 @@ impl Tool for TypeTool {
         }
         let end = self.caret;
         let start = end.saturating_sub(text.len());
-        self.preedit = Some(Preedit { range: start..end, active: active_chars.and_then(|r| char_range_to_bytes(&text, r)) });
+        self.preedit = Some(Preedit {
+            range: start..end,
+            active: active_chars.and_then(|r| char_range_to_bytes(&text, r)),
+        });
         out
     }
     fn composing(&self) -> bool {
@@ -659,7 +808,9 @@ impl Tool for TypeTool {
     /// Editing ends when a command takes the text out of the selection (Deselect, another object
     /// picked in the Layers panel) or removes it.
     fn after_command(&mut self, cx: &ToolContext) -> Vec<Action> {
-        let Some(id) = self.editing else { return vec![] };
+        let Some(id) = self.editing else {
+            return vec![];
+        };
         let mut cur = Some(id).filter(|i| cx.doc.node(*i).is_some());
         while let Some(c) = cur {
             if cx.selection.contains(c) {
@@ -751,32 +902,63 @@ impl Tool for TypeTool {
         };
         if let Some(mut f) = frame {
             f.apply_affine(t.xf);
-            o.push(Overlay::Path { path: f, color: [79, 128, 255], width: 1.0, dashed: false });
+            o.push(Overlay::Path {
+                path: f,
+                color: [79, 128, 255],
+                width: 1.0,
+                dashed: false,
+            });
         }
-        let (a, b) = (self.caret.min(self.anchor).min(len), self.caret.max(self.anchor).min(len));
+        let (a, b) = (
+            self.caret.min(self.anchor).min(len),
+            self.caret.max(self.anchor).min(len),
+        );
         if let Some(pe) = &self.preedit {
             // Marked text: a thin underline, a thick one under the clause being converted.
             let under = |o: &mut Vec<Overlay>, r: Range<usize>, width: f32| {
                 for q in vectorcraft_text::selection_quads(&lay, r.start.min(len), r.end.min(len)) {
                     let (l, rr) = (t.xf * q[3], t.xf * q[2]);
-                    o.push(Overlay::Path { path: vectorcraft_geom::Line::new(l, rr).to_path(0.1), color: [0, 0, 0], width, dashed: false });
+                    o.push(Overlay::Path {
+                        path: vectorcraft_geom::Line::new(l, rr).to_path(0.1),
+                        color: [0, 0, 0],
+                        width,
+                        dashed: false,
+                    });
                 }
             };
             under(&mut o, pe.range.clone(), 1.0);
             match &pe.active {
-                Some(r) if !r.is_empty() => under(&mut o, pe.range.start + r.start..pe.range.start + r.end, 2.5),
+                Some(r) if !r.is_empty() => under(
+                    &mut o,
+                    pe.range.start + r.start..pe.range.start + r.end,
+                    2.5,
+                ),
                 _ => {
-                    let at = pe.range.start + pe.active.as_ref().map_or(pe.range.len(), |r| r.start);
+                    let at =
+                        pe.range.start + pe.active.as_ref().map_or(pe.range.len(), |r| r.start);
                     let (p, q) = vectorcraft_text::caret_position(&lay, at.min(len));
-                    o.push(Overlay::Line { a: t.xf * p, b: t.xf * q, color: [0, 0, 0], dashed: false });
+                    o.push(Overlay::Line {
+                        a: t.xf * p,
+                        b: t.xf * q,
+                        color: [0, 0, 0],
+                        dashed: false,
+                    });
                 }
             }
         } else if a == b {
             let (p, q) = vectorcraft_text::caret_position(&lay, self.caret.min(len));
-            o.push(Overlay::Line { a: t.xf * p, b: t.xf * q, color: [0, 0, 0], dashed: false });
+            o.push(Overlay::Line {
+                a: t.xf * p,
+                b: t.xf * q,
+                color: [0, 0, 0],
+                dashed: false,
+            });
         } else {
             for q in vectorcraft_text::selection_quads(&lay, a, b) {
-                o.push(Overlay::Highlight { quad: q.map(|p| t.xf * p), color: [60, 120, 255, 90] });
+                o.push(Overlay::Highlight {
+                    quad: q.map(|p| t.xf * p),
+                    color: [60, 120, 255, 90],
+                });
             }
         }
         Self::overflow_marker(&t, &lay, cx, &mut o);

@@ -4,12 +4,12 @@
 pub mod arm;
 #[cfg(feature = "cpp-host")]
 pub mod cpp_host;
+#[cfg(feature = "gba")]
+pub mod gba;
 #[cfg(any(feature = "nds", feature = "ctr"))]
 pub mod handheld;
 #[cfg(feature = "nes")]
 pub mod nes;
-#[cfg(feature = "gba")]
-pub mod gba;
 #[cfg(feature = "psx")]
 pub mod psx;
 #[cfg(feature = "switch")]

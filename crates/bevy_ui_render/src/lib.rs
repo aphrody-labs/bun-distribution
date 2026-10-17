@@ -26,9 +26,9 @@ use bevy_a11y::AccessibilitySystems;
 use bevy_camera::visibility::InheritedVisibility;
 use bevy_camera::{Camera, Camera2d, Camera3d, RenderTarget};
 use bevy_ecs::entity::EntityIndexMap;
-use bevy_reflect::prelude::ReflectDefault;
 use bevy_reflect::Reflect;
-use bevy_render::camera::{extract_cameras, CameraMainPassTextureFormats};
+use bevy_reflect::prelude::ReflectDefault;
+use bevy_render::camera::{CameraMainPassTextureFormats, extract_cameras};
 use bevy_render::sync_world::{MainEntityHashMap, MainEntityHashSet};
 use bevy_shader::load_shader_library;
 use bevy_sprite_render::SpriteAssetEvents;
@@ -49,20 +49,20 @@ use bevy_core_pipeline::upscaling::upscaling;
 use bevy_ecs::prelude::*;
 use bevy_ecs::schedule::IntoScheduleConfigs;
 use bevy_ecs::system::SystemParam;
-use bevy_image::{prelude::*, TRANSPARENT_IMAGE_HANDLE};
-use bevy_math::{proj, Affine2, FloatOrd, Rect, UVec4, Vec2};
+use bevy_image::{TRANSPARENT_IMAGE_HANDLE, prelude::*};
+use bevy_math::{Affine2, FloatOrd, Rect, UVec4, Vec2, proj};
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     render_asset::RenderAssets,
     render_phase::{
-        sort_phase_system, AddRenderCommand, DrawFunctions, PhaseItem, PhaseItemExtraIndex,
-        ViewSortedRenderPhases,
+        AddRenderCommand, DrawFunctions, PhaseItem, PhaseItemExtraIndex, ViewSortedRenderPhases,
+        sort_phase_system,
     },
     render_resource::*,
     renderer::{RenderDevice, RenderQueue},
     sync_world::{MainEntity, RenderEntity},
     texture::GpuImage,
     view::{ExtractedView, RetainedViewEntity, ViewUniforms},
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_sprite::BorderRect;
 #[cfg(feature = "bevy_ui_debug")]
@@ -70,7 +70,7 @@ pub use debug_overlay::{GlobalUiDebugOptions, UiDebugOptions};
 
 use gradient::GradientPlugin;
 
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use bevy_text::{
     ComputedTextBlock, EditableText, InlineBox, PositionedGlyph, Strikethrough, StrikethroughColor,
     TextBackgroundColor, TextColor, TextCursorStyle, TextLayoutInfo, TextSpan, Underline,
@@ -96,7 +96,7 @@ pub mod prelude {
     pub use crate::debug_overlay::{GlobalUiDebugOptions, UiDebugOptions};
 
     pub use crate::{
-        ui_material::*, ui_material_pipeline::UiMaterialPlugin, BoxShadowSamples, UiAntiAlias,
+        BoxShadowSamples, UiAntiAlias, ui_material::*, ui_material_pipeline::UiMaterialPlugin,
     };
 }
 

@@ -25,7 +25,13 @@ const MAX_MOVING: usize = 256;
 /// Snap targets for points of vector `edited` (if any): its points except `moving` (the ones being
 /// dragged; their segments' midpoints move too), the points and segment midpoints of the other
 /// visible vectors on `page`, the layer targets around it and `extra` page points.
-pub fn targets(doc: &Document, page: NodeId, edited: Option<NodeId>, moving: &[usize], extra: &[Point]) -> Targets {
+pub fn targets(
+    doc: &Document,
+    page: NodeId,
+    edited: Option<NodeId>,
+    moving: &[usize],
+    extra: &[Point],
+) -> Targets {
     targets_moving(doc, page, edited, moving, extra, &[])
 }
 
@@ -40,17 +46,35 @@ pub fn targets_moving(
     others: &[(NodeId, Vec<usize>)],
 ) -> Targets {
     // Points are snapped on the page.
-    let mut t = Targets::gather_in(doc, page, edited.as_slice(), figcraft_geom::Affine::IDENTITY);
+    let mut t = Targets::gather_in(
+        doc,
+        page,
+        edited.as_slice(),
+        figcraft_geom::Affine::IDENTITY,
+    );
     let mut budget = MAX_POINTS;
     for p in extra.iter().take(budget) {
         t.add_point(*p);
     }
     budget = budget.saturating_sub(extra.len());
     if let Some(id) = edited {
-        add_vector(doc, id, &moving.iter().copied().collect(), &mut t, &mut budget);
+        add_vector(
+            doc,
+            id,
+            &moving.iter().copied().collect(),
+            &mut t,
+            &mut budget,
+        );
     }
-    for id in visible_vectors(doc, page).into_iter().filter(|v| Some(*v) != edited) {
-        let skip: BTreeSet<usize> = others.iter().find(|(o, _)| *o == id).map(|(_, v)| v.iter().copied().collect()).unwrap_or_default();
+    for id in visible_vectors(doc, page)
+        .into_iter()
+        .filter(|v| Some(*v) != edited)
+    {
+        let skip: BTreeSet<usize> = others
+            .iter()
+            .find(|(o, _)| *o == id)
+            .map(|(_, v)| v.iter().copied().collect())
+            .unwrap_or_default();
         add_vector(doc, id, &skip, &mut t, &mut budget);
     }
     t
@@ -59,14 +83,19 @@ pub fn targets_moving(
 /// The visible vectors on `page`, front to back.
 fn visible_vectors(doc: &Document, page: NodeId) -> Vec<NodeId> {
     let mut out = Vec::new();
-    let mut stack: Vec<NodeId> = doc.node(page).map(|n| n.children.clone()).unwrap_or_default();
+    let mut stack: Vec<NodeId> = doc
+        .node(page)
+        .map(|n| n.children.clone())
+        .unwrap_or_default();
     let mut visited = 0;
     while let Some(id) = stack.pop() {
         visited += 1;
         if visited > MAX_NODES {
             break;
         }
-        let Some(n) = doc.node(id).filter(|n| n.visible) else { continue };
+        let Some(n) = doc.node(id).filter(|n| n.visible) else {
+            continue;
+        };
         if matches!(n.kind, NodeKind::Vector { .. }) {
             out.push(id);
         }
@@ -76,17 +105,33 @@ fn visible_vectors(doc: &Document, page: NodeId) -> Vec<NodeId> {
 }
 
 /// Vector `id`'s points (but `skip`) and the midpoints of segments clear of them, in page space.
-fn add_vector(doc: &Document, id: NodeId, skip: &BTreeSet<usize>, t: &mut Targets, budget: &mut usize) {
-    let Some(net) = super::network(doc, id) else { return };
+fn add_vector(
+    doc: &Document,
+    id: NodeId,
+    skip: &BTreeSet<usize>,
+    t: &mut Targets,
+    budget: &mut usize,
+) {
+    let Some(net) = super::network(doc, id) else {
+        return;
+    };
     let w = doc.world_transform(id);
-    let points = net.vertices.iter().enumerate().filter(|(i, _)| !skip.contains(i)).map(|(_, v)| w * v.point());
+    let points = net
+        .vertices
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !skip.contains(i))
+        .map(|(_, v)| w * v.point());
     let mids = net
         .segments
         .iter()
         .enumerate()
         .filter(|(_, s)| !skip.contains(&s.a) && !skip.contains(&s.b))
         .filter_map(|(si, _)| Some(w * net.cubic(si)?.eval(0.5)));
-    for p in points.chain(mids).filter(|p| p.x.is_finite() && p.y.is_finite()) {
+    for p in points
+        .chain(mids)
+        .filter(|p| p.x.is_finite() && p.y.is_finite())
+    {
         if *budget == 0 {
             return;
         }
@@ -97,7 +142,10 @@ fn add_vector(doc: &Document, id: NodeId, skip: &BTreeSet<usize>, t: &mut Target
 
 /// The snapping that applies to a pointer event: (objects and points, the pixel grid).
 pub(crate) fn modes(s: &Session, ev: &PointerEvent) -> (bool, bool) {
-    let (objects, pixel) = s.ds().map(|d| (d.view.snap_objects, d.view.snap_pixel)).unwrap_or((true, true));
+    let (objects, pixel) = s
+        .ds()
+        .map(|d| (d.view.snap_objects, d.view.snap_pixel))
+        .unwrap_or((true, true));
     (objects && !ev.cmd, pixel)
 }
 
@@ -114,7 +162,11 @@ pub(crate) fn snap(
     lock: Option<bool>,
 ) -> (Vec2, Vec<Guide>) {
     let pts = pts.get(..MAX_MOVING).unwrap_or(pts);
-    let (dx, dy, _) = if objects { t.snap_points(pts, SNAP_PX / zoom.max(1e-6)) } else { (None, None, Vec::new()) };
+    let (dx, dy, _) = if objects {
+        t.snap_points(pts, SNAP_PX / zoom.max(1e-6))
+    } else {
+        (None, None, Vec::new())
+    };
     let mut d = Vec2::new(dx.unwrap_or(0.0), dy.unwrap_or(0.0));
     if pixel && let Some(g) = grab.filter(|g| g.x.is_finite() && g.y.is_finite()) {
         if dx.is_none() {
@@ -153,7 +205,12 @@ pub struct PenTargets {
 impl Session {
     /// A pen position: `ev`'s point snapped to the targets around vector `edited` (or the page's,
     /// plus `extra` points: the pen path's own), with the guides to show.
-    pub(crate) fn snap_pen(&mut self, ev: &PointerEvent, edited: Option<NodeId>, extra: &[Point]) -> Result<(Point, Vec<Guide>)> {
+    pub(crate) fn snap_pen(
+        &mut self,
+        ev: &PointerEvent,
+        edited: Option<NodeId>,
+        extra: &[Point],
+    ) -> Result<(Point, Vec<Guide>)> {
         let modes = modes(self, ev);
         if modes == (false, false) {
             return Ok((ev.p(), Vec::new()));
@@ -162,12 +219,20 @@ impl Session {
             let ds = self.ds()?;
             (ds.doc.clone(), ds.page)
         };
-        let cached = self.tool.pen_targets.as_ref().filter(|c| Arc::ptr_eq(&c.doc, &doc) && c.page == page && c.edited == edited && c.extra == extra);
+        let cached = self.tool.pen_targets.as_ref().filter(|c| {
+            Arc::ptr_eq(&c.doc, &doc) && c.page == page && c.edited == edited && c.extra == extra
+        });
         let targets = match cached {
             Some(c) => c.targets.clone(),
             None => {
                 let targets = Arc::new(targets(&doc, page, edited, &[], extra));
-                self.tool.pen_targets = Some(PenTargets { doc, page, edited, extra: extra.to_vec(), targets: targets.clone() });
+                self.tool.pen_targets = Some(PenTargets {
+                    doc,
+                    page,
+                    edited,
+                    extra: extra.to_vec(),
+                    targets: targets.clone(),
+                });
                 targets
             }
         };

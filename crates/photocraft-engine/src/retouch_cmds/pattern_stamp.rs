@@ -8,7 +8,9 @@ use photocraft_color::{BlendMode, PixelFormat};
 use photocraft_compose::pattern::{Placement, Tile, render};
 use photocraft_doc::Pattern;
 use photocraft_geom::Rect;
-use photocraft_paint::retouch::{Footprint, Region, apply_coverage, apply_dab_stroke, over_native, stroke_coverage};
+use photocraft_paint::retouch::{
+    Footprint, Region, apply_coverage, apply_dab_stroke, over_native, stroke_coverage,
+};
 use photocraft_paint::{Stroke, StrokePoint};
 use photocraft_raster::{Surface, from_rgba_into, to_rgba};
 use serde_json::{Value, json};
@@ -26,7 +28,11 @@ const STREAM_PHASE_Y: u64 = 102;
 
 pub(super) fn enabled(s: &Session) -> std::result::Result<(), String> {
     has_pixel_layer(s)?;
-    if crate::pattern_cmds::resolve(s, "").is_none() { Err("no pattern selected".into()) } else { Ok(()) }
+    if crate::pattern_cmds::resolve(s, "").is_none() {
+        Err("no pattern selected".into())
+    } else {
+        Ok(())
+    }
 }
 
 pub(super) fn run(s: &mut Session, p: &Value) -> Result<Value> {
@@ -45,11 +51,15 @@ pub(super) fn run(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(CMD, "`points` is empty"));
     };
     let phase = stamp_phase(p, CMD, aligned, first)?;
-    let tile = Tile::new(&pat).ok_or_else(|| bad(CMD, "the pattern is empty or too large to paint"))?;
+    let tile =
+        Tile::new(&pat).ok_or_else(|| bad(CMD, "the pattern is empty or too large to paint"))?;
     reject_huge_stroke(CMD, &stroke)?;
 
     let seed = p.get("seed").and_then(Value::as_u64).unwrap_or_else(|| {
-        let bytes = p.get("points").map(std::string::ToString::to_string).unwrap_or_default();
+        let bytes = p
+            .get("points")
+            .map(std::string::ToString::to_string)
+            .unwrap_or_default();
         photocraft_paint::rng::seed_from_bytes(bytes.as_bytes())
     });
     stroke.brush.seed = seed;
@@ -60,9 +70,13 @@ pub(super) fn run(s: &mut Session, p: &Value) -> Result<Value> {
         let (surf, lock) = crate::channel_cmds::target_surface(doc, id, p)?;
         let sel = pre.selection.as_ref();
         if impressionist {
-            paint_impressionist(surf, &stroke, sel, lock, &tile, &pat, phase, scale, angle, seed, mode)
+            paint_impressionist(
+                surf, &stroke, sel, lock, &tile, &pat, phase, scale, angle, seed, mode,
+            )
         } else {
-            paint_aligned(surf, &stroke, sel, lock, &tile, phase, scale, angle, mode, CMD)
+            paint_aligned(
+                surf, &stroke, sel, lock, &tile, phase, scale, angle, mode, CMD,
+            )
         }
     })?;
     if let Some(st) = s.active_mut() {
@@ -80,7 +94,9 @@ fn stamp_scale(p: &Value, cmd: &str) -> Result<f32> {
     match p.get("scale") {
         None => Ok(1.0),
         Some(v) => {
-            let s = v.as_f64().ok_or_else(|| bad(cmd, "`scale` must be a number (1..1000 %)"))?;
+            let s = v
+                .as_f64()
+                .ok_or_else(|| bad(cmd, "`scale` must be a number (1..1000 %)"))?;
             if !s.is_finite() || !(1.0..=1000.0).contains(&s) {
                 return Err(bad(cmd, "scale must be 1..1000 %"));
             }
@@ -93,7 +109,9 @@ fn stamp_angle(p: &Value, cmd: &str) -> Result<f32> {
     match p.get("angle") {
         None => Ok(0.0),
         Some(v) => {
-            let a = v.as_f64().ok_or_else(|| bad(cmd, "`angle` must be a number (degrees)"))?;
+            let a = v
+                .as_f64()
+                .ok_or_else(|| bad(cmd, "`angle` must be a number (degrees)"))?;
             if !a.is_finite() {
                 return Err(bad(cmd, "`angle` must be finite"));
             }
@@ -112,9 +130,17 @@ fn stamp_phase(p: &Value, cmd: &str, aligned: bool, first: &StrokePoint) -> Resu
             }
         }
         Some(v) => {
-            let a = v.as_array().ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
-            let x = a.first().and_then(Value::as_f64).ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
-            let y = a.get(1).and_then(Value::as_f64).ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
+            let a = v
+                .as_array()
+                .ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
+            let x = a
+                .first()
+                .and_then(Value::as_f64)
+                .ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
+            let y = a
+                .get(1)
+                .and_then(Value::as_f64)
+                .ok_or_else(|| bad(cmd, "`phase` must be [px, py]"))?;
             if !x.is_finite() || !y.is_finite() {
                 return Err(bad(cmd, "`phase` coordinates must be finite"));
             }
@@ -141,11 +167,17 @@ fn reject_huge_stroke(cmd: &str, stroke: &Stroke) -> Result<()> {
     let w = (max_x - min_x + pad * 2.0).ceil().max(1.0);
     let h = (max_y - min_y + pad * 2.0).ceil().max(1.0);
     if !w.is_finite() || !h.is_finite() || w > 1.0e9 || h > 1.0e9 {
-        return Err(bad(cmd, format!("stroke too large (at most {MAX_STROKE_PIXELS} px)")));
+        return Err(bad(
+            cmd,
+            format!("stroke too large (at most {MAX_STROKE_PIXELS} px)"),
+        ));
     }
     let area = (w as u64).saturating_mul(h as u64);
     if area > MAX_STROKE_PIXELS {
-        return Err(bad(cmd, format!("stroke too large ({w:.0}×{h:.0} px, at most {MAX_STROKE_PIXELS})")));
+        return Err(bad(
+            cmd,
+            format!("stroke too large ({w:.0}×{h:.0} px, at most {MAX_STROKE_PIXELS})"),
+        ));
     }
     Ok(())
 }
@@ -157,7 +189,10 @@ fn reject_bounds(cmd: &str, bounds: Rect) -> Result<()> {
     let (w, h) = (u64::from(bounds.width()), u64::from(bounds.height()));
     let area = w.saturating_mul(h);
     if area > MAX_STROKE_PIXELS {
-        return Err(bad(cmd, format!("stroke too large ({w}×{h} px, at most {MAX_STROKE_PIXELS})")));
+        return Err(bad(
+            cmd,
+            format!("stroke too large ({w}×{h} px, at most {MAX_STROKE_PIXELS})"),
+        ));
     }
     Ok(())
 }
@@ -172,8 +207,12 @@ fn rgba_to_region(fmt: &PixelFormat, rect: Rect, rgba: &[[f32; 4]]) -> Region {
     let mut enc = [0.0f32; 8];
     for (i, px) in rgba.iter().enumerate() {
         from_rgba_into(fmt, *px, &mut enc);
-        let Some(start) = i.checked_mul(n) else { continue };
-        let Some(end) = start.checked_add(n) else { continue };
+        let Some(start) = i.checked_mul(n) else {
+            continue;
+        };
+        let Some(end) = start.checked_add(n) else {
+            continue;
+        };
         if let (Some(dst), Some(src)) = (paint.data.get_mut(start..end), enc.get(..n)) {
             dst.copy_from_slice(src);
         }
@@ -202,7 +241,16 @@ fn paint_aligned(
     let place = placement(phase, scale, angle);
     let rgba = render(tile, &place, bounds);
     let paint = rgba_to_region(&surf.format(), bounds, &rgba);
-    Ok(apply_coverage(surf, bounds, &cov, stroke.brush.opacity, sel, lock, &paint, mode))
+    Ok(apply_coverage(
+        surf,
+        bounds,
+        &cov,
+        stroke.brush.opacity,
+        sel,
+        lock,
+        &paint,
+        mode,
+    ))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -224,7 +272,9 @@ fn paint_impressionist(
     let th = pat.height as f32 * scale;
     // Halo is the dab footprint only: Impressionist jitters phase, it does not blur.
     Ok(apply_dab_stroke(surf, stroke, sel, lock, 0, |work, fp| {
-        stamp_dab(work, &fmt, tile, fp, phase, scale, angle, seed, tw, th, mode);
+        stamp_dab(
+            work, &fmt, tile, fp, phase, scale, angle, seed, tw, th, mode,
+        );
     }))
 }
 
@@ -235,7 +285,9 @@ fn footprint_cov(fp: &Footprint, x: i32, y: i32) -> f32 {
     let dx = x.wrapping_sub(fp.rect.x0) as u32;
     let dy = y.wrapping_sub(fp.rect.y0) as u32;
     let w = fp.rect.width();
-    let idx = (dy as usize).saturating_mul(w as usize).saturating_add(dx as usize);
+    let idx = (dy as usize)
+        .saturating_mul(w as usize)
+        .saturating_add(dx as usize);
     fp.cov.get(idx).copied().unwrap_or(0.0)
 }
 
@@ -273,7 +325,9 @@ fn stamp_dab(
             }
             let ox = (x - r.x0) as usize;
             let oy = (y - r.y0) as usize;
-            let Some(px) = rgba.get(oy.saturating_mul(rw).saturating_add(ox)) else { continue };
+            let Some(px) = rgba.get(oy.saturating_mul(rw).saturating_add(ox)) else {
+                continue;
+            };
             from_rgba_into(fmt, *px, &mut enc);
             let dst = work.px_mut(x, y);
             if mode == BlendMode::Normal {
@@ -297,8 +351,17 @@ mod tests {
     use super::*;
 
     fn stroke(points: &[(f64, f64)], size: f32) -> Stroke {
-        let brush = photocraft_paint::BrushSettings { size, ..Default::default() };
-        Stroke { brush, points: points.iter().map(|&(x, y)| StrokePoint::new(x, y, 1.0)).collect() }
+        let brush = photocraft_paint::BrushSettings {
+            size,
+            ..Default::default()
+        };
+        Stroke {
+            brush,
+            points: points
+                .iter()
+                .map(|&(x, y)| StrokePoint::new(x, y, 1.0))
+                .collect(),
+        }
     }
 
     #[test]

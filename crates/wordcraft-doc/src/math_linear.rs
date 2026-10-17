@@ -9,24 +9,35 @@
 //! an operator or space; a parenthesised operand loses its parentheses). `^`/`_` with nothing
 //! before them are pre-scripts. A top-level `#` numbers the equation (`E=mc^2#(1)`).
 
-use crate::math::{Arg, FracKind, MAX_DEPTH, MClass, MNode, MRun, ScriptKind, is_nary_char, math_class, merge_runs};
+use crate::math::{
+    Arg, FracKind, MAX_DEPTH, MClass, MNode, MRun, ScriptKind, is_nary_char, math_class, merge_runs,
+};
 
 /// Function names set upright and applied to the following operand.
 pub const FUNCTION_NAMES: &[&str] = &[
-    "arccos", "arccot", "arccsc", "arcsec", "arcsin", "arctan", "arg", "cos", "cosh", "cot", "coth", "csc", "csch", "deg", "det", "dim", "exp",
-    "gcd", "hom", "inf", "ker", "lg", "lim", "liminf", "limsup", "ln", "log", "max", "min", "mod", "Pr", "sec", "sech", "sin", "sinh", "sup", "tan",
-    "tanh",
+    "arccos", "arccot", "arccsc", "arcsec", "arcsin", "arctan", "arg", "cos", "cosh", "cot",
+    "coth", "csc", "csch", "deg", "det", "dim", "exp", "gcd", "hom", "inf", "ker", "lg", "lim",
+    "liminf", "limsup", "ln", "log", "max", "min", "mod", "Pr", "sec", "sech", "sin", "sinh",
+    "sup", "tan", "tanh",
 ];
 
 /// Function names whose subscripts go underneath (`lim_(n→∞)`).
-const LIMIT_NAMES: &[&str] = &["lim", "liminf", "limsup", "max", "min", "sup", "inf", "det", "gcd", "Pr"];
+const LIMIT_NAMES: &[&str] = &[
+    "lim", "liminf", "limsup", "max", "min", "sup", "inf", "det", "gcd", "Pr",
+];
 
 /// The empty-argument placeholder.
 pub const PLACEHOLDER: char = '⬚';
 
 /// Parse linear-format text. Never fails: what isn't understood stays as text.
 pub fn parse(s: &str) -> Arg {
-    let mut p = P { c: s.chars().take(20_000).collect(), i: 0, depth: 0, no_limits: 0, steps: 0 };
+    let mut p = P {
+        c: s.chars().take(20_000).collect(),
+        i: 0,
+        depth: 0,
+        no_limits: 0,
+        steps: 0,
+    };
     let mut out = Vec::new();
     // Stray closers at the top level are text.
     while p.i < p.c.len() {
@@ -38,7 +49,10 @@ pub fn parse(s: &str) -> Arg {
     }
     let mut out = clean(out);
     // `expr#(n)`: a numbered equation.
-    if out.iter().any(|n| matches!(n, MNode::Run(r) if r.text.contains('#'))) {
+    if out
+        .iter()
+        .any(|n| matches!(n, MNode::Run(r) if r.text.contains('#')))
+    {
         out = vec![MNode::EqArr { rows: vec![out] }];
     }
     out
@@ -65,12 +79,32 @@ pub fn closer(c: char) -> Option<char> {
 }
 
 fn is_closer(c: char) -> bool {
-    matches!(c, ')' | ']' | '}' | '⟩' | '〉' | '⌉' | '⌋' | '⟧' | '〗' | '┤')
+    matches!(
+        c,
+        ')' | ']' | '}' | '⟩' | '〉' | '⌉' | '⌋' | '⟧' | '〗' | '┤'
+    )
 }
 
 /// Prefix characters that make a structure from the operand after them.
 fn is_prefix(c: char) -> bool {
-    matches!(c, '√' | '∛' | '∜' | '█' | '■' | '▭' | '□' | '¯' | '▁' | '⟡' | '⏞' | '⏟' | '⏜' | '⏝' | '⎴' | '⎵') || is_nary_char(c)
+    matches!(
+        c,
+        '√' | '∛'
+            | '∜'
+            | '█'
+            | '■'
+            | '▭'
+            | '□'
+            | '¯'
+            | '▁'
+            | '⟡'
+            | '⏞'
+            | '⏟'
+            | '⏜'
+            | '⏝'
+            | '⎴'
+            | '⎵'
+    ) || is_nary_char(c)
 }
 
 /// Combining marks used as accents.
@@ -80,8 +114,10 @@ pub fn is_combining(c: char) -> bool {
 
 /// Characters that end an operand.
 fn is_boundary(c: char) -> bool {
-    matches!(c, ' ' | '&' | '@' | '#' | '▒' | '│' | '/' | '⁄' | '∕' | '¦' | '\u{2061}')
-        || is_closer(c)
+    matches!(
+        c,
+        ' ' | '&' | '@' | '#' | '▒' | '│' | '/' | '⁄' | '∕' | '¦' | '\u{2061}'
+    ) || is_closer(c)
         || matches!(math_class(c), MClass::Bin | MClass::Rel | MClass::Punct)
 }
 
@@ -112,7 +148,11 @@ impl P {
     fn rest(&mut self) -> Arg {
         let t: String = self.c.get(self.i..).unwrap_or(&[]).iter().collect();
         self.i = self.c.len();
-        if t.is_empty() { Vec::new() } else { vec![MNode::Run(MRun::new(t))] }
+        if t.is_empty() {
+            Vec::new()
+        } else {
+            vec![MNode::Run(MRun::new(t))]
+        }
     }
 
     /// A sequence up to one of `stops` (not consumed) or the end.
@@ -148,7 +188,9 @@ impl P {
                 '^' | '_' => {
                     let pre = match out.last() {
                         None => true,
-                        Some(MNode::Run(r)) => r.text == " " || r.text.chars().all(|c| is_boundary(c) && c != '#'),
+                        Some(MNode::Run(r)) => {
+                            r.text == " " || r.text.chars().all(|c| is_boundary(c) && c != '#')
+                        }
                         _ => false,
                     };
                     if pre {
@@ -164,7 +206,11 @@ impl P {
                     self.i += 1;
                     let lim = self.script_operand(stops);
                     let e = out.pop().map(|n| vec![n]).unwrap_or_default();
-                    out.push(MNode::Lim { upper: c == '┴', e: strip_parens(e), lim });
+                    out.push(MNode::Lim {
+                        upper: c == '┴',
+                        e: strip_parens(e),
+                        lim,
+                    });
                 }
                 c if is_combining(c) => {
                     self.i += 1;
@@ -188,7 +234,9 @@ impl P {
 
     /// One atom (a character, a bracket group, a structure or a function application).
     fn atom(&mut self, stops: &[char]) -> Arg {
-        let Some(c) = self.peek() else { return Vec::new() };
+        let Some(c) = self.peek() else {
+            return Vec::new();
+        };
         if let Some(close) = closer(c) {
             self.i += 1;
             return vec![self.group(Some(c), &[close])];
@@ -245,7 +293,14 @@ impl P {
         let beg = open.filter(|c| *c != '〖');
         let end = end.filter(|c| *c != '〗');
         let sep = if elems.len() > 1 { Some('|') } else { None };
-        MNode::Delim { beg, end, sep, grow: true, shp_match: false, elems }
+        MNode::Delim {
+            beg,
+            end,
+            sep,
+            grow: true,
+            shp_match: false,
+            elems,
+        }
     }
 
     /// `├X … Y┤`: brackets given explicitly (any bracket characters, either side optional), the
@@ -269,13 +324,38 @@ impl P {
         if level != 0 {
             return None;
         }
-        let bracket = |c: &char| matches!(c, '(' | ')' | '[' | ']' | '{' | '}' | '⟨' | '⟩' | '⌈' | '⌉' | '⌊' | '⌋' | '|' | '‖' | '⟦' | '⟧');
+        let bracket = |c: &char| {
+            matches!(
+                c,
+                '(' | ')'
+                    | '['
+                    | ']'
+                    | '{'
+                    | '}'
+                    | '⟨'
+                    | '⟩'
+                    | '⌈'
+                    | '⌉'
+                    | '⌊'
+                    | '⌋'
+                    | '|'
+                    | '‖'
+                    | '⟦'
+                    | '⟧'
+            )
+        };
         let mut inner: Vec<char> = self.c.get(self.i..k).unwrap_or(&[]).to_vec();
         self.i = k + 1;
-        let beg = if inner.first().is_some_and(bracket) { Some(inner.remove(0)) } else { None };
+        let beg = if inner.first().is_some_and(bracket) {
+            Some(inner.remove(0))
+        } else {
+            None
+        };
         // A closing bracket at the end that pairs with an opening one inside is content.
         let paired = |inner: &[char]| -> bool {
-            let Some((last, body)) = inner.split_last() else { return false };
+            let Some((last, body)) = inner.split_last() else {
+                return false;
+            };
             let opener = match last {
                 ')' => '(',
                 ']' => '[',
@@ -286,10 +366,21 @@ impl P {
                 '⟧' => '⟦',
                 _ => return false,
             };
-            body.iter().filter(|c| **c == opener).count() > body.iter().filter(|c| *c == last).count()
+            body.iter().filter(|c| **c == opener).count()
+                > body.iter().filter(|c| *c == last).count()
         };
-        let end = if !inner.is_empty() && inner.last().is_some_and(bracket) && !paired(&inner) { inner.pop() } else { None };
-        let mut sub = P { c: inner, i: 0, depth: self.depth + 1, no_limits: 0, steps: self.steps };
+        let end = if !inner.is_empty() && inner.last().is_some_and(bracket) && !paired(&inner) {
+            inner.pop()
+        } else {
+            None
+        };
+        let mut sub = P {
+            c: inner,
+            i: 0,
+            depth: self.depth + 1,
+            no_limits: 0,
+            steps: self.steps,
+        };
         let mut elems = vec![Vec::new()];
         while sub.i < sub.c.len() {
             if let Some(e) = elems.last_mut() {
@@ -314,7 +405,14 @@ impl P {
         }
         self.steps = sub.steps;
         let sep = if elems.len() > 1 { Some('|') } else { None };
-        Some(MNode::Delim { beg, end, sep, grow: true, shp_match: false, elems })
+        Some(MNode::Delim {
+            beg,
+            end,
+            sep,
+            grow: true,
+            shp_match: false,
+            elems,
+        })
     }
 
     /// A prefix structure after its character.
@@ -327,13 +425,20 @@ impl P {
                     _ => Vec::new(),
                 };
                 let mut e = self.operand(stops);
-                if let Some(k) = e.iter().position(|n| matches!(n, MNode::Run(r) if r.text == "&")) {
+                if let Some(k) = e
+                    .iter()
+                    .position(|n| matches!(n, MNode::Run(r) if r.text == "&"))
+                {
                     let rest = e.split_off(k + 1);
                     e.pop();
                     deg = e;
                     e = rest;
                 }
-                MNode::Rad { deg_hide: deg.is_empty(), deg, e }
+                MNode::Rad {
+                    deg_hide: deg.is_empty(),
+                    deg,
+                    e,
+                }
             }
             '█' | '■' => {
                 if self.peek() == Some('(') {
@@ -347,17 +452,39 @@ impl P {
                     text(c)
                 }
             }
-            '▭' => MNode::BorderBox { hide: [false; 4], strike: [false; 4], e: self.operand(stops) },
-            '□' => MNode::Boxed { e: self.operand(stops) },
-            '¯' => MNode::Bar { top: true, e: self.operand(stops) },
-            '▁' => MNode::Bar { top: false, e: self.operand(stops) },
-            '⟡' => MNode::Phant { show: false, zero_wid: false, zero_asc: false, zero_desc: false, e: self.operand(stops) },
+            '▭' => MNode::BorderBox {
+                hide: [false; 4],
+                strike: [false; 4],
+                e: self.operand(stops),
+            },
+            '□' => MNode::Boxed {
+                e: self.operand(stops),
+            },
+            '¯' => MNode::Bar {
+                top: true,
+                e: self.operand(stops),
+            },
+            '▁' => MNode::Bar {
+                top: false,
+                e: self.operand(stops),
+            },
+            '⟡' => MNode::Phant {
+                show: false,
+                zero_wid: false,
+                zero_asc: false,
+                zero_desc: false,
+                e: self.operand(stops),
+            },
             // A label (`┴`/`┬`) after the operand belongs to the whole brace.
             '⏞' | '⏜' | '⎴' | '⏟' | '⏝' | '⎵' => {
                 self.no_limits += 1;
                 let e = self.operand(stops);
                 self.no_limits -= 1;
-                MNode::GroupChr { chr: c, top: matches!(c, '⏞' | '⏜' | '⎴'), e }
+                MNode::GroupChr {
+                    chr: c,
+                    top: matches!(c, '⏞' | '⏜' | '⎴'),
+                    e,
+                }
             }
             _ => {
                 // N-ary operator: limits, then the operand.
@@ -381,8 +508,21 @@ impl P {
                 if self.peek() == Some('▒') {
                     self.i += 1;
                 }
-                let e = if self.peek().is_some_and(|c| c == ' ') { Vec::new() } else { self.operand(stops) };
-                MNode::Nary { chr: c, lim_loc: None, grow: false, sub_hide: !has_sub, sup_hide: !has_sup, sub, sup, e }
+                let e = if self.peek().is_some_and(|c| c == ' ') {
+                    Vec::new()
+                } else {
+                    self.operand(stops)
+                };
+                MNode::Nary {
+                    chr: c,
+                    lim_loc: None,
+                    grow: false,
+                    sub_hide: !has_sub,
+                    sup_hide: !has_sup,
+                    sub,
+                    sup,
+                    e,
+                }
             }
         }
     }
@@ -407,12 +547,20 @@ impl P {
                 let upper = self.peek() == Some('┴');
                 self.i += 1;
                 let lim = self.script_operand(stops);
-                vec![MNode::Lim { upper, e: plain, lim }]
+                vec![MNode::Lim {
+                    upper,
+                    e: plain,
+                    lim,
+                }]
             }
             Some('_') if LIMIT_NAMES.contains(&word.as_str()) => {
                 self.i += 1;
                 let lim = self.script_operand(stops);
-                vec![MNode::Lim { upper: false, e: plain, lim }]
+                vec![MNode::Lim {
+                    upper: false,
+                    e: plain,
+                    lim,
+                }]
             }
             Some(c @ ('^' | '_')) => {
                 self.i += 1;
@@ -432,7 +580,11 @@ impl P {
             self.i += 1;
         }
         let next = self.peek();
-        let applies = next.is_some_and(|c| !stops.contains(&c) && !is_closer(c) && (!is_boundary(c) || c == '(' || matches!(c, '−' | '-' | '+')));
+        let applies = next.is_some_and(|c| {
+            !stops.contains(&c)
+                && !is_closer(c)
+                && (!is_boundary(c) || c == '(' || matches!(c, '−' | '-' | '+'))
+        });
         if !applies {
             return name;
         }
@@ -459,7 +611,12 @@ impl P {
             self.i += 1;
         }
         let base = self.operand(stops);
-        MNode::Script { kind: ScriptKind::Pre, base, sub, sup }
+        MNode::Script {
+            kind: ScriptKind::Pre,
+            base,
+            sub,
+            sup,
+        }
     }
 
     /// An operand: a parenthesised group (parentheses dropped) or a run of atoms with their
@@ -474,7 +631,11 @@ impl P {
             self.i += 1;
             let g = self.group(Some('('), &[')']);
             let inner = match g {
-                MNode::Delim { elems, end: Some(')'), .. } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
+                MNode::Delim {
+                    elems,
+                    end: Some(')'),
+                    ..
+                } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
                 other => vec![other],
             };
             out = inner;
@@ -483,7 +644,9 @@ impl P {
             self.i += 1;
             let g = self.group(Some('〖'), &['〗']);
             out = match g {
-                MNode::Delim { elems, .. } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
+                MNode::Delim { elems, .. } if elems.len() == 1 => {
+                    elems.into_iter().next().unwrap_or_default()
+                }
                 other => vec![other],
             };
             self.postfix(&mut out, stops, true);
@@ -533,7 +696,14 @@ impl P {
                     if out.is_empty() {
                         return None;
                     }
-                    return Some(MNode::Delim { beg: None, end: None, sep: None, grow: true, shp_match: false, elems: vec![std::mem::take(out)] });
+                    return Some(MNode::Delim {
+                        beg: None,
+                        end: None,
+                        sep: None,
+                        grow: true,
+                        shp_match: false,
+                        elems: vec![std::mem::take(out)],
+                    });
                 }
                 out.pop()
             };
@@ -548,12 +718,19 @@ impl P {
                     self.i += 1;
                     let lim = self.script_operand(stops);
                     let b = base(out);
-                    out.push(MNode::Lim { upper: c == '┴', e: b.map(|n| vec![n]).unwrap_or_default(), lim });
+                    out.push(MNode::Lim {
+                        upper: c == '┴',
+                        e: b.map(|n| vec![n]).unwrap_or_default(),
+                        lim,
+                    });
                 }
                 c if is_combining(c) => {
                     self.i += 1;
                     let b = base(out);
-                    out.push(MNode::Acc { chr: c, e: b.map(|n| strip_parens(vec![n])).unwrap_or_default() });
+                    out.push(MNode::Acc {
+                        chr: c,
+                        e: b.map(|n| strip_parens(vec![n])).unwrap_or_default(),
+                    });
                 }
                 _ => break,
             }
@@ -571,14 +748,20 @@ impl P {
             Some('(') => {
                 self.i += 1;
                 match self.group(Some('('), &[')']) {
-                    MNode::Delim { elems, end: Some(')'), .. } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
+                    MNode::Delim {
+                        elems,
+                        end: Some(')'),
+                        ..
+                    } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
                     other => vec![other],
                 }
             }
             Some('〖') => {
                 self.i += 1;
                 match self.group(Some('〖'), &['〗']) {
-                    MNode::Delim { elems, .. } if elems.len() == 1 => elems.into_iter().next().unwrap_or_default(),
+                    MNode::Delim { elems, .. } if elems.len() == 1 => {
+                        elems.into_iter().next().unwrap_or_default()
+                    }
                     other => vec![other],
                 }
             }
@@ -591,7 +774,9 @@ impl P {
                 let t: String = self.c.get(start..self.i).unwrap_or(&[]).iter().collect();
                 vec![MNode::Run(MRun::new(t))]
             }
-            Some(c @ ('−' | '-' | '+' | '±' | '∓')) if self.peek_at(1).is_some_and(|n| !is_boundary(n)) => {
+            Some(c @ ('−' | '-' | '+' | '±' | '∓'))
+                if self.peek_at(1).is_some_and(|n| !is_boundary(n)) =>
+            {
                 self.i += 1;
                 let mut v = vec![text(c)];
                 v.extend(self.script_operand(stops));
@@ -628,7 +813,20 @@ fn operand_start(out: &[MNode]) -> usize {
 /// A single parenthesised group used as an operand loses its parentheses.
 pub fn strip_parens(mut a: Arg) -> Arg {
     if a.len() == 1
-        && let Some(MNode::Delim { beg: Some('('), end: Some(')'), elems, .. } | MNode::Delim { beg: None, end: None, elems, .. }) = a.first_mut()
+        && let Some(
+            MNode::Delim {
+                beg: Some('('),
+                end: Some(')'),
+                elems,
+                ..
+            }
+            | MNode::Delim {
+                beg: None,
+                end: None,
+                elems,
+                ..
+            },
+        ) = a.first_mut()
         && elems.len() == 1
     {
         return elems.pop().unwrap_or_default();
@@ -638,14 +836,44 @@ pub fn strip_parens(mut a: Arg) -> Arg {
 
 fn attach_script(base: Option<MNode>, sup: bool, s: Arg) -> MNode {
     match base {
-        Some(MNode::Script { kind: ScriptKind::Sub, base, sub, .. }) if sup => MNode::Script { kind: ScriptKind::SubSup, base, sub, sup: s },
-        Some(MNode::Script { kind: ScriptKind::Sup, base, sup: sp, .. }) if !sup => MNode::Script { kind: ScriptKind::SubSup, base, sub: s, sup: sp },
+        Some(MNode::Script {
+            kind: ScriptKind::Sub,
+            base,
+            sub,
+            ..
+        }) if sup => MNode::Script {
+            kind: ScriptKind::SubSup,
+            base,
+            sub,
+            sup: s,
+        },
+        Some(MNode::Script {
+            kind: ScriptKind::Sup,
+            base,
+            sup: sp,
+            ..
+        }) if !sup => MNode::Script {
+            kind: ScriptKind::SubSup,
+            base,
+            sub: s,
+            sup: sp,
+        },
         b => {
             let base = b.map(|b| vec![b]).unwrap_or_default();
             if sup {
-                MNode::Script { kind: ScriptKind::Sup, base, sub: Vec::new(), sup: s }
+                MNode::Script {
+                    kind: ScriptKind::Sup,
+                    base,
+                    sub: Vec::new(),
+                    sup: s,
+                }
             } else {
-                MNode::Script { kind: ScriptKind::Sub, base, sub: s, sup: Vec::new() }
+                MNode::Script {
+                    kind: ScriptKind::Sub,
+                    base,
+                    sub: s,
+                    sup: Vec::new(),
+                }
             }
         }
     }
@@ -670,9 +898,17 @@ fn grid(matrix: bool, inner: Arg) -> MNode {
         }
     }
     if matrix {
-        MNode::Matrix { rows, col_jc: Vec::new() }
+        MNode::Matrix {
+            rows,
+            col_jc: Vec::new(),
+        }
     } else {
-        MNode::EqArr { rows: rows.into_iter().map(|r| r.into_iter().flatten().collect()).collect() }
+        MNode::EqArr {
+            rows: rows
+                .into_iter()
+                .map(|r| r.into_iter().flatten().collect())
+                .collect(),
+        }
     }
 }
 
@@ -692,24 +928,101 @@ fn clean(a: Arg) -> Arg {
 pub fn map_args(n: MNode, f: &dyn Fn(Arg) -> Arg) -> MNode {
     match n {
         MNode::Run(r) => MNode::Run(r),
-        MNode::Frac { kind, num, den } => MNode::Frac { kind, num: f(num), den: f(den) },
-        MNode::Script { kind, base, sub, sup } => MNode::Script { kind, base: f(base), sub: f(sub), sup: f(sup) },
-        MNode::Rad { deg, deg_hide, e } => MNode::Rad { deg: f(deg), deg_hide, e: f(e) },
-        MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub, sup, e } => {
-            MNode::Nary { chr, lim_loc, grow, sub_hide, sup_hide, sub: f(sub), sup: f(sup), e: f(e) }
-        }
-        MNode::Delim { beg, end, sep, grow, shp_match, elems } => {
-            MNode::Delim { beg, end, sep, grow, shp_match, elems: elems.into_iter().map(f).collect() }
-        }
-        MNode::Func { name, e } => MNode::Func { name: f(name), e: f(e) },
-        MNode::Lim { upper, e, lim } => MNode::Lim { upper, e: f(e), lim: f(lim) },
+        MNode::Frac { kind, num, den } => MNode::Frac {
+            kind,
+            num: f(num),
+            den: f(den),
+        },
+        MNode::Script {
+            kind,
+            base,
+            sub,
+            sup,
+        } => MNode::Script {
+            kind,
+            base: f(base),
+            sub: f(sub),
+            sup: f(sup),
+        },
+        MNode::Rad { deg, deg_hide, e } => MNode::Rad {
+            deg: f(deg),
+            deg_hide,
+            e: f(e),
+        },
+        MNode::Nary {
+            chr,
+            lim_loc,
+            grow,
+            sub_hide,
+            sup_hide,
+            sub,
+            sup,
+            e,
+        } => MNode::Nary {
+            chr,
+            lim_loc,
+            grow,
+            sub_hide,
+            sup_hide,
+            sub: f(sub),
+            sup: f(sup),
+            e: f(e),
+        },
+        MNode::Delim {
+            beg,
+            end,
+            sep,
+            grow,
+            shp_match,
+            elems,
+        } => MNode::Delim {
+            beg,
+            end,
+            sep,
+            grow,
+            shp_match,
+            elems: elems.into_iter().map(f).collect(),
+        },
+        MNode::Func { name, e } => MNode::Func {
+            name: f(name),
+            e: f(e),
+        },
+        MNode::Lim { upper, e, lim } => MNode::Lim {
+            upper,
+            e: f(e),
+            lim: f(lim),
+        },
         MNode::Acc { chr, e } => MNode::Acc { chr, e: f(e) },
         MNode::Bar { top, e } => MNode::Bar { top, e: f(e) },
-        MNode::BorderBox { hide, strike, e } => MNode::BorderBox { hide, strike, e: f(e) },
+        MNode::BorderBox { hide, strike, e } => MNode::BorderBox {
+            hide,
+            strike,
+            e: f(e),
+        },
         MNode::Boxed { e } => MNode::Boxed { e: f(e) },
         MNode::GroupChr { chr, top, e } => MNode::GroupChr { chr, top, e: f(e) },
-        MNode::EqArr { rows } => MNode::EqArr { rows: rows.into_iter().map(f).collect() },
-        MNode::Matrix { rows, col_jc } => MNode::Matrix { rows: rows.into_iter().map(|r| r.into_iter().map(f).collect()).collect(), col_jc },
-        MNode::Phant { show, zero_wid, zero_asc, zero_desc, e } => MNode::Phant { show, zero_wid, zero_asc, zero_desc, e: f(e) },
+        MNode::EqArr { rows } => MNode::EqArr {
+            rows: rows.into_iter().map(f).collect(),
+        },
+        MNode::Matrix { rows, col_jc } => MNode::Matrix {
+            rows: rows
+                .into_iter()
+                .map(|r| r.into_iter().map(f).collect())
+                .collect(),
+            col_jc,
+        },
+        MNode::Phant {
+            show,
+            zero_wid,
+            zero_asc,
+            zero_desc,
+            e,
+        } => MNode::Phant {
+            show,
+            zero_wid,
+            zero_asc,
+            zero_desc,
+            e: f(e),
+        },
     }
 }

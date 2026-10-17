@@ -22,7 +22,7 @@ use crate::{
         SystemWithAccess,
     },
     system::{RunSystemError, System, SystemAccess, SystemIn, SystemStateFlags},
-    world::{unsafe_world_cell::UnsafeWorldCell, DeferredWorld, World},
+    world::{DeferredWorld, World, unsafe_world_cell::UnsafeWorldCell},
 };
 
 /// Types that can run a [`SystemSchedule`] on a [`World`].

@@ -5,7 +5,7 @@ use bevy_math::UVec2;
 use bevy_platform::collections::HashMap;
 use wgpu::TextureFormat;
 
-use crate::{render_resource::TextureView, RenderApp};
+use crate::{RenderApp, render_resource::TextureView};
 
 /// A manually managed [`TextureView`] for use as a [`bevy_camera::RenderTarget`].
 #[derive(Debug, Clone)]

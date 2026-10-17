@@ -35,8 +35,15 @@ use std::collections::{HashMap, HashSet};
 ///
 /// Verbatim de `statsKeys` (`comparison-engine.ts:66`). Ce sont ces chaînes-là
 /// qui apparaissent dans [`EcartStat::stat`].
-pub const NOMS_STATS_COMPAREES: [&str; 7] =
-    ["kick", "control", "technique", "physical", "pressure", "agility", "intelligence"];
+pub const NOMS_STATS_COMPAREES: [&str; 7] = [
+    "kick",
+    "control",
+    "technique",
+    "physical",
+    "pressure",
+    "agility",
+    "intelligence",
+];
 
 /// Sous-ensemble d'une variante de personnage nécessaire à la comparaison.
 ///
@@ -222,11 +229,20 @@ pub fn comparer_variantes(
             au_moins_une_superieure = true;
         }
 
-        ecarts_stats.push(EcartStat { stat: nom, valeur_base, valeur_variante, ecart });
+        ecarts_stats.push(EcartStat {
+            stat: nom,
+            valeur_base,
+            valeur_variante,
+            ecart,
+        });
     }
 
-    let nom_technique =
-        |id: &str| -> String { noms_techniques.get(id).cloned().unwrap_or_else(|| id.to_string()) };
+    let nom_technique = |id: &str| -> String {
+        noms_techniques
+            .get(id)
+            .cloned()
+            .unwrap_or_else(|| id.to_string())
+    };
 
     let base_ids = dedup_ordonne(&base.techniques);
     let var_ids = dedup_ordonne(&variante.techniques);
@@ -274,11 +290,16 @@ pub fn comparer_variantes(
 
     if ecart_total != 0 {
         let signe = if ecart_total > 0 { "+" } else { "" };
-        details.push(format!("Différence totale de statistiques de {signe}{ecart_total}"));
+        details.push(format!(
+            "Différence totale de statistiques de {signe}{ecart_total}"
+        ));
     }
 
     if !techniques_ajoutees.is_empty() {
-        details.push(format!("Nouvelles techniques apprises : {}", techniques_ajoutees.join(", ")));
+        details.push(format!(
+            "Nouvelles techniques apprises : {}",
+            techniques_ajoutees.join(", ")
+        ));
     }
 
     ResultatComparaison {
@@ -313,7 +334,10 @@ pub fn analyser_variantes(
     let Some(base) = variantes.first() else {
         return Vec::new();
     };
-    variantes.iter().map(|v| comparer_variantes(base, v, noms_techniques)).collect()
+    variantes
+        .iter()
+        .map(|v| comparer_variantes(base, v, noms_techniques))
+        .collect()
 }
 
 #[cfg(test)]
@@ -343,7 +367,10 @@ mod tests {
         assert_eq!(r.classification.libelle_inagle(), "Base Version");
         assert_eq!(r.ecart_total, 0);
         assert!(r.ecarts_stats.is_empty());
-        assert_eq!(r.explication, "Il s'agit de la version d'origine (la plus jeune).");
+        assert_eq!(
+            r.explication,
+            "Il s'agit de la version d'origine (la plus jeune)."
+        );
     }
 
     #[test]
@@ -393,7 +420,10 @@ mod tests {
         assert_eq!(r.classification, Classification::EvolutionHybride);
         assert_eq!(r.classification.libelle_inagle(), "Hybrid Evolution");
         assert!(r.element_change && r.position_changee);
-        assert_eq!(r.explication, "Changement de poste (FW ➔ GK) et d'élément (Fire ➔ Wind).");
+        assert_eq!(
+            r.explication,
+            "Changement de poste (FW ➔ GK) et d'élément (Fire ➔ Wind)."
+        );
     }
 
     #[test]
@@ -415,7 +445,10 @@ mod tests {
         let autre = variante("0xBBBB", "FW", "Void", [10; 7]);
         let r = comparer_variantes(&base, &autre, &sans_noms());
         assert_eq!(r.classification, Classification::ChangementElement);
-        assert_eq!(r.explication, "Changement d'élément élémentaire : Fire ➔ Void.");
+        assert_eq!(
+            r.explication,
+            "Changement d'élément élémentaire : Fire ➔ Void."
+        );
     }
 
     #[test]
@@ -435,7 +468,15 @@ mod tests {
         let noms: Vec<&str> = r.ecarts_stats.iter().map(|e| e.stat).collect();
         assert_eq!(
             noms,
-            ["kick", "control", "technique", "physical", "pressure", "agility", "intelligence"]
+            [
+                "kick",
+                "control",
+                "technique",
+                "physical",
+                "pressure",
+                "agility",
+                "intelligence"
+            ]
         );
         // `physical` est le 4e (Pr), `pressure` le 5e (Ps) — l'inverse casserait
         // silencieusement toute lecture des écarts.
@@ -459,7 +500,8 @@ mod tests {
         assert_eq!(r.techniques_ajoutees, ["Tornade"]);
         assert_eq!(r.techniques_retirees, ["s_perdue"]);
         assert!(
-            r.explication.ends_with("Nouvelles techniques apprises : Tornade."),
+            r.explication
+                .ends_with("Nouvelles techniques apprises : Tornade."),
             "{}",
             r.explication
         );
@@ -469,7 +511,12 @@ mod tests {
     fn techniques_dupliquees_ne_sortent_qu_une_fois_et_dans_l_ordre() {
         let base = variante("0xAAAA", "FW", "Fire", [10; 7]);
         let mut autre = variante("0xBBBB", "FW", "Fire", [10; 7]);
-        autre.techniques = vec!["b".to_string(), "a".to_string(), "b".to_string(), "c".to_string()];
+        autre.techniques = vec![
+            "b".to_string(),
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+        ];
         let r = comparer_variantes(&base, &autre, &sans_noms());
         // Ordre de PREMIÈRE insertion, comme `new Set` en JS — pas un tri.
         assert_eq!(r.techniques_ajoutees, ["b", "a", "c"]);
@@ -510,6 +557,9 @@ mod tests {
             assert_ne!(r.classification, Classification::EvolutionSerie);
         }
         // La variante existe malgré tout dans le type, avec son libellé exact.
-        assert_eq!(Classification::EvolutionSerie.libelle_inagle(), "Series Evolution");
+        assert_eq!(
+            Classification::EvolutionSerie.libelle_inagle(),
+            "Series Evolution"
+        );
     }
 }

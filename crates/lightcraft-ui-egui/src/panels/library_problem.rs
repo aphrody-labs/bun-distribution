@@ -28,7 +28,12 @@ pub struct LibraryProblem {
 
 impl LibraryProblem {
     pub fn new(path: impl Into<String>, error: impl Into<String>) -> LibraryProblem {
-        LibraryProblem { path: path.into(), error: error.into(), can_retry: true, ..Default::default() }
+        LibraryProblem {
+            path: path.into(),
+            error: error.into(),
+            can_retry: true,
+            ..Default::default()
+        }
     }
 
     /// `ui.inspect` → `libraryProblem`.
@@ -55,7 +60,11 @@ fn open(app: &mut LightcraftApp, path: Option<String>) {
     match app.run("app.openLibrary", params) {
         Ok(serde_json::Value::Null) => {} // folder dialog cancelled
         Ok(_) => {
-            let files = app.library_problem.take().map(|p| p.pending_import).unwrap_or_default();
+            let files = app
+                .library_problem
+                .take()
+                .map(|p| p.pending_import)
+                .unwrap_or_default();
             // in the background, like files dropped on the window (issue #374)
             if !files.is_empty()
                 && let Err(e) = crate::import::start_paths(app, files)
@@ -84,19 +93,27 @@ pub fn logic(app: &mut LightcraftApp) {
 
 /// The blocking window (until a choice is made).
 pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
-    let Some(problem) = app.library_problem.clone() else { return };
+    let Some(problem) = app.library_problem.clone() else {
+        return;
+    };
     if problem.dismissed {
         return;
     }
     let t = Tokens::get(ctx);
     let screen = ctx.content_rect();
-    egui::Area::new(egui::Id::new("library-problem-dim")).order(egui::Order::Middle).fixed_pos(screen.min).interactable(true).show(ctx, |ui| {
-        // swallows clicks: nothing behind the window can be used meanwhile
-        ui.allocate_rect(screen, egui::Sense::click_and_drag());
-        ui.painter().rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
-    });
+    egui::Area::new(egui::Id::new("library-problem-dim"))
+        .order(egui::Order::Middle)
+        .fixed_pos(screen.min)
+        .interactable(true)
+        .show(ctx, |ui| {
+            // swallows clicks: nothing behind the window can be used meanwhile
+            ui.allocate_rect(screen, egui::Sense::click_and_drag());
+            ui.painter()
+                .rect_filled(screen, 0.0, egui::Color32::from_black_alpha(160));
+        });
     let mut choice = None;
-    let frame = egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(18, 14));
+    let frame =
+        egui::Frame::window(&ctx.global_style()).inner_margin(egui::Margin::symmetric(18, 14));
     egui::Window::new(crate::i18n::tr("Your library couldn't be opened"))
         .id(egui::Id::new("library-problem"))
         .order(egui::Order::Foreground)
@@ -146,7 +163,11 @@ pub fn show(app: &mut LightcraftApp, ctx: &egui::Context) {
             if let Some(p) = app.library_problem.as_mut() {
                 p.dismissed = true;
             }
-            let files = app.library_problem.as_mut().map(|p| std::mem::take(&mut p.pending_import)).unwrap_or_default();
+            let files = app
+                .library_problem
+                .as_mut()
+                .map(|p| std::mem::take(&mut p.pending_import))
+                .unwrap_or_default();
             // in the background, like files dropped on the window (issue #374)
             if !files.is_empty()
                 && let Err(e) = crate::import::start_paths(app, files)

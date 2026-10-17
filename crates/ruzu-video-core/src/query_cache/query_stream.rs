@@ -176,7 +176,10 @@ mod tests {
         let blocked = done_rx.recv_timeout(std::time::Duration::from_millis(100));
         drop(held);
         worker.join().unwrap();
-        assert!(matches!(blocked, Err(std::sync::mpsc::RecvTimeoutError::Timeout)));
+        assert!(matches!(
+            blocked,
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout)
+        ));
         assert_eq!(done_rx.recv().unwrap(), VecDeque::from([slot]));
     }
 

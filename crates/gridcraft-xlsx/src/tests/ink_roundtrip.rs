@@ -28,7 +28,10 @@ fn read_drawing(drawing: &str) -> Workbook {
     let rels = r#"<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>"#;
     let bytes = minimal(
         r#"<sheetData/><drawing r:id="rId1"/>"#,
-        &[("xl/worksheets/_rels/sheet1.xml.rels", rels), ("xl/drawings/drawing1.xml", drawing)],
+        &[
+            ("xl/worksheets/_rels/sheet1.xml.rels", rels),
+            ("xl/drawings/drawing1.xml", drawing),
+        ],
         "",
         "",
     );
@@ -57,35 +60,68 @@ fn exported_ink_has_a_visible_unfilled_path_and_correct_stroke() {
         sheet.shapes.push(Shape {
             id,
             kind: ShapeKind::Ink,
-            anchor: Anchor { width: 100.0, height: 50.0, mode: AnchorMode::Absolute, ..Default::default() },
+            anchor: Anchor {
+                width: 100.0,
+                height: 50.0,
+                mode: AnchorMode::Absolute,
+                ..Default::default()
+            },
             fill: Color::Rgb(width << 16),
             line: Color::Rgb(0xA12BCD),
             text: "-10.0,5.0;50.0,40.0;90.0,10.0".into(),
             format: Default::default(),
         });
     }
-    let wb = Workbook { sheets: vec![Arc::new(sheet)], ..Default::default() };
+    let wb = Workbook {
+        sheets: vec![Arc::new(sheet)],
+        ..Default::default()
+    };
     let bytes = write_xlsx(&wb).unwrap();
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bytes)).unwrap();
     let mut drawing = String::new();
-    archive.by_name("xl/drawings/drawing1.xml").unwrap().read_to_string(&mut drawing).unwrap();
+    archive
+        .by_name("xl/drawings/drawing1.xml")
+        .unwrap()
+        .read_to_string(&mut drawing)
+        .unwrap();
     let root = xml::parse(drawing.as_bytes()).unwrap();
-    let shapes: Vec<_> = root.children.iter().filter_map(|anchor| anchor.child("sp")).collect();
+    let shapes: Vec<_> = root
+        .children
+        .iter()
+        .filter_map(|anchor| anchor.child("sp"))
+        .collect();
     assert_eq!(shapes.len(), 2);
     for (shape, width) in shapes.iter().zip([3, 12]) {
-        assert!(!has_caption(shape), "stroke coordinates must not be visible text");
+        assert!(
+            !has_caption(shape),
+            "stroke coordinates must not be visible text"
+        );
         let properties = shape.child("spPr").unwrap();
         assert!(properties.child("prstGeom").is_none());
         assert!(properties.child("noFill").is_some());
-        let paths: Vec<_> = properties.path(&["custGeom", "pathLst"]).unwrap().kids("path").collect();
+        let paths: Vec<_> = properties
+            .path(&["custGeom", "pathLst"])
+            .unwrap()
+            .kids("path")
+            .collect();
         assert_eq!(paths.len(), 1);
         let path = paths[0];
         assert_eq!(path.attr("fill"), Some("none"));
         let w = path.attr_i64("w").unwrap();
         let h = path.attr_i64("h").unwrap();
         assert!(w > 0 && h > 0);
-        assert_eq!(path.children.iter().map(|c| c.name.as_str()).collect::<Vec<_>>(), ["moveTo", "lnTo", "lnTo"]);
-        for (command, [x, y]) in path.children.iter().zip([[-10.0, 5.0], [50.0, 40.0], [90.0, 10.0]]) {
+        assert_eq!(
+            path.children
+                .iter()
+                .map(|c| c.name.as_str())
+                .collect::<Vec<_>>(),
+            ["moveTo", "lnTo", "lnTo"]
+        );
+        for (command, [x, y]) in
+            path.children
+                .iter()
+                .zip([[-10.0, 5.0], [50.0, 40.0], [90.0, 10.0]])
+        {
             let point = command.child("pt").unwrap();
             let actual_x = point.attr_i64("x").unwrap() as f64 * 100.0 / w as f64;
             let actual_y = point.attr_i64("y").unwrap() as f64 * 50.0 / h as f64;
@@ -100,7 +136,11 @@ fn exported_ink_has_a_visible_unfilled_path_and_correct_stroke() {
         if width > 8 {
             assert_eq!(color.child_val("alpha"), Some("45000"));
         } else {
-            assert!(color.child("alpha").is_none_or(|a| a.attr("val") == Some("100000")));
+            assert!(
+                color
+                    .child("alpha")
+                    .is_none_or(|a| a.attr("val") == Some("100000"))
+            );
         }
     }
 }
@@ -110,7 +150,10 @@ fn numeric_polyline_from_an_independent_package_is_scaled_into_editable_ink() {
     for (width, alpha) in [(3, ""), (12, r#"<a:alpha val="45000"/>"#)] {
         let xml = drawing()
             .replace("w=\"28575\"", &format!("w=\"{}\"", width * 9525))
-            .replace(r#"<a:srgbClr val="A12BCD"/>"#, &format!(r#"<a:srgbClr val="A12BCD">{alpha}</a:srgbClr>"#));
+            .replace(
+                r#"<a:srgbClr val="A12BCD"/>"#,
+                &format!(r#"<a:srgbClr val="A12BCD">{alpha}</a:srgbClr>"#),
+            );
         let wb = read_drawing(&xml);
         let shapes = &wb.sheet(0).unwrap().shapes;
         assert_eq!(shapes.len(), 1);
@@ -134,7 +177,10 @@ fn imported_points_are_not_snapped_to_native_tenth_units() {
     let shape = &wb.sheet(0).unwrap().shapes[0];
     assert_eq!(shape.kind, ShapeKind::Ink);
     let original = points(shape);
-    assert!((original[0][0] - 0.10005).abs() < 0.00000001, "an imported coordinate is not necessarily a native tenth-unit point");
+    assert!(
+        (original[0][0] - 0.10005).abs() < 0.00000001,
+        "an imported coordinate is not necessarily a native tenth-unit point"
+    );
     let (reopened, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
     let after = &reopened.sheet(0).unwrap().shapes[0];
     assert_eq!(after.kind, ShapeKind::Ink);
@@ -179,7 +225,14 @@ fn unsupported_geometry_or_appearance_is_not_reclassified_as_editable_ink() {
     ];
     for (name, xml) in cases {
         let wb = read_drawing(&xml);
-        assert!(wb.sheet(0).unwrap().shapes.iter().all(|s| s.kind != ShapeKind::Ink), "{name} was silently converted to editable ink");
+        assert!(
+            wb.sheet(0)
+                .unwrap()
+                .shapes
+                .iter()
+                .all(|s| s.kind != ShapeKind::Ink),
+            "{name} was silently converted to editable ink"
+        );
     }
 }
 
@@ -190,5 +243,11 @@ fn oversized_polyline_is_not_truncated_into_different_ink() {
         commands.push_str(r#"<a:lnTo><a:pt x="100" y="80"/></a:lnTo>"#);
     }
     let wb = read_drawing(&drawing().replace(POINTS, &commands));
-    assert!(wb.sheet(0).unwrap().shapes.iter().all(|s| s.kind != ShapeKind::Ink));
+    assert!(
+        wb.sheet(0)
+            .unwrap()
+            .shapes
+            .iter()
+            .all(|s| s.kind != ShapeKind::Ink)
+    );
 }

@@ -1,7 +1,7 @@
 use crate::{
-    extract_2d_meshes, init_mesh_2d_pipeline, load_mesh2d_bindings, DrawMesh2d, Mesh2d,
-    Mesh2dPipeline, Mesh2dPipelineKey, RenderMesh2dInstances, SetMesh2dBindGroup,
-    SetMesh2dViewBindGroup, ViewKeyCache,
+    DrawMesh2d, Mesh2d, Mesh2dPipeline, Mesh2dPipelineKey, RenderMesh2dInstances,
+    SetMesh2dBindGroup, SetMesh2dViewBindGroup, ViewKeyCache, extract_2d_meshes,
+    init_mesh_2d_pipeline, load_mesh2d_bindings,
 };
 use alloc::sync::Arc;
 use bevy_app::{App, Plugin, PostUpdate};
@@ -21,8 +21,8 @@ use bevy_ecs::system::{SystemParam, SystemState};
 use bevy_ecs::{
     prelude::*,
     system::{
-        lifetimeless::{SRes, SResMut},
         SystemParamItem,
+        lifetimeless::{SRes, SResMut},
     },
 };
 use bevy_material::key::{ErasedMaterialKey, ErasedMaterialPipelineKey, ErasedMeshPipelineKey};
@@ -32,21 +32,22 @@ use bevy_math::FloatOrd;
 use bevy_mesh::MeshVertexBufferLayoutRef;
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_platform::hash::FixedHasher;
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_render::camera::{DirtySpecializationSystems, DirtySpecializations, PendingQueues};
 use bevy_render::erased_render_asset::{
     ErasedRenderAsset, ErasedRenderAssetPlugin, ErasedRenderAssets, PrepareAssetError,
 };
 use bevy_render::material_bind_groups::{
-    material_uses_bindless_resources, FallbackBuffer, MaterialBindGroupAllocators,
-    MaterialBindingId, RenderMaterialBindings,
+    FallbackBuffer, MaterialBindGroupAllocators, MaterialBindingId, RenderMaterialBindings,
+    material_uses_bindless_resources,
 };
 use bevy_render::storage::GpuShaderBuffer;
 use bevy_render::sync_world::MainEntityHashSet;
 use bevy_render::view::{RenderVisibleEntities, RetainedViewEntity};
 use bevy_render::{
+    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
     mesh::RenderMesh,
-    render_asset::{prepare_assets, RenderAssets},
+    render_asset::{RenderAssets, prepare_assets},
     render_phase::{
         AddRenderCommand, BinnedRenderPhaseType, DrawFunctions, InputUniformIndex, PhaseItem,
         PhaseItemExtraIndex, RenderCommand, RenderCommandResult, SetItemPipeline,
@@ -59,7 +60,6 @@ use bevy_render::{
     renderer::RenderDevice,
     sync_world::{MainEntity, MainEntityHashMap},
     view::ExtractedView,
-    Extract, ExtractSchedule, GpuResourceAppExt, Render, RenderApp, RenderStartup, RenderSystems,
 };
 use bevy_shader::{Shader, ShaderDefVal, ShaderRef};
 use bevy_utils::Parallel;

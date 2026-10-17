@@ -97,8 +97,15 @@ pub(crate) fn is_craw(t: &Tiff, ifd: &Ifd) -> bool {
     if t.tag_uint(ifd, tag::COMPRESSION) != Some(32767) {
         return false;
     }
-    let (w, h) = (t.tag_uint(ifd, tag::IMAGE_WIDTH).unwrap_or(0), t.tag_uint(ifd, tag::IMAGE_LENGTH).unwrap_or(0));
-    let bytes: u64 = t.tag_uints(ifd, tag::STRIP_BYTE_COUNTS).iter().map(|&c| u64::from(c)).sum();
+    let (w, h) = (
+        t.tag_uint(ifd, tag::IMAGE_WIDTH).unwrap_or(0),
+        t.tag_uint(ifd, tag::IMAGE_LENGTH).unwrap_or(0),
+    );
+    let bytes: u64 = t
+        .tag_uints(ifd, tag::STRIP_BYTE_COUNTS)
+        .iter()
+        .map(|&c| u64::from(c))
+        .sum();
     match t.tag_uint(ifd, SONY_RAW_FILE_TYPE) {
         Some(kind) => kind == 2,
         None => bytes > 0 && bytes == u64::from(w) * u64::from(h),
@@ -107,43 +114,84 @@ pub(crate) fn is_craw(t: &Tiff, ifd: &Ifd) -> bool {
 
 /// Reads the cRAW image of a raw IFD.
 pub(crate) fn read_craw(t: &Tiff, ifd: &Ifd, limits: &Limits) -> Result<Plane> {
-    let width = t.tag_uint(ifd, tag::IMAGE_WIDTH).ok_or_else(|| RawError::malformed("raw image has no width"))? as usize;
-    let height = t.tag_uint(ifd, tag::IMAGE_LENGTH).ok_or_else(|| RawError::malformed("raw image has no height"))? as usize;
+    let width = t
+        .tag_uint(ifd, tag::IMAGE_WIDTH)
+        .ok_or_else(|| RawError::malformed("raw image has no width"))? as usize;
+    let height = t
+        .tag_uint(ifd, tag::IMAGE_LENGTH)
+        .ok_or_else(|| RawError::malformed("raw image has no height"))? as usize;
     if !width.is_multiple_of(32) {
-        return Err(RawError::unsupported(format!("Sony compressed ARW {width} pixels wide (not a multiple of 32)")));
+        return Err(RawError::unsupported(format!(
+            "Sony compressed ARW {width} pixels wide (not a multiple of 32)"
+        )));
     }
-    let lut = tone_lut(&t.tag_uints(ifd, SONY_TONE_CURVE)).ok_or_else(|| RawError::unsupported("Sony compressed ARW without a usable tone curve (0x7010)"))?;
+    let lut = tone_lut(&t.tag_uints(ifd, SONY_TONE_CURVE)).ok_or_else(|| {
+        RawError::unsupported("Sony compressed ARW without a usable tone curve (0x7010)")
+    })?;
     limits.check(width as u64, height as u64, 2)?;
     // One byte per pixel: locate every row in the strips.
     let mut rows: Vec<&[u8]> = Vec::with_capacity(height);
     for s in segments(t, ifd, width, height)? {
         let n = s.h.min(height.saturating_sub(s.y));
         for r in 0..n {
-            let at = s.offset.checked_add(r * width).ok_or_else(|| RawError::malformed("raw strip offset overflows"))?;
+            let at = s
+                .offset
+                .checked_add(r * width)
+                .ok_or_else(|| RawError::malformed("raw strip offset overflows"))?;
             if (r + 1) * width > s.len {
-                return Err(RawError::malformed("compressed ARW strip is shorter than its rows"));
+                return Err(RawError::malformed(
+                    "compressed ARW strip is shorter than its rows",
+                ));
             }
-            rows.push(t.bytes(at, width).ok_or_else(|| RawError::malformed("compressed ARW data lies outside the file"))?);
+            rows.push(
+                t.bytes(at, width).ok_or_else(|| {
+                    RawError::malformed("compressed ARW data lies outside the file")
+                })?,
+            );
         }
     }
     if rows.len() != height {
-        return Err(RawError::malformed("compressed ARW strips do not cover the image"));
+        return Err(RawError::malformed(
+            "compressed ARW strips do not cover the image",
+        ));
     }
     let mut data = vec![0u16; width * height];
     let band = par::band_rows(width);
     par::chunks_mut(&mut data, band * width, |i, chunk| {
         for (r, out) in chunk.chunks_exact_mut(width).enumerate() {
-            let Some(src) = rows.get(i * band + r) else { return };
-            for (group, px) in src.as_chunks::<32>().0.iter().zip(out.as_chunks_mut::<32>().0) {
-                let (Ok(even), Ok(odd)) = (<&[u8; 16]>::try_from(&group[..16]), <&[u8; 16]>::try_from(&group[16..])) else { continue };
-                for (k, (e, o)) in decode_block(even).into_iter().zip(decode_block(odd)).enumerate() {
+            let Some(src) = rows.get(i * band + r) else {
+                return;
+            };
+            for (group, px) in src
+                .as_chunks::<32>()
+                .0
+                .iter()
+                .zip(out.as_chunks_mut::<32>().0)
+            {
+                let (Ok(even), Ok(odd)) = (
+                    <&[u8; 16]>::try_from(&group[..16]),
+                    <&[u8; 16]>::try_from(&group[16..]),
+                ) else {
+                    continue;
+                };
+                for (k, (e, o)) in decode_block(even)
+                    .into_iter()
+                    .zip(decode_block(odd))
+                    .enumerate()
+                {
                     px[2 * k] = lut.get(usize::from(e)).copied().unwrap_or(0);
                     px[2 * k + 1] = lut.get(usize::from(o)).copied().unwrap_or(0);
                 }
             }
         }
     });
-    Ok(Plane { width, height, samples: 1, bits: 14, data })
+    Ok(Plane {
+        width,
+        height,
+        samples: 1,
+        bits: 14,
+        data,
+    })
 }
 
 #[cfg(test)]

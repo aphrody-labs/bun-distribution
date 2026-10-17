@@ -121,9 +121,12 @@ impl EmdFile {
         if model_table_offset > 0 && model_table_offset + model_count * 4 <= buffer.len() {
             for i in 0..model_count {
                 let off = model_table_offset + i * 4;
-                let part_offset = u32::from_le_bytes(buffer[off..off + 4].try_into().unwrap()) as usize;
-                if part_offset > 0 && part_offset < buffer.len()
-                    && let Ok(part) = parse_model_part(buffer, part_offset, i) {
+                let part_offset =
+                    u32::from_le_bytes(buffer[off..off + 4].try_into().unwrap()) as usize;
+                if part_offset > 0
+                    && part_offset < buffer.len()
+                    && let Ok(part) = parse_model_part(buffer, part_offset, i)
+                {
                     parts.push(part);
                 }
             }
@@ -248,13 +251,21 @@ const FLAG_TEXUV: u32 = 0x4;
 const FLAG_COMPRESSED: u32 = 0x8000;
 
 fn corrupt(details: impl Into<String>) -> ReError {
-    ReError::ParseError { context: "emd", details: details.into() }
+    ReError::ParseError {
+        context: "emd",
+        details: details.into(),
+    }
 }
 
 fn at<const N: usize>(b: &[u8], offset: usize) -> Result<[u8; N]> {
-    b.get(offset..offset.checked_add(N).ok_or_else(|| corrupt("offset overflow"))?)
-        .and_then(|slice| slice.try_into().ok())
-        .ok_or_else(|| corrupt(format!("read of {N} bytes at {offset} out of range")))
+    b.get(
+        offset
+            ..offset
+                .checked_add(N)
+                .ok_or_else(|| corrupt("offset overflow"))?,
+    )
+    .and_then(|slice| slice.try_into().ok())
+    .ok_or_else(|| corrupt(format!("read of {N} bytes at {offset} out of range")))
 }
 fn u16_at(b: &[u8], o: usize) -> Result<u16> {
     at::<2>(b, o).map(u16::from_le_bytes)
@@ -279,7 +290,7 @@ fn f16_at(b: &[u8], o: usize) -> Result<f32> {
                 } else {
                     f32::NAN
                 }
-            },
+            }
             e => (1.0 + mantissa / 1024.0) * 2f32.powi(e - 15),
         })
 }
@@ -288,22 +299,40 @@ fn rel(base: usize, offset: i32) -> Result<usize> {
         .map_err(|_| corrupt("negative relative offset"))
 }
 
-fn xv2_vertices(b: &[u8], flags: u32, mut base: usize, count: usize, size: usize) -> Result<Vec<EmdVertex>> {
+fn xv2_vertices(
+    b: &[u8],
+    flags: u32,
+    mut base: usize,
+    count: usize,
+    size: usize,
+) -> Result<Vec<EmdVertex>> {
     let compressed = flags & FLAG_COMPRESSED != 0;
     let mut out = Vec::with_capacity(count.min(1 << 20));
     for _ in 0..count {
         let mut vertex = EmdVertex::default();
         let mut cursor = base;
         if flags & FLAG_POS != 0 {
-            vertex.position = [f32_at(b, cursor)?, f32_at(b, cursor + 4)?, f32_at(b, cursor + 8)?];
+            vertex.position = [
+                f32_at(b, cursor)?,
+                f32_at(b, cursor + 4)?,
+                f32_at(b, cursor + 8)?,
+            ];
             cursor += 12;
         }
         if flags & FLAG_NORMAL != 0 {
             if compressed {
-                vertex.normal = [f16_at(b, cursor)?, f16_at(b, cursor + 2)?, f16_at(b, cursor + 4)?];
+                vertex.normal = [
+                    f16_at(b, cursor)?,
+                    f16_at(b, cursor + 2)?,
+                    f16_at(b, cursor + 4)?,
+                ];
                 cursor += 8;
             } else {
-                vertex.normal = [f32_at(b, cursor)?, f32_at(b, cursor + 4)?, f32_at(b, cursor + 8)?];
+                vertex.normal = [
+                    f32_at(b, cursor)?,
+                    f32_at(b, cursor + 4)?,
+                    f32_at(b, cursor + 8)?,
+                ];
                 cursor += 12;
             }
         }
@@ -328,7 +357,11 @@ fn xv2_indices(b: &[u8], submesh: usize) -> Result<Vec<u32>> {
         let list = rel(submesh, i32_at(b, table + z * 4)?)?;
         let faces = usize::try_from(i32_at(b, list)?.max(0)).unwrap_or(0);
         let pointer = i32_at(b, list + 8)?;
-        let faces_at = if pointer != 0 { rel(list, pointer)? } else { list + 16 };
+        let faces_at = if pointer != 0 {
+            rel(list, pointer)?
+        } else {
+            list + 16
+        };
         if faces > 0xFFFF {
             for h in 0..faces {
                 indices.push(u32::try_from(i32_at(b, faces_at + h * 4)?).unwrap_or(0));
@@ -352,27 +385,51 @@ fn parse_xv2(b: &[u8]) -> Result<EmdFile> {
         if model == 0 {
             continue;
         }
-        let name_at = if name_table != 0 { usize::try_from(i32_at(b, name_table + i * 4)?).unwrap_or(0) } else { 0 };
-        let name = if name_at != 0 { read_c_string(b, name_at) } else { format!("Part_{i}") };
+        let name_at = if name_table != 0 {
+            usize::try_from(i32_at(b, name_table + i * 4)?).unwrap_or(0)
+        } else {
+            0
+        };
+        let name = if name_at != 0 {
+            read_c_string(b, name_at)
+        } else {
+            format!("Part_{i}")
+        };
         let mesh_count = usize::from(u16_at(b, model + 2)?);
         let mesh_table = rel(model, i32_at(b, model + 4)?)?;
         let mut meshes = Vec::with_capacity(mesh_count);
         for m in 0..mesh_count {
             let mesh = rel(model, i32_at(b, mesh_table + m * 4)?)?;
             let mesh_name_at = i32_at(b, mesh + 48)?;
-            let mesh_name = if mesh_name_at != 0 { read_c_string(b, rel(mesh, mesh_name_at)?) } else { String::new() };
+            let mesh_name = if mesh_name_at != 0 {
+                read_c_string(b, rel(mesh, mesh_name_at)?)
+            } else {
+                String::new()
+            };
             let submesh_count = usize::from(u16_at(b, mesh + 54)?);
             let submesh_table = rel(mesh, i32_at(b, mesh + 56)?)?;
             let mut submeshes = Vec::with_capacity(submesh_count);
             for s in 0..submesh_count {
                 let sm = rel(mesh, i32_at(b, submesh_table + s * 4)?)?;
                 let flags = u32::try_from(i32_at(b, sm + 48)?).unwrap_or(0);
-                let size = usize::try_from(i32_at(b, sm + 52)?).map_err(|_| corrupt("vertex size"))?;
-                let count = usize::try_from(i32_at(b, sm + 56)?).map_err(|_| corrupt("vertex count"))?;
+                let size =
+                    usize::try_from(i32_at(b, sm + 52)?).map_err(|_| corrupt("vertex size"))?;
+                let count =
+                    usize::try_from(i32_at(b, sm + 56)?).map_err(|_| corrupt("vertex count"))?;
                 let vertices_at = rel(sm, i32_at(b, sm + 60)?)?;
                 let name_at = i32_at(b, sm + 64)?;
-                let sm_name = if name_at != 0 { read_c_string(b, rel(sm, name_at)?) } else { String::new() };
-                let aabb = |o: usize| -> Result<[f32; 3]> { Ok([f32_at(b, sm + o)?, f32_at(b, sm + o + 4)?, f32_at(b, sm + o + 8)?]) };
+                let sm_name = if name_at != 0 {
+                    read_c_string(b, rel(sm, name_at)?)
+                } else {
+                    String::new()
+                };
+                let aabb = |o: usize| -> Result<[f32; 3]> {
+                    Ok([
+                        f32_at(b, sm + o)?,
+                        f32_at(b, sm + o + 4)?,
+                        f32_at(b, sm + o + 8)?,
+                    ])
+                };
                 submeshes.push(EmdSubmesh {
                     name: sm_name.clone(),
                     material_name: sm_name,
@@ -382,14 +439,22 @@ fn parse_xv2(b: &[u8]) -> Result<EmdFile> {
                     aabb_max: aabb(32)?,
                 });
             }
-            meshes.push(EmdMesh { name: mesh_name, submeshes, aabb_min: [0.0; 3], aabb_max: [0.0; 3] });
+            meshes.push(EmdMesh {
+                name: mesh_name,
+                submeshes,
+                aabb_min: [0.0; 3],
+                aabb_max: [0.0; 3],
+            });
         }
         parts.push(EmdModelPart { name, meshes });
     }
     if parts.is_empty() {
         return Err(corrupt("no model in the model table"));
     }
-    Ok(EmdFile { name: "DBXV2_Model".into(), parts })
+    Ok(EmdFile {
+        name: "DBXV2_Model".into(),
+        parts,
+    })
 }
 
 fn write_vertex(buf: &mut Vec<u8>, pos: [f32; 3], normal: [f32; 3], uv: [f32; 2]) {
@@ -419,16 +484,21 @@ fn parse_model_part(buffer: &[u8], offset: usize, idx: usize) -> Result<EmdModel
         format!("Part_{idx}")
     };
 
-    let mesh_count = u16::from_le_bytes(buffer[offset + 4..offset + 6].try_into().unwrap()) as usize;
-    let mesh_table_off = u32::from_le_bytes(buffer[offset + 8..offset + 12].try_into().unwrap()) as usize;
+    let mesh_count =
+        u16::from_le_bytes(buffer[offset + 4..offset + 6].try_into().unwrap()) as usize;
+    let mesh_table_off =
+        u32::from_le_bytes(buffer[offset + 8..offset + 12].try_into().unwrap()) as usize;
 
     let mut meshes = Vec::with_capacity(mesh_count);
     if mesh_table_off > 0 && mesh_table_off + mesh_count * 4 <= buffer.len() {
         for i in 0..mesh_count {
             let m_off = mesh_table_off + i * 4;
-            let mesh_offset = u32::from_le_bytes(buffer[m_off..m_off + 4].try_into().unwrap()) as usize;
-            if mesh_offset > 0 && mesh_offset < buffer.len()
-                && let Ok(mesh) = parse_mesh(buffer, mesh_offset, i) {
+            let mesh_offset =
+                u32::from_le_bytes(buffer[m_off..m_off + 4].try_into().unwrap()) as usize;
+            if mesh_offset > 0
+                && mesh_offset < buffer.len()
+                && let Ok(mesh) = parse_mesh(buffer, mesh_offset, i)
+            {
                 meshes.push(mesh);
             }
         }
@@ -446,15 +516,19 @@ fn parse_mesh(buffer: &[u8], offset: usize, idx: usize) -> Result<EmdMesh> {
     }
 
     let submesh_count = u16::from_le_bytes(buffer[offset..offset + 2].try_into().unwrap()) as usize;
-    let submesh_table_off = u32::from_le_bytes(buffer[offset + 4..offset + 8].try_into().unwrap()) as usize;
+    let submesh_table_off =
+        u32::from_le_bytes(buffer[offset + 4..offset + 8].try_into().unwrap()) as usize;
 
     let mut submeshes = Vec::with_capacity(submesh_count);
     if submesh_table_off > 0 && submesh_table_off + submesh_count * 4 <= buffer.len() {
         for i in 0..submesh_count {
             let s_off = submesh_table_off + i * 4;
-            let submesh_offset = u32::from_le_bytes(buffer[s_off..s_off + 4].try_into().unwrap()) as usize;
-            if submesh_offset > 0 && submesh_offset < buffer.len()
-                && let Ok(sub) = parse_submesh(buffer, submesh_offset, i) {
+            let submesh_offset =
+                u32::from_le_bytes(buffer[s_off..s_off + 4].try_into().unwrap()) as usize;
+            if submesh_offset > 0
+                && submesh_offset < buffer.len()
+                && let Ok(sub) = parse_submesh(buffer, submesh_offset, i)
+            {
                 submeshes.push(sub);
             }
         }
@@ -483,10 +557,14 @@ fn parse_submesh(buffer: &[u8], offset: usize, idx: usize) -> Result<EmdSubmesh>
         format!("Material_{idx}")
     };
 
-    let vertex_count = u32::from_le_bytes(buffer[offset + 4..offset + 8].try_into().unwrap()) as usize;
-    let index_count = u32::from_le_bytes(buffer[offset + 8..offset + 12].try_into().unwrap()) as usize;
-    let vertex_off = u32::from_le_bytes(buffer[offset + 12..offset + 16].try_into().unwrap()) as usize;
-    let index_off = u32::from_le_bytes(buffer[offset + 16..offset + 20].try_into().unwrap()) as usize;
+    let vertex_count =
+        u32::from_le_bytes(buffer[offset + 4..offset + 8].try_into().unwrap()) as usize;
+    let index_count =
+        u32::from_le_bytes(buffer[offset + 8..offset + 12].try_into().unwrap()) as usize;
+    let vertex_off =
+        u32::from_le_bytes(buffer[offset + 12..offset + 16].try_into().unwrap()) as usize;
+    let index_off =
+        u32::from_le_bytes(buffer[offset + 16..offset + 20].try_into().unwrap()) as usize;
 
     let mut vertices = Vec::with_capacity(vertex_count);
     let stride = 32; // standard pos(12) + normal(12) + uv(8)

@@ -21,16 +21,24 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
         let snapshots = std::env::var_os("FILMCRAFT_UI_SNAPSHOT_DIR").map(std::path::PathBuf::from);
-        let mut b = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000);
+        let mut b = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000);
         if snapshots.is_some() {
             b = b.wgpu();
         }
         let harness = b.build_eframe(move |_cc| app);
-        let mut d = Driver { harness, tx, snapshots };
+        let mut d = Driver {
+            harness,
+            tx,
+            snapshots,
+        };
         d.frames(4);
         d
     }
@@ -64,7 +72,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn click(&mut self, id: &str) {
@@ -76,43 +87,82 @@ impl Driver {
         let v = self.ok("ui.elements", json!({"prefix": id}));
         v.as_array()?.iter().find(|e| e["id"] == id).map(|e| {
             let r = &e["rect"];
-            [r[0].as_f64().unwrap() as f32, r[1].as_f64().unwrap() as f32, r[2].as_f64().unwrap() as f32, r[3].as_f64().unwrap() as f32]
+            [
+                r[0].as_f64().unwrap() as f32,
+                r[1].as_f64().unwrap() as f32,
+                r[2].as_f64().unwrap() as f32,
+                r[3].as_f64().unwrap() as f32,
+            ]
         })
     }
 
     fn ids(&mut self, prefix: &str) -> Vec<String> {
         let v = self.ok("ui.elements", json!({"prefix": prefix}));
-        v.as_array().unwrap().iter().filter_map(|e| e["id"].as_str().map(str::to_string)).collect()
+        v.as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|e| e["id"].as_str().map(str::to_string))
+            .collect()
     }
 
     /// Press on `id` at fraction `fx` of its width, move to fraction `tx` over several frames, release.
     fn drag_x(&mut self, id: &str, fx: f32, tx: f32, steps: usize) {
-        let r = self.element(id).unwrap_or_else(|| panic!("no element {id}"));
+        let r = self
+            .element(id)
+            .unwrap_or_else(|| panic!("no element {id}"));
         let mut p = egui::pos2(r[0] + r[2] * fx, r[1] + r[3] / 2.0);
         let push = |d: &mut Self, e: egui::Event| d.harness.input_mut().events.push(e);
         push(self, egui::Event::PointerMoved(p));
         self.frames(1);
-        push(self, egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() });
+        push(
+            self,
+            egui::Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            },
+        );
         self.frames(1);
         for _ in 0..steps {
             p.x += r[2] * (tx - fx) / steps as f32;
             push(self, egui::Event::PointerMoved(p));
             self.frames(1);
         }
-        push(self, egui::Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() });
+        push(
+            self,
+            egui::Event::PointerButton {
+                pos: p,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: Default::default(),
+            },
+        );
         self.frames(2);
     }
 
     /// Offscreen render of the window (or the bounding box of the elements under `prefix`).
     fn snapshot(&mut self, name: &str, prefix: Option<&str>) {
-        let Some(dir) = self.snapshots.clone() else { return };
+        let Some(dir) = self.snapshots.clone() else {
+            return;
+        };
         let crop = prefix.map(|p| {
             let v = self.ok("ui.elements", json!({"prefix": p}));
             let mut bb = [f32::MAX, f32::MAX, f32::MIN, f32::MIN];
             for e in v.as_array().unwrap() {
                 let r = &e["rect"];
-                let (x, y, w, h) = (r[0].as_f64().unwrap() as f32, r[1].as_f64().unwrap() as f32, r[2].as_f64().unwrap() as f32, r[3].as_f64().unwrap() as f32);
-                bb = [bb[0].min(x), bb[1].min(y), bb[2].max(x + w), bb[3].max(y + h)];
+                let (x, y, w, h) = (
+                    r[0].as_f64().unwrap() as f32,
+                    r[1].as_f64().unwrap() as f32,
+                    r[2].as_f64().unwrap() as f32,
+                    r[3].as_f64().unwrap() as f32,
+                );
+                bb = [
+                    bb[0].min(x),
+                    bb[1].min(y),
+                    bb[2].max(x + w),
+                    bb[3].max(y + h),
+                ];
             }
             bb
         });
@@ -196,25 +246,55 @@ fn essential_sound_panel_by_id_and_by_drag() {
     d.click("essentialSound.repair.noise.on");
     let c = es(&mut d, a1);
     assert_eq!(c["settings"]["repair"]["noise"]["on"], true);
-    assert!(c["effects"].as_array().unwrap().iter().any(|e| e["effect"] == "denoise"));
-    let undo0 = d.exec("history.list", json!({}))["undo"].as_array().unwrap().len();
+    assert!(
+        c["effects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|e| e["effect"] == "denoise")
+    );
+    let undo0 = d.exec("history.list", json!({}))["undo"]
+        .as_array()
+        .unwrap()
+        .len();
     d.drag_x("essentialSound.repair.noise.amount", 0.5, 0.9, 6);
-    let amt = es(&mut d, a1)["settings"]["repair"]["noise"]["amount"].as_f64().unwrap();
+    let amt = es(&mut d, a1)["settings"]["repair"]["noise"]["amount"]
+        .as_f64()
+        .unwrap();
     assert!(amt > 8.0, "slider dragged to {amt}");
-    assert_eq!(d.exec("history.list", json!({}))["undo"].as_array().unwrap().len(), undo0 + 1, "a drag is one undo step");
+    assert_eq!(
+        d.exec("history.list", json!({}))["undo"]
+            .as_array()
+            .unwrap()
+            .len(),
+        undo0 + 1,
+        "a drag is one undo step"
+    );
     // the section switch bypasses the section's effects
     d.click("essentialSound.section.Repair.toggle");
     let c = es(&mut d, a1);
     assert_eq!(c["settings"]["repair"]["enabled"], false);
-    assert!(c["effects"].as_array().unwrap().iter().all(|e| e["enabled"] == false));
+    assert!(
+        c["effects"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|e| e["enabled"] == false)
+    );
     d.click("essentialSound.section.Repair.toggle");
     // Loudness twirl + Auto-Match
     d.click("essentialSound.section.Loudness");
     d.click("essentialSound.autoMatch");
     let c = es(&mut d, a1);
-    assert!(c["settings"]["loudness"]["target_lufs"].is_number(), "auto-matched: {c}");
+    assert!(
+        c["settings"]["loudness"]["target_lufs"].is_number(),
+        "auto-matched: {c}"
+    );
     // a preset
-    d.exec("essentialSound.applyPreset", json!({"preset": "Podcast Voice"}));
+    d.exec(
+        "essentialSound.applyPreset",
+        json!({"preset": "Podcast Voice"}),
+    );
     d.frames(3);
     d.snapshot("essential-sound-dialogue", Some("essentialSound."));
     // footer: clip volume and mute
@@ -246,9 +326,16 @@ fn essential_sound_panel_by_id_and_by_drag() {
     d.click("essentialSound.tab.Browse");
     d.frames(2);
     let ids = d.ids("essentialSound.browse.");
-    assert!(ids.iter().any(|i| i == "essentialSound.browse.Music.Duck Deep Under Dialogue"), "{ids:?}");
+    assert!(
+        ids.iter()
+            .any(|i| i == "essentialSound.browse.Music.Duck Deep Under Dialogue"),
+        "{ids:?}"
+    );
     d.click("essentialSound.browse.Music.Duck Deep Under Dialogue");
-    assert_eq!(es(&mut d, music)["settings"]["preset"], "Duck Deep Under Dialogue");
+    assert_eq!(
+        es(&mut d, music)["settings"]["preset"],
+        "Duck Deep Under Dialogue"
+    );
     d.snapshot("essential-sound-browse", Some("essentialSound."));
     d.click("essentialSound.tab.Edit");
     d.snapshot("essential-sound-audio-workspace", None);

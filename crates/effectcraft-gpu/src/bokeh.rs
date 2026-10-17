@@ -19,19 +19,33 @@ pub(crate) fn apply(e: &mut Enc, src: &GpuImage, d: &PlaneDof) -> Option<GpuImag
     let boosted = if d.highlight.gain > 0.0 {
         let out = e.scratch(w, h);
         let mut p = Params::default();
-        p.f[0] = [d.highlight.gain as f32, d.highlight.threshold as f32, d.highlight.saturation as f32, 0.0];
+        p.f[0] = [
+            d.highlight.gain as f32,
+            d.highlight.threshold as f32,
+            d.highlight.saturation as f32,
+            0.0,
+        ];
         e.pixels("bokeh_boost", &p, &padded, None, &out, None);
         out
     } else {
         padded
     };
     let prefix = e.image(w + 1, h);
-    e.dispatch("bokeh_prefix", &Params::default(), &boosted, None, &prefix, None, (h.div_ceil(64), 1));
+    e.dispatch(
+        "bokeh_prefix",
+        &Params::default(),
+        &boosted,
+        None,
+        &prefix,
+        None,
+        (h.div_ceil(64), 1),
+    );
     // Radius map, then every level's spans.
     let mut data: Vec<f32> = d.radius.as_ref().clone();
     let mut levels = vec![];
     for &r in &d.levels {
-        let (kernels, norm) = kernel_spans(&d.iris, r as f64).unwrap_or_else(|| (vec![(1.0, vec![(0, -0.5, 0.5)])], 1.0));
+        let (kernels, norm) = kernel_spans(&d.iris, r as f64)
+            .unwrap_or_else(|| (vec![(1.0, vec![(0, -0.5, 0.5)])], 1.0));
         let off = data.len() as u32;
         let mut count = 0u32;
         for (wt, spans) in &kernels {

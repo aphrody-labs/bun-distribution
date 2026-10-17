@@ -815,7 +815,11 @@ mod tests {
         let thread = process.get_thread_by_object_id(object_id).unwrap();
         let tls_address = thread.lock().unwrap().get_tls_address().get();
         assert_eq!(
-            process.get_shared_memory().read().unwrap().read_32(tls_address + 0x110),
+            process
+                .get_shared_memory()
+                .read()
+                .unwrap()
+                .read_32(tls_address + 0x110),
             handle,
         );
         drop(process);

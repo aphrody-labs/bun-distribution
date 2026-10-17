@@ -40,25 +40,38 @@ pub fn specs() -> Vec<CommandSpec> {
             "{name} — instances become plain text of their current value",
             has_doc,
             |s, p| {
-                let name = str_param(p, "name").ok_or_else(|| bad("variables.delete", "missing name"))?.to_string();
+                let name = str_param(p, "name")
+                    .ok_or_else(|| bad("variables.delete", "missing name"))?
+                    .to_string();
                 s.edit(|d, _| {
-                    let i = d.variable(&name).ok_or_else(|| bad("variables.delete", format!("no variable `{name}`")))?;
+                    let i = d
+                        .variable(&name)
+                        .ok_or_else(|| bad("variables.delete", format!("no variable `{name}`")))?;
                     // Replace instances with their value (first page context), then shift higher indices down.
                     let value = d.variable_value(i, Some(0)).unwrap_or_default();
                     let n = d.text_variables.len();
                     let ids: Vec<_> = d.stories.keys().copied().collect();
                     for sid in ids {
                         let Some(st) = d.story(sid) else { continue };
-                        if !st.text.chars().any(|c| designcraft_doc::vars::var_index(c).is_some_and(|k| k >= i)) {
+                        if !st
+                            .text
+                            .chars()
+                            .any(|c| designcraft_doc::vars::var_index(c).is_some_and(|k| k >= i))
+                        {
                             continue;
                         }
-                        let st = d.story_mut(sid).ok_or(designcraft_doc::DocError::NoStory(sid))?;
+                        let st = d
+                            .story_mut(sid)
+                            .ok_or(designcraft_doc::DocError::NoStory(sid))?;
                         let target = var_char(i).unwrap_or(' ').to_string();
                         while let Some(pos) = st.text.find(&target) {
                             st.replace(pos..pos + target.len(), &value);
                         }
                         for k in i + 1..n {
-                            let (from, to) = (var_char(k).unwrap_or(' ').to_string(), var_char(k - 1).unwrap_or(' ').to_string());
+                            let (from, to) = (
+                                var_char(k).unwrap_or(' ').to_string(),
+                                var_char(k - 1).unwrap_or(' ').to_string(),
+                            );
                             while let Some(pos) = st.text.find(&from) {
                                 st.replace(pos..pos + from.len(), &to);
                             }
@@ -77,8 +90,13 @@ pub fn specs() -> Vec<CommandSpec> {
             "{name} — at the text insertion point",
             super::has_text,
             |s, p| {
-                let name = str_param(p, "name").ok_or_else(|| bad("variables.insert", "missing name"))?;
-                let i = s.doc()?.doc.variable(name).ok_or_else(|| bad("variables.insert", format!("no variable `{name}`")))?;
+                let name =
+                    str_param(p, "name").ok_or_else(|| bad("variables.insert", "missing name"))?;
+                let i = s
+                    .doc()?
+                    .doc
+                    .variable(name)
+                    .ok_or_else(|| bad("variables.insert", format!("no variable `{name}`")))?;
                 let c = var_char(i).ok_or_else(|| bad("variables.insert", "too many variables"))?;
                 s.execute("text.insert", &json!({"text": c.to_string()}))
             }
@@ -87,19 +105,33 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn define(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("variables.define", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("variables.define", "missing name"))?
+        .to_string();
     let fmt = || str_param(p, "format").unwrap_or("MM/dd/yy").to_string();
     let kind = match str_param(p, "type").unwrap_or("custom") {
-        "custom" => VarKind::Custom { text: str_param(p, "text").unwrap_or("").into() },
-        "lastPageNumber" => VarKind::LastPageNumber { section: p.get("section").and_then(Value::as_bool).unwrap_or(false) },
+        "custom" => VarKind::Custom {
+            text: str_param(p, "text").unwrap_or("").into(),
+        },
+        "lastPageNumber" => VarKind::LastPageNumber {
+            section: p.get("section").and_then(Value::as_bool).unwrap_or(false),
+        },
         "chapterNumber" => VarKind::ChapterNumber,
-        "fileName" => VarKind::FileName { extension: p.get("extension").and_then(Value::as_bool).unwrap_or(false) },
+        "fileName" => VarKind::FileName {
+            extension: p.get("extension").and_then(Value::as_bool).unwrap_or(false),
+        },
         "creationDate" => VarKind::CreationDate { format: fmt() },
         "modificationDate" => VarKind::ModificationDate { format: fmt() },
         "outputDate" => VarKind::OutputDate { format: fmt() },
         "runningHeader" => VarKind::RunningHeader {
-            style: str_param(p, "style").ok_or_else(|| bad("variables.define", "runningHeader needs `style`"))?.into(),
-            use_: if str_param(p, "use") == Some("lastOnPage") { designcraft_doc::vars::Use::LastOnPage } else { Default::default() },
+            style: str_param(p, "style")
+                .ok_or_else(|| bad("variables.define", "runningHeader needs `style`"))?
+                .into(),
+            use_: if str_param(p, "use") == Some("lastOnPage") {
+                designcraft_doc::vars::Use::LastOnPage
+            } else {
+                Default::default()
+            },
             character: p.get("character").and_then(Value::as_bool).unwrap_or(false),
         },
         t => return Err(bad("variables.define", format!("unknown type `{t}`"))),
@@ -135,20 +167,34 @@ mod tests {
     #[test]
     fn parent_page_number_follows_section_renumbering() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 3, "facingPages": false})).unwrap();
+        s.execute("file.new", &json!({"pages": 3, "facingPages": false}))
+            .unwrap();
         let marker = designcraft_doc::story::PAGE_NUMBER.to_string();
         let r = s
             .execute("frame.create", &json!({"spread": {"kind": "parent", "index": 0}, "rect": [72, 30, 500, 60], "content": "text", "text": marker}))
             .unwrap();
-        let sid = s.doc().unwrap().doc.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap().text_frame().unwrap().story;
+        let sid = s
+            .doc()
+            .unwrap()
+            .doc
+            .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+            .unwrap()
+            .text_frame()
+            .unwrap()
+            .story;
         assert_eq!(s.doc().unwrap().doc.story(sid).unwrap().text, marker);
         let shown = |s: &Session, page: usize| -> usize {
             let d = s.doc().unwrap().doc.clone();
             let cs = s.cache.get(&d, sid, Some(page));
-            cs.frames.iter().flat_map(|f| f.lines.iter()).map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count()).sum()
+            cs.frames
+                .iter()
+                .flat_map(|f| f.lines.iter())
+                .map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count())
+                .sum()
         };
         assert_eq!(shown(&s, 2), 1, "page 3");
-        s.execute("layout.section", &json!({"page": 1, "startNumber": 100})).unwrap();
+        s.execute("layout.section", &json!({"page": 1, "startNumber": 100}))
+            .unwrap();
         assert_eq!(s.doc().unwrap().doc.page_name(2), "102");
         assert_eq!(shown(&s, 2), 3, "page 102 after renumbering");
     }
@@ -158,65 +204,154 @@ mod tests {
     #[test]
     fn running_header_on_parent_page_with_repeated_page_numbers() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 4, "facingPages": false})).unwrap();
-        s.execute("layout.section", &json!({"page": 3, "startNumber": 1})).unwrap();
+        s.execute("file.new", &json!({"pages": 4, "facingPages": false}))
+            .unwrap();
+        s.execute("layout.section", &json!({"page": 3, "startNumber": 1}))
+            .unwrap();
         let names: Vec<String> = (0..4).map(|i| s.doc().unwrap().doc.page_name(i)).collect();
         assert_eq!(names, ["1", "2", "1", "2"]);
-        s.execute("style.paragraph.create", &json!({"name": "Heading"})).ok();
+        s.execute("style.paragraph.create", &json!({"name": "Heading"}))
+            .ok();
         // The only heading is on the third page (the second section's page 1).
         let sp = s.doc().unwrap().doc.page_loc(2).unwrap().0;
         let r = s.execute("frame.create", &json!({"spread": sp, "rect": [72, 200, 400, 260], "content": "text", "text": "Epsilon"})).unwrap();
-        let sid = s.doc().unwrap().doc.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap().text_frame().unwrap().story;
-        s.execute("text.select", &json!({"story": sid.0, "anchor": 0, "focus": 1})).unwrap();
-        s.execute("style.paragraph.apply", &json!({"name": "Heading"})).unwrap();
-        s.execute("variables.define", &json!({"name": "Chapter Head", "type": "runningHeader", "style": "Heading"})).unwrap();
+        let sid = s
+            .doc()
+            .unwrap()
+            .doc
+            .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+            .unwrap()
+            .text_frame()
+            .unwrap()
+            .story;
+        s.execute(
+            "text.select",
+            &json!({"story": sid.0, "anchor": 0, "focus": 1}),
+        )
+        .unwrap();
+        s.execute("style.paragraph.apply", &json!({"name": "Heading"}))
+            .unwrap();
+        s.execute(
+            "variables.define",
+            &json!({"name": "Chapter Head", "type": "runningHeader", "style": "Heading"}),
+        )
+        .unwrap();
         let r = s
             .execute("frame.create", &json!({"spread": {"kind": "parent", "index": 0}, "rect": [72, 30, 500, 60], "content": "text", "text": ""}))
             .unwrap();
-        let sid = s.doc().unwrap().doc.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap().text_frame().unwrap().story;
-        s.execute("text.select", &json!({"story": sid.0, "anchor": 0, "focus": 0})).unwrap();
-        s.execute("variables.insert", &json!({"name": "Chapter Head"})).unwrap();
+        let sid = s
+            .doc()
+            .unwrap()
+            .doc
+            .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+            .unwrap()
+            .text_frame()
+            .unwrap()
+            .story;
+        s.execute(
+            "text.select",
+            &json!({"story": sid.0, "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("variables.insert", &json!({"name": "Chapter Head"}))
+            .unwrap();
         let d = s.doc().unwrap().doc.clone();
         let shown = |page: usize| -> usize {
             let cs = s.cache.get(&d, sid, Some(page));
-            cs.frames.iter().flat_map(|f| f.lines.iter()).map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count()).sum()
+            cs.frames
+                .iter()
+                .flat_map(|f| f.lines.iter())
+                .map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count())
+                .sum()
         };
         assert_eq!(shown(0), 0, "no heading on or before the first page");
-        assert_eq!(shown(2), "Epsilon".len(), "the third page (named 1) shows its own heading");
-        assert_eq!(shown(3), "Epsilon".len(), "the fourth page (named 2) carries it");
+        assert_eq!(
+            shown(2),
+            "Epsilon".len(),
+            "the third page (named 1) shows its own heading"
+        );
+        assert_eq!(
+            shown(3),
+            "Epsilon".len(),
+            "the fourth page (named 2) carries it"
+        );
     }
 
     #[test]
     fn running_header_on_parent_page_follows_headings() {
         let mut s = Session::new();
-        s.execute("file.new", &json!({"pages": 3, "facingPages": false})).unwrap();
-        s.execute("style.paragraph.create", &json!({"name": "Heading"})).ok();
+        s.execute("file.new", &json!({"pages": 3, "facingPages": false}))
+            .unwrap();
+        s.execute("style.paragraph.create", &json!({"name": "Heading"}))
+            .ok();
         // Headings on pages 1 and 3 (page 2 carries page 1's).
         for (page, text) in [(0, "Alpha"), (2, "Epsilon")] {
             let sp = s.doc().unwrap().doc.page_loc(page).unwrap().0;
             let r = s.execute("frame.create", &json!({"spread": sp, "rect": [72, 200, 400, 260], "content": "text", "text": text})).unwrap();
-            let sid = s.doc().unwrap().doc.item(designcraft_doc::ItemId(r["id"].as_u64().unwrap())).unwrap().text_frame().unwrap().story;
-            s.execute("text.select", &json!({"story": sid.0, "anchor": 0, "focus": 1})).unwrap();
-            s.execute("style.paragraph.apply", &json!({"name": "Heading"})).unwrap();
+            let sid = s
+                .doc()
+                .unwrap()
+                .doc
+                .item(designcraft_doc::ItemId(r["id"].as_u64().unwrap()))
+                .unwrap()
+                .text_frame()
+                .unwrap()
+                .story;
+            s.execute(
+                "text.select",
+                &json!({"story": sid.0, "anchor": 0, "focus": 1}),
+            )
+            .unwrap();
+            s.execute("style.paragraph.apply", &json!({"name": "Heading"}))
+                .unwrap();
         }
-        s.execute("variables.define", &json!({"name": "Chapter Head", "type": "runningHeader", "style": "Heading"})).unwrap();
-        s.execute("variables.define", &json!({"name": "Total", "type": "custom", "text": "of "})).unwrap();
+        s.execute(
+            "variables.define",
+            &json!({"name": "Chapter Head", "type": "runningHeader", "style": "Heading"}),
+        )
+        .unwrap();
+        s.execute(
+            "variables.define",
+            &json!({"name": "Total", "type": "custom", "text": "of "}),
+        )
+        .unwrap();
         // A header frame on the parent with "<running header> · <page> / <last page>".
         let r = s
             .execute("frame.create", &json!({"spread": {"kind": "parent", "index": 0}, "rect": [72, 30, 500, 60], "content": "text", "text": ""}))
             .unwrap();
         let fid = designcraft_doc::ItemId(r["id"].as_u64().unwrap());
-        let sid = s.doc().unwrap().doc.item(fid).unwrap().text_frame().unwrap().story;
-        s.execute("text.select", &json!({"story": sid.0, "anchor": 0, "focus": 0})).unwrap();
-        s.execute("variables.insert", &json!({"name": "Chapter Head"})).unwrap();
+        let sid = s
+            .doc()
+            .unwrap()
+            .doc
+            .item(fid)
+            .unwrap()
+            .text_frame()
+            .unwrap()
+            .story;
+        s.execute(
+            "text.select",
+            &json!({"story": sid.0, "anchor": 0, "focus": 0}),
+        )
+        .unwrap();
+        s.execute("variables.insert", &json!({"name": "Chapter Head"}))
+            .unwrap();
         s.execute("text.insert", &json!({"text": " · "})).unwrap();
-        s.execute("variables.insert", &json!({"name": "Last Page Number"})).unwrap();
+        s.execute("variables.insert", &json!({"name": "Last Page Number"}))
+            .unwrap();
         let d = s.doc().unwrap().doc.clone();
-        assert!(matches!(d.find(fid).unwrap().spread, designcraft_doc::SpreadRef::Parent(0)));
+        assert!(matches!(
+            d.find(fid).unwrap().spread,
+            designcraft_doc::SpreadRef::Parent(0)
+        ));
         // Visible glyphs of the header composed for each page: "Alpha · 3" vs "Epsilon · 3".
         let shown = |page: usize| -> usize {
             let cs = s.cache.get(&d, sid, Some(page));
-            cs.frames.iter().flat_map(|f| f.lines.iter()).map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count()).sum()
+            cs.frames
+                .iter()
+                .flat_map(|f| f.lines.iter())
+                .map(|l| l.glyphs.iter().filter(|g| g.visible && g.adv > 0.0).count())
+                .sum()
         };
         let (p1, p2, p3) = (shown(0), shown(1), shown(2));
         assert_eq!(p1, p2, "page 2 carries page 1's header");
@@ -224,11 +359,28 @@ mod tests {
         let idx = s.cache.running_index(&d);
         assert_eq!(idx.value("Heading", false, Default::default(), 0), "Alpha");
         assert_eq!(idx.value("Heading", false, Default::default(), 1), "Alpha");
-        assert_eq!(idx.value("Heading", false, Default::default(), 2), "Epsilon");
+        assert_eq!(
+            idx.value("Heading", false, Default::default(), 2),
+            "Epsilon"
+        );
         let list = s.execute("variables.list", &json!({})).unwrap();
-        assert!(list.as_array().unwrap().iter().any(|v| v["name"] == "Last Page Number" && v["value"] == "3"));
+        assert!(
+            list.as_array()
+                .unwrap()
+                .iter()
+                .any(|v| v["name"] == "Last Page Number" && v["value"] == "3")
+        );
         // Deleting a variable flattens its instances to text.
-        s.execute("variables.delete", &json!({"name": "Last Page Number"})).unwrap();
-        assert!(s.doc().unwrap().doc.story(sid).unwrap().text.ends_with(" · 3"));
+        s.execute("variables.delete", &json!({"name": "Last Page Number"}))
+            .unwrap();
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .story(sid)
+                .unwrap()
+                .text
+                .ends_with(" · 3")
+        );
     }
 }

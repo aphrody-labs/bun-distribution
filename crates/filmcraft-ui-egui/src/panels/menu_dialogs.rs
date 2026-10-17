@@ -41,7 +41,11 @@ pub struct Extras {
 
 impl Default for Extras {
     fn default() -> Self {
-        Extras { dialog: None, dynamic_waveforms: true, opened: Vec::new() }
+        Extras {
+            dialog: None,
+            dynamic_waveforms: true,
+            opened: Vec::new(),
+        }
     }
 }
 
@@ -68,7 +72,11 @@ fn meta(command: &str) -> Option<(&'static str, &'static str, &'static str)> {
         "sequence.transcribe" => (tl!("Transcribe Sequence"), "transcribe", tl!("Transcribe")),
         "file.saveAsTemplate" => (tl!("Save as Template"), "saveTemplate", tl!("Save")),
         "markers.addFlashCue" => (tl!("Flash Cue Marker"), "flashCue", tl!("OK")),
-        "help.systemCompatibilityReport" => (tl!("System Compatibility Report"), "systemReport", tl!("Close")),
+        "help.systemCompatibilityReport" => (
+            tl!("System Compatibility Report"),
+            "systemReport",
+            tl!("Close"),
+        ),
         "file.newColorMatte" => (tl!("New Color Matte"), "colorMatte", tl!("OK")),
         "project.matteColor" => (tl!("Color Matte Color"), "matteColor", tl!("OK")),
         _ => return None,
@@ -78,7 +86,9 @@ fn meta(command: &str) -> Option<(&'static str, &'static str, &'static str)> {
 /// Commands whose menu item opens a dialog (the Project Settings items share one).
 fn dialog_command(id: &str) -> Option<&'static str> {
     Some(match id {
-        "file.projectSettings.general" | "file.projectSettings.scratchDisks" | "project.ingestSettings" => "project.settings",
+        "file.projectSettings.general"
+        | "file.projectSettings.scratchDisks"
+        | "project.ingestSettings" => "project.settings",
         "edit.find" => "edit.find",
         "file.newSearchBin" => "file.newSearchBin",
         "file.mediaProperties" => "file.mediaProperties",
@@ -116,7 +126,12 @@ pub fn software_renderer(app: &FilmcraftApp) -> bool {
 /// Hand a path to the operating system (open it in its default application, or reveal it in the
 /// file manager). The host hook does it on the desktop; otherwise the path is opened as a
 /// `file://` URL.
-pub fn open_path(app: &mut FilmcraftApp, ctx: &egui::Context, path: &str, reveal: bool) -> Result<(), String> {
+pub fn open_path(
+    app: &mut FilmcraftApp,
+    ctx: &egui::Context,
+    path: &str,
+    reveal: bool,
+) -> Result<(), String> {
     app.ui.extras.opened.push(path.to_string());
     if app.ui.extras.opened.len() > 50 {
         app.ui.extras.opened.remove(0);
@@ -125,7 +140,10 @@ pub fn open_path(app: &mut FilmcraftApp, ctx: &egui::Context, path: &str, reveal
         Some(f) => f(path, reveal),
         None => {
             let p = path.replace('\\', "/");
-            ctx.open_url(egui::OpenUrl::new_tab(format!("file://{}{p}", if p.starts_with('/') { "" } else { "/" })));
+            ctx.open_url(egui::OpenUrl::new_tab(format!(
+                "file://{}{p}",
+                if p.starts_with('/') { "" } else { "/" }
+            )));
             Ok(())
         }
     }
@@ -133,7 +151,12 @@ pub fn open_path(app: &mut FilmcraftApp, ctx: &egui::Context, path: &str, reveal
 
 /// Where Reveal Log Files points: `<data dir>/Logs` (the temp folder without a data directory).
 pub fn logs_dir(app: &FilmcraftApp) -> std::path::PathBuf {
-    app.session.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| d.join("Logs")).unwrap_or_else(|| filmcraft_engine::temp_dir().join("FilmCraft Logs"))
+    app.session
+        .prefs_path
+        .as_ref()
+        .and_then(|p| p.parent())
+        .map(|d| d.join("Logs"))
+        .unwrap_or_else(|| filmcraft_engine::temp_dir().join("FilmCraft Logs"))
 }
 
 /// Write this session's log (system report and the command journal) into [`logs_dir`].
@@ -142,7 +165,16 @@ fn write_session_log(app: &FilmcraftApp) -> Result<std::path::PathBuf, String> {
     std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
     let path = dir.join(format!("session-{}.log", std::process::id()));
     let mut text = format!("{}\n", system_report(app));
-    for (id, p) in app.session.journal.iter().rev().take(2000).collect::<Vec<_>>().into_iter().rev() {
+    for (id, p) in app
+        .session
+        .journal
+        .iter()
+        .rev()
+        .take(2000)
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+    {
         text.push_str(&format!("{}\n", json!({"command": id, "params": p})));
     }
     std::fs::write(&path, text).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -158,8 +190,14 @@ pub fn system_report(app: &FilmcraftApp) -> Value {
     });
     let ok = gpu.is_some();
     r["gpu"] = gpu.unwrap_or(Value::Null);
-    let detail =
-        if ok { r["gpu"]["name"].as_str().unwrap_or("wgpu adapter").to_string() } else { tl!("no GPU adapter: the CPU compositor is used").to_string() };
+    let detail = if ok {
+        r["gpu"]["name"]
+            .as_str()
+            .unwrap_or("wgpu adapter")
+            .to_string()
+    } else {
+        tl!("no GPU adapter: the CPU compositor is used").to_string()
+    };
     if let Some(c) = r["checks"].as_array_mut() {
         c.push(json!({"name": "GPU acceleration", "ok": ok, "detail": detail}));
     }
@@ -167,13 +205,23 @@ pub fn system_report(app: &FilmcraftApp) -> Value {
 }
 
 /// Menu / shortcut entry points. Returns None for ids this module doesn't handle.
-pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn route(
+    app: &mut FilmcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     let empty = params.as_object().is_none_or(|m| m.is_empty());
     // UI commands
     match id {
         "view.dynamicAudioWaveforms" => {
-            app.ui.extras.dynamic_waveforms = params.get("on").and_then(Value::as_bool).unwrap_or(!app.ui.extras.dynamic_waveforms);
-            return Some(Ok(json!({"dynamicAudioWaveforms": app.ui.extras.dynamic_waveforms})));
+            app.ui.extras.dynamic_waveforms = params
+                .get("on")
+                .and_then(Value::as_bool)
+                .unwrap_or(!app.ui.extras.dynamic_waveforms);
+            return Some(Ok(
+                json!({"dynamicAudioWaveforms": app.ui.extras.dynamic_waveforms}),
+            ));
         }
         "help.revealLogFiles" => {
             let r = write_session_log(app).and_then(|p| {
@@ -184,12 +232,20 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
         }
         "help.systemCompatibilityReport" => {
             let report = system_report(app);
-            app.ui.extras.dialog = Some(ClipDialogDraft { command: id.into(), params: json!({}), info: report.clone(), error: String::new() });
+            app.ui.extras.dialog = Some(ClipDialogDraft {
+                command: id.into(),
+                params: json!({}),
+                info: report.clone(),
+                error: String::new(),
+            });
             return Some(Ok(json!({"dialog": "systemReport", "report": report})));
         }
         "edit.editOriginal" | "file.reveal" => {
             let reveal = id == "file.reveal";
-            let r = app.session.execute(id, params.clone()).map_err(|e| e.to_string());
+            let r = app
+                .session
+                .execute(id, params.clone())
+                .map_err(|e| e.to_string());
             return Some(r.and_then(|v| {
                 for p in v["paths"].as_array().cloned().unwrap_or_default() {
                     open_path(app, ctx, p.as_str().unwrap_or_default(), reveal)?;
@@ -198,7 +254,10 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
             }));
         }
         "clip.generateAudioWaveform" => {
-            let r = app.session.execute(id, params.clone()).map_err(|e| e.to_string());
+            let r = app
+                .session
+                .execute(id, params.clone())
+                .map_err(|e| e.to_string());
             if let Ok(v) = &r {
                 let mut peaks = app.tl.peaks.lock().unwrap_or_else(|e| e.into_inner());
                 for i in v["items"].as_array().cloned().unwrap_or_default() {
@@ -213,34 +272,63 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
                 return Some(Err(e));
             }
             let (filter, ext, name) = if id == "file.exportAle" {
-                (tl!("Avid Log Exchange"), "ale", format!("{}.ale", app.session.project.name))
+                (
+                    tl!("Avid Log Exchange"),
+                    "ale",
+                    format!("{}.ale", app.session.project.name),
+                )
             } else {
-                (tl!("FilmCraft Project"), "fcproj", tlf!("{name} Selection.fcproj", name = app.session.project.name))
+                (
+                    tl!("FilmCraft Project"),
+                    "fcproj",
+                    tlf!("{name} Selection.fcproj", name = app.session.project.name),
+                )
             };
             let mut p = params.clone();
             if !p.is_object() {
                 p = json!({});
             }
             let id = id.to_string();
-            return Some(app.pick(FileDialog::save_as(filter, &[ext], &name), move |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                p["path"] = json!(path);
-                app.session.execute(&id, p).map_err(|e| e.to_string())
-            }));
+            return Some(app.pick(
+                FileDialog::save_as(filter, &[ext], &name),
+                move |app, paths| {
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    p["path"] = json!(path);
+                    app.session.execute(&id, p).map_err(|e| e.to_string())
+                },
+            ));
         }
         "file.mediaPropertiesFile" if params.get("path").is_none() => {
-            let exts: Vec<&str> =
-                filmcraft_media::VIDEO_EXTENSIONS.iter().chain(filmcraft_media::AUDIO_EXTENSIONS).chain(filmcraft_media::STILL_EXTENSIONS).copied().collect();
+            let exts: Vec<&str> = filmcraft_media::VIDEO_EXTENSIONS
+                .iter()
+                .chain(filmcraft_media::AUDIO_EXTENSIONS)
+                .chain(filmcraft_media::STILL_EXTENSIONS)
+                .copied()
+                .collect();
             let id = id.to_string();
-            return Some(app.pick(FileDialog::open_file(tl!("Media"), &exts), move |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                let r = app.session.execute(&id, json!({"path": path})).map_err(|e| e.to_string());
-                if let Ok(v) = &r {
-                    app.ui.extras.dialog =
-                        Some(ClipDialogDraft { command: "file.mediaProperties".into(), params: json!({}), info: json!([v]), error: String::new() });
-                }
-                r
-            }));
+            return Some(app.pick(
+                FileDialog::open_file(tl!("Media"), &exts),
+                move |app, paths| {
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    let r = app
+                        .session
+                        .execute(&id, json!({"path": path}))
+                        .map_err(|e| e.to_string());
+                    if let Ok(v) = &r {
+                        app.ui.extras.dialog = Some(ClipDialogDraft {
+                            command: "file.mediaProperties".into(),
+                            params: json!({}),
+                            info: json!([v]),
+                            error: String::new(),
+                        });
+                    }
+                    r
+                },
+            ));
         }
         _ => {}
     }
@@ -256,7 +344,12 @@ pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Val
         Ok(x) => x,
         Err(e) => return Some(Err(e)),
     };
-    app.ui.extras.dialog = Some(ClipDialogDraft { command: cmd.into(), params, info, error: String::new() });
+    app.ui.extras.dialog = Some(ClipDialogDraft {
+        command: cmd.into(),
+        params,
+        info,
+        error: String::new(),
+    });
     Some(Ok(json!({"dialog": meta(cmd).map(|m| m.1)})))
 }
 
@@ -268,20 +361,29 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
             let timeline = app.ui.focused == PanelKind::Timeline && s.active_sequence().is_some();
             let last = s.state.find.clone();
             let rows = match &last {
-                Some(f) if f.scope == "project" => {
-                    f.query.rows.iter().map(|r| json!({"column": r.column, "operator": r.op.name(), "text": r.text})).collect::<Vec<_>>()
-                }
+                Some(f) if f.scope == "project" => f
+                    .query
+                    .rows
+                    .iter()
+                    .map(|r| json!({"column": r.column, "operator": r.op.name(), "text": r.text}))
+                    .collect::<Vec<_>>(),
                 _ => vec![json!({"column": "Name", "operator": "contains", "text": ""})],
             };
             let mut rows = rows;
             while rows.len() < 2 {
                 rows.push(json!({"column": "Name", "operator": "contains", "text": ""}));
             }
-            (json!({"scope": if timeline { "timeline" } else { "project" }, "rows": rows, "matchAll": true, "caseSensitive": false, "in": "all"}), json!({}))
+            (
+                json!({"scope": if timeline { "timeline" } else { "project" }, "rows": rows, "matchAll": true, "caseSensitive": false, "in": "all"}),
+                json!({}),
+            )
         }
         "file.newSearchBin" => {
             let text = app.ui.project_search.clone();
-            (json!({"name": "", "column": "All", "operator": "contains", "text": text}), Value::Null)
+            (
+                json!({"name": "", "column": "All", "operator": "contains", "text": text}),
+                Value::Null,
+            )
         }
         "project.settings" => {
             let tab = match id {
@@ -290,7 +392,9 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
                 _ => "general",
             };
             let st = s.project.settings.clone();
-            let general = s.execute("file.projectSettings.general", json!({})).map_err(|e| e.to_string())?;
+            let general = s
+                .execute("file.projectSettings.general", json!({}))
+                .map_err(|e| e.to_string())?;
             let scratch = filmcraft_engine::project_tools::scratch_paths(s);
             let ingest = serde_json::to_value(&st.ingest).unwrap_or_default();
             let sc = &st.scratch;
@@ -306,11 +410,19 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
             )
         }
         "file.mediaProperties" => {
-            let v = s.execute("file.mediaProperties", json!({})).map_err(|e| e.to_string())?;
+            let v = s
+                .execute("file.mediaProperties", json!({}))
+                .map_err(|e| e.to_string())?;
             (json!({}), v)
         }
         "clip.editOffline" => {
-            let item = s.state.project_selection.first().copied().and_then(|i| s.project.item(i)).cloned();
+            let item = s
+                .state
+                .project_selection
+                .first()
+                .copied()
+                .and_then(|i| s.project.item(i))
+                .cloned();
             let mut p = json!({});
             if let Some(it) = item {
                 p["item"] = json!(it.id.0);
@@ -321,7 +433,11 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
             }
             (p, Value::Null)
         }
-        "clip.sourceSettings" => (json!({}), s.execute("clip.sourceSettings", json!({})).map_err(|e| e.to_string())?),
+        "clip.sourceSettings" => (
+            json!({}),
+            s.execute("clip.sourceSettings", json!({}))
+                .map_err(|e| e.to_string())?,
+        ),
         "clip.updateMetadata" => {
             let n = s.state.project_selection.len().max(s.state.selection.len());
             (json!({}), json!({"count": n}))
@@ -330,30 +446,56 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
             json!({"ordering": "sort", "placement": "sequentially", "method": "insert", "overlapFrames": 30, "stillFrames": 150, "videoTransition": true, "audioTransition": true, "ignoreAudio": false, "ignoreVideo": false}),
             json!({"sequence": s.active_sequence().map(|_| s.state.active_sequence.and_then(|q| s.project.item(q)).map(|i| i.name.clone()).unwrap_or_default())}),
         ),
-        "clip.sceneEditDetection" => (json!({"applyCuts": true, "createSubclips": false, "generateMarkers": false, "sensitivity": 50.0}), Value::Null),
+        "clip.sceneEditDetection" => (
+            json!({"applyCuts": true, "createSubclips": false, "generateMarkers": false, "sensitivity": 50.0}),
+            Value::Null,
+        ),
         "sequence.normalizeMixTrack" => (json!({"db": 0.0}), Value::Null),
         "sequence.simplify" => {
-            let name = s.state.active_sequence.and_then(|q| s.project.item(q)).map(|i| tlf!("{name} (Simplified)", name = i.name)).unwrap_or_default();
+            let name = s
+                .state
+                .active_sequence
+                .and_then(|q| s.project.item(q))
+                .map(|i| tlf!("{name} (Simplified)", name = i.name))
+                .unwrap_or_default();
             (
                 json!({"name": name, "removeDisabled": true, "removeEmptyTracks": true, "closeGaps": false, "moveClipsDown": false, "removeVideoEffects": false, "removeAudioEffects": false, "removeText": false, "keep": "both"}),
                 Value::Null,
             )
         }
         "sequence.transcribe" => {
-            let tracks: Vec<String> = s.active_sequence().map(|q| (1..=q.audio_tracks.len()).map(|i| format!("A{i}")).collect()).unwrap_or_default();
-            (json!({"language": "auto", "track": "mix", "diarize": true}), json!({"tracks": tracks}))
+            let tracks: Vec<String> = s
+                .active_sequence()
+                .map(|q| {
+                    (1..=q.audio_tracks.len())
+                        .map(|i| format!("A{i}"))
+                        .collect()
+                })
+                .unwrap_or_default();
+            (
+                json!({"language": "auto", "track": "mix", "diarize": true}),
+                json!({"tracks": tracks}),
+            )
         }
         "file.saveAsTemplate" => (json!({"name": s.project.name}), Value::Null),
         "markers.addFlashCue" => (json!({"name": "", "comment": ""}), Value::Null),
         "file.newColorMatte" => {
-            let st = s.active_sequence().map(|q| q.settings.clone()).unwrap_or_default();
-            (json!({"color": "#000000", "name": "Color Matte", "width": st.width, "height": st.height, "seconds": 5.0}), Value::Null)
+            let st = s
+                .active_sequence()
+                .map(|q| q.settings.clone())
+                .unwrap_or_default();
+            (
+                json!({"color": "#000000", "name": "Color Matte", "width": st.width, "height": st.height, "seconds": 5.0}),
+                Value::Null,
+            )
         }
         "project.matteColor" => {
             let matte = match s.state.project_selection.as_slice() {
                 [id] => s.project.item(*id).and_then(|it| match &it.kind {
                     filmcraft_engine::project::ItemKind::Media(m) => match &m.media {
-                        filmcraft_engine::project::MediaRef::Generator(filmcraft_media::Generator::ColorMatte { color }) => Some((it.id, *color)),
+                        filmcraft_engine::project::MediaRef::Generator(
+                            filmcraft_media::Generator::ColorMatte { color },
+                        ) => Some((it.id, *color)),
                         _ => None,
                     },
                     _ => None,
@@ -361,7 +503,10 @@ fn defaults(app: &mut FilmcraftApp, cmd: &str, id: &str) -> Result<(Value, Value
                 _ => None,
             };
             let (id, color) = matte.ok_or("select one Color Matte")?;
-            (json!({"item": id.0, "color": filmcraft_color::to_hex(color)}), Value::Null)
+            (
+                json!({"item": id.0, "color": filmcraft_color::to_hex(color)}),
+                Value::Null,
+            )
         }
         _ => (json!({}), Value::Null),
     })
@@ -376,10 +521,22 @@ fn check(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &s
     }
 }
 
-fn text(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &str, label: &str, width: f32) {
+fn text(
+    ui: &mut egui::Ui,
+    elems: &mut Elems,
+    pre: &str,
+    p: &mut Value,
+    key: &str,
+    label: &str,
+    width: f32,
+) {
     ui.horizontal(|ui| {
         ui.label(label);
-        let mut v = p.get(key).and_then(Value::as_str).unwrap_or_default().to_string();
+        let mut v = p
+            .get(key)
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
         let r = ui.add(egui::TextEdit::singleline(&mut v).desired_width(width));
         push(elems, format!("{pre}.{key}"), &r, label);
         if r.changed() {
@@ -388,11 +545,24 @@ fn text(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &st
     });
 }
 
-fn number(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &str, label: &str, range: std::ops::RangeInclusive<f64>, suffix: &str) {
+fn number(
+    ui: &mut egui::Ui,
+    elems: &mut Elems,
+    pre: &str,
+    p: &mut Value,
+    key: &str,
+    label: &str,
+    range: std::ops::RangeInclusive<f64>,
+    suffix: &str,
+) {
     ui.horizontal(|ui| {
         ui.label(label);
         let mut v = p.get(key).and_then(Value::as_f64).unwrap_or(0.0);
-        let r = ui.add(crate::widgets::number_drag(&mut v).range(range).suffix(suffix));
+        let r = ui.add(
+            crate::widgets::number_drag(&mut v)
+                .range(range)
+                .suffix(suffix),
+        );
         push(elems, format!("{pre}.{key}"), &r, label);
         if r.changed() {
             p[key] = json!(v);
@@ -400,7 +570,15 @@ fn number(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &
     });
 }
 
-fn radios(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &str, label: &str, options: &[(&str, &str)]) {
+fn radios(
+    ui: &mut egui::Ui,
+    elems: &mut Elems,
+    pre: &str,
+    p: &mut Value,
+    key: &str,
+    label: &str,
+    options: &[(&str, &str)],
+) {
     ui.horizontal_wrapped(|ui| {
         ui.label(label);
         for (k, l) in options {
@@ -413,20 +591,33 @@ fn radios(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &
     });
 }
 
-fn combo(ui: &mut egui::Ui, elems: &mut Elems, id: &str, label: &str, value: &mut Value, options: &[(String, String)]) {
+fn combo(
+    ui: &mut egui::Ui,
+    elems: &mut Elems,
+    id: &str,
+    label: &str,
+    value: &mut Value,
+    options: &[(String, String)],
+) {
     ui.horizontal(|ui| {
         if !label.is_empty() {
             ui.label(label);
         }
         let cur = value.as_str().unwrap_or_default().to_string();
-        let shown = options.iter().find(|o| o.0 == cur).map(|o| o.1.clone()).unwrap_or(cur.clone());
-        let r = egui::ComboBox::from_id_salt(id).selected_text(crate::i18n::t(&shown)).show_ui(ui, |ui| {
-            for (k, l) in options {
-                if ui.selectable_label(cur == *k, crate::i18n::t(l)).clicked() {
-                    *value = json!(k);
+        let shown = options
+            .iter()
+            .find(|o| o.0 == cur)
+            .map(|o| o.1.clone())
+            .unwrap_or(cur.clone());
+        let r = egui::ComboBox::from_id_salt(id)
+            .selected_text(crate::i18n::t(&shown))
+            .show_ui(ui, |ui| {
+                for (k, l) in options {
+                    if ui.selectable_label(cur == *k, crate::i18n::t(l)).clicked() {
+                        *value = json!(k);
+                    }
                 }
-            }
-        });
+            });
         push(elems, id, &r.response, label);
     });
 }
@@ -435,7 +626,11 @@ fn combo(ui: &mut egui::Ui, elems: &mut Elems, id: &str, label: &str, value: &mu
 fn color(ui: &mut egui::Ui, elems: &mut Elems, pre: &str, p: &mut Value, key: &str, label: &str) {
     ui.horizontal(|ui| {
         ui.label(label);
-        let c = p.get(key).and_then(Value::as_str).and_then(filmcraft_color::parse_hex).unwrap_or([0.0, 0.0, 0.0, 1.0]);
+        let c = p
+            .get(key)
+            .and_then(Value::as_str)
+            .and_then(filmcraft_color::parse_hex)
+            .unwrap_or([0.0, 0.0, 0.0, 1.0]);
         let mut rgb = [c[0], c[1], c[2]].map(|v| (v.clamp(0.0, 1.0) * 255.0).round() as u8);
         let r = egui::color_picker::color_edit_button_srgb(ui, &mut rgb);
         push(elems, format!("{pre}.{key}"), &r, label);
@@ -452,7 +647,9 @@ fn pairs(v: &[&str]) -> Vec<(String, String)> {
 
 /// Draw the open dialog, if any.
 pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.extras.dialog.clone() else { return };
+    let Some(mut d) = app.ui.extras.dialog.clone() else {
+        return;
+    };
     crate::widgets::revert_drag_on_escape(ctx, egui::Id::new("menu-dialog-before-drag"), &mut d);
     let Some((title, pre, ok_text)) = meta(&d.command) else {
         app.ui.extras.dialog = None;
@@ -461,7 +658,10 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
     let mut elems: Elems = Vec::new();
     let mut action: Option<&'static str> = None;
     let mut browse: Option<String> = None;
-    let info_only = matches!(d.command.as_str(), "file.mediaProperties" | "clip.sourceSettings" | "help.systemCompatibilityReport");
+    let info_only = matches!(
+        d.command.as_str(),
+        "file.mediaProperties" | "clip.sourceSettings" | "help.systemCompatibilityReport"
+    );
     // the title is translated; the window keeps one id whatever the interface language
     let id = egui::Id::new(("menu-dialog", pre));
     egui::Window::new(title).id(id).collapsible(false).resizable(false).default_width(420.0).centered(ctx).show(ctx, |ui| {
@@ -874,7 +1074,11 @@ fn run(app: &mut FilmcraftApp, d: &ClipDialogDraft) -> Result<Option<String>, St
                 q["rows"] = json!([p["rows"][0]]);
             }
             let r = s.execute("edit.find", q).map_err(|e| e.to_string())?;
-            Ok(Some(tlf!("Match {n} of {total}", n = r["index"].as_u64().unwrap_or(0) + 1, total = r["matches"].as_u64().unwrap_or(0))))
+            Ok(Some(tlf!(
+                "Match {n} of {total}",
+                n = r["index"].as_u64().unwrap_or(0) + 1,
+                total = r["matches"].as_u64().unwrap_or(0)
+            )))
         }
         "project.settings" => {
             s.execute(
@@ -889,18 +1093,26 @@ fn run(app: &mut FilmcraftApp, d: &ClipDialogDraft) -> Result<Option<String>, St
             )
             .map_err(|e| e.to_string())?;
             if p["ingest"] != d.info["ingest"] {
-                s.execute("project.ingestSettings", p["ingest"].clone()).map_err(|e| e.to_string())?;
+                s.execute("project.ingestSettings", p["ingest"].clone())
+                    .map_err(|e| e.to_string())?;
             }
             Ok(None)
         }
         "file.saveAsTemplate" => {
-            let r = s.execute("file.saveAsTemplate", p.clone()).map_err(|e| e.to_string())?;
-            app.ui.status = tlf!("Saved template {path}", path = r["path"].as_str().unwrap_or_default());
+            let r = s
+                .execute("file.saveAsTemplate", p.clone())
+                .map_err(|e| e.to_string())?;
+            app.ui.status = tlf!(
+                "Saved template {path}",
+                path = r["path"].as_str().unwrap_or_default()
+            );
             Ok(None)
         }
         "clip.sceneEditDetection" => {
-            s.execute(&d.command, p.clone()).map_err(|e| e.to_string())?;
-            app.ui.status = tl!("Scene Edit Detection: analysing in the background (see Progress)").into();
+            s.execute(&d.command, p.clone())
+                .map_err(|e| e.to_string())?;
+            app.ui.status =
+                tl!("Scene Edit Detection: analysing in the background (see Progress)").into();
             Ok(None)
         }
         cmd => {
@@ -924,12 +1136,19 @@ pub fn search_bin_rows(
     ui: &mut egui::Ui,
     row: &mut usize,
     actions: &mut Vec<(String, Value)>,
-    draw_items: &mut dyn FnMut(&mut FilmcraftApp, &mut egui::Ui, &filmcraft_project::Bin, &mut usize, &mut Vec<(String, Value)>),
+    draw_items: &mut dyn FnMut(
+        &mut FilmcraftApp,
+        &mut egui::Ui,
+        &filmcraft_project::Bin,
+        &mut usize,
+        &mut Vec<(String, Value)>,
+    ),
 ) {
     let t = app.tokens;
     for sb in app.session.project.search_bins.clone() {
         let open = app.ui.expanded_bins.contains(&sb.id.0);
-        let (r, resp) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 22.0), egui::Sense::click());
+        let (r, resp) =
+            ui.allocate_exact_size(egui::vec2(ui.available_width(), 22.0), egui::Sense::click());
         if *row % 2 == 1 {
             ui.painter().rect_filled(r, 0.0, t.row_alt);
         }
@@ -938,12 +1157,19 @@ pub fn search_bin_rows(
         crate::icons::paint(
             ui.painter(),
             egui::Rect::from_center_size(egui::pos2(x + 5.0, r.center().y), egui::vec2(10.0, 10.0)),
-            if open { crate::icons::Icon::ChevronDown } else { crate::icons::Icon::ChevronRight },
+            if open {
+                crate::icons::Icon::ChevronDown
+            } else {
+                crate::icons::Icon::ChevronRight
+            },
             t.text_dim,
         );
         crate::icons::paint(
             ui.painter(),
-            egui::Rect::from_center_size(egui::pos2(x + 20.0, r.center().y), egui::vec2(13.0, 13.0)),
+            egui::Rect::from_center_size(
+                egui::pos2(x + 20.0, r.center().y),
+                egui::vec2(13.0, 13.0),
+            ),
             crate::icons::Icon::Search,
             t.icon,
         );
@@ -955,7 +1181,11 @@ pub fn search_bin_rows(
             crate::theme::Tokens::ui(12.0),
             t.text,
         );
-        app.auto.add(&format!("project.searchBin.{}", sb.id.0), r.intersect(ui.clip_rect()), &sb.name);
+        app.auto.add(
+            &format!("project.searchBin.{}", sb.id.0),
+            r.intersect(ui.clip_rect()),
+            &sb.name,
+        );
         if resp.clicked() {
             if open {
                 app.ui.expanded_bins.retain(|b| *b != sb.id.0);
@@ -970,8 +1200,14 @@ pub fn search_bin_rows(
             }
         });
         if open {
-            let bin =
-                filmcraft_project::Bin { id: sb.id, name: sb.name.clone(), children: matches.into_iter().map(filmcraft_project::BinEntry::Item).collect() };
+            let bin = filmcraft_project::Bin {
+                id: sb.id,
+                name: sb.name.clone(),
+                children: matches
+                    .into_iter()
+                    .map(filmcraft_project::BinEntry::Item)
+                    .collect(),
+            };
             draw_items(app, ui, &bin, row, actions);
         }
     }

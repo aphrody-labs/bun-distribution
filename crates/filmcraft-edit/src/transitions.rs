@@ -50,7 +50,9 @@ impl Alignment {
 
     /// `center`, `start` or `end` (Custom Start is reached by moving a transition, not chosen).
     pub fn parse(s: &str) -> Option<Alignment> {
-        Alignment::MENU.into_iter().find(|a| a.id().eq_ignore_ascii_case(s) || a.label().eq_ignore_ascii_case(s))
+        Alignment::MENU
+            .into_iter()
+            .find(|a| a.id().eq_ignore_ascii_case(s) || a.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -80,7 +82,10 @@ pub fn alignment(tr: &Transition, cut: Tick, frame: Tick) -> Alignment {
         Alignment::Start
     } else if tr.end() == cut {
         Alignment::End
-    } else if (tr.start.0.saturating_mul(2).saturating_add(tr.duration.0) - cut.0.saturating_mul(2)).abs() <= frame.0.max(0) {
+    } else if (tr.start.0.saturating_mul(2).saturating_add(tr.duration.0) - cut.0.saturating_mul(2))
+        .abs()
+        <= frame.0.max(0)
+    {
         Alignment::Center
     } else {
         Alignment::Custom
@@ -88,12 +93,20 @@ pub fn alignment(tr: &Transition, cut: Tick, frame: Tick) -> Alignment {
 }
 
 fn find(seq: &Sequence, id: TransitionId) -> Option<(&Track, &Transition)> {
-    seq.all_tracks().find_map(|t| t.transitions.iter().find(|x| x.id == id).map(|x| (t, x)))
+    seq.all_tracks()
+        .find_map(|t| t.transitions.iter().find(|x| x.id == id).map(|x| (t, x)))
 }
 
 /// Where a transition would start for `duration` and `align`, keeping its cut (and, for Center
 /// at Cut / Custom Start, its centre; `snap` puts a centred start on a frame).
-pub fn start_for(seq: &Sequence, id: TransitionId, duration: Tick, align: Alignment, frame: Tick, snap: impl Fn(Tick) -> Tick) -> Option<Tick> {
+pub fn start_for(
+    seq: &Sequence,
+    id: TransitionId,
+    duration: Tick,
+    align: Alignment,
+    frame: Tick,
+    snap: impl Fn(Tick) -> Tick,
+) -> Option<Tick> {
     let (track, tr) = find(seq, id)?;
     let (_, cut, _) = bounds(track, tr)?;
     let one_sided = alignment(tr, cut, frame);
@@ -106,25 +119,44 @@ pub fn start_for(seq: &Sequence, id: TransitionId, duration: Tick, align: Alignm
         Alignment::End => cut - duration,
         Alignment::Center => snap(cut - duration.mul_ratio(1, 2)),
         // Custom Start: the ends move equally, around where it is now
-        Alignment::Custom => snap(tr.start + tr.duration.mul_ratio(1, 2) - duration.mul_ratio(1, 2)),
+        Alignment::Custom => {
+            snap(tr.start + tr.duration.mul_ratio(1, 2) - duration.mul_ratio(1, 2))
+        }
     })
 }
 
 /// Move / resize a transition to cover `start .. start + duration`. Refused (leaving the sequence
 /// as it was) when its track is locked, it would be shorter than `min`, it would leave its clips,
 /// or it would no longer touch its cut (a one-sided one must keep its edge).
-pub fn set_span(seq: &mut Sequence, id: TransitionId, start: Tick, duration: Tick, min: Tick, frame: Tick) -> Result<()> {
-    let (track, tr) = find(seq, id).ok_or_else(|| EditError::Other(format!("no transition {}", id.0)))?;
+pub fn set_span(
+    seq: &mut Sequence,
+    id: TransitionId,
+    start: Tick,
+    duration: Tick,
+    min: Tick,
+    frame: Tick,
+) -> Result<()> {
+    let (track, tr) =
+        find(seq, id).ok_or_else(|| EditError::Other(format!("no transition {}", id.0)))?;
     if track.locked {
         return Err(EditError::Locked);
     }
-    let (lo, cut, hi) = bounds(track, tr).ok_or_else(|| EditError::Other("the transition's clips are gone".into()))?;
+    let (lo, cut, hi) = bounds(track, tr)
+        .ok_or_else(|| EditError::Other("the transition's clips are gone".into()))?;
     if duration < min.max(Tick(1)) {
-        return Err(EditError::Other("a transition lasts at least one frame".into()));
+        return Err(EditError::Other(
+            "a transition lasts at least one frame".into(),
+        ));
     }
-    let end = start.0.checked_add(duration.0).map(Tick).ok_or_else(|| EditError::Other("transition out of range".into()))?;
+    let end = start
+        .0
+        .checked_add(duration.0)
+        .map(Tick)
+        .ok_or_else(|| EditError::Other("transition out of range".into()))?;
     if start < lo || end > hi {
-        return Err(EditError::Other("a transition can't extend past the clips it joins".into()));
+        return Err(EditError::Other(
+            "a transition can't extend past the clips it joins".into(),
+        ));
     }
     let on_cut = match (tr.from, tr.to) {
         (None, Some(_)) => start == cut,
@@ -139,7 +171,10 @@ pub fn set_span(seq: &mut Sequence, id: TransitionId, start: Tick, duration: Tic
         }));
     }
     let tid = track.id;
-    let Some(x) = seq.track_mut(tid).and_then(|t| t.transitions.iter_mut().find(|x| x.id == id)) else {
+    let Some(x) = seq
+        .track_mut(tid)
+        .and_then(|t| t.transitions.iter_mut().find(|x| x.id == id))
+    else {
         return Err(EditError::Other(format!("no transition {}", id.0)));
     };
     x.start = start;
@@ -160,7 +195,13 @@ pub fn set_span(seq: &mut Sequence, id: TransitionId, start: Tick, duration: Tic
 /// Duration, follows the alignment instead: see [`start_for`].) A fade to or from nothing keeps
 /// its clip-edge end, and does not slide. Always clamped to where it may be ([`bounds`], over the
 /// cut, at least one `frame`). `None` when its clips are gone.
-pub fn drag_span(track: &Track, tr: &Transition, edge: Option<Edge>, delta: Tick, frame: Tick) -> Option<(Tick, Tick)> {
+pub fn drag_span(
+    track: &Track,
+    tr: &Transition,
+    edge: Option<Edge>,
+    delta: Tick,
+    frame: Tick,
+) -> Option<(Tick, Tick)> {
     let (lo, cut, hi) = bounds(track, tr)?;
     let frame = frame.max(Tick(1));
     let (s0, e0, d0) = (tr.start, tr.end(), tr.duration);
@@ -170,7 +211,11 @@ pub fn drag_span(track: &Track, tr: &Transition, edge: Option<Edge>, delta: Tick
         None if one_sided => unchanged,
         None => {
             let (min_s, max_s) = (lo.max(cut - d0), (hi - d0).min(cut));
-            if min_s > max_s { unchanged } else { Some(((s0 + delta).clamp(min_s, max_s), d0)) }
+            if min_s > max_s {
+                unchanged
+            } else {
+                Some(((s0 + delta).clamp(min_s, max_s), d0))
+            }
         }
         Some(Edge::In) if tr.from.is_none() => unchanged,
         Some(Edge::In) => {
@@ -189,7 +234,10 @@ pub fn drag_span(track: &Track, tr: &Transition, edge: Option<Edge>, delta: Tick
 
 /// Remove transitions (on unlocked tracks). Returns how many went.
 pub fn remove(seq: &mut Sequence, ids: &[TransitionId]) -> Result<usize> {
-    if seq.all_tracks().any(|t| t.locked && t.transitions.iter().any(|x| ids.contains(&x.id))) {
+    if seq
+        .all_tracks()
+        .any(|t| t.locked && t.transitions.iter().any(|x| ids.contains(&x.id)))
+    {
         return Err(EditError::Locked);
     }
     let mut n = 0;
@@ -198,13 +246,19 @@ pub fn remove(seq: &mut Sequence, ids: &[TransitionId]) -> Result<usize> {
         t.transitions.retain(|x| !ids.contains(&x.id));
         n += before - t.transitions.len();
     }
-    if n == 0 { Err(EditError::Nothing) } else { Ok(n) }
+    if n == 0 {
+        Err(EditError::Nothing)
+    } else {
+        Ok(n)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use filmcraft_project::{ClipId, ItemId, Label, Project, SequenceSettings, TrackItem, find_effect};
+    use filmcraft_project::{
+        ClipId, ItemId, Label, Project, SequenceSettings, TrackItem, find_effect,
+    };
     use filmcraft_time::FrameRate;
 
     const R: FrameRate = FrameRate::FPS_24;
@@ -262,16 +316,33 @@ mod tests {
     /// at 0 (id 2) and a fade out at 144 (id 3).
     fn seq() -> Sequence {
         let mut p = Project::new("t");
-        let s = p.new_sequence("s", SequenceSettings { frame_rate: R, ..Default::default() }, 1, 0, None);
+        let s = p.new_sequence(
+            "s",
+            SequenceSettings {
+                frame_rate: R,
+                ..Default::default()
+            },
+            1,
+            0,
+            None,
+        );
         let mut q = p.sequence(s).unwrap().clone();
         let t = &mut q.video_tracks[0];
         t.items = vec![clip(1, 0, 48), clip(2, 48, 48), clip(3, 96, 48)];
-        t.transitions = vec![transition(1, 36, 24, Some(1), Some(2)), transition(2, 0, 12, None, Some(1)), transition(3, 132, 12, Some(3), None)];
+        t.transitions = vec![
+            transition(1, 36, 24, Some(1), Some(2)),
+            transition(2, 0, 12, None, Some(1)),
+            transition(3, 132, 12, Some(3), None),
+        ];
         q
     }
 
     fn span(q: &Sequence, id: u64) -> (Tick, Tick) {
-        let x = q.video_tracks[0].transitions.iter().find(|x| x.id.0 == id).unwrap();
+        let x = q.video_tracks[0]
+            .transitions
+            .iter()
+            .find(|x| x.id.0 == id)
+            .unwrap();
         (x.start, x.duration)
     }
 
@@ -284,7 +355,10 @@ mod tests {
     #[test]
     fn alignment_reads_the_span() {
         let mut q = seq();
-        assert_eq!((align(&q, 1), align(&q, 2), align(&q, 3)), (Alignment::Center, Alignment::Start, Alignment::End));
+        assert_eq!(
+            (align(&q, 1), align(&q, 2), align(&q, 3)),
+            (Alignment::Center, Alignment::Start, Alignment::End)
+        );
         set_span(&mut q, TransitionId(1), f(48), f(24), f(1), f(1)).unwrap();
         assert_eq!(align(&q, 1), Alignment::Start);
         set_span(&mut q, TransitionId(1), f(24), f(24), f(1), f(1)).unwrap();
@@ -301,20 +375,39 @@ mod tests {
         let q = seq();
         let snap = |t: Tick| R.snap(t);
         // Center at Cut: both ends move
-        assert_eq!(start_for(&q, TransitionId(1), f(36), Alignment::Center, f(1), snap), Some(f(30)));
+        assert_eq!(
+            start_for(&q, TransitionId(1), f(36), Alignment::Center, f(1), snap),
+            Some(f(30))
+        );
         // Start at Cut: only the end moves; End at Cut: only the beginning
-        assert_eq!(start_for(&q, TransitionId(1), f(36), Alignment::Start, f(1), snap), Some(f(48)));
-        assert_eq!(start_for(&q, TransitionId(1), f(36), Alignment::End, f(1), snap), Some(f(12)));
+        assert_eq!(
+            start_for(&q, TransitionId(1), f(36), Alignment::Start, f(1), snap),
+            Some(f(48))
+        );
+        assert_eq!(
+            start_for(&q, TransitionId(1), f(36), Alignment::End, f(1), snap),
+            Some(f(12))
+        );
         // a one-sided transition keeps its edge whatever is asked
-        assert_eq!(start_for(&q, TransitionId(2), f(20), Alignment::Center, f(1), snap), Some(f(0)));
-        assert_eq!(start_for(&q, TransitionId(3), f(20), Alignment::Center, f(1), snap), Some(f(124)));
+        assert_eq!(
+            start_for(&q, TransitionId(2), f(20), Alignment::Center, f(1), snap),
+            Some(f(0))
+        );
+        assert_eq!(
+            start_for(&q, TransitionId(3), f(20), Alignment::Center, f(1), snap),
+            Some(f(124))
+        );
     }
 
     #[test]
     fn custom_start_resizes_around_its_middle() {
         let mut q = seq();
         set_span(&mut q, TransitionId(1), f(40), f(20), f(1), f(1)).unwrap();
-        assert_eq!(start_for(&q, TransitionId(1), f(10), Alignment::Custom, f(1), |t| R.snap(t)), Some(f(45)));
+        assert_eq!(
+            start_for(&q, TransitionId(1), f(10), Alignment::Custom, f(1), |t| R
+                .snap(t)),
+            Some(f(45))
+        );
     }
 
     #[test]
@@ -331,14 +424,27 @@ mod tests {
             (3, 120, 12), // a fade out must end at its clip's end
             (9, 0, 12),   // no such transition
         ] {
-            assert!(set_span(&mut q, TransitionId(id), f(start), f(dur), f(1), f(1)).is_err(), "{id} {start} {dur}");
+            assert!(
+                set_span(&mut q, TransitionId(id), f(start), f(dur), f(1), f(1)).is_err(),
+                "{id} {start} {dur}"
+            );
             assert_eq!(q, before, "refused changes leave the sequence as it was");
         }
         // the whole of both clips is allowed
         set_span(&mut q, TransitionId(1), f(0), f(96), f(1), f(1)).unwrap();
         assert_eq!(span(&q, 1), (f(0), f(96)));
         // Tick::MAX never overflows
-        assert!(set_span(&mut q, TransitionId(1), Tick(i64::MAX - 1), Tick(i64::MAX), f(1), f(1)).is_err());
+        assert!(
+            set_span(
+                &mut q,
+                TransitionId(1),
+                Tick(i64::MAX - 1),
+                Tick(i64::MAX),
+                f(1),
+                f(1)
+            )
+            .is_err()
+        );
     }
 
     fn drag(q: &Sequence, id: u64, edge: Option<Edge>, frames: i64) -> (i64, i64) {
@@ -353,9 +459,21 @@ mod tests {
         // centred (36..60 over the cut at 48): an end trims that end only, the other stays
         assert_eq!(drag(&q, 1, Some(Edge::In), -4), (32, 28));
         assert_eq!(drag(&q, 1, Some(Edge::Out), -10), (36, 14));
-        assert_eq!(drag(&q, 1, Some(Edge::Out), -100), (36, 12), "the end stops at the cut");
-        assert_eq!(drag(&q, 1, Some(Edge::Out), 100), (36, 60), "and at the incoming clip's end");
-        assert_eq!(drag(&q, 1, Some(Edge::In), -100), (0, 60), "the start at the outgoing clip's start");
+        assert_eq!(
+            drag(&q, 1, Some(Edge::Out), -100),
+            (36, 12),
+            "the end stops at the cut"
+        );
+        assert_eq!(
+            drag(&q, 1, Some(Edge::Out), 100),
+            (36, 60),
+            "and at the incoming clip's end"
+        );
+        assert_eq!(
+            drag(&q, 1, Some(Edge::In), -100),
+            (0, 60),
+            "the start at the outgoing clip's start"
+        );
         // the middle slides it, staying over the cut and inside the clips
         assert_eq!(drag(&q, 1, None, 5), (41, 24));
         assert_eq!(drag(&q, 1, None, 100), (48, 24));
@@ -363,9 +481,17 @@ mod tests {
         // not centred: the other end stays
         set_span(&mut q, TransitionId(1), f(40), f(20), f(1), f(1)).unwrap();
         assert_eq!(drag(&q, 1, Some(Edge::In), -4), (36, 24));
-        assert_eq!(drag(&q, 1, Some(Edge::In), 100), (48, 12), "the start stops at the cut");
+        assert_eq!(
+            drag(&q, 1, Some(Edge::In), 100),
+            (48, 12),
+            "the start stops at the cut"
+        );
         assert_eq!(drag(&q, 1, Some(Edge::Out), 6), (40, 26));
-        assert_eq!(drag(&q, 1, Some(Edge::Out), -100), (40, 8), "the end stops at the cut");
+        assert_eq!(
+            drag(&q, 1, Some(Edge::Out), -100),
+            (40, 8),
+            "the end stops at the cut"
+        );
         // a fade in keeps its start, a fade out its end; neither slides
         assert_eq!(drag(&q, 2, Some(Edge::In), 3), (0, 12));
         assert_eq!(drag(&q, 2, Some(Edge::Out), 3), (0, 15));
@@ -373,7 +499,12 @@ mod tests {
         assert_eq!(drag(&q, 3, Some(Edge::Out), 3), (132, 12));
         assert_eq!(drag(&q, 3, Some(Edge::In), -3), (129, 15));
         // whatever comes out is a span set_span accepts
-        for (id, edge, n) in [(1, Some(Edge::In), -70), (1, None, 33), (2, Some(Edge::Out), 99), (3, Some(Edge::In), -99)] {
+        for (id, edge, n) in [
+            (1, Some(Edge::In), -70),
+            (1, None, 33),
+            (2, Some(Edge::Out), 99),
+            (3, Some(Edge::In), -99),
+        ] {
             let (t, x) = find(&q, TransitionId(id)).unwrap();
             let (st, d) = drag_span(t, x, edge, f(n), f(1)).unwrap();
             let mut c = q.clone();
@@ -385,7 +516,10 @@ mod tests {
     fn locked_tracks_refuse() {
         let mut q = seq();
         q.video_tracks[0].locked = true;
-        assert_eq!(set_span(&mut q, TransitionId(1), f(40), f(20), f(1), f(1)), Err(EditError::Locked));
+        assert_eq!(
+            set_span(&mut q, TransitionId(1), f(40), f(20), f(1), f(1)),
+            Err(EditError::Locked)
+        );
         assert_eq!(remove(&mut q, &[TransitionId(1)]), Err(EditError::Locked));
     }
 
@@ -393,7 +527,11 @@ mod tests {
     fn remove_takes_only_the_named_transitions() {
         let mut q = seq();
         assert_eq!(remove(&mut q, &[TransitionId(1), TransitionId(3)]), Ok(2));
-        let left: Vec<u64> = q.video_tracks[0].transitions.iter().map(|x| x.id.0).collect();
+        let left: Vec<u64> = q.video_tracks[0]
+            .transitions
+            .iter()
+            .map(|x| x.id.0)
+            .collect();
         assert_eq!(left, vec![2]);
         assert_eq!(q.video_tracks[0].items.len(), 3, "the clips stay");
         assert_eq!(remove(&mut q, &[TransitionId(1)]), Err(EditError::Nothing));

@@ -33,7 +33,11 @@ pub(crate) fn num(v: f64) -> String {
 
 /// Append [`num`]`(v)` to `s`.
 pub(crate) fn push_num(s: &mut String, v: f64) {
-    let v = if v.is_finite() { (v * 10_000.0).round() / 10_000.0 } else { 0.0 };
+    let v = if v.is_finite() {
+        (v * 10_000.0).round() / 10_000.0
+    } else {
+        0.0
+    };
     if v == v.trunc() && v.abs() < 1e15 {
         let _ = write!(s, "{}", v as i64);
         return;
@@ -197,7 +201,13 @@ pub(crate) fn ascii85_decode(text: &str) -> Option<Vec<u8>> {
                     return None;
                 }
                 if n > 1 {
-                    let padded: Vec<u8> = group.iter().take(n).copied().chain(std::iter::repeat(b'u')).take(5).collect();
+                    let padded: Vec<u8> = group
+                        .iter()
+                        .take(n)
+                        .copied()
+                        .chain(std::iter::repeat(b'u'))
+                        .take(5)
+                        .collect();
                     let v = value85(&padded)?;
                     out.extend(v.to_be_bytes().iter().take(n - 1));
                 }
@@ -220,7 +230,10 @@ pub(crate) fn ascii85_decode(text: &str) -> Option<Vec<u8>> {
 
 /// The value of five base-85 digits; `None` past `u32::MAX`.
 fn value85(digits: &[u8]) -> Option<u32> {
-    digits.iter().try_fold(0u32, |acc, d| acc.checked_mul(85)?.checked_add(u32::from(d.checked_sub(b'!')?)))
+    digits.iter().try_fold(0u32, |acc, d| {
+        acc.checked_mul(85)?
+            .checked_add(u32::from(d.checked_sub(b'!')?))
+    })
 }
 
 /// Run-length encoding (PackBits: what PostScript's `RunLengthDecode` reads), shared with TIFF.
@@ -228,7 +241,10 @@ pub(crate) use vectorcraft_render::encode::tiff::packbits;
 
 /// `data` compressed for `FlateDecode` (zlib).
 pub(crate) fn deflate(data: &[u8]) -> Vec<u8> {
-    let mut e = flate2::write::ZlibEncoder::new(Vec::with_capacity(data.len() / 2), flate2::Compression::default());
+    let mut e = flate2::write::ZlibEncoder::new(
+        Vec::with_capacity(data.len() / 2),
+        flate2::Compression::default(),
+    );
     // Writing to a Vec doesn't fail.
     let _ = e.write_all(data);
     e.finish().unwrap_or_default()
@@ -237,6 +253,9 @@ pub(crate) fn deflate(data: &[u8]) -> Vec<u8> {
 /// zlib `data` inflated, when it is valid and at most `max` bytes.
 pub(crate) fn inflate(data: &[u8], max: u64) -> Option<Vec<u8>> {
     let mut out = vec![];
-    flate2::read::ZlibDecoder::new(data).take(max + 1).read_to_end(&mut out).ok()?;
+    flate2::read::ZlibDecoder::new(data)
+        .take(max + 1)
+        .read_to_end(&mut out)
+        .ok()?;
     (out.len() as u64 <= max).then_some(out)
 }

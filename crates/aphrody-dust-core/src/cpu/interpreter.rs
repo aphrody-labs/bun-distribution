@@ -31,7 +31,10 @@ macro_rules! spsr {
             $cpu.engine_data.regs.spsr
         } else {
             #[cfg(feature = "log")]
-            slog::warn!($cpu.logger, "Unpredictable SPSR read in non-exception mode, reading CPSR");
+            slog::warn!(
+                $cpu.logger,
+                "Unpredictable SPSR read in non-exception mode, reading CPSR"
+            );
             $cpu.engine_data.regs.cpsr
         }
     };
@@ -45,7 +48,10 @@ macro_rules! update_spsr {
             );
         } else {
             #[cfg(feature = "log")]
-            slog::warn!($cpu.logger, "Unpredictable SPSR write in non-exception mode, ignoring");
+            slog::warn!(
+                $cpu.logger,
+                "Unpredictable SPSR write in non-exception mode, ignoring"
+            );
         }
     };
 }

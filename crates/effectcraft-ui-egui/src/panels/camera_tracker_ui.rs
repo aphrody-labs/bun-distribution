@@ -55,11 +55,20 @@ fn tracker_group(l: &Layer, uid: Uid) -> Option<&PropGroup> {
 
 /// The selected 3D Camera Tracker effect on an active layer (After Effects shows the points
 /// while the effect is selected).
-fn active(s: &Session, comp: &Comp, ectx: &EvalCtx, l2c: &dyn Fn(&EvalCtx, &Layer) -> Mat3) -> Option<Active> {
+fn active(
+    s: &Session,
+    comp: &Comp,
+    ectx: &EvalCtx,
+    l2c: &dyn Fn(&EvalCtx, &Layer) -> Mat3,
+) -> Option<Active> {
     let time = ectx.time;
     for (lid, uid) in &s.state.selected_props {
-        let Some(l) = comp.layer(*lid).filter(|l| l.is_active_at(time)) else { continue };
-        let Some(g) = tracker_group(l, *uid) else { continue };
+        let Some(l) = comp.layer(*lid).filter(|l| l.is_active_at(time)) else {
+            continue;
+        };
+        let Some(g) = tracker_group(l, *uid) else {
+            continue;
+        };
         let params = effectcraft_engine::camera_track::static_params(g);
         let val = |id: &str| effectcraft_engine::effects::warp_stab::param(&params, id).cloned();
         let solve = ct::solve(&params);
@@ -67,7 +76,11 @@ fn active(s: &Session, comp: &Comp, ectx: &EvalCtx, l2c: &dyn Fn(&EvalCtx, &Laye
         let lt = l.layer_time(time).seconds();
         let frame = solve.as_ref().and_then(|sv| sv.frame_at(lt)).or_else(|| {
             let t = tracks.as_ref()?;
-            (t.frame_duration > 0.0).then(|| ((lt - t.start) / t.frame_duration).round().clamp(0.0, t.frames.saturating_sub(1) as f64) as usize)
+            (t.frame_duration > 0.0).then(|| {
+                ((lt - t.start) / t.frame_duration)
+                    .round()
+                    .clamp(0.0, t.frames.saturating_sub(1) as f64) as usize
+            })
         });
         let undistort = solve.as_ref().is_some_and(|sv| ct::undistorts(&params, sv));
         return Some(Active {
@@ -93,7 +106,11 @@ fn to_screen(a: &Active, map: &ViewerMap, q: [f64; 2]) -> Pos2 {
 
 fn col(id: u32) -> Color32 {
     let c = point_color(id);
-    Color32::from_rgb((c[0] * 255.0) as u8, (c[1] * 255.0) as u8, (c[2] * 255.0) as u8)
+    Color32::from_rgb(
+        (c[0] * 255.0) as u8,
+        (c[1] * 255.0) as u8,
+        (c[2] * 255.0) as u8,
+    )
 }
 
 /// Comp-pixel scale of the layer → comp mapping.
@@ -109,12 +126,24 @@ fn draw_target(p: &egui::Painter, a: &Active, map: &ViewerMap, sv: &CameraSolve,
     let r = t.size * 0.5 * a.target_size / 100.0;
     for (i, frac) in [1.0, 0.66, 0.33].into_iter().enumerate() {
         let ring = ct::target_circle(t.center, t.normal, r * frac, 48);
-        let pts: Vec<Pos2> = ring.iter().filter_map(|x| sv.project(a.frame, *x, a.undistort)).map(|q| to_screen(a, map, q)).collect();
+        let pts: Vec<Pos2> = ring
+            .iter()
+            .filter_map(|x| sv.project(a.frame, *x, a.undistort))
+            .map(|q| to_screen(a, map, q))
+            .collect();
         if pts.len() < 3 {
             return;
         }
-        let fill = if i % 2 == 0 { Color32::from_rgba_unmultiplied(0xd0, 0x30, 0x30, 70) } else { Color32::from_rgba_unmultiplied(0xff, 0xff, 0xff, 50) };
-        p.add(egui::Shape::convex_polygon(pts.clone(), fill, Stroke::new(1.0, Color32::from_rgb(0xe0, 0x40, 0x40))));
+        let fill = if i % 2 == 0 {
+            Color32::from_rgba_unmultiplied(0xd0, 0x30, 0x30, 70)
+        } else {
+            Color32::from_rgba_unmultiplied(0xff, 0xff, 0xff, 50)
+        };
+        p.add(egui::Shape::convex_polygon(
+            pts.clone(),
+            fill,
+            Stroke::new(1.0, Color32::from_rgb(0xe0, 0x40, 0x40)),
+        ));
     }
     if let Some(c) = sv.project(a.frame, t.center, a.undistort) {
         let c = to_screen(a, map, c);
@@ -169,7 +198,9 @@ pub fn viewer_hook(
     if !app.ui.viewer.show_layer_controls {
         return;
     }
-    let Some(a) = active(&app.session, comp, ectx, l2c) else { return };
+    let Some(a) = active(&app.session, comp, ectx, l2c) else {
+        return;
+    };
     let selected = app.session.state.camera_points.clone();
     let lscale = l2c_scale(&a.l2c) * map.zoom;
     let mut hits: Vec<Hit> = vec![];
@@ -199,7 +230,9 @@ pub fn viewer_hook(
             // 2D source tracks (also shown before the solve finishes).
             if let Some(tr) = &a.tracks {
                 for t in &tr.tracks {
-                    let Some(q) = t.at(a.frame as u32) else { continue };
+                    let Some(q) = t.at(a.frame as u32) else {
+                        continue;
+                    };
                     let sp = to_screen(&a, map, q);
                     let c = col(t.id);
                     let r = (3.0 * a.point_size as f32 / 100.0).clamp(1.5, 12.0);
@@ -216,9 +249,14 @@ pub fn viewer_hook(
     }
     // Interaction over the image.
     // While Space (Hand tool) is held the overlay only hovers, so the viewer underneath gets the pan drag.
-    let sense = if super::space_hand(&ctx) { Sense::hover() } else { Sense::click_and_drag() };
+    let sense = if super::space_hand(&ctx) {
+        Sense::hover()
+    } else {
+        Sense::click_and_drag()
+    };
     let resp = ui.interact(map.area, egui::Id::new("viewer-camera-tracker"), sense);
-    app.auto.add("viewer.cameraTracker", map.area, "3D Camera Tracker points");
+    app.auto
+        .add("viewer.cameraTracker", map.area, "3D Camera Tracker points");
     // The overlay is on top of the viewer, so a middle-button drag lands here: pan the viewer like the Hand tool.
     if resp.dragged_by(egui::PointerButton::Middle) {
         let pid = egui::Id::new("viewer-camera-tracker-pan");
@@ -226,17 +264,31 @@ pub fn viewer_hook(
             let start_pan = app.ui.viewer.pan;
             ui.data_mut(|d| d.insert_temp(pid, start_pan));
         }
-        if let (Some(start_pan), Some(d)) = (ui.data(|m| m.get_temp::<[f32; 2]>(pid)), resp.total_drag_delta()) {
+        if let (Some(start_pan), Some(d)) = (
+            ui.data(|m| m.get_temp::<[f32; 2]>(pid)),
+            resp.total_drag_delta(),
+        ) {
             app.ui.viewer.pan = [start_pan[0] + d.x, start_pan[1] + d.y];
         }
         return;
     }
     for (id, sp, r) in hits.iter().take(400) {
-        app.auto.add(&format!("viewer.cameraTracker.point.{id}"), Rect::from_center_size(*sp, vec2(r * 2.0 + 4.0, r * 2.0 + 4.0)), "track point");
+        app.auto.add(
+            &format!("viewer.cameraTracker.point.{id}"),
+            Rect::from_center_size(*sp, vec2(r * 2.0 + 4.0, r * 2.0 + 4.0)),
+            "track point",
+        );
     }
     let hover = resp.hover_pos();
-    let point_at = |p: Pos2| hits.iter().filter(|h| h.1.distance(p) <= h.2 + 3.0).min_by(|x, y| x.1.distance(p).total_cmp(&y.1.distance(p))).map(|h| h.0);
-    let tri = hover.filter(|p| point_at(*p).is_none()).and_then(|p| triangle_at(&hits, p));
+    let point_at = |p: Pos2| {
+        hits.iter()
+            .filter(|h| h.1.distance(p) <= h.2 + 3.0)
+            .min_by(|x, y| x.1.distance(p).total_cmp(&y.1.distance(p)))
+            .map(|h| h.0)
+    };
+    let tri = hover
+        .filter(|p| point_at(*p).is_none())
+        .and_then(|p| triangle_at(&hits, p));
     let mid = egui::Id::new("viewer-camera-tracker-marquee");
     let marquee: Option<Pos2> = ui.data(|d| d.get_temp(mid));
     // Hover target / the selection's target.
@@ -244,9 +296,16 @@ pub fn viewer_hook(
         if let Some(t3) = tri
             && let Some(t) = effectcraft_engine::camera_track::target_for(&sv, &t3, a.frame)
         {
-            let ps: Vec<Pos2> = t3.iter().filter_map(|i| hits.iter().find(|h| h.0 == *i)).map(|h| h.1).collect();
+            let ps: Vec<Pos2> = t3
+                .iter()
+                .filter_map(|i| hits.iter().find(|h| h.0 == *i))
+                .map(|h| h.1)
+                .collect();
             if ps.len() == 3 {
-                painter.add(egui::Shape::closed_line(ps, Stroke::new(1.0, Color32::from_white_alpha(200))));
+                painter.add(egui::Shape::closed_line(
+                    ps,
+                    Stroke::new(1.0, Color32::from_white_alpha(200)),
+                ));
             }
             draw_target(painter, &a, map, &sv, &t);
         } else if !selected.is_empty()
@@ -267,9 +326,18 @@ pub fn viewer_hook(
         painter.rect_filled(r, 0.0, t.accent.gamma_multiply(0.12));
         painter.rect_stroke(r, 0.0, Stroke::new(1.0, t.accent), egui::StrokeKind::Middle);
         if resp.drag_stopped() {
-            let ids: Vec<u32> = hits.iter().filter(|h| r.contains(h.1)).map(|h| h.0).collect();
+            let ids: Vec<u32> = hits
+                .iter()
+                .filter(|h| r.contains(h.1))
+                .map(|h| h.0)
+                .collect();
             ui.data_mut(|d| d.remove::<Pos2>(mid));
-            run(app, &ctx, "camera.selectPoints", json!({"points": ids, "add": mods.shift}));
+            run(
+                app,
+                &ctx,
+                "camera.selectPoints",
+                json!({"points": ids, "add": mods.shift}),
+            );
         }
     } else if resp.drag_stopped() {
         ui.data_mut(|d| d.remove::<Pos2>(mid));
@@ -278,8 +346,18 @@ pub fn viewer_hook(
         && let Some(p) = resp.interact_pointer_pos()
     {
         match (point_at(p), triangle_at(&hits, p)) {
-            (Some(id), _) => run(app, &ctx, "camera.selectPoints", json!({"points": [id], "toggle": mods.shift})),
-            (None, Some(t3)) => run(app, &ctx, "camera.selectPoints", json!({"points": t3, "add": mods.shift})),
+            (Some(id), _) => run(
+                app,
+                &ctx,
+                "camera.selectPoints",
+                json!({"points": [id], "toggle": mods.shift}),
+            ),
+            (None, Some(t3)) => run(
+                app,
+                &ctx,
+                "camera.selectPoints",
+                json!({"points": t3, "add": mods.shift}),
+            ),
             (None, None) => run(app, &ctx, "camera.selectPoints", json!({"points": []})),
         }
     }
@@ -289,7 +367,10 @@ pub fn viewer_hook(
         let pts: Vec<u32> = if !selected.is_empty() {
             selected.clone()
         } else if let Some(p) = resp.interact_pointer_pos() {
-            point_at(p).map(|i| vec![i]).or_else(|| triangle_at(&hits, p).map(|t| t.to_vec())).unwrap_or_default()
+            point_at(p)
+                .map(|i| vec![i])
+                .or_else(|| triangle_at(&hits, p).map(|t| t.to_vec()))
+                .unwrap_or_default()
         } else {
             vec![]
         };
@@ -312,7 +393,10 @@ pub fn viewer_hook(
         let some = !pts.is_empty();
         let many = pts.len() > 1;
         let mut pick: Option<(&str, serde_json::Value)> = None;
-        if ui.add_enabled(some, egui::Button::new(tr("Set Ground Plane and Origin"))).clicked() {
+        if ui
+            .add_enabled(some, egui::Button::new(tr("Set Ground Plane and Origin")))
+            .clicked()
+        {
             pick = Some(("camera.setGroundPlane", with(None, false)));
         }
         ui.separator();
@@ -327,15 +411,20 @@ pub fn viewer_hook(
             }
         }
         ui.separator();
-        for (label, kind) in
-            [("Create Multiple Text Layers and Camera", "text"), ("Create Multiple Solids and Camera", "solid"), ("Create Multiple Nulls and Camera", "null")]
-        {
+        for (label, kind) in [
+            ("Create Multiple Text Layers and Camera", "text"),
+            ("Create Multiple Solids and Camera", "solid"),
+            ("Create Multiple Nulls and Camera", "null"),
+        ] {
             if ui.add_enabled(many, egui::Button::new(label)).clicked() {
                 pick = Some(("camera.createFromSolve", with(Some(kind), true)));
             }
         }
         ui.separator();
-        if ui.add_enabled(some, egui::Button::new(tr("Delete Selected Points"))).clicked() {
+        if ui
+            .add_enabled(some, egui::Button::new(tr("Delete Selected Points")))
+            .clicked()
+        {
             pick = Some(("camera.deletePoints", with(None, false)));
         }
         if let Some((cmd, q)) = pick {
@@ -349,13 +438,24 @@ pub fn viewer_hook(
         && ui.input(|i| i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace))
         && !ctx.egui_wants_keyboard_input()
     {
-        run(app, &ctx, "camera.deletePoints", json!({"layer": a.layer.0, "effect": a.uid, "points": selected}));
+        run(
+            app,
+            &ctx,
+            "camera.deletePoints",
+            json!({"layer": a.layer.0, "effect": a.uid, "points": selected}),
+        );
     }
 }
 
 /// "Analyzing in background (step 1 of 2)" / "Solving camera" over the analysed layer, and a
 /// warning when the solve failed (unless Hide Warning Banner).
-fn banner(app: &mut EffectcraftApp, painter: &egui::Painter, map: &ViewerMap, ectx: &EvalCtx, l2c: &dyn Fn(&EvalCtx, &Layer) -> Mat3) {
+fn banner(
+    app: &mut EffectcraftApp,
+    painter: &egui::Painter,
+    map: &ViewerMap,
+    ectx: &EvalCtx,
+    l2c: &dyn Fn(&EvalCtx, &Layer) -> Mat3,
+) {
     let comp = ectx.comp;
     let time = ectx.time;
     let cid = ectx.comp_id;
@@ -367,7 +467,14 @@ fn banner(app: &mut EffectcraftApp, painter: &egui::Painter, map: &ViewerMap, ec
         let galley = painter.layout_no_wrap(text.clone(), Tokens::medium(13.0), Color32::WHITE);
         let r = Rect::from_center_size(at, galley.size() + vec2(28.0, 14.0)).intersect(map.area);
         painter.rect_filled(r, 3.0, color);
-        painter.galley(pos2(r.center().x - galley.size().x / 2.0, r.center().y - galley.size().y / 2.0), galley, Color32::WHITE);
+        painter.galley(
+            pos2(
+                r.center().x - galley.size().x / 2.0,
+                r.center().y - galley.size().y / 2.0,
+            ),
+            galley,
+            Color32::WHITE,
+        );
         app.auto.add(id, r, &text);
     };
     if let Some((cc, cl, _)) = app.session.camera_target()
@@ -376,7 +483,13 @@ fn banner(app: &mut EffectcraftApp, painter: &egui::Painter, map: &ViewerMap, ec
         && let Some(layer) = comp.layer(cl)
         && layer.is_active_at(time)
     {
-        draw(app, layer, pr.banner(), Color32::from_rgba_unmultiplied(0x1d, 0x4f, 0x9c, 0xe0), "viewer.cameraBanner");
+        draw(
+            app,
+            layer,
+            pr.banner(),
+            Color32::from_rgba_unmultiplied(0x1d, 0x4f, 0x9c, 0xe0),
+            "viewer.cameraBanner",
+        );
         return;
     }
     // A failed solve: tracks without a solve while nothing is running or queued.
@@ -407,49 +520,124 @@ pub fn editor(
     actions: &mut Vec<(String, serde_json::Value)>,
 ) {
     let t = app.tokens;
-    let running = app.session.camera_target().is_some_and(|(_, l, u)| l == layer.id && u == g.uid) && app.session.is_camera_analyzing();
+    let running = app
+        .session
+        .camera_target()
+        .is_some_and(|(_, l, u)| l == layer.id && u == g.uid)
+        && app.session.is_camera_analyzing();
     let busy = app.session.is_camera_analyzing();
     let me = json!({"layer": layer.id.0, "effect": g.uid});
     let b1 = Rect::from_min_size(pos2(r.min.x + 24.0, r.min.y + 4.0), vec2(84.0, 22.0));
     let b2 = Rect::from_min_size(pos2(b1.max.x + 8.0, b1.min.y), vec2(84.0, 22.0));
     let b3 = Rect::from_min_size(pos2(b2.max.x + 8.0, b1.min.y), vec2(110.0, 22.0));
-    if widgets::text_button(ui, b1, "Analyze", false, &t, egui::Id::new(("ct-analyze", g.uid))).clicked() && !busy {
+    if widgets::text_button(
+        ui,
+        b1,
+        "Analyze",
+        false,
+        &t,
+        egui::Id::new(("ct-analyze", g.uid)),
+    )
+    .clicked()
+        && !busy
+    {
         actions.push(("camera.analyze".into(), me.clone()));
     }
-    app.auto.add(&format!("effectControls.cameraTracker.{}.analyze", g.uid), b1, "Analyze");
+    app.auto.add(
+        &format!("effectControls.cameraTracker.{}.analyze", g.uid),
+        b1,
+        "Analyze",
+    );
     if running {
-        if widgets::text_button(ui, b2, "Cancel", false, &t, egui::Id::new(("ct-cancel", g.uid))).clicked() {
+        if widgets::text_button(
+            ui,
+            b2,
+            "Cancel",
+            false,
+            &t,
+            egui::Id::new(("ct-cancel", g.uid)),
+        )
+        .clicked()
+        {
             actions.push(("camera.cancel".into(), json!({})));
         }
-        app.auto.add(&format!("effectControls.cameraTracker.{}.cancel", g.uid), b2, "Cancel");
+        app.auto.add(
+            &format!("effectControls.cameraTracker.{}.cancel", g.uid),
+            b2,
+            "Cancel",
+        );
     }
     let params = effectcraft_engine::camera_track::static_params(g);
     let solve = ct::solve(&params);
     if solve.is_some() {
-        if widgets::text_button(ui, b3, "Create Camera", false, &t, egui::Id::new(("ct-camera", g.uid))).clicked() {
+        if widgets::text_button(
+            ui,
+            b3,
+            "Create Camera",
+            false,
+            &t,
+            egui::Id::new(("ct-camera", g.uid)),
+        )
+        .clicked()
+        {
             actions.push(("camera.create".into(), me.clone()));
         }
-        app.auto.add(&format!("effectControls.cameraTracker.{}.createCamera", g.uid), b3, "Create Camera");
+        app.auto.add(
+            &format!("effectControls.cameraTracker.{}.createCamera", g.uid),
+            b3,
+            "Create Camera",
+        );
     }
     let status = match app.session.camera_progress() {
         Some(pr) if running => pr.banner(),
         _ => match &solve {
-            Some(sv) => tr_args("Method Used: {}    Average Error: {} pixels", &[&(sv.method_used.label()), &format!("{:.2}", sv.average_error)]),
-            None if ct::tracks(&params).is_some() && app.session.camera_pending.iter().any(|(_, l, u)| *l == layer.id && *u == g.uid) => {
+            Some(sv) => tr_args(
+                "Method Used: {}    Average Error: {} pixels",
+                &[
+                    &(sv.method_used.label()),
+                    &format!("{:.2}", sv.average_error),
+                ],
+            ),
+            None if ct::tracks(&params).is_some()
+                && app
+                    .session
+                    .camera_pending
+                    .iter()
+                    .any(|(_, l, u)| *l == layer.id && *u == g.uid) =>
+            {
                 "Waiting to solve".into()
             }
-            None if ct::tracks(&params).is_some() => "Unable to solve camera: try another Solve Method or Shot Type".into(),
-            None if app.session.camera_pending.iter().any(|(_, l, u)| *l == layer.id && *u == g.uid) => "Waiting to analyze".into(),
+            None if ct::tracks(&params).is_some() => {
+                "Unable to solve camera: try another Solve Method or Shot Type".into()
+            }
+            None if app
+                .session
+                .camera_pending
+                .iter()
+                .any(|(_, l, u)| *l == layer.id && *u == g.uid) =>
+            {
+                "Waiting to analyze".into()
+            }
             None => "Not analyzed: click Analyze".into(),
         },
     };
-    p.text(pos2(r.min.x + 24.0, r.min.y + 38.0), Align2::LEFT_CENTER, status, Tokens::ui(11.5), t.text_dim);
+    p.text(
+        pos2(r.min.x + 24.0, r.min.y + 38.0),
+        Align2::LEFT_CENTER,
+        status,
+        Tokens::ui(11.5),
+        t.text_dim,
+    );
     if let Some(sv) = &solve {
         let f = sv.focal();
         p.text(
             pos2(r.min.x + 24.0, r.min.y + 56.0),
             Align2::LEFT_CENTER,
-            format!("{} solved points · Horizontal Angle of View {:.1}°", sv.points.len(), sv.hfov(f)),
+            format!(
+                "{} solved points · Horizontal Angle of View {:.1}°",
+                sv.points.len(),
+                sv.hfov(f)
+            ),
             Tokens::ui(11.5),
             t.text_faint,
         );

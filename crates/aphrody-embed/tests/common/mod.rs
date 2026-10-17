@@ -17,7 +17,7 @@ pub(crate) fn model_or_skip(id: &str) -> Option<(ModelSpec, std::path::PathBuf)>
         Err(err) if is_offline() => {
             eprintln!("SKIPPED: {id} not installed and APHRODY_OFFLINE=1 ({err})");
             None
-        },
+        }
         Err(err) => panic!("cannot install {id}: {err}"),
     }
 }
@@ -26,9 +26,11 @@ pub(crate) fn model_or_skip(id: &str) -> Option<(ModelSpec, std::path::PathBuf)>
 pub(crate) fn installed(id: &str) -> bool {
     let spec = find_model(id).expect("model in manifest");
     let dir = spec.default_dir();
-    spec.files
-        .iter()
-        .all(|f| std::fs::metadata(dir.join(&f.name)).map(|m| m.len() == f.size).unwrap_or(false))
+    spec.files.iter().all(|f| {
+        std::fs::metadata(dir.join(&f.name))
+            .map(|m| m.len() == f.size)
+            .unwrap_or(false)
+    })
 }
 
 /// Like [`model_or_skip`] for cross-encoders.
@@ -42,7 +44,7 @@ pub(crate) fn reranker_or_skip(
         Err(err) if is_offline() => {
             eprintln!("SKIPPED: {id} not installed and APHRODY_OFFLINE=1 ({err})");
             None
-        },
+        }
         Err(err) => panic!("cannot install {id}: {err}"),
     }
 }

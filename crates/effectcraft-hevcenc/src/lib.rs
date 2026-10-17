@@ -14,7 +14,14 @@
 //! let _hvcc = enc.hvcc();
 //! ```
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 // Index loops over fixed-size blocks read more clearly than iterator chains in codec code.
 #![allow(clippy::needless_range_loop, clippy::too_many_arguments)]
 
@@ -160,7 +167,13 @@ impl RateCtl {
         let target = kbps as f64 * 1000.0 / fps.max(0.001);
         let bpp = target / (cfg.width as f64 * cfg.height as f64);
         let init_qp = (28.0 - 6.0 * (bpp / 0.08).log2()).round().clamp(10.0, 46.0) as i32;
-        RateCtl { target, buffer: 0.0, x: [None, None], last_qp: [init_qp - 3, init_qp], init_qp }
+        RateCtl {
+            target,
+            buffer: 0.0,
+            x: [None, None],
+            last_qp: [init_qp - 3, init_qp],
+            init_qp,
+        }
     }
 
     fn qp(&self, idr: bool) -> i32 {
@@ -173,7 +186,8 @@ impl RateCtl {
             (None, None) => return if idr { self.init_qp - 3 } else { self.init_qp },
         };
         let qp = (4.0 + 6.0 * (x / want).log2()).round() as i32;
-        qp.clamp(self.last_qp[t] - 6, self.last_qp[t] + 6).clamp(1, 51)
+        qp.clamp(self.last_qp[t] - 6, self.last_qp[t] + 6)
+            .clamp(1, 51)
     }
 
     fn update(&mut self, idr: bool, qp: i32, bits: f64) {
@@ -207,26 +221,40 @@ impl Encoder {
             return Err(Error::InvalidConfig("empty frame".into()));
         }
         if !cfg.width.is_multiple_of(2) || !cfg.height.is_multiple_of(2) {
-            return Err(Error::InvalidConfig(format!("{}x{}: 4:2:0 HEVC needs even dimensions", cfg.width, cfg.height)));
+            return Err(Error::InvalidConfig(format!(
+                "{}x{}: 4:2:0 HEVC needs even dimensions",
+                cfg.width, cfg.height
+            )));
         }
         if cfg.width > 16384 || cfg.height > 16384 {
-            return Err(Error::InvalidConfig("picture larger than 16384 samples".into()));
+            return Err(Error::InvalidConfig(
+                "picture larger than 16384 samples".into(),
+            ));
         }
         if cfg.fps_num == 0 || cfg.fps_den == 0 {
             return Err(Error::InvalidConfig("zero frame rate".into()));
         }
         match cfg.rate {
-            RateControl::ConstantQp(q) if q > 51 => return Err(Error::InvalidConfig(format!("QP {q} > 51"))),
-            RateControl::Bitrate { kbps: 0 } => return Err(Error::InvalidConfig("zero bitrate".into())),
+            RateControl::ConstantQp(q) if q > 51 => {
+                return Err(Error::InvalidConfig(format!("QP {q} > 51")));
+            }
+            RateControl::Bitrate { kbps: 0 } => {
+                return Err(Error::InvalidConfig("zero bitrate".into()));
+            }
             _ => {}
         }
         let min_cb = 1u32 << LOG2_MIN_CB;
-        let (coded_width, coded_height) = (cfg.width.div_ceil(min_cb) * min_cb, cfg.height.div_ceil(min_cb) * min_cb);
+        let (coded_width, coded_height) = (
+            cfg.width.div_ceil(min_cb) * min_cb,
+            cfg.height.div_ceil(min_cb) * min_cb,
+        );
         let kbps = match cfg.rate {
             RateControl::Bitrate { kbps } => Some(kbps),
             RateControl::ConstantQp(_) => None,
         };
-        let level_idc = cfg.level_idc.unwrap_or_else(|| params::choose_level(coded_width, coded_height, cfg.fps_num, cfg.fps_den, kbps));
+        let level_idc = cfg.level_idc.unwrap_or_else(|| {
+            params::choose_level(coded_width, coded_height, cfg.fps_num, cfg.fps_den, kbps)
+        });
         let seq = SeqParams {
             coded_width,
             coded_height,
@@ -241,7 +269,16 @@ impl Encoder {
         };
         let sets = [params::vps(&seq), params::sps(&seq), params::pps()];
         let rc = kbps.map(|k| RateCtl::new(k, &cfg));
-        Ok(Encoder { cfg, seq, sets, frames: 0, poc: 0, reference: None, recon: None, rc })
+        Ok(Encoder {
+            cfg,
+            seq,
+            sets,
+            frames: 0,
+            poc: 0,
+            reference: None,
+            recon: None,
+            rc,
+        })
     }
 
     pub fn config(&self) -> &EncoderConfig {
@@ -277,13 +314,30 @@ impl Encoder {
         let mut out: [Vec<u16>; 3] = Default::default();
         for (c, plane) in out.iter_mut().enumerate() {
             let (src, stride, w, h, cw, ch) = if c == 0 {
-                (f.y, f.y_stride, self.seq.width, self.seq.height, self.seq.coded_width, self.seq.coded_height)
+                (
+                    f.y,
+                    f.y_stride,
+                    self.seq.width,
+                    self.seq.height,
+                    self.seq.coded_width,
+                    self.seq.coded_height,
+                )
             } else {
                 let s = if c == 1 { f.u } else { f.v };
-                (s, f.uv_stride, self.seq.width / 2, self.seq.height / 2, self.seq.coded_width / 2, self.seq.coded_height / 2)
+                (
+                    s,
+                    f.uv_stride,
+                    self.seq.width / 2,
+                    self.seq.height / 2,
+                    self.seq.coded_width / 2,
+                    self.seq.coded_height / 2,
+                )
             };
             let (w, h, cw, ch) = (w as usize, h as usize, cw as usize, ch as usize);
-            assert!(stride >= w && src.len() >= (h - 1) * stride + w, "HEVC encoder: plane {c} smaller than {w}x{h} (stride {stride})");
+            assert!(
+                stride >= w && src.len() >= (h - 1) * stride + w,
+                "HEVC encoder: plane {c} smaller than {w}x{h} (stride {stride})"
+            );
             plane.reserve(cw * ch);
             for y in 0..ch {
                 let row = &src[y.min(h - 1) * stride..][..w];
@@ -306,10 +360,19 @@ impl Encoder {
             (None, RateControl::ConstantQp(q)) => q as i32,
             (None, RateControl::Bitrate { .. }) => 28,
         };
-        let (w, h) = (self.seq.coded_width as usize, self.seq.coded_height as usize);
+        let (w, h) = (
+            self.seq.coded_width as usize,
+            self.seq.coded_height as usize,
+        );
         let bd = self.seq.bit_depth;
         let kind = if idr { SliceKind::I } else { SliceKind::P };
-        let me = if idr { None } else { self.reference.as_ref().map(|r| me::MeRef::new(&r[0], w, h, bd)) };
+        let me = if idr {
+            None
+        } else {
+            self.reference
+                .as_ref()
+                .map(|r| me::MeRef::new(&r[0], w, h, bd))
+        };
         let refp = if idr { None } else { self.reference.as_ref() };
         let mut fc = FrameCoder::new(bd, w, h, kind, qp, &src, refp, me.as_ref());
 
@@ -348,10 +411,21 @@ impl Encoder {
         // output picture: cropped reconstruction
         let rec = std::mem::take(&mut fc.rec);
         let (ow, oh) = (self.seq.width as usize, self.seq.height as usize);
-        let crop = |p: &[u16], stride: usize, w: usize, h: usize| -> Vec<u16> { (0..h).flat_map(|y| p[y * stride..y * stride + w].iter().copied()).collect() };
-        self.recon = Some([crop(&rec[0], w, ow, oh), crop(&rec[1], w / 2, ow / 2, oh / 2), crop(&rec[2], w / 2, ow / 2, oh / 2)]);
+        let crop = |p: &[u16], stride: usize, w: usize, h: usize| -> Vec<u16> {
+            (0..h)
+                .flat_map(|y| p[y * stride..y * stride + w].iter().copied())
+                .collect()
+        };
+        self.recon = Some([
+            crop(&rec[0], w, ow, oh),
+            crop(&rec[1], w / 2, ow / 2, oh / 2),
+            crop(&rec[2], w / 2, ow / 2, oh / 2),
+        ]);
         self.reference = Some(rec);
         self.frames += 1;
-        Packet { data, keyframe: idr }
+        Packet {
+            data,
+            keyframe: idr,
+        }
     }
 }

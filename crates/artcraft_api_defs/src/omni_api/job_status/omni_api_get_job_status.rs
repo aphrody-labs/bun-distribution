@@ -8,12 +8,12 @@ use crate::omni_api::job_status::omni_api_job_status_payload::OmniApiJobStatusPa
 /// Path params for `GET /v1/omni_api/job_status/job/{token}`.
 #[derive(Deserialize, ToSchema)]
 pub struct OmniApiGetJobStatusPathInfo {
-  pub token: InferenceJobToken,
+    pub token: InferenceJobToken,
 }
 
 /// Success body for `GET /v1/omni_api/job_status/job/{token}`.
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct OmniApiGetJobStatusSuccessResponse {
-  pub success: bool,
-  pub state: OmniApiJobStatusPayload,
+    pub success: bool,
+    pub state: OmniApiJobStatusPayload,
 }

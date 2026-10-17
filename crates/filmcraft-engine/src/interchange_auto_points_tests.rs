@@ -79,8 +79,14 @@ fn auto_points(p: &Project) -> Vec<String> {
 }
 
 fn import(s: &mut Session, doc: &std::path::Path) -> (serde_json::Value, ItemId) {
-    let r = s.execute("file.import", json!({"paths": [doc.to_string_lossy()]})).unwrap();
-    let seq = ItemId(r["sequences"][0].as_u64().unwrap_or_else(|| panic!("no sequence in {r}")));
+    let r = s
+        .execute("file.import", json!({"paths": [doc.to_string_lossy()]}))
+        .unwrap();
+    let seq = ItemId(
+        r["sequences"][0]
+            .as_u64()
+            .unwrap_or_else(|| panic!("no sequence in {r}")),
+    );
     (r["documents"][0].clone(), seq)
 }
 
@@ -95,20 +101,43 @@ fn a_project_saved_after_an_interchange_import_opens_again() {
     let before = s.project.clone();
     // the media file is not there: its real size is not known
     let (r, seq) = import(&mut s, &doc);
-    assert_eq!((r["linkedMedia"].as_u64(), r["offlineMedia"].as_array().map(Vec::len)), (Some(0), Some(1)), "{r}");
+    assert_eq!(
+        (
+            r["linkedMedia"].as_u64(),
+            r["offlineMedia"].as_array().map(Vec::len)
+        ),
+        (Some(0), Some(1)),
+        "{r}"
+    );
     let clip = first_clip(&s, seq);
-    assert_eq!(clip.effect("motion").unwrap().f64_at("scale", Tick::ZERO), 50.0);
-    assert_eq!(motion_point(&clip, "position"), Vec2::new(960.0, 540.0), "the frame centre, as placing a clip resolves it");
-    assert!(motion_point(&clip, "anchor").x.is_nan(), "the anchor waits for the media's real size");
+    assert_eq!(
+        clip.effect("motion").unwrap().f64_at("scale", Tick::ZERO),
+        50.0
+    );
+    assert_eq!(
+        motion_point(&clip, "position"),
+        Vec2::new(960.0, 540.0),
+        "the frame centre, as placing a clip resolves it"
+    );
+    assert!(
+        motion_point(&clip, "anchor").x.is_nan(),
+        "the anchor waits for the media's real size"
+    );
     assert_eq!(auto_points(&s.project), ["motion.anchor"]);
     // the saved file opens again and holds the same project (NaN != NaN, so compare what is written)
     let path = d.join("p.fcproj").to_string_lossy().to_string();
     s.execute("file.saveAs", json!({"path": path})).unwrap();
     let mut t = Session::default();
     t.execute("file.open", json!({"path": path})).unwrap();
-    assert_eq!(filmcraft_format::encode(&t.project, false), filmcraft_format::encode(&s.project, false));
+    assert_eq!(
+        filmcraft_format::encode(&t.project, false),
+        filmcraft_format::encode(&s.project, false)
+    );
     assert_eq!(auto_points(&t.project), ["motion.anchor"]);
-    assert_eq!(motion_point(&first_clip(&t, seq), "position"), Vec2::new(960.0, 540.0));
+    assert_eq!(
+        motion_point(&first_clip(&t, seq), "position"),
+        Vec2::new(960.0, 540.0)
+    );
     // without a link step the import is one undo step
     s.execute("edit.undo", json!({})).unwrap();
     assert_eq!(*s.project, *before);
@@ -123,7 +152,13 @@ fn a_project_saved_after_an_interchange_import_opens_again() {
 fn a_linked_clip_gets_its_anchor_from_the_real_size_of_the_media() {
     let d = tmp_dir("ix-auto-linked");
     std::fs::create_dir_all(d.join("media")).unwrap();
-    make_movie(&d.join("media/shot.mov"), DemoScene::OceanSunset, 320, 180, 24);
+    make_movie(
+        &d.join("media/shot.mov"),
+        DemoScene::OceanSunset,
+        320,
+        180,
+        24,
+    );
     let doc = d.join("cut.xml");
     std::fs::write(&doc, xml_with_a_scale_only_motion_filter()).unwrap();
     let mut s = Session::default();
@@ -132,7 +167,13 @@ fn a_linked_clip_gets_its_anchor_from_the_real_size_of_the_media() {
     assert_eq!(r["linkedMedia"], 1, "{r}");
     let clip = first_clip(&s, seq);
     assert_eq!(s.project.source_size(clip.item), Some((320, 180)));
-    assert_eq!((motion_point(&clip, "position"), motion_point(&clip, "anchor")), (Vec2::new(960.0, 540.0), Vec2::new(160.0, 90.0)));
+    assert_eq!(
+        (
+            motion_point(&clip, "position"),
+            motion_point(&clip, "anchor")
+        ),
+        (Vec2::new(960.0, 540.0), Vec2::new(160.0, 90.0))
+    );
     assert_eq!(auto_points(&s.project), Vec::<String>::new());
     // nothing is NaN, so the reopened project is equal
     let path = d.join("p.fcproj").to_string_lossy().to_string();
@@ -144,7 +185,11 @@ fn a_linked_clip_gets_its_anchor_from_the_real_size_of_the_media() {
     let linked = s.project.clone();
     s.execute("edit.undo", json!({})).unwrap();
     let clip = first_clip(&s, seq);
-    assert_eq!(s.project.source_size(clip.item), Some((3840, 2160)), "the size the document declared");
+    assert_eq!(
+        s.project.source_size(clip.item),
+        Some((3840, 2160)),
+        "the size the document declared"
+    );
     assert!(motion_point(&clip, "anchor").x.is_nan());
     s.execute("edit.undo", json!({})).unwrap();
     assert_eq!(*s.project, *before);
@@ -167,10 +212,21 @@ fn an_edl_clip_is_centred_in_its_real_size_not_the_assumed_sequence_size() {
     let (r, seq) = import(&mut s, &doc);
     assert_eq!(r["linkedMedia"], 1, "{r}");
     let st = s.project.sequence(seq).unwrap().settings.clone();
-    assert_ne!((st.width, st.height), (320, 180), "the media is not the size of the sequence");
+    assert_ne!(
+        (st.width, st.height),
+        (320, 180),
+        "the media is not the size of the sequence"
+    );
     let clip = first_clip(&s, seq);
-    assert_eq!(motion_point(&clip, "position"), Vec2::new(st.width as f64 / 2.0, st.height as f64 / 2.0));
-    assert_eq!(motion_point(&clip, "anchor"), Vec2::new(160.0, 90.0), "the centre of the 320×180 picture");
+    assert_eq!(
+        motion_point(&clip, "position"),
+        Vec2::new(st.width as f64 / 2.0, st.height as f64 / 2.0)
+    );
+    assert_eq!(
+        motion_point(&clip, "anchor"),
+        Vec2::new(160.0, 90.0),
+        "the centre of the 320×180 picture"
+    );
     assert_eq!(auto_points(&s.project), Vec::<String>::new());
     let _ = std::fs::remove_dir_all(&d);
 }
@@ -189,22 +245,39 @@ fn relinking_later_resolves_the_anchor_that_waited_for_the_real_size() {
     let mut t = Session::default();
     t.execute("file.open", json!({"path": path})).unwrap();
     let clip = first_clip(&t, seq);
-    assert!(motion_point(&clip, "anchor").x.is_nan(), "still auto after the reopen");
+    assert!(
+        motion_point(&clip, "anchor").x.is_nan(),
+        "still auto after the reopen"
+    );
     // the file turns up in another folder, smaller than the document said
     std::fs::create_dir_all(d.join("found")).unwrap();
     let found = d.join("found/shot.mov");
     make_movie(&found, DemoScene::OceanSunset, 320, 180, 24);
     let waiting = t.project.clone();
-    let r = t.execute("media.relink", json!({"item": clip.item.0, "path": found.to_string_lossy(), "force": true})).unwrap();
+    let r = t
+        .execute(
+            "media.relink",
+            json!({"item": clip.item.0, "path": found.to_string_lossy(), "force": true}),
+        )
+        .unwrap();
     assert_eq!(r["relinked"].as_array().map(Vec::len), Some(1), "{r}");
     let clip = first_clip(&t, seq);
     assert_eq!(t.project.source_size(clip.item), Some((320, 180)));
-    assert_eq!((motion_point(&clip, "position"), motion_point(&clip, "anchor")), (Vec2::new(960.0, 540.0), Vec2::new(160.0, 90.0)));
+    assert_eq!(
+        (
+            motion_point(&clip, "position"),
+            motion_point(&clip, "anchor")
+        ),
+        (Vec2::new(960.0, 540.0), Vec2::new(160.0, 90.0))
+    );
     assert_eq!(auto_points(&t.project), Vec::<String>::new());
     // one undo step takes the link and the anchor back together
     let linked = t.project.clone();
     t.execute("edit.undo", json!({})).unwrap();
-    assert_eq!(filmcraft_format::encode(&t.project, false), filmcraft_format::encode(&waiting, false));
+    assert_eq!(
+        filmcraft_format::encode(&t.project, false),
+        filmcraft_format::encode(&waiting, false)
+    );
     assert_eq!(auto_points(&t.project), ["motion.anchor"]);
     t.execute("edit.redo", json!({})).unwrap();
     assert_eq!(*t.project, *linked);
@@ -212,8 +285,15 @@ fn relinking_later_resolves_the_anchor_that_waited_for_the_real_size() {
     std::fs::create_dir_all(d.join("other")).unwrap();
     let other = d.join("other/shot.mov");
     make_movie(&other, DemoScene::OceanSunset, 160, 90, 24);
-    t.execute("media.relink", json!({"item": clip.item.0, "path": other.to_string_lossy(), "force": true})).unwrap();
-    assert_eq!(motion_point(&first_clip(&t, seq), "anchor"), Vec2::new(160.0, 90.0));
+    t.execute(
+        "media.relink",
+        json!({"item": clip.item.0, "path": other.to_string_lossy(), "force": true}),
+    )
+    .unwrap();
+    assert_eq!(
+        motion_point(&first_clip(&t, seq), "anchor"),
+        Vec2::new(160.0, 90.0)
+    );
     let _ = std::fs::remove_dir_all(&d);
 }
 
@@ -246,13 +326,23 @@ fn an_interchange_import_links_media_without_reading_the_files_whole() {
     }
     let d = tmp_dir("ix-streamed-link");
     std::fs::create_dir_all(d.join("media")).unwrap();
-    make_movie(&d.join("media/shot.mov"), DemoScene::OceanSunset, 320, 180, 24);
+    make_movie(
+        &d.join("media/shot.mov"),
+        DemoScene::OceanSunset,
+        320,
+        180,
+        24,
+    );
     let doc = d.join("cut.xml");
     std::fs::write(&doc, xml_with_a_scale_only_motion_filter()).unwrap();
     let mut s = Session::new(std::sync::Arc::new(NoWholeMediaReads));
     let (r, seq) = import(&mut s, &doc);
     assert_eq!(r["linkedMedia"], 1, "{r}");
     let clip = first_clip(&s, seq);
-    assert_eq!(s.project.source_size(clip.item), Some((320, 180)), "the file's real size, from its index");
+    assert_eq!(
+        s.project.source_size(clip.item),
+        Some((320, 180)),
+        "the file's real size, from its index"
+    );
     let _ = std::fs::remove_dir_all(&d);
 }

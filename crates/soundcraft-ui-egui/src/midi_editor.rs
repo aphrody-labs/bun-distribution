@@ -47,7 +47,13 @@ pub fn target_clip(app: &SoundApp) -> Option<ClipId> {
         .filter(|t| s.edit.selected_tracks.contains(&t.id) && t.kind.is_midi())
         .flat_map(|t| t.clips().iter())
         .find(|c| c.range().contains(at) || c.range().overlaps(&s.edit.selection))
-        .or_else(|| s.tracks.iter().filter(|t| s.edit.selected_tracks.contains(&t.id) && t.kind.is_midi()).flat_map(|t| t.clips().iter()).next())
+        .or_else(|| {
+            s.tracks
+                .iter()
+                .filter(|t| s.edit.selected_tracks.contains(&t.id) && t.kind.is_midi())
+                .flat_map(|t| t.clips().iter())
+                .next()
+        })
         .map(|c| c.id)
 }
 
@@ -64,14 +70,39 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
     ui.painter().rect_filled(full, 0.0, t.panel_bg);
     let header = Rect::from_min_size(full.min, vec2(full.width(), 22.0));
     ui.painter().rect_filled(header, 0.0, t.panel_bg2);
-    ui.painter().text(pos2(header.min.x + 8.0, header.center().y), Align2::LEFT_CENTER, "MIDI EDITOR", bold(11.5), t.header_text);
+    ui.painter().text(
+        pos2(header.min.x + 8.0, header.center().y),
+        Align2::LEFT_CENTER,
+        "MIDI EDITOR",
+        bold(11.5),
+        t.header_text,
+    );
     let Some(cid) = target_clip(app) else {
-        ui.painter().text(full.center(), Align2::CENTER_CENTER, "Select a MIDI clip (or a MIDI track) to edit its notes.", regular(13.0), t.text_dim);
+        ui.painter().text(
+            full.center(),
+            Align2::CENTER_CENTER,
+            "Select a MIDI clip (or a MIDI track) to edit its notes.",
+            regular(13.0),
+            t.text_dim,
+        );
         return;
     };
-    let Some((track, clip)) = app.engine.session().find_clip(cid).map(|(t, c)| (t, c.clone())) else { return };
-    let ClipContent::Midi { sequence } = &clip.content else { return };
-    let track_color = app.engine.session().track(track).map_or([120, 120, 200], |t| t.color);
+    let Some((track, clip)) = app
+        .engine
+        .session()
+        .find_clip(cid)
+        .map(|(t, c)| (t, c.clone()))
+    else {
+        return;
+    };
+    let ClipContent::Midi { sequence } = &clip.content else {
+        return;
+    };
+    let track_color = app
+        .engine
+        .session()
+        .track(track)
+        .map_or([120, 120, 200], |t| t.color);
     ui.painter().text(
         pos2(header.min.x + 110.0, header.center().y),
         Align2::LEFT_CENTER,
@@ -85,8 +116,15 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
         t.text_dim,
     );
     // Header toolbar: whole-clip MIDI operations.
-    let bar = Rect::from_min_max(pos2(header.max.x - 330.0, header.min.y + 1.0), pos2(header.max.x - 6.0, header.max.y - 1.0));
-    let mut tb = ui.new_child(egui::UiBuilder::new().max_rect(bar).layout(egui::Layout::right_to_left(egui::Align::Center)));
+    let bar = Rect::from_min_max(
+        pos2(header.max.x - 330.0, header.min.y + 1.0),
+        pos2(header.max.x - 6.0, header.max.y - 1.0),
+    );
+    let mut tb = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(bar)
+            .layout(egui::Layout::right_to_left(egui::Align::Center)),
+    );
     tb.spacing_mut().item_spacing.x = 4.0;
     let mut op: Option<(&str, serde_json::Value)> = None;
     if tb.small_button("Legato").clicked() {
@@ -98,7 +136,11 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
     if tb.small_button("Vel +10").clicked() {
         op = Some(("event.change_velocity", json!({"add": 10})));
     }
-    if tb.small_button("Quantize").on_hover_text("Quantize to the grid").clicked() {
+    if tb
+        .small_button("Quantize")
+        .on_hover_text("Quantize to the grid")
+        .clicked()
+    {
         op = Some(("event.quantize", json!({"grid": "1/16", "strength": 100})));
     }
     if let Some((id, mut p)) = op {
@@ -110,7 +152,11 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
     let base_tick = s.tempo.samples_to_ticks(clip.start, sr);
     let len_ticks = (s.tempo.samples_to_ticks(clip.end(), sr) - base_tick).max(1);
     let grid_ticks = match s.edit.grid {
-        soundcraft_time::GridValue::Note { value, dotted, triplet } => {
+        soundcraft_time::GridValue::Note {
+            value,
+            dotted,
+            triplet,
+        } => {
             let mut g = value.ticks();
             if dotted {
                 g = g * 3 / 2;
@@ -122,21 +168,40 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
         }
         _ => TICKS_PER_QUARTER / 4,
     };
-    let roll = Rect::from_min_max(pos2(full.min.x + KEY_W, header.max.y), pos2(full.max.x - 4.0, full.max.y - VEL_H - 4.0));
+    let roll = Rect::from_min_max(
+        pos2(full.min.x + KEY_W, header.max.y),
+        pos2(full.max.x - 4.0, full.max.y - VEL_H - 4.0),
+    );
     let keys = Rect::from_min_max(pos2(full.min.x, roll.min.y), pos2(roll.min.x, roll.max.y));
-    let vel = Rect::from_min_max(pos2(roll.min.x, roll.max.y + 4.0), pos2(roll.max.x, full.max.y - 2.0));
+    let vel = Rect::from_min_max(
+        pos2(roll.min.x, roll.max.y + 4.0),
+        pos2(roll.max.x, full.max.y - 2.0),
+    );
     // Vertical range: centre on the notes the first time.
     let rows = (roll.height() / ROW_H).floor() as i32;
     if app.midi.clip != Some(cid) {
-        let hi = sequence.notes.iter().map(|n| i32::from(n.pitch)).max().unwrap_or(72);
-        let lo = sequence.notes.iter().map(|n| i32::from(n.pitch)).min().unwrap_or(48);
+        let hi = sequence
+            .notes
+            .iter()
+            .map(|n| i32::from(n.pitch))
+            .max()
+            .unwrap_or(72);
+        let lo = sequence
+            .notes
+            .iter()
+            .map(|n| i32::from(n.pitch))
+            .min()
+            .unwrap_or(48);
         app.midi.scroll = (127 - (hi + lo) / 2 - rows / 2) as f32 * ROW_H;
         app.midi.clip = Some(cid);
     }
     if ui.rect_contains_pointer(roll) {
         app.midi.scroll -= ui.input(|i| i.smooth_scroll_delta.y);
     }
-    app.midi.scroll = app.midi.scroll.clamp(0.0, (128.0 * ROW_H - roll.height()).max(0.0));
+    app.midi.scroll = app
+        .midi
+        .scroll
+        .clamp(0.0, (128.0 * ROW_H - roll.height()).max(0.0));
     let scroll = app.midi.scroll;
     let px_per_tick = roll.width() / len_ticks as f32;
     let x_of = |tick: i64| roll.min.x + tick as f32 * px_per_tick;
@@ -149,9 +214,25 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
         let pitch = top - r;
         let y = y_of(pitch);
         let row = Rect::from_min_size(pos2(roll.min.x, y), vec2(roll.width(), ROW_H));
-        painter.rect_filled(row, 0.0, if is_black(pitch) { Color32::from_rgb(30, 30, 32) } else { Color32::from_rgb(40, 40, 42) });
+        painter.rect_filled(
+            row,
+            0.0,
+            if is_black(pitch) {
+                Color32::from_rgb(30, 30, 32)
+            } else {
+                Color32::from_rgb(40, 40, 42)
+            },
+        );
         let key = Rect::from_min_size(pos2(keys.min.x, y), vec2(KEY_W - 2.0, ROW_H - 1.0));
-        painter.rect_filled(key, 1.0, if is_black(pitch) { Color32::from_rgb(20, 20, 20) } else { Color32::from_rgb(225, 225, 225) });
+        painter.rect_filled(
+            key,
+            1.0,
+            if is_black(pitch) {
+                Color32::from_rgb(20, 20, 20)
+            } else {
+                Color32::from_rgb(225, 225, 225)
+            },
+        );
         if pitch.rem_euclid(12) == 0 && (0..=127).contains(&pitch) {
             painter.text(
                 pos2(key.max.x - 3.0, key.center().y),
@@ -160,7 +241,10 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
                 regular(8.0),
                 Color32::from_rgb(40, 40, 40),
             );
-            painter.line_segment([pos2(roll.min.x, y + ROW_H), pos2(roll.max.x, y + ROW_H)], Stroke::new(1.0, Color32::from_rgb(64, 64, 68)));
+            painter.line_segment(
+                [pos2(roll.min.x, y + ROW_H), pos2(roll.max.x, y + ROW_H)],
+                Stroke::new(1.0, Color32::from_rgb(64, 64, 68)),
+            );
         }
     }
     // Grid.
@@ -171,7 +255,14 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
         if grid_ticks as f32 * px_per_tick > 4.0 || bar {
             painter.line_segment(
                 [pos2(x, roll.min.y), pos2(x, roll.max.y)],
-                Stroke::new(1.0, if bar { Color32::from_rgb(80, 80, 86) } else { Color32::from_rgb(50, 50, 54) }),
+                Stroke::new(
+                    1.0,
+                    if bar {
+                        Color32::from_rgb(80, 80, 86)
+                    } else {
+                        Color32::from_rgb(50, 50, 54)
+                    },
+                ),
             );
         }
         tick += grid_ticks;
@@ -182,7 +273,10 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
     for (i, n) in sequence.notes.iter().enumerate() {
         let (mut st, mut ln, mut p) = (n.start, n.length, i32::from(n.pitch));
         if let Some(d) = &drag
-            && (d.index == i || (!d.resize && app.midi.selected.contains(&i) && app.midi.selected.contains(&d.index)))
+            && (d.index == i
+                || (!d.resize
+                    && app.midi.selected.contains(&i)
+                    && app.midi.selected.contains(&d.index)))
         {
             if d.resize {
                 if d.index == i {
@@ -193,15 +287,28 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
                 p = (p + d.dy_semi as i32).clamp(0, 127);
             }
         }
-        let r = Rect::from_min_max(pos2(x_of(st), y_of(p) + 1.0), pos2(x_of(st + ln).max(x_of(st) + 3.0), y_of(p) + ROW_H - 1.0));
+        let r = Rect::from_min_max(
+            pos2(x_of(st), y_of(p) + 1.0),
+            pos2(x_of(st + ln).max(x_of(st) + 3.0), y_of(p) + ROW_H - 1.0),
+        );
         let sel = app.midi.selected.contains(&i);
         let k = 0.45 + 0.55 * f32::from(n.velocity) / 127.0;
         let fill = if sel {
             Color32::WHITE
         } else {
-            Color32::from_rgb((f32::from(base.r()) * k) as u8, (f32::from(base.g()) * k) as u8, (f32::from(base.b()) * k) as u8)
+            Color32::from_rgb(
+                (f32::from(base.r()) * k) as u8,
+                (f32::from(base.g()) * k) as u8,
+                (f32::from(base.b()) * k) as u8,
+            )
         };
-        painter.rect(r, 2.0, fill, Stroke::new(1.0, Color32::BLACK), StrokeKind::Inside);
+        painter.rect(
+            r,
+            2.0,
+            fill,
+            Stroke::new(1.0, Color32::BLACK),
+            StrokeKind::Inside,
+        );
     }
     // Interaction.
     let resp = ui.interact(roll, ui.id().with(("roll", cid.0)), Sense::click_and_drag());
@@ -209,7 +316,10 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
         sequence.notes.iter().enumerate().rev().find_map(|(i, n)| {
             let r = Rect::from_min_max(
                 pos2(x_of(n.start), y_of(i32::from(n.pitch))),
-                pos2(x_of(n.start + n.length).max(x_of(n.start) + 3.0), y_of(i32::from(n.pitch)) + ROW_H),
+                pos2(
+                    x_of(n.start + n.length).max(x_of(n.start) + 3.0),
+                    y_of(i32::from(n.pitch)) + ROW_H,
+                ),
             );
             r.contains(pos).then_some((i, pos.x > r.max.x - 5.0))
         })
@@ -222,7 +332,13 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
             if !app.midi.selected.contains(&i) {
                 app.midi.selected = vec![i];
             }
-            app.midi.drag = Some(NoteDrag { index: i, resize: edge, start: p, dx_ticks: 0, dy_semi: 0 });
+            app.midi.drag = Some(NoteDrag {
+                index: i,
+                resize: edge,
+                start: p,
+                dx_ticks: 0,
+                dy_semi: 0,
+            });
         } else {
             app.midi.band = Some(p);
         }
@@ -330,27 +446,60 @@ pub fn show(app: &mut SoundApp, ui: &mut Ui) {
             let _ = app.run("midi.notes_move", json!({"clip": cid.0, "indices": app.midi.selected, "ticks": ticks, "semitones": semi}));
         }
     }
-    if !app.midi.selected.is_empty() && ui.input(|i| i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace)) {
-        let _ = app.run("midi.note_delete", json!({"clip": cid.0, "indices": app.midi.selected}));
+    if !app.midi.selected.is_empty()
+        && ui.input(|i| i.key_pressed(egui::Key::Delete) || i.key_pressed(egui::Key::Backspace))
+    {
+        let _ = app.run(
+            "midi.note_delete",
+            json!({"clip": cid.0, "indices": app.midi.selected}),
+        );
         app.midi.selected.clear();
     }
     // Velocity lane.
-    ui.painter().rect_filled(vel, 0.0, Color32::from_rgb(28, 28, 30));
-    ui.painter().text(pos2(full.min.x + 6.0, vel.center().y), Align2::LEFT_CENTER, "Velocity", regular(10.0), t.text_dim);
+    ui.painter()
+        .rect_filled(vel, 0.0, Color32::from_rgb(28, 28, 30));
+    ui.painter().text(
+        pos2(full.min.x + 6.0, vel.center().y),
+        Align2::LEFT_CENTER,
+        "Velocity",
+        regular(10.0),
+        t.text_dim,
+    );
     let vresp = ui.interact(vel, ui.id().with(("vel", cid.0)), Sense::click_and_drag());
     for (i, n) in sequence.notes.iter().enumerate() {
         let x = x_of(n.start);
         let h = (vel.height() - 4.0) * f32::from(n.velocity) / 127.0;
-        let col = if app.midi.selected.contains(&i) { Color32::WHITE } else { base };
-        ui.painter().line_segment([pos2(x + 1.0, vel.max.y - 2.0), pos2(x + 1.0, vel.max.y - 2.0 - h)], Stroke::new(3.0, col));
-        ui.painter().circle_filled(pos2(x + 1.0, vel.max.y - 2.0 - h), 2.5, col);
+        let col = if app.midi.selected.contains(&i) {
+            Color32::WHITE
+        } else {
+            base
+        };
+        ui.painter().line_segment(
+            [
+                pos2(x + 1.0, vel.max.y - 2.0),
+                pos2(x + 1.0, vel.max.y - 2.0 - h),
+            ],
+            Stroke::new(3.0, col),
+        );
+        ui.painter()
+            .circle_filled(pos2(x + 1.0, vel.max.y - 2.0 - h), 2.5, col);
     }
     if (vresp.clicked() || vresp.dragged())
         && let Some(p) = vresp.interact_pointer_pos()
-        && let Some((i, n)) = sequence.notes.iter().enumerate().min_by_key(|(_, n)| ((x_of(n.start) - p.x).abs() * 10.0) as i64)
+        && let Some((i, n)) = sequence
+            .notes
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, n)| ((x_of(n.start) - p.x).abs() * 10.0) as i64)
         && (x_of(n.start) - p.x).abs() < 8.0
     {
-        let v = (((vel.max.y - 2.0 - p.y) / (vel.height() - 4.0)) * 127.0).round().clamp(1.0, 127.0) as i64;
-        let _ = app.engine.execute_merged("midi.note_edit", &json!({"clip": cid.0, "index": i, "velocity": v}), &format!("vel:{}", cid.0));
+        let v = (((vel.max.y - 2.0 - p.y) / (vel.height() - 4.0)) * 127.0)
+            .round()
+            .clamp(1.0, 127.0) as i64;
+        let _ = app.engine.execute_merged(
+            "midi.note_edit",
+            &json!({"clip": cid.0, "index": i, "velocity": v}),
+            &format!("vel:{}", cid.0),
+        );
     }
 }

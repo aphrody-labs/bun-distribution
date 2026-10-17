@@ -32,8 +32,13 @@ impl ImageSignaturePreview {
             return Err("preview scale must be finite and positive".into());
         }
         guard(|| {
-            let mut renderer = pdfcraft_render::PageRenderer::new(self.bytes.clone(), self.config.clone());
-            let out = renderer.render(pdfcraft_render::RenderRequest { page: self.page, scale, ..Default::default() });
+            let mut renderer =
+                pdfcraft_render::PageRenderer::new(self.bytes.clone(), self.config.clone());
+            let out = renderer.render(pdfcraft_render::RenderRequest {
+                page: self.page,
+                scale,
+                ..Default::default()
+            });
             if let Some(e) = &out.error {
                 return Err(e.clone());
             }
@@ -45,25 +50,57 @@ impl ImageSignaturePreview {
 impl Document {
     /// Prepare the actual embedded signature, including alpha, and an independent background.
     /// A cheap COS clone excludes only this annotation; other page content remains visible.
-    pub fn image_signature_preview(&self, page: usize, index: usize) -> Result<Option<ImageSignaturePreview>, String> {
+    pub fn image_signature_preview(
+        &self,
+        page: usize,
+        index: usize,
+    ) -> Result<Option<ImageSignaturePreview>, String> {
         guard(|| {
             let editor = self.editor.as_ref().ok_or("the document can't be read")?;
-            let Some(picture) = pdfcraft_annot::signature_image(&editor.cos, page, index).map_err(|e| e.to_string())? else { return Ok(None) };
+            let Some(picture) = pdfcraft_annot::signature_image(&editor.cos, page, index)
+                .map_err(|e| e.to_string())?
+            else {
+                return Ok(None);
+            };
             let obj = editor.cos.get(picture);
-            let pdfcraft_cos::Object::Stream(s) = &*obj else { return Err("the signature image is damaged".into()) };
-            let (w, h) = (s.dict.int(b"Width").unwrap_or(0), s.dict.int(b"Height").unwrap_or(0));
-            if w <= 0 || h <= 0 || w > i64::from(MAX_SIDE) || h > i64::from(MAX_SIDE) || w.saturating_mul(h) > MAX_PIXELS as i64 {
+            let pdfcraft_cos::Object::Stream(s) = &*obj else {
+                return Err("the signature image is damaged".into());
+            };
+            let (w, h) = (
+                s.dict.int(b"Width").unwrap_or(0),
+                s.dict.int(b"Height").unwrap_or(0),
+            );
+            if w <= 0
+                || h <= 0
+                || w > i64::from(MAX_SIDE)
+                || h > i64::from(MAX_SIDE)
+                || w.saturating_mul(h) > MAX_PIXELS as i64
+            {
                 return Err(SignatureImageError::PlacedSize.to_string());
             }
             let (_, bytes) = pdfcraft_create::image_file(&editor.cos, picture)?;
             let image = SignatureImage::from_bytes(&bytes).map_err(|e| e.to_string())?;
-            let opacity =
-                pdfcraft_annot::props(&editor.cos, page, index).map(|p| p.opacity).filter(|v| v.is_finite()).unwrap_or(1.0).clamp(0.0, 1.0) as f32;
-            let turn = pdfcraft_annot::picture_rotation(&editor.cos, page, index).map_err(|e| e.to_string())?;
+            let opacity = pdfcraft_annot::props(&editor.cos, page, index)
+                .map(|p| p.opacity)
+                .filter(|v| v.is_finite())
+                .unwrap_or(1.0)
+                .clamp(0.0, 1.0) as f32;
+            let turn = pdfcraft_annot::picture_rotation(&editor.cos, page, index)
+                .map_err(|e| e.to_string())?;
             let mut cos = editor.cos.clone();
             pdfcraft_annot::delete_annotation(&mut cos, page, index).map_err(|e| e.to_string())?;
-            let bytes = Arc::new(pdfcraft_cos::write_incremental(&cos, &pdfcraft_cos::SaveOptions::default()).map_err(|e| e.to_string())?);
-            Ok(Some(ImageSignaturePreview { image, opacity, turn, page, bytes, config: self.config.clone() }))
+            let bytes = Arc::new(
+                pdfcraft_cos::write_incremental(&cos, &pdfcraft_cos::SaveOptions::default())
+                    .map_err(|e| e.to_string())?,
+            );
+            Ok(Some(ImageSignaturePreview {
+                image,
+                opacity,
+                turn,
+                page,
+                bytes,
+                config: self.config.clone(),
+            }))
         })?
     }
 }
@@ -102,7 +139,9 @@ pub enum SignatureImageError {
     #[error("Choose an image smaller than 4 MiB and 32 megapixels (at most 8192 pixels per side).")]
     Size,
     /// An image already in the document, which was stored at 4 megapixels or less when placed.
-    #[error("This signature image is larger than 4 megapixels (or 4096 pixels per side), so it can't be previewed.")]
+    #[error(
+        "This signature image is larger than 4 megapixels (or 4096 pixels per side), so it can't be previewed."
+    )]
     PlacedSize,
     #[error("Couldn't read the signature image: {0}")]
     Read(#[from] std::io::Error),
@@ -136,7 +175,13 @@ pub(crate) fn decode_source(bytes: &[u8]) -> Result<DynamicImage, SignatureImage
     // 8-bit RGBA at the pixel cap; 16-bit sources that large hit this and report Size.
     limits.max_alloc = Some(MAX_SOURCE_PIXELS * 4);
     reader.limits(limits);
-    let too_big = |e: image::ImageError| if matches!(e, image::ImageError::Limits(_)) { SignatureImageError::Size } else { e.into() };
+    let too_big = |e: image::ImageError| {
+        if matches!(e, image::ImageError::Limits(_)) {
+            SignatureImageError::Size
+        } else {
+            e.into()
+        }
+    };
     let mut decoder = reader.into_decoder().map_err(too_big)?;
     let (w, h) = decoder.dimensions();
     if w == 0 || h == 0 || u64::from(w) * u64::from(h) > MAX_SOURCE_PIXELS {
@@ -159,7 +204,9 @@ impl SignatureImage {
     /// Read at most the file limit plus one byte, even if the file grows while being read.
     pub fn read(reader: impl Read) -> Result<Self, SignatureImageError> {
         let mut bytes = Vec::new();
-        reader.take(MAX_SIGNATURE_IMAGE_BYTES as u64 + 1).read_to_end(&mut bytes)?;
+        reader
+            .take(MAX_SIGNATURE_IMAGE_BYTES as u64 + 1)
+            .read_to_end(&mut bytes)?;
         Self::from_bytes(&bytes)
     }
 
@@ -173,7 +220,11 @@ impl SignatureImage {
         if bytes.len() > MAX_SIGNATURE_IMAGE_BYTES {
             return Err(SignatureImageError::Size);
         }
-        Ok(Self { bytes: Arc::new(bytes), rgba: Arc::new(rgba.into_raw()), size })
+        Ok(Self {
+            bytes: Arc::new(bytes),
+            rgba: Arc::new(rgba.into_raw()),
+            size,
+        })
     }
 
     pub fn bytes(&self) -> &Arc<Vec<u8>> {
@@ -192,13 +243,22 @@ impl SignatureImage {
     pub fn graphic(&self) -> pdfcraft_sign::Graphic {
         // Sides are at most 4096 pixels; 0 would be refused by the signer, never drawn.
         let side = |v: usize| u32::try_from(v).unwrap_or(0);
-        pdfcraft_sign::Graphic::Image { width: side(self.size[0]), height: side(self.size[1]), rgba: self.rgba.clone() }
+        pdfcraft_sign::Graphic::Image {
+            width: side(self.size[0]),
+            height: side(self.size[1]),
+            rgba: self.rgba.clone(),
+        }
     }
 
     /// Make near-white paper transparent, keeping darker ink.
-    pub fn remove_white_background(&self, cutoff: u8, feather: u8) -> Result<Self, SignatureImageError> {
+    pub fn remove_white_background(
+        &self,
+        cutoff: u8,
+        feather: u8,
+    ) -> Result<Self, SignatureImageError> {
         let [w, h] = self.size;
-        let mut rgba = image::RgbaImage::from_raw(w as u32, h as u32, self.rgba.as_ref().clone()).ok_or(SignatureImageError::Size)?;
+        let mut rgba = image::RgbaImage::from_raw(w as u32, h as u32, self.rgba.as_ref().clone())
+            .ok_or(SignatureImageError::Size)?;
         let high = f32::from(cutoff);
         let span = f32::from(feather.max(1));
         for pixel in rgba.pixels_mut() {
@@ -221,19 +281,39 @@ impl SignatureImage {
         }
         let [w, h] = self.size;
         let scale = (150.0 / w as f64).min(if initials { 24.0 } else { 32.0 } / h as f64);
-        upright_box(i64::from(page.rotation), at, w as f64 * scale, h as f64 * scale)
+        upright_box(
+            i64::from(page.rotation),
+            at,
+            w as f64 * scale,
+            h as f64 * scale,
+        )
     }
 
-    pub fn edit(&self, page: usize, info: &PageInfo, at: [f64; 2], initials: bool, author: &str) -> Option<Edit> {
+    pub fn edit(
+        &self,
+        page: usize,
+        info: &PageInfo,
+        at: [f64; 2],
+        initials: bool,
+        author: &str,
+    ) -> Option<Edit> {
         let rect = self.rect(info, at, initials)?;
-        let label = if initials { "Add initials" } else { "Add signature" };
+        let label = if initials {
+            "Add initials"
+        } else {
+            "Add signature"
+        };
         Some(Edit::Batch {
             label: label.into(),
             edits: vec![Edit::AddCustomStamp {
                 page,
                 rect,
                 name: if initials { "Initials" } else { "Signature" }.into(),
-                file: MarkFile { name: "signature.png".into(), bytes: self.bytes.clone(), page: 0 },
+                file: MarkFile {
+                    name: "signature.png".into(),
+                    bytes: self.bytes.clone(),
+                    page: 0,
+                },
                 author: author.into(),
             }],
         })
@@ -246,8 +326,18 @@ mod tests {
 
     /// A 300 x 400 page shown turned `rotation` degrees clockwise.
     fn page(rotation: u16) -> PageInfo {
-        let (width, height) = if rotation.is_multiple_of(180) { (300.0, 400.0) } else { (400.0, 300.0) };
-        PageInfo { width, height, label: String::new(), crop: [0.0, 0.0, 300.0, 400.0], rotation }
+        let (width, height) = if rotation.is_multiple_of(180) {
+            (300.0, 400.0)
+        } else {
+            (400.0, 300.0)
+        };
+        PageInfo {
+            width,
+            height,
+            label: String::new(),
+            crop: [0.0, 0.0, 300.0, 400.0],
+            rotation,
+        }
     }
 
     fn png(w: u32, h: u32) -> Vec<u8> {
@@ -262,10 +352,21 @@ mod tests {
         let image = SignatureImage::from_bytes(&png(400, 40)).unwrap();
         assert_eq!(image.size(), [400, 40]);
         assert_eq!(&image.rgba()[..4], &[40, 60, 80, 128]);
-        let Edit::Batch { edits, .. } = image.edit(0, &page(0), [20.0, 100.0], false, "Ada").unwrap() else { panic!() };
-        let Edit::AddCustomStamp { rect, .. } = &edits[0] else { panic!() };
+        let Edit::Batch { edits, .. } = image
+            .edit(0, &page(0), [20.0, 100.0], false, "Ada")
+            .unwrap()
+        else {
+            panic!()
+        };
+        let Edit::AddCustomStamp { rect, .. } = &edits[0] else {
+            panic!()
+        };
         assert_eq!(*rect, [20.0, 92.5, 170.0, 107.5]);
-        assert!(image.edit(0, &page(0), [f64::NAN, 0.0], false, "").is_none());
+        assert!(
+            image
+                .edit(0, &page(0), [f64::NAN, 0.0], false, "")
+                .is_none()
+        );
         assert_eq!(SignatureImage::from_bytes(image.bytes()).unwrap(), image);
     }
 
@@ -274,10 +375,19 @@ mod tests {
         assert!(SignatureImage::from_bytes(b"not an image").is_err());
         assert!(SignatureImage::from_bytes(b"\x89PNG\r\n\x1a\ntruncated").is_err());
         assert!(SignatureImage::from_bytes(&vec![0; MAX_SIGNATURE_IMAGE_BYTES + 1]).is_err());
-        assert!(matches!(SignatureImage::from_bytes(&png(8193, 1)), Err(SignatureImageError::Size)));
-        assert!(matches!(SignatureImage::from_bytes(&png(8192, 4097)), Err(SignatureImageError::Size)));
+        assert!(matches!(
+            SignatureImage::from_bytes(&png(8193, 1)),
+            Err(SignatureImageError::Size)
+        ));
+        assert!(matches!(
+            SignatureImage::from_bytes(&png(8192, 4097)),
+            Err(SignatureImageError::Size)
+        ));
         assert!(SignatureImage::read(std::io::repeat(0)).is_err());
-        assert!(matches!(SignatureImage::from_bytes(b"GIF89a\x02\0\x02\0"), Err(SignatureImageError::Format)));
+        assert!(matches!(
+            SignatureImage::from_bytes(b"GIF89a\x02\0\x02\0"),
+            Err(SignatureImageError::Format)
+        ));
     }
 
     /// #1075: a 6025 x 2506 scan is scaled down to fit 4096 per side and 4 megapixels.
@@ -286,15 +396,26 @@ mod tests {
         let image = SignatureImage::from_bytes(&png(6025, 2506)).unwrap();
         let [w, h] = image.size();
         assert!(w <= 4096 && (w * h) as u64 <= MAX_PIXELS, "{w} x {h}");
-        assert!((w as f64 / h as f64 - 6025.0 / 2506.0).abs() < 0.01, "{w} x {h}");
-        assert_eq!(SignatureImage::from_bytes(&png(4096, 1)).unwrap().size(), [4096, 1]);
-        assert_eq!(SignatureImage::from_bytes(&png(8192, 1)).unwrap().size(), [4096, 1]);
+        assert!(
+            (w as f64 / h as f64 - 6025.0 / 2506.0).abs() < 0.01,
+            "{w} x {h}"
+        );
+        assert_eq!(
+            SignatureImage::from_bytes(&png(4096, 1)).unwrap().size(),
+            [4096, 1]
+        );
+        assert_eq!(
+            SignatureImage::from_bytes(&png(8192, 1)).unwrap().size(),
+            [4096, 1]
+        );
     }
 
     #[test]
     fn jpeg_signatures_are_normalized_to_png() {
         let mut jpeg = Cursor::new(Vec::new());
-        image::RgbImage::from_pixel(60, 20, image::Rgb([20, 20, 20])).write_to(&mut jpeg, ImageFormat::Jpeg).unwrap();
+        image::RgbImage::from_pixel(60, 20, image::Rgb([20, 20, 20]))
+            .write_to(&mut jpeg, ImageFormat::Jpeg)
+            .unwrap();
         let image = SignatureImage::from_bytes(&jpeg.into_inner()).unwrap();
         assert_eq!(image.size(), [60, 20]);
         assert!(image.bytes().starts_with(b"\x89PNG\r\n\x1a\n"));
@@ -304,7 +425,9 @@ mod tests {
     #[test]
     fn jpeg_signature_orientation_is_applied_before_preview_and_embedding() {
         let mut jpeg = Cursor::new(Vec::new());
-        image::RgbImage::from_pixel(60, 20, image::Rgb([20, 20, 20])).write_to(&mut jpeg, ImageFormat::Jpeg).unwrap();
+        image::RgbImage::from_pixel(60, 20, image::Rgb([20, 20, 20]))
+            .write_to(&mut jpeg, ImageFormat::Jpeg)
+            .unwrap();
         let jpeg = jpeg.into_inner();
         // Synthetic EXIF IFD with Orientation=6 (90 degrees clockwise).
         let exif = b"Exif\0\0II\x2a\0\x08\0\0\0\x01\0\x12\x01\x03\0\x01\0\0\0\x06\0\0\0\0\0\0\0";
@@ -315,7 +438,10 @@ mod tests {
         rotated.extend_from_slice(&jpeg[2..]);
         let image = SignatureImage::from_bytes(&rotated).unwrap();
         assert_eq!(image.size(), [20, 60]);
-        assert_eq!(SignatureImage::from_bytes(image.bytes()).unwrap().size(), [20, 60]);
+        assert_eq!(
+            SignatureImage::from_bytes(image.bytes()).unwrap().size(),
+            [20, 60]
+        );
         assert!(!image.bytes().windows(4).any(|w| w == b"Exif"));
     }
 
@@ -325,7 +451,14 @@ mod tests {
         let mut session = crate::Session::new();
         let blank = session.create_blank(300.0, 400.0, 1).unwrap();
         let id = session.open_new("form.pdf", blank).unwrap();
-        session.apply(id, image.edit(0, &page(0), [20.0, 100.0], false, "Ada").unwrap()).unwrap();
+        session
+            .apply(
+                id,
+                image
+                    .edit(0, &page(0), [20.0, 100.0], false, "Ada")
+                    .unwrap(),
+            )
+            .unwrap();
         let a = &session.get(id).unwrap().info.annotations[0];
         assert_eq!(a.rect, [20.0, 99.75, 170.0, 100.25]);
     }
@@ -336,14 +469,28 @@ mod tests {
         let mut session = crate::Session::new();
         let blank = session.create_blank(300.0, 400.0, 1).unwrap();
         let id = session.open_new("form.pdf", blank).unwrap();
-        session.apply(id, image.edit(0, &page(0), [20.0, 100.0], false, "Ada").unwrap()).unwrap();
+        session
+            .apply(
+                id,
+                image
+                    .edit(0, &page(0), [20.0, 100.0], false, "Ada")
+                    .unwrap(),
+            )
+            .unwrap();
         let doc = session.get(id).unwrap();
         let bytes = doc.bytes.clone();
         let generation = doc.edit_generation();
         let preview = doc.image_signature_preview(0, 0).unwrap().unwrap();
         assert_eq!(preview.image.rgba(), image.rgba());
         let background = preview.render_background(1.0).unwrap();
-        assert!(background.rgba.as_chunks::<4>().0.iter().all(|p| *p == [255, 255, 255, 255]));
+        assert!(
+            background
+                .rgba
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .all(|p| *p == [255, 255, 255, 255])
+        );
         assert!(Arc::ptr_eq(&bytes, &doc.bytes));
         assert_eq!(doc.edit_generation(), generation);
         assert_eq!(doc.can_undo(), Some("Add signature"));
@@ -357,12 +504,23 @@ mod tests {
         let mut session = crate::Session::new();
         let blank = session.create_blank(300.0, 400.0, 1).unwrap();
         let id = session.open_new("form.pdf", blank).unwrap();
-        session.apply(id, image.edit(0, &page(0), [20.0, 100.0], false, "Ada").unwrap()).unwrap();
+        session
+            .apply(
+                id,
+                image
+                    .edit(0, &page(0), [20.0, 100.0], false, "Ada")
+                    .unwrap(),
+            )
+            .unwrap();
         let doc = session.doc_mut(id).unwrap();
         let cos = &mut doc.editor.as_mut().unwrap().cos;
         let picture = pdfcraft_annot::signature_image(cos, 0, 0).unwrap().unwrap();
-        let pdfcraft_cos::Object::Stream(mut stream) = (*cos.get(picture)).clone() else { panic!() };
-        stream.dict.set(b"Width".to_vec(), pdfcraft_cos::Object::Int(i64::MAX));
+        let pdfcraft_cos::Object::Stream(mut stream) = (*cos.get(picture)).clone() else {
+            panic!()
+        };
+        stream
+            .dict
+            .set(b"Width".to_vec(), pdfcraft_cos::Object::Int(i64::MAX));
         cos.set(picture, pdfcraft_cos::Object::Stream(stream));
         let error = doc.image_signature_preview(0, 0).err().unwrap();
         assert_eq!(error, SignatureImageError::PlacedSize.to_string());
@@ -380,7 +538,10 @@ mod tests {
             (270, [200.0, 340.0], [184.0, 276.0, 216.0, 340.0]),
         ] {
             let rect = image.rect(&page(rotation), at, false).unwrap();
-            assert!(rect.iter().zip(want).all(|(a, b)| (a - b).abs() < 0.01), "{rotation}: {rect:?}, want {want:?}");
+            assert!(
+                rect.iter().zip(want).all(|(a, b)| (a - b).abs() < 0.01),
+                "{rotation}: {rect:?}, want {want:?}"
+            );
         }
     }
 
@@ -401,7 +562,10 @@ mod tests {
         assert_eq!(cleaned.size(), [4, 1]);
         assert_eq!(pixels[0][3], 0, "white paper must be transparent");
         assert_eq!(pixels[1], [20, 20, 20, 255], "dark ink must be unchanged");
-        assert!(pixels[2][3] > 0 && pixels[2][3] < 255, "near-white must fade");
+        assert!(
+            pixels[2][3] > 0 && pixels[2][3] < 255,
+            "near-white must fade"
+        );
         assert_eq!(pixels[3][3], 100, "existing transparency must be kept");
     }
 }

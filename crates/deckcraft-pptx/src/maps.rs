@@ -6,14 +6,21 @@ use deckcraft_model::anim::{ANIMATIONS, AnimClass};
 use crate::xml::{A, El, W};
 
 /// (our kind, namespace prefix, element) for transitions that map one-to-one.
-const SIMPLE: &[(&str, &str, &str)] =
-    &[("dissolve", "p", "dissolve"), ("random", "p", "random"), ("honeycomb", "p14", "honeycomb"), ("flash", "p14", "flash")];
+const SIMPLE: &[(&str, &str, &str)] = &[
+    ("dissolve", "p", "dissolve"),
+    ("random", "p", "random"),
+    ("honeycomb", "p14", "honeycomb"),
+    ("flash", "p14", "flash"),
+];
 
 /// Read a transition effect element → (kind, option). `None` for effects we don't model.
 pub fn transition_from_xml(e: &El) -> Option<(String, String)> {
     let (k, o) = transition_from_xml_raw(e)?;
     // Kinds without options keep none.
-    let has_opts = deckcraft_model::anim::TRANSITIONS.iter().find(|t| t.0 == k).is_none_or(|t| !t.4.is_empty());
+    let has_opts = deckcraft_model::anim::TRANSITIONS
+        .iter()
+        .find(|t| t.0 == k)
+        .is_none_or(|t| !t.4.is_empty());
     Some((k, if has_opts { o } else { String::new() }))
 }
 
@@ -21,14 +28,31 @@ fn transition_from_xml_raw(e: &El) -> Option<(String, String)> {
     let dir = |d: &str| e.attr("dir").unwrap_or(d).to_string();
     let k = |s: &str| s.to_string();
     Some(match e.local() {
-        "fade" => (k("fade"), if e.bool("thruBlk") == Some(true) { k("throughBlack") } else { k("smoothly") }),
-        "cut" => (k("cut"), if e.bool("thruBlk") == Some(true) { k("throughBlack") } else { String::new() }),
+        "fade" => (
+            k("fade"),
+            if e.bool("thruBlk") == Some(true) {
+                k("throughBlack")
+            } else {
+                k("smoothly")
+            },
+        ),
+        "cut" => (
+            k("cut"),
+            if e.bool("thruBlk") == Some(true) {
+                k("throughBlack")
+            } else {
+                String::new()
+            },
+        ),
         "push" => (k("push"), dir("l")),
         "wipe" => (k("wipe"), dir("l")),
         "split" => {
             let o = e.attr("orient").unwrap_or("horz");
             let d = e.attr("dir").unwrap_or("out");
-            (k("split"), format!("{o}{}", if d == "in" { "In" } else { "Out" }))
+            (
+                k("split"),
+                format!("{o}{}", if d == "in" { "In" } else { "Out" }),
+            )
         }
         "randomBar" => (k("randomBar"), dir("vert")),
         "circle" => (k("shape"), k("circle")),
@@ -54,16 +78,37 @@ fn transition_from_xml_raw(e: &El) -> Option<(String, String)> {
         "conveyor" => (k("conveyor"), dir("l")),
         "pan" => (k("pan"), dir("d")),
         "glitter" => (k("glitter"), dir("l")),
-        "shred" => (k("shred"), if e.attr("pattern") == Some("crush") { k("particles") } else { k("strips") }),
+        "shred" => (
+            k("shred"),
+            if e.attr("pattern") == Some("crush") {
+                k("particles")
+            } else {
+                k("strips")
+            },
+        ),
         "reveal" => {
             let black = e.bool("thruBlk") == Some(true);
             let right = e.attr("dir") == Some("r");
-            (k("reveal"), format!("{}{}", if black { "black" } else { "smoothly" }, if right { "Right" } else { "Left" }))
+            (
+                k("reveal"),
+                format!(
+                    "{}{}",
+                    if black { "black" } else { "smoothly" },
+                    if right { "Right" } else { "Left" }
+                ),
+            )
         }
         "flythrough" => {
             let out = e.attr("dir") == Some("out");
             let b = e.bool("hasBounce") == Some(true);
-            (k("flythrough"), format!("{}{}", if out { "out" } else { "in" }, if b { "Bounce" } else { "" }))
+            (
+                k("flythrough"),
+                format!(
+                    "{}{}",
+                    if out { "out" } else { "in" },
+                    if b { "Bounce" } else { "" }
+                ),
+            )
         }
         "prism" => {
             let content = e.bool("isContent") == Some(true);
@@ -78,11 +123,20 @@ fn transition_from_xml_raw(e: &El) -> Option<(String, String)> {
         }
         "prstTrans" => {
             let prst = e.attr("prst").unwrap_or("fallOver");
-            let known = deckcraft_model::anim::TRANSITIONS.iter().any(|t| t.0 == prst);
+            let known = deckcraft_model::anim::TRANSITIONS
+                .iter()
+                .any(|t| t.0 == prst);
             if !known {
                 return None;
             }
-            (k(prst), if e.bool("invX") == Some(true) { k("r") } else { k("l") })
+            (
+                k(prst),
+                if e.bool("invX") == Some(true) {
+                    k("r")
+                } else {
+                    k("l")
+                },
+            )
         }
         "morph" => (
             k("morph"),
@@ -136,7 +190,10 @@ pub fn transition_to_xml(w: &mut W, kind: &str, option: &str) -> Option<&'static
             "in" | "out" => w.empty("p:zoom", A::new().a("dir", option)),
             _ => w.empty0("p:circle"),
         },
-        "zoom" => w.empty("p:zoom", A::new().a("dir", if option == "out" { "out" } else { "in" })),
+        "zoom" => w.empty(
+            "p:zoom",
+            A::new().a("dir", if option == "out" { "out" } else { "in" }),
+        ),
         "uncover" => w.empty("p:pull", A::new().a("dir", eight("l"))),
         "cover" => w.empty("p:cover", A::new().a("dir", eight("l"))),
         "checker" => w.empty("p:checker", A::new().a("dir", hv("horz"))),
@@ -161,7 +218,11 @@ pub fn transition_to_xml(w: &mut W, kind: &str, option: &str) -> Option<&'static
             return Some("p14");
         }
         "vortex" | "glitter" => {
-            let name = if kind == "vortex" { "p14:vortex" } else { "p14:glitter" };
+            let name = if kind == "vortex" {
+                "p14:vortex"
+            } else {
+                "p14:glitter"
+            };
             w.empty(name, A::new().a("dir", lrud("l")));
             return Some("p14");
         }
@@ -185,7 +246,11 @@ pub fn transition_to_xml(w: &mut W, kind: &str, option: &str) -> Option<&'static
             return Some("p14");
         }
         "doors" | "window" => {
-            let name = if kind == "doors" { "p14:doors" } else { "p14:window" };
+            let name = if kind == "doors" {
+                "p14:doors"
+            } else {
+                "p14:window"
+            };
             w.empty(name, A::new().a("dir", hv("vert")));
             return Some("p14");
         }
@@ -194,29 +259,60 @@ pub fn transition_to_xml(w: &mut W, kind: &str, option: &str) -> Option<&'static
             return Some("p14");
         }
         "shred" => {
-            w.empty("p14:shred", A::new().a("pattern", if option == "particles" { "crush" } else { "strip" }));
+            w.empty(
+                "p14:shred",
+                A::new().a(
+                    "pattern",
+                    if option == "particles" {
+                        "crush"
+                    } else {
+                        "strip"
+                    },
+                ),
+            );
             return Some("p14");
         }
         "reveal" => {
-            w.empty("p14:reveal", A::new().t("thruBlk", option.starts_with("black")).a("dir", if option.ends_with("Right") { "r" } else { "l" }));
+            w.empty(
+                "p14:reveal",
+                A::new()
+                    .t("thruBlk", option.starts_with("black"))
+                    .a("dir", if option.ends_with("Right") { "r" } else { "l" }),
+            );
             return Some("p14");
         }
         "flythrough" => {
             w.empty(
                 "p14:flythrough",
-                A::new().a("dir", if option.starts_with("out") { "out" } else { "in" }).t("hasBounce", option.ends_with("Bounce")),
+                A::new()
+                    .a(
+                        "dir",
+                        if option.starts_with("out") {
+                            "out"
+                        } else {
+                            "in"
+                        },
+                    )
+                    .t("hasBounce", option.ends_with("Bounce")),
             );
             return Some("p14");
         }
         "cube" | "box" | "rotate" | "orbit" => {
             w.empty(
                 "p14:prism",
-                A::new().a("dir", lrud("l")).t("isContent", matches!(kind, "rotate" | "orbit")).t("isInverted", matches!(kind, "box" | "orbit")),
+                A::new()
+                    .a("dir", lrud("l"))
+                    .t("isContent", matches!(kind, "rotate" | "orbit"))
+                    .t("isInverted", matches!(kind, "box" | "orbit")),
             );
             return Some("p14");
         }
-        "fallOver" | "drape" | "curtains" | "wind" | "prestige" | "fracture" | "crush" | "peelOff" | "pageCurlDouble" | "airplane" | "origami" => {
-            w.empty("p15:prstTrans", A::new().a("prst", kind).t("invX", option == "r"));
+        "fallOver" | "drape" | "curtains" | "wind" | "prestige" | "fracture" | "crush"
+        | "peelOff" | "pageCurlDouble" | "airplane" | "origami" => {
+            w.empty(
+                "p15:prstTrans",
+                A::new().a("prst", kind).t("invX", option == "r"),
+            );
             return Some("p15");
         }
         "morph" => {
@@ -263,32 +359,73 @@ const SUBTYPES: &[(&str, &[(&str, u32)])] = &[
     ("floatOut", &[("u", 0), ("d", 4)]),
     (
         "shape",
-        &[("circleIn", 16), ("circleOut", 32), ("boxIn", 16), ("boxOut", 32), ("diamondIn", 16), ("diamondOut", 32), ("plusIn", 16), ("plusOut", 32)],
+        &[
+            ("circleIn", 16),
+            ("circleOut", 32),
+            ("boxIn", 16),
+            ("boxOut", 32),
+            ("diamondIn", 16),
+            ("diamondOut", 32),
+            ("plusIn", 16),
+            ("plusOut", 32),
+        ],
     ),
     ("shapeOut", INOUT_SHAPE),
-    ("lines", &[("down", 4), ("up", 1), ("right", 2), ("left", 8)]),
+    (
+        "lines",
+        &[("down", 4), ("up", 1), ("right", 2), ("left", 8)],
+    ),
     ("arcs", &[("down", 4), ("up", 1), ("right", 2), ("left", 8)]),
-    ("turns", &[("down", 4), ("up", 1), ("right", 2), ("left", 8)]),
+    (
+        "turns",
+        &[("down", 4), ("up", 1), ("right", 2), ("left", 8)],
+    ),
 ];
-const DIR8: &[(&str, u32)] = &[("b", 4), ("lb", 12), ("l", 8), ("lt", 9), ("t", 1), ("rt", 3), ("r", 2), ("rb", 6)];
+const DIR8: &[(&str, u32)] = &[
+    ("b", 4),
+    ("lb", 12),
+    ("l", 8),
+    ("lt", 9),
+    ("t", 1),
+    ("rt", 3),
+    ("r", 2),
+    ("rb", 6),
+];
 const DIR4: &[(&str, u32)] = &[("b", 4), ("l", 8), ("t", 1), ("r", 2)];
-const SPLIT: &[(&str, u32)] = &[("horzIn", 21), ("horzOut", 42), ("vertIn", 26), ("vertOut", 37)];
+const SPLIT: &[(&str, u32)] = &[
+    ("horzIn", 21),
+    ("horzOut", 42),
+    ("vertIn", 26),
+    ("vertOut", 37),
+];
 const INOUT: &[(&str, u32)] = &[("in", 16), ("out", 32)];
 const INOUT_SHAPE: &[(&str, u32)] = &[("circleIn", 16), ("circleOut", 32)];
 const HV: &[(&str, u32)] = &[("horz", 10), ("vert", 5)];
 const WHEEL: &[(&str, u32)] = &[("1", 1), ("2", 2), ("3", 3), ("4", 4), ("8", 8)];
 
 pub fn option_from_subtype(effect: &str, sub: u32) -> String {
-    SUBTYPES.iter().find(|(e, _)| *e == effect).and_then(|(_, m)| m.iter().find(|(_, s)| *s == sub)).map(|(o, _)| o.to_string()).unwrap_or_default()
+    SUBTYPES
+        .iter()
+        .find(|(e, _)| *e == effect)
+        .and_then(|(_, m)| m.iter().find(|(_, s)| *s == sub))
+        .map(|(o, _)| o.to_string())
+        .unwrap_or_default()
 }
 
 pub fn subtype_from_option(effect: &str, option: &str) -> Option<u32> {
-    SUBTYPES.iter().find(|(e, _)| *e == effect).and_then(|(_, m)| m.iter().find(|(o, _)| *o == option)).map(|(_, s)| *s)
+    SUBTYPES
+        .iter()
+        .find(|(e, _)| *e == effect)
+        .and_then(|(_, m)| m.iter().find(|(o, _)| *o == option))
+        .map(|(_, s)| *s)
 }
 
 /// Our effect id for a preset (first match in [`ANIMATIONS`]).
 pub fn effect_for_preset(class: AnimClass, preset: u32) -> Option<&'static str> {
-    ANIMATIONS.iter().find(|a| a.2 == class && a.3 == preset && a.0 != "customPath").map(|a| a.0)
+    ANIMATIONS
+        .iter()
+        .find(|a| a.2 == class && a.3 == preset && a.0 != "customPath")
+        .map(|a| a.0)
 }
 
 /// Effect used for presets we don't know.
@@ -335,13 +472,19 @@ mod tests {
             if *kind == "none" {
                 continue;
             }
-            let opts: Vec<&str> = if opts.is_empty() { vec![""] } else { opts.to_vec() };
+            let opts: Vec<&str> = if opts.is_empty() {
+                vec![""]
+            } else {
+                opts.to_vec()
+            };
             for o in opts {
                 let mut w = W::frag();
-                let ns = transition_to_xml(&mut w, kind, o).unwrap_or_else(|| panic!("no xml for {kind}"));
+                let ns = transition_to_xml(&mut w, kind, o)
+                    .unwrap_or_else(|| panic!("no xml for {kind}"));
                 assert!(!ns.is_empty());
                 let d = parse(w.s.as_bytes()).unwrap();
-                let (k, opt) = transition_from_xml(&d.root).unwrap_or_else(|| panic!("no read for {kind}"));
+                let (k, opt) =
+                    transition_from_xml(&d.root).unwrap_or_else(|| panic!("no read for {kind}"));
                 // `shape` in/out are written as zoom; everything else must come back.
                 if *kind == "shape" && (o == "in" || o == "out") {
                     assert_eq!(k, "zoom");

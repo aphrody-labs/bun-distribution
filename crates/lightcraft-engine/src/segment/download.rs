@@ -70,7 +70,11 @@ impl Downloader {
             last.error.clone_from(&t.error);
         }
         // (only the session's thread locks `last`)
-        let (file, error) = self.last.try_lock().map(|l| (l.file.clone(), l.error.clone())).unwrap_or_default();
+        let (file, error) = self
+            .last
+            .try_lock()
+            .map(|l| (l.file.clone(), l.error.clone()))
+            .unwrap_or_default();
         Status {
             running: s.running.load(Ordering::SeqCst),
             done: s.done.load(Ordering::SeqCst),
@@ -112,44 +116,52 @@ impl Downloader {
         s.cancel.store(false, Ordering::SeqCst);
         s.finished.store(false, Ordering::SeqCst);
         s.done.store(0, Ordering::SeqCst);
-        s.total.store(files.iter().filter_map(|f| f.size).sum(), Ordering::SeqCst);
+        s.total
+            .store(files.iter().filter_map(|f| f.size).sum(), Ordering::SeqCst);
         // nothing else runs while `running` was false
         *lock(&s.text) = Text::default();
         *lock(&self.last) = Text::default();
-        let task = activity.start("download", "Downloading model", Cancel::Flag(s.cancel.clone()));
+        let task = activity.start(
+            "download",
+            "Downloading model",
+            Cancel::Flag(s.cancel.clone()),
+        );
         task.set_unit(Unit::Bytes);
         task.detail(name);
         task.progress(0, s.total.load(Ordering::SeqCst));
         let guard = Running(s.clone());
-        let spawned = std::thread::Builder::new().name("sam3-download".into()).spawn(move || {
-            let s = guard.0.clone();
-            let mut last_file = String::new();
-            let mut on_progress = |p: &Progress| {
-                s.done.store(p.done, Ordering::SeqCst);
-                s.total.store(p.total, Ordering::SeqCst);
-                task.progress(p.done, p.total);
-                if p.file != last_file {
-                    last_file.clone_from(&p.file);
-                    lock(&s.text).file.clone_from(&p.file);
+        let spawned = std::thread::Builder::new()
+            .name("sam3-download".into())
+            .spawn(move || {
+                let s = guard.0.clone();
+                let mut last_file = String::new();
+                let mut on_progress = |p: &Progress| {
+                    s.done.store(p.done, Ordering::SeqCst);
+                    s.total.store(p.total, Ordering::SeqCst);
+                    task.progress(p.done, p.total);
+                    if p.file != last_file {
+                        last_file.clone_from(&p.file);
+                        lock(&s.text).file.clone_from(&p.file);
+                    }
+                };
+                let r = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    fetch::download(files, &mirrors, &dir, &opts, &s.cancel, &mut on_progress)
+                }));
+                let error = match r {
+                    Ok(Ok(())) => {
+                        s.finished.store(true, Ordering::SeqCst);
+                        log::info!("SAM 3 model downloaded to {}", dir.display());
+                        None
+                    }
+                    Ok(Err(e)) => Some(e.to_string()),
+                    Err(_) => Some("the download failed unexpectedly".to_string()),
+                };
+                if let Some(e) = &error {
+                    log::warn!("SAM 3 download: {e}");
                 }
-            };
-            let r =
-                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| fetch::download(files, &mirrors, &dir, &opts, &s.cancel, &mut on_progress)));
-            let error = match r {
-                Ok(Ok(())) => {
-                    s.finished.store(true, Ordering::SeqCst);
-                    log::info!("SAM 3 model downloaded to {}", dir.display());
-                    None
-                }
-                Ok(Err(e)) => Some(e.to_string()),
-                Err(_) => Some("the download failed unexpectedly".to_string()),
-            };
-            if let Some(e) = &error {
-                log::warn!("SAM 3 download: {e}");
-            }
-            lock(&s.text).error = error;
-            drop(guard);
-        });
+                lock(&s.text).error = error;
+                drop(guard);
+            });
         match spawned {
             Ok(_) => Ok(true),
             Err(e) => {

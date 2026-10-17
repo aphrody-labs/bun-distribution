@@ -11,7 +11,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Paste Special…" => "Vložit jinak…",
         "Cut (⌘X)" => "Vyjmout (⌘X)",
         "Copy (⌘C)" => "Kopírovat (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Štětec formátu (dvojklikem zůstane zapnutý)",
+        "Format Painter (double-click to keep it on)" => {
+            "Štětec formátu (dvojklikem zůstane zapnutý)"
+        }
         "Bold (⌘B)" => "Tučné (⌘B)",
         "Italic (⌘I)" => "Kurzíva (⌘I)",
         "Underline (⌘U)" => "Podtržení (⌘U)",
@@ -235,7 +237,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Show All Notes" => "Zobrazit všechny poznámky",
         "Convert to Comments" => "Převést na komentáře",
         "Checkbox" => "Zaškrtávací políčko",
-        "Insert checkboxes in the selected cells" => "Vložit zaškrtávací políčka do vybraných buněk",
+        "Insert checkboxes in the selected cells" => {
+            "Vložit zaškrtávací políčka do vybraných buněk"
+        }
         "Sheet\nRight-to-Left" => "List zprava\ndoleva",
         "Sheet Right-to-Left" => "List zprava doleva",
         "Data\nAnalysis" => "Analýza\ndat",
@@ -300,7 +304,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "Soubor CSV, webová stránka nebo PDF je kopie: sešit si ponechá svůj vlastní soubor."
         }
-        "Save the workbook under another name or in another folder." => "Uloží sešit pod jiným názvem nebo do jiné složky.",
+        "Save the workbook under another name or in another folder." => {
+            "Uloží sešit pod jiným názvem nebo do jiné složky."
+        }
         "Print Active Sheets" => "Vytisknout aktivní listy",
         "Print Entire Workbook" => "Vytisknout celý sešit",
         "Fit Sheet on One Page" => "Přizpůsobit list na jednu stránku",
@@ -310,20 +316,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Předchozí stránka",
         "Next page" => "Další stránka",
         "Create PDF" => "Vytvořit PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "Uloží list jako dokument PDF se zachováním rozložení stránky.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Uloží list jako dokument PDF se zachováním rozložení stránky."
+        }
         "Change File Type" => "Změnit typ souboru",
         "CSV (Comma delimited)" => "CSV (oddělený čárkami)",
-        "Save the active sheet as comma-separated text." => "Uloží aktivní list jako text oddělený čárkami.",
+        "Save the active sheet as comma-separated text." => {
+            "Uloží aktivní list jako text oddělený čárkami."
+        }
         "Web Page (.html)" => "Webová stránka (.html)",
         "Save the workbook as a web page." => "Uloží sešit jako webovou stránku.",
         "Options|General" => "Obecné",
         "Options|Save" => "Uložit",
         "Show formula bar" => "Zobrazit řádek vzorců",
         "Enable AutoComplete for cell values" => "Povolit automatické dokončování hodnot buněk",
-        "Save .xlsx workbooks automatically after every change" => "Automaticky ukládat sešity .xlsx po každé změně",
+        "Save .xlsx workbooks automatically after every change" => {
+            "Automaticky ukládat sešity .xlsx po každé změně"
+        }
         "Workbook calculation" => "Výpočet sešitu",
         "Enable iterative calculation" => "Povolit iterativní výpočet",
-        "Calculation settings are saved with the workbook." => "Nastavení výpočtů se ukládá se sešitem.",
+        "Calculation settings are saved with the workbook." => {
+            "Nastavení výpočtů se ukládá se sešitem."
+        }
         "100%" => "100 %",
         "Zoom to\nSelection" => "Přiblížit\nna výběr",
         "Freeze\nPanes" => "Ukotvit\npříčky",
@@ -384,7 +398,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Úpravy",
         "Point" => "Výběr odkazu",
         "Calculate" => "Přepočítat",
-        "Select destination and press Enter or choose Paste" => "Vyberte cíl a stiskněte Enter nebo zvolte Vložit",
+        "Select destination and press Enter or choose Paste" => {
+            "Vyberte cíl a stiskněte Enter nebo zvolte Vložit"
+        }
         "General" => "Obecný",
         "Number" => "Číslo",
         "Currency" => "Měna",
@@ -450,7 +466,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Down" => "Dolů",
         "Edit chart title" => "Upravit název grafu",
         "Erase ink strokes" => "Vymazat tahy rukopisu",
-        "Every command run in this session (replayable)" => "Všechny příkazy spuštěné v této relaci (lze znovu přehrát)",
+        "Every command run in this session (replayable)" => {
+            "Všechny příkazy spuštěné v této relaci (lze znovu přehrát)"
+        }
         "Filter (⌘⇧F)" => "Filtr (⌘⇧F)",
         "Find & Select" => "Najít a vybrat",
         "Flash Fill (⌘E)" => "Dynamické doplňování (⌘E)",
@@ -460,7 +478,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Hide Sheet" => "Skrýt list",
         "Hierarchy & more" => "Hierarchické a další grafy",
         "Highlighter" => "Zvýrazňovač",
-        "How agents drive GridCraft (MCP / control channel)" => "Jak agenti ovládají GridCraft (MCP / řídicí kanál)",
+        "How agents drive GridCraft (MCP / control channel)" => {
+            "Jak agenti ovládají GridCraft (MCP / řídicí kanál)"
+        }
         "Import a text or CSV file" => "Importovat textový soubor nebo CSV",
         "Insert\nSlicer" => "Vložit\nprůřez",
         "Insert Function (⇧F3)" => "Vložit funkci (⇧F3)",
@@ -516,7 +536,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Undo list" => "Seznam akcí k vrácení",
         "Unhide Sheet…" => "Zobrazit list…",
         "Up" => "Nahoru",
-        "Version, contributors and the AI models that helped" => "Verze, přispěvatelé a modely AI, které pomáhaly",
+        "Version, contributors and the AI models that helped" => {
+            "Verze, přispěvatelé a modely AI, které pomáhaly"
+        }
         "Watch\nWindow" => "Okno\nsledování",
         "What-If Analysis" => "Citlivostní analýza",
         "Workbook\nStatistics" => "Statistika\nsešitu",

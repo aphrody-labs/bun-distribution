@@ -24,14 +24,23 @@ pub const REGISTRATION: &str = "[Registration]";
 /// plate, process and spot (printer's marks). Every document has it; it can't be edited or deleted.
 pub fn registration() -> &'static Swatch {
     static S: std::sync::OnceLock<Swatch> = std::sync::OnceLock::new();
-    S.get_or_init(|| Swatch { name: REGISTRATION.into(), paint: Paint::solid(Color::cmyk(1.0, 1.0, 1.0, 1.0)), global: true, spot: false })
+    S.get_or_init(|| Swatch {
+        name: REGISTRATION.into(),
+        paint: Paint::solid(Color::cmyk(1.0, 1.0, 1.0, 1.0)),
+        global: true,
+        spot: false,
+    })
 }
 
 impl Swatch {
     /// A tint swatch's base swatch and tint: its colour links to another (global) swatch.
     pub fn tint_of(&self) -> Option<(&str, f32)> {
         match &self.paint {
-            Paint::Solid { swatch: Some(base), tint, .. } => Some((base, *tint)),
+            Paint::Solid {
+                swatch: Some(base),
+                tint,
+                ..
+            } => Some((base, *tint)),
             _ => None,
         }
     }
@@ -48,7 +57,12 @@ pub struct SwatchGroup {
 }
 
 fn solid(name: &str, hex: &str) -> Swatch {
-    Swatch { name: name.into(), paint: Paint::solid(Color::from_hex(hex).unwrap_or(Color::BLACK)), global: false, spot: false }
+    Swatch {
+        name: name.into(),
+        paint: Paint::solid(Color::from_hex(hex).unwrap_or(Color::BLACK)),
+        global: false,
+        spot: false,
+    }
 }
 
 /// The default swatches of a document in colour `model`: [`base_swatches`] with their RGB colours
@@ -63,10 +77,17 @@ pub fn default_swatches(model: Model) -> (Vec<Swatch>, Vec<SwatchGroup>) {
                 *c = Color::cmyk(pct(cc), pct(m), pct(y), pct(k));
             }
         };
-        for w in s.iter_mut().chain(g.iter_mut().flat_map(|g| g.swatches.iter_mut())) {
+        for w in s
+            .iter_mut()
+            .chain(g.iter_mut().flat_map(|g| g.swatches.iter_mut()))
+        {
             match &mut w.paint {
                 Paint::Solid { color, .. } => cmyk(color),
-                Paint::Gradient(gp) => gp.gradient.stops.iter_mut().for_each(|st| cmyk(&mut st.color)),
+                Paint::Gradient(gp) => gp
+                    .gradient
+                    .stops
+                    .iter_mut()
+                    .for_each(|st| cmyk(&mut st.color)),
                 _ => {}
             }
         }
@@ -78,8 +99,16 @@ pub fn default_swatches(model: Model) -> (Vec<Swatch>, Vec<SwatchGroup>) {
 /// gradients. (The composition is ours; the reference app's layout grammar — None first, then
 /// specials — is kept.)
 fn base_swatches() -> (Vec<Swatch>, Vec<SwatchGroup>) {
-    let mut s =
-        vec![Swatch { name: "[None]".into(), paint: Paint::None, global: false, spot: false }, solid("White", "#ffffff"), solid("Black", "#000000")];
+    let mut s = vec![
+        Swatch {
+            name: "[None]".into(),
+            paint: Paint::None,
+            global: false,
+            spot: false,
+        },
+        solid("White", "#ffffff"),
+        solid("Black", "#000000"),
+    ];
     let spectrum = [
         ("Red", "#ed1c24"),
         ("Orange Red", "#f15a24"),
@@ -118,7 +147,12 @@ fn base_swatches() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         .map(|i| {
             let k = i as f32 / 10.0;
             let c = Color::gray(k);
-            Swatch { name: format!("K={}", (k * 100.0) as u32), paint: Paint::solid(c), global: false, spot: false }
+            Swatch {
+                name: format!("K={}", (k * 100.0) as u32),
+                paint: Paint::solid(c),
+                global: false,
+                spot: false,
+            }
         })
         .collect();
     let grad = |name: &str, a: &str, b: &str, kind: GradientKind| Swatch {
@@ -133,12 +167,25 @@ fn base_swatches() -> (Vec<Swatch>, Vec<SwatchGroup>) {
         global: false,
         spot: false,
     };
-    s.push(grad("White, Black", "#ffffff", "#000000", GradientKind::Linear));
-    s.push(grad("Radial White, Black", "#ffffff", "#000000", GradientKind::Radial));
+    s.push(grad(
+        "White, Black",
+        "#ffffff",
+        "#000000",
+        GradientKind::Linear,
+    ));
+    s.push(grad(
+        "Radial White, Black",
+        "#ffffff",
+        "#000000",
+        GradientKind::Radial,
+    ));
     s.push(grad("Sunset", "#fbb03b", "#d4145a", GradientKind::Linear));
     s.push(grad("Ocean", "#29abe2", "#2e3192", GradientKind::Linear));
     let groups = vec![
-        SwatchGroup { name: "Grays".into(), swatches: grays },
+        SwatchGroup {
+            name: "Grays".into(),
+            swatches: grays,
+        },
         SwatchGroup {
             name: "Brights".into(),
             swatches: vec![
@@ -170,17 +217,32 @@ mod tests {
     fn cmyk_defaults_are_cmyk_with_the_same_names() {
         let (rgb, _) = default_swatches(Model::Rgb);
         let (s, g) = default_swatches(Model::Cmyk);
-        assert_eq!(s.iter().map(|w| &w.name).collect::<Vec<_>>(), rgb.iter().map(|w| &w.name).collect::<Vec<_>>());
-        let colors = s.iter().chain(g.iter().flat_map(|g| &g.swatches)).flat_map(|w| match &w.paint {
-            Paint::Solid { color, .. } => vec![*color],
-            Paint::Gradient(gp) => gp.gradient.stops.iter().map(|st| st.color).collect(),
-            _ => vec![],
-        });
+        assert_eq!(
+            s.iter().map(|w| &w.name).collect::<Vec<_>>(),
+            rgb.iter().map(|w| &w.name).collect::<Vec<_>>()
+        );
+        let colors = s
+            .iter()
+            .chain(g.iter().flat_map(|g| &g.swatches))
+            .flat_map(|w| match &w.paint {
+                Paint::Solid { color, .. } => vec![*color],
+                Paint::Gradient(gp) => gp.gradient.stops.iter().map(|st| st.color).collect(),
+                _ => vec![],
+            });
         assert!(colors.clone().all(|c| !matches!(c, Color::Rgb { .. })));
-        assert!(colors.clone().any(|c| matches!(c, Color::Gray { .. })), "greys stay Gray");
-        let white = s.iter().find(|w| w.name == "White").and_then(|w| w.paint.color());
+        assert!(
+            colors.clone().any(|c| matches!(c, Color::Gray { .. })),
+            "greys stay Gray"
+        );
+        let white = s
+            .iter()
+            .find(|w| w.name == "White")
+            .and_then(|w| w.paint.color());
         assert_eq!(white, Some(Color::cmyk(0.0, 0.0, 0.0, 0.0)));
-        let black = s.iter().find(|w| w.name == "Black").and_then(|w| w.paint.color());
+        let black = s
+            .iter()
+            .find(|w| w.name == "Black")
+            .and_then(|w| w.paint.color());
         assert_eq!(black, Some(Color::cmyk(0.0, 0.0, 0.0, 1.0)));
     }
 
@@ -189,7 +251,10 @@ mod tests {
         // `solid`/`grad` fall back to black or white on a bad literal instead of panicking; make sure
         // none falls back.
         let src = include_str!("swatch.rs");
-        let hexes: Vec<&str> = src.split('"').filter(|t| t.starts_with('#') && t.len() == 7).collect();
+        let hexes: Vec<&str> = src
+            .split('"')
+            .filter(|t| t.starts_with('#') && t.len() == 7)
+            .collect();
         assert!(hexes.len() > 30);
         for h in hexes {
             assert!(Color::from_hex(h).is_some(), "{h}");

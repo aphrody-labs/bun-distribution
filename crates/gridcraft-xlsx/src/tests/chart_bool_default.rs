@@ -20,13 +20,26 @@ fn flags(ser: &str, group: &str) -> (bool, bool) {
 #[test]
 fn omitted_val_means_on() {
     assert_eq!(flags("<c:smooth/>", "<c:showVal/>"), (true, true));
-    assert_eq!(flags("<c:dLbls><c:showVal/></c:dLbls>", ""), (false, true), "series-level value labels");
+    assert_eq!(
+        flags("<c:dLbls><c:showVal/></c:dLbls>", ""),
+        (false, true),
+        "series-level value labels"
+    );
 }
 
 #[test]
 fn explicit_values_are_honoured() {
-    assert_eq!(flags("<c:smooth val=\"1\"/>", "<c:showVal val=\"1\"/>"), (true, true));
-    assert_eq!(flags("<c:smooth val=\"true\"/>", "<c:showVal val=\"true\"/>"), (true, true));
-    assert_eq!(flags("<c:smooth val=\"0\"/>", "<c:showVal val=\"0\"/>"), (false, false));
+    assert_eq!(
+        flags("<c:smooth val=\"1\"/>", "<c:showVal val=\"1\"/>"),
+        (true, true)
+    );
+    assert_eq!(
+        flags("<c:smooth val=\"true\"/>", "<c:showVal val=\"true\"/>"),
+        (true, true)
+    );
+    assert_eq!(
+        flags("<c:smooth val=\"0\"/>", "<c:showVal val=\"0\"/>"),
+        (false, false)
+    );
     assert_eq!(flags("", ""), (false, false));
 }

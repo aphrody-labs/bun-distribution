@@ -144,7 +144,12 @@ impl MemoryQuery {
     /// Build the minimal query: just an `agent_id`, no filters.
     #[must_use]
     pub fn for_agent(agent_id: impl Into<String>) -> Self {
-        Self { agent_id: agent_id.into(), q: None, tags: Vec::new(), limit: None }
+        Self {
+            agent_id: agent_id.into(),
+            q: None,
+            tags: Vec::new(),
+            limit: None,
+        }
     }
 }
 

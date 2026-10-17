@@ -84,11 +84,20 @@ fn an_instance_keeps_its_memory_and_reports_panel_changes() {
     let mut inst = Instance::new(&m, &Limits::default()).unwrap();
     let mut host = Settings::default();
     let first = inst.call("{}", &mut host).unwrap();
-    assert_eq!((first.output.as_str(), first.ui), ("1", Some(UiChange::Show(Panel::parse(PANEL).unwrap()))));
+    assert_eq!(
+        (first.output.as_str(), first.ui),
+        ("1", Some(UiChange::Show(Panel::parse(PANEL).unwrap())))
+    );
     let second = inst.call("{}", &mut host).unwrap();
-    assert!(second.output.contains("panel:") && second.ui.is_none(), "{second:?}");
+    assert!(
+        second.output.contains("panel:") && second.ui.is_none(),
+        "{second:?}"
+    );
     let third = inst.call("{}", &mut host).unwrap();
-    assert_eq!((third.output.as_str(), third.ui), ("3", Some(UiChange::Close)));
+    assert_eq!(
+        (third.output.as_str(), third.ui),
+        ("3", Some(UiChange::Close))
+    );
 }
 
 #[test]
@@ -109,8 +118,14 @@ fn settings_go_through_the_host() {
     assert_eq!(out.output, "[1,2]");
     assert!(host.0.is_empty());
     // Settings cost host calls like any other.
-    let limits = Limits { max_calls: 2, ..Limits::default() };
-    assert!(matches!(crate::run(&m, "{}", &limits, &mut host), Err(PluginError::Limit(_))));
+    let limits = Limits {
+        max_calls: 2,
+        ..Limits::default()
+    };
+    assert!(matches!(
+        crate::run(&m, "{}", &limits, &mut host),
+        Err(PluginError::Limit(_))
+    ));
 }
 
 #[test]
@@ -127,7 +142,11 @@ fn panels_are_validated_and_keep_entered_values() {
     )
     .unwrap();
     assert_eq!(p.control("accent").unwrap().default, Some(json!("#FF00AA")));
-    assert_eq!(p.control("n").unwrap().default, Some(json!(4.0)), "values are clamped");
+    assert_eq!(
+        p.control("n").unwrap().default,
+        Some(json!(4.0)),
+        "values are clamped"
+    );
     assert_eq!(p.control("go").unwrap().kind, ParamKind::Button);
     let mut old = Map::new();
     old.insert("t".into(), json!("typed"));
@@ -153,22 +172,37 @@ fn panels_are_validated_and_keep_entered_values() {
         &many,
     ];
     for j in junk {
-        assert!(Panel::parse(j).is_err(), "accepted {}", j.chars().take(60).collect::<String>());
+        assert!(
+            Panel::parse(j).is_err(),
+            "accepted {}",
+            j.chars().take(60).collect::<String>()
+        );
     }
-    let huge = format!(r#"{{"controls": [{{"type": "note", "label": "{}"}}]}}"#, "x".repeat(70_000));
+    let huge = format!(
+        r#"{{"controls": [{{"type": "note", "label": "{}"}}]}}"#,
+        "x".repeat(70_000)
+    );
     assert!(Panel::parse(&huge).unwrap_err().contains("larger"));
-    let long_note = format!(r#"{{"controls": [{{"type": "note", "label": "{}"}}]}}"#, "x".repeat(1001));
+    let long_note = format!(
+        r#"{{"controls": [{{"type": "note", "label": "{}"}}]}}"#,
+        "x".repeat(1001)
+    );
     assert!(Panel::parse(&long_note).is_err());
     // Junk values are dropped, not kept.
     let p = Panel::parse(
         r#"{"controls": [{"type": "color", "name": "c", "value": {"deep": [1, 2]}}, {"type": "boolean", "name": "b", "value": "yes"}]}"#,
     )
     .unwrap();
-    assert_eq!(json!(p.values(&Map::new())), json!({"c": "#000000", "b": false}));
+    assert_eq!(
+        json!(p.values(&Map::new())),
+        json!({"c": "#000000", "b": false})
+    );
     // Buttons and notes don't go in manifests; colours and lists do.
     let manifest = |kind: &str| {
         let params = json!([{"name": "x", "type": kind, "options": ["a"]}]);
-        Manifest::from_value(&json!({"id": "a.b", "name": "A", "main": "a.wasm", "commands": [{"id": "c", "label": "C", "params": params}]}))
+        Manifest::from_value(
+            &json!({"id": "a.b", "name": "A", "main": "a.wasm", "commands": [{"id": "c", "label": "C", "params": params}]}),
+        )
     };
     assert!(manifest("button").is_err() && manifest("note").is_err());
     assert!(manifest("color").is_ok() && manifest("list").is_ok());

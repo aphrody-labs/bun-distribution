@@ -9,16 +9,16 @@ pub fn msr<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, inst
     match OP {
         OP_MTMSR => {
             ctx.gekko.msr = crate::gekko::msr::Msr::from(ctx.gekko.read_gpr(instr.rs()));
-        },
+        }
         OP_MFMSR => {
             ctx.gekko.write_gpr(instr.rd(), ctx.gekko.msr.raw());
-        },
+        }
         OP_RFI => {
             const RFI_MSR_MASK: u32 = 0x87C0_FFFF;
             let msr = (ctx.gekko.msr.raw() & !RFI_MSR_MASK) | (ctx.gekko.spr.srr1 & RFI_MSR_MASK);
             ctx.gekko.msr = crate::gekko::msr::Msr::from(msr & !0x0004_0000);
             ctx.gekko.nia = ctx.gekko.spr.srr0.value() << 2;
-        },
+        }
         _ => todo!("MSR instruction with OP = {OP:#x}"),
     }
 }
@@ -32,15 +32,20 @@ pub fn spr<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, inst
             let val = ctx.gekko.read_gpr(instr.rs());
             match spr_num {
                 22 => {
-                    ctx.scheduler.cancel(crate::scheduler::Handler::DecUnderflow);
+                    ctx.scheduler
+                        .cancel(crate::scheduler::Handler::DecUnderflow);
                     ctx.gekko.dec.write(ctx.scheduler.cycles, val);
                     ctx.gekko.spr.dec = val;
                     ctx.scheduler.schedule_in(
                         crate::gekko::dec::cycles_until_underflow(val),
                         crate::scheduler::Handler::DecUnderflow,
                     );
-                    tracing::debug!(cycles = ctx.scheduler.cycles, value = val, "decrementer set");
-                },
+                    tracing::debug!(
+                        cycles = ctx.scheduler.cycles,
+                        value = val,
+                        "decrementer set"
+                    );
+                }
                 284 => ctx.scheduler.set_timebase_lower(val),
                 285 => ctx.scheduler.set_timebase_upper(val),
                 923 => {
@@ -57,23 +62,23 @@ pub fn spr<const OP: u32, const SYSTEM: SystemId>(ctx: &mut System<SYSTEM>, inst
                         let _ = written;
                         ctx.gekko.spr.dmal.set_trigger(false);
                     }
-                },
+                }
                 _ => ctx.gekko.spr.write(spr_num, val),
             }
-        },
+        }
         OP_MFSPR => {
             let spr_num = instr.spr_swapped();
             let val = match spr_num {
                 22 => {
                     ctx.gekko.spr.dec = ctx.gekko.dec.read(ctx.scheduler.cycles);
                     ctx.gekko.spr.dec
-                },
+                }
                 268 => ctx.scheduler.timebase_lower(),
                 269 => ctx.scheduler.timebase_upper(),
                 _ => ctx.gekko.spr.read(spr_num),
             };
             ctx.gekko.write_gpr(instr.rd(), val);
-        },
+        }
         _ => todo!("SPR instruction with OP = {OP:#x}"),
     }
 }
@@ -87,10 +92,11 @@ pub fn segment<const OP: u32, const SYSTEM: SystemId>(
     match OP {
         OP_MTSR => {
             ctx.gekko.sr[instr.sr() as usize] = Sr::from_raw(ctx.gekko.read_gpr(instr.rs()));
-        },
+        }
         OP_MFSR => {
-            ctx.gekko.write_gpr(instr.rd(), ctx.gekko.sr[instr.sr() as usize].raw());
-        },
+            ctx.gekko
+                .write_gpr(instr.rd(), ctx.gekko.sr[instr.sr() as usize].raw());
+        }
         _ => todo!("Segment Register instruction with OP = {OP:#x}"),
     }
 }

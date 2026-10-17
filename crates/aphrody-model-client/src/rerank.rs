@@ -98,11 +98,23 @@ mod tests {
     #[test]
     fn scores_return_to_input_order_and_ignore_out_of_range_hits() {
         let hits = [
-            RerankHit { index: 2, score: 0.9 },
-            RerankHit { index: 0, score: 0.1 },
-            RerankHit { index: 7, score: 5.0 },
+            RerankHit {
+                index: 2,
+                score: 0.9,
+            },
+            RerankHit {
+                index: 0,
+                score: 0.1,
+            },
+            RerankHit {
+                index: 7,
+                score: 5.0,
+            },
         ];
-        assert_eq!(scores_in_input_order(&hits, 3), vec![Some(0.1), None, Some(0.9)]);
+        assert_eq!(
+            scores_in_input_order(&hits, 3),
+            vec![Some(0.1), None, Some(0.9)]
+        );
         assert_eq!(scores_in_input_order(&[], 2), vec![None, None]);
     }
 }

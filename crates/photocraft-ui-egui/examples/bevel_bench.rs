@@ -17,14 +17,18 @@ use std::time::Instant;
 
 use eframe::wgpu;
 use photocraft_color::{BlendMode, Color};
-use photocraft_doc::{Bevel, BevelStyle, BevelTechnique, Contour, Document, Effect, FxCommon, LayerContent};
+use photocraft_doc::{
+    Bevel, BevelStyle, BevelTechnique, Contour, Document, Effect, FxCommon, LayerContent,
+};
 use photocraft_geom::Rect;
 use serde_json::json;
 
 const SIZES: [u32; 3] = [8, 50, 250];
 
 fn arg(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1).cloned())
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1).cloned())
 }
 
 fn block_on<F: std::future::Future>(f: F) -> F::Output {
@@ -64,7 +68,11 @@ fn bevel(size: f32) -> Effect {
 /// The scene's document through the engine, so the shape and the glyphs are the real thing.
 fn scene(kind: &str, w: u32, h: u32) -> Result<Document, String> {
     let mut s = photocraft_engine::Session::new();
-    s.execute("file.new", json!({"width": w, "height": h, "background": "#1E1813"})).map_err(|e| format!("file.new: {e}"))?;
+    s.execute(
+        "file.new",
+        json!({"width": w, "height": h, "background": "#1E1813"}),
+    )
+    .map_err(|e| format!("file.new: {e}"))?;
     let (w, h) = (w as i64, h as i64);
     match kind {
         "ellipse" => {
@@ -80,7 +88,9 @@ fn scene(kind: &str, w: u32, h: u32) -> Result<Document, String> {
             .map_err(|e| format!("type.create: {e}"))?;
         }
     }
-    s.active().map(|a| (*a.doc).clone()).ok_or_else(|| "no active document".to_string())
+    s.active()
+        .map(|a| (*a.doc).clone())
+        .ok_or_else(|| "no active document".to_string())
 }
 
 /// Sets the bevel on the scene's one effect layer.
@@ -101,21 +111,37 @@ struct Gpu {
 
 fn gpu() -> Option<Gpu> {
     let instance = wgpu::Instance::default();
-    let adapter =
-        block_on(instance.request_adapter(&wgpu::RequestAdapterOptions { power_preference: wgpu::PowerPreference::HighPerformance, ..Default::default() }))
-            .ok()?;
+    let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
+        power_preference: wgpu::PowerPreference::HighPerformance,
+        ..Default::default()
+    }))
+    .ok()?;
     eprintln!("adapter: {:?}", adapter.get_info().name);
     // The limits the app requests (see `gpu_canvas::use_adapter_limits`).
     let limits = photocraft_ui_egui::gpu_canvas::device_limits(&adapter);
-    let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor { required_limits: limits, ..Default::default() })).ok()?;
+    let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        required_limits: limits,
+        ..Default::default()
+    }))
+    .ok()?;
     let comp = photocraft_gpu::Compositor::new(&device);
-    Some(Gpu { device, queue, comp, adapter: adapter.get_info().name })
+    Some(Gpu {
+        device,
+        queue,
+        comp,
+        adapter: adapter.get_info().name,
+    })
 }
 
 fn gpu_time(g: &mut Gpu, doc: &Document, region: Rect) -> Result<f64, String> {
     let t = Instant::now();
-    g.comp.render(&g.device, &g.queue, doc, region, |_, _| {}).map_err(|e| e.to_string())?;
-    let _ = g.device.poll(wgpu::PollType::Wait { submission_index: None, timeout: None });
+    g.comp
+        .render(&g.device, &g.queue, doc, region, |_, _| {})
+        .map_err(|e| e.to_string())?;
+    let _ = g.device.poll(wgpu::PollType::Wait {
+        submission_index: None,
+        timeout: None,
+    });
     Ok(t.elapsed().as_secs_f64() * 1000.0)
 }
 
@@ -133,13 +159,24 @@ fn median(v: &mut [f64]) -> f64 {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    let (w, h) = arg(&args, "--size").and_then(|s| s.split_once('x').and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?)))).unwrap_or((4000u32, 3000u32));
-    let reps: usize = arg(&args, "--reps").and_then(|v| v.parse().ok()).unwrap_or(5);
+    let (w, h) = arg(&args, "--size")
+        .and_then(|s| {
+            s.split_once('x')
+                .and_then(|(a, b)| Some((a.parse().ok()?, b.parse().ok()?)))
+        })
+        .unwrap_or((4000u32, 3000u32));
+    let reps: usize = arg(&args, "--reps")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(5);
     let no_cpu = args.iter().any(|a| a == "--no-cpu");
     let only = arg(&args, "--scene");
     let mut g = gpu();
     let adapter = g.as_ref().map(|g| g.adapter.clone());
-    println!("document {w}x{h} ({:.1} MP), {reps} reps per case, adapter {}", f64::from(w) * f64::from(h) / 1e6, adapter.as_deref().unwrap_or("none"));
+    println!(
+        "document {w}x{h} ({:.1} MP), {reps} reps per case, adapter {}",
+        f64::from(w) * f64::from(h) / 1e6,
+        adapter.as_deref().unwrap_or("none")
+    );
     println!("{:<44} {:>18} {:>18}   (median ms)", "case", "GPU", "CPU");
 
     // `--json out.json` (`cargo xtask perf`): one row per case and compositor, with samples and the peak RSS.
@@ -183,22 +220,37 @@ fn main() {
             }
             let peak = rss.peak();
             if !gs.is_empty() {
-                json_rows.push(photocraft_testkit::perf::row(&format!("{what} (GPU)"), &gs, peak, None));
+                json_rows.push(photocraft_testkit::perf::row(
+                    &format!("{what} (GPU)"),
+                    &gs,
+                    peak,
+                    None,
+                ));
             }
             if !cs.is_empty() {
-                json_rows.push(photocraft_testkit::perf::row(&format!("{what} (CPU)"), &cs, peak, None));
+                json_rows.push(photocraft_testkit::perf::row(
+                    &format!("{what} (CPU)"),
+                    &cs,
+                    peak,
+                    None,
+                ));
             }
             let show = |v: &mut Vec<f64>, err: Option<&String>| match (v.is_empty(), err) {
                 (false, _) => format!("{:.1}", median(v)),
                 (true, Some(e)) => format!("unsupported ({e})"),
                 (true, None) => "-".to_string(),
             };
-            println!("{what:<44} {:>18} {:>18}", show(&mut gs, gerr.as_ref()), show(&mut cs, None));
+            println!(
+                "{what:<44} {:>18} {:>18}",
+                show(&mut gs, gerr.as_ref()),
+                show(&mut cs, None)
+            );
         }
     }
     if let Some(out) = arg(&args, "--json") {
         let context = json!({"width": w, "height": h, "gpu_adapter": adapter});
-        let report = photocraft_testkit::perf::report("bevel_bench", context, json_rows, Some(&rss));
+        let report =
+            photocraft_testkit::perf::report("bevel_bench", context, json_rows, Some(&rss));
         if let Err(e) = photocraft_testkit::perf::write_report(&out, &report) {
             eprintln!("{e}");
             std::process::exit(1);

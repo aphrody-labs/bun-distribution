@@ -2,7 +2,10 @@
 //! names and alt text.
 
 use deckcraft_color::{ColorTransform, Rgba, SchemeSlot};
-use deckcraft_model::style::{Dash, Glow, Gradient, GradientShape, GradientStop, LineEnd, PatternFill, PictureFill, Reflection, Shadow};
+use deckcraft_model::style::{
+    Dash, Glow, Gradient, GradientShape, GradientStop, LineEnd, PatternFill, PictureFill,
+    Reflection, Shadow,
+};
 use deckcraft_model::{ColorRef, Effects, Fill, Geom, Line, ShapeStyle};
 use serde_json::{Value, json};
 
@@ -30,13 +33,69 @@ pub fn specs() -> Vec<CommandSpec> {
             freeform
         ),
         cmd!(query "shape.sites", "Connection Sites", [], None, "{id} → [[x, y]] connection sites in slide points", has_slide, sites),
-        cmd!("shape.move", "Move", [], None, "{dx?, dy?: pt (relative) | x?, y?: pt (absolute), ids?}", has_selection, move_by),
-        cmd!("shape.resize", "Size", ["Shape Format", "Size"], None, "{w?, h?: pt, lockAspect?: bool, ids?}", has_selection, resize),
-        cmd!("shape.setBounds", "Position and Size", [], None, "{x, y, w, h, ids?}", has_selection, set_bounds),
-        cmd!("shape.rotate", "Rotation", ["Shape Format", "Arrange", "Rotate"], None, "{deg?: absolute, by?: relative, ids?}", has_selection, rotate),
-        cmd!("shape.flip", "Flip", ["Shape Format", "Arrange", "Rotate"], None, "{axis: horizontal|vertical, ids?}", has_selection, flip),
-        cmd!("shape.adjust", "Adjust Shape", [], None, "{index, value (file units), ids?}", has_selection, adjust),
-        cmd!("shape.change", "Change Shape", ["Shape Format", "Insert Shapes", "Edit Shape"], None, "{preset, ids?}", has_selection, change),
+        cmd!(
+            "shape.move",
+            "Move",
+            [],
+            None,
+            "{dx?, dy?: pt (relative) | x?, y?: pt (absolute), ids?}",
+            has_selection,
+            move_by
+        ),
+        cmd!(
+            "shape.resize",
+            "Size",
+            ["Shape Format", "Size"],
+            None,
+            "{w?, h?: pt, lockAspect?: bool, ids?}",
+            has_selection,
+            resize
+        ),
+        cmd!(
+            "shape.setBounds",
+            "Position and Size",
+            [],
+            None,
+            "{x, y, w, h, ids?}",
+            has_selection,
+            set_bounds
+        ),
+        cmd!(
+            "shape.rotate",
+            "Rotation",
+            ["Shape Format", "Arrange", "Rotate"],
+            None,
+            "{deg?: absolute, by?: relative, ids?}",
+            has_selection,
+            rotate
+        ),
+        cmd!(
+            "shape.flip",
+            "Flip",
+            ["Shape Format", "Arrange", "Rotate"],
+            None,
+            "{axis: horizontal|vertical, ids?}",
+            has_selection,
+            flip
+        ),
+        cmd!(
+            "shape.adjust",
+            "Adjust Shape",
+            [],
+            None,
+            "{index, value (file units), ids?}",
+            has_selection,
+            adjust
+        ),
+        cmd!(
+            "shape.change",
+            "Change Shape",
+            ["Shape Format", "Insert Shapes", "Edit Shape"],
+            None,
+            "{preset, ids?}",
+            has_selection,
+            change
+        ),
         cmd!(
             "shape.fill",
             "Shape Fill",
@@ -73,9 +132,33 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             quick_style
         ),
-        cmd!("shape.rename", "Rename", ["Selection Pane"], None, "{name, id?}", has_selection, rename),
-        cmd!("shape.altText", "Alt Text", ["Shape Format", "Accessibility"], None, "{text, decorative?: bool, ids?}", has_selection, alt_text),
-        cmd!("shape.visible", "Show/Hide", ["Selection Pane"], None, "{visible?: bool, ids?}", has_selection, visible),
+        cmd!(
+            "shape.rename",
+            "Rename",
+            ["Selection Pane"],
+            None,
+            "{name, id?}",
+            has_selection,
+            rename
+        ),
+        cmd!(
+            "shape.altText",
+            "Alt Text",
+            ["Shape Format", "Accessibility"],
+            None,
+            "{text, decorative?: bool, ids?}",
+            has_selection,
+            alt_text
+        ),
+        cmd!(
+            "shape.visible",
+            "Show/Hide",
+            ["Selection Pane"],
+            None,
+            "{visible?: bool, ids?}",
+            has_selection,
+            visible
+        ),
         cmd!(
             "shape.lock",
             "Lock",
@@ -85,8 +168,24 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             lock
         ),
-        cmd!("shape.setDefault", "Set as Default Shape", [], None, "{}", has_selection, set_default),
-        cmd!("picture.crop", "Crop", ["Picture Format", "Size"], None, "{left?, top?, right?, bottom?: fraction 0..1, ids?}", has_selection, crop),
+        cmd!(
+            "shape.setDefault",
+            "Set as Default Shape",
+            [],
+            None,
+            "{}",
+            has_selection,
+            set_default
+        ),
+        cmd!(
+            "picture.crop",
+            "Crop",
+            ["Picture Format", "Size"],
+            None,
+            "{left?, top?, right?, bottom?: fraction 0..1, ids?}",
+            has_selection,
+            crop
+        ),
         cmd!(
             "picture.adjust",
             "Corrections",
@@ -96,7 +195,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             picture_adjust
         ),
-        cmd!("picture.reset", "Reset Picture", ["Picture Format", "Adjust"], None, "{ids?}", has_selection, picture_reset),
+        cmd!(
+            "picture.reset",
+            "Reset Picture",
+            ["Picture Format", "Adjust"],
+            None,
+            "{ids?}",
+            has_selection,
+            picture_reset
+        ),
         cmd!(
             "picture.change",
             "Change Picture",
@@ -131,7 +238,10 @@ fn move_by(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn resize(s: &mut Session, p: &Value) -> Result<Value> {
-    let (w, h) = (f64_param(p, "w").map(|v| v.max(0.0)), f64_param(p, "h").map(|v| v.max(0.0)));
+    let (w, h) = (
+        f64_param(p, "w").map(|v| v.max(0.0)),
+        f64_param(p, "h").map(|v| v.max(0.0)),
+    );
     let lock = bool_or(p, "lockAspect", false);
     edit_geometry(s, p, "shape.resize", |sh| {
         if let Some(x) = sh.xfrm.as_mut() {
@@ -185,7 +295,9 @@ fn rotate(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn flip(s: &mut Session, p: &Value) -> Result<Value> {
-    let v = str_param(p, "axis").unwrap_or("horizontal").starts_with('v');
+    let v = str_param(p, "axis")
+        .unwrap_or("horizontal")
+        .starts_with('v');
     edit_geometry(s, p, "shape.flip", |sh| {
         if let Some(x) = sh.xfrm.as_mut() {
             if v {
@@ -203,7 +315,9 @@ fn adjust(s: &mut Session, p: &Value) -> Result<Value> {
     let v = f64_param(p, "value").ok_or_else(|| bad("shape.adjust", "missing `value`"))?;
     edit_geometry(s, p, "shape.adjust", |sh| {
         if let Geom::Preset { name, adj } = &mut sh.geom {
-            let defaults = deckcraft_geom::preset::info(name).map(|x| x.defaults).unwrap_or(&[]);
+            let defaults = deckcraft_geom::preset::info(name)
+                .map(|x| x.defaults)
+                .unwrap_or(&[]);
             while adj.len() <= i {
                 let k = adj.len();
                 adj.push(defaults.get(k).copied().unwrap_or(0.0));
@@ -218,7 +332,8 @@ fn adjust(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn change(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_param(p, "preset").ok_or_else(|| bad("shape.change", "missing `preset`"))?;
-    let info = deckcraft_geom::preset::info(name).ok_or_else(|| bad("shape.change", format!("unknown preset `{name}`")))?;
+    let info = deckcraft_geom::preset::info(name)
+        .ok_or_else(|| bad("shape.change", format!("unknown preset `{name}`")))?;
     edit_geometry(s, p, "shape.change", |sh| {
         sh.geom = Geom::preset(info.name);
         Ok(())
@@ -235,7 +350,10 @@ pub(crate) fn gradient_param(v: &Value) -> Option<Gradient> {
         .iter()
         .filter_map(|s| {
             let a = s.as_array()?;
-            Some(GradientStop { pos: a.first()?.as_f64()?.clamp(0.0, 1.0), color: color_value(a.get(1)?)? })
+            Some(GradientStop {
+                pos: a.first()?.as_f64()?.clamp(0.0, 1.0),
+                color: color_value(a.get(1)?)?,
+            })
         })
         .collect();
     if stops.len() < 2 {
@@ -245,23 +363,43 @@ pub(crate) fn gradient_param(v: &Value) -> Option<Gradient> {
         .get("focus")
         .and_then(Value::as_array)
         .and_then(|a| {
-            let f = |i: usize| a.get(i).and_then(Value::as_f64).filter(|x| x.is_finite()).map(|x| x.clamp(0.0, 1.0));
+            let f = |i: usize| {
+                a.get(i)
+                    .and_then(Value::as_f64)
+                    .filter(|x| x.is_finite())
+                    .map(|x| x.clamp(0.0, 1.0))
+            };
             Some([f(0)?, f(1)?, f(2)?, f(3)?])
         })
         .unwrap_or([0.5, 0.5, 0.5, 0.5]);
     let mut stops = stops;
     stops.sort_by(|a, b| a.pos.total_cmp(&b.pos));
-    let path = |p: &str| GradientShape::Path { path: p.into(), focus };
+    let path = |p: &str| GradientShape::Path {
+        path: p.into(),
+        focus,
+    };
     let shape = match v.get("kind").and_then(Value::as_str) {
         Some("radial" | "circle") => path("circle"),
         Some("rectangular" | "rect") => path("rect"),
         Some("path" | "shape") => path("shape"),
         _ => GradientShape::Linear {
-            angle: v.get("angle").and_then(Value::as_f64).filter(|a| a.is_finite()).unwrap_or(90.0).rem_euclid(360.0),
+            angle: v
+                .get("angle")
+                .and_then(Value::as_f64)
+                .filter(|a| a.is_finite())
+                .unwrap_or(90.0)
+                .rem_euclid(360.0),
             scaled: false,
         },
     };
-    Some(Gradient { stops, shape, rotate_with_shape: v.get("rotateWithShape").and_then(Value::as_bool).unwrap_or(true) })
+    Some(Gradient {
+        stops,
+        shape,
+        rotate_with_shape: v
+            .get("rotateWithShape")
+            .and_then(Value::as_bool)
+            .unwrap_or(true),
+    })
 }
 
 fn fill(s: &mut Session, p: &Value) -> Result<Value> {
@@ -272,26 +410,50 @@ fn fill(s: &mut Session, p: &Value) -> Result<Value> {
     } else if let Some(c) = color_param(p, "color") {
         Some(Some(Fill::solid(c)))
     } else if let Some(g) = p.get("gradient") {
-        Some(Some(Fill::Gradient(
-            gradient_param(g).ok_or_else(|| bad("shape.fill", "gradient needs at least two `stops`: [[0, \"#fff\"], [1, \"#000\"]]"))?,
-        )))
+        Some(Some(Fill::Gradient(gradient_param(g).ok_or_else(
+            || {
+                bad(
+                    "shape.fill",
+                    "gradient needs at least two `stops`: [[0, \"#fff\"], [1, \"#000\"]]",
+                )
+            },
+        )?)))
     } else if let Some(pt) = p.get("pattern") {
         Some(Some(Fill::Pattern(PatternFill {
-            preset: pt.get("preset").and_then(Value::as_str).unwrap_or("pct50").to_string(),
-            fg: pt.get("fg").and_then(color_value).unwrap_or(ColorRef::scheme(SchemeSlot::Accent1)),
-            bg: pt.get("bg").and_then(color_value).unwrap_or(ColorRef::scheme(SchemeSlot::Bg1)),
+            preset: pt
+                .get("preset")
+                .and_then(Value::as_str)
+                .unwrap_or("pct50")
+                .to_string(),
+            fg: pt
+                .get("fg")
+                .and_then(color_value)
+                .unwrap_or(ColorRef::scheme(SchemeSlot::Accent1)),
+            bg: pt
+                .get("bg")
+                .and_then(color_value)
+                .unwrap_or(ColorRef::scheme(SchemeSlot::Bg1)),
         })))
     } else if p.get("picture").is_some() {
-        let (name, bytes) = super::insert::media_bytes(&with_param(p, "data", p.get("picture").cloned().unwrap_or_default()), "shape.fill")?;
+        let (name, bytes) = super::insert::media_bytes(
+            &with_param(p, "data", p.get("picture").cloned().unwrap_or_default()),
+            "shape.fill",
+        )?;
         let ct = super::insert::content_type(&name, &bytes);
         let media = s.edit(|doc, _| Ok(doc.add_media(&name, ct, bytes)))?;
-        Some(Some(Fill::Picture(PictureFill { media, ..Default::default() })))
+        Some(Some(Fill::Picture(PictureFill {
+            media,
+            ..Default::default()
+        })))
     } else {
         None
     };
     let transparency = f64_param(p, "transparency");
     if new_fill.is_none() && transparency.is_none() {
-        return Err(bad("shape.fill", "give `color`, `none`, `gradient`, `pattern`, `picture`, `transparency` or `reset`"));
+        return Err(bad(
+            "shape.fill",
+            "give `color`, `none`, `gradient`, `pattern`, `picture`, `transparency` or `reset`",
+        ));
     }
     // Transparency on an inherited (style) fill needs the effective colour.
     let st = s.doc()?;
@@ -306,7 +468,9 @@ fn fill(s: &mut Session, p: &Value) -> Result<Value> {
                         ctx.as_ref().and_then(|c| {
                             let (f, ph) = deckcraft_model::resolve::fill(c, sh);
                             f.map(|f| match f {
-                                Fill::Solid { color } => Fill::solid(ColorRef::rgb(c.color(&color, ph))),
+                                Fill::Solid { color } => {
+                                    Fill::solid(ColorRef::rgb(c.color(&color, ph)))
+                                }
                                 other => other,
                             })
                         }),
@@ -320,11 +484,20 @@ fn fill(s: &mut Session, p: &Value) -> Result<Value> {
             sh.fill.clone_from(f);
         }
         if let Some(t) = transparency {
-            let base = sh.fill.clone().or_else(|| ctx_fill.iter().find(|(i, _)| *i == sh.id).and_then(|(_, f)| f.clone()));
+            let base = sh.fill.clone().or_else(|| {
+                ctx_fill
+                    .iter()
+                    .find(|(i, _)| *i == sh.id)
+                    .and_then(|(_, f)| f.clone())
+            });
             if let Some(Fill::Solid { mut color }) = base {
-                color.mods.retain(|m| !matches!(m, ColorTransform::Alpha(_)));
+                color
+                    .mods
+                    .retain(|m| !matches!(m, ColorTransform::Alpha(_)));
                 if t > 0.0 {
-                    color.mods.push(ColorTransform::Alpha(((1.0 - t.clamp(0.0, 1.0)) * 100_000.0).round() as i32));
+                    color.mods.push(ColorTransform::Alpha(
+                        ((1.0 - t.clamp(0.0, 1.0)) * 100_000.0).round() as i32,
+                    ));
                 }
                 sh.fill = Some(Fill::Solid { color });
             }
@@ -334,7 +507,15 @@ fn fill(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn line_end(v: &str) -> Option<LineEnd> {
-    if v == "none" { None } else { Some(LineEnd { kind: v.to_string(), w: "med".into(), len: "med".into() }) }
+    if v == "none" {
+        None
+    } else {
+        Some(LineEnd {
+            kind: v.to_string(),
+            w: "med".into(),
+            len: "med".into(),
+        })
+    }
 }
 
 fn line(s: &mut Session, p: &Value) -> Result<Value> {
@@ -342,7 +523,9 @@ fn line(s: &mut Session, p: &Value) -> Result<Value> {
     let none = bool_or(p, "none", false);
     let color = color_param(p, "color");
     let width = f64_param(p, "width").map(|w| w.clamp(0.0, 1584.0));
-    let dash = str_param(p, "dash").map(|d| Dash::Preset { name: d.to_string() });
+    let dash = str_param(p, "dash").map(|d| Dash::Preset {
+        name: d.to_string(),
+    });
     let head = str_param(p, "head").map(line_end);
     let tail = str_param(p, "tail").map(line_end);
     let cap = str_param(p, "cap").map(|c| match c {
@@ -411,15 +594,38 @@ fn shadow_preset(v: &Value) -> Option<Option<Shadow>> {
         Value::String(s) => Some(match s.as_str() {
             "none" => None,
             "inner" => Some(base(true)),
-            "perspective" => Some(Shadow { sy: 0.23, kx: -1200000.0 / 60000.0, dir: 90.0, dist: 0.0, blur: 6.0, align: "bl".into(), ..base(false) }),
-            "bottom" => Some(Shadow { dir: 90.0, ..base(false) }),
-            "center" => Some(Shadow { dist: 0.0, blur: 8.0, ..base(false) }),
+            "perspective" => Some(Shadow {
+                sy: 0.23,
+                kx: -1200000.0 / 60000.0,
+                dir: 90.0,
+                dist: 0.0,
+                blur: 6.0,
+                align: "bl".into(),
+                ..base(false)
+            }),
+            "bottom" => Some(Shadow {
+                dir: 90.0,
+                ..base(false)
+            }),
+            "center" => Some(Shadow {
+                dist: 0.0,
+                blur: 8.0,
+                ..base(false)
+            }),
             _ => Some(base(false)),
         }),
         Value::Object(o) => Some(Some(Shadow {
             color: o.get("color").and_then(color_value).unwrap_or(black(40000)),
-            blur: o.get("blur").and_then(Value::as_f64).unwrap_or(4.0).clamp(0.0, 200.0),
-            dist: o.get("dist").and_then(Value::as_f64).unwrap_or(3.0).clamp(0.0, 200.0),
+            blur: o
+                .get("blur")
+                .and_then(Value::as_f64)
+                .unwrap_or(4.0)
+                .clamp(0.0, 200.0),
+            dist: o
+                .get("dist")
+                .and_then(Value::as_f64)
+                .unwrap_or(3.0)
+                .clamp(0.0, 200.0),
             dir: o.get("dir").and_then(Value::as_f64).unwrap_or(45.0),
             inner: o.get("inner").and_then(Value::as_bool).unwrap_or(false),
             ..base(false)
@@ -433,8 +639,14 @@ fn effects(s: &mut Session, p: &Value) -> Result<Value> {
     let shadow = p.get("shadow").and_then(shadow_preset);
     let glow: Option<Option<Glow>> = p.get("glow").map(|g| match g {
         Value::Object(o) => Some(Glow {
-            color: o.get("color").and_then(color_value).unwrap_or(ColorRef::scheme(SchemeSlot::Accent1).with(ColorTransform::Alpha(40000))),
-            radius: o.get("radius").and_then(Value::as_f64).unwrap_or(8.0).clamp(0.0, 150.0),
+            color: o.get("color").and_then(color_value).unwrap_or(
+                ColorRef::scheme(SchemeSlot::Accent1).with(ColorTransform::Alpha(40000)),
+            ),
+            radius: o
+                .get("radius")
+                .and_then(Value::as_f64)
+                .unwrap_or(8.0)
+                .clamp(0.0, 150.0),
         }),
         Value::Number(n) => Some(Glow {
             color: ColorRef::scheme(SchemeSlot::Accent1).with(ColorTransform::Alpha(40000)),
@@ -442,14 +654,40 @@ fn effects(s: &mut Session, p: &Value) -> Result<Value> {
         }),
         _ => None,
     });
-    let soft = p.get("softEdges").map(|v| v.as_f64().filter(|x| *x > 0.0).map(|x| x.min(100.0)));
+    let soft = p
+        .get("softEdges")
+        .map(|v| v.as_f64().filter(|x| *x > 0.0).map(|x| x.min(100.0)));
     let refl = str_param(p, "reflection").map(|r| match r {
         "none" => None,
-        "half" => Some(Reflection { blur: 0.5, start_alpha: 0.5, end_alpha: 0.0, end_pos: 0.55, dist: 4.0 }),
-        "full" => Some(Reflection { blur: 0.5, start_alpha: 0.5, end_alpha: 0.0, end_pos: 0.9, dist: 4.0 }),
-        _ => Some(Reflection { blur: 0.5, start_alpha: 0.5, end_alpha: 0.0, end_pos: 0.35, dist: 0.0 }),
+        "half" => Some(Reflection {
+            blur: 0.5,
+            start_alpha: 0.5,
+            end_alpha: 0.0,
+            end_pos: 0.55,
+            dist: 4.0,
+        }),
+        "full" => Some(Reflection {
+            blur: 0.5,
+            start_alpha: 0.5,
+            end_alpha: 0.0,
+            end_pos: 0.9,
+            dist: 4.0,
+        }),
+        _ => Some(Reflection {
+            blur: 0.5,
+            start_alpha: 0.5,
+            end_alpha: 0.0,
+            end_pos: 0.35,
+            dist: 0.0,
+        }),
     });
-    let bevel = str_param(p, "bevel").map(|b| if b == "none" { None } else { Some(b.to_string()) });
+    let bevel = str_param(p, "bevel").map(|b| {
+        if b == "none" {
+            None
+        } else {
+            Some(b.to_string())
+        }
+    });
     edit_shapes(s, p, "shape.effects", |sh| {
         if reset {
             sh.effects = None;
@@ -513,7 +751,12 @@ pub fn quick_style_for(index: usize) -> (ShapeStyle, Option<Fill>, Option<Line>)
         }
         1 => (st, None, None),
         2 => {
-            st.fill_ref = (1, c.clone().with(ColorTransform::LumMod(20000)).with(ColorTransform::LumOff(80000)));
+            st.fill_ref = (
+                1,
+                c.clone()
+                    .with(ColorTransform::LumMod(20000))
+                    .with(ColorTransform::LumOff(80000)),
+            );
             st.line_ref = (0, c.clone());
             st.font_ref.1 = Some(c.with(ColorTransform::LumMod(50000)));
             (st, None, Some(Line::none()))
@@ -551,7 +794,9 @@ fn quick_style(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("shape.rename", "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("shape.rename", "missing `name`"))?
+        .to_string();
     edit_shapes(s, p, "shape.rename", |sh| {
         sh.name = name.clone();
         Ok(())
@@ -604,10 +849,17 @@ fn set_locked(sh: &mut deckcraft_model::Shape, to: bool, depth: usize) {
 
 fn set_default(s: &mut Session, _p: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else { return ok() };
+    let Some(sh) = st.selected_shapes().first().map(|x| (*x).clone()) else {
+        return ok();
+    };
     // New shapes drawn in this session take this look (Set as Default Shape).
     s.default_look = Some(super::format::Painted {
-        run: sh.text.as_ref().and_then(|t| t.paragraphs.first()).and_then(|p| p.runs.first()).map(|r| r.props.clone()),
+        run: sh
+            .text
+            .as_ref()
+            .and_then(|t| t.paragraphs.first())
+            .and_then(|p| p.runs.first())
+            .map(|r| r.props.clone()),
         para: None,
         fill: sh.fill.clone(),
         line: sh.line.clone(),
@@ -618,7 +870,12 @@ fn set_default(s: &mut Session, _p: &Value) -> Result<Value> {
 }
 
 fn crop(s: &mut Session, p: &Value) -> Result<Value> {
-    let c = [f64_param(p, "left"), f64_param(p, "top"), f64_param(p, "right"), f64_param(p, "bottom")];
+    let c = [
+        f64_param(p, "left"),
+        f64_param(p, "top"),
+        f64_param(p, "right"),
+        f64_param(p, "bottom"),
+    ];
     edit_geometry(s, p, "picture.crop", |sh| {
         if let deckcraft_model::ShapeKind::Picture { fill } = &mut sh.kind {
             for (i, v) in c.iter().enumerate() {
@@ -708,7 +965,11 @@ fn media_options(s: &mut Session, p: &Value) -> Result<Value> {
             if let Some(v) = f64_param(p, "volume") {
                 m.volume = v.clamp(0.0, 1.0);
             }
-            let ms = |k: &str| p.get(k).and_then(Value::as_u64).map(|v| v.min(u32::MAX as u64) as u32);
+            let ms = |k: &str| {
+                p.get(k)
+                    .and_then(Value::as_u64)
+                    .map(|v| v.min(u32::MAX as u64) as u32)
+            };
             if let Some(v) = ms("trimStart") {
                 m.trim_start_ms = v;
             }
@@ -728,31 +989,58 @@ fn media_options(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn shape_id(p: &Value, key: &str) -> Option<deckcraft_model::ShapeId> {
-    p.get(key).and_then(Value::as_u64).map(|v| deckcraft_model::ShapeId(v as u32))
+    p.get(key)
+        .and_then(Value::as_u64)
+        .map(|v| deckcraft_model::ShapeId(v as u32))
 }
 
 fn sites(s: &mut Session, p: &Value) -> Result<Value> {
     let id = shape_id(p, "id").ok_or_else(|| bad("shape.sites", "missing `id`"))?;
     let st = s.doc()?;
-    let sh = st.shape(id).ok_or_else(|| bad("shape.sites", "no such shape"))?;
-    Ok(json!(crate::connect::sites(&st.doc, &st.selection, sh).iter().map(|q| [q.x, q.y]).collect::<Vec<_>>()))
+    let sh = st
+        .shape(id)
+        .ok_or_else(|| bad("shape.sites", "no such shape"))?;
+    Ok(json!(
+        crate::connect::sites(&st.doc, &st.selection, sh)
+            .iter()
+            .map(|q| [q.x, q.y])
+            .collect::<Vec<_>>()
+    ))
 }
 
 fn connect(s: &mut Session, p: &Value) -> Result<Value> {
-    let (Some(from), Some(to)) = (shape_id(p, "from"), shape_id(p, "to")) else { return Err(bad("shape.connect", "missing `from` / `to`")) };
+    let (Some(from), Some(to)) = (shape_id(p, "from"), shape_id(p, "to")) else {
+        return Err(bad("shape.connect", "missing `from` / `to`"));
+    };
     let st = s.doc()?;
-    let site_list = |id| st.shape(id).map(|sh| crate::connect::sites(&st.doc, &st.selection, sh)).unwrap_or_default();
+    let site_list = |id| {
+        st.shape(id)
+            .map(|sh| crate::connect::sites(&st.doc, &st.selection, sh))
+            .unwrap_or_default()
+    };
     let (a, b) = (site_list(from), site_list(to));
     if a.is_empty() || b.is_empty() {
-        return Err(bad("shape.connect", "both shapes need connection sites (lines and groups have none)"));
+        return Err(bad(
+            "shape.connect",
+            "both shapes need connection sites (lines and groups have none)",
+        ));
     }
-    let pick = |v: &[deckcraft_geom::Point], key: &str| usize_param(p, key).filter(|i| *i < v.len());
+    let pick =
+        |v: &[deckcraft_geom::Point], key: &str| usize_param(p, key).filter(|i| *i < v.len());
     let (ia, ib) = match (pick(&a, "fromSite"), pick(&b, "toSite")) {
         (Some(i), Some(j)) => (i, j),
         (fi, fj) => {
             let mut best = (f64::MAX, 0, 0);
-            for (i, pa) in a.iter().enumerate().filter(|(i, _)| fi.is_none_or(|f| f == *i)) {
-                for (j, pb) in b.iter().enumerate().filter(|(j, _)| fj.is_none_or(|f| f == *j)) {
+            for (i, pa) in a
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| fi.is_none_or(|f| f == *i))
+            {
+                for (j, pb) in b
+                    .iter()
+                    .enumerate()
+                    .filter(|(j, _)| fj.is_none_or(|f| f == *j))
+                {
                     let d = (*pa - *pb).hypot();
                     if d < best.0 {
                         best = (d, i, j);
@@ -767,18 +1055,29 @@ fn connect(s: &mut Session, p: &Value) -> Result<Value> {
         Some(id) => id,
         None => {
             let preset = str_param(p, "preset").unwrap_or("straightConnector1");
-            let r = s.execute("shape.insert", &json!({"preset": preset, "rect": [p0.x, p0.y, 1.0, 1.0]}))?;
-            deckcraft_model::ShapeId(r.get("id").and_then(Value::as_u64).ok_or_else(|| bad("shape.connect", "insert failed"))? as u32)
+            let r = s.execute(
+                "shape.insert",
+                &json!({"preset": preset, "rect": [p0.x, p0.y, 1.0, 1.0]}),
+            )?;
+            deckcraft_model::ShapeId(
+                r.get("id")
+                    .and_then(Value::as_u64)
+                    .ok_or_else(|| bad("shape.connect", "insert failed"))? as u32,
+            )
         }
     };
     s.edit(|doc, sel| {
         let list = crate::shapes_mut(doc, sel).ok_or_else(|| bad("shape.connect", "no slide"))?;
-        let sh = deckcraft_model::find_shape_mut(list, id).ok_or_else(|| bad("shape.connect", "no such line"))?;
+        let sh = deckcraft_model::find_shape_mut(list, id)
+            .ok_or_else(|| bad("shape.connect", "no such line"))?;
         if !sh.is_line() {
             return Err(bad("shape.connect", "`id` is not a line or connector"));
         }
         sh.xfrm = Some(crate::tools::line_xfrm(p0, p1, 0.0));
-        sh.kind = deckcraft_model::ShapeKind::Connector { start: Some((from, ia as u32)), end: Some((to, ib as u32)) };
+        sh.kind = deckcraft_model::ShapeKind::Connector {
+            start: Some((from, ia as u32)),
+            end: Some((to, ib as u32)),
+        };
         Ok(())
     })?;
     Ok(json!({"id": id.0, "fromSite": ia, "toSite": ib}))
@@ -794,14 +1093,26 @@ pub fn freeform_path(pts: &[deckcraft_geom::Point], closed: bool, smooth: bool) 
     let n = pts.len();
     if smooth && n > 2 {
         let at = |i: isize| -> deckcraft_geom::Point {
-            if closed { pts[i.rem_euclid(n as isize) as usize] } else { pts[i.clamp(0, n as isize - 1) as usize] }
+            if closed {
+                pts[i.rem_euclid(n as isize) as usize]
+            } else {
+                pts[i.clamp(0, n as isize - 1) as usize]
+            }
         };
         let segs = if closed { n } else { n - 1 };
         for i in 0..segs as isize {
             let (p0, p1, p2, p3) = (at(i - 1), at(i), at(i + 1), at(i + 2));
             let c1 = p1 + (p2 - p0) / 6.0;
             let c2 = p2 - (p3 - p1) / 6.0;
-            d += &format!(" C {} {} {} {} {} {}", f(c1.x), f(c1.y), f(c2.x), f(c2.y), f(p2.x), f(p2.y));
+            d += &format!(
+                " C {} {} {} {} {} {}",
+                f(c1.x),
+                f(c1.y),
+                f(c2.x),
+                f(c2.y),
+                f(p2.x),
+                f(p2.y)
+            );
         }
     } else {
         for q in &pts[1..] {
@@ -820,7 +1131,12 @@ fn freeform(s: &mut Session, p: &Value) -> Result<Value> {
         .and_then(Value::as_array)
         .map(|a| {
             a.iter()
-                .filter_map(|v| Some(deckcraft_geom::Point::new(v.get(0)?.as_f64()?, v.get(1)?.as_f64()?)))
+                .filter_map(|v| {
+                    Some(deckcraft_geom::Point::new(
+                        v.get(0)?.as_f64()?,
+                        v.get(1)?.as_f64()?,
+                    ))
+                })
                 .filter(|q| q.x.is_finite() && q.y.is_finite())
                 .take(20_000)
                 .collect()
@@ -836,20 +1152,35 @@ fn freeform(s: &mut Session, p: &Value) -> Result<Value> {
         bb = bb.union_pt(*q);
     }
     let (w, h) = (bb.width().max(1.0), bb.height().max(1.0));
-    let local: Vec<deckcraft_geom::Point> = pts.iter().map(|q| deckcraft_geom::Point::new(q.x - bb.x0, q.y - bb.y0)).collect();
+    let local: Vec<deckcraft_geom::Point> = pts
+        .iter()
+        .map(|q| deckcraft_geom::Point::new(q.x - bb.x0, q.y - bb.y0))
+        .collect();
     let d = freeform_path(&local, closed, smooth);
     // Closed shapes take the default shape style, open paths the line style.
-    let r = s.execute("shape.insert", &json!({"preset": if closed { "rect" } else { "line" }, "rect": [bb.x0, bb.y0, w, h]}))?;
-    let id = deckcraft_model::ShapeId(r.get("id").and_then(Value::as_u64).ok_or_else(|| bad("shape.freeform", "insert failed"))? as u32);
+    let r = s.execute(
+        "shape.insert",
+        &json!({"preset": if closed { "rect" } else { "line" }, "rect": [bb.x0, bb.y0, w, h]}),
+    )?;
+    let id = deckcraft_model::ShapeId(
+        r.get("id")
+            .and_then(Value::as_u64)
+            .ok_or_else(|| bad("shape.freeform", "insert failed"))? as u32,
+    );
     s.edit(|doc, sel| {
         let list = crate::shapes_mut(doc, sel).ok_or_else(|| bad("shape.freeform", "no slide"))?;
-        let sh = deckcraft_model::find_shape_mut(list, id).ok_or_else(|| bad("shape.freeform", "insert failed"))?;
+        let sh = deckcraft_model::find_shape_mut(list, id)
+            .ok_or_else(|| bad("shape.freeform", "insert failed"))?;
         sh.geom = Geom::Custom {
             paths: vec![deckcraft_model::CustomPath {
                 w,
                 h,
                 d: d.clone(),
-                fill: if closed { deckcraft_geom::preset::FillMode::Norm } else { deckcraft_geom::preset::FillMode::None },
+                fill: if closed {
+                    deckcraft_geom::preset::FillMode::Norm
+                } else {
+                    deckcraft_geom::preset::FillMode::None
+                },
                 stroke: true,
             }],
         };

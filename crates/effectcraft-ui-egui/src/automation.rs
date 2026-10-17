@@ -41,10 +41,16 @@ impl Registry {
         self.previous = std::mem::take(&mut self.elements);
     }
     pub fn find(&self, id: &str) -> Option<&Element> {
-        self.previous.iter().chain(self.elements.iter()).find(|e| e.id == id)
+        self.previous
+            .iter()
+            .chain(self.elements.iter())
+            .find(|e| e.id == id)
     }
     /// Elements whose id starts with a prefix.
     pub fn query(&self, prefix: &str) -> Vec<&Element> {
-        self.previous.iter().filter(|e| e.id.starts_with(prefix)).collect()
+        self.previous
+            .iter()
+            .filter(|e| e.id.starts_with(prefix))
+            .collect()
     }
 }

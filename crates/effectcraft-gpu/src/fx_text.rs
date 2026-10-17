@@ -17,7 +17,15 @@ pub(crate) const IDS: &[&str] = &["ec.text.numbers", "ec.text.timecode"];
 
 /// Run effect `id` (one of [`IDS`]); `None` = this parameter combination runs on the CPU.
 pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let shape = Buf { img: Image { width: b.img.width, height: b.img.height, data: vec![] }, offset: b.offset, scale: b.scale };
+    let shape = Buf {
+        img: Image {
+            width: b.img.width,
+            height: b.img.height,
+            data: vec![],
+        },
+        offset: b.offset,
+        scale: b.scale,
+    };
     let t = effectcraft_effects::text_layer(id, ctx, &shape)?;
     let cov = e.g.upload_image(&t.coverage)?;
     let mut p = Params::default();

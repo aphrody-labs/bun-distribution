@@ -3,7 +3,7 @@ use bevy_platform::{hash::FixedHasher, sync::PoisonError};
 use bevy_ptr::OwningPtr;
 #[cfg(feature = "bevy_reflect")]
 use bevy_reflect::Reflect;
-use bevy_utils::{prelude::DebugName, TypeIdHashMap};
+use bevy_utils::{TypeIdHashMap, prelude::DebugName};
 use core::{
     alloc::Layout,
     any::{Any, TypeId},

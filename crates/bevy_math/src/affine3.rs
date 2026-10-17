@@ -1,4 +1,4 @@
-use glam::{vec3, Affine3, Affine3A, Mat3, Vec3Swizzles, Vec4, Vec4Swizzles};
+use glam::{Affine3, Affine3A, Mat3, Vec3Swizzles, Vec4, Vec4Swizzles, vec3};
 
 /// Extension trait for [`Affine3`]
 pub trait Affine3Ext {

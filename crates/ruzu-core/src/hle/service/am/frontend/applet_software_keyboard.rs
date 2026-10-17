@@ -1185,7 +1185,11 @@ mod tests {
         let owner = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), false)));
         let parent = Arc::new(Mutex::new(Applet::new(system_ref, Process::new(), true)));
         owner.lock().unwrap().caller_applet = Arc::downgrade(&parent);
-        parent.lock().unwrap().child_applets.push(Arc::clone(&owner));
+        parent
+            .lock()
+            .unwrap()
+            .child_applets
+            .push(Arc::clone(&owner));
         let broker = Arc::new(AppletDataBroker::new());
         let frontend_impl = Arc::new(DeferredSoftwareKeyboardApplet {
             submit_normal: Mutex::new(None),

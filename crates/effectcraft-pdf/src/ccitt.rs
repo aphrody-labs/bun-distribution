@@ -22,7 +22,15 @@ pub struct Params {
 
 impl Default for Params {
     fn default() -> Self {
-        Params { k: 0, end_of_line: false, byte_align: false, columns: 1728, rows: 0, end_of_block: true, black_is_1: false }
+        Params {
+            k: 0,
+            end_of_line: false,
+            byte_align: false,
+            columns: 1728,
+            rows: 0,
+            end_of_block: true,
+            black_is_1: false,
+        }
     }
 }
 
@@ -260,14 +268,23 @@ fn table(term: &[(u16, u8); 64], makeup: &[(u16, u8); 27]) -> Table {
 
 fn tables() -> &'static (Table, Table) {
     static T: OnceLock<(Table, Table)> = OnceLock::new();
-    T.get_or_init(|| (table(&WHITE_TERM, &WHITE_MAKEUP), table(&BLACK_TERM, &BLACK_MAKEUP)))
+    T.get_or_init(|| {
+        (
+            table(&WHITE_TERM, &WHITE_MAKEUP),
+            table(&BLACK_TERM, &BLACK_MAKEUP),
+        )
+    })
 }
 
 /// The code (code, length) for a run of `run` (≥ 0, any length) as make-up codes then a
 /// terminating code (used by the test encoder).
 #[cfg(test)]
 pub(crate) fn run_codes(white: bool, mut run: usize) -> Vec<(u16, u8)> {
-    let (term, makeup) = if white { (&WHITE_TERM, &WHITE_MAKEUP) } else { (&BLACK_TERM, &BLACK_MAKEUP) };
+    let (term, makeup) = if white {
+        (&WHITE_TERM, &WHITE_MAKEUP)
+    } else {
+        (&BLACK_TERM, &BLACK_MAKEUP)
+    };
     let mut out = vec![];
     while run >= 2560 {
         out.push(EXT_MAKEUP[12]);
@@ -291,7 +308,10 @@ struct Reader<'a> {
 
 impl Reader<'_> {
     fn bit_at(&self, i: usize) -> u16 {
-        self.data.get(i / 8).map(|b| ((b >> (7 - i % 8)) & 1) as u16).unwrap_or(0)
+        self.data
+            .get(i / 8)
+            .map(|b| ((b >> (7 - i % 8)) & 1) as u16)
+            .unwrap_or(0)
     }
 
     fn peek(&self, n: usize) -> u16 {
@@ -315,7 +335,10 @@ impl Reader<'_> {
     /// An EOL (eleven or more 0 bits then 1) at the read position: consume it.
     fn eol(&mut self) -> bool {
         let mut zeros = 0;
-        while zeros < 64 && self.bit + zeros < self.data.len() * 8 && self.bit_at(self.bit + zeros) == 0 {
+        while zeros < 64
+            && self.bit + zeros < self.data.len() * 8
+            && self.bit_at(self.bit + zeros) == 0
+        {
             zeros += 1;
         }
         if zeros >= 11 && self.bit + zeros < self.data.len() * 8 {
@@ -496,10 +519,18 @@ fn pack(changes: &[usize], columns: usize, black_is_1: bool, out: &mut Vec<u8>) 
 /// decoded are kept); `None` when no row decodes or the output would exceed `max`.
 pub fn decode(data: &[u8], p: &Params, max: usize) -> Option<Vec<u8>> {
     let columns = p.columns.clamp(1, 1 << 16);
-    let max_rows = if p.rows > 0 { p.rows.min(1 << 20) } else { 1 << 20 };
+    let max_rows = if p.rows > 0 {
+        p.rows.min(1 << 20)
+    } else {
+        1 << 20
+    };
     let row_bytes = columns.checked_add(7)? / 8;
     // With `/Rows` the image is padded to that many rows (below), so its size is known up front.
-    let padded_len = if p.rows > 0 { max_rows.checked_mul(row_bytes)? } else { 0 };
+    let padded_len = if p.rows > 0 {
+        max_rows.checked_mul(row_bytes)?
+    } else {
+        0
+    };
     if row_bytes > max || padded_len > max {
         return None;
     }
@@ -533,7 +564,11 @@ pub fn decode(data: &[u8], p: &Params, max: usize) -> Option<Vec<u8>> {
                 break;
             }
             let two_d = p.k > 0 && r.take(1) == 0;
-            if two_d { row_2d(&mut r, &refl, columns).ok() } else { row_1d(&mut r, columns) }
+            if two_d {
+                row_2d(&mut r, &refl, columns).ok()
+            } else {
+                row_1d(&mut r, columns)
+            }
         };
         let Some(line) = line else { break };
         // Unknown row counts are bounded as rows arrive, without returning a prefix.
@@ -707,20 +742,38 @@ pub(crate) mod tests {
 
     fn unpack(data: &[u8], cols: usize, rows: usize) -> Vec<Vec<bool>> {
         let rb = cols.div_ceil(8);
-        (0..rows).map(|y| (0..cols).map(|x| data[y * rb + x / 8] & (0x80 >> (x % 8)) == 0).collect()).collect()
+        (0..rows)
+            .map(|y| {
+                (0..cols)
+                    .map(|x| data[y * rb + x / 8] & (0x80 >> (x % 8)) == 0)
+                    .collect()
+            })
+            .collect()
     }
 
     #[test]
     fn code_tables_are_prefix_free() {
-        for (white, term, makeup) in [(true, &WHITE_TERM, &WHITE_MAKEUP), (false, &BLACK_TERM, &BLACK_MAKEUP)] {
-            let mut all: Vec<(u16, u8)> = term.iter().chain(makeup.iter()).chain(EXT_MAKEUP.iter()).copied().collect();
+        for (white, term, makeup) in [
+            (true, &WHITE_TERM, &WHITE_MAKEUP),
+            (false, &BLACK_TERM, &BLACK_MAKEUP),
+        ] {
+            let mut all: Vec<(u16, u8)> = term
+                .iter()
+                .chain(makeup.iter())
+                .chain(EXT_MAKEUP.iter())
+                .copied()
+                .collect();
             all.push((1, 12)); // EOL
             let mut kraft = 0.0;
             for (i, a) in all.iter().enumerate() {
                 kraft += 0.5f64.powi(a.1 as i32);
                 for (j, b) in all.iter().enumerate() {
                     if i != j && a.1 <= b.1 {
-                        assert_ne!(b.0 >> (b.1 - a.1), a.0, "white {white}: {a:?} is a prefix of {b:?}");
+                        assert_ne!(
+                            b.0 >> (b.1 - a.1),
+                            a.0,
+                            "white {white}: {a:?} is a prefix of {b:?}"
+                        );
                     }
                 }
             }
@@ -730,25 +783,76 @@ pub(crate) mod tests {
 
     #[test]
     fn round_trips_group_3_and_group_4() {
-        for (cols, rows, seed) in [(1, 3, 1), (8, 8, 2), (37, 29, 3), (300, 40, 4), (2600, 6, 5)] {
+        for (cols, rows, seed) in [
+            (1, 3, 1),
+            (8, 8, 2),
+            (37, 29, 3),
+            (300, 40, 4),
+            (2600, 6, 5),
+        ] {
             let img = pattern(cols, rows, seed);
             for k in [-1, 0, 1, 3] {
                 let data = encode(&img, k);
-                let p = Params { k, columns: cols, rows, ..Params::default() };
-                let out = decode(&data, &p, 1 << 20).unwrap_or_else(|| panic!("{cols}×{rows} K {k}: no rows"));
+                let p = Params {
+                    k,
+                    columns: cols,
+                    rows,
+                    ..Params::default()
+                };
+                let out = decode(&data, &p, 1 << 20)
+                    .unwrap_or_else(|| panic!("{cols}×{rows} K {k}: no rows"));
                 assert_eq!(unpack(&out, cols, rows), img, "{cols}×{rows} K {k}");
                 // Rows unknown: stop at the end of the data / EOFB.
-                let out = decode(&data, &Params { rows: 0, ..p.clone() }, 1 << 20).unwrap();
-                assert_eq!(unpack(&out, cols, rows), img, "{cols}×{rows} K {k}, no /Rows");
+                let out = decode(
+                    &data,
+                    &Params {
+                        rows: 0,
+                        ..p.clone()
+                    },
+                    1 << 20,
+                )
+                .unwrap();
+                assert_eq!(
+                    unpack(&out, cols, rows),
+                    img,
+                    "{cols}×{rows} K {k}, no /Rows"
+                );
                 // BlackIs1 inverts.
-                let inv = decode(&data, &Params { black_is_1: true, ..p }, 1 << 20).unwrap();
-                assert!(inv.iter().zip(&decode(&data, &Params { k, columns: cols, rows, ..Params::default() }, 1 << 20).unwrap()).all(|(a, b)| a ^ b == 0xFF));
+                let inv = decode(
+                    &data,
+                    &Params {
+                        black_is_1: true,
+                        ..p
+                    },
+                    1 << 20,
+                )
+                .unwrap();
+                assert!(
+                    inv.iter()
+                        .zip(
+                            &decode(
+                                &data,
+                                &Params {
+                                    k,
+                                    columns: cols,
+                                    rows,
+                                    ..Params::default()
+                                },
+                                1 << 20
+                            )
+                            .unwrap()
+                        )
+                        .all(|(a, b)| a ^ b == 0xFF)
+                );
             }
         }
     }
 
     fn hex(s: &str) -> Vec<u8> {
-        (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap()).collect()
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
     }
 
     /// Data from an independent encoder (libtiff's `tiffcp -c g4 / g3:1d / g3:2d / g3:1d:fill`,
@@ -777,7 +881,14 @@ pub(crate) mod tests {
             ),
         ];
         for (i, (k, data)) in cases.iter().enumerate() {
-            let p = Params { k: *k, columns: 61, rows: 23, black_is_1: true, end_of_line: *k >= 0, ..Params::default() };
+            let p = Params {
+                k: *k,
+                columns: 61,
+                rows: 23,
+                black_is_1: true,
+                end_of_line: *k >= 0,
+                ..Params::default()
+            };
             let out = decode(&hex(data), &p, 1 << 20).unwrap();
             assert_eq!(out, raw, "case {i} (K {k})");
             let out = decode(&hex(data), &Params { rows: 0, ..p }, 1 << 20).unwrap();
@@ -790,7 +901,16 @@ pub(crate) mod tests {
         let img = pattern(64, 20, 9);
         let data = encode(&img, -1);
         for cut in [0, 1, data.len() / 3, data.len() - 3] {
-            let out = decode(&data[..cut], &Params { k: -1, columns: 64, rows: 20, ..Params::default() }, 1 << 20);
+            let out = decode(
+                &data[..cut],
+                &Params {
+                    k: -1,
+                    columns: 64,
+                    rows: 20,
+                    ..Params::default()
+                },
+                1 << 20,
+            );
             if let Some(out) = out {
                 assert_eq!(out.len(), 20 * 8);
             }
@@ -800,8 +920,26 @@ pub(crate) mod tests {
             *b ^= (i * 37) as u8;
         }
         for k in [-1, 0, 2] {
-            let _ = decode(&garbage, &Params { k, columns: 64, rows: 20, ..Params::default() }, 1 << 20);
-            let _ = decode(&garbage, &Params { k, columns: 1, rows: 0, ..Params::default() }, 1 << 20);
+            let _ = decode(
+                &garbage,
+                &Params {
+                    k,
+                    columns: 64,
+                    rows: 20,
+                    ..Params::default()
+                },
+                1 << 20,
+            );
+            let _ = decode(
+                &garbage,
+                &Params {
+                    k,
+                    columns: 1,
+                    rows: 0,
+                    ..Params::default()
+                },
+                1 << 20,
+            );
         }
     }
 }

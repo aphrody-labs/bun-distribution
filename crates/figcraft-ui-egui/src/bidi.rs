@@ -10,7 +10,9 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use egui::text::{ByteIndex, CCursor, CCursorRange, LayoutJob, LayoutSection, TextFormat, TextWrapping};
+use egui::text::{
+    ByteIndex, CCursor, CCursorRange, LayoutJob, LayoutSection, TextFormat, TextWrapping,
+};
 use egui::{Color32, FontId, Galley, Id, Painter, Pos2, Rect, Response, Stroke, Ui, pos2, vec2};
 use figcraft_text::display::{self, VisualLine};
 
@@ -26,15 +28,29 @@ const ELIDED_MAX: usize = 4096;
 
 /// `name` on one line in `font`, at most `max_w` wide (ending in an ellipsis when cut), ready to
 /// paint: in visual order with Arabic letters joined when it has right-to-left text.
-pub fn name_galley(painter: &Painter, name: &str, font: FontId, color: Color32, max_w: f32) -> Arc<Galley> {
+pub fn name_galley(
+    painter: &Painter,
+    name: &str,
+    font: FontId,
+    color: Color32,
+    max_w: f32,
+) -> Arc<Galley> {
     let max_w = max_w.max(1.0);
     if !display::has_rtl(name) {
         let mut job = LayoutJob::simple_singleline(name.to_string(), font, color);
         job.wrap = TextWrapping::truncate_at_width(max_w);
         return painter.layout_job(job);
     }
-    let key = (name.to_string(), font.size.to_bits(), matches!(font.family, egui::FontFamily::Proportional), max_w.to_bits());
-    let cache = painter.ctx().data_mut(|d| d.get_temp_mut_or_default::<Elided>(Id::new("bidi_elided")).clone());
+    let key = (
+        name.to_string(),
+        font.size.to_bits(),
+        matches!(font.family, egui::FontFamily::Proportional),
+        max_w.to_bits(),
+    );
+    let cache = painter.ctx().data_mut(|d| {
+        d.get_temp_mut_or_default::<Elided>(Id::new("bidi_elided"))
+            .clone()
+    });
     let hit = cache.0.lock().ok().and_then(|m| m.get(&key).cloned());
     let shown = hit.unwrap_or_else(|| {
         let fits = |v: &VisualLine| visual_galley(painter, v, &font, color).size().x <= max_w;
@@ -52,16 +68,26 @@ pub fn name_galley(painter: &Painter, name: &str, font: FontId, color: Color32, 
 
 /// A line in display order laid out with each cluster as its own section, so egui's shaper (which
 /// would reverse a right-to-left run once more) gets one ordered, joined cluster at a time.
-fn visual_galley(painter: &Painter, line: &VisualLine, font: &FontId, color: Color32) -> Arc<Galley> {
+fn visual_galley(
+    painter: &Painter,
+    line: &VisualLine,
+    font: &FontId,
+    color: Color32,
+) -> Arc<Galley> {
     let chars: Vec<char> = line.text.chars().collect();
     let format = TextFormat::simple(font.clone(), color);
     let mut job = LayoutJob::default();
     for c in &line.clusters {
         let start = job.text.len();
-        job.text.extend(chars.get(c.shown.clone()).unwrap_or_default());
+        job.text
+            .extend(chars.get(c.shown.clone()).unwrap_or_default());
         // Pushed as is: `LayoutJob::append` would merge it with the section before.
         if job.text.len() > start {
-            job.sections.push(LayoutSection { leading_space: 0.0, byte_range: ByteIndex(start)..ByteIndex(job.text.len()), format: format.clone() });
+            job.sections.push(LayoutSection {
+                leading_space: 0.0,
+                byte_range: ByteIndex(start)..ByteIndex(job.text.len()),
+                format: format.clone(),
+            });
         }
     }
     painter.layout_job(job)
@@ -69,9 +95,19 @@ fn visual_galley(painter: &Painter, line: &VisualLine, font: &FontId, color: Col
 
 /// Paint `name` (see [`name_galley`]) with its left end at `left_center`'s x, centred on its y;
 /// returns the painted rectangle.
-pub fn paint_name(painter: &Painter, left_center: Pos2, name: &str, font: FontId, color: Color32, max_w: f32) -> Rect {
+pub fn paint_name(
+    painter: &Painter,
+    left_center: Pos2,
+    name: &str,
+    font: FontId,
+    color: Color32,
+    max_w: f32,
+) -> Rect {
     let galley = name_galley(painter, name, font, color, max_w);
-    let rect = Rect::from_min_size(pos2(left_center.x, left_center.y - galley.size().y / 2.0), galley.size());
+    let rect = Rect::from_min_size(
+        pos2(left_center.x, left_center.y - galley.size().y / 2.0),
+        galley.size(),
+    );
     painter.galley(rect.min, galley, color);
     rect
 }
@@ -81,7 +117,13 @@ fn edges(v: &VisualLine, galley: &Galley) -> Vec<(f64, f64)> {
     let chars: Vec<(f64, f64)> = galley
         .rows
         .first()
-        .map(|r| r.row.glyphs.iter().map(|g| (f64::from(g.pos.x), f64::from(g.pos.x + g.advance_width))).collect())
+        .map(|r| {
+            r.row
+                .glyphs
+                .iter()
+                .map(|g| (f64::from(g.pos.x), f64::from(g.pos.x + g.advance_width)))
+                .collect()
+        })
         .unwrap_or_default();
     v.cluster_edges(&chars)
 }
@@ -98,7 +140,11 @@ impl Shown {
         let line = display::visual_line(text);
         let galley = visual_galley(ui.painter(), &line, font, color);
         let edges = edges(&line, &galley);
-        Shown { line, galley, edges }
+        Shown {
+            line,
+            galley,
+            edges,
+        }
     }
 
     fn caret_x(&self, i: usize) -> f32 {
@@ -164,13 +210,21 @@ pub fn single_line(ui: &mut Ui, id: Id, text: &mut String, font: FontId, width: 
         if response.double_clicked() {
             let (a, b) = word_at(text, at);
             range = Some(CCursorRange::two(CCursor::new(a), CCursor::new(b)));
-        } else if response.clicked() || (response.is_pointer_button_down_on() && !response.dragged()) {
+        } else if response.clicked()
+            || (response.is_pointer_button_down_on() && !response.dragged())
+        {
             // Pressed (not yet dragging): the caret and the drag's anchor go here.
             ui.data_mut(|d| d.insert_temp(anchor_id(id), at));
             range = Some(CCursorRange::one(CCursor::new(at)));
         } else if response.dragged() {
-            let anchor = ui.data(|d| d.get_temp::<usize>(anchor_id(id))).unwrap_or(at);
-            range = Some(CCursorRange { primary: CCursor::new(at), secondary: CCursor::new(anchor), h_pos: None });
+            let anchor = ui
+                .data(|d| d.get_temp::<usize>(anchor_id(id)))
+                .unwrap_or(at);
+            range = Some(CCursorRange {
+                primary: CCursor::new(at),
+                secondary: CCursor::new(anchor),
+                h_pos: None,
+            });
         }
         if range != out.state.cursor.char_range() {
             let mut state = out.state.clone();
@@ -196,15 +250,20 @@ pub fn single_line(ui: &mut Ui, id: Id, text: &mut String, font: FontId, width: 
     if focused && let Some(r) = range {
         let (a, b) = (r.primary.index.0, r.secondary.index.0);
         for (x0, x1) in shown.line.selection(a, b, &shown.edges) {
-            let sel = Rect::from_min_max(pos2(o.x + x0 as f32, o.y), pos2(o.x + x1 as f32, o.y + h));
+            let sel =
+                Rect::from_min_max(pos2(o.x + x0 as f32, o.y), pos2(o.x + x1 as f32, o.y + h));
             painter.rect_filled(sel, 0.0, ui.visuals().selection.bg_fill);
         }
     }
     painter.galley(o, shown.galley.clone(), color);
     if focused {
         let x = (o.x + cx).round() + 0.5;
-        painter.line_segment([pos2(x, o.y), pos2(x, o.y + h)], ui.visuals().text_cursor.stroke);
-        ui.ctx().request_repaint_after(std::time::Duration::from_millis(500));
+        painter.line_segment(
+            [pos2(x, o.y), pos2(x, o.y + h)],
+            ui.visuals().text_cursor.stroke,
+        );
+        ui.ctx()
+            .request_repaint_after(std::time::Duration::from_millis(500));
     }
     response
 }
@@ -215,9 +274,12 @@ fn visual_arrows(ui: &mut Ui, id: Id, text: &str, font: &FontId, color: Color32)
     let moves: Vec<(bool, bool)> = ui.input_mut(|i| {
         let mut out = Vec::new();
         i.events.retain(|e| match e {
-            egui::Event::Key { key: key @ (egui::Key::ArrowLeft | egui::Key::ArrowRight), pressed: true, modifiers, .. }
-                if !modifiers.alt && !modifiers.command && !modifiers.ctrl =>
-            {
+            egui::Event::Key {
+                key: key @ (egui::Key::ArrowLeft | egui::Key::ArrowRight),
+                pressed: true,
+                modifiers,
+                ..
+            } if !modifiers.alt && !modifiers.command && !modifiers.ctrl => {
                 out.push((*key == egui::Key::ArrowRight, modifiers.shift));
                 false
             }
@@ -228,11 +290,16 @@ fn visual_arrows(ui: &mut Ui, id: Id, text: &str, font: &FontId, color: Color32)
     if moves.is_empty() {
         return;
     }
-    let Some(mut state) = egui::TextEdit::load_state(ui.ctx(), id) else { return };
+    let Some(mut state) = egui::TextEdit::load_state(ui.ctx(), id) else {
+        return;
+    };
     let shown = Shown::new(ui, text, font, color);
     let mut r = state.cursor.char_range().unwrap_or_default();
     for (right, shift) in moves {
-        let (lo, hi) = (r.primary.index.0.min(r.secondary.index.0), r.primary.index.0.max(r.secondary.index.0));
+        let (lo, hi) = (
+            r.primary.index.0.min(r.secondary.index.0),
+            r.primary.index.0.max(r.secondary.index.0),
+        );
         let next = if !shift && lo != hi {
             // A selection collapses to its end on the side of the arrow.
             let (xa, xb) = (shown.caret_x(lo), shown.caret_x(hi));
@@ -241,7 +308,11 @@ fn visual_arrows(ui: &mut Ui, id: Id, text: &str, font: &FontId, color: Color32)
             shown.line.step(r.primary.index.0, right, &shown.edges)
         };
         r = if shift {
-            CCursorRange { primary: CCursor::new(next), secondary: r.secondary, h_pos: None }
+            CCursorRange {
+                primary: CCursor::new(next),
+                secondary: r.secondary,
+                h_pos: None,
+            }
         } else {
             CCursorRange::one(CCursor::new(next))
         };
@@ -253,8 +324,12 @@ fn visual_arrows(ui: &mut Ui, id: Id, text: &str, font: &FontId, color: Color32)
 /// The word around char `i` (letters, digits and marks; else the single char).
 fn word_at(text: &str, i: usize) -> (usize, usize) {
     let chars: Vec<char> = text.chars().collect();
-    let is_word =
-        |k: usize| chars.get(k).is_some_and(|c| c.is_alphanumeric() || matches!(*c as u32, 0x0300..=0x036F | 0x0591..=0x05C7 | 0x064B..=0x065F));
+    let is_word = |k: usize| {
+        chars.get(k).is_some_and(|c| {
+            c.is_alphanumeric()
+                || matches!(*c as u32, 0x0300..=0x036F | 0x0591..=0x05C7 | 0x064B..=0x065F)
+        })
+    };
     let i = i.min(chars.len());
     let at = if is_word(i) {
         i
@@ -297,8 +372,13 @@ pub fn script_fallbacks(have: &dyn Fn(char) -> bool) -> Vec<(String, egui::FontD
         if have(c) || taken.iter().any(|f| f.has_char(c)) {
             continue;
         }
-        let Some(face) = figcraft_text::face_with_char(c, &FAMILIES) else { continue };
-        out.push((format!("system-{}-{}", face.family, face.style), crate::theme::font_data(&face)));
+        let Some(face) = figcraft_text::face_with_char(c, &FAMILIES) else {
+            continue;
+        };
+        out.push((
+            format!("system-{}-{}", face.family, face.style),
+            crate::theme::font_data(&face),
+        ));
         taken.push(face);
     }
     out

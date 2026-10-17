@@ -55,7 +55,11 @@ impl BitWriter {
 
     /// se(v).
     pub fn se(&mut self, v: i32) {
-        let k = if v > 0 { 2 * v as u32 - 1 } else { (-(v as i64) as u32) * 2 };
+        let k = if v > 0 {
+            2 * v as u32 - 1
+        } else {
+            (-(v as i64) as u32) * 2
+        };
         self.ue(k);
     }
 

@@ -37,7 +37,11 @@ pub(crate) fn place(styles: &[RunStyle], line: &mut [PlacedGlyph]) -> f64 {
             break;
         }
         let members: Vec<usize> = (i..j).filter(|&k| is_warichu(styles, &line[k])).collect();
-        if members.is_empty() || members.iter().any(|&k| line[k].rtl || line[k].tcy.is_some()) {
+        if members.is_empty()
+            || members
+                .iter()
+                .any(|&k| line[k].rtl || line[k].tcy.is_some())
+        {
             i = j;
             continue;
         }
@@ -156,7 +160,9 @@ fn split_even(advs: &[f64], n: usize, before: usize, after: usize) -> Vec<usize>
 
 fn restore(line: &mut [PlacedGlyph], members: &[usize], saved: &[(f64, f64, f64, f64)]) {
     for (i, &k) in members.iter().enumerate() {
-        let Some((y, adv, sx, sy)) = saved.get(i).copied() else { continue };
+        let Some((y, adv, sx, sy)) = saved.get(i).copied() else {
+            continue;
+        };
         let Some(g) = line.get_mut(k) else { continue };
         g.y = y;
         g.adv = adv;
@@ -174,8 +180,14 @@ fn layout(styles: &[RunStyle], line: &mut [PlacedGlyph], members: &[usize]) -> f
     let after = st.warichu_chars_after as usize;
     let n = line_count(members.len(), st.warichu_lines as usize, before, after);
     let scale = (st.warichu_size / 100.0).clamp(0.05, 4.0);
-    let old_x0 = members.iter().map(|&k| line[k].x).fold(f64::INFINITY, f64::min);
-    let old_right = members.iter().map(|&k| line[k].x + line[k].adv).fold(f64::NEG_INFINITY, f64::max);
+    let old_x0 = members
+        .iter()
+        .map(|&k| line[k].x)
+        .fold(f64::INFINITY, f64::min);
+    let old_right = members
+        .iter()
+        .map(|&k| line[k].x + line[k].adv)
+        .fold(f64::NEG_INFINITY, f64::max);
     let old_span = old_right - old_x0;
     if !old_span.is_finite() || old_span <= 0.0 {
         return 0.0;
@@ -199,7 +211,11 @@ fn layout(styles: &[RunStyle], line: &mut [PlacedGlyph], members: &[usize]) -> f
         restore(line, members, &saved);
         return 0.0;
     }
-    let counts = if n <= 1 { vec![members.len()] } else { split_even(&scaled, n, before.max(1), after.max(1)) };
+    let counts = if n <= 1 {
+        vec![members.len()]
+    } else {
+        split_even(&scaled, n, before.max(1), after.max(1))
+    };
     let mut widths = Vec::with_capacity(counts.len());
     let mut off = 0_usize;
     for &c in &counts {
@@ -220,7 +236,11 @@ fn layout(styles: &[RunStyle], line: &mut [PlacedGlyph], members: &[usize]) -> f
     let small = st.size * scale;
     // 0 is the default (one small em). Any other value, including a negative one, is added to
     // that em and then clamped so the rows cannot swap order.
-    let gap = if st.warichu_line_spacing == 0.0 { small } else { (small + st.warichu_line_spacing).max(0.0) };
+    let gap = if st.warichu_line_spacing == 0.0 {
+        small
+    } else {
+        (small + st.warichu_line_spacing).max(0.0)
+    };
     let mut off = 0_usize;
     for (li, &c) in counts.iter().enumerate() {
         let w = widths[li];
@@ -228,7 +248,9 @@ fn layout(styles: &[RunStyle], line: &mut [PlacedGlyph], members: &[usize]) -> f
             WarichuAlignment::Left => (0.0, 0.0),
             WarichuAlignment::Right => ((block - w).max(0.0), 0.0),
             WarichuAlignment::Justify if c > 1 && block > w => (0.0, (block - w) / (c - 1) as f64),
-            WarichuAlignment::Auto | WarichuAlignment::Center | WarichuAlignment::Justify => ((block - w) / 2.0, 0.0),
+            WarichuAlignment::Auto | WarichuAlignment::Center | WarichuAlignment::Justify => {
+                ((block - w) / 2.0, 0.0)
+            }
         };
         let y_off = (li as f64 - (rows as f64 - 1.0) / 2.0) * gap;
         let mut x = old_x0 + start_x;
@@ -240,7 +262,11 @@ fn layout(styles: &[RunStyle], line: &mut [PlacedGlyph], members: &[usize]) -> f
         off += c;
     }
     let delta = block - old_span;
-    let mut placed: Vec<(f64, f64)> = old_xs.iter().enumerate().map(|(i, ox)| (*ox, line[members[i]].x)).collect();
+    let mut placed: Vec<(f64, f64)> = old_xs
+        .iter()
+        .enumerate()
+        .map(|(i, ox)| (*ox, line[members[i]].x))
+        .collect();
     placed.sort_by(|a, b| a.0.total_cmp(&b.0));
     let mut member_at = vec![false; line.len()];
     for &k in members {

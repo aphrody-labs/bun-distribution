@@ -69,7 +69,11 @@ impl Ctx<'_> {
 }
 
 fn preset_name(name: &str) -> &str {
-    if name == "textBox" || name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric()) { "rect" } else { name }
+    if name == "textBox" || name.is_empty() || !name.chars().all(|c| c.is_ascii_alphanumeric()) {
+        "rect"
+    } else {
+        name
+    }
 }
 
 /// Non-adjust shape guides some presets carry in their `avLst` (ECMA-376 default values).
@@ -94,16 +98,30 @@ pub fn geometry(w: &mut W, g: &Geom) {
                 w.empty0("a:avLst");
             } else {
                 // PowerPoint wants the complete guide list once any is given.
-                let defaults = deckcraft_geom::preset::info(name).map(|i| i.defaults).unwrap_or(&[]);
+                let defaults = deckcraft_geom::preset::info(name)
+                    .map(|i| i.defaults)
+                    .unwrap_or(&[]);
                 let mut vals: Vec<f64> = adj.iter().take(16).copied().collect();
                 while vals.len() < defaults.len() {
                     vals.push(defaults.get(vals.len()).copied().unwrap_or(0.0));
                 }
                 w.open0("a:avLst");
-                let single = if defaults.is_empty() { vals.len() == 1 } else { defaults.len() == 1 };
+                let single = if defaults.is_empty() {
+                    vals.len() == 1
+                } else {
+                    defaults.len() == 1
+                };
                 for (i, v) in vals.iter().enumerate() {
-                    let n = if single && i == 0 { "adj".to_string() } else { format!("adj{}", i + 1) };
-                    let v = if v.is_finite() { v.round().clamp(-2.0e9, 2.0e9) as i64 } else { 0 };
+                    let n = if single && i == 0 {
+                        "adj".to_string()
+                    } else {
+                        format!("adj{}", i + 1)
+                    };
+                    let v = if v.is_finite() {
+                        v.round().clamp(-2.0e9, 2.0e9) as i64
+                    } else {
+                        0
+                    };
                     w.empty("a:gd", A::new().a("name", n).a("fmla", format!("val {v}")));
                 }
                 for (n, v) in extra_guides(name) {
@@ -128,7 +146,14 @@ pub fn geometry(w: &mut W, g: &Geom) {
 fn cnvpr(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape) {
     let a = A::new()
         .a("id", id)
-        .a("name", if s.name.is_empty() { format!("Shape {id}") } else { s.name.clone() })
+        .a(
+            "name",
+            if s.name.is_empty() {
+                format!("Shape {id}")
+            } else {
+                s.name.clone()
+            },
+        )
         .o("descr", (!s.descr.is_empty()).then_some(s.descr.as_str()))
         .t("hidden", s.hidden)
         .o("title", (!s.title.is_empty()).then_some(s.title.as_str()));
@@ -145,8 +170,19 @@ fn cnvpr(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape) {
     }
     if s.decorative {
         w.open0("a:extLst");
-        w.open("a:ext", A::new().a("uri", "{C183D7F6-B498-43B3-948B-1728B52AA6E4}"));
-        w.empty("adec:decorative", A::new().a("xmlns:adec", "http://schemas.microsoft.com/office/drawing/2017/decorative").a("val", "1"));
+        w.open(
+            "a:ext",
+            A::new().a("uri", "{C183D7F6-B498-43B3-948B-1728B52AA6E4}"),
+        );
+        w.empty(
+            "adec:decorative",
+            A::new()
+                .a(
+                    "xmlns:adec",
+                    "http://schemas.microsoft.com/office/drawing/2017/decorative",
+                )
+                .a("val", "1"),
+        );
         w.close("a:ext");
         w.close("a:extLst");
     }
@@ -161,7 +197,10 @@ fn nv_pr(w: &mut W, s: &Shape) {
                 PhType::Obj => None,
                 k => Some(k.xml()),
             };
-            let sz = ph.size.as_deref().filter(|z| matches!(*z, "full" | "half" | "quarter"));
+            let sz = ph
+                .size
+                .as_deref()
+                .filter(|z| matches!(*z, "full" | "half" | "quarter"));
             w.empty(
                 "p:ph",
                 A::new()
@@ -182,7 +221,11 @@ fn nv_pr(w: &mut W, s: &Shape) {
 fn locks(w: &mut W, tag: &str, s: &Shape, extra: A) {
     let a = extra.t("noGrp", s.ph.is_some() || s.locked);
     let a = match tag {
-        "a:grpSpLocks" => a.t("noUngrp", s.locked).t("noRot", s.locked).t("noMove", s.locked).t("noResize", s.locked),
+        "a:grpSpLocks" => a
+            .t("noUngrp", s.locked)
+            .t("noRot", s.locked)
+            .t("noMove", s.locked)
+            .t("noResize", s.locked),
         _ => {
             let a = a
                 .t("noRot", s.locked)
@@ -192,7 +235,11 @@ fn locks(w: &mut W, tag: &str, s: &Shape, extra: A) {
                 .t("noAdjustHandles", s.locked)
                 .t("noChangeArrowheads", s.locked)
                 .t("noChangeShapeType", s.locked);
-            if tag == "a:picLocks" { a.t("noCrop", s.locked) } else { a }
+            if tag == "a:picLocks" {
+                a.t("noCrop", s.locked)
+            } else {
+                a
+            }
         }
     };
     if a.v.is_empty() {
@@ -203,7 +250,11 @@ fn locks(w: &mut W, tag: &str, s: &Shape, extra: A) {
 
 fn style(w: &mut W, st: &ShapeStyle) {
     w.open0("p:style");
-    for (tag, (idx, c)) in [("a:lnRef", &st.line_ref), ("a:fillRef", &st.fill_ref), ("a:effectRef", &st.effect_ref)] {
+    for (tag, (idx, c)) in [
+        ("a:lnRef", &st.line_ref),
+        ("a:fillRef", &st.fill_ref),
+        ("a:effectRef", &st.effect_ref),
+    ] {
         w.open(tag, A::new().a("idx", idx));
         dml::color(w, c);
         w.close(tag);
@@ -229,7 +280,11 @@ fn sp_pr(w: &mut W, x: &mut Exp, o: &mut Out, s: &Shape, geom: bool) {
     if let Some(xf) = &s.xfrm {
         dml::xfrm(w, "a:xfrm", xf, None);
     }
-    if geom && (s.xfrm.is_some() || s.ph.is_none() || !matches!(&s.geom, Geom::Preset { name, adj } if name == "rect" && adj.is_empty())) {
+    if geom
+        && (s.xfrm.is_some()
+            || s.ph.is_none()
+            || !matches!(&s.geom, Geom::Preset { name, adj } if name == "rect" && adj.is_empty()))
+    {
         geometry(w, &s.geom);
     }
     if let Some(f) = &s.fill {
@@ -263,7 +318,12 @@ pub fn shape(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, depth
             if s.text.as_ref().is_some_and(dml::has_math) {
                 // Equations: OMML for readers that know it, plain text otherwise.
                 w.open("mc:AlternateContent", A::new().a("xmlns:mc", NS_MC));
-                w.open("mc:Choice", A::new().a("xmlns:a14", crate::opc::NS_A14).a("Requires", "a14"));
+                w.open(
+                    "mc:Choice",
+                    A::new()
+                        .a("xmlns:a14", crate::opc::NS_A14)
+                        .a("Requires", "a14"),
+                );
                 let id = cx.id_for(s);
                 sp(w, x, o, id, s, true);
                 w.close("mc:Choice");
@@ -288,7 +348,10 @@ pub fn shape(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, depth
             w.close("p:nvPicPr");
             dml::blip_fill(w, x, o, "p:blipFill", fill);
             let mut s2 = s.clone();
-            if matches!(s2.fill, Some(Fill::Picture(_) | Fill::Background | Fill::Group)) {
+            if matches!(
+                s2.fill,
+                Some(Fill::Picture(_) | Fill::Background | Fill::Group)
+            ) {
                 s2.fill = None;
             }
             sp_pr(w, x, o, &s2, true);
@@ -358,7 +421,13 @@ pub fn shape(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, depth
         ShapeKind::Table(t) => {
             let id = cx.id_for(s);
             frame_open(w, x, o, id, s);
-            w.open("a:graphicData", A::new().a("uri", "http://schemas.openxmlformats.org/drawingml/2006/table"));
+            w.open(
+                "a:graphicData",
+                A::new().a(
+                    "uri",
+                    "http://schemas.openxmlformats.org/drawingml/2006/table",
+                ),
+            );
             table(w, x, o, t);
             w.close("a:graphicData");
             frame_close(w);
@@ -367,8 +436,17 @@ pub fn shape(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, depth
             let id = cx.id_for(s);
             let rid = x.chart_rel(o, c);
             frame_open(w, x, o, id, s);
-            w.open("a:graphicData", A::new().a("uri", "http://schemas.openxmlformats.org/drawingml/2006/chart"));
-            w.empty("c:chart", A::new().a("xmlns:c", crate::opc::NS_C).a("r:id", rid));
+            w.open(
+                "a:graphicData",
+                A::new().a(
+                    "uri",
+                    "http://schemas.openxmlformats.org/drawingml/2006/chart",
+                ),
+            );
+            w.empty(
+                "c:chart",
+                A::new().a("xmlns:c", crate::opc::NS_C).a("r:id", rid),
+            );
             w.close("a:graphicData");
             frame_close(w);
         }
@@ -390,20 +468,35 @@ pub fn shape(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, depth
             dml::xfrm(w, "a:xfrm", &xf, Some(&xf));
             w.close("p:grpSpPr");
             for (i, st) in strokes.iter().enumerate().take(10_000) {
-                let Some(stroke) = ink_shape(st, i) else { continue };
+                let Some(stroke) = ink_shape(st, i) else {
+                    continue;
+                };
                 let sid = cx.ids.fresh();
                 sp(w, x, o, sid, &stroke, false);
             }
             w.close("p:grpSp");
         }
-        ShapeKind::Opaque { xml, preview, label } => opaque(w, x, o, cx, s, xml, *preview, label),
+        ShapeKind::Opaque {
+            xml,
+            preview,
+            label,
+        } => opaque(w, x, o, cx, s, xml, *preview, label),
     }
 }
 
 fn ink_shape(st: &deckcraft_model::InkStroke, i: usize) -> Option<Shape> {
-    let pts: Vec<(f64, f64)> = st.points.iter().filter(|p| p.0.is_finite() && p.1.is_finite()).map(|p| (p.0, p.1)).collect();
-    let (x0, y0) = pts.iter().fold((f64::MAX, f64::MAX), |a, p| (a.0.min(p.0), a.1.min(p.1)));
-    let (x1, y1) = pts.iter().fold((f64::MIN, f64::MIN), |a, p| (a.0.max(p.0), a.1.max(p.1)));
+    let pts: Vec<(f64, f64)> = st
+        .points
+        .iter()
+        .filter(|p| p.0.is_finite() && p.1.is_finite())
+        .map(|p| (p.0, p.1))
+        .collect();
+    let (x0, y0) = pts
+        .iter()
+        .fold((f64::MAX, f64::MAX), |a, p| (a.0.min(p.0), a.1.min(p.1)));
+    let (x1, y1) = pts
+        .iter()
+        .fold((f64::MIN, f64::MIN), |a, p| (a.0.max(p.0), a.1.max(p.1)));
     if pts.len() < 2 {
         return None;
     }
@@ -421,7 +514,15 @@ fn ink_shape(st: &deckcraft_model::InkStroke, i: usize) -> Option<Shape> {
         id: ShapeId(0),
         name: format!("Ink {}", i + 1),
         xfrm: Some(Xfrm::new(x0, y0, w, h)),
-        geom: Geom::Custom { paths: vec![deckcraft_model::CustomPath { w, h, d, fill: deckcraft_geom::preset::FillMode::None, stroke: true }] },
+        geom: Geom::Custom {
+            paths: vec![deckcraft_model::CustomPath {
+                w,
+                h,
+                d,
+                fill: deckcraft_geom::preset::FillMode::None,
+                stroke: true,
+            }],
+        },
         fill: Some(Fill::None),
         line: Some(deckcraft_model::Line {
             cap: Some(deckcraft_model::style::LineCap::Round),
@@ -433,7 +534,10 @@ fn ink_shape(st: &deckcraft_model::InkStroke, i: usize) -> Option<Shape> {
 }
 
 fn sp(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape, math: bool) {
-    w.open("p:sp", A::new().t("useBgFill", matches!(s.fill, Some(Fill::Background))));
+    w.open(
+        "p:sp",
+        A::new().t("useBgFill", matches!(s.fill, Some(Fill::Background))),
+    );
     w.open0("p:nvSpPr");
     cnvpr(w, x, o, id, s);
     let mut cnv = A::new();
@@ -474,7 +578,14 @@ fn frame_open(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape) {
     w.open0("p:nvGraphicFramePr");
     cnvpr(w, x, o, id, s);
     w.open0("p:cNvGraphicFramePr");
-    w.empty("a:graphicFrameLocks", A::new().a("noGrp", "1").t("noDrilldown", s.locked).t("noMove", s.locked).t("noResize", s.locked));
+    w.empty(
+        "a:graphicFrameLocks",
+        A::new()
+            .a("noGrp", "1")
+            .t("noDrilldown", s.locked)
+            .t("noMove", s.locked)
+            .t("noResize", s.locked),
+    );
     w.close("p:cNvGraphicFramePr");
     nv_pr(w, s);
     w.close("p:nvGraphicFramePr");
@@ -534,12 +645,17 @@ fn table(w: &mut W, x: &mut Exp, o: &mut Out, t: &Table) {
             dml::text_body(w, x, o, "a:txBody", &c.text, false);
             let mut a = A::new();
             if let Some(m) = c.margins {
-                a = a.a("marL", emu(m[0])).a("marR", emu(m[1])).a("marT", emu(m[2])).a("marB", emu(m[3]));
+                a = a
+                    .a("marL", emu(m[0]))
+                    .a("marR", emu(m[1]))
+                    .a("marT", emu(m[2]))
+                    .a("marB", emu(m[3]));
             }
             a = a.o("vert", c.vertical.map(|v| v.xml())).o(
                 "anchor",
                 c.anchor.map(|a| match a {
-                    deckcraft_model::text::Anchor::Justified | deckcraft_model::text::Anchor::Distributed => "t",
+                    deckcraft_model::text::Anchor::Justified
+                    | deckcraft_model::text::Anchor::Distributed => "t",
                     other => other.xml(),
                 }),
             );
@@ -592,22 +708,39 @@ fn media(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape, m: &deckcraft_
     if let Some(ph) = &s.ph {
         let _ = ph;
     }
-    let tag = if m.video { "a:videoFile" } else { "a:audioFile" };
+    let tag = if m.video {
+        "a:videoFile"
+    } else {
+        "a:audioFile"
+    };
     if let Some(l) = &link {
         w.empty(tag, A::new().a("r:link", l));
     }
     if let Some(e) = &embed {
         w.open0("p:extLst");
-        w.open("p:ext", A::new().a("uri", "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}"));
-        w.open("p14:media", A::new().a("xmlns:p14", crate::opc::NS_P14).a("r:embed", e));
+        w.open(
+            "p:ext",
+            A::new().a("uri", "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}"),
+        );
+        w.open(
+            "p14:media",
+            A::new().a("xmlns:p14", crate::opc::NS_P14).a("r:embed", e),
+        );
         if m.trim_start_ms > 0 || m.trim_end_ms > 0 {
             w.empty(
                 "p14:trim",
-                A::new().o("st", (m.trim_start_ms > 0).then_some(m.trim_start_ms)).o("end", (m.trim_end_ms > 0).then_some(m.trim_end_ms)),
+                A::new()
+                    .o("st", (m.trim_start_ms > 0).then_some(m.trim_start_ms))
+                    .o("end", (m.trim_end_ms > 0).then_some(m.trim_end_ms)),
             );
         }
         if m.fade_in_ms > 0 || m.fade_out_ms > 0 {
-            w.empty("p14:fade", A::new().o("in", (m.fade_in_ms > 0).then_some(m.fade_in_ms)).o("out", (m.fade_out_ms > 0).then_some(m.fade_out_ms)));
+            w.empty(
+                "p14:fade",
+                A::new()
+                    .o("in", (m.fade_in_ms > 0).then_some(m.fade_in_ms))
+                    .o("out", (m.fade_out_ms > 0).then_some(m.fade_out_ms)),
+            );
         }
         if !m.bookmarks.is_empty() {
             w.open0("p14:bmkLst");
@@ -622,7 +755,10 @@ fn media(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape, m: &deckcraft_
     }
     w.close("p:nvPr");
     w.close("p:nvPicPr");
-    let poster = deckcraft_model::style::PictureFill { media: m.poster.unwrap_or_default(), ..Default::default() };
+    let poster = deckcraft_model::style::PictureFill {
+        media: m.poster.unwrap_or_default(),
+        ..Default::default()
+    };
     dml::blip_fill(w, x, o, "p:blipFill", &poster);
     let mut s3 = s.clone();
     s3.fill = None;
@@ -631,7 +767,16 @@ fn media(w: &mut W, x: &mut Exp, o: &mut Out, id: u32, s: &Shape, m: &deckcraft_
 }
 
 #[allow(clippy::too_many_arguments)]
-fn opaque(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, xml: &str, preview: Option<deckcraft_model::MediaId>, label: &str) {
+fn opaque(
+    w: &mut W,
+    x: &mut Exp,
+    o: &mut Out,
+    cx: &mut Ctx,
+    s: &Shape,
+    xml: &str,
+    preview: Option<deckcraft_model::MediaId>,
+    label: &str,
+) {
     // Kept XML that references no relationships can be written back as it was.
     if let Ok(doc) = crate::xml::parse(xml.as_bytes())
         && !crate::read::has_rel_refs(&doc.root)
@@ -651,7 +796,12 @@ fn opaque(w: &mut W, x: &mut Exp, o: &mut Out, cx: &mut Ctx, s: &Shape, xml: &st
     }
     match preview {
         Some(m) if x.p.media(m).is_some() => {
-            p.kind = ShapeKind::Picture { fill: deckcraft_model::style::PictureFill { media: m, ..Default::default() } };
+            p.kind = ShapeKind::Picture {
+                fill: deckcraft_model::style::PictureFill {
+                    media: m,
+                    ..Default::default()
+                },
+            };
             p.ph = None;
             shape_with_id(w, x, o, cx, &p, id);
         }
@@ -726,16 +876,39 @@ mod tests {
     #[test]
     fn preset_guides_are_complete() {
         let mut w = W::frag();
-        geometry(&mut w, &Geom::Preset { name: "star5".into(), adj: vec![20000.0] });
+        geometry(
+            &mut w,
+            &Geom::Preset {
+                name: "star5".into(),
+                adj: vec![20000.0],
+            },
+        );
         assert_eq!(
             w.s,
             r#"<a:prstGeom prst="star5"><a:avLst><a:gd name="adj" fmla="val 20000"/><a:gd name="hf" fmla="val 105146"/><a:gd name="vf" fmla="val 110557"/></a:avLst></a:prstGeom>"#
         );
         let mut w = W::frag();
-        geometry(&mut w, &Geom::Preset { name: "rightArrow".into(), adj: vec![10000.0] });
-        assert!(w.s.contains(r#"name="adj1" fmla="val 10000""#) && w.s.contains(r#"name="adj2" fmla="val 50000""#), "{}", w.s);
+        geometry(
+            &mut w,
+            &Geom::Preset {
+                name: "rightArrow".into(),
+                adj: vec![10000.0],
+            },
+        );
+        assert!(
+            w.s.contains(r#"name="adj1" fmla="val 10000""#)
+                && w.s.contains(r#"name="adj2" fmla="val 50000""#),
+            "{}",
+            w.s
+        );
         let mut w = W::frag();
-        geometry(&mut w, &Geom::Preset { name: "textBox".into(), adj: vec![] });
+        geometry(
+            &mut w,
+            &Geom::Preset {
+                name: "textBox".into(),
+                adj: vec![],
+            },
+        );
         assert_eq!(w.s, r#"<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>"#);
     }
 }

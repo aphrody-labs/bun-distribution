@@ -78,7 +78,10 @@ impl Graph {
             serde_json::to_writer(&mut w, &value)?;
         }
         w.write_all(b"],\"built_at_commit\":").map_err(io)?;
-        serde_json::to_writer(&mut w, &built_at_commit.or(self.meta.built_at_commit.as_deref()))?;
+        serde_json::to_writer(
+            &mut w,
+            &built_at_commit.or(self.meta.built_at_commit.as_deref()),
+        )?;
         w.write_all(b"}").map_err(io)?;
         Ok(())
     }
@@ -120,6 +123,9 @@ mod tests {
         let loaded = Graph::load(&db, "graph:rt").unwrap();
         assert_eq!(loaded.nodes.len(), 5);
         assert_eq!(loaded.edges.len(), 4);
-        assert_eq!(loaded.edges[2].confidence, crate::graph::Confidence::Inferred);
+        assert_eq!(
+            loaded.edges[2].confidence,
+            crate::graph::Confidence::Inferred
+        );
     }
 }

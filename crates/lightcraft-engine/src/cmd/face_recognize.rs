@@ -16,12 +16,21 @@ use crate::{Result, Session};
 fn name_param(p: &Value, c: &str) -> Result<Option<String>> {
     let name = match p.get("name") {
         None | Some(Value::Null) => None,
-        Some(v) => Some(v.as_str().ok_or_else(|| bad(c, "`name` must be text or null"))?.trim().to_string()).filter(|n| !n.is_empty()),
+        Some(v) => Some(
+            v.as_str()
+                .ok_or_else(|| bad(c, "`name` must be text or null"))?
+                .trim()
+                .to_string(),
+        )
+        .filter(|n| !n.is_empty()),
     };
     if let Some(n) = &name
         && (n.chars().count() > 200 || n.chars().any(char::is_control))
     {
-        return Err(bad(c, "a name is at most 200 characters, without control characters"));
+        return Err(bad(
+            c,
+            "a name is at most 200 characters, without control characters",
+        ));
     }
     Ok(name)
 }
@@ -29,7 +38,12 @@ fn name_param(p: &Value, c: &str) -> Result<Option<String>> {
 /// Give a face region its name. Naming makes the face yours: a later "Detect Faces" run no longer replaces it.
 fn apply_name(region: &mut lightcraft_meta::Region, name: &Option<String>) {
     region.name = name.clone();
-    if name.is_some() && region.description.as_deref().is_some_and(|d| d.starts_with(super::face_detect::MARK)) {
+    if name.is_some()
+        && region
+            .description
+            .as_deref()
+            .is_some_and(|d| d.starts_with(super::face_detect::MARK))
+    {
         region.description = None;
     }
 }
@@ -39,15 +53,22 @@ fn apply_name(region: &mut lightcraft_meta::Region, name: &Option<String>) {
 fn name_faces(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "faces.nameFaces";
     let name = name_param(p, C)?;
-    let list = p.get("faces").and_then(Value::as_array).ok_or_else(|| bad(C, "missing `faces`"))?;
+    let list = p
+        .get("faces")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(C, "missing `faces`"))?;
     if list.len() > 5000 {
         return Err(bad(C, "at most 5000 faces at a time"));
     }
-    let mut by_photo: std::collections::BTreeMap<u64, Vec<usize>> = std::collections::BTreeMap::new();
+    let mut by_photo: std::collections::BTreeMap<u64, Vec<usize>> =
+        std::collections::BTreeMap::new();
     for f in list {
-        let (Some(photo), Some(index)) =
-            (f.get("photo").and_then(Value::as_u64), f.get("index").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()))
-        else {
+        let (Some(photo), Some(index)) = (
+            f.get("photo").and_then(Value::as_u64),
+            f.get("index")
+                .and_then(Value::as_u64)
+                .and_then(|i| usize::try_from(i).ok()),
+        ) else {
             return Err(bad(C, "each face needs a `photo` and an `index`"));
         };
         by_photo.entry(photo).or_default().push(index);
@@ -55,24 +76,40 @@ fn name_faces(s: &mut Session, p: &Value) -> Result<Value> {
     let (mut ops, mut named) = (Vec::new(), 0usize);
     for (photo, indexes) in by_photo {
         let id = lightcraft_catalog::PhotoId(photo);
-        let Some(photo) = s.catalog.photo(id) else { continue };
+        let Some(photo) = s.catalog.photo(id) else {
+            continue;
+        };
         let mut meta = photo.meta.clone();
         let before = named;
         for i in indexes {
-            if let Some(region) = meta.regions.get_mut(i).filter(|r| r.kind == lightcraft_meta::RegionKind::Face) {
+            if let Some(region) = meta
+                .regions
+                .get_mut(i)
+                .filter(|r| r.kind == lightcraft_meta::RegionKind::Face)
+            {
                 apply_name(region, &name);
                 named += 1;
             }
         }
         if named > before {
-            ops.push(Op::SetMeta { id, meta: Box::new(meta) });
+            ops.push(Op::SetMeta {
+                id,
+                meta: Box::new(meta),
+            });
         }
     }
     if ops.is_empty() {
         return Err(bad(C, "none of those faces exist"));
     }
     let photos = ops.len();
-    s.commit(if name.is_some() { "Name Faces" } else { "Clear Face Names" }, Op::Batch { ops })?;
+    s.commit(
+        if name.is_some() {
+            "Name Faces"
+        } else {
+            "Clear Face Names"
+        },
+        Op::Batch { ops },
+    )?;
     s.skip_auto_write = true;
     Ok(json!({"named": named, "photos": photos, "name": name}))
 }
@@ -81,13 +118,40 @@ fn name_faces(s: &mut Session, p: &Value) -> Result<Value> {
 /// makes the face yours: a later "Detect Faces" run no longer replaces it.
 fn set_name(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "faces.setName";
-    let id = p.get("id").and_then(Value::as_u64).map(lightcraft_catalog::PhotoId).or_else(|| s.active()).ok_or_else(|| bad(C, "no photo"))?;
-    let index = p.get("index").and_then(Value::as_u64).and_then(|i| usize::try_from(i).ok()).ok_or_else(|| bad(C, "missing or invalid `index`"))?;
+    let id = p
+        .get("id")
+        .and_then(Value::as_u64)
+        .map(lightcraft_catalog::PhotoId)
+        .or_else(|| s.active())
+        .ok_or_else(|| bad(C, "no photo"))?;
+    let index = p
+        .get("index")
+        .and_then(Value::as_u64)
+        .and_then(|i| usize::try_from(i).ok())
+        .ok_or_else(|| bad(C, "missing or invalid `index`"))?;
     let name = name_param(p, C)?;
-    let mut meta = s.catalog.photo(id).ok_or_else(|| bad(C, "no such photo"))?.meta.clone();
-    let region = meta.regions.get_mut(index).ok_or_else(|| bad(C, "no such region"))?;
+    let mut meta = s
+        .catalog
+        .photo(id)
+        .ok_or_else(|| bad(C, "no such photo"))?
+        .meta
+        .clone();
+    let region = meta
+        .regions
+        .get_mut(index)
+        .ok_or_else(|| bad(C, "no such region"))?;
     apply_name(region, &name);
-    s.commit(if name.is_some() { "Name Face" } else { "Clear Face Name" }, Op::SetMeta { id, meta: Box::new(meta) })?;
+    s.commit(
+        if name.is_some() {
+            "Name Face"
+        } else {
+            "Clear Face Name"
+        },
+        Op::SetMeta {
+            id,
+            meta: Box::new(meta),
+        },
+    )?;
     s.skip_auto_write = true;
     Ok(json!({"id": id.0, "index": index, "name": name}))
 }
@@ -108,7 +172,11 @@ struct Arranged {
 /// `faces.unnamed {limit?: 600}`: the faces nobody has named, to be named a group at a time. With recognition running,
 /// faces that look alike are next to each other, and a face the named faces recognise carries the name they suggest.
 fn unnamed(s: &mut Session, p: &Value) -> Result<Value> {
-    let limit = p.get("limit").and_then(Value::as_u64).map_or(600, |n| usize::try_from(n).unwrap_or(600)).clamp(1, MAX_UNNAMED);
+    let limit = p
+        .get("limit")
+        .and_then(Value::as_u64)
+        .map_or(600, |n| usize::try_from(n).unwrap_or(600))
+        .clamp(1, MAX_UNNAMED);
     let mut all: Vec<(u64, usize, lightcraft_geom::Rect)> = Vec::new();
     for ph in s.catalog.photos().filter(|ph| ph.in_library()) {
         for (index, r) in ph.meta.regions.iter().enumerate() {
@@ -129,7 +197,9 @@ fn unnamed(s: &mut Session, p: &Value) -> Result<Value> {
             json!({"photo": photo, "index": index, "rect": rect_json(rect), "view": rect_json(&view), "suggestion": suggestion})
         })
         .collect();
-    Ok(json!({"total": total, "faces": faces, "ordered": arranged.ordered, "ready": arranged.ready}))
+    Ok(
+        json!({"total": total, "faces": faces, "ordered": arranged.ordered, "ready": arranged.ready}),
+    )
 }
 
 /// What looking for faces that resemble a person found.
@@ -153,13 +223,24 @@ const MAX_CONFIRMED: usize = 5000;
 /// running, the unnamed faces that look most like them, to be confirmed one by one.
 fn person(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "faces.person";
-    let name = p.get("name").and_then(Value::as_str).map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(C, "missing `name`"))?;
+    let name = p
+        .get("name")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(C, "missing `name`"))?;
     let key = name.to_lowercase();
-    let limit = p.get("more").and_then(Value::as_u64).map_or(120, |n| usize::try_from(n).unwrap_or(120)).min(1000);
+    let limit = p
+        .get("more")
+        .and_then(Value::as_u64)
+        .map_or(120, |n| usize::try_from(n).unwrap_or(120))
+        .min(1000);
     let (mut shown, mut total, mut confirmed) = (name.to_string(), 0usize, Vec::new());
     for ph in s.catalog.photos().filter(|ph| ph.in_library()) {
         for (index, r) in ph.meta.regions.iter().enumerate() {
-            let Some(n) = r.name.as_deref().filter(|n| r.kind == lightcraft_meta::RegionKind::Face && n.trim().to_lowercase() == key) else {
+            let Some(n) = r.name.as_deref().filter(|n| {
+                r.kind == lightcraft_meta::RegionKind::Face && n.trim().to_lowercase() == key
+            }) else {
                 continue;
             };
             if total == 0 {
@@ -171,7 +252,15 @@ fn person(s: &mut Session, p: &Value) -> Result<Value> {
             }
         }
     }
-    let similar = if total > 0 { imp::similar(s, &key, limit) } else { Similar { items: Vec::new(), ready: false, pending: 0 } };
+    let similar = if total > 0 {
+        imp::similar(s, &key, limit)
+    } else {
+        Similar {
+            items: Vec::new(),
+            ready: false,
+            pending: 0,
+        }
+    };
     Ok(
         json!({"name": shown, "total": total, "confirmed": confirmed, "more": similar.items, "ready": similar.ready, "pendingPhotos": similar.pending}),
     )
@@ -194,7 +283,9 @@ mod imp {
     use super::super::face_detect::{LABEL, MARK};
     use super::super::face_models::{finish_downloads, installed_models, read_settings};
     use super::Similar;
-    use crate::faces_worker::{Done, EDGE, PREFETCH, Pace, Prepared, Worker, max_workers, process, target_workers};
+    use crate::faces_worker::{
+        Done, EDGE, PREFETCH, Pace, Prepared, Worker, max_workers, process, target_workers,
+    };
     use crate::{Result, Session};
 
     /// Defaults for suggestions, until a model's own threshold is known.
@@ -215,16 +306,31 @@ mod imp {
         {
             return Ok(e.clone());
         }
-        let dir = s.face_models_dir.clone().ok_or_else(|| bad(cmd, "this build has nowhere to keep face models"))?;
-        let id = read_settings(&dir).embedder.ok_or_else(|| bad(cmd, "no recognition model is chosen: add one in Settings > Faces and press Use"))?;
+        let dir = s
+            .face_models_dir
+            .clone()
+            .ok_or_else(|| bad(cmd, "this build has nowhere to keep face models"))?;
+        let id = read_settings(&dir).embedder.ok_or_else(|| {
+            bad(
+                cmd,
+                "no recognition model is chosen: add one in Settings > Faces and press Use",
+            )
+        })?;
         let installed = installed_models(&dir)
             .into_iter()
             .find(|i| i.manifest.id == id)
             .ok_or_else(|| bad(cmd, "the chosen recognition model is not installed"))?;
-        let tag = format!("{id}@{}", installed.manifest.sha256.as_deref().unwrap_or("unknown"));
+        let tag = format!(
+            "{id}@{}",
+            installed.manifest.sha256.as_deref().unwrap_or("unknown")
+        );
         s.faces.checked = Some(Instant::now());
         // which photos the detector has searched is kept beside the library (or in memory when it is not on disk)
-        let scan_path = s.library.as_ref().filter(|l| l.on_disk).map(|l| l.dir.join("face-scanned.bin"));
+        let scan_path = s
+            .library
+            .as_ref()
+            .filter(|l| l.on_disk)
+            .map(|l| l.dir.join("face-scanned.bin"));
         if s.faces.scanned.path() != scan_path.as_deref() {
             s.faces.scanned.reset(scan_path);
         }
@@ -233,12 +339,19 @@ mod imp {
         {
             return Ok(e.clone());
         }
-        let embedder = Arc::new(Embedder::load(&dir.join(&id).join("model.onnx"), &installed.manifest).map_err(|e| bad(cmd, e.to_string()))?);
+        let embedder = Arc::new(
+            Embedder::load(&dir.join(&id).join("model.onnx"), &installed.manifest)
+                .map_err(|e| bad(cmd, e.to_string()))?,
+        );
         let dim = match installed.manifest.output {
             lightcraft_faces::OutputSpec::Embedding { dim } => dim as usize,
             _ => return Err(bad(cmd, "the chosen model is not a recognition model")),
         };
-        let cache = s.library.as_ref().filter(|l| l.on_disk).map(|l| l.dir.join(format!("face-embeddings-{id}.bin")));
+        let cache = s
+            .library
+            .as_ref()
+            .filter(|l| l.on_disk)
+            .map(|l| l.dir.join(format!("face-embeddings-{id}.bin")));
         s.faces.index.reset(&tag, dim, cache);
         s.faces.queue.clear();
         s.faces.queue_stamp = None;
@@ -255,7 +368,11 @@ mod imp {
     /// (nothing from XMP, nothing drawn or named, no earlier detection) and has not been searched yet.
     fn needs_search(s: &Session, photo: &Photo) -> bool {
         photo.in_library()
-            && !photo.meta.regions.iter().any(|r| r.kind == RegionKind::Face)
+            && !photo
+                .meta
+                .regions
+                .iter()
+                .any(|r| r.kind == RegionKind::Face)
             && !s.faces.scanned.contains(photo.id.0)
             && !s.faces.scan_failed.contains(&photo.id.0)
     }
@@ -265,8 +382,13 @@ mod imp {
     fn prepare(s: &mut Session, id: PhotoId, search: bool) -> Option<Prepared> {
         let tag = s.faces.index.tag.clone();
         let photo = s.catalog.photo(id)?.clone();
-        let todo: Vec<Rect> =
-            photo.meta.regions.iter().filter(|r| r.kind == RegionKind::Face && s.faces.index.needs(id.0, &r.rect)).map(|r| r.rect).collect();
+        let todo: Vec<Rect> = photo
+            .meta
+            .regions
+            .iter()
+            .filter(|r| r.kind == RegionKind::Face && s.faces.index.needs(id.0, &r.rect))
+            .map(|r| r.rect)
+            .collect();
         // finding faces needs the detector the user may not have downloaded: such a photo is left unsearched, not marked as searched
         let detector = crate::cmd::face_detect::detector(s).ok();
         let detect = search && detector.is_some() && needs_search(s, &photo);
@@ -275,7 +397,16 @@ mod imp {
         }
         let job = s.preview_job(id, EDGE, EDGE, false, &DevelopSettings::default())?;
         let preview = s.scan_preview_of(&photo);
-        Some(Prepared { tag, epoch: s.faces.epoch, id, job, preview, todo, detect, detector })
+        Some(Prepared {
+            tag,
+            epoch: s.faces.epoch,
+            id,
+            job,
+            preview,
+            todo,
+            detect,
+            detector,
+        })
     }
 
     /// The faces the detector found in a photo that had none become its face regions: unnamed, marked as detected (so a
@@ -284,16 +415,33 @@ mod imp {
         if found.is_empty() {
             return;
         }
-        let Some(photo) = s.catalog.photo(id) else { return };
+        let Some(photo) = s.catalog.photo(id) else {
+            return;
+        };
         // the user (or an import) got there first: leave their faces alone
-        if photo.meta.regions.iter().any(|r| r.kind == RegionKind::Face) {
+        if photo
+            .meta
+            .regions
+            .iter()
+            .any(|r| r.kind == RegionKind::Face)
+        {
             return;
         }
         let mut meta = photo.meta.clone();
         for rect in found {
-            meta.regions.push(Region { rect: *rect, kind: RegionKind::Face, name: None, description: Some(format!("{MARK}{LABEL}")) });
+            meta.regions.push(Region {
+                rect: *rect,
+                kind: RegionKind::Face,
+                name: None,
+                description: Some(format!("{MARK}{LABEL}")),
+            });
         }
-        if s.apply_system(Op::SetMeta { id, meta: Box::new(meta) }).is_ok() {
+        if s.apply_system(Op::SetMeta {
+            id,
+            meta: Box::new(meta),
+        })
+        .is_ok()
+        {
             // regions are not written to XMP, so no sidecar may be rewritten for this
             s.skip_auto_write = true;
         }
@@ -335,7 +483,12 @@ mod imp {
 
     /// Take in whatever the worker has finished.
     fn collect(s: &mut Session) -> (usize, usize) {
-        let finished = s.faces.worker.as_ref().map(Worker::finished).unwrap_or_default();
+        let finished = s
+            .faces
+            .worker
+            .as_ref()
+            .map(Worker::finished)
+            .unwrap_or_default();
         finished.into_iter().fold((0, 0), |(e, f), d| {
             let (de, df) = ingest(s, d);
             (e + de, f + df)
@@ -344,7 +497,9 @@ mod imp {
 
     /// Embed every face region of `id` the index does not have yet, here and now. Returns (embedded, failed).
     fn embed_photo(s: &mut Session, id: PhotoId, e: &Embedder) -> Result<(usize, usize)> {
-        let Some(job) = prepare(s, id, false) else { return Ok((0, 0)) };
+        let Some(job) = prepare(s, id, false) else {
+            return Ok((0, 0));
+        };
         Ok(ingest(s, process(job, e)))
     }
 
@@ -354,7 +509,12 @@ mod imp {
     fn pending(s: &Session, first: &[PhotoId], search: bool) -> Vec<PhotoId> {
         let mut out: Vec<(u8, PhotoId)> = Vec::new();
         for p in s.catalog.photos().filter(|p| p.in_library()) {
-            let faces: Vec<_> = p.meta.regions.iter().filter(|r| r.kind == RegionKind::Face).collect();
+            let faces: Vec<_> = p
+                .meta
+                .regions
+                .iter()
+                .filter(|r| r.kind == RegionKind::Face)
+                .collect();
             let embed = faces.iter().any(|r| s.faces.index.needs(p.id.0, &r.rect));
             if embed || (search && needs_search(s, p)) {
                 let rank = if first.contains(&p.id) {
@@ -377,9 +537,17 @@ mod imp {
         const C: &str = "faces.index";
         let embedder = current(s, C)?;
         collect(s);
-        let budget = Duration::from_millis(p.get("budgetMs").and_then(Value::as_u64).unwrap_or(200).min(600_000));
-        let first: Vec<PhotoId> =
-            p.get("ids").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(PhotoId).collect()).unwrap_or_default();
+        let budget = Duration::from_millis(
+            p.get("budgetMs")
+                .and_then(Value::as_u64)
+                .unwrap_or(200)
+                .min(600_000),
+        );
+        let first: Vec<PhotoId> = p
+            .get("ids")
+            .and_then(Value::as_array)
+            .map(|a| a.iter().filter_map(Value::as_u64).map(PhotoId).collect())
+            .unwrap_or_default();
         let todo = pending(s, &first, false);
         let started = Instant::now();
         let (mut embedded, mut failed, mut done) = (0, 0, 0);
@@ -413,7 +581,14 @@ mod imp {
     /// shots taken close together, so the zone does not matter.
     fn capture_secs(iso: &str) -> Option<i64> {
         let n = |a: usize, b: usize| iso.get(a..b)?.parse::<i64>().ok();
-        let (y, m, d, hh, mm, ss) = (n(0, 4)?, n(5, 7)?, n(8, 10)?, n(11, 13)?, n(14, 16)?, n(17, 19)?);
+        let (y, m, d, hh, mm, ss) = (
+            n(0, 4)?,
+            n(5, 7)?,
+            n(8, 10)?,
+            n(11, 13)?,
+            n(14, 16)?,
+            n(17, 19)?,
+        );
         if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
             return None;
         }
@@ -434,20 +609,44 @@ mod imp {
         const C: &str = "faces.evaluate";
         let embedder = current(s, C)?;
         collect(s);
-        let burst = p.get("burstSecs").and_then(Value::as_i64).unwrap_or(5).clamp(0, 86_400 * 7);
-        let margin = p.get("margin").and_then(Value::as_f64).filter(|v| v.is_finite()).map_or(DEFAULT_MARGIN, |v| v as f32);
+        let burst = p
+            .get("burstSecs")
+            .and_then(Value::as_i64)
+            .unwrap_or(5)
+            .clamp(0, 86_400 * 7);
+        let margin = p
+            .get("margin")
+            .and_then(Value::as_f64)
+            .filter(|v| v.is_finite())
+            .map_or(DEFAULT_MARGIN, |v| v as f32);
         let thresholds: Vec<f32> = p
             .get("thresholds")
             .and_then(Value::as_array)
-            .map(|a| a.iter().filter_map(Value::as_f64).filter(|v| v.is_finite()).map(|v| v as f32).take(64).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(Value::as_f64)
+                    .filter(|v| v.is_finite())
+                    .map(|v| v as f32)
+                    .take(64)
+                    .collect()
+            })
             .filter(|v: &Vec<f32>| !v.is_empty())
             .unwrap_or_else(|| (4..=16).map(|i| i as f32 * 0.05).collect());
-        let budget = Duration::from_millis(p.get("budgetMs").and_then(Value::as_u64).unwrap_or(0).min(3_600_000));
+        let budget = Duration::from_millis(
+            p.get("budgetMs")
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+                .min(3_600_000),
+        );
         let started = Instant::now();
         // `scope: "visible"` looks only at the photos the current filter shows (say one year, or one album)
-        let scope: Option<std::collections::HashSet<PhotoId>> = (str_scope(p) == Some("visible")).then(|| s.visible_cloned().into_iter().collect());
+        let scope: Option<std::collections::HashSet<PhotoId>> =
+            (str_scope(p) == Some("visible")).then(|| s.visible_cloned().into_iter().collect());
         let in_scope = |id: PhotoId| scope.as_ref().is_none_or(|v| v.contains(&id));
-        let todo: Vec<PhotoId> = pending(s, &[], false).into_iter().filter(|id| in_scope(*id)).collect();
+        let todo: Vec<PhotoId> = pending(s, &[], false)
+            .into_iter()
+            .filter(|id| in_scope(*id))
+            .collect();
         let mut done = 0;
         for id in &todo {
             if started.elapsed() >= budget {
@@ -473,11 +672,21 @@ mod imp {
                     .regions
                     .iter()
                     .filter(|r| r.kind == RegionKind::Face)
-                    .filter_map(|r| Some(Named { name: r.name.clone()?, emb: s.faces.index.get(ph.id.0, &r.rect)?.clone(), photo: ph.id, when }))
+                    .filter_map(|r| {
+                        Some(Named {
+                            name: r.name.clone()?,
+                            emb: s.faces.index.get(ph.id.0, &r.rect)?.clone(),
+                            photo: ph.id,
+                            when,
+                        })
+                    })
                     .collect::<Vec<_>>()
             })
             .collect();
-        let near = |a: &Named, b: &Named| a.photo == b.photo || matches!((a.when, b.when), (Some(x), Some(y)) if (x - y).abs() <= burst);
+        let near = |a: &Named, b: &Named| {
+            a.photo == b.photo
+                || matches!((a.when, b.when), (Some(x), Some(y)) if (x - y).abs() <= burst)
+        };
         let mut sweep: Vec<(f32, usize, usize)> = thresholds.iter().map(|t| (*t, 0, 0)).collect();
         let (mut queries, mut top1, mut unmatchable) = (0usize, 0usize, 0usize);
         for q in &named {
@@ -486,10 +695,16 @@ mod imp {
                 unmatchable += 1;
                 continue;
             }
-            let refs: Vec<(&str, &[f32])> = others.iter().map(|g| (g.name.as_str(), &g.emb[..])).collect();
+            let refs: Vec<(&str, &[f32])> = others
+                .iter()
+                .map(|g| (g.name.as_str(), &g.emb[..]))
+                .collect();
             let ranked = matching::rank(&q.emb, &refs);
             queries += 1;
-            if ranked.first().is_some_and(|r| r.name.eq_ignore_ascii_case(&q.name)) {
+            if ranked
+                .first()
+                .is_some_and(|r| r.name.eq_ignore_ascii_case(&q.name))
+            {
                 top1 += 1;
             }
             for (t, suggested, correct) in sweep.iter_mut() {
@@ -501,7 +716,13 @@ mod imp {
                 }
             }
         }
-        let pct = |n: usize, d: usize| if d == 0 { Value::Null } else { json!((n as f64 / d as f64 * 1000.0).round() / 1000.0) };
+        let pct = |n: usize, d: usize| {
+            if d == 0 {
+                Value::Null
+            } else {
+                json!((n as f64 / d as f64 * 1000.0).round() / 1000.0)
+            }
+        };
         Ok(json!({
             "model": s.faces.index.tag,
             "namedFaces": named.len(),
@@ -525,7 +746,10 @@ mod imp {
             return 0;
         }
         s.faces.peak = s.faces.peak.max(pending);
-        let task = s.faces.task.get_or_insert_with(|| s.activity.start("faces", "Finding faces", crate::activity::Cancel::No));
+        let task = s.faces.task.get_or_insert_with(|| {
+            s.activity
+                .start("faces", "Finding faces", crate::activity::Cancel::No)
+        });
         task.progress(s.faces.peak.saturating_sub(pending), s.faces.peak);
         s.faces.peak
     }
@@ -541,7 +765,10 @@ mod imp {
         let target = target_workers(pace);
         // a model that has finished downloading is installed and switched on here, whether or not recognition was on
         finish_downloads(s);
-        let enabled = s.face_models_dir.clone().is_some_and(|d| enabled_cached(s, &d));
+        let enabled = s
+            .face_models_dir
+            .clone()
+            .is_some_and(|d| enabled_cached(s, &d));
         if !enabled {
             track(s, 0);
             return Ok(json!({"active": false}));
@@ -558,7 +785,9 @@ mod imp {
         };
         s.faces.retry_at = None;
         let (embedded, _) = collect(s);
-        if (s.faces.index.has_unsaved() || s.faces.scanned.has_unsaved()) && s.faces.saved_at.is_none_or(|t| t.elapsed() >= SAVE_EVERY) {
+        if (s.faces.index.has_unsaved() || s.faces.scanned.has_unsaved())
+            && s.faces.saved_at.is_none_or(|t| t.elapsed() >= SAVE_EVERY)
+        {
             if let Err(e) = s.faces.index.save() {
                 log::warn!("could not save the face embeddings: {e}");
             }
@@ -567,7 +796,10 @@ mod imp {
             }
             s.faces.saved_at = Some(Instant::now());
         }
-        if s.faces.in_flight.is_empty() && s.faces.queue.is_empty() && s.faces.queue_stamp != Some(s.catalog.revision) {
+        if s.faces.in_flight.is_empty()
+            && s.faces.queue.is_empty()
+            && s.faces.queue_stamp != Some(s.catalog.revision)
+        {
             // the queue is taken from the end, so it is made last first
             let mut queue = pending(s, &[], true);
             queue.reverse();
@@ -584,8 +816,14 @@ mod imp {
         }
         while target > 0 && s.faces.in_flight.len() < target + PREFETCH {
             let Some(id) = s.faces.queue.pop() else { break };
-            let Some(job) = prepare(s, id, true) else { continue };
-            if s.faces.worker.as_ref().is_some_and(|w| w.submit(embedder.clone(), job)) {
+            let Some(job) = prepare(s, id, true) else {
+                continue;
+            };
+            if s.faces
+                .worker
+                .as_ref()
+                .is_some_and(|w| w.submit(embedder.clone(), job))
+            {
                 s.faces.in_flight.insert(id);
             } else {
                 break;
@@ -610,17 +848,34 @@ mod imp {
     /// model's suggestion bar, since a person looks at these before anything is named. Only faces already embedded can be
     /// found; `ready` says whether recognition is running at all.
     pub fn similar(s: &mut Session, key: &str, limit: usize) -> Similar {
-        let none = Similar { items: Vec::new(), ready: false, pending: 0 };
-        let Some(dir) = s.face_models_dir.clone() else { return none };
+        let none = Similar {
+            items: Vec::new(),
+            ready: false,
+            pending: 0,
+        };
+        let Some(dir) = s.face_models_dir.clone() else {
+            return none;
+        };
         if !enabled_cached(s, &dir) {
             return none;
         }
-        let Ok(embedder) = current_with(s, "faces.person", false) else { return none };
+        let Ok(embedder) = current_with(s, "faces.person", false) else {
+            return none;
+        };
         let pending = s.faces.queue.len() + s.faces.in_flight.len();
-        let (mut gallery, mut candidates): (Vec<Arc<[f32]>>, Vec<(u64, usize, Rect, Arc<[f32]>)>) = (Vec::new(), Vec::new());
+        let (mut gallery, mut candidates): (Vec<Arc<[f32]>>, Vec<(u64, usize, Rect, Arc<[f32]>)>) =
+            (Vec::new(), Vec::new());
         for ph in s.catalog.photos().filter(|ph| ph.in_library()) {
-            for (index, r) in ph.meta.regions.iter().enumerate().filter(|(_, r)| r.kind == RegionKind::Face) {
-                let Some(e) = s.faces.index.get(ph.id.0, &r.rect) else { continue };
+            for (index, r) in ph
+                .meta
+                .regions
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| r.kind == RegionKind::Face)
+            {
+                let Some(e) = s.faces.index.get(ph.id.0, &r.rect) else {
+                    continue;
+                };
                 match r.name.as_deref() {
                     Some(n) if n.trim().to_lowercase() == key => gallery.push(e.clone()),
                     Some(_) => {}
@@ -628,11 +883,20 @@ mod imp {
                 }
             }
         }
-        let ready = Similar { items: Vec::new(), ready: true, pending };
+        let ready = Similar {
+            items: Vec::new(),
+            ready: true,
+            pending,
+        };
         if gallery.is_empty() {
             return ready;
         }
-        let bar = embedder.manifest().thresholds.match_cosine.unwrap_or(DEFAULT_THRESHOLD) * 0.8;
+        let bar = embedder
+            .manifest()
+            .thresholds
+            .match_cosine
+            .unwrap_or(DEFAULT_THRESHOLD)
+            * 0.8;
         let refs: Vec<(&str, &[f32])> = gallery.iter().map(|e| ("person", &e[..])).collect();
         let mut scored: Vec<(f32, u64, usize, Rect)> = candidates
             .into_iter()
@@ -687,13 +951,25 @@ mod imp {
 
     /// Put the unnamed faces `all` in order of likeness (the ones already embedded; the rest follow in photo order) and
     /// find a name for those the named faces recognise, for the first `limit` of them.
-    pub fn arrange_unnamed(s: &mut Session, all: &mut Vec<(u64, usize, Rect)>, limit: usize) -> super::Arranged {
-        let none = super::Arranged { ordered: false, ready: false, suggestions: Default::default() };
-        let Some(dir) = s.face_models_dir.clone() else { return none };
+    pub fn arrange_unnamed(
+        s: &mut Session,
+        all: &mut Vec<(u64, usize, Rect)>,
+        limit: usize,
+    ) -> super::Arranged {
+        let none = super::Arranged {
+            ordered: false,
+            ready: false,
+            suggestions: Default::default(),
+        };
+        let Some(dir) = s.face_models_dir.clone() else {
+            return none;
+        };
         if !enabled_cached(s, &dir) {
             return none;
         }
-        let Ok(embedder) = current_with(s, "faces.unnamed", false) else { return none };
+        let Ok(embedder) = current_with(s, "faces.unnamed", false) else {
+            return none;
+        };
         let (mut embedded, mut plain) = (Vec::new(), Vec::new());
         for f in all.drain(..) {
             match s.faces.index.get(f.0, &f.2) {
@@ -703,7 +979,10 @@ mod imp {
         }
         let beyond = embedded.split_off(embedded.len().min(MAX_ARRANGED));
         let order = nearest_chain(&embedded.iter().map(|(_, e)| &e[..]).collect::<Vec<_>>());
-        let ordered: Vec<((u64, usize, Rect), Arc<[f32]>)> = order.into_iter().filter_map(|i| embedded.get(i).cloned()).collect();
+        let ordered: Vec<((u64, usize, Rect), Arc<[f32]>)> = order
+            .into_iter()
+            .filter_map(|i| embedded.get(i).cloned())
+            .collect();
         // names the faces already named suggest, as `faces.suggest` would
         let gallery: Vec<(String, Arc<[f32]>)> = s
             .catalog
@@ -714,16 +993,27 @@ mod imp {
                     .regions
                     .iter()
                     .filter(|r| r.kind == RegionKind::Face)
-                    .filter_map(|r| Some((r.name.clone()?, s.faces.index.get(ph.id.0, &r.rect)?.clone())))
+                    .filter_map(|r| {
+                        Some((
+                            r.name.clone()?,
+                            s.faces.index.get(ph.id.0, &r.rect)?.clone(),
+                        ))
+                    })
                     .collect::<Vec<_>>()
             })
             .collect();
         let refs: Vec<(&str, &[f32])> = gallery.iter().map(|(n, e)| (n.as_str(), &e[..])).collect();
-        let threshold = embedder.manifest().thresholds.match_cosine.unwrap_or(DEFAULT_THRESHOLD);
+        let threshold = embedder
+            .manifest()
+            .thresholds
+            .match_cosine
+            .unwrap_or(DEFAULT_THRESHOLD);
         let mut suggestions = std::collections::HashMap::new();
         if !refs.is_empty() {
             for ((photo, index, _), e) in ordered.iter().take(limit) {
-                if let Some(x) = matching::suggest(&matching::rank(e, &refs), threshold, DEFAULT_MARGIN) {
+                if let Some(x) =
+                    matching::suggest(&matching::rank(e, &refs), threshold, DEFAULT_MARGIN)
+                {
                     suggestions.insert((*photo, *index), (x.name, x.score));
                 }
             }
@@ -732,7 +1022,11 @@ mod imp {
         all.extend(ordered.into_iter().map(|(f, _)| f));
         all.extend(beyond.into_iter().map(|(f, _)| f));
         all.extend(plain);
-        super::Arranged { ordered: grouped, ready: true, suggestions }
+        super::Arranged {
+            ordered: grouped,
+            ready: true,
+            suggestions,
+        }
     }
 
     /// Whether face recognition is switched on, looked up at most once a second.
@@ -753,11 +1047,23 @@ mod imp {
         collect(s);
         let targets = s.targets(p);
         let model_threshold = embedder.manifest().thresholds.match_cosine;
-        let num = |k: &str| p.get(k).and_then(Value::as_f64).filter(|v| v.is_finite()).map(|v| v as f32);
-        let threshold = num("threshold").or(model_threshold).unwrap_or(DEFAULT_THRESHOLD);
+        let num = |k: &str| {
+            p.get(k)
+                .and_then(Value::as_f64)
+                .filter(|v| v.is_finite())
+                .map(|v| v as f32)
+        };
+        let threshold = num("threshold")
+            .or(model_threshold)
+            .unwrap_or(DEFAULT_THRESHOLD);
         let margin = num("margin").unwrap_or(DEFAULT_MARGIN);
         // the photos asked about are embedded first, then the named faces they are compared with, within the budget
-        let budget = Duration::from_millis(p.get("budgetMs").and_then(Value::as_u64).unwrap_or(1500).min(600_000));
+        let budget = Duration::from_millis(
+            p.get("budgetMs")
+                .and_then(Value::as_u64)
+                .unwrap_or(1500)
+                .min(600_000),
+        );
         let started = Instant::now();
         let todo = pending(s, &targets, false);
         let mut done = 0;
@@ -779,16 +1085,29 @@ mod imp {
                     .regions
                     .iter()
                     .filter(|r| r.kind == RegionKind::Face)
-                    .filter_map(|r| Some((r.name.clone()?, s.faces.index.get(ph.id.0, &r.rect)?.clone())))
+                    .filter_map(|r| {
+                        Some((
+                            r.name.clone()?,
+                            s.faces.index.get(ph.id.0, &r.rect)?.clone(),
+                        ))
+                    })
                     .collect::<Vec<_>>()
             })
             .collect();
         let refs: Vec<(&str, &[f32])> = gallery.iter().map(|(n, e)| (n.as_str(), &e[..])).collect();
         let mut photos = Vec::new();
         for id in &targets {
-            let Some(photo) = s.catalog.photo(*id) else { continue };
+            let Some(photo) = s.catalog.photo(*id) else {
+                continue;
+            };
             let mut faces = Vec::new();
-            for (index, r) in photo.meta.regions.iter().enumerate().filter(|(_, r)| r.kind == RegionKind::Face && r.name.is_none()) {
+            for (index, r) in photo
+                .meta
+                .regions
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| r.kind == RegionKind::Face && r.name.is_none())
+            {
                 let Some(q) = s.faces.index.get(id.0, &r.rect) else {
                     faces.push(json!({"index": index, "pending": true}));
                     continue;
@@ -810,7 +1129,9 @@ mod imp {
     #[cfg(test)]
     mod tests {
         use super::*;
-        use crate::tests_face_recognize::{install_yunet, region, set_regions, setup, temp, two_photos};
+        use crate::tests_face_recognize::{
+            install_yunet, region, set_regions, setup, temp, two_photos,
+        };
 
         fn unit(parts: &[(usize, f32)]) -> Vec<f32> {
             let mut v = vec![0.0; 64];
@@ -829,8 +1150,20 @@ mod imp {
             (s, d)
         }
 
-        fn finished(s: &Session, id: PhotoId, found: Option<Vec<Rect>>, results: Vec<(Rect, Option<Vec<f32>>, Rect)>) -> Done {
-            Done { tag: s.faces.index.tag.clone(), epoch: s.faces.epoch, id, results, detect_wanted: true, found }
+        fn finished(
+            s: &Session,
+            id: PhotoId,
+            found: Option<Vec<Rect>>,
+            results: Vec<(Rect, Option<Vec<f32>>, Rect)>,
+        ) -> Done {
+            Done {
+                tag: s.faces.index.tag.clone(),
+                epoch: s.faces.epoch,
+                id,
+                results,
+                detect_wanted: true,
+                found,
+            }
         }
 
         #[test]
@@ -840,12 +1173,24 @@ mod imp {
             set_regions(&mut s, b, vec![region(0.1, Some("Ann"))]);
             let (undo, redo) = (s.undo.len(), s.redo.len());
             let found = region(0.3, None).rect;
-            let done = finished(&s, a, Some(vec![found]), vec![(found, Some(unit(&[(0, 1.0)])), found)]);
+            let done = finished(
+                &s,
+                a,
+                Some(vec![found]),
+                vec![(found, Some(unit(&[(0, 1.0)])), found)],
+            );
             assert_eq!(ingest(&mut s, done), (1, 0));
             let regions = &s.catalog.photo(a).unwrap().meta.regions;
             assert_eq!(regions.len(), 1);
-            assert!(regions[0].kind == RegionKind::Face && regions[0].name.is_none() && regions[0].rect == found);
-            assert!(regions[0].description.as_deref().unwrap().starts_with(MARK), "marked as detected");
+            assert!(
+                regions[0].kind == RegionKind::Face
+                    && regions[0].name.is_none()
+                    && regions[0].rect == found
+            );
+            assert!(
+                regions[0].description.as_deref().unwrap().starts_with(MARK),
+                "marked as detected"
+            );
             // not something the user did, and its embedding is already there
             assert_eq!((s.undo.len(), s.redo.len()), (undo, redo));
             assert!(s.skip_auto_write, "no sidecar is rewritten for it");
@@ -866,8 +1211,14 @@ mod imp {
             assert!(needs_search(&s, s.catalog.photo(a).unwrap()));
             let done = finished(&s, a, None, vec![]);
             ingest(&mut s, done);
-            assert!(!s.faces.scanned.contains(a.0), "not remembered as searched: the file may come back");
-            assert!(!needs_search(&s, s.catalog.photo(a).unwrap()), "but not retried on every pass");
+            assert!(
+                !s.faces.scanned.contains(a.0),
+                "not remembered as searched: the file may come back"
+            );
+            assert!(
+                !needs_search(&s, s.catalog.photo(a).unwrap()),
+                "but not retried on every pass"
+            );
             assert!(!pending(&s, &[], true).contains(&a));
             let _ = std::fs::remove_dir_all(&d);
         }
@@ -883,14 +1234,26 @@ mod imp {
             assert_eq!(pending(&s, &[], false), vec![b]);
             let scan = pending(&s, &[], true);
             assert_eq!(scan.first(), Some(&b), "named faces first");
-            assert!(scan.contains(&a) && scan.len() > 2, "the unsearched photos follow");
-            assert!(prepare(&mut s, a, false).is_none(), "nothing to embed in a photo without boxes");
+            assert!(
+                scan.contains(&a) && scan.len() > 2,
+                "the unsearched photos follow"
+            );
+            assert!(
+                prepare(&mut s, a, false).is_none(),
+                "nothing to embed in a photo without boxes"
+            );
             if detector {
                 assert!(prepare(&mut s, a, true).is_some_and(|p| p.detect && p.todo.is_empty()));
             } else {
-                assert!(prepare(&mut s, a, true).is_none(), "no detector: nothing to do, and not marked as searched");
+                assert!(
+                    prepare(&mut s, a, true).is_none(),
+                    "no detector: nothing to do, and not marked as searched"
+                );
             }
-            assert!(prepare(&mut s, b, true).is_some_and(|p| !p.detect && p.todo.len() == 2), "a photo with boxes is not searched");
+            assert!(
+                prepare(&mut s, b, true).is_some_and(|p| !p.detect && p.todo.len() == 2),
+                "a photo with boxes is not searched"
+            );
             // once searched, a photo is not searched again
             s.faces.scanned.insert(a.0);
             assert!(!pending(&s, &[], true).contains(&a));
@@ -905,9 +1268,22 @@ mod imp {
             s.faces.index.insert(a.0, &rect, unit(&[(0, 1.0)]));
             s.faces.scanned.insert(a.0);
             let epoch = s.faces.epoch;
-            let old = finished(&s, a, Some(vec![rect]), vec![(rect, Some(unit(&[(1, 1.0)])), rect)]);
+            let old = finished(
+                &s,
+                a,
+                Some(vec![rect]),
+                vec![(rect, Some(unit(&[(1, 1.0)])), rect)],
+            );
             s.open_library(d.join("second"), true).unwrap();
-            assert_eq!((s.faces.index.len(), s.faces.scanned.len(), s.faces.queue.len(), s.faces.in_flight.len()), (0, 0, 0, 0));
+            assert_eq!(
+                (
+                    s.faces.index.len(),
+                    s.faces.scanned.len(),
+                    s.faces.queue.len(),
+                    s.faces.in_flight.len()
+                ),
+                (0, 0, 0, 0)
+            );
             assert!(s.faces.epoch != epoch && s.faces.embedder.is_none());
             // a worker that was still busy with the old library cannot put its faces into the new one
             assert_eq!(ingest(&mut s, old), (0, 0));
@@ -919,11 +1295,22 @@ mod imp {
         fn the_unnamed_faces_that_look_like_a_person_come_best_first() {
             let (mut s, d) = loaded("similar");
             let (a, b) = two_photos(&s);
-            let c = s.catalog.photos().map(|p| p.id).find(|id| *id != a && *id != b).unwrap();
-            set_regions(&mut s, a, vec![region(0.1, Some("Ann")), region(0.5, Some("Bob"))]);
+            let c = s
+                .catalog
+                .photos()
+                .map(|p| p.id)
+                .find(|id| *id != a && *id != b)
+                .unwrap();
+            set_regions(
+                &mut s,
+                a,
+                vec![region(0.1, Some("Ann")), region(0.5, Some("Bob"))],
+            );
             set_regions(&mut s, b, vec![region(0.1, None), region(0.5, None)]);
             set_regions(&mut s, c, vec![region(0.3, None)]);
-            let put = |s: &mut Session, id: PhotoId, x: f64, v: Vec<f32>| s.faces.index.insert(id.0, &region(x, None).rect, v);
+            let put = |s: &mut Session, id: PhotoId, x: f64, v: Vec<f32>| {
+                s.faces.index.insert(id.0, &region(x, None).rect, v)
+            };
             put(&mut s, a, 0.1, unit(&[(0, 1.0)])); // Ann
             put(&mut s, a, 0.5, unit(&[(1, 1.0)])); // Bob
             put(&mut s, b, 0.1, unit(&[(0, 0.95), (1, 0.05)])); // looks just like Ann
@@ -931,8 +1318,16 @@ mod imp {
             put(&mut s, c, 0.3, unit(&[(0, 0.8), (1, 0.6)])); // somewhat like Ann
             let r = similar(&mut s, "ann", 10);
             assert!(r.ready);
-            let found: Vec<(u64, u64)> = r.items.iter().map(|i| (i["photo"].as_u64().unwrap(), i["index"].as_u64().unwrap())).collect();
-            assert_eq!(found, vec![(b.0, 0), (c.0, 0)], "best first; the face that looks like Bob is left out");
+            let found: Vec<(u64, u64)> = r
+                .items
+                .iter()
+                .map(|i| (i["photo"].as_u64().unwrap(), i["index"].as_u64().unwrap()))
+                .collect();
+            assert_eq!(
+                found,
+                vec![(b.0, 0), (c.0, 0)],
+                "best first; the face that looks like Bob is left out"
+            );
             assert!(r.items[0]["score"].as_f64().unwrap() > r.items[1]["score"].as_f64().unwrap());
             assert_eq!(similar(&mut s, "ann", 1).items.len(), 1, "capped");
             assert!(similar(&mut s, "nobody", 10).items.is_empty());
@@ -953,11 +1348,17 @@ mod imp {
     }
 
     pub fn suggest(_: &mut Session, _: &Value) -> Result<Value> {
-        Err(bad("faces.suggest", "this build cannot run face recognition"))
+        Err(bad(
+            "faces.suggest",
+            "this build cannot run face recognition",
+        ))
     }
 
     pub fn evaluate(_: &mut Session, _: &Value) -> Result<Value> {
-        Err(bad("faces.evaluate", "this build cannot run face recognition"))
+        Err(bad(
+            "faces.evaluate",
+            "this build cannot run face recognition",
+        ))
     }
 
     pub fn pump(_: &mut Session, _: &Value) -> Result<Value> {
@@ -965,11 +1366,23 @@ mod imp {
     }
 
     pub fn similar(_: &mut Session, _: &str, _: usize) -> super::Similar {
-        super::Similar { items: Vec::new(), ready: false, pending: 0 }
+        super::Similar {
+            items: Vec::new(),
+            ready: false,
+            pending: 0,
+        }
     }
 
-    pub fn arrange_unnamed(_: &mut Session, _: &mut Vec<(u64, usize, lightcraft_geom::Rect)>, _: usize) -> super::Arranged {
-        super::Arranged { ordered: false, ready: false, suggestions: Default::default() }
+    pub fn arrange_unnamed(
+        _: &mut Session,
+        _: &mut Vec<(u64, usize, lightcraft_geom::Rect)>,
+        _: usize,
+    ) -> super::Arranged {
+        super::Arranged {
+            ordered: false,
+            ready: false,
+            suggestions: Default::default(),
+        }
     }
 }
 

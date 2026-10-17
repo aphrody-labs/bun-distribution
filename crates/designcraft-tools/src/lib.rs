@@ -6,7 +6,14 @@
 //! replayable by the control channel and MCP, and tools are testable without a UI.
 //!
 //! Pointer positions are **canvas** coordinates (see [`layout::CanvasLayout`]).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 mod anchors;
@@ -72,7 +79,12 @@ pub struct PointerEvent {
 
 impl PointerEvent {
     pub fn new(kind: PointerKind, x: f64, y: f64) -> Self {
-        Self { kind, pos: Point::new(x, y), mods: Mods::default(), clicks: 0 }
+        Self {
+            kind,
+            pos: Point::new(x, y),
+            mods: Mods::default(),
+            clicks: 0,
+        }
     }
     pub fn with_mods(mut self, m: Mods) -> Self {
         self.mods = m;
@@ -224,7 +236,9 @@ impl ToolContext<'_> {
     /// The parent item showing (not yet overridden) on the document page under `p`:
     /// (absolute page, parent item).
     pub fn hit_parent_on_page(&self, p: Point) -> Option<(usize, ItemId)> {
-        let (SpreadRef::Doc(si), sp) = self.layout.spread_at(p)? else { return None };
+        let (SpreadRef::Doc(si), sp) = self.layout.spread_at(p)? else {
+            return None;
+        };
         let spread = self.doc.spreads.get(si)?;
         let pi = spread.page_at_x(sp.x)?;
         let page = self.doc.first_page_of_spread(si) + pi;
@@ -236,13 +250,21 @@ impl ToolContext<'_> {
             .items
             .iter()
             .rev()
-            .find(|it| !it.locked && !pg.overridden.contains(&it.id) && designcraft_doc::edit_hit(it, at, self.tol(4.0)))
+            .find(|it| {
+                !it.locked
+                    && !pg.overridden.contains(&it.id)
+                    && designcraft_doc::edit_hit(it, at, self.tol(4.0))
+            })
             .map(|it| (page, it.id))
     }
 
     fn hit_parent(&self, sr: SpreadRef, sp: Point) -> Option<(SpreadRef, ItemId)> {
         let s = self.doc.spread(sr)?;
-        s.items.iter().rev().find(|it| !it.locked && designcraft_doc::edit_hit(it, sp, self.tol(4.0))).map(|it| (sr, it.id))
+        s.items
+            .iter()
+            .rev()
+            .find(|it| !it.locked && designcraft_doc::edit_hit(it, sp, self.tol(4.0)))
+            .map(|it| (sr, it.id))
     }
 
     /// Spread-space → canvas transform of the spread holding item `id`.
@@ -259,7 +281,9 @@ impl ToolContext<'_> {
     pub fn selection_bounds(&self) -> Option<Rect> {
         let mut r: Option<Rect> = None;
         for id in &self.selection.items {
-            let (Some(it), Some(xf)) = (self.doc.item(*id), self.item_canvas_xf(*id)) else { continue };
+            let (Some(it), Some(xf)) = (self.doc.item(*id), self.item_canvas_xf(*id)) else {
+                continue;
+            };
             let b = xf.transform_rect_bbox(it.bounds());
             r = Some(r.map_or(b, |r| r.union(b)));
         }
@@ -270,8 +294,12 @@ impl ToolContext<'_> {
     pub fn selection_visible_bounds(&self) -> Option<Rect> {
         let mut acc: Option<Rect> = None;
         for id in &self.selection.items {
-            let (Some(it), Some(xf)) = (self.doc.item(*id), self.item_canvas_xf(*id)) else { continue };
-            let Some(local) = crate::snap::moving_bounds(it) else { continue };
+            let (Some(it), Some(xf)) = (self.doc.item(*id), self.item_canvas_xf(*id)) else {
+                continue;
+            };
+            let Some(local) = crate::snap::moving_bounds(it) else {
+                continue;
+            };
             let b = xf.transform_rect_bbox(local);
             if !(b.x0.is_finite() && b.y0.is_finite() && b.x1.is_finite() && b.y1.is_finite()) {
                 continue;
@@ -380,7 +408,8 @@ pub fn create(id: &str) -> Box<dyn Tool> {
     match id {
         "selection" => Box::new(select::SelectionTool::new(false)),
         "directSelection" => Box::new(select::SelectionTool::new(true)),
-        "rectangleFrame" | "ellipseFrame" | "polygonFrame" | "rectangle" | "ellipse" | "polygon" | "line" => Box::new(frame::FrameTool::new(id)),
+        "rectangleFrame" | "ellipseFrame" | "polygonFrame" | "rectangle" | "ellipse"
+        | "polygon" | "line" => Box::new(frame::FrameTool::new(id)),
         "type" => Box::new(text::TypeTool::default()),
         "verticalType" => Box::new(text::TypeTool::vertical()),
         "pen" => Box::new(pen::PenTool::default()),
@@ -405,7 +434,9 @@ pub fn create(id: &str) -> Box<dyn Tool> {
         "gap" => Box::new(nav::GapTool::default()),
         "contentCollector" => Box::new(nav::ConveyorTool::new(false)),
         "contentPlacer" => Box::new(nav::ConveyorTool::new(true)),
-        other => Box::new(NoopTool(tool_info(other).map(|t| t.id).unwrap_or("selection"))),
+        other => Box::new(NoopTool(
+            tool_info(other).map(|t| t.id).unwrap_or("selection"),
+        )),
     }
 }
 

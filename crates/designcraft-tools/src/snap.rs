@@ -8,7 +8,9 @@
 
 use std::collections::HashSet;
 
-use designcraft_doc::{Item, ItemId, Orientation, PageSide, Selection, SpreadId, SpreadRef, StrokeAlign};
+use designcraft_doc::{
+    Item, ItemId, Orientation, PageSide, Selection, SpreadId, SpreadRef, StrokeAlign,
+};
 use designcraft_geom::snap::snap_to_grid;
 use designcraft_geom::{Affine, Point, Rect, Vec2, format_measure};
 
@@ -64,8 +66,12 @@ pub fn snap(cx: &ToolContext, req: SnapRequest<'_>) -> Snap {
     // Three false flags lock the axis: do not move it and do not draw a guide for it.
     let x_free = req.x_edges != [false; 3];
     let y_free = req.y_edges != [false; 3];
-    let x_hit = x_free.then(|| first_on_axis(cx, &req, Axis::X, tol)).flatten();
-    let y_hit = y_free.then(|| first_on_axis(cx, &req, Axis::Y, tol)).flatten();
+    let x_hit = x_free
+        .then(|| first_on_axis(cx, &req, Axis::X, tol))
+        .flatten();
+    let y_hit = y_free
+        .then(|| first_on_axis(cx, &req, Axis::Y, tol))
+        .flatten();
     let mut out = Snap::default();
     if let Some(hit) = &x_hit {
         out.delta.x = hit.delta;
@@ -75,7 +81,12 @@ pub fn snap(cx: &ToolContext, req: SnapRequest<'_>) -> Snap {
         out.delta.y = hit.delta;
         out.length_delta[1] = hit.length_delta;
     }
-    let placed = Rect::new(req.rect.x0 + out.delta.x, req.rect.y0 + out.delta.y, req.rect.x1 + out.delta.x, req.rect.y1 + out.delta.y);
+    let placed = Rect::new(
+        req.rect.x0 + out.delta.x,
+        req.rect.y0 + out.delta.y,
+        req.rect.x1 + out.delta.x,
+        req.rect.y1 + out.delta.y,
+    );
     if let Some(hit) = &x_hit {
         push_hit_guides(&mut out.guides, cx, &req, Axis::X, hit, placed);
     }
@@ -89,7 +100,12 @@ pub fn snap(cx: &ToolContext, req: SnapRequest<'_>) -> Snap {
 ///
 /// One edge takes the whole delta. Both edges of an axis split it, low edge one way and high
 /// edge the other, so a length match keeps the centre. A non-finite component is ignored.
-pub(crate) fn nudge_edges(mut rect: Rect, x_edges: [bool; 3], y_edges: [bool; 3], delta: Vec2) -> Rect {
+pub(crate) fn nudge_edges(
+    mut rect: Rect,
+    x_edges: [bool; 3],
+    y_edges: [bool; 3],
+    delta: Vec2,
+) -> Rect {
     nudge_axis(&mut rect.x0, &mut rect.x1, x_edges, delta.x);
     nudge_axis(&mut rect.y0, &mut rect.y1, y_edges, delta.y);
     rect
@@ -158,7 +174,11 @@ fn zone_tol(cx: &ToolContext) -> Option<f64> {
         return None;
     }
     let tol = cx.tol(zone);
-    if tol.is_finite() && tol > 0.0 { Some(tol) } else { None }
+    if tol.is_finite() && tol > 0.0 {
+        Some(tol)
+    } else {
+        None
+    }
 }
 
 /// Matched rotation, in the same degrees `transform.rotate` receives.
@@ -180,17 +200,30 @@ fn rotation_snap(cx: &ToolContext, req: &SnapRequest<'_>, zone_length: f64) -> S
     let mut guides = Vec::new();
     let p = cx.layout.xf(req.spread) * req.pointer;
     if point_finite(p) {
-        guides.push(Overlay::Measure { p, text: format_angle(angle) });
+        guides.push(Overlay::Measure {
+            p,
+            text: format_angle(angle),
+        });
     }
-    Snap { angle: Some(angle), guides, ..Snap::default() }
+    Snap {
+        angle: Some(angle),
+        guides,
+        ..Snap::default()
+    }
 }
 
 fn match_rotation(cx: &ToolContext, req: &SnapRequest<'_>, zone_length: f64) -> Option<f64> {
-    if !matches!(req.gesture, Gesture::Rotate) || !cx.snap.smart_guides || !cx.snap.smart_dimensions {
+    if !matches!(req.gesture, Gesture::Rotate) || !cx.snap.smart_guides || !cx.snap.smart_dimensions
+    {
         return None;
     }
     let proposed = req.angle?;
-    if !proposed.is_finite() || !req.radius.is_finite() || req.radius < 1.0 || !zone_length.is_finite() || zone_length <= 0.0 {
+    if !proposed.is_finite()
+        || !req.radius.is_finite()
+        || req.radius < 1.0
+        || !zone_length.is_finite()
+        || zone_length <= 0.0
+    {
         return None;
     }
     let tol = (zone_length / req.radius).atan().to_degrees();
@@ -201,7 +234,18 @@ fn match_rotation(cx: &ToolContext, req: &SnapRequest<'_>, zone_length: f64) -> 
     let mut seen = HashSet::new();
     if let Some(spread) = cx.doc.spread(req.spread) {
         for item in &spread.items {
-            push_rotation(&mut best, cx.selection, req, item, Affine::IDENTITY, false, 0, &mut seen, proposed, tol);
+            push_rotation(
+                &mut best,
+                cx.selection,
+                req,
+                item,
+                Affine::IDENTITY,
+                false,
+                0,
+                &mut seen,
+                proposed,
+                tol,
+            );
         }
     }
     // Parent editing already lists those items on the spread. Do not add them again.
@@ -221,20 +265,39 @@ fn push_parent_rotations(
     proposed: f64,
     tol: f64,
 ) {
-    let SpreadRef::Doc(si) = req.spread else { return };
+    let SpreadRef::Doc(si) = req.spread else {
+        return;
+    };
     let page_count = cx.doc.spreads.get(si).map(|sp| sp.pages.len()).unwrap_or(0);
     let first = cx.doc.first_page_of_spread(si);
     for pi in 0..page_count {
-        let Some(abs) = first.checked_add(pi) else { continue };
-        let Some(page) = cx.doc.page(abs) else { continue };
+        let Some(abs) = first.checked_add(pi) else {
+            continue;
+        };
+        let Some(page) = cx.doc.page(abs) else {
+            continue;
+        };
         if !page.show_parent_items {
             continue;
         }
         let doc_side = page.side;
         let overridden = page.overridden.clone();
-        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else { continue };
+        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else {
+            continue;
+        };
         let mut seen_spreads = HashSet::new();
-        push_parent_rotation_chain(best, cx, req, doc_side, &overridden, ppi, seen_items, &mut seen_spreads, proposed, tol);
+        push_parent_rotation_chain(
+            best,
+            cx,
+            req,
+            doc_side,
+            &overridden,
+            ppi,
+            seen_items,
+            &mut seen_spreads,
+            proposed,
+            tol,
+        );
     }
 }
 
@@ -250,7 +313,9 @@ fn push_parent_rotation_chain(
     proposed: f64,
     tol: f64,
 ) {
-    let Some(parent) = cx.doc.parents.get(index) else { return };
+    let Some(parent) = cx.doc.parents.get(index) else {
+        return;
+    };
     if !seen_spreads.insert(parent.id) {
         return;
     }
@@ -261,15 +326,41 @@ fn push_parent_rotation_chain(
                 continue;
             }
             // A facing parent only shows items whose center sits on this document page's parent page.
-            if parent.pages.len() > 1 && parent.page_at_x(item.bounds().center().x) != Some(page_idx) {
+            if parent.pages.len() > 1
+                && parent.page_at_x(item.bounds().center().x) != Some(page_idx)
+            {
                 continue;
             }
-            push_rotation(best, cx.selection, req, item, Affine::IDENTITY, false, 0, seen_items, proposed, tol);
+            push_rotation(
+                best,
+                cx.selection,
+                req,
+                item,
+                Affine::IDENTITY,
+                false,
+                0,
+                seen_items,
+                proposed,
+                tol,
+            );
         }
     }
     let Some(next_id) = next else { return };
-    let Some(next_index) = cx.doc.parent_index(next_id) else { return };
-    push_parent_rotation_chain(best, cx, req, doc_side, overridden, next_index, seen_items, seen_spreads, proposed, tol);
+    let Some(next_index) = cx.doc.parent_index(next_id) else {
+        return;
+    };
+    push_parent_rotation_chain(
+        best,
+        cx,
+        req,
+        doc_side,
+        overridden,
+        next_index,
+        seen_items,
+        seen_spreads,
+        proposed,
+        tol,
+    );
 }
 
 fn push_rotation(
@@ -299,7 +390,18 @@ fn push_rotation(
         return;
     }
     for child in item.children() {
-        push_rotation(best, selection, req, child, abs, skip, depth + 1, seen, proposed, tol);
+        push_rotation(
+            best,
+            selection,
+            req,
+            child,
+            abs,
+            skip,
+            depth + 1,
+            seen,
+            proposed,
+            tol,
+        );
     }
 }
 
@@ -369,7 +471,11 @@ fn angular_distance(a: f64, b: f64) -> f64 {
 /// Whole degrees have no decimal. Anything else prints one decimal place.
 fn format_angle(deg: f64) -> String {
     let nearest = deg.round();
-    if nearest.is_finite() && (deg - nearest).abs() < 1e-6 { format!("{nearest:.0}") } else { format!("{deg:.1}") }
+    if nearest.is_finite() && (deg - nearest).abs() < 1e-6 {
+        format!("{nearest:.0}")
+    } else {
+        format!("{deg:.1}")
+    }
 }
 
 fn first_on_axis(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -> Option<AxisHit> {
@@ -394,7 +500,9 @@ fn pass_grid(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -> O
     let spacing = grid_interval(cx, axis)?;
     let origin = grid_origin(cx, req, axis)?;
     let mut best: Option<Best> = None;
-    offer_enabled(&mut best, req.rect, axis_flags(req, axis), axis, tol, |v| Some(snap_to_grid(v, spacing, origin)));
+    offer_enabled(&mut best, req.rect, axis_flags(req, axis), axis, tol, |v| {
+        Some(snap_to_grid(v, spacing, origin))
+    });
     best.map(|b| b.hit)
 }
 
@@ -415,7 +523,10 @@ fn grid_interval(cx: &ToolContext, axis: Axis) -> Option<f64> {
 /// Page-bounds origin on `axis` for the page under the rect center.
 fn grid_origin(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis) -> Option<f64> {
     let spread = cx.doc.spread(req.spread)?;
-    let bounds = spread.pages.get(spread.page_at_x(req.rect.center().x)?)?.bounds();
+    let bounds = spread
+        .pages
+        .get(spread.page_at_x(req.rect.center().x)?)?
+        .bounds();
     let origin = match axis {
         Axis::X => bounds.x0,
         Axis::Y => bounds.y0,
@@ -449,7 +560,9 @@ fn pass_baseline(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) 
             continue;
         }
         let origin = bounds.y0 + baseline.start;
-        offer_enabled(&mut best, req.rect, flags, axis, tol, |v| nearest_baseline(v, origin, increment, bounds.y0, bounds.y1));
+        offer_enabled(&mut best, req.rect, flags, axis, tol, |v| {
+            nearest_baseline(v, origin, increment, bounds.y0, bounds.y1)
+        });
     }
     best.map(|b| b.hit)
 }
@@ -477,10 +590,20 @@ fn nearest_baseline(v: f64, origin: f64, increment: f64, y0: f64, y1: f64) -> Op
 }
 
 fn baseline_n_range(origin: f64, increment: f64, y0: f64, y1: f64) -> Option<(f64, f64)> {
-    if !origin.is_finite() || !increment.is_finite() || increment <= 0.0 || !y0.is_finite() || !y1.is_finite() || y0 >= y1 {
+    if !origin.is_finite()
+        || !increment.is_finite()
+        || increment <= 0.0
+        || !y0.is_finite()
+        || !y1.is_finite()
+        || y0 >= y1
+    {
         return None;
     }
-    let mut n_min = if origin < y0 { ((y0 - origin) / increment).ceil() } else { 0.0 };
+    let mut n_min = if origin < y0 {
+        ((y0 - origin) / increment).ceil()
+    } else {
+        0.0
+    };
     if !n_min.is_finite() || n_min < 0.0 {
         return None;
     }
@@ -506,7 +629,14 @@ fn baseline_line_ok(line: f64, origin: f64, increment: f64, y0: f64, y1: f64) ->
 }
 
 /// Each edge whose flag is set, against its own target. Nothing is drawn.
-fn offer_enabled(best: &mut Option<Best>, moving: Rect, flags: [bool; 3], axis: Axis, tol: f64, mut target_at: impl FnMut(f64) -> Option<f64>) {
+fn offer_enabled(
+    best: &mut Option<Best>,
+    moving: Rect,
+    flags: [bool; 3],
+    axis: Axis,
+    tol: f64,
+    mut target_at: impl FnMut(f64) -> Option<f64>,
+) {
     let (left, mid, right) = axis_triple(moving, axis);
     let [use_left, use_mid, use_right] = flags;
     for (on, v) in [(use_left, left), (use_mid, mid), (use_right, right)] {
@@ -553,7 +683,12 @@ fn pass_spacing(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -
         }
     }
     let choice = best?;
-    let shifted = Interval { lo: mover.lo + choice.delta, hi: mover.hi + choice.delta, perp_lo: mover.perp_lo, perp_hi: mover.perp_hi };
+    let shifted = Interval {
+        lo: mover.lo + choice.delta,
+        hi: mover.hi + choice.delta,
+        perp_lo: mover.perp_lo,
+        perp_hi: mover.perp_hi,
+    };
     if !shifted.lo.is_finite() || !shifted.hi.is_finite() {
         return None;
     }
@@ -562,21 +697,41 @@ fn pass_spacing(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -
     push_moving_gaps(&mut gaps, &shifted, &boxes, axis, choice.distance, &label);
     for g in &stationary {
         if gap_matches(g.gap, choice.distance) {
-            push_gap_mark(&mut gaps, axis, g.left, g.right, g.perp_lo, g.perp_hi, &label);
+            push_gap_mark(
+                &mut gaps, axis, g.left, g.right, g.perp_lo, g.perp_hi, &label,
+            );
         }
     }
-    Some(AxisHit { delta: choice.delta, at: 0.0, span: None, length_delta: None, dimension: None, gaps })
+    Some(AxisHit {
+        delta: choice.delta,
+        at: 0.0,
+        span: None,
+        length_delta: None,
+        dimension: None,
+        gaps,
+    })
 }
 
 /// Top-level visible boxes that overlap `mover` on the other axis.
 ///
 /// The moving rect is not one of them. Parents are not walked.
-fn spacing_intervals(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, mover: &Interval) -> Vec<Interval> {
+fn spacing_intervals(
+    cx: &ToolContext,
+    req: &SnapRequest<'_>,
+    axis: Axis,
+    mover: &Interval,
+) -> Vec<Interval> {
     let mut out = Vec::new();
-    let Some(sp) = cx.doc.spread(req.spread) else { return out };
+    let Some(sp) = cx.doc.spread(req.spread) else {
+        return out;
+    };
     for item in &sp.items {
-        let Some(rect) = item_target_rect(cx.selection, req, item) else { continue };
-        let Some(span) = interval_on(rect, axis) else { continue };
+        let Some(rect) = item_target_rect(cx.selection, req, item) else {
+            continue;
+        };
+        let Some(span) = interval_on(rect, axis) else {
+            continue;
+        };
         if ranges_overlap(mover.perp_lo, mover.perp_hi, span.perp_lo, span.perp_hi) {
             out.push(span);
         }
@@ -620,7 +775,12 @@ fn interval_on(rect: Rect, axis: Axis) -> Option<Interval> {
         Axis::X => (rect.x0, rect.x1, rect.y0, rect.y1),
         Axis::Y => (rect.y0, rect.y1, rect.x0, rect.x1),
     };
-    Some(Interval { lo: a0.min(a1), hi: a0.max(a1), perp_lo: p0.min(p1), perp_hi: p0.max(p1) })
+    Some(Interval {
+        lo: a0.min(a1),
+        hi: a0.max(a1),
+        perp_lo: p0.min(p1),
+        perp_hi: p0.max(p1),
+    })
 }
 
 /// Nearest positive gap on one side of `mover`.
@@ -628,7 +788,12 @@ fn interval_on(rect: Rect, axis: Axis) -> Option<Interval> {
 /// `low` looks toward decreasing coordinates. A box that overlaps that edge, or a zero gap,
 /// is nearer than any open gap, so the side produces nothing and a farther box is not used.
 /// `skip` drops a box that would otherwise be compared with itself.
-fn nearest_side(mover: &Interval, boxes: &[Interval], skip: Option<usize>, low: bool) -> Option<SideGap> {
+fn nearest_side(
+    mover: &Interval,
+    boxes: &[Interval],
+    skip: Option<usize>,
+    low: bool,
+) -> Option<SideGap> {
     let mut blocked = false;
     let mut best: Option<SideGap> = None;
     for (i, b) in boxes.iter().enumerate() {
@@ -640,7 +805,12 @@ fn nearest_side(mover: &Interval, boxes: &[Interval], skip: Option<usize>, low: 
             SideKind::Ignore => {}
             SideKind::Gap { gap, edge } => {
                 if best.as_ref().is_none_or(|have| gap < have.gap) {
-                    best = Some(SideGap { gap, edge, perp_lo: b.perp_lo, perp_hi: b.perp_hi });
+                    best = Some(SideGap {
+                        gap,
+                        edge,
+                        perp_lo: b.perp_lo,
+                        perp_hi: b.perp_hi,
+                    });
                 }
             }
         }
@@ -656,9 +826,19 @@ enum SideKind {
 
 fn side_gap(mover: &Interval, b: &Interval, low: bool) -> SideKind {
     let (gap, edge, crosses, past) = if low {
-        (mover.lo - b.hi, b.hi, b.lo < mover.lo && b.hi > mover.lo, b.hi > mover.lo)
+        (
+            mover.lo - b.hi,
+            b.hi,
+            b.lo < mover.lo && b.hi > mover.lo,
+            b.hi > mover.lo,
+        )
     } else {
-        (b.lo - mover.hi, b.lo, b.lo < mover.hi && b.hi > mover.hi, b.lo < mover.hi)
+        (
+            b.lo - mover.hi,
+            b.lo,
+            b.lo < mover.hi && b.hi > mover.hi,
+            b.lo < mover.hi,
+        )
     };
     if crosses {
         return SideKind::Block;
@@ -669,7 +849,11 @@ fn side_gap(mover: &Interval, b: &Interval, low: bool) -> SideKind {
     if !gap.is_finite() {
         return SideKind::Ignore;
     }
-    if gap <= 0.0 { SideKind::Block } else { SideKind::Gap { gap, edge } }
+    if gap <= 0.0 {
+        SideKind::Block
+    } else {
+        SideKind::Gap { gap, edge }
+    }
 }
 
 /// Nearest-neighbor gaps between stationary boxes that overlap on the other axis.
@@ -679,9 +863,19 @@ fn side_gap(mover: &Interval, b: &Interval, low: bool) -> SideKind {
 fn stationary_gaps(boxes: &[Interval]) -> Vec<StoredGap> {
     let mut out = Vec::new();
     for (i, a) in boxes.iter().enumerate() {
-        let Some(n) = nearest_side(a, boxes, Some(i), false) else { continue };
-        let Some((perp_lo, perp_hi)) = perp_span(a.perp_lo, a.perp_hi, n.perp_lo, n.perp_hi) else { continue };
-        out.push(StoredGap { gap: n.gap, left: a.hi, right: n.edge, perp_lo, perp_hi });
+        let Some(n) = nearest_side(a, boxes, Some(i), false) else {
+            continue;
+        };
+        let Some((perp_lo, perp_hi)) = perp_span(a.perp_lo, a.perp_hi, n.perp_lo, n.perp_hi) else {
+            continue;
+        };
+        out.push(StoredGap {
+            gap: n.gap,
+            left: a.hi,
+            right: n.edge,
+            perp_lo,
+            perp_hi,
+        });
     }
     out
 }
@@ -698,7 +892,11 @@ fn offer_spacing(best: &mut Option<SpacingChoice>, delta: f64, distance: f64, to
     }
     let dist = delta.abs();
     if dist <= tol && best.as_ref().is_none_or(|have| dist < have.dist) {
-        *best = Some(SpacingChoice { dist, delta, distance });
+        *best = Some(SpacingChoice {
+            dist,
+            delta,
+            distance,
+        });
     }
 }
 
@@ -707,32 +905,66 @@ fn gap_matches(gap: f64, distance: f64) -> bool {
 }
 
 /// Moving gaps after the shift. A side is drawn when its new nearest gap equals `distance`.
-fn push_moving_gaps(out: &mut Vec<GapMark>, shifted: &Interval, boxes: &[Interval], axis: Axis, distance: f64, label: &str) {
+fn push_moving_gaps(
+    out: &mut Vec<GapMark>,
+    shifted: &Interval,
+    boxes: &[Interval],
+    axis: Axis,
+    distance: f64,
+    label: &str,
+) {
     if let Some(n) = nearest_side(shifted, boxes, None, true)
         && gap_matches(n.gap, distance)
-        && let Some((perp_lo, perp_hi)) = perp_span(shifted.perp_lo, shifted.perp_hi, n.perp_lo, n.perp_hi)
+        && let Some((perp_lo, perp_hi)) =
+            perp_span(shifted.perp_lo, shifted.perp_hi, n.perp_lo, n.perp_hi)
     {
         push_gap_mark(out, axis, n.edge, shifted.lo, perp_lo, perp_hi, label);
     }
     if let Some(n) = nearest_side(shifted, boxes, None, false)
         && gap_matches(n.gap, distance)
-        && let Some((perp_lo, perp_hi)) = perp_span(shifted.perp_lo, shifted.perp_hi, n.perp_lo, n.perp_hi)
+        && let Some((perp_lo, perp_hi)) =
+            perp_span(shifted.perp_lo, shifted.perp_hi, n.perp_lo, n.perp_hi)
     {
         push_gap_mark(out, axis, shifted.hi, n.edge, perp_lo, perp_hi, label);
     }
 }
 
-fn push_gap_mark(out: &mut Vec<GapMark>, axis: Axis, left: f64, right: f64, perp_lo: f64, perp_hi: f64, label: &str) {
-    let Some((a, b)) = gap_ends(axis, left, right, perp_lo, perp_hi) else { return };
+fn push_gap_mark(
+    out: &mut Vec<GapMark>,
+    axis: Axis,
+    left: f64,
+    right: f64,
+    perp_lo: f64,
+    perp_hi: f64,
+    label: &str,
+) {
+    let Some((a, b)) = gap_ends(axis, left, right, perp_lo, perp_hi) else {
+        return;
+    };
     if out.iter().any(|g| segment_same(g.a, g.b, a, b)) {
         return;
     }
-    out.push(GapMark { a, b, label: label.to_string() });
+    out.push(GapMark {
+        a,
+        b,
+        label: label.to_string(),
+    });
 }
 
 /// Facing edges. The line sits on the midpoint of the perpendicular overlap.
-fn gap_ends(axis: Axis, left: f64, right: f64, perp_lo: f64, perp_hi: f64) -> Option<(Point, Point)> {
-    if !left.is_finite() || !right.is_finite() || !perp_lo.is_finite() || !perp_hi.is_finite() || right <= left {
+fn gap_ends(
+    axis: Axis,
+    left: f64,
+    right: f64,
+    perp_lo: f64,
+    perp_hi: f64,
+) -> Option<(Point, Point)> {
+    if !left.is_finite()
+        || !right.is_finite()
+        || !perp_lo.is_finite()
+        || !perp_hi.is_finite()
+        || right <= left
+    {
         return None;
     }
     let mid = (perp_lo + perp_hi) * 0.5;
@@ -754,8 +986,16 @@ fn gap_ends(axis: Axis, left: f64, right: f64, perp_lo: f64, perp_hi: f64) -> Op
 /// sides. Rotation is dropped. Width and height are both candidates for whichever length is set.
 /// The closest length inside the zone wins. Delta is the length difference applied from the moving
 /// edge. A rotated rectangle contributes its side lengths, not the axis-aligned box.
-fn pass_dimensions(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -> Option<AxisHit> {
-    if !matches!(req.gesture, Gesture::Resize | Gesture::Create) || !cx.snap.smart_guides || !cx.snap.smart_dimensions {
+fn pass_dimensions(
+    cx: &ToolContext,
+    req: &SnapRequest<'_>,
+    axis: Axis,
+    tol: f64,
+) -> Option<AxisHit> {
+    if !matches!(req.gesture, Gesture::Resize | Gesture::Create)
+        || !cx.snap.smart_guides
+        || !cx.snap.smart_dimensions
+    {
         return None;
     }
     let proposed = match axis {
@@ -808,12 +1048,18 @@ fn length_edge_delta(flags: [bool; 3], diff: f64) -> f64 {
 
 /// Guide along the side whose length matched, after the edge has moved.
 fn dimension_mark(req: &SnapRequest<'_>, axis: Axis, diff: f64, text: String) -> DimMark {
-    let (a, b) = dimension_segment(req.rect, axis, axis_flags(req, axis), diff).unwrap_or((Point::ORIGIN, Point::ORIGIN));
+    let (a, b) = dimension_segment(req.rect, axis, axis_flags(req, axis), diff)
+        .unwrap_or((Point::ORIGIN, Point::ORIGIN));
     DimMark { a, b, text }
 }
 
 /// Spread-space segment along the matched side. `diff` 0 is the side of `rect` itself.
-fn dimension_segment(rect: Rect, axis: Axis, flags: [bool; 3], diff: f64) -> Option<(Point, Point)> {
+fn dimension_segment(
+    rect: Rect,
+    axis: Axis,
+    flags: [bool; 3],
+    diff: f64,
+) -> Option<(Point, Point)> {
     if !diff.is_finite() || !rect_finite(rect) {
         return None;
     }
@@ -852,11 +1098,18 @@ pub(crate) fn lay_dimension_guides(
     if !rect_finite(committed) {
         return;
     }
-    let axes = [(Axis::X, x_edges, length_delta[0]), (Axis::Y, y_edges, length_delta[1])];
+    let axes = [
+        (Axis::X, x_edges, length_delta[0]),
+        (Axis::Y, y_edges, length_delta[1]),
+    ];
     for (axis, edges, diff) in axes {
         let Some(diff) = diff else { continue };
-        let Some((old_a, old_b)) = dimension_segment(pre, axis, edges, diff) else { continue };
-        let Some((new_a, new_b)) = dimension_segment(committed, axis, edges, 0.0) else { continue };
+        let Some((old_a, old_b)) = dimension_segment(pre, axis, edges, diff) else {
+            continue;
+        };
+        let Some((new_a, new_b)) = dimension_segment(committed, axis, edges, 0.0) else {
+            continue;
+        };
         let (oa, ob) = (xf * old_a, xf * old_b);
         let (na, nb) = (xf * new_a, xf * new_b);
         if !point_finite(na) || !point_finite(nb) {
@@ -884,12 +1137,21 @@ pub(crate) fn lay_dimension_guides(
 /// The dimensions pass draws a short horizontal tick at the proposed endpoint because the
 /// length is carried on x. The guide that remains is the segment from the anchor to the
 /// endpoint the gesture commits.
-pub(crate) fn lay_line_dimension(guides: &mut Vec<Overlay>, xf: Affine, anchor: Point, proposed: Point, committed: Point, diff: f64) {
+pub(crate) fn lay_line_dimension(
+    guides: &mut Vec<Overlay>,
+    xf: Affine,
+    anchor: Point,
+    proposed: Point,
+    committed: Point,
+    diff: f64,
+) {
     if !diff.is_finite() {
         return;
     }
     let rect = Rect::from_points(proposed, proposed);
-    let Some((old_a, old_b)) = dimension_segment(rect, Axis::X, [true, true, true], diff) else { return };
+    let Some((old_a, old_b)) = dimension_segment(rect, Axis::X, [true, true, true], diff) else {
+        return;
+    };
     let (oa, ob) = (xf * old_a, xf * old_b);
     let (na, nb) = (xf * anchor, xf * committed);
     if !point_finite(na) || !point_finite(nb) {
@@ -935,7 +1197,16 @@ fn dimension_lengths(cx: &ToolContext, req: &SnapRequest<'_>) -> Vec<f64> {
     let mut seen = HashSet::new();
     if let Some(sp) = cx.doc.spread(req.spread) {
         for item in &sp.items {
-            push_own_lengths(&mut out, cx.selection, req, item, Affine::IDENTITY, false, 0, &mut seen);
+            push_own_lengths(
+                &mut out,
+                cx.selection,
+                req,
+                item,
+                Affine::IDENTITY,
+                false,
+                0,
+                &mut seen,
+            );
         }
     }
     if !layout_edits_parents(cx) {
@@ -971,7 +1242,9 @@ fn push_own_lengths(
     if skip {
         return;
     }
-    let Some((w, h)) = leaf_own_size(item, abs) else { return };
+    let Some((w, h)) = leaf_own_size(item, abs) else {
+        return;
+    };
     out.push(w);
     out.push(h);
 }
@@ -991,7 +1264,11 @@ fn leaf_own_size(item: &Item, abs: Affine) -> Option<(f64, f64)> {
     if !outset.is_finite() {
         return None;
     }
-    let local = if outset > 0.0 { local.inflate(outset, outset) } else { local };
+    let local = if outset > 0.0 {
+        local.inflate(outset, outset)
+    } else {
+        local
+    };
     if !rect_finite(local) {
         return None;
     }
@@ -1017,24 +1294,50 @@ fn stroke_outset(item: &Item) -> f64 {
         StrokeAlign::Inside => 0.0,
         StrokeAlign::Outside => item.stroke.weight,
     };
-    if item.path.is_closed() { w } else { w.max(item.stroke.extent() - item.stroke.weight) }
+    if item.path.is_closed() {
+        w
+    } else {
+        w.max(item.stroke.extent() - item.stroke.weight)
+    }
 }
 
-fn push_parent_lengths(out: &mut Vec<f64>, cx: &ToolContext, req: &SnapRequest<'_>, seen_items: &mut HashSet<ItemId>) {
-    let SpreadRef::Doc(si) = req.spread else { return };
+fn push_parent_lengths(
+    out: &mut Vec<f64>,
+    cx: &ToolContext,
+    req: &SnapRequest<'_>,
+    seen_items: &mut HashSet<ItemId>,
+) {
+    let SpreadRef::Doc(si) = req.spread else {
+        return;
+    };
     let page_count = cx.doc.spreads.get(si).map(|sp| sp.pages.len()).unwrap_or(0);
     let first = cx.doc.first_page_of_spread(si);
     for pi in 0..page_count {
-        let Some(abs) = first.checked_add(pi) else { continue };
-        let Some(page) = cx.doc.page(abs) else { continue };
+        let Some(abs) = first.checked_add(pi) else {
+            continue;
+        };
+        let Some(page) = cx.doc.page(abs) else {
+            continue;
+        };
         if !page.show_parent_items {
             continue;
         }
         let doc_side = page.side;
         let overridden = page.overridden.clone();
-        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else { continue };
+        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else {
+            continue;
+        };
         let mut seen_spreads = HashSet::new();
-        push_parent_length_chain(out, cx, req, doc_side, &overridden, ppi, seen_items, &mut seen_spreads);
+        push_parent_length_chain(
+            out,
+            cx,
+            req,
+            doc_side,
+            &overridden,
+            ppi,
+            seen_items,
+            &mut seen_spreads,
+        );
     }
 }
 
@@ -1048,7 +1351,9 @@ fn push_parent_length_chain(
     seen_items: &mut HashSet<ItemId>,
     seen_spreads: &mut HashSet<SpreadId>,
 ) {
-    let Some(parent) = cx.doc.parents.get(index) else { return };
+    let Some(parent) = cx.doc.parents.get(index) else {
+        return;
+    };
     if !seen_spreads.insert(parent.id) {
         return;
     }
@@ -1058,15 +1363,37 @@ fn push_parent_length_chain(
             if overridden.contains(&item.id) {
                 continue;
             }
-            if parent.pages.len() > 1 && parent.page_at_x(item.bounds().center().x) != Some(page_idx) {
+            if parent.pages.len() > 1
+                && parent.page_at_x(item.bounds().center().x) != Some(page_idx)
+            {
                 continue;
             }
-            push_own_lengths(out, cx.selection, req, item, Affine::IDENTITY, false, 0, seen_items);
+            push_own_lengths(
+                out,
+                cx.selection,
+                req,
+                item,
+                Affine::IDENTITY,
+                false,
+                0,
+                seen_items,
+            );
         }
     }
     let Some(next_id) = next else { return };
-    let Some(next_index) = cx.doc.parent_index(next_id) else { return };
-    push_parent_length_chain(out, cx, req, doc_side, overridden, next_index, seen_items, seen_spreads);
+    let Some(next_index) = cx.doc.parent_index(next_id) else {
+        return;
+    };
+    push_parent_length_chain(
+        out,
+        cx,
+        req,
+        doc_side,
+        overridden,
+        next_index,
+        seen_items,
+        seen_spreads,
+    );
 }
 
 /// Ruler guides, margins, and column sides. No overlay.
@@ -1086,10 +1413,17 @@ fn pass_guides(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) ->
     for page in &sp.pages {
         let page_bounds = page.bounds();
         for guide in &page.guides {
-            if !guide.visible_in(cx.doc) || !guide.position.is_finite() || guide.orientation != axis_orientation(axis) {
+            if !guide.visible_in(cx.doc)
+                || !guide.position.is_finite()
+                || guide.orientation != axis_orientation(axis)
+            {
                 continue;
             }
-            let range = if guide.spread { spread_bounds } else { page_bounds };
+            let range = if guide.spread {
+                spread_bounds
+            } else {
+                page_bounds
+            };
             let (range_lo, range_hi) = perp_ends(range, axis);
             if !ranges_overlap(moving_lo, moving_hi, range_lo, range_hi) {
                 continue;
@@ -1136,11 +1470,31 @@ fn pass_align(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -> 
     let mut best: Option<Best> = None;
     if let Some(sp) = cx.doc.spread(req.spread) {
         for page in &sp.pages {
-            offer_box(&mut best, req.rect, flags, axis, page.bounds(), tol, cx.snap.align_edges, cx.snap.align_centers);
+            offer_box(
+                &mut best,
+                req.rect,
+                flags,
+                axis,
+                page.bounds(),
+                tol,
+                cx.snap.align_edges,
+                cx.snap.align_centers,
+            );
         }
         for item in &sp.items {
-            let Some(rect) = item_target_rect(cx.selection, req, item) else { continue };
-            offer_box(&mut best, req.rect, flags, axis, rect, tol, cx.snap.align_edges, cx.snap.align_centers);
+            let Some(rect) = item_target_rect(cx.selection, req, item) else {
+                continue;
+            };
+            offer_box(
+                &mut best,
+                req.rect,
+                flags,
+                axis,
+                rect,
+                tol,
+                cx.snap.align_edges,
+                cx.snap.align_centers,
+            );
         }
     }
     if !layout_edits_parents(cx) {
@@ -1151,12 +1505,19 @@ fn pass_align(cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, tol: f64) -> 
 
 /// Drag-start ids stay targets while copying. Preview copies are the live selection minus that set.
 fn align_skips_item(selection: &Selection, req: &SnapRequest<'_>, id: ItemId) -> bool {
-    if req.copying { selection.items.contains(&id) && !req.exclude.contains(&id) } else { req.exclude.contains(&id) }
+    if req.copying {
+        selection.items.contains(&id) && !req.exclude.contains(&id)
+    } else {
+        req.exclude.contains(&id)
+    }
 }
 
 /// Parent spreads are the canvas while a parent is being edited. Their items are ordinary targets.
 fn layout_edits_parents(cx: &ToolContext) -> bool {
-    cx.layout.slots.iter().any(|slot| matches!(slot.spread, SpreadRef::Parent(_)))
+    cx.layout
+        .slots
+        .iter()
+        .any(|slot| matches!(slot.spread, SpreadRef::Parent(_)))
 }
 
 /// Visible box used for alignment. Groups with children contribute the union of the children.
@@ -1178,7 +1539,13 @@ fn item_target_rect(selection: &Selection, req: &SnapRequest<'_>, item: &Item) -
 /// a rotated group's children do not fill that rectangle. Hidden and excluded children stay out.
 /// Nested groups use the same rule. A child's stroke is part of that child's visible bounds.
 /// The group's own stroke is not added.
-fn group_target_rect(selection: &Selection, req: &SnapRequest<'_>, item: &Item, seen: &mut HashSet<ItemId>, depth: usize) -> Option<Rect> {
+fn group_target_rect(
+    selection: &Selection,
+    req: &SnapRequest<'_>,
+    item: &Item,
+    seen: &mut HashSet<ItemId>,
+    depth: usize,
+) -> Option<Rect> {
     group_box(item, seen, depth, Some((selection, req)))
 }
 
@@ -1192,7 +1559,12 @@ pub(crate) fn moving_bounds(item: &Item) -> Option<Rect> {
     rect_finite(bounds).then_some(bounds)
 }
 
-fn group_box(item: &Item, seen: &mut HashSet<ItemId>, depth: usize, filter: Option<(&Selection, &SnapRequest<'_>)>) -> Option<Rect> {
+fn group_box(
+    item: &Item,
+    seen: &mut HashSet<ItemId>,
+    depth: usize,
+    filter: Option<(&Selection, &SnapRequest<'_>)>,
+) -> Option<Rect> {
     if depth >= ALIGN_GROUP_DEPTH || !seen.insert(item.id) {
         return None;
     }
@@ -1229,22 +1601,49 @@ fn group_box(item: &Item, seen: &mut HashSet<ItemId>, depth: usize, filter: Opti
 }
 
 /// Parent items shown on the document spread, shifted into that spread's space.
-fn offer_parent_items(best: &mut Option<Best>, cx: &ToolContext, req: &SnapRequest<'_>, flags: [bool; 3], axis: Axis, tol: f64) {
-    let SpreadRef::Doc(si) = req.spread else { return };
+fn offer_parent_items(
+    best: &mut Option<Best>,
+    cx: &ToolContext,
+    req: &SnapRequest<'_>,
+    flags: [bool; 3],
+    axis: Axis,
+    tol: f64,
+) {
+    let SpreadRef::Doc(si) = req.spread else {
+        return;
+    };
     let page_count = cx.doc.spreads.get(si).map(|sp| sp.pages.len()).unwrap_or(0);
     let first = cx.doc.first_page_of_spread(si);
     for pi in 0..page_count {
-        let Some(abs) = first.checked_add(pi) else { continue };
-        let Some(page) = cx.doc.page(abs) else { continue };
+        let Some(abs) = first.checked_add(pi) else {
+            continue;
+        };
+        let Some(page) = cx.doc.page(abs) else {
+            continue;
+        };
         if !page.show_parent_items {
             continue;
         }
         let doc_x = page.x;
         let doc_side = page.side;
         let overridden = page.overridden.clone();
-        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else { continue };
+        let Some((ppi, _)) = cx.doc.parent_page_for(abs) else {
+            continue;
+        };
         let mut seen = HashSet::new();
-        offer_parent_chain(best, cx, req, flags, axis, tol, doc_x, doc_side, &overridden, ppi, &mut seen);
+        offer_parent_chain(
+            best,
+            cx,
+            req,
+            flags,
+            axis,
+            tol,
+            doc_x,
+            doc_side,
+            &overridden,
+            ppi,
+            &mut seen,
+        );
     }
 }
 
@@ -1262,7 +1661,9 @@ fn offer_parent_chain(
     index: usize,
     seen: &mut HashSet<SpreadId>,
 ) {
-    let Some(parent) = cx.doc.parents.get(index) else { return };
+    let Some(parent) = cx.doc.parents.get(index) else {
+        return;
+    };
     if !seen.insert(parent.id) {
         return;
     }
@@ -1278,22 +1679,43 @@ fn offer_parent_chain(
                 }
                 // Same other-page skip as the renderer: a facing parent only shows items
                 // whose center sits on the parent page this document page uses.
-                if parent.pages.len() > 1 && parent.page_at_x(item.bounds().center().x) != Some(page_idx) {
+                if parent.pages.len() > 1
+                    && parent.page_at_x(item.bounds().center().x) != Some(page_idx)
+                {
                     continue;
                 }
-                let Some(rect) = item_target_rect(cx.selection, req, item) else { continue };
-                offer_box(best, req.rect, flags, axis, shift_x(rect, dx), tol, cx.snap.align_edges, cx.snap.align_centers);
+                let Some(rect) = item_target_rect(cx.selection, req, item) else {
+                    continue;
+                };
+                offer_box(
+                    best,
+                    req.rect,
+                    flags,
+                    axis,
+                    shift_x(rect, dx),
+                    tol,
+                    cx.snap.align_edges,
+                    cx.snap.align_centers,
+                );
             }
         }
     }
     let Some(next_id) = next else { return };
-    let Some(next_index) = cx.doc.parent_index(next_id) else { return };
-    offer_parent_chain(best, cx, req, flags, axis, tol, doc_x, doc_side, overridden, next_index, seen);
+    let Some(next_index) = cx.doc.parent_index(next_id) else {
+        return;
+    };
+    offer_parent_chain(
+        best, cx, req, flags, axis, tol, doc_x, doc_side, overridden, next_index, seen,
+    );
 }
 
 /// Left page of a facing parent, otherwise the last page. Same choice as `Document::parent_page_for`.
 fn shown_parent_page_index(page_count: usize, side: PageSide) -> Option<usize> {
-    if page_count >= 2 && side == PageSide::Left { Some(0) } else { page_count.checked_sub(1) }
+    if page_count >= 2 && side == PageSide::Left {
+        Some(0)
+    } else {
+        page_count.checked_sub(1)
+    }
 }
 
 fn shift_x(r: Rect, dx: f64) -> Rect {
@@ -1340,7 +1762,14 @@ fn ranges_overlap(a0: f64, a1: f64, b0: f64, b1: f64) -> bool {
 }
 
 /// Any requested edge, including the center, against one guide line. No span, so nothing is drawn.
-fn offer_line(best: &mut Option<Best>, moving: Rect, flags: [bool; 3], axis: Axis, target: f64, tol: f64) {
+fn offer_line(
+    best: &mut Option<Best>,
+    moving: Rect,
+    flags: [bool; 3],
+    axis: Axis,
+    target: f64,
+    tol: f64,
+) {
     let (left, mid, right) = axis_triple(moving, axis);
     let [use_left, use_mid, use_right] = flags;
     if use_left {
@@ -1354,7 +1783,16 @@ fn offer_line(best: &mut Option<Best>, moving: Rect, flags: [bool; 3], axis: Axi
     }
 }
 
-fn offer_box(best: &mut Option<Best>, moving: Rect, flags: [bool; 3], axis: Axis, target: Rect, tol: f64, edges: bool, centers: bool) {
+fn offer_box(
+    best: &mut Option<Best>,
+    moving: Rect,
+    flags: [bool; 3],
+    axis: Axis,
+    target: Rect,
+    tol: f64,
+    edges: bool,
+    centers: bool,
+) {
     let (m0, m_mid, m1) = axis_triple(moving, axis);
     let (t0, t_mid, t1) = axis_triple(target, axis);
     let [use_left, use_mid, use_right] = flags;
@@ -1380,21 +1818,45 @@ fn offer(best: &mut Option<Best>, moving: f64, target: f64, tol: f64, span: Opti
     let delta = target - moving;
     let dist = delta.abs();
     if dist <= tol && best.as_ref().is_none_or(|b| dist < b.dist) {
-        *best = Some(Best { dist, hit: AxisHit { delta, at: target, span, length_delta: None, dimension: None, gaps: Vec::new() } });
+        *best = Some(Best {
+            dist,
+            hit: AxisHit {
+                delta,
+                at: target,
+                span,
+                length_delta: None,
+                dimension: None,
+                gaps: Vec::new(),
+            },
+        });
     }
 }
 
-fn push_hit_guides(out: &mut Vec<Overlay>, cx: &ToolContext, req: &SnapRequest<'_>, axis: Axis, hit: &AxisHit, moving: Rect) {
+fn push_hit_guides(
+    out: &mut Vec<Overlay>,
+    cx: &ToolContext,
+    req: &SnapRequest<'_>,
+    axis: Axis,
+    hit: &AxisHit,
+    moving: Rect,
+) {
     push_alignment_guide(out, cx, req.spread, axis, hit, moving);
     push_gap_guides(out, cx, req.spread, hit);
     let Some(mark) = &hit.dimension else { return };
     let xf = cx.layout.xf(req.spread);
-    if mark.a.x.is_finite() && mark.a.y.is_finite() && mark.b.x.is_finite() && mark.b.y.is_finite() {
-        out.push(Overlay::Guide { a: xf * mark.a, b: xf * mark.b });
+    if mark.a.x.is_finite() && mark.a.y.is_finite() && mark.b.x.is_finite() && mark.b.y.is_finite()
+    {
+        out.push(Overlay::Guide {
+            a: xf * mark.a,
+            b: xf * mark.b,
+        });
     }
     let p = xf * req.pointer;
     if p.x.is_finite() && p.y.is_finite() {
-        out.push(Overlay::Measure { p, text: mark.text.clone() });
+        out.push(Overlay::Measure {
+            p,
+            text: mark.text.clone(),
+        });
     }
 }
 
@@ -1407,12 +1869,23 @@ fn push_gap_guides(out: &mut Vec<Overlay>, cx: &ToolContext, spread: SpreadRef, 
         let a = xf * g.a;
         let b = xf * g.b;
         if point_finite(a) && point_finite(b) {
-            out.push(Overlay::Gap { a, b, label: g.label.clone() });
+            out.push(Overlay::Gap {
+                a,
+                b,
+                label: g.label.clone(),
+            });
         }
     }
 }
 
-fn push_alignment_guide(out: &mut Vec<Overlay>, cx: &ToolContext, spread: SpreadRef, axis: Axis, hit: &AxisHit, moving: Rect) {
+fn push_alignment_guide(
+    out: &mut Vec<Overlay>,
+    cx: &ToolContext,
+    spread: SpreadRef,
+    axis: Axis,
+    hit: &AxisHit,
+    moving: Rect,
+) {
     let Some(target) = hit.span else { return };
     let xf = cx.layout.xf(spread);
     let (a, b) = match axis {
@@ -1468,12 +1941,33 @@ mod tests {
         let moving_id = make(&mut doc, moving);
         let other_id = make(&mut doc, other);
         let page = &mut Arc::make_mut(&mut doc.spreads[0]).pages[0];
-        page.guides.push(Guide { orientation: Orientation::Vertical, position: guide_x, spread: false, locked: false, layer: None, liquid: false });
+        page.guides.push(Guide {
+            orientation: Orientation::Vertical,
+            position: guide_x,
+            spread: false,
+            locked: false,
+            layer: None,
+            liquid: false,
+        });
         (doc, moving_id, other_id)
     }
 
-    fn ctx_on<'a>(doc: &'a Document, sel: &'a Selection, cache: &'a Cache, layout: &'a CanvasLayout) -> ToolContext<'a> {
-        ToolContext { doc, selection: sel, cache, layout, zoom: 1.0, layer: doc.default_layer(), snap: SnapView::FACTORY, unit: Unit::Points }
+    fn ctx_on<'a>(
+        doc: &'a Document,
+        sel: &'a Selection,
+        cache: &'a Cache,
+        layout: &'a CanvasLayout,
+    ) -> ToolContext<'a> {
+        ToolContext {
+            doc,
+            selection: sel,
+            cache,
+            layout,
+            zoom: 1.0,
+            layer: doc.default_layer(),
+            snap: SnapView::FACTORY,
+            unit: Unit::Points,
+        }
     }
 
     fn y_req(rect: Rect) -> SnapRequest<'static> {
@@ -1511,7 +2005,11 @@ mod tests {
     #[test]
     fn guide_beats_a_closer_object_edge() {
         // Right edge at 100.5. Object edge at 100 (0.5 away). Guide at 104 (3.5 away). Zone is 4.
-        let (doc, moving, _other) = doc_with_items(Rect::new(80.0, 100.0, 100.5, 140.0), Rect::new(90.0, 100.0, 100.0, 160.0), 104.0);
+        let (doc, moving, _other) = doc_with_items(
+            Rect::new(80.0, 100.0, 100.5, 140.0),
+            Rect::new(90.0, 100.0, 100.0, 160.0),
+            104.0,
+        );
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
         let sel = Selection::default();
@@ -1546,7 +2044,12 @@ mod tests {
         let id = ItemId(doc.alloc());
         let (ppi, ppg) = doc.parent_page_for(0).unwrap();
         let parent_x = doc.parents[ppi].pages[ppg].x;
-        let mut item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(parent_x + 72.0, 140.0, parent_x + 252.0, 300.0)));
+        let mut item = Item::new(
+            id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(parent_x + 72.0, 140.0, parent_x + 252.0, 300.0)),
+        );
         item.stroke = Stroke::default(); // 1 pt, center
         doc.insert_item(SpreadRef::Parent(ppi), item, None).unwrap();
         let cache = Cache::new();
@@ -1576,7 +2079,11 @@ mod tests {
 
     #[test]
     fn object_edge_snaps_when_guide_snap_is_off() {
-        let (doc, moving, _other) = doc_with_items(Rect::new(80.0, 100.0, 100.5, 140.0), Rect::new(90.0, 100.0, 100.0, 160.0), 104.0);
+        let (doc, moving, _other) = doc_with_items(
+            Rect::new(80.0, 100.0, 100.5, 140.0),
+            Rect::new(90.0, 100.0, 100.0, 160.0),
+            104.0,
+        );
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
         let sel = Selection::default();
@@ -1604,9 +2111,17 @@ mod tests {
 
     #[test]
     fn hidden_layer_guide_is_not_a_target() {
-        let (mut doc, moving, _) = doc_with_items(Rect::new(80.0, 100.0, 102.0, 140.0), Rect::new(300.0, 100.0, 340.0, 140.0), 104.0);
+        let (mut doc, moving, _) = doc_with_items(
+            Rect::new(80.0, 100.0, 102.0, 140.0),
+            Rect::new(300.0, 100.0, 340.0, 140.0),
+            104.0,
+        );
         let layer = doc.default_layer();
-        doc.layers.iter_mut().find(|l| l.id == layer).unwrap().visible = false;
+        doc.layers
+            .iter_mut()
+            .find(|l| l.id == layer)
+            .unwrap()
+            .visible = false;
         Arc::make_mut(&mut doc.spreads[0]).pages[0].guides[0].layer = Some(layer);
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
@@ -1636,7 +2151,12 @@ mod tests {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
         let id = ItemId(doc.alloc());
-        let item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(100.0, 40.0, 160.0, 80.0)));
+        let item = Item::new(
+            id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(100.0, 40.0, 160.0, 80.0)),
+        );
         doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
@@ -1695,7 +2215,11 @@ mod tests {
                 pointer: Point::new(0.0, 0.0),
             },
         );
-        assert!((hit.delta.x - -1.0).abs() < 1e-6, "delta.x = {}", hit.delta.x);
+        assert!(
+            (hit.delta.x - -1.0).abs() < 1e-6,
+            "delta.x = {}",
+            hit.delta.x
+        );
     }
 
     #[test]
@@ -1706,17 +2230,24 @@ mod tests {
         doc.settings.grid.subdivisions = 8; // 9 pt
         let layer = doc.default_layer();
         let id = ItemId(doc.alloc());
-        let item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(10.0, 10.0, 40.0, 40.0)));
+        let item = Item::new(
+            id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(10.0, 10.0, 40.0, 40.0)),
+        );
         doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
         // Guide 1 pt away at x = 11. Subdivision line at 9 is 1 pt the other way. Grid must win.
-        Arc::make_mut(&mut doc.spreads[0]).pages[0].guides.push(Guide {
-            orientation: Orientation::Vertical,
-            position: 11.0,
-            spread: true,
-            locked: false,
-            layer: None,
-            liquid: false,
-        });
+        Arc::make_mut(&mut doc.spreads[0]).pages[0]
+            .guides
+            .push(Guide {
+                orientation: Orientation::Vertical,
+                position: 11.0,
+                spread: true,
+                locked: false,
+                layer: None,
+                liquid: false,
+            });
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
         let sel = Selection::default();
@@ -1752,7 +2283,12 @@ mod tests {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
         let id = ItemId(doc.alloc());
-        let mut item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 40.0)));
+        let mut item = Item::new(
+            id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 200.0, 40.0)),
+        );
         item.xf = Affine::rotate((-30.0_f64).to_radians());
         doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
         let cache = Cache::new();
@@ -1779,7 +2315,9 @@ mod tests {
             },
         );
         assert!((hit.delta.x - 3.0).abs() < 1e-6);
-        assert!(matches!(hit.guides.last(), Some(Overlay::Measure { text, .. }) if text.contains("200")));
+        assert!(
+            matches!(hit.guides.last(), Some(Overlay::Measure { text, .. }) if text.contains("200"))
+        );
     }
 
     #[test]
@@ -1790,12 +2328,24 @@ mod tests {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
         let child_id = ItemId(doc.alloc());
-        let mut child = Item::new(child_id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 40.0)));
+        let mut child = Item::new(
+            child_id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 40.0)),
+        );
         child.xf = Affine::rotate((-90.0_f64).to_radians());
         let group_id = ItemId(doc.alloc());
-        let mut group = Item::new(group_id, layer, Shape::Group, designcraft_geom::PathData::default());
+        let mut group = Item::new(
+            group_id,
+            layer,
+            Shape::Group,
+            designcraft_geom::PathData::default(),
+        );
         group.xf = Affine::scale_non_uniform(2.0, 1.0);
-        group.content = designcraft_doc::Content::Group { items: vec![std::sync::Arc::new(child)] };
+        group.content = designcraft_doc::Content::Group {
+            items: vec![std::sync::Arc::new(child)],
+        };
         doc.insert_item(SpreadRef::Doc(0), group, None).unwrap();
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
@@ -1821,7 +2371,11 @@ mod tests {
                 pointer: Point::new(282.0, 220.0),
             },
         );
-        assert!((hit.delta.x - -2.0).abs() < 1e-6, "delta.x = {}, want -2 toward local height times 2", hit.delta.x);
+        assert!(
+            (hit.delta.x - -2.0).abs() < 1e-6,
+            "delta.x = {}, want -2 toward local height times 2",
+            hit.delta.x
+        );
     }
 
     #[test]
@@ -1829,7 +2383,11 @@ mod tests {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
         // Stationary gap of 20 between [0,40] and [60,90]. Moving box at [112,150], 22 away from 90.
-        for r in [Rect::new(0.0, 0.0, 40.0, 30.0), Rect::new(60.0, 0.0, 90.0, 30.0), Rect::new(112.0, 0.0, 150.0, 30.0)] {
+        for r in [
+            Rect::new(0.0, 0.0, 40.0, 30.0),
+            Rect::new(60.0, 0.0, 90.0, 30.0),
+            Rect::new(112.0, 0.0, 150.0, 30.0),
+        ] {
             let id = ItemId(doc.alloc());
             let item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(r));
             doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
@@ -1864,7 +2422,10 @@ mod tests {
     fn create_does_not_match_spacing() {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        for r in [Rect::new(0.0, 0.0, 40.0, 30.0), Rect::new(60.0, 0.0, 90.0, 30.0)] {
+        for r in [
+            Rect::new(0.0, 0.0, 40.0, 30.0),
+            Rect::new(60.0, 0.0, 90.0, 30.0),
+        ] {
             let id = ItemId(doc.alloc());
             let item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(r));
             doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
@@ -1899,7 +2460,12 @@ mod tests {
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
         let id = ItemId(doc.alloc());
-        let mut item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 80.0, 40.0)));
+        let mut item = Item::new(
+            id,
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 80.0, 40.0)),
+        );
         item.xf = Affine::rotate((-30.0_f64).to_radians());
         doc.insert_item(SpreadRef::Doc(0), item, None).unwrap();
         let cache = Cache::new();
@@ -1943,9 +2509,19 @@ mod tests {
         let layer = doc.default_layer();
         let id = ItemId(doc.alloc());
         let mut item = Item::new(id, layer, Shape::Rectangle, shapes::rectangle(rect));
-        item.xf = Affine::translate((center.x, center.y)) * Affine::rotate((-30.0_f64).to_radians()) * Affine::translate((-center.x, -center.y));
+        item.xf = Affine::translate((center.x, center.y))
+            * Affine::rotate((-30.0_f64).to_radians())
+            * Affine::translate((-center.x, -center.y));
         doc.insert_item(SpreadRef::Parent(ppi), item, None).unwrap();
-        assert!(doc.spreads[0].items.iter().all(|it| (designcraft_geom::decompose::decompose(it.xf).rotation - 30.0).abs() > 1.0));
+        assert!(
+            doc.spreads[0]
+                .items
+                .iter()
+                .all(
+                    |it| (designcraft_geom::decompose::decompose(it.xf).rotation - 30.0).abs()
+                        > 1.0
+                )
+        );
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
         let sel = Selection::default();
@@ -1977,23 +2553,53 @@ mod tests {
         // swings the empty corners out. The snap target is each child's visible box, transformed, then united.
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        let mut child_a = Item::new(ItemId(doc.alloc()), layer, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)));
-        child_a.stroke = Stroke { weight: 2.0, ..Stroke::default() };
-        let child_b = Item::new(ItemId(doc.alloc()), layer, Shape::Rectangle, shapes::rectangle(Rect::new(40.0, 30.0, 50.0, 40.0)));
-        let mut group = Item::new(ItemId(doc.alloc()), layer, Shape::Group, designcraft_geom::PathData::default());
+        let mut child_a = Item::new(
+            ItemId(doc.alloc()),
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0)),
+        );
+        child_a.stroke = Stroke {
+            weight: 2.0,
+            ..Stroke::default()
+        };
+        let child_b = Item::new(
+            ItemId(doc.alloc()),
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(40.0, 30.0, 50.0, 40.0)),
+        );
+        let mut group = Item::new(
+            ItemId(doc.alloc()),
+            layer,
+            Shape::Group,
+            designcraft_geom::PathData::default(),
+        );
         let xf = Affine::translate((300.0, 400.0)) * Affine::rotate((-45.0_f64).to_radians());
         group.xf = xf;
-        group.content = designcraft_doc::Content::Group { items: vec![Arc::new(child_a), Arc::new(child_b)] };
+        group.content = designcraft_doc::Content::Group {
+            items: vec![Arc::new(child_a), Arc::new(child_b)],
+        };
         doc.insert_item(SpreadRef::Doc(0), group, None).unwrap();
         let a_vis = Rect::new(-1.0, -1.0, 11.0, 11.0);
         let b_vis = Rect::new(40.0, 30.0, 50.0, 40.0);
-        let per_child = xf.transform_rect_bbox(a_vis).union(xf.transform_rect_bbox(b_vis));
+        let per_child = xf
+            .transform_rect_bbox(a_vis)
+            .union(xf.transform_rect_bbox(b_vis));
         let rotated_union = xf.transform_rect_bbox(a_vis.union(b_vis));
         // At 45 degrees the empty corners move y, not x. The two boxes share x0.
-        assert!((per_child.y0 - rotated_union.y0).abs() > 1.0, "fixture does not separate the two boxes");
+        assert!(
+            (per_child.y0 - rotated_union.y0).abs() > 1.0,
+            "fixture does not separate the two boxes"
+        );
         let gap = 2.0;
         // A short rect just above the per-child top. Its other edges stay outside the zone of the rotated union.
-        let moving = Rect::new(per_child.x0, per_child.y0 - gap - 4.0, per_child.x0 + 20.0, per_child.y0 - gap);
+        let moving = Rect::new(
+            per_child.x0,
+            per_child.y0 - gap - 4.0,
+            per_child.x0 + 20.0,
+            per_child.y0 - gap,
+        );
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
         let sel = Selection::default();
@@ -2001,9 +2607,17 @@ mod tests {
         cx.snap.snap_to_guides = false;
         cx.snap.snap_to_document_grid = false;
         let hit = snap(&cx, y_req(moving));
-        assert!((hit.delta.y - gap).abs() < 1e-4, "delta.y {}, want {gap} onto {}", hit.delta.y, per_child.y0);
+        assert!(
+            (hit.delta.y - gap).abs() < 1e-4,
+            "delta.y {}, want {gap} onto {}",
+            hit.delta.y,
+            per_child.y0
+        );
         let wrong = rotated_union.y0 - moving.y1;
-        assert!((hit.delta.y - wrong).abs() > 1.0, "delta matched the rotated local union");
+        assert!(
+            (hit.delta.y - wrong).abs() > 1.0,
+            "delta matched the rotated local union"
+        );
     }
 
     #[test]
@@ -2012,10 +2626,22 @@ mod tests {
         // 2 degrees is inside the zone of 0 and far from 30. Local 0 must not win.
         let mut doc = Document::new(&NewDocument::default());
         let layer = doc.default_layer();
-        let child = Item::new(ItemId(doc.alloc()), layer, Shape::Rectangle, shapes::rectangle(Rect::new(0.0, 0.0, 40.0, 20.0)));
-        let mut group = Item::new(ItemId(doc.alloc()), layer, Shape::Group, designcraft_geom::PathData::default());
+        let child = Item::new(
+            ItemId(doc.alloc()),
+            layer,
+            Shape::Rectangle,
+            shapes::rectangle(Rect::new(0.0, 0.0, 40.0, 20.0)),
+        );
+        let mut group = Item::new(
+            ItemId(doc.alloc()),
+            layer,
+            Shape::Group,
+            designcraft_geom::PathData::default(),
+        );
         group.xf = Affine::rotate((-30.0_f64).to_radians());
-        group.content = designcraft_doc::Content::Group { items: vec![Arc::new(child)] };
+        group.content = designcraft_doc::Content::Group {
+            items: vec![Arc::new(child)],
+        };
         doc.insert_item(SpreadRef::Doc(0), group, None).unwrap();
         let cache = Cache::new();
         let layout = CanvasLayout::new(&doc, false);
@@ -2041,7 +2667,11 @@ mod tests {
             )
         };
         let near_zero = ask(2.0);
-        assert!(near_zero.angle.is_none(), "local 0 was a target: {:?}", near_zero.angle);
+        assert!(
+            near_zero.angle.is_none(),
+            "local 0 was a target: {:?}",
+            near_zero.angle
+        );
         let near_group = ask(28.0);
         let angle = near_group.angle.expect("absolute 30");
         assert!((angle - 30.0).abs() < 1e-6, "angle {angle}");

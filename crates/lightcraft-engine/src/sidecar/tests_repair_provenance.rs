@@ -18,7 +18,10 @@ impl MoveFs for Faults {
     }
     fn rename_no_replace(&self, a: &Path, b: &Path) -> std::io::Result<()> {
         if self.0.iter().any(|p| same_path_or_file(p, a)) {
-            Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "injected provenance partial move"))
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "injected provenance partial move",
+            ))
         } else {
             RealFs.rename_no_replace(a, b)
         }
@@ -43,12 +46,28 @@ fn path(photo: &Path, style: SidecarNaming, upper: bool) -> PathBuf {
     if upper { p.with_extension("XMP") } else { p }
 }
 fn queued(s: &Session) -> Vec<crate::rename::SidecarMove> {
-    s.pending_sidecar_repairs.iter().chain(s.undo.iter().chain(&s.redo).flat_map(|e| &e.retry_sidecars)).cloned().collect()
+    s.pending_sidecar_repairs
+        .iter()
+        .chain(s.undo.iter().chain(&s.redo).flat_map(|e| &e.retry_sidecars))
+        .cloned()
+        .collect()
 }
 fn session(photo: &Path) -> Session {
     let mut s = Session::new();
-    let p = Photo::new(PhotoId(1), Source::File { path: photo.to_string_lossy().into_owned() }, "a.jpg", "JPEG", 4, 3, "");
-    s.catalog.apply(Op::AddPhoto { photo: Box::new(p) }).unwrap();
+    let p = Photo::new(
+        PhotoId(1),
+        Source::File {
+            path: photo.to_string_lossy().into_owned(),
+        },
+        "a.jpg",
+        "JPEG",
+        4,
+        3,
+        "",
+    );
+    s.catalog
+        .apply(Op::AddPhoto { photo: Box::new(p) })
+        .unwrap();
     s.selection = crate::Selection::single(PhotoId(1));
     s
 }
@@ -84,12 +103,32 @@ fn partial(style: SidecarNaming, upper_stem: bool, upper_full: bool, shared: boo
     let mut s = session(&a);
     s.xmp.naming = style;
     let rollback = style == SidecarNaming::Full;
-    let faults = Faults(vec![full_a.clone(), if rollback { stem_b.clone() } else { b.clone() }]);
+    let faults = Faults(vec![
+        full_a.clone(),
+        if rollback { stem_b.clone() } else { b.clone() },
+    ]);
     let plans = s.plan_rename_with(&faults, &[PhotoId(1)], "Trip", 1);
-    assert!(s.execute_fn("photo.rename", |s| Ok(json!({"renamed": s.apply_rename_with(&faults, &plans)?}))).is_err());
+    assert!(
+        s.execute_fn("photo.rename", |s| Ok(
+            json!({"renamed": s.apply_rename_with(&faults, &plans)?})
+        ))
+        .is_err()
+    );
     assert_eq!(queued(&s).len(), 1);
-    let (companion, source, target) = if rollback { (full_a, stem_b, stem_a) } else { (stem_b, full_a, full_b) };
-    Partial { s, dir, a, b, companion, source, target }
+    let (companion, source, target) = if rollback {
+        (full_a, stem_b, stem_a)
+    } else {
+        (stem_b, full_a, full_b)
+    };
+    Partial {
+        s,
+        dir,
+        a,
+        b,
+        companion,
+        source,
+        target,
+    }
 }
 fn replace(p: &Path, held: &Path, in_place: bool) -> (Vec<u8>, Vec<u8>) {
     let original = std::fs::read(p).unwrap();
@@ -105,15 +144,29 @@ fn replace(p: &Path, held: &Path, in_place: bool) -> (Vec<u8>, Vec<u8>) {
         std::fs::rename(p, held).unwrap();
     }
     let foreign = packet(&"f".repeat(original.len() - packet("").len())).into_bytes();
-    assert_eq!(original.len(), foreign.len(), "content changes must be detected even at the same length");
+    assert_eq!(
+        original.len(),
+        foreign.len(),
+        "content changes must be detected even at the same length"
+    );
     assert_ne!(original, foreign);
-    assert!(parse_sidecar(std::str::from_utf8(&foreign).unwrap(), crate::crs::Target::Rendered).is_ok());
+    assert!(
+        parse_sidecar(
+            std::str::from_utf8(&foreign).unwrap(),
+            crate::crs::Target::Rendered
+        )
+        .is_ok()
+    );
     std::fs::write(p, &foreign).unwrap();
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
         let m = std::fs::metadata(p).unwrap();
-        assert_eq!(before == (m.dev(), m.ino()), in_place, "exercise replacement and unchanged-inode edits separately");
+        assert_eq!(
+            before == (m.dev(), m.ino()),
+            in_place,
+            "exercise replacement and unchanged-inode edits separately"
+        );
     }
     (original, foreign)
 }
@@ -131,22 +184,46 @@ fn replaced_and_in_place_companions_block_save_autowrite_retry_and_file_history(
                     let source = std::fs::read(&f.source).unwrap();
                     let before = f.s.catalog.photo(PhotoId(1)).unwrap().source.clone();
                     f.s.xmp.auto_write = true;
-                    f.s.execute("photo.setMeta", &json!({"title": "Fresh", "addKeywords": ["café"]})).unwrap();
-                    assert_eq!(queued(&f.s), queue, "AutoWrite must retain the exact repair");
+                    f.s.execute(
+                        "photo.setMeta",
+                        &json!({"title": "Fresh", "addKeywords": ["café"]}),
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        queued(&f.s),
+                        queue,
+                        "AutoWrite must retain the exact repair"
+                    );
                     assert_eq!(std::fs::read(&f.companion).unwrap(), foreign);
                     let saved = save(&mut f.s);
                     assert!(saved["written"].as_array().unwrap().is_empty());
-                    assert!(saved["failed"][0]["error"].as_str().unwrap().contains("changed since"));
+                    assert!(
+                        saved["failed"][0]["error"]
+                            .as_str()
+                            .unwrap()
+                            .contains("changed since")
+                    );
                     assert_eq!(queued(&f.s), queue);
                     assert_eq!(std::fs::read(&f.source).unwrap(), source);
                     assert!(!f.target.exists());
                     assert!(f.s.repair_sidecars_with(&RealFs).is_err());
-                    let plans = f.s.plan_rename(&[PhotoId(1)], if style == SidecarNaming::Stem { "Trip" } else { "a" }, 1);
+                    let plans = f.s.plan_rename(
+                        &[PhotoId(1)],
+                        if style == SidecarNaming::Stem {
+                            "Trip"
+                        } else {
+                            "a"
+                        },
+                        1,
+                    );
                     assert!(f.s.apply_rename(&plans).is_err());
                     // Metadata history remains available while physical ownership is unresolved.
                     f.s.execute("edit.undo", &json!({})).unwrap();
                     assert_eq!(std::fs::read(&f.companion).unwrap(), foreign);
-                    assert!(f.s.undo_step().is_err(), "the real rename Undo must reject the foreign companion");
+                    assert!(
+                        f.s.undo_step().is_err(),
+                        "the real rename Undo must reject the foreign companion"
+                    );
                     assert_eq!(queued(&f.s), queue);
                     assert_eq!(f.s.catalog.photo(PhotoId(1)).unwrap().source, before);
                     assert_eq!(std::fs::read(&f.companion).unwrap(), foreign);
@@ -170,16 +247,33 @@ fn failed_redo_and_discarded_or_pruned_history_keep_companion_provenance() {
         let mut f = partial(SidecarNaming::Stem, false, false, false);
         if owner == "pruned" {
             for _ in 0..1000 {
-                f.s.commit("Unrelated retention step", Op::Batch { ops: Vec::new() }).unwrap();
+                f.s.commit("Unrelated retention step", Op::Batch { ops: Vec::new() })
+                    .unwrap();
             }
             assert_eq!(f.s.pending_sidecar_repairs.len(), 1);
         } else {
             f.s.undo_step().unwrap();
             let full_a = path(&f.a, SidecarNaming::Full, false);
-            assert!(f.s.redo_step_with(&Faults(vec![full_a, f.b.clone()])).is_err());
-            assert_eq!(f.s.redo.iter().map(|e| e.retry_sidecars.len()).sum::<usize>(), 1);
+            assert!(
+                f.s.redo_step_with(&Faults(vec![full_a, f.b.clone()]))
+                    .is_err()
+            );
+            assert_eq!(
+                f.s.redo
+                    .iter()
+                    .map(|e| e.retry_sidecars.len())
+                    .sum::<usize>(),
+                1
+            );
             if owner == "discarded" {
-                f.s.commit("Discard failed redo", Op::SetRating { id: PhotoId(1), rating: 3 }).unwrap();
+                f.s.commit(
+                    "Discard failed redo",
+                    Op::SetRating {
+                        id: PhotoId(1),
+                        rating: 3,
+                    },
+                )
+                .unwrap();
                 assert_eq!(f.s.pending_sidecar_repairs.len(), 1);
                 assert!(f.s.redo.is_empty());
             }
@@ -234,11 +328,17 @@ fn absent_peer_destinations_are_not_owned_and_retirement_records_only_completed_
     assert!(!save(&mut f.s)["failed"].as_array().unwrap().is_empty());
     assert!(f.s.repair_sidecars_with(&RealFs).is_err());
     assert_eq!(queued(&f.s), queue);
-    assert!(!upper.exists(), "a foreign peer must be rejected before the first repair retires");
+    assert!(
+        !upper.exists(),
+        "a foreign peer must be rejected before the first repair retires"
+    );
     assert_eq!(std::fs::read(&future).unwrap(), foreign);
     assert_eq!(std::fs::read(&f.companion).unwrap(), original_companion);
     std::fs::remove_file(&future).unwrap();
-    assert!(f.s.repair_sidecars_with(&Faults(vec![f.source.clone()])).is_err());
+    assert!(
+        f.s.repair_sidecars_with(&Faults(vec![f.source.clone()]))
+            .is_err()
+    );
     assert_eq!(queued(&f.s).len(), 1);
     let held = f.dir.join("retired-original-held.xmp");
     let (observed_upper, replaced) = replace(&upper, &held, false);
@@ -263,10 +363,24 @@ fn own_atomic_shared_packet_writes_advance_retained_versions_and_failures_do_not
     let shared_before = std::fs::read(&shared).unwrap();
     let copied_before = std::fs::read(&f.companion).unwrap();
     let raw = f.dir.join("a.CR3");
-    let mut photo = Photo::new(PhotoId(2), Source::File { path: raw.to_string_lossy().into_owned() }, "a.CR3", "CR3", 4, 3, "");
+    let mut photo = Photo::new(
+        PhotoId(2),
+        Source::File {
+            path: raw.to_string_lossy().into_owned(),
+        },
+        "a.CR3",
+        "CR3",
+        4,
+        3,
+        "",
+    );
     photo.kind = MediaKind::Raw;
     photo.meta.title = "Legitimate shared packet write".into();
-    f.s.catalog.apply(Op::AddPhoto { photo: Box::new(photo) }).unwrap();
+    f.s.catalog
+        .apply(Op::AddPhoto {
+            photo: Box::new(photo),
+        })
+        .unwrap();
     // A missing repair for the moved JPEG must not block a healthy save by its raw sibling.
     let held = f.dir.join("unavailable-source.xmp");
     std::fs::rename(&f.source, &held).unwrap();
@@ -275,7 +389,11 @@ fn own_atomic_shared_packet_writes_advance_retained_versions_and_failures_do_not
         let _fault = lightcraft_catalog::safe_file::fail_writes_after(0);
         assert!(f.s.save_sidecar(PhotoId(2)).is_err());
     }
-    assert_eq!(queued(&f.s), before, "failed atomic writes must not advance provenance");
+    assert_eq!(
+        queued(&f.s),
+        before,
+        "failed atomic writes must not advance provenance"
+    );
     assert_eq!(std::fs::read(&shared).unwrap(), shared_before);
     f.s.save_sidecar(PhotoId(2)).unwrap();
     assert_ne!(std::fs::read(&shared).unwrap(), shared_before);
@@ -285,12 +403,18 @@ fn own_atomic_shared_packet_writes_advance_retained_versions_and_failures_do_not
     let shared_written = std::fs::read(&shared).unwrap();
     std::fs::write(&shared, packet("foreign-after-our-write")).unwrap();
     assert!(f.s.save_sidecar(PhotoId(2)).is_err());
-    assert_eq!(std::fs::read_to_string(&shared).unwrap(), packet("foreign-after-our-write"));
+    assert_eq!(
+        std::fs::read_to_string(&shared).unwrap(),
+        packet("foreign-after-our-write")
+    );
     std::fs::write(&shared, &shared_written).unwrap();
     f.s.save_sidecar(PhotoId(2)).unwrap();
     std::fs::rename(&held, &f.source).unwrap();
     assert!(save(&mut f.s)["failed"].as_array().unwrap().is_empty());
-    assert!(queued(&f.s).is_empty(), "own shared writes must not stale the retained repair");
+    assert!(
+        queued(&f.s).is_empty(),
+        "own shared writes must not stale the retained repair"
+    );
     assert_eq!(std::fs::read(&shared).unwrap(), shared_written);
     drop(f.s);
     std::fs::remove_dir_all(f.dir).unwrap();
@@ -306,7 +430,8 @@ fn replaced_copy_keeps_its_shared_original_and_repair_source_byte_identical() {
     let (original, foreign) = replace(&f.companion, &held, false);
     let queue = queued(&f.s);
     f.s.xmp.auto_write = true;
-    f.s.execute("photo.setMeta", &json!({"title": "Fresh"})).unwrap();
+    f.s.execute("photo.setMeta", &json!({"title": "Fresh"}))
+        .unwrap();
     assert!(!save(&mut f.s)["failed"].as_array().unwrap().is_empty());
     assert!(f.s.repair_sidecars_with(&RealFs).is_err());
     assert_eq!(queued(&f.s), queue);
@@ -359,7 +484,11 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
     }
     let root = crate::tests_xmp::temp_dir("detached-history-preflight-contract");
     let image = lightcraft_raster::Rgba8::from_fn(4, 3, |_, _| [40, 80, 120, 255]);
-    let png = lightcraft_codecs::encode_png(&lightcraft_codecs::EncodeImage::rgba8(&image), &Default::default()).unwrap();
+    let png = lightcraft_codecs::encode_png(
+        &lightcraft_codecs::EncodeImage::rgba8(&image),
+        &Default::default(),
+    )
+    .unwrap();
     let mut s = Session::new();
     s.xmp.naming = SidecarNaming::Stem;
     let mut native = Vec::new();
@@ -371,30 +500,70 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
         std::fs::write(&original, &png).unwrap();
         let stem = path(&original, SidecarNaming::Stem, false);
         let full = path(&original, SidecarNaming::Full, true);
-        for (p, marker) in [(&stem, format!("{name}-stem")), (&full, format!("{name}-full"))] {
+        for (p, marker) in [
+            (&stem, format!("{name}-stem")),
+            (&full, format!("{name}-full")),
+        ] {
             std::fs::write(p, packet(&marker)).unwrap();
-            assert_eq!(parse_sidecar(&std::fs::read_to_string(p).unwrap(), crate::crs::Target::Rendered).unwrap().rating, Some(5));
+            assert_eq!(
+                parse_sidecar(
+                    &std::fs::read_to_string(p).unwrap(),
+                    crate::crs::Target::Rendered
+                )
+                .unwrap()
+                .rating,
+                Some(5)
+            );
         }
         let id = PhotoId(i as u64 + 1);
-        let photo = Photo::new(id, Source::File { path: original.to_string_lossy().into_owned() }, "a.png", "PNG", 4, 3, "");
-        s.catalog.apply(Op::AddPhoto { photo: Box::new(photo) }).unwrap();
+        let photo = Photo::new(
+            id,
+            Source::File {
+                path: original.to_string_lossy().into_owned(),
+            },
+            "a.png",
+            "PNG",
+            4,
+            3,
+            "",
+        );
+        s.catalog
+            .apply(Op::AddPhoto {
+                photo: Box::new(photo),
+            })
+            .unwrap();
         let fs = Faults(vec![full.clone(), moved.clone()]);
         if i == 0 {
             let plans = s.plan_rename_with(&fs, &[id], "Trip", 1);
             assert!(s.apply_rename_with(&fs, &plans).is_err());
         } else {
             // Register the genuine second partial move without draining the first repair.
-            let moves = vec![(original.to_string_lossy().into_owned(), moved.to_string_lossy().into_owned())];
+            let moves = vec![(
+                original.to_string_lossy().into_owned(),
+                moved.to_string_lossy().into_owned(),
+            )];
             let err = crate::rename::move_all(&fs, &moves).unwrap_err();
             assert_eq!(err.stuck, moves);
             assert_eq!(err.pending_sidecars.len(), 1);
-            let op = Op::SetFile { id, source: Source::File { path: moved.to_string_lossy().into_owned() }, file_name: "Trip.png".into() };
+            let op = Op::SetFile {
+                id,
+                source: Source::File {
+                    path: moved.to_string_lossy().into_owned(),
+                },
+                file_name: "Trip.png".into(),
+            };
             s.follow_stuck(&op, err, true);
         }
         assert_eq!(s.undo.len(), i + 1);
         assert_eq!(queued(&s).len(), i + 1);
-        assert_eq!(s.catalog.photo(id).unwrap().source, Source::File { path: moved.to_string_lossy().into_owned() });
-        let decoded = lightcraft_codecs::decode(&std::fs::read(&moved).unwrap(), Default::default()).unwrap();
+        assert_eq!(
+            s.catalog.photo(id).unwrap().source,
+            Source::File {
+                path: moved.to_string_lossy().into_owned()
+            }
+        );
+        let decoded =
+            lightcraft_codecs::decode(&std::fs::read(&moved).unwrap(), Default::default()).unwrap();
         assert_eq!((decoded.width, decoded.height), (4, 3));
         native.push(NativePartial {
             id,
@@ -409,16 +578,26 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
     let first = &native[0];
     let second = &native[1];
     let first_stem = std::fs::read(&first.companion).unwrap();
-    let full_packets: Vec<_> = native.iter().map(|f| std::fs::read(&f.full).unwrap()).collect();
+    let full_packets: Vec<_> = native
+        .iter()
+        .map(|f| std::fs::read(&f.full).unwrap())
+        .collect();
     let held = root.join("observed-second-companion.xmp");
     let (observed, foreign) = replace(&second.companion, &held, false);
     let mut entry = s.undo.pop().unwrap(); // Undo/Redo call this method with their entry detached.
     let retained = queued(&s);
     let detached = entry.retry_sidecars.clone();
     assert_eq!((retained.len(), detached.len()), (1, 1));
-    let sources: Vec<_> = native.iter().map(|f| s.catalog.photo(f.id).unwrap().source.clone()).collect();
+    let sources: Vec<_> = native
+        .iter()
+        .map(|f| s.catalog.photo(f.id).unwrap().source.clone())
+        .collect();
     let log_len = s.pending_log.len();
-    let mut packets: Vec<_> = native.iter().flat_map(|f| [&f.moved, &f.full, &f.companion]).map(|p| (p.clone(), std::fs::read(p).unwrap())).collect();
+    let mut packets: Vec<_> = native
+        .iter()
+        .flat_map(|f| [&f.moved, &f.full, &f.companion])
+        .map(|p| (p.clone(), std::fs::read(p).unwrap()))
+        .collect();
     packets.push((held.clone(), std::fs::read(&held).unwrap()));
     assert!(!first.target.exists() && !second.target.exists());
 
@@ -433,7 +612,11 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
         entry.retry_sidecars.len(),
         first.target.exists()
     );
-    assert_eq!(queued(&s), retained, "reject the detached owner before any unrelated global repair retires");
+    assert_eq!(
+        queued(&s),
+        retained,
+        "reject the detached owner before any unrelated global repair retires"
+    );
     assert_eq!(entry.retry_sidecars, detached);
     assert_eq!(s.pending_log.len(), log_len);
     for (f, source) in native.iter().zip(&sources) {
@@ -441,7 +624,12 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
         assert!(!f.original.exists() && !f.target.exists());
     }
     for (p, bytes) in &packets {
-        assert_eq!(std::fs::read(p).unwrap(), *bytes, "rejection must preserve {} byte for byte", p.display());
+        assert_eq!(
+            std::fs::read(p).unwrap(),
+            *bytes,
+            "rejection must preserve {} byte for byte",
+            p.display()
+        );
     }
 
     // Resolving the changed content permits the same real method to repair and undo the move.
@@ -449,8 +637,19 @@ fn detached_history_entry_is_checked_before_unrelated_global_retirement() {
     let inverse = s.apply_with_files(&mut entry, &RealFs).unwrap();
     assert!(queued(&s).is_empty() && entry.retry_sidecars.is_empty());
     assert_eq!(s.catalog.photo(first.id).unwrap().source, sources[0]);
-    assert_eq!(s.catalog.photo(second.id).unwrap().source, Source::File { path: second.original.to_string_lossy().into_owned() });
-    assert_eq!(s.file_moves(&inverse), vec![(second.original.to_string_lossy().into_owned(), second.moved.to_string_lossy().into_owned())]);
+    assert_eq!(
+        s.catalog.photo(second.id).unwrap().source,
+        Source::File {
+            path: second.original.to_string_lossy().into_owned()
+        }
+    );
+    assert_eq!(
+        s.file_moves(&inverse),
+        vec![(
+            second.original.to_string_lossy().into_owned(),
+            second.moved.to_string_lossy().into_owned()
+        )]
+    );
     assert_eq!(std::fs::read(&first.moved).unwrap(), png);
     assert_eq!(std::fs::read(&second.original).unwrap(), png);
     assert_eq!(std::fs::read(&first.companion).unwrap(), first_stem);

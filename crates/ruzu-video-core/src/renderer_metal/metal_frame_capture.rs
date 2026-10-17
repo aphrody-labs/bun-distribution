@@ -43,13 +43,21 @@ impl MetalFrameCapture {
             log::error!("Cannot create fresh Metal capture directory {directory:?}: {error}");
             return None;
         }
-        log::info!("Metal GPU capture armed: create {:?} to capture one presentation interval",
-            directory.join("capture.request"));
-        Some(Self { directory, manager, state: State::Waiting })
+        log::info!(
+            "Metal GPU capture armed: create {:?} to capture one presentation interval",
+            directory.join("capture.request")
+        );
+        Some(Self {
+            directory,
+            manager,
+            state: State::Waiting,
+        })
     }
 
     pub(super) fn needs_boundary(&self) -> bool {
-        boundary_requested(self.state, || self.directory.join("capture.request").is_file())
+        boundary_requested(self.state, || {
+            self.directory.join("capture.request").is_file()
+        })
     }
 
     pub(super) fn abort(&mut self) {
@@ -65,7 +73,10 @@ impl MetalFrameCapture {
         if self.state == State::Capturing {
             self.manager.stopCapture();
             self.state = State::Done;
-            log::info!("Metal GPU capture finished: {:?}", self.directory.join("frame.gputrace"));
+            log::info!(
+                "Metal GPU capture finished: {:?}",
+                self.directory.join("frame.gputrace")
+            );
             return;
         }
         if self.state != State::Waiting {
@@ -127,7 +138,11 @@ mod tests {
     fn capture_is_requested_once_and_stops_at_the_next_boundary() {
         assert!(!boundary_requested(State::Waiting, || false));
         assert!(boundary_requested(State::Waiting, || true));
-        assert!(boundary_requested(State::Capturing, || panic!("must finish without polling")));
-        assert!(!boundary_requested(State::Done, || panic!("must never restart")));
+        assert!(boundary_requested(State::Capturing, || panic!(
+            "must finish without polling"
+        )));
+        assert!(!boundary_requested(State::Done, || panic!(
+            "must never restart"
+        )));
     }
 }

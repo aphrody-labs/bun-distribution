@@ -166,8 +166,8 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        asset_value, Asset, AssetApp, AssetEvent, AssetId, AssetMode, AssetPlugin, AssetServer,
-        Assets, DirectAssetAccessExt, Handle, UntypedHandle,
+        Asset, AssetApp, AssetEvent, AssetId, AssetMode, AssetPlugin, AssetServer, Assets,
+        DirectAssetAccessExt, Handle, UntypedHandle, asset_value,
     };
 }
 
@@ -203,7 +203,7 @@ pub use server::*;
 pub use uuid;
 
 use crate::{
-    io::{embedded::EmbeddedAssetRegistry, AssetSourceBuilder, AssetSourceBuilders, AssetSourceId},
+    io::{AssetSourceBuilder, AssetSourceBuilders, AssetSourceId, embedded::EmbeddedAssetRegistry},
     processor::{AssetProcessor, Process},
 };
 use alloc::{
@@ -628,7 +628,10 @@ impl AssetApp for App {
     ) -> &mut Self {
         let id = id.into();
         if self.world().get_resource::<AssetServer>().is_some() {
-            error!("{} must be registered before `AssetPlugin` (typically added as part of `DefaultPlugins`)", id);
+            error!(
+                "{} must be registered before `AssetPlugin` (typically added as part of `DefaultPlugins`)",
+                id
+            );
         }
 
         {
@@ -728,19 +731,19 @@ pub struct AssetEventSystems;
 #[cfg(test)]
 mod tests {
     use crate::{
-        folder::LoadedFolder,
-        handle::Handle,
-        io::{
-            gated::{GateOpener, GatedReader},
-            memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
-            AssetReader, AssetReaderError, AssetSourceBuilder, AssetSourceEvent, AssetSourceId,
-            AssetWatcher, Reader,
-        },
-        loader::{AssetLoader, LoadContext},
         Asset, AssetApp, AssetEvent, AssetId, AssetLoadError, AssetLoadFailedEvent, AssetPath,
         AssetPlugin, AssetServer, Assets, InvalidGenerationError, LoadState, LoadedAsset,
         LoadedUntypedAsset, UnapprovedPathMode, UntypedHandle, VisitAssetDependencies,
         WriteDefaultMetaError,
+        folder::LoadedFolder,
+        handle::Handle,
+        io::{
+            AssetReader, AssetReaderError, AssetSourceBuilder, AssetSourceEvent, AssetSourceId,
+            AssetWatcher, Reader,
+            gated::{GateOpener, GatedReader},
+            memory::{Dir, MemoryAssetReader, MemoryAssetWriter},
+        },
+        loader::{AssetLoader, LoadContext},
     };
     use alloc::{
         boxed::Box,
@@ -763,10 +766,10 @@ mod tests {
         sync::Mutex,
     };
     use bevy_reflect::{Reflect, TypePath};
-    use bevy_tasks::{block_on, futures::check_ready, AsyncComputeTaskPool};
+    use bevy_tasks::{AsyncComputeTaskPool, block_on, futures::check_ready};
     use core::{any::TypeId, assert_matches, time::Duration};
     use crossbeam_channel::TryRecvError;
-    use futures_lite::{future::yield_now, AsyncReadExt};
+    use futures_lite::{AsyncReadExt, future::yield_now};
     use ron::ser::PrettyConfig;
     use serde::{Deserialize, Serialize};
     use std::path::{Path, PathBuf};
@@ -1495,9 +1498,11 @@ mod tests {
 
             assert!(asset_server.load_state(a_id).is_loaded());
             assert!(asset_server.dependency_load_state(a_id).is_loaded());
-            assert!(asset_server
-                .recursive_dependency_load_state(a_id)
-                .is_failed());
+            assert!(
+                asset_server
+                    .recursive_dependency_load_state(a_id)
+                    .is_failed()
+            );
 
             assert!(asset_server.is_loaded(a_id));
             assert!(asset_server.is_loaded_with_direct_dependencies(a_id));
@@ -2940,11 +2945,12 @@ mod tests {
         drop(original_handle);
 
         app.update();
-        assert!(app
-            .world()
-            .resource::<Assets<TestAsset>>()
-            .get(&new_handle)
-            .is_some());
+        assert!(
+            app.world()
+                .resource::<Assets<TestAsset>>()
+                .get(&new_handle)
+                .is_some()
+        );
 
         let _other_handle: Handle<TestAsset> = asset_server.load("test.txt");
         app.update();
@@ -3225,17 +3231,22 @@ mod tests {
     impl From<&AssetLoadError> for TestAssetLoadError {
         fn from(value: &AssetLoadError) -> TestAssetLoadError {
             match value {
-                AssetLoadError::RequestedHandleTypeMismatch (err) => Self::RequestedHandleTypeMismatch {
-                    requested: err.requested,
-                    actual_asset_name: err.actual_asset_name,
-                },
+                AssetLoadError::RequestedHandleTypeMismatch(err) => {
+                    Self::RequestedHandleTypeMismatch {
+                        requested: err.requested,
+                        actual_asset_name: err.actual_asset_name,
+                    }
+                }
                 AssetLoadError::MissingAssetLoader { .. } => Self::MissingAssetLoader,
                 AssetLoadError::AssetReaderError(AssetReaderError::NotFound(_)) => {
                     Self::AssetReaderErrorNotFound
                 }
                 AssetLoadError::AssetLoaderError { .. } => Self::AssetLoaderError,
                 AssetLoadError::MissingLabel { .. } => Self::MissingLabel,
-                _ => panic!("TestAssetLoadError's From<&AssetLoaderError> is missing a case for AssetLoadError \"{:?}\".", value),
+                _ => panic!(
+                    "TestAssetLoadError's From<&AssetLoaderError> is missing a case for AssetLoadError \"{:?}\".",
+                    value
+                ),
             }
         }
     }

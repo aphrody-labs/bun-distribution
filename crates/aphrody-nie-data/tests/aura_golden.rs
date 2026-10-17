@@ -44,7 +44,10 @@ fn aura_node_fixture() -> serde_json::Value {
         ("Int", "0"),
         ("Int", "0"),
     ];
-    let variables: Vec<_> = raw.iter().map(|(t, v)| json!({ "type": t, "value": v })).collect();
+    let variables: Vec<_> = raw
+        .iter()
+        .map(|(t, v)| json!({ "type": t, "value": v }))
+        .collect();
     json!({
         "entries": [{
             "name": "AURA_CMD_INFO_0",
@@ -133,9 +136,18 @@ fn hissatsu_resolu_chaine_skillid1_vers_skill_config() {
 #[test]
 fn determine_sub_type_prefixes() {
     assert_eq!(determine_sub_type("wks00020", None), AuraSubType::Keshin);
-    assert_eq!(determine_sub_type("wks00240", Some("Totem de feu")), AuraSubType::Soul);
-    assert_eq!(determine_sub_type("awakening_001", None), AuraSubType::Awakening);
-    assert_eq!(determine_sub_type("mode_change_x", None), AuraSubType::ModeChange);
+    assert_eq!(
+        determine_sub_type("wks00240", Some("Totem de feu")),
+        AuraSubType::Soul
+    );
+    assert_eq!(
+        determine_sub_type("awakening_001", None),
+        AuraSubType::Awakening
+    );
+    assert_eq!(
+        determine_sub_type("mode_change_x", None),
+        AuraSubType::ModeChange
+    );
     assert_eq!(determine_sub_type("wmm00210", None), AuraSubType::Miximax);
     assert_eq!(determine_sub_type("wko00010", None), AuraSubType::Keshin);
     assert_eq!(determine_sub_type("was00010", None), AuraSubType::Keshin);
@@ -176,7 +188,11 @@ fn hissatsu_0f8c620d_resout_whs01780_vrai_fichier() {
     // AURA_CMD_INFO_0 : auraId=0x7978E1FA, skillId1=0x0F8C620D → whs01780.
     let a0 = &auras[0];
     assert_eq!(a0.aura_id.to_hex(), "0x7978E1FA", "AURA_CMD_INFO_0 auraId");
-    assert_eq!(a0.config.skill_id1.unwrap().to_hex(), "0x0F8C620D", "AURA_CMD_INFO_0 skillId1");
+    assert_eq!(
+        a0.config.skill_id1.unwrap().to_hex(),
+        "0x0F8C620D",
+        "AURA_CMD_INFO_0 skillId1"
+    );
 
     let h = resolve_aura_hissatsu(&a0.config, &map)
         .expect("0x0F8C620D doit résoudre vers whs01780 dans skill_config_4.00.17.00");

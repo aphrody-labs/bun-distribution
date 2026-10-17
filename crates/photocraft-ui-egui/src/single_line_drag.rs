@@ -96,13 +96,31 @@ mod tests {
 
     /// Run one frame with `events` over a text field; returns its rect.
     fn frame(ctx: &Context, field: Field, id: Id, events: Vec<Event>) -> Rect {
-        let input = RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))), events, ..Default::default() };
+        let input = RawInput {
+            screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0))),
+            events,
+            ..Default::default()
+        };
         let mut rect = Rect::NOTHING;
         let mut out = ctx.run_ui(input, |ui| {
             ui.add_space(100.0);
             rect = match field {
-                Field::SingleLine => ui.add(egui::TextEdit::singleline(&mut TEXT.to_string()).id(id).desired_width(400.0)).rect,
-                Field::MultiLine => ui.add(egui::TextEdit::multiline(&mut LINES.to_string()).id(id).desired_width(400.0)).rect,
+                Field::SingleLine => {
+                    ui.add(
+                        egui::TextEdit::singleline(&mut TEXT.to_string())
+                            .id(id)
+                            .desired_width(400.0),
+                    )
+                    .rect
+                }
+                Field::MultiLine => {
+                    ui.add(
+                        egui::TextEdit::multiline(&mut LINES.to_string())
+                            .id(id)
+                            .desired_width(400.0),
+                    )
+                    .rect
+                }
             };
         });
         out.textures_delta.clear();
@@ -110,36 +128,67 @@ mod tests {
     }
 
     fn press(pos: Pos2, pressed: bool) -> Event {
-        Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }
+        Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        }
     }
 
     /// Press at `from`, drag a little sideways, then to `to` and release; the selection as
     /// (anchor, end) character indices. Both points get the field's rect and the width of
     /// [`TEXT`].
-    fn drag(field: Field, from: impl Fn(Rect, f32) -> Pos2, to: impl Fn(Rect, f32) -> Pos2) -> (usize, usize) {
+    fn drag(
+        field: Field,
+        from: impl Fn(Rect, f32) -> Pos2,
+        to: impl Fn(Rect, f32) -> Pos2,
+    ) -> (usize, usize) {
         let ctx = ctx();
         let id = Id::new("single-line-drag-test");
         let rect = frame(&ctx, field, id, vec![]);
         frame(&ctx, field, id, vec![]);
         let text_w = text_width(&ctx);
         let (from, to) = (from(rect, text_w), to(rect, text_w));
-        frame(&ctx, field, id, vec![Event::PointerMoved(from), press(from, true)]);
-        frame(&ctx, field, id, vec![Event::PointerMoved(from + vec2(1.0, 0.0))]);
+        frame(
+            &ctx,
+            field,
+            id,
+            vec![Event::PointerMoved(from), press(from, true)],
+        );
+        frame(
+            &ctx,
+            field,
+            id,
+            vec![Event::PointerMoved(from + vec2(1.0, 0.0))],
+        );
         let anchor = selection(&ctx, id).0;
-        frame(&ctx, field, id, vec![Event::PointerMoved(from + vec2(12.0, 0.0))]);
+        frame(
+            &ctx,
+            field,
+            id,
+            vec![Event::PointerMoved(from + vec2(12.0, 0.0))],
+        );
         frame(&ctx, field, id, vec![Event::PointerMoved(to)]);
         frame(&ctx, field, id, vec![Event::PointerMoved(to)]);
         let during = selection(&ctx, id);
         frame(&ctx, field, id, vec![press(to, false)]);
         let after = selection(&ctx, id);
-        assert_eq!(during, after, "releasing keeps the selection made by the drag");
+        assert_eq!(
+            during, after,
+            "releasing keeps the selection made by the drag"
+        );
         assert_eq!(after.0, anchor, "the anchor stays where the drag started");
         after
     }
 
     fn text_width(ctx: &Context) -> f32 {
         let font = egui::TextStyle::Body.resolve(&ctx.global_style());
-        ctx.fonts_mut(|f| f.layout_no_wrap(TEXT.to_string(), font, egui::Color32::WHITE).size().x)
+        ctx.fonts_mut(|f| {
+            f.layout_no_wrap(TEXT.to_string(), font, egui::Color32::WHITE)
+                .size()
+                .x
+        })
     }
 
     fn selection(ctx: &Context, id: Id) -> (usize, usize) {
@@ -157,21 +206,35 @@ mod tests {
     fn dragging_up_and_right_selects_right_of_the_anchor() {
         let n = TEXT.chars().count();
         // Up out of the field, to three quarters of the text.
-        let (anchor, end) = drag(Field::SingleLine, on_row(0.5), |r, w| pos2(r.left() + 4.0 + 0.75 * w, r.top() - 40.0));
+        let (anchor, end) = drag(Field::SingleLine, on_row(0.5), |r, w| {
+            pos2(r.left() + 4.0 + 0.75 * w, r.top() - 40.0)
+        });
         assert!(anchor > 0 && anchor < n, "anchor {anchor} is mid-text");
-        assert!(end > anchor && end < n, "selection ends right of the anchor at the pointer's x ({anchor}..{end}), not at the start");
+        assert!(
+            end > anchor && end < n,
+            "selection ends right of the anchor at the pointer's x ({anchor}..{end}), not at the start"
+        );
         // Up and past the end of the text: everything right of the anchor.
-        let (anchor, end) = drag(Field::SingleLine, on_row(0.5), |r, _| pos2(r.right() + 50.0, r.top() - 60.0));
+        let (anchor, end) = drag(Field::SingleLine, on_row(0.5), |r, _| {
+            pos2(r.right() + 50.0, r.top() - 60.0)
+        });
         assert!(anchor > 0 && end == n, "{anchor}..{end}");
     }
 
     #[test]
     fn dragging_down_and_left_selects_left_of_the_anchor() {
         let n = TEXT.chars().count();
-        let (anchor, end) = drag(Field::SingleLine, on_row(0.75), |r, w| pos2(r.left() + 4.0 + 0.25 * w, r.bottom() + 40.0));
+        let (anchor, end) = drag(Field::SingleLine, on_row(0.75), |r, w| {
+            pos2(r.left() + 4.0 + 0.25 * w, r.bottom() + 40.0)
+        });
         assert!(anchor > 0 && anchor < n, "anchor {anchor} is mid-text");
-        assert!(end < anchor && end > 0, "selection ends left of the anchor at the pointer's x ({anchor}..{end}), not at the end");
-        let (anchor, end) = drag(Field::SingleLine, on_row(0.75), |r, _| pos2(r.left() - 50.0, r.bottom() + 60.0));
+        assert!(
+            end < anchor && end > 0,
+            "selection ends left of the anchor at the pointer's x ({anchor}..{end}), not at the end"
+        );
+        let (anchor, end) = drag(Field::SingleLine, on_row(0.75), |r, _| {
+            pos2(r.left() - 50.0, r.bottom() + 60.0)
+        });
         assert!(anchor > 0 && end == 0, "{anchor}..{end}");
     }
 
@@ -179,17 +242,43 @@ mod tests {
     fn a_multi_line_field_keeps_its_vertical_drag() {
         // Press on the last line, drag up above the field: the selection runs to the start.
         let last_line = |r: Rect, _| pos2(r.left() + 30.0, r.top() + r.height() * 0.6);
-        let (anchor, end) = drag(Field::MultiLine, last_line, |r, _| pos2(r.left() + 30.0, r.top() - 40.0));
-        assert!(anchor > "first line\nsecond line\n".len(), "anchor {anchor} is on the last line");
-        assert_eq!(end, 0, "dragging above a multi-line field selects to its start");
-        assert_eq!(super::row_y(Rect::from_min_size(Pos2::ZERO, vec2(200.0, 100.0)), 24.0), None);
+        let (anchor, end) = drag(Field::MultiLine, last_line, |r, _| {
+            pos2(r.left() + 30.0, r.top() - 40.0)
+        });
+        assert!(
+            anchor > "first line\nsecond line\n".len(),
+            "anchor {anchor} is on the last line"
+        );
+        assert_eq!(
+            end, 0,
+            "dragging above a multi-line field selects to its start"
+        );
+        assert_eq!(
+            super::row_y(Rect::from_min_size(Pos2::ZERO, vec2(200.0, 100.0)), 24.0),
+            None
+        );
     }
 
     #[test]
     fn the_row_is_inside_a_single_line_rect() {
-        assert_eq!(super::row_y(Rect::from_min_size(pos2(0.0, 10.0), vec2(200.0, 20.0)), 24.0), Some(20.0));
-        assert_eq!(super::row_y(Rect::from_min_size(pos2(0.0, 10.0), vec2(200.0, 40.0)), 24.0), Some(22.0));
+        assert_eq!(
+            super::row_y(
+                Rect::from_min_size(pos2(0.0, 10.0), vec2(200.0, 20.0)),
+                24.0
+            ),
+            Some(20.0)
+        );
+        assert_eq!(
+            super::row_y(
+                Rect::from_min_size(pos2(0.0, 10.0), vec2(200.0, 40.0)),
+                24.0
+            ),
+            Some(22.0)
+        );
         assert_eq!(super::row_y(Rect::NOTHING, 24.0), None);
-        assert_eq!(super::row_y(Rect::from_min_size(Pos2::ZERO, vec2(10.0, f32::NAN)), 24.0), None);
+        assert_eq!(
+            super::row_y(Rect::from_min_size(Pos2::ZERO, vec2(10.0, f32::NAN)), 24.0),
+            None
+        );
     }
 }

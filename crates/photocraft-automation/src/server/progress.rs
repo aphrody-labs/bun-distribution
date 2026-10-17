@@ -6,7 +6,11 @@ use rmcp::service::RequestContext;
 use std::time::{Duration, Instant};
 
 impl PhotocraftMcp {
-    pub(super) async fn render_video_progress(&self, params: Value, context: RequestContext<RoleServer>) -> CallToolResult {
+    pub(super) async fn render_video_progress(
+        &self,
+        params: Value,
+        context: RequestContext<RoleServer>,
+    ) -> CallToolResult {
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
         // rmcp may drop the request future on cancellation. The blocking worker owns the
         // token too, so it still stops and cleans up without needing that future to be polled.

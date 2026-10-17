@@ -10,7 +10,9 @@ pub(crate) fn anchors_to_v1(v: &mut Value) {
         Value::Object(o) => {
             for (k, x) in o.iter_mut() {
                 match x {
-                    Value::Array(anchors) if k == "anchors" => anchors.iter_mut().for_each(anchor_to_v1),
+                    Value::Array(anchors) if k == "anchors" => {
+                        anchors.iter_mut().for_each(anchor_to_v1)
+                    }
                     _ => anchors_to_v1(x),
                 }
             }
@@ -27,7 +29,9 @@ fn anchor_to_v1(a: &mut Value) {
     };
     let Some(o) = a.as_object() else { return };
     // Not a v2 anchor (already a map, or something else called `anchors`): leave it alone.
-    let Some(p) = o.get("p").and_then(point) else { return };
+    let Some(p) = o.get("p").and_then(point) else {
+        return;
+    };
     let handle = |k: &str| o.get(k).and_then(point).unwrap_or_else(|| p.clone());
     let kind = o.get("kind").cloned().unwrap_or_else(|| json!("Corner"));
     *a = json!({ "p": p, "in": handle("in"), "out": handle("out"), "kind": kind });
@@ -42,8 +46,14 @@ mod tests {
         let mut v = json!({"layers": [{"path": {"subpaths": [{"anchors": [{"p": [1.0, 2.0]}, {"p": [3.0, 4.0], "out": [5.0, 4.0], "kind": "Smooth"}], "closed": true}]}}], "effect": {"anchors": true}});
         anchors_to_v1(&mut v);
         let a = &v["layers"][0]["path"]["subpaths"][0]["anchors"];
-        assert_eq!(a[0], json!({"p": {"x": 1.0, "y": 2.0}, "in": {"x": 1.0, "y": 2.0}, "out": {"x": 1.0, "y": 2.0}, "kind": "Corner"}));
-        assert_eq!(a[1], json!({"p": {"x": 3.0, "y": 4.0}, "in": {"x": 3.0, "y": 4.0}, "out": {"x": 5.0, "y": 4.0}, "kind": "Smooth"}));
+        assert_eq!(
+            a[0],
+            json!({"p": {"x": 1.0, "y": 2.0}, "in": {"x": 1.0, "y": 2.0}, "out": {"x": 1.0, "y": 2.0}, "kind": "Corner"})
+        );
+        assert_eq!(
+            a[1],
+            json!({"p": {"x": 3.0, "y": 4.0}, "in": {"x": 3.0, "y": 4.0}, "out": {"x": 5.0, "y": 4.0}, "kind": "Smooth"})
+        );
         assert_eq!(v["effect"]["anchors"], json!(true));
     }
 }

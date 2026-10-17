@@ -22,12 +22,20 @@ fn fixture() -> Vec<u8> {
     for o in offsets {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
 fn card(h: &Harness<'_, PdfCraftApp>, id: &str) -> egui::Rect {
-    h.ctx.data(|d| d.get_temp(egui::Id::new(id).with("card"))).unwrap_or_else(|| panic!("missing dialog card {id}"))
+    h.ctx
+        .data(|d| d.get_temp(egui::Id::new(id).with("card")))
+        .unwrap_or_else(|| panic!("missing dialog card {id}"))
 }
 
 fn protected() -> Vec<u8> {
@@ -46,38 +54,63 @@ fn protected() -> Vec<u8> {
 
 #[test]
 fn document_properties_fields_are_tall_and_inset() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("doc.pdf", None, fixture()).unwrap();
-        app.set_option("dialog", "properties").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("doc.pdf", None, fixture()).unwrap();
+            app.set_option("dialog", "properties").unwrap();
+            app
+        });
     h.run_steps(4);
     let card = card(&h, "dialog");
     let heading = h.get_by_label("Document Properties").rect();
-    assert!(heading.left() - card.left() >= 16.0, "heading inset {heading:?} in {card:?}");
-    assert!(heading.top() - card.top() >= 16.0, "heading inset {heading:?} in {card:?}");
+    assert!(
+        heading.left() - card.left() >= 16.0,
+        "heading inset {heading:?} in {card:?}"
+    );
+    assert!(
+        heading.top() - card.top() >= 16.0,
+        "heading inset {heading:?} in {card:?}"
+    );
     let field = h.get_by_role_and_label(Role::TextInput, "Title").rect();
     assert!(field.height() >= 30.0, "title field {field:?}");
-    assert!(field.left() >= card.left() + 16.0, "title field {field:?} in {card:?}");
-    assert!(field.right() <= card.right() - 16.0, "title field {field:?} in {card:?}");
+    assert!(
+        field.left() >= card.left() + 16.0,
+        "title field {field:?} in {card:?}"
+    );
+    assert!(
+        field.right() <= card.right() - 16.0,
+        "title field {field:?} in {card:?}"
+    );
 }
 
 #[test]
 fn password_prompt_field_is_tall_and_inset() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("secret.pdf", None, protected()).unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("secret.pdf", None, protected()).unwrap();
+            app
+        });
     h.run_steps(4);
     let card = card(&h, "password");
     let field = h.get_by_role(Role::PasswordInput).rect();
     assert!(field.height() >= 30.0, "password field {field:?}");
-    assert!(field.left() - card.left() >= 16.0, "password field {field:?} in {card:?}");
-    assert!(card.right() - field.right() >= 16.0, "password field {field:?} in {card:?}");
+    assert!(
+        field.left() - card.left() >= 16.0,
+        "password field {field:?} in {card:?}"
+    );
+    assert!(
+        card.right() - field.right() >= 16.0,
+        "password field {field:?} in {card:?}"
+    );
     let heading = h.get_by_label("Password required").rect();
-    assert!(heading.top() - card.top() >= 16.0, "heading inset {heading:?} in {card:?}");
+    assert!(
+        heading.top() - card.top() >= 16.0,
+        "heading inset {heading:?} in {card:?}"
+    );
 }

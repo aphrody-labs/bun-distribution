@@ -111,10 +111,16 @@ impl Registers {
         self.ext_ac_cache[0] = self.ac0_low;
         self.ext_ac_cache[1] = self.ac1_low;
         let sxm = self.sign_extended();
-        self.ext_ac_cache[2] =
-            if sxm { self.saturate_ac_mid(self.ac0_high, self.ac0_mid) } else { self.ac0_mid };
-        self.ext_ac_cache[3] =
-            if sxm { self.saturate_ac_mid(self.ac1_high, self.ac1_mid) } else { self.ac1_mid };
+        self.ext_ac_cache[2] = if sxm {
+            self.saturate_ac_mid(self.ac0_high, self.ac0_mid)
+        } else {
+            self.ac0_mid
+        };
+        self.ext_ac_cache[3] = if sxm {
+            self.saturate_ac_mid(self.ac1_high, self.ac1_mid)
+        } else {
+            self.ac1_mid
+        };
         self.ext_ac_cache[4] = self.ac0_mid;
         self.ext_ac_cache[5] = self.ac1_mid;
     }
@@ -125,7 +131,11 @@ impl Registers {
         let ar = self.ar[reg] as u32;
         let wr = self.wr[reg] as u32;
         let nar = ar.wrapping_add(1);
-        if (nar ^ ar) > ((wr | 1) << 1) { nar.wrapping_sub(wr + 1) as u16 } else { nar as u16 }
+        if (nar ^ ar) > ((wr | 1) << 1) {
+            nar.wrapping_sub(wr + 1) as u16
+        } else {
+            nar as u16
+        }
     }
 
     /// Decrement address register by 1 with WR wrapping.
@@ -178,7 +188,11 @@ impl Registers {
         let nar = ar.wrapping_add(ix as i32 as u32);
         let dar = (nar ^ ar ^ ix as i32 as u32) & mx;
         if ix >= 0 {
-            if dar > wr { nar.wrapping_sub(wr + 1) as u16 } else { nar as u16 }
+            if dar > wr {
+                nar.wrapping_sub(wr + 1) as u16
+            } else {
+                nar as u16
+            }
         } else if (((nar.wrapping_add(wr + 1)) ^ nar) & dar) <= wr {
             nar.wrapping_add(wr + 1) as u16
         } else {
@@ -219,12 +233,12 @@ impl Registers {
                 self.ac0_high = high;
                 self.ac0_mid = mid;
                 self.ac0_low = low;
-            },
+            }
             1 => {
                 self.ac1_high = high;
                 self.ac1_mid = mid;
                 self.ac1_low = low;
-            },
+            }
             _ => unreachable!(),
         }
     }
@@ -353,7 +367,7 @@ impl Registers {
             19 => {
                 let raw: u16 = self.status.into();
                 raw & !0x0100 // bit 8 always reads as 0
-            },
+            }
             20 => self.product_low,
             21 => self.product_mid1,
             22 => self.product_high & 0xFF,
@@ -369,17 +383,17 @@ impl Registers {
                     return self.saturate_ac_mid(self.ac0_high, self.ac0_mid);
                 }
                 self.ac0_mid
-            },
+            }
             31 => {
                 if ALLOW_SATURATION && self.sign_extended() {
                     return self.saturate_ac_mid(self.ac1_high, self.ac1_mid);
                 }
                 self.ac1_mid
-            },
+            }
             _ => {
                 tracing::error!(index, "DSP read: invalid register index");
                 0
-            },
+            }
         }
     }
 
@@ -388,7 +402,11 @@ impl Registers {
     #[inline(always)]
     fn saturate_ac_mid(&self, high: u16, mid: u16) -> u16 {
         let sign_ext = if mid & 0x8000 != 0 { 0xFFFF } else { 0 };
-        if high != sign_ext { if high & 0x80 != 0 { 0x8000 } else { 0x7FFF } } else { mid }
+        if high != sign_ext {
+            if high & 0x80 != 0 { 0x8000 } else { 0x7FFF }
+        } else {
+            mid
+        }
     }
 
     /// Get the 40-bit product register value.
@@ -462,17 +480,17 @@ impl Registers {
                     self.ac0_high = if value & 0x8000 != 0 { 0xFFFF } else { 0 };
                     self.ac0_low = 0;
                 }
-            },
+            }
             31 => {
                 self.ac1_mid = value;
                 if ALLOW_SIGN_EXTENSION && self.sign_extended() {
                     self.ac1_high = if value & 0x8000 != 0 { 0xFFFF } else { 0 };
                     self.ac1_low = 0;
                 }
-            },
+            }
             _ => {
                 tracing::error!(index, "DSP write: invalid register index");
-            },
+            }
         }
     }
 }

@@ -122,8 +122,10 @@ const NOMS: [&str; 5] = [
 ];
 
 fn scripts() -> Vec<PathBuf> {
-    let racine = std::env::var("NIE_GAME_DIR")
-        .map_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."), PathBuf::from);
+    let racine = std::env::var("NIE_GAME_DIR").map_or_else(
+        |_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../.."),
+        PathBuf::from,
+    );
     // Un montage FRAÎCHEMENT extrait a priorité : `nie vfs extract data/common/script/lua/
     // --out <dir>` produit la seule copie dont on sache qu'elle vient du jeu, et c'est ce que
     // `NIE_LUA_MOUNT` désigne. Sans lui, on retombe sur les dumps du dépôt.
@@ -182,13 +184,13 @@ fn parcourir(proto: &Prototype, ecrit: &mut BTreeSet<String>, lit: &mut BTreeSet
                 if let Some(nom) = constante_rk(proto, i.b) {
                     ecrit.insert(nom.to_owned());
                 }
-            },
+            }
             OP_GETTABUP if i.b == 0 => {
                 if let Some(nom) = constante_rk(proto, i.c) {
                     lit.insert(nom.to_owned());
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
     for enfant in &proto.protos {
@@ -222,7 +224,10 @@ fn qui_definit_les_globales_en_tete_de_file() {
         let nom_court = chemin.to_string_lossy().into_owned();
         for cible in NOMS {
             if ecrit.contains(cible) {
-                definit.entry(cible.to_owned()).or_default().push(nom_court.clone());
+                definit
+                    .entry(cible.to_owned())
+                    .or_default()
+                    .push(nom_court.clone());
             }
             if lit.contains(cible) {
                 *appelle.entry(cible.to_owned()).or_default() += 1;

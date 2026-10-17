@@ -14,14 +14,27 @@ fn curves(h: &RgbHistogram) -> [[f32; BINS]; 3] {
                 *value = center;
             } else {
                 let sample = |j: usize| bins.get(j.clamp(1, BINS - 2)).copied().unwrap_or(0) as f32;
-                *value = (sample(i.saturating_sub(2)) + 4.0 * sample(i - 1) + 6.0 * center + 4.0 * sample(i + 1) + sample(i + 2)) / 16.0;
+                *value = (sample(i.saturating_sub(2))
+                    + 4.0 * sample(i - 1)
+                    + 6.0 * center
+                    + 4.0 * sample(i + 1)
+                    + sample(i + 2))
+                    / 16.0;
             }
         }
     }
     // One scale for RGB. Edge clipping spikes must not flatten all interior tonal detail;
     // preserve them at the edges, capped at the top. A flat black/white image uses its edge peak.
-    let interior = curves.iter().flat_map(|c| c.iter().skip(1).take(BINS - 2)).copied().fold(0.0f32, f32::max);
-    let peak = if interior > 0.0 { interior } else { curves.iter().flatten().copied().fold(0.0f32, f32::max) };
+    let interior = curves
+        .iter()
+        .flat_map(|c| c.iter().skip(1).take(BINS - 2))
+        .copied()
+        .fold(0.0f32, f32::max);
+    let peak = if interior > 0.0 {
+        interior
+    } else {
+        curves.iter().flatten().copied().fold(0.0f32, f32::max)
+    };
     let scale = if peak > 0.0 { peak * 1.1 } else { 1.0 };
     for value in curves.iter_mut().flatten() {
         *value = (*value / scale).min(1.0);
@@ -29,9 +42,21 @@ fn curves(h: &RgbHistogram) -> [[f32; BINS]; 3] {
     curves
 }
 
-fn quad(mesh: &mut Mesh, rect: Rect, x: [f32; 2], bottom: [f32; 2], top: [f32; 2], color: egui::Color32) {
+fn quad(
+    mesh: &mut Mesh,
+    rect: Rect,
+    x: [f32; 2],
+    bottom: [f32; 2],
+    top: [f32; 2],
+    color: egui::Color32,
+) {
     let vertex = mesh.vertices.len() as u32; // Bounded: at most 257 spans × 4 cuts × 3 bands × 4 vertices.
-    for (x, height) in [(x[0], bottom[0]), (x[0], top[0]), (x[1], top[1]), (x[1], bottom[1])] {
+    for (x, height) in [
+        (x[0], bottom[0]),
+        (x[0], top[0]),
+        (x[1], top[1]),
+        (x[1], bottom[1]),
+    ] {
         mesh.colored_vertex(pos2(x, rect.bottom() - height * rect.height()), color);
     }
     mesh.add_triangle(vertex, vertex + 1, vertex + 2);
@@ -58,7 +83,9 @@ fn span(mesh: &mut Mesh, rect: Rect, x: [f32; 2], a: [f32; 3], b: [f32; 3], t: &
             }
         }
     }
-    let Some(cuts) = cuts.get_mut(..n) else { return };
+    let Some(cuts) = cuts.get_mut(..n) else {
+        return;
+    };
     cuts.sort_unstable_by(f32::total_cmp);
     for cut in cuts.windows(2) {
         let (start, end) = (cut[0], cut[1]);
@@ -68,7 +95,9 @@ fn span(mesh: &mut Mesh, rect: Rect, x: [f32; 2], a: [f32; 3], b: [f32; 3], t: &
         let left = std::array::from_fn::<_, 3, _>(|c| a[c] + (b[c] - a[c]) * start);
         let right = std::array::from_fn::<_, 3, _>(|c| a[c] + (b[c] - a[c]) * end);
         let mut levels = [(0usize, 1u8), (1, 2), (2, 4)];
-        levels.sort_unstable_by(|(i, _), (j, _)| (left[*i] + right[*i]).total_cmp(&(left[*j] + right[*j])));
+        levels.sort_unstable_by(|(i, _), (j, _)| {
+            (left[*i] + right[*i]).total_cmp(&(left[*j] + right[*j]))
+        });
         let x = [x[0] + (x[1] - x[0]) * start, x[0] + (x[1] - x[0]) * end];
         let mut floor = [0.0; 2];
         let mut mask = 7;
@@ -97,7 +126,14 @@ fn fill(rect: Rect, curves: &[[f32; BINS]; 3], t: &Tokens) -> Mesh {
         previous_x = x;
         previous = next;
     }
-    span(&mut mesh, rect, [previous_x, rect.right()], previous, previous, t);
+    span(
+        &mut mesh,
+        rect,
+        [previous_x, rect.right()],
+        previous,
+        previous,
+        t,
+    );
     mesh
 }
 
@@ -114,10 +150,19 @@ pub(crate) fn paint(painter: &egui::Painter, rect: Rect, h: &RgbHistogram, t: &T
         let mut points = Vec::with_capacity(BINS + 2);
         points.push(pos2(rect.left(), rect.bottom() - values[0] * rect.height()));
         for (i, v) in values.iter().enumerate() {
-            points.push(pos2(rect.left() + (i as f32 + 0.5) / BINS as f32 * rect.width(), rect.bottom() - v * rect.height()));
+            points.push(pos2(
+                rect.left() + (i as f32 + 0.5) / BINS as f32 * rect.width(),
+                rect.bottom() - v * rect.height(),
+            ));
         }
-        points.push(pos2(rect.right(), rect.bottom() - values[BINS - 1] * rect.height()));
-        painter.add(egui::Shape::line(points, egui::Stroke::new(1.0, t.histogram_color(1 << channel))));
+        points.push(pos2(
+            rect.right(),
+            rect.bottom() - values[BINS - 1] * rect.height(),
+        ));
+        painter.add(egui::Shape::line(
+            points,
+            egui::Stroke::new(1.0, t.histogram_color(1 << channel)),
+        ));
     }
 }
 
@@ -156,14 +201,22 @@ mod tests {
             if cross(b - a, c - a).abs() < 0.00001 {
                 return None;
             }
-            let sides = [cross(b - a, point - a), cross(c - b, point - b), cross(a - c, point - c)];
-            (sides.iter().all(|&s| s >= -0.00001) || sides.iter().all(|&s| s <= 0.00001)).then_some(mesh.vertices[triangle[0] as usize].color)
+            let sides = [
+                cross(b - a, point - a),
+                cross(c - b, point - b),
+                cross(a - c, point - c),
+            ];
+            (sides.iter().all(|&s| s >= -0.00001) || sides.iter().all(|&s| s <= 0.00001))
+                .then_some(mesh.vertices[triangle[0] as usize].color)
         })
     }
 
     #[test]
     fn shared_scale_and_overlaps_are_exact_for_every_theme() {
-        let h = RgbHistogram { channels: [[3; BINS], [2; BINS], [1; BINS]], ..Default::default() };
+        let h = RgbHistogram {
+            channels: [[3; BINS], [2; BINS], [1; BINS]],
+            ..Default::default()
+        };
         let rect = Rect::from_min_max(pos2(0.0, 0.0), pos2(256.0, 110.0));
         for kind in ThemeKind::ALL {
             let t = Tokens::for_kind(kind);
@@ -188,11 +241,27 @@ mod tests {
             let t = Tokens::for_kind(kind);
             let m = mesh(rect, &h, &t);
             for mask in 1..=7 {
-                assert_eq!(color_at(&m, pos2((mask * 30 + 5) as f32 + 0.5, 95.0)), Some(t.histogram_fill(mask as u8)));
+                assert_eq!(
+                    color_at(&m, pos2((mask * 30 + 5) as f32 + 0.5, 95.0)),
+                    Some(t.histogram_fill(mask as u8))
+                );
             }
             let mut m = Mesh::default();
-            span(&mut m, rect, [0.0, 256.0], [1.0, 0.25, 0.75], [0.25, 1.0, 0.75], &t);
-            for (x, y, mask) in [(25.6, 90.0, 7), (25.6, 50.0, 5), (25.6, 10.0, 1), (230.4, 50.0, 6), (230.4, 10.0, 2)] {
+            span(
+                &mut m,
+                rect,
+                [0.0, 256.0],
+                [1.0, 0.25, 0.75],
+                [0.25, 1.0, 0.75],
+                &t,
+            );
+            for (x, y, mask) in [
+                (25.6, 90.0, 7),
+                (25.6, 50.0, 5),
+                (25.6, 10.0, 1),
+                (230.4, 50.0, 6),
+                (230.4, 10.0, 2),
+            ] {
                 assert_eq!(color_at(&m, pos2(x, y)), Some(t.histogram_fill(mask)));
             }
             // Triangle interiors never stack: alpha fill must be independent of the channel order.
@@ -214,7 +283,10 @@ mod tests {
 
     #[test]
     fn edge_spikes_do_not_flatten_or_bleed_into_interior_detail() {
-        let mut h = RgbHistogram { channels: [[10; BINS]; 3], ..Default::default() };
+        let mut h = RgbHistogram {
+            channels: [[10; BINS]; 3],
+            ..Default::default()
+        };
         h.channels[0][0] = 1_000_000;
         h.channels[1][255] = 1_000_000;
         let p = curves(&h);
@@ -232,7 +304,14 @@ mod tests {
     fn empty_and_bad_rectangles_draw_no_ribbons() {
         let t = Tokens::for_kind(ThemeKind::Pro);
         let h = RgbHistogram::default();
-        assert!(mesh(Rect::from_min_max(pos2(0.0, 0.0), pos2(256.0, 100.0)), &h, &t).is_empty());
+        assert!(
+            mesh(
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(256.0, 100.0)),
+                &h,
+                &t
+            )
+            .is_empty()
+        );
         assert!(mesh(Rect::NOTHING, &h, &t).is_empty());
     }
     fn covers(mesh: &Mesh, point: egui::Pos2) -> bool {
@@ -250,7 +329,11 @@ mod tests {
         let p = curves(&h);
         let low = p[0][40..210].iter().copied().fold(f32::INFINITY, f32::min);
         let high = p[0][40..210].iter().copied().fold(0.0f32, f32::max);
-        assert!(high - low < 0.2, "quantization comb still dominates the contour: {}", high - low);
+        assert!(
+            high - low < 0.2,
+            "quantization comb still dominates the contour: {}",
+            high - low
+        );
         assert_eq!(p[0][240], 0.0, "wide empty tonal ranges must stay empty");
     }
 
@@ -262,9 +345,22 @@ mod tests {
             channel[121] = 100;
         }
         let original = h.clone();
-        let m = mesh(Rect::from_min_max(pos2(0.0, 0.0), pos2(256.0, 100.0)), &h, &Tokens::for_kind(ThemeKind::Pro));
-        assert!(covers(&m, pos2(120.5, 85.0)), "isolated empty bin creates a full-height black stripe");
-        assert!(!covers(&m, pos2(180.5, 85.0)), "a real empty tonal range must stay empty");
-        assert_eq!(h, original, "display filtering must never change raw statistics");
+        let m = mesh(
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(256.0, 100.0)),
+            &h,
+            &Tokens::for_kind(ThemeKind::Pro),
+        );
+        assert!(
+            covers(&m, pos2(120.5, 85.0)),
+            "isolated empty bin creates a full-height black stripe"
+        );
+        assert!(
+            !covers(&m, pos2(180.5, 85.0)),
+            "a real empty tonal range must stay empty"
+        );
+        assert_eq!(
+            h, original,
+            "display filtering must never change raw statistics"
+        );
     }
 }

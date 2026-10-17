@@ -19,7 +19,13 @@ impl<'a> BoolDecoder<'a> {
     /// init_bool (9.2.1): the marker bit is read and returned in `Err` position when non-zero is
     /// not treated as fatal (libvpx ignores it too), so this only returns the decoder.
     pub fn new(data: &'a [u8]) -> Self {
-        let mut d = BoolDecoder { data, pos: 0, value: 0, count: -8, range: 255 };
+        let mut d = BoolDecoder {
+            data,
+            pos: 0,
+            value: 0,
+            count: -8,
+            range: 255,
+        };
         d.fill();
         d.read_bool(128);
         d
@@ -112,7 +118,13 @@ mod tests {
 
     impl<'a> SpecDecoder<'a> {
         fn new(data: &'a [u8]) -> Self {
-            let mut d = SpecDecoder { data, bitpos: 0, value: 0, range: 255, max_bits: 8 * data.len() as i64 - 8 };
+            let mut d = SpecDecoder {
+                data,
+                bitpos: 0,
+                value: 0,
+                range: 255,
+                max_bits: 8 * data.len() as i64 - 8,
+            };
             for _ in 0..8 {
                 d.value = (d.value << 1) | d.bit();
             }
@@ -120,7 +132,11 @@ mod tests {
             d
         }
         fn bit(&mut self) -> u32 {
-            let b = self.data.get(self.bitpos / 8).map(|b| (b >> (7 - self.bitpos % 8)) & 1).unwrap_or(0);
+            let b = self
+                .data
+                .get(self.bitpos / 8)
+                .map(|b| (b >> (7 - self.bitpos % 8)) & 1)
+                .unwrap_or(0);
             self.bitpos += 1;
             b as u32
         }

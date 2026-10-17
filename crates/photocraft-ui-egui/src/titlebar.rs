@@ -10,7 +10,10 @@
 //! Breeze's (KDE) or a plain round set elsewhere, with the set of buttons and their side taken
 //! from the desktop's button layout. The shapes are drawn here, not read from the icon theme.
 
-use egui::{Color32, CursorIcon, Id, LayerId, Order, PointerButton, Pos2, Rect, ResizeDirection, Sense, Stroke, Ui, ViewportCommand, pos2, vec2};
+use egui::{
+    Color32, CursorIcon, Id, LayerId, Order, PointerButton, Pos2, Rect, ResizeDirection, Sense,
+    Stroke, Ui, ViewportCommand, pos2, vec2,
+};
 use serde_json::json;
 
 use crate::PhotocraftApp;
@@ -117,13 +120,20 @@ impl PartialEq for CaptionIcons {
 
 impl std::fmt::Debug for CaptionIcons {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CaptionIcons").field("theme", &self.theme).finish_non_exhaustive()
+        f.debug_struct("CaptionIcons")
+            .field("theme", &self.theme)
+            .finish_non_exhaustive()
     }
 }
 
 impl Default for CaptionStyle {
     fn default() -> Self {
-        Self { family: CaptionFamily::Windows, left: vec![], right: CAPTIONS.to_vec(), icons: None }
+        Self {
+            family: CaptionFamily::Windows,
+            left: vec![],
+            right: CAPTIONS.to_vec(),
+            icons: None,
+        }
     }
 }
 
@@ -154,19 +164,32 @@ impl CaptionStyle {
         };
         let left = side(left);
         let right = side(right);
-        Self { family, left, right, icons: None }
+        Self {
+            family,
+            left,
+            right,
+            icons: None,
+        }
     }
 }
 
 /// The caption style the platform reports, or Windows' when it reports none.
 fn style(app: &PhotocraftApp, ctx: &egui::Context) -> CaptionStyle {
-    app.services.caption_style.as_ref().map(|read| read(ctx)).unwrap_or_default()
+    app.services
+        .caption_style
+        .as_ref()
+        .map(|read| read(ctx))
+        .unwrap_or_default()
 }
 
 /// The title bar's height: `base`, or with GNOME's buttons at least libadwaita's header bar
 /// (46 pt, plus the bar's 1 pt separator), so the bar is as tall as its neighbours' title bars.
 pub fn bar_height(app: &PhotocraftApp, ctx: &egui::Context, base: f32) -> f32 {
-    if app.custom_titlebar && style(app, ctx).family == CaptionFamily::Adwaita { base.max(47.0) } else { base }
+    if app.custom_titlebar && style(app, ctx).family == CaptionFamily::Adwaita {
+        base.max(47.0)
+    } else {
+        base
+    }
 }
 
 /// The width the caption buttons take at the bar's (left, right) end: zero for a side without
@@ -176,14 +199,23 @@ pub fn reserved(app: &PhotocraftApp, ctx: &egui::Context) -> (f32, f32) {
         return (0.0, 0.0);
     }
     let s = style(app, ctx);
-    let width = |side: &[Caption]| slots(s.family, side, 0.0, true).last().map_or(0.0, |(_, r, _)| r.1);
+    let width = |side: &[Caption]| {
+        slots(s.family, side, 0.0, true)
+            .last()
+            .map_or(0.0, |(_, r, _)| r.1)
+    };
     (width(&s.left), width(&s.right))
 }
 
 /// Each button's horizontal extent (left, right) and face centre on a side starting at `from`, in
 /// order. `outer_left` puts the edge gap on the first button's left (the left end) instead of the
 /// last button's right.
-fn slots(family: CaptionFamily, side: &[Caption], from: f32, outer_left: bool) -> Vec<(Caption, (f32, f32), f32)> {
+fn slots(
+    family: CaptionFamily,
+    side: &[Caption],
+    from: f32,
+    outer_left: bool,
+) -> Vec<(Caption, (f32, f32), f32)> {
     let (size, gap, end) = family.metrics();
     let mut x = from;
     let n = side.len();
@@ -204,10 +236,16 @@ fn slots(family: CaptionFamily, side: &[Caption], from: f32, outer_left: bool) -
 /// centre, for a bar `bar` between the window's `left` and `right` edges.
 fn layout(s: &CaptionStyle, bar: Rect, left: f32, right: f32) -> Vec<(Caption, Rect, Pos2)> {
     let rect = |(c, (l, r), centre): (Caption, (f32, f32), f32)| {
-        (c, Rect::from_min_max(pos2(l, bar.top()), pos2(r, bar.bottom() - 1.0)), pos2(centre, bar.center().y))
+        (
+            c,
+            Rect::from_min_max(pos2(l, bar.top()), pos2(r, bar.bottom() - 1.0)),
+            pos2(centre, bar.center().y),
+        )
     };
     let lefts = slots(s.family, &s.left, left, true);
-    let width = slots(s.family, &s.right, 0.0, false).last().map_or(0.0, |(_, r, _)| r.1);
+    let width = slots(s.family, &s.right, 0.0, false)
+        .last()
+        .map_or(0.0, |(_, r, _)| r.1);
     let rights = slots(s.family, &s.right, right - width, false);
     lefts.into_iter().chain(rights).map(rect).collect()
 }
@@ -236,8 +274,21 @@ pub fn caption_buttons(app: &mut PhotocraftApp, ui: &mut Ui, bar: Rect) {
     let content = ui.ctx().content_rect();
     let windows = s.family == CaptionFamily::Windows;
     let mut clicked = None;
-    for (c, r, centre) in layout(&s, bar, bar.left().max(content.left()), bar.right().min(content.right())) {
-        let resp = ui.interact(r, caption_id(c), if windows { Sense::click() } else { Sense::click_and_drag() });
+    for (c, r, centre) in layout(
+        &s,
+        bar,
+        bar.left().max(content.left()),
+        bar.right().min(content.right()),
+    ) {
+        let resp = ui.interact(
+            r,
+            caption_id(c),
+            if windows {
+                Sense::click()
+            } else {
+                Sense::click_and_drag()
+            },
+        );
         if resp.drag_started_by(PointerButton::Primary) {
             ui.ctx().send_viewport_cmd(ViewportCommand::StartDrag);
         }
@@ -252,7 +303,11 @@ pub fn caption_buttons(app: &mut PhotocraftApp, ui: &mut Ui, bar: Rect) {
                 _ => Color32::TRANSPARENT,
             };
             ui.painter().rect_filled(r, 0.0, fill);
-            let ink = if close && resp.hovered() { t.caption_close_text } else { t.icon };
+            let ink = if close && resp.hovered() {
+                t.caption_close_text
+            } else {
+                t.icon
+            };
             paint_windows_glyph(ui, c, max, r.center(), Stroke::new(1.0, ink));
         } else {
             paint_round(ui, &t, &s, c, max, centre, resp.hovered(), pressed);
@@ -291,7 +346,16 @@ fn paint_windows_glyph(ui: &Ui, c: Caption, maximized: bool, at: egui::Pos2, s: 
         Caption::Maximize if maximized => {
             let front = Rect::from_min_max(g.min + vec2(0.0, 2.0), g.max - vec2(2.0, 0.0));
             p.rect_stroke(front, 0.0, s, egui::StrokeKind::Middle);
-            p.line(vec![g.min + vec2(2.0, 2.0), g.min + vec2(2.0, 0.0), g.right_top(), g.max - vec2(0.0, 2.0), g.max - vec2(2.0, 2.0)], s);
+            p.line(
+                vec![
+                    g.min + vec2(2.0, 2.0),
+                    g.min + vec2(2.0, 0.0),
+                    g.right_top(),
+                    g.max - vec2(0.0, 2.0),
+                    g.max - vec2(2.0, 2.0),
+                ],
+                s,
+            );
         }
         Caption::Maximize => {
             p.rect_stroke(g, 0.0, s, egui::StrokeKind::Middle);
@@ -308,12 +372,24 @@ fn paint_windows_glyph(ui: &Ui, c: Caption, maximized: bool, at: egui::Pos2, s: 
 /// so it suits light and dark themes alike; Breeze instead fills it with the icon colour on hover
 /// and draws the glyph in the bar's colour.
 #[allow(clippy::too_many_arguments)]
-fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: bool, centre: Pos2, hovered: bool, pressed: bool) {
+fn paint_round(
+    ui: &Ui,
+    t: &Tokens,
+    s: &CaptionStyle,
+    c: Caption,
+    maximized: bool,
+    centre: Pos2,
+    hovered: bool,
+    pressed: bool,
+) {
     let family = s.family;
     let (size, _, _) = family.metrics();
     // Whole pixels, so the glyphs' edges stay sharp.
     let ppp = ui.ctx().pixels_per_point();
-    let centre = pos2((centre.x * ppp).round() / ppp, (centre.y * ppp).round() / ppp);
+    let centre = pos2(
+        (centre.x * ppp).round() / ppp,
+        (centre.y * ppp).round() / ppp,
+    );
     let close = c == Caption::Close;
     let (fill, ink) = if family == CaptionFamily::Breeze {
         match (hovered, pressed) {
@@ -324,7 +400,11 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
             _ => (Color32::TRANSPARENT, t.icon),
         }
     } else {
-        let rest = if family == CaptionFamily::Adwaita { 0.10 } else { 0.0 };
+        let rest = if family == CaptionFamily::Adwaita {
+            0.10
+        } else {
+            0.0
+        };
         let target = if pressed {
             0.30
         } else if hovered {
@@ -333,7 +413,9 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
             rest
         };
         // libadwaita eases the disc over 0.2 s.
-        let a = ui.ctx().animate_value_with_time(caption_id(c).with("disc"), target, 0.2);
+        let a = ui
+            .ctx()
+            .animate_value_with_time(caption_id(c).with("disc"), target, 0.2);
         (t.icon.gamma_multiply(a), t.icon)
     };
     let p = ui.painter();
@@ -353,8 +435,16 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
     {
         let side = tex.size_vec2() / ppp;
         let min = centre - side / 2.0;
-        let rect = Rect::from_min_size(pos2((min.x * ppp).round() / ppp, (min.y * ppp).round() / ppp), side);
-        p.image(tex.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), ink);
+        let rect = Rect::from_min_size(
+            pos2((min.x * ppp).round() / ppp, (min.y * ppp).round() / ppp),
+            side,
+        );
+        p.image(
+            tex.id(),
+            rect,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            ink,
+        );
         return;
     }
     let at = |x: f32, y: f32| centre + vec2(x - 8.0, y - 8.0) * k;
@@ -366,7 +456,10 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
                 p.line(vec![at(2.5, 5.5), at(8.0, 11.0), at(13.5, 5.5)], s);
             }
             Caption::Maximize if maximized => {
-                p.add(egui::Shape::closed_line(vec![at(8.0, 3.0), at(13.0, 8.0), at(8.0, 13.0), at(3.0, 8.0)], s));
+                p.add(egui::Shape::closed_line(
+                    vec![at(8.0, 3.0), at(13.0, 8.0), at(8.0, 13.0), at(3.0, 8.0)],
+                    s,
+                ));
             }
             Caption::Maximize => {
                 p.line(vec![at(2.5, 10.5), at(8.0, 5.0), at(13.5, 10.5)], s);
@@ -385,8 +478,17 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
                 p.rect_filled(Rect::from_min_max(at(4.0, 10.0), at(12.0, 12.0)), 0.0, ink);
             }
             Caption::Maximize => {
-                let square = if maximized { frame(5.0, 11.0) } else { frame(4.0, 12.0) };
-                p.rect_stroke(square, 0.0, Stroke::new(2.0 * k, ink), egui::StrokeKind::Inside);
+                let square = if maximized {
+                    frame(5.0, 11.0)
+                } else {
+                    frame(4.0, 12.0)
+                };
+                p.rect_stroke(
+                    square,
+                    0.0,
+                    Stroke::new(2.0 * k, ink),
+                    egui::StrokeKind::Inside,
+                );
             }
             Caption::Close => {
                 let s = Stroke::new(1.5 * k, ink);
@@ -399,7 +501,12 @@ fn paint_round(ui: &Ui, t: &Tokens, s: &CaptionStyle, c: Caption, maximized: boo
 
 /// `icon` from the theme at `px` device pixels, uploaded once per theme and size; `None` (also
 /// remembered) when the theme lacks it or it doesn't render.
-fn theme_icon(ctx: &egui::Context, icons: &CaptionIcons, icon: CaptionIcon, px: u32) -> Option<egui::TextureHandle> {
+fn theme_icon(
+    ctx: &egui::Context,
+    icons: &CaptionIcons,
+    icon: CaptionIcon,
+    px: u32,
+) -> Option<egui::TextureHandle> {
     let id = Id::new(("caption-icon", &icons.theme, icon, px));
     if let Some(cached) = ctx.data(|d| d.get_temp::<Option<egui::TextureHandle>>(id)) {
         return cached;
@@ -409,8 +516,16 @@ fn theme_icon(ctx: &egui::Context, icons: &CaptionIcons, icon: CaptionIcon, px: 
         let mask = (icons.render)(icon, px).filter(|m| m.len() == side * side)?;
         // White at the mask's coverage, tinted with the ink when drawn.
         let pixels = mask.into_iter().map(Color32::from_white_alpha).collect();
-        let image = egui::ColorImage { size: [side, side], source_size: vec2(px as f32, px as f32), pixels };
-        Some(ctx.load_texture(format!("caption-{icon:?}-{px}"), image, egui::TextureOptions::LINEAR))
+        let image = egui::ColorImage {
+            size: [side, side],
+            source_size: vec2(px as f32, px as f32),
+            pixels,
+        };
+        Some(ctx.load_texture(
+            format!("caption-{icon:?}-{px}"),
+            image,
+            egui::TextureOptions::LINEAR,
+        ))
     });
     ctx.data_mut(|d| d.insert_temp(id, tex.clone()));
     tex
@@ -426,14 +541,46 @@ fn zones(w: Rect) -> [(Rect, ResizeDirection, CursorIcon); 8] {
     use ResizeDirection::*;
     let (e, c) = (EDGE, CORNER);
     [
-        (Rect::from_min_max(w.left_top(), pos2(w.right(), w.top() + e)), North, CursorIcon::ResizeNorth),
-        (Rect::from_min_max(pos2(w.left(), w.bottom() - e), w.right_bottom()), South, CursorIcon::ResizeSouth),
-        (Rect::from_min_max(w.left_top(), pos2(w.left() + e, w.bottom())), West, CursorIcon::ResizeWest),
-        (Rect::from_min_max(pos2(w.right() - e, w.top()), w.right_bottom()), East, CursorIcon::ResizeEast),
-        (Rect::from_min_size(w.left_top(), vec2(c, c)), NorthWest, CursorIcon::ResizeNwSe),
-        (Rect::from_min_size(w.right_top() - vec2(c, 0.0), vec2(c, c)), NorthEast, CursorIcon::ResizeNeSw),
-        (Rect::from_min_size(w.left_bottom() - vec2(0.0, c), vec2(c, c)), SouthWest, CursorIcon::ResizeNeSw),
-        (Rect::from_min_size(w.right_bottom() - vec2(c, c), vec2(c, c)), SouthEast, CursorIcon::ResizeNwSe),
+        (
+            Rect::from_min_max(w.left_top(), pos2(w.right(), w.top() + e)),
+            North,
+            CursorIcon::ResizeNorth,
+        ),
+        (
+            Rect::from_min_max(pos2(w.left(), w.bottom() - e), w.right_bottom()),
+            South,
+            CursorIcon::ResizeSouth,
+        ),
+        (
+            Rect::from_min_max(w.left_top(), pos2(w.left() + e, w.bottom())),
+            West,
+            CursorIcon::ResizeWest,
+        ),
+        (
+            Rect::from_min_max(pos2(w.right() - e, w.top()), w.right_bottom()),
+            East,
+            CursorIcon::ResizeEast,
+        ),
+        (
+            Rect::from_min_size(w.left_top(), vec2(c, c)),
+            NorthWest,
+            CursorIcon::ResizeNwSe,
+        ),
+        (
+            Rect::from_min_size(w.right_top() - vec2(c, 0.0), vec2(c, c)),
+            NorthEast,
+            CursorIcon::ResizeNeSw,
+        ),
+        (
+            Rect::from_min_size(w.left_bottom() - vec2(0.0, c), vec2(c, c)),
+            SouthWest,
+            CursorIcon::ResizeNeSw,
+        ),
+        (
+            Rect::from_min_size(w.right_bottom() - vec2(c, c), vec2(c, c)),
+            SouthEast,
+            CursorIcon::ResizeNwSe,
+        ),
     ]
 }
 
@@ -455,16 +602,43 @@ struct HandOff {
 /// input brings no release of its own: where the OS does send it (Windows, X11), nothing is added,
 /// so no second release can turn into a click. Call from `raw_input_hook`.
 pub fn release_after_os_resize(ctx: &egui::Context, raw: &mut egui::RawInput) {
-    let Some(h) = ctx.data(|d| d.get_temp::<HandOff>(resize_handed_off_id())) else { return };
+    let Some(h) = ctx.data(|d| d.get_temp::<HandOff>(resize_handed_off_id())) else {
+        return;
+    };
     if h.released.is_some() || h.pass >= ctx.cumulative_pass_nr() {
         return;
     }
-    let os_released = raw.events.iter().any(|e| matches!(e, egui::Event::PointerButton { button: PointerButton::Primary, pressed: false, .. }));
-    if let Some(pos) = ctx.input(|i| i.pointer.latest_pos()).filter(|_| !os_released && ctx.input(|i| i.pointer.primary_down())) {
-        raw.events.push(egui::Event::PointerButton { pos, button: PointerButton::Primary, pressed: false, modifiers: ctx.input(|i| i.modifiers) });
+    let os_released = raw.events.iter().any(|e| {
+        matches!(
+            e,
+            egui::Event::PointerButton {
+                button: PointerButton::Primary,
+                pressed: false,
+                ..
+            }
+        )
+    });
+    if let Some(pos) = ctx
+        .input(|i| i.pointer.latest_pos())
+        .filter(|_| !os_released && ctx.input(|i| i.pointer.primary_down()))
+    {
+        raw.events.push(egui::Event::PointerButton {
+            pos,
+            button: PointerButton::Primary,
+            pressed: false,
+            modifiers: ctx.input(|i| i.modifiers),
+        });
     }
     let pass = ctx.cumulative_pass_nr();
-    ctx.data_mut(|d| d.insert_temp(resize_handed_off_id(), HandOff { released: Some(pass), ..h }));
+    ctx.data_mut(|d| {
+        d.insert_temp(
+            resize_handed_off_id(),
+            HandOff {
+                released: Some(pass),
+                ..h
+            },
+        )
+    });
 }
 
 /// The compositor owns the pointer during an OS resize: it sets its own cursor, and the button
@@ -474,8 +648,20 @@ pub fn release_after_os_resize(ctx: &egui::Context, raw: &mut egui::RawInput) {
 /// sent again on the next.
 fn reshow_cursor_after_os_resize(ctx: &egui::Context) {
     // Only motion after the press was ended means the compositor gave the pointer back.
-    let Some(HandOff { released: Some(pass), .. }) = ctx.data(|d| d.get_temp::<HandOff>(resize_handed_off_id())) else { return };
-    if pass < ctx.cumulative_pass_nr() && ctx.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::PointerMoved(_)))) {
+    let Some(HandOff {
+        released: Some(pass),
+        ..
+    }) = ctx.data(|d| d.get_temp::<HandOff>(resize_handed_off_id()))
+    else {
+        return;
+    };
+    if pass < ctx.cumulative_pass_nr()
+        && ctx.input(|i| {
+            i.events
+                .iter()
+                .any(|e| matches!(e, egui::Event::PointerMoved(_)))
+        })
+    {
         ctx.data_mut(|d| d.remove::<HandOff>(resize_handed_off_id()));
         ctx.set_cursor_icon(CursorIcon::Default);
         ctx.request_repaint();
@@ -494,11 +680,21 @@ pub fn resize_zones(ui: &mut Ui) {
     let layer = LayerId::new(Order::Foreground, Id::new("titlebar-resize"));
     let zui = ui.new_child(egui::UiBuilder::new().layer_id(layer).max_rect(w));
     for (i, (r, dir, cursor)) in zones(w).into_iter().enumerate() {
-        let resp = zui.interact(r, Id::new(("titlebar-resize", i)), Sense::drag()).on_hover_cursor(cursor);
+        let resp = zui
+            .interact(r, Id::new(("titlebar-resize", i)), Sense::drag())
+            .on_hover_cursor(cursor);
         if resp.drag_started_by(PointerButton::Primary) {
             ctx.send_viewport_cmd(ViewportCommand::BeginResize(dir));
             let pass = ctx.cumulative_pass_nr();
-            ctx.data_mut(|d| d.insert_temp(resize_handed_off_id(), HandOff { pass, released: None }));
+            ctx.data_mut(|d| {
+                d.insert_temp(
+                    resize_handed_off_id(),
+                    HandOff {
+                        pass,
+                        released: None,
+                    },
+                )
+            });
         }
     }
     // After the zones, so its one-frame cursor wins over theirs.
@@ -526,13 +722,23 @@ mod tests {
             PhotocraftApp::setup_context(&ctx, crate::theme::ThemeKind::ALL[0]);
             let mut app = PhotocraftApp::new(Session::new(), crate::Services::default());
             app.custom_titlebar = true;
-            Self { ctx, app, width, time: 0.0, maximized: false }
+            Self {
+                ctx,
+                app,
+                width,
+                time: 0.0,
+                maximized: false,
+            }
         }
 
         fn frame(&mut self, events: Vec<Event>) -> egui::FullOutput {
             self.time += 0.05;
-            let mut input =
-                RawInput { screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(self.width, 600.0))), time: Some(self.time), events, ..Default::default() };
+            let mut input = RawInput {
+                screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(self.width, 600.0))),
+                time: Some(self.time),
+                events,
+                ..Default::default()
+            };
             if let Some(v) = input.viewports.get_mut(&ViewportId::ROOT) {
                 v.maximized = Some(self.maximized);
             }
@@ -550,10 +756,22 @@ mod tests {
         /// Frames for a pointer gesture: move to `path[0]`, press, move along `path`, release. The
         /// viewport commands the frames sent.
         fn gesture(&mut self, path: &[Pos2]) -> Vec<ViewportCommand> {
-            let mut events = vec![vec![Event::PointerMoved(path[0])], vec![button(path[0], true)]];
+            let mut events = vec![
+                vec![Event::PointerMoved(path[0])],
+                vec![button(path[0], true)],
+            ];
             events.extend(path[1..].iter().map(|p| vec![Event::PointerMoved(*p)]));
             events.push(vec![button(*path.last().unwrap_or(&path[0]), false)]);
-            events.into_iter().flat_map(|e| self.frame(e).viewport_output.remove(&ViewportId::ROOT).map(|v| v.commands).unwrap_or_default()).collect()
+            events
+                .into_iter()
+                .flat_map(|e| {
+                    self.frame(e)
+                        .viewport_output
+                        .remove(&ViewportId::ROOT)
+                        .map(|v| v.commands)
+                        .unwrap_or_default()
+                })
+                .collect()
         }
 
         fn click(&mut self, p: Pos2) -> Vec<ViewportCommand> {
@@ -561,7 +779,10 @@ mod tests {
         }
 
         fn caption(&self, c: Caption) -> Rect {
-            self.ctx.read_response(caption_id(c)).map(|r| r.rect).unwrap_or(Rect::NOTHING)
+            self.ctx
+                .read_response(caption_id(c))
+                .map(|r| r.rect)
+                .unwrap_or(Rect::NOTHING)
         }
 
         /// The bar's clickable widgets other than its drag gap and the caption buttons.
@@ -573,7 +794,12 @@ mod tests {
                     .layers()
                     .filter(|(l, _)| l.order != Order::Foreground)
                     .flat_map(|(_, ws)| ws.iter())
-                    .filter(|w| w.sense.senses_click() && !w.sense.senses_drag() && w.rect.top() < 30.0 && !skip.contains(&w.id))
+                    .filter(|w| {
+                        w.sense.senses_click()
+                            && !w.sense.senses_drag()
+                            && w.rect.top() < 30.0
+                            && !skip.contains(&w.id)
+                    })
                     .map(|w| w.rect)
                     .collect()
             })
@@ -583,7 +809,10 @@ mod tests {
     fn texts(out: &egui::FullOutput) -> Vec<(String, Rect)> {
         fn walk(s: &egui::Shape, v: &mut Vec<(String, Rect)>) {
             match s {
-                egui::Shape::Text(t) => v.push((t.galley.text().to_string(), Rect::from_min_size(t.pos, t.galley.size()))),
+                egui::Shape::Text(t) => v.push((
+                    t.galley.text().to_string(),
+                    Rect::from_min_size(t.pos, t.galley.size()),
+                )),
                 egui::Shape::Vec(s) => s.iter().for_each(|s| walk(s, v)),
                 _ => {}
             }
@@ -594,7 +823,12 @@ mod tests {
     }
 
     fn button(p: Pos2, pressed: bool) -> Event {
-        Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() }
+        Event::PointerButton {
+            pos: p,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        }
     }
 
     #[test]
@@ -604,14 +838,27 @@ mod tests {
             w.frame(vec![]);
             let out = w.frame(vec![]);
             let [min, max, close] = CAPTIONS.map(|c| w.caption(c));
-            assert_eq!((close.right(), close.top()), (width, 0.0), "Close sits in the window's corner at {width}");
+            assert_eq!(
+                (close.right(), close.top()),
+                (width, 0.0),
+                "Close sits in the window's corner at {width}"
+            );
             // The bar's bottom point is the panel's separator line, which the buttons leave visible.
-            assert!(close.height() >= 31.0 && [min, max, close].iter().all(|r| r.width() == BUTTON_WIDTH));
+            assert!(
+                close.height() >= 31.0
+                    && [min, max, close].iter().all(|r| r.width() == BUTTON_WIDTH)
+            );
             assert_eq!((min.right(), max.right()), (max.left(), close.left()));
             let widgets = w.bar_widgets();
-            assert!(widgets.len() >= 10, "menus, search, theme, workspace: {widgets:?}");
+            assert!(
+                widgets.len() >= 10,
+                "menus, search, theme, workspace: {widgets:?}"
+            );
             for a in &widgets {
-                assert!(a.right() <= min.left(), "{a:?} runs into the caption buttons at {width}");
+                assert!(
+                    a.right() <= min.left(),
+                    "{a:?} runs into the caption buttons at {width}"
+                );
             }
             // Wide windows show the whole group; the narrowest drops Discord (also Help › Discord).
             let has_discord = texts(&out).iter().any(|(t, _)| t == "Discord");
@@ -625,8 +872,15 @@ mod tests {
         w.frame(vec![]);
         let out = w.frame(vec![]);
         let mark = crate::brand::mark_rect(&w.ctx).expect("the brand mark is painted");
-        let file = texts(&out).into_iter().find(|(t, _)| t == "File").map(|(_, r)| r).expect("the File menu title");
-        assert!(mark.right() < file.left(), "the mark sits left of the menus: {mark:?} {file:?}");
+        let file = texts(&out)
+            .into_iter()
+            .find(|(t, _)| t == "File")
+            .map(|(_, r)| r)
+            .expect("the File menu title");
+        assert!(
+            mark.right() < file.left(),
+            "the mark sits left of the menus: {mark:?} {file:?}"
+        );
         assert!(mark.left() < 20.0 && mark.width() >= 16.0, "{mark:?}");
     }
 
@@ -638,18 +892,27 @@ mod tests {
         let cmds = w.click(close);
         // File › Exit asks the window to close; the unsaved-changes guard (`discard_ui`) then
         // decides, so the caption button and the menu item behave the same.
-        assert!(cmds.iter().any(|c| matches!(c, ViewportCommand::Close)), "{cmds:?}");
+        assert!(
+            cmds.iter().any(|c| matches!(c, ViewportCommand::Close)),
+            "{cmds:?}"
+        );
     }
 
     #[test]
     fn minimize_and_maximize_follow_the_window_state() {
         let mut w = Win::new(1100.0);
         w.frame(vec![]);
-        let (min, max) = (w.caption(Caption::Minimize).center(), w.caption(Caption::Maximize).center());
+        let (min, max) = (
+            w.caption(Caption::Minimize).center(),
+            w.caption(Caption::Maximize).center(),
+        );
         assert!(w.click(min).contains(&ViewportCommand::Minimized(true)));
         assert!(w.click(max).contains(&ViewportCommand::Maximized(true)));
         w.maximized = true;
-        assert!(w.click(max).contains(&ViewportCommand::Maximized(false)), "Restore");
+        assert!(
+            w.click(max).contains(&ViewportCommand::Maximized(false)),
+            "Restore"
+        );
     }
 
     #[test]
@@ -657,9 +920,18 @@ mod tests {
         let mut w = Win::new(1440.0);
         w.frame(vec![]);
         let empty = pos2(980.0, 16.0);
-        assert!(w.bar_widgets().iter().all(|r| !r.contains(empty)), "the probe point must be empty bar space");
+        assert!(
+            w.bar_widgets().iter().all(|r| !r.contains(empty)),
+            "the probe point must be empty bar space"
+        );
         let cmds = w.gesture(&[empty, empty + vec2(12.0, 4.0), empty + vec2(30.0, 8.0)]);
-        assert_eq!(cmds.iter().filter(|c| matches!(c, ViewportCommand::StartDrag)).count(), 1, "{cmds:?}");
+        assert_eq!(
+            cmds.iter()
+                .filter(|c| matches!(c, ViewportCommand::StartDrag))
+                .count(),
+            1,
+            "{cmds:?}"
+        );
         let mut cmds = w.click(empty);
         cmds.extend(w.click(empty));
         assert!(cmds.contains(&ViewportCommand::Maximized(true)), "{cmds:?}");
@@ -667,12 +939,21 @@ mod tests {
         w.time += 1.0;
         let mut cmds = w.click(empty);
         cmds.extend(w.click(empty));
-        assert!(cmds.contains(&ViewportCommand::Maximized(false)), "{cmds:?}");
+        assert!(
+            cmds.contains(&ViewportCommand::Maximized(false)),
+            "{cmds:?}"
+        );
         // Widgets keep their clicks: dragging from a menu title doesn't move the window.
-        let file = texts(&w.frame(vec![])).into_iter().find(|(t, _)| t == "File").map(|(_, r)| r.center());
+        let file = texts(&w.frame(vec![]))
+            .into_iter()
+            .find(|(t, _)| t == "File")
+            .map(|(_, r)| r.center());
         let file = file.expect("the File menu title");
         let cmds = w.gesture(&[file, file + vec2(12.0, 4.0), file + vec2(30.0, 8.0)]);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::StartDrag)), "{cmds:?}");
+        assert!(
+            !cmds.iter().any(|c| matches!(c, ViewportCommand::StartDrag)),
+            "{cmds:?}"
+        );
     }
 
     /// #1581: KDE Wayland keeps the button release of an OS resize. egui then kept the edge
@@ -685,19 +966,38 @@ mod tests {
         let p = pos2(3.0, 300.0);
         // Press and drag; the compositor takes over, so no release ever arrives.
         let mut cmds = vec![];
-        for e in [vec![Event::PointerMoved(p)], vec![button(p, true)], vec![Event::PointerMoved(p + vec2(6.0, 0.0))]] {
-            cmds.extend(w.frame(e).viewport_output.remove(&ViewportId::ROOT).map(|v| v.commands).unwrap_or_default());
+        for e in [
+            vec![Event::PointerMoved(p)],
+            vec![button(p, true)],
+            vec![Event::PointerMoved(p + vec2(6.0, 0.0))],
+        ] {
+            cmds.extend(
+                w.frame(e)
+                    .viewport_output
+                    .remove(&ViewportId::ROOT)
+                    .map(|v| v.commands)
+                    .unwrap_or_default(),
+            );
         }
-        assert!(cmds.contains(&ViewportCommand::BeginResize(ResizeDirection::West)), "{cmds:?}");
+        assert!(
+            cmds.contains(&ViewportCommand::BeginResize(ResizeDirection::West)),
+            "{cmds:?}"
+        );
         w.frame(vec![]);
-        assert!(!w.ctx.input(|i| i.pointer.primary_down()), "the press ends with the hand-off");
+        assert!(
+            !w.ctx.input(|i| i.pointer.primary_down()),
+            "the press ends with the hand-off"
+        );
         // The pointer comes back: one frame of the default cursor, so the next one is re-sent.
         let out = w.frame(vec![Event::PointerMoved(p)]);
         assert_eq!(out.platform_output.cursor_icon, CursorIcon::Default);
         let out = w.frame(vec![Event::PointerMoved(p + vec2(1.0, 0.0))]);
         assert_eq!(out.platform_output.cursor_icon, CursorIcon::ResizeWest);
         // And the next press resizes again (it alternated before).
-        assert!(w.gesture(&[p, p + vec2(6.0, 0.0)]).contains(&ViewportCommand::BeginResize(ResizeDirection::West)));
+        assert!(
+            w.gesture(&[p, p + vec2(6.0, 0.0)])
+                .contains(&ViewportCommand::BeginResize(ResizeDirection::West))
+        );
     }
 
     /// Where the OS does send the release of a resize (Windows, X11), no second one is added: a
@@ -711,7 +1011,10 @@ mod tests {
         w.frame(vec![button(p, true)]);
         w.frame(vec![Event::PointerMoved(p + vec2(6.0, 0.0))]);
         // The release arrives with the next input.
-        let mut raw = RawInput { events: vec![button(p + vec2(6.0, 0.0), false)], ..Default::default() };
+        let mut raw = RawInput {
+            events: vec![button(p + vec2(6.0, 0.0), false)],
+            ..Default::default()
+        };
         release_after_os_resize(&w.ctx, &mut raw);
         assert_eq!(raw.events.len(), 1, "{:?}", raw.events);
         // Or it already arrived in an earlier input: egui has the button up, nothing to end.
@@ -759,48 +1062,107 @@ mod tests {
             assert_eq!(out.platform_output.cursor_icon, cursor, "at {p:?}");
         }
         let cmds = w.gesture(&[pos2(7.0, 300.0), pos2(13.0, 306.0)]);
-        assert_eq!(cmds, vec![ViewportCommand::BeginResize(West)], "the edge zone is 8 pt deep");
+        assert_eq!(
+            cmds,
+            vec![ViewportCommand::BeginResize(West)],
+            "the edge zone is 8 pt deep"
+        );
         // Clear of the zone and of egui's interact radius around it.
         let cmds = w.gesture(&[pos2(20.0, 300.0), pos2(26.0, 306.0)]);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::BeginResize(_))), "{cmds:?}");
+        assert!(
+            !cmds
+                .iter()
+                .any(|c| matches!(c, ViewportCommand::BeginResize(_))),
+            "{cmds:?}"
+        );
         // Maximized: no zones, and the window's top-right corner is Close.
         w.maximized = true;
         let cmds = w.gesture(&[pos2(1.0, 300.0), pos2(8.0, 300.0)]);
-        assert!(!cmds.iter().any(|c| matches!(c, ViewportCommand::BeginResize(_))), "{cmds:?}");
-        assert!(w.click(pos2(999.5, 0.5)).iter().any(|c| matches!(c, ViewportCommand::Close)));
+        assert!(
+            !cmds
+                .iter()
+                .any(|c| matches!(c, ViewportCommand::BeginResize(_))),
+            "{cmds:?}"
+        );
+        assert!(
+            w.click(pos2(999.5, 0.5))
+                .iter()
+                .any(|c| matches!(c, ViewportCommand::Close))
+        );
     }
 
     #[test]
     fn gtk_layouts_pick_the_buttons_and_their_sides() {
         use Caption::*;
-        let s = CaptionStyle::from_gtk_layout(CaptionFamily::Adwaita, "appmenu:minimize,maximize,close");
+        let s = CaptionStyle::from_gtk_layout(
+            CaptionFamily::Adwaita,
+            "appmenu:minimize,maximize,close",
+        );
         assert_eq!((s.left, s.right), (vec![], vec![Minimize, Maximize, Close]));
         // Unknown names are skipped, spaces trimmed, a repeat placed once, a second colon is a name.
-        let s = CaptionStyle::from_gtk_layout(CaptionFamily::Adwaita, "close,close , minimize:icon,maximize:close");
+        let s = CaptionStyle::from_gtk_layout(
+            CaptionFamily::Adwaita,
+            "close,close , minimize:icon,maximize:close",
+        );
         assert_eq!((s.left, s.right), (vec![Close, Minimize], vec![]));
         let s = CaptionStyle::from_gtk_layout(CaptionFamily::Breeze, "minimize,close");
-        assert_eq!((s.left, s.right), (vec![Minimize, Close], vec![]), "no colon: GTK puts them all at the start");
+        assert_eq!(
+            (s.left, s.right),
+            (vec![Minimize, Close], vec![]),
+            "no colon: GTK puts them all at the start"
+        );
         let s = CaptionStyle::from_gtk_layout(CaptionFamily::Breeze, "");
         assert!(s.left.is_empty() && s.right.is_empty());
-        assert_eq!(CaptionFamily::parse(" Breeze "), Some(CaptionFamily::Breeze));
+        assert_eq!(
+            CaptionFamily::parse(" Breeze "),
+            Some(CaptionFamily::Breeze)
+        );
         assert_eq!(CaptionFamily::parse("aqua"), None);
-        assert_eq!(CaptionStyle::default(), CaptionStyle { family: CaptionFamily::Windows, left: vec![], right: CAPTIONS.to_vec(), icons: None });
+        assert_eq!(
+            CaptionStyle::default(),
+            CaptionStyle {
+                family: CaptionFamily::Windows,
+                left: vec![],
+                right: CAPTIONS.to_vec(),
+                icons: None
+            }
+        );
     }
 
     #[test]
     fn linux_buttons_sit_where_the_layout_says_and_drag_the_window() {
         use Caption::*;
-        for (family, size, gap, end) in [(CaptionFamily::Adwaita, 24.0, 6.5, 10.0), (CaptionFamily::Breeze, 18.0, 4.5, 8.0)] {
+        for (family, size, gap, end) in [
+            (CaptionFamily::Adwaita, 24.0, 6.5, 10.0),
+            (CaptionFamily::Breeze, 18.0, 4.5, 8.0),
+        ] {
             let width = 1100.0;
             let mut w = Win::new(width);
-            w.app.services.caption_style = Some(Box::new(move |_| CaptionStyle { family, left: vec![Close], right: vec![Minimize, Maximize], icons: None }));
+            w.app.services.caption_style = Some(Box::new(move |_| CaptionStyle {
+                family,
+                left: vec![Close],
+                right: vec![Minimize, Maximize],
+                icons: None,
+            }));
             w.frame(vec![]);
             w.frame(vec![]);
             let [min, max, close] = CAPTIONS.map(|c| w.caption(c));
             // Flush with the window's edges, the edge gap outermost, the hit areas touching.
-            assert_eq!((close.left(), close.width()), (0.0, end + size + gap), "{family:?}");
-            assert_eq!((max.right(), max.width()), (width, gap + size + end), "{family:?}");
-            assert_eq!((min.right(), min.width()), (max.left(), 2.0 * gap + size), "{family:?}");
+            assert_eq!(
+                (close.left(), close.width()),
+                (0.0, end + size + gap),
+                "{family:?}"
+            );
+            assert_eq!(
+                (max.right(), max.width()),
+                (width, gap + size + end),
+                "{family:?}"
+            );
+            assert_eq!(
+                (min.right(), min.width()),
+                (max.left(), 2.0 * gap + size),
+                "{family:?}"
+            );
             // GNOME's header bars are taller than Photoshop's bar; KDE's are not.
             if family == CaptionFamily::Adwaita {
                 assert_eq!(close.height(), 46.0);
@@ -808,17 +1170,39 @@ mod tests {
                 assert!((31.0..46.0).contains(&close.height()), "{close:?}");
             }
             let mark = crate::brand::mark_rect(&w.ctx).expect("the brand mark is painted");
-            assert!(mark.left() > close.right(), "the bar starts after the left buttons: {mark:?} {close:?}");
+            assert!(
+                mark.left() > close.right(),
+                "the bar starts after the left buttons: {mark:?} {close:?}"
+            );
             for a in w.bar_widgets() {
-                assert!(a.left() >= close.right() && a.right() <= min.left(), "{a:?} runs into the caption buttons ({family:?})");
+                assert!(
+                    a.left() >= close.right() && a.right() <= min.left(),
+                    "{a:?} runs into the caption buttons ({family:?})"
+                );
             }
-            assert!(w.click(max.center()).contains(&ViewportCommand::Maximized(true)));
-            assert!(w.click(close.center()).iter().any(|c| matches!(c, ViewportCommand::Close)));
+            assert!(
+                w.click(max.center())
+                    .contains(&ViewportCommand::Maximized(true))
+            );
+            assert!(
+                w.click(close.center())
+                    .iter()
+                    .any(|c| matches!(c, ViewportCommand::Close))
+            );
             // A drag that starts on a button moves the window instead of pressing it.
             let at = min.center();
             let cmds = w.gesture(&[at, at + vec2(12.0, 4.0), at + vec2(30.0, 8.0)]);
-            assert_eq!(cmds.iter().filter(|c| matches!(c, ViewportCommand::StartDrag)).count(), 1, "{cmds:?}");
-            assert!(!cmds.contains(&ViewportCommand::Minimized(true)), "{cmds:?}");
+            assert_eq!(
+                cmds.iter()
+                    .filter(|c| matches!(c, ViewportCommand::StartDrag))
+                    .count(),
+                1,
+                "{cmds:?}"
+            );
+            assert!(
+                !cmds.contains(&ViewportCommand::Minimized(true)),
+                "{cmds:?}"
+            );
         }
     }
 
@@ -826,7 +1210,9 @@ mod tests {
     #[test]
     fn only_sides_with_buttons_take_room() {
         let mut w = Win::new(1000.0);
-        w.app.services.caption_style = Some(Box::new(|_| CaptionStyle::from_gtk_layout(CaptionFamily::Adwaita, "appmenu:close")));
+        w.app.services.caption_style = Some(Box::new(|_| {
+            CaptionStyle::from_gtk_layout(CaptionFamily::Adwaita, "appmenu:close")
+        }));
         assert_eq!(reserved(&w.app, &w.ctx), (0.0, 6.5 + 24.0 + 10.0));
         w.app.custom_titlebar = false;
         assert_eq!(reserved(&w.app, &w.ctx), (0.0, 0.0));
@@ -850,7 +1236,10 @@ mod tests {
                 _ => None,
             }
         };
-        let icons = CaptionIcons { theme: "Test".into(), render: std::sync::Arc::new(render) };
+        let icons = CaptionIcons {
+            theme: "Test".into(),
+            render: std::sync::Arc::new(render),
+        };
         let ctx = egui::Context::default();
         let mut out = ctx.run_ui(RawInput::default(), |ui| {
             let tex = theme_icon(ui.ctx(), &icons, CaptionIcon::Close, 16).expect("rendered");
@@ -858,11 +1247,18 @@ mod tests {
             assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Close, 16).is_some());
             assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Restore, 16).is_none());
             assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Restore, 16).is_none());
-            assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Minimize, 16).is_none(), "a mask of the wrong size");
+            assert!(
+                theme_icon(ui.ctx(), &icons, CaptionIcon::Minimize, 16).is_none(),
+                "a mask of the wrong size"
+            );
             assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Close, 0).is_none());
             assert!(theme_icon(ui.ctx(), &icons, CaptionIcon::Close, 100_000).is_none());
         });
         out.textures_delta.clear();
-        assert_eq!(calls.load(Ordering::Relaxed), 3, "each icon and size rendered once; absurd sizes never");
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            3,
+            "each icon and size rendered once; absurd sizes never"
+        );
     }
 }

@@ -107,7 +107,10 @@ impl AssetReader for VfsAssetReader {
     async fn is_directory<'a>(&'a self, path: &'a Path) -> Result<bool, AssetReaderError> {
         let mut prefix = Self::logical(path);
         prefix.push('/');
-        Ok(self.vfs.iter().any(|(entry, _)| entry.starts_with(prefix.as_str())))
+        Ok(self
+            .vfs
+            .iter()
+            .any(|(entry, _)| entry.starts_with(prefix.as_str())))
     }
 }
 

@@ -13,7 +13,20 @@ use common::*;
 #[test]
 fn aac_mp4_resampled_reads_follow_the_edit_list() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let Some(f) = fixture(&ff, "tone_aac_48k.mp4", &["-f", "lavfi", "-i", "sine=frequency=440:sample_rate=48000:d=3", "-c:a", "aac", "-b:a", "128k"]) else {
+    let Some(f) = fixture(
+        &ff,
+        "tone_aac_48k.mp4",
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000:d=3",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+        ],
+    ) else {
         panic!("could not write the AAC fixture")
     };
     let src = filmcraft_codecs::open_bytes("tone_aac_48k.mp4", bytes(&f)).unwrap();
@@ -34,8 +47,14 @@ fn aac_mp4_resampled_reads_follow_the_edit_list() {
         start += piece as i64;
     }
     let level = native.iter().fold(0f32, |m, v| m.max(v.abs()));
-    assert!(peak <= level * 1.01, "resampled peak {peak} above the source's {level}");
-    assert!(worst < 1e-4, "resampled read differs from the source by {worst}");
+    assert!(
+        peak <= level * 1.01,
+        "resampled peak {peak} above the source's {level}"
+    );
+    assert!(
+        worst < 1e-4,
+        "resampled read differs from the source by {worst}"
+    );
 }
 
 /// ffmpeg's MP4 muxer skips the B-frame reorder delay with an edit list, so the media (`mdhd`) runs
@@ -43,7 +62,18 @@ fn aac_mp4_resampled_reads_follow_the_edit_list() {
 #[test]
 fn bframe_mp4_duration_is_the_decoded_frame_count() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let args = ["-f", "lavfi", "-i", "testsrc2=size=160x96:rate=30:duration=2", "-c:v", "libx264", "-bf", "2", "-pix_fmt", "yuv420p"];
+    let args = [
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc2=size=160x96:rate=30:duration=2",
+        "-c:v",
+        "libx264",
+        "-bf",
+        "2",
+        "-pix_fmt",
+        "yuv420p",
+    ];
     let Some(f) = fixture(&ff, "bframes_x264.mp4", &args) else {
         eprintln!("SKIPPED: ffmpeg without libx264");
         return;
@@ -51,17 +81,29 @@ fn bframe_mp4_duration_is_the_decoded_frame_count() {
     let n = ffmpeg_frames(&ff, &f, "yuv420p").len() / (160 * 96 * 3 / 2);
     assert_eq!(n, 60);
     let src = filmcraft_codecs::open_bytes("bframes_x264.mp4", bytes(&f)).unwrap();
-    assert_eq!(src.info().duration, filmcraft_time::FrameRate::FPS_30.tick_of(n as i64));
+    assert_eq!(
+        src.info().duration,
+        filmcraft_time::FrameRate::FPS_30.tick_of(n as i64)
+    );
 }
 
 /// `mp4` (moov after mdat, as ffmpeg writes it) with a clean aperture (`clap`) of `w`×`h` moved by
 /// (`dx`, `dy`) from the centre, inserted at the end of the first video sample entry.
 fn with_clap(mp4: &[u8], (w, h, dx, dy): (u32, u32, i32, i32)) -> Vec<u8> {
-    let be = |b: &[u8], at: usize| u32::from_be_bytes([b[at], b[at + 1], b[at + 2], b[at + 3]]) as usize;
+    let be =
+        |b: &[u8], at: usize| u32::from_be_bytes([b[at], b[at + 1], b[at + 2], b[at + 3]]) as usize;
     // the chain moov > trak > mdia > minf > stbl > stsd > avc1 (stsd has 8 bytes before its entries)
     let mut chain = Vec::new();
     let (mut off, mut end) = (0, mp4.len());
-    for (want, skip) in [(b"moov", 8), (b"trak", 8), (b"mdia", 8), (b"minf", 8), (b"stbl", 8), (b"stsd", 16), (b"avc1", 0)] {
+    for (want, skip) in [
+        (b"moov", 8),
+        (b"trak", 8),
+        (b"mdia", 8),
+        (b"minf", 8),
+        (b"stbl", 8),
+        (b"stsd", 16),
+        (b"avc1", 0),
+    ] {
         loop {
             assert!(off + 8 <= end, "no {}", String::from_utf8_lossy(want));
             let size = be(mp4, off);
@@ -75,9 +117,23 @@ fn with_clap(mp4: &[u8], (w, h, dx, dy): (u32, u32, i32, i32)) -> Vec<u8> {
         }
     }
     let entry = *chain.last().unwrap();
-    assert!(mp4.windows(4).position(|x| x == b"mdat").unwrap() < chain[0], "moov must follow mdat");
+    assert!(
+        mp4.windows(4).position(|x| x == b"mdat").unwrap() < chain[0],
+        "moov must follow mdat"
+    );
     let mut clap = Vec::new();
-    for v in [40u32, u32::from_be_bytes(*b"clap"), w, 1, h, 1, dx as u32, 1, dy as u32, 1] {
+    for v in [
+        40u32,
+        u32::from_be_bytes(*b"clap"),
+        w,
+        1,
+        h,
+        1,
+        dx as u32,
+        1,
+        dy as u32,
+        1,
+    ] {
         clap.extend_from_slice(&v.to_be_bytes());
     }
     let mut out = mp4.to_vec();
@@ -97,15 +153,49 @@ fn with_clap(mp4: &[u8], (w, h, dx, dy): (u32, u32, i32, i32)) -> Vec<u8> {
 #[test]
 fn cropped_pictures_match_ffmpeg() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let src = ["-f", "lavfi", "-i", "testsrc2=size=320x240:rate=30:duration=1,noise=alls=10:allf=t", "-c:v", "libx264", "-bf", "2", "-pix_fmt", "yuv420p"];
+    let src = [
+        "-f",
+        "lavfi",
+        "-i",
+        "testsrc2=size=320x240:rate=30:duration=1,noise=alls=10:allf=t",
+        "-c:v",
+        "libx264",
+        "-bf",
+        "2",
+        "-pix_fmt",
+        "yuv420p",
+    ];
     let Some(plain) = fixture(&ff, "crop_plain_x264.mp4", &src) else {
         eprintln!("SKIPPED: ffmpeg without libx264");
         return;
     };
-    let sps =
-        fixture(&ff, "crop_sps_x264.mp4", &[&src[..], &["-bsf:v", "h264_metadata=crop_left=16:crop_right=16:crop_top=8:crop_bottom=8"]].concat()).unwrap();
+    let sps = fixture(
+        &ff,
+        "crop_sps_x264.mp4",
+        &[
+            &src[..],
+            &[
+                "-bsf:v",
+                "h264_metadata=crop_left=16:crop_right=16:crop_top=8:crop_bottom=8",
+            ],
+        ]
+        .concat(),
+    )
+    .unwrap();
     // the display matrix added without re-encoding (an encode would turn the pixels instead)
-    let rotated = fixture(&ff, "crop_rotated_x264.mp4", &["-display_rotation", "90", "-i", plain.to_str().unwrap(), "-c", "copy"]).unwrap();
+    let rotated = fixture(
+        &ff,
+        "crop_rotated_x264.mp4",
+        &[
+            "-display_rotation",
+            "90",
+            "-i",
+            plain.to_str().unwrap(),
+            "-c",
+            "copy",
+        ],
+    )
+    .unwrap();
     let dir = dir();
     let mut cases = vec![("SPS crop", sps, (288, 224))];
     // HEVC: the conformance window
@@ -123,7 +213,18 @@ fn cropped_pictures_match_ffmpeg() {
         "-pix_fmt",
         "yuv420p",
     ];
-    match fixture(&ff, "crop_conformance_x265.mp4", &[&hevc[..], &["-bsf:v", "hevc_metadata=crop_left=16:crop_right=16:crop_top=8:crop_bottom=8"]].concat()) {
+    match fixture(
+        &ff,
+        "crop_conformance_x265.mp4",
+        &[
+            &hevc[..],
+            &[
+                "-bsf:v",
+                "hevc_metadata=crop_left=16:crop_right=16:crop_top=8:crop_bottom=8",
+            ],
+        ]
+        .concat(),
+    ) {
         Some(p) => cases.push(("HEVC conformance window", p, (288, 224))),
         None => eprintln!("SKIPPED (HEVC case): ffmpeg without libx265"),
     }
@@ -137,7 +238,9 @@ fn cropped_pictures_match_ffmpeg() {
         cases.push((name, path, size));
     }
     for (name, path, (w, h)) in cases {
-        let src = filmcraft_codecs::open_bytes(path.file_name().unwrap().to_str().unwrap(), bytes(&path)).unwrap();
+        let src =
+            filmcraft_codecs::open_bytes(path.file_name().unwrap().to_str().unwrap(), bytes(&path))
+                .unwrap();
         let v = src.info().video.clone().unwrap();
         assert_eq!((v.width, v.height), (w, h), "{name}: reported size");
         let (cw, ch) = (w.div_ceil(2) as usize, h.div_ceil(2) as usize);
@@ -145,7 +248,21 @@ fn cropped_pictures_match_ffmpeg() {
         // pointers (on AVX-512 machines it needs 64-byte alignment) and returns wider frames
         let raw = ffmpeg_out(
             &ff,
-            &["-flags", "unaligned", "-i", path.to_str().unwrap(), "-map", "0:v:0", "-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"],
+            &[
+                "-flags",
+                "unaligned",
+                "-i",
+                path.to_str().unwrap(),
+                "-map",
+                "0:v:0",
+                "-fps_mode",
+                "passthrough",
+                "-f",
+                "rawvideo",
+                "-pix_fmt",
+                "yuv420p",
+                "-",
+            ],
         );
         let frame_bytes = (w * h) as usize + 2 * cw * ch;
         if name.contains("clap") && !raw.len().is_multiple_of(frame_bytes) {
@@ -153,13 +270,24 @@ fn cropped_pictures_match_ffmpeg() {
             eprintln!("SKIPPED ({name}): this ffmpeg does not apply the clean aperture");
             continue;
         }
-        assert_eq!(raw.len() % frame_bytes, 0, "{name}: ffmpeg's frames are {w}x{h}");
+        assert_eq!(
+            raw.len() % frame_bytes,
+            0,
+            "{name}: ffmpeg's frames are {w}x{h}"
+        );
         let n = raw.len() / frame_bytes;
         assert_eq!(n, 30, "{name}");
         for (i, want) in raw.chunks(frame_bytes).enumerate() {
-            let f = src.video_frame(filmcraft_media::FrameRequest::full(v.frame_rate.tick_of(i as i64))).unwrap();
+            let f = src
+                .video_frame(filmcraft_media::FrameRequest::full(
+                    v.frame_rate.tick_of(i as i64),
+                ))
+                .unwrap();
             assert_eq!((f.width, f.height), (w, h), "{name}: frame {i} size");
-            assert!(planes(&f) == raw_planes(want, w as usize, h as usize, cw, ch, 1), "{name}: frame {i} differs from ffmpeg's");
+            assert!(
+                planes(&f) == raw_planes(want, w as usize, h as usize, cw, ch, 1),
+                "{name}: frame {i} differs from ffmpeg's"
+            );
         }
     }
 }
@@ -191,18 +319,31 @@ fn open_gop_leading_pictures_decode_alone() {
         eprintln!("SKIPPED: ffmpeg without libx265");
         return;
     };
-    let mkv = fixture(&ff, "open_gop_x265.mkv", &["-i", mp4.to_str().unwrap(), "-c", "copy"]).unwrap();
+    let mkv = fixture(
+        &ff,
+        "open_gop_x265.mkv",
+        &["-i", mp4.to_str().unwrap(), "-c", "copy"],
+    )
+    .unwrap();
     let raw = ffmpeg_frames(&ff, &mp4, "yuv420p");
     let frame_bytes = 160 * 96 * 3 / 2;
-    let want: Vec<_> = raw.chunks(frame_bytes).map(|f| raw_planes(f, 160, 96, 80, 48, 1)).collect();
+    let want: Vec<_> = raw
+        .chunks(frame_bytes)
+        .map(|f| raw_planes(f, 160, 96, 80, 48, 1))
+        .collect();
     assert_eq!(want.len(), 60);
     for path in [&mp4, &mkv] {
         let name = path.file_name().unwrap().to_str().unwrap();
         let open = || filmcraft_codecs::open_bytes(name, bytes(path)).unwrap();
         let rate = open().info().frame_rate();
         let frame = |src: &filmcraft_media::SharedSource, i: usize| {
-            let f = src.video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(i as i64))).unwrap_or_else(|e| panic!("{name}: frame {i}: {e}"));
-            assert!(planes(&f) == want[i], "{name}: frame {i} differs from ffmpeg's");
+            let f = src
+                .video_frame(filmcraft_media::FrameRequest::full(rate.tick_of(i as i64)))
+                .unwrap_or_else(|e| panic!("{name}: frame {i}: {e}"));
+            assert!(
+                planes(&f) == want[i],
+                "{name}: frame {i} differs from ffmpeg's"
+            );
         };
         for i in 0..want.len() {
             frame(&open(), i);
@@ -223,27 +364,52 @@ fn open_gop_leading_pictures_decode_alone() {
 #[test]
 fn mp2_in_mp4_and_mov_matches_ffmpeg() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    for (name, rate) in [("mp2_stereo_224k_48k.mp4", 48_000u32), ("mp2_stereo_224k_44k.mov", 44_100)] {
+    for (name, rate) in [
+        ("mp2_stereo_224k_48k.mp4", 48_000u32),
+        ("mp2_stereo_224k_44k.mov", 44_100),
+    ] {
         let input = format!("anoisesrc=d=1:c=pink:r={rate}:a=0.3");
-        let Some(f) = fixture(&ff, name, &["-f", "lavfi", "-i", &input, "-ac", "2", "-c:a", "mp2", "-b:a", "224k"]) else {
+        let Some(f) = fixture(
+            &ff,
+            name,
+            &[
+                "-f", "lavfi", "-i", &input, "-ac", "2", "-c:a", "mp2", "-b:a", "224k",
+            ],
+        ) else {
             eprintln!("SKIPPED ({name}): this ffmpeg can't encode it");
             continue;
         };
         let src = filmcraft_codecs::open_bytes(name, bytes(&f)).unwrap();
         let a = src.info().audio().cloned().unwrap();
-        assert_eq!((a.sample_rate, a.channels, a.codec.as_str()), (rate, 2, "MPEG Audio"), "{name}");
+        assert_eq!(
+            (a.sample_rate, a.channels, a.codec.as_str()),
+            (rate, 2, "MPEG Audio"),
+            "{name}"
+        );
         let want = ffmpeg_audio_f32(&ff, &f, &[]);
         let n = want.len() / 2;
-        assert!(n > rate as usize * 9 / 10, "{name}: ffmpeg decoded {n} samples");
+        assert!(
+            n > rate as usize * 9 / 10,
+            "{name}: ffmpeg decoded {n} samples"
+        );
         let worst = |from: usize, len: usize| {
             let got = src.audio(from as i64, len, rate).unwrap();
-            (0..len).map(|k| (0..2).map(|c| (got.channels[c][k] - want[2 * (from + k) + c]).abs()).fold(0f32, f32::max)).fold(0f32, f32::max)
+            (0..len)
+                .map(|k| {
+                    (0..2)
+                        .map(|c| (got.channels[c][k] - want[2 * (from + k) + c]).abs())
+                        .fold(0f32, f32::max)
+                })
+                .fold(0f32, f32::max)
         };
         let level = want.iter().fold(0f32, |m, v| m.max(v.abs()));
         assert!(level > 0.1, "{name}: the source is silent ({level})");
         // a seek into the middle first, then the whole track from the start
         let (mid, all) = (worst(n / 2 + 77, 3000), worst(0, n));
         println!("{name}: {n} samples, max error mid {mid:.2e}, whole {all:.2e}");
-        assert!(mid <= 1e-4 && all <= 1e-4, "{name}: differs from ffmpeg by {mid} (mid) / {all} (whole)");
+        assert!(
+            mid <= 1e-4 && all <= 1e-4,
+            "{name}: differs from ffmpeg by {mid} (mid) / {all} (whole)"
+        );
     }
 }

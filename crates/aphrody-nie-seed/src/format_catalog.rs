@@ -193,10 +193,18 @@ pub enum CatalogParseError {
     TooManyFormats { actual: usize, limit: usize },
     /// One format contained more fields than allowed.
     #[error("format {format_name:?} contains {actual} fields; limit is {limit}")]
-    TooManyFields { format_name: String, actual: usize, limit: usize },
+    TooManyFields {
+        format_name: String,
+        actual: usize,
+        limit: usize,
+    },
     /// One format contained more filename extensions than allowed.
     #[error("format {format_name:?} contains {actual} extensions; limit is {limit}")]
-    TooManyExtensions { format_name: String, actual: usize, limit: usize },
+    TooManyExtensions {
+        format_name: String,
+        actual: usize,
+        limit: usize,
+    },
     /// The total field count exceeded the configured limit.
     #[error("catalog contains more than {limit} fields")]
     TooManyTotalFields { limit: usize },
@@ -205,7 +213,11 @@ pub enum CatalogParseError {
     EmptyName { location: String },
     /// A retained string exceeded the configured limit.
     #[error("{location} is {actual} bytes; string limit is {limit} bytes")]
-    StringTooLong { location: String, actual: usize, limit: usize },
+    StringTooLong {
+        location: String,
+        actual: usize,
+        limit: usize,
+    },
 }
 
 /// Parse and validate an exported iecode format catalog from bytes.
@@ -281,7 +293,9 @@ fn validate_catalog(
         }
         total_fields = total_fields.saturating_add(format.fields.len());
         if total_fields > limits.max_total_fields {
-            return Err(CatalogParseError::TooManyTotalFields { limit: limits.max_total_fields });
+            return Err(CatalogParseError::TooManyTotalFields {
+                limit: limits.max_total_fields,
+            });
         }
 
         for field in &format.fields {
@@ -299,7 +313,9 @@ fn check_required_name(
     max_string_bytes: usize,
 ) -> Result<(), CatalogParseError> {
     if value.trim().is_empty() {
-        return Err(CatalogParseError::EmptyName { location: location.to_owned() });
+        return Err(CatalogParseError::EmptyName {
+            location: location.to_owned(),
+        });
     }
     check_string(location, value, max_string_bytes)
 }
@@ -369,9 +385,16 @@ pub fn ingest_format_catalog(db: &mut Db, path: &Path) -> Result<CatalogStats> {
         );
     }
 
-    debug!("catalogue iecode : generator={} formats={}", doc.generator, doc.formats.len());
+    debug!(
+        "catalogue iecode : generator={} formats={}",
+        doc.generator,
+        doc.formats.len()
+    );
 
-    let tx = db.conn_mut().transaction().context("ouverture de transaction format_catalog")?;
+    let tx = db
+        .conn_mut()
+        .transaction()
+        .context("ouverture de transaction format_catalog")?;
 
     let mut stats = CatalogStats::default();
 
@@ -408,7 +431,11 @@ pub fn ingest_format_catalog(db: &mut Db, path: &Path) -> Result<CatalogStats> {
             stats.fields += 1;
         }
 
-        debug!("format catalogue : {} (id={format_id}, {} champs)", fmt.name, fmt.fields.len());
+        debug!(
+            "format catalogue : {} (id={format_id}, {} champs)",
+            fmt.name,
+            fmt.fields.len()
+        );
     }
 
     tx.commit().context("commit format_catalog")?;
@@ -428,7 +455,10 @@ mod tests {
         let unique = format!(
             "nie-seed-catalog-{}-{}.json",
             std::process::id(),
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         );
         path.push(unique);
         let mut f = std::fs::File::create(&path).unwrap();
@@ -477,7 +507,10 @@ mod tests {
 
         assert_eq!(catalog.schema_version, SUPPORTED_SCHEMA_VERSION);
         assert_eq!(catalog.generator, "iecode");
-        assert_eq!(catalog.game.as_deref(), Some("Inazuma Eleven: Victory Road"));
+        assert_eq!(
+            catalog.game.as_deref(),
+            Some("Inazuma Eleven: Victory Road")
+        );
         assert_eq!(catalog.format_count, Some(2));
         assert_eq!(catalog.formats.len(), 2);
         assert_eq!(catalog.total_fields(), 2);
@@ -497,23 +530,34 @@ mod tests {
 
     #[test]
     fn rejects_input_before_json_allocation_limit() {
-        let limits =
-            CatalogLimits { max_input_bytes: SAMPLE.len() - 1, ..CatalogLimits::default() };
+        let limits = CatalogLimits {
+            max_input_bytes: SAMPLE.len() - 1,
+            ..CatalogLimits::default()
+        };
         let error = parse_format_catalog_bytes(SAMPLE.as_bytes(), limits).unwrap_err();
         assert!(matches!(error, CatalogParseError::InputTooLarge { .. }));
     }
 
     #[test]
     fn rejects_entry_and_string_limits() {
-        let format_limits = CatalogLimits { max_formats: 1, ..CatalogLimits::default() };
+        let format_limits = CatalogLimits {
+            max_formats: 1,
+            ..CatalogLimits::default()
+        };
         let error = parse_format_catalog_bytes(SAMPLE.as_bytes(), format_limits).unwrap_err();
         assert!(matches!(error, CatalogParseError::TooManyFormats { .. }));
 
-        let field_limits = CatalogLimits { max_fields_per_format: 1, ..CatalogLimits::default() };
+        let field_limits = CatalogLimits {
+            max_fields_per_format: 1,
+            ..CatalogLimits::default()
+        };
         let error = parse_format_catalog_bytes(SAMPLE.as_bytes(), field_limits).unwrap_err();
         assert!(matches!(error, CatalogParseError::TooManyFields { .. }));
 
-        let string_limits = CatalogLimits { max_string_bytes: 3, ..CatalogLimits::default() };
+        let string_limits = CatalogLimits {
+            max_string_bytes: 3,
+            ..CatalogLimits::default()
+        };
         let error = parse_format_catalog_bytes(SAMPLE.as_bytes(), string_limits).unwrap_err();
         assert!(matches!(error, CatalogParseError::StringTooLong { .. }));
     }
@@ -522,7 +566,10 @@ mod tests {
     fn rejects_unsupported_schema_and_empty_names() {
         let unsupported = br#"{ "schema_version": 999, "formats": [] }"#;
         let error = parse_format_catalog_bytes(unsupported, CatalogLimits::default()).unwrap_err();
-        assert!(matches!(error, CatalogParseError::UnsupportedSchema { actual: 999, .. }));
+        assert!(matches!(
+            error,
+            CatalogParseError::UnsupportedSchema { actual: 999, .. }
+        ));
 
         let empty_name = br#"{
             "schema_version": 1,
@@ -544,7 +591,9 @@ mod tests {
         // Le format G4TX est présent et ses champs aussi.
         let n_g4tx: i64 = db
             .conn()
-            .query_row("SELECT COUNT(*) FROM format WHERE name='G4TX'", [], |r| r.get(0))
+            .query_row("SELECT COUNT(*) FROM format WHERE name='G4TX'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(n_g4tx, 1);
 
@@ -562,7 +611,9 @@ mod tests {
         // Source machine-readable correctement tracée.
         let src: String = db
             .conn()
-            .query_row("SELECT source FROM format WHERE name='G4TX'", [], |r| r.get(0))
+            .query_row("SELECT source FROM format WHERE name='G4TX'", [], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(src, "iecode-catalog");
 
@@ -580,12 +631,16 @@ mod tests {
         assert_eq!(s1.fields, s2.fields);
 
         // Pas de doublon de format ni de champ après deux passes.
-        let n_fmt: i64 =
-            db.conn().query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0)).unwrap();
+        let n_fmt: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(n_fmt, 2);
 
-        let n_field: i64 =
-            db.conn().query_row("SELECT COUNT(*) FROM format_field", [], |r| r.get(0)).unwrap();
+        let n_field: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM format_field", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(n_field, 2, "les champs ne doivent pas se dupliquer");
 
         std::fs::remove_file(&path).ok();

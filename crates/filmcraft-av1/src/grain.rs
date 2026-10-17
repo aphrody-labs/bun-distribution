@@ -40,7 +40,11 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
     let mut luma = vec![[0i32; 82]; 73];
     for row in luma.iter_mut() {
         for v in row.iter_mut() {
-            let gv = if g.num_y_points > 0 { GAUSSIAN_SEQUENCE[rng.next(11) as usize] as i32 } else { 0 };
+            let gv = if g.num_y_points > 0 {
+                GAUSSIAN_SEQUENCE[rng.next(11) as usize] as i32
+            } else {
+                0
+            };
             *v = round2(gv, shift);
         }
     }
@@ -68,11 +72,18 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
     let mut cb = vec![[0i32; 82]; 73];
     let mut cr = vec![[0i32; 82]; 73];
     if !mono {
-        for (arr, seed, on) in [(&mut cb, 0xb524u32, g.num_cb_points > 0), (&mut cr, 0x49d8, g.num_cr_points > 0)] {
+        for (arr, seed, on) in [
+            (&mut cb, 0xb524u32, g.num_cb_points > 0),
+            (&mut cr, 0x49d8, g.num_cr_points > 0),
+        ] {
             rng.0 = g.grain_seed ^ seed;
             for row in arr.iter_mut().take(chroma_h) {
                 for v in row.iter_mut().take(chroma_w) {
-                    let gv = if on || g.chroma_scaling_from_luma { GAUSSIAN_SEQUENCE[rng.next(11) as usize] as i32 } else { 0 };
+                    let gv = if on || g.chroma_scaling_from_luma {
+                        GAUSSIAN_SEQUENCE[rng.next(11) as usize] as i32
+                    } else {
+                        0
+                    };
                     *v = round2(gv, shift);
                 }
             }
@@ -158,7 +169,15 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
     // Noise stripes (7.18.3.5).
     let stripe_w = w + 64;
     let n_stripes = (h.div_ceil(2)).div_ceil(16).max(1);
-    let mut stripes: Vec<[Vec<i32>; 3]> = (0..n_stripes).map(|_| [vec![0; 34 * stripe_w], vec![0; 34 * stripe_w], vec![0; 34 * stripe_w]]).collect();
+    let mut stripes: Vec<[Vec<i32>; 3]> = (0..n_stripes)
+        .map(|_| {
+            [
+                vec![0; 34 * stripe_w],
+                vec![0; 34 * stripe_w],
+                vec![0; 34 * stripe_w],
+            ]
+        })
+        .collect();
     let overlap = g.overlap_flag;
     for (luma_num, stripe) in stripes.iter_mut().enumerate() {
         let mut r = g.grain_seed;
@@ -187,7 +206,11 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
                             let idx = i * stripe_w + x * 2 + j;
                             if j < 2 && overlap && x > 0 {
                                 let old = s[idx];
-                                gv = if j == 0 { old * 27 + gv * 17 } else { old * 17 + gv * 27 };
+                                gv = if j == 0 {
+                                    old * 27 + gv * 17
+                                } else {
+                                    old * 17 + gv * 27
+                                };
                                 gv = round2(gv, 5).clamp(grain_min, grain_max);
                             }
                             s[idx] = gv;
@@ -213,7 +236,11 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
         if psy == 0 {
             if i < 2 && luma_num > 0 && overlap {
                 let old = stripes[luma_num - 1][plane][(i + 32) * stripe_w + x];
-                gv = if i == 0 { old * 27 + gv * 17 } else { old * 17 + gv * 27 };
+                gv = if i == 0 {
+                    old * 27 + gv * 17
+                } else {
+                    old * 17 + gv * 27
+                };
                 gv = round2(gv, 5).clamp(grain_min, grain_max);
             }
         } else if i < 1 && luma_num > 0 && overlap {
@@ -226,7 +253,15 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
     // Blend (7.18.3.5).
     let (min_value, max_luma, max_chroma) = if g.clip_to_restricted_range {
         let ml = 235 << (bd - 8);
-        (16 << (bd - 8), ml, if pic.matrix_coefficients as usize == MC_IDENTITY { ml } else { 240 << (bd - 8) })
+        (
+            16 << (bd - 8),
+            ml,
+            if pic.matrix_coefficients as usize == MC_IDENTITY {
+                ml
+            } else {
+                240 << (bd - 8)
+            },
+        )
     } else {
         let m = (256 << (bd - 8)) - 1;
         (0, m, m)
@@ -242,10 +277,28 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
                 let lx = x << sub_x;
                 let ly = y << sub_y;
                 let lnx = (lx + 1).min(w - 1);
-                let avg = if sub_x != 0 { round2(py[ly * w + lx] as i32 + py[ly * w + lnx] as i32, 1) } else { py[ly * w + lx] as i32 };
+                let avg = if sub_x != 0 {
+                    round2(py[ly * w + lx] as i32 + py[ly * w + lnx] as i32, 1)
+                } else {
+                    py[ly * w + lx] as i32
+                };
                 for (plane, out, on, luma_mult, mult, offset) in [
-                    (1usize, &mut *pu, g.num_cb_points > 0, g.cb_luma_mult, g.cb_mult, g.cb_offset),
-                    (2, &mut *pv, g.num_cr_points > 0, g.cr_luma_mult, g.cr_mult, g.cr_offset),
+                    (
+                        1usize,
+                        &mut *pu,
+                        g.num_cb_points > 0,
+                        g.cb_luma_mult,
+                        g.cb_mult,
+                        g.cb_offset,
+                    ),
+                    (
+                        2,
+                        &mut *pv,
+                        g.num_cr_points > 0,
+                        g.cr_luma_mult,
+                        g.cr_mult,
+                        g.cr_offset,
+                    ),
                 ] {
                     if !(on || g.chroma_scaling_from_luma) {
                         continue;
@@ -257,7 +310,10 @@ pub(crate) fn apply(pic: &mut Picture, g: &FilmGrainParams, seq: &SequenceHeader
                         let combined = avg * (luma_mult as i32 - 128) + orig * (mult as i32 - 128);
                         ((combined >> 6) + ((offset as i32 - 256) << (bd - 8))).clamp(0, pix_max)
                     };
-                    let noise = round2(scale_lut(plane, merged) * noise_at(plane, y, x), scaling_shift);
+                    let noise = round2(
+                        scale_lut(plane, merged) * noise_at(plane, y, x),
+                        scaling_shift,
+                    );
                     out[y * cw + x] = (orig + noise).clamp(min_value, max_chroma) as u16;
                 }
             }

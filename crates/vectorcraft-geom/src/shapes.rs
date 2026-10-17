@@ -13,7 +13,15 @@ pub const KAPPA: f64 = 0.552_284_749_830_793_6;
 /// Rectangle with 4 corner anchors, clockwise from the top-left.
 pub fn rectangle(r: Rect) -> PathData {
     let r = r.abs();
-    PathData::single(SubPath::polyline(&[Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)], true))
+    PathData::single(SubPath::polyline(
+        &[
+            Point::new(r.x0, r.y0),
+            Point::new(r.x1, r.y0),
+            Point::new(r.x1, r.y1),
+            Point::new(r.x0, r.y1),
+        ],
+        true,
+    ))
 }
 
 /// Rounded rectangle (8 anchors). The radius is clamped to half the shorter side.
@@ -35,7 +43,11 @@ pub enum CornerKind {
 }
 
 impl CornerKind {
-    pub const ALL: [CornerKind; 3] = [CornerKind::Round, CornerKind::InvertedRound, CornerKind::Chamfer];
+    pub const ALL: [CornerKind; 3] = [
+        CornerKind::Round,
+        CornerKind::InvertedRound,
+        CornerKind::Chamfer,
+    ];
 
     /// The kind after this one (Alt-clicking a corner widget cycles through them).
     pub fn next(self) -> Self {
@@ -76,7 +88,12 @@ pub fn ellipse(r: Rect) -> PathData {
     let ry = r.height() / 2.0;
     let kx = rx * KAPPA;
     let ky = ry * KAPPA;
-    let s = |p: Point, hin: Vec2| Anchor { p, h_in: p + hin, h_out: p - hin, kind: AnchorKind::Smooth };
+    let s = |p: Point, hin: Vec2| Anchor {
+        p,
+        h_in: p + hin,
+        h_out: p - hin,
+        kind: AnchorKind::Smooth,
+    };
     let anchors = vec![
         s(Point::new(c.x - rx, c.y), Vec2::new(0.0, ky)),
         s(Point::new(c.x, c.y - ry), Vec2::new(-kx, 0.0)),
@@ -124,8 +141,17 @@ pub fn ellipse_pie(r: Rect, start: f64, end: f64) -> PathData {
         let (p, d) = (at(a), tangent(a) * k);
         let h_in = if i == 0 { p } else { p - d };
         let h_out = if i == pieces { p } else { p + d };
-        let kind = if i == 0 || i == pieces { AnchorKind::Corner } else { AnchorKind::Smooth };
-        anchors.push(Anchor { p, h_in, h_out, kind });
+        let kind = if i == 0 || i == pieces {
+            AnchorKind::Corner
+        } else {
+            AnchorKind::Smooth
+        };
+        anchors.push(Anchor {
+            p,
+            h_in,
+            h_out,
+            kind,
+        });
     }
     PathData::single(SubPath::new(anchors, true))
 }
@@ -175,8 +201,20 @@ pub fn arc(a: Point, b: Point, slope: f64, closed: bool) -> PathData {
     let corner = Point::new(b.x, a.y);
     let h1 = a + (corner - a) * k;
     let h2 = b + (corner - b) * k;
-    let mut anchors =
-        vec![Anchor { p: a, h_in: a, h_out: h1, kind: AnchorKind::Corner }, Anchor { p: b, h_in: h2, h_out: b, kind: AnchorKind::Corner }];
+    let mut anchors = vec![
+        Anchor {
+            p: a,
+            h_in: a,
+            h_out: h1,
+            kind: AnchorKind::Corner,
+        },
+        Anchor {
+            p: b,
+            h_in: h2,
+            h_out: b,
+            kind: AnchorKind::Corner,
+        },
+    ];
     if closed {
         let o = Point::new(a.x, b.y);
         anchors.push(Anchor::corner(o));
@@ -185,7 +223,13 @@ pub fn arc(a: Point, b: Point, slope: f64, closed: bool) -> PathData {
 }
 
 /// Archimedean-style spiral approximating Illustrator's Spiral tool (decay-based, `segments` quarter turns).
-pub fn spiral(center: Point, radius: f64, decay_percent: f64, segments: u32, clockwise: bool) -> PathData {
+pub fn spiral(
+    center: Point,
+    radius: f64,
+    decay_percent: f64,
+    segments: u32,
+    clockwise: bool,
+) -> PathData {
     let decay = (decay_percent / 100.0).clamp(0.05, 0.9999);
     let dir = if clockwise { 1.0 } else { -1.0 };
     let mut anchors = Vec::new();
@@ -199,7 +243,12 @@ pub fn spiral(center: Point, radius: f64, decay_percent: f64, segments: u32, clo
         let r_next = r * decay;
         let h_in = p - t * (KAPPA * (r + r_prev) / 2.0);
         let h_out = p + t * (KAPPA * (r + r_next) / 2.0);
-        anchors.push(Anchor { p, h_in: if i == 0 { p } else { h_in }, h_out: if i == segments { p } else { h_out }, kind: AnchorKind::Smooth });
+        anchors.push(Anchor {
+            p,
+            h_in: if i == 0 { p } else { h_in },
+            h_out: if i == segments { p } else { h_out },
+            kind: AnchorKind::Smooth,
+        });
         r *= decay;
     }
     // Illustrator spirals wind inward from the outer point; reverse so the path starts at the centre end.
@@ -230,10 +279,24 @@ fn skewed(t: f64, skew: f64) -> f64 {
 /// sides (top, bottom, left, right), then the horizontal and the vertical dividers as open lines.
 /// A positive `h_skew` crowds the horizontal dividers toward the top and a positive `v_skew` the
 /// vertical ones toward the right (percent, see [`GRID_SKEW_MAX`]).
-pub fn rectangular_grid(r: Rect, (h_dividers, h_skew): (u32, f64), (v_dividers, v_skew): (u32, f64), frame: bool) -> Vec<PathData> {
+pub fn rectangular_grid(
+    r: Rect,
+    (h_dividers, h_skew): (u32, f64),
+    (v_dividers, v_skew): (u32, f64),
+    frame: bool,
+) -> Vec<PathData> {
     let r = r.abs();
-    let (tl, tr, br, bl) = (Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1));
-    let mut out = if frame { vec![rectangle(r)] } else { vec![line(tl, tr), line(bl, br), line(tl, bl), line(tr, br)] };
+    let (tl, tr, br, bl) = (
+        Point::new(r.x0, r.y0),
+        Point::new(r.x1, r.y0),
+        Point::new(r.x1, r.y1),
+        Point::new(r.x0, r.y1),
+    );
+    let mut out = if frame {
+        vec![rectangle(r)]
+    } else {
+        vec![line(tl, tr), line(bl, br), line(tl, bl), line(tr, br)]
+    };
     for i in 1..=h_dividers {
         // From the top down: toward the top is toward 0.
         let y = r.y0 + r.height() * skewed(i as f64 / (h_dividers + 1) as f64, -h_skew);
@@ -252,7 +315,12 @@ pub fn rectangular_grid(r: Rect, (h_dividers, h_skew): (u32, f64), (v_dividers, 
 /// [`GRID_SKEW_MAX`]). With `compound`, the ellipses pair up from the outside in into rings (two
 /// subpaths, the inner one reversed so that it is a hole under either fill rule); an odd one out
 /// is the innermost ellipse alone.
-pub fn polar_grid(r: Rect, (concentric, c_skew): (u32, f64), (radial, r_skew): (u32, f64), compound: bool) -> Vec<PathData> {
+pub fn polar_grid(
+    r: Rect,
+    (concentric, c_skew): (u32, f64),
+    (radial, r_skew): (u32, f64),
+    compound: bool,
+) -> Vec<PathData> {
     let r = r.abs();
     let c = r.center();
     let mut out: Vec<PathData> = Vec::new();
@@ -260,7 +328,10 @@ pub fn polar_grid(r: Rect, (concentric, c_skew): (u32, f64), (radial, r_skew): (
         let f = skewed(i as f64 / (concentric + 1) as f64, c_skew);
         let mut e = ellipse(Rect::from_center_size(c, (r.width() * f, r.height() * f)));
         // Every second ellipse from the outside is the hole of the one before it.
-        match out.last_mut().filter(|_| compound && (concentric + 1 - i) % 2 == 1) {
+        match out
+            .last_mut()
+            .filter(|_| compound && (concentric + 1 - i) % 2 == 1)
+        {
             Some(ring) => {
                 e.reverse();
                 ring.subpaths.append(&mut e.subpaths);
@@ -272,7 +343,13 @@ pub fn polar_grid(r: Rect, (concentric, c_skew): (u32, f64), (radial, r_skew): (
     for i in 0..radial {
         // The turn runs clockwise on screen: clockwise of the top is toward its start.
         let a = -PI / 2.0 + TAU * skewed(i as f64 / radial as f64, -r_skew);
-        out.push(line(c, Point::new(c.x + r.width() / 2.0 * a.cos(), c.y + r.height() / 2.0 * a.sin())));
+        out.push(line(
+            c,
+            Point::new(
+                c.x + r.width() / 2.0 * a.cos(),
+                c.y + r.height() / 2.0 * a.sin(),
+            ),
+        ));
     }
     out
 }
@@ -283,7 +360,9 @@ mod tests {
 
     /// The corner (index into `radii`) of each anchor of [`rectangle_with_corners`].
     fn corner_sources(r: Rect, radii: [f64; 4]) -> Vec<usize> {
-        crate::corners::cut_corners(&rectangle(r), &radii, &[]).1.concat()
+        crate::corners::cut_corners(&rectangle(r), &radii, &[])
+            .1
+            .concat()
     }
 
     /// A pie is the arc from its start to its end angle, counterclockwise on screen, closed through
@@ -297,14 +376,31 @@ mod tests {
         let q = ellipse_pie(r, 0.0, 90.0);
         let a: Vec<Point> = q.subpaths[0].anchors.iter().map(|a| a.p).collect();
         assert_eq!(a.len(), 3);
-        assert!(a[0].distance(Point::new(100.0, 50.0)) < 1e-9 && a[1].distance(Point::new(200.0, 50.0)) < 1e-9);
-        assert!(a[2].distance(Point::new(100.0, 0.0)) < 1e-9, "counterclockwise on screen: up");
-        assert_eq!(q.bounds().map(|b| (b.x0.round(), b.y0.round(), b.x1.round(), b.y1.round())), Some((100.0, 0.0, 200.0, 50.0)));
+        assert!(
+            a[0].distance(Point::new(100.0, 50.0)) < 1e-9
+                && a[1].distance(Point::new(200.0, 50.0)) < 1e-9
+        );
+        assert!(
+            a[2].distance(Point::new(100.0, 0.0)) < 1e-9,
+            "counterclockwise on screen: up"
+        );
+        assert_eq!(
+            q.bounds()
+                .map(|b| (b.x0.round(), b.y0.round(), b.x1.round(), b.y1.round())),
+            Some((100.0, 0.0, 200.0, 50.0))
+        );
         // Three quarters, from 12 round to 3 o'clock: four pieces at most, the whole box covered.
         let big = ellipse_pie(r, 90.0, 0.0);
         assert!(big.subpaths[0].anchors.len() <= 6 && big.subpaths[0].closed);
-        assert_eq!(big.bounds().map(|b| (b.x0.round(), b.y0.round(), b.x1.round(), b.y1.round())), Some((0.0, 0.0, 200.0, 100.0)));
-        assert!(ellipse_pie(r, f64::NAN, 10.0).anchor_count() == 4, "not a number: the whole ellipse");
+        assert_eq!(
+            big.bounds()
+                .map(|b| (b.x0.round(), b.y0.round(), b.x1.round(), b.y1.round())),
+            Some((0.0, 0.0, 200.0, 100.0))
+        );
+        assert!(
+            ellipse_pie(r, f64::NAN, 10.0).anchor_count() == 4,
+            "not a number: the whole ellipse"
+        );
     }
 
     #[test]
@@ -335,7 +431,10 @@ mod tests {
         let p = rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 100.0);
         assert_eq!(p.anchor_count(), 8);
         assert_eq!(p.bounds(), Some(Rect::new(0.0, 0.0, 20.0, 10.0)));
-        assert_eq!(rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 0.0).anchor_count(), 4);
+        assert_eq!(
+            rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 0.0).anchor_count(),
+            4
+        );
     }
 
     #[test]
@@ -343,8 +442,12 @@ mod tests {
         // The 8 anchors a rounded rectangle always had, from the top side's first one.
         let (r, rad) = (Rect::new(10.0, 20.0, 110.0, 70.0), 7.5);
         let (x0, y0, x1, y1, k) = (10.0, 20.0, 110.0, 70.0, rad * KAPPA);
-        let a =
-            |p: (f64, f64), hin: (f64, f64), hout: (f64, f64)| Anchor { p: p.into(), h_in: hin.into(), h_out: hout.into(), kind: AnchorKind::Corner };
+        let a = |p: (f64, f64), hin: (f64, f64), hout: (f64, f64)| Anchor {
+            p: p.into(),
+            h_in: hin.into(),
+            h_out: hout.into(),
+            kind: AnchorKind::Corner,
+        };
         let want = vec![
             a((x0 + rad, y0), (x0 + rad - k, y0), (x0 + rad, y0)),
             a((x1 - rad, y0), (x1 - rad, y0), (x1 - rad + k, y0)),
@@ -367,23 +470,51 @@ mod tests {
         let radii = [0.0, 10.0, 0.0, 0.0];
         let p = rectangle_with_corners(r, radii, [CornerKind::Round; 4]);
         let pts: Vec<Point> = p.subpaths[0].anchors.iter().map(|a| a.p).collect();
-        assert_eq!(pts, [Point::new(0.0, 0.0), Point::new(90.0, 0.0), Point::new(100.0, 10.0), Point::new(100.0, 60.0), Point::new(0.0, 60.0)]);
+        assert_eq!(
+            pts,
+            [
+                Point::new(0.0, 0.0),
+                Point::new(90.0, 0.0),
+                Point::new(100.0, 10.0),
+                Point::new(100.0, 60.0),
+                Point::new(0.0, 60.0)
+            ]
+        );
         assert_eq!(corner_sources(r, radii), [0, 1, 1, 2, 3]);
         let quarter = PI * 25.0;
-        assert!((p.subpaths[0].area() - (6000.0 - 100.0 + quarter)).abs() < 0.1, "a quarter circle off one corner");
+        assert!(
+            (p.subpaths[0].area() - (6000.0 - 100.0 + quarter)).abs() < 0.1,
+            "a quarter circle off one corner"
+        );
         // The top-left corner rounded: its top-side anchor first, its left-side one last.
-        assert_eq!(corner_sources(r, [10.0, 0.0, 0.0, 200.0]), [0, 1, 2, 3, 3, 0]);
+        assert_eq!(
+            corner_sources(r, [10.0, 0.0, 0.0, 200.0]),
+            [0, 1, 2, 3, 3, 0]
+        );
         // Inverted round cuts a quarter circle out; a chamfer cuts a triangle.
         let inverted = rectangle_with_corners(r, radii, [CornerKind::InvertedRound; 4]);
         assert!((inverted.subpaths[0].area() - (6000.0 - quarter)).abs() < 0.1);
         let chamfer = rectangle_with_corners(r, radii, [CornerKind::Chamfer; 4]);
         assert!((chamfer.subpaths[0].area() - (6000.0 - 50.0)).abs() < 1e-9);
-        assert!(chamfer.subpaths[0].anchors.iter().all(|a| !a.has_in() && !a.has_out()), "straight");
+        assert!(
+            chamfer.subpaths[0]
+                .anchors
+                .iter()
+                .all(|a| !a.has_in() && !a.has_out()),
+            "straight"
+        );
         // Radii clamp to half the shorter side; negative and NaN radii are none.
         let p = rectangle_with_corners(r, [500.0, -5.0, f64::NAN, 0.0], [CornerKind::Round; 4]);
         assert_eq!(p.subpaths[0].anchors[0].p, Point::new(30.0, 0.0));
         assert_eq!(p.anchor_count(), 5);
-        assert_eq!(CornerKind::ALL.map(CornerKind::next), [CornerKind::InvertedRound, CornerKind::Chamfer, CornerKind::Round]);
+        assert_eq!(
+            CornerKind::ALL.map(CornerKind::next),
+            [
+                CornerKind::InvertedRound,
+                CornerKind::Chamfer,
+                CornerKind::Round
+            ]
+        );
     }
 
     /// #442: on a rectangle that isn't square, every corner is a circular arc of the same radius,
@@ -392,13 +523,31 @@ mod tests {
     fn corners_of_a_non_square_rectangle_are_alike() {
         let r = Rect::new(0.0, 0.0, 200.0, 80.0);
         assert_eq!(max_corner_radius(-200.0, 80.0), 40.0);
-        assert_eq!([30.0, 60.0, -1.0, f64::NAN].map(|x| fitted_corner_radius(200.0, 80.0, x)), [30.0, 40.0, 0.0, 0.0]);
+        assert_eq!(
+            [30.0, 60.0, -1.0, f64::NAN].map(|x| fitted_corner_radius(200.0, 80.0, x)),
+            [30.0, 40.0, 0.0, 0.0]
+        );
         for (radius, drawn) in [(30.0, 30.0), (60.0, 40.0)] {
-            for kinds in [[CornerKind::Round; 4], [CornerKind::Chamfer, CornerKind::InvertedRound, CornerKind::Round, CornerKind::Chamfer]] {
-                let a: Vec<Point> = rectangle_with_corners(r, [radius; 4], kinds).subpaths[0].anchors.iter().map(|a| a.p).collect();
+            for kinds in [
+                [CornerKind::Round; 4],
+                [
+                    CornerKind::Chamfer,
+                    CornerKind::InvertedRound,
+                    CornerKind::Round,
+                    CornerKind::Chamfer,
+                ],
+            ] {
+                let a: Vec<Point> = rectangle_with_corners(r, [radius; 4], kinds).subpaths[0]
+                    .anchors
+                    .iter()
+                    .map(|a| a.p)
+                    .collect();
                 for (i, j) in [(7, 0), (1, 2), (3, 4), (5, 6)] {
                     let (x, y) = ((a[j].x - a[i].x).abs(), (a[j].y - a[i].y).abs());
-                    assert!((x - drawn).abs() < 1e-9 && (y - drawn).abs() < 1e-9, "radius {radius}: a corner spans {x} × {y}");
+                    assert!(
+                        (x - drawn).abs() < 1e-9 && (y - drawn).abs() < 1e-9,
+                        "radius {radius}: a corner spans {x} × {y}"
+                    );
                 }
             }
         }
@@ -416,7 +565,11 @@ mod tests {
     fn star_alternates_radii() {
         let p = star(Point::ZERO, 10.0, 5.0, 5, 0.0);
         assert_eq!(p.anchor_count(), 10);
-        let d: Vec<f64> = p.subpaths[0].anchors.iter().map(|a| a.p.to_vec2().hypot()).collect();
+        let d: Vec<f64> = p.subpaths[0]
+            .anchors
+            .iter()
+            .map(|a| a.p.to_vec2().hypot())
+            .collect();
         assert!((d[0] - 10.0).abs() < 1e-9 && (d[1] - 5.0).abs() < 1e-9);
     }
 
@@ -440,7 +593,11 @@ mod tests {
         assert_eq!(polar_grid(r, (5, 0.0), (5, 0.0), false).len(), 11);
         // #1008: no radial dividers is none, only the outer ellipse without concentric ones.
         for (radial, len) in [(0, 1), (1, 2), (2, 3)] {
-            assert_eq!(polar_grid(r, (0, 0.0), (radial, 0.0), false).len(), len, "{radial}");
+            assert_eq!(
+                polar_grid(r, (0, 0.0), (radial, 0.0), false).len(),
+                len,
+                "{radial}"
+            );
         }
     }
 
@@ -461,17 +618,38 @@ mod tests {
         let r = Rect::new(0.0, 0.0, 100.0, 100.0);
         let framed = rectangular_grid(r, (3, 0.0), (1, 0.0), true);
         assert!(framed[0].is_closed() && framed[1..].iter().all(|p| !p.is_closed()));
-        assert_eq!(starts(&framed[1..]), [Point::new(0.0, 25.0), Point::new(0.0, 50.0), Point::new(0.0, 75.0), Point::new(50.0, 0.0)]);
+        assert_eq!(
+            starts(&framed[1..]),
+            [
+                Point::new(0.0, 25.0),
+                Point::new(0.0, 50.0),
+                Point::new(0.0, 75.0),
+                Point::new(50.0, 0.0)
+            ]
+        );
         let sides = rectangular_grid(r, (3, 0.0), (1, 0.0), false);
         assert_eq!(sides.len(), 8);
-        assert!(sides.iter().all(|p| !p.is_closed() && p.anchor_count() == 2));
+        assert!(
+            sides
+                .iter()
+                .all(|p| !p.is_closed() && p.anchor_count() == 2)
+        );
         assert_eq!(sides[4..], framed[1..]);
-        for (skew, toward_start) in [(100.0, true), (-100.0, false), (GRID_SKEW_MAX, true), (-1e9, false), (f64::INFINITY, true)] {
+        for (skew, toward_start) in [
+            (100.0, true),
+            (-100.0, false),
+            (GRID_SKEW_MAX, true),
+            (-1e9, false),
+            (f64::INFINITY, true),
+        ] {
             let g = rectangular_grid(r, (3, skew), (3, -skew), true);
             let ys: Vec<f64> = starts(&g[1..4]).iter().map(|p| p.y).collect();
             let xs: Vec<f64> = starts(&g[4..]).iter().map(|p| p.x).collect();
             for v in [&ys, &xs] {
-                assert!(v.windows(2).all(|w| w[0] < w[1]) && v[0] > 0.0 && v[2] < 100.0, "{skew}: {v:?}");
+                assert!(
+                    v.windows(2).all(|w| w[0] < w[1]) && v[0] > 0.0 && v[2] < 100.0,
+                    "{skew}: {v:?}"
+                );
                 // Toward the top (y) and the left (x) is toward 0: the middle divider passes the middle.
                 assert_eq!(v[1] < 50.0, toward_start, "{skew}: {v:?}");
             }
@@ -479,8 +657,17 @@ mod tests {
         }
         // 100 % squares the fraction from the side the dividers crowd to: 1/4, 1/2 and 3/4 from the top.
         let g = rectangular_grid(r, (3, 100.0), (0, 0.0), true);
-        assert!(close(&starts(&g[1..]).iter().map(|p| p.y).collect::<Vec<_>>(), &[6.25, 25.0, 56.25]), "{g:?}");
-        assert_eq!(rectangular_grid(r, (3, f64::NAN), (1, f64::NAN), true), framed);
+        assert!(
+            close(
+                &starts(&g[1..]).iter().map(|p| p.y).collect::<Vec<_>>(),
+                &[6.25, 25.0, 56.25]
+            ),
+            "{g:?}"
+        );
+        assert_eq!(
+            rectangular_grid(r, (3, f64::NAN), (1, f64::NAN), true),
+            framed
+        );
     }
 
     /// #1377: the ellipses come from the outside in and skew toward the outside (positive) or the
@@ -489,40 +676,73 @@ mod tests {
     #[test]
     fn a_polar_grid_skews_its_dividers_and_pairs_ellipses_into_rings() {
         let r = Rect::new(0.0, 0.0, 100.0, 100.0);
-        let widths = |g: &[PathData], n: usize| g[..n].iter().map(|p| p.bounds().unwrap().width()).collect::<Vec<_>>();
-        for (skew, want) in [(0.0, [100.0, 75.0, 50.0, 25.0]), (100.0, [100.0, 93.75, 75.0, 43.75]), (-100.0, [100.0, 56.25, 25.0, 6.25])] {
+        let widths = |g: &[PathData], n: usize| {
+            g[..n]
+                .iter()
+                .map(|p| p.bounds().unwrap().width())
+                .collect::<Vec<_>>()
+        };
+        for (skew, want) in [
+            (0.0, [100.0, 75.0, 50.0, 25.0]),
+            (100.0, [100.0, 93.75, 75.0, 43.75]),
+            (-100.0, [100.0, 56.25, 25.0, 6.25]),
+        ] {
             let got = widths(&polar_grid(r, (3, skew), (0, 0.0), false), 4);
             assert!(close(&got, &want), "{skew}: {got:?}");
         }
         // Radial: four dividers point up, right, down and left; skewed, the first stays up and the
         // other three all point to the right (clockwise of it) or to the left.
-        let ends = |skew: f64| polar_grid(r, (0, 0.0), (4, skew), false)[1..].iter().map(|p| p.subpaths[0].anchors[1].p).collect::<Vec<_>>();
+        let ends = |skew: f64| {
+            polar_grid(r, (0, 0.0), (4, skew), false)[1..]
+                .iter()
+                .map(|p| p.subpaths[0].anchors[1].p)
+                .collect::<Vec<_>>()
+        };
         let even = ends(0.0);
-        for (p, want) in even.iter().zip([(50.0, 0.0), (100.0, 50.0), (50.0, 100.0), (0.0, 50.0)]) {
+        for (p, want) in even
+            .iter()
+            .zip([(50.0, 0.0), (100.0, 50.0), (50.0, 100.0), (0.0, 50.0)])
+        {
             assert!(p.distance(Point::new(want.0, want.1)) < 1e-9, "{even:?}");
         }
         for (skew, right) in [(GRID_SKEW_MAX, true), (-GRID_SKEW_MAX, false)] {
             let e = ends(skew);
             assert!(e[0].distance(even[0]) < 1e-9);
-            assert!(e[1..].iter().all(|p| (p.x > 50.0) == right && (p.x - 50.0).abs() > 1e-6), "{skew}: {e:?}");
+            assert!(
+                e[1..]
+                    .iter()
+                    .all(|p| (p.x > 50.0) == right && (p.x - 50.0).abs() > 1e-6),
+                "{skew}: {e:?}"
+            );
         }
         // Compound: 4 ellipses are 2 rings, 5 are 2 rings and the innermost ellipse; each ring's
         // hole runs against its outside.
         for (concentric, shapes) in [(3, vec![2, 2]), (4, vec![2, 2, 1]), (0, vec![1])] {
             let g = polar_grid(r, (concentric, 0.0), (2, 0.0), true);
             assert_eq!(g.len(), shapes.len() + 2);
-            assert_eq!(g[..shapes.len()].iter().map(|p| p.subpaths.len()).collect::<Vec<_>>(), shapes);
+            assert_eq!(
+                g[..shapes.len()]
+                    .iter()
+                    .map(|p| p.subpaths.len())
+                    .collect::<Vec<_>>(),
+                shapes
+            );
             for ring in g.iter().filter(|p| p.subpaths.len() == 2) {
                 assert!(ring.is_closed());
                 assert!(ring.subpaths[0].signed_area() * ring.subpaths[1].signed_area() < 0.0);
-                assert!(ring.subpaths[0].signed_area().abs() > ring.subpaths[1].signed_area().abs());
+                assert!(
+                    ring.subpaths[0].signed_area().abs() > ring.subpaths[1].signed_area().abs()
+                );
             }
         }
     }
 
     #[test]
     fn arc_open_and_closed() {
-        assert_eq!(arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, false).anchor_count(), 2);
+        assert_eq!(
+            arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, false).anchor_count(),
+            2
+        );
         assert!(arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, true).subpaths[0].closed);
     }
 }

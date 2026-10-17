@@ -55,14 +55,20 @@ pub fn decode_json() -> Value {
 /// the export's wall time; `waitMs` is the encoding side's idle wait for the render.
 pub fn export_json() -> Value {
     let hw = filmcraft_export::hw_encode_stats();
-    let stages: serde_json::Map<String, Value> =
-        filmcraft_export::stage_times().into_iter().map(|(s, ns)| (format!("{}Ms", s.name()), json!(ns as f64 / 1e6))).collect();
+    let stages: serde_json::Map<String, Value> = filmcraft_export::stage_times()
+        .into_iter()
+        .map(|(s, ns)| (format!("{}Ms", s.name()), json!(ns as f64 / 1e6)))
+        .collect();
     json!({"hardware": {"frames": hw.frames, "sessions": hw.sessions, "declined": hw.declined}, "stages": stages})
 }
 
 /// The engine's `perf.stats`.
 pub fn stats(s: &Session) -> Value {
-    let running = s.jobs.iter().filter(|j| j.result.lock().map(|r| r.is_none()).unwrap_or(false)).count();
+    let running = s
+        .jobs
+        .iter()
+        .filter(|j| j.result.lock().map(|r| r.is_none()).unwrap_or(false))
+        .count();
     json!({
         "decode": decode_json(),
         "export": export_json(),
@@ -80,7 +86,10 @@ mod tests {
     #[test]
     fn perf_stats_query_reports_decode_counters() {
         let mut s = Session::default();
-        assert!(s.execute("perf.stats", json!({})).is_ok(), "available without a project");
+        assert!(
+            s.execute("perf.stats", json!({})).is_ok(),
+            "available without a project"
+        );
         s.execute("file.openDemoProject", json!({})).unwrap();
         let undo = s.history.undo.len();
         let v = s.execute("perf.stats", json!({})).unwrap();
@@ -103,16 +112,44 @@ mod tests {
         ] {
             assert!(v["decode"][k].is_number(), "decode.{k} in {v}");
         }
-        for k in ["frames", "softwareFrames", "sessions", "declined", "fallbacks"] {
-            assert!(v["decode"]["hardware"][k].is_number(), "decode.hardware.{k} in {v}");
+        for k in [
+            "frames",
+            "softwareFrames",
+            "sessions",
+            "declined",
+            "fallbacks",
+        ] {
+            assert!(
+                v["decode"]["hardware"][k].is_number(),
+                "decode.hardware.{k} in {v}"
+            );
         }
         assert!(v["decode"]["hardware"]["enabled"].is_boolean());
-        assert!(v["decode"]["hardware"]["backend"].is_null() || v["decode"]["hardware"]["backend"].is_string());
+        assert!(
+            v["decode"]["hardware"]["backend"].is_null()
+                || v["decode"]["hardware"]["backend"].is_string()
+        );
         for k in ["frames", "sessions", "declined"] {
-            assert!(v["export"]["hardware"][k].is_number(), "export.hardware.{k} in {v}");
+            assert!(
+                v["export"]["hardware"][k].is_number(),
+                "export.hardware.{k} in {v}"
+            );
         }
-        for k in ["setupMs", "loudnessMs", "renderMs", "encodeMs", "convertMs", "audioMs", "muxMs", "finishMs", "waitMs"] {
-            assert!(v["export"]["stages"][k].is_number(), "export.stages.{k} in {v}");
+        for k in [
+            "setupMs",
+            "loudnessMs",
+            "renderMs",
+            "encodeMs",
+            "convertMs",
+            "audioMs",
+            "muxMs",
+            "finishMs",
+            "waitMs",
+        ] {
+            assert!(
+                v["export"]["stages"][k].is_number(),
+                "export.stages.{k} in {v}"
+            );
         }
         assert!(v["media"]["openSources"].is_number());
         assert_eq!(v["jobs"]["running"], json!(0));

@@ -57,17 +57,32 @@ pub struct DynCtx<'a> {
 }
 
 fn file_name(p: &str) -> String {
-    std::path::Path::new(p).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| p.to_string())
+    std::path::Path::new(p)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| p.to_string())
 }
 
 fn dyn_entry(label: String, command: &str, params: Value) -> MenuEntry {
-    MenuEntry { label, command: command.into(), params, shortcut: None }
+    MenuEntry {
+        label,
+        command: command.into(),
+        params,
+        shortcut: None,
+    }
 }
 
 /// The bindable holding shortcut `keys` in the active preset (its label).
 fn holder_of(s: &Session, keys: &str) -> Option<String> {
     let t = s.shortcuts();
-    t.bindables.iter().find(|b| t.keys.get(&b.key).is_some_and(|k| k.iter().any(|k| k == keys))).map(|b| b.label.clone())
+    t.bindables
+        .iter()
+        .find(|b| {
+            t.keys
+                .get(&b.key)
+                .is_some_and(|k| k.iter().any(|k| k == keys))
+        })
+        .map(|b| b.label.clone())
 }
 
 /// The entries of a `@dynamic:<name>` node, and the disabled placeholder shown when there are
@@ -81,18 +96,41 @@ pub fn dynamic(s: &Session, name: &str, cx: &DynCtx) -> (Vec<MenuEntry>, Option<
         list.iter()
             .enumerate()
             .map(|(i, p)| {
-                let n =
-                    if stem { std::path::Path::new(p).file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| p.clone()) } else { file_name(p) };
+                let n = if stem {
+                    std::path::Path::new(p)
+                        .file_stem()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| p.clone())
+                } else {
+                    file_name(p)
+                };
                 dyn_entry(n, cmd, json!({"index": i}))
             })
             .collect()
     };
     match name {
-        "recentProjects" => (indexed(&s.prefs.recent_projects, "file.openRecent", false), Some("No Recent Projects")),
-        "recentFootage" => (indexed(&s.prefs.recent_footage, "file.importRecent", false), Some("No Recent Footage")),
-        "recentPresets" => (indexed(&s.prefs.recent_presets, "anim.applyRecentPreset", true), Some("No Recent Presets")),
+        "recentProjects" => (
+            indexed(&s.prefs.recent_projects, "file.openRecent", false),
+            Some("No Recent Projects"),
+        ),
+        "recentFootage" => (
+            indexed(&s.prefs.recent_footage, "file.importRecent", false),
+            Some("No Recent Footage"),
+        ),
+        "recentPresets" => (
+            indexed(&s.prefs.recent_presets, "anim.applyRecentPreset", true),
+            Some("No Recent Presets"),
+        ),
         "history" => (
-            s.history.undo.iter().rev().enumerate().map(|(i, (l, _))| dyn_entry(format!("Undo {l}"), "edit.history", json!({"steps": i + 1}))).collect(),
+            s.history
+                .undo
+                .iter()
+                .rev()
+                .enumerate()
+                .map(|(i, (l, _))| {
+                    dyn_entry(format!("Undo {l}"), "edit.history", json!({"steps": i + 1}))
+                })
+                .collect(),
             Some("No History"),
         ),
         "view3dShortcuts" => (
@@ -125,20 +163,38 @@ pub fn dynamic(s: &Session, name: &str, cx: &DynCtx) -> (Vec<MenuEntry>, Option<
                 .collect(),
             None,
         ),
-        "savedWorkspaces" => (cx.saved_workspaces.iter().map(|w| dyn_entry(w.clone(), "window.workspace", json!({"name": w}))).collect(), None),
+        "savedWorkspaces" => (
+            cx.saved_workspaces
+                .iter()
+                .map(|w| dyn_entry(w.clone(), "window.workspace", json!({"name": w})))
+                .collect(),
+            None,
+        ),
         "openViewers" => (
             s.state
                 .open_comps
                 .iter()
                 .filter(|c| Some(**c) != s.state.active_comp)
-                .filter_map(|c| s.project.item(*c).map(|i| dyn_entry(format!("Composition: {}", i.name), "comp.open", json!({"comp": c.0}))))
+                .filter_map(|c| {
+                    s.project.item(*c).map(|i| {
+                        dyn_entry(
+                            format!("Composition: {}", i.name),
+                            "comp.open",
+                            json!({"comp": c.0}),
+                        )
+                    })
+                })
                 .collect(),
             None,
         ),
         // File ▸ Scripts: installed and sample scripts; the Window menu's ScriptUI panels.
         "scripts" | "scriptPanels" => {
             let panels = name == "scriptPanels";
-            let cmd = if panels { "window.scriptPanel" } else { "file.runScript" };
+            let cmd = if panels {
+                "window.scriptPanel"
+            } else {
+                "file.runScript"
+            };
             (
                 crate::commands::scripts::scripts(s)
                     .into_iter()
@@ -157,11 +213,20 @@ pub fn dynamic(s: &Session, name: &str, cx: &DynCtx) -> (Vec<MenuEntry>, Option<
 pub fn submenu_label(s: &Session, label: &str, cx: &DynCtx) -> String {
     match label {
         "Assign Shortcut to 3D View" => {
-            let v = s.active_comp_id().and_then(|c| s.state.views3d.get(&c)).map(|v| v.current).unwrap_or_default();
-            let name = crate::commands::find(crate::commands::view_command(v)).map(|c| c.label).unwrap_or("Active Camera");
+            let v = s
+                .active_comp_id()
+                .and_then(|c| s.state.views3d.get(&c))
+                .map(|v| v.current)
+                .unwrap_or_default();
+            let name = crate::commands::find(crate::commands::view_command(v))
+                .map(|c| c.label)
+                .unwrap_or("Active Camera");
             format!("Assign Shortcut to “{name}”")
         }
-        "Assign Shortcut to Workspace" => format!("Assign Shortcut to “{}” Workspace", cx.workspace.unwrap_or("Default")),
+        "Assign Shortcut to Workspace" => format!(
+            "Assign Shortcut to “{}” Workspace",
+            cx.workspace.unwrap_or("Default")
+        ),
         _ => label.to_string(),
     }
 }
@@ -182,7 +247,11 @@ impl MenuEntry {
         commands::find(&self.command)
     }
     pub fn params_or_empty(&self) -> Value {
-        if self.params.is_null() { Value::Object(Default::default()) } else { self.params.clone() }
+        if self.params.is_null() {
+            Value::Object(Default::default())
+        } else {
+            self.params.clone()
+        }
     }
 }
 
@@ -211,7 +280,11 @@ pub fn menu_bar() -> &'static [MenuNode] {
 
 /// Every entry with its submenu path (`["Layer", "Blending Mode"]`), depth first.
 pub fn entries() -> Vec<(Vec<String>, &'static MenuEntry)> {
-    fn rec(nodes: &'static [MenuNode], path: &mut Vec<String>, out: &mut Vec<(Vec<String>, &'static MenuEntry)>) {
+    fn rec(
+        nodes: &'static [MenuNode],
+        path: &mut Vec<String>,
+        out: &mut Vec<(Vec<String>, &'static MenuEntry)>,
+    ) {
         for n in nodes {
             match n {
                 MenuNode::Item(e) => out.push((path.clone(), e)),
@@ -231,9 +304,18 @@ pub fn entries() -> Vec<(Vec<String>, &'static MenuEntry)> {
 
 /// Display label of an entry: label names come from Settings ▸ Labels.
 pub fn entry_label(s: &Session, e: &MenuEntry) -> String {
-    let comp_name = || s.active_comp_id().and_then(|c| s.project.item(c)).map(|i| i.name.clone()).unwrap_or_else(|| "(none)".into());
-    let layer_name =
-        || s.active_comp().and_then(|c| s.state.selected_layers.first().and_then(|l| c.layer(*l))).map(|l| l.name.clone()).unwrap_or_else(|| "(none)".into());
+    let comp_name = || {
+        s.active_comp_id()
+            .and_then(|c| s.project.item(c))
+            .map(|i| i.name.clone())
+            .unwrap_or_else(|| "(none)".into())
+    };
+    let layer_name = || {
+        s.active_comp()
+            .and_then(|c| s.state.selected_layers.first().and_then(|l| c.layer(*l)))
+            .map(|l| l.name.clone())
+            .unwrap_or_else(|| "(none)".into())
+    };
     match e.command.as_str() {
         // Window menu: the panels' current viewer instances.
         "window.panel" => match e.params.get("panel").and_then(Value::as_str) {
@@ -241,18 +323,36 @@ pub fn entry_label(s: &Session, e: &MenuEntry) -> String {
             Some("timeline") => format!("Timeline: {}", comp_name()),
             Some("flowchart") => format!("Flowchart: {}", comp_name()),
             Some("layer") => format!("Layer: {}", layer_name()),
-            Some("effectControls") if e.label == "Effect Controls" => format!("Effect Controls: {}", layer_name()),
+            Some("effectControls") if e.label == "Effect Controls" => {
+                format!("Effect Controls: {}", layer_name())
+            }
             // The footage shown in the Footage panel (else the selected footage).
             Some("footage") => {
-                let shown = s.state.footage_panel.as_ref().and_then(|f| s.project.item(f.item));
+                let shown = s
+                    .state
+                    .footage_panel
+                    .as_ref()
+                    .and_then(|f| s.project.item(f.item));
                 let f = shown.or_else(|| {
-                    s.state.project_selection.iter().filter_map(|i| s.project.item(*i)).find(|i| matches!(i.kind, effectcraft_project::ItemKind::Footage(_)))
+                    s.state
+                        .project_selection
+                        .iter()
+                        .filter_map(|i| s.project.item(*i))
+                        .find(|i| matches!(i.kind, effectcraft_project::ItemKind::Footage(_)))
                 });
-                format!("Footage: {}", f.map(|i| i.name.clone()).unwrap_or_else(|| "(none)".into()))
+                format!(
+                    "Footage: {}",
+                    f.map(|i| i.name.clone()).unwrap_or_else(|| "(none)".into())
+                )
             }
             _ => e.label.clone(),
         },
-        "edit.label" => match e.params.get("label").and_then(Value::as_str).and_then(effectcraft_color::Label::from_name) {
+        "edit.label" => match e
+            .params
+            .get("label")
+            .and_then(Value::as_str)
+            .and_then(effectcraft_color::Label::from_name)
+        {
             Some(l) if l != effectcraft_color::Label::None => s.prefs.label_name(l),
             _ => e.label.clone(),
         },
@@ -296,17 +396,26 @@ pub fn checked(s: &Session, command: &str, params: &Value) -> Option<bool> {
         "layer.quality" => {
             use effectcraft_project::Quality::*;
             let q = layer?.switches.quality;
-            Some(matches!((pstr("quality")?, q), ("best", Best) | ("draft", Draft) | ("wireframe", Wireframe)))
+            Some(matches!(
+                (pstr("quality")?, q),
+                ("best", Best) | ("draft", Draft) | ("wireframe", Wireframe)
+            ))
         }
         "layer.sampling" => {
             use effectcraft_project::Sampling::*;
             let q = layer?.switches.sampling;
-            Some(matches!((pstr("sampling")?, q), ("bilinear", Bilinear) | ("bicubic", Bicubic)))
+            Some(matches!(
+                (pstr("sampling")?, q),
+                ("bilinear", Bilinear) | ("bicubic", Bicubic)
+            ))
         }
         "layer.frameBlending" => {
             use effectcraft_project::FrameBlend::*;
             let q = layer?.switches.frame_blend;
-            Some(matches!((pstr("mode")?, q), ("off", Off) | ("frameMix", FrameMix) | ("pixelMotion", PixelMotion)))
+            Some(matches!(
+                (pstr("mode")?, q),
+                ("off", Off) | ("frameMix", FrameMix) | ("pixelMotion", PixelMotion)
+            ))
         }
         "layer.trackMatte" => {
             use effectcraft_project::MatteKind::*;
@@ -322,35 +431,57 @@ pub fn checked(s: &Session, command: &str, params: &Value) -> Option<bool> {
         }
         "layer.markersLock" => Some(layer?.markers_locked),
         "layer.mask.hideLocked" => Some(s.state.hide_locked_masks),
-        "view.res.full" | "view.res.half" | "view.res.third" | "view.res.quarter" | "view.res.custom" => {
-            Some(comp.resolution.label().eq_ignore_ascii_case(command.trim_start_matches("view.res.")))
-        }
-        "view.layout" => Some(params.get("views").and_then(Value::as_u64) == Some(s.state.view_layout.max(1) as u64)),
+        "view.res.full" | "view.res.half" | "view.res.third" | "view.res.quarter"
+        | "view.res.custom" => Some(
+            comp.resolution
+                .label()
+                .eq_ignore_ascii_case(command.trim_start_matches("view.res.")),
+        ),
+        "view.layout" => Some(
+            params.get("views").and_then(Value::as_u64) == Some(s.state.view_layout.max(1) as u64),
+        ),
         "view.shareViewOptions" => Some(s.state.share_view_options),
         "view.extendedViewer" => Some(s.prefs.three_d.extended_viewer),
         "view.snapping" => Some(s.state.snapping),
         "view.displayColorManagement" => Some(s.state.viewer.display_color_management),
-        "view.customRgb" => Some(s.state.viewer.simulation.profile == crate::viewer::SimProfile::MyCustom),
+        "view.customRgb" => {
+            Some(s.state.viewer.simulation.profile == crate::viewer::SimProfile::MyCustom)
+        }
         "view.simulateOutput" => {
             let want = pstr("profile")?;
             let sim = s.state.viewer.simulation;
             Some(if want == "custom" {
-                sim.profile != crate::viewer::SimProfile::None && sim == s.state.viewer.custom_simulation
+                sim.profile != crate::viewer::SimProfile::None
+                    && sim == s.state.viewer.custom_simulation
             } else {
                 crate::viewer::SimProfile::parse(want) == Some(sim.profile)
-                    && (sim != s.state.viewer.custom_simulation || sim.profile == crate::viewer::SimProfile::None)
+                    && (sim != s.state.viewer.custom_simulation
+                        || sim.profile == crate::viewer::SimProfile::None)
             })
         }
         "layer.mask.motionBlur" | "layer.mask.featherFalloff" | "path.rotoBezier" => {
             use effectcraft_project::{FeatherFalloff, GroupKind, MaskMotionBlur};
-            let GroupKind::Mask { motion_blur, feather_falloff, roto_bezier, .. } = layer?.masks()?.groups().next()?.kind else { return None };
+            let GroupKind::Mask {
+                motion_blur,
+                feather_falloff,
+                roto_bezier,
+                ..
+            } = layer?.masks()?.groups().next()?.kind
+            else {
+                return None;
+            };
             Some(match command {
                 "path.rotoBezier" => roto_bezier,
                 "layer.mask.motionBlur" => matches!(
                     (pstr("mode")?, motion_blur),
-                    ("sameAsLayer", MaskMotionBlur::SameAsLayer) | ("on", MaskMotionBlur::On) | ("off", MaskMotionBlur::Off)
+                    ("sameAsLayer", MaskMotionBlur::SameAsLayer)
+                        | ("on", MaskMotionBlur::On)
+                        | ("off", MaskMotionBlur::Off)
                 ),
-                _ => matches!((pstr("mode")?, feather_falloff), ("smooth", FeatherFalloff::Smooth) | ("linear", FeatherFalloff::Linear)),
+                _ => matches!(
+                    (pstr("mode")?, feather_falloff),
+                    ("smooth", FeatherFalloff::Smooth) | ("linear", FeatherFalloff::Linear)
+                ),
             })
         }
         _ => None,
@@ -361,7 +492,14 @@ pub fn checked(s: &Session, command: &str, params: &Value) -> Option<bool> {
 /// Windows (as in After Effects) and "Reveal in File Manager" elsewhere.
 fn platform_label(label: &str, mac: bool) -> String {
     match label.strip_prefix("Reveal in Finder") {
-        Some(rest) if !mac => format!("Reveal in {}{rest}", if cfg!(target_os = "windows") { "Explorer" } else { "File Manager" }),
+        Some(rest) if !mac => format!(
+            "Reveal in {}{rest}",
+            if cfg!(target_os = "windows") {
+                "Explorer"
+            } else {
+                "File Manager"
+            }
+        ),
         _ => label.to_string(),
     }
 }
@@ -394,13 +532,20 @@ pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
             *body = rest;
             Some(keep)
         };
-        if let Some(false) = tagged("[mac] ", mac, &mut body).or_else(|| tagged("[!mac] ", !mac, &mut body)) {
+        if let Some(false) =
+            tagged("[mac] ", mac, &mut body).or_else(|| tagged("[!mac] ", !mac, &mut body))
+        {
             skip_below = Some(depth);
             continue;
         }
         lines.push(Line { depth, body });
     }
-    fn build(lines: &[Line], i: &mut usize, depth: usize, mac: bool) -> Result<Vec<MenuNode>, String> {
+    fn build(
+        lines: &[Line],
+        i: &mut usize,
+        depth: usize,
+        mac: bool,
+    ) -> Result<Vec<MenuNode>, String> {
         let mut out = vec![];
         while *i < lines.len() {
             let l = &lines[*i];
@@ -420,7 +565,9 @@ pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
                 continue;
             }
             if let Some(name) = l.body.strip_prefix("@dynamic:") {
-                out.push(MenuNode::Dynamic { name: name.trim().to_string() });
+                out.push(MenuNode::Dynamic {
+                    name: name.trim().to_string(),
+                });
                 continue;
             }
             let mut parts = l.body.split(" | ");
@@ -429,13 +576,28 @@ pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
                 Some(cmd) => {
                     let cmd = cmd.trim();
                     let (command, params) = match cmd.split_once(' ') {
-                        Some((c, json)) => (c.to_string(), serde_json::from_str(json.trim()).map_err(|e| format!("`{}`: {e}", l.body))?),
+                        Some((c, json)) => (
+                            c.to_string(),
+                            serde_json::from_str(json.trim())
+                                .map_err(|e| format!("`{}`: {e}", l.body))?,
+                        ),
                         None => (cmd.to_string(), Value::Null),
                     };
                     // Entries with bound params state their own shortcut; plain entries use the command's.
-                    let inherited = if params.is_null() { commands::find(&command).and_then(|c| c.shortcut).map(str::to_string) } else { None };
+                    let inherited = if params.is_null() {
+                        commands::find(&command)
+                            .and_then(|c| c.shortcut)
+                            .map(str::to_string)
+                    } else {
+                        None
+                    };
                     let shortcut = parts.next().map(|s| s.trim().to_string()).or(inherited);
-                    out.push(MenuNode::Item(MenuEntry { label, command, params, shortcut }));
+                    out.push(MenuNode::Item(MenuEntry {
+                        label,
+                        command,
+                        params,
+                        shortcut,
+                    }));
                 }
                 None => {
                     let children = build(lines, i, depth + 1, mac)?;
@@ -456,8 +618,12 @@ pub fn parse(text: &str, mac: bool) -> Result<Vec<MenuNode>, String> {
 fn effect_categories() -> Vec<MenuNode> {
     let mut cats: Vec<(&str, Vec<MenuNode>)> = vec![];
     for e in crate::effects::all() {
-        let entry =
-            MenuNode::Item(MenuEntry { label: e.name.into(), command: "effect.apply".into(), params: serde_json::json!({"effect": e.id}), shortcut: None });
+        let entry = MenuNode::Item(MenuEntry {
+            label: e.name.into(),
+            command: "effect.apply".into(),
+            params: serde_json::json!({"effect": e.id}),
+            shortcut: None,
+        });
         match cats.iter_mut().find(|(c, _)| *c == e.category) {
             Some((_, v)) => v.push(entry),
             None => cats.push((e.category, vec![entry])),
@@ -470,7 +636,12 @@ fn effect_categories() -> Vec<MenuNode> {
             _ => String::new(),
         });
     }
-    cats.into_iter().map(|(c, children)| MenuNode::Submenu { label: c.to_string(), children }).collect()
+    cats.into_iter()
+        .map(|(c, children)| MenuNode::Submenu {
+            label: c.to_string(),
+            children,
+        })
+        .collect()
 }
 
 /// The After Effects menu layout. Labels use "..." like AE's macOS menus.

@@ -48,7 +48,9 @@ pub struct HomeDb {
 
 impl std::fmt::Debug for HomeDb {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HomeDb").field("path", &self.path).finish_non_exhaustive()
+        f.debug_struct("HomeDb")
+            .field("path", &self.path)
+            .finish_non_exhaustive()
     }
 }
 
@@ -74,7 +76,10 @@ impl HomeDb {
         let path = path.as_ref();
         let mut conn = sqlite::open(path, policy())?;
         migrate_sqlite(&mut conn, &migrations()?, &MigrateOptions::default())?;
-        Ok(Self { conn, path: Some(path.to_path_buf()) })
+        Ok(Self {
+            conn,
+            path: Some(path.to_path_buf()),
+        })
     }
 
     /// Open a transient in-memory database, migrated (tests, dry runs).
@@ -96,7 +101,10 @@ impl HomeDb {
     pub fn open_read_only(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         let conn = sqlite::open(path, OpenPolicy::read_only())?;
-        Ok(Self { conn, path: Some(path.to_path_buf()) })
+        Ok(Self {
+            conn,
+            path: Some(path.to_path_buf()),
+        })
     }
 
     /// The underlying connection.
@@ -131,7 +139,10 @@ impl HomeDb {
             return Ok(0);
         }
         let version: Option<i64> = self.conn.query_row(
-            &format!("SELECT max(version) FROM {}", aphrody_sql::migrate::DEFAULT_TABLE),
+            &format!(
+                "SELECT max(version) FROM {}",
+                aphrody_sql::migrate::DEFAULT_TABLE
+            ),
             [],
             |row| row.get(0),
         )?;
@@ -144,8 +155,14 @@ impl HomeDb {
     ///
     /// [`StoreError::Integrity`] when SQLite reports anything but `ok`.
     pub fn integrity_check(&self) -> Result<()> {
-        let result: String = self.conn.query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
-        if result == "ok" { Ok(()) } else { Err(StoreError::Integrity(result)) }
+        let result: String = self
+            .conn
+            .query_row("PRAGMA integrity_check", [], |row| row.get(0))?;
+        if result == "ok" {
+            Ok(())
+        } else {
+            Err(StoreError::Integrity(result))
+        }
     }
 }
 
@@ -188,8 +205,10 @@ mod tests {
         let second = HomeDb::open_path(&path).unwrap();
         assert_eq!(second.schema_version().unwrap(), 7);
         second.integrity_check().unwrap();
-        let mode: String =
-            second.conn().pragma_query_value(None, "journal_mode", |r| r.get(0)).unwrap();
+        let mode: String = second
+            .conn()
+            .pragma_query_value(None, "journal_mode", |r| r.get(0))
+            .unwrap();
         assert_eq!(mode, "wal");
     }
 
@@ -204,14 +223,20 @@ mod tests {
         let db = HomeDb::open_path(&path).unwrap();
         let (docs, chunks): (i64, i64) = db
             .conn()
-            .query_row("SELECT (SELECT count(*) FROM docs), (SELECT count(*) FROM chunks)", [], |r| {
-                Ok((r.get(0)?, r.get(1)?))
-            })
+            .query_row(
+                "SELECT (SELECT count(*) FROM docs), (SELECT count(*) FROM chunks)",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
             .unwrap();
         assert_eq!((docs, chunks), (1, 1));
         // The new column exists and is NULL for the pre-existing document.
-        let source: Option<i64> =
-            db.conn().query_row("SELECT source_id FROM docs WHERE path = 'a.rs'", [], |r| r.get(0)).unwrap();
+        let source: Option<i64> = db
+            .conn()
+            .query_row("SELECT source_id FROM docs WHERE path = 'a.rs'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
         assert_eq!(source, None);
         assert_eq!(db.schema_version().unwrap(), 7);
     }
@@ -220,9 +245,16 @@ mod tests {
     fn a_modified_applied_migration_is_rejected() {
         let mut db = HomeDb::open_in_memory().unwrap();
         db.conn_mut()
-            .execute("UPDATE aphrody_migrations SET sha256 = ?1 WHERE version = 1", ["0".repeat(64)])
+            .execute(
+                "UPDATE aphrody_migrations SET sha256 = ?1 WHERE version = 1",
+                ["0".repeat(64)],
+            )
             .unwrap();
-        let result = migrate_sqlite(db.conn_mut(), &migrations().unwrap(), &MigrateOptions::default());
+        let result = migrate_sqlite(
+            db.conn_mut(),
+            &migrations().unwrap(),
+            &MigrateOptions::default(),
+        );
         assert!(result.is_err());
     }
 

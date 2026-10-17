@@ -47,7 +47,11 @@ impl ColorProfile {
 
     /// Parse an id or label, ignoring case, spaces, `-` and `_` (`"Display P3"`, `"display-p3"`, `"p3"`).
     pub fn parse(s: &str) -> Option<Self> {
-        let k: String = s.chars().filter(|c| !matches!(c, ' ' | '-' | '_')).flat_map(char::to_lowercase).collect();
+        let k: String = s
+            .chars()
+            .filter(|c| !matches!(c, ' ' | '-' | '_'))
+            .flat_map(char::to_lowercase)
+            .collect();
         match k.as_str() {
             "srgb" => Some(ColorProfile::Srgb),
             "displayp3" | "p3" => Some(ColorProfile::DisplayP3),
@@ -120,35 +124,64 @@ impl ProfileConversion {
     /// (the colour picker's gamut warning).
     pub fn clips(&self, c: Color) -> bool {
         let Some(m) = &self.m else { return false };
-        apply(m, [decode(c.r), decode(c.g), decode(c.b)]).into_iter().any(outside)
+        apply(m, [decode(c.r), decode(c.g), decode(c.b)])
+            .into_iter()
+            .any(outside)
     }
 
     /// Which premultiplied 8-bit RGBA pixels fall outside the target space (see [`Self::clips`]):
     /// the canvas's soft proof.
     pub fn clipped_pixels(&self, rgba: &[u8]) -> Vec<bool> {
         let pixels = rgba.as_chunks::<4>().0;
-        let Some(m) = &self.m else { return vec![false; pixels.len()] };
+        let Some(m) = &self.m else {
+            return vec![false; pixels.len()];
+        };
         let to_linear: [f64; 256] = std::array::from_fn(|i| decode(i as f32 / 255.0));
         let lin = |v: u8| to_linear.get(usize::from(v)).copied().unwrap_or(0.0);
-        pixels.iter().map(|&[r, g, b, a]| a != 0 && apply(m, [r, g, b].map(|c| lin(straight(c, a)))).into_iter().any(outside)).collect()
+        pixels
+            .iter()
+            .map(|&[r, g, b, a]| {
+                a != 0
+                    && apply(m, [r, g, b].map(|c| lin(straight(c, a))))
+                        .into_iter()
+                        .any(outside)
+            })
+            .collect()
     }
 
     /// Convert premultiplied 8-bit RGBA pixels in place (table-driven; a no-op for the identity).
     pub fn apply_pixels(&self, rgba: &mut [u8]) {
         let Some(m) = &self.m else { return };
         let to_linear: [f32; 256] = std::array::from_fn(|i| decode(i as f32 / 255.0) as f32);
-        let to_encoded: Vec<u8> = (0..ENCODE_STEPS).map(|i| (encode(i as f64 / (ENCODE_STEPS - 1) as f64) * 255.0).round() as u8).collect();
+        let to_encoded: Vec<u8> = (0..ENCODE_STEPS)
+            .map(|i| (encode(i as f64 / (ENCODE_STEPS - 1) as f64) * 255.0).round() as u8)
+            .collect();
         let m = m.map(|row| row.map(|v| v as f32));
         let lin = |v: u8| to_linear.get(usize::from(v)).copied().unwrap_or(0.0);
-        let enc = |l: f32| to_encoded.get((l.clamp(0.0, 1.0) * (ENCODE_STEPS - 1) as f32).round() as usize).copied().unwrap_or(0);
+        let enc = |l: f32| {
+            to_encoded
+                .get((l.clamp(0.0, 1.0) * (ENCODE_STEPS - 1) as f32).round() as usize)
+                .copied()
+                .unwrap_or(0)
+        };
         for [r, g, b, a] in rgba.as_chunks_mut::<4>().0.iter_mut() {
             if *a == 0 {
                 continue;
             }
             let alpha = u32::from(*a);
-            let v = [lin(straight(*r, *a)), lin(straight(*g, *a)), lin(straight(*b, *a))];
+            let v = [
+                lin(straight(*r, *a)),
+                lin(straight(*g, *a)),
+                lin(straight(*b, *a)),
+            ];
             let out = m.map(|row| enc(row[0] * v[0] + row[1] * v[1] + row[2] * v[2]));
-            let premul = |c: u8| if alpha == 255 { c } else { ((u32::from(c) * alpha + 127) / 255) as u8 };
+            let premul = |c: u8| {
+                if alpha == 255 {
+                    c
+                } else {
+                    ((u32::from(c) * alpha + 127) / 255) as u8
+                }
+            };
             (*r, *g, *b) = (premul(out[0]), premul(out[1]), premul(out[2]));
         }
     }
@@ -157,14 +190,24 @@ impl ProfileConversion {
 /// A premultiplied 8-bit channel without its alpha (`a` > 0).
 fn straight(c: u8, a: u8) -> u8 {
     let alpha = u32::from(a.max(1));
-    if alpha == 255 { c } else { ((u32::from(c) * 255 + alpha / 2) / alpha).min(255) as u8 }
+    if alpha == 255 {
+        c
+    } else {
+        ((u32::from(c) * 255 + alpha / 2) / alpha).min(255) as u8
+    }
 }
 
 /// A linear channel the target space can't hold: below 0 or above 1 by more than two 8-bit steps
 /// once encoded (smaller excesses are the rounding of 8-bit values in the other space).
 fn outside(l: f64) -> bool {
     const SLACK: f64 = 2.0 / 255.0;
-    let enc = |x: f64| if x <= 0.003_130_8 { x * 12.92 } else { 1.055 * x.powf(1.0 / 2.4) - 0.055 };
+    let enc = |x: f64| {
+        if x <= 0.003_130_8 {
+            x * 12.92
+        } else {
+            1.055 * x.powf(1.0 / 2.4) - 0.055
+        }
+    };
     (l < 0.0 && enc(-l) > SLACK) || (l > 1.0 && enc(l) > 1.0 + SLACK)
 }
 
@@ -173,14 +216,30 @@ const ENCODE_STEPS: usize = 4096;
 
 /// The sRGB transfer function, encoded value → linear light.
 fn decode(v: f32) -> f64 {
-    let v = f64::from(if v.is_finite() { v.clamp(0.0, 1.0) } else { 0.0 });
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    let v = f64::from(if v.is_finite() {
+        v.clamp(0.0, 1.0)
+    } else {
+        0.0
+    });
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 
 /// The sRGB transfer function, linear light → encoded value (clipped to 0..=1).
 fn encode(l: f64) -> f32 {
-    let l = if l.is_finite() { l.clamp(0.0, 1.0) } else { 0.0 };
-    (if l <= 0.003_130_8 { l * 12.92 } else { 1.055 * l.powf(1.0 / 2.4) - 0.055 }) as f32
+    let l = if l.is_finite() {
+        l.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    (if l <= 0.003_130_8 {
+        l * 12.92
+    } else {
+        1.055 * l.powf(1.0 / 2.4) - 0.055
+    }) as f32
 }
 
 /// The XYZ of chromaticity `(x, y)` at luminance 1.

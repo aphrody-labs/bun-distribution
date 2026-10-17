@@ -12,7 +12,11 @@ fn a_fresh_session_finds_installed_fonts_by_name() {
     probe.load_system_fonts();
     // An installed family that isn't bundled and that loads.
     let installed = probe.families();
-    let Some(family) = installed.iter().filter(|f| !bundled.contains(f)).find(|f| probe.face(f, "Regular").family == **f) else {
+    let Some(family) = installed
+        .iter()
+        .filter(|f| !bundled.contains(f))
+        .find(|f| probe.face(f, "Regular").family == **f)
+    else {
         eprintln!("no system fonts installed: nothing to check");
         return;
     };

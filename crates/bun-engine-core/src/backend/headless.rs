@@ -69,7 +69,10 @@ impl<C: HeadlessCore> HeadlessSession<C> {
     /// Starts a session at virtual tick zero.
     #[must_use]
     pub const fn new(core: C) -> Self {
-        Self { core, elapsed_ticks: 0 }
+        Self {
+            core,
+            elapsed_ticks: 0,
+        }
     }
 
     /// Returns the current virtual tick count.
@@ -85,7 +88,9 @@ impl<C: HeadlessCore> HeadlessSession<C> {
         input: &C::Input,
     ) -> Result<StepOutcome, AdvanceError<C::Error>> {
         // Check the full budget before calling the core so overflow never leaves a half-step.
-        self.elapsed_ticks.checked_add(budget.get()).ok_or(AdvanceError::ClockOverflow)?;
+        self.elapsed_ticks
+            .checked_add(budget.get())
+            .ok_or(AdvanceError::ClockOverflow)?;
         let outcome = self.core.step(budget, input).map_err(AdvanceError::Core)?;
         if outcome.ticks.get() > budget.get() {
             return Err(AdvanceError::InvalidStep);
@@ -97,7 +102,10 @@ impl<C: HeadlessCore> HeadlessSession<C> {
     /// Captures console state and the virtual clock together.
     #[must_use]
     pub fn snapshot(&self) -> SessionState<C::State> {
-        SessionState { core: self.core.snapshot(), elapsed_ticks: self.elapsed_ticks }
+        SessionState {
+            core: self.core.snapshot(),
+            elapsed_ticks: self.elapsed_ticks,
+        }
     }
 
     /// Restores console state and the virtual clock together.
@@ -150,7 +158,10 @@ mod tests {
 
     #[test]
     fn synthetic_core_replays_after_restore() {
-        let mut session = HeadlessSession::new(CounterCore { count: 0, overrun: false });
+        let mut session = HeadlessSession::new(CounterCore {
+            count: 0,
+            overrun: false,
+        });
         let budget = NonZeroU64::new(2).unwrap();
         session.advance(budget, &1).unwrap();
         let saved = session.snapshot();
@@ -163,7 +174,10 @@ mod tests {
 
     #[test]
     fn rejects_core_budget_overrun() {
-        let mut session = HeadlessSession::new(CounterCore { count: 0, overrun: true });
+        let mut session = HeadlessSession::new(CounterCore {
+            count: 0,
+            overrun: true,
+        });
         let result = session.advance(NonZeroU64::new(1).unwrap(), &0);
         assert_eq!(result, Err(AdvanceError::InvalidStep));
         assert_eq!(session.elapsed_ticks(), 0);
@@ -171,8 +185,14 @@ mod tests {
 
     #[test]
     fn rejects_virtual_clock_overflow() {
-        let mut session = HeadlessSession::new(CounterCore { count: 0, overrun: false });
-        session.restore(SessionState { core: 0, elapsed_ticks: u64::MAX });
+        let mut session = HeadlessSession::new(CounterCore {
+            count: 0,
+            overrun: false,
+        });
+        session.restore(SessionState {
+            core: 0,
+            elapsed_ticks: u64::MAX,
+        });
         let result = session.advance(NonZeroU64::new(1).unwrap(), &0);
         assert_eq!(result, Err(AdvanceError::ClockOverflow));
     }

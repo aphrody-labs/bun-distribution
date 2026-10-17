@@ -83,7 +83,9 @@ fn table_exists(conn: &Connection, table: &str) -> rusqlite::Result<bool> {
 }
 
 fn json(raw: Option<String>) -> Value {
-    raw.as_deref().and_then(|value| serde_json::from_str(value).ok()).unwrap_or(Value::Null)
+    raw.as_deref()
+        .and_then(|value| serde_json::from_str(value).ok())
+        .unwrap_or(Value::Null)
 }
 
 fn placeholder(code: Option<&str>, fr: Option<&str>, en: Option<&str>) -> bool {
@@ -128,7 +130,11 @@ fn special_row(row: &Row<'_>) -> rusqlite::Result<TacticRecord> {
     let code: Option<String> = row.get(1)?;
     let fr: Option<String> = row.get(2)?;
     let en: Option<String> = row.get(3)?;
-    let name = en.clone().or(fr.clone()).or(code.clone()).unwrap_or_default();
+    let name = en
+        .clone()
+        .or(fr.clone())
+        .or(code.clone())
+        .unwrap_or_default();
     Ok(TacticRecord {
         id,
         internal_code: code,
@@ -162,7 +168,9 @@ fn read_main(conn: &Connection) -> anyhow::Result<Vec<TacticRecord>> {
         return Ok(Vec::new());
     }
     let mut statement = conn.prepare("SELECT name,name_fr,name_ja,effect1,effect2,effect3,duration,cooldown,shop,id,internal_code,description_fr,description_en,description_ja,element_id,element,power,recast_time,partner_count,partner_ids,image_url FROM inagle_tactics")?;
-    Ok(statement.query_map([], main_row)?.collect::<Result<Vec<_>, _>>()?)
+    Ok(statement
+        .query_map([], main_row)?
+        .collect::<Result<Vec<_>, _>>()?)
 }
 
 fn read_special(conn: &Connection) -> anyhow::Result<Vec<TacticRecord>> {
@@ -170,7 +178,9 @@ fn read_special(conn: &Connection) -> anyhow::Result<Vec<TacticRecord>> {
         return Ok(Vec::new());
     }
     let mut statement = conn.prepare("SELECT id,internal_code,name_fr,name_en,name_ja,description_fr,description_en,description_ja,power,recast_time,element_id,element,partner_count,partner_ids,data FROM inagle_special_tactics")?;
-    Ok(statement.query_map([], special_row)?.collect::<Result<Vec<_>, _>>()?)
+    Ok(statement
+        .query_map([], special_row)?
+        .collect::<Result<Vec<_>, _>>()?)
 }
 
 fn slug(value: &str) -> String {
@@ -195,8 +205,9 @@ fn merge_rows(mut main: Vec<TacticRecord>, special: Vec<TacticRecord>) -> Vec<Ta
             continue;
         }
         if let Some(code) = extra.internal_code.as_deref()
-            && let Some(primary) =
-                main.iter_mut().find(|row| row.internal_code.as_deref() == Some(code))
+            && let Some(primary) = main
+                .iter_mut()
+                .find(|row| row.internal_code.as_deref() == Some(code))
         {
             if primary.element.is_none() {
                 primary.element = extra.element;
@@ -231,9 +242,24 @@ pub fn list_tactics(conn: &Connection, request: &TacticListRequest) -> anyhow::R
         let q = query.to_lowercase();
         rows.retain(|row| {
             row.name.to_lowercase().contains(&q)
-                || row.name_fr.as_deref().unwrap_or("").to_lowercase().contains(&q)
-                || row.name_en.as_deref().unwrap_or("").to_lowercase().contains(&q)
-                || row.internal_code.as_deref().unwrap_or("").to_lowercase().contains(&q)
+                || row
+                    .name_fr
+                    .as_deref()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&q)
+                || row
+                    .name_en
+                    .as_deref()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&q)
+                || row
+                    .internal_code
+                    .as_deref()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&q)
         });
     }
     rows.sort_by_key(|row| {
@@ -294,19 +320,31 @@ mod tests {
     }
     #[test]
     fn merges_primary_and_special_rows_and_filters_placeholders() {
-        let page =
-            list_tactics(&fixture(), &TacticListRequest { limit: Some(20), ..Default::default() })
-                .unwrap();
+        let page = list_tactics(
+            &fixture(),
+            &TacticListRequest {
+                limit: Some(20),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(page.total, 2);
-        let primary =
-            page.data.iter().find(|row| row.internal_code.as_deref() == Some("wht00001")).unwrap();
+        let primary = page
+            .data
+            .iter()
+            .find(|row| row.internal_code.as_deref() == Some("wht00001"))
+            .unwrap();
         assert_eq!(primary.power, Some(40));
         assert_eq!(primary.partner_ids[0], "c1");
     }
     #[test]
     fn resolves_special_tactic_by_slug() {
         assert_eq!(
-            get_tactic(&fixture(), "scenario-move").unwrap().unwrap().internal_code.as_deref(),
+            get_tactic(&fixture(), "scenario-move")
+                .unwrap()
+                .unwrap()
+                .internal_code
+                .as_deref(),
             Some("wht00002")
         );
     }

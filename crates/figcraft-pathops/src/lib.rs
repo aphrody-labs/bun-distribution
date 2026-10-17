@@ -4,7 +4,14 @@
 //!   sweep-line topology from `linesweeper`); results use the even-odd rule.
 //! - [`stroke_outline`]: a stroke as a fill, with Figma's Inside / Center / Outside alignment,
 //!   dashes, caps, joins, arrowheads, variable width profiles ([`width`]) and brushes ([`brush`]).
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod brush;
 #[cfg(test)]
@@ -66,7 +73,9 @@ fn binary(a: &BezPath, b: &BezPath, op: linesweeper::BinaryOp) -> Result<BezPath
     if !finite(a) || !finite(b) {
         return Err(PathOpsError::BadInput);
     }
-    let contours = linesweeper::binary_op(&closed(a), &closed(b), linesweeper::FillRule::NonZero, op).map_err(|_| PathOpsError::BadInput)?;
+    let contours =
+        linesweeper::binary_op(&closed(a), &closed(b), linesweeper::FillRule::NonZero, op)
+            .map_err(|_| PathOpsError::BadInput)?;
     let mut out = BezPath::new();
     for c in contours.contours() {
         out.extend(c.path.elements().iter().copied());
@@ -99,9 +108,13 @@ pub fn boolean(paths: &[BezPath], op: BoolOp) -> Result<BezPath, PathOpsError> {
 /// Fold `operands` bottom to top, each combined with the result of those below it by its own
 /// operation (the bottom operand's operation is unused): what a boolean group whose operands carry
 /// their own operations paints. A lone operand comes out simplified.
-pub fn boolean_ops<'a>(operands: impl IntoIterator<Item = (&'a BezPath, BoolOp)>) -> Result<BezPath, PathOpsError> {
+pub fn boolean_ops<'a>(
+    operands: impl IntoIterator<Item = (&'a BezPath, BoolOp)>,
+) -> Result<BezPath, PathOpsError> {
     let mut it = operands.into_iter();
-    let Some((first, _)) = it.next() else { return Ok(BezPath::new()) };
+    let Some((first, _)) = it.next() else {
+        return Ok(BezPath::new());
+    };
     let mut acc: Option<BezPath> = None;
     for (p, op) in it {
         acc = Some(boolean_step(acc.as_ref().unwrap_or(first), p, op)?);
@@ -189,16 +202,31 @@ pub fn faces(paths: &[(BezPath, bool)]) -> Result<Vec<ArrangementFace>, PathOpsE
     if closed_paths.iter().all(|p| p.elements().is_empty()) {
         return Ok(Vec::new());
     }
-    let bbox = closed_paths.iter().filter(|p| !p.elements().is_empty()).map(Shape::bounding_box).reduce(|a, b| a.union(b));
-    let m = bbox.map(|b| b.x0.abs().max(b.x1.abs()).max(b.y0.abs()).max(b.y1.abs())).unwrap_or(0.0);
+    let bbox = closed_paths
+        .iter()
+        .filter(|p| !p.elements().is_empty())
+        .map(Shape::bounding_box)
+        .reduce(|a, b| a.union(b));
+    let m = bbox
+        .map(|b| b.x0.abs().max(b.x1.abs()).max(b.y0.abs()).max(b.y1.abs()))
+        .unwrap_or(0.0);
     let eps = (m * f64::EPSILON * 64.0).max(1e-6);
-    let topo = linesweeper::topology::Topology::<Windings>::from_paths(closed_paths.iter().enumerate().map(|(i, p)| (p, i)), eps)
-        .map_err(|_| PathOpsError::BadInput)?;
+    let topo = linesweeper::topology::Topology::<Windings>::from_paths(
+        closed_paths.iter().enumerate().map(|(i, p)| (p, i)),
+        eps,
+    )
+    .map_err(|_| PathOpsError::BadInput)?;
     let even_odd: Vec<bool> = paths.iter().map(|(_, e)| *e).collect();
     let cover_of = |w: &Windings| -> Vec<usize> {
         w.0.iter()
             .enumerate()
-            .filter(|(i, n)| if even_odd.get(*i).copied().unwrap_or(false) { *n % 2 != 0 } else { **n != 0 })
+            .filter(|(i, n)| {
+                if even_odd.get(*i).copied().unwrap_or(false) {
+                    *n % 2 != 0
+                } else {
+                    **n != 0
+                }
+            })
             .map(|(i, _)| i)
             .collect()
     };
@@ -206,7 +234,10 @@ pub fn faces(paths: &[(BezPath, bool)]) -> Result<Vec<ArrangementFace>, PathOpsE
     let mut covers: std::collections::BTreeSet<Vec<usize>> = std::collections::BTreeSet::new();
     for seg in topo.segment_indices() {
         let half = seg.first_half();
-        for w in [topo.winding_clockwise(half), topo.winding_counter_clockwise(half)] {
+        for w in [
+            topo.winding_clockwise(half),
+            topo.winding_counter_clockwise(half),
+        ] {
             let c = cover_of(w);
             if !c.is_empty() {
                 covers.insert(c);
@@ -221,10 +252,16 @@ pub fn faces(paths: &[(BezPath, bool)]) -> Result<Vec<ArrangementFace>, PathOpsE
         // holes are faces of their own).
         for (i, c) in all.iter().enumerate().filter(|(_, c)| c.outer) {
             let mut path = c.path.clone();
-            for hole in all.iter().filter(|h| !h.outer && h.parent.map(|p| p.0) == Some(i)) {
+            for hole in all
+                .iter()
+                .filter(|h| !h.outer && h.parent.map(|p| p.0) == Some(i))
+            {
                 path.extend(hole.path.elements().iter().copied());
             }
-            out.push(ArrangementFace { path, cover: cover.clone() });
+            out.push(ArrangementFace {
+                path,
+                cover: cover.clone(),
+            });
             if out.len() >= MAX_FACES {
                 return Ok(out);
             }
@@ -234,7 +271,9 @@ pub fn faces(paths: &[(BezPath, bool)]) -> Result<Vec<ArrangementFace>, PathOpsE
 }
 
 /// The union of disjoint faces (shared edges dissolve) as one clean path.
-pub fn union_faces<'a>(faces: impl IntoIterator<Item = &'a BezPath>) -> Result<BezPath, PathOpsError> {
+pub fn union_faces<'a>(
+    faces: impl IntoIterator<Item = &'a BezPath>,
+) -> Result<BezPath, PathOpsError> {
     let mut all = BezPath::new();
     for f in faces {
         all.extend(f.elements().iter().copied());
@@ -283,7 +322,12 @@ pub fn stroke_outline(path: &BezPath, props: &StrokeProps, closed_shape: bool) -
 
 /// [`stroke_outline`] of a shape whose stroke follows vector network `net` (`path` is its stroke
 /// path): points with a cap or join of their own draw them there.
-pub fn stroke_outline_of(path: &BezPath, props: &StrokeProps, closed_shape: bool, net: Option<&VectorNetwork>) -> BezPath {
+pub fn stroke_outline_of(
+    path: &BezPath,
+    props: &StrokeProps,
+    closed_shape: bool,
+    net: Option<&VectorNetwork>,
+) -> BezPath {
     let w = props.weight;
     if !(w.is_finite() && w > 0.0) {
         return BezPath::new();
@@ -292,11 +336,17 @@ pub fn stroke_outline_of(path: &BezPath, props: &StrokeProps, closed_shape: bool
     // Centred at `width` (twice the weight for Inside/Outside, which clip half of it away).
     let centred = |width: f64| match (&styled, &props.brush, props.profile()) {
         (Some(st), ..) => st.outline(width, props),
-        (None, Some(b), _) => brush::outline(path, width, props, b).unwrap_or_else(|| stroke_center(path, width, props)),
-        (None, None, Some(p)) => width::variable_outline(path, width, props, p).unwrap_or_else(|| stroke_center(path, width, props)),
+        (None, Some(b), _) => brush::outline(path, width, props, b)
+            .unwrap_or_else(|| stroke_center(path, width, props)),
+        (None, None, Some(p)) => width::variable_outline(path, width, props, p)
+            .unwrap_or_else(|| stroke_center(path, width, props)),
         (None, None, None) => stroke_center(path, width, props),
     };
-    let align = if closed_shape { props.align } else { StrokeAlign::Center };
+    let align = if closed_shape {
+        props.align
+    } else {
+        StrokeAlign::Center
+    };
     let mut out = match align {
         StrokeAlign::Center => centred(w),
         StrokeAlign::Inside => {
@@ -380,8 +430,13 @@ pub fn arrowhead(path: &BezPath, cap: StrokeCap, weight: f64, at_end: bool) -> O
             l.move_to(tip - dir * s + n * (s * 0.7));
             l.line_to(tip);
             l.line_to(tip - dir * s - n * (s * 0.7));
-            let props =
-                StrokeProps { weight, cap_start: StrokeCap::Round, cap_end: StrokeCap::Round, join: StrokeJoin::Round, ..StrokeProps::default() };
+            let props = StrokeProps {
+                weight,
+                cap_start: StrokeCap::Round,
+                cap_end: StrokeCap::Round,
+                join: StrokeJoin::Round,
+                ..StrokeProps::default()
+            };
             return Some(stroke_center(&l, weight, &props));
         }
         StrokeCap::CircleFilled => {
@@ -408,7 +463,8 @@ pub fn rect_side_strokes(w: f64, h: f64, sides: [f64; 4], align: StrokeAlign) ->
         StrokeAlign::Center => 0.5,
         StrokeAlign::Outside => 1.0,
     };
-    let rect = |x0: f64, y0: f64, x1: f64, y1: f64| figcraft_geom::Rect::new(x0, y0, x1, y1).to_path(0.1);
+    let rect =
+        |x0: f64, y0: f64, x1: f64, y1: f64| figcraft_geom::Rect::new(x0, y0, x1, y1).to_path(0.1);
     let mut p = BezPath::new();
     // Outer box edges.
     let (ox0, oy0, ox1, oy1) = (-l * f, -t * f, w + r * f, h + b * f);
@@ -419,10 +475,20 @@ pub fn rect_side_strokes(w: f64, h: f64, sides: [f64; 4], align: StrokeAlign) ->
         p.extend(rect(ox0, oy1 - b, ox1, oy1).elements().iter().copied());
     }
     if l > 0.0 {
-        p.extend(rect(ox0, oy0 + t, ox0 + l, oy1 - b).elements().iter().copied());
+        p.extend(
+            rect(ox0, oy0 + t, ox0 + l, oy1 - b)
+                .elements()
+                .iter()
+                .copied(),
+        );
     }
     if r > 0.0 {
-        p.extend(rect(ox1 - r, oy0 + t, ox1, oy1 - b).elements().iter().copied());
+        p.extend(
+            rect(ox1 - r, oy0 + t, ox1, oy1 - b)
+                .elements()
+                .iter()
+                .copied(),
+        );
     }
     p
 }
@@ -460,33 +526,56 @@ mod tests {
     fn arrangement_faces() {
         // Two overlapping squares: A only, B only, both.
         let f = faces(&[(sq(0.0, 0.0, 10.0), false), (sq(5.0, 5.0, 10.0), false)]).unwrap();
-        let mut got: Vec<(Vec<usize>, i64)> = f.iter().map(|x| (x.cover.clone(), x.path.area().abs().round() as i64)).collect();
+        let mut got: Vec<(Vec<usize>, i64)> = f
+            .iter()
+            .map(|x| (x.cover.clone(), x.path.area().abs().round() as i64))
+            .collect();
         got.sort();
         assert_eq!(got, vec![(vec![0], 75), (vec![0, 1], 25), (vec![1], 75)]);
         // Uniting faces dissolves their shared edges.
         let u = union_faces(f.iter().map(|x| &x.path)).unwrap();
         assert!((u.area().abs() - 175.0).abs() < 1e-6);
-        assert_eq!(u.elements().iter().filter(|e| matches!(e, PathEl::MoveTo(_))).count(), 1);
+        assert_eq!(
+            u.elements()
+                .iter()
+                .filter(|e| matches!(e, PathEl::MoveTo(_)))
+                .count(),
+            1
+        );
         // A square inside a ring (even-odd): the ring, the square, and the gap between them is
         // not covered; the square's area under the ring's hole is a face of its own.
         let mut ring = sq(0.0, 0.0, 30.0);
         ring.extend(sq(10.0, 10.0, 10.0).elements().iter().copied());
         let f = faces(&[(ring, true), (sq(12.0, 12.0, 4.0), false)]).unwrap();
-        let mut got: Vec<(Vec<usize>, i64)> = f.iter().map(|x| (x.cover.clone(), x.path.area().abs().round() as i64)).collect();
+        let mut got: Vec<(Vec<usize>, i64)> = f
+            .iter()
+            .map(|x| (x.cover.clone(), x.path.area().abs().round() as i64))
+            .collect();
         got.sort();
         assert_eq!(got, vec![(vec![0], 800), (vec![1], 16)]);
         // Two overlapping circles: three faces with curved edges.
         let c = |x: f64| kurbo::Circle::new((x, 0.0), 10.0).to_path(0.01);
         let f = faces(&[(c(0.0), false), (c(10.0), false)]).unwrap();
         assert_eq!(f.len(), 3);
-        assert!(f.iter().all(|x| x.path.elements().iter().any(|e| matches!(e, PathEl::CurveTo(..)))));
+        assert!(f.iter().all(|x| {
+            x.path
+                .elements()
+                .iter()
+                .any(|e| matches!(e, PathEl::CurveTo(..)))
+        }));
         // Hostile and empty input.
         let mut bad = BezPath::new();
         bad.move_to((f64::NAN, 0.0));
         bad.line_to((1.0, 1.0));
         assert!(faces(&[(bad, false)]).is_err());
         assert!(faces(&[]).unwrap().is_empty());
-        assert!(faces(&vec![(sq(0.0, 0.0, 1.0), false); MAX_ARRANGEMENT_INPUTS + 1]).is_err());
+        assert!(
+            faces(&vec![
+                (sq(0.0, 0.0, 1.0), false);
+                MAX_ARRANGEMENT_INPUTS + 1
+            ])
+            .is_err()
+        );
     }
 
     #[test]
@@ -496,20 +585,48 @@ mod tests {
         bad.line_to((1.0, 1.0));
         assert!(boolean(&[bad, sq(0.0, 0.0, 1.0)], BoolOp::Union).is_err());
         assert!(boolean(&[], BoolOp::Union).unwrap().elements().is_empty());
-        let _ = stroke_outline(&sq(0.0, 0.0, 10.0), &StrokeProps { weight: f64::INFINITY, ..Default::default() }, true);
+        let _ = stroke_outline(
+            &sq(0.0, 0.0, 10.0),
+            &StrokeProps {
+                weight: f64::INFINITY,
+                ..Default::default()
+            },
+            true,
+        );
     }
 
     #[test]
     fn stroke_alignment_bounds() {
         let r = sq(0.0, 0.0, 100.0);
-        let props = StrokeProps { weight: 10.0, align: StrokeAlign::Inside, ..Default::default() };
+        let props = StrokeProps {
+            weight: 10.0,
+            align: StrokeAlign::Inside,
+            ..Default::default()
+        };
         let inside = stroke_outline(&r, &props, true);
         let b = inside.bounding_box();
         assert!(b.x0 >= -0.01 && b.x1 <= 100.01, "{b:?}");
-        let outside = stroke_outline(&r, &StrokeProps { align: StrokeAlign::Outside, ..props.clone() }, true);
+        let outside = stroke_outline(
+            &r,
+            &StrokeProps {
+                align: StrokeAlign::Outside,
+                ..props.clone()
+            },
+            true,
+        );
         let b = outside.bounding_box();
-        assert!((b.x0 + 10.0).abs() < 0.01 && (b.x1 - 110.0).abs() < 0.01, "{b:?}");
-        let center = stroke_outline(&r, &StrokeProps { align: StrokeAlign::Center, ..props }, true);
+        assert!(
+            (b.x0 + 10.0).abs() < 0.01 && (b.x1 - 110.0).abs() < 0.01,
+            "{b:?}"
+        );
+        let center = stroke_outline(
+            &r,
+            &StrokeProps {
+                align: StrokeAlign::Center,
+                ..props
+            },
+            true,
+        );
         let b = center.bounding_box();
         assert!((b.x0 + 5.0).abs() < 0.01);
     }
@@ -519,7 +636,11 @@ mod tests {
         let mut line = BezPath::new();
         line.move_to((0.0, 0.0));
         line.line_to((100.0, 0.0));
-        let props = StrokeProps { weight: 2.0, cap_end: StrokeCap::TriangleArrow, ..Default::default() };
+        let props = StrokeProps {
+            weight: 2.0,
+            cap_end: StrokeCap::TriangleArrow,
+            ..Default::default()
+        };
         let s = stroke_outline(&line, &props, false);
         assert!(s.bounding_box().height() > 4.0);
         assert!(arrowhead(&BezPath::new(), StrokeCap::LineArrow, 1.0, true).is_none());
@@ -530,7 +651,12 @@ mod tests {
         let mut line = BezPath::new();
         line.move_to((0.0, 0.0));
         line.line_to((100.0, 0.0));
-        let props = StrokeProps { weight: 2.0, dashes: vec![10.0, 10.0], align: StrokeAlign::Center, ..Default::default() };
+        let props = StrokeProps {
+            weight: 2.0,
+            dashes: vec![10.0, 10.0],
+            align: StrokeAlign::Center,
+            ..Default::default()
+        };
         let s = stroke_center(&line, 2.0, &props);
         assert!((s.area().abs() - 100.0).abs() < 2.0, "{}", s.area());
     }

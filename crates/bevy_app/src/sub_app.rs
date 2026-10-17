@@ -1,7 +1,7 @@
 use crate::{App, AppLabel, First, InternedAppLabel, Plugin, Plugins, PluginsState};
 use alloc::{boxed::Box, string::String, vec::Vec};
 use bevy_ecs::{
-    message::{message_update_system, MessageRegistry},
+    message::{MessageRegistry, message_update_system},
     observer::IntoObserver,
     prelude::*,
     schedule::{

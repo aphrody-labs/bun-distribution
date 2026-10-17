@@ -66,8 +66,13 @@ impl Embedder for LlamaServerEmbedder {
             "model": self.model_id,
         });
 
-        let resp =
-            self.client.post(&self.endpoint).json(&body).send().await.map_err(RagError::Http)?;
+        let resp = self
+            .client
+            .post(&self.endpoint)
+            .json(&body)
+            .send()
+            .await
+            .map_err(RagError::Http)?;
 
         if !resp.status().is_success() {
             let status = resp.status();

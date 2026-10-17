@@ -63,7 +63,9 @@ pub(crate) fn validate_freshness(v: &str) -> Result<String, String> {
         b.len() == 10
             && b[4] == b'-'
             && b[7] == b'-'
-            && b.iter().enumerate().all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit())
+            && b.iter()
+                .enumerate()
+                .all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit())
     };
     match v {
         "pd" | "pw" | "pm" | "py" => Ok(v.to_owned()),
@@ -78,20 +80,23 @@ pub(crate) fn validate_freshness(v: &str) -> Result<String, String> {
 fn format_error(status: u16, body: &str) -> String {
     let mut msg = match serde_json::from_str::<Value>(body) {
         Ok(v) if v["error"].is_object() => {
-            let code =
-                v["error"]["code"].as_str().unwrap_or("UNKNOWN").to_lowercase().replace('_', " ");
+            let code = v["error"]["code"]
+                .as_str()
+                .unwrap_or("UNKNOWN")
+                .to_lowercase()
+                .replace('_', " ");
             match v["error"]["detail"].as_str().unwrap_or("") {
                 "" => format!("{code} ({status})"),
                 detail => format!("{code} ({status}) — {detail}"),
             }
-        },
+        }
         _ => format!("HTTP {status}"),
     };
     match status {
         401 => msg.push_str(&format!("\nhint: vérifier {API_KEY_ENV}")),
         403 => msg.push_str("\nhint: cet endpoint peut exiger un autre plan API"),
         429 => msg.push_str("\nhint: réessayer après un court délai"),
-        _ => {},
+        _ => {}
     }
     msg
 }
@@ -112,9 +117,15 @@ fn parse_hits(body: &Value) -> Vec<Hit> {
 }
 
 pub(crate) async fn api_key(store: &dyn SecretStore) -> miette::Result<SecretValue> {
-    match store.get(API_KEY_ENV).await.map_err(|e| miette::miette!("{e}"))? {
+    match store
+        .get(API_KEY_ENV)
+        .await
+        .map_err(|e| miette::miette!("{e}"))?
+    {
         Some(v) if !v.is_empty() => Ok(v),
-        _ => Err(miette::miette!("clé Brave Search absente : définir {API_KEY_ENV}")),
+        _ => Err(miette::miette!(
+            "clé Brave Search absente : définir {API_KEY_ENV}"
+        )),
     }
 }
 
@@ -142,13 +153,22 @@ pub(crate) async fn web_search(
         .await
         .map_err(|e| miette::miette!("Brave Search : {e}"))?;
     let status = resp.status().as_u16();
-    let bytes = resp.bytes().await.map_err(|e| miette::miette!("Brave Search : {e}"))?;
+    let bytes = resp
+        .bytes()
+        .await
+        .map_err(|e| miette::miette!("Brave Search : {e}"))?;
     if bytes.len() > MAX_RESPONSE_BODY_SIZE {
-        return Err(miette::miette!("Brave Search : réponse trop grande ({} octets)", bytes.len()));
+        return Err(miette::miette!(
+            "Brave Search : réponse trop grande ({} octets)",
+            bytes.len()
+        ));
     }
     let text = String::from_utf8_lossy(&bytes);
     if !(200..300).contains(&status) {
-        return Err(miette::miette!("Brave Search : {}", format_error(status, &text)));
+        return Err(miette::miette!(
+            "Brave Search : {}",
+            format_error(status, &text)
+        ));
     }
     let body: Value = serde_json::from_str(&text)
         .map_err(|e| miette::miette!("Brave Search : JSON invalide : {e}"))?;
@@ -174,7 +194,10 @@ mod tests {
             serde_json::json!({"q":"rust","count":5,"freshness":"pw","country":"FR"})
         );
         assert_eq!(
-            web_body(&WebQuery { q: "x".into(), ..Default::default() }),
+            web_body(&WebQuery {
+                q: "x".into(),
+                ..Default::default()
+            }),
             serde_json::json!({"q":"x"})
         );
     }
@@ -191,7 +214,10 @@ mod tests {
 
     #[test]
     fn error_envelope() {
-        let m = format_error(429, r#"{"error":{"code":"RATE_LIMITED","detail":"slow down"}}"#);
+        let m = format_error(
+            429,
+            r#"{"error":{"code":"RATE_LIMITED","detail":"slow down"}}"#,
+        );
         assert!(m.starts_with("rate limited (429) — slow down"), "{m}");
         assert_eq!(format_error(502, "<html>"), "HTTP 502");
     }
@@ -245,7 +271,9 @@ mod tests {
             freshness: Some("pm".into()),
             country: Some("US".into()),
         };
-        let hits = web_search(&base, &SecretValue::from("test-key"), &q).await.unwrap();
+        let hits = web_search(&base, &SecretValue::from("test-key"), &q)
+            .await
+            .unwrap();
         assert_eq!(
             hits,
             vec![Hit {
@@ -256,7 +284,11 @@ mod tests {
         );
         let req = server.join().unwrap();
         assert!(req.starts_with("POST /res/v1/web/search "), "{req}");
-        assert!(req.to_ascii_lowercase().contains("x-subscription-token: test-key"), "{req}");
+        assert!(
+            req.to_ascii_lowercase()
+                .contains("x-subscription-token: test-key"),
+            "{req}"
+        );
         let body: Value = serde_json::from_str(req.rsplit("\r\n\r\n").next().unwrap()).unwrap();
         assert_eq!(
             body,
@@ -273,13 +305,19 @@ mod tests {
         let err = web_search(
             &base,
             &SecretValue::from("k"),
-            &WebQuery { q: "x".into(), ..Default::default() },
+            &WebQuery {
+                q: "x".into(),
+                ..Default::default()
+            },
         )
         .await
         .unwrap_err();
         server.join().unwrap();
         let msg = err.to_string();
-        assert!(msg.contains("subscription token invalid (401) — bad"), "{msg}");
+        assert!(
+            msg.contains("subscription token invalid (401) — bad"),
+            "{msg}"
+        );
         assert!(msg.contains(API_KEY_ENV), "{msg}");
     }
 }

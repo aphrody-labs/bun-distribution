@@ -5,7 +5,14 @@
 //!   running app's `--control` port.
 //! - [`mcp::Server`]: a Model Context Protocol server over stdio (newline-delimited JSON-RPC 2.0)
 //!   exposing SoundCraft as tools and resources.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod mcp;
 
@@ -38,21 +45,29 @@ impl Backend for Headless {
     fn call(&mut self, method: &str, params: Value) -> Result<Value, String> {
         match method {
             "engine.execute" | "command" => {
-                let id = params.get("command").or_else(|| params.get("id")).and_then(Value::as_str).ok_or("`command` required")?;
+                let id = params
+                    .get("command")
+                    .or_else(|| params.get("id"))
+                    .and_then(Value::as_str)
+                    .ok_or("`command` required")?;
                 let p = params.get("params").cloned().unwrap_or(json!({}));
                 let r = self.engine.execute(id, &p).map_err(|e| e.to_string());
                 // Headless has no audio engine: drop transport requests but keep the playhead.
                 self.engine.transport_requests.clear();
                 r
             }
-            "engine.commands" => self.engine.execute("engine.commands", &params).map_err(|e| e.to_string()),
+            "engine.commands" => self
+                .engine
+                .execute("engine.commands", &params)
+                .map_err(|e| e.to_string()),
             "engine.parity" => Ok(soundcraft_engine::catalog::parity_json()),
-            "session.inspect" | "document.inspect" => {
-                Ok(soundcraft_engine::inspect::session(&self.engine, params.get("detail").and_then(Value::as_str) == Some("full")))
-            }
-            m if m.starts_with("ui.") => {
-                Err(format!("`{m}` needs the desktop app: start `soundcraft --control 0` and use `soundcraft-cli mcp --connect PORT`"))
-            }
+            "session.inspect" | "document.inspect" => Ok(soundcraft_engine::inspect::session(
+                &self.engine,
+                params.get("detail").and_then(Value::as_str) == Some("full"),
+            )),
+            m if m.starts_with("ui.") => Err(format!(
+                "`{m}` needs the desktop app: start `soundcraft --control 0` and use `soundcraft-cli mcp --connect PORT`"
+            )),
             other => Err(format!("unknown method `{other}`")),
         }
     }
@@ -74,18 +89,30 @@ pub struct Remote {
 impl Remote {
     /// `target` is a port (`7979`) or `host:port`.
     pub fn new(target: &str) -> Self {
-        let addr = if target.contains(':') { target.to_string() } else { format!("127.0.0.1:{target}") };
-        Remote { addr, conn: None, next_id: 1 }
+        let addr = if target.contains(':') {
+            target.to_string()
+        } else {
+            format!("127.0.0.1:{target}")
+        };
+        Remote {
+            addr,
+            conn: None,
+            next_id: 1,
+        }
     }
 
     fn connect(&mut self) -> Result<(), String> {
         if self.conn.is_some() {
             return Ok(());
         }
-        let sock = self.addr.parse().map_err(|e| format!("{}: {e}", self.addr))?;
-        let s =
-            TcpStream::connect_timeout(&sock, Duration::from_millis(800)).map_err(|e| format!("cannot reach SoundCraft at {}: {e}", self.addr))?;
-        s.set_read_timeout(Some(Duration::from_secs(120))).map_err(|e| e.to_string())?;
+        let sock = self
+            .addr
+            .parse()
+            .map_err(|e| format!("{}: {e}", self.addr))?;
+        let s = TcpStream::connect_timeout(&sock, Duration::from_millis(800))
+            .map_err(|e| format!("cannot reach SoundCraft at {}: {e}", self.addr))?;
+        s.set_read_timeout(Some(Duration::from_secs(120)))
+            .map_err(|e| e.to_string())?;
         let r = s.try_clone().map_err(|e| e.to_string())?;
         self.conn = Some((s, BufReader::new(r)));
         Ok(())
@@ -107,7 +134,11 @@ impl Remote {
         if v.get("ok").and_then(Value::as_bool).unwrap_or(false) {
             Ok(v.get("result").cloned().unwrap_or(Value::Null))
         } else {
-            Err(v.get("error").and_then(Value::as_str).unwrap_or("error").to_string())
+            Err(v
+                .get("error")
+                .and_then(Value::as_str)
+                .unwrap_or("error")
+                .to_string())
         }
     }
 }
@@ -139,7 +170,10 @@ mod tests {
     #[test]
     fn headless_executes_and_inspects() {
         let mut h = Headless::new(Engine::default());
-        let r = h.call("engine.execute", json!({"command": "track.new", "params": {"count": 2, "format": "stereo"}}));
+        let r = h.call(
+            "engine.execute",
+            json!({"command": "track.new", "params": {"count": 2, "format": "stereo"}}),
+        );
         assert!(r.is_ok(), "{r:?}");
         let s = h.call("session.inspect", json!({})).unwrap();
         assert_eq!(s["tracks"].as_array().map(Vec::len), Some(2));

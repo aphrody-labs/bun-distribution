@@ -4,7 +4,9 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use figcraft_color::{Color, Paint};
-use figcraft_doc::{Comment, DevSnapshot, Document, ImageData, Message, Node, NodeId, NodeKind, Style, StyleKind};
+use figcraft_doc::{
+    Comment, DevSnapshot, Document, ImageData, Message, Node, NodeId, NodeKind, Style, StyleKind,
+};
 
 use crate::change::{Change, DocProp, Entry, Json, Prop};
 use crate::replica::{Mode, Replica};
@@ -17,22 +19,29 @@ fn round_trip(a: &Replica, b: &Document) -> Vec<Change> {
     r.apply(&d.changes, Mode::Strict).unwrap();
     assert_eq!(r.document(), b, "{:#?}", d.changes);
     assert_eq!(r, d.replica, "positions agree");
-    let wire: Vec<Change> = message::decode(&message::encode(&d.changes).unwrap(), usize::MAX).unwrap();
+    let wire: Vec<Change> =
+        message::decode(&message::encode(&d.changes).unwrap(), usize::MAX).unwrap();
     assert_eq!(wire, d.changes, "binary round trip");
-    let json: Vec<Change> = message::decode_json(&message::encode_json(&d.changes).unwrap(), usize::MAX).unwrap();
+    let json: Vec<Change> =
+        message::decode_json(&message::encode_json(&d.changes).unwrap(), usize::MAX).unwrap();
     assert_eq!(json, d.changes, "JSON round trip");
     d.changes
 }
 
 fn rect(doc: &mut Document, parent: NodeId, name: &str) -> NodeId {
-    doc.create(parent, NodeKind::Rectangle, name, 0.0, 0.0, 10.0, 10.0).unwrap()
+    doc.create(parent, NodeKind::Rectangle, name, 0.0, 0.0, 10.0, 10.0)
+        .unwrap()
 }
 
 fn setup() -> (Replica, NodeId, NodeId, Vec<NodeId>) {
     let mut doc = Document::new("File");
     let page = doc.first_page().unwrap();
-    let frame = doc.create(page, NodeKind::Frame, "Frame", 0.0, 0.0, 200.0, 200.0).unwrap();
-    let kids = (0..5).map(|i| rect(&mut doc, frame, &format!("R{i}"))).collect();
+    let frame = doc
+        .create(page, NodeKind::Frame, "Frame", 0.0, 0.0, 200.0, 200.0)
+        .unwrap();
+    let kids = (0..5)
+        .map(|i| rect(&mut doc, frame, &format!("R{i}")))
+        .collect();
     (Replica::new(doc), page, frame, kids)
 }
 
@@ -44,7 +53,9 @@ fn property_edits_send_only_what_changed() {
     b.get_mut(kids[1]).unwrap().fills = vec![Paint::solid(Color::from_rgb8_const(1, 2, 3))];
     let changes = round_trip(&a, &b);
     assert_eq!(changes.len(), 2);
-    assert!(changes.iter().all(|c| matches!(c, Change::Set { id, prop: Prop::Opacity | Prop::Fills, .. } if *id == kids[1])));
+    assert!(changes.iter().all(
+        |c| matches!(c, Change::Set { id, prop: Prop::Opacity | Prop::Fills, .. } if *id == kids[1])
+    ));
     assert!(round_trip(&a, a.document()).is_empty(), "nothing changed");
 }
 
@@ -54,14 +65,25 @@ fn creations_moves_reorders_and_deletions_round_trip() {
     let mut b = a.document().clone();
     // A new group with a new child inside the frame, one rectangle moved into it, one deleted,
     // one reordered to the bottom, one moved to the page.
-    let g = b.create(frame, NodeKind::Group, "G", 5.0, 5.0, 1.0, 1.0).unwrap();
+    let g = b
+        .create(frame, NodeKind::Group, "G", 5.0, 5.0, 1.0, 1.0)
+        .unwrap();
     let inner = rect(&mut b, g, "Inner");
     b.place(kids[0], g, 0).unwrap();
     b.remove(kids[1]).unwrap();
     b.reorder(kids[4], 0).unwrap();
     b.place(kids[2], page, 0).unwrap();
     let changes = round_trip(&a, &b);
-    let creates: Vec<NodeId> = changes.iter().filter_map(|c| if let Change::Create { id, .. } = c { Some(*id) } else { None }).collect();
+    let creates: Vec<NodeId> = changes
+        .iter()
+        .filter_map(|c| {
+            if let Change::Create { id, .. } = c {
+                Some(*id)
+            } else {
+                None
+            }
+        })
+        .collect();
     assert_eq!(creates, vec![g, inner], "parents before children");
     assert!(changes.contains(&Change::Delete { id: kids[1] }));
     // kids[3] kept its place and key.
@@ -75,10 +97,19 @@ fn deleting_a_subtree_sends_one_delete_and_moves_out_first() {
     b.place(kids[0], page, 0).unwrap();
     b.remove(frame).unwrap();
     let changes = round_trip(&a, &b);
-    let deletes: Vec<&Change> = changes.iter().filter(|c| matches!(c, Change::Delete { .. })).collect();
+    let deletes: Vec<&Change> = changes
+        .iter()
+        .filter(|c| matches!(c, Change::Delete { .. }))
+        .collect();
     assert_eq!(deletes, vec![&Change::Delete { id: frame }]);
-    let moved = changes.iter().position(|c| matches!(c, Change::Set { id, prop: Prop::Parent, .. } if *id == kids[0])).unwrap();
-    let deleted = changes.iter().position(|c| matches!(c, Change::Delete { .. })).unwrap();
+    let moved = changes
+        .iter()
+        .position(|c| matches!(c, Change::Set { id, prop: Prop::Parent, .. } if *id == kids[0]))
+        .unwrap();
+    let deleted = changes
+        .iter()
+        .position(|c| matches!(c, Change::Delete { .. }))
+        .unwrap();
     assert!(moved < deleted);
 }
 
@@ -91,7 +122,11 @@ fn pages_add_reorder_and_delete() {
     rect(&mut b, p3, "On three");
     b.pages = vec![p3, page, p2];
     let after = round_trip(&a, &b);
-    assert!(after.iter().any(|c| matches!(c, Change::Create { id, parent: None, .. } if *id == p3)));
+    assert!(
+        after
+            .iter()
+            .any(|c| matches!(c, Change::Create { id, parent: None, .. } if *id == p3))
+    );
     let a2 = diff(&a, &b).unwrap().replica;
     let mut c = b.clone();
     c.remove(page).unwrap();
@@ -102,9 +137,17 @@ fn pages_add_reorder_and_delete() {
 fn kind_changes_and_transforms_round_trip() {
     let (a, _, frame, kids) = setup();
     let mut b = a.document().clone();
-    b.get_mut(frame).unwrap().kind = NodeKind::Component { description: "A card".into(), props: BTreeMap::new() };
-    b.get_mut(kids[0]).unwrap().kind = NodeKind::Ellipse { start: 0.0, sweep: 3.0, inner: 0.25 };
-    b.get_mut(kids[0]).unwrap().transform = figcraft_geom::Affine::new([0.5, 0.1, -0.1, 2.0, 1.0 / 3.0, -7.25]);
+    b.get_mut(frame).unwrap().kind = NodeKind::Component {
+        description: "A card".into(),
+        props: BTreeMap::new(),
+    };
+    b.get_mut(kids[0]).unwrap().kind = NodeKind::Ellipse {
+        start: 0.0,
+        sweep: 3.0,
+        inner: 0.25,
+    };
+    b.get_mut(kids[0]).unwrap().transform =
+        figcraft_geom::Affine::new([0.5, 0.1, -0.1, 2.0, 1.0 / 3.0, -7.25]);
     round_trip(&a, &b);
 }
 
@@ -113,7 +156,9 @@ fn style(id: &str) -> Style {
         id: id.into(),
         name: format!("S {id}"),
         description: String::new(),
-        kind: StyleKind::Paint { paints: vec![Paint::solid(Color::BLACK)] },
+        kind: StyleKind::Paint {
+            paints: vec![Paint::solid(Color::BLACK)],
+        },
         bound: Default::default(),
     }
 }
@@ -131,16 +176,34 @@ fn document_level_data_round_trips() {
         x: 1.0,
         y: 2.0,
         anchor: None,
-        first: Message { author: "Ada".into(), text: "Hi".into(), created: 1, edited: 0, reactions: vec![] },
+        first: Message {
+            author: "Ada".into(),
+            text: "Hi".into(),
+            created: 1,
+            edited: 0,
+            reactions: vec![],
+        },
         resolved: false,
         replies: vec![],
         read_by: None,
     });
-    b.images.insert("hash".into(), ImageData { bytes: Arc::new(vec![1, 2, 3, 250]), width: 2, height: 1 });
-    let snap = DevSnapshot { nodes: vec![Arc::new(b.node(kids[0]).unwrap().clone())] };
+    b.images.insert(
+        "hash".into(),
+        ImageData {
+            bytes: Arc::new(vec![1, 2, 3, 250]),
+            width: 2,
+            height: 1,
+        },
+    );
+    let snap = DevSnapshot {
+        nodes: vec![Arc::new(b.node(kids[0]).unwrap().clone())],
+    };
     b.dev_snapshots.insert(kids[0], Arc::new(snap));
     let changes = round_trip(&a, &b);
-    assert!(changes.contains(&Change::SetDoc { prop: DocProp::Name, value: Json::of("Renamed").unwrap() }));
+    assert!(changes.contains(&Change::SetDoc {
+        prop: DocProp::Name,
+        value: Json::of("Renamed").unwrap()
+    }));
     let a2 = diff(&a, &b).unwrap().replica;
     // Edit one style, remove one, reorder: per-entry changes plus the order.
     let mut c = b.clone();
@@ -150,15 +213,31 @@ fn document_level_data_round_trips() {
     c.images.clear();
     c.comments[0].resolved = true;
     let changes = round_trip(&a2, &c);
-    assert!(changes.contains(&Change::Remove { entry: Entry::Style("s2".into()) }));
-    assert!(changes.contains(&Change::Remove { entry: Entry::Image("hash".into()) }));
-    assert!(changes.iter().any(|ch| matches!(ch, Change::SetDoc { prop: DocProp::StyleOrder, .. })));
+    assert!(changes.contains(&Change::Remove {
+        entry: Entry::Style("s2".into())
+    }));
+    assert!(changes.contains(&Change::Remove {
+        entry: Entry::Image("hash".into())
+    }));
+    assert!(changes.iter().any(|ch| matches!(
+        ch,
+        Change::SetDoc {
+            prop: DocProp::StyleOrder,
+            ..
+        }
+    )));
     // Duplicate ids fall back to the whole list.
     let a3 = diff(&a2, &c).unwrap().replica;
     let mut d = c.clone();
     d.styles.push(style("s1"));
     let changes = round_trip(&a3, &d);
-    assert!(matches!(changes.as_slice(), [Change::SetDoc { prop: DocProp::Styles, .. }]));
+    assert!(matches!(
+        changes.as_slice(),
+        [Change::SetDoc {
+            prop: DocProp::Styles,
+            ..
+        }]
+    ));
 }
 
 #[test]
@@ -174,14 +253,19 @@ fn snapshots_rebuild_the_same_state() {
     let snap = r.snapshot().unwrap();
     let back = Replica::from_snapshot(&snap).unwrap();
     assert_eq!(back, r);
-    assert!(Replica::from_snapshot(&[]).is_err(), "a snapshot needs a page");
+    assert!(
+        Replica::from_snapshot(&[]).is_err(),
+        "a snapshot needs a page"
+    );
 }
 
 #[test]
 fn diffing_costs_the_size_of_the_edit() {
     let mut doc = Document::new("Big");
     let page = doc.first_page().unwrap();
-    let ids: Vec<NodeId> = (0..20_000).map(|i| rect(&mut doc, page, &format!("R{i}"))).collect();
+    let ids: Vec<NodeId> = (0..20_000)
+        .map(|i| rect(&mut doc, page, &format!("R{i}")))
+        .collect();
     let a = Replica::new(doc);
     let mut b = a.document().clone();
     b.get_mut(ids[123]).unwrap().name = "Edited".into();
@@ -190,7 +274,17 @@ fn diffing_costs_the_size_of_the_edit() {
     assert_eq!(changes.len(), 1);
     // Inserting one layer in the middle writes one key; its siblings keep theirs.
     let mut c = a.document().clone();
-    let n = Node::new(c.alloc_id(), NodeKind::Ellipse { start: 0.0, sweep: 1.0, inner: 0.0 }, "Mid", 1.0, 1.0);
+    let n = Node::new(
+        c.alloc_id(),
+        NodeKind::Ellipse {
+            start: 0.0,
+            sweep: 1.0,
+            inner: 0.0,
+        },
+        "Mid",
+        1.0,
+        1.0,
+    );
     c.insert(n, page, Some(10_000)).unwrap();
     let changes = round_trip(&a, &c);
     assert_eq!(changes.len(), 1);
@@ -208,45 +302,126 @@ fn keys_respace_before_they_grow_long() {
         round_trip(&a, &b);
         a = diff(&a, &b).unwrap().replica;
     }
-    assert!(a.positions().values().all(|k| k.len() <= crate::frac::KEY_RESPACE_LEN));
+    assert!(
+        a.positions()
+            .values()
+            .all(|k| k.len() <= crate::frac::KEY_RESPACE_LEN)
+    );
 }
 
 #[test]
 fn invalid_changes_are_refused_and_lenient_mode_skips_them() {
     let (a, page, frame, kids) = setup();
-    let set = |id: NodeId, prop: Prop, v: serde_json::Value| Change::Set { id, prop, value: Json(v) };
+    let set = |id: NodeId, prop: Prop, v: serde_json::Value| Change::Set {
+        id,
+        prop,
+        value: Json(v),
+    };
     let frame_kind = || Json::of(&NodeKind::Frame).unwrap();
     let bad: Vec<(Change, &str)> = vec![
         (set(NodeId(999), Prop::Name, "x".into()), "unknown node"),
         (set(kids[0], Prop::Opacity, "loud".into()), "wrong type"),
         (set(kids[0], Prop::Opacity, 2.0.into()), "out of range"),
         (set(kids[0], Prop::Width, (-1.0).into()), "negative size"),
-        (set(frame, Prop::Parent, serde_json::json!(kids[0])), "into a leaf"),
-        (set(frame, Prop::Parent, serde_json::Value::Null), "a frame without a parent"),
-        (set(page, Prop::Parent, serde_json::json!(frame)), "a page into a frame"),
+        (
+            set(frame, Prop::Parent, serde_json::json!(kids[0])),
+            "into a leaf",
+        ),
+        (
+            set(frame, Prop::Parent, serde_json::Value::Null),
+            "a frame without a parent",
+        ),
+        (
+            set(page, Prop::Parent, serde_json::json!(frame)),
+            "a page into a frame",
+        ),
         (set(kids[0], Prop::Position, "not a key".into()), "bad key"),
-        (set(kids[0], Prop::Kind, serde_json::json!({"type": "page"})), "becoming a page"),
-        (set(frame, Prop::Kind, serde_json::json!({"type": "rectangle"})), "a leaf with children"),
-        (Change::Create { id: kids[0], kind: frame_kind(), parent: Some(page), position: "a5".into(), props: vec![] }, "existing id"),
-        (Change::Create { id: NodeId(500), kind: frame_kind(), parent: None, position: "a5".into(), props: vec![] }, "parentless frame"),
-        (Change::Create { id: NodeId(500), kind: frame_kind(), parent: Some(NodeId(404)), position: "a5".into(), props: vec![] }, "missing parent"),
+        (
+            set(kids[0], Prop::Kind, serde_json::json!({"type": "page"})),
+            "becoming a page",
+        ),
+        (
+            set(frame, Prop::Kind, serde_json::json!({"type": "rectangle"})),
+            "a leaf with children",
+        ),
+        (
+            Change::Create {
+                id: kids[0],
+                kind: frame_kind(),
+                parent: Some(page),
+                position: "a5".into(),
+                props: vec![],
+            },
+            "existing id",
+        ),
+        (
+            Change::Create {
+                id: NodeId(500),
+                kind: frame_kind(),
+                parent: None,
+                position: "a5".into(),
+                props: vec![],
+            },
+            "parentless frame",
+        ),
+        (
+            Change::Create {
+                id: NodeId(500),
+                kind: frame_kind(),
+                parent: Some(NodeId(404)),
+                position: "a5".into(),
+                props: vec![],
+            },
+            "missing parent",
+        ),
         (Change::Delete { id: page }, "the last page"),
-        (Change::Put { entry: Entry::Style("a".into()), value: Json::of(&style("b")).unwrap() }, "entry id mismatch"),
+        (
+            Change::Put {
+                entry: Entry::Style("a".into()),
+                value: Json::of(&style("b")).unwrap(),
+            },
+            "entry id mismatch",
+        ),
     ];
     for (c, why) in bad {
         let mut r = a.clone();
-        assert!(r.apply(std::slice::from_ref(&c), Mode::Strict).is_err(), "{why}: {c:?}");
+        assert!(
+            r.apply(std::slice::from_ref(&c), Mode::Strict).is_err(),
+            "{why}: {c:?}"
+        );
         let mut r = a.clone();
-        let out = r.apply(&[c, set(kids[0], Prop::Name, "ok".into())], Mode::Lenient).unwrap();
+        let out = r
+            .apply(&[c, set(kids[0], Prop::Name, "ok".into())], Mode::Lenient)
+            .unwrap();
         assert!(out.skipped <= 1, "{why}");
         assert_eq!(r.document().node(kids[0]).unwrap().name, "ok");
     }
     // A cycle.
     let mut r = a.clone();
-    let inner = Change::Create { id: NodeId(600), kind: frame_kind(), parent: Some(frame), position: "a9".into(), props: vec![] };
+    let inner = Change::Create {
+        id: NodeId(600),
+        kind: frame_kind(),
+        parent: Some(frame),
+        position: "a9".into(),
+        props: vec![],
+    };
     let cycle = set(frame, Prop::Parent, serde_json::json!(600));
-    assert!(matches!(r.apply(&[inner, cycle], Mode::Strict), Err(Error::Invalid(_))));
+    assert!(matches!(
+        r.apply(&[inner, cycle], Mode::Strict),
+        Err(Error::Invalid(_))
+    ));
     // Deleting what's already gone does nothing.
     let mut r = a.clone();
-    assert!(r.apply(&[Change::Delete { id: NodeId(12345) }, Change::Remove { entry: Entry::Comment(1) }], Mode::Strict).is_ok());
+    assert!(
+        r.apply(
+            &[
+                Change::Delete { id: NodeId(12345) },
+                Change::Remove {
+                    entry: Entry::Comment(1)
+                }
+            ],
+            Mode::Strict
+        )
+        .is_ok()
+    );
 }

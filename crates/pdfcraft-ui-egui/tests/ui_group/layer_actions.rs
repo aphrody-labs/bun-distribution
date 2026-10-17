@@ -9,7 +9,8 @@ use pdfcraft_ui_egui::PdfCraftApp;
 /// One page with layers Red (on) and Green (off), a radio-button group, each drawing a band;
 /// a "show-red" push button turns Red on and a link toggles Green.
 fn fixture() -> Vec<u8> {
-    let content = "/OC /R BDC 1 0 0 rg 20 300 260 40 re f EMC /OC /G BDC 0 1 0 rg 20 240 260 40 re f EMC";
+    let content =
+        "/OC /R BDC 1 0 0 rg 20 300 260 40 re f EMC /OC /G BDC 0 1 0 rg 20 240 260 40 re f EMC";
     let objs = [
         "<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [7 0 R] >> /OCProperties << /OCGs [5 0 R 6 0 R] /D << /OFF [6 0 R] /RBGroups [[5 0 R 6 0 R]] >> >> >>".to_string(),
         "<< /Type /Pages /Kids [3 0 R] /Count 1 >>".into(),
@@ -31,19 +32,27 @@ fn fixture() -> Vec<u8> {
     for o in offs {
         out.extend_from_slice(format!("{o:010} 00000 n \n").as_bytes());
     }
-    out.extend_from_slice(format!("trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n", objs.len() + 1).as_bytes());
+    out.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{x}\n%%EOF\n",
+            objs.len() + 1
+        )
+        .as_bytes(),
+    );
     out
 }
 
 fn harness(setup: impl FnOnce(&mut PdfCraftApp) + 'static) -> Harness<'static, PdfCraftApp> {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(move |_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("layers.pdf", None, fixture()).unwrap();
-        app.set_option("zoom", "150").unwrap();
-        setup(&mut app);
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(move |_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("layers.pdf", None, fixture()).unwrap();
+            app.set_option("zoom", "150").unwrap();
+            setup(&mut app);
+            app
+        });
     h.run_steps(6);
     h
 }
@@ -67,7 +76,14 @@ fn click(h: &mut Harness<'static, PdfCraftApp>, p: Pos2) {
 /// Whether Red and Green are shown.
 fn shown(h: &Harness<'static, PdfCraftApp>) -> Vec<(String, bool)> {
     let s = h.state();
-    s.session.get(s.views[0].id).unwrap().info.layers.iter().map(|l| (l.name.clone(), l.visible)).collect()
+    s.session
+        .get(s.views[0].id)
+        .unwrap()
+        .info
+        .layers
+        .iter()
+        .map(|l| (l.name.clone(), l.visible))
+        .collect()
 }
 
 fn layers(red: bool, green: bool) -> Vec<(String, bool)> {
@@ -89,7 +105,10 @@ fn links_set_layer_visibility() {
     click(&mut h, link);
     assert_eq!(shown(&h), layers(false, false));
     let s = h.state();
-    assert!(!s.session.get(s.views[0].id).unwrap().dirty, "showing and hiding layers doesn't change the document");
+    assert!(
+        !s.session.get(s.views[0].id).unwrap().dirty,
+        "showing and hiding layers doesn't change the document"
+    );
 }
 
 #[test]
@@ -102,5 +121,8 @@ fn push_buttons_set_layer_visibility() {
     click(&mut h, button);
     assert_eq!(shown(&h), layers(true, false));
     let s = h.state();
-    assert!(!s.session.get(s.views[0].id).unwrap().dirty, "showing and hiding layers doesn't change the document");
+    assert!(
+        !s.session.get(s.views[0].id).unwrap().dirty,
+        "showing and hiding layers doesn't change the document"
+    );
 }

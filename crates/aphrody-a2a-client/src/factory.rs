@@ -24,12 +24,22 @@ impl TransportKey {
             .next()
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or(1);
-        TransportKey { protocol: iface.protocol_binding.clone(), major_version: major }
+        TransportKey {
+            protocol: iface.protocol_binding.clone(),
+            major_version: major,
+        }
     }
 
     fn from_protocol(protocol: &str, version: &str) -> Self {
-        let major = version.split('.').next().and_then(|s| s.parse::<u64>().ok()).unwrap_or(1);
-        TransportKey { protocol: protocol.to_string(), major_version: major }
+        let major = version
+            .split('.')
+            .next()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(1);
+        TransportKey {
+            protocol: protocol.to_string(),
+            major_version: major,
+        }
     }
 }
 
@@ -92,7 +102,7 @@ impl A2AClientFactory {
                     return Ok(
                         A2AClient::new(transport).with_interceptors(self.interceptors.clone())
                     );
-                },
+                }
                 Err(e) => {
                     tracing::debug!(
                         protocol = %iface.protocol_binding,
@@ -101,7 +111,7 @@ impl A2AClientFactory {
                         "transport creation failed, trying next"
                     );
                     last_err = Some(e);
-                },
+                }
             }
         }
 
@@ -223,8 +233,9 @@ mod tests {
     #[test]
     fn test_builder_preferred_bindings() {
         install_rustls_provider();
-        let factory =
-            A2AClientFactory::builder().preferred_bindings(vec!["grpc".to_string()]).build();
+        let factory = A2AClientFactory::builder()
+            .preferred_bindings(vec!["grpc".to_string()])
+            .build();
         assert_eq!(factory.preferred_bindings, vec!["grpc"]);
     }
 
@@ -232,8 +243,9 @@ mod tests {
     fn test_builder_with_interceptor() {
         install_rustls_provider();
         use crate::middleware::LoggingInterceptor;
-        let factory =
-            A2AClientFactory::builder().with_interceptor(Arc::new(LoggingInterceptor)).build();
+        let factory = A2AClientFactory::builder()
+            .with_interceptor(Arc::new(LoggingInterceptor))
+            .build();
         assert_eq!(factory.interceptors.len(), 1);
     }
 

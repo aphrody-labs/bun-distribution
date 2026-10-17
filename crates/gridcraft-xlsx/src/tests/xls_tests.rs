@@ -60,7 +60,13 @@ pub(crate) fn compound(name: &str, data: &[u8]) -> Vec<u8> {
         payload.push(minifat);
         payload.extend(container.chunks(512).map(<[u8]>::to_vec));
         chains.push((data_at, stream_sectors));
-        dir.extend_from_slice(&dir_entry("Root Entry", 5, 1, 0, (stream_sectors * 512) as u32));
+        dir.extend_from_slice(&dir_entry(
+            "Root Entry",
+            5,
+            1,
+            0,
+            (stream_sectors * 512) as u32,
+        ));
         dir.extend_from_slice(&dir_entry(name, 2, FREE, 0, data.len() as u32));
     } else {
         let mut body = data.to_vec();
@@ -119,7 +125,11 @@ pub(crate) fn compound(name: &str, data: &[u8]) -> Vec<u8> {
     put32(&mut out, 64, u32::from(minifat_at.is_some()));
     put32(&mut out, 68, END);
     for i in 0..109 {
-        put32(&mut out, 76 + i * 4, if i < fat_n { i as u32 } else { FREE });
+        put32(
+            &mut out,
+            76 + i * 4,
+            if i < fat_n { i as u32 } else { FREE },
+        );
     }
     for f in &fat {
         out.extend_from_slice(&f.to_le_bytes());
@@ -154,7 +164,10 @@ fn cell(r: u16, c: u16, xf: u16) -> Vec<u8> {
 }
 
 fn bof(dt: u16) -> Vec<u8> {
-    rec(0x0809, &cat(&[&u16s(&[0x0600, dt, 0x0DBB, 0x07CC]), &[0; 8]]))
+    rec(
+        0x0809,
+        &cat(&[&u16s(&[0x0600, dt, 0x0DBB, 0x07CC]), &[0; 8]]),
+    )
 }
 
 fn eof() -> Vec<u8> {
@@ -202,15 +215,51 @@ fn sample(date1904: bool) -> Vec<u8> {
     // SST: "Hello", then "Wörld" as UTF-16 split across a Continue record.
     let mut sst = cat(&[&2u32.to_le_bytes(), &2u32.to_le_bytes(), &xlstr("Hello")]);
     sst.extend_from_slice(&[5, 0, 0, b'W']);
-    let sst_rec = cat(&[&rec(0x00FC, &sst), &rec(0x003C, &cat(&[&[1], &u16s(&[0xF6, 'r' as u16, 'l' as u16, 'd' as u16])]))]);
+    let sst_rec = cat(&[
+        &rec(0x00FC, &sst),
+        &rec(
+            0x003C,
+            &cat(&[&[1], &u16s(&[0xF6, 'r' as u16, 'l' as u16, 'd' as u16])]),
+        ),
+    ]);
     let xf = |ifmt: u16| rec(0x00E0, &cat(&[&u16s(&[0, ifmt, 0]), &[0; 14]]));
     // Lbl "Rate" = Data!$A$1 (PtgRef3d, absolute).
     let rate = cat(&[&[0x3A], &1u16.to_le_bytes(), &u16s(&[0, 0])]);
-    let lbl = rec(0x0018, &cat(&[&u16s(&[0]), &[0, 4], &u16s(&[rate.len() as u16, 0, 0]), &[0; 4], &[0], b"Rate", &rate]));
+    let lbl = rec(
+        0x0018,
+        &cat(&[
+            &u16s(&[0]),
+            &[0, 4],
+            &u16s(&[rate.len() as u16, 0, 0]),
+            &[0; 4],
+            &[0],
+            b"Rate",
+            &rate,
+        ]),
+    );
     // Print_Area on Sheet1 (built-in name 6, itab 1) = Sheet1!$A$1:$B$2.
     let pa = cat(&[&[0x3B], &0u16.to_le_bytes(), &u16s(&[0, 1, 0, 1])]);
-    let print_area = rec(0x0018, &cat(&[&u16s(&[0x0020]), &[0, 1], &u16s(&[pa.len() as u16, 0, 1]), &[0; 4], &[0, 6], &pa]));
-    let boundsheet = |pos: u32, kind: u8, name: &str| rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, kind, name.len() as u8, 0], name.as_bytes()]));
+    let print_area = rec(
+        0x0018,
+        &cat(&[
+            &u16s(&[0x0020]),
+            &[0, 1],
+            &u16s(&[pa.len() as u16, 0, 1]),
+            &[0; 4],
+            &[0, 6],
+            &pa,
+        ]),
+    );
+    let boundsheet = |pos: u32, kind: u8, name: &str| {
+        rec(
+            0x0085,
+            &cat(&[
+                &pos.to_le_bytes(),
+                &[0, kind, name.len() as u8, 0],
+                name.as_bytes(),
+            ]),
+        )
+    };
     let globals = |positions: [u32; 3]| {
         cat(&[
             &bof(0x0005),
@@ -223,17 +272,37 @@ fn sample(date1904: bool) -> Vec<u8> {
             &boundsheet(positions[1], 0, "Data"),
             &boundsheet(positions[2], 2, "Chart1"),
             &rec(0x01AE, &u16s(&[3, 0x0401])),
-            &rec(0x0017, &cat(&[&u16s(&[2]), &u16s(&[0, 0, 0]), &u16s(&[0, 1, 1])])),
+            &rec(
+                0x0017,
+                &cat(&[&u16s(&[2]), &u16s(&[0, 0, 0]), &u16s(&[0, 1, 1])]),
+            ),
             &lbl,
             &print_area,
             &sst_rec,
             &eof(),
         ])
     };
-    let mulrk = cat(&[&u16s(&[1, 2]), &u16s(&[0]), &((7u32 << 2) | 2).to_le_bytes(), &u16s(&[2]), &((150u32 << 2) | 3).to_le_bytes(), &u16s(&[3])]);
+    let mulrk = cat(&[
+        &u16s(&[1, 2]),
+        &u16s(&[0]),
+        &((7u32 << 2) | 2).to_le_bytes(),
+        &u16s(&[2]),
+        &((150u32 << 2) | 3).to_le_bytes(),
+        &u16s(&[3]),
+    ]);
     let shared = cat(&[&[0x4C], &u16s(&[0, 0xFFFF]), &ptg_int(10), &[0x05]]);
-    let array = cat(&[&[0x65], &u16s(&[4, 5, 0xC000, 0xC000]), &ptg_int(2), &[0x05]]);
-    let sum = cat(&[&[0x25], &u16s(&[0, 0, 1 | 0xC000, 2 | 0xC000]), &[0x22, 1], &4u16.to_le_bytes()]);
+    let array = cat(&[
+        &[0x65],
+        &u16s(&[4, 5, 0xC000, 0xC000]),
+        &ptg_int(2),
+        &[0x05],
+    ]);
+    let sum = cat(&[
+        &[0x25],
+        &u16s(&[0, 0, 1 | 0xC000, 2 | 0xC000]),
+        &[0x22, 1],
+        &4u16.to_le_bytes(),
+    ]);
     let concat = cat(&[&ptg_ref(0, 0), &[0x17, 1, 0, b'!'], &[0x08]]);
     let round = cat(&[&ptg_ref(0, 1), &ptg_int(0), &[0x41], &27u16.to_le_bytes()]);
     let name_ref = cat(&[&[0x43], &1u32.to_le_bytes(), &ptg_int(2), &[0x05]]);
@@ -242,32 +311,71 @@ fn sample(date1904: bool) -> Vec<u8> {
         &bof(0x0010),
         &rec(0x0225, &u16s(&[0, 255])),
         &rec(0x007D, &u16s(&[0, 0, 20 * 256, 0, 0x0002, 0])),
-        &rec(0x0208, &cat(&[&u16s(&[0, 0, 4, 600, 0, 0]), &(0x0140u32).to_le_bytes()])),
+        &rec(
+            0x0208,
+            &cat(&[&u16s(&[0, 0, 4, 600, 0, 0]), &(0x0140u32).to_le_bytes()]),
+        ),
         &rec(0x00FD, &cat(&[&cell(0, 0, 0), &0u32.to_le_bytes()])),
         &rec(0x0203, &cat(&[&cell(0, 1, 0), &1.5f64.to_le_bytes()])),
-        &rec(0x027E, &cat(&[&cell(0, 2, 0), &((42u32 << 2) | 2).to_le_bytes()])),
+        &rec(
+            0x027E,
+            &cat(&[&cell(0, 2, 0), &((42u32 << 2) | 2).to_le_bytes()]),
+        ),
         &rec(0x00FD, &cat(&[&cell(0, 3, 0), &1u32.to_le_bytes()])),
         &rec(0x0205, &cat(&[&cell(1, 0, 0), &[1, 0]])),
         &rec(0x0205, &cat(&[&cell(1, 1, 0), &[0x07, 1]])),
         &rec(0x00BD, &mulrk),
-        &formula(2, 0, num(3.0), &cat(&[&ptg_ref(0, 1), &ptg_int(2), &[0x05]])),
+        &formula(
+            2,
+            0,
+            num(3.0),
+            &cat(&[&ptg_ref(0, 1), &ptg_int(2), &[0x05]]),
+        ),
         &formula(2, 1, num(43.5), &sum),
         &formula(2, 2, special(0, 0), &concat),
         &rec(0x0207, &xlstr("Hello!")),
-        &formula(2, 3, special(1, 1), &cat(&[&ptg_ref(0, 1), &ptg_int(1), &[0x0D]])),
+        &formula(
+            2,
+            3,
+            special(1, 1),
+            &cat(&[&ptg_ref(0, 1), &ptg_int(1), &[0x0D]]),
+        ),
         &formula(2, 4, num(14.0), &name_ref),
         &formula(2, 5, num(2.0), &round),
         &formula(2, 6, num(7.0), &ref3d),
         &formula(2, 7, special(2, 0x2A), &[0x1C, 0x2A]),
         &rec(0x0203, &cat(&[&cell(3, 0, 1), &0.0f64.to_le_bytes()])),
         &rec(0x0203, &cat(&[&cell(3, 1, 2), &0.25f64.to_le_bytes()])),
-        &rec(0x027E, &cat(&[&cell(4, 0, 0), &((1u32 << 2) | 2).to_le_bytes()])),
-        &rec(0x027E, &cat(&[&cell(5, 0, 0), &((2u32 << 2) | 2).to_le_bytes()])),
+        &rec(
+            0x027E,
+            &cat(&[&cell(4, 0, 0), &((1u32 << 2) | 2).to_le_bytes()]),
+        ),
+        &rec(
+            0x027E,
+            &cat(&[&cell(5, 0, 0), &((2u32 << 2) | 2).to_le_bytes()]),
+        ),
         &formula(4, 1, num(10.0), &exp(4, 1)),
-        &rec(0x04BC, &cat(&[&u16s(&[4, 5]), &[1, 1, 0, 2], &(shared.len() as u16).to_le_bytes(), &shared])),
+        &rec(
+            0x04BC,
+            &cat(&[
+                &u16s(&[4, 5]),
+                &[1, 1, 0, 2],
+                &(shared.len() as u16).to_le_bytes(),
+                &shared,
+            ]),
+        ),
         &formula(5, 1, num(20.0), &exp(4, 1)),
         &formula(4, 2, num(2.0), &exp(4, 2)),
-        &rec(0x0221, &cat(&[&u16s(&[4, 5]), &[2, 2], &[0; 6], &(array.len() as u16).to_le_bytes(), &array])),
+        &rec(
+            0x0221,
+            &cat(&[
+                &u16s(&[4, 5]),
+                &[2, 2],
+                &[0; 6],
+                &(array.len() as u16).to_le_bytes(),
+                &array,
+            ]),
+        ),
         &formula(5, 2, num(4.0), &exp(4, 2)),
         &rec(0x00E5, &cat(&[&u16s(&[1]), &u16s(&[6, 6, 0, 1])])),
         // An embedded chart substream: its records are not cells.
@@ -276,7 +384,11 @@ fn sample(date1904: bool) -> Vec<u8> {
         &eof(),
         &eof(),
     ]);
-    let data = cat(&[&bof(0x0010), &rec(0x0203, &cat(&[&cell(0, 0, 0), &7.0f64.to_le_bytes()])), &eof()]);
+    let data = cat(&[
+        &bof(0x0010),
+        &rec(0x0203, &cat(&[&cell(0, 0, 0), &7.0f64.to_le_bytes()])),
+        &eof(),
+    ]);
     let chart = cat(&[&bof(0x0020), &eof()]);
     let len = globals([0; 3]).len() as u32;
     let p1 = len;
@@ -290,7 +402,10 @@ fn v(wb: &gridcraft_model::Workbook, sheet: usize, a1: &str) -> Value {
 }
 
 fn ftext(wb: &gridcraft_model::Workbook, a1: &str) -> Option<String> {
-    wb.sheets[0].cell(CellRef::parse(a1).unwrap()).and_then(|c| c.formula.as_ref()).map(|f| f.text.clone())
+    wb.sheets[0]
+        .cell(CellRef::parse(a1).unwrap())
+        .and_then(|c| c.formula.as_ref())
+        .map(|f| f.text.clone())
 }
 
 #[test]
@@ -304,9 +419,19 @@ fn reads_values_formulas_formats_and_layout() {
         let bytes = compound("Workbook", &stream);
         assert_eq!(sniff(&bytes), Format::Xls);
         let (wb, report) = read_xls(&bytes).unwrap();
-        assert!(report.warnings[0].contains("Excel 97-2003"), "{:?}", report.warnings);
+        assert!(
+            report.warnings[0].contains("Excel 97-2003"),
+            "{:?}",
+            report.warnings
+        );
         assert!(report.warnings.iter().any(|w| w.contains("Chart sheets")));
-        assert_eq!(wb.sheets.iter().map(|s| s.name.as_str()).collect::<Vec<_>>(), ["Sheet1", "Data"]);
+        assert_eq!(
+            wb.sheets
+                .iter()
+                .map(|s| s.name.as_str())
+                .collect::<Vec<_>>(),
+            ["Sheet1", "Data"]
+        );
         assert_eq!(v(&wb, 0, "A1"), Value::from("Hello"));
         assert_eq!(v(&wb, 0, "B1"), Value::Number(1.5));
         assert_eq!(v(&wb, 0, "C1"), Value::Number(42.0));
@@ -332,14 +457,34 @@ fn reads_values_formulas_formats_and_layout() {
         assert_eq!(ftext(&wb, "B6").as_deref(), Some("A6*10"));
         // Array formula: the anchor holds it; the other cell's cached result is dropped so that
         // the formula fills the range on recalculation (as when an .xlsx is read, #156).
-        let c5 = wb.sheets[0].cell(CellRef::parse("C5").unwrap()).unwrap().formula.clone().unwrap();
-        assert_eq!((c5.text.as_str(), c5.array), ("A5:A6*2", Some(RangeRef::parse("C5:C6").unwrap())));
+        let c5 = wb.sheets[0]
+            .cell(CellRef::parse("C5").unwrap())
+            .unwrap()
+            .formula
+            .clone()
+            .unwrap();
+        assert_eq!(
+            (c5.text.as_str(), c5.array),
+            ("A5:A6*2", Some(RangeRef::parse("C5:C6").unwrap()))
+        );
         assert_eq!(ftext(&wb, "C6"), None);
         assert_eq!(v(&wb, 0, "C6"), Value::Empty);
         // Number formats, merges, sizes, names, print area; embedded chart records ignored.
         let sh = &wb.sheets[0];
-        assert_eq!(wb.styles.get(sh.style_id(CellRef::parse("A4").unwrap())).num_fmt.as_str(), "yyyy-mm-dd");
-        assert_eq!(wb.styles.get(sh.style_id(CellRef::parse("B4").unwrap())).num_fmt.as_str(), "0.00%");
+        assert_eq!(
+            wb.styles
+                .get(sh.style_id(CellRef::parse("A4").unwrap()))
+                .num_fmt
+                .as_str(),
+            "yyyy-mm-dd"
+        );
+        assert_eq!(
+            wb.styles
+                .get(sh.style_id(CellRef::parse("B4").unwrap()))
+                .num_fmt
+                .as_str(),
+            "0.00%"
+        );
         assert_eq!(sh.merges, vec![RangeRef::parse("A7:B7").unwrap()]);
         assert!(sh.cols.get(&0).unwrap().size.unwrap() > sh.default_col_width);
         assert_eq!(sh.rows.get(&0).unwrap().size, Some(40.0));
@@ -347,13 +492,28 @@ fn reads_values_formulas_formats_and_layout() {
         assert_eq!(sh.print.print_area, RangeRef::parse("A1:B2"));
         assert_eq!(v(&wb, 0, "J10"), Value::Empty);
         assert_eq!(wb.names.len(), 1);
-        assert_eq!((wb.names[0].name.as_str(), wb.names[0].formula.as_str()), ("Rate", "Data!$A$1"));
+        assert_eq!(
+            (wb.names[0].name.as_str(), wb.names[0].formula.as_str()),
+            ("Rate", "Data!$A$1")
+        );
         assert_eq!(v(&wb, 1, "A1"), Value::Number(7.0));
         assert_eq!(wb.date_system, DateSystem::D1900);
         // The import saves as .xlsx and reads back.
         let (back, _) = read_xlsx(&write_xlsx(&wb).unwrap()).unwrap();
-        assert_eq!(back.sheets[0].cell(CellRef::parse("A3").unwrap()).unwrap().formula.as_ref().unwrap().text, "B1*2");
-        assert_eq!(back.sheets[0].value(CellRef::parse("C3").unwrap()), Value::from("Hello!"));
+        assert_eq!(
+            back.sheets[0]
+                .cell(CellRef::parse("A3").unwrap())
+                .unwrap()
+                .formula
+                .as_ref()
+                .unwrap()
+                .text,
+            "B1*2"
+        );
+        assert_eq!(
+            back.sheets[0].value(CellRef::parse("C3").unwrap()),
+            Value::from("Hello!")
+        );
     }
     let (wb, _) = read_xls(&compound("Workbook", &sample(true))).unwrap();
     assert_eq!(wb.date_system, DateSystem::D1904);
@@ -364,12 +524,29 @@ fn text_result_of_a_formula_kept_as_its_value() {
     // A what-if data table cell ({=TABLE(B1,)}) can't be imported as a formula, so its saved result
     // is kept. With the default XF the cell is blank until the String record brings the text.
     let table = cat(&[&[0x02], &u16s(&[0, 0])]);
-    let sheet = cat(&[&bof(0x0010), &formula(0, 0, special(0, 0), &table), &rec(0x0207, &xlstr("103a")), &eof()]);
-    let boundsheet = |pos: u32| rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"]));
+    let sheet = cat(&[
+        &bof(0x0010),
+        &formula(0, 0, special(0, 0), &table),
+        &rec(0x0207, &xlstr("103a")),
+        &eof(),
+    ]);
+    let boundsheet = |pos: u32| {
+        rec(
+            0x0085,
+            &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"]),
+        )
+    };
     let len = cat(&[&bof(0x0005), &boundsheet(0), &eof()]).len() as u32;
     let stream = cat(&[&bof(0x0005), &boundsheet(len), &eof(), &sheet]);
     let (wb, report) = read_xls(&compound("Workbook", &stream)).unwrap();
-    assert!(report.warnings.iter().any(|w| w.contains("what-if data tables")), "{:?}", report.warnings);
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("what-if data tables")),
+        "{:?}",
+        report.warnings
+    );
     assert_eq!(ftext(&wb, "A1"), None);
     assert_eq!(v(&wb, 0, "A1"), Value::from("103a"));
 }
@@ -380,7 +557,9 @@ fn refuses_encrypted_old_and_foreign_files() {
     let mut stream = bof(0x0005);
     stream.extend(rec(0x002F, &[1, 0, 1, 0]));
     stream.extend(eof());
-    let err = read_xls(&compound("Workbook", &stream)).unwrap_err().to_string();
+    let err = read_xls(&compound("Workbook", &stream))
+        .unwrap_err()
+        .to_string();
     assert!(err.contains("password-protected"), "{err}");
     // A BIFF5 (Excel 5.0/95) workbook keeps its data in a `Book` stream.
     let book = compound("Book", &stream);
@@ -424,17 +603,33 @@ fn hostile_xls_input_never_panics_or_hangs() {
     assert!(read_xls(&b).is_err());
     // Huge declared counts: shared strings, merges, external sheets.
     let mut huge = bof(0x0005);
-    huge.extend(rec(0x00FC, &cat(&[&u32::MAX.to_le_bytes(), &u32::MAX.to_le_bytes()])));
+    huge.extend(rec(
+        0x00FC,
+        &cat(&[&u32::MAX.to_le_bytes(), &u32::MAX.to_le_bytes()]),
+    ));
     huge.extend(eof());
-    assert!(matches!(read_xls(&compound("Workbook", &huge)), Err(IoError::TooLarge(_))));
+    assert!(matches!(
+        read_xls(&compound("Workbook", &huge)),
+        Err(IoError::TooLarge(_))
+    ));
     let mut huge = bof(0x0005);
-    huge.extend(rec(0x00FC, &cat(&[&9u32.to_le_bytes(), &1_000_000u32.to_le_bytes(), &xlstr("x")])));
+    huge.extend(rec(
+        0x00FC,
+        &cat(&[
+            &9u32.to_le_bytes(),
+            &1_000_000u32.to_le_bytes(),
+            &xlstr("x"),
+        ]),
+    ));
     huge.extend(rec(0x0017, &u16s(&[0xFFFF])));
     huge.extend(eof());
     assert!(read_xls(&compound("Workbook", &huge)).is_err()); // no worksheets
     // A sheet pointing outside the stream and a stream size larger than the file.
     let mut bad = bof(0x0005);
-    bad.extend(rec(0x0085, &cat(&[&u32::MAX.to_le_bytes(), &[0, 0, 1, 0], b"S"])));
+    bad.extend(rec(
+        0x0085,
+        &cat(&[&u32::MAX.to_le_bytes(), &[0, 0, 1, 0], b"S"]),
+    ));
     bad.extend(eof());
     assert!(read_xls(&compound("Workbook", &bad)).is_err());
     let mut b = compound("Workbook", &big);
@@ -459,12 +654,26 @@ fn sheets_share_one_record_budget() {
     // Many BoundSheet records point into one long substream (at successive nested BOFs), so each
     // sheet would read the whole tail. The record allowance is shared, not per sheet.
     let n = 300u32;
-    let tail: Vec<u8> = (0..2000u16).flat_map(|r| rec(0x0203, &cat(&[&cell(r, 0, 0), &1.0f64.to_le_bytes()]))).collect();
-    let boundsheet = |pos: u32, name: &str| rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, 0, name.len() as u8, 0], name.as_bytes()]));
+    let tail: Vec<u8> = (0..2000u16)
+        .flat_map(|r| rec(0x0203, &cat(&[&cell(r, 0, 0), &1.0f64.to_le_bytes()])))
+        .collect();
+    let boundsheet = |pos: u32, name: &str| {
+        rec(
+            0x0085,
+            &cat(&[
+                &pos.to_le_bytes(),
+                &[0, 0, name.len() as u8, 0],
+                name.as_bytes(),
+            ]),
+        )
+    };
     let globals = |base: u32| {
         let mut g = bof(0x0005);
         for i in 0..n {
-            g.extend(boundsheet(base + i * bof(0x0010).len() as u32, &format!("S{i}")));
+            g.extend(boundsheet(
+                base + i * bof(0x0010).len() as u32,
+                &format!("S{i}"),
+            ));
         }
         g.extend(eof());
         g
@@ -478,8 +687,13 @@ fn sheets_share_one_record_budget() {
     stream.extend(eof());
     let file = compound("Workbook", &stream);
     // About n × 2,000 records in all: over a 100,000 shared allowance, though each sheet alone fits.
-    assert!(matches!(crate::xls::read_xls_with(&file, crate::xls::Budget::with_max_records(100_000)), Err(IoError::TooLarge(_))));
-    assert!(crate::xls::read_xls_with(&file, crate::xls::Budget::with_max_records(10_000_000)).is_ok());
+    assert!(matches!(
+        crate::xls::read_xls_with(&file, crate::xls::Budget::with_max_records(100_000)),
+        Err(IoError::TooLarge(_))
+    ));
+    assert!(
+        crate::xls::read_xls_with(&file, crate::xls::Budget::with_max_records(10_000_000)).is_ok()
+    );
 
     // Two sheets at the same offset are refused outright.
     let mut dup = bof(0x0005);
@@ -489,7 +703,9 @@ fn sheets_share_one_record_budget() {
     dup.extend(eof());
     dup.extend(bof(0x0010));
     dup.extend(eof());
-    let err = read_xls(&compound("Workbook", &dup)).unwrap_err().to_string();
+    let err = read_xls(&compound("Workbook", &dup))
+        .unwrap_err()
+        .to_string();
     assert!(err.contains("same substream"), "{err}");
 }
 
@@ -502,23 +718,50 @@ fn formulas_using_a_skipped_name_keep_their_saved_results() {
     let local = cat(&[&[0x3A], &0u16.to_le_bytes(), &u16s(&[0, 0])]);
     let twice = cat(&[&[0x23], &1u32.to_le_bytes(), &ptg_int(2), &[0x05]]);
     let lbl = |name: &str, rgce: &[u8]| {
-        rec(0x0018, &cat(&[&u16s(&[0]), &[0, name.len() as u8], &u16s(&[rgce.len() as u16, 0, 0]), &[0; 4], &[0], name.as_bytes(), rgce]))
+        rec(
+            0x0018,
+            &cat(&[
+                &u16s(&[0]),
+                &[0, name.len() as u8],
+                &u16s(&[rgce.len() as u16, 0, 0]),
+                &[0; 4],
+                &[0],
+                name.as_bytes(),
+                rgce,
+            ]),
+        )
     };
-    let boundsheet = |pos: u32| rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"]));
+    let boundsheet = |pos: u32| {
+        rec(
+            0x0085,
+            &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"]),
+        )
+    };
     let globals = |pos: u32| {
         cat(&[
             &bof(0x0005),
             &boundsheet(pos),
             &rec(0x01AE, &u16s(&[1, 0x0401])),
-            &rec(0x01AE, &cat(&[&u16s(&[1]), &xlstr("Source.xlsx"), &xlstr("Sheet1")])),
-            &rec(0x0017, &cat(&[&u16s(&[2]), &u16s(&[0, 0, 0]), &u16s(&[1, 0, 0])])),
+            &rec(
+                0x01AE,
+                &cat(&[&u16s(&[1]), &xlstr("Source.xlsx"), &xlstr("Sheet1")]),
+            ),
+            &rec(
+                0x0017,
+                &cat(&[&u16s(&[2]), &u16s(&[0, 0, 0]), &u16s(&[1, 0, 0])]),
+            ),
             &lbl("ExtRange", &ext),
             &lbl("Local", &local),
             &lbl("Twice", &twice),
             &eof(),
         ])
     };
-    let sum_ext = cat(&[&[0x43], &1u32.to_le_bytes(), &[0x22, 1], &4u16.to_le_bytes()]);
+    let sum_ext = cat(&[
+        &[0x43],
+        &1u32.to_le_bytes(),
+        &[0x22, 1],
+        &4u16.to_le_bytes(),
+    ]);
     let local_x2 = cat(&[&[0x43], &2u32.to_le_bytes(), &ptg_int(2), &[0x05]]);
     let sheet = cat(&[
         &bof(0x0010),
@@ -529,12 +772,23 @@ fn formulas_using_a_skipped_name_keep_their_saved_results() {
     ]);
     let pos = globals(0).len() as u32;
     let (wb, report) = read_xls(&compound("Workbook", &cat(&[&globals(pos), &sheet]))).unwrap();
-    let names: Vec<_> = wb.names.iter().map(|n| (n.name.as_str(), n.formula.as_str())).collect();
+    let names: Vec<_> = wb
+        .names
+        .iter()
+        .map(|n| (n.name.as_str(), n.formula.as_str()))
+        .collect();
     assert_eq!(names, [("Local", "Sheet1!$A$1"), ("Twice", "ExtRange*2")]);
     assert_eq!(ftext(&wb, "B6"), None);
     assert_eq!(v(&wb, 0, "B6"), Value::Number(60.0));
     assert_eq!(ftext(&wb, "B7").as_deref(), Some("Local*2"));
-    assert!(report.warnings.iter().any(|w| w.contains("defined names") && w.contains("saved results")), "{:?}", report.warnings);
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("defined names") && w.contains("saved results")),
+        "{:?}",
+        report.warnings
+    );
 }
 
 #[test]
@@ -542,14 +796,40 @@ fn reads_iterative_calculation_settings() {
     // CalcMode, CalcCount, CalcIter and CalcDelta repeat in every worksheet substream; here only
     // the first sheet carries them, so the sheet after it must not reset them to the defaults.
     // CalcPrecision sits in the globals.
-    let calc = cat(&[&rec(0x000D, &u16s(&[0])), &rec(0x000C, &u16s(&[50])), &rec(0x0011, &u16s(&[1])), &rec(0x0010, &0.01f64.to_le_bytes())]);
+    let calc = cat(&[
+        &rec(0x000D, &u16s(&[0])),
+        &rec(0x000C, &u16s(&[50])),
+        &rec(0x0011, &u16s(&[1])),
+        &rec(0x0010, &0.01f64.to_le_bytes()),
+    ]);
     let sheet1 = cat(&[&bof(0x0010), &calc, &eof()]);
     let sheet2 = cat(&[&bof(0x0010), &eof()]);
-    let boundsheet = |pos: u32, name: &str| rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, 0, name.len() as u8, 0], name.as_bytes()]));
-    let globals = |p1: u32, p2: u32| cat(&[&bof(0x0005), &rec(0x000E, &u16s(&[0])), &boundsheet(p1, "A"), &boundsheet(p2, "B"), &eof()]);
+    let boundsheet = |pos: u32, name: &str| {
+        rec(
+            0x0085,
+            &cat(&[
+                &pos.to_le_bytes(),
+                &[0, 0, name.len() as u8, 0],
+                name.as_bytes(),
+            ]),
+        )
+    };
+    let globals = |p1: u32, p2: u32| {
+        cat(&[
+            &bof(0x0005),
+            &rec(0x000E, &u16s(&[0])),
+            &boundsheet(p1, "A"),
+            &boundsheet(p2, "B"),
+            &eof(),
+        ])
+    };
     let p1 = globals(0, 0).len() as u32;
     let p2 = p1 + sheet1.len() as u32;
-    let (wb, _) = read_xls(&compound("Workbook", &cat(&[&globals(p1, p2), &sheet1, &sheet2]))).unwrap();
+    let (wb, _) = read_xls(&compound(
+        "Workbook",
+        &cat(&[&globals(p1, p2), &sheet1, &sheet2]),
+    ))
+    .unwrap();
     assert!(wb.calc.iterative);
     assert_eq!((wb.calc.max_iterations, wb.calc.max_change), (50, 0.01));
     assert_eq!(wb.calc.mode, gridcraft_model::CalcMode::Manual);
@@ -563,7 +843,10 @@ fn reads_iterative_calculation_settings() {
 fn a_format_shorter_than_its_count_keeps_its_characters() {
     // A FORMAT whose cch is one more than the characters in the record (seen in real files):
     // Excel opens them, the record's characters are the format code.
-    let short = rec(0x041E, &cat(&[&165u16.to_le_bytes(), &6u16.to_le_bytes(), &[0], b"0.000"]));
+    let short = rec(
+        0x041E,
+        &cat(&[&165u16.to_le_bytes(), &6u16.to_le_bytes(), &[0], b"0.000"]),
+    );
     let xf = |ifmt: u16| rec(0x00E0, &cat(&[&u16s(&[0, ifmt, 0]), &[0; 14]]));
     let globals = |pos: u32| {
         cat(&[
@@ -573,7 +856,10 @@ fn a_format_shorter_than_its_count_keeps_its_characters() {
             &xf(0),
             &xf(164),
             &xf(165),
-            &rec(0x0085, &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"])),
+            &rec(
+                0x0085,
+                &cat(&[&pos.to_le_bytes(), &[0, 0, 6, 0], b"Sheet1"]),
+            ),
             &eof(),
         ])
     };
@@ -587,10 +873,23 @@ fn a_format_shorter_than_its_count_keeps_its_characters() {
     let stream = cat(&[&globals(globals(0).len() as u32), &sheet]);
     let (wb, report) = read_xls(&compound("Workbook", &stream)).unwrap();
     let sh = &wb.sheets[0];
-    let fmt = |a1: &str| wb.styles.get(sh.style_id(CellRef::parse(a1).unwrap())).num_fmt.as_str().to_string();
+    let fmt = |a1: &str| {
+        wb.styles
+            .get(sh.style_id(CellRef::parse(a1).unwrap()))
+            .num_fmt
+            .as_str()
+            .to_string()
+    };
     assert_eq!(v(&wb, 0, "A1"), Value::Number(7.0));
     assert_eq!(v(&wb, 0, "A3"), Value::Number(1.25));
     assert_eq!(fmt("A2"), "yyyy-mm-dd");
     assert_eq!(fmt("A3"), "0.000");
-    assert!(report.warnings.iter().any(|w| w.contains("declared length")), "{:?}", report.warnings);
+    assert!(
+        report
+            .warnings
+            .iter()
+            .any(|w| w.contains("declared length")),
+        "{:?}",
+        report.warnings
+    );
 }

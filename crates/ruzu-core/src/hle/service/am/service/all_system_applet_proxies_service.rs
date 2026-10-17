@@ -44,7 +44,11 @@ impl IAllSystemAppletProxiesService {
                 Some(Self::open_system_applet_proxy_handler),
                 "OpenSystemAppletProxy",
             ),
-            (110, Some(Self::open_system_applet_proxy_handler), "OpenSystemAppletProxyEx"),
+            (
+                110,
+                Some(Self::open_system_applet_proxy_handler),
+                "OpenSystemAppletProxyEx",
+            ),
             (
                 200,
                 Some(Self::open_library_applet_proxy_old_handler),
@@ -55,12 +59,28 @@ impl IAllSystemAppletProxiesService {
                 Some(Self::open_library_applet_proxy_handler),
                 "OpenLibraryAppletProxy",
             ),
-            (300, Some(Self::open_overlay_applet_proxy_handler), "OpenOverlayAppletProxy"),
-            (350, Some(Self::open_system_application_proxy_handler), "OpenSystemApplicationProxy"),
+            (
+                300,
+                Some(Self::open_overlay_applet_proxy_handler),
+                "OpenOverlayAppletProxy",
+            ),
+            (
+                350,
+                Some(Self::open_system_application_proxy_handler),
+                "OpenSystemApplicationProxy",
+            ),
             (400, None, "CreateSelfLibraryAppletCreatorForDevelop"),
             (410, None, "GetSystemAppletControllerForDebug"),
-            (450, Some(Self::get_system_process_common_functions), "GetSystemProcessCommonFunctions"),
-            (460, Some(Self::get_applet_alternative_functions), "GetAppletAlternativeFunctions"),
+            (
+                450,
+                Some(Self::get_system_process_common_functions),
+                "GetSystemProcessCommonFunctions",
+            ),
+            (
+                460,
+                Some(Self::get_applet_alternative_functions),
+                "GetAppletAlternativeFunctions",
+            ),
             (1000, None, "GetDebugFunctions"),
         ]);
         Self {
@@ -71,7 +91,10 @@ impl IAllSystemAppletProxiesService {
         }
     }
 
-    fn get_system_process_common_functions(_this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn get_system_process_common_functions(
+        _this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         log::debug!("IAllSystemAppletProxiesService::GetSystemProcessCommonFunctions (STUBBED)");
         let mut rb = ResponseBuilder::new(ctx, 2, 0, 0);
         rb.push_result(RESULT_SUCCESS);
@@ -101,12 +124,18 @@ impl IAllSystemAppletProxiesService {
         }
         let (object_id, current_id) = {
             let owner = process.lock().unwrap();
-            (owner.handle_table.get_object(handle)?, owner.get_process_id())
+            (
+                owner.handle_table.get_object(handle)?,
+                owner.get_process_id(),
+            )
         };
         if object_id == current_id {
             return Some(process);
         }
-        ctx.get_system()?.get().kernel()?.get_process_by_id(object_id)
+        ctx.get_system()?
+            .get()
+            .kernel()?
+            .get_process_by_id(object_id)
     }
 
     fn push_interface_response(
@@ -170,7 +199,10 @@ impl IAllSystemAppletProxiesService {
         Self::push_interface_response(ctx, proxy);
     }
 
-    fn open_system_application_proxy_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
+    fn open_system_application_proxy_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
         let service = unsafe {
             &*(this as *const dyn ServiceFramework as *const IAllSystemAppletProxiesService)
         };
@@ -304,7 +336,9 @@ mod tests {
         system.set_current_process_arc(caller.clone());
         system.kernel().unwrap().register_process(target.clone());
         let mut kernel = ScopedKernelForTest::new();
-        kernel.kernel_mut().set_system_ref(SystemRef::from_ref(&system));
+        kernel
+            .kernel_mut()
+            .set_system_ref(SystemRef::from_ref(&system));
         let thread = Arc::new(KThreadLock::new(KThread::new()));
         thread.lock().unwrap().parent = Some(Arc::downgrade(&caller));
 
@@ -329,8 +363,12 @@ mod tests {
         let window = Arc::new(Mutex::new(WindowSystem::new(SystemRef::null())));
         let mut applet = Applet::new(SystemRef::null(), Process::new(), false);
         applet.aruid.pid = 0x51;
-        window.lock().unwrap().track_applet(Arc::new(Mutex::new(applet)), false);
-        let service = IAllSystemAppletProxiesService::new(SystemRef::null(), Arc::downgrade(&window));
+        window
+            .lock()
+            .unwrap()
+            .track_applet(Arc::new(Mutex::new(applet)), false);
+        let service =
+            IAllSystemAppletProxiesService::new(SystemRef::null(), Arc::downgrade(&window));
         for command in [300, 350] {
             let mut ctx = request(thread.clone(), PseudoHandle::CurrentProcess as u32);
             assert_eq!(ctx.get_pid(), 0x51);

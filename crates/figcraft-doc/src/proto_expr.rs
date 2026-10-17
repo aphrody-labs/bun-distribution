@@ -86,7 +86,11 @@ impl Expr {
 
     /// The value, with variables resolved in `modes`. `None` when a variable is missing, the
     /// types don't fit the operator, a number isn't finite or the nesting is too deep.
-    pub fn eval(&self, vars: &Variables, modes: &BTreeMap<CollectionId, ModeId>) -> Option<VariableValue> {
+    pub fn eval(
+        &self,
+        vars: &Variables,
+        modes: &BTreeMap<CollectionId, ModeId>,
+    ) -> Option<VariableValue> {
         self.eval_at(vars, modes, 0)
     }
 
@@ -95,15 +99,27 @@ impl Expr {
         matches!(self.eval(vars, modes), Some(VariableValue::Boolean(true)))
     }
 
-    fn eval_at(&self, vars: &Variables, modes: &BTreeMap<CollectionId, ModeId>, depth: usize) -> Option<VariableValue> {
+    fn eval_at(
+        &self,
+        vars: &Variables,
+        modes: &BTreeMap<CollectionId, ModeId>,
+        depth: usize,
+    ) -> Option<VariableValue> {
         if depth > MAX_EXPR_DEPTH {
             return None;
         }
         let (op, args) = match self {
             Expr::Value(VariableValue::Alias(id)) => return vars.resolve(id, modes),
-            Expr::Value(VariableValue::Number(n)) => return n.is_finite().then_some(VariableValue::Number(*n)),
+            Expr::Value(VariableValue::Number(n)) => {
+                return n.is_finite().then_some(VariableValue::Number(*n));
+            }
             Expr::Value(v) => return Some(v.clone()),
-            Expr::Mode { collection } => return vars.collection(collection)?.current_mode(modes).map(|m| VariableValue::String(m.name.clone())),
+            Expr::Mode { collection } => {
+                return vars
+                    .collection(collection)?
+                    .current_mode(modes)
+                    .map(|m| VariableValue::String(m.name.clone()));
+            }
             Expr::InMode { variable, mode } => {
                 let v = vars.get(variable)?;
                 let c = vars.collection(&v.collection)?;
@@ -113,7 +129,10 @@ impl Expr {
             }
             Expr::Op { op, args } => (*op, args),
         };
-        let vals: Vec<VariableValue> = args.iter().map(|a| a.eval_at(vars, modes, depth + 1)).collect::<Option<_>>()?;
+        let vals: Vec<VariableValue> = args
+            .iter()
+            .map(|a| a.eval_at(vars, modes, depth + 1))
+            .collect::<Option<_>>()?;
         apply(op, &vals)
     }
 
@@ -126,8 +145,12 @@ impl Expr {
 
     fn collect_variables<'a>(&'a self, out: &mut Vec<&'a str>, depth: usize) {
         match self {
-            Expr::Value(VariableValue::Alias(id)) | Expr::InMode { variable: id, .. } => out.push(id),
-            Expr::Op { args, .. } if depth < MAX_EXPR_DEPTH => args.iter().for_each(|a| a.collect_variables(out, depth + 1)),
+            Expr::Value(VariableValue::Alias(id)) | Expr::InMode { variable: id, .. } => {
+                out.push(id)
+            }
+            Expr::Op { args, .. } if depth < MAX_EXPR_DEPTH => args
+                .iter()
+                .for_each(|a| a.collect_variables(out, depth + 1)),
             _ => {}
         }
     }
@@ -143,28 +166,40 @@ impl Expr {
             return "…".into();
         }
         match self {
-            Expr::Value(VariableValue::Alias(id)) => vars.get(id).map_or_else(|| "(missing variable)".into(), |v| v.name.clone()),
+            Expr::Value(VariableValue::Alias(id)) => vars
+                .get(id)
+                .map_or_else(|| "(missing variable)".into(), |v| v.name.clone()),
             Expr::Value(VariableValue::String(s)) => quote(s),
             // Exact numbers and `#` colours, so the text reads back as the same expression.
             Expr::Value(VariableValue::Number(n)) => format!("{n}"),
             Expr::Value(VariableValue::Color(c)) => c.to_css_hex(),
             Expr::Value(v) => v.display(),
             Expr::Mode { collection } => {
-                let name = vars.collection(collection).map_or("(missing collection)", |c| c.name.as_str());
+                let name = vars
+                    .collection(collection)
+                    .map_or("(missing collection)", |c| c.name.as_str());
                 format!("mode({})", name_arg(name))
             }
             Expr::InMode { variable, mode } => {
                 let var = vars.get(variable);
-                let mode =
-                    var.and_then(|v| vars.collection(&v.collection)).and_then(|c| c.find_mode(mode)).map_or("(missing mode)", |m| m.name.as_str());
-                format!("{}[{}]", Expr::var(variable.clone()).display_at(vars, depth + 1), name_arg(mode))
+                let mode = var
+                    .and_then(|v| vars.collection(&v.collection))
+                    .and_then(|c| c.find_mode(mode))
+                    .map_or("(missing mode)", |m| m.name.as_str());
+                format!(
+                    "{}[{}]",
+                    Expr::var(variable.clone()).display_at(vars, depth + 1),
+                    name_arg(mode)
+                )
             }
             Expr::Op { op, args } => {
                 let parts: Vec<String> = args
                     .iter()
                     .map(|a| match a {
                         // `not` binds looser than what it may sit in (`(not a) == b`).
-                        Expr::Op { op, args } if args.len() > 1 || *op == ExprOp::Not => format!("({})", a.display_at(vars, depth + 1)),
+                        Expr::Op { op, args } if args.len() > 1 || *op == ExprOp::Not => {
+                            format!("({})", a.display_at(vars, depth + 1))
+                        }
                         _ => a.display_at(vars, depth + 1),
                     })
                     .collect();
@@ -181,7 +216,9 @@ impl Expr {
 /// A collection or mode name as written inside `mode(…)` or `[…]`: as it is, or quoted when it has
 /// spaces at its ends, quotes or brackets.
 fn name_arg(name: &str) -> String {
-    let plain = !name.is_empty() && name.trim() == name && !name.contains(['"', '\'', '\\', '(', ')', '[', ']', '{', '}']);
+    let plain = !name.is_empty()
+        && name.trim() == name
+        && !name.contains(['"', '\'', '\\', '(', ')', '[', ']', '{', '}']);
     if plain { name.to_string() } else { quote(name) }
 }
 
@@ -219,7 +256,9 @@ fn as_text(v: &VariableValue) -> Option<String> {
 
 fn same(a: &VariableValue, b: &VariableValue) -> bool {
     match (a, b) {
-        (VariableValue::Number(x), VariableValue::Number(y)) => (x - y).abs() <= 1e-9 * x.abs().max(y.abs()).max(1.0),
+        (VariableValue::Number(x), VariableValue::Number(y)) => {
+            (x - y).abs() <= 1e-9 * x.abs().max(y.abs()).max(1.0)
+        }
         (VariableValue::Color(x), VariableValue::Color(y)) => x.to_rgba8() == y.to_rgba8(),
         _ => a == b,
     }
@@ -233,7 +272,9 @@ fn apply(op: ExprOp, vals: &[VariableValue]) -> Option<VariableValue> {
     let fold = |f: fn(f64, f64) -> Option<f64>| {
         let n = nums()?;
         let (first, rest) = n.split_first()?;
-        rest.iter().try_fold(*first, |acc, x| f(acc, *x)).and_then(finite)
+        rest.iter()
+            .try_fold(*first, |acc, x| f(acc, *x))
+            .and_then(finite)
     };
     match op {
         Add if vals.iter().any(|v| matches!(v, VariableValue::String(_))) => {
@@ -270,8 +311,12 @@ fn apply(op: ExprOp, vals: &[VariableValue]) -> Option<VariableValue> {
                 _ => ord != O::Less,
             }))
         }
-        And => bools().filter(|b| !b.is_empty()).map(|b| VariableValue::Boolean(b.iter().all(|x| *x))),
-        Or => bools().filter(|b| !b.is_empty()).map(|b| VariableValue::Boolean(b.iter().any(|x| *x))),
+        And => bools()
+            .filter(|b| !b.is_empty())
+            .map(|b| VariableValue::Boolean(b.iter().all(|x| *x))),
+        Or => bools()
+            .filter(|b| !b.is_empty())
+            .map(|b| VariableValue::Boolean(b.iter().any(|x| *x))),
         Not => match vals {
             [VariableValue::Boolean(b)] => Some(VariableValue::Boolean(!b)),
             _ => None,

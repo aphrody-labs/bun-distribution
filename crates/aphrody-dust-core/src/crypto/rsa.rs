@@ -52,7 +52,10 @@ impl Visitor<'_> for RsaSignatureBytesVisitor {
 impl RsaSignature {
     /// Returns a [`DisplayRsaSignature`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayRsaSignature<'_> {
-        DisplayRsaSignature { rsa_signature: self, indent }
+        DisplayRsaSignature {
+            rsa_signature: self,
+            indent,
+        }
     }
 }
 

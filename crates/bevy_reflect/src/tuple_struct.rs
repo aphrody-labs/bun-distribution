@@ -5,11 +5,11 @@ use bevy_reflect_derive::impl_type_path;
 
 use crate::generics::impl_generic_info_methods;
 use crate::{
-    attributes::{impl_custom_attribute_methods, CustomAttributes},
-    tuple::{DynamicTuple, Tuple},
-    ty::impl_type_methods,
     ApplyError, Generics, PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut,
     ReflectOwned, ReflectRef, Type, TypeInfo, TypePath, UnnamedField,
+    attributes::{CustomAttributes, impl_custom_attribute_methods},
+    tuple::{DynamicTuple, Tuple},
+    ty::impl_type_methods,
 };
 use alloc::{boxed::Box, vec::Vec};
 use core::{

@@ -75,7 +75,13 @@ impl VersionCrcData {
         let crc16_v3 = version_crc_data.read_le::<u16>(6);
         let crc16_v103 = version_crc_data.read_le::<u16>(8);
 
-        Ok(VersionCrcData { version, crc16_v1, crc16_v2, crc16_v3, crc16_v103 })
+        Ok(VersionCrcData {
+            version,
+            crc16_v1,
+            crc16_v2,
+            crc16_v3,
+            crc16_v103,
+        })
     }
 }
 
@@ -145,10 +151,27 @@ impl Titles {
         let german = title!(0x540);
         let italian = title!(0x640);
         let spanish = title!(0x740);
-        let chinese = if version >= Version::Chinese { Some(title!(0x840)) } else { None };
-        let korean = if version >= Version::Korean { Some(title!(0x940)) } else { None };
+        let chinese = if version >= Version::Chinese {
+            Some(title!(0x840))
+        } else {
+            None
+        };
+        let korean = if version >= Version::Korean {
+            Some(title!(0x940))
+        } else {
+            None
+        };
 
-        Some(Titles { japanese, english, french, german, italian, spanish, chinese, korean })
+        Some(Titles {
+            japanese,
+            english,
+            french,
+            german,
+            italian,
+            spanish,
+            chinese,
+            korean,
+        })
     }
 }
 
@@ -199,7 +222,11 @@ impl AnimatedIcon {
             anim_sequence.push(entry);
         }
 
-        Some(AnimatedIcon { palettes, pixels, anim_sequence })
+        Some(AnimatedIcon {
+            palettes,
+            pixels,
+            anim_sequence,
+        })
     }
 }
 

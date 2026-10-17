@@ -80,19 +80,33 @@ fn resize(img: Image, w: usize, h: usize) -> Image {
     if img.w == w && img.h == h {
         return img;
     }
-    let m = Affine::scale(w as f64 / img.w.max(1) as f64, h as f64 / img.h.max(1) as f64);
+    let m = Affine::scale(
+        w as f64 / img.w.max(1) as f64,
+        h as f64 / img.h.max(1) as f64,
+    );
     img.transformed(w, h, &m)
 }
 
 /// Effects that read other frames (skipped when rendering another frame for one of them).
 pub fn is_temporal(id: &str) -> bool {
-    matches!(id, "posterize_time" | "echo" | "warp_stabilizer" | "auto_reframe")
+    matches!(
+        id,
+        "posterize_time" | "echo" | "warp_stabilizer" | "auto_reframe"
+    )
 }
 
 impl FxEnv for ItemEnv<'_> {
     fn frame(&self, dt: f64, upto: &EffectInstance) -> Option<Image> {
         let t2 = self.t + Tick::from_seconds_f64(dt);
-        let base = crate::base_layer(self.project, self.seq, self.item, t2, self.opts, self.sources, self.want)?;
+        let base = crate::base_layer(
+            self.project,
+            self.seq,
+            self.item,
+            t2,
+            self.opts,
+            self.sources,
+            self.want,
+        )?;
         let mut img = resize(base, self.layer_size.0, self.layer_size.1);
         let src = crate::source_size(self.project, self.item.item).unwrap_or((1, 1));
         let cx = FxCtx {
@@ -110,7 +124,10 @@ impl FxEnv for ItemEnv<'_> {
             if std::ptr::eq(e, upto) {
                 break;
             }
-            if e.def().is_some_and(|d| !d.intrinsic) && !filmcraft_project::graphic::is_layer(e) && !is_temporal(&e.effect) {
+            if e.def().is_some_and(|d| !d.intrinsic)
+                && !filmcraft_project::graphic::is_layer(e)
+                && !is_temporal(&e.effect)
+            {
                 crate::mask::apply_effect(&mut img, e, &cx);
             }
         }
@@ -118,14 +135,34 @@ impl FxEnv for ItemEnv<'_> {
     }
     fn source_frame(&self, dt: f64, scale: f32) -> Option<Image> {
         let t2 = self.t + Tick::from_seconds_f64(dt);
-        crate::base_layer(self.project, self.seq, self.item, t2, self.opts, self.sources, scale.clamp(1.0 / 64.0, 1.0))
+        crate::base_layer(
+            self.project,
+            self.seq,
+            self.item,
+            t2,
+            self.opts,
+            self.sources,
+            scale.clamp(1.0 / 64.0, 1.0),
+        )
     }
     fn track(&self, index: usize) -> Option<Image> {
         if index >= self.seq.video_tracks.len() {
             return None;
         }
-        let o = RenderOptions { captions: false, working_output: true, depth: self.opts.depth + 1, ..self.opts };
-        Some(crate::render_seq_tracks(self.project, self.seq, self.t, o, self.sources, Some(index)))
+        let o = RenderOptions {
+            captions: false,
+            working_output: true,
+            depth: self.opts.depth + 1,
+            ..self.opts
+        };
+        Some(crate::render_seq_tracks(
+            self.project,
+            self.seq,
+            self.t,
+            o,
+            self.sources,
+            Some(index),
+        ))
     }
     fn layer_to_output(&self) -> Affine {
         self.layer_to_output
@@ -141,10 +178,19 @@ impl FxEnv for ItemEnv<'_> {
     }
     fn media_timecode(&self) -> String {
         let s = &self.seq.settings;
-        format_time(self.item.source_time_at(self.t), s.frame_rate, s.drop_frame, TimeDisplay::Timecode, s.sample_rate as i64)
+        format_time(
+            self.item.source_time_at(self.t),
+            s.frame_rate,
+            s.drop_frame,
+            TimeDisplay::Timecode,
+            s.sample_rate as i64,
+        )
     }
     fn file_name(&self) -> String {
-        self.project.item(self.item.item).map(|p| p.name.clone()).unwrap_or_default()
+        self.project
+            .item(self.item.item)
+            .map(|p| p.name.clone())
+            .unwrap_or_default()
     }
     fn sequence_name(&self) -> String {
         self.project
@@ -158,7 +204,8 @@ impl FxEnv for ItemEnv<'_> {
         (self.seq.settings.width, self.seq.settings.height)
     }
     fn source_size(&self) -> (u32, u32) {
-        crate::source_size(self.project, self.item.item).unwrap_or((self.seq.settings.width, self.seq.settings.height))
+        crate::source_size(self.project, self.item.item)
+            .unwrap_or((self.seq.settings.width, self.seq.settings.height))
     }
     fn clip_key(&self) -> u64 {
         let mut h = 0xcbf2_9ce4_8422_2325u64;
@@ -185,19 +232,33 @@ pub(crate) fn fv(e: &EffectInstance, id: &str, cx: &FxCtx) -> f32 {
     e.f64_at(id, cx.t) as f32
 }
 pub(crate) fn bv(e: &EffectInstance, id: &str) -> bool {
-    e.param(id).and_then(|p| p.value.as_bool()).or_else(|| def_value(e, id).and_then(|v| v.as_bool())).unwrap_or(false)
+    e.param(id)
+        .and_then(|p| p.value.as_bool())
+        .or_else(|| def_value(e, id).and_then(|v| v.as_bool()))
+        .unwrap_or(false)
 }
 pub(crate) fn chv(e: &EffectInstance, id: &str) -> u32 {
-    match e.param(id).map(|p| p.value.clone()).or_else(|| def_value(e, id)) {
+    match e
+        .param(id)
+        .map(|p| p.value.clone())
+        .or_else(|| def_value(e, id))
+    {
         Some(ParamValue::Choice(c)) => c,
         _ => 0,
     }
 }
 pub(crate) fn cv(e: &EffectInstance, id: &str, cx: &FxCtx) -> [f32; 4] {
-    e.param(id).and_then(|p| p.value_at(cx.t).as_color()).or_else(|| def_value(e, id).and_then(|v| v.as_color())).unwrap_or([1.0; 4])
+    e.param(id)
+        .and_then(|p| p.value_at(cx.t).as_color())
+        .or_else(|| def_value(e, id).and_then(|v| v.as_color()))
+        .unwrap_or([1.0; 4])
 }
 pub(crate) fn tv(e: &EffectInstance, id: &str) -> String {
-    match e.param(id).map(|p| p.value.clone()).or_else(|| def_value(e, id)) {
+    match e
+        .param(id)
+        .map(|p| p.value.clone())
+        .or_else(|| def_value(e, id))
+    {
         Some(ParamValue::Text(s)) => s,
         _ => String::new(),
     }
@@ -205,15 +266,37 @@ pub(crate) fn tv(e: &EffectInstance, id: &str) -> String {
 /// A point parameter in working pixels. Auto (NaN) components use the effect's auto position
 /// (`filmcraft_project::effect::auto_point`) or the layer centre.
 pub(crate) fn pv(e: &EffectInstance, id: &str, cx: &FxCtx, img: &Image) -> Vec2 {
-    let v = e.param(id).map(|p| p.vec2_at(cx.t)).or_else(|| def_value(e, id).and_then(|v| v.as_vec2())).unwrap_or(Vec2::new(f64::NAN, f64::NAN));
+    let v = e
+        .param(id)
+        .map(|p| p.vec2_at(cx.t))
+        .or_else(|| def_value(e, id).and_then(|v| v.as_vec2()))
+        .unwrap_or(Vec2::new(f64::NAN, f64::NAN));
     let (fx, fy) = filmcraft_project::effect::auto_point(&e.effect, id).unwrap_or((0.5, 0.5));
-    Vec2::new(if v.x.is_nan() { img.w as f64 * fx } else { v.x * cx.px_scale as f64 }, if v.y.is_nan() { img.h as f64 * fy } else { v.y * cx.px_scale as f64 })
+    Vec2::new(
+        if v.x.is_nan() {
+            img.w as f64 * fx
+        } else {
+            v.x * cx.px_scale as f64
+        },
+        if v.y.is_nan() {
+            img.h as f64 * fy
+        } else {
+            v.y * cx.px_scale as f64
+        },
+    )
 }
 /// A point offset parameter (no auto position) in working pixels.
 pub(crate) fn offv(e: &EffectInstance, id: &str, cx: &FxCtx) -> Vec2 {
-    let v = e.param(id).map(|p| p.vec2_at(cx.t)).or_else(|| def_value(e, id).and_then(|v| v.as_vec2())).unwrap_or_default();
+    let v = e
+        .param(id)
+        .map(|p| p.vec2_at(cx.t))
+        .or_else(|| def_value(e, id).and_then(|v| v.as_vec2()))
+        .unwrap_or_default();
     let k = cx.px_scale as f64;
-    Vec2::new(if v.x.is_nan() { 0.0 } else { v.x * k }, if v.y.is_nan() { 0.0 } else { v.y * k })
+    Vec2::new(
+        if v.x.is_nan() { 0.0 } else { v.x * k },
+        if v.y.is_nan() { 0.0 } else { v.y * k },
+    )
 }
 
 // ------------------------------------------------------------------ colour helpers
@@ -226,7 +309,11 @@ pub(crate) fn luma(c: [f32; 3]) -> f32 {
 }
 #[inline]
 pub(crate) fn lerp3(a: [f32; 3], b: [f32; 3], t: f32) -> [f32; 3] {
-    [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]
+    [
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    ]
 }
 #[inline]
 pub(crate) fn smoothstep(e0: f32, e1: f32, x: f32) -> f32 {
@@ -332,7 +419,14 @@ pub(crate) fn noise3(x: f32, y: f32, z: f32, seed: u64) -> f32 {
     let (xf, yf, zf) = (x - xi, y - yi, z - zi);
     let (xi, yi, zi) = (xi as i64, yi as i64, zi as i64);
     let (u, v, w) = (fade(xf), fade(yf), fade(zf));
-    let g = |dx: i64, dy: i64, dz: i64| grad3(hash_u(xi + dx, yi + dy, zi + dz, seed), xf - dx as f32, yf - dy as f32, zf - dz as f32);
+    let g = |dx: i64, dy: i64, dz: i64| {
+        grad3(
+            hash_u(xi + dx, yi + dy, zi + dz, seed),
+            xf - dx as f32,
+            yf - dy as f32,
+            zf - dz as f32,
+        )
+    };
     let l = |a: f32, b: f32, t: f32| a + (b - a) * t;
     let x00 = l(g(0, 0, 0), g(1, 0, 0), u);
     let x10 = l(g(0, 1, 0), g(1, 1, 0), u);
@@ -348,7 +442,13 @@ pub(crate) fn fbm(x: f32, y: f32, z: f32, octaves: f32, seed: u64) -> f32 {
     let mut i = 0;
     while (i as f32) < n {
         let k = (n - i as f32).min(1.0);
-        sum += noise3(x * freq, y * freq, z * freq + i as f32 * 17.13, seed.wrapping_add(i as u64)) * amp * k;
+        sum += noise3(
+            x * freq,
+            y * freq,
+            z * freq + i as f32 * 17.13,
+            seed.wrapping_add(i as u64),
+        ) * amp
+            * k;
         norm += amp * k;
         amp *= 0.5;
         freq *= 2.0;
@@ -374,7 +474,11 @@ pub(crate) fn blur_plane(plane: &[f32], w: usize, h: usize, sigma: f32) -> Vec<f
     if sigma <= 0.3 {
         return plane.to_vec();
     }
-    let mut im = Image { w, h, px: plane.iter().flat_map(|&v| [v, 0.0, 0.0, 0.0]).collect() };
+    let mut im = Image {
+        w,
+        h,
+        px: plane.iter().flat_map(|&v| [v, 0.0, 0.0, 0.0]).collect(),
+    };
     crate::effects::gaussian(&mut im, sigma, sigma, false);
     im.px.as_chunks::<4>().0.iter().map(|p| p[0]).collect()
 }
@@ -400,13 +504,16 @@ pub(crate) fn highlights(img: &Image, threshold: f32, soft: f32) -> Image {
 /// Fill an image from a per-pixel premultiplied colour function (x, y at pixel centres).
 pub(crate) fn generate(img: &mut Image, f: impl Fn(f32, f32, [f32; 4]) -> [f32; 4] + Sync) {
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let p = &mut row[x * 4..x * 4 + 4];
-            let o = f(x as f32 + 0.5, y as f32 + 0.5, [p[0], p[1], p[2], p[3]]);
-            p.copy_from_slice(&o);
-        }
-    });
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let p = &mut row[x * 4..x * 4 + 4];
+                let o = f(x as f32 + 0.5, y as f32 + 0.5, [p[0], p[1], p[2], p[3]]);
+                p.copy_from_slice(&o);
+            }
+        });
 }
 
 /// Inverse-map warp with an affine (destination → source sampling).
@@ -443,7 +550,11 @@ pub(crate) fn clip_progress(cx: &FxCtx) -> f64 {
     match cx.env {
         Some(env) => {
             let d = env.clip_seconds();
-            if d <= 1e-9 { 0.0 } else { (cx.seconds / d).clamp(0.0, 1.0) }
+            if d <= 1e-9 {
+                0.0
+            } else {
+                (cx.seconds / d).clamp(0.0, 1.0)
+            }
         }
         None => 0.0,
     }
@@ -485,7 +596,9 @@ pub fn apply(img: &mut Image, e: &EffectInstance, cx: &FxCtx) -> bool {
         "spin" => distort::spin(img, e, cx),
         "wiggle" => distort::wiggle(img, e, cx),
         "camera_shake" => distort::camera_shake(img, e, cx),
-        "transform" if bv(e, "shutter_override") && fv(e, "shutter_angle", cx) > 0.5 => distort::transform_fx(img, e, cx),
+        "transform" if bv(e, "shutter_override") && fv(e, "shutter_angle", cx) > 0.5 => {
+            distort::transform_fx(img, e, cx)
+        }
         "spacer" => distort::spacer(img, e, cx),
         "clone" => distort::clone_fx(img, e, cx),
         "auto_align" => distort::auto_align(img, e, cx),

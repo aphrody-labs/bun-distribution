@@ -65,7 +65,11 @@ impl Saturator {
         self.mix.set(self.p.v(3) / 100.0);
         self.out.set(db_to_gain(self.p.v(4)));
         let f = self.p.v(2);
-        self.tone = if f >= 19_999.0 { 0.0 } else { (-std::f32::consts::TAU * f / self.sr).exp() };
+        self.tone = if f >= 19_999.0 {
+            0.0
+        } else {
+            (-std::f32::consts::TAU * f / self.sr).exp()
+        };
     }
 }
 
@@ -77,7 +81,12 @@ impl Plugin for Saturator {
         let ch = sane_channels(channels);
         self.dc = vec![DcBlocker::new(10.0, self.sr); ch];
         self.lp = vec![0.0; ch];
-        for s in [&mut self.drive, &mut self.bias, &mut self.mix, &mut self.out] {
+        for s in [
+            &mut self.drive,
+            &mut self.bias,
+            &mut self.mix,
+            &mut self.out,
+        ] {
             s.set_time(20.0, self.sr);
         }
         self.update();
@@ -87,7 +96,12 @@ impl Plugin for Saturator {
     fn reset(&mut self) {
         self.dc.iter_mut().for_each(DcBlocker::reset);
         self.lp.iter_mut().for_each(|v| *v = 0.0);
-        for s in [&mut self.drive, &mut self.bias, &mut self.mix, &mut self.out] {
+        for s in [
+            &mut self.drive,
+            &mut self.bias,
+            &mut self.mix,
+            &mut self.out,
+        ] {
             s.snap();
         }
     }
@@ -104,7 +118,11 @@ impl Plugin for Saturator {
             let tb = b.tanh();
             let norm = 1.0 / ((g + b).tanh() - tb).max(1e-3);
             for c in 0..ch {
-                let (Some(buf), Some(dc), Some(lp)) = (io.get_mut(c), self.dc.get_mut(c), self.lp.get_mut(c)) else { continue };
+                let (Some(buf), Some(dc), Some(lp)) =
+                    (io.get_mut(c), self.dc.get_mut(c), self.lp.get_mut(c))
+                else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 let mut y = ((g * dry + b).tanh() - tb) * norm;
@@ -125,7 +143,14 @@ impl Plugin for Saturator {
 
 static LOFI_PARAMS: [ParamInfo; 4] = [
     lin("bits", "Bit Depth", 1.0, 24.0, 8.0, Unit::None),
-    log("sample_rate", "Sample Rate", 500.0, 48000.0, 11025.0, Unit::Hz),
+    log(
+        "sample_rate",
+        "Sample Rate",
+        500.0,
+        48000.0,
+        11025.0,
+        Unit::Hz,
+    ),
     lin("noise", "Noise", 0.0, 100.0, 0.0, Unit::Percent),
     lin("mix", "Mix", 0.0, 100.0, 100.0, Unit::Percent),
 ];
@@ -212,11 +237,18 @@ impl Plugin for LoFi {
                 self.phase -= 1.0;
             }
             for c in 0..ch {
-                let (Some(buf), Some(h)) = (io.get_mut(c), self.held.get_mut(c)) else { continue };
+                let (Some(buf), Some(h)) = (io.get_mut(c), self.held.get_mut(c)) else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 if grab {
-                    let noisy = dry + if nz > 0.0 { self.rng.bipolar() * nz } else { 0.0 };
+                    let noisy = dry
+                        + if nz > 0.0 {
+                            self.rng.bipolar() * nz
+                        } else {
+                            0.0
+                        };
                     *h = (noisy / step).round() * step;
                 }
                 *x = dry * (1.0 - m) + *h * m;
@@ -260,7 +292,13 @@ impl Default for Rectifier {
 
 impl Rectifier {
     pub fn new() -> Self {
-        let mut r = Self { p: Params::new(&RECT_PARAMS), sr: 48_000.0, dc: Vec::new(), mix: Smoother::new(1.0), out: Smoother::new(1.0) };
+        let mut r = Self {
+            p: Params::new(&RECT_PARAMS),
+            sr: 48_000.0,
+            dc: Vec::new(),
+            mix: Smoother::new(1.0),
+            out: Smoother::new(1.0),
+        };
         r.update();
         r
     }
@@ -297,7 +335,9 @@ impl Plugin for Rectifier {
             let m = self.mix.next();
             let o = self.out.next();
             for c in 0..ch {
-                let (Some(buf), Some(dc)) = (io.get_mut(c), self.dc.get_mut(c)) else { continue };
+                let (Some(buf), Some(dc)) = (io.get_mut(c), self.dc.get_mut(c)) else {
+                    continue;
+                };
                 let Some(x) = buf.get_mut(n) else { continue };
                 let dry = if x.is_finite() { *x } else { 0.0 };
                 let r = if full { dry.abs() } else { dry.max(0.0) };

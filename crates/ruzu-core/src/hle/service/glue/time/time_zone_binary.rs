@@ -51,8 +51,11 @@ mod tests {
         const CHILD: &str = "RUZU_TIMEZONE_ARCHIVE_TEST_ROOT";
         if std::env::var_os(CHILD).is_none() {
             let nonce = std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-            let root = std::env::temp_dir().join(format!("ruzu-timezones-{}-{nonce}", std::process::id()));
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos();
+            let root =
+                std::env::temp_dir().join(format!("ruzu-timezones-{}-{nonce}", std::process::id()));
             std::fs::create_dir(&root).unwrap();
             let status = std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", "hle::service::glue::time::time_zone_binary::tests::embedded_rules_convert_all_configurable_zones_without_firmware", "--nocapture"])
@@ -67,20 +70,32 @@ mod tests {
         let root = std::path::PathBuf::from(std::env::var_os(CHILD).unwrap());
         common::fs::path_util::set_app_directory(root.to_str().unwrap());
         let system = crate::core::System::new_for_test();
-        system.get_filesystem_controller().lock().unwrap().create_factories(
-            crate::file_sys::vfs::vfs_real::RealVfsFilesystem::new(), false,
-        );
+        system
+            .get_filesystem_controller()
+            .lock()
+            .unwrap()
+            .create_factories(
+                crate::file_sys::vfs::vfs_real::RealVfsFilesystem::new(),
+                false,
+            );
         let mut binary = TimeZoneBinary::new(crate::core::SystemRef::from_ref(&system));
         assert_eq!(binary.mount(), RESULT_SUCCESS);
         assert!(binary.get_time_zone_count() > 0);
-        for zone in common::time_zone::get_time_zone_strings().iter().copied()
-            .chain(["Etc/GMT", "Asia/Kathmandu", "Canada/Newfoundland"]) {
+        for zone in common::time_zone::get_time_zone_strings()
+            .iter()
+            .copied()
+            .chain(["Etc/GMT", "Asia/Kathmandu", "Canada/Newfoundland"])
+        {
             let mut name = [0; 0x24];
             name[..zone.len()].copy_from_slice(zone.as_bytes());
             assert!(binary.is_valid(&name), "{zone}");
             let rule = binary.get_time_zone_rule(&name).unwrap();
             let mut time_zone = crate::hle::service::psc::time::time_zone::TimeZone::new();
-            assert_eq!(time_zone.parse_binary(&name, &rule), RESULT_SUCCESS, "{zone}");
+            assert_eq!(
+                time_zone.parse_binary(&name, &rule),
+                RESULT_SUCCESS,
+                "{zone}"
+            );
             time_zone.set_initialized();
             // Mid-January and mid-July 2024, away from DST transition ambiguity.
             for timestamp in [1_705_320_000, 1_721_044_800] {
@@ -88,8 +103,13 @@ mod tests {
                 assert_eq!(calendar.year, 2024, "{zone}");
                 assert_eq!(calendar.padding, 0);
                 let mut round_trip = [0; 2];
-                let count = time_zone.to_posix_time_with_my_rule(&mut round_trip, &calendar).unwrap();
-                assert!(round_trip[..count as usize].contains(&timestamp), "{zone}: {calendar:?}");
+                let count = time_zone
+                    .to_posix_time_with_my_rule(&mut round_trip, &calendar)
+                    .unwrap();
+                assert!(
+                    round_trip[..count as usize].contains(&timestamp),
+                    "{zone}: {calendar:?}"
+                );
             }
         }
     }

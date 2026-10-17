@@ -1257,7 +1257,9 @@ impl BufferCacheRuntime for TestBufferCacheRuntime {
         self.completed_tick = self.current_tick;
     }
 
-    fn current_tick(&self) -> u64 { self.current_tick }
+    fn current_tick(&self) -> u64 {
+        self.current_tick
+    }
 
     fn is_free(&mut self, tick: u64) -> bool {
         self.queried_ticks.push(tick);

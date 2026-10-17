@@ -41,8 +41,8 @@ fn extract_service_params(
                         .or_insert_with(Vec::new)
                         .push(v.to_string());
                 }
-            },
-            tonic::metadata::KeyAndValueRef::Binary(..) => {},
+            }
+            tonic::metadata::KeyAndValueRef::Binary(..) => {}
         }
     }
     params
@@ -71,7 +71,9 @@ impl<H: RequestHandler> A2aService for GrpcHandler<H> {
             .send_message(&params, native_req)
             .await
             .map_err(|e| a2a_error_to_status(&e))?;
-        Ok(tonic::Response::new(pbconv::to_proto_send_message_response(&result)))
+        Ok(tonic::Response::new(
+            pbconv::to_proto_send_message_response(&result),
+        ))
     }
 
     type SendStreamingMessageStream = BoxStreamResult<proto::StreamResponse>;
@@ -116,7 +118,9 @@ impl<H: RequestHandler> A2aService for GrpcHandler<H> {
             .list_tasks(&params, native_req)
             .await
             .map_err(|e| a2a_error_to_status(&e))?;
-        Ok(tonic::Response::new(pbconv::to_proto_list_tasks_response(&result)))
+        Ok(tonic::Response::new(pbconv::to_proto_list_tasks_response(
+            &result,
+        )))
     }
 
     async fn cancel_task(
@@ -162,7 +166,9 @@ impl<H: RequestHandler> A2aService for GrpcHandler<H> {
             .create_push_config(&params, native_req)
             .await
             .map_err(|e| a2a_error_to_status(&e))?;
-        Ok(tonic::Response::new(pbconv::to_proto_task_push_notification_config(&result)))
+        Ok(tonic::Response::new(
+            pbconv::to_proto_task_push_notification_config(&result),
+        ))
     }
 
     async fn get_task_push_notification_config(
@@ -177,7 +183,9 @@ impl<H: RequestHandler> A2aService for GrpcHandler<H> {
             .get_push_config(&params, native_req)
             .await
             .map_err(|e| a2a_error_to_status(&e))?;
-        Ok(tonic::Response::new(pbconv::to_proto_task_push_notification_config(&result)))
+        Ok(tonic::Response::new(
+            pbconv::to_proto_task_push_notification_config(&result),
+        ))
     }
 
     async fn list_task_push_notification_configs(
@@ -193,9 +201,9 @@ impl<H: RequestHandler> A2aService for GrpcHandler<H> {
             .list_push_configs(&params, native_req)
             .await
             .map_err(|e| a2a_error_to_status(&e))?;
-        Ok(tonic::Response::new(pbconv::to_proto_list_task_push_notification_configs_response(
-            &result,
-        )))
+        Ok(tonic::Response::new(
+            pbconv::to_proto_list_task_push_notification_configs_response(&result),
+        ))
     }
 
     async fn get_extended_agent_card(
@@ -245,7 +253,10 @@ mod tests {
         metadata.insert("x-another", "value2".parse().unwrap());
         let params = extract_service_params(&metadata);
         assert_eq!(params.get("x-custom").unwrap(), &vec!["value1".to_string()]);
-        assert_eq!(params.get("x-another").unwrap(), &vec!["value2".to_string()]);
+        assert_eq!(
+            params.get("x-another").unwrap(),
+            &vec!["value2".to_string()]
+        );
     }
 
     #[test]
@@ -275,7 +286,10 @@ mod tests {
             }
         }
 
-        let handler = Arc::new(DefaultRequestHandler::new(NoopExecutor, InMemoryTaskStore::new()));
+        let handler = Arc::new(DefaultRequestHandler::new(
+            NoopExecutor,
+            InMemoryTaskStore::new(),
+        ));
         let grpc_handler = GrpcHandler::new(handler);
         // Just verify construction
         let _ = grpc_handler;

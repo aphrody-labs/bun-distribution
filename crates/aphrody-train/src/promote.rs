@@ -26,7 +26,10 @@ pub struct PromoteCriteria {
 
 impl Default for PromoteCriteria {
     fn default() -> Self {
-        Self { min_delta_recall_at_5: 0.01, max_tag_regression: 0.03 }
+        Self {
+            min_delta_recall_at_5: 0.01,
+            max_tag_regression: 0.03,
+        }
     }
 }
 
@@ -80,7 +83,10 @@ pub fn evaluate_candidate(
         || !valid_score(candidate_recall_at_5)
         || baseline_tags.is_empty()
         || baseline_tags.keys().ne(candidate_tags.keys())
-        || baseline_tags.values().chain(candidate_tags.values()).any(|score| !valid_score(*score))
+        || baseline_tags
+            .values()
+            .chain(candidate_tags.values())
+            .any(|score| !valid_score(*score))
     {
         return PromoteVerdict::Rejected {
             reason: "scores must be finite probabilities with identical nonempty per-tag sets"
@@ -128,7 +134,10 @@ pub fn evaluate_candidate(
         };
     }
 
-    let filename = artifact_path.file_stem().and_then(|s| s.to_str()).unwrap_or("trained_model");
+    let filename = artifact_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("trained_model");
 
     PromoteVerdict::Promoted {
         model_id: format!("local:{filename}"),
@@ -156,7 +165,9 @@ impl PromoteVerdict {
         artifact_id: &str,
         decided_by: &str,
     ) -> Result<String, crate::registry::RegistryError> {
-        registry.record_verdict(kind, alias, artifact_id, None, self, decided_by).await
+        registry
+            .record_verdict(kind, alias, artifact_id, None, self, decided_by)
+            .await
     }
 }
 
@@ -229,7 +240,7 @@ mod tests {
         match verdict {
             PromoteVerdict::Rejected { reason, .. } => {
                 assert!(reason.contains("Per-tag regression"));
-            },
+            }
             _ => panic!("expected rejection"),
         }
     }
@@ -241,8 +252,15 @@ mod tests {
         let mut tags = BTreeMap::new();
         tags.insert("anime".into(), 0.80);
         assert!(
-            !evaluate_candidate(0.80, 0.90, &tags, &tags, &missing, &PromoteCriteria::default())
-                .is_promoted()
+            !evaluate_candidate(
+                0.80,
+                0.90,
+                &tags,
+                &tags,
+                &missing,
+                &PromoteCriteria::default()
+            )
+            .is_promoted()
         );
         let artifact = temp.path().join("model.onnx");
         std::fs::write(&artifact, b"weights").unwrap();

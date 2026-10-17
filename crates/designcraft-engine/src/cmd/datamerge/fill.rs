@@ -8,8 +8,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use designcraft_doc::{
-    Asset, AssetId, Content, DataField, Fill, Fitting, Graphic, Hyperlink, HyperlinkDest, HyperlinkSource, Item, ItemId, MergeOptions,
-    PlaceholderAnchor, PlaceholderRole, Shape, SpreadRef, Story, StoryId,
+    Asset, AssetId, Content, DataField, Fill, Fitting, Graphic, Hyperlink, HyperlinkDest,
+    HyperlinkSource, Item, ItemId, MergeOptions, PlaceholderAnchor, PlaceholderRole, Shape,
+    SpreadRef, Story, StoryId,
 };
 use designcraft_geom::{Affine, Rect, Vec2};
 
@@ -70,7 +71,12 @@ pub fn copy_item(
     Ok(())
 }
 
-fn renumber(dst: &mut designcraft_doc::Document, src: &designcraft_doc::Document, it: &mut Item, maps: &mut Maps) {
+fn renumber(
+    dst: &mut designcraft_doc::Document,
+    src: &designcraft_doc::Document,
+    it: &mut Item,
+    maps: &mut Maps,
+) {
     let old = it.id;
     let new_id = ItemId(dst.alloc());
     maps.items.insert(old, new_id);
@@ -86,7 +92,10 @@ fn renumber(dst: &mut designcraft_doc::Document, src: &designcraft_doc::Document
                 *n
             } else {
                 let n = StoryId(dst.alloc());
-                let mut st = src.story(tf.story).cloned().unwrap_or_else(|| Story::new(n));
+                let mut st = src
+                    .story(tf.story)
+                    .cloned()
+                    .unwrap_or_else(|| Story::new(n));
                 st.id = n;
                 let mut assets = HashMap::new();
                 for a in designcraft_doc::story_asset_refs(&st) {
@@ -158,10 +167,23 @@ pub fn fill_row(
                     continue;
                 };
                 match ph.role {
-                    PlaceholderRole::Text => reps.push(Rep { story: mapped, start: *start, end: *end, text: cell }),
+                    PlaceholderRole::Text => reps.push(Rep {
+                        story: mapped,
+                        start: *start,
+                        end: *end,
+                        text: cell,
+                    }),
                     PlaceholderRole::Hyperlink => {
                         if let Some(dest) = classify_link(&cell) {
-                            links.push((PlaceholderAnchor::Text { story: mapped, start: *start, end: *end }, dest, ph.field.clone()));
+                            links.push((
+                                PlaceholderAnchor::Text {
+                                    story: mapped,
+                                    start: *start,
+                                    end: *end,
+                                },
+                                dest,
+                                ph.field.clone(),
+                            ));
                         }
                     }
                     PlaceholderRole::Image | PlaceholderRole::Qr => {}
@@ -175,11 +197,27 @@ pub fn fill_row(
                     continue;
                 };
                 match ph.role {
-                    PlaceholderRole::Image => place_image(doc, mapped, &ph.field, &cell, record, options, data_dir, doc_dir, &mut report),
-                    PlaceholderRole::Qr => place_qr(doc, mapped, &ph.field, &cell, record, &mut report),
+                    PlaceholderRole::Image => place_image(
+                        doc,
+                        mapped,
+                        &ph.field,
+                        &cell,
+                        record,
+                        options,
+                        data_dir,
+                        doc_dir,
+                        &mut report,
+                    ),
+                    PlaceholderRole::Qr => {
+                        place_qr(doc, mapped, &ph.field, &cell, record, &mut report)
+                    }
                     PlaceholderRole::Hyperlink => {
                         if let Some(dest) = classify_link(&cell) {
-                            links.push((PlaceholderAnchor::Item { id: mapped }, dest, ph.field.clone()));
+                            links.push((
+                                PlaceholderAnchor::Item { id: mapped },
+                                dest,
+                                ph.field.clone(),
+                            ));
                         }
                     }
                     PlaceholderRole::Text => {}
@@ -198,11 +236,15 @@ pub fn fill_row(
             other => other,
         };
         if !create_link(doc, anchor, dest) {
-            report.warnings.push(format!("Record {record}, field {field}: the hyperlink could not be created."));
+            report.warnings.push(format!(
+                "Record {record}, field {field}: the hyperlink could not be created."
+            ));
         }
     }
     if parent {
-        report.warnings.push("A parent-page placeholder was left unfilled.".into());
+        report
+            .warnings
+            .push("A parent-page placeholder was left unfilled.".into());
     }
     report
 }
@@ -219,11 +261,17 @@ fn typed_reps(
     stories.sort_by_key(|(a, _)| a.0);
     stories.dedup();
     for (original, mapped) in stories {
-        let Some(st) = doc.story(mapped) else { continue };
+        let Some(st) = doc.story(mapped) else {
+            continue;
+        };
         let covers: Vec<(usize, usize)> = placeholders
             .iter()
             .filter_map(|ph| match (&ph.role, &ph.anchor) {
-                (PlaceholderRole::Text, PlaceholderAnchor::Text { story, start, end }) if *story == original => Some((*start, *end)),
+                (PlaceholderRole::Text, PlaceholderAnchor::Text { story, start, end })
+                    if *story == original =>
+                {
+                    Some((*start, *end))
+                }
                 _ => None,
             })
             .collect();
@@ -234,7 +282,12 @@ fn typed_reps(
             if !fields.iter().any(|f| f.name == name) {
                 continue;
             }
-            reps.push(Rep { story: mapped, start, end, text: cell_of(fields, row, &name).to_string() });
+            reps.push(Rep {
+                story: mapped,
+                start,
+                end,
+                text: cell_of(fields, row, &name).to_string(),
+            });
         }
     }
 }
@@ -266,7 +319,9 @@ fn apply_reps(doc: &mut designcraft_doc::Document, reps: &[Rep]) {
     for sid in stories {
         let mut mine: Vec<&Rep> = reps.iter().filter(|r| r.story == sid).collect();
         mine.sort_by_key(|r| std::cmp::Reverse(r.start));
-        let Some(st) = doc.story_mut(sid) else { continue };
+        let Some(st) = doc.story_mut(sid) else {
+            continue;
+        };
         for r in mine {
             if r.start <= r.end && r.end <= st.text.len() {
                 st.replace(r.start..r.end, &r.text);
@@ -298,10 +353,18 @@ fn adjust_range(story: StoryId, start: usize, end: usize, reps: &[Rep]) -> (usiz
 }
 
 pub fn add_delta(pos: usize, delta: isize) -> usize {
-    if delta >= 0 { pos.saturating_add(delta as usize) } else { pos.saturating_sub(delta.unsigned_abs()) }
+    if delta >= 0 {
+        pos.saturating_add(delta as usize)
+    } else {
+        pos.saturating_sub(delta.unsigned_abs())
+    }
 }
 
-fn create_link(doc: &mut designcraft_doc::Document, anchor: PlaceholderAnchor, dest: HyperlinkDest) -> bool {
+fn create_link(
+    doc: &mut designcraft_doc::Document,
+    anchor: PlaceholderAnchor,
+    dest: HyperlinkDest,
+) -> bool {
     let source = match anchor {
         PlaceholderAnchor::Item { id } => {
             if doc.item(id).is_none() {
@@ -310,7 +373,9 @@ fn create_link(doc: &mut designcraft_doc::Document, anchor: PlaceholderAnchor, d
             HyperlinkSource::Item { id }
         }
         PlaceholderAnchor::Text { story, start, end } => {
-            let Some(st) = doc.story(story) else { return false };
+            let Some(st) = doc.story(story) else {
+                return false;
+            };
             if start > end || end > st.text.len() {
                 return false;
             }
@@ -322,7 +387,12 @@ fn create_link(doc: &mut designcraft_doc::Document, anchor: PlaceholderAnchor, d
         HyperlinkDest::Url(u) | HyperlinkDest::Email(u) => u.clone(),
         HyperlinkDest::Page(p) => format!("Page {}", p + 1),
     };
-    doc.hyperlinks.push(Hyperlink { id, name, source, dest });
+    doc.hyperlinks.push(Hyperlink {
+        id,
+        name,
+        source,
+        dest,
+    });
     true
 }
 
@@ -344,34 +414,60 @@ fn place_image(
         if len == 0 || len > super::MAX_IMAGE_FILE_BYTES {
             return None;
         }
-        std::fs::read(p).ok().filter(|b| !b.is_empty()).map(|b| (p.clone(), b))
+        std::fs::read(p)
+            .ok()
+            .filter(|b| !b.is_empty())
+            .map(|b| (p.clone(), b))
     });
     let Some((path, bytes)) = found else {
         if let Some(it) = doc.item_mut(item) {
             it.content = Content::Unassigned;
         }
-        report.missing.push(MissingImage { record, field: field.to_string(), path: cell.to_string() });
-        report.warnings.push(format!("Record {record}, field {field}: missing image {cell}."));
+        report.missing.push(MissingImage {
+            record,
+            field: field.to_string(),
+            path: cell.to_string(),
+        });
+        report.warnings.push(format!(
+            "Record {record}, field {field}: missing image {cell}."
+        ));
         return;
     };
     let Some((pw, ph)) = designcraft_render::image_size(&bytes) else {
         if let Some(it) = doc.item_mut(item) {
             it.content = Content::Unassigned;
         }
-        report.missing.push(MissingImage { record, field: field.to_string(), path: cell.to_string() });
-        report.warnings.push(format!("Record {record}, field {field}: missing image {cell}."));
+        report.missing.push(MissingImage {
+            record,
+            field: field.to_string(),
+            path: cell.to_string(),
+        });
+        report.warnings.push(format!(
+            "Record {record}, field {field}: missing image {cell}."
+        ));
         return;
     };
     let Some(inner) = doc.item(item).map(|it| it.inner_bounds()) else {
-        report.warnings.push(format!("Record {record}, field {field}: missing image {cell}."));
-        report.missing.push(MissingImage { record, field: field.to_string(), path: cell.to_string() });
+        report.warnings.push(format!(
+            "Record {record}, field {field}: missing image {cell}."
+        ));
+        report.missing.push(MissingImage {
+            record,
+            field: field.to_string(),
+            path: cell.to_string(),
+        });
         return;
     };
     let (nw, nh) = (f64::from(pw), f64::from(ph));
     let mode = fitting_of(&options.fitting);
     let fresh = AssetId(doc.alloc());
-    let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_else(|| field.to_string());
-    let link = options.link_images.then(|| path.to_string_lossy().into_owned());
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| field.to_string());
+    let link = options
+        .link_images
+        .then(|| path.to_string_lossy().into_owned());
     let aid = doc.add_asset(Asset {
         id: fresh,
         name,
@@ -381,7 +477,14 @@ fn place_image(
         pixels: Some((pw, ph)),
         page: 0,
     });
-    let mut g = Graphic { asset: aid, size: (nw, nh), xf: Affine::translate((inner.x0, inner.y0)), auto_fit: mode, fit_align: 0, crop: [0.0; 4] };
+    let mut g = Graphic {
+        asset: aid,
+        size: (nw, nh),
+        xf: Affine::translate((inner.x0, inner.y0)),
+        auto_fit: mode,
+        fit_align: 0,
+        crop: [0.0; 4],
+    };
     if let Some(xf) = g.fitted(inner, mode) {
         g.xf = xf;
     }
@@ -396,17 +499,30 @@ fn place_image(
     }
 }
 
-fn place_qr(doc: &mut designcraft_doc::Document, item: ItemId, field: &str, cell: &str, record: u32, report: &mut FillReport) {
+fn place_qr(
+    doc: &mut designcraft_doc::Document,
+    item: ItemId,
+    field: &str,
+    cell: &str,
+    record: u32,
+    report: &mut FillReport,
+) {
     if cell.is_empty() {
-        report.warnings.push(format!("Record {record}, field {field}: the QR cell is empty."));
+        report.warnings.push(format!(
+            "Record {record}, field {field}: the QR cell is empty."
+        ));
         return;
     }
     let Some(it) = doc.item(item).cloned() else {
-        report.warnings.push(format!("Record {record}, field {field}: the QR content does not fit."));
+        report.warnings.push(format!(
+            "Record {record}, field {field}: the QR content does not fit."
+        ));
         return;
     };
     let Some(path) = designcraft_geom::qr::qr_path(cell, it.inner_bounds()) else {
-        report.warnings.push(format!("Record {record}, field {field}: the QR content does not fit."));
+        report.warnings.push(format!(
+            "Record {record}, field {field}: the QR content does not fit."
+        ));
         return;
     };
     let id = ItemId(doc.alloc());
@@ -414,7 +530,9 @@ fn place_qr(doc: &mut designcraft_doc::Document, item: ItemId, field: &str, cell
     code.fill = Fill::swatch(designcraft_color::swatch::BLACK);
     code.alt_text = format!("QR code: {cell}");
     if let Some(frame) = doc.item_mut(item) {
-        frame.content = Content::Group { items: vec![Arc::new(code)] };
+        frame.content = Content::Group {
+            items: vec![Arc::new(code)],
+        };
     }
 }
 
@@ -434,11 +552,17 @@ fn classify_link(cell: &str) -> Option<HyperlinkDest> {
     }
     // An explicit scheme must be a web or mail one; `javascript:`, `file:` and the like stay text.
     if let Some((scheme, _)) = value.split_once(':') {
-        let is_scheme = scheme.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
-            && scheme.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
+        let is_scheme = scheme
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphabetic())
+            && scheme
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'));
         if is_scheme {
             let scheme = scheme.to_ascii_lowercase();
-            return matches!(scheme.as_str(), "http" | "https" | "ftp" | "mailto").then(|| HyperlinkDest::Url(value.to_string()));
+            return matches!(scheme.as_str(), "http" | "https" | "ftp" | "mailto")
+                .then(|| HyperlinkDest::Url(value.to_string()));
         }
     }
     if value.contains("://") || value.chars().any(char::is_whitespace) {
@@ -452,16 +576,28 @@ fn classify_link(cell: &str) -> Option<HyperlinkDest> {
 
 fn anchor_is_parent(doc: &designcraft_doc::Document, anchor: &PlaceholderAnchor) -> bool {
     match anchor {
-        PlaceholderAnchor::Item { id } => matches!(doc.find(*id).map(|l| l.spread), Some(SpreadRef::Parent(_))),
+        PlaceholderAnchor::Item { id } => {
+            matches!(doc.find(*id).map(|l| l.spread), Some(SpreadRef::Parent(_)))
+        }
         PlaceholderAnchor::Text { story, .. } => {
-            let Some(st) = doc.story(*story) else { return false };
-            !st.frames.is_empty() && st.frames.iter().all(|fid| matches!(doc.find(*fid).map(|l| l.spread), Some(SpreadRef::Parent(_))))
+            let Some(st) = doc.story(*story) else {
+                return false;
+            };
+            !st.frames.is_empty()
+                && st.frames.iter().all(|fid| {
+                    matches!(doc.find(*fid).map(|l| l.spread), Some(SpreadRef::Parent(_)))
+                })
         }
     }
 }
 
 fn cell_of<'a>(fields: &[DataField], row: &'a [String], name: &str) -> &'a str {
-    fields.iter().position(|f| f.name == name).and_then(|i| row.get(i)).map(String::as_str).unwrap_or("")
+    fields
+        .iter()
+        .position(|f| f.name == name)
+        .and_then(|i| row.get(i))
+        .map(String::as_str)
+        .unwrap_or("")
 }
 
 #[cfg(test)]
@@ -470,11 +606,29 @@ mod link_tests {
 
     #[test]
     fn only_web_and_mail_schemes_become_links() {
-        for ok in ["https://example.com", "HTTP://example.com", "ftp://files.example.com", "mailto:a@example.com", "www.example.com"] {
-            assert!(matches!(classify_link(ok), Some(HyperlinkDest::Url(_))), "{ok}");
+        for ok in [
+            "https://example.com",
+            "HTTP://example.com",
+            "ftp://files.example.com",
+            "mailto:a@example.com",
+            "www.example.com",
+        ] {
+            assert!(
+                matches!(classify_link(ok), Some(HyperlinkDest::Url(_))),
+                "{ok}"
+            );
         }
-        assert!(matches!(classify_link("a@example.com"), Some(HyperlinkDest::Email(_))));
-        for bad in ["javascript:alert(1)", "file:///etc/passwd", "data:text/html,hi", "vbscript:x", ""] {
+        assert!(matches!(
+            classify_link("a@example.com"),
+            Some(HyperlinkDest::Email(_))
+        ));
+        for bad in [
+            "javascript:alert(1)",
+            "file:///etc/passwd",
+            "data:text/html,hi",
+            "vbscript:x",
+            "",
+        ] {
             assert!(classify_link(bad).is_none(), "{bad}");
         }
     }

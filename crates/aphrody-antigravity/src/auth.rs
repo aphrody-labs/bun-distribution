@@ -42,8 +42,10 @@ const TOKEN_ENDPOINT: &str = "https://oauth2.googleapis.com/token";
 /// wants a fully standalone refresh sets one of these. When none is set the
 /// refresh path falls back to re-reading the OS credential store, which the
 /// running Antigravity desktop app keeps fresh (the keyless design).
-pub const CLIENT_SECRET_ENV_VARS: &[&str] =
-    &["APHRODY_ANTIGRAVITY_OAUTH_CLIENT_SECRET", "ANTIGRAVITY_OAUTH_CLIENT_SECRET"];
+pub const CLIENT_SECRET_ENV_VARS: &[&str] = &[
+    "APHRODY_ANTIGRAVITY_OAUTH_CLIENT_SECRET",
+    "ANTIGRAVITY_OAUTH_CLIENT_SECRET",
+];
 
 /// Resolve the Antigravity OAuth client secret from the environment.
 ///
@@ -142,7 +144,10 @@ impl TokenEnvelope {
     /// Fold the envelope into an [`OAuthToken`], carrying the top-level
     /// `auth_method` alongside the inner token fields.
     fn into_token(self) -> OAuthToken {
-        OAuthToken { auth_method: self.auth_method, ..OAuthToken::from(self.token) }
+        OAuthToken {
+            auth_method: self.auth_method,
+            ..OAuthToken::from(self.token)
+        }
     }
 }
 
@@ -213,8 +218,11 @@ mod unix_impl {
         }
 
         if let Some(home) = home {
-            paths
-                .push(home.join(".gemini").join("antigravity-cli").join("antigravity-oauth-token"));
+            paths.push(
+                home.join(".gemini")
+                    .join("antigravity-cli")
+                    .join("antigravity-oauth-token"),
+            );
         }
 
         Ok(paths)
@@ -255,7 +263,10 @@ mod windows_impl {
     const CRED_TARGET: &str = "gemini:antigravity";
 
     pub(super) fn read_credential() -> Result<OAuthToken, SdkError> {
-        let target: Vec<u16> = CRED_TARGET.encode_utf16().chain(std::iter::once(0u16)).collect();
+        let target: Vec<u16> = CRED_TARGET
+            .encode_utf16()
+            .chain(std::iter::once(0u16))
+            .collect();
 
         // SAFETY: `target` is a NUL-terminated UTF-16 string whose lifetime
         // extends past the CredReadW call.  On success CredReadW allocates a
@@ -312,7 +323,9 @@ impl OAuthToken {
     /// * [`SdkError::TokenParse`] — response body is not valid JSON.
     pub async fn refresh(&self, client: &reqwest::Client) -> Result<OAuthToken, SdkError> {
         let Some(ref refresh_token) = self.refresh_token else {
-            return Err(SdkError::Unsupported("no refresh_token available; cannot refresh"));
+            return Err(SdkError::Unsupported(
+                "no refresh_token available; cannot refresh",
+            ));
         };
 
         let mut params = vec![
@@ -333,7 +346,10 @@ impl OAuthToken {
         let status = response.status();
         if !status.is_success() {
             let body = response.text().await.unwrap_or_default();
-            return Err(SdkError::OAuthServer { status: status.as_u16(), body });
+            return Err(SdkError::OAuthServer {
+                status: status.as_u16(),
+                body,
+            });
         }
 
         // Google returns a flat JSON object: {"access_token": "…", "expires_in": 3599, …}
@@ -391,7 +407,10 @@ mod tests {
         // Set → resolved, so the standalone OAuth refresh is used.
         let name = CLIENT_SECRET_ENV_VARS[0];
         unsafe { std::env::set_var(name, "GOCSPX-example") };
-        assert_eq!(resolve_client_secret_from_env().as_deref(), Some("GOCSPX-example"));
+        assert_eq!(
+            resolve_client_secret_from_env().as_deref(),
+            Some("GOCSPX-example")
+        );
 
         // Empty is treated as unset.
         unsafe { std::env::set_var(name, "") };
@@ -457,7 +476,10 @@ mod tests {
     fn parse_agy_envelope_missing_access_token_errors() {
         let json = r#"{"token":{"refresh_token":"1//x"}}"#;
         let result = parse_envelope(json);
-        assert!(result.is_err(), "expected error when access_token is missing");
+        assert!(
+            result.is_err(),
+            "expected error when access_token is missing"
+        );
     }
 
     /// On Unix without a token file, `token_from_credential_manager` returns
@@ -467,7 +489,7 @@ mod tests {
     #[test]
     fn credential_manager_unix_without_panic() {
         match token_from_credential_manager() {
-            Ok(_) | Err(SdkError::Unsupported(_)) => {},
+            Ok(_) | Err(SdkError::Unsupported(_)) => {}
             Err(e) => panic!("unexpected error variant: {e:?}"),
         }
     }
@@ -487,7 +509,7 @@ mod tests {
         // If it does not exist we get SdkError::CredentialManager.
         let result = token_from_credential_manager();
         match result {
-            Ok(_) | Err(SdkError::CredentialManager { .. }) => {},
+            Ok(_) | Err(SdkError::CredentialManager { .. }) => {}
             Err(e) => panic!("unexpected error variant: {e:?}"),
         }
     }

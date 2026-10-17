@@ -1,7 +1,7 @@
 use crate::func::signature::ArgumentSignature;
 use crate::func::{
-    args::{ArgCount, ArgError},
     Return,
+    args::{ArgCount, ArgError},
 };
 use alloc::borrow::Cow;
 use bevy_platform::collections::HashSet;
@@ -25,7 +25,9 @@ pub enum FunctionError {
         received: usize,
     },
     /// No overload was found for the given set of arguments.
-    #[error("no overload found for arguments with signature `{received:?}`, expected one of `{expected:?}`")]
+    #[error(
+        "no overload found for arguments with signature `{received:?}`, expected one of `{expected:?}`"
+    )]
     NoOverload {
         /// The set of available argument signatures.
         expected: HashSet<ArgumentSignature>,

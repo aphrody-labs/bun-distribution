@@ -67,14 +67,22 @@ impl GalleryRequest {
         if !(1..=200).contains(&self.limit.unwrap_or(48)) || self.offset.unwrap_or(0) > 1_000_000 {
             return Err("Require limit 1..200 and offset 0..1000000");
         }
-        if self.q.as_ref().is_some_and(|q| q.len() > 256 || q.chars().any(char::is_control)) {
+        if self
+            .q
+            .as_ref()
+            .is_some_and(|q| q.len() > 256 || q.chars().any(char::is_control))
+        {
             return Err("Query must contain at most 256 bytes and no control characters");
         }
         if self.view.as_deref().is_some_and(|view| view != "editorial") {
             return Err("Unknown gallery view");
         }
         let editorial = self.view.as_deref() == Some("editorial");
-        if self.category.as_ref().is_some_and(|category| !is_category(category, editorial)) {
+        if self
+            .category
+            .as_ref()
+            .is_some_and(|category| !is_category(category, editorial))
+        {
             return Err("Unknown gallery metadata category");
         }
         if let Some(resource) = &self.resource {
@@ -85,12 +93,14 @@ impl GalleryRequest {
 }
 
 fn is_category(category: &str, editorial: bool) -> bool {
-    matches!(category, "story" | "chronicle" | "special" | "kizuna" | "other")
-        || (editorial
-            && matches!(
-                category,
-                "gallery_img2" | "ev_pic" | "stadium" | "vsroute_map" | "hlp" | "telop_waza"
-            ))
+    matches!(
+        category,
+        "story" | "chronicle" | "special" | "kizuna" | "other"
+    ) || (editorial
+        && matches!(
+            category,
+            "gallery_img2" | "ev_pic" | "stadium" | "vsroute_map" | "hlp" | "telop_waza"
+        ))
 }
 
 /// Strip only the documented original image/thumbnail directory and container extension.
@@ -132,7 +142,7 @@ fn optional_i64(row: &Row<'_>, index: usize) -> rusqlite::Result<Option<i64>> {
             text.parse::<i64>().map(Some).map_err(|error| {
                 rusqlite::Error::FromSqlConversionFailure(index, Type::Text, Box::new(error))
             })
-        },
+        }
         value => Err(rusqlite::Error::InvalidColumnType(
             index,
             format!("column_{index}"),
@@ -149,8 +159,12 @@ pub fn query(conn: &Connection, request: &GalleryRequest) -> anyhow::Result<Gall
     }
     let limit = request.limit.unwrap_or(48);
     let offset = request.offset.unwrap_or(0);
-    let resource =
-        request.resource.as_deref().map(resource_key).transpose().map_err(anyhow::Error::msg)?;
+    let resource = request
+        .resource
+        .as_deref()
+        .map(resource_key)
+        .transpose()
+        .map_err(anyhow::Error::msg)?;
     let search = request.q.as_deref().unwrap_or("").trim();
     let filter = format!(
         "WHERE (?1 = '' OR instr(lower(COALESCE(img_path, '')), lower(?1)) > 0)
@@ -174,23 +188,32 @@ pub fn query(conn: &Connection, request: &GalleryRequest) -> anyhow::Result<Gall
             END ASC NULLS LAST, id ASC LIMIT ?4 OFFSET ?5"
         ))?;
         statement
-            .query_map(params![search, request.category, resource, limit, offset], |row| {
-                Ok(GalleryRecord {
-                    id: row.get(0)?,
-                    img_path: row.get(1)?,
-                    thumb_path: row.get(2)?,
-                    need_token_num: optional_i64(row, 3)?,
-                    flg_no: optional_i64(row, 4)?,
-                    category: row.get(5)?,
-                    title: None,
-                    vfs_path: None,
-                    source: None,
-                })
-            })?
+            .query_map(
+                params![search, request.category, resource, limit, offset],
+                |row| {
+                    Ok(GalleryRecord {
+                        id: row.get(0)?,
+                        img_path: row.get(1)?,
+                        thumb_path: row.get(2)?,
+                        need_token_num: optional_i64(row, 3)?,
+                        flg_no: optional_i64(row, 4)?,
+                        category: row.get(5)?,
+                        title: None,
+                        vfs_path: None,
+                        source: None,
+                    })
+                },
+            )?
             .collect::<Result<Vec<_>, _>>()?
     };
     snapshot.commit()?;
-    Ok(GalleryPage { records, total, limit, offset, categories: Vec::new() })
+    Ok(GalleryPage {
+        records,
+        total,
+        limit,
+        offset,
+        categories: Vec::new(),
+    })
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -317,21 +340,40 @@ fn query_editorial_with_records(
         "telop_waza",
     ]
     .into_iter()
-    .filter_map(|id| counts.get(id).map(|count| GalleryCategory { id: id.into(), count: *count }))
+    .filter_map(|id| {
+        counts.get(id).map(|count| GalleryCategory {
+            id: id.into(),
+            count: *count,
+        })
+    })
     .collect();
 
     let search = request.q.as_deref().unwrap_or("").trim().to_lowercase();
     records.retain(|record| {
-        request.category.as_ref().is_none_or(|category| &record.category == category)
+        request
+            .category
+            .as_ref()
+            .is_none_or(|category| &record.category == category)
             && (search.is_empty()
                 || record.id.to_lowercase().contains(&search)
-                || record.title.as_deref().unwrap_or("").to_lowercase().contains(&search)
-                || record.vfs_path.as_deref().unwrap_or("").to_lowercase().contains(&search))
+                || record
+                    .title
+                    .as_deref()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&search)
+                || record
+                    .vfs_path
+                    .as_deref()
+                    .unwrap_or("")
+                    .to_lowercase()
+                    .contains(&search))
             && request.resource.as_ref().is_none_or(|resource| {
                 resource_key(resource).is_ok_and(|key| {
                     record.img_path.as_deref() == Some(key)
                         || record.vfs_path.as_deref().is_some_and(|path| {
-                            path.strip_suffix(".g4tx").is_some_and(|path| path.ends_with(key))
+                            path.strip_suffix(".g4tx")
+                                .is_some_and(|path| path.ends_with(key))
                         })
                 })
             })
@@ -340,8 +382,18 @@ fn query_editorial_with_records(
     let total = records.len() as u64;
     let limit = request.limit.unwrap_or(48);
     let offset = request.offset.unwrap_or(0);
-    let records = records.into_iter().skip(offset as usize).take(limit as usize).collect();
-    Ok(GalleryPage { records, total, limit, offset, categories })
+    let records = records
+        .into_iter()
+        .skip(offset as usize)
+        .take(limit as usize)
+        .collect();
+    Ok(GalleryPage {
+        records,
+        total,
+        limit,
+        offset,
+        categories,
+    })
 }
 
 #[cfg(test)]
@@ -385,12 +437,31 @@ mod tests {
     #[test]
     fn pagination_counts_only_mirror_rows_and_preserves_nulls() {
         let conn = fixture();
-        let page =
-            query(&conn, &GalleryRequest { limit: Some(2), offset: Some(1), ..Default::default() })
-                .unwrap();
+        let page = query(
+            &conn,
+            &GalleryRequest {
+                limit: Some(2),
+                offset: Some(1),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(page.total, 5);
-        assert_eq!(page.records.iter().map(|row| row.id.as_str()).collect::<Vec<_>>(), ["b", "d"]);
-        let end = query(&conn, &GalleryRequest { offset: Some(4), ..Default::default() }).unwrap();
+        assert_eq!(
+            page.records
+                .iter()
+                .map(|row| row.id.as_str())
+                .collect::<Vec<_>>(),
+            ["b", "d"]
+        );
+        let end = query(
+            &conn,
+            &GalleryRequest {
+                offset: Some(4),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(end.records[0].id, "c");
         assert_eq!(end.records[0].thumb_path, None);
         assert_eq!(end.records[0].need_token_num, None);
@@ -404,7 +475,11 @@ mod tests {
         for view in [None, Some("editorial".to_owned())] {
             let page = query(
                 &conn,
-                &GalleryRequest { view, category: Some("story".into()), ..Default::default() },
+                &GalleryRequest {
+                    view,
+                    category: Some("story".into()),
+                    ..Default::default()
+                },
             )
             .unwrap();
             let numeric = page.records.iter().find(|row| row.id == "numeric").unwrap();
@@ -421,18 +496,33 @@ mod tests {
     #[test]
     fn category_and_search_use_literal_resource_tokens() {
         let conn = fixture();
-        let story =
-            query(&conn, &GalleryRequest { category: Some("story".into()), ..Default::default() })
-                .unwrap();
+        let story = query(
+            &conn,
+            &GalleryRequest {
+                category: Some("story".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(story.total, 2);
-        let percent =
-            query(&conn, &GalleryRequest { q: Some("100%_".into()), ..Default::default() })
-                .unwrap();
+        let percent = query(
+            &conn,
+            &GalleryRequest {
+                q: Some("100%_".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(percent.total, 1);
         assert_eq!(percent.records[0].id, "d");
-        let other =
-            query(&conn, &GalleryRequest { category: Some("other".into()), ..Default::default() })
-                .unwrap();
+        let other = query(
+            &conn,
+            &GalleryRequest {
+                category: Some("other".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(other.total, 2);
     }
 
@@ -447,16 +537,25 @@ mod tests {
         ] {
             let page = query(
                 &conn,
-                &GalleryRequest { resource: Some(resource.into()), ..Default::default() },
+                &GalleryRequest {
+                    resource: Some(resource.into()),
+                    ..Default::default()
+                },
             )
             .unwrap();
             assert_eq!(page.total, 1);
             assert_eq!(page.records[0].img_path.as_deref(), Some("img_story_one"));
-            assert_eq!(page.records[0].thumb_path.as_deref(), Some("thumb_story_one"));
+            assert_eq!(
+                page.records[0].thumb_path.as_deref(),
+                Some("thumb_story_one")
+            );
         }
         let missing = query(
             &conn,
-            &GalleryRequest { resource: Some("img_missing".into()), ..Default::default() },
+            &GalleryRequest {
+                resource: Some("img_missing".into()),
+                ..Default::default()
+            },
         )
         .unwrap();
         assert_eq!(missing.total, 0);
@@ -475,20 +574,43 @@ mod tests {
             "img_\0one",
         ] {
             assert!(
-                GalleryRequest { resource: Some(resource.into()), ..Default::default() }
-                    .validate()
-                    .is_err()
+                GalleryRequest {
+                    resource: Some(resource.into()),
+                    ..Default::default()
+                }
+                .validate()
+                .is_err()
             );
         }
         for input in [
-            GalleryRequest { limit: Some(0), ..Default::default() },
-            GalleryRequest { limit: Some(201), ..Default::default() },
-            GalleryRequest { offset: Some(1_000_001), ..Default::default() },
-            GalleryRequest { category: Some("menu".into()), ..Default::default() },
-            GalleryRequest { q: Some("x".repeat(257)), ..Default::default() },
+            GalleryRequest {
+                limit: Some(0),
+                ..Default::default()
+            },
+            GalleryRequest {
+                limit: Some(201),
+                ..Default::default()
+            },
+            GalleryRequest {
+                offset: Some(1_000_001),
+                ..Default::default()
+            },
+            GalleryRequest {
+                category: Some("menu".into()),
+                ..Default::default()
+            },
+            GalleryRequest {
+                q: Some("x".repeat(257)),
+                ..Default::default()
+            },
         ] {
             assert!(input.validate().is_err());
-            assert!(!query(&empty, &input).unwrap_err().to_string().contains("no such table"));
+            assert!(
+                !query(&empty, &input)
+                    .unwrap_err()
+                    .to_string()
+                    .contains("no such table")
+            );
         }
     }
 
@@ -499,7 +621,11 @@ mod tests {
         let manifest: EditorialManifest =
             serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
         assert_eq!(manifest.items.len(), 3_579);
-        let ids = manifest.items.iter().map(|item| item.id.as_str()).collect::<HashSet<_>>();
+        let ids = manifest
+            .items
+            .iter()
+            .map(|item| item.id.as_str())
+            .collect::<HashSet<_>>();
         assert_eq!(ids.len(), 3_579);
 
         let page = query(
@@ -512,10 +638,28 @@ mod tests {
         )
         .unwrap();
         assert_eq!(page.total, 3_584);
-        assert_eq!(page.categories.iter().map(|row| row.count).sum::<u64>(), 3_584);
-        assert_eq!(page.categories.iter().find(|row| row.id == "gallery_img2").unwrap().count, 363);
-        assert!(page.records.iter().any(|record| record.source.as_deref() == Some("selection")));
-        assert!(page.records.iter().any(|record| record.source.as_deref() == Some("manifest")));
+        assert_eq!(
+            page.categories.iter().map(|row| row.count).sum::<u64>(),
+            3_584
+        );
+        assert_eq!(
+            page.categories
+                .iter()
+                .find(|row| row.id == "gallery_img2")
+                .unwrap()
+                .count,
+            363
+        );
+        assert!(
+            page.records
+                .iter()
+                .any(|record| record.source.as_deref() == Some("selection"))
+        );
+        assert!(
+            page.records
+                .iter()
+                .any(|record| record.source.as_deref() == Some("manifest"))
+        );
     }
 
     #[test]
@@ -563,19 +707,28 @@ mod tests {
         assert!(manifest.items.is_empty());
         let page = query_editorial_with_records(
             &fixture(),
-            &GalleryRequest { view: Some("editorial".into()), ..Default::default() },
+            &GalleryRequest {
+                view: Some("editorial".into()),
+                ..Default::default()
+            },
             Vec::new(),
         )
         .unwrap();
         assert_eq!(page.total, 5);
         assert_eq!(page.categories.iter().map(|row| row.count).sum::<u64>(), 5);
-        assert!(page.records.iter().all(|row| row.source.as_deref() == Some("selection")));
+        assert!(
+            page.records
+                .iter()
+                .all(|row| row.source.as_deref() == Some("selection"))
+        );
     }
 
     #[test]
     fn explicit_manifest_reports_unreadable_and_invalid_inputs() {
-        let unique =
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
         let path =
             std::env::temp_dir().join(format!("nie-gallery-{}-{unique}.json", std::process::id()));
         assert!(load_editorial_manifest(Some(path.as_os_str())).is_err());
@@ -584,7 +737,12 @@ mod tests {
             assert!(load_editorial_manifest(Some(path.as_os_str())).is_err());
         }
         std::fs::write(&path, r#"{"items":[]}"#).unwrap();
-        assert!(load_editorial_manifest(Some(path.as_os_str())).unwrap().items.is_empty());
+        assert!(
+            load_editorial_manifest(Some(path.as_os_str()))
+                .unwrap()
+                .items
+                .is_empty()
+        );
         std::fs::remove_file(path).unwrap();
     }
 }

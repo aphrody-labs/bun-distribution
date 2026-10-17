@@ -30,7 +30,10 @@ fn load() -> Option<serde_json::Value> {
 fn categories_byte_exact() {
     let Some(root) = load() else { return };
     let cfg = parse_flag_config(&root);
-    assert_eq!(cfg.flag_info, [0, 1, 2, 17, 19, 22, 5, 6, 7, 8, 16, 20, 21, 12, 11]);
+    assert_eq!(
+        cfg.flag_info,
+        [0, 1, 2, 17, 19, 22, 5, 6, 7, 8, 16, 20, 21, 12, 11]
+    );
     assert_eq!(cfg.tbox_info, [3]);
     assert_eq!(cfg.tbox_repop_info, [13]);
     assert_eq!(cfg.map_door_info, [4]);

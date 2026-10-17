@@ -3,7 +3,9 @@ use photocraft_raw::testgen::cr3_preview;
 use photocraft_raw::{RawFormat, embedded_preview, embedded_previews, identify, orientation};
 
 fn jpeg() -> Vec<u8> {
-    vec![0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 20, 0, 32, 1, 1, 0x11, 0, 0xff, 0xd9]
+    vec![
+        0xff, 0xd8, 0xff, 0xc0, 0, 11, 8, 0, 20, 0, 32, 1, 1, 0x11, 0, 0xff, 0xd9,
+    ]
 }
 
 fn position(b: &[u8], marker: &[u8]) -> usize {
@@ -100,7 +102,10 @@ fn prvw_is_used_when_no_jpeg_track_exists() {
     let mut body = vec![0; 12];
     body.extend_from_slice(&(jpeg().len() as u32).to_be_bytes());
     body.extend(jpeg());
-    let mut uuid = vec![0xea, 0xf4, 0x2b, 0x5e, 0x1c, 0x98, 0x4b, 0x88, 0xb9, 0xfb, 0xb7, 0xdc, 0x40, 0x6e, 0x4d, 0x16];
+    let mut uuid = vec![
+        0xea, 0xf4, 0x2b, 0x5e, 0x1c, 0x98, 0x4b, 0x88, 0xb9, 0xfb, 0xb7, 0xdc, 0x40, 0x6e, 0x4d,
+        0x16,
+    ];
     uuid.extend([0; 8]);
     uuid.extend(bx(b"PRVW", &body));
     let b = [ftyp, bx(b"uuid", &uuid)].concat();
@@ -114,6 +119,10 @@ fn deeply_nested_containers_are_bounded() {
     for _ in 0..1000 {
         b = [((b.len() + 8) as u32).to_be_bytes().as_slice(), b"moov", &b].concat();
     }
-    let ftyp = [24u32.to_be_bytes().as_slice(), b"ftypcrx \0\0\0\x01crx isom"].concat();
+    let ftyp = [
+        24u32.to_be_bytes().as_slice(),
+        b"ftypcrx \0\0\0\x01crx isom",
+    ]
+    .concat();
     assert!(embedded_previews(&[ftyp, b].concat()).is_empty());
 }

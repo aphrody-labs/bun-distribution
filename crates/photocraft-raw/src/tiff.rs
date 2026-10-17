@@ -145,7 +145,11 @@ impl<'a> Tiff<'a> {
             b"MM\0*" | b"MMOR" => false,
             _ => return None,
         };
-        let mut t = Tiff { data, le, first_ifd: 0 };
+        let mut t = Tiff {
+            data,
+            le,
+            first_ifd: 0,
+        };
         t.first_ifd = t.u32_at(4)? as usize;
         Some(t)
     }
@@ -156,17 +160,29 @@ impl<'a> Tiff<'a> {
 
     pub fn u16_at(&self, at: usize) -> Option<u16> {
         let s: [u8; 2] = self.bytes(at, 2)?.try_into().ok()?;
-        Some(if self.le { u16::from_le_bytes(s) } else { u16::from_be_bytes(s) })
+        Some(if self.le {
+            u16::from_le_bytes(s)
+        } else {
+            u16::from_be_bytes(s)
+        })
     }
 
     pub fn u32_at(&self, at: usize) -> Option<u32> {
         let s: [u8; 4] = self.bytes(at, 4)?.try_into().ok()?;
-        Some(if self.le { u32::from_le_bytes(s) } else { u32::from_be_bytes(s) })
+        Some(if self.le {
+            u32::from_le_bytes(s)
+        } else {
+            u32::from_be_bytes(s)
+        })
     }
 
     fn u64_at(&self, at: usize) -> Option<u64> {
         let s: [u8; 8] = self.bytes(at, 8)?.try_into().ok()?;
-        Some(if self.le { u64::from_le_bytes(s) } else { u64::from_be_bytes(s) })
+        Some(if self.le {
+            u64::from_le_bytes(s)
+        } else {
+            u64::from_be_bytes(s)
+        })
     }
 
     /// Reads the IFD at `offset`. Value offsets are relative to `base`
@@ -179,12 +195,25 @@ impl<'a> Tiff<'a> {
         let mut entries = Vec::with_capacity(n);
         for i in 0..n {
             let e = offset.checked_add(2 + 12 * i)?;
-            let (Some(tag), Some(typ), Some(count)) = (self.u16_at(e), self.u16_at(e.saturating_add(2)), self.u32_at(e.saturating_add(4))) else {
+            let (Some(tag), Some(typ), Some(count)) = (
+                self.u16_at(e),
+                self.u16_at(e.saturating_add(2)),
+                self.u32_at(e.saturating_add(4)),
+            ) else {
                 break;
             };
             let size = type_size(typ).saturating_mul(count as usize);
-            let at = if size <= 4 { e.saturating_add(8) } else { (self.u32_at(e.saturating_add(8))? as usize).saturating_add(base) };
-            entries.push(Entry { tag, typ, count, at });
+            let at = if size <= 4 {
+                e.saturating_add(8)
+            } else {
+                (self.u32_at(e.saturating_add(8))? as usize).saturating_add(base)
+            };
+            entries.push(Entry {
+                tag,
+                typ,
+                count,
+                at,
+            });
         }
         Some(Ifd { offset, entries })
     }
@@ -192,7 +221,8 @@ impl<'a> Tiff<'a> {
     /// Offset of the IFD that follows the one at `ifd` (0 = none).
     pub fn next_ifd(&self, ifd: &Ifd) -> usize {
         let n = ifd.entries.len();
-        self.u32_at(ifd.offset.saturating_add(2 + 12 * n)).unwrap_or(0) as usize
+        self.u32_at(ifd.offset.saturating_add(2 + 12 * n))
+            .unwrap_or(0) as usize
     }
 
     /// Every IFD reachable from the header: the main chain, SubIFDs and the
@@ -206,7 +236,9 @@ impl<'a> Tiff<'a> {
                 continue;
             }
             seen.push(off);
-            let Some(ifd) = self.ifd_at(off, 0) else { continue };
+            let Some(ifd) = self.ifd_at(off, 0) else {
+                continue;
+            };
             let next = self.next_ifd(&ifd);
             if next != 0 {
                 stack.push(next);
@@ -233,7 +265,9 @@ impl<'a> Tiff<'a> {
         let at = e.at.checked_add(i.checked_mul(e.unit())?)?;
         match e.typ {
             1 | 7 => self.bytes(at, 1).map(|b| u32::from(b[0])),
-            6 => self.bytes(at, 1).and_then(|b| u32::try_from(b[0] as i8).ok()),
+            6 => self
+                .bytes(at, 1)
+                .and_then(|b| u32::try_from(b[0] as i8).ok()),
             3 => self.u16_at(at).map(u32::from),
             8 => self.u16_at(at).and_then(|v| u32::try_from(v as i16).ok()),
             4 | 13 => self.u32_at(at),
@@ -263,7 +297,10 @@ impl<'a> Tiff<'a> {
                 f64::from(n) / f64::from(d)
             }
             10 => {
-                let (n, d) = (self.u32_at(at)? as i32, self.u32_at(at.saturating_add(4))? as i32);
+                let (n, d) = (
+                    self.u32_at(at)? as i32,
+                    self.u32_at(at.saturating_add(4))? as i32,
+                );
                 if d == 0 {
                     return None;
                 }
@@ -279,13 +316,19 @@ impl<'a> Tiff<'a> {
     /// All values as unsigned integers (empty if any is unreadable).
     pub fn uints(&self, e: &Entry) -> Vec<u32> {
         let n = (e.count as usize).min(MAX_VALUES);
-        (0..n).map(|i| self.uint(e, i)).collect::<Option<Vec<_>>>().unwrap_or_default()
+        (0..n)
+            .map(|i| self.uint(e, i))
+            .collect::<Option<Vec<_>>>()
+            .unwrap_or_default()
     }
 
     /// All values as floats (empty if any is unreadable).
     pub fn floats(&self, e: &Entry) -> Vec<f64> {
         let n = (e.count as usize).min(MAX_VALUES);
-        (0..n).map(|i| self.float(e, i)).collect::<Option<Vec<_>>>().unwrap_or_default()
+        (0..n)
+            .map(|i| self.float(e, i))
+            .collect::<Option<Vec<_>>>()
+            .unwrap_or_default()
     }
 
     /// The raw value bytes of an entry.
@@ -322,13 +365,17 @@ impl<'a> Tiff<'a> {
 /// The EXIF orientation (1..=8) of a raw tag value; anything else is the default 1. The range is
 /// checked on the `u32`: narrowing first let a LONG like 65538 pass as 2 (#1817).
 pub(crate) fn orientation(v: Option<u32>) -> u16 {
-    v.filter(|o| (1..=8).contains(o)).and_then(|o| u16::try_from(o).ok()).unwrap_or(1)
+    v.filter(|o| (1..=8).contains(o))
+        .and_then(|o| u16::try_from(o).ok())
+        .unwrap_or(1)
 }
 
 /// A human-readable listing of every IFD and entry (debugging aid).
 pub(crate) fn dump(data: &[u8]) -> String {
     use std::fmt::Write;
-    let Some(t) = Tiff::new(data) else { return "not a TIFF-structured file".into() };
+    let Some(t) = Tiff::new(data) else {
+        return "not a TIFF-structured file".into();
+    };
     let mut s = String::new();
     for ifd in t.all_ifds() {
         let _ = writeln!(s, "IFD @{}", ifd.offset);
@@ -337,10 +384,24 @@ pub(crate) fn dump(data: &[u8]) -> String {
                 t.ascii(e).unwrap_or_default()
             } else {
                 let n = (e.count as usize).min(12);
-                let v: Vec<String> = (0..n).map(|i| t.float(e, i).map(|f| format!("{f}")).unwrap_or_else(|| "?".into())).collect();
-                format!("{}{}", v.join(" "), if e.count as usize > n { " …" } else { "" })
+                let v: Vec<String> = (0..n)
+                    .map(|i| {
+                        t.float(e, i)
+                            .map(|f| format!("{f}"))
+                            .unwrap_or_else(|| "?".into())
+                    })
+                    .collect();
+                format!(
+                    "{}{}",
+                    v.join(" "),
+                    if e.count as usize > n { " …" } else { "" }
+                )
             };
-            let _ = writeln!(s, "  {:5} (0x{:04X}) type {:2} count {:7} @{:9}: {}", e.tag, e.tag, e.typ, e.count, e.at, preview);
+            let _ = writeln!(
+                s,
+                "  {:5} (0x{:04X}) type {:2} count {:7} @{:9}: {}",
+                e.tag, e.tag, e.typ, e.count, e.at, preview
+            );
         }
     }
     s
@@ -353,7 +414,14 @@ mod tests {
     #[test]
     fn orientation_is_range_checked_before_narrowing() {
         // #1817: 65538 as u16 is 2, which passed the 1..=8 check.
-        for (v, want) in [(None, 1), (Some(0), 1), (Some(9), 1), (Some(65_538), 1), (Some(65_537), 1), (Some(u32::MAX), 1)] {
+        for (v, want) in [
+            (None, 1),
+            (Some(0), 1),
+            (Some(9), 1),
+            (Some(65_538), 1),
+            (Some(65_537), 1),
+            (Some(u32::MAX), 1),
+        ] {
             assert_eq!(orientation(v), want, "{v:?}");
         }
         for o in 1..=8u32 {

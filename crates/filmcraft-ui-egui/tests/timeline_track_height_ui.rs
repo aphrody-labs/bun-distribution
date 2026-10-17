@@ -18,14 +18,22 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 1400.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 1400.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         // short enough that every track is in view, with empty space above and below them
-        d.ok("ui.set", json!({"timeline": {"videoTrackHeight": 24.0, "audioTrackHeight": 24.0}}));
+        d.ok(
+            "ui.set",
+            json!({"timeline": {"videoTrackHeight": 24.0, "audioTrackHeight": 24.0}}),
+        );
         d.frames(3);
         d
     }
@@ -65,16 +73,33 @@ impl Driver {
     /// Drag from the middle of the element `id` by `dy` points.
     fn drag(&mut self, id: &str, fy: f32, dy: f32) {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == json!(id)).unwrap_or_else(|| panic!("no element {id}")).clone();
-        let r: Vec<f32> = e["rect"].as_array().unwrap().iter().map(|n| n.as_f64().unwrap() as f32).collect();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == json!(id))
+            .unwrap_or_else(|| panic!("no element {id}"))
+            .clone();
+        let r: Vec<f32> = e["rect"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|n| n.as_f64().unwrap() as f32)
+            .collect();
         let (x, y) = (r[0] + r[2] / 2.0, r[1] + r[3] * fy);
-        self.ok("ui.drag", json!({"from": {"x": x, "y": y}, "to": {"x": x, "y": y + dy}}));
+        self.ok(
+            "ui.drag",
+            json!({"from": {"x": x, "y": y}, "to": {"x": x, "y": y + dy}}),
+        );
         self.frames(3);
     }
 
     fn labels(&self) -> (String, String) {
         let seq = self.app().session.active_sequence().unwrap();
-        (format!("V{}", seq.video_tracks.len()), format!("A{}", seq.audio_tracks.len()))
+        (
+            format!("V{}", seq.video_tracks.len()),
+            format!("A{}", seq.audio_tracks.len()),
+        )
     }
 }
 

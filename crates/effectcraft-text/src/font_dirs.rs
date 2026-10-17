@@ -34,7 +34,9 @@ impl FontEnv {
             xdg_data_dirs: var("XDG_DATA_DIRS"),
             xdg_config_home: var("XDG_CONFIG_HOME").map(PathBuf::from),
             fontconfig_file: var("FONTCONFIG_FILE").map(PathBuf::from),
-            fontconfig_roots: ["/etc/fonts/fonts.conf", "/usr/local/etc/fonts/fonts.conf"].map(PathBuf::from).to_vec(),
+            fontconfig_roots: ["/etc/fonts/fonts.conf", "/usr/local/etc/fonts/fonts.conf"]
+                .map(PathBuf::from)
+                .to_vec(),
             fixed: [
                 "/usr/share/fonts",
                 "/usr/local/share/fonts",
@@ -49,11 +51,17 @@ impl FontEnv {
     }
 
     fn data_home(&self) -> Option<PathBuf> {
-        self.xdg_data_home.clone().filter(|p| p.is_absolute()).or_else(|| self.home.as_ref().map(|h| h.join(".local/share")))
+        self.xdg_data_home
+            .clone()
+            .filter(|p| p.is_absolute())
+            .or_else(|| self.home.as_ref().map(|h| h.join(".local/share")))
     }
 
     fn config_home(&self) -> Option<PathBuf> {
-        self.xdg_config_home.clone().filter(|p| p.is_absolute()).or_else(|| self.home.as_ref().map(|h| h.join(".config")))
+        self.xdg_config_home
+            .clone()
+            .filter(|p| p.is_absolute())
+            .or_else(|| self.home.as_ref().map(|h| h.join(".config")))
     }
 }
 
@@ -68,8 +76,15 @@ pub(crate) fn unix_font_dirs(env: &FontEnv) -> Vec<PathBuf> {
     if let Some(d) = env.data_home() {
         dirs.push(d.join("fonts"));
     }
-    let data_dirs = env.xdg_data_dirs.clone().unwrap_or_else(|| "/usr/local/share:/usr/share".into());
-    dirs.extend(std::env::split_paths(&data_dirs).filter(|p| p.is_absolute()).map(|p| p.join("fonts")));
+    let data_dirs = env
+        .xdg_data_dirs
+        .clone()
+        .unwrap_or_else(|| "/usr/local/share:/usr/share".into());
+    dirs.extend(
+        std::env::split_paths(&data_dirs)
+            .filter(|p| p.is_absolute())
+            .map(|p| p.join("fonts")),
+    );
     dirs.extend(fontconfig_dirs(env));
     dedup_dirs(dirs)
 }
@@ -77,7 +92,9 @@ pub(crate) fn unix_font_dirs(env: &FontEnv) -> Vec<PathBuf> {
 /// Drop repeated folders (also the same folder reached through a symlink), keeping the first.
 fn dedup_dirs(dirs: Vec<PathBuf>) -> Vec<PathBuf> {
     let mut seen = HashSet::new();
-    dirs.into_iter().filter(|d| seen.insert(std::fs::canonicalize(d).unwrap_or_else(|_| d.clone()))).collect()
+    dirs.into_iter()
+        .filter(|d| seen.insert(std::fs::canonicalize(d).unwrap_or_else(|_| d.clone())))
+        .collect()
 }
 
 const MAX_INCLUDE_DEPTH: u32 = 8;
@@ -86,7 +103,11 @@ const MAX_FILE_BYTES: u64 = 1 << 20;
 
 /// The font folders named by the fontconfig configuration.
 pub(crate) fn fontconfig_dirs(env: &FontEnv) -> Vec<PathBuf> {
-    let mut st = Reader { env, out: Vec::new(), seen: HashSet::new() };
+    let mut st = Reader {
+        env,
+        out: Vec::new(),
+        seen: HashSet::new(),
+    };
     let root = match &env.fontconfig_file {
         Some(f) => Some(f.clone()),
         None => env.fontconfig_roots.iter().find(|p| p.is_file()).cloned(),
@@ -112,11 +133,17 @@ impl Reader<'_> {
     /// Read a configuration file or, for a folder, its `NN-name.conf` files in name order.
     fn include(&mut self, path: &Path, depth: u32) {
         if path.is_dir() {
-            let Ok(rd) = std::fs::read_dir(path) else { return };
+            let Ok(rd) = std::fs::read_dir(path) else {
+                return;
+            };
             let mut files: Vec<PathBuf> = rd
                 .flatten()
                 .map(|e| e.path())
-                .filter(|p| p.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.ends_with(".conf") && n.starts_with(|c: char| c.is_ascii_digit())))
+                .filter(|p| {
+                    p.file_name().and_then(|n| n.to_str()).is_some_and(|n| {
+                        n.ends_with(".conf") && n.starts_with(|c: char| c.is_ascii_digit())
+                    })
+                })
                 .collect();
             files.sort();
             for f in files {
@@ -135,10 +162,15 @@ impl Reader<'_> {
         if !self.seen.insert(key) {
             return;
         }
-        if std::fs::metadata(path).map(|m| m.len() > MAX_FILE_BYTES).unwrap_or(true) {
+        if std::fs::metadata(path)
+            .map(|m| m.len() > MAX_FILE_BYTES)
+            .unwrap_or(true)
+        {
             return;
         }
-        let Ok(text) = std::fs::read_to_string(path) else { return };
+        let Ok(text) = std::fs::read_to_string(path) else {
+            return;
+        };
         let base = path.parent().map(Path::to_path_buf).unwrap_or_default();
         for el in elements(&text) {
             match el.name {
@@ -173,7 +205,14 @@ impl Reader<'_> {
             return Some(p.to_path_buf());
         }
         match el.attr("prefix") {
-            Some("xdg") => Some(if include { self.env.config_home()? } else { self.env.data_home()? }.join(p)),
+            Some("xdg") => Some(
+                if include {
+                    self.env.config_home()?
+                } else {
+                    self.env.data_home()?
+                }
+                .join(p),
+            ),
             Some("default" | "cwd") => std::env::current_dir().ok().map(|c| c.join(p)),
             _ => Some(base.join(p)),
         }
@@ -226,23 +265,35 @@ fn elements(src: &str) -> Vec<Element<'_>> {
         let Some(close) = tail.find('>') else { break };
         let inner = tail.get(1..close).unwrap_or_default();
         i = start + close + 1;
-        let name_len = inner.find(|c: char| c.is_whitespace() || c == '/').unwrap_or(inner.len());
+        let name_len = inner
+            .find(|c: char| c.is_whitespace() || c == '/')
+            .unwrap_or(inner.len());
         let name = inner.get(..name_len).unwrap_or_default();
         if !matches!(name, "dir" | "remap-dir" | "include") || inner.ends_with('/') {
             continue;
         }
         let attrs = inner.get(name_len..).unwrap_or_default();
         let end_tag = format!("</{name}>");
-        let Some(body_len) = src.get(i..).and_then(|s| s.find(&end_tag)) else { break };
+        let Some(body_len) = src.get(i..).and_then(|s| s.find(&end_tag)) else {
+            break;
+        };
         let body = src.get(i..i + body_len).unwrap_or_default();
         i += body_len + end_tag.len();
-        out.push(Element { name, attrs, text: decode_entities(body) });
+        out.push(Element {
+            name,
+            attrs,
+            text: decode_entities(body),
+        });
     }
     out
 }
 
 fn decode_entities(s: &str) -> String {
-    s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
+    s.replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&amp;", "&")
 }
 
 #[cfg(test)]
@@ -297,10 +348,19 @@ mod tests {
             &etc.join("conf.d/50-flatpak.conf"),
             "<fontconfig><reset-dirs /><dir>/run/host/fonts</dir><include ignore_missing=\"yes\">/run/host/font-dirs.xml</include></fontconfig>",
         );
-        write(&etc.join("conf.d/60-remap.conf"), "<fontconfig><remap-dir as-path=\"/usr/share/fonts\">/remapped/fonts</remap-dir></fontconfig>");
+        write(
+            &etc.join("conf.d/60-remap.conf"),
+            "<fontconfig><remap-dir as-path=\"/usr/share/fonts\">/remapped/fonts</remap-dir></fontconfig>",
+        );
         write(&etc.join("conf.d/README"), "<dir>/not/a/conf/file</dir>");
-        write(&etc.join("conf.d/nodigit.conf"), "<fontconfig><dir>/no/digit</dir></fontconfig>");
-        write(&root.join("home/.config/fontconfig/fonts.conf"), "<fontconfig><dir>/user/conf/fonts</dir></fontconfig>");
+        write(
+            &etc.join("conf.d/nodigit.conf"),
+            "<fontconfig><dir>/no/digit</dir></fontconfig>",
+        );
+        write(
+            &root.join("home/.config/fontconfig/fonts.conf"),
+            "<fontconfig><dir>/user/conf/fonts</dir></fontconfig>",
+        );
         let dirs = fontconfig_dirs(&env_in(&root));
         let home = root.join("home");
         let want = vec![
@@ -321,8 +381,14 @@ mod tests {
     fn include_cycles_and_unclosed_tags_terminate() {
         let root = temp("cycle");
         let etc = root.join("etc/fonts");
-        write(&etc.join("fonts.conf"), "<fontconfig><dir>/one</dir><include>b.conf</include><include>fonts.conf</include></fontconfig>");
-        write(&etc.join("b.conf"), "<fontconfig><include>fonts.conf</include><dir>/two</dir><dir>/unclosed");
+        write(
+            &etc.join("fonts.conf"),
+            "<fontconfig><dir>/one</dir><include>b.conf</include><include>fonts.conf</include></fontconfig>",
+        );
+        write(
+            &etc.join("b.conf"),
+            "<fontconfig><include>fonts.conf</include><dir>/two</dir><dir>/unclosed",
+        );
         let dirs = fontconfig_dirs(&env_in(&root));
         assert_eq!(dirs, vec![PathBuf::from("/one"), PathBuf::from("/two")]);
         assert!(fontconfig_dirs(&FontEnv::default()).is_empty());
@@ -335,12 +401,17 @@ mod tests {
         let env = FontEnv {
             home: Some(root.join("home")),
             xdg_data_home: Some(root.join("data")),
-            xdg_data_dirs: Some(std::env::join_paths([root.join("share"), "relative/ignored".into()]).unwrap()),
+            xdg_data_dirs: Some(
+                std::env::join_paths([root.join("share"), "relative/ignored".into()]).unwrap(),
+            ),
             fixed: vec![PathBuf::from("/run/host/fonts")],
             fontconfig_file: Some(root.join("fonts.conf")),
             ..Default::default()
         };
-        write(&root.join("fonts.conf"), "<fontconfig><dir>/run/host/fonts</dir><dir prefix=\"xdg\">fonts</dir></fontconfig>");
+        write(
+            &root.join("fonts.conf"),
+            "<fontconfig><dir>/run/host/fonts</dir><dir prefix=\"xdg\">fonts</dir></fontconfig>",
+        );
         let dirs = unix_font_dirs(&env);
         assert_eq!(
             dirs,
@@ -364,11 +435,28 @@ mod tests {
         let host = root.join("run/host/fonts/TTF");
         std::fs::create_dir_all(&host).unwrap();
         std::fs::write(host.join("NOTOSERIF.TTF"), crate::fonts::NOTO_SERIF_REGULAR).unwrap();
-        write(&root.join("etc/fonts/conf.d/50-flatpak.conf"), &format!("<fontconfig><dir>{}</dir></fontconfig>", root.join("run/host/fonts").display()));
-        write(&root.join("etc/fonts/fonts.conf"), "<fontconfig><include ignore_missing=\"yes\">conf.d</include></fontconfig>");
-        let src = crate::fonts::DirectorySource { dirs: unix_font_dirs(&env_in(&root)) };
+        write(
+            &root.join("etc/fonts/conf.d/50-flatpak.conf"),
+            &format!(
+                "<fontconfig><dir>{}</dir></fontconfig>",
+                root.join("run/host/fonts").display()
+            ),
+        );
+        write(
+            &root.join("etc/fonts/fonts.conf"),
+            "<fontconfig><include ignore_missing=\"yes\">conf.d</include></fontconfig>",
+        );
+        let src = crate::fonts::DirectorySource {
+            dirs: unix_font_dirs(&env_in(&root)),
+        };
         let faces = src.faces();
-        assert!(faces.iter().any(|f| f.family == "Noto Serif" && f.origin == "system"), "{:?}", faces.iter().map(|f| &f.family).collect::<Vec<_>>());
+        assert!(
+            faces
+                .iter()
+                .any(|f| f.family == "Noto Serif" && f.origin == "system"),
+            "{:?}",
+            faces.iter().map(|f| &f.family).collect::<Vec<_>>()
+        );
         let _ = std::fs::remove_dir_all(&root);
     }
 }

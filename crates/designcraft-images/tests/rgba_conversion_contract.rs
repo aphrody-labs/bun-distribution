@@ -3,7 +3,9 @@ use image::{DynamicImage, ImageFormat, RgbaImage};
 
 fn encoded(image: &DynamicImage, format: ImageFormat) -> Vec<u8> {
     let mut bytes = Vec::new();
-    image.write_to(&mut std::io::Cursor::new(&mut bytes), format).unwrap();
+    image
+        .write_to(&mut std::io::Cursor::new(&mut bytes), format)
+        .unwrap();
     bytes
 }
 
@@ -22,47 +24,100 @@ fn assert_pixels(source: DynamicImage, expected: &[u8]) {
 
 #[test]
 fn rgba8_keeps_hidden_rgb_and_straight_partial_alpha() {
-    let pixels = [200, 30, 90, 0, 20, 170, 240, 1, 180, 40, 70, 128, 5, 250, 90, 255];
+    let pixels = [
+        200, 30, 90, 0, 20, 170, 240, 1, 180, 40, 70, 128, 5, 250, 90, 255,
+    ];
     let source = DynamicImage::ImageRgba8(RgbaImage::from_raw(2, 2, pixels.to_vec()).unwrap());
     assert_pixels(source, &pixels);
 }
 
 #[test]
 fn rgb8_only_adds_opaque_alpha() {
-    let source = DynamicImage::ImageRgb8(image::RgbImage::from_raw(2, 2, vec![200, 30, 90, 20, 170, 240, 180, 40, 70, 5, 250, 90]).unwrap());
-    assert_pixels(source, &[200, 30, 90, 255, 20, 170, 240, 255, 180, 40, 70, 255, 5, 250, 90, 255]);
+    let source = DynamicImage::ImageRgb8(
+        image::RgbImage::from_raw(
+            2,
+            2,
+            vec![200, 30, 90, 20, 170, 240, 180, 40, 70, 5, 250, 90],
+        )
+        .unwrap(),
+    );
+    assert_pixels(
+        source,
+        &[
+            200, 30, 90, 255, 20, 170, 240, 255, 180, 40, 70, 255, 5, 250, 90, 255,
+        ],
+    );
 }
 
 #[test]
 fn grayscale8_matches_fixed_rgb_values() {
-    let source = DynamicImage::ImageLuma8(image::GrayImage::from_raw(2, 2, vec![0, 1, 128, 255]).unwrap());
-    assert_pixels(source, &[0, 0, 0, 255, 1, 1, 1, 255, 128, 128, 128, 255, 255, 255, 255, 255]);
+    let source =
+        DynamicImage::ImageLuma8(image::GrayImage::from_raw(2, 2, vec![0, 1, 128, 255]).unwrap());
+    assert_pixels(
+        source,
+        &[
+            0, 0, 0, 255, 1, 1, 1, 255, 128, 128, 128, 255, 255, 255, 255, 255,
+        ],
+    );
 }
 
 #[test]
 fn grayscale16_uses_existing_eight_bit_scaling() {
-    let source = DynamicImage::ImageLuma16(image::ImageBuffer::from_raw(2, 2, vec![0, 257, 32896, 65535]).unwrap());
-    assert_pixels(source, &[0, 0, 0, 255, 1, 1, 1, 255, 128, 128, 128, 255, 255, 255, 255, 255]);
+    let source = DynamicImage::ImageLuma16(
+        image::ImageBuffer::from_raw(2, 2, vec![0, 257, 32896, 65535]).unwrap(),
+    );
+    assert_pixels(
+        source,
+        &[
+            0, 0, 0, 255, 1, 1, 1, 255, 128, 128, 128, 255, 255, 255, 255, 255,
+        ],
+    );
 }
 
 #[test]
 fn grayscale16_rounding_boundaries_match_fixed_values() {
-    let source = DynamicImage::ImageLuma16(image::ImageBuffer::from_raw(2, 2, vec![128, 129, 65406, 65407]).unwrap());
-    assert_pixels(source, &[0, 0, 0, 255, 1, 1, 1, 255, 254, 254, 254, 255, 255, 255, 255, 255]);
+    let source = DynamicImage::ImageLuma16(
+        image::ImageBuffer::from_raw(2, 2, vec![128, 129, 65406, 65407]).unwrap(),
+    );
+    assert_pixels(
+        source,
+        &[
+            0, 0, 0, 255, 1, 1, 1, 255, 254, 254, 254, 255, 255, 255, 255, 255,
+        ],
+    );
 }
 
 #[test]
 fn rgba16_preserves_straight_alpha_and_existing_scaling() {
     let source = DynamicImage::ImageRgba16(
-        image::ImageBuffer::from_raw(2, 2, vec![65535, 0, 32896, 0, 0, 65535, 257, 257, 32896, 257, 65535, 32896, 257, 32896, 0, 65535]).unwrap(),
+        image::ImageBuffer::from_raw(
+            2,
+            2,
+            vec![
+                65535, 0, 32896, 0, 0, 65535, 257, 257, 32896, 257, 65535, 32896, 257, 32896, 0,
+                65535,
+            ],
+        )
+        .unwrap(),
     );
-    assert_pixels(source, &[255, 0, 128, 0, 0, 255, 1, 1, 128, 1, 255, 128, 1, 128, 0, 255]);
+    assert_pixels(
+        source,
+        &[
+            255, 0, 128, 0, 0, 255, 1, 1, 128, 1, 255, 128, 1, 128, 0, 255,
+        ],
+    );
 }
 
 #[test]
 fn malformed_rasters_remain_unsupported_without_mutating_input() {
-    let png = encoded(&DynamicImage::ImageRgba8(RgbaImage::from_pixel(2, 2, image::Rgba([13, 27, 42, 128]))), ImageFormat::Png);
-    let tiff = encoded(&DynamicImage::ImageRgba8(RgbaImage::from_pixel(2, 2, image::Rgba([13, 27, 42, 128]))), ImageFormat::Tiff);
+    let png = encoded(
+        &DynamicImage::ImageRgba8(RgbaImage::from_pixel(2, 2, image::Rgba([13, 27, 42, 128]))),
+        ImageFormat::Png,
+    );
+    let tiff = encoded(
+        &DynamicImage::ImageRgba8(RgbaImage::from_pixel(2, 2, image::Rgba([13, 27, 42, 128]))),
+        ImageFormat::Tiff,
+    );
     for input in [b"".as_slice(), b"not a raster", &png[..16], &tiff[..6]] {
         let original = input.to_vec();
         assert!(designcraft_images::decode_rgba(input).is_none());
@@ -89,7 +144,9 @@ fn all_gray_bytes_survive_png_and_tiff_decoding() {
 
 #[test]
 fn grayscale_eps_proxy_keeps_all_values_and_source_bytes() {
-    let source = DynamicImage::ImageLuma8(image::GrayImage::from_raw(256, 1, (0u8..=255).collect()).unwrap());
+    let source = DynamicImage::ImageLuma8(
+        image::GrayImage::from_raw(256, 1, (0u8..=255).collect()).unwrap(),
+    );
     let tiff = encoded(&source, ImageFormat::Tiff);
     // Original DOS EPS wrapper with this test's generated grayscale TIFF preview.
     let ps = b"%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 256 1\n%%EOF\n";

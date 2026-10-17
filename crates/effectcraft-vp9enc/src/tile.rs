@@ -23,16 +23,31 @@ pub const ZEROMV: u8 = 12;
 pub const NEWMV: u8 = 13;
 
 const PARTITION_TREE: [i8; 6] = [0, 2, -1, 4, -2, -3];
-const INTRA_MODE_TREE: [i8; 18] = [0, 2, -9, 4, -1, 6, 8, 12, -2, 10, -4, -5, -3, 14, -8, 16, -6, -7];
+const INTRA_MODE_TREE: [i8; 18] = [
+    0, 2, -9, 4, -1, 6, 8, 12, -2, 10, -4, -5, -3, 14, -8, 16, -6, -7,
+];
 /// Leaves are `mode - NEARESTMV`.
 const INTER_MODE_TREE: [i8; 6] = [-2, 2, 0, 4, -1, -3];
 const MV_JOINT_TREE: [i8; 6] = [0, 2, -1, 4, -2, -3];
-const MV_CLASS_TREE: [i8; 20] = [0, 2, -1, 4, 6, 8, -2, -3, 10, 12, -4, -5, -6, 14, 16, 18, -7, -8, -9, -10];
+const MV_CLASS_TREE: [i8; 20] = [
+    0, 2, -1, 4, 6, 8, -2, -3, 10, 12, -4, -5, -6, 14, 16, 18, -7, -8, -9, -10,
+];
 const MV_FR_TREE: [i8; 6] = [0, 2, -1, 4, -2, -3];
 
 /// extra_bits[token] = (cat, numExtra, base).
-const EXTRA_BITS: [(u8, u8, u16); 11] =
-    [(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 0, 3), (0, 0, 4), (1, 1, 5), (2, 2, 7), (3, 3, 11), (4, 4, 19), (5, 5, 35), (6, 14, 67)];
+const EXTRA_BITS: [(u8, u8, u16); 11] = [
+    (0, 0, 0),
+    (0, 0, 1),
+    (0, 0, 2),
+    (0, 0, 3),
+    (0, 0, 4),
+    (1, 1, 5),
+    (2, 2, 7),
+    (3, 3, 11),
+    (4, 4, 19),
+    (5, 5, 35),
+    (6, 14, 67),
+];
 const CAT_PROBS: [&[u8]; 7] = [
     &[],
     &[159],
@@ -40,7 +55,9 @@ const CAT_PROBS: [&[u8]; 7] = [
     &[173, 148, 140],
     &[176, 155, 140, 135],
     &[180, 157, 141, 134, 130],
-    &[254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129],
+    &[
+        254, 254, 254, 252, 249, 243, 230, 196, 177, 153, 140, 133, 130, 129,
+    ],
 ];
 
 /// mode2txfm_map for the intra modes used here (inter blocks use DCT_DCT).
@@ -87,7 +104,10 @@ fn neighbors(tx_type: u8) -> [(usize, usize); 16] {
 
 fn eob_of(levels: &[i32; 16], tx_type: u8) -> usize {
     let sc = scan(tx_type);
-    (0..16).rev().find(|&i| levels[sc[i] as usize] != 0).map_or(0, |i| i + 1)
+    (0..16)
+        .rev()
+        .find(|&i| levels[sc[i] as usize] != 0)
+        .map_or(0, |i| i + 1)
 }
 
 /// Rough coefficient bit cost (1/256 bit) for rate-distortion decisions.
@@ -98,13 +118,25 @@ fn levels_cost(levels: &[i32; 16], eob: usize) -> u32 {
     let mut bits = 256;
     for &l in levels {
         let a = l.unsigned_abs();
-        bits += if a == 0 { 160 } else { 640 + 384 * (32 - a.leading_zeros()) };
+        bits += if a == 0 {
+            160
+        } else {
+            640 + 384 * (32 - a.leading_zeros())
+        };
     }
     bits
 }
 
 /// Intra prediction (8.5.1) of a square block for DC / V / H / TM.
-fn predict_intra(p: &Plane, x: usize, y: usize, log2: usize, mode: u8, have_left: bool, have_above: bool) -> [i32; 64] {
+fn predict_intra(
+    p: &Plane,
+    x: usize,
+    y: usize,
+    log2: usize,
+    mode: u8,
+    have_left: bool,
+    have_above: bool,
+) -> [i32; 64] {
     let size = 1usize << log2;
     let base = 128i32;
     let buf = &p.rec;
@@ -145,7 +177,10 @@ fn predict_intra(p: &Plane, x: usize, y: usize, log2: usize, mode: u8, have_left
     }
     if mode == DC_PRED {
         let v = match (have_left, have_above) {
-            (true, true) => (left[..size].iter().sum::<i32>() + above[..size].iter().sum::<i32>() + size as i32) >> (log2 + 1),
+            (true, true) => {
+                (left[..size].iter().sum::<i32>() + above[..size].iter().sum::<i32>() + size as i32)
+                    >> (log2 + 1)
+            }
             (true, false) => (left[..size].iter().sum::<i32>() + (1 << (log2 - 1))) >> log2,
             (false, true) => (above[..size].iter().sum::<i32>() + (1 << (log2 - 1))) >> log2,
             (false, false) => base,
@@ -159,7 +194,11 @@ fn predict_intra(p: &Plane, x: usize, y: usize, log2: usize, mode: u8, have_left
 
 /// `mv_class` of an offset (|component| - 1).
 fn mv_class(offset: u32) -> u32 {
-    if offset < 16 { 0 } else { (31 - offset.leading_zeros()) - 3 }
+    if offset < 16 {
+        0
+    } else {
+        (31 - offset.leading_zeros()) - 3
+    }
 }
 
 fn mv_component_cost(i: usize, v: i32) -> u32 {
@@ -172,7 +211,11 @@ fn mv_component_cost(i: usize, v: i32) -> u32 {
     if c == 0 {
         let b = offset >> 3;
         bits += cost(b == 1, d[probs::MV_CLASS0_BIT + i]);
-        bits += tree_cost(&MV_FR_TREE, &d[probs::MV_CLASS0_FR + i * 6 + b as usize * 3..], fr);
+        bits += tree_cost(
+            &MV_FR_TREE,
+            &d[probs::MV_CLASS0_FR + i * 6 + b as usize * 3..],
+            fr,
+        );
     } else {
         let dd = (offset - (1 << (c + 3))) >> 3;
         for b in 0..c {
@@ -190,9 +233,14 @@ fn mv_tables() -> &'static ([Vec<u32>; 2], [u32; 4]) {
     use std::sync::OnceLock;
     static T: OnceLock<([Vec<u32>; 2], [u32; 4])> = OnceLock::new();
     T.get_or_init(|| {
-        let comp = std::array::from_fn(|i| (-MV_TABLE..=MV_TABLE).map(|v| if v == 0 { 0 } else { mv_component_cost(i, v) }).collect());
+        let comp = std::array::from_fn(|i| {
+            (-MV_TABLE..=MV_TABLE)
+                .map(|v| if v == 0 { 0 } else { mv_component_cost(i, v) })
+                .collect()
+        });
         let d = &probs_defaults().0;
-        let joints = std::array::from_fn(|j| tree_cost(&MV_JOINT_TREE, &d[probs::MV_JOINT..], j as u8));
+        let joints =
+            std::array::from_fn(|j| tree_cost(&MV_JOINT_TREE, &d[probs::MV_JOINT..], j as u8));
         (comp, joints)
     })
 }
@@ -201,8 +249,16 @@ fn mv_tables() -> &'static ([Vec<u32>; 2], [u32; 4]) {
 pub fn mv_cost(diff: Mv) -> u32 {
     let (comp, joints) = mv_tables();
     let joint = (diff.row != 0) as usize * 2 + (diff.col != 0) as usize;
-    let c = |i: usize, v: i32| if v.abs() <= MV_TABLE { comp[i][(v + MV_TABLE) as usize] } else { mv_component_cost(i, v) };
-    joints[joint] + if diff.row != 0 { c(0, diff.row) } else { 0 } + if diff.col != 0 { c(1, diff.col) } else { 0 }
+    let c = |i: usize, v: i32| {
+        if v.abs() <= MV_TABLE {
+            comp[i][(v + MV_TABLE) as usize]
+        } else {
+            mv_component_cost(i, v)
+        }
+    };
+    joints[joint]
+        + if diff.row != 0 { c(0, diff.row) } else { 0 }
+        + if diff.col != 0 { c(1, diff.col) } else { 0 }
 }
 
 fn probs_defaults() -> &'static probs::Probs {
@@ -246,7 +302,13 @@ pub struct Tile<'a> {
 }
 
 impl<'a> Tile<'a> {
-    pub fn new(f: &'a FrameParams<'a>, planes: &'a mut [Plane; 3], mi: &'a mut [Mi], col_start: usize, col_end: usize) -> Tile<'a> {
+    pub fn new(
+        f: &'a FrameParams<'a>,
+        planes: &'a mut [Plane; 3],
+        mi: &'a mut [Mi],
+        col_start: usize,
+        col_end: usize,
+    ) -> Tile<'a> {
         let n = f.mi_cols * 2 + 16;
         Tile {
             f,
@@ -307,15 +369,26 @@ impl<'a> Tile<'a> {
             above |= self.above_part[c + i];
             left |= self.left_part[(r & 7) + i];
         }
-        let ctx = bsl * 4 + (((left >> boffset) & 1) as usize) * 2 + ((above >> boffset) & 1) as usize;
+        let ctx =
+            bsl * 4 + (((left >> boffset) & 1) as usize) * 2 + ((above >> boffset) & 1) as usize;
         let key = self.f.key;
-        let prob = |i: usize| if key { P::Fixed(KF_PARTITION_PROBS[ctx * 3 + i]) } else { P::Ctx((probs::PARTITION + ctx * 3 + i) as u16) };
+        let prob = |i: usize| {
+            if key {
+                P::Fixed(KF_PARTITION_PROBS[ctx * 3 + i])
+            } else {
+                P::Ctx((probs::PARTITION + ctx * 3 + i) as u16)
+            }
+        };
         if bsize == BLOCK_8X8 {
             self.w.put(false, prob(0)); // PARTITION_NONE
             if key {
                 self.intra_block(r, c);
             } else {
-                let mv = self.pending.iter().find(|p| p.0 == r && p.1 == c).map(|p| p.2);
+                let mv = self
+                    .pending
+                    .iter()
+                    .find(|p| p.0 == r && p.1 == c)
+                    .map(|p| p.2);
                 let mv = mv.unwrap_or_else(|| self.search(r, c, BLOCK_8X8).0);
                 self.inter_block(r, c, BLOCK_8X8, mv);
             }
@@ -360,7 +433,9 @@ impl<'a> Tile<'a> {
         let uv_mode = {
             let mut best = (i64::MAX, DC_PRED);
             for m in MODES {
-                let cost: i64 = (1..3).map(|p| self.intra_cost(p, c * 4, r * 4, 2, m, avail_l, avail_u)).sum();
+                let cost: i64 = (1..3)
+                    .map(|p| self.intra_cost(p, c * 4, r * 4, 2, m, avail_l, avail_u))
+                    .sum();
                 if cost < best.0 {
                     best = (cost, m);
                 }
@@ -369,17 +444,52 @@ impl<'a> Tile<'a> {
         };
         // skip = 0 (neighbours never skip in key frames: context 0); tx_size implied (4×4).
         self.w.ctx(false, probs::SKIP);
-        let above_mode = if avail_u { self.mi_at(r - 1, c).mode } else { DC_PRED };
-        let left_mode = if avail_l { self.mi_at(r, c - 1).mode } else { DC_PRED };
+        let above_mode = if avail_u {
+            self.mi_at(r - 1, c).mode
+        } else {
+            DC_PRED
+        };
+        let left_mode = if avail_l {
+            self.mi_at(r, c - 1).mode
+        } else {
+            DC_PRED
+        };
         let o = (above_mode as usize * 10 + left_mode as usize) * 9;
-        self.w.tree(&INTRA_MODE_TREE, y_mode, |i| P::Fixed(KF_Y_MODE_PROBS[o + i]));
+        self.w.tree(&INTRA_MODE_TREE, y_mode, |i| {
+            P::Fixed(KF_Y_MODE_PROBS[o + i])
+        });
         let o = y_mode as usize * 9;
-        self.w.tree(&INTRA_MODE_TREE, uv_mode, |i| P::Fixed(KF_UV_MODE_PROBS[o + i]));
-        self.set_mi(r, c, 1, Mi { inter: false, mode: y_mode, mv: Mv::ZERO, skip: false, size: BLOCK_8X8 });
+        self.w.tree(&INTRA_MODE_TREE, uv_mode, |i| {
+            P::Fixed(KF_UV_MODE_PROBS[o + i])
+        });
+        self.set_mi(
+            r,
+            c,
+            1,
+            Mi {
+                inter: false,
+                mode: y_mode,
+                mv: Mv::ZERO,
+                skip: false,
+                size: BLOCK_8X8,
+            },
+        );
         // Residual: luma 2×2 transform blocks, then one 4×4 block per chroma plane.
         for (dy, dx) in [(0, 0), (0, 1), (1, 0), (1, 1)] {
-            let tx = if self.f.quant.lossless { DCT_DCT } else { mode_tx_type(y_mode) };
-            self.intra_tx(0, c * 8 + dx * 4, r * 8 + dy * 4, y_mode, tx, avail_l || dx > 0, avail_u || dy > 0);
+            let tx = if self.f.quant.lossless {
+                DCT_DCT
+            } else {
+                mode_tx_type(y_mode)
+            };
+            self.intra_tx(
+                0,
+                c * 8 + dx * 4,
+                r * 8 + dy * 4,
+                y_mode,
+                tx,
+                avail_l || dx > 0,
+                avail_u || dy > 0,
+            );
         }
         for p in 1..3 {
             self.intra_tx(p, c * 4, r * 4, uv_mode, DCT_DCT, avail_l, avail_u);
@@ -387,7 +497,16 @@ impl<'a> Tile<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn intra_cost(&self, plane: usize, x: usize, y: usize, log2: usize, mode: u8, have_left: bool, have_above: bool) -> i64 {
+    fn intra_cost(
+        &self,
+        plane: usize,
+        x: usize,
+        y: usize,
+        log2: usize,
+        mode: u8,
+        have_left: bool,
+        have_above: bool,
+    ) -> i64 {
         let p = &self.planes[plane];
         let pred = predict_intra(p, x, y, log2, mode, have_left, have_above);
         let size = 1 << log2;
@@ -400,7 +519,15 @@ impl<'a> Tile<'a> {
         s
     }
 
-    fn choose_intra(&self, plane: usize, x: usize, y: usize, log2: usize, have_left: bool, have_above: bool) -> u8 {
+    fn choose_intra(
+        &self,
+        plane: usize,
+        x: usize,
+        y: usize,
+        log2: usize,
+        have_left: bool,
+        have_above: bool,
+    ) -> u8 {
         let mut best = (i64::MAX, DC_PRED);
         for m in MODES {
             let cost = self.intra_cost(plane, x, y, log2, m, have_left, have_above);
@@ -412,7 +539,16 @@ impl<'a> Tile<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn intra_tx(&mut self, plane: usize, x: usize, y: usize, mode: u8, tx_type: u8, have_left: bool, have_above: bool) {
+    fn intra_tx(
+        &mut self,
+        plane: usize,
+        x: usize,
+        y: usize,
+        mode: u8,
+        tx_type: u8,
+        have_left: bool,
+        have_above: bool,
+    ) {
         let ss = (plane > 0) as usize;
         let max_x = (self.f.mi_cols * 8) >> ss;
         let max_y = (self.f.mi_rows * 8) >> ss;
@@ -431,7 +567,11 @@ impl<'a> Tile<'a> {
                 res[i * 4 + j] = p.src[(y + i) * p.w + x + j] as i32 - pred[i * 4 + j];
             }
         }
-        let q = Quant { round_dc: 0.5, round_ac: 0.38, ..self.f.quant };
+        let q = Quant {
+            round_dc: 0.5,
+            round_ac: 0.38,
+            ..self.f.quant
+        };
         let levels = q.levels(&res, tx_type);
         let eob = eob_of(&levels, tx_type);
         let ctx0 = (self.above_nz[plane][x4] + self.left_nz[plane][ly]) as usize;
@@ -440,7 +580,8 @@ impl<'a> Tile<'a> {
         let p = &mut self.planes[plane];
         for i in 0..4 {
             for j in 0..4 {
-                p.rec[(y + i) * p.w + x + j] = (pred[i * 4 + j] + resid[i * 4 + j]).clamp(0, 255) as u8;
+                p.rec[(y + i) * p.w + x + j] =
+                    (pred[i * 4 + j] + resid[i * 4 + j]).clamp(0, 255) as u8;
             }
         }
         let nz = (eob > 0) as u8;
@@ -448,7 +589,15 @@ impl<'a> Tile<'a> {
         self.left_nz[plane][ly] = nz;
     }
 
-    fn tokens(&mut self, plane: usize, inter: bool, tx_type: u8, levels: &[i32; 16], eob: usize, ctx0: usize) {
+    fn tokens(
+        &mut self,
+        plane: usize,
+        inter: bool,
+        tx_type: u8,
+        levels: &[i32; 16],
+        eob: usize,
+        ctx0: usize,
+    ) {
         let sc = scan(tx_type);
         let nb = neighbors(tx_type);
         let ptype = (plane > 0) as usize;
@@ -458,7 +607,11 @@ impl<'a> Tile<'a> {
         while c < 16 {
             let pos = sc[c] as usize;
             let band = COEFBAND_4X4[c] as usize;
-            let ctx = if c == 0 { ctx0 } else { ((1 + tc[nb[c].0] + tc[nb[c].1]) >> 1) as usize };
+            let ctx = if c == 0 {
+                ctx0
+            } else {
+                ((1 + tc[nb[c].0] + tc[nb[c].1]) >> 1) as usize
+            };
             let o = probs::coef_index(ptype, inter, band, ctx);
             if check_eob {
                 let more = c < eob;
@@ -511,7 +664,8 @@ impl<'a> Tile<'a> {
                 let extra = (v - base_v as u32).min((1 << num_extra) - 1);
                 let cp = CAT_PROBS[cat as usize];
                 for e in 0..num_extra as usize {
-                    self.w.fixed((extra >> (num_extra as usize - 1 - e)) & 1 != 0, cp[e]);
+                    self.w
+                        .fixed((extra >> (num_extra as usize - 1 - e)) & 1 != 0, cp[e]);
                 }
             }
             tc[pos] = ENERGY_CLASS[token];
@@ -523,12 +677,19 @@ impl<'a> Tile<'a> {
     // ------------------------------------------------------------ inter
 
     fn is_inside(&self, r: i32, c: i32) -> bool {
-        r >= 0 && (r as usize) < self.f.mi_rows && c >= self.col_start as i32 && (c as usize) < self.col_end
+        r >= 0
+            && (r as usize) < self.f.mi_rows
+            && c >= self.col_start as i32
+            && (c as usize) < self.col_end
     }
 
     /// `find_mv_refs` + `find_best_ref_mvs` for LAST_FRAME: (NearestMv, NearMv, mode context).
     fn mv_refs(&self, r: usize, c: usize, bsize: u8) -> (Mv, Mv, usize) {
-        let search = if bsize == BLOCK_16X16 { &MV_REF_16X16 } else { &MV_REF_8X8 };
+        let search = if bsize == BLOCK_16X16 {
+            &MV_REF_16X16
+        } else {
+            &MV_REF_8X8
+        };
         let mut list = [Mv::ZERO; 2];
         let mut count = 0;
         let add = |mv: Mv, list: &mut [Mv; 2], count: &mut usize| {
@@ -561,14 +722,22 @@ impl<'a> Tile<'a> {
             let to_left = -(c * 64);
             let to_right = (self.f.mi_cols as i32 - b - c) * 64;
             Mv::new(
-                mv.row.clamp(to_top - border, (to_bottom + border).max(to_top - border)),
-                mv.col.clamp(to_left - border, (to_right + border).max(to_left - border)),
+                mv.row
+                    .clamp(to_top - border, (to_bottom + border).max(to_top - border)),
+                mv.col
+                    .clamp(to_left - border, (to_right + border).max(to_left - border)),
             )
         };
         for mv in list.iter_mut() {
             *mv = clamp(*mv, 128);
             // No high precision: odd components move toward zero.
-            let even = |v: i32| if v & 1 != 0 { v + if v > 0 { -1 } else { 1 } } else { v };
+            let even = |v: i32| {
+                if v & 1 != 0 {
+                    v + if v > 0 { -1 } else { 1 }
+                } else {
+                    v
+                }
+            };
             *mv = clamp(Mv::new(even(mv.row), even(mv.col)), (160 - 4) << 3);
         }
         (list[0], list[1], ctx)
@@ -589,23 +758,36 @@ impl<'a> Tile<'a> {
     /// SAD of the luma prediction at `mv` against the source.
     fn sad(&self, r: usize, c: usize, n: usize, mv: Mv) -> u32 {
         let p = &self.planes[0];
-        let (x16, y16) = (((c * 8) << 4) as i32 + 2 * mv.col, ((r * 8) << 4) as i32 + 2 * mv.row);
+        let (x16, y16) = (
+            ((c * 8) << 4) as i32 + 2 * mv.col,
+            ((r * 8) << 4) as i32 + 2 * mv.row,
+        );
         let mut s = 0u32;
         if let Some((pl, o, st)) = self.f.phases.as_ref().and_then(|ph| ph.block(x16, y16, n)) {
             for i in 0..n {
                 let a = &p.src[(r * 8 + i) * p.w + c * 8..][..n];
                 let b = &pl[o + i * st..o + i * st + n];
-                s += a.iter().zip(b).map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs()).sum::<u32>();
+                s += a
+                    .iter()
+                    .zip(b)
+                    .map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs())
+                    .sum::<u32>();
             }
             return s;
         }
         // Inter search only runs on frames with a reference.
-        let Some(refs) = self.f.refs.as_ref() else { return u32::MAX / 4 };
+        let Some(refs) = self.f.refs.as_ref() else {
+            return u32::MAX / 4;
+        };
         let mut pred = [0u8; 256];
         predict(&refs[0], x16, y16, n, n, &mut pred);
         for i in 0..n {
             let a = &p.src[(r * 8 + i) * p.w + c * 8..][..n];
-            s += a.iter().zip(&pred[i * n..i * n + n]).map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs()).sum::<u32>();
+            s += a
+                .iter()
+                .zip(&pred[i * n..i * n + n])
+                .map(|(a, b)| (*a as i32 - *b as i32).unsigned_abs())
+                .sum::<u32>();
         }
         s
     }
@@ -619,7 +801,13 @@ impl<'a> Tile<'a> {
         let inside = |mv: Mv| mv.row >= lo_r && mv.row <= hi_r && mv.col >= lo_c && mv.col <= hi_c;
         let lambda = self.f.lambda_sad / 256.0;
         let d = &probs_defaults().0;
-        let mb: [u32; 4] = std::array::from_fn(|m| tree_cost(&INTER_MODE_TREE, &d[probs::INTER_MODE + mctx * 3..], m as u8));
+        let mb: [u32; 4] = std::array::from_fn(|m| {
+            tree_cost(
+                &INTER_MODE_TREE,
+                &d[probs::INTER_MODE + mctx * 3..],
+                m as u8,
+            )
+        });
         let mode_bits = |m: u8| mb[(m - NEARESTMV) as usize];
         let cost = |mv: Mv| -> f64 {
             let bits = if mv == nearest {
@@ -685,7 +873,16 @@ impl<'a> Tile<'a> {
         // Sub-sample refinement: half then quarter samples (1/8 units, even: no high precision).
         for s in [4, 2] {
             let center = best.0;
-            for (dr, dc) in [(-s, 0), (s, 0), (0, -s), (0, s), (-s, -s), (-s, s), (s, -s), (s, s)] {
+            for (dr, dc) in [
+                (-s, 0),
+                (s, 0),
+                (0, -s),
+                (0, s),
+                (-s, -s),
+                (-s, s),
+                (s, -s),
+                (s, s),
+            ] {
                 let cand = Mv::new(center.row + dr, center.col + dc);
                 if !inside(cand) {
                     continue;
@@ -714,7 +911,18 @@ impl<'a> Tile<'a> {
             j8 += j;
             self.pending[k] = (rr, cc, mv);
             // Tentative mode info so the next 8×8 blocks see this one as a candidate.
-            self.set_mi(rr, cc, 1, Mi { inter: true, mode: NEWMV, mv, skip: false, size: BLOCK_8X8 });
+            self.set_mi(
+                rr,
+                cc,
+                1,
+                Mi {
+                    inter: true,
+                    mode: NEWMV,
+                    mv,
+                    skip: false,
+                    size: BLOCK_8X8,
+                },
+            );
         }
         if j16 <= j8 {
             self.pending = [(usize::MAX, 0, Mv::ZERO); 4];
@@ -731,30 +939,53 @@ impl<'a> Tile<'a> {
         let n = 8 * n8;
         let (nearest, near, mctx) = self.mv_refs(r, c, bsize);
         let d = &probs_defaults().0;
-        let mode_bits = |m: u8| tree_cost(&INTER_MODE_TREE, &d[probs::INTER_MODE + mctx * 3..], m - NEARESTMV);
+        let mode_bits = |m: u8| {
+            tree_cost(
+                &INTER_MODE_TREE,
+                &d[probs::INTER_MODE + mctx * 3..],
+                m - NEARESTMV,
+            )
+        };
         let mut mode = (NEWMV, mode_bits(NEWMV) + mv_cost(mv.minus(nearest)));
-        for (m, ok) in [(NEARESTMV, mv == nearest), (NEARMV, mv == near), (ZEROMV, mv == Mv::ZERO)] {
+        for (m, ok) in [
+            (NEARESTMV, mv == nearest),
+            (NEARMV, mv == near),
+            (ZEROMV, mv == Mv::ZERO),
+        ] {
             if ok && mode_bits(m) < mode.1 {
                 mode = (m, mode_bits(m));
             }
         }
         let mode = mode.0;
         // Prediction of every plane (written straight into the reconstruction).
-        let Some(refs) = self.f.refs.as_ref() else { return };
+        let Some(refs) = self.f.refs.as_ref() else {
+            return;
+        };
         for plane in 0..3 {
             let ch = plane > 0;
             let (row16, col16) = clamp_for_plane(mv, r, c, n8, mi_rows, mi_cols, ch);
             let bn = if ch { n / 2 } else { n };
             let (bx, by) = if ch { (c * 4, r * 4) } else { (c * 8, r * 8) };
             let mut pred = [0u8; 256];
-            predict(&refs[plane], ((bx as i32) << 4) + col16, ((by as i32) << 4) + row16, bn, bn, &mut pred);
+            predict(
+                &refs[plane],
+                ((bx as i32) << 4) + col16,
+                ((by as i32) << 4) + row16,
+                bn,
+                bn,
+                &mut pred,
+            );
             let p = &mut self.planes[plane];
             for i in 0..bn {
                 p.rec[(by + i) * p.w + bx..][..bn].copy_from_slice(&pred[i * bn..i * bn + bn]);
             }
         }
         // Residual: quantise every 4×4, dropping blocks whose coefficients don't pay for themselves.
-        let q = Quant { round_dc: 0.5, round_ac: 0.42, ..self.f.quant };
+        let q = Quant {
+            round_dc: 0.5,
+            round_ac: 0.42,
+            ..self.f.quant
+        };
         // Weight of the rate term when dropping a transform block's coefficients (low: keep quality on par
         // with key frames at the same q index).
         let zl = 0.07;
@@ -781,8 +1012,15 @@ impl<'a> Tile<'a> {
                     if eob > 0 && !q.lossless {
                         let back = q.residual(&levels, tx, eob);
                         let d_skip: i64 = res.iter().map(|v| (*v as i64) * (*v as i64)).sum();
-                        let d_code: i64 = res.iter().zip(&back).map(|(a, b)| ((a - b) as i64).pow(2)).sum();
-                        if d_skip as f64 <= d_code as f64 + zl * self.f.lambda_sse * levels_cost(&levels, eob) as f64 / 256.0 {
+                        let d_code: i64 = res
+                            .iter()
+                            .zip(&back)
+                            .map(|(a, b)| ((a - b) as i64).pow(2))
+                            .sum();
+                        if d_skip as f64
+                            <= d_code as f64
+                                + zl * self.f.lambda_sse * levels_cost(&levels, eob) as f64 / 256.0
+                        {
                             levels = [0; 16];
                             eob = 0;
                         }
@@ -798,7 +1036,8 @@ impl<'a> Tile<'a> {
         let avail_l = c > self.col_start;
         let above = avail_u.then(|| self.mi_at(r - 1, c));
         let left = avail_l.then(|| self.mi_at(r, c - 1));
-        let skip_ctx = above.is_some_and(|m| m.skip) as usize + left.is_some_and(|m| m.skip) as usize;
+        let skip_ctx =
+            above.is_some_and(|m| m.skip) as usize + left.is_some_and(|m| m.skip) as usize;
         self.w.ctx(skip, probs::SKIP + skip_ctx);
         // is_inter context: neighbours are inter (no intra blocks in inter frames).
         let intra = |m: Option<Mi>| m.is_some_and(|m| !m.inter);
@@ -833,11 +1072,24 @@ impl<'a> Tile<'a> {
             (None, None) => 2,
         };
         self.w.ctx(false, probs::SINGLE_REF + ref_ctx * 2);
-        self.w.tree(&INTER_MODE_TREE, mode - NEARESTMV, |i| P::Ctx((probs::INTER_MODE + mctx * 3 + i) as u16));
+        self.w.tree(&INTER_MODE_TREE, mode - NEARESTMV, |i| {
+            P::Ctx((probs::INTER_MODE + mctx * 3 + i) as u16)
+        });
         if mode == NEWMV {
             self.write_mv(mv.minus(nearest));
         }
-        self.set_mi(r, c, n8, Mi { inter: true, mode, mv, skip, size: bsize });
+        self.set_mi(
+            r,
+            c,
+            n8,
+            Mi {
+                inter: true,
+                mode,
+                mv,
+                skip,
+                size: bsize,
+            },
+        );
         // Tokens and reconstruction.
         for (plane, x, y, levels, eob) in blocks {
             let ss = (plane > 0) as usize;
@@ -864,7 +1116,9 @@ impl<'a> Tile<'a> {
 
     fn write_mv(&mut self, diff: Mv) {
         let joint = (diff.row != 0) as u8 * 2 + (diff.col != 0) as u8;
-        self.w.tree(&MV_JOINT_TREE, joint, |i| P::Ctx((probs::MV_JOINT + i) as u16));
+        self.w.tree(&MV_JOINT_TREE, joint, |i| {
+            P::Ctx((probs::MV_JOINT + i) as u16)
+        });
         if diff.row != 0 {
             self.write_mv_component(0, diff.row);
         }
@@ -874,22 +1128,32 @@ impl<'a> Tile<'a> {
     }
 
     fn write_mv_component(&mut self, i: usize, v: i32) {
-        debug_assert!(v != 0 && v & 1 == 0, "vectors are even without high precision");
+        debug_assert!(
+            v != 0 && v & 1 == 0,
+            "vectors are even without high precision"
+        );
         let offset = v.unsigned_abs() - 1;
         let c = mv_class(offset);
         self.w.ctx(v < 0, probs::MV_SIGN + i);
-        self.w.tree(&MV_CLASS_TREE, c as u8, |k| P::Ctx((probs::MV_CLASS + i * 10 + k) as u16));
+        self.w.tree(&MV_CLASS_TREE, c as u8, |k| {
+            P::Ctx((probs::MV_CLASS + i * 10 + k) as u16)
+        });
         let fr = ((offset >> 1) & 3) as u8;
         if c == 0 {
             let b = (offset >> 3) as usize;
             self.w.ctx(b == 1, probs::MV_CLASS0_BIT + i);
-            self.w.tree(&MV_FR_TREE, fr, |k| P::Ctx((probs::MV_CLASS0_FR + i * 6 + b * 3 + k) as u16));
+            self.w.tree(&MV_FR_TREE, fr, |k| {
+                P::Ctx((probs::MV_CLASS0_FR + i * 6 + b * 3 + k) as u16)
+            });
         } else {
             let dd = (offset - (1 << (c + 3))) >> 3;
             for b in 0..c {
-                self.w.ctx((dd >> b) & 1 == 1, probs::MV_BITS + i * 10 + b as usize);
+                self.w
+                    .ctx((dd >> b) & 1 == 1, probs::MV_BITS + i * 10 + b as usize);
             }
-            self.w.tree(&MV_FR_TREE, fr, |k| P::Ctx((probs::MV_FR + i * 3 + k) as u16));
+            self.w.tree(&MV_FR_TREE, fr, |k| {
+                P::Ctx((probs::MV_FR + i * 3 + k) as u16)
+            });
         }
     }
 }

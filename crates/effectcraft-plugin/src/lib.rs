@@ -22,10 +22,19 @@
 //! differently on another machine. The runtime is the `wasm` feature (on for the desktop app and
 //! the CLI); without it [`load_wasm`] says plug-ins are unavailable.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use effectcraft_effects::EffectSpec;
-pub use effectcraft_effects::plugin::{EffectPlugin, PLUGIN_API_VERSION, PluginFrame, PluginManifest, PluginParams, register_plugin};
+pub use effectcraft_effects::plugin::{
+    EffectPlugin, PLUGIN_API_VERSION, PluginFrame, PluginManifest, PluginParams, register_plugin,
+};
 
 #[cfg(feature = "wasm")]
 mod wasm;

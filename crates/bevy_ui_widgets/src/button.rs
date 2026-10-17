@@ -10,8 +10,8 @@ use bevy_ecs::{
     reflect::ReflectComponent,
     system::{Commands, Query},
 };
-use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input::ButtonState;
+use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::FocusedInput;
 use bevy_picking::events::{
     PointerCancel, PointerClick, PointerDragEnd, PointerPress, PointerRelease,

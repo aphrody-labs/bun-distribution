@@ -15,10 +15,12 @@ use std::sync::Arc;
 use vectorcraft_color::{Color, Paint};
 use vectorcraft_doc::clipnest::{Clip, Drawn, MAX_NEST, deep_clips, nest};
 use vectorcraft_doc::{
-    Appearance, AppearanceItem, CharStyle, Dash, Document, FillLayer, ImageBlob, ImageObject, Justify, LayerColor, LineCap, LineJoin, Node, NodeKind,
-    StrokeLayer, TextObject,
+    Appearance, AppearanceItem, CharStyle, Dash, Document, FillLayer, ImageBlob, ImageObject,
+    Justify, LayerColor, LineCap, LineJoin, Node, NodeKind, StrokeLayer, TextObject,
 };
-use vectorcraft_geom::{Affine, BezPath, FillRule, PathData, PathEl, Point, Rect, Shape, Vec2, shapes};
+use vectorcraft_geom::{
+    Affine, BezPath, FillRule, PathData, PathEl, Point, Rect, Shape, Vec2, shapes,
+};
 
 use crate::dib::Rgba;
 use crate::{Imported, Kind};
@@ -42,16 +44,20 @@ const PATCOPY: u32 = 0x00F0_0021;
 const WHITENESS: u32 = 0x00FF_0062;
 const BLACKNESS: u32 = 0x0000_0042;
 
-const SKIPPED_ROPS: &str = "images drawn with raster operations other than a plain copy (masks, inversions) were left out";
+const SKIPPED_ROPS: &str =
+    "images drawn with raster operations other than a plain copy (masks, inversions) were left out";
 const HATCHES: &str = "hatched brushes are filled with their colour";
 const PATTERN_BRUSHES: &str = "pattern brushes are filled grey";
-const EXCLUDED_CLIPS: &str = "clip areas cut out of the clip (excluded rectangles, differences) are ignored";
+const EXCLUDED_CLIPS: &str =
+    "clip areas cut out of the clip (excluded rectangles, differences) are ignored";
 const BAD_IMAGE: &str = "an image that couldn't be read was left out";
 const FAR_AWAY: &str = "objects far outside the picture were left out";
 
 /// Is `r` finite and within [`LIMIT`]?
 fn sane(r: Rect) -> bool {
-    [r.x0, r.y0, r.x1, r.y1].iter().all(|v| v.is_finite() && v.abs() <= LIMIT)
+    [r.x0, r.y0, r.x1, r.y1]
+        .iter()
+        .all(|v| v.is_finite() && v.abs() <= LIMIT)
 }
 
 /// A pen: its style flags (`PS_*`), width in logical units, colour and dash entries.
@@ -65,9 +71,19 @@ pub(crate) struct PenObj {
 }
 
 impl PenObj {
-    pub const NULL: PenObj = PenObj { style: PS_NULL, width: 0.0, color: [0; 3], entries: vec![] };
+    pub const NULL: PenObj = PenObj {
+        style: PS_NULL,
+        width: 0.0,
+        color: [0; 3],
+        entries: vec![],
+    };
     pub fn solid(color: [u8; 3]) -> Self {
-        Self { style: 0, width: 0.0, color, entries: vec![] }
+        Self {
+            style: 0,
+            width: 0.0,
+            color,
+            entries: vec![],
+        }
     }
 }
 
@@ -224,7 +240,13 @@ pub(crate) fn arc_path(r: Rect, start: Point, end: Point, ccw: bool, kind: ArcKi
         let s = (a1 - a0).rem_euclid(tau);
         if s == 0.0 { tau } else { s }
     };
-    let arc = kurbo::Arc { center: c, radii, start_angle: a0, sweep_angle: sweep, x_rotation: 0.0 };
+    let arc = kurbo::Arc {
+        center: c,
+        radii,
+        start_angle: a0,
+        sweep_angle: sweep,
+        x_rotation: 0.0,
+    };
     let tol = ARC_TOLERANCE * radii.x.max(radii.y).max(1e-9);
     if kind == ArcKind::Pie {
         bp.move_to(c);
@@ -243,7 +265,10 @@ pub(crate) fn arc_path(r: Rect, start: Point, end: Point, ccw: bool, kind: ArcKi
 /// A rectangle with elliptical corners `rx` × `ry`.
 pub(crate) fn round_rect(r: Rect, rx: f64, ry: f64) -> BezPath {
     let r = r.abs();
-    let (rx, ry) = ((rx / 2.0).abs().min(r.width() / 2.0), (ry / 2.0).abs().min(r.height() / 2.0));
+    let (rx, ry) = (
+        (rx / 2.0).abs().min(r.width() / 2.0),
+        (ry / 2.0).abs().min(r.height() / 2.0),
+    );
     if rx <= 0.0 || ry <= 0.0 {
         return shapes::rectangle(r).to_bezpath();
     }
@@ -257,7 +282,13 @@ pub(crate) fn round_rect(r: Rect, rx: f64, ry: f64) -> BezPath {
 
 impl Player {
     fn new(kind: Kind, dev_to_doc: Affine, mm_per_px: f64, artboard: Rect) -> Self {
-        let side = |v: f64| if v.is_finite() { v.clamp(1.0, LIMIT) } else { 1.0 };
+        let side = |v: f64| {
+            if v.is_finite() {
+                v.clamp(1.0, LIMIT)
+            } else {
+                1.0
+            }
+        };
         let (w, h) = (side(artboard.width()), side(artboard.height()));
         let mut doc = Document::new(w, h);
         doc.layers.clear();
@@ -308,17 +339,30 @@ impl Player {
             2..=6 => {
                 let mm = [0.1, 0.01, 0.254, 0.0254, 25.4 / 1440.0][(d.map_mode - 2) as usize];
                 let s = mm / self.mm_per_px.max(1e-12);
-                Affine::translate(d.vp_org) * Affine::scale_non_uniform(s, -s) * Affine::translate(-d.win_org)
+                Affine::translate(d.vp_org)
+                    * Affine::scale_non_uniform(s, -s)
+                    * Affine::translate(-d.win_org)
             }
             7 | 8 => {
-                let ratio = |v: f64, w: f64| if w.abs() > 1e-12 && v.is_finite() { v / w } else { 1.0 };
-                let (mut sx, mut sy) = (ratio(d.vp_ext.x, d.win_ext.x), ratio(d.vp_ext.y, d.win_ext.y));
+                let ratio = |v: f64, w: f64| {
+                    if w.abs() > 1e-12 && v.is_finite() {
+                        v / w
+                    } else {
+                        1.0
+                    }
+                };
+                let (mut sx, mut sy) = (
+                    ratio(d.vp_ext.x, d.win_ext.x),
+                    ratio(d.vp_ext.y, d.win_ext.y),
+                );
                 if d.map_mode == 7 {
                     // Isotropic: the same scale both ways, the smaller one.
                     let s = sx.abs().min(sy.abs());
                     (sx, sy) = (s.copysign(sx), s.copysign(sy));
                 }
-                Affine::translate(d.vp_org) * Affine::scale_non_uniform(sx, sy) * Affine::translate(-d.win_org)
+                Affine::translate(d.vp_org)
+                    * Affine::scale_non_uniform(sx, sy)
+                    * Affine::translate(-d.win_org)
             }
             _ => Affine::translate(d.vp_org - d.win_org),
         };
@@ -347,7 +391,11 @@ impl Player {
         self.dc.vp_ext = Vec2::new(x, y);
     }
     pub fn scale_ext(&mut self, window: bool, x: (f64, f64), y: (f64, f64)) {
-        let e = if window { &mut self.dc.win_ext } else { &mut self.dc.vp_ext };
+        let e = if window {
+            &mut self.dc.win_ext
+        } else {
+            &mut self.dc.vp_ext
+        };
         if x.1 != 0.0 && y.1 != 0.0 {
             *e = Vec2::new(e.x * x.0 / x.1, e.y * y.0 / y.1);
         }
@@ -368,7 +416,11 @@ impl Player {
     // ---------- state ----------
 
     pub fn set_fill_mode(&mut self, alternate: bool) {
-        self.dc.fill_rule = if alternate { FillRule::EvenOdd } else { FillRule::NonZero };
+        self.dc.fill_rule = if alternate {
+            FillRule::EvenOdd
+        } else {
+            FillRule::NonZero
+        };
     }
     pub fn set_miter(&mut self, m: f64) {
         if m.is_finite() && m >= 1.0 {
@@ -395,7 +447,11 @@ impl Player {
     /// number.
     pub fn restore(&mut self, n: i32) {
         let len = self.saved.len();
-        let keep = if n < 0 { len.checked_sub(n.unsigned_abs() as usize) } else { (n as usize).checked_sub(1).filter(|k| *k < len) };
+        let keep = if n < 0 {
+            len.checked_sub(n.unsigned_abs() as usize)
+        } else {
+            (n as usize).checked_sub(1).filter(|k| *k < len)
+        };
         if let Some(k) = keep {
             self.saved.truncate(k + 1);
             if let Some(dc) = self.saved.pop() {
@@ -423,7 +479,12 @@ impl Player {
     /// Put `obj` in the lowest free slot (WMF).
     pub fn create(&mut self, obj: Obj) {
         let start = self.free_hint.min(self.objects.len());
-        let i = self.objects.iter().skip(start).position(Option::is_none).map_or(self.objects.len(), |p| p + start);
+        let i = self
+            .objects
+            .iter()
+            .skip(start)
+            .position(Option::is_none)
+            .map_or(self.objects.len(), |p| p + start);
         if i > u16::MAX as usize {
             return;
         }
@@ -506,7 +567,11 @@ impl Player {
         // Geometric pens, and other pens wider than 1, have a width in logical units; the others
         // are one pixel wide.
         let w = p.width * self.scale();
-        let width = if w > 0.0 && w.is_finite() && (p.style & PS_GEOMETRIC != 0 || p.width > 1.0) { w } else { HAIRLINE };
+        let width = if w > 0.0 && w.is_finite() && (p.style & PS_GEOMETRIC != 0 || p.width > 1.0) {
+            w
+        } else {
+            HAIRLINE
+        };
         let mut st = StrokeLayer::new(rgb(p.color), width);
         // Round caps and joins unless the style asks for others.
         st.cap = match p.style & 0xf00 {
@@ -529,7 +594,11 @@ impl Player {
             7 => p.entries.iter().map(|e| e * self.scale()).collect(),
             _ => vec![],
         };
-        let dash = Dash { pattern, offset: 0.0, align_corners: false };
+        let dash = Dash {
+            pattern,
+            offset: 0.0,
+            align_corners: false,
+        };
         st.dash = dash.is_dashed().then_some(dash);
         Some(st)
     }
@@ -549,7 +618,14 @@ impl Player {
         if items.is_empty() {
             return;
         }
-        let mut n = Node::path(vectorcraft_doc::NodeId(0), PathData::from_bezpath(&bp), Appearance { items, ..Appearance::default() });
+        let mut n = Node::path(
+            vectorcraft_doc::NodeId(0),
+            PathData::from_bezpath(&bp),
+            Appearance {
+                items,
+                ..Appearance::default()
+            },
+        );
         if let NodeKind::Path { rule, .. } = &mut n.kind {
             *rule = self.dc.fill_rule;
         }
@@ -579,7 +655,9 @@ impl Player {
 
     /// Polygon / Polyline (and Bézier ones): `pts` in logical units.
     pub fn poly(&mut self, pts: &[Point], closed: bool, bezier: bool) {
-        let Some((first, rest)) = pts.split_first() else { return };
+        let Some((first, rest)) = pts.split_first() else {
+            return;
+        };
         let mut bp = BezPath::new();
         bp.move_to(*first);
         if bezier {
@@ -599,7 +677,9 @@ impl Player {
     pub fn poly_poly(&mut self, polys: &[Vec<Point>], closed: bool) {
         let mut bp = BezPath::new();
         for p in polys {
-            let Some((first, rest)) = p.split_first() else { continue };
+            let Some((first, rest)) = p.split_first() else {
+                continue;
+            };
             bp.move_to(*first);
             rest.iter().for_each(|q| bp.line_to(*q));
             if closed {
@@ -616,7 +696,9 @@ impl Player {
 
     /// LineTo / PolylineTo / PolyBezierTo: from the current position through `pts` (logical).
     pub fn poly_to(&mut self, pts: &[Point], bezier: bool) {
-        let Some(last) = pts.last().copied() else { return };
+        let Some(last) = pts.last().copied() else {
+            return;
+        };
         let xf = self.xf();
         let start = xf * self.pos;
         let target = match &mut self.path {
@@ -691,16 +773,26 @@ impl Player {
             return self.warn(FAR_AWAY);
         }
         // A rectangle around the whole picture (what writers clip to first) clips nothing in it.
-        let lines = path.elements().iter().all(|e| !matches!(e, PathEl::QuadTo(..) | PathEl::CurveTo(..)));
+        let lines = path
+            .elements()
+            .iter()
+            .all(|e| !matches!(e, PathEl::QuadTo(..) | PathEl::CurveTo(..)));
         let around = path.bounding_box().inflate(0.5, 0.5);
-        if lines && path.elements().len() <= 6 && around.contains(self.frame.origin()) && around.contains(Point::new(self.frame.x1, self.frame.y1)) {
+        if lines
+            && path.elements().len() <= 6
+            && around.contains(self.frame.origin())
+            && around.contains(Point::new(self.frame.x1, self.frame.y1))
+        {
             return;
         }
         if self.dc.clips.len() >= MAX_NEST {
             return self.warn(&deep_clips());
         }
         self.next_clip += 1;
-        self.dc.clips.push(Arc::new(Clip { id: self.next_clip, region: Some((path, rule)) }));
+        self.dc.clips.push(Arc::new(Clip {
+            id: self.next_clip,
+            region: Some((path, rule)),
+        }));
     }
 
     /// SelectClipPath (`mode`: 1 and, 5 copy; the others cut out, which isn't read).
@@ -766,7 +858,14 @@ impl Player {
 
     /// An image whose source rectangle `src` (pixels, from the top-left) is drawn into `dest`
     /// (logical: origin and signed size) with raster operation `rop`, at `opacity`.
-    pub fn image(&mut self, img: Result<Rgba, String>, src: Rect, dest: Rect, rop: u32, opacity: f64) {
+    pub fn image(
+        &mut self,
+        img: Result<Rgba, String>,
+        src: Rect,
+        dest: Rect,
+        rop: u32,
+        opacity: f64,
+    ) {
         if rop != SRCCOPY {
             self.warn(SKIPPED_ROPS);
             return;
@@ -779,16 +878,27 @@ impl Player {
         if img.width == 0 || img.height == 0 {
             return;
         }
-        let Ok(png) = img.to_png() else { return self.warn(BAD_IMAGE) };
+        let Ok(png) = img.to_png() else {
+            return self.warn(BAD_IMAGE);
+        };
         let blob = ImageBlob::new("image/png", png);
         let key = blob.content_key();
         self.doc.images.entry(key.clone()).or_insert(blob);
         let (w, h) = (f64::from(img.width), f64::from(img.height));
-        let xf = self.xf() * Affine::translate((dest.x0, dest.y0)) * Affine::scale_non_uniform(dest.width() / w, dest.height() / h);
+        let xf = self.xf()
+            * Affine::translate((dest.x0, dest.y0))
+            * Affine::scale_non_uniform(dest.width() / w, dest.height() / h);
         if !xf.as_coeffs().iter().all(|v| v.is_finite()) || xf.determinant().abs() < 1e-12 {
             return;
         }
-        let im = ImageObject { key, width: img.width, height: img.height, xf, link: None, placement: Default::default() };
+        let im = ImageObject {
+            key,
+            width: img.width,
+            height: img.height,
+            xf,
+            link: None,
+            placement: Default::default(),
+        };
         let mut n = Node::new(vectorcraft_doc::NodeId(0), NodeKind::Image(Box::new(im)));
         n.opacity = opacity.clamp(0.0, 1.0) as f32;
         self.push(n);
@@ -805,9 +915,22 @@ impl Player {
         let f = self.dc.font.clone();
         let k = self.scale();
         // A negative height is the em; a positive one the cell (the em and the internal leading).
-        let em = if f.height < 0.0 { -f.height } else { f.height * 0.85 };
-        let size = if em > 0.0 && (em * k).is_finite() { (em * k).clamp(0.5, 5000.0) } else { 12.0 };
-        let mut style = CharStyle { size, fill: rgb(self.dc.text_color), stroke: Paint::None, ..CharStyle::default() };
+        let em = if f.height < 0.0 {
+            -f.height
+        } else {
+            f.height * 0.85
+        };
+        let size = if em > 0.0 && (em * k).is_finite() {
+            (em * k).clamp(0.5, 5000.0)
+        } else {
+            12.0
+        };
+        let mut style = CharStyle {
+            size,
+            fill: rgb(self.dc.text_color),
+            stroke: Paint::None,
+            ..CharStyle::default()
+        };
         if !f.face.trim().is_empty() {
             style.font_family = f.face.trim().to_string();
         }
@@ -828,14 +951,20 @@ impl Player {
         };
         let origin = self.xf() * at;
         let mut t = TextObject::point(Point::ZERO, &s, style);
-        t.xf = Affine::translate(origin.to_vec2()) * Affine::rotate(angle) * Affine::translate((0.0, drop));
+        t.xf = Affine::translate(origin.to_vec2())
+            * Affine::rotate(angle)
+            * Affine::translate((0.0, drop));
         t.para.justify = match align & 0x06 {
             0x06 => Justify::Center,
             0x02 => Justify::Right,
             _ => Justify::Left,
         };
-        t.cached_bounds = Some(vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t).bounds);
-        self.push(Node::new(vectorcraft_doc::NodeId(0), NodeKind::Text(Box::new(t))));
+        t.cached_bounds =
+            Some(vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t).bounds);
+        self.push(Node::new(
+            vectorcraft_doc::NodeId(0),
+            NodeKind::Text(Box::new(t)),
+        ));
     }
 
     // ---------- the document ----------
@@ -861,7 +990,11 @@ impl Player {
             *c = children;
         }
         self.doc.layers = vec![Arc::new(layer)];
-        Imported { document: self.doc, kind: self.kind, warnings: self.warnings }
+        Imported {
+            document: self.doc,
+            kind: self.kind,
+            warnings: self.warnings,
+        }
     }
 }
 
@@ -869,8 +1002,19 @@ impl Player {
 fn crop(img: Rgba, src: Rect) -> Rgba {
     let (w, h) = (img.width, img.height);
     let s = src.abs();
-    let clamp = |v: f64, max: u32| if v.is_finite() { v.round().clamp(0.0, f64::from(max)) as u32 } else { 0 };
-    let (x0, y0, x1, y1) = (clamp(s.x0, w), clamp(s.y0, h), clamp(s.x1, w), clamp(s.y1, h));
+    let clamp = |v: f64, max: u32| {
+        if v.is_finite() {
+            v.round().clamp(0.0, f64::from(max)) as u32
+        } else {
+            0
+        }
+    };
+    let (x0, y0, x1, y1) = (
+        clamp(s.x0, w),
+        clamp(s.y0, h),
+        clamp(s.x1, w),
+        clamp(s.y1, h),
+    );
     if (x0, y0, x1, y1) == (0, 0, w, h) || x1 <= x0 || y1 <= y0 {
         return img;
     }
@@ -881,7 +1025,11 @@ fn crop(img: Rgba, src: Rect) -> Rgba {
             pixels.extend_from_slice(p);
         }
     }
-    Rgba { width: x1 - x0, height: y1 - y0, pixels }
+    Rgba {
+        width: x1 - x0,
+        height: y1 - y0,
+        pixels,
+    }
 }
 
 /// Read a metafile.

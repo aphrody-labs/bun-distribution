@@ -76,7 +76,11 @@ pub enum RawOverlayError {
 impl Overlay {
     fn check_size(data: &[u8]) -> Result<(), RawOverlayError> {
         let size = size_of::<Self>();
-        if data.len().is_multiple_of(size) { Ok(()) } else { InvalidSizeSnafu {}.fail() }
+        if data.len().is_multiple_of(size) {
+            Ok(())
+        } else {
+            InvalidSizeSnafu {}.fail()
+        }
     }
 
     fn handle_pod_cast<T>(
@@ -109,7 +113,10 @@ impl Overlay {
 
     /// Creates a [`DisplayOverlay`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayOverlay<'_> {
-        DisplayOverlay { overlay: self, indent }
+        DisplayOverlay {
+            overlay: self,
+            indent,
+        }
     }
 }
 
@@ -131,7 +138,11 @@ impl Display for DisplayOverlay<'_> {
         writeln!(f, "{i}.ctor start ...... : {:#x}", overlay.ctor_start)?;
         writeln!(f, "{i}.ctor end ........ : {:#x}", overlay.ctor_end)?;
         writeln!(f, "{i}Compressed size .. : {:#x}", overlay.flags.size())?;
-        writeln!(f, "{i}Is compressed .... : {}", overlay.flags.is_compressed())?;
+        writeln!(
+            f,
+            "{i}Is compressed .... : {}",
+            overlay.flags.is_compressed()
+        )?;
         writeln!(f, "{i}Is signed ........ : {}", overlay.flags.is_signed())?;
         writeln!(f, "{i}Reserved flags ... : {:#x}", overlay.flags.reserved())?;
         Ok(())

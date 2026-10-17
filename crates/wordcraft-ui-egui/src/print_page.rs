@@ -29,7 +29,14 @@ pub struct PrintSettings {
 
 impl Default for PrintSettings {
     fn default() -> Self {
-        PrintSettings { range: "all".into(), pages: String::new(), parity: "all".into(), copies: 1, collate: true, preview: 0 }
+        PrintSettings {
+            range: "all".into(),
+            pages: String::new(),
+            parity: "all".into(),
+            copies: 1,
+            collate: true,
+            preview: 0,
+        }
     }
 }
 
@@ -44,21 +51,36 @@ impl PrintSettings {
     }
 }
 
-const RANGES: [(&str, &str); 4] = [("all", "All pages"), ("current", "Current page"), ("selection", "Selected pages"), ("custom", "Custom range")];
-const PARITIES: [(&str, &str); 3] = [("all", "All pages in the range"), ("odd", "Odd pages only"), ("even", "Even pages only")];
+const RANGES: [(&str, &str); 4] = [
+    ("all", "All pages"),
+    ("current", "Current page"),
+    ("selection", "Selected pages"),
+    ("custom", "Custom range"),
+];
+const PARITIES: [(&str, &str); 3] = [
+    ("all", "All pages in the range"),
+    ("odd", "Odd pages only"),
+    ("even", "Even pages only"),
+];
 
 /// A choice list over `(id, label)` pairs; true when the choice changed.
 fn choice(ui: &mut Ui, salt: &str, current: &mut String, items: &[(&str, &str)]) -> bool {
-    let shown = items.iter().find(|(id, _)| *id == current.as_str()).map_or("", |(_, l)| *l);
+    let shown = items
+        .iter()
+        .find(|(id, _)| *id == current.as_str())
+        .map_or("", |(_, l)| *l);
     let mut changed = false;
-    egui::ComboBox::from_id_salt(salt).width(260.0).selected_text(tl!(shown)).show_ui(ui, |ui| {
-        for (id, label) in items {
-            if ui.selectable_label(current == id, tl!(label)).clicked() && current != id {
-                *current = (*id).to_string();
-                changed = true;
+    egui::ComboBox::from_id_salt(salt)
+        .width(260.0)
+        .selected_text(tl!(shown))
+        .show_ui(ui, |ui| {
+            for (id, label) in items {
+                if ui.selectable_label(current == id, tl!(label)).clicked() && current != id {
+                    *current = (*id).to_string();
+                    changed = true;
+                }
             }
-        }
-    });
+        });
     changed
 }
 
@@ -77,9 +99,20 @@ fn layout_of(app: &WordApp, ctx: &egui::Context) -> Arc<DocLayout> {
 }
 
 /// The texture of one page, re-rendered only when the document, page or size changes.
-fn page_texture(app: &WordApp, ctx: &egui::Context, lay: &DocLayout, page: usize, width: f32) -> Option<TextureHandle> {
+fn page_texture(
+    app: &WordApp,
+    ctx: &egui::Context,
+    lay: &DocLayout,
+    page: usize,
+    width: f32,
+) -> Option<TextureHandle> {
     let id = egui::Id::new("print_page_texture");
-    let key = (app.session.rev(), page, width as u32, (ctx.pixels_per_point() * 100.0) as u32);
+    let key = (
+        app.session.rev(),
+        page,
+        width as u32,
+        (ctx.pixels_per_point() * 100.0) as u32,
+    );
     if let Some((k, t)) = ctx.data(|d| d.get_temp::<((u64, usize, u32, u32), TextureHandle)>(id))
         && k == key
     {
@@ -88,7 +121,10 @@ fn page_texture(app: &WordApp, ctx: &egui::Context, lay: &DocLayout, page: usize
     let pg = lay.pages.get(page)?;
     let scale = (width / pg.w.max(1.0) * ctx.pixels_per_point()).clamp(0.05, 4.0);
     let img = wordcraft_render::render_page(&app.session.doc, pg, scale, &Default::default());
-    let color = egui::ColorImage::from_rgba_unmultiplied([img.width as usize, img.height as usize], &img.to_straight());
+    let color = egui::ColorImage::from_rgba_unmultiplied(
+        [img.width as usize, img.height as usize],
+        &img.to_straight(),
+    );
     let tex = ctx.load_texture("print_page_preview", color, egui::TextureOptions::LINEAR);
     ctx.data_mut(|d| d.insert_temp(id, (key, tex.clone())));
     Some(tex)
@@ -204,12 +240,28 @@ fn preview(app: &mut WordApp, ui: &mut Ui, lay: &DocLayout, total: usize) {
     let ctx = ui.ctx().clone();
     let width = 340.0;
     let page = app.ui.print.preview;
-    let aspect = lay.pages.get(page).map_or(11.0 / 8.5, |p| p.h.max(1.0) / p.w.max(1.0)).clamp(0.2, 5.0);
+    let aspect = lay
+        .pages
+        .get(page)
+        .map_or(11.0 / 8.5, |p| p.h.max(1.0) / p.w.max(1.0))
+        .clamp(0.2, 5.0);
     let (r, _) = ui.allocate_exact_size(vec2(width, width * aspect), Sense::hover());
-    ui.painter().rect_filled(r.translate(vec2(2.0, 3.0)), 0.0, t.page_shadow);
-    ui.painter().rect(r, 0.0, egui::Color32::WHITE, Stroke::new(1.0, t.border_strong), egui::StrokeKind::Inside);
+    ui.painter()
+        .rect_filled(r.translate(vec2(2.0, 3.0)), 0.0, t.page_shadow);
+    ui.painter().rect(
+        r,
+        0.0,
+        egui::Color32::WHITE,
+        Stroke::new(1.0, t.border_strong),
+        egui::StrokeKind::Inside,
+    );
     if let Some(tex) = page_texture(app, &ctx, lay, page, width) {
-        ui.painter().image(tex.id(), r, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), egui::Color32::WHITE);
+        ui.painter().image(
+            tex.id(),
+            r,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
     }
     ui.add_space(6.0);
     ui.horizontal(|ui| {
@@ -225,7 +277,13 @@ fn preview(app: &mut WordApp, ui: &mut Ui, lay: &DocLayout, total: usize) {
         if nav(ui, "chevronLeft", tl!("Previous Page"), page > 0) {
             app.ui.print.preview = page - 1;
         }
-        let label = crate::i18n::fmt(tl!("Page {page} of {pages}"), &[("page", &(page + 1).to_string()), ("pages", &total.to_string())]);
+        let label = crate::i18n::fmt(
+            tl!("Page {page} of {pages}"),
+            &[
+                ("page", &(page + 1).to_string()),
+                ("pages", &total.to_string()),
+            ],
+        );
         ui.label(egui::RichText::new(label).font(regular(13.0)));
         if nav(ui, "chevronRight", tl!("Next Page"), page + 1 < total) {
             app.ui.print.preview = page + 1;
@@ -247,7 +305,13 @@ pub fn export_formats(app: &mut WordApp, ui: &mut Ui) {
         ("Plain text (*.txt)", "txt"),
         ("Page image (*.png)", "png"),
     ] {
-        if ui.add(egui::Button::new(egui::RichText::new(tl!(label)).font(medium(13.5))).min_size(vec2(320.0, 34.0))).clicked() {
+        if ui
+            .add(
+                egui::Button::new(egui::RichText::new(tl!(label)).font(medium(13.5)))
+                    .min_size(vec2(320.0, 34.0)),
+            )
+            .clicked()
+        {
             app.export_dialog(ext);
         }
         ui.add_space(4.0);

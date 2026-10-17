@@ -72,30 +72,66 @@ fn list(s: &Session) -> Value {
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "metadata.savePreset";
-    let name = str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(C, "missing `name`"))?.to_string();
+    let name = str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(C, "missing `name`"))?
+        .to_string();
     let fields = match p.get("fields") {
         Some(Value::Object(o)) => {
             if let Some(k) = o.keys().find(|k| !FIELDS.contains(&k.as_str())) {
-                return Err(bad(C, format!("unknown field `{k}` ({})", FIELDS.join(", "))));
+                return Err(bad(
+                    C,
+                    format!("unknown field `{k}` ({})", FIELDS.join(", ")),
+                ));
             }
-            if let Some(v) = o.get("copyrightStatus").filter(|v| v.as_str().and_then(CopyrightStatus::parse).is_none()) {
-                return Err(bad(C, format!("copyrightStatus {v}: unknown, copyrighted or publicDomain")));
+            if let Some(v) = o
+                .get("copyrightStatus")
+                .filter(|v| v.as_str().and_then(CopyrightStatus::parse).is_none())
+            {
+                return Err(bad(
+                    C,
+                    format!("copyrightStatus {v}: unknown, copyrighted or publicDomain"),
+                ));
             }
             Value::Object(o.clone())
         }
         Some(_) => return Err(bad(C, "`fields` must be an object")),
         // from the active photo: its non-empty fields among `only` (default: copyright, creator, place)
         None => {
-            let id = s.active().ok_or_else(|| bad(C, "no `fields` and no active photo"))?;
-            let mut m = s.catalog.photo(id).ok_or_else(|| bad(C, "no photo"))?.meta.clone();
-            let only: Vec<String> =
-                p.get("only").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect()).unwrap_or_else(
-                    || {
-                        ["copyright", "copyrightStatus", "usageTerms", "copyrightUrl", "creator", "location", "city", "state", "country"]
-                            .map(String::from)
-                            .to_vec()
-                    },
-                );
+            let id = s
+                .active()
+                .ok_or_else(|| bad(C, "no `fields` and no active photo"))?;
+            let mut m = s
+                .catalog
+                .photo(id)
+                .ok_or_else(|| bad(C, "no photo"))?
+                .meta
+                .clone();
+            let only: Vec<String> = p
+                .get("only")
+                .and_then(Value::as_array)
+                .map(|a| {
+                    a.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_string)
+                        .collect()
+                })
+                .unwrap_or_else(|| {
+                    [
+                        "copyright",
+                        "copyrightStatus",
+                        "usageTerms",
+                        "copyrightUrl",
+                        "creator",
+                        "location",
+                        "city",
+                        "state",
+                        "country",
+                    ]
+                    .map(String::from)
+                    .to_vec()
+                });
             let mut o = Map::new();
             for k in only.iter().filter(|k| FIELDS.contains(&k.as_str())) {
                 if k == "keywords" {
@@ -113,8 +149,15 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
             Value::Object(o)
         }
     };
-    let preset = MetadataPreset { name: name.clone(), fields };
-    match s.metadata_presets.iter_mut().find(|m| m.name.eq_ignore_ascii_case(&name)) {
+    let preset = MetadataPreset {
+        name: name.clone(),
+        fields,
+    };
+    match s
+        .metadata_presets
+        .iter_mut()
+        .find(|m| m.name.eq_ignore_ascii_case(&name))
+    {
         Some(m) => *m = preset,
         None => s.metadata_presets.push(preset),
     }
@@ -126,11 +169,16 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "metadata.deletePreset";
     let name = str_param(p, "name").ok_or_else(|| bad(C, "missing `name`"))?;
     let n = s.metadata_presets.len();
-    s.metadata_presets.retain(|m| !m.name.eq_ignore_ascii_case(name));
+    s.metadata_presets
+        .retain(|m| !m.name.eq_ignore_ascii_case(name));
     if s.metadata_presets.len() == n {
         return Err(bad(C, format!("no metadata preset `{name}`")));
     }
-    if s.import_defaults.metadata_preset.as_deref().is_some_and(|m| m.eq_ignore_ascii_case(name)) {
+    if s.import_defaults
+        .metadata_preset
+        .as_deref()
+        .is_some_and(|m| m.eq_ignore_ascii_case(name))
+    {
         s.import_defaults.metadata_preset = None;
     }
     s.save_prefs()?;
@@ -149,7 +197,14 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
         .ok_or_else(|| bad(C, format!("no metadata preset `{name}`")))?;
     let mut params = Map::new();
     for (k, v) in preset.fields.as_object().into_iter().flatten() {
-        params.insert(if k == "keywords" { "addKeywords".into() } else { k.clone() }, v.clone());
+        params.insert(
+            if k == "keywords" {
+                "addKeywords".into()
+            } else {
+                k.clone()
+            },
+            v.clone(),
+        );
     }
     if let Some(ids) = p.get("ids") {
         params.insert("ids".into(), ids.clone());
@@ -169,7 +224,15 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             save
         ),
-        cmd!("metadata.deletePreset", "Delete Metadata Preset", [], None, "{name}", always, delete),
+        cmd!(
+            "metadata.deletePreset",
+            "Delete Metadata Preset",
+            [],
+            None,
+            "{name}",
+            always,
+            delete
+        ),
         cmd!(
             "metadata.applyPreset",
             "Apply Metadata Preset",

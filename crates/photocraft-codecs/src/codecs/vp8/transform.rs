@@ -141,7 +141,9 @@ mod tests {
     use super::*;
 
     fn lcg(seed: &mut u64) -> i32 {
-        *seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        *seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((*seed >> 33) % 511) as i32 - 255
     }
 
@@ -160,7 +162,11 @@ mod tests {
     #[test]
     fn dct_of_a_constant_block_is_a_dc_only_block() {
         let c = fdct(&[37; 16]);
-        assert_eq!(c[0], 37 * 8, "DC is 8× the mean (2× orthonormal, 4 × 4 samples)");
+        assert_eq!(
+            c[0],
+            37 * 8,
+            "DC is 8× the mean (2× orthonormal, 4 × 4 samples)"
+        );
         assert!(c[1..].iter().all(|&v| v == 0));
         assert_eq!(idct(&c), [37; 16]);
     }

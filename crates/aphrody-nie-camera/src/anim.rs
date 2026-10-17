@@ -64,7 +64,9 @@ impl<'a> CameraTrack<'a> {
     /// La piste d'un objet par son nom de la table de noms (`"c0010"`, `"c0020"`…).
     #[must_use]
     pub fn nommee(anim: &'a CameraAnim, nom: &str) -> Option<Self> {
-        (0..anim.object_count()).find(|&i| anim.name_of(i) == nom).map(|objet| Self { anim, objet })
+        (0..anim.object_count())
+            .find(|&i| anim.name_of(i) == nom)
+            .map(|objet| Self { anim, objet })
     }
 
     /// Le nom déclaré de cet objet.
@@ -139,7 +141,7 @@ impl<'a> CameraTrack<'a> {
                 // Pas de conversion : l'unité n'est pas prouvée, donc la valeur reste à côté.
                 ChannelKind::Fov => fov_brut = Some(v),
                 ChannelKind::Roll => roll_brut = Some(v),
-                ChannelKind::Other(_) => {},
+                ChannelKind::Other(_) => {}
             }
         }
 
@@ -254,7 +256,10 @@ mod tests {
                 }
             }
         }
-        assert!(verifies > 0, "aucun canal décodable : la mesure ne prouverait rien");
+        assert!(
+            verifies > 0,
+            "aucun canal décodable : la mesure ne prouverait rien"
+        );
     }
 
     /// Un état échantillonné doit tomber dans l'enveloppe du décodage direct. Si l'interpolation
@@ -314,7 +319,10 @@ mod tests {
         for objet in 0..anim.object_count() {
             let piste = CameraTrack::nouvelle(&anim, objet).expect("objet");
             let e = piste.etat(1100.0);
-            assert_eq!(e.etat.fov_deg, defaut.fov_deg, "fov_deg a été écrit sans preuve d'unité");
+            assert_eq!(
+                e.etat.fov_deg, defaut.fov_deg,
+                "fov_deg a été écrit sans preuve d'unité"
+            );
             assert_eq!(
                 e.etat.roll_deg, defaut.roll_deg,
                 "roll_deg a été écrit sans preuve d'unité"

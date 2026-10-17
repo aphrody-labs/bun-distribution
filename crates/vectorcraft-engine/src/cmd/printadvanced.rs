@@ -18,7 +18,11 @@ use super::*;
 
 /// The flattener options of `set`'s preset (`None`: transparency prints live); an error naming
 /// `cmd` for a preset that is neither built in nor in `saved`.
-pub(crate) fn flattener(cmd: &str, set: &PrintSettings, saved: &[FlattenerPreset]) -> Result<Option<FlattenOptions>> {
+pub(crate) fn flattener(
+    cmd: &str,
+    set: &PrintSettings,
+    saved: &[FlattenerPreset],
+) -> Result<Option<FlattenOptions>> {
     let name = set.advanced.flattener_preset.trim();
     if name.is_empty() {
         return Ok(None);
@@ -30,7 +34,12 @@ pub(crate) fn flattener(cmd: &str, set: &PrintSettings, saved: &[FlattenerPreset
 
 /// `doc` as Print as Bitmap and the flattener preset of `set` print it (from `saved` presets), or
 /// `None` when neither applies. Print as Bitmap is for composite output.
-pub(crate) fn prepare(cmd: &str, doc: &Document, set: &PrintSettings, saved: &[FlattenerPreset]) -> Result<Option<Document>> {
+pub(crate) fn prepare(
+    cmd: &str,
+    doc: &Document,
+    set: &PrintSettings,
+    saved: &[FlattenerPreset],
+) -> Result<Option<Document>> {
     let composite = set.output.mode == OutputMode::Composite;
     let bitmap = set.advanced.print_as_bitmap && composite;
     let flattener = flattener(cmd, set, saved)?;
@@ -41,16 +50,22 @@ pub(crate) fn prepare(cmd: &str, doc: &Document, set: &PrintSettings, saved: &[F
     if bitmap {
         return bitmap_document(cmd, &printed, set).map(Some);
     }
-    let Some(mut o) = flattener else { return Ok(None) };
+    let Some(mut o) = flattener else {
+        return Ok(None);
+    };
     // Composite overprints that were discarded or simulated aren't preserved either.
     o.preserve_overprints &= !composite || set.advanced.overprints == PrintOverprints::Preserve;
-    Ok(Some(flatten_document(&printed, &o)?.unwrap_or_else(|| printed.into_owned())))
+    Ok(Some(
+        flatten_document(&printed, &o)?.unwrap_or_else(|| printed.into_owned()),
+    ))
 }
 
 /// Leave guide paths out of `nodes` (the renderer draws them; they never print).
 fn drop_guides(nodes: &mut Vec<Arc<Node>>) {
     fn has_guides(n: &Node) -> bool {
-        matches!(n.kind, NodeKind::Path { guide: true, .. }) || n.children().is_some_and(|c| c.iter().any(|c| has_guides(c)))
+        matches!(n.kind, NodeKind::Path { guide: true, .. })
+            || n.children()
+                .is_some_and(|c| c.iter().any(|c| has_guides(c)))
     }
     nodes.retain(|n| !matches!(n.kind, NodeKind::Path { guide: true, .. }));
     for n in nodes.iter_mut().filter(|n| has_guides(n)) {
@@ -68,8 +83,16 @@ fn bitmap_document(cmd: &str, doc: &Document, set: &PrintSettings) -> Result<Doc
     let bleed = set.bleed.of(doc);
     let mut art = doc.clone();
     drop_guides(&mut art.layers);
-    let anti_alias = if doc.raster_effects.anti_alias { AntiAlias::Art } else { AntiAlias::None };
-    let opts = RenderOptions { skip_templates: true, anti_alias, ..Default::default() };
+    let anti_alias = if doc.raster_effects.anti_alias {
+        AntiAlias::Art
+    } else {
+        AntiAlias::None
+    };
+    let opts = RenderOptions {
+        skip_templates: true,
+        anti_alias,
+        ..Default::default()
+    };
     let mut out = doc.clone();
     let mut renderer = vectorcraft_render::Renderer::new();
     let mut images = vec![];
@@ -77,7 +100,9 @@ fn bitmap_document(cmd: &str, doc: &Document, set: &PrintSettings) -> Result<Doc
         let area = outset(r, bleed);
         // At most MAX_PIXELS, and 65535 pixels a side.
         let side = area.width().max(area.height()).max(1.0);
-        let scale = (doc.raster_effects_ppi / 72.0).min((MAX_PIXELS / (area.width() * area.height()).max(1.0)).sqrt()).min(65_535.0 / side);
+        let scale = (doc.raster_effects_ppi / 72.0)
+            .min((MAX_PIXELS / (area.width() * area.height()).max(1.0)).sqrt())
+            .min(65_535.0 / side);
         if !(scale.is_finite() && scale > 0.0) {
             continue;
         }
@@ -93,10 +118,23 @@ fn bitmap_document(cmd: &str, doc: &Document, set: &PrintSettings) -> Result<Doc
             continue;
         }
         let key = unique_key(&out, "print-bitmap");
-        out.images.insert(key.clone(), ImageBlob::new("image/png", img.to_png().map_err(EngineError::Other)?));
+        out.images.insert(
+            key.clone(),
+            ImageBlob::new("image/png", img.to_png().map_err(EngineError::Other)?),
+        );
         let xf = Affine::translate(region.origin().to_vec2()) * Affine::scale(1.0 / scale);
-        let image = ImageObject { key, width: img.width, height: img.height, xf, link: None, placement: Default::default() };
-        images.push(Arc::new(Node::new(out.alloc_id(), NodeKind::Image(Box::new(image)))));
+        let image = ImageObject {
+            key,
+            width: img.width,
+            height: img.height,
+            xf,
+            link: None,
+            placement: Default::default(),
+        };
+        images.push(Arc::new(Node::new(
+            out.alloc_id(),
+            NodeKind::Image(Box::new(image)),
+        )));
     }
     let mut layer = Node::layer(out.alloc_id(), "Bitmap", LayerColor::Preset(0));
     if let Some(children) = layer.children_mut() {

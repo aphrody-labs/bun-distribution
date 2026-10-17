@@ -1,7 +1,7 @@
 use bevy_core_pipeline::FullscreenShader;
 
-use super::{Bloom, BLOOM_TEXTURE_FORMAT};
-use bevy_asset::{load_embedded_asset, AssetServer, Handle};
+use super::{BLOOM_TEXTURE_FORMAT, Bloom};
+use bevy_asset::{AssetServer, Handle, load_embedded_asset};
 use bevy_ecs::{
     prelude::{Component, Entity},
     resource::Resource,

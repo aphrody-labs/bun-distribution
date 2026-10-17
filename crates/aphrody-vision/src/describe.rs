@@ -45,7 +45,13 @@ impl VisionOptions {
     #[must_use]
     pub fn new(model_id: impl Into<String>, mode: VisionMode) -> Self {
         let max_tokens = mode.default_max_tokens();
-        Self { model_id: model_id.into(), mode, max_tokens, gpu_layers: 99, keep_raw: false }
+        Self {
+            model_id: model_id.into(),
+            mode,
+            max_tokens,
+            gpu_layers: 99,
+            keep_raw: false,
+        }
     }
 
     /// Caption options for the default captioning model.
@@ -113,7 +119,7 @@ impl Description {
         match self {
             Self::Caption { answer } | Self::Answer { answer, .. } => {
                 answer.text().map(ToOwned::to_owned)
-            },
+            }
             Self::Page { text } => text.markdown().map(ToOwned::to_owned),
             Self::Regions { regions } => {
                 let joined = regions
@@ -123,7 +129,7 @@ impl Description {
                     .collect::<Vec<_>>()
                     .join("\n");
                 (!joined.is_empty()).then_some(joined)
-            },
+            }
         }
     }
 }
@@ -221,14 +227,19 @@ impl Describer {
         let raw = page.raw.clone().unwrap_or_default();
 
         let description = match &self.mode {
-            VisionMode::Caption => Description::Caption { answer: classify(&raw) },
-            VisionMode::DenseRegion => Description::Regions { regions: parse_regions(&raw) },
+            VisionMode::Caption => Description::Caption {
+                answer: classify(&raw),
+            },
+            VisionMode::DenseRegion => Description::Regions {
+                regions: parse_regions(&raw),
+            },
             // Handed through untouched: the OCR path already decided whether
             // this page holds text, and second-guessing it here is exactly how
             // a description ends up filed as a transcription.
             VisionMode::FullPageOcr => Description::Page { text: page.text },
-            VisionMode::Vqa { question } => {
-                Description::Answer { question: question.clone(), answer: classify(&raw) }
+            VisionMode::Vqa { question } => Description::Answer {
+                question: question.clone(),
+                answer: classify(&raw),
             },
         };
 
@@ -249,11 +260,14 @@ impl Describer {
 /// reference nobody typed. The catalog id the caller passed is what
 /// `aphrody model pull` takes.
 fn explain_missing(error: &aphrody_ocr_vlm::OcrError, model_id: &str) -> Option<VisionError> {
-    matches!(error, aphrody_ocr_vlm::OcrError::Model(aphrody_models::ModelError::NotInstalled(_)))
-        .then(|| VisionError::ModelNotInstalled {
-            model_id: model_id.to_owned(),
-            command: pull_command(model_id),
-        })
+    matches!(
+        error,
+        aphrody_ocr_vlm::OcrError::Model(aphrody_models::ModelError::NotInstalled(_))
+    )
+    .then(|| VisionError::ModelNotInstalled {
+        model_id: model_id.to_owned(),
+        command: pull_command(model_id),
+    })
 }
 
 /// The exact command that installs a catalog model.
@@ -267,8 +281,12 @@ pub fn pull_command(model_id: &str) -> String {
 /// Best-effort: a registry that cannot be written is a reason to log, not a
 /// reason to refuse an inference that is otherwise ready to run.
 fn touch(model_id: &str) {
-    let Ok(entry) = Catalog::builtin().get(model_id) else { return };
-    let Ok(store) = ModelStore::open() else { return };
+    let Ok(entry) = Catalog::builtin().get(model_id) else {
+        return;
+    };
+    let Ok(store) = ModelStore::open() else {
+        return;
+    };
     for file in &entry.files {
         if let Err(error) = store.touch(&file.reference) {
             tracing::debug!(%error, model = model_id, "could not touch model in the registry");
@@ -282,12 +300,18 @@ mod tests {
 
     #[test]
     fn the_pull_hint_is_a_command_that_can_be_run_verbatim() {
-        assert_eq!(pull_command("granite-docling-258m"), "aphrody model pull granite-docling-258m");
+        assert_eq!(
+            pull_command("granite-docling-258m"),
+            "aphrody model pull granite-docling-258m"
+        );
     }
 
     #[test]
     fn options_take_the_token_budget_of_their_mode() {
-        assert_eq!(VisionOptions::caption().max_tokens, VisionMode::Caption.default_max_tokens());
+        assert_eq!(
+            VisionOptions::caption().max_tokens,
+            VisionMode::Caption.default_max_tokens()
+        );
         assert_eq!(
             VisionOptions::new("smolvlm-500m-q8", VisionMode::FullPageOcr).max_tokens,
             VisionMode::FullPageOcr.default_max_tokens()
@@ -298,16 +322,30 @@ mod tests {
     fn the_default_models_exist_in_the_builtin_catalog() {
         // A default nobody can pull is a broken default.
         for id in [DEFAULT_CAPTION_MODEL, DEFAULT_DOCUMENT_MODEL] {
-            let entry = Catalog::builtin().get(id).unwrap_or_else(|e| panic!("{id}: {e}"));
+            let entry = Catalog::builtin()
+                .get(id)
+                .unwrap_or_else(|e| panic!("{id}: {e}"));
             assert_eq!(entry.task.to_string(), "visual-transcription");
         }
     }
 
     #[test]
     fn the_default_models_serve_their_default_mode() {
-        assert!(VisionMode::Caption.prompt_for(DEFAULT_CAPTION_MODEL).is_ok());
-        assert!(VisionMode::DenseRegion.prompt_for(DEFAULT_DOCUMENT_MODEL).is_ok());
-        assert!(VisionMode::FullPageOcr.prompt_for(DEFAULT_DOCUMENT_MODEL).is_ok());
+        assert!(
+            VisionMode::Caption
+                .prompt_for(DEFAULT_CAPTION_MODEL)
+                .is_ok()
+        );
+        assert!(
+            VisionMode::DenseRegion
+                .prompt_for(DEFAULT_DOCUMENT_MODEL)
+                .is_ok()
+        );
+        assert!(
+            VisionMode::FullPageOcr
+                .prompt_for(DEFAULT_DOCUMENT_MODEL)
+                .is_ok()
+        );
     }
 
     #[test]
@@ -317,7 +355,10 @@ mod tests {
             DEFAULT_DOCUMENT_MODEL,
             VisionMode::vqa("what colour is the car?"),
         )) {
-            Err(error) => assert!(matches!(error, VisionError::ModeUnsupported { .. }), "{error}"),
+            Err(error) => assert!(
+                matches!(error, VisionError::ModeUnsupported { .. }),
+                "{error}"
+            ),
             Ok(_) => panic!("a document model must not accept a free-form question"),
         }
     }
@@ -329,7 +370,10 @@ mod tests {
         ));
         let explained = explain_missing(&backend, "smolvlm-500m-q8").unwrap();
         let rendered = explained.to_string();
-        assert!(rendered.contains("aphrody model pull smolvlm-500m-q8"), "{rendered}");
+        assert!(
+            rendered.contains("aphrody model pull smolvlm-500m-q8"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -342,7 +386,9 @@ mod tests {
     fn page_descriptions_keep_the_textless_verdict() {
         // The asymmetry at the heart of the crate: OCR is allowed to say
         // "there is no text here", and that must not collapse to "".
-        let page = Description::Page { text: PageText::None };
+        let page = Description::Page {
+            text: PageText::None,
+        };
         assert_eq!(page.as_text(), None);
         let json = serde_json::to_value(&page).unwrap();
         assert_eq!(json["text"]["kind"], "none");
@@ -350,8 +396,11 @@ mod tests {
 
     #[test]
     fn a_caption_may_describe_where_a_transcription_may_not() {
-        let caption =
-            Description::Caption { answer: Answer::Ok { text: "A drawing of a cat.".into() } };
+        let caption = Description::Caption {
+            answer: Answer::Ok {
+                text: "A drawing of a cat.".into(),
+            },
+        };
         assert_eq!(caption.as_text().unwrap(), "A drawing of a cat.");
     }
 
@@ -359,9 +408,21 @@ mod tests {
     fn region_text_is_joined_for_a_one_line_log() {
         let regions = Description::Regions {
             regions: vec![
-                Region { label: "text".into(), text: "top bar".into(), bbox: None },
-                Region { label: "picture".into(), text: String::new(), bbox: None },
-                Region { label: "text".into(), text: "footer".into(), bbox: None },
+                Region {
+                    label: "text".into(),
+                    text: "top bar".into(),
+                    bbox: None,
+                },
+                Region {
+                    label: "picture".into(),
+                    text: String::new(),
+                    bbox: None,
+                },
+                Region {
+                    label: "text".into(),
+                    text: "footer".into(),
+                    bbox: None,
+                },
             ],
         };
         assert_eq!(regions.as_text().unwrap(), "top bar\nfooter");
@@ -369,14 +430,22 @@ mod tests {
 
     #[test]
     fn a_region_list_with_nothing_in_it_reads_as_no_text() {
-        assert_eq!(Description::Regions { regions: Vec::new() }.as_text(), None);
+        assert_eq!(
+            Description::Regions {
+                regions: Vec::new()
+            }
+            .as_text(),
+            None
+        );
     }
 
     #[test]
     fn a_vqa_report_echoes_its_question() {
         let description = Description::Answer {
             question: "how many tabs?".into(),
-            answer: Answer::Ok { text: "three".into() },
+            answer: Answer::Ok {
+                text: "three".into(),
+            },
         };
         let json = serde_json::to_value(&description).unwrap();
         assert_eq!(json["kind"], "answer");
@@ -389,7 +458,11 @@ mod tests {
             image: PathBuf::from("shot.png"),
             model_id: DEFAULT_CAPTION_MODEL.to_owned(),
             mode: ModeKind::Caption,
-            description: Description::Caption { answer: Answer::Ok { text: "a wall".into() } },
+            description: Description::Caption {
+                answer: Answer::Ok {
+                    text: "a wall".into(),
+                },
+            },
             elapsed_ms: 42,
             raw: None,
         };

@@ -1,7 +1,14 @@
 //! DeckCraft colour: sRGB colours, theme colour slots and DrawingML-style colour transforms
 //! (tint, shade, luminance modulation/offset, alpha…), so theme-relative colours resolve the way
 //! presentation files expect.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 use serde::{Deserialize, Serialize};
@@ -24,7 +31,12 @@ impl Default for Rgba {
 impl Rgba {
     pub const BLACK: Rgba = Rgba::rgb(0, 0, 0);
     pub const WHITE: Rgba = Rgba::rgb(255, 255, 255);
-    pub const TRANSPARENT: Rgba = Rgba { r: 0, g: 0, b: 0, a: 0 };
+    pub const TRANSPARENT: Rgba = Rgba {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 0,
+    };
 
     pub const fn rgb(r: u8, g: u8, b: u8) -> Self {
         Rgba { r, g, b, a: 255 }
@@ -43,7 +55,11 @@ impl Rgba {
             6 => Some(Rgba::rgb(byte(0)?, byte(2)?, byte(4)?)),
             8 => Some(Rgba::rgba(byte(0)?, byte(2)?, byte(4)?, byte(6)?)),
             3 => {
-                let n = |i: usize| s.get(i..i + 1).and_then(|h| u8::from_str_radix(h, 16).ok()).map(|v| v * 17);
+                let n = |i: usize| {
+                    s.get(i..i + 1)
+                        .and_then(|h| u8::from_str_radix(h, 16).ok())
+                        .map(|v| v * 17)
+                };
                 Some(Rgba::rgb(n(0)?, n(1)?, n(2)?))
             }
             _ => None,
@@ -57,17 +73,37 @@ impl Rgba {
         Rgba { a, ..self }
     }
     pub fn to_f32(self) -> [f32; 4] {
-        [self.r as f32 / 255.0, self.g as f32 / 255.0, self.b as f32 / 255.0, self.a as f32 / 255.0]
+        [
+            self.r as f32 / 255.0,
+            self.g as f32 / 255.0,
+            self.b as f32 / 255.0,
+            self.a as f32 / 255.0,
+        ]
     }
     pub fn from_f64(r: f64, g: f64, b: f64, a: f64) -> Self {
-        let c = |v: f64| if v.is_finite() { (v.clamp(0.0, 1.0) * 255.0).round() as u8 } else { 0 };
-        Rgba { r: c(r), g: c(g), b: c(b), a: c(a) }
+        let c = |v: f64| {
+            if v.is_finite() {
+                (v.clamp(0.0, 1.0) * 255.0).round() as u8
+            } else {
+                0
+            }
+        };
+        Rgba {
+            r: c(r),
+            g: c(g),
+            b: c(b),
+            a: c(a),
+        }
     }
     /// Relative luminance (WCAG), 0–1.
     pub fn luminance(self) -> f64 {
         let lin = |c: u8| {
             let v = c as f64 / 255.0;
-            if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+            if v <= 0.04045 {
+                v / 12.92
+            } else {
+                ((v + 0.055) / 1.055).powf(2.4)
+            }
         };
         0.2126 * lin(self.r) + 0.7152 * lin(self.g) + 0.0722 * lin(self.b)
     }
@@ -88,7 +124,11 @@ impl Rgba {
             return (0.0, 0.0, l);
         }
         let d = max - min;
-        let s = if l > 0.5 { d / (2.0 - max - min) } else { d / (max + min) };
+        let s = if l > 0.5 {
+            d / (2.0 - max - min)
+        } else {
+            d / (max + min)
+        };
         let h = if (max - r).abs() < 1e-12 {
             (g - b) / d + if g < b { 6.0 } else { 0.0 }
         } else if (max - g).abs() < 1e-12 {
@@ -105,7 +145,11 @@ impl Rgba {
         if s == 0.0 {
             return Rgba::from_f64(l, l, l, a as f64 / 255.0);
         }
-        let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
+        let q = if l < 0.5 {
+            l * (1.0 + s)
+        } else {
+            l + s - l * s
+        };
         let p = 2.0 * l - q;
         let f = |t: f64| {
             let t = if t < 0.0 {
@@ -129,9 +173,22 @@ impl Rgba {
     }
     /// Linear interpolation (straight alpha).
     pub fn lerp(self, o: Rgba, t: f64) -> Rgba {
-        let t = if t.is_finite() { t.clamp(0.0, 1.0) } else { 0.0 };
-        let m = |a: u8, b: u8| (a as f64 + (b as f64 - a as f64) * t).round().clamp(0.0, 255.0) as u8;
-        Rgba { r: m(self.r, o.r), g: m(self.g, o.g), b: m(self.b, o.b), a: m(self.a, o.a) }
+        let t = if t.is_finite() {
+            t.clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
+        let m = |a: u8, b: u8| {
+            (a as f64 + (b as f64 - a as f64) * t)
+                .round()
+                .clamp(0.0, 255.0) as u8
+        };
+        Rgba {
+            r: m(self.r, o.r),
+            g: m(self.g, o.g),
+            b: m(self.b, o.b),
+            a: m(self.a, o.a),
+        }
     }
 }
 
@@ -411,33 +468,71 @@ fn apply_one(c: Rgba, t: ColorTransform) -> Rgba {
             Rgba::from_hsl(h + v as f64 / 60_000.0, s, l, c.a)
         }
         ColorTransform::Alpha(v) => c.with_alpha((pct(v).clamp(0.0, 1.0) * 255.0).round() as u8),
-        ColorTransform::AlphaMod(v) => c.with_alpha((c.a as f64 * pct(v)).round().clamp(0.0, 255.0) as u8),
-        ColorTransform::AlphaOff(v) => c.with_alpha((c.a as f64 + pct(v) * 255.0).round().clamp(0.0, 255.0) as u8),
+        ColorTransform::AlphaMod(v) => {
+            c.with_alpha((c.a as f64 * pct(v)).round().clamp(0.0, 255.0) as u8)
+        }
+        ColorTransform::AlphaOff(v) => {
+            c.with_alpha((c.a as f64 + pct(v) * 255.0).round().clamp(0.0, 255.0) as u8)
+        }
         ColorTransform::Comp => {
             let (h, s, l) = c.to_hsl();
             Rgba::from_hsl(h + 180.0, s, l, c.a)
         }
-        ColorTransform::Inv => Rgba { r: 255 - c.r, g: 255 - c.g, b: 255 - c.b, a: c.a },
+        ColorTransform::Inv => Rgba {
+            r: 255 - c.r,
+            g: 255 - c.g,
+            b: 255 - c.b,
+            a: c.a,
+        },
         ColorTransform::Gray => {
-            let y = (0.299 * c.r as f64 + 0.587 * c.g as f64 + 0.114 * c.b as f64).round().clamp(0.0, 255.0) as u8;
-            Rgba { r: y, g: y, b: y, a: c.a }
+            let y = (0.299 * c.r as f64 + 0.587 * c.g as f64 + 0.114 * c.b as f64)
+                .round()
+                .clamp(0.0, 255.0) as u8;
+            Rgba {
+                r: y,
+                g: y,
+                b: y,
+                a: c.a,
+            }
         }
-        ColorTransform::RedMod(v) => Rgba { r: (c.r as f64 * pct(v)).round().clamp(0.0, 255.0) as u8, ..c },
-        ColorTransform::GreenMod(v) => Rgba { g: (c.g as f64 * pct(v)).round().clamp(0.0, 255.0) as u8, ..c },
-        ColorTransform::BlueMod(v) => Rgba { b: (c.b as f64 * pct(v)).round().clamp(0.0, 255.0) as u8, ..c },
+        ColorTransform::RedMod(v) => Rgba {
+            r: (c.r as f64 * pct(v)).round().clamp(0.0, 255.0) as u8,
+            ..c
+        },
+        ColorTransform::GreenMod(v) => Rgba {
+            g: (c.g as f64 * pct(v)).round().clamp(0.0, 255.0) as u8,
+            ..c
+        },
+        ColorTransform::BlueMod(v) => Rgba {
+            b: (c.b as f64 * pct(v)).round().clamp(0.0, 255.0) as u8,
+            ..c
+        },
     }
 }
 
 fn to_lin(v: u8) -> f64 {
     let v = v as f64 / 255.0;
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 fn from_lin(v: f64) -> f64 {
     let v = v.clamp(0.0, 1.0);
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 fn map_linear(c: Rgba, f: impl Fn(f64) -> f64) -> Rgba {
-    Rgba::from_f64(from_lin(f(to_lin(c.r))), from_lin(f(to_lin(c.g))), from_lin(f(to_lin(c.b))), c.a as f64 / 255.0)
+    Rgba::from_f64(
+        from_lin(f(to_lin(c.r))),
+        from_lin(f(to_lin(c.g))),
+        from_lin(f(to_lin(c.b))),
+        c.a as f64 / 255.0,
+    )
 }
 
 /// The colour-picker grid shown under each theme colour: lighter 80/60/40%, darker 25/50%
@@ -446,11 +541,26 @@ pub fn theme_variants(c: Rgba) -> [(Vec<ColorTransform>, &'static str); 5] {
     let (_, _, l) = c.to_hsl();
     if l < 0.2 {
         [
-            (vec![ColorTransform::LumMod(10000), ColorTransform::LumOff(90000)], "Lighter 90%"),
-            (vec![ColorTransform::LumMod(25000), ColorTransform::LumOff(75000)], "Lighter 75%"),
-            (vec![ColorTransform::LumMod(50000), ColorTransform::LumOff(50000)], "Lighter 50%"),
-            (vec![ColorTransform::LumMod(75000), ColorTransform::LumOff(25000)], "Lighter 25%"),
-            (vec![ColorTransform::LumMod(90000), ColorTransform::LumOff(10000)], "Lighter 10%"),
+            (
+                vec![ColorTransform::LumMod(10000), ColorTransform::LumOff(90000)],
+                "Lighter 90%",
+            ),
+            (
+                vec![ColorTransform::LumMod(25000), ColorTransform::LumOff(75000)],
+                "Lighter 75%",
+            ),
+            (
+                vec![ColorTransform::LumMod(50000), ColorTransform::LumOff(50000)],
+                "Lighter 50%",
+            ),
+            (
+                vec![ColorTransform::LumMod(75000), ColorTransform::LumOff(25000)],
+                "Lighter 25%",
+            ),
+            (
+                vec![ColorTransform::LumMod(90000), ColorTransform::LumOff(10000)],
+                "Lighter 10%",
+            ),
         ]
     } else if l > 0.8 {
         [
@@ -462,9 +572,18 @@ pub fn theme_variants(c: Rgba) -> [(Vec<ColorTransform>, &'static str); 5] {
         ]
     } else {
         [
-            (vec![ColorTransform::LumMod(20000), ColorTransform::LumOff(80000)], "Lighter 80%"),
-            (vec![ColorTransform::LumMod(40000), ColorTransform::LumOff(60000)], "Lighter 60%"),
-            (vec![ColorTransform::LumMod(60000), ColorTransform::LumOff(40000)], "Lighter 40%"),
+            (
+                vec![ColorTransform::LumMod(20000), ColorTransform::LumOff(80000)],
+                "Lighter 80%",
+            ),
+            (
+                vec![ColorTransform::LumMod(40000), ColorTransform::LumOff(60000)],
+                "Lighter 60%",
+            ),
+            (
+                vec![ColorTransform::LumMod(60000), ColorTransform::LumOff(40000)],
+                "Lighter 40%",
+            ),
             (vec![ColorTransform::LumMod(75000)], "Darker 25%"),
             (vec![ColorTransform::LumMod(50000)], "Darker 50%"),
         ]
@@ -531,11 +650,18 @@ mod tests {
 
     #[test]
     fn hsl_roundtrip() {
-        for c in [Rgba::rgb(10, 200, 30), Rgba::rgb(255, 0, 0), Rgba::rgb(128, 128, 128), Rgba::rgb(21, 96, 130)] {
+        for c in [
+            Rgba::rgb(10, 200, 30),
+            Rgba::rgb(255, 0, 0),
+            Rgba::rgb(128, 128, 128),
+            Rgba::rgb(21, 96, 130),
+        ] {
             let (h, s, l) = c.to_hsl();
             let d = Rgba::from_hsl(h, s, l, 255);
             assert!(
-                (d.r as i32 - c.r as i32).abs() <= 1 && (d.g as i32 - c.g as i32).abs() <= 1 && (d.b as i32 - c.b as i32).abs() <= 1,
+                (d.r as i32 - c.r as i32).abs() <= 1
+                    && (d.g as i32 - c.g as i32).abs() <= 1
+                    && (d.b as i32 - c.b as i32).abs() <= 1,
                 "{c:?} {d:?}"
             );
         }
@@ -545,15 +671,28 @@ mod tests {
     fn transforms() {
         let c = Rgba::rgb(0x40, 0x80, 0xC0);
         assert_eq!(apply(c, &[ColorTransform::Alpha(50000)]).a, 128);
-        let lighter = apply(c, &[ColorTransform::LumMod(20000), ColorTransform::LumOff(80000)]);
+        let lighter = apply(
+            c,
+            &[ColorTransform::LumMod(20000), ColorTransform::LumOff(80000)],
+        );
         assert!(lighter.luminance() > c.luminance());
         let darker = apply(c, &[ColorTransform::LumMod(50000)]);
         assert!(darker.luminance() < c.luminance());
         assert_eq!(apply(Rgba::WHITE, &[ColorTransform::Shade(0)]), Rgba::BLACK);
         assert_eq!(apply(Rgba::BLACK, &[ColorTransform::Tint(0)]), Rgba::WHITE);
-        assert_eq!(apply(c, &[ColorTransform::Inv]), Rgba::rgb(0xBF, 0x7F, 0x3F));
+        assert_eq!(
+            apply(c, &[ColorTransform::Inv]),
+            Rgba::rgb(0xBF, 0x7F, 0x3F)
+        );
         // hostile values never panic
-        let _ = apply(c, &[ColorTransform::LumMod(i32::MAX), ColorTransform::HueOff(i32::MIN), ColorTransform::AlphaMod(i32::MIN)]);
+        let _ = apply(
+            c,
+            &[
+                ColorTransform::LumMod(i32::MAX),
+                ColorTransform::HueOff(i32::MIN),
+                ColorTransform::AlphaMod(i32::MIN),
+            ],
+        );
     }
 
     #[test]
@@ -564,7 +703,10 @@ mod tests {
 
     #[test]
     fn scheme_slots() {
-        let mut s = ColorScheme { name: "t".into(), colors: [Rgba::BLACK; 12] };
+        let mut s = ColorScheme {
+            name: "t".into(),
+            colors: [Rgba::BLACK; 12],
+        };
         s.set(SchemeSlot::Accent3, Rgba::WHITE);
         assert_eq!(s.get(SchemeSlot::Accent3), Rgba::WHITE);
         assert_eq!(s.get(SchemeSlot::Tx1), Rgba::BLACK);

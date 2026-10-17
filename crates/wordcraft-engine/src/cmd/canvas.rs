@@ -22,7 +22,11 @@ const MIN_SIDE: f32 = 9.0;
 const FIT_MARGIN: f32 = 0.0;
 
 fn has_canvas(s: &Session) -> Option<&'static str> {
-    if selected_canvas(s).is_some() { None } else { Some("select a drawing canvas first") }
+    if selected_canvas(s).is_some() {
+        None
+    } else {
+        Some("select a drawing canvas first")
+    }
 }
 
 /// The selected Drawing Canvas: its position and the canvas.
@@ -55,8 +59,12 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// `insert.canvas`: a new empty canvas in line with text at the caret, selected.
 fn insert(s: &mut Session, v: &Value) -> CmdResult {
-    let w = p::f32(v, "width").unwrap_or(432.0).clamp(MIN_SIDE, MAX_SIDE);
-    let h = p::f32(v, "height").unwrap_or(216.0).clamp(MIN_SIDE, MAX_SIDE);
+    let w = p::f32(v, "width")
+        .unwrap_or(432.0)
+        .clamp(MIN_SIDE, MAX_SIDE);
+    let h = p::f32(v, "height")
+        .unwrap_or(216.0)
+        .clamp(MIN_SIDE, MAX_SIDE);
     let style = CanvasStyle {
         fill: p::str(v, "fill").and_then(wordcraft_doc::props::Rgb::parse),
         stroke: p::str(v, "outline").and_then(wordcraft_doc::props::Rgb::parse),
@@ -64,9 +72,20 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
     };
     let props = s.typing_props();
     let at = delete_selection(s)?;
-    let obj = InlineObject::Group { w, h, float: Float::default(), ch_w: w, ch_h: h, children: Vec::new(), canvas: Some(style) };
+    let obj = InlineObject::Group {
+        w,
+        h,
+        float: Float::default(),
+        ch_w: w,
+        ch_h: h,
+        children: Vec::new(),
+        canvas: Some(style),
+    };
     let end = s.doc.insert_object(&at, obj, &props)?;
-    s.sel = Selection { anchor: at, focus: end };
+    s.sel = Selection {
+        anchor: at,
+        focus: end,
+    };
     sel_result(s)
 }
 
@@ -74,14 +93,26 @@ fn insert(s: &mut Session, v: &Value) -> CmdResult {
 /// later one a little lower and to the right, shrunk (keeping its proportions) to fit. Returns
 /// the member's index, or `None` when no canvas is selected (insert as usual).
 pub fn add_member(s: &mut Session, obj: InlineObject) -> Result<Option<usize>, CmdError> {
-    let Some((pos, canvas)) = selected_canvas(s) else { return Ok(None) };
-    let InlineObject::Group { w: cw, h: ch, children, .. } = canvas else { return Ok(None) };
+    let Some((pos, canvas)) = selected_canvas(s) else {
+        return Ok(None);
+    };
+    let InlineObject::Group {
+        w: cw,
+        h: ch,
+        children,
+        ..
+    } = canvas
+    else {
+        return Ok(None);
+    };
     if children.len() >= MAX_GROUP_CHILDREN {
         return Err(CmdError::Failed("the drawing canvas is full".into()));
     }
     let (cw, ch, n) = (*cw, *ch, children.len());
     let mut obj = obj;
-    let (ow, oh, _) = obj.frame().ok_or_else(|| CmdError::Params("not a picture or shape".into()))?;
+    let (ow, oh, _) = obj
+        .frame()
+        .ok_or_else(|| CmdError::Params("not a picture or shape".into()))?;
     let k = (cw / ow.max(1.0)).min(ch / oh.max(1.0)).min(1.0);
     let (ow, oh) = ((ow * k).max(1.0), (oh * k).max(1.0));
     obj.set_size(ow, oh);
@@ -91,15 +122,36 @@ pub fn add_member(s: &mut Session, obj: InlineObject) -> Result<Option<usize>, C
     let step = 12.0 * (n % 6) as f32;
     let x = ((cw - ow) / 2.0 + step).clamp(0.0, (cw - ow).max(0.0));
     let y = ((ch - oh) / 2.0 + step).clamp(0.0, (ch - oh).max(0.0));
-    edit_canvas(s, &pos, |_, _, children| children.push(GroupChild { x, y, obj: obj.clone() }))?;
+    edit_canvas(s, &pos, |_, _, children| {
+        children.push(GroupChild {
+            x,
+            y,
+            obj: obj.clone(),
+        })
+    })?;
     Ok(Some(n))
 }
 
 /// Change the canvas at `pos`: `f` gets its frame size and members (and may change them).
-fn edit_canvas(s: &mut Session, pos: &Pos, f: impl FnOnce(&mut f32, &mut f32, &mut Vec<GroupChild>)) -> Result<InlineObject, CmdError> {
+fn edit_canvas(
+    s: &mut Session,
+    pos: &Pos,
+    f: impl FnOnce(&mut f32, &mut f32, &mut Vec<GroupChild>),
+) -> Result<InlineObject, CmdError> {
     let para = s.doc.para_mut(pos.story, &pos.path)?;
-    let o = para.object_at_mut(pos.off).ok_or_else(|| CmdError::Failed("object vanished".into()))?;
-    let InlineObject::Group { w, h, ch_w, ch_h, children, canvas: Some(_), .. } = o else {
+    let o = para
+        .object_at_mut(pos.off)
+        .ok_or_else(|| CmdError::Failed("object vanished".into()))?;
+    let InlineObject::Group {
+        w,
+        h,
+        ch_w,
+        ch_h,
+        children,
+        canvas: Some(_),
+        ..
+    } = o
+    else {
         return Err(CmdError::Disabled("select a drawing canvas first".into()));
     };
     f(w, h, children);
@@ -117,7 +169,9 @@ fn clean(v: f32) -> f32 {
 }
 
 fn canvas_pos(s: &Session) -> Result<Pos, CmdError> {
-    selected_canvas(s).map(|(p, _)| p).ok_or_else(|| CmdError::Disabled("select a drawing canvas first".into()))
+    selected_canvas(s)
+        .map(|(p, _)| p)
+        .ok_or_else(|| CmdError::Disabled("select a drawing canvas first".into()))
 }
 
 fn result(o: &InlineObject) -> CmdResult {
@@ -128,15 +182,33 @@ fn result(o: &InlineObject) -> CmdResult {
 fn bounds(children: &[GroupChild]) -> Option<[f32; 4]> {
     children
         .iter()
-        .filter_map(|c| c.obj.frame().map(|(w, h, _)| [clean(c.x), clean(c.y), clean(c.x) + clean(w), clean(c.y) + clean(h)]))
-        .reduce(|a, b| [a[0].min(b[0]), a[1].min(b[1]), a[2].max(b[2]), a[3].max(b[3])])
+        .filter_map(|c| {
+            c.obj.frame().map(|(w, h, _)| {
+                [
+                    clean(c.x),
+                    clean(c.y),
+                    clean(c.x) + clean(w),
+                    clean(c.y) + clean(h),
+                ]
+            })
+        })
+        .reduce(|a, b| {
+            [
+                a[0].min(b[0]),
+                a[1].min(b[1]),
+                a[2].max(b[2]),
+                a[3].max(b[3]),
+            ]
+        })
 }
 
 /// `canvas.fit`: the frame shrinks (or grows) to the drawing, which moves to its corner.
 fn fit(s: &mut Session, _: &Value) -> CmdResult {
     let pos = canvas_pos(s)?;
     let o = edit_canvas(s, &pos, |w, h, children| {
-        let Some([x0, y0, x1, y1]) = bounds(children) else { return };
+        let Some([x0, y0, x1, y1]) = bounds(children) else {
+            return;
+        };
         for c in children.iter_mut() {
             c.x = (c.x - x0 + FIT_MARGIN).clamp(-MAX_SIDE, MAX_SIDE);
             c.y = (c.y - y0 + FIT_MARGIN).clamp(-MAX_SIDE, MAX_SIDE);
@@ -163,7 +235,9 @@ fn expand(s: &mut Session, v: &Value) -> CmdResult {
 fn scale(s: &mut Session, v: &Value) -> CmdResult {
     let k = p::req_f32(v, "factor")?;
     if !(0.1..=10.0).contains(&k) {
-        return Err(CmdError::Params("`factor` must be between 0.1 and 10".into()));
+        return Err(CmdError::Params(
+            "`factor` must be between 0.1 and 10".into(),
+        ));
     }
     let pos = canvas_pos(s)?;
     let o = edit_canvas(s, &pos, |w, h, children| {
@@ -173,7 +247,8 @@ fn scale(s: &mut Session, v: &Value) -> CmdResult {
             c.x = (c.x * k).clamp(-MAX_SIDE, MAX_SIDE);
             c.y = (c.y * k).clamp(-MAX_SIDE, MAX_SIDE);
             if let Some((mw, mh, _)) = c.obj.frame() {
-                c.obj.set_size((mw * k).clamp(1.0, MAX_SIDE), (mh * k).clamp(1.0, MAX_SIDE));
+                c.obj
+                    .set_size((mw * k).clamp(1.0, MAX_SIDE), (mh * k).clamp(1.0, MAX_SIDE));
             }
         }
     })?;
@@ -202,9 +277,16 @@ fn member(s: &mut Session, v: &Value) -> CmdResult {
         _ => 0,
     };
     if i >= count {
-        return Err(CmdError::Params(format!("no member {i} (the canvas has {count})")));
+        return Err(CmdError::Params(format!(
+            "no member {i} (the canvas has {count})"
+        )));
     }
-    let (x, y, nw, nh) = (p::f32(v, "x"), p::f32(v, "y"), p::f32(v, "width"), p::f32(v, "height"));
+    let (x, y, nw, nh) = (
+        p::f32(v, "x"),
+        p::f32(v, "y"),
+        p::f32(v, "width"),
+        p::f32(v, "height"),
+    );
     let delete = p::bool(v, "delete").unwrap_or(false);
     let o = edit_canvas(s, &pos, |_, _, children| {
         if delete {
@@ -221,7 +303,10 @@ fn member(s: &mut Session, v: &Value) -> CmdResult {
             c.y = y.clamp(-MAX_SIDE, MAX_SIDE);
         }
         if let Some((w0, h0, _)) = c.obj.frame() {
-            c.obj.set_size(nw.unwrap_or(w0).clamp(1.0, MAX_SIDE), nh.unwrap_or(h0).clamp(1.0, MAX_SIDE));
+            c.obj.set_size(
+                nw.unwrap_or(w0).clamp(1.0, MAX_SIDE),
+                nh.unwrap_or(h0).clamp(1.0, MAX_SIDE),
+            );
         }
     })?;
     result(&o)
@@ -230,7 +315,9 @@ fn member(s: &mut Session, v: &Value) -> CmdResult {
 /// Shape Fill and Shape Outline on a selected canvas colour its background and border.
 pub fn style_mut(o: &mut InlineObject) -> Option<&mut CanvasStyle> {
     match o {
-        InlineObject::Group { canvas: Some(c), .. } => Some(c),
+        InlineObject::Group {
+            canvas: Some(c), ..
+        } => Some(c),
         _ => None,
     }
 }
@@ -243,7 +330,9 @@ mod tests {
         selected_canvas(s).map(|(_, o)| o.clone()).unwrap()
     }
     fn members(o: &InlineObject) -> Vec<(f32, f32, f32, f32)> {
-        let InlineObject::Group { children, .. } = o else { panic!("{o:?}") };
+        let InlineObject::Group { children, .. } = o else {
+            panic!("{o:?}")
+        };
         children
             .iter()
             .map(|c| {
@@ -262,8 +351,16 @@ mod tests {
         s.run("insert.canvas", &json!({})).unwrap();
         let c = canvas(&s);
         assert_eq!(c.frame().map(|(w, h, _)| (w, h)), Some((432.0, 216.0)));
-        s.run("insert.shape", &json!({"kind": "ellipse", "width": 100, "height": 50})).unwrap();
-        s.run("insert.shape", &json!({"kind": "star", "width": 60, "height": 60})).unwrap();
+        s.run(
+            "insert.shape",
+            &json!({"kind": "ellipse", "width": 100, "height": 50}),
+        )
+        .unwrap();
+        s.run(
+            "insert.shape",
+            &json!({"kind": "star", "width": 60, "height": 60}),
+        )
+        .unwrap();
         let c = canvas(&s);
         let m = members(&c);
         assert_eq!(m.len(), 2);
@@ -274,14 +371,23 @@ mod tests {
         assert_eq!(para.objects.len(), 1);
         // Fill and outline colour the canvas.
         s.run("shape.fill", &json!({"color": "FFF2CC"})).unwrap();
-        s.run("shape.outline", &json!({"color": "1F4E79", "width": 1.5})).unwrap();
+        s.run("shape.outline", &json!({"color": "1F4E79", "width": 1.5}))
+            .unwrap();
         let style = *canvas(&s).canvas_style().unwrap();
         assert_eq!(
             style,
-            CanvasStyle { fill: wordcraft_doc::props::Rgb::parse("FFF2CC"), stroke: wordcraft_doc::props::Rgb::parse("1F4E79"), stroke_width: 1.5 }
+            CanvasStyle {
+                fill: wordcraft_doc::props::Rgb::parse("FFF2CC"),
+                stroke: wordcraft_doc::props::Rgb::parse("1F4E79"),
+                stroke_width: 1.5
+            }
         );
         // Members move, resize and go within the canvas.
-        s.run("canvas.member", &json!({"index": 1, "x": 10, "y": 20, "width": 30})).unwrap();
+        s.run(
+            "canvas.member",
+            &json!({"index": 1, "x": 10, "y": 20, "width": 30}),
+        )
+        .unwrap();
         assert_eq!(members(&canvas(&s))[1], (10.0, 20.0, 30.0, 60.0));
         // A text box goes in too, with its own story.
         s.run("select.objects", &json!({"index": 0})).unwrap();
@@ -299,17 +405,34 @@ mod tests {
     #[test]
     fn fit_expand_and_scale_change_the_frame() {
         let mut s = Session::new(wordcraft_doc::Document::new());
-        s.run("insert.canvas", &json!({"width": 400, "height": 300})).unwrap();
-        s.run("insert.shape", &json!({"kind": "rectangle", "width": 100, "height": 40})).unwrap();
-        s.run("insert.shape", &json!({"kind": "ellipse", "width": 50, "height": 50})).unwrap();
-        s.run("canvas.member", &json!({"index": 0, "x": 40, "y": 30})).unwrap();
-        s.run("canvas.member", &json!({"index": 1, "x": 200, "y": 100})).unwrap();
+        s.run("insert.canvas", &json!({"width": 400, "height": 300}))
+            .unwrap();
+        s.run(
+            "insert.shape",
+            &json!({"kind": "rectangle", "width": 100, "height": 40}),
+        )
+        .unwrap();
+        s.run(
+            "insert.shape",
+            &json!({"kind": "ellipse", "width": 50, "height": 50}),
+        )
+        .unwrap();
+        s.run("canvas.member", &json!({"index": 0, "x": 40, "y": 30}))
+            .unwrap();
+        s.run("canvas.member", &json!({"index": 1, "x": 200, "y": 100}))
+            .unwrap();
         s.run("canvas.fit", &json!({})).unwrap();
         let c = canvas(&s);
         assert_eq!(c.frame().map(|(w, h, _)| (w, h)), Some((210.0, 120.0)));
-        assert_eq!(members(&c), [(0.0, 0.0, 100.0, 40.0), (160.0, 70.0, 50.0, 50.0)]);
+        assert_eq!(
+            members(&c),
+            [(0.0, 0.0, 100.0, 40.0), (160.0, 70.0, 50.0, 50.0)]
+        );
         s.run("canvas.expand", &json!({"by": 20})).unwrap();
-        assert_eq!(canvas(&s).frame().map(|(w, h, _)| (w, h)), Some((230.0, 140.0)));
+        assert_eq!(
+            canvas(&s).frame().map(|(w, h, _)| (w, h)),
+            Some((230.0, 140.0))
+        );
         s.run("canvas.scale", &json!({"factor": 0.5})).unwrap();
         let c = canvas(&s);
         assert_eq!(c.frame().map(|(w, h, _)| (w, h)), Some((115.0, 70.0)));
@@ -317,10 +440,19 @@ mod tests {
         assert!(s.run("canvas.scale", &json!({"factor": 0.0})).is_err());
         // Undo puts the drawing back as it was before the scale.
         s.run("edit.undo", &json!({})).unwrap();
-        assert_eq!(canvas_in_text(&s).frame().map(|(w, h, _)| (w, h)), Some((230.0, 140.0)));
+        assert_eq!(
+            canvas_in_text(&s).frame().map(|(w, h, _)| (w, h)),
+            Some((230.0, 140.0))
+        );
     }
 
     fn canvas_in_text(s: &Session) -> InlineObject {
-        s.doc.body.first().and_then(|b| b.as_para()).and_then(|p| p.objects.first()).cloned().unwrap()
+        s.doc
+            .body
+            .first()
+            .and_then(|b| b.as_para())
+            .and_then(|p| p.objects.first())
+            .cloned()
+            .unwrap()
     }
 }

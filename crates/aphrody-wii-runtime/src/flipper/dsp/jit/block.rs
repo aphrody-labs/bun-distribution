@@ -128,7 +128,12 @@ fn can_unroll_instruction(raw: u32) -> bool {
         return false;
     }
 
-    let bytes = [(raw >> 8) as u8, raw as u8, (raw >> 24) as u8, (raw >> 16) as u8];
+    let bytes = [
+        (raw >> 8) as u8,
+        raw as u8,
+        (raw >> 24) as u8,
+        (raw >> 16) as u8,
+    ];
     let Some((insn, _)) = I::decode(&bytes) else {
         return false;
     };
@@ -139,10 +144,10 @@ fn can_unroll_instruction(raw: u32) -> bool {
         I::Sr { rs, .. } => !is_stack_register(rs),
         I::Lrr { d, .. } | I::Lrrd { d, .. } | I::Lrri { d, .. } | I::Lrrn { d, .. } => {
             !is_stack_register(d)
-        },
+        }
         I::Srr { s, .. } | I::Srrd { s, .. } | I::Srri { s, .. } | I::Srrn { s, .. } => {
             !is_stack_register(s)
-        },
+        }
         I::Mrr { dst, src } => !is_stack_register(dst) && !is_stack_register(src),
         _ => true,
     }
@@ -210,7 +215,10 @@ fn try_unroll_immediate_loop(iram: &[u8], irom: &[u8], spec: &mut BlockSpec) {
     }
 
     let prefix_len = spec.instrs.len() - 1;
-    let Some(expanded_len) = body.len().checked_mul(count).and_then(|n| n.checked_add(prefix_len))
+    let Some(expanded_len) = body
+        .len()
+        .checked_mul(count)
+        .and_then(|n| n.checked_add(prefix_len))
     else {
         return;
     };

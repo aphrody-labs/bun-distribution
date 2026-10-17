@@ -14,8 +14,8 @@ use bevy_ecs::{
     reflect::{ReflectComponent, ReflectEvent},
     system::{Commands, Query},
 };
-use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input::ButtonState;
+use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::FocusedInput;
 use bevy_log::warn_once;
 use bevy_math::ops;
@@ -24,7 +24,7 @@ use bevy_picking::events::{
 };
 use bevy_picking::hover::PointerCaptureMap;
 
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_ui::{
     ComputedNode, ComputedUiRenderTargetInfo, InteractionDisabled, Pressed, UiGlobalTransform,
     UiScale,
@@ -765,11 +765,11 @@ mod tests {
     use super::*;
     use bevy_camera::NormalizedRenderTarget;
     use bevy_ecs::hierarchy::ChildOf;
-    use bevy_input::keyboard::Key;
     use bevy_input::InputPlugin;
+    use bevy_input::keyboard::Key;
     use bevy_input_focus::{
-        tab_navigation::{TabIndex, TabNavigationPlugin},
         FocusCause, InputDispatchPlugin, InputFocus, InputFocusPlugin,
+        tab_navigation::{TabIndex, TabNavigationPlugin},
     };
     use bevy_math::Vec2;
     use bevy_picking::{

@@ -30,7 +30,12 @@ fn cr2_spec(w: usize, h: usize, comps: usize, slices: Vec<usize>) -> Cr2Spec {
 
 #[test]
 fn cr2_slices_decode_exactly() {
-    for (comps, slices) in [(2, vec![32, 32, 24]), (4, vec![40, 48]), (2, vec![]), (4, vec![88])] {
+    for (comps, slices) in [
+        (2, vec![32, 32, 24]),
+        (4, vec![40, 48]),
+        (2, vec![]),
+        (4, vec![88]),
+    ] {
         let spec = cr2_spec(88, 30, comps, slices.clone());
         let b = spec.build();
         assert_eq!(identify(&b), Some(RawFormat::Cr2));
@@ -39,7 +44,11 @@ fn cr2_slices_decode_exactly() {
         assert_eq!(s.data, spec.data, "{comps} components, slices {slices:?}");
         assert_eq!(s.active, Rect::new(16, 4, 72, 26));
         assert_eq!(s.camera_wb, Some([2.0, 1.0, 1.5]));
-        assert!(s.black.values.iter().all(|&v| (v - 512.0).abs() < 1e-3), "{:?}", s.black.values);
+        assert!(
+            s.black.values.iter().all(|&v| (v - 512.0).abs() < 1e-3),
+            "{:?}",
+            s.black.values
+        );
         assert_eq!(s.cfa.as_ref().unwrap().phase(16, 4), [0, 1, 1, 2]);
     }
 }
@@ -108,19 +117,30 @@ fn other_raw_containers_are_recognised_but_unsupported() {
     cr3.extend_from_slice(b"ftypcrx ");
     cr3.extend_from_slice(&[0; 12]);
     assert_eq!(identify(&cr3), Some(RawFormat::Cr3));
-    assert!(matches!(decode(&cr3, &Limits::default()), Err(RawError::Unsupported(_))));
+    assert!(matches!(
+        decode(&cr3, &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
     // A bare RAF header has no CFA TIFF (like early FinePix files): recognised, unsupported.
     let mut raf = b"FUJIFILMCCD-RAW 0201FF383501".to_vec();
     raf.resize(200, 0);
     assert_eq!(identify(&raf), Some(RawFormat::Raf));
-    assert!(matches!(decode(&raf, &Limits::default()), Err(RawError::Unsupported(_))));
-    assert_eq!(decode(b"not a raw file", &Limits::default()).unwrap_err(), RawError::NotRaw);
+    assert!(matches!(
+        decode(&raf, &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
+    assert_eq!(
+        decode(b"not a raw file", &Limits::default()).unwrap_err(),
+        RawError::NotRaw
+    );
 }
 
 #[test]
 fn embedded_preview_is_found() {
     // A RAF header pointing at a minimal baseline JPEG (SOI, SOF0, EOI).
-    let jpeg = [0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 0x20, 0x00, 0x30, 1, 1, 0x11, 0, 0xFF, 0xD9];
+    let jpeg = [
+        0xFF, 0xD8, 0xFF, 0xC0, 0x00, 0x0B, 8, 0x00, 0x20, 0x00, 0x30, 1, 1, 0x11, 0, 0xFF, 0xD9,
+    ];
     let mut raf = b"FUJIFILMCCD-RAW 0201FF383501".to_vec();
     raf.resize(100, 0);
     raf[84..88].copy_from_slice(&100u32.to_be_bytes());
@@ -142,7 +162,11 @@ fn cr2_phase_spec(cfa: [u8; 4], l: usize, t: usize, model_id: Option<u32>) -> Cr
     let colourful = scene(w, h);
     let rgb: Vec<[f32; 3]> = (0..w * h)
         .map(|i| {
-            let p = if i % w >= w / 2 { [0.4; 3] } else { colourful[i] };
+            let p = if i % w >= w / 2 {
+                [0.4; 3]
+            } else {
+                colourful[i]
+            };
             [p[0] / wb[0], p[1] / wb[1], p[2] / wb[2]]
         })
         .collect();
@@ -194,12 +218,26 @@ fn cr2_cfa_phase_is_measured_for_every_row_phase_and_border_parity() {
         for (l, t) in [(16, 4), (17, 4), (16, 5), (17, 5)] {
             let b = cr2_phase_spec(cfa, l, t, None).build();
             let s = decode(&b, &Limits::default()).unwrap();
-            assert_eq!(s.cfa.as_ref().unwrap().phase(0, 0), cfa, "cfa {cfa:?} borders ({l}, {t})");
+            assert_eq!(
+                s.cfa.as_ref().unwrap().phase(0, 0),
+                cfa,
+                "cfa {cfa:?} borders ({l}, {t})"
+            );
             assert!(s.warnings.is_empty(), "{:?}", s.warnings);
-            let d = develop_sensor(&s, &DevelopOptions { orient: false, ..Default::default() }).unwrap();
+            let d = develop_sensor(
+                &s,
+                &DevelopOptions {
+                    orient: false,
+                    ..Default::default()
+                },
+            )
+            .unwrap();
             let [r, g, bl] = grey_patch(&d, 192 / 2 - l);
             // Neutral grey decodes neutral (a swapped phase gives a strong magenta or green cast).
-            assert!((r / g - 1.0).abs() < 0.02 && (bl / g - 1.0).abs() < 0.02, "cfa {cfa:?} borders ({l}, {t}): grey patch {r:.0} {g:.0} {bl:.0}");
+            assert!(
+                (r / g - 1.0).abs() < 0.02 && (bl / g - 1.0).abs() < 0.02,
+                "cfa {cfa:?} borders ({l}, {t}): grey patch {r:.0} {g:.0} {bl:.0}"
+            );
         }
     }
 }
@@ -215,11 +253,19 @@ fn cr2_cfa_phase_falls_back_to_the_model_table() {
     // EOS 7D (Canon model ID 0x80000250): green/blue first.
     let s = flat(Some(0x8000_0250));
     assert_eq!(s.cfa.as_ref().unwrap().phase(0, 0), [1, 2, 0, 1]);
-    assert!(!s.warnings.iter().any(|w| w.contains("colour filter phase")), "{:?}", s.warnings);
+    assert!(
+        !s.warnings.iter().any(|w| w.contains("colour filter phase")),
+        "{:?}",
+        s.warnings
+    );
     // Unknown model: red/green first, with a warning.
     let s = flat(Some(0x8000_0001));
     assert_eq!(s.cfa.as_ref().unwrap().phase(0, 0), [0, 1, 1, 2]);
-    assert!(s.warnings.iter().any(|w| w.contains("colour filter phase")), "{:?}", s.warnings);
+    assert!(
+        s.warnings.iter().any(|w| w.contains("colour filter phase")),
+        "{:?}",
+        s.warnings
+    );
     let s = flat(None);
     assert_eq!(s.cfa.as_ref().unwrap().phase(0, 0), [0, 1, 1, 2]);
 }

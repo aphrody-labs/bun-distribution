@@ -17,10 +17,10 @@ use bevy_math::{Rect, Vec2};
 use bevy_platform::hash::FixedHasher;
 
 use bevy_text::{
-    add_glyph_to_atlas, cursor_reveal_rect, get_glyph_atlas_info, scrollable_text_layout_width,
     EditableText, EditableTextGeneration, Font, FontAtlasKey, FontAtlasSet, FontCx, FontHinting,
     FontSize, GlyphCacheKey, LayoutCx, LineBreak, LineHeight, PositionedGlyph, RemSize,
     RunGeometry, ScaleCx, TextBrush, TextFont, TextLayout, TextLayoutInfo, TextLineYBounds,
+    add_glyph_to_atlas, cursor_reveal_rect, get_glyph_atlas_info, scrollable_text_layout_width,
 };
 use bevy_time::{Real, Time};
 use parley::{BoundingBox, PositionedLayoutItem, StyleProperty};

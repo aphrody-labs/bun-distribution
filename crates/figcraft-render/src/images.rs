@@ -22,7 +22,15 @@ fn cache() -> &'static Mutex<HashMap<Key, Arc<Pixmap>>> {
 
 fn fkey(f: &ImageFilters) -> [i32; 7] {
     let q = |v: f32| (v * 1000.0).round() as i32;
-    [q(f.exposure), q(f.contrast), q(f.saturation), q(f.temperature), q(f.tint), q(f.highlights), q(f.shadows)]
+    [
+        q(f.exposure),
+        q(f.contrast),
+        q(f.saturation),
+        q(f.temperature),
+        q(f.tint),
+        q(f.highlights),
+        q(f.shadows),
+    ]
 }
 
 /// Decode encoded image bytes into a premultiplied sRGB pixmap (max 16k per side).
@@ -34,7 +42,11 @@ pub fn decode(bytes: &[u8]) -> Option<Pixmap> {
 /// image's own profile into `target` (`false`), or as sRGB when it has none (`true`: the sRGB →
 /// `target` conversion is still to do).
 fn decode_in(bytes: &[u8], target: ColorProfile) -> Option<(Pixmap, bool)> {
-    let mut dec = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok()?.into_decoder().ok()?;
+    let mut dec = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?
+        .into_decoder()
+        .ok()?;
     let source = crate::image_profile::Source::read(bytes, &mut dec);
     let img = image::DynamicImage::from_decoder(dec).ok()?;
     match source.convert(&img, target) {
@@ -51,11 +63,17 @@ fn profile_cache() -> &'static Mutex<HashMap<String, Option<String>>> {
 /// The name of image `hash`'s own colour profile (empty for an unnamed one); `None` when unknown,
 /// and it's taken as sRGB. Cached.
 pub fn profile_name(hash: &str, data: Option<&ImageData>) -> Option<String> {
-    if let Some(n) = profile_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(hash) {
+    if let Some(n) = profile_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(hash)
+    {
         return n.clone();
     }
     let name = crate::image_profile::Source::of(&data?.bytes).name;
-    let mut c = profile_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut c = profile_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if c.len() > 256 {
         c.clear();
     }
@@ -70,7 +88,13 @@ fn premultiplied(rgba: &image::RgbaImage) -> Option<Pixmap> {
         return None;
     }
     let mut p = Pixmap::new(w, h)?;
-    for (dst, src) in p.data_mut().as_chunks_mut::<4>().0.iter_mut().zip(rgba.as_raw().chunks_exact(4)) {
+    for (dst, src) in p
+        .data_mut()
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
+        .zip(rgba.as_raw().chunks_exact(4))
+    {
         let a = u32::from(src.get(3).copied().unwrap_or(255));
         let pm = |c: u8| ((u32::from(c) * a + 127) / 255) as u8;
         dst.copy_from_slice(&[
@@ -84,16 +108,31 @@ fn premultiplied(rgba: &image::RgbaImage) -> Option<Pixmap> {
 }
 
 /// The decoded (and filtered) image for `hash` in the colour space `profile`, cached.
-pub fn get(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, profile: ColorProfile) -> Option<Arc<Pixmap>> {
+pub fn get(
+    hash: &str,
+    data: Option<&ImageData>,
+    filters: &ImageFilters,
+    profile: ColorProfile,
+) -> Option<Arc<Pixmap>> {
     let key = (hash.to_string(), fkey(filters), profile);
-    if let Some(p) = cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&key) {
+    if let Some(p) = cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(&key)
+    {
         return Some(p.clone());
     }
     let (mut p, srgb) = decode_in(&data?.bytes, profile)?;
     // Images with their own profile are in `profile` already (sRGB → sRGB is the identity).
-    finish(&mut p, filters, if srgb { profile } else { ColorProfile::Srgb });
+    finish(
+        &mut p,
+        filters,
+        if srgb { profile } else { ColorProfile::Srgb },
+    );
     let p = Arc::new(p);
-    let mut c = cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut c = cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if c.len() > 256 {
         c.clear();
     }
@@ -106,7 +145,9 @@ fn finish(p: &mut Pixmap, filters: &ImageFilters, profile: ColorProfile) {
     if !filters.is_identity() {
         apply_filters(p, filters);
     }
-    ColorProfile::Srgb.conversion_to(profile).apply_pixels(p.data_mut());
+    ColorProfile::Srgb
+        .conversion_to(profile)
+        .apply_pixels(p.data_mut());
 }
 
 /// The most frames of an animated GIF that play.
@@ -131,7 +172,10 @@ impl Animation {
             return (0, self.ends.first().copied().unwrap_or(f64::INFINITY));
         }
         let t = t.rem_euclid(total);
-        let i = self.ends.partition_point(|e| *e <= t).min(self.ends.len().saturating_sub(1));
+        let i = self
+            .ends
+            .partition_point(|e| *e <= t)
+            .min(self.ends.len().saturating_sub(1));
         (i, self.ends.get(i).map_or(f64::INFINITY, |e| e - t))
     }
 
@@ -151,7 +195,11 @@ impl Animation {
 /// A GIF frame's delay in seconds. Delays under 20 ms play as 100 ms, as browsers do (many GIFs
 /// say 0 and mean "the default").
 pub fn frame_secs(numer: u32, denom: u32) -> f64 {
-    let ms = if denom == 0 { 0.0 } else { f64::from(numer) / f64::from(denom) };
+    let ms = if denom == 0 {
+        0.0
+    } else {
+        f64::from(numer) / f64::from(denom)
+    };
     if ms < 20.0 { 0.1 } else { ms / 1000.0 }
 }
 
@@ -189,9 +237,18 @@ fn anim_cache() -> &'static Mutex<AnimCache> {
 
 /// The animated GIF `hash`'s frames for `filters` and `profile`, decoded on first use and cached;
 /// `None` for anything that doesn't move.
-pub fn animation(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, profile: ColorProfile) -> Option<Arc<Animation>> {
+pub fn animation(
+    hash: &str,
+    data: Option<&ImageData>,
+    filters: &ImageFilters,
+    profile: ColorProfile,
+) -> Option<Arc<Animation>> {
     let key = (hash.to_string(), fkey(filters), profile);
-    if let Some(a) = anim_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&key) {
+    if let Some(a) = anim_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(&key)
+    {
         return a.clone();
     }
     let a = decode_frames(&data?.bytes).map(|frames| {
@@ -206,7 +263,9 @@ pub fn animation(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, p
             .unzip();
         Arc::new(Animation { frames, ends })
     });
-    let mut c = anim_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut c = anim_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let held: u64 = c.values().flatten().map(|a| a.bytes()).sum();
     if held + a.as_ref().map_or(0, |a| a.bytes()) > MAX_CACHED_ANIMATION_BYTES || c.len() > 256 {
         c.clear();
@@ -217,7 +276,13 @@ pub fn animation(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, p
 
 /// The frame an animated GIF shows `t` seconds in, when that isn't its first frame (the still
 /// image every other path draws).
-pub fn frame_at(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, profile: ColorProfile, t: f64) -> Option<Arc<Pixmap>> {
+pub fn frame_at(
+    hash: &str,
+    data: Option<&ImageData>,
+    filters: &ImageFilters,
+    profile: ColorProfile,
+    t: f64,
+) -> Option<Arc<Pixmap>> {
     if t.is_nan() || t <= 0.0 {
         return None;
     }
@@ -234,14 +299,27 @@ pub fn frame_at(hash: &str, data: Option<&ImageData>, filters: &ImageFilters, pr
 /// shortcut: text runs with their own image fills aren't looked at; add them if anyone animates text.
 pub fn animation_clock(doc: &Document, root: NodeId, t: f64) -> Option<(u64, f64)> {
     let mut clock: Option<(u64, f64)> = None;
-    for n in doc.subtree(root).into_iter().filter_map(|id| doc.node(id)).filter(|n| n.visible) {
+    for n in doc
+        .subtree(root)
+        .into_iter()
+        .filter_map(|id| doc.node(id))
+        .filter(|n| n.visible)
+    {
         for p in n.fills.iter().chain(&n.strokes).filter(|p| p.visible) {
             if let PaintKind::Image(img) = &p.kind
-                && let Some(a) = animation(&img.image, doc.images.get(&img.image), &img.filters, doc.color_profile)
+                && let Some(a) = animation(
+                    &img.image,
+                    doc.images.get(&img.image),
+                    &img.filters,
+                    doc.color_profile,
+                )
             {
                 let (i, next) = a.at(t);
                 let (key, soonest) = clock.unwrap_or((0, f64::INFINITY));
-                clock = Some((key.wrapping_mul(31).wrapping_add(i as u64 + 1), soonest.min(next)));
+                clock = Some((
+                    key.wrapping_mul(31).wrapping_add(i as u64 + 1),
+                    soonest.min(next),
+                ));
             }
         }
     }
@@ -293,14 +371,23 @@ pub fn apply_filters(p: &mut Pixmap, f: &ImageFilters) {
 
 /// Read an image's pixel size without keeping the decode.
 pub fn dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
-    let reader = image::ImageReader::new(std::io::Cursor::new(bytes)).with_guessed_format().ok()?;
+    let reader = image::ImageReader::new(std::io::Cursor::new(bytes))
+        .with_guessed_format()
+        .ok()?;
     reader.into_dimensions().ok()
 }
 
 /// `pm` with a transparent 1-pixel border.
 pub fn pad(pm: &Pixmap) -> Option<Pixmap> {
     let mut out = Pixmap::new(pm.width() + 2, pm.height() + 2)?;
-    out.draw_pixmap(1, 1, pm.as_ref(), &tiny_skia::PixmapPaint::default(), tiny_skia::Transform::identity(), None);
+    out.draw_pixmap(
+        1,
+        1,
+        pm.as_ref(),
+        &tiny_skia::PixmapPaint::default(),
+        tiny_skia::Transform::identity(),
+        None,
+    );
     Some(out)
 }
 
@@ -310,13 +397,24 @@ fn padded_cache() -> &'static Mutex<HashMap<Key, Arc<Pixmap>>> {
 }
 
 /// `pm` with a transparent 1-pixel border (cached).
-pub fn padded(hash: &str, filters: &ImageFilters, profile: ColorProfile, pm: &Pixmap) -> Option<Arc<Pixmap>> {
+pub fn padded(
+    hash: &str,
+    filters: &ImageFilters,
+    profile: ColorProfile,
+    pm: &Pixmap,
+) -> Option<Arc<Pixmap>> {
     let key = (hash.to_string(), fkey(filters), profile);
-    if let Some(p) = padded_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(&key) {
+    if let Some(p) = padded_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+        .get(&key)
+    {
         return Some(p.clone());
     }
     let out = Arc::new(pad(pm)?);
-    let mut c = padded_cache().lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut c = padded_cache()
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     if c.len() > 256 {
         c.clear();
     }

@@ -54,7 +54,10 @@ impl Gekko {
     pub const NO_RESERVATION: u32 = 0xFF69_1337;
 
     pub fn new(initial_pc: u32) -> Self {
-        let spr = spr::Spr { dec: u32::MAX, ..Default::default() };
+        let spr = spr::Spr {
+            dec: u32::MAX,
+            ..Default::default()
+        };
 
         Gekko {
             gprs: [0; 32],
@@ -164,7 +167,11 @@ impl Gekko {
     #[inline(always)]
     pub fn read_gpr_or_zero(&self, index: u8) -> u32 {
         debug_assert!(index < 32);
-        if index == 0 { 0 } else { unsafe { *self.gprs.get_unchecked(index as usize) } }
+        if index == 0 {
+            0
+        } else {
+            unsafe { *self.gprs.get_unchecked(index as usize) }
+        }
     }
 }
 

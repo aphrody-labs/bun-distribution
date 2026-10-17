@@ -20,7 +20,13 @@ enum OnRefusal {
 /// `s` as a WAT string literal.
 pub(crate) fn lit(s: &str) -> String {
     s.bytes()
-        .map(|b| if b.is_ascii_graphic() && b != b'"' && b != b'\\' || b == b' ' { (b as char).to_string() } else { format!("\\{b:02x}") })
+        .map(|b| {
+            if b.is_ascii_graphic() && b != b'"' && b != b'\\' || b == b' ' {
+                (b as char).to_string()
+            } else {
+                format!("\\{b:02x}")
+            }
+        })
         .collect()
 }
 
@@ -28,11 +34,17 @@ pub(crate) fn lit(s: &str) -> String {
 /// (or the first refusal). `tail` runs after the calls (an endless loop, a trap…).
 fn script(calls: &[(&str, Value)], on_refusal: OnRefusal, tail: &str) -> Vec<u8> {
     let mut data = String::new();
-    let mut body = String::from("(local.set $sel (call $reply_read (i32.const 60000) (call $selection)))\n");
+    let mut body =
+        String::from("(local.set $sel (call $reply_read (i32.const 60000) (call $selection)))\n");
     let mut at = 0usize;
     for (cmd, params) in calls {
         let p = params.to_string();
-        data += &format!("(data (i32.const {at}) \"{}\") (data (i32.const {}) \"{}\")\n", lit(cmd), at + cmd.len(), lit(&p));
+        data += &format!(
+            "(data (i32.const {at}) \"{}\") (data (i32.const {}) \"{}\")\n",
+            lit(cmd),
+            at + cmd.len(),
+            lit(&p)
+        );
         let status = if on_refusal == OnRefusal::Fail { 1 } else { 0 };
         body += &format!(
             "(if (call $call (i32.const {at}) (i32.const {}) (i32.const {}) (i32.const {}))
@@ -73,11 +85,19 @@ pub(crate) fn manifest(id: &str, access: &str, allow: &[&str]) -> Value {
 
 /// Install a plugin from a manifest and module bytes (no files).
 pub(crate) fn install(s: &mut Session, manifest: Value, wasm: &[u8]) {
-    ex(s, "plugin.import", json!({"manifest": manifest, "wasm": b64(wasm)}));
+    ex(
+        s,
+        "plugin.import",
+        json!({"manifest": manifest, "wasm": b64(wasm)}),
+    );
 }
 
 pub(crate) fn rect(s: &mut Session, x: f64) -> NodeId {
-    idv(&ex(s, "shape.rectangle", json!({"x": x, "y": 0, "width": 10, "height": 10})))
+    idv(&ex(
+        s,
+        "shape.rectangle",
+        json!({"x": x, "y": 0, "width": 10, "height": 10}),
+    ))
 }
 
 pub(crate) fn layer_count(s: &Session) -> usize {
@@ -106,10 +126,17 @@ fn a_run_reads_the_selection_and_its_edits_are_one_undo_step() {
     ex(&mut s, "select.set", json!({"ids": [a]}));
     let calls = [
         ("object.rename", json!({"name": "Tidy"})),
-        ("shape.rectangle", json!({"x": 50, "y": 0, "width": 20, "height": 20})),
+        (
+            "shape.rectangle",
+            json!({"x": 50, "y": 0, "width": 20, "height": 20}),
+        ),
         ("node.get", json!({"id": a})),
     ];
-    install(&mut s, manifest("org.test.tidy", "write", &[]), &script(&calls, OnRefusal::Fail, ""));
+    install(
+        &mut s,
+        manifest("org.test.tidy", "write", &[]),
+        &script(&calls, OnRefusal::Fail, ""),
+    );
     let (layers, undo) = (layer_count(&s), undo_len(&s));
     let out = ex(&mut s, "plugin.run", json!({"id": "org.test.tidy"}));
     assert_eq!(out["output"], json!([a.0]), "the plugin read the selection");
@@ -117,14 +144,20 @@ fn a_run_reads_the_selection_and_its_edits_are_one_undo_step() {
     assert_eq!(node(&s, a).name, "Tidy");
     assert_eq!(layer_count(&s), layers + 1);
     assert_eq!(undo_len(&s), undo + 1, "one undo step for the whole run");
-    assert_eq!(s.ds().unwrap().history.undo.last().unwrap().label, "Plugin org.test.tidy");
+    assert_eq!(
+        s.ds().unwrap().history.undo.last().unwrap().label,
+        "Plugin org.test.tidy"
+    );
     ex(&mut s, "edit.undo", json!({}));
     assert_eq!(node(&s, a).name, "Rectangle");
     assert_eq!(layer_count(&s), layers);
     // Run last plugin runs it again.
     ex(&mut s, "plugins.runLast", json!({}));
     assert_eq!(layer_count(&s), layers + 1);
-    assert_eq!(ex(&mut s, "plugin.list", json!({}))["last"], json!({"id": "org.test.tidy", "command": "run"}));
+    assert_eq!(
+        ex(&mut s, "plugin.list", json!({}))["last"],
+        json!({"id": "org.test.tidy", "command": "run"})
+    );
 }
 
 #[test]
@@ -135,7 +168,17 @@ fn read_only_plugins_and_allowlists_are_enforced() {
     install(
         &mut s,
         manifest("org.test.reader", "read", &[]),
-        &script(&[("node.get", json!({"id": a})), ("shape.rectangle", json!({"x": 0, "y": 0, "width": 5, "height": 5}))], OnRefusal::Fail, ""),
+        &script(
+            &[
+                ("node.get", json!({"id": a})),
+                (
+                    "shape.rectangle",
+                    json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+                ),
+            ],
+            OnRefusal::Fail,
+            "",
+        ),
     );
     let (layers, undo) = (layer_count(&s), undo_len(&s));
     let e = run_err(&mut s, "org.test.reader");
@@ -145,7 +188,14 @@ fn read_only_plugins_and_allowlists_are_enforced() {
     install(
         &mut s,
         manifest("org.test.narrow", "write", &["node.*", "select.set"]),
-        &script(&[("node.get", json!({"id": a})), ("object.rename", json!({"name": "x"}))], OnRefusal::Fail, ""),
+        &script(
+            &[
+                ("node.get", json!({"id": a})),
+                ("object.rename", json!({"name": "x"})),
+            ],
+            OnRefusal::Fail,
+            "",
+        ),
     );
     let e = run_err(&mut s, "org.test.narrow");
     assert!(e.contains("asked permission for"), "{e}");
@@ -167,26 +217,54 @@ fn files_dialogs_history_and_plugins_are_off_limits() {
         ("plugin.run", json!({"id": "org.test.deny"})),
         ("plugin.remove", json!({"id": "org.test.deny"})),
         ("edit.undo", json!({})),
-        ("command.batch", json!({"commands": [{"command": "file.saveAs", "params": {"path": target}}]})),
+        (
+            "command.batch",
+            json!({"commands": [{"command": "file.saveAs", "params": {"path": target}}]}),
+        ),
         ("doc.switch", json!({"index": 0})),
         ("pref.keepTool", json!({})),
         // Without a name it would open inline renaming in the layers panel: a UI request.
         ("object.rename", json!({})),
     ];
     for (cmd, params) in refused {
-        install(&mut s, manifest("org.test.deny", "write", &[]), &script(&[(cmd, params.clone())], OnRefusal::Report, ""));
+        install(
+            &mut s,
+            manifest("org.test.deny", "write", &[]),
+            &script(&[(cmd, params.clone())], OnRefusal::Report, ""),
+        );
         let (doc, undo) = (s.ds().unwrap().doc.clone(), undo_len(&s));
         let out = ex(&mut s, "plugin.run", json!({"id": "org.test.deny"}));
         let msg = out["output"].as_str().unwrap_or_default().to_string();
-        assert!(msg.contains("plugins") || msg.contains("dialog"), "{cmd}: {out}");
-        assert!(std::sync::Arc::ptr_eq(&doc, &s.ds().unwrap().doc), "{cmd} left the document as it was");
+        assert!(
+            msg.contains("plugins") || msg.contains("dialog"),
+            "{cmd}: {out}"
+        );
+        assert!(
+            std::sync::Arc::ptr_eq(&doc, &s.ds().unwrap().doc),
+            "{cmd} left the document as it was"
+        );
         assert_eq!(undo_len(&s), undo, "{cmd}");
         assert!(s.ui_requests.is_empty(), "{cmd}: {:?}", s.ui_requests);
     }
     assert!(!dir.exists(), "nothing was written");
-    assert!(ex(&mut s, "plugin.list", json!({}))["plugins"].as_array().unwrap().len() == 1, "the plugin didn't remove itself");
+    assert!(
+        ex(&mut s, "plugin.list", json!({}))["plugins"]
+            .as_array()
+            .unwrap()
+            .len()
+            == 1,
+        "the plugin didn't remove itself"
+    );
     // The read-only exceptions are open.
-    install(&mut s, manifest("org.test.reads", "read", &[]), &script(&[("doc.list", json!({})), ("version.list", json!({}))], OnRefusal::Fail, ""));
+    install(
+        &mut s,
+        manifest("org.test.reads", "read", &[]),
+        &script(
+            &[("doc.list", json!({})), ("version.list", json!({}))],
+            OnRefusal::Fail,
+            "",
+        ),
+    );
     ex(&mut s, "plugin.run", json!({"id": "org.test.reads"}));
 }
 
@@ -195,20 +273,41 @@ fn traps_endless_loops_and_memory_hogs_roll_back() {
     let mut s = Session::new();
     let a = rect(&mut s, 0.0);
     ex(&mut s, "select.set", json!({"ids": [a]}));
-    let edit = [("shape.rectangle", json!({"x": 90, "y": 0, "width": 5, "height": 5})), ("object.rename", json!({"name": "Half done"}))];
+    let edit = [
+        (
+            "shape.rectangle",
+            json!({"x": 90, "y": 0, "width": 5, "height": 5}),
+        ),
+        ("object.rename", json!({"name": "Half done"})),
+    ];
     let cases = [
         ("org.test.trap", "unreachable", "crashed"),
         ("org.test.loop", "(loop $l (br $l))", "instruction budget"),
-        ("org.test.grow", "(if (i32.eq (memory.grow (i32.const 2000)) (i32.const -1)) (then unreachable))", "crashed"),
+        (
+            "org.test.grow",
+            "(if (i32.eq (memory.grow (i32.const 2000)) (i32.const -1)) (then unreachable))",
+            "crashed",
+        ),
     ];
     for (id, tail, want) in cases {
-        install(&mut s, manifest(id, "write", &[]), &script(&edit, OnRefusal::Fail, tail));
+        install(
+            &mut s,
+            manifest(id, "write", &[]),
+            &script(&edit, OnRefusal::Fail, tail),
+        );
         let (layers, undo, sel) = (layer_count(&s), undo_len(&s), s.selection());
         let started = web_time::Instant::now();
         let e = run_err(&mut s, id);
         assert!(e.contains(want), "{id}: {e}");
-        assert!(started.elapsed().as_secs() < 20, "{id} was stopped promptly");
-        assert_eq!((layer_count(&s), undo_len(&s), s.selection()), (layers, undo, sel), "{id} rolled back");
+        assert!(
+            started.elapsed().as_secs() < 20,
+            "{id} was stopped promptly"
+        );
+        assert_eq!(
+            (layer_count(&s), undo_len(&s), s.selection()),
+            (layers, undo, sel),
+            "{id} rolled back"
+        );
         assert_eq!(node(&s, a).name, "Rectangle");
     }
     // A module that asks for more memory than the cap up front never starts.
@@ -240,22 +339,46 @@ fn parameters_defaults_and_notifications_reach_the_plugin() {
         {"id": "grid", "label": "Swatch grid", "params": [{"name": "columns", "type": "number", "default": 4, "min": 1, "max": 8}, {"name": "label", "type": "text"}]}
     ]);
     install(&mut s, m, &echo);
-    let out = ex(&mut s, "plugin.run", json!({"id": "org.test.echo", "command": "grid", "params": {"columns": 99}}));
-    assert_eq!(out["output"], json!({"api": 1, "command": "grid", "params": {"columns": 8.0, "label": ""}, "selection": []}));
+    let out = ex(
+        &mut s,
+        "plugin.run",
+        json!({"id": "org.test.echo", "command": "grid", "params": {"columns": 99}}),
+    );
+    assert_eq!(
+        out["output"],
+        json!({"api": 1, "command": "grid", "params": {"columns": 8.0, "label": ""}, "selection": []})
+    );
     assert_eq!(s.message.as_deref(), Some("Done!"));
-    assert_eq!(undo_len(&s), 0, "a run that edits nothing adds no undo step");
-    assert_eq!(ex(&mut s, "plugin.run", json!({"id": "org.test.echo"}))["output"]["command"], "first", "the first command by default");
+    assert_eq!(
+        undo_len(&s),
+        0,
+        "a run that edits nothing adds no undo step"
+    );
+    assert_eq!(
+        ex(&mut s, "plugin.run", json!({"id": "org.test.echo"}))["output"]["command"],
+        "first",
+        "the first command by default"
+    );
     for bad in [
         json!({"id": "org.test.echo", "command": "nope"}),
         json!({"id": "org.test.echo", "command": "grid", "params": {"columns": "many"}}),
         json!({"id": "missing"}),
         json!({}),
     ] {
-        assert!(matches!(s.execute("plugin.run", &bad), Err(EngineError::BadParams { .. })), "{bad}");
+        assert!(
+            matches!(
+                s.execute("plugin.run", &bad),
+                Err(EngineError::BadParams { .. })
+            ),
+            "{bad}"
+        );
     }
     assert!(s.execute("plugins.runLast", &json!({})).is_ok());
     ex(&mut s, "plugin.remove", json!({"id": "org.test.echo"}));
-    assert!(s.execute("plugins.runLast", &json!({})).is_err(), "the removed plugin is forgotten");
+    assert!(
+        s.execute("plugins.runLast", &json!({})).is_err(),
+        "the removed plugin is forgotten"
+    );
 }
 
 #[test]
@@ -287,7 +410,14 @@ fn junk_manifests_and_modules_are_refused() {
     assert_eq!(ex(&mut s, "plugin.list", json!({}))["plugins"], json!([]));
     // Every plugin command with junk parameters (the engine-wide sweep runs them too).
     install(&mut s, manifest("org.test.ok", "write", &[]), &ok);
-    for cmd in ["plugin.list", "plugin.import", "plugin.remove", "plugin.run", "plugins.runLast", "plugins.manage"] {
+    for cmd in [
+        "plugin.list",
+        "plugin.import",
+        "plugin.remove",
+        "plugin.run",
+        "plugins.runLast",
+        "plugins.manage",
+    ] {
         for j in [
             json!(null),
             json!([1]),
@@ -312,31 +442,71 @@ impl Drop for TempDir {
 
 #[test]
 fn development_plugins_load_from_a_manifest_and_reload_their_module() {
-    let dir = TempDir(std::env::temp_dir().join(format!("figcraft-plugin-dev-{}", std::process::id())));
+    let dir =
+        TempDir(std::env::temp_dir().join(format!("figcraft-plugin-dev-{}", std::process::id())));
     std::fs::create_dir_all(&dir.0).unwrap();
-    let write_module = |calls: &[(&str, Value)]| std::fs::write(dir.0.join("plugin.wasm"), script(calls, OnRefusal::Fail, "")).unwrap();
-    std::fs::write(dir.0.join("figcraft-plugin.json"), manifest("org.test.dev", "write", &[]).to_string()).unwrap();
-    write_module(&[("shape.rectangle", json!({"x": 0, "y": 0, "width": 5, "height": 5}))]);
+    let write_module = |calls: &[(&str, Value)]| {
+        std::fs::write(
+            dir.0.join("plugin.wasm"),
+            script(calls, OnRefusal::Fail, ""),
+        )
+        .unwrap()
+    };
+    std::fs::write(
+        dir.0.join("figcraft-plugin.json"),
+        manifest("org.test.dev", "write", &[]).to_string(),
+    )
+    .unwrap();
+    write_module(&[(
+        "shape.rectangle",
+        json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+    )]);
     let mut s = Session::new();
     // The folder or the manifest file itself.
-    let out = ex(&mut s, "plugin.import", json!({"path": dir.0.to_string_lossy()}));
+    let out = ex(
+        &mut s,
+        "plugin.import",
+        json!({"path": dir.0.to_string_lossy()}),
+    );
     assert_eq!(out["id"], "org.test.dev");
     assert_eq!(out["replaced"], false);
-    let manifest_path = dir.0.join("figcraft-plugin.json").to_string_lossy().into_owned();
-    assert_eq!(ex(&mut s, "plugin.import", json!({"path": manifest_path}))["replaced"], true);
+    let manifest_path = dir
+        .0
+        .join("figcraft-plugin.json")
+        .to_string_lossy()
+        .into_owned();
+    assert_eq!(
+        ex(&mut s, "plugin.import", json!({"path": manifest_path}))["replaced"],
+        true
+    );
     ex(&mut s, "plugin.run", json!({"id": "org.test.dev"}));
     assert_eq!(layer_count(&s), 1);
     // A rebuilt module runs without importing again.
     write_module(&[
-        ("shape.ellipse", json!({"x": 0, "y": 0, "width": 5, "height": 5})),
-        ("shape.ellipse", json!({"x": 9, "y": 0, "width": 5, "height": 5})),
+        (
+            "shape.ellipse",
+            json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+        ),
+        (
+            "shape.ellipse",
+            json!({"x": 9, "y": 0, "width": 5, "height": 5}),
+        ),
     ]);
     ex(&mut s, "plugin.run", json!({"id": "org.test.dev"}));
     assert_eq!(layer_count(&s), 3);
     // Only plugins with a manifest file are saved with the preferences.
-    install(&mut s, manifest("org.test.memory", "read", &[]), &script(&[], OnRefusal::Fail, ""));
+    install(
+        &mut s,
+        manifest("org.test.memory", "read", &[]),
+        &script(&[], OnRefusal::Fail, ""),
+    );
     let saved = serde_json::to_value(&s.prefs).unwrap();
-    let ids: Vec<&str> = saved["plugins"].as_array().unwrap().iter().filter_map(|p| p["manifest"]["id"].as_str()).collect();
+    let ids: Vec<&str> = saved["plugins"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter_map(|p| p["manifest"]["id"].as_str())
+        .collect();
     assert_eq!(ids, vec!["org.test.dev"]);
     let back: crate::Prefs = serde_json::from_value(saved).unwrap();
     assert_eq!(back.plugins.len(), 1);
@@ -344,7 +514,13 @@ fn development_plugins_load_from_a_manifest_and_reload_their_module() {
     std::fs::remove_file(dir.0.join("plugin.wasm")).unwrap();
     assert!(run_err(&mut s, "org.test.dev").contains("plugin.wasm"));
     ex(&mut s, "plugin.remove", json!({"id": "org.test.dev"}));
-    assert_eq!(ex(&mut s, "plugin.list", json!({}))["plugins"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        ex(&mut s, "plugin.list", json!({}))["plugins"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -356,21 +532,56 @@ fn a_full_undo_history_keeps_its_steps_and_tampered_manifests_are_refused() {
         rect(&mut s, x);
     }
     assert_eq!(undo_len(&s), 3);
-    let edits: Vec<(&str, Value)> = (0..5).map(|i| ("shape.ellipse", json!({"x": i * 10, "y": 50, "width": 5, "height": 5}))).collect();
-    install(&mut s, manifest("org.test.many", "write", &[]), &script(&edits, OnRefusal::Fail, ""));
+    let edits: Vec<(&str, Value)> = (0..5)
+        .map(|i| {
+            (
+                "shape.ellipse",
+                json!({"x": i * 10, "y": 50, "width": 5, "height": 5}),
+            )
+        })
+        .collect();
+    install(
+        &mut s,
+        manifest("org.test.many", "write", &[]),
+        &script(&edits, OnRefusal::Fail, ""),
+    );
     let oldest = s.ds().unwrap().history.undo[1].doc.clone();
     ex(&mut s, "plugin.run", json!({"id": "org.test.many"}));
     let undo = &s.ds().unwrap().history.undo;
-    assert_eq!(undo.len(), 3, "the run is one step; only the oldest step made room for it");
+    assert_eq!(
+        undo.len(),
+        3,
+        "the run is one step; only the oldest step made room for it"
+    );
     assert!(std::sync::Arc::ptr_eq(&undo[0].doc, &oldest));
     assert!(s.ds().unwrap().doc.contains(first));
     // A failing run leaves the history alone.
-    install(&mut s, manifest("org.test.fail", "write", &[]), &script(&edits, OnRefusal::Fail, "unreachable"));
-    let before: Vec<_> = s.ds().unwrap().history.undo.iter().map(|e| e.doc.clone()).collect();
+    install(
+        &mut s,
+        manifest("org.test.fail", "write", &[]),
+        &script(&edits, OnRefusal::Fail, "unreachable"),
+    );
+    let before: Vec<_> = s
+        .ds()
+        .unwrap()
+        .history
+        .undo
+        .iter()
+        .map(|e| e.doc.clone())
+        .collect();
     run_err(&mut s, "org.test.fail");
     let after = &s.ds().unwrap().history.undo;
-    assert!(before.len() == after.len() && before.iter().zip(after).all(|(a, b)| std::sync::Arc::ptr_eq(a, &b.doc)));
+    assert!(
+        before.len() == after.len()
+            && before
+                .iter()
+                .zip(after)
+                .all(|(a, b)| std::sync::Arc::ptr_eq(a, &b.doc))
+    );
     // A manifest edited in the preferences file is checked again before it runs.
     s.prefs.plugins[0].manifest.main = "../../elsewhere.wasm".into();
-    assert!(matches!(s.execute("plugin.run", &json!({"id": "org.test.many"})), Err(EngineError::BadParams { .. })));
+    assert!(matches!(
+        s.execute("plugin.run", &json!({"id": "org.test.many"})),
+        Err(EngineError::BadParams { .. })
+    ));
 }

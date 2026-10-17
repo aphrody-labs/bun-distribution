@@ -457,7 +457,7 @@ impl Template for EntityTemplate {
             Self::None => {
                 return Err(BevyError::error(
                     "Failed to specify an entity for this EntityTemplate",
-                ))
+                ));
             }
         })
     }

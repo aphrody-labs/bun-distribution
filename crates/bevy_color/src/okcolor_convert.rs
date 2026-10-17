@@ -8,7 +8,7 @@
     reason = "The code is translated from a C implementation."
 )]
 
-use crate::{okhsla::Okhsla, LinearRgba, Okhsva, Oklaba};
+use crate::{LinearRgba, Okhsva, Oklaba, okhsla::Okhsla};
 use bevy_math::ops;
 
 #[derive(Clone, Copy)]

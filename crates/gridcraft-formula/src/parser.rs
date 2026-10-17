@@ -25,9 +25,17 @@ pub fn parse(src: &str) -> Result<Expr, ParseError> {
 
 pub(crate) fn parse_syntax(src: &str, locale: crate::FormulaLocale) -> Result<Expr, ParseError> {
     let body = src.strip_prefix('=').unwrap_or(src);
-    let toks = tokenize_locale(body, locale).map_err(|e| ParseError { msg: e.msg, pos: e.pos })?;
+    let toks = tokenize_locale(body, locale).map_err(|e| ParseError {
+        msg: e.msg,
+        pos: e.pos,
+    })?;
     let toks = significant_spaces(toks);
-    let mut p = Parser { toks, i: 0, depth: 0, input: locale == crate::FormulaLocale::Es };
+    let mut p = Parser {
+        toks,
+        i: 0,
+        depth: 0,
+        input: locale == crate::FormulaLocale::Es,
+    };
     let e = p.expr(0, false)?;
     match p.peek() {
         Tok::Eof => Ok(e),
@@ -50,9 +58,18 @@ fn significant_spaces(toks: Vec<Token>) -> Vec<Token> {
     let mut out: Vec<Token> = Vec::with_capacity(toks.len());
     for (i, t) in toks.iter().enumerate() {
         if t.tok == Tok::Space {
-            let prev_end = out.last().is_some_and(|p| matches!(p.tok, Tok::Word(_) | Tok::RParen | Tok::Struct(_) | Tok::Error(_)));
-            let next_start =
-                toks.get(i + 1).is_some_and(|n| matches!(n.tok, Tok::Word(_) | Tok::Sheet(..) | Tok::LParen | Tok::Func(_) | Tok::Error(_)));
+            let prev_end = out.last().is_some_and(|p| {
+                matches!(
+                    p.tok,
+                    Tok::Word(_) | Tok::RParen | Tok::Struct(_) | Tok::Error(_)
+                )
+            });
+            let next_start = toks.get(i + 1).is_some_and(|n| {
+                matches!(
+                    n.tok,
+                    Tok::Word(_) | Tok::Sheet(..) | Tok::LParen | Tok::Func(_) | Tok::Error(_)
+                )
+            });
             if prev_end && next_start {
                 out.push(t.clone());
             }
@@ -78,7 +95,11 @@ fn word_is_cols(w: &str) -> Option<(u32, bool)> {
 fn word_is_row(w: &str) -> Option<(u32, bool)> {
     let abs = w.starts_with('$');
     let n: u32 = w.trim_start_matches('$').parse().ok()?;
-    if n == 0 || n > MAX_ROWS { None } else { Some((n - 1, abs)) }
+    if n == 0 || n > MAX_ROWS {
+        None
+    } else {
+        Some((n - 1, abs))
+    }
 }
 
 fn word_is_cell(w: &str) -> Option<Anchor> {
@@ -86,7 +107,12 @@ fn word_is_cell(w: &str) -> Option<Anchor> {
     if !rest.is_empty() {
         return None;
     }
-    Some(Anchor { row, col, row_abs, col_abs })
+    Some(Anchor {
+        row,
+        col,
+        row_abs,
+        col_abs,
+    })
 }
 
 /// `_xlfn.XLOOKUP` → `XLOOKUP`. `_xludf.` is kept (`_xludf.SUM`): it marks a user-defined
@@ -109,7 +135,10 @@ impl Parser {
         self.toks.get(self.i).map(|t| &t.tok).unwrap_or(&Tok::Eof)
     }
     fn peek_at(&self, k: usize) -> &Tok {
-        self.toks.get(self.i + k).map(|t| &t.tok).unwrap_or(&Tok::Eof)
+        self.toks
+            .get(self.i + k)
+            .map(|t| &t.tok)
+            .unwrap_or(&Tok::Eof)
     }
     fn pos(&self) -> usize {
         self.toks.get(self.i).map(|t| t.start).unwrap_or(0)
@@ -122,14 +151,21 @@ impl Parser {
         t
     }
     fn err(&self, msg: impl Into<String>) -> ParseError {
-        ParseError { msg: msg.into(), pos: self.pos() }
+        ParseError {
+            msg: msg.into(),
+            pos: self.pos(),
+        }
     }
     fn expect(&mut self, t: Tok) -> Result<(), ParseError> {
         if *self.peek() == t {
             self.next();
             Ok(())
         } else {
-            Err(self.err(format!("expected {}, found {}", describe(&t), describe(self.peek()))))
+            Err(self.err(format!(
+                "expected {}, found {}",
+                describe(&t),
+                describe(self.peek())
+            )))
         }
     }
 
@@ -169,7 +205,12 @@ impl Parser {
                 lhs = Expr::Unary(UnOp::Percent, Box::new(lhs));
                 continue;
             }
-            if *self.peek() == Tok::LParen && matches!(lhs, Expr::Call(..) | Expr::Invoke(..) | Expr::Paren(_) | Expr::Name(_)) {
+            if *self.peek() == Tok::LParen
+                && matches!(
+                    lhs,
+                    Expr::Call(..) | Expr::Invoke(..) | Expr::Paren(_) | Expr::Name(_)
+                )
+            {
                 // Invoking a LAMBDA result.
                 if let Expr::Name(_) = lhs {
                     // A name followed by '(' was lexed as Func; this is `(name)(…)` only.
@@ -190,7 +231,9 @@ impl Parser {
                 lhs = Expr::Unary(UnOp::Trim(mode), Box::new(combine(BinOp::Range, lhs, rhs)));
                 continue;
             }
-            let Some(op) = self.binop(allow_union) else { break };
+            let Some(op) = self.binop(allow_union) else {
+                break;
+            };
             let bp = op.precedence();
             if bp < min_bp {
                 break;
@@ -233,8 +276,14 @@ impl Parser {
             Tok::Text(s) => Ok(Expr::Text(Arc::from(s))),
             Tok::Bool(b) => Ok(Expr::Bool(b)),
             Tok::Error(e) => Ok(Expr::Error(e)),
-            Tok::Op("-") => Ok(Expr::Unary(UnOp::Neg, Box::new(self.expr(60, allow_union)?))),
-            Tok::Op("+") => Ok(Expr::Unary(UnOp::Plus, Box::new(self.expr(60, allow_union)?))),
+            Tok::Op("-") => Ok(Expr::Unary(
+                UnOp::Neg,
+                Box::new(self.expr(60, allow_union)?),
+            )),
+            Tok::Op("+") => Ok(Expr::Unary(
+                UnOp::Plus,
+                Box::new(self.expr(60, allow_union)?),
+            )),
             Tok::Op("@") => Ok(Expr::Unary(UnOp::At, Box::new(self.expr(95, allow_union)?))),
             Tok::LParen => {
                 let e = self.expr(0, true)?;
@@ -247,7 +296,12 @@ impl Parser {
                 let mut args = self.args()?;
                 // Files write `A1#` as `_xlfn.ANCHORARRAY(A1)`.
                 if name == "ANCHORARRAY"
-                    && let [Expr::Ref(Reference { kind: RefKind::Cell(_), .. })] = args.as_slice()
+                    && let [
+                        Expr::Ref(Reference {
+                            kind: RefKind::Cell(_),
+                            ..
+                        }),
+                    ] = args.as_slice()
                     && let Some(r) = args.pop()
                 {
                     return Ok(Expr::Unary(UnOp::Spill, Box::new(r)));
@@ -282,7 +336,10 @@ impl Parser {
                 match self.next() {
                     Tok::Word(w) => self.reference_from_word(sheet, &w),
                     Tok::Error(CellError::Ref) => Ok(Expr::Error(CellError::Ref)),
-                    t => Err(self.err(format!("expected a reference after the sheet name, found {}", describe(&t)))),
+                    t => Err(self.err(format!(
+                        "expected a reference after the sheet name, found {}",
+                        describe(&t)
+                    ))),
                 }
             }
             Tok::Word(w) => {
@@ -290,12 +347,18 @@ impl Parser {
                     && word_is_cell(&w).is_none()
                 {
                     let pos = self.pos();
-                    let Tok::Struct(body) = self.next() else { return Err(self.err("internal")) };
-                    return parse_struct(&w, &body).map(Expr::Struct).map_err(|msg| ParseError { msg, pos });
+                    let Tok::Struct(body) = self.next() else {
+                        return Err(self.err("internal"));
+                    };
+                    return parse_struct(&w, &body)
+                        .map(Expr::Struct)
+                        .map_err(|msg| ParseError { msg, pos });
                 }
                 self.reference_from_word(SheetSel::Current, &w)
             }
-            Tok::Struct(body) => parse_struct("", &body).map(Expr::Struct).map_err(|msg| self.err(msg)),
+            Tok::Struct(body) => parse_struct("", &body)
+                .map(Expr::Struct)
+                .map_err(|msg| self.err(msg)),
             t => Err(self.err(format!("unexpected {}", describe(&t)))),
         }
     }
@@ -326,7 +389,10 @@ impl Parser {
                 self.next();
                 return Ok(wrap(RefKind::Range(a, b), sheet));
             }
-            let cell = Expr::Ref(Reference { sheet, kind: RefKind::Cell(a) });
+            let cell = Expr::Ref(Reference {
+                sheet,
+                kind: RefKind::Cell(a),
+            });
             if *self.peek() == Tok::Op("#") {
                 self.next();
                 return Ok(Expr::Unary(UnOp::Spill, Box::new(cell)));
@@ -363,7 +429,11 @@ impl Parser {
             return Err(self.err(format!("unexpected `{w}`")));
         }
         // A function passed by name is saved as `_xleta.SUM`.
-        if let Some(f) = w.get(..7).filter(|p| p.eq_ignore_ascii_case("_xleta.")).and_then(|_| w.get(7..)) {
+        if let Some(f) = w
+            .get(..7)
+            .filter(|p| p.eq_ignore_ascii_case("_xleta."))
+            .and_then(|_| w.get(7..))
+        {
             return Ok(Expr::Name(f.to_ascii_uppercase()));
         }
         Ok(Expr::Name(w.to_string()))
@@ -376,19 +446,39 @@ impl Parser {
                 Tok::Number(n) => Expr::Number(n),
                 Tok::Op("-") => match self.next() {
                     Tok::Number(n) => Expr::Number(-n),
-                    t => return Err(self.err(format!("expected a number in array, found {}", describe(&t)))),
+                    t => {
+                        return Err(self.err(format!(
+                            "expected a number in array, found {}",
+                            describe(&t)
+                        )));
+                    }
                 },
                 Tok::Op("+") => match self.next() {
                     Tok::Number(n) => Expr::Number(n),
-                    t => return Err(self.err(format!("expected a number in array, found {}", describe(&t)))),
+                    t => {
+                        return Err(self.err(format!(
+                            "expected a number in array, found {}",
+                            describe(&t)
+                        )));
+                    }
                 },
                 Tok::Text(s) => Expr::Text(Arc::from(s)),
                 Tok::Bool(b) => Expr::Bool(b),
                 Tok::Word(w) if self.input => crate::input::boolean_alias(&w)
                     .map(Expr::Bool)
-                    .ok_or_else(|| self.err(format!("array constants may only contain constants, found {}", describe(&Tok::Word(w)))))?,
+                    .ok_or_else(|| {
+                        self.err(format!(
+                            "array constants may only contain constants, found {}",
+                            describe(&Tok::Word(w))
+                        ))
+                    })?,
                 Tok::Error(e) => Expr::Error(e),
-                t => return Err(self.err(format!("array constants may only contain constants, found {}", describe(&t)))),
+                t => {
+                    return Err(self.err(format!(
+                        "array constants may only contain constants, found {}",
+                        describe(&t)
+                    )));
+                }
             };
             if let Some(r) = rows.last_mut() {
                 r.push(el);
@@ -397,7 +487,11 @@ impl Parser {
                 Tok::Comma => {}
                 Tok::Semicolon => rows.push(Vec::new()),
                 Tok::RBrace => break,
-                t => return Err(self.err(format!("expected `,`, `;` or `}}`, found {}", describe(&t)))),
+                t => {
+                    return Err(
+                        self.err(format!("expected `,`, `;` or `}}`, found {}", describe(&t)))
+                    );
+                }
             }
         }
         let w = rows.first().map_or(0, Vec::len);
@@ -415,7 +509,10 @@ fn combine(op: BinOp, lhs: Expr, rhs: Expr) -> Expr {
         && b.sheet == SheetSel::Current
         && let (RefKind::Cell(x), RefKind::Cell(y)) = (&a.kind, &b.kind)
     {
-        return Expr::Ref(Reference { sheet: a.sheet.clone(), kind: RefKind::Range(*x, *y) });
+        return Expr::Ref(Reference {
+            sheet: a.sheet.clone(),
+            kind: RefKind::Range(*x, *y),
+        });
     }
     Expr::Binary(op, Box::new(lhs), Box::new(rhs))
 }
@@ -473,7 +570,10 @@ pub fn parse_struct(table: &str, body: &str) -> Result<StructRef, String> {
         if let Some(rest) = body.strip_prefix('@') {
             specifiers.push(StructItem::ThisRow);
             let rest = rest.trim();
-            let rest = rest.strip_prefix('[').and_then(|r| r.strip_suffix(']')).unwrap_or(rest);
+            let rest = rest
+                .strip_prefix('[')
+                .and_then(|r| r.strip_suffix(']'))
+                .unwrap_or(rest);
             if !rest.is_empty() {
                 cols.push(column(rest)?);
             }
@@ -541,7 +641,10 @@ pub fn parse_struct(table: &str, body: &str) -> Result<StructRef, String> {
         let tail = gap.trim();
         if !tail.is_empty() {
             let bare = tail.strip_prefix(',').map(str::trim).unwrap_or("");
-            let simple = !bare.is_empty() && !bare.chars().any(|c| matches!(c, '[' | ']' | '#' | '\'' | ',' | ':'));
+            let simple = !bare.is_empty()
+                && !bare
+                    .chars()
+                    .any(|c| matches!(c, '[' | ']' | '#' | '\'' | ',' | ':'));
             if !(simple && specifiers == [StructItem::ThisRow] && cols.is_empty()) {
                 return Err(unexpected(tail));
             }
@@ -554,5 +657,10 @@ pub fn parse_struct(table: &str, body: &str) -> Result<StructRef, String> {
     let mut it = cols.into_iter();
     let col_start = it.next();
     let col_end = it.next();
-    Ok(StructRef { table: table.to_string(), specifiers, col_start, col_end })
+    Ok(StructRef {
+        table: table.to_string(),
+        specifiers,
+        col_start,
+        col_end,
+    })
 }

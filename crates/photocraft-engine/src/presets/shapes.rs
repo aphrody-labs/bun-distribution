@@ -11,7 +11,10 @@ use photocraft_geom::{Affine, Point, Rect};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use super::{Group, Named, always, bad, edit_groups, find, group_index, has_doc, req_str, str_param, unique_name};
+use super::{
+    Group, Named, always, bad, edit_groups, find, group_index, has_doc, req_str, str_param,
+    unique_name,
+};
 use crate::commands::CommandSpec;
 use crate::vector_cmds::path_json;
 use crate::{EngineError, Result, Session};
@@ -37,7 +40,9 @@ impl Named for ShapePreset {
 fn circle(cx: f64, cy: f64, r: f64) -> Subpath {
     // Four cubic quarter arcs (κ = 0.5523).
     let k = r * 0.552_284_75;
-    let knot = |x: f64, y: f64, ix: f64, iy: f64, ox: f64, oy: f64| Knot::smooth(Point::new(x, y), Point::new(ix, iy), Point::new(ox, oy));
+    let knot = |x: f64, y: f64, ix: f64, iy: f64, ox: f64, oy: f64| {
+        Knot::smooth(Point::new(x, y), Point::new(ix, iy), Point::new(ox, oy))
+    };
     Subpath {
         closed: true,
         op: PathOp::Combine,
@@ -52,10 +57,19 @@ fn circle(cx: f64, cy: f64, r: f64) -> Subpath {
 
 /// Parse the path language described in the module docs.
 pub fn parse(src: &str) -> std::result::Result<Path, String> {
-    let toks: Vec<String> = src.replace(',', " ").replace('!', " ! ").split_whitespace().map(str::to_string).collect();
+    let toks: Vec<String> = src
+        .replace(',', " ")
+        .replace('!', " ! ")
+        .split_whitespace()
+        .map(str::to_string)
+        .collect();
     let mut i = 0;
     let num = |i: &mut usize| -> std::result::Result<f64, String> {
-        let v = toks.get(*i).ok_or("unexpected end")?.parse::<f64>().map_err(|_| format!("expected a number at `{}`", toks[*i]))?;
+        let v = toks
+            .get(*i)
+            .ok_or("unexpected end")?
+            .parse::<f64>()
+            .map_err(|_| format!("expected a number at `{}`", toks[*i]))?;
         *i += 1;
         Ok(v)
     };
@@ -88,7 +102,11 @@ pub fn parse(src: &str) -> std::result::Result<Path, String> {
             "M" => {
                 finish(&mut cur, &mut subs, true);
                 let (x, y) = (num(&mut i)?, num(&mut i)?);
-                cur = Some(Subpath { closed: true, knots: vec![Knot::corner(x, y)], op });
+                cur = Some(Subpath {
+                    closed: true,
+                    knots: vec![Knot::corner(x, y)],
+                    op,
+                });
                 op = PathOp::Combine;
             }
             "L" => {
@@ -110,15 +128,26 @@ pub fn parse(src: &str) -> std::result::Result<Path, String> {
                         let q = Point::new(num(&mut i)?, num(&mut i)?);
                         let p = Point::new(num(&mut i)?, num(&mut i)?);
                         (
-                            Point::new(last.x + (q.x - last.x) * 2.0 / 3.0, last.y + (q.y - last.y) * 2.0 / 3.0),
-                            Point::new(p.x + (q.x - p.x) * 2.0 / 3.0, p.y + (q.y - p.y) * 2.0 / 3.0),
+                            Point::new(
+                                last.x + (q.x - last.x) * 2.0 / 3.0,
+                                last.y + (q.y - last.y) * 2.0 / 3.0,
+                            ),
+                            Point::new(
+                                p.x + (q.x - p.x) * 2.0 / 3.0,
+                                p.y + (q.y - p.y) * 2.0 / 3.0,
+                            ),
                             p,
                         )
                     };
                     if let Some(k) = s.knots.last_mut() {
                         k.out_ctrl = c1;
                     }
-                    s.knots.push(Knot { anchor: p, in_ctrl: c2, out_ctrl: p, smooth: false });
+                    s.knots.push(Knot {
+                        anchor: p,
+                        in_ctrl: c2,
+                        out_ctrl: p,
+                        smooth: false,
+                    });
                 }
             }
             "Z" => finish(&mut cur, &mut subs, true),
@@ -145,7 +174,12 @@ fn star(n: usize, ratio: f64, rot: f64) -> String {
     for k in 0..2 * n {
         let r = if k % 2 == 0 { 50.0 } else { 50.0 * ratio };
         let a = rot + std::f64::consts::PI * k as f64 / n as f64 - std::f64::consts::FRAC_PI_2;
-        s += &format!("{} {:.3} {:.3} ", if k == 0 { "M" } else { "L" }, 50.0 + r * a.cos(), 50.0 + r * a.sin());
+        s += &format!(
+            "{} {:.3} {:.3} ",
+            if k == 0 { "M" } else { "L" },
+            50.0 + r * a.cos(),
+            50.0 + r * a.sin()
+        );
     }
     s + "Z"
 }
@@ -156,7 +190,10 @@ fn sun() -> String {
         let a = std::f64::consts::TAU * k as f64 / 12.0;
         let p = |r: f64, da: f64| (50.0 + r * (a + da).cos(), 50.0 + r * (a + da).sin());
         let (b1, b2, tip) = (p(28.0, -0.12), p(28.0, 0.12), p(50.0, 0.0));
-        s += &format!("M {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} Z ", b1.0, b1.1, tip.0, tip.1, b2.0, b2.1);
+        s += &format!(
+            "M {:.3} {:.3} L {:.3} {:.3} L {:.3} {:.3} Z ",
+            b1.0, b1.1, tip.0, tip.1, b2.0, b2.1
+        );
     }
     s
 }
@@ -165,7 +202,11 @@ fn flower() -> String {
     let mut s = String::new();
     for k in 0..6 {
         let a = std::f64::consts::TAU * k as f64 / 6.0 - std::f64::consts::FRAC_PI_2;
-        s += &format!("O {:.3} {:.3} 18 ", 50.0 + 30.0 * a.cos(), 50.0 + 30.0 * a.sin());
+        s += &format!(
+            "O {:.3} {:.3} 18 ",
+            50.0 + 30.0 * a.cos(),
+            50.0 + 30.0 * a.sin()
+        );
     }
     s + "O 50 50 20 ! O 50 50 9"
 }
@@ -177,7 +218,12 @@ fn shout() -> String {
     for k in 0..2 * n {
         let r = if k % 2 == 0 { 1.0 } else { 0.78 };
         let a = std::f64::consts::PI * k as f64 / n as f64;
-        s += &format!("{} {:.3} {:.3} ", if k == 0 { "M" } else { "L" }, 50.0 + 50.0 * r * a.cos(), 40.0 + 40.0 * r * a.sin());
+        s += &format!(
+            "{} {:.3} {:.3} ",
+            if k == 0 { "M" } else { "L" },
+            50.0 + 50.0 * r * a.cos(),
+            40.0 + 40.0 * r * a.sin()
+        );
     }
     s + "Z M 30 70 L 14 100 L 46 74 Z"
 }
@@ -185,35 +231,88 @@ fn shout() -> String {
 /// Built-in groups (our own drawings).
 pub fn builtin() -> Vec<Group<ShapePreset>> {
     let mk = |list: Vec<(&str, String)>| -> Vec<ShapePreset> {
-        list.into_iter().filter_map(|(n, src)| parse(&src).ok().map(|path| ShapePreset { name: n.into(), path })).collect()
+        list.into_iter()
+            .filter_map(|(n, src)| {
+                parse(&src).ok().map(|path| ShapePreset {
+                    name: n.into(),
+                    path,
+                })
+            })
+            .collect()
     };
     let s = |x: &str| x.to_string();
     vec![
         Group::new(
             "Symbols",
             mk(vec![
-                ("Heart", s("M 50 92 C 20 70 0 52 0 30 C 0 12 14 0 28 0 C 40 0 47 8 50 16 C 53 8 60 0 72 0 C 86 0 100 12 100 30 C 100 52 80 70 50 92 Z")),
+                (
+                    "Heart",
+                    s(
+                        "M 50 92 C 20 70 0 52 0 30 C 0 12 14 0 28 0 C 40 0 47 8 50 16 C 53 8 60 0 72 0 C 86 0 100 12 100 30 C 100 52 80 70 50 92 Z",
+                    ),
+                ),
                 ("Star", star(5, 0.4, 0.0)),
                 ("Six-Point Star", star(6, 0.55, 0.0)),
                 ("Burst", star(16, 0.72, 0.0)),
-                ("Check Mark", s("M 5 55 L 20 40 L 38 58 L 82 12 L 97 27 L 38 88 Z")),
-                ("Cross", s("M 20 5 L 50 35 L 80 5 L 95 20 L 65 50 L 95 80 L 80 95 L 50 65 L 20 95 L 5 80 L 35 50 L 5 20 Z")),
-                ("Plus", s("M 38 0 L 62 0 L 62 38 L 100 38 L 100 62 L 62 62 L 62 100 L 38 100 L 38 62 L 0 62 L 0 38 L 38 38 Z")),
+                (
+                    "Check Mark",
+                    s("M 5 55 L 20 40 L 38 58 L 82 12 L 97 27 L 38 88 Z"),
+                ),
+                (
+                    "Cross",
+                    s(
+                        "M 20 5 L 50 35 L 80 5 L 95 20 L 65 50 L 95 80 L 80 95 L 50 65 L 20 95 L 5 80 L 35 50 L 5 20 Z",
+                    ),
+                ),
+                (
+                    "Plus",
+                    s(
+                        "M 38 0 L 62 0 L 62 38 L 100 38 L 100 62 L 62 62 L 62 100 L 38 100 L 38 62 L 0 62 L 0 38 L 38 38 Z",
+                    ),
+                ),
                 ("Ring", s("O 50 50 50 ! O 50 50 32")),
-                ("Lightning", s("M 58 0 L 18 56 L 44 56 L 34 100 L 82 38 L 55 38 L 70 0 Z")),
+                (
+                    "Lightning",
+                    s("M 58 0 L 18 56 L 44 56 L 34 100 L 82 38 L 55 38 L 70 0 Z"),
+                ),
                 ("Diamond", s("M 50 0 L 90 50 L 50 100 L 10 50 Z")),
             ]),
         ),
         Group::new(
             "Arrows",
             mk(vec![
-                ("Arrow Right", s("M 0 35 L 55 35 L 55 15 L 100 50 L 55 85 L 55 65 L 0 65 Z")),
-                ("Arrow Left", s("M 100 35 L 45 35 L 45 15 L 0 50 L 45 85 L 45 65 L 100 65 Z")),
-                ("Arrow Up", s("M 35 100 L 35 45 L 15 45 L 50 0 L 85 45 L 65 45 L 65 100 Z")),
-                ("Arrow Down", s("M 35 0 L 35 55 L 15 55 L 50 100 L 85 55 L 65 55 L 65 0 Z")),
-                ("Double Arrow", s("M 0 50 L 25 20 L 25 38 L 75 38 L 75 20 L 100 50 L 75 80 L 75 62 L 25 62 L 25 80 Z")),
-                ("Chevron", s("M 10 0 L 45 0 L 95 50 L 45 100 L 10 100 L 60 50 Z")),
-                ("Curved Arrow", s("M 8 92 C 8 45 35 22 68 22 L 68 4 L 98 34 L 68 64 L 68 44 C 48 44 30 58 30 92 Z")),
+                (
+                    "Arrow Right",
+                    s("M 0 35 L 55 35 L 55 15 L 100 50 L 55 85 L 55 65 L 0 65 Z"),
+                ),
+                (
+                    "Arrow Left",
+                    s("M 100 35 L 45 35 L 45 15 L 0 50 L 45 85 L 45 65 L 100 65 Z"),
+                ),
+                (
+                    "Arrow Up",
+                    s("M 35 100 L 35 45 L 15 45 L 50 0 L 85 45 L 65 45 L 65 100 Z"),
+                ),
+                (
+                    "Arrow Down",
+                    s("M 35 0 L 35 55 L 15 55 L 50 100 L 85 55 L 65 55 L 65 0 Z"),
+                ),
+                (
+                    "Double Arrow",
+                    s(
+                        "M 0 50 L 25 20 L 25 38 L 75 38 L 75 20 L 100 50 L 75 80 L 75 62 L 25 62 L 25 80 Z",
+                    ),
+                ),
+                (
+                    "Chevron",
+                    s("M 10 0 L 45 0 L 95 50 L 45 100 L 10 100 L 60 50 Z"),
+                ),
+                (
+                    "Curved Arrow",
+                    s(
+                        "M 8 92 C 8 45 35 22 68 22 L 68 4 L 98 34 L 68 64 L 68 44 C 48 44 30 58 30 92 Z",
+                    ),
+                ),
             ]),
         ),
         Group::new(
@@ -225,8 +324,18 @@ pub fn builtin() -> Vec<Group<ShapePreset>> {
                         "M 15 5 L 85 5 C 93 5 100 12 100 20 L 100 60 C 100 68 93 75 85 75 L 45 75 L 20 98 L 25 75 L 15 75 C 7 75 0 68 0 60 L 0 20 C 0 12 7 5 15 5 Z",
                     ),
                 ),
-                ("Round Bubble", s("M 50 5 C 78 5 100 22 100 42 C 100 62 78 79 50 79 C 44 79 38 78 33 77 L 12 95 L 18 72 C 7 65 0 54 0 42 C 0 22 22 5 50 5 Z")),
-                ("Thought Bubble", s("M 50 5 C 78 5 100 20 100 38 C 100 56 78 71 50 71 C 22 71 0 56 0 38 C 0 20 22 5 50 5 Z O 22 82 8 O 9 95 5")),
+                (
+                    "Round Bubble",
+                    s(
+                        "M 50 5 C 78 5 100 22 100 42 C 100 62 78 79 50 79 C 44 79 38 78 33 77 L 12 95 L 18 72 C 7 65 0 54 0 42 C 0 22 22 5 50 5 Z",
+                    ),
+                ),
+                (
+                    "Thought Bubble",
+                    s(
+                        "M 50 5 C 78 5 100 20 100 38 C 100 56 78 71 50 71 C 22 71 0 56 0 38 C 0 20 22 5 50 5 Z O 22 82 8 O 9 95 5",
+                    ),
+                ),
                 ("Shout Bubble", shout()),
             ]),
         ),
@@ -243,19 +352,46 @@ pub fn builtin() -> Vec<Group<ShapePreset>> {
                 ("Crescent Moon", s("O 45 50 45 ! O 66 40 38")),
                 (
                     "Cloud",
-                    s("M 25 80 C 10 80 0 70 0 58 C 0 46 10 37 22 37 C 24 20 38 10 54 10 C 70 10 82 20 85 34 C 95 35 100 45 100 57 C 100 70 90 80 78 80 Z"),
+                    s(
+                        "M 25 80 C 10 80 0 70 0 58 C 0 46 10 37 22 37 C 24 20 38 10 54 10 C 70 10 82 20 85 34 C 95 35 100 45 100 57 C 100 70 90 80 78 80 Z",
+                    ),
                 ),
-                ("Raindrop", s("M 50 0 C 60 25 85 45 85 68 C 85 87 69 100 50 100 C 31 100 15 87 15 68 C 15 45 40 25 50 0 Z")),
+                (
+                    "Raindrop",
+                    s(
+                        "M 50 0 C 60 25 85 45 85 68 C 85 87 69 100 50 100 C 31 100 15 87 15 68 C 15 45 40 25 50 0 Z",
+                    ),
+                ),
                 ("Flower", flower()),
-                ("Tree", s("M 50 0 L 85 45 L 68 45 L 92 75 L 56 75 L 56 100 L 44 100 L 44 75 L 8 75 L 32 45 L 15 45 Z")),
+                (
+                    "Tree",
+                    s(
+                        "M 50 0 L 85 45 L 68 45 L 92 75 L 56 75 L 56 100 L 44 100 L 44 75 L 8 75 L 32 45 L 15 45 Z",
+                    ),
+                ),
             ]),
         ),
         Group::new(
             "Animals",
             mk(vec![
-                ("Fish", s("M 0 50 C 15 25 45 15 70 32 L 96 12 L 88 50 L 96 88 L 70 68 C 45 85 15 75 0 50 Z ! O 20 45 4")),
-                ("Cat", s("M 15 10 L 35 30 C 45 27 55 27 65 30 L 85 10 L 88 50 C 92 75 72 95 50 95 C 28 95 8 75 12 50 Z ! O 36 58 6 ! O 64 58 6")),
-                ("Bird", s("M 0 40 C 15 30 35 32 50 50 C 65 32 85 30 100 40 C 85 40 65 48 50 70 C 35 48 15 40 0 40 Z")),
+                (
+                    "Fish",
+                    s(
+                        "M 0 50 C 15 25 45 15 70 32 L 96 12 L 88 50 L 96 88 L 70 68 C 45 85 15 75 0 50 Z ! O 20 45 4",
+                    ),
+                ),
+                (
+                    "Cat",
+                    s(
+                        "M 15 10 L 35 30 C 45 27 55 27 65 30 L 85 10 L 88 50 C 92 75 72 95 50 95 C 28 95 8 75 12 50 Z ! O 36 58 6 ! O 64 58 6",
+                    ),
+                ),
+                (
+                    "Bird",
+                    s(
+                        "M 0 40 C 15 30 35 32 50 50 C 65 32 85 30 100 40 C 85 40 65 48 50 70 C 35 48 15 40 0 40 Z",
+                    ),
+                ),
                 (
                     "Butterfly",
                     s(
@@ -268,7 +404,12 @@ pub fn builtin() -> Vec<Group<ShapePreset>> {
                         "M 50 50 C 68 50 82 66 82 80 C 82 92 70 96 60 94 C 55 93 52 91 50 91 C 48 91 45 93 40 94 C 30 96 18 92 18 80 C 18 66 32 50 50 50 Z O 18 42 10 O 37 22 11 O 63 22 11 O 82 42 10",
                     ),
                 ),
-                ("Rabbit", s("O 50 72 26 M 34 52 C 22 30 24 2 34 2 C 44 2 46 30 44 50 Z M 66 52 C 78 30 76 2 66 2 C 56 2 54 30 56 50 Z")),
+                (
+                    "Rabbit",
+                    s(
+                        "O 50 72 26 M 34 52 C 22 30 24 2 34 2 C 44 2 46 30 44 50 Z M 66 52 C 78 30 76 2 66 2 C 56 2 54 30 56 50 Z",
+                    ),
+                ),
             ]),
         ),
     ]
@@ -277,7 +418,15 @@ pub fn builtin() -> Vec<Group<ShapePreset>> {
 /// Every shape the panel shows: the preset groups plus Define Custom Shape results.
 pub fn all_groups(s: &Session) -> Vec<Group<ShapePreset>> {
     let mut g = s.presets.shapes.clone();
-    let custom: Vec<ShapePreset> = s.edit_state.custom_shapes.iter().map(|c| ShapePreset { name: c.name.clone(), path: c.path.clone() }).collect();
+    let custom: Vec<ShapePreset> = s
+        .edit_state
+        .custom_shapes
+        .iter()
+        .map(|c| ShapePreset {
+            name: c.name.clone(),
+            path: c.path.clone(),
+        })
+        .collect();
     if !custom.is_empty() {
         g.push(Group::new(CUSTOM_GROUP, custom));
     }
@@ -286,7 +435,8 @@ pub fn all_groups(s: &Session) -> Vec<Group<ShapePreset>> {
 
 fn lookup(s: &Session, name: &str, group: Option<&str>, cmd: &str) -> Result<ShapePreset> {
     let groups = all_groups(s);
-    let (gi, ii) = find(&groups, name, group).ok_or_else(|| bad(cmd, format!("no shape \"{name}\" (see shape.presets.list)")))?;
+    let (gi, ii) = find(&groups, name, group)
+        .ok_or_else(|| bad(cmd, format!("no shape \"{name}\" (see shape.presets.list)")))?;
     Ok(groups[gi].items[ii].clone())
 }
 
@@ -294,14 +444,20 @@ fn lookup(s: &Session, name: &str, group: Option<&str>, cmd: &str) -> Result<Sha
 pub fn thumbnail(path: &Path, size: u32) -> Vec<f32> {
     let size = size.clamp(4, 512);
     let m = (size as f64 * 0.08).max(1.0);
-    let fitted = fit(path, [m, m, size as f64 - 2.0 * m, size as f64 - 2.0 * m], true);
+    let fitted = fit(
+        path,
+        [m, m, size as f64 - 2.0 * m, size as f64 - 2.0 * m],
+        true,
+    );
     photocraft_vector::path_coverage(&fitted, Rect::new(0, 0, size as i32, size as i32))
 }
 
 /// Map `path` (its control bounds) onto `rect` = [x, y, w, h]; `keep` preserves the aspect ratio
 /// (centred in the rect).
 pub fn fit(path: &Path, rect: [f64; 4], keep: bool) -> Path {
-    let Some((x0, y0, x1, y1)) = path.control_bounds() else { return path.clone() };
+    let Some((x0, y0, x1, y1)) = path.control_bounds() else {
+        return path.clone();
+    };
     let (bw, bh) = ((x1 - x0).max(1e-9), (y1 - y0).max(1e-9));
     let (mut sx, mut sy) = (rect[2] / bw, rect[3] / bh);
     let (mut ox, mut oy) = (rect[0], rect[1]);
@@ -311,14 +467,20 @@ pub fn fit(path: &Path, rect: [f64; 4], keep: bool) -> Path {
         oy += (rect[3] - bh * k) / 2.0;
         (sx, sy) = (k, k);
     }
-    path.transform(&Affine { m: [sx, 0.0, 0.0, sy, ox - x0 * sx, oy - y0 * sy] })
+    path.transform(&Affine {
+        m: [sx, 0.0, 0.0, sy, ox - x0 * sx, oy - y0 * sy],
+    })
 }
 
 fn list(s: &mut Session, _: &Value) -> Result<Value> {
     let groups: Vec<Value> = all_groups(s)
         .iter()
         .map(|g| {
-            let items: Vec<Value> = g.items.iter().map(|i| json!({"name": i.name, "subpaths": i.path.subpaths.len()})).collect();
+            let items: Vec<Value> = g
+                .items
+                .iter()
+                .map(|i| json!({"name": i.name, "subpaths": i.path.subpaths.len()}))
+                .collect();
             json!({"name": g.name, "shapes": items})
         })
         .collect();
@@ -336,8 +498,16 @@ fn place(s: &mut Session, p: &Value) -> Result<Value> {
         Some(a) if a.len() == 4 => {
             let v: Vec<f64> = a.iter().map(|x| x.as_f64().unwrap_or(0.0)).collect();
             // Negative sizes (dragging up/left) flip into a positive rect.
-            let (x, wd) = if v[2] < 0.0 { (v[0] + v[2], -v[2]) } else { (v[0], v[2]) };
-            let (y, hd) = if v[3] < 0.0 { (v[1] + v[3], -v[3]) } else { (v[1], v[3]) };
+            let (x, wd) = if v[2] < 0.0 {
+                (v[0] + v[2], -v[2])
+            } else {
+                (v[0], v[2])
+            };
+            let (y, hd) = if v[3] < 0.0 {
+                (v[1] + v[3], -v[3])
+            } else {
+                (v[1], v[3])
+            };
             if wd < 1.0 || hd < 1.0 {
                 return Err(bad(CMD, "the shape rect is empty"));
             }
@@ -364,11 +534,19 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     const CMD: &str = "shape.presets.new";
     let path = match p.get("path") {
         Some(v @ Value::Object(_)) => crate::vector_cmds::parse_path(v).map_err(|e| bad(CMD, e))?,
-        Some(Value::String(src)) if src.trim_start().starts_with(['M', 'O', '!']) => parse(src).map_err(|e| bad(CMD, e))?,
+        Some(Value::String(src)) if src.trim_start().starts_with(['M', 'O', '!']) => {
+            parse(src).map_err(|e| bad(CMD, e))?
+        }
         other => {
-            let d = s.active().ok_or_else(|| bad(CMD, "no document (pass `path`)"))?;
-            crate::edit_menu_cmds::current_path(&d.doc, d.active_layer, other.and_then(Value::as_str))
-                .ok_or_else(|| bad(CMD, "select a path or shape layer first"))?
+            let d = s
+                .active()
+                .ok_or_else(|| bad(CMD, "no document (pass `path`)"))?;
+            crate::edit_menu_cmds::current_path(
+                &d.doc,
+                d.active_layer,
+                other.and_then(Value::as_str),
+            )
+            .ok_or_else(|| bad(CMD, "select a path or shape layer first"))?
         }
     };
     if path.is_empty() {
@@ -379,7 +557,10 @@ fn new_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let name = unique_name(&s.presets.shapes, str_param(p, "name").unwrap_or("Shape"));
     let gi = group_index(&mut s.presets.shapes, str_param(p, "group"));
     let group = s.presets.shapes[gi].name.clone();
-    s.presets.shapes[gi].items.push(ShapePreset { name: name.clone(), path });
+    s.presets.shapes[gi].items.push(ShapePreset {
+        name: name.clone(),
+        path,
+    });
     s.presets_changed();
     Ok(json!({"name": name, "group": group}))
 }
@@ -401,7 +582,11 @@ fn edit(s: &mut Session, p: &Value) -> Result<Value> {
             }
             json!({"name": to})
         }
-        "delete" if p.get("preset").and_then(Value::as_str).is_some_and(|n| custom(s, n)) => {
+        "delete"
+            if p.get("preset")
+                .and_then(Value::as_str)
+                .is_some_and(|n| custom(s, n)) =>
+        {
             let n = req_str(p, "preset", CMD)?;
             s.edit_state.custom_shapes.retain(|c| c.name != n);
             json!({"deleted": 1})

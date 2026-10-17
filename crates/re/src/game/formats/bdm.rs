@@ -57,7 +57,10 @@ impl BdmFile {
     /// Parses a BDM binary file.
     pub fn parse(buffer: &[u8]) -> Result<Self> {
         if buffer.len() < 16 {
-            return Err(ReError::BufferTooSmall { required: 16, available: buffer.len() });
+            return Err(ReError::BufferTooSmall {
+                required: 16,
+                available: buffer.len(),
+            });
         }
 
         if &buffer[0..4] != BDM_MAGIC {

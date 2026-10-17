@@ -58,7 +58,10 @@ impl DataValue {
     /// Whether this value fits the variable's kind (a dataset may carry values for
     /// variables of either kind; each binding takes what fits it).
     pub fn fits(&self, kind: VariableKind) -> bool {
-        matches!((self, kind), (Self::Text(_), VariableKind::Text) | (Self::Visible(_), VariableKind::Visibility))
+        matches!(
+            (self, kind),
+            (Self::Text(_), VariableKind::Text) | (Self::Visible(_), VariableKind::Visibility)
+        )
     }
 }
 
@@ -75,7 +78,9 @@ impl DataSet {
     /// says. A value the art can't report (its object is locked or gone) isn't drift: the row
     /// keeps it, and applying it again would skip it too.
     pub fn matches(&self, current: &BTreeMap<String, DataValue>) -> bool {
-        self.values.iter().all(|(k, v)| current.get(k).is_none_or(|c| c == v))
+        self.values
+            .iter()
+            .all(|(k, v)| current.get(k).is_none_or(|c| c == v))
     }
 }
 
@@ -112,13 +117,18 @@ impl Variables {
 
     /// Bind `id` to the variable `name`. True when it was not bound to it already.
     pub fn bind(&mut self, id: NodeId, name: &str) -> bool {
-        self.bindings.entry(id).or_default().insert(name.to_string())
+        self.bindings
+            .entry(id)
+            .or_default()
+            .insert(name.to_string())
     }
 
     /// Drop `id`'s binding to `name` (and the binding itself when that was its last variable).
     /// True when there was one.
     pub fn unbind(&mut self, id: NodeId, name: &str) -> bool {
-        let Some(bound) = self.bindings.get_mut(&id) else { return false };
+        let Some(bound) = self.bindings.get_mut(&id) else {
+            return false;
+        };
         let dropped = bound.remove(name);
         if bound.is_empty() {
             self.bindings.remove(&id);
@@ -128,7 +138,12 @@ impl Variables {
 
     /// The objects bound to the variable `name`, in document order.
     pub fn objects_of(&self, name: &str) -> Vec<NodeId> {
-        let mut ids: Vec<NodeId> = self.bindings.iter().filter(|(_, v)| v.contains(name)).map(|(id, _)| *id).collect();
+        let mut ids: Vec<NodeId> = self
+            .bindings
+            .iter()
+            .filter(|(_, v)| v.contains(name))
+            .map(|(id, _)| *id)
+            .collect();
         ids.sort_unstable();
         ids
     }
@@ -157,7 +172,12 @@ impl Document {
     /// like [`Document::prune_assets`] does for Asset Export's. A binding outliving its object
     /// would count as a skip in every dataset application and grow the saved file forever.
     pub fn prune_variable_bindings(&mut self) {
-        if self.variables.bindings.keys().all(|id| self.node(*id).is_some()) {
+        if self
+            .variables
+            .bindings
+            .keys()
+            .all(|id| self.node(*id).is_some())
+        {
             return;
         }
         let mut bindings = std::mem::take(&mut self.variables.bindings);
@@ -170,7 +190,12 @@ impl Document {
     /// doesn't count, as that is what a visibility variable drives: a row that hid it must be
     /// able to show it again, and a capture must record it hidden.
     pub fn variable_target(&self, id: NodeId) -> bool {
-        self.ancestry(id).is_some_and(|a| a.iter().all(|i| self.node(*i).is_some_and(|n| !n.locked && (n.visible || *i == id))))
+        self.ancestry(id).is_some_and(|a| {
+            a.iter().all(|i| {
+                self.node(*i)
+                    .is_some_and(|n| !n.locked && (n.visible || *i == id))
+            })
+        })
     }
 
     /// What the object `id` holds for the variable of `kind`: its characters, or whether it
@@ -197,7 +222,11 @@ impl Document {
         for v in &self.variables.variables {
             // An object driven by several variables of the same kind reads from the first one
             // bound, so a capture is one value per variable and applies back the same way.
-            let value = self.variables.objects_of(&v.name).into_iter().find_map(|id| self.variable_value(id, v.kind));
+            let value = self
+                .variables
+                .objects_of(&v.name)
+                .into_iter()
+                .find_map(|id| self.variable_value(id, v.kind));
             if let Some(value) = value {
                 out.insert(v.name.clone(), value);
             }

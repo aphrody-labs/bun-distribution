@@ -13,13 +13,13 @@ use bevy_ecs::{
 };
 use bevy_input_focus::tab_navigation::TabIndex;
 use bevy_math::Rot2;
-use bevy_picking::{cursor::EntityCursor, hover::Hovered, PickingSystems};
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_picking::{PickingSystems, cursor::EntityCursor, hover::Hovered};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_scene::prelude::*;
 use bevy_text::FontWeight;
 use bevy_ui::{
-    px, AlignItems, Checked, Display, FlexDirection, InteractionDisabled, JustifyContent, Node,
-    PositionType, Pressed, UiRect, UiTransform,
+    AlignItems, Checked, Display, FlexDirection, InteractionDisabled, JustifyContent, Node,
+    PositionType, Pressed, UiRect, UiTransform, px,
 };
 use bevy_ui_widgets::{ActivateOnPress, Checkbox};
 

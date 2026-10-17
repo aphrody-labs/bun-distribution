@@ -52,7 +52,16 @@ fn bounds(keys: &[SelKey]) -> Option<[f64; 4]> {
 
 fn handle_points(r: Rect) -> [Pos2; 8] {
     let c = r.center();
-    [r.left_top(), r.right_top(), r.right_bottom(), r.left_bottom(), pos2(c.x, r.min.y), pos2(r.max.x, c.y), pos2(c.x, r.max.y), pos2(r.min.x, c.y)]
+    [
+        r.left_top(),
+        r.right_top(),
+        r.right_bottom(),
+        r.left_bottom(),
+        pos2(c.x, r.min.y),
+        pos2(r.max.x, c.y),
+        pos2(c.x, r.max.y),
+        pos2(r.min.x, c.y),
+    ]
 }
 
 /// The transform box for two or more selected keys. Call before the keys are drawn (its inside
@@ -76,7 +85,8 @@ pub(crate) fn transform_box(
         return;
     }
     let Some(b) = bounds(keys) else { return };
-    let r = Rect::from_min_max(pos2(tm.x(b[0]), ymap(b[3])), pos2(tm.x(b[2]), ymap(b[1]))).expand(6.0);
+    let r =
+        Rect::from_min_max(pos2(tm.x(b[0]), ymap(b[3])), pos2(tm.x(b[2]), ymap(b[1]))).expand(6.0);
     let value_ok = !speed && keys.iter().all(|k| k.editable);
     let col = Color32::from_rgb(0xd8, 0xd8, 0xd8);
     let ctx = ui.ctx().clone();
@@ -99,13 +109,23 @@ pub(crate) fn transform_box(
     let mut start: Option<BoxDrag> = None;
     let mut resp_any: Option<egui::Response> = None;
     if !handles {
-        p.rect_stroke(r, 0.0, Stroke::new(1.0, col.gamma_multiply(0.7)), StrokeKind::Middle);
+        p.rect_stroke(
+            r,
+            0.0,
+            Stroke::new(1.0, col.gamma_multiply(0.7)),
+            StrokeKind::Middle,
+        );
         let resp = ui.interact(r, egui::Id::new("graph-box-inside"), Sense::drag());
-        app.auto.add("timeline.graph.transformBox", r, "Transform box");
+        app.auto
+            .add("timeline.graph.transformBox", r, "Transform box");
         if resp.drag_started()
             && let Some(o) = ui.input(|i| i.pointer.press_origin())
         {
-            start = Some(BoxDrag { handle: 8, anchor: [0.0; 2], last: data(o) });
+            start = Some(BoxDrag {
+                handle: 8,
+                anchor: [0.0; 2],
+                last: data(o),
+            });
         }
         resp_any = Some(resp);
     } else {
@@ -117,11 +137,23 @@ pub(crate) fn transform_box(
             let hr = Rect::from_center_size(*h, vec2(7.0, 7.0));
             p.rect_filled(hr, 0.0, Color32::from_gray(0x20));
             p.rect_stroke(hr, 0.0, Stroke::new(1.0, col), StrokeKind::Middle);
-            let resp = ui.interact(hr.expand(2.0), egui::Id::new(("graph-box-handle", i)), Sense::drag());
-            app.auto.add(&format!("timeline.graph.transformBox.{i}"), hr, "Transform box handle");
+            let resp = ui.interact(
+                hr.expand(2.0),
+                egui::Id::new(("graph-box-handle", i)),
+                Sense::drag(),
+            );
+            app.auto.add(
+                &format!("timeline.graph.transformBox.{i}"),
+                hr,
+                "Transform box handle",
+            );
             if resp.drag_started() {
                 let opp = [2, 3, 0, 1, 6, 7, 4, 5][i];
-                start = Some(BoxDrag { handle: i, anchor: corner(opp), last: corner(i) });
+                start = Some(BoxDrag {
+                    handle: i,
+                    anchor: corner(opp),
+                    last: corner(i),
+                });
             }
             if resp.dragged() || resp.drag_stopped() {
                 resp_any = Some(resp);
@@ -135,7 +167,9 @@ pub(crate) fn transform_box(
         });
     }
     let Some(resp) = resp_any else { return };
-    let Some(st) = ctx.data(|d| d.get_temp::<BoxDrag>(box_id())) else { return };
+    let Some(st) = ctx.data(|d| d.get_temp::<BoxDrag>(box_id())) else {
+        return;
+    };
     if (st.handle == 8) == handles {
         return;
     }
@@ -217,7 +251,14 @@ pub fn comp_snap_times(c: &Comp) -> Vec<f64> {
 /// The candidate nearest `t` within `tol` screen points, else `t`.
 pub(crate) fn snap_px(tm: TMap, t: f64, cands: &[f64], tol: f32) -> f64 {
     let x = tm.x(t);
-    cands.iter().copied().map(|c| (c, (tm.x(c) - x).abs())).filter(|(_, d)| *d < tol).min_by(|a, b| a.1.total_cmp(&b.1)).map(|(c, _)| c).unwrap_or(t)
+    cands
+        .iter()
+        .copied()
+        .map(|c| (c, (tm.x(c) - x).abs()))
+        .filter(|(_, d)| *d < tol)
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(c, _)| c)
+        .unwrap_or(t)
 }
 
 #[cfg(test)]
@@ -228,14 +269,30 @@ mod snap_tests {
     fn graph_snap_targets_markers_and_layer_ends() {
         use effectcraft_engine::Session;
         let mut s = Session::default();
-        s.execute("comp.new", json!({"name": "S", "width": 100, "height": 100, "frameRate": 30, "duration": 4})).unwrap();
-        s.execute("layer.newSolid", json!({"color": "#ffffff", "width": 10, "height": 10})).unwrap();
+        s.execute(
+            "comp.new",
+            json!({"name": "S", "width": 100, "height": 100, "frameRate": 30, "duration": 4}),
+        )
+        .unwrap();
+        s.execute(
+            "layer.newSolid",
+            json!({"color": "#ffffff", "width": 10, "height": 10}),
+        )
+        .unwrap();
         s.execute("comp.addMarker", json!({"time": 1.5})).unwrap();
         let c = s.active_comp().unwrap();
         let cands = comp_snap_times(c);
         assert!(cands.contains(&1.5), "{cands:?}");
-        assert!(cands.iter().any(|t| (*t - c.layers[0].out_point.seconds()).abs() < 1e-9));
-        let tm = TMap { x0: 0.0, start: 0.0, pps: 100.0 };
+        assert!(
+            cands
+                .iter()
+                .any(|t| (*t - c.layers[0].out_point.seconds()).abs() < 1e-9)
+        );
+        let tm = TMap {
+            x0: 0.0,
+            start: 0.0,
+            pps: 100.0,
+        };
         // 1.53 s is 3 points from the marker: snaps; 1.6 s (10 points) doesn't.
         assert_eq!(snap_px(tm, 1.53, &cands, 6.0), 1.5);
         assert_eq!(snap_px(tm, 1.6, &[1.5], 6.0), 1.6);
@@ -260,7 +317,13 @@ fn alt_id() -> egui::Id {
 
 /// Selected keys' comp-time range.
 fn sel_range(app: &EffectcraftApp, comp: &Comp) -> Option<(f64, f64)> {
-    let ts: Vec<f64> = app.session.state.selected_keys.iter().filter_map(|k| comp.layer(k.layer).map(|l| l.comp_time(k.time).seconds())).collect();
+    let ts: Vec<f64> = app
+        .session
+        .state
+        .selected_keys
+        .iter()
+        .filter_map(|k| comp.layer(k.layer).map(|l| l.comp_time(k.time).seconds()))
+        .collect();
     if ts.len() < 2 {
         return None;
     }
@@ -271,12 +334,27 @@ fn sel_range(app: &EffectcraftApp, comp: &Comp) -> Option<(f64, f64)> {
 
 /// Alt-drag on the first or last key of a selected group starts scaling the group in time
 /// about the other end. Returns true when it took the drag.
-pub(crate) fn alt_scale_begin(app: &EffectcraftApp, ctx: &egui::Context, comp: &Comp, key_ct: f64) -> bool {
-    let Some((lo, hi)) = sel_range(app, comp) else { return false };
+pub(crate) fn alt_scale_begin(
+    app: &EffectcraftApp,
+    ctx: &egui::Context,
+    comp: &Comp,
+    key_ct: f64,
+) -> bool {
+    let Some((lo, hi)) = sel_range(app, comp) else {
+        return false;
+    };
     let st = if (key_ct - hi).abs() < 1e-6 {
-        AltScale { anchor: lo, end_is_max: true, span: None }
+        AltScale {
+            anchor: lo,
+            end_is_max: true,
+            span: None,
+        }
     } else if (key_ct - lo).abs() < 1e-6 {
-        AltScale { anchor: hi, end_is_max: false, span: None }
+        AltScale {
+            anchor: hi,
+            end_is_max: false,
+            span: None,
+        }
     } else {
         return false;
     };
@@ -285,20 +363,45 @@ pub(crate) fn alt_scale_begin(app: &EffectcraftApp, ctx: &egui::Context, comp: &
 }
 
 /// While an Alt-drag scale is active: scale the group so its dragged end follows the pointer.
-pub(crate) fn alt_scale_update(app: &EffectcraftApp, ctx: &egui::Context, comp: &Comp, tm: TMap, actions: &mut Actions) {
-    let Some(st) = ctx.data(|d| d.get_temp::<AltScale>(alt_id())) else { return };
+pub(crate) fn alt_scale_update(
+    app: &EffectcraftApp,
+    ctx: &egui::Context,
+    comp: &Comp,
+    tm: TMap,
+    actions: &mut Actions,
+) {
+    let Some(st) = ctx.data(|d| d.get_temp::<AltScale>(alt_id())) else {
+        return;
+    };
     if !ctx.input(|i| i.pointer.primary_down()) {
         ctx.data_mut(|d| d.remove::<AltScale>(alt_id()));
         actions.push(("__endMerge".into(), json!({})));
         return;
     }
-    let (Some((lo, hi)), Some(px)) = (sel_range(app, comp), ctx.input(|i| i.pointer.latest_pos())) else { return };
+    let (Some((lo, hi)), Some(px)) = (sel_range(app, comp), ctx.input(|i| i.pointer.latest_pos()))
+    else {
+        return;
+    };
     let fr = comp.frame_rate;
-    let target = fr.snap_nearest(effectcraft_engine::time::Tick::from_seconds_f64(tm.t(px.x).max(0.0))).seconds();
+    let target = fr
+        .snap_nearest(effectcraft_engine::time::Tick::from_seconds_f64(
+            tm.t(px.x).max(0.0),
+        ))
+        .seconds();
     // The group's span when the drag started: every step sends the whole scale since then.
-    let span = st.span.unwrap_or((if st.end_is_max { hi } else { lo }) - st.anchor);
+    let span = st
+        .span
+        .unwrap_or((if st.end_is_max { hi } else { lo }) - st.anchor);
     if st.span.is_none() {
-        ctx.data_mut(|d| d.insert_temp(alt_id(), AltScale { span: Some(span), ..st }));
+        ctx.data_mut(|d| {
+            d.insert_temp(
+                alt_id(),
+                AltScale {
+                    span: Some(span),
+                    ..st
+                },
+            )
+        });
     }
     let want = target - st.anchor;
     if span.abs() < 1e-9 || want.abs() < 1e-9 || want.signum() != span.signum() {
@@ -315,7 +418,10 @@ pub(crate) fn alt_scale_active(ctx: &egui::Context) -> bool {
 /// Graph Editor ▸ Show Reference Graph: the other graph type, normalized to the plot, faint.
 pub(crate) fn reference_graph(p: &egui::Painter, plot: Rect, curves: &[(Color32, Vec<Pos2>)]) {
     for (c, pts) in curves {
-        p.add(egui::Shape::line(pts.clone(), Stroke::new(1.0, c.gamma_multiply(0.35))));
+        p.add(egui::Shape::line(
+            pts.clone(),
+            Stroke::new(1.0, c.gamma_multiply(0.35)),
+        ));
     }
     let _ = plot;
 }

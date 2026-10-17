@@ -54,13 +54,20 @@ fn main() {
     let mb = bytes.len() as f64 / (1024.0 * 1024.0);
     let chunk = 64 * 1024;
 
-    let mut term = AphrodyTerm::new(TermConfig { cols: 120, rows: 40, max_scrollback: 10_000 });
+    let mut term = AphrodyTerm::new(TermConfig {
+        cols: 120,
+        rows: 40,
+        max_scrollback: 10_000,
+    });
     let started = Instant::now();
     for piece in bytes.chunks(chunk) {
         term.ingest(piece);
     }
     let secs = started.elapsed().as_secs_f64();
-    println!("aphrody-term ingest: {mb:.1} MB in {secs:.3} s = {:.1} MB/s", mb / secs);
+    println!(
+        "aphrody-term ingest: {mb:.1} MB in {secs:.3} s = {:.1} MB/s",
+        mb / secs
+    );
 
     let frames = 2_000;
     let _ = term.render_frame();
@@ -83,7 +90,10 @@ fn main() {
         let _ = state.take_replies();
     }
     let secs = started.elapsed().as_secs_f64();
-    println!("terminal-core (rio-vt) ingest: {mb:.1} MB in {secs:.3} s = {:.1} MB/s", mb / secs);
+    println!(
+        "terminal-core (rio-vt) ingest: {mb:.1} MB in {secs:.3} s = {:.1} MB/s",
+        mb / secs
+    );
 
     let started = Instant::now();
     let snapshots = 500;

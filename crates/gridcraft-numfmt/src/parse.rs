@@ -25,7 +25,10 @@ pub(crate) enum DatePart {
 
 impl DatePart {
     pub(crate) fn is_calendar(self) -> bool {
-        matches!(self, DatePart::Year(_) | DatePart::Month(_) | DatePart::Day(_))
+        matches!(
+            self,
+            DatePart::Year(_) | DatePart::Month(_) | DatePart::Day(_)
+        )
     }
 }
 
@@ -62,7 +65,11 @@ impl Tok {
             Tok::Point => ".".into(),
             Tok::Comma => ",".into(),
             Tok::Percent => "%".into(),
-            Tok::Exp { upper, plus } => format!("{}{}", if *upper { 'E' } else { 'e' }, if *plus { '+' } else { '-' }),
+            Tok::Exp { upper, plus } => format!(
+                "{}{}",
+                if *upper { 'E' } else { 'e' },
+                if *plus { '+' } else { '-' }
+            ),
             Tok::Slash => "/".into(),
             Tok::Fill(_) | Tok::At | Tok::General | Tok::Date(_) => String::new(),
         }
@@ -203,7 +210,10 @@ fn push_lit(toks: &mut Vec<Tok>, s: &str) {
 }
 
 fn is_currency_char(c: char) -> bool {
-    matches!(c, '$' | '€' | '£' | '¥' | '₹' | '₩' | '₽' | '¢' | '₪' | '₫' | '฿')
+    matches!(
+        c,
+        '$' | '€' | '£' | '¥' | '₹' | '₩' | '₽' | '¢' | '₪' | '₫' | '฿'
+    )
 }
 
 fn parse_color(lc: &str) -> Option<FormatColor> {
@@ -255,7 +265,12 @@ struct Raw {
 
 fn tokenize(src: &str) -> Raw {
     let cs: Vec<char> = src.chars().collect();
-    let mut raw = Raw { toks: Vec::new(), color: None, cond: None, currency: false };
+    let mut raw = Raw {
+        toks: Vec::new(),
+        color: None,
+        cond: None,
+        currency: false,
+    };
     let toks = &mut raw.toks;
     // With no `]` at or after a `[`, that `[` is a literal; checking this once keeps the scan linear.
     let last_close = cs.iter().rposition(|&c| c == ']');
@@ -303,10 +318,18 @@ fn tokenize(src: &str) -> Raw {
                 continue;
             }
             '[' => {
-                let close = if last_close.is_some_and(|l| l > i) { cs.get(i + 1..).and_then(|r| r.iter().position(|&d| d == ']')) } else { None };
+                let close = if last_close.is_some_and(|l| l > i) {
+                    cs.get(i + 1..)
+                        .and_then(|r| r.iter().position(|&d| d == ']'))
+                } else {
+                    None
+                };
                 if let Some(p) = close {
                     let content: String = cs.get(i + 1..i + 1 + p).unwrap_or(&[]).iter().collect();
-                    bracket(&mut raw_parts(toks, &mut raw.color, &mut raw.cond, &mut raw.currency), &content);
+                    bracket(
+                        &mut raw_parts(toks, &mut raw.color, &mut raw.cond, &mut raw.currency),
+                        &content,
+                    );
                     i += p + 2;
                 } else {
                     push_lit(toks, "[");
@@ -336,7 +359,10 @@ fn tokenize(src: &str) -> Raw {
                 continue;
             }
             'e' | 'E' if matches!(cs.get(i + 1), Some('+' | '-')) => {
-                toks.push(Tok::Exp { upper: c == 'E', plus: cs.get(i + 1) == Some(&'+') });
+                toks.push(Tok::Exp {
+                    upper: c == 'E',
+                    plus: cs.get(i + 1) == Some(&'+'),
+                });
                 i += 2;
                 continue;
             }
@@ -393,8 +419,18 @@ struct RawParts<'a> {
     currency: &'a mut bool,
 }
 
-fn raw_parts<'a>(toks: &'a mut Vec<Tok>, color: &'a mut Option<FormatColor>, cond: &'a mut Option<Cond>, currency: &'a mut bool) -> RawParts<'a> {
-    RawParts { toks, color, cond, currency }
+fn raw_parts<'a>(
+    toks: &'a mut Vec<Tok>,
+    color: &'a mut Option<FormatColor>,
+    cond: &'a mut Option<Cond>,
+    currency: &'a mut bool,
+) -> RawParts<'a> {
+    RawParts {
+        toks,
+        color,
+        cond,
+        currency,
+    }
 }
 
 /// Handles the content of a `[...]` tag.
@@ -438,7 +474,12 @@ fn date_part(t: &Tok) -> Option<DatePart> {
 }
 
 fn analyze(raw: Raw) -> Section {
-    let Raw { mut toks, color, cond, currency } = raw;
+    let Raw {
+        mut toks,
+        color,
+        cond,
+        currency,
+    } = raw;
     let is_date = toks.iter().any(|t| matches!(t, Tok::Date(_)));
     let has_general = toks.iter().any(|t| matches!(t, Tok::General));
     let mut sec = Section {
@@ -460,12 +501,16 @@ fn analyze(raw: Raw) -> Section {
         sec.kind = SecKind::Date;
         // m/mm after hours or before seconds means minutes.
         for i in 0..toks.len() {
-            let Some(Tok::Date(DatePart::Month(n))) = toks.get(i) else { continue };
+            let Some(Tok::Date(DatePart::Month(n))) = toks.get(i) else {
+                continue;
+            };
             let n = *n;
             if n > 2 {
                 continue;
             }
-            let prev = toks.get(..i).and_then(|s| s.iter().rev().find_map(date_part));
+            let prev = toks
+                .get(..i)
+                .and_then(|s| s.iter().rev().find_map(date_part));
             let next = toks.get(i + 1..).and_then(|s| s.iter().find_map(date_part));
             let after_h = matches!(prev, Some(DatePart::Hour(_) | DatePart::ElapsedH(_)));
             let before_s = matches!(next, Some(DatePart::Second(_) | DatePart::ElapsedS(_)));
@@ -539,7 +584,10 @@ fn analyze(raw: Raw) -> Section {
         }
     }
     let last_exp = toks.iter().rposition(|t| matches!(t, Tok::Exp { .. }));
-    let scientific = toks.iter().skip_while(|t| !matches!(t, Tok::Digit(_))).any(|t| matches!(t, Tok::Exp { .. }));
+    let scientific = toks
+        .iter()
+        .skip_while(|t| !matches!(t, Tok::Digit(_)))
+        .any(|t| matches!(t, Tok::Exp { .. }));
     for i in 0..toks.len() {
         let Some(t) = toks.get(i).cloned() else { break };
         let replace = match t {
@@ -587,7 +635,11 @@ fn analyze(raw: Raw) -> Section {
             Tok::Slash => {
                 // Literal text may sit between the bar and the denominator (`#/ #`, `# ?=/=?`).
                 let next_ok = matches!(toks.get(i + 1), Some(Tok::FixedDenom(_)))
-                    || matches!(toks.get(i + 1..).and_then(|s| s.iter().find(|t| !matches!(t, Tok::Lit(_)))), Some(Tok::Digit(_)));
+                    || matches!(
+                        toks.get(i + 1..)
+                            .and_then(|s| s.iter().find(|t| !matches!(t, Tok::Lit(_)))),
+                        Some(Tok::Digit(_))
+                    );
                 // An exponent kept before this bar (`seen_exp`) or any marker still ahead of it.
                 let has_exp = seen_exp || last_exp.is_some_and(|l| l > i);
                 if !fraction_slash && seen_digit && next_ok && !seen_point && !has_exp {
@@ -599,7 +651,9 @@ fn analyze(raw: Raw) -> Section {
                 }
             }
             Tok::FixedDenom(ref s) => {
-                if matches!(i.checked_sub(1).and_then(|p| toks.get(p)), Some(Tok::Slash)) && sec.fraction {
+                if matches!(i.checked_sub(1).and_then(|p| toks.get(p)), Some(Tok::Slash))
+                    && sec.fraction
+                {
                     None
                 } else {
                     Some(Tok::Lit(s.clone()))
@@ -635,7 +689,10 @@ fn analyze(raw: Raw) -> Section {
 
 /// Parses a whole format code into its sections.
 pub(crate) fn parse_sections(code: &str) -> Vec<Section> {
-    split_sections(code).iter().map(|s| analyze(tokenize(s))).collect()
+    split_sections(code)
+        .iter()
+        .map(|s| analyze(tokenize(s)))
+        .collect()
 }
 
 #[cfg(test)]

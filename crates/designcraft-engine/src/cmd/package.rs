@@ -44,7 +44,9 @@ fn ensure_real_directory(path: &Path, ancestor: bool) -> Result<()> {
             }
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty())
+            if let Some(parent) = path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
                 && parent != path
             {
                 ensure_real_directory(parent, true)?;
@@ -56,7 +58,10 @@ fn ensure_real_directory(path: &Path, ancestor: bool) -> Result<()> {
             }
             let metadata = std::fs::symlink_metadata(path).map_err(|e| path_error(path, e))?;
             if is_redirect(&metadata) || !metadata.is_dir() {
-                return Err(path_error(path, "output directory was redirected while it was being created"));
+                return Err(path_error(
+                    path,
+                    "output directory was redirected while it was being created",
+                ));
             }
         }
         Err(e) => return Err(path_error(path, e)),
@@ -81,12 +86,18 @@ impl OutputRoot {
 
     fn validate_directory(&self, path: &Path) -> Result<()> {
         if !path.starts_with(&self.path) {
-            return Err(path_error(path, "output path is outside the selected directory"));
+            return Err(path_error(
+                path,
+                "output path is outside the selected directory",
+            ));
         }
         ensure_real_directory(path, false)?;
         let canonical = std::fs::canonicalize(path).map_err(|e| path_error(path, e))?;
         if !canonical.starts_with(&self.canonical) {
-            return Err(path_error(path, "output directory resolves outside the selected directory"));
+            return Err(path_error(
+                path,
+                "output directory resolves outside the selected directory",
+            ));
         }
         Ok(())
     }
@@ -100,15 +111,23 @@ impl OutputRoot {
     }
 
     fn validate_file_entry(&self, path: &Path) -> Result<bool> {
-        let parent = path.parent().ok_or_else(|| path_error(path, "output file has no parent directory"))?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| path_error(path, "output file has no parent directory"))?;
         self.validate_directory(parent)?;
         if !path.starts_with(&self.path) {
-            return Err(path_error(path, "output file is outside the selected directory"));
+            return Err(path_error(
+                path,
+                "output file is outside the selected directory",
+            ));
         }
         match std::fs::symlink_metadata(path) {
             Ok(metadata) => {
                 if is_redirect(&metadata) {
-                    return Err(path_error(path, "refusing to replace a redirected output file"));
+                    return Err(path_error(
+                        path,
+                        "refusing to replace a redirected output file",
+                    ));
                 }
                 if !metadata.is_file() {
                     return Err(path_error(path, "output path is not a regular file"));
@@ -121,8 +140,14 @@ impl OutputRoot {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn temporary_file(&self, path: &Path, permissions: Option<std::fs::Permissions>) -> Result<tempfile::NamedTempFile> {
-        let parent = path.parent().ok_or_else(|| path_error(path, "output file has no parent directory"))?;
+    fn temporary_file(
+        &self,
+        path: &Path,
+        permissions: Option<std::fs::Permissions>,
+    ) -> Result<tempfile::NamedTempFile> {
+        let parent = path
+            .parent()
+            .ok_or_else(|| path_error(path, "output file has no parent directory"))?;
         self.validate_directory(parent)?;
         let mut builder = tempfile::Builder::new();
         builder.prefix(".designcraft-package-").suffix(".tmp");
@@ -133,11 +158,15 @@ impl OutputRoot {
             // Match fs::write for a new output: 0666 restricted by the caller's umask.
             builder.permissions(std::fs::Permissions::from_mode(0o666));
         }
-        let file = builder.tempfile_in(parent).map_err(|e| path_error(path, e))?;
+        let file = builder
+            .tempfile_in(parent)
+            .map_err(|e| path_error(path, e))?;
         #[cfg(unix)]
         if let Some(permissions) = permissions {
             // Overwrites retain their prior mode; copied fonts retain their source mode.
-            file.as_file().set_permissions(permissions).map_err(|e| path_error(path, e))?;
+            file.as_file()
+                .set_permissions(permissions)
+                .map_err(|e| path_error(path, e))?;
         }
         #[cfg(not(unix))]
         // The replacement inherits its directory's ACL. Rust's portable permission API cannot
@@ -150,12 +179,22 @@ impl OutputRoot {
         #[cfg(target_arch = "wasm32")]
         {
             let _ = (path, bytes);
-            return Err(EngineError::Other("package files are unavailable on the web".into()));
+            return Err(EngineError::Other(
+                "package files are unavailable on the web".into(),
+            ));
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             let existed = self.validate_file_entry(path)?;
-            let permissions = if existed { Some(std::fs::symlink_metadata(path).map_err(|e| path_error(path, e))?.permissions()) } else { None };
+            let permissions = if existed {
+                Some(
+                    std::fs::symlink_metadata(path)
+                        .map_err(|e| path_error(path, e))?
+                        .permissions(),
+                )
+            } else {
+                None
+            };
             let mut file = self.temporary_file(path, permissions)?;
             file.write_all(bytes).map_err(|e| path_error(path, e))?;
             // Recheck immediately before replacement. If a name is raced after this check,
@@ -168,19 +207,28 @@ impl OutputRoot {
 
     fn copy(&self, from: &Path, to: &Path) -> Result<()> {
         if self.validate_file_entry(to)?
-            && std::fs::canonicalize(to).is_ok_and(|target| std::fs::canonicalize(from).is_ok_and(|source| source == target))
+            && std::fs::canonicalize(to).is_ok_and(|target| {
+                std::fs::canonicalize(from).is_ok_and(|source| source == target)
+            })
         {
             return Ok(());
         }
         #[cfg(target_arch = "wasm32")]
         {
             let _ = from;
-            return Err(EngineError::Other("package files are unavailable on the web".into()));
+            return Err(EngineError::Other(
+                "package files are unavailable on the web".into(),
+            ));
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
             let mut source = File::open(from).map_err(|e| path_error(from, e))?;
-            let permissions = Some(source.metadata().map_err(|e| path_error(from, e))?.permissions());
+            let permissions = Some(
+                source
+                    .metadata()
+                    .map_err(|e| path_error(from, e))?
+                    .permissions(),
+            );
             let mut target = self.temporary_file(to, permissions)?;
             std::io::copy(&mut source, &mut target).map_err(|e| path_error(to, e))?;
             self.validate_file_entry(to)?;
@@ -214,8 +262,14 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn is_reserved_windows_name(name: &str) -> bool {
-    let stem = name.split('.').next().unwrap_or(name).trim_end_matches([' ', '.']);
-    ["con", "prn", "aux", "nul"].into_iter().any(|reserved| caseless::compatibility_caseless_match_str(stem, reserved))
+    let stem = name
+        .split('.')
+        .next()
+        .unwrap_or(name)
+        .trim_end_matches([' ', '.']);
+    ["con", "prn", "aux", "nul"]
+        .into_iter()
+        .any(|reserved| caseless::compatibility_caseless_match_str(stem, reserved))
         || (1..=9).any(|n| {
             caseless::compatibility_caseless_match_str(stem, &format!("com{n}"))
                 || caseless::compatibility_caseless_match_str(stem, &format!("lpt{n}"))
@@ -228,10 +282,14 @@ fn portable_names_equal(a: &str, b: &str) -> bool {
 
 /// A portable single path component made from document metadata.
 fn safe_component(name: &str, fallback: &str) -> String {
-    let leaf = name.rsplit(['/', '\\']).find(|part| !part.is_empty()).unwrap_or("");
+    let leaf = name
+        .rsplit(['/', '\\'])
+        .find(|part| !part.is_empty())
+        .unwrap_or("");
     let mut safe = String::new();
     for ch in leaf.trim().chars() {
-        let replacement = ch.is_control() || matches!(ch, '<' | '>' | ':' | '"' | '|' | '?' | '*' | '/' | '\\');
+        let replacement =
+            ch.is_control() || matches!(ch, '<' | '>' | ':' | '"' | '|' | '?' | '*' | '/' | '\\');
         let ch = if replacement { '_' } else { ch };
         if safe.len() + ch.len_utf8() > MAX_OUTPUT_COMPONENT_BYTES {
             break;
@@ -251,7 +309,10 @@ fn safe_component(name: &str, fallback: &str) -> String {
 fn package_output_path(dir: &Path, title: &str, extension: &str) -> Result<PathBuf> {
     let path = dir.join(format!("{title}.{extension}"));
     if path.parent() != Some(dir) {
-        return Err(bad("file.package", "an output filename would be outside the selected directory"));
+        return Err(bad(
+            "file.package",
+            "an output filename would be outside the selected directory",
+        ));
     }
     Ok(path)
 }
@@ -280,7 +341,12 @@ fn unique_name(base: String, taken: &mut Vec<String>) -> String {
 }
 
 /// Write each asset's bytes into `dir`; returns the relinked document and the paths written.
-fn write_links(d: &Document, root: &OutputRoot, dir: &Path, only: Option<&[AssetId]>) -> Result<(Document, Vec<PathBuf>)> {
+fn write_links(
+    d: &Document,
+    root: &OutputRoot,
+    dir: &Path,
+    only: Option<&[AssetId]>,
+) -> Result<(Document, Vec<PathBuf>)> {
     root.validate_directory(dir)?;
     let mut out = d.clone();
     let mut taken = Vec::new();
@@ -306,7 +372,14 @@ fn write_links(d: &Document, root: &OutputRoot, dir: &Path, only: Option<&[Asset
 /// Copy the font file of `face` into `dir` (created when first needed) unless its licence
 /// restricts it or it is already there (`copied`: the source files copied) → what the package
 /// report adds after the font's name (nothing when copied).
-fn copy_font(root: &OutputRoot, face: &FontFace, dir: &Path, copied: &mut Vec<PathBuf>, taken: &mut Vec<String>, files: &mut Vec<PathBuf>) -> String {
+fn copy_font(
+    root: &OutputRoot,
+    face: &FontFace,
+    dir: &Path,
+    copied: &mut Vec<PathBuf>,
+    taken: &mut Vec<String>,
+    files: &mut Vec<PathBuf>,
+) -> String {
     let from = match &face.source {
         FontSource::Bundled => return " — included with DesignCraft".into(),
         FontSource::Memory => return " — not copied: no font file".into(),
@@ -318,9 +391,18 @@ fn copy_font(root: &OutputRoot, face: &FontFace, dir: &Path, copied: &mut Vec<Pa
     if copied.contains(from) {
         return String::new();
     }
-    let name = safe_component(&from.file_name().map(|n| n.to_string_lossy()).unwrap_or_default(), "font");
+    let name = safe_component(
+        &from
+            .file_name()
+            .map(|n| n.to_string_lossy())
+            .unwrap_or_default(),
+        "font",
+    );
     let to = dir.join(unique_name(name, taken));
-    match root.validate_directory(dir).and_then(|_| root.copy(from, &to)) {
+    match root
+        .validate_directory(dir)
+        .and_then(|_| root.copy(from, &to))
+    {
         Ok(()) => {
             copied.push(from.clone());
             files.push(to);
@@ -353,14 +435,17 @@ fn drawn_faces(cs: &ComposedStory, depth: usize, out: &mut Vec<FaceRef>) {
 }
 
 fn package(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = PathBuf::from(str_param(p, "dir").ok_or_else(|| bad("file.package", "missing `dir`"))?);
+    let dir =
+        PathBuf::from(str_param(p, "dir").ok_or_else(|| bad("file.package", "missing `dir`"))?);
     let st = s.doc()?;
     let root = OutputRoot::new(dir.clone())?;
     let display_title = st.doc.title.clone();
     let title = safe_component(&display_title, "Untitled");
     let fonts = s.execute("font.list", &json!({}))?;
     let links = s.execute("links.list", &json!({}))?;
-    let pre = s.execute("preflight.run", &json!({})).unwrap_or(Value::Null);
+    let pre = s
+        .execute("preflight.run", &json!({}))
+        .unwrap_or(Value::Null);
     let d = s.doc()?.doc.clone();
     let links_dir = root.child("Links")?;
     let (packed, mut files) = write_links(&d, &root, &links_dir, None)?;
@@ -373,12 +458,27 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     let (mut copied, mut taken) = (Vec::new(), Vec::new());
     let (mut font_lines, mut named) = (Vec::new(), Vec::new());
     for f in fonts.as_array().into_iter().flatten() {
-        let (family, style) = (f["family"].as_str().unwrap_or(""), f["style"].as_str().unwrap_or(""));
-        let missing = f["missing"].as_bool().unwrap_or(false) || f["styleMissing"].as_bool().unwrap_or(false);
+        let (family, style) = (
+            f["family"].as_str().unwrap_or(""),
+            f["style"].as_str().unwrap_or(""),
+        );
+        let missing =
+            f["missing"].as_bool().unwrap_or(false) || f["styleMissing"].as_bool().unwrap_or(false);
         // A missing font's text is drawn in its substitute, which isn't a fallback font.
         let face = db.face(family, style);
         named.push(face.id());
-        let note = if missing { " — MISSING".to_string() } else { copy_font(&root, &face, &fonts_dir, &mut copied, &mut taken, &mut files) };
+        let note = if missing {
+            " — MISSING".to_string()
+        } else {
+            copy_font(
+                &root,
+                &face,
+                &fonts_dir,
+                &mut copied,
+                &mut taken,
+                &mut files,
+            )
+        };
         font_lines.push(format!("  {family} {style}{note}\n"));
     }
     // Fallback fonts: the faces that draw characters the named fonts lack.
@@ -390,7 +490,14 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     drawn.sort_by(|a, b| (&a.family, &a.style).cmp(&(&b.family, &b.style)));
     let fallback_lines: Vec<String> = drawn
         .iter()
-        .map(|f| format!("  {} {}{}\n", f.family, f.style, copy_font(&root, f, &fonts_dir, &mut copied, &mut taken, &mut files)))
+        .map(|f| {
+            format!(
+                "  {} {}{}\n",
+                f.family,
+                f.style,
+                copy_font(&root, f, &fonts_dir, &mut copied, &mut taken, &mut files)
+            )
+        })
         .collect();
     if p.get("idml").and_then(Value::as_bool).unwrap_or(true) {
         let path = package_output_path(&dir, &title, "idml")?;
@@ -399,7 +506,8 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     }
     if p.get("pdf").and_then(Value::as_bool).unwrap_or(false) {
         let path = package_output_path(&dir, &title, "pdf")?;
-        let bytes = designcraft_pdf::export_pdf(&packed, &s.cache, &Default::default()).map_err(|e| EngineError::Other(e.to_string()))?;
+        let bytes = designcraft_pdf::export_pdf(&packed, &s.cache, &Default::default())
+            .map_err(|e| EngineError::Other(e.to_string()))?;
         root.write(&path, &bytes)?;
         files.push(path);
     }
@@ -416,23 +524,36 @@ fn package(s: &mut Session, p: &Value) -> Result<Value> {
     }
     r += "\nLinks\n";
     for l in links.as_array().into_iter().flatten() {
-        r += &format!("  {} ({})\n", l["name"].as_str().unwrap_or(""), l["status"].as_str().unwrap_or(""));
+        r += &format!(
+            "  {} ({})\n",
+            l["name"].as_str().unwrap_or(""),
+            l["status"].as_str().unwrap_or("")
+        );
     }
     if let Some(issues) = pre.get("issues").and_then(Value::as_array) {
         r += &format!("\nPreflight: {} issue(s)\n", issues.len());
         for i in issues {
-            r += &format!("  {}\n", i.get("message").and_then(Value::as_str).unwrap_or(""));
+            r += &format!(
+                "  {}\n",
+                i.get("message").and_then(Value::as_str).unwrap_or("")
+            );
         }
     }
     let report = dir.join("Instructions.txt");
     root.write(&report, r.as_bytes())?;
     files.push(report);
-    Ok(json!({"dir": dir.to_string_lossy(), "files": files.iter().map(|f| f.to_string_lossy().to_string()).collect::<Vec<_>>(), "report": r}))
+    Ok(
+        json!({"dir": dir.to_string_lossy(), "files": files.iter().map(|f| f.to_string_lossy().to_string()).collect::<Vec<_>>(), "report": r}),
+    )
 }
 
 fn copy_links(s: &mut Session, p: &Value) -> Result<Value> {
-    let dir = PathBuf::from(str_param(p, "dir").ok_or_else(|| bad("links.copyTo", "missing `dir`"))?);
-    let only: Option<Vec<AssetId>> = p.get("assets").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(AssetId).collect());
+    let dir =
+        PathBuf::from(str_param(p, "dir").ok_or_else(|| bad("links.copyTo", "missing `dir`"))?);
+    let only: Option<Vec<AssetId>> = p
+        .get("assets")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).map(AssetId).collect());
     let d = s.doc()?.doc.clone();
     let root = OutputRoot::new(dir.clone())?;
     let (relinked, written) = write_links(&d, &root, &dir, only.as_deref())?;
@@ -449,15 +570,34 @@ mod tests {
 
     #[test]
     fn relocated_packages_rebind_embedded_image_links_on_open() {
-        let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos();
-        let dir = std::env::temp_dir().join(format!("dc-package-relocation-{}-{nonce}", std::process::id()));
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "dc-package-relocation-{}-{nonce}",
+            std::process::id()
+        ));
         let original = dir.join("original");
         let moved = dir.join("moved");
-        let png = designcraft_render::Rendered { width: 4, height: 3, pixels: [30, 90, 180, 255].repeat(12) }.to_png();
+        let png = designcraft_render::Rendered {
+            width: 4,
+            height: 3,
+            pixels: [30, 90, 180, 255].repeat(12),
+        }
+        .to_png();
         let mut s = Session::new();
-        s.execute("file.new", &json!({"title": "OwnedPackage", "width": 72, "height": 72})).unwrap();
+        s.execute(
+            "file.new",
+            &json!({"title": "OwnedPackage", "width": 72, "height": 72}),
+        )
+        .unwrap();
         s.execute("file.place", &json!({"base64": super::super::base64_encode(&png), "name": "owned.png", "x": 5, "y": 5, "width": 16})).unwrap();
-        s.execute("file.package", &json!({"dir": original.to_string_lossy(), "idml": true, "pdf": false})).unwrap();
+        s.execute(
+            "file.package",
+            &json!({"dir": original.to_string_lossy(), "idml": true, "pdf": false}),
+        )
+        .unwrap();
         std::fs::rename(&original, &moved).unwrap();
         let expected = std::path::absolute(moved.join("Links").join("owned.png")).unwrap();
         for (command, extension) in [("file.open", "designcraft"), ("file.openIdml", "idml")] {
@@ -465,7 +605,11 @@ mod tests {
             opened.execute(command, &json!({"path": moved.join(format!("OwnedPackage.{extension}")).to_string_lossy()})).unwrap();
             let asset = opened.doc().unwrap().doc.assets.values().next().unwrap();
             assert_eq!(*asset.data, png, "{extension}: preserve embedded pixels");
-            assert_eq!(asset.link.as_deref(), expected.to_str(), "{extension}: use the relocated Links file");
+            assert_eq!(
+                asset.link.as_deref(),
+                expected.to_str(),
+                "{extension}: use the relocated Links file"
+            );
             let links = opened.execute("links.list", &json!({})).unwrap();
             assert_eq!(links[0]["status"], "ok", "{extension}");
         }
@@ -481,17 +625,33 @@ mod tests {
         std::fs::write(&svg, r##"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40"/></svg>"##).unwrap();
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("file.place", &json!({"path": svg.to_string_lossy(), "x": 100, "y": 100})).unwrap();
-        s.execute("frame.create", &json!({"rect": [72, 300, 400, 400], "content": "text", "text": "Hello"})).unwrap();
+        s.execute(
+            "file.place",
+            &json!({"path": svg.to_string_lossy(), "x": 100, "y": 100}),
+        )
+        .unwrap();
+        s.execute(
+            "frame.create",
+            &json!({"rect": [72, 300, 400, 400], "content": "text", "text": "Hello"}),
+        )
+        .unwrap();
         let out = dir.join("Pkg");
         let r = s.execute("file.package", &json!({"dir": out.to_string_lossy(), "pdf": true, "instructions": "Print on matte."})).unwrap();
-        let files: Vec<String> = r["files"].as_array().unwrap().iter().map(|f| f.as_str().unwrap().to_string()).collect();
+        let files: Vec<String> = r["files"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| f.as_str().unwrap().to_string())
+            .collect();
         assert!(files.iter().any(|f| f.ends_with(".designcraft")));
         assert!(files.iter().any(|f| f.ends_with(".idml")));
         assert!(files.iter().any(|f| f.ends_with(".pdf")));
         assert!(out.join("Links").join("logo.svg").exists());
         let report = std::fs::read_to_string(out.join("Instructions.txt")).unwrap();
-        assert!(report.contains("Print on matte.") && report.contains("logo.svg"), "{report}");
+        assert!(
+            report.contains("Print on matte.") && report.contains("logo.svg"),
+            "{report}"
+        );
         assert!(report.contains("Preflight:"), "{report}");
         // The packaged document links to its Links folder.
         let doc_file = files.iter().find(|f| f.ends_with(".designcraft")).unwrap();
@@ -499,9 +659,26 @@ mod tests {
         let link = packed.assets.values().next().unwrap().link.clone().unwrap();
         assert!(link.contains("Links"), "{link}");
         // Copy Links To relinks the open document.
-        let r = s.execute("links.copyTo", &json!({"dir": dir.join("Copies").to_string_lossy()})).unwrap();
+        let r = s
+            .execute(
+                "links.copyTo",
+                &json!({"dir": dir.join("Copies").to_string_lossy()}),
+            )
+            .unwrap();
         assert_eq!(r["copied"], 1);
-        assert!(s.doc().unwrap().doc.assets.values().next().unwrap().link.as_deref().unwrap().contains("Copies"));
+        assert!(
+            s.doc()
+                .unwrap()
+                .doc
+                .assets
+                .values()
+                .next()
+                .unwrap()
+                .link
+                .as_deref()
+                .unwrap()
+                .contains("Copies")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -516,28 +693,54 @@ mod tests {
         let fonts = dir.join("src").join(DOCUMENT_FONTS_FOLDER);
         std::fs::create_dir_all(&fonts).unwrap();
         std::fs::write(fonts.join("free.ttf"), font_with(FREE, &['F']).unwrap()).unwrap();
-        std::fs::write(fonts.join("restricted.otf"), with_fs_type(font_with(RESTRICTED, &['R']).unwrap(), 0x0002).unwrap()).unwrap();
+        std::fs::write(
+            fonts.join("restricted.otf"),
+            with_fs_type(font_with(RESTRICTED, &['R']).unwrap(), 0x0002).unwrap(),
+        )
+        .unwrap();
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
 
-            std::fs::set_permissions(fonts.join("free.ttf"), std::fs::Permissions::from_mode(0o640)).unwrap();
+            std::fs::set_permissions(
+                fonts.join("free.ttf"),
+                std::fs::Permissions::from_mode(0o640),
+            )
+            .unwrap();
         }
         // Text in both fonts, and in the bundled default font.
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         let r = s.execute("frame.create", &json!({"rect": [72, 72, 400, 300], "content": "text", "text": "Free Restricted Default"})).unwrap();
         for (a, b, family) in [(0, 4, FREE), (5, 15, RESTRICTED)] {
-            s.execute("text.select", &json!({"story": r["story"], "anchor": a, "focus": b})).unwrap();
-            s.execute("type.char", &json!({"fontFamily": family, "fontStyle": "Regular"})).unwrap();
+            s.execute(
+                "text.select",
+                &json!({"story": r["story"], "anchor": a, "focus": b}),
+            )
+            .unwrap();
+            s.execute(
+                "type.char",
+                &json!({"fontFamily": family, "fontStyle": "Regular"}),
+            )
+            .unwrap();
         }
         let src = dir.join("src").join("Fonts.designcraft");
-        s.execute("file.save", &json!({"path": src.to_string_lossy()})).unwrap();
+        s.execute("file.save", &json!({"path": src.to_string_lossy()}))
+            .unwrap();
         let mut s = Session::new();
-        assert_eq!(s.execute("file.open", &json!({"path": src.to_string_lossy()})).unwrap()["documentFonts"], 2);
+        assert_eq!(
+            s.execute("file.open", &json!({"path": src.to_string_lossy()}))
+                .unwrap()["documentFonts"],
+            2
+        );
 
         let out = dir.join("Pkg");
-        let r = s.execute("file.package", &json!({"dir": out.to_string_lossy(), "idml": false})).unwrap();
+        let r = s
+            .execute(
+                "file.package",
+                &json!({"dir": out.to_string_lossy(), "idml": false}),
+            )
+            .unwrap();
         let packed_fonts = out.join(DOCUMENT_FONTS_FOLDER);
         assert!(packed_fonts.join("free.ttf").exists());
         #[cfg(unix)]
@@ -545,23 +748,61 @@ mod tests {
             use std::os::unix::fs::PermissionsExt;
 
             assert_eq!(
-                std::fs::metadata(packed_fonts.join("free.ttf")).unwrap().permissions().mode() & 0o777,
-                std::fs::metadata(fonts.join("free.ttf")).unwrap().permissions().mode() & 0o777
+                std::fs::metadata(packed_fonts.join("free.ttf"))
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777,
+                std::fs::metadata(fonts.join("free.ttf"))
+                    .unwrap()
+                    .permissions()
+                    .mode()
+                    & 0o777
             );
         }
-        assert!(!packed_fonts.join("restricted.otf").exists(), "a restricted licence keeps the font out");
-        assert!(r["files"].to_string().contains("free.ttf"), "{}", r["files"]);
+        assert!(
+            !packed_fonts.join("restricted.otf").exists(),
+            "a restricted licence keeps the font out"
+        );
+        assert!(
+            r["files"].to_string().contains("free.ttf"),
+            "{}",
+            r["files"]
+        );
         let report = r["report"].as_str().unwrap();
-        assert!(report.contains(&format!("{RESTRICTED} Regular — not copied: its licence doesn't allow it")), "{report}");
+        assert!(
+            report.contains(&format!(
+                "{RESTRICTED} Regular — not copied: its licence doesn't allow it"
+            )),
+            "{report}"
+        );
         assert!(report.contains(&format!("{FREE} Regular\n")), "{report}");
-        assert!(report.contains(&format!("{} Regular — included with DesignCraft", designcraft_fonts::DEFAULT_FAMILY)), "{report}");
+        assert!(
+            report.contains(&format!(
+                "{} Regular — included with DesignCraft",
+                designcraft_fonts::DEFAULT_FAMILY
+            )),
+            "{report}"
+        );
         // The packaged document opens with its fonts.
         let doc = r["files"][0].as_str().unwrap().to_string();
-        assert_eq!(Session::new().execute("file.open", &json!({"path": doc})).unwrap()["documentFonts"], 1);
+        assert_eq!(
+            Session::new()
+                .execute("file.open", &json!({"path": doc}))
+                .unwrap()["documentFonts"],
+            1
+        );
         // Packaging into the folder the fonts come from leaves them whole.
         let len = std::fs::metadata(fonts.join("free.ttf")).unwrap().len();
-        s.execute("file.package", &json!({"dir": dir.join("src").to_string_lossy(), "idml": false})).unwrap();
-        assert_eq!(std::fs::metadata(fonts.join("free.ttf")).unwrap().len(), len);
+        s.execute(
+            "file.package",
+            &json!({"dir": dir.join("src").to_string_lossy(), "idml": false}),
+        )
+        .unwrap();
+        assert_eq!(
+            std::fs::metadata(fonts.join("free.ttf")).unwrap().len(),
+            len
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -580,40 +821,97 @@ mod tests {
         let fonts = dir.join("src").join(DOCUMENT_FONTS_FOLDER);
         std::fs::create_dir_all(&fonts).unwrap();
         std::fs::write(fonts.join("named.ttf"), font_with(NAMED, &['N']).unwrap()).unwrap();
-        std::fs::write(fonts.join("helper.ttf"), font_with(HELPER, &[helped]).unwrap()).unwrap();
-        std::fs::write(fonts.join("restricted.otf"), with_fs_type(font_with(RESTRICTED, &[restricted]).unwrap(), 0x0002).unwrap()).unwrap();
+        std::fs::write(
+            fonts.join("helper.ttf"),
+            font_with(HELPER, &[helped]).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            fonts.join("restricted.otf"),
+            with_fs_type(font_with(RESTRICTED, &[restricted]).unwrap(), 0x0002).unwrap(),
+        )
+        .unwrap();
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("document.preferences", &json!({"glyphFallback": true})).unwrap();
+        s.execute("document.preferences", &json!({"glyphFallback": true}))
+            .unwrap();
         let text = format!("N{helped}{restricted}");
-        let r = s.execute("frame.create", &json!({"rect": [72, 72, 400, 300], "content": "text", "text": text})).unwrap();
-        s.execute("text.select", &json!({"story": r["story"], "anchor": 0, "focus": text.len()})).unwrap();
-        s.execute("type.char", &json!({"fontFamily": NAMED, "fontStyle": "Regular"})).unwrap();
+        let r = s
+            .execute(
+                "frame.create",
+                &json!({"rect": [72, 72, 400, 300], "content": "text", "text": text}),
+            )
+            .unwrap();
+        s.execute(
+            "text.select",
+            &json!({"story": r["story"], "anchor": 0, "focus": text.len()}),
+        )
+        .unwrap();
+        s.execute(
+            "type.char",
+            &json!({"fontFamily": NAMED, "fontStyle": "Regular"}),
+        )
+        .unwrap();
         let src = dir.join("src").join("Fallback.designcraft");
-        s.execute("file.save", &json!({"path": src.to_string_lossy()})).unwrap();
+        s.execute("file.save", &json!({"path": src.to_string_lossy()}))
+            .unwrap();
         let mut s = Session::new();
-        assert_eq!(s.execute("file.open", &json!({"path": src.to_string_lossy()})).unwrap()["documentFonts"], 3);
+        assert_eq!(
+            s.execute("file.open", &json!({"path": src.to_string_lossy()}))
+                .unwrap()["documentFonts"],
+            3
+        );
 
         let out = dir.join("Pkg");
-        let r = s.execute("file.package", &json!({"dir": out.to_string_lossy(), "idml": false})).unwrap();
+        let r = s
+            .execute(
+                "file.package",
+                &json!({"dir": out.to_string_lossy(), "idml": false}),
+            )
+            .unwrap();
         let packed_fonts = out.join(DOCUMENT_FONTS_FOLDER);
         assert!(packed_fonts.join("named.ttf").exists());
-        assert!(packed_fonts.join("helper.ttf").exists(), "the fallback font that draws text is copied");
-        assert!(!packed_fonts.join("restricted.otf").exists(), "a restricted licence keeps a fallback font out too");
+        assert!(
+            packed_fonts.join("helper.ttf").exists(),
+            "the fallback font that draws text is copied"
+        );
+        assert!(
+            !packed_fonts.join("restricted.otf").exists(),
+            "a restricted licence keeps a fallback font out too"
+        );
         let report = r["report"].as_str().unwrap();
-        let fallback = report.split("Fallback fonts").nth(1).unwrap_or_else(|| panic!("{report}"));
-        assert!(fallback.contains(&format!("{HELPER} Regular\n")), "{report}");
-        assert!(fallback.contains(&format!("{RESTRICTED} Regular — not copied: its licence doesn't allow it")), "{report}");
+        let fallback = report
+            .split("Fallback fonts")
+            .nth(1)
+            .unwrap_or_else(|| panic!("{report}"));
+        assert!(
+            fallback.contains(&format!("{HELPER} Regular\n")),
+            "{report}"
+        );
+        assert!(
+            fallback.contains(&format!(
+                "{RESTRICTED} Regular — not copied: its licence doesn't allow it"
+            )),
+            "{report}"
+        );
         assert!(!fallback.contains(NAMED), "{report}");
         // The packaged document draws the same text with its fonts.
         let doc = r["files"][0].as_str().unwrap().to_string();
-        assert_eq!(Session::new().execute("file.open", &json!({"path": doc})).unwrap()["documentFonts"], 2);
+        assert_eq!(
+            Session::new()
+                .execute("file.open", &json!({"path": doc}))
+                .unwrap()["documentFonts"],
+            2
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
     fn package_uses_portable_names_inside_the_selected_directory() {
-        assert_eq!(safe_component("Archive/Annual: Review", "Untitled"), "Annual_ Review");
+        assert_eq!(
+            safe_component("Archive/Annual: Review", "Untitled"),
+            "Annual_ Review"
+        );
         assert_eq!(safe_component(".", "Untitled"), "Untitled");
         assert_eq!(safe_component("CON", "Untitled"), "_CON");
         assert_eq!(safe_component("COM¹.txt", "Untitled"), "_COM¹.txt");
@@ -625,17 +923,30 @@ mod tests {
         assert_eq!(unique_name("Logo.svg".into(), &mut taken), "Logo.svg");
         assert_eq!(unique_name("logo.svg".into(), &mut taken), "logo 2.svg");
         assert_eq!(unique_name("Résumé.pdf".into(), &mut taken), "Résumé.pdf");
-        assert_eq!(unique_name("Re\u{301}sume\u{301}.pdf".into(), &mut taken), "Re\u{301}sume\u{301} 2.pdf");
+        assert_eq!(
+            unique_name("Re\u{301}sume\u{301}.pdf".into(), &mut taken),
+            "Re\u{301}sume\u{301} 2.pdf"
+        );
         assert_eq!(unique_name("ΟΣ.txt".into(), &mut taken), "ΟΣ.txt");
         assert_eq!(unique_name("ος.txt".into(), &mut taken), "ος 2.txt");
 
         let dir = std::env::temp_dir().join(format!("dc-package-safe-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let mut s = Session::new();
-        s.execute("file.new", &json!({"title": "Archive/Annual: Review"})).unwrap();
-        let r = s.execute("file.package", &json!({"dir": dir.to_string_lossy(), "idml": false})).unwrap();
+        s.execute("file.new", &json!({"title": "Archive/Annual: Review"}))
+            .unwrap();
+        let r = s
+            .execute(
+                "file.package",
+                &json!({"dir": dir.to_string_lossy(), "idml": false}),
+            )
+            .unwrap();
         let files = r["files"].as_array().unwrap();
-        assert!(files.iter().all(|path| Path::new(path.as_str().unwrap()).starts_with(&dir)));
+        assert!(
+            files
+                .iter()
+                .all(|path| Path::new(path.as_str().unwrap()).starts_with(&dir))
+        );
         assert!(dir.join("Annual_ Review.designcraft").is_file());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -656,15 +967,26 @@ mod tests {
 
         let mut s = Session::new();
         s.execute("file.new", &json!({"title": "Annual"})).unwrap();
-        s.execute("file.package", &json!({"dir": dir.to_string_lossy(), "idml": false})).unwrap();
-        s.execute("file.package", &json!({"dir": dir.to_string_lossy(), "idml": false})).unwrap();
+        s.execute(
+            "file.package",
+            &json!({"dir": dir.to_string_lossy(), "idml": false}),
+        )
+        .unwrap();
+        s.execute(
+            "file.package",
+            &json!({"dir": dir.to_string_lossy(), "idml": false}),
+        )
+        .unwrap();
         assert!(super::super::from_bytes(&std::fs::read(&document).unwrap()).is_ok());
         assert!(!dir.join(designcraft_fonts::DOCUMENT_FONTS_FOLDER).exists());
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
 
-            assert_eq!(std::fs::metadata(&document).unwrap().permissions().mode() & 0o777, 0o640);
+            assert_eq!(
+                std::fs::metadata(&document).unwrap().permissions().mode() & 0o777,
+                0o640
+            );
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -674,8 +996,13 @@ mod tests {
         let dir = PathBuf::from(format!(".dc-package-relative-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let mut s = Session::new();
-        s.execute("file.new", &json!({"title": "Relative"})).unwrap();
-        s.execute("file.package", &json!({"dir": dir.to_string_lossy(), "idml": false})).unwrap();
+        s.execute("file.new", &json!({"title": "Relative"}))
+            .unwrap();
+        s.execute(
+            "file.package",
+            &json!({"dir": dir.to_string_lossy(), "idml": false}),
+        )
+        .unwrap();
         assert!(dir.join("Relative.designcraft").is_file());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -685,7 +1012,8 @@ mod tests {
     fn package_refuses_redirected_destinations() {
         use std::os::unix::fs::symlink;
 
-        let base = std::env::temp_dir().join(format!("dc-package-redirects-{}", std::process::id()));
+        let base =
+            std::env::temp_dir().join(format!("dc-package-redirects-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         std::fs::create_dir_all(&base).unwrap();
         let outside = base.join("separate");
@@ -695,7 +1023,13 @@ mod tests {
 
         let redirected_root = base.join("redirected-package");
         symlink(&outside, &redirected_root).unwrap();
-        assert!(s.execute("file.package", &json!({"dir": redirected_root.to_string_lossy(), "idml": false})).is_err());
+        assert!(
+            s.execute(
+                "file.package",
+                &json!({"dir": redirected_root.to_string_lossy(), "idml": false})
+            )
+            .is_err()
+        );
         assert!(!outside.join("Annual.designcraft").exists());
         std::fs::remove_file(&redirected_root).unwrap();
 
@@ -703,14 +1037,30 @@ mod tests {
         let linked_parent = base.join("linked-parent");
         symlink(&outside, &linked_parent).unwrap();
         let nested_package = linked_parent.join("nested").join("Package");
-        s.execute("file.package", &json!({"dir": nested_package.to_string_lossy(), "idml": false})).unwrap();
-        assert!(outside.join("nested").join("Package").join("Annual.designcraft").is_file());
+        s.execute(
+            "file.package",
+            &json!({"dir": nested_package.to_string_lossy(), "idml": false}),
+        )
+        .unwrap();
+        assert!(
+            outside
+                .join("nested")
+                .join("Package")
+                .join("Annual.designcraft")
+                .is_file()
+        );
         std::fs::remove_file(&linked_parent).unwrap();
 
         let package = base.join("Package");
         std::fs::create_dir_all(&package).unwrap();
         symlink(&outside, package.join("Links")).unwrap();
-        assert!(s.execute("file.package", &json!({"dir": package.to_string_lossy(), "idml": false})).is_err());
+        assert!(
+            s.execute(
+                "file.package",
+                &json!({"dir": package.to_string_lossy(), "idml": false})
+            )
+            .is_err()
+        );
         assert!(!outside.join("Annual.designcraft").exists());
         std::fs::remove_file(package.join("Links")).unwrap();
         std::fs::create_dir(package.join("Links")).unwrap();
@@ -718,7 +1068,13 @@ mod tests {
         let kept = outside.join("kept.designcraft");
         std::fs::write(&kept, b"kept").unwrap();
         symlink(&kept, package.join("Annual.designcraft")).unwrap();
-        assert!(s.execute("file.package", &json!({"dir": package.to_string_lossy(), "idml": false})).is_err());
+        assert!(
+            s.execute(
+                "file.package",
+                &json!({"dir": package.to_string_lossy(), "idml": false})
+            )
+            .is_err()
+        );
         assert_eq!(std::fs::read(&kept).unwrap(), b"kept");
         let _ = std::fs::remove_dir_all(&base);
     }
@@ -728,7 +1084,10 @@ mod tests {
     fn package_refuses_windows_directory_redirects() {
         use std::os::windows::fs::symlink_dir;
 
-        let base = std::env::temp_dir().join(format!("dc-package-windows-redirect-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!(
+            "dc-package-windows-redirect-{}",
+            std::process::id()
+        ));
         let _ = std::fs::remove_dir_all(&base);
         let outside = base.join("separate");
         std::fs::create_dir_all(&outside).unwrap();
@@ -743,7 +1102,13 @@ mod tests {
         }
         let mut s = Session::new();
         s.execute("file.new", &json!({"title": "Annual"})).unwrap();
-        assert!(s.execute("file.package", &json!({"dir": redirected.to_string_lossy(), "idml": false})).is_err());
+        assert!(
+            s.execute(
+                "file.package",
+                &json!({"dir": redirected.to_string_lossy(), "idml": false})
+            )
+            .is_err()
+        );
         assert!(!outside.join("Annual.designcraft").exists());
         std::fs::remove_dir(&redirected).unwrap();
         let _ = std::fs::remove_dir_all(&base);

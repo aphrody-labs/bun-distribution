@@ -38,12 +38,20 @@ impl DelinksExt for Delinks {
         let mut files_sorted_by_section: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
         for (i, file) in self.files.iter().enumerate() {
             for section in file.sections.iter() {
-                files_sorted_by_section.entry(section.name()).or_default().push(i);
+                files_sorted_by_section
+                    .entry(section.name())
+                    .or_default()
+                    .push(i);
             }
         }
         for (section_name, files) in files_sorted_by_section.iter_mut() {
             files.sort_unstable_by_key(|&i| {
-                self.files[i].sections.by_name(section_name).unwrap().1.start_address()
+                self.files[i]
+                    .sections
+                    .by_name(section_name)
+                    .unwrap()
+                    .1
+                    .start_address()
             });
         }
 
@@ -64,7 +72,7 @@ impl DelinksExt for Delinks {
                     sorted_files[pos] = std::mem::take(&mut self.files[index]);
                 }
                 self.files = sorted_files;
-            },
+            }
             Err(cycle) => {
                 // Print link order cycle
                 let first = cycle[0];
@@ -81,7 +89,7 @@ impl DelinksExt for Delinks {
                     cycle,
                     self.files[first].name
                 )
-            },
+            }
         };
 
         // Stabilize gap IDs
@@ -159,7 +167,10 @@ impl DelinksExt for Delinks {
                 let file = self.files.remove(i);
                 for section in file.sections {
                     self.files[j].sections.add(section).with_context(|| {
-                        format!("when combining gaps {} and {}", file.name, self.files[j].name)
+                        format!(
+                            "when combining gaps {} and {}",
+                            file.name, self.files[j].name
+                        )
                     })?;
                 }
             }
@@ -263,8 +274,9 @@ impl DelinksPrivExt for Delinks {
         self.files
             .iter_mut()
             .filter_map(|delink_file| {
-                let (_, migrated_section) =
-                    delink_file.sections.by_name(migration.source_name().as_ref())?;
+                let (_, migrated_section) = delink_file
+                    .sections
+                    .by_name(migration.source_name().as_ref())?;
                 Some(migrate_delink_file(
                     section,
                     migration,
@@ -355,7 +367,10 @@ impl DelinksMap {
 
                 let has_migration = modules.iter().any(|source_module| {
                     let source = self.map.get_mut(source_module).unwrap();
-                    source.files.iter().any(|file| file.sections.by_name(&source_name).is_some())
+                    source
+                        .files
+                        .iter()
+                        .any(|file| file.sections.by_name(&source_name).is_some())
                 });
                 if !has_migration {
                     continue;

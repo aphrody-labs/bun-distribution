@@ -48,32 +48,69 @@ pub struct Chunk {
 
 impl ImageInfo {
     pub fn from_ifd(ifd: &Ifd) -> Result<ImageInfo> {
-        let width = ifd.u32(tags::IMAGE_WIDTH).ok_or(TiffError::MissingTag(tags::IMAGE_WIDTH))?;
-        let height = ifd.u32(tags::IMAGE_LENGTH).ok_or(TiffError::MissingTag(tags::IMAGE_LENGTH))?;
+        let width = ifd
+            .u32(tags::IMAGE_WIDTH)
+            .ok_or(TiffError::MissingTag(tags::IMAGE_WIDTH))?;
+        let height = ifd
+            .u32(tags::IMAGE_LENGTH)
+            .ok_or(TiffError::MissingTag(tags::IMAGE_LENGTH))?;
         if width == 0 || height == 0 {
             return Err(TiffError::Invalid("zero image dimension".into()));
         }
         let samples_per_pixel = ifd.u16(tags::SAMPLES_PER_PIXEL).unwrap_or(1).max(1);
-        let bits_per_sample: Vec<u16> =
-            ifd.u64s(tags::BITS_PER_SAMPLE).map(|v| v.into_iter().map(|b| b.min(u16::MAX as u64) as u16).collect()).unwrap_or_else(|| vec![1]);
-        let bits_per_sample = if bits_per_sample.is_empty() { vec![1] } else { bits_per_sample };
+        let bits_per_sample: Vec<u16> = ifd
+            .u64s(tags::BITS_PER_SAMPLE)
+            .map(|v| {
+                v.into_iter()
+                    .map(|b| b.min(u16::MAX as u64) as u16)
+                    .collect()
+            })
+            .unwrap_or_else(|| vec![1]);
+        let bits_per_sample = if bits_per_sample.is_empty() {
+            vec![1]
+        } else {
+            bits_per_sample
+        };
         let planar = ifd.u16(tags::PLANAR_CONFIGURATION).unwrap_or(1);
         let (layout, offsets, byte_counts) = if let Some(tw) = ifd.u32(tags::TILE_WIDTH) {
-            let th = ifd.u32(tags::TILE_LENGTH).ok_or(TiffError::MissingTag(tags::TILE_LENGTH))?;
+            let th = ifd
+                .u32(tags::TILE_LENGTH)
+                .ok_or(TiffError::MissingTag(tags::TILE_LENGTH))?;
             if tw == 0 || th == 0 {
                 return Err(TiffError::Invalid("zero tile size".into()));
             }
-            let offs = ifd.u64s(tags::TILE_OFFSETS).or_else(|| ifd.u64s(tags::STRIP_OFFSETS)).ok_or(TiffError::MissingTag(tags::TILE_OFFSETS))?;
+            let offs = ifd
+                .u64s(tags::TILE_OFFSETS)
+                .or_else(|| ifd.u64s(tags::STRIP_OFFSETS))
+                .ok_or(TiffError::MissingTag(tags::TILE_OFFSETS))?;
             let cnts = ifd
                 .u64s(tags::TILE_BYTE_COUNTS)
                 .or_else(|| ifd.u64s(tags::STRIP_BYTE_COUNTS))
                 .ok_or(TiffError::MissingTag(tags::TILE_BYTE_COUNTS))?;
-            (Layout::Tiles { tile_width: tw, tile_height: th }, offs, cnts)
+            (
+                Layout::Tiles {
+                    tile_width: tw,
+                    tile_height: th,
+                },
+                offs,
+                cnts,
+            )
         } else {
-            let offs = ifd.u64s(tags::STRIP_OFFSETS).ok_or(TiffError::MissingTag(tags::STRIP_OFFSETS))?;
+            let offs = ifd
+                .u64s(tags::STRIP_OFFSETS)
+                .ok_or(TiffError::MissingTag(tags::STRIP_OFFSETS))?;
             let cnts = ifd.u64s(tags::STRIP_BYTE_COUNTS).unwrap_or_default();
-            let rps = ifd.u32(tags::ROWS_PER_STRIP).unwrap_or(height).clamp(1, height);
-            (Layout::Strips { rows_per_strip: rps }, offs, cnts)
+            let rps = ifd
+                .u32(tags::ROWS_PER_STRIP)
+                .unwrap_or(height)
+                .clamp(1, height);
+            (
+                Layout::Strips {
+                    rows_per_strip: rps,
+                },
+                offs,
+                cnts,
+            )
         };
         Ok(ImageInfo {
             width,
@@ -106,7 +143,13 @@ impl ImageInfo {
     pub fn grid(&self) -> (u32, u32) {
         match self.layout {
             Layout::Strips { rows_per_strip } => (1, self.height.div_ceil(rows_per_strip)),
-            Layout::Tiles { tile_width, tile_height } => (self.width.div_ceil(tile_width), self.height.div_ceil(tile_height)),
+            Layout::Tiles {
+                tile_width,
+                tile_height,
+            } => (
+                self.width.div_ceil(tile_width),
+                self.height.div_ceil(tile_height),
+            ),
         }
     }
 
@@ -114,7 +157,10 @@ impl ImageInfo {
     pub fn chunk_size(&self) -> (u32, u32) {
         match self.layout {
             Layout::Strips { rows_per_strip } => (self.width, rows_per_strip),
-            Layout::Tiles { tile_width, tile_height } => (tile_width, tile_height),
+            Layout::Tiles {
+                tile_width,
+                tile_height,
+            } => (tile_width, tile_height),
         }
     }
 
@@ -123,7 +169,11 @@ impl ImageInfo {
     pub fn chunks(&self, data_len: u64) -> Vec<Chunk> {
         let (across, down) = self.grid();
         let per_plane = across as usize * down as usize;
-        let planes = if self.planar == 2 { self.samples_per_pixel as usize } else { 1 };
+        let planes = if self.planar == 2 {
+            self.samples_per_pixel as usize
+        } else {
+            1
+        };
         let (cw, ch) = self.chunk_size();
         let n = self.offsets.len().min(per_plane.saturating_mul(planes));
         let mut out = Vec::with_capacity(n);
@@ -142,11 +192,26 @@ impl ImageInfo {
                 Some(&l) if l > 0 => l,
                 _ => {
                     // infer: up to the next larger offset, else end of data
-                    let next = self.offsets.iter().copied().filter(|&o| o > offset).min().unwrap_or(data_len);
+                    let next = self
+                        .offsets
+                        .iter()
+                        .copied()
+                        .filter(|&o| o > offset)
+                        .min()
+                        .unwrap_or(data_len);
                     next.saturating_sub(offset)
                 }
             };
-            out.push(Chunk { index: i, x, y, width: cw, height, plane: plane as u16, offset, len });
+            out.push(Chunk {
+                index: i,
+                x,
+                y,
+                width: cw,
+                height,
+                plane: plane as u16,
+                offset,
+                len,
+            });
         }
         out
     }

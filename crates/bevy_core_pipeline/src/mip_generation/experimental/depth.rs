@@ -18,7 +18,7 @@ use bevy_ecs::{
     system::{Commands, Local, Query, Res, ResMut},
 };
 use bevy_log::debug;
-use bevy_math::{uvec2, UVec2, Vec4Swizzles as _};
+use bevy_math::{UVec2, Vec4Swizzles as _, uvec2};
 use bevy_render::{
     batching::gpu_preprocessing::GpuPreprocessingSupport,
     diagnostic::RecordDiagnostics,
@@ -26,7 +26,6 @@ use bevy_render::{
         OcclusionCulling, OcclusionCullingSubview, OcclusionCullingSubviewEntities,
     },
     render_resource::{
-        binding_types::{sampler, texture_2d, texture_2d_multisampled, texture_storage_2d},
         BindGroup, BindGroupEntries, BindGroupLayout, BindGroupLayoutDescriptor,
         BindGroupLayoutEntries, CachedComputePipelineId, ComputePassDescriptor, ComputePipeline,
         ComputePipelineDescriptor, Extent3d, IntoBinding, PipelineCache, Sampler,
@@ -34,6 +33,7 @@ use bevy_render::{
         SpecializedComputePipelines, StorageTextureAccess, TextureAspect, TextureDescriptor,
         TextureDimension, TextureFormat, TextureSampleType, TextureUsages, TextureView,
         TextureViewDescriptor, TextureViewDimension,
+        binding_types::{sampler, texture_2d, texture_2d_multisampled, texture_storage_2d},
     },
     renderer::{RenderContext, RenderDevice, ViewQuery},
     texture::TextureCache,

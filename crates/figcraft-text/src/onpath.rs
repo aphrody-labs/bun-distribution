@@ -26,7 +26,12 @@ impl OnPath {
         let mut line = polylines(&tp.path())?.into_iter().next()?;
         // A subpath ending where it starts (an ellipse) goes round like a closed one.
         line.closed |= matches!((line.points.first(), line.points.last()), (Some(a), Some(b)) if (*a - *b).hypot() < 1e-6);
-        Some(Self { origin: tp.start() * line.length() - shift, line, flip: tp.flip, baseline })
+        Some(Self {
+            origin: tp.start() * line.length() - shift,
+            line,
+            flip: tp.flip,
+            baseline,
+        })
     }
 
     /// The point on the path `along` units from its start (flipped: from its end) and the
@@ -36,7 +41,11 @@ impl OnPath {
         if len <= 1e-9 || !along.is_finite() {
             return None;
         }
-        let s = if self.line.closed { along.rem_euclid(len) } else { along };
+        let s = if self.line.closed {
+            along.rem_euclid(len)
+        } else {
+            along
+        };
         if !(0.0..=len).contains(&s) {
             return None;
         }
@@ -53,7 +62,11 @@ impl OnPath {
     pub fn frame(&self, x: f64, y: f64) -> Option<Affine> {
         let (p, dir) = self.at(self.origin + x)?;
         let below = Vec2::new(-dir.y, dir.x) * (y - self.baseline);
-        Some(Affine::translate((p + below).to_vec2()) * Affine::rotate(dir.atan2()) * Affine::translate((-x, -y)))
+        Some(
+            Affine::translate((p + below).to_vec2())
+                * Affine::rotate(dir.atan2())
+                * Affine::translate((-x, -y)),
+        )
     }
 }
 
@@ -72,7 +85,9 @@ pub(crate) fn place(out: &mut TextLayout, tp: &TextPath, align: TextAlignH) {
     };
     for g in &mut out.glyphs {
         // A hidden glyph collapses to a point.
-        g.warp = on.frame(g.x + g.advance / 2.0, g.y).unwrap_or(Affine::scale(0.0));
+        g.warp = on
+            .frame(g.x + g.advance / 2.0, g.y)
+            .unwrap_or(Affine::scale(0.0));
     }
     // shortcut: underline and strikethrough aren't drawn on a path; bend them along when asked for.
     out.decorations.clear();

@@ -11,7 +11,11 @@ pub(crate) fn profile_state_root(config: &Config) -> miette::Result<PathBuf> {
     let base = aphrody_models::paths::state_dir()
         .map_err(|error| miette::miette!("profile state: {error}"))?;
     let workspace = profile_workspace(config)?;
-    Ok(profile_state_root_at(&base, &workspace, config.active_profile.as_deref()))
+    Ok(profile_state_root_at(
+        &base,
+        &workspace,
+        config.active_profile.as_deref(),
+    ))
 }
 
 fn profile_state_root_at(base: &Path, workspace: &Path, active_profile: Option<&str>) -> PathBuf {

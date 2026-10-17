@@ -67,14 +67,22 @@ impl ExceptionTableEntry {
     }
 
     pub fn exception_record_pointer(&self) -> Option<u32> {
-        self.has_long_exception_record().then_some(self.exception_record)
+        self.has_long_exception_record()
+            .then_some(self.exception_record)
     }
 }
 
 #[derive(Debug, Snafu)]
 pub enum ExceptionDataError {
-    #[snafu(display("Failed to cast data to exception table entry: {}\n{}", error, backtrace))]
-    PodCastError { error: bytemuck::PodCastError, backtrace: Backtrace },
+    #[snafu(display(
+        "Failed to cast data to exception table entry: {}\n{}",
+        error,
+        backtrace
+    ))]
+    PodCastError {
+        error: bytemuck::PodCastError,
+        backtrace: Backtrace,
+    },
     #[snafu(transparent)]
     SectionCode { source: SectionCodeError },
     #[snafu(transparent)]
@@ -117,8 +125,10 @@ impl<'a> ExceptionData<'a> {
             bytemuck::try_cast_slice(&arm9_code[start..end])
                 .map_err(|error| PodCastSnafu { error }.build())?;
 
-        let exception_start =
-            exception_table.iter().filter_map(ExceptionTableEntry::exception_record_pointer).min();
+        let exception_start = exception_table
+            .iter()
+            .filter_map(ExceptionTableEntry::exception_record_pointer)
+            .min();
 
         Ok(Some(ExceptionData {
             exception_start,
@@ -135,9 +145,7 @@ impl<'a> ExceptionData<'a> {
         base_address: u32,
     ) -> Result<Option<(&'static FindExceptionTableFn, u32, u32, u32)>, ExceptionDataError> {
         let end_address = base_address + module_code.len() as u32;
-        log::debug!(
-            "Searching for exception table in {base_address:#010x}..{end_address:#010x}"
-        );
+        log::debug!("Searching for exception table in {base_address:#010x}..{end_address:#010x}");
 
         for address in (base_address..end_address).step_by(4) {
             let code = &module_code[(address - base_address) as usize..];
@@ -161,7 +169,12 @@ impl<'a> ExceptionData<'a> {
                 "Found {FIND_EXCEPTION_TABLE_SYMBOL_NAME} function at {address:#010x} with .exceptix start {exceptix_start:#010x} and end {exceptix_end:#010x}"
             );
 
-            return Ok(Some((find_exception_table_fn, address, exceptix_start, exceptix_end)));
+            return Ok(Some((
+                find_exception_table_fn,
+                address,
+                exceptix_start,
+                exceptix_end,
+            )));
         }
         Ok(None)
     }

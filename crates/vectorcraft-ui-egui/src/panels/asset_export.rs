@@ -18,7 +18,9 @@ use vectorcraft_doc::{ExportAsset, Node, NodeId};
 use vectorcraft_engine::DocState;
 
 use super::{pstate, set_pstate};
-use crate::dialogs::{EXPORT_FOR_SCREENS, open_export_for_screens_assets, screen_formats, screen_saved_rows};
+use crate::dialogs::{
+    EXPORT_FOR_SCREENS, open_export_for_screens_assets, screen_formats, screen_saved_rows,
+};
 use crate::state::Dialog;
 use crate::theme::Tokens;
 use crate::widgets::{self, menu_item};
@@ -61,21 +63,51 @@ pub(crate) fn paint_thumb(ui: &Ui, st: &DocState, a: &ExportAsset, r: Rect) {
         if k.0 != (st.uid, st.revision) {
             *k = ((st.uid, st.revision), HashMap::new());
         }
-        k.1.entry(a.id).or_insert_with(|| ids().iter().filter_map(|id| st.doc.node(*id)).map(|n| std::ptr::from_ref(n) as usize).collect()).clone()
+        k.1.entry(a.id)
+            .or_insert_with(|| {
+                ids()
+                    .iter()
+                    .filter_map(|id| st.doc.node(*id))
+                    .map(|n| std::ptr::from_ref(n) as usize)
+                    .collect()
+            })
+            .clone()
     });
     let px = (r.width() * ui.ctx().pixels_per_point()).round().max(8.0) as u32;
     let key = (nodes, px);
     let tex = CACHE.with(|c| c.borrow().get(&key).cloned()).or_else(|| {
         let art: Vec<&Node> = ids().iter().filter_map(|id| st.doc.node(*id)).collect();
         let img = RENDERER.with(|rr| match art.as_slice() {
-            [one] => rr.borrow_mut().render_node_thumbnail_with(&st.doc, one, px, None, &super::layers::thumb_options()),
+            [one] => rr.borrow_mut().render_node_thumbnail_with(
+                &st.doc,
+                one,
+                px,
+                None,
+                &super::layers::thumb_options(),
+            ),
             many => {
-                let group = Node::group(NodeId(0), many.iter().map(|n| Arc::new((*n).clone())).collect());
-                rr.borrow_mut().render_node_thumbnail_with(&st.doc, &group, px, None, &super::layers::thumb_options())
+                let group = Node::group(
+                    NodeId(0),
+                    many.iter().map(|n| Arc::new((*n).clone())).collect(),
+                );
+                rr.borrow_mut().render_node_thumbnail_with(
+                    &st.doc,
+                    &group,
+                    px,
+                    None,
+                    &super::layers::thumb_options(),
+                )
             }
         })?;
-        let color = egui::ColorImage::from_rgba_premultiplied([img.width as usize, img.height as usize], &img.pixels);
-        let tex = ui.ctx().load_texture(format!("asset-thumb-{}", a.id), color, egui::TextureOptions::LINEAR);
+        let color = egui::ColorImage::from_rgba_premultiplied(
+            [img.width as usize, img.height as usize],
+            &img.pixels,
+        );
+        let tex = ui.ctx().load_texture(
+            format!("asset-thumb-{}", a.id),
+            color,
+            egui::TextureOptions::LINEAR,
+        );
         CACHE.with(|c| {
             let mut c = c.borrow_mut();
             if c.len() > 512 {
@@ -86,7 +118,12 @@ pub(crate) fn paint_thumb(ui: &Ui, st: &DocState, a: &ExportAsset, r: Rect) {
         Some(tex)
     });
     if let Some(t) = tex {
-        ui.painter().image(t.id(), r, Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)), Color32::WHITE);
+        ui.painter().image(
+            t.id(),
+            r,
+            Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
 }
 
@@ -116,19 +153,40 @@ fn tiles(ui: &mut Ui, st: &DocState, sel: &[u64], ev: &mut Events) {
             } else if resp.hovered() {
                 ui.painter().rect_filled(r, 2.0, t.hover);
             }
-            let th = Rect::from_min_size(egui::pos2(r.center().x - THUMB / 2.0, r.top() + 4.0), vec2(THUMB, THUMB));
+            let th = Rect::from_min_size(
+                egui::pos2(r.center().x - THUMB / 2.0, r.top() + 4.0),
+                vec2(THUMB, THUMB),
+            );
             paint_thumb(ui, st, a, th);
-            ui.painter().rect_stroke(th, 0.0, Stroke::new(if on { 2.0 } else { 1.0 }, if on { t.accent } else { t.border }), StrokeKind::Outside);
-            let name_rect = Rect::from_min_max(egui::pos2(r.left() + 2.0, th.bottom() + 3.0), egui::pos2(r.right() - 2.0, r.bottom() - 1.0));
+            ui.painter().rect_stroke(
+                th,
+                0.0,
+                Stroke::new(
+                    if on { 2.0 } else { 1.0 },
+                    if on { t.accent } else { t.border },
+                ),
+                StrokeKind::Outside,
+            );
+            let name_rect = Rect::from_min_max(
+                egui::pos2(r.left() + 2.0, th.bottom() + 3.0),
+                egui::pos2(r.right() - 2.0, r.bottom() - 1.0),
+            );
             match &renaming {
                 Some((id, buf)) if *id == a.id => {
                     let mut buf = buf.clone();
                     let mut child = ui.new_child(egui::UiBuilder::new().max_rect(name_rect));
-                    let te = child.add(egui::TextEdit::singleline(&mut buf).desired_width(name_rect.width()).font(egui::FontId::proportional(11.5)));
+                    let te = child.add(
+                        egui::TextEdit::singleline(&mut buf)
+                            .desired_width(name_rect.width())
+                            .font(egui::FontId::proportional(11.5)),
+                    );
                     // Enter or a click elsewhere commits, Escape cancels.
                     if te.lost_focus() {
                         ui.data_mut(|d| d.remove::<(u64, String)>(rename_id));
-                        if child.input(|i| !i.key_pressed(egui::Key::Escape)) && buf.trim() != a.name && !buf.trim().is_empty() {
+                        if child.input(|i| !i.key_pressed(egui::Key::Escape))
+                            && buf.trim() != a.name
+                            && !buf.trim().is_empty()
+                        {
                             ev.rename = Some((a.id, buf.trim().to_string()));
                         }
                     } else {
@@ -159,7 +217,10 @@ fn tiles(ui: &mut Ui, st: &DocState, sel: &[u64], ev: &mut Events) {
 /// Art dragged off the canvas over the list: outline it; dropped, it becomes assets.
 fn drop_zone(ui: &Ui, zone: &egui::Response, ev: &mut Events) {
     if let Some(ids) = widgets::art_drop(ui, zone) {
-        ev.drop = Some((ids.into_iter().map(NodeId).collect(), ui.input(|i| i.modifiers.alt)));
+        ev.drop = Some((
+            ids.into_iter().map(NodeId).collect(),
+            ui.input(|i| i.modifiers.alt),
+        ));
     }
 }
 
@@ -176,7 +237,12 @@ fn collect(app: &mut VectorcraftApp, ctx: &egui::Context, ids: Option<Vec<NodeId
         p["ids"] = json!(ids.iter().map(|id| id.0).collect::<Vec<_>>());
     }
     if let Some(r) = run(app, "assets.add", p) {
-        let ids: Vec<u64> = r["assets"].as_array().into_iter().flatten().filter_map(Value::as_u64).collect();
+        let ids: Vec<u64> = r["assets"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_u64)
+            .collect();
         set_pstate(ctx, SELECTED, ids);
     }
 }
@@ -194,7 +260,11 @@ fn export_now(app: &mut VectorcraftApp, ids: Vec<u64>, files_each: usize) {
     if io::is_web(app) {
         p["zip"] = json!(ids.len() * files_each > 1);
     } else {
-        let saved = app.session.active().map(|st| st.doc.export_settings.clone()).unwrap_or_default();
+        let saved = app
+            .session
+            .active()
+            .map(|st| st.doc.export_settings.clone())
+            .unwrap_or_default();
         let folder = if crate::picks::can(app, &crate::picks::PickRequest::Folder) {
             match crate::picks::folder(app) {
                 Some(f) => f,
@@ -213,7 +283,12 @@ fn export_now(app: &mut VectorcraftApp, ids: Vec<u64>, files_each: usize) {
             }
         };
         p["folder"] = json!(folder);
-        p["openLocation"] = json!(saved.get("openLocation").and_then(Value::as_bool).unwrap_or(true));
+        p["openLocation"] = json!(
+            saved
+                .get("openLocation")
+                .and_then(Value::as_bool)
+                .unwrap_or(true)
+        );
     }
     if let Err(e) = io::export_files(app, "assets.export", p) {
         app.status(e);
@@ -234,14 +309,19 @@ fn settings(ui: &mut Ui, st: &DocState) -> (Option<Settings>, usize) {
     let (rows, preset) = screen_saved_rows(&st.doc.export_settings);
     let preset = preset.unwrap_or_default().to_string();
     let n = rows.len();
-    let mut d = Dialog::new(EXPORT_FOR_SCREENS, json!({ "formats": &rows, "preset": preset, "__settings": "" }));
+    let mut d = Dialog::new(
+        EXPORT_FOR_SCREENS,
+        json!({ "formats": &rows, "preset": preset, "__settings": "" }),
+    );
     screen_formats(ui, &mut d);
     let (shown, picked) = (d.str("__settings"), d.str("preset"));
     let formats = d.fields.remove("formats").unwrap_or(Value::Null);
     let change = if !shown.is_empty() {
         Some(Settings::Format(shown))
     } else if picked != preset && !picked.is_empty() {
-        Some(Settings::Set(json!({ "preset": picked, "subfolders": true })))
+        Some(Settings::Set(
+            json!({ "preset": picked, "subfolders": true }),
+        ))
     } else if picked != preset || formats.as_array() != Some(&rows) {
         // Rows edited, or Custom picked: the rows as they are, without the preset.
         Some(Settings::Set(json!({ "formats": formats, "preset": "" })))
@@ -274,7 +354,11 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 tiles(ui, st, &sel, &mut ev);
             }
         });
-        let zone = ui.interact(out.inner_rect, ui.id().with("asset-export-drop"), Sense::hover());
+        let zone = ui.interact(
+            out.inner_rect,
+            ui.id().with("asset-export-drop"),
+            Sense::hover(),
+        );
         drop_zone(ui, &zone, &mut ev);
     });
     ui.add_space(6.0);
@@ -291,18 +375,40 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
                 let label = if sel.is_empty() || sel.len() == all.len() {
                     tl!("Export").to_string()
                 } else {
-                    crate::i18n::fmt(tl!("Export {count} Selected"), &[("count", &sel.len().to_string())])
+                    crate::i18n::fmt(
+                        tl!("Export {count} Selected"),
+                        &[("count", &sel.len().to_string())],
+                    )
                 };
-                export_clicked = widgets::primary_button(ui, &label).on_hover_text(tl!("Export the selected assets (else all of them)")).clicked();
+                export_clicked = widgets::primary_button(ui, &label)
+                    .on_hover_text(tl!("Export the selected assets (else all of them)"))
+                    .clicked();
             });
         });
     });
     let (mut screens, mut add, mut remove) = (false, false, false);
     widgets::bottom_bar(ui, |ui| {
-        screens = widgets::icon_button(ui, "monitor", tl!("Export for Screens…"), false, 24.0).clicked();
+        screens =
+            widgets::icon_button(ui, "monitor", tl!("Export for Screens…"), false, 24.0).clicked();
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            remove = widgets::icon_button_enabled(ui, "trash-2", tl!("Remove Selected Assets"), false, !sel.is_empty(), 24.0).clicked();
-            add = widgets::icon_button_enabled(ui, "plus", tl!("Add Selected Artwork (Alt: as one asset)"), false, has_art, 24.0).clicked();
+            remove = widgets::icon_button_enabled(
+                ui,
+                "trash-2",
+                tl!("Remove Selected Assets"),
+                false,
+                !sel.is_empty(),
+                24.0,
+            )
+            .clicked();
+            add = widgets::icon_button_enabled(
+                ui,
+                "plus",
+                tl!("Add Selected Artwork (Alt: as one asset)"),
+                false,
+                has_art,
+                24.0,
+            )
+            .clicked();
         });
     });
     // Act on what the panel saw (the document is no longer borrowed).
@@ -348,19 +454,30 @@ pub fn show(app: &mut VectorcraftApp, ui: &mut Ui) {
 
 /// The selected assets, else all of them.
 fn sel_or_all(sel: &[u64], all: &[u64]) -> Vec<u64> {
-    if sel.is_empty() { all.to_vec() } else { sel.to_vec() }
+    if sel.is_empty() {
+        all.to_vec()
+    } else {
+        sel.to_vec()
+    }
 }
 
 /// The panel (≡) menu.
 pub fn menu(app: &mut VectorcraftApp, ui: &mut Ui) {
     let ctx = ui.ctx().clone();
-    let Some(st) = app.session.active() else { return };
+    let Some(st) = app.session.active() else {
+        return;
+    };
     let (has_art, sel) = (!st.selection.is_empty(), selected(&ctx, st));
     let all: Vec<u64> = st.doc.assets.iter().map(|a| a.id).collect();
     if menu_item(ui, tl!("Add Selected Artwork as One Asset"), has_art, false) {
         collect(app, &ctx, None, true);
     }
-    if menu_item(ui, tl!("Add Selected Artwork as Multiple Assets"), has_art, false) {
+    if menu_item(
+        ui,
+        tl!("Add Selected Artwork as Multiple Assets"),
+        has_art,
+        false,
+    ) {
         collect(app, &ctx, None, false);
     }
     ui.separator();

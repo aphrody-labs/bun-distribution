@@ -61,16 +61,86 @@ pub struct Teinte {
 /// Mesure du 2026-09-06, `pixel mesurer … --k 10`, remplissage 16,98 % de l'atlas (le reste est
 /// transparent). Les parts somment à 99 % aux arrondis près.
 pub const PALETTE: [Teinte; 10] = [
-    Teinte { nom: "creme", hex: "#F7F3F0", part_pct: 25.0, l: 0.9664, c: 0.0059, h: 59.65 },
-    Teinte { nom: "blond", hex: "#EADBA6", part_pct: 21.0, l: 0.8908, c: 0.0707, h: 94.17 },
-    Teinte { nom: "sable", hex: "#C2B19E", part_pct: 13.0, l: 0.7696, c: 0.0329, h: 70.41 },
-    Teinte { nom: "taupe", hex: "#AF9183", part_pct: 11.0, l: 0.6803, c: 0.0416, h: 46.43 },
-    Teinte { nom: "mauve", hex: "#8B7083", part_pct: 9.0, l: 0.5774, c: 0.0435, h: 337.07 },
-    Teinte { nom: "brun", hex: "#6C5454", part_pct: 7.0, l: 0.4705, c: 0.0320, h: 18.35 },
-    Teinte { nom: "ocre", hex: "#91704C", part_pct: 5.0, l: 0.5690, c: 0.0658, h: 68.31 },
-    Teinte { nom: "cacao", hex: "#4E3738", part_pct: 4.0, l: 0.3633, c: 0.0330, h: 15.93 },
-    Teinte { nom: "azur", hex: "#17335C", part_pct: 2.0, l: 0.3229, c: 0.0807, h: 258.02 },
-    Teinte { nom: "nuit", hex: "#131420", part_pct: 2.0, l: 0.1963, c: 0.0242, h: 280.23 },
+    Teinte {
+        nom: "creme",
+        hex: "#F7F3F0",
+        part_pct: 25.0,
+        l: 0.9664,
+        c: 0.0059,
+        h: 59.65,
+    },
+    Teinte {
+        nom: "blond",
+        hex: "#EADBA6",
+        part_pct: 21.0,
+        l: 0.8908,
+        c: 0.0707,
+        h: 94.17,
+    },
+    Teinte {
+        nom: "sable",
+        hex: "#C2B19E",
+        part_pct: 13.0,
+        l: 0.7696,
+        c: 0.0329,
+        h: 70.41,
+    },
+    Teinte {
+        nom: "taupe",
+        hex: "#AF9183",
+        part_pct: 11.0,
+        l: 0.6803,
+        c: 0.0416,
+        h: 46.43,
+    },
+    Teinte {
+        nom: "mauve",
+        hex: "#8B7083",
+        part_pct: 9.0,
+        l: 0.5774,
+        c: 0.0435,
+        h: 337.07,
+    },
+    Teinte {
+        nom: "brun",
+        hex: "#6C5454",
+        part_pct: 7.0,
+        l: 0.4705,
+        c: 0.0320,
+        h: 18.35,
+    },
+    Teinte {
+        nom: "ocre",
+        hex: "#91704C",
+        part_pct: 5.0,
+        l: 0.5690,
+        c: 0.0658,
+        h: 68.31,
+    },
+    Teinte {
+        nom: "cacao",
+        hex: "#4E3738",
+        part_pct: 4.0,
+        l: 0.3633,
+        c: 0.0330,
+        h: 15.93,
+    },
+    Teinte {
+        nom: "azur",
+        hex: "#17335C",
+        part_pct: 2.0,
+        l: 0.3229,
+        c: 0.0807,
+        h: 258.02,
+    },
+    Teinte {
+        nom: "nuit",
+        hex: "#131420",
+        part_pct: 2.0,
+        l: 0.1963,
+        c: 0.0242,
+        h: 280.23,
+    },
 ];
 
 /// Index de la teinte crème dans [`PALETTE`].
@@ -153,7 +223,13 @@ pub const ROLES: [Role; 26] = [
         chroma: 1.0,
         role: "le fond le plus profond",
     },
-    Role { nom: "jeu-fond-nuit", source: AZUR, l: 0.3000, chroma: 0.9, role: "un panneau sombre" },
+    Role {
+        nom: "jeu-fond-nuit",
+        source: AZUR,
+        l: 0.3000,
+        chroma: 0.9,
+        role: "un panneau sombre",
+    },
     Role {
         nom: "jeu-fond-profond",
         source: AZUR,
@@ -181,7 +257,13 @@ pub const ROLES: [Role; 26] = [
     // seulement son nom. Le BRUN du personnage (h = 18,35°) est la teinte la plus rouge de la
     // palette avec le cacao. Le brun mesuré est mat (C = 0,0320) et le gamut autorise ici
     // jusqu'à ×7,28 : à ×5 elle redevient une brique franche sans rien devoir écrêter.
-    Role { nom: "jeu-accent-brique", source: BRUN, l: 0.5800, chroma: 5.0, role: "l'alerte" },
+    Role {
+        nom: "jeu-accent-brique",
+        source: BRUN,
+        l: 0.5800,
+        chroma: 5.0,
+        role: "l'alerte",
+    },
     Role {
         nom: "jeu-accent-azur",
         source: AZUR,
@@ -200,7 +282,13 @@ pub const ROLES: [Role; 26] = [
         chroma: 1.2,
         role: "le liseré d'un état actif",
     },
-    Role { nom: "jeu-accent-turquoise", source: AZUR, l: 0.7000, chroma: 1.9, role: "le succès" },
+    Role {
+        nom: "jeu-accent-turquoise",
+        source: AZUR,
+        l: 0.7000,
+        chroma: 1.9,
+        role: "le succès",
+    },
     // --- Surfaces claires ---------------------------------------------------------------------
     // La « glace » sourçait la CREME (h = 59,65°) et rendait `#f1e9e3` — du beige chaud sous un
     // nom de surface froide. Elle vient du bleu de la tenue, comme la brume qui la voisine.
@@ -283,7 +371,13 @@ pub const ROLES: [Role; 26] = [
         chroma: 1.3,
         role: "le haut d'une tuile",
     },
-    Role { nom: "jeu-tuile-bas", source: AZUR, l: 0.3900, chroma: 1.2, role: "le bas d'une tuile" },
+    Role {
+        nom: "jeu-tuile-bas",
+        source: AZUR,
+        l: 0.3900,
+        chroma: 1.2,
+        role: "le bas d'une tuile",
+    },
     Role {
         nom: "jeu-tuile-bord",
         source: AZUR,
@@ -315,7 +409,13 @@ pub const ROLES: [Role; 26] = [
         chroma: 1.9,
         role: "la plaque centrale",
     },
-    Role { nom: "jeu-lisere-or", source: BLOND, l: 0.7800, chroma: 2.1, role: "le liseré doré" },
+    Role {
+        nom: "jeu-lisere-or",
+        source: BLOND,
+        l: 0.7800,
+        chroma: 2.1,
+        role: "le liseré doré",
+    },
 ];
 
 /// Les trois couleurs de la coquille Inacord, dérivées des mêmes teintes.
@@ -341,7 +441,13 @@ pub const ROLES_INACORD: [Role; 3] = [
         chroma: 0.6,
         role: "son panneau clair",
     },
-    Role { nom: "inacord-accent", source: AZUR, l: 0.7000, chroma: 1.1, role: "son unique accent" },
+    Role {
+        nom: "inacord-accent",
+        source: AZUR,
+        l: 0.7000,
+        chroma: 1.1,
+        role: "son unique accent",
+    },
 ];
 
 /// Les trois composantes sRGB d'une couleur Oklch, **sans écrêtage**.
@@ -397,7 +503,11 @@ pub fn oklch_vers_hex(oklch: [f64; 3]) -> String {
 fn luminance(rgb: [u8; 3]) -> f64 {
     let voie = |v: u8| {
         let s = f64::from(v) / 255.0;
-        if s <= 0.040_45 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+        if s <= 0.040_45 {
+            s / 12.92
+        } else {
+            ((s + 0.055) / 1.055).powf(2.4)
+        }
     };
     0.2126 * voie(rgb[0]) + 0.7152 * voie(rgb[1]) + 0.0722 * voie(rgb[2])
 }
@@ -413,7 +523,11 @@ pub fn contraste(a: [f64; 3], b: [f64; 3]) -> f64 {
 /// Le rôle nommé, ou `None`.
 #[must_use]
 pub fn role(nom: &str) -> Option<Role> {
-    ROLES.iter().chain(ROLES_INACORD.iter()).copied().find(|r| r.nom == nom)
+    ROLES
+        .iter()
+        .chain(ROLES_INACORD.iter())
+        .copied()
+        .find(|r| r.nom == nom)
 }
 
 /// Les paires que l'interface superpose réellement, avec le contraste exigé.
@@ -717,16 +831,27 @@ mod tests {
     #[test]
     fn les_paires_affichees_restent_lisibles() {
         for (a, b, mesure, min) in contrastes() {
-            assert!(mesure >= min, "{a} sur {b} : contraste {mesure:.2}, minimum {min}");
+            assert!(
+                mesure >= min,
+                "{a} sur {b} : contraste {mesure:.2}, minimum {min}"
+            );
         }
-        assert_eq!(contrastes().len(), PAIRES.len(), "une paire nomme un rôle inconnu");
+        assert_eq!(
+            contrastes().len(),
+            PAIRES.len(),
+            "une paire nomme un rôle inconnu"
+        );
     }
 
     #[test]
     fn la_feuille_porte_tous_les_roles() {
         let css = feuille_css();
         for r in ROLES.iter().chain(ROLES_INACORD.iter()) {
-            assert!(css.contains(&format!("--{}: oklch(", r.nom)), "{} absent", r.nom);
+            assert!(
+                css.contains(&format!("--{}: oklch(", r.nom)),
+                "{} absent",
+                r.nom
+            );
         }
         assert!(css.starts_with("/* Couleurs derivees"));
         assert!(css.trim_end().ends_with('}'));
@@ -761,7 +886,10 @@ mod tests {
             "le socle cite un role absent de ROLES :\n{socle}"
         );
         // Et il ne doit porter AUCUN hexadécimal : c'est tout l'objet de la dérivation.
-        assert!(!socle.contains('#'), "une couleur hexadecimale subsiste dans le socle :\n{socle}");
+        assert!(
+            !socle.contains('#'),
+            "une couleur hexadecimale subsiste dans le socle :\n{socle}"
+        );
     }
 
     #[test]
@@ -790,7 +918,10 @@ mod tests {
         assert!(css.contains("@media (prefers-reduced-motion: reduce)"));
         // Le compte est celui du fichier d'origine : 46 dans `:root`, 48 avec les deux du
         // `@media`. Un rôle ajouté sans intertitre, ou un socle rogné, s'y voit tout de suite.
-        let proprietes = css.lines().filter(|l| l.trim_start().starts_with("--")).count();
+        let proprietes = css
+            .lines()
+            .filter(|l| l.trim_start().starts_with("--"))
+            .count();
         assert_eq!(proprietes, 48, "le compte de proprietes a change");
     }
 }

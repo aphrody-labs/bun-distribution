@@ -7,7 +7,16 @@ use serde_json::{Value, json};
 use crate::{CmdError, CmdResult, CommandSpec, Prefs, Session, p};
 
 /// Options panes, in the order the page lists them (the `pane` param of `file.options`).
-pub const PANES: [&str; 8] = ["general", "display", "proofing", "save", "language", "accessibility", "advanced", "agents"];
+pub const PANES: [&str; 8] = [
+    "general",
+    "display",
+    "proofing",
+    "save",
+    "language",
+    "accessibility",
+    "advanced",
+    "agents",
+];
 
 /// Longest initials kept, in characters.
 pub const MAX_INITIALS_CHARS: usize = 9;
@@ -35,7 +44,9 @@ pub fn specs() -> Vec<CommandSpec> {
 /// The on/off settings by their `file.options` name.
 fn flags() -> [(&'static str, fn(&mut Prefs) -> &mut bool); 7] {
     [
-        ("typingReplacesSelection", |p| &mut p.typing_replaces_selection),
+        ("typingReplacesSelection", |p| {
+            &mut p.typing_replaces_selection
+        }),
         ("insertKeyOvertype", |p| &mut p.insert_key_overtype),
         ("overtype", |p| &mut p.overtype),
         ("markGrammar", |p| &mut p.mark_grammar),
@@ -45,8 +56,16 @@ fn flags() -> [(&'static str, fn(&mut Prefs) -> &mut bool); 7] {
     ]
 }
 
-fn mark_flags() -> [(&'static str, fn(&mut wordcraft_layout::display::FormattingMarks) -> &mut bool); 4] {
-    [("tabs", |m| &mut m.tabs), ("spaces", |m| &mut m.spaces), ("paragraphs", |m| &mut m.paragraphs), ("hidden", |m| &mut m.hidden)]
+fn mark_flags() -> [(
+    &'static str,
+    fn(&mut wordcraft_layout::display::FormattingMarks) -> &mut bool,
+); 4] {
+    [
+        ("tabs", |m| &mut m.tabs),
+        ("spaces", |m| &mut m.spaces),
+        ("paragraphs", |m| &mut m.paragraphs),
+        ("hidden", |m| &mut m.hidden),
+    ]
 }
 
 fn bool_param(v: &Value, k: &str) -> Result<Option<bool>, CmdError> {
@@ -59,17 +78,26 @@ fn bool_param(v: &Value, k: &str) -> Result<Option<bool>, CmdError> {
 
 /// Words for the custom dictionary: trimmed, single words, at most [`MAX_WORD_CHARS`] long.
 fn words_param(v: &Value, k: &str) -> Result<Vec<String>, CmdError> {
-    let Some(x) = v.get(k).filter(|x| !x.is_null()) else { return Ok(Vec::new()) };
+    let Some(x) = v.get(k).filter(|x| !x.is_null()) else {
+        return Ok(Vec::new());
+    };
     let bad = || CmdError::Params(format!("`{k}` must be a list of words"));
     let list = x.as_array().ok_or_else(bad)?;
     if list.len() > MAX_WORDS_PER_CALL {
-        return Err(CmdError::Params(format!("`{k}` takes at most {MAX_WORDS_PER_CALL} words")));
+        return Err(CmdError::Params(format!(
+            "`{k}` takes at most {MAX_WORDS_PER_CALL} words"
+        )));
     }
     let mut out = Vec::new();
     for w in list {
         let w = w.as_str().ok_or_else(bad)?.trim();
-        if w.is_empty() || w.chars().count() > MAX_WORD_CHARS || w.chars().any(|c| c.is_whitespace() || c.is_control()) {
-            return Err(CmdError::Params(format!("`{k}`: {w:?} isn't a single word of at most {MAX_WORD_CHARS} characters")));
+        if w.is_empty()
+            || w.chars().count() > MAX_WORD_CHARS
+            || w.chars().any(|c| c.is_whitespace() || c.is_control())
+        {
+            return Err(CmdError::Params(format!(
+                "`{k}`: {w:?} isn't a single word of at most {MAX_WORD_CHARS} characters"
+            )));
         }
         out.push(w.to_string());
     }
@@ -79,7 +107,12 @@ fn words_param(v: &Value, k: &str) -> Result<Vec<String>, CmdError> {
 fn options(s: &mut Session, v: &Value) -> CmdResult {
     let pane = match p::str(v, "pane") {
         Some(name) if PANES.contains(&name) => name,
-        Some(name) => return Err(CmdError::Params(format!("unknown pane `{name}`; one of {}", PANES.join(", ")))),
+        Some(name) => {
+            return Err(CmdError::Params(format!(
+                "unknown pane `{name}`; one of {}",
+                PANES.join(", ")
+            )));
+        }
         None => "general",
     };
     // Read every setting first, so a bad one changes nothing.
@@ -90,7 +123,13 @@ fn options(s: &mut Session, v: &Value) -> CmdResult {
     };
     let initials = match v.get("initials") {
         None | Some(Value::Null) => None,
-        Some(Value::String(i)) => Some(i.trim().chars().filter(|c| !c.is_control()).take(MAX_INITIALS_CHARS).collect::<String>()),
+        Some(Value::String(i)) => Some(
+            i.trim()
+                .chars()
+                .filter(|c| !c.is_control())
+                .take(MAX_INITIALS_CHARS)
+                .collect::<String>(),
+        ),
         Some(_) => return Err(CmdError::Params("`initials` must be a string".into())),
     };
     let units = match v.get("units") {
@@ -98,20 +137,34 @@ fn options(s: &mut Session, v: &Value) -> CmdResult {
         // `auto` forgets the choice: lengths follow the region again (#838).
         Some(Value::String(a)) if a == "auto" => Some(None),
         Some(u) => Some(Some(
-            serde_json::from_value::<wordcraft_geom::Unit>(u.clone())
-                .map_err(|_| CmdError::Params("`units` is one of inches, centimeters, millimeters, points, picas, auto".into()))?,
+            serde_json::from_value::<wordcraft_geom::Unit>(u.clone()).map_err(|_| {
+                CmdError::Params(
+                    "`units` is one of inches, centimeters, millimeters, points, picas, auto"
+                        .into(),
+                )
+            })?,
         )),
     };
     let region = match v.get("region") {
         None | Some(Value::Null) => None,
         // `auto` (or an empty tag) forgets the choice: the system's region again.
-        Some(Value::String(t)) if t.trim().is_empty() || t.trim().eq_ignore_ascii_case("auto") => Some(None),
+        Some(Value::String(t)) if t.trim().is_empty() || t.trim().eq_ignore_ascii_case("auto") => {
+            Some(None)
+        }
         // Kept as the tag (normalised, short), so it is saved and read back as chosen.
         Some(Value::String(t)) => {
             let r = wordcraft_geom::Region::from_tag(t);
-            Some(Some(if r.territory.is_empty() { r.language } else { format!("{}-{}", r.language, r.territory) }))
+            Some(Some(if r.territory.is_empty() {
+                r.language
+            } else {
+                format!("{}-{}", r.language, r.territory)
+            }))
         }
-        Some(_) => return Err(CmdError::Params("`region` must be a locale tag like pl-PL, or auto".into())),
+        Some(_) => {
+            return Err(CmdError::Params(
+                "`region` must be a locale tag like pl-PL, or auto".into(),
+            ));
+        }
     };
     let mut flag_values = Vec::new();
     for (k, f) in flags() {
@@ -129,7 +182,11 @@ fn options(s: &mut Session, v: &Value) -> CmdResult {
                 }
             }
         }
-        Some(_) => return Err(CmdError::Params("`marks` must be an object of true/false".into())),
+        Some(_) => {
+            return Err(CmdError::Params(
+                "`marks` must be an object of true/false".into(),
+            ));
+        }
     }
     let check_spelling = bool_param(v, "checkSpelling")?;
     let add = words_param(v, "addWords")?;

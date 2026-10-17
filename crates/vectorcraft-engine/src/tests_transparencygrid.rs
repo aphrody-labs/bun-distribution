@@ -10,7 +10,10 @@ fn transparency_grid_is_per_document_view_state() {
     s.execute("file.new", &json!({})).unwrap();
     let grid = |s: &Session| s.doc().unwrap().transparency_grid;
     assert!(!grid(&s));
-    assert_eq!(s.execute("view.transparencyGrid", &json!({})).unwrap(), json!({"on": true}));
+    assert_eq!(
+        s.execute("view.transparencyGrid", &json!({})).unwrap(),
+        json!({"on": true})
+    );
     assert!(grid(&s));
     // Not an edit: nothing to undo, the document stays clean, the journal skips it.
     let st = s.doc().unwrap();
@@ -18,11 +21,24 @@ fn transparency_grid_is_per_document_view_state() {
     // Another document has its own setting.
     s.execute("file.new", &json!({})).unwrap();
     assert!(!grid(&s));
-    assert_eq!(s.execute("view.transparencyGrid", &json!({"on": false})).unwrap(), json!({"on": false}));
-    s.execute("document.activate", &json!({"index": 0})).unwrap();
+    assert_eq!(
+        s.execute("view.transparencyGrid", &json!({"on": false}))
+            .unwrap(),
+        json!({"on": false})
+    );
+    s.execute("document.activate", &json!({"index": 0}))
+        .unwrap();
     assert!(grid(&s));
-    assert_eq!(s.execute("view.transparencyGrid", &json!({})).unwrap(), json!({"on": false}));
-    assert_eq!(s.execute("view.transparencyGrid", &json!({"on": true})).unwrap(), json!({"on": true}));
-    s.execute("document.activate", &json!({"index": 1})).unwrap();
+    assert_eq!(
+        s.execute("view.transparencyGrid", &json!({})).unwrap(),
+        json!({"on": false})
+    );
+    assert_eq!(
+        s.execute("view.transparencyGrid", &json!({"on": true}))
+            .unwrap(),
+        json!({"on": true})
+    );
+    s.execute("document.activate", &json!({"index": 1}))
+        .unwrap();
     assert!(!grid(&s));
 }

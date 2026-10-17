@@ -8,12 +8,12 @@ use bevy_core_pipeline::{
 use bevy_ecs::prelude::*;
 use bevy_platform::collections::HashMap;
 use bevy_render::{
+    Render, RenderApp, RenderSystems,
     camera::ExtractedCamera,
     diagnostic::RecordDiagnostics,
     render_resource::*,
     renderer::{RenderContext, ViewQuery},
     view::{Msaa, ViewTarget},
-    Render, RenderApp, RenderSystems,
 };
 
 /// This enables "msaa writeback" support for the `core_2d` and `core_3d` pipelines, which can be enabled on cameras

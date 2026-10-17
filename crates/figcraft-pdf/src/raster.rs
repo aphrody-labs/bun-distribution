@@ -37,7 +37,11 @@ pub(crate) struct Shadows {
 
 impl Raster {
     fn new(p: &Pixmap, rect: Rect, ink: Ink) -> Raster {
-        Raster { image: ink.bitmap(figcraft_render::to_rgba8(p), p.width(), p.height()), rect, px: (p.width(), p.height()) }
+        Raster {
+            image: ink.bitmap(figcraft_render::to_rgba8(p), p.width(), p.height()),
+            rect,
+            px: (p.width(), p.height()),
+        }
     }
 }
 
@@ -54,22 +58,40 @@ impl Exporter<'_> {
         if side > MAX_RASTER_SIDE {
             k *= MAX_RASTER_SIDE / side;
         }
-        let (w, h) = ((b.width() * k).ceil().max(1.0), (b.height() * k).ceil().max(1.0));
-        Some(View { origin: (b.x0, b.y0), scale: k, width: w as u32, height: h as u32 })
+        let (w, h) = (
+            (b.width() * k).ceil().max(1.0),
+            (b.height() * k).ceil().max(1.0),
+        );
+        Some(View {
+            origin: (b.x0, b.y0),
+            scale: k,
+            width: w as u32,
+            height: h as u32,
+        })
     }
 
     fn view_rect(v: &View) -> Rect {
         let k = v.scale.max(1e-9);
-        Rect::new(v.origin.0, v.origin.1, v.origin.0 + f64::from(v.width) / k, v.origin.1 + f64::from(v.height) / k)
+        Rect::new(
+            v.origin.0,
+            v.origin.1,
+            v.origin.0 + f64::from(v.width) / k,
+            v.origin.1 + f64::from(v.height) / k,
+        )
     }
 
     /// Draw a raster image at its page rectangle.
     pub(crate) fn place_raster(&self, s: &mut Surface, r: &Raster, opacity: f32, b: BlendMode) {
         let (pw, ph) = r.px;
-        let Some(size) = Size::from_wh(pw as f32, ph as f32) else { return };
+        let Some(size) = Size::from_wh(pw as f32, ph as f32) else {
+            return;
+        };
         let t = self.page_origin
             * Affine::translate((r.rect.x0, r.rect.y0))
-            * Affine::scale_non_uniform(r.rect.width() / f64::from(pw.max(1)), r.rect.height() / f64::from(ph.max(1)));
+            * Affine::scale_non_uniform(
+                r.rect.width() / f64::from(pw.max(1)),
+                r.rect.height() / f64::from(ph.max(1)),
+            );
         if !affine_ok(t) {
             return;
         }
@@ -103,11 +125,21 @@ impl Exporter<'_> {
         let doc = self.doc;
         let Some(n) = doc.node(id) else { return };
         // Blurs, shadows and texture reach beyond the painted bounds.
-        let Some(view) = figcraft_render::raster_bounds(doc, id).and_then(|b| self.raster_view(b)) else { return };
+        let Some(view) = figcraft_render::raster_bounds(doc, id).and_then(|b| self.raster_view(b))
+        else {
+            return;
+        };
         // Its backdrop effects are placed separately (see `backdrop`).
-        let Some(pix) = figcraft_render::render_alone(doc, id, &view, Alone::WithEffects) else { return };
+        let Some(pix) = figcraft_render::render_alone(doc, id, &view, Alone::WithEffects) else {
+            return;
+        };
         // The renderer applied opacity; the blend mode applies against the PDF backdrop.
-        self.place_raster(s, &Raster::new(&pix, Self::view_rect(&view), self.ink()), 1.0, n.blend);
+        self.place_raster(
+            s,
+            &Raster::new(&pix, Self::view_rect(&view), self.ink()),
+            1.0,
+            n.blend,
+        );
     }
 
     /// Node `id`'s background blurs and glass as an image over its shape, drawn by the renderer
@@ -122,7 +154,8 @@ impl Exporter<'_> {
     pub(crate) fn backdrop_pixels(&self, id: NodeId) -> Option<(Pixmap, View)> {
         let view = self.raster_view(backdrop::shape_bounds(self.doc, id)?)?;
         // Nothing is exported past the page's edge (the renderer's export ends there too).
-        let fx = backdrop::effects_beneath(self.doc, &self.page_ids, id, &view, Some(self.page_rect))?;
+        let fx =
+            backdrop::effects_beneath(self.doc, &self.page_ids, id, &view, Some(self.page_rect))?;
         Some((fx, view))
     }
 
@@ -140,14 +173,19 @@ impl Exporter<'_> {
             .map(|e| match &e.kind {
                 // Inner shadows need room outside the shape: everything outside casts them.
                 EffectKind::DropShadow(sh) | EffectKind::InnerShadow(sh) => {
-                    sh.radius.abs() * 2.0 + sh.spread.abs() * figcraft_doc::SPREAD_MITER_LIMIT + sh.offset.0.abs() + sh.offset.1.abs()
+                    sh.radius.abs() * 2.0
+                        + sh.spread.abs() * figcraft_doc::SPREAD_MITER_LIMIT
+                        + sh.offset.0.abs()
+                        + sh.offset.1.abs()
                 }
                 _ => 0.0,
             })
             .filter(|m| m.is_finite())
             .fold(0.0, f64::max)
             * sc;
-        let b = doc.world_render_bounds(id)?.inflate(reach + 1.0, reach + 1.0);
+        let b = doc
+            .world_render_bounds(id)?
+            .inflate(reach + 1.0, reach + 1.0);
         let view = self.raster_view(b)?;
         let rect = Self::view_rect(&view);
         let (w, h) = (view.width, view.height);
@@ -167,7 +205,9 @@ impl Exporter<'_> {
                     // A group is no outline: its layers' pixels, together, are what is shaded.
                     let inner = match &shape {
                         Some(o) => shadow::inner_shadow(o, w, h, xf, view.scale, sh),
-                        None if matches!(n.kind, NodeKind::Group) => shadow::inner_shadow_of(&layer, view.scale, sh),
+                        None if matches!(n.kind, NodeKind::Group) => {
+                            shadow::inner_shadow_of(&layer, view.scale, sh)
+                        }
                         None => None,
                     };
                     if let Some(p) = inner {

@@ -94,7 +94,11 @@ impl LobbyHub {
     /// Creates a new lobby hub.
     #[must_use]
     pub fn new() -> Self {
-        Self { rooms: HashMap::new(), player_to_room: HashMap::new(), seed_counter: 1000 }
+        Self {
+            rooms: HashMap::new(),
+            player_to_room: HashMap::new(),
+            seed_counter: 1000,
+        }
     }
 
     /// Creates a new room with a generated Inacode, assigning the creator as Host (Home slot).
@@ -148,15 +152,20 @@ impl LobbyHub {
             return Err(LobbyError::PlayerAlreadyInRoom(player_id, existing.clone()));
         }
 
-        let room =
-            self.rooms.get_mut(inacode).ok_or_else(|| LobbyError::RoomNotFound(inacode.clone()))?;
+        let room = self
+            .rooms
+            .get_mut(inacode)
+            .ok_or_else(|| LobbyError::RoomNotFound(inacode.clone()))?;
 
         if room.in_match {
             return Err(LobbyError::MatchAlreadyRunning(inacode.clone()));
         }
 
         if room.members.len() >= room.config.max_members as usize {
-            return Err(LobbyError::RoomFull(inacode.clone(), room.config.max_members));
+            return Err(LobbyError::RoomFull(
+                inacode.clone(),
+                room.config.max_members,
+            ));
         }
 
         if let Some(ref required_pw) = room.config.password
@@ -243,8 +252,10 @@ impl LobbyHub {
         inacode: &Inacode,
         caller_id: &str,
     ) -> Result<(u64, String, String), LobbyError> {
-        let room =
-            self.rooms.get_mut(inacode).ok_or_else(|| LobbyError::RoomNotFound(inacode.clone()))?;
+        let room = self
+            .rooms
+            .get_mut(inacode)
+            .ok_or_else(|| LobbyError::RoomNotFound(inacode.clone()))?;
 
         if room.host_id != caller_id {
             return Err(LobbyError::OnlyHostCanStart);
@@ -304,7 +315,11 @@ mod tests {
 
         // Host creates room
         let (inacode, info) = hub
-            .create_room("player_1".to_string(), "Mark Evans".to_string(), RoomConfig::default())
+            .create_room(
+                "player_1".to_string(),
+                "Mark Evans".to_string(),
+                RoomConfig::default(),
+            )
             .expect("room created ok");
 
         assert_eq!(info.members.len(), 1);
@@ -312,7 +327,12 @@ mod tests {
 
         // Guest joins room
         let (slot, updated_info) = hub
-            .join_room(&inacode, "player_2".to_string(), "Axel Blaze".to_string(), None)
+            .join_room(
+                &inacode,
+                "player_2".to_string(),
+                "Axel Blaze".to_string(),
+                None,
+            )
             .expect("guest joined ok");
 
         assert_eq!(slot, PlayerSlot::Away);
@@ -324,7 +344,9 @@ mod tests {
         assert!(all_ready);
 
         // Host starts match
-        let (seed, home, away) = hub.start_match(&inacode, "player_1").expect("match started");
+        let (seed, home, away) = hub
+            .start_match(&inacode, "player_1")
+            .expect("match started");
         assert!(seed > 0);
         assert_eq!(home, "player_1");
         assert_eq!(away, "player_2");

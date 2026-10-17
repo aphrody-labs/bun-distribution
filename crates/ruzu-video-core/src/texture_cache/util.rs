@@ -2056,7 +2056,9 @@ mod tests {
             )
         };
         // ASTC LDR void-extent block, opaque red in 16-bit channels.
-        let block = [0xfc, 0x0d, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0, 0, 0xff, 0xff];
+        let block = [
+            0xfc, 0x0d, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0, 0, 0xff, 0xff,
+        ];
         let info = ImageInfo {
             format: PixelFormat::Astc2d4x4Unorm,
             image_type: ImageType::E2D,
@@ -2089,7 +2091,10 @@ mod tests {
                 assert_eq!(copies[0].buffer_size, size as usize);
                 let mut decoded = vec![0; 64];
                 crate::texture_cache::decode_bc::decompress_bcn(
-                    &output, &mut decoded, &mut copies[0], format,
+                    &output,
+                    &mut decoded,
+                    &mut copies[0],
+                    format,
                 );
                 decoded
             } else {

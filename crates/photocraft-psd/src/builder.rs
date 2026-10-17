@@ -11,7 +11,9 @@ use crate::file::{GlobalLayerMask, LayerInfoPlacement, PsdFile};
 use crate::header::{ColorMode, Header, Version};
 use crate::image_data::ImageData;
 use crate::io::encode_legacy_name;
-use crate::layer::{BlendingRanges, ChannelData, LayerFlags, LayerInfo, LayerMask, LayerRecord, MaskData, Rect};
+use crate::layer::{
+    BlendingRanges, ChannelData, LayerFlags, LayerInfo, LayerMask, LayerRecord, MaskData, Rect,
+};
 use crate::resources::{ImageResource, ResolutionInfo, ids, version_info_resource};
 use crate::tagged::{SectionType, TaggedBlock};
 
@@ -64,9 +66,15 @@ impl PixelData {
         let spp = self.spp();
         let invert = self.mode_depth().0 == ColorMode::Cmyk && c < 4;
         match self {
-            PixelData::Rgba8(v) | PixelData::GrayA8(v) | PixelData::Cmyka8(v) => {
-                (0..n).map(|i| if invert { 255 - v[i * spp + c] } else { v[i * spp + c] }).collect()
-            }
+            PixelData::Rgba8(v) | PixelData::GrayA8(v) | PixelData::Cmyka8(v) => (0..n)
+                .map(|i| {
+                    if invert {
+                        255 - v[i * spp + c]
+                    } else {
+                        v[i * spp + c]
+                    }
+                })
+                .collect(),
             PixelData::Rgba16(v) | PixelData::GrayA16(v) | PixelData::Cmyka16(v) => (0..n)
                 .flat_map(|i| {
                     let s = v[i * spp + c];
@@ -78,8 +86,12 @@ impl PixelData {
     fn alpha_is_opaque(&self, n: usize) -> bool {
         let spp = self.spp();
         match self {
-            PixelData::Rgba8(v) | PixelData::GrayA8(v) | PixelData::Cmyka8(v) => (0..n).all(|i| v[i * spp + spp - 1] == 255),
-            PixelData::Rgba16(v) | PixelData::GrayA16(v) | PixelData::Cmyka16(v) => (0..n).all(|i| v[i * spp + spp - 1] == 65535),
+            PixelData::Rgba8(v) | PixelData::GrayA8(v) | PixelData::Cmyka8(v) => {
+                (0..n).all(|i| v[i * spp + spp - 1] == 255)
+            }
+            PixelData::Rgba16(v) | PixelData::GrayA16(v) | PixelData::Cmyka16(v) => {
+                (0..n).all(|i| v[i * spp + spp - 1] == 65535)
+            }
         }
     }
 
@@ -93,7 +105,11 @@ impl PixelData {
                 .take(n)
                 .map(|p| {
                     let (color, alpha) = (u32::from(p[c]), u32::from(p[3]));
-                    if alpha == 0 { p[c] } else { ((color * alpha + 127) / 255 + 255 - alpha) as u8 }
+                    if alpha == 0 {
+                        p[c]
+                    } else {
+                        ((color * alpha + 127) / 255 + 255 - alpha) as u8
+                    }
                 })
                 .collect(),
             Self::Rgba16(v) if c < 3 => v
@@ -103,7 +119,11 @@ impl PixelData {
                 .take(n)
                 .flat_map(|p| {
                     let (color, alpha) = (u32::from(p[c]), u32::from(p[3]));
-                    let value = if alpha == 0 { p[c] } else { ((color * alpha + 32767) / 65535 + 65535 - alpha) as u16 };
+                    let value = if alpha == 0 {
+                        p[c]
+                    } else {
+                        ((color * alpha + 32767) / 65535 + 65535 - alpha) as u16
+                    };
                     value.to_be_bytes()
                 })
                 .collect(),
@@ -158,7 +178,14 @@ pub struct LayerSpec {
 
 impl LayerSpec {
     /// A visible normal layer at full opacity.
-    pub fn new(name: impl Into<String>, left: i32, top: i32, width: u32, height: u32, pixels: PixelData) -> Self {
+    pub fn new(
+        name: impl Into<String>,
+        left: i32,
+        top: i32,
+        width: u32,
+        height: u32,
+        pixels: PixelData,
+    ) -> Self {
         LayerSpec {
             name: name.into(),
             left,
@@ -195,7 +222,13 @@ pub struct GroupSpec {
 impl GroupSpec {
     /// A visible, open, pass-through group.
     pub fn new(name: impl Into<String>) -> Self {
-        GroupSpec { name: name.into(), blend_mode: BlendMode::PassThrough, opacity: 255, visible: true, open: true }
+        GroupSpec {
+            name: name.into(),
+            blend_mode: BlendMode::PassThrough,
+            opacity: 255,
+            visible: true,
+            open: true,
+        }
     }
 }
 
@@ -259,12 +292,16 @@ impl PsdBuilder {
     }
     /// Adds a resolution resource.
     pub fn resolution(mut self, dpi: f64) -> Self {
-        self.resources.push(ImageResource::new(ids::RESOLUTION_INFO, ResolutionInfo::from_dpi(dpi).to_bytes()));
+        self.resources.push(ImageResource::new(
+            ids::RESOLUTION_INFO,
+            ResolutionInfo::from_dpi(dpi).to_bytes(),
+        ));
         self
     }
     /// Adds an ICC profile resource.
     pub fn icc_profile(mut self, icc: Vec<u8>) -> Self {
-        self.resources.push(ImageResource::new(ids::ICC_PROFILE, icc));
+        self.resources
+            .push(ImageResource::new(ids::ICC_PROFILE, icc));
         self
     }
     /// Adds an arbitrary image resource.
@@ -285,7 +322,10 @@ impl PsdBuilder {
     }
     /// Closes the innermost open group.
     pub fn end_group(&mut self) -> Result<&mut Self> {
-        let g = self.open_groups.pop().ok_or_else(|| PsdError::invalid("end_group without begin_group"))?;
+        let g = self
+            .open_groups
+            .pop()
+            .ok_or_else(|| PsdError::invalid("end_group without begin_group"))?;
         self.entries.push(Entry::GroupEnd(g));
         Ok(self)
     }
@@ -307,10 +347,19 @@ impl PsdBuilder {
 
     fn check_pixels(&self, p: &PixelData, n: usize) -> Result<()> {
         if p.mode_depth() != (self.color_mode, self.depth) {
-            return Err(PsdError::invalid(format!("pixel format {:?} does not match document {:?}/{}", p.mode_depth(), self.color_mode, self.depth)));
+            return Err(PsdError::invalid(format!(
+                "pixel format {:?} does not match document {:?}/{}",
+                p.mode_depth(),
+                self.color_mode,
+                self.depth
+            )));
         }
         if p.len() != n * p.spp() {
-            return Err(PsdError::invalid(format!("pixel buffer has {} samples, expected {}", p.len(), n * p.spp())));
+            return Err(PsdError::invalid(format!(
+                "pixel buffer has {} samples, expected {}",
+                p.len(),
+                n * p.spp()
+            )));
         }
         Ok(())
     }
@@ -341,14 +390,28 @@ impl PsdBuilder {
             if m.data.len() != mw * mh {
                 return Err(PsdError::invalid("mask buffer size mismatch"));
             }
-            let plane: Vec<u8> = if self.depth == 16 { m.data.iter().flat_map(|&v| (u16::from(v) * 257).to_be_bytes()).collect() } else { m.data.clone() };
+            let plane: Vec<u8> = if self.depth == 16 {
+                m.data
+                    .iter()
+                    .flat_map(|&v| (u16::from(v) * 257).to_be_bytes())
+                    .collect()
+            } else {
+                m.data.clone()
+            };
             channels.push(self.channel(-2, &plane, mw, mh)?);
-            let flags = if m.disabled { LayerMask::FLAG_DISABLED } else { 0 };
+            let flags = if m.disabled {
+                LayerMask::FLAG_DISABLED
+            } else {
+                0
+            };
             mask = MaskData::Mask(LayerMask::new(m.rect, m.default_color, flags));
         }
         let mut flags = LayerFlags(0);
         flags.set_hidden(!spec.visible);
-        let mut blocks = vec![TaggedBlock::unicode_name(&spec.name), TaggedBlock::layer_id(id)];
+        let mut blocks = vec![
+            TaggedBlock::unicode_name(&spec.name),
+            TaggedBlock::layer_id(id),
+        ];
         if let Some(f) = spec.fill_opacity {
             blocks.push(TaggedBlock::fill_opacity(f));
         }
@@ -375,7 +438,10 @@ impl PsdBuilder {
             return Err(PsdError::invalid("unclosed group"));
         }
         if !matches!(self.depth, 8 | 16) {
-            return Err(PsdError::Unsupported(format!("builder depth {}", self.depth)));
+            return Err(PsdError::Unsupported(format!(
+                "builder depth {}",
+                self.depth
+            )));
         }
         let cc = self.color_channels()?;
         let mut layers = Vec::new();
@@ -394,7 +460,11 @@ impl PsdBuilder {
                     ..Default::default()
                 }),
                 Entry::GroupEnd(g) => {
-                    let kind = if g.open { SectionType::OpenFolder } else { SectionType::ClosedFolder };
+                    let kind = if g.open {
+                        SectionType::OpenFolder
+                    } else {
+                        SectionType::ClosedFolder
+                    };
                     let mut flags = LayerFlags(0);
                     flags.set_hidden(!g.visible);
                     layers.push(LayerRecord {
@@ -423,7 +493,11 @@ impl PsdBuilder {
                 let with_alpha = !p.alpha_is_opaque(n);
                 let mut planes = Vec::new();
                 for c in 0..cc + usize::from(with_alpha) {
-                    planes.extend(if with_alpha { p.composite_plane(c, n) } else { p.plane(c, n) });
+                    planes.extend(if with_alpha {
+                        p.composite_plane(c, n)
+                    } else {
+                        p.plane(c, n)
+                    });
                 }
                 (true, planes, with_alpha)
             }
@@ -434,16 +508,32 @@ impl PsdBuilder {
             }
         };
         let channels = (cc + usize::from(with_alpha)) as u16;
-        let header = Header::new(self.version, self.width, self.height, channels, self.depth, self.color_mode);
+        let header = Header::new(
+            self.version,
+            self.width,
+            self.height,
+            channels,
+            self.depth,
+            self.color_mode,
+        );
         header.validate()?;
         let image_data = ImageData::encode(self.compression, &planes, &header)?;
         let mut resources = self.resources.clone();
         resources.push(version_info_resource(real));
 
         let has_layers = !layers.is_empty();
-        let layer_info = has_layers.then_some(LayerInfo { merged_alpha: with_alpha, layers, padding: None });
+        let layer_info = has_layers.then_some(LayerInfo {
+            merged_alpha: with_alpha,
+            layers,
+            padding: None,
+        });
         let layer_info_placement = if has_layers && self.depth == 16 {
-            LayerInfoPlacement::GlobalBlock { index: 0, signature: *b"8BIM", key: *b"Lr16", padding: None }
+            LayerInfoPlacement::GlobalBlock {
+                index: 0,
+                signature: *b"8BIM",
+                key: *b"Lr16",
+                padding: None,
+            }
         } else {
             LayerInfoPlacement::Section
         };

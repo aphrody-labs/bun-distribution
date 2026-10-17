@@ -44,7 +44,10 @@ pub fn encode_f_req(rpc_id: &str, payload: &Value) -> serde_json::Result<String>
 #[must_use]
 pub fn strip_xssi(raw: &str) -> &str {
     let stripped = raw.strip_prefix(")]}'\n").unwrap_or(raw);
-    stripped.strip_prefix(")]}'").unwrap_or(stripped).trim_start()
+    stripped
+        .strip_prefix(")]}'")
+        .unwrap_or(stripped)
+        .trim_start()
 }
 
 /// Walk the length-prefixed chunk stream and yield every JSON array chunk.
@@ -110,7 +113,9 @@ pub fn parse_envelopes(raw: &str) -> Vec<Value> {
     let chunks = extract_chunks(stripped);
     let mut results = Vec::new();
     for chunk in chunks {
-        let Value::Array(envelopes) = chunk else { continue };
+        let Value::Array(envelopes) = chunk else {
+            continue;
+        };
         for env in envelopes {
             let Value::Array(items) = env else { continue };
             if items.first().and_then(Value::as_str) != Some("wrb.fr") {

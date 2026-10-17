@@ -16,7 +16,7 @@ pub(crate) fn register_jit_code(kind: &str, pc: u32, address: usize, size: usize
                 tracing::warn!(%err, "failed to create JIT symbol map");
 
                 None
-            },
+            }
         }
     });
 

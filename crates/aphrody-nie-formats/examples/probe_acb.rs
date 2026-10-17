@@ -20,8 +20,12 @@ fn apercu(v: &UtfValue) -> String {
         // BE : type + index) : l'imprimer en hexa est le seul moyen d'établir la chaîne
         // cue → synth → waveform sur des données réelles.
         UtfValue::Bytes(b) if b.len() <= 8 => {
-            format!("<{}: {}>", b.len(), b.iter().map(|x| format!("{x:02x}")).collect::<String>())
-        },
+            format!(
+                "<{}: {}>",
+                b.len(),
+                b.iter().map(|x| format!("{x:02x}")).collect::<String>()
+            )
+        }
         UtfValue::Bytes(b) => format!("<{} octets>", b.len()),
         autre => format!("{autre:?}"),
     }
@@ -79,10 +83,19 @@ fn main() {
             println!("\n-- {} : @UTF ILLISIBLE ({} octets)", col.name, b.len());
             continue;
         };
-        println!("\n-- {} : {} colonnes, {} lignes", col.name, sub.columns.len(), sub.rows.len());
+        println!(
+            "\n-- {} : {} colonnes, {} lignes",
+            col.name,
+            sub.columns.len(),
+            sub.rows.len()
+        );
         println!(
             "   colonnes : {}",
-            sub.columns.iter().map(|c| c.name.as_str()).collect::<Vec<_>>().join(", ")
+            sub.columns
+                .iter()
+                .map(|c| c.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         );
         for r in 0..sub.rows.len().min(4) {
             let ligne: Vec<String> = sub

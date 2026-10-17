@@ -124,7 +124,11 @@ fn sep(mode: Blend, b: f32, s: f32) -> f32 {
             if s <= 0.5 {
                 b - (1.0 - 2.0 * s) * b * (1.0 - b)
             } else {
-                let d = if b <= 0.25 { ((16.0 * b - 12.0) * b + 4.0) * b } else { b.sqrt() };
+                let d = if b <= 0.25 {
+                    ((16.0 * b - 12.0) * b + 4.0) * b
+                } else {
+                    b.sqrt()
+                };
                 b + (2.0 * s - 1.0) * (d - b)
             }
         }
@@ -231,7 +235,8 @@ pub fn blend_rgb(mode: Blend, b: [f32; 3], s: [f32; 3]) -> [f32; 3] {
 }
 
 fn hash2(x: usize, y: usize) -> f32 {
-    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
+    let mut h = (x as u64).wrapping_mul(0x9E37_79B9_7F4A_7C15)
+        ^ (y as u64).wrapping_mul(0xC2B2_AE3D_27D4_EB4F);
     h ^= h >> 31;
     h = h.wrapping_mul(0xBF58_476D_1CE4_E5B9);
     h ^= h >> 29;
@@ -249,46 +254,68 @@ pub fn composite(dst: &mut Image, src: &Image, opacity: f32, mode: Blend) {
 /// the rectangle is visited; its pixels are mixed exactly as [`composite`] mixes them (the dissolve
 /// pattern follows the pixel's place in `dst`). The part of the rectangle outside `dst` is ignored.
 pub fn composite_at(dst: &mut Image, src: &Image, x0: usize, y0: usize, opacity: f32, mode: Blend) {
-    let (cw, ch) = (src.w.min(dst.w.saturating_sub(x0)), src.h.min(dst.h.saturating_sub(y0)));
+    let (cw, ch) = (
+        src.w.min(dst.w.saturating_sub(x0)),
+        src.h.min(dst.h.saturating_sub(y0)),
+    );
     if cw == 0 || ch == 0 || src.px.len() != src.w * src.h * 4 {
         return;
     }
     let dw = dst.w;
-    dst.px.par_chunks_mut(dw * 4).skip(y0).take(ch).zip(src.px.par_chunks(src.w * 4)).enumerate().for_each(|(ry, (d, s))| {
-        let y = y0 + ry;
-        for rx in 0..cw {
-            let x = x0 + rx;
-            let (i, j) = (x * 4, rx * 4);
-            let mut sp = [s[j] * opacity, s[j + 1] * opacity, s[j + 2] * opacity, s[j + 3] * opacity];
-            let sa = sp[3];
-            if sa <= 0.0 {
-                continue;
-            }
-            if mode == Blend::Dissolve {
-                if hash2(x, y) >= sa {
+    dst.px
+        .par_chunks_mut(dw * 4)
+        .skip(y0)
+        .take(ch)
+        .zip(src.px.par_chunks(src.w * 4))
+        .enumerate()
+        .for_each(|(ry, (d, s))| {
+            let y = y0 + ry;
+            for rx in 0..cw {
+                let x = x0 + rx;
+                let (i, j) = (x * 4, rx * 4);
+                let mut sp = [
+                    s[j] * opacity,
+                    s[j + 1] * opacity,
+                    s[j + 2] * opacity,
+                    s[j + 3] * opacity,
+                ];
+                let sa = sp[3];
+                if sa <= 0.0 {
                     continue;
                 }
-                sp = [sp[0] / sa, sp[1] / sa, sp[2] / sa, 1.0];
-            }
-            let da = d[i + 3];
-            if mode == Blend::Normal || mode == Blend::Dissolve || da <= 0.0 {
-                let k = 1.0 - sp[3];
-                for c in 0..4 {
-                    d[i + c] = sp[c] + d[i + c] * k;
+                if mode == Blend::Dissolve {
+                    if hash2(x, y) >= sa {
+                        continue;
+                    }
+                    sp = [sp[0] / sa, sp[1] / sa, sp[2] / sa, 1.0];
                 }
-                continue;
+                let da = d[i + 3];
+                if mode == Blend::Normal || mode == Blend::Dissolve || da <= 0.0 {
+                    let k = 1.0 - sp[3];
+                    for c in 0..4 {
+                        d[i + c] = sp[c] + d[i + c] * k;
+                    }
+                    continue;
+                }
+                let sa = sp[3];
+                let cs = [
+                    linear_to_srgb(sp[0] / sa),
+                    linear_to_srgb(sp[1] / sa),
+                    linear_to_srgb(sp[2] / sa),
+                ];
+                let cb = [
+                    linear_to_srgb(d[i] / da),
+                    linear_to_srgb(d[i + 1] / da),
+                    linear_to_srgb(d[i + 2] / da),
+                ];
+                let bl = blend_rgb(mode, cb, cs);
+                for c in 0..3 {
+                    let mixed = srgb_to_linear(bl[c].clamp(0.0, 1.0));
+                    d[i + c] = sp[c] * (1.0 - da) + d[i + c] * (1.0 - sa) + sa * da * mixed;
+                }
+                d[i + 3] = sa + da - sa * da;
             }
-            let sa = sp[3];
-            let cs = [linear_to_srgb(sp[0] / sa), linear_to_srgb(sp[1] / sa), linear_to_srgb(sp[2] / sa)];
-            let cb = [linear_to_srgb(d[i] / da), linear_to_srgb(d[i + 1] / da), linear_to_srgb(d[i + 2] / da)];
-            let bl = blend_rgb(mode, cb, cs);
-            for c in 0..3 {
-                let mixed = srgb_to_linear(bl[c].clamp(0.0, 1.0));
-                d[i + c] = sp[c] * (1.0 - da) + d[i + c] * (1.0 - sa) + sa * da * mixed;
-            }
-            d[i + 3] = sa + da - sa * da;
-        }
-    });
+        });
 }
 
 #[cfg(test)]

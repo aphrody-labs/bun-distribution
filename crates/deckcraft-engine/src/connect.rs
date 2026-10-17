@@ -15,7 +15,12 @@ pub fn sites(doc: &Presentation, sel: &Selection, s: &Shape) -> Vec<Point> {
     let x = xfrm_of(doc, sel, s);
     let mut local = deckcraft_render::shape_geometry(s, x.w, x.h).sites;
     if local.is_empty() {
-        local = vec![Point::new(x.w / 2.0, 0.0), Point::new(0.0, x.h / 2.0), Point::new(x.w / 2.0, x.h), Point::new(x.w, x.h / 2.0)];
+        local = vec![
+            Point::new(x.w / 2.0, 0.0),
+            Point::new(0.0, x.h / 2.0),
+            Point::new(x.w / 2.0, x.h),
+            Point::new(x.w, x.h / 2.0),
+        ];
     }
     let a = x.affine();
     local.into_iter().map(|p| a * p).collect()
@@ -43,12 +48,29 @@ pub fn nearest_site(
 }
 
 /// The shape whose sites should show while drawing or dragging a connector end near `p`.
-pub fn site_shape_at(doc: &Presentation, sel: &Selection, shapes: &[Shape], p: Point, margin: f64, exclude: Option<ShapeId>) -> Option<ShapeId> {
+pub fn site_shape_at(
+    doc: &Presentation,
+    sel: &Selection,
+    shapes: &[Shape],
+    p: Point,
+    margin: f64,
+    exclude: Option<ShapeId>,
+) -> Option<ShapeId> {
     shapes
         .iter()
         .rev()
-        .filter(|s| Some(s.id) != exclude && !s.hidden && !s.is_line() && !matches!(s.kind, ShapeKind::Ink { .. }))
-        .find(|s| xfrm_of(doc, sel, s).bounds().inflate(margin, margin).contains(p))
+        .filter(|s| {
+            Some(s.id) != exclude
+                && !s.hidden
+                && !s.is_line()
+                && !matches!(s.kind, ShapeKind::Ink { .. })
+        })
+        .find(|s| {
+            xfrm_of(doc, sel, s)
+                .bounds()
+                .inflate(margin, margin)
+                .contains(p)
+        })
         .map(|s| s.id)
 }
 
@@ -61,8 +83,15 @@ pub fn endpoints(x: &Xfrm) -> (Point, Point) {
 /// Move the ends of connectors glued to shapes on the edited slide to the current site positions.
 /// Connections to shapes that no longer exist are dropped.
 pub fn reroute(doc: &mut Presentation, sel: &Selection) {
-    let Some(list) = crate::shapes_mut(doc, sel) else { return };
-    if !list.iter().any(|s| matches!(s.kind, ShapeKind::Connector { start: Some(_), .. } | ShapeKind::Connector { end: Some(_), .. })) {
+    let Some(list) = crate::shapes_mut(doc, sel) else {
+        return;
+    };
+    if !list.iter().any(|s| {
+        matches!(
+            s.kind,
+            ShapeKind::Connector { start: Some(_), .. } | ShapeKind::Connector { end: Some(_), .. }
+        )
+    }) {
         return;
     }
     let snapshot: Vec<Shape> = list.clone();
@@ -74,7 +103,9 @@ pub fn reroute(doc: &mut Presentation, sel: &Selection) {
     };
     let mut updates: Vec<(usize, Xfrm, bool, bool)> = vec![];
     for (i, s) in snapshot.iter().enumerate() {
-        let ShapeKind::Connector { start, end } = &s.kind else { continue };
+        let ShapeKind::Connector { start, end } = &s.kind else {
+            continue;
+        };
         if start.is_none() && end.is_none() {
             continue;
         }
@@ -101,7 +132,9 @@ pub fn reroute(doc: &mut Presentation, sel: &Selection) {
             updates.push((i, nx, drop_a, drop_b));
         }
     }
-    let Some(list) = crate::shapes_mut(doc, sel) else { return };
+    let Some(list) = crate::shapes_mut(doc, sel) else {
+        return;
+    };
     for (i, nx, drop_a, drop_b) in updates {
         if let Some(s) = list.get_mut(i) {
             s.xfrm = Some(nx);
@@ -120,12 +153,17 @@ pub fn reroute(doc: &mut Presentation, sel: &Selection) {
 /// Glue end `end` (0 = start, 1 = end) of line `id` to `to` (or unglue with `None`). Plain lines
 /// become connectors when glued.
 pub fn set_glue(list: &mut [Shape], id: ShapeId, end: u8, to: Option<(ShapeId, u32)>) {
-    let Some(s) = list.iter_mut().find(|s| s.id == id) else { return };
+    let Some(s) = list.iter_mut().find(|s| s.id == id) else {
+        return;
+    };
     if !matches!(s.kind, ShapeKind::Connector { .. }) {
         if to.is_none() || !matches!(s.kind, ShapeKind::Shape) {
             return;
         }
-        s.kind = ShapeKind::Connector { start: None, end: None };
+        s.kind = ShapeKind::Connector {
+            start: None,
+            end: None,
+        };
     }
     if let ShapeKind::Connector { start, end: e } = &mut s.kind {
         if end == 0 {

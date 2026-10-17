@@ -124,7 +124,11 @@ const fn crc32_table() -> [u32; 256] {
         let mut crc = i;
         let mut j = 0;
         while j < 8 {
-            crc = if crc & 1 == 1 { (crc >> 1) ^ CRC32_POLY } else { crc >> 1 };
+            crc = if crc & 1 == 1 {
+                (crc >> 1) ^ CRC32_POLY
+            } else {
+                crc >> 1
+            };
             j += 1;
         }
         table[i as usize] = crc;
@@ -209,7 +213,12 @@ pub fn decrypt_block(buffer: &mut [u8], file_offset: u64, key: u32) {
         return;
     }
 
-    let k = [key as u8, (key >> 8) as u8, (key >> 16) as u8, (key >> 24) as u8];
+    let k = [
+        key as u8,
+        (key >> 8) as u8,
+        (key >> 16) as u8,
+        (key >> 24) as u8,
+    ];
 
     let length = buffer.len();
     let mut i = 0usize;
@@ -415,16 +424,23 @@ pub fn decrypt_cpk_in_place(buffer: &mut [u8], filename: &str) {
 ///   `@UTF` attendue à 0x10 est absente.
 pub fn decrypt_and_check_cpk(buffer: &mut [u8], filename: &str) -> Result<u32, FormatError> {
     if buffer.len() < 0x14 {
-        return Err(FormatError::TooShort { got: buffer.len(), need: 0x14 });
+        return Err(FormatError::TooShort {
+            got: buffer.len(),
+            need: 0x14,
+        });
     }
     let key = key_from_filename(filename);
     decrypt_block(buffer, 0, key);
 
     if buffer[..4] != CPK_MAGIC {
-        return Err(FormatError::BadMagic { format: "CPK (déchiffrement)" });
+        return Err(FormatError::BadMagic {
+            format: "CPK (déchiffrement)",
+        });
     }
     if buffer[0x10..0x14] != UTF_MAGIC {
-        return Err(FormatError::BadMagic { format: "@UTF embarqué CPK (déchiffrement)" });
+        return Err(FormatError::BadMagic {
+            format: "@UTF embarqué CPK (déchiffrement)",
+        });
     }
     Ok(key)
 }
@@ -550,13 +566,21 @@ impl UtfValue {
     /// Retourne la référence de chaîne si la valeur est une `String`.
     #[must_use]
     pub fn as_str(&self) -> Option<&str> {
-        if let Self::String(s) = self { Some(s) } else { None }
+        if let Self::String(s) = self {
+            Some(s)
+        } else {
+            None
+        }
     }
 
     /// Retourne le slice du blob si la valeur est `Bytes`.
     #[must_use]
     pub fn as_bytes(&self) -> Option<&[u8]> {
-        if let Self::Bytes(b) = self { Some(b) } else { None }
+        if let Self::Bytes(b) = self {
+            Some(b)
+        } else {
+            None
+        }
     }
 }
 
@@ -653,7 +677,10 @@ pub fn is_utf(data: &[u8]) -> bool {
 /// - [`FormatError::Corrupt`] pour toute incohérence interne.
 pub fn parse_utf(data: &[u8]) -> Result<UtfTable, FormatError> {
     if data.len() < UTF_MIN_TOTAL {
-        return Err(FormatError::TooShort { got: data.len(), need: UTF_MIN_TOTAL });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: UTF_MIN_TOTAL,
+        });
     }
     if !is_utf(data) {
         return Err(FormatError::BadMagic { format: "@UTF" });
@@ -733,7 +760,12 @@ pub fn parse_utf(data: &[u8]) -> Result<UtfTable, FormatError> {
             None
         };
 
-        col_defs.push(ColDef { col_type, flags, name, default_value });
+        col_defs.push(ColDef {
+            col_type,
+            flags,
+            name,
+            default_value,
+        });
     }
 
     // --- Lignes ---
@@ -786,10 +818,18 @@ pub fn parse_utf(data: &[u8]) -> Result<UtfTable, FormatError> {
 
     let columns: Vec<UtfColumn> = col_defs
         .into_iter()
-        .map(|d| UtfColumn { name: d.name, col_type: d.col_type, flags: d.flags })
+        .map(|d| UtfColumn {
+            name: d.name,
+            col_type: d.col_type,
+            flags: d.flags,
+        })
         .collect();
 
-    Ok(UtfTable { name: table_name, columns, rows })
+    Ok(UtfTable {
+        name: table_name,
+        columns,
+        rows,
+    })
 }
 
 /// Parse l'en-tête d'une archive CPK (non chiffrée).
@@ -803,7 +843,10 @@ pub fn parse_utf(data: &[u8]) -> Result<UtfTable, FormatError> {
 /// - Toute erreur de [`parse_utf`] pour la table embarquée.
 pub fn parse_cpk(data: &[u8]) -> Result<CpkHeader, FormatError> {
     if data.len() < 0x14 {
-        return Err(FormatError::TooShort { got: data.len(), need: 0x14 });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: 0x14,
+        });
     }
     if data[..4] != CPK_MAGIC {
         return Err(FormatError::BadMagic { format: "CPK" });
@@ -843,7 +886,9 @@ pub fn parse_table_container(
             decrypt_table(&mut table_data);
             let dec_magic = u32::from_le_bytes(table_data[0..4].try_into().unwrap());
             if dec_magic != 0x46545540 {
-                return Err(FormatError::BadMagic { format: "@UTF dechiffree" });
+                return Err(FormatError::BadMagic {
+                    format: "@UTF dechiffree",
+                });
             }
         }
     }
@@ -884,9 +929,17 @@ impl CpkReader {
         self.entries
             .iter()
             .find(|e| full(e) == path)
-            .or_else(|| self.entries.iter().find(|e| full(e).eq_ignore_ascii_case(path)))
+            .or_else(|| {
+                self.entries
+                    .iter()
+                    .find(|e| full(e).eq_ignore_ascii_case(path))
+            })
             .or_else(|| self.entries.iter().find(|e| e.filename == filename))
-            .or_else(|| self.entries.iter().find(|e| e.filename.eq_ignore_ascii_case(filename)))
+            .or_else(|| {
+                self.entries
+                    .iter()
+                    .find(|e| e.filename.eq_ignore_ascii_case(filename))
+            })
     }
     /// Initialise et parse l'archive CPK (détecte le chiffrement à la volée).
     pub fn new(data: &[u8], filename: &str) -> Result<Self, FormatError> {
@@ -907,7 +960,10 @@ impl CpkReader {
         let mut file_key = None;
 
         if data.len() < 16 {
-            return Err(FormatError::TooShort { got: data.len(), need: 16 });
+            return Err(FormatError::TooShort {
+                got: data.len(),
+                need: 16,
+            });
         }
 
         let magic = u32::from_le_bytes(data[0..4].try_into().unwrap());
@@ -932,7 +988,9 @@ impl CpkReader {
                 is_encrypted = true;
                 file_key = Some(key_without);
             } else {
-                return Err(FormatError::BadMagic { format: "CPK (non dechiffrable)" });
+                return Err(FormatError::BadMagic {
+                    format: "CPK (non dechiffrable)",
+                });
             }
         }
 
@@ -942,7 +1000,10 @@ impl CpkReader {
             }
             let mut region = read(offset as u64, size)?;
             if region.len() != size {
-                return Err(FormatError::TooShort { got: region.len(), need: size });
+                return Err(FormatError::TooShort {
+                    got: region.len(),
+                    need: size,
+                });
             }
             if is_encrypted && let Some(k) = file_key {
                 decrypt_block(&mut region, offset as u64, k);
@@ -1004,7 +1065,11 @@ impl CpkReader {
             });
         }
 
-        Ok(CpkReader { entries, file_key, is_encrypted })
+        Ok(CpkReader {
+            entries,
+            file_key,
+            is_encrypted,
+        })
     }
 
     /// Extrait et décompresse un fichier depuis le CPK.
@@ -1032,7 +1097,10 @@ impl CpkReader {
             .map_err(|_| FormatError::Corrupt("CPK: entry size exceeds address space"))?;
         let mut raw = read(entry.offset, size)?;
         if raw.len() != size {
-            return Err(FormatError::TooShort { got: raw.len(), need: size });
+            return Err(FormatError::TooShort {
+                got: raw.len(),
+                need: size,
+            });
         }
         if self.is_encrypted
             && let Some(k) = self.file_key
@@ -1053,13 +1121,19 @@ impl CpkReader {
 // ---------------------------------------------------------------------------
 
 fn checked_region(data: &[u8], offset: usize, size: usize) -> Result<&[u8], FormatError> {
-    let end =
-        offset.checked_add(size).ok_or(FormatError::Corrupt("CPK: region offset overflow"))?;
-    data.get(offset..end).ok_or(FormatError::TooShort { got: data.len(), need: end })
+    let end = offset
+        .checked_add(size)
+        .ok_or(FormatError::Corrupt("CPK: region offset overflow"))?;
+    data.get(offset..end).ok_or(FormatError::TooShort {
+        got: data.len(),
+        need: end,
+    })
 }
 
 fn read_u8(data: &[u8], off: usize) -> Result<u8, FormatError> {
-    data.get(off).copied().ok_or(FormatError::Corrupt("@UTF : lecture u8 hors limites"))
+    data.get(off)
+        .copied()
+        .ok_or(FormatError::Corrupt("@UTF : lecture u8 hors limites"))
 }
 
 fn read_u16_be(data: &[u8], off: usize) -> Result<u16, FormatError> {
@@ -1091,7 +1165,9 @@ fn read_cstr(data: &[u8], pool_base: usize, pool_off: usize) -> Result<String, F
         .checked_add(pool_off)
         .ok_or(FormatError::Corrupt("@UTF : overflow offset string pool"))?;
     if start >= data.len() {
-        return Err(FormatError::Corrupt("@UTF : offset string pool hors limites"));
+        return Err(FormatError::Corrupt(
+            "@UTF : offset string pool hors limites",
+        ));
     }
     let slice = &data[start..];
     let nul = slice.iter().position(|&b| b == 0).unwrap_or(slice.len());
@@ -1137,15 +1213,15 @@ fn read_value(
         ColumnType::F32 => {
             let bits = read_u32_be(data, off)?;
             UtfValue::F32(f32::from_bits(bits))
-        },
+        }
         ColumnType::F64 => {
             let bits = read_u64_be(data, off)?;
             UtfValue::F64(f64::from_bits(bits))
-        },
+        }
         ColumnType::String => {
             let pool_off = read_u32_be(data, off)? as usize;
             UtfValue::String(read_cstr(data, string_pool, pool_off)?)
-        },
+        }
         ColumnType::Bytes => {
             let blob_off = read_u32_be(data, off)? as usize;
             let blob_len = read_u32_be(data, off + 4)? as usize;
@@ -1163,14 +1239,14 @@ fn read_value(
                 }
                 UtfValue::Bytes(data[abs_start..abs_end].to_vec())
             }
-        },
+        }
         ColumnType::Guid => {
             if off + 16 > data.len() {
                 UtfValue::Bytes(Vec::new())
             } else {
                 UtfValue::Bytes(data[off..off + 16].to_vec())
             }
-        },
+        }
     })
 }
 
@@ -1219,7 +1295,10 @@ mod tests {
                 .unwrap();
             assert_eq!(data, expected);
             assert_eq!(reader.is_encrypted, encrypted);
-            assert!(fetched < 4096, "metadata plus resource, not the 2 MiB archive");
+            assert!(
+                fetched < 4096,
+                "metadata plus resource, not the 2 MiB archive"
+            );
         }
     }
 
@@ -1229,7 +1308,11 @@ mod tests {
         bytes[..8].copy_from_slice(b"CRILAYLA");
         bytes[8..12]
             .copy_from_slice(&(crate::crilayla::MAX_DECOMPRESSED_SIZE as u32).to_le_bytes());
-        let reader = CpkReader { entries: Vec::new(), file_key: None, is_encrypted: false };
+        let reader = CpkReader {
+            entries: Vec::new(),
+            file_key: None,
+            is_encrypted: false,
+        };
         let entry = CpkEntry {
             filename: "oversized.g4tx".into(),
             directory: String::new(),
@@ -1240,7 +1323,9 @@ mod tests {
         };
         assert!(matches!(
             reader.extract(&bytes, &entry),
-            Err(FormatError::Corrupt("CRILAYLA: decoded size exceeds 256 MiB budget"))
+            Err(FormatError::Corrupt(
+                "CRILAYLA: decoded size exceeds 256 MiB budget"
+            ))
         ));
     }
 
@@ -1267,7 +1352,11 @@ mod tests {
 
     #[test]
     fn overflowing_entry_ranges_are_rejected() {
-        let reader = CpkReader { entries: Vec::new(), file_key: None, is_encrypted: false };
+        let reader = CpkReader {
+            entries: Vec::new(),
+            file_key: None,
+            is_encrypted: false,
+        };
         let entry = CpkEntry {
             filename: String::new(),
             directory: String::new(),
@@ -1400,7 +1489,10 @@ mod tests {
     fn mauvais_magic_utf_rejete() {
         let mut data = build_utf_fixture();
         data[0] = b'X';
-        assert!(matches!(parse_utf(&data), Err(FormatError::BadMagic { .. })));
+        assert!(matches!(
+            parse_utf(&data),
+            Err(FormatError::BadMagic { .. })
+        ));
     }
 
     #[test]
@@ -1416,7 +1508,10 @@ mod tests {
         let mut cpk_data = alloc::vec![b'X', b'P', b'K', b' '];
         cpk_data.extend_from_slice(&[0u8; 12]);
         cpk_data.extend_from_slice(&data);
-        assert!(matches!(parse_cpk(&cpk_data), Err(FormatError::BadMagic { .. })));
+        assert!(matches!(
+            parse_cpk(&cpk_data),
+            Err(FormatError::BadMagic { .. })
+        ));
     }
 
     #[test]
@@ -1545,9 +1640,18 @@ mod tests {
         // Clé recoupée empiriquement : ce nom déchiffre le CPK réel en "CPK ".
         assert_eq!(key_from_filename(REAL_CPK_NAME), 0xBD28_1847);
         // Autres CPK réels du même dump (clés recoupées par déchiffrement → "CPK "/"@UTF").
-        assert_eq!(key_from_filename("fc62c6effe5a8c4748ab9cb3721c1017.cpk"), 0x00DE_44F8);
-        assert_eq!(key_from_filename("48d8f85b93565fb22212eb77d7b9eda0.cpk"), 0x5629_F92E);
-        assert_eq!(key_from_filename("6a3ab1ffb3d2e6c5dc62215be407f063.cpk"), 0x52B4_1918);
+        assert_eq!(
+            key_from_filename("fc62c6effe5a8c4748ab9cb3721c1017.cpk"),
+            0x00DE_44F8
+        );
+        assert_eq!(
+            key_from_filename("48d8f85b93565fb22212eb77d7b9eda0.cpk"),
+            0x5629_F92E
+        );
+        assert_eq!(
+            key_from_filename("6a3ab1ffb3d2e6c5dc62215be407f063.cpk"),
+            0x52B4_1918
+        );
     }
 
     #[cfg(feature = "real-fixtures")]
@@ -1570,7 +1674,11 @@ mod tests {
         // appliquée au header réel, elle ne produit pas "CPK ". On le prouve.
         let mut buf = REAL_CPK_HEAD_ENC.to_vec();
         decrypt_block(&mut buf, 0, VIOLA_FIXED_KEY);
-        assert_ne!(&buf[..4], b"CPK ", "0x1717E18E ne doit PAS donner 'CPK ' sur un pack");
+        assert_ne!(
+            &buf[..4],
+            b"CPK ",
+            "0x1717E18E ne doit PAS donner 'CPK ' sur un pack"
+        );
     }
 
     #[cfg(feature = "real-fixtures")]
@@ -1582,7 +1690,10 @@ mod tests {
         let key = key_from_filename(REAL_CPK_NAME);
         decrypt_block(&mut buf, 0, key);
         decrypt_block(&mut buf, 0, key);
-        assert_eq!(buf, original, "double déchiffrement doit rétablir le clair chiffré");
+        assert_eq!(
+            buf, original,
+            "double déchiffrement doit rétablir le clair chiffré"
+        );
     }
 
     #[cfg(feature = "real-fixtures")]
@@ -1598,7 +1709,10 @@ mod tests {
         for (start, len) in [(0usize, 7usize), (7, 9), (16, 64), (80, 432)] {
             decrypt_block(&mut windowed[start..start + len], start as u64, key);
         }
-        assert_eq!(whole, windowed, "déchiffrement par fenêtres = déchiffrement global");
+        assert_eq!(
+            whole, windowed,
+            "déchiffrement par fenêtres = déchiffrement global"
+        );
     }
 
     #[test]
@@ -1656,10 +1770,17 @@ mod tests {
     /// → cfgbin_parse → l'entrée racine contient des milliers de fichiers CPK.
     #[test]
     fn cpk_list_decrypts_real_file() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
-        let path = std::path::Path::new(&dir).join("data").join("cpk_list.cfg.bin");
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
+        let path = std::path::Path::new(&dir)
+            .join("data")
+            .join("cpk_list.cfg.bin");
         let Ok(enc) = std::fs::read(&path) else {
-            eprintln!("skip cpk_list_decrypts_real_file : {} absent", path.display());
+            eprintln!(
+                "skip cpk_list_decrypts_real_file : {} absent",
+                path.display()
+            );
             return;
         };
         let clear = decrypt_cpk_list(&enc).expect("déchiffrement AES-256-CBC");
@@ -1673,12 +1794,18 @@ mod tests {
 
         // En-tête T2B cohérent.
         let entries = i32::from_le_bytes(clear[0..4].try_into().unwrap());
-        assert!((1000..1_000_000).contains(&entries), "entries_count aberrant : {entries}");
+        assert!(
+            (1000..1_000_000).contains(&entries),
+            "entries_count aberrant : {entries}"
+        );
 
         // Parse réel + nombre d'enfants (fichiers CPK indexés).
         let cfg = crate::cfgbin::cfgbin_parse(&clear).expect("parse T2B cpk_list");
         let children: usize = cfg.entries.iter().map(|e| e.children.len()).sum();
-        assert!(children > 1000, "attendu > 1000 entrées CPK, obtenu {children}");
+        assert!(
+            children > 1000,
+            "attendu > 1000 entrées CPK, obtenu {children}"
+        );
         eprintln!(
             "cpk_list OK : {} octets clairs, entries_count={entries}, {children} enfants",
             clear.len()

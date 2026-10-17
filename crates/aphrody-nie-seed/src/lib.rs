@@ -81,7 +81,10 @@ pub fn ingest_all(
     let mut stats = Stats::default();
 
     // 1. Classes RTTI
-    let rtti_path = refs_root.join("iecode-re").join("research").join("nie-rtti-classes.txt");
+    let rtti_path = refs_root
+        .join("iecode-re")
+        .join("research")
+        .join("nie-rtti-classes.txt");
     stats.rtti_classes = rtti_classes::ingest_rtti_classes(db, binary_id, &rtti_path)?;
     // anchors = une ancre par classe RTTI
     stats.anchors += stats.rtti_classes;
@@ -95,10 +98,10 @@ pub fn ingest_all(
             Ok(s) => {
                 stats.catalog_formats = s.formats;
                 stats.catalog_fields = s.fields;
-            },
+            }
             Err(e) => {
                 tracing::warn!("ingestion catalogue iecode ignorée : {e:#}");
-            },
+            }
         }
     }
 
@@ -108,7 +111,7 @@ pub fn ingest_all(
             Ok(n) => stats.hash_names = n,
             Err(e) => {
                 tracing::warn!("ingestion inagle ignorée : {e:#}");
-            },
+            }
         }
     }
 

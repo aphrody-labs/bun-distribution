@@ -6,8 +6,8 @@ use bevy_reflect::{TypePath, TypeRegistryArc};
 
 #[cfg(feature = "serialize")]
 use {
-    crate::{serde::WorldDeserializer, DynamicWorld},
-    bevy_asset::{io::Reader, AssetLoader, LoadContext},
+    crate::{DynamicWorld, serde::WorldDeserializer},
+    bevy_asset::{AssetLoader, LoadContext, io::Reader},
     serde::de::DeserializeSeed,
     thiserror::Error,
 };

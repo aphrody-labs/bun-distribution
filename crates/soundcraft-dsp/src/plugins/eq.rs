@@ -21,10 +21,24 @@ static EQ7_PARAMS: [ParamInfo; 23] = [
     log("mid_freq", "MF Freq", 100.0, 8000.0, 1000.0, Unit::Hz),
     lin("mid_gain", "MF Gain", -24.0, 24.0, 0.0, Unit::Db),
     log("mid_q", "MF Q", 0.1, 10.0, 1.0, Unit::None),
-    log("high_mid_freq", "HMF Freq", 500.0, 20000.0, 4000.0, Unit::Hz),
+    log(
+        "high_mid_freq",
+        "HMF Freq",
+        500.0,
+        20000.0,
+        4000.0,
+        Unit::Hz,
+    ),
     lin("high_mid_gain", "HMF Gain", -24.0, 24.0, 0.0, Unit::Db),
     log("high_mid_q", "HMF Q", 0.1, 10.0, 1.0, Unit::None),
-    log("high_shelf_freq", "HF Freq", 1000.0, 20000.0, 8000.0, Unit::Hz),
+    log(
+        "high_shelf_freq",
+        "HF Freq",
+        1000.0,
+        20000.0,
+        8000.0,
+        Unit::Hz,
+    ),
     lin("high_shelf_gain", "HF Gain", -24.0, 24.0, 0.0, Unit::Db),
     log("high_shelf_q", "HF Q", 0.3, 2.0, 0.707, Unit::None),
     toggle("lpf_on", "LPF", false),
@@ -43,7 +57,15 @@ pub static EQ7_INFO: PluginInfo = PluginInfo {
     audiosuite: true,
 };
 
-const EQ1_TYPES: &[&str] = &["Peak", "Low Shelf", "High Shelf", "High Pass", "Low Pass", "Notch", "Band Pass"];
+const EQ1_TYPES: &[&str] = &[
+    "Peak",
+    "Low Shelf",
+    "High Shelf",
+    "High Pass",
+    "Low Pass",
+    "Notch",
+    "Band Pass",
+];
 
 static EQ1_PARAMS: [ParamInfo; 5] = [
     choice("type", "Type", EQ1_TYPES, 0),
@@ -70,17 +92,30 @@ fn val(v: &[f32], i: usize) -> f32 {
 
 /// Writes 1–2 cascaded sections for an HPF/LPF of the given slope index (6/12/18/24 dB/oct).
 fn pass_filter(slope: usize, high: bool, freq: f32, sr: f32) -> [Coeffs; 2] {
-    let (k1, k2) = if high { (FilterType::HighPass1, FilterType::HighPass) } else { (FilterType::LowPass1, FilterType::LowPass) };
+    let (k1, k2) = if high {
+        (FilterType::HighPass1, FilterType::HighPass)
+    } else {
+        (FilterType::LowPass1, FilterType::LowPass)
+    };
     match slope {
         0 => [Coeffs::design(k1, freq, 0.707, 0.0, sr), Coeffs::IDENTITY],
-        2 => [Coeffs::design(k1, freq, 0.707, 0.0, sr), Coeffs::design(k2, freq, 1.0, 0.0, sr)],
+        2 => [
+            Coeffs::design(k1, freq, 0.707, 0.0, sr),
+            Coeffs::design(k2, freq, 1.0, 0.0, sr),
+        ],
         3 => {
             let q = butterworth_qs(4);
             let q0 = q.first().copied().unwrap_or(0.54);
             let q1 = q.get(1).copied().unwrap_or(1.31);
-            [Coeffs::design(k2, freq, q0, 0.0, sr), Coeffs::design(k2, freq, q1, 0.0, sr)]
+            [
+                Coeffs::design(k2, freq, q0, 0.0, sr),
+                Coeffs::design(k2, freq, q1, 0.0, sr),
+            ]
         }
-        _ => [Coeffs::design(k2, freq, std::f32::consts::FRAC_1_SQRT_2, 0.0, sr), Coeffs::IDENTITY],
+        _ => [
+            Coeffs::design(k2, freq, std::f32::consts::FRAC_1_SQRT_2, 0.0, sr),
+            Coeffs::IDENTITY,
+        ],
     }
 }
 
@@ -91,7 +126,13 @@ fn design_eq7(v: &[f32], sr: f32) -> [Coeffs; 9] {
         c[0] = a;
         c[1] = b;
     }
-    let bands = [(4, FilterType::LowShelf), (7, FilterType::Peak), (10, FilterType::Peak), (13, FilterType::Peak), (16, FilterType::HighShelf)];
+    let bands = [
+        (4, FilterType::LowShelf),
+        (7, FilterType::Peak),
+        (10, FilterType::Peak),
+        (13, FilterType::Peak),
+        (16, FilterType::HighShelf),
+    ];
     for (k, (i, kind)) in bands.into_iter().enumerate() {
         let g = val(v, i + 1);
         if g.abs() > 1e-4
@@ -169,12 +210,30 @@ impl Default for Eq1 {
 }
 
 impl<const S: usize> Eq<S> {
-    fn build(info: &'static PluginInfo, design: fn(&[f32], f32) -> [Coeffs; S], gain_ids: &'static [usize]) -> Self {
+    fn build(
+        info: &'static PluginInfo,
+        design: fn(&[f32], f32) -> [Coeffs; S],
+        gain_ids: &'static [usize],
+    ) -> Self {
         let p = Params::new(info.params);
-        let sm = info.params.iter().map(|i| Smoother::new(i.default)).collect();
+        let sm = info
+            .params
+            .iter()
+            .map(|i| Smoother::new(i.default))
+            .collect();
         let vals = info.params.iter().map(|i| i.default).collect();
-        let mut eq =
-            Self { info, design, gain_ids, p, sm, vals, coeffs: [Coeffs::IDENTITY; S], filt: Vec::new(), gain: Smoother::new(1.0), sr: 48_000.0 };
+        let mut eq = Self {
+            info,
+            design,
+            gain_ids,
+            p,
+            sm,
+            vals,
+            coeffs: [Coeffs::IDENTITY; S],
+            filt: Vec::new(),
+            gain: Smoother::new(1.0),
+            sr: 48_000.0,
+        };
         eq.redesign();
         eq
     }
@@ -208,9 +267,22 @@ impl<const S: usize> Eq<S> {
 
     /// Magnitude response (dB, including input/output gain) of the current settings.
     pub fn response_db(&self, freqs: &[f32], sample_rate: f32) -> Vec<f32> {
-        let coeffs = (self.design)(&(0..self.info.params.len()).map(|i| self.p.v(i)).collect::<Vec<_>>(), sample_rate);
+        let coeffs = (self.design)(
+            &(0..self.info.params.len())
+                .map(|i| self.p.v(i))
+                .collect::<Vec<_>>(),
+            sample_rate,
+        );
         let g = self.total_gain_db(|i| self.p.v(i));
-        freqs.iter().map(|&f| g + coeffs.iter().map(|c| c.magnitude_db(f, sample_rate)).sum::<f32>()).collect()
+        freqs
+            .iter()
+            .map(|&f| {
+                g + coeffs
+                    .iter()
+                    .map(|c| c.magnitude_db(f, sample_rate))
+                    .sum::<f32>()
+            })
+            .collect()
     }
 }
 
@@ -269,7 +341,9 @@ impl<const S: usize> Plugin for Eq<S> {
                 *g = self.gain.next();
             }
             for (buf, f) in io.iter_mut().zip(self.filt.iter_mut()) {
-                let Some(seg) = buf.get_mut(pos..pos + n) else { continue };
+                let Some(seg) = buf.get_mut(pos..pos + n) else {
+                    continue;
+                };
                 for (x, g) in seg.iter_mut().zip(&gains) {
                     let mut y = *x;
                     for b in f.iter_mut() {
@@ -298,16 +372,33 @@ fn response_from(
     let vals: Vec<f32> = (0..info.params.len()).map(|i| p.v(i)).collect();
     let coeffs = design(&vals, sr);
     let g: f32 = gain_ids.iter().map(|&i| p.v(i)).sum();
-    freqs.iter().map(|&f| g + coeffs.iter().map(|c| c.magnitude_db(f, sr)).sum::<f32>()).collect()
+    freqs
+        .iter()
+        .map(|&f| g + coeffs.iter().map(|c| c.magnitude_db(f, sr)).sum::<f32>())
+        .collect()
 }
 
 /// EQ 7-Band magnitude response in dB at `freqs`, for curve drawing. `params` overrides the
 /// defaults by id; unknown ids are ignored.
 pub fn eq7_response(params: &[(&str, f32)], freqs: &[f32], sr: f32) -> Vec<f32> {
-    response_from(&EQ7_INFO, &|v, sr| design_eq7(v, sr).to_vec(), &[0, 22], params, freqs, sr)
+    response_from(
+        &EQ7_INFO,
+        &|v, sr| design_eq7(v, sr).to_vec(),
+        &[0, 22],
+        params,
+        freqs,
+        sr,
+    )
 }
 
 /// EQ 1-Band magnitude response in dB at `freqs`.
 pub fn eq1_response(params: &[(&str, f32)], freqs: &[f32], sr: f32) -> Vec<f32> {
-    response_from(&EQ1_INFO, &|v, sr| design_eq1(v, sr).to_vec(), &[4], params, freqs, sr)
+    response_from(
+        &EQ1_INFO,
+        &|v, sr| design_eq1(v, sr).to_vec(),
+        &[4],
+        params,
+        freqs,
+        sr,
+    )
 }

@@ -13,13 +13,16 @@ const WIDTH: f32 = 1200.0;
 fn harness() -> Harness {
     let mut session = Session::new();
     session.new_workbook();
-    let mut h = egui_kittest::Harness::builder().with_step_dt(1.0 / 60.0).with_size(vec2(WIDTH, 800.0)).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            app.logic(ui.ctx());
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    let mut h = egui_kittest::Harness::builder()
+        .with_step_dt(1.0 / 60.0)
+        .with_size(vec2(WIDTH, 800.0))
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                app.logic(ui.ctx());
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     h
 }
@@ -30,20 +33,37 @@ fn grid_right(h: &Harness) -> f32 {
 
 /// A comment whose author line and reply row are wide enough to push the pane if they don't wrap.
 fn open_pane_on_long_comment(h: &mut Harness) {
-    let text = "A long comment that should wrap inside the pane instead of pushing it wider. ".repeat(6);
+    let text =
+        "A long comment that should wrap inside the pane instead of pushing it wider. ".repeat(6);
     let author = "Someone With A Rather Long Display Name, Finance Department, Head Office";
-    h.state_mut().run("review.newComment", json!({"cell": "B2", "text": text, "author": author})).unwrap();
-    h.state_mut().run("review.showComments", json!({"on": true})).unwrap();
+    h.state_mut()
+        .run(
+            "review.newComment",
+            json!({"cell": "B2", "text": text, "author": author}),
+        )
+        .unwrap();
+    h.state_mut()
+        .run("review.showComments", json!({"on": true}))
+        .unwrap();
     h.run_steps(3);
 }
 
 fn drag(h: &mut Harness, from: Pos2, to: Pos2) {
-    let press = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
-    h.input_mut().events.extend([Event::PointerMoved(from), press(from, true)]);
+    let press = |pos, pressed| Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    };
+    h.input_mut()
+        .events
+        .extend([Event::PointerMoved(from), press(from, true)]);
     h.step();
     for i in 1..=6 {
         let t = i as f32 / 6.0;
-        h.input_mut().events.push(Event::PointerMoved(from + (to - from) * t));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(from + (to - from) * t));
         h.step();
     }
     h.input_mut().events.push(press(to, false));
@@ -57,23 +77,38 @@ fn the_pane_does_not_grow_on_its_own_and_keeps_a_manual_resize() {
     let gutter = WIDTH - grid_right(&h);
     open_pane_on_long_comment(&mut h);
     let opened = grid_right(&h);
-    assert!(WIDTH - opened < WIDTH / 2.0, "the pane opens at its default width, got {}", WIDTH - opened);
+    assert!(
+        WIDTH - opened < WIDTH / 2.0,
+        "the pane opens at its default width, got {}",
+        WIDTH - opened
+    );
     h.run_steps(60);
-    assert_eq!(grid_right(&h), opened, "the pane must not widen itself frame after frame");
+    assert_eq!(
+        grid_right(&h),
+        opened,
+        "the pane must not widen itself frame after frame"
+    );
 
     // Drag the pane's left edge 150px to the left: the new width stays.
     let edge = pos2(opened + gutter, 450.0);
     drag(&mut h, edge, edge - vec2(150.0, 0.0));
     let resized = grid_right(&h);
     // The grab point is a few pixels off the exact edge, so allow some slack on the 150px.
-    assert!(opened - resized > 120.0, "the drag widens the pane, grid edge {opened} -> {resized}");
+    assert!(
+        opened - resized > 120.0,
+        "the drag widens the pane, grid edge {opened} -> {resized}"
+    );
     h.run_steps(60);
     assert_eq!(grid_right(&h), resized, "a manual resize must hold");
 
     // Dragged almost to the window's left edge, the pane stops at half the window.
     let edge = pos2(resized + gutter, 450.0);
     drag(&mut h, edge, pos2(60.0, 450.0));
-    assert!(grid_right(&h) > WIDTH / 2.0 - gutter - 30.0, "the pane is capped at half the window, grid edge {}", grid_right(&h));
+    assert!(
+        grid_right(&h) > WIDTH / 2.0 - gutter - 30.0,
+        "the pane is capped at half the window, grid edge {}",
+        grid_right(&h)
+    );
 }
 
 /// How many separate ribbon buttons show `tip` when hovered, scanning the big-button row.
@@ -82,7 +117,9 @@ fn buttons_with_tip(h: &mut Harness, tip: &str) -> usize {
     let (mut count, mut inside) = (0, false);
     let mut x = 2.0;
     while x < WIDTH {
-        h.input_mut().events.push(Event::PointerMoved(pos2(x, 120.0)));
+        h.input_mut()
+            .events
+            .push(Event::PointerMoved(pos2(x, 120.0)));
         h.run_steps(6);
         let shown = h.query_all_by_value(tip).next().is_some();
         if shown && !inside {

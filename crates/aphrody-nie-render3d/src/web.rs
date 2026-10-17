@@ -26,9 +26,17 @@ const PRESENT: &str = r"
 /// Caméra absolue : angles en radians, distance en rayons du modèle. Rejette NaN/infini.
 /// Le tangage et la distance suivent les mêmes bornes que le viewport natif.
 pub fn checked_camera(yaw: f32, pitch: f32, distance: f32) -> Result<Camera> {
-    ensure!(yaw.is_finite() && pitch.is_finite() && distance.is_finite(), "caméra non finie");
+    ensure!(
+        yaw.is_finite() && pitch.is_finite() && distance.is_finite(),
+        "caméra non finie"
+    );
     ensure!(distance > 0.0, "distance de caméra non positive");
-    Ok(Camera { yaw: yaw.rem_euclid(std::f32::consts::TAU), pitch, distance }.clamped())
+    Ok(Camera {
+        yaw: yaw.rem_euclid(std::f32::consts::TAU),
+        pitch,
+        distance,
+    }
+    .clamped())
 }
 
 /// Dimensions de backing store en pixels, pas en unités CSS. Aucun arrondi implicite JS.
@@ -312,7 +320,10 @@ mod browser {
         }
 
         fn ready(&self) -> Result<()> {
-            let state = self.fault.lock().map_err(|_| anyhow::anyhow!("état GPU indisponible"))?;
+            let state = self
+                .fault
+                .lock()
+                .map_err(|_| anyhow::anyhow!("état GPU indisponible"))?;
             if let Some(message) = state.as_ref() {
                 bail!("device WebGPU perdu ; recréer le viewer : {message}");
             }
@@ -359,10 +370,16 @@ mod browser {
                     "géométrie non finie"
                 );
                 ensure!(
-                    primitive.indices.iter().all(|&i| (i as usize) < primitive.positions.len()),
+                    primitive
+                        .indices
+                        .iter()
+                        .all(|&i| (i as usize) < primitive.positions.len()),
                     "indice hors géométrie"
                 );
-                ensure!(primitive.indices.len().is_multiple_of(3), "indices non triangulaires");
+                ensure!(
+                    primitive.indices.len().is_multiple_of(3),
+                    "indices non triangulaires"
+                );
                 // Vertex partagé = position + normale + UV + drapeau matériau = 36 octets.
                 ensure!(
                     (primitive.positions.len() as u64) * 36 <= limits.max_buffer_size
@@ -384,7 +401,10 @@ mod browser {
             let uploaded = self.renderer.try_upload(&model)?;
             ensure!(uploaded.triangle_count > 0, "GLB sans triangle exploitable");
             self.model = Some(uploaded);
-            self.pickable = Some(glb::Model { primitives: model.primitives, textures: Vec::new() });
+            self.pickable = Some(glb::Model {
+                primitives: model.primitives,
+                textures: Vec::new(),
+            });
             Ok(())
         }
 
@@ -394,7 +414,10 @@ mod browser {
         /// remettre un par un évite de faire traverser une table à la frontière `wasm_bindgen`,
         /// et permet de ne recharger que ce qui change entre deux scènes.
         pub fn stage_asset(&mut self, asset: &str, bytes: &[u8]) -> Result<()> {
-            ensure!(!asset.is_empty() && asset.len() <= 4096, "référence d'asset invalide");
+            ensure!(
+                !asset.is_empty() && asset.len() <= 4096,
+                "référence d'asset invalide"
+            );
             ensure!(bytes.len() <= 64 * 1024 * 1024, "GLB supérieur à 64 Mio");
             let model = glb::parse_with_texture_budget(bytes, MAX_DECODED_TEXTURE_BYTES)?;
             self.staged.insert(asset.to_owned(), model);
@@ -424,9 +447,15 @@ mod browser {
             self.pickable = None;
             self.owners = Vec::new();
             let uploaded = self.renderer.try_upload(&model)?;
-            ensure!(uploaded.triangle_count > 0, "scène sans triangle exploitable");
+            ensure!(
+                uploaded.triangle_count > 0,
+                "scène sans triangle exploitable"
+            );
             self.model = Some(uploaded);
-            self.pickable = Some(glb::Model { primitives: model.primitives, textures: Vec::new() });
+            self.pickable = Some(glb::Model {
+                primitives: model.primitives,
+                textures: Vec::new(),
+            });
             self.owners = owners;
             Ok(())
         }
@@ -506,8 +535,11 @@ mod browser {
                 segments.extend(crate::scene::box_segments(min, max, [90, 170, 255]));
                 // Le gizmo se pose au centre de la boîte, ses poignées à sa demi-diagonale : une
                 // longueur fixe serait invisible sur un grand objet et démesurée sur un petit.
-                let centre =
-                    [(min[0] + max[0]) * 0.5, (min[1] + max[1]) * 0.5, (min[2] + max[2]) * 0.5];
+                let centre = [
+                    (min[0] + max[0]) * 0.5,
+                    (min[1] + max[1]) * 0.5,
+                    (min[2] + max[2]) * 0.5,
+                ];
                 let demi = ((max[0] - min[0]).max(max[1] - min[1]).max(max[2] - min[2])) * 0.5;
                 let longueur = demi.max(0.1) * 1.6;
                 // Retenues pour l'interaction : le test de poignée et le glissement doivent viser
@@ -517,7 +549,7 @@ mod browser {
                     GizmoMode::Rotate => crate::gizmo::rotation_handles(centre, longueur),
                     GizmoMode::Translate | GizmoMode::Scale => {
                         crate::gizmo::handles(centre, longueur)
-                    },
+                    }
                 });
             }
 
@@ -775,17 +807,17 @@ mod browser {
                 wgpu::CurrentSurfaceTexture::Suboptimal(frame) => (frame, true),
                 wgpu::CurrentSurfaceTexture::Timeout | wgpu::CurrentSurfaceTexture::Occluded => {
                     return Ok(false);
-                },
+                }
                 wgpu::CurrentSurfaceTexture::Outdated => {
                     self.surface.configure(self.renderer.device(), &self.config);
                     return Ok(false);
-                },
+                }
                 wgpu::CurrentSurfaceTexture::Lost => {
                     bail!("surface WebGPU perdue ; recréer le viewer")
-                },
+                }
                 wgpu::CurrentSurfaceTexture::Validation => {
                     bail!("validation de surface WebGPU échouée")
-                },
+                }
             };
             // Le handle Device est Arc-backed. Le cloner avant l'emprunt mutable du renderer
             // permet de bâtir le bind group à partir de la vue renvoyée sans créer un second
@@ -809,8 +841,13 @@ mod browser {
                         }],
                     }));
             }
-            let bind = self.presentation_bind.as_ref().expect("bind group créé ci-dessus");
-            let target = frame.texture.create_view(&wgpu::TextureViewDescriptor::default());
+            let bind = self
+                .presentation_bind
+                .as_ref()
+                .expect("bind group créé ci-dessus");
+            let target = frame
+                .texture
+                .create_view(&wgpu::TextureViewDescriptor::default());
             let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("NIE présentation"),
             });
@@ -893,7 +930,10 @@ mod tests {
 
     #[test]
     fn dimensions_strictes_sans_coercition_js() {
-        assert_eq!(checked_size(1920.0, 1080.0, 2048).expect("taille valide"), (1920, 1080));
+        assert_eq!(
+            checked_size(1920.0, 1080.0, 2048).expect("taille valide"),
+            (1920, 1080)
+        );
         for value in [0.0, -1.0, 1.5, 2049.0, f64::NAN, f64::INFINITY] {
             assert!(checked_size(value, 1.0, 2048).is_err());
             assert!(checked_size(1.0, value, 2048).is_err());

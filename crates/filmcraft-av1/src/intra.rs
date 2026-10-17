@@ -56,7 +56,15 @@ pub(crate) fn predict_intra(pl: &mut Plane, p: &IntraParams) {
         let v = (1 << (bd - 1)) - 1;
         above[EDGE..EDGE + n].iter_mut().for_each(|a| *a = v);
     } else {
-        let above_limit = (p.max_x).min(x as i32 + if p.have_above_right { 2 * w as i32 } else { w as i32 } - 1);
+        let above_limit = (p.max_x).min(
+            x as i32
+                + if p.have_above_right {
+                    2 * w as i32
+                } else {
+                    w as i32
+                }
+                - 1,
+        );
         let row = pl.row_from(y - 1, x);
         for i in 0..n {
             above[EDGE + i] = row[(above_limit.min(x as i32 + i as i32)) as usize - x] as i32;
@@ -69,7 +77,15 @@ pub(crate) fn predict_intra(pl: &mut Plane, p: &IntraParams) {
         let v = (1 << (bd - 1)) + 1;
         left[EDGE..EDGE + n].iter_mut().for_each(|a| *a = v);
     } else {
-        let left_limit = (p.max_y).min(y as i32 + if p.have_below_left { 2 * h as i32 } else { h as i32 } - 1);
+        let left_limit = (p.max_y).min(
+            y as i32
+                + if p.have_below_left {
+                    2 * h as i32
+                } else {
+                    h as i32
+                }
+                - 1,
+        );
         for i in 0..n {
             left[EDGE + i] = pl.at(x - 1, left_limit.min(y as i32 + i as i32) as usize) as i32;
         }
@@ -94,7 +110,18 @@ pub(crate) fn predict_intra(pl: &mut Plane, p: &IntraParams) {
     } else if p.mode == SMOOTH_PRED || p.mode == SMOOTH_V_PRED || p.mode == SMOOTH_H_PRED {
         smooth(&above, &left, p.mode, p.log2w, p.log2h, w, h, &mut pred);
     } else if p.mode == DC_PRED {
-        dc(&above, &left, p.have_left, p.have_above, p.log2w, p.log2h, w, h, bd, &mut pred);
+        dc(
+            &above,
+            &left,
+            p.have_left,
+            p.have_above,
+            p.log2w,
+            p.log2h,
+            w,
+            h,
+            bd,
+            &mut pred,
+        );
     } else {
         // PAETH_PRED
         let tl = above[EDGE - 1];
@@ -121,7 +148,15 @@ pub(crate) fn predict_intra(pl: &mut Plane, p: &IntraParams) {
     }
 }
 
-fn recursive_intra(above: &[i32], left: &[i32], w: usize, h: usize, mode: usize, bd: u32, pred: &mut [u16]) {
+fn recursive_intra(
+    above: &[i32],
+    left: &[i32],
+    w: usize,
+    h: usize,
+    mode: usize,
+    bd: u32,
+    pred: &mut [u16],
+) {
     let w4 = w >> 2;
     let h2 = h >> 1;
     for i2 in 0..h2 {
@@ -148,7 +183,8 @@ fn recursive_intra(above: &[i32], left: &[i32], w: usize, h: usize, mode: usize,
                     for i in 0..7 {
                         pr += INTRA_FILTER_TAPS[mode][(i1 << 2) + j1][i] as i32 * pv[i];
                     }
-                    pred[((i2 << 1) + i1) * w + (j4 << 2) + j1] = clip1(round2_signed(pr, INTRA_FILTER_SCALE_BITS as u32), bd);
+                    pred[((i2 << 1) + i1) * w + (j4 << 2) + j1] =
+                        clip1(round2_signed(pr, INTRA_FILTER_SCALE_BITS as u32), bd);
                 }
             }
         }
@@ -171,7 +207,16 @@ fn sm_weights(log2: u32) -> &'static [u8] {
 }
 
 #[allow(clippy::too_many_arguments)]
-fn smooth(above: &[i32], left: &[i32], mode: usize, log2w: u32, log2h: u32, w: usize, h: usize, pred: &mut [u16]) {
+fn smooth(
+    above: &[i32],
+    left: &[i32],
+    mode: usize,
+    log2w: u32,
+    log2h: u32,
+    w: usize,
+    h: usize,
+    pred: &mut [u16],
+) {
     let wx = sm_weights(log2w);
     let wy = sm_weights(log2h);
     for i in 0..h {
@@ -183,9 +228,15 @@ fn smooth(above: &[i32], left: &[i32], mode: usize, log2w: u32, log2h: u32, w: u
                     + (256 - wx[j] as i32) * above[EDGE + w - 1];
                 round2(s, 9)
             } else if mode == SMOOTH_V_PRED {
-                round2(wy[i] as i32 * above[EDGE + j] + (256 - wy[i] as i32) * left[EDGE + h - 1], 8)
+                round2(
+                    wy[i] as i32 * above[EDGE + j] + (256 - wy[i] as i32) * left[EDGE + h - 1],
+                    8,
+                )
             } else {
-                round2(wx[j] as i32 * left[EDGE + i] + (256 - wx[j] as i32) * above[EDGE + w - 1], 8)
+                round2(
+                    wx[j] as i32 * left[EDGE + i] + (256 - wx[j] as i32) * above[EDGE + w - 1],
+                    8,
+                )
             };
             pred[i * w + j] = v as u16;
         }
@@ -193,9 +244,21 @@ fn smooth(above: &[i32], left: &[i32], mode: usize, log2w: u32, log2h: u32, w: u
 }
 
 #[allow(clippy::too_many_arguments)]
-fn dc(above: &[i32], left: &[i32], have_left: bool, have_above: bool, log2w: u32, log2h: u32, w: usize, h: usize, bd: u32, pred: &mut [u16]) {
+fn dc(
+    above: &[i32],
+    left: &[i32],
+    have_left: bool,
+    have_above: bool,
+    log2w: u32,
+    log2h: u32,
+    w: usize,
+    h: usize,
+    bd: u32,
+    pred: &mut [u16],
+) {
     let v = if have_left && have_above {
-        let mut sum: i32 = left[EDGE..EDGE + h].iter().sum::<i32>() + above[EDGE..EDGE + w].iter().sum::<i32>();
+        let mut sum: i32 =
+            left[EDGE..EDGE + h].iter().sum::<i32>() + above[EDGE..EDGE + w].iter().sum::<i32>();
         sum += ((w + h) >> 1) as i32;
         sum / (w + h) as i32
     } else if have_left {
@@ -317,7 +380,14 @@ fn edge_upsample(buf: &mut [i32], num_px: usize, bd: u32) {
     }
 }
 
-fn directional(above: &mut [i32], left: &mut [i32], p: &IntraParams, w: usize, h: usize, pred: &mut [u16]) {
+fn directional(
+    above: &mut [i32],
+    left: &mut [i32],
+    p: &IntraParams,
+    w: usize,
+    h: usize,
+    pred: &mut [u16],
+) {
     let p_angle = MODE_TO_ANGLE[p.mode] as i32 + p.angle_delta * ANGLE_STEP as i32;
     let mut upsample_above = 0u32;
     let mut upsample_left = 0u32;
@@ -331,12 +401,16 @@ fn directional(above: &mut [i32], left: &mut [i32], p: &IntraParams, w: usize, h
             }
             if p.have_above {
                 let strength = edge_filter_strength(w, h, p.filter_type, p_angle - 90);
-                let num_px = w.min((p.max_x - p.x as i32 + 1) as usize) + if p_angle < 90 { h } else { 0 } + 1;
+                let num_px = w.min((p.max_x - p.x as i32 + 1) as usize)
+                    + if p_angle < 90 { h } else { 0 }
+                    + 1;
                 edge_filter(above, num_px, strength);
             }
             if p.have_left {
                 let strength = edge_filter_strength(w, h, p.filter_type, p_angle - 180);
-                let num_px = h.min((p.max_y - p.y as i32 + 1) as usize) + if p_angle > 180 { w } else { 0 } + 1;
+                let num_px = h.min((p.max_y - p.y as i32 + 1) as usize)
+                    + if p_angle > 180 { w } else { 0 }
+                    + 1;
                 edge_filter(left, num_px, strength);
             }
         }
@@ -374,7 +448,11 @@ fn directional(above: &mut [i32], left: &mut [i32], p: &IntraParams, w: usize, h
                 let base = (idx >> (6 - upsample_above)) + (j << upsample_above);
                 let shift = ((idx << upsample_above) >> 1) & 0x1f;
                 let max_base_x = (w as i32 + h as i32 - 1) << upsample_above;
-                if base < max_base_x { round2(a(base) * (32 - shift) + a(base + 1) * shift, 5) } else { a(max_base_x) }
+                if base < max_base_x {
+                    round2(a(base) * (32 - shift) + a(base + 1) * shift, 5)
+                } else {
+                    a(max_base_x)
+                }
             } else if p_angle > 90 && p_angle < 180 {
                 let idx = (j << 6) - (i + 1) * dx;
                 let base = idx >> (6 - upsample_above);

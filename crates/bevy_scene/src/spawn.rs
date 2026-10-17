@@ -138,7 +138,7 @@ pub trait WorldSceneExt {
     /// ```
     // PERF: ideally this is an iterator
     fn spawn_scene_list<L: SceneList>(&mut self, scenes: L)
-        -> Result<Vec<Entity>, SpawnSceneError>;
+    -> Result<Vec<Entity>, SpawnSceneError>;
 
     /// Queues the `scene_list` to be spawned. This will evaluate the `scene_list`'s dependencies (via [`Scene::register_dependencies`]) and queue it to be resolved
     /// and spawned after all of the dependencies have been loaded. If a [`SpawnSceneError`] occurs, it will be logged as an error.
@@ -852,7 +852,7 @@ impl QueuedScenes {
 #[cfg(test)]
 mod tests {
     use super::EntityWorldMutSceneExt;
-    use crate::{self as bevy_scene, bsn, ScenePlugin};
+    use crate::{self as bevy_scene, ScenePlugin, bsn};
     use bevy_app::{App, TaskPoolPlugin};
     use bevy_asset::AssetPlugin;
     use bevy_ecs::{name::Name, prelude::*, template::FromTemplate};

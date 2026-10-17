@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct ApiTokenExternal(pub String);
 
 impl_string_token!(ApiTokenExternal);
-impl_crockford_generator!(ApiTokenExternal, 32usize, LegacyTokenPrefix::ApiTokenExternal, CrockfordUpper);
+impl_crockford_generator!(
+    ApiTokenExternal,
+    32usize,
+    LegacyTokenPrefix::ApiTokenExternal,
+    CrockfordUpper
+);

@@ -96,23 +96,48 @@ pub struct Freeform {
 
 impl Default for Freeform {
     fn default() -> Self {
-        Freeform { w: 0.0, h: 0.0, paths: Vec::new(), alpha: 1.0, ink: None, order: None }
+        Freeform {
+            w: 0.0,
+            h: 0.0,
+            paths: Vec::new(),
+            alpha: 1.0,
+            ink: None,
+            order: None,
+        }
     }
 }
 
 impl Freeform {
     /// An ink stroke through `pts` (shape-local points, already in the `w` × `h` frame).
     pub fn ink(tool: InkTool, w: f32, h: f32, pts: Vec<[f32; 2]>) -> Freeform {
-        Freeform { w, h, paths: vec![FreePath { pts, closed: false }], alpha: tool.alpha(), ink: Some(tool), order: None }.sanitized()
+        Freeform {
+            w,
+            h,
+            paths: vec![FreePath { pts, closed: false }],
+            alpha: tool.alpha(),
+            ink: Some(tool),
+            order: None,
+        }
+        .sanitized()
     }
 
     /// The same geometry with non-finite points dropped, coordinates clamped, the counts capped
     /// and the opacity in 0–1: safe to draw whatever file or command it came from.
     pub fn sanitized(mut self) -> Freeform {
-        let fin = |v: f32| if v.is_finite() { v.clamp(-MAX_COORD, MAX_COORD) } else { 0.0 };
+        let fin = |v: f32| {
+            if v.is_finite() {
+                v.clamp(-MAX_COORD, MAX_COORD)
+            } else {
+                0.0
+            }
+        };
         self.w = fin(self.w).max(0.0);
         self.h = fin(self.h).max(0.0);
-        self.alpha = if self.alpha.is_finite() { self.alpha.clamp(0.0, 1.0) } else { 1.0 };
+        self.alpha = if self.alpha.is_finite() {
+            self.alpha.clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
         self.paths.truncate(MAX_PATHS);
         for p in &mut self.paths {
             p.pts.retain(|[x, y]| x.is_finite() && y.is_finite());
@@ -134,11 +159,23 @@ impl Freeform {
     pub fn placed(&self, x: f32, y: f32, fw: f32, fh: f32) -> Vec<(Vec<[f32; 2]>, bool)> {
         let sx = if self.w > 0.0 { fw / self.w } else { 1.0 };
         let sy = if self.h > 0.0 { fh / self.h } else { 1.0 };
-        let (sx, sy) = (if sx.is_finite() { sx } else { 1.0 }, if sy.is_finite() { sy } else { 1.0 });
+        let (sx, sy) = (
+            if sx.is_finite() { sx } else { 1.0 },
+            if sy.is_finite() { sy } else { 1.0 },
+        );
         self.paths
             .iter()
             .take(MAX_PATHS)
-            .map(|p| (p.pts.iter().take(MAX_POINTS).map(|[px, py]| [x + px * sx, y + py * sy]).collect(), p.closed))
+            .map(|p| {
+                (
+                    p.pts
+                        .iter()
+                        .take(MAX_POINTS)
+                        .map(|[px, py]| [x + px * sx, y + py * sy])
+                        .collect(),
+                    p.closed,
+                )
+            })
             .collect()
     }
 
@@ -148,7 +185,11 @@ impl Freeform {
         let mut best: Option<f32> = None;
         for (pts, closed) in self.placed(x, y, fw, fh) {
             let n = pts.len();
-            let segs = if closed && n > 2 { n } else { n.saturating_sub(1) };
+            let segs = if closed && n > 2 {
+                n
+            } else {
+                n.saturating_sub(1)
+            };
             let mut consider = |a: [f32; 2], b: [f32; 2]| {
                 let d = seg_distance(a, b, [px, py]);
                 if d.is_finite() && best.is_none_or(|bd| d < bd) {
@@ -174,7 +215,11 @@ impl Freeform {
 fn seg_distance(a: [f32; 2], b: [f32; 2], p: [f32; 2]) -> f32 {
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let len2 = dx * dx + dy * dy;
-    let t = if len2 > 0.0 { (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if len2 > 0.0 {
+        (((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / len2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let (cx, cy) = (a[0] + t * dx, a[1] + t * dy);
     ((p[0] - cx).powi(2) + (p[1] - cy).powi(2)).sqrt()
 }
@@ -185,9 +230,22 @@ mod tests {
 
     #[test]
     fn hostile_geometry_is_sanitized() {
-        let mut pts = vec![[f32::NAN, 1.0], [2.0, f32::INFINITY], [1.0, 2.0], [1e30, -1e30]];
+        let mut pts = vec![
+            [f32::NAN, 1.0],
+            [2.0, f32::INFINITY],
+            [1.0, 2.0],
+            [1e30, -1e30],
+        ];
         pts.extend(std::iter::repeat_n([3.0, 3.0], MAX_POINTS * 2));
-        let f = Freeform { w: f32::NAN, h: -4.0, paths: vec![FreePath { pts, closed: false }], alpha: 7.0, ink: None, order: None }.sanitized();
+        let f = Freeform {
+            w: f32::NAN,
+            h: -4.0,
+            paths: vec![FreePath { pts, closed: false }],
+            alpha: 7.0,
+            ink: None,
+            order: None,
+        }
+        .sanitized();
         assert_eq!((f.w, f.h, f.alpha), (0.0, 0.0, 1.0));
         let p = &f.paths[0].pts;
         assert_eq!(p.len(), MAX_POINTS);
@@ -199,7 +257,13 @@ mod tests {
     fn distance_to_a_stroke_scales_with_its_frame() {
         let f = Freeform::ink(InkTool::Pen, 10.0, 10.0, vec![[0.0, 0.0], [10.0, 0.0]]);
         // Frame twice the size at (100, 100): the stroke runs from (100,100) to (120,100).
-        assert_eq!(f.distance(100.0, 100.0, 20.0, 20.0, 110.0, 103.0), Some(3.0));
-        assert_eq!(Freeform::default().distance(0.0, 0.0, 1.0, 1.0, 0.0, 0.0), None);
+        assert_eq!(
+            f.distance(100.0, 100.0, 20.0, 20.0, 110.0, 103.0),
+            Some(3.0)
+        );
+        assert_eq!(
+            Freeform::default().distance(0.0, 0.0, 1.0, 1.0, 0.0, 0.0),
+            None
+        );
     }
 }

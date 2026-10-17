@@ -8,44 +8,47 @@ const FLAT_COST_IN_USD_CENTS: u64 = 7;
 /// no option affects the price.
 #[derive(Clone, Debug)]
 pub struct ArtcraftTripoSplatCostState {
-  pub cost_in_usd_cents: u64,
+    pub cost_in_usd_cents: u64,
 }
 
 impl ArtcraftTripoSplatCostState {
-  pub fn from_request(_request: &ArtcraftTripoSplatRequestState) -> Self {
-    Self { cost_in_usd_cents: FLAT_COST_IN_USD_CENTS }
-  }
+    pub fn from_request(_request: &ArtcraftTripoSplatRequestState) -> Self {
+        Self {
+            cost_in_usd_cents: FLAT_COST_IN_USD_CENTS,
+        }
+    }
 
-  pub fn estimate_cost(&self) -> SplatGenerationCostEstimate {
-    artcraft_splat_cost_estimate(self.cost_in_usd_cents)
-  }
+    pub fn estimate_cost(&self) -> SplatGenerationCostEstimate {
+        artcraft_splat_cost_estimate(self.cost_in_usd_cents)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-  use tokens::tokens::media_files::MediaFileToken;
+    use tokens::tokens::media_files::MediaFileToken;
 
-  use crate::api::image_list_ref::ImageListRef;
-  use crate::api::router_provider::RouterProvider;
-  use crate::api::router_splat_model::RouterSplatModel;
-  use crate::generate::generate_splat::generate_splat_request_builder::GenerateSplatRequestBuilder;
+    use crate::api::image_list_ref::ImageListRef;
+    use crate::api::router_provider::RouterProvider;
+    use crate::api::router_splat_model::RouterSplatModel;
+    use crate::generate::generate_splat::generate_splat_request_builder::GenerateSplatRequestBuilder;
 
-  #[test]
-  fn flat_seven_cents() {
-    let builder = GenerateSplatRequestBuilder {
-      model: RouterSplatModel::TripoSplat,
-      provider: RouterProvider::Artcraft,
-      reference_images: Some(ImageListRef::MediaFileTokens(vec![
-        MediaFileToken::new("mf_test123".to_string()),
-      ])),
-      ..Default::default()
-    };
-    let cost = builder.build2()
-      .expect("build should succeed")
-      .estimate_cost()
-      .expect("estimate should succeed")
-      .cost_in_usd_cents
-      .expect("cost should be present");
-    assert_eq!(cost, 7);
-  }
+    #[test]
+    fn flat_seven_cents() {
+        let builder = GenerateSplatRequestBuilder {
+            model: RouterSplatModel::TripoSplat,
+            provider: RouterProvider::Artcraft,
+            reference_images: Some(ImageListRef::MediaFileTokens(vec![MediaFileToken::new(
+                "mf_test123".to_string(),
+            )])),
+            ..Default::default()
+        };
+        let cost = builder
+            .build2()
+            .expect("build should succeed")
+            .estimate_cost()
+            .expect("estimate should succeed")
+            .cost_in_usd_cents
+            .expect("cost should be present");
+        assert_eq!(cost, 7);
+    }
 }

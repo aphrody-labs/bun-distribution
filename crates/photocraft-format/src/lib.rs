@@ -20,7 +20,14 @@
 //! This crate sits at L3 next to the compositor, so it does not render.
 //! Callers pass previews in [`SaveOptions`]; `photocraft-io` does that.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod atomic;
 pub mod autosave;
@@ -55,11 +62,15 @@ pub enum FormatError {
     Corrupt(String),
     #[error("unsupported .pcraft feature: {0}")]
     Unsupported(String),
-    #[error("bundle written by a newer version (format {found}, this build reads up to {supported})")]
+    #[error(
+        "bundle written by a newer version (format {found}, this build reads up to {supported})"
+    )]
     TooNew { found: u32, supported: u32 },
     #[error("limit exceeded: {0}")]
     LimitExceeded(String),
-    #[error("`{path}` is NaN or infinite, which a .pcraft manifest cannot hold; reset that value and save again")]
+    #[error(
+        "`{path}` is NaN or infinite, which a .pcraft manifest cannot hold; reset that value and save again"
+    )]
     NonFinite { path: String },
     #[error("I/O: {0}")]
     Io(#[from] std::io::Error),
@@ -172,7 +183,12 @@ pub fn load_bytes_source(src: &dyn ByteSource, opts: &LoadOptions) -> Result<Doc
 
 pub fn load_path_with(path: &Path, opts: &LoadOptions) -> Result<Document> {
     if path.is_dir() {
-        store::load(&store::DirSource { root: path.to_path_buf() }, opts)
+        store::load(
+            &store::DirSource {
+                root: path.to_path_buf(),
+            },
+            opts,
+        )
     } else {
         let bytes = read::read_file(path)?;
         load_from_bytes_with(&bytes, opts)

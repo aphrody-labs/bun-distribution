@@ -1,4 +1,4 @@
-use bevy_asset::{load_embedded_asset, AssetServer, Handle};
+use bevy_asset::{AssetServer, Handle, load_embedded_asset};
 use bevy_core_pipeline::FullscreenShader;
 use bevy_ecs::{
     component::Component,
@@ -10,12 +10,12 @@ use bevy_ecs::{
 use bevy_render::{
     globals::GlobalsUniform,
     render_resource::{
-        binding_types::{sampler, texture_2d, texture_2d_multisampled, uniform_buffer_sized},
         BindGroupLayoutDescriptor, BindGroupLayoutEntries, CachedRenderPipelineId,
         ColorTargetState, ColorWrites, FilterMode, FragmentState, PipelineCache,
         RenderPipelineDescriptor, Sampler, SamplerBindingType, SamplerDescriptor, ShaderStages,
         ShaderType, SpecializedRenderPipeline, SpecializedRenderPipelines, TextureFormat,
         TextureSampleType,
+        binding_types::{sampler, texture_2d, texture_2d_multisampled, uniform_buffer_sized},
     },
     renderer::RenderDevice,
     view::{ExtractedView, Msaa},

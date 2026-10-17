@@ -5,7 +5,9 @@
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let a: Vec<String> = std::env::args().collect();
-    let (Some(models), Some(id), Some(script), Some(out)) = (a.get(1), a.get(2), a.get(3), a.get(4)) else {
+    let (Some(models), Some(id), Some(script), Some(out)) =
+        (a.get(1), a.get(2), a.get(3), a.get(4))
+    else {
         eprintln!("usage: narrate <models dir> <voice id> <script.txt> <out.wav>");
         std::process::exit(2);
     };

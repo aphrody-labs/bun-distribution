@@ -101,7 +101,7 @@ impl super::device::ExiDevice for ExiMacronix {
                         "IPL byte read"
                     );
                 }
-            },
+            }
             SRAM_START..=SRAM_END => {
                 let offset = ((addr - SRAM_START) as usize + self.cursor) % SRAM_SIZE;
                 if self.is_write() {
@@ -122,7 +122,7 @@ impl super::device::ExiDevice for ExiMacronix {
                         "SRAM byte read"
                     );
                 }
-            },
+            }
             RTC_START..=RTC_END => {
                 if !self.is_write() {
                     let rtc = Self::rtc_seconds().to_be_bytes();
@@ -134,13 +134,13 @@ impl super::device::ExiDevice for ExiMacronix {
                         "RTC byte read"
                     );
                 }
-            },
+            }
             _ => {
                 if !self.is_write() {
                     *byte = 0;
                     tracing::debug!(addr = format!("{:06X}", addr), "Unknown address read");
                 }
-            },
+            }
         }
 
         self.cursor += 1;
@@ -160,7 +160,7 @@ impl super::device::ExiDevice for ExiMacronix {
                     data = format!("{:02X?}", &buf),
                     "IPL DMA read"
                 );
-            },
+            }
             SRAM_START..=SRAM_END => {
                 let base = (addr - SRAM_START) as usize;
                 for (i, b) in buf.iter_mut().enumerate() {
@@ -172,7 +172,7 @@ impl super::device::ExiDevice for ExiMacronix {
                     data = format!("{:02X?}", &buf),
                     "SRAM DMA read"
                 );
-            },
+            }
             RTC_START..=RTC_END => {
                 let rtc = Self::rtc_seconds();
                 let rtc_bytes = rtc.to_be_bytes();
@@ -186,10 +186,10 @@ impl super::device::ExiDevice for ExiMacronix {
                     time = rtc,
                     "RTC DMA read"
                 );
-            },
+            }
             _ => {
                 buf.fill(0);
-            },
+            }
         }
     }
 
@@ -276,7 +276,9 @@ impl Sram {
     }
 
     pub fn empty() -> Self {
-        let mut sram = Self { data: [0; SRAM_SIZE] };
+        let mut sram = Self {
+            data: [0; SRAM_SIZE],
+        };
 
         sram.fix_flash_id_checksums();
 

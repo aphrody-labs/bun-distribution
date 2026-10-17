@@ -49,11 +49,20 @@ struct Group {
 /// The name an AOV normalizes to for the precomp check (`Direct_Diffuse` and
 /// `directDiffuse` are the same AOV).
 fn normalize(name: &str) -> String {
-    name.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase()
+    name.chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase()
 }
 
 /// The additive AOVs a beauty precomp is built from: the light-path set Arnold writes.
-const PRECOMP_REQUIRED: [&str; 5] = ["directdiffuse", "indirectdiffuse", "directspecular", "indirectspecular", "emission"];
+const PRECOMP_REQUIRED: [&str; 5] = [
+    "directdiffuse",
+    "indirectdiffuse",
+    "directspecular",
+    "indirectspecular",
+    "emission",
+];
 const PRECOMP_OPTIONAL: [&str; 3] = ["transmission", "sss", "volume"];
 
 /// The base channel name (`R` of `diffuse.R`, `R` of `R`).
@@ -72,14 +81,23 @@ fn groups(bytes: &[u8]) -> Result<Vec<Group>, IoError> {
         }
         let mut found: Vec<Group> = Vec::new();
         for c in &part.channels {
-            let Some((prefix, base)) = channel_base_split(&c.name) else { continue };
+            let Some((prefix, base)) = channel_base_split(&c.name) else {
+                continue;
+            };
             if prefix.chars().last().is_some_and(|ch| ch.is_ascii_digit()) {
                 continue;
             }
             if found.iter_mut().all(|g| g.prefix != prefix) {
-                found.push(Group { prefix: prefix.to_string(), part: part.index, channels: Vec::new(), alpha: None });
+                found.push(Group {
+                    prefix: prefix.to_string(),
+                    part: part.index,
+                    channels: Vec::new(),
+                    alpha: None,
+                });
             }
-            let Some(group) = found.iter_mut().find(|g| g.prefix == prefix) else { continue };
+            let Some(group) = found.iter_mut().find(|g| g.prefix == prefix) else {
+                continue;
+            };
             match base {
                 "R" | "G" | "B" => group.channels.push(c.name.clone()),
                 "A" => group.alpha = Some(c.name.clone()),
@@ -101,7 +119,9 @@ fn channel_base_split(name: &str) -> Option<(&str, &str)> {
 /// The name a part is listed, selected and imported as: its `name` attribute, or
 /// `part <index>` when it has none (a single-part render usually carries no name).
 fn part_display_name(part: &codecs::ExrPartInfo) -> String {
-    part.name.clone().unwrap_or_else(|| format!("part {}", part.index))
+    part.name
+        .clone()
+        .unwrap_or_else(|| format!("part {}", part.index))
 }
 
 /// Lists the entries of a multi-part or channel-grouped EXR for a chooser: flat parts in
@@ -110,7 +130,9 @@ fn part_display_name(part: &codecs::ExrPartInfo) -> String {
 pub fn entries(bytes: &[u8]) -> Result<Vec<Entry>, IoError> {
     let info = codecs::exr_info(bytes, &Default::default())?;
     if info.iter().all(|p| p.deep) {
-        return Err(IoError::Unsupported("this EXR holds only deep parts; it opens through the deep decoder".into()));
+        return Err(IoError::Unsupported(
+            "this EXR holds only deep parts; it opens through the deep decoder".into(),
+        ));
     }
     let mut out = Vec::new();
     for part in &info {
@@ -123,7 +145,11 @@ pub fn entries(bytes: &[u8]) -> Result<Vec<Entry>, IoError> {
             view: part.view.clone(),
             width: part.width,
             height: part.height,
-            channels: part.channels.iter().filter(|c| ["R", "G", "B", "A", "Y"].contains(&channel_base(&c.name))).count(),
+            channels: part
+                .channels
+                .iter()
+                .filter(|c| ["R", "G", "B", "A", "Y"].contains(&channel_base(&c.name)))
+                .count(),
             objects: None,
         });
     }
@@ -191,7 +217,11 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
         return Err(IoError::Unsupported("the EXR has no parts".into()));
     }
     let all_groups = groups(bytes)?;
-    let view_passes = |view: &Option<String>| view.as_ref().is_none_or(|v| sel.view.eq_ignore_ascii_case("both") || v.eq_ignore_ascii_case(&sel.view));
+    let view_passes = |view: &Option<String>| {
+        view.as_ref().is_none_or(|v| {
+            sel.view.eq_ignore_ascii_case("both") || v.eq_ignore_ascii_case(&sel.view)
+        })
+    };
     // A named part wins over an unnamed one listed under the same fallback name ("part 0").
     let part_by_name = |want: &str| {
         let flat = || info.iter().filter(|p| !p.deep);
@@ -204,7 +234,10 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
     for want in &sel.parts {
         let p = part_by_name(want)?;
         if !view_passes(&p.view) {
-            return Err(IoError::Unsupported(format!("the part {want} is of the {:?} view, the filter is {}", p.view, sel.view)));
+            return Err(IoError::Unsupported(format!(
+                "the part {want} is of the {:?} view, the filter is {}",
+                p.view, sel.view
+            )));
         }
         if !chosen_parts.iter().any(|c| c.index == p.index) {
             chosen_parts.push(p);
@@ -212,10 +245,16 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
     }
     let mut chosen_groups: Vec<&Group> = Vec::new();
     for want in &sel.groups {
-        let g = all_groups.iter().find(|g| g.prefix == *want).ok_or_else(|| IoError::Unsupported(format!("no channel group named {want}")))?;
+        let g = all_groups
+            .iter()
+            .find(|g| g.prefix == *want)
+            .ok_or_else(|| IoError::Unsupported(format!("no channel group named {want}")))?;
         let part_view = info.get(g.part).and_then(|p| p.view.clone());
         if !view_passes(&part_view) {
-            return Err(IoError::Unsupported(format!("the group {} is of the {:?} view, the filter is {}", want, part_view, sel.view)));
+            return Err(IoError::Unsupported(format!(
+                "the group {} is of the {:?} view, the filter is {}",
+                want, part_view, sel.view
+            )));
         }
         if !chosen_groups.iter().any(|c| c.prefix == g.prefix) {
             chosen_groups.push(g);
@@ -247,7 +286,10 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
         }
         let (surface, mode) = layer_surface(&img, &mut max)?;
         gray_only &= mode == ColorMode::Grayscale;
-        layers.push(Layer::new(part_display_name(part), LayerContent::Raster(surface)));
+        layers.push(Layer::new(
+            part_display_name(part),
+            LayerContent::Raster(surface),
+        ));
     }
     for group in &chosen_groups {
         let mut names = group.channels.clone();
@@ -259,7 +301,10 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
         }
         let (surface, mode) = layer_surface(&img, &mut max)?;
         gray_only &= mode == ColorMode::Grayscale;
-        layers.push(Layer::new(group.prefix.clone(), LayerContent::Raster(surface)));
+        layers.push(Layer::new(
+            group.prefix.clone(),
+            LayerContent::Raster(surface),
+        ));
     }
 
     if sel.precomp {
@@ -274,24 +319,46 @@ pub fn import(name: &str, bytes: &[u8], sel: &Selection) -> Result<ImportResult,
     if f16_seen {
         warnings.push("16-bit float samples are stored as 32-bit float".to_string());
     }
-    let mode = if gray_only { ColorMode::Grayscale } else { ColorMode::Rgb };
+    let mode = if gray_only {
+        ColorMode::Grayscale
+    } else {
+        ColorMode::Rgb
+    };
     let mut doc = Document::new(name, Size::new(max.0, max.1), mode, DocSample::F32);
     doc.layers = layers;
     if mode == ColorMode::Rgb {
         // OpenEXR holds linear, scene-referred values: tag them linear sRGB, as File › Open does.
         doc.icc_profile = Some(Builtin::LinearSrgb.profile().to_bytes());
     }
-    Ok(ImportResult { document: doc, warnings, source_read_only: false, preview_only: false })
+    Ok(ImportResult {
+        document: doc,
+        warnings,
+        source_read_only: false,
+        preview_only: false,
+    })
 }
 
 /// The additive beauty from the file's AOV groups: premultiplied RGB summed over the
 /// light-path set, alpha the maximum coverage, straightened back. Fails naming the missing
 /// AOVs when the required set is incomplete; AOVs beyond the set are ignored.
-fn precomp_layer(bytes: &[u8], all_groups: &[Group], opts: &DecodeOptions, max: &mut (u32, u32), warnings: &mut Vec<String>) -> Result<Layer, IoError> {
+fn precomp_layer(
+    bytes: &[u8],
+    all_groups: &[Group],
+    opts: &DecodeOptions,
+    max: &mut (u32, u32),
+    warnings: &mut Vec<String>,
+) -> Result<Layer, IoError> {
     let have: Vec<String> = all_groups.iter().map(|g| normalize(&g.prefix)).collect();
-    let missing: Vec<&str> = PRECOMP_REQUIRED.iter().copied().filter(|r| !have.iter().any(|h| h == *r)).collect();
+    let missing: Vec<&str> = PRECOMP_REQUIRED
+        .iter()
+        .copied()
+        .filter(|r| !have.iter().any(|h| h == *r))
+        .collect();
     if !missing.is_empty() {
-        return Err(IoError::Unsupported(format!("the AOV set is incomplete for a beauty precomp; missing: {}", missing.join(", "))));
+        return Err(IoError::Unsupported(format!(
+            "the AOV set is incomplete for a beauty precomp; missing: {}",
+            missing.join(", ")
+        )));
     }
     let mut sum_rgb: Vec<f32> = Vec::new();
     let mut alpha: Vec<f32> = Vec::new();
@@ -312,7 +379,9 @@ fn precomp_layer(bytes: &[u8], all_groups: &[Group], opts: &DecodeOptions, max: 
             sum_rgb = vec![0.0; w as usize * h as usize * 3];
             alpha = vec![0.0; w as usize * h as usize];
         } else if size != (w, h) {
-            return Err(IoError::Unsupported("the AOV groups differ in size; a beauty precomp needs one common extent".into()));
+            return Err(IoError::Unsupported(
+                "the AOV groups differ in size; a beauty precomp needs one common extent".into(),
+            ));
         }
         let px = rgba.to_f32_samples().unwrap_or_default();
         for p in 0..(w as usize * h as usize) {
@@ -332,7 +401,15 @@ fn precomp_layer(bytes: &[u8], all_groups: &[Group], opts: &DecodeOptions, max: 
     let mut out = vec![0f32; w as usize * h as usize * 4];
     for p in 0..(w as usize * h as usize) {
         let a = alpha[p];
-        let (r, g, b) = if a > 0.0 { (sum_rgb[p * 3] / a, sum_rgb[p * 3 + 1] / a, sum_rgb[p * 3 + 2] / a) } else { (0.0, 0.0, 0.0) };
+        let (r, g, b) = if a > 0.0 {
+            (
+                sum_rgb[p * 3] / a,
+                sum_rgb[p * 3 + 1] / a,
+                sum_rgb[p * 3 + 2] / a,
+            )
+        } else {
+            (0.0, 0.0, 0.0)
+        };
         out[p * 4] = r;
         out[p * 4 + 1] = g;
         out[p * 4 + 2] = b;
@@ -342,6 +419,12 @@ fn precomp_layer(bytes: &[u8], all_groups: &[Group], opts: &DecodeOptions, max: 
     max.0 = max.0.max(w);
     max.1 = max.1.max(h);
     let (surface, _) = layer_surface(&img, max)?;
-    warnings.push("beauty (precomp) is the additive sum of the file's AOVs; alpha is the maximum coverage".to_string());
-    Ok(Layer::new("beauty (precomp)", LayerContent::Raster(surface)))
+    warnings.push(
+        "beauty (precomp) is the additive sum of the file's AOVs; alpha is the maximum coverage"
+            .to_string(),
+    );
+    Ok(Layer::new(
+        "beauty (precomp)",
+        LayerContent::Raster(surface),
+    ))
 }

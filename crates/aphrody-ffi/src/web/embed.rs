@@ -43,7 +43,8 @@ fn worker_binary() -> std::ffi::OsString {
 }
 
 fn spawn_worker() -> Result<Worker, String> {
-    let mut child = Command::new(worker_binary()).no_window()
+    let mut child = Command::new(worker_binary())
+        .no_window()
         .arg("worker")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -52,8 +53,16 @@ fn spawn_worker() -> Result<Worker, String> {
         .spawn()
         .map_err(|err| format!("Aphrody embedding worker unavailable: {err}"))?;
     let stdin = child.stdin.take().ok_or("embedding worker has no stdin")?;
-    let stdout = child.stdout.take().ok_or("embedding worker has no stdout")?;
-    Ok(Worker { _child: child, stdin, stdout, inflight: false })
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or("embedding worker has no stdout")?;
+    Ok(Worker {
+        _child: child,
+        stdin,
+        stdout,
+        inflight: false,
+    })
 }
 
 async fn call_worker(request: Value) -> String {
@@ -74,7 +83,10 @@ async fn call_worker(request: Value) -> String {
     let worker = slot.as_mut().expect("worker inserted above");
     worker.inflight = true;
     let result = async {
-        worker.stdin.write_all(&(payload.len() as u32).to_le_bytes()).await?;
+        worker
+            .stdin
+            .write_all(&(payload.len() as u32).to_le_bytes())
+            .await?;
         worker.stdin.write_all(&payload).await?;
         worker.stdin.flush().await?;
         let mut prefix = [0u8; 4];
@@ -96,18 +108,21 @@ async fn call_worker(request: Value) -> String {
         Ok(value) => {
             worker.inflight = false;
             value.to_string()
-        },
+        }
         Err(err) => {
             *slot = None;
             error_json_string(format!("Aphrody embedding worker failed: {err}"))
-        },
+        }
     }
 }
 
 fn parse_string_array(raw: &str) -> Result<Value, String> {
     let value: Value = serde_json::from_str(raw)
         .map_err(|err| format!("expected a JSON array of strings: {err}"))?;
-    if value.as_array().is_some_and(|items| items.iter().all(Value::is_string)) {
+    if value
+        .as_array()
+        .is_some_and(|items| items.iter().all(Value::is_string))
+    {
         Ok(value)
     } else {
         Err("expected a JSON array of strings".into())
@@ -131,7 +146,9 @@ pub unsafe extern "C" fn web_internal_embed_submit(
             Ok(texts) => texts,
             Err(err) => return jobs::resolved(error_json_string(err)),
         };
-        let kind = unsafe { borrow_str(kind_ptr) }.unwrap_or("passage").to_string();
+        let kind = unsafe { borrow_str(kind_ptr) }
+            .unwrap_or("passage")
+            .to_string();
         jobs::submit(
             timeout_ms,
             call_worker(json!({ "op": "embed", "texts": texts, "kind": kind })),
@@ -149,9 +166,9 @@ pub unsafe extern "C" fn web_internal_rerank_submit(
     timeout_ms: u32,
 ) -> u64 {
     guard(0, || {
-        let (Some(query), Some(raw)) =
-            (unsafe { borrow_str(query_ptr) }, unsafe { borrow_str(passages_json_ptr) })
-        else {
+        let (Some(query), Some(raw)) = (unsafe { borrow_str(query_ptr) }, unsafe {
+            borrow_str(passages_json_ptr)
+        }) else {
             return jobs::resolved(error_json_string("invalid rerank arguments"));
         };
         let passages = match parse_string_array(raw) {
@@ -198,7 +215,10 @@ pub unsafe extern "C" fn web_internal_embed_install_submit(
         let Some(model_id) = (unsafe { borrow_str(model_id_ptr) }) else {
             return jobs::resolved(error_json_string("invalid model id"));
         };
-        jobs::submit(timeout_ms, call_worker(json!({ "op": "install", "model_id": model_id })))
+        jobs::submit(
+            timeout_ms,
+            call_worker(json!({ "op": "install", "model_id": model_id })),
+        )
     })
 }
 

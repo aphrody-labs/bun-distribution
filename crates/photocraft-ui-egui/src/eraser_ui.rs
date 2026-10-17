@@ -74,7 +74,11 @@ pub fn block_size(app: &PhotocraftApp) -> f32 {
 /// The Eraser's Mode dropdown (Brush / Pencil / Block). Returns whether it changed.
 pub fn mode_dropdown(ui: &mut egui::Ui, mode: &mut String) -> bool {
     opt(ui, tl!("Mode:"));
-    let modes = [("brush".to_string(), tl!("Brush")), ("pencil".to_string(), tl!("Pencil")), ("block".to_string(), tl!("Block"))];
+    let modes = [
+        ("brush".to_string(), tl!("Brush")),
+        ("pencil".to_string(), tl!("Pencil")),
+        ("block".to_string(), tl!("Block")),
+    ];
     widgets::dropdown(ui, "eraser-mode", mode, &modes, 96.0)
 }
 
@@ -103,7 +107,11 @@ pub fn options_bar(app: &mut PhotocraftApp, ui: &mut egui::Ui, tool: Tool) -> bo
             for (k, icon, tip) in [
                 ("continuous", "pipette", tl!("Sampling: Continuous")),
                 ("once", "circle-dot", tl!("Sampling: Once")),
-                ("backgroundSwatch", "square", tl!("Sampling: Background Swatch")),
+                (
+                    "backgroundSwatch",
+                    "square",
+                    tl!("Sampling: Background Swatch"),
+                ),
             ] {
                 if icons::button(ui, icon, 24.0, o.bg_sampling == k, tip).clicked() {
                     o.bg_sampling = k.into();

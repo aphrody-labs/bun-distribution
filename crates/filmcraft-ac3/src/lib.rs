@@ -18,7 +18,17 @@
 //! adaptive hybrid transform and enhanced coupling are refused with [`Error::Unsupported`];
 //! transient pre-noise processing data is read and not applied.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 mod eac3;
 mod tables;
@@ -38,7 +48,9 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// Data rate in kb/s by frmsizecod / 2 (Table 5.18).
-const BITRATES: [u32; 19] = [32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640];
+const BITRATES: [u32; 19] = [
+    32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 384, 448, 512, 576, 640,
+];
 
 /// Full-bandwidth channels per acmod (Table 5.8).
 const NFCHANS: [usize; 8] = [2, 1, 2, 3, 3, 4, 4, 5];
@@ -123,7 +135,17 @@ pub fn parse_header(b: &[u8]) -> Result<Header> {
         r.skip(2);
     }
     let lfeon = r.read(1) == 1;
-    Ok(Header { sample_rate, bitrate_kbps: kbps >> shift, frame_bytes: words as usize * 2, bsid, acmod, lfeon, blocks: 6, strmtyp: 0, substreamid: 0 })
+    Ok(Header {
+        sample_rate,
+        bitrate_kbps: kbps >> shift,
+        frame_bytes: words as usize * 2,
+        bsid,
+        acmod,
+        lfeon,
+        blocks: 6,
+        strmtyp: 0,
+        substreamid: 0,
+    })
 }
 
 /// MSB-first bit reader; reads past the end give zeros.
@@ -184,7 +206,9 @@ fn window() -> &'static [f32; 256] {
             s
         };
         let alpha = 5.0 * std::f64::consts::PI;
-        let k: Vec<f64> = (0..=256).map(|j| i0(alpha * (1.0 - ((j as f64 - 128.0) / 128.0).powi(2)).max(0.0).sqrt())).collect();
+        let k: Vec<f64> = (0..=256)
+            .map(|j| i0(alpha * (1.0 - ((j as f64 - 128.0) / 128.0).powi(2)).max(0.0).sqrt()))
+            .collect();
         let total: f64 = k.iter().sum();
         let mut acc = 0.0;
         let mut w = [0f32; 256];
@@ -212,7 +236,13 @@ fn twiddles() -> &'static Twiddles {
     T.get_or_init(|| {
         use std::f64::consts::PI;
         let n = 512.0;
-        let mut t = Twiddles { c1: [0.0; 128], s1: [0.0; 128], c2: [0.0; 64], s2: [0.0; 64], e: [(0.0, 0.0); 128] };
+        let mut t = Twiddles {
+            c1: [0.0; 128],
+            s1: [0.0; 128],
+            c2: [0.0; 64],
+            s2: [0.0; 64],
+            e: [(0.0, 0.0); 128],
+        };
         for k in 0..128 {
             let a = 2.0 * PI * (8 * k + 1) as f64 / (8.0 * n);
             t.c1[k] = -a.cos() as f32;
@@ -322,7 +352,11 @@ fn imdct(x: &[f32; 256], short: bool, out: &mut [f32; 512]) {
 fn logadd(a: i32, b: i32) -> i32 {
     let c = a - b;
     let addr = ((c.abs() >> 1) as usize).min(255);
-    if c >= 0 { a + tables::LATAB[addr] as i32 } else { b + tables::LATAB[addr] as i32 }
+    if c >= 0 {
+        a + tables::LATAB[addr] as i32
+    } else {
+        b + tables::LATAB[addr] as i32
+    }
 }
 
 fn calc_lowcomp(a: i32, b0: i32, b1: i32, bin: usize) -> i32 {
@@ -366,7 +400,13 @@ fn bit_allocation(exp: &[u8; 256], p: &AllocParams, g: &Globals, bap: &mut [u8; 
     if start >= end {
         return;
     }
-    let (sdecay, fdecay, sgain, dbknee, floor) = (SLOWDEC[g.sdcycod], FASTDEC[g.fdcycod], SLOWGAIN[g.sgaincod], DBPBTAB[g.dbpbcod], FLOORTAB[g.floorcod]);
+    let (sdecay, fdecay, sgain, dbknee, floor) = (
+        SLOWDEC[g.sdcycod],
+        FASTDEC[g.fdcycod],
+        SLOWGAIN[g.sgaincod],
+        DBPBTAB[g.dbpbcod],
+        FLOORTAB[g.floorcod],
+    );
     let mut psd = [0i32; 256];
     for bin in start..end {
         psd[bin] = 3072 - ((exp[bin] as i32) << 7);
@@ -448,7 +488,11 @@ fn bit_allocation(exp: &[u8; 256], p: &AllocParams, g: &Globals, bap: &mut [u8; 
         let mut band = 0usize;
         for &(off, len, ba) in segs {
             band += off as usize;
-            let delta = if ba >= 4 { (ba as i32 - 3) << 7 } else { (ba as i32 - 4) << 7 };
+            let delta = if ba >= 4 {
+                (ba as i32 - 3) << 7
+            } else {
+                (ba as i32 - 4) << 7
+            };
             for _ in 0..len {
                 if band < 50 {
                     mask[band] += delta;
@@ -543,7 +587,10 @@ impl Frame {
             expstr: [0; 7],
             endmant: [0; 5],
             exps: [[0; 256]; 7],
-            g: Globals { fscod, ..Default::default() },
+            g: Globals {
+                fscod,
+                ..Default::default()
+            },
             csnroffst: 0,
             fsnroffst: [0; 7],
             fgaincod: [0; 7],
@@ -570,7 +617,15 @@ fn dynrng_gain(v: u32) -> f32 {
 
 /// Decode exponents of one set (§7.1.3) into `exp[first..]`; `ngrps` groups of 3 mapped values,
 /// each expanded to `grpsize` bins after the absolute exponent.
-fn decode_exponents(r: &mut Bits, absexp: i32, ngrps: usize, grpsize: usize, exp: &mut [u8; 256], first: usize, skip_abs: bool) -> Result<()> {
+fn decode_exponents(
+    r: &mut Bits,
+    absexp: i32,
+    ngrps: usize,
+    grpsize: usize,
+    exp: &mut [u8; 256],
+    first: usize,
+    skip_abs: bool,
+) -> Result<()> {
     let mut prev = absexp;
     let mut at = first;
     if !skip_abs {
@@ -677,7 +732,12 @@ pub struct Decoded {
 
 impl Decoder {
     pub fn new() -> Decoder {
-        Decoder { delay: [[0.0; 256]; 6], dither: 0, seed: 0x1234_5678, carry: None }
+        Decoder {
+            delay: [[0.0; 256]; 6],
+            dither: 0,
+            seed: 0x1234_5678,
+            carry: None,
+        }
     }
 
     /// Seed the dither generator (dither is decoder-specific noise; tests compare two seeds).
@@ -693,7 +753,10 @@ impl Decoder {
 
     fn dither(&mut self) -> f32 {
         // uniform in [-0.707, 0.707] (§7.3.4; any reasonably random sequence)
-        self.dither = self.dither.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+        self.dither = self
+            .dither
+            .wrapping_mul(1_664_525)
+            .wrapping_add(1_013_904_223);
         ((self.dither >> 8) as f32 / (1u32 << 24) as f32 * 2.0 - 1.0) * 0.707
     }
 
@@ -714,7 +777,12 @@ impl Decoder {
         let fscod = (frame[4] >> 6) as usize;
         // Dither is reseeded per syncframe from its CRC words (plus the configured seed), so a
         // frame decodes to the same samples however it was reached (seeking, render caches).
-        let crcs = u32::from_be_bytes([frame[2], frame[3], frame[h.frame_bytes - 2], frame[h.frame_bytes - 1]]);
+        let crcs = u32::from_be_bytes([
+            frame[2],
+            frame[3],
+            frame[h.frame_bytes - 2],
+            frame[h.frame_bytes - 1],
+        ]);
         self.dither = self.seed ^ crcs.wrapping_mul(0x9E37_79B9);
         let mut r = Bits::new(&frame[..h.frame_bytes]);
         r.skip(40); // syncinfo
@@ -757,17 +825,26 @@ impl Decoder {
         }
         let mut f = Frame::new(NFCHANS[acmod], fscod);
         let pcm = self.blocks(&mut r, &mut f, acmod, lfeon, 6, None)?;
-        Ok(Decoded { header: h, channels: wav_order(pcm, acmod, lfeon) })
+        Ok(Decoded {
+            header: h,
+            channels: wav_order(pcm, acmod, lfeon),
+        })
     }
 
     /// Decode one E-AC-3 syncframe (`frame` is exactly the syncframe).
     fn decode_eac3(&mut self, frame: &[u8], h: Header) -> Result<Decoded> {
         if !h.is_primary() {
-            return Ok(Decoded { header: h, channels: Vec::new() });
+            return Ok(Decoded {
+                header: h,
+                channels: Vec::new(),
+            });
         }
         // E-AC-3 has a single CRC, at the end (§E2.2.6): reseed the dither from the last words
         let n = frame.len();
-        let tail = frame.get(n.saturating_sub(4)..).and_then(|t| <[u8; 4]>::try_from(t).ok()).unwrap_or_default();
+        let tail = frame
+            .get(n.saturating_sub(4)..)
+            .and_then(|t| <[u8; 4]>::try_from(t).ok())
+            .unwrap_or_default();
         self.dither = self.seed ^ u32::from_be_bytes(tail).wrapping_mul(0x9E37_79B9);
         let mut r = Bits::new(frame);
         let bsi = eac3::read_bsi(&mut r)?;
@@ -780,12 +857,23 @@ impl Decoder {
         };
         let pcm = self.blocks(&mut r, &mut f, acmod, lfeon, nblocks, Some(&mut e))?;
         self.carry = Some((acmod, lfeon, bsi.fscod, f));
-        Ok(Decoded { header: h, channels: wav_order(pcm, acmod, lfeon) })
+        Ok(Decoded {
+            header: h,
+            channels: wav_order(pcm, acmod, lfeon),
+        })
     }
 
     /// Decode `nblocks` audio blocks and synthesize them (inverse transform, overlap-add), in coded
     /// channel order with the LFE last.
-    fn blocks(&mut self, r: &mut Bits, f: &mut Frame, acmod: usize, lfeon: bool, nblocks: usize, mut x: Option<&mut eac3::FrameInfo>) -> Result<Vec<Vec<f32>>> {
+    fn blocks(
+        &mut self,
+        r: &mut Bits,
+        f: &mut Frame,
+        acmod: usize,
+        lfeon: bool,
+        nblocks: usize,
+        mut x: Option<&mut eac3::FrameInfo>,
+    ) -> Result<Vec<Vec<f32>>> {
         let nfchans = f.nfchans;
         let nout = nfchans + lfeon as usize;
         let mut pcm: Vec<Vec<f32>> = vec![Vec::with_capacity(256 * nblocks); nout];
@@ -1039,7 +1127,13 @@ impl Decoder {
         match x.as_deref() {
             Some(e) if !e.bamode => {
                 // §E2.2.4 defaults
-                (f.g.sdcycod, f.g.fdcycod, f.g.sgaincod, f.g.dbpbcod, f.g.floorcod) = (2, 1, 1, 2, 7);
+                (
+                    f.g.sdcycod,
+                    f.g.fdcycod,
+                    f.g.sgaincod,
+                    f.g.dbpbcod,
+                    f.g.floorcod,
+                ) = (2, 1, 1, 2, 7);
             }
             _ => {
                 if r.bit() {
@@ -1127,7 +1221,10 @@ impl Decoder {
                 _ => r.bit(),
             };
             if leak {
-                f.cplleak = (((r.read(3) as i32) << 8) + 768, ((r.read(3) as i32) << 8) + 768);
+                f.cplleak = (
+                    ((r.read(3) as i32) << 8) + 768,
+                    ((r.read(3) as i32) << 8) + 768,
+                );
             }
         }
         // delta bit allocation
@@ -1145,7 +1242,9 @@ impl Decoder {
             for ch in order {
                 if f.deltbae[ch] == 1 {
                     let n = r.read(3) as usize + 1;
-                    f.deltsegs[ch] = (0..n).map(|_| (r.read(5) as u8, r.read(4) as u8, r.read(3) as u8)).collect();
+                    f.deltsegs[ch] = (0..n)
+                        .map(|_| (r.read(5) as u8, r.read(4) as u8, r.read(3) as u8))
+                        .collect();
                 } else if f.deltbae[ch] == 3 {
                     return Err(Error::Invalid("reserved delta bit allocation state"));
                 }
@@ -1162,7 +1261,17 @@ impl Decoder {
         let mut sets: Vec<(usize, AllocParams)> = Vec::new();
         for ch in 0..nf {
             let dba = (f.deltbae[ch] <= 1).then(|| f.deltsegs[ch].clone());
-            sets.push((ch, AllocParams { start: 0, end: f.endmant[ch], fgain: FASTGAIN[f.fgaincod[ch]], snroffset: snr(f.fsnroffst[ch]), leak: None, dba }));
+            sets.push((
+                ch,
+                AllocParams {
+                    start: 0,
+                    end: f.endmant[ch],
+                    fgain: FASTGAIN[f.fgaincod[ch]],
+                    snroffset: snr(f.fsnroffst[ch]),
+                    leak: None,
+                    dba,
+                },
+            ));
         }
         if f.cplinu {
             let dba = (f.deltbae[CPL] <= 1).then(|| f.deltsegs[CPL].clone());
@@ -1179,7 +1288,17 @@ impl Decoder {
             ));
         }
         if lfeon {
-            sets.push((LFE, AllocParams { start: 0, end: 7, fgain: FASTGAIN[f.fgaincod[LFE]], snroffset: snr(f.fsnroffst[LFE]), leak: None, dba: None }));
+            sets.push((
+                LFE,
+                AllocParams {
+                    start: 0,
+                    end: 7,
+                    fgain: FASTGAIN[f.fgaincod[LFE]],
+                    snroffset: snr(f.fsnroffst[LFE]),
+                    leak: None,
+                    dba: None,
+                },
+            ));
         }
         for (ch, p) in &sets {
             f.bap[*ch] = [0; 256];
@@ -1195,7 +1314,11 @@ impl Decoder {
         for ch in 0..nf {
             for bin in 0..f.endmant[ch] {
                 let b = f.bap[ch][bin];
-                let m = if b == 0 { if f.dithflag[ch] { self.dither() } else { 0.0 } } else { mantissa(r, b, &mut gr) };
+                let m = if b == 0 {
+                    if f.dithflag[ch] { self.dither() } else { 0.0 }
+                } else {
+                    mantissa(r, b, &mut gr)
+                };
                 coefs[ch][bin] = m * 2f32.powi(-(f.exps[ch][bin] as i32));
             }
             if f.cplinu && f.chincpl[ch] && !got_cpl {
@@ -1203,7 +1326,11 @@ impl Decoder {
                 for bin in f.cplstrtmant()..f.cplendmant() {
                     let b = f.bap[CPL][bin];
                     // zero-bit coupling mantissas are dithered per channel when decoupling
-                    cpl[bin] = if b == 0 { f32::NAN } else { mantissa(r, b, &mut gr) };
+                    cpl[bin] = if b == 0 {
+                        f32::NAN
+                    } else {
+                        mantissa(r, b, &mut gr)
+                    };
                 }
             }
         }
@@ -1222,7 +1349,11 @@ impl Decoder {
                 }
                 for bin in f.cplstrtmant()..f.cplendmant() {
                     let s = (bin - 37) / 12 - f.cplbegf;
-                    let m = if cpl[bin].is_nan() { if f.dithflag[ch] { self.dither() } else { 0.0 } } else { cpl[bin] };
+                    let m = if cpl[bin].is_nan() {
+                        if f.dithflag[ch] { self.dither() } else { 0.0 }
+                    } else {
+                        cpl[bin]
+                    };
                     let mut v = m * 2f32.powi(-(f.exps[CPL][bin] as i32)) * f.cplco[ch][s] * 8.0;
                     if acmod == 2 && ch == 1 && f.phsflginu && f.phsflg[s] {
                         v = -v;
@@ -1233,7 +1364,11 @@ impl Decoder {
         }
         // rematrixing
         if acmod == 2 {
-            let end = if f.cplinu { f.cplstrtmant() } else { f.endmant[0].min(f.endmant[1]) };
+            let end = if f.cplinu {
+                f.cplstrtmant()
+            } else {
+                f.endmant[0].min(f.endmant[1])
+            };
             const B: [usize; 5] = [13, 25, 37, 61, 253];
             for k in 0..4 {
                 if f.rematflg[k] {
@@ -1251,13 +1386,18 @@ impl Decoder {
         {
             for ch in 0..nf {
                 if e.spx.chinspx[ch] {
-                    e.spx.synthesize(ch, e.spxatten[ch], &mut coefs[ch], || self.noise());
+                    e.spx
+                        .synthesize(ch, e.spxatten[ch], &mut coefs[ch], || self.noise());
                 }
             }
         }
         // dynamic range
         for ch in 0..nf {
-            let g = if acmod == 0 && ch == 1 { f.dynrng[1] } else { f.dynrng[0] };
+            let g = if acmod == 0 && ch == 1 {
+                f.dynrng[1]
+            } else {
+                f.dynrng[0]
+            };
             if g != 1.0 {
                 coefs[ch].iter_mut().for_each(|c| *c *= g);
             }

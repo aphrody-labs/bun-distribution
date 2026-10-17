@@ -18,7 +18,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             protect_sheet
         ),
-        cmd!("review.unprotectSheet", "Unprotect Sheet", ["Review", "Protect"], None, "{password?}", has_doc, unprotect_sheet),
+        cmd!(
+            "review.unprotectSheet",
+            "Unprotect Sheet",
+            ["Review", "Protect"],
+            None,
+            "{password?}",
+            has_doc,
+            unprotect_sheet
+        ),
         cmd!(
             "review.protectWorkbook",
             "Protect Workbook",
@@ -76,13 +84,22 @@ fn comment_cells(s: &Session) -> Vec<(usize, CellRef)> {
         .enumerate()
         .filter(|(_, sh)| sh.visibility == Visibility::Visible)
         // `CellRef` orders by row, then column: reading order.
-        .flat_map(|(i, sh)| sh.comments.iter().filter(|(_, c)| c.threaded).map(move |(at, _)| (i, *at)))
+        .flat_map(|(i, sh)| {
+            sh.comments
+                .iter()
+                .filter(|(_, c)| c.threaded)
+                .map(move |(at, _)| (i, *at))
+        })
         .collect()
 }
 
 fn has_comments(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if comment_cells(s).is_empty() { Err("there are no comments in this workbook".into()) } else { Ok(()) }
+    if comment_cells(s).is_empty() {
+        Err("there are no comments in this workbook".into())
+    } else {
+        Ok(())
+    }
 }
 
 /// Selects the next (or previous) threaded comment after the active cell, moving on to the next
@@ -94,10 +111,15 @@ fn step_comment(s: &mut Session, forward: bool) -> Result<Json> {
     let target = if forward {
         list.iter().find(|c| **c > here).or_else(|| list.first())
     } else {
-        list.iter().rev().find(|c| **c < here).or_else(|| list.last())
+        list.iter()
+            .rev()
+            .find(|c| **c < here)
+            .or_else(|| list.last())
     };
     let Some(&(sheet, at)) = target else {
-        return Err(EngineError::Other("There are no comments in this workbook.".into()));
+        return Err(EngineError::Other(
+            "There are no comments in this workbook.".into(),
+        ));
     };
     let d = s.doc_mut()?;
     d.wb_switch_sheet(sheet);
@@ -112,15 +134,27 @@ fn step_comment(s: &mut Session, forward: bool) -> Result<Json> {
 /// Review › Notes › Convert to Comments: every note in the workbook becomes a threaded comment
 /// with the same author and text.
 fn convert_notes(s: &mut Session, _: &Json) -> Result<Json> {
-    let sheets: Vec<usize> =
-        s.doc()?.wb.sheets.iter().enumerate().filter(|(_, sh)| sh.comments.values().any(|c| !c.threaded)).map(|(i, _)| i).collect();
+    let sheets: Vec<usize> = s
+        .doc()?
+        .wb
+        .sheets
+        .iter()
+        .enumerate()
+        .filter(|(_, sh)| sh.comments.values().any(|c| !c.threaded))
+        .map(|(i, _)| i)
+        .collect();
     if sheets.is_empty() {
         return Ok(json!({"converted": 0}));
     }
     edit(s, |cx| {
         let mut n = 0usize;
         for i in &sheets {
-            for c in cx.sheet_mut(*i)?.comments.values_mut().filter(|c| !c.threaded) {
+            for c in cx
+                .sheet_mut(*i)?
+                .comments
+                .values_mut()
+                .filter(|c| !c.threaded)
+            {
                 c.threaded = true;
                 c.visible = false;
                 n += 1;
@@ -134,8 +168,14 @@ fn protect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
     let sheet = target_sheet(s, p)?;
     // Re-protecting a password-protected sheet would replace the password without knowing it:
     // unprotect it first, as in Excel. One without a password can take new options directly.
-    let has_password = |pr: &SheetProtection| pr.password.is_some() || pr.legacy_password_hash.is_some();
-    if s.doc()?.wb.sheet(sheet).and_then(|sh| sh.protection.as_ref()).is_some_and(has_password) {
+    let has_password =
+        |pr: &SheetProtection| pr.password.is_some() || pr.legacy_password_hash.is_some();
+    if s.doc()?
+        .wb
+        .sheet(sheet)
+        .and_then(|sh| sh.protection.as_ref())
+        .is_some_and(has_password)
+    {
         return Err(EngineError::Other("The sheet is protected with a password. Unprotect it first (Review › Unprotect Sheet).".into()));
     }
     let b = |k: &str| bool_param(p, k).unwrap_or(false);
@@ -155,8 +195,16 @@ fn protect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
         autofilter: b("autofilter"),
     };
     let d = s.doc()?;
-    let what = d.wb.sheet(sheet).map(|sh| sh.name.clone()).unwrap_or_default();
-    let prot = SheetProtection { password: str_param(p, "password").filter(|x| !x.is_empty()).map(|pw| new_password_hash(d, &what, pw)), ..prot };
+    let what =
+        d.wb.sheet(sheet)
+            .map(|sh| sh.name.clone())
+            .unwrap_or_default();
+    let prot = SheetProtection {
+        password: str_param(p, "password")
+            .filter(|x| !x.is_empty())
+            .map(|pw| new_password_hash(d, &what, pw)),
+        ..prot
+    };
     edit(s, |cx| {
         cx.sheet_mut(sheet)?.protection = Some(prot.clone());
         Ok(Json::Null)
@@ -165,7 +213,12 @@ fn protect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
 
 fn unprotect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
     let sheet = target_sheet(s, p)?;
-    if let Some(pr) = s.doc()?.wb.sheet(sheet).and_then(|sh| sh.protection.as_ref()) {
+    if let Some(pr) = s
+        .doc()?
+        .wb
+        .sheet(sheet)
+        .and_then(|sh| sh.protection.as_ref())
+    {
         let pw = str_param(p, "password").unwrap_or("");
         let ok = match (&pr.password, pr.legacy_password_hash) {
             (Some(h), _) => h.verify(pw).map_err(EngineError::Other)?,
@@ -173,7 +226,9 @@ fn unprotect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
             (None, None) => true,
         };
         if !ok {
-            return Err(EngineError::Other("The password you supplied is not correct.".into()));
+            return Err(EngineError::Other(
+                "The password you supplied is not correct.".into(),
+            ));
         }
     }
     edit(s, |cx| {
@@ -187,12 +242,20 @@ fn unprotect_sheet(s: &mut Session, p: &Json) -> Result<Json> {
 fn new_password_hash(d: &DocState, what: &str, pw: &str) -> PasswordHash {
     static SALT_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let n = SALT_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let seed = format!("{what}\u{0}{n}\u{0}{}\u{0}{}", d.uid, gridcraft_calc::now_serial().to_bits());
+    let seed = format!(
+        "{what}\u{0}{n}\u{0}{}\u{0}{}",
+        d.uid,
+        gridcraft_calc::now_serial().to_bits()
+    );
     PasswordHash::new_sha512(pw, &gridcraft_model::password::salt_from(seed.as_bytes()))
 }
 
 fn range_text(r: &EditRange) -> String {
-    r.ranges.iter().map(|x| x.a1()).collect::<Vec<_>>().join(",")
+    r.ranges
+        .iter()
+        .map(|x| x.a1())
+        .collect::<Vec<_>>()
+        .join(",")
 }
 
 /// Review › Allow Edit Ranges: list, add, modify or delete the ranges that stay editable on a
@@ -200,7 +263,9 @@ fn range_text(r: &EditRange) -> String {
 fn allow_edit_ranges(s: &mut Session, p: &Json) -> Result<Json> {
     let sheet = target_sheet(s, p)?;
     let action = str_param(p, "action").unwrap_or("list");
-    let title = str_param(p, "title").map(str::trim).filter(|t| !t.is_empty());
+    let title = str_param(p, "title")
+        .map(str::trim)
+        .filter(|t| !t.is_empty());
     let d = s.doc()?;
     let sh = d.wb.sheet(sheet).ok_or(EngineError::NoDocument)?;
     let sheet_name = sh.name.clone();
@@ -211,19 +276,26 @@ fn allow_edit_ranges(s: &mut Session, p: &Json) -> Result<Json> {
             .position(|r| r.title.eq_ignore_ascii_case(t))
             .ok_or_else(|| bad("review.allowEditRanges", format!("no range titled `{t}`")))
     };
-    let hash = |pw: &str, title: &str| new_password_hash(d, &format!("{sheet_name}\u{0}{title}"), pw);
+    let hash =
+        |pw: &str, title: &str| new_password_hash(d, &format!("{sheet_name}\u{0}{title}"), pw);
     if matches!(action, "add" | "modify" | "delete") && sh.is_protected() {
-        return Err(EngineError::Other("Unprotect the sheet to change its edit ranges.".into()));
+        return Err(EngineError::Other(
+            "Unprotect the sheet to change its edit ranges.".into(),
+        ));
     }
     match action {
         "list" => {}
         "unlock" => {
             let i = find(title)?;
-            let Some(r) = sh.edit_ranges.get(i) else { return Err(bad("review.allowEditRanges", "no such range")) };
+            let Some(r) = sh.edit_ranges.get(i) else {
+                return Err(bad("review.allowEditRanges", "no such range"));
+            };
             if let Some(h) = &r.password {
                 let pw = str_param(p, "password").unwrap_or("");
                 if !h.verify(pw).map_err(EngineError::Other)? {
-                    return Err(EngineError::Other("The password you supplied is not correct.".into()));
+                    return Err(EngineError::Other(
+                        "The password you supplied is not correct.".into(),
+                    ));
                 }
                 let key = (sheet_name.clone(), r.title.clone());
                 let d = s.doc_mut()?;
@@ -235,16 +307,35 @@ fn allow_edit_ranges(s: &mut Session, p: &Json) -> Result<Json> {
         "add" => {
             let t = match title {
                 Some(t) => t.to_string(),
-                None => {
-                    (1..).map(|n| format!("Range{n}")).find(|t| !sh.edit_ranges.iter().any(|r| r.title.eq_ignore_ascii_case(t))).unwrap_or_default()
-                }
+                None => (1..)
+                    .map(|n| format!("Range{n}"))
+                    .find(|t| {
+                        !sh.edit_ranges
+                            .iter()
+                            .any(|r| r.title.eq_ignore_ascii_case(t))
+                    })
+                    .unwrap_or_default(),
             };
-            if sh.edit_ranges.iter().any(|r| r.title.eq_ignore_ascii_case(&t)) {
-                return Err(bad("review.allowEditRanges", format!("a range titled `{t}` already exists")));
+            if sh
+                .edit_ranges
+                .iter()
+                .any(|r| r.title.eq_ignore_ascii_case(&t))
+            {
+                return Err(bad(
+                    "review.allowEditRanges",
+                    format!("a range titled `{t}` already exists"),
+                ));
             }
             let ranges = target_ranges(s, p)?;
-            let password = str_param(p, "password").filter(|pw| !pw.is_empty()).map(|pw| hash(pw, &t));
-            let r = EditRange { title: t, ranges, password, security_descriptor: None };
+            let password = str_param(p, "password")
+                .filter(|pw| !pw.is_empty())
+                .map(|pw| hash(pw, &t));
+            let r = EditRange {
+                title: t,
+                ranges,
+                password,
+                security_descriptor: None,
+            };
             edit(s, |cx| {
                 cx.sheet_mut(sheet)?.edit_ranges.push(r.clone());
                 Ok(())
@@ -252,10 +343,25 @@ fn allow_edit_ranges(s: &mut Session, p: &Json) -> Result<Json> {
         }
         "modify" => {
             let i = find(title)?;
-            let mut r = sh.edit_ranges.get(i).cloned().ok_or_else(|| bad("review.allowEditRanges", "no such range"))?;
-            if let Some(n) = str_param(p, "newTitle").map(str::trim).filter(|n| !n.is_empty()) {
-                if sh.edit_ranges.iter().enumerate().any(|(j, x)| j != i && x.title.eq_ignore_ascii_case(n)) {
-                    return Err(bad("review.allowEditRanges", format!("a range titled `{n}` already exists")));
+            let mut r = sh
+                .edit_ranges
+                .get(i)
+                .cloned()
+                .ok_or_else(|| bad("review.allowEditRanges", "no such range"))?;
+            if let Some(n) = str_param(p, "newTitle")
+                .map(str::trim)
+                .filter(|n| !n.is_empty())
+            {
+                if sh
+                    .edit_ranges
+                    .iter()
+                    .enumerate()
+                    .any(|(j, x)| j != i && x.title.eq_ignore_ascii_case(n))
+                {
+                    return Err(bad(
+                        "review.allowEditRanges",
+                        format!("a range titled `{n}` already exists"),
+                    ));
                 }
                 r.title = n.to_string();
             }
@@ -282,7 +388,12 @@ fn allow_edit_ranges(s: &mut Session, p: &Json) -> Result<Json> {
                 Ok(())
             })?;
         }
-        other => return Err(bad("review.allowEditRanges", format!("unknown action `{other}`"))),
+        other => {
+            return Err(bad(
+                "review.allowEditRanges",
+                format!("unknown action `{other}`"),
+            ));
+        }
     }
     let d = s.doc()?;
     let sh = d.wb.sheet(sheet).ok_or(EngineError::NoDocument)?;
@@ -307,12 +418,18 @@ fn protect_workbook(s: &mut Session, p: &Json) -> Result<Json> {
         return Ok(json!({"on": on}));
     }
     let password = if on {
-        str_param(p, "password").filter(|pw| !pw.is_empty()).map(|pw| new_password_hash(d, "workbook", pw))
+        str_param(p, "password")
+            .filter(|pw| !pw.is_empty())
+            .map(|pw| new_password_hash(d, "workbook", pw))
     } else {
         if let Some(h) = &d.wb.structure_password
-            && !h.verify(str_param(p, "password").unwrap_or("")).map_err(EngineError::Other)?
+            && !h
+                .verify(str_param(p, "password").unwrap_or(""))
+                .map_err(EngineError::Other)?
         {
-            return Err(EngineError::Other("The password you supplied is not correct.".into()));
+            return Err(EngineError::Other(
+                "The password you supplied is not correct.".into(),
+            ));
         }
         None
     };
@@ -343,7 +460,8 @@ fn accessibility(s: &mut Session, _: &Json) -> Result<Json> {
             }
         }
         if !sh.merges.is_empty() {
-            issues.push(json!({"sheet": sh.name, "issue": "Merged cells", "count": sh.merges.len()}));
+            issues
+                .push(json!({"sheet": sh.name, "issue": "Merged cells", "count": sh.merges.len()}));
         }
         if sh.name.starts_with("Sheet") {
             issues.push(json!({"sheet": sh.name, "issue": "Default sheet name"}));
@@ -359,12 +477,21 @@ mod tests {
     fn book() -> Session {
         let mut s = Session::new();
         s.new_workbook();
-        s.execute("home.insertSheet", json!({"name": "Two"})).unwrap();
+        s.execute("home.insertSheet", json!({"name": "Two"}))
+            .unwrap();
         s.execute("sheet.activate", json!({"sheet": 0})).unwrap();
         for (sheet, cell) in [(0, "C1"), (0, "A3"), (1, "B2")] {
-            s.execute("review.newComment", json!({"sheet": sheet, "cell": cell, "text": "c", "author": "Ann"})).unwrap();
+            s.execute(
+                "review.newComment",
+                json!({"sheet": sheet, "cell": cell, "text": "c", "author": "Ann"}),
+            )
+            .unwrap();
         }
-        s.execute("review.newNote", json!({"sheet": 0, "cell": "A2", "text": "note", "author": "Bob"})).unwrap();
+        s.execute(
+            "review.newNote",
+            json!({"sheet": 0, "cell": "A2", "text": "note", "author": "Bob"}),
+        )
+        .unwrap();
         s
     }
 
@@ -393,7 +520,8 @@ mod tests {
     fn comment_navigation_is_disabled_without_comments() {
         let mut s = Session::new();
         s.new_workbook();
-        s.execute("review.newNote", json!({"cell": "A1", "text": "note"})).unwrap();
+        s.execute("review.newNote", json!({"cell": "A1", "text": "note"}))
+            .unwrap();
         assert!(s.execute("review.nextComment", json!({})).is_err());
         assert!(s.execute("review.previousComment", json!({})).is_err());
         assert_eq!(at(&s), (0, "A1".to_string()));
@@ -402,15 +530,33 @@ mod tests {
     #[test]
     fn sheet_passwords_use_excel_hashes_and_old_json_hashes_still_verify() {
         let mut s = book();
-        s.execute("review.protectSheet", json!({"password": "pa55"})).unwrap();
-        let prot = s.doc().unwrap().wb.active().unwrap().protection.clone().unwrap();
-        assert!(matches!(&prot.password, Some(PasswordHash::Iterated { algorithm, .. }) if algorithm == "SHA-512"));
+        s.execute("review.protectSheet", json!({"password": "pa55"}))
+            .unwrap();
+        let prot = s
+            .doc()
+            .unwrap()
+            .wb
+            .active()
+            .unwrap()
+            .protection
+            .clone()
+            .unwrap();
+        assert!(
+            matches!(&prot.password, Some(PasswordHash::Iterated { algorithm, .. }) if algorithm == "SHA-512")
+        );
         assert!(s.execute("review.unprotectSheet", json!({})).is_err());
-        assert!(s.execute("review.unprotectSheet", json!({"password": "pass"})).is_err());
+        assert!(
+            s.execute("review.unprotectSheet", json!({"password": "pass"}))
+                .is_err()
+        );
         // Protecting again can't swap the password out from under it.
         assert!(s.execute("review.protectSheet", json!({})).is_err());
-        assert_eq!(s.doc().unwrap().wb.active().unwrap().protection.as_ref(), Some(&prot));
-        s.execute("review.unprotectSheet", json!({"password": "pa55"})).unwrap();
+        assert_eq!(
+            s.doc().unwrap().wb.active().unwrap().protection.as_ref(),
+            Some(&prot)
+        );
+        s.execute("review.unprotectSheet", json!({"password": "pa55"}))
+            .unwrap();
         assert!(!s.doc().unwrap().wb.active().unwrap().is_protected());
         // A GridCraft JSON workbook saved before carried the internal hash under `password_hash`.
         let old = format!(
@@ -418,26 +564,52 @@ mod tests {
             password_hash("old")
         );
         let prot: SheetProtection = serde_json::from_str(&old).unwrap();
-        assert_eq!((prot.legacy_password_hash, prot.password.is_none()), (Some(password_hash("old")), true));
+        assert_eq!(
+            (prot.legacy_password_hash, prot.password.is_none()),
+            (Some(password_hash("old")), true)
+        );
         let i = s.doc().unwrap().wb.active_sheet;
         let wb = std::sync::Arc::make_mut(&mut s.doc_mut().unwrap().wb);
         std::sync::Arc::make_mut(&mut wb.sheets[i]).protection = Some(prot);
-        assert!(s.execute("review.unprotectSheet", json!({"password": "new"})).is_err());
-        s.execute("review.unprotectSheet", json!({"password": "old"})).unwrap();
+        assert!(
+            s.execute("review.unprotectSheet", json!({"password": "new"}))
+                .is_err()
+        );
+        s.execute("review.unprotectSheet", json!({"password": "old"}))
+            .unwrap();
     }
 
     #[test]
     fn protect_workbook_with_a_password_really_verifies() {
         let mut s = book();
-        s.execute("review.protectWorkbook", json!({"password": "pa55"})).unwrap();
+        s.execute("review.protectWorkbook", json!({"password": "pa55"}))
+            .unwrap();
         assert!(s.doc().unwrap().wb.protected_structure);
-        assert!(s.execute("home.insertSheet", json!({"name": "Three"})).is_err(), "the structure is locked");
+        assert!(
+            s.execute("home.insertSheet", json!({"name": "Three"}))
+                .is_err(),
+            "the structure is locked"
+        );
         // A second Protect keeps it protected; unprotecting needs the right password.
-        assert_eq!(s.execute("review.protectWorkbook", json!({"on": true})).unwrap()["on"], true);
+        assert_eq!(
+            s.execute("review.protectWorkbook", json!({"on": true}))
+                .unwrap()["on"],
+            true
+        );
         assert!(s.execute("review.protectWorkbook", json!({})).is_err());
-        assert!(s.execute("review.protectWorkbook", json!({"on": false, "password": "pass"})).is_err());
+        assert!(
+            s.execute(
+                "review.protectWorkbook",
+                json!({"on": false, "password": "pass"})
+            )
+            .is_err()
+        );
         assert!(s.doc().unwrap().wb.protected_structure);
-        s.execute("review.protectWorkbook", json!({"on": false, "password": "pa55"})).unwrap();
+        s.execute(
+            "review.protectWorkbook",
+            json!({"on": false, "password": "pa55"}),
+        )
+        .unwrap();
         let wb = &s.doc().unwrap().wb;
         assert!(!wb.protected_structure && wb.structure_password.is_none());
         // Without a password it toggles freely.
@@ -449,17 +621,33 @@ mod tests {
     #[test]
     fn convert_to_comments_turns_every_note_into_a_comment_and_undoes() {
         let mut s = book();
-        s.execute("review.newNote", json!({"sheet": 1, "cell": "D4", "text": "second", "author": "Cy"})).unwrap();
-        s.execute("review.showNote", json!({"sheet": 1, "cell": "D4"})).unwrap();
+        s.execute(
+            "review.newNote",
+            json!({"sheet": 1, "cell": "D4", "text": "second", "author": "Cy"}),
+        )
+        .unwrap();
+        s.execute("review.showNote", json!({"sheet": 1, "cell": "D4"}))
+            .unwrap();
         let r = s.execute("review.convertToComments", json!({})).unwrap();
         assert_eq!(r["converted"], 2);
         let wb = &s.doc().unwrap().wb;
         let a2 = &wb.sheets[0].comments[&CellRef::parse("A2").unwrap()];
         let d4 = &wb.sheets[1].comments[&CellRef::parse("D4").unwrap()];
         assert!(a2.threaded && d4.threaded && !d4.visible);
-        assert_eq!((a2.author.as_str(), a2.text.as_str(), d4.author.as_str(), d4.text.as_str()), ("Bob", "note", "Cy", "second"));
+        assert_eq!(
+            (
+                a2.author.as_str(),
+                a2.text.as_str(),
+                d4.author.as_str(),
+                d4.text.as_str()
+            ),
+            ("Bob", "note", "Cy", "second")
+        );
         // Nothing left to convert; one undo restores the notes.
-        assert_eq!(s.execute("review.convertToComments", json!({})).unwrap()["converted"], 0);
+        assert_eq!(
+            s.execute("review.convertToComments", json!({})).unwrap()["converted"],
+            0
+        );
         s.execute("edit.undo", json!({})).unwrap();
         assert!(!s.doc().unwrap().wb.sheets[0].comments[&CellRef::parse("A2").unwrap()].threaded);
     }
@@ -467,12 +655,29 @@ mod tests {
     #[test]
     fn show_comments_and_show_all_notes_toggle() {
         let mut s = book();
-        assert_eq!(s.execute("review.showComments", json!({})).unwrap()["on"], true);
-        assert_eq!(s.execute("review.showComments", json!({})).unwrap()["on"], false);
-        assert_eq!(s.execute("review.showComments", json!({"on": true})).unwrap()["on"], true);
+        assert_eq!(
+            s.execute("review.showComments", json!({})).unwrap()["on"],
+            true
+        );
+        assert_eq!(
+            s.execute("review.showComments", json!({})).unwrap()["on"],
+            false
+        );
+        assert_eq!(
+            s.execute("review.showComments", json!({"on": true}))
+                .unwrap()["on"],
+            true
+        );
         assert!(s.comments_pane);
-        assert_eq!(s.execute("review.showAllNotes", json!({})).unwrap()["on"], true);
-        assert_eq!(s.execute("review.showAllNotes", json!({"on": false})).unwrap()["on"], false);
+        assert_eq!(
+            s.execute("review.showAllNotes", json!({})).unwrap()["on"],
+            true
+        );
+        assert_eq!(
+            s.execute("review.showAllNotes", json!({"on": false}))
+                .unwrap()["on"],
+            false
+        );
         assert!(!s.show_all_notes);
     }
 }
@@ -484,8 +689,16 @@ mod edit_range_tests {
     fn protected_book() -> Session {
         let mut s = Session::new();
         s.new_workbook();
-        s.execute("review.allowEditRanges", json!({"action": "add", "title": "Open", "range": "A1:A3"})).unwrap();
-        s.execute("review.allowEditRanges", json!({"action": "add", "title": "Budget", "range": "B1:B3,D1", "password": "pa55"})).unwrap();
+        s.execute(
+            "review.allowEditRanges",
+            json!({"action": "add", "title": "Open", "range": "A1:A3"}),
+        )
+        .unwrap();
+        s.execute(
+            "review.allowEditRanges",
+            json!({"action": "add", "title": "Budget", "range": "B1:B3,D1", "password": "pa55"}),
+        )
+        .unwrap();
         s.execute("review.protectSheet", json!({})).unwrap();
         s
     }
@@ -493,20 +706,55 @@ mod edit_range_tests {
     #[test]
     fn edit_ranges_open_locked_cells_and_passwords_really_verify() {
         let mut s = protected_book();
-        s.execute("cell.set", json!({"cell": "A2", "input": "1"})).unwrap();
-        assert!(s.execute("cell.set", json!({"cell": "C1", "input": "1"})).is_err());
-        let err = s.execute("cell.set", json!({"cell": "D1", "input": "1"})).unwrap_err().to_string();
+        s.execute("cell.set", json!({"cell": "A2", "input": "1"}))
+            .unwrap();
+        assert!(
+            s.execute("cell.set", json!({"cell": "C1", "input": "1"}))
+                .is_err()
+        );
+        let err = s
+            .execute("cell.set", json!({"cell": "D1", "input": "1"}))
+            .unwrap_err()
+            .to_string();
         assert!(err.contains("Budget"), "{err}");
         // A paste or fill is checked the same way.
-        assert!(s.execute("range.setValues", json!({"range": "B2", "values": [[5]]})).is_err());
-        assert!(s.execute("review.allowEditRanges", json!({"action": "unlock", "title": "Budget", "password": "pass"})).is_err());
-        assert!(s.execute("review.allowEditRanges", json!({"action": "unlock", "title": "Budget"})).is_err());
-        let list = s.execute("review.allowEditRanges", json!({"action": "unlock", "title": "budget", "password": "pa55"})).unwrap();
+        assert!(
+            s.execute("range.setValues", json!({"range": "B2", "values": [[5]]}))
+                .is_err()
+        );
+        assert!(
+            s.execute(
+                "review.allowEditRanges",
+                json!({"action": "unlock", "title": "Budget", "password": "pass"})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "review.allowEditRanges",
+                json!({"action": "unlock", "title": "Budget"})
+            )
+            .is_err()
+        );
+        let list = s
+            .execute(
+                "review.allowEditRanges",
+                json!({"action": "unlock", "title": "budget", "password": "pa55"}),
+            )
+            .unwrap();
         assert_eq!(list[1]["unlocked"], true);
-        s.execute("range.setValues", json!({"range": "B2", "values": [[5]]})).unwrap();
-        s.execute("cell.set", json!({"cell": "D1", "input": "2"})).unwrap();
+        s.execute("range.setValues", json!({"range": "B2", "values": [[5]]}))
+            .unwrap();
+        s.execute("cell.set", json!({"cell": "D1", "input": "2"}))
+            .unwrap();
         // Ranges can't change while the sheet is protected.
-        assert!(s.execute("review.allowEditRanges", json!({"action": "delete", "title": "Open"})).is_err());
+        assert!(
+            s.execute(
+                "review.allowEditRanges",
+                json!({"action": "delete", "title": "Open"})
+            )
+            .is_err()
+        );
     }
 
     #[test]
@@ -514,23 +762,65 @@ mod edit_range_tests {
         let mut s = Session::new();
         s.new_workbook();
         // Empty params list; nothing to list yet.
-        assert_eq!(s.execute("review.allowEditRanges", json!({})).unwrap(), json!([]));
-        s.execute("selection.set", json!({"range": "C3:D4"})).unwrap();
-        let list = s.execute("review.allowEditRanges", json!({"action": "add"})).unwrap();
-        assert_eq!(list, json!([{"title": "Range1", "range": "C3:D4", "password": false, "unlocked": true}]));
-        assert!(s.execute("review.allowEditRanges", json!({"action": "add", "title": "range1", "range": "A1"})).is_err());
+        assert_eq!(
+            s.execute("review.allowEditRanges", json!({})).unwrap(),
+            json!([])
+        );
+        s.execute("selection.set", json!({"range": "C3:D4"}))
+            .unwrap();
+        let list = s
+            .execute("review.allowEditRanges", json!({"action": "add"}))
+            .unwrap();
+        assert_eq!(
+            list,
+            json!([{"title": "Range1", "range": "C3:D4", "password": false, "unlocked": true}])
+        );
+        assert!(
+            s.execute(
+                "review.allowEditRanges",
+                json!({"action": "add", "title": "range1", "range": "A1"})
+            )
+            .is_err()
+        );
         let list = s
             .execute("review.allowEditRanges", json!({"action": "modify", "title": "Range1", "newTitle": "Mine", "range": "E5", "password": "x"}))
             .unwrap();
-        assert_eq!((list[0]["title"].as_str(), list[0]["range"].as_str(), list[0]["password"].as_bool()), (Some("Mine"), Some("E5"), Some(true)));
+        assert_eq!(
+            (
+                list[0]["title"].as_str(),
+                list[0]["range"].as_str(),
+                list[0]["password"].as_bool()
+            ),
+            (Some("Mine"), Some("E5"), Some(true))
+        );
         // Inserting a row above moves the range with its cells.
-        s.execute("home.insertRows", json!({"rows": "1:1"})).unwrap();
-        assert_eq!(s.execute("review.allowEditRanges", json!({})).unwrap()[0]["range"], "E6");
-        s.execute("review.allowEditRanges", json!({"action": "delete", "title": "Mine"})).unwrap();
-        assert_eq!(s.execute("review.allowEditRanges", json!({})).unwrap(), json!([]));
+        s.execute("home.insertRows", json!({"rows": "1:1"}))
+            .unwrap();
+        assert_eq!(
+            s.execute("review.allowEditRanges", json!({})).unwrap()[0]["range"],
+            "E6"
+        );
+        s.execute(
+            "review.allowEditRanges",
+            json!({"action": "delete", "title": "Mine"}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.execute("review.allowEditRanges", json!({})).unwrap(),
+            json!([])
+        );
         s.execute("edit.undo", json!({})).unwrap();
-        assert_eq!(s.execute("review.allowEditRanges", json!({})).unwrap()[0]["title"], "Mine");
-        assert!(s.execute("review.allowEditRanges", json!({"action": "nope"})).is_err());
-        assert!(s.execute("review.allowEditRanges", json!({"action": "delete"})).is_err());
+        assert_eq!(
+            s.execute("review.allowEditRanges", json!({})).unwrap()[0]["title"],
+            "Mine"
+        );
+        assert!(
+            s.execute("review.allowEditRanges", json!({"action": "nope"}))
+                .is_err()
+        );
+        assert!(
+            s.execute("review.allowEditRanges", json!({"action": "delete"}))
+                .is_err()
+        );
     }
 }

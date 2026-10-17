@@ -261,7 +261,10 @@ fn cfg5_gate_0() {
         g.condition1, "AAAAACEFNcl4Pb8AEwIoAAYCNK0nb6ooAAYCMgAAAAIyAAAAAXg=",
         "condition1 base64 brut"
     );
-    assert_eq!(g.condition2, "AAAAACEFNcl4Pb8AEwIoAAYCNLiYp6YoAAYCMgAAAAIyAAAAAXg=");
+    assert_eq!(
+        g.condition2,
+        "AAAAACEFNcl4Pb8AEwIoAAYCNLiYp6YoAAYCMgAAAAIyAAAAAXg="
+    );
     assert_eq!(g.condition3, "", "condition3 sentinelle → vide");
 }
 
@@ -354,7 +357,10 @@ fn opponent_compte_et_entree_0() {
     assert_eq!(o.category, 0);
     assert_eq!(o.battle_id, HashId(0xD750_C819));
     assert_eq!(o.sort_order, 1);
-    assert_eq!(o.cond1, "AAAAABgFNaNVuJ8ACgEoAAYCNEHkr7IyAAAAAXg=", "cond1 base64");
+    assert_eq!(
+        o.cond1, "AAAAABgFNaNVuJ8ACgEoAAYCNEHkr7IyAAAAAXg=",
+        "cond1 base64"
+    );
     assert_eq!(o.cond2, "", "cond2 sentinelle → vide");
     assert_eq!(o.cond3, "");
     assert_eq!(o.cond4, "");

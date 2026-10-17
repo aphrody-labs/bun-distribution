@@ -15,7 +15,9 @@ use std::sync::Arc;
 
 use filmcraft_color::{ColorInfo, Range};
 use filmcraft_frame::{AudioBuffer, Chroma, PixelData, VideoFrame};
-use filmcraft_media::{FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource, VideoStreamInfo};
+use filmcraft_media::{
+    FrameRequest, MediaError, MediaInfo, MediaKind, MediaSource, SharedSource, VideoStreamInfo,
+};
 use filmcraft_time::{FrameRate, Tick};
 
 use crate::CodecError;
@@ -42,7 +44,9 @@ struct Layout {
 impl Layout {
     fn parse(c: &str) -> Option<Layout> {
         let (base, bits) = match c.split_once('p') {
-            Some((base, bits)) if !bits.is_empty() && bits.bytes().all(|b| b.is_ascii_digit()) => (base, bits.parse().ok()?),
+            Some((base, bits)) if !bits.is_empty() && bits.bytes().all(|b| b.is_ascii_digit()) => {
+                (base, bits.parse().ok()?)
+            }
             _ => (c, 8),
         };
         let (base, bits) = match base.strip_prefix("mono") {
@@ -61,7 +65,11 @@ impl Layout {
             "mono" => (None, false),
             _ => return None,
         };
-        Some(Layout { chroma, bits, alpha })
+        Some(Layout {
+            chroma,
+            bits,
+            alpha,
+        })
     }
 
     fn label(self) -> String {
@@ -130,7 +138,8 @@ impl Y4mSource {
         if params.next() != Some("YUV4MPEG2") {
             return Err(bad("not a YUV4MPEG2 file"));
         }
-        let (mut w, mut h, mut rate, mut par, mut colour, mut full) = (0u32, 0u32, None, (1u32, 1u32), "420jpeg".to_string(), false);
+        let (mut w, mut h, mut rate, mut par, mut colour, mut full) =
+            (0u32, 0u32, None, (1u32, 1u32), "420jpeg".to_string(), false);
         for p in params.filter(|p| !p.is_empty()) {
             let (tag, v) = p.split_at(1);
             match tag {
@@ -156,9 +165,12 @@ impl Y4mSource {
             return Err(bad("missing or zero size"));
         }
         if u64::from(w) * u64::from(h) > MAX_PIXELS {
-            return Err(CodecError::Unsupported(format!("{name}: Y4M frames larger than 268 million pixels")));
+            return Err(CodecError::Unsupported(format!(
+                "{name}: Y4M frames larger than 268 million pixels"
+            )));
         }
-        let layout = Layout::parse(&colour).ok_or_else(|| CodecError::Unsupported(format!("{name}: Y4M colour space {colour}")))?;
+        let layout = Layout::parse(&colour)
+            .ok_or_else(|| CodecError::Unsupported(format!("{name}: Y4M colour space {colour}")))?;
         // ffmpeg's default when the file names no rate
         let rate = rate.unwrap_or(FrameRate::FPS_25);
         let (luma, chroma, alpha) = plane_samples(w, h, layout);
@@ -168,20 +180,30 @@ impl Y4mSource {
         let len = reader.len();
         let mut frames = Vec::new();
         while pos < len {
-            let Some((line, data)) = line_at(&*reader, pos) else { break };
+            let Some((line, data)) = line_at(&*reader, pos) else {
+                break;
+            };
             if !line.starts_with(b"FRAME") {
                 break;
             }
-            let Some(end) = data.checked_add(frame_bytes as u64).filter(|&e| e <= len) else { break };
+            let Some(end) = data.checked_add(frame_bytes as u64).filter(|&e| e <= len) else {
+                break;
+            };
             frames.push(data);
             pos = end;
         }
         if frames.is_empty() {
             return Err(bad("no complete frames"));
         }
-        let color = ColorInfo { matrix: filmcraft_frame::default_matrix(w, h), range: if full { Range::Full } else { Range::Limited }, ..ColorInfo::REC709 };
+        let color = ColorInfo {
+            matrix: filmcraft_frame::default_matrix(w, h),
+            range: if full { Range::Full } else { Range::Limited },
+            ..ColorInfo::REC709
+        };
         let duration = Tick::from_rational(frames.len() as i64, rate.den, rate.num);
-        let bitrate = (frame_bytes as u64 * 8).checked_mul(rate.num as u64).map(|b| b / rate.den as u64);
+        let bitrate = (frame_bytes as u64 * 8)
+            .checked_mul(rate.num as u64)
+            .map(|b| b / rate.den as u64);
         let info = MediaInfo {
             name: name.to_string(),
             kind: MediaKind::Movie,
@@ -203,40 +225,89 @@ impl Y4mSource {
             start_timecode: None,
             file_size: Some(len),
         };
-        Ok(Self { info, reader, frames, frame_bytes, layout, rate })
+        Ok(Self {
+            info,
+            reader,
+            frames,
+            frame_bytes,
+            layout,
+            rate,
+        })
     }
 
     fn frame(&self, idx: usize) -> crate::Result<VideoFrame> {
         let (Some(&at), Some(v)) = (self.frames.get(idx), self.info.video.as_ref()) else {
-            return Err(CodecError::Container("Y4M: frame index out of range".into()));
+            return Err(CodecError::Container(
+                "Y4M: frame index out of range".into(),
+            ));
         };
-        let data = filmcraft_media::reader::read_range(&*self.reader, at, self.frame_bytes).map_err(|e| CodecError::Container(e.to_string()))?;
+        let data = filmcraft_media::reader::read_range(&*self.reader, at, self.frame_bytes)
+            .map_err(|e| CodecError::Container(e.to_string()))?;
         let (luma, chroma, alpha) = plane_samples(v.width, v.height, self.layout);
         // mono: neutral chroma at 4:2:0
-        let mono = Layout { chroma: Some(Chroma::C420), ..self.layout };
+        let mono = Layout {
+            chroma: Some(Chroma::C420),
+            ..self.layout
+        };
         let grey = plane_samples(v.width, v.height, mono).1;
         let pixels = if self.layout.bits == 8 {
-            let plane = |i: usize, n: usize| Arc::new(data.get(i..i + n).map(<[u8]>::to_vec).unwrap_or_else(|| vec![0; n]));
+            let plane = |i: usize, n: usize| {
+                Arc::new(
+                    data.get(i..i + n)
+                        .map(<[u8]>::to_vec)
+                        .unwrap_or_else(|| vec![0; n]),
+                )
+            };
             let (y, cb, cr) = match self.layout.chroma {
-                Some(_) => (plane(0, luma), plane(luma, chroma), plane(luma + chroma, chroma)),
-                None => (plane(0, luma), Arc::new(vec![128; grey]), Arc::new(vec![128; grey])),
+                Some(_) => (
+                    plane(0, luma),
+                    plane(luma, chroma),
+                    plane(luma + chroma, chroma),
+                ),
+                None => (
+                    plane(0, luma),
+                    Arc::new(vec![128; grey]),
+                    Arc::new(vec![128; grey]),
+                ),
             };
             let a = self.layout.alpha.then(|| plane(luma + 2 * chroma, alpha));
-            PixelData::Yuv8 { planes: [y, cb, cr], chroma: self.layout.chroma.unwrap_or(Chroma::C420), alpha: a }
+            PixelData::Yuv8 {
+                planes: [y, cb, cr],
+                chroma: self.layout.chroma.unwrap_or(Chroma::C420),
+                alpha: a,
+            }
         } else {
             let max = (1u32 << self.layout.bits) - 1;
             let plane = |i: usize, n: usize| {
                 Arc::new(match data.get(i * 2..(i + n) * 2) {
-                    Some(b) => b.as_chunks::<2>().0.iter().map(|&s| u32::from(u16::from_le_bytes(s)).min(max) as u16).collect(),
+                    Some(b) => b
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
+                        .map(|&s| u32::from(u16::from_le_bytes(s)).min(max) as u16)
+                        .collect(),
                     None => vec![0; n],
                 })
             };
             let mid = 1u16 << (self.layout.bits - 1);
             let (y, cb, cr) = match self.layout.chroma {
-                Some(_) => (plane(0, luma), plane(luma, chroma), plane(luma + chroma, chroma)),
-                None => (plane(0, luma), Arc::new(vec![mid; grey]), Arc::new(vec![mid; grey])),
+                Some(_) => (
+                    plane(0, luma),
+                    plane(luma, chroma),
+                    plane(luma + chroma, chroma),
+                ),
+                None => (
+                    plane(0, luma),
+                    Arc::new(vec![mid; grey]),
+                    Arc::new(vec![mid; grey]),
+                ),
             };
-            PixelData::Yuv16 { planes: [y, cb, cr], chroma: self.layout.chroma.unwrap_or(Chroma::C420), bits: self.layout.bits, alpha: None }
+            PixelData::Yuv16 {
+                planes: [y, cb, cr],
+                chroma: self.layout.chroma.unwrap_or(Chroma::C420),
+                bits: self.layout.bits,
+                alpha: None,
+            }
         };
         Ok(VideoFrame {
             width: v.width,
@@ -256,11 +327,18 @@ impl MediaSource for Y4mSource {
 
     fn video_frame(&self, req: FrameRequest) -> Result<Arc<VideoFrame>, MediaError> {
         let last = self.frames.len().saturating_sub(1);
-        let idx = usize::try_from(self.rate.frame_at(req.time.max(Tick::ZERO))).unwrap_or(last).min(last);
+        let idx = usize::try_from(self.rate.frame_at(req.time.max(Tick::ZERO)))
+            .unwrap_or(last)
+            .min(last);
         Ok(Arc::new(self.frame(idx)?))
     }
 
-    fn audio(&self, _start: i64, _frames: usize, _sample_rate: u32) -> Result<AudioBuffer, MediaError> {
+    fn audio(
+        &self,
+        _start: i64,
+        _frames: usize,
+        _sample_rate: u32,
+    ) -> Result<AudioBuffer, MediaError> {
         Err(MediaError::NoStream("audio"))
     }
 }
@@ -269,14 +347,26 @@ pub fn opener(name: &str, bytes: Arc<[u8]>) -> Option<Result<SharedSource, Media
     if !sniff(&bytes) {
         return None;
     }
-    Some(Y4mSource::open(name, bytes).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        Y4mSource::open(name, bytes)
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }
 
-pub fn reader_opener(name: &str, head: &[u8], reader: &filmcraft_media::SharedReader) -> Option<Result<SharedSource, MediaError>> {
+pub fn reader_opener(
+    name: &str,
+    head: &[u8],
+    reader: &filmcraft_media::SharedReader,
+) -> Option<Result<SharedSource, MediaError>> {
     if !sniff(head) {
         return None;
     }
-    Some(Y4mSource::open_reader(name, reader.clone()).map(|s| Arc::new(s) as SharedSource).map_err(Into::into))
+    Some(
+        Y4mSource::open_reader(name, reader.clone())
+            .map(|s| Arc::new(s) as SharedSource)
+            .map_err(Into::into),
+    )
 }
 
 #[cfg(test)]
@@ -285,14 +375,29 @@ mod tests {
 
     #[test]
     fn colour_space_names() {
-        let l = |c: Option<Chroma>, bits, alpha| Some(Layout { chroma: c, bits, alpha });
+        let l = |c: Option<Chroma>, bits, alpha| {
+            Some(Layout {
+                chroma: c,
+                bits,
+                alpha,
+            })
+        };
         assert_eq!(Layout::parse("420jpeg"), l(Some(Chroma::C420), 8, false));
         assert_eq!(Layout::parse("420p10"), l(Some(Chroma::C420), 10, false));
         assert_eq!(Layout::parse("422p12"), l(Some(Chroma::C422), 12, false));
         assert_eq!(Layout::parse("444alpha"), l(Some(Chroma::C444), 8, true));
         assert_eq!(Layout::parse("mono"), l(None, 8, false));
         assert_eq!(Layout::parse("mono16"), l(None, 16, false));
-        for bad in ["411", "420p", "420p7", "420p17", "mono10p12", "444alphap10", "", "p10"] {
+        for bad in [
+            "411",
+            "420p",
+            "420p7",
+            "420p17",
+            "mono10p12",
+            "444alphap10",
+            "",
+            "p10",
+        ] {
             assert_eq!(Layout::parse(bad), None, "{bad}");
         }
     }

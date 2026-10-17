@@ -59,19 +59,26 @@ impl MeasureExt for egui::DragValue<'_> {
         self.suffix(unit.suffix())
             .custom_formatter(move |n, decimals| {
                 let s = egui::emath::format_with_decimals_in_range(n, decimals);
-                if sep == '.' { s } else { s.replace('.', &sep.to_string()) }
+                if sep == '.' {
+                    s
+                } else {
+                    s.replace('.', &sep.to_string())
+                }
             })
             .custom_parser(move |text| {
                 let text: String = text.chars().filter(|c| !c.is_whitespace()).collect();
-                wordcraft_geom::parse_measure(&text, unit).map(|pt| f64::from(pt / unit.pt_per_unit()))
+                wordcraft_geom::parse_measure(&text, unit)
+                    .map(|pt| f64::from(pt / unit.pt_per_unit()))
             })
     }
 }
 
 /// Regions offered in File › Options › Advanced › Region (any locale tag works through
 /// `file.options`): Letter and A4 countries, decimal point and decimal comma.
-const REGIONS: [&str; 16] =
-    ["en-US", "en-CA", "en-GB", "en-AU", "en-IN", "es-MX", "es-ES", "pt-BR", "fr-FR", "de-DE", "it-IT", "pl-PL", "ru-RU", "ja-JP", "zh-CN", "ko-KR"];
+const REGIONS: [&str; 16] = [
+    "en-US", "en-CA", "en-GB", "en-AU", "en-IN", "es-MX", "es-ES", "pt-BR", "fr-FR", "de-DE",
+    "it-IT", "pl-PL", "ru-RU", "ja-JP", "zh-CN", "ko-KR",
+];
 
 /// The units offered, with their names.
 pub const UNITS: [(Unit, &str); 5] = [
@@ -101,7 +108,11 @@ pub fn page(app: &mut WordApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
     ui.label(RichText::new(tl!("Options")).font(semibold(26.0)));
     ui.add_space(16.0);
-    let current = if PANES.contains(&app.ui.options_pane.as_str()) { app.ui.options_pane.clone() } else { "general".to_string() };
+    let current = if PANES.contains(&app.ui.options_pane.as_str()) {
+        app.ui.options_pane.clone()
+    } else {
+        "general".to_string()
+    };
     ui.horizontal_top(|ui| {
         ui.vertical(|ui| {
             ui.set_width(170.0);
@@ -109,14 +120,31 @@ pub fn page(app: &mut WordApp, ui: &mut Ui) {
                 let label = tl!(pane_label(id));
                 let active = current == id;
                 let (r, resp) = ui.allocate_exact_size(vec2(170.0, 30.0), egui::Sense::click());
-                resp.widget_info(|| egui::WidgetInfo::selected(egui::WidgetType::SelectableLabel, true, active, label));
+                resp.widget_info(|| {
+                    egui::WidgetInfo::selected(
+                        egui::WidgetType::SelectableLabel,
+                        true,
+                        active,
+                        label,
+                    )
+                });
                 if active {
                     ui.painter().rect_filled(r, 4.0, t.checked);
                 } else if resp.hovered() {
                     ui.painter().rect_filled(r, 4.0, t.hover);
                 }
-                let font = if active { semibold(14.0) } else { crate::theme::regular(14.0) };
-                ui.painter().text(egui::pos2(r.min.x + 12.0, r.center().y), egui::Align2::LEFT_CENTER, label, font, t.text);
+                let font = if active {
+                    semibold(14.0)
+                } else {
+                    crate::theme::regular(14.0)
+                };
+                ui.painter().text(
+                    egui::pos2(r.min.x + 12.0, r.center().y),
+                    egui::Align2::LEFT_CENTER,
+                    label,
+                    font,
+                    t.text,
+                );
                 if resp.clicked() {
                     app.ui.options_pane = id.to_string();
                 }
@@ -171,7 +199,10 @@ fn general(app: &mut WordApp, ui: &mut Ui) {
     section(ui, "Interface");
     theme_picker(app, ui);
     interface_size_picker(app, ui);
-    ui.checkbox(&mut app.ui.mini_toolbar, tl!("Show the mini toolbar when text is selected"));
+    ui.checkbox(
+        &mut app.ui.mini_toolbar,
+        tl!("Show the mini toolbar when text is selected"),
+    );
     let mut dark_page = app.session.view.dark_mode;
     if ui
         .checkbox(&mut dark_page, tl!("Dark page (white text on black)"))
@@ -180,7 +211,10 @@ fn general(app: &mut WordApp, ui: &mut Ui) {
     {
         let _ = app.run("view.darkMode", json!({"value": dark_page}));
     }
-    ui.checkbox(&mut app.ui.show_discord, tl!("Show the community button in the title bar"));
+    ui.checkbox(
+        &mut app.ui.show_discord,
+        tl!("Show the community button in the title bar"),
+    );
     default_app_button(app, ui);
     ui.add_space(8.0);
     section(ui, "Start-up");
@@ -196,27 +230,39 @@ fn general(app: &mut WordApp, ui: &mut Ui) {
     }
     ui.add_space(8.0);
     section(ui, "Personalize");
-    egui::Grid::new("options_user").num_columns(2).spacing(vec2(8.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("User name:"));
-        let mut n = app.session.author.clone();
-        if ui.add(egui::TextEdit::singleline(&mut n).desired_width(260.0)).changed() {
-            app.session.author = n;
-        }
-        ui.end_row();
-        ui.label(tl!("Initials:"));
-        let mut i = app.session.initials.clone();
-        let hint = app.session.user_initials();
-        if ui
-            .add(
-                egui::TextEdit::singleline(&mut i).desired_width(80.0).char_limit(wordcraft_engine::cmd::options::MAX_INITIALS_CHARS).hint_text(hint),
-            )
-            .changed()
-        {
-            set(app, json!({"initials": i}));
-        }
-        ui.end_row();
-    });
-    note(ui, "New comments and tracked changes are recorded under this name and these initials.");
+    egui::Grid::new("options_user")
+        .num_columns(2)
+        .spacing(vec2(8.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("User name:"));
+            let mut n = app.session.author.clone();
+            if ui
+                .add(egui::TextEdit::singleline(&mut n).desired_width(260.0))
+                .changed()
+            {
+                app.session.author = n;
+            }
+            ui.end_row();
+            ui.label(tl!("Initials:"));
+            let mut i = app.session.initials.clone();
+            let hint = app.session.user_initials();
+            if ui
+                .add(
+                    egui::TextEdit::singleline(&mut i)
+                        .desired_width(80.0)
+                        .char_limit(wordcraft_engine::cmd::options::MAX_INITIALS_CHARS)
+                        .hint_text(hint),
+                )
+                .changed()
+            {
+                set(app, json!({"initials": i}));
+            }
+            ui.end_row();
+        });
+    note(
+        ui,
+        "New comments and tracked changes are recorded under this name and these initials.",
+    );
 }
 
 fn display(app: &mut WordApp, ui: &mut Ui) {
@@ -235,7 +281,10 @@ fn display(app: &mut WordApp, ui: &mut Ui) {
         }
     }
     let mut marks = app.session.view.marks;
-    if ui.checkbox(&mut marks, tl!("Show all formatting marks")).changed() {
+    if ui
+        .checkbox(&mut marks, tl!("Show all formatting marks"))
+        .changed()
+    {
         let _ = app.run("view.marks", json!({"value": marks}));
     }
     ui.add_space(8.0);
@@ -248,21 +297,56 @@ fn display(app: &mut WordApp, ui: &mut Ui) {
     ui.add_space(8.0);
     section(ui, "Printing");
     ui.checkbox(&mut app.ui.print_backgrounds, tl!("Print the page color"));
-    ui.checkbox(&mut app.ui.update_fields_before_print, tl!("Update fields before printing"));
+    ui.checkbox(
+        &mut app.ui.update_fields_before_print,
+        tl!("Update fields before printing"),
+    );
 }
 
 fn proofing(app: &mut WordApp, ui: &mut Ui) {
     // #476 (AutoCorrect Options…) goes here, at the top.
     section(ui, "Spelling");
     let pr = app.session.prefs.clone();
-    flag(app, ui, "Ignore words in capitals", "ignoreUppercase", pr.ignore_uppercase);
-    flag(app, ui, "Ignore words with numbers", "ignoreNumbers", pr.ignore_numbers);
-    flag(app, ui, "Ignore web and file addresses", "ignoreInternet", pr.ignore_internet);
+    flag(
+        app,
+        ui,
+        "Ignore words in capitals",
+        "ignoreUppercase",
+        pr.ignore_uppercase,
+    );
+    flag(
+        app,
+        ui,
+        "Ignore words with numbers",
+        "ignoreNumbers",
+        pr.ignore_numbers,
+    );
+    flag(
+        app,
+        ui,
+        "Ignore web and file addresses",
+        "ignoreInternet",
+        pr.ignore_internet,
+    );
     ui.add_space(8.0);
     section(ui, "As you type");
     let spelling = app.session.view.proofing;
-    flag(app, ui, "Check spelling as you type", "checkSpelling", spelling);
-    ui.add_enabled_ui(app.session.view.proofing, |ui| flag(app, ui, "Mark grammar errors as you type", "markGrammar", pr.mark_grammar));
+    flag(
+        app,
+        ui,
+        "Check spelling as you type",
+        "checkSpelling",
+        spelling,
+    );
+    ui.add_enabled_ui(app.session.view.proofing, |ui| {
+        flag(
+            app,
+            ui,
+            "Mark grammar errors as you type",
+            "markGrammar",
+            pr.mark_grammar,
+        )
+    });
     ui.add_space(8.0);
     section(ui, "Custom dictionary");
     custom_dictionary(app, ui);
@@ -273,29 +357,45 @@ fn proofing(app: &mut WordApp, ui: &mut Ui) {
 fn custom_dictionary(app: &mut WordApp, ui: &mut Ui) {
     let words = wordcraft_engine::proof::user_dictionary();
     if words.is_empty() {
-        note(ui, "No words yet. Add to Dictionary on a misspelled word puts it here.");
+        note(
+            ui,
+            "No words yet. Add to Dictionary on a misspelled word puts it here.",
+        );
     }
-    egui::ScrollArea::vertical().id_salt("options_dictionary").max_height(180.0).show(ui, |ui| {
-        for w in &words {
-            ui.horizontal(|ui| {
-                ui.allocate_ui_with_layout(vec2(220.0, 20.0), egui::Layout::left_to_right(egui::Align::Center), |ui| {
-                    ui.set_min_width(220.0);
-                    ui.add(egui::Label::new(w.as_str()).truncate());
+    egui::ScrollArea::vertical()
+        .id_salt("options_dictionary")
+        .max_height(180.0)
+        .show(ui, |ui| {
+            for w in &words {
+                ui.horizontal(|ui| {
+                    ui.allocate_ui_with_layout(
+                        vec2(220.0, 20.0),
+                        egui::Layout::left_to_right(egui::Align::Center),
+                        |ui| {
+                            ui.set_min_width(220.0);
+                            ui.add(egui::Label::new(w.as_str()).truncate());
+                        },
+                    );
+                    if ui.small_button(tl!("Remove")).clicked() {
+                        set(app, json!({"removeWords": [w]}));
+                    }
                 });
-                if ui.small_button(tl!("Remove")).clicked() {
-                    set(app, json!({"removeWords": [w]}));
-                }
-            });
-        }
-    });
+            }
+        });
     let id = egui::Id::new("options_dictionary_new");
     let mut word = ui.data(|d| d.get_temp::<String>(id)).unwrap_or_default();
     ui.horizontal(|ui| {
-        let r = ui.add(egui::TextEdit::singleline(&mut word).desired_width(220.0).char_limit(MAX_WORD_CHARS).hint_text(tl!("New word")));
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut word)
+                .desired_width(220.0)
+                .char_limit(MAX_WORD_CHARS)
+                .hint_text(tl!("New word")),
+        );
         let enter = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
         let w = word.trim().to_string();
         let ok = !w.is_empty() && !w.chars().any(char::is_whitespace);
-        if (ui.add_enabled(ok, egui::Button::new(tl!("Add"))).clicked() || (enter && ok)) && app.run("file.options", json!({"addWords": [w]})).is_ok()
+        if (ui.add_enabled(ok, egui::Button::new(tl!("Add"))).clicked() || (enter && ok))
+            && app.run("file.options", json!({"addWords": [w]})).is_ok()
         {
             word.clear();
         }
@@ -308,14 +408,23 @@ fn save(app: &mut WordApp, ui: &mut Ui) {
     // The browser can't write to the user's files, so AutoSave can't be turned on there (#176).
     let browser = app.autosave_block() == Some(crate::AutoSaveBlock::Browser);
     let mut autosave = app.autosave && !browser;
-    let r = ui.add_enabled(!browser, egui::Checkbox::new(&mut autosave, tl!("AutoSave documents you have saved in WordCraft")));
+    let r = ui.add_enabled(
+        !browser,
+        egui::Checkbox::new(
+            &mut autosave,
+            tl!("AutoSave documents you have saved in WordCraft"),
+        ),
+    );
     if browser {
         r.on_disabled_hover_text(crate::AutoSaveBlock::Browser.reason());
     } else if r.changed() {
         app.autosave = autosave;
         app.session.autosave = autosave;
     }
-    note(ui, "AutoSave writes your changes to the file a moment after you stop typing.");
+    note(
+        ui,
+        "AutoSave writes your changes to the file a moment after you stop typing.",
+    );
 }
 
 fn language(app: &mut WordApp, ui: &mut Ui) {
@@ -324,7 +433,10 @@ fn language(app: &mut WordApp, ui: &mut Ui) {
     // #414 (detect the document's language) goes here.
     ui.add_space(8.0);
     section(ui, "Proofing language");
-    note(ui, "Spelling and grammar are checked in English (United States).");
+    note(
+        ui,
+        "Spelling and grammar are checked in English (United States).",
+    );
 }
 
 fn accessibility(app: &mut WordApp, ui: &mut Ui) {
@@ -336,13 +448,20 @@ fn accessibility(app: &mut WordApp, ui: &mut Ui) {
     let mut rate = app.session.read_aloud.rate();
     ui.horizontal(|ui| {
         ui.label(tl!("Speed"));
-        let r = ui.add(egui::Slider::new(&mut rate, MIN_RATE..=MAX_RATE).step_by(0.05).custom_formatter(|v, _| format!("{v:.2}×")));
+        let r = ui.add(
+            egui::Slider::new(&mut rate, MIN_RATE..=MAX_RATE)
+                .step_by(0.05)
+                .custom_formatter(|v, _| format!("{v:.2}×")),
+        );
         if r.changed() {
             let _ = app.run("readAloud.speed", json!({"value": rate}));
         }
     });
     let mut skip = app.session.read_aloud.skip_citations;
-    if ui.checkbox(&mut skip, tl!("Skip citations & bibliography")).changed() {
+    if ui
+        .checkbox(&mut skip, tl!("Skip citations & bibliography"))
+        .changed()
+    {
         let _ = app.run("readAloud.skipCitations", json!({"value": skip}));
     }
 }
@@ -350,57 +469,117 @@ fn accessibility(app: &mut WordApp, ui: &mut Ui) {
 fn advanced(app: &mut WordApp, ui: &mut Ui) {
     section(ui, "Editing");
     let pr = app.session.prefs.clone();
-    flag(app, ui, "Typing replaces selected text", "typingReplacesSelection", pr.typing_replaces_selection);
-    flag(app, ui, "Use the Insert key to switch overtype on and off", "insertKeyOvertype", pr.insert_key_overtype);
-    flag(app, ui, "Overtype (typing replaces the characters after the caret)", "overtype", pr.overtype);
+    flag(
+        app,
+        ui,
+        "Typing replaces selected text",
+        "typingReplacesSelection",
+        pr.typing_replaces_selection,
+    );
+    flag(
+        app,
+        ui,
+        "Use the Insert key to switch overtype on and off",
+        "insertKeyOvertype",
+        pr.insert_key_overtype,
+    );
+    flag(
+        app,
+        ui,
+        "Overtype (typing replaces the characters after the caret)",
+        "overtype",
+        pr.overtype,
+    );
     ui.add_space(8.0);
     section(ui, "Display");
-    egui::Grid::new("options_display").num_columns(2).spacing(vec2(8.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("Recent documents to show:"));
-        let mut n = app.ui.recent_shown();
-        if ui.add(egui::DragValue::new(&mut n).range(0..=crate::MAX_RECENT).speed(0.2)).changed() {
-            app.ui.recent_count = n;
-        }
-        ui.end_row();
-        ui.label(tl!("Measurement units:"));
-        // The user's choice, else the region's (#838): Automatic follows the region.
-        let units = app.session.units();
-        let auto = app.session.prefs.units.is_none();
-        let name = UNITS.iter().find(|(u, _)| *u == units).map_or("Inches", |(_, n)| n);
-        let shown = if auto { format!("{} ({})", tl!("Automatic"), tl!(name)) } else { tl!(name).to_string() };
-        egui::ComboBox::from_id_salt("options_units").selected_text(shown).width(200.0).show_ui(ui, |ui| {
-            if ui.selectable_label(auto, tl!("Automatic")).clicked() {
-                set(app, json!({"units": "auto"}));
+    egui::Grid::new("options_display")
+        .num_columns(2)
+        .spacing(vec2(8.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Recent documents to show:"));
+            let mut n = app.ui.recent_shown();
+            if ui
+                .add(
+                    egui::DragValue::new(&mut n)
+                        .range(0..=crate::MAX_RECENT)
+                        .speed(0.2),
+                )
+                .changed()
+            {
+                app.ui.recent_count = n;
             }
-            for (u, label) in UNITS {
-                if ui.selectable_label(!auto && units == u, tl!(label)).clicked() {
-                    set(app, json!({"units": u}));
-                }
-            }
+            ui.end_row();
+            ui.label(tl!("Measurement units:"));
+            // The user's choice, else the region's (#838): Automatic follows the region.
+            let units = app.session.units();
+            let auto = app.session.prefs.units.is_none();
+            let name = UNITS
+                .iter()
+                .find(|(u, _)| *u == units)
+                .map_or("Inches", |(_, n)| n);
+            let shown = if auto {
+                format!("{} ({})", tl!("Automatic"), tl!(name))
+            } else {
+                tl!(name).to_string()
+            };
+            egui::ComboBox::from_id_salt("options_units")
+                .selected_text(shown)
+                .width(200.0)
+                .show_ui(ui, |ui| {
+                    if ui.selectable_label(auto, tl!("Automatic")).clicked() {
+                        set(app, json!({"units": "auto"}));
+                    }
+                    for (u, label) in UNITS {
+                        if ui
+                            .selectable_label(!auto && units == u, tl!(label))
+                            .clicked()
+                        {
+                            set(app, json!({"units": u}));
+                        }
+                    }
+                });
+            ui.end_row();
+            // The region new documents, units and the decimal separator follow; Automatic is the
+            // system's (#838).
+            ui.label(tl!("Region:"));
+            let chosen = app.session.prefs.region.clone();
+            let system = &app.session.system_region;
+            let system_tag = if system.territory.is_empty() {
+                system.language.clone()
+            } else {
+                format!("{}-{}", system.language, system.territory)
+            };
+            let automatic = crate::i18n::fmt(
+                tl!("Automatic ({region})"),
+                &[("region", system_tag.as_str())],
+            );
+            let shown = chosen.clone().unwrap_or_else(|| automatic.clone());
+            egui::ComboBox::from_id_salt("options_region")
+                .selected_text(shown)
+                .width(200.0)
+                .show_ui(ui, |ui| {
+                    if ui
+                        .selectable_label(chosen.is_none(), automatic.as_str())
+                        .clicked()
+                    {
+                        set(app, json!({"region": "auto"}));
+                    }
+                    for tag in REGIONS {
+                        if ui
+                            .selectable_label(chosen.as_deref() == Some(tag), tag)
+                            .clicked()
+                        {
+                            set(app, json!({"region": tag}));
+                        }
+                    }
+                });
+            ui.end_row();
         });
-        ui.end_row();
-        // The region new documents, units and the decimal separator follow; Automatic is the
-        // system's (#838).
-        ui.label(tl!("Region:"));
-        let chosen = app.session.prefs.region.clone();
-        let system = &app.session.system_region;
-        let system_tag = if system.territory.is_empty() { system.language.clone() } else { format!("{}-{}", system.language, system.territory) };
-        let automatic = crate::i18n::fmt(tl!("Automatic ({region})"), &[("region", system_tag.as_str())]);
-        let shown = chosen.clone().unwrap_or_else(|| automatic.clone());
-        egui::ComboBox::from_id_salt("options_region").selected_text(shown).width(200.0).show_ui(ui, |ui| {
-            if ui.selectable_label(chosen.is_none(), automatic.as_str()).clicked() {
-                set(app, json!({"region": "auto"}));
-            }
-            for tag in REGIONS {
-                if ui.selectable_label(chosen.as_deref() == Some(tag), tag).clicked() {
-                    set(app, json!({"region": tag}));
-                }
-            }
-        });
-        ui.end_row();
-    });
     let mut keytips = app.ui.keytips_enabled;
-    if ui.checkbox(&mut keytips, tl!("Show KeyTips (Alt or F10)")).changed() {
+    if ui
+        .checkbox(&mut keytips, tl!("Show KeyTips (Alt or F10)"))
+        .changed()
+    {
         let _ = app.run("ui.keytips", json!({"value": keytips}));
     }
     ui.add_space(8.0);
@@ -441,13 +620,19 @@ fn theme_picker(app: &mut WordApp, ui: &mut Ui) {
     use crate::theme::Appearance;
     ui.horizontal(|ui| {
         ui.label(tl!("Interface theme:"));
-        egui::ComboBox::from_id_salt("interface_theme").selected_text(tl!(app.ui.theme.label())).width(220.0).show_ui(ui, |ui| {
-            for a in Appearance::ALL {
-                if ui.selectable_label(app.ui.theme == a, tl!(a.label())).clicked() {
-                    let _ = app.run("ui.theme", json!({"value": a.code()}));
+        egui::ComboBox::from_id_salt("interface_theme")
+            .selected_text(tl!(app.ui.theme.label()))
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for a in Appearance::ALL {
+                    if ui
+                        .selectable_label(app.ui.theme == a, tl!(a.label()))
+                        .clicked()
+                    {
+                        let _ = app.run("ui.theme", json!({"value": a.code()}));
+                    }
                 }
-            }
-        });
+            });
     });
 }
 
@@ -457,13 +642,19 @@ fn interface_size_picker(app: &mut WordApp, ui: &mut Ui) {
     let current = app.ui.interface_size.percent();
     ui.horizontal(|ui| {
         ui.label(tl!("Interface size:"));
-        egui::ComboBox::from_id_salt("interface_size").selected_text(format!("{current}%")).width(220.0).show_ui(ui, |ui| {
-            for pct in InterfaceSize::PRESETS {
-                if ui.selectable_label(current == pct, format!("{pct}%")).clicked() {
-                    let _ = app.run("ui.interfaceSize", json!({"percent": pct}));
+        egui::ComboBox::from_id_salt("interface_size")
+            .selected_text(format!("{current}%"))
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for pct in InterfaceSize::PRESETS {
+                    if ui
+                        .selectable_label(current == pct, format!("{pct}%"))
+                        .clicked()
+                    {
+                        let _ = app.run("ui.interfaceSize", json!({"percent": pct}));
+                    }
                 }
-            }
-        });
+            });
     });
     ui.label(
         RichText::new(tl!(
@@ -480,20 +671,31 @@ fn animations_picker(app: &mut WordApp, ui: &mut Ui) {
     use crate::theme::Animations;
     ui.horizontal(|ui| {
         ui.label(tl!("Animation effects:"));
-        egui::ComboBox::from_id_salt("animation_effects").selected_text(tl!(app.ui.animations.label())).width(220.0).show_ui(ui, |ui| {
-            for a in Animations::ALL {
-                if ui.selectable_label(app.ui.animations == a, tl!(a.label())).clicked() {
-                    let _ = app.run("ui.animations", json!({"value": a.code()}));
+        egui::ComboBox::from_id_salt("animation_effects")
+            .selected_text(tl!(app.ui.animations.label()))
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for a in Animations::ALL {
+                    if ui
+                        .selectable_label(app.ui.animations == a, tl!(a.label()))
+                        .clicked()
+                    {
+                        let _ = app.run("ui.animations", json!({"value": a.code()}));
+                    }
                 }
-            }
-        });
+            });
     });
-    note(ui, "Smooth scrolling and zooming, and menus and buttons that fade in. Off shows every change at once.");
+    note(
+        ui,
+        "Smooth scrolling and zooming, and menus and buttons that fade in. Off shows every change at once.",
+    );
     if app.ui.animations == Animations::System {
         let reported = match app.system_animations() {
             Some(true) => "Your system has animation effects turned on.",
             Some(false) => "Your system has animation effects turned off.",
-            None => "Your system doesn't report an animation setting, so animation effects stay on.",
+            None => {
+                "Your system doesn't report an animation setting, so animation effects stay on."
+            }
         };
         note(ui, reported);
     }
@@ -505,20 +707,36 @@ fn language_picker(app: &mut WordApp, ui: &mut Ui) {
     // The language names are in their own scripts: fonts for them load from the next frame.
     app.want_system_cjk = true;
     let system = crate::i18n::system_lang();
-    let auto_label = crate::i18n::fmt(tl!("Automatic ({language})"), &[("language", system.name())]);
-    let current = if app.ui.language == AUTO { auto_label.clone() } else { Lang::from_pref(&app.ui.language).name().to_string() };
+    let auto_label = crate::i18n::fmt(
+        tl!("Automatic ({language})"),
+        &[("language", system.name())],
+    );
+    let current = if app.ui.language == AUTO {
+        auto_label.clone()
+    } else {
+        Lang::from_pref(&app.ui.language).name().to_string()
+    };
     ui.horizontal(|ui| {
         ui.label(tl!("Interface language:"));
-        egui::ComboBox::from_id_salt("interface_language").selected_text(current).width(220.0).show_ui(ui, |ui| {
-            if ui.selectable_label(app.ui.language == AUTO, auto_label.as_str()).clicked() {
-                let _ = app.run("ui.language", json!({"value": AUTO}));
-            }
-            for lang in Lang::all() {
-                if ui.selectable_label(app.ui.language == lang.code(), lang.name()).clicked() {
-                    let _ = app.run("ui.language", json!({"value": lang.code()}));
+        egui::ComboBox::from_id_salt("interface_language")
+            .selected_text(current)
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                if ui
+                    .selectable_label(app.ui.language == AUTO, auto_label.as_str())
+                    .clicked()
+                {
+                    let _ = app.run("ui.language", json!({"value": AUTO}));
                 }
-            }
-        });
+                for lang in Lang::all() {
+                    if ui
+                        .selectable_label(app.ui.language == lang.code(), lang.name())
+                        .clicked()
+                    {
+                        let _ = app.run("ui.language", json!({"value": lang.code()}));
+                    }
+                }
+            });
     });
     ui.label(RichText::new(tl!("Automatic follows your system's language. Menus and commands change; your documents don't.")).small().weak());
 }
@@ -542,10 +760,17 @@ fn object_at<'a>(root: &'a mut Value, path: &[String]) -> Option<&'a mut Map<Str
     v.as_object_mut()
 }
 
-fn overlay<T: DeserializeOwned>(root: &mut Value, path: &mut Vec<String>, input: &Value, depth: usize) {
+fn overlay<T: DeserializeOwned>(
+    root: &mut Value,
+    path: &mut Vec<String>,
+    input: &Value,
+    depth: usize,
+) {
     let Some(map) = input.as_object() else { return };
     for (k, v) in map {
-        let Some(parent) = object_at(root, path) else { return };
+        let Some(parent) = object_at(root, path) else {
+            return;
+        };
         let old = parent.get(k).cloned();
         if depth < 4 && v.is_object() && old.as_ref().is_some_and(Value::is_object) {
             path.push(k.clone());
@@ -571,11 +796,19 @@ fn overlay<T: DeserializeOwned>(root: &mut Value, path: &mut Vec<String>, input:
 fn default_app_button(app: &mut WordApp, ui: &mut Ui) {
     if app.services.make_default_app.is_some() {
         let hint = if cfg!(target_os = "windows") {
-            tl!("Opens Settings › Default apps, where you choose WordCraft for .docx and the other document types.")
+            tl!(
+                "Opens Settings › Default apps, where you choose WordCraft for .docx and the other document types."
+            )
         } else {
-            tl!("Opens .docx, .doc, .rtf and .odt files and Word templates with WordCraft from now on.")
+            tl!(
+                "Opens .docx, .doc, .rtf and .odt files and Word templates with WordCraft from now on."
+            )
         };
-        if ui.button(tl!("Make WordCraft the default for Word documents…")).on_hover_text(hint).clicked() {
+        if ui
+            .button(tl!("Make WordCraft the default for Word documents…"))
+            .on_hover_text(hint)
+            .clicked()
+        {
             // Straight to the hook, not through `run`: only a click may change system defaults.
             let _ = app.make_default_app();
         }
@@ -595,11 +828,19 @@ fn numeral_picker(app: &mut WordApp, ui: &mut Ui) {
     ui.horizontal(|ui| {
         ui.label(tl!("Numerals:"));
         let mut sel = app.session.view.numeral;
-        egui::ComboBox::from_id_salt("numerals").selected_text(tl!(sel.label())).width(220.0).show_ui(ui, |ui| {
-            for m in [NumeralMode::Arabic, NumeralMode::Hindi, NumeralMode::Context, NumeralMode::System] {
-                ui.selectable_value(&mut sel, m, tl!(m.label()));
-            }
-        });
+        egui::ComboBox::from_id_salt("numerals")
+            .selected_text(tl!(sel.label()))
+            .width(220.0)
+            .show_ui(ui, |ui| {
+                for m in [
+                    NumeralMode::Arabic,
+                    NumeralMode::Hindi,
+                    NumeralMode::Context,
+                    NumeralMode::System,
+                ] {
+                    ui.selectable_value(&mut sel, m, tl!(m.label()));
+                }
+            });
         if sel != app.session.view.numeral {
             let _ = app.run("view.numeral", json!({ "value": sel }));
         }
@@ -618,7 +859,10 @@ mod tests {
     use crate::{Services, UiState, WordApp};
 
     fn app() -> WordApp {
-        WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), Services::default())
+        WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
+        )
     }
 
     /// File › Options settings come back after a restart, and a `ui.json` with a wrong value in
@@ -646,26 +890,52 @@ mod tests {
             "editing": {"measurementUnits": "furlongs", "typingReplacesSelection": false, "marks": {"tabs": "yes", "spaces": true}}}"#;
         let ui = UiState::from_json(junk).unwrap();
         assert_eq!(ui.theme, Appearance::Dark);
-        assert_eq!((ui.recent_count, ui.print_backgrounds, ui.options_pane.as_str()), (12, false, "general"));
+        assert_eq!(
+            (
+                ui.recent_count,
+                ui.print_backgrounds,
+                ui.options_pane.as_str()
+            ),
+            (12, false, "general")
+        );
         assert_eq!(ui.legacy_dark, Some(true));
         assert_eq!(ui.editing.units, None);
         assert!(!ui.editing.typing_replaces_selection);
         assert!(ui.editing.marks.spaces && !ui.editing.marks.tabs);
-        assert!(UiState::from_json(b"[1, 2]").is_none() && UiState::from_json(b"not json").is_none());
+        assert!(
+            UiState::from_json(b"[1, 2]").is_none() && UiState::from_json(b"not json").is_none()
+        );
     }
 
     /// Settings saved before #838 kept the unit under `editing.units` (default inches): a unit
     /// the user chose carries over to `measurementUnits`; inches, junk or a newer value don't.
     #[test]
     fn a_unit_chosen_before_regions_survives_the_rename() {
-        let editing = |json: &str| UiState::from_json(format!(r#"{{"editing": {json}}}"#).as_bytes()).unwrap().editing.units;
-        assert_eq!(editing(r#"{"units": "centimeters"}"#), Some(Unit::Centimeters));
-        assert_eq!(editing(r#"{"units": "picas", "overtype": true}"#), Some(Unit::Picas));
+        let editing = |json: &str| {
+            UiState::from_json(format!(r#"{{"editing": {json}}}"#).as_bytes())
+                .unwrap()
+                .editing
+                .units
+        };
+        assert_eq!(
+            editing(r#"{"units": "centimeters"}"#),
+            Some(Unit::Centimeters)
+        );
+        assert_eq!(
+            editing(r#"{"units": "picas", "overtype": true}"#),
+            Some(Unit::Picas)
+        );
         assert_eq!(editing(r#"{"units": "inches"}"#), None);
         assert_eq!(editing(r#"{"units": "furlongs"}"#), None);
         assert_eq!(editing(r#"{"units": 7}"#), None);
-        assert_eq!(editing(r#"{"units": "millimeters", "measurementUnits": "points"}"#), Some(Unit::Points));
-        assert_eq!(editing(r#"{"units": "millimeters", "measurementUnits": null}"#), None);
+        assert_eq!(
+            editing(r#"{"units": "millimeters", "measurementUnits": "points"}"#),
+            Some(Unit::Points)
+        );
+        assert_eq!(
+            editing(r#"{"units": "millimeters", "measurementUnits": null}"#),
+            None
+        );
         assert_eq!(editing("{}"), None);
         let mut a = app();
         a.apply_prefs(UiState::from_json(br#"{"editing": {"units": "millimeters"}}"#).unwrap());
@@ -682,14 +952,16 @@ mod tests {
         let mut a = app();
         a.run("file.options", json!({"pane": "display"})).unwrap();
         assert!(a.ui.backstage);
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         h.get_by_label("Spaces").click();
         h.run_steps(2);
@@ -713,21 +985,33 @@ mod tests {
     #[test]
     fn animation_effects_is_an_accessibility_option() {
         use crate::theme::Animations;
-        let services = Services { animations_enabled: Some(Box::new(|| Some(false))), ..Default::default() };
-        let mut a = WordApp::new(wordcraft_engine::Session::new(wordcraft_doc::Document::new()), services);
-        a.run("file.options", json!({"pane": "accessibility"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        let services = Services {
+            animations_enabled: Some(Box::new(|| Some(false))),
+            ..Default::default()
+        };
+        let mut a = WordApp::new(
+            wordcraft_engine::Session::new(wordcraft_doc::Document::new()),
+            services,
         );
+        a.run("file.options", json!({"pane": "accessibility"}))
+            .unwrap();
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
         assert_eq!(h.state().ui.animations, Animations::System);
         assert!(h.query_by_label("Animation effects:").is_some());
-        assert!(h.query_by_label("Your system has animation effects turned off.").is_some());
+        assert!(
+            h.query_by_label("Your system has animation effects turned off.")
+                .is_some()
+        );
         assert!(!h.state().animations_on());
         h.get_by_role(egui::accesskit::Role::ComboBox).click();
         h.run_steps(4);
@@ -735,7 +1019,11 @@ mod tests {
         h.run_steps(4);
         assert_eq!(h.state().ui.animations, Animations::On);
         assert!(h.state().animations_on());
-        assert!(h.query_by_label("Your system has animation effects turned off.").is_none(), "only said while the system is followed");
+        assert!(
+            h.query_by_label("Your system has animation effects turned off.")
+                .is_none(),
+            "only said while the system is followed"
+        );
     }
 
     /// File › Options › General › Start-up (#766): the checkbox is the `ui.startScreen` setting.
@@ -743,20 +1031,27 @@ mod tests {
     fn general_start_up_turns_the_start_screen_off_and_on() {
         let mut a = app();
         a.run("file.options", json!({"pane": "general"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
-        assert!(h.query_by_label("Start-up").is_some(), "the section is there");
-        h.get_by_label("Show the Start screen when WordCraft starts").click();
+        assert!(
+            h.query_by_label("Start-up").is_some(),
+            "the section is there"
+        );
+        h.get_by_label("Show the Start screen when WordCraft starts")
+            .click();
         h.run_steps(4);
         assert!(!h.state().ui.start_screen, "the checkbox turns it off");
-        h.get_by_label("Show the Start screen when WordCraft starts").click();
+        h.get_by_label("Show the Start screen when WordCraft starts")
+            .click();
         h.run_steps(4);
         assert!(h.state().ui.start_screen, "and on again");
     }
@@ -767,23 +1062,32 @@ mod tests {
     fn advanced_animation_turns_the_caret_animation_off_and_on() {
         let mut a = app();
         a.run("file.options", json!({"pane": "advanced"})).unwrap();
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
-        assert!(h.query_by_label("Animation").is_some(), "the section is there");
-        h.get_by_label("Animate the caret (it glides and fades)").click();
+        assert!(
+            h.query_by_label("Animation").is_some(),
+            "the section is there"
+        );
+        h.get_by_label("Animate the caret (it glides and fades)")
+            .click();
         h.run_steps(4);
         assert!(!h.state().ui.caret_animation, "the checkbox turns it off");
-        h.get_by_label("Animate the caret (it glides and fades)").click();
+        h.get_by_label("Animate the caret (it glides and fades)")
+            .click();
         h.run_steps(4);
         assert!(h.state().ui.caret_animation, "and on again");
-        h.state_mut().run("ui.language", json!({"value": "es"})).unwrap();
+        h.state_mut()
+            .run("ui.language", json!({"value": "es"}))
+            .unwrap();
         h.run_steps(4);
         assert!(h.query_by_label("Animación").is_some() && h.query_by_label("Animation").is_none());
     }
@@ -796,27 +1100,49 @@ mod tests {
         let mut a = app();
         a.run("file.options", json!({"region": "pl-PL"})).unwrap();
         a.run("file.new", json!({})).unwrap();
-        assert_eq!(wordcraft_geom::paper_name(a.session.doc.last_section.page_w, a.session.doc.last_section.page_h), Some("A4"));
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
+        assert_eq!(
+            wordcraft_geom::paper_name(
+                a.session.doc.last_section.page_w,
+                a.session.doc.last_section.page_h
+            ),
+            Some("A4")
         );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(2);
         // The dialog reads the unit when it opens, after a frame has picked up the region.
-        h.state_mut().run("ui.dialog", json!({"name": "pageSetup"})).unwrap();
+        h.state_mut()
+            .run("ui.dialog", json!({"name": "pageSetup"}))
+            .unwrap();
         h.run_steps(4);
         assert_eq!((unit(), decimal()), (Unit::Centimeters, ','));
         assert_eq!(length(72.0), "2,54 cm");
-        assert_eq!(h.query_all_by_value("2,54 cm").count(), 4, "four margins in centimetres with a decimal comma");
+        assert_eq!(
+            h.query_all_by_value("2,54 cm").count(),
+            4,
+            "four margins in centimetres with a decimal comma"
+        );
 
-        h.state_mut().run("file.options", json!({"units": "inches"})).unwrap();
+        h.state_mut()
+            .run("file.options", json!({"units": "inches"}))
+            .unwrap();
         h.run_steps(4);
-        assert_eq!(length(108.0), "1,5\"", "the user's unit, still the region's decimal comma");
-        h.state_mut().run("file.options", json!({"units": "auto", "region": "en-US"})).unwrap();
+        assert_eq!(
+            length(108.0),
+            "1,5\"",
+            "the user's unit, still the region's decimal comma"
+        );
+        h.state_mut()
+            .run("file.options", json!({"units": "auto", "region": "en-US"}))
+            .unwrap();
         h.run_steps(4);
         assert_eq!(length(72.0), "1\"");
     }

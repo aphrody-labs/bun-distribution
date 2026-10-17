@@ -78,12 +78,21 @@ fn is_ident(s: &str) -> bool {
     if !chars.next().is_some_and(|c| c.is_ascii_alphabetic()) {
         return false;
     }
-    s.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '/' | '-'))
+    s.chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '.' | '/' | '-'))
 }
 
 /// Rend `s` utilisable comme identifiant de fonction.
 fn slug(s: &str) -> String {
-    s.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' { c } else { '_' }).collect()
+    s.chars()
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 /// Reconstruit les références de chaînes par désassemblage et nomme les
@@ -119,7 +128,10 @@ pub fn ingest_string_refs(
     // 1. Chaînes des sections de données, indexées par adresse de début.
     let mut strings: HashMap<u64, String> = HashMap::new();
     for name in [".rdata", ".data", ".rodata"] {
-        let Some(sec) = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
+        let Some(sec) = pe
+            .sections
+            .iter()
+            .find(|s| s.name().is_ok_and(|n| n.starts_with(name)))
         else {
             continue;
         };
@@ -153,8 +165,10 @@ pub fn ingest_string_refs(
         let mut q = db
             .conn()
             .prepare("SELECT vaddr, size FROM function WHERE binary_id=?1 ORDER BY vaddr")?;
-        q.query_map([bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64)))?
-            .collect::<std::result::Result<_, _>>()?
+        q.query_map([bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64))
+        })?
+        .collect::<std::result::Result<_, _>>()?
     };
     funcs.retain(|&(a, _)| (text_va..text_end).contains(&a));
 
@@ -166,7 +180,11 @@ pub fn ingest_string_refs(
     for i in 0..funcs.len() {
         let (a, size) = funcs[i];
         let next = funcs.get(i + 1).map_or(text_end, |&(b, _)| b);
-        let end = if size > 0 { a + size } else { next.min(a + MAX_BODY) };
+        let end = if size > 0 {
+            a + size
+        } else {
+            next.min(a + MAX_BODY)
+        };
         let end = end.min(text_end).min(a + MAX_BODY);
         if end <= a {
             continue;

@@ -18,7 +18,12 @@ fn fit(from: (u32, u32), to: (u32, u32)) -> Option<(f64, (f64, f64), (f64, f64))
     if from.0 == 0 || from.1 == 0 || to.0 == 0 || to.1 == 0 {
         return None;
     }
-    let (w0, h0, w1, h1) = (f64::from(from.0), f64::from(from.1), f64::from(to.0), f64::from(to.1));
+    let (w0, h0, w1, h1) = (
+        f64::from(from.0),
+        f64::from(from.1),
+        f64::from(to.0),
+        f64::from(to.1),
+    );
     let k = (w1 / w0).min(h1 / h0);
     (k.is_finite() && k > 0.0).then_some((k, (w0 / 2.0, h0 / 2.0), (w1 / 2.0, h1 / 2.0)))
 }
@@ -38,12 +43,16 @@ pub fn scale_motion(seq: &mut Sequence, from: (u32, u32), to: (u32, u32)) -> usi
     if from == to {
         return 0;
     }
-    let Some((k, c0, c1)) = fit(from, to) else { return 0 };
+    let Some((k, c0, c1)) = fit(from, to) else {
+        return 0;
+    };
     let mut n = 0;
     for track in seq.all_tracks_mut().filter(|t| t.kind == TrackKind::Video) {
         for item in &mut track.items {
             let refits = item.scale_to_frame;
-            let Some(motion) = item.effect_mut("motion") else { continue };
+            let Some(motion) = item.effect_mut("motion") else {
+                continue;
+            };
             if let Some(p) = motion.param_mut("position") {
                 p.map_values(|v| match v {
                     ParamValue::Vec2(mut v) => {
@@ -58,7 +67,9 @@ pub fn scale_motion(seq: &mut Sequence, from: (u32, u32), to: (u32, u32)) -> usi
                 for id in ["scale", "scale_width"] {
                     if let Some(p) = motion.param_mut(id) {
                         p.map_values(|v| match v {
-                            ParamValue::Float(s) => ParamValue::Float((s * k).clamp(0.0, MAX_SCALE)),
+                            ParamValue::Float(s) => {
+                                ParamValue::Float((s * k).clamp(0.0, MAX_SCALE))
+                            }
                             other => other,
                         });
                     }
@@ -73,7 +84,9 @@ pub fn scale_motion(seq: &mut Sequence, from: (u32, u32), to: (u32, u32)) -> usi
 #[cfg(test)]
 mod tests {
     use super::*;
-    use filmcraft_project::{ClipId, ItemId, Keyframe, Label, Project, SequenceSettings, TrackItem, find_effect};
+    use filmcraft_project::{
+        ClipId, ItemId, Keyframe, Label, Project, SequenceSettings, TrackItem, find_effect,
+    };
     use filmcraft_time::Tick;
 
     fn seq_with(items: Vec<TrackItem>) -> Sequence {
@@ -86,7 +99,8 @@ mod tests {
 
     fn clip(id: u64, pos: (f64, f64), scale: f64) -> TrackItem {
         let mut motion = find_effect("motion").unwrap().instance();
-        motion.param_mut("position").unwrap().value = ParamValue::Vec2(filmcraft_geom::Vec2::new(pos.0, pos.1));
+        motion.param_mut("position").unwrap().value =
+            ParamValue::Vec2(filmcraft_geom::Vec2::new(pos.0, pos.1));
         motion.param_mut("scale").unwrap().value = ParamValue::Float(scale);
         TrackItem {
             id: ClipId(id),
@@ -118,14 +132,26 @@ mod tests {
     }
 
     fn pos(seq: &Sequence, i: usize) -> (f64, f64) {
-        match seq.video_tracks[0].items[i].effect("motion").unwrap().param("position").unwrap().value {
+        match seq.video_tracks[0].items[i]
+            .effect("motion")
+            .unwrap()
+            .param("position")
+            .unwrap()
+            .value
+        {
             ParamValue::Vec2(v) => (v.x, v.y),
             _ => panic!("position is a point"),
         }
     }
 
     fn scale(seq: &Sequence, i: usize) -> f64 {
-        match seq.video_tracks[0].items[i].effect("motion").unwrap().param("scale").unwrap().value {
+        match seq.video_tracks[0].items[i]
+            .effect("motion")
+            .unwrap()
+            .param("scale")
+            .unwrap()
+            .value
+        {
             ParamValue::Float(s) => s,
             _ => panic!("scale is a number"),
         }
@@ -137,7 +163,10 @@ mod tests {
 
     #[test]
     fn same_aspect_scales_position_and_scale_together() {
-        let mut seq = seq_with(vec![clip(1, (960.0, 540.0), 100.0), clip(2, (300.0, 90.0), 50.0)]);
+        let mut seq = seq_with(vec![
+            clip(1, (960.0, 540.0), 100.0),
+            clip(2, (300.0, 90.0), 50.0),
+        ]);
         assert_eq!(scale_motion(&mut seq, (1920, 1080), (1280, 720)), 2);
         assert!(close(pos(&seq, 0), (640.0, 360.0)), "{:?}", pos(&seq, 0));
         assert!(close(pos(&seq, 1), (200.0, 60.0)), "{:?}", pos(&seq, 1));
@@ -148,11 +177,18 @@ mod tests {
     #[test]
     fn aspect_change_fits_the_old_frame_inside_the_new_one() {
         // 1920x1080 -> 1080x1920: k = min(1080/1920, 1920/1080) = 0.5625, centred
-        let mut seq = seq_with(vec![clip(1, (960.0, 540.0), 100.0), clip(2, (0.0, 0.0), 100.0)]);
+        let mut seq = seq_with(vec![
+            clip(1, (960.0, 540.0), 100.0),
+            clip(2, (0.0, 0.0), 100.0),
+        ]);
         scale_motion(&mut seq, (1920, 1080), (1080, 1920));
         assert!(close(pos(&seq, 0), (540.0, 960.0)), "{:?}", pos(&seq, 0));
         // the old top-left corner lands on the new frame's left edge, letterboxed vertically
-        assert!(close(pos(&seq, 1), (0.0, 960.0 - 0.5625 * 540.0)), "{:?}", pos(&seq, 1));
+        assert!(
+            close(pos(&seq, 1), (0.0, 960.0 - 0.5625 * 540.0)),
+            "{:?}",
+            pos(&seq, 1)
+        );
         assert!((scale(&seq, 0) - 56.25).abs() < 1e-9);
     }
 
@@ -161,16 +197,43 @@ mod tests {
         let mut c = clip(1, (960.0, 540.0), 100.0);
         let m = c.effect_mut("motion").unwrap();
         m.param_mut("position").unwrap().keyframes = vec![
-            Keyframe::new(Tick::ZERO, ParamValue::Vec2(filmcraft_geom::Vec2::new(0.0, 0.0))),
-            Keyframe::new(Tick(10), ParamValue::Vec2(filmcraft_geom::Vec2::new(1920.0, 1080.0))),
+            Keyframe::new(
+                Tick::ZERO,
+                ParamValue::Vec2(filmcraft_geom::Vec2::new(0.0, 0.0)),
+            ),
+            Keyframe::new(
+                Tick(10),
+                ParamValue::Vec2(filmcraft_geom::Vec2::new(1920.0, 1080.0)),
+            ),
         ];
-        m.param_mut("scale").unwrap().keyframes = vec![Keyframe::new(Tick::ZERO, ParamValue::Float(100.0)), Keyframe::new(Tick(10), ParamValue::Float(200.0))];
+        m.param_mut("scale").unwrap().keyframes = vec![
+            Keyframe::new(Tick::ZERO, ParamValue::Float(100.0)),
+            Keyframe::new(Tick(10), ParamValue::Float(200.0)),
+        ];
         let mut seq = seq_with(vec![c]);
         scale_motion(&mut seq, (1920, 1080), (3840, 2160));
         let m = seq.video_tracks[0].items[0].effect("motion").unwrap();
-        let kp: Vec<_> = m.param("position").unwrap().keyframes.iter().map(|k| k.value.clone()).collect();
-        assert_eq!(kp, vec![ParamValue::Vec2(filmcraft_geom::Vec2::new(0.0, 0.0)), ParamValue::Vec2(filmcraft_geom::Vec2::new(3840.0, 2160.0))]);
-        let ks: Vec<_> = m.param("scale").unwrap().keyframes.iter().map(|k| k.value.clone()).collect();
+        let kp: Vec<_> = m
+            .param("position")
+            .unwrap()
+            .keyframes
+            .iter()
+            .map(|k| k.value.clone())
+            .collect();
+        assert_eq!(
+            kp,
+            vec![
+                ParamValue::Vec2(filmcraft_geom::Vec2::new(0.0, 0.0)),
+                ParamValue::Vec2(filmcraft_geom::Vec2::new(3840.0, 2160.0))
+            ]
+        );
+        let ks: Vec<_> = m
+            .param("scale")
+            .unwrap()
+            .keyframes
+            .iter()
+            .map(|k| k.value.clone())
+            .collect();
         assert_eq!(ks, vec![ParamValue::Float(200.0), ParamValue::Float(400.0)]);
     }
 
@@ -208,6 +271,9 @@ mod tests {
         assert_eq!(scale_motion(&mut seq, (0, 1080), (1280, 720)), 0);
         assert_eq!(scale_motion(&mut seq, (1920, 1080), (1280, 0)), 0);
         // Debug, not ==: the automatic anchor is NaN, which never equals itself
-        assert_eq!(format!("{:?}", seq.video_tracks[0].items[0].effects), format!("{:?}", before.video_tracks[0].items[0].effects));
+        assert_eq!(
+            format!("{:?}", seq.video_tracks[0].items[0].effects),
+            format!("{:?}", before.video_tracks[0].items[0].effects)
+        );
     }
 }

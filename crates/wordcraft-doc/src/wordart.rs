@@ -79,7 +79,11 @@ pub struct TextOutline {
 
 impl Default for TextOutline {
     fn default() -> Self {
-        TextOutline { color: Some(Rgb::BLACK), width: 0.75, transparency: 0.0 }
+        TextOutline {
+            color: Some(Rgb::BLACK),
+            width: 0.75,
+            transparency: 0.0,
+        }
     }
 }
 
@@ -96,7 +100,12 @@ pub struct Reflection {
 
 impl Default for Reflection {
     fn default() -> Self {
-        Reflection { transparency: 50.0, size: 50.0, distance: 0.0, blur: 0.5 }
+        Reflection {
+            transparency: 50.0,
+            size: 50.0,
+            distance: 0.0,
+            blur: 0.5,
+        }
     }
 }
 
@@ -110,18 +119,31 @@ impl TextFill {
     pub fn sanitized(&self) -> Option<TextFill> {
         Some(match self {
             TextFill::None => TextFill::None,
-            TextFill::Solid { color, transparency } => TextFill::Solid { color: *color, transparency: clamp(*transparency, 0.0, 100.0, 0.0) },
+            TextFill::Solid {
+                color,
+                transparency,
+            } => TextFill::Solid {
+                color: *color,
+                transparency: clamp(*transparency, 0.0, 100.0, 0.0),
+            },
             TextFill::Gradient { stops, angle } => {
                 let mut s: Vec<GradStop> = stops
                     .iter()
                     .take(MAX_STOPS)
-                    .map(|g| GradStop { pos: clamp(g.pos, 0.0, 100.0, 0.0), color: g.color, transparency: clamp(g.transparency, 0.0, 100.0, 0.0) })
+                    .map(|g| GradStop {
+                        pos: clamp(g.pos, 0.0, 100.0, 0.0),
+                        color: g.color,
+                        transparency: clamp(g.transparency, 0.0, 100.0, 0.0),
+                    })
                     .collect();
                 if s.is_empty() {
                     return None;
                 }
                 s.sort_by(|a, b| a.pos.total_cmp(&b.pos));
-                TextFill::Gradient { stops: s, angle: clamp(*angle, -1e6, 1e6, 0.0).rem_euclid(360.0) }
+                TextFill::Gradient {
+                    stops: s,
+                    angle: clamp(*angle, -1e6, 1e6, 0.0).rem_euclid(360.0),
+                }
             }
         })
     }
@@ -195,34 +217,95 @@ pub const ART_STYLES: [(&str, &str); 8] = [
 /// The text effects of WordArt style `id` (see [`ART_STYLES`]) in theme colours `theme` (dk1,
 /// lt1, dk2, lt2, accent1…6 as in [`crate::THEME_COLORS`]). `None` for an unknown id.
 pub fn art_style(id: &str, theme: &[Rgb]) -> Option<TextEffects> {
-    let slot = |i: usize| theme.get(i).or_else(|| crate::THEME_COLORS.get(i)).copied().unwrap_or(Rgb::BLACK);
+    let slot = |i: usize| {
+        theme
+            .get(i)
+            .or_else(|| crate::THEME_COLORS.get(i))
+            .copied()
+            .unwrap_or(Rgb::BLACK)
+    };
     let (dark, light, accent, accent2) = (slot(2), slot(1), slot(4), slot(5));
-    let solid = |c: Rgb| Some(TextFill::Solid { color: c, transparency: 0.0 });
-    let line = |c: Rgb, w: f32| Some(TextOutline { color: Some(c), width: w, transparency: 0.0 });
+    let solid = |c: Rgb| {
+        Some(TextFill::Solid {
+            color: c,
+            transparency: 0.0,
+        })
+    };
+    let line = |c: Rgb, w: f32| {
+        Some(TextOutline {
+            color: Some(c),
+            width: w,
+            transparency: 0.0,
+        })
+    };
     let grad = |a: Rgb, b: Rgb| {
         Some(TextFill::Gradient {
-            stops: vec![GradStop { pos: 0.0, color: a, transparency: 0.0 }, GradStop { pos: 100.0, color: b, transparency: 0.0 }],
+            stops: vec![
+                GradStop {
+                    pos: 0.0,
+                    color: a,
+                    transparency: 0.0,
+                },
+                GradStop {
+                    pos: 100.0,
+                    color: b,
+                    transparency: 0.0,
+                },
+            ],
             angle: 90.0,
         })
     };
     let fx = match id {
-        "solid" => TextEffects { fill: solid(accent), ..Default::default() },
-        "outlined" => TextEffects { fill: solid(light), outline: line(accent, 1.0), ..Default::default() },
-        "hollow" => TextEffects { fill: Some(TextFill::None), outline: line(dark, 1.0), ..Default::default() },
-        "gradient" => TextEffects { fill: grad(accent, slot(7)), ..Default::default() },
+        "solid" => TextEffects {
+            fill: solid(accent),
+            ..Default::default()
+        },
+        "outlined" => TextEffects {
+            fill: solid(light),
+            outline: line(accent, 1.0),
+            ..Default::default()
+        },
+        "hollow" => TextEffects {
+            fill: Some(TextFill::None),
+            outline: line(dark, 1.0),
+            ..Default::default()
+        },
+        "gradient" => TextEffects {
+            fill: grad(accent, slot(7)),
+            ..Default::default()
+        },
         "shadowed" => TextEffects {
             fill: solid(dark),
-            shadow: Some(Shadow { color: Rgb::BLACK, transparency: 55.0, blur: 3.0, distance: 3.0, angle: 45.0, rot_with_shape: false }),
+            shadow: Some(Shadow {
+                color: Rgb::BLACK,
+                transparency: 55.0,
+                blur: 3.0,
+                distance: 3.0,
+                angle: 45.0,
+                rot_with_shape: false,
+            }),
             ..Default::default()
         },
         "glowing" => TextEffects {
             fill: solid(light),
             outline: line(accent, 0.5),
-            glow: Some(Glow { color: accent, size: 6.0, transparency: 55.0 }),
+            glow: Some(Glow {
+                color: accent,
+                size: 6.0,
+                transparency: 55.0,
+            }),
             ..Default::default()
         },
-        "reflected" => TextEffects { fill: solid(accent), reflection: Some(Reflection::default()), ..Default::default() },
-        "sunset" => TextEffects { fill: grad(accent2, slot(8)), outline: line(dark, 0.5), ..Default::default() },
+        "reflected" => TextEffects {
+            fill: solid(accent),
+            reflection: Some(Reflection::default()),
+            ..Default::default()
+        },
+        "sunset" => TextEffects {
+            fill: grad(accent2, slot(8)),
+            outline: line(dark, 0.5),
+            ..Default::default()
+        },
         _ => return None,
     };
     Some(fx)
@@ -302,7 +385,13 @@ pub struct TextWarp {
 impl TextWarp {
     /// A warp with preset `preset` (one of [`WARP_PRESETS`]); `None` for any other name.
     pub fn new(preset: &str) -> Option<TextWarp> {
-        WARP_PRESETS.iter().find(|p| **p == preset).map(|p| TextWarp { preset: (*p).to_string(), adj: Vec::new() })
+        WARP_PRESETS
+            .iter()
+            .find(|p| **p == preset)
+            .map(|p| TextWarp {
+                preset: (*p).to_string(),
+                adj: Vec::new(),
+            })
     }
     /// Add an adjust value (capped: at most [`MAX_ADJ`], short ASCII names, values within
     /// ±[`MAX_ADJ_VALUE`]); a repeated name replaces the earlier value.
@@ -343,19 +432,42 @@ mod tests {
     fn hostile_values_are_reduced() {
         let fx = TextEffects {
             fill: Some(TextFill::Gradient {
-                stops: (0..50).map(|i| GradStop { pos: if i == 0 { f32::NAN } else { 1e9 }, color: Rgb::BLACK, transparency: -5.0 }).collect(),
+                stops: (0..50)
+                    .map(|i| GradStop {
+                        pos: if i == 0 { f32::NAN } else { 1e9 },
+                        color: Rgb::BLACK,
+                        transparency: -5.0,
+                    })
+                    .collect(),
                 angle: f32::INFINITY,
             }),
-            outline: Some(TextOutline { color: None, width: 1e9, transparency: f32::NAN }),
+            outline: Some(TextOutline {
+                color: None,
+                width: 1e9,
+                transparency: f32::NAN,
+            }),
             ..Default::default()
         }
         .sanitized();
-        let Some(TextFill::Gradient { stops, angle }) = fx.fill else { panic!("a gradient") };
+        let Some(TextFill::Gradient { stops, angle }) = fx.fill else {
+            panic!("a gradient")
+        };
         assert_eq!(stops.len(), MAX_STOPS);
-        assert!(stops.iter().all(|s| (0.0..=100.0).contains(&s.pos) && s.transparency == 0.0));
+        assert!(
+            stops
+                .iter()
+                .all(|s| (0.0..=100.0).contains(&s.pos) && s.transparency == 0.0)
+        );
         assert_eq!(angle, 0.0);
         assert_eq!(fx.outline.map(|o| o.width), Some(MAX_OUTLINE));
-        assert_eq!(TextFill::Gradient { stops: vec![], angle: 0.0 }.sanitized(), None);
+        assert_eq!(
+            TextFill::Gradient {
+                stops: vec![],
+                angle: 0.0
+            }
+            .sanitized(),
+            None
+        );
 
         assert!(TextWarp::new("textMadeUp").is_none());
         let mut w = TextWarp::new("textArchUp").unwrap();

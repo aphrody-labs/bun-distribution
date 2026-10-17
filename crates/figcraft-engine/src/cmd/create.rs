@@ -64,18 +64,62 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             frame_create
         ),
-        spec!("shape.rectangle", "Rectangle", "{x, y, width, height, parent?, props?}", true, |s, p| create_kind(s, p, "rectangle")),
-        spec!("shape.ellipse", "Ellipse", "{x, y, width, height, parent?, props?}", true, |s, p| create_kind(s, p, "ellipse")),
-        spec!("shape.polygon", "Polygon", "{x, y, width, height, parent?, props? {pointCount}}", true, |s, p| create_kind(s, p, "polygon")),
-        spec!("shape.star", "Star", "{x, y, width, height, parent?, props? {pointCount, innerRadius}}", true, |s, p| create_kind(s, p, "star")),
-        spec!("shape.line", "Line", "{x, y, width (length), parent?, props? {rotation}}", true, |s, p| create_kind(s, p, "line")),
-        spec!("shape.arrow", "Arrow", "{x, y, width (length), parent?, props?}", true, |s, p| create_kind(s, p, "arrow")),
-        spec!("text.create", "Text", "{text, x, y, parent?, width? (fixed width wraps), props? (fontSize, fontFamily, …)}", true, |s, p| {
-            create_kind(s, p, "text")
-        }),
-        spec!("vector.create", "Vector", "{path (SVG path data) | points [[x,y],..], closed?, x?, y?, parent?, props?}", true, |s, p| create_kind(
-            s, p, "vector"
-        )),
+        spec!(
+            "shape.rectangle",
+            "Rectangle",
+            "{x, y, width, height, parent?, props?}",
+            true,
+            |s, p| create_kind(s, p, "rectangle")
+        ),
+        spec!(
+            "shape.ellipse",
+            "Ellipse",
+            "{x, y, width, height, parent?, props?}",
+            true,
+            |s, p| create_kind(s, p, "ellipse")
+        ),
+        spec!(
+            "shape.polygon",
+            "Polygon",
+            "{x, y, width, height, parent?, props? {pointCount}}",
+            true,
+            |s, p| create_kind(s, p, "polygon")
+        ),
+        spec!(
+            "shape.star",
+            "Star",
+            "{x, y, width, height, parent?, props? {pointCount, innerRadius}}",
+            true,
+            |s, p| create_kind(s, p, "star")
+        ),
+        spec!(
+            "shape.line",
+            "Line",
+            "{x, y, width (length), parent?, props? {rotation}}",
+            true,
+            |s, p| create_kind(s, p, "line")
+        ),
+        spec!(
+            "shape.arrow",
+            "Arrow",
+            "{x, y, width (length), parent?, props?}",
+            true,
+            |s, p| create_kind(s, p, "arrow")
+        ),
+        spec!(
+            "text.create",
+            "Text",
+            "{text, x, y, parent?, width? (fixed width wraps), props? (fontSize, fontFamily, …)}",
+            true,
+            |s, p| { create_kind(s, p, "text") }
+        ),
+        spec!(
+            "vector.create",
+            "Vector",
+            "{path (SVG path data) | points [[x,y],..], closed?, x?, y?, parent?, props?}",
+            true,
+            |s, p| create_kind(s, p, "vector")
+        ),
         spec!(
             "image.place",
             "Place image",
@@ -83,18 +127,33 @@ pub fn specs() -> Vec<CommandSpec> {
             true,
             place_image
         ),
-        spec!("frame.swapOrientation", "Swap orientation", "{ids?} (portrait ⇄ landscape: width and height trade places)", true, |s, p| {
-            let ids = req_targets("frame.swapOrientation", s, p)?;
-            let doc = s.doc()?;
-            let sizes: Vec<(NodeId, f64, f64)> = ids.iter().filter_map(|i| doc.node(*i).map(|n| (*i, n.width, n.height))).collect();
-            for (i, w, h) in sizes {
-                super::arrange::resize_cmd(s, &json!({"ids": [i], "width": h, "height": w}))?;
+        spec!(
+            "frame.swapOrientation",
+            "Swap orientation",
+            "{ids?} (portrait ⇄ landscape: width and height trade places)",
+            true,
+            |s, p| {
+                let ids = req_targets("frame.swapOrientation", s, p)?;
+                let doc = s.doc()?;
+                let sizes: Vec<(NodeId, f64, f64)> = ids
+                    .iter()
+                    .filter_map(|i| doc.node(*i).map(|n| (*i, n.width, n.height)))
+                    .collect();
+                for (i, w, h) in sizes {
+                    super::arrange::resize_cmd(s, &json!({"ids": [i], "width": h, "height": w}))?;
+                }
+                ok()
             }
-            ok()
-        }),
-        spec!("frame.presets", "List frame presets", "{}", false, |_, _| {
-            Ok(Value::Array(FRAME_PRESETS.iter().map(|(c, n, w, h)| json!({"category": c, "name": n, "width": w, "height": h})).collect()))
-        }),
+        ),
+        spec!(
+            "frame.presets",
+            "List frame presets",
+            "{}",
+            false,
+            |_, _| {
+                Ok(Value::Array(FRAME_PRESETS.iter().map(|(c, n, w, h)| json!({"category": c, "name": n, "width": w, "height": h})).collect()))
+            }
+        ),
     ]
 }
 
@@ -102,7 +161,14 @@ pub fn specs() -> Vec<CommandSpec> {
 /// excluding `exclude` and their descendants.
 pub fn frame_at(doc: &Document, page: NodeId, pt: Point, exclude: &[NodeId]) -> Option<NodeId> {
     /// `locked`: inside an instance, where only slots (and what's in them) take layers.
-    fn rec(doc: &Document, id: NodeId, pt: Point, exclude: &[NodeId], depth: usize, locked: bool) -> Option<NodeId> {
+    fn rec(
+        doc: &Document,
+        id: NodeId,
+        pt: Point,
+        exclude: &[NodeId],
+        depth: usize,
+        locked: bool,
+    ) -> Option<NodeId> {
         if depth > 128 || exclude.contains(&id) {
             return None;
         }
@@ -127,22 +193,54 @@ pub fn frame_at(doc: &Document, page: NodeId, pt: Point, exclude: &[NodeId]) -> 
         (is_container && inside && !locked).then_some(id)
     }
     let p = doc.node(page)?;
-    p.children.iter().rev().find_map(|c| rec(doc, *c, pt, exclude, 0, false))
+    p.children
+        .iter()
+        .rev()
+        .find_map(|c| rec(doc, *c, pt, exclude, 0, false))
 }
 
 pub fn kind_for(t: &str) -> Option<(NodeKind, &'static str)> {
     Some(match t.to_ascii_lowercase().as_str() {
         "rectangle" | "rect" => (NodeKind::Rectangle, "Rectangle"),
-        "ellipse" | "circle" | "oval" => (NodeKind::Ellipse { start: 0.0, sweep: std::f64::consts::TAU, inner: 0.0 }, "Ellipse"),
+        "ellipse" | "circle" | "oval" => (
+            NodeKind::Ellipse {
+                start: 0.0,
+                sweep: std::f64::consts::TAU,
+                inner: 0.0,
+            },
+            "Ellipse",
+        ),
         "polygon" | "triangle" => (NodeKind::Polygon { count: 3 }, "Polygon"),
-        "star" => (NodeKind::Star { count: 5, inner_ratio: 0.38 }, "Star"),
+        "star" => (
+            NodeKind::Star {
+                count: 5,
+                inner_ratio: 0.38,
+            },
+            "Star",
+        ),
         "line" => (NodeKind::Line, "Line"),
         "arrow" => (NodeKind::Line, "Arrow"),
-        "vector" | "path" => (NodeKind::Vector { network: VectorNetwork::default() }, "Vector"),
+        "vector" | "path" => (
+            NodeKind::Vector {
+                network: VectorNetwork::default(),
+            },
+            "Vector",
+        ),
         "text" => (NodeKind::Text(TextData::default()), "Text"),
         "frame" => (NodeKind::Frame, "Frame"),
-        "section" => (NodeKind::Section { contents_hidden: false }, "Section"),
-        "component" => (NodeKind::Component { description: String::new(), props: Default::default() }, "Component"),
+        "section" => (
+            NodeKind::Section {
+                contents_hidden: false,
+            },
+            "Section",
+        ),
+        "component" => (
+            NodeKind::Component {
+                description: String::new(),
+                props: Default::default(),
+            },
+            "Component",
+        ),
         "group" => (NodeKind::Group, "Group"),
         "slice" => (NodeKind::Slice, "Slice"),
         _ => return None,
@@ -177,7 +275,11 @@ pub fn create(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(cmd, "sections go on the page or in other sections"));
     }
     // X and Y are in the frame's space: a group parent has none of its own.
-    let space = if pn.kind.bounds_follow_children() { doc.frame_relative(parent) } else { figcraft_geom::Affine::IDENTITY };
+    let space = if pn.kind.bounds_follow_children() {
+        doc.frame_relative(parent)
+    } else {
+        figcraft_geom::Affine::IDENTITY
+    };
     let x = num_or(p, "x", 0.0);
     let y = num_or(p, "y", 0.0);
     let (mut w, mut h) = match base {
@@ -191,7 +293,8 @@ pub fn create(s: &mut Session, p: &Value) -> Result<Value> {
     let mut offset = (0.0, 0.0);
     if let NodeKind::Vector { network } = &mut kind {
         if let Some(d) = string(p, "path") {
-            let mut path = parse_path_data(&d).ok_or_else(|| bad(cmd, "`path` is not valid SVG path data"))?;
+            let mut path =
+                parse_path_data(&d).ok_or_else(|| bad(cmd, "`path` is not valid SVG path data"))?;
             use figcraft_geom::Shape;
             let bb = path.bounding_box();
             path.apply_affine(figcraft_geom::Affine::translate((-bb.x0, -bb.y0)));
@@ -203,12 +306,18 @@ pub fn create(s: &mut Session, p: &Value) -> Result<Value> {
             h = bb.height();
             offset = (bb.x0, bb.y0);
         } else if let Some(Value::Array(pts)) = get(p, "points") {
-            let pts: Vec<Point> = pts.iter().filter_map(|v| Some(Point::new(f64_of(v.get(0)?)?, f64_of(v.get(1)?)?))).collect();
+            let pts: Vec<Point> = pts
+                .iter()
+                .filter_map(|v| Some(Point::new(f64_of(v.get(0)?)?, f64_of(v.get(1)?)?)))
+                .collect();
             if pts.len() < 2 {
                 return Err(bad(cmd, "`points` needs at least two [x, y] pairs"));
             }
             let bb = figcraft_geom::points_bounds(pts.iter().copied()).unwrap_or_default();
-            let local: Vec<Point> = pts.iter().map(|q| Point::new(q.x - bb.x0, q.y - bb.y0)).collect();
+            let local: Vec<Point> = pts
+                .iter()
+                .map(|q| Point::new(q.x - bb.x0, q.y - bb.y0))
+                .collect();
             *network = VectorNetwork::from_points(&local, boolean(p, "closed").unwrap_or(false));
             w = bb.width();
             h = bb.height();
@@ -216,36 +325,59 @@ pub fn create(s: &mut Session, p: &Value) -> Result<Value> {
         }
     }
     if let NodeKind::Text(td) = &mut kind {
-        td.characters = string(p, "text").or_else(|| string(p, "characters")).unwrap_or_default();
+        td.characters = string(p, "text")
+            .or_else(|| string(p, "characters"))
+            .unwrap_or_default();
         if w > 0.0 {
             td.auto_resize = TextAutoResize::Height;
         }
     }
     let name = string(p, "name").unwrap_or_else(|| {
         if let NodeKind::Text(td) = &kind {
-            let first: String = td.characters.lines().next().unwrap_or("").chars().take(64).collect();
+            let first: String = td
+                .characters
+                .lines()
+                .next()
+                .unwrap_or("")
+                .chars()
+                .take(64)
+                .collect();
             if !first.trim().is_empty() {
                 return first;
             }
         }
         if matches!(base, "Frame" | "Section" | "Component" | "Group") {
-            s.doc().map(|d| d.next_name(base)).unwrap_or_else(|_| base.to_string())
+            s.doc()
+                .map(|d| d.next_name(base))
+                .unwrap_or_else(|_| base.to_string())
         } else {
             base.to_string()
         }
     });
     // In the app (it has a theme), text that names no fill is readable on its page: white on a
     // dark one. Headless sessions make the same thing everywhere.
-    let asks_fill = get(p, "props").is_some_and(|o| ["fill", "fills", "fillStyle"].iter().any(|k| o.get(k).is_some()));
+    let asks_fill = get(p, "props").is_some_and(|o| {
+        ["fill", "fills", "fillStyle"]
+            .iter()
+            .any(|k| o.get(k).is_some())
+    });
     let app_text = s.ui_dark.is_some() && base == "Text" && !asks_fill;
     let ds = s.ds_mut()?;
     let doc = ds.doc_mut();
     let nid = doc.alloc_id();
-    let mut node = if base == "Section" { Node::new_section(nid, name, w, h) } else { Node::new(nid, kind, name, w, h) };
-    if app_text && let Some(fills) = crate::tools::readable_text_fills(doc, doc.page_of(parent).unwrap_or(page)) {
+    let mut node = if base == "Section" {
+        Node::new_section(nid, name, w, h)
+    } else {
+        Node::new(nid, kind, name, w, h)
+    };
+    if app_text
+        && let Some(fills) =
+            crate::tools::readable_text_fills(doc, doc.page_of(parent).unwrap_or(page))
+    {
         node.fills = fills;
     }
-    node.transform = space.inverse() * figcraft_geom::Affine::translate((x + offset.0, y + offset.1));
+    node.transform =
+        space.inverse() * figcraft_geom::Affine::translate((x + offset.0, y + offset.1));
     if base == "Arrow" {
         node.stroke.cap_end = StrokeCap::LineArrow;
     }
@@ -300,14 +432,22 @@ fn free_spot(s: &Session, w: f64, h: f64) -> Result<(f64, f64)> {
     let doc = &ds.doc;
     let right_most = doc
         .node(ds.page)
-        .map(|pg| pg.children.iter().filter_map(|c| doc.world_bounds(*c)).collect::<Vec<_>>())
+        .map(|pg| {
+            pg.children
+                .iter()
+                .filter_map(|c| doc.world_bounds(*c))
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_default()
         .into_iter()
         .filter(|b| b.x1.is_finite() && b.y0.is_finite())
         .max_by(|a, b| a.x1.total_cmp(&b.x1));
     Ok(match right_most {
         Some(b) => ((b.x1 + 100.0).round(), b.y0.round()),
-        None => ((ds.view.cx - w / 2.0).round(), (ds.view.cy - h / 2.0).round()),
+        None => (
+            (ds.view.cx - w / 2.0).round(),
+            (ds.view.cy - h / 2.0).round(),
+        ),
     })
 }
 
@@ -318,7 +458,9 @@ fn read_path(path: &str) -> Result<Vec<u8>> {
 
 #[cfg(target_arch = "wasm32")]
 fn read_path(path: &str) -> Result<Vec<u8>> {
-    Err(EngineError::Other(format!("{path}: files can't be read in the browser")))
+    Err(EngineError::Other(format!(
+        "{path}: files can't be read in the browser"
+    )))
 }
 
 /// Place an image as a rectangle with an image fill (Figma's image layer).
@@ -326,14 +468,23 @@ pub fn place_image(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "image.place";
     let bytes = if let Some(b64) = string(p, "data") {
         use base64::Engine as _;
-        let b64 = b64.split_once(',').map(|(_, d)| d.to_string()).unwrap_or(b64);
-        base64::engine::general_purpose::STANDARD.decode(b64.trim()).map_err(|e| bad(cmd, format!("`data`: {e}")))?
+        let b64 = b64
+            .split_once(',')
+            .map(|(_, d)| d.to_string())
+            .unwrap_or(b64);
+        base64::engine::general_purpose::STANDARD
+            .decode(b64.trim())
+            .map_err(|e| bad(cmd, format!("`data`: {e}")))?
     } else if let Some(path) = string(p, "path") {
         read_path(&path)?
     } else {
         return Err(bad(cmd, "pass `data` (base64) or `path`"));
     };
-    let mode = match string(p, "mode").unwrap_or_default().to_ascii_lowercase().as_str() {
+    let mode = match string(p, "mode")
+        .unwrap_or_default()
+        .to_ascii_lowercase()
+        .as_str()
+    {
         "fit" => ImageScaleMode::Fit,
         "crop" => ImageScaleMode::Crop,
         "tile" => ImageScaleMode::Tile,
@@ -343,13 +494,18 @@ pub fn place_image(s: &mut Session, p: &Value) -> Result<Value> {
     let parent = id(p, "parent").unwrap_or(page);
     let ds = s.ds_mut()?;
     let doc = ds.doc_mut();
-    let (hash, iw, ih) = figcraft_format::add_image(doc, bytes).map_err(|e| bad(cmd, e.to_string()))?;
+    let (hash, iw, ih) =
+        figcraft_format::add_image(doc, bytes).map_err(|e| bad(cmd, e.to_string()))?;
     let profile = figcraft_render::images::profile_name(&hash, doc.images.get(&hash));
     let (iw, ih) = (f64::from(iw), f64::from(ih));
     // Fit large images into 1000 px like Figma does when placing.
     let k = (1000.0 / iw.max(ih)).min(1.0);
     let w = num(p, "width").unwrap_or(iw * k);
-    let h = num(p, "height").unwrap_or(if num(p, "width").is_some() { w * ih / iw.max(1.0) } else { ih * k });
+    let h = num(p, "height").unwrap_or(if num(p, "width").is_some() {
+        w * ih / iw.max(1.0)
+    } else {
+        ih * k
+    });
     let nid = doc.alloc_id();
     let name = string(p, "name").unwrap_or_else(|| "Image".into());
     let mut node = Node::new(nid, NodeKind::Rectangle, name, w, h);

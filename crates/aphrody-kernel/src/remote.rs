@@ -31,7 +31,10 @@ struct PendingCall {
 
 impl Drop for PendingCall {
     fn drop(&mut self) {
-        self.pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&self.id);
+        self.pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(&self.id);
     }
 }
 
@@ -54,11 +57,16 @@ impl RemoteSubsystem {
             .and_then(Value::as_str)
             .filter(|name| {
                 !name.is_empty()
-                    && name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+                    && name
+                        .chars()
+                        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
             })
             .ok_or("`name` is required: letters, digits, `_` and `-`")?
             .to_owned();
-        let runtime = params.get("runtime").and_then(Value::as_str).unwrap_or("external");
+        let runtime = params
+            .get("runtime")
+            .and_then(Value::as_str)
+            .unwrap_or("external");
         let description = params
             .get("description")
             .and_then(Value::as_str)
@@ -69,8 +77,10 @@ impl RemoteSubsystem {
             .ok_or("`tools` must be an array")?
             .iter()
             .map(|tool| {
-                let tool_name =
-                    tool.get("name").and_then(Value::as_str).ok_or("every tool needs a `name`")?;
+                let tool_name = tool
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or("every tool needs a `name`")?;
                 let schema = tool
                     .get("inputSchema")
                     .or_else(|| tool.get("input_schema"))
@@ -78,7 +88,9 @@ impl RemoteSubsystem {
                     .unwrap_or_else(|| json!({ "type": "object" }));
                 let mut definition = ToolDefinition::new(
                     tool_name,
-                    tool.get("description").and_then(Value::as_str).unwrap_or_default(),
+                    tool.get("description")
+                        .and_then(Value::as_str)
+                        .unwrap_or_default(),
                     schema,
                 );
                 definition.read_only = tool
@@ -132,13 +144,19 @@ impl SystemSubsystem for RemoteSubsystem {
     }
 
     async fn call(&self, tool: &str, arguments: Value) -> Result<Value, SubsystemError> {
-        let id = format!("aphrody-os:{}", self.next_id.fetch_add(1, Ordering::Relaxed));
+        let id = format!(
+            "aphrody-os:{}",
+            self.next_id.fetch_add(1, Ordering::Relaxed)
+        );
         let (sender, receiver) = oneshot::channel();
         self.pending
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .insert(id.clone(), sender);
-        let _pending_call = PendingCall { id: id.clone(), pending: Arc::clone(&self.pending) };
+        let _pending_call = PendingCall {
+            id: id.clone(),
+            pending: Arc::clone(&self.pending),
+        };
         let request = json!({
             "jsonrpc": "2.0",
             "id": id,
@@ -146,22 +164,31 @@ impl SystemSubsystem for RemoteSubsystem {
             "params": { "name": tool, "arguments": arguments },
         });
         if self.outbound.send(request).await.is_err() {
-            return Err(SubsystemError::Unavailable(format!("{} disconnected", self.name)));
+            return Err(SubsystemError::Unavailable(format!(
+                "{} disconnected",
+                self.name
+            )));
         }
         let response = match tokio::time::timeout(REMOTE_TIMEOUT, receiver).await {
             Ok(Ok(response)) => response,
             Ok(Err(_)) => {
-                return Err(SubsystemError::Unavailable(format!("{} disconnected", self.name)));
-            },
+                return Err(SubsystemError::Unavailable(format!(
+                    "{} disconnected",
+                    self.name
+                )));
+            }
             Err(_) => {
                 return Err(SubsystemError::Failed(format!(
                     "{tool} timed out after {}s",
                     REMOTE_TIMEOUT.as_secs()
                 )));
-            },
+            }
         };
         if let Some(error) = response.get("error") {
-            let message = error.get("message").and_then(Value::as_str).unwrap_or("remote error");
+            let message = error
+                .get("message")
+                .and_then(Value::as_str)
+                .unwrap_or("remote error");
             return Err(SubsystemError::Failed(message.to_owned()));
         }
         from_call_result(response.get("result").unwrap_or(&Value::Null))

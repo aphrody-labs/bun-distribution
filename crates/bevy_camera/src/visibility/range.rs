@@ -21,8 +21,8 @@ use bevy_reflect::Reflect;
 use bevy_transform::components::GlobalTransform;
 use bevy_utils::Parallel;
 
-use super::{check_visibility_cpu_culling, VisibilitySystems};
-use crate::{camera::Camera, primitives::Aabb, visibility::NoCpuCulling, ShadowLodOrigin};
+use super::{VisibilitySystems, check_visibility_cpu_culling};
+use crate::{ShadowLodOrigin, camera::Camera, primitives::Aabb, visibility::NoCpuCulling};
 
 /// A plugin that enables [`VisibilityRange`]s, which allow entities to be
 /// hidden or shown based on distance to the camera.

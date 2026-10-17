@@ -44,10 +44,17 @@ fn a4_in_millimetres_opens_at_its_printed_size() {
     )
     .unwrap();
     let mm = 72.0 / 25.4;
-    assert!(close_rect(d.artboards[0].rect, Rect::new(0.0, 0.0, 595.28, 841.89)), "{:?}", d.artboards[0].rect);
+    assert!(
+        close_rect(d.artboards[0].rect, Rect::new(0.0, 0.0, 595.28, 841.89)),
+        "{:?}",
+        d.artboards[0].rect
+    );
     assert_eq!(d.units, Unit::Millimeters);
     let b = art(&d)[0].geometric_bounds().unwrap();
-    assert!(close_rect(b, Rect::new(10.0 * mm, 20.0 * mm, 110.0 * mm, 70.0 * mm)), "{b:?}");
+    assert!(
+        close_rect(b, Rect::new(10.0 * mm, 20.0 * mm, 110.0 * mm, 70.0 * mm)),
+        "{b:?}"
+    );
 }
 
 #[test]
@@ -57,13 +64,26 @@ fn physical_units_without_a_view_box() {
         <rect width="1in" height="2cm" stroke="black" stroke-width="1mm"/></svg>"#,
     )
     .unwrap();
-    assert!(close_rect(d.artboards[0].rect, Rect::new(0.0, 0.0, 612.0, 792.0)));
+    assert!(close_rect(
+        d.artboards[0].rect,
+        Rect::new(0.0, 0.0, 612.0, 792.0)
+    ));
     assert_eq!(d.units, Unit::Inches);
     let n = art(&d)[0];
-    assert!(close_rect(n.geometric_bounds().unwrap(), Rect::new(0.0, 0.0, 72.0, 72.0 / 2.54 * 2.0)));
+    assert!(close_rect(
+        n.geometric_bounds().unwrap(),
+        Rect::new(0.0, 0.0, 72.0, 72.0 / 2.54 * 2.0)
+    ));
     assert!(close(n.appearance.stroke_width(), 72.0 / 25.4));
-    for (w, unit) in [("100pt", Unit::Points), ("10pc", Unit::Picas), ("10cm", Unit::Centimeters)] {
-        let d = import(&format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="10"/>"#)).unwrap();
+    for (w, unit) in [
+        ("100pt", Unit::Points),
+        ("10pc", Unit::Picas),
+        ("10cm", Unit::Centimeters),
+    ] {
+        let d = import(&format!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="10"/>"#
+        ))
+        .unwrap();
         assert_eq!(d.units, unit, "{w}");
     }
 }
@@ -74,7 +94,10 @@ fn unitless_and_pixels_map_one_to_one() {
         let d = import(&format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="50"><rect width="100" height="50"/></svg>"#)).unwrap();
         assert_eq!(d.artboards[0].rect, Rect::new(0.0, 0.0, 100.0, 50.0), "{w}");
         assert_eq!(d.units, Unit::Pixels, "{w}");
-        assert!(close_rect(art(&d)[0].geometric_bounds().unwrap(), Rect::new(0.0, 0.0, 100.0, 50.0)));
+        assert!(close_rect(
+            art(&d)[0].geometric_bounds().unwrap(),
+            Rect::new(0.0, 0.0, 100.0, 50.0)
+        ));
     }
     // No size at all: the viewBox gives it, in user units.
     let d = import(r#"<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 40"/>"#).unwrap();
@@ -110,7 +133,9 @@ fn text_lengths_in_physical_units() {
         <text x="1in" y="2in" font-size="20" letter-spacing="0.1em" stroke="red" stroke-width="1pt">Hi</text></svg>"#,
     )
     .unwrap();
-    let NodeKind::Text(t) = &art(&d)[0].kind else { panic!() };
+    let NodeKind::Text(t) = &art(&d)[0].kind else {
+        panic!()
+    };
     let o = t.xf.translation();
     assert!(close(o.x, 72.0) && close(o.y, 144.0), "{o:?}");
     let st = t.first_style();
@@ -129,6 +154,13 @@ fn absolute_lengths_in_a_pixel_document_keep_their_size() {
     )
     .unwrap();
     let n = art(&d)[0];
-    assert!(close_rect(n.geometric_bounds().unwrap(), Rect::new(0.0, 0.0, 72.0, 720.0 / 25.4)), "{:?}", n.geometric_bounds());
+    assert!(
+        close_rect(
+            n.geometric_bounds().unwrap(),
+            Rect::new(0.0, 0.0, 72.0, 720.0 / 25.4)
+        ),
+        "{:?}",
+        n.geometric_bounds()
+    );
     assert!(close(n.appearance.stroke_width(), 2.0));
 }

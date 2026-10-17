@@ -108,7 +108,11 @@ fn score(query: &str, text: &str) -> Option<i32> {
 
 impl Launcher {
     /// Replace one provider's items (library rescans, plugin reloads, locale changes).
-    pub fn set_provider(&mut self, provider: &Provider, items: impl IntoIterator<Item = SearchItem>) {
+    pub fn set_provider(
+        &mut self,
+        provider: &Provider,
+        items: impl IntoIterator<Item = SearchItem>,
+    ) {
         self.items.retain(|i| &i.provider != provider);
         self.items.extend(items);
     }
@@ -124,7 +128,13 @@ impl Launcher {
     pub fn search(&self, query: &str, limit: usize) -> Vec<Hit<'_>> {
         let mut query = query.trim_start();
         let mut only: Option<Provider> = None;
-        for provider in [Provider::Games, Provider::Apps, Provider::Settings, Provider::Actions, Provider::Media] {
+        for provider in [
+            Provider::Games,
+            Provider::Apps,
+            Provider::Settings,
+            Provider::Actions,
+            Provider::Media,
+        ] {
             if let Some(prefix) = provider.prefix()
                 && query.starts_with(prefix)
             {
@@ -143,20 +153,29 @@ impl Launcher {
                     .chain(item.keywords.iter().map(String::as_str))
                     .chain(std::iter::once(item.subtitle.as_str()))
                     .enumerate()
-                    .filter_map(|(n, text)| score(&query, text).map(|s| if n == 0 { s } else { s - 100 }))
+                    .filter_map(|(n, text)| {
+                        score(&query, text).map(|s| if n == 0 { s } else { s - 100 })
+                    })
                     .max()?;
                 let boost = self
                     .recent
                     .iter()
                     .position(|r| r == &item.id)
                     .map_or(0, |at| 200 - (at as i32) * 5);
-                Some(Hit { item, score: best + boost })
+                Some(Hit {
+                    item,
+                    score: best + boost,
+                })
             })
             .collect();
         if query.is_empty() {
             hits.retain(|h| self.recent.contains(&h.item.id) || only.is_some());
         }
-        hits.sort_by(|a, b| b.score.cmp(&a.score).then_with(|| a.item.title.cmp(&b.item.title)));
+        hits.sort_by(|a, b| {
+            b.score
+                .cmp(&a.score)
+                .then_with(|| a.item.title.cmp(&b.item.title))
+        });
         hits.truncate(limit);
         hits
     }

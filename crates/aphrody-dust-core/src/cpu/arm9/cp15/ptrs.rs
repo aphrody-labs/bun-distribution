@@ -330,7 +330,10 @@ impl Ptrs {
             let (map_start_ptr, adj_lower_bound) = if map_bounds.0 <= region_bounds.0 {
                 (start_ptr, region_bounds.0)
             } else {
-                (start_ptr.add((map_bounds.0 & (mem_size - 1) as u32) as usize), map_bounds.0)
+                (
+                    start_ptr.add((map_bounds.0 & (mem_size - 1) as u32) as usize),
+                    map_bounds.0,
+                )
             };
 
             self.map_cpu_local_range_inner(

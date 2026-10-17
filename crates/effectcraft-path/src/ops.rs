@@ -88,7 +88,10 @@ pub fn length(p: &BezPath) -> f64 {
 
 /// Number of on-curve vertices of a path (closing duplicates excluded).
 pub fn vertex_count(p: &BezPath) -> usize {
-    subs(p).iter().map(|s| s.segs.len() + usize::from(!s.closed)).sum()
+    subs(p)
+        .iter()
+        .map(|s| s.segs.len() + usize::from(!s.closed))
+        .sum()
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -119,8 +122,16 @@ impl Measured {
             if s1 <= sa || s0 >= sb || len <= 0.0 {
                 continue;
             }
-            let t0 = if sa > s0 { seg.inv_arclen(sa - s0, ACC) } else { 0.0 };
-            let t1 = if sb < s1 { seg.inv_arclen(sb - s0, ACC) } else { 1.0 };
+            let t0 = if sa > s0 {
+                seg.inv_arclen(sa - s0, ACC)
+            } else {
+                0.0
+            };
+            let t1 = if sb < s1 {
+                seg.inv_arclen(sb - s0, ACC)
+            } else {
+                1.0
+            };
             if t1 <= t0 {
                 continue;
             }
@@ -161,7 +172,9 @@ fn trim_intervals(start: f64, end: f64, offset_deg: f64) -> Option<Vec<(f64, f64
 /// fractions of its own length at the same time. `start`/`end` in percent, `offset` in degrees.
 /// Paths trimmed away entirely come back empty (the list keeps its length).
 pub fn trim(paths: &[BezPath], start: f64, end: f64, offset_deg: f64) -> Vec<BezPath> {
-    let Some(iv) = trim_intervals(start, end, offset_deg) else { return paths.to_vec() };
+    let Some(iv) = trim_intervals(start, end, offset_deg) else {
+        return paths.to_vec();
+    };
     paths
         .iter()
         .map(|p| {
@@ -180,7 +193,9 @@ pub fn trim(paths: &[BezPath], start: f64, end: f64, offset_deg: f64) -> Vec<Bez
 /// Trim Paths, "Trim Multiple Shapes: Individually": the paths are laid end to end in stacking
 /// order and trimmed as one continuous length, so they draw on one after another.
 pub fn trim_individually(paths: &[BezPath], start: f64, end: f64, offset_deg: f64) -> Vec<BezPath> {
-    let Some(iv) = trim_intervals(start, end, offset_deg) else { return paths.to_vec() };
+    let Some(iv) = trim_intervals(start, end, offset_deg) else {
+        return paths.to_vec();
+    };
     let ms: Vec<Measured> = paths.iter().map(Measured::new).collect();
     let total: f64 = ms.iter().map(|m| m.total).sum();
     let mut base = 0.0;
@@ -214,7 +229,17 @@ pub fn pucker_bloat(paths: &[BezPath], amount: f64) -> Vec<BezPath> {
     paths
         .iter()
         .map(|p| {
-            let verts: Vec<Point> = p.elements().iter().filter_map(|e| if matches!(e, PathEl::ClosePath) { None } else { e.end_point() }).collect();
+            let verts: Vec<Point> = p
+                .elements()
+                .iter()
+                .filter_map(|e| {
+                    if matches!(e, PathEl::ClosePath) {
+                        None
+                    } else {
+                        e.end_point()
+                    }
+                })
+                .collect();
             if verts.is_empty() {
                 return p.clone();
             }
@@ -307,16 +332,37 @@ fn round_sub(sub: &Sub, r: f64, out: &mut BezPath) {
     let trimmed: Vec<(PathSeg, Vec2, Vec2)> = (0..n)
         .map(|j| {
             let a = cut[j];
-            let b = if sub.closed || j + 1 < n { cut[(j + 1) % n] } else { 0.0 };
+            let b = if sub.closed || j + 1 < n {
+                cut[(j + 1) % n]
+            } else {
+                0.0
+            };
             if a <= 0.0 && b <= 0.0 {
                 return (segs[j], seg_start_tan(&segs[j]), seg_end_tan(&segs[j]));
             }
-            let t0 = if a > 0.0 { segs[j].inv_arclen(a, ACC) } else { 0.0 };
-            let t1 = if b > 0.0 { segs[j].inv_arclen((lens[j] - b).max(0.0), ACC) } else { 1.0 }.max(t0);
-            (segs[j].subsegment(t0..t1), seg_tan_at(&segs[j], t0), seg_tan_at(&segs[j], t1))
+            let t0 = if a > 0.0 {
+                segs[j].inv_arclen(a, ACC)
+            } else {
+                0.0
+            };
+            let t1 = if b > 0.0 {
+                segs[j].inv_arclen((lens[j] - b).max(0.0), ACC)
+            } else {
+                1.0
+            }
+            .max(t0);
+            (
+                segs[j].subsegment(t0..t1),
+                seg_tan_at(&segs[j], t0),
+                seg_tan_at(&segs[j], t1),
+            )
         })
         .collect();
-    let arc = |out: &mut BezPath, from: &(PathSeg, Vec2, Vec2), to: &(PathSeg, Vec2, Vec2), corner: Point, phi: f64| {
+    let arc = |out: &mut BezPath,
+               from: &(PathSeg, Vec2, Vec2),
+               to: &(PathSeg, Vec2, Vec2),
+               corner: Point,
+               phi: f64| {
         let (p, q) = (from.0.end(), to.0.start());
         // Circular arc through the two tangent points: radius = d / tan(φ/2), handle = 4/3·tan(φ/4)·R.
         let k = 4.0 / 3.0 * (phi / 4.0).tan() / (phi / 2.0).tan();
@@ -350,7 +396,14 @@ fn round_sub(sub: &Sub, r: f64, out: &mut BezPath) {
 /// Offset Paths: grows (positive `amount`) or shrinks (negative) every path with the given line
 /// join. `copies` copies are made, copy *i* (0-based) offset by `amount · (i + 1 + copy_offset)`,
 /// all returned in the same compound path.
-pub fn offset(paths: &[BezPath], amount: f64, join: Join, miter_limit: f64, copies: f64, copy_offset: f64) -> Vec<BezPath> {
+pub fn offset(
+    paths: &[BezPath],
+    amount: f64,
+    join: Join,
+    miter_limit: f64,
+    copies: f64,
+    copy_offset: f64,
+) -> Vec<BezPath> {
     let n = copies.round().clamp(1.0, 1000.0) as usize;
     paths
         .iter()
@@ -358,7 +411,12 @@ pub fn offset(paths: &[BezPath], amount: f64, join: Join, miter_limit: f64, copi
             let mut out = BezPath::new();
             for i in 0..n {
                 let d = amount * (i as f64 + 1.0 + copy_offset);
-                out.extend(crate::offset::offset_path(p, d, join, miter_limit).elements().iter().copied());
+                out.extend(
+                    crate::offset::offset_path(p, d, join, miter_limit)
+                        .elements()
+                        .iter()
+                        .copied(),
+                );
             }
             out
         })
@@ -414,7 +472,9 @@ pub fn twist(paths: &[BezPath], angle_deg: f64, center: [f64; 2]) -> Vec<BezPath
                 for seg in &sub.segs {
                     let cb = seg.to_cubic();
                     let len = seg.arclen(ACC);
-                    let m = ((a.abs() * len / rmax) / 0.15 + len / 50.0).ceil().clamp(1.0, 64.0) as usize;
+                    let m = ((a.abs() * len / rmax) / 0.15 + len / 50.0)
+                        .ceil()
+                        .clamp(1.0, 64.0) as usize;
                     for i in 0..m {
                         let q = cb.subsegment(i as f64 / m as f64..(i + 1) as f64 / m as f64);
                         let (p0, p3) = (map(q.p0), map(q.p3));
@@ -454,29 +514,55 @@ fn resample(sub: &Sub, m: usize) -> Vec<Sample> {
         for k in 0..m {
             if k == 0 {
                 let tout = seg_start_tan(&segs[j]);
-                let prev = if sub.closed || j > 0 { Some((j + n - 1) % n) } else { None };
+                let prev = if sub.closed || j > 0 {
+                    Some((j + n - 1) % n)
+                } else {
+                    None
+                };
                 let tan = match prev {
                     Some(pj) => unit(seg_end_tan(&segs[pj]) + tout).unwrap_or(tout),
                     None => tout,
                 };
                 let len_prev = prev.map_or(0.0, |pj| lens[pj] / m as f64);
-                out.push(Sample { p: segs[j].start(), tan, len_prev, len_next: piece });
+                out.push(Sample {
+                    p: segs[j].start(),
+                    tan,
+                    len_prev,
+                    len_next: piece,
+                });
             } else {
                 let t = segs[j].inv_arclen(piece * k as f64, ACC);
-                out.push(Sample { p: segs[j].eval(t), tan: seg_tan_at(&segs[j], t), len_prev: piece, len_next: piece });
+                out.push(Sample {
+                    p: segs[j].eval(t),
+                    tan: seg_tan_at(&segs[j], t),
+                    len_prev: piece,
+                    len_next: piece,
+                });
             }
         }
     }
     if !sub.closed {
         let last = &segs[n - 1];
-        out.push(Sample { p: last.end(), tan: seg_end_tan(last), len_prev: lens[n - 1] / m as f64, len_next: 0.0 });
+        out.push(Sample {
+            p: last.end(),
+            tan: seg_end_tan(last),
+            len_prev: lens[n - 1] / m as f64,
+            len_next: 0.0,
+        });
     }
     out
 }
 
 /// Emit displaced samples as corner (polyline) or smooth (tangent-aligned cubic) points.
 /// `handle` is the handle length as a fraction of the adjacent piece length.
-fn emit(samples: &[Sample], disp: &[Vec2], closed: bool, smooth: bool, handle: f64, out: &mut BezPath) {
+fn emit(
+    samples: &[Sample],
+    disp: &[Vec2],
+    closed: bool,
+    smooth: bool,
+    handle: f64,
+    out: &mut BezPath,
+) {
     let n = samples.len();
     if n == 0 {
         return;
@@ -488,7 +574,11 @@ fn emit(samples: &[Sample], disp: &[Vec2], closed: bool, smooth: bool, handle: f
         let j = (i + 1) % n;
         if smooth {
             let (a, b) = (&samples[i], &samples[j]);
-            out.curve_to(pt(i) + a.tan * (a.len_next * handle), pt(j) - b.tan * (b.len_prev * handle), pt(j));
+            out.curve_to(
+                pt(i) + a.tan * (a.len_next * handle),
+                pt(j) - b.tan * (b.len_prev * handle),
+                pt(j),
+            );
         } else {
             out.line_to(pt(j));
         }
@@ -510,7 +600,11 @@ pub fn zigzag(paths: &[BezPath], size: f64, ridges: f64, smooth: bool) -> Vec<Be
             let mut out = BezPath::new();
             for sub in subs(p) {
                 let s = resample(&sub, m);
-                let disp: Vec<Vec2> = s.iter().enumerate().map(|(i, x)| perp(x.tan) * if i % 2 == 0 { size } else { -size }).collect();
+                let disp: Vec<Vec2> = s
+                    .iter()
+                    .enumerate()
+                    .map(|(i, x)| perp(x.tan) * if i % 2 == 0 { size } else { -size })
+                    .collect();
                 emit(&s, &disp, sub.closed, smooth, 0.36, &mut out);
             }
             out
@@ -538,7 +632,15 @@ pub struct WiggleParams {
 
 impl Default for WiggleParams {
     fn default() -> Self {
-        WiggleParams { size: 10.0, detail: 10.0, smooth: true, speed: 2.0, correlation: 50.0, phase_deg: 0.0, seed: 0.0 }
+        WiggleParams {
+            size: 10.0,
+            detail: 10.0,
+            smooth: true,
+            speed: 2.0,
+            correlation: 50.0,
+            phase_deg: 0.0,
+            seed: 0.0,
+        }
     }
 }
 
@@ -564,7 +666,11 @@ fn noise(seed: u64, idx: u64, t: f64) -> f64 {
     let p = |k: i64| hash(seed, idx, i + k);
     // Catmull-Rom through four lattice values keeps the motion C1-continuous.
     let (p0, p1, p2, p3) = (p(-1), p(0), p(1), p(2));
-    let v = 0.5 * (2.0 * p1 + (-p0 + p2) * f + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * f * f + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * f * f * f);
+    let v = 0.5
+        * (2.0 * p1
+            + (-p0 + p2) * f
+            + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * f * f
+            + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * f * f * f);
     v.clamp(-1.0, 1.0)
 }
 
@@ -590,7 +696,10 @@ pub fn wiggle(paths: &[BezPath], w: &WiggleParams, time_s: f64) -> Vec<BezPath> 
                 let disp: Vec<Vec2> = s
                     .iter()
                     .map(|_| {
-                        let own = Vec2::new(noise(seed, idx * 2, t + idx as f64 * 0.37), noise(seed, idx * 2 + 1, t + idx as f64 * 0.61));
+                        let own = Vec2::new(
+                            noise(seed, idx * 2, t + idx as f64 * 0.37),
+                            noise(seed, idx * 2 + 1, t + idx as f64 * 0.61),
+                        );
                         idx += 1;
                         (shared * corr + own * (1.0 - corr)) * w.size
                     })
@@ -642,15 +751,23 @@ pub fn merge(paths: &[BezPath], mode: MergeMode) -> BezPath {
         }
         return out;
     }
-    let inputs: Vec<(BezPath, FillRule)> = paths.iter().filter(|p| !p.elements().is_empty()).map(|p| (p.clone(), FillRule::NonZero)).collect();
+    let inputs: Vec<(BezPath, FillRule)> = paths
+        .iter()
+        .filter(|p| !p.elements().is_empty())
+        .map(|p| (p.clone(), FillRule::NonZero))
+        .collect();
     if inputs.is_empty() {
         return BezPath::new();
     }
     match mode {
         MergeMode::Add => crate::boolean::boolean_n(&inputs, |m| m.iter().any(|&b| b)),
-        MergeMode::Subtract => crate::boolean::boolean_n(&inputs, |m| m[0] && !m[1..].iter().any(|&b| b)),
+        MergeMode::Subtract => {
+            crate::boolean::boolean_n(&inputs, |m| m[0] && !m[1..].iter().any(|&b| b))
+        }
         MergeMode::Intersect => crate::boolean::boolean_n(&inputs, |m| m.iter().all(|&b| b)),
-        MergeMode::Exclude => crate::boolean::boolean_n(&inputs, |m| m.iter().filter(|&&b| b).count() % 2 == 1),
+        MergeMode::Exclude => {
+            crate::boolean::boolean_n(&inputs, |m| m.iter().filter(|&&b| b).count() % 2 == 1)
+        }
         // Handled above (no boolean operation).
         MergeMode::Merge => crate::boolean::boolean_n(&inputs, |m| m.iter().any(|&b| b)),
     }

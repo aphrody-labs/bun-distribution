@@ -63,7 +63,9 @@ impl GuestConfig {
 
     /// The pause before reconnect `attempt` (from 1).
     pub(crate) fn backoff(&self, attempt: u32) -> Duration {
-        self.backoff.saturating_mul(1u32 << attempt.saturating_sub(1).min(16)).min(self.max_backoff)
+        self.backoff
+            .saturating_mul(1u32 << attempt.saturating_sub(1).min(16))
+            .min(self.max_backoff)
     }
 }
 
@@ -87,7 +89,10 @@ pub(crate) fn unresolved(cfg: &GuestConfig, outcome: Outcome) -> Outcome {
     Outcome::Failed(match outcome {
         // A server from before join codes can't read the question.
         Outcome::Refused(why) if why.contains("couldn't be read") => {
-            format!("{} doesn't know join codes yet (it runs an older version): ask for the invite link instead", cfg.invite.server.display())
+            format!(
+                "{} doesn't know join codes yet (it runs an older version): ask for the invite link instead",
+                cfg.invite.server.display()
+            )
         }
         Outcome::Refused(why) | Outcome::Failed(why) | Outcome::Ended(why) => why,
         Outcome::Retry(why) => format!("Couldn't reach the server ({why})"),
@@ -98,7 +103,9 @@ pub(crate) fn unresolved(cfg: &GuestConfig, outcome: Outcome) -> Outcome {
 /// The server's answer to the join code: the invite is whole now.
 pub(crate) fn resolved(cfg: &mut GuestConfig, file: String, token: String) -> Result<(), Outcome> {
     if !crate::invite::valid_id(&file, 1, 64) || !crate::invite::valid_id(&token, 16, 128) {
-        return Err(Outcome::Failed("the server answered the join code with something that isn't a file".into()));
+        return Err(Outcome::Failed(
+            "the server answered the join code with something that isn't a file".into(),
+        ));
     }
     cfg.code = None;
     (cfg.invite.file, cfg.invite.token) = (file, token);
@@ -108,9 +115,17 @@ pub(crate) fn resolved(cfg: &mut GuestConfig, file: String, token: String) -> Re
 /// What a close frame from the host means.
 pub(crate) fn closed(code: u16, reason: &str) -> Outcome {
     match code {
-        CLOSE_AWAY => Outcome::Ended(if reason.is_empty() { ENDED.to_string() } else { reason.to_string() }),
+        CLOSE_AWAY => Outcome::Ended(if reason.is_empty() {
+            ENDED.to_string()
+        } else {
+            reason.to_string()
+        }),
         CLOSE_POLICY => Outcome::Refused(reason.to_string()),
-        CLOSE_RESTART => Outcome::Retry(if reason.is_empty() { RESTARTING.to_string() } else { reason.to_string() }),
+        CLOSE_RESTART => Outcome::Retry(if reason.is_empty() {
+            RESTARTING.to_string()
+        } else {
+            reason.to_string()
+        }),
         _ => Outcome::Retry("the host closed the connection".into()),
     }
 }
@@ -126,14 +141,22 @@ pub(crate) enum Next {
 /// After `outcome`: a refusal or the end of the session is final, and so is a first join that
 /// can't reach the host; a live connection that dropped tries again with growing pauses until the
 /// attempts run out.
-pub(crate) fn after(outcome: Outcome, cfg: &GuestConfig, was_live: bool, attempt: &mut u32, inbox: &Inbox) -> Next {
+pub(crate) fn after(
+    outcome: Outcome,
+    cfg: &GuestConfig,
+    was_live: bool,
+    attempt: &mut u32,
+    inbox: &Inbox,
+) -> Next {
     let failed = |reason: String| Next::Stop(Some(Event::Status(Status::Failed { reason })));
     match outcome {
         Outcome::Left => Next::Stop(None),
         Outcome::Refused(why) => failed(format!("The host refused: {why}")),
         Outcome::Failed(why) => failed(why),
         Outcome::Ended(reason) => Next::Stop(Some(Event::Ended { reason })),
-        Outcome::Retry(why) if !was_live => failed(format!("Couldn't join the live session: {why}")),
+        Outcome::Retry(why) if !was_live => {
+            failed(format!("Couldn't join the live session: {why}"))
+        }
         Outcome::Retry(why) => {
             *attempt += 1;
             if *attempt > cfg.attempts {
@@ -181,11 +204,29 @@ pub(crate) enum Taken {
 /// Take in one message from the host: events for the UI go to `inbox`, and `resume` follows the
 /// session. On the welcome, `welcomed` runs before the UI hears of it: what the sync client sends
 /// in answer must go out on this connection.
-pub(crate) fn take(m: ServerMsg, cfg: &GuestConfig, inbox: &Inbox, seen: &mut Seen, resume: &Resuming, welcomed: &dyn Fn()) -> Taken {
+pub(crate) fn take(
+    m: ServerMsg,
+    cfg: &GuestConfig,
+    inbox: &Inbox,
+    seen: &mut Seen,
+    resume: &Resuming,
+    welcomed: &dyn Fn(),
+) -> Taken {
     match m {
-        ServerMsg::Welcome { session, client_id, seq, ref peers, access, .. } => {
+        ServerMsg::Welcome {
+            session,
+            client_id,
+            seq,
+            ref peers,
+            access,
+            ..
+        } => {
             if let Ok(mut r) = resume.lock() {
-                *r = Some(Resume { session, client_id, seq });
+                *r = Some(Resume {
+                    session,
+                    client_id,
+                    seq,
+                });
             }
             // The sync client opens the document (and fills in its name and pages).
             let peers = peers.clone();
@@ -215,7 +256,10 @@ pub(crate) fn take(m: ServerMsg, cfg: &GuestConfig, inbox: &Inbox, seen: &mut Se
             Some(info) if p.client_id == info.me => {
                 info.name = p.name;
                 info.color = p.color;
-                inbox.push(Event::Welcome { info: info.clone(), peers: seen.peers.clone() });
+                inbox.push(Event::Welcome {
+                    info: info.clone(),
+                    peers: seen.peers.clone(),
+                });
             }
             _ => {
                 seen.peers.retain(|q| q.client_id != p.client_id);
@@ -227,7 +271,10 @@ pub(crate) fn take(m: ServerMsg, cfg: &GuestConfig, inbox: &Inbox, seen: &mut Se
             seen.peers.retain(|q| q.client_id != client_id);
             inbox.push(Event::PeerLeft(client_id));
         }
-        ServerMsg::Presence { client_id, presence } => {
+        ServerMsg::Presence {
+            client_id,
+            presence,
+        } => {
             if seen.info.as_ref().is_some_and(|i| i.me != client_id) {
                 inbox.presence(client_id, presence);
             }
@@ -247,7 +294,11 @@ pub(crate) fn take(m: ServerMsg, cfg: &GuestConfig, inbox: &Inbox, seen: &mut Se
         ServerMsg::Hosting(info) => inbox.push(Event::Hosting(*info)),
         ServerMsg::Reported { error } => inbox.push(Event::Reported(error)),
         // Answers for managing and library connections, and to a join code: not this one's.
-        ServerMsg::Pong | ServerMsg::Admin(_) | ServerMsg::Library(_) | ServerMsg::Plugins(_) | ServerMsg::Resolved { .. } => {}
+        ServerMsg::Pong
+        | ServerMsg::Admin(_)
+        | ServerMsg::Library(_)
+        | ServerMsg::Plugins(_)
+        | ServerMsg::Resolved { .. } => {}
     }
     Taken::Continue
 }

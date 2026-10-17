@@ -22,7 +22,9 @@ impl Raw {
     /// `alpha`: write ARGB (depth 32); otherwise RGB (depth 24).
     pub(crate) fn new(w: u32, h: u32, alpha: bool) -> Result<Raw> {
         if w == 0 || h == 0 || w > u16::MAX as u32 || h > u16::MAX as u32 {
-            return Err(ExportError::Unsupported(format!("uncompressed QuickTime frames must be 1–65535 px, not {w}×{h}")));
+            return Err(ExportError::Unsupported(format!(
+                "uncompressed QuickTime frames must be 1–65535 px, not {w}×{h}"
+            )));
         }
         Ok(Raw { w, h, alpha })
     }
@@ -70,8 +72,16 @@ impl VideoEncoder for Raw {
             format: fourcc,
             data_reference_index: 1,
             // Written verbatim; `video` makes the track a video track with the right size.
-            codec: CodecConfig::Unknown { fourcc, raw: self.description() },
-            video: Some(VideoParams { width: self.w as u16, height: self.h as u16, depth: self.depth(), ..Default::default() }),
+            codec: CodecConfig::Unknown {
+                fourcc,
+                raw: self.description(),
+            },
+            video: Some(VideoParams {
+                width: self.w as u16,
+                height: self.h as u16,
+                depth: self.depth(),
+                ..Default::default()
+            }),
             audio: None,
             bitrate: None,
         }
@@ -80,11 +90,20 @@ impl VideoEncoder for Raw {
     fn encode(&mut self, rgba: &[u8], _index: u64) -> Result<Vec<Packet>> {
         let (w, h) = (self.w as usize, self.h as usize);
         let row = self.row_bytes();
-        let size = row.checked_mul(h).ok_or_else(|| ExportError::Encode("frame too large".into()))?;
+        let size = row
+            .checked_mul(h)
+            .ok_or_else(|| ExportError::Encode("frame too large".into()))?;
         let mut data = vec![0u8; size];
         for (y, out) in data.chunks_exact_mut(row).enumerate() {
-            let src = rgba.get(y * w * 4..(y + 1) * w * 4).ok_or_else(|| ExportError::Encode("short frame".into()))?;
-            for (p, o) in src.as_chunks::<4>().0.iter().zip(out.chunks_exact_mut(if self.alpha { 4 } else { 3 })) {
+            let src = rgba
+                .get(y * w * 4..(y + 1) * w * 4)
+                .ok_or_else(|| ExportError::Encode("short frame".into()))?;
+            for (p, o) in src
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .zip(out.chunks_exact_mut(if self.alpha { 4 } else { 3 }))
+            {
                 if self.alpha {
                     o.copy_from_slice(&[p[3], p[0], p[1], p[2]]);
                 } else {
@@ -92,7 +111,11 @@ impl VideoEncoder for Raw {
                 }
             }
         }
-        Ok(vec![Packet { data, key: true, cto: 0 }])
+        Ok(vec![Packet {
+            data,
+            key: true,
+            cto: 0,
+        }])
     }
 
     fn flush(&mut self) -> Result<Vec<Packet>> {
@@ -109,16 +132,26 @@ mod tests {
         let mut r = Raw::new(3, 2, false).unwrap();
         let rgba: Vec<u8> = (0..24).collect();
         let p = r.encode(&rgba, 0).unwrap();
-        assert_eq!(p[0].data, [0, 1, 2, 4, 5, 6, 8, 9, 10, 0, 12, 13, 14, 16, 17, 18, 20, 21, 22, 0]);
+        assert_eq!(
+            p[0].data,
+            [
+                0, 1, 2, 4, 5, 6, 8, 9, 10, 0, 12, 13, 14, 16, 17, 18, 20, 21, 22, 0
+            ]
+        );
         assert_eq!(r.sample_entry().video.unwrap().depth, 24);
     }
 
     #[test]
     fn argb_moves_alpha_first() {
         let mut r = Raw::new(1, 1, true).unwrap();
-        assert_eq!(r.encode(&[10, 20, 30, 40], 0).unwrap()[0].data, [40, 10, 20, 30]);
+        assert_eq!(
+            r.encode(&[10, 20, 30, 40], 0).unwrap()[0].data,
+            [40, 10, 20, 30]
+        );
         let e = r.sample_entry();
-        let CodecConfig::Unknown { raw, .. } = e.codec else { panic!("raw entry") };
+        let CodecConfig::Unknown { raw, .. } = e.codec else {
+            panic!("raw entry")
+        };
         assert_eq!(raw.len(), 78);
         assert_eq!(&raw[74..76], &32u16.to_be_bytes());
     }

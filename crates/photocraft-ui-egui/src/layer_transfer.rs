@@ -43,13 +43,32 @@ fn clear(ctx: &egui::Context) {
 
 /// The layers `id` stands for: the selection when it is one of the selected layers, else itself.
 fn begin(app: &PhotocraftApp, ctx: &egui::Context, id: LayerId, grab: Option<[f64; 2]>) -> bool {
-    let Some(st) = app.session.active() else { return false };
-    let layers = if st.is_layer_selected(id) { st.selected_layers() } else { vec![id] };
-    let label = match layers.as_slice() {
-        [one] => st.doc.layer(*one).map_or_else(String::new, |l| l.name.clone()),
-        many => crate::i18n::trn(crate::i18n::current(), many.len() as u64, "{n} layer", "{n} layers"),
+    let Some(st) = app.session.active() else {
+        return false;
     };
-    let t = Transfer { source: st.doc.id, layers: layers.iter().map(|l| l.0).collect(), grab, label };
+    let layers = if st.is_layer_selected(id) {
+        st.selected_layers()
+    } else {
+        vec![id]
+    };
+    let label = match layers.as_slice() {
+        [one] => st
+            .doc
+            .layer(*one)
+            .map_or_else(String::new, |l| l.name.clone()),
+        many => crate::i18n::trn(
+            crate::i18n::current(),
+            many.len() as u64,
+            "{n} layer",
+            "{n} layers",
+        ),
+    };
+    let t = Transfer {
+        source: st.doc.id,
+        layers: layers.iter().map(|l| l.0).collect(),
+        grab,
+        label,
+    };
     ctx.data_mut(|d| d.insert_temp(key(), t));
     true
 }
@@ -61,9 +80,15 @@ pub fn begin_from_panel(app: &PhotocraftApp, ctx: &egui::Context, layer: LayerId
 
 /// A Move-tool drag of whole layers (not a selection or a floating piece) under way.
 fn move_drag(app: &PhotocraftApp) -> Option<[f64; 2]> {
-    let d = app.drag.as_ref().filter(|d| d.tool == Tool::Move && d.sel_move.is_none())?;
+    let d = app
+        .drag
+        .as_ref()
+        .filter(|d| d.tool == Tool::Move && d.sel_move.is_none())?;
     let st = app.session.active()?;
-    let plain = app.ui.transform.is_none() && app.guide_drag.is_none() && st.doc.selection.is_none() && st.floating.is_none();
+    let plain = app.ui.transform.is_none()
+        && app.guide_drag.is_none()
+        && st.doc.selection.is_none()
+        && st.floating.is_none();
     plain.then_some(d.start)
 }
 
@@ -82,7 +107,9 @@ pub fn pointer_if_armed(app: &PhotocraftApp, ctx: &egui::Context) -> Option<egui
 pub fn over_tab(app: &mut PhotocraftApp, ctx: &egui::Context, index: usize) {
     if get(ctx).is_none() {
         let Some(grab) = move_drag(app) else { return };
-        let Some(active) = app.session.active().and_then(|st| st.active_layer) else { return };
+        let Some(active) = app.session.active().and_then(|st| st.active_layer) else {
+            return;
+        };
         if app.session.active_index() == Some(index) {
             return;
         }
@@ -90,7 +117,11 @@ pub fn over_tab(app: &mut PhotocraftApp, ctx: &egui::Context, index: usize) {
         app.drag = None;
         app.move_preview = None;
         crate::move_mods::abandon(app);
-        let active = app.session.active().and_then(|st| st.active_layer).unwrap_or(active);
+        let active = app
+            .session
+            .active()
+            .and_then(|st| st.active_layer)
+            .unwrap_or(active);
         if !begin(app, ctx, active, Some(grab)) {
             return;
         }
@@ -110,7 +141,13 @@ pub fn over_tab(app: &mut PhotocraftApp, ctx: &egui::Context, index: usize) {
 /// layers there; while the button is held a ghost follows the pointer.
 pub fn finish(app: &mut PhotocraftApp, ctx: &egui::Context) {
     let Some(t) = get(ctx) else { return };
-    let (pos, released, down) = ctx.input(|i| (i.pointer.latest_pos(), i.pointer.any_released(), i.pointer.primary_down()));
+    let (pos, released, down) = ctx.input(|i| {
+        (
+            i.pointer.latest_pos(),
+            i.pointer.any_released(),
+            i.pointer.primary_down(),
+        )
+    });
     let target = pos.and_then(|p| target_at(app, p));
     if !released {
         if !down {
@@ -138,8 +175,14 @@ fn target_at(app: &PhotocraftApp, p: egui::Pos2) -> Option<(usize, Option<[f64; 
         return None;
     }
     match crate::canvas::arranged_cells(app, app.last_canvas_rect) {
-        Some(cells) => cells.into_iter().find(|(_, r)| r.contains(p)).map(|(d, _)| (d, None)),
-        None => Some((app.session.active_index()?, crate::canvas::ViewXform::active(app).map(|xf| xf.to_doc(p)))),
+        Some(cells) => cells
+            .into_iter()
+            .find(|(_, r)| r.contains(p))
+            .map(|(d, _)| (d, None)),
+        None => Some((
+            app.session.active_index()?,
+            crate::canvas::ViewXform::active(app).map(|xf| xf.to_doc(p)),
+        )),
     }
 }
 
@@ -148,8 +191,12 @@ fn drop(app: &mut PhotocraftApp, ctx: &egui::Context, dest: usize, at: Option<[f
     let Some(t) = get(ctx) else { return };
     clear(ctx);
     let docs = app.session.documents();
-    let Some(src) = docs.iter().position(|d| d.doc.id == t.source) else { return };
-    let Some(to) = docs.get(dest).filter(|_| dest != src) else { return };
+    let Some(src) = docs.iter().position(|d| d.doc.id == t.source) else {
+        return;
+    };
+    let Some(to) = docs.get(dest).filter(|_| dest != src) else {
+        return;
+    };
     let same_size = to.doc.size == docs[src].doc.size;
     let mut p = json!({"document": dest, "source": src, "layers": t.layers});
     match at.filter(|_| !ctx.input(|i| i.modifiers.shift)) {
@@ -168,11 +215,22 @@ fn drop(app: &mut PhotocraftApp, ctx: &egui::Context, dest: usize, at: Option<[f
 /// The dragged layers' name next to the pointer (also the Layers panel's reorder drag).
 pub fn ghost(ctx: &egui::Context, p: egui::Pos2, label: &str) {
     let t = crate::theme::Tokens::get(ctx);
-    let painter = ctx.layer_painter(egui::LayerId::new(egui::Order::Tooltip, egui::Id::new("layer-transfer-ghost")));
+    let painter = ctx.layer_painter(egui::LayerId::new(
+        egui::Order::Tooltip,
+        egui::Id::new("layer-transfer-ghost"),
+    ));
     let g = painter.layout_no_wrap(label.to_string(), egui::FontId::proportional(12.0), t.text);
-    let r = egui::Rect::from_min_size(p + egui::vec2(12.0, -10.0), g.size() + egui::vec2(16.0, 8.0));
+    let r = egui::Rect::from_min_size(
+        p + egui::vec2(12.0, -10.0),
+        g.size() + egui::vec2(16.0, 8.0),
+    );
     painter.rect_filled(r, t.radius_sm, t.card.gamma_multiply(0.95));
-    painter.rect_stroke(r, t.radius_sm, egui::Stroke::new(1.0, t.accent), egui::StrokeKind::Inside);
+    painter.rect_stroke(
+        r,
+        t.radius_sm,
+        egui::Stroke::new(1.0, t.accent),
+        egui::StrokeKind::Inside,
+    );
     painter.galley(r.min + egui::vec2(8.0, 4.0), g, t.text);
 }
 

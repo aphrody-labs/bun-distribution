@@ -58,7 +58,9 @@ pub fn ensure_model<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> Result<Path
 /// `true` when every file of `spec` is present in `dir` with the manifest size.
 /// Never touches the network.
 pub fn is_installed<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> bool {
-    spec.files().iter().all(|f| file_size(&dir.join(&f.name)) == Some(f.size))
+    spec.files()
+        .iter()
+        .all(|f| file_size(&dir.join(&f.name)) == Some(f.size))
 }
 
 /// Return `dir` if `spec` is installed there, else [`Error::NotInstalled`]. No network I/O;
@@ -67,7 +69,10 @@ pub fn require_installed<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> Result
     if is_installed(spec, dir) {
         Ok(dir.to_path_buf())
     } else {
-        Err(Error::NotInstalled { model: spec.versioned_id(), dir: dir.to_path_buf() })
+        Err(Error::NotInstalled {
+            model: spec.versioned_id(),
+            dir: dir.to_path_buf(),
+        })
     }
 }
 
@@ -93,7 +98,10 @@ pub fn verify_model<S: ModelFiles + ?Sized>(spec: &S, dir: &Path) -> Result<()> 
 }
 
 fn file_size(path: &Path) -> Option<u64> {
-    fs::metadata(path).ok().filter(|m| m.is_file()).map(|m| m.len())
+    fs::metadata(path)
+        .ok()
+        .filter(|m| m.is_file())
+        .map(|m| m.len())
 }
 
 fn download_with_retries(file: &FileSpec, dest: &Path) -> Result<()> {
@@ -108,7 +116,7 @@ fn download_with_retries(file: &FileSpec, dest: &Path) -> Result<()> {
                 if attempt < DOWNLOAD_ATTEMPTS {
                     std::thread::sleep(Duration::from_millis(500 * attempt as u64));
                 }
-            },
+            }
         }
     }
     Err(last_err.expect("at least one attempt"))
@@ -118,7 +126,12 @@ fn download_once(file: &FileSpec, dest: &Path) -> Result<()> {
     let dir = dest.parent().unwrap_or_else(|| Path::new("."));
     static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     let unique = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    let tmp = dir.join(format!(".{}.{}-{}.partial", file.name, std::process::id(), unique));
+    let tmp = dir.join(format!(
+        ".{}.{}-{}.partial",
+        file.name,
+        std::process::id(),
+        unique
+    ));
     let result =
         stream_to(file, &tmp).and_then(|()| fs::rename(&tmp, dest).map_err(|e| Error::io(dest, e)));
     if result.is_err() {
@@ -128,14 +141,20 @@ fn download_once(file: &FileSpec, dest: &Path) -> Result<()> {
 }
 
 fn stream_to(file: &FileSpec, tmp: &Path) -> Result<()> {
-    let download_err = |message: String| Error::Download { url: file.url.clone(), message };
+    let download_err = |message: String| Error::Download {
+        url: file.url.clone(),
+        message,
+    };
     let agent: ureq::Agent = ureq::Agent::config_builder()
         .timeout_connect(Some(Duration::from_secs(30)))
         .timeout_recv_response(Some(Duration::from_secs(60)))
         .user_agent(concat!("aphrody-embed/", env!("CARGO_PKG_VERSION")))
         .build()
         .into();
-    let response = agent.get(&file.url).call().map_err(|e| download_err(e.to_string()))?;
+    let response = agent
+        .get(&file.url)
+        .call()
+        .map_err(|e| download_err(e.to_string()))?;
     let mut reader = response.into_body().into_reader();
 
     let out = File::create(tmp).map_err(|e| Error::io(tmp, e))?;
@@ -144,7 +163,9 @@ fn stream_to(file: &FileSpec, tmp: &Path) -> Result<()> {
     let mut buf = vec![0u8; COPY_BUFFER];
     let mut size = 0u64;
     loop {
-        let n = reader.read(&mut buf).map_err(|e| download_err(e.to_string()))?;
+        let n = reader
+            .read(&mut buf)
+            .map_err(|e| download_err(e.to_string()))?;
         if n == 0 {
             break;
         }
@@ -155,7 +176,9 @@ fn stream_to(file: &FileSpec, tmp: &Path) -> Result<()> {
             break; // Oversized: fail the integrity check without reading further.
         }
     }
-    let out = writer.into_inner().map_err(|e| Error::io(tmp, e.into_error()))?;
+    let out = writer
+        .into_inner()
+        .map_err(|e| Error::io(tmp, e.into_error()))?;
     check_integrity(file, &hex(&hasher.finalize()), size)?;
     out.sync_all().map_err(|e| Error::io(tmp, e))?;
     Ok(())

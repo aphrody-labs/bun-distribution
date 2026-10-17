@@ -6,7 +6,14 @@
 //!
 //! Coordinates are points, y down. Each spread has its own space: pages sit side by side from
 //! x = 0 with their tops at y = 0. Items live in spread space via `Item::xf`.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 #![forbid(unsafe_code)]
 
 pub mod anchored;
@@ -40,8 +47,8 @@ pub use anchored::{AnchorPosition, AnchoredObject, OBJECT_MARK};
 pub use assets::{find_same_asset, insert_asset, remap_story_assets, story_asset_refs};
 pub use attrs::*;
 pub use datamerge::{
-    DataField, DataFieldKind, DataMerge, DataSource, Delimiter, Fingerprint, MergeOptions, Placeholder, PlaceholderAnchor, PlaceholderRole,
-    SourceStatus,
+    DataField, DataFieldKind, DataMerge, DataSource, Delimiter, Fingerprint, MergeOptions,
+    Placeholder, PlaceholderAnchor, PlaceholderRole, SourceStatus,
 };
 pub use designcraft_color as color;
 pub use designcraft_geom as geom;
@@ -122,7 +129,13 @@ pub struct BaselineGrid {
 
 impl Default for BaselineGrid {
     fn default() -> Self {
-        BaselineGrid { start: 36.0, increment: 12.0, relative_to: GridRelative::TopOfPage, color: [140, 205, 230], view_threshold: 0.75 }
+        BaselineGrid {
+            start: 36.0,
+            increment: 12.0,
+            relative_to: GridRelative::TopOfPage,
+            color: [140, 205, 230],
+            view_threshold: 0.75,
+        }
     }
 }
 
@@ -138,7 +151,13 @@ pub struct DocumentGrid {
 
 impl Default for DocumentGrid {
     fn default() -> Self {
-        DocumentGrid { horizontal: 72.0, vertical: 72.0, subdivisions: 8, color: [200, 200, 200], in_back: true }
+        DocumentGrid {
+            horizontal: 72.0,
+            vertical: 72.0,
+            subdivisions: 8,
+            color: [200, 200, 200],
+            in_back: true,
+        }
     }
 }
 
@@ -153,7 +172,10 @@ pub struct NumberedList {
 
 impl Default for NumberedList {
     fn default() -> Self {
-        NumberedList { name: String::new(), continue_across_stories: true }
+        NumberedList {
+            name: String::new(),
+            continue_across_stories: true,
+        }
     }
 }
 
@@ -207,7 +229,10 @@ impl Document {
     /// Is text with these conditions hidden? (Conditioned text shows while any of its conditions
     /// is visible.)
     pub fn conditions_hide(&self, conds: &[String]) -> bool {
-        !conds.is_empty() && conds.iter().all(|c| self.conditions.iter().any(|x| x.name == *c && !x.visible))
+        !conds.is_empty()
+            && conds
+                .iter()
+                .all(|c| self.conditions.iter().any(|x| x.name == *c && !x.visible))
     }
 }
 
@@ -238,7 +263,10 @@ impl InkManager {
                 _ => break,
             }
         }
-        (n, self.all_to_process || self.to_process.iter().any(|x| x == n))
+        (
+            n,
+            self.all_to_process || self.to_process.iter().any(|x| x == n),
+        )
     }
 }
 
@@ -257,7 +285,10 @@ pub struct XmlSettings {
 
 impl XmlSettings {
     pub fn is_empty(&self) -> bool {
-        self.tags.is_empty() && self.style_map.is_empty() && self.root.is_empty() && self.dtd.is_empty()
+        self.tags.is_empty()
+            && self.style_map.is_empty()
+            && self.root.is_empty()
+            && self.dtd.is_empty()
     }
 }
 
@@ -298,7 +329,12 @@ pub struct AdvancedType {
 
 impl Default for AdvancedType {
     fn default() -> Self {
-        AdvancedType { superscript_size: 58.3, superscript_position: 33.3, subscript_size: 58.3, subscript_position: 33.3 }
+        AdvancedType {
+            superscript_size: 58.3,
+            superscript_position: 33.3,
+            subscript_size: 58.3,
+            subscript_position: 33.3,
+        }
     }
 }
 
@@ -457,7 +493,13 @@ impl Asset {
     pub fn is_raster(&self) -> bool {
         matches!(
             self.mime.as_str(),
-            "image/png" | "image/jpeg" | "image/gif" | "image/webp" | "image/tiff" | "image/bmp" | "image/vnd.adobe.photoshop"
+            "image/png"
+                | "image/jpeg"
+                | "image/gif"
+                | "image/webp"
+                | "image/tiff"
+                | "image/bmp"
+                | "image/vnd.adobe.photoshop"
         )
     }
 }
@@ -553,8 +595,14 @@ pub struct Document {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum HyperlinkSource {
-    Item { id: ItemId },
-    Text { story: StoryId, start: usize, end: usize },
+    Item {
+        id: ItemId,
+    },
+    Text {
+        story: StoryId,
+        start: usize,
+        end: usize,
+    },
 }
 
 /// Where a hyperlink goes.
@@ -635,7 +683,10 @@ impl Document {
 
     /// Absolute index of the first page of spread `si`.
     pub fn first_page_of_spread(&self, si: usize) -> usize {
-        self.spreads[..si.min(self.spreads.len())].iter().map(|s| s.pages.len()).sum()
+        self.spreads[..si.min(self.spreads.len())]
+            .iter()
+            .map(|s| s.pages.len())
+            .sum()
     }
 
     pub fn page(&self, abs: usize) -> Option<&Page> {
@@ -645,18 +696,28 @@ impl Document {
 
     /// Iterate all pages with their absolute index and spread index.
     pub fn pages(&self) -> impl Iterator<Item = (usize, usize, &Page)> {
-        self.spreads.iter().enumerate().flat_map(|(si, s)| s.pages.iter().map(move |p| (si, p))).enumerate().map(|(i, (si, p))| (i, si, p))
+        self.spreads
+            .iter()
+            .enumerate()
+            .flat_map(|(si, s)| s.pages.iter().map(move |p| (si, p)))
+            .enumerate()
+            .map(|(i, (si, p))| (i, si, p))
     }
 
     /// The section containing absolute page `abs`.
     pub fn section_of(&self, abs: usize) -> Option<&Section> {
-        self.sections.iter().filter(|s| s.start <= abs).max_by_key(|s| s.start)
+        self.sections
+            .iter()
+            .filter(|s| s.start <= abs)
+            .max_by_key(|s| s.start)
     }
 
     /// The page number (before formatting) of absolute page `abs`, per sections. A section without
     /// a start number continues from the previous section.
     pub fn page_number(&self, abs: usize) -> u32 {
-        let Some(sec) = self.section_of(abs) else { return abs as u32 + 1 };
+        let Some(sec) = self.section_of(abs) else {
+            return abs as u32 + 1;
+        };
         let start = match sec.start_number {
             Some(n) => n,
             None if sec.start == 0 => 1,
@@ -667,9 +728,15 @@ impl Document {
 
     /// The displayed page name ("1", "iv", "A-3"…) for an absolute page index, per sections.
     pub fn page_name(&self, abs: usize) -> String {
-        let Some(sec) = self.section_of(abs) else { return (abs + 1).to_string() };
+        let Some(sec) = self.section_of(abs) else {
+            return (abs + 1).to_string();
+        };
         let num = sec.style.format(self.page_number(abs));
-        if sec.include_prefix { format!("{}{}", sec.prefix, num) } else { num }
+        if sec.include_prefix {
+            format!("{}{}", sec.prefix, num)
+        } else {
+            num
+        }
     }
 
     pub fn layer(&self, id: LayerId) -> Option<&Layer> {
@@ -680,7 +747,11 @@ impl Document {
     }
     /// Stacking rank of a layer: 0 = backmost.
     pub fn layer_rank(&self, id: LayerId) -> usize {
-        self.layers.iter().position(|l| l.id == id).map(|i| self.layers.len() - 1 - i).unwrap_or(0)
+        self.layers
+            .iter()
+            .position(|l| l.id == id)
+            .map(|i| self.layers.len() - 1 - i)
+            .unwrap_or(0)
     }
     pub fn default_layer(&self) -> LayerId {
         self.layers.first().map(|l| l.id).unwrap_or_default()
@@ -700,7 +771,11 @@ impl Document {
     /// Resolve a swatch reference to a display colour.
     /// A shadow's light angle: its own, or the document's Global Light.
     pub fn light_angle(&self, angle: f64, global: bool) -> f64 {
-        if global { self.settings.global_light } else { angle }
+        if global {
+            self.settings.global_light
+        } else {
+            angle
+        }
     }
 
     pub fn resolve_color(&self, swatch: &str, tint: f32) -> Option<designcraft_color::Color> {
@@ -711,14 +786,27 @@ impl Document {
     pub fn check(&self) -> Result<()> {
         for f in &self.styles.composite_fonts {
             if f.entries.iter().any(|e| {
-                ![e.relative_size, e.horizontal_scale, e.vertical_scale].iter().all(|v| v.is_finite() && *v > 0.0) || !e.baseline_shift.is_finite()
+                ![e.relative_size, e.horizontal_scale, e.vertical_scale]
+                    .iter()
+                    .all(|v| v.is_finite() && *v > 0.0)
+                    || !e.baseline_shift.is_finite()
             }) {
-                return Err(DocError::Invalid(format!("invalid composite font metrics: {}", f.name)));
+                return Err(DocError::Invalid(format!(
+                    "invalid composite font metrics: {}",
+                    f.name
+                )));
             }
         }
         for t in &self.styles.mojikumi_tables {
-            if t.overrides.iter().any(|r| ![r.minimum, r.desired, r.maximum].iter().all(|v| v.is_finite())) {
-                return Err(DocError::Invalid(format!("non-finite mojikumi spacing: {}", t.name)));
+            if t.overrides.iter().any(|r| {
+                ![r.minimum, r.desired, r.maximum]
+                    .iter()
+                    .all(|v| v.is_finite())
+            }) {
+                return Err(DocError::Invalid(format!(
+                    "non-finite mojikumi spacing: {}",
+                    t.name
+                )));
             }
         }
         let mut ids = std::collections::HashSet::new();
@@ -738,13 +826,23 @@ impl Document {
         for (sid, st) in &self.stories {
             st.check().map_err(DocError::Invalid)?;
             if st.id != *sid {
-                return Err(DocError::Invalid(format!("story key {sid} != id {}", st.id)));
+                return Err(DocError::Invalid(format!(
+                    "story key {sid} != id {}",
+                    st.id
+                )));
             }
             for f in &st.frames {
                 let item = self.find(*f).ok_or(DocError::NoItem(*f))?;
-                match self.item_at(&item).and_then(|i| i.text_frame().map(|t| t.story)) {
+                match self
+                    .item_at(&item)
+                    .and_then(|i| i.text_frame().map(|t| t.story))
+                {
                     Some(s) if s == *sid => {}
-                    other => return Err(DocError::Invalid(format!("frame {f} in story {sid} points at {other:?}"))),
+                    other => {
+                        return Err(DocError::Invalid(format!(
+                            "frame {f} in story {sid} points at {other:?}"
+                        )));
+                    }
                 }
             }
         }
@@ -754,13 +852,18 @@ impl Document {
                 let mut bad = None;
                 it.walk(&mut |i| {
                     if let Some(t) = i.text_frame()
-                        && !self.stories.get(&t.story).is_some_and(|s| s.frames.contains(&i.id))
+                        && !self
+                            .stories
+                            .get(&t.story)
+                            .is_some_and(|s| s.frames.contains(&i.id))
                     {
                         bad = Some(i.id);
                     }
                 });
                 if let Some(b) = bad {
-                    return Err(DocError::Invalid(format!("text frame {b} not in its story's thread")));
+                    return Err(DocError::Invalid(format!(
+                        "text frame {b} not in its story's thread"
+                    )));
                 }
             }
         }
@@ -769,7 +872,10 @@ impl Document {
         }
         // Ids are allocated by counting up from `next_id`: leave room so that can't overflow.
         if self.next_id > MAX_NEXT_ID {
-            return Err(DocError::Invalid(format!("next_id {} out of range", self.next_id)));
+            return Err(DocError::Invalid(format!(
+                "next_id {} out of range",
+                self.next_id
+            )));
         }
         Ok(())
     }

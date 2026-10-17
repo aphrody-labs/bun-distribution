@@ -5,6 +5,6 @@ use utoipa::ToSchema;
 /// Response body for the omni-gen image generation endpoint.
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct OmniGenImageGenerateResponse {
-  pub success: bool,
-  pub inference_job_token: InferenceJobToken,
+    pub success: bool,
+    pub inference_job_token: InferenceJobToken,
 }

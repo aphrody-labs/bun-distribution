@@ -23,7 +23,9 @@ impl ExportHarness {
         let written = Rc::new(RefCell::new(vec![]));
         let w = written.clone();
         let services = Services {
-            pick_save: Some(Box::new(|p: &crate::FilePick| Some(format!("/out/{}", p.name)))),
+            pick_save: Some(Box::new(|p: &crate::FilePick| {
+                Some(format!("/out/{}", p.name))
+            })),
             write: Some(Box::new(move |p: &str, b: &[u8]| {
                 w.borrow_mut().push((p.to_string(), b.to_vec()));
                 Ok(())
@@ -31,21 +33,36 @@ impl ExportHarness {
             ..Default::default()
         };
         let mut app = VectorcraftApp::new(Session::new(), services);
-        app.run("file.new", json!({"width": 80, "height": 60, "artboards": 80})).unwrap();
+        app.run(
+            "file.new",
+            json!({"width": 80, "height": 60, "artboards": 80}),
+        )
+        .unwrap();
         app.run("paint.setStroke", json!({"none": true})).unwrap();
-        for (i, name, colour, width, height) in
-            [(0, "FirstArt", "#cc2200", 11, 13), (78, "OtherArt", "#2244cc", 9, 7), (79, "LastArt", "#00aa88", 17, 19)]
-        {
+        for (i, name, colour, width, height) in [
+            (0, "FirstArt", "#cc2200", 11, 13),
+            (78, "OtherArt", "#2244cc", 9, 7),
+            (79, "LastArt", "#00aa88", 17, 19),
+        ] {
             let r = app.session.active().unwrap().doc.artboards[i].rect;
             app.run("select.none", json!({})).unwrap();
             app.run("paint.setFill", json!({"color": colour})).unwrap();
-            app.run("shape.rectangle", json!({"x": r.x0 + 7.0, "y": r.y0 + 11.0, "width": width, "height": height})).unwrap();
+            app.run(
+                "shape.rectangle",
+                json!({"x": r.x0 + 7.0, "y": r.y0 + 11.0, "width": width, "height": height}),
+            )
+            .unwrap();
             app.run("object.setProps", json!({"name": name})).unwrap();
         }
         app.run("select.none", json!({})).unwrap();
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        Self { app, ctx, written, time: 0.0 }
+        Self {
+            app,
+            ctx,
+            written,
+            time: 0.0,
+        }
     }
 
     fn frame(&mut self, events: Vec<Event>) -> egui::FullOutput {
@@ -56,7 +73,9 @@ impl ExportHarness {
             screen_rect: Some(Rect::from_min_size(Pos2::ZERO, vec2(1000.0, 900.0))),
             ..Default::default()
         };
-        let mut out = self.ctx.run_ui(input, |ui| super::show(&mut self.app, ui.ctx()));
+        let mut out = self
+            .ctx
+            .run_ui(input, |ui| super::show(&mut self.app, ui.ctx()));
         out.textures_delta.clear();
         out
     }
@@ -67,7 +86,12 @@ impl ExportHarness {
     }
 
     fn click(&mut self, at: Pos2) -> egui::FullOutput {
-        let button = |pressed| Event::PointerButton { pos: at, button: egui::PointerButton::Primary, pressed, modifiers: Default::default() };
+        let button = |pressed| Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: Default::default(),
+        };
         self.frame(vec![Event::PointerMoved(at)]);
         self.frame(vec![button(true)]);
         self.frame(vec![button(false)]);
@@ -75,13 +99,21 @@ impl ExportHarness {
     }
 
     fn choose_range(&mut self, format: &str, range: &str) {
-        self.app.run("file.exportAs", json!({"format": format})).unwrap();
+        self.app
+            .run("file.exportAs", json!({"format": format}))
+            .unwrap();
         let out = self.settle();
         let out = self.click(text_at(&out, "Use Artboards"));
         let out = self.click(text_at(&out, "Range:"));
         assert!(!self.app.ui.dialog.as_ref().unwrap().bool("all"));
         self.click(text_at(&out, "1-80"));
-        self.frame(vec![Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND }]);
+        self.frame(vec![Event::Key {
+            key: egui::Key::A,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        }]);
         let out = self.frame(vec![Event::Text(range.into())]);
         assert_eq!(self.app.ui.dialog.as_ref().unwrap().str("range"), range);
         assert!(self.written.borrow().is_empty());
@@ -106,13 +138,21 @@ fn text_at(out: &egui::FullOutput, label: &str) -> Pos2 {
             _ => None,
         }
     }
-    out.shapes.iter().find_map(|s| find(&s.shape, label)).unwrap_or_else(|| panic!("missing {label}: {}", crate::tests_labels::shapes_text(out)))
+    out.shapes
+        .iter()
+        .find_map(|s| find(&s.shape, label))
+        .unwrap_or_else(|| panic!("missing {label}: {}", crate::tests_labels::shapes_text(out)))
 }
 
 #[test]
 fn invalid_range_preserves_export_dialog_and_writes_nothing() {
     let mut h = ExportHarness::new();
-    h.app.run("file.exportAs", json!({"format": "svg", "useArtboards": true, "range": "81"})).unwrap();
+    h.app
+        .run(
+            "file.exportAs",
+            json!({"format": "svg", "useArtboards": true, "range": "81"}),
+        )
+        .unwrap();
     let out = h.settle();
     h.click(text_at(&out, "Export…"));
     assert_eq!(h.app.ui.dialog.as_ref().unwrap().kind, "exportAs");
@@ -127,17 +167,32 @@ fn a_bad_range_in_svg_options_keeps_the_modal_and_saved_options() {
     let saved = h.app.ui.svg_options.clone();
     let out = h.settle();
     h.click(text_at(&out, "80"));
-    h.frame(vec![Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND }]);
+    h.frame(vec![Event::Key {
+        key: egui::Key::A,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::COMMAND,
+    }]);
     let out = h.frame(vec![Event::Text("81".into())]);
     assert_eq!(h.app.ui.dialog.as_ref().unwrap().str("range"), "81");
     h.click(text_at(&out, "OK"));
-    assert_eq!(h.app.ui.dialog.as_ref().map(|d| d.kind.as_str()), Some("svgOptions"));
+    assert_eq!(
+        h.app.ui.dialog.as_ref().map(|d| d.kind.as_str()),
+        Some("svgOptions")
+    );
     assert_eq!(h.app.ui.svg_options, saved);
     assert!(h.written.borrow().is_empty());
     assert!(h.app.ui.status.contains("81"));
     let out = h.settle();
     h.click(text_at(&out, "81"));
-    h.frame(vec![Event::Key { key: egui::Key::A, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND }]);
+    h.frame(vec![Event::Key {
+        key: egui::Key::A,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: egui::Modifiers::COMMAND,
+    }]);
     h.frame(vec![Event::Text("80".into())]);
     h.finish("OK");
     assert_eq!(h.written.borrow().len(), 1);

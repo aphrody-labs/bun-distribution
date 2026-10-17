@@ -50,7 +50,11 @@ impl MemoryWatch {
             busy.store(false, Ordering::Release);
         };
         #[cfg(not(target_arch = "wasm32"))]
-        if std::thread::Builder::new().name("ec-memory".into()).spawn(read).is_err() {
+        if std::thread::Builder::new()
+            .name("ec-memory".into())
+            .spawn(read)
+            .is_err()
+        {
             self.busy.store(false, Ordering::Release);
         }
         #[cfg(target_arch = "wasm32")]
@@ -72,7 +76,9 @@ fn run(cmd: &str, args: &[&str]) -> Option<String> {
     #[cfg(target_os = "windows")]
     std::os::windows::process::CommandExt::creation_flags(&mut c, 0x0800_0000); // CREATE_NO_WINDOW
     let out = c.output().ok()?;
-    out.status.success().then(|| String::from_utf8_lossy(&out.stdout).to_string())
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).to_string())
 }
 
 /// Parse `/proc/meminfo` (kB values).
@@ -83,13 +89,20 @@ pub fn parse_meminfo(text: &str) -> Option<SysMemory> {
         Some(kb * 1024)
     };
     let total = field("MemTotal:")?;
-    let available = field("MemAvailable:").or_else(|| Some(field("MemFree:")? + field("Cached:").unwrap_or(0)))?;
+    let available = field("MemAvailable:")
+        .or_else(|| Some(field("MemFree:")? + field("Cached:").unwrap_or(0)))?;
     Some(SysMemory { total, available })
 }
 
 /// Parse macOS `vm_stat` output: free + inactive + speculative + purgeable pages.
 pub fn parse_vm_stat(text: &str, total: u64) -> Option<SysMemory> {
-    let page: u64 = text.split("page size of ").nth(1)?.split_whitespace().next()?.parse().ok()?;
+    let page: u64 = text
+        .split("page size of ")
+        .nth(1)?
+        .split_whitespace()
+        .next()?
+        .parse()
+        .ok()?;
     let pages = |name: &str| -> u64 {
         text.lines()
             .find(|l| l.starts_with(name))
@@ -97,8 +110,14 @@ pub fn parse_vm_stat(text: &str, total: u64) -> Option<SysMemory> {
             .and_then(|v| v.trim().trim_end_matches('.').parse::<u64>().ok())
             .unwrap_or(0)
     };
-    let free = pages("Pages free") + pages("Pages inactive") + pages("Pages speculative") + pages("Pages purgeable");
-    Some(SysMemory { total, available: (free * page).min(total) })
+    let free = pages("Pages free")
+        + pages("Pages inactive")
+        + pages("Pages speculative")
+        + pages("Pages purgeable");
+    Some(SysMemory {
+        total,
+        available: (free * page).min(total),
+    })
 }
 
 /// Parse `sysctl -n hw.physmem hw.pagesize vm.stats.vm.v_free_count vm.stats.vm.v_inactive_count`
@@ -108,7 +127,10 @@ pub fn parse_freebsd_sysctl(text: &str) -> Option<SysMemory> {
     let total = it.next()??;
     let page = it.next()??;
     let free = it.next()??.saturating_add(it.next()??);
-    Some(SysMemory { total, available: free.saturating_mul(page).min(total) })
+    Some(SysMemory {
+        total,
+        available: free.saturating_mul(page).min(total),
+    })
 }
 
 /// Total and available physical memory, when the system reports them.
@@ -120,20 +142,41 @@ pub fn memory() -> Option<SysMemory> {
     #[cfg(target_os = "macos")]
     {
         let total: u64 = run("sysctl", &["-n", "hw.memsize"])?.trim().parse().ok()?;
-        return parse_vm_stat(&run("vm_stat", &[])?, total).or(Some(SysMemory { total, available: total }));
+        return parse_vm_stat(&run("vm_stat", &[])?, total).or(Some(SysMemory {
+            total,
+            available: total,
+        }));
     }
     #[cfg(target_os = "freebsd")]
     {
-        return parse_freebsd_sysctl(&run("sysctl", &["-n", "hw.physmem", "hw.pagesize", "vm.stats.vm.v_free_count", "vm.stats.vm.v_inactive_count"])?);
+        return parse_freebsd_sysctl(&run(
+            "sysctl",
+            &[
+                "-n",
+                "hw.physmem",
+                "hw.pagesize",
+                "vm.stats.vm.v_free_count",
+                "vm.stats.vm.v_inactive_count",
+            ],
+        )?);
     }
     #[cfg(target_os = "windows")]
     {
         let text = run(
             "powershell",
-            &["-NoProfile", "-Command", "$o=Get-CimInstance Win32_OperatingSystem; \"$($o.TotalVisibleMemorySize) $($o.FreePhysicalMemory)\""],
+            &[
+                "-NoProfile",
+                "-Command",
+                "$o=Get-CimInstance Win32_OperatingSystem; \"$($o.TotalVisibleMemorySize) $($o.FreePhysicalMemory)\"",
+            ],
         )?;
-        let mut it = text.split_whitespace().filter_map(|v| v.parse::<u64>().ok());
-        return Some(SysMemory { total: it.next()? * 1024, available: it.next()? * 1024 });
+        let mut it = text
+            .split_whitespace()
+            .filter_map(|v| v.parse::<u64>().ok());
+        return Some(SysMemory {
+            total: it.next()? * 1024,
+            available: it.next()? * 1024,
+        });
     }
     #[allow(unreachable_code)]
     None
@@ -144,15 +187,23 @@ pub fn cpu_name() -> Option<String> {
     #[cfg(target_os = "linux")]
     {
         let t = std::fs::read_to_string("/proc/cpuinfo").ok()?;
-        return t.lines().find(|l| l.starts_with("model name")).and_then(|l| l.split(':').nth(1)).map(|s| s.trim().to_string());
+        return t
+            .lines()
+            .find(|l| l.starts_with("model name"))
+            .and_then(|l| l.split(':').nth(1))
+            .map(|s| s.trim().to_string());
     }
     #[cfg(target_os = "macos")]
     {
-        return run("sysctl", &["-n", "machdep.cpu.brand_string"]).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+        return run("sysctl", &["-n", "machdep.cpu.brand_string"])
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
     }
     #[cfg(target_os = "freebsd")]
     {
-        return run("sysctl", &["-n", "hw.model"]).map(|s| s.trim().to_string()).filter(|s| !s.is_empty());
+        return run("sysctl", &["-n", "hw.model"])
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
     }
     #[cfg(target_os = "windows")]
     {
@@ -187,7 +238,9 @@ pub fn os_version() -> String {
 
 /// Logical CPU cores.
 pub fn cpu_cores() -> usize {
-    std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1)
+    std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1)
 }
 
 /// The graphics lines of Settings ▸ GPU Information and Help ▸ System Report: whether the GPU
@@ -197,14 +250,20 @@ pub fn gpu_summary(s: &crate::Session) -> String {
     let mut text = match s.accel.as_ref().map(|a| a.name()) {
         Some(name) => format!("Compositing: GPU, {name}.\n"),
         None => {
-            let threads = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+            let threads = std::thread::available_parallelism()
+                .map(|n| n.get())
+                .unwrap_or(1);
             let why = s.accel_note.as_deref().unwrap_or("no reason was recorded");
-            format!("Compositing: CPU, {threads} threads (pure Rust, rayon).\nGPU compositing is off: {why}\n")
+            format!(
+                "Compositing: CPU, {threads} threads (pure Rust, rayon).\nGPU compositing is off: {why}\n"
+            )
         }
     };
     match &s.window_adapter {
         Some(adapter) => text.push_str(&format!("Window graphics: {adapter}\n")),
-        None => text.push_str("Window graphics: not known yet (the window has not drawn its first frame).\n"),
+        None => text.push_str(
+            "Window graphics: not known yet (the window has not drawn its first frame).\n",
+        ),
     }
     text
 }
@@ -227,8 +286,17 @@ mod tests {
 
     #[test]
     fn parses_proc_meminfo_and_vm_stat() {
-        let m = parse_meminfo("MemTotal:       16000000 kB\nMemFree:  1000 kB\nMemAvailable:    8000000 kB\n").unwrap();
-        assert_eq!(m, SysMemory { total: 16_000_000 * 1024, available: 8_000_000 * 1024 });
+        let m = parse_meminfo(
+            "MemTotal:       16000000 kB\nMemFree:  1000 kB\nMemAvailable:    8000000 kB\n",
+        )
+        .unwrap();
+        assert_eq!(
+            m,
+            SysMemory {
+                total: 16_000_000 * 1024,
+                available: 8_000_000 * 1024
+            }
+        );
         assert!(!m.is_low());
         let vm = "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                               1000.\nPages active:  5.\nPages inactive:                           3000.\nPages speculative:                         100.\n";
         let m = parse_vm_stat(vm, 8 << 30).unwrap();

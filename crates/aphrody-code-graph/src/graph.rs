@@ -244,8 +244,9 @@ impl Graph {
     ///
     /// [`GraphError::UnknownSource`] or database failures.
     pub fn load(db: &HomeDb, label: &str) -> Result<Self> {
-        let source =
-            db.source_id(label)?.ok_or_else(|| GraphError::UnknownSource(label.to_owned()))?;
+        let source = db
+            .source_id(label)?
+            .ok_or_else(|| GraphError::UnknownSource(label.to_owned()))?;
         let mut nodes = Vec::new();
         {
             let mut stmt = db.conn().prepare(
@@ -274,8 +275,11 @@ impl Graph {
                 nodes.push(row?);
             }
         }
-        let index: HashMap<&str, usize> =
-            nodes.iter().enumerate().map(|(i, n)| (n.id.as_str(), i)).collect();
+        let index: HashMap<&str, usize> = nodes
+            .iter()
+            .enumerate()
+            .map(|(i, n)| (n.id.as_str(), i))
+            .collect();
         let mut edges = Vec::new();
         {
             let mut stmt = db.conn().prepare(
@@ -307,7 +311,12 @@ impl Graph {
         let meta = db.conn().query_row(
             "SELECT root, json_extract(meta_json, '$.built_at_commit') FROM sources WHERE id = ?1",
             [source],
-            |r| Ok(GraphMeta { root: r.get(0)?, built_at_commit: r.get(1)? }),
+            |r| {
+                Ok(GraphMeta {
+                    root: r.get(0)?,
+                    built_at_commit: r.get(1)?,
+                })
+            },
         )?;
         let mut graph = Self::from_parts(nodes, edges);
         graph.meta = meta;
@@ -325,7 +334,10 @@ impl Graph {
         let tx = db.conn_mut().transaction()?;
         tx.execute("DELETE FROM graph_edges WHERE source_id = ?1", [source])?;
         tx.execute("DELETE FROM graph_nodes WHERE source_id = ?1", [source])?;
-        tx.execute("DELETE FROM graph_communities WHERE source_id = ?1", [source])?;
+        tx.execute(
+            "DELETE FROM graph_communities WHERE source_id = ?1",
+            [source],
+        )?;
         {
             let mut node = tx.prepare(
                 "INSERT INTO graph_nodes (source_id, node_id, label, kind, file_path, loc, lang, community, attrs_json)
@@ -440,6 +452,9 @@ mod tests {
         assert_eq!(loaded.edges.len(), 4);
         assert_eq!(loaded.edges[2].confidence, Confidence::Inferred);
         assert_eq!(loaded.nodes[0].community, Some(1));
-        assert!(matches!(Graph::load(&db, "missing"), Err(GraphError::UnknownSource(_))));
+        assert!(matches!(
+            Graph::load(&db, "missing"),
+            Err(GraphError::UnknownSource(_))
+        ));
     }
 }

@@ -38,7 +38,11 @@ const LOG: [u8; FIELD_SIZE] = gen_log_table();
 const EXP: [u8; EXP_TABLE_SIZE] = gen_exp_table(&LOG);
 
 const fn table_mul(a: u8, b: u8) -> u8 {
-    if a == 0 || b == 0 { 0 } else { EXP[LOG[a as usize] as usize + LOG[b as usize] as usize] }
+    if a == 0 || b == 0 {
+        0
+    } else {
+        EXP[LOG[a as usize] as usize + LOG[b as usize] as usize]
+    }
 }
 
 const fn gen_mul_table() -> [[u8; FIELD_SIZE]; FIELD_SIZE] {

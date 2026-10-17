@@ -17,7 +17,9 @@ use std::collections::HashMap;
 
 use serde_json::{Value, json};
 use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, DEFAULT_GRAPHIC_STYLE, Document, GraphicStyle, Node, NodeId, NodeKind};
+use vectorcraft_doc::{
+    Appearance, DEFAULT_GRAPHIC_STYLE, Document, GraphicStyle, Node, NodeId, NodeKind,
+};
 use vectorcraft_geom::Rect;
 
 use super::*;
@@ -52,7 +54,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             style_delete
         ),
-        cmd!("graphicStyle.duplicate", "Duplicate Graphic Style", ["Window", "Graphic Styles"], None, "{name} → {name}", has_doc, style_duplicate),
+        cmd!(
+            "graphicStyle.duplicate",
+            "Duplicate Graphic Style",
+            ["Window", "Graphic Styles"],
+            None,
+            "{name} → {name}",
+            has_doc,
+            style_duplicate
+        ),
         cmd!(
             query "graphicStyle.list",
             "List Graphic Styles",
@@ -170,12 +180,16 @@ pub(crate) fn in_sync(n: &Node, g: &GraphicStyle) -> bool {
     }
     let mut leaves = vec![];
     painted(n, true, &mut leaves);
-    n.appearance == Appearance::default() && leaves.iter().all(|l| l.id != n.id && g.appearance_on(l).approx_eq(&l.appearance))
+    n.appearance == Appearance::default()
+        && leaves
+            .iter()
+            .all(|l| l.id != n.id && g.appearance_on(l).approx_eq(&l.appearance))
 }
 
 /// The style `n` is linked to (and still looks like).
 pub(crate) fn linked_style<'a>(d: &'a Document, n: &Node) -> Option<&'a GraphicStyle> {
-    d.graphic_style_by_id(n.extras().graphic_style?).filter(|g| in_sync(n, g))
+    d.graphic_style_by_id(n.extras().graphic_style?)
+        .filter(|g| in_sync(n, g))
 }
 
 /// Objects anywhere in the art that `f` accepts.
@@ -246,8 +260,13 @@ pub(crate) fn captured(n: &Node) -> Appearance {
 /// Override Character Color: type taking appearance `ap` loses its characters' fill when `ap` has
 /// fills, and their stroke when it has strokes.
 fn override_chars(n: &mut Node, ap: &Appearance) {
-    let NodeKind::Text(t) = &mut n.kind else { return };
-    let (fills, strokes) = (ap.items.iter().any(|i| i.is_fill()), ap.items.iter().any(|i| !i.is_fill()));
+    let NodeKind::Text(t) = &mut n.kind else {
+        return;
+    };
+    let (fills, strokes) = (
+        ap.items.iter().any(|i| i.is_fill()),
+        ap.items.iter().any(|i| !i.is_fill()),
+    );
     for r in &mut t.runs {
         if fills {
             r.style.fill = Paint::None;
@@ -285,16 +304,26 @@ fn set_link(d: &mut Document, ids: &[NodeId], link: Option<u32>) {
 }
 
 fn style_index(d: &Document, name: &str) -> Result<usize> {
-    d.graphic_style_index(name).ok_or_else(|| EngineError::Other(format!("no graphic style `{name}`")))
+    d.graphic_style_index(name)
+        .ok_or_else(|| EngineError::Other(format!("no graphic style `{name}`")))
 }
 
 /// The object a style is made from: `id`, else the first selected object.
 fn source<'a>(s: &'a Session, p: &Value, cmd: &str) -> Result<(NodeId, &'a Node)> {
     let id = match id_param(p, "id") {
         Some(id) => id,
-        None => super::edit::selected_roots(s)?.first().copied().ok_or_else(|| bad(cmd, "select an object (or pass `id`)"))?,
+        None => super::edit::selected_roots(s)?
+            .first()
+            .copied()
+            .ok_or_else(|| bad(cmd, "select an object (or pass `id`)"))?,
     };
-    Ok((id, s.doc()?.doc.node(id).ok_or_else(|| bad(cmd, format!("no object {}", id.0)))?))
+    Ok((
+        id,
+        s.doc()?
+            .doc
+            .node(id)
+            .ok_or_else(|| bad(cmd, format!("no object {}", id.0)))?,
+    ))
 }
 
 impl Session {
@@ -359,11 +388,17 @@ fn style_apply(s: &mut Session, p: &Value) -> Result<Value> {
 fn style_new(s: &mut Session, p: &Value) -> Result<Value> {
     let (src, n) = source(s, p, "graphicStyle.new")?;
     let d = &s.doc()?.doc;
-    let name = match str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()) {
+    let name = match str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+    {
         Some(n) => unique_name(n, |x| d.graphic_style(x).is_some()),
         None => d.new_graphic_style_name(),
     };
-    let g = GraphicStyle { id: d.next_graphic_style_id(), ..GraphicStyle::of(name.clone(), captured(n), n) };
+    let g = GraphicStyle {
+        id: d.next_graphic_style_id(),
+        ..GraphicStyle::of(name.clone(), captured(n), n)
+    };
     s.edit("New Graphic Style", |d, _| {
         set_link(d, &[src], Some(g.id));
         d.graphic_styles.push(g);
@@ -373,31 +408,51 @@ fn style_new(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn style_delete(s: &mut Session, p: &Value) -> Result<Value> {
-    let names: Vec<String> = match (p.get("names").and_then(Value::as_array), str_param(p, "name")) {
-        (Some(a), _) => a.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+    let names: Vec<String> = match (
+        p.get("names").and_then(Value::as_array),
+        str_param(p, "name"),
+    ) {
+        (Some(a), _) => a
+            .iter()
+            .filter_map(Value::as_str)
+            .map(str::to_string)
+            .collect(),
         (None, Some(n)) => vec![n.to_string()],
         (None, None) => return Err(bad("graphicStyle.delete", "missing name")),
     };
-    s.edit(if names.len() > 1 { "Delete Graphic Styles" } else { "Delete Graphic Style" }, |d, _| {
-        for name in &names {
-            let i = style_index(d, name)?;
-            let id = d.graphic_styles.remove(i).id;
-            if id != 0 {
-                let ids = objects_where(d, |n| n.extras().graphic_style == Some(id));
-                set_link(d, &ids, None);
+    s.edit(
+        if names.len() > 1 {
+            "Delete Graphic Styles"
+        } else {
+            "Delete Graphic Style"
+        },
+        |d, _| {
+            for name in &names {
+                let i = style_index(d, name)?;
+                let id = d.graphic_styles.remove(i).id;
+                if id != 0 {
+                    let ids = objects_where(d, |n| n.extras().graphic_style == Some(id));
+                    set_link(d, &ids, None);
+                }
             }
-        }
-        Ok(())
-    })?;
+            Ok(())
+        },
+    )?;
     ok()
 }
 
 fn style_duplicate(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_param(p, "name").ok_or_else(|| bad("graphicStyle.duplicate", "missing name"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad("graphicStyle.duplicate", "missing name"))?
+        .to_string();
     let new = s.edit("Duplicate Graphic Style", |d, _| {
         let pos = style_index(d, &name)?;
         let nm = unique_name(&format!("{name} copy"), |n| d.graphic_style(n).is_some());
-        let g = GraphicStyle { name: nm.clone(), id: d.next_graphic_style_id(), ..d.graphic_styles[pos].clone() };
+        let g = GraphicStyle {
+            name: nm.clone(),
+            id: d.next_graphic_style_id(),
+            ..d.graphic_styles[pos].clone()
+        };
         d.graphic_styles.insert(pos + 1, g);
         Ok(nm)
     })?;
@@ -413,12 +468,22 @@ fn style_list(s: &mut Session, _: &Value) -> Result<Value> {
         .map(|g| {
             let mut v = style_json(g);
             v["id"] = json!(g.id);
-            v["linked"] = json!(links.get(&g.id).map(|v| v.iter().map(|i| i.0).collect::<Vec<_>>()).unwrap_or_default());
+            v["linked"] = json!(
+                links
+                    .get(&g.id)
+                    .map(|v| v.iter().map(|i| i.0).collect::<Vec<_>>())
+                    .unwrap_or_default()
+            );
             v
         })
         .collect();
-    let selected = s.selection_graphic_style().filter(|(_, linked)| *linked).map(|(g, _)| g.name.clone());
-    Ok(json!({ "styles": styles, "selected": selected, "overrideCharColor": s.prefs.override_char_color }))
+    let selected = s
+        .selection_graphic_style()
+        .filter(|(_, linked)| *linked)
+        .map(|(g, _)| g.name.clone());
+    Ok(
+        json!({ "styles": styles, "selected": selected, "overrideCharColor": s.prefs.override_char_color }),
+    )
 }
 
 /// Style `g` described as `graphicStyle.list` lists it (without `id` and `linked`).
@@ -456,21 +521,33 @@ fn style_redefine(s: &mut Session, p: &Value) -> Result<Value> {
     let look = GraphicStyle::of(String::new(), captured(n), n);
     let name = d.graphic_styles[i].name.clone();
     let chars = s.prefs.override_char_color;
-    s.edit(&format!("Redefine Graphic Style \u{201c}{name}\u{201d}"), |d, _| {
-        let id = d.graphic_style_id(i);
-        let old = std::mem::replace(&mut d.graphic_styles[i], GraphicStyle { name: name.clone(), id, ..look });
-        // Objects still linked follow the new definition; edited ones are unlinked (they keep
-        // their look), and the source keeps its own.
-        let linked = objects_where(d, |n| n.extras().graphic_style == Some(id) && n.id != src);
-        let (follow, edited): (Vec<NodeId>, Vec<NodeId>) = linked.into_iter().partition(|nid| d.node(*nid).is_some_and(|n| in_sync(n, &old)));
-        set_link(d, &edited, None);
-        let g = d.graphic_styles[i].clone();
-        for nid in follow {
-            apply_style(d, nid, &g, chars);
-        }
-        set_link(d, &[src], Some(id));
-        Ok(())
-    })?;
+    s.edit(
+        &format!("Redefine Graphic Style \u{201c}{name}\u{201d}"),
+        |d, _| {
+            let id = d.graphic_style_id(i);
+            let old = std::mem::replace(
+                &mut d.graphic_styles[i],
+                GraphicStyle {
+                    name: name.clone(),
+                    id,
+                    ..look
+                },
+            );
+            // Objects still linked follow the new definition; edited ones are unlinked (they keep
+            // their look), and the source keeps its own.
+            let linked = objects_where(d, |n| n.extras().graphic_style == Some(id) && n.id != src);
+            let (follow, edited): (Vec<NodeId>, Vec<NodeId>) = linked
+                .into_iter()
+                .partition(|nid| d.node(*nid).is_some_and(|n| in_sync(n, &old)));
+            set_link(d, &edited, None);
+            let g = d.graphic_styles[i].clone();
+            for nid in follow {
+                apply_style(d, nid, &g, chars);
+            }
+            set_link(d, &[src], Some(id));
+            Ok(())
+        },
+    )?;
     Ok(json!({ "name": name }))
 }
 
@@ -485,12 +562,20 @@ fn style_break_link(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn style_rename(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "graphicStyle.rename";
-    let name = str_param(p, "name").ok_or_else(|| bad(cmd, "missing name"))?.to_string();
-    let to = str_param(p, "to").map(str::trim).filter(|t| !t.is_empty()).ok_or_else(|| bad(cmd, "missing `to`"))?.to_string();
+    let name = str_param(p, "name")
+        .ok_or_else(|| bad(cmd, "missing name"))?
+        .to_string();
+    let to = str_param(p, "to")
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .ok_or_else(|| bad(cmd, "missing `to`"))?
+        .to_string();
     s.edit("Graphic Style Options", |d, _| {
         let i = style_index(d, &name)?;
         if to != name && d.graphic_style(&to).is_some() {
-            return Err(EngineError::Other(format!("a graphic style named `{to}` already exists")));
+            return Err(EngineError::Other(format!(
+                "a graphic style named `{to}` already exists"
+            )));
         }
         d.graphic_styles[i].name = to.clone();
         Ok(())
@@ -501,13 +586,19 @@ fn style_rename(s: &mut Session, p: &Value) -> Result<Value> {
 fn style_unused(s: &mut Session, _: &Value) -> Result<Value> {
     let d = &s.doc()?.doc;
     let links = links(d);
-    let names: Vec<&str> = d.graphic_styles.iter().filter(|g| !links.contains_key(&g.id)).map(|g| g.name.as_str()).collect();
+    let names: Vec<&str> = d
+        .graphic_styles
+        .iter()
+        .filter(|g| !links.contains_key(&g.id))
+        .map(|g| g.name.as_str())
+        .collect();
     Ok(json!({ "names": names }))
 }
 
 fn style_sort(s: &mut Session, _: &Value) -> Result<Value> {
     s.edit("Sort by Name", |d, _| {
-        d.graphic_styles.sort_by_cached_key(|g| (g.name != DEFAULT_GRAPHIC_STYLE, g.name.to_lowercase()));
+        d.graphic_styles
+            .sort_by_cached_key(|g| (g.name != DEFAULT_GRAPHIC_STYLE, g.name.to_lowercase()));
         Ok(())
     })?;
     ok()
@@ -515,13 +606,23 @@ fn style_sort(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn style_merge(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "graphicStyle.merge";
-    let names: Vec<&str> = p.get("names").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+    let names: Vec<&str> = p
+        .get("names")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_str).collect())
+        .unwrap_or_default();
     if names.len() < 2 {
         return Err(bad(cmd, "give two or more style `names`"));
     }
     let d = &s.doc()?.doc;
-    let styles = names.iter().map(|n| style_index(d, n).map(|i| &d.graphic_styles[i])).collect::<Result<Vec<_>>>()?;
-    let name = match str_param(p, "name").map(str::trim).filter(|n| !n.is_empty()) {
+    let styles = names
+        .iter()
+        .map(|n| style_index(d, n).map(|i| &d.graphic_styles[i]))
+        .collect::<Result<Vec<_>>>()?;
+    let name = match str_param(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+    {
         Some(n) => unique_name(n, |x| d.graphic_style(x).is_some()),
         None => d.new_graphic_style_name(),
     };
@@ -532,8 +633,17 @@ fn style_merge(s: &mut Session, p: &Value) -> Result<Value> {
         ap.effects.extend(g.appearance.effects.iter().cloned());
     }
     // Styles saved before unit-box styles keep their placed gradients in document coordinates.
-    let unit_box = styles.iter().filter(|g| g.appearance.has_placed_gradient()).all(|g| g.unit_box);
-    let g = GraphicStyle { name: name.clone(), appearance: ap, id: d.next_graphic_style_id(), unit_box, ..styles[0].clone() };
+    let unit_box = styles
+        .iter()
+        .filter(|g| g.appearance.has_placed_gradient())
+        .all(|g| g.unit_box);
+    let g = GraphicStyle {
+        name: name.clone(),
+        appearance: ap,
+        id: d.next_graphic_style_id(),
+        unit_box,
+        ..styles[0].clone()
+    };
     s.edit("Merge Graphic Styles", |d, _| {
         d.graphic_styles.push(g);
         Ok(())
@@ -544,7 +654,10 @@ fn style_merge(s: &mut Session, p: &Value) -> Result<Value> {
 fn style_move(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "graphicStyle.move";
     let name = str_param(p, "name").ok_or_else(|| bad(cmd, "missing name"))?;
-    let to = p.get("to").and_then(Value::as_u64).ok_or_else(|| bad(cmd, "missing `to` (an index)"))?;
+    let to = p
+        .get("to")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(cmd, "missing `to` (an index)"))?;
     let d = &s.doc()?.doc;
     let from = style_index(d, name)?;
     let to = (to as usize).min(d.graphic_styles.len() - 1);

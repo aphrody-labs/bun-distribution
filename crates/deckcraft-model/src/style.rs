@@ -35,10 +35,16 @@ pub struct ColorRef {
 
 impl ColorRef {
     pub fn rgb(c: Rgba) -> Self {
-        ColorRef { base: ColorBase::Rgb { rgb: c }, mods: vec![] }
+        ColorRef {
+            base: ColorBase::Rgb { rgb: c },
+            mods: vec![],
+        }
     }
     pub fn scheme(slot: SchemeSlot) -> Self {
-        ColorRef { base: ColorBase::Scheme { slot }, mods: vec![] }
+        ColorRef {
+            base: ColorBase::Scheme { slot },
+            mods: vec![],
+        }
     }
     pub fn with(mut self, m: ColorTransform) -> Self {
         self.mods.push(m);
@@ -48,7 +54,9 @@ impl ColorRef {
     pub fn resolve(&self, scheme: &ColorScheme, ph: Option<Rgba>) -> Rgba {
         let base = match &self.base {
             ColorBase::Rgb { rgb } => *rgb,
-            ColorBase::Scheme { slot: SchemeSlot::PhClr } => ph.unwrap_or_else(|| scheme.get(SchemeSlot::Accent1)),
+            ColorBase::Scheme {
+                slot: SchemeSlot::PhClr,
+            } => ph.unwrap_or_else(|| scheme.get(SchemeSlot::Accent1)),
             ColorBase::Scheme { slot } => scheme.get(*slot),
             ColorBase::Preset { name } => deckcraft_color::preset(name).unwrap_or(Rgba::BLACK),
             ColorBase::System { last, .. } => *last,
@@ -116,7 +124,9 @@ pub enum PictureMode {
 
 impl Default for PictureMode {
     fn default() -> Self {
-        PictureMode::Stretch { fill_rect: [0.0; 4] }
+        PictureMode::Stretch {
+            fill_rect: [0.0; 4],
+        }
     }
 }
 
@@ -244,8 +254,19 @@ pub enum Dash {
 }
 
 impl Dash {
-    pub const PRESETS: [&'static str; 11] =
-        ["solid", "sysDot", "sysDash", "dash", "dashDot", "lgDash", "lgDashDot", "lgDashDotDot", "dot", "sysDashDot", "sysDashDotDot"];
+    pub const PRESETS: [&'static str; 11] = [
+        "solid",
+        "sysDot",
+        "sysDash",
+        "dash",
+        "dashDot",
+        "lgDash",
+        "lgDashDot",
+        "lgDashDotDot",
+        "dot",
+        "sysDashDot",
+        "sysDashDotDot",
+    ];
     /// Dash/space lengths in multiples of the line width.
     pub fn pattern(&self) -> Vec<f64> {
         match self {
@@ -300,10 +321,17 @@ pub struct Line {
 
 impl Line {
     pub fn solid(c: ColorRef, width: f64) -> Self {
-        Line { fill: Some(Fill::solid(c)), width: Some(width), ..Default::default() }
+        Line {
+            fill: Some(Fill::solid(c)),
+            width: Some(width),
+            ..Default::default()
+        }
     }
     pub fn none() -> Self {
-        Line { fill: Some(Fill::None), ..Default::default() }
+        Line {
+            fill: Some(Fill::None),
+            ..Default::default()
+        }
     }
     /// Fill unset fields from `parent`.
     pub fn inherit(&mut self, parent: &Line) {

@@ -75,7 +75,9 @@ impl G4ma {
     /// Recherche un clip par son hash CRC32.
     #[must_use]
     pub fn find_clip_by_hash(&self, crc32: u32) -> Option<&Clip> {
-        self.motion.as_ref().and_then(|m| m.find_clip_by_hash(crc32))
+        self.motion
+            .as_ref()
+            .and_then(|m| m.find_clip_by_hash(crc32))
     }
 }
 
@@ -100,11 +102,18 @@ pub fn parse_motion(data: &[u8]) -> Option<Motion> {
 /// [`FormatError::TooShort`] si < 0x40 octets, [`FormatError::BadMagic`] si le magic ≠ « G4MA ».
 pub fn parse(data: &[u8]) -> Result<G4ma, FormatError> {
     if data.len() < HEADER_LEN {
-        return Err(FormatError::TooShort { got: data.len(), need: HEADER_LEN });
+        return Err(FormatError::TooShort {
+            got: data.len(),
+            need: HEADER_LEN,
+        });
     }
     let header = level5::parse_header(data, MAGIC, "G4MA")?;
     let motion = Motion::parse(data);
-    Ok(G4ma { header, file_size: data.len(), motion })
+    Ok(G4ma {
+        header,
+        file_size: data.len(),
+        motion,
+    })
 }
 
 #[cfg(test)]
@@ -130,7 +139,10 @@ mod tests {
 
     #[test]
     fn rejette_magic_et_court() {
-        assert!(matches!(parse(&[0u8; HEADER_LEN]), Err(FormatError::BadMagic { .. })));
+        assert!(matches!(
+            parse(&[0u8; HEADER_LEN]),
+            Err(FormatError::BadMagic { .. })
+        ));
         assert!(matches!(parse(b"G4MA"), Err(FormatError::TooShort { .. })));
         assert!(is_g4ma(b"G4MA____"));
         assert!(!is_g4ma(b"G4MT"));
@@ -216,7 +228,9 @@ mod tests {
         assert_eq!(clip.frame_count(), 61);
         assert_eq!(clip.fps, 60);
 
-        let clip_by_hash = g.find_clip_by_hash(expected_hash).expect("clip trouvé par hash");
+        let clip_by_hash = g
+            .find_clip_by_hash(expected_hash)
+            .expect("clip trouvé par hash");
         assert_eq!(clip_by_hash.name, "mat0");
     }
 

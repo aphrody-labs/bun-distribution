@@ -9,7 +9,7 @@ pub mod http_gpt_image_2_edit_image;
 pub mod http_nano_banana_2_edit_image;
 pub mod http_nano_banana_pro_edit_image;
 pub mod http_qwen_image_edit;
+pub mod http_seededit_v3_edit;
 pub mod http_seedream_4_edit_image;
 pub mod http_seedream_4p5_edit_image;
 pub mod http_seedream_5_edit_image;
-pub mod http_seededit_v3_edit;

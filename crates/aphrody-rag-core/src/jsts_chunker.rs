@@ -112,7 +112,10 @@ fn byte_to_line(lines: &[&str], byte_offset: u32) -> u32 {
 }
 
 fn span_to_lines(lines: &[&str], span: oxc_span::Span) -> (u32, u32) {
-    (byte_to_line(lines, span.start), byte_to_line(lines, span.end.saturating_sub(1)))
+    (
+        byte_to_line(lines, span.start),
+        byte_to_line(lines, span.end.saturating_sub(1)),
+    )
 }
 
 /// Best-effort symbol name for a top-level statement. `None` for statements
@@ -129,10 +132,11 @@ fn collect_statement(
         Statement::FunctionDeclaration(f) => {
             let name = f.id.as_ref().map(|id| id.name.to_string());
             out.push((name, start, end));
-        },
+        }
         Statement::ClassDeclaration(c) => {
             let class_name =
-                c.id.as_ref().map_or_else(|| "default".to_string(), |id| id.name.to_string());
+                c.id.as_ref()
+                    .map_or_else(|| "default".to_string(), |id| id.name.to_string());
             let text_len = end.saturating_sub(start) as usize;
             if text_len < opts.max_chars / 40 || c.body.body.is_empty() {
                 // Small class: keep as a single unit.
@@ -144,7 +148,7 @@ fn collect_statement(
                     out.push((Some(format!("{class_name}::{method_name}")), es, ee));
                 }
             }
-        },
+        }
         Statement::VariableDeclaration(decl) => {
             let mut named = false;
             for d in &decl.declarations {
@@ -162,26 +166,26 @@ fn collect_statement(
             if !named {
                 out.push((None, start, end));
             }
-        },
+        }
         Statement::TSInterfaceDeclaration(i) => out.push((Some(i.id.name.to_string()), start, end)),
         Statement::TSTypeAliasDeclaration(t) => out.push((Some(t.id.name.to_string()), start, end)),
         Statement::TSEnumDeclaration(e) => out.push((Some(e.id.name.to_string()), start, end)),
         Statement::ExportDeclaration(export) => {
             out.push((declaration_name(&export.declaration), start, end));
-        },
+        }
         Statement::ExportNamedDeclaration(_) => out.push((None, start, end)),
         Statement::ExportDefaultDeclaration(export) => {
             let name = match &export.declaration {
                 ExportDefaultDeclarationKind::FunctionDeclaration(f) => {
                     f.id.as_ref().map(|id| id.name.to_string())
-                },
+                }
                 ExportDefaultDeclarationKind::ClassDeclaration(c) => {
                     c.id.as_ref().map(|id| id.name.to_string())
-                },
+                }
                 _ => None,
             };
             out.push((name.or_else(|| Some("default".to_string())), start, end));
-        },
+        }
         _ => out.push((None, start, end)),
     }
 }
@@ -206,12 +210,16 @@ fn declaration_name(decl: &Declaration) -> Option<String> {
 
 fn class_element_name(el: &ClassElement) -> String {
     match el {
-        ClassElement::MethodDefinition(m) => {
-            m.key.name().map(|n| n.to_string()).unwrap_or_else(|| "method".to_string())
-        },
-        ClassElement::PropertyDefinition(p) => {
-            p.key.name().map(|n| n.to_string()).unwrap_or_else(|| "field".to_string())
-        },
+        ClassElement::MethodDefinition(m) => m
+            .key
+            .name()
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| "method".to_string()),
+        ClassElement::PropertyDefinition(p) => p
+            .key
+            .name()
+            .map(|n| n.to_string())
+            .unwrap_or_else(|| "field".to_string()),
         _ => "member".to_string(),
     }
 }

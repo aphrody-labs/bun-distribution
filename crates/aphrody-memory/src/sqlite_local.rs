@@ -46,7 +46,8 @@ pub struct SqliteLocalProvider {
 
 impl std::fmt::Debug for SqliteLocalProvider {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("SqliteLocalProvider").finish_non_exhaustive()
+        f.debug_struct("SqliteLocalProvider")
+            .finish_non_exhaustive()
     }
 }
 
@@ -59,10 +60,15 @@ impl SqliteLocalProvider {
     pub fn open_profile(
         profile: &aphrody_agent_home::ProfileServiceContext,
     ) -> Result<Self, MemoryError> {
-        let path = profile.local_memory_path().ok_or(MemoryError::MissingConfig(
-            "database.cache=sqlite_wal is required for local profile memory with PostgreSQL",
-        ))?;
-        if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        let path = profile
+            .local_memory_path()
+            .ok_or(MemoryError::MissingConfig(
+                "database.cache=sqlite_wal is required for local profile memory with PostgreSQL",
+            ))?;
+        if let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
             std::fs::create_dir_all(parent)?;
         }
         Self::open(path)
@@ -90,7 +96,9 @@ impl SqliteLocalProvider {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, MemoryError> {
         let conn = sqlite::open(path, OpenPolicy::read_write()).map_err(Self::sql_error)?;
         Self::bootstrap(&conn)?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     /// Open an in-memory SQLite store (testing).
@@ -100,7 +108,9 @@ impl SqliteLocalProvider {
     pub fn open_in_memory() -> Result<Self, MemoryError> {
         let conn = sqlite::open_in_memory(OpenPolicy::read_write()).map_err(Self::sql_error)?;
         Self::bootstrap(&conn)?;
-        Ok(Self { conn: Mutex::new(conn) })
+        Ok(Self {
+            conn: Mutex::new(conn),
+        })
     }
 
     /// Maps `aphrody-sql` failures onto the public [`MemoryError`] variants.
@@ -128,7 +138,14 @@ impl SqliteLocalProvider {
         let tags: Vec<String> = serde_json::from_str(&tags_json)?;
         let metadata: serde_json::Value = serde_json::from_str(&metadata_json)?;
         let created = u64::try_from(created_at_unix_ms).unwrap_or(0);
-        Ok(MemoryRecord { id, agent_id, content, tags, created_at_unix_ms: created, metadata })
+        Ok(MemoryRecord {
+            id,
+            agent_id,
+            content,
+            tags,
+            created_at_unix_ms: created,
+            metadata,
+        })
     }
 }
 
@@ -148,7 +165,14 @@ impl MemoryProvider for SqliteLocalProvider {
         conn.execute(
             "INSERT OR REPLACE INTO memory_records (id, agent_id, content, tags_json, \
              created_at_unix_ms, metadata_json) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![rec.id, rec.agent_id, rec.content, tags_json, created, metadata_json,],
+            params![
+                rec.id,
+                rec.agent_id,
+                rec.content,
+                tags_json,
+                created,
+                metadata_json,
+            ],
         )?;
         Ok(id_for_return)
     }
@@ -171,7 +195,7 @@ impl MemoryProvider for SqliteLocalProvider {
                     row.get(5)?,
                 )?;
                 Ok(Some(r))
-            },
+            }
             None => Ok(None),
         }
     }
@@ -213,8 +237,10 @@ impl MemoryProvider for SqliteLocalProvider {
 
         let conn = self.conn.lock().await;
         let mut stmt = conn.prepare(&sql)?;
-        let bind_refs: Vec<&dyn rusqlite::ToSql> =
-            binds.iter().map(|b| b.as_ref() as &dyn rusqlite::ToSql).collect();
+        let bind_refs: Vec<&dyn rusqlite::ToSql> = binds
+            .iter()
+            .map(|b| b.as_ref() as &dyn rusqlite::ToSql)
+            .collect();
         let mut rows = stmt.query(bind_refs.as_slice())?;
         let mut out = Vec::new();
         while let Some(row) = rows.next()? {
@@ -244,7 +270,9 @@ impl MemoryProvider for SqliteLocalProvider {
         if n == 1 {
             Ok(())
         } else {
-            Err(MemoryError::Unexpected(format!("health check returned {n}")))
+            Err(MemoryError::Unexpected(format!(
+                "health check returned {n}"
+            )))
         }
     }
 

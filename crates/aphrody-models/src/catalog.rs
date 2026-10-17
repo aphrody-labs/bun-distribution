@@ -292,7 +292,10 @@ impl CatalogEntry {
     /// Total download size, when every file declares one.
     #[must_use]
     pub fn total_bytes(&self) -> Option<u64> {
-        self.files.iter().map(|f| f.bytes).try_fold(0_u64, |acc, b| Some(acc + b?))
+        self.files
+            .iter()
+            .map(|f| f.bytes)
+            .try_fold(0_u64, |acc, b| Some(acc + b?))
     }
 
     /// The artefact filling a given role.
@@ -348,8 +351,10 @@ impl Catalog {
     ///
     /// [`ModelError::Catalog`] when the text is not a valid catalog.
     pub fn from_json(text: &str, origin: impl Into<std::path::PathBuf>) -> Result<Self> {
-        serde_json::from_str(text)
-            .map_err(|source| crate::ModelError::Catalog { path: origin.into(), source })
+        serde_json::from_str(text).map_err(|source| crate::ModelError::Catalog {
+            path: origin.into(),
+            source,
+        })
     }
 
     /// Read a declared catalog file (see [`Catalog::from_json`]).
@@ -404,7 +409,10 @@ impl Catalog {
     /// Every entry executable by a given backend.
     #[must_use]
     pub fn by_backend(&self, backend: Backend) -> Vec<&CatalogEntry> {
-        self.entries.iter().filter(|e| e.backend == backend).collect()
+        self.entries
+            .iter()
+            .filter(|e| e.backend == backend)
+            .collect()
     }
 
     /// All ids, in catalog order.
@@ -459,9 +467,11 @@ impl Resolved<'_> {
     #[must_use]
     pub fn artifacts(&self) -> Vec<(ModelRef, Option<String>)> {
         match self {
-            Self::Catalog(entry) => {
-                entry.files.iter().map(|f| (f.reference.clone(), f.sha256.clone())).collect()
-            },
+            Self::Catalog(entry) => entry
+                .files
+                .iter()
+                .map(|f| (f.reference.clone(), f.sha256.clone()))
+                .collect(),
             Self::Direct(reference) => vec![(reference.clone(), None)],
         }
     }
@@ -566,7 +576,8 @@ mod tests {
                 let Some(sha) = &file.sha256 else { continue };
                 assert_eq!(sha.len(), 64, "{}/{}: {sha}", entry.id, file.role);
                 assert!(
-                    sha.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
+                    sha.chars()
+                        .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
                     "{}/{}: digest must be lower-case hex, got {sha}",
                     entry.id,
                     file.role
@@ -606,7 +617,11 @@ mod tests {
     fn every_entry_exposes_a_primary_artifact_and_a_size() {
         for entry in &Catalog::builtin().entries {
             assert!(entry.primary().is_some(), "{} has no files", entry.id);
-            assert!(entry.total_bytes().is_some(), "{} has a file without a size", entry.id);
+            assert!(
+                entry.total_bytes().is_some(),
+                "{} has a file without a size",
+                entry.id
+            );
             assert!(!entry.summary.is_empty(), "{} has no summary", entry.id);
         }
     }
@@ -614,8 +629,15 @@ mod tests {
     #[test]
     fn the_three_target_workloads_are_covered() {
         let catalog = Catalog::builtin();
-        for task in [ModelTask::Ocr, ModelTask::VisualTranscription, ModelTask::SpeechToText] {
-            assert!(!catalog.by_task(task).is_empty(), "no model catalogued for {task}");
+        for task in [
+            ModelTask::Ocr,
+            ModelTask::VisualTranscription,
+            ModelTask::SpeechToText,
+        ] {
+            assert!(
+                !catalog.by_task(task).is_empty(),
+                "no model catalogued for {task}"
+            );
         }
     }
 
@@ -656,10 +678,14 @@ mod tests {
         )
         .unwrap();
         let builtin = Catalog::builtin();
-        let resolved = builtin.resolve_with(Some(&declared), "product-adapter").unwrap();
+        let resolved = builtin
+            .resolve_with(Some(&declared), "product-adapter")
+            .unwrap();
         assert_eq!(resolved.catalog_id(), Some("product-adapter"));
         assert_eq!(resolved.artifacts()[0].1.as_deref().map(str::len), Some(64));
-        let base = builtin.resolve_with(Some(&declared), "qwen3-4b-instruct-2507-q4km").unwrap();
+        let base = builtin
+            .resolve_with(Some(&declared), "qwen3-4b-instruct-2507-q4km")
+            .unwrap();
         assert_eq!(base.catalog_id(), Some("qwen3-4b-instruct-2507-q4km"));
         assert!(matches!(
             Catalog::from_json("{}", "bad.json"),
@@ -682,7 +708,10 @@ mod tests {
         assert_eq!(resolved.catalog_id(), Some("whisper-base-en"));
         let artifacts = resolved.artifacts();
         assert_eq!(artifacts.len(), 1);
-        assert!(artifacts[0].1.is_some(), "catalog pulls carry an expected digest");
+        assert!(
+            artifacts[0].1.is_some(),
+            "catalog pulls carry an expected digest"
+        );
 
         let direct = catalog.resolve("hf:owner/repo/weights.gguf").unwrap();
         assert_eq!(direct.catalog_id(), None);
@@ -722,7 +751,10 @@ mod tests {
     fn catalog_urls_target_the_pinned_commit() {
         let entry = Catalog::builtin().get("whisper-base-en").unwrap();
         let url = entry.primary().unwrap().reference.download_url().unwrap();
-        assert!(url.starts_with("https://huggingface.co/ggerganov/whisper.cpp/resolve/"), "{url}");
+        assert!(
+            url.starts_with("https://huggingface.co/ggerganov/whisper.cpp/resolve/"),
+            "{url}"
+        );
         assert!(url.ends_with("/ggml-base.en.bin?download=true"), "{url}");
     }
 }

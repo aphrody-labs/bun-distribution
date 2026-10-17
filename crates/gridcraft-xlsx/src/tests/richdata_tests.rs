@@ -68,7 +68,11 @@ fn jpeg() -> Vec<u8> {
 }
 
 fn picture(data: Vec<u8>, mime: &str, alt: &str) -> CellPicture {
-    CellPicture { data, mime: mime.into(), alt: alt.into() }
+    CellPicture {
+        data,
+        mime: mime.into(),
+        alt: alt.into(),
+    }
 }
 
 /// A1 vm2 -> block1/type2/v0 -> future0 -> rv1 -> structure1 -> relation1.
@@ -85,19 +89,28 @@ fn independent_parts(chain: bool) -> Vec<(String, Vec<u8>)> {
         "pkg/book.xml",
         r#"<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Pictures" sheetId="1" r:id="sheet"/></sheets></workbook>"#,
     );
-    let rich =
-        r#"<Relationship Id="value" Type="http://schemas.microsoft.com/office/2017/06/relationships/rdRichValue" Target="../rich/values.xml"/>"#;
+    let rich = r#"<Relationship Id="value" Type="http://schemas.microsoft.com/office/2017/06/relationships/rdRichValue" Target="../rich/values.xml"/>"#;
     let rest = r#"<Relationship Id="structure" Type="http://schemas.microsoft.com/office/2017/06/relationships/rdRichValueStructure" Target="../rich/structures.xml"/><Relationship Id="images" Type="http://schemas.microsoft.com/office/2022/10/relationships/richValueRel" Target="../rich/images.xml"/>"#;
     add(
         "pkg/_rels/book.xml.rels",
         &format!(
             r#"<Relationships><Relationship Id="sheet" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="../sheets/data.xml"/><Relationship Id="metadata" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sheetMetadata" Target="../meta/state.xml"/>{}</Relationships>"#,
-            if chain { String::new() } else { format!("{rich}{rest}") }
+            if chain {
+                String::new()
+            } else {
+                format!("{rich}{rest}")
+            }
         ),
     );
     if chain {
-        add("meta/_rels/state.xml.rels", &format!("<Relationships>{rich}</Relationships>"));
-        add("rich/_rels/values.xml.rels", &format!("<Relationships>{rest}</Relationships>"));
+        add(
+            "meta/_rels/state.xml.rels",
+            &format!("<Relationships>{rich}</Relationships>"),
+        );
+        add(
+            "rich/_rels/values.xml.rels",
+            &format!("<Relationships>{rest}</Relationships>"),
+        );
     }
     add(
         "sheets/data.xml",
@@ -128,7 +141,12 @@ fn independent_parts(chain: bool) -> Vec<(String, Vec<u8>)> {
 }
 
 fn zip(parts: &[(String, Vec<u8>)]) -> Vec<u8> {
-    make_zip(&parts.iter().map(|(name, bytes)| (name.as_str(), bytes.as_slice())).collect::<Vec<_>>())
+    make_zip(
+        &parts
+            .iter()
+            .map(|(name, bytes)| (name.as_str(), bytes.as_slice()))
+            .collect::<Vec<_>>(),
+    )
 }
 
 fn replace(parts: &mut [(String, Vec<u8>)], name: &str, from: &str, to: &str) {
@@ -143,10 +161,23 @@ fn reads_independent_indices_reordered_keys_and_both_relationship_layouts() {
         let (wb, _) = read_xlsx(&zip(&independent_parts(chain))).unwrap();
         let sheet = wb.sheet(0).unwrap();
         let cell = sheet.cells.get(at("A1")).unwrap();
-        assert_eq!(sheet.cell_pictures.get(&at("A1")).map(Arc::as_ref), Some(&picture(png(), "image/png", "green & <image>")));
+        assert_eq!(
+            sheet.cell_pictures.get(&at("A1")).map(Arc::as_ref),
+            Some(&picture(png(), "image/png", "green & <image>"))
+        );
         assert_eq!(cell.value, Value::Error(CellError::Value));
         assert!(cell.formula.is_none());
-        assert!(sheet.cells.get(at("B1")).unwrap().formula.as_ref().unwrap().array.is_none());
+        assert!(
+            sheet
+                .cells
+                .get(at("B1"))
+                .unwrap()
+                .formula
+                .as_ref()
+                .unwrap()
+                .array
+                .is_none()
+        );
         assert!(sheet.cells.get(at("B2")).is_none());
     }
 }
@@ -156,8 +187,12 @@ fn pictures_roundtrip_across_sheets_with_and_without_dynamic_arrays() {
     for dynamic in [false, true] {
         let mut wb = Workbook::new();
         let first = Arc::new(picture(png(), "image/png", "green & <a> Ω\nline"));
-        wb.sheet_mut(0).unwrap().set_picture(at("B2"), first.clone());
-        wb.sheet_mut(0).unwrap().set_picture(at("A4"), Arc::new(picture(jpeg(), "image/jpeg", "gray")));
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_picture(at("B2"), first.clone());
+        wb.sheet_mut(0)
+            .unwrap()
+            .set_picture(at("A4"), Arc::new(picture(jpeg(), "image/jpeg", "gray")));
         let mut second = Sheet::new("Second");
         second.set_picture(at("C7"), first.clone());
         wb.sheets.push(Arc::new(second));
@@ -166,29 +201,69 @@ fn pictures_roundtrip_across_sheets_with_and_without_dynamic_arrays() {
             let mut f = Cell::formula(Formula::new("SEQUENCE(2)"));
             f.value = Value::Number(1.0);
             sheet.cells.set(at("E1"), f);
-            sheet.spill_ranges.insert(at("E1"), RangeRef::parse("E1:E2").unwrap());
+            sheet
+                .spill_ranges
+                .insert(at("E1"), RangeRef::parse("E1:E2").unwrap());
             sheet.spill.insert(at("E2"), Value::Number(2.0));
         }
         let bytes = write_xlsx(&wb).unwrap();
         let mut package = Package::open(&bytes).unwrap();
         let metadata = package.read_xml("xl/metadata.xml").unwrap().unwrap();
-        assert_eq!(metadata.child("metadataTypes").unwrap().attr_u32("count"), Some(if dynamic { 2 } else { 1 }));
-        assert_eq!(metadata.child("valueMetadata").unwrap().attr_u32("count"), Some(2));
+        assert_eq!(
+            metadata.child("metadataTypes").unwrap().attr_u32("count"),
+            Some(if dynamic { 2 } else { 1 })
+        );
+        assert_eq!(
+            metadata.child("valueMetadata").unwrap().attr_u32("count"),
+            Some(2)
+        );
         let (loaded, report) = read_xlsx(&bytes).unwrap();
         assert!(report.warnings.is_empty(), "{:?}", report.warnings);
-        assert_eq!(loaded.sheet(0).unwrap().cell_pictures.get(&at("B2")), Some(&first));
-        assert_eq!(loaded.sheet(1).unwrap().cell_pictures.get(&at("C7")), Some(&first));
-        assert_eq!(loaded.sheet(0).unwrap().cell_pictures.get(&at("A4")).unwrap().data, jpeg());
+        assert_eq!(
+            loaded.sheet(0).unwrap().cell_pictures.get(&at("B2")),
+            Some(&first)
+        );
+        assert_eq!(
+            loaded.sheet(1).unwrap().cell_pictures.get(&at("C7")),
+            Some(&first)
+        );
+        assert_eq!(
+            loaded
+                .sheet(0)
+                .unwrap()
+                .cell_pictures
+                .get(&at("A4"))
+                .unwrap()
+                .data,
+            jpeg()
+        );
         if dynamic {
-            let f = loaded.sheet(0).unwrap().cells.get(at("E1")).unwrap().formula.as_ref().unwrap();
+            let f = loaded
+                .sheet(0)
+                .unwrap()
+                .cells
+                .get(at("E1"))
+                .unwrap()
+                .formula
+                .as_ref()
+                .unwrap();
             assert_eq!(f.text, "SEQUENCE(2)");
             assert!(f.array.is_none());
         }
         let rels = package.rels("xl/workbook.xml").unwrap();
         assert!(rels.iter().any(|r| r.kind == "rdRichValue"));
         assert!(rels.iter().any(|r| r.kind == "richValueRel"));
-        let sheet = package.read_xml("xl/worksheets/sheet1.xml").unwrap().unwrap();
-        let picture_cell = sheet.child("sheetData").unwrap().kids("row").flat_map(|row| row.kids("c")).find(|c| c.attr("r") == Some("B2")).unwrap();
+        let sheet = package
+            .read_xml("xl/worksheets/sheet1.xml")
+            .unwrap()
+            .unwrap();
+        let picture_cell = sheet
+            .child("sheetData")
+            .unwrap()
+            .kids("row")
+            .flat_map(|row| row.kids("c"))
+            .find(|c| c.attr("r") == Some("B2"))
+            .unwrap();
         assert_eq!(picture_cell.attr("vm"), Some("1"));
         assert_eq!(picture_cell.attr("t"), Some("e"));
         assert_eq!(picture_cell.child("v").unwrap().text, "#VALUE!");
@@ -199,40 +274,68 @@ fn pictures_roundtrip_across_sheets_with_and_without_dynamic_arrays() {
 fn broken_picture_references_keep_the_scalar_fallback_with_warnings() {
     for (part, from, to) in [
         ("sheets/data.xml", "vm=\"2\"", "vm=\"999\""),
-        ("meta/state.xml", "<rc t=\"2\" v=\"0\"/>", "<rc t=\"2\" v=\"99\"/>"),
+        (
+            "meta/state.xml",
+            "<rc t=\"2\" v=\"0\"/>",
+            "<rc t=\"2\" v=\"99\"/>",
+        ),
         ("meta/state.xml", "<rv:rvb i=\"1\"/>", "<rv:rvb i=\"99\"/>"),
         ("rich/values.xml", "<rv s=\"1\">", "<rv s=\"99\">"),
         ("rich/values.xml", "<v>1</v>", "<v>99</v>"),
-        ("rich/_rels/images.xml.rels", "Target=\"../media/original.bin\"", "Target=\"https://example.invalid/image.png\" TargetMode=\"External\""),
+        (
+            "rich/_rels/images.xml.rels",
+            "Target=\"../media/original.bin\"",
+            "Target=\"https://example.invalid/image.png\" TargetMode=\"External\"",
+        ),
         ("rich/_rels/images.xml.rels", "original.bin", "missing.bin"),
-        ("rich/structures.xml", "t=\"_localImage\"", "t=\"unsupportedImage\""),
+        (
+            "rich/structures.xml",
+            "t=\"_localImage\"",
+            "t=\"unsupportedImage\"",
+        ),
         ("rich/images.xml", "opaqueImageId", "missingImageId"),
     ] {
         let mut parts = independent_parts(false);
         replace(&mut parts, part, from, to);
         let (wb, report) = read_xlsx(&zip(&parts)).unwrap();
         let cell = wb.sheet(0).unwrap().cells.get(at("A1")).unwrap();
-        assert!(!wb.sheet(0).unwrap().cell_pictures.contains_key(&at("A1")), "{part}: {to}");
+        assert!(
+            !wb.sheet(0).unwrap().cell_pictures.contains_key(&at("A1")),
+            "{part}: {to}"
+        );
         assert_eq!(cell.value, Value::Error(CellError::Value));
-        assert!(report.warnings.iter().any(|w| w.contains("picture")), "{:?}", report.warnings);
+        assert!(
+            report.warnings.iter().any(|w| w.contains("picture")),
+            "{:?}",
+            report.warnings
+        );
     }
 }
 
 #[test]
 fn hostile_image_bytes_and_dimensions_are_bounded() {
     let mut parts = independent_parts(false);
-    let (_, image) = parts.iter_mut().find(|(n, _)| n == "media/original.bin").unwrap();
+    let (_, image) = parts
+        .iter_mut()
+        .find(|(n, _)| n == "media/original.bin")
+        .unwrap();
     image[16..20].copy_from_slice(&u32::MAX.to_be_bytes());
     let (wb, report) = read_xlsx(&zip(&parts)).unwrap();
     assert!(!wb.sheet(0).unwrap().cell_pictures.contains_key(&at("A1")));
     assert!(report.warnings.iter().any(|w| w.contains("pixels")));
-    let (_, image) = parts.iter_mut().find(|(n, _)| n == "media/original.bin").unwrap();
+    let (_, image) = parts
+        .iter_mut()
+        .find(|(n, _)| n == "media/original.bin")
+        .unwrap();
     image.resize(16 * 1024 * 1024 + 1, 0);
     let (wb, report) = read_xlsx(&zip(&parts)).unwrap();
     assert!(!wb.sheet(0).unwrap().cell_pictures.contains_key(&at("A1")));
     assert!(report.warnings.iter().any(|w| w.contains("oversized")));
     let mut wb = Workbook::new();
-    wb.sheet_mut(0).unwrap().set_picture(at("A1"), Arc::new(picture(vec![1, 2, 3], "image/png", "invalid")));
+    wb.sheet_mut(0).unwrap().set_picture(
+        at("A1"),
+        Arc::new(picture(vec![1, 2, 3], "image/png", "invalid")),
+    );
     assert!(matches!(write_xlsx(&wb), Err(IoError::Format(_))));
 }
 
@@ -256,17 +359,40 @@ fn oversized_entry(mut bytes: Vec<u8>, path: &str, size: u32) -> Vec<u8> {
 #[test]
 fn picture_metadata_limits_and_relationship_read_errors_do_not_block_workbooks() {
     let mut parts = independent_parts(false);
-    replace(&mut parts, "sheets/data.xml", "</sheetData>", "<row r=\"3\"><c r=\"C3\"><v>42</v></c></row></sheetData>");
+    replace(
+        &mut parts,
+        "sheets/data.xml",
+        "</sheetData>",
+        "<row r=\"3\"><c r=\"C3\"><v>42</v></c></row></sheetData>",
+    );
     let oversized_xml = oversized_entry(zip(&parts), "rich/values.xml", 16 * 1024 * 1024 + 1);
-    let broken_rels = oversized_entry(zip(&parts), "rich/_rels/images.xml.rels", 512 * 1024 * 1024 + 1);
-    let (_, values) = parts.iter_mut().find(|(path, _)| path == "rich/values.xml").unwrap();
-    *values = format!("<rvData count=\"100001\">{}</rvData>", "<rv/>".repeat(100_001)).into_bytes();
+    let broken_rels = oversized_entry(
+        zip(&parts),
+        "rich/_rels/images.xml.rels",
+        512 * 1024 * 1024 + 1,
+    );
+    let (_, values) = parts
+        .iter_mut()
+        .find(|(path, _)| path == "rich/values.xml")
+        .unwrap();
+    *values = format!(
+        "<rvData count=\"100001\">{}</rvData>",
+        "<rv/>".repeat(100_001)
+    )
+    .into_bytes();
     for bytes in [oversized_xml, broken_rels, zip(&parts)] {
         let (wb, report) = read_xlsx(&bytes).expect("optional picture data must not block opening");
         let sh = wb.sheet(0).unwrap();
         assert!(sh.cell_pictures.is_empty());
         assert_eq!(sh.value(at("A1")), Value::Error(CellError::Value));
         assert_eq!(sh.value(at("C3")), Value::Number(42.0));
-        assert!(report.warnings.iter().any(|w| w.contains("cell-picture data could not be read")), "{:?}", report.warnings);
+        assert!(
+            report
+                .warnings
+                .iter()
+                .any(|w| w.contains("cell-picture data could not be read")),
+            "{:?}",
+            report.warnings
+        );
     }
 }

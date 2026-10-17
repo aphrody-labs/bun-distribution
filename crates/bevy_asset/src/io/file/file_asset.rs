@@ -1,8 +1,8 @@
 use crate::io::{
-    get_meta_path, AssetReader, AssetReaderError, AssetWriter, AssetWriterError, PathStream,
-    Reader, ReaderNotSeekableError, SeekableReader, Writer,
+    AssetReader, AssetReaderError, AssetWriter, AssetWriterError, PathStream, Reader,
+    ReaderNotSeekableError, SeekableReader, Writer, get_meta_path,
 };
-use async_fs::{read_dir, File};
+use async_fs::{File, read_dir};
 #[cfg(not(target_os = "windows"))]
 use async_io::Timer;
 #[cfg(not(target_os = "windows"))]

@@ -5,13 +5,16 @@ use crate::generate::generate_splat::splat_generation_draft_context::SplatGenera
 
 #[derive(Clone, Debug)]
 pub struct WorldLabsMarble1p0DraftState {
-  /// Shared World Labs draft; the model is baked in at build time.
-  pub draft: WorldLabsSplatDraft,
+    /// Shared World Labs draft; the model is baked in at build time.
+    pub draft: WorldLabsSplatDraft,
 }
 
 impl WorldLabsMarble1p0DraftState {
-  pub async fn to_request(&self, draft_context: &SplatGenerationDraftContext<'_>) -> Result<WorldLabsMarble1p0RequestState, ArtcraftRouterError> {
-    let request = self.draft.to_request(draft_context).await?;
-    Ok(WorldLabsMarble1p0RequestState { request })
-  }
+    pub async fn to_request(
+        &self,
+        draft_context: &SplatGenerationDraftContext<'_>,
+    ) -> Result<WorldLabsMarble1p0RequestState, ArtcraftRouterError> {
+        let request = self.draft.to_request(draft_context).await?;
+        Ok(WorldLabsMarble1p0RequestState { request })
+    }
 }

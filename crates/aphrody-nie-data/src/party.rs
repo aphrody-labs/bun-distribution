@@ -101,7 +101,11 @@ impl CtrlCharaData {
         if chara_id.is_zero() {
             return None;
         }
-        Some(Self { chara_id, ctrl_type: node.int(1), flag: node.int(2) })
+        Some(Self {
+            chara_id,
+            ctrl_type: node.int(1),
+            flag: node.int(2),
+        })
     }
 }
 
@@ -135,7 +139,10 @@ impl PartyDeparture {
         if chara_id.is_zero() {
             return None;
         }
-        Some(Self { chara_id, texture_id: field_hash(v, "textureId") })
+        Some(Self {
+            chara_id,
+            texture_id: field_hash(v, "textureId"),
+        })
     }
 }
 
@@ -222,8 +229,14 @@ impl SpecifyPartyData {
         let chara = v.get("chara").and_then(Value::as_array);
         Some(Self {
             party_id,
-            chara_offset: chara.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            chara_count: chara.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            chara_offset: chara
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            chara_count: chara
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }
@@ -377,7 +390,10 @@ pub fn parse_specify_party(root: &Value) -> SpecifyPartyConfig {
             }
         }
     }
-    SpecifyPartyConfig { chara_list, party_list }
+    SpecifyPartyConfig {
+        chara_list,
+        party_list,
+    }
 }
 
 /// Parse un `guest_limit_config.cfg.bin.json` — 9 règles de limite d'invité.

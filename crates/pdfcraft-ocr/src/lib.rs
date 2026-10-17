@@ -8,7 +8,14 @@
 //!
 //! The models read the Latin alphabet (English and other languages written without accents).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::path::{Path, PathBuf};
 
@@ -30,7 +37,9 @@ pub const LANGUAGES: &[(&str, &str)] = &[("en", "English")];
 pub enum OcrError {
     /// Shown to end users (release packages ship the models; a source build fetches them with
     /// `cargo xtask models`). The UI catalogs key this exact text.
-    #[error("the text recognition models are not installed (reinstall PdfCraft, or set PDFCRAFT_MODELS to the folder that holds them)")]
+    #[error(
+        "the text recognition models are not installed (reinstall PdfCraft, or set PDFCRAFT_MODELS to the folder that holds them)"
+    )]
     NoModels,
     #[error("loading {0}: {1}")]
     Load(String, String),
@@ -50,7 +59,10 @@ pub struct Models {
 impl Models {
     /// The models in `dir`, if both files are there.
     pub fn in_dir(dir: &Path) -> Option<Models> {
-        let m = Models { detection: dir.join(DETECTION_MODEL), recognition: dir.join(RECOGNITION_MODEL) };
+        let m = Models {
+            detection: dir.join(DETECTION_MODEL),
+            recognition: dir.join(RECOGNITION_MODEL),
+        };
         (m.detection.is_file() && m.recognition.is_file()).then_some(m)
     }
 
@@ -66,7 +78,10 @@ impl Models {
         if let Some(d) = std::env::var_os("PDFCRAFT_MODELS") {
             dirs.push(PathBuf::from(d));
         }
-        if let Some(exe) = std::env::current_exe().ok().and_then(|e| e.parent().map(Path::to_path_buf)) {
+        if let Some(exe) = std::env::current_exe()
+            .ok()
+            .and_then(|e| e.parent().map(Path::to_path_buf))
+        {
             dirs.extend(Self::dirs_beside_exe(&exe));
         }
         dirs.push(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../assets/models"));
@@ -80,7 +95,11 @@ impl Models {
     /// - `../share/pdfcraft/models`: the FHS-style trees (`bin/` → `share/`) of the Linux
     ///   deb/rpm/tar.gz/AppImage/Flatpak and the FreeBSD tarball, wherever they are installed.
     pub fn dirs_beside_exe(exe_dir: &Path) -> Vec<PathBuf> {
-        vec![exe_dir.join("models"), exe_dir.join("../Resources/models"), exe_dir.join("../share/pdfcraft/models")]
+        vec![
+            exe_dir.join("models"),
+            exe_dir.join("../Resources/models"),
+            exe_dir.join("../share/pdfcraft/models"),
+        ]
     }
 }
 
@@ -99,7 +118,11 @@ pub struct Line {
 
 impl Line {
     pub fn text(&self) -> String {
-        self.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ")
+        self.words
+            .iter()
+            .map(|w| w.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 
@@ -110,14 +133,18 @@ pub struct Ocr {
 
 impl Ocr {
     pub fn load(models: &Models) -> Result<Ocr, OcrError> {
-        let load = |p: &Path| rten::Model::load_file(p).map_err(|e| OcrError::Load(p.display().to_string(), e.to_string()));
+        let load = |p: &Path| {
+            rten::Model::load_file(p)
+                .map_err(|e| OcrError::Load(p.display().to_string(), e.to_string()))
+        };
         let params = ocrs::OcrEngineParams {
             detection_model: Some(load(&models.detection)?),
             recognition_model: Some(load(&models.recognition)?),
             alphabet: Some(ALPHABET.into()),
             ..Default::default()
         };
-        let engine = ocrs::OcrEngine::new(params).map_err(|e| OcrError::Load("ocr engine".into(), e.to_string()))?;
+        let engine = ocrs::OcrEngine::new(params)
+            .map_err(|e| OcrError::Load("ocr engine".into(), e.to_string()))?;
         Ok(Ocr { engine })
     }
 
@@ -133,7 +160,13 @@ impl Ocr {
         }
         // ocrs wants 1 or 3 channels.
         let rgb: std::borrow::Cow<[u8]> = if pixels.len() == (width * height * 4) as usize {
-            pixels.as_chunks::<4>().0.iter().flat_map(|p| [p[0], p[1], p[2]]).collect::<Vec<u8>>().into()
+            pixels
+                .as_chunks::<4>()
+                .0
+                .iter()
+                .flat_map(|p| [p[0], p[1], p[2]])
+                .collect::<Vec<u8>>()
+                .into()
         } else {
             pixels.into()
         };
@@ -142,7 +175,10 @@ impl Ocr {
         let input = self.engine.prepare_input(source).map_err(|e| err(&e))?;
         let found = self.engine.detect_words(&input).map_err(|e| err(&e))?;
         let lines = self.engine.find_text_lines(&input, &found);
-        let read = self.engine.recognize_text(&input, &lines).map_err(|e| err(&e))?;
+        let read = self
+            .engine
+            .recognize_text(&input, &lines)
+            .map_err(|e| err(&e))?;
         use ocrs::TextItem;
         Ok(read
             .into_iter()
@@ -152,7 +188,15 @@ impl Ocr {
                     .words()
                     .map(|w| {
                         let r = w.bounding_rect();
-                        Word { text: w.to_string(), rect: [r.left() as f32, r.top() as f32, r.right() as f32, r.bottom() as f32] }
+                        Word {
+                            text: w.to_string(),
+                            rect: [
+                                r.left() as f32,
+                                r.top() as f32,
+                                r.right() as f32,
+                                r.bottom() as f32,
+                            ],
+                        }
                     })
                     .filter(|w| !w.text.trim().is_empty())
                     .collect(),
@@ -180,7 +224,12 @@ impl PlacedWord {
         let o = to_user(l, b);
         let br = to_user(r, b);
         let tl = to_user(l, t);
-        PlacedWord { text: word.text.clone(), origin: o, across: [br[0] - o[0], br[1] - o[1]], up: [tl[0] - o[0], tl[1] - o[1]] }
+        PlacedWord {
+            text: word.text.clone(),
+            origin: o,
+            across: [br[0] - o[0], br[1] - o[1]],
+            up: [tl[0] - o[0], tl[1] - o[1]],
+        }
     }
 }
 
@@ -198,11 +247,17 @@ fn ink_extent(text: &str) -> (f64, f64) {
     if !text.chars().any(char::is_alphanumeric) {
         return (BOX_EM - DESCENT, -DESCENT);
     }
-    let tall = text
-        .chars()
-        .any(|c| c.is_uppercase() || c.is_ascii_digit() || "bdfhijklt!?/\\()[]{}|'\"#$%&@".contains(c) || (c.is_alphabetic() && !c.is_ascii()));
+    let tall = text.chars().any(|c| {
+        c.is_uppercase()
+            || c.is_ascii_digit()
+            || "bdfhijklt!?/\\()[]{}|'\"#$%&@".contains(c)
+            || (c.is_alphabetic() && !c.is_ascii())
+    });
     let low = text.chars().any(|c| "gjpqy()[]{}|_".contains(c));
-    (if tall { CAP_HEIGHT } else { X_HEIGHT }, if low { -DESCENT } else { 0.0 })
+    (
+        if tall { CAP_HEIGHT } else { X_HEIGHT },
+        if low { -DESCENT } else { 0.0 },
+    )
 }
 
 fn num(v: f64) -> String {
@@ -247,7 +302,13 @@ mod tests {
     fn places_words_through_the_mapping() {
         // 2 pixels per point, page 612 × 792, y flipped.
         let to_user = |x: f32, y: f32| [x as f64 / 2.0, 792.0 - y as f64 / 2.0];
-        let w = PlacedWord::place(&Word { text: "Hello".into(), rect: [100.0, 200.0, 300.0, 240.0] }, to_user);
+        let w = PlacedWord::place(
+            &Word {
+                text: "Hello".into(),
+                rect: [100.0, 200.0, 300.0, 240.0],
+            },
+            to_user,
+        );
         assert_eq!(w.origin, [50.0, 672.0]);
         assert_eq!(w.across, [100.0, 0.0]);
         assert_eq!(w.up, [0.0, 20.0]);
@@ -263,12 +324,24 @@ mod tests {
 
     #[test]
     fn text_layer_is_invisible_text_fitted_to_each_box() {
-        let w = PlacedWord { text: "Hi".into(), origin: [10.0, 20.0], across: [30.0, 0.0], up: [0.0, 9.3] };
+        let w = PlacedWord {
+            text: "Hi".into(),
+            origin: [10.0, 20.0],
+            across: [30.0, 0.0],
+            up: [0.0, 9.3],
+        };
         let s = String::from_utf8(text_layer(&[w])).unwrap();
         assert!(s.contains("3 Tr") && s.contains("/PCHelv 1 Tf"), "{s}");
         let width = helvetica_width("Hi", 1.0);
         // "Hi" has no descender: its box spans the cap height, from the baseline up.
-        assert!(s.contains(&format!("{} 0 0 {} 10 20 Tm (Hi) Tj", num(30.0 / width), num(9.3 / CAP_HEIGHT))), "{s}");
+        assert!(
+            s.contains(&format!(
+                "{} 0 0 {} 10 20 Tm (Hi) Tj",
+                num(30.0 / width),
+                num(9.3 / CAP_HEIGHT)
+            )),
+            "{s}"
+        );
         assert!(s.starts_with("/OCR BMC") && s.ends_with("EMC\n"));
     }
 
@@ -283,17 +356,35 @@ mod tests {
         assert_eq!(ink_extent("Gallus.Ze@camtel.cm"), (CAP_HEIGHT, 0.0));
         assert_eq!(ink_extent("Corporation"), (CAP_HEIGHT, -DESCENT));
         assert_eq!(ink_extent("--"), (BOX_EM - DESCENT, -DESCENT));
-        let w = PlacedWord { text: "gap".into(), origin: [0.0, 100.0], across: [20.0, 0.0], up: [0.0, 7.3] };
+        let w = PlacedWord {
+            text: "gap".into(),
+            origin: [0.0, 100.0],
+            across: [20.0, 0.0],
+            up: [0.0, 7.3],
+        };
         let s = String::from_utf8(text_layer(&[w])).unwrap();
         let em = 7.3 / (X_HEIGHT + DESCENT);
-        assert!(s.contains(&format!(" 0 0 {} 0 {} Tm (gap) Tj", num(em), num(100.0 + em * DESCENT))), "{s}");
+        assert!(
+            s.contains(&format!(
+                " 0 0 {} 0 {} Tm (gap) Tj",
+                num(em),
+                num(100.0 + em * DESCENT)
+            )),
+            "{s}"
+        );
     }
 
     #[test]
     fn rotated_pages_keep_the_reading_direction() {
         // A page turned 90°: image x runs up the page.
         let to_user = |x: f32, y: f32| [y as f64, x as f64];
-        let w = PlacedWord::place(&Word { text: "Up".into(), rect: [0.0, 0.0, 50.0, 10.0] }, to_user);
+        let w = PlacedWord::place(
+            &Word {
+                text: "Up".into(),
+                rect: [0.0, 0.0, 50.0, 10.0],
+            },
+            to_user,
+        );
         assert_eq!(w.across, [0.0, 50.0]);
         assert_eq!(w.up, [-10.0, 0.0]);
     }
@@ -302,28 +393,54 @@ mod tests {
     /// Mirrors packaging/{windows/package.ps1,macos/package.sh,linux/package.sh,freebsd/package.sh}.
     #[test]
     fn finds_the_models_in_every_release_package_layout() {
-        let base = std::env::temp_dir().join(format!("pdfcraft-ocr-layouts-{}", std::process::id()));
+        let base =
+            std::env::temp_dir().join(format!("pdfcraft-ocr-layouts-{}", std::process::id()));
         let layouts = [
             ("windows", "PdfCraft", "PdfCraft/models"),
-            ("macos", "PdfCraft.app/Contents/MacOS", "PdfCraft.app/Contents/Resources/models"),
+            (
+                "macos",
+                "PdfCraft.app/Contents/MacOS",
+                "PdfCraft.app/Contents/Resources/models",
+            ),
             ("linux-deb-rpm", "usr/bin", "usr/share/pdfcraft/models"),
-            ("linux-tar", "pdfcraft-1.0.0-linux-x86_64/bin", "pdfcraft-1.0.0-linux-x86_64/share/pdfcraft/models"),
-            ("appimage", "PdfCraft.AppDir/usr/bin", "PdfCraft.AppDir/usr/share/pdfcraft/models"),
+            (
+                "linux-tar",
+                "pdfcraft-1.0.0-linux-x86_64/bin",
+                "pdfcraft-1.0.0-linux-x86_64/share/pdfcraft/models",
+            ),
+            (
+                "appimage",
+                "PdfCraft.AppDir/usr/bin",
+                "PdfCraft.AppDir/usr/share/pdfcraft/models",
+            ),
             ("flatpak", "app/bin", "app/share/pdfcraft/models"),
-            ("freebsd", "usr/local/bin", "usr/local/share/pdfcraft/models"),
+            (
+                "freebsd",
+                "usr/local/bin",
+                "usr/local/share/pdfcraft/models",
+            ),
         ];
         for (name, exe_dir, models_dir) in layouts {
             let root = base.join(name);
             let (exe_dir, models_dir) = (root.join(exe_dir), root.join(models_dir));
             std::fs::create_dir_all(&exe_dir).unwrap();
             std::fs::create_dir_all(&models_dir).unwrap();
-            let found = || Models::dirs_beside_exe(&exe_dir).iter().find_map(|d| Models::in_dir(d));
+            let found = || {
+                Models::dirs_beside_exe(&exe_dir)
+                    .iter()
+                    .find_map(|d| Models::in_dir(d))
+            };
             assert_eq!(found(), None, "{name}: no models yet");
             for file in [DETECTION_MODEL, RECOGNITION_MODEL] {
                 std::fs::write(models_dir.join(file), b"model").unwrap();
             }
-            let models = found().unwrap_or_else(|| panic!("{name}: models in {} not found", models_dir.display()));
-            assert_eq!(models.detection.canonicalize().unwrap(), models_dir.join(DETECTION_MODEL).canonicalize().unwrap(), "{name}");
+            let models = found()
+                .unwrap_or_else(|| panic!("{name}: models in {} not found", models_dir.display()));
+            assert_eq!(
+                models.detection.canonicalize().unwrap(),
+                models_dir.join(DETECTION_MODEL).canonicalize().unwrap(),
+                "{name}"
+            );
         }
         let _ = std::fs::remove_dir_all(&base);
     }
@@ -341,7 +458,10 @@ mod tests {
     #[test]
     fn missing_models_message_is_for_end_users() {
         let message = OcrError::NoModels.to_string();
-        assert!(!message.contains("cargo") && message.contains("PDFCRAFT_MODELS"), "{message}");
+        assert!(
+            !message.contains("cargo") && message.contains("PDFCRAFT_MODELS"),
+            "{message}"
+        );
     }
 
     /// End to end on rendered text, when the models are installed (`cargo xtask models`).
@@ -355,8 +475,15 @@ mod tests {
         let (w, h, px) = test_image::hello();
         let lines = ocr.recognize(&px, w, h).unwrap();
         let text: Vec<String> = lines.iter().map(Line::text).collect();
-        assert!(text.iter().any(|t| t.contains("HELL") && t.contains("WOR")), "{text:?}");
-        let word = lines.iter().flat_map(|l| &l.words).find(|w| w.text.contains("HELL")).unwrap();
+        assert!(
+            text.iter().any(|t| t.contains("HELL") && t.contains("WOR")),
+            "{text:?}"
+        );
+        let word = lines
+            .iter()
+            .flat_map(|l| &l.words)
+            .find(|w| w.text.contains("HELL"))
+            .unwrap();
         assert!(word.rect[0] >= 10.0 && word.rect[0] < 60.0, "{word:?}");
     }
 
@@ -364,20 +491,57 @@ mod tests {
         /// "HELLO WORLD" drawn with blocky 5×7 letters, 4 pixels per dot, black on white.
         pub fn hello() -> (u32, u32, Vec<u8>) {
             const GLYPHS: &[(char, [&str; 7])] = &[
-                ('H', ["X...X", "X...X", "X...X", "XXXXX", "X...X", "X...X", "X...X"]),
-                ('E', ["XXXXX", "X....", "X....", "XXXX.", "X....", "X....", "XXXXX"]),
-                ('L', ["X....", "X....", "X....", "X....", "X....", "X....", "XXXXX"]),
-                ('O', [".XXX.", "X...X", "X...X", "X...X", "X...X", "X...X", ".XXX."]),
-                ('W', ["X...X", "X...X", "X...X", "X.X.X", "X.X.X", "XX.XX", "X...X"]),
-                ('R', ["XXXX.", "X...X", "X...X", "XXXX.", "X.X..", "X..X.", "X...X"]),
-                ('D', ["XXXX.", "X...X", "X...X", "X...X", "X...X", "X...X", "XXXX."]),
+                (
+                    'H',
+                    [
+                        "X...X", "X...X", "X...X", "XXXXX", "X...X", "X...X", "X...X",
+                    ],
+                ),
+                (
+                    'E',
+                    [
+                        "XXXXX", "X....", "X....", "XXXX.", "X....", "X....", "XXXXX",
+                    ],
+                ),
+                (
+                    'L',
+                    [
+                        "X....", "X....", "X....", "X....", "X....", "X....", "XXXXX",
+                    ],
+                ),
+                (
+                    'O',
+                    [
+                        ".XXX.", "X...X", "X...X", "X...X", "X...X", "X...X", ".XXX.",
+                    ],
+                ),
+                (
+                    'W',
+                    [
+                        "X...X", "X...X", "X...X", "X.X.X", "X.X.X", "XX.XX", "X...X",
+                    ],
+                ),
+                (
+                    'R',
+                    [
+                        "XXXX.", "X...X", "X...X", "XXXX.", "X.X..", "X..X.", "X...X",
+                    ],
+                ),
+                (
+                    'D',
+                    [
+                        "XXXX.", "X...X", "X...X", "X...X", "X...X", "X...X", "XXXX.",
+                    ],
+                ),
             ];
             let text = "HELLO WORLD";
             let (dot, x0, y0) = (4u32, 40u32, 40u32);
             let (w, h) = (x0 * 2 + text.len() as u32 * 6 * dot, y0 * 2 + 7 * dot);
             let mut px = vec![255u8; (w * h * 4) as usize];
             for (i, c) in text.chars().enumerate() {
-                let Some((_, rows)) = GLYPHS.iter().find(|g| g.0 == c) else { continue };
+                let Some((_, rows)) = GLYPHS.iter().find(|g| g.0 == c) else {
+                    continue;
+                };
                 for (ry, row) in rows.iter().enumerate() {
                     for (rx, b) in row.bytes().enumerate() {
                         if b != b'X' {

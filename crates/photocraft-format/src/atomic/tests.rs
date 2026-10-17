@@ -5,7 +5,11 @@ struct TempDir(PathBuf);
 impl TempDir {
     fn new(tag: &str) -> Self {
         static N: AtomicU64 = AtomicU64::new(0);
-        let d = std::env::temp_dir().join(format!("pc-atomic-{tag}-{}-{}", std::process::id(), N.fetch_add(1, Ordering::Relaxed)));
+        let d = std::env::temp_dir().join(format!(
+            "pc-atomic-{tag}-{}-{}",
+            std::process::id(),
+            N.fetch_add(1, Ordering::Relaxed)
+        ));
         let _ = std::fs::remove_dir_all(&d);
         std::fs::create_dir_all(&d).unwrap();
         Self(d)
@@ -24,9 +28,16 @@ impl Drop for TempDir {
 
 /// Only the target remains: no temporary file was left behind.
 fn assert_no_temp(dir: &Path) {
-    let leftovers: Vec<_> =
-        std::fs::read_dir(dir).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.ends_with(".tmp")).collect();
-    assert!(leftovers.is_empty(), "temporary files left behind: {leftovers:?}");
+    let leftovers: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().into_owned())
+        .filter(|n| n.ends_with(".tmp"))
+        .collect();
+    assert!(
+        leftovers.is_empty(),
+        "temporary files left behind: {leftovers:?}"
+    );
 }
 
 const ORIGINAL: &[u8] = b"the user's precious original document";
@@ -46,9 +57,15 @@ struct Faulty {
 impl AtomicFs for Faulty {
     fn write_new(&self, tmp: &Path, bytes: &[u8]) -> io::Result<()> {
         if let Some(n) = self.fail_write_after {
-            let mut f = std::fs::OpenOptions::new().write(true).create_new(true).open(tmp)?;
+            let mut f = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(tmp)?;
             f.write_all(&bytes[..n.min(bytes.len())])?;
-            return Err(io::Error::new(io::ErrorKind::StorageFull, "injected: no space left on device"));
+            return Err(io::Error::new(
+                io::ErrorKind::StorageFull,
+                "injected: no space left on device",
+            ));
         }
         RealFs.write_new(tmp, bytes)
     }
@@ -59,7 +76,10 @@ impl AtomicFs for Faulty {
         }
         if self.locked_renames.get() > 0 {
             self.locked_renames.set(self.locked_renames.get() - 1);
-            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "injected: sharing violation"));
+            return Err(io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                "injected: sharing violation",
+            ));
         }
         RealFs.rename(from, to)
     }
@@ -74,7 +94,10 @@ impl AtomicFs for Faulty {
     }
 }
 
-const NO_RETRY: RenameRetry = RenameRetry { attempts: 0, first_delay_ms: 0 };
+const NO_RETRY: RenameRetry = RenameRetry {
+    attempts: 0,
+    first_delay_ms: 0,
+};
 
 #[test]
 fn replaces_and_creates() {
@@ -93,7 +116,9 @@ fn replaces_and_creates() {
 fn reports_write_progress() {
     let d = TempDir::new("progress");
     let p = d.0.join("big.psd");
-    let bytes: Vec<u8> = (0..WRITE_CHUNK * 2 + 123).map(|i| (i % 251) as u8).collect();
+    let bytes: Vec<u8> = (0..WRITE_CHUNK * 2 + 123)
+        .map(|i| (i % 251) as u8)
+        .collect();
     let seen = std::sync::Mutex::new(Vec::new());
     atomic_write_progress(&p, &bytes, &|f| seen.lock().unwrap().push(f)).unwrap();
     let seen = seen.into_inner().unwrap();
@@ -101,7 +126,10 @@ fn reports_write_progress() {
     assert!(seen.windows(2).all(|w| w[0] < w[1]), "monotonic: {seen:?}");
     assert!(seen[0] > 0.0 && seen[0] < 0.6, "{seen:?}");
     assert_eq!(seen.last().copied(), Some(1.0));
-    assert!(std::fs::read(&p).unwrap() == bytes, "the file holds the bytes");
+    assert!(
+        std::fs::read(&p).unwrap() == bytes,
+        "the file holds the bytes"
+    );
     assert_no_temp(&d.0);
 }
 
@@ -118,7 +146,10 @@ fn write_failure_halfway_keeps_original() {
     let d = TempDir::new("write");
     let p = d.0.join("doc.psd");
     std::fs::write(&p, ORIGINAL).unwrap();
-    let fs = Faulty { fail_write_after: Some(5), ..Default::default() };
+    let fs = Faulty {
+        fail_write_after: Some(5),
+        ..Default::default()
+    };
     let e = atomic_write_with(&fs, NO_RETRY, &p, &[7u8; 4096]).unwrap_err();
     assert_eq!(e.kind(), io::ErrorKind::StorageFull);
     assert!(e.to_string().contains("not changed"), "{e}");
@@ -132,7 +163,10 @@ fn rename_failure_keeps_original() {
     let d = TempDir::new("rename");
     let p = d.0.join("doc.psd");
     std::fs::write(&p, ORIGINAL).unwrap();
-    let fs = Faulty { fail_rename: Some(io::ErrorKind::Other), ..Default::default() };
+    let fs = Faulty {
+        fail_rename: Some(io::ErrorKind::Other),
+        ..Default::default()
+    };
     assert!(atomic_write_with(&fs, NO_RETRY, &p, b"new").is_err());
     assert_eq!(std::fs::read(&p).unwrap(), ORIGINAL);
     assert_no_temp(&d.0);
@@ -143,7 +177,10 @@ fn cross_device_rename_errors_clearly_and_never_writes_in_place() {
     let d = TempDir::new("exdev");
     let p = d.0.join("doc.psd");
     std::fs::write(&p, ORIGINAL).unwrap();
-    let fs = Faulty { fail_rename: Some(io::ErrorKind::CrossesDevices), ..Default::default() };
+    let fs = Faulty {
+        fail_rename: Some(io::ErrorKind::CrossesDevices),
+        ..Default::default()
+    };
     let e = atomic_write_with(&fs, NO_RETRY, &p, b"new").unwrap_err();
     assert!(e.to_string().contains("different volume"), "{e}");
     assert_eq!(std::fs::read(&p).unwrap(), ORIGINAL);
@@ -155,8 +192,20 @@ fn locked_target_rename_is_retried() {
     let d = TempDir::new("locked");
     let p = d.0.join("doc.psd");
     std::fs::write(&p, ORIGINAL).unwrap();
-    let fs = Faulty { locked_renames: Cell::new(2), ..Default::default() };
-    atomic_write_with(&fs, RenameRetry { attempts: 3, first_delay_ms: 1 }, &p, b"new").unwrap();
+    let fs = Faulty {
+        locked_renames: Cell::new(2),
+        ..Default::default()
+    };
+    atomic_write_with(
+        &fs,
+        RenameRetry {
+            attempts: 3,
+            first_delay_ms: 1,
+        },
+        &p,
+        b"new",
+    )
+    .unwrap();
     assert_eq!(std::fs::read(&p).unwrap(), b"new");
     assert_eq!(fs.renames.get(), 3);
     assert_no_temp(&d.0);
@@ -167,8 +216,20 @@ fn lock_that_outlasts_the_retries_keeps_original() {
     let d = TempDir::new("locked2");
     let p = d.0.join("doc.psd");
     std::fs::write(&p, ORIGINAL).unwrap();
-    let fs = Faulty { locked_renames: Cell::new(10), ..Default::default() };
-    let e = atomic_write_with(&fs, RenameRetry { attempts: 2, first_delay_ms: 1 }, &p, b"new").unwrap_err();
+    let fs = Faulty {
+        locked_renames: Cell::new(10),
+        ..Default::default()
+    };
+    let e = atomic_write_with(
+        &fs,
+        RenameRetry {
+            attempts: 2,
+            first_delay_ms: 1,
+        },
+        &p,
+        b"new",
+    )
+    .unwrap_err();
     assert_eq!(e.kind(), io::ErrorKind::PermissionDenied);
     assert!(e.to_string().contains("locked"), "{e}");
     assert_eq!(fs.renames.get(), 3);
@@ -205,7 +266,10 @@ fn keeps_the_original_file_mode() {
     std::fs::write(&p, ORIGINAL).unwrap();
     std::fs::set_permissions(&p, std::fs::Permissions::from_mode(0o600)).unwrap();
     atomic_write(&p, b"new").unwrap();
-    assert_eq!(std::fs::metadata(&p).unwrap().permissions().mode() & 0o777, 0o600);
+    assert_eq!(
+        std::fs::metadata(&p).unwrap().permissions().mode() & 0o777,
+        0o600
+    );
 }
 
 #[cfg(unix)]
@@ -217,7 +281,12 @@ fn writes_through_a_symlink() {
     std::fs::write(&real, ORIGINAL).unwrap();
     std::os::unix::fs::symlink(&real, &link).unwrap();
     atomic_write(&link, b"new").unwrap();
-    assert!(std::fs::symlink_metadata(&link).unwrap().file_type().is_symlink());
+    assert!(
+        std::fs::symlink_metadata(&link)
+            .unwrap()
+            .file_type()
+            .is_symlink()
+    );
     assert_eq!(std::fs::read(&real).unwrap(), b"new");
 }
 
@@ -242,7 +311,11 @@ fn a_refused_full_flush_falls_back_to_a_plain_fsync_on_apple_only() {
         });
         let apple = cfg!(target_vendor = "apple");
         assert_eq!(r.is_ok(), apple, "{name}");
-        assert_eq!(fsynced.get(), apple, "{name}: the plain fsync runs only on Apple platforms");
+        assert_eq!(
+            fsynced.get(),
+            apple,
+            "{name}: the plain fsync runs only on Apple platforms"
+        );
     }
     // The plain fsync's own failure is reported.
     if cfg!(target_vendor = "apple") {
@@ -262,6 +335,10 @@ fn sync_file_flushes_a_local_file() {
     let dir = TempDir::new("sync");
     let path = dir.0.join("f.bin");
     // Opened for writing, as the saves do: Windows can't flush a read-only handle.
-    let file = std::fs::OpenOptions::new().write(true).create_new(true).open(&path).unwrap();
+    let file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&path)
+        .unwrap();
     sync_file(&file).unwrap();
 }

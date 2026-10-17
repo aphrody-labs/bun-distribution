@@ -16,15 +16,15 @@ use core::{
 use {
     alloc::string::ToString,
     serde::{
-        de::{Error, Visitor},
         Deserialize, Deserializer, Serialize, Serializer,
+        de::{Error, Visitor},
     },
 };
 
 #[cfg(feature = "bevy_reflect")]
 use {
     crate::reflect::ReflectComponent,
-    bevy_reflect::{std_traits::ReflectDefault, Reflect},
+    bevy_reflect::{Reflect, std_traits::ReflectDefault},
 };
 
 #[cfg(all(feature = "serialize", feature = "bevy_reflect"))]
@@ -94,7 +94,7 @@ impl Name {
     /// created from a borrow.
     #[inline(always)]
     pub fn mutate(&mut self, func: impl FnOnce(&mut String)) {
-        self.0 .0.mutate(|cow_str| match cow_str {
+        self.0.0.mutate(|cow_str| match cow_str {
             Cow::Borrowed(borrowed) => {
                 let mut owned = borrowed.to_owned();
                 func(&mut owned);
@@ -109,26 +109,26 @@ impl Name {
     /// Gets the name of the entity as a `&str`.
     #[inline(always)]
     pub fn as_str(&self) -> &str {
-        &self.0 .0
+        &self.0.0
     }
     /// Get the precomputed hash of this names string, useful for raw entry operations on [`PreHashMap`](bevy_utils::PreHashMap)
     #[inline(always)]
     pub fn pre_hash(&self) -> u64 {
-        self.0 .0.hash()
+        self.0.0.hash()
     }
 }
 
 impl core::fmt::Display for Name {
     #[inline(always)]
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        core::fmt::Display::fmt(&*self.0 .0, f)
+        core::fmt::Display::fmt(&*self.0.0, f)
     }
 }
 
 impl core::fmt::Debug for Name {
     #[inline(always)]
     fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
-        core::fmt::Debug::fmt(&self.0 .0, f)
+        core::fmt::Debug::fmt(&self.0.0, f)
     }
 }
 
@@ -192,7 +192,7 @@ impl From<String> for Name {
 impl AsRef<str> for Name {
     #[inline(always)]
     fn as_ref(&self) -> &str {
-        &self.0 .0
+        &self.0.0
     }
 }
 
@@ -212,18 +212,18 @@ impl From<Name> for String {
 
 impl Hash for Name {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        Hash::hash(&self.0 .0, state);
+        Hash::hash(&self.0.0, state);
     }
 }
 
 impl PartialEq for Name {
     fn eq(&self, other: &Self) -> bool {
-        if self.0 .0.hash() != other.0 .0.hash() {
+        if self.0.0.hash() != other.0.0.hash() {
             // Makes the common case of two strings not been equal very fast
             return false;
         }
 
-        self.0 .0.eq(&other.0 .0)
+        self.0.0.eq(&other.0.0)
     }
 }
 
@@ -237,7 +237,7 @@ impl PartialOrd for Name {
 
 impl Ord for Name {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        self.0 .0.cmp(&other.0 .0)
+        self.0.0.cmp(&other.0.0)
     }
 }
 
@@ -315,7 +315,7 @@ mod tests {
 mod serde_tests {
     use super::Name;
 
-    use serde_test::{assert_tokens, Token};
+    use serde_test::{Token, assert_tokens};
 
     #[test]
     fn test_serde_name() {

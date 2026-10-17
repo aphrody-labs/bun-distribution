@@ -29,8 +29,34 @@ const MUSIC: &[&str] = &[
 
 fn spec(name: &str) -> Vec<&'static str> {
     match name {
-        "ogg_opus_music.opus" => [MUSIC, &["-t", "3", "-c:a", "libopus", "-b:a", "160k", "-application", "audio"]].concat(),
-        "ogg_opus_trim.ogg" => [MUSIC, &["-t", "1.2345", "-c:a", "libopus", "-b:a", "96k", "-frame_duration", "10"]].concat(),
+        "ogg_opus_music.opus" => [
+            MUSIC,
+            &[
+                "-t",
+                "3",
+                "-c:a",
+                "libopus",
+                "-b:a",
+                "160k",
+                "-application",
+                "audio",
+            ],
+        ]
+        .concat(),
+        "ogg_opus_trim.ogg" => [
+            MUSIC,
+            &[
+                "-t",
+                "1.2345",
+                "-c:a",
+                "libopus",
+                "-b:a",
+                "96k",
+                "-frame_duration",
+                "10",
+            ],
+        ]
+        .concat(),
         "ogg_opus_speech.opus" => {
             vec![
                 "-f",
@@ -70,7 +96,12 @@ fn spec(name: &str) -> Vec<&'static str> {
     }
 }
 
-const ALL: &[&str] = &["ogg_opus_music.opus", "ogg_opus_trim.ogg", "ogg_opus_speech.opus", "ogg_vorbis.ogg"];
+const ALL: &[&str] = &[
+    "ogg_opus_music.opus",
+    "ogg_opus_trim.ogg",
+    "ogg_opus_speech.opus",
+    "ogg_vorbis.ogg",
+];
 
 fn make(ff: &Path, name: &str) -> PathBuf {
     fixture(ff, name, &spec(name)).unwrap_or_else(|| panic!("could not generate {name}"))
@@ -82,20 +113,47 @@ fn snr_db(reference: &[f32], ours: &[f32]) -> f64 {
         s += (*r as f64).powi(2);
         n += (*r as f64 - *o as f64).powi(2);
     }
-    if n == 0.0 { f64::INFINITY } else { 10.0 * (s / n).log10() }
+    if n == 0.0 {
+        f64::INFINITY
+    } else {
+        10.0 * (s / n).log10()
+    }
 }
 
 /// (our continuous decode interleaved, ffmpeg's decode interleaved, channels, rate)
-fn decode_both(ff: &Path, file: &Path, decoder: &[&str]) -> (OggSource, Vec<f32>, Vec<f32>, usize, u32) {
+fn decode_both(
+    ff: &Path,
+    file: &Path,
+    decoder: &[&str],
+) -> (OggSource, Vec<f32>, Vec<f32>, usize, u32) {
     let src = OggSource::open(file.file_name().unwrap().to_str().unwrap(), bytes(file)).unwrap();
     let a = src.info().audio().cloned().unwrap();
     let ch = a.channels as usize;
     let mut args: Vec<&str> = decoder.to_vec();
-    args.extend_from_slice(&["-i", file.to_str().unwrap(), "-map", "0:a:0", "-f", "f32le", "-"]);
-    let want: Vec<f32> = ffmpeg_out(ff, &args).as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]])).collect();
+    args.extend_from_slice(&[
+        "-i",
+        file.to_str().unwrap(),
+        "-map",
+        "0:a:0",
+        "-f",
+        "f32le",
+        "-",
+    ]);
+    let want: Vec<f32> = ffmpeg_out(ff, &args)
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+        .collect();
     let n = want.len() / ch;
     let frames = src.info().duration.to_units_floor(a.sample_rate as i64) as usize;
-    assert_eq!(frames, n, "{}: our length = ffmpeg's ({} samples)", file.display(), n);
+    assert_eq!(
+        frames,
+        n,
+        "{}: our length = ffmpeg's ({} samples)",
+        file.display(),
+        n
+    );
     let buf = src.audio(0, n, a.sample_rate).unwrap();
     let mut ours = Vec::with_capacity(n * ch);
     for i in 0..n {
@@ -122,8 +180,15 @@ fn check_seeks(file: &Path, ours: &[f32], ch: usize, rate: u32, tol: f32) {
             }
         }
     }
-    assert!(worst <= tol, "{}: seek differs from continuous decode by {worst}", file.display());
-    eprintln!("{}: seeks within {worst:e} of the continuous decode", file.display());
+    assert!(
+        worst <= tol,
+        "{}: seek differs from continuous decode by {worst}",
+        file.display()
+    );
+    eprintln!(
+        "{}: seeks within {worst:e} of the continuous decode",
+        file.display()
+    );
 }
 
 #[test]
@@ -136,7 +201,11 @@ fn opus_celt_music_matches_libopus() {
     assert_eq!((rate, ch), (48_000, 2));
     assert_eq!(src.info().audio().unwrap().codec, "Opus");
     let snr = snr_db(&want, &ours);
-    eprintln!("{}: {} samples, SNR {snr:.1} dB vs libopus", f.display(), want.len() / ch);
+    eprintln!(
+        "{}: {} samples, SNR {snr:.1} dB vs libopus",
+        f.display(),
+        want.len() / ch
+    );
     assert!(snr >= 50.0, "SNR {snr:.1} dB");
     check_seeks(&f, &ours, ch, rate, 2e-3);
 }
@@ -147,7 +216,12 @@ fn opus_end_trimming_and_10ms_frames() {
     let f = make(&ff, "ogg_opus_trim.ogg");
     let (src, ours, want, ch, rate) = decode_both(&ff, &f, &["-c:a", "libopus"]);
     // 1.2345 s is not a whole number of 10 ms packets: the last page's granule trims the end
-    let t = filmcraft_ogg::OpusTiming::of(&src.file().streams[0], filmcraft_opus::OpusHead::parse(&src.file().streams[0].headers[0]).unwrap().pre_skip as u32);
+    let t = filmcraft_ogg::OpusTiming::of(
+        &src.file().streams[0],
+        filmcraft_opus::OpusHead::parse(&src.file().streams[0].headers[0])
+            .unwrap()
+            .pre_skip as u32,
+    );
     let decoded: i64 = t.durations.iter().map(|&d| d as i64).sum::<i64>() - t.pre_skip as i64;
     assert!(t.total < decoded, "end trimmed: {} < {}", t.total, decoded);
     assert_eq!(t.total, 59_256, "1.2345 s at 48 kHz");
@@ -176,7 +250,10 @@ fn vorbis_matches_ffmpeg() {
     assert_eq!(src.info().audio().unwrap().codec, "Vorbis");
     assert_eq!((rate, ch), (44_100, 2));
     let snr = snr_db(&want, &ours);
-    eprintln!("{}: SNR {snr:.1} dB vs ffmpeg's Vorbis decoder", f.display());
+    eprintln!(
+        "{}: SNR {snr:.1} dB vs ffmpeg's Vorbis decoder",
+        f.display()
+    );
     assert!(snr >= 60.0, "SNR {snr:.1} dB");
     check_seeks(&f, &ours, ch, rate, 0.0);
 }
@@ -193,7 +270,9 @@ fn opened_through_open_bytes_and_robust_to_damage() {
         let cut = full.len() * k / 12;
         if let Ok(s) = OggSource::open("cut", full[..cut].to_vec().into()) {
             let n = s.info().duration.to_units_floor(48_000);
-            let _ = s.audio(rng.below(n.max(1) as u64) as i64, 5000, 48_000).unwrap();
+            let _ = s
+                .audio(rng.below(n.max(1) as u64) as i64, 5000, 48_000)
+                .unwrap();
         }
     }
     for _ in 0..40 {
@@ -221,6 +300,8 @@ fn generate_fixtures() {
     };
     for n in ALL {
         let out = dir().join(n);
-        filmcraft_testkit::fixtures::generate_and_report(n, std::slice::from_ref(&out), || fixture(&ff, n, &spec(n)));
+        filmcraft_testkit::fixtures::generate_and_report(n, std::slice::from_ref(&out), || {
+            fixture(&ff, n, &spec(n))
+        });
     }
 }

@@ -13,11 +13,15 @@ fn wia(_s: &mut Session, _p: &Value) -> Result<Value> {
     {
         // A real implementation enumerates WIA devices via COM (IWiaDevMgr) and transfers an image
         // into a new document. No COM binding is wired yet, so report zero devices.
-        Ok(json!({"available": true, "devices": [], "note": "WIA device enumeration not yet wired"}))
+        Ok(
+            json!({"available": true, "devices": [], "note": "WIA device enumeration not yet wired"}),
+        )
     }
     #[cfg(not(target_os = "windows"))]
     {
-        Ok(json!({"available": false, "devices": [], "note": "WIA scanner/camera import is available on Windows only"}))
+        Ok(
+            json!({"available": false, "devices": [], "note": "WIA scanner/camera import is available on Windows only"}),
+        )
     }
 }
 

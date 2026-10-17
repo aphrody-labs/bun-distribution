@@ -36,7 +36,12 @@ impl SvgPathPen {
     /// New pen with the given uniform scale and number format.
     #[must_use]
     pub fn new(scale: f32, format: NumberFormat) -> Self {
-        Self { data: String::new(), scale, offset: (0.0, 0.0), format }
+        Self {
+            data: String::new(),
+            scale,
+            offset: (0.0, 0.0),
+            format,
+        }
     }
 
     /// Translates every point by `(dx, dy)` after scaling and flipping.
@@ -56,12 +61,15 @@ impl SvgPathPen {
         match self.format {
             NumberFormat::Fixed(p) => {
                 let s = format!("{v:.prec$}", prec = usize::from(p));
-                if s.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') {
+                if s.trim_start_matches('-')
+                    .chars()
+                    .all(|c| c == '0' || c == '.')
+                {
                     s.trim_start_matches('-').to_owned()
                 } else {
                     s
                 }
-            },
+            }
             NumberFormat::Trimmed(p) => format_number(f64::from(v), p),
         }
     }
@@ -236,13 +244,19 @@ pub fn ligature_glyph(font: &FontRef<'_>, text: &str) -> Option<GlyphId> {
         .find(|r| r.script_tag() == Tag::new(b"DFLT"))
         .or_else(|| records.iter().find(|r| r.script_tag() == Tag::new(b"latn")))
         .or_else(|| records.first())?;
-    let lang_sys = record.script(scripts.offset_data()).ok()?.default_lang_sys()?.ok()?;
+    let lang_sys = record
+        .script(scripts.offset_data())
+        .ok()?
+        .default_lang_sys()?
+        .ok()?;
 
     // Material Symbols carries its name ligatures under `rlig` and has no `liga` at all.
     let tags = [Tag::new(b"rlig"), Tag::new(b"liga")];
     let subtables = |index: u16| -> Vec<LigatureSubstFormat1<'_>> {
         match lookups.lookups().get(usize::from(index)) {
-            Ok(SubstitutionLookup::Ligature(lookup)) => lookup.subtables().iter().flatten().collect(),
+            Ok(SubstitutionLookup::Ligature(lookup)) => {
+                lookup.subtables().iter().flatten().collect()
+            }
             Ok(SubstitutionLookup::Extension(lookup)) => lookup
                 .subtables()
                 .iter()
@@ -263,16 +277,27 @@ pub fn ligature_glyph(font: &FontRef<'_>, text: &str) -> Option<GlyphId> {
         if !tags.contains(&record.feature_tag()) {
             continue;
         }
-        let Ok(feature) = record.feature(features.offset_data()) else { continue };
+        let Ok(feature) = record.feature(features.offset_data()) else {
+            continue;
+        };
         for lookup in feature.lookup_list_indices() {
             for subtable in subtables(lookup.get()) {
-                let Ok(coverage) = subtable.coverage() else { continue };
-                let Some(at) = coverage.get(first) else { continue };
-                let Ok(set) = subtable.ligature_sets().get(usize::from(at)) else { continue };
+                let Ok(coverage) = subtable.coverage() else {
+                    continue;
+                };
+                let Some(at) = coverage.get(first) else {
+                    continue;
+                };
+                let Ok(set) = subtable.ligature_sets().get(usize::from(at)) else {
+                    continue;
+                };
                 for ligature in set.ligatures().iter().flatten() {
                     let components = ligature.component_glyph_ids();
                     if components.len() == rest.len()
-                        && components.iter().zip(&rest).all(|(a, b)| GlyphId::from(a.get()) == *b)
+                        && components
+                            .iter()
+                            .zip(&rest)
+                            .all(|(a, b)| GlyphId::from(a.get()) == *b)
                     {
                         return Some(GlyphId::from(ligature.ligature_glyph()));
                     }
@@ -307,8 +332,11 @@ pub fn glyph_outline(
     let scale = target / upem;
     let mut pen = SvgPathPen::new(scale, options.format);
     draw(&font, gid, &loc, &mut pen)?;
-    let advance =
-        font.glyph_metrics(Size::unscaled(), &loc).advance_width(gid).unwrap_or(upem) * scale;
+    let advance = font
+        .glyph_metrics(Size::unscaled(), &loc)
+        .advance_width(gid)
+        .unwrap_or(upem)
+        * scale;
     Ok(Some(GlyphOutline {
         path: pen.into_path(),
         advance,

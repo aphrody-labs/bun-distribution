@@ -76,18 +76,31 @@ pub(crate) fn unpack_block(b: &[u8; 16], bits: u32, out: &mut [u16]) {
 }
 
 pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
-    let ifd = t.ifd_at(t.first_ifd, 0).ok_or_else(|| RawError::malformed("RW2 has no IFD0"))?;
+    let ifd = t
+        .ifd_at(t.first_ifd, 0)
+        .ok_or_else(|| RawError::malformed("RW2 has no IFD0"))?;
     let raw_format = t.tag_uint(&ifd, RAW_FORMAT);
     if raw_format != Some(5) {
-        let f = raw_format.map(|v| v.to_string()).unwrap_or_else(|| "unknown".into());
-        return Err(RawError::unsupported(format!("Panasonic RW2 raw format {f} (vendor-compressed) is not decoded yet")));
+        let f = raw_format
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "unknown".into());
+        return Err(RawError::unsupported(format!(
+            "Panasonic RW2 raw format {f} (vendor-compressed) is not decoded yet"
+        )));
     }
-    let width = t.tag_uint(&ifd, SENSOR_WIDTH).ok_or_else(|| RawError::malformed("RW2 has no sensor width"))? as usize;
-    let height = t.tag_uint(&ifd, SENSOR_HEIGHT).ok_or_else(|| RawError::malformed("RW2 has no sensor height"))? as usize;
+    let width = t
+        .tag_uint(&ifd, SENSOR_WIDTH)
+        .ok_or_else(|| RawError::malformed("RW2 has no sensor width"))? as usize;
+    let height = t
+        .tag_uint(&ifd, SENSOR_HEIGHT)
+        .ok_or_else(|| RawError::malformed("RW2 has no sensor height"))? as usize;
     let bits = t.tag_uint(&ifd, BITS_PER_SAMPLE).unwrap_or(12);
-    let ppb = pixels_per_block(bits).ok_or_else(|| RawError::unsupported(format!("Panasonic RW2 with {bits}-bit samples")))?;
+    let ppb = pixels_per_block(bits)
+        .ok_or_else(|| RawError::unsupported(format!("Panasonic RW2 with {bits}-bit samples")))?;
     if !width.is_multiple_of(ppb) {
-        return Err(RawError::unsupported(format!("Panasonic RW2 {width} pixels wide (not whole {ppb}-pixel blocks)")));
+        return Err(RawError::unsupported(format!(
+            "Panasonic RW2 {width} pixels wide (not whole {ppb}-pixel blocks)"
+        )));
     }
     limits.check(width as u64, height as u64, 2)?;
     let cfa = match t.tag_uint(&ifd, CFA_PATTERN) {
@@ -99,16 +112,25 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
     };
     let cfa = Cfa::bayer(cfa).ok_or_else(|| RawError::malformed("bad CFA"))?;
     let offset =
-        t.tag_uint(&ifd, RAW_DATA_OFFSET).or_else(|| t.tag_uint(&ifd, tag::STRIP_OFFSETS)).ok_or_else(|| RawError::malformed("RW2 has no raw data offset"))?
-            as usize;
+        t.tag_uint(&ifd, RAW_DATA_OFFSET)
+            .or_else(|| t.tag_uint(&ifd, tag::STRIP_OFFSETS))
+            .ok_or_else(|| RawError::malformed("RW2 has no raw data offset"))? as usize;
     let row_bytes = width / ppb * 16;
-    let src = t.data.get(offset..).ok_or_else(|| RawError::malformed("RW2 raw data lies outside the file"))?;
+    let src = t
+        .data
+        .get(offset..)
+        .ok_or_else(|| RawError::malformed("RW2 raw data lies outside the file"))?;
     let need = row_bytes * height;
     // Whole pages are stored; tolerate a short final page (its missing bytes read as 0).
     if src.len() < need.saturating_sub(PAGE) {
         return Err(RawError::malformed("RW2 raw data is truncated"));
     }
-    let half = |l: usize| -> [u8; 8] { src.get(physical(l)..).and_then(|b| b.get(..8)).and_then(|b| <[u8; 8]>::try_from(b).ok()).unwrap_or([0; 8]) };
+    let half = |l: usize| -> [u8; 8] {
+        src.get(physical(l)..)
+            .and_then(|b| b.get(..8))
+            .and_then(|b| <[u8; 8]>::try_from(b).ok())
+            .unwrap_or([0; 8])
+    };
     let mut data = vec![0u16; width * height];
     let band = par::band_rows(width);
     par::chunks_mut(&mut data, band * width, |i, chunk| {
@@ -130,8 +152,16 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
     let mut warnings = Vec::new();
     let black = match BLACK_LEVEL.map(level) {
         [Some(r), Some(g), Some(b)] => {
-            let v = cfa.phase(0, 0).map(|c| [r, g, b][usize::from(c).min(2)] as f32);
-            BlackLevels { rows: 2, cols: 2, values: v.to_vec(), delta_h: Vec::new(), delta_v: Vec::new() }
+            let v = cfa
+                .phase(0, 0)
+                .map(|c| [r, g, b][usize::from(c).min(2)] as f32);
+            BlackLevels {
+                rows: 2,
+                cols: 2,
+                values: v.to_vec(),
+                delta_h: Vec::new(),
+                delta_v: Vec::new(),
+            }
         }
         _ => {
             warnings.push("RW2: black level not recorded; assumed 0".to_string());
@@ -139,14 +169,29 @@ pub(crate) fn decode(t: &Tiff, limits: &Limits) -> Result<Sensor> {
         }
     };
     let max = ((1u32 << bits) - 1) as f32;
-    let white = LINEARITY_LIMIT.map(|tg| level(tg).map(|v| v as f32).filter(|v| *v > 0.0 && *v <= max).unwrap_or(max));
+    let white = LINEARITY_LIMIT.map(|tg| {
+        level(tg)
+            .map(|v| v as f32)
+            .filter(|v| *v > 0.0 && *v <= max)
+            .unwrap_or(max)
+    });
     let camera_wb = match WB_LEVEL.map(level) {
-        [Some(r), Some(g), Some(b)] if g > 0.0 => Some([r / g, 1.0, b / g]).filter(|m| m.iter().all(|v| (0.25..8.0).contains(v))),
+        [Some(r), Some(g), Some(b)] if g > 0.0 => {
+            Some([r / g, 1.0, b / g]).filter(|m| m.iter().all(|v| (0.25..8.0).contains(v)))
+        }
         _ => None,
     };
-    let border = [SENSOR_LEFT_BORDER, SENSOR_TOP_BORDER, SENSOR_RIGHT_BORDER, SENSOR_BOTTOM_BORDER].map(|tg| t.tag_uint(&ifd, tg).map(|v| v as usize));
+    let border = [
+        SENSOR_LEFT_BORDER,
+        SENSOR_TOP_BORDER,
+        SENSOR_RIGHT_BORDER,
+        SENSOR_BOTTOM_BORDER,
+    ]
+    .map(|tg| t.tag_uint(&ifd, tg).map(|v| v as usize));
     let crop = match border {
-        [Some(l), Some(tp), Some(r), Some(b)] if r > l && b > tp => Rect::new(l, tp, r - l, b - tp).intersect(&full),
+        [Some(l), Some(tp), Some(r), Some(b)] if r > l && b > tp => {
+            Rect::new(l, tp, r - l, b - tp).intersect(&full)
+        }
         _ => full,
     };
     let crop = if crop.is_empty() { full } else { crop };
@@ -198,7 +243,12 @@ mod tests {
         }
         let mut out = [0u16; 10];
         unpack_block(&v.to_le_bytes(), 12, &mut out);
-        assert_eq!(out, [0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x109]);
+        assert_eq!(
+            out,
+            [
+                0x100, 0x101, 0x102, 0x103, 0x104, 0x105, 0x106, 0x107, 0x108, 0x109
+            ]
+        );
         let mut out = [0u16; 12];
         unpack_block(&[0xFF; 16], 14, &mut out);
         assert_eq!(&out[..9], &[0x3FFF; 9]);

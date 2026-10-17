@@ -138,7 +138,11 @@ impl Tokens {
     }
 
     pub fn get(ctx: &egui::Context) -> Tokens {
-        if ctx.global_style().visuals.dark_mode { Tokens::dark() } else { Tokens::light() }
+        if ctx.global_style().visuals.dark_mode {
+            Tokens::dark()
+        } else {
+            Tokens::light()
+        }
     }
 }
 
@@ -225,7 +229,12 @@ fn try_load(paths: &[(&str, u32)]) -> Option<FontData> {
 /// Last line of defence before [`FontDefinitions`] reach egui: drops every face epaint could not
 /// parse (and its key from every family), so a bad font costs a fallback, never a crash.
 pub(crate) fn drop_unparseable_fonts(fonts: &mut FontDefinitions) {
-    let bad: Vec<String> = fonts.font_data.iter().filter(|(_, fd)| !font_parses(&fd.font, fd.index)).map(|(k, _)| k.clone()).collect();
+    let bad: Vec<String> = fonts
+        .font_data
+        .iter()
+        .filter(|(_, fd)| !font_parses(&fd.font, fd.index))
+        .map(|(k, _)| k.clone())
+        .collect();
     for key in &bad {
         log::warn!("dropping font {key:?}: egui can't parse it");
         fonts.font_data.remove(key);
@@ -251,8 +260,15 @@ fn home_fonts(file: &str) -> String {
 fn candidates(role: &str) -> Vec<(String, u32)> {
     let mac_sys = "/System/Library/Fonts";
     let mac_sup = "/System/Library/Fonts/Supplemental";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
-    let lin = ["/usr/share/fonts/truetype", "/usr/share/fonts", "/usr/local/share/fonts", "/usr/share/fonts/TTF"];
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let lin = [
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts",
+        "/usr/local/share/fonts",
+        "/usr/share/fonts/TTF",
+    ];
     let mut v: Vec<(String, u32)> = Vec::new();
     let mut add = |s: String, i: u32| v.push((s, i));
     match role {
@@ -267,10 +283,22 @@ fn candidates(role: &str) -> Vec<(String, u32)> {
                 add(format!("{d}/liberation/LiberationSans-Regular.ttf"), 0);
             }
             // Fedora keeps each family in its own package folder (#54).
-            add("/usr/share/fonts/abattis-cantarell-fonts/Cantarell-Regular.otf".into(), 0);
-            add("/usr/share/fonts/google-noto/NotoSans-Regular.ttf".into(), 0);
-            add("/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf".into(), 0);
-            add("/usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf".into(), 0);
+            add(
+                "/usr/share/fonts/abattis-cantarell-fonts/Cantarell-Regular.otf".into(),
+                0,
+            );
+            add(
+                "/usr/share/fonts/google-noto/NotoSans-Regular.ttf".into(),
+                0,
+            );
+            add(
+                "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf".into(),
+                0,
+            );
+            add(
+                "/usr/share/fonts/liberation-sans-fonts/LiberationSans-Regular.ttf".into(),
+                0,
+            );
         }
         "ui-bold" => {
             add(format!("{mac_sys}/HelveticaNeue.ttc"), 1);
@@ -281,14 +309,27 @@ fn candidates(role: &str) -> Vec<(String, u32)> {
                 add(format!("{d}/liberation/LiberationSans-Bold.ttf"), 0);
             }
             add("/usr/share/fonts/google-noto/NotoSans-Bold.ttf".into(), 0);
-            add("/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf".into(), 0);
-            add("/usr/share/fonts/liberation-sans-fonts/LiberationSans-Bold.ttf".into(), 0);
+            add(
+                "/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf".into(),
+                0,
+            );
+            add(
+                "/usr/share/fonts/liberation-sans-fonts/LiberationSans-Bold.ttf".into(),
+                0,
+            );
         }
         "cell" | "cell-bold" | "cell-italic" | "cell-bold-italic" => {
-            let (carlito, calibri_win, calibri_mac, arial_mac, arial_win, lib, dejavu) = match role {
-                "cell" => {
-                    ("Carlito-Regular.ttf", "calibri.ttf", "Calibri.ttf", "Arial.ttf", "arial.ttf", "LiberationSans-Regular.ttf", "DejaVuSans.ttf")
-                }
+            let (carlito, calibri_win, calibri_mac, arial_mac, arial_win, lib, dejavu) = match role
+            {
+                "cell" => (
+                    "Carlito-Regular.ttf",
+                    "calibri.ttf",
+                    "Calibri.ttf",
+                    "Arial.ttf",
+                    "arial.ttf",
+                    "LiberationSans-Regular.ttf",
+                    "DejaVuSans.ttf",
+                ),
                 "cell-bold" => (
                     "Carlito-Bold.ttf",
                     "calibrib.ttf",
@@ -373,7 +414,11 @@ pub enum HanOrder {
 
 impl HanOrder {
     pub fn of(language: crate::i18n::Language) -> Self {
-        if language == crate::i18n::Language::Ja { Self::Japanese } else { Self::Chinese }
+        if language == crate::i18n::Language::Ja {
+            Self::Japanese
+        } else {
+            Self::Chinese
+        }
     }
 }
 
@@ -387,13 +432,30 @@ pub fn font_definitions_for_language(language: crate::i18n::Language) -> FontDef
 /// families are recorded in [`crate::fonts`] so [`cell_family`] only names a family egui has.
 pub fn font_definitions_with(language: crate::i18n::Language, used: &[String]) -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
-    let base_prop: Vec<String> = fonts.families.get(&FontFamily::Proportional).cloned().unwrap_or_default();
-    let base_mono: Vec<String> = fonts.families.get(&FontFamily::Monospace).cloned().unwrap_or_default();
+    let base_prop: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Proportional)
+        .cloned()
+        .unwrap_or_default();
+    let base_mono: Vec<String> = fonts
+        .families
+        .get(&FontFamily::Monospace)
+        .cloned()
+        .unwrap_or_default();
     let mut bound: Vec<String> = Vec::new();
     // The non-Latin fallback faces have to sit at the end of each chain: a Latin font owns Latin,
     // and epaint picks the first face that has the glyph, so they only catch their own scripts.
     let fallback = load_fallback(&mut fonts, HanOrder::of(language));
-    for role in [UI, UI_BOLD, CELL, CELL_BOLD, CELL_ITALIC, CELL_BOLD_ITALIC, SERIF, MONO] {
+    for role in [
+        UI,
+        UI_BOLD,
+        CELL,
+        CELL_BOLD,
+        CELL_ITALIC,
+        CELL_BOLD_ITALIC,
+        SERIF,
+        MONO,
+    ] {
         let paths = candidates(role);
         let refs: Vec<(&str, u32)> = paths.iter().map(|(p, i)| (p.as_str(), *i)).collect();
         let mut chain: Vec<String> = Vec::new();
@@ -406,7 +468,11 @@ pub fn font_definitions_with(language: crate::i18n::Language, used: &[String]) -
         } else if role.starts_with("cell-") {
             chain.push(format!("sys-{CELL}"));
         }
-        chain.extend(if role == MONO { base_mono.clone() } else { base_prop.clone() });
+        chain.extend(if role == MONO {
+            base_mono.clone()
+        } else {
+            base_prop.clone()
+        });
         chain.extend(fallback.iter().cloned());
         chain.retain(|k| fonts.font_data.contains_key(k));
         fonts.families.insert(FontFamily::Name(role.into()), chain);
@@ -425,7 +491,10 @@ pub fn font_definitions_with(language: crate::i18n::Language, used: &[String]) -
             if let Some(chain) = fonts.families.get_mut(&FontFamily::Name(role.into()))
                 && !chain.contains(&cell_key)
             {
-                let at = chain.iter().position(|k| fallback.contains(k)).unwrap_or(chain.len());
+                let at = chain
+                    .iter()
+                    .position(|k| fallback.contains(k))
+                    .unwrap_or(chain.len());
                 chain.insert(at, cell_key.clone());
             }
         }
@@ -436,7 +505,12 @@ pub fn font_definitions_with(language: crate::i18n::Language, used: &[String]) -
     }
     drop_unparseable_fonts(&mut fonts);
     // Only families egui still has data for count as bound (a dropped face can empty a chain).
-    bound.retain(|f| fonts.families.get(&FontFamily::Name(f.as_str().into())).is_some_and(|c| !c.is_empty()));
+    bound.retain(|f| {
+        fonts
+            .families
+            .get(&FontFamily::Name(f.as_str().into()))
+            .is_some_and(|c| !c.is_empty())
+    });
     crate::fonts::set_bound(bound);
     fonts
 }
@@ -522,7 +596,9 @@ const LINUX_CJK_DIRS: [&str; 10] = [
 #[cfg(not(target_arch = "wasm32"))]
 fn cjk_han_japanese() -> Vec<(String, u32)> {
     let mac = "/System/Library/Fonts";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
     let mut v: Vec<(String, u32)> = Vec::new();
     v.push((format!("{win}\\YuGothR.ttc"), 0)); // Yu Gothic
     v.push((format!("{win}\\msgothic.ttc"), 0)); // MS Gothic
@@ -539,7 +615,9 @@ fn cjk_han_japanese() -> Vec<(String, u32)> {
 #[cfg(not(target_arch = "wasm32"))]
 fn cjk_han_simplified() -> Vec<(String, u32)> {
     let mac = "/System/Library/Fonts";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
     let mut v: Vec<(String, u32)> = Vec::new();
     v.push((format!("{win}\\msyh.ttc"), 0)); // Microsoft YaHei
     v.push((format!("{win}\\simsun.ttc"), 0)); // SimSun
@@ -563,7 +641,9 @@ fn cjk_han_simplified() -> Vec<(String, u32)> {
 #[cfg(not(target_arch = "wasm32"))]
 fn cjk_hangul() -> Vec<(String, u32)> {
     let mac = "/System/Library/Fonts";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
     let mut v: Vec<(String, u32)> = Vec::new();
     v.push((format!("{win}\\malgun.ttf"), 0)); // Malgun Gothic
     v.push((format!("{mac}/AppleSDGothicNeo.ttc"), 0));
@@ -580,8 +660,15 @@ fn cjk_hangul() -> Vec<(String, u32)> {
 fn thai() -> Vec<(String, u32)> {
     let mac_sys = "/System/Library/Fonts";
     let mac_sup = "/System/Library/Fonts/Supplemental";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
-    let lin = ["/usr/share/fonts/truetype/noto", "/usr/share/fonts/opentype/noto", "/usr/share/fonts/truetype", "/usr/share/fonts"];
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let lin = [
+        "/usr/share/fonts/truetype/noto",
+        "/usr/share/fonts/opentype/noto",
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts",
+    ];
     let mut v: Vec<(String, u32)> = Vec::new();
     v.push((format!("{win}\\LeelawUI.ttf"), 0)); // Leelawadee UI
     v.push((format!("{win}\\tahoma.ttf"), 0)); // Tahoma
@@ -602,8 +689,15 @@ fn thai() -> Vec<(String, u32)> {
 fn hebrew() -> Vec<(String, u32)> {
     let mac_sys = "/System/Library/Fonts";
     let mac_sup = "/System/Library/Fonts/Supplemental";
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
-    let lin = ["/usr/share/fonts/truetype/noto", "/usr/share/fonts/opentype/noto", "/usr/share/fonts/truetype", "/usr/share/fonts"];
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let lin = [
+        "/usr/share/fonts/truetype/noto",
+        "/usr/share/fonts/opentype/noto",
+        "/usr/share/fonts/truetype",
+        "/usr/share/fonts",
+    ];
     let mut v: Vec<(String, u32)> = Vec::new();
     v.push((format!("{win}\\david.ttf"), 0)); // David
     v.push((format!("{win}\\frank.ttf"), 0)); // FrankRuehl
@@ -629,8 +723,13 @@ fn hebrew() -> Vec<(String, u32)> {
 /// loaded it.
 #[cfg(not(target_arch = "wasm32"))]
 fn symbols() -> Vec<(String, u32)> {
-    let win = std::env::var("WINDIR").map(|w| format!("{w}\\Fonts")).unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
-    let mut v: Vec<(String, u32)> = vec![(format!("{win}\\seguisym.ttf"), 0), ("/System/Library/Fonts/Apple Symbols.ttf".into(), 0)];
+    let win = std::env::var("WINDIR")
+        .map(|w| format!("{w}\\Fonts"))
+        .unwrap_or_else(|_| "C:\\Windows\\Fonts".into());
+    let mut v: Vec<(String, u32)> = vec![
+        (format!("{win}\\seguisym.ttf"), 0),
+        ("/System/Library/Fonts/Apple Symbols.ttf".into(), 0),
+    ];
     for d in [
         "/usr/share/fonts/truetype/dejavu",
         "/usr/share/fonts/dejavu-sans-fonts",
@@ -667,7 +766,10 @@ fn symbols_more() -> Vec<(String, u32)> {
 pub fn symbol_face_installed() -> bool {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        symbols().iter().chain(symbols_more().iter()).any(|(p, _)| std::path::Path::new(p).exists())
+        symbols()
+            .iter()
+            .chain(symbols_more().iter())
+            .any(|(p, _)| std::path::Path::new(p).exists())
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -679,8 +781,16 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
     // Install both palettes before System can switch between the style slots.
     for theme in [egui::Theme::Light, egui::Theme::Dark] {
         let dark = theme == egui::Theme::Dark;
-        let t = if dark { Tokens::dark() } else { Tokens::light() };
-        let mut v = if dark { Visuals::dark() } else { Visuals::light() };
+        let t = if dark {
+            Tokens::dark()
+        } else {
+            Tokens::light()
+        };
+        let mut v = if dark {
+            Visuals::dark()
+        } else {
+            Visuals::light()
+        };
         v.panel_fill = t.window;
         v.window_fill = t.menu_bg;
         v.extreme_bg_color = t.input_bg;
@@ -695,11 +805,20 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
         v.widgets.inactive.bg_stroke = Stroke::new(1.0, t.input_border);
         v.window_corner_radius = egui::CornerRadius::same(10);
         v.menu_corner_radius = egui::CornerRadius::same(8);
-        v.popup_shadow = egui::epaint::Shadow { offset: [0, 4], blur: 16, spread: 0, color: t.shadow };
+        v.popup_shadow = egui::epaint::Shadow {
+            offset: [0, 4],
+            blur: 16,
+            spread: 0,
+            color: t.shadow,
+        };
         ctx.set_visuals_of(theme, v);
     }
     ctx.options_mut(|o| o.fallback_theme = egui::Theme::Light);
-    ctx.set_theme(if dark { egui::Theme::Dark } else { egui::Theme::Light });
+    ctx.set_theme(if dark {
+        egui::Theme::Dark
+    } else {
+        egui::Theme::Light
+    });
     ctx.all_styles_mut(|s| {
         s.spacing.item_spacing = egui::vec2(6.0, 4.0);
         s.spacing.button_padding = egui::vec2(6.0, 3.0);
@@ -707,8 +826,12 @@ pub fn apply(ctx: &egui::Context, dark: bool) {
         s.text_styles.insert(egui::TextStyle::Body, ui_font(13.0));
         s.text_styles.insert(egui::TextStyle::Button, ui_font(13.0));
         s.text_styles.insert(egui::TextStyle::Small, ui_font(11.0));
-        s.text_styles.insert(egui::TextStyle::Heading, ui_bold(18.0));
-        s.text_styles.insert(egui::TextStyle::Monospace, FontId::new(12.0, FontFamily::Name(MONO.into())));
+        s.text_styles
+            .insert(egui::TextStyle::Heading, ui_bold(18.0));
+        s.text_styles.insert(
+            egui::TextStyle::Monospace,
+            FontId::new(12.0, FontFamily::Name(MONO.into())),
+        );
     });
 }
 
@@ -723,43 +846,84 @@ mod font_binding_tests {
 
     /// The families [`font_definitions`] always binds, whatever is installed.
     fn always_bound() -> Vec<String> {
-        [UI, UI_BOLD, CELL, CELL_BOLD, CELL_ITALIC, CELL_BOLD_ITALIC, SERIF, MONO].iter().map(|s| s.to_string()).collect()
+        [
+            UI,
+            UI_BOLD,
+            CELL,
+            CELL_BOLD,
+            CELL_ITALIC,
+            CELL_BOLD_ITALIC,
+            SERIF,
+            MONO,
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
     }
 
     #[test]
     fn a_name_that_is_not_an_installed_font_gets_a_built_in_role() {
-        let _g = crate::fonts::TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = crate::fonts::TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // Nothing installed: every name buckets to a role that font_definitions bound.
         crate::fonts::set_bound(always_bound());
-        for name in ["", "Calibri", "Courier New", "Times New Roman", "Grossly Missing Font", "\u{1F600}"] {
+        for name in [
+            "",
+            "Calibri",
+            "Courier New",
+            "Times New Roman",
+            "Grossly Missing Font",
+            "\u{1F600}",
+        ] {
             for (b, i) in [(false, false), (true, false), (false, true), (true, true)] {
-                let FontFamily::Name(fam) = cell_family(name, b, i) else { panic!("{name:?} should name a family") };
-                assert!(crate::fonts::is_bound(&fam), "{name:?} {b} {i} → unbound {fam:?}");
+                let FontFamily::Name(fam) = cell_family(name, b, i) else {
+                    panic!("{name:?} should name a family")
+                };
+                assert!(
+                    crate::fonts::is_bound(&fam),
+                    "{name:?} {b} {i} → unbound {fam:?}"
+                );
             }
         }
     }
 
     #[test]
     fn a_bound_installed_font_is_used_by_name() {
-        let _g = crate::fonts::TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = crate::fonts::TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         let role = crate::fonts::role_key("Ubuntu", true, false);
         crate::fonts::set_bound(always_bound().into_iter().chain([role.clone()]));
         assert!(matches!(cell_family("Ubuntu", true, false), FontFamily::Name(f) if *f == *role));
         // The same family in a style that wasn't bound falls back to a built-in role that is.
-        let FontFamily::Name(fallback) = cell_family("Ubuntu", false, true) else { panic!("should name a family") };
-        assert!(crate::fonts::is_bound(&fallback), "the fallback is a bound role");
+        let FontFamily::Name(fallback) = cell_family("Ubuntu", false, true) else {
+            panic!("should name a family")
+        };
+        assert!(
+            crate::fonts::is_bound(&fallback),
+            "the fallback is a bound role"
+        );
         crate::fonts::set_bound(always_bound());
     }
 
     #[test]
     fn arbitrary_names_never_yield_an_unbound_family() {
-        let _g = crate::fonts::TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = crate::fonts::TEST_LOCK
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         // A workbook can hold any font name; none may name a family egui has no data for.
         crate::fonts::set_bound(always_bound());
         for seed in 0..500u32 {
-            let name: String =
-                (0..(seed % 40)).map(|k| char::from_u32(0x20 + (seed.wrapping_mul(31).wrapping_add(k) % 0x5F)).unwrap_or('x')).collect();
-            let FontFamily::Name(fam) = cell_family(&name, seed % 2 == 0, seed % 3 == 0) else { continue };
+            let name: String = (0..(seed % 40))
+                .map(|k| {
+                    char::from_u32(0x20 + (seed.wrapping_mul(31).wrapping_add(k) % 0x5F))
+                        .unwrap_or('x')
+                })
+                .collect();
+            let FontFamily::Name(fam) = cell_family(&name, seed % 2 == 0, seed % 3 == 0) else {
+                continue;
+            };
             assert!(crate::fonts::is_bound(&fam), "{name:?} → unbound {fam:?}");
         }
     }
@@ -775,18 +939,45 @@ mod tests {
         // Structural: whatever loaded, the non-Latin fallback keys must sit at the end of each chain
         // (after the Latin/default fonts) so Latin still wins for Latin text, in the language's order.
         for han in [HanOrder::Chinese, HanOrder::Japanese] {
-            let language = if han == HanOrder::Japanese { Language::Ja } else { Language::Zh };
+            let language = if han == HanOrder::Japanese {
+                Language::Ja
+            } else {
+                Language::Zh
+            };
             let fonts = font_definitions_for_language(language);
-            let fb_keys: Vec<String> =
-                fallback_faces(han).into_iter().map(|(k, _)| k.to_string()).filter(|k| fonts.font_data.contains_key(k)).collect();
+            let fb_keys: Vec<String> = fallback_faces(han)
+                .into_iter()
+                .map(|(k, _)| k.to_string())
+                .filter(|k| fonts.font_data.contains_key(k))
+                .collect();
             if fb_keys.is_empty() {
                 return; // no fallback face on this machine (minimal Linux)
             }
-            for role in [UI, UI_BOLD, CELL, CELL_BOLD, CELL_ITALIC, CELL_BOLD_ITALIC, SERIF, MONO] {
-                let chain = fonts.families.get(&FontFamily::Name(role.into())).map(Vec::as_slice).unwrap_or_default();
-                assert!(chain.len() >= fb_keys.len(), "{role} chain too short for its fallback");
+            for role in [
+                UI,
+                UI_BOLD,
+                CELL,
+                CELL_BOLD,
+                CELL_ITALIC,
+                CELL_BOLD_ITALIC,
+                SERIF,
+                MONO,
+            ] {
+                let chain = fonts
+                    .families
+                    .get(&FontFamily::Name(role.into()))
+                    .map(Vec::as_slice)
+                    .unwrap_or_default();
+                assert!(
+                    chain.len() >= fb_keys.len(),
+                    "{role} chain too short for its fallback"
+                );
                 let tail = &chain[chain.len() - fb_keys.len()..];
-                assert_eq!(tail, fb_keys.as_slice(), "{role} must end its chain with the fallback faces");
+                assert_eq!(
+                    tail,
+                    fb_keys.as_slice(),
+                    "{role} must end its chain with the fallback faces"
+                );
             }
         }
     }
@@ -800,30 +991,77 @@ mod tests {
         if !fonts.font_data.contains_key(&cell) {
             return; // no system cell font on this machine
         }
-        let fb: Vec<String> = fallback_faces(HanOrder::Chinese).into_iter().map(|(k, _)| k.to_string()).collect();
-        for family in [FontFamily::Proportional, FontFamily::Name(UI.into()), FontFamily::Name(UI_BOLD.into()), FontFamily::Name(MONO.into())] {
+        let fb: Vec<String> = fallback_faces(HanOrder::Chinese)
+            .into_iter()
+            .map(|(k, _)| k.to_string())
+            .collect();
+        for family in [
+            FontFamily::Proportional,
+            FontFamily::Name(UI.into()),
+            FontFamily::Name(UI_BOLD.into()),
+            FontFamily::Name(MONO.into()),
+        ] {
             let chain = fonts.families.get(&family).cloned().unwrap_or_default();
             let at = chain.iter().position(|k| *k == cell);
             assert!(at.is_some(), "{family:?} lacks the cell face: {chain:?}");
-            let first_fb = chain.iter().position(|k| fb.contains(k)).unwrap_or(chain.len());
-            assert!(at.unwrap_or(usize::MAX) < first_fb, "{family:?}: cell face must precede the script faces");
+            let first_fb = chain
+                .iter()
+                .position(|k| fb.contains(k))
+                .unwrap_or(chain.len());
+            assert!(
+                at.unwrap_or(usize::MAX) < first_fb,
+                "{family:?}: cell face must precede the script faces"
+            );
         }
     }
 
     #[test]
     fn language_reorders_only_the_han_faces() {
-        let keys = |han| fallback_faces(han).into_iter().map(|(k, _)| k).collect::<Vec<_>>();
+        let keys = |han| {
+            fallback_faces(han)
+                .into_iter()
+                .map(|(k, _)| k)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(
             keys(HanOrder::Japanese),
-            ["sys-cjk-han-ja", "sys-cjk-han-zh", "sys-cjk-hangul", "sys-thai", "sys-hebrew", "sys-symbols", "sys-symbols-2"]
+            [
+                "sys-cjk-han-ja",
+                "sys-cjk-han-zh",
+                "sys-cjk-hangul",
+                "sys-thai",
+                "sys-hebrew",
+                "sys-symbols",
+                "sys-symbols-2"
+            ]
         );
         assert_eq!(
             keys(HanOrder::Chinese),
-            ["sys-cjk-han-zh", "sys-cjk-han-ja", "sys-cjk-hangul", "sys-thai", "sys-hebrew", "sys-symbols", "sys-symbols-2"]
+            [
+                "sys-cjk-han-zh",
+                "sys-cjk-han-ja",
+                "sys-cjk-hangul",
+                "sys-thai",
+                "sys-hebrew",
+                "sys-symbols",
+                "sys-symbols-2"
+            ]
         );
         assert_eq!(HanOrder::of(Language::Ja), HanOrder::Japanese);
-        for l in [Language::En, Language::Zh, Language::Ko, Language::Ru, Language::PtBr, Language::De, Language::Cs] {
-            assert_eq!(HanOrder::of(l), HanOrder::Chinese, "{l:?} shares the default order (no font rebuild)");
+        for l in [
+            Language::En,
+            Language::Zh,
+            Language::Ko,
+            Language::Ru,
+            Language::PtBr,
+            Language::De,
+            Language::Cs,
+        ] {
+            assert_eq!(
+                HanOrder::of(l),
+                HanOrder::Chinese,
+                "{l:?} shares the default order (no font rebuild)"
+            );
         }
     }
 
@@ -833,11 +1071,16 @@ mod tests {
         // once, not once per script (tens of MB each).
         for language in [Language::En, Language::Ja] {
             let fonts = font_definitions_for_language(language);
-            let present: Vec<&Arc<FontData>> =
-                fallback_faces(HanOrder::of(language)).into_iter().filter_map(|(k, _)| fonts.font_data.get(k)).collect();
+            let present: Vec<&Arc<FontData>> = fallback_faces(HanOrder::of(language))
+                .into_iter()
+                .filter_map(|(k, _)| fonts.font_data.get(k))
+                .collect();
             for (i, a) in present.iter().enumerate() {
                 for b in present.iter().skip(i + 1) {
-                    assert!(a.font != b.font, "the same font file is loaded for two fallback scripts");
+                    assert!(
+                        a.font != b.font,
+                        "the same font file is loaded for two fallback scripts"
+                    );
                 }
             }
         }
@@ -850,13 +1093,21 @@ mod tests {
         // whose face is absent (a minimal machine) and fails if a face is present but not wired in.
         let cases: [(&str, Vec<(String, u32)>, &str); 7] = [
             ("sys-cjk-han-ja", cjk_han_japanese(), "カテゴリ"),
-            ("sys-cjk-han-zh", cjk_han_simplified(), "页面布局 客户端配置"),
+            (
+                "sys-cjk-han-zh",
+                cjk_han_simplified(),
+                "页面布局 客户端配置",
+            ),
             ("sys-cjk-hangul", cjk_hangul(), "한글"),
             ("sys-thai", thai(), "ทดสอบ"),
             ("sys-hebrew", hebrew(), "עברית"),
             ("ui", candidates(UI), "Русский"),
             // Czech interface labels: every Czech accented letter, in both cases.
-            ("ui", candidates(UI), "Příliš žluťoučký kůň úpěl ďábelské ódy ŘŠČŽÝÁÍÉÚŮĚŤĎŇÓ"),
+            (
+                "ui",
+                candidates(UI),
+                "Příliš žluťoučký kůň úpěl ďábelské ódy ŘŠČŽÝÁÍÉÚŮĚŤĎŇÓ",
+            ),
         ];
         for language in [Language::En, Language::Ja] {
             let ctx = egui::Context::default();
@@ -869,8 +1120,14 @@ mod tests {
             for family in [FontFamily::Proportional, FontFamily::Name(CELL.into())] {
                 let font = FontId::new(14.0, family);
                 let glyphs = |text: &str| {
-                    let galley = ctx.fonts_mut(|f| f.layout_no_wrap(text.to_owned(), font.clone(), Color32::BLACK));
-                    galley.rows.iter().flat_map(|r| r.glyphs.iter().filter(|g| g.chr != ' ').map(|g| g.uv_rect)).collect::<Vec<_>>()
+                    let galley = ctx.fonts_mut(|f| {
+                        f.layout_no_wrap(text.to_owned(), font.clone(), Color32::BLACK)
+                    });
+                    galley
+                        .rows
+                        .iter()
+                        .flat_map(|r| r.glyphs.iter().filter(|g| g.chr != ' ').map(|g| g.uv_rect))
+                        .collect::<Vec<_>>()
                 };
                 let tofu = glyphs("\u{25FB}");
                 for (key, cands, sample) in &cases {
@@ -892,23 +1149,39 @@ mod tests {
     fn unparseable_font_files_are_rejected_not_fatal() {
         // #226: epaint panics in `set_fonts` on a face it can't parse ("An offset was out of
         // bounds"). Garbage, a truncated real font and a bad collection index must all be refused.
-        let real = FontDefinitions::default().font_data.values().next().map(|fd| fd.font.to_vec()).unwrap_or_default();
+        let real = FontDefinitions::default()
+            .font_data
+            .values()
+            .next()
+            .map(|fd| fd.font.to_vec())
+            .unwrap_or_default();
         assert!(font_parses(&real, 0), "egui's own font must parse");
         assert!(!font_parses(b"", 0));
         assert!(!font_parses(&[0xAB; 64], 0));
-        assert!(!font_parses(real.get(..20).unwrap_or_default(), 0), "a truncated font must be refused");
+        assert!(
+            !font_parses(real.get(..20).unwrap_or_default(), 0),
+            "a truncated font must be refused"
+        );
         assert!(!font_parses(&real, 3), "a single-face file has no face 3");
 
         // A bad face that slipped into the definitions is dropped (key and family entries), and the
         // context builds its fonts without panicking.
         let mut fonts = font_definitions();
-        fonts.font_data.insert("sys-hebrew".into(), Arc::new(FontData::from_owned(vec![0, 1, 0, 0, 0, 0xFF, 0, 0])));
+        fonts.font_data.insert(
+            "sys-hebrew".into(),
+            Arc::new(FontData::from_owned(vec![0, 1, 0, 0, 0, 0xFF, 0, 0])),
+        );
         for chain in fonts.families.values_mut() {
             chain.push("sys-hebrew".into());
         }
         drop_unparseable_fonts(&mut fonts);
         assert!(!fonts.font_data.contains_key("sys-hebrew"));
-        assert!(fonts.families.values().all(|c| !c.iter().any(|k| k == "sys-hebrew")));
+        assert!(
+            fonts
+                .families
+                .values()
+                .all(|c| !c.iter().any(|k| k == "sys-hebrew"))
+        );
         let ctx = egui::Context::default();
         ctx.set_fonts(fonts);
         let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
@@ -925,10 +1198,18 @@ mod tests {
         let _ = std::fs::create_dir_all(&dir);
         let bad = dir.join("broken.ttf");
         let good = dir.join("good.ttf");
-        let real = FontDefinitions::default().font_data.values().next().map(|fd| fd.font.to_vec()).unwrap_or_default();
+        let real = FontDefinitions::default()
+            .font_data
+            .values()
+            .next()
+            .map(|fd| fd.font.to_vec())
+            .unwrap_or_default();
         let _ = std::fs::write(&bad, real.get(..40).unwrap_or_default());
         let _ = std::fs::write(&good, &real);
-        let (bad_s, good_s) = (bad.to_string_lossy().into_owned(), good.to_string_lossy().into_owned());
+        let (bad_s, good_s) = (
+            bad.to_string_lossy().into_owned(),
+            good.to_string_lossy().into_owned(),
+        );
         assert!(try_load(&[(bad_s.as_str(), 0)]).is_none());
         let loaded = try_load(&[(bad_s.as_str(), 0), (good_s.as_str(), 0)]);
         assert_eq!(loaded.map(|fd| fd.font.len()), Some(real.len()));

@@ -31,7 +31,10 @@ impl Homography {
     pub fn apply_real<T: Real>(&self, x: T, y: T) -> (T, T) {
         let m = &self.0;
         let w = (x * m[6] + y * m[7] + m[8]).clamp_tiny(1e-300);
-        ((x * m[0] + y * m[1] + m[2]) / w, (x * m[3] + y * m[4] + m[5]) / w)
+        (
+            (x * m[0] + y * m[1] + m[2]) / w,
+            (x * m[3] + y * m[4] + m[5]) / w,
+        )
     }
 
     pub fn mul(&self, o: &Homography) -> Homography {
@@ -66,14 +69,21 @@ impl Homography {
             (m[1] * m[6] - m[0] * m[7]) * inv,
             (m[0] * m[4] - m[1] * m[3]) * inv,
         ];
-        coefficients.iter().all(|v| v.is_finite()).then_some(Homography(coefficients))
+        coefficients
+            .iter()
+            .all(|v| v.is_finite())
+            .then_some(Homography(coefficients))
     }
 
     /// The homography mapping `src[i]` → `dst[i]` (4 correspondences, DLT with h33 = 1).
     pub fn from_quads(src: &[Point; 4], dst: &[Point; 4]) -> Option<Homography> {
         // Failed feature matches and invalid perspective parameters can contain
         // non-finite coordinates. Do not return a transform that poisons rendering.
-        if src.iter().chain(dst.iter()).any(|p| !p.x.is_finite() || !p.y.is_finite()) {
+        if src
+            .iter()
+            .chain(dst.iter())
+            .any(|p| !p.x.is_finite() || !p.y.is_finite())
+        {
             return None;
         }
         let mut a = [[0.0f64; 9]; 8];
@@ -100,7 +110,9 @@ impl Homography {
             }
         }
         let h: Vec<f64> = (0..8).map(|i| a[i][8] / a[i][i]).collect();
-        h.iter().all(|v| v.is_finite()).then_some(Homography([h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1.0]))
+        h.iter().all(|v| v.is_finite()).then_some(Homography([
+            h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1.0,
+        ]))
     }
 }
 
@@ -110,8 +122,18 @@ mod tests {
 
     #[test]
     fn quad_to_quad() {
-        let src = [Point::new(0.0, 0.0), Point::new(1.0, 0.0), Point::new(1.0, 1.0), Point::new(0.0, 1.0)];
-        let dst = [Point::new(0.1, 0.0), Point::new(0.9, 0.05), Point::new(1.0, 1.0), Point::new(0.0, 0.95)];
+        let src = [
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.0, 1.0),
+            Point::new(0.0, 1.0),
+        ];
+        let dst = [
+            Point::new(0.1, 0.0),
+            Point::new(0.9, 0.05),
+            Point::new(1.0, 1.0),
+            Point::new(0.0, 0.95),
+        ];
         let h = Homography::from_quads(&src, &dst).unwrap();
         for i in 0..4 {
             assert!(h.apply(src[i]).dist(dst[i]) < 1e-9);
@@ -130,16 +152,37 @@ mod tests {
 
     #[test]
     fn nonfinite_projective_and_affine_transforms_are_rejected() {
-        let src = [Point::new(0.0, 0.0), Point::new(1.0, 0.0), Point::new(1.0, 1.0), Point::new(0.0, 1.0)];
+        let src = [
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.0, 1.0),
+            Point::new(0.0, 1.0),
+        ];
         let mut invalid = src;
         invalid[2].x = f64::NAN;
         assert!(Homography::from_quads(&invalid, &src).is_none());
         invalid[2].x = f64::INFINITY;
         assert!(Homography::from_quads(&src, &invalid).is_none());
-        assert!(Homography([f64::NAN, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]).inverse().is_none());
-        assert!(Homography([f64::INFINITY, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]).inverse().is_none());
-        assert!(Affine([f64::NAN, 0.0, 0.0, 1.0, 0.0, 0.0]).inverse().is_none());
-        assert!(Affine([f64::INFINITY, 0.0, 0.0, 1.0, 0.0, 0.0]).inverse().is_none());
+        assert!(
+            Homography([f64::NAN, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+                .inverse()
+                .is_none()
+        );
+        assert!(
+            Homography([f64::INFINITY, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+                .inverse()
+                .is_none()
+        );
+        assert!(
+            Affine([f64::NAN, 0.0, 0.0, 1.0, 0.0, 0.0])
+                .inverse()
+                .is_none()
+        );
+        assert!(
+            Affine([f64::INFINITY, 0.0, 0.0, 1.0, 0.0, 0.0])
+                .inverse()
+                .is_none()
+        );
         assert_eq!(Affine::IDENTITY.inverse(), Some(Affine::IDENTITY));
     }
 }

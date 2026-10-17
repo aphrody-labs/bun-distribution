@@ -76,22 +76,30 @@ pub fn browser_video_container(bytes: &[u8], filename: &str) -> Result<BrowserVi
     if video.codec == CodecVideo::Mpeg2 {
         return transcode_mpeg2(&video, &EncoderOptions::default());
     }
-    let container = video.en_conteneur_web().map_err(|error| error.to_string())?;
-    Ok(BrowserVideo { mime: container.mime, bytes: container.octets })
+    let container = video
+        .en_conteneur_web()
+        .map_err(|error| error.to_string())?;
+    Ok(BrowserVideo {
+        mime: container.mime,
+        bytes: container.octets,
+    })
 }
 
 fn transcode_mpeg2(video: &Usm, options: &EncoderOptions) -> Result<BrowserVideo, String> {
     if video.codec != CodecVideo::Mpeg2 || video.images.is_empty() {
         return Err("MPEG-2 encoding requires a non-empty MPEG-2 video track".into());
     }
-    let (numerator, denominator) =
-        video.cadence().ok_or("MPEG-2 video has no declared frame rate")?;
+    let (numerator, denominator) = video
+        .cadence()
+        .ok_or("MPEG-2 video has no declared frame rate")?;
     let pixels = u64::from(video.entete.largeur) * u64::from(video.entete.hauteur);
     if pixels == 0 || pixels > MAX_PIXELS || video.images.len() > MAX_FRAMES {
         return Err("MPEG-2 dimensions or frame count exceed the browser conversion limit".into());
     }
     let bytes = video.images.iter().try_fold(0_usize, |total, frame| {
-        total.checked_add(frame.len()).filter(|size| *size <= MAX_USM_BYTES)
+        total
+            .checked_add(frame.len())
+            .filter(|size| *size <= MAX_USM_BYTES)
     });
     if bytes.is_none() {
         return Err("MPEG-2 track exceeds the browser conversion limit".into());
@@ -106,7 +114,8 @@ fn transcode_mpeg2(video: &Usm, options: &EncoderOptions) -> Result<BrowserVideo
         .open(&input)
         .map_err(|error| format!("Cannot create MPEG-2 input: {error}"))?;
     for frame in &video.images {
-        file.write_all(frame).map_err(|error| format!("Cannot write MPEG-2 input: {error}"))?;
+        file.write_all(frame)
+            .map_err(|error| format!("Cannot write MPEG-2 input: {error}"))?;
     }
     drop(file);
 
@@ -117,13 +126,23 @@ fn transcode_mpeg2(video: &Usm, options: &EncoderOptions) -> Result<BrowserVideo
         .args(["-nostdin", "-hide_banner", "-loglevel", "error"])
         .args(["-max_alloc", "67108864", "-threads", "2"])
         .args(["-max_pixels", &MAX_PIXELS.to_string()])
-        .args(["-protocol_whitelist", "file", "-f", "mpegvideo", "-c:v", "mpeg2video"])
+        .args([
+            "-protocol_whitelist",
+            "file",
+            "-f",
+            "mpegvideo",
+            "-c:v",
+            "mpeg2video",
+        ])
         .args(["-r", &format!("{numerator}/{denominator}"), "-i"])
         .arg(&input)
         .args(["-map", "0:v:0", "-an", "-c:v", "libx264", "-threads", "2"])
         .args(["-preset", "veryfast", "-crf", "16", "-pix_fmt", "yuv420p"])
         .args(["-fps_mode", "passthrough", "-movflags", "+faststart"])
-        .args(["-fs", &options.max_output_bytes.saturating_add(1).to_string()])
+        .args([
+            "-fs",
+            &options.max_output_bytes.saturating_add(1).to_string(),
+        ])
         .args(["-f", "mp4", "-n"])
         .arg(&output)
         .stdin(Stdio::null())
@@ -134,7 +153,10 @@ fn transcode_mpeg2(video: &Usm, options: &EncoderOptions) -> Result<BrowserVideo
     if bytes.len() < 32 || bytes.get(4..8) != Some(b"ftyp") {
         return Err("MPEG-2 encoder did not produce an MP4 container".into());
     }
-    Ok(BrowserVideo { mime: "video/mp4", bytes })
+    Ok(BrowserVideo {
+        mime: "video/mp4",
+        bytes,
+    })
 }
 
 fn read_bounded(path: &Path, limit: u64) -> Result<Vec<u8>, String> {
@@ -154,7 +176,9 @@ fn run_encoder(
     options: &EncoderOptions,
 ) -> Result<(), String> {
     let mut process = EncoderProcess(
-        command.spawn().map_err(|error| format!("Cannot start MPEG-2 encoder: {error}"))?,
+        command
+            .spawn()
+            .map_err(|error| format!("Cannot start MPEG-2 encoder: {error}"))?,
     );
     let start = Instant::now();
     loop {
@@ -210,7 +234,7 @@ impl TemporaryVideo {
                 Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
                 Err(error) => {
                     return Err(format!("Cannot create video temporary directory: {error}"));
-                },
+                }
             }
         }
         Err("Cannot reserve a video temporary directory".into())
@@ -252,7 +276,9 @@ mod tests {
     fn rejects_missing_cadence_instead_of_guessing_a_frame_rate() {
         let mut video = track();
         video.entete.cadence_num = 0;
-        let error = transcode_mpeg2(&video, &EncoderOptions::default()).err().unwrap();
+        let error = transcode_mpeg2(&video, &EncoderOptions::default())
+            .err()
+            .unwrap();
         assert!(error.contains("no declared frame rate"), "{error}");
     }
 
@@ -277,7 +303,12 @@ mod tests {
             executable: OsString::from("/missing/nie-video-test-encoder"),
             ..EncoderOptions::default()
         };
-        assert!(transcode_mpeg2(&track(), &options).err().unwrap().contains("Cannot start"));
+        assert!(
+            transcode_mpeg2(&track(), &options)
+                .err()
+                .unwrap()
+                .contains("Cannot start")
+        );
         let temporary = TemporaryVideo::create().unwrap();
         let path = temporary.path.clone();
         fs::write(path.join("test"), b"test").unwrap();
@@ -298,10 +329,16 @@ mod tests {
     #[test]
     fn stalled_encoder_is_killed_and_reaped_within_its_deadline() {
         let temporary = TemporaryVideo::create().unwrap();
-        let options =
-            EncoderOptions { timeout: Duration::from_millis(30), ..EncoderOptions::default() };
+        let options = EncoderOptions {
+            timeout: Duration::from_millis(30),
+            ..EncoderOptions::default()
+        };
         let mut command = Command::new("sleep");
-        command.arg("10").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+        command
+            .arg("10")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
         let start = Instant::now();
         let error =
             run_encoder(&mut command, &temporary.path.join("missing.mp4"), &options).unwrap_err();
@@ -315,9 +352,16 @@ mod tests {
         let temporary = TemporaryVideo::create().unwrap();
         let output = temporary.path.join("oversize.mp4");
         fs::write(&output, [0_u8; 32]).unwrap();
-        let options = EncoderOptions { max_output_bytes: 31, ..EncoderOptions::default() };
+        let options = EncoderOptions {
+            max_output_bytes: 31,
+            ..EncoderOptions::default()
+        };
         let mut command = Command::new("sleep");
-        command.arg("10").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null());
+        command
+            .arg("10")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
         let error = run_encoder(&mut command, &output, &options).unwrap_err();
         assert!(error.contains("output size limit"), "{error}");
     }
@@ -328,7 +372,8 @@ mod tests {
         let game_root =
             std::env::var_os("NIE_GAME_DIR").expect("Set NIE_GAME_DIR to the game root");
         let mut vfs = aphrody_nie_formats::vfs::Vfs::new();
-        vfs.init(Path::new(&game_root).join("data")).expect("Mount the actual game VFS");
+        vfs.init(Path::new(&game_root).join("data"))
+            .expect("Mount the actual game VFS");
         let temporary = TemporaryVideo::create().unwrap();
         for filename in ["IE_15th.usm", "L5logo.usm"] {
             let bytes = vfs.read(&format!("data/common/movie/{filename}")).unwrap();
@@ -364,7 +409,10 @@ mod tests {
                 .map(|part| part.parse().unwrap())
                 .collect();
             let (numerator, denominator) = source.entete.cadence().unwrap();
-            assert_eq!(rate[0] * u64::from(denominator), rate[1] * u64::from(numerator));
+            assert_eq!(
+                rate[0] * u64::from(denominator),
+                rate[1] * u64::from(numerator)
+            );
             println!(
                 "{filename}: {} bytes, {}x{}, {}/{} fps, {} frames",
                 output.bytes.len(),

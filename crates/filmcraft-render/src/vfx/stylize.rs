@@ -24,50 +24,63 @@ pub fn brush_strokes(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let steps = (len.ceil() as usize).clamp(2, 24);
     let src = img.clone();
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
-            let (cxi, cyi) = ((px / cell).floor() as i64, (py / cell).floor() as i64);
-            let jit = (hash01(cxi, cyi, 1, 77) - 0.5) * rnd * std::f32::consts::FRAC_PI_2;
-            let a = base_ang + jit;
-            let (dx, dy) = (a.cos(), -a.sin());
-            let (nx, ny) = (-dy, dx);
-            let mut acc = [0.0f32; 4];
-            let mut n = 0.0;
-            for i in 0..steps {
-                let t = (i as f32 / (steps - 1) as f32 - 0.5) * len;
-                for s in [-0.5f32, 0.0, 0.5] {
-                    let q = src.sample_bilinear_clamped(px + dx * t + nx * s * size, py + dy * t + ny * s * size);
-                    for k in 0..4 {
-                        acc[k] += q[k];
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                let (cxi, cyi) = ((px / cell).floor() as i64, (py / cell).floor() as i64);
+                let jit = (hash01(cxi, cyi, 1, 77) - 0.5) * rnd * std::f32::consts::FRAC_PI_2;
+                let a = base_ang + jit;
+                let (dx, dy) = (a.cos(), -a.sin());
+                let (nx, ny) = (-dy, dx);
+                let mut acc = [0.0f32; 4];
+                let mut n = 0.0;
+                for i in 0..steps {
+                    let t = (i as f32 / (steps - 1) as f32 - 0.5) * len;
+                    for s in [-0.5f32, 0.0, 0.5] {
+                        let q = src.sample_bilinear_clamped(
+                            px + dx * t + nx * s * size,
+                            py + dy * t + ny * s * size,
+                        );
+                        for k in 0..4 {
+                            acc[k] += q[k];
+                        }
+                        n += 1.0;
                     }
-                    n += 1.0;
+                }
+                // bristle texture across the stroke
+                let perp = px * nx + py * ny;
+                let bristle = 1.0
+                    + 0.1
+                        * noise3(
+                            perp / size.max(1.0),
+                            (px * dx + py * dy) / len.max(1.0),
+                            cxi as f32 * 0.37,
+                            5,
+                        );
+                let mut o = acc.map(|v| v / n);
+                for v in &mut o[..3] {
+                    *v *= bristle;
+                }
+                let cov = (0.75 + 0.25 * hash01(cxi, cyi, 3, 77)).min(1.0);
+                let o = match surface {
+                    1 => o.map(|v| v * cov),
+                    2 | 3 => {
+                        let bg = if surface == 2 { 1.0 } else { 0.0 };
+                        let mut b = [bg, bg, bg, 1.0];
+                        over(&mut b, o.map(|v| v * cov));
+                        b
+                    }
+                    _ => o,
+                };
+                let orig = src.get(x, y);
+                for k in 0..4 {
+                    row[x * 4 + k] = o[k] + (orig[k] - o[k]) * blend;
                 }
             }
-            // bristle texture across the stroke
-            let perp = px * nx + py * ny;
-            let bristle = 1.0 + 0.1 * noise3(perp / size.max(1.0), (px * dx + py * dy) / len.max(1.0), cxi as f32 * 0.37, 5);
-            let mut o = acc.map(|v| v / n);
-            for v in &mut o[..3] {
-                *v *= bristle;
-            }
-            let cov = (0.75 + 0.25 * hash01(cxi, cyi, 3, 77)).min(1.0);
-            let o = match surface {
-                1 => o.map(|v| v * cov),
-                2 | 3 => {
-                    let bg = if surface == 2 { 1.0 } else { 0.0 };
-                    let mut b = [bg, bg, bg, 1.0];
-                    over(&mut b, o.map(|v| v * cov));
-                    b
-                }
-                _ => o,
-            };
-            let orig = src.get(x, y);
-            for k in 0..4 {
-                row[x * 4 + k] = o[k] + (orig[k] - o[k]) * blend;
-            }
-        }
-    });
+        });
 }
 
 /// Color Emboss: emboss relief that keeps the picture's colours.
@@ -108,52 +121,59 @@ pub fn roughen_edges(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let a = alpha_of(img);
     let depth = blur_plane(&a, img.w, img.h, border * 0.5);
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let i = y * w + x;
-            let p = &mut row[x * 4..x * 4 + 4];
-            if p[3] <= 1e-6 {
-                continue;
-            }
-            let (u, v) = ((x as f32 + off.x as f32) / (scale * stretch), (y as f32 + off.y as f32) * stretch / scale);
-            let mut n = fbm(u, v, evo, cplx, seed);
-            if kind == 3 {
-                n = 1.0 - 2.0 * n.abs();
-            }
-            let d = depth[i];
-            let mut k = ((d - 0.5 + n * infl * 0.5) * (1.0 + sharp * 4.0) + 0.5).clamp(0.0, 1.0);
-            if kind == 2 {
-                k = if k > 0.5 { 1.0 } else { 0.0 };
-            }
-            if matches!(kind, 4..=7) {
-                // rust / photocopy: holes eaten into the border region
-                let hole = fbm(u * 2.3 + 11.0, v * 2.3, evo, cplx, seed + 1);
-                if d < 0.97 && hole > 0.25 {
-                    k *= 1.0 - smoothstep(0.25, 0.4, hole) * (1.0 - d);
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let i = y * w + x;
+                let p = &mut row[x * 4..x * 4 + 4];
+                if p[3] <= 1e-6 {
+                    continue;
                 }
-            }
-            if colored && d < 0.97 {
-                let t = (1.0 - d) * 1.5;
-                let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
-                let col = lerp3(c, ec, t.min(1.0));
-                for c in 0..3 {
-                    p[c] = col[c] * p[3];
+                let (u, v) = (
+                    (x as f32 + off.x as f32) / (scale * stretch),
+                    (y as f32 + off.y as f32) * stretch / scale,
+                );
+                let mut n = fbm(u, v, evo, cplx, seed);
+                if kind == 3 {
+                    n = 1.0 - 2.0 * n.abs();
                 }
-            }
-            if matches!(kind, 6 | 7) {
-                let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
-                let l = if luma(enc(c)) > 0.5 { 1.0 } else { 0.0 };
-                if kind == 6 {
-                    for c in 0..3 {
-                        p[c] = l * p[3];
+                let d = depth[i];
+                let mut k =
+                    ((d - 0.5 + n * infl * 0.5) * (1.0 + sharp * 4.0) + 0.5).clamp(0.0, 1.0);
+                if kind == 2 {
+                    k = if k > 0.5 { 1.0 } else { 0.0 };
+                }
+                if matches!(kind, 4..=7) {
+                    // rust / photocopy: holes eaten into the border region
+                    let hole = fbm(u * 2.3 + 11.0, v * 2.3, evo, cplx, seed + 1);
+                    if d < 0.97 && hole > 0.25 {
+                        k *= 1.0 - smoothstep(0.25, 0.4, hole) * (1.0 - d);
                     }
                 }
+                if colored && d < 0.97 {
+                    let t = (1.0 - d) * 1.5;
+                    let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
+                    let col = lerp3(c, ec, t.min(1.0));
+                    for c in 0..3 {
+                        p[c] = col[c] * p[3];
+                    }
+                }
+                if matches!(kind, 6 | 7) {
+                    let c = Image::unpremul([p[0], p[1], p[2], p[3]]);
+                    let l = if luma(enc(c)) > 0.5 { 1.0 } else { 0.0 };
+                    if kind == 6 {
+                        for c in 0..3 {
+                            p[c] = l * p[3];
+                        }
+                    }
+                }
+                for v in p.iter_mut() {
+                    *v *= k;
+                }
             }
-            for v in p.iter_mut() {
-                *v *= k;
-            }
-        }
-    });
+        });
 }
 
 /// Long Shadow: an extruded, optionally fading shadow behind the layer's alpha. The per-pixel
@@ -171,7 +191,11 @@ pub fn long_shadow(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (dx, dy) = (ang.sin() as f32, -ang.cos() as f32);
     let (w, h) = (img.w, img.h);
     let inf = f32::INFINITY;
-    let mut d: Vec<f32> = img.px.par_chunks(4).map(|p| if p[3] > 0.5 { 0.0 } else { inf }).collect();
+    let mut d: Vec<f32> = img
+        .px
+        .par_chunks(4)
+        .map(|p| if p[3] > 0.5 { 0.0 } else { inf })
+        .collect();
     let mut s = 1.0f32;
     while s <= len * 2.0 {
         let prev = d.clone();
@@ -188,15 +212,27 @@ pub fn long_shadow(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         });
         s *= 2.0;
     }
-    let mut sh: Vec<f32> = d.par_iter().map(|&v| if v <= len { (if fade { 1.0 - v / len } else { 1.0 }) * op } else { 0.0 }).collect();
+    let mut sh: Vec<f32> = d
+        .par_iter()
+        .map(|&v| {
+            if v <= len {
+                (if fade { 1.0 - v / len } else { 1.0 }) * op
+            } else {
+                0.0
+            }
+        })
+        .collect();
     sh = blur_plane(&sh, w, h, 0.6);
-    img.px.par_chunks_mut(4).zip(sh.par_iter()).for_each(|(p, &a)| {
-        let mut o = [col[0] * a, col[1] * a, col[2] * a, a];
-        if !only {
-            over(&mut o, [p[0], p[1], p[2], p[3]]);
-        }
-        p.copy_from_slice(&o);
-    });
+    img.px
+        .par_chunks_mut(4)
+        .zip(sh.par_iter())
+        .for_each(|(p, &a)| {
+            let mut o = [col[0] * a, col[1] * a, col[2] * a, a];
+            if !only {
+                over(&mut o, [p[0], p[1], p[2], p[3]]);
+            }
+            p.copy_from_slice(&o);
+        });
 }
 
 /// 1-D squared Euclidean distance transform: lower envelope of parabolas (Felzenszwalb &
@@ -211,7 +247,9 @@ fn edt_1d(f: &[f64], out: &mut [f64]) {
     let mut k = 0usize;
     z[0] = f64::NEG_INFINITY;
     z[1] = f64::INFINITY;
-    let isect = |q: usize, p: usize| ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64);
+    let isect = |q: usize, p: usize| {
+        ((f[q] + (q * q) as f64) - (f[p] + (p * p) as f64)) / (2.0 * q as f64 - 2.0 * p as f64)
+    };
     for q in 1..n {
         let mut s = isect(q, v[k]);
         while s <= z[k] {
@@ -281,25 +319,32 @@ pub fn stroke(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let d_out = distance_to(&inside, w, h);
     let d_in = distance_to(&outside, w, h);
     let iw = img.w;
-    img.px.par_chunks_mut(iw * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..iw {
-            let i = (y + 1) * w + x + 1;
-            // signed distance to the edge, positive outside (pixel centres sit ±0.5 from it)
-            let s = if inside[i] { -(d_in[i] - 0.5) } else { d_out[i] - 0.5 };
-            let (lo, hi) = match pos {
-                0 => (0.0, width),
-                1 => (-width / 2.0, width / 2.0),
-                _ => (-width, 0.0),
-            };
-            let k = ((s - lo + 0.5).clamp(0.0, 1.0)).min((hi - s + 0.5).clamp(0.0, 1.0)) * op;
-            let p = &mut row[x * 4..x * 4 + 4];
-            if only {
-                p.copy_from_slice(&[col[0] * k, col[1] * k, col[2] * k, k]);
-            } else if k > 0.0 {
-                over(p, [col[0] * k, col[1] * k, col[2] * k, k]);
+    img.px
+        .par_chunks_mut(iw * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..iw {
+                let i = (y + 1) * w + x + 1;
+                // signed distance to the edge, positive outside (pixel centres sit ±0.5 from it)
+                let s = if inside[i] {
+                    -(d_in[i] - 0.5)
+                } else {
+                    d_out[i] - 0.5
+                };
+                let (lo, hi) = match pos {
+                    0 => (0.0, width),
+                    1 => (-width / 2.0, width / 2.0),
+                    _ => (-width, 0.0),
+                };
+                let k = ((s - lo + 0.5).clamp(0.0, 1.0)).min((hi - s + 0.5).clamp(0.0, 1.0)) * op;
+                let p = &mut row[x * 4..x * 4 + 4];
+                if only {
+                    p.copy_from_slice(&[col[0] * k, col[1] * k, col[2] * k, k]);
+                } else if k > 0.0 {
+                    over(p, [col[0] * k, col[1] * k, col[2] * k, k]);
+                }
             }
-        }
-    });
+        });
 }
 
 /// Gradient (26.2): linear / radial / reflected / diamond ramp with midpoint and scatter.
@@ -348,24 +393,27 @@ pub fn block_dissolve(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let fe = fv(e, "feather", cx) / 100.0 * 0.5;
     let soft = bv(e, "soft");
     let w = img.w;
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let r = hash01((x as f32 / bw) as i64, (y as f32 / bh) as i64, 0, 41);
-            let a = if soft && fe > 0.0 {
-                smoothstep(c - fe, c + fe, r)
-            } else if r >= c {
-                1.0
-            } else {
-                0.0
-            };
-            if c >= 1.0 || a < 1.0 {
-                let a = if c >= 1.0 { 0.0 } else { a };
-                for v in &mut row[x * 4..x * 4 + 4] {
-                    *v *= a;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let r = hash01((x as f32 / bw) as i64, (y as f32 / bh) as i64, 0, 41);
+                let a = if soft && fe > 0.0 {
+                    smoothstep(c - fe, c + fe, r)
+                } else if r >= c {
+                    1.0
+                } else {
+                    0.0
+                };
+                if c >= 1.0 || a < 1.0 {
+                    let a = if c >= 1.0 { 0.0 } else { a };
+                    for v in &mut row[x * 4..x * 4 + 4] {
+                        *v *= a;
+                    }
                 }
             }
-        }
-    });
+        });
 }
 
 /// Alpha from a wipe source g (0..1): pixels whose g is below the completion vanish first.
@@ -389,34 +437,46 @@ pub fn gradient_wipe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let invert = bv(e, "invert");
     let layer = chv(e, "layer") as usize;
     let placement = chv(e, "placement");
-    let track = if layer > 0 { cx.env.and_then(|env| env.track(layer - 1).map(|t| (t, env.layer_to_output()))) } else { None };
+    let track = if layer > 0 {
+        cx.env
+            .and_then(|env| env.track(layer - 1).map(|t| (t, env.layer_to_output())))
+    } else {
+        None
+    };
     let own = img.clone();
     let w = img.w;
     let (iw, ih) = (img.w as f32, img.h as f32);
-    img.px.par_chunks_mut(w * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..w {
-            let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
-            let s = match &track {
-                Some((t, m)) => match placement {
-                    0 => t.get(x % t.w, y % t.h),
-                    1 => t.sample_bilinear(px - iw / 2.0 + t.w as f32 / 2.0, py - ih / 2.0 + t.h as f32 / 2.0),
-                    _ => {
-                        let o = m.apply(Vec2::new(px as f64, py as f64));
-                        t.sample_bilinear_clamped(o.x as f32, o.y as f32)
-                    }
-                },
-                None => own.get(x, y),
-            };
-            let mut g = filmcraft_color::linear_to_srgb(luma([s[0], s[1], s[2]]).clamp(0.0, 1.0));
-            if invert {
-                g = 1.0 - g;
+    img.px
+        .par_chunks_mut(w * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..w {
+                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+                let s = match &track {
+                    Some((t, m)) => match placement {
+                        0 => t.get(x % t.w, y % t.h),
+                        1 => t.sample_bilinear(
+                            px - iw / 2.0 + t.w as f32 / 2.0,
+                            py - ih / 2.0 + t.h as f32 / 2.0,
+                        ),
+                        _ => {
+                            let o = m.apply(Vec2::new(px as f64, py as f64));
+                            t.sample_bilinear_clamped(o.x as f32, o.y as f32)
+                        }
+                    },
+                    None => own.get(x, y),
+                };
+                let mut g =
+                    filmcraft_color::linear_to_srgb(luma([s[0], s[1], s[2]]).clamp(0.0, 1.0));
+                if invert {
+                    g = 1.0 - g;
+                }
+                let a = wipe_alpha(g, c, soft);
+                for v in &mut row[x * 4..x * 4 + 4] {
+                    *v *= a;
+                }
             }
-            let a = wipe_alpha(g, c, soft);
-            for v in &mut row[x * 4..x * 4 + 4] {
-                *v *= a;
-            }
-        }
-    });
+        });
 }
 
 /// Linear Wipe (Legacy): a straight edge sweeps across at Wipe Angle.
@@ -430,19 +490,25 @@ pub fn linear_wipe(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (w, h) = (img.w as f32, img.h as f32);
     // extent of the frame along the wipe direction
     let corners = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)].map(|(x, y)| x * dx + y * dy);
-    let (lo, hi) = (corners.iter().copied().fold(f32::INFINITY, f32::min), corners.iter().copied().fold(f32::NEG_INFINITY, f32::max));
+    let (lo, hi) = (
+        corners.iter().copied().fold(f32::INFINITY, f32::min),
+        corners.iter().copied().fold(f32::NEG_INFINITY, f32::max),
+    );
     let ext = (hi - lo).max(1.0);
     let soft = fv(e, "feather", cx) * cx.px_scale / ext;
     let wi = img.w;
-    img.px.par_chunks_mut(wi * 4).enumerate().for_each(|(y, row)| {
-        for x in 0..wi {
-            let g = ((x as f32 + 0.5) * dx + (y as f32 + 0.5) * dy - lo) / ext;
-            let a = wipe_alpha(g, c, soft);
-            for v in &mut row[x * 4..x * 4 + 4] {
-                *v *= a;
+    img.px
+        .par_chunks_mut(wi * 4)
+        .enumerate()
+        .for_each(|(y, row)| {
+            for x in 0..wi {
+                let g = ((x as f32 + 0.5) * dx + (y as f32 + 0.5) * dy - lo) / ext;
+                let a = wipe_alpha(g, c, soft);
+                for v in &mut row[x * 4..x * 4 + 4] {
+                    *v *= a;
+                }
             }
-        }
-    });
+        });
 }
 
 struct Rng(u64);
@@ -460,7 +526,15 @@ impl Rng {
 }
 
 /// A bolt between two points: midpoint displacement, `levels` of detail.
-fn bolt(a: (f32, f32), b: (f32, f32), segs: usize, amp: f32, levels: usize, detail_amp: f32, rng: &mut Rng) -> Vec<(f32, f32)> {
+fn bolt(
+    a: (f32, f32),
+    b: (f32, f32),
+    segs: usize,
+    amp: f32,
+    levels: usize,
+    detail_amp: f32,
+    rng: &mut Rng,
+) -> Vec<(f32, f32)> {
     let mut pts = vec![a];
     let (dx, dy) = (b.0 - a.0, b.1 - a.1);
     let len = (dx * dx + dy * dy).sqrt().max(1e-3);
@@ -480,7 +554,10 @@ fn bolt(a: (f32, f32), b: (f32, f32), segs: usize, amp: f32, levels: usize, deta
             let l = (ex * ex + ey * ey).sqrt().max(1e-3);
             let o = rng.signed() * a2.min(l * 0.5);
             np.push(p);
-            np.push(((p.0 + q.0) / 2.0 - ey / l * o, (p.1 + q.1) / 2.0 + ex / l * o));
+            np.push((
+                (p.0 + q.0) / 2.0 - ey / l * o,
+                (p.1 + q.1) / 2.0 + ex / l * o,
+            ));
         }
         if let Some(&last) = pts.last() {
             np.push(last);
@@ -509,7 +586,15 @@ pub fn lightning(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let mode = chv(e, "mode");
     let strike = (cx.seconds * speed / 10.0).floor() as u64;
     let mut rng = Rng(fv(e, "seed", cx).max(0.0) as u64 * 7919 + strike);
-    let main = bolt((s.x as f32, s.y as f32), (en.x as f32, en.y as f32), segs, amp, levels, damp, &mut rng);
+    let main = bolt(
+        (s.x as f32, s.y as f32),
+        (en.x as f32, en.y as f32),
+        segs,
+        amp,
+        levels,
+        damp,
+        &mut rng,
+    );
     let mut lines: Vec<(Vec<(f32, f32)>, f32)> = vec![(main.clone(), width)];
     for i in 1..main.len().saturating_sub(1) {
         if rng.next() < branching * 0.25 {
@@ -518,7 +603,10 @@ pub fn lightning(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             let a = dy.atan2(dx) + rng.signed() * 0.6;
             let l = dist * (0.15 + rng.next() * 0.25);
             let q = (p.0 + a.cos() * l, p.1 + a.sin() * l);
-            lines.push((bolt(p, q, 4, amp * 0.4, levels.min(3), damp, &mut rng), width * 0.6));
+            lines.push((
+                bolt(p, q, 4, amp * 0.4, levels.min(3), damp, &mut rng),
+                width * 0.6,
+            ));
         }
     }
     let (w, h) = (img.w, img.h);
@@ -527,8 +615,14 @@ pub fn lightning(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         for seg in pts.windows(2) {
             let (a, b) = (seg[0], seg[1]);
             let r = lw * 3.0;
-            let (x0, x1) = ((a.0.min(b.0) - r).floor().max(0.0) as usize, ((a.0.max(b.0) + r).ceil().max(0.0) as usize).min(w));
-            let (y0, y1) = ((a.1.min(b.1) - r).floor().max(0.0) as usize, ((a.1.max(b.1) + r).ceil().max(0.0) as usize).min(h));
+            let (x0, x1) = (
+                (a.0.min(b.0) - r).floor().max(0.0) as usize,
+                ((a.0.max(b.0) + r).ceil().max(0.0) as usize).min(w),
+            );
+            let (y0, y1) = (
+                (a.1.min(b.1) - r).floor().max(0.0) as usize,
+                ((a.1.max(b.1) + r).ceil().max(0.0) as usize).min(h),
+            );
             let (ex, ey) = (b.0 - a.0, b.1 - a.1);
             let l2 = (ex * ex + ey * ey).max(1e-6);
             for y in y0..y1 {
@@ -544,28 +638,31 @@ pub fn lightning(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             }
         }
     }
-    img.px.par_chunks_mut(4).zip(dmap.par_iter()).for_each(|(p, &d)| {
-        if !d.is_finite() {
-            return;
-        }
-        let glow = (-(d * 1.6)).exp() * 0.9;
-        let c = 1.0 - smoothstep(core * 0.5, core * 0.5 + 0.2, d);
-        let col = lerp3(outc.map(|v| v * glow), inc, c);
-        let a = glow.max(c).min(1.0);
-        let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
-        let o = match mode {
-            0 => {
-                let mut q = [p[0], p[1], p[2], p[3]];
-                over(&mut q, [col[0] * a, col[1] * a, col[2] * a, a]);
-                p.copy_from_slice(&q);
+    img.px
+        .par_chunks_mut(4)
+        .zip(dmap.par_iter())
+        .for_each(|(p, &d)| {
+            if !d.is_finite() {
                 return;
             }
-            m => blend_simple(m, base, col),
-        };
-        let na = p[3] + (1.0 - p[3]) * a;
-        let mixed = lerp3(base, o, a);
-        p.copy_from_slice(&[mixed[0] * na, mixed[1] * na, mixed[2] * na, na]);
-    });
+            let glow = (-(d * 1.6)).exp() * 0.9;
+            let c = 1.0 - smoothstep(core * 0.5, core * 0.5 + 0.2, d);
+            let col = lerp3(outc.map(|v| v * glow), inc, c);
+            let a = glow.max(c).min(1.0);
+            let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
+            let o = match mode {
+                0 => {
+                    let mut q = [p[0], p[1], p[2], p[3]];
+                    over(&mut q, [col[0] * a, col[1] * a, col[2] * a, a]);
+                    p.copy_from_slice(&q);
+                    return;
+                }
+                m => blend_simple(m, base, col),
+            };
+            let na = p[3] + (1.0 - p[3]) * a;
+            let mixed = lerp3(base, o, a);
+            p.copy_from_slice(&[mixed[0] * na, mixed[1] * na, mixed[2] * na, na]);
+        });
 }
 
 /// Cell Pattern (obsolete): Worley (cellular) noise patterns.
@@ -577,7 +674,11 @@ pub fn cell_pattern(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let disperse = fv(e, "disperse", cx).clamp(0.0, 1.5);
     let size = (fv(e, "size", cx) * cx.px_scale).max(1.0);
     let off = offv(e, "offset", cx);
-    let evo = if pat == 3 { 0.0 } else { fv(e, "evolution", cx).to_radians() };
+    let evo = if pat == 3 {
+        0.0
+    } else {
+        fv(e, "evolution", cx).to_radians()
+    };
     let seed = fv(e, "seed", cx).max(0.0) as u64;
     generate(img, |x, y, _| {
         let (u, v) = ((x + off.x as f32) / size, (y + off.y as f32) / size);
@@ -587,8 +688,12 @@ pub fn cell_pattern(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             for di in -1..=1 {
                 let (gi, gj) = (ci + di, cj + dj);
                 let ph = hash01(gi, gj, 9, seed) * std::f32::consts::TAU;
-                let jx = 0.5 + (hash01(gi, gj, 0, seed) - 0.5) * disperse + (evo + ph).cos() * 0.15 * disperse;
-                let jy = 0.5 + (hash01(gi, gj, 1, seed) - 0.5) * disperse + (evo + ph).sin() * 0.15 * disperse;
+                let jx = 0.5
+                    + (hash01(gi, gj, 0, seed) - 0.5) * disperse
+                    + (evo + ph).cos() * 0.15 * disperse;
+                let jy = 0.5
+                    + (hash01(gi, gj, 1, seed) - 0.5) * disperse
+                    + (evo + ph).sin() * 0.15 * disperse;
                 let d = ((gi as f32 + jx - u).powi(2) + (gj as f32 + jy - v).powi(2)).sqrt();
                 if d < f1 {
                     f2 = f1;
@@ -629,7 +734,11 @@ pub fn cell_pattern(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 pub fn checkerboard(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let a = pv(e, "anchor", cx, img);
     let cw = (fv(e, "width", cx) * cx.px_scale).max(1.0);
-    let ch = if bv(e, "square") { cw } else { (fv(e, "height", cx) * cx.px_scale).max(1.0) };
+    let ch = if bv(e, "square") {
+        cw
+    } else {
+        (fv(e, "height", cx) * cx.px_scale).max(1.0)
+    };
     let fe = fv(e, "feather", cx) * cx.px_scale;
     let col = lin(cv(e, "color", cx));
     let op = fv(e, "opacity", cx) / 100.0;
@@ -640,7 +749,11 @@ pub fn checkerboard(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         let edge = {
             let du = (u - u.round()).abs() * cw;
             let dv = (v - v.round()).abs() * ch;
-            if fe > 0.0 { smoothstep(0.0, fe, du.min(dv)) } else { 1.0 }
+            if fe > 0.0 {
+                smoothstep(0.0, fe, du.min(dv))
+            } else {
+                1.0
+            }
         };
         let k = par * edge * op;
         match mode {
@@ -663,7 +776,10 @@ pub fn checkerboard(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
 /// Ellipse (obsolete): an anti-aliased elliptical ring, Inside Color at its core.
 pub fn ellipse(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let c = pv(e, "center", cx, img);
-    let (rx, ry) = ((fv(e, "width", cx) * cx.px_scale / 2.0).max(0.5), (fv(e, "height", cx) * cx.px_scale / 2.0).max(0.5));
+    let (rx, ry) = (
+        (fv(e, "width", cx) * cx.px_scale / 2.0).max(0.5),
+        (fv(e, "height", cx) * cx.px_scale / 2.0).max(0.5),
+    );
     let th = (fv(e, "thickness", cx) * cx.px_scale).max(0.5);
     let soft = fv(e, "softness", cx) / 100.0;
     let inc = lin(cv(e, "inside", cx));
@@ -747,34 +863,39 @@ pub fn paint_bucket(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
         fill.iter_mut().for_each(|v| *v = 1.0 - *v);
     }
     let fill = blur_plane(&fill, w, h, 0.5);
-    img.px.par_chunks_mut(4).zip(fill.par_iter()).for_each(|(p, &f)| {
-        let k = f * op;
-        if k <= 0.0 {
-            return;
-        }
-        let s = [col[0] * k, col[1] * k, col[2] * k, k];
-        match mode {
-            1 => {
-                let mut q = s;
-                over(&mut q, [p[0], p[1], p[2], p[3]]);
-                p.copy_from_slice(&q);
+    img.px
+        .par_chunks_mut(4)
+        .zip(fill.par_iter())
+        .for_each(|(p, &f)| {
+            let k = f * op;
+            if k <= 0.0 {
+                return;
             }
-            2..=4 => {
-                let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
-                let bm = [0u32, 0, 1, 3, 2][mode as usize];
-                let o = lerp3(base, blend_simple(bm, base, col), k);
-                for c in 0..3 {
-                    p[c] = o[c] * p[3];
+            let s = [col[0] * k, col[1] * k, col[2] * k, k];
+            match mode {
+                1 => {
+                    let mut q = s;
+                    over(&mut q, [p[0], p[1], p[2], p[3]]);
+                    p.copy_from_slice(&q);
                 }
+                2..=4 => {
+                    let base = Image::unpremul([p[0], p[1], p[2], p[3]]);
+                    let bm = [0u32, 0, 1, 3, 2][mode as usize];
+                    let o = lerp3(base, blend_simple(bm, base, col), k);
+                    for c in 0..3 {
+                        p[c] = o[c] * p[3];
+                    }
+                }
+                _ => over(p, s),
             }
-            _ => over(p, s),
-        }
-    });
+        });
 }
 
 /// Write-on (obsolete): paints the animated Brush Position's path up to now.
 pub fn write_on(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
-    let Some(param) = e.param("brush") else { return };
+    let Some(param) = e.param("brush") else {
+        return;
+    };
     let col = lin(cv(e, "color", cx));
     let r = (fv(e, "size", cx) * cx.px_scale / 2.0).max(0.5);
     let hard = fv(e, "hardness", cx) / 100.0;
@@ -784,13 +905,25 @@ pub fn write_on(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let style = chv(e, "style");
     let elapsed = cx.seconds.max(0.0);
     let n = ((elapsed / spacing).floor() as usize).min(20_000);
-    let first = if stroke_len > 0.0 { ((elapsed - stroke_len) / spacing).ceil().max(0.0) as usize } else { 0 };
+    let first = if stroke_len > 0.0 {
+        ((elapsed - stroke_len) / spacing).ceil().max(0.0) as usize
+    } else {
+        0
+    };
     let to_px = |t: f64| {
         let mt = cx.t - Tick::from_seconds_f64(elapsed - t);
         let v = param.vec2_at(mt);
         let (fx, fy) = (
-            if v.x.is_nan() { img.w as f64 / 2.0 } else { v.x * cx.px_scale as f64 },
-            if v.y.is_nan() { img.h as f64 / 2.0 } else { v.y * cx.px_scale as f64 },
+            if v.x.is_nan() {
+                img.w as f64 / 2.0
+            } else {
+                v.x * cx.px_scale as f64
+            },
+            if v.y.is_nan() {
+                img.h as f64 / 2.0
+            } else {
+                v.y * cx.px_scale as f64
+            },
         );
         (fx as f32, fy as f32)
     };
@@ -812,8 +945,14 @@ pub fn write_on(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
     let (w, h) = (img.w, img.h);
     let mut cov = vec![0f32; w * h];
     for (sx, sy) in stamps {
-        let (x0, x1) = ((sx - r - 1.0).floor().max(0.0) as usize, ((sx + r + 1.0).ceil().max(0.0) as usize).min(w));
-        let (y0, y1) = ((sy - r - 1.0).floor().max(0.0) as usize, ((sy + r + 1.0).ceil().max(0.0) as usize).min(h));
+        let (x0, x1) = (
+            (sx - r - 1.0).floor().max(0.0) as usize,
+            ((sx + r + 1.0).ceil().max(0.0) as usize).min(w),
+        );
+        let (y0, y1) = (
+            (sy - r - 1.0).floor().max(0.0) as usize,
+            ((sy + r + 1.0).ceil().max(0.0) as usize).min(h),
+        );
         for y in y0..y1 {
             for x in x0..x1 {
                 let d = ((x as f32 + 0.5 - sx).powi(2) + (y as f32 + 0.5 - sy).powi(2)).sqrt();
@@ -825,16 +964,19 @@ pub fn write_on(img: &mut Image, e: &EffectInstance, cx: &FxCtx) {
             }
         }
     }
-    img.px.par_chunks_mut(4).zip(cov.par_iter()).for_each(|(p, &c)| {
-        let k = c * op;
-        match style {
-            1 => p.copy_from_slice(&[col[0] * k, col[1] * k, col[2] * k, k]),
-            2 => {
-                for v in p.iter_mut() {
-                    *v *= k;
+    img.px
+        .par_chunks_mut(4)
+        .zip(cov.par_iter())
+        .for_each(|(p, &c)| {
+            let k = c * op;
+            match style {
+                1 => p.copy_from_slice(&[col[0] * k, col[1] * k, col[2] * k, k]),
+                2 => {
+                    for v in p.iter_mut() {
+                        *v *= k;
+                    }
                 }
+                _ => over(p, [col[0] * k, col[1] * k, col[2] * k, k]),
             }
-            _ => over(p, [col[0] * k, col[1] * k, col[2] * k, k]),
-        }
-    });
+        });
 }

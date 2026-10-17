@@ -74,7 +74,12 @@ pub struct UnifiedOptions {
 
 impl Default for UnifiedOptions {
     fn default() -> Self {
-        Self { limit: 10, per_channel: 30, kinds: Vec::new(), rrf_k: 60.0 }
+        Self {
+            limit: 10,
+            per_channel: 30,
+            kinds: Vec::new(),
+            rrf_k: 60.0,
+        }
     }
 }
 
@@ -94,7 +99,11 @@ fn parse_line(loc: Option<&str>) -> Option<usize> {
 
 fn truncate(text: &str, max: usize) -> String {
     let flat: String = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    if flat.chars().count() <= max { flat } else { format!("{}...", flat.chars().take(max).collect::<String>()) }
+    if flat.chars().count() <= max {
+        flat
+    } else {
+        format!("{}...", flat.chars().take(max).collect::<String>())
+    }
 }
 
 /// Search chunks, graph nodes and memories of the home database and fuse the channels.
@@ -103,17 +112,29 @@ fn truncate(text: &str, max: usize) -> String {
 ///
 /// SQLite failures. A database without the graph or memory tables (older schema) simply
 /// contributes nothing for that channel.
-pub fn unified_search(db: &HomeDb, query: &str, options: &UnifiedOptions) -> Result<Vec<UnifiedHit>> {
-    let Some(expression) = fts_expression(query) else { return Ok(Vec::new()) };
+pub fn unified_search(
+    db: &HomeDb,
+    query: &str,
+    options: &UnifiedOptions,
+) -> Result<Vec<UnifiedHit>> {
+    let Some(expression) = fts_expression(query) else {
+        return Ok(Vec::new());
+    };
     let wants = |kind: HitKind| options.kinds.is_empty() || options.kinds.contains(&kind);
     let limit = i64::try_from(options.per_channel).unwrap_or(30);
     let mut hits: HashMap<String, UnifiedHit> = HashMap::new();
     let mut lists: Vec<Vec<String>> = Vec::new();
 
-    let mut run = |sql: &str, build: &dyn Fn(&rusqlite::Row<'_>) -> rusqlite::Result<UnifiedHit>| -> Result<()> {
+    let mut run = |sql: &str,
+                   build: &dyn Fn(&rusqlite::Row<'_>) -> rusqlite::Result<UnifiedHit>|
+     -> Result<()> {
         let mut statement = match db.conn().prepare(sql) {
             Ok(s) => s,
-            Err(rusqlite::Error::SqliteFailure(_, Some(message))) if message.contains("no such table") => return Ok(()),
+            Err(rusqlite::Error::SqliteFailure(_, Some(message)))
+                if message.contains("no such table") =>
+            {
+                return Ok(());
+            }
             Err(error) => return Err(RagError::Sqlite(error)),
         };
         let rows = statement.query_map(rusqlite::params![expression, limit], |r| build(r))?;
@@ -160,7 +181,11 @@ pub fn unified_search(db: &HomeDb, query: &str, options: &UnifiedOptions) -> Res
                     title: r.get(1)?,
                     path: r.get(2)?,
                     line: parse_line(loc.as_deref()),
-                    snippet: format!("{} in community {}", r.get::<_, String>(4)?, r.get::<_, String>(5)?),
+                    snippet: format!(
+                        "{} in community {}",
+                        r.get::<_, String>(4)?,
+                        r.get::<_, String>(5)?
+                    ),
                     score: 0.0,
                 })
             },
@@ -200,7 +225,10 @@ pub fn unified_search(db: &HomeDb, query: &str, options: &UnifiedOptions) -> Res
 /// to the global home.
 #[must_use]
 pub fn scope_for(profile: Option<&str>) -> HomeScope {
-    match profile.map(str::to_owned).or_else(|| std::env::var("APHRODY_PROFILE").ok()) {
+    match profile
+        .map(str::to_owned)
+        .or_else(|| std::env::var("APHRODY_PROFILE").ok())
+    {
         Some(p) => HomeScope::from_profile(Some(&p)),
         None => HomeScope::Global,
     }
@@ -218,9 +246,14 @@ pub fn existing_home_db(profile: Option<&str>) -> Option<std::path::PathBuf> {
 /// # Errors
 ///
 /// A missing home database or SQLite failures.
-pub fn home_query_json(profile: Option<&str>, query: &str, options: &UnifiedOptions) -> Result<serde_json::Value> {
-    let path = existing_home_db(profile)
-        .ok_or_else(|| RagError::Other("no home database yet (run `aphrody home index`)".to_owned()))?;
+pub fn home_query_json(
+    profile: Option<&str>,
+    query: &str,
+    options: &UnifiedOptions,
+) -> Result<serde_json::Value> {
+    let path = existing_home_db(profile).ok_or_else(|| {
+        RagError::Other("no home database yet (run `aphrody home index`)".to_owned())
+    })?;
     let db = HomeDb::open_read_only(&path).map_err(|e| RagError::Other(e.to_string()))?;
     let hits = unified_search(&db, query, options)?;
     Ok(serde_json::json!({ "query": query, "db": path, "hits": hits }))
@@ -239,7 +272,8 @@ pub fn home_status_json(profile: Option<&str>) -> Result<serde_json::Value> {
         },
         state: None,
     };
-    aphrody_store::cli::run(&args, &aphrody_store::cli::Command::Status).map_err(|e| RagError::Other(e.to_string()))
+    aphrody_store::cli::run(&args, &aphrody_store::cli::Command::Status)
+        .map_err(|e| RagError::Other(e.to_string()))
 }
 
 impl RagStore {
@@ -292,7 +326,10 @@ mod tests {
         let db = seeded();
         let hits = unified_search(&db, "fusion", &UnifiedOptions::default()).unwrap();
         let kinds: Vec<HitKind> = hits.iter().map(|h| h.kind).collect();
-        assert!(kinds.contains(&HitKind::Chunk) && kinds.contains(&HitKind::Memory), "{kinds:?}");
+        assert!(
+            kinds.contains(&HitKind::Chunk) && kinds.contains(&HitKind::Memory),
+            "{kinds:?}"
+        );
         let chunk = hits.iter().find(|h| h.kind == HitKind::Chunk).unwrap();
         assert_eq!(chunk.path.as_deref(), Some("docs/rag.md"));
         assert_eq!(chunk.line, Some(10));
@@ -303,7 +340,10 @@ mod tests {
     fn graph_nodes_are_found_by_label_and_carry_their_location() {
         let db = seeded();
         let hits = unified_search(&db, "RagSearcher", &UnifiedOptions::default()).unwrap();
-        let node = hits.iter().find(|h| h.kind == HitKind::Node).expect("node hit");
+        let node = hits
+            .iter()
+            .find(|h| h.kind == HitKind::Node)
+            .expect("node hit");
         assert_eq!(node.path.as_deref(), Some("crates/ai/rag/src/search.rs"));
         assert_eq!(node.line, Some(81));
         assert!(node.snippet.contains("community RagSearcher"));
@@ -312,11 +352,22 @@ mod tests {
     #[test]
     fn kinds_filter_and_empty_queries_are_handled() {
         let db = seeded();
-        let only_memory = UnifiedOptions { kinds: vec![HitKind::Memory], ..UnifiedOptions::default() };
+        let only_memory = UnifiedOptions {
+            kinds: vec![HitKind::Memory],
+            ..UnifiedOptions::default()
+        };
         let hits = unified_search(&db, "fusion", &only_memory).unwrap();
         assert!(hits.iter().all(|h| h.kind == HitKind::Memory));
-        assert!(unified_search(&db, "!!", &UnifiedOptions::default()).unwrap().is_empty());
-        assert!(unified_search(&db, "zzzznothing", &UnifiedOptions::default()).unwrap().is_empty());
+        assert!(
+            unified_search(&db, "!!", &UnifiedOptions::default())
+                .unwrap()
+                .is_empty()
+        );
+        assert!(
+            unified_search(&db, "zzzznothing", &UnifiedOptions::default())
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
@@ -327,12 +378,19 @@ mod tests {
     #[tokio::test]
     async fn the_rag_store_opens_on_the_home_database_and_sees_the_same_rows() {
         let state = tempfile::tempdir().unwrap();
-        let layout = HomeLayout::in_state(state.path(), &HomeScope::Profile("dbfr".into())).unwrap();
+        let layout =
+            HomeLayout::in_state(state.path(), &HomeScope::Profile("dbfr".into())).unwrap();
         let store = RagStore::open_home_layout(&layout).unwrap();
-        store.upsert_doc("a.md", "h", None, None, 1, 1).await.unwrap();
+        store
+            .upsert_doc("a.md", "h", None, None, 1, 1)
+            .await
+            .unwrap();
         let db = HomeDb::open_read_only(&layout.db_path).unwrap();
         assert_eq!(db.schema_version().unwrap(), 7);
-        let docs: i64 = db.conn().query_row("SELECT count(*) FROM docs", [], |r| r.get(0)).unwrap();
+        let docs: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM docs", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(docs, 1);
     }
 }

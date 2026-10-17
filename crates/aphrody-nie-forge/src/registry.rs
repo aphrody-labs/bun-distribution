@@ -76,7 +76,11 @@ impl RegistryEntry {
     /// # Erreurs
     /// Retourne une erreur si `va` n'est pas un entier hexadécimal `0x…`.
     pub fn va_value(&self) -> anyhow::Result<u64> {
-        let s = self.va.trim().trim_start_matches("0x").trim_start_matches("0X");
+        let s = self
+            .va
+            .trim()
+            .trim_start_matches("0x")
+            .trim_start_matches("0X");
         u64::from_str_radix(s, 16)
             .map_err(|e| anyhow::anyhow!("adresse invalide `{}` : {e}", self.va))
     }
@@ -124,7 +128,9 @@ impl Registry {
             std::fs::create_dir_all(dir)?;
         }
         let mut sorted = self.clone();
-        sorted.entries.sort_by_key(|e| e.va_value().unwrap_or(u64::MAX));
+        sorted
+            .entries
+            .sort_by_key(|e| e.va_value().unwrap_or(u64::MAX));
         std::fs::write(path, serde_json::to_string_pretty(&sorted)? + "\n")?;
         Ok(())
     }

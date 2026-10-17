@@ -1,8 +1,8 @@
 use super::{Aabb3d, BoundingSphere, IntersectsVolume};
 use crate::Ray3d;
 use bevy_math::{
-    ops::{self, FloatPow},
     Dir3A, Vec3A,
+    ops::{self, FloatPow},
 };
 
 #[cfg(feature = "bevy_reflect")]
@@ -65,11 +65,7 @@ impl RayCast3d {
         let tmin = tmin.max_element().max(0.);
         let tmax = tmax.min_element().min(self.max);
 
-        if tmin <= tmax {
-            Some(tmin)
-        } else {
-            None
-        }
+        if tmin <= tmax { Some(tmin) } else { None }
     }
 
     /// Get the distance of an intersection with a [`BoundingSphere`], if any.

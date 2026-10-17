@@ -12,11 +12,15 @@ const MAX_TYPES: usize = 1 << 12;
 const MAX_FONTS: usize = 256;
 
 fn be16(b: &[u8], at: usize) -> Option<usize> {
-    b.get(at..at.checked_add(2)?).and_then(|s| s.try_into().ok()).map(|s| u16::from_be_bytes(s) as usize)
+    b.get(at..at.checked_add(2)?)
+        .and_then(|s| s.try_into().ok())
+        .map(|s| u16::from_be_bytes(s) as usize)
 }
 
 fn be32(b: &[u8], at: usize) -> Option<usize> {
-    b.get(at..at.checked_add(4)?).and_then(|s| s.try_into().ok()).map(|s| u32::from_be_bytes(s) as usize)
+    b.get(at..at.checked_add(4)?)
+        .and_then(|s| s.try_into().ok())
+        .map(|s| u32::from_be_bytes(s) as usize)
 }
 
 /// The font files (`sfnt` resources) of a resource fork, in the order its map lists them. A
@@ -61,15 +65,22 @@ fn collect<'a>(fork: &'a [u8], fonts: &mut Vec<&'a [u8]>) -> Option<()> {
 /// The fonts of the suitcase font at `path`, read from its resource fork; none for a file
 /// without one, and off macOS, the only place such a fork is a part of a file.
 pub(crate) fn read_fonts(path: &Path) -> Vec<Vec<u8>> {
-    let Some(fork) = read_fork(path) else { return vec![] };
-    sfnt_resources(&fork).into_iter().map(<[u8]>::to_vec).collect()
+    let Some(fork) = read_fork(path) else {
+        return vec![];
+    };
+    sfnt_resources(&fork)
+        .into_iter()
+        .map(<[u8]>::to_vec)
+        .collect()
 }
 
 /// Whether the file at `path` is a suitcase font: nothing in its data fork and something in its
 /// resource fork.
 pub(crate) fn is_suitcase(path: &Path) -> bool {
     // Off macOS no file has a fork: don't look at every font file twice.
-    cfg!(target_os = "macos") && std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() == 0) && fork_len(path) > 0
+    cfg!(target_os = "macos")
+        && std::fs::metadata(path).is_ok_and(|m| m.is_file() && m.len() == 0)
+        && fork_len(path) > 0
 }
 
 #[cfg(target_os = "macos")]
@@ -86,7 +97,11 @@ pub(crate) fn fork_len(path: &Path) -> u64 {
 fn read_fork(path: &Path) -> Option<Vec<u8>> {
     use std::io::Read;
     let mut fork = Vec::new();
-    std::fs::File::open(fork_path(path)).ok()?.take(MAX_FORK).read_to_end(&mut fork).ok()?;
+    std::fs::File::open(fork_path(path))
+        .ok()?
+        .take(MAX_FORK)
+        .read_to_end(&mut fork)
+        .ok()?;
     Some(fork)
 }
 
@@ -141,7 +156,12 @@ pub(crate) fn fork_of(fonts: &[Vec<u8>]) -> Vec<u8> {
     map.extend_from_slice(&((28 + types.len()) as u16).to_be_bytes());
     map.extend(types);
     let mut fork = Vec::new();
-    for v in [256u32, 256 + data.len() as u32, data.len() as u32, map.len() as u32] {
+    for v in [
+        256u32,
+        256 + data.len() as u32,
+        data.len() as u32,
+        map.len() as u32,
+    ] {
         fork.extend_from_slice(&v.to_be_bytes());
     }
     fork.resize(256, 0);

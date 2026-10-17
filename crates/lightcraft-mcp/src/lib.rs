@@ -13,7 +13,14 @@
 //!
 //! Entry points: [`Server::serve`] (stdio loop) and [`Server::handle_line`] (one message).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod backend;
 mod base64;
@@ -25,7 +32,9 @@ pub use backend::{Backend, ProgressHook, Remote};
 pub use base64::{base64_decode, base64_encode};
 pub use headless::{Headless, encode_image, expand_paths, write_image};
 pub use server::{PROTOCOL_VERSION, Server};
-pub use tools::{COMMAND_TOOL_PREFIX, ToolResult, call_tool, command_tool_name, helper_tools, tool_definitions};
+pub use tools::{
+    COMMAND_TOOL_PREFIX, ToolResult, call_tool, command_tool_name, helper_tools, tool_definitions,
+};
 
 /// Default control-channel address of the desktop app (`lightcraft --control 7980`).
 pub const DEFAULT_ADDR: &str = "127.0.0.1:7980";

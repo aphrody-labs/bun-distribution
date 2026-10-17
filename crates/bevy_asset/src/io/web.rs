@@ -67,9 +67,11 @@ pub struct WebAssetPlugin {
 impl Plugin for WebAssetPlugin {
     fn build(&self, app: &mut App) {
         if !self.silence_startup_warning {
-            warn!("WebAssetPlugin is potentially insecure! Make sure to verify asset URLs are safe to load before loading them. \
+            warn!(
+                "WebAssetPlugin is potentially insecure! Make sure to verify asset URLs are safe to load before loading them. \
             If you promise you know what you're doing, you can silence this warning by setting silence_startup_warning: true \
-            in the WebAssetPlugin construction.");
+            in the WebAssetPlugin construction."
+            );
         }
         if app.is_plugin_added::<AssetPlugin>() {
             warn!("WebAssetPlugin must be added before AssetPlugin for it to work!");
@@ -145,8 +147,8 @@ async fn get(path: PathBuf) -> Result<Box<dyn Reader>, AssetReaderError> {
     if let Some(data) = web_asset_cache::try_load_from_cache(str_path).await? {
         return Ok(Box::new(VecReader::new(data)));
     }
-    use ureq::tls::{RootCerts, TlsConfig};
     use ureq::Agent;
+    use ureq::tls::{RootCerts, TlsConfig};
 
     static AGENT: LazyLock<Agent> = LazyLock::new(|| {
         Agent::config_builder()

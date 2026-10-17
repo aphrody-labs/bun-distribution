@@ -10,14 +10,20 @@ type Harness = egui_kittest::Harness<'static, PhotocraftApp>;
 
 fn harness() -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(egui::vec2(1000.0, 700.0)).with_pixels_per_point(1.0).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref() {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1000.0, 700.0))
+            .with_pixels_per_point(1.0)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -40,10 +46,16 @@ fn sample(h: &mut Harness, at: [f32; 2]) -> [u8; 3] {
 
 /// View › Pattern Preview, as the menu runs it.
 fn toggle(h: &mut Harness) {
-    let (request, _) = photocraft_ui_egui::control::ControlRequest::new("ui.menu.invoke", json!({"id": "view.patternPreview"}));
+    let (request, _) = photocraft_ui_egui::control::ControlRequest::new(
+        "ui.menu.invoke",
+        json!({"id": "view.patternPreview"}),
+    );
     let ctx = h.ctx.clone();
     let response = photocraft_ui_egui::control::handle(h.state_mut(), &ctx, &request);
-    assert!(matches!(response, photocraft_ui_egui::control::Outcome::Done(_)));
+    assert!(matches!(
+        response,
+        photocraft_ui_egui::control::Outcome::Done(_)
+    ));
 }
 
 fn near(a: [u8; 3], b: [u8; 3]) -> bool {
@@ -54,11 +66,21 @@ fn near(a: [u8; 3], b: [u8; 3]) -> bool {
 fn pattern_preview_repeats_the_document_on_gpu_and_cpu_canvases() {
     let Some(mut h) = harness() else { return };
     let app = h.state_mut();
-    app.run("file.new", json!({"width": 200, "height": 100, "mode": "rgb", "depth": 8})).expect("new");
-    app.run("edit.fill", json!({"color": "#2050d0"})).expect("fill");
+    app.run(
+        "file.new",
+        json!({"width": 200, "height": 100, "mode": "rgb", "depth": 8}),
+    )
+    .expect("new");
+    app.run("edit.fill", json!({"color": "#2050d0"}))
+        .expect("fill");
     // A red band along the left edge only, so the copy to the right shows it beside the right edge.
-    app.run("select.rect", json!({"x": 0, "y": 0, "width": 20, "height": 100})).expect("select");
-    app.run("edit.fill", json!({"color": "#e01010"})).expect("fill band");
+    app.run(
+        "select.rect",
+        json!({"x": 0, "y": 0, "width": 20, "height": 100}),
+    )
+    .expect("select");
+    app.run("edit.fill", json!({"color": "#e01010"}))
+        .expect("fill band");
     app.run("select.deselect", json!({})).expect("deselect");
     let v = app.ui.views.get_mut(0).expect("view");
     v.zoom = 1.0;
@@ -77,12 +99,21 @@ fn pattern_preview_repeats_the_document_on_gpu_and_cpu_canvases() {
         h.state_mut().ui.view.flip_horizontal = flip;
         h.state_mut().ui.view.pattern_preview = false;
         let off = sample(&mut h, right);
-        assert!(!near(off, red) && !near(off, blue), "{path}: pasteboard without Pattern Preview, got {off:?}");
-        assert!(near(sample(&mut h, [10.0, 50.0]), red), "{path}: the document's own band");
+        assert!(
+            !near(off, red) && !near(off, blue),
+            "{path}: pasteboard without Pattern Preview, got {off:?}"
+        );
+        assert!(
+            near(sample(&mut h, [10.0, 50.0]), red),
+            "{path}: the document's own band"
+        );
         toggle(&mut h);
         assert!(h.state().ui.view.pattern_preview);
         let got = sample(&mut h, right);
-        assert!(near(got, red), "{path}: copy to the right shows the left edge, got {got:?}");
+        assert!(
+            near(got, red),
+            "{path}: copy to the right shows the left edge, got {got:?}"
+        );
         let got = sample(&mut h, below);
         assert!(near(got, blue), "{path}: copy below, got {got:?}");
         let got = sample(&mut h, diagonal);

@@ -22,18 +22,26 @@ pub fn specs() -> Vec<CommandSpec> {
         false,
         |s, p| {
             let cmd = "inspect.code";
-            let id = targets(s, p).first().copied().ok_or_else(|| bad(cmd, "select a layer"))?;
+            let id = targets(s, p)
+                .first()
+                .copied()
+                .ok_or_else(|| bad(cmd, "select a layer"))?;
             let lang = match string(p, "language") {
-                Some(l) => CodeLang::from_id(&l).ok_or_else(|| bad(cmd, "language: css|html|react|swiftui|compose"))?,
+                Some(l) => CodeLang::from_id(&l)
+                    .ok_or_else(|| bad(cmd, "language: css|html|react|swiftui|compose"))?,
                 None => CodeLang::Css,
             };
             let rem = match string(p, "unit").map(|u| u.to_ascii_lowercase()).as_deref() {
                 None | Some("px") => None,
-                Some("rem") => Some(num_or(p, "rootFontSize", 16.0)).filter(|r| r.is_finite() && *r > 0.0 && *r <= 1000.0),
+                Some("rem") => Some(num_or(p, "rootFontSize", 16.0))
+                    .filter(|r| r.is_finite() && *r > 0.0 && *r <= 1000.0),
                 Some(_) => return Err(bad(cmd, "unit: px|rem")),
             };
             if string(p, "unit").is_some_and(|u| u.eq_ignore_ascii_case("rem")) && rem.is_none() {
-                return Err(bad(cmd, "rootFontSize: a positive number of pixels (up to 1000)"));
+                return Err(bad(
+                    cmd,
+                    "rootFontSize: a positive number of pixels (up to 1000)",
+                ));
             }
             let doc = s.doc()?;
             if !doc.contains(id) {
@@ -42,7 +50,9 @@ pub fn specs() -> Vec<CommandSpec> {
             let connected = crate::code_connect::link(doc, id, lang).is_some();
             let code = code_for(doc, id, lang);
             let code = match rem {
-                Some(root) if matches!(lang, CodeLang::Css | CodeLang::Html | CodeLang::React) => px_to_rem(&code, root),
+                Some(root) if matches!(lang, CodeLang::Css | CodeLang::Html | CodeLang::React) => {
+                    px_to_rem(&code, root)
+                }
                 _ => code,
             };
             Ok(json!({"code": code, "language": lang.id(), "connected": connected}))
@@ -64,7 +74,13 @@ pub enum CodeLang {
 }
 
 impl CodeLang {
-    pub const ALL: [CodeLang; 5] = [CodeLang::Css, CodeLang::Html, CodeLang::React, CodeLang::SwiftUi, CodeLang::Compose];
+    pub const ALL: [CodeLang; 5] = [
+        CodeLang::Css,
+        CodeLang::Html,
+        CodeLang::React,
+        CodeLang::SwiftUi,
+        CodeLang::Compose,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             CodeLang::Css => "css",
@@ -87,7 +103,9 @@ impl CodeLang {
         if s.eq_ignore_ascii_case("tsx") || s.eq_ignore_ascii_case("jsx") {
             return Some(CodeLang::React);
         }
-        CodeLang::ALL.into_iter().find(|l| l.id().eq_ignore_ascii_case(s) || l.label().eq_ignore_ascii_case(s))
+        CodeLang::ALL
+            .into_iter()
+            .find(|l| l.id().eq_ignore_ascii_case(s) || l.label().eq_ignore_ascii_case(s))
     }
 }
 
@@ -101,7 +119,11 @@ pub(crate) fn num(v: f64) -> String {
         return "0".into();
     }
     let r = (v * 100.0).round() / 100.0;
-    if (r - r.round()).abs() < 1e-9 { format!("{}", r.round() as i64) } else { format!("{r}") }
+    if (r - r.round()).abs() < 1e-9 {
+        format!("{}", r.round() as i64)
+    } else {
+        format!("{r}")
+    }
 }
 
 /// `code` with every pixel length (`12px`) in rem of `root` pixels (`0.75rem`); names that end
@@ -113,9 +135,18 @@ pub fn px_to_rem(code: &str, root: f64) -> String {
     while let Some(i) = rest.find("px") {
         let (head, tail) = (rest.get(..i).unwrap_or(""), rest.get(i + 2..).unwrap_or(""));
         // The number right before "px".
-        let start = head.char_indices().rev().take_while(|(_, c)| c.is_ascii_digit() || *c == '.' || *c == '-').last().map_or(head.len(), |(j, _)| j);
-        let (before, number) = (head.get(..start).unwrap_or(""), head.get(start..).unwrap_or(""));
-        let free = !before.chars().next_back().is_some_and(ident) && !tail.chars().next().is_some_and(|c| ident(c) || c == '-');
+        let start = head
+            .char_indices()
+            .rev()
+            .take_while(|(_, c)| c.is_ascii_digit() || *c == '.' || *c == '-')
+            .last()
+            .map_or(head.len(), |(j, _)| j);
+        let (before, number) = (
+            head.get(..start).unwrap_or(""),
+            head.get(start..).unwrap_or(""),
+        );
+        let free = !before.chars().next_back().is_some_and(ident)
+            && !tail.chars().next().is_some_and(|c| ident(c) || c == '-');
         match number.parse::<f64>() {
             Ok(v) if free && v.is_finite() => {
                 out.push_str(before);
@@ -136,7 +167,9 @@ pub fn code_for(doc: &Document, id: NodeId, lang: CodeLang) -> String {
     match lang {
         CodeLang::Css => css(doc, id),
         CodeLang::Html => html(doc, id),
-        CodeLang::React | CodeLang::SwiftUi | CodeLang::Compose => crate::component_codegen::code(doc, id, lang),
+        CodeLang::React | CodeLang::SwiftUi | CodeLang::Compose => {
+            crate::component_codegen::code(doc, id, lang)
+        }
     }
 }
 
@@ -152,7 +185,12 @@ pub(crate) struct Ctx<'a> {
 
 impl<'a> Ctx<'a> {
     pub fn new(doc: &'a Document, root: NodeId) -> Self {
-        Ctx { doc, root, comp: None, base: 0 }
+        Ctx {
+            doc,
+            root,
+            comp: None,
+            base: 0,
+        }
     }
 
     /// The component parameter controlling `field` ("visible", "characters", "mainComponent",
@@ -168,7 +206,11 @@ impl<'a> Ctx<'a> {
         n.children
             .iter()
             .copied()
-            .filter(|c| self.doc.node(*c).is_some_and(|k| k.visible || self.param(k, "visible").is_some()))
+            .filter(|c| {
+                self.doc
+                    .node(*c)
+                    .is_some_and(|k| k.visible || self.param(k, "visible").is_some())
+            })
             .take(MAX_CHILDREN)
             .collect()
     }
@@ -187,29 +229,40 @@ impl<'a> Ctx<'a> {
 }
 
 fn first_fill(n: &Node) -> Option<Color> {
-    n.fills.iter().filter(|p| p.visible).find_map(|p| match &p.kind {
-        PaintKind::Solid { color } => Some(color.with_alpha(color.a * p.opacity)),
-        PaintKind::Gradient(g) => g.sorted_stops().first().map(|s| s.color),
-        PaintKind::Image(_) | PaintKind::Pattern(_) => None,
-    })
+    n.fills
+        .iter()
+        .filter(|p| p.visible)
+        .find_map(|p| match &p.kind {
+            PaintKind::Solid { color } => Some(color.with_alpha(color.a * p.opacity)),
+            PaintKind::Gradient(g) => g.sorted_stops().first().map(|s| s.color),
+            PaintKind::Image(_) | PaintKind::Pattern(_) => None,
+        })
 }
 
 fn stroke_color(n: &Node) -> Option<Color> {
     if !n.has_visible_stroke() {
         return None;
     }
-    n.strokes.iter().filter(|p| p.visible).find_map(|p| p.solid_color().map(|c| c.with_alpha(c.a * p.opacity)))
+    n.strokes
+        .iter()
+        .filter(|p| p.visible)
+        .find_map(|p| p.solid_color().map(|c| c.with_alpha(c.a * p.opacity)))
 }
 
 fn drop_shadow(n: &Node) -> Option<&Shadow> {
-    n.effects.iter().filter(|e| e.visible).find_map(|e| match &e.kind {
-        EffectKind::DropShadow(s) => Some(s),
-        _ => None,
-    })
+    n.effects
+        .iter()
+        .filter(|e| e.visible)
+        .find_map(|e| match &e.kind {
+            EffectKind::DropShadow(s) => Some(s),
+            _ => None,
+        })
 }
 
 fn radius(n: &Node) -> f64 {
-    n.corners.uniform().unwrap_or_else(|| n.corners.radii.iter().copied().fold(0.0, f64::max))
+    n.corners
+        .uniform()
+        .unwrap_or_else(|| n.corners.radii.iter().copied().fold(0.0, f64::max))
 }
 
 /// Text content as a string literal (escaped for Swift; Kotlin also escapes `$`).
@@ -257,7 +310,11 @@ impl Tokens {
         if self.0.is_empty() {
             return String::new();
         }
-        let decls: String = self.0.iter().map(|(n, v)| format!("  {n}: {v};\n")).collect();
+        let decls: String = self
+            .0
+            .iter()
+            .map(|(n, v)| format!("  {n}: {v};\n"))
+            .collect();
         format!(":root {{\n{decls}}}\n")
     }
 }
@@ -273,28 +330,49 @@ pub fn css_var_name(variable: &str) -> String {
         }
     }
     let trimmed = out.trim_end_matches('-');
-    if trimmed.len() <= 2 { "--variable".into() } else { trimmed.to_string() }
+    if trimmed.len() <= 2 {
+        "--variable".into()
+    } else {
+        trimmed.to_string()
+    }
 }
 
 /// A variable's CSS custom property: its Web code syntax (`var(--x)` or `--x`) when it has one,
 /// else made from its name.
 pub fn css_var_of(v: &Variable) -> String {
-    let Some(web) = v.code_syntax.get("WEB").map(|w| w.trim()) else { return css_var_name(&v.name) };
-    let inner = web.strip_prefix("var(").map_or(web, |r| r.split([',', ')']).next().unwrap_or("").trim());
-    let valid = inner.len() > 2 && inner.starts_with("--") && inner.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_');
-    if valid { inner.chars().take(80).collect() } else { css_var_name(inner) }
+    let Some(web) = v.code_syntax.get("WEB").map(|w| w.trim()) else {
+        return css_var_name(&v.name);
+    };
+    let inner = web
+        .strip_prefix("var(")
+        .map_or(web, |r| r.split([',', ')']).next().unwrap_or("").trim());
+    let valid = inner.len() > 2
+        && inner.starts_with("--")
+        && inner
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_');
+    if valid {
+        inner.chars().take(80).collect()
+    } else {
+        css_var_name(inner)
+    }
 }
 
 /// `value`, or a reference to the variable bound to the first of `fields` that has one.
 fn tok(doc: &Document, n: &Node, fields: &[&str], value: String, t: &mut Tokens) -> String {
-    match fields.iter().find_map(|f| crate::devinspect::bound_variable(doc, n, f)) {
+    match fields
+        .iter()
+        .find_map(|f| crate::devinspect::bound_variable(doc, n, f))
+    {
         Some(v) => t.var(v, value),
         None => value,
     }
 }
 
 fn css(doc: &Document, id: NodeId) -> String {
-    let Some(n) = doc.node(id) else { return String::new() };
+    let Some(n) = doc.node(id) else {
+        return String::new();
+    };
     let mut t = Tokens::default();
     let decls = css_decls(doc, n, &mut t, (false, false));
     format!("/* {} */\n{decls}", n.name.replace("*/", "* /"))
@@ -314,17 +392,49 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
     }
     if let Some(l) = &n.layout {
         put("display", "flex".into());
-        put("flex-direction", if l.mode == LayoutMode::Vertical { "column" } else { "row" }.into());
+        put(
+            "flex-direction",
+            if l.mode == LayoutMode::Vertical {
+                "column"
+            } else {
+                "row"
+            }
+            .into(),
+        );
         if l.wrap {
             put("flex-wrap", "wrap".into());
         }
         put("gap", tok(doc, n, &["gap"], px(l.gap), t));
         let [pt, pr, pb, pl] = l.padding;
         let sides = [
-            tok(doc, n, &["paddingTop", "paddingVertical", "padding"], px(pt), t),
-            tok(doc, n, &["paddingRight", "paddingHorizontal", "padding"], px(pr), t),
-            tok(doc, n, &["paddingBottom", "paddingVertical", "padding"], px(pb), t),
-            tok(doc, n, &["paddingLeft", "paddingHorizontal", "padding"], px(pl), t),
+            tok(
+                doc,
+                n,
+                &["paddingTop", "paddingVertical", "padding"],
+                px(pt),
+                t,
+            ),
+            tok(
+                doc,
+                n,
+                &["paddingRight", "paddingHorizontal", "padding"],
+                px(pr),
+                t,
+            ),
+            tok(
+                doc,
+                n,
+                &["paddingBottom", "paddingVertical", "padding"],
+                px(pb),
+                t,
+            ),
+            tok(
+                doc,
+                n,
+                &["paddingLeft", "paddingHorizontal", "padding"],
+                px(pl),
+                t,
+            ),
         ];
         put("padding", sides.join(" "));
         let justify = match l.main_align {
@@ -364,14 +474,31 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
     } else if let Some(r) = n.corners.uniform().filter(|r| *r > 0.0) {
         put("border-radius", tok(doc, n, &["cornerRadius"], px(r), t));
     } else if n.corners.radii.iter().any(|r| *r > 0.0) {
-        let fields = ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"];
-        let corners: Vec<String> = n.corners.radii.iter().zip(fields).map(|(r, f)| tok(doc, n, &[f, "cornerRadius"], px(*r), t)).collect();
+        let fields = [
+            "topLeftRadius",
+            "topRightRadius",
+            "bottomRightRadius",
+            "bottomLeftRadius",
+        ];
+        let corners: Vec<String> = n
+            .corners
+            .radii
+            .iter()
+            .zip(fields)
+            .map(|(r, f)| tok(doc, n, &[f, "cornerRadius"], px(*r), t))
+            .collect();
         put("border-radius", corners.join(" "));
     }
     if n.opacity < 1.0 {
-        put("opacity", tok(doc, n, &["opacity"], num(f64::from(n.opacity)), t));
+        put(
+            "opacity",
+            tok(doc, n, &["opacity"], num(f64::from(n.opacity)), t),
+        );
     }
-    if !matches!(n.blend, figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough) {
+    if !matches!(
+        n.blend,
+        figcraft_color::BlendMode::Normal | figcraft_color::BlendMode::PassThrough
+    ) {
         put("mix-blend-mode", n.blend.css().into());
     }
     // Rotation turns counter-clockwise about the top-left corner (the position given); CSS
@@ -384,10 +511,21 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
     for (i, p) in n.fills.iter().enumerate().filter(|(_, p)| p.visible) {
         match &p.kind {
             PaintKind::Solid { color } => {
-                let key = if matches!(n.kind, NodeKind::Text(_)) { "color" } else { "background" };
+                let key = if matches!(n.kind, NodeKind::Text(_)) {
+                    "color"
+                } else {
+                    "background"
+                };
                 let c = color.with_alpha(color.a * p.opacity).to_css();
                 // A variable binds the first paint's colour.
-                put(key, if i == 0 { tok(doc, n, &["fill"], c, t) } else { c });
+                put(
+                    key,
+                    if i == 0 {
+                        tok(doc, n, &["fill"], c, t)
+                    } else {
+                        c
+                    },
+                );
             }
             PaintKind::Gradient(g) => put("background", css_gradient(g, n.width, n.height)),
             PaintKind::Image(_) => put("background", "url(image.png) center / cover".into()),
@@ -396,19 +534,32 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
     }
     if let Some(c) = stroke_color(n) {
         let weight = tok(doc, n, &["strokeWeight"], px(n.stroke.weight), t);
-        put("border", format!("{weight} solid {}", tok(doc, n, &["stroke"], c.to_css(), t)));
+        put(
+            "border",
+            format!("{weight} solid {}", tok(doc, n, &["stroke"], c.to_css(), t)),
+        );
     }
     let shadows: Vec<String> = n
         .effects
         .iter()
         .filter(|e| e.visible)
         .filter_map(|e| match &e.kind {
-            EffectKind::DropShadow(s) => {
-                Some(format!("{}px {}px {}px {}px {}", num(s.offset.0), num(s.offset.1), num(s.radius), num(s.spread), s.color.to_css()))
-            }
-            EffectKind::InnerShadow(s) => {
-                Some(format!("inset {}px {}px {}px {}px {}", num(s.offset.0), num(s.offset.1), num(s.radius), num(s.spread), s.color.to_css()))
-            }
+            EffectKind::DropShadow(s) => Some(format!(
+                "{}px {}px {}px {}px {}",
+                num(s.offset.0),
+                num(s.offset.1),
+                num(s.radius),
+                num(s.spread),
+                s.color.to_css()
+            )),
+            EffectKind::InnerShadow(s) => Some(format!(
+                "inset {}px {}px {}px {}px {}",
+                num(s.offset.0),
+                num(s.offset.1),
+                num(s.radius),
+                num(s.spread),
+                s.color.to_css()
+            )),
             _ => None,
         })
         .collect();
@@ -418,16 +569,33 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
     for e in n.effects.iter().filter(|e| e.visible) {
         match e.kind {
             // CSS blurs are uniform: a progressive blur has no CSS equivalent and is left out.
-            EffectKind::LayerBlur(ref b) if !b.is_progressive() => put("filter", format!("blur({}px)", num(b.radius / 2.0))),
-            EffectKind::BackgroundBlur(ref b) if !b.is_progressive() => put("backdrop-filter", format!("blur({}px)", num(b.radius / 2.0))),
+            EffectKind::LayerBlur(ref b) if !b.is_progressive() => {
+                put("filter", format!("blur({}px)", num(b.radius / 2.0)))
+            }
+            EffectKind::BackgroundBlur(ref b) if !b.is_progressive() => put(
+                "backdrop-filter",
+                format!("blur({}px)", num(b.radius / 2.0)),
+            ),
             // CSS has no refraction: the frost is the nearest.
-            EffectKind::Glass(ref g) => put("backdrop-filter", format!("blur({}px)", num(g.sanitized().frost / 2.0))),
+            EffectKind::Glass(ref g) => put(
+                "backdrop-filter",
+                format!("blur({}px)", num(g.sanitized().frost / 2.0)),
+            ),
             _ => {}
         }
     }
     if let NodeKind::Text(tx) = &n.kind {
         let s = &tx.style;
-        put("font-family", tok(doc, n, &["fontFamily"], format!("\"{}\"", s.font_family.replace('"', "'")), t));
+        put(
+            "font-family",
+            tok(
+                doc,
+                n,
+                &["fontFamily"],
+                format!("\"{}\"", s.font_family.replace('"', "'")),
+                t,
+            ),
+        );
         put("font-size", tok(doc, n, &["fontSize"], px(s.font_size), t));
         put("font-weight", s.weight().to_string());
         if s.italic() {
@@ -439,8 +607,12 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
             LineHeight::Auto => {}
         }
         match s.letter_spacing {
-            LetterSpacing::Pixels(v) if v != 0.0 => put("letter-spacing", tok(doc, n, &["letterSpacing"], px(v), t)),
-            LetterSpacing::Percent(p) if p != 0.0 => put("letter-spacing", format!("{}em", num(p / 100.0))),
+            LetterSpacing::Pixels(v) if v != 0.0 => {
+                put("letter-spacing", tok(doc, n, &["letterSpacing"], px(v), t))
+            }
+            LetterSpacing::Percent(p) if p != 0.0 => {
+                put("letter-spacing", format!("{}em", num(p / 100.0)))
+            }
             _ => {}
         }
         match tx.align_h {
@@ -470,7 +642,9 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
             };
             match l.style {
                 figcraft_doc::DecorationStyle::Solid => {}
-                figcraft_doc::DecorationStyle::Dotted => put("text-decoration-style", "dotted".into()),
+                figcraft_doc::DecorationStyle::Dotted => {
+                    put("text-decoration-style", "dotted".into())
+                }
                 figcraft_doc::DecorationStyle::Wavy => put("text-decoration-style", "wavy".into()),
             }
             if let Some(v) = len(l.thickness) {
@@ -500,19 +674,45 @@ pub(crate) fn css_decls(doc: &Document, n: &Node, t: &mut Tokens, hug: (bool, bo
 /// (CSS angles: 0deg up, 90deg right), radial with its handles' radii, angular as a conic
 /// gradient from its start direction.
 fn css_gradient(g: &figcraft_color::Gradient, w: f64, h: f64) -> String {
-    let stops = g.sorted_stops().iter().map(|s| format!("{} {}%", s.color.to_css(), (s.position * 100.0).round())).collect::<Vec<_>>().join(", ");
+    let stops = g
+        .sorted_stops()
+        .iter()
+        .map(|s| format!("{} {}%", s.color.to_css(), (s.position * 100.0).round()))
+        .collect::<Vec<_>>()
+        .join(", ");
     let (dx, dy) = ((g.to.0 - g.from.0) * w, (g.to.1 - g.from.1) * h);
-    let angle = if dx == 0.0 && dy == 0.0 { 180.0 } else { dx.atan2(-dy).to_degrees().rem_euclid(360.0) };
+    let angle = if dx == 0.0 && dy == 0.0 {
+        180.0
+    } else {
+        dx.atan2(-dy).to_degrees().rem_euclid(360.0)
+    };
     let pct = |v: f64| format!("{}%", num(v * 100.0));
     let at = format!("at {} {}", pct(g.from.0), pct(g.from.1));
     match g.kind {
-        figcraft_color::GradientKind::Linear => format!("linear-gradient({}deg, {stops})", num(angle)),
-        figcraft_color::GradientKind::Radial | figcraft_color::GradientKind::Diamond => {
-            let (rx, ry) = (((g.width.0 - g.from.0) * w).hypot((g.width.1 - g.from.1) * h), dx.hypot(dy));
-            let rel = |r: f64, side: f64| if side > 0.0 { pct(r / side) } else { "50%".into() };
-            format!("radial-gradient({} {} {at}, {stops})", rel(rx, w), rel(ry, h))
+        figcraft_color::GradientKind::Linear => {
+            format!("linear-gradient({}deg, {stops})", num(angle))
         }
-        figcraft_color::GradientKind::Angular => format!("conic-gradient(from {}deg {at}, {stops})", num(angle)),
+        figcraft_color::GradientKind::Radial | figcraft_color::GradientKind::Diamond => {
+            let (rx, ry) = (
+                ((g.width.0 - g.from.0) * w).hypot((g.width.1 - g.from.1) * h),
+                dx.hypot(dy),
+            );
+            let rel = |r: f64, side: f64| {
+                if side > 0.0 {
+                    pct(r / side)
+                } else {
+                    "50%".into()
+                }
+            };
+            format!(
+                "radial-gradient({} {} {at}, {stops})",
+                rel(rx, w),
+                rel(ry, h)
+            )
+        }
+        figcraft_color::GradientKind::Angular => {
+            format!("conic-gradient(from {}deg {at}, {stops})", num(angle))
+        }
     }
 }
 
@@ -528,15 +728,35 @@ pub(crate) fn class_name(name: &str, used: &mut Vec<String>) -> String {
             base.push('-');
         }
     }
-    let base = base.trim_end_matches('-').chars().take(40).collect::<String>();
-    let base = if base.is_empty() || base.starts_with(|c: char| c.is_ascii_digit()) { format!("layer-{base}") } else { base };
-    let name = (1..).map(|k| if k == 1 { base.clone() } else { format!("{base}-{k}") }).find(|n| !used.contains(n)).unwrap_or(base);
+    let base = base
+        .trim_end_matches('-')
+        .chars()
+        .take(40)
+        .collect::<String>();
+    let base = if base.is_empty() || base.starts_with(|c: char| c.is_ascii_digit()) {
+        format!("layer-{base}")
+    } else {
+        base
+    };
+    let name = (1..)
+        .map(|k| {
+            if k == 1 {
+                base.clone()
+            } else {
+                format!("{base}-{k}")
+            }
+        })
+        .find(|n| !used.contains(n))
+        .unwrap_or(base);
     used.push(name.clone());
     name
 }
 
 fn html_escape(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('\n', "<br>")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('\n', "<br>")
 }
 
 /// Text as JSX children: HTML escapes, braces as expressions, line breaks as `<br />`.
@@ -563,7 +783,12 @@ fn html(doc: &Document, id: NodeId) -> String {
     let ctx = Ctx::new(doc, id);
     let mut out = Markup::new(&ctx, false);
     out.node(id, None, 0, "");
-    format!("{}\n<style>\n{}{}</style>\n", out.markup, out.tokens.root_rule(), out.styles)
+    format!(
+        "{}\n<style>\n{}{}</style>\n",
+        out.markup,
+        out.tokens.root_rule(),
+        out.styles
+    )
 }
 
 /// Markup being built for a layer tree: HTML (`class`) or React JSX (`className`, component
@@ -600,12 +825,18 @@ impl<'c, 'a> Markup<'c, 'a> {
 
     /// JSX indents by two spaces, HTML by four.
     fn pad(&self, depth: usize) -> String {
-        if self.jsx { "  ".repeat(depth) } else { indent(depth) }
+        if self.jsx {
+            "  ".repeat(depth)
+        } else {
+            indent(depth)
+        }
     }
 
     /// A layer, shown only while its boolean parameter is on (JSX).
     pub fn node(&mut self, id: NodeId, parent: Option<&Node>, depth: usize, path: &str) {
-        let Some(n) = self.ctx.doc.node(id) else { return };
+        let Some(n) = self.ctx.doc.node(id) else {
+            return;
+        };
         if self.jsx
             && id != self.ctx.root
             && let Some(p) = self.ctx.param(n, "visible")
@@ -625,7 +856,8 @@ impl<'c, 'a> Markup<'c, 'a> {
             self.styles.push_str(&format!("  {line}\n"));
         }
         self.styles.push_str("}\n");
-        self.rules.push((path.to_string(), class.to_string(), decls));
+        self.rules
+            .push((path.to_string(), class.to_string(), decls));
     }
 
     fn element(&mut self, n: &Node, parent: Option<&Node>, depth: usize, path: &str) {
@@ -646,9 +878,14 @@ impl<'c, 'a> Markup<'c, 'a> {
         if root {
             decls.push_str("position: relative;\n");
         } else if in_flow {
-            let vertical = parent.and_then(|p| p.layout.as_ref()).is_some_and(|l| l.mode == LayoutMode::Vertical);
-            let (main, cross) =
-                if vertical { (n.child_layout.sizing_v, n.child_layout.sizing_h) } else { (n.child_layout.sizing_h, n.child_layout.sizing_v) };
+            let vertical = parent
+                .and_then(|p| p.layout.as_ref())
+                .is_some_and(|l| l.mode == LayoutMode::Vertical);
+            let (main, cross) = if vertical {
+                (n.child_layout.sizing_v, n.child_layout.sizing_h)
+            } else {
+                (n.child_layout.sizing_h, n.child_layout.sizing_v)
+            };
             if main == Sizing::Fill {
                 decls.push_str("flex: 1 1 0;\n");
             }
@@ -657,10 +894,17 @@ impl<'c, 'a> Markup<'c, 'a> {
             }
         } else {
             let c = n.transform.as_coeffs();
-            decls.push_str(&format!("position: absolute;\nleft: {}px;\ntop: {}px;\n", num(c[4]), num(c[5])));
+            decls.push_str(&format!(
+                "position: absolute;\nleft: {}px;\ntop: {}px;\n",
+                num(c[4]),
+                num(c[5])
+            ));
             let rot = figcraft_geom::rotation_degrees(n.transform);
             if rot.abs() > 0.01 {
-                decls.push_str(&format!("transform: rotate({}deg);\ntransform-origin: 0 0;\n", num(-rot)));
+                decls.push_str(&format!(
+                    "transform: rotate({}deg);\ntransform-origin: 0 0;\n",
+                    num(-rot)
+                ));
             }
         }
         // Nested instances are calls (JSX), in a wrapper that places them when needed.
@@ -674,21 +918,30 @@ impl<'c, 'a> Markup<'c, 'a> {
                 if decls.is_empty() {
                     self.markup.push_str(&inner);
                 } else {
-                    self.markup.push_str(&format!("{pad}<div {attr}=\"{class}\">\n{inner}{pad}</div>\n"));
+                    self.markup.push_str(&format!(
+                        "{pad}<div {attr}=\"{class}\">\n{inner}{pad}</div>\n"
+                    ));
                     self.rule(path, &class, decls);
                 }
                 return;
             }
         }
         let hugs = n.layout.is_some() || matches!(n.kind, NodeKind::Text(_));
-        let hug = (hugs && n.child_layout.sizing_h == Sizing::Hug, hugs && n.child_layout.sizing_v == Sizing::Hug);
+        let hug = (
+            hugs && n.child_layout.sizing_h == Sizing::Hug,
+            hugs && n.child_layout.sizing_v == Sizing::Hug,
+        );
         let mut own = css_decls(doc, n, &mut self.tokens, hug);
         if n.layout.is_none() && !n.children.is_empty() && !root && in_flow {
             own.push_str("position: relative;\n");
         }
         decls.push_str(&own);
         self.rule(path, &class, decls);
-        let attrs = if root { self.root_attrs.clone() } else { String::new() };
+        let attrs = if root {
+            self.root_attrs.clone()
+        } else {
+            String::new()
+        };
         let open = |tag: &str| format!("{pad}<{tag} {attr}=\"{class}\"{attrs}>");
         match &n.kind {
             NodeKind::Text(t) => {
@@ -704,7 +957,8 @@ impl<'c, 'a> Markup<'c, 'a> {
                 let slot = self.ctx.param(n, "slot").filter(|_| self.jsx);
                 let open = open("div");
                 if let Some(p) = slot.filter(|_| kids.is_empty()) {
-                    self.markup.push_str(&format!("{open}{{{}}}</div>\n", p.ident));
+                    self.markup
+                        .push_str(&format!("{open}{{{}}}</div>\n", p.ident));
                 } else if kids.is_empty() || self.ctx.too_deep(depth) {
                     self.markup.push_str(&format!("{open}</div>\n"));
                 } else {
@@ -713,7 +967,8 @@ impl<'c, 'a> Markup<'c, 'a> {
                     let (p1, p2) = (self.pad(depth + 1), self.pad(depth + 2));
                     let inner = match slot {
                         Some(p) => {
-                            self.markup.push_str(&format!("{p1}{{{} ?? (\n{p2}<>\n", p.ident));
+                            self.markup
+                                .push_str(&format!("{p1}{{{} ?? (\n{p2}<>\n", p.ident));
                             depth + 3
                         }
                         None => depth + 1,
@@ -739,7 +994,13 @@ impl<'c, 'a> Markup<'c, 'a> {
 // ------------------------------------------------------------------ SwiftUI
 
 fn swift_color(c: Color) -> String {
-    format!("Color(red: {}, green: {}, blue: {}, opacity: {})", num(f64::from(c.r)), num(f64::from(c.g)), num(f64::from(c.b)), num(f64::from(c.a)))
+    format!(
+        "Color(red: {}, green: {}, blue: {}, opacity: {})",
+        num(f64::from(c.r)),
+        num(f64::from(c.g)),
+        num(f64::from(c.b)),
+        num(f64::from(c.a))
+    )
 }
 
 fn swift_weight(w: u16) -> &'static str {
@@ -794,7 +1055,9 @@ fn swift_layer(ctx: &Ctx, n: &Node, depth: usize, out: &mut String, extra: &[Str
     let mut mods: Vec<String> = Vec::new();
     match &n.kind {
         NodeKind::Text(t) => {
-            let text = ctx.param(n, "characters").map_or_else(|| literal(&t.characters, false), |p| p.ident.clone());
+            let text = ctx
+                .param(n, "characters")
+                .map_or_else(|| literal(&t.characters, false), |p| p.ident.clone());
             out.push_str(&format!("{pad}Text({text})\n"));
             mods.push(format!(
                 ".font(.custom({}, size: {}).weight({}))",
@@ -811,19 +1074,32 @@ fn swift_layer(ctx: &Ctx, n: &Node, depth: usize, out: &mut String, extra: &[Str
             if let Some(c) = first_fill(n) {
                 mods.push(format!(".fill({})", swift_color(c)));
             }
-            mods.push(format!(".frame(width: {}, height: {})", num(n.width), num(n.height)));
+            mods.push(format!(
+                ".frame(width: {}, height: {})",
+                num(n.width),
+                num(n.height)
+            ));
         }
         NodeKind::Rectangle => {
-            out.push_str(&format!("{pad}RoundedRectangle(cornerRadius: {})\n", num(radius(n))));
+            out.push_str(&format!(
+                "{pad}RoundedRectangle(cornerRadius: {})\n",
+                num(radius(n))
+            ));
             if let Some(c) = first_fill(n) {
                 mods.push(format!(".fill({})", swift_color(c)));
             }
-            mods.push(format!(".frame(width: {}, height: {})", num(n.width), num(n.height)));
+            mods.push(format!(
+                ".frame(width: {}, height: {})",
+                num(n.width),
+                num(n.height)
+            ));
         }
         k if k.is_frame_like() || matches!(k, NodeKind::Group) => {
             let children = ctx.kids(n);
             let open = match n.layout.as_ref().map(|l| (l.mode, l)) {
-                Some((LayoutMode::Vertical, l)) => format!("VStack(alignment: .leading, spacing: {}) {{", num(l.gap)),
+                Some((LayoutMode::Vertical, l)) => {
+                    format!("VStack(alignment: .leading, spacing: {}) {{", num(l.gap))
+                }
                 Some((_, l)) => format!("HStack(alignment: .center, spacing: {}) {{", num(l.gap)),
                 None => "ZStack(alignment: .topLeading) {".to_string(),
             };
@@ -832,7 +1108,10 @@ fn swift_layer(ctx: &Ctx, n: &Node, depth: usize, out: &mut String, extra: &[Str
             let slot = ctx.param(n, "slot");
             let inner = match slot {
                 Some(p) => {
-                    out.push_str(&format!("{pad}    if let {0} {{\n{pad}        {0}\n{pad}    }} else {{\n", p.ident));
+                    out.push_str(&format!(
+                        "{pad}    if let {0} {{\n{pad}        {0}\n{pad}    }} else {{\n",
+                        p.ident
+                    ));
                     depth + 2
                 }
                 None => depth + 1,
@@ -855,21 +1134,42 @@ fn swift_layer(ctx: &Ctx, n: &Node, depth: usize, out: &mut String, extra: &[Str
             if let Some(l) = &n.layout {
                 let [t, r, b, lft] = l.padding;
                 if [t, r, b, lft].iter().any(|v| *v > 0.0) {
-                    mods.push(format!(".padding(EdgeInsets(top: {}, leading: {}, bottom: {}, trailing: {}))", num(t), num(lft), num(b), num(r)));
+                    mods.push(format!(
+                        ".padding(EdgeInsets(top: {}, leading: {}, bottom: {}, trailing: {}))",
+                        num(t),
+                        num(lft),
+                        num(b),
+                        num(r)
+                    ));
                 }
             }
-            mods.push(format!(".frame(width: {}, height: {}, alignment: .topLeading)", num(n.width), num(n.height)));
+            mods.push(format!(
+                ".frame(width: {}, height: {}, alignment: .topLeading)",
+                num(n.width),
+                num(n.height)
+            ));
             if let Some(c) = first_fill(n) {
                 mods.push(format!(".background({})", swift_color(c)));
             }
             if radius(n) > 0.0 {
-                mods.push(format!(".clipShape(RoundedRectangle(cornerRadius: {}))", num(radius(n))));
+                mods.push(format!(
+                    ".clipShape(RoundedRectangle(cornerRadius: {}))",
+                    num(radius(n))
+                ));
             }
         }
         _ => {
-            out.push_str(&format!("{pad}// {}: export as an image asset\n{pad}Image({})\n", n.kind.label(), literal(&n.name, false)));
+            out.push_str(&format!(
+                "{pad}// {}: export as an image asset\n{pad}Image({})\n",
+                n.kind.label(),
+                literal(&n.name, false)
+            ));
             mods.push(".resizable()".into());
-            mods.push(format!(".frame(width: {}, height: {})", num(n.width), num(n.height)));
+            mods.push(format!(
+                ".frame(width: {}, height: {})",
+                num(n.width),
+                num(n.height)
+            ));
         }
     }
     if let Some(c) = stroke_color(n) {
@@ -915,7 +1215,11 @@ fn modifier(n: &Node, shape: &str, padding: bool) -> String {
         m.push_str(&format!(".background({}, {shape})", kotlin_color(c)));
     }
     if let Some(c) = stroke_color(n) {
-        m.push_str(&format!(".border({}.dp, {}, {shape})", num(n.stroke.weight), kotlin_color(c)));
+        m.push_str(&format!(
+            ".border({}.dp, {}, {shape})",
+            num(n.stroke.weight),
+            kotlin_color(c)
+        ));
     }
     if n.opacity < 1.0 {
         m.push_str(&format!(".alpha({}f)", num(f64::from(n.opacity))));
@@ -923,7 +1227,13 @@ fn modifier(n: &Node, shape: &str, padding: bool) -> String {
     if padding && let Some(l) = &n.layout {
         let [t, r, b, lft] = l.padding;
         if [t, r, b, lft].iter().any(|v| *v > 0.0) {
-            m.push_str(&format!(".padding(start = {}.dp, top = {}.dp, end = {}.dp, bottom = {}.dp)", num(lft), num(t), num(r), num(b)));
+            m.push_str(&format!(
+                ".padding(start = {}.dp, top = {}.dp, end = {}.dp, bottom = {}.dp)",
+                num(lft),
+                num(t),
+                num(r),
+                num(b)
+            ));
         }
     }
     m
@@ -961,7 +1271,11 @@ fn compose_layer(ctx: &Ctx, n: &Node, depth: usize, out: &mut String) {
         out.push_str(&call);
         return;
     }
-    let shape = if radius(n) > 0.0 { format!("RoundedCornerShape({}.dp)", num(radius(n))) } else { "RectangleShape".to_string() };
+    let shape = if radius(n) > 0.0 {
+        format!("RoundedCornerShape({}.dp)", num(radius(n)))
+    } else {
+        "RectangleShape".to_string()
+    };
     match &n.kind {
         NodeKind::Text(t) => {
             let color = first_fill(n).map(kotlin_color).unwrap_or_else(|| "Color.Unspecified".into());
@@ -1034,10 +1348,29 @@ mod tests {
     use serde_json::json;
 
     fn card(s: &mut Session) -> NodeId {
-        let f = id_of(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 200, "height": 100, "name": "Card"})).unwrap()["id"]).unwrap();
-        s.execute("node.set", &json!({"id": f, "props": {"fills": ["#FFFFFF"], "cornerRadius": 12}})).unwrap();
-        s.execute("text.create", &json!({"text": "Say \"hi\" $5\nnow", "x": 0, "y": 0, "parent": f})).unwrap();
-        s.execute("shape.ellipse", &json!({"x": 0, "y": 0, "width": 24, "height": 24, "parent": f})).unwrap();
+        let f = id_of(
+            &s.execute(
+                "frame.create",
+                &json!({"x": 0, "y": 0, "width": 200, "height": 100, "name": "Card"}),
+            )
+            .unwrap()["id"],
+        )
+        .unwrap();
+        s.execute(
+            "node.set",
+            &json!({"id": f, "props": {"fills": ["#FFFFFF"], "cornerRadius": 12}}),
+        )
+        .unwrap();
+        s.execute(
+            "text.create",
+            &json!({"text": "Say \"hi\" $5\nnow", "x": 0, "y": 0, "parent": f}),
+        )
+        .unwrap();
+        s.execute(
+            "shape.ellipse",
+            &json!({"x": 0, "y": 0, "width": 24, "height": 24, "parent": f}),
+        )
+        .unwrap();
         s.execute("layout.add", &json!({"ids": [f]})).unwrap();
         f
     }
@@ -1049,7 +1382,10 @@ mod tests {
         let doc = s.doc().unwrap();
         let sw = code_for(doc, f, CodeLang::SwiftUi);
         assert!(sw.contains("Stack(alignment:"), "{sw}");
-        assert!(sw.contains("Text(\"Say \\\"hi\\\" $5\\nnow\")"), "escaped: {sw}");
+        assert!(
+            sw.contains("Text(\"Say \\\"hi\\\" $5\\nnow\")"),
+            "escaped: {sw}"
+        );
         assert!(sw.contains("Ellipse()"));
         assert!(sw.contains(".clipShape(RoundedRectangle(cornerRadius: 12))"));
         let kt = code_for(doc, f, CodeLang::Compose);
@@ -1060,19 +1396,42 @@ mod tests {
         let css = code_for(doc, f, CodeLang::Css);
         assert!(css.contains("display: flex;") && css.contains("border-radius: 12px;"));
         // Through the command.
-        let v = s.execute("inspect.code", &json!({"id": f, "language": "compose"})).unwrap();
+        let v = s
+            .execute("inspect.code", &json!({"id": f, "language": "compose"}))
+            .unwrap();
         assert_eq!(v["code"].as_str().unwrap(), kt);
-        assert!(s.execute("inspect.code", &json!({"id": f, "language": "cobol"})).is_err());
+        assert!(
+            s.execute("inspect.code", &json!({"id": f, "language": "cobol"}))
+                .is_err()
+        );
     }
 
     #[test]
     fn free_children_get_offsets_and_deep_trees_are_capped() {
         let mut s = Session::new();
-        let mut parent = id_of(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 50, "height": 50})).unwrap()["id"]).unwrap();
+        let mut parent = id_of(
+            &s.execute(
+                "frame.create",
+                &json!({"x": 0, "y": 0, "width": 50, "height": 50}),
+            )
+            .unwrap()["id"],
+        )
+        .unwrap();
         let root = parent;
-        s.execute("shape.rectangle", &json!({"x": 7, "y": 9, "width": 5, "height": 5, "parent": root})).unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"x": 7, "y": 9, "width": 5, "height": 5, "parent": root}),
+        )
+        .unwrap();
         for _ in 0..20 {
-            parent = id_of(&s.execute("frame.create", &json!({"x": 1, "y": 1, "width": 40, "height": 40, "parent": parent})).unwrap()["id"]).unwrap();
+            parent = id_of(
+                &s.execute(
+                    "frame.create",
+                    &json!({"x": 1, "y": 1, "width": 40, "height": 40, "parent": parent}),
+                )
+                .unwrap()["id"],
+            )
+            .unwrap();
         }
         let doc = s.doc().unwrap();
         let sw = code_for(doc, root, CodeLang::SwiftUi);

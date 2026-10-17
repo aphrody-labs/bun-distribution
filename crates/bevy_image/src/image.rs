@@ -10,11 +10,11 @@ use bevy_app::{App, Plugin};
 #[cfg(not(feature = "bevy_reflect"))]
 use bevy_reflect::TypePath;
 #[cfg(feature = "bevy_reflect")]
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 #[cfg(feature = "serialize")]
 use bevy_reflect::{ReflectDeserialize, ReflectSerialize};
 
-use bevy_asset::{uuid_handle, Asset, AssetApp, Assets, Handle, RenderAssetUsages};
+use bevy_asset::{Asset, AssetApp, Assets, Handle, RenderAssetUsages, uuid_handle};
 use bevy_color::{Color, ColorToComponents, Gray, LinearRgba, Srgba, Xyza};
 use bevy_ecs::resource::Resource;
 use bevy_math::{AspectRatio, UVec2, UVec3, Vec2};

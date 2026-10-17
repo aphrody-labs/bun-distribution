@@ -1,7 +1,10 @@
 //! NVENC H.264 encoding (Windows, NVIDIA GPU): the stream decodes with our own decoder to pictures
 //! close to the source, keyframes and timestamps are right, and Export takes it only when asked.
 //! Skips without an NVIDIA GPU / driver with NVENC.
-#![cfg(any(target_os = "windows", all(target_os = "linux", target_pointer_width = "64")))]
+#![cfg(any(
+    target_os = "windows",
+    all(target_os = "linux", target_pointer_width = "64")
+))]
 
 use filmcraft_isobmff::{AvcConfig, SampleEntry};
 use filmcraft_platform::nvenc::{Config, NvencH264, Packet, Profile};
@@ -15,8 +18,16 @@ fn rgba(w: usize, h: usize, i: usize) -> Vec<u8> {
             let (bx, by) = ((i * 7) % (w - 64), (i * 3) % (h - 64));
             let in_box = x >= bx && x < bx + 64 && y >= by && y < by + 64;
             let tex = ((x * 31 + y * 17 + i * 5) % 23) as u8;
-            v[o] = if in_box { 230 } else { (x * 200 / w) as u8 + tex };
-            v[o + 1] = if in_box { 40 } else { (y * 200 / h) as u8 + tex };
+            v[o] = if in_box {
+                230
+            } else {
+                (x * 200 / w) as u8 + tex
+            };
+            v[o + 1] = if in_box {
+                40
+            } else {
+                (y * 200 / h) as u8 + tex
+            };
             v[o + 2] = if in_box { 60 } else { 90 + tex };
             v[o + 3] = 255;
         }
@@ -40,7 +51,10 @@ fn config(w: u32, h: u32) -> Config {
     }
 }
 
-fn encode_all(cfg: &Config, frames: usize) -> Option<(NvencH264, Vec<Packet>, Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>)> {
+fn encode_all(
+    cfg: &Config,
+    frames: usize,
+) -> Option<(NvencH264, Vec<Packet>, Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>)> {
     let mut enc = match NvencH264::new(cfg) {
         Ok(e) => e,
         Err(why) => {
@@ -61,14 +75,25 @@ fn encode_all(cfg: &Config, frames: usize) -> Option<(NvencH264, Vec<Packet>, Ve
 }
 
 fn psnr(a: &[u8], b: &[u8]) -> f64 {
-    let mse = a.iter().zip(b).map(|(x, y)| (f64::from(*x) - f64::from(*y)).powi(2)).sum::<f64>() / a.len() as f64;
-    if mse == 0.0 { 99.0 } else { 10.0 * (255.0f64 * 255.0 / mse).log10() }
+    let mse = a
+        .iter()
+        .zip(b)
+        .map(|(x, y)| (f64::from(*x) - f64::from(*y)).powi(2))
+        .sum::<f64>()
+        / a.len() as f64;
+    if mse == 0.0 {
+        99.0
+    } else {
+        10.0 * (255.0f64 * 255.0 / mse).log10()
+    }
 }
 
 #[test]
 fn the_stream_decodes_to_the_source() {
     let (w, h) = (1280u32, 720u32);
-    let Some((enc, packets, sources)) = encode_all(&config(w, h), 72) else { return };
+    let Some((enc, packets, sources)) = encode_all(&config(w, h), 72) else {
+        return;
+    };
     assert_eq!(packets.len(), 72, "one packet per picture");
 
     // timestamps: decoding order, presentation = frame number, dts = k - delay
@@ -86,7 +111,11 @@ fn the_stream_decodes_to_the_source() {
 
     // the avcC parses and our decoder decodes the samples
     let (sps, pps) = enc.parameter_sets();
-    let entry = SampleEntry::avc(AvcConfig::new(vec![sps.to_vec()], vec![pps.to_vec()], 4), w as u16, h as u16);
+    let entry = SampleEntry::avc(
+        AvcConfig::new(vec![sps.to_vec()], vec![pps.to_vec()], 4),
+        w as u16,
+        h as u16,
+    );
     let mut dec = filmcraft_codecs::software_video_decoder(&entry).unwrap();
     let mut out = Vec::new();
     for p in &packets {
@@ -97,10 +126,19 @@ fn the_stream_decodes_to_the_source() {
     let mut worst = 99.0f64;
     for f in &out {
         let src = &sources[f.pts as usize];
-        let filmcraft_frame::PixelData::Yuv8 { planes, .. } = &f.frame.data else { panic!("8-bit planes") };
+        let filmcraft_frame::PixelData::Yuv8 { planes, .. } = &f.frame.data else {
+            panic!("8-bit planes")
+        };
         worst = worst.min(psnr(&planes[0], &src.0));
-        assert!(psnr(&planes[1], &src.1) > 33.0 && psnr(&planes[2], &src.2) > 33.0, "chroma of picture {}", f.pts);
+        assert!(
+            psnr(&planes[1], &src.1) > 33.0 && psnr(&planes[2], &src.2) > 33.0,
+            "chroma of picture {}",
+            f.pts
+        );
     }
     assert!(worst > 34.0, "luma PSNR {worst:.1} dB");
-    eprintln!("worst luma PSNR {worst:.1} dB, {} bytes", packets.iter().map(|p| p.data.len()).sum::<usize>());
+    eprintln!(
+        "worst luma PSNR {worst:.1} dB, {} bytes",
+        packets.iter().map(|p| p.data.len()).sum::<usize>()
+    );
 }

@@ -43,7 +43,11 @@ fn trim_empty_keeps_slot() {
 fn trim_across_start_point_is_one_piece() {
     // 75 %..125 % (via the offset) crosses the start of the closed path: one continuous subpath.
     let t = trim(&[sq(0.0, 0.0, 100.0)], 0.0, 50.0, 270.0);
-    let moves = t[0].elements().iter().filter(|e| matches!(e, PathEl::MoveTo(_))).count();
+    let moves = t[0]
+        .elements()
+        .iter()
+        .filter(|e| matches!(e, PathEl::MoveTo(_)))
+        .count();
     assert_eq!(moves, 1, "{:?}", t[0]);
 }
 
@@ -157,9 +161,17 @@ fn offset_negative_shrinks() {
 #[test]
 fn offset_circle_is_a_circle() {
     let o = offset(&[circle(0.0, 0.0, 50.0)], 10.0, Join::Round, 4.0, 1.0, 0.0);
-    assert!(close(area(&o), PI * 3600.0, 3600.0 * PI * 1e-3), "{}", area(&o));
+    assert!(
+        close(area(&o), PI * 3600.0, 3600.0 * PI * 1e-3),
+        "{}",
+        area(&o)
+    );
     let o = offset(&[circle(0.0, 0.0, 50.0)], -20.0, Join::Round, 4.0, 1.0, 0.0);
-    assert!(close(area(&o), PI * 900.0, 900.0 * PI * 1e-3), "{}", area(&o));
+    assert!(
+        close(area(&o), PI * 900.0, 900.0 * PI * 1e-3),
+        "{}",
+        area(&o)
+    );
     // Curves stay curves (no polygon flattening blow-up).
     assert!(vertex_count(&o[0]) < 40, "{}", vertex_count(&o[0]));
 }
@@ -175,7 +187,11 @@ fn offset_is_independent_of_orientation() {
 #[test]
 fn offset_copies() {
     let o = offset(&[sq(0.0, 0.0, 100.0)], 10.0, Join::Miter, 4.0, 3.0, 0.0);
-    let contours = o[0].elements().iter().filter(|e| matches!(e, PathEl::MoveTo(_))).count();
+    let contours = o[0]
+        .elements()
+        .iter()
+        .filter(|e| matches!(e, PathEl::MoveTo(_)))
+        .count();
     assert_eq!(contours, 3);
     assert!(close(o[0].bounding_box().width(), 160.0, 1e-3));
     let o = offset(&[sq(0.0, 0.0, 100.0)], 10.0, Join::Miter, 4.0, 1.0, 1.0);
@@ -198,7 +214,10 @@ fn bloat_moves_vertices_inwards_and_bulges() {
     let s = sq(-50.0, -50.0, 100.0);
     let b = pucker_bloat(std::slice::from_ref(&s), 50.0);
     for p in on_curve(&b[0]) {
-        assert!(close(p.x.abs(), 25.0, 1e-9) && close(p.y.abs(), 25.0, 1e-9), "{p:?}");
+        assert!(
+            close(p.x.abs(), 25.0, 1e-9) && close(p.y.abs(), 25.0, 1e-9),
+            "{p:?}"
+        );
     }
     // Handles pushed outwards: the shape reaches beyond its vertices.
     let bb = b[0].bounding_box();
@@ -213,7 +232,10 @@ fn pucker_moves_vertices_outwards() {
         assert!(close(q.x.abs(), 75.0, 1e-9) && close(q.y.abs(), 75.0, 1e-9));
     }
     assert!(area(&p) < area(&[s]) * 2.25, "segments pulled in");
-    assert_eq!(pucker_bloat(&[sq(0.0, 0.0, 1.0)], 0.0)[0], sq(0.0, 0.0, 1.0));
+    assert_eq!(
+        pucker_bloat(&[sq(0.0, 0.0, 1.0)], 0.0)[0],
+        sq(0.0, 0.0, 1.0)
+    );
 }
 
 // ---------------------------------------------------------------- twist
@@ -270,10 +292,19 @@ fn zigzag_vertex_counts() {
 #[test]
 fn zigzag_smooth_uses_curves() {
     let z = zigzag(&[sq(0.0, 0.0, 100.0)], 5.0, 2.0, true);
-    assert!(z[0].elements().iter().any(|e| matches!(e, PathEl::CurveTo(..))));
+    assert!(
+        z[0].elements()
+            .iter()
+            .any(|e| matches!(e, PathEl::CurveTo(..)))
+    );
     assert_eq!(vertex_count(&z[0]), 12);
     let corner = zigzag(&[sq(0.0, 0.0, 100.0)], 5.0, 2.0, false);
-    assert!(!corner[0].elements().iter().any(|e| matches!(e, PathEl::CurveTo(..))));
+    assert!(
+        !corner[0]
+            .elements()
+            .iter()
+            .any(|e| matches!(e, PathEl::CurveTo(..)))
+    );
 }
 
 // ---------------------------------------------------------------- wiggle
@@ -288,7 +319,17 @@ fn wiggle_is_deterministic_and_time_varying() {
     assert_ne!(a, wiggle(&s, &WiggleParams { seed: 3.0, ..w }, 0.5));
     // Phase of 360° = one wiggle period at speed 1: same as advancing time by one second.
     let w1 = WiggleParams { speed: 1.0, ..w };
-    assert_eq!(wiggle(&s, &WiggleParams { phase_deg: 360.0, ..w1 }, 0.25), wiggle(&s, &w1, 1.25));
+    assert_eq!(
+        wiggle(
+            &s,
+            &WiggleParams {
+                phase_deg: 360.0,
+                ..w1
+            },
+            0.25
+        ),
+        wiggle(&s, &w1, 1.25)
+    );
     assert_eq!(vertex_count(&a[0]), 4 * 11);
 }
 
@@ -297,7 +338,12 @@ fn wiggle_displacement_is_bounded() {
     let mut l = BezPath::new();
     l.move_to((0.0, 0.0));
     l.line_to((1000.0, 0.0));
-    let w = WiggleParams { size: 7.0, detail: 50.0, smooth: false, ..Default::default() };
+    let w = WiggleParams {
+        size: 7.0,
+        detail: 50.0,
+        smooth: false,
+        ..Default::default()
+    };
     for t in [0.0, 0.3, 1.7, 9.1] {
         let r = wiggle(std::slice::from_ref(&l), &w, t);
         let pts = on_curve(&r[0]);
@@ -310,7 +356,11 @@ fn wiggle_displacement_is_bounded() {
 #[test]
 fn wiggle_full_correlation_translates() {
     let s = [sq(0.0, 0.0, 100.0)];
-    let w = WiggleParams { correlation: 100.0, smooth: false, ..Default::default() };
+    let w = WiggleParams {
+        correlation: 100.0,
+        smooth: false,
+        ..Default::default()
+    };
     let r = wiggle(&s, &w, 0.4);
     assert!(close(area(&r), 10000.0, 1e-6));
     let zero = wiggle(&s, &WiggleParams { size: 0.0, ..w }, 1.0);
@@ -337,7 +387,10 @@ fn inclusion_exclusion(a: BezPath, b: BezPath) {
 #[test]
 fn merge_rects_inclusion_exclusion() {
     inclusion_exclusion(sq(0.0, 0.0, 100.0), sq(50.0, 30.0, 100.0));
-    let i = merge(&[sq(0.0, 0.0, 100.0), sq(50.0, 30.0, 100.0)], MergeMode::Intersect);
+    let i = merge(
+        &[sq(0.0, 0.0, 100.0), sq(50.0, 30.0, 100.0)],
+        MergeMode::Intersect,
+    );
     assert!(close(area(&[i]), 50.0 * 70.0, 1e-6));
 }
 
@@ -345,7 +398,10 @@ fn merge_rects_inclusion_exclusion() {
 fn merge_circles_inclusion_exclusion() {
     inclusion_exclusion(circle(0.0, 0.0, 50.0), circle(40.0, 10.0, 35.0));
     // Curves are preserved: the union of two circles has few vertices.
-    let u = merge(&[circle(0.0, 0.0, 50.0), circle(40.0, 10.0, 35.0)], MergeMode::Add);
+    let u = merge(
+        &[circle(0.0, 0.0, 50.0), circle(40.0, 10.0, 35.0)],
+        MergeMode::Add,
+    );
     assert!(vertex_count(&u) < 20, "{}", vertex_count(&u));
 }
 
@@ -354,11 +410,22 @@ fn merge_modes_edge_cases() {
     let a = sq(0.0, 0.0, 10.0);
     let b = sq(100.0, 0.0, 10.0);
     assert!(area(&[merge(&[a.clone(), b.clone()], MergeMode::Intersect)]) < 1e-9);
-    assert!(close(area(&[merge(&[a.clone(), b.clone()], MergeMode::Add)]), 200.0, 1e-6));
+    assert!(close(
+        area(&[merge(&[a.clone(), b.clone()], MergeMode::Add)]),
+        200.0,
+        1e-6
+    ));
     let m = merge(&[a.clone(), b.clone()], MergeMode::Merge);
     assert_eq!(m.elements().len(), a.elements().len() + b.elements().len());
     // Subtract with three operands: first minus the rest.
-    let s = merge(&[sq(0.0, 0.0, 100.0), sq(0.0, 0.0, 50.0), sq(50.0, 50.0, 50.0)], MergeMode::Subtract);
+    let s = merge(
+        &[
+            sq(0.0, 0.0, 100.0),
+            sq(0.0, 0.0, 50.0),
+            sq(50.0, 50.0, 50.0),
+        ],
+        MergeMode::Subtract,
+    );
     assert!(close(area(&[s]), 5000.0, 1e-6));
     assert!(merge(&[], MergeMode::Add).elements().is_empty());
 }
@@ -368,8 +435,16 @@ fn normalize_and_filled_area() {
     // Two same-direction overlapping squares in one path: non-zero fills the union.
     let mut p = sq(0.0, 0.0, 100.0);
     p.extend(sq(50.0, 0.0, 100.0).elements().iter().copied());
-    assert!(close(crate::boolean::filled_area(&p, FillRule::NonZero), 15000.0, 1e-6));
-    assert!(close(crate::boolean::filled_area(&p, FillRule::EvenOdd), 10000.0, 1e-6));
+    assert!(close(
+        crate::boolean::filled_area(&p, FillRule::NonZero),
+        15000.0,
+        1e-6
+    ));
+    assert!(close(
+        crate::boolean::filled_area(&p, FillRule::EvenOdd),
+        10000.0,
+        1e-6
+    ));
     let n = crate::boolean::normalize(&p, FillRule::EvenOdd);
     assert!(close(n.area().abs(), 10000.0, 1e-6));
 }

@@ -105,15 +105,24 @@ fn check_scene(m: &Model) {
     let prims = &m.meshes[0].primitives;
     assert_eq!(prims.len(), 2);
     let (quad, tri) = (&prims[0], &prims[1]);
-    assert_eq!((quad.positions.len(), quad.indices.clone()), (4, vec![0, 1, 2, 0, 2, 3]));
+    assert_eq!(
+        (quad.positions.len(), quad.indices.clone()),
+        (4, vec![0, 1, 2, 0, 2, 3])
+    );
     assert_eq!((tri.positions.len(), tri.triangle_count()), (3, 1));
     assert_eq!(quad.normals, vec![[0.0, 0.0, 1.0]; 4]);
     assert_eq!(tri.normals, vec![[0.0, -1.0, 0.0]; 3]);
     // UVs through the index, v flipped to image rows.
-    assert_eq!(quad.uvs, vec![[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]]);
+    assert_eq!(
+        quad.uvs,
+        vec![[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]]
+    );
 
     assert_eq!(m.materials.len(), 2);
-    let (red, glass) = (&m.materials[quad.material.unwrap()], &m.materials[tri.material.unwrap()]);
+    let (red, glass) = (
+        &m.materials[quad.material.unwrap()],
+        &m.materials[tri.material.unwrap()],
+    );
     assert_eq!(red.name, "Red");
     assert_eq!(red.base_color, [1.0, 0.0, 0.0, 1.0]);
     assert!((red.roughness - 0.02f32.sqrt()).abs() < 1e-6 && red.metallic == 0.0);
@@ -125,10 +134,16 @@ fn check_scene(m: &Model) {
     let inst = m.instances(None, 0.0);
     assert_eq!(inst.len(), 1);
     let apex = inst[0].world.apply(vec3(0.5, 0.5, 1.0));
-    assert!((apex.x - 9.0).abs() < 1e-9 && (apex.y - 4.0).abs() < 1e-9 && (apex.z + 1.0).abs() < 1e-9, "{apex:?}");
+    assert!(
+        (apex.x - 9.0).abs() < 1e-9 && (apex.y - 4.0).abs() < 1e-9 && (apex.z + 1.0).abs() < 1e-9,
+        "{apex:?}"
+    );
     let (lo, hi) = m.bounds().unwrap();
     let close = |a: [f64; 3], b: [f64; 3]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-9);
-    assert!(close(lo, [8.0, 2.0, -2.0]) && close(hi, [10.0, 4.0, 0.0]), "{lo:?} {hi:?}");
+    assert!(
+        close(lo, [8.0, 2.0, -2.0]) && close(hi, [10.0, 4.0, 0.0]),
+        "{lo:?} {hi:?}"
+    );
 }
 
 /// A binary FBX of the same node tree (`a:` children become typed arrays).
@@ -137,7 +152,11 @@ fn write_binary(nodes: &[FbxNode], version: u32, compress: bool) -> Vec<u8> {
         let array = |out: &mut Vec<u8>, t: u8, len: usize, raw: Vec<u8>| {
             out.push(t);
             out.extend((len as u32).to_le_bytes());
-            let data = if compress { miniz_oxide::deflate::compress_to_vec_zlib(&raw, 6) } else { raw };
+            let data = if compress {
+                miniz_oxide::deflate::compress_to_vec_zlib(&raw, 6)
+            } else {
+                raw
+            };
             out.extend((compress as u32).to_le_bytes());
             out.extend((data.len() as u32).to_le_bytes());
             out.extend(data);
@@ -171,8 +190,18 @@ fn write_binary(nodes: &[FbxNode], version: u32, compress: bool) -> Vec<u8> {
                 out.extend((b.len() as u32).to_le_bytes());
                 out.extend(b);
             }
-            Prop::Ints(v) => array(out, b'i', v.len(), v.iter().flat_map(|&i| (i as i32).to_le_bytes()).collect()),
-            Prop::Floats(v) => array(out, b'd', v.len(), v.iter().flat_map(|f| f.to_le_bytes()).collect()),
+            Prop::Ints(v) => array(
+                out,
+                b'i',
+                v.len(),
+                v.iter().flat_map(|&i| (i as i32).to_le_bytes()).collect(),
+            ),
+            Prop::Floats(v) => array(
+                out,
+                b'd',
+                v.len(),
+                v.iter().flat_map(|f| f.to_le_bytes()).collect(),
+            ),
         }
     }
     fn record(out: &mut Vec<u8>, n: &FbxNode, wide: bool, compress: bool) {
@@ -182,7 +211,9 @@ fn write_binary(nodes: &[FbxNode], version: u32, compress: bool) -> Vec<u8> {
         out.push(n.name.len() as u8);
         out.extend(n.name.as_bytes());
         let props = match n.child("a") {
-            Some(a) if a.props.iter().all(|p| matches!(p, Prop::Int(_))) => vec![Prop::Ints(a.ints())],
+            Some(a) if a.props.iter().all(|p| matches!(p, Prop::Int(_))) => {
+                vec![Prop::Ints(a.ints())]
+            }
             Some(a) => vec![Prop::Floats(a.floats())],
             None => n.props.clone(),
         };
@@ -234,7 +265,15 @@ fn binary_fbx_matches_ascii() {
         let bin = write_binary(&doc, version, compress);
         let (v, nodes) = read(&bin).unwrap();
         assert_eq!(v, version);
-        assert_eq!(nodes.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(), ["FBXHeaderExtension", "GlobalSettings", "Objects", "Connections"]);
+        assert_eq!(
+            nodes.iter().map(|n| n.name.as_str()).collect::<Vec<_>>(),
+            [
+                "FBXHeaderExtension",
+                "GlobalSettings",
+                "Objects",
+                "Connections"
+            ]
+        );
         // Found by its magic even without the extension.
         let m = load("scene.bin", &bin, &|_| None).unwrap();
         assert_eq!(m, ascii, "version {version}, compressed {compress}");
@@ -266,10 +305,16 @@ Connections:  {"#
         "C: \"OO\",500,300\n",
         "C: \"OO\",500,300\n\tC: \"OP\",600,400, \"DiffuseColor\"\n\tC: \"OP\",700,500, \"EmissiveColor\"\n\tC: \"OO\",800,700\n",
     );
-    let m = load("scene.fbx", doc.as_bytes(), &|uri| (uri == "maps/base.png").then(|| png.clone())).unwrap();
+    let m = load("scene.fbx", doc.as_bytes(), &|uri| {
+        (uri == "maps/base.png").then(|| png.clone())
+    })
+    .unwrap();
     assert_eq!(m.textures.len(), 2);
     let red = m.materials.iter().find(|x| x.name == "Red").unwrap();
-    assert_eq!(m.textures[red.base_color_tex.unwrap().texture].data[0], [0.0, 1.0, 0.0, 1.0]);
+    assert_eq!(
+        m.textures[red.base_color_tex.unwrap().texture].data[0],
+        [0.0, 1.0, 0.0, 1.0]
+    );
     let glass = m.materials.iter().find(|x| x.name == "Glass").unwrap();
     assert!(glass.emissive_tex.is_some());
     assert_eq!(glass.emissive, [1.0; 3]);
@@ -279,7 +324,9 @@ fn b64(b: &[u8]) -> String {
     const A: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut s = String::new();
     for c in b.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         for k in 0..4 {
             if k <= c.len() {
                 s.push(A[(n >> (18 - 6 * k) & 63) as usize] as char);
@@ -307,7 +354,14 @@ fn hostile_fbx_files_fail_cleanly() {
     // An array claiming 4 G elements.
     let mut huge = BINARY_MAGIC.to_vec();
     huge.extend(7400u32.to_le_bytes());
-    let body: Vec<u8> = b"d".iter().copied().chain(u32::MAX.to_le_bytes()).chain(0u32.to_le_bytes()).chain(8u32.to_le_bytes()).chain([0u8; 8]).collect();
+    let body: Vec<u8> = b"d"
+        .iter()
+        .copied()
+        .chain(u32::MAX.to_le_bytes())
+        .chain(0u32.to_le_bytes())
+        .chain(8u32.to_le_bytes())
+        .chain([0u8; 8])
+        .collect();
     let start = huge.len();
     let end = start + 13 + 1 + body.len();
     huge.extend((end as u32).to_le_bytes());
@@ -322,6 +376,15 @@ fn hostile_fbx_files_fail_cleanly() {
     // Not an FBX scene at all, an old FBX version, and a scene without meshes.
     assert!(parse(b"\x00\x01garbage", &|_| None).is_err());
     let v6 = "FBXHeaderExtension:  {\n FBXVersion: 6100\n}\nObjects: {\n}\n";
-    assert!(matches!(parse(v6.as_bytes(), &|_| None), Err(ModelError::Unsupported(_))));
-    assert!(parse(b"Objects: {\n Model: 1, \"Model::Empty\", \"Null\" {\n }\n}\n", &|_| None).is_err());
+    assert!(matches!(
+        parse(v6.as_bytes(), &|_| None),
+        Err(ModelError::Unsupported(_))
+    ));
+    assert!(
+        parse(
+            b"Objects: {\n Model: 1, \"Model::Empty\", \"Null\" {\n }\n}\n",
+            &|_| None
+        )
+        .is_err()
+    );
 }

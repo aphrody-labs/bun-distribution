@@ -107,7 +107,9 @@ fn bench_aes_gcm_decrypt_1kb(c: &mut Criterion) {
     let key = Key::<Aes256Gcm>::from(raw_key);
     let cipher = Aes256Gcm::new(&key);
     let nonce = Nonce::from(raw_nonce);
-    let ct = cipher.encrypt(&nonce, plaintext.as_ref()).expect("AES-GCM encrypt must succeed");
+    let ct = cipher
+        .encrypt(&nonce, plaintext.as_ref())
+        .expect("AES-GCM encrypt must succeed");
 
     // Build the Chromium-format wire blob: [3 prefix bytes][12 nonce][ct+tag]
     let mut wire = Vec::with_capacity(3 + 12 + ct.len());

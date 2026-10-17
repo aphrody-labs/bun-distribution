@@ -16,13 +16,19 @@ pub struct ToolResult {
 
 impl ToolResult {
     pub fn text(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: false }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: false,
+        }
     }
     pub fn json(v: &Value) -> Self {
         Self::text(serde_json::to_string_pretty(v).unwrap_or_default())
     }
     pub fn error(t: impl Into<String>) -> Self {
-        Self { content: vec![json!({"type": "text", "text": t.into()})], is_error: true }
+        Self {
+            content: vec![json!({"type": "text", "text": t.into()})],
+            is_error: true,
+        }
     }
     /// An image block followed by a JSON text block describing it.
     pub fn image(bytes: &[u8], mime: &str, info: &Value) -> Self {
@@ -39,7 +45,10 @@ impl ToolResult {
     }
     /// The first text block (tests and the CLI).
     pub fn first_text(&self) -> &str {
-        self.content.iter().find_map(|c| c.get("text").and_then(Value::as_str)).unwrap_or("")
+        self.content
+            .iter()
+            .find_map(|c| c.get("text").and_then(Value::as_str))
+            .unwrap_or("")
     }
 }
 
@@ -111,7 +120,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "list_commands",
             "List commands",
             "List FigCraft commands: id, label, menu path, shortcut, whether it is undoable, and a parameter description. Every menu item, panel action and shortcut is a command; run one with run_command (or several as one undo step with batch). Most commands act on `ids` when given, else on the selection. Use `filter` to narrow (e.g. \"align\", \"layout\", \"variable\", \"style\", \"component\", \"proto\").",
-            obj(json!({"filter": string("Case-insensitive substring matched against id, label, menu path and parameter docs")}), &[]),
+            obj(
+                json!({"filter": string("Case-insensitive substring matched against id, label, menu path and parameter docs")}),
+                &[],
+            ),
             true,
         ),
         tool(
@@ -183,7 +195,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "get_node",
             "Get layer",
             "One layer as JSON (same fields as inspect_document) with its children to `depth`.",
-            obj(json!({"id": id_schema("Layer id"), "depth": int("Child depth (default 1)")}), &["id"]),
+            obj(
+                json!({"id": id_schema("Layer id"), "depth": int("Child depth (default 1)")}),
+                &["id"],
+            ),
             true,
         ),
         tool(
@@ -253,8 +268,20 @@ pub fn tool_definitions() -> Vec<Value> {
             obj(json!({"path": string("Output .figcraft path")}), &[]),
             false,
         ),
-        tool("undo", "Undo", "Undo the last change (one command, batch or gesture). Returns {undone: bool}.", empty(), false),
-        tool("redo", "Redo", "Redo the last undone change. Returns {redone: bool}.", empty(), false),
+        tool(
+            "undo",
+            "Undo",
+            "Undo the last change (one command, batch or gesture). Returns {undone: bool}.",
+            empty(),
+            false,
+        ),
+        tool(
+            "redo",
+            "Redo",
+            "Redo the last undone change. Returns {redone: bool}.",
+            empty(),
+            false,
+        ),
         tool(
             "pointer",
             "Pointer gesture",
@@ -291,7 +318,10 @@ pub fn tool_definitions() -> Vec<Value> {
             "type_text",
             "Type text",
             "Type into a text layer. With `id`, starts editing that layer with all of its text selected (so the typed text replaces it), types, then stops editing. Without `id`, types at the caret of the text currently being edited (after a double-click with pointer, or after drawing with the text tool).",
-            obj(json!({"text": string("Text to type (\\n for a new line)"), "id": id_schema("Text layer to replace the contents of")}), &["text"]),
+            obj(
+                json!({"text": string("Text to type (\\n for a new line)"), "id": id_schema("Text layer to replace the contents of")}),
+                &["text"],
+            ),
             false,
         ),
         tool(
@@ -333,18 +363,26 @@ fn req_s<'a>(a: &'a Map<String, Value>, k: &str) -> Result<&'a str, String> {
 fn n_arg(a: &Map<String, Value>, k: &str) -> Result<Option<f64>, String> {
     match a.get(k) {
         None | Some(Value::Null) => Ok(None),
-        Some(v) => figcraft_engine::params::f64_of(v).map(Some).ok_or_else(|| format!("`{k}` must be a finite number")),
+        Some(v) => figcraft_engine::params::f64_of(v)
+            .map(Some)
+            .ok_or_else(|| format!("`{k}` must be a finite number")),
     }
 }
 
 fn id_arg(v: &Value) -> Result<u64, String> {
-    figcraft_engine::params::id_of(v).map(|i| i.0).ok_or_else(|| format!("{v} is not a layer id"))
+    figcraft_engine::params::id_of(v)
+        .map(|i| i.0)
+        .ok_or_else(|| format!("{v} is not a layer id"))
 }
 
 fn ids_arg(a: &Map<String, Value>, k: &str) -> Result<Option<Vec<u64>>, String> {
     match a.get(k) {
         None | Some(Value::Null) => Ok(None),
-        Some(Value::Array(arr)) => arr.iter().map(id_arg).collect::<Result<Vec<_>, _>>().map(Some),
+        Some(Value::Array(arr)) => arr
+            .iter()
+            .map(id_arg)
+            .collect::<Result<Vec<_>, _>>()
+            .map(Some),
         Some(v) => id_arg(v).map(|i| Some(vec![i])),
     }
 }
@@ -357,10 +395,16 @@ fn png_info(bytes: &[u8]) -> (u32, u32) {
 fn bounds_of(b: &mut dyn Backend, ids: &[u64]) -> Option<(f64, f64, f64, f64)> {
     let mut acc: Option<(f64, f64, f64, f64)> = None;
     for id in ids.iter().take(500) {
-        let Ok(n) = b.call("node.get", json!({"id": id, "depth": 0})) else { continue };
-        let Some(ab) = n.get("absoluteBounds") else { continue };
+        let Ok(n) = b.call("node.get", json!({"id": id, "depth": 0})) else {
+            continue;
+        };
+        let Some(ab) = n.get("absoluteBounds") else {
+            continue;
+        };
         let g = |k: &str| ab.get(k).and_then(Value::as_f64);
-        let (Some(x), Some(y), Some(w), Some(h)) = (g("x"), g("y"), g("width"), g("height")) else { continue };
+        let (Some(x), Some(y), Some(w), Some(h)) = (g("x"), g("y"), g("width"), g("height")) else {
+            continue;
+        };
         acc = Some(match acc {
             None => (x, y, x + w, y + h),
             Some((a, b2, c, d)) => (a.min(x), b2.min(y), c.max(x + w), d.max(y + h)),
@@ -392,39 +436,73 @@ fn normalize_paintish(v: &mut Value, depth: usize) {
             }
         }
         Value::Object(o) => {
-            if let Some(c) = o.get("color").filter(|c| c.is_string()).and_then(figcraft_engine::params::color_of) {
-                o.insert("color".into(), serde_json::to_value(c).unwrap_or(Value::Null));
+            if let Some(c) = o
+                .get("color")
+                .filter(|c| c.is_string())
+                .and_then(figcraft_engine::params::color_of)
+            {
+                o.insert(
+                    "color".into(),
+                    serde_json::to_value(c).unwrap_or(Value::Null),
+                );
             }
-            let is_gradient = o.get("type").and_then(Value::as_str).is_some_and(|t| t.to_ascii_lowercase().contains("gradient"));
+            let is_gradient = o
+                .get("type")
+                .and_then(Value::as_str)
+                .is_some_and(|t| t.to_ascii_lowercase().contains("gradient"));
             if is_gradient {
                 // Accept {"type":"linearGradient"} as well as {"type":"gradient","kind":"linear"}.
-                if let Some(t) = o.get("type").and_then(Value::as_str).map(str::to_ascii_lowercase)
+                if let Some(t) = o
+                    .get("type")
+                    .and_then(Value::as_str)
+                    .map(str::to_ascii_lowercase)
                     && t != "gradient"
                 {
                     let kind = t.trim_end_matches("gradient").to_string();
                     o.insert("type".into(), json!("gradient"));
-                    o.entry("kind").or_insert(json!(if kind.is_empty() { "linear".to_string() } else { kind }));
+                    o.entry("kind").or_insert(json!(if kind.is_empty() {
+                        "linear".to_string()
+                    } else {
+                        kind
+                    }));
                 }
                 o.entry("kind").or_insert(json!("linear"));
                 let linear = o.get("kind").and_then(Value::as_str) == Some("linear");
-                let (from, to, width) = if linear { ([0.5, 0.0], [0.5, 1.0], [-0.5, 0.0]) } else { ([0.5, 0.5], [0.5, 1.0], [1.0, 0.5]) };
+                let (from, to, width) = if linear {
+                    ([0.5, 0.0], [0.5, 1.0], [-0.5, 0.0])
+                } else {
+                    ([0.5, 0.5], [0.5, 1.0], [1.0, 0.5])
+                };
                 o.entry("from").or_insert(json!(from));
                 o.entry("to").or_insert(json!(to));
                 // A linear gradient's width handle goes square to its axis (else its bands skew,
                 // or vanish when the handle lies on the axis).
-                let pt = |k: &str| o.get(k).and_then(Value::as_array).and_then(|a| Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?)));
+                let pt = |k: &str| {
+                    o.get(k)
+                        .and_then(Value::as_array)
+                        .and_then(|a| Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?)))
+                };
                 if linear
                     && !o.contains_key("width")
                     && let (Some(f), Some(t)) = (pt("from"), pt("to"))
                 {
-                    o.insert("width".into(), json!([f.0 - (t.1 - f.1), f.1 + (t.0 - f.0)]));
+                    o.insert(
+                        "width".into(),
+                        json!([f.0 - (t.1 - f.1), f.1 + (t.0 - f.0)]),
+                    );
                 }
                 o.entry("width").or_insert(json!(width));
                 if let Some(Value::Array(stops)) = o.get_mut("stops") {
                     let n = stops.len();
                     for (i, s) in stops.iter_mut().enumerate() {
-                        if let Some(c) = figcraft_engine::params::color_of(s).filter(|_| s.is_string()) {
-                            let pos = if n > 1 { i as f64 / (n - 1) as f64 } else { 0.0 };
+                        if let Some(c) =
+                            figcraft_engine::params::color_of(s).filter(|_| s.is_string())
+                        {
+                            let pos = if n > 1 {
+                                i as f64 / (n - 1) as f64
+                            } else {
+                                0.0
+                            };
                             *s = json!({"position": pos, "color": c});
                         } else {
                             normalize_paintish(s, depth + 1);
@@ -477,14 +555,21 @@ pub fn call_tool(b: &mut dyn Backend, name: &str, args: &Value) -> ToolResult {
         "pointer" => pointer(b, &a),
         "key" => key(b, &a),
         "type_text" => type_text(b, &a),
-        "inspect_ui" => b.call("ui.inspect", json!({})).map(|v| ToolResult::json(&v)),
-        other => Err(format!("unknown tool `{other}` (tools/list has: {})", TOOL_NAMES.join(", "))),
+        "inspect_ui" => b
+            .call("ui.inspect", json!({}))
+            .map(|v| ToolResult::json(&v)),
+        other => Err(format!(
+            "unknown tool `{other}` (tools/list has: {})",
+            TOOL_NAMES.join(", ")
+        )),
     };
     r.unwrap_or_else(ToolResult::error)
 }
 
 fn list_commands(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
-    let filter = s_arg(a, "filter")?.map(str::to_lowercase).unwrap_or_default();
+    let filter = s_arg(a, "filter")?
+        .map(str::to_lowercase)
+        .unwrap_or_default();
     let all = b.call("engine.commands", json!({}))?;
     let list: Vec<Value> = all
         .as_array()
@@ -492,9 +577,11 @@ fn list_commands(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResu
             v.iter()
                 .filter(|c| {
                     filter.is_empty()
-                        || ["id", "label", "menu", "params"]
-                            .iter()
-                            .any(|k| c.get(*k).and_then(Value::as_str).is_some_and(|s| s.to_lowercase().contains(&filter)))
+                        || ["id", "label", "menu", "params"].iter().any(|k| {
+                            c.get(*k)
+                                .and_then(Value::as_str)
+                                .is_some_and(|s| s.to_lowercase().contains(&filter))
+                        })
                 })
                 .cloned()
                 .collect()
@@ -504,7 +591,10 @@ fn list_commands(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResu
         return Ok(ToolResult::text(format!("no command matches `{filter}`")));
     }
     // One compact line per command keeps this readable for agents.
-    let mut out = format!("{} commands (id — label [menu] (shortcut) params; * = undoable):\n", list.len());
+    let mut out = format!(
+        "{} commands (id — label [menu] (shortcut) params; * = undoable):\n",
+        list.len()
+    );
     for c in &list {
         let g = |k: &str| c.get(k).and_then(Value::as_str).unwrap_or("");
         out.push_str(g("id"));
@@ -539,13 +629,17 @@ fn run_command(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult
 }
 
 fn batch(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
-    let Some(Value::Array(cmds)) = a.get("commands") else { return Err("`commands` must be an array of {command, params}".into()) };
+    let Some(Value::Array(cmds)) = a.get("commands") else {
+        return Err("`commands` must be an array of {command, params}".into());
+    };
     if cmds.is_empty() {
         return Err("`commands` is empty".into());
     }
     let mut steps = Vec::with_capacity(cmds.len());
     for (i, c) in cmds.iter().enumerate() {
-        let Some(cmd) = c.get("command").and_then(Value::as_str) else { return Err(format!("step {i}: `command` must be a string")) };
+        let Some(cmd) = c.get("command").and_then(Value::as_str) else {
+            return Err(format!("step {i}: `command` must be a string"));
+        };
         let params = match c.get("params") {
             None | Some(Value::Null) => json!({}),
             Some(v @ Value::Object(_)) => v.clone(),
@@ -556,7 +650,12 @@ fn batch(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, Stri
         steps.push(json!({"command": cmd, "params": params}));
     }
     let label = s_arg(a, "label")?.unwrap_or("Batch");
-    exec(b, "command.batch", json!({"label": label, "commands": steps})).map(|v| ToolResult::json(&v))
+    exec(
+        b,
+        "command.batch",
+        json!({"label": label, "commands": steps}),
+    )
+    .map(|v| ToolResult::json(&v))
 }
 
 fn create_node(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
@@ -571,7 +670,10 @@ fn create_node(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult
         return Err("`props` must be an object".into());
     }
     let mut params = Map::new();
-    for k in ["type", "x", "y", "width", "height", "parent", "index", "name", "text", "path", "points", "closed", "props", "select"] {
+    for k in [
+        "type", "x", "y", "width", "height", "parent", "index", "name", "text", "path", "points",
+        "closed", "props", "select",
+    ] {
         if let Some(v) = a.get(k).filter(|v| !v.is_null()) {
             params.insert(k.into(), v.clone());
         }
@@ -610,7 +712,11 @@ fn set_properties(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolRes
             .map(|a| a.iter().filter_map(Value::as_u64).collect())
             .unwrap_or_default(),
     };
-    let nodes: Vec<Value> = ids.iter().take(20).filter_map(|i| b.call("node.get", json!({"id": i, "depth": 0})).ok()).collect();
+    let nodes: Vec<Value> = ids
+        .iter()
+        .take(20)
+        .filter_map(|i| b.call("node.get", json!({"id": i, "depth": 0})).ok())
+        .collect();
     Ok(ToolResult::json(&json!({"ok": true, "nodes": nodes})))
 }
 
@@ -621,7 +727,8 @@ fn inspect_document(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolR
         Some(Value::Bool(x)) => *x,
         Some(_) => return Err("`allPages` must be a boolean".into()),
     };
-    b.call("document.inspect", json!({"depth": depth, "allPages": all})).map(|v| ToolResult::json(&v))
+    b.call("document.inspect", json!({"depth": depth, "allPages": all}))
+        .map(|v| ToolResult::json(&v))
 }
 
 fn get_node(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
@@ -641,7 +748,11 @@ fn select(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, Str
     } else {
         exec(b, "select.set", json!({"ids": ids}))?;
     }
-    let sel = b.call("document.inspect", json!({"depth": 0}))?.get("selection").cloned().unwrap_or(Value::Null);
+    let sel = b
+        .call("document.inspect", json!({"depth": 0}))?
+        .get("selection")
+        .cloned()
+        .unwrap_or(Value::Null);
     Ok(ToolResult::json(&json!({"selection": sel})))
 }
 
@@ -667,9 +778,17 @@ fn export(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, Str
         params.insert("size".into(), json!(s));
     }
     // PDF print options and the export options, checked by the command.
-    for k in
-        ["bleed", "cropMarks", "bleedMarks", "cmyk", "contentsOnly", "includeBoundingBox", "svgOutlineText", "svgIdAttribute", "svgSimplifyStroke"]
-    {
+    for k in [
+        "bleed",
+        "cropMarks",
+        "bleedMarks",
+        "cmyk",
+        "contentsOnly",
+        "includeBoundingBox",
+        "svgOutlineText",
+        "svgIdAttribute",
+        "svgSimplifyStroke",
+    ] {
         if let Some(v) = a.get(k).filter(|v| !v.is_null()) {
             params.insert(k.into(), v.clone());
         }
@@ -679,16 +798,34 @@ fn export(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, Str
         return exec(b, "file.export", Value::Object(params)).map(|v| ToolResult::json(&v));
     }
     let r = exec(b, "file.export", Value::Object(params))?;
-    let fmt = r.get("format").and_then(Value::as_str).unwrap_or("png").to_string();
+    let fmt = r
+        .get("format")
+        .and_then(Value::as_str)
+        .unwrap_or("png")
+        .to_string();
     let bytes = decode_data(&r)?;
     match fmt.as_str() {
         "png" => {
             let (w, h) = png_info(&bytes);
-            Ok(ToolResult::image(&bytes, "image/png", &json!({"format": "png", "width": w, "height": h, "bytes": bytes.len()})))
+            Ok(ToolResult::image(
+                &bytes,
+                "image/png",
+                &json!({"format": "png", "width": w, "height": h, "bytes": bytes.len()}),
+            ))
         }
-        "jpg" | "jpeg" => Ok(ToolResult::image(&bytes, "image/jpeg", &json!({"format": "jpg", "bytes": bytes.len()}))),
-        "webp" => Ok(ToolResult::image(&bytes, "image/webp", &json!({"format": "webp", "bytes": bytes.len()}))),
-        "svg" => Ok(ToolResult::text(String::from_utf8_lossy(&bytes).into_owned())),
+        "jpg" | "jpeg" => Ok(ToolResult::image(
+            &bytes,
+            "image/jpeg",
+            &json!({"format": "jpg", "bytes": bytes.len()}),
+        )),
+        "webp" => Ok(ToolResult::image(
+            &bytes,
+            "image/webp",
+            &json!({"format": "webp", "bytes": bytes.len()}),
+        )),
+        "svg" => Ok(ToolResult::text(
+            String::from_utf8_lossy(&bytes).into_owned(),
+        )),
         other => {
             let mut out = json!({"format": other, "bytes": bytes.len(), "data": base64::engine::general_purpose::STANDARD.encode(&bytes)});
             if let Some(w) = r.get("warnings") {
@@ -707,7 +844,11 @@ fn screenshot(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult,
             None => b.screenshot_png()?,
         };
         let (w, h) = png_info(&bytes);
-        return Ok(ToolResult::image(&bytes, "image/png", &json!({"source": "window", "width": w, "height": h})));
+        return Ok(ToolResult::image(
+            &bytes,
+            "image/png",
+            &json!({"source": "window", "width": w, "height": h}),
+        ));
     }
     let max = n_arg(a, "maxSize")?.unwrap_or(1600.0).clamp(16.0, 8192.0);
     let req = n_arg(a, "scale")?.unwrap_or(1.0);
@@ -715,7 +856,11 @@ fn screenshot(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult,
         return Err("`scale` must be positive".into());
     }
     let ids = ids_arg(a, "ids")?.unwrap_or_default();
-    let measured = if ids.is_empty() { page_children(b)? } else { ids.clone() };
+    let measured = if ids.is_empty() {
+        page_children(b)?
+    } else {
+        ids.clone()
+    };
     let mut scale = req;
     if let Some((x0, y0, x1, y1)) = bounds_of(b, &measured) {
         let side = (x1 - x0).max(y1 - y0).max(1e-6);
@@ -736,7 +881,9 @@ fn open_file(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, 
     match a.get("variables") {
         None | Some(Value::Null) => {}
         Some(v @ (Value::String(_) | Value::Object(_))) => params["variables"] = v.clone(),
-        Some(_) => return Err("`variables` must be a path or the local variables JSON object".into()),
+        Some(_) => {
+            return Err("`variables` must be a path or the local variables JSON object".into());
+        }
     }
     let r = exec(b, "file.open", params)?;
     let doc = b.call("document.inspect", json!({"depth": 1}))?;
@@ -776,8 +923,14 @@ fn pointer(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, St
     p.insert("x".into(), json!(x));
     p.insert("y".into(), json!(y));
     if let Some(to) = a.get("to").filter(|v| !v.is_null()) {
-        let arr =
-            to.as_array().filter(|t| t.len() == 2 && t.iter().all(|v| figcraft_engine::params::f64_of(v).is_some())).ok_or("`to` must be [x, y]")?;
+        let arr = to
+            .as_array()
+            .filter(|t| {
+                t.len() == 2
+                    && t.iter()
+                        .all(|v| figcraft_engine::params::f64_of(v).is_some())
+            })
+            .ok_or("`to` must be [x, y]")?;
         p.insert("to".into(), Value::Array(arr.clone()));
     }
     if let Some(s) = n_arg(a, "steps")? {
@@ -789,7 +942,8 @@ fn pointer(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, St
         }
     }
     mods(a, &mut p)?;
-    b.call("ui.pointer", Value::Object(p)).map(|v| ToolResult::json(&v))
+    b.call("ui.pointer", Value::Object(p))
+        .map(|v| ToolResult::json(&v))
 }
 
 fn key(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
@@ -797,7 +951,8 @@ fn key(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String
     let mut p = Map::new();
     p.insert("key".into(), json!(k));
     mods(a, &mut p)?;
-    b.call("ui.key", Value::Object(p)).map(|v| ToolResult::json(&v))
+    b.call("ui.key", Value::Object(p))
+        .map(|v| ToolResult::json(&v))
 }
 
 fn type_text(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, String> {
@@ -814,6 +969,8 @@ fn type_text(b: &mut dyn Backend, a: &Map<String, Value>) -> Result<ToolResult, 
             let node = b.call("node.get", json!({"id": id, "depth": 0}))?;
             Ok(ToolResult::json(&json!({"ok": true, "node": node})))
         }
-        None => b.call("ui.type", json!({"text": text})).map(|v| ToolResult::json(&v)),
+        None => b
+            .call("ui.type", json!({"text": text}))
+            .map(|v| ToolResult::json(&v)),
     }
 }

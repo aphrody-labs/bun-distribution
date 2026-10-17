@@ -424,8 +424,14 @@ impl Engine3d {
         #[cfg(feature = "log")] logger: slog::Logger,
     ) -> Self {
         schedule.set_event(arm9::event_slots::GX_FIFO, arm9::Event::GxFifoStall);
-        schedule.set_event(arm9::event_slots::ENGINE_3D, arm9::Event::Engine3dCommandFinished);
-        emu_schedule.set_event(emu::event_slots::ENGINE_3D, emu::Event::Engine3dCommandFinished);
+        schedule.set_event(
+            arm9::event_slots::ENGINE_3D,
+            arm9::Event::Engine3dCommandFinished,
+        );
+        emu_schedule.set_event(
+            emu::event_slots::ENGINE_3D,
+            emu::Event::Engine3dCommandFinished,
+        );
 
         Engine3d {
             #[cfg(feature = "log")]
@@ -480,8 +486,11 @@ impl Engine3d {
             specular_color: i32x4::splat(0),
             emission_color: i32x4::splat(0),
             shininess_table: [0; 128],
-            lights: [Light { direction: [0; 3], half_vec: [0, 0, -0x100], color: i32x4::splat(0) };
-                4],
+            lights: [Light {
+                direction: [0; 3],
+                half_vec: [0, 0, -0x100],
+                color: i32x4::splat(0),
+            }; 4],
 
             next_poly_attrs: PolygonAttrs(0),
             cur_poly_attrs: PolygonAttrs(0),
@@ -553,7 +562,8 @@ impl Engine3d {
             _ => false,
         };
         if self.gx_fifo_irq_requested {
-            arm9.irqs.write_requested(arm9.irqs.requested().with_gx_fifo(true), &mut arm9.schedule);
+            arm9.irqs
+                .write_requested(arm9.irqs.requested().with_gx_fifo(true), &mut arm9.schedule);
         }
     }
 
@@ -646,12 +656,12 @@ impl Engine3d {
             0x11 | 0x12 => {
                 emu.gpu.engine_3d.queued_mtx_stack_cmds += 1;
                 emu.gpu.engine_3d.gx_status.set_matrix_stack_busy(true);
-            },
+            }
             0x70..=0x72 => {
                 emu.gpu.engine_3d.queued_test_cmd_entries += 1;
                 emu.gpu.engine_3d.gx_status.set_test_busy(true);
-            },
-            _ => {},
+            }
+            _ => {}
         }
 
         if !emu.gpu.engine_3d.gx_pipe.is_full() && emu.gpu.engine_3d.gx_fifo.is_empty() {
@@ -661,9 +671,9 @@ impl Engine3d {
             match emu.gpu.engine_3d.gx_status.fifo_irq_mode() {
                 1 => {
                     emu.gpu.engine_3d.gx_fifo_irq_requested = emu.gpu.engine_3d.gx_fifo.len() < 128;
-                },
+                }
                 2 => emu.gpu.engine_3d.gx_fifo_irq_requested = false,
-                _ => {},
+                _ => {}
             }
             if emu.gpu.engine_3d.gx_fifo.len() > 256 {
                 if !emu.gpu.engine_3d.gx_fifo_stalled {
@@ -678,7 +688,9 @@ impl Engine3d {
                             emu.gpu.engine_3d.command_finish_time,
                         );
                     }
-                    emu.arm9.schedule.schedule_event(arm9::event_slots::GX_FIFO, cur_time);
+                    emu.arm9
+                        .schedule
+                        .schedule_event(arm9::event_slots::GX_FIFO, cur_time);
                 }
                 return;
             }
@@ -690,8 +702,11 @@ impl Engine3d {
 
     fn write_unpacked_command(emu: &mut Emu<impl cpu::Engine>, command: u8, param: u32) {
         if emu.gpu.engine_3d.remaining_command_params == 0 {
-            emu.gpu.engine_3d.remaining_command_params =
-                emu.gpu.engine_3d.params_for_command(command).saturating_sub(1);
+            emu.gpu.engine_3d.remaining_command_params = emu
+                .gpu
+                .engine_3d
+                .params_for_command(command)
+                .saturating_sub(1);
         } else {
             emu.gpu.engine_3d.remaining_command_params -= 1;
         }
@@ -710,7 +725,13 @@ impl Engine3d {
                     emu.gpu.engine_3d.remaining_command_params = next_command_params;
                     break;
                 }
-                Self::write_to_gx_fifo(emu, FifoEntry { command: next_command, param: 0 });
+                Self::write_to_gx_fifo(
+                    emu,
+                    FifoEntry {
+                        command: next_command,
+                        param: 0,
+                    },
+                );
             };
         }
 
@@ -726,7 +747,13 @@ impl Engine3d {
         } else {
             {
                 let command = emu.gpu.engine_3d.cur_packed_commands as u8;
-                Self::write_to_gx_fifo(emu, FifoEntry { command, param: value });
+                Self::write_to_gx_fifo(
+                    emu,
+                    FifoEntry {
+                        command,
+                        param: value,
+                    },
+                );
                 emu.gpu.engine_3d.remaining_command_params -= 1;
                 if emu.gpu.engine_3d.remaining_command_params > 0 {
                     return;
@@ -758,14 +785,19 @@ impl Engine3d {
         }
         emu.gpu.engine_3d.update_gx_fifo_irq(&mut emu.arm9);
         if emu.gpu.engine_3d.gx_fifo_half_empty() {
-            emu.arm9.start_dma_transfers_with_timing::<{ arm9::dma::Timing::GxFifo }>();
+            emu.arm9
+                .start_dma_transfers_with_timing::<{ arm9::dma::Timing::GxFifo }>();
         }
 
         let was_stalled = emu.gpu.engine_3d.gx_fifo_stalled;
         emu.gpu.engine_3d.gx_fifo_stalled &= emu.gpu.engine_3d.gx_fifo.len() > 256;
         if was_stalled
             && !emu.gpu.engine_3d.gx_fifo_stalled
-            && emu.arm9.schedule.schedule().is_scheduled(arm9::event_slots::GX_FIFO)
+            && emu
+                .arm9
+                .schedule
+                .schedule()
+                .is_scheduled(arm9::event_slots::GX_FIFO)
         {
             emu.arm9.schedule.cancel_event(arm9::event_slots::GX_FIFO);
         }
@@ -781,18 +813,18 @@ impl Engine3d {
             MatrixMode::Projection => {
                 self.cur_proj_mtx = matrix;
                 self.clip_mtx_needs_recalculation = true;
-            },
+            }
 
             MatrixMode::Position => {
                 self.cur_pos_vec_mtxs[0] = matrix;
                 self.clip_mtx_needs_recalculation = true;
-            },
+            }
 
             MatrixMode::PositionVector => {
                 self.cur_pos_vec_mtxs[0] = matrix;
                 self.cur_pos_vec_mtxs[1] = matrix;
                 self.clip_mtx_needs_recalculation = true;
-            },
+            }
 
             MatrixMode::Texture => self.cur_tex_mtx = matrix,
         }
@@ -813,7 +845,9 @@ impl Engine3d {
                 .direction
                 .iter()
                 .zip(normal.iter())
-                .fold(0_i32, |acc, (a, b)| acc.wrapping_add((*a as i64 * *b as i64) as i32)))
+                .fold(0_i32, |acc, (a, b)| {
+                    acc.wrapping_add((*a as i64 * *b as i64) as i32)
+                }))
                 >> 9)
                 .max(0);
 
@@ -821,7 +855,9 @@ impl Engine3d {
                 .half_vec
                 .iter()
                 .zip(normal.iter())
-                .fold(0_i32, |acc, (a, b)| acc.wrapping_add((*a as i64 * *b as i64) as i32)))
+                .fold(0_i32, |acc, (a, b)| {
+                    acc.wrapping_add((*a as i64 * *b as i64) as i32)
+                }))
                 >> 9)
                 .max(0);
             if shininess_level >= 0x200 {
@@ -842,7 +878,9 @@ impl Engine3d {
 
     fn add_vert(&mut self, coords: [i16; 3]) {
         if self.poly_ram_level as usize == self.poly_ram.len() {
-            self.rendering_state.control.set_poly_vert_ram_overflow(true);
+            self.rendering_state
+                .control
+                .set_poly_vert_ram_overflow(true);
             return;
         }
 
@@ -855,7 +893,10 @@ impl Engine3d {
         let transformed_coords = self.cur_clip_mtx.mul_left_vec3::<i16, i32>(coords);
 
         if self.tex_params.coord_transform_mode() == 3 {
-            let [u, v, ..] = self.cur_tex_mtx.mul_left_vec3_zero::<i16, i16, 24>(coords).to_array();
+            let [u, v, ..] = self
+                .cur_tex_mtx
+                .mul_left_vec3_zero::<i16, i16, 24>(coords)
+                .to_array();
             self.transformed_tex_coords = self.tex_coords + TexCoords::from_array([u, v]);
         }
 
@@ -880,19 +921,19 @@ impl Engine3d {
         match self.cur_prim_type {
             PrimitiveType::Triangles | PrimitiveType::Quads => {
                 self.cur_prim_vert_index = PrimVertIndex::new(0);
-            },
+            }
 
             PrimitiveType::TriangleStrip => {
                 self.cur_prim_verts[self.cur_strip_prim_is_odd as usize] = self.cur_prim_verts[2];
                 self.cur_prim_vert_index = PrimVertIndex::new(2);
                 self.cur_strip_prim_is_odd = !self.cur_strip_prim_is_odd;
-            },
+            }
 
             PrimitiveType::QuadStrip => {
                 self.cur_prim_verts.copy_within(2.., 0);
                 self.cur_prim_verts.swap(0, 1);
                 self.cur_prim_vert_index = PrimVertIndex::new(2);
-            },
+            }
         }
     }
 
@@ -1076,15 +1117,19 @@ impl Engine3d {
         if self.vert_ram_level as usize
             > self.vert_ram.len() - (clipped_verts_len.get() as usize - shared_verts_len)
         {
-            self.rendering_state.control.set_poly_vert_ram_overflow(true);
+            self.rendering_state
+                .control
+                .set_poly_vert_ram_overflow(true);
             self.connect_to_last_strip_prim = false;
             return;
         }
 
         let connect_to_last_strip_prim = replace(
             &mut self.connect_to_last_strip_prim,
-            matches!(self.cur_prim_type, PrimitiveType::TriangleStrip | PrimitiveType::QuadStrip)
-                && !clipped,
+            matches!(
+                self.cur_prim_type,
+                PrimitiveType::TriangleStrip | PrimitiveType::QuadStrip
+            ) && !clipped,
         );
 
         let is_translucent = matches!(self.cur_poly_attrs.alpha(), 1..=30)
@@ -1130,7 +1175,10 @@ impl Engine3d {
                 }
                 ((unsafe {
                     // Safety: w != 0
-                    simd_div(coords.cast::<u64>() * viewport_size, u64x2::splat((w << 1) as u64))
+                    simd_div(
+                        coords.cast::<u64>() * viewport_size,
+                        u64x2::splat((w << 1) as u64),
+                    )
                 }
                 .cast::<u32>()
                     + viewport_origin)
@@ -1223,13 +1271,13 @@ impl Engine3d {
                     } else {
                         [poly.verts[2], poly.verts[1]]
                     };
-                },
+                }
 
                 PrimitiveType::QuadStrip => {
                     self.last_strip_prim_vert_indices = [poly.verts[3], poly.verts[2]];
-                },
+                }
 
-                _ => {},
+                _ => {}
             }
         }
     }
@@ -1265,7 +1313,12 @@ impl Engine3d {
         for x in 0..2 {
             if self
                 .clip_polygon(
-                    &[coords[x << 2], coords[x << 2 | 1], coords[x << 2 | 3], coords[x << 2 | 2]],
+                    &[
+                        coords[x << 2],
+                        coords[x << 2 | 1],
+                        coords[x << 2 | 3],
+                        coords[x << 2 | 2],
+                    ],
                     0,
                     &mut clip_buffer,
                 )
@@ -1278,7 +1331,12 @@ impl Engine3d {
         for y in 0..2 {
             if self
                 .clip_polygon(
-                    &[coords[y << 1], coords[y << 1 | 1], coords[y << 1 | 5], coords[y << 1 | 4]],
+                    &[
+                        coords[y << 1],
+                        coords[y << 1 | 1],
+                        coords[y << 1 | 5],
+                        coords[y << 1 | 4],
+                    ],
                     0,
                     &mut clip_buffer,
                 )
@@ -1322,7 +1380,12 @@ impl Engine3d {
             // - Bottom Y (lower first)
             // - Top Y (lower first)
             // - Submit order (thus needing a stable sort)
-            if emu.gpu.engine_3d.swap_buffers_attrs.translucent_auto_sort_disabled() {
+            if emu
+                .gpu
+                .engine_3d
+                .swap_buffers_attrs
+                .translucent_auto_sort_disabled()
+            {
                 emu.gpu.engine_3d.poly_ram[..emu.gpu.engine_3d.poly_ram_level as usize]
                     .sort_by_key(|poly| {
                         if poly.attrs.is_translucent() {
@@ -1404,8 +1467,10 @@ impl Engine3d {
             }
 
             let prev_gx_pipe_len = emu.gpu.engine_3d.gx_pipe.len();
-            let FifoEntry { command, param: first_param } =
-                unsafe { emu.gpu.engine_3d.gx_pipe.peek_unchecked() };
+            let FifoEntry {
+                command,
+                param: first_param,
+            } = unsafe { emu.gpu.engine_3d.gx_pipe.peek_unchecked() };
 
             if command == 0 {
                 unsafe {
@@ -1451,7 +1516,7 @@ impl Engine3d {
                     // MTX_MODE
                     emu.gpu.engine_3d.mtx_mode =
                         unsafe { transmute::<u8, MatrixMode>(first_param as u8 & 3) };
-                },
+                }
 
                 0x11 => {
                     // MTX_PUSH
@@ -1462,7 +1527,7 @@ impl Engine3d {
                             }
                             emu.gpu.engine_3d.proj_stack = emu.gpu.engine_3d.cur_proj_mtx;
                             emu.gpu.engine_3d.proj_stack_pointer = true;
-                        },
+                        }
 
                         MatrixMode::Position | MatrixMode::PositionVector => {
                             if emu.gpu.engine_3d.pos_vec_stack_pointer >= 31 {
@@ -1473,14 +1538,14 @@ impl Engine3d {
                                 emu.gpu.engine_3d.cur_pos_vec_mtxs;
                             emu.gpu.engine_3d.pos_vec_stack_pointer =
                                 (emu.gpu.engine_3d.pos_vec_stack_pointer + 1).min(63);
-                        },
+                        }
 
                         MatrixMode::Texture => {
                             emu.gpu.engine_3d.tex_stack = emu.gpu.engine_3d.cur_tex_mtx;
-                        },
+                        }
                     }
                     dequeue_mtx_stack_cmd!();
-                },
+                }
 
                 0x12 => {
                     // MTX_POP
@@ -1489,7 +1554,7 @@ impl Engine3d {
                             emu.gpu.engine_3d.proj_stack_pointer = false;
                             emu.gpu.engine_3d.cur_proj_mtx = emu.gpu.engine_3d.proj_stack;
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position | MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.pos_vec_stack_pointer =
@@ -1502,21 +1567,21 @@ impl Engine3d {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs = emu.gpu.engine_3d.pos_vec_stack
                                 [(emu.gpu.engine_3d.pos_vec_stack_pointer & 31) as usize];
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => {
                             emu.gpu.engine_3d.cur_tex_mtx = emu.gpu.engine_3d.tex_stack;
-                        },
+                        }
                     }
                     dequeue_mtx_stack_cmd!();
-                },
+                }
 
                 0x13 => {
                     // MTX_STORE
                     match emu.gpu.engine_3d.mtx_mode {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.proj_stack = emu.gpu.engine_3d.cur_proj_mtx;
-                        },
+                        }
 
                         MatrixMode::Position | MatrixMode::PositionVector => {
                             let addr = first_param as u8 & 31;
@@ -1525,13 +1590,13 @@ impl Engine3d {
                             }
                             emu.gpu.engine_3d.pos_vec_stack[addr as usize] =
                                 emu.gpu.engine_3d.cur_pos_vec_mtxs;
-                        },
+                        }
 
                         MatrixMode::Texture => {
                             emu.gpu.engine_3d.tex_stack = emu.gpu.engine_3d.cur_tex_mtx;
-                        },
+                        }
                     }
-                },
+                }
 
                 0x14 => {
                     // MTX_RESTORE
@@ -1539,7 +1604,7 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx = emu.gpu.engine_3d.proj_stack;
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position | MatrixMode::PositionVector => {
                             let addr = first_param as u8 & 31;
@@ -1549,13 +1614,13 @@ impl Engine3d {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs =
                                 emu.gpu.engine_3d.pos_vec_stack[addr as usize];
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => {
                             emu.gpu.engine_3d.cur_tex_mtx = emu.gpu.engine_3d.tex_stack;
-                        },
+                        }
                     }
-                },
+                }
 
                 0x15 => {
                     // MTX_IDENTITY
@@ -1563,22 +1628,22 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx = Matrix::identity();
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0] = Matrix::identity();
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0] = Matrix::identity();
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[1] = Matrix::identity();
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx = Matrix::identity(),
                     }
-                },
+                }
 
                 0x16 => {
                     // MTX_LOAD_4x4
@@ -1589,7 +1654,7 @@ impl Engine3d {
                             entry.param as i32);
                     }
                     emu.gpu.engine_3d.load_matrix(Matrix::new(contents));
-                },
+                }
 
                 0x17 => {
                     // MTX_LOAD_4x3
@@ -1604,7 +1669,7 @@ impl Engine3d {
                         );
                     }
                     emu.gpu.engine_3d.load_matrix(Matrix::new(contents));
-                },
+                }
 
                 0x18 => {
                     // MTX_MULT_4x4
@@ -1619,22 +1684,22 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx.mul_left_4x4(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_4x4(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_4x4(contents);
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[1].mul_left_4x4(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx.mul_left_4x4(contents),
                     }
-                },
+                }
 
                 0x19 => {
                     // MTX_MULT_4x3
@@ -1649,22 +1714,22 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx.mul_left_4x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_4x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_4x3(contents);
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[1].mul_left_4x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx.mul_left_4x3(contents),
                     }
-                },
+                }
 
                 0x1A => {
                     // MTX_MULT_3x3
@@ -1679,22 +1744,22 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx.mul_left_3x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_3x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].mul_left_3x3(contents);
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[1].mul_left_3x3(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx.mul_left_3x3(contents),
                     }
-                },
+                }
 
                 0x1B => {
                     // MTX_SCALE
@@ -1708,16 +1773,16 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx.scale(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position | MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].scale(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx.scale(contents),
                     }
-                },
+                }
                 0x1C => {
                     // MTX_TRANS
                     let mut contents = [first_param as i32, 0, 0];
@@ -1730,27 +1795,27 @@ impl Engine3d {
                         MatrixMode::Projection => {
                             emu.gpu.engine_3d.cur_proj_mtx.translate(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Position => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].translate(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::PositionVector => {
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[0].translate(contents);
                             emu.gpu.engine_3d.cur_pos_vec_mtxs[1].translate(contents);
                             emu.gpu.engine_3d.clip_mtx_needs_recalculation = true;
-                        },
+                        }
 
                         MatrixMode::Texture => emu.gpu.engine_3d.cur_tex_mtx.translate(contents),
                     }
-                },
+                }
 
                 0x20 => {
                     // COLOR
                     emu.gpu.engine_3d.vert_color = rgb5_to_rgb6(decode_rgb5(first_param as u16, 0));
-                },
+                }
 
                 0x21 => {
                     // NORMAL
@@ -1772,7 +1837,7 @@ impl Engine3d {
                     }
 
                     emu.gpu.engine_3d.apply_lighting();
-                },
+                }
 
                 0x22 => {
                     // TEXCOORD
@@ -1782,7 +1847,7 @@ impl Engine3d {
                     match emu.gpu.engine_3d.tex_params.coord_transform_mode() {
                         0 => {
                             emu.gpu.engine_3d.transformed_tex_coords = emu.gpu.engine_3d.tex_coords;
-                        },
+                        }
                         1 => {
                             let [u, v, ..] = emu
                                 .gpu
@@ -1792,10 +1857,10 @@ impl Engine3d {
                                 .to_array();
                             emu.gpu.engine_3d.transformed_tex_coords =
                                 TexCoords::from_array([u, v]);
-                        },
-                        _ => {},
+                        }
+                        _ => {}
                     }
-                },
+                }
 
                 0x23 => {
                     // VTX_16
@@ -1805,7 +1870,7 @@ impl Engine3d {
                         (first_param >> 16) as i16,
                         second_param as i16,
                     ]);
-                },
+                }
 
                 0x24 => {
                     // VTX_10
@@ -1814,7 +1879,7 @@ impl Engine3d {
                         ((first_param >> 10) as i16) << 6,
                         ((first_param >> 20) as i16) << 6,
                     ]);
-                },
+                }
                 0x25 => {
                     // VTX_XY
                     emu.gpu.engine_3d.add_vert([
@@ -1822,7 +1887,7 @@ impl Engine3d {
                         (first_param >> 16) as i16,
                         emu.gpu.engine_3d.last_vtx_coords[2],
                     ]);
-                },
+                }
                 0x26 => {
                     // VTX_XZ
                     emu.gpu.engine_3d.add_vert([
@@ -1830,7 +1895,7 @@ impl Engine3d {
                         emu.gpu.engine_3d.last_vtx_coords[1],
                         (first_param >> 16) as i16,
                     ]);
-                },
+                }
 
                 0x27 => {
                     // VTX_YZ
@@ -1839,7 +1904,7 @@ impl Engine3d {
                         first_param as i16,
                         (first_param >> 16) as i16,
                     ]);
-                },
+                }
 
                 0x28 => {
                     // VTX_DIFF
@@ -1851,22 +1916,22 @@ impl Engine3d {
                         emu.gpu.engine_3d.last_vtx_coords[2]
                             .wrapping_add((first_param >> 14) as i16 >> 6),
                     ]);
-                },
+                }
 
                 0x29 => {
                     // POLYGON_ATTR
                     emu.gpu.engine_3d.next_poly_attrs = PolygonAttrs(first_param);
-                },
+                }
 
                 0x2A => {
                     // TEXIMAGE_PARAM
                     emu.gpu.engine_3d.tex_params = TextureParams(first_param);
-                },
+                }
 
                 0x2B => {
                     // PLTT_BASE
                     emu.gpu.engine_3d.tex_palette_base = first_param as u16 & 0x1FFF;
-                },
+                }
 
                 0x30 => {
                     // DIF_AMB
@@ -1877,7 +1942,7 @@ impl Engine3d {
                     if first_param & 1 << 15 != 0 {
                         emu.gpu.engine_3d.vert_color = rgb5_to_rgb6(diffuse_color);
                     }
-                },
+                }
 
                 0x31 => {
                     // SPE_EMI
@@ -1885,7 +1950,7 @@ impl Engine3d {
                     emu.gpu.engine_3d.emission_color =
                         decode_rgb5((first_param >> 16) as u16, 0).cast();
                     emu.gpu.engine_3d.shininess_table_enabled = first_param & 1 << 15 != 0;
-                },
+                }
 
                 0x32 => {
                     // LIGHT_VECTOR
@@ -1898,15 +1963,18 @@ impl Engine3d {
                         .to_array();
                     let light = &mut emu.gpu.engine_3d.lights[(first_param >> 30) as usize];
                     light.direction = [transformed[0], transformed[1], transformed[2]];
-                    light.half_vec =
-                        [transformed[0] >> 1, transformed[1] >> 1, (transformed[2] - 0x200) >> 1];
-                },
+                    light.half_vec = [
+                        transformed[0] >> 1,
+                        transformed[1] >> 1,
+                        (transformed[2] - 0x200) >> 1,
+                    ];
+                }
 
                 0x33 => {
                     // LIGHT_COLOR
                     emu.gpu.engine_3d.lights[(first_param >> 30) as usize].color =
                         decode_rgb5(first_param as u16, 0).cast();
-                },
+                }
 
                 0x34 => {
                     // SHININESS
@@ -1922,7 +1990,7 @@ impl Engine3d {
                             emu.gpu.engine_3d.shininess_table[i + 3] = (entry.param >> 24) as u8;
                         });
                     }
-                },
+                }
 
                 0x40 => {
                     // BEGIN_VTXS
@@ -1933,17 +2001,17 @@ impl Engine3d {
                     emu.gpu.engine_3d.cur_prim_max_verts = match emu.gpu.engine_3d.cur_prim_type {
                         PrimitiveType::Triangles | PrimitiveType::TriangleStrip => {
                             PrimMaxVerts::new(3)
-                        },
+                        }
                         PrimitiveType::Quads | PrimitiveType::QuadStrip => PrimMaxVerts::new(4),
                     };
                     emu.gpu.engine_3d.cur_strip_prim_is_odd = false;
                     emu.gpu.engine_3d.connect_to_last_strip_prim = false;
-                },
+                }
 
                 0x41 => {
                     // END_VTXS
                     // Should do nothing according to GBATEK
-                },
+                }
 
                 0x50 => {
                     // SWAP_BUFFERS
@@ -1954,7 +2022,7 @@ impl Engine3d {
                     // Gets unlocked by the GPU when VBlank starts
                     emu.gpu.engine_3d.command_finish_time.0 = RawTimestamp::MAX;
                     return;
-                },
+                }
 
                 0x60 => {
                     // VIEWPORT
@@ -1971,7 +2039,7 @@ impl Engine3d {
                         y1.wrapping_sub(y0_unmasked).wrapping_add(1) & 0xFF,
                     ])
                     .cast();
-                },
+                }
 
                 0x70 => {
                     // BOX_TEST
@@ -1979,12 +2047,14 @@ impl Engine3d {
                     let result = unsafe {
                         let second_param = read_from_gx_pipe!().param;
                         let third_param = read_from_gx_pipe!().param;
-                        emu.gpu.engine_3d.box_test(first_param, second_param, third_param)
+                        emu.gpu
+                            .engine_3d
+                            .box_test(first_param, second_param, third_param)
                     };
                     emu.gpu.engine_3d.gx_status.set_box_test_result(result);
 
                     dequeue_test_cmd_entries!(3);
-                },
+                }
 
                 0x71 => {
                     // POS_TEST
@@ -1994,8 +2064,11 @@ impl Engine3d {
                     }
 
                     let second_param = unsafe { read_from_gx_pipe!() }.param;
-                    emu.gpu.engine_3d.last_vtx_coords =
-                        [first_param as i16, (first_param >> 16) as i16, second_param as i16];
+                    emu.gpu.engine_3d.last_vtx_coords = [
+                        first_param as i16,
+                        (first_param >> 16) as i16,
+                        second_param as i16,
+                    ];
                     let transformed_coords = emu
                         .gpu
                         .engine_3d
@@ -2004,7 +2077,7 @@ impl Engine3d {
                     emu.gpu.engine_3d.pos_test_result = transformed_coords.cast().to_array();
 
                     dequeue_test_cmd_entries!(2);
-                },
+                }
 
                 0x72 => {
                     // VEC_TEST
@@ -2020,13 +2093,16 @@ impl Engine3d {
                         >> 3)
                         .cast()
                         .to_array();
-                    emu.gpu.engine_3d.vec_test_result =
-                        [transformed_normal[0], transformed_normal[1], transformed_normal[2]];
+                    emu.gpu.engine_3d.vec_test_result = [
+                        transformed_normal[0],
+                        transformed_normal[1],
+                        transformed_normal[2],
+                    ];
 
                     dequeue_test_cmd_entries!(1);
-                },
+                }
 
-                _ => {},
+                _ => {}
             }
 
             Self::refill_gx_pipe_and_update_gx_fifo(

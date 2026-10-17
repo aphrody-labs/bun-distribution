@@ -117,7 +117,11 @@ pub fn stats(img: &Image, skin_protect: bool) -> Stats {
             continue;
         }
         let lab = oklab([p[0] / p[3], p[1] / p[3], p[2] / p[3]]);
-        let cw = if skin_protect { 1.0 - 0.8 * skin_weight(lab) } else { 1.0 } as f64;
+        let cw = if skin_protect {
+            1.0 - 0.8 * skin_weight(lab)
+        } else {
+            1.0
+        } as f64;
         let w = tonal_weights(lab[0]);
         for k in 0..3 {
             cwsum[k] += w[k] as f64 * cw;
@@ -127,10 +131,23 @@ pub fn stats(img: &Image, skin_protect: bool) -> Stats {
     let bands = std::array::from_fn(|k| {
         let w = acc[k][0].max(1e-9);
         let cw = cwsum[k].max(1e-9);
-        [(acc[k][0] / n) as f32, (acc[k][1] / w) as f32, (acc[k][2] / cw) as f32, (acc[k][3] / cw) as f32]
+        [
+            (acc[k][0] / n) as f32,
+            (acc[k][1] / w) as f32,
+            (acc[k][2] / cw) as f32,
+            (acc[k][3] / cw) as f32,
+        ]
     });
     let sw = skin[2].max(1e-9);
-    Stats { bands, chroma: (chroma.0 / chroma.1.max(1e-9)) as f32, skin: [(skin[0] / sw) as f32, (skin[1] / sw) as f32, (skin[2] / n) as f32] }
+    Stats {
+        bands,
+        chroma: (chroma.0 / chroma.1.max(1e-9)) as f32,
+        skin: [
+            (skin[0] / sw) as f32,
+            (skin[1] / sw) as f32,
+            (skin[2] / n) as f32,
+        ],
+    }
 }
 
 /// Residuals between graded statistics and the reference's (bands weighted by how much of both
@@ -138,7 +155,9 @@ pub fn stats(img: &Image, skin_protect: bool) -> Stats {
 fn residuals(cur: &Stats, refs: &Stats) -> Vec<f32> {
     let mut r = Vec::with_capacity(10);
     for k in 0..3 {
-        let w = (cur.bands[k][0].min(refs.bands[k][0]) * 3.0).clamp(0.0, 1.0).sqrt();
+        let w = (cur.bands[k][0].min(refs.bands[k][0]) * 3.0)
+            .clamp(0.0, 1.0)
+            .sqrt();
         r.push((cur.bands[k][1] - refs.bands[k][1]) * w);
         r.push((cur.bands[k][2] - refs.bands[k][2]) * w * 2.0);
         r.push((cur.bands[k][3] - refs.bands[k][3]) * w * 2.0);
@@ -166,12 +185,24 @@ pub struct Match {
 fn set_params(base: &EffectInstance, x: &[f32; 10]) -> EffectInstance {
     let mut e = base.clone();
     let mut put = |id: &str, v: ParamValue| {
-        let prm = e.params.entry(id.to_string()).or_insert_with(|| filmcraft_project::Param::new(v.clone()));
+        let prm = e
+            .params
+            .entry(id.to_string())
+            .or_insert_with(|| filmcraft_project::Param::new(v.clone()));
         prm.value = v;
     };
-    put("wheel_shadows", ParamValue::Vec2(Vec2::new(x[0] as f64, x[1] as f64)));
-    put("wheel_midtones", ParamValue::Vec2(Vec2::new(x[2] as f64, x[3] as f64)));
-    put("wheel_highlights", ParamValue::Vec2(Vec2::new(x[4] as f64, x[5] as f64)));
+    put(
+        "wheel_shadows",
+        ParamValue::Vec2(Vec2::new(x[0] as f64, x[1] as f64)),
+    );
+    put(
+        "wheel_midtones",
+        ParamValue::Vec2(Vec2::new(x[2] as f64, x[3] as f64)),
+    );
+    put(
+        "wheel_highlights",
+        ParamValue::Vec2(Vec2::new(x[4] as f64, x[5] as f64)),
+    );
     put("wheel_shadows_l", ParamValue::Float(x[6] as f64 * 100.0));
     put("wheel_midtones_l", ParamValue::Float(x[7] as f64 * 100.0));
     put("wheel_highlights_l", ParamValue::Float(x[8] as f64 * 100.0));
@@ -201,14 +232,20 @@ fn graded_stats(img: &Image, base: &EffectInstance, x: &[f32; 10], skin_protect:
 
 /// Solve the grade that matches `current` (the clip before its wheels) to `reference`. `base` is
 /// the clip's Lumetri instance (its other settings are kept; wheels and saturation are solved).
-pub fn solve(current: &Image, reference: &Image, base: &EffectInstance, skin_protect: bool) -> Match {
+pub fn solve(
+    current: &Image,
+    reference: &Image,
+    base: &EffectInstance,
+    skin_protect: bool,
+) -> Match {
     let cur = shrink(current, 96);
     let refs = stats(&shrink(reference, 96), skin_protect);
     let mut x = [0f32; 10];
     let lambda_reg = 0.02f32;
     let cost = |x: &[f32; 10]| -> (Vec<f32>, f32) {
         let r = residuals(&graded_stats(&cur, base, x, skin_protect), &refs);
-        let c = r.iter().map(|v| v * v).sum::<f32>() + lambda_reg * lambda_reg * x.iter().map(|v| v * v).sum::<f32>();
+        let c = r.iter().map(|v| v * v).sum::<f32>()
+            + lambda_reg * lambda_reg * x.iter().map(|v| v * v).sum::<f32>();
         (r, c)
     };
     let (mut r, mut c) = cost(&x);
@@ -241,7 +278,9 @@ pub fn solve(current: &Image, reference: &Image, base: &EffectInstance, skin_pro
             g[p] += (lambda_reg * lambda_reg * x[p]) as f64;
             a[p][p] += (lambda_reg * lambda_reg) as f64 + mu as f64 * (1.0 + a[p][p]);
         }
-        let Some(dx) = solve_linear(a, g.map(|v| -v)) else { break };
+        let Some(dx) = solve_linear(a, g.map(|v| -v)) else {
+            break;
+        };
         let mut xn = x;
         for p in 0..10 {
             xn[p] = (x[p] + dx[p] as f32).clamp(-1.0, 1.0);
@@ -373,9 +412,17 @@ mod tests {
     fn oklab_reference_values() {
         // Ottosson's published table: white → (1, 0, 0); sRGB red → (0.6279, 0.2249, 0.1258)
         let w = oklab([1.0, 1.0, 1.0]);
-        assert!((w[0] - 1.0).abs() < 1e-3 && w[1].abs() < 1e-3 && w[2].abs() < 1e-3, "{w:?}");
+        assert!(
+            (w[0] - 1.0).abs() < 1e-3 && w[1].abs() < 1e-3 && w[2].abs() < 1e-3,
+            "{w:?}"
+        );
         let r = oklab([1.0, 0.0, 0.0]);
-        assert!((r[0] - 0.6279).abs() < 2e-3 && (r[1] - 0.2249).abs() < 2e-3 && (r[2] - 0.1258).abs() < 2e-3, "{r:?}");
+        assert!(
+            (r[0] - 0.6279).abs() < 2e-3
+                && (r[1] - 0.2249).abs() < 2e-3
+                && (r[2] - 0.1258).abs() < 2e-3,
+            "{r:?}"
+        );
         let w = tonal_weights(0.1);
         assert!(w[0] > 0.99 && w[2] == 0.0);
         assert!(skin_weight(oklab([0.55, 0.32, 0.22])) > 0.9);
@@ -391,7 +438,10 @@ mod tests {
         for v in m.shadows.iter().chain(&m.midtones).chain(&m.highlights) {
             assert!(v.abs() < 0.02, "{m:?}");
         }
-        assert!(m.lightness.iter().all(|v| v.abs() < 2.0) && (m.saturation - 100.0).abs() < 2.0, "{m:?}");
+        assert!(
+            m.lightness.iter().all(|v| v.abs() < 2.0) && (m.saturation - 100.0).abs() < 2.0,
+            "{m:?}"
+        );
     }
 
     #[test]
@@ -421,7 +471,12 @@ mod tests {
         let want = stats(&reference, false);
         for k in 0..3 {
             for c in 1..4 {
-                assert!((out.bands[k][c] - want.bands[k][c]).abs() < 0.02, "band {k} channel {c}: {:?} vs {:?}", out.bands[k], want.bands[k]);
+                assert!(
+                    (out.bands[k][c] - want.bands[k][c]).abs() < 0.02,
+                    "band {k} channel {c}: {:?} vs {:?}",
+                    out.bands[k],
+                    want.bands[k]
+                );
             }
         }
     }
@@ -431,7 +486,11 @@ mod tests {
         let base = find_effect("lumetri").unwrap().instance();
         let f = frame(true);
         // a strong green/teal cast reference
-        let reference = graded(&f, &base, [-0.6, 0.5, -0.6, 0.5, -0.5, 0.4, 0.0, 0.0, 0.0, 0.0]);
+        let reference = graded(
+            &f,
+            &base,
+            [-0.6, 0.5, -0.6, 0.5, -0.5, 0.4, 0.0, 0.0, 0.0, 0.0],
+        );
         let hue = |img: &Image| {
             let s = stats(img, true);
             s.skin[1].atan2(s.skin[0]).to_degrees()

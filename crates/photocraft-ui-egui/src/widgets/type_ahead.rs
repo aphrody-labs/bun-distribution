@@ -17,7 +17,8 @@ fn open_id() -> Id {
 /// option instead of a tool, ↩ closes the list instead of committing something on the canvas.
 pub fn list_open(ctx: &egui::Context) -> bool {
     let pass = ctx.cumulative_pass_nr();
-    ctx.data(|d| d.get_temp::<u64>(open_id())).is_some_and(|seen| seen.saturating_add(2) >= pass)
+    ctx.data(|d| d.get_temp::<u64>(open_id()))
+        .is_some_and(|seen| seen.saturating_add(2) >= pass)
 }
 
 /// The keys of the open list of dropdown `id`, called while drawing the list, before its rows:
@@ -30,7 +31,9 @@ pub fn keys(ui: &mut Ui, id: Id, current: Option<usize>, labels: &[&str]) -> Opt
     // A list opened anew starts with no letters typed.
     let shown_id = key.with("pass");
     ui.data_mut(|d| {
-        if d.get_temp::<u64>(shown_id).is_none_or(|seen| seen.saturating_add(2) < pass) {
+        if d.get_temp::<u64>(shown_id)
+            .is_none_or(|seen| seen.saturating_add(2) < pass)
+        {
             d.remove::<(String, f64)>(key);
         }
         d.insert_temp(shown_id, pass);
@@ -52,7 +55,9 @@ pub fn keys(ui: &mut Ui, id: Id, current: Option<usize>, labels: &[&str]) -> Opt
     if typed.is_empty() {
         return None;
     }
-    let (mut prefix, last) = ui.data(|d| d.get_temp::<(String, f64)>(key)).unwrap_or_default();
+    let (mut prefix, last) = ui
+        .data(|d| d.get_temp::<(String, f64)>(key))
+        .unwrap_or_default();
     // A pause (or a clock that went backwards) starts over.
     if !(now >= last && now - last <= PAUSE) {
         prefix.clear();
@@ -91,10 +96,16 @@ fn find(lower: &[String], prefix: &str, from: Option<usize>) -> Option<usize> {
     }
     let mut chars = prefix.chars();
     let first = chars.next()?;
-    let (needle, skip) = if chars.all(|c| c == first) { (first.to_string(), 1) } else { (prefix.to_string(), 0) };
+    let (needle, skip) = if chars.all(|c| c == first) {
+        (first.to_string(), 1)
+    } else {
+        (prefix.to_string(), 0)
+    };
     // Without a shown option the search starts at the top, the first match included.
     let start = from.map_or(0, |f| f.saturating_add(skip)) % n;
-    (0..n).map(|k| start.saturating_add(k) % n).find(|&i| lower.get(i).is_some_and(|l| l.starts_with(&needle)))
+    (0..n)
+        .map(|k| start.saturating_add(k) % n)
+        .find(|&i| lower.get(i).is_some_and(|l| l.starts_with(&needle)))
 }
 
 #[cfg(test)]
@@ -107,20 +118,40 @@ mod tests {
 
     #[test]
     fn a_letter_cycles_and_a_prefix_narrows() {
-        let l = labels(&["Normal", "Dissolve", "Darken", "Multiply", "Darker Color", "Lighten", "Linear Burn"]);
+        let l = labels(&[
+            "Normal",
+            "Dissolve",
+            "Darken",
+            "Multiply",
+            "Darker Color",
+            "Lighten",
+            "Linear Burn",
+        ]);
         assert_eq!(find(&l, "d", Some(0)), Some(1));
         assert_eq!(find(&l, "dd", Some(1)), Some(2));
         assert_eq!(find(&l, "ddd", Some(2)), Some(4));
-        assert_eq!(find(&l, "dddd", Some(4)), Some(1), "wraps to the first match");
+        assert_eq!(
+            find(&l, "dddd", Some(4)),
+            Some(1),
+            "wraps to the first match"
+        );
         assert_eq!(find(&l, "da", Some(1)), Some(2));
-        assert_eq!(find(&l, "darke", Some(2)), Some(2), "keeps the shown option while it matches");
+        assert_eq!(
+            find(&l, "darke", Some(2)),
+            Some(2),
+            "keeps the shown option while it matches"
+        );
         assert_eq!(find(&l, "darker", Some(2)), Some(4));
         assert_eq!(find(&l, "linear b", Some(5)), Some(6));
         assert_eq!(find(&l, "x", Some(0)), None);
         assert_eq!(find(&l, "d", None), Some(1));
         assert_eq!(find(&[], "d", Some(0)), None);
         assert_eq!(find(&l, "", Some(0)), None);
-        assert_eq!(find(&l, "n", Some(usize::MAX)), Some(0), "an index past the end doesn't panic");
+        assert_eq!(
+            find(&l, "n", Some(usize::MAX)),
+            Some(0),
+            "an index past the end doesn't panic"
+        );
     }
 
     /// Press `key` the way a keyboard does: a key event and the text it types.
@@ -134,13 +165,21 @@ mod tests {
         use egui::accesskit::Role;
         use egui_kittest::{Harness, kittest::Queryable};
 
-        let mut h = Harness::builder().with_size(egui::vec2(300.0, 400.0)).build_ui_state(
-            |ui, selected: &mut usize| {
-                let options = [(0, "Normal"), (1, "Dissolve"), (2, "Darken"), (3, "Multiply"), (4, "Darker Color")];
-                crate::widgets::dropdown(ui, "blend-mode", selected, &options, 120.0);
-            },
-            0,
-        );
+        let mut h = Harness::builder()
+            .with_size(egui::vec2(300.0, 400.0))
+            .build_ui_state(
+                |ui, selected: &mut usize| {
+                    let options = [
+                        (0, "Normal"),
+                        (1, "Dissolve"),
+                        (2, "Darken"),
+                        (3, "Multiply"),
+                        (4, "Darker Color"),
+                    ];
+                    crate::widgets::dropdown(ui, "blend-mode", selected, &options, 120.0);
+                },
+                0,
+            );
         // Typing with the list closed does nothing.
         type_key(&h, egui::Key::D, "d");
         h.run();

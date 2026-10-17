@@ -60,11 +60,18 @@ pub struct Names {
 #[derive(Clone, Copy, Debug)]
 pub enum Cite {
     /// `(Who<year_sep>Year<pages_sep>Pages)`.
-    AuthorDate { year_sep: &'static str, pages_sep: &'static str },
+    AuthorDate {
+        year_sep: &'static str,
+        pages_sep: &'static str,
+    },
     /// `(Who Pages)`.
     AuthorPage,
     /// `<open>n<close>`; pages follow `pages_sep` inside the brackets (left out when `None`).
-    Number { open: &'static str, close: &'static str, pages_sep: Option<&'static str> },
+    Number {
+        open: &'static str,
+        close: &'static str,
+        pages_sep: Option<&'static str>,
+    },
 }
 
 /// A citation and bibliography style, as data. Entry templates fill `{n}`, `{names}`, `{year}`,
@@ -99,11 +106,28 @@ impl CiteStyle {
     }
 }
 
-const fn names(first: Name, rest: Name, sep: &'static str, two: &'static str, last: &'static str) -> Names {
-    Names { first, rest, sep, two, last, max: 0, et_al: "" }
+const fn names(
+    first: Name,
+    rest: Name,
+    sep: &'static str,
+    two: &'static str,
+    last: &'static str,
+) -> Names {
+    Names {
+        first,
+        rest,
+        sep,
+        two,
+        last,
+        max: 0,
+        et_al: "",
+    }
 }
 
-const AUTHOR_DATE: Cite = Cite::AuthorDate { year_sep: " ", pages_sep: ", p. " };
+const AUTHOR_DATE: Cite = Cite::AuthorDate {
+    year_sep: " ",
+    pages_sep: ", p. ",
+};
 
 /// Every style, in picker order (alphabetical). Formats follow the published style guides'
 /// rules for the source types WordCraft records, written in our own words.
@@ -111,7 +135,10 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "APA",
         aliases: &["apa"],
-        cite: Cite::AuthorDate { year_sep: ", ", pages_sep: ", p. " },
+        cite: Cite::AuthorDate {
+            year_sep: ", ",
+            pages_sep: ", p. ",
+        },
         and: "&",
         et_al_from: 3,
         order: Order::Author,
@@ -123,7 +150,10 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "Chicago",
         aliases: &["chicago"],
-        cite: Cite::AuthorDate { year_sep: " ", pages_sep: ", " },
+        cite: Cite::AuthorDate {
+            year_sep: " ",
+            pages_sep: ", ",
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Author,
@@ -137,11 +167,25 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "GB/T 7714",
         aliases: &["gb"],
-        cite: Cite::Number { open: "[", close: "]", pages_sep: Some(", ") },
+        cite: Cite::Number {
+            open: "[",
+            close: "]",
+            pages_sep: Some(", "),
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Cited,
-        names: Names { max: 3, et_al: ", et al.", ..names(Name::UpperLastBareInitials, Name::UpperLastBareInitials, ", ", ", ", ", ") },
+        names: Names {
+            max: 3,
+            et_al: ", et al.",
+            ..names(
+                Name::UpperLastBareInitials,
+                Name::UpperLastBareInitials,
+                ", ",
+                ", ",
+                ", ",
+            )
+        },
         book: "[{n}] ⟦{names}. ⟧{title}[{type}].⟦ {pub},⟧ {year}.⟦ {url}.⟧",
         article: "[{n}] ⟦{names}. ⟧{title}[{type}]. {journal}, {year}⟦, {volume}⟧⟦: {pages}⟧.⟦ {url}.⟧",
         bib_title: "References",
@@ -151,11 +195,21 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "GOST (name sort)",
         aliases: &["gost", "gostname"],
-        cite: Cite::Number { open: "[", close: "]", pages_sep: Some(", p. ") },
+        cite: Cite::Number {
+            open: "[",
+            close: "]",
+            pages_sep: Some(", p. "),
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Author,
-        names: names(Name::LastSpaceInitials, Name::LastSpaceInitials, ", ", ", ", ", "),
+        names: names(
+            Name::LastSpaceInitials,
+            Name::LastSpaceInitials,
+            ", ",
+            ", ",
+            ", ",
+        ),
         book: GOST_BOOK,
         article: GOST_ARTICLE,
         bib_title: "References",
@@ -163,11 +217,21 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "GOST (title sort)",
         aliases: &["gosttitle"],
-        cite: Cite::Number { open: "[", close: "]", pages_sep: Some(", p. ") },
+        cite: Cite::Number {
+            open: "[",
+            close: "]",
+            pages_sep: Some(", p. "),
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Title,
-        names: names(Name::LastSpaceInitials, Name::LastSpaceInitials, ", ", ", ", ", "),
+        names: names(
+            Name::LastSpaceInitials,
+            Name::LastSpaceInitials,
+            ", ",
+            ", ",
+            ", ",
+        ),
         book: GOST_BOOK,
         article: GOST_ARTICLE,
         bib_title: "References",
@@ -176,11 +240,20 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "Harvard (Anglia)",
         aliases: &["harvard"],
-        cite: Cite::AuthorDate { year_sep: ", ", pages_sep: ", p. " },
+        cite: Cite::AuthorDate {
+            year_sep: ", ",
+            pages_sep: ", p. ",
+        },
         and: "and",
         et_al_from: 4,
         order: Order::Author,
-        names: names(Name::LastInitials, Name::LastInitials, ", ", " and ", " and "),
+        names: names(
+            Name::LastInitials,
+            Name::LastInitials,
+            ", ",
+            " and ",
+            " and ",
+        ),
         book: "⟦{names}, ⟧{year}. {title}.⟦ {pub}.⟧⟦ Available at: <{url}>.⟧",
         article: "⟦{names}, ⟧{year}. {title}. {journal}⟦, {volume}⟧⟦, pp. {pages}⟧.⟦ Available at: <{url}>.⟧",
         bib_title: "References",
@@ -188,7 +261,11 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "IEEE",
         aliases: &["ieee"],
-        cite: Cite::Number { open: "[", close: "]", pages_sep: None },
+        cite: Cite::Number {
+            open: "[",
+            close: "]",
+            pages_sep: None,
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Cited,
@@ -205,7 +282,13 @@ pub static STYLES: [CiteStyle; 12] = [
         and: "and",
         et_al_from: 4,
         order: Order::Author,
-        names: names(Name::UpperLastFirst, Name::UpperLastFirst, ", ", " and ", " and "),
+        names: names(
+            Name::UpperLastFirst,
+            Name::UpperLastFirst,
+            ", ",
+            " and ",
+            " and ",
+        ),
         book: "⟦{names}, ⟧{year}. {title}.⟦ {pub}.⟧⟦ Available from: {url}⟧",
         article: "⟦{names}, ⟧{year}. {title}. {journal}⟦, {volume}⟧⟦, {pages}⟧.⟦ Available from: {url}⟧",
         bib_title: "References",
@@ -214,11 +297,21 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "ISO 690 (numerical)",
         aliases: &["iso690num", "iso690nmerical"],
-        cite: Cite::Number { open: "(", close: ")", pages_sep: Some(", p. ") },
+        cite: Cite::Number {
+            open: "(",
+            close: ")",
+            pages_sep: Some(", p. "),
+        },
         and: "and",
         et_al_from: 4,
         order: Order::Cited,
-        names: names(Name::UpperLastFirst, Name::UpperLastFirst, ", ", " and ", " and "),
+        names: names(
+            Name::UpperLastFirst,
+            Name::UpperLastFirst,
+            ", ",
+            " and ",
+            " and ",
+        ),
         book: "{n}. ⟦{names}. ⟧{title}.⟦ {pub},⟧ {year}.⟦ Available from: {url}⟧",
         article: "{n}. ⟦{names}. ⟧{title}. {journal}. {year}⟦, {volume}⟧⟦, {pages}⟧.⟦ Available from: {url}⟧",
         bib_title: "References",
@@ -230,7 +323,11 @@ pub static STYLES: [CiteStyle; 12] = [
         and: "and",
         et_al_from: 3,
         order: Order::Author,
-        names: Names { max: 1, et_al: ", et al.", ..names(Name::LastFirst, Name::LastFirst, ", ", ", ", ", ") },
+        names: Names {
+            max: 1,
+            et_al: ", et al.",
+            ..names(Name::LastFirst, Name::LastFirst, ", ", ", ", ", ")
+        },
         book: "⟦{names}. ⟧“{title}.”⟦ {publisher},⟧ {year}.⟦ {url}⟧",
         article: "⟦{names}. ⟧“{title}.” {journal}⟦, {volume}⟧⟦, {pages}⟧, {year}.⟦ {url}⟧",
         bib_title: "Works Cited",
@@ -239,7 +336,11 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "SIST02",
         aliases: &["sist"],
-        cite: Cite::Number { open: "(", close: ")", pages_sep: Some(", p. ") },
+        cite: Cite::Number {
+            open: "(",
+            close: ")",
+            pages_sep: Some(", p. "),
+        },
         and: "and",
         et_al_from: 3,
         order: Order::Cited,
@@ -252,7 +353,10 @@ pub static STYLES: [CiteStyle; 12] = [
     CiteStyle {
         name: "Turabian",
         aliases: &["turabian"],
-        cite: Cite::AuthorDate { year_sep: " ", pages_sep: ", " },
+        cite: Cite::AuthorDate {
+            year_sep: " ",
+            pages_sep: ", ",
+        },
         and: "and",
         et_al_from: 4,
         order: Order::Author,
@@ -263,16 +367,24 @@ pub static STYLES: [CiteStyle; 12] = [
     },
 ];
 
-const GOST_BOOK: &str = "{n}. ⟦{names} ⟧{title}. –⟦ {city} :⟧⟦ {publisher},⟧ {year}.⟦ – URL: {url}.⟧";
+const GOST_BOOK: &str =
+    "{n}. ⟦{names} ⟧{title}. –⟦ {city} :⟧⟦ {publisher},⟧ {year}.⟦ – URL: {url}.⟧";
 const GOST_ARTICLE: &str = "{n}. ⟦{names} ⟧{title} // {journal}. – {year}.⟦ – Vol. {volume}.⟧⟦ – P. {pages}.⟧⟦ – URL: {url}.⟧";
 
 /// The style called `name`: one of ours (any case), or Word's style name or style-sheet file
 /// name (`Harvard - Anglia`, `\GostTitle.XSL`).
 pub fn find_style(name: &str) -> Option<&'static CiteStyle> {
-    if let Some(st) = STYLES.iter().find(|x| x.name.eq_ignore_ascii_case(name.trim())) {
+    if let Some(st) = STYLES
+        .iter()
+        .find(|x| x.name.eq_ignore_ascii_case(name.trim()))
+    {
         return Some(st);
     }
-    let key: String = name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect();
+    let key: String = name
+        .chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|c| c.to_ascii_lowercase())
+        .collect();
     let key = key.strip_suffix("xsl").unwrap_or(&key);
     STYLES
         .iter()
@@ -371,7 +483,12 @@ fn authors(a: &str) -> Vec<(String, String)> {
 /// "Alex Mei" → "A. M." (`dots`), or "A M" without them.
 fn initials(first: &str, dots: bool) -> String {
     let sep = if dots { ". " } else { " " };
-    let mut out = first.split_whitespace().filter_map(|w| w.chars().next()).map(String::from).collect::<Vec<_>>().join(sep);
+    let mut out = first
+        .split_whitespace()
+        .filter_map(|w| w.chars().next())
+        .map(String::from)
+        .collect::<Vec<_>>()
+        .join(sep);
     if dots && !out.is_empty() {
         out.push('.');
     }
@@ -379,7 +496,13 @@ fn initials(first: &str, dots: bool) -> String {
 }
 
 fn name(form: Name, last: &str, first: &str) -> String {
-    let join = |a: String, sep: &str, b: String| if a.is_empty() || b.is_empty() { format!("{a}{b}") } else { format!("{a}{sep}{b}") };
+    let join = |a: String, sep: &str, b: String| {
+        if a.is_empty() || b.is_empty() {
+            format!("{a}{b}")
+        } else {
+            format!("{a}{sep}{b}")
+        }
+    };
     match form {
         Name::LastFirst => join(last.to_string(), ", ", first.to_string()),
         Name::FirstLast => join(first.to_string(), " ", last.to_string()),
@@ -392,8 +515,16 @@ fn name(form: Name, last: &str, first: &str) -> String {
 }
 
 fn name_list(au: &[(String, String)], form: &Names) -> String {
-    let shown = if form.max > 0 { au.get(..form.max).unwrap_or(au) } else { au };
-    let parts: Vec<String> = shown.iter().enumerate().map(|(i, (l, f))| name(if i == 0 { form.first } else { form.rest }, l, f)).collect();
+    let shown = if form.max > 0 {
+        au.get(..form.max).unwrap_or(au)
+    } else {
+        au
+    };
+    let parts: Vec<String> = shown
+        .iter()
+        .enumerate()
+        .map(|(i, (l, f))| name(if i == 0 { form.first } else { form.rest }, l, f))
+        .collect();
     let mut out = match parts.as_slice() {
         [] => String::new(),
         [one] => one.clone(),
@@ -473,9 +604,18 @@ pub fn cite(src: &Source, style_name: &str, n: usize, pages: &str) -> String {
     match st.cite {
         Cite::AuthorPage if pages.is_empty() => format!("({who})"),
         Cite::AuthorPage => format!("({who} {pages})"),
-        Cite::AuthorDate { year_sep, .. } if pages.is_empty() => format!("({who}{year_sep}{})", src.year),
-        Cite::AuthorDate { year_sep, pages_sep } => format!("({who}{year_sep}{}{pages_sep}{pages})", src.year),
-        Cite::Number { open, close, pages_sep: Some(sep) } if !pages.is_empty() => format!("{open}{n}{sep}{pages}{close}"),
+        Cite::AuthorDate { year_sep, .. } if pages.is_empty() => {
+            format!("({who}{year_sep}{})", src.year)
+        }
+        Cite::AuthorDate {
+            year_sep,
+            pages_sep,
+        } => format!("({who}{year_sep}{}{pages_sep}{pages})", src.year),
+        Cite::Number {
+            open,
+            close,
+            pages_sep: Some(sep),
+        } if !pages.is_empty() => format!("{open}{n}{sep}{pages}{close}"),
         Cite::Number { open, close, .. } => format!("{open}{n}{close}"),
     }
 }
@@ -491,7 +631,11 @@ fn gb_type(src: &Source) -> String {
         "report" => "R",
         _ => "Z",
     };
-    if src.url.is_empty() { code.into() } else { format!("{code}/OL") }
+    if src.url.is_empty() {
+        code.into()
+    } else {
+        format!("{code}/OL")
+    }
 }
 
 /// Bibliography entry for a style; `n` is the source's number in numbered styles.
@@ -507,7 +651,11 @@ pub fn entry(src: &Source, style_name: &str, n: usize) -> String {
             "title" => src.title.clone(),
             "city" => src.city.clone(),
             "publisher" => src.publisher.clone(),
-            "pub" => [src.city.as_str(), src.publisher.as_str()].into_iter().filter(|x| !x.is_empty()).collect::<Vec<_>>().join(": "),
+            "pub" => [src.city.as_str(), src.publisher.as_str()]
+                .into_iter()
+                .filter(|x| !x.is_empty())
+                .collect::<Vec<_>>()
+                .join(": "),
             "journal" => src.journal.clone(),
             "volume" => src.volume.clone(),
             "pages" => src.pages.clone(),
@@ -516,12 +664,20 @@ pub fn entry(src: &Source, style_name: &str, n: usize) -> String {
             _ => String::new(),
         }
     };
-    render(if src.journal.is_empty() { st.book } else { st.article }, &field)
+    render(
+        if src.journal.is_empty() {
+            st.book
+        } else {
+            st.article
+        },
+        &field,
+    )
 }
 
 fn sources(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(a) = v.get("add") {
-        let mut src: Source = serde_json::from_value(a.clone()).map_err(|e| CmdError::Params(e.to_string()))?;
+        let mut src: Source =
+            serde_json::from_value(a.clone()).map_err(|e| CmdError::Params(e.to_string()))?;
         if src.tag.is_empty() {
             let base: String = authors(&src.author)
                 .first()
@@ -557,18 +713,42 @@ fn citation(s: &mut Session, v: &Value) -> CmdResult {
     let tag = match p::str(v, "tag") {
         Some(t) => t.to_string(),
         None => match v.get("source") {
-            Some(_) => s.doc.sources.last().map(|x| x.tag.clone()).unwrap_or_default(),
+            Some(_) => s
+                .doc
+                .sources
+                .last()
+                .map(|x| x.tag.clone())
+                .unwrap_or_default(),
             None => return Err(CmdError::Params("give `tag` or `source`".into())),
         },
     };
-    let src = s.doc.sources.iter().find(|x| x.tag == tag).cloned().ok_or_else(|| CmdError::Params(format!("no source `{tag}`")))?;
+    let src = s
+        .doc
+        .sources
+        .iter()
+        .find(|x| x.tag == tag)
+        .cloned()
+        .ok_or_else(|| CmdError::Params(format!("no source `{tag}`")))?;
     let pages = p::str(v, "pages").unwrap_or("").to_string();
     let st = style(&s.bib_style);
     let n = number_of(&s.doc, &bib_order(&s.doc, st, super::default_lang(s)), &tag);
     let props = s.typing_props();
     let at = delete_selection(s)?;
-    let instr = if pages.is_empty() { format!("CITATION {tag}") } else { format!("CITATION {tag} \\p {pages}") };
-    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: cite(&src, st.name, n, &pages), locked: false, code: false }, &props)?;
+    let instr = if pages.is_empty() {
+        format!("CITATION {tag}")
+    } else {
+        format!("CITATION {tag} \\p {pages}")
+    };
+    let end = s.doc.insert_object(
+        &at,
+        InlineObject::Field {
+            instr,
+            result: cite(&src, st.name, n, &pages),
+            locked: false,
+            code: false,
+        },
+        &props,
+    )?;
     s.sel = Selection::caret(end);
     // A new citation can renumber the others (numbered styles count in order of first citation).
     if st.numbered() {
@@ -593,7 +773,9 @@ fn cited_tags(doc: &Document) -> Vec<String> {
     let mut seen = std::collections::HashSet::new();
     let mut out = Vec::new();
     for path in doc.para_paths(StoryRef::Body) {
-        let Some(p) = doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         for o in &p.objects {
             if let InlineObject::Field { instr, .. } = o
                 && let Some((tag, _)) = citation_field(instr)
@@ -607,7 +789,10 @@ fn cited_tags(doc: &Document) -> Vec<String> {
 }
 
 fn author_key(src: &Source) -> String {
-    authors(&src.author).first().map(|a| a.0.to_lowercase()).unwrap_or_else(|| src.title.to_lowercase())
+    authors(&src.author)
+        .first()
+        .map(|a| a.0.to_lowercase())
+        .unwrap_or_else(|| src.title.to_lowercase())
 }
 
 /// Indices into `doc.sources` in bibliography order: the cited sources (every source while
@@ -617,14 +802,34 @@ fn bib_order(doc: &Document, st: &CiteStyle, lang: Option<String>) -> Vec<usize>
     let mut idx: Vec<usize> = if cited.is_empty() {
         (0..doc.sources.len()).collect()
     } else if st.order == Order::Cited {
-        cited.iter().filter_map(|t| doc.sources.iter().position(|x| &x.tag == t)).collect()
+        cited
+            .iter()
+            .filter_map(|t| doc.sources.iter().position(|x| &x.tag == t))
+            .collect()
     } else {
         let cited: std::collections::HashSet<&str> = cited.iter().map(String::as_str).collect();
-        doc.sources.iter().enumerate().filter(|(_, x)| cited.contains(x.tag.as_str())).map(|(i, _)| i).collect()
+        doc.sources
+            .iter()
+            .enumerate()
+            .filter(|(_, x)| cited.contains(x.tag.as_str()))
+            .map(|(i, _)| i)
+            .collect()
     };
     // Sorted in the document's language (Polish authors `Łukasiewicz` before `Mazur`).
     let key = |i: &usize, by_title: bool| {
-        sort_key(&doc.sources.get(*i).map(|x| if by_title { x.title.clone() } else { author_key(x) }).unwrap_or_default(), lang.as_deref())
+        sort_key(
+            &doc.sources
+                .get(*i)
+                .map(|x| {
+                    if by_title {
+                        x.title.clone()
+                    } else {
+                        author_key(x)
+                    }
+                })
+                .unwrap_or_default(),
+            lang.as_deref(),
+        )
     };
     match st.order {
         Order::Author => idx.sort_by_cached_key(|i| key(i, false)),
@@ -636,7 +841,11 @@ fn bib_order(doc: &Document, st: &CiteStyle, lang: Option<String>) -> Vec<usize>
 
 /// A source's number in a numbered style: its place in the bibliography order.
 fn number_of(doc: &Document, order: &[usize], tag: &str) -> usize {
-    order.iter().position(|&i| doc.sources.get(i).is_some_and(|x| x.tag == tag)).unwrap_or(order.len()).saturating_add(1)
+    order
+        .iter()
+        .position(|&i| doc.sources.get(i).is_some_and(|x| x.tag == tag))
+        .unwrap_or(order.len())
+        .saturating_add(1)
 }
 
 /// Refresh CITATION results and generated lists.
@@ -650,7 +859,9 @@ fn refresh_citations(s: &mut Session) -> Result<(), CmdError> {
     let st = style(&s.bib_style);
     let order = bib_order(&s.doc, st, super::default_lang(s));
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         let updates: Vec<(usize, String)> = p
             .objects
             .iter()
@@ -685,15 +896,29 @@ pub(crate) fn generated_list(s: &mut Session, instr: &str, title: &str) -> Resul
     if at.story != StoryRef::Body || at.path.depth() > 0 {
         return Err(CmdError::Failed("lists go in the main text".into()));
     }
-    let mut head = if title.is_empty() { Paragraph::new() } else { Paragraph::with_text(title, CharProps::default()).styled("Heading1") };
+    let mut head = if title.is_empty() {
+        Paragraph::new()
+    } else {
+        Paragraph::with_text(title, CharProps::default()).styled("Heading1")
+    };
     let end = head.len();
     head.insert_object(
         end,
-        InlineObject::Field { instr: instr.to_string(), result: String::new(), locked: false, code: false },
+        InlineObject::Field {
+            instr: instr.to_string(),
+            result: String::new(),
+            locked: false,
+            code: false,
+        },
         &CharProps::default(),
     )?;
-    let i = if s.doc.para_at(&at).is_some_and(|p| p.is_empty()) { at.path.last() } else { s.doc.split_paragraph(&at)?.path.last() };
-    s.doc.insert_block(StoryRef::Body, &Path::top(i), Block::Para(head))?;
+    let i = if s.doc.para_at(&at).is_some_and(|p| p.is_empty()) {
+        at.path.last()
+    } else {
+        s.doc.split_paragraph(&at)?.path.last()
+    };
+    s.doc
+        .insert_block(StoryRef::Body, &Path::top(i), Block::Para(head))?;
     update_generated(s)
 }
 
@@ -701,7 +926,11 @@ fn list_kind(p: &Paragraph) -> Option<String> {
     p.objects.iter().find_map(|o| match o {
         InlineObject::Field { instr, .. } => {
             let t = instr.trim_start();
-            (t.starts_with("BIBLIOGRAPHY") || t.starts_with("INDEX") || t.starts_with("TOA") || t.starts_with("TOC \\c")).then(|| t.to_string())
+            (t.starts_with("BIBLIOGRAPHY")
+                || t.starts_with("INDEX")
+                || t.starts_with("TOA")
+                || t.starts_with("TOC \\c"))
+            .then(|| t.to_string())
         }
         _ => None,
     })
@@ -717,14 +946,22 @@ pub fn update_generated(s: &mut Session) -> Result<(), CmdError> {
             name: "List Entry".into(),
             kind: wordcraft_doc::StyleKind::Paragraph,
             based_on: Some("Normal".into()),
-            para: wordcraft_doc::ParaProps { space_after: Some(4.0), ..Default::default() },
+            para: wordcraft_doc::ParaProps {
+                space_after: Some(4.0),
+                ..Default::default()
+            },
             hidden: true,
             ..Default::default()
         });
     }
     let mut i = 0;
     while i < s.doc.body.len() {
-        let kind = s.doc.body.get(i).and_then(|b| b.as_para()).and_then(list_kind);
+        let kind = s
+            .doc
+            .body
+            .get(i)
+            .and_then(|b| b.as_para())
+            .and_then(list_kind);
         let Some(kind) = kind else {
             i += 1;
             continue;
@@ -735,7 +972,13 @@ pub fn update_generated(s: &mut Session) -> Result<(), CmdError> {
             continue;
         }
         // Remove old entries.
-        while s.doc.body.get(i + 1).and_then(|b| b.as_para()).is_some_and(|p| p.props.style.as_deref() == Some(ENTRY_STYLE)) {
+        while s
+            .doc
+            .body
+            .get(i + 1)
+            .and_then(|b| b.as_para())
+            .is_some_and(|p| p.props.style.as_deref() == Some(ENTRY_STYLE))
+        {
             s.doc.remove_block(StoryRef::Body, &Path::top(i + 1))?;
         }
         let lines = entries_for(s, &kind);
@@ -747,9 +990,14 @@ pub fn update_generated(s: &mut Session) -> Result<(), CmdError> {
                 para.props.indent_first = Some(-36.0);
             }
             if text.contains('\t') {
-                para.props.tabs = Some(vec![TabStop { pos: width - 0.5, align: TabAlign::Right, leader: TabLeader::Dot }]);
+                para.props.tabs = Some(vec![TabStop {
+                    pos: width - 0.5,
+                    align: TabAlign::Right,
+                    leader: TabLeader::Dot,
+                }]);
             }
-            s.doc.insert_block(StoryRef::Body, &Path::top(i + 1 + k), Block::Para(para))?;
+            s.doc
+                .insert_block(StoryRef::Body, &Path::top(i + 1 + k), Block::Para(para))?;
         }
         i += 1;
     }
@@ -759,7 +1007,10 @@ pub fn update_generated(s: &mut Session) -> Result<(), CmdError> {
 
 fn page_of(s: &mut Session, pos: &Pos) -> u32 {
     let l = s.layout();
-    l.caret(pos).and_then(|c| l.pages.get(c.page)).map(|p| p.number).unwrap_or(1)
+    l.caret(pos)
+        .and_then(|c| l.pages.get(c.page))
+        .map(|p| p.number)
+        .unwrap_or(1)
 }
 
 /// Entry lines (text, hanging indent) for a generated list.
@@ -769,27 +1020,54 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
         return bib_order(&s.doc, st, super::default_lang(s))
             .into_iter()
             .enumerate()
-            .filter_map(|(k, i)| s.doc.sources.get(i).map(|x| (entry(x, st.name, k.saturating_add(1)), !st.numbered())))
+            .filter_map(|(k, i)| {
+                s.doc
+                    .sources
+                    .get(i)
+                    .map(|x| (entry(x, st.name, k.saturating_add(1)), !st.numbered()))
+            })
             .collect();
     }
     // Collect marks with positions.
     let mut marks: Vec<(String, Pos)> = Vec::new();
     let caption_label = kind.split('"').nth(1).unwrap_or("Figure").to_string();
     for path in s.doc.para_paths(StoryRef::Body) {
-        let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+        let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+            continue;
+        };
         if kind.starts_with("TOC \\c") {
-            if p.props.style.as_deref() == Some("Caption") && p.plain_text().starts_with(&caption_label) {
-                marks.push((p.plain_text(), Pos { story: StoryRef::Body, path: path.clone(), off: 0 }));
+            if p.props.style.as_deref() == Some("Caption")
+                && p.plain_text().starts_with(&caption_label)
+            {
+                marks.push((
+                    p.plain_text(),
+                    Pos {
+                        story: StoryRef::Body,
+                        path: path.clone(),
+                        off: 0,
+                    },
+                ));
             }
             continue;
         }
         for off in p.object_offsets() {
             if let Some(InlineObject::Field { instr, .. }) = p.object_at(off) {
                 let t = instr.trim_start();
-                let want = if kind.starts_with("INDEX") { "XE" } else { "TA" };
+                let want = if kind.starts_with("INDEX") {
+                    "XE"
+                } else {
+                    "TA"
+                };
                 if t.starts_with(want) {
                     let e = t.split('"').nth(1).unwrap_or("").to_string();
-                    marks.push((e, Pos { story: StoryRef::Body, path: path.clone(), off }));
+                    marks.push((
+                        e,
+                        Pos {
+                            story: StoryRef::Body,
+                            path: path.clone(),
+                            off,
+                        },
+                    ));
                 }
             }
         }
@@ -799,18 +1077,34 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
     let positions: Vec<Pos> = {
         let mut v = Vec::new();
         for path in s.doc.para_paths(StoryRef::Body) {
-            let Some(p) = s.doc.para(StoryRef::Body, &path) else { continue };
+            let Some(p) = s.doc.para(StoryRef::Body, &path) else {
+                continue;
+            };
             if kind.starts_with("TOC \\c") {
-                if p.props.style.as_deref() == Some("Caption") && p.plain_text().starts_with(&caption_label) {
-                    v.push(Pos { story: StoryRef::Body, path: path.clone(), off: 0 });
+                if p.props.style.as_deref() == Some("Caption")
+                    && p.plain_text().starts_with(&caption_label)
+                {
+                    v.push(Pos {
+                        story: StoryRef::Body,
+                        path: path.clone(),
+                        off: 0,
+                    });
                 }
                 continue;
             }
             for off in p.object_offsets() {
                 if let Some(InlineObject::Field { instr, .. }) = p.object_at(off) {
-                    let want = if kind.starts_with("INDEX") { "XE" } else { "TA" };
+                    let want = if kind.starts_with("INDEX") {
+                        "XE"
+                    } else {
+                        "TA"
+                    };
                     if instr.trim_start().starts_with(want) {
-                        v.push(Pos { story: StoryRef::Body, path: path.clone(), off });
+                        v.push(Pos {
+                            story: StoryRef::Body,
+                            path: path.clone(),
+                            off,
+                        });
                     }
                 }
             }
@@ -824,13 +1118,18 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
         }
     }
     if kind.starts_with("TOC \\c") {
-        return with_pages.into_iter().map(|(t, p)| (format!("{t}\t{p}"), false)).collect();
+        return with_pages
+            .into_iter()
+            .map(|(t, p)| (format!("{t}\t{p}"), false))
+            .collect();
     }
     // Index / TOA: group by entry, sort, list pages.
     let lang = super::default_lang(s);
     let mut grouped: std::collections::BTreeMap<(SortKey, String), Vec<u32>> = Default::default();
     for (e, p) in with_pages {
-        let pages = grouped.entry((sort_key(&e, lang.as_deref()), e)).or_default();
+        let pages = grouped
+            .entry((sort_key(&e, lang.as_deref()), e))
+            .or_default();
         if !pages.contains(&p) {
             pages.push(p);
         }
@@ -845,8 +1144,16 @@ fn entries_for(s: &mut Session, kind: &str) -> Vec<(String, bool)> {
                 out.push((l, false));
             }
         }
-        let list = pages.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(", ");
-        out.push(if kind.starts_with("INDEX") { (format!("{e}, {list}"), true) } else { (format!("{e}\t{list}"), false) });
+        let list = pages
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        out.push(if kind.starts_with("INDEX") {
+            (format!("{e}, {list}"), true)
+        } else {
+            (format!("{e}\t{list}"), false)
+        });
     }
     out
 }
@@ -855,10 +1162,16 @@ fn cross_ref(s: &mut Session, v: &Value) -> CmdResult {
     let to = p::str(v, "to").unwrap_or("heading");
     let targets = ref_targets(s, to);
     let Some(target) = p::str(v, "target") else {
-        return Ok(Value::Array(targets.iter().map(|(t, _)| json!(t)).collect()));
+        return Ok(Value::Array(
+            targets.iter().map(|(t, _)| json!(t)).collect(),
+        ));
     };
-    let find = |ts: Vec<(String, Pos)>| ts.into_iter().find(|(t, _)| t == target || t.starts_with(target));
-    let (text, pos) = find(targets).ok_or_else(|| CmdError::Params(format!("no {to} `{target}`")))?;
+    let find = |ts: Vec<(String, Pos)>| {
+        ts.into_iter()
+            .find(|(t, _)| t == target || t.starts_with(target))
+    };
+    let (text, pos) =
+        find(targets).ok_or_else(|| CmdError::Params(format!("no {to} `{target}`")))?;
     let show = p::str(v, "show").unwrap_or("text");
     let page = page_of(s, &pos);
     let result = match show {
@@ -871,7 +1184,9 @@ fn cross_ref(s: &mut Session, v: &Value) -> CmdResult {
                 "below".into()
             }
         }
-        _ if to == "bookmark" => super::references::bookmark_text(&s.doc, &text).unwrap_or_default(),
+        _ if to == "bookmark" => {
+            super::references::bookmark_text(&s.doc, &text).unwrap_or_default()
+        }
         _ => text.clone(),
     };
     let props = s.typing_props();
@@ -882,11 +1197,24 @@ fn cross_ref(s: &mut Session, v: &Value) -> CmdResult {
         (text, at)
     } else {
         // Deleting the selection can move paragraphs: look the target up again.
-        let (_, pos) = find(ref_targets(s, to)).ok_or_else(|| CmdError::Params(format!("no {to} `{target}`")))?;
+        let (_, pos) = find(ref_targets(s, to))
+            .ok_or_else(|| CmdError::Params(format!("no {to} `{target}`")))?;
         ref_bookmark(s, &pos, show == "number", at)?
     };
-    let instr = format!("{} {name} \\h", if show == "page" { "PAGEREF" } else { "REF" });
-    let end = s.doc.insert_object(&at, InlineObject::Field { instr, result: result.clone(), locked: false, code: false }, &props)?;
+    let instr = format!(
+        "{} {name} \\h",
+        if show == "page" { "PAGEREF" } else { "REF" }
+    );
+    let end = s.doc.insert_object(
+        &at,
+        InlineObject::Field {
+            instr,
+            result: result.clone(),
+            locked: false,
+            code: false,
+        },
+        &props,
+    )?;
     s.sel = Selection::caret(end);
     Ok(json!({"inserted": result}))
 }
@@ -907,7 +1235,14 @@ fn ref_targets(s: &Session, to: &str) -> Vec<(String, Pos)> {
                     && p.props.style.as_deref() == Some("Caption")
                     && p.plain_text().starts_with(label)
                 {
-                    targets.push((p.plain_text(), Pos { story: StoryRef::Body, path: path.clone(), off: 0 }));
+                    targets.push((
+                        p.plain_text(),
+                        Pos {
+                            story: StoryRef::Body,
+                            path: path.clone(),
+                            off: 0,
+                        },
+                    ));
                 }
             }
         }
@@ -917,7 +1252,14 @@ fn ref_targets(s: &Session, to: &str) -> Vec<(String, Pos)> {
                     && s.doc.styles.resolve_para(&p.props).outline_level.is_some()
                     && !p.plain_text().trim().is_empty()
                 {
-                    targets.push((p.plain_text().trim().to_string(), Pos { story: StoryRef::Body, path: path.clone(), off: 0 }));
+                    targets.push((
+                        p.plain_text().trim().to_string(),
+                        Pos {
+                            story: StoryRef::Body,
+                            path: path.clone(),
+                            off: 0,
+                        },
+                    ));
                 }
             }
         }
@@ -928,28 +1270,66 @@ fn ref_targets(s: &Session, to: &str) -> Vec<(String, Pos)> {
 /// The hidden `_Ref` bookmark around the target paragraph at `pos` (its label and number only
 /// when `number_only`), reusing one already there. Returns its name and `at` moved past the
 /// bookmark marks inserted before it.
-fn ref_bookmark(s: &mut Session, pos: &Pos, number_only: bool, mut at: Pos) -> Result<(String, Pos), CmdError> {
+fn ref_bookmark(
+    s: &mut Session,
+    pos: &Pos,
+    number_only: bool,
+    mut at: Pos,
+) -> Result<(String, Pos), CmdError> {
     const MARK: usize = wordcraft_doc::para::OBJ.len_utf8();
-    let para = s.doc.para(pos.story, &pos.path).ok_or_else(|| CmdError::Params("cross-reference target is gone".into()))?;
-    let end = if number_only { para.text.find(':').unwrap_or(para.len()) } else { para.len() };
+    let para = s
+        .doc
+        .para(pos.story, &pos.path)
+        .ok_or_else(|| CmdError::Params("cross-reference target is gone".into()))?;
+    let end = if number_only {
+        para.text.find(':').unwrap_or(para.len())
+    } else {
+        para.len()
+    };
     if let Some(InlineObject::BookmarkStart { name }) = para.object_at(0)
         && name.starts_with("_Ref")
     {
         // Reuse it when it covers the same extent: up to the colon, or the whole paragraph.
         let same = para.object_offsets().into_iter().any(|o| {
             matches!(para.object_at(o), Some(InlineObject::BookmarkEnd { name: n }) if n == name)
-                && para.text.get(o.saturating_add(MARK)..).is_some_and(|rest| if number_only { rest.starts_with(':') } else { rest.is_empty() })
+                && para.text.get(o.saturating_add(MARK)..).is_some_and(|rest| {
+                    if number_only {
+                        rest.starts_with(':')
+                    } else {
+                        rest.is_empty()
+                    }
+                })
         });
         if same {
             return Ok((name.clone(), at));
         }
     }
-    let next =
-        s.doc.bookmarks().iter().filter_map(|(n, _)| n.strip_prefix("_Ref").and_then(|d| d.parse::<u64>().ok())).max().unwrap_or(0).saturating_add(1);
+    let next = s
+        .doc
+        .bookmarks()
+        .iter()
+        .filter_map(|(n, _)| n.strip_prefix("_Ref").and_then(|d| d.parse::<u64>().ok()))
+        .max()
+        .unwrap_or(0)
+        .saturating_add(1);
     let name = format!("_Ref{next:09}");
     let props = CharProps::default();
-    s.doc.insert_object(&Pos { off: end, ..pos.clone() }, InlineObject::BookmarkEnd { name: name.clone() }, &props)?;
-    s.doc.insert_object(&Pos { off: 0, ..pos.clone() }, InlineObject::BookmarkStart { name: name.clone() }, &props)?;
+    s.doc.insert_object(
+        &Pos {
+            off: end,
+            ..pos.clone()
+        },
+        InlineObject::BookmarkEnd { name: name.clone() },
+        &props,
+    )?;
+    s.doc.insert_object(
+        &Pos {
+            off: 0,
+            ..pos.clone()
+        },
+        InlineObject::BookmarkStart { name: name.clone() },
+        &props,
+    )?;
     if at.story == pos.story && at.path == pos.path {
         if at.off >= end {
             at.off = at.off.saturating_add(2 * MARK);
@@ -968,24 +1348,37 @@ mod tests {
     #[test]
     fn citations_and_bibliography() {
         let mut s = Session::new(wordcraft_doc::Document::new());
-        s.run("text.insert", &json!({"text": "Studios matter "})).unwrap();
+        s.run("text.insert", &json!({"text": "Studios matter "}))
+            .unwrap();
         s.run("references.citation", &json!({"source": {"author": "Rivera, Alex; Chen, Mei", "title": "Shared Spaces", "year": "2021", "publisher": "Harbor Books", "city": "Portland"}})).unwrap();
-        assert!(s.doc.plain_text(StoryRef::Body).contains("(Rivera & Chen, 2021)"), "{}", s.doc.plain_text(StoryRef::Body));
+        assert!(
+            s.doc
+                .plain_text(StoryRef::Body)
+                .contains("(Rivera & Chen, 2021)"),
+            "{}",
+            s.doc.plain_text(StoryRef::Body)
+        );
         s.run("text.newParagraph", &json!({})).unwrap();
         s.run("references.bibliography", &json!({})).unwrap();
         let t = s.doc.plain_text(StoryRef::Body);
-        assert!(t.contains("Rivera, A., & Chen, M. (2021). Shared Spaces. Harbor Books."), "{t}");
-        s.run("references.citationStyle", &json!({"style": "MLA"})).unwrap();
+        assert!(
+            t.contains("Rivera, A., & Chen, M. (2021). Shared Spaces. Harbor Books."),
+            "{t}"
+        );
+        s.run("references.citationStyle", &json!({"style": "MLA"}))
+            .unwrap();
         let t = s.doc.plain_text(StoryRef::Body);
         assert!(t.contains("(Rivera and Chen)"), "{t}");
-        s.run("references.citationStyle", &json!({"style": "IEEE"})).unwrap();
+        s.run("references.citationStyle", &json!({"style": "IEEE"}))
+            .unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).contains("[1]"));
     }
 
     #[test]
     fn bibliography_round_trip_docx() {
         let mut s = Session::new(wordcraft_doc::Document::new());
-        s.run("text.insert", &json!({"text": "Studios matter "})).unwrap();
+        s.run("text.insert", &json!({"text": "Studios matter "}))
+            .unwrap();
         s.run(
             "references.citation",
             &json!({
@@ -1012,7 +1405,12 @@ mod tests {
         // Serialize to DOCX and back — sources must survive.
         let bytes = wordcraft_docx::write(&s.doc).expect("docx write");
         let doc = wordcraft_docx::read(&bytes).expect("docx read");
-        assert_eq!(doc.sources.len(), 1, "round-tripped sources: {:?}", doc.sources);
+        assert_eq!(
+            doc.sources.len(),
+            1,
+            "round-tripped sources: {:?}",
+            doc.sources
+        );
         assert_eq!(doc.sources[0].author, "Rivera, Alex; Chen, Mei");
         assert_eq!(doc.sources[0].title, "Shared Spaces");
         assert_eq!(doc.sources[0].editor, "Johnson, Robert");
@@ -1025,17 +1423,28 @@ mod tests {
 
         // Round-tripped document in a new session works with citation styles.
         let mut s2 = Session::new(doc);
-        s2.run("references.citationStyle", &json!({"style": "Harvard (Anglia)"})).unwrap();
+        s2.run(
+            "references.citationStyle",
+            &json!({"style": "Harvard (Anglia)"}),
+        )
+        .unwrap();
         let t = s2.doc.plain_text(StoryRef::Body);
         assert!(t.contains("(Rivera and Chen, 2021)"), "{t}");
-        assert!(t.contains("Rivera, A. and Chen, M., 2021. Shared Spaces. Portland: Harbor Books."), "{t}");
+        assert!(
+            t.contains("Rivera, A. and Chen, M., 2021. Shared Spaces. Portland: Harbor Books."),
+            "{t}"
+        );
     }
 
     #[test]
     fn citation_style_survives_docx_save_and_reopen() {
         let mut s = Session::new(wordcraft_doc::Document::new());
         s.run("references.citation", &json!({"source": {"author": "Rivera, Alex", "title": "Shared Spaces", "year": "2021"}})).unwrap();
-        s.run("references.citationStyle", &json!({"style": "Harvard (Anglia)"})).unwrap();
+        s.run(
+            "references.citationStyle",
+            &json!({"style": "Harvard (Anglia)"}),
+        )
+        .unwrap();
         let bytes = wordcraft_docx::write(&s.doc).expect("docx write");
         let doc = wordcraft_docx::read(&bytes).expect("docx read");
         assert_eq!(doc.settings.bib_style.as_deref(), Some("Harvard (Anglia)"));
@@ -1044,12 +1453,17 @@ mod tests {
         other.set_document(doc);
         assert_eq!(other.bib_style, "Harvard (Anglia)");
         // A document without a recorded style is APA.
-        assert_eq!(Session::new(wordcraft_doc::Document::new()).bib_style, "APA");
+        assert_eq!(
+            Session::new(wordcraft_doc::Document::new()).bib_style,
+            "APA"
+        );
     }
 
     #[test]
     fn index_and_figures() {
-        let mut s = Session::new(wordcraft_doc::Document::from_text("Kilns are hot.\nPresses are heavy.\nMore kilns."));
+        let mut s = Session::new(wordcraft_doc::Document::from_text(
+            "Kilns are hot.\nPresses are heavy.\nMore kilns.",
+        ));
         s.run("select.text", &json!({"text": "Kilns"})).unwrap();
         s.run("references.markEntry", &json!({})).unwrap();
         s.run("select.text", &json!({"text": "Presses"})).unwrap();
@@ -1060,36 +1474,72 @@ mod tests {
         let t = s.doc.plain_text(StoryRef::Body);
         assert!(t.contains("Kilns, 1") && t.contains("Presses, 1"), "{t}");
         s.run("caret.docStart", &json!({})).unwrap();
-        s.run("references.caption", &json!({"label": "Figure", "text": "The kiln"})).unwrap();
+        s.run(
+            "references.caption",
+            &json!({"label": "Figure", "text": "The kiln"}),
+        )
+        .unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
         s.run("references.tableOfFigures", &json!({})).unwrap();
-        assert!(s.doc.plain_text(StoryRef::Body).contains("Figure 1: The kiln\t1"));
-        let list = s.run("insert.crossReference", &json!({"to": "figure"})).unwrap();
+        assert!(
+            s.doc
+                .plain_text(StoryRef::Body)
+                .contains("Figure 1: The kiln\t1")
+        );
+        let list = s
+            .run("insert.crossReference", &json!({"to": "figure"}))
+            .unwrap();
         assert_eq!(list.as_array().unwrap().len(), 1);
-        s.run("insert.crossReference", &json!({"to": "figure", "target": "Figure 1", "show": "number"})).unwrap();
+        s.run(
+            "insert.crossReference",
+            &json!({"to": "figure", "target": "Figure 1", "show": "number"}),
+        )
+        .unwrap();
         assert!(s.doc.plain_text(StoryRef::Body).contains("Figure 1"));
         // The number-only reference marks just "Figure 1" of the caption.
-        let (name, _) = s.doc.bookmarks().into_iter().find(|(n, _)| n.starts_with("_Ref")).unwrap();
-        assert_eq!(crate::cmd::references::bookmark_text(&s.doc, &name).as_deref(), Some("Figure 1"));
-        assert!(fields(&s).contains(&(format!("REF {name} \\h"), "Figure 1".to_string())), "{:?}", fields(&s));
+        let (name, _) = s
+            .doc
+            .bookmarks()
+            .into_iter()
+            .find(|(n, _)| n.starts_with("_Ref"))
+            .unwrap();
+        assert_eq!(
+            crate::cmd::references::bookmark_text(&s.doc, &name).as_deref(),
+            Some("Figure 1")
+        );
+        assert!(
+            fields(&s).contains(&(format!("REF {name} \\h"), "Figure 1".to_string())),
+            "{:?}",
+            fields(&s)
+        );
     }
 
     /// #661: References › Table of Authorities › Update Table picks up citations marked after the table.
     #[test]
     fn table_of_authorities_updates() {
-        let mut s = Session::new(wordcraft_doc::Document::from_text("Smith v. Jones held it.\nDoe v. Roe agreed."));
-        s.run("select.text", &json!({"text": "Smith v. Jones"})).unwrap();
+        let mut s = Session::new(wordcraft_doc::Document::from_text(
+            "Smith v. Jones held it.\nDoe v. Roe agreed.",
+        ));
+        s.run("select.text", &json!({"text": "Smith v. Jones"}))
+            .unwrap();
         s.run("references.markCitation", &json!({})).unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
         s.run("text.newParagraph", &json!({})).unwrap();
         s.run("references.tableOfAuthorities", &json!({})).unwrap();
         let t = s.doc.plain_text(StoryRef::Body);
-        assert!(t.contains("Smith v. Jones") && !t.contains("Doe v. Roe, "), "{t}");
-        s.run("select.text", &json!({"text": "Doe v. Roe"})).unwrap();
+        assert!(
+            t.contains("Smith v. Jones") && !t.contains("Doe v. Roe, "),
+            "{t}"
+        );
+        s.run("select.text", &json!({"text": "Doe v. Roe"}))
+            .unwrap();
         s.run("references.markCitation", &json!({})).unwrap();
         s.run("references.updateAuthorities", &json!({})).unwrap();
         let after = s.doc.plain_text(StoryRef::Body);
-        assert!(after.matches("Doe v. Roe").count() > t.matches("Doe v. Roe").count(), "{after}");
+        assert!(
+            after.matches("Doe v. Roe").count() > t.matches("Doe v. Roe").count(),
+            "{after}"
+        );
     }
 
     /// Field instructions and results in the body, in order.
@@ -1109,26 +1559,47 @@ mod tests {
     fn cross_references_point_at_real_bookmarks() {
         let mut s = Session::new(wordcraft_doc::Document::from_text("Kilns\nSee here."));
         s.run("caret.docStart", &json!({})).unwrap();
-        s.run("styles.apply", &json!({"style": "Heading 1"})).unwrap();
+        s.run("styles.apply", &json!({"style": "Heading 1"}))
+            .unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("insert.crossReference", &json!({"to": "heading", "target": "Kilns"})).unwrap();
+        s.run(
+            "insert.crossReference",
+            &json!({"to": "heading", "target": "Kilns"}),
+        )
+        .unwrap();
         // The heading gets a hidden bookmark, and the REF field names it (not a literal `_Ref`).
         let marks = s.doc.bookmarks();
         assert_eq!(marks.len(), 1, "{marks:?}");
         let name = marks[0].0.clone();
         assert!(name.starts_with("_Ref") && name.len() > 4, "{name}");
         assert_eq!(marks[0].1.path, s.doc.para_paths(StoryRef::Body)[0]);
-        assert_eq!(fields(&s), vec![(format!("REF {name} \\h"), "Kilns".to_string())]);
+        assert_eq!(
+            fields(&s),
+            vec![(format!("REF {name} \\h"), "Kilns".to_string())]
+        );
         // A second reference to the same heading reuses the bookmark.
-        s.run("insert.crossReference", &json!({"to": "heading", "target": "Kilns", "show": "page"})).unwrap();
+        s.run(
+            "insert.crossReference",
+            &json!({"to": "heading", "target": "Kilns", "show": "page"}),
+        )
+        .unwrap();
         assert_eq!(s.doc.bookmarks().len(), 1);
-        assert_eq!(fields(&s)[1], (format!("PAGEREF {name} \\h"), "1".to_string()));
+        assert_eq!(
+            fields(&s)[1],
+            (format!("PAGEREF {name} \\h"), "1".to_string())
+        );
         // Update Field follows the heading's new text.
         s.run("select.text", &json!({"text": "ilns"})).unwrap();
         s.run("text.insert", &json!({"text": "ILNS"})).unwrap();
         s.run("references.updateFields", &json!({})).unwrap();
         assert_eq!(fields(&s)[0].1, "KILNS");
-        assert!(s.doc.plain_text(StoryRef::Body).ends_with("See here.KILNS1"), "{}", s.doc.plain_text(StoryRef::Body));
+        assert!(
+            s.doc
+                .plain_text(StoryRef::Body)
+                .ends_with("See here.KILNS1"),
+            "{}",
+            s.doc.plain_text(StoryRef::Body)
+        );
     }
 
     #[test]
@@ -1137,21 +1608,40 @@ mod tests {
         s.run("select.text", &json!({"text": "Kilns"})).unwrap();
         s.run("insert.bookmark", &json!({"name": "Spot"})).unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("insert.crossReference", &json!({"to": "bookmark", "target": "Spot"})).unwrap();
-        assert_eq!(s.doc.bookmarks().len(), 1, "no extra bookmark for a named one");
-        assert_eq!(fields(&s), vec![("REF Spot \\h".to_string(), "Kilns".to_string())]);
+        s.run(
+            "insert.crossReference",
+            &json!({"to": "bookmark", "target": "Spot"}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.doc.bookmarks().len(),
+            1,
+            "no extra bookmark for a named one"
+        );
+        assert_eq!(
+            fields(&s),
+            vec![("REF Spot \\h".to_string(), "Kilns".to_string())]
+        );
     }
 
     #[test]
     fn cross_reference_inside_its_own_target_paragraph() {
         let mut s = Session::new(wordcraft_doc::Document::from_text("Kilns"));
-        s.run("styles.apply", &json!({"style": "Heading 1"})).unwrap();
+        s.run("styles.apply", &json!({"style": "Heading 1"}))
+            .unwrap();
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("insert.crossReference", &json!({"to": "heading", "target": "Kilns"})).unwrap();
+        s.run(
+            "insert.crossReference",
+            &json!({"to": "heading", "target": "Kilns"}),
+        )
+        .unwrap();
         assert_eq!(s.doc.plain_text(StoryRef::Body), "KilnsKilns");
         // The field sits after the bookmark, so it doesn't mark itself.
         let name = s.doc.bookmarks()[0].0.clone();
-        assert_eq!(crate::cmd::references::bookmark_text(&s.doc, &name).as_deref(), Some("Kilns"));
+        assert_eq!(
+            crate::cmd::references::bookmark_text(&s.doc, &name).as_deref(),
+            Some("Kilns")
+        );
     }
 
     fn two_sources(s: &mut Session, a_title: &str) {
@@ -1165,7 +1655,8 @@ mod tests {
     fn author_date_styles_cite_and_list() {
         let mut s = Session::new(wordcraft_doc::Document::new());
         two_sources(&mut s, "Shared Spaces");
-        s.run("references.citation", &json!({"tag": "A", "pages": "12"})).unwrap();
+        s.run("references.citation", &json!({"tag": "A", "pages": "12"}))
+            .unwrap();
         s.run("references.citation", &json!({"tag": "B"})).unwrap();
         s.run("text.newParagraph", &json!({})).unwrap();
         s.run("references.bibliography", &json!({})).unwrap();
@@ -1187,21 +1678,35 @@ mod tests {
             ),
         ];
         for (style, cites, list) in cases {
-            s.run("references.citationStyle", &json!({"style": style})).unwrap();
+            s.run("references.citationStyle", &json!({"style": style}))
+                .unwrap();
             let t = s.doc.plain_text(StoryRef::Body);
             assert!(t.starts_with(cites) && t.contains(list), "{style}: {t}");
         }
-        assert!(s.run("references.citationStyle", &json!({"style": "Vancouver"})).unwrap_err().to_string().contains("Turabian"));
-        assert_eq!(s.bib_style, "Turabian", "an unknown style keeps the current one");
+        assert!(
+            s.run("references.citationStyle", &json!({"style": "Vancouver"}))
+                .unwrap_err()
+                .to_string()
+                .contains("Turabian")
+        );
+        assert_eq!(
+            s.bib_style, "Turabian",
+            "an unknown style keeps the current one"
+        );
     }
 
     #[test]
     fn numbered_styles_count_in_order_of_first_citation() {
         let mut s = Session::new(wordcraft_doc::Document::new());
         two_sources(&mut s, "Shared Spaces");
-        s.run("references.citationStyle", &json!({"style": "ISO 690 (numerical)"})).unwrap();
+        s.run(
+            "references.citationStyle",
+            &json!({"style": "ISO 690 (numerical)"}),
+        )
+        .unwrap();
         s.run("text.insert", &json!({"text": "Later "})).unwrap();
-        s.run("references.citation", &json!({"tag": "A", "pages": "12"})).unwrap();
+        s.run("references.citation", &json!({"tag": "A", "pages": "12"}))
+            .unwrap();
         assert_eq!(fields(&s)[0].1, "(1, p. 12)");
         // Citing B earlier in the text makes it number 1 and renumbers A.
         s.run("caret.docStart", &json!({})).unwrap();
@@ -1232,7 +1737,8 @@ mod tests {
             ),
         ];
         for (style, cites, list) in cases {
-            s.run("references.citationStyle", &json!({"style": style})).unwrap();
+            s.run("references.citationStyle", &json!({"style": style}))
+                .unwrap();
             let t = s.doc.plain_text(StoryRef::Body);
             assert!(t.starts_with(cites) && t.contains(list), "{style}: {t}");
         }
@@ -1243,21 +1749,42 @@ mod tests {
         let mut s = Session::new(wordcraft_doc::Document::new());
         two_sources(&mut s, "Atlas of Studios");
         s.run("references.citation", &json!({"tag": "A"})).unwrap();
-        s.run("references.citation", &json!({"tag": "B", "pages": "15"})).unwrap();
+        s.run("references.citation", &json!({"tag": "B", "pages": "15"}))
+            .unwrap();
         s.run("text.newParagraph", &json!({})).unwrap();
         s.run("references.bibliography", &json!({})).unwrap();
         let okafor = "Okafor N. Kilns and Clay // Studio Quarterly. – 2019. – Vol. 4. – P. 10-20.";
         let rivera = "Rivera A., Chen M. Atlas of Studios. – Portland : Harbor Books, 2021.";
         // Word's style and style-sheet names pick the same styles.
-        s.run("references.citationStyle", &json!({"style": "\\GostName.XSL"})).unwrap();
+        s.run(
+            "references.citationStyle",
+            &json!({"style": "\\GostName.XSL"}),
+        )
+        .unwrap();
         assert_eq!(s.bib_style, "GOST (name sort)");
         let t = s.doc.plain_text(StoryRef::Body);
-        assert!(t.starts_with("[2][1, p. 15]") && t.contains(&format!("1. {okafor}\n2. {rivera}")), "{t}");
-        s.run("references.citationStyle", &json!({"style": "GOST - Title Sort"})).unwrap();
+        assert!(
+            t.starts_with("[2][1, p. 15]") && t.contains(&format!("1. {okafor}\n2. {rivera}")),
+            "{t}"
+        );
+        s.run(
+            "references.citationStyle",
+            &json!({"style": "GOST - Title Sort"}),
+        )
+        .unwrap();
         let t = s.doc.plain_text(StoryRef::Body);
-        assert!(t.starts_with("[1][2, p. 15]") && t.contains(&format!("1. {rivera}\n2. {okafor}")), "{t}");
-        assert_eq!(find_style("ISO 690 - Numerical Reference").map(|x| x.name), Some("ISO 690 (numerical)"));
-        assert_eq!(find_style("Harvard - Anglia 2008").map(|x| x.name), Some("Harvard (Anglia)"));
+        assert!(
+            t.starts_with("[1][2, p. 15]") && t.contains(&format!("1. {rivera}\n2. {okafor}")),
+            "{t}"
+        );
+        assert_eq!(
+            find_style("ISO 690 - Numerical Reference").map(|x| x.name),
+            Some("ISO 690 (numerical)")
+        );
+        assert_eq!(
+            find_style("Harvard - Anglia 2008").map(|x| x.name),
+            Some("Harvard (Anglia)")
+        );
         assert!(find_style("").is_none() && find_style("Vancouver").is_none());
     }
 }

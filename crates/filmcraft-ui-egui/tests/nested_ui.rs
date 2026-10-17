@@ -19,7 +19,10 @@ impl Driver {
         s.execute("file.openDemoProject", json!({})).unwrap();
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(s).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -55,7 +58,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 
     fn app(&mut self) -> &mut FilmcraftApp {
@@ -67,9 +73,19 @@ impl Driver {
     /// (x, y, width, height) of an element, if it is on screen.
     fn rect(&mut self, id: &str) -> Option<[f64; 4]> {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == json!(id))?.clone();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == json!(id))?
+            .clone();
         let r = &e["rect"];
-        Some([r[0].as_f64().unwrap(), r[1].as_f64().unwrap(), r[2].as_f64().unwrap(), r[3].as_f64().unwrap()])
+        Some([
+            r[0].as_f64().unwrap(),
+            r[1].as_f64().unwrap(),
+            r[2].as_f64().unwrap(),
+            r[3].as_f64().unwrap(),
+        ])
     }
 }
 
@@ -85,21 +101,42 @@ fn the_empty_end_of_a_nest_is_marked_in_the_timeline() {
     };
     d.exec("timeline.select", json!({"clips": [a.id.0, b.id.0]}));
     let r = d.exec("clip.nest", json!({"name": "Inner"}));
-    let (nested, nest) = (r["sequence"].as_u64().unwrap(), r["clips"][0].as_u64().unwrap());
+    let (nested, nest) = (
+        r["sequence"].as_u64().unwrap(),
+        r["clips"][0].as_u64().unwrap(),
+    );
     d.frames(3);
-    let clip = d.rect(&format!("timeline.clip.{nest}")).expect("the nest clip is on screen");
-    assert!(d.rect(&format!("timeline.clip.{nest}.empty")).is_none(), "a full nest has no empty part");
+    let clip = d
+        .rect(&format!("timeline.clip.{nest}"))
+        .expect("the nest clip is on screen");
+    assert!(
+        d.rect(&format!("timeline.clip.{nest}.empty")).is_none(),
+        "a full nest has no empty part"
+    );
     // remove the second clip inside the nest
     d.exec("sequence.open", json!({"item": nested}));
     d.exec("timeline.select", json!({"clips": [b.id.0]}));
     d.exec("edit.clear", json!({}));
     d.exec("sequence.open", json!({"item": outer}));
     d.frames(3);
-    let clip2 = d.rect(&format!("timeline.clip.{nest}")).expect("the nest clip is on screen");
-    assert!((clip2[2] - clip[2]).abs() < 1.0, "the nest is as long as before");
-    let empty = d.rect(&format!("timeline.clip.{nest}.empty")).expect("the empty part is marked");
+    let clip2 = d
+        .rect(&format!("timeline.clip.{nest}"))
+        .expect("the nest clip is on screen");
+    assert!(
+        (clip2[2] - clip[2]).abs() < 1.0,
+        "the nest is as long as before"
+    );
+    let empty = d
+        .rect(&format!("timeline.clip.{nest}.empty"))
+        .expect("the empty part is marked");
     // it covers the removed clip's share of the nest, at its right end
     let share = b.duration.0 as f64 / (a.duration.0 + b.duration.0) as f64;
-    assert!((empty[2] - clip2[2] * share).abs() < 2.0, "{empty:?} of {clip2:?}, share {share}");
-    assert!((empty[0] + empty[2] - (clip2[0] + clip2[2])).abs() < 1.0, "it ends where the clip ends");
+    assert!(
+        (empty[2] - clip2[2] * share).abs() < 2.0,
+        "{empty:?} of {clip2:?}, share {share}"
+    );
+    assert!(
+        (empty[0] + empty[2] - (clip2[0] + clip2[2])).abs() < 1.0,
+        "it ends where the clip ends"
+    );
 }

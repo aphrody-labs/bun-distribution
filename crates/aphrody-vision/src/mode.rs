@@ -90,7 +90,9 @@ impl VisionMode {
     /// A VQA mode for `question`.
     #[must_use]
     pub fn vqa(question: impl Into<String>) -> Self {
-        Self::Vqa { question: question.into() }
+        Self::Vqa {
+            question: question.into(),
+        }
     }
 
     /// This mode's discriminant.
@@ -148,7 +150,7 @@ impl VisionMode {
                 // DocTags carry <loc_*> boxes per block, which is exactly the
                 // per-region answer, so the trained instruction is reused.
                 "Convert this page to docling.".to_owned()
-            },
+            }
             (Self::DenseRegion, Family::Florence) => "<DENSE_REGION_CAPTION>".to_owned(),
             (Self::DenseRegion, Family::Chat) => "List each distinct region of this image and \
                                                   describe it on its own line."
@@ -184,7 +186,7 @@ fn alternative_for(kind: ModeKind) -> &'static str {
     match kind {
         ModeKind::FullPageOcr | ModeKind::DenseRegion => {
             aphrody_models::LocalRole::Ocr.default_model()
-        },
+        }
         ModeKind::Caption | ModeKind::Vqa => CHAT_ALTERNATIVE_MODEL,
     }
 }
@@ -237,7 +239,9 @@ mod tests {
 
     #[test]
     fn refusing_a_mode_names_a_model_that_serves_it() {
-        let error = VisionMode::Caption.prompt_for("granite-docling-258m").unwrap_err();
+        let error = VisionMode::Caption
+            .prompt_for("granite-docling-258m")
+            .unwrap_err();
         let rendered = error.to_string();
         assert!(rendered.contains("smolvlm-500m-q8"), "{rendered}");
         assert!(matches!(error, VisionError::ModeUnsupported { .. }));
@@ -257,9 +261,14 @@ mod tests {
 
     #[test]
     fn florence_modes_use_task_control_tokens() {
-        assert_eq!(VisionMode::Caption.prompt_for("florence2-base-ft").unwrap(), "<CAPTION>");
         assert_eq!(
-            VisionMode::DenseRegion.prompt_for("florence2-base-ft").unwrap(),
+            VisionMode::Caption.prompt_for("florence2-base-ft").unwrap(),
+            "<CAPTION>"
+        );
+        assert_eq!(
+            VisionMode::DenseRegion
+                .prompt_for("florence2-base-ft")
+                .unwrap(),
             "<DENSE_REGION_CAPTION>"
         );
     }
@@ -267,14 +276,21 @@ mod tests {
     #[test]
     fn vqa_passes_the_question_through_unchanged() {
         let question = "How many windows are open, and which one is focused?";
-        assert_eq!(VisionMode::vqa(question).prompt_for("smolvlm-500m-q8").unwrap(), question);
+        assert_eq!(
+            VisionMode::vqa(question)
+                .prompt_for("smolvlm-500m-q8")
+                .unwrap(),
+            question
+        );
     }
 
     #[test]
     fn dense_region_on_docling_asks_for_doctags() {
         // Any other instruction loses the <loc_*> boxes, which are the whole
         // point of the mode on this family.
-        let prompt = VisionMode::DenseRegion.prompt_for("granite-docling-258m").unwrap();
+        let prompt = VisionMode::DenseRegion
+            .prompt_for("granite-docling-258m")
+            .unwrap();
         assert!(prompt.contains("docling"), "{prompt}");
     }
 

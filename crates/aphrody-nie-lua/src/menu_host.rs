@@ -648,7 +648,7 @@ fn lua_table_to_i32_vec(v: Option<&Value>) -> Vec<i32> {
                 .map(|i| t.raw_get::<Value>(i as i64).ok())
                 .map(|e| lua_to_i32(e.as_ref()))
                 .collect()
-        },
+        }
         _ => Vec::new(),
     }
 }
@@ -680,8 +680,12 @@ fn value_repr(v: &Value) -> String {
         },
         Value::Number(n) => {
             let u = *n as i64 as u32;
-            if u as f64 == *n { entier_hex(u) } else { format!("{n}") }
-        },
+            if u as f64 == *n {
+                entier_hex(u)
+            } else {
+                format!("{n}")
+            }
+        }
         Value::String(s) => format!("{:?}", s.to_string_lossy()),
         Value::Table(_) => "<table>".to_string(),
         Value::Function(_) => "<function>".to_string(),
@@ -876,7 +880,9 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                 if let Some(string) = result {
                     let mut state = state.borrow_mut();
                     let layer = state.current_layer;
-                    state.known_cmd_log.push(("ObservedNativeStringQuery".to_string(), layer));
+                    state
+                        .known_cmd_log
+                        .push(("ObservedNativeStringQuery".to_string(), layer));
                     let mut values = vec![Value::Boolean(string.is_some())];
                     if let Some(string) = string {
                         values.push(Value::String(string));
@@ -892,10 +898,10 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                 let value = match observed {
                     crate::menu_state::ObservedMenuQueryValue::Boolean(value) => {
                         Value::Boolean(value)
-                    },
+                    }
                     crate::menu_state::ObservedMenuQueryValue::Byte(value) => {
                         Value::Number(f64::from(value))
-                    },
+                    }
                 };
                 let layer = state.borrow().current_layer;
                 state
@@ -910,14 +916,19 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                     let state = state.borrow();
                     (state.current_layer, state.text_by_id.get(&text_id).cloned())
                 };
-                state.borrow_mut().known_cmd_log.push(("GetText".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GetText".to_string(), layer));
                 return match text {
-                    Some(text) => {
-                        Ok(MultiValue::from_vec(vec![Value::String(lua.create_string(text)?)]))
-                    },
+                    Some(text) => Ok(MultiValue::from_vec(vec![Value::String(
+                        lua.create_string(text)?,
+                    )])),
                     // Le handler local `0x140CA60C0` sélectionne une chaîne statique vide si
                     // la table ne contient pas l'ID, puis pousse toujours une string Lua.
-                    None => Ok(MultiValue::from_vec(vec![Value::String(lua.create_string("")?)])),
+                    None => Ok(MultiValue::from_vec(vec![Value::String(
+                        lua.create_string("")?,
+                    )])),
                 };
             }
             if cmd_id == CMD_GENERAL_IS_CONDITION_ACTIVE {
@@ -925,22 +936,35 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                 let (active, layer) = {
                     let state = state.borrow();
                     (
-                        state.condition_flags.get(&condition_id).copied().unwrap_or(false),
+                        state
+                            .condition_flags
+                            .get(&condition_id)
+                            .copied()
+                            .unwrap_or(false),
                         state.current_layer,
                     )
                 };
-                state.borrow_mut().known_cmd_log.push(("IsConditionActive".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("IsConditionActive".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Boolean(active)]));
             }
             if cmd_id == CMD_GENERAL_GET_LIST_COUNT {
                 let list_id = lua_to_u32(args.get(1));
                 let (count, resolved, layer) = {
                     let state = state.borrow();
-                    let (count, resolved) =
-                        state.list_counts.get(&list_id).copied().unwrap_or((0, false));
+                    let (count, resolved) = state
+                        .list_counts
+                        .get(&list_id)
+                        .copied()
+                        .unwrap_or((0, false));
                     (count, resolved, state.current_layer)
                 };
-                state.borrow_mut().known_cmd_log.push(("GetListCount".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GetListCount".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![
                     Value::Number(f64::from(count)),
                     Value::Boolean(resolved),
@@ -950,46 +974,79 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                 let resource_id = lua_to_u32(args.get(1));
                 let (available, layer) = {
                     let state = state.borrow();
-                    (state.resource_ids.contains(&resource_id), state.current_layer)
+                    (
+                        state.resource_ids.contains(&resource_id),
+                        state.current_layer,
+                    )
                 };
-                state.borrow_mut().known_cmd_log.push(("ResourceAvailable".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("ResourceAvailable".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Boolean(available)]));
             }
             if cmd_id == CMD_GENERAL_APPLY_UI_EFFECT {
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("ApplyUiEffect".to_string(), layer));
-                return Ok(MultiValue::from_vec(vec![Value::Number(f64::from(u8::from(
-                    args.len() > 1,
-                )))]));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("ApplyUiEffect".to_string(), layer));
+                return Ok(MultiValue::from_vec(vec![Value::Number(f64::from(
+                    u8::from(args.len() > 1),
+                ))]));
             }
             if cmd_id == CMD_GENERAL_APPLY_STATE {
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("ApplyState".to_string(), layer));
-                return Ok(MultiValue::from_vec(vec![Value::Number(f64::from(u8::from(
-                    args.len() > 1,
-                )))]));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("ApplyState".to_string(), layer));
+                return Ok(MultiValue::from_vec(vec![Value::Number(f64::from(
+                    u8::from(args.len() > 1),
+                ))]));
             }
             if cmd_id == CMD_GENERAL_SET_GLOBAL_INT {
                 let layer = state.borrow().current_layer;
                 if args.len() <= 1 {
                     return Ok(MultiValue::from_vec(vec![Value::Number(0.0)]));
                 }
-                state.borrow_mut().set_engine_int_2728(lua_to_i32(args.get(1)));
-                state.borrow_mut().known_cmd_log.push(("SetGlobalInt".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .set_engine_int_2728(lua_to_i32(args.get(1)));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("SetGlobalInt".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Number(1.0)]));
             }
             if cmd_id == CMD_GENERAL_QUERY_BOOL_A {
                 let key = lua_to_u32(args.get(1));
-                let active = state.borrow().condition_flags.get(&key).copied().unwrap_or(false);
+                let active = state
+                    .borrow()
+                    .condition_flags
+                    .get(&key)
+                    .copied()
+                    .unwrap_or(false);
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("GeneralQueryBoolA".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GeneralQueryBoolA".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Boolean(active)]));
             }
             if cmd_id == CMD_GENERAL_QUERY_BOOL_B {
                 let key = lua_to_u32(args.get(1));
-                let active = state.borrow().condition_flags.get(&key).copied().unwrap_or(false);
+                let active = state
+                    .borrow()
+                    .condition_flags
+                    .get(&key)
+                    .copied()
+                    .unwrap_or(false);
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("GeneralQueryBoolB".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GeneralQueryBoolB".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Boolean(active)]));
             }
             if cmd_id == CMD_GENERAL_QUERY_STATE {
@@ -997,11 +1054,17 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
                     return Ok(MultiValue::from_vec(vec![Value::Boolean(false)]));
                 }
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("GeneralQueryState".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GeneralQueryState".to_string(), layer));
                 // Le handler natif pousse d'abord le drapeau de succès, puis une valeur d'état.
                 // Le registre d'état n'est pas encore alimenté par le save-data : 0 est donc le
                 // défaut observable, mais le protocole de retour (bool, entier) est conservé.
-                return Ok(MultiValue::from_vec(vec![Value::Boolean(true), Value::Number(0.0)]));
+                return Ok(MultiValue::from_vec(vec![
+                    Value::Boolean(true),
+                    Value::Number(0.0),
+                ]));
             }
             if cmd_id == CMD_GENERAL_APPLY_CURRENT_STATE {
                 let layer = state.borrow().current_layer;
@@ -1021,16 +1084,27 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
             }
             if cmd_id == CMD_GENERAL_GET_CURRENT_TEXT {
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("GeneralGetCurrentText".to_string(), layer));
-                return Ok(MultiValue::from_vec(vec![Value::String(lua.create_string("")?)]));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GeneralGetCurrentText".to_string(), layer));
+                return Ok(MultiValue::from_vec(vec![Value::String(
+                    lua.create_string("")?,
+                )]));
             }
             if cmd_id == CMD_GENERAL_GET_CURRENT_INT {
                 let layer = state.borrow().current_layer;
-                state.borrow_mut().known_cmd_log.push(("GeneralGetCurrentInt".to_string(), layer));
+                state
+                    .borrow_mut()
+                    .known_cmd_log
+                    .push(("GeneralGetCurrentInt".to_string(), layer));
                 return Ok(MultiValue::from_vec(vec![Value::Number(0.0)]));
             }
             let layer = state.borrow().current_layer;
-            state.borrow_mut().unknown_general_cmd_log.push((cmd_id, layer, args_repr(&args)));
+            state
+                .borrow_mut()
+                .unknown_general_cmd_log
+                .push((cmd_id, layer, args_repr(&args)));
             // Les scripts natifs emploient le retour de commandes encore opaques dans des
             // comparaisons et des calculs. Conserver le neutre numérique empêche une erreur VM,
             // tandis que `unknown_general_cmd_log` rend le manque explicitement observable.
@@ -1040,7 +1114,11 @@ pub fn install_menu_host(lua: &Lua) -> mlua::Result<Rc<RefCell<MenuState>>> {
     }
 
     // ── funcLuaActionCommand / funcLuaCameraCommand / funcLuaSpTacticsCommand ─
-    for name in &["funcLuaActionCommand", "funcLuaCameraCommand", "funcLuaSpTacticsCommand"] {
+    for name in &[
+        "funcLuaActionCommand",
+        "funcLuaCameraCommand",
+        "funcLuaSpTacticsCommand",
+    ] {
         let f = lua.create_function(|_lua, _args: Variadic<Value>| Ok(Value::Number(0.0)))?;
         lua.globals().set(*name, f)?;
     }
@@ -1112,7 +1190,9 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
     // slot moteur ne fait pas partie de MenuState, mais le retour débloque
     // la branche Lua de démarrage.
     if cmd_id == CMD_KIZUNA_TOWN_RESET {
-        state.known_cmd_log.push(("KizunaTownReset".to_string(), state.current_layer));
+        state
+            .known_cmd_log
+            .push(("KizunaTownReset".to_string(), state.current_layer));
         return 1.0;
     }
 
@@ -1127,10 +1207,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let layer = lua_to_u32(args.first());
             let obj_id = lua_to_u32(args.get(1));
             let enabled = lua_to_bool(args.get(2), false);
-            state.known_cmd_log.push(("SetUseSaveButton".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetUseSaveButton".to_string(), layer));
             state.layer(layer).obj(obj_id).use_save_button = Some(enabled);
             return 1.0;
-        },
+        }
 
         // ── SetObjectField0x124(objId, value, [index], [layerId]) ──────────
         // Handler 0x140CE84A0 writes the integer verbatim and invalidates +0x168.
@@ -1144,10 +1226,16 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let value = lua_to_i32(args.get(1));
             let index = lua_to_i32(args.get(2));
             let layer = target_layer(state, args, 3);
-            state.known_cmd_log.push(("SetObjectField0x124".to_string(), layer));
-            state.layer(layer).obj(obj_id).native_field_0x124_by_index.insert(index, value);
+            state
+                .known_cmd_log
+                .push(("SetObjectField0x124".to_string(), layer));
+            state
+                .layer(layer)
+                .obj(obj_id)
+                .native_field_0x124_by_index
+                .insert(index, value);
             return 1.0;
-        },
+        }
 
         // ── SetObjectVisible(objId, index, visible, [layerId]) ──────────────
         CMD_SET_OBJECT_VISIBLE => {
@@ -1155,11 +1243,13 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let index = lua_to_i32(args.get(1));
             let visible = lua_to_bool(args.get(2), true);
             let layer = target_layer(state, args, 3);
-            state.known_cmd_log.push(("SetObjectVisible".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetObjectVisible".to_string(), layer));
             let o = state.layer(layer).obj(obj_id);
             o.visible = visible;
             o.visible_par_index.insert(index, visible);
-        },
+        }
 
         // ── SetSprite(objId, index, cellId, frame, color, [layerId]) ────────
         CMD_SET_SPRITE => {
@@ -1175,7 +1265,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             obj.sprite_texture_hash = Some(cell_id);
             obj.frame = Some(frame);
             obj.color_hash = color;
-        },
+        }
 
         // ── SetText(objId, index, textHash|string, …, [layerId]) ────────────
         CMD_SET_TEXT => {
@@ -1184,13 +1274,13 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 Some(Value::String(s)) => Some(s.to_string_lossy()),
                 Some(v @ Value::Number(_)) | Some(v @ Value::Integer(_)) => {
                     Some(format!("0x{:08X}", lua_to_u32(Some(v))))
-                },
+                }
                 _ => None,
             };
             let layer = state.current_layer;
             state.known_cmd_log.push(("SetText".to_string(), layer));
             state.layer(layer).obj(obj_id).text = text;
-        },
+        }
 
         // ── SetColor(objId, part, colorId, [cellIndex]) ─────────────────────
         CMD_SET_COLOR => {
@@ -1199,18 +1289,20 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let layer = state.current_layer;
             state.known_cmd_log.push(("SetColor".to_string(), layer));
             state.layer(layer).obj(obj_id).color_hash = Some(color_id);
-        },
+        }
 
         // ── SetLayerActive(layerId, active) — met aussi à jour le layer courant ─
         CMD_SET_LAYER_ACTIVE => {
             let layer_id = lua_to_u32(args.first());
             let active = lua_to_bool(args.get(1), true);
-            state.known_cmd_log.push(("SetLayerActive".to_string(), layer_id));
+            state
+                .known_cmd_log
+                .push(("SetLayerActive".to_string(), layer_id));
             state.layer(layer_id).enabled = active;
             if active {
                 state.current_layer = layer_id;
             }
-        },
+        }
 
         // ── SetPartVisible(objId, index, partId, enabled, [layerId]) ────────
         // Granularité « part » non encore modélisée dans MenuObjectState : on rabat sur la
@@ -1219,7 +1311,9 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let enabled = lua_to_bool(args.get(3), true);
             let layer = target_layer(state, args, 4);
-            state.known_cmd_log.push(("SetPartVisible".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetPartVisible".to_string(), layer));
             // Symétrique : la commande MONTRE autant qu'elle cache. Le handler (0x140CEA100) lit
             // ses quatre arguments puis réduit le dernier à un booléen (`setne`) qu'il applique —
             // il n'y a pas de chemin qui ignorerait `true`. N'agir que sur `false`, comme avant,
@@ -1230,7 +1324,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let o = state.layer(layer).obj(obj_id);
             o.visible = enabled;
             o.visible_par_index.insert(index, enabled);
-        },
+        }
 
         // KizunaSetPartVisible (0x140CCC930) : (objId, partId, visible).
         // Le handler natif résout l'objet puis la part par hash et marque la part dirty. Le
@@ -1243,10 +1337,16 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let part_id = lua_to_u32(args.get(1));
             let visible = lua_to_bool(args.get(2), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("KizunaSetPartVisible".to_string(), layer));
-            state.layer(layer).obj(obj_id).part_visible.insert(part_id, visible);
+            state
+                .known_cmd_log
+                .push(("KizunaSetPartVisible".to_string(), layer));
+            state
+                .layer(layer)
+                .obj(obj_id)
+                .part_visible
+                .insert(part_id, visible);
             return 1.0;
-        },
+        }
 
         // KizunaSetPartColorRGBA (0x140CDF9F0) : (objId, partIndex, partId, r, g, b, a).
         // Le septième argument est optionnel dans le natif (alpha = 0 si absent), mais les
@@ -1265,10 +1365,16 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 lua_to_f32(args.get(6)),
             ];
             let layer = state.current_layer;
-            state.known_cmd_log.push(("KizunaSetPartColorRGBA".to_string(), layer));
-            state.layer(layer).obj(obj_id).part_color_rgba.insert(part_id, rgba);
+            state
+                .known_cmd_log
+                .push(("KizunaSetPartColorRGBA".to_string(), layer));
+            state
+                .layer(layer)
+                .obj(obj_id)
+                .part_color_rgba
+                .insert(part_id, rgba);
             return 1.0;
-        },
+        }
 
         // ── SetIconSprite(objId, h1, h2, h3, n4, [idx], [enable], [layerId]) ──
         // Handler 0x140CE74D0 : résout l'objet (arg0) puis 0x14053EB00 écrit des données
@@ -1280,11 +1386,13 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let h1 = lua_to_u32_or_none(args.get(1)); // chemin g4tx
             let h2 = lua_to_u32_or_none(args.get(2)); // nom de région/texture
             let layer = target_layer(state, args, 7);
-            state.known_cmd_log.push(("SetIconSprite".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetIconSprite".to_string(), layer));
             let o = state.layer(layer).obj(obj_id);
             o.sprite_texture_hash = h1;
             o.sprite_region_hash = h2;
-        },
+        }
 
         // ── SetNodeSprite(objId, index, spriteHash) ─────────────────────────
         // Handler 0x140CDEEC0 -> 0x14101A280 (dword clé-hash sur sous-nœud). Champ sprite INFÉRÉ.
@@ -1292,9 +1400,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let sprite = lua_to_u32_or_none(args.get(2));
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetNodeSprite".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetNodeSprite".to_string(), layer));
             state.layer(layer).obj(obj_id).sprite_texture_hash = sprite;
-        },
+        }
 
         // ── SetNodeSpriteEnabled(objId, index, spriteHash, enabled) ─────────
         // Handler 0x140CDE7C0 -> 0x14101A280 (hash) + 0x14101A5A0 (flag). Sprite + visibilité INFÉRÉS.
@@ -1303,11 +1413,13 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let sprite = lua_to_u32_or_none(args.get(2));
             let enabled = lua_to_bool(args.get(3), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetNodeSpriteEnabled".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetNodeSpriteEnabled".to_string(), layer));
             let obj = state.layer(layer).obj(obj_id);
             obj.sprite_texture_hash = sprite;
             obj.visible = enabled;
-        },
+        }
 
         // ── SetPartEnabled(objId, index, partHash, enabled, [layerId]) ──────
         // Handler 0x140CC77C0 : écrit BYTE [part+0x90] sur la part repérée par `partHash`.
@@ -1316,10 +1428,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let enabled = lua_to_bool(args.get(3), true);
             let layer = target_layer(state, args, 4);
-            state.known_cmd_log.push(("SetPartEnabled".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetPartEnabled".to_string(), layer));
             let obj = state.layer(layer).obj(obj_id);
             obj.visible = enabled;
-        },
+        }
 
         // ── SetAllPartsEnabled(objId, index, enabled) ───────────────────────
         // Handler 0x140CDE670 : propage le flag à TOUS les enfants. Fallback symétrique.
@@ -1327,10 +1441,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let enabled = lua_to_bool(args.get(2), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetAllPartsEnabled".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetAllPartsEnabled".to_string(), layer));
             let obj = state.layer(layer).obj(obj_id);
             obj.visible = enabled;
-        },
+        }
 
         // ── SetChildVisible(objId, childHash, visible, [index]) ─────────────
         // Handler 0x140CE7CB0 -> 0x140540E90 (chemin de visibilité). Fallback symétrique.
@@ -1338,10 +1454,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let visible = lua_to_bool(args.get(2), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetChildVisible".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetChildVisible".to_string(), layer));
             let obj = state.layer(layer).obj(obj_id);
             obj.visible = visible;
-        },
+        }
 
         // ── SetObjectActive(objId, active, [layerId]) ───────────────────────
         // Handler 0x140CF3940 -> 0x14051A6B0 (flag d'octet). Champ `active` INFÉRÉ.
@@ -1349,9 +1467,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let active = lua_to_bool(args.get(1), true);
             let layer = target_layer(state, args, 2);
-            state.known_cmd_log.push(("SetObjectActive".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetObjectActive".to_string(), layer));
             state.layer(layer).obj(obj_id).active = active;
-        },
+        }
 
         // ── SetItemCount(objId, count, [a], [b]) ────────────────────────────
         // Handler 0x140CE6D50 -> 0x14053E550 : écrit DWORD [obj+0x148] = count. Champ numérique CONFIRMÉ.
@@ -1359,9 +1479,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let count = lua_to_i32(args.get(1));
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetItemCount".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetItemCount".to_string(), layer));
             state.layer(layer).obj(obj_id).number = Some(count);
-        },
+        }
 
         // ── SetNodeParam / ObjectAction : objId reversé, mutation interne non modélisée ──
         // Handlers 0x140CDF220 (BYTE [node+0xB1]) et 0x140CF48C0 (appel virtuel). Le layout
@@ -1378,7 +1500,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 state.known_cmd_log.push((name.to_string(), layer));
             }
             let _ = state.layer(layer).obj(obj_id);
-        },
+        }
 
         // ── SetObjectValue(objId, valueHash, flag) ──────────────────────────
         // 0x140CE6580 : FindObjectInLayer puis DWORD [obj+0x140]=valueHash. On retient valueHash
@@ -1387,9 +1509,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let value = lua_to_i32(args.get(1));
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetObjectValue".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetObjectValue".to_string(), layer));
             state.layer(layer).obj(obj_id).value = Some(value);
-        },
+        }
 
         // ── SetSubObjectEnabled(objId, index, enabled) ──────────────────────
         // 0x140CCD490 : setter bool sur le sous-objet [obj+0x10]. Granularité non modélisée :
@@ -1398,9 +1522,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let enabled = lua_to_bool(args.get(2), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetSubObjectEnabled".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetSubObjectEnabled".to_string(), layer));
             state.layer(layer).obj(obj_id).visible = enabled;
-        },
+        }
 
         // ── SetSubNodeEnabled(objId, subId, enabled, [v]) ───────────────────
         // 0x140CE7A50 -> 0x140540FC0(obj, subId, enabled). Fallback objet symétrique.
@@ -1408,9 +1534,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let enabled = lua_to_bool(args.get(2), true);
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetSubNodeEnabled".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetSubNodeEnabled".to_string(), layer));
             state.layer(layer).obj(obj_id).visible = enabled;
-        },
+        }
 
         // ── SetNodeIndex(objId, index, value, [layerId]) ────────────────────
         // 0x140CD0470 : layerId optionnel en arg[3] (FindLayerById) sinon layer courant. Le champ
@@ -1418,9 +1546,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         CMD_SET_NODE_INDEX => {
             let obj_id = lua_to_u32(args.first());
             let layer = target_layer(state, args, 3);
-            state.known_cmd_log.push(("SetNodeIndex".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetNodeIndex".to_string(), layer));
             let _ = state.layer(layer).obj(obj_id);
-        },
+        }
 
         // ── SetSelectedIndex(objId, index, [bool], [bool]) -> bool (0x6A06BC75) ──
         // handler 0x140CE6B20 reversé : écrit l'index SÉLECTIONNÉ (curseur) `[obj+0x154]` de la liste.
@@ -1429,10 +1559,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let obj_id = lua_to_u32(args.first());
             let index = lua_to_i32(args.get(1));
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetSelectedIndex".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("SetSelectedIndex".to_string(), layer));
             state.layer(layer).obj(obj_id).selected_index = Some(index);
             return 1.0;
-        },
+        }
 
         // ── SetItemFlagA/B(objId, itemIndex, bool) -> bool (0x838B3427 / 0x32F65AA1) ──
         // Flags par-item (handlers 0x140CC69F0/0x140CC7670 reversés, renvoient al=1 si ≥3 args). Les 2
@@ -1449,7 +1581,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 return 1.0;
             }
             return 0.0;
-        },
+        }
 
         // ── ObjectActionById(objId, [index], [layerId]) ─────────────────────
         // 0x140CF4400 -> 0x14051E970 (même action virtuelle que ObjectAction). layerId optionnel
@@ -1457,9 +1589,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         CMD_OBJECT_ACTION_BY_ID => {
             let obj_id = lua_to_u32(args.first());
             let layer = target_layer(state, args, 2);
-            state.known_cmd_log.push(("ObjectActionById".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("ObjectActionById".to_string(), layer));
             let _ = state.layer(layer).obj(obj_id);
-        },
+        }
 
         // ── Setters de sous-nœud / part (objId = arg0, layer courant) ───────
         // SetNodeValue, SetNodeParamBlock, SetPartParamI/F (param int/float par part),
@@ -1478,7 +1612,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 state.known_cmd_log.push((name.to_string(), layer));
             }
             let _ = state.layer(layer).obj(obj_id);
-        },
+        }
 
         // ── SetItemParam(objId, itemIndex, key, value, [en]) ────────────────
         // 0x140C96E80 : FindObjectInLayer(obj, itemIndex) puis pose key->value PAR ITEM. Layout
@@ -1490,9 +1624,16 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let key = lua_to_u32(args.get(2));
             let value = lua_to_i32(args.get(3));
             let layer = state.current_layer;
-            state.known_cmd_log.push(("SetItemParam".to_string(), layer));
-            state.layer(layer).obj(obj_id).sub_item(item_index).params.insert(key, value);
-        },
+            state
+                .known_cmd_log
+                .push(("SetItemParam".to_string(), layer));
+            state
+                .layer(layer)
+                .obj(obj_id)
+                .sub_item(item_index)
+                .params
+                .insert(key, value);
+        }
 
         // ── SetListItemValues / …Multi(layerId, objId, <table>…) ────────────
         // 0x140CB0240 / 0x140CB0460 : arg0 = layerId (FindLayerById), arg1 = objId, puis les
@@ -1517,11 +1658,13 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             let n_items = columns.iter().map(Vec::len).max().unwrap_or(0);
             let obj = state.layer(layer).obj(obj_id);
             for i in 0..n_items {
-                let vals: Vec<i32> =
-                    columns.iter().map(|c| c.get(i).copied().unwrap_or(0)).collect();
+                let vals: Vec<i32> = columns
+                    .iter()
+                    .map(|c| c.get(i).copied().unwrap_or(0))
+                    .collect();
                 obj.sub_item(i as i32).values = vals;
             }
-        },
+        }
 
         // ── GetObjectAttr(objId, [attr]) -> int : lit la donnée de scène ─────
         // Utilisé par `GetItemButtonNum` (script) pour connaître le nombre d'item-buttons d'un
@@ -1529,9 +1672,11 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         // les slots `AttachLocator` des objbin de l'écran) ; 0 par défaut (layer non-liste).
         CMD_GET_OBJECT_ATTR => {
             let obj_id = lua_to_u32(args.first());
-            state.known_cmd_log.push(("GetObjectAttr".to_string(), state.current_layer));
+            state
+                .known_cmd_log
+                .push(("GetObjectAttr".to_string(), state.current_layer));
             return f64::from(state.object_attr.get(&obj_id).copied().unwrap_or(0));
-        },
+        }
 
         // ── GetObjectActive(objId, [index]) -> bool ─────────────────────────
         // Le getter lit le même octet d'état que SetObjectActive (handler
@@ -1542,7 +1687,9 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         CMD_GET_OBJECT_ACTIVE => {
             let obj_id = lua_to_u32(args.first());
             let layer = state.current_layer;
-            state.known_cmd_log.push(("GetObjectActive".to_string(), layer));
+            state
+                .known_cmd_log
+                .push(("GetObjectActive".to_string(), layer));
             return if state
                 .layers
                 .get(&layer)
@@ -1553,7 +1700,7 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
             } else {
                 0.0
             };
-        },
+        }
 
         // ── Autres getters : renvoient un défaut sûr (état moteur non simulé) ─
         // Renvoyer le défaut maintient le flot de contrôle du script sans crash. Affiner
@@ -1564,10 +1711,12 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         | CMD_GET_GLOBAL_STATE_A
         | CMD_GET_GLOBAL_STATE_B => {
             if let Some(name) = command_name(cmd_id) {
-                state.known_cmd_log.push((name.to_string(), state.current_layer));
+                state
+                    .known_cmd_log
+                    .push((name.to_string(), state.current_layer));
             }
             return 0.0;
-        },
+        }
 
         // ── Famille « apply → return true » (no-arg) : handlers 0x140CBF150 / 0x140CEEE80 /
         // 0x140C96A50 REVERSÉS (désassemblage nie.exe). Chacun lit/query un état moteur, l'applique,
@@ -1581,59 +1730,70 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
         | CMD_APPLY_DEFAULT_TRUE
         | CMD_SET_GLOBAL_FLAG_TRUE => {
             if let Some(name) = command_name(cmd_id) {
-                state.known_cmd_log.push((name.to_string(), state.current_layer));
+                state
+                    .known_cmd_log
+                    .push((name.to_string(), state.current_layer));
             }
             return 1.0;
-        },
+        }
 
         // Batch « apply état moteur → return 1 » (12 handlers reversés via la table de dispatch ;
         // ≤2 ret + `mov al,1` dominant vérifié sur chacun, cf. REVERSED_RETURN1). Même sémantique
         // de retour que la famille ci-dessus.
         c if REVERSED_RETURN1.contains(&c) => {
             if let Some(name) = command_name(cmd_id) {
-                state.known_cmd_log.push((name.to_string(), state.current_layer));
+                state
+                    .known_cmd_log
+                    .push((name.to_string(), state.current_layer));
             }
             return 1.0;
-        },
+        }
 
         // Setters à garde d'arité reversés sur le binaire COURANT (triage iced-x86 + bornes .pdata) :
         // ret unique, aucune déf `al=0`, déf finale `al=1` → renvoient 1. Champ moteur non modélisé.
         // Cf. ARG_GUARDED_RETURN1.
         c if ARG_GUARDED_RETURN1.contains(&c) => {
             if let Some(name) = command_name(cmd_id) {
-                state.known_cmd_log.push((name.to_string(), state.current_layer));
+                state
+                    .known_cmd_log
+                    .push((name.to_string(), state.current_layer));
             }
             return 1.0;
-        },
+        }
 
         // Appels UI Kizuna à garde d'arité : les handlers 0x140CB28E0, 0x140CB3570 et
         // 0x140CB35C0 poussent une réussite après leur mutation dans le manager natif. On
         // conserve leurs arguments numériques par partie sans inventer leur structure native.
         CMD_KIZUNA_APPLY_PART_FLAGS | CMD_KIZUNA_SET_PART_PARAM | CMD_KIZUNA_SET_PART_TEXTURE => {
             if let Some(name) = command_name(cmd_id) {
-                state.known_cmd_log.push((name.to_string(), state.current_layer));
+                state
+                    .known_cmd_log
+                    .push((name.to_string(), state.current_layer));
             }
             if args.len() >= 3 {
                 let obj_id = lua_to_u32(args.first());
                 let part_id = lua_to_u32(args.get(2));
-                let raw_args =
-                    args.iter().skip(1).map(|value| lua_to_u32(Some(value))).collect::<Vec<_>>();
+                let raw_args = args
+                    .iter()
+                    .skip(1)
+                    .map(|value| lua_to_u32(Some(value)))
+                    .collect::<Vec<_>>();
                 let object = state.layer(state.current_layer).obj(obj_id);
                 match cmd_id {
                     CMD_KIZUNA_APPLY_PART_FLAGS => {
                         object.part_flag_args.insert(part_id, raw_args);
-                    },
+                    }
                     CMD_KIZUNA_SET_PART_PARAM => {
                         object.part_param_args.insert(part_id, raw_args);
-                    },
+                    }
                     CMD_KIZUNA_SET_PART_TEXTURE => {
                         object.part_texture_args.insert(part_id, raw_args);
-                    },
+                    }
                     _ => unreachable!("commande Kizuna déjà filtrée"),
                 }
             }
             return 1.0;
-        },
+        }
 
         // ── RegisterItemListCount (0x16C1C4C0) : handler 0x140CD8E30 reversé ──
         // Enregistre `object_attr[objId] = count` (arg3) dans le manager d'items que GetObjectAttr
@@ -1649,12 +1809,14 @@ fn dispatch_menu_command(state: &mut MenuState, cmd_id: u32, args: &[Value]) -> 
                 return 1.0;
             }
             return 0.0;
-        },
+        }
 
         // ── Commande non reversée : journal pour découverte ────────────────
         _ => {
-            state.unknown_cmd_log.push((cmd_id, lua_to_u32(args.first()), args_repr(args)));
-        },
+            state
+                .unknown_cmd_log
+                .push((cmd_id, lua_to_u32(args.first()), args_repr(args)));
+        }
     }
     0.0
 }
@@ -1782,9 +1944,16 @@ pub fn enumerate_header_tabs(lua: &Lua) -> Vec<HeaderTab> {
         if obj_hash == 0 {
             continue;
         }
-        let text_id =
-            text_fn.as_ref().and_then(|f| f.call::<i64>(tab_type as f64).ok()).unwrap_or(0) as u32;
-        tabs.push(HeaderTab { index: i - 1, tab_type, obj_hash, text_id });
+        let text_id = text_fn
+            .as_ref()
+            .and_then(|f| f.call::<i64>(tab_type as f64).ok())
+            .unwrap_or(0) as u32;
+        tabs.push(HeaderTab {
+            index: i - 1,
+            tab_type,
+            obj_hash,
+            text_id,
+        });
     }
     tabs
 }
@@ -1866,7 +2035,15 @@ pub fn drive_menu_for_frames(
     item_counts: &BTreeMap<u32, i32>,
     frames: u32,
 ) -> Result<DriveReport, LuaError> {
-    drive_menu_for_frames_impl(lua, script_bytes, name, layer_ids, item_counts, frames, true)
+    drive_menu_for_frames_impl(
+        lua,
+        script_bytes,
+        name,
+        layer_ids,
+        item_counts,
+        frames,
+        true,
+    )
 }
 
 /// Pilote un menu dont le chunk principal est déjà chargé dans `lua`.
@@ -1882,7 +2059,15 @@ pub(crate) fn drive_menu_for_frames_existing(
     item_counts: &BTreeMap<u32, i32>,
     frames: u32,
 ) -> Result<DriveReport, LuaError> {
-    drive_menu_for_frames_impl(lua, script_bytes, name, layer_ids, item_counts, frames, false)
+    drive_menu_for_frames_impl(
+        lua,
+        script_bytes,
+        name,
+        layer_ids,
+        item_counts,
+        frames,
+        false,
+    )
 }
 
 fn drive_menu_for_frames_impl(
@@ -1894,7 +2079,9 @@ fn drive_menu_for_frames_impl(
     frames: u32,
     initialize: bool,
 ) -> Result<DriveReport, LuaError> {
-    let func = initialize.then(|| crate::load_bytecode(lua, script_bytes, name)).transpose()?;
+    let func = initialize
+        .then(|| crate::load_bytecode(lua, script_bytes, name))
+        .transpose()?;
 
     let mut report = DriveReport {
         frames_requested: frames,
@@ -1915,7 +2102,7 @@ fn drive_menu_for_frames_impl(
             Ok(()) => report.top_level_ok = true,
             Err(e) => {
                 report.top_level_err = Some(e.to_string().lines().next().unwrap_or("").to_string())
-            },
+            }
         }
     }
 
@@ -1933,7 +2120,7 @@ fn drive_menu_for_frames_impl(
             Err(e) => {
                 report.on_init = Some(false);
                 report.callback_errors.push(format!("OnInit: {e}"));
-            },
+            }
         }
     }
 
@@ -1955,7 +2142,9 @@ fn drive_menu_for_frames_impl(
                     let result = f.call::<MultiValue>((lid as f64, f64::from(idx)));
                     let ok = result.is_ok();
                     if let Err(e) = result {
-                        report.callback_errors.push(format!("{cb}(0x{lid:08X}, {idx}): {e}"));
+                        report
+                            .callback_errors
+                            .push(format!("{cb}(0x{lid:08X}, {idx}): {e}"));
                     }
                     if cb == "OnOpenLayer" && ok {
                         report.on_open = true;
@@ -2028,15 +2217,21 @@ fn drive_menu_for_frames_impl(
 }
 
 fn count_callback(report: &mut DriveReport, callback: &str) {
-    *report.callback_invocations.entry(callback.to_string()).or_default() += 1;
+    *report
+        .callback_invocations
+        .entry(callback.to_string())
+        .or_default() += 1;
 }
 
 fn collect_missing_paths(globals: &mlua::Table, table_name: &str) -> Vec<String> {
     let Ok(table) = globals.get::<mlua::Table>(table_name) else {
         return Vec::new();
     };
-    let mut paths: Vec<String> =
-        table.pairs::<String, Value>().filter_map(Result::ok).map(|(path, _)| path).collect();
+    let mut paths: Vec<String> = table
+        .pairs::<String, Value>()
+        .filter_map(Result::ok)
+        .map(|(path, _)| path)
+        .collect();
     paths.sort_unstable();
     paths.dedup();
     paths
@@ -2083,11 +2278,15 @@ mod dispatch_tests {
                 (42, ObservedMenuCString::from_bytes(vec![66])),
             ]),
         });
-        let values: MultiValue =
-            lua.load("return funcLuaCommand(0x3D935467, '256.9', '0', 262.7)").eval().unwrap();
+        let values: MultiValue = lua
+            .load("return funcLuaCommand(0x3D935467, '256.9', '0', 262.7)")
+            .eval()
+            .unwrap();
         assert_eq!(values.len(), 2);
         assert!(matches!(values[0], Value::Boolean(true)));
-        let Value::String(bytes) = &values[1] else { panic!("raw Lua string expected") };
+        let Value::String(bytes) = &values[1] else {
+            panic!("raw Lua string expected")
+        };
         assert_eq!(bytes.as_bytes().as_ref(), &[255, 128, 65]);
         let shape: (usize, bool, usize, usize, bool) = lua
             .load(
@@ -2100,10 +2299,15 @@ mod dispatch_tests {
             .eval()
             .unwrap();
         assert_eq!(shape, (2, true, 0, 1, false));
-        let result: (bool, String) =
-            lua.load("return funcLuaCommand(0x3D935467,11,0,6)").eval().unwrap();
+        let result: (bool, String) = lua
+            .load("return funcLuaCommand(0x3D935467,11,0,6)")
+            .eval()
+            .unwrap();
         assert_eq!(result, (true, "B".to_string()));
-        let invalid: bool = lua.load("return funcLuaCommand(0x3D935467,16,0/0,6)").eval().unwrap();
+        let invalid: bool = lua
+            .load("return funcLuaCommand(0x3D935467,16,0/0,6)")
+            .eval()
+            .unwrap();
         assert!(!invalid);
         assert!(state.borrow().unknown_general_cmd_log.is_empty());
     }
@@ -2120,21 +2324,23 @@ mod dispatch_tests {
     fn observed_flag_getters_preserve_lua_types_and_category_identity() {
         use crate::menu_state::{ObservedMenuFlags, ObservedMenuNativeState};
         let (lua, state) = host();
-        state.borrow_mut().set_observed_native_state(ObservedMenuNativeState {
-            category_0_flags: Some(ObservedMenuFlags {
-                descriptors: BTreeMap::from([(42, Some(5119))]),
-                values: BTreeMap::from([(5119, true)]),
-            }),
-            category_1_values: Some(ObservedMenuFlags {
-                descriptors: BTreeMap::from([(42, Some(639))]),
-                values: BTreeMap::from([(639, 255)]),
-            }),
-            category_5_flags: Some(ObservedMenuFlags {
-                descriptors: BTreeMap::from([(42, None)]),
-                values: BTreeMap::new(),
-            }),
-            ..Default::default()
-        });
+        state
+            .borrow_mut()
+            .set_observed_native_state(ObservedMenuNativeState {
+                category_0_flags: Some(ObservedMenuFlags {
+                    descriptors: BTreeMap::from([(42, Some(5119))]),
+                    values: BTreeMap::from([(5119, true)]),
+                }),
+                category_1_values: Some(ObservedMenuFlags {
+                    descriptors: BTreeMap::from([(42, Some(639))]),
+                    values: BTreeMap::from([(639, 255)]),
+                }),
+                category_5_flags: Some(ObservedMenuFlags {
+                    descriptors: BTreeMap::from([(42, None)]),
+                    values: BTreeMap::new(),
+                }),
+                ..Default::default()
+            });
         let result: (bool, u8, bool) = lua.load("return funcLuaCommand(0x381D0910, 42), funcLuaCommand(0xA50C0747, 42), funcLuaCommand(0x88154DF4, 42)").eval().unwrap();
         assert_eq!(result, (true, 255, false));
         assert_eq!(state.borrow().known_cmd_log.len(), 3);
@@ -2186,8 +2392,12 @@ mod dispatch_tests {
         for id in ids {
             let _: Value = command.call(f64::from(id)).unwrap();
         }
-        let unresolved: Vec<u32> =
-            state.borrow().unknown_general_cmd_log.iter().map(|entry| entry.0).collect();
+        let unresolved: Vec<u32> = state
+            .borrow()
+            .unknown_general_cmd_log
+            .iter()
+            .map(|entry| entry.0)
+            .collect();
         assert_eq!(unresolved, ids);
         assert!(state.borrow().known_cmd_log.is_empty());
         state.borrow_mut().observed_native.context_69c8_field_2cac6f = Some(2);
@@ -2226,15 +2436,23 @@ mod dispatch_tests {
     fn apply_global_config_returns_true_per_reversed_handler() {
         let (lua, _state) = host();
         // Les 3 commandes « apply → true » reversées renvoient 1 (pas le défaut getter 0).
-        for cid in [CMD_APPLY_GLOBAL_CONFIG_TRUE, CMD_APPLY_QUERY_TRUE, CMD_APPLY_DEFAULT_TRUE] {
+        for cid in [
+            CMD_APPLY_GLOBAL_CONFIG_TRUE,
+            CMD_APPLY_QUERY_TRUE,
+            CMD_APPLY_DEFAULT_TRUE,
+        ] {
             let ret: f64 = menu_cmd(&lua).call::<f64>((f64::from(cid),)).unwrap();
             assert_eq!(ret, 1.0, "cmdId 0x{cid:08X} : handler reversé renvoie AL=1");
         }
         // `SetGlobalFlag` (0x74578BF4, 1 arg) : handler 0x140CEECE0 reversé via la table de dispatch
         // → pose un flag moteur global et renvoie AL=1 (avec son arg bool). Appelé avec le bool.
-        let ret: f64 =
-            menu_cmd(&lua).call::<f64>((f64::from(CMD_SET_GLOBAL_FLAG_TRUE), false)).unwrap();
-        assert_eq!(ret, 1.0, "SetGlobalFlag(bool) : handler reversé renvoie AL=1");
+        let ret: f64 = menu_cmd(&lua)
+            .call::<f64>((f64::from(CMD_SET_GLOBAL_FLAG_TRUE), false))
+            .unwrap();
+        assert_eq!(
+            ret, 1.0,
+            "SetGlobalFlag(bool) : handler reversé renvoie AL=1"
+        );
     }
 
     /// Batch « apply état moteur → return 1 » (12 cmdId reversés via la table de dispatch +
@@ -2244,7 +2462,11 @@ mod dispatch_tests {
     fn reversed_return1_batch_returns_one() {
         let (lua, _state) = host();
         for &cid in REVERSED_RETURN1 {
-            assert_eq!(command_name(cid), Some("ApplyReturn1(=>1)"), "0x{cid:08X} nommé");
+            assert_eq!(
+                command_name(cid),
+                Some("ApplyReturn1(=>1)"),
+                "0x{cid:08X} nommé"
+            );
             let ret: f64 = menu_cmd(&lua).call::<f64>((f64::from(cid), 1.0)).unwrap();
             assert_eq!(ret, 1.0, "cmdId 0x{cid:08X} : handler reversé renvoie AL=1");
         }
@@ -2259,7 +2481,11 @@ mod dispatch_tests {
     fn arg_guarded_return1_batch_returns_one() {
         let (lua, _state) = host();
         for &cid in ARG_GUARDED_RETURN1 {
-            assert_eq!(command_name(cid), Some("ArgGuardedReturn1(=>1)"), "0x{cid:08X} nommé");
+            assert_eq!(
+                command_name(cid),
+                Some("ArgGuardedReturn1(=>1)"),
+                "0x{cid:08X} nommé"
+            );
             let ret: f64 = menu_cmd(&lua).call::<f64>((f64::from(cid), 1.0)).unwrap();
             assert_eq!(ret, 1.0, "cmdId 0x{cid:08X} : handler renvoie AL=1");
         }
@@ -2289,7 +2515,9 @@ mod dispatch_tests {
         // GetObjectAttr(objId) relit le count fourni par le script (mécanisme GetItemButtonNum).
         assert_eq!(state.borrow().object_attr.get(&2_250_456_639), Some(&8));
         // < 4 args -> al=0 (pas d'enregistrement).
-        let ret0: f64 = f.call::<f64>((f64::from(CMD_REGISTER_ITEM_LIST_COUNT), 1_f64)).unwrap();
+        let ret0: f64 = f
+            .call::<f64>((f64::from(CMD_REGISTER_ITEM_LIST_COUNT), 1_f64))
+            .unwrap();
         assert_eq!(ret0, 0.0, "handler renvoie al=0 (<4 args)");
     }
 
@@ -2303,7 +2531,12 @@ mod dispatch_tests {
             .call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0x77_u32), true))
             .unwrap();
         let ret: f64 = menu_cmd(&lua)
-            .call::<f64>((f64::from(CMD_SET_SELECTED_INDEX), f64::from(0xABCD_u32), 3_f64, true))
+            .call::<f64>((
+                f64::from(CMD_SET_SELECTED_INDEX),
+                f64::from(0xABCD_u32),
+                3_f64,
+                true,
+            ))
             .unwrap();
         assert_eq!(ret, 1.0, "handler renvoie al=1");
         assert_eq!(
@@ -2333,12 +2566,24 @@ mod dispatch_tests {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
         // établir le layer courant
-        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true)).unwrap();
-        // SetObjectVisible(objId=0xBEEF, index=0, visible=false)
-        f.call::<f64>((f64::from(CMD_SET_OBJECT_VISIBLE), f64::from(0xBEEF_u32), 0.0_f64, false))
+        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true))
             .unwrap();
+        // SetObjectVisible(objId=0xBEEF, index=0, visible=false)
+        f.call::<f64>((
+            f64::from(CMD_SET_OBJECT_VISIBLE),
+            f64::from(0xBEEF_u32),
+            0.0_f64,
+            false,
+        ))
+        .unwrap();
         let st = state.borrow();
-        let obj = st.layers.get(&0xAAAA).unwrap().objects.get(&0xBEEF).unwrap();
+        let obj = st
+            .layers
+            .get(&0xAAAA)
+            .unwrap()
+            .objects
+            .get(&0xBEEF)
+            .unwrap();
         assert!(!obj.visible, "visible lu en position 3 (après index)");
     }
 
@@ -2376,20 +2621,38 @@ mod dispatch_tests {
             st.set_object_attr(3_873_872_512, 3);
         }
         let f = menu_cmd(&lua);
-        let main = f.call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 2_250_456_639.0_f64)).unwrap();
-        let sub = f.call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 3_873_872_512.0_f64)).unwrap();
-        let other = f.call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 1234.0_f64)).unwrap();
+        let main = f
+            .call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 2_250_456_639.0_f64))
+            .unwrap();
+        let sub = f
+            .call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 3_873_872_512.0_f64))
+            .unwrap();
+        let other = f
+            .call::<f64>((f64::from(CMD_GET_OBJECT_ATTR), 1234.0_f64))
+            .unwrap();
         assert_eq!(main, 8.0, "compte du layer-list principal");
         assert_eq!(sub, 3.0, "compte du layer-list secondaire");
         assert_eq!(other, 0.0, "layer non renseigné -> 0");
-        assert!(state.borrow().known_cmd_log.iter().any(|(n, _)| n == "GetObjectAttr"));
+        assert!(
+            state
+                .borrow()
+                .known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "GetObjectAttr")
+        );
     }
 
     /// `command_name` couvre les cmdId résiduels nouvellement reversés.
     #[test]
     fn command_names_cover_residual_set() {
-        assert_eq!(command_name(CMD_SET_USE_SAVE_BUTTON), Some("SetUseSaveButton"));
-        assert_eq!(command_name(CMD_SET_OBJECT_FIELD_0X124), Some("SetObjectField0x124"));
+        assert_eq!(
+            command_name(CMD_SET_USE_SAVE_BUTTON),
+            Some("SetUseSaveButton")
+        );
+        assert_eq!(
+            command_name(CMD_SET_OBJECT_FIELD_0X124),
+            Some("SetObjectField0x124")
+        );
         assert_eq!(command_name(0x214D_A123), Some("SetIconSprite"));
         assert_eq!(command_name(0xCAE6_622C), Some("SetPartEnabled"));
         assert_eq!(command_name(0xC1DE_BA99), Some("SetItemCount"));
@@ -2411,7 +2674,11 @@ mod dispatch_tests {
             ))
             .unwrap();
         let field_result = command
-            .call::<f64>((f64::from(CMD_SET_OBJECT_FIELD_0X124), 367_379_312.0_f64, 1.0_f64))
+            .call::<f64>((
+                f64::from(CMD_SET_OBJECT_FIELD_0X124),
+                367_379_312.0_f64,
+                1.0_f64,
+            ))
             .unwrap();
 
         assert_eq!(save_result, 1.0);
@@ -2421,7 +2688,10 @@ mod dispatch_tests {
             state.layers[&2_645_952_753].objects[&1_138_543_975].use_save_button,
             Some(false)
         );
-        assert_eq!(state.layers[&0].objects[&367_379_312].native_field_0x124_by_index[&0], 1);
+        assert_eq!(
+            state.layers[&0].objects[&367_379_312].native_field_0x124_by_index[&0],
+            1
+        );
         assert!(state.unknown_cmd_log.is_empty());
     }
 
@@ -2455,7 +2725,8 @@ mod dispatch_tests {
     fn set_icon_sprite_registers_object_and_sprite() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true)).unwrap();
+        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true))
+            .unwrap();
         f.call::<f64>((
             f64::from(CMD_SET_ICON_SPRITE),
             f64::from(0x76A9_E67E_u32), // objId (arg0)
@@ -2467,8 +2738,18 @@ mod dispatch_tests {
         ))
         .unwrap();
         let st = state.borrow();
-        let obj = st.layers.get(&0xAAAA).unwrap().objects.get(&0x76A9_E67E).unwrap();
-        assert_eq!(obj.sprite_texture_hash, Some(0xF53A_1234), "h1 retenu comme sprite");
+        let obj = st
+            .layers
+            .get(&0xAAAA)
+            .unwrap()
+            .objects
+            .get(&0x76A9_E67E)
+            .unwrap();
+        assert_eq!(
+            obj.sprite_texture_hash,
+            Some(0xF53A_1234),
+            "h1 retenu comme sprite"
+        );
         assert!(st.unknown_cmd_log.is_empty(), "cmd reversé ≠ inconnu");
     }
 
@@ -2478,10 +2759,23 @@ mod dispatch_tests {
     fn set_item_count_sets_number() {
         let (lua, state) = host();
         menu_cmd(&lua)
-            .call::<f64>((f64::from(CMD_SET_ITEM_COUNT), f64::from(0x862A_u32), 8.0_f64))
+            .call::<f64>((
+                f64::from(CMD_SET_ITEM_COUNT),
+                f64::from(0x862A_u32),
+                8.0_f64,
+            ))
             .unwrap();
         let st = state.borrow();
-        assert_eq!(st.layers.get(&0).unwrap().objects.get(&0x862A).unwrap().number, Some(8));
+        assert_eq!(
+            st.layers
+                .get(&0)
+                .unwrap()
+                .objects
+                .get(&0x862A)
+                .unwrap()
+                .number,
+            Some(8)
+        );
     }
 
     /// SetPartEnabled(objId, index, partHash, enabled) — le fallback de granularité
@@ -2520,7 +2814,10 @@ mod dispatch_tests {
         let st = state.borrow();
         let objs = &st.layers.get(&0).unwrap().objects;
         assert!(objs.get(&0x111).unwrap().visible, "part activée -> visible");
-        assert!(objs.get(&0x222).unwrap().visible, "part réactivée -> visible");
+        assert!(
+            objs.get(&0x222).unwrap().visible,
+            "part réactivée -> visible"
+        );
     }
 
     #[test]
@@ -2556,9 +2853,11 @@ mod dispatch_tests {
             assert_eq!(object.part_visible.get(&0x222), Some(&false));
             assert_eq!(object.part_color_rgba[&0x222], [0.1, 0.2, 0.3, 0.4]);
         }
-        for command in
-            [CMD_KIZUNA_APPLY_PART_FLAGS, CMD_KIZUNA_SET_PART_PARAM, CMD_KIZUNA_SET_PART_TEXTURE]
-        {
+        for command in [
+            CMD_KIZUNA_APPLY_PART_FLAGS,
+            CMD_KIZUNA_SET_PART_PARAM,
+            CMD_KIZUNA_SET_PART_TEXTURE,
+        ] {
             assert_eq!(
                 f.call::<f64>((
                     f64::from(command),
@@ -2588,10 +2887,22 @@ mod dispatch_tests {
     fn set_object_active_toggles_active() {
         let (lua, state) = host();
         menu_cmd(&lua)
-            .call::<f64>((f64::from(CMD_SET_OBJECT_ACTIVE_S), f64::from(0x862A_u32), false))
+            .call::<f64>((
+                f64::from(CMD_SET_OBJECT_ACTIVE_S),
+                f64::from(0x862A_u32),
+                false,
+            ))
             .unwrap();
         let st = state.borrow();
-        assert!(!st.layers.get(&0).unwrap().objects.get(&0x862A).unwrap().active);
+        assert!(
+            !st.layers
+                .get(&0)
+                .unwrap()
+                .objects
+                .get(&0x862A)
+                .unwrap()
+                .active
+        );
     }
 
     /// SetNodeParam / ObjectAction : référencent l'objet (le runtime l'a piloté) sans inventer de
@@ -2600,9 +2911,16 @@ mod dispatch_tests {
     fn node_param_and_action_register_object_only() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_NODE_PARAM), f64::from(0x304_u32), 0.0_f64, 0.0_f64, 0.0_f64))
+        f.call::<f64>((
+            f64::from(CMD_NODE_PARAM),
+            f64::from(0x304_u32),
+            0.0_f64,
+            0.0_f64,
+            0.0_f64,
+        ))
+        .unwrap();
+        f.call::<f64>((f64::from(CMD_OBJECT_ACTION), f64::from(0x1793_u32)))
             .unwrap();
-        f.call::<f64>((f64::from(CMD_OBJECT_ACTION), f64::from(0x1793_u32))).unwrap();
         let st = state.borrow();
         assert!(st.layers.get(&0).unwrap().objects.contains_key(&0x304));
         assert!(st.layers.get(&0).unwrap().objects.contains_key(&0x1793));
@@ -2638,7 +2956,8 @@ mod dispatch_tests {
     fn set_object_value_registers_and_sets_value() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true)).unwrap();
+        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xAAAA_u32), true))
+            .unwrap();
         f.call::<f64>((
             f64::from(CMD_SET_OBJECT_VALUE),
             f64::from(0x5AFC_AA78_u32),
@@ -2647,8 +2966,18 @@ mod dispatch_tests {
         ))
         .unwrap();
         let st = state.borrow();
-        let obj = st.layers.get(&0xAAAA).unwrap().objects.get(&0x5AFC_AA78).unwrap();
-        assert_eq!(obj.value, Some(0xCB14_7A28_u32 as i32), "valueHash retenu dans `value`");
+        let obj = st
+            .layers
+            .get(&0xAAAA)
+            .unwrap()
+            .objects
+            .get(&0x5AFC_AA78)
+            .unwrap();
+        assert_eq!(
+            obj.value,
+            Some(0xCB14_7A28_u32 as i32),
+            "valueHash retenu dans `value`"
+        );
         assert!(st.unknown_cmd_log.is_empty(), "cmd reversé ≠ inconnu");
     }
 
@@ -2658,8 +2987,13 @@ mod dispatch_tests {
     fn set_subobject_enabled_hides_when_disabled() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_SET_SUBOBJECT_ENABLED), f64::from(0x111_u32), 0.0_f64, true))
-            .unwrap();
+        f.call::<f64>((
+            f64::from(CMD_SET_SUBOBJECT_ENABLED),
+            f64::from(0x111_u32),
+            0.0_f64,
+            true,
+        ))
+        .unwrap();
         f.call::<f64>((
             f64::from(CMD_SET_SUBOBJECT_ENABLED),
             f64::from(0xC88D_6DB6_u32),
@@ -2677,7 +3011,10 @@ mod dispatch_tests {
         let st = state.borrow();
         let objs = &st.layers.get(&0).unwrap().objects;
         assert!(objs.get(&0x111).unwrap().visible, "activé -> visible");
-        assert!(objs.get(&0xC88D_6DB6).unwrap().visible, "réactivé -> visible");
+        assert!(
+            objs.get(&0xC88D_6DB6).unwrap().visible,
+            "réactivé -> visible"
+        );
     }
 
     /// SetListItemValues(layerId, objId, <table>) — arg0 = layerId (PAS objId) ; l'objet-liste est
@@ -2700,12 +3037,25 @@ mod dispatch_tests {
             .unwrap();
         let st = state.borrow();
         let layer = st.layers.get(&0x9DB6_08F1).expect("layer = arg0");
-        let obj = layer.objects.get(&0x43DC_D9A7).expect("objId = arg1 enregistré dans layer arg0");
+        let obj = layer
+            .objects
+            .get(&0x43DC_D9A7)
+            .expect("objId = arg1 enregistré dans layer arg0");
         assert_eq!(obj.sub_items.len(), 2, "2 items enregistrés");
-        assert_eq!(obj.sub_items.get(&0).unwrap().values, vec![1_981_080_283_u32 as i32]);
-        assert_eq!(obj.sub_items.get(&1).unwrap().values, vec![3_421_673_595_u32 as i32]);
+        assert_eq!(
+            obj.sub_items.get(&0).unwrap().values,
+            vec![1_981_080_283_u32 as i32]
+        );
+        assert_eq!(
+            obj.sub_items.get(&1).unwrap().values,
+            vec![3_421_673_595_u32 as i32]
+        );
         assert!(st.unknown_cmd_log.is_empty(), "cmd reversé ≠ inconnu");
-        assert!(st.known_cmd_log.iter().any(|(n, _)| n == "SetListItemValues"));
+        assert!(
+            st.known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "SetListItemValues")
+        );
     }
 
     /// SetListItemValuesMulti(layerId, objId, t0, t1, t2) — N tables PARALLÈLES : item i =
@@ -2736,7 +3086,13 @@ mod dispatch_tests {
             ))
             .unwrap();
         let st = state.borrow();
-        let obj = st.layers.get(&0xBBBB).unwrap().objects.get(&0x4666_8627).unwrap();
+        let obj = st
+            .layers
+            .get(&0xBBBB)
+            .unwrap()
+            .objects
+            .get(&0x4666_8627)
+            .unwrap();
         assert_eq!(obj.sub_items.len(), 2, "2 items");
         assert_eq!(
             obj.sub_items.get(&0).unwrap().values,
@@ -2748,7 +3104,11 @@ mod dispatch_tests {
             vec![1_723_685_574, 3_794_706_590_u32 as i32, 18],
             "item 1 = colonne par colonne"
         );
-        assert!(st.known_cmd_log.iter().any(|(n, _)| n == "SetListItemValuesMulti"));
+        assert!(
+            st.known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "SetListItemValuesMulti")
+        );
     }
 
     /// SetItemParam(objId, itemIndex, key, value) — paramètre keyé enregistré dans le sous-item
@@ -2758,7 +3118,8 @@ mod dispatch_tests {
     fn set_item_param_records_keyed_sub_item() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xCCCC_u32), true)).unwrap();
+        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xCCCC_u32), true))
+            .unwrap();
         // item 2, key 0x1234 -> value 7 ; item 2, key 0x5678 -> value 9.
         f.call::<f64>((
             f64::from(CMD_SET_ITEM_PARAM),
@@ -2792,11 +3153,24 @@ mod dispatch_tests {
     fn mainmenu_part_setters_register_object() {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
-        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xBBBB_u32), true)).unwrap();
-        f.call::<f64>((f64::from(CMD_SET_NODE_VALUE), f64::from(0x87DC_9C59_u32), 0.0, 1.0, 2.0))
+        f.call::<f64>((f64::from(CMD_SET_LAYER_ACTIVE), f64::from(0xBBBB_u32), true))
             .unwrap();
-        f.call::<f64>((f64::from(CMD_SET_PART_PARAM_I), f64::from(0xD5A7_61D9_u32), 1.0, 0.0, 0.0))
-            .unwrap();
+        f.call::<f64>((
+            f64::from(CMD_SET_NODE_VALUE),
+            f64::from(0x87DC_9C59_u32),
+            0.0,
+            1.0,
+            2.0,
+        ))
+        .unwrap();
+        f.call::<f64>((
+            f64::from(CMD_SET_PART_PARAM_I),
+            f64::from(0xD5A7_61D9_u32),
+            1.0,
+            0.0,
+            0.0,
+        ))
+        .unwrap();
         f.call::<f64>((
             f64::from(CMD_SET_PART_PARAM_F),
             f64::from(0xD5A7_61D9_u32),
@@ -2819,9 +3193,18 @@ mod dispatch_tests {
         .unwrap();
         let st = state.borrow();
         let objs = &st.layers.get(&0xBBBB).unwrap().objects;
-        assert!(objs.contains_key(&0x87DC_9C59), "SetNodeValue enregistre l'objet");
-        assert!(objs.contains_key(&0xD5A7_61D9), "SetPartParamI/F enregistrent l'objet");
-        assert!(objs.contains_key(&0xC0C0_C0C0), "SetElementColor enregistre l'objet");
+        assert!(
+            objs.contains_key(&0x87DC_9C59),
+            "SetNodeValue enregistre l'objet"
+        );
+        assert!(
+            objs.contains_key(&0xD5A7_61D9),
+            "SetPartParamI/F enregistrent l'objet"
+        );
+        assert!(
+            objs.contains_key(&0xC0C0_C0C0),
+            "SetElementColor enregistre l'objet"
+        );
         assert_eq!(command_name(CMD_SET_ELEMENT_COLOR), Some("SetElementColor"));
         assert!(st.unknown_cmd_log.is_empty(), "cmds reversés ≠ inconnus");
     }
@@ -2840,8 +3223,17 @@ mod dispatch_tests {
             ))
             .unwrap();
         assert_eq!(r, 0.0);
-        assert!(state.borrow().known_cmd_log.iter().any(|(n, _)| n == "GetNodeIndexByHash"));
-        assert!(state.borrow().unknown_cmd_log.is_empty(), "getter reversé ≠ inconnu");
+        assert!(
+            state
+                .borrow()
+                .known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "GetNodeIndexByHash")
+        );
+        assert!(
+            state.borrow().unknown_cmd_log.is_empty(),
+            "getter reversé ≠ inconnu"
+        );
     }
 
     /// `enumerate_header_tabs` appelle les VRAIES fonctions du script (GetSortOfTabs /
@@ -2879,7 +3271,11 @@ mod dispatch_tests {
         .unwrap();
 
         let tabs = enumerate_header_tabs(&lua);
-        assert_eq!(tabs.len(), 9, "mode normal forcé -> 9 onglets (pas les 5 chronicle)");
+        assert_eq!(
+            tabs.len(),
+            9,
+            "mode normal forcé -> 9 onglets (pas les 5 chronicle)"
+        );
         // Ordre = GetSortOfTabs.
         let types: Vec<i64> = tabs.iter().map(|t| t.tab_type).collect();
         assert_eq!(types, vec![10, 20, 30, 70, 40, 80, 60, 50, 90]);
@@ -2930,7 +3326,10 @@ mod dispatch_tests {
             LAYER_GENERAL_WIN,
             "general_win = 0x117473AB"
         );
-        assert_eq!(aphrody_nie_formats::cfgbin::crc32(b"general_win"), 0x1174_73AB);
+        assert_eq!(
+            aphrody_nie_formats::cfgbin::crc32(b"general_win"),
+            0x1174_73AB
+        );
         assert_eq!(
             aphrody_nie_formats::cfgbin::crc32(b"savedata_management_menu_save_and_upload"),
             LAYER_SAVEDATA_GROUPE,
@@ -2977,29 +3376,59 @@ mod dispatch_tests {
         let (lua, state) = host();
         let f = menu_cmd(&lua);
         let obj = f64::from(0x1_u32);
-        assert_eq!(f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj)).unwrap(), 0.0);
-        f.call::<f64>((f64::from(CMD_SET_OBJECT_ACTIVE_S), obj, false)).unwrap();
-        assert_eq!(f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj)).unwrap(), 0.0);
-        f.call::<f64>((f64::from(CMD_SET_OBJECT_ACTIVE_S), obj, true)).unwrap();
-        assert_eq!(f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj)).unwrap(), 1.0);
-        assert!(state.borrow().known_cmd_log.iter().any(|(n, _)| n == "GetObjectActive"));
-        assert!(state.borrow().unknown_cmd_log.is_empty(), "getter reversé ≠ inconnu");
+        assert_eq!(
+            f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj))
+                .unwrap(),
+            0.0
+        );
+        f.call::<f64>((f64::from(CMD_SET_OBJECT_ACTIVE_S), obj, false))
+            .unwrap();
+        assert_eq!(
+            f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj))
+                .unwrap(),
+            0.0
+        );
+        f.call::<f64>((f64::from(CMD_SET_OBJECT_ACTIVE_S), obj, true))
+            .unwrap();
+        assert_eq!(
+            f.call::<f64>((f64::from(CMD_GET_OBJECT_ACTIVE), obj))
+                .unwrap(),
+            1.0
+        );
+        assert!(
+            state
+                .borrow()
+                .known_cmd_log
+                .iter()
+                .any(|(n, _)| n == "GetObjectActive")
+        );
+        assert!(
+            state.borrow().unknown_cmd_log.is_empty(),
+            "getter reversé ≠ inconnu"
+        );
     }
 
     #[test]
     fn general_get_text_reads_runtime_table() {
         let (lua, state) = host();
-        state.borrow_mut().set_text(0x1234_5678, "Jouer".to_string());
+        state
+            .borrow_mut()
+            .set_text(0x1234_5678, "Jouer".to_string());
         let get_text: Function = lua.globals().get("funcLuaCommand").unwrap();
-        let value: String =
-            get_text.call((f64::from(CMD_GENERAL_GET_TEXT), f64::from(0x1234_5678_u32))).unwrap();
+        let value: String = get_text
+            .call((f64::from(CMD_GENERAL_GET_TEXT), f64::from(0x1234_5678_u32)))
+            .unwrap();
         assert_eq!(value, "Jouer");
         let current_value: String = get_text
-            .call((f64::from(CMD_GENERAL_GET_TEXT_CURRENT), f64::from(0x1234_5678_u32)))
+            .call((
+                f64::from(CMD_GENERAL_GET_TEXT_CURRENT),
+                f64::from(0x1234_5678_u32),
+            ))
             .unwrap();
         assert_eq!(current_value, "Jouer");
-        let missing: String =
-            get_text.call((f64::from(CMD_GENERAL_GET_TEXT), f64::from(0xDEAD_BEEFu32))).unwrap();
+        let missing: String = get_text
+            .call((f64::from(CMD_GENERAL_GET_TEXT), f64::from(0xDEAD_BEEFu32)))
+            .unwrap();
         assert!(missing.is_empty());
     }
 
@@ -3012,34 +3441,49 @@ mod dispatch_tests {
         let command: Function = lua.globals().get("funcLuaCommand").unwrap();
 
         let active: bool = command
-            .call((f64::from(CMD_GENERAL_IS_CONDITION_ACTIVE), f64::from(0xCAFE_u32)))
+            .call((
+                f64::from(CMD_GENERAL_IS_CONDITION_ACTIVE),
+                f64::from(0xCAFE_u32),
+            ))
             .unwrap();
         assert!(active);
 
-        let (count, resolved): (i64, bool) =
-            command.call((f64::from(CMD_GENERAL_GET_LIST_COUNT), f64::from(0xBEEF_u32))).unwrap();
+        let (count, resolved): (i64, bool) = command
+            .call((f64::from(CMD_GENERAL_GET_LIST_COUNT), f64::from(0xBEEF_u32)))
+            .unwrap();
         assert_eq!((count, resolved), (7, true));
 
         let available: bool = command
-            .call((f64::from(CMD_GENERAL_RESOURCE_AVAILABLE), f64::from(0xFACE_u32)))
+            .call((
+                f64::from(CMD_GENERAL_RESOURCE_AVAILABLE),
+                f64::from(0xFACE_u32),
+            ))
             .unwrap();
         assert!(available);
         let absent: bool = command
-            .call((f64::from(CMD_GENERAL_RESOURCE_AVAILABLE), f64::from(0xDEAD_u32)))
+            .call((
+                f64::from(CMD_GENERAL_RESOURCE_AVAILABLE),
+                f64::from(0xDEAD_u32),
+            ))
             .unwrap();
         assert!(!absent);
 
-        let apply_effect: f64 =
-            command.call((f64::from(CMD_GENERAL_APPLY_UI_EFFECT), 0x1234_u32)).unwrap();
+        let apply_effect: f64 = command
+            .call((f64::from(CMD_GENERAL_APPLY_UI_EFFECT), 0x1234_u32))
+            .unwrap();
         assert_eq!(apply_effect, 1.0);
-        let empty_effect: f64 = command.call(f64::from(CMD_GENERAL_APPLY_UI_EFFECT)).unwrap();
+        let empty_effect: f64 = command
+            .call(f64::from(CMD_GENERAL_APPLY_UI_EFFECT))
+            .unwrap();
         assert_eq!(empty_effect, 0.0);
-        let apply_state: f64 =
-            command.call((f64::from(CMD_GENERAL_APPLY_STATE), 0xCAFE_u32)).unwrap();
+        let apply_state: f64 = command
+            .call((f64::from(CMD_GENERAL_APPLY_STATE), 0xCAFE_u32))
+            .unwrap();
         assert_eq!(apply_state, 1.0);
 
-        let set_global_int: f64 =
-            command.call((f64::from(CMD_GENERAL_SET_GLOBAL_INT), 7_i32)).unwrap();
+        let set_global_int: f64 = command
+            .call((f64::from(CMD_GENERAL_SET_GLOBAL_INT), 7_i32))
+            .unwrap();
         assert_eq!(set_global_int, 1.0);
         assert_eq!(state.borrow().engine_int_2728, Some(7));
         let empty_global_int: f64 = command.call(f64::from(CMD_GENERAL_SET_GLOBAL_INT)).unwrap();
@@ -3051,7 +3495,13 @@ mod dispatch_tests {
 
         let unknown: f64 = command.call((1.0_f64,)).unwrap();
         assert_eq!(unknown, 0.0);
-        assert!(state.borrow().unknown_general_cmd_log.iter().any(|(id, _, _)| *id == 1));
+        assert!(
+            state
+                .borrow()
+                .unknown_general_cmd_log
+                .iter()
+                .any(|(id, _, _)| *id == 1)
+        );
         assert!(state.borrow().unknown_cmd_log.is_empty());
     }
 
@@ -3061,18 +3511,27 @@ mod dispatch_tests {
         state.borrow_mut().set_condition(0x0BAD, true);
         let command: Function = lua.globals().get("funcLuaCommand").unwrap();
 
-        let a: bool =
-            command.call((f64::from(CMD_GENERAL_QUERY_BOOL_A), f64::from(0x0BAD_u32))).unwrap();
+        let a: bool = command
+            .call((f64::from(CMD_GENERAL_QUERY_BOOL_A), f64::from(0x0BAD_u32)))
+            .unwrap();
         assert!(a);
         let b: bool = command
-            .call((f64::from(CMD_GENERAL_QUERY_BOOL_B), f64::from(0x0BAD_u32), 0_i32, 0_i32))
+            .call((
+                f64::from(CMD_GENERAL_QUERY_BOOL_B),
+                f64::from(0x0BAD_u32),
+                0_i32,
+                0_i32,
+            ))
             .unwrap();
         assert!(b);
-        let (ok, value): (bool, i64) =
-            command.call((f64::from(CMD_GENERAL_QUERY_STATE), 1_i32, 0_i32, 13_i32)).unwrap();
+        let (ok, value): (bool, i64) = command
+            .call((f64::from(CMD_GENERAL_QUERY_STATE), 1_i32, 0_i32, 13_i32))
+            .unwrap();
         assert!(ok);
         assert_eq!(value, 0);
-        let applied: bool = command.call(f64::from(CMD_GENERAL_APPLY_CURRENT_STATE)).unwrap();
+        let applied: bool = command
+            .call(f64::from(CMD_GENERAL_APPLY_CURRENT_STATE))
+            .unwrap();
         assert!(applied);
         assert_eq!(state.borrow().unknown_general_cmd_log.len(), 0);
     }
@@ -3181,8 +3640,20 @@ mod dispatch_tests {
             .dump(false);
         let report =
             drive_menu_for_frames(&lua, &bytes, "host-paths", &[], &BTreeMap::new(), 0).unwrap();
-        assert!(!report.missing_host_calls.contains(&"GENERAL_WINDOW".to_string()));
-        assert!(report.missing_host_paths.contains(&"GENERAL_WINDOW.Open".to_string()));
-        assert!(report.missing_host_paths.contains(&"GENERAL_WINDOW.Open()".to_string()));
+        assert!(
+            !report
+                .missing_host_calls
+                .contains(&"GENERAL_WINDOW".to_string())
+        );
+        assert!(
+            report
+                .missing_host_paths
+                .contains(&"GENERAL_WINDOW.Open".to_string())
+        );
+        assert!(
+            report
+                .missing_host_paths
+                .contains(&"GENERAL_WINDOW.Open()".to_string())
+        );
     }
 }

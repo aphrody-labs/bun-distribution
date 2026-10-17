@@ -7,41 +7,41 @@ use serde::{Deserialize, Serialize};
 /// differs only in the server-side generation behavior.
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct ViduQ3ReferenceToVideoMixInput {
-  /// Text prompt (max 2000 characters).
-  pub prompt: String,
+    /// Text prompt (max 2000 characters).
+    pub prompt: String,
 
-  /// URLs of the reference images (1 to 4) used for subject consistency.
-  pub reference_image_urls: Vec<String>,
+    /// URLs of the reference images (1 to 4) used for subject consistency.
+    pub reference_image_urls: Vec<String>,
 
-  /// Duration in seconds. Range 1–16. fal default: 5.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub duration: Option<u8>,
+    /// Duration in seconds. Range 1–16. fal default: 5.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<u8>,
 
-  /// Seed for reproducibility. Random when omitted.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub seed: Option<i64>,
+    /// Seed for reproducibility. Random when omitted.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub seed: Option<i64>,
 
-  /// Aspect ratio.
-  /// Possible values: "16:9", "9:16", "4:3", "3:4", "1:1". fal default: "16:9".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub aspect_ratio: Option<String>,
+    /// Aspect ratio.
+    /// Possible values: "16:9", "9:16", "4:3", "3:4", "1:1". fal default: "16:9".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aspect_ratio: Option<String>,
 
-  /// Output resolution.
-  /// Possible values: "360p", "540p", "720p", "1080p". fal default: "720p".
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub resolution: Option<String>,
+    /// Output resolution.
+    /// Possible values: "360p", "540p", "720p", "1080p". fal default: "720p".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resolution: Option<String>,
 
-  /// Whether to generate audio for the video. fal default: true.
-  #[serde(skip_serializing_if = "Option::is_none")]
-  pub audio: Option<bool>,
+    /// Whether to generate audio for the video. fal default: true.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub audio: Option<bool>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ViduQ3ReferenceToVideoMixVideoFile {
-  pub url: String,
+    pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ViduQ3ReferenceToVideoMixOutput {
-  pub video: ViduQ3ReferenceToVideoMixVideoFile,
+    pub video: ViduQ3ReferenceToVideoMixVideoFile,
 }

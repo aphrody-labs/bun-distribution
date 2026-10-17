@@ -19,9 +19,18 @@ pub fn eval(text: &str, current: f64) -> Option<f64> {
     let mut i = 0;
     while let Some(c) = raw.get(i) {
         if c.is_alphabetic() {
-            let end = raw.iter().skip(i).position(|c| !c.is_alphabetic()).map_or(raw.len(), |n| i + n);
-            let before = i.checked_sub(1).and_then(|b| raw.get(b)).is_some_and(|c| c.is_ascii_digit());
-            let after = raw.get(end).is_some_and(|c| c.is_ascii_digit() || *c == '.');
+            let end = raw
+                .iter()
+                .skip(i)
+                .position(|c| !c.is_alphabetic())
+                .map_or(raw.len(), |n| i + n);
+            let before = i
+                .checked_sub(1)
+                .and_then(|b| raw.get(b))
+                .is_some_and(|c| c.is_ascii_digit());
+            let after = raw
+                .get(end)
+                .is_some_and(|c| c.is_ascii_digit() || *c == '.');
             if before && after {
                 return None;
             }
@@ -40,7 +49,10 @@ pub fn eval(text: &str, current: f64) -> Option<f64> {
             c => c,
         })
         .collect();
-    let mut p = Parser { chars: &chars, pos: 0 };
+    let mut p = Parser {
+        chars: &chars,
+        pos: 0,
+    };
     let v = if matches!(chars.first(), Some('*' | '/')) {
         let t = p.term_from(current.is_finite().then_some(current)?, 0)?;
         p.expr_from(t, 0)?
@@ -170,13 +182,23 @@ mod tests {
 
     #[test]
     fn bad_input_gives_nothing() {
-        for bad in ["", "   ", "abc", "2*", "*", "(1+2", "1+2)", "1..2", "1/0", "0/0", "2**3", "1,5", "()"] {
+        for bad in [
+            "", "   ", "abc", "2*", "*", "(1+2", "1+2)", "1..2", "1/0", "0/0", "2**3", "1,5", "()",
+        ] {
             assert_eq!(eval(bad, 7.0), None, "{bad:?}");
         }
         assert_eq!(eval("*2", f64::NAN), None);
         assert_eq!(eval(&"9".repeat(400), 0.0), None, "too long");
-        assert_eq!(eval(&format!("{}1{}", "(".repeat(100), ")".repeat(100)), 0.0), None, "too deep");
-        assert_eq!(eval(&format!("{}1", "-".repeat(100)), 0.0), None, "too many signs");
+        assert_eq!(
+            eval(&format!("{}1{}", "(".repeat(100), ")".repeat(100)), 0.0),
+            None,
+            "too deep"
+        );
+        assert_eq!(
+            eval(&format!("{}1", "-".repeat(100)), 0.0),
+            None,
+            "too many signs"
+        );
         // letters between digits are refused, not dropped (`1e3` is not 13)
         assert_eq!(eval("1e3", 0.0), None);
         assert_eq!(eval("10x20", 0.0), None);

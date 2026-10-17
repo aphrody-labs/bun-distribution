@@ -59,7 +59,12 @@ pub struct PendingShot {
 const SHOT_TIMEOUT: f64 = 60.0;
 
 fn pending(ctx: &Context) -> std::sync::Arc<std::sync::Mutex<Vec<PendingShot>>> {
-    ctx.data_mut(|d| d.get_temp_mut_or_insert_with(egui::Id::new("pending_shots"), || std::sync::Arc::new(std::sync::Mutex::new(Vec::new()))).clone())
+    ctx.data_mut(|d| {
+        d.get_temp_mut_or_insert_with(egui::Id::new("pending_shots"), || {
+            std::sync::Arc::new(std::sync::Mutex::new(Vec::new()))
+        })
+        .clone()
+    })
 }
 
 pub fn drain(app: &mut FigApp, ctx: &Context) {
@@ -70,53 +75,89 @@ pub fn drain(app: &mut FigApp, ctx: &Context) {
         i.events
             .iter()
             .filter_map(|e| match e {
-                egui::Event::Screenshot { viewport_id, image, .. } => Some((*viewport_id, image.clone())),
+                egui::Event::Screenshot {
+                    viewport_id, image, ..
+                } => Some((*viewport_id, image.clone())),
                 _ => None,
             })
             .collect()
     });
     for (vp, img) in &shots {
-        list.lock().unwrap_or_else(std::sync::PoisonError::into_inner).retain(|p| {
-            if p.viewport != *vp {
-                return true;
-            }
-            let res = save_color_image(img, &p.path).map(|_| json!({"path": p.path, "width": img.size[0], "height": img.size[1]}));
-            let _ = p.reply.send(ControlReply { id: p.id.clone(), result: res });
-            false
-        });
+        list.lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .retain(|p| {
+                if p.viewport != *vp {
+                    return true;
+                }
+                let res = save_color_image(img, &p.path)
+                    .map(|_| json!({"path": p.path, "width": img.size[0], "height": img.size[1]}));
+                let _ = p.reply.send(ControlReply {
+                    id: p.id.clone(),
+                    result: res,
+                });
+                false
+            });
     }
     let reqs = std::mem::take(&mut app.control_queue);
     for r in reqs {
         // Requests for another window wait for its frame.
-        let target = r.params.get("window").and_then(Value::as_u64).unwrap_or(app.windows.focused);
+        let target = r
+            .params
+            .get("window")
+            .and_then(Value::as_u64)
+            .unwrap_or(app.windows.focused);
         if target != app.windows.current {
             if app.windows.exists(target) {
                 ctx.request_repaint_of(crate::windows::viewport(target));
                 app.control_queue.push(r);
             } else {
-                let _ = r.reply.send(ControlReply { id: r.id, result: Err(format!("no window {target}")) });
+                let _ = r.reply.send(ControlReply {
+                    id: r.id,
+                    result: Err(format!("no window {target}")),
+                });
             }
             continue;
         }
         if r.method == "ui.screenshot" {
-            let path = r.params.get("path").and_then(Value::as_str).unwrap_or("figcraft-screenshot.png").to_string();
+            let path = r
+                .params
+                .get("path")
+                .and_then(Value::as_str)
+                .unwrap_or("figcraft-screenshot.png")
+                .to_string();
             let viewport = ctx.viewport_id();
-            list.lock().unwrap_or_else(std::sync::PoisonError::into_inner).push(PendingShot { id: r.id, path, reply: r.reply, since: now, viewport });
+            list.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .push(PendingShot {
+                    id: r.id,
+                    path,
+                    reply: r.reply,
+                    since: now,
+                    viewport,
+                });
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
             continue;
         }
         let res = handle(app, ctx, &r.method, &r.params);
-        let _ = r.reply.send(ControlReply { id: r.id, result: res });
+        let _ = r.reply.send(ControlReply {
+            id: r.id,
+            result: res,
+        });
         ctx.request_repaint();
     }
     // The window delivers a screenshot some frames after it was asked for (once the GPU has copied
     // it back), and only while frames are drawn: keep drawing until it arrives (a hidden window
     // never delivers; its requests expire).
-    let mut list = list.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let mut list = list
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     list.retain(|p| {
         let live = now - p.since < SHOT_TIMEOUT;
         if !live {
-            let _ = p.reply.send(ControlReply { id: p.id.clone(), result: Err("the window didn't deliver a screenshot (is it visible?)".into()) });
+            let _ = p.reply.send(ControlReply {
+                id: p.id.clone(),
+                result: Err("the window didn't deliver a screenshot (is it visible?)".into()),
+            });
         }
         live
     });
@@ -131,7 +172,8 @@ fn save_color_image(img: &egui::ColorImage, path: &str) -> Result<(), String> {
     for p in &img.pixels {
         rgba.extend_from_slice(&p.to_srgba_unmultiplied());
     }
-    let buf = image::RgbaImage::from_raw(w as u32, h as u32, rgba).ok_or("bad screenshot buffer")?;
+    let buf =
+        image::RgbaImage::from_raw(w as u32, h as u32, rgba).ok_or("bad screenshot buffer")?;
     buf.save(path).map_err(|e| e.to_string())
 }
 
@@ -143,7 +185,11 @@ fn pad_name(v: &Value) -> Option<&'static str> {
         return usize::try_from(i).ok().and_then(gamepad_button);
     }
     let s = v.as_str()?.trim();
-    GAMEPAD_BUTTONS.iter().copied().find(|b| b.eq_ignore_ascii_case(s) || b.get(8..).is_some_and(|short| short.eq_ignore_ascii_case(s)))
+    GAMEPAD_BUTTONS.iter().copied().find(|b| {
+        b.eq_ignore_ascii_case(s)
+            || b.get(8..)
+                .is_some_and(|short| short.eq_ignore_ascii_case(s))
+    })
 }
 
 fn b(p: &Value, k: &str) -> bool {
@@ -592,19 +638,24 @@ pub fn handle(app: &mut FigApp, ctx: &Context, method: &str, p: &Value) -> Resul
 
 fn pointer(app: &mut FigApp, p: &Value) -> Result<Value, String> {
     let zoom = app.session.ds().map(|d| d.view.zoom).unwrap_or(1.0);
-    let at = |x: Option<f64>, y: Option<f64>, sx: Option<f64>, sy: Option<f64>| -> Option<(f64, f64)> {
-        match (x, y, sx, sy) {
-            (Some(x), Some(y), _, _) => Some((x, y)),
-            (_, _, Some(sx), Some(sy)) => {
-                let pt = app.to_page(egui::pos2(sx as f32, sy as f32));
-                Some((pt.x, pt.y))
+    let at =
+        |x: Option<f64>, y: Option<f64>, sx: Option<f64>, sy: Option<f64>| -> Option<(f64, f64)> {
+            match (x, y, sx, sy) {
+                (Some(x), Some(y), _, _) => Some((x, y)),
+                (_, _, Some(sx), Some(sy)) => {
+                    let pt = app.to_page(egui::pos2(sx as f32, sy as f32));
+                    Some((pt.x, pt.y))
+                }
+                _ => None,
             }
-            _ => None,
-        }
-    };
+        };
     let f = |k: &str| p.get(k).and_then(Value::as_f64);
-    let (x, y) = at(f("x"), f("y"), f("sx"), f("sy")).ok_or("pass x, y (page) or sx, sy (screen)")?;
-    let pressure = |k: &str| f(k).filter(|v| v.is_finite()).map(|v| v.clamp(0.0, 1.0) as f32);
+    let (x, y) =
+        at(f("x"), f("y"), f("sx"), f("sy")).ok_or("pass x, y (page) or sx, sy (screen)")?;
+    let pressure = |k: &str| {
+        f(k).filter(|v| v.is_finite())
+            .map(|v| v.clamp(0.0, 1.0) as f32)
+    };
     let mk = |kind: PointerKind, x: f64, y: f64| PointerEvent {
         kind,
         x,
@@ -619,9 +670,13 @@ fn pointer(app: &mut FigApp, p: &Value) -> Result<Value, String> {
         pressure: pressure("pressure"),
     };
     // A drag's pressure goes from `pressure` to `pressureTo`.
-    let (pr0, pr1) = (pressure("pressure"), pressure("pressureTo").or(pressure("pressure")));
+    let (pr0, pr1) = (
+        pressure("pressure"),
+        pressure("pressureTo").or(pressure("pressure")),
+    );
     let kind = p.get("kind").and_then(Value::as_str).unwrap_or("click");
-    let run = |app: &mut FigApp, ev: PointerEvent| app.session.pointer(&ev).map_err(|e| e.to_string());
+    let run =
+        |app: &mut FigApp, ev: PointerEvent| app.session.pointer(&ev).map_err(|e| e.to_string());
     match kind {
         "down" => run(app, mk(PointerKind::Down, x, y))?,
         "move" => run(app, mk(PointerKind::Move, x, y))?,
@@ -633,17 +688,36 @@ fn pointer(app: &mut FigApp, p: &Value) -> Result<Value, String> {
             run(app, mk(PointerKind::Up, x, y))?;
         }
         "drag" => {
-            let to = p.get("to").and_then(Value::as_array).ok_or("drag needs `to: [x, y]`")?;
+            let to = p
+                .get("to")
+                .and_then(Value::as_array)
+                .ok_or("drag needs `to: [x, y]`")?;
             let tx = to.first().and_then(Value::as_f64).ok_or("bad `to`")?;
             let ty = to.get(1).and_then(Value::as_f64).ok_or("bad `to`")?;
-            let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(8).clamp(1, 200);
+            let steps = p
+                .get("steps")
+                .and_then(Value::as_u64)
+                .unwrap_or(8)
+                .clamp(1, 200);
             run(app, mk(PointerKind::Down, x, y))?;
             for i in 1..=steps {
                 let t = i as f64 / steps as f64;
                 let pressure = pr0.zip(pr1).map(|(a, b)| a + (b - a) * t as f32);
-                run(app, PointerEvent { pressure, ..mk(PointerKind::Move, x + (tx - x) * t, y + (ty - y) * t) })?;
+                run(
+                    app,
+                    PointerEvent {
+                        pressure,
+                        ..mk(PointerKind::Move, x + (tx - x) * t, y + (ty - y) * t)
+                    },
+                )?;
             }
-            run(app, PointerEvent { pressure: pr1, ..mk(PointerKind::Up, tx, ty) })?;
+            run(
+                app,
+                PointerEvent {
+                    pressure: pr1,
+                    ..mk(PointerKind::Up, tx, ty)
+                },
+            )?;
         }
         other => return Err(format!("unknown pointer kind `{other}`")),
     }

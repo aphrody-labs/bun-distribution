@@ -4,7 +4,14 @@
 //! (`format.bold`, `insert.table`), a label, the ribbon/menu location, a default shortcut, a
 //! params description and a `run` function. Menus, ribbon, shortcuts, the command palette, the
 //! CLI, the JSON control channel and the MCP server all call [`Session::run`].
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod catalog;
 pub mod cmd;
@@ -27,7 +34,8 @@ pub use io::Password;
 pub use keymap::KeyMap;
 pub use ribbon::RibbonLayout;
 pub use session::{
-    CellRange, ColumnBlock, EditSnapshot, FindState, MathEdit, Prefs, Selection, Session, UNDO_LIST_MAX, ViewState, blank_document, set_system_locale,
+    CellRange, ColumnBlock, EditSnapshot, FindState, MathEdit, Prefs, Selection, Session,
+    UNDO_LIST_MAX, ViewState, blank_document, set_system_locale,
 };
 pub use wordcraft_doc as doc;
 pub use wordcraft_geom::Region;
@@ -77,8 +85,22 @@ fn always(_: &Session) -> Option<&'static str> {
 }
 
 impl CommandSpec {
-    pub const fn new(id: &'static str, label: &'static str, location: &'static str, run: fn(&mut Session, &Value) -> CmdResult) -> Self {
-        CommandSpec { id, label, location, shortcut: "", params: "{}", mutates: true, enabled: always, run }
+    pub const fn new(
+        id: &'static str,
+        label: &'static str,
+        location: &'static str,
+        run: fn(&mut Session, &Value) -> CmdResult,
+    ) -> Self {
+        CommandSpec {
+            id,
+            label,
+            location,
+            shortcut: "",
+            params: "{}",
+            mutates: true,
+            enabled: always,
+            run,
+        }
     }
     pub const fn key(mut self, s: &'static str) -> Self {
         self.shortcut = s;
@@ -130,7 +152,9 @@ impl Registry {
     }
     /// The command bound to a shortcut, if any.
     pub fn by_shortcut(&self, key: &str) -> Option<&CommandSpec> {
-        self.specs.iter().find(|s| !s.shortcut.is_empty() && s.shortcut.split(" / ").any(|k| k.eq_ignore_ascii_case(key)))
+        self.specs.iter().find(|s| {
+            !s.shortcut.is_empty() && s.shortcut.split(" / ").any(|k| k.eq_ignore_ascii_case(key))
+        })
     }
 }
 
@@ -147,13 +171,22 @@ pub mod p {
         str(v, k).ok_or_else(|| CmdError::Params(format!("`{k}` (string) is required")))
     }
     pub fn f32(v: &Value, k: &str) -> Option<f32> {
-        v.get(k).and_then(Value::as_f64).map(|x| x as f32).filter(|x| x.is_finite())
+        v.get(k)
+            .and_then(Value::as_f64)
+            .map(|x| x as f32)
+            .filter(|x| x.is_finite())
     }
     pub fn req_f32(v: &Value, k: &str) -> Result<f32, CmdError> {
         f32(v, k).ok_or_else(|| CmdError::Params(format!("`{k}` (number) is required")))
     }
     pub fn u64(v: &Value, k: &str) -> Option<u64> {
-        v.get(k).and_then(|x| x.as_u64().or_else(|| x.as_f64().filter(|f| *f >= 0.0 && f.is_finite()).map(|f| f as u64)))
+        v.get(k).and_then(|x| {
+            x.as_u64().or_else(|| {
+                x.as_f64()
+                    .filter(|f| *f >= 0.0 && f.is_finite())
+                    .map(|f| f as u64)
+            })
+        })
     }
     pub fn bool(v: &Value, k: &str) -> Option<bool> {
         v.get(k).and_then(Value::as_bool)

@@ -38,7 +38,10 @@ fn material_path(path: &str) -> PathBuf {
                 .ancestors()
                 .nth(3)
                 .expect("identity crate is three directories below its workspace root");
-            workspace.parent().expect("Aphrody workspace parent").join("material")
+            workspace
+                .parent()
+                .expect("Aphrody workspace parent")
+                .join("material")
         });
     checkout.join(path)
 }
@@ -46,18 +49,26 @@ fn material_path(path: &str) -> PathBuf {
 /// Entry point of the former `export_assets` binary, now reached through the `aphrody` multi-call binary.
 /// `args[0]` is the program name (argv convention). Returns the process exit code.
 pub fn export_assets_main(args: Vec<OsString>) -> i32 {
-    match executer(&args.iter().map(|a| a.to_string_lossy().into_owned()).collect::<Vec<_>>()) {
+    match executer(
+        &args
+            .iter()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect::<Vec<_>>(),
+    ) {
         Ok(()) => 0,
         Err(e) => {
             eprintln!("{e}");
             1
-        },
+        }
     }
 }
 
 fn executer(args: &[String]) -> Result<(), String> {
     let lire = |nom: &str| -> Option<String> {
-        args.iter().position(|a| a == nom).and_then(|i| args.get(i + 1)).cloned()
+        args.iter()
+            .position(|a| a == nom)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
     };
     let drapeau = |nom: &str| args.iter().any(|a| a == nom);
     let sortie = PathBuf::from(lire("--out").unwrap_or_else(|| "var/aphrody-assets".into()));
@@ -69,11 +80,19 @@ fn executer(args: &[String]) -> Result<(), String> {
         let anim = pet.animation(&animation).ok_or_else(|| {
             format!(
                 "animation « {animation} » inconnue. Disponibles : {}",
-                pet.manifest.animations.keys().cloned().collect::<Vec<_>>().join(", ")
+                pet.manifest
+                    .animations
+                    .keys()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
             )
         })?;
         let frame = anim.frames.get(index).ok_or_else(|| {
-            format!("frame {index} hors de « {animation} » ({} frames)", anim.frames.len())
+            format!(
+                "frame {index} hors de « {animation} » ({} frames)",
+                anim.frames.len()
+            )
         })?;
         let fichiers = pet
             .brand_assets(frame, TAILLES_FAVICON)
@@ -82,7 +101,9 @@ fn executer(args: &[String]) -> Result<(), String> {
     }
 
     let portrait = match lire("--source") {
-        Some(chemin) => image::open(&chemin).map_err(|e| format!("{chemin} : {e}"))?.to_rgba8(),
+        Some(chemin) => image::open(&chemin)
+            .map_err(|e| format!("{chemin} : {e}"))?
+            .to_rgba8(),
         None => logo::portrait().map_err(|e| e.to_string())?,
     };
     if let Some(webp) = lire("--webp") {
@@ -118,7 +139,11 @@ fn executer(args: &[String]) -> Result<(), String> {
     let cdn = lire("--cdn").unwrap_or_else(|| CDN.into());
     let marque = logo::marque(
         &portrait,
-        polices.as_ref().map(|(w, c, f)| Polices { wordmark: w, css_m3: c, woff2: f }),
+        polices.as_ref().map(|(w, c, f)| Polices {
+            wordmark: w,
+            css_m3: c,
+            woff2: f,
+        }),
         &cdn,
     )
     .map_err(|e| e.to_string())?;
@@ -138,8 +163,12 @@ fn executer(args: &[String]) -> Result<(), String> {
         c.visage.y0,
         c.visage.y1
     );
-    let palette: Vec<String> =
-        marque.theme.palette.iter().map(|p| format!("{} {:.1} %", p.hex, p.part_pct)).collect();
+    let palette: Vec<String> = marque
+        .theme
+        .palette
+        .iter()
+        .map(|p| format!("{} {:.1} %", p.hex, p.part_pct))
+        .collect();
     println!("palette : {}", palette.join(", "));
     println!("graine M3 : {}", marque.theme.export.seed);
     println!(

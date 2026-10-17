@@ -12,7 +12,11 @@ use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Parser)]
-#[command(name = "bunos-infra", version, about = "Bun OS unified infrastructure and workflow orchestrator")]
+#[command(
+    name = "bunos-infra",
+    version,
+    about = "Bun OS unified infrastructure and workflow orchestrator"
+)]
 struct Cli {
     #[arg(long, env = "APHRODY_INFRA_ROOT", default_value = ".")]
     root: PathBuf,
@@ -542,7 +546,10 @@ struct Run {
 impl Run {
     fn start(root: &Path, scope: &str) -> Result<Self> {
         let stamp = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let dir = root.join("var").join("runs").join(format!("{stamp}-{}", std::process::id()));
+        let dir = root
+            .join("var")
+            .join("runs")
+            .join(format!("{stamp}-{}", std::process::id()));
         for child in ["pending", "results", "logs", "evidence"] {
             fs::create_dir_all(dir.join(child))?;
         }
@@ -556,12 +563,20 @@ impl Run {
             "status": "running",
             "evidence": []
         });
-        fs::write(dir.join("manifest.json"), serde_json::to_vec_pretty(&manifest)?)?;
-        Ok(Self { root: root.to_path_buf(), dir, actions: Vec::new() })
+        fs::write(
+            dir.join("manifest.json"),
+            serde_json::to_vec_pretty(&manifest)?,
+        )?;
+        Ok(Self {
+            root: root.to_path_buf(),
+            dir,
+            actions: Vec::new(),
+        })
     }
 
     fn action(&mut self, name: &str, status: &str, detail: impl Into<Value>) {
-        self.actions.push(json!({ "name": name, "status": status, "detail": detail.into() }));
+        self.actions
+            .push(json!({ "name": name, "status": status, "detail": detail.into() }));
     }
 
     fn finish(self, status: &str, outputs: Vec<Value>) -> Result<()> {
@@ -605,8 +620,11 @@ fn load_matrix(root: &Path) -> Result<Matrix> {
 const LINUX_BUILD_IMAGE: &str = "aphrody/build-linux:26.04";
 
 fn selected<'a>(matrix: &'a Matrix, id: Option<&str>) -> Result<Vec<&'a Target>> {
-    let targets: Vec<_> =
-        matrix.targets.iter().filter(|t| id.is_none_or(|wanted| t.id == wanted)).collect();
+    let targets: Vec<_> = matrix
+        .targets
+        .iter()
+        .filter(|t| id.is_none_or(|wanted| t.id == wanted))
+        .collect();
     if targets.is_empty() {
         bail!("cible inconnue: {}", id.unwrap_or("<aucune>"));
     }
@@ -687,12 +705,27 @@ fn status(target_id: Option<&str>, as_json: bool, run: &mut Run) -> Result<()> {
     if as_json {
         println!("{}", serde_json::to_string_pretty(&result)?);
     } else {
-        println!("observed at epoch {observed_at} (source {})", matrix.generated_at);
+        println!(
+            "observed at epoch {observed_at} (source {})",
+            matrix.generated_at
+        );
         for target in &targets {
-            let field =
-                |key: &str| target.get(key).and_then(Value::as_str).unwrap_or("-").to_owned();
-            let live = target.get("live").map_or_else(|| "-".to_owned(), Value::to_string);
-            println!("{:<20} {:<12} {:<10} {live}", field("id"), field("kind"), field("os"));
+            let field = |key: &str| {
+                target
+                    .get(key)
+                    .and_then(Value::as_str)
+                    .unwrap_or("-")
+                    .to_owned()
+            };
+            let live = target
+                .get("live")
+                .map_or_else(|| "-".to_owned(), Value::to_string);
+            println!(
+                "{:<20} {:<12} {:<10} {live}",
+                field("id"),
+                field("kind"),
+                field("os")
+            );
         }
     }
     Ok(())
@@ -716,7 +749,9 @@ fn quality_script(stage: QualityStage, scripts: &serde_json::Map<String, Value>)
         QualityStage::Export => &["manga:ocr:export"],
         QualityStage::Plan => &[],
     };
-    candidates.iter().find_map(|name| scripts.contains_key(*name).then(|| (*name).to_owned()))
+    candidates
+        .iter()
+        .find_map(|name| scripts.contains_key(*name).then(|| (*name).to_owned()))
 }
 
 fn quality(
@@ -781,8 +816,10 @@ fn quality(
         rows.push(row);
     }
     let workspace_count = rows.len();
-    let available_scripts =
-        rows.iter().map(|row| row["available"].as_array().map_or(0, Vec::len)).sum::<usize>();
+    let available_scripts = rows
+        .iter()
+        .map(|row| row["available"].as_array().map_or(0, Vec::len))
+        .sum::<usize>();
     let output = json!({ "stage": format!("{stage:?}").to_lowercase(), "run": execute, "summary": { "workspaces": workspace_count, "managedScripts": available_scripts }, "repositories": rows });
     if as_json {
         println!("{}", serde_json::to_string_pretty(&output)?);
@@ -804,14 +841,20 @@ fn quality(
 fn workspace_repositories(root: &Path, requested: Option<&str>) -> Result<Vec<(String, PathBuf)>> {
     if root.join("crates/infra/infra/Cargo.toml").is_file() {
         let manifest: Value = serde_json::from_slice(&fs::read(root.join("package.json"))?)?;
-        let name = manifest["name"].as_str().context("root package.json has no name")?;
+        let name = manifest["name"]
+            .as_str()
+            .context("root package.json has no name")?;
         if requested.is_some_and(|wanted| wanted != name) {
-            bail!("dépôt non catalogué: {} (workspace consolidé: {name})", requested.unwrap());
+            bail!(
+                "dépôt non catalogué: {} (workspace consolidé: {name})",
+                requested.unwrap()
+            );
         }
         return Ok(vec![(name.to_owned(), root.to_path_buf())]);
     }
-    let workspace =
-        root.parent().context("le dépôt Infra doit avoir une racine workspace parente")?;
+    let workspace = root
+        .parent()
+        .context("le dépôt Infra doit avoir une racine workspace parente")?;
     let catalog_path = [
         root.join("docs/ecosystem/ecosystem.json"),
         root.join("docs/reference/infra/ecosystem/ecosystem.json"),
@@ -888,7 +931,7 @@ fn maintenance(
                 if let Ok(result) = output {
                     row["metadataBytes"] = json!(result.stdout.len());
                 }
-            },
+            }
             MaintenanceAction::Update | MaintenanceAction::Fix | MaintenanceAction::Clean => {
                 if dirty {
                     bail!("{name} est sale; maintenance refusée");
@@ -900,21 +943,21 @@ fn maintenance(
                         } else {
                             vec!["update", "--dry-run"]
                         }
-                    },
+                    }
                     MaintenanceAction::Fix => {
                         if apply {
                             vec!["fix", "--workspace", "--all-targets"]
                         } else {
                             vec!["fix", "--workspace", "--all-targets", "--allow-no-vcs"]
                         }
-                    },
+                    }
                     MaintenanceAction::Clean => {
                         if apply {
                             vec!["clean", "--workspace"]
                         } else {
                             vec!["clean", "--workspace", "--dry-run"]
                         }
-                    },
+                    }
                     MaintenanceAction::Scan => unreachable!(),
                 };
                 row["command"] = json!(format!("cargo {}", args.join(" ")));
@@ -934,7 +977,7 @@ fn maintenance(
                         );
                     }
                 }
-            },
+            }
         }
         rows.push(row);
     }
@@ -967,10 +1010,10 @@ fn observed_command(tool: &str, args: &[&str]) -> Value {
                 .trim()
                 .to_owned();
             json!({ "tool": tool, "available": output.status.success(), "version": version })
-        },
+        }
         Err(error) => {
             json!({ "tool": tool, "available": false, "error": error.kind().to_string() })
-        },
+        }
     }
 }
 
@@ -1005,7 +1048,11 @@ fn user_unit_check(name: &str) -> Value {
 fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()> {
     let pins = devenv::load(root, "wsl")?;
     let expected = [
-        ("rustc", vec!["--version"], Some(format!("rustc {}", pins.rust_channel))),
+        (
+            "rustc",
+            vec!["--version"],
+            Some(format!("rustc {}", pins.rust_channel)),
+        ),
         ("bun", vec!["--version"], Some(pins.bun)),
         ("uv", vec!["--version"], Some(pins.uv)),
         ("nu", vec!["--version"], None),
@@ -1052,11 +1099,12 @@ fn doctor(root: &Path, as_json: bool, strict: bool, run: &mut Run) -> Result<()>
         .unwrap_or_else(|| json!({ "configPresent": false }));
     let source_sync = user_unit_check("aphrody-source-sync.service");
     let matrix = load_matrix(&run.root)?;
-    let failures =
-        tools.iter().any(|tool| {
-            !tool["available"].as_bool().unwrap_or(false)
-                || !tool["matchesPin"].as_bool().unwrap_or(false)
-        }) || executables.iter().any(|binary| !binary["available"].as_bool().unwrap_or(false));
+    let failures = tools.iter().any(|tool| {
+        !tool["available"].as_bool().unwrap_or(false)
+            || !tool["matchesPin"].as_bool().unwrap_or(false)
+    }) || executables
+        .iter()
+        .any(|binary| !binary["available"].as_bool().unwrap_or(false));
     let result = json!({
         "root": root,
         "manifest": "ok",
@@ -1099,7 +1147,11 @@ fn sync(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Res
                 }
             }
         }
-        run.action("sync", if apply { "applied" } else { "planned" }, detail.clone());
+        run.action(
+            "sync",
+            if apply { "applied" } else { "planned" },
+            detail.clone(),
+        );
         println!("{}", serde_json::to_string(&detail)?);
     }
     Ok(())
@@ -1107,7 +1159,12 @@ fn sync(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> Res
 
 fn gh_count(value: &Value) -> usize {
     value.as_array().map_or_else(
-        || value.get("total_count").and_then(Value::as_u64).unwrap_or(0) as usize,
+        || {
+            value
+                .get("total_count")
+                .and_then(Value::as_u64)
+                .unwrap_or(0) as usize
+        },
         Vec::len,
     )
 }
@@ -1121,13 +1178,19 @@ async fn gh_surfaces(
         ("metadata", base.clone()),
         ("forks", format!("{base}/forks?per_page=100&sort=newest")),
         ("branches", format!("{base}/branches?per_page=100")),
-        ("pulls", format!("{base}/pulls?state=all&sort=updated&direction=desc&per_page=100")),
+        (
+            "pulls",
+            format!("{base}/pulls?state=all&sort=updated&direction=desc&per_page=100"),
+        ),
         ("commits", format!("{base}/commits?per_page=20")),
         ("releases", format!("{base}/releases?per_page=100")),
     ];
     let mut surfaces = serde_json::Map::new();
     for (name, route) in routes {
-        let result = match client.request(aphrody_git::ApiMethod::Get, &route, None).await {
+        let result = match client
+            .request(aphrody_git::ApiMethod::Get, &route, None)
+            .await
+        {
             Ok(response) if name == "metadata" => json!({
                 "status": response.status,
                 "data": {
@@ -1157,7 +1220,7 @@ async fn gh_surfaces(
                     data["sample"] = body.as_array().map(|rows| rows.iter().take(20).map(|row| json!({"tag":row["tag_name"],"name":row["name"],"published_at":row["published_at"],"url":row["html_url"],"assets":row["assets"].as_array().map_or(0, Vec::len)})).collect::<Vec<_>>()).map_or(Value::Null, |v| json!(v));
                 }
                 json!({"status":response.status,"data":data})
-            },
+            }
             Err(error) => json!({"error":error.to_string()}),
         };
         surfaces.insert(name.to_owned(), result);
@@ -1225,7 +1288,7 @@ async fn workspace_git_audit(
                     .unwrap()
                     .push(json!({"repository":name,"error":error.to_string()}));
                 continue;
-            },
+            }
         };
         let branches = aphrody_git::list_branches(&path).unwrap_or_default();
         let commits = aphrody_git::commit_log(&path, 20).unwrap_or_default();
@@ -1268,17 +1331,28 @@ async fn workspace_git_audit(
             flush(&mut parsed, &section, &module_path, &url);
             for (module_name, module_path, url) in parsed {
                 let checkout = aphrody_git::inspect_repository(path.join(&module_path)).ok();
-                let parent = Path::new(&module_path).parent().and_then(Path::to_str).unwrap_or("");
-                let leaf =
-                    Path::new(&module_path).file_name().and_then(|s| s.to_str()).unwrap_or("");
+                let parent = Path::new(&module_path)
+                    .parent()
+                    .and_then(Path::to_str)
+                    .unwrap_or("");
+                let leaf = Path::new(&module_path)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("");
                 let gitlink = aphrody_git::list_tree_at(
                     &path,
                     local.head.as_deref(),
-                    if parent.is_empty() { None } else { Some(parent) },
+                    if parent.is_empty() {
+                        None
+                    } else {
+                        Some(parent)
+                    },
                 )
                 .ok()
                 .and_then(|nodes| {
-                    nodes.into_iter().find(|node| node.name == leaf && node.mode == 0o160000)
+                    nodes
+                        .into_iter()
+                        .find(|node| node.name == leaf && node.mode == 0o160000)
                 });
                 let parsed_repo = aphrody_git::GitHubRepository::parse(&url).ok();
                 let mut module = json!({"parent":name,"name":module_name,"path":module_path,"url":url,"gitlink":gitlink.map(|node|node.oid),"initialized":checkout.is_some(),"head":checkout.as_ref().and_then(|value|value.head.clone()),"dirty":checkout.as_ref().map(|value|value.dirty)});
@@ -1293,19 +1367,26 @@ async fn workspace_git_audit(
     report["submodules"] = json!(module_rows);
     for kind in ["container", "docker", "maven", "npm", "nuget", "rubygems"] {
         let route = format!("/users/aphrody-code/packages?package_type={kind}&per_page=100");
-        let value = match client.request(aphrody_git::ApiMethod::Get, &route, None).await {
+        let value = match client
+            .request(aphrody_git::ApiMethod::Get, &route, None)
+            .await
+        {
             Ok(response) => {
                 json!({"status":response.status,"count":gh_count(&response.body),"packages":response.body})
-            },
+            }
             Err(error) => json!({"error":error.to_string()}),
         };
         report["github_packages"][kind] = value;
     }
     match aphrody_git::fetch_awesome_list("rust").await {
         Ok(index) => {
-            let matches = index.search("cargo").into_iter().take(100).collect::<Vec<_>>();
+            let matches = index
+                .search("cargo")
+                .into_iter()
+                .take(100)
+                .collect::<Vec<_>>();
             report["awesome_rust"] = json!({"repository":index.repository,"categories":index.categories.len(),"total_items":index.total_items,"cargo_matches":matches});
-        },
+        }
         Err(error) => report["notes"]
             .as_array_mut()
             .unwrap()
@@ -1315,10 +1396,11 @@ async fn workspace_git_audit(
     match client.graphql(&query).await {
         Ok(value) => {
             report["graphql"] = json!({"login":value.pointer("/viewer/login"),"owned_repository_count":value.pointer("/viewer/repositories/totalCount"),"repositories":value.pointer("/viewer/repositories/nodes")})
-        },
-        Err(error) => {
-            report["notes"].as_array_mut().unwrap().push(json!({"graphql_error":error.to_string()}))
-        },
+        }
+        Err(error) => report["notes"]
+            .as_array_mut()
+            .unwrap()
+            .push(json!({"graphql_error":error.to_string()})),
     }
     let output = root.join("target/research/github-audit.json");
     if let Some(parent) = output.parent() {
@@ -1344,7 +1426,11 @@ fn dev_env_local(root: &Path, host: &str, apply: bool, run: &mut Run) -> Result<
     if !matches!(host, "vps" | "dbfr" | "wsl") {
         bail!("--local attend vps, dbfr ou wsl: {host}");
     }
-    let report = run_remote("bash", &["-s"], &devenv::script(&devenv::load(root, host)?, apply)?)?;
+    let report = run_remote(
+        "bash",
+        &["-s"],
+        &devenv::script(&devenv::load(root, host)?, apply)?,
+    )?;
     print!("{report}");
     run.action(
         "dev-env",
@@ -1359,8 +1445,16 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
     let targets = selected(&matrix, target_id)?;
     for target in targets {
         let (host, program, args): (&str, &str, Vec<&str>) = match target.id.as_str() {
-            "vps" => ("vps", "ssh", vec!["-o", "BatchMode=yes", "vps", "bash", "-s"]),
-            "dbfr" => ("dbfr", "ssh", vec!["-o", "BatchMode=yes", "dbfr", "bash", "-s"]),
+            "vps" => (
+                "vps",
+                "ssh",
+                vec!["-o", "BatchMode=yes", "vps", "bash", "-s"],
+            ),
+            "dbfr" => (
+                "dbfr",
+                "ssh",
+                vec!["-o", "BatchMode=yes", "dbfr", "bash", "-s"],
+            ),
             "linux-container-26.04" => (
                 "wsl",
                 "docker",
@@ -1385,7 +1479,7 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
                     );
                 }
                 continue;
-            },
+            }
         };
         let pins = devenv::load(root, host)?;
         let report = run_remote(program, &args, &devenv::script(&pins, apply)?)?;
@@ -1403,17 +1497,19 @@ fn dev_env(root: &Path, target_id: Option<&str>, apply: bool, run: &mut Run) -> 
 /// A release below the stack root whose path segments are plain names: the path is
 /// forwarded to a remote shell by ssh, so `.`, `..`, spaces and metacharacters are refused.
 fn release_path_is_valid(release: &str, stack: DeployStack) -> bool {
-    release.strip_prefix(stack.release_root().as_str()).is_some_and(|id| {
-        !id.is_empty()
-            && id.split('/').all(|part| {
-                !part.is_empty()
-                    && part != "."
-                    && part != ".."
-                    && part
-                        .chars()
-                        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
-            })
-    })
+    release
+        .strip_prefix(stack.release_root().as_str())
+        .is_some_and(|id| {
+            !id.is_empty()
+                && id.split('/').all(|part| {
+                    !part.is_empty()
+                        && part != "."
+                        && part != ".."
+                        && part
+                            .chars()
+                            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+                })
+        })
 }
 
 fn deploy_target_is_supported(target: &str, stack: DeployStack) -> bool {
@@ -1423,7 +1519,15 @@ fn deploy_target_is_supported(target: &str, stack: DeployStack) -> bool {
 
 /// `ssh` arguments running the selected host's adapter as root, never prompting.
 fn remote_adapter_args<'a>(target: &'a str, adapter: &'a str, release: &'a str) -> [&'a str; 7] {
-    ["-o", "BatchMode=yes", target, "sudo", "-n", adapter, release]
+    [
+        "-o",
+        "BatchMode=yes",
+        target,
+        "sudo",
+        "-n",
+        adapter,
+        release,
+    ]
 }
 
 /// Select the existing adapter's compute mode without activating the full stack.
@@ -1454,7 +1558,11 @@ fn deploy(
     let _ = selected(&matrix, Some(target))?;
     let adapter = std::env::var(stack.adapter_env()).unwrap_or_else(|_| stack.adapter().to_owned());
     let detail = json!({ "target": target, "stack": stack, "release": release, "releaseRoot": stack.release_root(), "mode": if apply { "apply" } else { "plan" }, "adapter": adapter, "requires": stack.requires() });
-    run.action("deploy", if apply { "delegated" } else { "planned" }, detail.clone());
+    run.action(
+        "deploy",
+        if apply { "delegated" } else { "planned" },
+        detail.clone(),
+    );
     println!("{}", serde_json::to_string_pretty(&detail)?);
     if apply {
         if !deploy_target_is_supported(target, stack) {
@@ -1474,7 +1582,10 @@ fn deploy(
             .output()
             .with_context(|| format!("ssh {target} indisponible"))?;
         if !output.status.success() {
-            bail!("déploiement distant échoué: {}", String::from_utf8_lossy(&output.stderr).trim());
+            bail!(
+                "déploiement distant échoué: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
         }
         run.action(
             "deploy.remote",
@@ -1498,16 +1609,19 @@ fn nginx_command(command: &NginxCommand) -> Result<()> {
             };
             print!("{}", render_nginx(&raw, comment)?);
             Ok(())
-        },
+        }
         NginxCommand::Test { path, docker: None } => {
             crate::NginxConfig::test_syntax(path).map_err(|error| anyhow::anyhow!(error))
-        },
-        NginxCommand::Test { path, docker: Some(image) } => {
+        }
+        NginxCommand::Test {
+            path,
+            docker: Some(image),
+        } => {
             let report =
                 crate::nginx::test_in_container(path, image).map_err(anyhow::Error::msg)?;
             eprintln!("{report}");
             Ok(())
-        },
+        }
     }
 }
 
@@ -1525,12 +1639,17 @@ fn render_nginx(raw: &str, comment: &[String]) -> Result<String> {
 fn validate_catalogs(root: &Path, as_json: bool, run: &mut Run) -> Result<()> {
     let mut report = validate::run(root)?;
     let catalog = crate::catalog::load_service_catalog(root)?;
-    report
-        .errors
-        .extend(validate::check_unit_templates(&root.join("infra/config/host/systemd"), &catalog));
+    report.errors.extend(validate::check_unit_templates(
+        &root.join("infra/config/host/systemd"),
+        &catalog,
+    ));
     run.action(
         "validate",
-        if report.errors.is_empty() { "success" } else { "failed" },
+        if report.errors.is_empty() {
+            "success"
+        } else {
+            "failed"
+        },
         json!(&report),
     );
     if as_json {
@@ -1561,7 +1680,11 @@ fn run_remote(program: &str, args: &[&str], script: &str) -> Result<String> {
         .spawn()
         .and_then(|mut child| {
             use std::io::Write;
-            child.stdin.take().expect("stdin piped").write_all(script.as_bytes())?;
+            child
+                .stdin
+                .take()
+                .expect("stdin piped")
+                .write_all(script.as_bytes())?;
             child.wait_with_output()
         })
         .with_context(|| format!("{program} {args:?} indisponible"))?;
@@ -1581,8 +1704,11 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
         .get(target_id)
         .with_context(|| format!("cible absente de infra/config/disk-reclaim.json: {target_id}"))?;
     let script = reclaim::script(target, apply)?;
-    let stdout =
-        run_remote("ssh", &["-o", "BatchMode=yes", &target.ssh_alias, "sh", "-s"], &script)?;
+    let stdout = run_remote(
+        "ssh",
+        &["-o", "BatchMode=yes", &target.ssh_alias, "sh", "-s"],
+        &script,
+    )?;
     let mut total = 0u64;
     let mut entries = Vec::new();
     for line in stdout.lines() {
@@ -1603,10 +1729,17 @@ fn reclaim_disk(root: &Path, target_id: &str, apply: bool, run: &mut Run) -> Res
             .chain(system_paths)
             .find(|e| e.path == label)
             .map_or(fallback, |e| e.reason.as_str());
-        println!("{:>8.2} GiB  {label}  ({reason})", bytes as f64 / 1024f64.powi(3));
+        println!(
+            "{:>8.2} GiB  {label}  ({reason})",
+            bytes as f64 / 1024f64.powi(3)
+        );
         entries.push(json!({ "path": label, "bytes": bytes }));
     }
-    let mode = if apply { "reclaimed" } else { "reclaimable (plan, rerun with --apply)" };
+    let mode = if apply {
+        "reclaimed"
+    } else {
+        "reclaimable (plan, rerun with --apply)"
+    };
     println!("{:>8.2} GiB  total {mode}", total as f64 / 1024f64.powi(3));
     run.action(
         "reclaim",
@@ -1622,7 +1755,10 @@ fn service_probe(
     timeout_secs: u32,
 ) -> Result<crate::probe::ProbeResult> {
     if crate::lifecycle::is_local_target(target_id) {
-        Ok(crate::probe::probe_url(url, std::time::Duration::from_secs(u64::from(timeout_secs))))
+        Ok(crate::probe::probe_url(
+            url,
+            std::time::Duration::from_secs(u64::from(timeout_secs)),
+        ))
     } else {
         crate::probe::probe_remote(target_id, url, timeout_secs)
     }
@@ -1663,7 +1799,11 @@ fn service_health(
             println!(
                 "{} {}",
                 result["id"].as_str().unwrap_or("-"),
-                if result["probe"]["ok"] == Value::Bool(true) { "UP" } else { "DOWN" }
+                if result["probe"]["ok"] == Value::Bool(true) {
+                    "UP"
+                } else {
+                    "DOWN"
+                }
             );
         }
     }
@@ -1705,13 +1845,19 @@ fn service_prewarm(root: &Path, target_id: &str, as_json: bool, run: &mut Run) -
     ];
     let health = service_probe(target_id, &format!("{base}/health"), 8)?;
     if !health.ok {
-        bail!("nie-model-serve indisponible: {}", health.error.unwrap_or_default());
+        bail!(
+            "nie-model-serve indisponible: {}",
+            health.error.unwrap_or_default()
+        );
     }
     let items: Vec<Value> = codes.iter().map(|code| {
         let probe = service_probe(target_id, &format!("{base}/model-full/{code}.glb"), 15)?;
         Ok(json!({ "code": code, "ok": probe.ok, "status": probe.status, "durationMs": probe.duration_ms }))
     }).collect::<Result<Vec<_>>>()?;
-    let success = items.iter().filter(|item| item["ok"] == Value::Bool(true)).count();
+    let success = items
+        .iter()
+        .filter(|item| item["ok"] == Value::Bool(true))
+        .count();
     let output =
         json!({ "target": base, "success": success, "total": items.len(), "items": items });
     if as_json {
@@ -1721,7 +1867,11 @@ fn service_prewarm(root: &Path, target_id: &str, as_json: bool, run: &mut Run) -
     }
     run.action(
         "service.prewarm",
-        if success == codes.len() { "success" } else { "failed" },
+        if success == codes.len() {
+            "success"
+        } else {
+            "failed"
+        },
         output,
     );
     if success != codes.len() {
@@ -1751,7 +1901,7 @@ fn service_lifecycle(
             }
             run.action("service.catalog", "success", json!({ "target": target_id }));
             Ok(())
-        },
+        }
         ServiceAction::Health => service_health(root, id, target_id, as_json, run),
         ServiceAction::Prewarm => service_prewarm(root, target_id, as_json, run),
         ServiceAction::Status => {
@@ -1774,7 +1924,7 @@ fn service_lifecycle(
                 json!({ "target": target_id, "results": statuses }),
             );
             Ok(())
-        },
+        }
         _ => {
             let results = crate::lifecycle::execute_lifecycle(root, action, id, target_id)?;
             if as_json {
@@ -1799,7 +1949,7 @@ fn service_lifecycle(
                 bail!("échec de l'action de cycle de vie sur {target_id}");
             }
             Ok(())
-        },
+        }
     }
 }
 
@@ -1825,13 +1975,24 @@ fn probe_endpoint(
             result.url,
             result.status,
             result.duration_ms,
-            result.error.as_ref().map(|e| format!(" error: {e}")).unwrap_or_default()
+            result
+                .error
+                .as_ref()
+                .map(|e| format!(" error: {e}"))
+                .unwrap_or_default()
         );
     }
 
-    run.action("probe", if result.ok { "success" } else { "failed" }, json!({ "result": result }));
+    run.action(
+        "probe",
+        if result.ok { "success" } else { "failed" },
+        json!({ "result": result }),
+    );
     if !result.ok {
-        bail!("probe a échoué: {}", result.error.unwrap_or_else(|| "code non-2xx".to_string()));
+        bail!(
+            "probe a échoué: {}",
+            result.error.unwrap_or_else(|| "code non-2xx".to_string())
+        );
     }
     Ok(())
 }
@@ -1850,10 +2011,16 @@ fn check_pipeline_workspace(
                 errors.push(format!("{}: dépôt absent", step.repo));
                 continue;
             }
-            let Some(manifest) =
-                manifests.iter().map(|name| repo.join(name)).find(|path| path.is_file())
+            let Some(manifest) = manifests
+                .iter()
+                .map(|name| repo.join(name))
+                .find(|path| path.is_file())
             else {
-                errors.push(format!("{}: manifeste {} absent", step.repo, manifests.join(" / ")));
+                errors.push(format!(
+                    "{}: manifeste {} absent",
+                    step.repo,
+                    manifests.join(" / ")
+                ));
                 continue;
             };
             if step.runner == crate::pipeline::Runner::Bun
@@ -1869,13 +2036,13 @@ fn check_pipeline_workspace(
                         if !scripts.contains_key(script) {
                             errors.push(format!("{}: script Bun {} absent", step.repo, script));
                         }
-                    },
+                    }
                     [_, filter, package, script] if filter == "--filter" => {
                         let catalog = package_catalogs
                             .entry(repo.clone())
                             .or_insert_with(|| workspace_package_scripts(&repo));
                         match catalog.get(package) {
-                            Some(scripts) if scripts.contains(script) => {},
+                            Some(scripts) if scripts.contains(script) => {}
                             Some(_) => errors.push(format!(
                                 "{}: package {} sans script Bun {}",
                                 step.repo, package, script
@@ -1883,7 +2050,7 @@ fn check_pipeline_workspace(
                             None => errors
                                 .push(format!("{}: package Bun {} absent", step.repo, package)),
                         }
-                    },
+                    }
                     _ => errors.push(format!(
                         "{}: commande Bun run non prise en charge: {:?}",
                         step.repo, step.command
@@ -1958,7 +2125,10 @@ fn workspace_package_scripts(
 fn run_pipeline_stage(root: &Path, stage_name: &str, as_json: bool, run: &mut Run) -> Result<()> {
     let config = crate::pipeline::load_pipeline_config(root)?;
     let workspace_root = match &config.workspace_root {
-        Some(rel) => root.join(rel).canonicalize().unwrap_or_else(|_| root.to_path_buf()),
+        Some(rel) => root
+            .join(rel)
+            .canonicalize()
+            .unwrap_or_else(|_| root.to_path_buf()),
         None => root.parent().unwrap_or(root).to_path_buf(),
     };
 
@@ -2011,16 +2181,29 @@ fn run_pipeline_stage(root: &Path, stage_name: &str, as_json: bool, run: &mut Ru
                 }
             }
         }
-        run.action("pipeline.plan", "success", json!({ "stages": config.stages.len() }));
+        run.action(
+            "pipeline.plan",
+            "success",
+            json!({ "stages": config.stages.len() }),
+        );
         return Ok(());
     }
 
-    let stage = config.stages.iter().find(|s| s.id == stage_name).with_context(|| {
-        format!(
-            "étape de pipeline inconnue: {stage_name} (disponibles: plan, {})",
-            config.stages.iter().map(|s| s.id.as_str()).collect::<Vec<_>>().join(", ")
-        )
-    })?;
+    let stage = config
+        .stages
+        .iter()
+        .find(|s| s.id == stage_name)
+        .with_context(|| {
+            format!(
+                "étape de pipeline inconnue: {stage_name} (disponibles: plan, {})",
+                config
+                    .stages
+                    .iter()
+                    .map(|s| s.id.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
+        })?;
 
     println!("Exécution de l'étape de pipeline: {}...", stage.id);
     let result = crate::pipeline::run_stage(&workspace_root, stage);
@@ -2054,10 +2237,17 @@ fn run_pipeline_stage(root: &Path, stage_name: &str, as_json: bool, run: &mut Ru
 }
 
 async fn execute_ssh(cmd: &aphrody_ssh::Commands, json: bool, run: &mut Run) -> Result<()> {
-    run.action("ssh", "dispatched", json!({ "command": format!("{:?}", cmd) }));
-    aphrody_ssh::run(aphrody_ssh::Cli { json, command: cmd.clone() })
-        .await
-        .map_err(|e| anyhow::anyhow!("{e}"))
+    run.action(
+        "ssh",
+        "dispatched",
+        json!({ "command": format!("{:?}", cmd) }),
+    );
+    aphrody_ssh::run(aphrody_ssh::Cli {
+        json,
+        command: cmd.clone(),
+    })
+    .await
+    .map_err(|e| anyhow::anyhow!("{e}"))
 }
 
 fn execute_git(repo_path: &Path, as_json: bool, run: &mut Run) -> Result<()> {
@@ -2069,12 +2259,19 @@ fn execute_git(repo_path: &Path, as_json: bool, run: &mut Run) -> Result<()> {
         println!("{}", serde_json::to_string_pretty(&val)?);
     } else {
         println!("dépôt: {}", repo.root.display());
-        println!("branche: {}", repo.branch.as_deref().unwrap_or("<detached>"));
+        println!(
+            "branche: {}",
+            repo.branch.as_deref().unwrap_or("<detached>")
+        );
         println!("commit HEAD: {}", repo.head.as_deref().unwrap_or("<aucun>"));
         println!("dirty: {}", repo.dirty);
         println!("remotes: {}", repo.remotes.len());
         for remote in &repo.remotes {
-            println!("  - {} -> {}", remote.name, remote.fetch_url.as_deref().unwrap_or("-"));
+            println!(
+                "  - {} -> {}",
+                remote.name,
+                remote.fetch_url.as_deref().unwrap_or("-")
+            );
         }
         println!("modifications ({}) :", repo.changes.len());
         for change in &repo.changes {
@@ -2091,7 +2288,11 @@ fn execute_ci(
     as_json: bool,
     run: &mut Run,
 ) -> Result<()> {
-    let mode = if apply { aphrody_git::InstallMode::Apply } else { aphrody_git::InstallMode::Plan };
+    let mode = if apply {
+        aphrody_git::InstallMode::Apply
+    } else {
+        aphrody_git::InstallMode::Plan
+    };
     let outcome = aphrody_git::install_consumer_workflow(repo_path, source_ref, mode)
         .map_err(|e| anyhow::anyhow!("distribution CI échouée: {e}"))?;
     let val = serde_json::to_value(&outcome)?;
@@ -2121,7 +2322,12 @@ async fn execute_vpn(cmd: &VpnCommand, run: &mut Run) -> Result<()> {
                 println!("{}", serde_json::to_string_pretty(&val)?);
             } else {
                 match status {
-                    aphrody_vpn::TunnelState::Connected { relay, location, ipv4, ipv6 } => {
+                    aphrody_vpn::TunnelState::Connected {
+                        relay,
+                        location,
+                        ipv4,
+                        ipv6,
+                    } => {
                         println!("état: Connecté");
                         println!("relais: {relay} ({location})");
                         if let Some(ip) = ipv4 {
@@ -2130,30 +2336,38 @@ async fn execute_vpn(cmd: &VpnCommand, run: &mut Run) -> Result<()> {
                         if let Some(ip) = ipv6 {
                             println!("ipv6: {ip}");
                         }
-                    },
+                    }
                     aphrody_vpn::TunnelState::Connecting => println!("état: Connexion en cours..."),
                     aphrody_vpn::TunnelState::Disconnected => println!("état: Déconnecté"),
                     aphrody_vpn::TunnelState::Blocked(reason) => {
                         println!("état: Bloqué ({reason})")
-                    },
+                    }
                     aphrody_vpn::TunnelState::Unknown(raw) => println!("état: Inconnu ({raw})"),
                 }
             }
-        },
+        }
         VpnCommand::Connect { location } => {
             let ctrl =
                 aphrody_vpn::MullvadController::discover().map_err(|e| anyhow::anyhow!("{e}"))?;
-            ctrl.connect(location.as_deref()).await.map_err(|e| anyhow::anyhow!("{e}"))?;
+            ctrl.connect(location.as_deref())
+                .await
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
             println!("connexion mullvad initiée (location: {:?})", location);
-            run.action("vpn", "connect", json!({ "ok": true, "location": location }));
-        },
+            run.action(
+                "vpn",
+                "connect",
+                json!({ "ok": true, "location": location }),
+            );
+        }
         VpnCommand::Disconnect => {
             let ctrl =
                 aphrody_vpn::MullvadController::discover().map_err(|e| anyhow::anyhow!("{e}"))?;
-            ctrl.disconnect().await.map_err(|e| anyhow::anyhow!("{e}"))?;
+            ctrl.disconnect()
+                .await
+                .map_err(|e| anyhow::anyhow!("{e}"))?;
             println!("déconnexion mullvad effectuée");
             run.action("vpn", "disconnect", json!({ "ok": true }));
-        },
+        }
         VpnCommand::ProxyTarget { json } => {
             let host = std::env::var(aphrody_vpn::PROXY_HOST_ENV).ok();
             let remote = std::env::var(aphrody_vpn::PROXY_REMOTE_ENV).ok();
@@ -2167,12 +2381,12 @@ async fn execute_vpn(cmd: &VpnCommand, run: &mut Run) -> Result<()> {
                         println!("hôte SSH proxy: {h}");
                         println!("endpoint distant SOCKS5: {r}");
                     }
-                },
+                }
                 Err(e) => {
                     bail!("{e}");
-                },
+                }
             }
-        },
+        }
     }
     Ok(())
 }
@@ -2196,7 +2410,7 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                         crate::drive::MountKind::LocalFs { .. } => "LocalFs".to_owned(),
                         crate::drive::MountKind::RemoteSftp { host, .. } => {
                             format!("RemoteSftp({})", host.alias())
-                        },
+                        }
                         crate::drive::MountKind::GitRepo { .. } => "GitRepo".to_owned(),
                         crate::drive::MountKind::OpenDalFs { .. } => "OpenDalFs".to_owned(),
                     };
@@ -2209,7 +2423,7 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                     );
                 }
             }
-        },
+        }
         DriveCommand::Ls { uri, json } => {
             let nodes = engine
                 .list_dir(uri)
@@ -2228,7 +2442,7 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                     );
                 }
             }
-        },
+        }
         DriveCommand::Tree { uri, depth, json } => {
             let tree = engine
                 .tree(uri, *depth)
@@ -2249,15 +2463,19 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                 }
                 print_node(&tree, 0);
             }
-        },
+        }
         DriveCommand::Cat { uri } => {
             let content = engine
                 .read_file(uri)
                 .await
                 .with_context(|| format!("échec de lecture pour URI '{uri}'"))?;
-            run.action("drive", "cat", json!({ "uri": uri, "bytes": content.len() }));
+            run.action(
+                "drive",
+                "cat",
+                json!({ "uri": uri, "bytes": content.len() }),
+            );
             std::io::Write::write_all(&mut std::io::stdout(), &content)?;
-        },
+        }
         DriveCommand::Git { mount, json } => {
             let overview = engine
                 .git_overview(mount)
@@ -2267,8 +2485,14 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
             if *json {
                 println!("{}", serde_json::to_string_pretty(&val)?);
             } else {
-                println!("branche: {}", overview.branch.as_deref().unwrap_or("<detached>"));
-                println!("commit HEAD: {}", overview.head.as_deref().unwrap_or("<aucun>"));
+                println!(
+                    "branche: {}",
+                    overview.branch.as_deref().unwrap_or("<detached>")
+                );
+                println!(
+                    "commit HEAD: {}",
+                    overview.head.as_deref().unwrap_or("<aucun>")
+                );
                 println!("dirty: {}", overview.dirty);
                 println!("branches ({}):", overview.branches.len());
                 for b in &overview.branches {
@@ -2289,7 +2513,7 @@ async fn execute_drive(cmd: &DriveCommand, run: &mut Run) -> Result<()> {
                     );
                 }
             }
-        },
+        }
     }
     Ok(())
 }
@@ -2302,21 +2526,24 @@ pub fn cli_main(args: Vec<std::ffi::OsString>) -> i32 {
         Err(error) => {
             let _ = error.print();
             return error.exit_code();
-        },
+        }
     };
-    let runtime = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+    {
         Ok(runtime) => runtime,
         Err(error) => {
             eprintln!("Error: {error}");
             return 1;
-        },
+        }
     };
     match runtime.block_on(run_cli(cli)) {
         Ok(()) => 0,
         Err(error) => {
             eprintln!("Error: {error:?}");
             1
-        },
+        }
     }
 }
 
@@ -2338,20 +2565,33 @@ async fn run_cli(cli: Cli) -> Result<()> {
     let mut run = Run::start(&root, &scope)?;
     let result = match &cli.command {
         CommandKind::Status { target, json } => status(target.as_deref(), *json, &mut run),
-        CommandKind::Quality { stage, repo, run: execute, json } => {
-            quality(&root, *stage, repo.as_deref(), *execute, *json, &mut run)
-        },
-        CommandKind::Maintenance { action, repo, apply, json } => {
-            maintenance(&root, *action, repo.as_deref(), *apply, *json, &mut run)
-        },
+        CommandKind::Quality {
+            stage,
+            repo,
+            run: execute,
+            json,
+        } => quality(&root, *stage, repo.as_deref(), *execute, *json, &mut run),
+        CommandKind::Maintenance {
+            action,
+            repo,
+            apply,
+            json,
+        } => maintenance(&root, *action, repo.as_deref(), *apply, *json, &mut run),
         CommandKind::Inventory { json } => {
-            let args =
-                if *json { vec!["run", "infra:inventory"] } else { vec!["run", "infra:status"] };
+            let args = if *json {
+                vec!["run", "infra:inventory"]
+            } else {
+                vec!["run", "infra:status"]
+            };
             let output = command(&root, "bun", &args)?;
-            run.action("inventory.bun", "success", json!({ "outputBytes": output.len() }));
+            run.action(
+                "inventory.bun",
+                "success",
+                json!({ "outputBytes": output.len() }),
+            );
             println!("{output}");
             Ok(())
-        },
+        }
         CommandKind::Doctor { json, strict } => doctor(&root, *json, *strict, &mut run),
         CommandKind::Sync { target, apply } => sync(&root, target.as_deref(), *apply, &mut run),
         CommandKind::Deploy {
@@ -2395,8 +2635,13 @@ async fn run_cli(cli: Cli) -> Result<()> {
                 }
                 deploy(target, *stack, release.as_deref(), *apply, &mut run)
             }
-        },
-        CommandKind::Boot { action, host, entry, json } => {
+        }
+        CommandKind::Boot {
+            action,
+            host,
+            entry,
+            json,
+        } => {
             let drift =
                 crate::boot::run_boot(&root, *action, host.as_deref(), entry.as_deref(), *json)?;
             run.action("boot", if drift { "drift" } else { "conforme" }, json!({}));
@@ -2404,11 +2649,15 @@ async fn run_cli(cli: Cli) -> Result<()> {
                 bail!("dérive de persistance au boot");
             }
             Ok(())
-        },
+        }
         CommandKind::Validate { json } => validate_catalogs(&root, *json, &mut run),
         CommandKind::Reclaim { target, apply } => reclaim_disk(&root, target, *apply, &mut run),
-        CommandKind::DevEnv { target, apply, local, developer_cli } => match (developer_cli, local)
-        {
+        CommandKind::DevEnv {
+            target,
+            apply,
+            local,
+            developer_cli,
+        } => match (developer_cli, local) {
             (true, _) => {
                 let report =
                     run_remote("bash", &["-s"], &devenv::developer_script(&root, *apply)?)?;
@@ -2419,33 +2668,50 @@ async fn run_cli(cli: Cli) -> Result<()> {
                     json!({ "report": report }),
                 );
                 Ok(())
-            },
+            }
             (false, Some(host)) => dev_env_local(&root, host, *apply, &mut run),
             (false, None) => dev_env(&root, target.as_deref(), *apply, &mut run),
         },
-        CommandKind::Service { action, id, target, json } => {
-            service_lifecycle(&root, *action, id.as_deref(), target, *json, &mut run)
-        },
-        CommandKind::Probe { endpoint, timeout, target, json } => {
-            probe_endpoint(&root, endpoint, *timeout, target.as_deref(), *json, &mut run)
-        },
+        CommandKind::Service {
+            action,
+            id,
+            target,
+            json,
+        } => service_lifecycle(&root, *action, id.as_deref(), target, *json, &mut run),
+        CommandKind::Probe {
+            endpoint,
+            timeout,
+            target,
+            json,
+        } => probe_endpoint(
+            &root,
+            endpoint,
+            *timeout,
+            target.as_deref(),
+            *json,
+            &mut run,
+        ),
         CommandKind::Pipeline { stage, json } => run_pipeline_stage(&root, stage, *json, &mut run),
         CommandKind::Serve { port, target } => {
             crate::api::ApiServer::new(root.clone(), *port, target.clone()).run()
-        },
+        }
         CommandKind::Ssh { json, command } => execute_ssh(command, *json, &mut run).await,
         CommandKind::Git { repo, json } => execute_git(repo, *json, &mut run),
-        CommandKind::WorkspaceGitAudit { workspace_root, json } => {
-            workspace_git_audit(&root, workspace_root.as_deref(), *json, &mut run).await
-        },
-        CommandKind::Ci { repo, source_ref, apply, json } => {
-            execute_ci(repo, source_ref, *apply, *json, &mut run)
-        },
+        CommandKind::WorkspaceGitAudit {
+            workspace_root,
+            json,
+        } => workspace_git_audit(&root, workspace_root.as_deref(), *json, &mut run).await,
+        CommandKind::Ci {
+            repo,
+            source_ref,
+            apply,
+            json,
+        } => execute_ci(repo, source_ref, *apply, *json, &mut run),
         CommandKind::Vpn { command } => execute_vpn(command, &mut run).await,
         CommandKind::Nginx { command } => nginx_command(command),
-        CommandKind::Wg { json, command } => {
-            crate::tunnel::execute(&root, command, *json).await.map(|v| run.action("wg", "done", v))
-        },
+        CommandKind::Wg { json, command } => crate::tunnel::execute(&root, command, *json)
+            .await
+            .map(|v| run.action("wg", "done", v)),
         CommandKind::Remote { command } => crate::remote::execute_remote(&root, command)
             .await
             .map(|v| run.action("remote", "done", v)),
@@ -2454,11 +2720,20 @@ async fn run_cli(cli: Cli) -> Result<()> {
         CommandKind::Drive { command } => execute_drive(command, &mut run).await,
         CommandKind::Ovh { command } => execute_ovh(command, &mut run).await,
         CommandKind::Secrets { command } => {
-            run.action("secrets", "exec", json!({ "command": format!("{:?}", command) }));
+            run.action(
+                "secrets",
+                "exec",
+                json!({ "command": format!("{:?}", command) }),
+            );
             command.execute(&root)
-        },
+        }
         CommandKind::Gitea {
-            command: GiteaCommand::Provision { apply, repository, json: as_json },
+            command:
+                GiteaCommand::Provision {
+                    apply,
+                    repository,
+                    json: as_json,
+                },
         } => {
             let report = crate::gitea::provision(&root, *apply, repository.as_deref())?;
             run.action(
@@ -2472,17 +2747,28 @@ async fn run_cli(cli: Cli) -> Result<()> {
                 println!("{}", serde_json::to_string(&report)?);
             }
             Ok(())
-        },
-        CommandKind::Gitea { command: GiteaCommand::Mirrors { apply, batch, json: as_json } } => {
+        }
+        CommandKind::Gitea {
+            command:
+                GiteaCommand::Mirrors {
+                    apply,
+                    batch,
+                    json: as_json,
+                },
+        } => {
             let report = crate::gitea::mirrors(&root, *apply, batch)?;
-            run.action("gitea.mirrors", if *apply { "applied" } else { "planned" }, json!(&report));
+            run.action(
+                "gitea.mirrors",
+                if *apply { "applied" } else { "planned" },
+                json!(&report),
+            );
             if *as_json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
                 println!("{}", serde_json::to_string(&report)?);
             }
             Ok(())
-        },
+        }
     };
     match result {
         Ok(()) => run.finish("success", vec![]),
@@ -2491,14 +2777,17 @@ async fn run_cli(cli: Cli) -> Result<()> {
             run.action("error", "failed", json!({ "message": message }));
             run.finish("failed", vec![])?;
             Err(error)
-        },
+        }
     }
 }
 
 fn execute_yolo(root: &Path, args: &[String], run: &mut Run) -> Result<()> {
     run.action("yolo", "exec", json!({ "args": args }));
-    let mut argv: Vec<std::ffi::OsString> =
-        vec!["aphrody-yolo".into(), "--root".into(), root.as_os_str().to_owned()];
+    let mut argv: Vec<std::ffi::OsString> = vec![
+        "aphrody-yolo".into(),
+        "--root".into(),
+        root.as_os_str().to_owned(),
+    ];
     argv.extend(args.iter().map(std::ffi::OsString::from));
     // The yolo CLI builds its own runtime: run it on a thread outside the caller's runtime.
     let code = std::thread::scope(|scope| scope.spawn(|| aphrody_yolo::cli_main(argv)).join())
@@ -2510,7 +2799,11 @@ fn execute_yolo(root: &Path, args: &[String], run: &mut Run) -> Result<()> {
 }
 
 async fn execute_ovh(command: &aphrody_ovh::OvhCommand, run: &mut Run) -> Result<()> {
-    run.action("ovh", "dispatch", json!({ "command": format!("{:?}", command) }));
+    run.action(
+        "ovh",
+        "dispatch",
+        json!({ "command": format!("{:?}", command) }),
+    );
     command.execute().await
 }
 
@@ -2579,11 +2872,17 @@ mod tests {
         fs::create_dir_all(root.join("crates/infra/infra")).unwrap();
         fs::write(root.join("crates/infra/infra/Cargo.toml"), "").unwrap();
         fs::write(root.join("Cargo.toml"), "[workspace]\n").unwrap();
-        fs::write(root.join("package.json"), r#"{"name":"aphrody","scripts":{"lint":"oxlint"}}"#)
-            .unwrap();
+        fs::write(
+            root.join("package.json"),
+            r#"{"name":"aphrody","scripts":{"lint":"oxlint"}}"#,
+        )
+        .unwrap();
         let expected = vec![("aphrody".to_owned(), root.clone())];
         assert_eq!(workspace_repositories(&root, None).unwrap(), expected);
-        assert_eq!(maintenance_repositories(&root, Some("aphrody")).unwrap(), expected);
+        assert_eq!(
+            maintenance_repositories(&root, Some("aphrody")).unwrap(),
+            expected
+        );
         assert!(workspace_repositories(&root, Some("aphrody-ai")).is_err());
     }
 
@@ -2628,10 +2927,22 @@ mod tests {
             "/home/ubuntu/apps/aphrody/releases/",
             DeployStack::Aphrody
         ));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/../etc", DeployStack::Rg));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/a/./b", DeployStack::Rg));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/current", DeployStack::Aphrody));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/aphrody/releases/a", DeployStack::Rg));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/rg/releases/../etc",
+            DeployStack::Rg
+        ));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/rg/releases/a/./b",
+            DeployStack::Rg
+        ));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/aphrody/current",
+            DeployStack::Aphrody
+        ));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/aphrody/releases/a",
+            DeployStack::Rg
+        ));
         assert!(release_path_is_valid(
             "/home/ubuntu/apps/shenron/releases/1111111111111111111111111111111111111111",
             DeployStack::Shenron
@@ -2644,7 +2955,10 @@ mod tests {
             "/home/ubuntu/apps/aphrody/releases/20260926T120000Z-0123abcd",
             DeployStack::Bundle
         ));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/rg/releases/x;reboot", DeployStack::Rg));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/rg/releases/x;reboot",
+            DeployStack::Rg
+        ));
         assert!(!release_path_is_valid(
             "/home/ubuntu/apps/shenron/releases/a b",
             DeployStack::Shenron
@@ -2653,10 +2967,18 @@ mod tests {
 
     #[test]
     fn every_stack_has_its_own_adapter_root_and_override() {
-        let stacks =
-            [DeployStack::Aphrody, DeployStack::Shenron, DeployStack::Rg, DeployStack::Bundle];
+        let stacks = [
+            DeployStack::Aphrody,
+            DeployStack::Shenron,
+            DeployStack::Rg,
+            DeployStack::Bundle,
+        ];
         for (index, stack) in stacks.iter().enumerate() {
-            assert!(stack.adapter().starts_with("/usr/local/sbin/aphrody-infra-deploy-"));
+            assert!(
+                stack
+                    .adapter()
+                    .starts_with("/usr/local/sbin/aphrody-infra-deploy-")
+            );
             assert!(stack.release_root().ends_with('/'));
             assert!(!stack.requires().is_empty());
             for other in &stacks[index + 1..] {
@@ -2666,10 +2988,22 @@ mod tests {
             }
         }
         // The Aphrody stack is the multi-service adapter, never the retired site-only one.
-        assert_eq!(DeployStack::Aphrody.adapter(), "/usr/local/sbin/aphrody-infra-deploy-aphrody");
-        assert!(DeployStack::Aphrody.requires().iter().any(|item| item.contains("SMOKE.json")));
         assert_eq!(
-            remote_adapter_args("vps", "/usr/local/sbin/x", "/home/ubuntu/apps/rg/releases/a"),
+            DeployStack::Aphrody.adapter(),
+            "/usr/local/sbin/aphrody-infra-deploy-aphrody"
+        );
+        assert!(
+            DeployStack::Aphrody
+                .requires()
+                .iter()
+                .any(|item| item.contains("SMOKE.json"))
+        );
+        assert_eq!(
+            remote_adapter_args(
+                "vps",
+                "/usr/local/sbin/x",
+                "/home/ubuntu/apps/rg/releases/a"
+            ),
             [
                 "-o",
                 "BatchMode=yes",
@@ -2684,12 +3018,30 @@ mod tests {
 
     #[test]
     fn deploy_cli_routes_rg_explicitly_and_preserves_aphrody_default() {
-        let rg =
-            Cli::try_parse_from(["aphrody-infra", "deploy", "--target", "vps", "--stack", "rg"])
-                .unwrap();
-        assert_matches!(rg.command, CommandKind::Deploy { stack: DeployStack::Rg, .. });
+        let rg = Cli::try_parse_from([
+            "aphrody-infra",
+            "deploy",
+            "--target",
+            "vps",
+            "--stack",
+            "rg",
+        ])
+        .unwrap();
+        assert_matches!(
+            rg.command,
+            CommandKind::Deploy {
+                stack: DeployStack::Rg,
+                ..
+            }
+        );
         let default = Cli::try_parse_from(["aphrody-infra", "deploy", "--target", "vps"]).unwrap();
-        assert_matches!(default.command, CommandKind::Deploy { stack: DeployStack::Aphrody, .. });
+        assert_matches!(
+            default.command,
+            CommandKind::Deploy {
+                stack: DeployStack::Aphrody,
+                ..
+            }
+        );
         for (name, expected) in [
             ("shenron", DeployStack::Shenron),
             ("bundle", DeployStack::Bundle),
@@ -2718,7 +3070,10 @@ mod tests {
         assert_eq!(compute.adapter(), DeployStack::Aphrody.adapter());
         assert_eq!(compute.adapter_env(), DeployStack::Aphrody.adapter_env());
         assert!(release_path_is_valid(release, compute));
-        assert!(!release_path_is_valid("/home/ubuntu/apps/shenron/releases/a", compute));
+        assert!(!release_path_is_valid(
+            "/home/ubuntu/apps/shenron/releases/a",
+            compute
+        ));
         assert_eq!(
             remote_stack_adapter_args("vps", compute, compute.adapter(), release),
             [
@@ -2732,9 +3087,12 @@ mod tests {
                 release,
             ]
         );
-        for stack in
-            [DeployStack::Aphrody, DeployStack::Shenron, DeployStack::Rg, DeployStack::Bundle]
-        {
+        for stack in [
+            DeployStack::Aphrody,
+            DeployStack::Shenron,
+            DeployStack::Rg,
+            DeployStack::Bundle,
+        ] {
             assert_eq!(
                 remote_stack_adapter_args("vps", stack, stack.adapter(), release),
                 remote_adapter_args("vps", stack.adapter(), release)
@@ -2753,8 +3111,14 @@ mod tests {
             DeployStack::Bundle,
         ];
         for stack in stacks {
-            assert_eq!(deploy_target_is_supported("vps", stack), stack != DeployStack::App);
-            assert_eq!(deploy_target_is_supported("dbfr", stack), stack == DeployStack::Shenron);
+            assert_eq!(
+                deploy_target_is_supported("vps", stack),
+                stack != DeployStack::App
+            );
+            assert_eq!(
+                deploy_target_is_supported("dbfr", stack),
+                stack == DeployStack::Shenron
+            );
             for target in ["", "omar", "aphro-pc", "unknown", "dbfr;reboot"] {
                 assert!(!deploy_target_is_supported(target, stack));
             }
@@ -2772,9 +3136,23 @@ mod tests {
         ));
         let adapter = DeployStack::Shenron.adapter();
         let dbfr = remote_stack_adapter_args("dbfr", DeployStack::Shenron, adapter, release);
-        assert_eq!(dbfr, ["-o", "BatchMode=yes", "dbfr", "sudo", "-n", adapter, release]);
+        assert_eq!(
+            dbfr,
+            [
+                "-o",
+                "BatchMode=yes",
+                "dbfr",
+                "sudo",
+                "-n",
+                adapter,
+                release
+            ]
+        );
         let vps = remote_stack_adapter_args("vps", DeployStack::Shenron, adapter, release);
-        assert_eq!(vps, ["-o", "BatchMode=yes", "vps", "sudo", "-n", adapter, release]);
+        assert_eq!(
+            vps,
+            ["-o", "BatchMode=yes", "vps", "sudo", "-n", adapter, release]
+        );
         assert_eq!(&dbfr[3..], &vps[3..]);
         assert!(!dbfr.contains(&"vps"));
         assert!(!vps.contains(&"dbfr"));
@@ -2816,7 +3194,11 @@ mod tests {
         )
         .unwrap_err();
         assert!(error.to_string().contains("adaptateur non qualifié"));
-        assert!(!run.actions.iter().any(|action| action["name"] == "deploy.remote"));
+        assert!(
+            !run.actions
+                .iter()
+                .any(|action| action["name"] == "deploy.remote")
+        );
     }
 
     #[test]
@@ -2824,7 +3206,9 @@ mod tests {
         let mounts = Cli::try_parse_from(["aphrody-infra", "drive", "mounts", "--json"]).unwrap();
         assert_matches!(
             mounts.command,
-            CommandKind::Drive { command: DriveCommand::Mounts { json: true } }
+            CommandKind::Drive {
+                command: DriveCommand::Mounts { json: true }
+            }
         );
         let ls =
             Cli::try_parse_from(["aphrody-infra", "drive", "ls", "vdfs://vps/var/www"]).unwrap();
@@ -2860,7 +3244,9 @@ mod tests {
         let profiles = Cli::try_parse_from(["aphrody-infra", "ovh", "profiles"]).unwrap();
         assert_matches!(
             profiles.command,
-            CommandKind::Ovh { command: aphrody_ovh::OvhCommand::Profiles }
+            CommandKind::Ovh {
+                command: aphrody_ovh::OvhCommand::Profiles
+            }
         );
 
         let dns = Cli::try_parse_from([

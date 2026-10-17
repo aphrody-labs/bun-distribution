@@ -15,7 +15,11 @@ pub struct BuildInfo {
 
 impl From<raw::BuildInfo> for BuildInfo {
     fn from(raw: raw::BuildInfo) -> Self {
-        Self { bss_start: raw.bss_start, bss_end: raw.bss_end, sdk_version: raw.sdk_version }
+        Self {
+            bss_start: raw.bss_start,
+            bss_end: raw.bss_end,
+            sdk_version: raw.sdk_version,
+        }
     }
 }
 

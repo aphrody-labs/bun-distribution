@@ -49,9 +49,12 @@ fn load(vfs: &Vfs, prefix: &str, must_contain: &str) -> Option<serde_json::Value
 }
 
 fn main() {
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
     let quest_root =
         load(&vfs, "quest_config", "/gamedata/quest/").expect("quest_config introuvable");
@@ -75,7 +78,12 @@ fn main() {
 
     for q in quests.iter().take(6) {
         let t = aphrody_nie_data::quest::resolve_title(q, &titles);
-        eprintln!("  quest {} title {} → {:?}", q.quest_id.to_hex(), q.title_hash.to_hex(), t);
+        eprintln!(
+            "  quest {} title {} → {:?}",
+            q.quest_id.to_hex(),
+            q.title_hash.to_hex(),
+            t
+        );
     }
     eprintln!(
         "✓ END-TO-END OK : {resolved} titres de quête résolus via le résolveur de texte universel"

@@ -56,7 +56,7 @@ pub(crate) fn bridge_addr() -> String {
                      {DEFAULT_BRIDGE_PORT}"
                 );
                 DEFAULT_BRIDGE_PORT
-            },
+            }
         },
         _ => DEFAULT_BRIDGE_PORT,
     };
@@ -98,12 +98,12 @@ async fn ensure_started() {
                     match listener.accept().await {
                         Ok((stream, _)) => {
                             tokio::spawn(handle_conn(stream));
-                        },
+                        }
                         Err(e) => tracing::warn!("ps-bridge accept failed: {e}"),
                     }
                 }
             });
-        },
+        }
         Err(e) => tracing::warn!("ps-bridge bind {addr} failed: {e}"),
     }
 }
@@ -115,7 +115,7 @@ async fn handle_conn(stream: TcpStream) {
         Err(e) => {
             tracing::warn!("ps-bridge handshake failed: {e}");
             return;
-        },
+        }
     };
     tracing::info!("ps-bridge: Photoshop UXP plugin connected");
     let (mut sink, mut read) = ws.split();
@@ -164,13 +164,15 @@ pub(crate) async fn call(op: &str, args: Value, timeout: Duration) -> Result<Val
     {
         let guard = b.sender.lock().await;
         match guard.as_ref() {
-            Some(s) if s.send(payload).is_ok() => {},
+            Some(s) if s.send(payload).is_ok() => {}
             _ => {
                 b.pending.lock().await.remove(&id);
-                return Err("Photoshop UXP plugin not connected — load the aphrody panel in \
+                return Err(
+                    "Photoshop UXP plugin not connected — load the aphrody panel in \
                             Photoshop (Plugins ▸ aphrody) and confirm it shows Connected"
-                    .to_string());
-            },
+                        .to_string(),
+                );
+            }
         }
     }
 
@@ -185,11 +187,11 @@ pub(crate) async fn call(op: &str, args: Value, timeout: Duration) -> Result<Val
             } else {
                 Ok(v.get("result").cloned().unwrap_or(Value::Null))
             }
-        },
+        }
         Ok(Err(_)) => Err("bridge response channel dropped".to_string()),
         Err(_) => {
             b.pending.lock().await.remove(&id);
             Err("timeout waiting for Photoshop response".to_string())
-        },
+        }
     }
 }

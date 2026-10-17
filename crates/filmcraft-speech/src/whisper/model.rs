@@ -52,13 +52,21 @@ impl Attention {
 
     fn split(&self, x: &Tensor) -> Result<Tensor> {
         let (b, t, d) = x.dims3()?;
-        x.reshape((b, t, self.heads, d / self.heads))?.transpose(1, 2)?.contiguous()
+        x.reshape((b, t, self.heads, d / self.heads))?
+            .transpose(1, 2)?
+            .contiguous()
     }
 
     /// `x`: queries (b, t, d). `kv`: None = self-attention on `x` (appending to the cache when
     /// `cached`), Some(audio) = cross-attention (keys/values cached after the first call when
     /// `cached`). Returns the output and the attention logits (b, heads, t, tk).
-    fn forward(&mut self, x: &Tensor, kv: Option<&Tensor>, mask: Option<&Tensor>, cached: bool) -> Result<(Tensor, Tensor)> {
+    fn forward(
+        &mut self,
+        x: &Tensor,
+        kv: Option<&Tensor>,
+        mask: Option<&Tensor>,
+        cached: bool,
+    ) -> Result<(Tensor, Tensor)> {
         let (_, t, d) = x.dims3()?;
         let dh = d / self.heads;
         let q = (self.split(&self.q.forward(x)?)? * (dh as f64).powf(-0.5))?;
@@ -112,7 +120,10 @@ struct Block {
 impl Block {
     fn new(d: usize, heads: usize, cross: bool, vb: VarBuilder) -> Result<Self> {
         let cross = if cross {
-            Some((Attention::new(d, heads, vb.pp("encoder_attn"))?, candle_nn::layer_norm(d, 1e-5, vb.pp("encoder_attn_layer_norm"))?))
+            Some((
+                Attention::new(d, heads, vb.pp("encoder_attn"))?,
+                candle_nn::layer_norm(d, 1e-5, vb.pp("encoder_attn_layer_norm"))?,
+            ))
         } else {
             None
         };
@@ -126,8 +137,16 @@ impl Block {
         })
     }
 
-    fn forward(&mut self, x: &Tensor, xa: Option<&Tensor>, mask: Option<&Tensor>, cached: bool) -> Result<(Tensor, Option<Tensor>)> {
-        let (a, _) = self.attn.forward(&self.attn_ln.forward(x)?, None, mask, cached)?;
+    fn forward(
+        &mut self,
+        x: &Tensor,
+        xa: Option<&Tensor>,
+        mask: Option<&Tensor>,
+        cached: bool,
+    ) -> Result<(Tensor, Option<Tensor>)> {
+        let (a, _) = self
+            .attn
+            .forward(&self.attn_ln.forward(x)?, None, mask, cached)?;
         let mut x = (x + a)?;
         let mut qk = None;
         if let (Some((c, ln)), Some(xa)) = (&mut self.cross, xa) {
@@ -135,7 +154,9 @@ impl Block {
             x = (x + a)?;
             qk = Some(w);
         }
-        let h = self.fc2.forward(&self.fc1.forward(&self.mlp_ln.forward(&x)?)?.gelu_erf()?)?;
+        let h = self
+            .fc2
+            .forward(&self.fc1.forward(&self.mlp_ln.forward(&x)?)?.gelu_erf()?)?;
         Ok(((x + h)?, qk))
     }
 
@@ -158,13 +179,30 @@ pub struct Encoder {
 impl Encoder {
     fn new(cfg: &Config, vb: VarBuilder) -> Result<Self> {
         let d = cfg.d_model;
-        let c1 = Conv1dConfig { padding: 1, stride: 1, ..Default::default() };
-        let c2 = Conv1dConfig { padding: 1, stride: 2, ..Default::default() };
+        let c1 = Conv1dConfig {
+            padding: 1,
+            stride: 1,
+            ..Default::default()
+        };
+        let c2 = Conv1dConfig {
+            padding: 1,
+            stride: 2,
+            ..Default::default()
+        };
         Ok(Self {
             conv1: candle_nn::conv1d(cfg.num_mel_bins, d, 3, c1, vb.pp("conv1"))?,
             conv2: candle_nn::conv1d(d, d, 3, c2, vb.pp("conv2"))?,
             pos: vb.get((cfg.max_source_positions, d), "embed_positions.weight")?,
-            blocks: (0..cfg.encoder_layers).map(|i| Block::new(d, cfg.encoder_attention_heads, false, vb.pp(format!("layers.{i}")))).collect::<Result<_>>()?,
+            blocks: (0..cfg.encoder_layers)
+                .map(|i| {
+                    Block::new(
+                        d,
+                        cfg.encoder_attention_heads,
+                        false,
+                        vb.pp(format!("layers.{i}")),
+                    )
+                })
+                .collect::<Result<_>>()?,
             ln: candle_nn::layer_norm(d, 1e-5, vb.pp("layer_norm"))?,
         })
     }
@@ -202,7 +240,16 @@ impl Decoder {
             tok_t: tok.embeddings().t()?.contiguous()?,
             tok,
             pos: vb.get((cfg.max_target_positions, d), "embed_positions.weight")?,
-            blocks: (0..cfg.decoder_layers).map(|i| Block::new(d, cfg.decoder_attention_heads, true, vb.pp(format!("layers.{i}")))).collect::<Result<_>>()?,
+            blocks: (0..cfg.decoder_layers)
+                .map(|i| {
+                    Block::new(
+                        d,
+                        cfg.decoder_attention_heads,
+                        true,
+                        vb.pp(format!("layers.{i}")),
+                    )
+                })
+                .collect::<Result<_>>()?,
             ln: candle_nn::layer_norm(d, 1e-5, vb.pp("layer_norm"))?,
             offset: 0,
         })
@@ -217,19 +264,42 @@ impl Decoder {
     }
 
     fn mask(t: usize, offset: usize, dev: &Device) -> Result<Tensor> {
-        let m: Vec<f32> = (0..t).flat_map(|i| (0..offset + t).map(move |j| if j > offset + i { f32::NEG_INFINITY } else { 0.0 })).collect();
+        let m: Vec<f32> = (0..t)
+            .flat_map(|i| {
+                (0..offset + t).map(move |j| {
+                    if j > offset + i {
+                        f32::NEG_INFINITY
+                    } else {
+                        0.0
+                    }
+                })
+            })
+            .collect();
         Tensor::from_vec(m, (t, offset + t), dev)
     }
 
     /// Logits (1, t, vocab) for `tokens` appended to the cache. With `qk_heads`, also returns the
     /// cross-attention logits of those (layer, head) pairs: (heads, t, audio frames).
-    pub fn forward(&mut self, tokens: &[u32], xa: &Tensor, cached: bool, qk_heads: Option<&[(usize, usize)]>) -> Result<(Tensor, Option<Tensor>)> {
+    pub fn forward(
+        &mut self,
+        tokens: &[u32],
+        xa: &Tensor,
+        cached: bool,
+        qk_heads: Option<&[(usize, usize)]>,
+    ) -> Result<(Tensor, Option<Tensor>)> {
         let dev = xa.device();
         let t = tokens.len();
         let offset = if cached { self.offset } else { 0 };
         let ids = Tensor::new(tokens, dev)?.unsqueeze(0)?;
-        let mut x = self.tok.forward(&ids)?.broadcast_add(&self.pos.narrow(0, offset, t)?)?;
-        let mask = if t > 1 { Some(Self::mask(t, offset, dev)?) } else { None };
+        let mut x = self
+            .tok
+            .forward(&ids)?
+            .broadcast_add(&self.pos.narrow(0, offset, t)?)?;
+        let mask = if t > 1 {
+            Some(Self::mask(t, offset, dev)?)
+        } else {
+            None
+        };
         let mut picked = Vec::new();
         for (li, b) in self.blocks.iter_mut().enumerate() {
             let (y, qk) = b.forward(&x, Some(xa), mask.as_ref(), cached)?;
@@ -247,7 +317,11 @@ impl Decoder {
         }
         let x = self.ln.forward(&x)?;
         let logits = x.broadcast_matmul(&self.tok_t)?;
-        let qk = if picked.is_empty() { None } else { Some(Tensor::stack(&picked, 0)?) };
+        let qk = if picked.is_empty() {
+            None
+        } else {
+            Some(Tensor::stack(&picked, 0)?)
+        };
         Ok((logits, qk))
     }
 }
@@ -264,7 +338,12 @@ impl Model {
         let device = Device::Cpu;
         let vb = VarBuilder::from_buffered_safetensors(weights, DType::F32, &device)?;
         let vb = vb.pp("model");
-        Ok(Self { encoder: Encoder::new(&cfg, vb.pp("encoder"))?, decoder: Decoder::new(&cfg, vb.pp("decoder"))?, cfg, device })
+        Ok(Self {
+            encoder: Encoder::new(&cfg, vb.pp("encoder"))?,
+            decoder: Decoder::new(&cfg, vb.pp("decoder"))?,
+            cfg,
+            device,
+        })
     }
 
     pub fn last_logits(logits: &Tensor) -> Result<Vec<f32>> {

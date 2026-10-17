@@ -15,7 +15,14 @@
 //! Models are in their own units with +Y up (glTF's convention); the renderer maps them into
 //! After Effects' Y-down pixel space.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod extrude;
 pub mod fbx;
@@ -66,14 +73,26 @@ pub struct Texture {
 
 impl Texture {
     pub fn solid(c: [f32; 4]) -> Texture {
-        Texture { width: 1, height: 1, data: vec![c], wrap: [Wrap::Repeat; 2] }
+        Texture {
+            width: 1,
+            height: 1,
+            data: vec![c],
+            wrap: [Wrap::Repeat; 2],
+        }
     }
     /// Decode a PNG or JPEG.
     pub fn decode(bytes: &[u8]) -> Result<Texture> {
-        let img = image::load_from_memory(bytes).map_err(|e| perr(format!("image: {e}")))?.to_rgba32f();
+        let img = image::load_from_memory(bytes)
+            .map_err(|e| perr(format!("image: {e}")))?
+            .to_rgba32f();
         let (w, h) = (img.width(), img.height());
         let data = img.pixels().map(|p| p.0).collect();
-        Ok(Texture { width: w, height: h, data, wrap: [Wrap::Repeat; 2] })
+        Ok(Texture {
+            width: w,
+            height: h,
+            data,
+            wrap: [Wrap::Repeat; 2],
+        })
     }
 }
 
@@ -146,7 +165,12 @@ impl Default for Material {
 impl Material {
     /// A plain dielectric material of a colour (primitives, OBJ without MTL).
     pub fn plain(base: [f32; 4], metallic: f32, roughness: f32) -> Material {
-        Material { base_color: base, metallic, roughness, ..Material::default() }
+        Material {
+            base_color: base,
+            metallic,
+            roughness,
+            ..Material::default()
+        }
     }
 }
 
@@ -175,7 +199,11 @@ impl Primitive {
     pub fn compute_normals(&mut self) {
         let mut n = vec![[0.0f32; 3]; self.positions.len()];
         for t in self.indices.as_chunks::<3>().0 {
-            let (a, b, c) = (self.positions[t[0] as usize], self.positions[t[1] as usize], self.positions[t[2] as usize]);
+            let (a, b, c) = (
+                self.positions[t[0] as usize],
+                self.positions[t[1] as usize],
+                self.positions[t[2] as usize],
+            );
             let f = cross(sub(b, a), sub(c, a));
             for &i in t {
                 let v = &mut n[i as usize];
@@ -184,14 +212,24 @@ impl Primitive {
                 v[2] += f[2];
             }
         }
-        self.normals = n.into_iter().map(|v| normalize(v).unwrap_or([0.0, 0.0, 1.0])).collect();
+        self.normals = n
+            .into_iter()
+            .map(|v| normalize(v).unwrap_or([0.0, 0.0, 1.0]))
+            .collect();
     }
     /// Split every triangle into its own vertices with a face normal (glTF: flat normals when a
     /// primitive has none).
     pub fn flat_normals(&mut self) {
-        let mut p = Primitive { material: self.material, ..Default::default() };
+        let mut p = Primitive {
+            material: self.material,
+            ..Default::default()
+        };
         for t in self.indices.as_chunks::<3>().0 {
-            let (a, b, c) = (self.positions[t[0] as usize], self.positions[t[1] as usize], self.positions[t[2] as usize]);
+            let (a, b, c) = (
+                self.positions[t[0] as usize],
+                self.positions[t[1] as usize],
+                self.positions[t[2] as usize],
+            );
             let f = normalize(cross(sub(b, a), sub(c, a))).unwrap_or([0.0, 0.0, 1.0]);
             for &i in t {
                 let i = i as usize;
@@ -230,8 +268,16 @@ impl Primitive {
                 continue;
             }
             let r = 1.0 / det;
-            let sdir = [(e1[0] * dv2 - e2[0] * dv1) * r, (e1[1] * dv2 - e2[1] * dv1) * r, (e1[2] * dv2 - e2[2] * dv1) * r];
-            let tdir = [(e2[0] * du1 - e1[0] * du2) * r, (e2[1] * du1 - e1[1] * du2) * r, (e2[2] * du1 - e1[2] * du2) * r];
+            let sdir = [
+                (e1[0] * dv2 - e2[0] * dv1) * r,
+                (e1[1] * dv2 - e2[1] * dv1) * r,
+                (e1[2] * dv2 - e2[2] * dv1) * r,
+            ];
+            let tdir = [
+                (e2[0] * du1 - e1[0] * du2) * r,
+                (e2[1] * du1 - e1[1] * du2) * r,
+                (e2[2] * du1 - e1[2] * du2) * r,
+            ];
             for i in [i0, i1, i2] {
                 for k in 0..3 {
                     tan[i][k] += sdir[k];
@@ -246,7 +292,11 @@ impl Primitive {
                 let d = dot(nn, t);
                 let o = [t[0] - nn[0] * d, t[1] - nn[1] * d, t[2] - nn[2] * d];
                 let o = normalize(o).unwrap_or_else(|| any_perpendicular(nn));
-                let w = if dot(cross(nn, o), bit[i]) < 0.0 { -1.0 } else { 1.0 };
+                let w = if dot(cross(nn, o), bit[i]) < 0.0 {
+                    -1.0
+                } else {
+                    1.0
+                };
                 [o[0], o[1], o[2], w]
             })
             .collect();
@@ -270,7 +320,11 @@ pub(crate) fn sub(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
     [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 }
 pub(crate) fn cross(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 pub(crate) fn dot(a: [f32; 3], b: [f32; 3]) -> f32 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
@@ -280,7 +334,11 @@ pub(crate) fn normalize(a: [f32; 3]) -> Option<[f32; 3]> {
     (l > 1e-20 && l.is_finite()).then(|| [a[0] / l, a[1] / l, a[2] / l])
 }
 fn any_perpendicular(n: [f32; 3]) -> [f32; 3] {
-    let a = if n[0].abs() < 0.9 { [1.0, 0.0, 0.0] } else { [0.0, 1.0, 0.0] };
+    let a = if n[0].abs() < 0.9 {
+        [1.0, 0.0, 0.0]
+    } else {
+        [0.0, 1.0, 0.0]
+    };
     normalize(cross(n, a)).unwrap_or([1.0, 0.0, 0.0])
 }
 
@@ -328,7 +386,8 @@ impl Default for Node {
 
 impl Node {
     pub fn local(&self) -> Mat4 {
-        self.matrix.unwrap_or_else(|| trs(self.translation, self.rotation, self.scale))
+        self.matrix
+            .unwrap_or_else(|| trs(self.translation, self.rotation, self.scale))
     }
 }
 
@@ -348,11 +407,30 @@ pub fn trs(t: [f64; 3], q: [f64; 4], s: [f64; 3]) -> Mat4 {
 /// Rotation matrix of a quaternion (x, y, z, w); normalised first.
 pub fn quat_matrix(q: [f64; 4]) -> Mat4 {
     let l = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).sqrt();
-    let [x, y, z, w] = if l > 1e-12 { [q[0] / l, q[1] / l, q[2] / l, q[3] / l] } else { [0.0, 0.0, 0.0, 1.0] };
+    let [x, y, z, w] = if l > 1e-12 {
+        [q[0] / l, q[1] / l, q[2] / l, q[3] / l]
+    } else {
+        [0.0, 0.0, 0.0, 1.0]
+    };
     Mat4([
-        [1.0 - 2.0 * (y * y + z * z), 2.0 * (x * y - z * w), 2.0 * (x * z + y * w), 0.0],
-        [2.0 * (x * y + z * w), 1.0 - 2.0 * (x * x + z * z), 2.0 * (y * z - x * w), 0.0],
-        [2.0 * (x * z - y * w), 2.0 * (y * z + x * w), 1.0 - 2.0 * (x * x + y * y), 0.0],
+        [
+            1.0 - 2.0 * (y * y + z * z),
+            2.0 * (x * y - z * w),
+            2.0 * (x * z + y * w),
+            0.0,
+        ],
+        [
+            2.0 * (x * y + z * w),
+            1.0 - 2.0 * (x * x + z * z),
+            2.0 * (y * z - x * w),
+            0.0,
+        ],
+        [
+            2.0 * (x * z - y * w),
+            2.0 * (y * z + x * w),
+            1.0 - 2.0 * (x * x + y * y),
+            0.0,
+        ],
         [0.0, 0.0, 0.0, 1.0],
     ])
 }
@@ -372,8 +450,15 @@ pub fn slerp(a: [f64; 4], b: [f64; 4], t: f64) -> [f64; 4] {
         let s = th.sin();
         (((1.0 - t) * th).sin() / s, (t * th).sin() / s)
     };
-    let q = [a[0] * ka + b[0] * kb, a[1] * ka + b[1] * kb, a[2] * ka + b[2] * kb, a[3] * ka + b[3] * kb];
-    let l = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]).sqrt().max(1e-12);
+    let q = [
+        a[0] * ka + b[0] * kb,
+        a[1] * ka + b[1] * kb,
+        a[2] * ka + b[2] * kb,
+        a[3] * ka + b[3] * kb,
+    ];
+    let l = (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3])
+        .sqrt()
+        .max(1e-12);
     [q[0] / l, q[1] / l, q[2] / l, q[3] / l]
 }
 
@@ -421,8 +506,16 @@ impl Channel {
     pub fn sample(&self, t: f64) -> Option<[f64; 4]> {
         let n = self.times.len();
         let w = self.width();
-        let stride = if self.interp == Interp::CubicSpline { 3 * w } else { w };
-        let off = if self.interp == Interp::CubicSpline { w } else { 0 };
+        let stride = if self.interp == Interp::CubicSpline {
+            3 * w
+        } else {
+            w
+        };
+        let off = if self.interp == Interp::CubicSpline {
+            w
+        } else {
+            0
+        };
         if n == 0 || self.values.len() < n * stride {
             return None;
         }
@@ -440,7 +533,11 @@ impl Channel {
         if t >= self.times[n - 1] as f64 {
             return Some(get(n - 1, off));
         }
-        let k = self.times.partition_point(|&x| (x as f64) <= t).saturating_sub(1).min(n - 2);
+        let k = self
+            .times
+            .partition_point(|&x| (x as f64) <= t)
+            .saturating_sub(1)
+            .min(n - 2);
         let (ta, tb) = (self.times[k] as f64, self.times[k + 1] as f64);
         let dt = (tb - ta).max(1e-9);
         let u = ((t - ta) / dt).clamp(0.0, 1.0);
@@ -472,7 +569,9 @@ impl Channel {
                     v[i] = h00 * a[i] + h10 * dt * out_a[i] + h01 * b[i] + h11 * dt * in_b[i];
                 }
                 if self.path == ChannelPath::Rotation {
-                    let l = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3]).sqrt().max(1e-12);
+                    let l = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2] + v[3] * v[3])
+                        .sqrt()
+                        .max(1e-12);
                     for c in v.iter_mut() {
                         *c /= l;
                     }
@@ -493,7 +592,10 @@ pub struct Animation {
 impl Animation {
     /// Length in seconds (the last key time of any channel).
     pub fn duration(&self) -> f64 {
-        self.channels.iter().filter_map(|c| c.times.last()).fold(0.0f64, |a, &b| a.max(b as f64))
+        self.channels
+            .iter()
+            .filter_map(|c| c.times.last())
+            .fold(0.0f64, |a, &b| a.max(b as f64))
     }
 }
 
@@ -525,7 +627,11 @@ pub struct ModelCamera {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum CameraProjection {
     /// Vertical field of view (radians), optional aspect ratio, near plane.
-    Perspective { yfov: f64, aspect: Option<f64>, znear: f64 },
+    Perspective {
+        yfov: f64,
+        aspect: Option<f64>,
+        znear: f64,
+    },
     /// Half the orthographic view's width and height (model units).
     Orthographic { xmag: f64, ymag: f64 },
 }
@@ -577,15 +683,30 @@ pub struct Instance<'m> {
 impl Model {
     /// A model of one mesh at the root.
     pub fn single(mesh: Mesh, materials: Vec<Material>) -> Model {
-        Model { meshes: vec![mesh], nodes: vec![Node { mesh: Some(0), ..Node::default() }], roots: vec![0], materials, ..Model::default() }
+        Model {
+            meshes: vec![mesh],
+            nodes: vec![Node {
+                mesh: Some(0),
+                ..Node::default()
+            }],
+            roots: vec![0],
+            materials,
+            ..Model::default()
+        }
     }
 
     /// Local node matrices at animation `clip` time `t` (seconds); `None` = rest pose.
     pub fn local_pose(&self, clip: Option<usize>, t: f64) -> Vec<Mat4> {
-        let mut trs_v: Vec<([f64; 3], [f64; 4], [f64; 3])> = self.nodes.iter().map(|n| (n.translation, n.rotation, n.scale)).collect();
+        let mut trs_v: Vec<([f64; 3], [f64; 4], [f64; 3])> = self
+            .nodes
+            .iter()
+            .map(|n| (n.translation, n.rotation, n.scale))
+            .collect();
         if let Some(a) = clip.and_then(|c| self.animations.get(c)) {
             for ch in &a.channels {
-                let (Some(v), Some(e)) = (ch.sample(t), trs_v.get_mut(ch.node)) else { continue };
+                let (Some(v), Some(e)) = (ch.sample(t), trs_v.get_mut(ch.node)) else {
+                    continue;
+                };
                 match ch.path {
                     ChannelPath::Translation => e.0 = [v[0], v[1], v[2]],
                     ChannelPath::Rotation => e.1 = v,
@@ -593,14 +714,19 @@ impl Model {
                 }
             }
         }
-        self.nodes.iter().zip(trs_v).map(|(n, (t, r, s))| n.matrix.unwrap_or_else(|| trs(t, r, s))).collect()
+        self.nodes
+            .iter()
+            .zip(trs_v)
+            .map(|(n, (t, r, s))| n.matrix.unwrap_or_else(|| trs(t, r, s)))
+            .collect()
     }
 
     /// Model-space matrices of every node (hierarchy applied) for a local pose.
     pub fn world_pose(&self, local: &[Mat4]) -> Vec<Mat4> {
         let mut world = vec![Mat4::IDENTITY; self.nodes.len()];
         let mut seen = vec![false; self.nodes.len()];
-        let mut stack: Vec<(usize, Mat4)> = self.roots.iter().map(|&r| (r, Mat4::IDENTITY)).collect();
+        let mut stack: Vec<(usize, Mat4)> =
+            self.roots.iter().map(|&r| (r, Mat4::IDENTITY)).collect();
         while let Some((i, parent)) = stack.pop() {
             if i >= self.nodes.len() || seen[i] {
                 continue;
@@ -633,13 +759,24 @@ impl Model {
                     s.joints
                         .iter()
                         .enumerate()
-                        .map(|(k, &j)| world.get(j).copied().unwrap_or(Mat4::IDENTITY) * s.inverse_bind.get(k).copied().unwrap_or(Mat4::IDENTITY))
+                        .map(|(k, &j)| {
+                            world.get(j).copied().unwrap_or(Mat4::IDENTITY)
+                                * s.inverse_bind.get(k).copied().unwrap_or(Mat4::IDENTITY)
+                        })
                         .collect()
                 });
                 // Skinned vertices are placed by their joints alone (glTF: the node transform of
                 // a skinned mesh is ignored).
-                let w = if joints.is_some() { Mat4::IDENTITY } else { world[i] };
-                out.push(Instance { mesh: m, world: w, joints });
+                let w = if joints.is_some() {
+                    Mat4::IDENTITY
+                } else {
+                    world[i]
+                };
+                out.push(Instance {
+                    mesh: m,
+                    world: w,
+                    joints,
+                });
             }
             stack.extend(n.children.iter().rev());
         }
@@ -659,14 +796,22 @@ impl Model {
             reach[i] = true;
             stack.extend(self.nodes[i].children.iter().copied());
         }
-        let count = if lights { self.lights.len() } else { self.cameras.len() };
+        let count = if lights {
+            self.lights.len()
+        } else {
+            self.cameras.len()
+        };
         self.nodes
             .iter()
             .enumerate()
             .filter(|(i, _)| reach[*i])
             .filter_map(|(i, n)| {
                 let index = if lights { n.light } else { n.camera }?;
-                (index < count).then_some(Placed { index, node: i, world: world[i] })
+                (index < count).then_some(Placed {
+                    index,
+                    node: i,
+                    world: world[i],
+                })
             })
             .collect()
     }
@@ -690,17 +835,29 @@ impl Model {
     }
 
     pub fn vertex_count(&self) -> usize {
-        self.meshes.iter().flat_map(|m| &m.primitives).map(|p| p.positions.len()).sum()
+        self.meshes
+            .iter()
+            .flat_map(|m| &m.primitives)
+            .map(|p| p.positions.len())
+            .sum()
     }
     pub fn triangle_count(&self) -> usize {
-        self.meshes.iter().flat_map(|m| &m.primitives).map(|p| p.triangle_count()).sum()
+        self.meshes
+            .iter()
+            .flat_map(|m| &m.primitives)
+            .map(|p| p.triangle_count())
+            .sum()
     }
 }
 
 /// The skinning (or node) matrix of vertex `k` of an instance's primitive.
 pub fn vertex_matrix(inst: &Instance, p: &Primitive, k: usize) -> Mat4 {
-    let Some(j) = &inst.joints else { return inst.world };
-    let (Some(ji), Some(wi)) = (p.joints.get(k), p.weights.get(k)) else { return inst.world };
+    let Some(j) = &inst.joints else {
+        return inst.world;
+    };
+    let (Some(ji), Some(wi)) = (p.joints.get(k), p.weights.get(k)) else {
+        return inst.world;
+    };
     let mut m = [[0.0; 4]; 4];
     let mut total = 0.0;
     for c in 0..4 {
@@ -708,7 +865,9 @@ pub fn vertex_matrix(inst: &Instance, p: &Primitive, k: usize) -> Mat4 {
         if w == 0.0 {
             continue;
         }
-        let Some(jm) = j.get(ji[c] as usize) else { continue };
+        let Some(jm) = j.get(ji[c] as usize) else {
+            continue;
+        };
         total += w;
         for r in 0..4 {
             for q in 0..4 {
@@ -748,7 +907,9 @@ pub fn load(path: &str, bytes: &[u8], resolve: &dyn Fn(&str) -> Option<Vec<u8>>)
         Some(_) => gltf::parse(bytes, resolve),
         None if bytes.starts_with(b"glTF") => gltf::parse(bytes, resolve),
         None if bytes.starts_with(fbx::BINARY_MAGIC) => fbx::parse(bytes, resolve),
-        None => Err(ModelError::Unsupported(format!("{path}: not a glTF, OBJ, STL or FBX file"))),
+        None => Err(ModelError::Unsupported(format!(
+            "{path}: not a glTF, OBJ, STL or FBX file"
+        ))),
     }
 }
 
@@ -776,7 +937,11 @@ impl Model {
             triangles: self.triangle_count(),
             materials: self.materials.len(),
             textures: self.textures.len(),
-            animations: self.animations.iter().map(|a| (a.name.clone(), a.duration())).collect(),
+            animations: self
+                .animations
+                .iter()
+                .map(|a| (a.name.clone(), a.duration()))
+                .collect(),
             skinned: !self.skins.is_empty(),
             min,
             max,

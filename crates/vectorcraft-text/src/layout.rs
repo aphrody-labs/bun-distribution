@@ -5,7 +5,8 @@ use std::ops::Range;
 use kurbo::{Affine, BezPath, PathEl, Point, Rect, Shape, Vec2};
 use unicode_bidi::{BidiInfo, Level};
 use vectorcraft_doc::{
-    Burasagari, CharStyle, InlineArt, Justify, Kinsoku, LeadingModel, Mojikumi, ParaDirection, ParaStyle, PathAlign, PathEffect, TextKind, TextObject,
+    Burasagari, CharStyle, InlineArt, Justify, Kinsoku, LeadingModel, Mojikumi, ParaDirection,
+    ParaStyle, PathAlign, PathEffect, TextKind, TextObject,
 };
 use vectorcraft_geom::{ArcPath, PathData};
 
@@ -13,10 +14,13 @@ use crate::composer::{Breakpoint, Params, compose};
 use crate::fontdb::FontDb;
 use crate::hyphen::hyphen_points;
 use crate::shape::{
-    Punct, SGlyph, Tcy, cap_x_heights, hyphen_glyph, is_cjk, mark_word_ends, no_line_end, no_line_start, punct, shape_range, soft_line_start,
-    style_metrics,
+    Punct, SGlyph, Tcy, cap_x_heights, hyphen_glyph, is_cjk, mark_word_ends, no_line_end,
+    no_line_start, punct, shape_range, soft_line_start, style_metrics,
 };
-use crate::{Composer, FirstBaseline, InlineGlyph, LayoutOptions, LineInfo, OtFeatures, PositionedGlyph, TextLayout, VerticalAlign};
+use crate::{
+    Composer, FirstBaseline, InlineGlyph, LayoutOptions, LineInfo, OtFeatures, PositionedGlyph,
+    TextLayout, VerticalAlign,
+};
 
 const EPS: f64 = 1e-6;
 
@@ -38,15 +42,32 @@ struct Ctx<'a> {
 
 impl Ctx<'_> {
     fn style_at(&self, b: usize) -> &CharStyle {
-        let find = |b: usize| self.runs.iter().find(|(r, _)| r.start <= b && b < r.end).map(|(_, s)| *s);
-        find(b).or_else(|| b.checked_sub(1).and_then(find)).or_else(|| self.runs.first().map(|(_, s)| *s)).unwrap_or(&self.default)
+        let find = |b: usize| {
+            self.runs
+                .iter()
+                .find(|(r, _)| r.start <= b && b < r.end)
+                .map(|(_, s)| *s)
+        };
+        find(b)
+            .or_else(|| b.checked_sub(1).and_then(find))
+            .or_else(|| self.runs.first().map(|(_, s)| *s))
+            .unwrap_or(&self.default)
     }
 
     /// Shape paragraph `r` (its bidi resolution `bidi`).
     fn shape_para(&self, r: Range<usize>, bidi: Option<&BidiInfo<'_>>) -> Vec<SGlyph> {
         let mut v = Vec::with_capacity(r.len());
         let levels = bidi.map_or(&[][..], |b| &b.levels);
-        shape_range(self.db, self.text, r, &self.runs, &self.inlines, &self.opts.features, levels, &mut v);
+        shape_range(
+            self.db,
+            self.text,
+            r,
+            &self.runs,
+            &self.inlines,
+            &self.opts.features,
+            levels,
+            &mut v,
+        );
         if self.vertical {
             tate_chu_yoko(&mut v, |g| self.style_at(g.byte).size);
             // An upright glyph advances down the column by its vertical advance (the font's vertical
@@ -59,7 +80,10 @@ impl Ctx<'_> {
                 // Proportional Metrics: `vpal` (and the vertical kerning with it) moves it and
                 // changes its length down the column, in fonts with vertical metrics (else the cell
                 // stays as it is, #966).
-                if let Some(a) = g.vpal.filter(|_| g.tcy.is_none() && g.face.vertical_glyph(g.gid).is_some()) {
+                if let Some(a) = g
+                    .vpal
+                    .filter(|_| g.tcy.is_none() && g.face.vertical_glyph(g.gid).is_some())
+                {
                     g.dx += a.dx;
                     g.dy += a.dy;
                     g.adv += a.advance;
@@ -70,8 +94,20 @@ impl Ctx<'_> {
         v
     }
 
-    fn emit(&mut self, g: &SGlyph, pre: Affine, origin: Point, angle: f64, advance: f64, line: usize) {
-        let src = if g.inline.is_some() { std::sync::Arc::new(BezPath::new()) } else { self.db.outline(&g.face, g.gid) };
+    fn emit(
+        &mut self,
+        g: &SGlyph,
+        pre: Affine,
+        origin: Point,
+        angle: f64,
+        advance: f64,
+        line: usize,
+    ) {
+        let src = if g.inline.is_some() {
+            std::sync::Arc::new(BezPath::new())
+        } else {
+            self.db.outline(&g.face, g.gid)
+        };
         // A glyph whose leading space was taken off (mojikumi) is drawn that much earlier: an
         // upright one in vertical type by moving it up the column once it stands upright.
         let upright = self.vertical && !self.on_path && g.tcy.is_none() && stands_upright(g);
@@ -80,7 +116,9 @@ impl Ctx<'_> {
             // Inline graphics: art space to glyph space (no font outline).
             Some(ib) => Affine::translate((-lead, -g.bshift)) * ib.xf,
             None => {
-                Affine::rotate(-g.rotation.to_radians()) * Affine::translate((g.dx - lead, g.dy - g.bshift)) * Affine::scale_non_uniform(g.sx, g.sy)
+                Affine::rotate(-g.rotation.to_radians())
+                    * Affine::translate((g.dx - lead, g.dy - g.bshift))
+                    * Affine::scale_non_uniform(g.sx, g.sy)
             }
         };
         let mut m = pre * local;
@@ -91,20 +129,35 @@ impl Ctx<'_> {
             // Tate-chu-yoko: the block set across the column, centred on its em of it.
             let em = self.style_at(g.byte).size;
             let start = origin.x - t.pen;
-            let centre = Point::new(start + em * 0.5, origin.y - g.face.ideographic_centre() * em);
+            let centre = Point::new(
+                start + em * 0.5,
+                origin.y - g.face.ideographic_centre() * em,
+            );
             let across = Affine::translate((centre.x - t.width * 0.5 + t.ink - origin.x, 0.0));
-            let squeeze = Affine::translate((centre.x, 0.0)) * Affine::scale_non_uniform(t.squeeze, 1.0) * Affine::translate((-centre.x, 0.0));
+            let squeeze = Affine::translate((centre.x, 0.0))
+                * Affine::scale_non_uniform(t.squeeze, 1.0)
+                * Affine::translate((-centre.x, 0.0));
             m = Affine::rotate_about(-std::f64::consts::FRAC_PI_2, centre) * squeeze * across * m;
         } else if self.vertical && stands_upright(g) {
             // Turned about the centre of its cell, which the column's centre line runs through: the
             // middle of its own cell, not of its advance (tracking and justification add space
             // after the cell, and must not push the glyph off the centre line).
             let em = self.style_at(g.byte).size;
-            let cell = if g.adv > 0.0 { upright_cell(g) } else { advance };
+            let cell = if g.adv > 0.0 {
+                upright_cell(g)
+            } else {
+                advance
+            };
             // A leading space taken off moves it up the column after the turn (moving the
             // turning point instead would move it across the column too).
             m = Affine::translate((-g.lead, 0.0))
-                * Affine::rotate_about(-std::f64::consts::FRAC_PI_2, Point::new(origin.x + cell * 0.5, origin.y - upright_centre(g, cell, em)))
+                * Affine::rotate_about(
+                    -std::f64::consts::FRAC_PI_2,
+                    Point::new(
+                        origin.x + cell * 0.5,
+                        origin.y - upright_centre(g, cell, em),
+                    ),
+                )
                 * m;
         }
         // Control characters (tabs) and soft hyphens draw nothing (fonts map them to .notdef).
@@ -119,7 +172,13 @@ impl Ctx<'_> {
         };
         let font_id = g.face.id();
         if let Some(art) = g.inline.as_ref().and_then(|ib| ib.art) {
-            self.out.inlines.push(InlineGlyph { run: g.run, byte: g.byte, glyph: self.out.glyphs.len(), xf: m, bounds: m.transform_rect_bbox(art) });
+            self.out.inlines.push(InlineGlyph {
+                run: g.run,
+                byte: g.byte,
+                glyph: self.out.glyphs.len(),
+                xf: m,
+                bounds: m.transform_rect_bbox(art),
+            });
         }
         self.out.glyphs.push(PositionedGlyph {
             outline,
@@ -160,20 +219,37 @@ pub fn layout(db: &FontDb, t: &TextObject) -> TextLayout {
 /// isn't drawn). For importers whose source shows that line: the frame is made taller, from its
 /// top, by what the first line needs. Whether it was.
 pub fn fit_first_line(db: &FontDb, t: &mut TextObject) -> bool {
-    let TextKind::Area { frame } = &t.kind else { return false };
-    let Some(b) = frame.bounds().filter(|b| b.height() > 1e-6) else { return false };
+    let TextKind::Area { frame } = &t.kind else {
+        return false;
+    };
+    let Some(b) = frame.bounds().filter(|b| b.height() > 1e-6) else {
+        return false;
+    };
     if !layout(db, t).lines.is_empty() {
         return false;
     }
     // The height of its first line: the line's as point type.
-    let point = TextObject { kind: TextKind::Point, ..t.clone() };
-    let Some(need) = layout(db, &point).lines.first().map(|l| l.ascent + l.descent) else { return false };
+    let point = TextObject {
+        kind: TextKind::Point,
+        ..t.clone()
+    };
+    let Some(need) = layout(db, &point)
+        .lines
+        .first()
+        .map(|l| l.ascent + l.descent)
+    else {
+        return false;
+    };
     // (A little more than it, for the rounding of the layout.)
     let by = (need + 0.05) / b.height();
     if !(by.is_finite() && by > 1.0) {
         return false;
     }
-    let taller = frame.transformed(Affine::translate((0.0, b.y0)) * Affine::scale_non_uniform(1.0, by) * Affine::translate((0.0, -b.y0)));
+    let taller = frame.transformed(
+        Affine::translate((0.0, b.y0))
+            * Affine::scale_non_uniform(1.0, by)
+            * Affine::translate((0.0, -b.y0)),
+    );
     let short = std::mem::replace(&mut t.kind, TextKind::Area { frame: taller });
     // Something else keeps the line out (a frame narrower than a letter): as the source has it.
     if layout(db, t).lines.is_empty() {
@@ -196,26 +272,46 @@ pub fn decorations(layout: &TextLayout, db: &FontDb, t: &TextObject) -> Vec<(usi
     let mut i = 0;
     while let Some(g) = glyphs.get(i) {
         // The stretch: the glyphs of this run on this line, in a row.
-        let end = glyphs.iter().skip(i).position(|h| h.run != g.run || h.line != g.line).map_or(glyphs.len(), |n| i + n);
+        let end = glyphs
+            .iter()
+            .skip(i)
+            .position(|h| h.run != g.run || h.line != g.line)
+            .map_or(glyphs.len(), |n| i + n);
         let stretch = glyphs.get(i..end).unwrap_or_default();
         i = end.max(i + 1);
-        let Some(style) = t.runs.get(g.run).map(|r| &r.style) else { continue };
+        let Some(style) = t.runs.get(g.run).map(|r| &r.style) else {
+            continue;
+        };
         if !(style.underline || style.strikethrough) {
             continue;
         }
-        let Some(face) = db.face_by_id(g.font_id) else { continue };
-        let (x0, x1) = stretch.iter().fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), h| {
-            let (s, e) = (h.origin.x, h.origin.x + h.advance);
-            (a.min(s).min(e), b.max(s).max(e))
-        });
-        for (on, (offset, thickness)) in [(style.underline, face.underline), (style.strikethrough, face.strikeout)] {
+        let Some(face) = db.face_by_id(g.font_id) else {
+            continue;
+        };
+        let (x0, x1) = stretch
+            .iter()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), h| {
+                let (s, e) = (h.origin.x, h.origin.x + h.advance);
+                (a.min(s).min(e), b.max(s).max(e))
+            });
+        for (on, (offset, thickness)) in [
+            (style.underline, face.underline),
+            (style.strikethrough, face.strikeout),
+        ] {
             if !on {
                 continue;
             }
             // Font units run y down in the glyph's transform: the bar's top is at -offset.
-            let (top, bottom) = ((g.xf * Point::new(0.0, -offset)).y, (g.xf * Point::new(0.0, -offset + thickness)).y);
+            let (top, bottom) = (
+                (g.xf * Point::new(0.0, -offset)).y,
+                (g.xf * Point::new(0.0, -offset + thickness)).y,
+            );
             let bar = Rect::new(x0, top.min(bottom), x1, top.max(bottom));
-            if bar.width() > 0.0 && bar.height() > 0.0 && bar.width().is_finite() && bar.height().is_finite() {
+            if bar.width() > 0.0
+                && bar.height() > 0.0
+                && bar.width().is_finite()
+                && bar.height().is_finite()
+            {
                 out.push((g.run, bar.to_path(0.1)));
             }
         }
@@ -231,7 +327,9 @@ const SHRINK_PASSES: usize = 11;
 pub fn layout_with(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout {
     let first = layout_once(db, t, opts);
     match (opts.fit.min_scale(), &t.kind) {
-        (Some(min), TextKind::Area { .. }) if first.overflow => shrink_to_fit(db, t, opts, min).unwrap_or(first),
+        (Some(min), TextKind::Area { .. }) if first.overflow => {
+            shrink_to_fit(db, t, opts, min).unwrap_or(first)
+        }
         _ => first,
     }
 }
@@ -240,11 +338,20 @@ pub fn layout_with(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLay
 /// it fits, searched by bisection over the first run's document size in steps of 0.1 pt (so its scaled size
 /// is a whole number of tenths of a point, the same every time). Down at `min` it lays out there,
 /// still overflowing. None (keep the full-size layout) when the text has no usable size.
-fn shrink_to_fit(db: &FontDb, t: &TextObject, opts: &LayoutOptions, min: f64) -> Option<TextLayout> {
+fn shrink_to_fit(
+    db: &FontDb,
+    t: &TextObject,
+    opts: &LayoutOptions,
+    min: f64,
+) -> Option<TextLayout> {
     // Exact size edits after object scaling may store a local size below 0.1. Fit in the
     // same document points as the Character controls, independent of that representation.
     let points = t.style_scale()?.points;
-    let size = t.runs.first().map(|r| r.style.size * points).filter(|s| s.is_finite() && *s >= 0.1)?;
+    let size = t
+        .runs
+        .first()
+        .map(|r| r.style.size * points)
+        .filter(|s| s.is_finite() && *s >= 0.1)?;
     if !(min.is_finite() && min < 1.0) {
         return None;
     }
@@ -315,7 +422,11 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
     for r in &t.runs {
         runs.push((off..off + r.text.len(), &r.style));
         // Only a well-formed inline run (one object replacement character) is a graphic.
-        inlines.push(r.inline.as_ref().filter(|_| crate::edit::is_inline_text(&r.text)));
+        inlines.push(
+            r.inline
+                .as_ref()
+                .filter(|_| crate::edit::is_inline_text(&r.text)),
+        );
         off += r.text.len();
     }
     let mut paras = Vec::new();
@@ -331,13 +442,28 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
     let is_on_path = matches!(&t.kind, TextKind::OnPath { .. });
     let vopts;
     let opts = if vertical {
-        vopts = LayoutOptions { features: OtFeatures { vertical: true, ..opts.features }, ..opts.clone() };
+        vopts = LayoutOptions {
+            features: OtFeatures {
+                vertical: true,
+                ..opts.features
+            },
+            ..opts.clone()
+        };
         &vopts
     } else {
         opts
     };
-    let mut cx =
-        Ctx { on_path: is_on_path, db, text: &text, runs, inlines, default: CharStyle::default(), opts, vertical, out: TextLayout::default() };
+    let mut cx = Ctx {
+        on_path: is_on_path,
+        db,
+        text: &text,
+        runs,
+        inlines,
+        default: CharStyle::default(),
+        opts,
+        vertical,
+        out: TextLayout::default(),
+    };
     // Vertical type: line space turned a quarter turn clockwise (lines become columns, each next
     // one to the left). Point type's anchor is on the first column's centre line. Vertical path
     // type stays on its path (each glyph turned across it in `emit`).
@@ -346,8 +472,13 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
         TextKind::OnPath { .. } => Affine::IDENTITY,
         TextKind::Point => {
             let first = cx.style_at(0);
-            let centre =
-                db.face_version(&first.font_family, &first.font_style, first.font_version.as_deref()).map_or(EM_CENTER, |f| f.ideographic_centre());
+            let centre = db
+                .face_version(
+                    &first.font_family,
+                    &first.font_style,
+                    first.font_version.as_deref(),
+                )
+                .map_or(EM_CENTER, |f| f.ideographic_centre());
             Affine::translate((-centre * first.size, 0.0)) * QUARTER_TURN
         }
         _ => QUARTER_TURN,
@@ -357,12 +488,21 @@ fn layout_once(db: &FontDb, t: &TextObject, opts: &LayoutOptions) -> TextLayout 
         TextKind::Area { frame } => {
             let to_lines = line_xf.inverse();
             let wrap: Vec<vectorcraft_doc::WrapShape> = if vertical {
-                t.wrap.iter().map(|w| vectorcraft_doc::WrapShape { path: w.path.transformed(to_lines), ..w.clone() }).collect()
+                t.wrap
+                    .iter()
+                    .map(|w| vectorcraft_doc::WrapShape {
+                        path: w.path.transformed(to_lines),
+                        ..w.clone()
+                    })
+                    .collect()
             } else {
                 t.wrap.clone()
             };
             let mut regions = Region::cells(&(to_lines * frame.to_bezpath()), opts, &wrap);
-            cx.out.frames = regions.iter().map(|r| line_xf.transform_rect_bbox(r.cell)).collect();
+            cx.out.frames = regions
+                .iter()
+                .map(|r| line_xf.transform_rect_bbox(r.cell))
+                .collect();
             flow(&mut cx, &paras, t, Some(&regions));
             if opts.vertical_align != VerticalAlign::Top {
                 align_vertically(&mut cx, &paras, t, &mut regions);
@@ -408,11 +548,20 @@ fn tate_chu_yoko(g: &mut [SGlyph], size: impl Fn(&SGlyph) -> f64) {
         if (2..=3).contains(&(end - i)) {
             let em = size(&g[i]);
             let width: f64 = g[i..end].iter().map(|g| g.adv).sum();
-            let squeeze = if width > em && width > 0.0 { em / width } else { 1.0 };
+            let squeeze = if width > em && width > 0.0 {
+                em / width
+            } else {
+                1.0
+            };
             let mut ink = 0.0;
             for (k, gl) in g[i..end].iter_mut().enumerate() {
                 let adv = gl.adv;
-                gl.tcy = Some(Tcy { pen: if k == 0 { 0.0 } else { em }, ink, width, squeeze });
+                gl.tcy = Some(Tcy {
+                    pen: if k == 0 { 0.0 } else { em },
+                    ink,
+                    width,
+                    squeeze,
+                });
                 gl.adv = if k == 0 { em } else { 0.0 };
                 ink += adv;
             }
@@ -440,7 +589,9 @@ fn compress_punctuation(sg: &mut [SGlyph]) -> Vec<bool> {
     let mut lost_after = vec![false; sg.len()];
     for j in 1..sg.len() {
         let (before, after) = sg.split_at_mut(j);
-        let (Some(a), Some(b)) = (before.last_mut(), after.first_mut()) else { continue };
+        let (Some(a), Some(b)) = (before.last_mut(), after.first_mut()) else {
+            continue;
+        };
         if punct(b.ch).is_none() {
             continue;
         }
@@ -491,7 +642,9 @@ fn space_japanese_and_latin(sg: &mut [SGlyph]) -> Vec<f64> {
     let mut added = vec![0.0; sg.len()];
     for j in 1..sg.len() {
         let (before, after) = sg.split_at_mut(j);
-        let (Some(a), Some(b)) = (before.last_mut(), after.first()) else { continue };
+        let (Some(a), Some(b)) = (before.last_mut(), after.first()) else {
+            continue;
+        };
         if a.tcy.is_some() || b.tcy.is_some() {
             continue;
         }
@@ -607,7 +760,12 @@ fn finish_bounds(out: &mut TextLayout) {
     }
     if !out.on_path {
         for l in &out.lines {
-            add(xf.transform_rect_bbox(Rect::new(l.x0.min(l.x1), l.baseline - l.ascent, l.x0.max(l.x1), l.baseline + l.descent)));
+            add(xf.transform_rect_bbox(Rect::new(
+                l.x0.min(l.x1),
+                l.baseline - l.ascent,
+                l.x0.max(l.x1),
+                l.baseline + l.descent,
+            )));
         }
     }
     out.bounds = b.unwrap_or_default();
@@ -634,7 +792,11 @@ fn cell_space(out: &TextLayout, regions: &[Region]) -> Vec<Option<(f64, f64, usi
                 return None;
             }
             // Never negative: a full (or overflowing) cell stays where top alignment put it.
-            Some(((top - r.top()).max(0.0), (r.bottom() - bottom).max(0.0), baselines.len()))
+            Some((
+                (top - r.top()).max(0.0),
+                (r.bottom() - bottom).max(0.0),
+                baselines.len(),
+            ))
         })
         .collect()
 }
@@ -645,9 +807,16 @@ fn cell_space(out: &TextLayout, regions: &[Region]) -> Vec<Option<(f64, f64, usi
 /// Other frames give lines different widths at different heights, so the text flows again with
 /// each cell's lines started lower (or spaced wider) until it settles, at most eight passes; a
 /// pass that would push text out of the frame is undone and retried with half the step.
-fn align_vertically(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: &mut [Region]) {
+fn align_vertically(
+    cx: &mut Ctx<'_>,
+    paras: &[Range<usize>],
+    t: &TextObject,
+    regions: &mut [Region],
+) {
     let align = cx.opts.vertical_align;
-    let plain = regions.iter().all(|r| (r.rect || r.polys.is_empty()) && r.wraps.is_empty());
+    let plain = regions
+        .iter()
+        .all(|r| (r.rect || r.polys.is_empty()) && r.wraps.is_empty());
     if plain {
         let space = cell_space(&cx.out, regions);
         // Each distinct baseline's index within its cell, for justify.
@@ -657,18 +826,29 @@ fn align_vertically(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, re
             .lines
             .iter()
             .map(|l| {
-                let Some(Some((_, below, n))) = space.get(l.region).copied() else { return 0.0 };
+                let Some(Some((_, below, n))) = space.get(l.region).copied() else {
+                    return 0.0;
+                };
                 match align {
                     VerticalAlign::Top => 0.0,
                     VerticalAlign::Center => below * 0.5,
                     VerticalAlign::Bottom => below,
                     VerticalAlign::Justify => {
-                        let Some(s) = seen.get_mut(l.region) else { return 0.0 };
-                        let k = s.iter().position(|b| (b - l.baseline).abs() < 1e-6).unwrap_or_else(|| {
-                            s.push(l.baseline);
-                            s.len() - 1
-                        });
-                        if n > 1 { below * k as f64 / (n - 1) as f64 } else { 0.0 }
+                        let Some(s) = seen.get_mut(l.region) else {
+                            return 0.0;
+                        };
+                        let k = s
+                            .iter()
+                            .position(|b| (b - l.baseline).abs() < 1e-6)
+                            .unwrap_or_else(|| {
+                                s.push(l.baseline);
+                                s.len() - 1
+                            });
+                        if n > 1 {
+                            below * k as f64 / (n - 1) as f64
+                        } else {
+                            0.0
+                        }
                     }
                 }
             })
@@ -687,7 +867,13 @@ fn align_vertically(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, re
         }
         // Inline art moves with its glyph's line.
         for i in &mut cx.out.inlines {
-            let d = cx.out.glyphs.get(i.glyph).and_then(|g| offs.get(g.line)).copied().unwrap_or(0.0);
+            let d = cx
+                .out
+                .glyphs
+                .get(i.glyph)
+                .and_then(|g| offs.get(g.line))
+                .copied()
+                .unwrap_or(0.0);
             if d != 0.0 {
                 let m = Affine::translate((0.0, d));
                 i.xf = m * i.xf;
@@ -704,7 +890,9 @@ fn align_vertically(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, re
         let mut moved = false;
         let saved: Vec<(f64, f64)> = regions.iter().map(|r| (r.shift, r.gap)).collect();
         for (r, s) in regions.iter_mut().zip(&space) {
-            let Some((above, below, n)) = *s else { continue };
+            let Some((above, below, n)) = *s else {
+                continue;
+            };
             let (shift, gap) = match align {
                 VerticalAlign::Top => (r.shift, r.gap),
                 VerticalAlign::Center => (r.shift + (below - above) * 0.5 * step, r.gap),
@@ -712,7 +900,10 @@ fn align_vertically(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, re
                 VerticalAlign::Justify if n > 1 => (r.shift, r.gap + below * step / (n - 1) as f64),
                 VerticalAlign::Justify => (r.shift, r.gap),
             };
-            let (shift, gap) = (shift.clamp(0.0, r.cell.height().max(0.0)), gap.clamp(0.0, r.cell.height().max(0.0)));
+            let (shift, gap) = (
+                shift.clamp(0.0, r.cell.height().max(0.0)),
+                gap.clamp(0.0, r.cell.height().max(0.0)),
+            );
             if (shift - r.shift).abs() > 0.25 || (gap - r.gap).abs() > 0.01 {
                 moved = true;
             }
@@ -862,17 +1053,35 @@ fn intersect_intervals(a: &[(f64, f64)], b: &[(f64, f64)]) -> Vec<(f64, f64)> {
 }
 
 impl Region {
-    fn cells(path: &BezPath, opts: &LayoutOptions, wrap: &[vectorcraft_doc::WrapShape]) -> Vec<Region> {
+    fn cells(
+        path: &BezPath,
+        opts: &LayoutOptions,
+        wrap: &[vectorcraft_doc::WrapShape],
+    ) -> Vec<Region> {
         // A frame out of range has no cells, and a wrap shape out of range is left out.
-        let Some(polys) = polygons(path) else { return vec![] };
+        let Some(polys) = polygons(path) else {
+            return vec![];
+        };
         let wraps: Vec<(Vec<Vec<Point>>, f64, bool)> = wrap
             .iter()
-            .filter_map(|w| Some((polygons(&w.path.to_bezpath())?, w.wrap.offset.max(0.0), w.wrap.invert)))
+            .filter_map(|w| {
+                Some((
+                    polygons(&w.path.to_bezpath())?,
+                    w.wrap.offset.max(0.0),
+                    w.wrap.invert,
+                ))
+            })
             .filter(|w| !w.0.is_empty())
             .collect();
         let bbox = path.bounding_box();
         let rect = polys.len() == 1 && {
-            let area: f64 = polys[0].iter().zip(polys[0].iter().cycle().skip(1)).map(|(a, b)| a.x * b.y - b.x * a.y).sum::<f64>().abs() * 0.5;
+            let area: f64 = polys[0]
+                .iter()
+                .zip(polys[0].iter().cycle().skip(1))
+                .map(|(a, b)| a.x * b.y - b.x * a.y)
+                .sum::<f64>()
+                .abs()
+                * 0.5;
             (area - bbox.area()).abs() <= bbox.area() * 1e-6 + 1e-9
         };
         let (rows, cols) = (opts.rows.max(1), opts.columns.max(1));
@@ -885,8 +1094,20 @@ impl Region {
             for r in 0..rows {
                 let x0 = bbox.x0 + c as f64 * (cw + gutter);
                 let y0 = bbox.y0 + r as f64 * (rh + gutter);
-                let cell = if rows * cols == 1 { bbox } else { Rect::new(x0, y0, x0 + cw, y0 + rh) };
-                out.push(Region { cell, inset: opts.inset.max(0.0), polys: polys.clone(), rect, wraps: wraps.clone(), shift: 0.0, gap: 0.0 });
+                let cell = if rows * cols == 1 {
+                    bbox
+                } else {
+                    Rect::new(x0, y0, x0 + cw, y0 + rh)
+                };
+                out.push(Region {
+                    cell,
+                    inset: opts.inset.max(0.0),
+                    polys: polys.clone(),
+                    rect,
+                    wraps: wraps.clone(),
+                    shift: 0.0,
+                    gap: 0.0,
+                });
             }
         }
         out
@@ -902,41 +1123,83 @@ impl Region {
     /// Inside intervals (even-odd) of the horizontal line at `y`, minus the wrap objects (or
     /// inside them, for Invert Wrap). Offsets grow each wrap shape vertically and horizontally.
     fn intervals(&self, y: f64) -> Vec<(f64, f64)> {
-        let mut iv = if self.polys.is_empty() || self.rect { vec![(self.cell.x0, self.cell.x1)] } else { poly_intervals(&self.polys, y) };
+        let mut iv = if self.polys.is_empty() || self.rect {
+            vec![(self.cell.x0, self.cell.x1)]
+        } else {
+            poly_intervals(&self.polys, y)
+        };
         for (polys, off, invert) in &self.wraps {
-            let ys = if *off > 0.0 { vec![y - off, y - off * 0.5, y, y + off * 0.5, y + off] } else { vec![y] };
-            let w = union_intervals(ys.into_iter().flat_map(|y| poly_intervals(polys, y)).map(|(a, b)| (a - off, b + off)).collect());
-            iv = if *invert { intersect_intervals(&iv, &w) } else { subtract_intervals(&iv, &w) };
+            let ys = if *off > 0.0 {
+                vec![y - off, y - off * 0.5, y, y + off * 0.5, y + off]
+            } else {
+                vec![y]
+            };
+            let w = union_intervals(
+                ys.into_iter()
+                    .flat_map(|y| poly_intervals(polys, y))
+                    .map(|(a, b)| (a - off, b + off))
+                    .collect(),
+            );
+            iv = if *invert {
+                intersect_intervals(&iv, &w)
+            } else {
+                subtract_intervals(&iv, &w)
+            };
         }
         iv
     }
 
     /// Widest horizontal span inside the frame (and the cell) over the band `top..bottom`.
     fn span(&self, top: f64, bottom: f64) -> Option<(f64, f64)> {
-        self.spans(top, bottom).into_iter().max_by(|x, y| (x.1 - x.0).total_cmp(&(y.1 - y.0)))
+        self.spans(top, bottom)
+            .into_iter()
+            .max_by(|x, y| (x.1 - x.0).total_cmp(&(y.1 - y.0)))
     }
 
     /// Every horizontal span inside the frame (and the cell) over the band `top..bottom`, left to
     /// right (text wraps on both sides of an object).
     fn spans(&self, top: f64, bottom: f64) -> Vec<(f64, f64)> {
         let clip = |(a, b): (f64, f64)| {
-            let (a, b) = (a.max(self.cell.x0) + self.inset, b.min(self.cell.x1) - self.inset);
+            let (a, b) = (
+                a.max(self.cell.x0) + self.inset,
+                b.min(self.cell.x1) - self.inset,
+            );
             (b > a).then_some((a, b))
         };
         let plain = self.polys.is_empty() || self.rect;
         if plain && self.wraps.is_empty() {
-            return (self.cell.width() > 0.0).then_some((self.cell.x0, self.cell.x1)).and_then(clip).into_iter().collect();
+            return (self.cell.width() > 0.0)
+                .then_some((self.cell.x0, self.cell.x1))
+                .and_then(clip)
+                .into_iter()
+                .collect();
         }
         let fb = if plain {
             self.cell
         } else {
-            self.polys.iter().flatten().fold(Rect::new(f64::MAX, f64::MAX, f64::MIN, f64::MIN), |r, p| r.union_pt(*p))
+            self.polys
+                .iter()
+                .flatten()
+                .fold(Rect::new(f64::MAX, f64::MAX, f64::MIN, f64::MIN), |r, p| {
+                    r.union_pt(*p)
+                })
         };
-        let clamp = |y: f64| if plain { y } else { y.clamp(fb.y0 + 1e-4, fb.y1 - 1e-4) };
+        let clamp = |y: f64| {
+            if plain {
+                y
+            } else {
+                y.clamp(fb.y0 + 1e-4, fb.y1 - 1e-4)
+            }
+        };
         // Sample the band densely enough for curved frames (circles, blobs).
         let samples = 5;
-        let mut rows: Vec<Vec<(f64, f64)>> =
-            (0..samples).map(|k| self.intervals(clamp(top + (bottom - top) * k as f64 / (samples - 1) as f64))).collect();
+        let mut rows: Vec<Vec<(f64, f64)>> = (0..samples)
+            .map(|k| {
+                self.intervals(clamp(
+                    top + (bottom - top) * k as f64 / (samples - 1) as f64,
+                ))
+            })
+            .collect();
         let mid = rows.swap_remove(samples / 2);
         if !self.wraps.is_empty() {
             // Wrap objects split lines: keep exactly what is free on every sampled row.
@@ -946,8 +1209,11 @@ impl Region {
         mid.into_iter()
             .filter_map(|(mut a, mut b)| {
                 for o in &rows {
-                    let best =
-                        o.iter().map(|&(c, d)| (a.max(c), b.min(d))).filter(|(c, d)| d > c).max_by(|x, y| (x.1 - x.0).total_cmp(&(y.1 - y.0)))?;
+                    let best = o
+                        .iter()
+                        .map(|&(c, d)| (a.max(c), b.min(d)))
+                        .filter(|(c, d)| d > c)
+                        .max_by(|x, y| (x.1 - x.0).total_cmp(&(y.1 - y.0)))?;
                     a = best.0;
                     b = best.1;
                 }
@@ -972,7 +1238,14 @@ struct Metrics {
 impl Metrics {
     fn of(g: &SGlyph) -> Self {
         let em = g.face.units_per_em() * g.sy;
-        Self { asc: g.ascent, desc: g.descent, lead: g.leading, cap: g.cap, xh: g.xh, top: (g.face.ideographic_centre() + 0.5) * em }
+        Self {
+            asc: g.ascent,
+            desc: g.descent,
+            lead: g.leading,
+            cap: g.cap,
+            xh: g.xh,
+            top: (g.face.ideographic_centre() + 0.5) * em,
+        }
     }
     fn max(g: &[SGlyph]) -> Option<Self> {
         let mut it = g.iter();
@@ -1028,7 +1301,13 @@ impl Pen<'_> {
     /// down to the first one wide enough. Only when no line is does it go on the first line with
     /// room for any text, and get broken there.
     /// The `bool` is true for a further span at the previous line's baseline.
-    fn place(&mut self, est: Metrics, ind_l: f64, ind_r: f64, word: f64) -> Option<(f64, f64, f64, bool)> {
+    fn place(
+        &mut self,
+        est: Metrics,
+        ind_l: f64,
+        ind_r: f64,
+        word: f64,
+    ) -> Option<(f64, f64, f64, bool)> {
         if word > 0.0 && word < self.no_room_for {
             let mut pen = self.clone();
             if let Some(placed) = pen.place_at_least(est, ind_l, ind_r, word) {
@@ -1042,7 +1321,13 @@ impl Pen<'_> {
     }
 
     /// [`Pen::place`], skipping lines of a non-rectangular frame narrower than `min`.
-    fn place_at_least(&mut self, est: Metrics, ind_l: f64, ind_r: f64, min: f64) -> Option<(f64, f64, f64, bool)> {
+    fn place_at_least(
+        &mut self,
+        est: Metrics,
+        ind_l: f64,
+        ind_r: f64,
+        min: f64,
+    ) -> Option<(f64, f64, f64, bool)> {
         let Some(regions) = self.regions else {
             let b = self.prev.map_or(0.0, |b| self.next_baseline(b, est));
             return Some((b, f64::NEG_INFINITY, f64::INFINITY, false));
@@ -1054,7 +1339,9 @@ impl Pen<'_> {
         loop {
             let r = regions.get(self.ri)?;
             let mut baseline = match self.prev {
-                None if self.model == LeadingModel::EmBoxTop => r.top() + r.shift + est.top.max(self.fb_min),
+                None if self.model == LeadingModel::EmBoxTop => {
+                    r.top() + r.shift + est.top.max(self.fb_min)
+                }
                 None => r.top() + r.shift + est.first_baseline(self.fb, self.fb_min),
                 Some(b) => self.next_baseline(b, est) + r.gap,
             };
@@ -1066,7 +1353,11 @@ impl Pen<'_> {
                     break;
                 }
                 // A rectangle's lines are all as wide: none below has more room for the word.
-                let min = if r.rect || r.polys.is_empty() { 0.0 } else { min };
+                let min = if r.rect || r.polys.is_empty() {
+                    0.0
+                } else {
+                    min
+                };
                 let fits = |&(a, b): &(f64, f64)| {
                     let room = b - a - ind_l - ind_r;
                     room > est.asc.max(1.0) && room + EPS >= min
@@ -1078,7 +1369,11 @@ impl Pen<'_> {
                     }
                 } else {
                     // Wrap objects can split a line: fill every span, left to right.
-                    let mut spans: Vec<(f64, f64)> = r.spans(baseline - est.asc, baseline + est.desc).into_iter().filter(fits).collect();
+                    let mut spans: Vec<(f64, f64)> = r
+                        .spans(baseline - est.asc, baseline + est.desc)
+                        .into_iter()
+                        .filter(fits)
+                        .collect();
                     if spans.is_empty() {
                         baseline += step;
                         continue;
@@ -1096,7 +1391,9 @@ impl Pen<'_> {
         }
     }
     fn bottom(&self) -> f64 {
-        self.regions.and_then(|r| r.get(self.ri)).map_or(f64::INFINITY, |r| r.bottom())
+        self.regions
+            .and_then(|r| r.get(self.ri))
+            .map_or(f64::INFINITY, |r| r.bottom())
     }
     /// The baseline of the line after the one at `prev`, for a line of metrics `est`.
     fn next_baseline(&self, prev: f64, est: Metrics) -> f64 {
@@ -1124,7 +1421,13 @@ fn tab_advance(tabs: &[vectorcraft_doc::TabStop], origin: f64, x: f64, rest: &[S
         TabAlign::Left => pos,
         TabAlign::Right => pos - width,
         TabAlign::Center => pos - width / 2.0,
-        TabAlign::Decimal => pos - seg.iter().take_while(|g| g.ch != on).map(|g| g.adv).sum::<f64>(),
+        TabAlign::Decimal => {
+            pos - seg
+                .iter()
+                .take_while(|g| g.ch != on)
+                .map(|g| g.adv)
+                .sum::<f64>()
+        }
     };
     let explicit = tabs.iter().find_map(|t| {
         let at = target(t.position, t.align, t.align_on);
@@ -1133,7 +1436,8 @@ fn tab_advance(tabs: &[vectorcraft_doc::TabStop], origin: f64, x: f64, rest: &[S
     let at = explicit.unwrap_or_else(|| {
         let last = tabs.iter().map(|t| t.position).fold(0.0, f64::max).max(0.0);
         let base = rel.max(last);
-        ((base / vectorcraft_doc::text::DEFAULT_TAB_INTERVAL).floor() + 1.0) * vectorcraft_doc::text::DEFAULT_TAB_INTERVAL
+        ((base / vectorcraft_doc::text::DEFAULT_TAB_INTERVAL).floor() + 1.0)
+            * vectorcraft_doc::text::DEFAULT_TAB_INTERVAL
     });
     (at - rel).max(0.0)
 }
@@ -1159,7 +1463,15 @@ fn word_width(g: &[SGlyph], i: usize) -> f64 {
 
 /// Greedy break: returns (end glyph index, hyphenated) for a line starting at `i` of `width`.
 /// With burasagari, a comma or full stop that doesn't fit ends the line, hanging outside it.
-fn break_line(text: &str, g: &[SGlyph], i: usize, width: f64, hyphenate: bool, burasagari: Burasagari, kinsoku: Kinsoku) -> (usize, bool) {
+fn break_line(
+    text: &str,
+    g: &[SGlyph],
+    i: usize,
+    width: f64,
+    hyphenate: bool,
+    burasagari: Burasagari,
+    kinsoku: Kinsoku,
+) -> (usize, bool) {
     if !width.is_finite() {
         return (g.len(), false);
     }
@@ -1175,7 +1487,10 @@ fn break_line(text: &str, g: &[SGlyph], i: usize, width: f64, hyphenate: bool, b
         let cluster_width: f64 = g[j..cluster_end].iter().map(|glyph| glyph.adv).sum();
         if j > i && !gl.is_space() && x + cluster_width > width + EPS {
             // It ends the line with the spaces after it.
-            if burasagari != Burasagari::None && hangs(gl) && kinsoku_allows(g, cluster_end - 1, kinsoku) {
+            if burasagari != Burasagari::None
+                && hangs(gl)
+                && kinsoku_allows(g, cluster_end - 1, kinsoku)
+            {
                 let mut end = cluster_end;
                 while g.get(end).is_some_and(SGlyph::is_space) {
                     end += 1;
@@ -1208,10 +1523,15 @@ fn break_line(text: &str, g: &[SGlyph], i: usize, width: f64, hyphenate: bool, b
             we += 1;
         }
         let x_ws: f64 = g[i..word_start].iter().map(|g| g.adv).sum();
-        let pts: Vec<usize> = hyphen_breaks(text, g, word_start, we).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)).collect();
+        let pts: Vec<usize> = hyphen_breaks(text, g, word_start, we)
+            .into_iter()
+            .filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku))
+            .collect();
         for &k in pts.iter().rev() {
             if k <= j && k > i {
-                let w = x_ws + g[word_start..k].iter().map(|g| g.adv).sum::<f64>() + hyphen_glyph(&g[k - 1]).adv;
+                let w = x_ws
+                    + g[word_start..k].iter().map(|g| g.adv).sum::<f64>()
+                    + hyphen_glyph(&g[k - 1]).adv;
                 if w <= width + EPS {
                     return (k, true);
                 }
@@ -1238,7 +1558,8 @@ fn hangs(g: &SGlyph) -> bool {
 /// closing one, a comma, a full stop, a small kana… (the character is pushed to the next line
 /// with the one before it).
 fn kinsoku_allows(g: &[SGlyph], j: usize, kinsoku: Kinsoku) -> bool {
-    g.get(j).is_some_and(|gl| kinsoku_between(gl.ch, g.get(j + 1).map(|n| n.ch), kinsoku))
+    g.get(j)
+        .is_some_and(|gl| kinsoku_between(gl.ch, g.get(j + 1).map(|n| n.ch), kinsoku))
 }
 
 /// Kinsoku for a break between `before` and `after` (none: the end of the paragraph): Hard keeps
@@ -1248,7 +1569,9 @@ fn kinsoku_between(before: char, after: Option<char>, kinsoku: Kinsoku) -> bool 
     match kinsoku {
         Kinsoku::None => true,
         Kinsoku::Hard => !no_line_end(before) && after.is_none_or(|c| !no_line_start(c)),
-        Kinsoku::Soft => !no_line_end(before) && after.is_none_or(|c| !no_line_start(c) || soft_line_start(c)),
+        Kinsoku::Soft => {
+            !no_line_end(before) && after.is_none_or(|c| !no_line_start(c) || soft_line_start(c))
+        }
     }
 }
 
@@ -1262,7 +1585,9 @@ mod wrapping_tests {
         // entirely synthetic, so the regressions don't depend on a particular font's shaping.
         static DB: std::sync::OnceLock<FontDb> = std::sync::OnceLock::new();
         let db = DB.get_or_init(|| FontDb::with_font_dirs(vec![]));
-        let face = db.face("Source Sans 3", "Regular").expect("bundled test face");
+        let face = db
+            .face("Source Sans 3", "Regular")
+            .expect("bundled test face");
         specs
             .iter()
             .map(|&(byte, len, adv, ch)| SGlyph {
@@ -1306,10 +1631,21 @@ mod wrapping_tests {
         let text = "بَت";
         let glyphs = synthetic_glyphs(&[(0, 4, 2.0, 'ب'), (0, 4, 2.0, 'ب'), (4, 2, 1.0, 'ت')]);
 
-        let (end, hyphenated) = break_line(text, &glyphs, 0, 3.0, false, Burasagari::None, Kinsoku::Hard);
+        let (end, hyphenated) = break_line(
+            text,
+            &glyphs,
+            0,
+            3.0,
+            false,
+            Burasagari::None,
+            Kinsoku::Hard,
+        );
 
         assert!(!hyphenated);
-        assert_eq!(end, 2, "oversized base-plus-mark cluster must stay together");
+        assert_eq!(
+            end, 2,
+            "oversized base-plus-mark cluster must stay together"
+        );
         assert_eq!(source_range(&glyphs, 0, end), 0..4);
         assert_eq!(glyphs.get(end).map(|g| g.byte), Some(4));
     }
@@ -1317,16 +1653,40 @@ mod wrapping_tests {
     #[test]
     fn greedy_wrap_keeps_an_oversized_cluster_after_a_line_start_atomic() {
         let text = "بَتَث";
-        let glyphs = synthetic_glyphs(&[(0, 4, 1.0, 'ب'), (4, 4, 2.0, 'ت'), (4, 4, 2.0, 'ت'), (8, 2, 1.0, 'ث')]);
+        let glyphs = synthetic_glyphs(&[
+            (0, 4, 1.0, 'ب'),
+            (4, 4, 2.0, 'ت'),
+            (4, 4, 2.0, 'ت'),
+            (8, 2, 1.0, 'ث'),
+        ]);
 
-        let (first_end, _) = break_line(text, &glyphs, 0, 3.0, false, Burasagari::None, Kinsoku::Hard);
+        let (first_end, _) = break_line(
+            text,
+            &glyphs,
+            0,
+            3.0,
+            false,
+            Burasagari::None,
+            Kinsoku::Hard,
+        );
         assert_eq!(first_end, 1);
         assert_eq!(source_range(&glyphs, 0, first_end), 0..4);
 
-        let (second_end, hyphenated) = break_line(text, &glyphs, first_end, 3.0, false, Burasagari::None, Kinsoku::Hard);
+        let (second_end, hyphenated) = break_line(
+            text,
+            &glyphs,
+            first_end,
+            3.0,
+            false,
+            Burasagari::None,
+            Kinsoku::Hard,
+        );
 
         assert!(!hyphenated);
-        assert_eq!(second_end, 3, "oversized cluster at the next line start must stay together");
+        assert_eq!(
+            second_end, 3,
+            "oversized cluster at the next line start must stay together"
+        );
         assert_eq!(source_range(&glyphs, first_end, second_end), 4..8);
         assert_eq!(glyphs.get(second_end).map(|g| g.byte), Some(8));
     }
@@ -1340,11 +1700,25 @@ mod wrapping_tests {
             return;
         };
         let text = "بَت";
-        let style = CharStyle { font_family: face.family.clone(), font_style: face.style.clone(), size: 20.0, ..CharStyle::default() };
+        let style = CharStyle {
+            font_family: face.family.clone(),
+            font_style: face.style.clone(),
+            size: 20.0,
+            ..CharStyle::default()
+        };
         let bidi = para_bidi(text, None);
         let levels = bidi.as_ref().map_or(&[][..], |info| &info.levels);
         let mut shaped = Vec::new();
-        shape_range(db, text, 0..text.len(), &[(0..text.len(), &style)], &[], &OtFeatures::default(), levels, &mut shaped);
+        shape_range(
+            db,
+            text,
+            0..text.len(),
+            &[(0..text.len(), &style)],
+            &[],
+            &OtFeatures::default(),
+            levels,
+            &mut shaped,
+        );
         let Some(first) = shaped.first() else { return };
         let first_end = shaped.iter().take_while(|g| g.byte == first.byte).count();
         if first.byte != 0 || first_end < 2 || first_end >= shaped.len() {
@@ -1365,7 +1739,9 @@ mod wrapping_tests {
         let Some(width) = width else { return };
 
         let mut object = TextObject::point(Point::ZERO, text, style);
-        object.kind = TextKind::Area { frame: PathData::from_bezpath(&Rect::new(0.0, 0.0, width, 100.0).to_path(0.1)) };
+        object.kind = TextKind::Area {
+            frame: PathData::from_bezpath(&Rect::new(0.0, 0.0, width, 100.0).to_path(0.1)),
+        };
         let result = layout_with(db, &object, &LayoutOptions::default());
 
         let next_cluster_byte = shaped.get(first_end).map(|g| g.byte);
@@ -1388,7 +1764,15 @@ fn japanese_letters_for_the_latin_space_are_kana_kanji_and_marks_not_hangul_or_p
 #[cfg(test)]
 #[test]
 fn kinsoku_keeps_closing_marks_off_line_starts_and_opening_ones_off_line_ends() {
-    for (a, b) in [('字', '。'), ('弧', '」'), ('」', '、'), ('ャ', 'ー'), ('カ', 'ッ'), ('「', 'か'), ('（', '雅')] {
+    for (a, b) in [
+        ('字', '。'),
+        ('弧', '」'),
+        ('」', '、'),
+        ('ャ', 'ー'),
+        ('カ', 'ッ'),
+        ('「', 'か'),
+        ('（', '雅'),
+    ] {
         assert!(!kinsoku_between(a, Some(b), Kinsoku::Hard), "{a}{b}");
     }
     for (a, b) in [('。', '雅'), ('」', 'は'), ('字', '「'), ('の', '演')] {
@@ -1402,11 +1786,24 @@ fn kinsoku_keeps_closing_marks_off_line_starts_and_opening_ones_off_line_ends() 
 #[cfg(test)]
 #[test]
 fn soft_kinsoku_lets_small_kana_and_the_prolonged_sound_mark_start_a_line() {
-    for (a, b) in [('ャ', 'ー'), ('カ', 'ッ'), ('時', '々'), ('ト', 'ㇰ'), ('か', 'ゃ')] {
+    for (a, b) in [
+        ('ャ', 'ー'),
+        ('カ', 'ッ'),
+        ('時', '々'),
+        ('ト', 'ㇰ'),
+        ('か', 'ゃ'),
+    ] {
         assert!(!kinsoku_between(a, Some(b), Kinsoku::Hard), "{a}{b}");
         assert!(kinsoku_between(a, Some(b), Kinsoku::Soft), "{a}{b}");
     }
-    for (a, b) in [('字', '。'), ('弧', '」'), ('「', 'か'), ('ｶ', 'ｯ'), ('ｶ', 'ｰ'), ('字', 'ゝ')] {
+    for (a, b) in [
+        ('字', '。'),
+        ('弧', '」'),
+        ('「', 'か'),
+        ('ｶ', 'ｯ'),
+        ('ｶ', 'ｰ'),
+        ('字', 'ゝ'),
+    ] {
         assert!(!kinsoku_between(a, Some(b), Kinsoku::Soft), "{a}{b}");
         assert!(kinsoku_between(a, Some(b), Kinsoku::None), "{a}{b}");
     }
@@ -1426,7 +1823,9 @@ fn hyphen_breaks(text: &str, g: &[SGlyph], ws: usize, we: usize) -> Vec<usize> {
         return vec![];
     }
     let (s, e) = (g[a].byte, g[b - 1].byte + g[b - 1].len);
-    let Some(word) = text.get(s..e) else { return vec![] };
+    let Some(word) = text.get(s..e) else {
+        return vec![];
+    };
     let offs: Vec<usize> = word.char_indices().map(|(o, _)| s + o).collect();
     hyphen_points(word)
         .into_iter()
@@ -1446,20 +1845,39 @@ fn candidates(text: &str, g: &[SGlyph], hyphenate: bool, kinsoku: Kinsoku) -> Ve
         let end_of_word = gl.is_space() || gl.break_after();
         if end_of_word {
             if hyphenate && j > ws {
-                for k in hyphen_breaks(text, g, ws, j).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)) {
-                    v.push(Breakpoint { end: k, hyphen: hyphen_glyph(&g[k - 1]).adv });
+                for k in hyphen_breaks(text, g, ws, j)
+                    .into_iter()
+                    .filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku))
+                {
+                    v.push(Breakpoint {
+                        end: k,
+                        hyphen: hyphen_glyph(&g[k - 1]).adv,
+                    });
                 }
             }
-            let hy = if gl.is_soft_hyphen() { hyphen_glyph(gl).adv } else { 0.0 };
+            let hy = if gl.is_soft_hyphen() {
+                hyphen_glyph(gl).adv
+            } else {
+                0.0
+            };
             if j + 1 < g.len() && g[j + 1].byte != gl.byte && kinsoku_allows(g, j, kinsoku) {
-                v.push(Breakpoint { end: j + 1, hyphen: hy });
+                v.push(Breakpoint {
+                    end: j + 1,
+                    hyphen: hy,
+                });
             }
             ws = j + 1;
         }
     }
     if hyphenate && g.len() > ws {
-        for k in hyphen_breaks(text, g, ws, g.len()).into_iter().filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku)) {
-            v.push(Breakpoint { end: k, hyphen: hyphen_glyph(&g[k - 1]).adv });
+        for k in hyphen_breaks(text, g, ws, g.len())
+            .into_iter()
+            .filter(|&k| k > 0 && kinsoku_allows(g, k - 1, kinsoku))
+        {
+            v.push(Breakpoint {
+                end: k,
+                hyphen: hyphen_glyph(&g[k - 1]).adv,
+            });
         }
     }
     v.sort_by_key(|b| b.end);
@@ -1472,13 +1890,27 @@ const MAX_COMPOSE_GLYPHS: usize = 200_000;
 
 /// Every-line composition of paragraph glyphs `sg` if applicable (area text with uniform line
 /// metrics, justified or ragged); `None` falls back to the greedy single-line composer.
-fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], para: &ParaStyle, pen: &Pen<'_>, rtl: bool) -> Option<Vec<(usize, bool)>> {
-    let ragged = matches!(para.justify, Justify::Auto | Justify::Left | Justify::Center | Justify::Right);
+fn compose_para(
+    cx: &Ctx<'_>,
+    sg: &[SGlyph],
+    para: &ParaStyle,
+    pen: &Pen<'_>,
+    rtl: bool,
+) -> Option<Vec<(usize, bool)>> {
+    let ragged = matches!(
+        para.justify,
+        Justify::Auto | Justify::Left | Justify::Center | Justify::Right
+    );
     let composer = cx.opts.composer.unwrap_or(para.composer);
     // A paragraph whose commas or full stops may hang is composed line by line (as the Japanese
     // single-line composer does).
     let may_hang = para.burasagari != Burasagari::None && sg.iter().any(hangs);
-    if composer != Composer::EveryLine || pen.regions.is_none() || sg.len() < 2 || sg.len() > MAX_COMPOSE_GLYPHS || may_hang {
+    if composer != Composer::EveryLine
+        || pen.regions.is_none()
+        || sg.len() < 2
+        || sg.len() > MAX_COMPOSE_GLYPHS
+        || may_hang
+    {
         return None;
     }
     let m = Metrics::of(&sg[0]);
@@ -1496,7 +1928,9 @@ fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], para: &ParaStyle, pen: &Pen<'_>, rt
         // Only the first line's first word is known here. Later lines are placed as the composed
         // lines need: each fits its width, so its first word does too.
         let word = if first { word_width(sg, 0) } else { 0.0 };
-        let Some((b, x0, x1, _)) = sim.place(m, ind_l, para.right_indent, word) else { break };
+        let Some((b, x0, x1, _)) = sim.place(m, ind_l, para.right_indent, word) else {
+            break;
+        };
         let w = x1 - x0 - ind_l - para.right_indent;
         widths.push(w);
         acc += w.max(1.0);
@@ -1509,20 +1943,36 @@ fn compose_para(cx: &Ctx<'_>, sg: &[SGlyph], para: &ParaStyle, pen: &Pen<'_>, rt
     let last = *widths.last()?;
     let width = |k: usize| widths.get(k).copied().unwrap_or(last);
     // Lines from `uniform_from` on are interchangeable (same width).
-    let uniform_from = widths.iter().rposition(|&w| (w - last).abs() > EPS).map_or(0, |k| k + 1);
+    let uniform_from = widths
+        .iter()
+        .rposition(|&w| (w - last).abs() > EPS)
+        .map_or(0, |k| k + 1);
     let cands = candidates(cx.text, sg, para.hyphenate, para.kinsoku);
     let justify_last = para.justify == Justify::JustifyAll;
-    let params = |tolerance| Params { justify_last, ragged, tolerance, uniform_from };
+    let params = |tolerance| Params {
+        justify_last,
+        ragged,
+        tolerance,
+        uniform_from,
+    };
     // Ragged: first look for breaks that leave at most one rag zone (a sixth of the width) on
     // each line, then accept any lines that fit.
-    let (strict, loose) = if ragged { (1.0, f64::INFINITY) } else { (1.0, 4.0) };
+    let (strict, loose) = if ragged {
+        (1.0, f64::INFINITY)
+    } else {
+        (1.0, 4.0)
+    };
     // The same rule as the line loop below: an opening bracket starting a wrapped line gives up
     // the space before it.
     let start_credit = |i: usize| {
         let flush = !rtl && para.mojikumi == Mojikumi::LineEndHalf;
-        sg.get(i).filter(|g| flush && g.lead <= 0.0).and_then(|g| punct_half(g, Punct::Opening)).unwrap_or(0.0)
+        sg.get(i)
+            .filter(|g| flush && g.lead <= 0.0)
+            .and_then(|g| punct_half(g, Punct::Opening))
+            .unwrap_or(0.0)
     };
-    compose(sg, &width, &start_credit, &cands, &params(strict)).or_else(|| compose(sg, &width, &start_credit, &cands, &params(loose)))
+    compose(sg, &width, &start_credit, &cands, &params(strict))
+        .or_else(|| compose(sg, &width, &start_credit, &cands, &params(loose)))
 }
 
 /// Flow paragraphs `paras` (byte ranges) of `t`, each with its own paragraph attributes
@@ -1552,16 +2002,33 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
         // Thai, Lao, Khmer and Myanmar break lines between words, not at spaces.
         mark_word_ends(text.get(pr.clone()).unwrap_or_default(), pr.start, &mut sg);
         // Japanese composition: consecutive punctuation shares one half-em space.
-        let compressed = if para.mojikumi == Mojikumi::LineEndHalf { compress_punctuation(&mut sg) } else { vec![] };
+        let compressed = if para.mojikumi == Mojikumi::LineEndHalf {
+            compress_punctuation(&mut sg)
+        } else {
+            vec![]
+        };
         // …and a quarter em between Japanese and Latin text.
-        let wakan = if para.mojikumi == Mojikumi::LineEndHalf { space_japanese_and_latin(&mut sg) } else { vec![] };
+        let wakan = if para.mojikumi == Mojikumi::LineEndHalf {
+            space_japanese_and_latin(&mut sg)
+        } else {
+            vec![]
+        };
         let pm = {
             let (asc, desc, lead) = style_metrics(cx.db, cx.style_at(pr.start));
             let st = cx.style_at(pr.start);
             let (cap, xh) = cap_x_heights(cx.db, st);
-            let centre =
-                cx.db.face_version(&st.font_family, &st.font_style, st.font_version.as_deref()).map_or(EM_CENTER, |f| f.ideographic_centre());
-            Metrics { asc, desc, lead, cap, xh, top: (centre + 0.5) * st.size * st.v_scale / 100.0 }
+            let centre = cx
+                .db
+                .face_version(&st.font_family, &st.font_style, st.font_version.as_deref())
+                .map_or(EM_CENTER, |f| f.ideographic_centre());
+            Metrics {
+                asc,
+                desc,
+                lead,
+                cap,
+                xh,
+                top: (centre + 0.5) * st.size * st.v_scale / 100.0,
+            }
         };
         if pi > 0 {
             pen.pending += para.space_before;
@@ -1573,7 +2040,12 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
         loop {
             let est = if i < n { Metrics::of(&sg[i]) } else { pm };
             let first_line = li_para == 0;
-            let ind_l = para.left_indent + if first_line { para.first_line_indent } else { 0.0 };
+            let ind_l = para.left_indent
+                + if first_line {
+                    para.first_line_indent
+                } else {
+                    0.0
+                };
             // Measured before Mojikumi narrows an opening bracket, as the composer measures it.
             let word = word_width(&sg, i);
             // Mojikumi: an opening bracket starting a line is set flush with the line's start (the
@@ -1592,14 +2064,24 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             // next row/column if it no longer fits).
             let (baseline, x0, x1, end, hyph, m) = loop {
                 let first_in_region = pen.prev.is_none();
-                let Some((mut baseline, x0, x1, same_baseline)) = pen.place(est, ind_l, para.right_indent, word) else {
+                let Some((mut baseline, x0, x1, same_baseline)) =
+                    pen.place(est, ind_l, para.right_indent, word)
+                else {
                     cx.out.overflow = cx.text.len() > if i < n { sg[i].byte } else { pr.start };
                     break 'paras;
                 };
                 let width = x1 - x0 - ind_l - para.right_indent;
                 let (end, hyph) = match composed.as_ref().and_then(|c| c.get(li_para)) {
                     Some(&(e, h)) if e > i => (e, h),
-                    _ if i < n => break_line(cx.text, &sg, i, width, para.hyphenate, para.burasagari, para.kinsoku),
+                    _ if i < n => break_line(
+                        cx.text,
+                        &sg,
+                        i,
+                        width,
+                        para.hyphenate,
+                        para.burasagari,
+                        para.kinsoku,
+                    ),
                     _ => (n, false),
                 };
                 let m = Metrics::max(&sg[i..end]).unwrap_or(pm);
@@ -1608,7 +2090,11 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 } else if pen.model == LeadingModel::EmBoxTop {
                     // The em box top is fixed (the frame's top, or the line above's): the baseline
                     // hangs from it by this line's tallest em box.
-                    if first_in_region { m.top.max(pen.fb_min) - est.top.max(pen.fb_min) } else { m.top - est.top }
+                    if first_in_region {
+                        m.top.max(pen.fb_min) - est.top.max(pen.fb_min)
+                    } else {
+                        m.top - est.top
+                    }
                 } else if first_in_region {
                     m.first_baseline(pen.fb, pen.fb_min) - est.first_baseline(pen.fb, pen.fb_min)
                 } else {
@@ -1624,7 +2110,11 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 }
                 break (baseline, x0, x1, end, hyph, m);
             };
-            let (ax0, ax1) = if regions.is_some() { (x0 + ind_l, x1 - para.right_indent) } else { (x0, x1) };
+            let (ax0, ax1) = if regions.is_some() {
+                (x0 + ind_l, x1 - para.right_indent)
+            } else {
+                (x0, x1)
+            };
             let width = ax1 - ax0;
             pen.pending = 0.0;
             let last_of_para = end >= n;
@@ -1635,14 +2125,23 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             let hyphen = (hyph && end > i).then(|| hyphen_glyph(&sg[end - 1]));
             // Mojikumi: a closing bracket, comma or full stop ending the line is set half width, and
             // no Japanese–Latin space is left at the end of a line.
-            let end_trim = match trimmed.checked_sub(1).filter(|&k| k >= i && para.mojikumi == Mojikumi::LineEndHalf) {
+            let end_trim = match trimmed
+                .checked_sub(1)
+                .filter(|&k| k >= i && para.mojikumi == Mojikumi::LineEndHalf)
+            {
                 Some(k) => {
-                    let half = if compressed.get(k).copied().unwrap_or(false) { None } else { sg.get(k).and_then(|g| punct_half(g, Punct::Closing)) };
+                    let half = if compressed.get(k).copied().unwrap_or(false) {
+                        None
+                    } else {
+                        sg.get(k).and_then(|g| punct_half(g, Punct::Closing))
+                    };
                     half.unwrap_or(0.0) + wakan.get(k).copied().unwrap_or(0.0)
                 }
                 None => 0.0,
             };
-            let w: f64 = sg[i..trimmed].iter().map(|g| g.adv).sum::<f64>() + hyphen.as_ref().map_or(0.0, |h| h.adv) - end_trim;
+            let w: f64 = sg[i..trimmed].iter().map(|g| g.adv).sum::<f64>()
+                + hyphen.as_ref().map_or(0.0, |h| h.adv)
+                - end_trim;
             // Burasagari: a comma or full stop ending an area type line hangs outside it (Standard:
             // when it doesn't fit; Forced: always). The rest of the line is aligned and justified
             // without it, and it follows the line's last character.
@@ -1675,10 +2174,13 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             // gaps next to a CJK character, not inside a Latin word or a tate-chu-yoko block.
             let cjk_gap = |j: usize| {
                 j + 1 < body
-                    && sg
-                        .get(j)
-                        .zip(sg.get(j + 1))
-                        .is_some_and(|(a, b)| !a.is_space() && !b.is_space() && !b.continues_tcy() && a.ch != '\t' && (is_cjk(a.ch) || is_cjk(b.ch)))
+                    && sg.get(j).zip(sg.get(j + 1)).is_some_and(|(a, b)| {
+                        !a.is_space()
+                            && !b.is_space()
+                            && !b.continues_tcy()
+                            && a.ch != '\t'
+                            && (is_cjk(a.ch) || is_cjk(b.ch))
+                    })
             };
             let cjk_gaps = (i..body).filter(|&j| cjk_gap(j)).count();
             if justify && (width - w).abs() > EPS {
@@ -1688,10 +2190,17 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                     (per_space, per_cjk) = (per, per);
                 } else if spaces > 0 {
                     // Composed lines may shrink word spaces (never below zero).
-                    per_space =
-                        ((width - w) / spaces as f64).max(-sg[i..body].iter().filter(|g| g.is_space()).map(|g| g.adv).fold(f64::MAX, f64::min));
+                    per_space = ((width - w) / spaces as f64).max(
+                        -sg[i..body]
+                            .iter()
+                            .filter(|g| g.is_space())
+                            .map(|g| g.adv)
+                            .fold(f64::MAX, f64::min),
+                    );
                 } else if para.justify == Justify::JustifyAll && width > w {
-                    let gaps = sg.get(i + 1..body).map_or(0, |s| s.iter().filter(|g| !g.continues_tcy()).count());
+                    let gaps = sg
+                        .get(i + 1..body)
+                        .map_or(0, |s| s.iter().filter(|g| !g.continues_tcy()).count());
                     if gaps > 0 {
                         per_gap = (width - w) / gaps as f64;
                     }
@@ -1715,17 +2224,28 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             let li = cx.out.lines.len();
             let glyph_start = cx.out.glyphs.len();
             // Character Alignment lines smaller characters up with the line's largest em box.
-            let line_em = sg.get(i..end).map_or(0.0, |line| line.iter().map(glyph_em).fold(0.0, f64::max));
+            let line_em = sg
+                .get(i..end)
+                .map_or(0.0, |line| line.iter().map(glyph_em).fold(0.0, f64::max));
             let mut x_end = start_x;
             // Tab stops are measured from the frame's left edge (point type: the origin).
             let tab_origin = if regions.is_some() { x0 } else { 0.0 };
             let line_start = sg.get(i).map_or(pr.start, |g| g.byte);
             let line_end = sg.get(end).map_or(pr.end, |g| g.byte);
-            let order = visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, line_start..line_end, &sg[i..end]);
+            let order = visual_order(
+                bidi.as_ref().filter(|_| !cx.vertical),
+                pr.start,
+                line_start..line_end,
+                &sg[i..end],
+            );
             // RTL's logical trailing spaces precede the visible content. Keep them outside
             // the aligned content extent, just as LTR trailing spaces extend to its right.
-            let leading_space_width: f64 =
-                order.iter().take_while(|&&offset| i + offset >= trimmed).filter_map(|&offset| sg.get(i + offset)).map(|g| g.adv).sum();
+            let leading_space_width: f64 = order
+                .iter()
+                .take_while(|&&offset| i + offset >= trimmed)
+                .filter_map(|&offset| sg.get(i + offset))
+                .map(|g| g.adv)
+                .sum();
             let mut x = start_x - leading_space_width;
             for offset in order {
                 let j = i + offset;
@@ -1743,12 +2263,15 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                         if cjk_gap(j) {
                             adv += per_cjk;
                         }
-                    } else if j + 1 < body && sg.get(j + 1).is_some_and(|next| !next.continues_tcy()) {
+                    } else if j + 1 < body
+                        && sg.get(j + 1).is_some_and(|next| !next.continues_tcy())
+                    {
                         // Between glyphs, never inside a tate-chu-yoko block (one cell).
                         adv += per_gap;
                     }
                 }
-                let y = baseline - align_shift(g, cx.style_at(g.byte).char_align, line_em, cx.vertical);
+                let y =
+                    baseline - align_shift(g, cx.style_at(g.byte).char_align, line_em, cx.vertical);
                 cx.emit(g, Affine::translate((x, y)), Point::new(x, y), 0.0, adv, li);
                 x += adv;
                 if j < trimmed {
@@ -1758,7 +2281,14 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
             if let Some(h) = &hyphen {
                 // The hyphen follows the last non-space glyph.
                 let hx = x_end;
-                cx.emit(h, Affine::translate((hx, baseline)), Point::new(hx, baseline), 0.0, h.adv, li);
+                cx.emit(
+                    h,
+                    Affine::translate((hx, baseline)),
+                    Point::new(hx, baseline),
+                    0.0,
+                    h.adv,
+                    li,
+                );
                 x_end = hx + h.adv;
             }
             cx.out.lines.push(LineInfo {
@@ -1772,7 +2302,11 @@ fn flow(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, regions: Optio
                 end: if last_of_para { pr.end } else { sg[end].byte },
                 glyph_start,
                 glyph_end: cx.out.glyphs.len(),
-                avail: if regions.is_some() { (ax0, ax1) } else { (start_x, x_end) },
+                avail: if regions.is_some() {
+                    (ax0, ax1)
+                } else {
+                    (start_x, x_end)
+                },
                 region: if regions.is_some() { pen.ri } else { 0 },
             });
             pen.settled(baseline, m);
@@ -1824,7 +2358,12 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         let bidi = para_bidi(text.get(pr.clone()).unwrap_or_default(), para.direction);
         rtl.get_or_insert(is_rtl(bidi.as_ref()) && !cx.vertical);
         let shaped = cx.shape_para(pr.clone(), bidi.as_ref());
-        for i in visual_order(bidi.as_ref().filter(|_| !cx.vertical), pr.start, pr.clone(), &shaped) {
+        for i in visual_order(
+            bidi.as_ref().filter(|_| !cx.vertical),
+            pr.start,
+            pr.clone(),
+            &shaped,
+        ) {
             if let Some(g) = shaped.get(i) {
                 sg.push(g.clone());
             }
@@ -1832,11 +2371,17 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     }
     let rtl = rtl.unwrap_or(false);
     // A path out of range holds no text, as a path with no length holds none.
-    let ap = if in_range(&path.to_bezpath()) { ArcPath::new(path) } else { ArcPath::default() };
-    let m = Metrics::max(&sg).map(|m| (m.asc, m.desc)).unwrap_or_else(|| {
-        let s = style_metrics(cx.db, cx.style_at(0));
-        (s.0, s.1)
-    });
+    let ap = if in_range(&path.to_bezpath()) {
+        ArcPath::new(path)
+    } else {
+        ArcPath::default()
+    };
+    let m = Metrics::max(&sg)
+        .map(|m| (m.asc, m.desc))
+        .unwrap_or_else(|| {
+            let s = style_metrics(cx.db, cx.style_at(0));
+            (s.0, s.1)
+        });
     let text_len = cx.text.len();
     if ap.is_empty() {
         cx.out.overflow = !sg.is_empty();
@@ -1860,7 +2405,11 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
     let (from, to) = t.kind.path_span().unwrap_or((0.0, 1.0));
     let s_start = from * ap.len();
     let avail = (to - from) * ap.len();
-    let spacing = if t.path_spacing.is_finite() { t.path_spacing } else { 0.0 };
+    let spacing = if t.path_spacing.is_finite() {
+        t.path_spacing
+    } else {
+        0.0
+    };
     let mut steps = path_steps(&ap, &sg, s_start, spacing);
     let w: f64 = steps.iter().sum();
     let s0 = match para.justify {
@@ -1895,19 +2444,31 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
         let pre = match t.path_effect {
             PathEffect::Rainbow => Affine::translate(p.to_vec2()) * Affine::rotate(angle) * half,
             // x axis along the tangent, y axis stays vertical.
-            PathEffect::Skew => Affine::translate(p.to_vec2()) * Affine::new([dir.x, dir.y, 0.0, 1.0, 0.0, 0.0]) * half,
+            PathEffect::Skew => {
+                Affine::translate(p.to_vec2())
+                    * Affine::new([dir.x, dir.y, 0.0, 1.0, 0.0, 0.0])
+                    * half
+            }
             // x axis stays horizontal (facing the path's direction), y axis perpendicular to the path.
             PathEffect::Ribbon3d => {
                 let sx = if dir.x < 0.0 { -1.0 } else { 1.0 };
-                Affine::translate(p.to_vec2()) * Affine::new([sx, 0.0, -dir.y * sx, dir.x * sx, 0.0, 0.0]) * half
+                Affine::translate(p.to_vec2())
+                    * Affine::new([sx, 0.0, -dir.y * sx, dir.x * sx, 0.0, 0.0])
+                    * half
             }
-            PathEffect::StairStep => Affine::translate(ap.at(s).0.to_vec2()) * Affine::translate((0.0, rise)),
+            PathEffect::StairStep => {
+                Affine::translate(ap.at(s).0.to_vec2()) * Affine::translate((0.0, rise))
+            }
             // x axis along the tangent; vertical edges point at the path's centre (kept on the glyph's
             // up side, and never closer than ~17° to the baseline so glyphs stay legible).
             PathEffect::Gravity => {
                 let n = Vec2::new(dir.y, -dir.x);
                 let mut up = p - centre;
-                up = if up.hypot() < 1e-9 { n } else { up / up.hypot() };
+                up = if up.hypot() < 1e-9 {
+                    n
+                } else {
+                    up / up.hypot()
+                };
                 if up.dot(n) < 0.0 {
                     up = -up;
                 }
@@ -1915,7 +2476,9 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
                     let along = up - n * up.dot(n);
                     up = n * 0.3 + along / along.hypot().max(1e-9) * (1.0 - 0.09f64).sqrt();
                 }
-                Affine::translate(p.to_vec2()) * Affine::new([dir.x, dir.y, -up.x, -up.y, 0.0, 0.0]) * half
+                Affine::translate(p.to_vec2())
+                    * Affine::new([dir.x, dir.y, -up.x, -up.y, 0.0, 0.0])
+                    * half
             }
         };
         // The caret's baseline moves with the type.
@@ -1947,29 +2510,54 @@ fn on_path(cx: &mut Ctx<'_>, paras: &[Range<usize>], t: &TextObject, path: &Path
 pub(crate) fn para_bidi(text: &str, direction: Option<ParaDirection>) -> Option<BidiInfo<'_>> {
     use unicode_bidi::BidiClass::{AL, AN, FSI, R, RLE, RLI, RLO};
     let rtl_set = direction == Some(ParaDirection::RightToLeft);
-    if !rtl_set && !text.chars().any(|c| matches!(unicode_bidi::bidi_class(c), R | AL | AN | RLE | RLO | RLI | FSI)) {
+    if !rtl_set
+        && !text.chars().any(|c| {
+            matches!(
+                unicode_bidi::bidi_class(c),
+                R | AL | AN | RLE | RLO | RLI | FSI
+            )
+        })
+    {
         return None;
     }
-    let level = direction.map(|d| if d == ParaDirection::RightToLeft { Level::rtl() } else { Level::ltr() });
+    let level = direction.map(|d| {
+        if d == ParaDirection::RightToLeft {
+            Level::rtl()
+        } else {
+            Level::ltr()
+        }
+    });
     Some(BidiInfo::new(text, level))
 }
 
 /// Does the paragraph run right to left ([`para_bidi`])?
 pub(crate) fn is_rtl(bidi: Option<&BidiInfo<'_>>) -> bool {
-    bidi.and_then(|b| b.paragraphs.first()).is_some_and(|p| p.level.is_rtl())
+    bidi.and_then(|b| b.paragraphs.first())
+        .is_some_and(|p| p.level.is_rtl())
 }
 
 /// The visual order of a line's `glyphs` (indices into them), whole shaping clusters reordered
 /// (UAX #9 L1–L2) for the line `line` (bytes of the text) of the paragraph starting at byte
 /// `paragraph_start`; their own order when nothing is right to left (`bidi` None).
-fn visual_order(bidi: Option<&BidiInfo<'_>>, paragraph_start: usize, line: Range<usize>, glyphs: &[SGlyph]) -> Vec<usize> {
-    let Some((bidi, para)) = bidi.filter(|b| b.has_rtl()).and_then(|b| Some((b, b.paragraphs.first()?))) else {
+fn visual_order(
+    bidi: Option<&BidiInfo<'_>>,
+    paragraph_start: usize,
+    line: Range<usize>,
+    glyphs: &[SGlyph],
+) -> Vec<usize> {
+    let Some((bidi, para)) = bidi
+        .filter(|b| b.has_rtl())
+        .and_then(|b| Some((b, b.paragraphs.first()?)))
+    else {
         return (0..glyphs.len()).collect();
     };
     if glyphs.is_empty() {
         return vec![];
     }
-    let levels = bidi.reordered_levels(para, line.start.saturating_sub(paragraph_start)..line.end.saturating_sub(paragraph_start));
+    let levels = bidi.reordered_levels(
+        para,
+        line.start.saturating_sub(paragraph_start)..line.end.saturating_sub(paragraph_start),
+    );
     let mut clusters: Vec<Range<usize>> = Vec::new();
     for (i, g) in glyphs.iter().enumerate() {
         if i > 0 && glyphs.get(i - 1).is_some_and(|p| p.byte == g.byte) {
@@ -1983,7 +2571,16 @@ fn visual_order(bidi: Option<&BidiInfo<'_>>, paragraph_start: usize, line: Range
     let cluster_levels: Vec<_> = clusters
         .iter()
         .filter_map(|c| glyphs.get(c.start))
-        .map(|g| levels.get(g.byte.saturating_sub(paragraph_start)).copied().unwrap_or(g.level))
+        .map(|g| {
+            levels
+                .get(g.byte.saturating_sub(paragraph_start))
+                .copied()
+                .unwrap_or(g.level)
+        })
         .collect();
-    unicode_bidi::BidiInfo::reorder_visual(&cluster_levels).into_iter().filter_map(|i| clusters.get(i)).flat_map(|c| c.clone()).collect()
+    unicode_bidi::BidiInfo::reorder_visual(&cluster_levels)
+        .into_iter()
+        .filter_map(|i| clusters.get(i))
+        .flat_map(|c| c.clone())
+        .collect()
 }

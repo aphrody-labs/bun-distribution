@@ -34,7 +34,10 @@ impl<'a> VMetrics<'a> {
 
     /// Advance down the line in font units.
     pub(crate) fn advance(&self, gid: GlyphId) -> f64 {
-        self.vmtx.as_ref().and_then(|t| t.advance(gid)).map_or(self.upem, f64::from)
+        self.vmtx
+            .as_ref()
+            .and_then(|t| t.advance(gid))
+            .map_or(self.upem, f64::from)
     }
 
     /// Height of the vertical origin above the glyph's baseline in font units.
@@ -69,7 +72,12 @@ pub(crate) fn em_box(face: &FontFace) -> (f64, f64) {
         })
     };
     font.and_then(|f| f.os2().ok())
-        .and_then(|t| centred(f64::from(t.s_typo_ascender()), f64::from(t.s_typo_descender())))
+        .and_then(|t| {
+            centred(
+                f64::from(t.s_typo_ascender()),
+                f64::from(t.s_typo_descender()),
+            )
+        })
         .or_else(|| centred(face.ascent, -face.descent))
         .unwrap_or((upem * 0.88, upem * -0.12))
 }
@@ -79,19 +87,35 @@ pub(crate) fn em_box(face: &FontFace) -> (f64, f64) {
 fn base_em_box(font: &skrifa::FontRef<'_>, upem: f64) -> Option<(f64, f64)> {
     let axis = font.base().ok()?.horiz_axis()?.ok()?;
     let tags = axis.base_tag_list()?.ok()?;
-    let index = |tag: &[u8; 4]| tags.baseline_tags().iter().position(|t| t.get() == Tag::new(tag));
+    let index = |tag: &[u8; 4]| {
+        tags.baseline_tags()
+            .iter()
+            .position(|t| t.get() == Tag::new(tag))
+    };
     let (ideo, idtp) = (index(b"ideo"), index(b"idtp"));
     if ideo.is_none() && idtp.is_none() {
         return None;
     }
     let scripts = axis.base_script_list().ok()?;
     let records = scripts.base_script_records();
-    let rank = |t: Tag| [Tag::new(b"hani"), Tag::new(b"kana"), Tag::new(b"DFLT")].iter().position(|p| *p == t).unwrap_or(3);
+    let rank = |t: Tag| {
+        [Tag::new(b"hani"), Tag::new(b"kana"), Tag::new(b"DFLT")]
+            .iter()
+            .position(|p| *p == t)
+            .unwrap_or(3)
+    };
     let mut order: Vec<_> = records.iter().collect();
     order.sort_by_key(|r| rank(r.base_script_tag()));
     order.into_iter().find_map(|r| {
-        let values = r.base_script(scripts.offset_data()).ok()?.base_values()?.ok()?;
-        let coord = |i: Option<usize>| i.and_then(|i| values.base_coords().get(i).ok()).map(|c| f64::from(c.coordinate()));
+        let values = r
+            .base_script(scripts.offset_data())
+            .ok()?
+            .base_values()?
+            .ok()?;
+        let coord = |i: Option<usize>| {
+            i.and_then(|i| values.base_coords().get(i).ok())
+                .map(|c| f64::from(c.coordinate()))
+        };
         match (coord(ideo), coord(idtp)) {
             (Some(bottom), Some(top)) => (top > bottom).then_some((top, bottom)),
             (Some(bottom), None) => Some((bottom + upem, bottom)),
@@ -111,17 +135,28 @@ pub(crate) struct VerticalFuncs<'a> {
 impl VerticalFuncs<'_> {
     /// The vertical origin (x, y) in whole font units: centred across, [`VMetrics::origin`] up.
     pub(crate) fn origin(&self, gid: u32) -> (i32, i32) {
-        ((self.face.advance(gid) / 2.0).round() as i32, self.metrics.origin(GlyphId::new(gid)).round() as i32)
+        (
+            (self.face.advance(gid) / 2.0).round() as i32,
+            self.metrics.origin(GlyphId::new(gid)).round() as i32,
+        )
     }
 }
 
 impl harfrust::font::FontFuncs for VerticalFuncs<'_> {
-    fn advance_height(&mut self, _: &harfrust::font::BuiltinFontFuncs, glyph: harfrust::GlyphId) -> i32 {
+    fn advance_height(
+        &mut self,
+        _: &harfrust::font::BuiltinFontFuncs,
+        glyph: harfrust::GlyphId,
+    ) -> i32 {
         // The shaper's y axis points up: advancing down the line is negative.
         -(self.metrics.advance(GlyphId::new(glyph.to_u32())).round() as i32)
     }
 
-    fn vertical_origin(&mut self, _: &harfrust::font::BuiltinFontFuncs, glyph: harfrust::GlyphId) -> (i32, i32) {
+    fn vertical_origin(
+        &mut self,
+        _: &harfrust::font::BuiltinFontFuncs,
+        glyph: harfrust::GlyphId,
+    ) -> (i32, i32) {
         self.origin(glyph.to_u32())
     }
 }

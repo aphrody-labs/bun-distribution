@@ -37,7 +37,14 @@ pub struct Ctx<'a> {
 
 pub fn ts_transform(a: Affine) -> Transform {
     let c = a.as_coeffs();
-    Transform::from_row(c[0] as f32, c[1] as f32, c[2] as f32, c[3] as f32, c[4] as f32, c[5] as f32)
+    Transform::from_row(
+        c[0] as f32,
+        c[1] as f32,
+        c[2] as f32,
+        c[3] as f32,
+        c[4] as f32,
+        c[5] as f32,
+    )
 }
 
 /// kurbo path → tiny-skia path (None when empty or degenerate).
@@ -49,28 +56,70 @@ pub fn ts_path(p: &BezPath) -> Option<tiny_skia::Path> {
             PathEl::MoveTo(p) => b.move_to(p.x as f32, p.y as f32),
             PathEl::LineTo(p) => b.line_to(p.x as f32, p.y as f32),
             PathEl::QuadTo(c, p) => b.quad_to(c.x as f32, c.y as f32, p.x as f32, p.y as f32),
-            PathEl::CurveTo(c1, c2, p) => b.cubic_to(c1.x as f32, c1.y as f32, c2.x as f32, c2.y as f32, p.x as f32, p.y as f32),
+            PathEl::CurveTo(c1, c2, p) => b.cubic_to(
+                c1.x as f32,
+                c1.y as f32,
+                c2.x as f32,
+                c2.y as f32,
+                p.x as f32,
+                p.y as f32,
+            ),
             PathEl::ClosePath => b.close(),
         }
     }
     b.finish()
 }
 
-fn fill_with(pix: &mut Pixmap, path: &tiny_skia::Path, paints: &[Paint], w: f64, h: f64, xf: Affine, rule: FillRule, ctx: &Ctx, mask: Option<&Mask>) {
+fn fill_with(
+    pix: &mut Pixmap,
+    path: &tiny_skia::Path,
+    paints: &[Paint],
+    w: f64,
+    h: f64,
+    xf: Affine,
+    rule: FillRule,
+    ctx: &Ctx,
+    mask: Option<&Mask>,
+) {
     let scale = xf.determinant().abs().sqrt();
     for p in paints {
-        let Some(prep) = prepare_at(p, w, h, scale, ctx.doc, ctx.time) else { continue };
-        let paint = tiny_skia::Paint { shader: prep.shader(), anti_alias: true, blend_mode: ts_blend(p.blend), ..Default::default() };
+        let Some(prep) = prepare_at(p, w, h, scale, ctx.doc, ctx.time) else {
+            continue;
+        };
+        let paint = tiny_skia::Paint {
+            shader: prep.shader(),
+            anti_alias: true,
+            blend_mode: ts_blend(p.blend),
+            ..Default::default()
+        };
         if p.blend == BlendMode::PlusDarker {
             // No tiny-skia mode: the paint alone over its pixels, then blended in.
-            let area = path
-                .bounds()
-                .transform(ts_transform(xf))
-                .and_then(|b| int_rect(Rect::new(b.left().into(), b.top().into(), b.right().into(), b.bottom().into()), (pix.width(), pix.height())));
-            let Some(mut alone) = area.and_then(|r| Pixmap::new(r.width(), r.height())) else { continue };
+            let area = path.bounds().transform(ts_transform(xf)).and_then(|b| {
+                int_rect(
+                    Rect::new(
+                        b.left().into(),
+                        b.top().into(),
+                        b.right().into(),
+                        b.bottom().into(),
+                    ),
+                    (pix.width(), pix.height()),
+                )
+            });
+            let Some(mut alone) = area.and_then(|r| Pixmap::new(r.width(), r.height())) else {
+                continue;
+            };
             let Some(r) = area else { continue };
             let t = ts_transform(Affine::translate((-f64::from(r.x()), -f64::from(r.y()))) * xf);
-            alone.fill_path(path, &tiny_skia::Paint { blend_mode: tiny_skia::BlendMode::SourceOver, ..paint }, rule, t, None);
+            alone.fill_path(
+                path,
+                &tiny_skia::Paint {
+                    blend_mode: tiny_skia::BlendMode::SourceOver,
+                    ..paint
+                },
+                rule,
+                t,
+                None,
+            );
             crate::paint::composite(pix, (r.x(), r.y()), &alone, 1.0, p.blend);
             continue;
         }
@@ -89,8 +138,24 @@ pub(crate) fn hash_path(p: &BezPath, h: &mut impl Hasher) {
         use figcraft_geom::kurbo::PathEl::*;
         match *el {
             MoveTo(a) | LineTo(a) => (0u8, a.x.to_bits(), a.y.to_bits()).hash(h),
-            QuadTo(a, b) => (1u8, a.x.to_bits(), a.y.to_bits(), b.x.to_bits(), b.y.to_bits()).hash(h),
-            CurveTo(a, b, c) => (2u8, a.x.to_bits(), a.y.to_bits(), b.x.to_bits(), b.y.to_bits(), c.x.to_bits(), c.y.to_bits()).hash(h),
+            QuadTo(a, b) => (
+                1u8,
+                a.x.to_bits(),
+                a.y.to_bits(),
+                b.x.to_bits(),
+                b.y.to_bits(),
+            )
+                .hash(h),
+            CurveTo(a, b, c) => (
+                2u8,
+                a.x.to_bits(),
+                a.y.to_bits(),
+                b.x.to_bits(),
+                b.y.to_bits(),
+                c.x.to_bits(),
+                c.y.to_bits(),
+            )
+                .hash(h),
             ClosePath => 3u8.hash(h),
         }
     }
@@ -101,13 +166,29 @@ pub fn stroke_area(n: &Node, path: &BezPath, closed: bool) -> Arc<BezPath> {
     let props = &n.stroke;
     // Per-side strokes on rectangles/frames.
     if let Some(sides) = props.sides
-        && matches!(n.kind, NodeKind::Rectangle | NodeKind::Frame | NodeKind::Component { .. } | NodeKind::Instance { .. })
+        && matches!(
+            n.kind,
+            NodeKind::Rectangle
+                | NodeKind::Frame
+                | NodeKind::Component { .. }
+                | NodeKind::Instance { .. }
+        )
         && n.corners.uniform() == Some(0.0)
     {
-        return Arc::new(figcraft_pathops::rect_side_strokes(n.width, n.height, sides, props.align));
+        return Arc::new(figcraft_pathops::rect_side_strokes(
+            n.width,
+            n.height,
+            sides,
+            props.align,
+        ));
     }
     // Rect/ellipse inside/outside strokes without booleans: an even-odd ring of two outlines.
-    if props.dashes.is_empty() && props.profile().is_none() && props.brush.is_none() && closed && props.align != StrokeAlign::Center {
+    if props.dashes.is_empty()
+        && props.profile().is_none()
+        && props.brush.is_none()
+        && closed
+        && props.align != StrokeAlign::Center
+    {
         let w = props.weight;
         let ring = |inset: f64| -> Option<BezPath> {
             let (x0, y0, ww, hh) = (inset, inset, n.width - 2.0 * inset, n.height - 2.0 * inset);
@@ -123,13 +204,26 @@ pub fn stroke_area(n: &Node, path: &BezPath, closed: bool) -> Arc<BezPath> {
                 | NodeKind::Section { .. }
                     if n.corners.smoothing == 0.0 =>
                 {
-                    let radii = n.corners.radii.map(|r| if r > 0.0 { (r - inset).max(0.0) } else { 0.0 });
+                    let radii = n
+                        .corners
+                        .radii
+                        .map(|r| if r > 0.0 { (r - inset).max(0.0) } else { 0.0 });
                     let mut p = figcraft_geom::rounded_rect(ww, hh, radii, 0.0);
                     p.apply_affine(Affine::translate((x0, y0)));
                     Some(p)
                 }
-                NodeKind::Ellipse { sweep, inner, .. } if sweep.abs() >= std::f64::consts::TAU - 1e-9 && inner == 0.0 => {
-                    Some(figcraft_geom::kurbo::Ellipse::from_rect(Rect::new(x0, y0, x0 + ww, y0 + hh)).to_path(0.05))
+                NodeKind::Ellipse { sweep, inner, .. }
+                    if sweep.abs() >= std::f64::consts::TAU - 1e-9 && inner == 0.0 =>
+                {
+                    Some(
+                        figcraft_geom::kurbo::Ellipse::from_rect(Rect::new(
+                            x0,
+                            y0,
+                            x0 + ww,
+                            y0 + hh,
+                        ))
+                        .to_path(0.05),
+                    )
                 }
                 _ => None,
             }
@@ -147,7 +241,15 @@ pub fn stroke_area(n: &Node, path: &BezPath, closed: bool) -> Arc<BezPath> {
     }
     let mut h = std::collections::hash_map::DefaultHasher::new();
     hash_path(path, &mut h);
-    (props.weight.to_bits(), props.align as u8, props.cap_start as u8, props.cap_end as u8, props.join as u8, props.miter_limit.to_bits(), closed)
+    (
+        props.weight.to_bits(),
+        props.align as u8,
+        props.cap_start as u8,
+        props.cap_end as u8,
+        props.join as u8,
+        props.miter_limit.to_bits(),
+        closed,
+    )
         .hash(&mut h);
     for d in &props.dashes {
         d.to_bits().hash(&mut h);
@@ -161,17 +263,31 @@ pub fn stroke_area(n: &Node, path: &BezPath, closed: bool) -> Arc<BezPath> {
     for v in net.map(|n| n.vertices.as_slice()).unwrap_or_default() {
         (v.cap.map(|c| c as u8), v.join.map(|j| j as u8)).hash(&mut h);
     }
-    for p in props.profile().map(|p| p.points.as_slice()).unwrap_or_default() {
+    for p in props
+        .profile()
+        .map(|p| p.points.as_slice())
+        .unwrap_or_default()
+    {
         (p.t.to_bits(), p.scale.to_bits(), p.bias.to_bits()).hash(&mut h);
     }
     if let Some(b) = &props.brush {
-        (&b.preset, b.spacing.to_bits(), b.size_jitter.to_bits(), b.rotation_jitter.to_bits(), b.scatter.to_bits(), b.seed).hash(&mut h);
+        (
+            &b.preset,
+            b.spacing.to_bits(),
+            b.size_jitter.to_bits(),
+            b.rotation_jitter.to_bits(),
+            b.scatter.to_bits(),
+            b.seed,
+        )
+            .hash(&mut h);
     }
     let key = h.finish();
     if let Some(p) = locked(stroke_cache()).get(key) {
         return p;
     }
-    let out = Arc::new(figcraft_pathops::stroke_outline_of(path, props, closed, net));
+    let out = Arc::new(figcraft_pathops::stroke_outline_of(
+        path, props, closed, net,
+    ));
     locked(stroke_cache()).insert(key, out.clone());
     out
 }
@@ -182,7 +298,8 @@ pub fn stroke_fill(doc: &Document, n: &Node) -> Option<(Arc<BezPath>, FillRule)>
     if !n.has_visible_stroke() {
         return None;
     }
-    let closed = figcraft_doc::geometry::is_closed(n) || matches!(n.kind, NodeKind::BooleanOp { .. });
+    let closed =
+        figcraft_doc::geometry::is_closed(n) || matches!(n.kind, NodeKind::BooleanOp { .. });
     let geom = match &n.kind {
         NodeKind::BooleanOp { .. } => node_outline(doc, n).map(|(p, _)| p),
         NodeKind::Text(_) | NodeKind::Group | NodeKind::Page { .. } => None,
@@ -193,7 +310,9 @@ pub fn stroke_fill(doc: &Document, n: &Node) -> Option<(Arc<BezPath>, FillRule)>
 
 /// Even-odd ring paths need the even-odd rule; everything else non-zero.
 pub(crate) fn stroke_rule(n: &Node, closed: bool) -> FillRule {
-    if n.stroke.sides.is_some() || (n.stroke.dashes.is_empty() && closed && n.stroke.align != StrokeAlign::Center) {
+    if n.stroke.sides.is_some()
+        || (n.stroke.dashes.is_empty() && closed && n.stroke.align != StrokeAlign::Center)
+    {
         FillRule::EvenOdd
     } else {
         FillRule::Winding
@@ -225,8 +344,15 @@ pub fn node_outline(doc: &Document, n: &Node) -> Option<(BezPath, FillRule)> {
             Some((p, FillRule::Winding))
         }
         NodeKind::Vector { network } => {
-            let rule =
-                if network.regions.iter().any(|r| r.winding == figcraft_doc::WindingRule::EvenOdd) { FillRule::EvenOdd } else { FillRule::Winding };
+            let rule = if network
+                .regions
+                .iter()
+                .any(|r| r.winding == figcraft_doc::WindingRule::EvenOdd)
+            {
+                FillRule::EvenOdd
+            } else {
+                FillRule::Winding
+            };
             Some((network.fill_path(), rule))
         }
         _ => figcraft_doc::geometry::shape_path(n).map(|p| (p, FillRule::Winding)),
@@ -239,7 +365,12 @@ pub fn subtree_outline(doc: &Document, n: &Node, depth: usize) -> Option<(BezPat
         return None;
     }
     match &n.kind {
-        NodeKind::Group | NodeKind::Frame | NodeKind::Component { .. } | NodeKind::Instance { .. } if !n.children.is_empty() => {
+        NodeKind::Group
+        | NodeKind::Frame
+        | NodeKind::Component { .. }
+        | NodeKind::Instance { .. }
+            if !n.children.is_empty() =>
+        {
             let mut out = BezPath::new();
             if n.kind.is_frame_like()
                 && let Some(p) = figcraft_doc::geometry::shape_path(n)
@@ -268,7 +399,8 @@ fn device_rect(xf: Affine, r: Rect) -> Rect {
 
 /// The area text may paint without its glyphs being looked at: its box, generously grown.
 fn text_box_bounds(n: &Node) -> Rect {
-    n.local_rect().inflate(n.height.max(10.0), n.height.max(10.0) * 0.5)
+    n.local_rect()
+        .inflate(n.height.max(10.0), n.height.max(10.0) * 0.5)
 }
 
 /// Local bounds a node paints into (its box grown by stroke/effect reach, plus unclipped children).
@@ -311,11 +443,18 @@ pub fn effect_margin(n: &Node) -> f64 {
         .map(|e| match &e.kind {
             EffectKind::LayerBlur(b) => b.max_radius() * 2.0,
             EffectKind::BackgroundBlur { .. } | EffectKind::Glass(_) => e.backdrop_radius() * 2.0,
-            EffectKind::DropShadow(s) => s.radius * 2.0 + s.spread.abs() * figcraft_doc::SPREAD_MITER_LIMIT + s.offset.0.abs() + s.offset.1.abs(),
+            EffectKind::DropShadow(s) => {
+                s.radius * 2.0
+                    + s.spread.abs() * figcraft_doc::SPREAD_MITER_LIMIT
+                    + s.offset.0.abs()
+                    + s.offset.1.abs()
+            }
             EffectKind::Texture(t) => t.radius.abs(),
             // A group's inner shadows are cast from around its pixels: a layer cut off at the
             // view would cast one from the cut.
-            EffectKind::InnerShadow(s) if matches!(n.kind, NodeKind::Group) => s.radius * 2.0 + s.spread.abs() + s.offset.0.abs() + s.offset.1.abs(),
+            EffectKind::InnerShadow(s) if matches!(n.kind, NodeKind::Group) => {
+                s.radius * 2.0 + s.spread.abs() + s.offset.0.abs() + s.offset.1.abs()
+            }
             _ => 0.0,
         })
         .filter(|m| m.is_finite())
@@ -374,7 +513,16 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
         // Outline mode can show hidden layers too (nothing of them is culled: a hidden layer
         // isn't counted in its parent's bounds).
         if outline && ctx.outline.hidden {
-            draw_outline(&Ctx { outline_mode: true, ..*ctx }, pix, n, parent_xf * n.transform, depth);
+            draw_outline(
+                &Ctx {
+                    outline_mode: true,
+                    ..*ctx
+                },
+                pix,
+                n,
+                parent_xf * n.transform,
+                depth,
+            );
         }
         return;
     }
@@ -390,7 +538,16 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
         return;
     }
     if outline {
-        draw_outline(&Ctx { outline_mode: true, ..*ctx }, pix, n, xf, depth);
+        draw_outline(
+            &Ctx {
+                outline_mode: true,
+                ..*ctx
+            },
+            pix,
+            n,
+            xf,
+            depth,
+        );
         return;
     }
     if ctx.lod && dev.width().max(dev.height()) < lod::TINY_PX && lod::splattable(ctx.doc, n, 0) {
@@ -413,7 +570,9 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
     let (lx, ly) = (x0 as i32, y0 as i32);
     let lw = w.min(16_384.0) as u32;
     let lh = h.min(16_384.0) as u32;
-    let Some(mut layer) = Pixmap::new(lw, lh) else { return };
+    let Some(mut layer) = Pixmap::new(lw, lh) else {
+        return;
+    };
     let lxf = Affine::translate((-f64::from(lx), -f64::from(ly))) * xf;
     let shape = node_outline(ctx.doc, n);
     // Background blur and glass: the whole backdrop under the layer (every surface below this
@@ -423,10 +582,23 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
     {
         let pad = backdrop::pad(n, ctx.scale);
         let p = i32::try_from(pad).unwrap_or(0);
-        if let Some(back) = backdrop::backdrop(pix, ctx.under, lx.saturating_sub(p), ly.saturating_sub(p), lw + pad * 2, lh + pad * 2)
-            && let Some(b) = backdrop::effects(n, sh, &back, pad, lw, lh, lxf, ctx.scale)
+        if let Some(back) = backdrop::backdrop(
+            pix,
+            ctx.under,
+            lx.saturating_sub(p),
+            ly.saturating_sub(p),
+            lw + pad * 2,
+            lh + pad * 2,
+        ) && let Some(b) = backdrop::effects(n, sh, &back, pad, lw, lh, lxf, ctx.scale)
         {
-            layer.draw_pixmap(0, 0, b.as_ref(), &PixmapPaint::default(), Transform::identity(), None);
+            layer.draw_pixmap(
+                0,
+                0,
+                b.as_ref(),
+                &PixmapPaint::default(),
+                Transform::identity(),
+                None,
+            );
         }
     }
     let op = n.opacity.clamp(0.0, 1.0);
@@ -438,31 +610,68 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
                     && let Some(sh) = &shape
                     && let Some(inner) = shadow::inner_shadow(sh, lw, lh, lxf, ctx.scale, s)
                 {
-                    l.draw_pixmap(0, 0, inner.as_ref(), &PixmapPaint::default(), Transform::identity(), None);
+                    l.draw_pixmap(
+                        0,
+                        0,
+                        inner.as_ref(),
+                        &PixmapPaint::default(),
+                        Transform::identity(),
+                        None,
+                    );
                 }
             }
         };
-        let has_inner = shape.is_some() && n.effects.iter().any(|e| e.visible && matches!(e.kind, EffectKind::InnerShadow(_)));
+        let has_inner = shape.is_some()
+            && n.effects
+                .iter()
+                .any(|e| e.visible && matches!(e.kind, EffectKind::InnerShadow(_)));
         // Backdrops further down see this layer composited onto `pix`.
-        let under = Under { opacity: op, blend: n.blend, ..Under::new(pix, (lx, ly), ctx.under) };
-        draw_content(&Ctx { under: Some(&under), ..*ctx }, &mut layer, n, lxf, depth, has_inner.then_some(&inner as &dyn Fn(&mut Pixmap)));
+        let under = Under {
+            opacity: op,
+            blend: n.blend,
+            ..Under::new(pix, (lx, ly), ctx.under)
+        };
+        draw_content(
+            &Ctx {
+                under: Some(&under),
+                ..*ctx
+            },
+            &mut layer,
+            n,
+            lxf,
+            depth,
+            has_inner.then_some(&inner as &dyn Fn(&mut Pixmap)),
+        );
     }
     // A group is no outline of its own: its inner shadows are cast from around what its layers
     // draw together, over them.
-    if matches!(n.kind, NodeKind::Group) && n.effects.iter().any(|e| e.visible && matches!(e.kind, EffectKind::InnerShadow(_))) {
+    if matches!(n.kind, NodeKind::Group)
+        && n.effects
+            .iter()
+            .any(|e| e.visible && matches!(e.kind, EffectKind::InnerShadow(_)))
+    {
         let cover = layer.clone();
         for e in n.effects.iter().filter(|e| e.visible) {
             if let EffectKind::InnerShadow(s) = &e.kind
                 && let Some(sh) = shadow::inner_shadow_of(&cover, ctx.scale, s)
             {
-                layer.draw_pixmap(0, 0, sh.as_ref(), &PixmapPaint::default(), Transform::identity(), None);
+                layer.draw_pixmap(
+                    0,
+                    0,
+                    sh.as_ref(),
+                    &PixmapPaint::default(),
+                    Transform::identity(),
+                    None,
+                );
             }
         }
     }
     // Layer blur, noise and texture, in list order, over everything else.
     for e in n.effects.iter().filter(|e| e.visible) {
         match &e.kind {
-            EffectKind::LayerBlur(b) => blur::apply(&mut layer, b, (n.width, n.height), lxf, ctx.scale),
+            EffectKind::LayerBlur(b) => {
+                blur::apply(&mut layer, b, (n.width, n.height), lxf, ctx.scale)
+            }
             EffectKind::Noise(nz) => grain::noise(&mut layer, nz, lxf, id.0 as u32),
             EffectKind::Texture(t) => grain::texture(&mut layer, t, lxf, ctx.scale, id.0 as u32),
             _ => {}
@@ -481,9 +690,20 @@ pub fn draw_node(ctx: &Ctx, pix: &mut Pixmap, id: NodeId, parent_xf: Affine, dep
 }
 
 fn draw_outline(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize) {
-    let color = if ctx.outline.light { tiny_skia::Color::WHITE } else { tiny_skia::Color::BLACK };
-    let paint = tiny_skia::Paint { shader: tiny_skia::Shader::SolidColor(color), anti_alias: true, ..Default::default() };
-    let stroke = tiny_skia::Stroke { width: 1.0 / ctx.scale.max(1e-6) as f32, ..Default::default() };
+    let color = if ctx.outline.light {
+        tiny_skia::Color::WHITE
+    } else {
+        tiny_skia::Color::BLACK
+    };
+    let paint = tiny_skia::Paint {
+        shader: tiny_skia::Shader::SolidColor(color),
+        anti_alias: true,
+        ..Default::default()
+    };
+    let stroke = tiny_skia::Stroke {
+        width: 1.0 / ctx.scale.max(1e-6) as f32,
+        ..Default::default()
+    };
     if let Some((path, _)) = node_outline(ctx.doc, n)
         && !matches!(n.kind, NodeKind::Group)
         && let Some(tp) = ts_path(&path)
@@ -491,7 +711,8 @@ fn draw_outline(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize)
         pix.stroke_path(&tp, &paint, &stroke, ts_transform(xf), None);
     }
     // Object bounds: the box of every layer whose outline isn't its box already.
-    let boxed = matches!(n.kind, NodeKind::Rectangle) && n.corners.uniform() == Some(0.0) || n.kind.is_frame_like();
+    let boxed = matches!(n.kind, NodeKind::Rectangle) && n.corners.uniform() == Some(0.0)
+        || n.kind.is_frame_like();
     if ctx.outline.bounds
         && !boxed
         && let Some(tp) = ts_path(&figcraft_geom::kurbo::Shape::to_path(&n.local_rect(), 0.1))
@@ -509,7 +730,14 @@ fn draw_outline(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize)
 type OverFills<'a> = Option<&'a dyn Fn(&mut Pixmap)>;
 
 /// Fills, `over_fills`, children (clipped), strokes and text of a node, without opacity/effects.
-fn draw_content(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize, over_fills: OverFills) {
+fn draw_content(
+    ctx: &Ctx,
+    pix: &mut Pixmap,
+    n: &Node,
+    xf: Affine,
+    depth: usize,
+    over_fills: OverFills,
+) {
     let doc = ctx.doc;
     let (w, h) = (n.width, n.height);
     match &n.kind {
@@ -524,44 +752,76 @@ fn draw_content(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize,
             }
         }
         NodeKind::Text(t) => {
-            let Some((layout, dy)) = figcraft_text::layout_node(n) else { return };
+            let Some((layout, dy)) = figcraft_text::layout_node(n) else {
+                return;
+            };
             let gxf = xf * Affine::translate((0.0, dy));
             // Group glyphs by style so runs with their own fills paint with them.
             let mut by_style: HashMap<usize, BezPath> = HashMap::new();
             for g in &layout.glyphs {
-                by_style.entry(g.style).or_default().extend(g.path().elements().iter().copied());
+                by_style
+                    .entry(g.style)
+                    .or_default()
+                    .extend(g.path().elements().iter().copied());
             }
             for d in &layout.decorations {
-                by_style.entry(d.style).or_default().extend(d.path().elements().iter().copied());
+                by_style
+                    .entry(d.style)
+                    .or_default()
+                    .extend(d.path().elements().iter().copied());
             }
             let mut keys: Vec<usize> = by_style.keys().copied().collect();
             keys.sort_unstable();
             // Every run's fills, then what paints over the fills, then the strokes on top.
             for k in &keys {
-                let Some(tp) = by_style.get(k).and_then(ts_path) else { continue };
-                let fills = layout.styles.get(*k).and_then(|s| s.fills.as_ref()).unwrap_or(&n.fills);
+                let Some(tp) = by_style.get(k).and_then(ts_path) else {
+                    continue;
+                };
+                let fills = layout
+                    .styles
+                    .get(*k)
+                    .and_then(|s| s.fills.as_ref())
+                    .unwrap_or(&n.fills);
                 fill_with(pix, &tp, fills, w, h, gxf, FillRule::Winding, ctx, None);
             }
             if let Some(f) = over_fills {
                 f(pix);
             }
             if n.has_visible_stroke() {
-                let props = figcraft_doc::StrokeProps { align: StrokeAlign::Center, ..n.stroke.clone() };
+                let props = figcraft_doc::StrokeProps {
+                    align: StrokeAlign::Center,
+                    ..n.stroke.clone()
+                };
                 for path in keys.iter().filter_map(|k| by_style.get(k)) {
                     let s = figcraft_pathops::stroke_center(path, props.weight, &props);
                     if let Some(ts) = ts_path(&s) {
-                        fill_with(pix, &ts, &n.strokes, w, h, gxf, FillRule::Winding, ctx, None);
+                        fill_with(
+                            pix,
+                            &ts,
+                            &n.strokes,
+                            w,
+                            h,
+                            gxf,
+                            FillRule::Winding,
+                            ctx,
+                            None,
+                        );
                     }
                 }
             }
             let _ = t;
         }
         _ => {
-            let closed = figcraft_doc::geometry::is_closed(n) || matches!(n.kind, NodeKind::BooleanOp { .. });
+            let closed = figcraft_doc::geometry::is_closed(n)
+                || matches!(n.kind, NodeKind::BooleanOp { .. });
             let splatted = ctx.lod && closed && lod::splat_fills(pix, n, xf);
             let clips = n.clip && n.kind.is_frame_like() && !n.children.is_empty();
             // The outline fills, clips children to rounded corners and strokes booleans.
-            let outline = if splatted && !(clips && n.corners.uniform() != Some(0.0)) { None } else { node_outline(doc, n) };
+            let outline = if splatted && !(clips && n.corners.uniform() != Some(0.0)) {
+                None
+            } else {
+                node_outline(doc, n)
+            };
             if !splatted
                 && let Some((path, rule)) = &outline
                 && closed
@@ -572,7 +832,10 @@ fn draw_content(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize,
             if let Some(f) = over_fills {
                 f(pix);
             }
-            if !matches!(n.kind, NodeKind::BooleanOp { .. }) && !n.children.is_empty() && !n.hides_contents() {
+            if !matches!(n.kind, NodeKind::BooleanOp { .. })
+                && !n.children.is_empty()
+                && !n.hides_contents()
+            {
                 if clips {
                     draw_children_clipped(ctx, pix, n, xf, depth, outline.as_ref().map(|(p, _)| p));
                 } else {
@@ -587,7 +850,17 @@ fn draw_content(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize,
                 if let Some(g) = geom {
                     let area = stroke_area(n, &g, closed);
                     if let Some(tp) = ts_path(&area) {
-                        fill_with(pix, &tp, &n.strokes, w, h, xf, stroke_rule(n, closed), ctx, None);
+                        fill_with(
+                            pix,
+                            &tp,
+                            &n.strokes,
+                            w,
+                            h,
+                            xf,
+                            stroke_rule(n, closed),
+                            ctx,
+                            None,
+                        );
                     }
                 }
             }
@@ -598,20 +871,42 @@ fn draw_content(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize,
 fn draw_children(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize) {
     let kids = &n.children;
     for run in ctx.doc.paint_runs(n) {
-        let Some(&c) = kids.get(run.start) else { continue };
+        let Some(&c) = kids.get(run.start) else {
+            continue;
+        };
         if ctx.doc.node(c).is_some_and(|cn| cn.is_mask && cn.visible) {
             // Everything above the mask (until the next mask) is clipped by its alpha.
-            draw_masked(ctx, pix, c, kids.get(run.start + 1..run.end).unwrap_or(&[]), xf, depth);
+            draw_masked(
+                ctx,
+                pix,
+                c,
+                kids.get(run.start + 1..run.end).unwrap_or(&[]),
+                xf,
+                depth,
+            );
         } else {
             draw_node(ctx, pix, c, xf, depth + 1);
         }
     }
 }
 
-fn draw_masked(ctx: &Ctx, pix: &mut Pixmap, mask_id: NodeId, content: &[NodeId], xf: Affine, depth: usize) {
+fn draw_masked(
+    ctx: &Ctx,
+    pix: &mut Pixmap,
+    mask_id: NodeId,
+    content: &[NodeId],
+    xf: Affine,
+    depth: usize,
+) {
     let (w, h) = (pix.width(), pix.height());
-    let Some(mut mask_px) = Pixmap::new(w, h) else { return };
-    let mask_type = ctx.doc.node(mask_id).map(|m| m.mask_type).unwrap_or_default();
+    let Some(mut mask_px) = Pixmap::new(w, h) else {
+        return;
+    };
+    let mask_type = ctx
+        .doc
+        .node(mask_id)
+        .map(|m| m.mask_type)
+        .unwrap_or_default();
     // Draw the mask node as if it weren't a mask (a vector mask: its outline, fully opaque).
     if let Some(m) = ctx.doc.node(mask_id) {
         let mut m2 = m.clone();
@@ -627,7 +922,10 @@ fn draw_masked(ctx: &Ctx, pix: &mut Pixmap, mask_id: NodeId, content: &[NodeId],
                 mask_px.fill_path(&path, &paint, rule, ts_transform(mxf), None);
             }
         } else if needs_layer(&m2) {
-            let paint = PixmapPaint { opacity: m2.opacity, ..Default::default() };
+            let paint = PixmapPaint {
+                opacity: m2.opacity,
+                ..Default::default()
+            };
             let mut tmp = Pixmap::new(w, h);
             if let Some(tmp) = tmp.as_mut() {
                 draw_content(ctx, tmp, &m2, mxf, depth + 1, None);
@@ -637,28 +935,58 @@ fn draw_masked(ctx: &Ctx, pix: &mut Pixmap, mask_id: NodeId, content: &[NodeId],
             draw_content(ctx, &mut mask_px, &m2, mxf, depth + 1, None);
         }
     }
-    let Some(mut layer) = Pixmap::new(w, h) else { return };
-    let kind = if mask_type == figcraft_doc::MaskType::Luminance { MaskType::Luminance } else { MaskType::Alpha };
+    let Some(mut layer) = Pixmap::new(w, h) else {
+        return;
+    };
+    let kind = if mask_type == figcraft_doc::MaskType::Luminance {
+        MaskType::Luminance
+    } else {
+        MaskType::Alpha
+    };
     let mask = Mask::from_pixmap(mask_px.as_ref(), kind);
     {
-        let under = Under { clip: Some(&mask), ..Under::new(pix, (0, 0), ctx.under) };
-        let sub = Ctx { under: Some(&under), ..*ctx };
+        let under = Under {
+            clip: Some(&mask),
+            ..Under::new(pix, (0, 0), ctx.under)
+        };
+        let sub = Ctx {
+            under: Some(&under),
+            ..*ctx
+        };
         for c in content {
             draw_node(&sub, &mut layer, *c, xf, depth + 1);
         }
     }
-    pix.draw_pixmap(0, 0, layer.as_ref(), &PixmapPaint::default(), Transform::identity(), Some(&mask));
+    pix.draw_pixmap(
+        0,
+        0,
+        layer.as_ref(),
+        &PixmapPaint::default(),
+        Transform::identity(),
+        Some(&mask),
+    );
 }
 
-fn draw_children_clipped(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, depth: usize, clip: Option<&BezPath>) {
+fn draw_children_clipped(
+    ctx: &Ctx,
+    pix: &mut Pixmap,
+    n: &Node,
+    xf: Affine,
+    depth: usize,
+    clip: Option<&BezPath>,
+) {
     let (pw, ph) = (pix.width(), pix.height());
     let dev = device_rect(xf, n.local_rect());
-    let Some(ir) = int_rect(dev, (pw, ph)) else { return };
+    let Some(ir) = int_rect(dev, (pw, ph)) else {
+        return;
+    };
     let (lx, ly) = (ir.x(), ir.y());
     // The layer starts as what lies under it and goes back in its place through the clip:
     // clipping cuts the children off without isolating them, so their blend modes reach the
     // layers behind the frame.
-    let Some(mut layer) = pix.clone_rect(ir) else { return };
+    let Some(mut layer) = pix.clone_rect(ir) else {
+        return;
+    };
     let lxf = Affine::translate((-f64::from(lx), -f64::from(ly))) * xf;
     let rect_clip = n.corners.uniform() == Some(0.0) && is_axis_aligned(xf);
     // The clip (a rectangular one is the layer's own box) is known before the children draw, so
@@ -676,8 +1004,21 @@ fn draw_children_clipped(ctx: &Ctx, pix: &mut Pixmap, n: &Node, xf: Affine, dept
         return;
     }
     {
-        let under = Under { clip: mask.as_ref(), replaces: true, ..Under::new(pix, (lx, ly), ctx.under) };
-        draw_children(&Ctx { under: Some(&under), ..*ctx }, &mut layer, n, lxf, depth);
+        let under = Under {
+            clip: mask.as_ref(),
+            replaces: true,
+            ..Under::new(pix, (lx, ly), ctx.under)
+        };
+        draw_children(
+            &Ctx {
+                under: Some(&under),
+                ..*ctx
+            },
+            &mut layer,
+            n,
+            lxf,
+            depth,
+        );
     }
     backdrop::replace(pix, (lx, ly), &layer, mask.as_ref().map(|m| (m, (0, 0))));
 }

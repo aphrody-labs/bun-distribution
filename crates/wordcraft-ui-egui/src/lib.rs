@@ -3,13 +3,28 @@
 //!
 //! The UI is thin: it reads `Session` state and acts through [`WordApp::run`] (command ids), so
 //! the menus, ribbon, shortcuts, control channel and MCP all reach the same behaviour.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 /// What the operating system says about light and dark. macOS and Windows answer through winit;
 /// winit reports nothing on Linux, where the desktop portal does ([`desktop_theme`]). `None` means
 /// nobody answered, not a preference.
 fn system_theme(ctx: &egui::Context, desktop_dark: Option<bool>) -> Option<egui::Theme> {
-    ctx.system_theme().or_else(|| desktop_dark.map(|dark| if dark { egui::Theme::Dark } else { egui::Theme::Light }))
+    ctx.system_theme().or_else(|| {
+        desktop_dark.map(|dark| {
+            if dark {
+                egui::Theme::Dark
+            } else {
+                egui::Theme::Light
+            }
+        })
+    })
 }
 
 /// An English UI string in the current interface language ([`i18n::t`]).
@@ -101,7 +116,8 @@ pub struct Services {
     /// cancelled) through the returned channel once the user answers, and wakes the UI; a dropped
     /// sender counts as cancelled. An `Err` says no system dialog could be shown, and the app shows
     /// its built-in file browser instead (#576). The app shows one dialog at a time ([`file_dialogs`]).
-    pub file_dialog: Option<Box<dyn Fn(FileDialogRequest) -> std::sync::mpsc::Receiver<FileDialogAnswer>>>,
+    pub file_dialog:
+        Option<Box<dyn Fn(FileDialogRequest) -> std::sync::mpsc::Receiver<FileDialogAnswer>>>,
     /// Web: open a file picker; the file arrives later through `inbox`.
     pub open_async: Option<Box<dyn Fn(&str)>>,
     /// Web: files (name, bytes) delivered asynchronously (picker, drag and drop).
@@ -330,11 +346,17 @@ impl UiState {
 /// unit other than inches under the old key was the user's own choice, so it carries over (an
 /// inch value can't be told from the old default, so it follows the region).
 fn migrate_units(v: &mut Value) {
-    let Some(editing) = v.get_mut("editing").and_then(Value::as_object_mut) else { return };
+    let Some(editing) = v.get_mut("editing").and_then(Value::as_object_mut) else {
+        return;
+    };
     if editing.contains_key("measurementUnits") {
         return;
     }
-    if let Some(old) = editing.get("units").and_then(Value::as_str).filter(|u| *u != "inches") {
+    if let Some(old) = editing
+        .get("units")
+        .and_then(Value::as_str)
+        .filter(|u| *u != "inches")
+    {
         let old = Value::String(old.to_string());
         editing.insert("measurementUnits".into(), old);
     }
@@ -563,17 +585,28 @@ impl WordApp {
         self.ui.backstage = false;
         // A `ui.json` from before the theme setting: its dark-mode switch picks Dark or Light.
         if let Some(dark) = self.ui.legacy_dark.take() {
-            self.ui.theme = if dark { theme::Appearance::Dark } else { theme::Appearance::Light };
+            self.ui.theme = if dark {
+                theme::Appearance::Dark
+            } else {
+                theme::Appearance::Light
+            };
         }
         // The session owns the name from here on; `prefs` copies it back when saving.
         let author = std::mem::take(&mut self.ui.author);
         if !author.trim().is_empty() {
             self.session.author = author;
         }
-        self.session.initials = std::mem::take(&mut self.ui.initials).chars().take(wordcraft_engine::cmd::options::MAX_INITIALS_CHARS).collect();
-        for w in std::mem::take(&mut self.ui.dictionary).iter().take(MAX_DICTIONARY) {
+        self.session.initials = std::mem::take(&mut self.ui.initials)
+            .chars()
+            .take(wordcraft_engine::cmd::options::MAX_INITIALS_CHARS)
+            .collect();
+        for w in std::mem::take(&mut self.ui.dictionary)
+            .iter()
+            .take(MAX_DICTIONARY)
+        {
             let w = w.trim();
-            if !w.is_empty() && w.chars().count() <= wordcraft_engine::cmd::options::MAX_WORD_CHARS {
+            if !w.is_empty() && w.chars().count() <= wordcraft_engine::cmd::options::MAX_WORD_CHARS
+            {
                 wordcraft_engine::proof::add_word(w);
             }
         }
@@ -603,9 +636,19 @@ impl WordApp {
             return Ok(json!({"pending": name}));
         }
         if self.session.dirty && discards_document(id, &params) {
-            let name =
-                self.session.path.as_ref().and_then(|p| p.file_name()).map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| self.title_stem());
-            self.dialog = Some(dialogs::Dialog::SaveChanges { name, then: id.to_string(), params, document: self.session.document_id() });
+            let name = self
+                .session
+                .path
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| self.title_stem());
+            self.dialog = Some(dialogs::Dialog::SaveChanges {
+                name,
+                then: id.to_string(),
+                params,
+                document: self.session.document_id(),
+            });
             return Ok(json!({"pending": "saveChanges"}));
         }
         // The ribbon and context-menu Paste commands send no text: read the system clipboard's, as
@@ -665,31 +708,58 @@ impl WordApp {
             return r;
         }
         // Web: saving and exporting become downloads.
-        if self.services.download.is_some() && matches!(id, "file.save" | "file.saveAs" | "file.exportPdf" | "file.exportPng") {
-            let name = params.get("path").and_then(Value::as_str).map(str::to_string).unwrap_or_else(|| self.default_save_name());
-            let name = if id == "file.exportPdf" && !name.ends_with(".pdf") { format!("{name}.pdf") } else { name };
+        if self.services.download.is_some()
+            && matches!(
+                id,
+                "file.save" | "file.saveAs" | "file.exportPdf" | "file.exportPng"
+            )
+        {
+            let name = params
+                .get("path")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+                .unwrap_or_else(|| self.default_save_name());
+            let name = if id == "file.exportPdf" && !name.ends_with(".pdf") {
+                format!("{name}.pdf")
+            } else {
+                name
+            };
             // A save with a password encrypts this and later saves (`file.save`'s `password`).
             if matches!(id, "file.save" | "file.saveAs")
                 && let Some(pw) = params.get("password").filter(|v| !v.is_null())
             {
-                if !wordcraft_engine::io::can_encrypt(&name) || pw.as_str().is_none_or(str::is_empty) {
+                if !wordcraft_engine::io::can_encrypt(&name)
+                    || pw.as_str().is_none_or(str::is_empty)
+                {
                     return Err("only Word documents (.docx, .docm, .dotx, .dotm) can be saved with a password, and it can't be empty".into());
                 }
-                self.session.run("file.encrypt", &json!({"password": pw})).map_err(|e| e.to_string())?;
+                self.session
+                    .run("file.encrypt", &json!({"password": pw}))
+                    .map_err(|e| e.to_string())?;
             }
             // A save is a save, download or not: advance the revision and modified stamp (#262).
             if matches!(id, "file.save" | "file.saveAs") {
                 self.session.stamp_save();
             }
             // Word documents are encrypted with the document's password, if it has one.
-            let password =
-                if matches!(id, "file.save" | "file.saveAs") { self.session.password.as_ref().map(wordcraft_engine::Password::as_str) } else { None };
+            let password = if matches!(id, "file.save" | "file.saveAs") {
+                self.session
+                    .password
+                    .as_ref()
+                    .map(wordcraft_engine::Password::as_str)
+            } else {
+                None
+            };
             let opts = wordcraft_engine::cmd::file::export_options(&self.session, &params);
-            let bytes = wordcraft_engine::io::save_bytes_with(&name, &self.session.doc, password, &opts)?;
+            let bytes =
+                wordcraft_engine::io::save_bytes_with(&name, &self.session.doc, password, &opts)?;
             if let Some(d) = &self.services.download
                 && let Err(e) = d(&name, &bytes)
             {
-                let msg = i18n::fmt(tl!("Couldn't download {name}: {error}"), &[("name", &name), ("error", &e)]);
+                let msg = i18n::fmt(
+                    tl!("Couldn't download {name}: {error}"),
+                    &[("name", &name), ("error", &e)],
+                );
                 log::error!("download of {name} failed: {e}");
                 self.status(msg.clone());
                 return Err(msg);
@@ -715,7 +785,10 @@ impl WordApp {
         if let Ok(v) = &r
             && matches!(id, "file.save" | "file.saveAs")
             && v.get("saved").and_then(Value::as_bool) == Some(true)
-            && v.get("path").and_then(Value::as_str).map(std::path::Path::new) == self.session.path.as_deref()
+            && v.get("path")
+                .and_then(Value::as_str)
+                .map(std::path::Path::new)
+                == self.session.path.as_deref()
         {
             self.autosave_path = self.session.path.clone();
         }
@@ -733,16 +806,23 @@ impl WordApp {
     fn keep_web_font(&self, id: &str, params: &Value, result: &Value) {
         match id {
             "font.add" => {
-                if let (Some(store), Some(file), Some(data)) =
-                    (&self.services.store_font, result.get("file").and_then(Value::as_str), params.get("data").and_then(Value::as_str))
-                    && let Some(bytes) = wordcraft_engine::cmd::insert::base64_decode(data)
+                if let (Some(store), Some(file), Some(data)) = (
+                    &self.services.store_font,
+                    result.get("file").and_then(Value::as_str),
+                    params.get("data").and_then(Value::as_str),
+                ) && let Some(bytes) = wordcraft_engine::cmd::insert::base64_decode(data)
                 {
                     store(file, &bytes);
                 }
             }
             "font.remove" => {
                 if let Some(forget) = &self.services.forget_font {
-                    for f in result.get("removed").and_then(Value::as_array).into_iter().flatten() {
+                    for f in result
+                        .get("removed")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                    {
                         if let Some(file) = f.get("file").and_then(Value::as_str) {
                             forget(file);
                         }
@@ -763,14 +843,21 @@ impl WordApp {
         }
         self.font_generation = generation;
         self.session.relayout();
-        self.previews.fonts_changed(ctx, db.user_fonts().iter().flat_map(|f| f.families()));
+        self.previews
+            .fonts_changed(ctx, db.user_fonts().iter().flat_map(|f| f.families()));
         ctx.request_repaint();
     }
 
     /// Answer the Save Changes prompt: Save (through Save As for a new document) and carry on,
     /// carry on without saving, or cancel. A failed or cancelled save cancels too.
     fn answer_save_changes(&mut self, choice: SaveChoice) -> Result<Value, String> {
-        let Some(dialogs::Dialog::SaveChanges { then, params, document, .. }) = self.dialog.take() else {
+        let Some(dialogs::Dialog::SaveChanges {
+            then,
+            params,
+            document,
+            ..
+        }) = self.dialog.take()
+        else {
             return Err("no Save Changes prompt is open".into());
         };
         if document != self.session.document_id() {
@@ -782,7 +869,11 @@ impl WordApp {
             // A new document: ask where through Save As; the command runs once that has saved,
             // which with the desktop's non-blocking dialog is on a later frame (#94).
             SaveChoice::Save if self.session.path.is_none() && self.services.download.is_none() => {
-                return match self.save_as(file_dialogs::AfterSave::Continue { then, params, document }) {
+                return match self.save_as(file_dialogs::AfterSave::Continue {
+                    then,
+                    params,
+                    document,
+                }) {
                     file_dialogs::Asked::Done(r) => r,
                     file_dialogs::Asked::Pending => Ok(json!({"pending": "saveAs"})),
                     file_dialogs::Asked::Busy => Ok(json!({"done": false})),
@@ -793,7 +884,8 @@ impl WordApp {
         if !go {
             return Ok(json!({"done": false}));
         }
-        self.execute_user(&then, params).map(|r| json!({"done": true, "result": r}))
+        self.execute_user(&then, params)
+            .map(|r| json!({"done": true, "result": r}))
     }
 
     /// [`WordApp::execute`] for something the user did: a document that turns out to be
@@ -805,8 +897,16 @@ impl WordApp {
             && wordcraft_engine::io::needs_password(e)
         {
             let path = params.get("path").and_then(Value::as_str).unwrap_or("");
-            let name = std::path::Path::new(path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string());
-            self.dialog = Some(dialogs::Dialog::Password { name, params, password: Default::default(), message: String::new() });
+            let name = std::path::Path::new(path)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| path.to_string());
+            self.dialog = Some(dialogs::Dialog::Password {
+                name,
+                params,
+                password: Default::default(),
+                message: String::new(),
+            });
             return Ok(json!({"pending": "password"}));
         }
         r
@@ -818,7 +918,10 @@ impl WordApp {
     /// the command is cancelled and the document stays.
     fn save_for_prompt(&mut self) -> bool {
         let saved = match self.execute("file.save", json!({})) {
-            Ok(v) => v.get("saved").and_then(Value::as_bool) == Some(true) || v.get("downloaded").is_some(),
+            Ok(v) => {
+                v.get("saved").and_then(Value::as_bool) == Some(true)
+                    || v.get("downloaded").is_some()
+            }
             Err(_) => false,
         };
         self.safely_saved(saved)
@@ -837,7 +940,9 @@ impl WordApp {
     /// close; with unsaved changes it asks first and returns false.
     pub fn close_requested(&mut self) -> bool {
         if self.printing.busy() {
-            self.status(tl!("Wait for the print job to finish submitting before closing."));
+            self.status(tl!(
+                "Wait for the print job to finish submitting before closing."
+            ));
             return false;
         }
         if self.quit_requested || !self.session.dirty {
@@ -853,20 +958,31 @@ impl WordApp {
         if id == "view.outline" {
             self.ui.nav_tab = "headings".into();
         }
-        if matches!(id, "view.readColumnWidth" | "view.readTextSize" | "view.readLineSpacing") {
+        if matches!(
+            id,
+            "view.readColumnWidth" | "view.readTextSize" | "view.readLineSpacing"
+        ) {
             self.canvas.read_force_reflow = true;
         }
         if id == "view.readMode" {
             self.canvas.read_first_visible = None;
         }
         // Drawing leaves the caret where it was: following it would pull the view off the ink.
-        if !id.starts_with("view.") && !id.starts_with("document.") && !id.starts_with("format.state") && !id.starts_with("draw.") {
+        if !id.starts_with("view.")
+            && !id.starts_with("document.")
+            && !id.starts_with("format.state")
+            && !id.starts_with("draw.")
+        {
             self.canvas.scroll_to_caret = true;
         }
         for req in std::mem::take(&mut self.session.ui_requests) {
             self.handle_request(&req);
         }
-        if let Some(p) = self.session.path.as_ref().map(|p| p.to_string_lossy().to_string())
+        if let Some(p) = self
+            .session
+            .path
+            .as_ref()
+            .map(|p| p.to_string_lossy().to_string())
             && self.ui.recent.first() != Some(&p)
         {
             self.ui.recent.retain(|r| *r != p);
@@ -925,7 +1041,11 @@ impl WordApp {
 
     /// Whether the interface theme setting currently resolves to dark (`System` asks the OS).
     pub fn ui_is_dark(&self) -> bool {
-        self.ui.theme.is_dark(self.ctx.as_ref().and_then(|ctx| system_theme(ctx, self.desktop_dark)))
+        self.ui.theme.is_dark(
+            self.ctx
+                .as_ref()
+                .and_then(|ctx| system_theme(ctx, self.desktop_dark)),
+        )
     }
 
     /// Whether animation effects are on: the Animation effects setting, where `System` follows
@@ -941,7 +1061,11 @@ impl WordApp {
 
     /// Ask the host for the system's animation setting.
     fn read_system_animations(&mut self) {
-        self.system_animations = self.services.animations_enabled.as_ref().and_then(|ask| ask());
+        self.system_animations = self
+            .services
+            .animations_enabled
+            .as_ref()
+            .and_then(|ask| ask());
     }
 
     /// Commands that live in the UI layer.
@@ -959,7 +1083,10 @@ impl WordApp {
                 json!({"tab": self.ui.tab})
             }
             "ui.backstage" => {
-                self.ui.backstage = p.get("value").and_then(Value::as_bool).unwrap_or(!self.ui.backstage);
+                self.ui.backstage = p
+                    .get("value")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(!self.ui.backstage);
                 if let Some(pg) = s("page") {
                     self.ui.backstage_page = pg.into();
                 }
@@ -970,9 +1097,17 @@ impl WordApp {
             }
             "ui.dialog" if s("name") == Some("colors") => {
                 // The font colour's More Colors… (#606); `tab`: standard or custom.
-                let target = colors::Target::cmd("format.color").remember(colors::Remember::FontColor);
-                let current =
-                    self.session.run("format.state", &json!({})).ok().and_then(|st| st.get("color").and_then(Value::as_str).and_then(colors::parse));
+                let target =
+                    colors::Target::cmd("format.color").remember(colors::Remember::FontColor);
+                let current = self
+                    .session
+                    .run("format.state", &json!({}))
+                    .ok()
+                    .and_then(|st| {
+                        st.get("color")
+                            .and_then(Value::as_str)
+                            .and_then(colors::parse)
+                    });
                 let mut d = colors::ColorsDialog::new(current, target);
                 if s("tab") == Some("custom") {
                     d.tab = colors::ColorsTab::Custom;
@@ -1009,7 +1144,9 @@ impl WordApp {
             }
             "ui.keytips" => {
                 if let Some(v) = p.get("value") {
-                    let Some(enabled) = v.as_bool() else { return Some(Err("`value` must be a boolean".into())) };
+                    let Some(enabled) = v.as_bool() else {
+                        return Some(Err("`value` must be a boolean".into()));
+                    };
                     self.ui.keytips_enabled = enabled;
                     if !enabled {
                         self.ui.keytips = keytips::Phase::Off;
@@ -1020,8 +1157,15 @@ impl WordApp {
             }
             "ui.dark" => {
                 // A manual Light/Dark switch (toggles what is shown when no value is given).
-                let dark = p.get("value").and_then(Value::as_bool).unwrap_or(!self.ui_is_dark());
-                self.ui.theme = if dark { theme::Appearance::Dark } else { theme::Appearance::Light };
+                let dark = p
+                    .get("value")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(!self.ui_is_dark());
+                self.ui.theme = if dark {
+                    theme::Appearance::Dark
+                } else {
+                    theme::Appearance::Light
+                };
                 json!({"dark": dark, "theme": self.ui.theme.code()})
             }
             "ui.theme" => {
@@ -1029,7 +1173,11 @@ impl WordApp {
                 if let Some(v) = s("value") {
                     match theme::Appearance::from_code(v) {
                         Some(a) => self.ui.theme = a,
-                        None => return Some(Err(format!("unknown theme {v:?}; use light, dark or system"))),
+                        None => {
+                            return Some(Err(format!(
+                                "unknown theme {v:?}; use light, dark or system"
+                            )));
+                        }
                     }
                 }
                 json!({"theme": self.ui.theme.code(), "dark": self.ui_is_dark()})
@@ -1057,7 +1205,11 @@ impl WordApp {
                 if let Some(v) = s("value") {
                     match theme::Animations::from_code(v) {
                         Some(a) => self.ui.animations = a,
-                        None => return Some(Err(format!("unknown animations setting {v:?}; use system, on or off"))),
+                        None => {
+                            return Some(Err(format!(
+                                "unknown animations setting {v:?}; use system, on or off"
+                            )));
+                        }
                     }
                 }
                 self.read_system_animations();
@@ -1069,8 +1221,12 @@ impl WordApp {
                     match i18n::normalize_pref(v) {
                         Some(code) => self.ui.language = code.to_string(),
                         None => {
-                            let codes: Vec<&str> = i18n::Lang::all().map(i18n::Lang::code).collect();
-                            return Some(Err(format!("unknown language `{v}`; use auto or one of {}", codes.join(", "))));
+                            let codes: Vec<&str> =
+                                i18n::Lang::all().map(i18n::Lang::code).collect();
+                            return Some(Err(format!(
+                                "unknown language `{v}`; use auto or one of {}",
+                                codes.join(", ")
+                            )));
                         }
                     }
                 }
@@ -1102,7 +1258,13 @@ impl WordApp {
                 json!({"pending": self.recipient_list_pending})
             }
             // Native printing submits the selected queue on a worker; the browser owns its dialog.
-            "ui.printSettings" => return Some(printing::settings(&mut self.printing, p, self.services.printers.as_ref())),
+            "ui.printSettings" => {
+                return Some(printing::settings(
+                    &mut self.printing,
+                    p,
+                    self.services.printers.as_ref(),
+                ));
+            }
             "ui.print" | "ui.printSubmit" => return Some(self.print_to_system(p)),
             // File › Options › General › Make WordCraft the default… changes the user's system
             // default apps (Linux) or opens system settings (Windows), so only a click on that
@@ -1141,10 +1303,15 @@ impl WordApp {
             // Shape Format › Text › Create Link: the next click on an empty text box links the
             // selected box to it (`shape.link` with that box as the target); Esc cancels.
             "ui.linkTextBox" => {
-                let from = wordcraft_engine::cmd::objects::text_box_target(&self.session).filter(|_| widgets::enabled(self, "shape.link"));
-                let Some((pos, _)) = from else { return Some(Err("select a text box that isn't linked yet first".into())) };
+                let from = wordcraft_engine::cmd::objects::text_box_target(&self.session)
+                    .filter(|_| widgets::enabled(self, "shape.link"));
+                let Some((pos, _)) = from else {
+                    return Some(Err("select a text box that isn't linked yet first".into()));
+                };
                 self.canvas.link_from = Some(pos);
-                self.status(tl!("Click the empty text box the text should continue in (Esc cancels)"));
+                self.status(tl!(
+                    "Click the empty text box the text should continue in (Esc cancels)"
+                ));
                 json!({"pending": "link"})
             }
             _ => return None,
@@ -1162,11 +1329,15 @@ impl WordApp {
     /// command, so nothing programmatic (control channel, MCP, macros) can change system defaults.
     pub(crate) fn make_default_app(&mut self) -> Result<Value, String> {
         let Some(hook) = self.services.make_default_app.as_ref() else {
-            return Err("WordCraft can't change the default apps here; use your system's settings".into());
+            return Err(
+                "WordCraft can't change the default apps here; use your system's settings".into(),
+            );
         };
         match hook() {
             Ok(DefaultApp::SettingsOpened) => {
-                self.status(tl!("In Default apps, choose WordCraft for the document types you want it to open."));
+                self.status(tl!(
+                    "In Default apps, choose WordCraft for the document types you want it to open."
+                ));
                 Ok(json!({"settingsOpened": true}))
             }
             Ok(DefaultApp::MadeDefault) => {
@@ -1175,7 +1346,10 @@ impl WordApp {
             }
             Err(e) => {
                 log::warn!("make default app: {e}");
-                let msg = i18n::fmt(tl!("Couldn't make WordCraft the default: {error}"), &[("error", &e)]);
+                let msg = i18n::fmt(
+                    tl!("Couldn't make WordCraft the default: {error}"),
+                    &[("error", &e)],
+                );
                 self.status(msg.clone());
                 Err(msg)
             }
@@ -1223,7 +1397,12 @@ impl WordApp {
             self.recipient_list_pending = true;
             return;
         }
-        let _ = self.ask_file(file_dialogs::FileDialogRequest::Open { purpose: "recipients".into() }, file_dialogs::AfterPick::Recipients);
+        let _ = self.ask_file(
+            file_dialogs::FileDialogRequest::Open {
+                purpose: "recipients".into(),
+            },
+            file_dialogs::AfterPick::Recipients,
+        );
     }
 
     /// Load mail-merge recipients and say how many there are. A workbook with several sheets
@@ -1236,12 +1415,30 @@ impl WordApp {
             let sheets = v
                 .get("sheets")
                 .and_then(Value::as_array)
-                .map(|a| a.iter().filter_map(Value::as_str).map(str::to_string).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_string)
+                        .collect()
+                })
                 .unwrap_or_default();
-            self.dialog = Some(dialogs::Dialog::SelectTable { sheets, selected: 0, headers: true, message: String::new(), params });
+            self.dialog = Some(dialogs::Dialog::SelectTable {
+                sheets,
+                selected: 0,
+                headers: true,
+                message: String::new(),
+                params,
+            });
         } else if let Ok(v) = &r {
-            let records = v.get("records").and_then(Value::as_u64).unwrap_or(0).to_string();
-            self.status(i18n::fmt(tl!("Recipients: {count}"), &[("count", &records)]));
+            let records = v
+                .get("records")
+                .and_then(Value::as_u64)
+                .unwrap_or(0)
+                .to_string();
+            self.status(i18n::fmt(
+                tl!("Recipients: {count}"),
+                &[("count", &records)],
+            ));
         }
         r
     }
@@ -1249,9 +1446,16 @@ impl WordApp {
     /// The name Save suggests: the open file's own Word format (so a .docm keeps its macros),
     /// otherwise .docx.
     fn default_save_name(&self) -> String {
-        let ext = self.session.path.as_ref().and_then(|p| p.extension()).map(|e| e.to_string_lossy().to_string());
+        let ext = self
+            .session
+            .path
+            .as_ref()
+            .and_then(|p| p.extension())
+            .map(|e| e.to_string_lossy().to_string());
         match ext {
-            Some(e) if wordcraft_engine::io::is_word_package(&e) => format!("{}.{e}", self.title_stem()),
+            Some(e) if wordcraft_engine::io::is_word_package(&e) => {
+                format!("{}.{e}", self.title_stem())
+            }
             _ => format!("{}.docx", self.title_stem()),
         }
     }
@@ -1265,9 +1469,12 @@ impl WordApp {
         if stem.chars().any(wordcraft_fonts::is_cjk) {
             self.want_system_cjk = true;
         }
-        let new = theme::faces_for_preedit(&stem, &self.canvas.ime_faces, theme::caption_char_covered, |c| {
-            wordcraft_fonts::FontDb::global().fallback_for(c, u32::MAX)
-        });
+        let new = theme::faces_for_preedit(
+            &stem,
+            &self.canvas.ime_faces,
+            theme::caption_char_covered,
+            |c| wordcraft_fonts::FontDb::global().fallback_for(c, u32::MAX),
+        );
         if !new.is_empty() {
             self.canvas.ime_faces.extend(new);
             // Fonts are already installed for this frame's language; load the new faces too.
@@ -1279,7 +1486,10 @@ impl WordApp {
     /// named in the interface language, as `Document1` is in English.
     pub fn title_stem(&self) -> String {
         match &self.session.path {
-            Some(p) => p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| tl!("Document1").into()),
+            Some(p) => p
+                .file_stem()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_else(|| tl!("Document1").into()),
             None => {
                 if self.session.doc.core.title.is_empty() {
                     tl!("Document1").into()
@@ -1297,8 +1507,11 @@ impl WordApp {
             return;
         }
         self.print_feedback_seen = self.printing.message.clone();
-        let Some(message @ (printing::Feedback::Submitted(_) | printing::Feedback::Failed(_) | printing::Feedback::WorkerStopped)) =
-            self.printing.message.clone()
+        let Some(
+            message @ (printing::Feedback::Submitted(_)
+            | printing::Feedback::Failed(_)
+            | printing::Feedback::WorkerStopped),
+        ) = self.printing.message.clone()
         else {
             return;
         };
@@ -1382,7 +1595,11 @@ impl WordApp {
             {
                 let path = f.path().to_string_lossy().to_string();
                 let lp = path.to_ascii_lowercase();
-                let img = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".wmf", ".emf"].iter().any(|e| lp.ends_with(e));
+                let img = [
+                    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".wmf", ".emf",
+                ]
+                .iter()
+                .any(|e| lp.ends_with(e));
                 let sheet = [".xlsx", ".xlsm", ".ods"].iter().any(|e| lp.ends_with(e));
                 let _ = if img {
                     self.run("insert.picture", json!({"path": path}))
@@ -1406,8 +1623,16 @@ impl WordApp {
     /// face has changed since the last install.
     fn install_ui_fonts(&mut self, ctx: &egui::Context, lang: i18n::Lang) {
         let system_cjk = self.fonts_system_cjk || self.want_system_cjk || lang.uses_cjk();
-        if !self.styled || lang.prefers_hans() != self.fonts_hans || system_cjk != self.fonts_system_cjk {
-            theme::install_fonts_extra(ctx, lang.prefers_hans(), system_cjk, &self.canvas.ime_faces);
+        if !self.styled
+            || lang.prefers_hans() != self.fonts_hans
+            || system_cjk != self.fonts_system_cjk
+        {
+            theme::install_fonts_extra(
+                ctx,
+                lang.prefers_hans(),
+                system_cjk,
+                &self.canvas.ime_faces,
+            );
             self.fonts_hans = lang.prefers_hans();
             self.fonts_system_cjk = system_cjk;
             // Mod with -, = and 0 are Word shortcuts (optional hyphen, subscript, paragraph spacing);
@@ -1436,9 +1661,14 @@ impl WordApp {
         if self.services.download.is_some() {
             return Some(AutoSaveBlock::Browser);
         }
-        let Some(path) = &self.session.path else { return Some(AutoSaveBlock::Unsaved) };
+        let Some(path) = &self.session.path else {
+            return Some(AutoSaveBlock::Unsaved);
+        };
         if !keeps_everything(&path.to_string_lossy()) {
-            let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
             return Some(AutoSaveBlock::Format { name });
         }
         if !self.saved_here() {
@@ -1456,7 +1686,10 @@ impl WordApp {
     /// without it, it toggles what the switch shows. Turning it on for a document AutoSave can't
     /// cover is an error that says why, instead of a switch that is on but saves nothing (#196).
     fn set_autosave(&mut self, params: &Value) -> Result<Value, String> {
-        let on = params.get("value").and_then(Value::as_bool).unwrap_or(!self.autosaves());
+        let on = params
+            .get("value")
+            .and_then(Value::as_bool)
+            .unwrap_or(!self.autosaves());
         if on && let Some(block) = self.autosave_block() {
             return Err(block.reason());
         }
@@ -1468,12 +1701,19 @@ impl WordApp {
     /// AutoSave: write a saved document a couple of seconds after the last change. A failure is
     /// shown in the status bar and turns AutoSave off for the file until the user saves it again.
     fn autosave_tick(&mut self, now: f64) {
-        if self.autosaves() && self.session.dirty && now - self.last_autosave > 2500.0 && now - self.canvas.caret_visible_since > 1500.0 {
+        if self.autosaves()
+            && self.session.dirty
+            && now - self.last_autosave > 2500.0
+            && now - self.canvas.caret_visible_since > 1500.0
+        {
             self.last_autosave = now;
             if let Err(e) = self.session.run("file.save", &json!({})) {
                 log::warn!("AutoSave failed: {e}");
                 self.autosave_path = None;
-                self.status(i18n::fmt(tl!("AutoSave failed: {error}. Save the document to turn AutoSave back on."), &[("error", &e.to_string())]));
+                self.status(i18n::fmt(
+                    tl!("AutoSave failed: {error}. Save the document to turn AutoSave back on."),
+                    &[("error", &e.to_string())],
+                ));
             }
         }
     }
@@ -1485,9 +1725,15 @@ impl WordApp {
         }
         let n = match self.synthetic.first() {
             Some(egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. }) => 1,
-            _ => self.synthetic.iter().position(|e| matches!(e, egui::Event::Key { pressed: false, .. })).map_or(self.synthetic.len(), |i| i + 1),
+            _ => self
+                .synthetic
+                .iter()
+                .position(|e| matches!(e, egui::Event::Key { pressed: false, .. }))
+                .map_or(self.synthetic.len(), |i| i + 1),
         };
-        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) = self.synthetic.first() {
+        if let Some(egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. }) =
+            self.synthetic.first()
+        {
             raw.events.push(egui::Event::PointerMoved(*p));
         }
         let n = n.min(self.synthetic.len());
@@ -1521,9 +1767,11 @@ impl WordApp {
             ribbon::show(self, ui);
             chrome::status_bar(self, ui);
             panes::show(self, ui);
-            egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.canvas)).show(ui, |ui| {
-                canvas::show(self, ui);
-            });
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(t.canvas))
+                .show(ui, |ui| {
+                    canvas::show(self, ui);
+                });
         }
         content_controls::popup(self, &ctx);
         dialogs::show(self, &ctx);
@@ -1537,7 +1785,11 @@ impl WordApp {
         if let Some(url) = self.canvas.open_url.take() {
             ctx.open_url(egui::OpenUrl::new_tab(url));
         }
-        let title = format!("{}{} - WordCraft", self.title_stem(), if self.session.dirty { " •" } else { "" });
+        let title = format!(
+            "{}{} - WordCraft",
+            self.title_stem(),
+            if self.session.dirty { " •" } else { "" }
+        );
         if title != self.sent_title {
             ctx.send_viewport_cmd(egui::ViewportCommand::Title(title.clone()));
             self.sent_title = title;
@@ -1550,15 +1802,25 @@ impl WordApp {
     /// Files that arrived asynchronously (web picker, drops): documents open, pictures insert,
     /// recipient lists (CSV/TSV, spreadsheets, or a text file asked for as one) load as recipients.
     fn drain_inbox(&mut self) {
-        let Some(inbox) = self.services.inbox.clone() else { return };
+        let Some(inbox) = self.services.inbox.clone() else {
+            return;
+        };
         let files = std::mem::take(&mut *inbox.lock().unwrap_or_else(|e| e.into_inner()));
         for (name, bytes) in files {
             let lower = name.to_ascii_lowercase();
-            let img = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".wmf", ".emf"].iter().any(|e| lower.ends_with(e));
+            let img = [
+                ".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".wmf", ".emf",
+            ]
+            .iter()
+            .any(|e| lower.ends_with(e));
             // Any recipient file ends the pending picker request, so a later .txt drop opens normally.
             let asked = std::mem::take(&mut self.recipient_list_pending);
-            let list = lower.ends_with(".csv") || lower.ends_with(".tsv") || (lower.ends_with(".txt") && asked);
-            let sheet = [".xlsx", ".xlsm", ".ods"].iter().any(|e| lower.ends_with(e));
+            let list = lower.ends_with(".csv")
+                || lower.ends_with(".tsv")
+                || (lower.ends_with(".txt") && asked);
+            let sheet = [".xlsx", ".xlsm", ".ods"]
+                .iter()
+                .any(|e| lower.ends_with(e));
             self.recipient_list_pending = asked && !list && !sheet;
             let r = if sheet {
                 self.load_recipients(json!({"path": name, "data": wordcraft_engine::cmd::insert::base64_encode(&bytes)}))
@@ -1567,7 +1829,9 @@ impl WordApp {
             } else if list {
                 self.load_recipients(json!({"csv": wordcraft_engine::io::decode_text(&bytes)}))
             } else if img {
-                self.insert_or_change_picture(json!({"data": wordcraft_engine::cmd::insert::base64_encode(&bytes)}))
+                self.insert_or_change_picture(
+                    json!({"data": wordcraft_engine::cmd::insert::base64_encode(&bytes)}),
+                )
             } else {
                 self.run("file.open", json!({"path": name, "data": wordcraft_engine::cmd::insert::base64_encode(&bytes)}))
             };
@@ -1578,7 +1842,9 @@ impl WordApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             let reply = req.reply.clone();
             match control::handle(self, ctx, &req) {
@@ -1589,7 +1855,8 @@ impl WordApp {
                     self.shot_token += 1;
                     let token = self.shot_token;
                     self.queued_shots.push((token, now_ms() + 120.0, 0));
-                    self.pending_shots.push((token, path, reply, now_ms() + 8000.0));
+                    self.pending_shots
+                        .push((token, path, reply, now_ms() + 8000.0));
                 }
             }
         }
@@ -1601,7 +1868,9 @@ impl WordApp {
         self.queued_shots.retain_mut(|(token, at, frames)| {
             *frames += 1;
             if now >= *at && *frames >= 3 {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -1621,8 +1890,14 @@ impl WordApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -1688,8 +1963,14 @@ impl AutoSaveBlock {
 /// document's own file, including macro-enabled documents and templates); anything else is a
 /// copy that leaves it unsaved. AutoSave writes only these formats.
 pub fn keeps_everything(name: &str) -> bool {
-    let ext = std::path::Path::new(name).extension().map(|e| e.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
-    matches!(ext.as_str(), "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml")
+    let ext = std::path::Path::new(name)
+        .extension()
+        .map(|e| e.to_string_lossy().to_ascii_lowercase())
+        .unwrap_or_default();
+    matches!(
+        ext.as_str(),
+        "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf" | "json" | "xml"
+    )
 }
 
 /// The dialog a user-run command opens when it lacks the input it needs (scripts and agents get
@@ -1699,14 +1980,19 @@ pub fn keeps_everything(name: &str) -> bool {
 /// settings, Symbol and Field without a character or code, and Enclose Characters without a shape.
 fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
     let has = |k: &str| params.get(k).is_some_and(|v| !v.is_null());
-    let rule = params.get("rule").and_then(Value::as_str).map(str::to_ascii_uppercase);
+    let rule = params
+        .get("rule")
+        .and_then(Value::as_str)
+        .map(str::to_ascii_uppercase);
     match id {
         "mailings.rules" if !has("field") => match rule.as_deref() {
             None | Some("IF") => Some("ruleIf"),
             Some("SKIPIF") => Some("ruleSkipIf"),
             _ => None,
         },
-        "mailings.recipients" if !["csv", "path", "data", "rows"].into_iter().any(has) => Some("recipientList"),
+        "mailings.recipients" if !["csv", "path", "data", "rows"].into_iter().any(has) => {
+            Some("recipientList")
+        }
         "mailings.editRecipients" if !has("rows") => Some("recipientList"),
         "mailings.insertField" if !has("field") => Some("insertMergeField"),
         "mailings.findRecipient" if !has("text") => Some("findRecipient"),
@@ -1720,47 +2006,73 @@ fn input_dialog(id: &str, params: &Value) -> Option<&'static str> {
         // Chart without a type shows the gallery; Change Chart Type and Edit Data their dialogs.
         "insert.chart" if !has("type") && !has("data") => Some("insertChart"),
         "chart.type" if !has("type") => Some("changeChartType"),
-        "chart.editData" if !["data", "categories", "series"].into_iter().any(has) => Some("chartData"),
+        "chart.editData" if !["data", "categories", "series"].into_iter().any(has) => {
+            Some("chartData")
+        }
         // Table Properties without settings shows the dialog (with settings it applies them).
-        "table.properties" if params.as_object().is_none_or(|m| m.is_empty()) => Some("tableProperties"),
+        "table.properties" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("tableProperties")
+        }
         // Tabs, Borders and Shading, and Page Borders without settings show their dialogs (#320).
         "para.tabs" if params.as_object().is_none_or(|m| m.is_empty()) => Some("tabs"),
         "para.borders" if params.as_object().is_none_or(|m| m.is_empty()) => Some("borders"),
-        "design.pageBorders" if params.as_object().is_none_or(|m| m.is_empty()) => Some("pageBorders"),
+        "design.pageBorders" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("pageBorders")
+        }
         // `null` is an answer here: it removes the password.
         "file.encrypt" if params.get("password").is_none() => Some("encryptPassword"),
         // Define New Multilevel List and Track Changes Options without settings show their dialogs.
         "list.define" if params.get("levels").is_none() => Some("defineList"),
-        "review.trackingOptions" if params.as_object().is_none_or(|m| m.is_empty()) => Some("trackChangesOptions"),
+        "review.trackingOptions" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("trackChangesOptions")
+        }
         // Compare / Combine without a revised document, AutoCorrect Options without settings and
         // Restrict Editing without settings show their dialogs or pane (#412).
         "review.compare" if !has("path") && !has("text") => Some("compare"),
         "review.combine" if !has("path") && !has("text") => Some("combine"),
-        "tools.autocorrect" if params.as_object().is_none_or(|m| m.is_empty()) => Some("autoCorrect"),
-        "review.restrict" | "file.protect" if params.as_object().is_none_or(|m| m.is_empty()) => Some("restrictEditing"),
+        "tools.autocorrect" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("autoCorrect")
+        }
+        "review.restrict" | "file.protect" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("restrictEditing")
+        }
         "insert.bookmark" if !has("name") => Some("bookmark"),
         // Word Count from the keyboard or command search shows its dialog, as the ribbon does.
         "review.wordCount" if params.as_object().is_none_or(|m| m.is_empty()) => Some("wordCount"),
         // Content control Properties without settings shows the dialog.
-        "developer.properties" if params.as_object().is_none_or(|m| m.is_empty()) => Some("controlProperties"),
+        "developer.properties" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("controlProperties")
+        }
         // Enclose Characters without a shape (null is one: it takes the enclosure away).
         "format.enclose" if params.get("shape").is_none() => Some("enclose"),
         // Footnote and Endnote without settings shows its dialog (#385).
-        "references.noteOptions" if params.as_object().is_none_or(|m| m.is_empty()) => Some("noteOptions"),
+        "references.noteOptions" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("noteOptions")
+        }
         // References dialogs (#402): Insert Caption, Insert Index, Mark Entry, Manage Sources and
         // Insert Citation without a source.
-        "references.caption" | "references.index" if params.as_object().is_none_or(|m| m.is_empty()) => {
-            Some(if id == "references.caption" { "caption" } else { "index" })
+        "references.caption" | "references.index"
+            if params.as_object().is_none_or(|m| m.is_empty()) =>
+        {
+            Some(if id == "references.caption" {
+                "caption"
+            } else {
+                "index"
+            })
         }
         "references.markEntry" if !has("entry") => Some("markEntry"),
-        "references.sources" if params.as_object().is_none_or(|m| m.is_empty()) => Some("sourceManager"),
+        "references.sources" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("sourceManager")
+        }
         "references.citation" if !has("tag") && !has("source") => Some("createSource"),
         // Templates and Add-ins, and the Organizer without a file to list (#377).
         "tools.templates" => Some("templates"),
         "styles.organizer" if !has("path") => Some("organizer"),
         // Language, Envelopes and Labels without settings show their dialogs (#407).
         "review.language" if params.as_object().is_none_or(|m| m.is_empty()) => Some("language"),
-        "mailings.envelopes" if params.as_object().is_none_or(|m| m.is_empty()) => Some("envelopes"),
+        "mailings.envelopes" if params.as_object().is_none_or(|m| m.is_empty()) => {
+            Some("envelopes")
+        }
         "mailings.labels" if params.as_object().is_none_or(|m| m.is_empty()) => Some("labels"),
         _ => None,
     }
@@ -1785,7 +2097,10 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs_f64() * 1000.0)
+            .unwrap_or(0.0)
     }
     // `SystemTime::now()` panics on wasm32-unknown-unknown, so ask the browser's clock.
     #[cfg(target_arch = "wasm32")]
@@ -1804,18 +2119,31 @@ mod tests {
     use egui_kittest::kittest::Queryable;
 
     fn mod_key(key: egui::Key) -> egui::Event {
-        egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND }
+        egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        }
     }
 
     /// Issue #14: Mod+- (optional hyphen) also zoomed the whole window out, so it read as "zoom out".
     #[test]
     fn word_shortcuts_do_not_zoom_the_window() {
         let ctx = egui::Context::default();
-        let mut app = WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default());
+        let mut app = WordApp::new(
+            Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
+        );
         let mut frame = |events: Vec<egui::Event>| {
-            let input = egui::RawInput { events, ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                ..Default::default()
+            };
             // No painter here: dropping the font atlas delta unapplied trips an epaint debug assertion.
-            ctx.run_ui(input, |ui| app.logic(ui.ctx())).drop_without_applying_deltas();
+            ctx.run_ui(input, |ui| app.logic(ui.ctx()))
+                .drop_without_applying_deltas();
         };
         frame(Vec::new());
         frame(vec![mod_key(egui::Key::Minus)]);
@@ -1835,7 +2163,12 @@ mod tests {
                 app.logic(ui.ctx());
                 app.ui(ui);
             });
-            let n = out.viewport_output.values().flat_map(|v| v.commands.iter()).filter(|c| matches!(c, egui::ViewportCommand::Title(_))).count();
+            let n = out
+                .viewport_output
+                .values()
+                .flat_map(|v| v.commands.iter())
+                .filter(|c| matches!(c, egui::ViewportCommand::Title(_)))
+                .count();
             out.drop_without_applying_deltas();
             n
         };
@@ -1855,20 +2188,30 @@ mod tests {
     fn non_latin_file_name_is_drawn_in_the_caption() {
         let ctx = egui::Context::default();
         let frame = |app: &mut WordApp| {
-            ctx.run_ui(egui::RawInput::default(), |ui| app.logic(ui.ctx())).drop_without_applying_deltas();
+            ctx.run_ui(egui::RawInput::default(), |ui| app.logic(ui.ctx()))
+                .drop_without_applying_deltas();
         };
         let mut latin = app();
         latin.session.path = Some("report.docx".into());
         frame(&mut latin);
         assert!(!latin.want_system_cjk);
-        assert!(latin.canvas.ime_faces.is_empty(), "a Latin name needs no extra face");
+        assert!(
+            latin.canvas.ime_faces.is_empty(),
+            "a Latin name needs no extra face"
+        );
 
         let mut hebrew = app();
         hebrew.session.path = Some("מסמך.docx".into());
         frame(&mut hebrew);
         let letter = 'מ';
-        if wordcraft_fonts::FontDb::global().fallback_for(letter, u32::MAX).is_some_and(|f| f.data().len() <= 16 << 20) {
-            assert!(hebrew.canvas.ime_faces.iter().any(|f| f.covers(letter)), "the caption borrows a face that covers the file name");
+        if wordcraft_fonts::FontDb::global()
+            .fallback_for(letter, u32::MAX)
+            .is_some_and(|f| f.data().len() <= 16 << 20)
+        {
+            assert!(
+                hebrew.canvas.ime_faces.iter().any(|f| f.covers(letter)),
+                "the caption borrows a face that covers the file name"
+            );
         }
         let n = hebrew.canvas.ime_faces.len();
         frame(&mut hebrew);
@@ -1878,11 +2221,17 @@ mod tests {
         cjk.session.path = Some("文档.docx".into());
         frame(&mut cjk);
         assert!(cjk.want_system_cjk, "a CJK file name loads the CJK UI font");
-        assert!(cjk.canvas.ime_faces.is_empty(), "CJK collections are not copied into the fallback list");
+        assert!(
+            cjk.canvas.ime_faces.is_empty(),
+            "CJK collections are not copied into the fallback list"
+        );
     }
 
     fn app() -> WordApp {
-        WordApp::new(Session::new(wordcraft_doc::Document::new()), Services::default())
+        WordApp::new(
+            Session::new(wordcraft_doc::Document::new()),
+            Services::default(),
+        )
     }
 
     /// File › Options › Advanced › Animation: the caret's animation is a UI command, kept between
@@ -1890,9 +2239,21 @@ mod tests {
     #[test]
     fn caret_animation_is_a_ui_command_and_survives_a_restart() {
         let mut a = app();
-        assert_eq!(a.run("ui.caretAnimation", json!({})).unwrap(), json!({"caretAnimation": true}), "on by default; no value reads it");
-        assert_eq!(a.run("ui.caretAnimation", json!({"value": false})).unwrap(), json!({"caretAnimation": false}));
-        for junk in [json!({"value": "yes"}), json!({"value": 1}), json!({"value": null}), json!({"value": [true]})] {
+        assert_eq!(
+            a.run("ui.caretAnimation", json!({})).unwrap(),
+            json!({"caretAnimation": true}),
+            "on by default; no value reads it"
+        );
+        assert_eq!(
+            a.run("ui.caretAnimation", json!({"value": false})).unwrap(),
+            json!({"caretAnimation": false})
+        );
+        for junk in [
+            json!({"value": "yes"}),
+            json!({"value": 1}),
+            json!({"value": null}),
+            json!({"value": [true]}),
+        ] {
             assert!(a.run("ui.caretAnimation", junk).is_err());
         }
         assert!(!a.ui.caret_animation, "a rejected value keeps the setting");
@@ -1904,7 +2265,10 @@ mod tests {
         // Settings saved before the option existed leave it on.
         let old: UiState = serde_json::from_str(r#"{"tab":"Insert"}"#).unwrap();
         assert!(old.caret_animation && old.tab == "Insert");
-        assert_eq!(a.run("ui.caretAnimation", json!({"value": true})).unwrap()["caretAnimation"], true);
+        assert_eq!(
+            a.run("ui.caretAnimation", json!({"value": true})).unwrap()["caretAnimation"],
+            true
+        );
     }
 
     /// #766: started with nothing to open, the app shows File › Home (the Start screen) as Word
@@ -1919,21 +2283,34 @@ mod tests {
         a.ui.backstage_page = "print".into();
         assert!(a.start_screen(), "on by default");
         assert!(a.ui.backstage && a.ui.backstage_page == "home");
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         h.run_steps(4);
-        assert!(h.query_by_label("Blank document").is_some(), "Home lists Blank document and the templates");
+        assert!(
+            h.query_by_label("Blank document").is_some(),
+            "Home lists Blank document and the templates"
+        );
         assert!(h.query_by_label("Recent").is_some(), "and the Recent list");
         h.key_press(egui::Key::Escape);
         h.run_steps(4);
         assert!(!h.state().ui.backstage, "Esc leaves the Start screen");
-        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body).trim(), "", "for an empty blank document");
+        assert_eq!(
+            h.state()
+                .session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .trim(),
+            "",
+            "for an empty blank document"
+        );
         assert!(!h.state().session.dirty);
 
         let mut b = app();
@@ -1947,9 +2324,21 @@ mod tests {
     #[test]
     fn start_screen_setting_is_a_ui_command_and_survives_a_restart() {
         let mut a = app();
-        assert_eq!(a.run("ui.startScreen", json!({})).unwrap(), json!({"startScreen": true}), "on by default; no value reads it");
-        assert_eq!(a.run("ui.startScreen", json!({"value": false})).unwrap(), json!({"startScreen": false}));
-        for junk in [json!({"value": "yes"}), json!({"value": 1}), json!({"value": null}), json!({"value": [true]})] {
+        assert_eq!(
+            a.run("ui.startScreen", json!({})).unwrap(),
+            json!({"startScreen": true}),
+            "on by default; no value reads it"
+        );
+        assert_eq!(
+            a.run("ui.startScreen", json!({"value": false})).unwrap(),
+            json!({"startScreen": false})
+        );
+        for junk in [
+            json!({"value": "yes"}),
+            json!({"value": 1}),
+            json!({"value": null}),
+            json!({"value": [true]}),
+        ] {
             assert!(a.run("ui.startScreen", junk).is_err());
         }
         assert!(!a.ui.start_screen, "a rejected value keeps the setting");
@@ -1959,10 +2348,16 @@ mod tests {
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
         assert!(!b.ui.start_screen && !b.start_screen());
         let old: UiState = serde_json::from_str(r#"{"tab":"Insert"}"#).unwrap();
-        assert!(old.start_screen, "settings from before the option leave it on");
+        assert!(
+            old.start_screen,
+            "settings from before the option leave it on"
+        );
         let mut c = app();
         c.apply_prefs(old);
-        assert!(!c.ui.backstage, "applying settings alone stays in the editor");
+        assert!(
+            !c.ui.backstage,
+            "applying settings alone stays in the editor"
+        );
         assert!(c.start_screen() && c.ui.backstage_page == "home");
     }
 
@@ -1973,7 +2368,9 @@ mod tests {
         a.run("insert.icon", json!({})).unwrap();
         assert_eq!(a.dialog.as_ref().map(dialogs::Dialog::name), Some("icons"));
         a.dialog = None;
-        let r = a.run("insert.icon", json!({"id": "sun", "size": 36})).unwrap();
+        let r = a
+            .run("insert.icon", json!({"id": "sun", "size": 36}))
+            .unwrap();
         assert_eq!(r["icon"], "sun");
         assert!(a.dialog.is_none(), "an id inserts without the dialog");
         assert!(a.selected_picture_media().is_some());
@@ -1984,10 +2381,17 @@ mod tests {
     #[test]
     fn table_properties_button_opens_the_dialog() {
         let mut a = app();
-        a.run("insert.table", json!({"rows": 2, "cols": 2})).unwrap();
+        a.run("insert.table", json!({"rows": 2, "cols": 2}))
+            .unwrap();
         a.run("table.properties", json!({})).unwrap();
-        let Some(dialogs::Dialog::TableProperties { form, basis }) = a.dialog.clone() else { panic!("no dialog: {:?}", a.dialog) };
-        assert_eq!(form.changes(&basis), json!({}), "untouched, nothing changes");
+        let Some(dialogs::Dialog::TableProperties { form, basis }) = a.dialog.clone() else {
+            panic!("no dialog: {:?}", a.dialog)
+        };
+        assert_eq!(
+            form.changes(&basis),
+            json!({}),
+            "untouched, nothing changes"
+        );
         let mut f = (*form).clone();
         f.align = "center".into();
         f.row_height_on = true;
@@ -1995,15 +2399,25 @@ mod tests {
         f.row_exact = true;
         f.header_row = true;
         let changes = f.changes(&basis);
-        assert_eq!(changes, json!({"align": "center", "rowHeight": 36.0, "rowHeightRule": "exact", "headerRow": true}));
+        assert_eq!(
+            changes,
+            json!({"align": "center", "rowHeight": 36.0, "rowHeightRule": "exact", "headerRow": true})
+        );
         a.dialog = None;
         a.run("table.properties", changes).unwrap();
         assert!(a.dialog.is_none(), "settings apply without the dialog");
         let (tp, _, _) = a.session.sel.focus.path.cell().unwrap();
         let t = a.session.doc.table(a.session.sel.focus.story, &tp).unwrap();
         assert_eq!(t.props.align, Some(wordcraft_doc::props::Align::Center));
-        assert_eq!((t.rows[0].props.height, t.rows[0].props.header), (Some(36.0), true));
-        assert_eq!(dialogs::TableForm::read(&a).unwrap().changes(&f), json!({}), "the dialog reopens with the new values");
+        assert_eq!(
+            (t.rows[0].props.height, t.rows[0].props.header),
+            (Some(36.0), true)
+        );
+        assert_eq!(
+            dialogs::TableForm::read(&a).unwrap().changes(&f),
+            json!({}),
+            "the dialog reopens with the new values"
+        );
         // Table direction (#362) is one more setting of the same step.
         let mut g = dialogs::TableForm::read(&a).unwrap();
         let basis = g.clone();
@@ -2019,13 +2433,24 @@ mod tests {
         a.run("text.insert", json!({"text": "a 字 b"})).unwrap();
         a.run("select.text", json!({"text": "字"})).unwrap();
         a.run("format.enclose", json!({})).unwrap();
-        let Some(dialogs::Dialog::Enclose { style, text, shape }) = a.dialog.clone() else { panic!("no dialog: {:?}", a.dialog) };
-        assert_eq!((style.as_str(), text.as_str(), shape.as_str()), ("shrink", "字", "circle"));
+        let Some(dialogs::Dialog::Enclose { style, text, shape }) = a.dialog.clone() else {
+            panic!("no dialog: {:?}", a.dialog)
+        };
+        assert_eq!(
+            (style.as_str(), text.as_str(), shape.as_str()),
+            ("shrink", "字", "circle")
+        );
         a.dialog = None;
-        a.run("format.enclose", json!({"shape": "square", "style": "enlarge", "text": "字"})).unwrap();
+        a.run(
+            "format.enclose",
+            json!({"shape": "square", "style": "enlarge", "text": "字"}),
+        )
+        .unwrap();
         assert!(a.dialog.is_none(), "a shape applies without the dialog");
         a.run("format.enclose", json!({})).unwrap();
-        let Some(dialogs::Dialog::Enclose { style, shape, .. }) = a.dialog.clone() else { panic!("no dialog") };
+        let Some(dialogs::Dialog::Enclose { style, shape, .. }) = a.dialog.clone() else {
+            panic!("no dialog")
+        };
         assert_eq!((style.as_str(), shape.as_str()), ("enlarge", "square"));
     }
 
@@ -2037,7 +2462,10 @@ mod tests {
         let ctx = egui::Context::default();
         let mut a = app();
         let frame = |a: &mut WordApp, events: Vec<egui::Event>| {
-            let input = egui::RawInput { events, ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2048,16 +2476,36 @@ mod tests {
         for _ in 0..3 {
             frame(&mut a, Vec::new());
         }
-        let key = egui::Event::Key { key: egui::Key::H, physical_key: None, pressed: true, repeat: false, modifiers: egui::Modifiers::COMMAND };
+        let key = egui::Event::Key {
+            key: egui::Key::H,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers: egui::Modifiers::COMMAND,
+        };
         frame(&mut a, vec![key]);
         for _ in 0..2 {
             frame(&mut a, Vec::new());
         }
-        assert!(ctx.memory(|m| m.has_focus(egui::Id::new("find_what"))), "Find what has the focus");
+        assert!(
+            ctx.memory(|m| m.has_focus(egui::Id::new("find_what"))),
+            "Find what has the focus"
+        );
         frame(&mut a, vec![egui::Event::Text("abc".into())]);
-        let Some(dialogs::Dialog::Find { query, .. }) = &a.dialog else { panic!("no Find dialog") };
-        assert!(query.ends_with("abc"), "typing went into Find what: {query:?}");
-        assert!(a.session.doc.plain_text(wordcraft_doc::StoryRef::Body).is_empty(), "nothing was typed into the document");
+        let Some(dialogs::Dialog::Find { query, .. }) = &a.dialog else {
+            panic!("no Find dialog")
+        };
+        assert!(
+            query.ends_with("abc"),
+            "typing went into Find what: {query:?}"
+        );
+        assert!(
+            a.session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .is_empty(),
+            "nothing was typed into the document"
+        );
     }
 
     /// Issue #139: Ctrl+wheel over the page didn't zoom.
@@ -2069,7 +2517,12 @@ mod tests {
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2093,7 +2546,11 @@ mod tests {
         for _ in 0..30 {
             frame(&mut a, Vec::new());
         }
-        assert!(a.canvas.scale > before * 1.05, "Ctrl+wheel up zooms in: {before} -> {}", a.canvas.scale);
+        assert!(
+            a.canvas.scale > before * 1.05,
+            "Ctrl+wheel up zooms in: {before} -> {}",
+            a.canvas.scale
+        );
         let zoomed = a.canvas.scale;
         frame(&mut a, vec![wheel(-1.0)]);
         for _ in 0..30 {
@@ -2112,7 +2569,10 @@ mod tests {
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1440.0, 900.0));
         let frame = |a: &mut WordApp| {
             for _ in 0..4 {
-                let input = egui::RawInput { screen_rect: Some(screen), ..Default::default() };
+                let input = egui::RawInput {
+                    screen_rect: Some(screen),
+                    ..Default::default()
+                };
                 ctx.run_ui(input, |ui| {
                     a.logic(ui.ctx());
                     a.ui(ui);
@@ -2127,7 +2587,10 @@ mod tests {
             a.run(fit, json!({})).unwrap();
             let fitted = frame(&mut a);
             assert!((fitted - base).abs() > 0.05, "{fit} changes the zoom");
-            assert!((a.session.view.zoom - fitted).abs() < 1e-3, "{fit}: session zoom follows the shown zoom");
+            assert!(
+                (a.session.view.zoom - fitted).abs() < 1e-3,
+                "{fit}: session zoom follows the shown zoom"
+            );
             a.run("view.zoomIn", json!({})).unwrap();
             let zin = frame(&mut a);
             assert!(zin > fitted, "{fit}: Zoom In zooms in: {fitted} -> {zin}");
@@ -2135,12 +2598,17 @@ mod tests {
             frame(&mut a);
             a.run("view.zoomOut", json!({})).unwrap();
             let zout = frame(&mut a);
-            assert!(zout < fitted, "{fit}: Zoom Out zooms out: {fitted} -> {zout}");
+            assert!(
+                zout < fitted,
+                "{fit}: Zoom Out zooms out: {fitted} -> {zout}"
+            );
             // The Zoom dialog opens at the shown zoom.
             a.run(fit, json!({})).unwrap();
             frame(&mut a);
             a.run("ui.dialog", json!({"name": "zoom"})).unwrap();
-            assert!(matches!(a.dialog, Some(dialogs::Dialog::Zoom { percent }) if (percent - (fitted * 100.0).round()).abs() < 1.0));
+            assert!(
+                matches!(a.dialog, Some(dialogs::Dialog::Zoom { percent }) if (percent - (fitted * 100.0).round()).abs() < 1.0)
+            );
             a.dialog = None;
         }
         a.run("view.zoom100", json!({})).unwrap();
@@ -2157,7 +2625,12 @@ mod tests {
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2169,22 +2642,56 @@ mod tests {
         }
         let over_page = a.canvas.canvas_rect.unwrap().center();
         frame(&mut a, vec![egui::Event::PointerMoved(over_page)]);
-        let wheel = |unit, y: f32, phase| egui::Event::MouseWheel { unit, delta: egui::vec2(0.0, y), phase, modifiers: egui::Modifiers::NONE };
+        let wheel = |unit, y: f32, phase| egui::Event::MouseWheel {
+            unit,
+            delta: egui::vec2(0.0, y),
+            phase,
+            modifiers: egui::Modifiers::NONE,
+        };
         let start = a.canvas.scroll_offset.y;
-        frame(&mut a, vec![wheel(egui::MouseWheelUnit::Point, -40.0, egui::TouchPhase::Start)]);
-        assert_eq!(a.canvas.scroll_offset.y, start + 40.0, "the first touchpad delta lands in the same frame");
+        frame(
+            &mut a,
+            vec![wheel(
+                egui::MouseWheelUnit::Point,
+                -40.0,
+                egui::TouchPhase::Start,
+            )],
+        );
+        assert_eq!(
+            a.canvas.scroll_offset.y,
+            start + 40.0,
+            "the first touchpad delta lands in the same frame"
+        );
         // Fingers lift; the coast after it is left to the unit tests (crate::scroll).
-        frame(&mut a, vec![wheel(egui::MouseWheelUnit::Point, 0.0, egui::TouchPhase::End)]);
+        frame(
+            &mut a,
+            vec![wheel(
+                egui::MouseWheelUnit::Point,
+                0.0,
+                egui::TouchPhase::End,
+            )],
+        );
         a.canvas.wheel = Default::default();
         let at = a.canvas.scroll_offset.y;
-        frame(&mut a, vec![wheel(egui::MouseWheelUnit::Line, -1.0, egui::TouchPhase::Move)]);
+        frame(
+            &mut a,
+            vec![wheel(
+                egui::MouseWheelUnit::Line,
+                -1.0,
+                egui::TouchPhase::Move,
+            )],
+        );
         let first = a.canvas.scroll_offset.y - at;
         for _ in 0..30 {
             frame(&mut a, Vec::new());
         }
         let notch = crate::scroll::notch_px(a.canvas.scale / crate::canvas::PX_PER_PT);
         assert!(first > 0.0 && first < notch, "a notch eases in: {first}");
-        assert!((a.canvas.scroll_offset.y - at - notch).abs() < 0.5, "a notch scrolls {notch}: {}", a.canvas.scroll_offset.y - at);
+        assert!(
+            (a.canvas.scroll_offset.y - at - notch).abs() < 0.5,
+            "a notch scrolls {notch}: {}",
+            a.canvas.scroll_offset.y - at
+        );
     }
 
     /// Reading Mode: reflowed viewport-height columns, horizontal wheel/navigation, exit restores
@@ -2193,14 +2700,24 @@ mod tests {
     fn reading_mode_columns_wheel_turns_and_navigation() {
         let ctx = egui::Context::default();
         let mut a = app();
-        a.run("text.insert", json!({"text": "One readable paragraph in many narrow columns. ".repeat(300)})).unwrap();
-        a.run("caret.set", json!({"pos": wordcraft_doc::Pos::body(0, 0)})).unwrap();
+        a.run(
+            "text.insert",
+            json!({"text": "One readable paragraph in many narrow columns. ".repeat(300)}),
+        )
+        .unwrap();
+        a.run("caret.set", json!({"pos": wordcraft_doc::Pos::body(0, 0)}))
+            .unwrap();
         let original = a.session.doc.settings.clone();
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 740.0));
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>, screen| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2226,22 +2743,50 @@ mod tests {
         let click = a.canvas.page_rects[2].center();
         assert!(a.canvas.canvas_rect.unwrap().contains(click));
         let initial_scroll = a.canvas.scroll_offset.x;
-        let button =
-            |pressed| egui::Event::PointerButton { pos: click, button: egui::PointerButton::Primary, pressed, modifiers: egui::Modifiers::NONE };
-        frame(&mut a, vec![egui::Event::PointerMoved(click), button(true)], screen);
-        assert_eq!(a.session.layout().caret_on(&a.session.sel.focus, a.session.page_hint).unwrap().page, 2);
+        let button = |pressed| egui::Event::PointerButton {
+            pos: click,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(
+            &mut a,
+            vec![egui::Event::PointerMoved(click), button(true)],
+            screen,
+        );
+        assert_eq!(
+            a.session
+                .layout()
+                .caret_on(&a.session.sel.focus, a.session.page_hint)
+                .unwrap()
+                .page,
+            2
+        );
         frame(&mut a, vec![], screen); // mouse is still held at the same coordinates
-        assert!((a.canvas.scroll_offset.x - initial_scroll).abs() < 0.5, "click must not scroll a later column to the left");
-        assert!(a.session.sel.is_collapsed(), "stationary click must not create a selection");
+        assert!(
+            (a.canvas.scroll_offset.x - initial_scroll).abs() < 0.5,
+            "click must not scroll a later column to the left"
+        );
+        assert!(
+            a.session.sel.is_collapsed(),
+            "stationary click must not create a selection"
+        );
         frame(&mut a, vec![button(false)], screen);
         frame(&mut a, vec![], screen);
         assert!((a.canvas.scroll_offset.x - initial_scroll).abs() < 0.5);
         assert!(a.session.sel.is_collapsed());
         // An explicit caret move outside the visible columns must still reveal its destination.
-        a.run("caret.set", json!({"pos": wordcraft_doc::Pos::body(0, 5000)})).unwrap();
+        a.run(
+            "caret.set",
+            json!({"pos": wordcraft_doc::Pos::body(0, 5000)}),
+        )
+        .unwrap();
         frame(&mut a, vec![], screen);
-        assert!(a.canvas.scroll_offset.x > initial_scroll + a.session.view.read_width * a.canvas.scale);
-        a.run("caret.set", json!({"pos": wordcraft_doc::Pos::body(0, 0)})).unwrap();
+        assert!(
+            a.canvas.scroll_offset.x > initial_scroll + a.session.view.read_width * a.canvas.scale
+        );
+        a.run("caret.set", json!({"pos": wordcraft_doc::Pos::body(0, 0)}))
+            .unwrap();
         frame(&mut a, vec![], screen);
         assert!((a.canvas.scroll_offset.x - initial_scroll).abs() < 0.5);
         let over = a.canvas.canvas_rect.unwrap().center();
@@ -2257,14 +2802,23 @@ mod tests {
             screen,
         );
         let step = a.session.view.read_width * a.canvas.scale + 18.0;
-        assert!(a.canvas.scroll_offset.x > 0.0 && a.canvas.scroll_offset.x < step, "a wheel turn animates instead of jumping");
+        assert!(
+            a.canvas.scroll_offset.x > 0.0 && a.canvas.scroll_offset.x < step,
+            "a wheel turn animates instead of jumping"
+        );
         let first = a.canvas.scroll_offset.x;
         frame(&mut a, vec![], screen);
-        assert!(a.canvas.scroll_offset.x > first, "smooth motion continues after the wheel event");
+        assert!(
+            a.canvas.scroll_offset.x > first,
+            "smooth motion continues after the wheel event"
+        );
         for _ in 0..23 {
             frame(&mut a, vec![], screen);
         }
-        assert!((a.canvas.scroll_offset.x - step).abs() < 1.0, "animation settles exactly on column boundary");
+        assert!(
+            (a.canvas.scroll_offset.x - step).abs() < 1.0,
+            "animation settles exactly on column boundary"
+        );
         assert_eq!(a.canvas.scroll_offset.y, 0.0);
         canvas::turn_read_page(&mut a, 1.0);
         for _ in 0..25 {
@@ -2275,14 +2829,23 @@ mod tests {
         // A heading navigation request must position its column at the leading edge,
         // not wherever egui's generic scroll_to_rect decides the caret is visible.
         let target = wordcraft_doc::Pos::body(0, 5000);
-        a.run("view.navigationPane", json!({"value": true})).unwrap();
+        a.run("view.navigationPane", json!({"value": true}))
+            .unwrap();
         a.run("caret.set", json!({"pos": target})).unwrap();
         a.canvas.nav_to_caret = true;
         a.canvas.scroll_to_caret = false;
         frame(&mut a, vec![], screen);
-        let page = a.session.layout().caret_on(&a.session.sel.focus, a.session.page_hint).unwrap().page;
+        let page = a
+            .session
+            .layout()
+            .caret_on(&a.session.sel.focus, a.session.page_hint)
+            .unwrap()
+            .page;
         let step = a.session.view.read_width * a.canvas.scale + 18.0;
-        assert!((a.canvas.scroll_offset.x - (page as f32 * step)).abs() < 1.0, "heading must align its column beside the navigation pane");
+        assert!(
+            (a.canvas.scroll_offset.x - (page as f32 * step)).abs() < 1.0,
+            "heading must align its column beside the navigation pane"
+        );
         assert!(a.canvas.scroll_offset.x != x);
         // Resizing changes the content width (reflow), not the zoom or the print paper width.
         let narrow = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(850.0, 630.0));
@@ -2290,14 +2853,26 @@ mod tests {
         let before_layout = a.session.layout();
         let anchor = a.canvas.read_first_visible.clone().unwrap();
         frame(&mut a, vec![], narrow);
-        assert!(std::sync::Arc::ptr_eq(&before_layout, &a.session.layout()), "resize frames reuse cached pagination");
-        assert!((a.canvas.scroll_offset.x - before_resize).abs() < 1.0, "no jump while resize is in progress");
-        assert_eq!(a.session.view.read_width, initial_width, "expensive repagination is deferred during resizing");
+        assert!(
+            std::sync::Arc::ptr_eq(&before_layout, &a.session.layout()),
+            "resize frames reuse cached pagination"
+        );
+        assert!(
+            (a.canvas.scroll_offset.x - before_resize).abs() < 1.0,
+            "no jump while resize is in progress"
+        );
+        assert_eq!(
+            a.session.view.read_width, initial_width,
+            "expensive repagination is deferred during resizing"
+        );
         for _ in 0..15 {
             frame(&mut a, vec![], narrow);
         }
         assert_ne!(a.session.view.read_width, initial_width);
-        assert!(!std::sync::Arc::ptr_eq(&before_layout, &a.session.layout()), "stable viewport commits one repagination");
+        assert!(
+            !std::sync::Arc::ptr_eq(&before_layout, &a.session.layout()),
+            "stable viewport commits one repagination"
+        );
         let target_page = a.session.layout().caret_on(&anchor, 0).unwrap().page;
         let new_step = a.session.view.read_width * a.canvas.scale + 18.0;
         assert!(
@@ -2305,7 +2880,8 @@ mod tests {
             "resize must preserve visible text anchor, not jump to editing caret"
         );
         assert!((a.canvas.scale - canvas::PX_PER_PT).abs() < 0.01);
-        a.run("view.readColumnWidth", json!({"value": "page"})).unwrap();
+        a.run("view.readColumnWidth", json!({"value": "page"}))
+            .unwrap();
         frame(&mut a, vec![], narrow);
         assert!(a.session.view.read_width <= 612.0);
         a.run("view.readTextSize", json!({"value": 125})).unwrap();
@@ -2322,7 +2898,10 @@ mod tests {
     /// An app whose host reports the system's animation setting as `system` holds it.
     fn app_with_system_animations(system: &std::rc::Rc<std::cell::Cell<Option<bool>>>) -> WordApp {
         let system = system.clone();
-        let services = Services { animations_enabled: Some(Box::new(move || system.get())), ..Default::default() };
+        let services = Services {
+            animations_enabled: Some(Box::new(move || system.get())),
+            ..Default::default()
+        };
         WordApp::new(Session::new(wordcraft_doc::Document::new()), services)
     }
 
@@ -2339,20 +2918,43 @@ mod tests {
             (Animations::Off, Some(true), false),
             (Animations::Off, None, false),
         ] {
-            assert_eq!(setting.enabled(system), on, "{setting:?} with the system at {system:?}");
+            assert_eq!(
+                setting.enabled(system),
+                on,
+                "{setting:?} with the system at {system:?}"
+            );
         }
         // No host hook (tests, headless screenshots): nothing is reported, so they are on.
         let mut a = app();
-        assert_eq!(a.run("ui.animations", json!({})).unwrap(), json!({"animations": "system", "enabled": true, "system": null}));
+        assert_eq!(
+            a.run("ui.animations", json!({})).unwrap(),
+            json!({"animations": "system", "enabled": true, "system": null})
+        );
         // The system has them off, as Windows reports with Animation effects switched off.
         let system = std::rc::Rc::new(std::cell::Cell::new(Some(false)));
         let mut a = app_with_system_animations(&system);
-        assert_eq!(a.run("ui.animations", json!({})).unwrap(), json!({"animations": "system", "enabled": false, "system": false}));
-        assert_eq!(a.run("ui.animations", json!({"value": "On"})).unwrap()["enabled"], true);
+        assert_eq!(
+            a.run("ui.animations", json!({})).unwrap(),
+            json!({"animations": "system", "enabled": false, "system": false})
+        );
+        assert_eq!(
+            a.run("ui.animations", json!({"value": "On"})).unwrap()["enabled"],
+            true
+        );
         system.set(Some(true));
-        assert_eq!(a.run("ui.animations", json!({"value": "off"})).unwrap(), json!({"animations": "off", "enabled": false, "system": true}));
-        assert!(a.run("ui.animations", json!({"value": "sometimes"})).is_err());
-        assert_eq!(a.ui.animations, Animations::Off, "a rejected value keeps the setting");
+        assert_eq!(
+            a.run("ui.animations", json!({"value": "off"})).unwrap(),
+            json!({"animations": "off", "enabled": false, "system": true})
+        );
+        assert!(
+            a.run("ui.animations", json!({"value": "sometimes"}))
+                .is_err()
+        );
+        assert_eq!(
+            a.ui.animations,
+            Animations::Off,
+            "a rejected value keeps the setting"
+        );
         let saved = serde_json::to_string(&a.prefs()).unwrap();
         assert!(saved.contains(r#""animations":"off""#), "{saved}");
         let mut b = app();
@@ -2360,9 +2962,17 @@ mod tests {
         assert_eq!(b.ui.animations, Animations::Off);
         assert!(!b.animations_on());
         // Preferences from before the setting, or with a value it doesn't know, follow the system.
-        for raw in [r#"{"tab": "Insert"}"#, r#"{"animations": "wobbly", "tab": "Insert"}"#, r#"{"animations": 3, "tab": "Insert"}"#] {
+        for raw in [
+            r#"{"tab": "Insert"}"#,
+            r#"{"animations": "wobbly", "tab": "Insert"}"#,
+            r#"{"animations": 3, "tab": "Insert"}"#,
+        ] {
             let ui = UiState::from_json(raw.as_bytes()).unwrap();
-            assert_eq!((ui.animations, ui.tab.as_str()), (Animations::System, "Insert"), "{raw}");
+            assert_eq!(
+                (ui.animations, ui.tab.as_str()),
+                (Animations::System, "Insert"),
+                "{raw}"
+            );
         }
     }
 
@@ -2379,7 +2989,12 @@ mod tests {
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2391,7 +3006,11 @@ mod tests {
         }
         assert!(!a.animations_on());
         assert_eq!(ctx.global_style().animation_time, 0.0, "no fades");
-        assert_eq!(ctx.global_style().scroll_animation, egui::style::ScrollAnimation::none(), "no glide to the caret");
+        assert_eq!(
+            ctx.global_style().scroll_animation,
+            egui::style::ScrollAnimation::none(),
+            "no glide to the caret"
+        );
         let over_page = a.canvas.canvas_rect.unwrap().center();
         frame(&mut a, vec![egui::Event::PointerMoved(over_page)]);
         let notch_down = || egui::Event::MouseWheel {
@@ -2404,20 +3023,36 @@ mod tests {
         let at = a.canvas.scroll_offset.y;
         frame(&mut a, vec![notch_down()]);
         let landed = a.canvas.scroll_offset.y;
-        assert!((landed - at - notch).abs() < 0.5, "the whole notch ({notch}) lands in its frame: {}", landed - at);
+        assert!(
+            (landed - at - notch).abs() < 0.5,
+            "the whole notch ({notch}) lands in its frame: {}",
+            landed - at
+        );
         for _ in 0..30 {
             frame(&mut a, Vec::new());
         }
-        assert_eq!(a.canvas.scroll_offset.y, landed, "nothing is left to ease in");
+        assert_eq!(
+            a.canvas.scroll_offset.y, landed,
+            "nothing is left to ease in"
+        );
         // Animation effects are switched back on in the system's settings: the next frame has it.
         system.set(Some(true));
         frame(&mut a, Vec::new());
         assert!(a.animations_on());
-        assert_eq!(ctx.global_style().animation_time, egui::Style::default().animation_time);
-        assert_eq!(ctx.global_style().scroll_animation, egui::Style::default().scroll_animation);
+        assert_eq!(
+            ctx.global_style().animation_time,
+            egui::Style::default().animation_time
+        );
+        assert_eq!(
+            ctx.global_style().scroll_animation,
+            egui::Style::default().scroll_animation
+        );
         frame(&mut a, vec![notch_down()]);
         let first = a.canvas.scroll_offset.y - landed;
-        assert!(first > 0.0 && first < notch, "a notch eases in again: {first}");
+        assert!(
+            first > 0.0 && first < notch,
+            "a notch eases in again: {first}"
+        );
     }
 
     /// With animation effects off a zoom step is finished in its own frame: Ctrl+wheel zooms the
@@ -2434,7 +3069,12 @@ mod tests {
         // One frame; returns how soon it asked to be drawn again.
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             let out = ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2460,25 +3100,38 @@ mod tests {
         let before = a.canvas.scale;
         frame(&mut a, vec![ctrl_wheel(1.0)]);
         let (scale, pages) = (a.canvas.scale, a.canvas.page_rects.clone());
-        assert!((scale / before - notch_zoom).abs() < 1e-3, "the whole notch in its frame: {before} -> {scale}");
+        assert!(
+            (scale / before - notch_zoom).abs() < 1e-3,
+            "the whole notch in its frame: {before} -> {scale}"
+        );
         for _ in 0..30 {
             frame(&mut a, Vec::new());
             assert_eq!(a.canvas.scale, scale, "nothing is left to ease in");
-            assert_eq!(a.canvas.page_rects, pages, "the page was already where and how it stays");
+            assert_eq!(
+                a.canvas.page_rects, pages,
+                "the page was already where and how it stays"
+            );
         }
         // Quarter notches: a step of about 10% with every second one, nothing in between.
         frame(&mut a, vec![ctrl_wheel(-0.25)]);
         assert_eq!(a.canvas.scale, scale, "a quarter notch isn't a step yet");
         frame(&mut a, vec![ctrl_wheel(-0.25)]);
         let stepped = a.canvas.scale;
-        assert!((stepped / scale - (-0.1_f32).exp()).abs() < 1e-3, "{scale} -> {stepped}");
+        assert!(
+            (stepped / scale - (-0.1_f32).exp()).abs() < 1e-3,
+            "{scale} -> {stepped}"
+        );
         for _ in 0..30 {
             frame(&mut a, Vec::new());
         }
         assert_eq!(a.canvas.scale, stepped);
         // Zoom Out (the status bar's minus, View › Zoom Out): the page changes in that frame, and
         // the frame asks for another at once so the readout beside the slider isn't left behind.
-        assert_ne!(frame(&mut a, Vec::new()), Some(std::time::Duration::ZERO), "idle: nothing to redraw at once");
+        assert_ne!(
+            frame(&mut a, Vec::new()),
+            Some(std::time::Duration::ZERO),
+            "idle: nothing to redraw at once"
+        );
         a.run("view.zoomOut", json!({})).unwrap();
         assert_eq!(frame(&mut a, Vec::new()), Some(std::time::Duration::ZERO));
         let (scale, pages) = (a.canvas.scale, a.canvas.page_rects.clone());
@@ -2494,12 +3147,21 @@ mod tests {
         let ctx = egui::Context::default();
         let mut a = app();
         // A few pages of text, so there is content below the fold.
-        a.run("text.insert", json!({"text": "lorem ipsum dolor sit amet consectetur ".repeat(1200)})).unwrap();
+        a.run(
+            "text.insert",
+            json!({"text": "lorem ipsum dolor sit amet consectetur ".repeat(1200)}),
+        )
+        .unwrap();
         let screen = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 600.0));
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp, events: Vec<egui::Event>| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { events, time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                events,
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2509,12 +3171,19 @@ mod tests {
         for _ in 0..3 {
             frame(&mut a, Vec::new());
         }
-        let (Some(vp), Some(page)) = (a.canvas.viewport, a.canvas.page_rects.first()) else { panic!("the canvas laid out") };
+        let (Some(vp), Some(page)) = (a.canvas.viewport, a.canvas.page_rects.first()) else {
+            panic!("the canvas laid out")
+        };
         let start = page.left_top() + egui::vec2(120.0, 150.0);
         frame(&mut a, vec![egui::Event::PointerMoved(start)]);
         frame(
             &mut a,
-            vec![egui::Event::PointerButton { pos: start, button: egui::PointerButton::Primary, pressed: true, modifiers: Default::default() }],
+            vec![egui::Event::PointerButton {
+                pos: start,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: Default::default(),
+            }],
         );
         assert!(a.canvas.drag_selecting(), "the press started a drag-select");
         let base = a.session.sel.focus.clone();
@@ -2523,18 +3192,32 @@ mod tests {
         for _ in 0..30 {
             frame(&mut a, vec![egui::Event::PointerMoved(below)]);
         }
-        assert!(a.canvas.scroll_offset.y > 0.0, "the view scrolled toward later content");
-        assert!(a.session.sel.focus > base, "the selection followed the content");
+        assert!(
+            a.canvas.scroll_offset.y > 0.0,
+            "the view scrolled toward later content"
+        );
+        assert!(
+            a.session.sel.focus > base,
+            "the selection followed the content"
+        );
         // The pointer never moves; the content keeps scrolling under it, so the selection must
         // keep growing.
         let grown = a.session.sel.focus.clone();
         for _ in 0..15 {
             frame(&mut a, vec![egui::Event::PointerMoved(below)]);
         }
-        assert!(a.session.sel.focus > grown, "the selection keeps growing under a stationary pointer");
+        assert!(
+            a.session.sel.focus > grown,
+            "the selection keeps growing under a stationary pointer"
+        );
         frame(
             &mut a,
-            vec![egui::Event::PointerButton { pos: below, button: egui::PointerButton::Primary, pressed: false, modifiers: Default::default() }],
+            vec![egui::Event::PointerButton {
+                pos: below,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: Default::default(),
+            }],
         );
         assert!(!a.canvas.drag_selecting());
         assert!(!a.session.sel.is_collapsed(), "the drag left a selection");
@@ -2553,7 +3236,11 @@ mod tests {
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2571,8 +3258,14 @@ mod tests {
             frame(&mut a);
         }
         let rects = a.canvas.page_rects.clone();
-        assert_eq!(a.canvas.cols, 4, "30%: all four pages fit across: {rects:?}");
-        assert!((rects[3].top() - rects[0].top()).abs() < 1.0 && rects[3].left() > rects[2].right(), "{rects:?}");
+        assert_eq!(
+            a.canvas.cols, 4,
+            "30%: all four pages fit across: {rects:?}"
+        );
+        assert!(
+            (rects[3].top() - rects[0].top()).abs() < 1.0 && rects[3].left() > rects[2].right(),
+            "{rects:?}"
+        );
         // A click inside the last page's text puts the caret on that page.
         let p = canvas::page_to_screen(&mut a, 3, 100.0, 80.0).unwrap();
         assert!(rects[3].contains(p), "{p:?} in {:?}", rects[3]);
@@ -2593,7 +3286,11 @@ mod tests {
         let mut t = 0.0;
         let mut frame = |a: &mut WordApp| {
             t += 1.0 / 60.0;
-            let input = egui::RawInput { time: Some(t), screen_rect: Some(screen), ..Default::default() };
+            let input = egui::RawInput {
+                time: Some(t),
+                screen_rect: Some(screen),
+                ..Default::default()
+            };
             ctx.run_ui(input, |ui| {
                 a.logic(ui.ctx());
                 a.ui(ui);
@@ -2609,19 +3306,27 @@ mod tests {
         for _ in 0..3 {
             frame(&mut a);
         }
-        assert_eq!(a.canvas.cols, 1, "30% after One Page: still one page per row");
+        assert_eq!(
+            a.canvas.cols, 1,
+            "30% after One Page: still one page per row"
+        );
         a.run("view.multiplePages", json!({})).unwrap();
         a.run("view.zoom", json!({"value": 30})).unwrap();
         for _ in 0..3 {
             frame(&mut a);
         }
-        assert_eq!(a.canvas.cols, 4, "30% after Multiple Pages: all four pages fit across");
+        assert_eq!(
+            a.canvas.cols, 4,
+            "30% after Multiple Pages: all four pages fit across"
+        );
     }
 
     #[test]
     fn user_name_survives_restart() {
         let mut first = app();
-        first.run("file.setAuthor", json!({"name": "Ada Lovelace"})).unwrap();
+        first
+            .run("file.setAuthor", json!({"name": "Ada Lovelace"}))
+            .unwrap();
         let saved = serde_json::to_vec(&first.prefs()).unwrap();
 
         let mut second = app();
@@ -2629,7 +3334,9 @@ mod tests {
         assert_eq!(second.session.author, "Ada Lovelace");
 
         // A later rename is what gets saved next, not the name loaded at startup.
-        second.run("file.setAuthor", json!({"name": "Grace Hopper"})).unwrap();
+        second
+            .run("file.setAuthor", json!({"name": "Grace Hopper"}))
+            .unwrap();
         assert_eq!(second.prefs().author, "Grace Hopper");
     }
 
@@ -2663,7 +3370,8 @@ mod tests {
     fn docx_on_disk(dir: &std::path::Path, text: &str) -> std::path::PathBuf {
         let path = dir.join("contract.docx");
         let mut s = Session::new(wordcraft_doc::Document::from_text(text));
-        s.run("file.save", &json!({"path": path.to_string_lossy()})).unwrap();
+        s.run("file.save", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         path
     }
 
@@ -2673,21 +3381,29 @@ mod tests {
         let mut a = typed();
         a.run("file.new", json!({})).unwrap();
         assert_eq!(prompt(&a), Some("saveChanges"));
-        assert!(body_text(&a).contains(UNSAVED), "the document is untouched while the prompt is up");
+        assert!(
+            body_text(&a).contains(UNSAVED),
+            "the document is untouched while the prompt is up"
+        );
         assert!(a.session.dirty);
 
         // Cancel: nothing happens.
-        a.run("ui.saveChanges", json!({"answer": "cancel"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "cancel"}))
+            .unwrap();
         assert_eq!(prompt(&a), None);
         assert!(body_text(&a).contains(UNSAVED));
 
         // Don't Save: the new document replaces it.
         a.run("file.new", json!({"template": "letter"})).unwrap();
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
         assert_eq!(prompt(&a), None);
         assert!(!body_text(&a).contains(UNSAVED));
         assert!(!a.session.dirty);
-        assert!(!body_text(&a).trim().is_empty(), "the template the user picked was used");
+        assert!(
+            !body_text(&a).trim().is_empty(),
+            "the template the user picked was used"
+        );
     }
 
     #[test]
@@ -2705,15 +3421,28 @@ mod tests {
         let dir = scratch("password");
         let path = dir.join("locked.docx");
         let mut s = Session::new(wordcraft_doc::Document::from_text("Locked away"));
-        s.run("file.save", &json!({"path": path.to_string_lossy(), "password": "sesame"})).unwrap();
+        s.run(
+            "file.save",
+            &json!({"path": path.to_string_lossy(), "password": "sesame"}),
+        )
+        .unwrap();
 
         let mut a = typed();
-        assert!(a.execute("file.open", json!({"path": path.to_string_lossy()})).is_err(), "a script gets the error");
+        assert!(
+            a.execute("file.open", json!({"path": path.to_string_lossy()}))
+                .is_err(),
+            "a script gets the error"
+        );
         assert_eq!(prompt(&a), None);
-        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        a.run("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
         assert_eq!(prompt(&a), Some("password"));
-        assert!(body_text(&a).contains(UNSAVED), "nothing is replaced until the password fits");
+        assert!(
+            body_text(&a).contains(UNSAVED),
+            "nothing is replaced until the password fits"
+        );
         let state = serde_json::to_string(&a.dialog).unwrap();
         assert!(state.contains("locked.docx") && !state.contains("sesame"));
 
@@ -2732,12 +3461,14 @@ mod tests {
         let dir = scratch("open");
         let path = docx_on_disk(&dir, "Signed contract");
         let mut a = typed();
-        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        a.run("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert_eq!(prompt(&a), Some("saveChanges"));
         assert!(body_text(&a).contains(UNSAVED));
         assert_eq!(a.session.path, None);
 
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
         assert!(body_text(&a).contains("Signed contract"));
         assert_eq!(a.session.path.as_deref(), Some(path.as_path()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -2759,11 +3490,13 @@ mod tests {
         a.run("file.close", json!({})).unwrap();
         assert_eq!(prompt(&a), Some("saveChanges"));
         assert!(!a.quit_requested);
-        a.run("ui.saveChanges", json!({"answer": "cancel"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "cancel"}))
+            .unwrap();
         assert!(!a.quit_requested);
 
         a.run("file.close", json!({})).unwrap();
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
         assert!(a.quit_requested);
 
         // A clean document closes straight away.
@@ -2781,13 +3514,18 @@ mod tests {
         let mut a = typed();
         assert!(!a.close_requested());
         assert_eq!(prompt(&a), Some("saveChanges"));
-        a.run("ui.saveChanges", json!({"answer": "cancel"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "cancel"}))
+            .unwrap();
         assert!(!a.close_requested(), "asked again on the next click");
 
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
         assert!(a.quit_requested);
         assert!(a.close_requested(), "the close that follows goes ahead");
-        assert!(body_text(&a).contains(UNSAVED), "nothing was replaced on the way out");
+        assert!(
+            body_text(&a).contains(UNSAVED),
+            "nothing was replaced on the way out"
+        );
     }
 
     /// Enter activates the focused prompt button; it means Save only when no button has focus.
@@ -2795,12 +3533,17 @@ mod tests {
     #[test]
     fn enter_answers_with_the_focused_button() {
         use egui_kittest::kittest::Queryable;
-        for (focus, quits, saves) in [(Some("Cancel"), false, false), (Some("Don't Save"), true, false), (None, true, true)] {
+        for (focus, quits, saves) in [
+            (Some("Cancel"), false, false),
+            (Some("Don't Save"), true, false),
+            (None, true, true),
+        ] {
             let dir = scratch(&format!("enter-{}", focus.map_or(0, str::len)));
             let path = docx_on_disk(&dir, "Draft");
             let before = std::fs::read(&path).unwrap();
             let mut a = app();
-            a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+            a.run("file.open", json!({"path": path.to_string_lossy()}))
+                .unwrap();
             a.run("text.insert", json!({"text": "Revised "})).unwrap();
             a.run("file.close", json!({})).unwrap();
             assert_eq!(prompt(&a), Some("saveChanges"));
@@ -2833,7 +3576,11 @@ mod tests {
             let a = h.state();
             assert_eq!(prompt(a), None, "{focus:?}: answered");
             assert_eq!(a.quit_requested, quits, "{focus:?}: quit");
-            assert_eq!(std::fs::read(&path).unwrap() != before, saves, "{focus:?}: file written");
+            assert_eq!(
+                std::fs::read(&path).unwrap() != before,
+                saves,
+                "{focus:?}: file written"
+            );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
@@ -2846,14 +3593,33 @@ mod tests {
         for (arrows, focused, quits, saves) in [
             (vec![egui::Key::ArrowLeft], "Save", true, true),
             (vec![egui::Key::ArrowRight], "Don't Save", true, false),
-            (vec![egui::Key::ArrowRight, egui::Key::ArrowRight, egui::Key::ArrowRight], "Cancel", false, false),
-            (vec![egui::Key::ArrowRight, egui::Key::ArrowRight, egui::Key::ArrowLeft], "Don't Save", true, false),
+            (
+                vec![
+                    egui::Key::ArrowRight,
+                    egui::Key::ArrowRight,
+                    egui::Key::ArrowRight,
+                ],
+                "Cancel",
+                false,
+                false,
+            ),
+            (
+                vec![
+                    egui::Key::ArrowRight,
+                    egui::Key::ArrowRight,
+                    egui::Key::ArrowLeft,
+                ],
+                "Don't Save",
+                true,
+                false,
+            ),
         ] {
             let dir = scratch(&format!("arrows-{}-{}", arrows.len(), focused.len()));
             let path = docx_on_disk(&dir, "Draft");
             let before = std::fs::read(&path).unwrap();
             let mut a = app();
-            a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+            a.run("file.open", json!({"path": path.to_string_lossy()}))
+                .unwrap();
             a.run("text.insert", json!({"text": "Revised "})).unwrap();
             a.run("file.close", json!({})).unwrap();
             assert_eq!(prompt(&a), Some("saveChanges"));
@@ -2873,12 +3639,18 @@ mod tests {
             for _ in 0..3 {
                 h.step();
             }
-            assert!(h.get_by_label("Save").is_focused(), "Save has focus when the prompt opens");
+            assert!(
+                h.get_by_label("Save").is_focused(),
+                "Save has focus when the prompt opens"
+            );
             for key in &arrows {
                 h.key_press(*key);
                 h.step();
             }
-            assert!(h.get_by_label(focused).is_focused(), "{arrows:?}: {focused} has focus");
+            assert!(
+                h.get_by_label(focused).is_focused(),
+                "{arrows:?}: {focused} has focus"
+            );
             h.key_press(egui::Key::Enter);
             for _ in 0..3 {
                 h.step();
@@ -2886,7 +3658,11 @@ mod tests {
             let a = h.state();
             assert_eq!(prompt(a), None, "{arrows:?}: answered");
             assert_eq!(a.quit_requested, quits, "{arrows:?}: quit");
-            assert_eq!(std::fs::read(&path).unwrap() != before, saves, "{arrows:?}: file written");
+            assert_eq!(
+                std::fs::read(&path).unwrap() != before,
+                saves,
+                "{arrows:?}: file written"
+            );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
@@ -2896,7 +3672,10 @@ mod tests {
     #[test]
     fn ui_print_needs_the_hosts_print_hook() {
         let mut a = typed();
-        assert!(a.run("ui.print", json!({})).is_err(), "no print hook: an error");
+        assert!(
+            a.run("ui.print", json!({})).is_err(),
+            "no print hook: an error"
+        );
 
         let got = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
         let seen = got.clone();
@@ -2907,14 +3686,22 @@ mod tests {
         let r = a.run("ui.print", json!({})).unwrap();
         assert_eq!(r["printing"], true);
         assert_eq!(got.borrow().len(), 1, "printed once");
-        assert!(got.borrow().first().is_some_and(|b| b.starts_with(b"%PDF")), "the hook got a PDF");
+        assert!(
+            got.borrow().first().is_some_and(|b| b.starts_with(b"%PDF")),
+            "the hook got a PDF"
+        );
         assert!(a.session.dirty, "printing is not a save");
 
         a.services.print = Some(Box::new(|_| Err("blocked by the browser".into())));
         a.status_msg = None;
         let e = a.run("ui.print", json!({})).unwrap_err();
         assert!(e.contains("blocked by the browser"), "{e}");
-        assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("blocked by the browser")), "the status bar says why");
+        assert!(
+            a.status_msg
+                .as_ref()
+                .is_some_and(|(m, _)| m.contains("blocked by the browser")),
+            "the status bar says why"
+        );
     }
 
     /// Make WordCraft the default… (#295) goes through the host's hook and reports the outcome in
@@ -2932,16 +3719,33 @@ mod tests {
         }));
         assert_eq!(a.make_default_app().unwrap()["default"], true);
         assert_eq!(calls.get(), 1);
-        assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("now the default")), "{:?}", a.status_msg);
+        assert!(
+            a.status_msg
+                .as_ref()
+                .is_some_and(|(m, _)| m.contains("now the default")),
+            "{:?}",
+            a.status_msg
+        );
 
         a.services.make_default_app = Some(Box::new(|| Ok(DefaultApp::SettingsOpened)));
         assert_eq!(a.make_default_app().unwrap()["settingsOpened"], true);
-        assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("Default apps")), "{:?}", a.status_msg);
+        assert!(
+            a.status_msg
+                .as_ref()
+                .is_some_and(|(m, _)| m.contains("Default apps")),
+            "{:?}",
+            a.status_msg
+        );
 
         a.services.make_default_app = Some(Box::new(|| Err("xdg-mime isn't installed".into())));
         let e = a.make_default_app().unwrap_err();
         assert!(e.contains("xdg-mime isn't installed"), "{e}");
-        assert!(a.status_msg.as_ref().is_some_and(|(m, _)| m.contains("xdg-mime isn't installed")), "the status bar says why");
+        assert!(
+            a.status_msg
+                .as_ref()
+                .is_some_and(|(m, _)| m.contains("xdg-mime isn't installed")),
+            "the status bar says why"
+        );
         assert!(!a.session.dirty, "the document is untouched");
     }
 
@@ -2971,10 +3775,14 @@ mod tests {
             seen.borrow_mut().push(bytes.len());
             Ok(())
         }));
-        assert!(a.run("ui.print", json!({"pages": "7-9"})).is_err(), "page 7 doesn't exist");
+        assert!(
+            a.run("ui.print", json!({"pages": "7-9"})).is_err(),
+            "page 7 doesn't exist"
+        );
         assert!(a.run("ui.print", json!({"range": "nope"})).is_err());
         assert!(sizes.borrow().is_empty(), "nothing was sent");
-        a.run("ui.print", json!({"range": "current", "copies": 3})).unwrap();
+        a.run("ui.print", json!({"range": "current", "copies": 3}))
+            .unwrap();
         assert_eq!(sizes.borrow().len(), 1);
     }
 
@@ -2995,23 +3803,41 @@ mod tests {
                 }));
             }
             a.run("file.print", json!({})).unwrap();
-            let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-                |ui, app: &mut WordApp| {
-                    let ctx = ui.ctx().clone();
-                    app.logic(&ctx);
-                    app.ui(ui);
-                },
-                a,
-            );
+            let mut h = egui_kittest::Harness::builder()
+                .with_size(egui::vec2(1440.0, 900.0))
+                .build_ui_state(
+                    |ui, app: &mut WordApp| {
+                        let ctx = ui.ctx().clone();
+                        app.logic(&ctx);
+                        app.ui(ui);
+                    },
+                    a,
+                );
             for _ in 0..4 {
                 h.step();
             }
-            assert!(h.state().ui.backstage && h.state().ui.backstage_page == "print", "the Print page is open");
-            assert_eq!(h.query_by_label(BLURB).is_some(), hook, "hook {hook}: the Print button's blurb");
-            assert!(h.query_by_label("PDF document (*.pdf)").is_some(), "hook {hook}: the page rendered its export choices");
+            assert!(
+                h.state().ui.backstage && h.state().ui.backstage_page == "print",
+                "the Print page is open"
+            );
+            assert_eq!(
+                h.query_by_label(BLURB).is_some(),
+                hook,
+                "hook {hook}: the Print button's blurb"
+            );
+            assert!(
+                h.query_by_label("PDF document (*.pdf)").is_some(),
+                "hook {hook}: the page rendered its export choices"
+            );
             if hook {
                 // The page's own Print button (the backstage list has a Print entry too): the last.
-                let buttons: Vec<_> = h.query_all(egui_kittest::kittest::By::new().role(egui::accesskit::Role::Button).label("Print")).collect();
+                let buttons: Vec<_> = h
+                    .query_all(
+                        egui_kittest::kittest::By::new()
+                            .role(egui::accesskit::Role::Button)
+                            .label("Print"),
+                    )
+                    .collect();
                 buttons.last().expect("a Print button").click();
                 h.step();
                 h.step();
@@ -3036,18 +3862,29 @@ mod tests {
                     Ok(DefaultApp::MadeDefault)
                 }));
             }
-            a.run("ui.backstage", json!({"value": true, "page": "options"})).unwrap();
-            let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-                |ui, app: &mut WordApp| {
-                    let ctx = ui.ctx().clone();
-                    app.logic(&ctx);
-                    app.ui(ui);
-                },
-                a,
-            );
+            a.run("ui.backstage", json!({"value": true, "page": "options"}))
+                .unwrap();
+            let mut h = egui_kittest::Harness::builder()
+                .with_size(egui::vec2(1440.0, 900.0))
+                .build_ui_state(
+                    |ui, app: &mut WordApp| {
+                        let ctx = ui.ctx().clone();
+                        app.logic(&ctx);
+                        app.ui(ui);
+                    },
+                    a,
+                );
             h.run_steps(4);
-            assert!(h.query_by_label("Show the community button in the title bar").is_some(), "hook {hook}: the Options page rendered");
-            assert_eq!(h.query_by_label(LABEL).is_some(), hook, "hook {hook}: the button");
+            assert!(
+                h.query_by_label("Show the community button in the title bar")
+                    .is_some(),
+                "hook {hook}: the Options page rendered"
+            );
+            assert_eq!(
+                h.query_by_label(LABEL).is_some(),
+                hook,
+                "hook {hook}: the button"
+            );
             if hook {
                 h.get_by_label(LABEL).click();
                 h.run_steps(2);
@@ -3074,11 +3911,18 @@ mod tests {
             let (req, _reply) = ControlRequest::new("engine.execute", command);
             control::handle(&mut a, &ctx, &req);
         }
-        assert_eq!(prompt(&a), None, "the question was about a document that is gone");
+        assert_eq!(
+            prompt(&a),
+            None,
+            "the question was about a document that is gone"
+        );
 
         // An answer that arrives anyway (a click in that frame, an agent) doesn't touch B.
         a.dialog = asked;
-        assert!(a.run("ui.saveChanges", json!({"answer": "dontSave"})).is_err());
+        assert!(
+            a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+                .is_err()
+        );
         assert!(body_text(&a).contains("Edited Agent document"));
         assert_eq!(a.session.path.as_deref(), Some(path.as_path()));
         assert!(a.session.dirty);
@@ -3093,14 +3937,16 @@ mod tests {
         let mut a = app();
         let seen = reported.clone();
         a.services.on_dirty = Some(Box::new(move |d| seen.set(Some(d))));
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            a,
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                a,
+            );
         for _ in 0..6 {
             h.step();
         }
@@ -3108,78 +3954,138 @@ mod tests {
         assert_eq!(reported.get(), Some(false));
         h.event(egui::Event::Text("x".into()));
         h.step();
-        assert!(h.state().session.dirty, "the keystroke reached the document");
-        assert_eq!(reported.get(), Some(true), "the host was told before the frame ended");
+        assert!(
+            h.state().session.dirty,
+            "the keystroke reached the document"
+        );
+        assert_eq!(
+            reported.get(),
+            Some(true),
+            "the host was told before the frame ended"
+        );
     }
 
     #[test]
     fn paragraph_alignment_keeps_the_canvas_focused_for_typing() {
         use wordcraft_doc::Align;
 
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            typed(),
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                typed(),
+            );
         for _ in 0..6 {
             h.step();
         }
 
-        for (label, alignment, text) in
-            [("Align Left", Align::Left, " left"), ("Center", Align::Center, " center"), ("Align Right", Align::Right, " right")]
-        {
-            h.get_by_role_and_label(egui::accesskit::Role::Button, label).click();
+        for (label, alignment, text) in [
+            ("Align Left", Align::Left, " left"),
+            ("Center", Align::Center, " center"),
+            ("Align Right", Align::Right, " right"),
+        ] {
+            h.get_by_role_and_label(egui::accesskit::Role::Button, label)
+                .click();
             h.step();
 
-            assert!(h.state().canvas.focused, "{label}: the canvas keeps keyboard focus");
-            let paragraph = h.state().session.doc.para_at(&h.state().session.sel.focus).expect("the caret remains in its paragraph");
-            assert_eq!(h.state().session.doc.styles.resolve_para(&paragraph.props).align, alignment);
+            assert!(
+                h.state().canvas.focused,
+                "{label}: the canvas keeps keyboard focus"
+            );
+            let paragraph = h
+                .state()
+                .session
+                .doc
+                .para_at(&h.state().session.sel.focus)
+                .expect("the caret remains in its paragraph");
+            assert_eq!(
+                h.state()
+                    .session
+                    .doc
+                    .styles
+                    .resolve_para(&paragraph.props)
+                    .align,
+                alignment
+            );
 
             h.event(egui::Event::Text(text.into()));
             h.step();
-            assert!(body_text(h.state()).ends_with(text), "{label}: typing continues in the document");
+            assert!(
+                body_text(h.state()).ends_with(text),
+                "{label}: typing continues in the document"
+            );
         }
 
         // Every command button does the same, not only alignment: Bold, then type.
-        h.get_by_role_and_label(egui::accesskit::Role::Button, "Bold").click();
+        h.get_by_role_and_label(egui::accesskit::Role::Button, "Bold")
+            .click();
         h.step();
-        assert!(h.state().canvas.focused, "Bold: the canvas keeps keyboard focus");
+        assert!(
+            h.state().canvas.focused,
+            "Bold: the canvas keeps keyboard focus"
+        );
         h.event(egui::Event::Text(" bold".into()));
         h.step();
-        assert!(body_text(h.state()).ends_with(" bold"), "Bold: typing continues in the document");
+        assert!(
+            body_text(h.state()).ends_with(" bold"),
+            "Bold: typing continues in the document"
+        );
     }
 
     /// #330: Word's shortcuts work from the keyboard — Ctrl+Alt+1 (⌘⌥1) applies Heading 1, and
     /// an Alt shortcut doesn't also type the character its key would produce.
     #[test]
     fn word_shortcuts_run_from_the_keyboard() {
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            app(),
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                app(),
+            );
         for _ in 0..6 {
             h.step();
         }
-        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        let key = |key, modifiers| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        };
         h.event(egui::Event::Text("Kilns".into()));
         h.step();
-        h.event(key(egui::Key::Num1, egui::Modifiers::COMMAND | egui::Modifiers::ALT));
+        h.event(key(
+            egui::Key::Num1,
+            egui::Modifiers::COMMAND | egui::Modifiers::ALT,
+        ));
         h.step();
-        let style =
-            |h: &egui_kittest::Harness<WordApp>| h.state().session.doc.para_at(&wordcraft_doc::Pos::body(0, 0)).and_then(|p| p.props.style.clone());
+        let style = |h: &egui_kittest::Harness<WordApp>| {
+            h.state()
+                .session
+                .doc
+                .para_at(&wordcraft_doc::Pos::body(0, 0))
+                .and_then(|p| p.props.style.clone())
+        };
         assert_eq!(style(&h).as_deref(), Some("Heading1"));
         // Alt+F7 (next misspelling) can come with key text on some platforms; none is typed.
         h.event(key(egui::Key::F7, egui::Modifiers::ALT));
         h.event(egui::Event::Text("x".into()));
         h.step();
-        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Kilns");
+        assert_eq!(
+            h.state()
+                .session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body),
+            "Kilns"
+        );
     }
 
     /// #819: Alt+Q opens Search with its box focused, as in Word: the Q isn't typed into the
@@ -3187,18 +4093,26 @@ mod tests {
     #[cfg(not(target_os = "macos"))]
     #[test]
     fn alt_q_opens_search_and_typing_goes_there() {
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            app(),
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                app(),
+            );
         for _ in 0..6 {
             h.step();
         }
-        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        let key = |key, modifiers| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        };
         h.event(egui::Event::Text("Kilns".into()));
         h.step();
         // Some platforms send the key's text with an Alt shortcut; it isn't typed.
@@ -3213,12 +4127,25 @@ mod tests {
         h.step();
         {
             use egui_kittest::kittest::Queryable;
-            assert!(h.query_by_label_contains("Word Count").is_some(), "an empty box suggests commands, as Word's does");
+            assert!(
+                h.query_by_label_contains("Word Count").is_some(),
+                "an empty box suggests commands, as Word's does"
+            );
         }
         h.event(egui::Event::Text("bold".into()));
         h.step();
-        assert_eq!(query(&h).as_deref(), Some("bold"), "typing goes into the search box");
-        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Kilns");
+        assert_eq!(
+            query(&h).as_deref(),
+            Some("bold"),
+            "typing goes into the search box"
+        );
+        assert_eq!(
+            h.state()
+                .session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body),
+            "Kilns"
+        );
         h.event(key(egui::Key::Escape, egui::Modifiers::NONE));
         h.step();
         h.step();
@@ -3235,7 +4162,10 @@ mod tests {
         h.step();
         h.step();
         assert!(h.state().dialog.is_none(), "Enter ran the search");
-        assert!(h.state().session.view.nav_pane, "the Navigation pane shows the results");
+        assert!(
+            h.state().session.view.nav_pane,
+            "the Navigation pane shows the results"
+        );
         assert_eq!(h.state().session.find.results.len(), 1);
     }
 
@@ -3244,18 +4174,34 @@ mod tests {
     #[test]
     fn search_command_matches_every_word() {
         let mut a = app();
-        let r = a.run("tools.search", json!({"query": "insert table"})).unwrap();
-        let ids: Vec<&str> = r["matches"].as_array().unwrap().iter().filter_map(|m| m["id"].as_str()).collect();
+        let r = a
+            .run("tools.search", json!({"query": "insert table"}))
+            .unwrap();
+        let ids: Vec<&str> = r["matches"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|m| m["id"].as_str())
+            .collect();
         assert!(ids.contains(&"insert.table"), "{ids:?}");
         assert!(r["matches"].as_array().unwrap().iter().all(|m| {
             let hay = format!("{} {} {}", m["label"], m["location"], m["id"]).to_lowercase();
             hay.contains("insert") && hay.contains("table")
         }));
-        assert_eq!(a.run("tools.search", json!({"query": "   "})).unwrap()["matches"], json!([]));
-        assert_eq!(a.run("tools.search", json!({"query": "zzqqxx"})).unwrap()["matches"], json!([]));
+        assert_eq!(
+            a.run("tools.search", json!({"query": "   "})).unwrap()["matches"],
+            json!([])
+        );
+        assert_eq!(
+            a.run("tools.search", json!({"query": "zzqqxx"})).unwrap()["matches"],
+            json!([])
+        );
         assert!(a.dialog.is_none(), "a query never opens the box");
         a.run("tools.search", json!({})).unwrap();
-        assert!(matches!(a.dialog, Some(dialogs::Dialog::Commands { .. })), "no query opens Search");
+        assert!(
+            matches!(a.dialog, Some(dialogs::Dialog::Commands { .. })),
+            "no query opens Search"
+        );
     }
 
     /// Save writes the document first, then carries on with what the user asked for.
@@ -3264,15 +4210,23 @@ mod tests {
         let dir = scratch("save");
         let path = docx_on_disk(&dir, "Draft");
         let mut a = app();
-        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        a.run("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         a.run("text.insert", json!({"text": "Revised "})).unwrap();
         a.run("file.new", json!({})).unwrap();
         assert_eq!(prompt(&a), Some("saveChanges"));
         a.run("ui.saveChanges", json!({"answer": "save"})).unwrap();
         assert_eq!(prompt(&a), None);
-        assert_eq!(a.session.path, None, "the new document replaced the saved one");
+        assert_eq!(
+            a.session.path, None,
+            "the new document replaced the saved one"
+        );
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
-        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Revised Draft"));
+        assert!(
+            saved
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .contains("Revised Draft")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3282,16 +4236,25 @@ mod tests {
     fn a_save_that_drops_content_does_not_continue() {
         for ext in ["png", "txt"] {
             let dir = scratch(&format!("lossy-{ext}"));
-            let picked = dir.join(format!("novel.{ext}")).to_string_lossy().to_string();
+            let picked = dir
+                .join(format!("novel.{ext}"))
+                .to_string_lossy()
+                .to_string();
             let mut a = typed();
             a.services.pick_save = Some(Box::new(move |_| Some(picked.clone())));
             a.run("file.new", json!({})).unwrap();
             a.status_msg = None;
             let r = a.run("ui.saveChanges", json!({"answer": "save"})).unwrap();
             assert_eq!(r["done"], false, "{ext}: the New was cancelled");
-            assert!(dir.join(format!("novel.{ext}")).exists(), "{ext}: the copy was written");
+            assert!(
+                dir.join(format!("novel.{ext}")).exists(),
+                "{ext}: the copy was written"
+            );
             assert_eq!(prompt(&a), None);
-            assert!(body_text(&a).contains(UNSAVED), "{ext}: the document is kept");
+            assert!(
+                body_text(&a).contains(UNSAVED),
+                "{ext}: the document is kept"
+            );
             assert!(a.session.dirty);
             assert!(a.status_msg.is_some(), "{ext}: the status bar says why");
             let _ = std::fs::remove_dir_all(&dir);
@@ -3308,7 +4271,14 @@ mod tests {
             a.execute("file.saveAs", json!({"path": name})).unwrap();
             assert!(a.session.dirty, "{name}");
         }
-        for name in ["novel.docx", "novel.docm", "novel.DOTX", "novel.dotm", "novel.odt", "novel.rtf"] {
+        for name in [
+            "novel.docx",
+            "novel.docm",
+            "novel.DOTX",
+            "novel.dotm",
+            "novel.odt",
+            "novel.rtf",
+        ] {
             let mut a = typed();
             a.services.download = Some(Box::new(|_, _| Ok(())));
             a.execute("file.saveAs", json!({"path": name})).unwrap();
@@ -3324,13 +4294,19 @@ mod tests {
             let dir = scratch(&format!("autosave-{ext}"));
             let path = dir.join(format!("novel.{ext}"));
             let mut a = typed();
-            a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
+            a.run("file.save", json!({"path": path.to_string_lossy()}))
+                .unwrap();
             assert!(a.autosaves(), "{ext}");
             a.run("text.insert", json!({"text": "More "})).unwrap();
             a.autosave_tick(now_ms() + 10_000.0);
             assert!(!a.session.dirty, "{ext}: AutoSave wrote the file");
             let saved = wordcraft_engine::io::open_path(&path).unwrap();
-            assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("More "), "{ext}");
+            assert!(
+                saved
+                    .plain_text(wordcraft_doc::StoryRef::Body)
+                    .contains("More "),
+                "{ext}"
+            );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
@@ -3350,8 +4326,15 @@ mod tests {
         assert_eq!(r["done"], false, "the New was cancelled");
         assert!(body_text(&a).contains(UNSAVED));
         assert!(a.session.dirty);
-        let msg = a.status_msg.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-        assert!(msg.contains("blocked by the browser"), "the status bar says why: {msg:?}");
+        let msg = a
+            .status_msg
+            .as_ref()
+            .map(|(m, _)| m.clone())
+            .unwrap_or_default();
+        assert!(
+            msg.contains("blocked by the browser"),
+            "the status bar says why: {msg:?}"
+        );
     }
 
     /// A new document has no path: Save goes through Save As, and cancelling that cancels the New.
@@ -3377,7 +4360,11 @@ mod tests {
         a.run("ui.saveChanges", json!({"answer": "save"})).unwrap();
         assert!(a.quit_requested);
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
-        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains(UNSAVED));
+        assert!(
+            saved
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .contains(UNSAVED)
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3409,27 +4396,43 @@ mod tests {
     fn mailings_ask_before_replacing_unsaved_work() {
         for id in MAILINGS {
             let mut a = typed();
-            a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+            a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
             let document = a.session.document_id();
             a.run(id, mailing(id)).unwrap();
             assert_eq!(prompt(&a), Some("saveChanges"), "{id}");
-            assert_eq!(a.session.document_id(), document, "{id}: untouched while the prompt is up");
+            assert_eq!(
+                a.session.document_id(),
+                document,
+                "{id}: untouched while the prompt is up"
+            );
 
-            a.run("ui.saveChanges", json!({"answer": "cancel"})).unwrap();
+            a.run("ui.saveChanges", json!({"answer": "cancel"}))
+                .unwrap();
             assert_eq!(prompt(&a), None);
-            assert_eq!(a.session.document_id(), document, "{id}: Cancel keeps the document");
+            assert_eq!(
+                a.session.document_id(),
+                document,
+                "{id}: Cancel keeps the document"
+            );
             assert!(body_text(&a).contains(UNSAVED));
             assert!(a.session.dirty);
 
             a.run(id, mailing(id)).unwrap();
-            a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
+            a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+                .unwrap();
             assert_eq!(prompt(&a), None);
-            assert_ne!(a.session.document_id(), document, "{id}: Don't Save makes the new document");
+            assert_ne!(
+                a.session.document_id(),
+                document,
+                "{id}: Don't Save makes the new document"
+            );
             assert_eq!(a.session.path, None);
         }
         // A `path` that isn't text merges into a new document, like no path at all.
         let mut a = typed();
-        a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+        a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+            .unwrap();
         a.run("mailings.finish", json!({"path": null})).unwrap();
         assert_eq!(prompt(&a), Some("saveChanges"));
     }
@@ -3441,8 +4444,13 @@ mod tests {
         let dir = scratch("merge-to-file");
         for id in MAILINGS {
             let mut a = app();
-            a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
-            a.run("file.save", json!({"path": dir.join("saved.docx").to_string_lossy()})).unwrap();
+            a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
+            a.run(
+                "file.save",
+                json!({"path": dir.join("saved.docx").to_string_lossy()}),
+            )
+            .unwrap();
             assert!(!a.session.dirty);
             let document = a.session.document_id();
             a.run(id, mailing(id)).unwrap();
@@ -3451,8 +4459,10 @@ mod tests {
         }
         let out = dir.join("merged.docx");
         let mut a = typed();
-        a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
-        a.run("mailings.finish", json!({"path": out.to_string_lossy()})).unwrap();
+        a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+            .unwrap();
+        a.run("mailings.finish", json!({"path": out.to_string_lossy()}))
+            .unwrap();
         assert_eq!(prompt(&a), None);
         assert!(out.exists());
         assert!(body_text(&a).contains(UNSAVED));
@@ -3467,23 +4477,31 @@ mod tests {
             let dir = scratch(&format!("mailings-{}", id.len()));
             let path = docx_on_disk(&dir, "Signed contract");
             let mut a = app();
-            a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+            a.run("file.open", json!({"path": path.to_string_lossy()}))
+                .unwrap();
             a.run("text.insert", json!({"text": "Revised "})).unwrap();
             a.run("file.save", json!({})).unwrap();
             assert!(a.autosaves());
-            a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+            a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
             a.run("text.insert", json!({"text": "Again "})).unwrap();
             a.run(id, mailing(id)).unwrap();
             a.run("ui.saveChanges", json!({"answer": "save"})).unwrap();
             assert_eq!(prompt(&a), None);
             let saved = std::fs::read(&path).unwrap();
             assert!(
-                wordcraft_engine::io::open_path(&path).unwrap().plain_text(wordcraft_doc::StoryRef::Body).contains("Revised Again Signed"),
+                wordcraft_engine::io::open_path(&path)
+                    .unwrap()
+                    .plain_text(wordcraft_doc::StoryRef::Body)
+                    .contains("Revised Again Signed"),
                 "{id}: Save wrote the document first"
             );
 
             assert_eq!(a.session.path, None, "{id}");
-            assert!(!a.saved_here() && !a.autosaves(), "{id}: AutoSave doesn't cover the result");
+            assert!(
+                !a.saved_here() && !a.autosaves(),
+                "{id}: AutoSave doesn't cover the result"
+            );
             assert_ne!(a.title_stem(), "contract", "{id}: titled as a new document");
             a.run("text.insert", json!({"text": "Note "})).unwrap();
             a.autosave_tick(now_ms() + 10_000.0);
@@ -3492,7 +4510,11 @@ mod tests {
             a.run("edit.undo", json!({})).unwrap();
             a.run("file.save", json!({})).unwrap();
             a.autosave_tick(now_ms() + 20_000.0);
-            assert_eq!(std::fs::read(&path).unwrap(), saved, "{id}: the original file is never overwritten");
+            assert_eq!(
+                std::fs::read(&path).unwrap(),
+                saved,
+                "{id}: the original file is never overwritten"
+            );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
@@ -3503,7 +4525,8 @@ mod tests {
         let ctx = egui::Context::default();
         for id in MAILINGS {
             let mut a = typed();
-            a.execute("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+            a.execute("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
             let document = a.session.document_id();
             let (req, _reply) = ControlRequest::new("engine.execute", json!({"command": id}));
             control::handle(&mut a, &ctx, &req);
@@ -3520,7 +4543,8 @@ mod tests {
     fn undo_after_a_mailing_cannot_redirect_a_pending_prompt() {
         for id in MAILINGS {
             let mut a = typed();
-            a.execute("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+            a.execute("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
             a.execute(id, json!({})).unwrap();
             let result = body_text(&a);
             let b = a.session.document_id();
@@ -3530,9 +4554,18 @@ mod tests {
 
             a.execute("edit.undo", json!({})).unwrap();
             assert_eq!(a.session.document_id(), b, "{id}");
-            assert_eq!(body_text(&a), result, "{id}: nothing from before the mailing comes back");
-            a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
-            assert_ne!(a.session.document_id(), b, "{id}: Don't Save discarded the document it asked about");
+            assert_eq!(
+                body_text(&a),
+                result,
+                "{id}: nothing from before the mailing comes back"
+            );
+            a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+                .unwrap();
+            assert_ne!(
+                a.session.document_id(),
+                b,
+                "{id}: Don't Save discarded the document it asked about"
+            );
         }
     }
 
@@ -3544,25 +4577,39 @@ mod tests {
             let dir = scratch(&format!("mailings-redo-{}", id.len()));
             let path = docx_on_disk(&dir, "Signed contract");
             let copy = dir.join("copy.docx");
-            let on_file = |p: &std::path::Path| wordcraft_engine::io::open_path(p).unwrap().plain_text(wordcraft_doc::StoryRef::Body);
+            let on_file = |p: &std::path::Path| {
+                wordcraft_engine::io::open_path(p)
+                    .unwrap()
+                    .plain_text(wordcraft_doc::StoryRef::Body)
+            };
             let mut a = app();
-            a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
-            a.run("mailings.recipients", json!({"csv": "Name\nAda"})).unwrap();
+            a.run("file.open", json!({"path": path.to_string_lossy()}))
+                .unwrap();
+            a.run("mailings.recipients", json!({"csv": "Name\nAda"}))
+                .unwrap();
             a.run("file.save", json!({})).unwrap();
             a.run(id, mailing(id)).unwrap();
             assert_eq!(prompt(&a), None, "{id}: the document was saved");
             let result = body_text(&a);
 
             a.run("edit.undo", json!({})).unwrap();
-            assert_eq!(body_text(&a), result, "{id}: history starts afresh, like New");
-            a.run("file.saveAs", json!({"path": copy.to_string_lossy()})).unwrap();
+            assert_eq!(
+                body_text(&a),
+                result,
+                "{id}: history starts afresh, like New"
+            );
+            a.run("file.saveAs", json!({"path": copy.to_string_lossy()}))
+                .unwrap();
             let written = on_file(&copy);
             a.run("edit.redo", json!({})).unwrap();
             assert_eq!(body_text(&a), result, "{id}: nothing to redo");
             a.run("file.save", json!({})).unwrap();
             a.autosave_tick(now_ms() + 10_000.0);
             assert_eq!(on_file(&copy), written, "{id}");
-            assert!(on_file(&path).contains("Signed contract"), "{id}: the original is untouched");
+            assert!(
+                on_file(&path).contains("Signed contract"),
+                "{id}: the original is untouched"
+            );
             let _ = std::fs::remove_dir_all(&dir);
         }
     }
@@ -3575,10 +4622,14 @@ mod tests {
         let path = docx_on_disk(&dir, "Original");
         let before = std::fs::read(&path).unwrap();
         let mut a = app();
-        a.run("file.open", json!({"path": path.to_string_lossy()})).unwrap();
+        a.run("file.open", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         a.run("text.insert", json!({"text": "Typed "})).unwrap();
         a.autosave_tick(now_ms() + 10_000.0);
-        assert!(std::fs::read(&path).unwrap() == before, "an opened file is never rewritten behind the user's back");
+        assert!(
+            std::fs::read(&path).unwrap() == before,
+            "an opened file is never rewritten behind the user's back"
+        );
         assert!(a.session.dirty);
 
         // After an explicit save, later changes are saved automatically.
@@ -3588,7 +4639,11 @@ mod tests {
         a.autosave_tick(now_ms() + 10_000.0);
         assert!(!a.session.dirty);
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
-        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("Typed More Original"));
+        assert!(
+            saved
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .contains("Typed More Original")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3601,29 +4656,47 @@ mod tests {
         let md = dir.join("notes.md");
         std::fs::write(&md, "# Notes\n\nSome text\n").unwrap();
         let mut a = app();
-        assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Unsaved), "a new document has no file yet");
-        a.run("file.open", json!({"path": md.to_string_lossy()})).unwrap();
+        assert_eq!(
+            a.autosave_block(),
+            Some(AutoSaveBlock::Unsaved),
+            "a new document has no file yet"
+        );
+        a.run("file.open", json!({"path": md.to_string_lossy()}))
+            .unwrap();
         a.run("text.insert", json!({"text": "Typed "})).unwrap();
         a.run("file.save", json!({})).unwrap();
         assert!(a.autosave, "the preference stays on");
-        assert_eq!(a.autosave_block(), Some(AutoSaveBlock::Format { name: "notes.md".into() }));
+        assert_eq!(
+            a.autosave_block(),
+            Some(AutoSaveBlock::Format {
+                name: "notes.md".into()
+            })
+        );
         assert!(!a.autosaves(), "the switch shows off");
         let why = a.autosave_block().map(|b| b.reason()).unwrap_or_default();
         assert!(why.contains("notes.md") && why.contains(".docx"), "{why}");
         let err = a.run("file.autosave", json!({"value": true})).unwrap_err();
         assert_eq!(err, why, "scripts are told why");
-        assert!(a.run("file.autosave", json!({"value": false})).is_ok(), "turning it off always works");
+        assert!(
+            a.run("file.autosave", json!({"value": false})).is_ok(),
+            "turning it off always works"
+        );
         a.autosave = true;
 
         // Save As .docx (what the greyed switch offers) lifts the block.
         let docx = dir.join("notes.docx");
-        a.run("file.saveAs", json!({"path": docx.to_string_lossy()})).unwrap();
+        a.run("file.saveAs", json!({"path": docx.to_string_lossy()}))
+            .unwrap();
         assert_eq!(a.autosave_block(), None);
         assert!(a.autosaves());
         a.run("text.insert", json!({"text": "More "})).unwrap();
         a.autosave_tick(now_ms() + 10_000.0);
         assert!(!a.session.dirty, "AutoSave wrote the .docx");
-        assert_eq!(a.run("file.autosave", json!({})).unwrap(), json!({"value": false}), "toggling turns it off");
+        assert_eq!(
+            a.run("file.autosave", json!({})).unwrap(),
+            json!({"value": false}),
+            "toggling turns it off"
+        );
         assert!(!a.autosaves());
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -3632,7 +4705,10 @@ mod tests {
     /// switch is blocked with a reason instead of being on while nothing is saved.
     #[test]
     fn autosave_is_unavailable_in_the_browser() {
-        let services = Services { download: Some(Box::new(|_: &str, _: &[u8]| Ok(()))), ..Default::default() };
+        let services = Services {
+            download: Some(Box::new(|_: &str, _: &[u8]| Ok(()))),
+            ..Default::default()
+        };
         let mut a = WordApp::new(Session::new(wordcraft_doc::Document::new()), services);
         a.run("text.insert", json!({"text": "Hello"})).unwrap();
         a.run("file.save", json!({"path": "draft.docx"})).unwrap();
@@ -3649,16 +4725,24 @@ mod tests {
         let path = dir.join("novel.docx");
         let mut a = typed();
         a.services.pick_open = Some(Box::new(|_| None));
-        a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
+        a.run("file.save", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         assert!(a.autosaves());
         a.run("file.open", json!({})).unwrap();
-        assert!(a.autosaves(), "the picker was cancelled; nothing was replaced");
+        assert!(
+            a.autosaves(),
+            "the picker was cancelled; nothing was replaced"
+        );
 
         a.run("text.insert", json!({"text": " continues"})).unwrap();
         a.autosave_tick(now_ms() + 10_000.0);
         assert!(!a.session.dirty);
         let saved = wordcraft_engine::io::open_path(&path).unwrap();
-        assert!(saved.plain_text(wordcraft_doc::StoryRef::Body).contains("chapter continues"));
+        assert!(
+            saved
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .contains("chapter continues")
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3669,14 +4753,22 @@ mod tests {
         let path = dir.join("gone").join("novel.docx");
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         let mut a = typed();
-        a.run("file.save", json!({"path": path.to_string_lossy()})).unwrap();
+        a.run("file.save", json!({"path": path.to_string_lossy()}))
+            .unwrap();
         // The folder disappears (unplugged drive, network share gone).
         std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
         a.run("text.insert", json!({"text": "More "})).unwrap();
         a.status_msg = None;
         a.autosave_tick(now_ms() + 10_000.0);
-        let msg = a.status_msg.as_ref().map(|(m, _)| m.clone()).unwrap_or_default();
-        assert!(msg.contains("AutoSave"), "the failure shows in the status bar: {msg:?}");
+        let msg = a
+            .status_msg
+            .as_ref()
+            .map(|(m, _)| m.clone())
+            .unwrap_or_default();
+        assert!(
+            msg.contains("AutoSave"),
+            "the failure shows in the status bar: {msg:?}"
+        );
         assert!(a.session.dirty);
 
         // Not retried until the user saves again.
@@ -3690,11 +4782,20 @@ mod tests {
     #[test]
     fn web_save_keeps_the_opened_word_format() {
         let mut doc = wordcraft_doc::Document::new();
-        doc.passthrough.insert("word/vbaProject.bin".into(), std::sync::Arc::new(vec![0xD0, 0xCF, 0x11, 0xE0, 1, 2, 3]));
-        doc.passthrough.insert("word/vbaData.xml".into(), std::sync::Arc::new(b"<wne:vbaSuppData/>".to_vec()));
+        doc.passthrough.insert(
+            "word/vbaProject.bin".into(),
+            std::sync::Arc::new(vec![0xD0, 0xCF, 0x11, 0xE0, 1, 2, 3]),
+        );
+        doc.passthrough.insert(
+            "word/vbaData.xml".into(),
+            std::sync::Arc::new(b"<wne:vbaSuppData/>".to_vec()),
+        );
         // The docx reader's list of parts the project relates to (wordcraft_docx VBA_RELATED).
         let related = "http://schemas.microsoft.com/office/2006/relationships/wordVbaData\tword/vbaData.xml\tapplication/vnd.ms-word.vbaData+xml\n";
-        doc.passthrough.insert("wordcraft:vbaProject.related".into(), std::sync::Arc::new(related.as_bytes().to_vec()));
+        doc.passthrough.insert(
+            "wordcraft:vbaProject.related".into(),
+            std::sync::Arc::new(related.as_bytes().to_vec()),
+        );
         let got: std::rc::Rc<std::cell::RefCell<Vec<(String, Vec<u8>)>>> = Default::default();
         let sink = got.clone();
         let services = Services {
@@ -3705,9 +4806,13 @@ mod tests {
             ..Default::default()
         };
         let mut a = WordApp::new(Session::new(doc), services);
-        for (opened, expect) in
-            [("m.docm", "m.docm"), ("t.DOTM", "t.DOTM"), ("t.dotx", "t.dotx"), ("notes.odt", "notes.docx"), ("readme.txt", "readme.docx")]
-        {
+        for (opened, expect) in [
+            ("m.docm", "m.docm"),
+            ("t.DOTM", "t.DOTM"),
+            ("t.dotx", "t.dotx"),
+            ("notes.odt", "notes.docx"),
+            ("readme.txt", "readme.docx"),
+        ] {
             a.session.path = Some(opened.into());
             a.run("file.save", json!({})).unwrap();
             let (name, bytes) = got.borrow_mut().pop().unwrap();
@@ -3715,7 +4820,11 @@ mod tests {
             let back = wordcraft_engine::io::open_bytes(&name, &bytes).unwrap();
             let macros = name.to_ascii_lowercase().ends_with('m');
             for part in ["word/vbaProject.bin", "word/vbaData.xml"] {
-                assert_eq!(back.passthrough.contains_key(part), macros, "{opened}: {part}");
+                assert_eq!(
+                    back.passthrough.contains_key(part),
+                    macros,
+                    "{opened}: {part}"
+                );
             }
         }
         // Save As with an explicit name is a conversion: a .docx can't hold macros.
@@ -3723,7 +4832,12 @@ mod tests {
         a.run("file.saveAs", json!({"path": "m.docx"})).unwrap();
         let (name, bytes) = got.borrow_mut().pop().unwrap();
         assert_eq!(name, "m.docx");
-        assert!(!wordcraft_engine::io::open_bytes(&name, &bytes).unwrap().passthrough.contains_key("word/vbaProject.bin"));
+        assert!(
+            !wordcraft_engine::io::open_bytes(&name, &bytes)
+                .unwrap()
+                .passthrough
+                .contains_key("word/vbaProject.bin")
+        );
     }
 
     #[test]
@@ -3753,7 +4867,11 @@ mod tests {
     #[test]
     fn interface_theme_migrates_and_survives_a_restart() {
         use theme::Appearance;
-        for (saved, want) in [(r#"{"dark": false}"#, Appearance::Light), (r#"{"dark": true}"#, Appearance::Dark), ("{}", Appearance::Light)] {
+        for (saved, want) in [
+            (r#"{"dark": false}"#, Appearance::Light),
+            (r#"{"dark": true}"#, Appearance::Dark),
+            ("{}", Appearance::Light),
+        ] {
             let mut a = app();
             a.apply_prefs(serde_json::from_str(saved).unwrap());
             assert_eq!(a.ui.theme, want, "{saved}");
@@ -3761,7 +4879,10 @@ mod tests {
         let mut a = app();
         a.run("ui.theme", json!({"value": "System"})).unwrap();
         let saved = serde_json::to_string(&a.prefs()).unwrap();
-        assert!(saved.contains(r#""theme":"system""#) && !saved.contains(r#""dark":"#), "{saved}");
+        assert!(
+            saved.contains(r#""theme":"system""#) && !saved.contains(r#""dark":"#),
+            "{saved}"
+        );
         let mut b = app();
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
         assert_eq!(b.ui.theme, Appearance::System);
@@ -3775,21 +4896,51 @@ mod tests {
     #[test]
     fn interface_size_survives_a_restart_and_clamps_junk() {
         let mut a = app();
-        assert_eq!(a.run("ui.interfaceSize", json!({})).unwrap()["percent"], 100);
-        assert_eq!(a.run("ui.interfaceSize", json!({"percent": 150})).unwrap()["percent"], 150);
+        assert_eq!(
+            a.run("ui.interfaceSize", json!({})).unwrap()["percent"],
+            100
+        );
+        assert_eq!(
+            a.run("ui.interfaceSize", json!({"percent": 150})).unwrap()["percent"],
+            150
+        );
         let saved = serde_json::to_string(&a.prefs()).unwrap();
         assert!(saved.contains(r#""interfaceSize":150"#), "{saved}");
         let mut b = app();
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
         assert_eq!(b.ui.interface_size.percent(), 150);
-        for (raw, want) in [("1000", 200), ("10", 80), ("-5", 80), ("124.6", 125), (r#""big""#, 100), ("null", 100), ("[1]", 100)] {
-            let ui: UiState = serde_json::from_str(&format!(r#"{{"interfaceSize": {raw}, "tab": "Insert"}}"#)).unwrap();
-            assert_eq!((ui.interface_size.percent(), ui.tab.as_str()), (want, "Insert"), "{raw}");
+        for (raw, want) in [
+            ("1000", 200),
+            ("10", 80),
+            ("-5", 80),
+            ("124.6", 125),
+            (r#""big""#, 100),
+            ("null", 100),
+            ("[1]", 100),
+        ] {
+            let ui: UiState =
+                serde_json::from_str(&format!(r#"{{"interfaceSize": {raw}, "tab": "Insert"}}"#))
+                    .unwrap();
+            assert_eq!(
+                (ui.interface_size.percent(), ui.tab.as_str()),
+                (want, "Insert"),
+                "{raw}"
+            );
         }
-        assert_eq!(a.run("ui.interfaceSize", json!({"percent": 500})).unwrap()["percent"], 200);
-        assert!(a.run("ui.interfaceSize", json!({"percent": "huge"})).is_err());
+        assert_eq!(
+            a.run("ui.interfaceSize", json!({"percent": 500})).unwrap()["percent"],
+            200
+        );
+        assert!(
+            a.run("ui.interfaceSize", json!({"percent": "huge"}))
+                .is_err()
+        );
         assert!(a.run("ui.interfaceSize", json!({"percent": null})).is_err());
-        assert_eq!(a.ui.interface_size.percent(), 200, "a rejected value keeps the setting");
+        assert_eq!(
+            a.ui.interface_size.percent(),
+            200,
+            "a rejected value keeps the setting"
+        );
     }
 
     /// #475: the interface size multiplies the display scale the system reports (egui's zoom
@@ -3802,8 +4953,13 @@ mod tests {
         a.run("ui.interfaceSize", json!({"percent": 150})).unwrap();
         let frame = |a: &mut WordApp, native: f32| {
             let mut input = egui::RawInput::default();
-            input.viewports.entry(egui::ViewportId::ROOT).or_default().native_pixels_per_point = Some(native);
-            ctx.run_ui(input, |ui| a.logic(ui.ctx())).drop_without_applying_deltas();
+            input
+                .viewports
+                .entry(egui::ViewportId::ROOT)
+                .or_default()
+                .native_pixels_per_point = Some(native);
+            ctx.run_ui(input, |ui| a.logic(ui.ctx()))
+                .drop_without_applying_deltas();
         };
         // The new factor applies from the next pass.
         frame(&mut a, 2.0);
@@ -3813,7 +4969,10 @@ mod tests {
         frame(&mut a, 1.0);
         frame(&mut a, 1.0);
         assert_eq!((ctx.zoom_factor(), ctx.pixels_per_point()), (0.8, 0.8));
-        assert_eq!(a.session.view.zoom, doc_zoom, "document zoom is a separate setting");
+        assert_eq!(
+            a.session.view.zoom, doc_zoom,
+            "document zoom is a separate setting"
+        );
     }
 
     /// #115: System follows the OS appearance (light when unknown); the manual choices ignore it.
@@ -3821,22 +4980,51 @@ mod tests {
     fn interface_theme_resolves_against_the_os_appearance() {
         use egui::Theme::{Dark, Light};
         use theme::Appearance;
-        let cases = [(Appearance::System, None, false), (Appearance::System, Some(Light), false), (Appearance::System, Some(Dark), true)];
-        for (setting, os, dark) in cases.into_iter().chain([(Appearance::Light, Some(Dark), false), (Appearance::Dark, Some(Light), true)]) {
-            assert_eq!(setting.is_dark(os), dark, "{setting:?} with the OS at {os:?}");
+        let cases = [
+            (Appearance::System, None, false),
+            (Appearance::System, Some(Light), false),
+            (Appearance::System, Some(Dark), true),
+        ];
+        for (setting, os, dark) in cases.into_iter().chain([
+            (Appearance::Light, Some(Dark), false),
+            (Appearance::Dark, Some(Light), true),
+        ]) {
+            assert_eq!(
+                setting.is_dark(os),
+                dark,
+                "{setting:?} with the OS at {os:?}"
+            );
         }
         let mut a = app();
         assert!(a.run("ui.theme", json!({"value": "purple"})).is_err());
-        assert_eq!(a.run("ui.theme", json!({"value": "dark"})).unwrap()["theme"], "dark");
-        assert_eq!(a.run("ui.dark", json!({})).unwrap()["theme"], "light", "ui.dark toggles the manual choice");
+        assert_eq!(
+            a.run("ui.theme", json!({"value": "dark"})).unwrap()["theme"],
+            "dark"
+        );
+        assert_eq!(
+            a.run("ui.dark", json!({})).unwrap()["theme"],
+            "light",
+            "ui.dark toggles the manual choice"
+        );
         assert_eq!(a.run("ui.theme", json!({})).unwrap()["theme"], "light");
     }
 
     /// One app frame with the OS appearance egui reports; returns the window commands it sent.
-    fn theme_frame(ctx: &egui::Context, a: &mut WordApp, os: Option<egui::Theme>) -> Vec<egui::ViewportCommand> {
-        let input = egui::RawInput { system_theme: os, ..Default::default() };
+    fn theme_frame(
+        ctx: &egui::Context,
+        a: &mut WordApp,
+        os: Option<egui::Theme>,
+    ) -> Vec<egui::ViewportCommand> {
+        let input = egui::RawInput {
+            system_theme: os,
+            ..Default::default()
+        };
         let mut out = ctx.run_ui(input, |ui| a.logic(ui.ctx()));
-        let commands = out.viewport_output.remove(&egui::ViewportId::ROOT).map(|v| v.commands).unwrap_or_default();
+        let commands = out
+            .viewport_output
+            .remove(&egui::ViewportId::ROOT)
+            .map(|v| v.commands)
+            .unwrap_or_default();
         out.drop_without_applying_deltas();
         commands
     }
@@ -3851,21 +5039,50 @@ mod tests {
         let mut a = app();
         a.run("ui.theme", json!({"value": "system"})).unwrap();
         let mut sent = Vec::new();
-        for (os, dark) in [(Some(Theme::Light), false), (Some(Theme::Dark), true), (Some(Theme::Light), false), (None, false)] {
+        for (os, dark) in [
+            (Some(Theme::Light), false),
+            (Some(Theme::Dark), true),
+            (Some(Theme::Light), false),
+            (None, false),
+        ] {
             sent.extend(theme_frame(&ctx, &mut a, os));
-            assert_eq!(ctx.options(|o| o.theme_preference), ThemePreference::System, "OS at {os:?}");
-            let want = if dark { theme::Tokens::dark() } else { theme::Tokens::light() };
+            assert_eq!(
+                ctx.options(|o| o.theme_preference),
+                ThemePreference::System,
+                "OS at {os:?}"
+            );
+            let want = if dark {
+                theme::Tokens::dark()
+            } else {
+                theme::Tokens::light()
+            };
             assert_eq!(theme::Tokens::get(&ctx).dark, dark, "OS at {os:?}");
             // Our palette, not egui's default style for that theme.
-            assert_eq!(ctx.global_style().visuals.panel_fill, want.ribbon, "OS at {os:?}");
+            assert_eq!(
+                ctx.global_style().visuals.panel_fill,
+                want.ribbon,
+                "OS at {os:?}"
+            );
             assert_eq!(a.ui_is_dark(), dark, "OS at {os:?}");
         }
-        assert!(sent.contains(&ViewportCommand::SetTheme(SystemTheme::SystemDefault)), "{sent:?}");
-        assert!(!sent.iter().any(|c| matches!(c, ViewportCommand::SetTheme(SystemTheme::Light | SystemTheme::Dark))), "{sent:?}");
+        assert!(
+            sent.contains(&ViewportCommand::SetTheme(SystemTheme::SystemDefault)),
+            "{sent:?}"
+        );
+        assert!(
+            !sent.iter().any(|c| matches!(
+                c,
+                ViewportCommand::SetTheme(SystemTheme::Light | SystemTheme::Dark)
+            )),
+            "{sent:?}"
+        );
         // A manual choice pins the window, whatever the OS says.
         a.run("ui.theme", json!({"value": "dark"})).unwrap();
         let sent = theme_frame(&ctx, &mut a, Some(Theme::Light));
-        assert!(sent.contains(&ViewportCommand::SetTheme(SystemTheme::Dark)), "{sent:?}");
+        assert!(
+            sent.contains(&ViewportCommand::SetTheme(SystemTheme::Dark)),
+            "{sent:?}"
+        );
         assert!(theme::Tokens::get(&ctx).dark);
     }
 
@@ -3886,17 +5103,30 @@ mod tests {
             a.run("view.darkMode", json!({"value": true})).unwrap();
             theme_frame(&ctx, &mut a, os);
             assert!(a.session.view.dark_mode, "{setting} with the OS at {os:?}");
-            assert_eq!(theme::Tokens::get(&ctx).dark, dark, "{setting} with the OS at {os:?}");
-            assert_eq!(a.run("ui.theme", json!({})).unwrap()["dark"], dark, "{setting} with the OS at {os:?}");
+            assert_eq!(
+                theme::Tokens::get(&ctx).dark,
+                dark,
+                "{setting} with the OS at {os:?}"
+            );
+            assert_eq!(
+                a.run("ui.theme", json!({})).unwrap()["dark"],
+                dark,
+                "{setting} with the OS at {os:?}"
+            );
         }
     }
 
     #[test]
     fn word_count_setting_survives_a_restart() {
         let mut a = app();
-        a.session.run("review.wordCount", &json!({"includeTextBoxes": false})).unwrap();
+        a.session
+            .run("review.wordCount", &json!({"includeTextBoxes": false}))
+            .unwrap();
         let saved = serde_json::to_string(&a.prefs()).unwrap();
-        assert!(saved.contains(r#""editing":{"countNotes":false,"#), "{saved}");
+        assert!(
+            saved.contains(r#""editing":{"countNotes":false,"#),
+            "{saved}"
+        );
         let mut b = app();
         b.apply_prefs(serde_json::from_str(&saved).unwrap());
         assert!(!b.session.prefs.count_notes);
@@ -3906,24 +5136,39 @@ mod tests {
     fn prefs_without_editing_keep_its_defaults() {
         let mut a = app();
         a.apply_prefs(serde_json::from_str(r#"{"tab": "Insert", "dark": true}"#).unwrap());
-        assert_eq!((a.ui.tab.as_str(), a.ui.theme), ("Insert", theme::Appearance::Dark));
-        assert!(a.session.prefs.count_notes, "text boxes and notes count by default");
+        assert_eq!(
+            (a.ui.tab.as_str(), a.ui.theme),
+            ("Insert", theme::Appearance::Dark)
+        );
+        assert!(
+            a.session.prefs.count_notes,
+            "text boxes and notes count by default"
+        );
     }
 
     fn png_bytes(c: [u8; 4]) -> Vec<u8> {
         let img = image::RgbaImage::from_fn(20, 10, |_, _| image::Rgba(c));
         let mut b = Vec::new();
-        image::DynamicImage::ImageRgba8(img).write_to(&mut std::io::Cursor::new(&mut b), image::ImageFormat::Png).unwrap();
+        image::DynamicImage::ImageRgba8(img)
+            .write_to(&mut std::io::Cursor::new(&mut b), image::ImageFormat::Png)
+            .unwrap();
         b
     }
 
     fn insert_picture(a: &mut WordApp, c: [u8; 4]) {
         let data = wordcraft_engine::cmd::insert::base64_encode(&png_bytes(c));
-        a.session.run("insert.picture", &json!({"data": data})).unwrap();
+        a.session
+            .run("insert.picture", &json!({"data": data}))
+            .unwrap();
     }
 
     fn object_count(a: &mut WordApp) -> usize {
-        a.session.run("arrange.selectionPane", &json!({})).unwrap().as_array().map(|x| x.len()).unwrap_or(0)
+        a.session
+            .run("arrange.selectionPane", &json!({}))
+            .unwrap()
+            .as_array()
+            .map(|x| x.len())
+            .unwrap_or(0)
     }
 
     /// A pending Change Picture replaces the selected image instead of inserting (#147).
@@ -3935,7 +5180,13 @@ mod tests {
         assert_eq!(object_count(&mut a), 1);
         let before = a.selected_picture_media().unwrap();
         a.change_picture_target = a.selected_picture_media();
-        a.services.inbox.as_ref().unwrap().lock().unwrap().push(("new.png".into(), png_bytes([30, 200, 30, 255])));
+        a.services
+            .inbox
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .push(("new.png".into(), png_bytes([30, 200, 30, 255])));
         a.drain_inbox();
         assert_eq!(object_count(&mut a), 1);
         assert_ne!(a.selected_picture_media().unwrap(), before);
@@ -3948,8 +5199,16 @@ mod tests {
         let mut a = app();
         a.services.inbox = Some(std::sync::Arc::new(std::sync::Mutex::new(Vec::new())));
         insert_picture(&mut a, [200, 30, 30, 255]);
-        a.session.run("select.collapse", &json!({"end": true})).unwrap();
-        a.services.inbox.as_ref().unwrap().lock().unwrap().push(("second.png".into(), png_bytes([30, 30, 200, 255])));
+        a.session
+            .run("select.collapse", &json!({"end": true}))
+            .unwrap();
+        a.services
+            .inbox
+            .as_ref()
+            .unwrap()
+            .lock()
+            .unwrap()
+            .push(("second.png".into(), png_bytes([30, 30, 200, 255])));
         a.drain_inbox();
         assert_eq!(object_count(&mut a), 2);
         // Stale target (another picture's key) clears instead of replacing the new selection.
@@ -3993,22 +5252,46 @@ mod tests {
         let r = a.run("mailings.recipients", json!({})).unwrap();
         assert_eq!(r, json!({"pending": "recipientList"}));
         assert_eq!(dialog_name(&a), Some("recipientList"));
-        assert!(a.status_msg.is_none(), "no error in the status bar: {:?}", a.status_msg);
-        let Some(dialogs::Dialog::RecipientList { fields, rows, .. }) = &a.dialog else { panic!() };
+        assert!(
+            a.status_msg.is_none(),
+            "no error in the status bar: {:?}",
+            a.status_msg
+        );
+        let Some(dialogs::Dialog::RecipientList { fields, rows, .. }) = &a.dialog else {
+            panic!()
+        };
         assert_eq!(fields.len(), dialogs::NEW_LIST_FIELDS.len());
         assert_eq!(rows.len(), 1, "a new list starts with one empty entry");
         // Edit Recipient List opens the same dialog, showing the current list.
         a.dialog = None;
-        a.run("mailings.recipients", json!({"csv": "Name,City\nAda,London"})).unwrap();
+        a.run(
+            "mailings.recipients",
+            json!({"csv": "Name,City\nAda,London"}),
+        )
+        .unwrap();
         a.run("mailings.editRecipients", json!({})).unwrap();
-        let Some(dialogs::Dialog::RecipientList { fields, rows, .. }) = &a.dialog else { panic!() };
-        assert_eq!((fields.clone(), rows.clone()), (vec!["Name".to_string(), "City".into()], vec![vec!["Ada".to_string(), "London".into()]]));
+        let Some(dialogs::Dialog::RecipientList { fields, rows, .. }) = &a.dialog else {
+            panic!()
+        };
+        assert_eq!(
+            (fields.clone(), rows.clone()),
+            (
+                vec!["Name".to_string(), "City".into()],
+                vec![vec!["Ada".to_string(), "London".into()]]
+            )
+        );
         // Type a New List… always starts fresh.
-        a.run("ui.dialog", json!({"name": "newRecipientList"})).unwrap();
-        let Some(dialogs::Dialog::RecipientList { fields, .. }) = &a.dialog else { panic!() };
+        a.run("ui.dialog", json!({"name": "newRecipientList"}))
+            .unwrap();
+        let Some(dialogs::Dialog::RecipientList { fields, .. }) = &a.dialog else {
+            panic!()
+        };
         assert_eq!(fields[0], dialogs::NEW_LIST_FIELDS[0]);
         // Insert Merge Field without a field opens its dialog too.
-        assert_eq!(a.run("mailings.insertField", json!({})).unwrap(), json!({"pending": "insertMergeField"}));
+        assert_eq!(
+            a.run("mailings.insertField", json!({})).unwrap(),
+            json!({"pending": "insertMergeField"})
+        );
         // Programmatic calls never open dialogs.
         let mut b = app();
         assert!(b.execute("mailings.recipients", json!({})).is_err());
@@ -4020,12 +5303,23 @@ mod tests {
     #[test]
     fn field_code_dialogs_open_for_users_only() {
         let mut a = app();
-        assert_eq!(a.run("insert.field", json!({})).unwrap(), json!({"pending": "field"}));
+        assert_eq!(
+            a.run("insert.field", json!({})).unwrap(),
+            json!({"pending": "field"})
+        );
         a.dialog = None;
         a.run("insert.field", json!({"instr": "PAGE"})).unwrap();
         a.run("caret.docStart", json!({})).unwrap();
-        assert_eq!(a.run("fields.setCode", json!({})).unwrap(), json!({"pending": "editFieldCode"}));
-        let Some(dialogs::Dialog::FieldCode { code, edit: true, .. }) = &a.dialog else { panic!("{:?}", a.dialog) };
+        assert_eq!(
+            a.run("fields.setCode", json!({})).unwrap(),
+            json!({"pending": "editFieldCode"})
+        );
+        let Some(dialogs::Dialog::FieldCode {
+            code, edit: true, ..
+        }) = &a.dialog
+        else {
+            panic!("{:?}", a.dialog)
+        };
         assert_eq!(code, "PAGE");
         let mut b = app();
         assert!(b.execute("insert.field", json!({})).is_err());
@@ -4038,34 +5332,81 @@ mod tests {
     #[test]
     fn merge_rules_and_reports_open_dialogs() {
         let mut a = app();
-        a.run("mailings.recipients", json!({"csv": "First Name,City\nAda,London"})).unwrap();
-        assert_eq!(a.run("mailings.rules", json!({"rule": "IF"})).unwrap(), json!({"pending": "ruleIf"}));
-        let Some(mut d) = a.dialog.take() else { panic!("no dialog") };
-        let dialogs::Dialog::MergeRule { field, value, then, els, .. } = &mut d else { panic!("{d:?}") };
+        a.run(
+            "mailings.recipients",
+            json!({"csv": "First Name,City\nAda,London"}),
+        )
+        .unwrap();
+        assert_eq!(
+            a.run("mailings.rules", json!({"rule": "IF"})).unwrap(),
+            json!({"pending": "ruleIf"})
+        );
+        let Some(mut d) = a.dialog.take() else {
+            panic!("no dialog")
+        };
+        let dialogs::Dialog::MergeRule {
+            field,
+            value,
+            then,
+            els,
+            ..
+        } = &mut d
+        else {
+            panic!("{d:?}")
+        };
         assert_eq!(field, "First Name", "the list's first field is picked");
-        (*field, *value, *then, *els) = ("City".into(), "London".into(), "Local".into(), "Away".into());
+        (*field, *value, *then, *els) = (
+            "City".into(),
+            "London".into(),
+            "Local".into(),
+            "Away".into(),
+        );
         let params = dialogs::rule_params(&d).unwrap();
         a.run("mailings.rules", params).unwrap();
         assert!(a.dialog.is_none());
         let fields = |a: &WordApp| -> Vec<String> {
             let (doc, body) = (&a.session.doc, wordcraft_doc::StoryRef::Body);
-            let paras = doc.para_paths(body).into_iter().filter_map(|p| doc.para(body, &p).cloned());
+            let paras = doc
+                .para_paths(body)
+                .into_iter()
+                .filter_map(|p| doc.para(body, &p).cloned());
             paras
                 .flat_map(|p| p.objects)
-                .filter_map(|o| if let wordcraft_doc::para::InlineObject::Field { instr, .. } = o { Some(instr) } else { None })
+                .filter_map(|o| {
+                    if let wordcraft_doc::para::InlineObject::Field { instr, .. } = o {
+                        Some(instr)
+                    } else {
+                        None
+                    }
+                })
                 .collect()
         };
-        assert_eq!(fields(&a), vec![r#"IF { MERGEFIELD City } = "London" "Local" "Away""#]);
+        assert_eq!(
+            fields(&a),
+            vec![r#"IF { MERGEFIELD City } = "London" "Local" "Away""#]
+        );
         // Next Record inserts directly; Skip Record If asks.
-        assert!(a.run("mailings.rules", json!({"rule": "NEXT"})).unwrap().get("pending").is_none());
+        assert!(
+            a.run("mailings.rules", json!({"rule": "NEXT"}))
+                .unwrap()
+                .get("pending")
+                .is_none()
+        );
         assert_eq!(fields(&a).last().map(String::as_str), Some("NEXT"));
-        assert_eq!(a.run("mailings.rules", json!({"rule": "skipif"})).unwrap(), json!({"pending": "ruleSkipIf"}));
+        assert_eq!(
+            a.run("mailings.rules", json!({"rule": "skipif"})).unwrap(),
+            json!({"pending": "ruleSkipIf"})
+        );
         a.dialog = None;
         a.run("mailings.matchFields", json!({})).unwrap();
-        let Some(dialogs::Dialog::MatchFields { address, .. }) = &a.dialog else { panic!() };
+        let Some(dialogs::Dialog::MatchFields { address, .. }) = &a.dialog else {
+            panic!()
+        };
         assert_eq!(address["firstName"], "First Name");
         a.run("mailings.checkErrors", json!({})).unwrap();
-        let Some(dialogs::Dialog::CheckErrors { unknown, records }) = &a.dialog else { panic!() };
+        let Some(dialogs::Dialog::CheckErrors { unknown, records }) = &a.dialog else {
+            panic!()
+        };
         assert_eq!((unknown.len(), *records), (0, 1));
         // Scripts and agents get the data or the default rule, never a dialog.
         let mut b = app();
@@ -4088,7 +5429,11 @@ mod tests {
             Some(path.clone())
         }));
         a.run("ui.openRecipientList", json!({})).unwrap();
-        assert_eq!(*asked.borrow(), "recipients", "the host can offer CSV files");
+        assert_eq!(
+            *asked.borrow(),
+            "recipients",
+            "the host can offer CSV files"
+        );
         assert_eq!(a.session.merge.headers, vec!["First Name", "City"]);
         assert_eq!(a.session.merge.rows.len(), 2);
         assert!(body_text(&a).contains(UNSAVED), "the document stays open");
@@ -4100,9 +5445,20 @@ mod tests {
     #[test]
     fn a_font_picked_on_the_web_is_added_listed_and_kept() {
         const FAMILY: &str = "Uifont Sans 3";
-        let mut font = std::fs::read(concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/fonts/SourceSans3-Regular.ttf")).unwrap();
-        let utf16 = |s: &str| s.encode_utf16().flat_map(u16::to_be_bytes).collect::<Vec<u8>>();
-        for (from, to) in [(utf16("Source Sans 3"), utf16(FAMILY)), (b"Source Sans 3".to_vec(), FAMILY.as_bytes().to_vec())] {
+        let mut font = std::fs::read(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../assets/fonts/SourceSans3-Regular.ttf"
+        ))
+        .unwrap();
+        let utf16 = |s: &str| {
+            s.encode_utf16()
+                .flat_map(u16::to_be_bytes)
+                .collect::<Vec<u8>>()
+        };
+        for (from, to) in [
+            (utf16("Source Sans 3"), utf16(FAMILY)),
+            (b"Source Sans 3".to_vec(), FAMILY.as_bytes().to_vec()),
+        ] {
             let mut i = 0;
             while let Some(at) = font[i..].windows(from.len()).position(|w| w == from) {
                 font[i + at..i + at + to.len()].copy_from_slice(&to);
@@ -4112,25 +5468,43 @@ mod tests {
         let mut a = typed();
         let asked = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
         let seen = asked.clone();
-        a.services.open_async = Some(Box::new(move |purpose| *seen.borrow_mut() = purpose.to_string()));
+        a.services.open_async = Some(Box::new(move |purpose| {
+            *seen.borrow_mut() = purpose.to_string()
+        }));
         let kept = std::rc::Rc::new(std::cell::RefCell::new(Vec::<(String, usize)>::new()));
         let (k1, k2) = (kept.clone(), kept.clone());
-        a.services.store_font = Some(Box::new(move |name, bytes| k1.borrow_mut().push((name.to_string(), bytes.len()))));
-        a.services.forget_font = Some(Box::new(move |name| k2.borrow_mut().retain(|(n, _)| n != name)));
+        a.services.store_font = Some(Box::new(move |name, bytes| {
+            k1.borrow_mut().push((name.to_string(), bytes.len()))
+        }));
+        a.services.forget_font = Some(Box::new(move |name| {
+            k2.borrow_mut().retain(|(n, _)| n != name)
+        }));
         let inbox: Inbox = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         a.services.inbox = Some(inbox.clone());
         let ctx = egui::Context::default();
         assert!(!a.previews.families().iter().any(|f| f == FAMILY));
         a.run("font.add", json!({})).unwrap();
         assert_eq!(*asked.borrow(), "font");
-        inbox.lock().unwrap().push(("Uifont-Regular.ttf".into(), font.clone()));
+        inbox
+            .lock()
+            .unwrap()
+            .push(("Uifont-Regular.ttf".into(), font.clone()));
         a.drain_inbox();
         a.watch_fonts(&ctx);
-        assert!(a.previews.families().iter().any(|f| f == FAMILY), "listed in the font menu at once");
-        assert_eq!(*kept.borrow(), vec![("Uifont-Regular.ttf".to_string(), font.len())]);
+        assert!(
+            a.previews.families().iter().any(|f| f == FAMILY),
+            "listed in the font menu at once"
+        );
+        assert_eq!(
+            *kept.borrow(),
+            vec![("Uifont-Regular.ttf".to_string(), font.len())]
+        );
         assert!(body_text(&a).contains(UNSAVED), "the document stays open");
         // Junk named like a font is refused, and nothing is kept.
-        inbox.lock().unwrap().push(("junk.woff2".into(), b"wOF2junk".to_vec()));
+        inbox
+            .lock()
+            .unwrap()
+            .push(("junk.woff2".into(), b"wOF2junk".to_vec()));
         a.drain_inbox();
         assert_eq!(kept.borrow().len(), 1);
         a.run("font.remove", json!({"family": FAMILY})).unwrap();
@@ -4146,30 +5520,59 @@ mod tests {
         let mut a = typed();
         let asked = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
         let seen = asked.clone();
-        a.services.open_async = Some(Box::new(move |purpose| *seen.borrow_mut() = purpose.to_string()));
+        a.services.open_async = Some(Box::new(move |purpose| {
+            *seen.borrow_mut() = purpose.to_string()
+        }));
         let inbox: Inbox = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         a.services.inbox = Some(inbox.clone());
-        assert_eq!(a.run("ui.openRecipientList", json!({})).unwrap(), json!({"pending": true}));
+        assert_eq!(
+            a.run("ui.openRecipientList", json!({})).unwrap(),
+            json!({"pending": true})
+        );
         assert_eq!(*asked.borrow(), "recipients");
-        inbox.lock().unwrap().push(("people.txt".into(), b"Name\tCity\nAda\tLondon\n".to_vec()));
+        inbox
+            .lock()
+            .unwrap()
+            .push(("people.txt".into(), b"Name\tCity\nAda\tLondon\n".to_vec()));
         a.drain_inbox();
         assert_eq!(a.session.merge.headers, vec!["Name", "City"]);
         assert!(!a.recipient_list_pending);
         assert!(body_text(&a).contains(UNSAVED), "the document stays open");
-        inbox.lock().unwrap().push(("more.csv".into(), b"Name\nBo\nCy\n".to_vec()));
+        inbox
+            .lock()
+            .unwrap()
+            .push(("more.csv".into(), b"Name\nBo\nCy\n".to_vec()));
         a.drain_inbox();
         assert_eq!(a.session.merge.rows.len(), 2);
         // A CSV picked through the picker must not turn the next .txt drop into recipients.
         a.run("ui.openRecipientList", json!({})).unwrap();
-        inbox.lock().unwrap().push(("people.csv".into(), b"Name,City\nAda,London\n".to_vec()));
+        inbox
+            .lock()
+            .unwrap()
+            .push(("people.csv".into(), b"Name,City\nAda,London\n".to_vec()));
         a.drain_inbox();
         assert!(!a.recipient_list_pending);
-        inbox.lock().unwrap().push(("notes.txt".into(), b"A plain text document.\nAnother line.\n".to_vec()));
+        inbox.lock().unwrap().push((
+            "notes.txt".into(),
+            b"A plain text document.\nAnother line.\n".to_vec(),
+        ));
         a.drain_inbox();
-        assert_eq!(prompt(&a), Some("saveChanges"), "the TXT opens like any document");
-        a.run("ui.saveChanges", json!({"answer": "dontSave"})).unwrap();
-        assert_eq!(a.session.merge.headers, vec!["Name", "City"], "the recipients stay");
-        assert!(body_text(&a).contains("A plain text document."), "the TXT opened as a document");
+        assert_eq!(
+            prompt(&a),
+            Some("saveChanges"),
+            "the TXT opens like any document"
+        );
+        a.run("ui.saveChanges", json!({"answer": "dontSave"}))
+            .unwrap();
+        assert_eq!(
+            a.session.merge.headers,
+            vec!["Name", "City"],
+            "the recipients stay"
+        );
+        assert!(
+            body_text(&a).contains("A plain text document."),
+            "the TXT opened as a document"
+        );
         // A cancelled picker leaves nothing pending once the user does something else.
         a.run("ui.openRecipientList", json!({})).unwrap();
         a.run("format.bold", json!({})).unwrap();
@@ -4187,14 +5590,29 @@ mod tests {
             assert!(r.is_ok(), "{id}: {r:?}");
             assert!(!a.canvas.scroll_to_caret, "{id} scrolled to the caret");
         };
-        keeps_view(&mut a, "draw.stroke", json!({"page": 0, "points": [[100, 300], [200, 320]], "tool": "pen"}));
-        keeps_view(&mut a, "draw.lasso", json!({"page": 0, "points": [[80, 280], [220, 280], [220, 340], [80, 340]]}));
+        keeps_view(
+            &mut a,
+            "draw.stroke",
+            json!({"page": 0, "points": [[100, 300], [200, 320]], "tool": "pen"}),
+        );
+        keeps_view(
+            &mut a,
+            "draw.lasso",
+            json!({"page": 0, "points": [[80, 280], [220, 280], [220, 340], [80, 340]]}),
+        );
         keeps_view(&mut a, "draw.lassoMove", json!({"dx": 10, "dy": 10}));
-        keeps_view(&mut a, "draw.stroke", json!({"page": 0, "points": [[300, 500], [400, 500]], "tool": "pencil"}));
+        keeps_view(
+            &mut a,
+            "draw.stroke",
+            json!({"page": 0, "points": [[300, 500], [400, 500]], "tool": "pencil"}),
+        );
         keeps_view(&mut a, "draw.erase", json!({"page": 0, "x": 350, "y": 500}));
         a.canvas.scroll_to_caret = false;
         a.run("text.insert", json!({"text": "x"})).unwrap();
-        assert!(a.canvas.scroll_to_caret, "typing still brings the caret into view");
+        assert!(
+            a.canvas.scroll_to_caret,
+            "typing still brings the caret into view"
+        );
     }
 
     /// `ui.render` and `ui.screenshot` without a `path` return the PNG in the reply instead of
@@ -4205,18 +5623,29 @@ mod tests {
         let ctx = egui::Context::default();
         let mut a = typed();
         let (req, _reply) = ControlRequest::new("ui.render", json!({"page": 1, "scale": 0.5}));
-        let control::Outcome::Done(v) = control::handle(&mut a, &ctx, &req) else { panic!("ui.render replies at once") };
+        let control::Outcome::Done(v) = control::handle(&mut a, &ctx, &req) else {
+            panic!("ui.render replies at once")
+        };
         assert_eq!(v["ok"], true, "{v}");
         assert!(v["result"].get("path").is_none(), "no file: {v}");
-        let png = wordcraft_engine::cmd::insert::base64_decode(v["result"]["png"].as_str().expect("png")).expect("base64");
+        let png =
+            wordcraft_engine::cmd::insert::base64_decode(v["result"]["png"].as_str().expect("png"))
+                .expect("base64");
         assert_eq!(&png[..4], b"\x89PNG", "{v}");
-        assert!(v["result"]["width"].as_u64().unwrap() > 0 && v["result"]["pages"].as_u64().unwrap() >= 1, "{v}");
+        assert!(
+            v["result"]["width"].as_u64().unwrap() > 0
+                && v["result"]["pages"].as_u64().unwrap() >= 1,
+            "{v}"
+        );
 
-        let image = egui::ColorImage::from_rgba_unmultiplied([2, 1], &[255, 0, 0, 255, 0, 0, 255, 255]);
+        let image =
+            egui::ColorImage::from_rgba_unmultiplied([2, 1], &[255, 0, 0, 255, 0, 0, 255, 255]);
         let v = control::save_screenshot(&image, None);
         assert_eq!(v["ok"], true, "{v}");
         assert!(v["result"].get("path").is_none(), "no file: {v}");
-        let png = wordcraft_engine::cmd::insert::base64_decode(v["result"]["png"].as_str().expect("png")).expect("base64");
+        let png =
+            wordcraft_engine::cmd::insert::base64_decode(v["result"]["png"].as_str().expect("png"))
+                .expect("base64");
         assert_eq!(&png[..4], b"\x89PNG");
         assert_eq!(v["result"]["width"], 2, "{v}");
         assert_eq!(v["result"]["height"], 1, "{v}");
@@ -4228,31 +5657,50 @@ mod tests {
     #[test]
     fn shift_f10_opens_the_context_menu_at_the_caret() {
         use egui_kittest::kittest::Queryable;
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            app(),
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                app(),
+            );
         for _ in 0..6 {
             h.step();
         }
-        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        let key = |key, modifiers| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        };
         h.event(egui::Event::Text("Kilns fire".into()));
         h.step();
-        let pastes = |h: &egui_kittest::Harness<WordApp>| h.query_all_by_label_contains("Paste").count();
+        let pastes =
+            |h: &egui_kittest::Harness<WordApp>| h.query_all_by_label_contains("Paste").count();
         let before = pastes(&h);
         h.event(key(egui::Key::F10, egui::Modifiers::SHIFT));
         h.step();
         h.step();
-        assert!(h.state().canvas.context_menu_open, "Shift+F10 opened the menu");
+        assert!(
+            h.state().canvas.context_menu_open,
+            "Shift+F10 opened the menu"
+        );
         assert!(pastes(&h) > before, "the page's context menu, with Paste");
         let caret = canvas::caret_screen(h.state_mut()).unwrap();
         let at = h.state().canvas.context_menu_at.unwrap();
-        assert!((at.x - caret.0.x).abs() < 1.0 && at.y > caret.0.y, "below the caret: {at:?} vs {caret:?}");
-        assert_eq!(h.state().ui.keytips, keytips::Phase::Off, "Shift+F10 doesn't show keytips");
+        assert!(
+            (at.x - caret.0.x).abs() < 1.0 && at.y > caret.0.y,
+            "below the caret: {at:?} vs {caret:?}"
+        );
+        assert_eq!(
+            h.state().ui.keytips,
+            keytips::Phase::Off,
+            "Shift+F10 doesn't show keytips"
+        );
         h.event(key(egui::Key::Escape, egui::Modifiers::NONE));
         h.step();
         h.step();
@@ -4262,7 +5710,13 @@ mod tests {
         h.step();
         h.step();
         assert!(h.state().canvas.context_menu_open);
-        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Kilns fire");
+        assert_eq!(
+            h.state()
+                .session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body),
+            "Kilns fire"
+        );
     }
 
     /// #712: Find, Replace and Go To open as in Word. Ctrl+F puts the keyboard in the Navigation
@@ -4270,36 +5724,63 @@ mod tests {
     /// the one Find and Replace dialog on its Replace and Go To tabs.
     #[test]
     fn find_replace_and_go_to_keys_like_word() {
-        let mut h = egui_kittest::Harness::builder().with_size(egui::vec2(1440.0, 900.0)).build_ui_state(
-            |ui, app: &mut WordApp| {
-                let ctx = ui.ctx().clone();
-                app.logic(&ctx);
-                app.ui(ui);
-            },
-            app(),
-        );
+        let mut h = egui_kittest::Harness::builder()
+            .with_size(egui::vec2(1440.0, 900.0))
+            .build_ui_state(
+                |ui, app: &mut WordApp| {
+                    let ctx = ui.ctx().clone();
+                    app.logic(&ctx);
+                    app.ui(ui);
+                },
+                app(),
+            );
         for _ in 0..6 {
             h.step();
         }
-        let key = |key, modifiers| egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers };
+        let key = |key, modifiers| egui::Event::Key {
+            key,
+            physical_key: None,
+            pressed: true,
+            repeat: false,
+            modifiers,
+        };
         h.event(egui::Event::Text("Kilns fire clay. Kilns cool.".into()));
         h.step();
-        let nav_query = |h: &egui_kittest::Harness<WordApp>| h.ctx.data(|d| d.get_temp::<String>(egui::Id::new("nav_query"))).unwrap_or_default();
+        let nav_query = |h: &egui_kittest::Harness<WordApp>| {
+            h.ctx
+                .data(|d| d.get_temp::<String>(egui::Id::new("nav_query")))
+                .unwrap_or_default()
+        };
         // Ctrl+F: the pane, and typing goes into its search box.
         h.event(key(egui::Key::F, egui::Modifiers::COMMAND));
         h.step();
         h.step();
-        assert!(h.state().session.view.nav_pane, "the Navigation pane opened");
-        assert!(h.state().dialog.is_none(), "no dialog: {:?}", h.state().dialog.as_ref().map(|d| d.name()));
+        assert!(
+            h.state().session.view.nav_pane,
+            "the Navigation pane opened"
+        );
+        assert!(
+            h.state().dialog.is_none(),
+            "no dialog: {:?}",
+            h.state().dialog.as_ref().map(|d| d.name())
+        );
         h.event(key(egui::Key::C, egui::Modifiers::NONE));
         h.event(egui::Event::Text("cool".into()));
         h.step();
         h.step();
         assert_eq!(nav_query(&h), "cool", "typed into the pane's search box");
         assert_eq!(h.state().session.find.results.len(), 1);
-        assert_eq!(h.state().session.doc.plain_text(wordcraft_doc::StoryRef::Body), "Kilns fire clay. Kilns cool.");
+        assert_eq!(
+            h.state()
+                .session
+                .doc
+                .plain_text(wordcraft_doc::StoryRef::Body),
+            "Kilns fire clay. Kilns cool."
+        );
         // With text selected, Ctrl+F searches for it.
-        h.state_mut().run("select.text", json!({"text": "Kilns"})).unwrap();
+        h.state_mut()
+            .run("select.text", json!({"text": "Kilns"}))
+            .unwrap();
         h.state_mut().canvas.want_focus = true;
         h.step();
         h.event(key(egui::Key::F, egui::Modifiers::COMMAND));

@@ -981,8 +981,14 @@ mod tests {
         };
         let first = create_session(0);
         let second = create_session(4);
-        audio_core.audio_out_manager.lock().set_session(0, Some(first.clone()));
-        audio_core.audio_out_manager.lock().set_session(4, Some(second.clone()));
+        audio_core
+            .audio_out_manager
+            .lock()
+            .set_session(0, Some(first.clone()));
+        audio_core
+            .audio_out_manager
+            .lock()
+            .set_session(4, Some(second.clone()));
         for volume in [0.25, 0.0, 1.0] {
             audio_core.set_all_audio_out_volume(volume);
             assert_eq!(first.get_volume(), volume);

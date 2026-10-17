@@ -47,7 +47,9 @@ pub fn rrf_weighted<Id: Clone + Eq + Hash>(lists: &[(&[Id], f64)], k: f64) -> Ve
         })
         .collect();
     out.sort_by(|a, b| {
-        b.1.partial_cmp(&a.1).unwrap_or(Ordering::Equal).then_with(|| a.2.cmp(&b.2))
+        b.1.partial_cmp(&a.1)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| a.2.cmp(&b.2))
     });
     out.into_iter().map(|(id, score, _)| (id, score)).collect()
 }
@@ -124,7 +126,9 @@ pub fn apply_source_weights<Id: Clone + Eq>(
 ) -> Vec<WeightedCandidate<Id>> {
     let mut ordered = candidates;
     ordered.sort_by(|a, b| {
-        boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+        boosted(weights, b)
+            .partial_cmp(&boosted(weights, a))
+            .unwrap_or(Ordering::Equal)
     });
 
     let mut top: Vec<WeightedCandidate<Id>> = ordered.iter().take(top_n).cloned().collect();
@@ -140,7 +144,9 @@ pub fn apply_source_weights<Id: Clone + Eq>(
             .filter(|c| is_quota_source(c) && boosted(weights, c) >= rule.min_score)
             .collect();
         promotable.sort_by(|a, b| {
-            boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+            boosted(weights, b)
+                .partial_cmp(&boosted(weights, a))
+                .unwrap_or(Ordering::Equal)
         });
 
         let initial_count = top.iter().filter(|c| is_quota_source(c)).count();
@@ -150,13 +156,18 @@ pub fn apply_source_weights<Id: Clone + Eq>(
             }
             let worst = top.iter().rposition(|c| {
                 !is_quota_source(c)
-                    && !c.kind.as_deref().is_some_and(|k| protected_kinds.iter().any(|p| p == k))
+                    && !c
+                        .kind
+                        .as_deref()
+                        .is_some_and(|k| protected_kinds.iter().any(|p| p == k))
             });
             let Some(worst_idx) = worst else { break };
             top[worst_idx] = promoted;
         }
         top.sort_by(|a, b| {
-            boosted(weights, b).partial_cmp(&boosted(weights, a)).unwrap_or(Ordering::Equal)
+            boosted(weights, b)
+                .partial_cmp(&boosted(weights, a))
+                .unwrap_or(Ordering::Equal)
         });
     }
     top
@@ -188,7 +199,10 @@ pub fn mmr<Id: Clone>(candidates: &[(Id, Vec<f32>, f64)], lambda: f64, top_n: us
         }
         selected.push(remaining.remove(best_pos));
     }
-    selected.into_iter().map(|i| candidates[i].0.clone()).collect()
+    selected
+        .into_iter()
+        .map(|i| candidates[i].0.clone())
+        .collect()
 }
 
 /// Dot product of two equal-length vectors (`0.0` on length mismatch).
@@ -275,7 +289,10 @@ pub fn quantize_i8(v: &[f32]) -> (Vec<i8>, f32) {
         return (vec![0_i8; v.len()], 0.0);
     }
     let scale = max_abs / 127.0;
-    let q = v.iter().map(|x| ((x / scale).round().clamp(-127.0, 127.0)) as i8).collect();
+    let q = v
+        .iter()
+        .map(|x| ((x / scale).round().clamp(-127.0, 127.0)) as i8)
+        .collect();
     (q, scale)
 }
 
@@ -284,7 +301,10 @@ pub fn quantize_i8(v: &[f32]) -> (Vec<i8>, f32) {
 /// embedding dimension).
 #[must_use]
 pub fn dot_i8(a: &[i8], b: &[i8]) -> i32 {
-    a.iter().zip(b).map(|(&x, &y)| i32::from(x) * i32::from(y)).sum()
+    a.iter()
+        .zip(b)
+        .map(|(&x, &y)| i32::from(x) * i32::from(y))
+        .sum()
 }
 
 #[derive(PartialEq)]
@@ -297,7 +317,9 @@ impl PartialOrd for Scored {
 }
 impl Ord for Scored {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.0.total_cmp(&other.0).then_with(|| other.1.cmp(&self.1))
+        self.0
+            .total_cmp(&other.0)
+            .then_with(|| other.1.cmp(&self.1))
     }
 }
 
@@ -314,7 +336,9 @@ pub fn top_k_exact(query: &[f32], matrix: &[f32], dim: usize, k: usize) -> Vec<(
     // The query norm is the same for every row: compute it once.
     let query_norm = norm(query);
     let rows = matrix.len() / dim;
-    top_k_by(rows, k, |r| cosine_with_norm(query, query_norm, &matrix[r * dim..(r + 1) * dim]))
+    top_k_by(rows, k, |r| {
+        cosine_with_norm(query, query_norm, &matrix[r * dim..(r + 1) * dim])
+    })
 }
 
 /// Bounded-heap selection shared by every top-`k` scan: scores each of `rows`
@@ -341,8 +365,10 @@ fn top_k_by(rows: usize, k: usize, mut score: impl FnMut(usize) -> f32) -> Vec<(
             heap.push(std::cmp::Reverse(Scored(s, r)));
         }
     }
-    let mut out: Vec<(usize, f32)> =
-        heap.into_iter().map(|std::cmp::Reverse(Scored(s, i))| (i, s)).collect();
+    let mut out: Vec<(usize, f32)> = heap
+        .into_iter()
+        .map(|std::cmp::Reverse(Scored(s, i))| (i, s))
+        .collect();
     out.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
     out
 }
@@ -381,7 +407,9 @@ pub fn top_k_i8(
     }
     let (q, q_scale) = quantize_i8(query);
     let rows = (codes.len() / dim).min(scales.len());
-    top_k_by(rows, k, |r| dot_i8(&q, &codes[r * dim..(r + 1) * dim]) as f32 * q_scale * scales[r])
+    top_k_by(rows, k, |r| {
+        dot_i8(&q, &codes[r * dim..(r + 1) * dim]) as f32 * q_scale * scales[r]
+    })
 }
 
 /// Merge per-shard top-`k` lists (each already expressed in *global* row
@@ -410,14 +438,20 @@ fn scale_bounds<Id>(list: &[(Id, f64)], scaling: ScoreScaling) -> (f64, f64) {
     match scaling {
         ScoreScaling::MinMax => list
             .iter()
-            .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), (_, s)| (lo.min(*s), hi.max(*s))),
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), (_, s)| {
+                (lo.min(*s), hi.max(*s))
+            }),
         ScoreScaling::DistBased => {
             let n = list.len() as f64;
             let mean = list.iter().map(|(_, s)| *s).sum::<f64>() / n;
-            let variance = list.iter().map(|(_, s)| (*s - mean) * (*s - mean)).sum::<f64>() / n;
+            let variance = list
+                .iter()
+                .map(|(_, s)| (*s - mean) * (*s - mean))
+                .sum::<f64>()
+                / n;
             let spread = 3.0 * variance.sqrt();
             (mean - spread, mean + spread)
-        },
+        }
     }
 }
 
@@ -442,11 +476,18 @@ pub fn fuse_scores<Id: Clone + Eq + Hash>(
         if list.is_empty() {
             continue;
         }
-        let weight = if total_weight > 0.0 { weight.max(0.0) / total_weight } else { equal_weight };
+        let weight = if total_weight > 0.0 {
+            weight.max(0.0) / total_weight
+        } else {
+            equal_weight
+        };
         let (lo, hi) = scale_bounds(list, scaling);
         for (id, score) in *list {
-            let scaled =
-                if hi == lo { if hi > 0.0 { 1.0 } else { 0.0 } } else { (score - lo) / (hi - lo) };
+            let scaled = if hi == lo {
+                if hi > 0.0 { 1.0 } else { 0.0 }
+            } else {
+                (score - lo) / (hi - lo)
+            };
             *scores.entry(id.clone()).or_insert(0.0) += scaled * weight;
             first_seen.entry(id.clone()).or_insert_with(|| {
                 let o = order;
@@ -475,7 +516,9 @@ pub fn minmax_normalize(values: &mut [f64]) {
     }
     let (lo, hi) = values
         .iter()
-        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &v| (lo.min(v), hi.max(v)));
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), &v| {
+            (lo.min(v), hi.max(v))
+        });
     if hi > lo {
         for v in values.iter_mut() {
             *v = (*v - lo) / (hi - lo);

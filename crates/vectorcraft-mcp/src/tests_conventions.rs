@@ -2,7 +2,8 @@ use crate::{Backend, Headless, Server, tool_definitions};
 use serde_json::{Value, json};
 
 fn rpc(s: &mut Server, method: &str, params: Value) -> Value {
-    s.handle(json!({"jsonrpc":"2.0","id":1,"method":method,"params":params})).unwrap()
+    s.handle(json!({"jsonrpc":"2.0","id":1,"method":method,"params":params}))
+        .unwrap()
 }
 fn call(s: &mut Server, name: &str, arguments: Value) -> Value {
     let r = rpc(s, "tools/call", json!({"name":name,"arguments":arguments}));
@@ -31,10 +32,19 @@ fn conventions_catalog_and_strict_keys() {
         assert!(tools.iter().any(|t| t["name"] == name), "missing {name}");
     }
     for t in tools {
-        for hint in ["readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint"] {
+        for hint in [
+            "readOnlyHint",
+            "destructiveHint",
+            "idempotentHint",
+            "openWorldHint",
+        ] {
             assert!(t["annotations"][hint].is_boolean(), "{t}");
         }
-        let r = rpc(&mut s, "tools/call", json!({"name":t["name"],"arguments":{"typo":1}}));
+        let r = rpc(
+            &mut s,
+            "tools/call",
+            json!({"name":t["name"],"arguments":{"typo":1}}),
+        );
         assert_eq!(r["error"]["code"], -32602, "{r}");
     }
     assert_eq!(rpc(&mut s, "ping", json!({}))["result"], json!({}));
@@ -43,12 +53,26 @@ fn conventions_catalog_and_strict_keys() {
 #[test]
 fn conventions_commands_batch_and_bounded_preview() {
     let mut s = Server::new(Box::new(Headless::with_document()));
-    let list = call(&mut s, "command_list", json!({"filter":"shape.rectangle","enabled_only":true}));
+    let list = call(
+        &mut s,
+        "command_list",
+        json!({"filter":"shape.rectangle","enabled_only":true}),
+    );
     assert_eq!(list["isError"], false, "{list}");
-    assert!(payload(&list).as_array().unwrap().iter().any(|c| c["id"] == "shape.rectangle"));
+    assert!(
+        payload(&list)
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|c| c["id"] == "shape.rectangle")
+    );
     let steps = json!([{"id":"shape.rectangle","params":{"x":10,"y":20,"width":30,"height":40}}, {"id":"no.such.command"}, {"id":"shape.rectangle","params":{"x":0,"y":0,"width":20,"height":20}}]);
     for (stop, total) in [(true, 2), (false, 3)] {
-        let r = call(&mut s, "command_batch", json!({"steps":steps,"stop_on_error":stop}));
+        let r = call(
+            &mut s,
+            "command_batch",
+            json!({"steps":steps,"stop_on_error":stop}),
+        );
         assert_eq!(r["isError"], true, "{r}");
         let p = payload(&r);
         assert_eq!(p["results"].as_array().unwrap().len(), total);
@@ -56,16 +80,35 @@ fn conventions_commands_batch_and_bounded_preview() {
         assert_eq!(p["completed"], total - 1);
     }
     // atomic: the whole batch is one undo step, named by `label` (#1163).
-    let undo_steps = |s: &mut Server| payload(&call(s, "doc_inspect", json!({"depth":0})))["history"].as_array().map_or(0, Vec::len);
+    let undo_steps = |s: &mut Server| {
+        payload(&call(s, "doc_inspect", json!({"depth":0})))["history"]
+            .as_array()
+            .map_or(0, Vec::len)
+    };
     let before = undo_steps(&mut s);
     let two = json!([{"id":"shape.rectangle","params":{"x":0,"y":0,"width":5,"height":5}}, {"id":"shape.ellipse","params":{"x":9,"y":0,"width":5,"height":5}}]);
-    let r = call(&mut s, "command_batch", json!({"steps":two,"atomic":true,"label":"Agent build"}));
+    let r = call(
+        &mut s,
+        "command_batch",
+        json!({"steps":two,"atomic":true,"label":"Agent build"}),
+    );
     assert_eq!(r["isError"], false, "{r}");
     assert_eq!(undo_steps(&mut s), before + 1);
-    assert_eq!(payload(&call(&mut s, "run_command", json!({"command":"edit.undo"})))["undone"], "Agent build");
+    assert_eq!(
+        payload(&call(&mut s, "run_command", json!({"command":"edit.undo"})))["undone"],
+        "Agent build"
+    );
     assert_eq!(undo_steps(&mut s), before);
-    for bad in [json!({"steps":two,"label":"x"}), json!({"steps":two,"atomic":"yes"}), json!({"steps":two,"atomic":true,"label":""})] {
-        assert_eq!(call(&mut s, "command_batch", bad.clone())["isError"], true, "{bad}");
+    for bad in [
+        json!({"steps":two,"label":"x"}),
+        json!({"steps":two,"atomic":"yes"}),
+        json!({"steps":two,"atomic":true,"label":""}),
+    ] {
+        assert_eq!(
+            call(&mut s, "command_batch", bad.clone())["isError"],
+            true,
+            "{bad}"
+        );
     }
     let before = call(&mut s, "doc_inspect", json!({}));
     let r = call(&mut s, "render_preview", json!({"max_side":64}));
@@ -75,18 +118,33 @@ fn conventions_commands_batch_and_bounded_preview() {
     assert!(img.width() <= 64 && img.height() <= 64);
     assert_eq!(before, call(&mut s, "doc_inspect", json!({})));
     for max in [json!(0), json!(4097), json!("64")] {
-        assert_eq!(call(&mut s, "render_preview", json!({"max_side":max}))["isError"], true);
+        assert_eq!(
+            call(&mut s, "render_preview", json!({"max_side":max}))["isError"],
+            true
+        );
     }
     // Another artboard, three times wider than tall, previews by its index (#1163).
-    let r = call(&mut s, "run_command", json!({"command":"artboard.new","params":{"x":2000,"y":0,"width":300,"height":100}}));
+    let r = call(
+        &mut s,
+        "run_command",
+        json!({"command":"artboard.new","params":{"x":2000,"y":0,"width":300,"height":100}}),
+    );
     assert_eq!(r["isError"], false, "{r}");
-    let r = call(&mut s, "render_preview", json!({"max_side":60,"artboard":1}));
+    let r = call(
+        &mut s,
+        "render_preview",
+        json!({"max_side":60,"artboard":1}),
+    );
     assert_eq!(r["isError"], false, "{r}");
     let png = vectorcraft_format::base64_decode(r["content"][0]["data"].as_str().unwrap()).unwrap();
     let img = image::load_from_memory(&png).unwrap();
     assert_eq!((img.width(), img.height()), (60, 20));
     for board in [json!(2), json!(-1), json!("1")] {
-        assert_eq!(call(&mut s, "render_preview", json!({"artboard":board}))["isError"], true, "{board}");
+        assert_eq!(
+            call(&mut s, "render_preview", json!({"artboard":board}))["isError"],
+            true,
+            "{board}"
+        );
     }
     for name in ["ui_inspect", "ui_screenshot"] {
         assert_eq!(call(&mut s, name, json!({}))["isError"], true);
@@ -110,7 +168,12 @@ fn conventions_tool_panics_are_tool_errors() {
     let mut s = Server::new(Box::new(Panics));
     let r = call(&mut s, "list_commands", json!({}));
     assert_eq!(r["isError"], true);
-    assert!(r["content"][0]["text"].as_str().unwrap().contains("backend bug"));
+    assert!(
+        r["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("backend bug")
+    );
     assert_eq!(rpc(&mut s, "ping", json!({}))["result"], json!({}));
 }
 
@@ -140,17 +203,50 @@ fn conventions_resources_and_versioned_results() {
             stripped.as_object_mut().unwrap().remove(key);
         }
         assert_eq!(stripped, legacy["result"]);
-        assert!(rpc(&mut s, method, extra)["result"].get("resultType").is_none());
+        assert!(
+            rpc(&mut s, method, extra)["result"]
+                .get("resultType")
+                .is_none()
+        );
     }
     let r = rpc(&mut s, "resources/list", json!({}));
-    assert!(r["result"]["resources"].as_array().unwrap().iter().any(|r| r["uri"] == "vectorcraft://commands"));
-    let commands = rpc(&mut s, "resources/read", json!({"uri":"vectorcraft://commands"}));
-    let commands: Value = serde_json::from_str(commands["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
+    assert!(
+        r["result"]["resources"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["uri"] == "vectorcraft://commands")
+    );
+    let commands = rpc(
+        &mut s,
+        "resources/read",
+        json!({"uri":"vectorcraft://commands"}),
+    );
+    let commands: Value =
+        serde_json::from_str(commands["result"]["contents"][0]["text"].as_str().unwrap()).unwrap();
     assert_eq!(commands, payload(&call(&mut s, "command_list", json!({}))));
-    assert_eq!(rpc(&mut s, "initialize", json!({"protocolVersion":"2026-07-28"}))["result"]["protocolVersion"], "2026-07-28");
-    assert_eq!(rpc(&mut s, "tools/list", json!({}))["result"]["resultType"], "complete");
-    rpc(&mut s, "initialize", json!({"protocolVersion":"2025-06-18"}));
-    assert!(rpc(&mut s, "tools/list", json!({}))["result"].get("resultType").is_none());
+    assert_eq!(
+        rpc(
+            &mut s,
+            "initialize",
+            json!({"protocolVersion":"2026-07-28"})
+        )["result"]["protocolVersion"],
+        "2026-07-28"
+    );
+    assert_eq!(
+        rpc(&mut s, "tools/list", json!({}))["result"]["resultType"],
+        "complete"
+    );
+    rpc(
+        &mut s,
+        "initialize",
+        json!({"protocolVersion":"2025-06-18"}),
+    );
+    assert!(
+        rpc(&mut s, "tools/list", json!({}))["result"]
+            .get("resultType")
+            .is_none()
+    );
 }
 
 /// #785: a batch step can use an earlier step's result (`"$N.path"`); a reference to nothing
@@ -164,9 +260,23 @@ fn batch_steps_refer_to_earlier_results() {
         {"id":"text.setRangeStyle","params":{"id":"$0.id","start":10,"end":14,"style":"Bold"}},
         {"id":"text.setRangeStyle","params":{"id":"$9.id","start":0,"end":1,"style":"Bold"}}
     ]);
-    let r = call(&mut s, "command_batch", json!({"steps":steps,"stop_on_error":false}));
+    let r = call(
+        &mut s,
+        "command_batch",
+        json!({"steps":steps,"stop_on_error":false}),
+    );
     let p = payload(&r);
-    assert_eq!((p["completed"].clone(), p["failed"].clone()), (json!(3), json!(1)), "{p}");
-    assert_eq!(p["results"][2]["result"]["id"], p["results"][0]["result"]["id"], "the text, not the selected rectangle");
-    assert!(p["results"][3]["error"].as_str().unwrap().contains("$9.id"), "{p}");
+    assert_eq!(
+        (p["completed"].clone(), p["failed"].clone()),
+        (json!(3), json!(1)),
+        "{p}"
+    );
+    assert_eq!(
+        p["results"][2]["result"]["id"], p["results"][0]["result"]["id"],
+        "the text, not the selected rectangle"
+    );
+    assert!(
+        p["results"][3]["error"].as_str().unwrap().contains("$9.id"),
+        "{p}"
+    );
 }

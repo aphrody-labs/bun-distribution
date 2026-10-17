@@ -55,18 +55,32 @@ impl SteamPlugin {
     /// The machine host's plugin: `system` (`nes`, `gba`, ...) and the ROM whose saves sync.
     pub fn new(options: RunOptions, system: impl Into<String>, rom: impl Into<PathBuf>) -> Self {
         let steam = Mutex::new(Some(Steam::init(&steam_options(&options))));
-        Self { options, system: system.into(), rom: Some(rom.into()), input_dir: super::input::default_dir(), steam }
+        Self {
+            options,
+            system: system.into(),
+            rom: Some(rom.into()),
+            input_dir: super::input::default_dir(),
+            steam,
+        }
     }
 
     /// Steam without a machine (frontends, the stream client): no cloud saves, no presence.
     pub fn bare(options: RunOptions) -> Self {
         let steam = Mutex::new(Some(Steam::init(&steam_options(&options))));
-        Self { options, system: String::new(), rom: None, input_dir: super::input::default_dir(), steam }
+        Self {
+            options,
+            system: String::new(),
+            rom: None,
+            input_dir: super::input::default_dir(),
+            steam,
+        }
     }
 }
 
 fn steam_options(options: &RunOptions) -> SteamOptions {
-    options.app_id.map_or_else(SteamOptions::default, SteamOptions::with_app_id)
+    options
+        .app_id
+        .map_or_else(SteamOptions::default, SteamOptions::with_app_id)
 }
 
 /// Machine key bits (`crate::machine::keys`) held on Steam Input controllers.
@@ -179,22 +193,32 @@ impl Plugin for SteamPlugin {
         let steam = match started.unwrap_or_else(|| Steam::init(&steam_options(&self.options))) {
             Ok(steam) => steam,
             Err(e) => {
-                app.insert_resource(SteamLayout { controller_first: super::gamescope(), size: DECK_SIZE });
+                app.insert_resource(SteamLayout {
+                    controller_first: super::gamescope(),
+                    size: DECK_SIZE,
+                });
                 app.insert_resource(SteamUnavailable(e));
                 return;
             }
         };
-        app.insert_resource(SteamLayout { controller_first: steam.controller_first(), size: DECK_SIZE });
+        app.insert_resource(SteamLayout {
+            controller_first: steam.controller_first(),
+            size: DECK_SIZE,
+        });
         if let Some(rom) = &self.rom {
             let title = self.options.title.clone().unwrap_or_else(|| {
-                rom.file_stem().map_or_else(|| "Unknown".into(), |s| s.to_string_lossy().into_owned())
+                rom.file_stem()
+                    .map_or_else(|| "Unknown".into(), |s| s.to_string_lossy().into_owned())
             });
             app.insert_resource(SteamPresence(Some(Presence {
                 system: self.system.clone(),
                 game: title.clone(),
                 state: None,
             })));
-            app.insert_resource(SteamFrame { picture: None, location: format!("{title} ({})", self.system.to_uppercase()) });
+            app.insert_resource(SteamFrame {
+                picture: None,
+                location: format!("{title} ({})", self.system.to_uppercase()),
+            });
             if self.options.cloud
                 && let Ok(bytes) = std::fs::read(rom)
             {
@@ -207,7 +231,13 @@ impl Plugin for SteamPlugin {
                     direction: cloud::Direction::Sync,
                 };
                 // Saves must be local before the machine boots: synchronous at startup.
-                let _ = cloud::sync(&target.rom_sha256, &target.title, &target.system, &target.dir, target.direction);
+                let _ = cloud::sync(
+                    &target.rom_sha256,
+                    &target.title,
+                    &target.system,
+                    &target.dir,
+                    target.direction,
+                );
                 app.insert_resource(SaveTarget(target));
             }
         }
@@ -246,7 +276,10 @@ fn pump(
         pending.0 = true;
     }
     if let Some(active) = steam.take_overlay_change() {
-        eprintln!("steam: overlay {}", if active { "activated" } else { "closed" });
+        eprintln!(
+            "steam: overlay {}",
+            if active { "activated" } else { "closed" }
+        );
         paused.0 = active;
         overlay.write(SteamOverlay { active });
     }
@@ -259,7 +292,9 @@ fn poll_input(
     mut pads: ResMut<SteamPads>,
     mut events: MessageWriter<SteamKeyEvent>,
 ) {
-    let (Some(steam), Some(mut input)) = (steam, input) else { return };
+    let (Some(steam), Some(mut input)) = (steam, input) else {
+        return;
+    };
     let mut next = pads.0;
     let held = if steam.overlay_active() {
         next = [None; 4];
@@ -273,7 +308,10 @@ fn poll_input(
     }
     let changed = held ^ keys.0;
     for bit in (0..32).map(|b| 1u32 << b).filter(|bit| changed & bit != 0) {
-        events.write(SteamKeyEvent { key: bit, pressed: held & bit != 0 });
+        events.write(SteamKeyEvent {
+            key: bit,
+            pressed: held & bit != 0,
+        });
     }
     if keys.0 != held {
         keys.0 = held;
@@ -340,13 +378,23 @@ fn run_cloud(
     // ISteamRemoteStorage is thread-safe; the synchronous reads and writes stay off the frame.
     std::thread::spawn(move || {
         for r in requests {
-            let _ = tx.send(cloud::sync(&r.rom_sha256, &r.title, &r.system, &r.dir, r.direction));
+            let _ = tx.send(cloud::sync(
+                &r.rom_sha256,
+                &r.title,
+                &r.system,
+                &r.dir,
+                r.direction,
+            ));
         }
     });
     worker.0 = Some(rx);
 }
 
-fn run_script(steam: Option<NonSend<Steam>>, mut state: ResMut<ScriptState>, mut exit: MessageWriter<AppExit>) {
+fn run_script(
+    steam: Option<NonSend<Steam>>,
+    mut state: ResMut<ScriptState>,
+    mut exit: MessageWriter<AppExit>,
+) {
     let Some(steam) = steam else { return };
     let elapsed = state.started.elapsed();
     if !state.overlay
@@ -356,23 +404,42 @@ fn run_script(steam: Option<NonSend<Steam>>, mut state: ResMut<ScriptState>, mut
         state.overlay = true;
         steam.open_overlay(&dialog);
     }
-    if !state.screenshot && state.script.screenshot_after.is_some_and(|after| elapsed >= after) {
+    if !state.screenshot
+        && state
+            .script
+            .screenshot_after
+            .is_some_and(|after| elapsed >= after)
+    {
         state.screenshot = true;
         steam.trigger_screenshot();
     }
-    if state.script.quit_after.is_some_and(|after| elapsed >= after + Duration::ZERO) {
+    if state
+        .script
+        .quit_after
+        .is_some_and(|after| elapsed >= after + Duration::ZERO)
+    {
         exit.write(AppExit::Success);
     }
 }
 
-fn on_exit(steam: Option<NonSend<Steam>>, target: Option<Res<SaveTarget>>, mut exits: MessageReader<AppExit>) {
+fn on_exit(
+    steam: Option<NonSend<Steam>>,
+    target: Option<Res<SaveTarget>>,
+    mut exits: MessageReader<AppExit>,
+) {
     if exits.read().next().is_none() {
         return;
     }
     let Some(steam) = steam else { return };
     if let Some(target) = target {
         let t = &target.0;
-        let _ = cloud::sync(&t.rom_sha256, &t.title, &t.system, &t.dir, cloud::Direction::Sync);
+        let _ = cloud::sync(
+            &t.rom_sha256,
+            &t.title,
+            &t.system,
+            &t.dir,
+            cloud::Direction::Sync,
+        );
     }
     steam.clear_presence();
     steam.pump();

@@ -11,8 +11,12 @@ pub(super) fn invalid_dsp_mul(ctx: &mut Context, _instr: u32, cond: &'static str
 
 pub(super) fn mrs<const SPSR: bool>(ctx: &mut Context, instr: u32, cond: &'static str) {
     let dst_reg = instr >> 12 & 0xF;
-    ctx.next_instr.opcode =
-        format!("mrs{} r{}, {}", cond, dst_reg, if SPSR { "spsr" } else { "cpsr" });
+    ctx.next_instr.opcode = format!(
+        "mrs{} r{}, {}",
+        cond,
+        dst_reg,
+        if SPSR { "spsr" } else { "cpsr" }
+    );
     if dst_reg == 15 || instr & 0xFFF != 0 || instr >> 16 & 0xF != 0xF {
         "Unpredictable".clone_into(&mut ctx.next_instr.comment);
     }
@@ -150,9 +154,24 @@ pub(super) fn ldc_stc<const LOAD: bool>(ctx: &mut Context, instr: u32, cond: &'s
     let writeback = instr & 1 << 21 != 0;
     let offset_sign = if instr & 1 << 23 == 0 { "-" } else { "" };
     let _ = match (p, writeback) {
-        (false, false) => write!(ctx.next_instr.opcode, ", #{}{:#05X}]", offset_sign, offset << 2),
-        (false, true) => write!(ctx.next_instr.opcode, ", #{}{:#05X}]!", offset_sign, offset << 2),
-        (true, false) => write!(ctx.next_instr.opcode, "], #{}{:#05X}", offset_sign, offset << 2),
+        (false, false) => write!(
+            ctx.next_instr.opcode,
+            ", #{}{:#05X}]",
+            offset_sign,
+            offset << 2
+        ),
+        (false, true) => write!(
+            ctx.next_instr.opcode,
+            ", #{}{:#05X}]!",
+            offset_sign,
+            offset << 2
+        ),
+        (true, false) => write!(
+            ctx.next_instr.opcode,
+            "], #{}{:#05X}",
+            offset_sign,
+            offset << 2
+        ),
         (true, true) => write!(ctx.next_instr.opcode, ", {{{offset}}}"),
     };
     if writeback && base_reg == 15 {

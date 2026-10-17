@@ -64,7 +64,11 @@ impl<'a> Reader<'a> {
     }
     /// A length field: 4 bytes in PSD, 8 bytes in PSB (`wide`).
     pub fn length(&mut self, wide: bool) -> Result<usize> {
-        let v = if wide { self.u64()? } else { self.u32()? as u64 };
+        let v = if wide {
+            self.u64()?
+        } else {
+            self.u32()? as u64
+        };
         usize::try_from(v).map_err(|_| Error::Invalid("length".into()))
     }
     /// A Pascal string padded so that length byte + text is a multiple of `pad`.
@@ -75,7 +79,9 @@ impl<'a> Reader<'a> {
         let padded = total.div_ceil(pad) * pad;
         self.skip(padded - total)?;
         // Pascal strings are in the system (Mac Roman) encoding; ASCII covers the common case.
-        Ok(s.iter().map(|&b| if b < 0x80 { b as char } else { mac_roman(b) }).collect())
+        Ok(s.iter()
+            .map(|&b| if b < 0x80 { b as char } else { mac_roman(b) })
+            .collect())
     }
 }
 

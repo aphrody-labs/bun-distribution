@@ -1245,21 +1245,28 @@ pub fn get_firmware_version_impl_for_system(
     system: &crate::core::System,
     fw_type: GetFirmwareVersionType,
 ) -> Result<FirmwareVersionFormat, ResultCode> {
-    use crate::file_sys::registered_cache::ContentProvider;
     use crate::file_sys::nca_metadata::ContentRecordType;
+    use crate::file_sys::registered_cache::ContentProvider;
     use crate::file_sys::romfs::extract_romfs;
     use crate::file_sys::system_archive::system_archive::synthesize_system_archive;
 
     const FIRMWARE_VERSION_SYSTEM_DATA_ID: u64 = 0x0100_0000_0000_0809;
     let fsc = system.get_filesystem_controller();
-    let nca = fsc.lock().unwrap().get_system_nand_contents().and_then(|cache| {
-        cache.get_entry(FIRMWARE_VERSION_SYSTEM_DATA_ID, ContentRecordType::Data)
-    });
+    let nca = fsc
+        .lock()
+        .unwrap()
+        .get_system_nand_contents()
+        .and_then(|cache| {
+            cache.get_entry(FIRMWARE_VERSION_SYSTEM_DATA_ID, ContentRecordType::Data)
+        });
     let romfs = extract_romfs(nca.and_then(|nca| nca.get_romfs()))
         .or_else(|| extract_romfs(synthesize_system_archive(FIRMWARE_VERSION_SYSTEM_DATA_ID)))
-        .ok_or(ResultCode(crate::file_sys::errors::RESULT_INVALID_ARGUMENT.0))?;
-    let file = romfs.get_file("file")
-        .ok_or(ResultCode(crate::file_sys::errors::RESULT_INVALID_ARGUMENT.0))?;
+        .ok_or(ResultCode(
+            crate::file_sys::errors::RESULT_INVALID_ARGUMENT.0,
+        ))?;
+    let file = romfs.get_file("file").ok_or(ResultCode(
+        crate::file_sys::errors::RESULT_INVALID_ARGUMENT.0,
+    ))?;
     read_firmware_version_data(&file.read_all_bytes(), fw_type)
 }
 
@@ -1274,7 +1281,8 @@ fn read_firmware_version_data(
     }
     // All fields are u8 or byte arrays, repr(C), alignment 1, with explicit
     // padding. Every bit pattern is valid and the complete payload is copied.
-    let mut out = unsafe { std::ptr::read_unaligned(data.as_ptr().cast::<FirmwareVersionFormat>()) };
+    let mut out =
+        unsafe { std::ptr::read_unaligned(data.as_ptr().cast::<FirmwareVersionFormat>()) };
     if fw_type == GetFirmwareVersionType::Version1 {
         out.revision_minor = 0;
     }
@@ -1296,8 +1304,10 @@ mod firmware_archive_tests {
         let v1 = read_firmware_version_data(&data, GetFirmwareVersionType::Version1).unwrap();
         assert_eq!((v1.major, v1.revision_minor), (20, 0));
         for size in [0, 0xff, 0x101] {
-            assert_eq!(read_firmware_version_data(&vec![0; size], GetFirmwareVersionType::Version2).err(),
-                Some(ResultCode(crate::file_sys::errors::RESULT_OUT_OF_RANGE.0)));
+            assert_eq!(
+                read_firmware_version_data(&vec![0; size], GetFirmwareVersionType::Version2).err(),
+                Some(ResultCode(crate::file_sys::errors::RESULT_OUT_OF_RANGE.0))
+            );
         }
     }
 }
@@ -1804,9 +1814,21 @@ impl SystemSettingsService {
                     Some(Self::set_panel_crc_mode_handler),
                     "SetPanelCrcMode",
                 ),
-                (commands::GET_HTTP_AUTH_CONFIGS, Some(Self::get_http_auth_configs_handler), "GetHttpAuthConfigs"),
-                (commands::GET_ACCOUNT_USER_SETTINGS, Some(Self::get_account_user_settings_handler), "GetAccountUserSettings"),
-                (commands::GET_DEFAULT_ACCOUNT_USER_SETTINGS, Some(Self::get_default_account_user_settings_handler), "GetDefaultAccountUserSettings"),
+                (
+                    commands::GET_HTTP_AUTH_CONFIGS,
+                    Some(Self::get_http_auth_configs_handler),
+                    "GetHttpAuthConfigs",
+                ),
+                (
+                    commands::GET_ACCOUNT_USER_SETTINGS,
+                    Some(Self::get_account_user_settings_handler),
+                    "GetAccountUserSettings",
+                ),
+                (
+                    commands::GET_DEFAULT_ACCOUNT_USER_SETTINGS,
+                    Some(Self::get_default_account_user_settings_handler),
+                    "GetDefaultAccountUserSettings",
+                ),
             ]),
             handlers_tipc: BTreeMap::new(),
         }
@@ -3179,7 +3201,11 @@ impl SystemSettingsService {
     }
 
     fn get_http_auth_configs_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let count = Self::as_self(this).inner.lock().unwrap().get_http_auth_configs();
+        let count = Self::as_self(this)
+            .inner
+            .lock()
+            .unwrap()
+            .get_http_auth_configs();
         // Upstream returns no entries. Do not copy its uninitialized scratch tail.
         let mut rb = ResponseBuilder::new(ctx, 3, 0, 0);
         rb.push_result(RESULT_SUCCESS);
@@ -3187,7 +3213,11 @@ impl SystemSettingsService {
     }
 
     fn get_account_user_settings_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let (count, settings) = Self::as_self(this).inner.lock().unwrap().get_account_user_settings();
+        let (count, settings) = Self::as_self(this)
+            .inner
+            .lock()
+            .unwrap()
+            .get_account_user_settings();
         if ctx.get_write_buffer_size(0) < settings.data.len() {
             ResponseBuilder::new(ctx, 2, 0, 0).push_result(crate::hle::result::RESULT_UNKNOWN);
             return;
@@ -3198,8 +3228,15 @@ impl SystemSettingsService {
         rb.push_u32(count);
     }
 
-    fn get_default_account_user_settings_handler(this: &dyn ServiceFramework, ctx: &mut HLERequestContext) {
-        let settings = Self::as_self(this).inner.lock().unwrap().get_default_account_user_settings();
+    fn get_default_account_user_settings_handler(
+        this: &dyn ServiceFramework,
+        ctx: &mut HLERequestContext,
+    ) {
+        let settings = Self::as_self(this)
+            .inner
+            .lock()
+            .unwrap()
+            .get_default_account_user_settings();
         let mut rb = ResponseBuilder::new(ctx, 18, 0, 0);
         rb.push_result(RESULT_SUCCESS);
         rb.push_raw(&settings);
@@ -3259,13 +3296,20 @@ mod tests {
             service.handlers[&command].handler_callback.unwrap()(&service, &mut ctx);
             assert_eq!(ctx.command_buffer()[6], 0);
             let count = if command == 315 { 1 } else { 16 };
-            assert!(ctx.command_buffer()[8..8 + count].iter().all(|word| *word == 0));
+            assert!(ctx.command_buffer()[8..8 + count]
+                .iter()
+                .all(|word| *word == 0));
         }
         let mut ctx = HLERequestContext::new();
         service.handlers[&319].handler_callback.unwrap()(&service, &mut ctx);
-        assert_eq!(ctx.command_buffer()[6], crate::hle::result::RESULT_UNKNOWN.0);
+        assert_eq!(
+            ctx.command_buffer()[6],
+            crate::hle::result::RESULT_UNKNOWN.0
+        );
         ctx.set_buffer_b_descriptors_for_test(vec![crate::hle::ipc::BufferDescriptorABW {
-            size_bits_0_31: 0x40, address_bits_0_31: 0, raw_word2: 0,
+            size_bits_0_31: 0x40,
+            address_bits_0_31: 0,
+            raw_word2: 0,
         }]);
         service.handlers[&319].handler_callback.unwrap()(&service, &mut ctx);
         assert_eq!(ctx.command_buffer()[6], 0);

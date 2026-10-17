@@ -36,21 +36,36 @@ pub struct AleDoc {
 
 impl AleDoc {
     pub fn heading(&self, key: &str) -> Option<&str> {
-        self.heading.iter().find(|(k, _)| k.eq_ignore_ascii_case(key)).map(|(_, v)| v.as_str())
+        self.heading
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(key))
+            .map(|(_, v)| v.as_str())
     }
     /// The value of `column` in row `row`.
     pub fn get(&self, row: usize, column: &str) -> Option<&str> {
-        let c = self.columns.iter().position(|x| x.eq_ignore_ascii_case(column))?;
+        let c = self
+            .columns
+            .iter()
+            .position(|x| x.eq_ignore_ascii_case(column))?;
         self.rows.get(row)?.get(c).map(String::as_str)
     }
     /// The heading's frame rate (`FPS`).
     pub fn rate(&self) -> Option<FrameRate> {
-        self.heading("FPS").and_then(|f| f.trim().parse::<f64>().ok()).map(FrameRate::from_f64)
+        self.heading("FPS")
+            .and_then(|f| f.trim().parse::<f64>().ok())
+            .map(FrameRate::from_f64)
     }
 }
 
 /// Metadata columns written after the standard ones (from the items' metadata fields).
-const EXTRA: [&str; 6] = ["Description", "Scene", "Take", "Shot", "Log Note", "Comment"];
+const EXTRA: [&str; 6] = [
+    "Description",
+    "Scene",
+    "Take",
+    "Shot",
+    "Log Note",
+    "Comment",
+];
 
 fn clean(s: &str) -> String {
     s.replace(['\t', '\r', '\n'], " ")
@@ -59,7 +74,11 @@ fn clean(s: &str) -> String {
 /// `FPS` heading text for a rate.
 pub fn fps_text(r: FrameRate) -> String {
     let f = r.as_f64();
-    if (f - f.round()).abs() < 1e-6 { format!("{}", f.round() as i64) } else { format!("{:.3}", f).trim_end_matches('0').to_string() }
+    if (f - f.round()).abs() < 1e-6 {
+        format!("{}", f.round() as i64)
+    } else {
+        format!("{:.3}", f).trim_end_matches('0').to_string()
+    }
 }
 
 /// `VIDEO_FORMAT` heading text for a frame height.
@@ -80,25 +99,45 @@ pub fn export_items(p: &Project, items: &[ItemId]) -> AleDoc {
         let it = p.item(id)?;
         match &it.kind {
             ItemKind::Media(m) => Some((m, Tick::ZERO, m.duration())),
-            ItemKind::Subclip { parent, range, .. } => p.item(*parent)?.as_media().map(|m| (m, range.start, range.duration)),
+            ItemKind::Subclip { parent, range, .. } => p
+                .item(*parent)?
+                .as_media()
+                .map(|m| (m, range.start, range.duration)),
             _ => None,
         }
     };
-    let rows_src: Vec<ItemId> = items.iter().copied().filter(|i| media_of(*i).is_some()).collect();
-    let first_video = rows_src.iter().find_map(|i| media_of(*i).and_then(|(m, ..)| m.info.video.as_ref().map(|v| (v.frame_rate, v.height))));
+    let rows_src: Vec<ItemId> = items
+        .iter()
+        .copied()
+        .filter(|i| media_of(*i).is_some())
+        .collect();
+    let first_video = rows_src.iter().find_map(|i| {
+        media_of(*i).and_then(|(m, ..)| m.info.video.as_ref().map(|v| (v.frame_rate, v.height)))
+    });
     let (rate, height) = first_video.unwrap_or((FrameRate::FPS_24, 1080));
-    let sr = rows_src.iter().find_map(|i| media_of(*i).and_then(|(m, ..)| m.info.audio().map(|a| a.sample_rate))).unwrap_or(48_000);
+    let sr = rows_src
+        .iter()
+        .find_map(|i| media_of(*i).and_then(|(m, ..)| m.info.audio().map(|a| a.sample_rate)))
+        .unwrap_or(48_000);
     let heading = vec![
         ("FIELD_DELIM".to_string(), "TABS".to_string()),
         ("VIDEO_FORMAT".to_string(), video_format(height).to_string()),
-        ("AUDIO_FORMAT".to_string(), if sr == 44_100 { "44khz" } else { "48khz" }.to_string()),
+        (
+            "AUDIO_FORMAT".to_string(),
+            if sr == 44_100 { "44khz" } else { "48khz" }.to_string(),
+        ),
         ("FPS".to_string(), fps_text(rate)),
     ];
-    let mut columns: Vec<String> = ["Name", "Tracks", "Start", "End", "Tape", "Source File"].iter().map(|s| s.to_string()).collect();
+    let mut columns: Vec<String> = ["Name", "Tracks", "Start", "End", "Tape", "Source File"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
     columns.extend(EXTRA.iter().map(|s| s.to_string()));
     let mut rows = Vec::new();
     for id in rows_src {
-        let (Some(it), Some((m, start, dur))) = (p.item(id), media_of(id)) else { continue };
+        let (Some(it), Some((m, start, dur))) = (p.item(id), media_of(id)) else {
+            continue;
+        };
         let mut tracks = String::new();
         if m.info.video.is_some() {
             tracks.push('V');
@@ -107,14 +146,24 @@ pub fn export_items(p: &Project, items: &[ItemId]) -> AleDoc {
             tracks.push_str(&format!("A{c}"));
         }
         // media start timecode (frames at the media's own rate) + the subclip offset
-        let tc0 = m.info.start_timecode.map(|f| m.frame_rate().tick_of(f)).unwrap_or(Tick::ZERO);
+        let tc0 = m
+            .info
+            .start_timecode
+            .map(|f| m.frame_rate().tick_of(f))
+            .unwrap_or(Tick::ZERO);
         let a = rate.frame_at(tc0 + start);
         let b = rate.frame_at(tc0 + start + dur);
         let path = match &m.media {
             MediaRef::File { path } => path.clone(),
             MediaRef::Generator(_) => String::new(),
         };
-        let meta = |k: &str| it.metadata.iter().find(|(x, _)| x.eq_ignore_ascii_case(k)).map(|(_, v)| clean(v)).unwrap_or_default();
+        let meta = |k: &str| {
+            it.metadata
+                .iter()
+                .find(|(x, _)| x.eq_ignore_ascii_case(k))
+                .map(|(_, v)| clean(v))
+                .unwrap_or_default()
+        };
         let mut row = vec![
             clean(&it.name),
             tracks,
@@ -126,7 +175,11 @@ pub fn export_items(p: &Project, items: &[ItemId]) -> AleDoc {
         row.extend(EXTRA.iter().map(|k| meta(k)));
         rows.push(row);
     }
-    AleDoc { heading, columns, rows }
+    AleDoc {
+        heading,
+        columns,
+        rows,
+    }
 }
 
 /// Serialise (CR LF line ends).
@@ -136,7 +189,13 @@ pub fn write(doc: &AleDoc) -> String {
         out.push_str(&format!("{}\t{}\r\n", clean(k), clean(v)));
     }
     out.push_str("\r\nColumn\r\n");
-    out.push_str(&doc.columns.iter().map(|c| clean(c)).collect::<Vec<_>>().join("\t"));
+    out.push_str(
+        &doc.columns
+            .iter()
+            .map(|c| clean(c))
+            .collect::<Vec<_>>()
+            .join("\t"),
+    );
     out.push_str("\r\n\r\nData\r\n");
     for r in &doc.rows {
         out.push_str(&r.iter().map(|c| clean(c)).collect::<Vec<_>>().join("\t"));
@@ -179,10 +238,15 @@ pub fn parse(text: &str) -> Result<AleDoc, String> {
             Sec::Heading => {
                 let mut it = line.splitn(2, '\t');
                 let k = it.next().unwrap_or_default().trim().to_string();
-                doc.heading.push((k, it.next().unwrap_or_default().trim().to_string()));
+                doc.heading
+                    .push((k, it.next().unwrap_or_default().trim().to_string()));
             }
-            Sec::Column => doc.columns.extend(line.split('\t').map(|c| c.trim().to_string())),
-            Sec::Data => doc.rows.push(line.split('\t').map(str::to_string).collect()),
+            Sec::Column => doc
+                .columns
+                .extend(line.split('\t').map(|c| c.trim().to_string())),
+            Sec::Data => doc
+                .rows
+                .push(line.split('\t').map(str::to_string).collect()),
         }
     }
     if doc.columns.is_empty() {
@@ -206,7 +270,14 @@ mod tests {
     use filmcraft_project::{Label, MediaClip};
     use filmcraft_time::TimeRange;
 
-    fn media(p: &mut Project, name: &str, rate: FrameRate, seconds: i64, tc: Option<i64>, audio: u32) -> ItemId {
+    fn media(
+        p: &mut Project,
+        name: &str,
+        rate: FrameRate,
+        seconds: i64,
+        tc: Option<i64>,
+        audio: u32,
+    ) -> ItemId {
         let info = MediaInfo {
             name: name.into(),
             kind: MediaKind::Movie,
@@ -224,7 +295,12 @@ mod tests {
                 hdr: None,
             }),
             audio_streams: (audio > 0)
-                .then(|| AudioStreamInfo { sample_rate: 48_000, channels: audio, codec: "aac".into(), bits_per_sample: None })
+                .then(|| AudioStreamInfo {
+                    sample_rate: 48_000,
+                    channels: audio,
+                    codec: "aac".into(),
+                    bits_per_sample: None,
+                })
                 .into_iter()
                 .collect(),
             container: "mp4".into(),
@@ -232,7 +308,9 @@ mod tests {
             file_size: None,
         };
         let clip = MediaClip {
-            media: MediaRef::File { path: format!("/media/{name}") },
+            media: MediaRef::File {
+                path: format!("/media/{name}"),
+            },
             info,
             interpret: Default::default(),
             mark_in: None,
@@ -250,12 +328,22 @@ mod tests {
         let mut p = Project::new("ALE");
         let r = FrameRate::FPS_23_976;
         let a = media(&mut p, "Beach\tWide.mp4", r, 10, Some(86_400), 2);
-        p.item_mut(a).unwrap().metadata.insert("Scene".into(), "4".into());
-        p.item_mut(a).unwrap().metadata.insert("Tape Name".into(), "A001".into());
+        p.item_mut(a)
+            .unwrap()
+            .metadata
+            .insert("Scene".into(), "4".into());
+        p.item_mut(a)
+            .unwrap()
+            .metadata
+            .insert("Tape Name".into(), "A001".into());
         let sub = p.add_item(
             "Beach Sub",
             Label::Iris,
-            ItemKind::Subclip { parent: a, range: TimeRange::new(r.tick_of(24), r.tick_of(48)), restrict_trims: false },
+            ItemKind::Subclip {
+                parent: a,
+                range: TimeRange::new(r.tick_of(24), r.tick_of(48)),
+                restrict_trims: false,
+            },
             None,
         );
         let seq = p.new_sequence("Seq", Default::default(), 1, 1, None);

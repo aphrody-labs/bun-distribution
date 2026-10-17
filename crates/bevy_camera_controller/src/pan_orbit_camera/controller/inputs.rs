@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use super::smoothing::InputQueue;
-use bevy_math::{prelude::*, DVec2};
+use bevy_math::{DVec2, prelude::*};
 
 /// Tracks the current exclusive motion type and input queue of the camera controller.
 #[derive(Debug, Clone)]
@@ -108,11 +108,7 @@ impl MotionInputs {
     /// Motion-conserving smoothed zoom input velocity.
     pub fn smooth_zoom_velocity(&self) -> f64 {
         let velocity = self.zoom_inputs().latest_smoothed().unwrap_or(0.0) as f64;
-        if !velocity.is_finite() {
-            0.0
-        } else {
-            velocity
-        }
+        if !velocity.is_finite() { 0.0 } else { velocity }
     }
 
     /// Get a reference to the queue of zoom inputs.
@@ -144,10 +140,6 @@ impl MotionInputs {
         let velocity = zoom_inputs.approx_smoothed(window, |v| {
             *v = v.abs();
         }) as f64;
-        if !velocity.is_finite() {
-            0.0
-        } else {
-            velocity
-        }
+        if !velocity.is_finite() { 0.0 } else { velocity }
     }
 }

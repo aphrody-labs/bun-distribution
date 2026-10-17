@@ -28,7 +28,10 @@ impl EmbArchive {
     /// Parse the container and validate every table, name and payload range.
     pub fn parse(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < HEADER_SIZE {
-            return Err(ReError::BufferTooSmall { required: HEADER_SIZE, available: bytes.len() });
+            return Err(ReError::BufferTooSmall {
+                required: HEADER_SIZE,
+                available: bytes.len(),
+            });
         }
         if &bytes[..4] != EMB_MAGIC {
             return Err(ReError::InvalidMagic {
@@ -46,15 +49,17 @@ impl EmbArchive {
         let count = count as usize;
         let content_table = content_table as usize;
         let name_table = name_table as usize;
-        let table_size =
-            count.checked_mul(8).ok_or_else(|| corrupt("entry table size overflow"))?;
+        let table_size = count
+            .checked_mul(8)
+            .ok_or_else(|| corrupt("entry table size overflow"))?;
         checked_range(bytes, content_table, table_size)?;
 
         let names = if name_table == 0 {
             None
         } else {
-            let name_size =
-                count.checked_mul(4).ok_or_else(|| corrupt("name table size overflow"))?;
+            let name_size = count
+                .checked_mul(4)
+                .ok_or_else(|| corrupt("name table size overflow"))?;
             checked_range(bytes, name_table, name_size)?;
             Some(name_table)
         };
@@ -86,11 +91,19 @@ impl EmbArchive {
             if !is_safe_file_name(&name) {
                 return Err(corrupt(format!("unsafe output filename at entry {index}")));
             }
-            let name = if has_extension(&name) { name } else { format!("{name}.dds") };
+            let name = if has_extension(&name) {
+                name
+            } else {
+                format!("{name}.dds")
+            };
             if !unique_names.insert(name.to_ascii_lowercase()) {
                 return Err(corrupt(format!("duplicate output filename: {name}")));
             }
-            entries.push(EmbEntry { name, offset, size_bytes });
+            entries.push(EmbEntry {
+                name,
+                offset,
+                size_bytes,
+            });
         }
 
         Ok(Self { entries })
@@ -109,14 +122,21 @@ impl EmbArchive {
 
 fn read_i32(bytes: &[u8], offset: usize, field: &str) -> Result<i32> {
     let range = checked_range(bytes, offset, 4)?;
-    let raw = bytes[range].try_into().map_err(|_| corrupt(format!("invalid {field}")))?;
+    let raw = bytes[range]
+        .try_into()
+        .map_err(|_| corrupt(format!("invalid {field}")))?;
     Ok(i32::from_le_bytes(raw))
 }
 
 fn checked_range(bytes: &[u8], offset: usize, length: usize) -> Result<std::ops::Range<usize>> {
-    let end = offset.checked_add(length).ok_or_else(|| corrupt("range overflow"))?;
+    let end = offset
+        .checked_add(length)
+        .ok_or_else(|| corrupt("range overflow"))?;
     if end > bytes.len() {
-        return Err(ReError::BufferTooSmall { required: end, available: bytes.len() });
+        return Err(ReError::BufferTooSmall {
+            required: end,
+            available: bytes.len(),
+        });
     }
     Ok(offset..end)
 }
@@ -134,7 +154,11 @@ fn read_name(bytes: &[u8], offset: usize, index: usize) -> Result<String> {
         .map(|length| offset + length)
         .ok_or_else(|| corrupt(format!("unterminated filename at entry {index}")))?;
     let name: String = bytes[offset..end].iter().copied().map(char::from).collect();
-    if name.is_empty() { Ok(format!("DATA{index}.dds")) } else { Ok(name) }
+    if name.is_empty() {
+        Ok(format!("DATA{index}.dds"))
+    } else {
+        Ok(name)
+    }
 }
 
 fn is_safe_file_name(name: &str) -> bool {

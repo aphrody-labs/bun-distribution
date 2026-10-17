@@ -97,7 +97,13 @@ impl GestureTool {
     /// along it (a mouse always presses fully).
     fn stroke_json(&self) -> Value {
         if self.pressures.len() == self.points.len() && self.pressures.iter().any(|p| *p < 1.0) {
-            Value::Array(self.points.iter().zip(&self.pressures).map(|(p, f)| json!([p.x, p.y, (f64::from(*f) * 1000.0).round() / 1000.0])).collect())
+            Value::Array(
+                self.points
+                    .iter()
+                    .zip(&self.pressures)
+                    .map(|(p, f)| json!([p.x, p.y, (f64::from(*f) * 1000.0).round() / 1000.0]))
+                    .collect(),
+            )
         } else {
             points_json(&self.points)
         }
@@ -120,11 +126,20 @@ impl GestureTool {
     fn find_extend(&self, cx: &ToolContext, p: Point) -> Option<(NodeId, bool)> {
         let tol = cx.tol(self.edit_within);
         for id in &cx.selection.objects {
-            let Some(pd) = cx.doc.node(*id).and_then(|n| n.path_data()) else { continue };
+            let Some(pd) = cx.doc.node(*id).and_then(|n| n.path_data()) else {
+                continue;
+            };
             if !cx.doc.is_editable(*id) {
                 continue;
             }
-            let Some(sp) = pd.subpaths.iter().rev().find(|s| !s.closed && !s.anchors.is_empty()) else { continue };
+            let Some(sp) = pd
+                .subpaths
+                .iter()
+                .rev()
+                .find(|s| !s.closed && !s.anchors.is_empty())
+            else {
+                continue;
+            };
             let (first, last) = (sp.anchors[0].p, sp.anchors[sp.anchors.len() - 1].p);
             if p.distance(last) <= tol {
                 return Some((*id, false));
@@ -160,18 +175,40 @@ impl GestureTool {
                 if !self.began {
                     return vec![];
                 }
-                let near = pts.len() > 2 && pts[0].distance(pts[pts.len() - 1]) <= cx.tol(self.close_within);
+                let near = pts.len() > 2
+                    && pts[0].distance(pts[pts.len() - 1]) <= cx.tol(self.close_within);
                 let closed = m.alt || (self.extend.is_none() && near);
-                vec![Action::Preview("path.freehand".into(), self.freehand_params(closed)), Action::Commit]
+                vec![
+                    Action::Preview("path.freehand".into(), self.freehand_params(closed)),
+                    Action::Commit,
+                ]
             }
-            "blobBrush" => vec![Action::Exec("path.blob".into(), json!({"points": points_json(pts), "size": self.size}))],
-            "eraser" => vec![Action::Exec("path.eraseRegion".into(), json!({"points": points_json(pts), "size": self.size}))],
-            "knife" if pts.len() >= 2 => vec![Action::Exec("path.knife".into(), json!({"points": points_json(pts)}))],
+            "blobBrush" => vec![Action::Exec(
+                "path.blob".into(),
+                json!({"points": points_json(pts), "size": self.size}),
+            )],
+            "eraser" => vec![Action::Exec(
+                "path.eraseRegion".into(),
+                json!({"points": points_json(pts), "size": self.size}),
+            )],
+            "knife" if pts.len() >= 2 => vec![Action::Exec(
+                "path.knife".into(),
+                json!({"points": points_json(pts)}),
+            )],
             "smooth" if has_sel && pts.len() >= 2 => {
-                vec![Action::Exec("path.smoothRegion".into(), json!({"points": points_json(pts), "radius": tol, "fidelity": self.fidelity}))]
+                vec![Action::Exec(
+                    "path.smoothRegion".into(),
+                    json!({"points": points_json(pts), "radius": tol, "fidelity": self.fidelity}),
+                )]
             }
-            "pathEraser" if has_sel => vec![Action::Exec("path.eraseSegments".into(), json!({"points": points_json(pts), "width": cx.tol(8.0)}))],
-            "join" if pts.len() >= 2 => vec![Action::Exec("path.joinScrub".into(), json!({"points": points_json(pts), "tolerance": tol}))],
+            "pathEraser" if has_sel => vec![Action::Exec(
+                "path.eraseSegments".into(),
+                json!({"points": points_json(pts), "width": cx.tol(8.0)}),
+            )],
+            "join" if pts.len() >= 2 => vec![Action::Exec(
+                "path.joinScrub".into(),
+                json!({"points": points_json(pts), "tolerance": tol}),
+            )],
             _ => vec![],
         }
     }
@@ -194,9 +231,17 @@ impl Tool for GestureTool {
             PointerKind::Down => {
                 self.active = true;
                 self.began = false;
-                self.extend = if self.draws_path() { self.find_extend(cx, p) } else { None };
+                self.extend = if self.draws_path() {
+                    self.find_extend(cx, p)
+                } else {
+                    None
+                };
                 // A path continued starts at its end; a new one where it snaps.
-                let start = if self.snaps() && self.extend.is_none() { self.snap.press(cx, p, &[], None) } else { p };
+                let start = if self.snaps() && self.extend.is_none() {
+                    self.snap.press(cx, p, &[], None)
+                } else {
+                    p
+                };
                 self.clear();
                 self.push(start, ev.pressure);
                 vec![]
@@ -209,7 +254,11 @@ impl Tool for GestureTool {
                     // Where the stroke would end: shown, taken on release.
                     self.snap.drag(cx, p, None);
                 }
-                if self.points.last().is_some_and(|l| l.distance(p) < cx.tol(1.0)) {
+                if self
+                    .points
+                    .last()
+                    .is_some_and(|l| l.distance(p) < cx.tol(1.0))
+                {
                     return vec![];
                 }
                 self.push(p, ev.pressure);
@@ -221,16 +270,27 @@ impl Tool for GestureTool {
                     self.began = true;
                     out.push(Action::Begin(self.label().into()));
                 }
-                out.push(Action::Preview("path.freehand".into(), self.freehand_params(false)));
+                out.push(Action::Preview(
+                    "path.freehand".into(),
+                    self.freehand_params(false),
+                ));
                 out
             }
             PointerKind::Up => {
                 if !self.active {
                     return vec![];
                 }
-                let end = if self.snaps() { self.snap.drag(cx, p, None) } else { p };
+                let end = if self.snaps() {
+                    self.snap.drag(cx, p, None)
+                } else {
+                    p
+                };
                 self.snap.clear();
-                if self.points.last().is_some_and(|l| l.distance(p) >= cx.tol(1.0)) {
+                if self
+                    .points
+                    .last()
+                    .is_some_and(|l| l.distance(p) >= cx.tol(1.0))
+                {
                     self.push(end, ev.pressure);
                 } else if self.snaps()
                     && self.points.len() > 1
@@ -287,8 +347,17 @@ impl Tool for GestureTool {
             "blobBrush" | "eraser" => (self.size * cx.zoom) as f32,
             _ => 1.0,
         };
-        let color = if self.id == "eraser" { [0x80, 0x80, 0x80] } else { FEEDBACK };
-        o.push(Overlay::Path { path: polyline(&self.points), color, width, dashed: self.id == "knife" });
+        let color = if self.id == "eraser" {
+            [0x80, 0x80, 0x80]
+        } else {
+            FEEDBACK
+        };
+        o.push(Overlay::Path {
+            path: polyline(&self.points),
+            color,
+            width,
+            dashed: self.id == "knife",
+        });
         o
     }
     fn cursor(&self, _cx: &ToolContext, _p: Point, _m: Mods) -> Cursor {
@@ -309,8 +378,12 @@ impl Tool for GestureTool {
             "fidelity" => self.fidelity = v.as_f64().unwrap_or(self.fidelity).clamp(0.05, 100.0),
             "size" => self.size = v.as_f64().unwrap_or(self.size).clamp(0.1, 1000.0),
             "fill" => self.fill = v.as_bool().unwrap_or(self.fill),
-            "editWithin" => self.edit_within = v.as_f64().unwrap_or(self.edit_within).clamp(0.0, 100.0),
-            "closeWithin" => self.close_within = v.as_f64().unwrap_or(self.close_within).clamp(0.0, 100.0),
+            "editWithin" => {
+                self.edit_within = v.as_f64().unwrap_or(self.edit_within).clamp(0.0, 100.0)
+            }
+            "closeWithin" => {
+                self.close_within = v.as_f64().unwrap_or(self.close_within).clamp(0.0, 100.0)
+            }
             _ => {}
         }
     }
@@ -322,13 +395,24 @@ mod tests {
     use crate::testutil::*;
     use vectorcraft_doc::Selection;
 
-    fn drag(t: &mut GestureTool, cx: &ToolContext, pts: &[(f64, f64)], m: Mods) -> Vec<Vec<Action>> {
-        let mut v = vec![t.pointer(cx, &PointerEvent::new(PointerKind::Down, pts[0].0, pts[0].1))];
+    fn drag(
+        t: &mut GestureTool,
+        cx: &ToolContext,
+        pts: &[(f64, f64)],
+        m: Mods,
+    ) -> Vec<Vec<Action>> {
+        let mut v = vec![t.pointer(
+            cx,
+            &PointerEvent::new(PointerKind::Down, pts[0].0, pts[0].1),
+        )];
         for &(x, y) in &pts[1..] {
             v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Drag, x, y)));
         }
         let l = pts[pts.len() - 1];
-        v.push(t.pointer(cx, &PointerEvent::new(PointerKind::Up, l.0, l.1).with_mods(m)));
+        v.push(t.pointer(
+            cx,
+            &PointerEvent::new(PointerKind::Up, l.0, l.1).with_mods(m),
+        ));
         v
     }
 
@@ -341,13 +425,40 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = GestureTool::new("pencil");
-        let acts = drag(&mut t, &cx, &[(102.0, 98.0), (151.0, 300.0), (250.0, 320.0), (198.0, 203.0)], Mods::default());
-        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
-        assert_eq!(v["points"], json!([[100.0, 100.0], [151.0, 300.0], [250.0, 320.0], [200.0, 200.0]]));
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[
+                (102.0, 98.0),
+                (151.0, 300.0),
+                (250.0, 320.0),
+                (198.0, 203.0),
+            ],
+            Mods::default(),
+        );
+        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else {
+            panic!("{acts:?}")
+        };
+        assert_eq!(
+            v["points"],
+            json!([
+                [100.0, 100.0],
+                [151.0, 300.0],
+                [250.0, 320.0],
+                [200.0, 200.0]
+            ])
+        );
         // The Paintbrush follows the hand all the way.
         let mut t = GestureTool::new("paintbrush");
-        let acts = drag(&mut t, &cx, &[(102.0, 98.0), (151.0, 300.0)], Mods::default());
-        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else { panic!("{acts:?}") };
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[(102.0, 98.0), (151.0, 300.0)],
+            Mods::default(),
+        );
+        let Some(Action::Preview(_, v)) = acts.last().and_then(|a| a.first()) else {
+            panic!("{acts:?}")
+        };
         assert_eq!(v["points"][0], json!([102.0, 98.0]));
     }
 
@@ -364,14 +475,31 @@ mod tests {
             let kinds = [PointerKind::Down, PointerKind::Drag, PointerKind::Up];
             let mut last = vec![];
             for ((k, x), f) in kinds.into_iter().zip([0.0, 40.0, 80.0]).zip(pressures) {
-                last = t.pointer(&cx, &PointerEvent { pressure: f, ..PointerEvent::new(k, x, 0.0) });
+                last = t.pointer(
+                    &cx,
+                    &PointerEvent {
+                        pressure: f,
+                        ..PointerEvent::new(k, x, 0.0)
+                    },
+                );
             }
-            let Some(Action::Preview(_, v)) = last.first() else { panic!("{last:?}") };
+            let Some(Action::Preview(_, v)) = last.first() else {
+                panic!("{last:?}")
+            };
             v["points"].clone()
         };
-        assert_eq!(stroke("paintbrush", [0.25, 0.5, 1.0]), json!([[0.0, 0.0, 0.25], [40.0, 0.0, 0.5], [80.0, 0.0, 1.0]]));
-        assert_eq!(stroke("paintbrush", [1.0; 3]), json!([[0.0, 0.0], [40.0, 0.0], [80.0, 0.0]]));
-        assert_eq!(stroke("pencil", [0.25, 0.5, 1.0]), json!([[0.0, 0.0], [40.0, 0.0], [80.0, 0.0]]));
+        assert_eq!(
+            stroke("paintbrush", [0.25, 0.5, 1.0]),
+            json!([[0.0, 0.0, 0.25], [40.0, 0.0, 0.5], [80.0, 0.0, 1.0]])
+        );
+        assert_eq!(
+            stroke("paintbrush", [1.0; 3]),
+            json!([[0.0, 0.0], [40.0, 0.0], [80.0, 0.0]])
+        );
+        assert_eq!(
+            stroke("pencil", [0.25, 0.5, 1.0]),
+            json!([[0.0, 0.0], [40.0, 0.0], [80.0, 0.0]])
+        );
     }
 
     #[test]
@@ -381,12 +509,21 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = GestureTool::new("pencil");
-        let acts = drag(&mut t, &cx, &[(0.0, 0.0), (10.0, 5.0), (20.0, 0.0)], Mods::default());
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[(0.0, 0.0), (10.0, 5.0), (20.0, 0.0)],
+            Mods::default(),
+        );
         assert!(acts[0].is_empty());
         assert_eq!(acts[1][0], Action::Begin("Pencil".into()));
-        assert!(matches!(&acts[1][1], Action::Preview(c, v) if c == "path.freehand" && v["points"].as_array().unwrap().len() == 2));
+        assert!(
+            matches!(&acts[1][1], Action::Preview(c, v) if c == "path.freehand" && v["points"].as_array().unwrap().len() == 2)
+        );
         let last = acts.last().unwrap();
-        assert!(matches!(&last[0], Action::Preview(_, v) if v["closed"] == false && v["style"] == "pencil"));
+        assert!(
+            matches!(&last[0], Action::Preview(_, v) if v["closed"] == false && v["style"] == "pencil")
+        );
         assert_eq!(last[1], Action::Commit);
         assert!(!t.busy());
     }
@@ -398,13 +535,28 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = GestureTool::new("paintbrush");
-        let acts = drag(&mut t, &cx, &[(0.0, 0.0), (10.0, 5.0), (20.0, 0.0)], Mods { alt: true, ..Default::default() });
-        assert!(matches!(&acts.last().unwrap()[0], Action::Preview(_, v) if v["closed"] == true && v["style"] == "brush"));
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[(0.0, 0.0), (10.0, 5.0), (20.0, 0.0)],
+            Mods {
+                alt: true,
+                ..Default::default()
+            },
+        );
+        assert!(
+            matches!(&acts.last().unwrap()[0], Action::Preview(_, v) if v["closed"] == true && v["style"] == "brush")
+        );
         // A selected closed rect is not continued; an open path would be (see engine tests).
         let mut s2 = Selection::default();
         s2.set([id]);
         let cx2 = crate::testutil::cx(&d, &s2, &p);
-        let acts = drag(&mut t, &cx2, &[(100.0, 100.0), (90.0, 90.0)], Mods::default());
+        let acts = drag(
+            &mut t,
+            &cx2,
+            &[(100.0, 100.0), (90.0, 90.0)],
+            Mods::default(),
+        );
         assert!(matches!(&acts[1][1], Action::Preview(_, v) if v.get("extend").is_none()));
     }
 
@@ -415,15 +567,24 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = GestureTool::new("eraser");
-        let acts = drag(&mut t, &cx, &[(50.0, 150.0), (250.0, 150.0)], Mods::default());
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[(50.0, 150.0), (250.0, 150.0)],
+            Mods::default(),
+        );
         assert!(acts[1].is_empty());
-        assert!(matches!(&acts[2][0], Action::Exec(c, v) if c == "path.eraseRegion" && v["size"] == 10.0));
+        assert!(
+            matches!(&acts[2][0], Action::Exec(c, v) if c == "path.eraseRegion" && v["size"] == 10.0)
+        );
         let mut k = GestureTool::new("knife");
         k.pointer(&cx, &PointerEvent::new(PointerKind::Down, 50.0, 150.0));
         k.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 150.0));
         assert_eq!(k.overlays(&cx).len(), 1);
         let a = k.pointer(&cx, &PointerEvent::new(PointerKind::Up, 250.0, 150.0));
-        assert!(matches!(&a[0], Action::Exec(c, v) if c == "path.knife" && v["points"].as_array().unwrap().len() == 3));
+        assert!(
+            matches!(&a[0], Action::Exec(c, v) if c == "path.knife" && v["points"].as_array().unwrap().len() == 3)
+        );
     }
 
     #[test]
@@ -433,7 +594,12 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = GestureTool::new("smooth");
-        let acts = drag(&mut t, &cx, &[(50.0, 150.0), (250.0, 150.0)], Mods::default());
+        let acts = drag(
+            &mut t,
+            &cx,
+            &[(50.0, 150.0), (250.0, 150.0)],
+            Mods::default(),
+        );
         assert!(acts.iter().all(|a| a.is_empty()));
         let mut b = GestureTool::new("blobBrush");
         b.key(&cx, ToolKey::BracketRight, Mods::default());

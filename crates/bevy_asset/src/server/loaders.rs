@@ -63,8 +63,10 @@ impl AssetLoaders {
                 list.push(loader_index);
             }
             if !duplicate_extensions.is_empty() {
-                warn!("Duplicate AssetLoader registered for Asset type `{loader_asset_type_name}` with extensions `{duplicate_extensions:?}`. \
-                Loader must be specified in a .meta file in order to load assets of this type with these extensions.");
+                warn!(
+                    "Duplicate AssetLoader registered for Asset type `{loader_asset_type_name}` with extensions `{duplicate_extensions:?}`. \
+                Loader must be specified in a .meta file in order to load assets of this type with these extensions."
+                );
             }
 
             self.type_path_to_loader.insert(type_path, loader_index);
@@ -129,8 +131,10 @@ impl AssetLoaders {
             list.push(loader_index);
         }
         if !duplicate_extensions.is_empty() {
-            warn!("Duplicate AssetLoader preregistered for Asset type `{loader_asset_type_name}` with extensions `{duplicate_extensions:?}`. \
-            Loader must be specified in a .meta file in order to load assets of this type with these extensions.");
+            warn!(
+                "Duplicate AssetLoader preregistered for Asset type `{loader_asset_type_name}` with extensions `{duplicate_extensions:?}`. \
+            Loader must be specified in a .meta file in order to load assets of this type with these extensions."
+            );
         }
 
         self.type_id_to_loaders
@@ -294,7 +298,7 @@ mod tests {
     use core::marker::PhantomData;
     use std::{
         path::Path,
-        sync::mpsc::{channel, Receiver, Sender},
+        sync::mpsc::{Receiver, Sender, channel},
     };
 
     use bevy_reflect::TypePath;

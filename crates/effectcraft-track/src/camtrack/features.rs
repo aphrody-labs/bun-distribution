@@ -34,13 +34,25 @@ pub struct TrackAnalyzer {
 
 impl TrackAnalyzer {
     pub fn new(size: [f64; 2], opts: AnalyzeOpts) -> TrackAnalyzer {
-        TrackAnalyzer { opts, prev: None, active: vec![], tracks: vec![], frame: 0, size, factor: 1.0, budget: None }
+        TrackAnalyzer {
+            opts,
+            prev: None,
+            active: vec![],
+            tracks: vec![],
+            frame: 0,
+            size,
+            factor: 1.0,
+            budget: None,
+        }
     }
 
     /// An analyzer working at most at `max_side` pixels with about `want` live features (the
     /// Warp Stabilizer's trajectories for Subspace Warp).
     pub fn with_budget(size: [f64; 2], max_side: u32, want: usize) -> TrackAnalyzer {
-        TrackAnalyzer { budget: Some((max_side, want.max(8))), ..TrackAnalyzer::new(size, AnalyzeOpts::default()) }
+        TrackAnalyzer {
+            budget: Some((max_side, want.max(8))),
+            ..TrackAnalyzer::new(size, AnalyzeOpts::default())
+        }
     }
 
     pub fn frames(&self) -> u32 {
@@ -56,7 +68,11 @@ impl TrackAnalyzer {
         if let Some(b) = self.budget {
             return b;
         }
-        if self.opts.detailed { (1280, 900) } else { (720, 500) }
+        if self.opts.detailed {
+            (1280, 900)
+        } else {
+            (720, 500)
+        }
     }
 
     /// Analyse the next frame.
@@ -67,9 +83,25 @@ impl TrackAnalyzer {
         let pyr = GrayPyramid::from_image(frame.img, frame.offset, factor, 4);
         let k = self.frame;
         match &self.prev {
-            Some(prev) if prev.width() == pyr.width() && prev.height() == pyr.height() && prev.offset == pyr.offset => {
+            Some(prev)
+                if prev.width() == pyr.width()
+                    && prev.height() == pyr.height()
+                    && prev.offset == pyr.offset =>
+            {
                 let pts: Vec<[f64; 2]> = self.active.iter().map(|a| a.1).collect();
-                let q = track(prev, &pyr, &pts, None, &LkOpts { radius: 6, iterations: 30, epsilon: 0.005, fb_max: 0.5, ..Default::default() });
+                let q = track(
+                    prev,
+                    &pyr,
+                    &pts,
+                    None,
+                    &LkOpts {
+                        radius: 6,
+                        iterations: 30,
+                        epsilon: 0.005,
+                        fb_max: 0.5,
+                        ..Default::default()
+                    },
+                );
                 let mut next = Vec::with_capacity(self.active.len());
                 for ((ti, _), q) in self.active.iter().zip(q) {
                     if let Some(q) = q {
@@ -84,9 +116,13 @@ impl TrackAnalyzer {
         }
         // Re-detect where there are no features.
         if (self.active.len() as f64) < want as f64 * 0.85 {
-            let md = (pyr.width().max(pyr.height()) as f64 / (want as f64).sqrt() * 0.6).clamp(5.0, 40.0);
+            let md = (pyr.width().max(pyr.height()) as f64 / (want as f64).sqrt() * 0.6)
+                .clamp(5.0, 40.0);
             let cell = md;
-            let (gw, gh) = ((pyr.width() as f64 / cell).ceil() as usize + 1, (pyr.height() as f64 / cell).ceil() as usize + 1);
+            let (gw, gh) = (
+                (pyr.width() as f64 / cell).ceil() as usize + 1,
+                (pyr.height() as f64 / cell).ceil() as usize + 1,
+            );
             let mut occ = vec![false; gw * gh];
             for (_, p) in &self.active {
                 let (cx, cy) = ((p[0] / cell) as usize, (p[1] / cell) as usize);
@@ -100,11 +136,21 @@ impl TrackAnalyzer {
                 let (cx, cy) = ((p[0] / cell) as usize, (p[1] / cell) as usize);
                 !occ.get(cy * gw + cx).copied().unwrap_or(true)
             };
-            let opts = CornerOpts { max_features: want - self.active.len().min(want), min_distance: md, quality: 0.001, window: 2, border: 8 };
+            let opts = CornerOpts {
+                max_features: want - self.active.len().min(want),
+                min_distance: md,
+                quality: 0.001,
+                window: 2,
+                border: 8,
+            };
             for p in good_features(&pyr, &opts, Some(&free)) {
                 let l = pyr.to_layer(p);
                 let id = self.tracks.len() as u32;
-                self.tracks.push(Track2D { id, start: k, pts: vec![[l[0] as f32, l[1] as f32]] });
+                self.tracks.push(Track2D {
+                    id,
+                    start: k,
+                    pts: vec![[l[0] as f32, l[1] as f32]],
+                });
                 self.active.push((id as usize, p));
             }
         }
@@ -113,14 +159,30 @@ impl TrackAnalyzer {
     }
 
     pub fn finish(self, start: f64, frame_duration: f64) -> CameraTracks {
-        let mut tracks: Vec<Track2D> = self.tracks.into_iter().filter(|t| t.pts.len() >= 3).collect();
+        let mut tracks: Vec<Track2D> = self
+            .tracks
+            .into_iter()
+            .filter(|t| t.pts.len() >= 3)
+            .collect();
         // Round to 1/100 pixel (smaller JSON) and renumber densely.
         for (i, t) in tracks.iter_mut().enumerate() {
             t.id = i as u32;
             for p in t.pts.iter_mut() {
-                *p = [(p[0] * 100.0).round() / 100.0, (p[1] * 100.0).round() / 100.0];
+                *p = [
+                    (p[0] * 100.0).round() / 100.0,
+                    (p[1] * 100.0).round() / 100.0,
+                ];
             }
         }
-        CameraTracks { version: 1, size: self.size, start, frame_duration, frames: self.frame, factor: self.factor, detailed: self.opts.detailed, tracks }
+        CameraTracks {
+            version: 1,
+            size: self.size,
+            start,
+            frame_duration,
+            frames: self.frame,
+            factor: self.factor,
+            detailed: self.opts.detailed,
+            tracks,
+        }
     }
 }

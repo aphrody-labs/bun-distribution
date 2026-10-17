@@ -192,7 +192,10 @@ static FORMATS: &[FormatDef] = &[
 ///
 /// Retourne une erreur si une insertion SQLite échoue.
 pub fn ingest_formats(db: &mut Db) -> Result<usize> {
-    let tx = db.conn_mut().transaction().context("ouverture de transaction formats")?;
+    let tx = db
+        .conn_mut()
+        .transaction()
+        .context("ouverture de transaction formats")?;
 
     let mut count = 0usize;
 
@@ -238,17 +241,23 @@ mod tests {
         assert_eq!(count, FORMATS.len());
 
         // Vérifier quelques formats emblématiques.
-        for name in &["G4TX", "G4MD", "G4PK", "CPK", "@UTF", "ACB", "AWB", "HCA", "DXBC", "RDBN"] {
+        for name in &[
+            "G4TX", "G4MD", "G4PK", "CPK", "@UTF", "ACB", "AWB", "HCA", "DXBC", "RDBN",
+        ] {
             let found: i64 = db
                 .conn()
-                .query_row("SELECT COUNT(*) FROM format WHERE name = ?1", [name], |r| r.get(0))
+                .query_row("SELECT COUNT(*) FROM format WHERE name = ?1", [name], |r| {
+                    r.get(0)
+                })
                 .unwrap();
             assert_eq!(found, 1, "format {name} introuvable");
         }
 
         // Vérifier le total.
-        let total: i64 =
-            db.conn().query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0)).unwrap();
+        let total: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(total, FORMATS.len() as i64);
     }
 
@@ -258,8 +267,10 @@ mod tests {
         let c1 = ingest_formats(&mut db).unwrap();
         let c2 = ingest_formats(&mut db).unwrap();
         // La seconde passe ne doit pas créer de doublons.
-        let total: i64 =
-            db.conn().query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0)).unwrap();
+        let total: i64 = db
+            .conn()
+            .query_row("SELECT COUNT(*) FROM format", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(total, c1 as i64);
         assert_eq!(c1, c2);
     }

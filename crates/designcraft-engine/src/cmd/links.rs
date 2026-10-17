@@ -45,14 +45,25 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             update
         ),
-        cmd!("links.embed", "Embed Link", ["Window", "Links"], None, "{asset} — keep only the copy in the document", has_doc, |s, p| {
-            let aid = asset_param(p, "links.embed")?;
-            s.edit(|d, _| {
-                let a = d.assets.get_mut(&aid).ok_or_else(|| bad("links.embed", "no such graphic"))?;
-                Arc::make_mut(a).link = None;
-                Ok(Value::Null)
-            })
-        }),
+        cmd!(
+            "links.embed",
+            "Embed Link",
+            ["Window", "Links"],
+            None,
+            "{asset} — keep only the copy in the document",
+            has_doc,
+            |s, p| {
+                let aid = asset_param(p, "links.embed")?;
+                s.edit(|d, _| {
+                    let a = d
+                        .assets
+                        .get_mut(&aid)
+                        .ok_or_else(|| bad("links.embed", "no such graphic"))?;
+                    Arc::make_mut(a).link = None;
+                    Ok(Value::Null)
+                })
+            }
+        ),
         cmd!(noundo "links.goTo", "Go To Link", ["Window", "Links"], None, "{asset} — selects the frames showing the graphic", has_doc, |s, p| {
             let aid = asset_param(p, "links.goTo")?;
             let st = s.doc_mut()?;
@@ -68,7 +79,10 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn asset_param(p: &Value, cmd: &str) -> Result<AssetId> {
-    p.get("asset").and_then(Value::as_u64).map(AssetId).ok_or_else(|| bad(cmd, "missing asset"))
+    p.get("asset")
+        .and_then(Value::as_u64)
+        .map(AssetId)
+        .ok_or_else(|| bad(cmd, "missing asset"))
 }
 
 /// Frames (graphic content) showing an asset, top-level or in groups.
@@ -90,7 +104,9 @@ fn uses(d: &Document, aid: AssetId) -> Vec<ItemId> {
 
 /// Link status of an asset.
 pub fn status(a: &designcraft_doc::Asset) -> &'static str {
-    let Some(path) = &a.link else { return "embedded" };
+    let Some(path) = &a.link else {
+        return "embedded";
+    };
     #[cfg(not(target_arch = "wasm32"))]
     {
         match std::fs::metadata(path) {
@@ -146,22 +162,33 @@ fn list(d: &Document) -> Vec<Value> {
 #[cfg(not(target_arch = "wasm32"))]
 fn reload(path: &str) -> Result<(Vec<u8>, (u32, u32))> {
     let b = std::fs::read(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
-    let px = designcraft_render::image_size(&b).ok_or_else(|| bad("links", format!("{path}: unsupported or corrupt image")))?;
+    let px = designcraft_render::image_size(&b)
+        .ok_or_else(|| bad("links", format!("{path}: unsupported or corrupt image")))?;
     Ok((b, px))
 }
 
 #[cfg(target_arch = "wasm32")]
 fn reload(path: &str) -> Result<(Vec<u8>, (u32, u32))> {
-    Err(EngineError::Other(format!("{path}: files can't be read on the web")))
+    Err(EngineError::Other(format!(
+        "{path}: files can't be read on the web"
+    )))
 }
 
 fn relink(s: &mut Session, p: &Value) -> Result<Value> {
     let aid = asset_param(p, "links.relink")?;
-    let path = str_param(p, "path").ok_or_else(|| bad("links.relink", "missing path"))?.to_string();
+    let path = str_param(p, "path")
+        .ok_or_else(|| bad("links.relink", "missing path"))?
+        .to_string();
     let (bytes, px) = reload(&path)?;
-    let name = std::path::Path::new(&path).file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| path.clone());
+    let name = std::path::Path::new(&path)
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| path.clone());
     s.edit(|d, _| {
-        let a = d.assets.get_mut(&aid).ok_or_else(|| bad("links.relink", "no such graphic"))?;
+        let a = d
+            .assets
+            .get_mut(&aid)
+            .ok_or_else(|| bad("links.relink", "no such graphic"))?;
         let a = Arc::make_mut(a);
         a.mime = designcraft_render::image_mime(&bytes).to_string();
         a.data = Arc::new(bytes.clone());
@@ -178,21 +205,37 @@ fn relink_folder(s: &mut Session, p: &Value) -> Result<Value> {
     if dir.is_none() && ext.is_none() {
         return Err(bad("links.relinkFolder", "give `dir` and/or `extension`"));
     }
-    let missing_only = p.get("missingOnly").and_then(Value::as_bool).unwrap_or(dir.is_some() && ext.is_none());
-    let only: Option<Vec<u64>> = p.get("assets").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).collect());
+    let missing_only = p
+        .get("missingOnly")
+        .and_then(Value::as_bool)
+        .unwrap_or(dir.is_some() && ext.is_none());
+    let only: Option<Vec<u64>> = p
+        .get("assets")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(Value::as_u64).collect());
     let d = &s.doc()?.doc;
     let mut todo: Vec<(AssetId, std::path::PathBuf)> = Vec::new();
     let mut not_found = Vec::new();
     for a in d.assets.values() {
-        if only.as_ref().is_some_and(|o| !o.contains(&a.id.0)) || (missing_only && status(a) != "missing") {
+        if only.as_ref().is_some_and(|o| !o.contains(&a.id.0))
+            || (missing_only && status(a) != "missing")
+        {
             continue;
         }
         let old = std::path::PathBuf::from(a.link.clone().unwrap_or_else(|| a.name.clone()));
-        let mut name = old.file_name().map(|n| n.to_os_string()).unwrap_or_else(|| a.name.clone().into());
+        let mut name = old
+            .file_name()
+            .map(|n| n.to_os_string())
+            .unwrap_or_else(|| a.name.clone().into());
         if let Some(e) = &ext {
-            name = std::path::Path::new(&name).with_extension(e).into_os_string();
+            name = std::path::Path::new(&name)
+                .with_extension(e)
+                .into_os_string();
         }
-        let folder = dir.clone().or_else(|| old.parent().map(|p| p.to_path_buf())).unwrap_or_default();
+        let folder = dir
+            .clone()
+            .or_else(|| old.parent().map(|p| p.to_path_buf()))
+            .unwrap_or_default();
         let cand = folder.join(&name);
         if cand.exists() {
             todo.push((a.id, cand));
@@ -213,7 +256,11 @@ fn update(s: &mut Session, p: &Value) -> Result<Value> {
     let which: Vec<(AssetId, String)> = d
         .assets
         .values()
-        .filter(|a| p.get("asset").and_then(Value::as_u64).is_none_or(|x| x == a.id.0))
+        .filter(|a| {
+            p.get("asset")
+                .and_then(Value::as_u64)
+                .is_none_or(|x| x == a.id.0)
+        })
         .filter(|a| status(a) == "modified")
         .filter_map(|a| a.link.clone().map(|l| (a.id, l)))
         .collect();
@@ -242,7 +289,12 @@ mod tests {
     use super::*;
 
     fn png(w: u32, h: u32) -> Vec<u8> {
-        designcraft_render::Rendered { width: w, height: h, pixels: vec![200u8; (w * h * 4) as usize] }.to_png()
+        designcraft_render::Rendered {
+            width: w,
+            height: h,
+            pixels: vec![200u8; (w * h * 4) as usize],
+        }
+        .to_png()
     }
 
     #[test]
@@ -255,29 +307,49 @@ mod tests {
         std::fs::write(&b, png(20, 10)).unwrap();
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("file.place", &json!({"path": a.to_string_lossy(), "x": 72, "y": 72, "width": 72})).unwrap();
+        s.execute(
+            "file.place",
+            &json!({"path": a.to_string_lossy(), "x": 72, "y": 72, "width": 72}),
+        )
+        .unwrap();
         let l = s.execute("links.list", &json!({})).unwrap();
         assert_eq!(l[0]["status"], "ok");
         assert_eq!(l[0]["uses"][0]["ppi"], 10.0, "10 px over 1 inch");
         let aid = l[0]["asset"].as_u64().unwrap();
         // The file changes on disk.
         std::fs::write(&a, png(30, 10)).unwrap();
-        assert_eq!(s.execute("links.list", &json!({})).unwrap()[0]["status"], "modified");
+        assert_eq!(
+            s.execute("links.list", &json!({})).unwrap()[0]["status"],
+            "modified"
+        );
         s.execute("links.update", &json!({})).unwrap();
         let l = s.execute("links.list", &json!({})).unwrap();
         assert_eq!(l[0]["status"], "ok");
         assert_eq!(l[0]["pixels"], json!([30, 10]));
         // Missing, then relinked.
         std::fs::remove_file(&a).unwrap();
-        assert_eq!(s.execute("links.list", &json!({})).unwrap()[0]["status"], "missing");
-        s.execute("links.relink", &json!({"asset": aid, "path": b.to_string_lossy()})).unwrap();
+        assert_eq!(
+            s.execute("links.list", &json!({})).unwrap()[0]["status"],
+            "missing"
+        );
+        s.execute(
+            "links.relink",
+            &json!({"asset": aid, "path": b.to_string_lossy()}),
+        )
+        .unwrap();
         let l = s.execute("links.list", &json!({})).unwrap();
-        assert_eq!((l[0]["status"].as_str(), l[0]["name"].as_str()), (Some("ok"), Some("b.png")));
+        assert_eq!(
+            (l[0]["status"].as_str(), l[0]["name"].as_str()),
+            (Some("ok"), Some("b.png"))
+        );
         // Go to selects the frame; embed forgets the file.
         let r = s.execute("links.goTo", &json!({"asset": aid})).unwrap();
         assert_eq!(r["ids"].as_array().unwrap().len(), 1);
         s.execute("links.embed", &json!({"asset": aid})).unwrap();
-        assert_eq!(s.execute("links.list", &json!({})).unwrap()[0]["status"], "embedded");
+        assert_eq!(
+            s.execute("links.list", &json!({})).unwrap()[0]["status"],
+            "embedded"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
@@ -293,21 +365,42 @@ mod relink_folder_tests {
         let dir = std::env::temp_dir().join(format!("dc-relink-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("new")).unwrap();
-        let svg =
-            |c: &str| format!(r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="{c}"/></svg>"##);
+        let svg = |c: &str| {
+            format!(
+                r##"<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="{c}"/></svg>"##
+            )
+        };
         let orig = dir.join("logo.svg");
         std::fs::write(&orig, svg("red")).unwrap();
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
-        s.execute("file.place", &json!({"path": orig.to_string_lossy()})).unwrap();
+        s.execute("file.place", &json!({"path": orig.to_string_lossy()}))
+            .unwrap();
         // The file moves away: relink from the new folder.
         std::fs::rename(&orig, dir.join("new").join("logo.svg")).unwrap();
-        let r = s.execute("links.relinkFolder", &json!({"dir": dir.join("new").to_string_lossy()})).unwrap();
+        let r = s
+            .execute(
+                "links.relinkFolder",
+                &json!({"dir": dir.join("new").to_string_lossy()}),
+            )
+            .unwrap();
         assert_eq!(r["relinked"], 1);
-        let link = s.doc().unwrap().doc.assets.values().next().unwrap().link.clone().unwrap();
+        let link = s
+            .doc()
+            .unwrap()
+            .doc
+            .assets
+            .values()
+            .next()
+            .unwrap()
+            .link
+            .clone()
+            .unwrap();
         assert!(link.contains("new"), "{link}");
         // Relink File Extension: the same name as .png doesn't exist → reported.
-        let r = s.execute("links.relinkFolder", &json!({"extension": "png"})).unwrap();
+        let r = s
+            .execute("links.relinkFolder", &json!({"extension": "png"}))
+            .unwrap();
         assert_eq!(r["relinked"], 0);
         assert_eq!(r["notFound"], json!(["logo.png"]));
         let _ = std::fs::remove_dir_all(&dir);
@@ -319,7 +412,12 @@ mod shared_asset_tests {
     use super::*;
 
     fn png(w: u32, h: u32) -> Vec<u8> {
-        designcraft_render::Rendered { width: w, height: h, pixels: vec![200u8; (w * h * 4) as usize] }.to_png()
+        designcraft_render::Rendered {
+            width: w,
+            height: h,
+            pixels: vec![200u8; (w * h * 4) as usize],
+        }
+        .to_png()
     }
 
     #[test]
@@ -327,24 +425,53 @@ mod shared_asset_tests {
         let mut s = Session::new();
         s.execute("file.new", &json!({})).unwrap();
         let a = super::super::file::base64_encode(&png(10, 10));
-        s.execute("file.place", &json!({"base64": a, "name": "a.png", "x": 72, "y": 72})).unwrap();
+        s.execute(
+            "file.place",
+            &json!({"base64": a, "name": "a.png", "x": 72, "y": 72}),
+        )
+        .unwrap();
         s.execute("edit.deselectAll", &json!({})).unwrap();
-        s.execute("file.place", &json!({"base64": a, "name": "a.png", "x": 200, "y": 72})).unwrap();
+        s.execute(
+            "file.place",
+            &json!({"base64": a, "name": "a.png", "x": 200, "y": 72}),
+        )
+        .unwrap();
         let l = s.execute("links.list", &json!({})).unwrap();
         assert_eq!(l.as_array().unwrap().len(), 1);
         assert_eq!(l[0]["uses"].as_array().unwrap().len(), 2);
         assert_eq!(s.doc().unwrap().doc.assets.len(), 1);
 
         // A new image into a frame: the old asset stays in memory (undo) but not in the file.
-        let f = s.execute("frame.create", &json!({"rect": [100, 300, 200, 400]})).unwrap()["id"].as_u64().unwrap();
+        let f = s
+            .execute("frame.create", &json!({"rect": [100, 300, 200, 400]}))
+            .unwrap()["id"]
+            .as_u64()
+            .unwrap();
         let b = super::super::file::base64_encode(&png(20, 10));
         let c = super::super::file::base64_encode(&png(30, 10));
-        s.execute("file.place", &json!({"base64": b, "name": "b.png", "frame": f})).unwrap();
-        s.execute("file.place", &json!({"base64": c, "name": "c.png", "frame": f})).unwrap();
+        s.execute(
+            "file.place",
+            &json!({"base64": b, "name": "b.png", "frame": f}),
+        )
+        .unwrap();
+        s.execute(
+            "file.place",
+            &json!({"base64": c, "name": "c.png", "frame": f}),
+        )
+        .unwrap();
         let d = &s.doc().unwrap().doc;
         assert_eq!(d.assets.len(), 3);
-        assert_eq!(s.execute("links.list", &json!({})).unwrap().as_array().unwrap().len(), 2);
-        let back = designcraft_format::load(&designcraft_format::save(&s.doc().unwrap().doc).unwrap()).unwrap();
+        assert_eq!(
+            s.execute("links.list", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        let back =
+            designcraft_format::load(&designcraft_format::save(&s.doc().unwrap().doc).unwrap())
+                .unwrap();
         let mut names: Vec<&str> = back.assets.values().map(|a| a.name.as_str()).collect();
         names.sort();
         assert_eq!(names, ["a.png", "c.png"]);
@@ -362,12 +489,20 @@ mod shared_asset_tests {
         s.execute("file.new", &json!({})).unwrap();
         for (path, x) in [(&a, 72), (&b, 200)] {
             s.execute("edit.deselectAll", &json!({})).unwrap();
-            s.execute("file.place", &json!({"path": path.to_string_lossy(), "x": x, "y": 72})).unwrap();
+            s.execute(
+                "file.place",
+                &json!({"path": path.to_string_lossy(), "x": x, "y": 72}),
+            )
+            .unwrap();
         }
         assert_eq!(s.doc().unwrap().doc.assets.len(), 2);
         let rows = |s: &mut Session| -> Vec<(String, Value)> {
             let l = s.execute("links.list", &json!({})).unwrap();
-            l.as_array().unwrap().iter().map(|r| (r["path"].as_str().unwrap().to_string(), r["pixels"].clone())).collect()
+            l.as_array()
+                .unwrap()
+                .iter()
+                .map(|r| (r["path"].as_str().unwrap().to_string(), r["pixels"].clone()))
+                .collect()
         };
         let paths = |r: &[(String, Value)]| r.iter().map(|(p, _)| p.clone()).collect::<Vec<_>>();
         let before = rows(&mut s);
@@ -378,7 +513,10 @@ mod shared_asset_tests {
         assert_eq!(s.execute("links.update", &json!({})).unwrap()["updated"], 1);
         let after = rows(&mut s);
         assert_eq!(paths(&after), paths(&before));
-        assert_eq!((after[0].1.clone(), after[1].1.clone()), (json!([10, 10]), json!([20, 10])));
+        assert_eq!(
+            (after[0].1.clone(), after[1].1.clone()),
+            (json!([10, 10]), json!([20, 10]))
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -422,7 +560,14 @@ mod shared_asset_tests {
             crop: [1.0; 4],
         });
         src.insert_item(SpreadRef::Doc(0), it, None).unwrap();
-        let ids = super::super::object::duplicate_from(&mut dst, &src, &[iid], SpreadRef::Doc(0), designcraft_geom::Vec2::ZERO).unwrap();
+        let ids = super::super::object::duplicate_from(
+            &mut dst,
+            &src,
+            &[iid],
+            SpreadRef::Doc(0),
+            designcraft_geom::Vec2::ZERO,
+        )
+        .unwrap();
         let g = dst.item(ids[0]).and_then(|i| i.graphic()).unwrap();
         assert_eq!((g.asset, g.crop), (same, [1.0; 4]));
         assert_eq!(dst.assets.len(), 2);

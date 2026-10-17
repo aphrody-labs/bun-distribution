@@ -6,7 +6,11 @@ const NOT_OBJECTS: [&str; 4] = ["\"[1,2]\"", "\"7\"", "\"true\"", "\"\"\"hi\"\"\
 fn with_name(name: &str, refers_to: &str) -> Session {
     let mut s = Session::new();
     s.new_workbook();
-    s.execute("formulas.defineName", json!({"name": name, "refersTo": refers_to})).unwrap();
+    s.execute(
+        "formulas.defineName",
+        json!({"name": name, "refersTo": refers_to}),
+    )
+    .unwrap();
     s
 }
 
@@ -30,7 +34,8 @@ fn saving_a_view_keeps_the_keys_of_a_stored_object() {
 fn creating_a_script_works_when_stored_list_is_not_an_object() {
     for text in NOT_OBJECTS {
         let mut s = with_name("_sc_scripts", text);
-        s.execute("automate.newScript", json!({"name": "s1", "commands": []})).unwrap();
+        s.execute("automate.newScript", json!({"name": "s1", "commands": []}))
+            .unwrap();
         let list = s.execute("automate.allScripts", json!({})).unwrap();
         assert!(list.to_string().contains("s1"), "{text}: {list}");
     }
@@ -41,7 +46,11 @@ fn stopping_a_recording_works_when_stored_list_is_not_an_object() {
     for text in NOT_OBJECTS {
         let mut s = with_name("_sc_scripts", text);
         s.execute("automate.recordActions", json!({})).unwrap();
-        s.execute("automate.recordActions", json!({"stop": true, "name": "s1"})).unwrap();
+        s.execute(
+            "automate.recordActions",
+            json!({"stop": true, "name": "s1"}),
+        )
+        .unwrap();
         let list = s.execute("automate.allScripts", json!({})).unwrap();
         assert!(list.to_string().contains("s1"), "{text}: {list}");
     }

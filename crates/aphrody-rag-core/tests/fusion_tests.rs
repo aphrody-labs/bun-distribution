@@ -70,10 +70,20 @@ fn apply_source_weights_boosts_then_fills_quota() {
         candidate("m2", "manga", "panel", 0.35),
     ];
     cands.reverse(); // input order shouldn't matter
-    let weights = vec![SourceWeight { source_id: "manga".to_string(), weight: 2.2 }];
-    let quota = QuotaRule { source_id: "manga".to_string(), quota: 2, min_score: 0.3 };
+    let weights = vec![SourceWeight {
+        source_id: "manga".to_string(),
+        weight: 2.2,
+    }];
+    let quota = QuotaRule {
+        source_id: "manga".to_string(),
+        quota: 2,
+        min_score: 0.3,
+    };
     let top = apply_source_weights(cands, &weights, Some(&quota), &[], 3);
-    let manga_count = top.iter().filter(|c| c.source_id.as_deref() == Some("manga")).count();
+    let manga_count = top
+        .iter()
+        .filter(|c| c.source_id.as_deref() == Some("manga"))
+        .count();
     assert_eq!(manga_count, 2, "{top:?}");
     assert_eq!(top.len(), 3);
 }
@@ -85,8 +95,15 @@ fn apply_source_weights_quota_evicts_filler_never_protected() {
         candidate("filler", "wiki", "other", 0.8),
         candidate("m1", "manga", "panel", 0.7),
     ];
-    let weights = vec![SourceWeight { source_id: "manga".to_string(), weight: 1.0 }];
-    let quota = QuotaRule { source_id: "manga".to_string(), quota: 1, min_score: 0.0 };
+    let weights = vec![SourceWeight {
+        source_id: "manga".to_string(),
+        weight: 1.0,
+    }];
+    let quota = QuotaRule {
+        source_id: "manga".to_string(),
+        quota: 1,
+        min_score: 0.0,
+    };
     let top = apply_source_weights(cands, &weights, Some(&quota), &["canon".to_string()], 2);
     let ids: Vec<&str> = top.iter().map(|c| c.id.as_str()).collect();
     assert!(ids.contains(&"protected"), "{ids:?}");
@@ -103,7 +120,10 @@ fn mmr_diversifies_away_from_near_duplicates() {
     ];
     let picked = mmr(&candidates, 0.5, 2);
     assert_eq!(picked[0], "a");
-    assert_eq!(picked[1], "b", "MMR should prefer the diverse 'b' over the near-duplicate 'a_dup'");
+    assert_eq!(
+        picked[1], "b",
+        "MMR should prefer the diverse 'b' over the near-duplicate 'a_dup'"
+    );
 }
 
 #[test]
@@ -127,7 +147,10 @@ fn quantize_i8_round_trips_within_tolerance() {
     // dot_i8 on the vector's own quantization approximates the true self-dot
     // (sum of squares == 2.5) once rescaled by `scale * scale`.
     let approx_self_dot = dot_i8(&q, &q) as f32 * scale * scale;
-    assert!((approx_self_dot - dot(&v, &v)).abs() < 0.05, "approx={approx_self_dot}");
+    assert!(
+        (approx_self_dot - dot(&v, &v)).abs() < 0.05,
+        "approx={approx_self_dot}"
+    );
 }
 
 #[test]
@@ -182,7 +205,11 @@ fn dot_matches_a_wide_sum_across_lane_boundaries() {
     for len in [0_usize, 1, 7, 8, 9, 16, 19, 64, 65] {
         let a = lcg_vec(&mut seed, len);
         let b = lcg_vec(&mut seed, len);
-        let wide: f64 = a.iter().zip(&b).map(|(x, y)| f64::from(*x) * f64::from(*y)).sum();
+        let wide: f64 = a
+            .iter()
+            .zip(&b)
+            .map(|(x, y)| f64::from(*x) * f64::from(*y))
+            .sum();
         assert!((f64::from(dot(&a, &b)) - wide).abs() < 1e-3, "len {len}");
     }
     assert_eq!(dot(&[1.0, 2.0], &[1.0]), 0.0, "length mismatch is zero");
@@ -200,7 +227,10 @@ fn cosine_with_norm_is_bit_identical_to_cosine() {
     for _ in 0..20 {
         let a = lcg_vec(&mut seed, 37);
         let b = lcg_vec(&mut seed, 37);
-        assert_eq!(cosine(&a, &b).to_bits(), cosine_with_norm(&a, norm(&a), &b).to_bits());
+        assert_eq!(
+            cosine(&a, &b).to_bits(),
+            cosine_with_norm(&a, norm(&a), &b).to_bits()
+        );
     }
     assert_eq!(cosine_with_norm(&[1.0, 0.0], 1.0, &[1.0]), 0.0);
     assert_eq!(cosine_with_norm(&[0.0, 0.0], 0.0, &[1.0, 0.0]), 0.0);
@@ -222,7 +252,10 @@ fn top_k_dot_matches_top_k_exact_on_unit_rows() {
     for ((_, a), (_, b)) in exact.iter().zip(&fast) {
         assert!((a - b).abs() < 1e-5);
     }
-    assert!(top_k_dot(&[1.0], &matrix, dim, 5).is_empty(), "wrong query width yields nothing");
+    assert!(
+        top_k_dot(&[1.0], &matrix, dim, 5).is_empty(),
+        "wrong query width yields nothing"
+    );
 }
 
 #[test]
@@ -239,12 +272,18 @@ fn top_k_i8_finds_the_exact_nearest_row_and_most_of_the_top_k() {
         scales.push(scale);
     }
     let query = matrix[17 * dim..18 * dim].to_vec();
-    let exact: Vec<usize> = top_k_dot(&query, &matrix, dim, 5).iter().map(|(r, _)| *r).collect();
+    let exact: Vec<usize> = top_k_dot(&query, &matrix, dim, 5)
+        .iter()
+        .map(|(r, _)| *r)
+        .collect();
     let approx = top_k_i8(&query, &codes, &scales, dim, 5);
     assert_eq!(approx[0].0, 17, "the stored row itself must rank first");
     assert!((approx[0].1 - 1.0).abs() < 0.02, "score {}", approx[0].1);
     let overlap = approx.iter().filter(|(r, _)| exact.contains(r)).count();
-    assert!(overlap >= 3, "int8 top-5 overlaps exact top-5 in {overlap} rows");
+    assert!(
+        overlap >= 3,
+        "int8 top-5 overlaps exact top-5 in {overlap} rows"
+    );
 }
 
 #[test]
@@ -274,10 +313,16 @@ fn top_k_breaks_ties_by_lower_row_and_ranks_nan_last() {
     let query = [1.0_f32, 0.0];
     let matrix = [1.0_f32, 0.0, 1.0, 0.0, f32::NAN, 0.0];
     let all = top_k_dot(&query, &matrix, 2, 3);
-    assert_eq!(all.iter().map(|(row, _)| *row).collect::<Vec<_>>(), vec![0, 1, 2]);
+    assert_eq!(
+        all.iter().map(|(row, _)| *row).collect::<Vec<_>>(),
+        vec![0, 1, 2]
+    );
     assert_eq!(all[2].1, f32::NEG_INFINITY);
     let two = top_k_dot(&query, &matrix, 2, 2);
-    assert_eq!(two.iter().map(|(row, _)| *row).collect::<Vec<_>>(), vec![0, 1]);
+    assert_eq!(
+        two.iter().map(|(row, _)| *row).collect::<Vec<_>>(),
+        vec![0, 1]
+    );
 }
 
 #[test]
@@ -299,7 +344,10 @@ fn fuse_scores_constant_lists_and_weights() {
     let fused = fuse_scores(&[(&flat[..], 1.0)], ScoreScaling::MinMax);
     assert_eq!(fused, vec![("x", 1.0), ("y", 1.0)]);
     let zero = [("z", 0.0)];
-    assert_eq!(fuse_scores(&[(&zero[..], 1.0)], ScoreScaling::MinMax), vec![("z", 0.0)]);
+    assert_eq!(
+        fuse_scores(&[(&zero[..], 1.0)], ScoreScaling::MinMax),
+        vec![("z", 0.0)]
+    );
 
     let left = [("a", 1.0)];
     let right = [("b", 1.0)];
@@ -315,9 +363,18 @@ fn fuse_scores_constant_lists_and_weights() {
 fn fuse_scores_dist_based_uses_three_sigma_bounds_without_clamping() {
     let list = [("a", 1.0), ("b", 2.0), ("c", 3.0)];
     let fused = fuse_scores(&[(&list[..], 1.0)], ScoreScaling::DistBased);
-    let score = |id: &str| fused.iter().find(|(i, _)| *i == id).map(|(_, s)| *s).unwrap();
+    let score = |id: &str| {
+        fused
+            .iter()
+            .find(|(i, _)| *i == id)
+            .map(|(_, s)| *s)
+            .unwrap()
+    };
     assert!((score("b") - 0.5).abs() < 1e-9);
-    assert!((score("a") + score("c") - 1.0).abs() < 1e-9, "symmetric around the mean");
+    assert!(
+        (score("a") + score("c") - 1.0).abs() < 1e-9,
+        "symmetric around the mean"
+    );
     assert!(score("c") > score("b") && score("b") > score("a"));
     // mean 2, population sigma sqrt(2/3): the bounds sit well outside the data, so scores stay
     // strictly inside (0, 1) instead of touching the ends as min-max would.

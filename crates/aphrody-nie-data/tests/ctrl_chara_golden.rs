@@ -87,7 +87,11 @@ fn fewer_than_three_vars_rejected() {
 
 #[test]
 fn entry_is_copy() {
-    let a = CtrlCharaData { chara_param_id: HashId(7), control_type: 2, flags: 0 };
+    let a = CtrlCharaData {
+        chara_param_id: HashId(7),
+        control_type: 2,
+        flags: 0,
+    };
     let b = a;
     assert_eq!(a, b);
 }

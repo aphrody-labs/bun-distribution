@@ -310,47 +310,149 @@ const INFOS: [Info; 15] = [
     },
     Info {
         code: "wht10040",
-        vals: [1051674089, 1064481596, -625380620, 40, 90, 2, -970049428, -1237005085, -803851704],
+        vals: [
+            1051674089,
+            1064481596,
+            -625380620,
+            40,
+            90,
+            2,
+            -970049428,
+            -1237005085,
+            -803851704,
+        ],
     },
     Info {
         code: "wht10050",
-        vals: [666137768, 644448893, -1012776011, 40, 90, 2, -550172371, -1352663646, -921894135],
+        vals: [
+            666137768,
+            644448893,
+            -1012776011,
+            40,
+            90,
+            2,
+            -550172371,
+            -1352663646,
+            -921894135,
+        ],
     },
     Info {
         code: "wht10060",
-        vals: [211363691, 222613950, -393277322, 40, 90, 1, -199730450, -2072859039, -501198646],
+        vals: [
+            211363691,
+            222613950,
+            -393277322,
+            40,
+            90,
+            1,
+            -199730450,
+            -2072859039,
+            -501198646,
+        ],
     },
     Info {
         code: "wht10070",
-        vals: [360846890, 341827839, -241950409, 40, 90, 1, -318542929, -1654022368, -79994485],
+        vals: [
+            360846890,
+            341827839,
+            -241950409,
+            40,
+            90,
+            1,
+            -318542929,
+            -1654022368,
+            -79994485,
+        ],
     },
     Info {
         code: "wht10080",
-        vals: [-1843787035, -1815610320, 1980513784, 40, 90, 0, 1788573536, 452035567, 2091089220],
+        vals: [
+            -1843787035,
+            -1815610320,
+            1980513784,
+            40,
+            90,
+            0,
+            1788573536,
+            452035567,
+            2091089220,
+        ],
     },
     Info {
         code: "wht10090",
-        vals: [-1962853468, -1965240975, 1863781561, 40, 90, 2, 1937786401, 65712814, 1706576901],
+        vals: [
+            -1962853468,
+            -1965240975,
+            1863781561,
+            40,
+            90,
+            2,
+            1937786401,
+            65712814,
+            1706576901,
+        ],
     },
     Info {
         code: "wht20010",
-        vals: [75025276, 94715305, -529597343, 10, 90, 1, -50743559, -50743559, -356401955],
+        vals: [
+            75025276, 94715305, -529597343, 10, 90, 1, -50743559, -50743559, -356401955,
+        ],
     },
     Info {
         code: "wht20010_st0301",
-        vals: [-2018737520, 94715305, -529597343, 40, 90, 1, -50743559, -50743559, -356401955],
+        vals: [
+            -2018737520,
+            94715305,
+            -529597343,
+            40,
+            90,
+            1,
+            -50743559,
+            -50743559,
+            -356401955,
+        ],
     },
     Info {
         code: "wht20020",
-        vals: [794138815, 780693098, -884756574, 10, 50, 0, -2121383236, -2121383236, -1041436898],
+        vals: [
+            794138815,
+            780693098,
+            -884756574,
+            10,
+            50,
+            0,
+            -2121383236,
+            -2121383236,
+            -1041436898,
+        ],
     },
     Info {
         code: "wht20040",
-        vals: [2031042361, 2027080172, -1659303900, 30, 90, 0, 0, 0, -1749661544],
+        vals: [
+            2031042361,
+            2027080172,
+            -1659303900,
+            30,
+            90,
+            0,
+            0,
+            0,
+            -1749661544,
+        ],
     },
     Info {
         code: "wht20050",
-        vals: [1611927160, 1640626349, -2080229019, 30, 90, 0, 1022940574, 1284645137, -1901233703],
+        vals: [
+            1611927160,
+            1640626349,
+            -2080229019,
+            30,
+            90,
+            0,
+            1022940574,
+            1284645137,
+            -1901233703,
+        ],
     },
     Info {
         code: "wht20060",
@@ -430,7 +532,9 @@ const SORT_INDEX: [i64; 15] = [32, 9, 24, 81, 56, 66, 46, 36, 76, 5, 65, 55, 35,
 
 /// Construit des variables Int au format iecode `{type:"Int", value:"<n>"}`.
 fn int_vars(vals: &[i64]) -> Vec<Value> {
-    vals.iter().map(|v| json!({ "type": "Int", "value": v.to_string() })).collect()
+    vals.iter()
+        .map(|v| json!({ "type": "Int", "value": v.to_string() }))
+        .collect()
 }
 
 /// Construit le noeud d'une tactique (var[1] = code interne String, le reste Int).
@@ -538,7 +642,11 @@ fn comptes_des_listes() {
     let cfg = parse_special_tactics(&fixture());
     assert_eq!(cfg.effects.len(), 33, "33 effets embarqués");
     assert_eq!(cfg.cond_ids.len(), 6, "6 conditions embarquées");
-    assert_eq!(cfg.success_cond_ids.len(), 3, "3 conditions de réussite (totalité du dump)");
+    assert_eq!(
+        cfg.success_cond_ids.len(),
+        3,
+        "3 conditions de réussite (totalité du dump)"
+    );
     assert_eq!(cfg.infos.len(), 15, "15 tactiques embarquées");
     assert_eq!(cfg.ref_effects.len(), 15);
     assert_eq!(cfg.ref_cond_ids.len(), 15);
@@ -559,7 +667,10 @@ fn effets_id_power_conditions() {
     // Effet 28 : power = NULL_SENTINEL (conservé brut), 2 conditions (var[2], var[3]).
     let e28 = &cfg.effects[28];
     assert_eq!(e28.effect_id.to_hex(), "0x9A6BE718");
-    assert_eq!(e28.power, NULL_SENTINEL, "la puissance n'est PAS filtrée de la sentinelle");
+    assert_eq!(
+        e28.power, NULL_SENTINEL,
+        "la puissance n'est PAS filtrée de la sentinelle"
+    );
     assert_eq!(e28.conditions.len(), 2);
     assert_eq!(e28.conditions[0], HashId::from_signed(1178143904));
     assert_eq!(e28.conditions[0].to_hex(), "0x46390CA0");
@@ -577,7 +688,11 @@ fn sentinelle_null_filtree_des_conditions() {
     let cfg = parse_special_tactics(&fixture());
     for effect in &cfg.effects {
         for cond in &effect.conditions {
-            assert_ne!(cond.get(), 0xC4DC_849A, "la sentinelle ne doit jamais rester en condition");
+            assert_ne!(
+                cond.get(),
+                0xC4DC_849A,
+                "la sentinelle ne doit jamais rester en condition"
+            );
         }
     }
 }
@@ -594,7 +709,10 @@ fn conditions_id_et_base64() {
 
     // Conditions de réussite : la 0 et la 1 partagent les mêmes données (doublon réel).
     assert_eq!(cfg.success_cond_ids[0].cond_id, 1550);
-    assert_eq!(cfg.success_cond_ids[0].cond_data, cfg.success_cond_ids[1].cond_data);
+    assert_eq!(
+        cfg.success_cond_ids[0].cond_data,
+        cfg.success_cond_ids[1].cond_data
+    );
     assert_eq!(cfg.success_cond_ids[2].cond_id, 1552);
 }
 
@@ -620,7 +738,11 @@ fn tactiques_champs_de_base() {
     let t12 = &cfg.infos[12];
     assert_eq!(t12.tactics_id.to_hex(), "0x790F3F39");
     assert_eq!(t12.internal_code, "wht20040");
-    assert_eq!(t12.partner_ids.len(), 1, "les 2 partenaires à 0x00000000 sont filtrés");
+    assert_eq!(
+        t12.partner_ids.len(),
+        1,
+        "les 2 partenaires à 0x00000000 sont filtrés"
+    );
     assert_eq!(t12.partner_ids[0].to_hex(), "0x97B64898");
 
     // Tactique 14 : power réel = 99999 (valeur extrême du dump).
@@ -636,7 +758,10 @@ fn ref_effects_chainage() {
         assert_eq!(r.offset, cursor, "chaînage REF_EFFECT à l'index {i}");
         cursor = r.offset + r.count;
     }
-    assert_eq!(cursor, 33, "les 15 tactiques couvrent exactement les 33 effets embarqués");
+    assert_eq!(
+        cursor, 33,
+        "les 15 tactiques couvrent exactement les 33 effets embarqués"
+    );
 }
 
 #[test]
@@ -683,10 +808,15 @@ fn cond_et_success_resolution() {
 #[test]
 fn sort_index_et_find_info() {
     let cfg = parse_special_tactics(&fixture());
-    assert_eq!(cfg.sort_index, vec![32, 9, 24, 81, 56, 66, 46, 36, 76, 5, 65, 55, 35, 45, 75]);
+    assert_eq!(
+        cfg.sort_index,
+        vec![32, 9, 24, 81, 56, 66, 46, 36, 76, 5, 65, 55, 35, 45, 75]
+    );
 
     // find_info par tactics_id.
-    let found = cfg.find_info(HashId(0x790F_3F39)).expect("tactique 0x790F3F39");
+    let found = cfg
+        .find_info(HashId(0x790F_3F39))
+        .expect("tactique 0x790F3F39");
     assert_eq!(found.internal_code, "wht20040");
     assert!(cfg.find_info(HashId(0xDEAD_BEEF)).is_none());
 }

@@ -6,7 +6,7 @@ mod _bsn;
 mod scene_component;
 
 use proc_macro::TokenStream;
-use syn::{parse_macro_input, DeriveInput};
+use syn::{DeriveInput, parse_macro_input};
 
 /// Creates a [`Scene`] using BSN (Bevy Scene Notation) syntax. These docs primarily show syntax.
 ///

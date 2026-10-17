@@ -1,10 +1,10 @@
 //! Helpers for mapping between winit and bevy types
 use bevy_ecs::entity::Entity;
 use bevy_input::{
+    ButtonState,
     keyboard::{KeyCode, KeyboardInput, NativeKeyCode},
     mouse::MouseButton,
     touch::{ForceTouch, TouchInput, TouchPhase},
-    ButtonState,
 };
 use bevy_math::{CompassOctant, Vec2};
 use bevy_window::SystemCursorIcon;

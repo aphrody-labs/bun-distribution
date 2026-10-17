@@ -5,7 +5,9 @@
 use effectcraft_engine::Session;
 use effectcraft_engine::color::Label;
 use effectcraft_keyframe::{Interp, TextDoc, Value as KV};
-use effectcraft_project::{Comp, GroupKind, ItemId, ItemKind, Layer, LayerId, LayerSource, Node, ParamUi, PropGroup};
+use effectcraft_project::{
+    Comp, GroupKind, ItemId, ItemKind, Layer, LayerId, LayerSource, Node, ParamUi, PropGroup,
+};
 use effectcraft_render::EvalCtx;
 use effectcraft_time::Tick;
 use serde_json::{Value as J, json};
@@ -23,12 +25,17 @@ fn f(a: &J, k: &str) -> Option<f64> {
 
 fn comp_of<'a>(s: &'a Session, a: &J) -> Result<(ItemId, &'a Comp), String> {
     let id = ItemId(u(a, "comp").ok_or("missing comp")?);
-    s.project.comp(id).map(|c| (id, c)).ok_or_else(|| "the composition no longer exists".to_string())
+    s.project
+        .comp(id)
+        .map(|c| (id, c))
+        .ok_or_else(|| "the composition no longer exists".to_string())
 }
 
 fn layer_of<'a>(s: &'a Session, a: &J) -> Result<(ItemId, &'a Comp, &'a Layer), String> {
     let (cid, c) = comp_of(s, a)?;
-    let l = c.layer(LayerId(u(a, "layer").ok_or("missing layer")?)).ok_or("the layer no longer exists (it was deleted)")?;
+    let l = c
+        .layer(LayerId(u(a, "layer").ok_or("missing layer")?))
+        .ok_or("the layer no longer exists (it was deleted)")?;
     Ok((cid, c, l))
 }
 
@@ -71,7 +78,10 @@ pub fn query(s: &mut Session, kind: &str, a: &J) -> R {
 fn project(s: &Session) -> J {
     let p = &s.project;
     let items: Vec<u64> = p.items.keys().map(|k| k.0).collect();
-    let active = s.active_comp_id().map(|c| c.0).or_else(|| (s.state.project_selection.len() == 1).then(|| s.state.project_selection[0].0));
+    let active = s
+        .active_comp_id()
+        .map(|c| c.0)
+        .or_else(|| (s.state.project_selection.len() == 1).then(|| s.state.project_selection[0].0));
     json!({
         "items": items,
         "active": active,
@@ -109,7 +119,10 @@ fn selected_props(s: &Session, c: &effectcraft_project::Comp) -> Vec<J> {
 
 fn item(s: &Session, a: &J) -> R {
     let id = ItemId(u(a, "id").ok_or("missing id")?);
-    let it = s.project.item(id).ok_or("the item no longer exists (it was deleted)")?;
+    let it = s
+        .project
+        .item(id)
+        .ok_or("the item no longer exists (it was deleted)")?;
     let mut o = json!({
         "id": id.0,
         "name": it.name,
@@ -119,17 +132,35 @@ fn item(s: &Session, a: &J) -> R {
         "label": label_index(it.label),
         "selected": s.state.project_selection.contains(&id),
     });
-    let used_in: Vec<u64> = s.project.comps().filter(|(_, c)| c.layers.iter().any(|l| l.source.item() == Some(id))).map(|(cid, _)| cid.0).collect();
+    let used_in: Vec<u64> = s
+        .project
+        .comps()
+        .filter(|(_, c)| c.layers.iter().any(|l| l.source.item() == Some(id)))
+        .map(|(cid, _)| cid.0)
+        .collect();
     o["usedIn"] = json!(used_in);
     match &it.kind {
         ItemKind::Folder => {
             o["kind"] = json!("folder");
-            o["children"] = json!(s.project.items.values().filter(|c| c.parent == Some(id)).map(|c| c.id.0).collect::<Vec<_>>());
+            o["children"] = json!(
+                s.project
+                    .items
+                    .values()
+                    .filter(|c| c.parent == Some(id))
+                    .map(|c| c.id.0)
+                    .collect::<Vec<_>>()
+            );
         }
         ItemKind::Comp(c) => {
             let cid = id;
             o["kind"] = json!("comp");
-            let sel: Vec<u64> = s.state.selected_layers.iter().filter(|l| c.layer(**l).is_some()).map(|l| l.0).collect();
+            let sel: Vec<u64> = s
+                .state
+                .selected_layers
+                .iter()
+                .filter(|l| c.layer(**l).is_some())
+                .map(|l| l.0)
+                .collect();
             let fps = c.frame_rate.as_f64();
             if let Some(m) = o.as_object_mut() {
                 m.extend(
@@ -164,8 +195,16 @@ fn item(s: &Session, a: &J) -> R {
             o["width"] = json!(fo.width);
             o["height"] = json!(fo.height);
             o["pixelAspect"] = json!(fo.pixel_aspect);
-            o["duration"] = json!(if fo.kind == effectcraft_project::FootageKind::Still { 0.0 } else { fo.duration.seconds() });
-            o["frameRate"] = json!(if fo.kind == effectcraft_project::FootageKind::Still { 0.0 } else { fo.frame_rate.as_f64() });
+            o["duration"] = json!(if fo.kind == effectcraft_project::FootageKind::Still {
+                0.0
+            } else {
+                fo.duration.seconds()
+            });
+            o["frameRate"] = json!(if fo.kind == effectcraft_project::FootageKind::Still {
+                0.0
+            } else {
+                fo.frame_rate.as_f64()
+            });
             o["hasVideo"] = json!(fo.has_video);
             o["hasAudio"] = json!(fo.has_audio);
             o["footageMissing"] = json!(fo.missing);
@@ -282,7 +321,16 @@ fn value_type(p: &effectcraft_project::Property) -> &'static str {
 
 /// Groups whose children are instances (effects, masks, shape items, animators).
 fn indexed_parade(g: &PropGroup) -> bool {
-    matches!(g.match_id.as_str(), "effects" | "masks" | "contents" | "animators" | "selectors" | "layerStyles" | "motionTrackers")
+    matches!(
+        g.match_id.as_str(),
+        "effects"
+            | "masks"
+            | "contents"
+            | "animators"
+            | "selectors"
+            | "layerStyles"
+            | "motionTrackers"
+    )
 }
 
 fn node_json(c: &Comp, l: &Layer, uid: u64) -> R {
@@ -297,11 +345,25 @@ fn node_json(c: &Comp, l: &Layer, uid: u64) -> R {
     }
     let ch = chain(l, uid).ok_or("the property no longer exists (it was deleted)")?;
     let node = *ch.last().ok_or("bad property")?;
-    let parent_group: &PropGroup = if ch.len() >= 2 { ch[ch.len() - 2].as_group().ok_or("bad tree")? } else { &l.props };
-    let index = parent_group.children.iter().position(|x| x.uid() == uid).map(|i| i + 1).unwrap_or(0);
-    let parent_uid = if ch.len() >= 2 { ch[ch.len() - 2].uid() } else { l.props.uid };
+    let parent_group: &PropGroup = if ch.len() >= 2 {
+        ch[ch.len() - 2].as_group().ok_or("bad tree")?
+    } else {
+        &l.props
+    };
+    let index = parent_group
+        .children
+        .iter()
+        .position(|x| x.uid() == uid)
+        .map(|i| i + 1)
+        .unwrap_or(0);
+    let parent_uid = if ch.len() >= 2 {
+        ch[ch.len() - 2].uid()
+    } else {
+        l.props.uid
+    };
     let match_name = matchnames::node(&ch);
-    let instance_parent = indexed_parade(parent_group) && ch.len() >= 2 || (ch.len() == 2 && ch[0].match_id() == "contents");
+    let instance_parent = indexed_parade(parent_group) && ch.len() >= 2
+        || (ch.len() == 2 && ch[0].match_id() == "contents");
     let mut o = json!({
         "uid": uid, "name": node.name(), "matchName": match_name, "matchId": node.match_id(), "index": index,
         "depth": ch.len(), "parent": parent_uid, "isLayer": false,
@@ -310,11 +372,21 @@ fn node_json(c: &Comp, l: &Layer, uid: u64) -> R {
     });
     match node {
         Node::Group(g) => {
-            let instance = matches!(g.kind, GroupKind::Indexed | GroupKind::Effect { .. } | GroupKind::Mask { .. } | GroupKind::Tracker { .. });
+            let instance = matches!(
+                g.kind,
+                GroupKind::Indexed
+                    | GroupKind::Effect { .. }
+                    | GroupKind::Mask { .. }
+                    | GroupKind::Tracker { .. }
+            );
             o["kind"] = json!("group");
             o["numProperties"] = json!(g.children.len());
             o["children"] = json!(g.children.iter().map(Node::uid).collect::<Vec<_>>());
-            o["propertyType"] = json!(if indexed_parade(g) { "INDEXED_GROUP" } else { "NAMED_GROUP" });
+            o["propertyType"] = json!(if indexed_parade(g) {
+                "INDEXED_GROUP"
+            } else {
+                "NAMED_GROUP"
+            });
             o["enabled"] = json!(g.enabled);
             o["canSetEnabled"] = json!(instance);
             o["instance"] = json!(instance || instance_parent);
@@ -322,10 +394,21 @@ fn node_json(c: &Comp, l: &Layer, uid: u64) -> R {
                 GroupKind::Effect { effect } => Some(effect.clone()),
                 _ => None,
             });
-            if let GroupKind::Mask { mode, inverted, color, locked, .. } = &g.kind {
+            if let GroupKind::Mask {
+                mode,
+                inverted,
+                color,
+                locked,
+                ..
+            } = &g.kind
+            {
                 o["maskMode"] = json!(mode.label());
                 o["inverted"] = json!(inverted);
-                o["color"] = json!([color[0] as f64 / 255.0, color[1] as f64 / 255.0, color[2] as f64 / 255.0]);
+                o["color"] = json!([
+                    color[0] as f64 / 255.0,
+                    color[1] as f64 / 255.0,
+                    color[2] as f64 / 255.0
+                ]);
                 o["locked"] = json!(locked);
             }
         }
@@ -360,8 +443,15 @@ fn node_json(c: &Comp, l: &Layer, uid: u64) -> R {
                 _ => "",
             });
             // Position with Separate Dimensions.
-            o["separated"] = json!(node.match_id() == "position" && parent_group.match_id == "transform" && parent_group.get("positionX").is_some());
-            o["separationFollower"] = json!(matches!(node.match_id(), "positionX" | "positionY" | "positionZ"));
+            o["separated"] = json!(
+                node.match_id() == "position"
+                    && parent_group.match_id == "transform"
+                    && parent_group.get("positionX").is_some()
+            );
+            o["separationFollower"] = json!(matches!(
+                node.match_id(),
+                "positionX" | "positionY" | "positionZ"
+            ));
         }
     }
     Ok(o)
@@ -374,7 +464,10 @@ fn node(s: &Session, a: &J) -> R {
 
 /// Normalized name for loose lookups: `Anchor Point`, `anchorPoint`, `anchor_point` → `anchorpoint`.
 fn loose(s: &str) -> String {
-    s.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_ascii_lowercase()
+    s.chars()
+        .filter(|c| c.is_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase()
 }
 
 /// AE-style aliases for our match ids (attribute names scripts use).
@@ -405,13 +498,23 @@ fn alias(k: &str) -> Option<&'static str> {
 fn child(s: &Session, a: &J) -> R {
     let (_, c, l) = layer_of(s, a)?;
     let uid = u(a, "uid").unwrap_or(0);
-    let g: &PropGroup = if uid == 0 || uid == l.props.uid { &l.props } else { l.props.find_group(uid).ok_or("not a property group")? };
+    let g: &PropGroup = if uid == 0 || uid == l.props.uid {
+        &l.props
+    } else {
+        l.props.find_group(uid).ok_or("not a property group")?
+    };
     let key = a.get("key").cloned().unwrap_or(J::Null);
     let found = match &key {
-        J::Number(n) => n.as_u64().and_then(|i| g.children.get((i as usize).checked_sub(1)?)),
+        J::Number(n) => n
+            .as_u64()
+            .and_then(|i| g.children.get((i as usize).checked_sub(1)?)),
         J::String(k) => {
             let chain_of = |n: &Node| -> String {
-                let mut ch = if uid == 0 || uid == l.props.uid { vec![] } else { chain(l, uid).unwrap_or_default() };
+                let mut ch = if uid == 0 || uid == l.props.uid {
+                    vec![]
+                } else {
+                    chain(l, uid).unwrap_or_default()
+                };
                 ch.push(n);
                 matchnames::node(&ch)
             };
@@ -422,7 +525,11 @@ fn child(s: &Session, a: &J) -> R {
                 .or_else(|| g.children.iter().find(|n| n.name() == k))
                 .or_else(|| g.children.iter().find(|n| n.match_id() == k))
                 .or_else(|| g.children.iter().find(|n| n.name().eq_ignore_ascii_case(k)))
-                .or_else(|| g.children.iter().find(|n| loose(n.name()) == lk || loose(n.match_id()) == lk))
+                .or_else(|| {
+                    g.children
+                        .iter()
+                        .find(|n| loose(n.name()) == lk || loose(n.match_id()) == lk)
+                })
                 .or_else(|| alias(&lk).and_then(|m| g.children.iter().find(|n| n.match_id() == m)))
         }
         _ => None,
@@ -440,7 +547,9 @@ fn js_value(c: &Comp, v: &KV) -> J {
         KV::Bool(b) => json!(if *b { 1 } else { 0 }),
         KV::Enum(i) => json!(*i + 1),
         KV::Layer(l) => json!(l.and_then(|id| c.index_of(LayerId(id))).unwrap_or(0)),
-        KV::Path(p) => json!({"vertices": p.vertices, "inTangents": p.in_tangents, "outTangents": p.out_tangents, "closed": p.closed}),
+        KV::Path(p) => {
+            json!({"vertices": p.vertices, "inTangents": p.in_tangents, "outTangents": p.out_tangents, "closed": p.closed})
+        }
         KV::Text(d) => text_json(d),
         v => v.to_json(),
     }
@@ -451,8 +560,14 @@ fn text_json(d: &TextDoc) -> J {
     let mut doc = serde_json::to_value(d).unwrap_or(J::Null);
     let st = d.style_at(0);
     if let Some(o) = doc.as_object_mut() {
-        o.insert("first".into(), effectcraft_keyframe::text_doc::char_style_json(&st));
-        o.insert("para".into(), effectcraft_keyframe::text_doc::para_style_json(&d.para(0)));
+        o.insert(
+            "first".into(),
+            effectcraft_keyframe::text_doc::char_style_json(&st),
+        );
+        o.insert(
+            "para".into(),
+            effectcraft_keyframe::text_doc::para_style_json(&d.para(0)),
+        );
     }
     doc
 }
@@ -460,8 +575,13 @@ fn text_json(d: &TextDoc) -> J {
 fn value(s: &Session, a: &J) -> R {
     let (cid, c, l) = layer_of(s, a)?;
     let uid = u(a, "uid").ok_or("missing uid")?;
-    let p = l.props.find(uid).ok_or("the property no longer exists (it was deleted)")?;
-    let t = f(a, "time").map(Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid));
+    let p = l
+        .props
+        .find(uid)
+        .ok_or("the property no longer exists (it was deleted)")?;
+    let t = f(a, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time_of(cid));
     let pre = a.get("pre").and_then(J::as_bool).unwrap_or(false);
     let v = if pre || !p.has_expression() {
         p.value_at(l.layer_time(t))
@@ -484,19 +604,31 @@ fn interp(i: Interp) -> &'static str {
 fn keys(s: &Session, a: &J) -> R {
     let (cid, c, l) = layer_of(s, a)?;
     let uid = u(a, "uid").ok_or("missing uid")?;
-    let p = l.props.find(uid).ok_or("the property no longer exists (it was deleted)")?;
-    let sel: Vec<Tick> = s.state.selected_keys.iter().filter(|k| k.layer == l.id && k.prop == uid).map(|k| k.time).collect();
+    let p = l
+        .props
+        .find(uid)
+        .ok_or("the property no longer exists (it was deleted)")?;
+    let sel: Vec<Tick> = s
+        .state
+        .selected_keys
+        .iter()
+        .filter(|k| k.layer == l.id && k.prop == uid)
+        .map(|k| k.time)
+        .collect();
     let _ = cid;
     let dims = if p.spatial { 1 } else { p.value.dims().max(1) };
     // Each side's ease as it plays (After Effects reports linear and auto-Bezier sides this way
     // too), else as stored; influence is stored as a fraction, scripts see percent.
     let ease = |i: usize, out: bool| -> J {
-        let Some(k) = p.keys.get(i) else { return json!([]) };
+        let Some(k) = p.keys.get(i) else {
+            return json!([]);
+        };
         let stored = if out { &k.out_ease } else { &k.in_ease };
         let v: Vec<J> = (0..dims)
             .map(|d| {
-                let e =
-                    effectcraft_keyframe::side_ease(&p.keys, i, d, p.spatial, out).or_else(|| stored.get(d).or(stored.first()).copied()).unwrap_or_default();
+                let e = effectcraft_keyframe::side_ease(&p.keys, i, d, p.spatial, out)
+                    .or_else(|| stored.get(d).or(stored.first()).copied())
+                    .unwrap_or_default();
                 json!({"speed": e.speed, "influence": e.influence * 100.0})
             })
             .collect();
@@ -508,7 +640,11 @@ fn keys(s: &Session, a: &J) -> R {
         .enumerate()
         .map(|(i, k)| {
             // Spatial tangents as the motion path plays (auto-Bezier and continuous keys too).
-            let (spatial_in, spatial_out) = if p.spatial { effectcraft_keyframe::spatial_tangents(&p.keys, i) } else { (k.spatial_in, k.spatial_out) };
+            let (spatial_in, spatial_out) = if p.spatial {
+                effectcraft_keyframe::spatial_tangents(&p.keys, i)
+            } else {
+                (k.spatial_in, k.spatial_out)
+            };
             json!({
                 "time": l.comp_time(k.time).seconds(),
                 "layerTime": k.time.seconds(),
@@ -531,8 +667,12 @@ fn textdoc(s: &Session, a: &J) -> R {
     let (cid, _, l) = layer_of(s, a)?;
     let uid = u(a, "uid").ok_or("missing uid")?;
     let p = l.props.find(uid).ok_or("the property no longer exists")?;
-    let t = f(a, "time").map(Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid));
-    let KV::Text(doc) = p.value_at(l.layer_time(t)) else { return Err("not a Source Text property".into()) };
+    let t = f(a, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time_of(cid));
+    let KV::Text(doc) = p.value_at(l.layer_time(t)) else {
+        return Err("not a Source Text property".into());
+    };
     let mut d = *doc;
     if let Some(attrs) = a.get("attrs").and_then(J::as_object) {
         if let Some(text) = attrs.get("text").and_then(J::as_str) {
@@ -579,18 +719,34 @@ fn markers(s: &Session, a: &J) -> R {
 
 fn source_rect(s: &Session, a: &J) -> R {
     let (cid, c, l) = layer_of(s, a)?;
-    let t = f(a, "time").map(Tick::from_seconds_f64).unwrap_or_else(|| s.time_of(cid));
+    let t = f(a, "time")
+        .map(Tick::from_seconds_f64)
+        .unwrap_or_else(|| s.time_of(cid));
     let mut ctx = EvalCtx::new(&s.project, cid, c, t);
     ctx.expr = s.expr.as_deref();
     let r = match &l.source {
         LayerSource::Text => {
-            let paths: Vec<_> = effectcraft_render::text::glyph_paths(&ctx, l).into_iter().map(|(p, _)| p).collect();
-            effectcraft_path::bounds(&paths).map(|b| [b.y0, b.x0, b.width(), b.height()]).unwrap_or([0.0; 4])
+            let paths: Vec<_> = effectcraft_render::text::glyph_paths(&ctx, l)
+                .into_iter()
+                .map(|(p, _)| p)
+                .collect();
+            effectcraft_path::bounds(&paths)
+                .map(|b| [b.y0, b.x0, b.width(), b.height()])
+                .unwrap_or([0.0; 4])
         }
         LayerSource::Shape => match l.props.sub("contents") {
             Some(contents) => {
                 let buf = effectcraft_render::shapes::render(&ctx, l, contents, 1.0);
-                if buf.img.width <= 4 { [0.0; 4] } else { [2.0 - buf.offset[1], 2.0 - buf.offset[0], buf.img.width as f64 - 4.0, buf.img.height as f64 - 4.0] }
+                if buf.img.width <= 4 {
+                    [0.0; 4]
+                } else {
+                    [
+                        2.0 - buf.offset[1],
+                        2.0 - buf.offset[0],
+                        buf.img.width as f64 - 4.0,
+                        buf.img.height as f64 - 4.0,
+                    ]
+                }
             }
             None => [0.0; 4],
         },
@@ -607,15 +763,26 @@ fn resolve_add(s: &Session, a: &J) -> R {
     let (_, _, l) = layer_of(s, a)?;
     let uid = u(a, "uid").unwrap_or(0);
     let name = a.get("name").and_then(J::as_str).unwrap_or("");
-    let g: &PropGroup = if uid == 0 || uid == l.props.uid { &l.props } else { l.props.find_group(uid).ok_or("not a property group")? };
+    let g: &PropGroup = if uid == 0 || uid == l.props.uid {
+        &l.props
+    } else {
+        l.props.find_group(uid).ok_or("not a property group")?
+    };
     let in_contents = g.match_id == "contents";
-    let in_group = l.props.sub("contents").is_some_and(|c| c.uid == g.uid || c.find_group(g.uid).is_some());
+    let in_group = l
+        .props
+        .sub("contents")
+        .is_some_and(|c| c.uid == g.uid || c.find_group(g.uid).is_some());
     Ok(match g.match_id.as_str() {
         "effects" => {
-            let id = matchnames::effect_from_match(name).map(str::to_string).or_else(|| effectcraft_engine::effects::lookup(name).map(|e| e.id.to_string()));
+            let id = matchnames::effect_from_match(name)
+                .map(str::to_string)
+                .or_else(|| effectcraft_engine::effects::lookup(name).map(|e| e.id.to_string()));
             match id {
                 Some(id) => json!({"kind": "effect", "effect": id}),
-                None => json!({"error": format!("Can not add a property with name \"{name}\" to this PropertyGroup (unknown effect)")}),
+                None => {
+                    json!({"error": format!("Can not add a property with name \"{name}\" to this PropertyGroup (unknown effect)")})
+                }
             }
         }
         "masks" => {
@@ -632,15 +799,33 @@ fn resolve_add(s: &Session, a: &J) -> R {
             }
             None => json!({"error": format!("Can not add \"{name}\" to Contents")}),
         },
-        "properties" if l.props.group("text/animators").is_some_and(|a| a.find_group(g.uid).is_some()) => {
-            let animator = l.props.group("text/animators").and_then(|a| a.groups().find(|x| x.find_group(g.uid).is_some()).map(|x| x.uid));
+        "properties"
+            if l.props
+                .group("text/animators")
+                .is_some_and(|a| a.find_group(g.uid).is_some()) =>
+        {
+            let animator = l.props.group("text/animators").and_then(|a| {
+                a.groups()
+                    .find(|x| x.find_group(g.uid).is_some())
+                    .map(|x| x.uid)
+            });
             match text_animator_property(name) {
                 Some(k) => json!({"kind": "animatorProperty", "property": k, "animator": animator}),
-                None => json!({"error": format!("Can not add \"{name}\" to an animator's Properties")}),
+                None => {
+                    json!({"error": format!("Can not add \"{name}\" to an animator's Properties")})
+                }
             }
         }
-        "selectors" if l.props.group("text/animators").is_some_and(|a| a.find_group(g.uid).is_some()) => {
-            let animator = l.props.group("text/animators").and_then(|a| a.groups().find(|x| x.find_group(g.uid).is_some()).map(|x| x.uid));
+        "selectors"
+            if l.props
+                .group("text/animators")
+                .is_some_and(|a| a.find_group(g.uid).is_some()) =>
+        {
+            let animator = l.props.group("text/animators").and_then(|a| {
+                a.groups()
+                    .find(|x| x.find_group(g.uid).is_some())
+                    .map(|x| x.uid)
+            });
             let kind = match name {
                 "ADBE Text Wiggly Selector" => "wiggly",
                 "ADBE Text Expressible Selector" => "expression",
@@ -686,13 +871,23 @@ fn text_animator_property(name: &str) -> Option<&'static str> {
         return Some(k);
     }
     let n = loose(name);
-    AE.iter().map(|(_, k)| *k).find(|k| loose(k) == n || (n == "anchorpoint" && *k == "anchor") || (n == "trackingamount" && *k == "tracking"))
+    AE.iter().map(|(_, k)| *k).find(|k| {
+        loose(k) == n
+            || (n == "anchorpoint" && *k == "anchor")
+            || (n == "trackingamount" && *k == "tracking")
+    })
 }
 
 /// `app.findMenuCommandId(name)`: 1-based index of the command whose label matches (menu items
 /// first), 0 when none does.
 fn menu_command_id(name: &str) -> J {
-    let norm = |s: &str| s.trim().trim_end_matches("...").trim_end_matches('…').trim().to_ascii_lowercase();
+    let norm = |s: &str| {
+        s.trim()
+            .trim_end_matches("...")
+            .trim_end_matches('…')
+            .trim()
+            .to_ascii_lowercase()
+    };
     let n = norm(name);
     let specs = effectcraft_engine::command_specs();
     let pick = specs

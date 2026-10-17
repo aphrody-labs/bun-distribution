@@ -24,15 +24,50 @@ struct Case {
 
 const CASES: &[Case] = &[
     // Composite of 2.52 GB in one decode.
-    Case { name: "flat8-29k-rle", width: 29_000, height: 29_000, depth: 8, rle: true, layered: false },
+    Case {
+        name: "flat8-29k-rle",
+        width: 29_000,
+        height: 29_000,
+        depth: 8,
+        rle: true,
+        layered: false,
+    },
     // A 4.8 GB file: offsets past 4 GiB, composite of 4.8 GB.
-    Case { name: "flat8-40k-raw", width: 40_000, height: 40_000, depth: 8, rle: false, layered: false },
+    Case {
+        name: "flat8-40k-raw",
+        width: 40_000,
+        height: 40_000,
+        depth: 8,
+        rle: false,
+        layered: false,
+    },
     // 4.38 GB file: layer channels of 625 MB, composite of 1.9 GB, data past 4 GiB.
-    Case { name: "layer8-25k-raw", width: 25_000, height: 25_000, depth: 8, rle: false, layered: true },
+    Case {
+        name: "layer8-25k-raw",
+        width: 25_000,
+        height: 25_000,
+        depth: 8,
+        rle: false,
+        layered: true,
+    },
     // Layer channels of 900 MB, composite of 2.7 GB.
-    Case { name: "layer8-30k-rle", width: 30_000, height: 30_000, depth: 8, rle: true, layered: true },
+    Case {
+        name: "layer8-30k-rle",
+        width: 30_000,
+        height: 30_000,
+        depth: 8,
+        rle: true,
+        layered: true,
+    },
     // Layer channels of 2.18 GB each.
-    Case { name: "layer16-33k-rle", width: 33_000, height: 33_000, depth: 16, rle: true, layered: true },
+    Case {
+        name: "layer16-33k-rle",
+        width: 33_000,
+        height: 33_000,
+        depth: 16,
+        rle: true,
+        layered: true,
+    },
 ];
 
 /// The 8-bit sample of channel `c` (0..3 colour, 3 = alpha) at (`x`, `y`). RLE files ignore `x`.
@@ -42,20 +77,34 @@ pub fn sample(x: u32, y: u32, c: u32, rle: bool) -> u8 {
         return 255;
     }
     let x = if rle { 0 } else { x };
-    (x.wrapping_mul(7).wrapping_add(y.wrapping_mul(13)).wrapping_add(c.wrapping_mul(101)) & 0xff) as u8
+    (x.wrapping_mul(7)
+        .wrapping_add(y.wrapping_mul(13))
+        .wrapping_add(c.wrapping_mul(101))
+        & 0xff) as u8
 }
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let out = args.first().map_or_else(|| std::env::temp_dir().join("photocraft-big-psb"), std::path::PathBuf::from);
+    let out = args.first().map_or_else(
+        || std::env::temp_dir().join("photocraft-big-psb"),
+        std::path::PathBuf::from,
+    );
     std::fs::create_dir_all(&out)?;
     let wanted = args.get(1..).unwrap_or(&[]);
-    for case in CASES.iter().filter(|c| wanted.is_empty() || wanted.iter().any(|w| w == c.name)) {
+    for case in CASES
+        .iter()
+        .filter(|c| wanted.is_empty() || wanted.iter().any(|w| w == c.name))
+    {
         let path = out.join(format!("{}.psb", case.name));
         let t = std::time::Instant::now();
         write_case(case, &path)?;
         let len = std::fs::metadata(&path)?.len();
-        println!("{}: {:.2} GB in {:.1} s", path.display(), len as f64 / 1e9, t.elapsed().as_secs_f64());
+        println!(
+            "{}: {:.2} GB in {:.1} s",
+            path.display(),
+            len as f64 / 1e9,
+            t.elapsed().as_secs_f64()
+        );
     }
     Ok(())
 }
@@ -99,7 +148,11 @@ fn row(c: &Case, y: u32, ch: u32, buf: &mut Vec<u8>) {
 /// Size of a channel block (compression word, RLE counts, rows) of `planes` planes.
 fn channel_len(c: &Case, planes: u64) -> u64 {
     let rows = planes * u64::from(c.height);
-    if c.rle { 2 + rows * 4 + rows * rle_row(row_bytes(c), 0).len() as u64 } else { 2 + rows * row_bytes(c) }
+    if c.rle {
+        2 + rows * 4 + rows * rle_row(row_bytes(c), 0).len() as u64
+    } else {
+        2 + rows * row_bytes(c)
+    }
 }
 
 /// Writes the compression word, the counts and the rows of `chans`.

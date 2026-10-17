@@ -45,13 +45,13 @@ pub unsafe extern "C" fn web_internal_get_chromium_cookies(
             Ok(cookies) => {
                 let json = serde_json::to_string(&cookies).unwrap_or_else(|_| "[]".to_string());
                 into_c_string(json)
-            },
+            }
             Err(e) => {
                 let err_json = serde_json::json!({
                     "error": format!("Failed to extract cookies: {}", e)
                 });
                 into_c_string(err_json.to_string())
-            },
+            }
         }
     })
 }

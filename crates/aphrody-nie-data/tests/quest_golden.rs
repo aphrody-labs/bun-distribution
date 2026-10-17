@@ -181,7 +181,10 @@ fn root_fixture() -> Value {
 
     // 2 noeuds REF réels (2 vars chacun, à 0) — DOIVENT être sautés par le parseur.
     let ref_phase = quest_node("QUEST_DATA_CFG_REF_PHASE_0", &[("Int", "0"), ("Int", "0")]);
-    let ref_reward = quest_node("QUEST_DATA_CFG_REF_REWARD_ITEM_0", &[("Int", "0"), ("Int", "0")]);
+    let ref_reward = quest_node(
+        "QUEST_DATA_CFG_REF_REWARD_ITEM_0",
+        &[("Int", "0"), ("Int", "0")],
+    );
 
     json!({
         "entries": [{

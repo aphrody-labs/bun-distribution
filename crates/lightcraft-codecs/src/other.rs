@@ -33,6 +33,23 @@ pub(crate) fn decode(bytes: &[u8], format: Format, opts: &DecodeOptions) -> Resu
         (false, false) => (Model::Rgb, false, img.into_rgb8().into_raw()),
         (false, true) => (Model::Rgb, true, img.into_rgba8().into_raw()),
     };
-    let raw = Raw { width: w as usize, height: h as usize, model, alpha, premultiplied: false, buf: Buf::U8(buf), bit_depth: 8 };
-    finish(format, raw, Meta { icc, ..Default::default() }, (w, h), opts)
+    let raw = Raw {
+        width: w as usize,
+        height: h as usize,
+        model,
+        alpha,
+        premultiplied: false,
+        buf: Buf::U8(buf),
+        bit_depth: 8,
+    };
+    finish(
+        format,
+        raw,
+        Meta {
+            icc,
+            ..Default::default()
+        },
+        (w, h),
+        opts,
+    )
 }

@@ -45,7 +45,9 @@ pub fn specs() -> Vec<CommandSpec> {
 }
 
 fn offset(e: &mut Engine, p: &Value) -> Result<Value> {
-    let at = position_param(e, "video.offset", p, "at")?.ok_or_else(|| bad("video.offset", "`at` required"))?.max(0);
+    let at = position_param(e, "video.offset", p, "at")?
+        .ok_or_else(|| bad("video.offset", "`at` required"))?
+        .max(0);
     let track = match track_param(e, "video.offset", p, "track")? {
         Some(t) => t,
         None => e
@@ -57,13 +59,27 @@ fn offset(e: &mut Engine, p: &Value) -> Result<Value> {
             .ok_or_else(|| bad("video.offset", "the session has no Video track"))?,
     };
     let s = e.session_mut();
-    let tr = s.track_mut(track).ok_or_else(|| bad("video.offset", "no such track"))?;
+    let tr = s
+        .track_mut(track)
+        .ok_or_else(|| bad("video.offset", "no such track"))?;
     if tr.kind != TrackKind::Video {
-        return Err(bad("video.offset", format!("`{}` is not a Video track", tr.name)));
+        return Err(bad(
+            "video.offset",
+            format!("`{}` is not a Video track", tr.name),
+        ));
     }
-    let Some(pl) = tr.playlist_mut() else { return Err(bad("video.offset", "the track has no playlist")) };
-    let first = pl.clips.iter().filter(|c| matches!(c.content, ClipContent::Video { .. })).map(|c| c.start).min();
-    let Some(first) = first else { return Err(bad("video.offset", "the Video track has no clips")) };
+    let Some(pl) = tr.playlist_mut() else {
+        return Err(bad("video.offset", "the track has no playlist"));
+    };
+    let first = pl
+        .clips
+        .iter()
+        .filter(|c| matches!(c.content, ClipContent::Video { .. }))
+        .map(|c| c.start)
+        .min();
+    let Some(first) = first else {
+        return Err(bad("video.offset", "the Video track has no clips"));
+    };
     let delta = at.saturating_sub(first);
     for c in &mut pl.clips {
         c.start = c.start.saturating_add(delta).clamp(0, MAX_POSITION);
@@ -106,17 +122,31 @@ mod tests {
         e.execute("edit.undo", &json!({})).unwrap();
         assert_eq!(e.session().track(t).unwrap().clips()[0].start, 1000);
         assert!(e.execute("video.offset", &json!({})).is_err());
-        let a = e.session_mut().add_track(TrackKind::Audio, ChannelFormat::Mono, Some("A"));
-        assert!(e.execute("video.offset", &json!({"track": a.0, "at": 0})).is_err());
+        let a = e
+            .session_mut()
+            .add_track(TrackKind::Audio, ChannelFormat::Mono, Some("A"));
+        assert!(
+            e.execute("video.offset", &json!({"track": a.0, "at": 0}))
+                .is_err()
+        );
         assert!(e.execute("video.offset", &json!({"at": i64::MAX})).is_ok());
     }
 
     #[test]
     fn online_toggles_and_list_reports_missing_files() {
         let (mut e, _) = video_engine();
-        assert_eq!(e.execute("video.online", &json!({})).unwrap()["value"], false);
-        assert_eq!(e.execute("video.online", &json!({})).unwrap()["value"], true);
-        assert_eq!(e.execute("video.online", &json!({"value": false})).unwrap()["value"], false);
+        assert_eq!(
+            e.execute("video.online", &json!({})).unwrap()["value"],
+            false
+        );
+        assert_eq!(
+            e.execute("video.online", &json!({})).unwrap()["value"],
+            true
+        );
+        assert_eq!(
+            e.execute("video.online", &json!({"value": false})).unwrap()["value"],
+            false
+        );
         let l = e.execute("video.list", &json!({})).unwrap();
         assert_eq!(l["online"], false);
         assert_eq!(l["videos"][0]["file_found"], false);
@@ -126,13 +156,22 @@ mod tests {
     #[test]
     fn video_clips_are_silent_in_the_mix() {
         let (mut e, t) = video_engine();
-        assert!(matches!(e.session().track(t).unwrap().clips()[0].content, ClipContent::Video { .. }));
-        e.session_mut().add_track(TrackKind::Master, ChannelFormat::Stereo, None);
+        assert!(matches!(
+            e.session().track(t).unwrap().clips()[0].content,
+            ClipContent::Video { .. }
+        ));
+        e.session_mut()
+            .add_track(TrackKind::Master, ChannelFormat::Stereo, None);
         let dir = std::env::temp_dir().join(format!("sc-video-bounce-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let out = dir.join("mix.wav");
-        e.execute("file.bounce_mix", &json!({"path": out.to_string_lossy(), "start": 0, "end": 96_000, "dither": false})).unwrap();
-        let (_, buf) = soundcraft_audio_io::decode(&std::fs::read(&out).unwrap(), Some("wav")).unwrap();
+        e.execute(
+            "file.bounce_mix",
+            &json!({"path": out.to_string_lossy(), "start": 0, "end": 96_000, "dither": false}),
+        )
+        .unwrap();
+        let (_, buf) =
+            soundcraft_audio_io::decode(&std::fs::read(&out).unwrap(), Some("wav")).unwrap();
         assert!(buf.channels.iter().flatten().all(|x| *x == 0.0));
         let _ = std::fs::remove_dir_all(dir);
     }
@@ -145,7 +184,12 @@ mod tests {
         let movie = dir.join("picture.mp4");
         std::fs::write(&movie, soundcraft_video::synth::h264_mp4(30, 10).unwrap()).unwrap();
         let mut e = Engine::default();
-        let r = e.execute("file.import_video", &json!({"path": movie.to_string_lossy(), "at": 4800})).unwrap();
+        let r = e
+            .execute(
+                "file.import_video",
+                &json!({"path": movie.to_string_lossy(), "at": 4800}),
+            )
+            .unwrap();
         assert!(r["audio"].is_null() && r["audio_error"].is_string(), "{r}");
         let s = e.session();
         assert_eq!(s.tracks[0].kind, TrackKind::Video);
@@ -155,12 +199,24 @@ mod tests {
         assert_eq!((v.width, v.height, v.codec.as_str()), (64, 48, "h264"));
         assert!((v.frame_rate - 24.0).abs() < 1e-9);
         // A second import does not overlap: it goes onto the same Video track after the first.
-        e.execute("file.import_video", &json!({"path": movie.to_string_lossy(), "at": 96_000})).unwrap();
-        assert_eq!(e.session().tracks.iter().filter(|t| t.kind == TrackKind::Video).count(), 1);
+        e.execute(
+            "file.import_video",
+            &json!({"path": movie.to_string_lossy(), "at": 96_000}),
+        )
+        .unwrap();
+        assert_eq!(
+            e.session()
+                .tracks
+                .iter()
+                .filter(|t| t.kind == TrackKind::Video)
+                .count(),
+            1
+        );
         e.execute("edit.undo", &json!({})).unwrap();
         // Save, reopen: the clip and the movie reference round-trip; nothing is missing.
         let sess = dir.join("s.scraft");
-        e.execute("session.save_as", &json!({"path": sess.to_string_lossy()})).unwrap();
+        e.execute("session.save_as", &json!({"path": sess.to_string_lossy()}))
+            .unwrap();
         let mut e2 = Engine::default();
         let missing = crate::io::open_session(&mut e2, &sess.to_string_lossy()).unwrap();
         assert!(missing.is_empty(), "{missing:?}");
@@ -170,20 +226,33 @@ mod tests {
         std::fs::create_dir_all(dir.join("Video Files")).unwrap();
         std::fs::rename(&movie, dir.join("Video Files").join("picture.mp4")).unwrap();
         let mut e3 = Engine::default();
-        assert!(crate::io::open_session(&mut e3, &sess.to_string_lossy()).unwrap().is_empty());
+        assert!(
+            crate::io::open_session(&mut e3, &sess.to_string_lossy())
+                .unwrap()
+                .is_empty()
+        );
         assert!(e3.session().videos[0].path.contains("Video Files"));
         // Movie gone: the session still opens and reports it.
         std::fs::remove_file(dir.join("Video Files").join("picture.mp4")).unwrap();
         let mut e4 = Engine::default();
         let missing = crate::io::open_session(&mut e4, &sess.to_string_lossy()).unwrap();
-        assert!(missing.iter().any(|m| m.contains("picture.mp4")), "{missing:?}");
+        assert!(
+            missing.iter().any(|m| m.contains("picture.mp4")),
+            "{missing:?}"
+        );
         assert!(e4.messages.iter().any(|m| m.contains("missing media")));
         assert_eq!(e4.session().tracks[0].clips().len(), 1);
         // Neither picture nor audio: an error, and nothing changes.
         let junk = dir.join("junk.mov");
         std::fs::write(&junk, b"not a movie at all").unwrap();
         let before = e4.session().tracks.len();
-        assert!(e4.execute("file.import_video", &json!({"path": junk.to_string_lossy()})).is_err());
+        assert!(
+            e4.execute(
+                "file.import_video",
+                &json!({"path": junk.to_string_lossy()})
+            )
+            .is_err()
+        );
         assert_eq!(e4.session().tracks.len(), before);
         let _ = std::fs::remove_dir_all(dir);
     }

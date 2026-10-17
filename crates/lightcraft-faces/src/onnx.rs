@@ -83,9 +83,13 @@ impl<R: Read + Seek> Walker<'_, R> {
 
     pub(crate) fn byte(&mut self) -> Result<u8> {
         let mut b = [0u8; 1];
-        self.r
-            .read_exact(&mut b)
-            .map_err(|e| if e.kind() == io::ErrorKind::UnexpectedEof { ProbeError::Malformed("file ends inside a field") } else { e.into() })?;
+        self.r.read_exact(&mut b).map_err(|e| {
+            if e.kind() == io::ErrorKind::UnexpectedEof {
+                ProbeError::Malformed("file ends inside a field")
+            } else {
+                e.into()
+            }
+        })?;
         let [x] = b;
         Ok(x)
     }
@@ -116,34 +120,47 @@ impl<R: Read + Seek> Walker<'_, R> {
             return Err(ProbeError::Malformed("too many fields"));
         }
         let tag = self.varint()?;
-        let number = u32::try_from(tag >> 3).map_err(|_| ProbeError::Malformed("field number too large"))?;
+        let number =
+            u32::try_from(tag >> 3).map_err(|_| ProbeError::Malformed("field number too large"))?;
         if number == 0 || number > 0x1fff_ffff {
             return Err(ProbeError::Malformed("invalid field number"));
         }
         let wire = match tag & 7 {
             0 => Wire::Varint(self.varint()?),
             1 => {
-                let at = self.pos()?.checked_add(8).ok_or(ProbeError::Malformed("offset overflow"))?;
+                let at = self
+                    .pos()?
+                    .checked_add(8)
+                    .ok_or(ProbeError::Malformed("offset overflow"))?;
                 if at > end || at > self.total {
                     return Err(ProbeError::Malformed("field runs past its message"));
                 }
                 let mut b = [0u8; 8];
-                self.r.read_exact(&mut b).map_err(|_| ProbeError::Malformed("file ends inside a field"))?;
+                self.r
+                    .read_exact(&mut b)
+                    .map_err(|_| ProbeError::Malformed("file ends inside a field"))?;
                 Wire::Fixed64(u64::from_le_bytes(b))
             }
             5 => {
-                let at = self.pos()?.checked_add(4).ok_or(ProbeError::Malformed("offset overflow"))?;
+                let at = self
+                    .pos()?
+                    .checked_add(4)
+                    .ok_or(ProbeError::Malformed("offset overflow"))?;
                 if at > end || at > self.total {
                     return Err(ProbeError::Malformed("field runs past its message"));
                 }
                 let mut b = [0u8; 4];
-                self.r.read_exact(&mut b).map_err(|_| ProbeError::Malformed("file ends inside a field"))?;
+                self.r
+                    .read_exact(&mut b)
+                    .map_err(|_| ProbeError::Malformed("file ends inside a field"))?;
                 Wire::Fixed32(u32::from_le_bytes(b))
             }
             2 => {
                 let len = self.varint()?;
                 let start = self.pos()?;
-                let stop = start.checked_add(len).ok_or(ProbeError::Malformed("offset overflow"))?;
+                let stop = start
+                    .checked_add(len)
+                    .ok_or(ProbeError::Malformed("offset overflow"))?;
                 if stop > end || stop > self.total {
                     return Err(ProbeError::Malformed("field runs past its message"));
                 }
@@ -232,7 +249,11 @@ fn tensor_type<R: Read + Seek>(w: &mut Walker<R>, end: u64, info: &mut TensorInf
     Ok(())
 }
 
-pub(crate) fn type_proto<R: Read + Seek>(w: &mut Walker<R>, end: u64, info: &mut TensorInfo) -> Result<()> {
+pub(crate) fn type_proto<R: Read + Seek>(
+    w: &mut Walker<R>,
+    end: u64,
+    info: &mut TensorInfo,
+) -> Result<()> {
     while let Some((n, f)) = w.next(end)? {
         match (n, f) {
             (1, Wire::Len { end: e, .. }) => {
@@ -247,7 +268,11 @@ pub(crate) fn type_proto<R: Read + Seek>(w: &mut Walker<R>, end: u64, info: &mut
 }
 
 fn value_info<R: Read + Seek>(w: &mut Walker<R>, end: u64) -> Result<TensorInfo> {
-    let mut info = TensorInfo { name: String::new(), elem_type: 0, shape: Vec::new() };
+    let mut info = TensorInfo {
+        name: String::new(),
+        elem_type: 0,
+        shape: Vec::new(),
+    };
     while let Some((n, f)) = w.next(end)? {
         match (n, f) {
             (1, Wire::Len { start, end: e }) => {
@@ -277,7 +302,12 @@ fn tensor_name<R: Read + Seek>(w: &mut Walker<R>, end: u64) -> Result<Option<Str
     Ok(None)
 }
 
-fn graph<R: Read + Seek>(w: &mut Walker<R>, end: u64, info: &mut OnnxInfo, weights: &mut HashSet<String>) -> Result<()> {
+fn graph<R: Read + Seek>(
+    w: &mut Walker<R>,
+    end: u64,
+    info: &mut OnnxInfo,
+    weights: &mut HashSet<String>,
+) -> Result<()> {
     while let Some((n, f)) = w.next(end)? {
         match (n, f) {
             (5, Wire::Len { end: e, .. }) => {
@@ -322,7 +352,11 @@ fn opset<R: Read + Seek>(w: &mut Walker<R>, end: u64) -> Result<Option<u64>> {
             _ => {}
         }
     }
-    Ok(if domain.is_empty() || domain == "ai.onnx" { version } else { None })
+    Ok(if domain.is_empty() || domain == "ai.onnx" {
+        version
+    } else {
+        None
+    })
 }
 
 /// Read an ONNX model's graph inputs and outputs from any seekable source.
@@ -335,7 +369,11 @@ pub fn probe_reader<R: Read + Seek>(r: &mut R) -> Result<OnnxInfo> {
     if total == 0 {
         return Err(ProbeError::Malformed("the file is empty"));
     }
-    let mut w = Walker { r, total, fields: 0 };
+    let mut w = Walker {
+        r,
+        total,
+        fields: 0,
+    };
     let (mut info, mut weights, mut saw_graph) = (OnnxInfo::default(), HashSet::new(), false);
     while let Some((n, f)) = w.next(total)? {
         match (n, f) {
@@ -366,7 +404,9 @@ pub fn probe_reader<R: Read + Seek>(r: &mut R) -> Result<OnnxInfo> {
         return Err(ProbeError::Malformed("too many inputs"));
     }
     if info.inputs.is_empty() || info.outputs.is_empty() {
-        return Err(ProbeError::Malformed("the graph has no inputs or no outputs"));
+        return Err(ProbeError::Malformed(
+            "the graph has no inputs or no outputs",
+        ));
     }
     Ok(info)
 }
@@ -389,17 +429,36 @@ pub(crate) mod tests {
         let info = probe_reader(&mut Cursor::new(model_bytes(512))).unwrap();
         assert_eq!(info.producer, "pytorch");
         assert_eq!(info.opset, Some(17));
-        assert_eq!(info.inputs.len(), 1, "the weight listed as an input is left out");
+        assert_eq!(
+            info.inputs.len(),
+            1,
+            "the weight listed as an input is left out"
+        );
         assert_eq!(info.inputs[0].name, "data");
         assert_eq!(info.inputs[0].elem_type, 1);
-        assert_eq!(info.inputs[0].shape, vec![Dim::Dynamic("N".into()), Dim::Fixed(3), Dim::Fixed(112), Dim::Fixed(112)]);
-        assert_eq!(info.outputs[0].shape, vec![Dim::Dynamic("N".into()), Dim::Fixed(512)]);
+        assert_eq!(
+            info.inputs[0].shape,
+            vec![
+                Dim::Dynamic("N".into()),
+                Dim::Fixed(3),
+                Dim::Fixed(112),
+                Dim::Fixed(112)
+            ]
+        );
+        assert_eq!(
+            info.outputs[0].shape,
+            vec![Dim::Dynamic("N".into()), Dim::Fixed(512)]
+        );
     }
 
     #[test]
     fn old_style_files_listing_hundreds_of_weights_as_inputs_still_probe() {
         let mut graph = Vec::new();
-        len_field(11, &value_info_bytes("data", 1, &[Err("N"), Ok(3), Ok(112), Ok(112)]), &mut graph);
+        len_field(
+            11,
+            &value_info_bytes("data", 1, &[Err("N"), Ok(3), Ok(112), Ok(112)]),
+            &mut graph,
+        );
         for i in 0..500 {
             let name = format!("weight{i}");
             len_field(11, &value_info_bytes(&name, 1, &[Ok(4)]), &mut graph);
@@ -407,7 +466,11 @@ pub(crate) mod tests {
             len_field(8, name.as_bytes(), &mut tensor);
             len_field(5, &tensor, &mut graph);
         }
-        len_field(12, &value_info_bytes("emb", 1, &[Err("N"), Ok(128)]), &mut graph);
+        len_field(
+            12,
+            &value_info_bytes("emb", 1, &[Err("N"), Ok(128)]),
+            &mut graph,
+        );
         let mut m = Vec::new();
         len_field(7, &graph, &mut m);
         let info = probe_reader(&mut Cursor::new(m)).unwrap();
@@ -419,7 +482,11 @@ pub(crate) mod tests {
     fn many_real_inputs_are_refused() {
         let mut graph = Vec::new();
         for i in 0..70 {
-            len_field(11, &value_info_bytes(&format!("in{i}"), 1, &[Ok(4)]), &mut graph);
+            len_field(
+                11,
+                &value_info_bytes(&format!("in{i}"), 1, &[Ok(4)]),
+                &mut graph,
+            );
         }
         len_field(12, &value_info_bytes("emb", 1, &[Ok(4)]), &mut graph);
         let mut m = Vec::new();

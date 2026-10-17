@@ -27,15 +27,29 @@ const CMD: &str = "mix.insert_state";
 fn slot_param(p: &Value) -> Result<Option<usize>> {
     let v = p.get("slot").ok_or_else(|| bad(CMD, "`slot` required"))?;
     if let Some(n) = v.as_u64() {
-        return usize::try_from(n).ok().filter(|&n| n < INSERT_SLOTS).map(Some).ok_or_else(|| bad(CMD, "slot out of range"));
+        return usize::try_from(n)
+            .ok()
+            .filter(|&n| n < INSERT_SLOTS)
+            .map(Some)
+            .ok_or_else(|| bad(CMD, "slot out of range"));
     }
-    let s = v.as_str().map(|s| s.trim().to_ascii_lowercase()).ok_or_else(|| bad(CMD, "`slot` must be a number or a letter"))?;
+    let s = v
+        .as_str()
+        .map(|s| s.trim().to_ascii_lowercase())
+        .ok_or_else(|| bad(CMD, "`slot` must be a number or a letter"))?;
     if s == "instrument" {
         return Ok(None);
     }
     match s.as_bytes() {
-        [c @ b'a'..=b'z'] if usize::from(c - b'a') < INSERT_SLOTS => Ok(Some(usize::from(c - b'a'))),
-        _ => s.parse::<usize>().ok().filter(|&n| n < INSERT_SLOTS).map(Some).ok_or_else(|| bad(CMD, "slot out of range")),
+        [c @ b'a'..=b'z'] if usize::from(c - b'a') < INSERT_SLOTS => {
+            Ok(Some(usize::from(c - b'a')))
+        }
+        _ => s
+            .parse::<usize>()
+            .ok()
+            .filter(|&n| n < INSERT_SLOTS)
+            .map(Some)
+            .ok_or_else(|| bad(CMD, "slot out of range")),
     }
 }
 
@@ -44,7 +58,10 @@ fn insert_state(e: &mut Engine, p: &Value) -> Result<Value> {
     let slot = slot_param(p)?;
     let state = match p.get("state") {
         None | Some(Value::Null) => None,
-        Some(Value::String(s)) => Some(b64::decode(s).ok_or_else(|| bad(CMD, "`state` is not valid base64 (or is too large)"))?),
+        Some(Value::String(s)) => Some(
+            b64::decode(s)
+                .ok_or_else(|| bad(CMD, "`state` is not valid base64 (or is too large)"))?,
+        ),
         Some(_) => return Err(bad(CMD, "`state` must be a base64 string or null")),
     };
     let s = e.session_mut();
@@ -73,27 +90,58 @@ mod tests {
         let mut e = Engine::default();
         e.execute("track.new", &json!({})).unwrap();
         let t = e.session().tracks[0].id.0;
-        e.execute("mix.insert", &json!({"track": t, "plugin": "gain", "slot": 2})).unwrap();
+        e.execute(
+            "mix.insert",
+            &json!({"track": t, "plugin": "gain", "slot": 2}),
+        )
+        .unwrap();
         let undo_before = e.can_undo();
         let blob = b64::encode(b"\x00\x01plugin state\xff");
-        let r = e.execute("mix.insert_state", &json!({"track": t, "slot": "c", "state": blob})).unwrap();
+        let r = e
+            .execute(
+                "mix.insert_state",
+                &json!({"track": t, "slot": "c", "state": blob}),
+            )
+            .unwrap();
         assert_eq!(r["bytes"], 15);
         let ins = e.session().tracks[0].mixer.inserts[2].clone().unwrap();
         assert_eq!(ins.state_bytes().unwrap(), b"\x00\x01plugin state\xff");
         assert_eq!(e.can_undo(), undo_before, "not undoable");
-        assert!(e.journal.iter().all(|(id, _)| id != "mix.insert_state"), "not journaled");
+        assert!(
+            e.journal.iter().all(|(id, _)| id != "mix.insert_state"),
+            "not journaled"
+        );
         // Survives save/load.
-        let dir = std::env::temp_dir().join(format!("soundcraft-insert-state-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("soundcraft-insert-state-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("s.scraft");
-        e.execute("session.save", &json!({"path": path.to_string_lossy()})).unwrap();
+        e.execute("session.save", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
         let mut f = Engine::default();
-        f.execute("session.open", &json!({"path": path.to_string_lossy()})).unwrap();
-        assert_eq!(f.session().tracks[0].mixer.inserts[2].as_ref().unwrap().state, ins.state);
+        f.execute("session.open", &json!({"path": path.to_string_lossy()}))
+            .unwrap();
+        assert_eq!(
+            f.session().tracks[0].mixer.inserts[2]
+                .as_ref()
+                .unwrap()
+                .state,
+            ins.state
+        );
         let _ = std::fs::remove_dir_all(&dir);
-        e.execute("mix.insert_state", &json!({"track": t, "slot": 2, "state": null})).unwrap();
-        assert_eq!(e.session().tracks[0].mixer.inserts[2].as_ref().unwrap().state, None);
+        e.execute(
+            "mix.insert_state",
+            &json!({"track": t, "slot": 2, "state": null}),
+        )
+        .unwrap();
+        assert_eq!(
+            e.session().tracks[0].mixer.inserts[2]
+                .as_ref()
+                .unwrap()
+                .state,
+            None
+        );
     }
 
     #[test]
@@ -101,7 +149,11 @@ mod tests {
         let mut e = Engine::default();
         e.execute("track.new", &json!({})).unwrap();
         let t = e.session().tracks[0].id.0;
-        e.execute("mix.insert", &json!({"track": t, "plugin": "gain", "slot": 0})).unwrap();
+        e.execute(
+            "mix.insert",
+            &json!({"track": t, "plugin": "gain", "slot": 0}),
+        )
+        .unwrap();
         for p in [
             json!({"track": t, "slot": 0, "state": "!!!"}),
             json!({"track": t, "slot": 0, "state": 5}),

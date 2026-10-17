@@ -65,7 +65,14 @@ pub(crate) fn record(buf: &[u8]) -> Option<(Rec<'_>, usize)> {
     let rest = buf.get(8..)?;
     let len = len.min(rest.len());
     let body = rest.get(..len)?;
-    Some((Rec { inst: ver_inst >> 4, typ, body }, 8 + len))
+    Some((
+        Rec {
+            inst: ver_inst >> 4,
+            typ,
+            body,
+        },
+        8 + len,
+    ))
 }
 
 /// The sibling records of a container body, at most `budget` of them (the budget is shared
@@ -74,7 +81,9 @@ pub(crate) fn children<'a>(body: &'a [u8], budget: &mut usize) -> Vec<Rec<'a>> {
     let mut out = Vec::new();
     let mut at = 0usize;
     while *budget > 0 {
-        let Some((rec, used)) = body.get(at..).and_then(record) else { break };
+        let Some((rec, used)) = body.get(at..).and_then(record) else {
+            break;
+        };
         *budget -= 1;
         out.push(rec);
         at = at.saturating_add(used);
@@ -83,11 +92,15 @@ pub(crate) fn children<'a>(body: &'a [u8], budget: &mut usize) -> Vec<Rec<'a>> {
 }
 
 fn u16_at(b: &[u8], at: usize) -> Option<u16> {
-    Some(u16::from_le_bytes(b.get(at..at.checked_add(2)?)?.try_into().ok()?))
+    Some(u16::from_le_bytes(
+        b.get(at..at.checked_add(2)?)?.try_into().ok()?,
+    ))
 }
 
 fn u32_at(b: &[u8], at: usize) -> Option<u32> {
-    Some(u32::from_le_bytes(b.get(at..at.checked_add(4)?)?.try_into().ok()?))
+    Some(u32::from_le_bytes(
+        b.get(at..at.checked_add(4)?)?.try_into().ok()?,
+    ))
 }
 
 fn i32_at(b: &[u8], at: usize) -> Option<i32> {
@@ -135,9 +148,21 @@ pub(crate) fn blip(rec: &Rec, limit: usize) -> Option<Blip> {
                 return None;
             }
             match rec.typ {
-                rt::BLIP_PNG => Some(Blip { bytes: data.to_vec(), ext: "png", placeholder: false }),
-                rt::BLIP_JPEG | rt::BLIP_JPEG_CMYK => Some(Blip { bytes: data.to_vec(), ext: "jpeg", placeholder: false }),
-                rt::BLIP_TIFF => Some(Blip { bytes: data.to_vec(), ext: "tiff", placeholder: false }),
+                rt::BLIP_PNG => Some(Blip {
+                    bytes: data.to_vec(),
+                    ext: "png",
+                    placeholder: false,
+                }),
+                rt::BLIP_JPEG | rt::BLIP_JPEG_CMYK => Some(Blip {
+                    bytes: data.to_vec(),
+                    ext: "jpeg",
+                    placeholder: false,
+                }),
+                rt::BLIP_TIFF => Some(Blip {
+                    bytes: data.to_vec(),
+                    ext: "tiff",
+                    placeholder: false,
+                }),
                 _ => dib_to_png(data),
             }
         }
@@ -163,9 +188,21 @@ pub(crate) fn blip(rec: &Rec, limit: usize) -> Option<Blip> {
                 return None;
             }
             match rec.typ {
-                rt::BLIP_EMF => Some(Blip { bytes, ext: "emf", placeholder: false }),
-                rt::BLIP_WMF => Some(Blip { bytes, ext: "wmf", placeholder: false }),
-                _ => Some(Blip { bytes, ext: "pict", placeholder: true }),
+                rt::BLIP_EMF => Some(Blip {
+                    bytes,
+                    ext: "emf",
+                    placeholder: false,
+                }),
+                rt::BLIP_WMF => Some(Blip {
+                    bytes,
+                    ext: "wmf",
+                    placeholder: false,
+                }),
+                _ => Some(Blip {
+                    bytes,
+                    ext: "pict",
+                    placeholder: true,
+                }),
             }
         }
         _ => None,
@@ -180,8 +217,15 @@ fn dib_to_png(dib: &[u8]) -> Option<Blip> {
     if !(12..=124).contains(&header) {
         return None;
     }
-    let (bits, used, compression) =
-        if header == 12 { (u16_at(dib, 10)? as usize, 0, 0) } else { (u16_at(dib, 14)? as usize, u32_at(dib, 32)? as usize, u32_at(dib, 16)?) };
+    let (bits, used, compression) = if header == 12 {
+        (u16_at(dib, 10)? as usize, 0, 0)
+    } else {
+        (
+            u16_at(dib, 14)? as usize,
+            u32_at(dib, 32)? as usize,
+            u32_at(dib, 16)?,
+        )
+    };
     let entry = if header == 12 { 3 } else { 4 };
     let colors = if used > 0 {
         used.min(256)
@@ -191,8 +235,15 @@ fn dib_to_png(dib: &[u8]) -> Option<Blip> {
         0
     };
     // BI_BITFIELDS masks follow a 40-byte header.
-    let masks = if header == 40 && (compression == 3 || compression == 6) { if compression == 3 { 12 } else { 16 } } else { 0 };
-    let off_bits = 14usize.checked_add(header)?.checked_add(colors * entry)?.checked_add(masks)?;
+    let masks = if header == 40 && (compression == 3 || compression == 6) {
+        if compression == 3 { 12 } else { 16 }
+    } else {
+        0
+    };
+    let off_bits = 14usize
+        .checked_add(header)?
+        .checked_add(colors * entry)?
+        .checked_add(masks)?;
     let file_size = 14usize.checked_add(dib.len())?;
     let mut bmp = Vec::with_capacity(file_size);
     bmp.extend_from_slice(b"BM");
@@ -209,10 +260,22 @@ fn dib_to_png(dib: &[u8]) -> Option<Blip> {
     reader.limits(limits);
     let mut png = Vec::new();
     match reader.decode() {
-        Ok(img) if img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png).is_ok() => {
-            Some(Blip { bytes: png, ext: "png", placeholder: false })
+        Ok(img)
+            if img
+                .write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)
+                .is_ok() =>
+        {
+            Some(Blip {
+                bytes: png,
+                ext: "png",
+                placeholder: false,
+            })
         }
-        _ => Some(Blip { bytes: bmp, ext: "bmp", placeholder: true }),
+        _ => Some(Blip {
+            bytes: bmp,
+            ext: "bmp",
+            placeholder: true,
+        }),
     }
 }
 
@@ -255,8 +318,12 @@ impl Props {
         let n = (count as usize).min(body.len() / 6);
         let mut complex_at = n * 6;
         for i in 0..n {
-            let Some(opid) = u16_at(body, i * 6) else { break };
-            let Some(op) = u32_at(body, i * 6 + 2) else { break };
+            let Some(opid) = u16_at(body, i * 6) else {
+                break;
+            };
+            let Some(op) = u32_at(body, i * 6 + 2) else {
+                break;
+            };
             let pid = opid & 0x3FFF;
             if opid & 0x8000 != 0 {
                 let start = complex_at;
@@ -264,8 +331,14 @@ impl Props {
                 if pid == 0x0381 {
                     let end = complex_at.min(body.len());
                     if let Some(data) = body.get(start..end) {
-                        let units: Vec<u16> =
-                            data.as_chunks::<2>().0.iter().map(|c| u16::from_le_bytes(*c)).take_while(|u| *u != 0).take(4096).collect();
+                        let units: Vec<u16> = data
+                            .as_chunks::<2>()
+                            .0
+                            .iter()
+                            .map(|c| u16::from_le_bytes(*c))
+                            .take_while(|u| *u != 0)
+                            .take(4096)
+                            .collect();
                         self.alt = String::from_utf16_lossy(&units);
                     }
                 }
@@ -278,7 +351,11 @@ impl Props {
                     // cropFromTop, cropFromBottom, cropFromLeft, cropFromRight.
                     let slot = [1, 3, 0, 2][(pid - 0x0100) as usize];
                     let v = fixed(op);
-                    self.crop[slot] = if v.is_finite() { v.clamp(0.0, 0.99) } else { 0.0 };
+                    self.crop[slot] = if v.is_finite() {
+                        v.clamp(0.0, 0.99)
+                    } else {
+                        0.0
+                    };
                 }
                 0x0104 => self.pib = Some(op),
                 0x0181 => self.fill_color = color(op),
@@ -396,7 +473,9 @@ pub(crate) fn shape(body: &[u8], budget: &mut usize) -> Sp {
 fn group(body: &[u8], depth: usize, budget: &mut usize) -> Option<Node> {
     let recs = children(body, budget);
     let mut it = recs.iter();
-    let head = it.find(|r| r.typ == rt::SP_CONTAINER).map(|r| shape(r.body, budget))?;
+    let head = it
+        .find(|r| r.typ == rt::SP_CONTAINER)
+        .map(|r| shape(r.body, budget))?;
     let mut members = Vec::new();
     for rec in it {
         if let Some(n) = node(rec, depth + 1, budget) {
@@ -410,7 +489,9 @@ fn group(body: &[u8], depth: usize, budget: &mut usize) -> Option<Node> {
 /// depth cap).
 fn node(rec: &Rec, depth: usize, budget: &mut usize) -> Option<Node> {
     match rec.typ {
-        rt::SP_CONTAINER => Some(shape(rec.body, budget)).filter(|s| !s.deleted()).map(Node::Shape),
+        rt::SP_CONTAINER => Some(shape(rec.body, budget))
+            .filter(|s| !s.deleted())
+            .map(Node::Shape),
         rt::SPGR_CONTAINER if depth < MAX_DEPTH => group(rec.body, depth, budget),
         _ => None,
     }
@@ -431,22 +512,35 @@ pub(crate) struct Content<'a> {
 pub(crate) fn content(blob: &[u8]) -> Content<'_> {
     let mut out = Content::default();
     let mut budget = MAX_RECORDS;
-    let Some((dgg, mut at)) = record(blob) else { return out };
+    let Some((dgg, mut at)) = record(blob) else {
+        return out;
+    };
     if dgg.typ == rt::DGG_CONTAINER {
         for rec in children(dgg.body, &mut budget) {
             if rec.typ == rt::BSTORE_CONTAINER {
-                out.bstore = children(rec.body, &mut budget).into_iter().filter(|r| r.typ == rt::FBSE).map(|r| r.body).take(MAX_BSE).collect();
+                out.bstore = children(rec.body, &mut budget)
+                    .into_iter()
+                    .filter(|r| r.typ == rt::FBSE)
+                    .map(|r| r.body)
+                    .take(MAX_BSE)
+                    .collect();
             }
         }
     }
     for _ in 0..MAX_DRAWINGS {
         let Some(&label) = blob.get(at) else { break };
-        let Some((dg, used)) = blob.get(at + 1..).and_then(record) else { break };
+        let Some((dg, used)) = blob.get(at + 1..).and_then(record) else {
+            break;
+        };
         at = at.saturating_add(1 + used);
         if dg.typ != rt::DG_CONTAINER {
             continue;
         }
-        let into = if label == 0 { &mut out.main } else { &mut out.header };
+        let into = if label == 0 {
+            &mut out.main
+        } else {
+            &mut out.header
+        };
         for rec in children(dg.body, &mut budget) {
             if rec.typ != rt::SPGR_CONTAINER {
                 continue;

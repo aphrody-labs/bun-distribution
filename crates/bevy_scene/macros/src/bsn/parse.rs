@@ -4,17 +4,16 @@ use crate::_bsn::types::{
     BsnSceneList, BsnSceneListItem, BsnSceneListItems, BsnStructUpdate, BsnTuple, BsnType,
     BsnUnnamedField, BsnValue,
 };
-use bevy_macro_utils::{path_to_string, PathType};
+use bevy_macro_utils::{PathType, path_to_string};
 use proc_macro2::{Delimiter, TokenStream, TokenTree};
-use quote::{quote, ToTokens};
+use quote::{ToTokens, quote};
 use syn::{
-    braced, bracketed,
+    Ident, Lit, LitStr, Member, Path, Result, Token, braced, bracketed,
     buffer::Cursor,
     custom_punctuation, parenthesized,
-    parse::{discouraged::Speculative, Parse, ParseBuffer, ParseStream},
+    parse::{Parse, ParseBuffer, ParseStream, discouraged::Speculative},
     spanned::Spanned,
     token::{At, Brace, Bracket, Colon, Comma, Dot, Paren, Tilde},
-    Ident, Lit, LitStr, Member, Path, Result, Token,
 };
 
 /// Functionally identical to [`Punctuated`](syn::punctuated::Punctuated), but fills the given `$list` Vec instead
@@ -317,7 +316,7 @@ impl BsnScene {
                             path_to_string(&path),
                             path_type,
                         ),
-                    ))
+                    ));
                 }
             }
         })
@@ -334,13 +333,13 @@ impl Parse for BsnType {
                 return Err(syn::Error::new(
                     path.span(),
                     "Expected a path to a BSN type but encountered a path to a function.",
-                ))
+                ));
             }
             PathType::Const => {
                 return Err(syn::Error::new(
                     path.span(),
                     "Expected a path to a BSN type but encountered a path to a const.",
-                ))
+                ));
             }
         };
         let fields = input.parse::<BsnFields>()?;

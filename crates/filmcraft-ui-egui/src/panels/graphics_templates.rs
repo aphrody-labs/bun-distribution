@@ -110,12 +110,20 @@ const THUMB_W: u32 = 192;
 
 fn thumb_texture(ctx: &egui::Context, e: &LibraryEntry) -> egui::TextureHandle {
     let px = thumbnail_cached(&e.template, THUMB_W);
-    let key = egui::Id::new(("gfx-thumb", e.template.id.as_str(), Arc::as_ptr(&px) as usize));
+    let key = egui::Id::new((
+        "gfx-thumb",
+        e.template.id.as_str(),
+        Arc::as_ptr(&px) as usize,
+    ));
     if let Some(t) = ctx.data(|d| d.get_temp::<egui::TextureHandle>(key)) {
         return t;
     }
     let img = egui::ColorImage::from_rgba_unmultiplied([px.0 as usize, px.1 as usize], &px.2);
-    let t = ctx.load_texture(format!("gfx-thumb-{}", e.template.id), img, egui::TextureOptions::LINEAR);
+    let t = ctx.load_texture(
+        format!("gfx-thumb-{}", e.template.id),
+        img,
+        egui::TextureOptions::LINEAR,
+    );
     ctx.data_mut(|d| d.insert_temp(key, t.clone()));
     t
 }
@@ -127,9 +135,21 @@ fn thumb_texture(ctx: &egui::Context, e: &LibraryEntry) -> egui::TextureHandle {
 fn tab_button(ui: &mut egui::Ui, r: Rect, label: &str, on: bool, t: &Tokens) -> egui::Response {
     let resp = ui.interact(r, egui::Id::new(("eg-tab", label)), Sense::click());
     if on {
-        ui.painter().line_segment([pos2(r.min.x + 6.0, r.max.y - 1.5), pos2(r.max.x - 6.0, r.max.y - 1.5)], Stroke::new(2.0, t.accent));
+        ui.painter().line_segment(
+            [
+                pos2(r.min.x + 6.0, r.max.y - 1.5),
+                pos2(r.max.x - 6.0, r.max.y - 1.5),
+            ],
+            Stroke::new(2.0, t.accent),
+        );
     }
-    ui.painter().text(r.center(), Align2::CENTER_CENTER, label, Tokens::semibold(12.0), if on { t.text } else { t.text_dim });
+    ui.painter().text(
+        r.center(),
+        Align2::CENTER_CENTER,
+        label,
+        Tokens::semibold(12.0),
+        if on { t.text } else { t.text_dim },
+    );
     resp
 }
 
@@ -143,10 +163,19 @@ pub fn essential_graphics(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect)
         _ => "browse",
     };
     let head = Rect::from_min_size(rect.min, vec2(rect.width(), 30.0));
-    ui.painter().line_segment([head.left_bottom(), head.right_bottom()], Stroke::new(1.0, t.separator));
+    ui.painter().line_segment(
+        [head.left_bottom(), head.right_bottom()],
+        Stroke::new(1.0, t.separator),
+    );
     let mut elems: Elems = Vec::new();
-    for (i, (id, label)) in [("browse", tl!("Browse")), ("edit", tl!("Edit"))].into_iter().enumerate() {
-        let r = Rect::from_min_size(pos2(head.min.x + 8.0 + i as f32 * 80.0, head.min.y), vec2(76.0, 30.0));
+    for (i, (id, label)) in [("browse", tl!("Browse")), ("edit", tl!("Edit"))]
+        .into_iter()
+        .enumerate()
+    {
+        let r = Rect::from_min_size(
+            pos2(head.min.x + 8.0 + i as f32 * 80.0, head.min.y),
+            vec2(76.0, 30.0),
+        );
         if tab_button(ui, r, label, tab == id, &t).clicked() {
             app.ui.gfx_templates.tab = id.into();
         }
@@ -173,21 +202,42 @@ fn browse(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let mut cats: Vec<String> = lib.iter().map(|e| e.template.category.clone()).collect();
     cats.sort();
     cats.dedup();
-    let mut b = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink2(vec2(10.0, 6.0))).id_salt("gfx-browse"));
+    let mut b = ui.new_child(
+        egui::UiBuilder::new()
+            .max_rect(rect.shrink2(vec2(10.0, 6.0)))
+            .id_salt("gfx-browse"),
+    );
     b.set_clip_rect(rect);
     let st = &mut app.ui.gfx_templates;
     b.horizontal(|ui| {
-        let r = ui.add(egui::TextEdit::singleline(&mut st.query).hint_text(tl!("Search templates")).desired_width((ui.available_width() - 230.0).max(110.0)));
+        let r = ui.add(
+            egui::TextEdit::singleline(&mut st.query)
+                .hint_text(tl!("Search templates"))
+                .desired_width((ui.available_width() - 230.0).max(110.0)),
+        );
         elems.push(("gfxTemplates.search".into(), r.rect, "Search".into()));
-        let cur = if st.category.is_empty() { tl!("All Categories").to_string() } else { crate::i18n::t(&st.category).to_string() };
-        let r = egui::ComboBox::from_id_salt("gfx-cat").selected_text(cur).width(130.0).show_ui(ui, |ui| {
-            ui.selectable_value(&mut st.category, String::new(), tl!("All Categories"));
-            for c in &cats {
-                ui.selectable_value(&mut st.category, c.clone(), crate::i18n::t(c));
-            }
-        });
-        elems.push(("gfxTemplates.category".into(), r.response.rect, "Category".into()));
-        let r = ui.button(tl!("Install…")).on_hover_text(tl!("Install Motion Graphics Template (.fcgt)"));
+        let cur = if st.category.is_empty() {
+            tl!("All Categories").to_string()
+        } else {
+            crate::i18n::t(&st.category).to_string()
+        };
+        let r = egui::ComboBox::from_id_salt("gfx-cat")
+            .selected_text(cur)
+            .width(130.0)
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut st.category, String::new(), tl!("All Categories"));
+                for c in &cats {
+                    ui.selectable_value(&mut st.category, c.clone(), crate::i18n::t(c));
+                }
+            });
+        elems.push((
+            "gfxTemplates.category".into(),
+            r.response.rect,
+            "Category".into(),
+        ));
+        let r = ui
+            .button(tl!("Install…"))
+            .on_hover_text(tl!("Install Motion Graphics Template (.fcgt)"));
         elems.push(("gfxTemplates.install".into(), r.rect, "Install".into()));
         install = r.clicked();
     });
@@ -210,9 +260,11 @@ fn browse(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let cols = ((avail + 8.0) / (card.x + 8.0)).floor().max(1.0) as usize;
     let mut new_sel: Option<String> = None;
     let mut apply: Option<String> = None;
-    egui::ScrollArea::vertical().id_salt("gfx-browse-scroll").max_height((rect.max.y - b.cursor().min.y - 40.0).max(60.0)).auto_shrink([false, false]).show(
-        &mut b,
-        |ui| {
+    egui::ScrollArea::vertical()
+        .id_salt("gfx-browse-scroll")
+        .max_height((rect.max.y - b.cursor().min.y - 40.0).max(60.0))
+        .auto_shrink([false, false])
+        .show(&mut b, |ui| {
             if shown.is_empty() {
                 ui.label(egui::RichText::new(tl!("No templates match.")).color(t.text_faint));
             }
@@ -232,25 +284,61 @@ fn browse(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
                                 t.field_bg
                             },
                         );
-                        let ir = Rect::from_min_size(r.min + vec2(5.0, 5.0), vec2(card.x - 10.0, 84.0));
+                        let ir =
+                            Rect::from_min_size(r.min + vec2(5.0, 5.0), vec2(card.x - 10.0, 84.0));
                         // dark checker-free backdrop so white titles read
-                        ui.painter().rect_filled(ir, 2.0, Color32::from_rgb(0x2a, 0x30, 0x3a));
+                        ui.painter()
+                            .rect_filled(ir, 2.0, Color32::from_rgb(0x2a, 0x30, 0x3a));
                         let tex = thumb_texture(ui.ctx(), e);
                         let sz = tex.size_vec2();
                         let k = (ir.width() / sz.x).min(ir.height() / sz.y);
                         let tr = Rect::from_center_size(ir.center(), sz * k);
-                        ui.painter().image(tex.id(), tr, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
-                        ui.painter().text(pos2(r.min.x + 6.0, ir.max.y + 6.0), Align2::LEFT_TOP, crate::i18n::t(&e.template.name), Tokens::ui(11.5), t.text);
+                        ui.painter().image(
+                            tex.id(),
+                            tr,
+                            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                            Color32::WHITE,
+                        );
+                        ui.painter().text(
+                            pos2(r.min.x + 6.0, ir.max.y + 6.0),
+                            Align2::LEFT_TOP,
+                            crate::i18n::t(&e.template.name),
+                            Tokens::ui(11.5),
+                            t.text,
+                        );
                         let category = crate::i18n::t(&e.template.category);
-                        let sub = if e.path.is_some() { tlf!("{category} · My Template", category) } else { category.to_string() };
-                        ui.painter().text(pos2(r.min.x + 6.0, ir.max.y + 20.0), Align2::LEFT_TOP, sub, Tokens::ui(10.0), t.text_faint);
+                        let sub = if e.path.is_some() {
+                            tlf!("{category} · My Template", category)
+                        } else {
+                            category.to_string()
+                        };
+                        ui.painter().text(
+                            pos2(r.min.x + 6.0, ir.max.y + 20.0),
+                            Align2::LEFT_TOP,
+                            sub,
+                            Tokens::ui(10.0),
+                            t.text_faint,
+                        );
                         if on {
-                            ui.painter().rect_stroke(r, 4.0, Stroke::new(1.5, t.accent), StrokeKind::Inside);
+                            ui.painter().rect_stroke(
+                                r,
+                                4.0,
+                                Stroke::new(1.5, t.accent),
+                                StrokeKind::Inside,
+                            );
                         }
-                        elems.push((format!("gfxTemplates.item.{}", e.template.id), r, e.template.name.clone()));
+                        elems.push((
+                            format!("gfxTemplates.item.{}", e.template.id),
+                            r,
+                            e.template.name.clone(),
+                        ));
                         let resp = resp.on_hover_text(crate::i18n::t(&e.template.description));
                         if resp.drag_started() {
-                            crate::panels::start_drag_template(ui, &e.template.id, &e.template.name);
+                            crate::panels::start_drag_template(
+                                ui,
+                                &e.template.id,
+                                &e.template.name,
+                            );
                         }
                         if resp.double_clicked() {
                             apply = Some(e.template.id.clone());
@@ -261,10 +349,11 @@ fn browse(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
                 });
                 ui.add_space(6.0);
             }
-        },
-    );
+        });
     b.add_space(4.0);
-    let sel_entry = selected.as_ref().and_then(|s| lib.iter().find(|e| &e.template.id == s));
+    let sel_entry = selected
+        .as_ref()
+        .and_then(|s| lib.iter().find(|e| &e.template.id == s));
     b.horizontal(|ui| {
         let r = ui.add_enabled(sel_entry.is_some(), egui::Button::new(tl!("Apply")));
         elems.push(("gfxTemplates.apply".into(), r.rect, "Apply".into()));
@@ -280,7 +369,13 @@ fn browse(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
             actions.push(("graphics.template.remove".into(), json!({"template": id})));
         }
         if let Some(e) = sel_entry {
-            ui.label(egui::RichText::new(tlf!("{n} editable properties", n = e.template.controls.len())).color(t.text_faint));
+            ui.label(
+                egui::RichText::new(tlf!(
+                    "{n} editable properties",
+                    n = e.template.controls.len()
+                ))
+                .color(t.text_faint),
+            );
         }
     });
     if let Some(s) = new_sel {
@@ -322,10 +417,19 @@ fn hex(c: [f32; 4]) -> String {
 
 fn row_label(ui: &mut egui::Ui, label: &str, t: &Tokens) -> egui::Ui {
     let (r, _) = ui.allocate_exact_size(vec2(ui.available_width(), 28.0), Sense::hover());
-    ui.painter().text(pos2(r.min.x + 18.0, r.center().y), Align2::LEFT_CENTER, crate::i18n::t(label), Tokens::ui(12.0), t.text_dim);
+    ui.painter().text(
+        pos2(r.min.x + 18.0, r.center().y),
+        Align2::LEFT_CENTER,
+        crate::i18n::t(label),
+        Tokens::ui(12.0),
+        t.text_dim,
+    );
     ui.new_child(
         egui::UiBuilder::new()
-            .max_rect(Rect::from_min_max(pos2(r.min.x + 130.0, r.min.y + 3.0), pos2(r.max.x - 6.0, r.max.y - 3.0)))
+            .max_rect(Rect::from_min_max(
+                pos2(r.min.x + 130.0, r.min.y + 3.0),
+                pos2(r.max.x - 6.0, r.max.y - 3.0),
+            ))
             .layout(egui::Layout::left_to_right(egui::Align::Center)),
     )
 }
@@ -342,10 +446,20 @@ pub fn template_controls(
     actions: &mut Vec<(String, Value)>,
 ) -> bool {
     let t = app.tokens;
-    let Some(link) = it.graphic.as_ref().and_then(|m| m.template.as_ref()) else { return false };
-    ui.label(egui::RichText::new(tlf!("   Template: {name}", name = link.name)).color(t.text_faint).size(11.0));
+    let Some(link) = it.graphic.as_ref().and_then(|m| m.template.as_ref()) else {
+        return false;
+    };
+    ui.label(
+        egui::RichText::new(tlf!("   Template: {name}", name = link.name))
+            .color(t.text_faint)
+            .size(11.0),
+    );
     for c in &link.controls {
-        let Some(e) = it.effects.iter().find(|e| graphic::is_layer(e) && filmcraft_project::gtemplate::layer_uid(e) == c.layer) else { continue };
+        let Some(e) = it.effects.iter().find(|e| {
+            graphic::is_layer(e) && filmcraft_project::gtemplate::layer_uid(e) == c.layer
+        }) else {
+            continue;
+        };
         let id = format!("gfxTemplates.control.{}", c.id);
         let pv = e.params.get(&c.param).map(|p| p.value_at(mt));
         // multi-line text: the label on its own row, the field full width below it
@@ -354,24 +468,39 @@ pub fn template_controls(
             && let Some(ParamValue::Text(s0)) = &pv
             && s0.contains('\n')
         {
-            ui.label(egui::RichText::new(format!("    {}", crate::i18n::t(&c.name))).color(t.text_dim).size(12.0));
+            ui.label(
+                egui::RichText::new(format!("    {}", crate::i18n::t(&c.name)))
+                    .color(t.text_dim)
+                    .size(12.0),
+            );
             let mut s = s0.clone();
             let rows = s.lines().count().clamp(2, 8);
             let r = ui
                 .horizontal(|ui| {
                     ui.add_space(14.0);
-                    ui.add(egui::TextEdit::multiline(&mut s).desired_rows(rows).desired_width(ui.available_width() - 8.0))
+                    ui.add(
+                        egui::TextEdit::multiline(&mut s)
+                            .desired_rows(rows)
+                            .desired_width(ui.available_width() - 8.0),
+                    )
                 })
                 .inner;
             autos.push((id, r.rect, c.name.clone()));
             if s != *s0 {
-                actions.push(("graphics.template.set".into(), json!({"clip": clip.0, "control": c.id, "value": s})));
+                actions.push((
+                    "graphics.template.set".into(),
+                    json!({"clip": clip.0, "control": c.id, "value": s}),
+                ));
             }
             continue;
         }
         let mut vui = row_label(ui, &c.name, &t);
-        let set =
-            |v: Value, actions: &mut Vec<(String, Value)>| actions.push(("graphics.template.set".into(), json!({"clip": clip.0, "control": c.id, "value": v})));
+        let set = |v: Value, actions: &mut Vec<(String, Value)>| {
+            actions.push((
+                "graphics.template.set".into(),
+                json!({"clip": clip.0, "control": c.id, "value": v}),
+            ))
+        };
         match c.kind {
             _ if c.param == "enabled" => {
                 let mut b = e.enabled;
@@ -387,7 +516,9 @@ pub fn template_controls(
                     _ => String::new(),
                 };
                 let before = s.clone();
-                let r = vui.add(egui::TextEdit::singleline(&mut s).desired_width(vui.available_width() - 4.0));
+                let r = vui.add(
+                    egui::TextEdit::singleline(&mut s).desired_width(vui.available_width() - 4.0),
+                );
                 autos.push((id, r.rect, c.name.clone()));
                 if s != before {
                     set(json!(s), actions);
@@ -397,11 +528,23 @@ pub fn template_controls(
                 let col = pv.and_then(|v| v.as_color()).unwrap_or([1.0; 4]);
                 let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0).round() as u8;
                 let mut c32 = Color32::from_rgb(q(col[0]), q(col[1]), q(col[2]));
-                let r = egui::color_picker::color_edit_button_srgba(&mut vui, &mut c32, egui::color_picker::Alpha::Opaque);
+                let r = egui::color_picker::color_edit_button_srgba(
+                    &mut vui,
+                    &mut c32,
+                    egui::color_picker::Alpha::Opaque,
+                );
                 autos.push((id, r.rect, c.name.clone()));
                 if r.changed() {
                     let [a, b2, cc, _] = c32.to_srgba_unmultiplied();
-                    set(json!(hex([a as f32 / 255.0, b2 as f32 / 255.0, cc as f32 / 255.0, 1.0])), actions);
+                    set(
+                        json!(hex([
+                            a as f32 / 255.0,
+                            b2 as f32 / 255.0,
+                            cc as f32 / 255.0,
+                            1.0
+                        ])),
+                        actions,
+                    );
                 }
             }
             ControlKind::Slider => {
@@ -426,16 +569,17 @@ pub fn template_controls(
                     Some(ParamValue::Text(s)) => s,
                     _ => String::new(),
                 };
-                let r = egui::ComboBox::from_id_salt(("gfx-tpl-font", clip.0, c.id.as_str())).selected_text(&fam).width(170.0).height(360.0).show_ui(
-                    &mut vui,
-                    |ui| {
+                let r = egui::ComboBox::from_id_salt(("gfx-tpl-font", clip.0, c.id.as_str()))
+                    .selected_text(&fam)
+                    .width(170.0)
+                    .height(360.0)
+                    .show_ui(&mut vui, |ui| {
                         for (f, _) in filmcraft_text::families() {
                             if ui.selectable_label(f == fam, &f).clicked() {
                                 set(json!(f), actions);
                             }
                         }
-                    },
-                );
+                    });
                 autos.push((id, r.response.rect, c.name.clone()));
             }
             ControlKind::Position => {
@@ -455,27 +599,48 @@ pub fn template_controls(
 }
 
 /// Responsive Design – Time (intro / outro and roll / crawl), shown with no layer selected.
-pub fn responsive_time(app: &FilmcraftApp, ui: &mut egui::Ui, clip: ClipId, it: &TrackItem, autos: &mut Elems, actions: &mut Vec<(String, Value)>) {
+pub fn responsive_time(
+    app: &FilmcraftApp,
+    ui: &mut egui::Ui,
+    clip: ClipId,
+    it: &TrackItem,
+    autos: &mut Elems,
+    actions: &mut Vec<(String, Value)>,
+) {
     let t = app.tokens;
     let rate = app.session.sequence_rate();
     let m = it.graphic.as_deref().cloned().unwrap_or_default();
     let frames = |x: Tick| rate.frame_at(rate.snap_nearest(x)) as f64;
-    for (key, label, v) in [("intro", tl!("Intro Duration"), m.intro), ("outro", tl!("Outro Duration"), m.outro)] {
+    for (key, label, v) in [
+        ("intro", tl!("Intro Duration"), m.intro),
+        ("outro", tl!("Outro Duration"), m.outro),
+    ] {
         let mut vui = row_label(ui, label, &t);
         let mut f = frames(v);
-        let r = vui.add(crate::widgets::number_drag(&mut f).speed(0.2).range(0.0..=100_000.0).suffix(" fr"));
+        let r = vui.add(
+            crate::widgets::number_drag(&mut f)
+                .speed(0.2)
+                .range(0.0..=100_000.0)
+                .suffix(" fr"),
+        );
         autos.push((format!("graphics.time.{key}"), r.rect, label.into()));
         if r.changed() {
-            actions.push(("graphics.setResponsiveTime".into(), json!({"clip": clip.0, format!("{key}Frames"): f.round()})));
+            actions.push((
+                "graphics.setResponsiveTime".into(),
+                json!({"clip": clip.0, format!("{key}Frames"): f.round()}),
+            ));
         }
     }
     let mut vui = row_label(ui, tl!("Roll"), &t);
     let mut mode = m.roll.mode;
-    let r = egui::ComboBox::from_id_salt(("gfx-roll", clip.0)).selected_text(crate::i18n::t(mode.label())).width(120.0).show_ui(&mut vui, |ui| {
-        for x in RollMode::ALL {
-            ui.selectable_value(&mut mode, x, crate::i18n::t(x.label()));
-        }
-    });
+    let r = egui::ComboBox::from_id_salt(("gfx-roll", clip.0))
+        .selected_text(crate::i18n::t(mode.label()))
+        .width(120.0)
+        .show_ui(&mut vui, |ui| {
+            for x in RollMode::ALL {
+                ui.selectable_value(&mut mode, x, crate::i18n::t(x.label()));
+            }
+        });
     autos.push(("graphics.roll.mode".into(), r.response.rect, "Roll".into()));
     if mode != m.roll.mode {
         let name = match mode {
@@ -484,15 +649,23 @@ pub fn responsive_time(app: &FilmcraftApp, ui: &mut egui::Ui, clip: ClipId, it: 
             RollMode::CrawlLeft => "crawlLeft",
             RollMode::CrawlRight => "crawlRight",
         };
-        actions.push(("graphics.setRoll".into(), json!({"clip": clip.0, "mode": name})));
+        actions.push((
+            "graphics.setRoll".into(),
+            json!({"clip": clip.0, "mode": name}),
+        ));
     }
     if m.roll.mode == RollMode::Off {
         return;
     }
     let mut vui = row_label(ui, "", &t);
-    for (key, label, v) in
-        [("startOffScreen", tl!("Start Off Screen"), m.roll.start_off_screen), ("endOffScreen", tl!("End Off Screen"), m.roll.end_off_screen)]
-    {
+    for (key, label, v) in [
+        (
+            "startOffScreen",
+            tl!("Start Off Screen"),
+            m.roll.start_off_screen,
+        ),
+        ("endOffScreen", tl!("End Off Screen"), m.roll.end_off_screen),
+    ] {
         let mut b = v;
         let r = vui.checkbox(&mut b, label);
         autos.push((format!("graphics.roll.{key}"), r.rect, label.into()));
@@ -508,10 +681,18 @@ pub fn responsive_time(app: &FilmcraftApp, ui: &mut egui::Ui, clip: ClipId, it: 
     ] {
         let mut vui = row_label(ui, label, &t);
         let mut f = frames(v);
-        let r = vui.add(crate::widgets::number_drag(&mut f).speed(0.2).range(0.0..=100_000.0).suffix(" fr"));
+        let r = vui.add(
+            crate::widgets::number_drag(&mut f)
+                .speed(0.2)
+                .range(0.0..=100_000.0)
+                .suffix(" fr"),
+        );
         autos.push((format!("graphics.roll.{key}"), r.rect, label.into()));
         if r.changed() {
-            actions.push(("graphics.setRoll".into(), json!({"clip": clip.0, format!("{key}Frames"): f.round()})));
+            actions.push((
+                "graphics.setRoll".into(),
+                json!({"clip": clip.0, format!("{key}Frames"): f.round()}),
+            ));
         }
     }
 }
@@ -539,23 +720,38 @@ pub fn responsive_position(
             .unwrap_or_default(),
     };
     let mut vui = row_label(ui, tl!("Pin To"), &t);
-    let r = egui::ComboBox::from_id_salt(("gfx-pin", clip.0, layer)).selected_text(&target_name).width(150.0).show_ui(&mut vui, |ui| {
-        if ui.selectable_label(pin.is_none(), tl!("None")).clicked() {
-            actions.push(("graphics.pin".into(), json!({"clip": clip.0, "layer": layer, "to": "none"})));
-        }
-        let on_frame = matches!(pin.as_ref().map(|p| p.to), Some(filmcraft_project::PinTarget::Frame));
-        if ui.selectable_label(on_frame, tl!("Video Frame")).clicked() {
-            actions.push(("graphics.pin".into(), json!({"clip": clip.0, "layer": layer, "to": "frame"})));
-        }
-        for (i, &e) in idx.iter().enumerate() {
-            if i != layer {
-                let n = layer_display_name(&it.effects[e], i);
-                if ui.selectable_label(n == target_name, &n).clicked() {
-                    actions.push(("graphics.pin".into(), json!({"clip": clip.0, "layer": layer, "to": i})));
+    let r = egui::ComboBox::from_id_salt(("gfx-pin", clip.0, layer))
+        .selected_text(&target_name)
+        .width(150.0)
+        .show_ui(&mut vui, |ui| {
+            if ui.selectable_label(pin.is_none(), tl!("None")).clicked() {
+                actions.push((
+                    "graphics.pin".into(),
+                    json!({"clip": clip.0, "layer": layer, "to": "none"}),
+                ));
+            }
+            let on_frame = matches!(
+                pin.as_ref().map(|p| p.to),
+                Some(filmcraft_project::PinTarget::Frame)
+            );
+            if ui.selectable_label(on_frame, tl!("Video Frame")).clicked() {
+                actions.push((
+                    "graphics.pin".into(),
+                    json!({"clip": clip.0, "layer": layer, "to": "frame"}),
+                ));
+            }
+            for (i, &e) in idx.iter().enumerate() {
+                if i != layer {
+                    let n = layer_display_name(&it.effects[e], i);
+                    if ui.selectable_label(n == target_name, &n).clicked() {
+                        actions.push((
+                            "graphics.pin".into(),
+                            json!({"clip": clip.0, "layer": layer, "to": i}),
+                        ));
+                    }
                 }
             }
-        }
-    });
+        });
     autos.push(("graphics.pin.to".into(), r.response.rect, "Pin To".into()));
     let Some(p) = pin else { return };
     let mut vui = row_label(ui, tl!("Pinned Edges"), &t);
@@ -563,21 +759,40 @@ pub fn responsive_position(
     let to = match p.to {
         filmcraft_project::PinTarget::Frame => json!("frame"),
         filmcraft_project::PinTarget::Layer(uid) => {
-            json!((0..idx.len()).find(|&i| filmcraft_project::gtemplate::layer_uid(&it.effects[idx[i]]) == uid).unwrap_or(0))
+            json!(
+                (0..idx.len())
+                    .find(|&i| filmcraft_project::gtemplate::layer_uid(&it.effects[idx[i]]) == uid)
+                    .unwrap_or(0)
+            )
         }
     };
     let mut changed = false;
     for (k, name) in ["left", "top", "right", "bottom"].iter().enumerate() {
         let r = vui.toggle_value(&mut edges[k], name[..1].to_ascii_uppercase());
-        autos.push((format!("graphics.pin.{name}"), r.rect, format!("Pin {name} edge")));
+        autos.push((
+            format!("graphics.pin.{name}"),
+            r.rect,
+            format!("Pin {name} edge"),
+        ));
         changed |= r.changed();
     }
     if changed {
-        let list: Vec<&str> = ["left", "top", "right", "bottom"].iter().zip(edges).filter(|(_, on)| *on).map(|(n, _)| *n).collect();
+        let list: Vec<&str> = ["left", "top", "right", "bottom"]
+            .iter()
+            .zip(edges)
+            .filter(|(_, on)| *on)
+            .map(|(n, _)| *n)
+            .collect();
         if list.is_empty() {
-            actions.push(("graphics.pin".into(), json!({"clip": clip.0, "layer": layer, "to": "none"})));
+            actions.push((
+                "graphics.pin".into(),
+                json!({"clip": clip.0, "layer": layer, "to": "none"}),
+            ));
         } else {
-            actions.push(("graphics.pin".into(), json!({"clip": clip.0, "layer": layer, "to": to, "edges": list})));
+            actions.push((
+                "graphics.pin".into(),
+                json!({"clip": clip.0, "layer": layer, "to": to, "edges": list}),
+            ));
         }
     }
 }
@@ -587,49 +802,107 @@ pub fn responsive_position(
 // ------------------------------------------------------------------------------------------------
 
 /// Menu / shortcut entry points of this module (None for other ids).
-pub fn route(app: &mut FilmcraftApp, ctx: &egui::Context, id: &str, params: &Value) -> Option<Result<Value, String>> {
+pub fn route(
+    app: &mut FilmcraftApp,
+    ctx: &egui::Context,
+    id: &str,
+    params: &Value,
+) -> Option<Result<Value, String>> {
     let empty = params.as_object().is_none_or(|m| m.is_empty());
     match id {
         "graphics.template.install" if params.get("path").is_none() => {
             let (id, ctx) = (id.to_string(), ctx.clone());
-            Some(app.pick(FileDialog::open_file(tl!("FilmCraft Graphics Template"), &["fcgt"]), move |app, paths| {
-                let Some(path) = paths.into_iter().next() else { return Ok(Value::Null) };
-                let r = app.session.execute(&id, json!({"path": path})).map_err(|e| e.to_string());
-                // The Browse panel's Install… button calls this directly and drops the result
-                // (#611); report a refused file here, so every caller shows why nothing happened.
-                if let Err(e) = &r {
-                    app.ui.status = e.clone();
-                }
-                invalidate(&ctx);
-                r
-            }))
+            Some(app.pick(
+                FileDialog::open_file(tl!("FilmCraft Graphics Template"), &["fcgt"]),
+                move |app, paths| {
+                    let Some(path) = paths.into_iter().next() else {
+                        return Ok(Value::Null);
+                    };
+                    let r = app
+                        .session
+                        .execute(&id, json!({"path": path}))
+                        .map_err(|e| e.to_string());
+                    // The Browse panel's Install… button calls this directly and drops the result
+                    // (#611); report a refused file here, so every caller shows why nothing happened.
+                    if let Err(e) = &r {
+                        app.ui.status = e.clone();
+                    }
+                    invalidate(&ctx);
+                    r
+                },
+            ))
         }
         "graphics.template.export" | "file.exportGraphicsTemplate" if empty => {
             let clip = filmcraft_engine::graphics::target_clip(&app.session, &Value::Null);
-            let Some(clip) = clip else { return Some(Err("select a graphic clip".into())) };
-            let it = app.session.active_sequence().and_then(|q| q.find_item(clip)).map(|(_, i)| i.clone())?;
+            let Some(clip) = clip else {
+                return Some(Err("select a graphic clip".into()));
+            };
+            let it = app
+                .session
+                .active_sequence()
+                .and_then(|q| q.find_item(clip))
+                .map(|(_, i)| i.clone())?;
             let idx = layer_indices(&it.effects);
             let mut controls = Vec::new();
             for (i, &ei) in idx.iter().enumerate() {
                 let e = &it.effects[ei];
                 let n = layer_display_name(e, i);
                 if e.effect == graphic::TEXT_LAYER {
-                    controls.push(ExportControl { layer: i, param: "text".into(), name: n.clone(), on: true });
-                    controls.push(ExportControl { layer: i, param: "font".into(), name: tlf!("{n} Font", n), on: false });
-                    controls.push(ExportControl { layer: i, param: "size".into(), name: tlf!("{n} Size", n), on: false });
+                    controls.push(ExportControl {
+                        layer: i,
+                        param: "text".into(),
+                        name: n.clone(),
+                        on: true,
+                    });
+                    controls.push(ExportControl {
+                        layer: i,
+                        param: "font".into(),
+                        name: tlf!("{n} Font", n),
+                        on: false,
+                    });
+                    controls.push(ExportControl {
+                        layer: i,
+                        param: "size".into(),
+                        name: tlf!("{n} Size", n),
+                        on: false,
+                    });
                 }
-                controls.push(ExportControl { layer: i, param: "fill_color".into(), name: tlf!("{n} Color", n), on: false });
-                controls.push(ExportControl { layer: i, param: "position".into(), name: tlf!("{n} Position", n), on: false });
-                controls.push(ExportControl { layer: i, param: "enabled".into(), name: tlf!("Show {n}", n), on: false });
+                controls.push(ExportControl {
+                    layer: i,
+                    param: "fill_color".into(),
+                    name: tlf!("{n} Color", n),
+                    on: false,
+                });
+                controls.push(ExportControl {
+                    layer: i,
+                    param: "position".into(),
+                    name: tlf!("{n} Position", n),
+                    on: false,
+                });
+                controls.push(ExportControl {
+                    layer: i,
+                    param: "enabled".into(),
+                    name: tlf!("Show {n}", n),
+                    on: false,
+                });
             }
-            app.ui.gfx_templates.export =
-                Some(ExportDraft { clip: clip.0, name: it.name.clone(), category: tl!("My Templates").into(), controls, ..Default::default() });
+            app.ui.gfx_templates.export = Some(ExportDraft {
+                clip: clip.0,
+                name: it.name.clone(),
+                category: tl!("My Templates").into(),
+                controls,
+                ..Default::default()
+            });
             Some(Ok(json!({"dialog": "exportTemplate"})))
         }
         "file.replaceFonts" if empty => {
             let used = filmcraft_engine::graphic_templates::fonts_used(&app.session);
             let from = used.first().map(|f| f.0.clone()).unwrap_or_default();
-            app.ui.gfx_templates.replace = Some(ReplaceDraft { from, to: filmcraft_text::fonts::DEFAULT_FAMILY.into(), error: String::new() });
+            app.ui.gfx_templates.replace = Some(ReplaceDraft {
+                from,
+                to: filmcraft_text::fonts::DEFAULT_FAMILY.into(),
+                error: String::new(),
+            });
             Some(Ok(json!({"dialog": "replaceFonts"})))
         }
         _ => None,
@@ -643,7 +916,9 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
 }
 
 fn export_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.gfx_templates.export.clone() else { return };
+    let Some(mut d) = app.ui.gfx_templates.export.clone() else {
+        return;
+    };
     let mut elems: Elems = Vec::new();
     let mut action: Option<bool> = None;
     egui::Window::new(tl!("Export As Motion Graphics Template"))
@@ -653,33 +928,53 @@ fn export_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
         .default_width(420.0)
         .centered(ctx)
         .show(ctx, |ui| {
-            egui::Grid::new("gfx-export-grid").num_columns(2).show(ui, |ui| {
-                ui.label(tl!("Name:"));
-                let r = ui.add(egui::TextEdit::singleline(&mut d.name).desired_width(260.0));
-                elems.push(("exportTemplate.name".into(), r.rect, "Name".into()));
-                ui.end_row();
-                ui.label(tl!("Category:"));
-                let r = ui.add(egui::TextEdit::singleline(&mut d.category).desired_width(260.0));
-                elems.push(("exportTemplate.category".into(), r.rect, "Category".into()));
-                ui.end_row();
-                ui.label(tl!("Description:"));
-                let r = ui.add(egui::TextEdit::singleline(&mut d.description).desired_width(260.0));
-                elems.push(("exportTemplate.description".into(), r.rect, "Description".into()));
-                ui.end_row();
-            });
+            egui::Grid::new("gfx-export-grid")
+                .num_columns(2)
+                .show(ui, |ui| {
+                    ui.label(tl!("Name:"));
+                    let r = ui.add(egui::TextEdit::singleline(&mut d.name).desired_width(260.0));
+                    elems.push(("exportTemplate.name".into(), r.rect, "Name".into()));
+                    ui.end_row();
+                    ui.label(tl!("Category:"));
+                    let r =
+                        ui.add(egui::TextEdit::singleline(&mut d.category).desired_width(260.0));
+                    elems.push(("exportTemplate.category".into(), r.rect, "Category".into()));
+                    ui.end_row();
+                    ui.label(tl!("Description:"));
+                    let r =
+                        ui.add(egui::TextEdit::singleline(&mut d.description).desired_width(260.0));
+                    elems.push((
+                        "exportTemplate.description".into(),
+                        r.rect,
+                        "Description".into(),
+                    ));
+                    ui.end_row();
+                });
             ui.separator();
             ui.label(tl!("Editable properties:"));
-            egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
-                for (n, c) in d.controls.iter_mut().enumerate() {
-                    ui.horizontal(|ui| {
-                        let r = ui.checkbox(&mut c.on, "");
-                        elems.push((format!("exportTemplate.control.{n}"), r.rect, c.name.clone()));
-                        ui.add(egui::TextEdit::singleline(&mut c.name).desired_width(220.0));
-                        ui.label(egui::RichText::new(c.param.replace('_', " ")).weak());
-                    });
-                }
-            });
-            ui.label(egui::RichText::new(tl!("Saved as a FilmCraft graphics template (.fcgt) in your templates folder.")).weak().size(11.0));
+            egui::ScrollArea::vertical()
+                .max_height(220.0)
+                .show(ui, |ui| {
+                    for (n, c) in d.controls.iter_mut().enumerate() {
+                        ui.horizontal(|ui| {
+                            let r = ui.checkbox(&mut c.on, "");
+                            elems.push((
+                                format!("exportTemplate.control.{n}"),
+                                r.rect,
+                                c.name.clone(),
+                            ));
+                            ui.add(egui::TextEdit::singleline(&mut c.name).desired_width(220.0));
+                            ui.label(egui::RichText::new(c.param.replace('_', " ")).weak());
+                        });
+                    }
+                });
+            ui.label(
+                egui::RichText::new(tl!(
+                    "Saved as a FilmCraft graphics template (.fcgt) in your templates folder."
+                ))
+                .weak()
+                .size(11.0),
+            );
             if !d.error.is_empty() {
                 ui.colored_label(Color32::from_rgb(0xff, 0x80, 0x80), &d.error);
             }
@@ -701,12 +996,20 @@ fn export_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
     }
     match action {
         Some(true) => {
-            let controls: Vec<Value> = d.controls.iter().filter(|c| c.on).map(|c| json!({"layer": c.layer, "param": c.param, "name": c.name})).collect();
+            let controls: Vec<Value> = d
+                .controls
+                .iter()
+                .filter(|c| c.on)
+                .map(|c| json!({"layer": c.layer, "param": c.param, "name": c.name}))
+                .collect();
             let p = json!({"clip": d.clip, "name": d.name, "category": d.category, "description": d.description, "controls": controls});
             match app.session.execute("graphics.template.export", p) {
                 Ok(v) => {
                     app.ui.gfx_templates.export = None;
-                    app.ui.status = tlf!("Exported graphics template to {path}", path = v["path"].as_str().unwrap_or_default());
+                    app.ui.status = tlf!(
+                        "Exported graphics template to {path}",
+                        path = v["path"].as_str().unwrap_or_default()
+                    );
                     invalidate(ctx);
                 }
                 Err(e) => {
@@ -721,7 +1024,9 @@ fn export_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
 }
 
 fn replace_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.gfx_templates.replace.clone() else { return };
+    let Some(mut d) = app.ui.gfx_templates.replace.clone() else {
+        return;
+    };
     let used = filmcraft_engine::graphic_templates::fonts_used(&app.session);
     let mut elems: Elems = Vec::new();
     let mut action: Option<bool> = None;
@@ -733,36 +1038,51 @@ fn replace_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
         .centered(ctx)
         .show(ctx, |ui| {
             ui.label(tl!("Fonts used in the project:"));
-            egui::Grid::new("gfx-fonts-used").striped(true).num_columns(3).show(ui, |ui| {
-                for (f, st, n) in &used {
-                    let missing = filmcraft_text::resolve(f, st).missing;
-                    ui.label(if missing {
-                        egui::RichText::new(tlf!("{f} (missing)", f)).color(Color32::from_rgb(0xff, 0xa0, 0x60))
-                    } else {
-                        egui::RichText::new(f)
-                    });
-                    ui.label(st);
-                    ui.label(format!("{n}"));
-                    ui.end_row();
-                }
-            });
+            egui::Grid::new("gfx-fonts-used")
+                .striped(true)
+                .num_columns(3)
+                .show(ui, |ui| {
+                    for (f, st, n) in &used {
+                        let missing = filmcraft_text::resolve(f, st).missing;
+                        ui.label(if missing {
+                            egui::RichText::new(tlf!("{f} (missing)", f))
+                                .color(Color32::from_rgb(0xff, 0xa0, 0x60))
+                        } else {
+                            egui::RichText::new(f)
+                        });
+                        ui.label(st);
+                        ui.label(format!("{n}"));
+                        ui.end_row();
+                    }
+                });
             ui.separator();
             let mut fams: Vec<String> = used.iter().map(|u| u.0.clone()).collect();
             fams.dedup();
             ui.horizontal(|ui| {
                 ui.label(tl!("Replace:"));
-                let r = egui::ComboBox::from_id_salt("gfx-rf-from").selected_text(&d.from).width(160.0).show_ui(ui, |ui| {
-                    for f in &fams {
-                        ui.selectable_value(&mut d.from, f.clone(), f);
-                    }
-                });
-                elems.push(("replaceFonts.from".into(), r.response.rect, "Replace".into()));
+                let r = egui::ComboBox::from_id_salt("gfx-rf-from")
+                    .selected_text(&d.from)
+                    .width(160.0)
+                    .show_ui(ui, |ui| {
+                        for f in &fams {
+                            ui.selectable_value(&mut d.from, f.clone(), f);
+                        }
+                    });
+                elems.push((
+                    "replaceFonts.from".into(),
+                    r.response.rect,
+                    "Replace".into(),
+                ));
                 ui.label(tl!("with:"));
-                let r = egui::ComboBox::from_id_salt("gfx-rf-to").selected_text(&d.to).width(160.0).height(360.0).show_ui(ui, |ui| {
-                    for (f, _) in filmcraft_text::families() {
-                        ui.selectable_value(&mut d.to, f.clone(), &f);
-                    }
-                });
+                let r = egui::ComboBox::from_id_salt("gfx-rf-to")
+                    .selected_text(&d.to)
+                    .width(160.0)
+                    .height(360.0)
+                    .show_ui(ui, |ui| {
+                        for (f, _) in filmcraft_text::families() {
+                            ui.selectable_value(&mut d.to, f.clone(), &f);
+                        }
+                    });
                 elems.push(("replaceFonts.to".into(), r.response.rect, "With".into()));
             });
             if !d.error.is_empty() {
@@ -785,7 +1105,10 @@ fn replace_dialog(app: &mut FilmcraftApp, ctx: &egui::Context) {
         app.auto.add(&id, r, &l);
     }
     match action {
-        Some(true) => match app.session.execute("file.replaceFonts", json!({"from": d.from, "to": d.to})) {
+        Some(true) => match app
+            .session
+            .execute("file.replaceFonts", json!({"from": d.from, "to": d.to}))
+        {
             Ok(v) => {
                 app.ui.gfx_templates.replace = None;
                 app.ui.status = tlf!("Replaced {n} font uses", n = v["replaced"]);

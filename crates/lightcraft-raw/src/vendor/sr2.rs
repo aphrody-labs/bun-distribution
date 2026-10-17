@@ -62,16 +62,21 @@ const SSHORT: u16 = 8;
 /// The first 127 keystream words for [`KEY`] (each XOR-ed with four block bytes, most significant byte first).
 /// Later words follow `k[n] = k[n − 63] ⊕ k[n − 127]`; see the module docs.
 const SEED: [u32; 127] = [
-    0x54c2c4d6, 0x49c478bc, 0x34ae2f8e, 0x25d80504, 0xc0d9d6b0, 0xd838fb71, 0xe8eff27d, 0xfbc1fcea, 0x506c499a, 0x47f20f37, 0x710777cf, 0x7867e7ba,
-    0x42d67caa, 0x7f2bd11a, 0x67a216ca, 0x0e986d40, 0x4ae8d4c0, 0xe36778b4, 0x5a958415, 0xdbfe2be8, 0x20faa1aa, 0x7132a6b8, 0xf4de4b7f, 0x55991aa1,
-    0xa849d5aa, 0x49577832, 0xb92f3daa, 0x399cc526, 0x22cdd000, 0xe1977a29, 0x37c5db55, 0xb0177e1e, 0x2a1016aa, 0xa300086e, 0x3bab9bfe, 0x262eece0,
-    0x23771aa9, 0x0a5dc91c, 0x31b902ae, 0x58e64bf8, 0x259c300e, 0xa57705c8, 0x284a6541, 0xfb229c60, 0x1bacaa9e, 0xbcab3350, 0x67cd9fbe, 0x8f135e60,
-    0xf8c26a40, 0x6770da61, 0x3e1febfd, 0xd0c70803, 0x8dbb037b, 0x6f6fa4c5, 0x6749d10d, 0x7f51598d, 0xd5e5a4ec, 0x207dfa91, 0x6558ebc2, 0xbe594639,
-    0x617a9e5d, 0x3c497950, 0x0844eb3f, 0x04207ed2, 0xd27ceac4, 0x70d20f05, 0xb47003f6, 0xe9e4e3ae, 0xcc19d265, 0x326dd956, 0xf0d3a327, 0xb71275f0,
-    0x7994e285, 0x0aff594d, 0x128e8345, 0x7bda597a, 0xd634c380, 0xe24a006f, 0x8974818b, 0x3320b22a, 0xbe808417, 0xa2d5648a, 0x6fe80b39, 0x23ebad41,
-    0xa2d11e5d, 0x027d9397, 0x9a722ac8, 0x432c7dac, 0x7146692a, 0x82a3dc77, 0xd66887c5, 0x831f43b7, 0x4e5dddde, 0x03793f81, 0x306ab437, 0x00ccf86c,
-    0xfc6ed3d2, 0x076b8fdb, 0x9808cfca, 0x0f4eef6e, 0xc8cc3830, 0x104ac16a, 0xa189eff4, 0x3e085c08, 0xd28baf88, 0x5c853ac4, 0xe60480f8, 0xc51acd98,
-    0x691e5ee1, 0x333feeb9, 0x1e35bc33, 0xec4a4642, 0xee57c5a5, 0xbeeb51f7, 0xe0c4f32c, 0xa5422f6a, 0x1d266d12, 0x3752fd3b, 0xfbc53c7d, 0x2421a4a3,
+    0x54c2c4d6, 0x49c478bc, 0x34ae2f8e, 0x25d80504, 0xc0d9d6b0, 0xd838fb71, 0xe8eff27d, 0xfbc1fcea,
+    0x506c499a, 0x47f20f37, 0x710777cf, 0x7867e7ba, 0x42d67caa, 0x7f2bd11a, 0x67a216ca, 0x0e986d40,
+    0x4ae8d4c0, 0xe36778b4, 0x5a958415, 0xdbfe2be8, 0x20faa1aa, 0x7132a6b8, 0xf4de4b7f, 0x55991aa1,
+    0xa849d5aa, 0x49577832, 0xb92f3daa, 0x399cc526, 0x22cdd000, 0xe1977a29, 0x37c5db55, 0xb0177e1e,
+    0x2a1016aa, 0xa300086e, 0x3bab9bfe, 0x262eece0, 0x23771aa9, 0x0a5dc91c, 0x31b902ae, 0x58e64bf8,
+    0x259c300e, 0xa57705c8, 0x284a6541, 0xfb229c60, 0x1bacaa9e, 0xbcab3350, 0x67cd9fbe, 0x8f135e60,
+    0xf8c26a40, 0x6770da61, 0x3e1febfd, 0xd0c70803, 0x8dbb037b, 0x6f6fa4c5, 0x6749d10d, 0x7f51598d,
+    0xd5e5a4ec, 0x207dfa91, 0x6558ebc2, 0xbe594639, 0x617a9e5d, 0x3c497950, 0x0844eb3f, 0x04207ed2,
+    0xd27ceac4, 0x70d20f05, 0xb47003f6, 0xe9e4e3ae, 0xcc19d265, 0x326dd956, 0xf0d3a327, 0xb71275f0,
+    0x7994e285, 0x0aff594d, 0x128e8345, 0x7bda597a, 0xd634c380, 0xe24a006f, 0x8974818b, 0x3320b22a,
+    0xbe808417, 0xa2d5648a, 0x6fe80b39, 0x23ebad41, 0xa2d11e5d, 0x027d9397, 0x9a722ac8, 0x432c7dac,
+    0x7146692a, 0x82a3dc77, 0xd66887c5, 0x831f43b7, 0x4e5dddde, 0x03793f81, 0x306ab437, 0x00ccf86c,
+    0xfc6ed3d2, 0x076b8fdb, 0x9808cfca, 0x0f4eef6e, 0xc8cc3830, 0x104ac16a, 0xa189eff4, 0x3e085c08,
+    0xd28baf88, 0x5c853ac4, 0xe60480f8, 0xc51acd98, 0x691e5ee1, 0x333feeb9, 0x1e35bc33, 0xec4a4642,
+    0xee57c5a5, 0xbeeb51f7, 0xe0c4f32c, 0xa5422f6a, 0x1d266d12, 0x3752fd3b, 0xfbc53c7d, 0x2421a4a3,
     0xcdc6a2de, 0x26e6b330, 0x6c073d46, 0x058e2f27, 0x43833f30, 0x46d1382e, 0x5f0804ec,
 ];
 
@@ -98,7 +103,11 @@ fn seed_from_key(key: u32) -> [u32; 127] {
 
 /// The seed for the four key bytes stored in the file: the measured [`SEED`] for [`KEY`], else the derived one.
 fn seed_for(key: [u8; 4]) -> [u32; 127] {
-    if key == KEY { SEED } else { seed_from_key(u32::from_le_bytes(key)) }
+    if key == KEY {
+        SEED
+    } else {
+        seed_from_key(u32::from_le_bytes(key))
+    }
 }
 
 /// XOR `block` with the keystream of [`KEY`] from its first byte on (whole 4-byte words; a shorter tail stays as
@@ -136,15 +145,26 @@ impl SubIfd {
     /// [`MAX_LEN`].
     pub(crate) fn read(bytes: &[u8], ifd0: &Ifd, order: ByteOrder) -> Option<Self> {
         let at = order.read_u32(ifd0.bytes(t::DNG_PRIVATE_DATA)?, 0)?;
-        let opts = ParseOptions { max_ifds: 1, max_depth: 0, follow_children: false, ..Default::default() };
-        let (private, _) = lightcraft_tiff::parse_ifd_at(bytes, u64::from(at), order, 0, false, &opts).ok()?;
+        let opts = ParseOptions {
+            max_ifds: 1,
+            max_depth: 0,
+            follow_children: false,
+            ..Default::default()
+        };
+        let (private, _) =
+            lightcraft_tiff::parse_ifd_at(bytes, u64::from(at), order, 0, false, &opts).ok()?;
         let key: [u8; 4] = private.bytes(SUBIFD_KEY)?.try_into().ok()?;
         let start = usize::try_from(private.u64(SUBIFD_OFFSET)?).ok()?;
         let len = usize::try_from(private.u64(SUBIFD_LENGTH)?).ok()?;
         if len > MAX_LEN {
             return None;
         }
-        Some(Self::decrypt_keyed(bytes.get(start..start.checked_add(len)?)?, start, order, key))
+        Some(Self::decrypt_keyed(
+            bytes.get(start..start.checked_add(len)?)?,
+            start,
+            order,
+            key,
+        ))
     }
 
     /// Decrypt `block`, the encrypted directory found at file offset `start`.
@@ -154,10 +174,19 @@ impl SubIfd {
     }
 
     /// [`SubIfd::decrypt`] for a block stored with `key` (tag `0x7221`).
-    pub(crate) fn decrypt_keyed(block: &[u8], start: usize, order: ByteOrder, key: [u8; 4]) -> Self {
+    pub(crate) fn decrypt_keyed(
+        block: &[u8],
+        start: usize,
+        order: ByteOrder,
+        key: [u8; 4],
+    ) -> Self {
         let mut plain = block.to_vec();
         apply_keystream_with(&mut plain, seed_for(key));
-        Self { start, plain, order }
+        Self {
+            start,
+            plain,
+            order,
+        }
     }
 
     /// The byte order of the directory's values (the file's).
@@ -170,16 +199,22 @@ impl SubIfd {
     pub(crate) fn short_bytes(&self, tag: u16) -> Option<(u16, &[u8])> {
         let o = self.order;
         let entries = usize::from(o.read_u16(&self.plain, 0)?);
-        let entry = (0..entries).map_while(|i| self.plain.get(2 + 12 * i..14 + 12 * i)).find(|e| o.read_u16(e, 0) == Some(tag))?;
+        let entry = (0..entries)
+            .map_while(|i| self.plain.get(2 + 12 * i..14 + 12 * i))
+            .find(|e| o.read_u16(e, 0) == Some(tag))?;
         let kind = o.read_u16(entry, 2)?;
         if kind != SHORT && kind != SSHORT {
             return None;
         }
-        let size = usize::try_from(o.read_u32(entry, 4)?).ok()?.checked_mul(2)?;
+        let size = usize::try_from(o.read_u32(entry, 4)?)
+            .ok()?
+            .checked_mul(2)?;
         let values = if size <= 4 {
             entry.get(8..8 + size)?
         } else {
-            let at = usize::try_from(o.read_u32(entry, 8)?).ok()?.checked_sub(self.start)?;
+            let at = usize::try_from(o.read_u32(entry, 8)?)
+                .ok()?
+                .checked_sub(self.start)?;
             self.plain.get(at..at.checked_add(size)?)?
         };
         Some((kind, values))
@@ -188,8 +223,21 @@ impl SubIfd {
     /// The values of a SHORT or SSHORT entry (see [`SubIfd::short_bytes`]).
     pub(crate) fn shorts(&self, tag: u16) -> Option<Vec<f64>> {
         let (kind, values) = self.short_bytes(tag)?;
-        let value = |v: u16| if kind == SSHORT { f64::from(v as i16) } else { f64::from(v) };
-        Some(values.as_chunks::<2>().0.iter().map(|&c| value(self.order.u16(c))).collect())
+        let value = |v: u16| {
+            if kind == SSHORT {
+                f64::from(v as i16)
+            } else {
+                f64::from(v)
+            }
+        };
+        Some(
+            values
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|&c| value(self.order.u16(c)))
+                .collect(),
+        )
     }
 }
 
@@ -227,7 +275,12 @@ pub(crate) mod tests {
     }
 
     /// [`block`] encrypted with another `key`.
-    pub(crate) fn block_keyed(start: usize, entries: &[(u16, u16, &[u16])], order: ByteOrder, key: [u8; 4]) -> Vec<u8> {
+    pub(crate) fn block_keyed(
+        start: usize,
+        entries: &[(u16, u16, &[u16])],
+        order: ByteOrder,
+        key: [u8; 4],
+    ) -> Vec<u8> {
         let mut b = block(start, entries, order);
         apply_keystream(&mut b); // undo the default key
         apply_keystream_with(&mut b, seed_for(key));
@@ -249,7 +302,13 @@ pub(crate) mod tests {
         let mut ks = vec![0u8; 62114];
         apply_keystream(&mut ks);
         let recovered: [(usize, &[u8]); 5] = [
-            (0, &[0x54, 0xc2, 0xc4, 0xd6, 0x49, 0xc4, 0x78, 0xbc, 0x34, 0xae, 0x2f, 0x8e, 0x25, 0xd8]),
+            (
+                0,
+                &[
+                    0x54, 0xc2, 0xc4, 0xd6, 0x49, 0xc4, 0x78, 0xbc, 0x34, 0xae, 0x2f, 0x8e, 0x25,
+                    0xd8,
+                ],
+            ),
             (1638, &[0x18, 0x95, 0x65, 0xf0, 0x18, 0x8f, 0x61, 0xc6]),
             (2166, &[0xc6, 0x17, 0x02, 0xcb, 0x89, 0x21, 0xbc, 0x43]),
             (2418, &[0xd1, 0xef, 0xda, 0xfe, 0x50, 0xf3, 0xd0, 0xbe]),
@@ -270,20 +329,49 @@ pub(crate) mod tests {
         use sha2::{Digest, Sha256};
         let mut ks = vec![0u8; 62112];
         apply_keystream(&mut ks);
-        let digest: String = Sha256::digest(&ks).iter().map(|b| format!("{b:02x}")).collect();
-        assert_eq!(digest, "d55e96d7bb69cb823d9dfa038dd9f3cfb6b080be4df8c8aa2bc56f71a4a3f183");
+        let digest: String = Sha256::digest(&ks)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect();
+        assert_eq!(
+            digest,
+            "d55e96d7bb69cb823d9dfa038dd9f3cfb6b080be4df8c8aa2bc56f71a4a3f183"
+        );
         // (file, position in the block, bytes stored there, WB_RGGBLevels)
         let cases: [(&str, usize, [u8; 8], [i16; 4]); 4] = [
-            ("DSLR-A700 DSC07249", 1654, [0xc9, 0x2a, 0xb6, 0xa4, 0x1f, 0xc1, 0x72, 0x30], [2128, 1024, 1024, 1564]),
-            ("DSLR-A500 DSC02421", 2182, [0xb9, 0x6a, 0xed, 0xd3, 0x0d, 0xa8, 0xbb, 0xda], [2212, 1024, 1024, 1416]),
-            ("SLT-A33 DSC01867", 2434, [0x3c, 0x43, 0x05, 0x3f, 0x0d, 0xe2, 0x05, 0xcc], [2344, 1024, 1024, 1508]),
-            ("ILCE-3500 DSC06923", 2526, [0x37, 0x2e, 0x71, 0x5b, 0x88, 0xb7, 0x21, 0x73], [2932, 1024, 1024, 1576]),
+            (
+                "DSLR-A700 DSC07249",
+                1654,
+                [0xc9, 0x2a, 0xb6, 0xa4, 0x1f, 0xc1, 0x72, 0x30],
+                [2128, 1024, 1024, 1564],
+            ),
+            (
+                "DSLR-A500 DSC02421",
+                2182,
+                [0xb9, 0x6a, 0xed, 0xd3, 0x0d, 0xa8, 0xbb, 0xda],
+                [2212, 1024, 1024, 1416],
+            ),
+            (
+                "SLT-A33 DSC01867",
+                2434,
+                [0x3c, 0x43, 0x05, 0x3f, 0x0d, 0xe2, 0x05, 0xcc],
+                [2344, 1024, 1024, 1508],
+            ),
+            (
+                "ILCE-3500 DSC06923",
+                2526,
+                [0x37, 0x2e, 0x71, 0x5b, 0x88, 0xb7, 0x21, 0x73],
+                [2932, 1024, 1024, 1576],
+            ),
         ];
         for (file, at, stored, levels) in cases {
             let mut block = vec![0u8; (at + 8).next_multiple_of(4)];
             block[at..at + 8].copy_from_slice(&stored);
             apply_keystream(&mut block);
-            let got: Vec<i16> = block[at..at + 8].chunks(2).map(|c| i16::from_le_bytes([c[0], c[1]])).collect();
+            let got: Vec<i16> = block[at..at + 8]
+                .chunks(2)
+                .map(|c| i16::from_le_bytes([c[0], c[1]]))
+                .collect();
             assert_eq!(got, levels, "{file}");
         }
     }
@@ -293,7 +381,10 @@ pub(crate) mod tests {
     #[test]
     fn seed_derivation_reproduces_the_measured_seed() {
         assert_eq!(seed_from_key(u32::from_le_bytes(KEY)), SEED);
-        assert_ne!(seed_from_key(u32::from_le_bytes(KEY)), seed_from_key(u32::from_le_bytes(KEY) ^ 1));
+        assert_ne!(
+            seed_from_key(u32::from_le_bytes(KEY)),
+            seed_from_key(u32::from_le_bytes(KEY) ^ 1)
+        );
         assert_eq!(seed_for(KEY), SEED);
     }
 
@@ -301,12 +392,19 @@ pub(crate) mod tests {
     fn another_key_decrypts_a_block() {
         // the DSC-R1's key and layout: black 0x7300, WB 0x7303 (G, R, B, G), crop 0x74c3
         let key = [0x63, 0xbe, 0x01, 0x3e];
-        let entries: [(u16, u16, &[u16]); 3] =
-            [(0x7300, SHORT, &[514, 511, 512, 513]), (0x7303, SHORT, &[256, 500, 385, 256]), (0x74c3, SHORT, &[16, 8, 3904, 2600])];
+        let entries: [(u16, u16, &[u16]); 3] = [
+            (0x7300, SHORT, &[514, 511, 512, 513]),
+            (0x7303, SHORT, &[256, 500, 385, 256]),
+            (0x74c3, SHORT, &[16, 8, 3904, 2600]),
+        ];
         for order in [Little, Big] {
             let enc = block_keyed(230812, &entries, order, key);
             let sub = SubIfd::decrypt_keyed(&enc, 230812, order, key);
-            assert_eq!(sub.shorts(0x7300), Some(vec![514.0, 511.0, 512.0, 513.0]), "{order:?}");
+            assert_eq!(
+                sub.shorts(0x7300),
+                Some(vec![514.0, 511.0, 512.0, 513.0]),
+                "{order:?}"
+            );
             assert_eq!(sub.shorts(0x7303), Some(vec![256.0, 500.0, 385.0, 256.0]));
             assert_eq!(sub.shorts(0x74c3), Some(vec![16.0, 8.0, 3904.0, 2600.0]));
             // the wrong key (or the default one) gives noise
@@ -333,22 +431,41 @@ pub(crate) mod tests {
     fn reads_entries_inline_and_at_file_offsets() {
         for order in [Little, Big] {
             let start = 75964;
-            let enc = block(start, &[(0x7310, SHORT, &[512; 4]), (0x7311, SHORT, &[256]), (0x7313, SSHORT, &[2212, 1024, 1024, 1416])], order);
+            let enc = block(
+                start,
+                &[
+                    (0x7310, SHORT, &[512; 4]),
+                    (0x7311, SHORT, &[256]),
+                    (0x7313, SSHORT, &[2212, 1024, 1024, 1416]),
+                ],
+                order,
+            );
             let sub = SubIfd::decrypt(&enc, start, order);
-            assert_eq!(sub.shorts(0x7313), Some(vec![2212.0, 1024.0, 1024.0, 1416.0]), "{order:?}");
+            assert_eq!(
+                sub.shorts(0x7313),
+                Some(vec![2212.0, 1024.0, 1024.0, 1416.0]),
+                "{order:?}"
+            );
             assert_eq!(sub.shorts(0x7310), Some(vec![512.0; 4]));
             assert_eq!(sub.shorts(0x7311), Some(vec![256.0]));
             assert_eq!(sub.shorts(0x7312), None);
             // SSHORT is signed
             let enc = block(start, &[(0x7313, SSHORT, &[0xffff, 1024])], order);
-            assert_eq!(SubIfd::decrypt(&enc, start, order).shorts(0x7313), Some(vec![-1.0, 1024.0]));
+            assert_eq!(
+                SubIfd::decrypt(&enc, start, order).shorts(0x7313),
+                Some(vec![-1.0, 1024.0])
+            );
         }
     }
 
     #[test]
     fn hostile_directories_give_none() {
         let start = 4096;
-        let good = block(start, &[(0x7313, SSHORT, &[2212, 1024, 1024, 1416])], Little);
+        let good = block(
+            start,
+            &[(0x7313, SSHORT, &[2212, 1024, 1024, 1416])],
+            Little,
+        );
         let read = |b: &[u8], start: usize| SubIfd::decrypt(b, start, Little).shorts(0x7313);
         assert!(read(&good, start).is_some());
         // decrypted at another file offset, the value offset points before or past the block
@@ -359,8 +476,24 @@ pub(crate) mod tests {
             assert_eq!(read(&good[..n], start), None, "{n} bytes");
         }
         // garbage: still encrypted; 65535 entries of tag 0xffff; a huge count, another type, a wild offset
-        assert_eq!(SubIfd { start, plain: good.clone(), order: Little }.shorts(0x7313), None);
-        assert_eq!(SubIfd { start, plain: vec![0xff; 1000], order: Little }.shorts(0x7313), None);
+        assert_eq!(
+            SubIfd {
+                start,
+                plain: good.clone(),
+                order: Little
+            }
+            .shorts(0x7313),
+            None
+        );
+        assert_eq!(
+            SubIfd {
+                start,
+                plain: vec![0xff; 1000],
+                order: Little
+            }
+            .shorts(0x7313),
+            None
+        );
         let mut plain = good.clone();
         apply_keystream(&mut plain);
         let patched = |at: usize, bytes: &[u8]| {
@@ -374,6 +507,9 @@ pub(crate) mod tests {
         assert_eq!(patched(10, &u32::MAX.to_le_bytes()), None); // value offset
         // an entry count past the end of the block: the scan stops where the block ends, so an entry before that
         // point is still found
-        assert_eq!(patched(0, &u16::MAX.to_le_bytes()), Some(vec![2212.0, 1024.0, 1024.0, 1416.0]));
+        assert_eq!(
+            patched(0, &u16::MAX.to_le_bytes()),
+            Some(vec![2212.0, 1024.0, 1024.0, 1416.0])
+        );
     }
 }

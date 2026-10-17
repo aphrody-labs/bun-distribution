@@ -44,7 +44,11 @@ pub fn diff(from: &Replica, to: &Document) -> Result<Diff, Error> {
             (Some(o), Some(n)) => {
                 for p in Prop::FIELDS {
                     if p.differs(o, n) {
-                        fields.push(Change::Set { id, prop: *p, value: p.get(n)? });
+                        fields.push(Change::Set {
+                            id,
+                            prop: *p,
+                            value: p.get(n)?,
+                        });
                     }
                 }
                 if o.parent != n.parent {
@@ -71,7 +75,12 @@ pub fn diff(from: &Replica, to: &Document) -> Result<Diff, Error> {
             },
         };
         // A child keeps its key only if it was under the same parent before.
-        let old = |c: NodeId| a.node(c).filter(|n| n.parent == p).and_then(|_| from.positions().get(&c)).map(String::as_str);
+        let old = |c: NodeId| {
+            a.node(c)
+                .filter(|n| n.parent == p)
+                .and_then(|_| from.positions().get(&c))
+                .map(String::as_str)
+        };
         for (c, k) in keys_for(kids, old)? {
             positions.insert(c, k.clone());
             rekeyed.insert(c, k);
@@ -107,13 +116,24 @@ pub fn diff(from: &Replica, to: &Document) -> Result<Diff, Error> {
         }
         if moved.contains(c) {
             let parent = to.node(*c).and_then(|n| n.parent);
-            changes.push(Change::Set { id: *c, prop: Prop::Parent, value: Json::of(&parent)? });
+            changes.push(Change::Set {
+                id: *c,
+                prop: Prop::Parent,
+                value: Json::of(&parent)?,
+            });
         }
-        changes.push(Change::Set { id: *c, prop: Prop::Position, value: Json::of(k)? });
+        changes.push(Change::Set {
+            id: *c,
+            prop: Prop::Position,
+            value: Json::of(k)?,
+        });
     }
     // Deletions last (a layer moved out of a deleted frame has moved by then); one per subtree.
     for id in &removed {
-        if a.node(*id).and_then(|n| n.parent).is_none_or(|p| !removed.contains(&p)) {
+        if a.node(*id)
+            .and_then(|n| n.parent)
+            .is_none_or(|p| !removed.contains(&p))
+        {
             changes.push(Change::Delete { id: *id });
         }
     }
@@ -138,7 +158,10 @@ fn depth(doc: &Document, id: NodeId) -> usize {
 /// New keys for the children `kids` (in their new order) whose `old` key no longer fits: the
 /// longest run of old keys that is still increasing is kept, the rest get keys between their kept
 /// neighbours. Falls back to re-spacing every child when keys would get long.
-fn keys_for<'a>(kids: &[NodeId], old: impl Fn(NodeId) -> Option<&'a str>) -> Result<Vec<(NodeId, String)>, Error> {
+fn keys_for<'a>(
+    kids: &[NodeId],
+    old: impl Fn(NodeId) -> Option<&'a str>,
+) -> Result<Vec<(NodeId, String)>, Error> {
     let olds: Vec<Option<&str>> = kids.iter().map(|c| old(*c)).collect();
     let kept = increasing_run(&olds);
     let mut out = Vec::new();
@@ -154,20 +177,38 @@ fn keys_for<'a>(kids: &[NodeId], old: impl Fn(NodeId) -> Option<&'a str>) -> Res
         while i < kids.len() && !kept.get(i).copied().unwrap_or(false) {
             i += 1;
         }
-        let next = if i < kids.len() { olds.get(i).copied().flatten() } else { None };
-        let keys = frac::n_between(prev, next, i - start).map_err(|e| Error::Invalid(e.to_string()))?;
+        let next = if i < kids.len() {
+            olds.get(i).copied().flatten()
+        } else {
+            None
+        };
+        let keys =
+            frac::n_between(prev, next, i - start).map_err(|e| Error::Invalid(e.to_string()))?;
         if keys.iter().any(|k| k.len() > KEY_RESPACE_LEN) {
             return respace(kids, &olds);
         }
-        out.extend(kids.get(start..i).unwrap_or_default().iter().copied().zip(keys));
+        out.extend(
+            kids.get(start..i)
+                .unwrap_or_default()
+                .iter()
+                .copied()
+                .zip(keys),
+        );
     }
     Ok(out)
 }
 
 /// Fresh, short keys for every child (those whose key changes).
 fn respace(kids: &[NodeId], olds: &[Option<&str>]) -> Result<Vec<(NodeId, String)>, Error> {
-    let keys = frac::n_between(None, None, kids.len()).map_err(|e| Error::Invalid(e.to_string()))?;
-    Ok(kids.iter().zip(olds).zip(keys).filter(|((_, o), k)| **o != Some(k.as_str())).map(|((c, _), k)| (*c, k)).collect())
+    let keys =
+        frac::n_between(None, None, kids.len()).map_err(|e| Error::Invalid(e.to_string()))?;
+    Ok(kids
+        .iter()
+        .zip(olds)
+        .zip(keys)
+        .filter(|((_, o), k)| **o != Some(k.as_str()))
+        .map(|((c, _), k)| (*c, k))
+        .collect())
 }
 
 /// Which entries form a longest strictly increasing subsequence of the present keys.
@@ -177,7 +218,8 @@ fn increasing_run(keys: &[Option<&str>]) -> Vec<bool> {
     let mut prev: Vec<Option<usize>> = vec![None; keys.len()];
     for (i, k) in keys.iter().enumerate() {
         let Some(k) = k else { continue };
-        let at = tails.partition_point(|t| keys.get(*t).copied().flatten().is_some_and(|tk| tk < *k));
+        let at =
+            tails.partition_point(|t| keys.get(*t).copied().flatten().is_some_and(|tk| tk < *k));
         if let Some(p) = prev.get_mut(i) {
             *p = at.checked_sub(1).and_then(|b| tails.get(b)).copied();
         }

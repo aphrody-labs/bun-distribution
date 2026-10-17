@@ -19,10 +19,21 @@ fn id(v: Value) -> NodeId {
 fn scene(props: Value) -> (Ui, NodeId) {
     let mut s = Session::new();
     let mut all = json!({"layout": "horizontal", "padding": 0, "gap": 10, "crossGap": 10});
-    all.as_object_mut().unwrap().extend(props.as_object().unwrap().clone());
-    let f = id(s.execute("frame.create", &json!({"x": 100, "y": 100, "width": 300, "height": 300, "props": all})).unwrap());
+    all.as_object_mut()
+        .unwrap()
+        .extend(props.as_object().unwrap().clone());
+    let f = id(s
+        .execute(
+            "frame.create",
+            &json!({"x": 100, "y": 100, "width": 300, "height": 300, "props": all}),
+        )
+        .unwrap());
     for _ in 0..3 {
-        s.execute("shape.rectangle", &json!({"parent": f, "x": 0, "y": 0, "width": 120, "height": 60})).unwrap();
+        s.execute(
+            "shape.rectangle",
+            &json!({"parent": f, "x": 0, "y": 0, "width": 120, "height": 60}),
+        )
+        .unwrap();
     }
     s.execute("select.set", &json!({"ids": [f]})).unwrap();
     (Ui::new(s), f)
@@ -36,7 +47,9 @@ fn drag(u: &mut Ui, from: (f64, f64), by: (f32, f32)) {
     u.frame(vec![Event::PointerMoved(p)]);
     u.button(p, true);
     for k in 1..=4 {
-        u.frame(vec![Event::PointerMoved(p + vec2(by.0, by.1) * zoom * (k as f32 / 4.0))]);
+        u.frame(vec![Event::PointerMoved(
+            p + vec2(by.0, by.1) * zoom * (k as f32 / 4.0),
+        )]);
     }
     u.button(p + vec2(by.0, by.1) * zoom, false);
     u.frame(vec![]);
@@ -48,28 +61,77 @@ fn dragging_the_gap_between_spread_rows_fixes_it_from_where_it_was() {
     let (mut u, f) = scene(json!({"wrap": true, "contentAlign": "spaceBetween"}));
     // Between the rows, at the frame's middle: page (250, 250). 20 down: 180 + 20.
     drag(&mut u, (250.0, 250.0), (0.0, 20.0));
-    let l = u.app.session.doc().unwrap().node(f).unwrap().layout.clone().unwrap();
+    let l = u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(f)
+        .unwrap()
+        .layout
+        .clone()
+        .unwrap();
     assert_eq!((l.content_align, l.cross_gap), (ContentAlign::Auto, 200.0));
     // One undo step for the whole drag.
     u.app.run("edit.undo", json!({}));
-    let l = u.app.session.doc().unwrap().node(f).unwrap().layout.clone().unwrap();
-    assert_eq!((l.content_align, l.cross_gap), (ContentAlign::SpaceBetween, 10.0));
+    let l = u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(f)
+        .unwrap()
+        .layout
+        .clone()
+        .unwrap();
+    assert_eq!(
+        (l.content_align, l.cross_gap),
+        (ContentAlign::SpaceBetween, 10.0)
+    );
 }
 
 #[test]
 fn dragging_an_auto_gap_between_items_fixes_it_too_and_fixed_gaps_drag_as_before() {
     // Three 60-wide items spread along 300: (300 - 3 × 60) / 2 = 60 apart.
     let (mut u, f) = scene(json!({"mainAlign": "spaceBetween"}));
-    for k in u.app.session.doc().unwrap().node(f).unwrap().children.clone() {
-        u.app.run("node.set", json!({"id": k, "props": {"width": 60}}));
+    for k in u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(f)
+        .unwrap()
+        .children
+        .clone()
+    {
+        u.app
+            .run("node.set", json!({"id": k, "props": {"width": 60}}));
     }
     u.frame(vec![]);
     // Between the first two items: x from 160 to 220 on the page, in the items' height.
     drag(&mut u, (190.0, 130.0), (-10.0, 0.0));
-    let l = u.app.session.doc().unwrap().node(f).unwrap().layout.clone().unwrap();
+    let l = u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(f)
+        .unwrap()
+        .layout
+        .clone()
+        .unwrap();
     assert_eq!((l.main_align, l.gap), (MainAlign::Min, 50.0));
     // A fixed gap: the drag changes the value and nothing else.
     drag(&mut u, (185.0, 130.0), (6.0, 0.0));
-    let l = u.app.session.doc().unwrap().node(f).unwrap().layout.clone().unwrap();
+    let l = u
+        .app
+        .session
+        .doc()
+        .unwrap()
+        .node(f)
+        .unwrap()
+        .layout
+        .clone()
+        .unwrap();
     assert_eq!((l.main_align, l.gap), (MainAlign::Min, 56.0));
 }

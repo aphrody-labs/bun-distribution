@@ -42,11 +42,21 @@ fn by_mcid(doc: &Document, resources: &Dict, data: &[u8]) -> HashMap<i64, (Vec<u
             _ => {}
         }
         let draws = match op.op.as_slice() {
-            b"Tj" | b"'" | b"\"" => op.operands.last().and_then(Object::as_string).is_some_and(|s| !s.bytes.is_empty()),
-            b"TJ" => {
-                op.operands.first().and_then(Object::as_array).is_some_and(|a| a.iter().any(|x| x.as_string().is_some_and(|s| !s.bytes.is_empty())))
-            }
-            b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"S" | b"s" | b"sh" | b"Do" | b"BI" => true,
+            b"Tj" | b"'" | b"\"" => op
+                .operands
+                .last()
+                .and_then(Object::as_string)
+                .is_some_and(|s| !s.bytes.is_empty()),
+            b"TJ" => op
+                .operands
+                .first()
+                .and_then(Object::as_array)
+                .is_some_and(|a| {
+                    a.iter()
+                        .any(|x| x.as_string().is_some_and(|s| !s.bytes.is_empty()))
+                }),
+            b"f" | b"F" | b"f*" | b"B" | b"B*" | b"b" | b"b*" | b"S" | b"s" | b"sh" | b"Do"
+            | b"BI" => true,
             _ => false,
         };
         let mut bytes = Vec::new();
@@ -61,8 +71,16 @@ fn by_mcid(doc: &Document, resources: &Dict, data: &[u8]) -> HashMap<i64, (Vec<u
 }
 
 /// The MCIDs whose content changed between `before` and `after`, and those left empty.
-pub(crate) fn touched(doc: &Document, resources: &Dict, before: &[u8], after: &[u8]) -> (HashSet<i64>, HashSet<i64>) {
-    let (b, a) = (by_mcid(doc, resources, before), by_mcid(doc, resources, after));
+pub(crate) fn touched(
+    doc: &Document,
+    resources: &Dict,
+    before: &[u8],
+    after: &[u8],
+) -> (HashSet<i64>, HashSet<i64>) {
+    let (b, a) = (
+        by_mcid(doc, resources, before),
+        by_mcid(doc, resources, after),
+    );
     let mut changed = HashSet::new();
     let mut empty = HashSet::new();
     for (id, (ops, _)) in &b {
@@ -84,13 +102,21 @@ pub(crate) fn touched(doc: &Document, resources: &Dict, before: &[u8], after: &[
     (changed, empty)
 }
 
-fn mcid_of(doc: &Document, o: &Object, page: Option<ObjRef>, target: ObjRef, stream: Option<(ObjRef, ObjRef)>) -> Option<i64> {
+fn mcid_of(
+    doc: &Document,
+    o: &Object,
+    page: Option<ObjRef>,
+    target: ObjRef,
+    stream: Option<(ObjRef, ObjRef)>,
+) -> Option<i64> {
     match &*doc.resolve(o) {
         Object::Int(n) if page == Some(target) && stream.is_none() => Some(*n),
         Object::Dict(m) if m.name(b"Type") == Some(b"MCR") => {
             let pg = m.get(b"Pg").and_then(Object::as_ref).or(page);
             let stm = m.get(b"Stm").and_then(Object::as_ref);
-            (pg == Some(target) && stm == stream.map(|s| s.0)).then(|| m.int(b"MCID")).flatten()
+            (pg == Some(target) && stm == stream.map(|s| s.0))
+                .then(|| m.int(b"MCID"))
+                .flatten()
         }
         _ => None,
     }
@@ -110,12 +136,19 @@ pub(crate) fn clean(
     let Some(root) = doc
         .root()
         .and_then(|r| doc.get(r).as_dict().cloned())
-        .and_then(|c| c.get(b"StructTreeRoot").map(|s| doc.resolve(s)).and_then(|s| s.as_dict().cloned()))
+        .and_then(|c| {
+            c.get(b"StructTreeRoot")
+                .map(|s| doc.resolve(s))
+                .and_then(|s| s.as_dict().cloned())
+        })
     else {
         return Ok(0);
     };
     // Indirect elements with the page they inherit.
-    let mut todo: Vec<(Object, Option<ObjRef>)> = root.get(b"K").map(|k| vec![(k.clone(), None)]).unwrap_or_default();
+    let mut todo: Vec<(Object, Option<ObjRef>)> = root
+        .get(b"K")
+        .map(|k| vec![(k.clone(), None)])
+        .unwrap_or_default();
     let mut seen = HashSet::new();
     let mut hits: Vec<(ObjRef, Dict, Option<ObjRef>, bool)> = Vec::new();
     while let Some((k, pg)) = todo.pop() {
@@ -130,7 +163,9 @@ pub(crate) fn clean(
                     todo.extend(a.iter().cloned().map(|x| (x, pg)));
                     continue;
                 }
-                let Some(d) = object.as_dict().cloned() else { continue };
+                let Some(d) = object.as_dict().cloned() else {
+                    continue;
+                };
                 if !d.contains(b"S") {
                     continue;
                 }
@@ -142,8 +177,13 @@ pub(crate) fn clean(
                     },
                     None => Vec::new(),
                 };
-                let sensitive = kids.iter().any(|x| mcid_of(doc, x, pg, page, stream).is_some_and(|m| changed.contains(&m)));
-                let remap = stream.is_some() && kids.iter().any(|x| mcid_of(doc, x, pg, page, stream).is_some());
+                let sensitive = kids.iter().any(|x| {
+                    mcid_of(doc, x, pg, page, stream).is_some_and(|m| changed.contains(&m))
+                });
+                let remap = stream.is_some()
+                    && kids
+                        .iter()
+                        .any(|x| mcid_of(doc, x, pg, page, stream).is_some());
                 if sensitive || remap {
                     hits.push((r, d.clone(), pg, sensitive));
                 }
@@ -155,7 +195,9 @@ pub(crate) fn clean(
     let mut n = 0;
     for (r, d, pg, sensitive) in hits {
         let kids = d.get(b"K").map(|k| doc.resolve(k));
-        let array = kids.as_ref().is_some_and(|k| matches!(&**k, Object::Array(_)));
+        let array = kids
+            .as_ref()
+            .is_some_and(|k| matches!(&**k, Object::Array(_)));
         let list = match kids.as_deref() {
             Some(Object::Array(a)) => a.clone(),
             Some(_) => d.get(b"K").cloned().into_iter().collect(),

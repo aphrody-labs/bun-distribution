@@ -47,8 +47,23 @@ impl Worker {
                         job = newer;
                     }
                     let t0 = crate::now_ms();
-                    let image = r.render(&job.doc, &job.cache, &job.placed, job.w, job.h, job.view, &job.opts);
-                    if done_tx.send(Done { token: job.token, image, ms: crate::now_ms() - t0 }).is_err() {
+                    let image = r.render(
+                        &job.doc,
+                        &job.cache,
+                        &job.placed,
+                        job.w,
+                        job.h,
+                        job.view,
+                        &job.opts,
+                    );
+                    if done_tx
+                        .send(Done {
+                            token: job.token,
+                            image,
+                            ms: crate::now_ms() - t0,
+                        })
+                        .is_err()
+                    {
                         break;
                     }
                     ctx.request_repaint();

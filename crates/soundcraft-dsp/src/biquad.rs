@@ -40,26 +40,72 @@ impl Default for Coeffs {
 
 impl Coeffs {
     /// Passes the signal unchanged.
-    pub const IDENTITY: Coeffs = Coeffs { b0: 1.0, b1: 0.0, b2: 0.0, a1: 0.0, a2: 0.0 };
+    pub const IDENTITY: Coeffs = Coeffs {
+        b0: 1.0,
+        b1: 0.0,
+        b2: 0.0,
+        a1: 0.0,
+        a2: 0.0,
+    };
 
     /// Designs a filter. All inputs are sanitized: frequency is clamped to 1 Hz .. 0.49·sr,
     /// Q to 0.025 .. 100 and gain to ±48 dB.
     pub fn design(kind: FilterType, freq: f32, q: f32, gain_db: f32, sample_rate: f32) -> Coeffs {
         let sr = f64::from(sane_sr(sample_rate));
-        let f = if freq.is_finite() { f64::from(freq).clamp(1.0, sr * 0.49) } else { 1000.0 };
-        let q = if q.is_finite() { f64::from(q).clamp(0.025, 100.0) } else { std::f64::consts::FRAC_1_SQRT_2 };
-        let g = if gain_db.is_finite() { f64::from(gain_db).clamp(-48.0, 48.0) } else { 0.0 };
+        let f = if freq.is_finite() {
+            f64::from(freq).clamp(1.0, sr * 0.49)
+        } else {
+            1000.0
+        };
+        let q = if q.is_finite() {
+            f64::from(q).clamp(0.025, 100.0)
+        } else {
+            std::f64::consts::FRAC_1_SQRT_2
+        };
+        let g = if gain_db.is_finite() {
+            f64::from(gain_db).clamp(-48.0, 48.0)
+        } else {
+            0.0
+        };
         let w0 = 2.0 * PI * f / sr;
         let (sw, cw) = w0.sin_cos();
         let alpha = sw / (2.0 * q);
         let a = 10f64.powf(g / 40.0);
         let (b0, b1, b2, a0, a1, a2) = match kind {
-            FilterType::LowPass => ((1.0 - cw) / 2.0, 1.0 - cw, (1.0 - cw) / 2.0, 1.0 + alpha, -2.0 * cw, 1.0 - alpha),
-            FilterType::HighPass => ((1.0 + cw) / 2.0, -(1.0 + cw), (1.0 + cw) / 2.0, 1.0 + alpha, -2.0 * cw, 1.0 - alpha),
+            FilterType::LowPass => (
+                (1.0 - cw) / 2.0,
+                1.0 - cw,
+                (1.0 - cw) / 2.0,
+                1.0 + alpha,
+                -2.0 * cw,
+                1.0 - alpha,
+            ),
+            FilterType::HighPass => (
+                (1.0 + cw) / 2.0,
+                -(1.0 + cw),
+                (1.0 + cw) / 2.0,
+                1.0 + alpha,
+                -2.0 * cw,
+                1.0 - alpha,
+            ),
             FilterType::BandPass => (alpha, 0.0, -alpha, 1.0 + alpha, -2.0 * cw, 1.0 - alpha),
             FilterType::Notch => (1.0, -2.0 * cw, 1.0, 1.0 + alpha, -2.0 * cw, 1.0 - alpha),
-            FilterType::AllPass => (1.0 - alpha, -2.0 * cw, 1.0 + alpha, 1.0 + alpha, -2.0 * cw, 1.0 - alpha),
-            FilterType::Peak => (1.0 + alpha * a, -2.0 * cw, 1.0 - alpha * a, 1.0 + alpha / a, -2.0 * cw, 1.0 - alpha / a),
+            FilterType::AllPass => (
+                1.0 - alpha,
+                -2.0 * cw,
+                1.0 + alpha,
+                1.0 + alpha,
+                -2.0 * cw,
+                1.0 - alpha,
+            ),
+            FilterType::Peak => (
+                1.0 + alpha * a,
+                -2.0 * cw,
+                1.0 - alpha * a,
+                1.0 + alpha / a,
+                -2.0 * cw,
+                1.0 - alpha / a,
+            ),
             FilterType::LowShelf => {
                 let s = 2.0 * a.sqrt() * alpha;
                 (
@@ -88,24 +134,56 @@ impl Coeffs {
                 let norm = 1.0 / (1.0 + k);
                 let a1 = (k - 1.0) * norm;
                 return if kind == FilterType::LowPass1 {
-                    Coeffs { b0: (k * norm) as f32, b1: (k * norm) as f32, b2: 0.0, a1: a1 as f32, a2: 0.0 }
+                    Coeffs {
+                        b0: (k * norm) as f32,
+                        b1: (k * norm) as f32,
+                        b2: 0.0,
+                        a1: a1 as f32,
+                        a2: 0.0,
+                    }
                 } else {
-                    Coeffs { b0: norm as f32, b1: -norm as f32, b2: 0.0, a1: a1 as f32, a2: 0.0 }
+                    Coeffs {
+                        b0: norm as f32,
+                        b1: -norm as f32,
+                        b2: 0.0,
+                        a1: a1 as f32,
+                        a2: 0.0,
+                    }
                 };
             }
         };
-        let c = Coeffs { b0: (b0 / a0) as f32, b1: (b1 / a0) as f32, b2: (b2 / a0) as f32, a1: (a1 / a0) as f32, a2: (a2 / a0) as f32 };
-        if [c.b0, c.b1, c.b2, c.a1, c.a2].iter().all(|v| v.is_finite()) { c } else { Coeffs::IDENTITY }
+        let c = Coeffs {
+            b0: (b0 / a0) as f32,
+            b1: (b1 / a0) as f32,
+            b2: (b2 / a0) as f32,
+            a1: (a1 / a0) as f32,
+            a2: (a2 / a0) as f32,
+        };
+        if [c.b0, c.b1, c.b2, c.a1, c.a2].iter().all(|v| v.is_finite()) {
+            c
+        } else {
+            Coeffs::IDENTITY
+        }
     }
 
     /// Magnitude response in dB at `freq` Hz.
     pub fn magnitude_db(&self, freq: f32, sample_rate: f32) -> f32 {
         let sr = f64::from(sane_sr(sample_rate));
-        let f = if freq.is_finite() { f64::from(freq).clamp(0.0, sr * 0.5) } else { 0.0 };
+        let f = if freq.is_finite() {
+            f64::from(freq).clamp(0.0, sr * 0.5)
+        } else {
+            0.0
+        };
         let w = 2.0 * PI * f / sr;
         let (s1, c1) = w.sin_cos();
         let (s2, c2) = (2.0 * w).sin_cos();
-        let (b0, b1, b2, a1, a2) = (f64::from(self.b0), f64::from(self.b1), f64::from(self.b2), f64::from(self.a1), f64::from(self.a2));
+        let (b0, b1, b2, a1, a2) = (
+            f64::from(self.b0),
+            f64::from(self.b1),
+            f64::from(self.b2),
+            f64::from(self.a1),
+            f64::from(self.a2),
+        );
         let nr = b0 + b1 * c1 + b2 * c2;
         let ni = -(b1 * s1 + b2 * s2);
         let dr = 1.0 + a1 * c1 + a2 * c2;
@@ -127,7 +205,11 @@ pub struct Biquad {
 
 impl Biquad {
     pub fn new(coeffs: Coeffs) -> Self {
-        Self { coeffs, z1: 0.0, z2: 0.0 }
+        Self {
+            coeffs,
+            z1: 0.0,
+            z2: 0.0,
+        }
     }
 
     /// Designs a new filter (see [`Coeffs::design`]).
@@ -192,7 +274,13 @@ mod tests {
 
     #[test]
     fn lowpass_minus3_at_cutoff() {
-        let c = Coeffs::design(FilterType::LowPass, 1000.0, std::f32::consts::FRAC_1_SQRT_2, 0.0, 48_000.0);
+        let c = Coeffs::design(
+            FilterType::LowPass,
+            1000.0,
+            std::f32::consts::FRAC_1_SQRT_2,
+            0.0,
+            48_000.0,
+        );
         assert!((c.magnitude_db(1000.0, 48_000.0) + 3.01).abs() < 0.05);
         let c1 = Coeffs::design(FilterType::HighPass1, 1000.0, 0.0, 0.0, 48_000.0);
         assert!((c1.magnitude_db(1000.0, 48_000.0) + 3.01).abs() < 0.05);
@@ -200,7 +288,13 @@ mod tests {
 
     #[test]
     fn hostile_inputs() {
-        let c = Coeffs::design(FilterType::Peak, f32::NAN, f32::INFINITY, f32::NEG_INFINITY, 0.0);
+        let c = Coeffs::design(
+            FilterType::Peak,
+            f32::NAN,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            0.0,
+        );
         assert!(c.b0.is_finite());
         let mut b = Biquad::new(c);
         assert!(b.process_sample(f32::NAN) == 0.0);

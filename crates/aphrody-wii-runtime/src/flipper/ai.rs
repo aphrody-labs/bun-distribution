@@ -79,7 +79,8 @@ pub fn start_audio_dma<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
         return;
     }
 
-    sys.scheduler.cancel(crate::scheduler::Handler::AiAudioDmaBlock);
+    sys.scheduler
+        .cancel(crate::scheduler::Handler::AiAudioDmaBlock);
     sys.ai.audio_dma_remaining_blocks = blocks;
     sys.ai.audio_dma_current_addr = sys.dsp.audio_dma_start_addr.raw();
     sys.dsp.csr.set_dma_status(true);
@@ -89,13 +90,16 @@ pub fn start_audio_dma<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
 
     tracing::debug!(addr = format!("{addr:08X}"), len, "AID DMA started");
 
-    sys.scheduler
-        .schedule_in(cycles_per_audio_dma_block(sys), crate::scheduler::Handler::AiAudioDmaBlock);
+    sys.scheduler.schedule_in(
+        cycles_per_audio_dma_block(sys),
+        crate::scheduler::Handler::AiAudioDmaBlock,
+    );
 }
 
 #[inline(always)]
 pub fn stop_audio_dma<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>) {
-    sys.scheduler.cancel(crate::scheduler::Handler::AiAudioDmaBlock);
+    sys.scheduler
+        .cancel(crate::scheduler::Handler::AiAudioDmaBlock);
     sys.ai.audio_dma_remaining_blocks = 0;
     sys.dsp.csr.set_dma_status(false);
 }
@@ -119,8 +123,10 @@ pub fn audio_dma_block_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>)
     }
 
     let block_bytes: [u8; 32] = {
-        let src =
-            sys.mmio.virt_slice(sys.ai.audio_dma_current_addr, AUDIO_DMA_BLOCK_BYTES as usize);
+        let src = sys.mmio.virt_slice(
+            sys.ai.audio_dma_current_addr,
+            AUDIO_DMA_BLOCK_BYTES as usize,
+        );
         let mut buf = [0u8; 32];
         buf.copy_from_slice(src);
         buf
@@ -128,8 +134,10 @@ pub fn audio_dma_block_handler<const SYSTEM: SystemId>(sys: &mut System<SYSTEM>)
     let frames: AidBlock = audio::decode_aid_block(&block_bytes);
 
     sys.audio_sink.push_stereo_block(&frames);
-    sys.ai.audio_dma_current_addr =
-        sys.ai.audio_dma_current_addr.wrapping_add(AUDIO_DMA_BLOCK_BYTES);
+    sys.ai.audio_dma_current_addr = sys
+        .ai
+        .audio_dma_current_addr
+        .wrapping_add(AUDIO_DMA_BLOCK_BYTES);
 
     sys.ai.audio_dma_remaining_blocks -= 1;
 

@@ -4,7 +4,9 @@
 //! last effect in the stack isn't Paint, as After Effects does). Defaults come from the Paint
 //! and Brushes panel options in [`PaintOptions`] (`paint.options`, `paint.brushPreset`).
 
-use effectcraft_effects::paint::{self, BRUSH_PRESETS, CHANNELS, DURATIONS, ERASE_MODES, MODES, StrokeKind, StrokeSpec};
+use effectcraft_effects::paint::{
+    self, BRUSH_PRESETS, CHANNELS, DURATIONS, ERASE_MODES, MODES, StrokeKind, StrokeSpec,
+};
 use effectcraft_keyframe::{Keyframe, Value as KV};
 use effectcraft_project::build::Ids;
 use effectcraft_project::{GroupKind, PropGroup, Uid};
@@ -107,7 +109,10 @@ impl Default for PaintOptions {
 }
 
 fn norm(s: &str) -> String {
-    s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase()
+    s.chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase()
 }
 
 /// Index of `v` in `names` (by number or case/space-insensitive name).
@@ -116,7 +121,11 @@ fn pick(v: Option<&Value>, names: &[&str], cmd: &str, what: &str) -> Result<Opti
         None | Some(Value::Null) => Ok(None),
         Some(Value::Number(n)) => {
             let i = n.as_u64().unwrap_or(u64::MAX);
-            if (i as usize) < names.len() { Ok(Some(i as u32)) } else { Err(bad(cmd, format!("`{what}` index out of range"))) }
+            if (i as usize) < names.len() {
+                Ok(Some(i as u32))
+            } else {
+                Err(bad(cmd, format!("`{what}` index out of range")))
+            }
         }
         Some(Value::String(s)) => {
             let k = norm(s);
@@ -124,7 +133,12 @@ fn pick(v: Option<&Value>, names: &[&str], cmd: &str, what: &str) -> Result<Opti
                 .iter()
                 .position(|n| norm(n) == k || (k == "writeon" && norm(n) == "writeon"))
                 .map(|i| Some(i as u32))
-                .ok_or_else(|| bad(cmd, format!("unknown {what} `{s}`; one of: {}", names.join(", "))))
+                .ok_or_else(|| {
+                    bad(
+                        cmd,
+                        format!("unknown {what} `{s}`; one of: {}", names.join(", ")),
+                    )
+                })
         }
         Some(_) => Err(bad(cmd, format!("`{what}` must be a name or index"))),
     }
@@ -198,14 +212,18 @@ fn apply_options(o: &mut PaintOptions, p: &Value, cmd: &str) -> Result<()> {
         o.channels = i;
     }
     let durs = ["constant", "writeOn", "singleFrame", "custom"];
-    if let Some(i) = pick(p.get("durationMode"), &DURATIONS, cmd, "durationMode").or_else(|_| pick(p.get("durationMode"), &durs, cmd, "durationMode"))? {
+    if let Some(i) = pick(p.get("durationMode"), &DURATIONS, cmd, "durationMode")
+        .or_else(|_| pick(p.get("durationMode"), &durs, cmd, "durationMode"))?
+    {
         o.duration = i;
     }
     if let Some(n) = p.get("customFrames").and_then(Value::as_u64) {
         o.custom_frames = (n as u32).max(1);
     }
     let erase = ["layerSourceAndPaint", "paintOnly", "lastStrokeOnly"];
-    if let Some(i) = pick(p.get("eraseMode"), &ERASE_MODES, cmd, "eraseMode").or_else(|_| pick(p.get("eraseMode"), &erase, cmd, "eraseMode"))? {
+    if let Some(i) = pick(p.get("eraseMode"), &ERASE_MODES, cmd, "eraseMode")
+        .or_else(|_| pick(p.get("eraseMode"), &erase, cmd, "eraseMode"))?
+    {
         o.erase = i;
     }
     if let Some(n) = p.get("clonePreset").and_then(Value::as_u64) {
@@ -230,7 +248,12 @@ fn apply_options(o: &mut PaintOptions, p: &Value, cmd: &str) -> Result<()> {
 }
 
 fn set_preset(o: &mut PaintOptions, i: usize, cmd: &str) -> Result<()> {
-    let t = BRUSH_PRESETS.get(i).ok_or_else(|| bad(cmd, format!("no brush preset {i} (0–{})", BRUSH_PRESETS.len() - 1)))?;
+    let t = BRUSH_PRESETS.get(i).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("no brush preset {i} (0–{})", BRUSH_PRESETS.len() - 1),
+        )
+    })?;
     o.diameter = t.diameter;
     o.angle = t.angle;
     o.roundness = t.roundness;
@@ -244,7 +267,11 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
     let mut o = s.state.paint.clone();
     apply_options(&mut o, p, "paint.options")?;
     // Editing the tip by hand deselects the preset.
-    if p.get("preset").is_none() && ["diameter", "angle", "roundness", "hardness", "spacing"].iter().any(|k| p.get(k).is_some()) {
+    if p.get("preset").is_none()
+        && ["diameter", "angle", "roundness", "hardness", "spacing"]
+            .iter()
+            .any(|k| p.get(k).is_some())
+    {
         o.preset = None;
     }
     if b_p(p, "reset") == Some(true) {
@@ -258,10 +285,15 @@ fn options(s: &mut Session, p: &Value) -> Result<Value> {
 fn preset(s: &mut Session, p: &Value) -> Result<Value> {
     let i = match p.get("preset").or_else(|| p.get("name")) {
         Some(Value::Number(n)) => n.as_u64().unwrap_or(u64::MAX) as usize,
-        Some(Value::String(name)) => {
-            BRUSH_PRESETS.iter().position(|t| norm(t.name) == norm(name)).ok_or_else(|| bad("paint.brushPreset", format!("no preset `{name}`")))?
+        Some(Value::String(name)) => BRUSH_PRESETS
+            .iter()
+            .position(|t| norm(t.name) == norm(name))
+            .ok_or_else(|| bad("paint.brushPreset", format!("no preset `{name}`")))?,
+        _ => {
+            return Ok(json!(
+                BRUSH_PRESETS.iter().map(|t| t.name).collect::<Vec<_>>()
+            ));
         }
-        _ => return Ok(json!(BRUSH_PRESETS.iter().map(|t| t.name).collect::<Vec<_>>())),
     };
     let mut o = s.state.paint.clone();
     set_preset(&mut o, i, "paint.brushPreset")?;
@@ -271,7 +303,12 @@ fn preset(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set_clone_source(s: &mut Session, p: &Value) -> Result<Value> {
-    let point = pt(p.get("point")).ok_or_else(|| bad("paint.setCloneSource", "missing `point` [x, y] (effect space)"))?;
+    let point = pt(p.get("point")).ok_or_else(|| {
+        bad(
+            "paint.setCloneSource",
+            "missing `point` [x, y] (effect space)",
+        )
+    })?;
     let (_, lid) = layer_p(s, p, "paint.setCloneSource")?;
     s.state.paint.clone_source = Some(lid.0);
     s.state.paint.clone_point = Some(point);
@@ -284,9 +321,14 @@ fn paint_effect(fx: &mut PropGroup, ids: &mut Ids, layer_size: [f64; 2]) -> Resu
     if let Some(g) = fx.groups().last().filter(|g| paint::is_paint(g)) {
         return Ok(g.uid);
     }
-    let spec = effectcraft_effects::find(paint::ID).ok_or_else(|| EngineError::Other("Paint effect missing".into()))?;
+    let spec = effectcraft_effects::find(paint::ID)
+        .ok_or_else(|| EngineError::Other("Paint effect missing".into()))?;
     let n = fx.groups().filter(|g| paint::is_paint(g)).count();
-    let name = if n == 0 { "Paint".to_string() } else { format!("Paint {}", n + 1) };
+    let name = if n == 0 {
+        "Paint".to_string()
+    } else {
+        format!("Paint {}", n + 1)
+    };
     let g = effectcraft_effects::instantiate(spec, ids, &name, layer_size);
     let uid = g.uid;
     fx.children.push(g.into());
@@ -297,19 +339,35 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "paint.stroke";
     let (cid, lid) = layer_p(s, p, cmd)?;
     let kind = match str_p(p, "kind") {
-        Some(k) => StrokeKind::from_name(k).ok_or_else(|| bad(cmd, format!("unknown kind `{k}` (brush | clone | eraser)")))?,
+        Some(k) => StrokeKind::from_name(k)
+            .ok_or_else(|| bad(cmd, format!("unknown kind `{k}` (brush | clone | eraser)")))?,
         None => StrokeKind::Brush,
     };
-    let raw = p.get("points").and_then(Value::as_array).ok_or_else(|| bad(cmd, "missing `points` [[x, y, pressure?], …] (effect space)"))?;
+    let raw = p.get("points").and_then(Value::as_array).ok_or_else(|| {
+        bad(
+            cmd,
+            "missing `points` [[x, y, pressure?], …] (effect space)",
+        )
+    })?;
     let mut points = vec![];
     let mut pressure = vec![];
     for q in raw {
-        let a = q.as_array().ok_or_else(|| bad(cmd, "each point is [x, y] or [x, y, pressure]"))?;
-        let (Some(x), Some(y)) = (a.first().and_then(Value::as_f64), a.get(1).and_then(Value::as_f64)) else {
+        let a = q
+            .as_array()
+            .ok_or_else(|| bad(cmd, "each point is [x, y] or [x, y, pressure]"))?;
+        let (Some(x), Some(y)) = (
+            a.first().and_then(Value::as_f64),
+            a.get(1).and_then(Value::as_f64),
+        ) else {
             return Err(bad(cmd, "each point is [x, y] or [x, y, pressure]"));
         };
         points.push([x, y]);
-        pressure.push(a.get(2).and_then(Value::as_f64).unwrap_or(1.0).clamp(0.0, 1.0));
+        pressure.push(
+            a.get(2)
+                .and_then(Value::as_f64)
+                .unwrap_or(1.0)
+                .clamp(0.0, 1.0),
+        );
     }
     if points.is_empty() {
         return Err(bad(cmd, "`points` is empty"));
@@ -333,11 +391,16 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let (out_t, write_on) = match o.duration {
         1 => (paint::FOREVER, true),
         2 => ((lt + fd).seconds(), false),
-        3 => ((lt + Tick(fd.0 * o.custom_frames.max(1) as i64)).seconds(), false),
+        3 => (
+            (lt + Tick(fd.0 * o.custom_frames.max(1) as i64)).seconds(),
+            false,
+        ),
         _ => (paint::FOREVER, false),
     };
     // Write On: End animates 0 → 100 % over the time the stroke took to draw.
-    let draw = f_p(p, "duration").unwrap_or(points.len() as f64 / fr.as_f64().max(1.0)).max(0.0);
+    let draw = f_p(p, "duration")
+        .unwrap_or(points.len() as f64 / fr.as_f64().max(1.0))
+        .max(0.0);
     let draw_end = lt + fr.snap_nearest(Tick::from_seconds_f64(draw)).max(fd);
     // Clone position: explicit, Aligned offset, or the source point.
     let first = points[0];
@@ -387,25 +450,39 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let (fx_uid, uid) = s.edit(&label, None, |proj, st| {
         let mut next = proj.next_id;
         let l = layer_mut(proj, cid, lid)?;
-        let fx = l.props.sub_mut("effects").ok_or_else(|| bad(cmd, "this layer has no effects"))?;
+        let fx = l
+            .props
+            .sub_mut("effects")
+            .ok_or_else(|| bad(cmd, "this layer has no effects"))?;
         let mut ids = Ids(&mut next);
         let fx_uid = paint_effect(fx, &mut ids, size)?;
-        let pg = fx.find_group_mut(fx_uid).ok_or_else(|| bad(cmd, "Paint effect gone"))?;
+        let pg = fx
+            .find_group_mut(fx_uid)
+            .ok_or_else(|| bad(cmd, "Paint effect gone"))?;
         let mut spec = spec;
         if spec.kind == StrokeKind::Eraser && spec.erase_mode == 2 {
-            spec.target = paint::strokes(pg).filter(|g| g.match_id != "eraser").last().map(|g| g.uid);
+            spec.target = paint::strokes(pg)
+                .filter(|g| g.match_id != "eraser")
+                .last()
+                .map(|g| g.uid);
         }
         let name = paint::next_name(pg, spec.kind);
         let mut g = paint::stroke_group(&mut ids, &name, &spec);
         if write_on && let Some(end) = g.sub_mut("stroke_options").and_then(|o| o.get_mut("end")) {
-            end.keys = vec![Keyframe::new(lt, KV::Scalar(0.0)), Keyframe::new(draw_end, KV::Scalar(100.0))];
+            end.keys = vec![
+                Keyframe::new(lt, KV::Scalar(0.0)),
+                Keyframe::new(draw_end, KV::Scalar(100.0)),
+            ];
         }
         let uid = g.uid;
         pg.children.push(g.into());
         proj.next_id = next;
         st.selected_props = vec![(lid, uid)];
         if spec.kind == StrokeKind::Clone && st.paint.aligned && st.paint.clone_offset.is_none() {
-            st.paint.clone_offset = Some([spec.clone_position[0] - spec.points[0][0], spec.clone_position[1] - spec.points[0][1]]);
+            st.paint.clone_offset = Some([
+                spec.clone_position[0] - spec.points[0][0],
+                spec.clone_position[1] - spec.points[0][1],
+            ]);
         }
         Ok((fx_uid, uid))
     })?;
@@ -416,10 +493,16 @@ fn stroke(s: &mut Session, p: &Value) -> Result<Value> {
 fn remove_stroke(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "paint.removeStroke";
     let (cid, lid) = layer_p(s, p, cmd)?;
-    let key = p.get("stroke").cloned().ok_or_else(|| bad(cmd, "missing `stroke` (uid or name)"))?;
+    let key = p
+        .get("stroke")
+        .cloned()
+        .ok_or_else(|| bad(cmd, "missing `stroke` (uid or name)"))?;
     s.edit("Delete Stroke", None, |proj, st| {
         let l = layer_mut(proj, cid, lid)?;
-        let fx = l.props.sub_mut("effects").ok_or_else(|| bad(cmd, "no effects"))?;
+        let fx = l
+            .props
+            .sub_mut("effects")
+            .ok_or_else(|| bad(cmd, "no effects"))?;
         for c in fx.children.iter_mut() {
             let Some(g) = c.as_group_mut() else { continue };
             if !matches!(&g.kind, GroupKind::Effect { effect } if effect == paint::ID) {
@@ -475,9 +558,33 @@ pub fn specs() -> Vec<CommandSpec> {
             always,
             options
         ),
-        cmd!("paint.brushPreset", "Brush Preset", [], None, "{preset?: index | name}", always, preset),
-        cmd!("paint.setCloneSource", "Set Clone Source", [], None, "{layer?, point: [x,y]}", has_comp, set_clone_source),
-        cmd!("paint.removeStroke", "Delete Paint Stroke", [], None, "{layer?, stroke: uid | name}", has_comp, remove_stroke),
+        cmd!(
+            "paint.brushPreset",
+            "Brush Preset",
+            [],
+            None,
+            "{preset?: index | name}",
+            always,
+            preset
+        ),
+        cmd!(
+            "paint.setCloneSource",
+            "Set Clone Source",
+            [],
+            None,
+            "{layer?, point: [x,y]}",
+            has_comp,
+            set_clone_source
+        ),
+        cmd!(
+            "paint.removeStroke",
+            "Delete Paint Stroke",
+            [],
+            None,
+            "{layer?, stroke: uid | name}",
+            has_comp,
+            remove_stroke
+        ),
         crate::query!("paint.presets", "Brush Presets", "{}", presets),
     ]
 }

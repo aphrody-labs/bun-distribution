@@ -15,7 +15,7 @@ use bevy_ecs::{
     system::{Local, Query, ResMut, SystemState},
     world::{EntityWorldMut, Mut, World},
 };
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 
 /// A plugin that synchronizes entities with [`SyncToSubWorld`] between the main world and the sub world.
 ///
@@ -292,7 +292,7 @@ mod sub_entities_world_query_impls {
             ReadOnlyQueryData, ReleaseStateQueryData, SingleEntityQueryData, WorldQuery,
         },
         storage::{Table, TableRow},
-        world::{unsafe_world_cell::UnsafeWorldCell, World},
+        world::{World, unsafe_world_cell::UnsafeWorldCell},
     };
 
     // SAFETY: defers completely to `&SubEntity` implementation,
@@ -574,7 +574,7 @@ mod tests {
     };
 
     use super::{
-        entity_sync_system, EntityRecord, MainEntity, PendingSyncEntity, SubEntity, SyncToSubWorld,
+        EntityRecord, MainEntity, PendingSyncEntity, SubEntity, SyncToSubWorld, entity_sync_system,
     };
 
     #[derive(Component)]

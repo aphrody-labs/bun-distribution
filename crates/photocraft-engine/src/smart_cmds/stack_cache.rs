@@ -34,13 +34,24 @@ pub const BUDGET: usize = 768 << 20;
 
 /// The first stage: what placing `bytes` (the source contents) through the smart object's
 /// transform, warp or perspective gives at pixel format `fmt` on `canvas`.
-pub(super) fn placed_key(bytes: &[u8], fmt: PixelFormat, sm: &SmartObject, canvas: Rect) -> StageKey {
+pub(super) fn placed_key(
+    bytes: &[u8],
+    fmt: PixelFormat,
+    sm: &SmartObject,
+    canvas: Rect,
+) -> StageKey {
     let mut h = blake3::Hasher::new();
     h.update(bytes);
     for v in sm.transform.m {
         h.update(&v.to_bits().to_le_bytes());
     }
-    h.update(format!("{fmt:?}|{:?}|{:?}|{:?}|{canvas:?}", sm.warp, sm.perspective, sm.stack_mode).as_bytes());
+    h.update(
+        format!(
+            "{fmt:?}|{:?}|{:?}|{:?}|{canvas:?}",
+            sm.warp, sm.perspective, sm.stack_mode
+        )
+        .as_bytes(),
+    );
     *h.finalize().as_bytes()
 }
 
@@ -69,7 +80,11 @@ pub(super) fn put(key: StageKey, stage: &Stage) {
     }
     let mut c = STAGES.lock().unwrap_or_else(PoisonError::into_inner);
     c.retain(|e| e.key != key);
-    c.push(Entry { key, stage: stage.clone(), bytes });
+    c.push(Entry {
+        key,
+        stage: stage.clone(),
+        bytes,
+    });
     while c.len() > ENTRIES || c.iter().map(|e| e.bytes).sum::<usize>() > BUDGET {
         c.remove(0);
     }
@@ -77,7 +92,12 @@ pub(super) fn put(key: StageKey, stage: &Stage) {
 
 /// Bytes held by cached stages.
 pub fn bytes() -> usize {
-    STAGES.lock().unwrap_or_else(PoisonError::into_inner).iter().map(|e| e.bytes).sum()
+    STAGES
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+        .map(|e| e.bytes)
+        .sum()
 }
 
 /// Drop every cached stage (Edit › Purge › All). Returns the bytes released.
@@ -91,5 +111,7 @@ pub fn purge() -> usize {
 fn surface_bytes(s: &Surface) -> usize {
     // Tiles shared with the document (or another stage) are charged anyway: the cache is what
     // keeps them alive once the document moves on.
-    s.tiles().fold(s.default_bytes().len(), |n, (_, t)| n.saturating_add(t.bytes().len()))
+    s.tiles().fold(s.default_bytes().len(), |n, (_, t)| {
+        n.saturating_add(t.bytes().len())
+    })
 }

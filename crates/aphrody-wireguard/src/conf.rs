@@ -85,9 +85,13 @@ impl PeerPatch {
     /// Merge into the same live peer, or create a new peer without inferred settings.
     pub fn merge(&self, current: Option<&Peer>) -> Result<Peer> {
         if current.is_some_and(|peer| peer.public_key != self.public_key) {
-            return Err(Error::Config("peer patch PublicKey differs from the live peer".into()));
+            return Err(Error::Config(
+                "peer patch PublicKey differs from the live peer".into(),
+            ));
         }
-        let mut peer = current.cloned().unwrap_or_else(|| Peer::new(self.public_key));
+        let mut peer = current
+            .cloned()
+            .unwrap_or_else(|| Peer::new(self.public_key));
         if let Some(key) = self.preshared_key {
             peer.preshared_key = Some(key);
         }
@@ -131,7 +135,9 @@ impl Peer {
 
     /// Resolve `Endpoint` (IPv4, `[IPv6]:port` or DNS name) to a socket address.
     pub fn resolve_endpoint(&self) -> Result<Option<SocketAddr>> {
-        let Some(ep) = &self.endpoint else { return Ok(None) };
+        let Some(ep) = &self.endpoint else {
+            return Ok(None);
+        };
         if let Ok(addr) = ep.parse::<SocketAddr>() {
             return Ok(Some(addr));
         }
@@ -158,12 +164,15 @@ fn parse_net(s: &str) -> Result<IpNet> {
     if let Ok(n) = s.parse::<IpNet>() {
         return Ok(n);
     }
-    let ip: IpAddr = s.parse().map_err(|_| Error::Config(format!("adresse invalide: {s}")))?;
+    let ip: IpAddr = s
+        .parse()
+        .map_err(|_| Error::Config(format!("adresse invalide: {s}")))?;
     Ok(IpNet::from(ip))
 }
 
 fn parse_num<T: std::str::FromStr>(key: &str, v: &str) -> Result<T> {
-    v.parse().map_err(|_| Error::Config(format!("{key}: valeur invalide `{v}`")))
+    v.parse()
+        .map_err(|_| Error::Config(format!("{key}: valeur invalide `{v}`")))
 }
 
 impl Config {
@@ -191,16 +200,18 @@ impl Config {
                         }
                         seen_interface = true;
                         Section::Interface
-                    },
+                    }
                     "[peer]" => {
                         cfg.peers.push(Peer::new(Key([0; 32])));
                         Section::Peer
-                    },
+                    }
                     other => return Err(at(format!("section inconnue {other}"))),
                 };
                 continue;
             }
-            let (k, v) = line.split_once('=').ok_or_else(|| at("`clé = valeur` attendu".into()))?;
+            let (k, v) = line
+                .split_once('=')
+                .ok_or_else(|| at("`clé = valeur` attendu".into()))?;
             let (k, v) = (k.trim().to_ascii_lowercase(), v.trim());
             match section {
                 Section::None => return Err(at("clé hors section".into())),
@@ -217,12 +228,12 @@ impl Config {
                             } else {
                                 Some(parse_num(&k, v)?)
                             }
-                        },
+                        }
                         "address" => {
                             for a in split_list(v) {
                                 i.addresses.push(parse_net(a)?);
                             }
-                        },
+                        }
                         "dns" => {
                             for d in split_list(v) {
                                 match d.parse::<IpAddr>() {
@@ -230,7 +241,7 @@ impl Config {
                                     Err(_) => i.dns_search.push(d.to_string()),
                                 }
                             }
-                        },
+                        }
                         "mtu" => i.mtu = Some(parse_num(&k, v)?),
                         "table" => {
                             i.table = match v.to_ascii_lowercase().as_str() {
@@ -238,7 +249,7 @@ impl Config {
                                 "off" => Table::Off,
                                 n => Table::Id(parse_num("Table", n)?),
                             }
-                        },
+                        }
                         "preup" => i.pre_up.push(v.to_string()),
                         "postup" => i.post_up.push(v.to_string()),
                         "predown" => i.pre_down.push(v.to_string()),
@@ -246,9 +257,12 @@ impl Config {
                         "saveconfig" => i.save_config = v.eq_ignore_ascii_case("true"),
                         other => return Err(at(format!("clé [Interface] inconnue: {other}"))),
                     }
-                },
+                }
                 Section::Peer => {
-                    let p = cfg.peers.last_mut().ok_or_else(|| at("[Peer] absent".into()))?;
+                    let p = cfg
+                        .peers
+                        .last_mut()
+                        .ok_or_else(|| at("[Peer] absent".into()))?;
                     match k.as_str() {
                         "publickey" => p.public_key = v.parse()?,
                         "presharedkey" => p.preshared_key = Some(v.parse()?),
@@ -256,7 +270,7 @@ impl Config {
                             for a in split_list(v) {
                                 p.allowed_ips.push(parse_net(a)?);
                             }
-                        },
+                        }
                         "endpoint" => p.endpoint = Some(v.to_string()),
                         "persistentkeepalive" => {
                             p.persistent_keepalive = if v.eq_ignore_ascii_case("off") {
@@ -264,14 +278,17 @@ impl Config {
                             } else {
                                 Some(parse_num(&k, v)?)
                             }
-                        },
+                        }
                         other => return Err(at(format!("clé [Peer] inconnue: {other}"))),
                     }
-                },
+                }
             }
         }
         if let Some(p) = cfg.peers.iter().find(|p| p.public_key.is_zero()) {
-            return Err(Error::Config(format!("[Peer] sans PublicKey ({:?})", p.endpoint)));
+            return Err(Error::Config(format!(
+                "[Peer] sans PublicKey ({:?})",
+                p.endpoint
+            )));
         }
         Ok(cfg)
     }
@@ -291,7 +308,12 @@ impl Config {
     fn render_inner(&self, stripped: bool) -> String {
         let i = &self.interface;
         let mut s = String::from("[Interface]\n");
-        let join = |v: &[IpNet]| v.iter().map(ToString::to_string).collect::<Vec<_>>().join(", ");
+        let join = |v: &[IpNet]| {
+            v.iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
         if let Some(k) = &i.private_key {
             let _ = writeln!(s, "PrivateKey = {k}");
         }
@@ -305,8 +327,12 @@ impl Config {
             if !i.addresses.is_empty() {
                 let _ = writeln!(s, "Address = {}", join(&i.addresses));
             }
-            let dns: Vec<String> =
-                i.dns.iter().map(ToString::to_string).chain(i.dns_search.iter().cloned()).collect();
+            let dns: Vec<String> = i
+                .dns
+                .iter()
+                .map(ToString::to_string)
+                .chain(i.dns_search.iter().cloned())
+                .collect();
             if !dns.is_empty() {
                 let _ = writeln!(s, "DNS = {}", dns.join(", "));
             }
@@ -314,11 +340,11 @@ impl Config {
                 let _ = writeln!(s, "MTU = {m}");
             }
             match i.table {
-                Table::Auto => {},
+                Table::Auto => {}
                 Table::Off => s.push_str("Table = off\n"),
                 Table::Id(n) => {
                     let _ = writeln!(s, "Table = {n}");
-                },
+                }
             }
             for (key, cmds) in [
                 ("PreUp", &i.pre_up),
@@ -392,7 +418,10 @@ PersistentKeepalive = 25
         assert_eq!(cfg.interface.dns_search, vec!["aphrody.internal"]);
         assert_eq!(cfg.interface.table, Table::Off);
         assert_eq!(cfg.peers[0].allowed_ips[1].to_string(), "10.9.0.1/32");
-        assert_eq!(cfg.peers[0].resolve_endpoint().unwrap().unwrap().port(), 51821);
+        assert_eq!(
+            cfg.peers[0].resolve_endpoint().unwrap().unwrap().port(),
+            51821
+        );
         let again = Config::parse(&cfg.render()).unwrap();
         assert_eq!(again, cfg);
         let stripped = cfg.strip();
@@ -477,6 +506,10 @@ PersistentKeepalive = 25
         assert_eq!(merged.endpoint, current.endpoint);
         assert_eq!(merged.persistent_keepalive, current.persistent_keepalive);
         assert!(!format!("{patch:?}").contains(&psk.to_base64()));
-        assert!(!serde_json::to_string(&merged).unwrap().contains(&psk.to_base64()));
+        assert!(
+            !serde_json::to_string(&merged)
+                .unwrap()
+                .contains(&psk.to_base64())
+        );
     }
 }

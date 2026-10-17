@@ -48,7 +48,14 @@ fn main() {
         }
     }
     let doc = &imp.document;
-    println!("mode {:?} depth {:?} layers {} warnings {:?} light {:?}", doc.mode, doc.depth, doc.layer_count(), imp.warnings, doc.global_light);
+    println!(
+        "mode {:?} depth {:?} layers {} warnings {:?} light {:?}",
+        doc.mode,
+        doc.depth,
+        doc.layer_count(),
+        imp.warnings,
+        doc.global_light
+    );
     for l in doc.walk() {
         let l = l.2;
         println!(
@@ -62,18 +69,32 @@ fn main() {
             l.visible
         );
         if let photocraft_doc::LayerContent::Adjustment(a) = &l.content {
-            println!("    {}", format!("{a:?}").chars().take(800).collect::<String>());
+            println!(
+                "    {}",
+                format!("{a:?}").chars().take(800).collect::<String>()
+            );
         }
         if let photocraft_doc::LayerContent::Fill(f) = &l.content {
             println!("    {f:?}");
         }
         if let Some(m) = &l.mask {
-            println!("    mask default {:?} bounds {:?} enabled {}", m.surface.default_pixel(), m.surface.content_bounds(), m.enabled);
+            println!(
+                "    mask default {:?} bounds {:?} enabled {}",
+                m.surface.default_pixel(),
+                m.surface.content_bounds(),
+                m.enabled
+            );
             let b = m.surface.content_bounds();
             let cx = (b.x0 + b.x1) / 2;
-            let col: Vec<String> = (b.y0..b.y0 + 6).chain(b.y1 - 6..b.y1).map(|y| format!("{y}:{:.2}", m.surface.pixel(cx, y)[0])).collect();
+            let col: Vec<String> = (b.y0..b.y0 + 6)
+                .chain(b.y1 - 6..b.y1)
+                .map(|y| format!("{y}:{:.2}", m.surface.pixel(cx, y)[0]))
+                .collect();
             println!("    mask column x={cx}: {}", col.join(" "));
-            let row: Vec<String> = (b.x0..b.x0 + 4).chain(b.x1 - 4..b.x1).map(|x| format!("{x}:{:.2}", m.surface.pixel(x, (b.y0 + b.y1) / 2)[0])).collect();
+            let row: Vec<String> = (b.x0..b.x0 + 4)
+                .chain(b.x1 - 4..b.x1)
+                .map(|x| format!("{x}:{:.2}", m.surface.pixel(x, (b.y0 + b.y1) / 2)[0]))
+                .collect();
             println!("    mask row: {}", row.join(" "));
         }
         if let Some(sf) = l.surface() {
@@ -102,32 +123,69 @@ fn main() {
             );
             if std::env::var_os("PATHS").is_some() {
                 for s in &sh.path.subpaths {
-                    println!("      subpath {:?} closed {} knots {:?}", s.op, s.closed, s.knots.iter().map(|k| (k.anchor.x, k.anchor.y)).collect::<Vec<_>>());
+                    println!(
+                        "      subpath {:?} closed {} knots {:?}",
+                        s.op,
+                        s.closed,
+                        s.knots
+                            .iter()
+                            .map(|k| (k.anchor.x, k.anchor.y))
+                            .collect::<Vec<_>>()
+                    );
                 }
             }
         }
         if let Some(vm) = &l.vector_mask {
             println!("    vector mask bounds {:?}", vm.path.control_bounds());
         }
-        println!("    clipped {} frame {:?} bounds {:?}", l.clipped, photocraft_compose::fill_frame(l, doc.bounds()), l.surface().map(|s| s.content_bounds()));
+        println!(
+            "    clipped {} frame {:?} bounds {:?}",
+            l.clipped,
+            photocraft_compose::fill_frame(l, doc.bounds()),
+            l.surface().map(|s| s.content_bounds())
+        );
         for e in &l.effects.items {
-            if let photocraft_doc::Effect::GradientOverlay { common, gradient, .. } = e
+            if let photocraft_doc::Effect::GradientOverlay {
+                common, gradient, ..
+            } = e
                 && common.enabled
             {
                 let g = format!("{gradient:?}");
                 println!("    gradient overlay: {g}");
             } else if format!("{e:?}").contains("enabled: true") {
-                println!("    fx {}", format!("{e:?}").chars().take(if std::env::var_os("FULL").is_some() { 100_000 } else { 200 }).collect::<String>());
+                println!(
+                    "    fx {}",
+                    format!("{e:?}")
+                        .chars()
+                        .take(if std::env::var_os("FULL").is_some() {
+                            100_000
+                        } else {
+                            200
+                        })
+                        .collect::<String>()
+                );
             }
         }
-        println!("    blocks {:?}", l.psd_blocks.iter().map(|(k, v)| format!("{}({})", String::from_utf8_lossy(k), v.len())).collect::<Vec<_>>());
+        println!(
+            "    blocks {:?}",
+            l.psd_blocks
+                .iter()
+                .map(|(k, v)| format!("{}({})", String::from_utf8_lossy(k), v.len()))
+                .collect::<Vec<_>>()
+        );
         for (k, v) in &l.psd_blocks {
             if k == b"lfx2" || k == b"lmfx" {
                 // Recursively list descriptor keys (effects), skipping colour stop lists.
-                fn walk(d: &photocraft_psd::descriptor::Descriptor, depth: usize, out: &mut Vec<String>) {
+                fn walk(
+                    d: &photocraft_psd::descriptor::Descriptor,
+                    depth: usize,
+                    out: &mut Vec<String>,
+                ) {
                     for (k, v) in &d.items {
                         let key = match k {
-                            photocraft_psd::descriptor::Id::Code(c) => String::from_utf8_lossy(c).to_string(),
+                            photocraft_psd::descriptor::Id::Code(c) => {
+                                String::from_utf8_lossy(c).to_string()
+                            }
                             other => String::from_utf8_lossy(other.as_bytes()).to_string(),
                         };
                         let vs = format!("{v:?}");
@@ -136,34 +194,56 @@ fn main() {
                                 out.push(format!("{}{key}:", "  ".repeat(depth)));
                                 walk(sub, depth + 1, out);
                             }
-                            _ => out.push(format!("{}{key} = {}", "  ".repeat(depth), vs.chars().take(90).collect::<String>())),
+                            _ => out.push(format!(
+                                "{}{key} = {}",
+                                "  ".repeat(depth),
+                                vs.chars().take(90).collect::<String>()
+                            )),
                         }
                     }
                 }
-                if let Ok((vd, _)) = photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(&v[4..]) {
+                if let Ok((vd, _)) =
+                    photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(&v[4..])
+                {
                     let mut out = Vec::new();
                     walk(&vd.descriptor, 3, &mut out);
-                    for l in out.iter().filter(|l| !l.trim_start().starts_with("Clrs") && !l.trim_start().starts_with("Trns")) {
+                    for l in out.iter().filter(|l| {
+                        !l.trim_start().starts_with("Clrs") && !l.trim_start().starts_with("Trns")
+                    }) {
                         println!("{l}");
                     }
                 }
             }
             if k == b"TySh"
-                && let Some(Ok((vd, _))) = v.get(52..).map(photocraft_psd::descriptor::VersionedDescriptor::parse_prefix)
+                && let Some(Ok((vd, _))) = v
+                    .get(52..)
+                    .map(photocraft_psd::descriptor::VersionedDescriptor::parse_prefix)
             {
                 // Text bounds (text space) and the transform.
-                let t: Vec<f64> = (0..6).map(|i| f64::from_be_bytes(v[2 + i * 8..10 + i * 8].try_into().unwrap())).collect();
+                let t: Vec<f64> = (0..6)
+                    .map(|i| f64::from_be_bytes(v[2 + i * 8..10 + i * 8].try_into().unwrap()))
+                    .collect();
                 println!("    TySh transform {t:?}");
                 for key in ["bounds", "boundingBox"] {
-                    if let Some(photocraft_psd::descriptor::Value::Descriptor(d)) = vd.descriptor.get(key) {
-                        let n: Vec<String> = d.items.iter().map(|(k, v)| format!("{}={v:?}", String::from_utf8_lossy(k.as_bytes()))).collect();
+                    if let Some(photocraft_psd::descriptor::Value::Descriptor(d)) =
+                        vd.descriptor.get(key)
+                    {
+                        let n: Vec<String> = d
+                            .items
+                            .iter()
+                            .map(|(k, v)| {
+                                format!("{}={v:?}", String::from_utf8_lossy(k.as_bytes()))
+                            })
+                            .collect();
                         println!("    TySh {key}: {}", n.join(" "));
                     }
                 }
             }
             if k == b"GdFl" {
                 // Skip the 4-byte version before the descriptor.
-                if let Ok((vd, _)) = photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(v) {
+                if let Ok((vd, _)) =
+                    photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(v)
+                {
                     println!(
                         "    GdFl keys: {:?}",
                         vd.descriptor
@@ -173,7 +253,8 @@ fn main() {
                             .map(|(k, v)| format!(
                                 "{:?}={}",
                                 match k {
-                                    photocraft_psd::descriptor::Id::Code(c) => String::from_utf8_lossy(c).to_string(),
+                                    photocraft_psd::descriptor::Id::Code(c) =>
+                                        String::from_utf8_lossy(c).to_string(),
                                     other => format!("{other:?}"),
                                 },
                                 format!("{v:?}").chars().take(120).collect::<String>()
@@ -196,8 +277,14 @@ fn main() {
                         println!("{}{key}:", "  ".repeat(depth));
                         walk(sub, depth + 1);
                     }
-                    photocraft_psd::descriptor::Value::Text(t) => println!("{}{key} = {:?}", "  ".repeat(depth), t.to_string_lossy()),
-                    photocraft_psd::descriptor::Value::List(items) if items.iter().all(|i| matches!(i, photocraft_psd::descriptor::Value::Descriptor(_))) => {
+                    photocraft_psd::descriptor::Value::Text(t) => {
+                        println!("{}{key} = {:?}", "  ".repeat(depth), t.to_string_lossy())
+                    }
+                    photocraft_psd::descriptor::Value::List(items)
+                        if items.iter().all(|i| {
+                            matches!(i, photocraft_psd::descriptor::Value::Descriptor(_))
+                        }) =>
+                    {
                         println!("{}{key} = [{} items]", "  ".repeat(depth), items.len());
                         for (i, it) in items.iter().enumerate() {
                             if let photocraft_psd::descriptor::Value::Descriptor(sub) = it {
@@ -206,14 +293,26 @@ fn main() {
                             }
                         }
                     }
-                    _ => println!("{}{key} = {}", "  ".repeat(depth), format!("{v:?}").chars().take(600).collect::<String>()),
+                    _ => println!(
+                        "{}{key} = {}",
+                        "  ".repeat(depth),
+                        format!("{v:?}").chars().take(600).collect::<String>()
+                    ),
                 }
             }
         }
         for rec in file.layers() {
-            println!("-- layer {:?} rect {:?}", String::from_utf8_lossy(&rec.name), rec.rect);
-            if let Some(b) = rec.block(b"lmfx").or(rec.block(b"lfx2")).or(rec.block(b"lfxs"))
-                && let Ok((vd, _)) = photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(&b.data[4..])
+            println!(
+                "-- layer {:?} rect {:?}",
+                String::from_utf8_lossy(&rec.name),
+                rec.rect
+            );
+            if let Some(b) = rec
+                .block(b"lmfx")
+                .or(rec.block(b"lfx2"))
+                .or(rec.block(b"lfxs"))
+                && let Ok((vd, _)) =
+                    photocraft_psd::descriptor::VersionedDescriptor::parse_prefix(&b.data[4..])
             {
                 walk(&vd.descriptor, 1);
             }
@@ -230,11 +329,24 @@ fn main() {
         for y in 0..h {
             for x in 0..w {
                 let (a, b) = (ours[y * w + x], merged[y * w + x]);
-                let over = |p: [f32; 4]| [p[0] * p[3] + 1.0 - p[3], p[1] * p[3] + 1.0 - p[3], p[2] * p[3] + 1.0 - p[3]];
+                let over = |p: [f32; 4]| {
+                    [
+                        p[0] * p[3] + 1.0 - p[3],
+                        p[1] * p[3] + 1.0 - p[3],
+                        p[2] * p[3] + 1.0 - p[3],
+                    ]
+                };
                 let (oa, ob) = (over(a), over(b));
                 let d = (0..3).map(|c| (oa[c] - ob[c]).abs()).fold(0.0f32, f32::max);
                 let heat = [q((d * 4.0).min(1.0)), q((1.0 - d * 4.0).max(0.0) * 0.3), 0];
-                for (k, px) in [[q(oa[0]), q(oa[1]), q(oa[2])], [q(ob[0]), q(ob[1]), q(ob[2])], heat].iter().enumerate() {
+                for (k, px) in [
+                    [q(oa[0]), q(oa[1]), q(oa[2])],
+                    [q(ob[0]), q(ob[1]), q(ob[2])],
+                    heat,
+                ]
+                .iter()
+                .enumerate()
+                {
                     let o = (y * w * 3 + k * w + x) * 4;
                     img[o..o + 3].copy_from_slice(px);
                     img[o + 3] = 255;
@@ -242,7 +354,11 @@ fn main() {
             }
         }
         // SCALE=n: nearest-neighbour upscale (small files).
-        let k: usize = std::env::var("SCALE").ok().and_then(|s| s.parse().ok()).unwrap_or(1).clamp(1, 16);
+        let k: usize = std::env::var("SCALE")
+            .ok()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(1)
+            .clamp(1, 16);
         let (img, w, h) = if k > 1 {
             let mut big = vec![0u8; w * 3 * k * h * k * 4];
             for y in 0..h * k {
@@ -255,10 +371,20 @@ fn main() {
         } else {
             (img, w, h)
         };
-        let image =
-            photocraft_codecs::Image::from_raw((w * 3) as u32, h as u32, photocraft_codecs::ChannelLayout::Rgba, photocraft_codecs::SampleType::U8, img)
-                .unwrap();
-        std::fs::write(&out, photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default()).unwrap()).unwrap();
+        let image = photocraft_codecs::Image::from_raw(
+            (w * 3) as u32,
+            h as u32,
+            photocraft_codecs::ChannelLayout::Rgba,
+            photocraft_codecs::SampleType::U8,
+            img,
+        )
+        .unwrap();
+        std::fs::write(
+            &out,
+            photocraft_codecs::encode(&image, photocraft_codecs::Format::Png, &Default::default())
+                .unwrap(),
+        )
+        .unwrap();
         println!("wrote {out}");
         return;
     }
@@ -268,7 +394,10 @@ fn main() {
         // masks not applied) and prefix.txt (width, height, layer names).
         let out = std::env::args().nth(4).expect("prefix");
         let wr = |name: String, px: &[[f32; 4]]| {
-            let bytes: Vec<u8> = px.iter().flat_map(|p| p.iter().flat_map(|v| v.to_le_bytes())).collect();
+            let bytes: Vec<u8> = px
+                .iter()
+                .flat_map(|p| p.iter().flat_map(|v| v.to_le_bytes()))
+                .collect();
             std::fs::write(name, bytes).unwrap();
         };
         wr(format!("{out}_ours.f32"), &ours);
@@ -276,7 +405,9 @@ fn main() {
         let mut meta = format!("{} {}\n", doc.size.width, doc.size.height);
         for (i, l) in doc.layers.iter().enumerate() {
             let b = photocraft_compose::surface_to_buffer(
-                l.surface().unwrap_or(&photocraft_raster::Surface::new(photocraft_color::PixelFormat::RGBA8)),
+                l.surface().unwrap_or(&photocraft_raster::Surface::new(
+                    photocraft_color::PixelFormat::RGBA8,
+                )),
                 doc.bounds(),
             );
             wr(format!("{out}_L{i}.f32"), &b.px);
@@ -287,11 +418,24 @@ fn main() {
     }
     if std::env::args().nth(3).as_deref() == Some("layerpx") {
         // layerpx x y: each layer's own pixel (0-255).
-        let x: i32 = std::env::args().nth(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let y: i32 = std::env::args().nth(5).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let x: i32 = std::env::args()
+            .nth(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let y: i32 = std::env::args()
+            .nth(5)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
         for l in doc.walk() {
             if let Some(s) = l.2.surface() {
-                println!("{:?}: {:?}", l.2.name, s.pixel(x, y).iter().map(|v| (v * 255.0 * 100.0).round() / 100.0).collect::<Vec<_>>());
+                println!(
+                    "{:?}: {:?}",
+                    l.2.name,
+                    s.pixel(x, y)
+                        .iter()
+                        .map(|v| (v * 255.0 * 100.0).round() / 100.0)
+                        .collect::<Vec<_>>()
+                );
             }
         }
         return;
@@ -299,8 +443,18 @@ fn main() {
     if std::env::args().nth(3).as_deref() == Some("grid") {
         // grid x0 y0 x1 y1 [channel]: ours / photoshop values (0-255, premultiplied colour).
         let w = doc.size.width as usize;
-        let a: Vec<usize> = (4..8).map(|i| std::env::args().nth(i).and_then(|s| s.parse().ok()).unwrap_or(0)).collect();
-        let ch: usize = std::env::args().nth(8).and_then(|s| s.parse().ok()).unwrap_or(3);
+        let a: Vec<usize> = (4..8)
+            .map(|i| {
+                std::env::args()
+                    .nth(i)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0)
+            })
+            .collect();
+        let ch: usize = std::env::args()
+            .nth(8)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(3);
         for (label, img) in [("ours", &ours), ("ps", &merged)] {
             println!("{label} (channel {ch}):");
             for y in a[1]..a[3] {
@@ -328,7 +482,12 @@ fn main() {
                 for x in cb.x0..cb.x1 {
                     let p = sf.pixel(x, y);
                     if p[p.len() - 1] > 0.0 {
-                        b = photocraft_geom::Rect::new(b.x0.min(x), b.y0.min(y), b.x1.max(x + 1), b.y1.max(y + 1));
+                        b = photocraft_geom::Rect::new(
+                            b.x0.min(x),
+                            b.y0.min(y),
+                            b.x1.max(x + 1),
+                            b.y1.max(y + 1),
+                        );
                     }
                 }
             }
@@ -336,13 +495,20 @@ fn main() {
                 continue;
             }
             let m = photocraft_compose::effects::margin(l);
-            let r = photocraft_geom::Rect::new((b.x0 - m).max(0), (b.y0 - m).max(0), (b.x1 + m).min(w), (b.y1 + m).min(h));
+            let r = photocraft_geom::Rect::new(
+                (b.x0 - m).max(0),
+                (b.y0 - m).max(0),
+                (b.x1 + m).min(w),
+                (b.y1 + m).min(h),
+            );
             let (mut worst, mut at, mut bad) = (0.0f32, (0, 0), 0usize);
             for y in r.y0..r.y1 {
                 for x in r.x0..r.x1 {
                     let i = (y * w + x) as usize;
                     let (a, b) = (ours[i], merged[i]);
-                    let d = (0..3).map(|c| (a[c] * a[3] - b[c] * b[3]).abs()).fold((a[3] - b[3]).abs(), f32::max);
+                    let d = (0..3)
+                        .map(|c| (a[c] * a[3] - b[c] * b[3]).abs())
+                        .fold((a[3] - b[3]).abs(), f32::max);
                     if d > 2.0 / 255.0 {
                         bad += 1;
                     }
@@ -351,36 +517,82 @@ fn main() {
                     }
                 }
             }
-            let fx: Vec<&str> = l.effects.items.iter().filter(|e| e.enabled()).map(|e| e.label()).collect();
-            println!("{:<32} {:>6.1} at {:?} bad {:>6}  {:?} {:?}", l.name, worst * 255.0, at, bad, l.blend, fx);
+            let fx: Vec<&str> = l
+                .effects
+                .items
+                .iter()
+                .filter(|e| e.enabled())
+                .map(|e| e.label())
+                .collect();
+            println!(
+                "{:<32} {:>6.1} at {:?} bad {:>6}  {:?} {:?}",
+                l.name,
+                worst * 255.0,
+                at,
+                bad,
+                l.blend,
+                fx
+            );
         }
         return;
     }
     if std::env::args().nth(3).as_deref() == Some("worst") {
         // The N worst pixels (premultiplied max channel error), with coordinates.
         let w = doc.size.width as usize;
-        let n: usize = std::env::args().nth(4).and_then(|s| s.parse().ok()).unwrap_or(20);
+        let n: usize = std::env::args()
+            .nth(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(20);
         let mut v: Vec<(f32, usize)> = ours
             .iter()
             .zip(&merged)
             .enumerate()
-            .map(|(i, (a, b))| ((0..4).map(|c| (a[c] * a[3] - b[c] * b[3]).abs()).fold((a[3] - b[3]).abs(), f32::max), i))
+            .map(|(i, (a, b))| {
+                (
+                    (0..4)
+                        .map(|c| (a[c] * a[3] - b[c] * b[3]).abs())
+                        .fold((a[3] - b[3]).abs(), f32::max),
+                    i,
+                )
+            })
             .collect();
         v.sort_by(|a, b| b.0.total_cmp(&a.0));
         for (d, i) in v.into_iter().take(n) {
             let (a, b) = (ours[i], merged[i]);
-            println!("({:4},{:4}) d={:5.1} ours {:?} ps {:?}", i % w, i / w, d * 255.0, a.map(|v| (v * 255.0).round()), b.map(|v| (v * 255.0).round()));
+            println!(
+                "({:4},{:4}) d={:5.1} ours {:?} ps {:?}",
+                i % w,
+                i / w,
+                d * 255.0,
+                a.map(|v| (v * 255.0).round()),
+                b.map(|v| (v * 255.0).round())
+            );
         }
         return;
     }
     if std::env::args().nth(3).as_deref() == Some("row") {
         let w = doc.size.width as usize;
-        let y: usize = std::env::args().nth(4).and_then(|s| s.parse().ok()).unwrap_or(0);
-        let (x0, x1): (usize, usize) =
-            (std::env::args().nth(5).and_then(|s| s.parse().ok()).unwrap_or(0), std::env::args().nth(6).and_then(|s| s.parse().ok()).unwrap_or(w));
+        let y: usize = std::env::args()
+            .nth(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
+        let (x0, x1): (usize, usize) = (
+            std::env::args()
+                .nth(5)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(0),
+            std::env::args()
+                .nth(6)
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(w),
+        );
         for x in (x0..x1).step_by(((x1 - x0) / 20).max(1)) {
             let (a, b) = (ours[y * w + x], merged[y * w + x]);
-            println!("x={x:5} ours {:?} ps {:?}", a.map(|v| (v * 1000.0).round() / 1000.0), b.map(|v| (v * 1000.0).round() / 1000.0));
+            println!(
+                "x={x:5} ours {:?} ps {:?}",
+                a.map(|v| (v * 1000.0).round() / 1000.0),
+                b.map(|v| (v * 1000.0).round() / 1000.0)
+            );
         }
         return;
     }
@@ -389,12 +601,26 @@ fn main() {
         // coverage `cov`, Photoshop's alpha `A` and the alpha `s` an effect beneath the layer
         // would need (A = s + l (1 - s)) over a transparent backdrop.
         let name = std::env::args().nth(4).expect("layer name");
-        let a: Vec<i32> = (5..9).map(|i| std::env::args().nth(i).and_then(|s| s.parse().ok()).unwrap_or(0)).collect();
+        let a: Vec<i32> = (5..9)
+            .map(|i| {
+                std::env::args()
+                    .nth(i)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0)
+            })
+            .collect();
         let w = doc.size.width as usize;
-        let l = doc.walk().into_iter().map(|t| t.2).find(|l| l.name == name).expect("layer");
+        let l = doc
+            .walk()
+            .into_iter()
+            .map(|t| t.2)
+            .find(|l| l.name == name)
+            .expect("layer");
         let r = photocraft_geom::Rect::new(a[0], a[1], a[2], a[3]);
         let cov = match &l.content {
-            photocraft_doc::LayerContent::Shape(sh) => photocraft_vector::path_coverage(&sh.path, r),
+            photocraft_doc::LayerContent::Shape(sh) => {
+                photocraft_vector::path_coverage(&sh.path, r)
+            }
             _ => vec![0.0; r.width() as usize * r.height() as usize],
         };
         for y in r.y0..r.y1 {
@@ -403,8 +629,17 @@ fn main() {
                 let c = cov[((y - r.y0) * r.width() as i32 + x - r.x0) as usize];
                 let p = merged[y as usize * w + x as usize];
                 let o = ours[y as usize * w + x as usize];
-                let s = if la < 1.0 { (p[3] - la) / (1.0 - la) } else { f32::NAN };
-                println!("({x:3},{y:3}) l {la:.3} cov {c:.3} A {:.3} ours {:.3} s {s:.3} ps {:?}", p[3], o[3], p.map(|v| (v * 255.0).round()));
+                let s = if la < 1.0 {
+                    (p[3] - la) / (1.0 - la)
+                } else {
+                    f32::NAN
+                };
+                println!(
+                    "({x:3},{y:3}) l {la:.3} cov {c:.3} A {:.3} ours {:.3} s {s:.3} ps {:?}",
+                    p[3],
+                    o[3],
+                    p.map(|v| (v * 255.0).round())
+                );
             }
         }
         return;
@@ -412,40 +647,74 @@ fn main() {
     if std::env::args().nth(3).as_deref() == Some("line") {
         // line x0 y0 x1 y1: every pixel on the segment, straight RGBA 0-255, ours | ps.
         let w = doc.size.width as usize;
-        let a: Vec<i64> = (4..8).map(|i| std::env::args().nth(i).and_then(|s| s.parse().ok()).unwrap_or(0)).collect();
+        let a: Vec<i64> = (4..8)
+            .map(|i| {
+                std::env::args()
+                    .nth(i)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0)
+            })
+            .collect();
         let n = (a[2] - a[0]).abs().max((a[3] - a[1]).abs()).max(1);
         for k in 0..=n {
-            let (x, y) = ((a[0] + (a[2] - a[0]) * k / n) as usize, (a[1] + (a[3] - a[1]) * k / n) as usize);
+            let (x, y) = (
+                (a[0] + (a[2] - a[0]) * k / n) as usize,
+                (a[1] + (a[3] - a[1]) * k / n) as usize,
+            );
             let (o, p) = (ours[y * w + x], merged[y * w + x]);
-            println!("({x:4},{y:4}) ours {:?} ps {:?}", o.map(|v| (v * 255.0).round()), p.map(|v| (v * 255.0).round()));
+            println!(
+                "({x:4},{y:4}) ours {:?} ps {:?}",
+                o.map(|v| (v * 255.0).round()),
+                p.map(|v| (v * 255.0).round())
+            );
         }
         return;
     }
     if std::env::args().nth(3).as_deref() == Some("col") {
         let (w, h) = (doc.size.width as usize, doc.size.height as usize);
-        let x = std::env::args().nth(4).and_then(|s| s.parse().ok()).unwrap_or(w / 2);
+        let x = std::env::args()
+            .nth(4)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(w / 2);
         for k in 0..=16 {
             let y = ((h - 1) * k / 16).min(h - 1);
             let (a, b) = (ours[y * w + x], merged[y * w + x]);
-            println!("y={y:5} ours {:?} ps {:?}", a.map(|v| (v * 1000.0).round() / 1000.0), b.map(|v| (v * 1000.0).round() / 1000.0));
+            println!(
+                "y={y:5} ours {:?} ps {:?}",
+                a.map(|v| (v * 1000.0).round() / 1000.0),
+                b.map(|v| (v * 1000.0).round() / 1000.0)
+            );
         }
         return;
     }
-    let n = std::env::args().nth(2).and_then(|s| s.parse().ok()).unwrap_or(8usize);
+    let n = std::env::args()
+        .nth(2)
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(8usize);
     for (i, (a, b)) in ours.iter().zip(&merged).enumerate().take(n) {
-        println!("{i:4}: ours {:?}\n      ps   {:?}", a.map(|v| (v * 1000.0).round() / 1000.0), b.map(|v| (v * 1000.0).round() / 1000.0));
+        println!(
+            "{i:4}: ours {:?}\n      ps   {:?}",
+            a.map(|v| (v * 1000.0).round() / 1000.0),
+            b.map(|v| (v * 1000.0).round() / 1000.0)
+        );
     }
 }
 
 /// The corpus oracle table (as `tests/corpus.rs`), files in parallel, without a test build.
 fn corpus_summary(root: &std::path::Path) {
     fn collect(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
+        let Ok(rd) = std::fs::read_dir(dir) else {
+            return;
+        };
         for e in rd.flatten() {
             let p = e.path();
             if p.is_dir() {
                 collect(&p, out);
-            } else if p.extension().and_then(|e| e.to_str()).is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb")) {
+            } else if p
+                .extension()
+                .and_then(|e| e.to_str())
+                .is_some_and(|e| e.eq_ignore_ascii_case("psd") || e.eq_ignore_ascii_case("psb"))
+            {
                 out.push(p);
             }
         }
@@ -457,24 +726,37 @@ fn corpus_summary(root: &std::path::Path) {
     type Row = (String, Option<(f32, f32)>);
     let row = |p: &std::path::PathBuf| -> Row {
         let name = p.strip_prefix(root).unwrap_or(p).display().to_string();
-        let Ok(bytes) = std::fs::read(p) else { return (name, None) };
-        let Ok(file) = photocraft_psd::PsdFile::from_bytes(&bytes) else { return (name, None) };
-        let Ok(imp) = photocraft_io::import(&name, &bytes) else { return (name, None) };
+        let Ok(bytes) = std::fs::read(p) else {
+            return (name, None);
+        };
+        let Ok(file) = photocraft_psd::PsdFile::from_bytes(&bytes) else {
+            return (name, None);
+        };
+        let Ok(imp) = photocraft_io::import(&name, &bytes) else {
+            return (name, None);
+        };
         if file.has_real_merged_data() == Some(false) || file.layers().is_empty() {
             return (name, None);
         }
-        let Ok(merged) = photocraft_io::merged_composite(&file) else { return (name, None) };
+        let Ok(merged) = photocraft_io::merged_composite(&file) else {
+            return (name, None);
+        };
         let ours = photocraft_compose::flatten(&imp.document).px;
         let mut m = 0.0f32;
         let mut bad = 0usize;
         for (a, b) in ours.iter().zip(&merged) {
-            let d = (0..4).map(|c| (a[c] * a[3] - b[c] * b[3]).abs()).fold((a[3] - b[3]).abs(), f32::max);
+            let d = (0..4)
+                .map(|c| (a[c] * a[3] - b[c] * b[3]).abs())
+                .fold((a[3] - b[3]).abs(), f32::max);
             m = m.max(d);
             if (0..4).any(|c| (a[c] * a[3] - b[c] * b[3]).abs() > TOL) {
                 bad += 1;
             }
         }
-        (name, Some((m, 100.0 * bad as f32 / ours.len().max(1) as f32)))
+        (
+            name,
+            Some((m, 100.0 * bad as f32 / ours.len().max(1) as f32)),
+        )
     };
     // Files in parallel (a few threads; flatten itself is tile-parallel).
     let next = std::sync::atomic::AtomicUsize::new(0);
@@ -510,5 +792,8 @@ fn corpus_summary(root: &std::path::Path) {
             None => skip += 1,
         }
     }
-    println!("{} files: {pass} pass, {diff} differ, {skip} skipped/errors", rows.len());
+    println!(
+        "{} files: {pass} pass, {diff} differ, {skip} skipped/errors",
+        rows.len()
+    );
 }

@@ -39,27 +39,47 @@ pub const TAKEN: u8 = 1;
 pub const ABANDONED: u8 = 2;
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Value) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Value,
+    ) -> (Self, std::sync::mpsc::Receiver<ControlResponse>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx, state: Default::default() }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+                state: Default::default(),
+            },
+            rx,
+        )
     }
 
     /// Claim the request for running; false when its sender already gave up on it.
     pub fn take(&self) -> bool {
         use std::sync::atomic::Ordering;
-        self.state.compare_exchange(PENDING, TAKEN, Ordering::SeqCst, Ordering::SeqCst).is_ok() || self.state.load(Ordering::SeqCst) == TAKEN
+        self.state
+            .compare_exchange(PENDING, TAKEN, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+            || self.state.load(Ordering::SeqCst) == TAKEN
     }
 
     /// Give up on the request; false when the app has already started it (it will answer).
     pub fn abandon(state: &std::sync::atomic::AtomicU8) -> bool {
         use std::sync::atomic::Ordering;
-        state.compare_exchange(PENDING, ABANDONED, Ordering::SeqCst, Ordering::SeqCst).is_ok() || state.load(Ordering::SeqCst) == ABANDONED
+        state
+            .compare_exchange(PENDING, ABANDONED, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok()
+            || state.load(Ordering::SeqCst) == ABANDONED
     }
 }
 
 pub enum Outcome {
     Done(Value),
-    Screenshot { path: Option<String>, headless: bool },
+    Screenshot {
+        path: Option<String>,
+        headless: bool,
+    },
 }
 
 fn ok(v: Value) -> Outcome {
@@ -84,7 +104,10 @@ pub fn all_commands(app: &LightcraftApp) -> Value {
         .map(|c| {
             let mut v = serde_json::to_value(&c).unwrap_or_default();
             if let Some(o) = v.as_object_mut() {
-                o.insert("shortcut".into(), json!(crate::shortcuts::shortcut_of(keymap, c.id)));
+                o.insert(
+                    "shortcut".into(),
+                    json!(crate::shortcuts::shortcut_of(keymap, c.id)),
+                );
             }
             v
         })
@@ -157,7 +180,13 @@ pub fn memory(app: &LightcraftApp) -> Value {
 
 fn modifiers(p: &Value) -> egui::Modifiers {
     let b = |n: &str| p.get(n).and_then(Value::as_bool).unwrap_or(false);
-    egui::Modifiers { alt: b("alt"), ctrl: b("ctrl"), shift: b("shift"), mac_cmd: b("cmd") && cfg!(target_os = "macos"), command: b("cmd") }
+    egui::Modifiers {
+        alt: b("alt"),
+        ctrl: b("ctrl"),
+        shift: b("shift"),
+        mac_cmd: b("cmd") && cfg!(target_os = "macos"),
+        command: b("cmd"),
+    }
 }
 
 fn key_from(name: &str) -> Option<egui::Key> {
@@ -179,18 +208,39 @@ fn key_from(name: &str) -> Option<egui::Key> {
     })
 }
 
-fn push_drag(app: &mut LightcraftApp, a: egui::Pos2, b: egui::Pos2, steps: u64, m: egui::Modifiers) {
+fn push_drag(
+    app: &mut LightcraftApp,
+    a: egui::Pos2,
+    b: egui::Pos2,
+    steps: u64,
+    m: egui::Modifiers,
+) {
     app.synthetic.push(egui::Event::PointerMoved(a));
-    app.synthetic.push(egui::Event::PointerButton { pos: a, button: egui::PointerButton::Primary, pressed: true, modifiers: m });
+    app.synthetic.push(egui::Event::PointerButton {
+        pos: a,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: m,
+    });
     for i in 1..=steps.max(1) {
         let t = i as f32 / steps.max(1) as f32;
-        app.synthetic.push(egui::Event::PointerMoved(a + (b - a) * t));
+        app.synthetic
+            .push(egui::Event::PointerMoved(a + (b - a) * t));
     }
-    app.synthetic.push(egui::Event::PointerButton { pos: b, button: egui::PointerButton::Primary, pressed: false, modifiers: m });
+    app.synthetic.push(egui::Event::PointerButton {
+        pos: b,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: m,
+    });
 }
 
 fn widget_rect(app: &LightcraftApp, id: &str) -> Option<egui::Rect> {
-    app.widgets.iter().rev().find(|(w, _)| w == id).map(|(_, r)| *r)
+    app.widgets
+        .iter()
+        .rev()
+        .find(|(w, _)| w == id)
+        .map(|(_, r)| *r)
 }
 
 pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest) -> Outcome {
@@ -199,67 +249,139 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
     let f = |k: &str| p.get(k).and_then(Value::as_f64);
     match req.method.as_str() {
         "engine.execute" | "ui.menu.invoke" | "command" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
-            let params = p.get("params").cloned().filter(|v| !v.is_null()).unwrap_or(json!({}));
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
+            let params = p
+                .get("params")
+                .cloned()
+                .filter(|v| !v.is_null())
+                .unwrap_or(json!({}));
             let r = app.run(id, params);
             ctx.request_repaint();
             wrap(r)
         }
         "engine.commands" => ok(all_commands(app)),
-        "ui.menu.list" => ok(serde_json::to_value(crate::menus::menu_entries(app)).unwrap_or_default()),
-        "ui.menu.tree" => {
-            ok(Value::Array(crate::menubar::menu_bar(app).into_iter().map(|(title, items)| json!({"label": title, "children": items})).collect()))
+        "ui.menu.list" => {
+            ok(serde_json::to_value(crate::menus::menu_entries(app)).unwrap_or_default())
         }
+        "ui.menu.tree" => ok(Value::Array(
+            crate::menubar::menu_bar(app)
+                .into_iter()
+                .map(|(title, items)| json!({"label": title, "children": items}))
+                .collect(),
+        )),
         "ui.inspect" => ok(inspect(app, ctx)),
         "ui.widgets" => {
             let filter = s("filter").unwrap_or("");
             ok(Value::Array(
-                app.widgets.iter().filter(|(id, _)| id.contains(filter)).map(|(id, r)| json!({"id": id, "rect": rect_json(*r)})).collect(),
+                app.widgets
+                    .iter()
+                    .filter(|(id, _)| id.contains(filter))
+                    .map(|(id, r)| json!({"id": id, "rect": rect_json(*r)}))
+                    .collect(),
             ))
         }
         "ui.clickWidget" | "ui.dragWidget" | "ui.hoverWidget" => {
-            let Some(id) = s("id") else { return err("missing `id`") };
-            let Some(r) = widget_rect(app, id) else { return err(format!("no widget `{id}` on screen (see ui.widgets)")) };
+            let Some(id) = s("id") else {
+                return err("missing `id`");
+            };
+            let Some(r) = widget_rect(app, id) else {
+                return err(format!("no widget `{id}` on screen (see ui.widgets)"));
+            };
             let m = modifiers(p);
             // optional relative position inside the widget (0..1)
-            let at = egui::pos2(r.left() + r.width() * f("fx").unwrap_or(0.5) as f32, r.top() + r.height() * f("fy").unwrap_or(0.5) as f32);
+            let at = egui::pos2(
+                r.left() + r.width() * f("fx").unwrap_or(0.5) as f32,
+                r.top() + r.height() * f("fy").unwrap_or(0.5) as f32,
+            );
             if req.method == "ui.hoverWidget" {
                 app.synthetic.push(egui::Event::PointerMoved(at));
             } else if req.method == "ui.clickWidget" {
                 let n = p.get("count").and_then(Value::as_u64).unwrap_or(1);
-                let button = if s("button") == Some("right") { egui::PointerButton::Secondary } else { egui::PointerButton::Primary };
+                let button = if s("button") == Some("right") {
+                    egui::PointerButton::Secondary
+                } else {
+                    egui::PointerButton::Primary
+                };
                 app.synthetic.push(egui::Event::PointerMoved(at));
                 for _ in 0..n {
-                    app.synthetic.push(egui::Event::PointerButton { pos: at, button, pressed: true, modifiers: m });
-                    app.synthetic.push(egui::Event::PointerButton { pos: at, button, pressed: false, modifiers: m });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos: at,
+                        button,
+                        pressed: true,
+                        modifiers: m,
+                    });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos: at,
+                        button,
+                        pressed: false,
+                        modifiers: m,
+                    });
                 }
             } else {
                 let to = egui::pos2(
-                    f("toX").map(|v| v as f32).unwrap_or(at.x + f("dx").unwrap_or(0.0) as f32),
-                    f("toY").map(|v| v as f32).unwrap_or(at.y + f("dy").unwrap_or(0.0) as f32),
+                    f("toX")
+                        .map(|v| v as f32)
+                        .unwrap_or(at.x + f("dx").unwrap_or(0.0) as f32),
+                    f("toY")
+                        .map(|v| v as f32)
+                        .unwrap_or(at.y + f("dy").unwrap_or(0.0) as f32),
                 );
-                push_drag(app, at, to, p.get("steps").and_then(Value::as_u64).unwrap_or(10), m);
+                push_drag(
+                    app,
+                    at,
+                    to,
+                    p.get("steps").and_then(Value::as_u64).unwrap_or(10),
+                    m,
+                );
             }
             ctx.request_repaint();
             ok(json!({"rect": rect_json(r)}))
         }
         "ui.move" => {
-            app.synthetic.push(egui::Event::PointerMoved(egui::pos2(f("x").unwrap_or(0.0) as f32, f("y").unwrap_or(0.0) as f32)));
+            app.synthetic.push(egui::Event::PointerMoved(egui::pos2(
+                f("x").unwrap_or(0.0) as f32,
+                f("y").unwrap_or(0.0) as f32,
+            )));
             ctx.request_repaint();
             ok(Value::Null)
         }
         "ui.click" | "ui.drag" => {
             let a = egui::pos2(f("x").unwrap_or(0.0) as f32, f("y").unwrap_or(0.0) as f32);
             let m = modifiers(p);
-            let button = if s("button") == Some("right") { egui::PointerButton::Secondary } else { egui::PointerButton::Primary };
+            let button = if s("button") == Some("right") {
+                egui::PointerButton::Secondary
+            } else {
+                egui::PointerButton::Primary
+            };
             if req.method == "ui.drag" {
-                let b = egui::pos2(f("toX").unwrap_or(0.0) as f32, f("toY").unwrap_or(0.0) as f32);
-                push_drag(app, a, b, p.get("steps").and_then(Value::as_u64).unwrap_or(10), m);
+                let b = egui::pos2(
+                    f("toX").unwrap_or(0.0) as f32,
+                    f("toY").unwrap_or(0.0) as f32,
+                );
+                push_drag(
+                    app,
+                    a,
+                    b,
+                    p.get("steps").and_then(Value::as_u64).unwrap_or(10),
+                    m,
+                );
             } else {
                 app.synthetic.push(egui::Event::PointerMoved(a));
                 for _ in 0..p.get("count").and_then(Value::as_u64).unwrap_or(1) {
-                    app.synthetic.push(egui::Event::PointerButton { pos: a, button, pressed: true, modifiers: m });
-                    app.synthetic.push(egui::Event::PointerButton { pos: a, button, pressed: false, modifiers: m });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos: a,
+                        button,
+                        pressed: true,
+                        modifiers: m,
+                    });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos: a,
+                        button,
+                        pressed: false,
+                        modifiers: m,
+                    });
                 }
             }
             ctx.request_repaint();
@@ -267,8 +389,12 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
         }
         "ui.pointer" => {
             // events in normalized image coordinates of the displayed photo frame
-            let Some(img) = app.image_rect else { return err("no image on screen (switch to Detail view)") };
-            let Some(events) = p.get("events").and_then(Value::as_array) else { return err("missing `events`") };
+            let Some(img) = app.image_rect else {
+                return err("no image on screen (switch to Detail view)");
+            };
+            let Some(events) = p.get("events").and_then(Value::as_array) else {
+                return err("missing `events`");
+            };
             let m = modifiers(p);
             for e in events {
                 let x = e.get("x").and_then(Value::as_f64).unwrap_or(0.5) as f32;
@@ -277,11 +403,19 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
                 match e.get("kind").and_then(Value::as_str).unwrap_or("move") {
                     "down" => {
                         app.synthetic.push(egui::Event::PointerMoved(pos));
-                        app.synthetic.push(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed: true, modifiers: m });
+                        app.synthetic.push(egui::Event::PointerButton {
+                            pos,
+                            button: egui::PointerButton::Primary,
+                            pressed: true,
+                            modifiers: m,
+                        });
                     }
-                    "up" => {
-                        app.synthetic.push(egui::Event::PointerButton { pos, button: egui::PointerButton::Primary, pressed: false, modifiers: m })
-                    }
+                    "up" => app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button: egui::PointerButton::Primary,
+                        pressed: false,
+                        modifiers: m,
+                    }),
                     _ => app.synthetic.push(egui::Event::PointerMoved(pos)),
                 }
             }
@@ -289,15 +423,30 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
             ok(json!({"events": events.len()}))
         }
         "ui.key" => {
-            let Some(k) = s("key").and_then(key_from) else { return err("unknown or missing `key`") };
+            let Some(k) = s("key").and_then(key_from) else {
+                return err("unknown or missing `key`");
+            };
             let m = modifiers(p);
-            app.synthetic.push(egui::Event::Key { key: k, physical_key: None, pressed: true, repeat: false, modifiers: m });
-            app.synthetic.push(egui::Event::Key { key: k, physical_key: None, pressed: false, repeat: false, modifiers: m });
+            app.synthetic.push(egui::Event::Key {
+                key: k,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: m,
+            });
+            app.synthetic.push(egui::Event::Key {
+                key: k,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: m,
+            });
             ctx.request_repaint();
             ok(Value::Null)
         }
         "ui.text" => {
-            app.synthetic.push(egui::Event::Text(s("text").unwrap_or("").to_string()));
+            app.synthetic
+                .push(egui::Event::Text(s("text").unwrap_or("").to_string()));
             ctx.request_repaint();
             ok(Value::Null)
         }
@@ -332,7 +481,10 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
             ok(Value::Null)
         }
         "ui.zoom" => {
-            let Some(factor) = f("factor").map(|v| v as f32).filter(|v| v.is_finite() && *v > 0.0) else {
+            let Some(factor) = f("factor")
+                .map(|v| v as f32)
+                .filter(|v| v.is_finite() && *v > 0.0)
+            else {
                 return err("ui.zoom: factor must be a finite positive number (1 = unchanged)");
             };
             app.synthetic.push(egui::Event::Zoom(factor));
@@ -341,7 +493,11 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
         }
         "ui.set" => {
             // an arrangement of the sidebar is checked, not made whole as a settings file's is
-            let sidebar = match p.get("sidebar").map(crate::sidebar::SidebarLayout::parse).transpose() {
+            let sidebar = match p
+                .get("sidebar")
+                .map(crate::sidebar::SidebarLayout::parse)
+                .transpose()
+            {
                 Ok(s) => s,
                 Err(e) => return err(e),
             };
@@ -359,13 +515,25 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
                     if let Some(ids) = p.get("collapsedSidebar").and_then(Value::as_array) {
                         use crate::sidebar::SidebarSection;
                         if p.get("sidebar").is_some() {
-                            return err("ui.set: give `sidebar` or the older `collapsedSidebar`, not both".to_string());
+                            return err(
+                                "ui.set: give `sidebar` or the older `collapsedSidebar`, not both"
+                                    .to_string(),
+                            );
                         }
-                        if let Some(unknown) = ids.iter().find(|id| id.as_str().and_then(SidebarSection::from_id).is_none()) {
-                            return err(format!("ui.set: `collapsedSidebar`: unknown section {unknown} ({})", SidebarSection::ids()));
+                        if let Some(unknown) = ids
+                            .iter()
+                            .find(|id| id.as_str().and_then(SidebarSection::from_id).is_none())
+                        {
+                            return err(format!(
+                                "ui.set: `collapsedSidebar`: unknown section {unknown} ({})",
+                                SidebarSection::ids()
+                            ));
                         }
                         for section in SidebarSection::ALL {
-                            u.sidebar.set_collapsed(section, ids.iter().any(|id| id.as_str() == Some(section.id())));
+                            u.sidebar.set_collapsed(
+                                section,
+                                ids.iter().any(|id| id.as_str() == Some(section.id())),
+                            );
                         }
                     }
                     u.collapsed_sidebar.clear();
@@ -388,7 +556,9 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
                 if (r.is_err()
                     && matches!(
                         d,
-                        crate::state::Dialog::Import { .. } | crate::state::Dialog::SamModel { .. } | crate::state::Dialog::SmartRules { .. }
+                        crate::state::Dialog::Import { .. }
+                            | crate::state::Dialog::SamModel { .. }
+                            | crate::state::Dialog::SmartRules { .. }
                     ))
                     || (r.is_ok() && crate::panels::dialogs::keeps_open(app, &d))
                 {
@@ -411,7 +581,9 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
             let w = f("width").unwrap_or(1600.0) as f32;
             let h = f("height").unwrap_or(1000.0) as f32;
             let zoom = ctx.zoom_factor();
-            let native_scale = ctx.input(|i| i.viewport().native_pixels_per_point).unwrap_or_else(|| ctx.pixels_per_point() / zoom);
+            let native_scale = ctx
+                .input(|i| i.viewport().native_pixels_per_point)
+                .unwrap_or_else(|| ctx.pixels_per_point() / zoom);
             if let Err(e) = crate::headless::resized_viewport([w, h], native_scale, zoom) {
                 return err(e);
             }
@@ -432,10 +604,17 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
                 return err(e);
             }
             ctx.request_repaint();
-            Outcome::Screenshot { path: s("path").map(str::to_string), headless: p.get("headless").and_then(Value::as_bool).unwrap_or(false) }
+            Outcome::Screenshot {
+                path: s("path").map(str::to_string),
+                headless: p.get("headless").and_then(Value::as_bool).unwrap_or(false),
+            }
         }
         "ui.render" => {
-            let id = p.get("id").and_then(Value::as_u64).map(lightcraft_catalog::PhotoId).or(app.session.active());
+            let id = p
+                .get("id")
+                .and_then(Value::as_u64)
+                .map(lightcraft_catalog::PhotoId)
+                .or(app.session.active());
             let Some(id) = id else { return err("no photo") };
             if let Some(Err(e)) = s("path").map(|path| app.session.check_write_target(path)) {
                 return err(e);
@@ -450,7 +629,9 @@ pub fn handle(app: &mut LightcraftApp, ctx: &egui::Context, req: &ControlRequest
                             None => err("no writer"),
                         }
                     }
-                    _ => ok(json!({"width": r.image.width, "height": r.image.height, "histogram": r.histogram})),
+                    _ => ok(
+                        json!({"width": r.image.width, "height": r.image.height, "histogram": r.histogram}),
+                    ),
                 },
                 Err(e) => err(e),
             }
@@ -469,9 +650,19 @@ pub const NO_EXPORT_FOLDER: &str = "Choose an export folder first.";
 /// Default export folder: `~/Pictures/LightCraft Exports` (`%USERPROFILE%\Pictures\LightCraft Exports`
 /// on Windows, where `HOME` usually isn't set). Empty when no home folder is known.
 pub fn default_export_dir() -> String {
-    let home = if cfg!(windows) { std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")) } else { std::env::var_os("HOME") };
+    let home = if cfg!(windows) {
+        std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME"))
+    } else {
+        std::env::var_os("HOME")
+    };
     home.filter(|h| !h.is_empty())
-        .map(|h| std::path::PathBuf::from(h).join("Pictures").join("LightCraft Exports").to_string_lossy().into_owned())
+        .map(|h| {
+            std::path::PathBuf::from(h)
+                .join("Pictures")
+                .join("LightCraft Exports")
+                .to_string_lossy()
+                .into_owned()
+        })
         .unwrap_or_default()
 }
 
@@ -487,13 +678,29 @@ pub fn export_active(app: &mut LightcraftApp, p: &Value) -> Result<Value, String
         opts.format = lightcraft_engine::export::ExportFormat::parse(ext).unwrap_or(opts.format);
     }
     let ids: Vec<_> = match p.get("ids").and_then(Value::as_array) {
-        Some(a) => a.iter().filter_map(|v| serde_json::from_value(v.clone()).ok()).collect(),
+        Some(a) => a
+            .iter()
+            .filter_map(|v| serde_json::from_value(v.clone()).ok())
+            .collect(),
         None if !app.session.selection.ids.is_empty() => {
             // Batch order (and `{seq}`) follows the grid order.
-            let sel: std::collections::HashSet<_> = app.session.selection.ids.iter().copied().collect();
-            let mut v: Vec<_> = app.session.visible().iter().copied().filter(|id| sel.contains(id)).collect();
+            let sel: std::collections::HashSet<_> =
+                app.session.selection.ids.iter().copied().collect();
+            let mut v: Vec<_> = app
+                .session
+                .visible()
+                .iter()
+                .copied()
+                .filter(|id| sel.contains(id))
+                .collect();
             let shown: std::collections::HashSet<_> = v.iter().copied().collect();
-            v.extend(app.session.selection.ids.iter().filter(|id| !shown.contains(id)));
+            v.extend(
+                app.session
+                    .selection
+                    .ids
+                    .iter()
+                    .filter(|id| !shown.contains(id)),
+            );
             v
         }
         None => app.session.active().into_iter().collect(),
@@ -505,28 +712,54 @@ pub fn export_active(app: &mut LightcraftApp, p: &Value) -> Result<Value, String
     // field cleared) is an error, like Lightroom refusing to export to an unspecified folder, rather
     // than a silent write into the working directory. No folder at all (e.g. File → Export with
     // Preset): the last export's, else the default.
-    let exact = p.get("path").and_then(Value::as_str).filter(|s| !s.trim().is_empty()).map(str::to_string);
+    let exact = p
+        .get("path")
+        .and_then(Value::as_str)
+        .filter(|s| !s.trim().is_empty())
+        .map(str::to_string);
     let dir = match p.get("dir").and_then(Value::as_str) {
         Some(d) => d.trim().to_string(),
         None => {
-            let last_dir =
-                app.session.last_export.as_ref().and_then(|l| l.get("dir")).and_then(Value::as_str).map(str::trim).filter(|d| !d.is_empty());
-            last_dir.map(str::to_string).unwrap_or_else(default_export_dir)
+            let last_dir = app
+                .session
+                .last_export
+                .as_ref()
+                .and_then(|l| l.get("dir"))
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|d| !d.is_empty());
+            last_dir
+                .map(str::to_string)
+                .unwrap_or_else(default_export_dir)
         }
     };
     if dir.is_empty() && exact.is_none() {
         return Err(NO_EXPORT_FOLDER.into());
     }
-    let to = Destination { dir: dir.clone(), exact };
+    let to = Destination {
+        dir: dir.clone(),
+        exact,
+    };
     // Add to Apple Photos: refused here, before anything is written, when it can't be done
     let after = app.session.after_export(&opts)?;
-    let background = p.get("background").and_then(Value::as_bool).unwrap_or(false) && app.services.write_shared.is_some();
+    let background = p
+        .get("background")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        && app.services.write_shared.is_some();
     let out = if background {
         let items = lightcraft_engine::export::prepare_batch(&mut app.session, &ids, &opts)?;
         crate::export_task::start(app, items, opts, to, after)?
     } else {
         let w = app.services.write.as_mut().ok_or("no writer")?;
-        let files = export_batch(&mut app.session, &ids, &opts, &to, &mut |path, bytes| w(path, bytes), &|path| std::path::Path::new(path).exists())?;
+        let files = export_batch(
+            &mut app.session,
+            &ids,
+            &opts,
+            &to,
+            &mut |path, bytes| w(path, bytes),
+            &|path| std::path::Path::new(path).exists(),
+        )?;
         let mut out = json!({"files": files});
         // Photos may take minutes (and waits for the permission prompt): in the desktop app on a
         // worker, never on this (UI) thread; the app announces the outcome and
@@ -548,7 +781,11 @@ pub fn export_active(app: &mut LightcraftApp, p: &Value) -> Result<Value, String
     Ok(out)
 }
 
-pub fn save_screenshot(app: &mut LightcraftApp, image: &egui::ColorImage, path: Option<&str>) -> Value {
+pub fn save_screenshot(
+    app: &mut LightcraftApp,
+    image: &egui::ColorImage,
+    path: Option<&str>,
+) -> Value {
     let [w, h] = image.size;
     let Some(path) = path else {
         return json!({"ok": true, "result": {"width": w, "height": h}});
@@ -557,7 +794,9 @@ pub fn save_screenshot(app: &mut LightcraftApp, image: &egui::ColorImage, path: 
     let Some(img) = lightcraft_raster::Rgba8::from_bytes(w, h, &rgba) else {
         return json!({"ok": false, "error": "bad screenshot buffer"});
     };
-    let Some(png) = app.services.png.as_ref() else { return json!({"ok": false, "error": "no encoder"}) };
+    let Some(png) = app.services.png.as_ref() else {
+        return json!({"ok": false, "error": "no encoder"});
+    };
     let bytes = png(&img);
     match app.services.write.as_mut() {
         Some(wr) => match wr(path, &bytes) {

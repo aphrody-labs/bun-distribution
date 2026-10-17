@@ -3,7 +3,9 @@
 //! commands of the Edit menu (Find and Replace, Find Next, Paste without Formatting).
 
 use serde_json::{Value, json};
-use vectorcraft_doc::{CharStyle, Document, Justify, NodeId, NodeKind, Quotes, TextKind, TextObject, TextRun};
+use vectorcraft_doc::{
+    CharStyle, Document, Justify, NodeId, NodeKind, Quotes, TextKind, TextObject, TextRun,
+};
 use vectorcraft_geom::{Affine, Rect, shapes};
 
 use super::typecmd::refresh_bounds;
@@ -134,11 +136,18 @@ fn ids_json(ids: &[NodeId]) -> Value {
 
 /// Rewrite every run of the given text objects with `f(run text, state)`. When no run changes, the
 /// document and its undo history stay as they are.
-fn edit_runs<S: Default>(s: &mut Session, label: &str, ids: &[NodeId], f: impl Fn(&str, &mut S) -> String) -> Result<usize> {
+fn edit_runs<S: Default>(
+    s: &mut Session,
+    label: &str,
+    ids: &[NodeId],
+    f: impl Fn(&str, &mut S) -> String,
+) -> Result<usize> {
     super::overprint::edit_counted(s, label, |d| {
         let mut changed = 0;
         for id in ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
             let mut st = S::default();
             let mut any = false;
             // Inline graphics are art, not characters to rewrite.
@@ -171,8 +180,19 @@ struct CaseState {
 
 fn change_case(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "type.changeCase";
-    let case = str_param(p, "case").ok_or_else(|| bad(C, "missing case"))?.to_ascii_lowercase();
-    if !["upper", "uppercase", "lower", "lowercase", "title", "sentence"].contains(&case.as_str()) {
+    let case = str_param(p, "case")
+        .ok_or_else(|| bad(C, "missing case"))?
+        .to_ascii_lowercase();
+    if ![
+        "upper",
+        "uppercase",
+        "lower",
+        "lowercase",
+        "title",
+        "sentence",
+    ]
+    .contains(&case.as_str())
+    {
         return Err(bad(C, "case must be upper|lower|title|sentence"));
     }
     let ids = texts(s, p, C)?;
@@ -187,7 +207,9 @@ fn change_case(s: &mut Session, p: &Value) -> Result<Value> {
                 "upper" | "uppercase" => out.extend(c.to_uppercase()),
                 "lower" | "lowercase" => out.extend(c.to_lowercase()),
                 "title" => {
-                    if st.prev.is_none_or(|p| p.is_whitespace() || matches!(p, '-' | '(' | '"' | '“' | '/')) {
+                    if st.prev.is_none_or(|p| {
+                        p.is_whitespace() || matches!(p, '-' | '(' | '"' | '“' | '/')
+                    }) {
                         out.extend(c.to_uppercase())
                     } else {
                         out.extend(c.to_lowercase())
@@ -220,7 +242,13 @@ struct PunctState {
 }
 
 /// Dashes (`--` en, `---` em), ellipses and, with `quotes`, typographer's quotes.
-pub(crate) fn smarten(text: &str, prev: &mut Option<char>, quotes: Option<&Quotes>, dashes: bool, ellipsis: bool) -> String {
+pub(crate) fn smarten(
+    text: &str,
+    prev: &mut Option<char>,
+    quotes: Option<&Quotes>,
+    dashes: bool,
+    ellipsis: bool,
+) -> String {
     let mut s = text.to_string();
     if dashes {
         s = s.replace("---", "—").replace("--", "–");
@@ -253,7 +281,9 @@ fn smart_punctuation(s: &mut Session, p: &Value) -> Result<Value> {
     } else {
         text_ids(&st.doc, &st.selection.objects)
     };
-    let n = edit_runs::<PunctState>(s, "Smart Punctuation", &ids, |text, st| smarten(text, &mut st.prev, q.as_ref(), d, e))?;
+    let n = edit_runs::<PunctState>(s, "Smart Punctuation", &ids, |text, st| {
+        smarten(text, &mut st.prev, q.as_ref(), d, e)
+    })?;
     Ok(json!({ "changed": n }))
 }
 
@@ -268,15 +298,26 @@ fn to_area(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit("Convert To Area Type", |d, _| {
         for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
             if !matches!(t.kind, TextKind::Point) {
                 continue;
             }
             let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
-            let b = if lay.bounds.area() > 0.0 { lay.bounds } else { t.estimate_bounds() };
+            let b = if lay.bounds.area() > 0.0 {
+                lay.bounds
+            } else {
+                t.estimate_bounds()
+            };
             let size = t.first_style().size;
             // A little slack on the right so the text doesn't rewrap.
-            let top = lay.lines.first().map(|l| l.baseline - l.ascent).unwrap_or(b.y0).min(b.y0);
+            let top = lay
+                .lines
+                .first()
+                .map(|l| l.baseline - l.ascent)
+                .unwrap_or(b.y0)
+                .min(b.y0);
             let slack = size * 0.5;
             // Slack goes where the alignment leaves room, so the text doesn't move or rewrap.
             let (sl, sr) = match t.para_at(0).justify {
@@ -286,7 +327,9 @@ fn to_area(s: &mut Session, p: &Value) -> Result<Value> {
                 _ => (0.0, slack),
             };
             let frame = Rect::new(b.x0 - sl, top, b.x1 + sr, b.y1.max(top + 1.0));
-            t.kind = TextKind::Area { frame: shapes::rectangle(frame) };
+            t.kind = TextKind::Area {
+                frame: shapes::rectangle(frame),
+            };
             refresh_bounds(t);
         }
         Ok(())
@@ -315,15 +358,28 @@ fn to_point(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit("Convert To Point Type", |d, _| {
         for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
-            let TextKind::Area { frame } = &t.kind else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
+            let TextKind::Area { frame } = &t.kind else {
+                continue;
+            };
             let fb = frame.bounds().unwrap_or_default();
             let lay = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), t);
             let plain = t.plain_text();
-            let baseline = lay.lines.first().map(|l| l.baseline).unwrap_or(fb.y0 + t.first_style().size * 0.8);
+            let baseline = lay
+                .lines
+                .first()
+                .map(|l| l.baseline)
+                .unwrap_or(fb.y0 + t.first_style().size * 0.8);
             // Soft wraps → explicit breaks (replace the space before the wrap when there is one).
-            let mut breaks: Vec<usize> =
-                lay.lines.iter().skip(1).map(|l| l.start).filter(|&b| b > 0 && plain.as_bytes().get(b - 1) != Some(&b'\n')).collect();
+            let mut breaks: Vec<usize> = lay
+                .lines
+                .iter()
+                .skip(1)
+                .map(|l| l.start)
+                .filter(|&b| b > 0 && plain.as_bytes().get(b - 1) != Some(&b'\n'))
+                .collect();
             breaks.sort_unstable();
             breaks.dedup();
             for b in breaks.into_iter().rev() {
@@ -338,21 +394,28 @@ fn to_point(s: &mut Session, p: &Value) -> Result<Value> {
                     // Never inside an inline graphic's run: at the end of the run before it, or a
                     // run of its own.
                     match t.runs.get(ri) {
-                        Some(r) if r.inline.is_some() => match ri.checked_sub(1).and_then(|p| t.runs.get_mut(p)) {
-                            Some(prev) if prev.inline.is_none() => prev.text.push('\n'),
-                            _ => {
-                                let style = t.runs.get(ri).map(|r| r.style.clone()).unwrap_or_default();
-                                t.runs.insert(ri, TextRun::new("\n", style));
+                        Some(r) if r.inline.is_some() => {
+                            match ri.checked_sub(1).and_then(|p| t.runs.get_mut(p)) {
+                                Some(prev) if prev.inline.is_none() => prev.text.push('\n'),
+                                _ => {
+                                    let style =
+                                        t.runs.get(ri).map(|r| r.style.clone()).unwrap_or_default();
+                                    t.runs.insert(ri, TextRun::new("\n", style));
+                                }
                             }
-                        },
+                        }
                         _ => t.runs[ri].text.insert(bi, '\n'),
                     }
                 }
             }
             // The point origin sits where the alignment anchors the first line.
             let p0 = t.para_at(0);
-            let (x0, x1) =
-                lay.lines.first().map_or((fb.x0, fb.x1), |l| (l.avail.0 - p0.left_indent - p0.first_line_indent, l.avail.1 + p0.right_indent));
+            let (x0, x1) = lay.lines.first().map_or((fb.x0, fb.x1), |l| {
+                (
+                    l.avail.0 - p0.left_indent - p0.first_line_indent,
+                    l.avail.1 + p0.right_indent,
+                )
+            });
             let ox = match p0.justify {
                 Justify::Center | Justify::JustifyCenter => (x0 + x1) * 0.5,
                 Justify::Right | Justify::JustifyRight => x1,
@@ -399,11 +462,15 @@ fn path_options(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "type.pathOptions";
     let ids: Vec<NodeId> = {
         let d = &s.doc()?.doc;
-        texts(s, p, C)?.into_iter().filter(|i| path_text(d.node(*i)).is_some()).collect()
+        texts(s, p, C)?
+            .into_iter()
+            .filter(|i| path_text(d.node(*i)).is_some())
+            .collect()
     };
     let first = *ids.first().ok_or_else(|| bad(C, "select type on a path"))?;
     let options = |s: &Session| -> Result<Value> {
-        let t = path_text(s.doc()?.doc.node(first)).ok_or_else(|| bad(C, "select type on a path"))?;
+        let t =
+            path_text(s.doc()?.doc.node(first)).ok_or_else(|| bad(C, "select type on a path"))?;
         Ok(path_options_of(t))
     };
     if !PATH_OPTIONS.iter().any(|k| p.get(k).is_some()) {
@@ -413,7 +480,11 @@ fn path_options(s: &mut Session, p: &Value) -> Result<Value> {
     let fraction = |k: &str| -> Result<Option<f64>> {
         match p.get(k) {
             None | Some(Value::Null) => Ok(None),
-            Some(v) => v.as_f64().filter(|x| x.is_finite()).map(|x| Some(x.clamp(0.0, 1.0))).ok_or_else(|| bad(C, format!("`{k}` is a number 0..1"))),
+            Some(v) => v
+                .as_f64()
+                .filter(|x| x.is_finite())
+                .map(|x| Some(x.clamp(0.0, 1.0)))
+                .ok_or_else(|| bad(C, format!("`{k}` is a number 0..1"))),
         }
     };
     let start = fraction("start")?;
@@ -421,18 +492,30 @@ fn path_options(s: &mut Session, p: &Value) -> Result<Value> {
     let end = p.get("end").map(|_| fraction("end")).transpose()?;
     let flip = bool_or(p, "flip", false);
     let effect = match str_param(p, "effect") {
-        Some(e) => Some(vectorcraft_doc::PathEffect::parse(e).ok_or_else(|| bad(C, format!("unknown effect `{e}`")))?),
+        Some(e) => Some(
+            vectorcraft_doc::PathEffect::parse(e)
+                .ok_or_else(|| bad(C, format!("unknown effect `{e}`")))?,
+        ),
         None => None,
     };
     let align = match str_param(p, "alignToPath") {
-        Some(a) => Some(vectorcraft_doc::PathAlign::parse(a).ok_or_else(|| bad(C, format!("unknown alignToPath `{a}`")))?),
+        Some(a) => Some(
+            vectorcraft_doc::PathAlign::parse(a)
+                .ok_or_else(|| bad(C, format!("unknown alignToPath `{a}`")))?,
+        ),
         None => None,
     };
-    let spacing = p.get("spacing").and_then(Value::as_f64).filter(|x| x.is_finite()).map(|x| x.clamp(-1000.0, 1000.0));
+    let spacing = p
+        .get("spacing")
+        .and_then(Value::as_f64)
+        .filter(|x| x.is_finite())
+        .map(|x| x.clamp(-1000.0, 1000.0));
     // Without a flip, when every object already has every value given, the document and its undo
     // history stay as they are.
     let has_values = |t: &TextObject| match &t.kind {
-        TextKind::OnPath { start: st, end: en, .. } => {
+        TextKind::OnPath {
+            start: st, end: en, ..
+        } => {
             start.is_none_or(|v| v == *st)
                 && end.is_none_or(|v| v == *en)
                 && effect.is_none_or(|e| t.path_effect == e)
@@ -442,13 +525,24 @@ fn path_options(s: &mut Session, p: &Value) -> Result<Value> {
         _ => true,
     };
     let d = &s.doc()?.doc;
-    if !flip && ids.iter().all(|id| path_text(d.node(*id)).is_none_or(has_values)) {
+    if !flip
+        && ids
+            .iter()
+            .all(|id| path_text(d.node(*id)).is_none_or(has_values))
+    {
         return options(s);
     }
     s.edit("Type on a Path Options", |d, _| {
         for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
-            let TextKind::OnPath { start: st, end: en, .. } = &mut t.kind else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
+            let TextKind::OnPath {
+                start: st, end: en, ..
+            } = &mut t.kind
+            else {
+                continue;
+            };
             if let Some(v) = start {
                 *st = v;
             }
@@ -523,9 +617,20 @@ pub(crate) fn fill_with_placeholder(t: &mut TextObject) {
             }
             out
         }
-        _ => PLACEHOLDER.split(". ").next().unwrap_or(PLACEHOLDER).to_string() + ".",
+        _ => {
+            PLACEHOLDER
+                .split(". ")
+                .next()
+                .unwrap_or(PLACEHOLDER)
+                .to_string()
+                + "."
+        }
     };
-    t.runs = vec![TextRun { text, style, inline: None }];
+    t.runs = vec![TextRun {
+        text,
+        style,
+        inline: None,
+    }];
     refresh_bounds(t);
 }
 
@@ -566,7 +671,9 @@ pub(crate) fn special_char(name: &str) -> Option<&'static str> {
 fn insert_char(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "type.insert";
     let text = match (str_param(p, "char"), str_param(p, "text")) {
-        (Some(c), _) => special_char(c).ok_or_else(|| bad(C, format!("unknown character `{c}`")))?.to_string(),
+        (Some(c), _) => special_char(c)
+            .ok_or_else(|| bad(C, format!("unknown character `{c}`")))?
+            .to_string(),
         (None, Some(t)) => t.to_string(),
         _ => return Err(bad(C, "give `char` or `text`")),
     };
@@ -583,7 +690,9 @@ fn insert_char(s: &mut Session, p: &Value) -> Result<Value> {
     }
     s.edit("Typing", |d, _| {
         for id in &ids {
-            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else { continue };
+            let Some(NodeKind::Text(t)) = d.node_mut(*id).map(|n| &mut n.kind) else {
+                continue;
+            };
             match t.runs.last_mut() {
                 Some(r) if r.inline.is_none() => r.text.push_str(&text),
                 // After an inline graphic: a run of its own, in its style.
@@ -591,7 +700,11 @@ fn insert_char(s: &mut Session, p: &Value) -> Result<Value> {
                     let style = r.style.clone();
                     t.runs.push(TextRun::new(text.clone(), style));
                 }
-                None => t.runs.push(TextRun { text: text.clone(), style: CharStyle::default(), inline: None }),
+                None => t.runs.push(TextRun {
+                    text: text.clone(),
+                    style: CharStyle::default(),
+                    inline: None,
+                }),
             }
             refresh_bounds(t);
         }
@@ -607,13 +720,24 @@ fn is_word(c: char) -> bool {
 }
 
 /// Byte ranges of `needle` in `hay`.
-pub(crate) fn find_all(hay: &str, needle: &str, match_case: bool, whole_word: bool) -> Vec<(usize, usize)> {
+pub(crate) fn find_all(
+    hay: &str,
+    needle: &str,
+    match_case: bool,
+    whole_word: bool,
+) -> Vec<(usize, usize)> {
     let nc: Vec<char> = needle.chars().collect();
     if nc.is_empty() {
         return vec![];
     }
     let hc: Vec<(usize, char)> = hay.char_indices().collect();
-    let eq = |a: char, b: char| if match_case { a == b } else { a == b || a.to_lowercase().eq(b.to_lowercase()) };
+    let eq = |a: char, b: char| {
+        if match_case {
+            a == b
+        } else {
+            a == b || a.to_lowercase().eq(b.to_lowercase())
+        }
+    };
     let mut out = vec![];
     let mut i = 0;
     while i + nc.len() <= hc.len() {
@@ -647,9 +771,15 @@ fn all_texts(d: &Document) -> Vec<NodeId> {
 
 fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "edit.findReplace";
-    let find = str_param(p, "find").filter(|f| !f.is_empty()).ok_or_else(|| bad(C, "missing `find`"))?.to_string();
+    let find = str_param(p, "find")
+        .filter(|f| !f.is_empty())
+        .ok_or_else(|| bad(C, "missing `find`"))?
+        .to_string();
     let rep = str_param(p, "replace").unwrap_or("").to_string();
-    let (mc, ww) = (bool_or(p, "matchCase", false), bool_or(p, "wholeWord", false));
+    let (mc, ww) = (
+        bool_or(p, "matchCase", false),
+        bool_or(p, "wholeWord", false),
+    );
     let ids = match ids_param(p, "ids") {
         Some(v) => text_ids(&s.doc()?.doc, &v),
         None => all_texts(&s.doc()?.doc),
@@ -658,7 +788,12 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
     let total: usize = ids
         .iter()
         .filter_map(|id| match &st.doc.node(*id)?.kind {
-            NodeKind::Text(t) => Some(t.runs.iter().map(|r| find_all(&r.text, &find, mc, ww).len()).sum::<usize>()),
+            NodeKind::Text(t) => Some(
+                t.runs
+                    .iter()
+                    .map(|r| find_all(&r.text, &find, mc, ww).len())
+                    .sum::<usize>(),
+            ),
             _ => None,
         })
         .sum();
@@ -681,16 +816,28 @@ fn find_replace(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn find_next(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "edit.findNext";
-    let find = str_param(p, "find").filter(|f| !f.is_empty()).ok_or_else(|| bad(C, "missing `find`"))?.to_string();
-    let (mc, ww) = (bool_or(p, "matchCase", false), bool_or(p, "wholeWord", false));
+    let find = str_param(p, "find")
+        .filter(|f| !f.is_empty())
+        .ok_or_else(|| bad(C, "missing `find`"))?
+        .to_string();
+    let (mc, ww) = (
+        bool_or(p, "matchCase", false),
+        bool_or(p, "wholeWord", false),
+    );
     let st = s.doc()?;
     let all = all_texts(&st.doc);
-    let cur = st.selection.objects.first().and_then(|id| all.iter().position(|x| x == id));
+    let cur = st
+        .selection
+        .objects
+        .first()
+        .and_then(|id| all.iter().position(|x| x == id));
     let n = all.len();
     let start = cur.map(|c| c + 1).unwrap_or(0);
-    let hit = (0..n).map(|k| all[(start + k) % n.max(1)]).find(|id| match st.doc.node(*id).map(|n| &n.kind) {
-        Some(NodeKind::Text(t)) => !find_all(&t.plain_text(), &find, mc, ww).is_empty(),
-        _ => false,
+    let hit = (0..n).map(|k| all[(start + k) % n.max(1)]).find(|id| {
+        match st.doc.node(*id).map(|n| &n.kind) {
+            Some(NodeKind::Text(t)) => !find_all(&t.plain_text(), &find, mc, ww).is_empty(),
+            _ => false,
+        }
     });
     match hit {
         Some(id) => {
@@ -706,7 +853,11 @@ fn find_next(s: &mut Session, p: &Value) -> Result<Value> {
 fn strip_formatting(n: &mut vectorcraft_doc::Node) {
     if let NodeKind::Text(t) = &mut n.kind {
         let text = t.plain_text();
-        t.runs = vec![TextRun { text, style: CharStyle::default(), inline: None }];
+        t.runs = vec![TextRun {
+            text,
+            style: CharStyle::default(),
+            inline: None,
+        }];
         t.set_all_paras(Default::default());
         refresh_bounds(t);
     }
@@ -722,7 +873,9 @@ fn paste_plain(s: &mut Session, p: &Value) -> Result<Value> {
     for n in &mut s.clipboard.nodes {
         strip_formatting(n);
     }
-    let paste = find_command("edit.paste").map(|c| c.run).ok_or_else(|| EngineError::Other("paste unavailable".into()))?;
+    let paste = find_command("edit.paste")
+        .map(|c| c.run)
+        .ok_or_else(|| EngineError::Other("paste unavailable".into()))?;
     let r = paste(s, p);
     s.clipboard.nodes = saved;
     if r.is_ok()

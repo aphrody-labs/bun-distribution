@@ -33,7 +33,11 @@ pub type LinkScan = Arc<Mutex<Option<(u64, Vec<(String, Vec<u64>, Option<Stamp>)
 #[cfg(not(target_arch = "wasm32"))]
 fn stamp(path: &str) -> Option<Stamp> {
     let meta = std::fs::metadata(path).ok()?;
-    let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let modified = meta
+        .modified()
+        .ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?;
     Some((meta.len(), modified.as_nanos()))
 }
 
@@ -52,7 +56,10 @@ pub fn linked_files(d: &vectorcraft_doc::Document) -> Vec<(String, Vec<u64>)> {
 pub(crate) fn update_changed(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
     let (uid, files) = (st.uid, crate::cmd::links::linked_groups(&st.doc));
-    let now = files.into_iter().map(|(p, ids)| (p.clone(), ids, stamp(&p))).collect();
+    let now = files
+        .into_iter()
+        .map(|(p, ids)| (p.clone(), ids, stamp(&p)))
+        .collect();
     s.apply_link_stamps(uid, now, true)
 }
 
@@ -70,10 +77,15 @@ impl Session {
         }
         let slot: LinkScan = Arc::default();
         let out = slot.clone();
-        let spawned = std::thread::Builder::new().name("link-watch".into()).spawn(move || {
-            let stamps = files.into_iter().map(|(p, ids)| (p.clone(), ids, stamp(&p))).collect();
-            *out.lock().unwrap_or_else(PoisonError::into_inner) = Some((uid, stamps));
-        });
+        let spawned = std::thread::Builder::new()
+            .name("link-watch".into())
+            .spawn(move || {
+                let stamps = files
+                    .into_iter()
+                    .map(|(p, ids)| (p.clone(), ids, stamp(&p)))
+                    .collect();
+                *out.lock().unwrap_or_else(PoisonError::into_inner) = Some((uid, stamps));
+            });
         if spawned.is_ok() {
             self.link_scan = Some(slot);
         }
@@ -82,7 +94,12 @@ impl Session {
     /// Apply a finished look (`None` while there is none, or it is still running): see
     /// [`Session::apply_link_stamps`].
     pub fn poll_link_scan(&mut self) -> Option<Result<Value>> {
-        let (uid, stamps) = self.link_scan.as_ref()?.lock().unwrap_or_else(PoisonError::into_inner).take()?;
+        let (uid, stamps) = self
+            .link_scan
+            .as_ref()?
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()?;
         self.link_scan = None;
         Some(self.apply_link_stamps(uid, stamps, false))
     }
@@ -91,7 +108,12 @@ impl Session {
     /// the changed ones as Update Links says (`update`: read them again regardless). Returns
     /// `{updated: [ids], ask: [ids], modified: [ids]}`: read again, to offer (Ask When Modified),
     /// or left modified (Manually).
-    pub fn apply_link_stamps(&mut self, uid: u64, now: Vec<(String, Vec<u64>, Option<Stamp>)>, update: bool) -> Result<Value> {
+    pub fn apply_link_stamps(
+        &mut self,
+        uid: u64,
+        now: Vec<(String, Vec<u64>, Option<Stamp>)>,
+        update: bool,
+    ) -> Result<Value> {
         let none = || json!({"updated": [], "ask": [], "modified": []});
         // The document went to the back meanwhile: it's looked at when it's in front again.
         if self.active().map(|d| d.uid) != Some(uid) {
@@ -127,13 +149,23 @@ impl Session {
         if changed.is_empty() {
             return Ok(none());
         }
-        let ids: Vec<u64> = changed.iter().flat_map(|(_, ids)| ids.iter().copied()).collect();
-        let mode = if update { "automatically" } else { self.prefs.update_links.as_str() };
+        let ids: Vec<u64> = changed
+            .iter()
+            .flat_map(|(_, ids)| ids.iter().copied())
+            .collect();
+        let mode = if update {
+            "automatically"
+        } else {
+            self.prefs.update_links.as_str()
+        };
         match mode {
             "automatically" => {
                 let r = self.execute("links.update", &json!({"ids": ids}))?;
                 // Not readable yet (still being written): the next look tries again.
-                let unread: BTreeSet<u64> = r["missing"].as_array().map(|a| a.iter().filter_map(Value::as_u64).collect()).unwrap_or_default();
+                let unread: BTreeSet<u64> = r["missing"]
+                    .as_array()
+                    .map(|a| a.iter().filter_map(Value::as_u64).collect())
+                    .unwrap_or_default();
                 for (path, ids) in &changed {
                     if ids.iter().any(|i| unread.contains(i))
                         && let Some(old) = before.get(path)

@@ -27,7 +27,10 @@ pub struct ScriptFont {
 impl FontSet {
     /// The typeface the theme gives `script` (`"Arab"`), if any.
     pub fn script(&self, script: &str) -> Option<&str> {
-        self.scripts.iter().find(|f| f.script.eq_ignore_ascii_case(script) && !f.typeface.is_empty()).map(|f| f.typeface.as_str())
+        self.scripts
+            .iter()
+            .find(|f| f.script.eq_ignore_ascii_case(script) && !f.typeface.is_empty())
+            .map(|f| f.typeface.as_str())
     }
 }
 
@@ -67,13 +70,19 @@ pub struct Theme {
 
 impl Default for Theme {
     fn default() -> Self {
-        builtin_themes().into_iter().next().unwrap_or_else(|| Theme {
-            name: "DeckCraft".into(),
-            colors: ColorScheme { name: "DeckCraft".into(), colors: [Rgba::BLACK; 12] },
-            fonts: FontScheme::default(),
-            format: FormatScheme::default(),
-            raw_extra: None,
-        })
+        builtin_themes()
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| Theme {
+                name: "DeckCraft".into(),
+                colors: ColorScheme {
+                    name: "DeckCraft".into(),
+                    colors: [Rgba::BLACK; 12],
+                },
+                fonts: FontScheme::default(),
+                format: FormatScheme::default(),
+                raw_extra: None,
+            })
     }
 }
 
@@ -97,7 +106,10 @@ fn hex(s: &str) -> Rgba {
 }
 
 fn scheme(name: &str, c: [&str; 12]) -> ColorScheme {
-    ColorScheme { name: name.into(), colors: c.map(hex) }
+    ColorScheme {
+        name: name.into(),
+        colors: c.map(hex),
+    }
 }
 
 fn ph() -> ColorRef {
@@ -109,17 +121,32 @@ pub fn default_format() -> FormatScheme {
     let grad = |a: i32, b: i32| {
         Fill::Gradient(Gradient {
             stops: vec![
-                GradientStop { pos: 0.0, color: ph().with(ColorTransform::LumMod(a)).with(ColorTransform::SatMod(103000)) },
-                GradientStop { pos: 1.0, color: ph().with(ColorTransform::LumMod(b)) },
+                GradientStop {
+                    pos: 0.0,
+                    color: ph()
+                        .with(ColorTransform::LumMod(a))
+                        .with(ColorTransform::SatMod(103000)),
+                },
+                GradientStop {
+                    pos: 1.0,
+                    color: ph().with(ColorTransform::LumMod(b)),
+                },
             ],
-            shape: GradientShape::Linear { angle: 90.0, scaled: false },
+            shape: GradientShape::Linear {
+                angle: 90.0,
+                scaled: false,
+            },
             rotate_with_shape: true,
         })
     };
     FormatScheme {
         name: "DeckCraft".into(),
         fills: vec![Fill::solid(ph()), grad(110000, 92000), grad(105000, 80000)],
-        lines: vec![Line::solid(ph(), 0.75), Line::solid(ph(), 1.0), Line::solid(ph(), 1.5)],
+        lines: vec![
+            Line::solid(ph(), 0.75),
+            Line::solid(ph(), 1.0),
+            Line::solid(ph(), 1.5),
+        ],
         effects: vec![
             Effects::default(),
             Effects::default(),
@@ -142,7 +169,10 @@ pub fn default_format() -> FormatScheme {
         ],
         bg_fills: vec![
             Fill::solid(ph()),
-            Fill::solid(ph().with(ColorTransform::Tint(95000)).with(ColorTransform::SatMod(170000))),
+            Fill::solid(
+                ph().with(ColorTransform::Tint(95000))
+                    .with(ColorTransform::SatMod(170000)),
+            ),
             grad(102000, 85000),
         ],
     }
@@ -155,8 +185,14 @@ pub fn builtin_themes() -> Vec<Theme> {
         colors,
         fonts: FontScheme {
             name: name.into(),
-            major: FontSet { latin: major.into(), ..Default::default() },
-            minor: FontSet { latin: minor.into(), ..Default::default() },
+            major: FontSet {
+                latin: major.into(),
+                ..Default::default()
+            },
+            minor: FontSet {
+                latin: minor.into(),
+                ..Default::default()
+            },
         },
         format: default_format(),
         raw_extra: None,
@@ -166,7 +202,10 @@ pub fn builtin_themes() -> Vec<Theme> {
             "DeckCraft",
             scheme(
                 "DeckCraft",
-                ["000000", "FFFFFF", "1E2B3C", "EDEBE7", "2E6FD8", "F26B1D", "2EA36F", "8A5CD8", "D83F6B", "E3B21C", "2E6FD8", "7A5BA6"],
+                [
+                    "000000", "FFFFFF", "1E2B3C", "EDEBE7", "2E6FD8", "F26B1D", "2EA36F", "8A5CD8",
+                    "D83F6B", "E3B21C", "2E6FD8", "7A5BA6",
+                ],
             ),
             "Inter",
             "Inter",
@@ -175,14 +214,23 @@ pub fn builtin_themes() -> Vec<Theme> {
             "Harbor",
             scheme(
                 "Harbor",
-                ["0B1F2A", "FFFFFF", "12384D", "E4EEF2", "1B7FA6", "36B3A8", "F2C14E", "F78154", "5D576B", "8AA29E", "1B7FA6", "5D576B"],
+                [
+                    "0B1F2A", "FFFFFF", "12384D", "E4EEF2", "1B7FA6", "36B3A8", "F2C14E", "F78154",
+                    "5D576B", "8AA29E", "1B7FA6", "5D576B",
+                ],
             ),
             "Merriweather",
             "Open Sans",
         ),
         t(
             "Ember",
-            scheme("Ember", ["1A1A1A", "FFFCF7", "3D2B1F", "F6EDE3", "D9480F", "F59F00", "A61E4D", "5C940D", "1971C2", "862E9C", "D9480F", "862E9C"]),
+            scheme(
+                "Ember",
+                [
+                    "1A1A1A", "FFFCF7", "3D2B1F", "F6EDE3", "D9480F", "F59F00", "A61E4D", "5C940D",
+                    "1971C2", "862E9C", "D9480F", "862E9C",
+                ],
+            ),
             "Montserrat",
             "Lato",
         ),
@@ -190,7 +238,10 @@ pub fn builtin_themes() -> Vec<Theme> {
             "Meadow",
             scheme(
                 "Meadow",
-                ["14281D", "FFFFFF", "2D4A37", "EEF5EE", "4C9A2A", "A4C639", "2F6F4E", "E9B44C", "9B2915", "50A2A7", "2F6F4E", "9B2915"],
+                [
+                    "14281D", "FFFFFF", "2D4A37", "EEF5EE", "4C9A2A", "A4C639", "2F6F4E", "E9B44C",
+                    "9B2915", "50A2A7", "2F6F4E", "9B2915",
+                ],
             ),
             "Merriweather",
             "Open Sans",
@@ -199,14 +250,23 @@ pub fn builtin_themes() -> Vec<Theme> {
             "Nocturne",
             scheme(
                 "Nocturne",
-                ["FFFFFF", "121826", "F2F4F8", "1E2638", "7C5CFF", "00C2A8", "FF6B9A", "FFC53D", "4DA3FF", "B2F35F", "7C5CFF", "FF6B9A"],
+                [
+                    "FFFFFF", "121826", "F2F4F8", "1E2638", "7C5CFF", "00C2A8", "FF6B9A", "FFC53D",
+                    "4DA3FF", "B2F35F", "7C5CFF", "FF6B9A",
+                ],
             ),
             "Inter",
             "Inter",
         ),
         t(
             "Paper",
-            scheme("Paper", ["262626", "FFFFFF", "404040", "F2F2F2", "595959", "8C8C8C", "C0504D", "4F81BD", "9BBB59", "F79646", "4F81BD", "8064A2"]),
+            scheme(
+                "Paper",
+                [
+                    "262626", "FFFFFF", "404040", "F2F2F2", "595959", "8C8C8C", "C0504D", "4F81BD",
+                    "9BBB59", "F79646", "4F81BD", "8064A2",
+                ],
+            ),
             "Playfair Display",
             "Lato",
         ),
@@ -214,14 +274,23 @@ pub fn builtin_themes() -> Vec<Theme> {
             "Coral Reef",
             scheme(
                 "Coral Reef",
-                ["0F2A33", "FFFFFF", "0E4D64", "FDF1EC", "FF6F59", "254441", "43AA8B", "B2B09B", "EF3054", "3F88C5", "3F88C5", "EF3054"],
+                [
+                    "0F2A33", "FFFFFF", "0E4D64", "FDF1EC", "FF6F59", "254441", "43AA8B", "B2B09B",
+                    "EF3054", "3F88C5", "3F88C5", "EF3054",
+                ],
             ),
             "Poppins",
             "Nunito Sans",
         ),
         t(
             "Slate",
-            scheme("Slate", ["111827", "FFFFFF", "374151", "F3F4F6", "6366F1", "0EA5E9", "10B981", "F59E0B", "EF4444", "8B5CF6", "6366F1", "8B5CF6"]),
+            scheme(
+                "Slate",
+                [
+                    "111827", "FFFFFF", "374151", "F3F4F6", "6366F1", "0EA5E9", "10B981", "F59E0B",
+                    "EF4444", "8B5CF6", "6366F1", "8B5CF6",
+                ],
+            ),
             "Roboto",
             "Roboto",
         ),
@@ -233,18 +302,39 @@ pub fn builtin_color_schemes() -> Vec<ColorScheme> {
     let mut v: Vec<ColorScheme> = builtin_themes().into_iter().map(|t| t.colors).collect();
     v.push(scheme(
         "Grayscale",
-        ["000000", "FFFFFF", "000000", "F8F8F8", "DDDDDD", "B2B2B2", "969696", "808080", "5F5F5F", "4D4D4D", "5F5F5F", "919191"],
+        [
+            "000000", "FFFFFF", "000000", "F8F8F8", "DDDDDD", "B2B2B2", "969696", "808080",
+            "5F5F5F", "4D4D4D", "5F5F5F", "919191",
+        ],
     ));
-    v.push(scheme("Ocean", ["000000", "FFFFFF", "13293D", "E8F1F2", "006494", "247BA0", "1B98E0", "6CC1E8", "13293D", "0B3954", "1B98E0", "6CC1E8"]));
+    v.push(scheme(
+        "Ocean",
+        [
+            "000000", "FFFFFF", "13293D", "E8F1F2", "006494", "247BA0", "1B98E0", "6CC1E8",
+            "13293D", "0B3954", "1B98E0", "6CC1E8",
+        ],
+    ));
     v.push(scheme(
         "Sunset",
-        ["2B2118", "FFFFFF", "6F1A07", "FFF3E6", "FF9F1C", "FFBF69", "CB997E", "E76F51", "F4A261", "2A9D8F", "E76F51", "2A9D8F"],
+        [
+            "2B2118", "FFFFFF", "6F1A07", "FFF3E6", "FF9F1C", "FFBF69", "CB997E", "E76F51",
+            "F4A261", "2A9D8F", "E76F51", "2A9D8F",
+        ],
     ));
     v.push(scheme(
         "Forest",
-        ["1B1B1B", "FFFFFF", "283618", "FEFAE0", "606C38", "DDA15E", "BC6C25", "283618", "8A9A5B", "4F772D", "606C38", "BC6C25"],
+        [
+            "1B1B1B", "FFFFFF", "283618", "FEFAE0", "606C38", "DDA15E", "BC6C25", "283618",
+            "8A9A5B", "4F772D", "606C38", "BC6C25",
+        ],
     ));
-    v.push(scheme("Berry", ["1F0A1D", "FFFFFF", "4A1942", "F7E8F3", "893168", "C6426E", "EB6A8F", "4A1942", "7D7ABC", "56A3A6", "893168", "56A3A6"]));
+    v.push(scheme(
+        "Berry",
+        [
+            "1F0A1D", "FFFFFF", "4A1942", "F7E8F3", "893168", "C6426E", "EB6A8F", "4A1942",
+            "7D7ABC", "56A3A6", "893168", "56A3A6",
+        ],
+    ));
     v
 }
 
@@ -252,8 +342,14 @@ pub fn builtin_color_schemes() -> Vec<ColorScheme> {
 pub fn builtin_font_schemes() -> Vec<FontScheme> {
     let f = |name: &str, major: &str, minor: &str| FontScheme {
         name: name.into(),
-        major: FontSet { latin: major.into(), ..Default::default() },
-        minor: FontSet { latin: minor.into(), ..Default::default() },
+        major: FontSet {
+            latin: major.into(),
+            ..Default::default()
+        },
+        minor: FontSet {
+            latin: minor.into(),
+            ..Default::default()
+        },
     };
     vec![
         f("Inter", "Inter", "Inter"),

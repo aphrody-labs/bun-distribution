@@ -4,7 +4,14 @@
 //! ([`Doc`]): groups with transforms and opacity, and shapes with fills and strokes in their own
 //! user space. [`rasterize`] draws it at any scale; the engine converts it to shape layers.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod color;
 mod pathdata;
@@ -74,8 +81,19 @@ pub enum Spread {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum GradientKind {
-    Linear { x1: f64, y1: f64, x2: f64, y2: f64 },
-    Radial { cx: f64, cy: f64, r: f64, fx: f64, fy: f64 },
+    Linear {
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+    },
+    Radial {
+        cx: f64,
+        cy: f64,
+        r: f64,
+        fx: f64,
+        fy: f64,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -112,8 +130,20 @@ pub struct Stroke {
 /// layer items).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Geom {
-    Rect { x: f64, y: f64, w: f64, h: f64, rx: f64, ry: f64 },
-    Ellipse { cx: f64, cy: f64, rx: f64, ry: f64 },
+    Rect {
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+        rx: f64,
+        ry: f64,
+    },
+    Ellipse {
+        cx: f64,
+        cy: f64,
+        rx: f64,
+        ry: f64,
+    },
     Path(BezPath),
 }
 
@@ -124,12 +154,18 @@ impl Geom {
             Geom::Rect { x, y, w, h, rx, ry } => {
                 let r = kurbo::Rect::new(*x, *y, x + w, y + h);
                 if *rx > 0.0 || *ry > 0.0 {
-                    if (rx - ry).abs() < 1e-9 { kurbo::RoundedRect::from_rect(r, *rx).to_path(0.01) } else { elliptic_round_rect(*x, *y, *w, *h, *rx, *ry) }
+                    if (rx - ry).abs() < 1e-9 {
+                        kurbo::RoundedRect::from_rect(r, *rx).to_path(0.01)
+                    } else {
+                        elliptic_round_rect(*x, *y, *w, *h, *rx, *ry)
+                    }
                 } else {
                     r.to_path(0.01)
                 }
             }
-            Geom::Ellipse { cx, cy, rx, ry } => kurbo::Ellipse::new((*cx, *cy), (*rx, *ry), 0.0).to_path(0.01),
+            Geom::Ellipse { cx, cy, rx, ry } => {
+                kurbo::Ellipse::new((*cx, *cy), (*rx, *ry), 0.0).to_path(0.01)
+            }
             Geom::Path(p) => p.clone(),
         }
     }
@@ -143,7 +179,11 @@ fn elliptic_round_rect(x: f64, y: f64, w: f64, h: f64, rx: f64, ry: f64) -> BezP
     p.line_to((x + w - rx, y));
     p.curve_to((x + w - rx + kx, y), (x + w, y + ry - ky), (x + w, y + ry));
     p.line_to((x + w, y + h - ry));
-    p.curve_to((x + w, y + h - ry + ky), (x + w - rx + kx, y + h), (x + w - rx, y + h));
+    p.curve_to(
+        (x + w, y + h - ry + ky),
+        (x + w - rx + kx, y + h),
+        (x + w - rx, y + h),
+    );
     p.line_to((x + rx, y + h));
     p.curve_to((x + rx - kx, y + h), (x, y + h - ry + ky), (x, y + h - ry));
     p.line_to((x, y + ry));
@@ -298,7 +338,10 @@ pub struct Doc {
 impl Doc {
     /// Pixel size (rounded up, at least 1×1).
     pub fn pixel_size(&self) -> (u32, u32) {
-        (self.width.ceil().clamp(1.0, 30000.0) as u32, self.height.ceil().clamp(1.0, 30000.0) as u32)
+        (
+            self.width.ceil().clamp(1.0, 30000.0) as u32,
+            self.height.ceil().clamp(1.0, 30000.0) as u32,
+        )
     }
     /// Every shape with its accumulated transform (to document pixels) and opacity, in paint
     /// order.
@@ -410,7 +453,9 @@ fn parse_css(css: &str, rules: &mut Vec<Rule>) {
     let mut rest = css.as_str();
     while let Some(open) = rest.find('{') {
         let sel = rest[..open].trim();
-        let Some(close) = rest[open..].find('}') else { break };
+        let Some(close) = rest[open..].find('}') else {
+            break;
+        };
         let body = &rest[open + 1..open + close];
         rest = &rest[open + close + 1..];
         if sel.starts_with('@') {
@@ -428,7 +473,11 @@ fn parse_css(css: &str, rules: &mut Vec<Rule>) {
             let mut id = None;
             let mut cur = String::new();
             let mut kind = 't';
-            let flush = |kind: char, cur: &mut String, tag: &mut Option<String>, classes: &mut Vec<String>, id: &mut Option<String>| {
+            let flush = |kind: char,
+                         cur: &mut String,
+                         tag: &mut Option<String>,
+                         classes: &mut Vec<String>,
+                         id: &mut Option<String>| {
                 if !cur.is_empty() {
                     match kind {
                         '.' => classes.push(std::mem::take(cur)),
@@ -451,9 +500,17 @@ fn parse_css(css: &str, rules: &mut Vec<Rule>) {
                 }
             }
             flush(kind, &mut cur, &mut tag, &mut classes, &mut id);
-            let specificity = id.is_some() as u32 * 100 + classes.len() as u32 * 10 + tag.is_some() as u32;
+            let specificity =
+                id.is_some() as u32 * 100 + classes.len() as u32 * 10 + tag.is_some() as u32;
             let order = rules.len();
-            rules.push(Rule { tag, classes, id, specificity, order, decls: decls.clone() });
+            rules.push(Rule {
+                tag,
+                classes,
+                id,
+                specificity,
+                order,
+                decls: decls.clone(),
+            });
         }
     }
 }
@@ -503,7 +560,10 @@ impl<'a, 'i> Parser<'a, 'i> {
             }
         }
         let tag = n.tag_name().name();
-        let classes: Vec<&str> = n.attribute("class").map(|c| c.split_whitespace().collect()).unwrap_or_default();
+        let classes: Vec<&str> = n
+            .attribute("class")
+            .map(|c| c.split_whitespace().collect())
+            .unwrap_or_default();
         let id = n.attribute("id");
         let mut matching: Vec<&Rule> = self
             .rules
@@ -530,7 +590,9 @@ impl<'a, 'i> Parser<'a, 'i> {
 
     fn length(&self, s: &str, axis: char, font: f64) -> Option<f64> {
         let s = s.trim();
-        let num_end = s.find(|c: char| !(c.is_ascii_digit() || matches!(c, '.' | '-' | '+' | 'e' | 'E'))).unwrap_or(s.len());
+        let num_end = s
+            .find(|c: char| !(c.is_ascii_digit() || matches!(c, '.' | '-' | '+' | 'e' | 'E')))
+            .unwrap_or(s.len());
         // "e" also starts "em"/"ex": back off if the number does not parse.
         let (mut num, mut unit) = (&s[..num_end], &s[num_end..]);
         if num.parse::<f64>().is_err() && (num.ends_with('e') || num.ends_with('E')) {
@@ -560,7 +622,9 @@ impl<'a, 'i> Parser<'a, 'i> {
     }
 
     fn attr_len(&self, n: roxmltree::Node, name: &str, axis: char, st: &Style) -> f64 {
-        n.attribute(name).and_then(|v| self.length(v, axis, st.font_size)).unwrap_or(0.0)
+        n.attribute(name)
+            .and_then(|v| self.length(v, axis, st.font_size))
+            .unwrap_or(0.0)
     }
 
     fn paint_ref(&self, v: &str) -> Option<Option<PaintRef>> {
@@ -573,9 +637,17 @@ impl<'a, 'i> Parser<'a, 'i> {
         }
         if let Some(rest) = v.strip_prefix("url(") {
             let (url, fallback) = rest.split_once(')').unwrap_or((rest, ""));
-            let id = url.trim().trim_matches(['"', '\'']).trim_start_matches('#').to_string();
+            let id = url
+                .trim()
+                .trim_matches(['"', '\''])
+                .trim_start_matches('#')
+                .to_string();
             let fb = fallback.trim();
-            let fb = if fb.is_empty() || fb == "none" { None } else { parse_color(fb) };
+            let fb = if fb.is_empty() || fb == "none" {
+                None
+            } else {
+                parse_color(fb)
+            };
             return Some(Some(PaintRef::Url(id, fb)));
         }
         if v == "inherit" {
@@ -587,12 +659,24 @@ impl<'a, 'i> Parser<'a, 'i> {
     /// Apply an element's declared inherited properties to `st`. Returns (opacity, display).
     fn cascade(&self, n: roxmltree::Node, st: &mut Style) -> (f64, bool) {
         let d = self.declared(n);
-        let num =
-            |k: &str| d.get(k).and_then(|v| v.trim().trim_end_matches('%').parse::<f64>().ok().map(|x| if v.trim().ends_with('%') { x / 100.0 } else { x }));
+        let num = |k: &str| {
+            d.get(k).and_then(|v| {
+                v.trim().trim_end_matches('%').parse::<f64>().ok().map(|x| {
+                    if v.trim().ends_with('%') {
+                        x / 100.0
+                    } else {
+                        x
+                    }
+                })
+            })
+        };
         if let Some(c) = d.get("color").and_then(|v| parse_color(v)) {
             st.color = c;
         }
-        if let Some(v) = d.get("font-size").and_then(|v| self.length(v, 'o', st.font_size)) {
+        if let Some(v) = d
+            .get("font-size")
+            .and_then(|v| self.length(v, 'o', st.font_size))
+        {
             st.font_size = v;
         }
         if let Some(p) = d.get("fill").and_then(|v| self.paint_ref(v)) {
@@ -607,14 +691,21 @@ impl<'a, 'i> Parser<'a, 'i> {
         if let Some(v) = num("stroke-opacity") {
             st.stroke_opacity = v.clamp(0.0, 1.0);
         }
-        if let Some(v) = d.get("stroke-width").and_then(|v| self.length(v, 'o', st.font_size)) {
+        if let Some(v) = d
+            .get("stroke-width")
+            .and_then(|v| self.length(v, 'o', st.font_size))
+        {
             st.stroke_width = v.max(0.0);
         }
         if let Some(v) = num("stroke-miterlimit") {
             st.miter = v.max(1.0);
         }
         if let Some(v) = d.get("fill-rule") {
-            st.fill_rule = if v.trim() == "evenodd" { FillRule::EvenOdd } else { FillRule::NonZero };
+            st.fill_rule = if v.trim() == "evenodd" {
+                FillRule::EvenOdd
+            } else {
+                FillRule::NonZero
+            };
         }
         if let Some(v) = d.get("stroke-linecap") {
             st.cap = match v.trim() {
@@ -634,12 +725,22 @@ impl<'a, 'i> Parser<'a, 'i> {
             st.dash = if v.trim() == "none" {
                 None
             } else {
-                let a: Vec<f64> =
-                    v.split(|c: char| c == ',' || c.is_whitespace()).filter(|t| !t.is_empty()).filter_map(|t| self.length(t, 'o', st.font_size)).collect();
-                if a.iter().all(|x| *x >= 0.0) && a.iter().any(|x| *x > 0.0) { Some(a) } else { None }
+                let a: Vec<f64> = v
+                    .split(|c: char| c == ',' || c.is_whitespace())
+                    .filter(|t| !t.is_empty())
+                    .filter_map(|t| self.length(t, 'o', st.font_size))
+                    .collect();
+                if a.iter().all(|x| *x >= 0.0) && a.iter().any(|x| *x > 0.0) {
+                    Some(a)
+                } else {
+                    None
+                }
             };
         }
-        if let Some(v) = d.get("stroke-dashoffset").and_then(|v| self.length(v, 'o', st.font_size)) {
+        if let Some(v) = d
+            .get("stroke-dashoffset")
+            .and_then(|v| self.length(v, 'o', st.font_size))
+        {
             st.dash_offset = v;
         }
         if let Some(v) = d.get("visibility") {
@@ -652,7 +753,10 @@ impl<'a, 'i> Parser<'a, 'i> {
     fn resolve_paint(&self, p: &PaintRef, st: &Style) -> Option<(Paint, f64)> {
         match p {
             PaintRef::Color(c) => Some((Paint::Color([c[0], c[1], c[2]]), c[3])),
-            PaintRef::Current => Some((Paint::Color([st.color[0], st.color[1], st.color[2]]), st.color[3])),
+            PaintRef::Current => Some((
+                Paint::Color([st.color[0], st.color[1], st.color[2]]),
+                st.color[3],
+            )),
             PaintRef::Url(id, fb) => match self.gradient(id, 0) {
                 Some(g) if g.stops.len() == 1 => {
                     let c = g.stops[0].1;
@@ -666,7 +770,10 @@ impl<'a, 'i> Parser<'a, 'i> {
     }
 
     fn href(&self, n: roxmltree::Node<'a, 'i>) -> Option<roxmltree::Node<'a, 'i>> {
-        let h = n.attributes().find(|a| a.name() == "href").map(|a| a.value())?;
+        let h = n
+            .attributes()
+            .find(|a| a.name() == "href")
+            .map(|a| a.value())?;
         self.ids.get(h.trim().trim_start_matches('#')).copied()
     }
 
@@ -694,22 +801,41 @@ impl<'a, 'i> Parser<'a, 'i> {
             let v = attr(name).unwrap_or(def);
             if bbox_units {
                 let v = v.trim();
-                if let Some(p) = v.strip_suffix('%') { p.parse::<f64>().unwrap_or(0.0) / 100.0 } else { v.parse::<f64>().unwrap_or(0.0) }
+                if let Some(p) = v.strip_suffix('%') {
+                    p.parse::<f64>().unwrap_or(0.0) / 100.0
+                } else {
+                    v.parse::<f64>().unwrap_or(0.0)
+                }
             } else {
                 self.length(v, axis, st.font_size).unwrap_or(0.0)
             }
         };
         let kind = if tag == "linearGradient" {
-            GradientKind::Linear { x1: len("x1", 'x', "0%"), y1: len("y1", 'y', "0%"), x2: len("x2", 'x', "100%"), y2: len("y2", 'y', "0%") }
+            GradientKind::Linear {
+                x1: len("x1", 'x', "0%"),
+                y1: len("y1", 'y', "0%"),
+                x2: len("x2", 'x', "100%"),
+                y2: len("y2", 'y', "0%"),
+            }
         } else {
             let cx = len("cx", 'x', "50%");
             let cy = len("cy", 'y', "50%");
             let r = len("r", 'o', "50%");
-            let fx = if attr("fx").is_some() { len("fx", 'x', "50%") } else { cx };
-            let fy = if attr("fy").is_some() { len("fy", 'y', "50%") } else { cy };
+            let fx = if attr("fx").is_some() {
+                len("fx", 'x', "50%")
+            } else {
+                cx
+            };
+            let fy = if attr("fy").is_some() {
+                len("fy", 'y', "50%")
+            } else {
+                cy
+            };
             GradientKind::Radial { cx, cy, r, fx, fy }
         };
-        let transform = attr("gradientTransform").map(parse_transform).unwrap_or(Affine::IDENTITY);
+        let transform = attr("gradientTransform")
+            .map(parse_transform)
+            .unwrap_or(Affine::IDENTITY);
         let spread = match attr("spreadMethod") {
             Some("reflect") => Spread::Reflect,
             Some("repeat") => Spread::Repeat,
@@ -717,15 +843,25 @@ impl<'a, 'i> Parser<'a, 'i> {
         };
         // Stops: from the first element in the chain that has any.
         let mut stops = vec![];
-        if let Some(src) = chain.iter().find(|e| e.children().any(|c| c.is_element() && c.tag_name().name() == "stop")) {
+        if let Some(src) = chain.iter().find(|e| {
+            e.children()
+                .any(|c| c.is_element() && c.tag_name().name() == "stop")
+        }) {
             let mut last = 0.0f64;
-            for s in src.children().filter(|c| c.is_element() && c.tag_name().name() == "stop") {
+            for s in src
+                .children()
+                .filter(|c| c.is_element() && c.tag_name().name() == "stop")
+            {
                 let d = self.declared(s);
                 let off = s
                     .attribute("offset")
                     .map(|o| {
                         let o = o.trim();
-                        if let Some(p) = o.strip_suffix('%') { p.parse::<f64>().unwrap_or(0.0) / 100.0 } else { o.parse::<f64>().unwrap_or(0.0) }
+                        if let Some(p) = o.strip_suffix('%') {
+                            p.parse::<f64>().unwrap_or(0.0) / 100.0
+                        } else {
+                            o.parse::<f64>().unwrap_or(0.0)
+                        }
                     })
                     .unwrap_or(0.0)
                     .clamp(0.0, 1.0)
@@ -733,27 +869,52 @@ impl<'a, 'i> Parser<'a, 'i> {
                 last = off;
                 let c = d
                     .get("stop-color")
-                    .and_then(|c| if c.trim() == "currentColor" { d.get("color").and_then(|x| parse_color(x)) } else { parse_color(c) })
+                    .and_then(|c| {
+                        if c.trim() == "currentColor" {
+                            d.get("color").and_then(|x| parse_color(x))
+                        } else {
+                            parse_color(c)
+                        }
+                    })
                     .unwrap_or([0.0, 0.0, 0.0, 1.0]);
-                let o = d.get("stop-opacity").and_then(|v| v.trim().parse::<f64>().ok()).unwrap_or(1.0).clamp(0.0, 1.0);
+                let o = d
+                    .get("stop-opacity")
+                    .and_then(|v| v.trim().parse::<f64>().ok())
+                    .unwrap_or(1.0)
+                    .clamp(0.0, 1.0);
                 stops.push((off, [c[0], c[1], c[2], c[3] * o]));
             }
         }
-        Some(Gradient { kind, stops, bbox_units, transform, spread })
+        Some(Gradient {
+            kind,
+            stops,
+            bbox_units,
+            transform,
+            spread,
+        })
     }
 
     fn element_name(n: roxmltree::Node) -> String {
-        n.attribute("id").map(str::to_string).unwrap_or_else(|| n.tag_name().name().to_string())
+        n.attribute("id")
+            .map(str::to_string)
+            .unwrap_or_else(|| n.tag_name().name().to_string())
     }
 
     /// Convert an element (and its subtree) into nodes appended to `out`.
-    fn node(&mut self, n: roxmltree::Node<'a, 'i>, parent: &Style, out: &mut Vec<Node>, depth: usize) {
+    fn node(
+        &mut self,
+        n: roxmltree::Node<'a, 'i>,
+        parent: &Style,
+        out: &mut Vec<Node>,
+        depth: usize,
+    ) {
         if depth > 64 || !is_svg_ns(&n) {
             return;
         }
         let tag = n.tag_name().name();
         match tag {
-            "defs" | "title" | "desc" | "metadata" | "style" | "linearGradient" | "radialGradient" | "symbol" | "clipPath" | "mask" | "pattern" | "marker"
+            "defs" | "title" | "desc" | "metadata" | "style" | "linearGradient"
+            | "radialGradient" | "symbol" | "clipPath" | "mask" | "pattern" | "marker"
             | "script" => return,
             "text" | "image" | "filter" | "foreignObject" | "switch" => {
                 self.skipped.push(tag.to_string());
@@ -766,7 +927,10 @@ impl<'a, 'i> Parser<'a, 'i> {
         if !display {
             return;
         }
-        let mut transform = n.attribute("transform").map(parse_transform).unwrap_or(Affine::IDENTITY);
+        let mut transform = n
+            .attribute("transform")
+            .map(parse_transform)
+            .unwrap_or(Affine::IDENTITY);
         match tag {
             "g" | "a" => {
                 let mut children = vec![];
@@ -789,8 +953,14 @@ impl<'a, 'i> Parser<'a, 'i> {
                 // Nested viewport.
                 let x = self.attr_len(n, "x", 'x', &st);
                 let y = self.attr_len(n, "y", 'y', &st);
-                let w = n.attribute("width").and_then(|v| self.length(v, 'x', st.font_size)).unwrap_or(self.vw);
-                let h = n.attribute("height").and_then(|v| self.length(v, 'y', st.font_size)).unwrap_or(self.vh);
+                let w = n
+                    .attribute("width")
+                    .and_then(|v| self.length(v, 'x', st.font_size))
+                    .unwrap_or(self.vw);
+                let h = n
+                    .attribute("height")
+                    .and_then(|v| self.length(v, 'y', st.font_size))
+                    .unwrap_or(self.vh);
                 let vb = viewbox_transform(n, w, h);
                 let mut children = vec![];
                 let saved = (self.vw, self.vh);
@@ -824,8 +994,14 @@ impl<'a, 'i> Parser<'a, 'i> {
                 transform *= Affine::translate((x, y));
                 let mut children = vec![];
                 if target.tag_name().name() == "symbol" {
-                    let w = n.attribute("width").and_then(|v| self.length(v, 'x', st.font_size)).unwrap_or(self.vw);
-                    let h = n.attribute("height").and_then(|v| self.length(v, 'y', st.font_size)).unwrap_or(self.vh);
+                    let w = n
+                        .attribute("width")
+                        .and_then(|v| self.length(v, 'x', st.font_size))
+                        .unwrap_or(self.vw);
+                    let h = n
+                        .attribute("height")
+                        .and_then(|v| self.length(v, 'y', st.font_size))
+                        .unwrap_or(self.vh);
                     let vb = viewbox_transform(target, w, h);
                     let mut inner = vec![];
                     let mut sst = st.clone();
@@ -863,21 +1039,32 @@ impl<'a, 'i> Parser<'a, 'i> {
                 if !st.visible {
                     return;
                 }
-                let Some(geom) = self.geometry(n, &st) else { return };
-                let fill = if matches!(tag, "line") { None } else { st.fill.as_ref().and_then(|p| self.resolve_paint(p, &st)) };
+                let Some(geom) = self.geometry(n, &st) else {
+                    return;
+                };
+                let fill = if matches!(tag, "line") {
+                    None
+                } else {
+                    st.fill.as_ref().and_then(|p| self.resolve_paint(p, &st))
+                };
                 let (fill, fill_alpha) = match fill {
                     Some((p, a)) => (Some(p), a),
                     None => (None, 1.0),
                 };
-                let stroke = st.stroke.as_ref().and_then(|p| self.resolve_paint(p, &st)).filter(|_| st.stroke_width > 0.0).map(|(paint, a)| Stroke {
-                    paint,
-                    opacity: st.stroke_opacity * a,
-                    width: st.stroke_width,
-                    cap: st.cap,
-                    join: st.join,
-                    miter: st.miter,
-                    dash: st.dash.clone().map(|d| (d, st.dash_offset)),
-                });
+                let stroke = st
+                    .stroke
+                    .as_ref()
+                    .and_then(|p| self.resolve_paint(p, &st))
+                    .filter(|_| st.stroke_width > 0.0)
+                    .map(|(paint, a)| Stroke {
+                        paint,
+                        opacity: st.stroke_opacity * a,
+                        width: st.stroke_width,
+                        cap: st.cap,
+                        join: st.join,
+                        miter: st.miter,
+                        dash: st.dash.clone().map(|d| (d, st.dash_offset)),
+                    });
                 out.push(Node::Shape(Shape {
                     name: Self::element_name(n),
                     geom,
@@ -929,29 +1116,50 @@ impl<'a, 'i> Parser<'a, 'i> {
                 if w <= 0.0 || h <= 0.0 {
                     return None;
                 }
-                let rx_a = n.attribute("rx").and_then(|v| self.length(v, 'x', st.font_size));
-                let ry_a = n.attribute("ry").and_then(|v| self.length(v, 'y', st.font_size));
+                let rx_a = n
+                    .attribute("rx")
+                    .and_then(|v| self.length(v, 'x', st.font_size));
+                let ry_a = n
+                    .attribute("ry")
+                    .and_then(|v| self.length(v, 'y', st.font_size));
                 let (rx, ry) = match (rx_a, ry_a) {
                     (Some(x), Some(y)) => (x, y),
                     (Some(x), None) => (x, x),
                     (None, Some(y)) => (y, y),
                     (None, None) => (0.0, 0.0),
                 };
-                Geom::Rect { x: l("x", 'x'), y: l("y", 'y'), w, h, rx: rx.clamp(0.0, w / 2.0), ry: ry.clamp(0.0, h / 2.0) }
+                Geom::Rect {
+                    x: l("x", 'x'),
+                    y: l("y", 'y'),
+                    w,
+                    h,
+                    rx: rx.clamp(0.0, w / 2.0),
+                    ry: ry.clamp(0.0, h / 2.0),
+                }
             }
             "circle" => {
                 let r = l("r", 'o');
                 if r <= 0.0 {
                     return None;
                 }
-                Geom::Ellipse { cx: l("cx", 'x'), cy: l("cy", 'y'), rx: r, ry: r }
+                Geom::Ellipse {
+                    cx: l("cx", 'x'),
+                    cy: l("cy", 'y'),
+                    rx: r,
+                    ry: r,
+                }
             }
             "ellipse" => {
                 let (rx, ry) = (l("rx", 'x'), l("ry", 'y'));
                 if rx <= 0.0 || ry <= 0.0 {
                     return None;
                 }
-                Geom::Ellipse { cx: l("cx", 'x'), cy: l("cy", 'y'), rx, ry }
+                Geom::Ellipse {
+                    cx: l("cx", 'x'),
+                    cy: l("cy", 'y'),
+                    rx,
+                    ry,
+                }
             }
             "line" => {
                 let mut p = BezPath::new();
@@ -986,8 +1194,12 @@ fn viewbox(n: roxmltree::Node) -> Option<([f64; 2], f64, f64)> {
 
 /// The viewBox → viewport transform (`preserveAspectRatio`, default `xMidYMid meet`).
 fn viewbox_transform(n: roxmltree::Node, w: f64, h: f64) -> Affine {
-    let Some(([x, y], vw, vh)) = viewbox(n) else { return Affine::IDENTITY };
-    let par = n.attribute("preserveAspectRatio").unwrap_or("xMidYMid meet");
+    let Some(([x, y], vw, vh)) = viewbox(n) else {
+        return Affine::IDENTITY;
+    };
+    let par = n
+        .attribute("preserveAspectRatio")
+        .unwrap_or("xMidYMid meet");
     let mut parts = par.split_whitespace();
     let mut align = parts.next().unwrap_or("xMidYMid");
     if align == "defer" {
@@ -1024,7 +1236,9 @@ pub fn parse_transform(s: &str) -> Affine {
     let mut rest = s;
     while let Some(open) = rest.find('(') {
         let name = rest[..open].trim().trim_start_matches(',').trim();
-        let Some(close) = rest[open..].find(')') else { break };
+        let Some(close) = rest[open..].find(')') else {
+            break;
+        };
         let a = pathdata::numbers(&rest[open + 1..open + close]);
         rest = &rest[open + close + 1..];
         let t = match (name, a.len()) {
@@ -1034,7 +1248,11 @@ pub fn parse_transform(s: &str) -> Affine {
             ("scale", 1) => Affine::scale(a[0]),
             ("scale", 2) => Affine::scale_non_uniform(a[0], a[1]),
             ("rotate", 1) => Affine::rotate(a[0].to_radians()),
-            ("rotate", 3) => Affine::translate((a[1], a[2])) * Affine::rotate(a[0].to_radians()) * Affine::translate((-a[1], -a[2])),
+            ("rotate", 3) => {
+                Affine::translate((a[1], a[2]))
+                    * Affine::rotate(a[0].to_radians())
+                    * Affine::translate((-a[1], -a[2]))
+            }
             ("skewX", 1) => Affine::new([1.0, 0.0, a[0].to_radians().tan(), 1.0, 0.0, 0.0]),
             ("skewY", 1) => Affine::new([1.0, a[0].to_radians().tan(), 0.0, 1.0, 0.0, 0.0]),
             _ => Affine::IDENTITY,
@@ -1054,7 +1272,11 @@ const MAX_XML_DEPTH: usize = 256;
 fn xml_depth(text: &str) -> usize {
     let b = text.as_bytes();
     let (mut i, mut depth, mut max) = (0usize, 0usize, 0usize);
-    let skip_to = |from: usize, end: &[u8]| b.get(from..).and_then(|r| r.windows(end.len()).position(|w| w == end)).map_or(b.len(), |p| from + p + end.len());
+    let skip_to = |from: usize, end: &[u8]| {
+        b.get(from..)
+            .and_then(|r| r.windows(end.len()).position(|w| w == end))
+            .map_or(b.len(), |p| from + p + end.len())
+    };
     while i < b.len() {
         if b[i] != b'<' {
             i += 1;
@@ -1101,10 +1323,16 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, Error> {
     let text = String::from_utf8_lossy(bytes);
     let text = text.trim_start_matches('\u{feff}');
     if xml_depth(text) > MAX_XML_DEPTH {
-        return Err(Error::Xml(format!("elements nested more than {MAX_XML_DEPTH} levels deep")));
+        return Err(Error::Xml(format!(
+            "elements nested more than {MAX_XML_DEPTH} levels deep"
+        )));
     }
-    let opts = roxmltree::ParsingOptions { allow_dtd: true, ..Default::default() };
-    let xml = roxmltree::Document::parse_with_options(text, opts).map_err(|e| Error::Xml(e.to_string()))?;
+    let opts = roxmltree::ParsingOptions {
+        allow_dtd: true,
+        ..Default::default()
+    };
+    let xml = roxmltree::Document::parse_with_options(text, opts)
+        .map_err(|e| Error::Xml(e.to_string()))?;
     let root = xml.root_element();
     if root.tag_name().name() != "svg" {
         return Err(Error::NotSvg);
@@ -1121,15 +1349,29 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, Error> {
         }
     }
     let vb = viewbox(root);
-    let mut p = Parser { ids, rules, vw: vb.map_or(300.0, |v| v.1), vh: vb.map_or(150.0, |v| v.2), skipped: vec![] };
+    let mut p = Parser {
+        ids,
+        rules,
+        vw: vb.map_or(300.0, |v| v.1),
+        vh: vb.map_or(150.0, |v| v.2),
+        skipped: vec![],
+    };
     let st = Style::default();
     let pct_or = |name: &str, axis: char, def: f64| -> f64 {
         match root.attribute(name) {
             Some(v) if v.trim().ends_with('%') => {
-                let f = v.trim().trim_end_matches('%').parse::<f64>().unwrap_or(100.0) / 100.0;
+                let f = v
+                    .trim()
+                    .trim_end_matches('%')
+                    .parse::<f64>()
+                    .unwrap_or(100.0)
+                    / 100.0;
                 def * f
             }
-            Some(v) => p.length(v, axis, st.font_size).filter(|x| *x > 0.0).unwrap_or(def),
+            Some(v) => p
+                .length(v, axis, st.font_size)
+                .filter(|x| *x > 0.0)
+                .unwrap_or(def),
             None => def,
         }
     };
@@ -1142,7 +1384,11 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, Error> {
                 (Some(_), None) => w2 * h / w,
                 _ => pct_or("height", 'y', h),
             };
-            let w2 = if root.attribute("width").is_none() && root.attribute("height").is_some() { h2 * w / h } else { w2 };
+            let w2 = if root.attribute("width").is_none() && root.attribute("height").is_some() {
+                h2 * w / h
+            } else {
+                w2
+            };
             (w2, h2)
         }
         None => (pct_or("width", 'x', 300.0), pct_or("height", 'y', 150.0)),
@@ -1157,7 +1403,17 @@ pub fn parse(bytes: &[u8]) -> Result<Doc, Error> {
     Ok(Doc {
         width: dw,
         height: dh,
-        root: Group { name: "svg".into(), transform, opacity, children, clip: vec![], blend: BlendMode::Normal, mask: None, isolated: true, knockout: false },
+        root: Group {
+            name: "svg".into(),
+            transform,
+            opacity,
+            children,
+            clip: vec![],
+            blend: BlendMode::Normal,
+            mask: None,
+            isolated: true,
+            knockout: false,
+        },
         skipped: std::mem::take(&mut p.skipped),
     })
 }

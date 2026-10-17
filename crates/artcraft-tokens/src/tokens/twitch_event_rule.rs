@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct TwitchEventRuleToken(pub String);
 
 impl_string_token!(TwitchEventRuleToken);
-impl_crockford_generator!(TwitchEventRuleToken, 32usize, LegacyTokenPrefix::TwitchEventRule, CrockfordLower);
+impl_crockford_generator!(
+    TwitchEventRuleToken,
+    32usize,
+    LegacyTokenPrefix::TwitchEventRule,
+    CrockfordLower
+);

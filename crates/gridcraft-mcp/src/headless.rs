@@ -35,11 +35,16 @@ impl Headless {
 
     fn execute(&mut self, id: &str, params: Value) -> Result<Value, String> {
         // Programmatic calls never open dialogs; anything a command queued for a UI is dropped.
-        self.session.execute_headless(id, params).map_err(|e| e.to_string())
+        self.session
+            .execute_headless(id, params)
+            .map_err(|e| e.to_string())
     }
 
     fn commands(&self, params: &Value) -> Value {
-        let q = params.get("search").and_then(Value::as_str).map(str::to_ascii_lowercase);
+        let q = params
+            .get("search")
+            .and_then(Value::as_str)
+            .map(str::to_ascii_lowercase);
         let list: Vec<Value> = self
             .session
             .commands()
@@ -48,7 +53,9 @@ impl Headless {
                 q.as_ref().is_none_or(|q| {
                     c.id.to_ascii_lowercase().contains(q.as_str())
                         || c.label.to_ascii_lowercase().contains(q.as_str())
-                        || c.menu.iter().any(|m| m.to_ascii_lowercase().contains(q.as_str()))
+                        || c.menu
+                            .iter()
+                            .any(|m| m.to_ascii_lowercase().contains(q.as_str()))
                 })
             })
             .map(|c| serde_json::to_value(c).unwrap_or_default())
@@ -63,16 +70,30 @@ impl Backend for Headless {
         match method {
             "ping" => Ok(json!("pong")),
             "engine.execute" => {
-                let id = params.get("command").and_then(Value::as_str).ok_or("engine.execute: missing `command`")?.to_string();
+                let id = params
+                    .get("command")
+                    .and_then(Value::as_str)
+                    .ok_or("engine.execute: missing `command`")?
+                    .to_string();
                 let p = params.get("params").cloned().unwrap_or_else(|| json!({}));
                 if !(p.is_object() || p.is_null()) {
-                    return Err(format!("engine.execute: `params` of `{id}` must be an object"));
+                    return Err(format!(
+                        "engine.execute: `params` of `{id}` must be an object"
+                    ));
                 }
                 self.execute(&id, p)
             }
             "engine.commands" => Ok(self.commands(&params)),
-            "engine.journal" => Ok(Value::Array(self.session.journal.iter().map(|(id, p)| json!({"command": id, "params": p})).collect())),
-            m if m.starts_with("ui.") || m.starts_with("app.screenshot") => Err(format!("{m}: {NO_UI}")),
+            "engine.journal" => Ok(Value::Array(
+                self.session
+                    .journal
+                    .iter()
+                    .map(|(id, p)| json!({"command": id, "params": p}))
+                    .collect(),
+            )),
+            m if m.starts_with("ui.") || m.starts_with("app.screenshot") => {
+                Err(format!("{m}: {NO_UI}"))
+            }
             // Read-only engine methods (`document.inspect`, `sheet.read`, `cell.get`, …) are
             // commands with the same id.
             m if gridcraft_engine::find_command(m).is_some() => self.execute(m, params),

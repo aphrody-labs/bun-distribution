@@ -122,9 +122,10 @@ pub fn atoms(tv: &mut TranslatorVisitor<'_>, insn: u64) {
 
     let size_64 = size == AtomsSize::U64;
     if size_64 && op != AtomOp::Exch {
-        std::panic::panic_any(crate::exception::NotImplementedException::new(
-            format!("64-bit Atoms Operation {}", op as u32),
-        ));
+        std::panic::panic_any(crate::exception::NotImplementedException::new(format!(
+            "64-bit Atoms Operation {}",
+            op as u32
+        )));
     }
     let is_signed = size == AtomsSize::S32;
     let offset = atoms_offset(tv, insn);

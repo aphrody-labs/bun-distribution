@@ -32,8 +32,12 @@ impl<'de> Deserialize<'de> for ProcessVersion {
             Other(serde::de::IgnoredAny),
         }
         Ok(match Wire::deserialize(d)? {
-            Wire::Whole(n) => u32::try_from(n).map_or_else(|_| ProcessVersion::legacy(), ProcessVersion),
-            Wire::Number(x) if x.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(&x) => ProcessVersion(x as u32),
+            Wire::Whole(n) => {
+                u32::try_from(n).map_or_else(|_| ProcessVersion::legacy(), ProcessVersion)
+            }
+            Wire::Number(x) if x.fract() == 0.0 && (0.0..=f64::from(u32::MAX)).contains(&x) => {
+                ProcessVersion(x as u32)
+            }
             Wire::Number(_) | Wire::Other(_) => ProcessVersion::legacy(),
         })
     }
@@ -61,7 +65,11 @@ impl ProcessVersion {
     /// number (a number from a newer LightCraft renders with [`Process::LATEST`]; one below V1,
     /// which no LightCraft writes, with V1).
     pub fn process(self) -> Process {
-        Process::ALL.into_iter().rev().find(|p| p.version() <= self).unwrap_or(Process::V1)
+        Process::ALL
+            .into_iter()
+            .rev()
+            .find(|p| p.version() <= self)
+            .unwrap_or(Process::V1)
     }
 
     /// A process this build implements.
@@ -107,7 +115,10 @@ pub struct DevelopSettings {
     /// The rendering process ([`ProcessVersion`]): the latest for new settings, V1 for settings
     /// saved without the field (the field-level default: not the struct's `Default`) or with a
     /// value that isn't a process number.
-    #[serde(default = "ProcessVersion::legacy", skip_serializing_if = "ProcessVersion::is_legacy")]
+    #[serde(
+        default = "ProcessVersion::legacy",
+        skip_serializing_if = "ProcessVersion::is_legacy"
+    )]
     pub process: ProcessVersion,
     pub profile: Profile,
     pub treatment: Treatment,
@@ -202,7 +213,11 @@ pub struct Profile {
 
 impl Default for Profile {
     fn default() -> Self {
-        Self { id: "lc.color".into(), amount: 100.0, camera_local_tone: false }
+        Self {
+            id: "lc.color".into(),
+            amount: 100.0,
+            camera_local_tone: false,
+        }
     }
 }
 
@@ -312,7 +327,12 @@ impl Default for WhiteBalance {
     fn default() -> Self {
         // (`Legacy`, like an absent field: a default photo's settings JSON stays what it was; the engine marks the
         // scale when white balance is written on a raw that has one, `lightcraft_pipeline::local::normalize_wb`)
-        Self { mode: WbMode::AsShot, temp: 6500.0, tint: 0.0, scale: WbScale::Legacy }
+        Self {
+            mode: WbMode::AsShot,
+            temp: 6500.0,
+            tint: 0.0,
+            scale: WbScale::Legacy,
+        }
     }
 }
 
@@ -389,7 +409,9 @@ pub struct Hsl {
 }
 
 /// The 8 colour-mixer bands in Lightroom order.
-pub const MIXER_BANDS: [&str; 8] = ["red", "orange", "yellow", "green", "aqua", "blue", "purple", "magenta"];
+pub const MIXER_BANDS: [&str; 8] = [
+    "red", "orange", "yellow", "green", "aqua", "blue", "purple", "magenta",
+];
 /// Centre hue of each band in degrees (sRGB-ish HSV hue).
 pub const MIXER_HUES: [f64; 8] = [0.0, 30.0, 60.0, 120.0, 180.0, 225.0, 270.0, 315.0];
 
@@ -408,7 +430,16 @@ pub struct Mixer {
 
 impl Mixer {
     pub fn bands(&self) -> [Hsl; 8] {
-        [self.red, self.orange, self.yellow, self.green, self.aqua, self.blue, self.purple, self.magenta]
+        [
+            self.red,
+            self.orange,
+            self.yellow,
+            self.green,
+            self.aqua,
+            self.blue,
+            self.purple,
+            self.magenta,
+        ]
     }
     pub fn is_neutral(&self) -> bool {
         self.bands().iter().all(|b| *b == Hsl::default())
@@ -468,7 +499,10 @@ impl Default for PointColor {
 impl PointColor {
     /// True when the sample changes nothing.
     pub fn is_neutral(&self) -> bool {
-        self.hue_shift == 0.0 && self.sat_shift == 0.0 && self.lum_shift == 0.0 && self.variance == 0.0
+        self.hue_shift == 0.0
+            && self.sat_shift == 0.0
+            && self.lum_shift == 0.0
+            && self.variance == 0.0
     }
 }
 
@@ -488,7 +522,16 @@ pub struct BwMix {
 
 impl BwMix {
     pub fn bands(&self) -> [f64; 8] {
-        [self.red, self.orange, self.yellow, self.green, self.aqua, self.blue, self.purple, self.magenta]
+        [
+            self.red,
+            self.orange,
+            self.yellow,
+            self.green,
+            self.aqua,
+            self.blue,
+            self.purple,
+            self.magenta,
+        ]
     }
 }
 
@@ -531,7 +574,9 @@ impl Default for ColorGrading {
 
 impl ColorGrading {
     pub fn is_neutral(&self) -> bool {
-        [self.shadows, self.midtones, self.highlights, self.global].iter().all(|w| w.sat == 0.0 && w.lum == 0.0)
+        [self.shadows, self.midtones, self.highlights, self.global]
+            .iter()
+            .all(|w| w.sat == 0.0 && w.lum == 0.0)
     }
 }
 
@@ -553,7 +598,11 @@ pub struct Calibration {
 impl Calibration {
     /// (hue, saturation) of the red, green and blue primaries.
     pub fn primaries(&self) -> [(f64, f64); 3] {
-        [(self.red_hue, self.red_sat), (self.green_hue, self.green_sat), (self.blue_hue, self.blue_sat)]
+        [
+            (self.red_hue, self.red_sat),
+            (self.green_hue, self.green_sat),
+            (self.blue_hue, self.blue_sat),
+        ]
     }
     pub fn is_neutral(&self) -> bool {
         *self == Calibration::default()
@@ -590,7 +639,14 @@ pub struct Vignette {
 
 impl Default for Vignette {
     fn default() -> Self {
-        Self { amount: 0.0, midpoint: 50.0, roundness: 0.0, feather: 50.0, highlights: 0.0, style: VignetteStyle::HighlightPriority }
+        Self {
+            amount: 0.0,
+            midpoint: 50.0,
+            roundness: 0.0,
+            feather: 50.0,
+            highlights: 0.0,
+            style: VignetteStyle::HighlightPriority,
+        }
     }
 }
 
@@ -606,7 +662,12 @@ pub struct Grain {
 
 impl Default for Grain {
     fn default() -> Self {
-        Self { amount: 0.0, size: 25.0, roughness: 50.0, seed: 0 }
+        Self {
+            amount: 0.0,
+            size: 25.0,
+            roughness: 50.0,
+            seed: 0,
+        }
     }
 }
 
@@ -904,7 +965,15 @@ pub struct BrushStroke {
 
 impl Default for BrushStroke {
     fn default() -> Self {
-        Self { points: Vec::new(), size: 0.03, feather: 50.0, flow: 100.0, density: 100.0, erase: false, auto_mask: false }
+        Self {
+            points: Vec::new(),
+            size: 0.03,
+            feather: 50.0,
+            flow: 100.0,
+            density: 100.0,
+            erase: false,
+            auto_mask: false,
+        }
     }
 }
 
@@ -959,7 +1028,11 @@ pub enum MaskShape {
         seg: Option<crate::SegMask>,
         /// Zoomed-in passes over parts of the image (higher resolution than `seg`), used
         /// inside their rectangles.
-        #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "crate::segmask::de_detail")]
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "crate::segmask::de_detail"
+        )]
         detail: Vec<crate::SegMask>,
         /// Edge −100..100: below 0 harder (a steeper transition), above 0 softer (feathered).
         #[serde(default, skip_serializing_if = "is_zero")]
@@ -971,7 +1044,11 @@ pub enum MaskShape {
         text: String,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         seg: Option<crate::SegMask>,
-        #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "crate::segmask::de_detail")]
+        #[serde(
+            default,
+            skip_serializing_if = "Vec::is_empty",
+            deserialize_with = "crate::segmask::de_detail"
+        )]
         detail: Vec<crate::SegMask>,
         /// Edge −100..100, as for `Object`.
         #[serde(default, skip_serializing_if = "is_zero")]
@@ -1018,7 +1095,15 @@ fn is_zero(v: &f64) -> bool {
 
 impl Default for Mask {
     fn default() -> Self {
-        Self { id: 0, name: "Mask 1".into(), visible: true, invert: false, components: Vec::new(), adjust: LocalAdjustments::default(), refine: 0.0 }
+        Self {
+            id: 0,
+            name: "Mask 1".into(),
+            visible: true,
+            invert: false,
+            components: Vec::new(),
+            adjust: LocalAdjustments::default(),
+            refine: 0.0,
+        }
     }
 }
 
@@ -1052,7 +1137,14 @@ pub struct Spot {
 
 impl Default for Spot {
     fn default() -> Self {
-        Self { mode: SpotMode::Remove, points: Vec::new(), size: 0.02, feather: 50.0, opacity: 100.0, source_offset: None }
+        Self {
+            mode: SpotMode::Remove,
+            points: Vec::new(),
+            size: 0.02,
+            feather: 50.0,
+            opacity: 100.0,
+            source_offset: None,
+        }
     }
 }
 
@@ -1075,7 +1167,15 @@ pub struct RedEye {
 
 impl Default for RedEye {
     fn default() -> Self {
-        Self { center: Point::new(0.5, 0.5), rx: 0.02, ry: 0.015, pupil_size: 50.0, darken: 50.0, pet: false, catchlight: None }
+        Self {
+            center: Point::new(0.5, 0.5),
+            rx: 0.02,
+            ry: 0.015,
+            pupil_size: 50.0,
+            darken: 50.0,
+            pet: false,
+            catchlight: None,
+        }
     }
 }
 
@@ -1153,7 +1253,11 @@ impl Hdr {
         if !self.enabled {
             return 1.0;
         }
-        let ev = if self.max_ev.is_finite() { self.max_ev } else { Hdr::DEFAULT_MAX_EV };
+        let ev = if self.max_ev.is_finite() {
+            self.max_ev
+        } else {
+            Hdr::DEFAULT_MAX_EV
+        };
         (ev.clamp(0.0, Hdr::MAX_EV_LIMIT) as f32).exp2()
     }
 }

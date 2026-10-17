@@ -186,7 +186,8 @@ impl VideoInterface {
             self.ticks_last_line_start = cycles;
         }
 
-        self.dpv.set_vertical_count((1 + self.half_line_count / 2) as u16);
+        self.dpv
+            .set_vertical_count((1 + self.half_line_count / 2) as u16);
 
         let hl_width = self.htr0.halfline_width() as u32;
         let current_vct = 1 + self.half_line_count / 2;
@@ -195,8 +196,11 @@ impl VideoInterface {
         macro_rules! check_di {
             ($di:expr) => {
                 if $di.enable() {
-                    let target_parity =
-                        if $di.horizontal_count() as u32 > hl_width { 1 } else { 0 };
+                    let target_parity = if $di.horizontal_count() as u32 > hl_width {
+                        1
+                    } else {
+                        0
+                    };
                     if current_vct == $di.vertical_count() as u32 && current_parity == target_parity
                     {
                         $di.set_interrupt(true);
@@ -233,9 +237,17 @@ impl VideoInterface {
 
     pub fn xfb_addr(&self) -> u32 {
         if self.dcr.interlaced() && self.in_even_field() {
-            if self.tfbl.page_offset() { self.bfbl.xfb_addr() << 5 } else { self.bfbl.xfb_addr() }
+            if self.tfbl.page_offset() {
+                self.bfbl.xfb_addr() << 5
+            } else {
+                self.bfbl.xfb_addr()
+            }
         } else {
-            if self.tfbl.page_offset() { self.tfbl.xfb_addr() << 5 } else { self.tfbl.xfb_addr() }
+            if self.tfbl.page_offset() {
+                self.tfbl.xfb_addr() << 5
+            } else {
+                self.tfbl.xfb_addr()
+            }
         }
     }
 }
@@ -288,7 +300,8 @@ pub fn ensure_half_line_scheduled<const SYSTEM: SystemId>(sys: &mut System<SYSTE
         let ticks_per_hl = sys.vi.ticks_per_half_line(SYSTEM);
         if ticks_per_hl > 0 {
             sys.vi.half_line_scheduled = true;
-            sys.scheduler.schedule_in(ticks_per_hl, crate::scheduler::Handler::ViHalfLine);
+            sys.scheduler
+                .schedule_in(ticks_per_hl, crate::scheduler::Handler::ViHalfLine);
         }
     }
 }

@@ -5,7 +5,9 @@ fn main() {
     let sr = 48_000.0;
     let secs = 10usize;
     for info in soundcraft_dsp::plugins() {
-        let Some(mut p) = soundcraft_dsp::create(info.id) else { continue };
+        let Some(mut p) = soundcraft_dsp::create(info.id) else {
+            continue;
+        };
         p.prepare(sr, 512, 2);
         let mut io = vec![vec![0.0f32; 512]; 2];
         let t0 = Instant::now();
@@ -23,6 +25,10 @@ fn main() {
             p.process(&mut io, 512);
         }
         let el = t0.elapsed().as_secs_f64();
-        println!("{:<20} {:>7.3}% of one core (stereo, 48 kHz)", info.id, el / secs as f64 * 100.0);
+        println!(
+            "{:<20} {:>7.3}% of one core (stereo, 48 kHz)",
+            info.id,
+            el / secs as f64 * 100.0
+        );
     }
 }

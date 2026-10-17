@@ -144,7 +144,9 @@ impl Timers {
 
             let remaining = increments - overflow_incs;
             overflow_incs = 0x1_0000 - timer.reload as RawTimestamp;
-            timer.counter = timer.reload.wrapping_add((remaining % overflow_incs) as u16);
+            timer.counter = timer
+                .reload
+                .wrapping_add((remaining % overflow_incs) as u16);
 
             if i.get() < 3 {
                 let next_i = Index::new(i.get() + 1);

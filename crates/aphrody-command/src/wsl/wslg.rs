@@ -57,7 +57,11 @@ fn process(name: &str) -> Option<aphrody_winclean::system::ProcessInfo> {
     aphrody_winclean::system::list_processes(Some(stem), "memory", 1_000)
         .processes
         .into_iter()
-        .find(|item| item.name.trim_end_matches(".exe").eq_ignore_ascii_case(stem))
+        .find(|item| {
+            item.name
+                .trim_end_matches(".exe")
+                .eq_ignore_ascii_case(stem)
+        })
 }
 
 fn processes(name: &str) -> Vec<u32> {
@@ -65,7 +69,11 @@ fn processes(name: &str) -> Vec<u32> {
     aphrody_winclean::system::list_processes(Some(stem), "memory", 1_000)
         .processes
         .into_iter()
-        .filter(|item| item.name.trim_end_matches(".exe").eq_ignore_ascii_case(stem))
+        .filter(|item| {
+            item.name
+                .trim_end_matches(".exe")
+                .eq_ignore_ascii_case(stem)
+        })
         .map(|item| item.pid)
         .collect()
 }
@@ -73,13 +81,17 @@ fn processes(name: &str) -> Vec<u32> {
 /// Display adapters from the driver class keys: name, provider, driver version, memory.
 #[must_use]
 pub fn display_adapters() -> Vec<Value> {
-    let Ok(class) = aphrody_winclean::registry::list_key(DISPLAY_CLASS) else { return vec![] };
+    let Ok(class) = aphrody_winclean::registry::list_key(DISPLAY_CLASS) else {
+        return vec![];
+    };
     let subkeys = class["SubKeys"].as_array().cloned().unwrap_or_default();
     subkeys
         .iter()
         .filter_map(Value::as_str)
         .filter(|path| {
-            path.rsplit('\\').next().is_some_and(|leaf| leaf.chars().all(|c| c.is_ascii_digit()))
+            path.rsplit('\\')
+                .next()
+                .is_some_and(|leaf| leaf.chars().all(|c| c.is_ascii_digit()))
         })
         .filter_map(|path| aphrody_winclean::registry::list_key(path).ok())
         .filter_map(|key| adapter_from_values(key["Values"].as_array()?))
@@ -154,8 +166,12 @@ pub fn decode_wsl_output(bytes: &[u8]) -> String {
         && bytes.len().is_multiple_of(2)
         && bytes.iter().skip(1).step_by(2).all(|b| *b == 0)
     {
-        let units: Vec<u16> =
-            bytes.as_chunks::<2>().0.iter().map(|pair| u16::from_le_bytes(*pair)).collect();
+        let units: Vec<u16> = bytes
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| u16::from_le_bytes(*pair))
+            .collect();
         String::from_utf16_lossy(&units)
     } else {
         String::from_utf8_lossy(bytes).into_owned()
@@ -187,7 +203,10 @@ fn guest_gpu(distro: Option<String>, guest_script: &Path) -> Result<Value> {
     };
     let script = std::path::absolute(guest_script)?;
     if !script.is_file() {
-        return Err(Error::Invalid(format!("guest script missing: {}", script.display())));
+        return Err(Error::Invalid(format!(
+            "guest script missing: {}",
+            script.display()
+        )));
     }
     let windows_path = script.to_string_lossy().replace('\\', "/");
     let converted = wsl(&["-d", &distro, "-e", "wslpath", "-a", &windows_path])?;
@@ -222,7 +241,10 @@ pub fn run(action: WslgAction) -> Result<Value> {
     match action {
         WslgAction::Status => Ok(host_info()),
         WslgAction::Windows => msrdc_windows(),
-        WslgAction::Gpu { distro, guest_script } => Ok(json!({
+        WslgAction::Gpu {
+            distro,
+            guest_script,
+        } => Ok(json!({
             "host": display_adapters(),
             "guest": guest_gpu(distro, &guest_script)?,
         })),
@@ -263,9 +285,13 @@ mod tests {
     #[test]
     fn host_info_reports_every_field() {
         let info = host_info();
-        for field in
-            ["installed", "installPath", "systemVhdSizeMb", "msrdcRunning", "displayAdapters"]
-        {
+        for field in [
+            "installed",
+            "installPath",
+            "systemVhdSizeMb",
+            "msrdcRunning",
+            "displayAdapters",
+        ] {
             assert!(info.get(field).is_some(), "{field}");
         }
         // Every Windows host has at least one display driver key (the basic adapter otherwise).

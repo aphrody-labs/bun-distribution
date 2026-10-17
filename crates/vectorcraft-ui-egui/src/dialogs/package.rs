@@ -55,8 +55,13 @@ pub fn open(app: &mut VectorcraftApp) -> Result<Value, String> {
         return Ok(Value::Null);
     };
     let p = std::path::Path::new(&path);
-    let stem = p.file_stem().map_or_else(|| "Untitled".into(), |s| s.to_string_lossy().into_owned());
-    let folder = p.parent().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default();
+    let stem = p
+        .file_stem()
+        .map_or_else(|| "Untitled".into(), |s| s.to_string_lossy().into_owned());
+    let folder = p
+        .parent()
+        .map(|f| f.to_string_lossy().into_owned())
+        .unwrap_or_default();
     let mut fields = json!({ "folder": folder, "name": format!("{stem} Folder") });
     for (k, _) in OPTIONS {
         fields[k] = json!(true);
@@ -90,7 +95,13 @@ fn body(app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         }
     }
     ui.add_space(6.0);
-    ui.label(egui::RichText::new(tl!("Fonts whose licence doesn't allow embedding are not copied.")).size(11.5).color(t.text_dim));
+    ui.label(
+        egui::RichText::new(tl!(
+            "Fonts whose licence doesn't allow embedding are not copied."
+        ))
+        .size(11.5)
+        .color(t.text_dim),
+    );
     false
 }
 
@@ -104,7 +115,12 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     }
     // The package holds the document as saved.
     if app.session.active().is_some_and(|st| st.is_dirty()) {
-        let r = io::save(app, vectorcraft_engine::cmd::fileio::SaveMode::Save, &json!({}), false)?;
+        let r = io::save(
+            app,
+            vectorcraft_engine::cmd::fileio::SaveMode::Save,
+            &json!({}),
+            false,
+        )?;
         // The save asks first (it would replace a file that loses what opening it left out).
         if r.get("pending").is_some() {
             return Ok(r);
@@ -115,14 +131,28 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let n = r["files"].as_array().map_or(0, Vec::len);
     let missing = r["missingLinks"].as_array().map_or(0, Vec::len);
     // The fonts left out: their license doesn't allow it, or they aren't on this computer.
-    let fonts = r["skippedFonts"].as_array().into_iter().flatten().filter_map(|f| f["font"].as_str()).collect::<Vec<_>>().join(", ");
-    let mut note = if missing > 0 { format!(" ({missing} linked file(s) not found)") } else { String::new() };
+    let fonts = r["skippedFonts"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|f| f["font"].as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let mut note = if missing > 0 {
+        format!(" ({missing} linked file(s) not found)")
+    } else {
+        String::new()
+    };
     if !fonts.is_empty() {
         note.push_str(&format!(" (fonts not copied: {fonts})"));
     }
     if web {
-        let (name, data) = (r["name"].as_str().unwrap_or("package.zip"), r["dataBase64"].as_str().unwrap_or_default());
-        let bytes = vectorcraft_format::base64_decode(data).ok_or("the package came back damaged")?;
+        let (name, data) = (
+            r["name"].as_str().unwrap_or("package.zip"),
+            r["dataBase64"].as_str().unwrap_or_default(),
+        );
+        let bytes =
+            vectorcraft_format::base64_decode(data).ok_or("the package came back damaged")?;
         io::write_named(app, None, name, &bytes)?;
         app.status(format!("Packaged {n} file(s){note}"));
         return Ok(r);
@@ -130,24 +160,47 @@ fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
     let folder = r["folder"].as_str().unwrap_or_default().to_string();
     app.status(format!("Packaged {n} file(s) in {folder}{note}"));
     let mut shown_note = if missing > 0 {
-        format!(" ({})", crate::i18n::fmt(tl!("{count} linked file(s) not found"), &[("count", &missing.to_string())]))
+        format!(
+            " ({})",
+            crate::i18n::fmt(
+                tl!("{count} linked file(s) not found"),
+                &[("count", &missing.to_string())]
+            )
+        )
     } else {
         String::new()
     };
     if !fonts.is_empty() {
-        shown_note.push_str(&format!(" ({})", crate::i18n::fmt(tl!("fonts not copied: {fonts}"), &[("fonts", &fonts)])));
+        shown_note.push_str(&format!(
+            " ({})",
+            crate::i18n::fmt(tl!("fonts not copied: {fonts}"), &[("fonts", &fonts)])
+        ));
     }
     let detail = crate::i18n::fmt(
         tl!("{count} file(s) in {folder}{note}. Show the package folder?"),
-        &[("count", &n.to_string()), ("folder", &folder), ("note", &shown_note)],
+        &[
+            ("count", &n.to_string()),
+            ("folder", &folder),
+            ("note", &shown_note),
+        ],
     );
-    ask(app, tl!("Package created"), &detail, "file.showPackage", json!({ "folder": folder }));
+    ask(
+        app,
+        tl!("Package created"),
+        &detail,
+        "file.showPackage",
+        json!({ "folder": folder }),
+    );
     Ok(r)
 }
 
 /// `file.showPackage {folder}`: show a package folder in the file manager.
 pub fn show_package(app: &mut VectorcraftApp, p: &Value) -> Result<Value, String> {
-    let folder = p.get("folder").and_then(Value::as_str).ok_or("missing `folder`")?.to_string();
+    let folder = p
+        .get("folder")
+        .and_then(Value::as_str)
+        .ok_or("missing `folder`")?
+        .to_string();
     io::open_in_app(app, &folder)?;
     Ok(json!({ "folder": folder }))
 }

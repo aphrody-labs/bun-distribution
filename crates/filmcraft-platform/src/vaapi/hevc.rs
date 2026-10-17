@@ -14,14 +14,16 @@ use std::sync::Arc;
 
 use filmcraft_bitstream::{length_prefixed_nals, unescape_rbsp};
 use filmcraft_codecs::{CodecError, DecodedFrame, Result};
-use filmcraft_hevc::dpb::{Dpb, Marking, Output, OutputMeta, PocState, Ref, RefPicSet, build_ref_lists};
+use filmcraft_hevc::dpb::{
+    Dpb, Marking, Output, OutputMeta, PocState, Ref, RefPicSet, build_ref_lists,
+};
 use filmcraft_hevc::params::{Layout, Pps, ScalingList, Sps};
 use filmcraft_hevc::slice::{NalHeader, SliceHeader, SliceType, nal_type};
 
 use super::Accel;
 use super::ffi::{
-    self, VAIQMatrixBufferHEVC, VAPictureHEVC, VAPictureParameterBufferHEVC, VASliceParameterBufferHEVC, hevc_pic_bits, hevc_slice_bits,
-    hevc_slice_parsing_bits,
+    self, VAIQMatrixBufferHEVC, VAPictureHEVC, VAPictureParameterBufferHEVC,
+    VASliceParameterBufferHEVC, hevc_pic_bits, hevc_slice_bits, hevc_slice_parsing_bits,
 };
 
 /// A picture in the DPB: its surface.
@@ -83,7 +85,13 @@ impl<A: Accel> Front<A> {
     /// A front end for samples with `length_size`-byte NAL length prefixes whose sample entry
     /// carried `parameter_sets` (VPS / SPS / PPS NAL units), decoding into `accel`'s surfaces of
     /// `size` luma samples and `bits` bits.
-    pub fn new(accel: A, length_size: usize, size: (u32, u32), bits: u32, parameter_sets: &[Vec<u8>]) -> Result<Self> {
+    pub fn new(
+        accel: A,
+        length_size: usize,
+        size: (u32, u32),
+        bits: u32,
+        parameter_sets: &[Vec<u8>],
+    ) -> Result<Self> {
         let mut f = Self {
             accel,
             length_size,
@@ -145,10 +153,18 @@ impl<A: Accel> Front<A> {
     }
 
     /// Read back the pictures the DPB output, right away: a surface leaving the DPB is reused.
-    fn read_out(&mut self, outs: Vec<Output<Surface>>, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn read_out(
+        &mut self,
+        outs: Vec<Output<Surface>>,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         for o in outs {
             let frame = self.accel.read(o.frame.index).map_err(decode_err)?;
-            frames.push(DecodedFrame { pts: o.meta.pts, frame, draft: false });
+            frames.push(DecodedFrame {
+                pts: o.meta.pts,
+                frame,
+                draft: false,
+            });
         }
         Ok(())
     }
@@ -165,12 +181,18 @@ impl<A: Accel> Front<A> {
         match hdr.nal_type {
             nal_type::SPS => {
                 let sps = Sps::parse(&rbsp()).map_err(decode_err)?;
-                let slot = self.spss.get_mut(sps.id as usize).ok_or_else(|| decode_err("SPS id out of range"))?;
+                let slot = self
+                    .spss
+                    .get_mut(sps.id as usize)
+                    .ok_or_else(|| decode_err("SPS id out of range"))?;
                 *slot = Some(Arc::new(sps));
             }
             nal_type::PPS => {
                 let pps = Pps::parse(&rbsp()).map_err(decode_err)?;
-                let slot = self.ppss.get_mut(pps.id as usize).ok_or_else(|| decode_err("PPS id out of range"))?;
+                let slot = self
+                    .ppss
+                    .get_mut(pps.id as usize)
+                    .ok_or_else(|| decode_err("PPS id out of range"))?;
                 *slot = Some(Arc::new(pps));
             }
             nal_type::EOS | nal_type::EOB => {
@@ -184,7 +206,13 @@ impl<A: Accel> Front<A> {
         Ok(())
     }
 
-    fn handle_slice(&mut self, nal: &[u8], hdr: NalHeader, pts: i64, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn handle_slice(
+        &mut self,
+        nal: &[u8],
+        hdr: NalHeader,
+        pts: i64,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         let rbsp = unescape_rbsp(nal.get(2..).unwrap_or_default());
         let first = rbsp.first().is_some_and(|b| b & 0x80 != 0);
         if first {
@@ -200,8 +228,14 @@ impl<A: Accel> Front<A> {
             hdr,
             |id| {
                 let missing = |what: String| filmcraft_hevc::Error::MissingParameterSet(what);
-                let pps = ppss.get(id as usize).and_then(Option::as_ref).ok_or_else(|| missing(format!("PPS {id}")))?;
-                let sps = spss.get(pps.sps_id as usize).and_then(Option::as_ref).ok_or_else(|| missing(format!("SPS {}", pps.sps_id)))?;
+                let pps = ppss
+                    .get(id as usize)
+                    .and_then(Option::as_ref)
+                    .ok_or_else(|| missing(format!("PPS {id}")))?;
+                let sps = spss
+                    .get(pps.sps_id as usize)
+                    .and_then(Option::as_ref)
+                    .ok_or_else(|| missing(format!("SPS {}", pps.sps_id)))?;
                 Ok((pps.clone(), sps.clone()))
             },
             prev,
@@ -212,7 +246,11 @@ impl<A: Accel> Front<A> {
         if first {
             self.start_picture(&sh, &sps, &pps, pts, frames)?;
         }
-        let Some(p) = self.pending.as_mut() else { return Err(decode_err("slice segment without the first slice of its picture")) };
+        let Some(p) = self.pending.as_mut() else {
+            return Err(decode_err(
+                "slice segment without the first slice of its picture",
+            ));
+        };
         if !Arc::ptr_eq(&p.pps, &pps) {
             return Err(decode_err("PPS changed within a picture"));
         }
@@ -227,18 +265,32 @@ impl<A: Accel> Front<A> {
         Ok(())
     }
 
-    fn start_picture(&mut self, sh: &SliceHeader, sps: &Arc<Sps>, pps: &Arc<Pps>, pts: i64, frames: &mut Vec<DecodedFrame>) -> Result<()> {
+    fn start_picture(
+        &mut self,
+        sh: &SliceHeader,
+        sps: &Arc<Sps>,
+        pps: &Arc<Pps>,
+        pts: i64,
+        frames: &mut Vec<DecodedFrame>,
+    ) -> Result<()> {
         if !sh.first_slice_segment_in_pic || sh.dependent {
             return Err(decode_err("invalid first slice segment"));
         }
-        if (sps.width, sps.height) != self.size || sps.bit_depth_luma != self.bits || sps.bit_depth_chroma != self.bits || sps.chroma_format_idc != 1 {
+        if (sps.width, sps.height) != self.size
+            || sps.bit_depth_luma != self.bits
+            || sps.bit_depth_chroma != self.bits
+            || sps.chroma_format_idc != 1
+        {
             return Err(unsupported("a picture size or format change"));
         }
         if sps.max_dec_pic_buffering as usize >= self.accel.surfaces().len() {
             return Err(unsupported("a DPB larger than the decoder's surfaces"));
         }
         let hdr = sh.nal;
-        let changed = self.active_sps.as_ref().is_some_and(|a| a.log2_ctb != sps.log2_ctb);
+        let changed = self
+            .active_sps
+            .as_ref()
+            .is_some_and(|a| a.log2_ctb != sps.log2_ctb);
         let mut outs = Vec::new();
         if changed {
             self.dpb.flush(&mut outs);
@@ -246,16 +298,27 @@ impl<A: Accel> Front<A> {
         self.active_sps = Some(sps.clone());
         self.dpb.max_dec_pic_buffering = sps.max_dec_pic_buffering as usize;
         self.dpb.max_num_reorder = sps.max_num_reorder as usize;
-        self.dpb.max_latency = if sps.max_latency_increase_plus1 != 0 { sps.max_num_reorder + sps.max_latency_increase_plus1 - 1 } else { 0 };
-        let irap_no_rasl = hdr.is_irap() && (hdr.is_idr() || hdr.is_bla() || self.first_picture || self.after_eos);
+        self.dpb.max_latency = if sps.max_latency_increase_plus1 != 0 {
+            sps.max_num_reorder + sps.max_latency_increase_plus1 - 1
+        } else {
+            0
+        };
+        let irap_no_rasl =
+            hdr.is_irap() && (hdr.is_idr() || hdr.is_bla() || self.first_picture || self.after_eos);
         if hdr.is_irap() {
             self.skip_rasl = irap_no_rasl;
         }
         let max_lsb = sps.max_poc_lsb();
         let poc = self.poc_state.compute(sh, max_lsb, irap_no_rasl);
         let mut make_missing = |_| Surface { index: MISSING };
-        let rps = self.dpb.apply_rps(sh, poc, max_lsb, irap_no_rasl, &mut make_missing).map_err(decode_err)?;
-        if [&rps.st_curr_before, &rps.st_curr_after, &rps.lt_curr].iter().any(|l| l.iter().any(|r| r.frame.index == MISSING)) {
+        let rps = self
+            .dpb
+            .apply_rps(sh, poc, max_lsb, irap_no_rasl, &mut make_missing)
+            .map_err(decode_err)?;
+        if [&rps.st_curr_before, &rps.st_curr_after, &rps.lt_curr]
+            .iter()
+            .any(|l| l.iter().any(|r| r.frame.index == MISSING))
+        {
             // the software decoder conceals them with mid-gray pictures
             return Err(unsupported("missing reference pictures"));
         }
@@ -270,10 +333,20 @@ impl<A: Accel> Front<A> {
         }
         self.read_out(outs, frames)?;
         let surfaces = self.accel.surfaces();
-        let target = (0..surfaces.len()).find(|&i| !self.dpb.entries.iter().any(|e| e.frame.index == i)).ok_or_else(|| decode_err("no free surface"))?;
-        let target_id = surfaces.get(target).copied().ok_or_else(|| decode_err("surface out of range"))?;
+        let target = (0..surfaces.len())
+            .find(|&i| !self.dpb.entries.iter().any(|e| e.frame.index == i))
+            .ok_or_else(|| decode_err("no free surface"))?;
+        let target_id = surfaces
+            .get(target)
+            .copied()
+            .ok_or_else(|| decode_err("surface out of range"))?;
         let mut pic = picture_params(sps, pps, sh)?;
-        pic.CurrPic = VAPictureHEVC { picture_id: target_id, pic_order_cnt: poc, flags: 0, va_reserved: [0; ffi::VA_PADDING_LOW] };
+        pic.CurrPic = VAPictureHEVC {
+            picture_id: target_id,
+            pic_order_cnt: poc,
+            flags: 0,
+            va_reserved: [0; ffi::VA_PADDING_LOW],
+        };
         // the reference frames: every picture the RPS kept, flagged with its part of the RPS
         let rps_flag = |index: usize| {
             let in_list = |l: &[Ref<Surface>]| l.iter().any(|r| r.frame.index == index);
@@ -287,15 +360,32 @@ impl<A: Accel> Front<A> {
                 0
             }
         };
-        let refs: Vec<_> = self.dpb.entries.iter().filter(|e| e.marking != Marking::Unused).collect();
+        let refs: Vec<_> = self
+            .dpb
+            .entries
+            .iter()
+            .filter(|e| e.marking != Marking::Unused)
+            .collect();
         if refs.len() > pic.ReferenceFrames.len() {
             return Err(unsupported("more than 15 reference frames"));
         }
         let mut ref_frames = Vec::with_capacity(refs.len());
         for (slot, e) in pic.ReferenceFrames.iter_mut().zip(&refs) {
-            let long = if e.marking == Marking::Long { ffi::VA_PICTURE_HEVC_LONG_TERM_REFERENCE } else { 0 };
-            let picture_id = surfaces.get(e.frame.index).copied().ok_or_else(|| decode_err("surface out of range"))?;
-            *slot = VAPictureHEVC { picture_id, pic_order_cnt: e.poc, flags: long | rps_flag(e.frame.index), va_reserved: [0; ffi::VA_PADDING_LOW] };
+            let long = if e.marking == Marking::Long {
+                ffi::VA_PICTURE_HEVC_LONG_TERM_REFERENCE
+            } else {
+                0
+            };
+            let picture_id = surfaces
+                .get(e.frame.index)
+                .copied()
+                .ok_or_else(|| decode_err("surface out of range"))?;
+            *slot = VAPictureHEVC {
+                picture_id,
+                pic_order_cnt: e.poc,
+                flags: long | rps_flag(e.frame.index),
+                va_reserved: [0; ffi::VA_PADDING_LOW],
+            };
             ref_frames.push(e.frame.index);
         }
         let output = sh.pic_output && !(hdr.is_rasl() && self.skip_rasl);
@@ -323,16 +413,34 @@ impl<A: Accel> Front<A> {
 
     /// Decode the collected picture, then insert it into the DPB.
     fn submit_pending(&mut self, frames: &mut Vec<DecodedFrame>) -> Result<()> {
-        let Some(mut p) = self.pending.take() else { return Ok(()) };
-        let Some(last) = p.slices.last_mut() else { return Err(decode_err("a picture without slices")) };
+        let Some(mut p) = self.pending.take() else {
+            return Ok(());
+        };
+        let Some(last) = p.slices.last_mut() else {
+            return Err(decode_err("a picture without slices"));
+        };
         last.0.LongSliceFlags |= 1 << hevc_slice_bits::LAST_SLICE_OF_PIC;
         p.pic.slice_parsing_fields |= u32::from(p.all_intra) << hevc_slice_parsing_bits::INTRA_PIC;
         p.pic.pic_fields |= u32::from(!p.any_b) << hevc_pic_bits::NO_BI_PRED;
-        let iq = if p.sps.scaling_list_enabled { Some(iq_matrix(p.pps.scaling_list.as_ref().or(p.sps.scaling_list.as_ref()))) } else { None };
-        self.accel.decode_hevc(p.target, &p.pic, iq.as_ref(), &p.slices).map_err(decode_err)?;
+        let iq = if p.sps.scaling_list_enabled {
+            Some(iq_matrix(
+                p.pps.scaling_list.as_ref().or(p.sps.scaling_list.as_ref()),
+            ))
+        } else {
+            None
+        };
+        self.accel
+            .decode_hevc(p.target, &p.pic, iq.as_ref(), &p.slices)
+            .map_err(decode_err)?;
         self.poc_state.update(&p.first, p.poc);
         let mut outs = Vec::new();
-        self.dpb.insert(Surface { index: p.target }, p.poc, p.output, p.meta, &mut outs);
+        self.dpb.insert(
+            Surface { index: p.target },
+            p.poc,
+            p.output,
+            p.meta,
+            &mut outs,
+        );
         self.read_out(outs, frames)
     }
 }
@@ -367,7 +475,11 @@ fn i8_of(v: i32) -> i8 {
 
 /// The picture parameters of a picture coded with `sps` / `pps` whose first slice segment is `sh`
 /// (the current and reference pictures, `IntraPicFlag` and `NoBiPredFlag` are filled in by the caller).
-pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> Result<VAPictureParameterBufferHEVC> {
+pub fn picture_params(
+    sps: &Sps,
+    pps: &Pps,
+    sh: &SliceHeader,
+) -> Result<VAPictureParameterBufferHEVC> {
     use hevc_pic_bits as p;
     use hevc_slice_parsing_bits as s;
     let pic_fields = (sps.chroma_format_idc & 3) << p::CHROMA_FORMAT_IDC
@@ -376,7 +488,10 @@ pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> Result<VAPictur
         | flag(sps.scaling_list_enabled, p::SCALING_LIST_ENABLED)
         | flag(pps.transform_skip, p::TRANSFORM_SKIP_ENABLED)
         | flag(sps.amp, p::AMP_ENABLED)
-        | flag(sps.strong_intra_smoothing, p::STRONG_INTRA_SMOOTHING_ENABLED)
+        | flag(
+            sps.strong_intra_smoothing,
+            p::STRONG_INTRA_SMOOTHING_ENABLED,
+        )
         | flag(pps.sign_data_hiding, p::SIGN_DATA_HIDING_ENABLED)
         | flag(pps.constrained_intra_pred, p::CONSTRAINED_INTRA_PRED)
         | flag(pps.cu_qp_delta_enabled, p::CU_QP_DELTA_ENABLED)
@@ -385,21 +500,41 @@ pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> Result<VAPictur
         | flag(pps.transquant_bypass, p::TRANSQUANT_BYPASS_ENABLED)
         | flag(pps.tiles_enabled, p::TILES_ENABLED)
         | flag(pps.entropy_coding_sync, p::ENTROPY_CODING_SYNC_ENABLED)
-        | flag(pps.loop_filter_across_slices, p::PPS_LOOP_FILTER_ACROSS_SLICES_ENABLED)
-        | flag(pps.loop_filter_across_tiles, p::LOOP_FILTER_ACROSS_TILES_ENABLED)
+        | flag(
+            pps.loop_filter_across_slices,
+            p::PPS_LOOP_FILTER_ACROSS_SLICES_ENABLED,
+        )
+        | flag(
+            pps.loop_filter_across_tiles,
+            p::LOOP_FILTER_ACROSS_TILES_ENABLED,
+        )
         | flag(sps.pcm_loop_filter_disabled, p::PCM_LOOP_FILTER_DISABLED)
         | flag(sps.max_num_reorder == 0, p::NO_PIC_REORDERING);
-    let slice_parsing_fields = flag(pps.lists_modification_present, s::LISTS_MODIFICATION_PRESENT)
-        | flag(sps.long_term_refs_present, s::LONG_TERM_REF_PICS_PRESENT)
+    let slice_parsing_fields = flag(
+        pps.lists_modification_present,
+        s::LISTS_MODIFICATION_PRESENT,
+    ) | flag(sps.long_term_refs_present, s::LONG_TERM_REF_PICS_PRESENT)
         | flag(sps.temporal_mvp, s::SPS_TEMPORAL_MVP_ENABLED)
         | flag(pps.cabac_init_present, s::CABAC_INIT_PRESENT)
         | flag(pps.output_flag_present, s::OUTPUT_FLAG_PRESENT)
-        | flag(pps.dependent_slice_segments_enabled, s::DEPENDENT_SLICE_SEGMENTS_ENABLED)
-        | flag(pps.slice_chroma_qp_offsets_present, s::PPS_SLICE_CHROMA_QP_OFFSETS_PRESENT)
+        | flag(
+            pps.dependent_slice_segments_enabled,
+            s::DEPENDENT_SLICE_SEGMENTS_ENABLED,
+        )
+        | flag(
+            pps.slice_chroma_qp_offsets_present,
+            s::PPS_SLICE_CHROMA_QP_OFFSETS_PRESENT,
+        )
         | flag(sps.sao, s::SAMPLE_ADAPTIVE_OFFSET_ENABLED)
-        | flag(pps.deblocking_override_enabled, s::DEBLOCKING_FILTER_OVERRIDE_ENABLED)
+        | flag(
+            pps.deblocking_override_enabled,
+            s::DEBLOCKING_FILTER_OVERRIDE_ENABLED,
+        )
         | flag(pps.deblocking_disabled, s::PPS_DISABLE_DEBLOCKING_FILTER)
-        | flag(pps.slice_header_extension_present, s::SLICE_SEGMENT_HEADER_EXTENSION_PRESENT)
+        | flag(
+            pps.slice_header_extension_present,
+            s::SLICE_SEGMENT_HEADER_EXTENSION_PRESENT,
+        )
         | flag(sh.nal.is_irap(), s::RAP_PIC)
         | flag(sh.nal.is_idr(), s::IDR_PIC);
     // tile sizes in CTBs, uniform spacing resolved
@@ -433,11 +568,17 @@ pub fn picture_params(sps: &Sps, pps: &Pps, sh: &SliceHeader) -> Result<VAPictur
         pcm_sample_bit_depth_luma_minus1: u8_of(sps.pcm_bit_depth_luma.saturating_sub(1)),
         pcm_sample_bit_depth_chroma_minus1: u8_of(sps.pcm_bit_depth_chroma.saturating_sub(1)),
         log2_min_luma_coding_block_size_minus3: u8_of(sps.log2_min_cb.saturating_sub(3)),
-        log2_diff_max_min_luma_coding_block_size: u8_of(sps.log2_ctb.saturating_sub(sps.log2_min_cb)),
+        log2_diff_max_min_luma_coding_block_size: u8_of(
+            sps.log2_ctb.saturating_sub(sps.log2_min_cb),
+        ),
         log2_min_transform_block_size_minus2: u8_of(sps.log2_min_tb.saturating_sub(2)),
-        log2_diff_max_min_transform_block_size: u8_of(sps.log2_max_tb.saturating_sub(sps.log2_min_tb)),
+        log2_diff_max_min_transform_block_size: u8_of(
+            sps.log2_max_tb.saturating_sub(sps.log2_min_tb),
+        ),
         log2_min_pcm_luma_coding_block_size_minus3: u8_of(sps.log2_min_pcm.saturating_sub(3)),
-        log2_diff_max_min_pcm_luma_coding_block_size: u8_of(sps.log2_max_pcm.saturating_sub(sps.log2_min_pcm)),
+        log2_diff_max_min_pcm_luma_coding_block_size: u8_of(
+            sps.log2_max_pcm.saturating_sub(sps.log2_min_pcm),
+        ),
         max_transform_hierarchy_depth_intra: u8_of(sps.max_th_depth_intra),
         max_transform_hierarchy_depth_inter: u8_of(sps.max_th_depth_inter),
         init_qp_minus26: i8_of(pps.init_qp - 26),
@@ -528,7 +669,12 @@ fn emulation_bytes_before(payload: &[u8], rbsp_len: usize) -> usize {
 
 /// The slice parameters of the slice segment `sh` (NAL unit `nal`) with reference lists `refs`,
 /// whose pictures are `ref_frames` (the surfaces of `ReferenceFrames`, in order).
-pub fn slice_params(sh: &SliceHeader, nal: &[u8], refs: &[Vec<Ref<Surface>>; 2], ref_frames: &[usize]) -> Result<VASliceParameterBufferHEVC> {
+pub fn slice_params(
+    sh: &SliceHeader,
+    nal: &[u8],
+    refs: &[Vec<Ref<Surface>>; 2],
+    ref_frames: &[usize],
+) -> Result<VASliceParameterBufferHEVC> {
     use hevc_slice_bits as b;
     let slice_type = match sh.slice_type {
         SliceType::B => 0,
@@ -544,14 +690,21 @@ pub fn slice_params(sh: &SliceHeader, nal: &[u8], refs: &[Vec<Ref<Surface>>; 2],
         | flag(sh.temporal_mvp, b::SLICE_TEMPORAL_MVP_ENABLED)
         | flag(sh.deblocking_disabled, b::SLICE_DEBLOCKING_FILTER_DISABLED)
         | flag(sh.collocated_from_l0, b::COLLOCATED_FROM_L0)
-        | flag(sh.loop_filter_across_slices, b::SLICE_LOOP_FILTER_ACROSS_SLICES_ENABLED);
-    let header_bytes = sh.data_offset.checked_add(2).ok_or_else(|| decode_err("slice header too long"))?;
+        | flag(
+            sh.loop_filter_across_slices,
+            b::SLICE_LOOP_FILTER_ACROSS_SLICES_ENABLED,
+        );
+    let header_bytes = sh
+        .data_offset
+        .checked_add(2)
+        .ok_or_else(|| decode_err("slice header too long"))?;
     let ep = emulation_bytes_before(nal.get(2..).unwrap_or_default(), sh.data_offset);
     let mut s = VASliceParameterBufferHEVC {
         slice_data_size: u32::try_from(nal.len()).map_err(|_| decode_err("slice too large"))?,
         slice_data_offset: 0,
         slice_data_flag: ffi::VA_SLICE_DATA_FLAG_ALL,
-        slice_data_byte_offset: u32::try_from(header_bytes).map_err(|_| decode_err("slice header too long"))?,
+        slice_data_byte_offset: u32::try_from(header_bytes)
+            .map_err(|_| decode_err("slice header too long"))?,
         slice_segment_address: sh.segment_address,
         RefPicList: [[0xFF; 15]; 2],
         LongSliceFlags: flags,
@@ -574,7 +727,8 @@ pub fn slice_params(sh: &SliceHeader, nal: &[u8], refs: &[Vec<Ref<Surface>>; 2],
         delta_chroma_weight_l1: [[0; 2]; 15],
         ChromaOffsetL1: [[0; 2]; 15],
         five_minus_max_num_merge_cand: u8_of(5u32.saturating_sub(sh.max_num_merge_cand)),
-        num_entry_point_offsets: u16::try_from(sh.entry_points.len()).map_err(|_| decode_err("too many entry points"))?,
+        num_entry_point_offsets: u16::try_from(sh.entry_points.len())
+            .map_err(|_| decode_err("too many entry points"))?,
         entry_offset_to_subset_array: 0,
         slice_data_num_emu_prevn_bytes: u16::try_from(ep).unwrap_or(u16::MAX),
         va_reserved: [0; ffi::VA_PADDING_LOW - 2],
@@ -584,7 +738,10 @@ pub fn slice_params(sh: &SliceHeader, nal: &[u8], refs: &[Vec<Ref<Surface>>; 2],
             return Err(decode_err("reference list longer than 15"));
         }
         for (i, r) in list.iter().enumerate() {
-            let idx = ref_frames.iter().position(|&f| f == r.frame.index).ok_or_else(|| decode_err("a reference is not among the reference frames"))?;
+            let idx = ref_frames
+                .iter()
+                .position(|&f| f == r.frame.index)
+                .ok_or_else(|| decode_err("a reference is not among the reference frames"))?;
             s.RefPicList[l][i] = u8::try_from(idx).unwrap_or(0xFF);
         }
     }
@@ -594,8 +751,20 @@ pub fn slice_params(sh: &SliceHeader, nal: &[u8], refs: &[Vec<Ref<Surface>>; 2],
         s.luma_log2_weight_denom = u8_of(w.luma_log2_denom);
         s.delta_chroma_log2_weight_denom = i8_of(chroma_denom - luma_denom);
         let lists = [
-            (&w.l[0], &mut s.delta_luma_weight_l0, &mut s.luma_offset_l0, &mut s.delta_chroma_weight_l0, &mut s.ChromaOffsetL0),
-            (&w.l[1], &mut s.delta_luma_weight_l1, &mut s.luma_offset_l1, &mut s.delta_chroma_weight_l1, &mut s.ChromaOffsetL1),
+            (
+                &w.l[0],
+                &mut s.delta_luma_weight_l0,
+                &mut s.luma_offset_l0,
+                &mut s.delta_chroma_weight_l0,
+                &mut s.ChromaOffsetL0,
+            ),
+            (
+                &w.l[1],
+                &mut s.delta_luma_weight_l1,
+                &mut s.luma_offset_l1,
+                &mut s.delta_chroma_weight_l1,
+                &mut s.ChromaOffsetL1,
+            ),
         ];
         for (entries, lw, lo, cw, co) in lists {
             for (i, e) in entries.iter().take(15).enumerate() {

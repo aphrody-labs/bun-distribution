@@ -12,11 +12,7 @@
 use std::{path::Path, sync::Arc};
 
 use aphrody_code_graph::pipeline::{BuildReport, build_graph};
-use aphrody_store::{
-    HomeDb, HomeLayout,
-    files::Stage,
-    scan::ScanOptions,
-};
+use aphrody_store::{HomeDb, HomeLayout, files::Stage, scan::ScanOptions};
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 
@@ -61,30 +57,59 @@ pub async fn run_pipeline(layout: &HomeLayout, label: &str, root: &Path) -> Resu
     let result = run_inner(layout, &mut db, label, root).await;
     match &result {
         Ok(report) => db
-            .finish_run(run, aphrody_store::RunStatus::Succeeded, &serde_json::to_value(report)?, None)
+            .finish_run(
+                run,
+                aphrody_store::RunStatus::Succeeded,
+                &serde_json::to_value(report)?,
+                None,
+            )
             .map_err(other)?,
         Err(error) => db
-            .finish_run(run, aphrody_store::RunStatus::Failed, &serde_json::json!({}), Some(&error.to_string()))
+            .finish_run(
+                run,
+                aphrody_store::RunStatus::Failed,
+                &serde_json::json!({}),
+                Some(&error.to_string()),
+            )
             .map_err(other)?,
     }
     result
 }
 
-async fn run_inner(layout: &HomeLayout, db: &mut HomeDb, label: &str, root: &Path) -> Result<PipelineReport> {
-    let mut report = PipelineReport { source: label.to_owned(), ..PipelineReport::default() };
-    let (_graph, graph_report) = build_graph(db, label, root, &ScanOptions::default()).map_err(other)?;
+async fn run_inner(
+    layout: &HomeLayout,
+    db: &mut HomeDb,
+    label: &str,
+    root: &Path,
+) -> Result<PipelineReport> {
+    let mut report = PipelineReport {
+        source: label.to_owned(),
+        ..PipelineReport::default()
+    };
+    let (_graph, graph_report) =
+        build_graph(db, label, root, &ScanOptions::default()).map_err(other)?;
     report.graph = graph_report;
-    let source = db.source_id(label).map_err(other)?.ok_or_else(|| other("source vanished"))?;
+    let source = db
+        .source_id(label)
+        .map_err(other)?
+        .ok_or_else(|| other("source vanished"))?;
 
     // Remove documents of files that are no longer in the fingerprint table.
     let prefix = format!("{label}:");
     let stale: Vec<i64> = {
-        let known: std::collections::HashSet<String> =
-            db.stored_files(source).map_err(other)?.into_keys().map(|rel| format!("{prefix}{rel}")).collect();
-        let mut statement = db.conn().prepare("SELECT id, path FROM docs WHERE substr(path, 1, ?1) = ?2")?;
-        let rows = statement.query_map(params![i64::try_from(prefix.chars().count()).unwrap_or(0), prefix], |r| {
-            Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?))
-        })?;
+        let known: std::collections::HashSet<String> = db
+            .stored_files(source)
+            .map_err(other)?
+            .into_keys()
+            .map(|rel| format!("{prefix}{rel}"))
+            .collect();
+        let mut statement = db
+            .conn()
+            .prepare("SELECT id, path FROM docs WHERE substr(path, 1, ?1) = ?2")?;
+        let rows = statement.query_map(
+            params![i64::try_from(prefix.chars().count()).unwrap_or(0), prefix],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)),
+        )?;
         let mut stale = Vec::new();
         for row in rows {
             let (id, path) = row?;
@@ -107,7 +132,12 @@ async fn run_inner(layout: &HomeLayout, db: &mut HomeDb, label: &str, root: &Pat
         .pending(source, Stage::Index)
         .map_err(other)?
         .into_iter()
-        .filter(|f| matches!(f.class, aphrody_store::FileClass::Code | aphrody_store::FileClass::Doc))
+        .filter(|f| {
+            matches!(
+                f.class,
+                aphrody_store::FileClass::Code | aphrody_store::FileClass::Doc
+            )
+        })
         .collect();
     for file in queue {
         let path = root.join(&file.rel_path);
@@ -117,21 +147,31 @@ async fn run_inner(layout: &HomeLayout, db: &mut HomeDb, label: &str, root: &Pat
         };
         let key = format!("{prefix}{}", file.rel_path);
         match indexer
-            .index_document(&key, &content, i64::try_from(file.size_bytes).unwrap_or(i64::MAX), file.mtime_ms, &options)
+            .index_document(
+                &key,
+                &content,
+                i64::try_from(file.size_bytes).unwrap_or(i64::MAX),
+                file.mtime_ms,
+                &options,
+            )
             .await
         {
             Ok(Some((chunks, _vectors))) => {
                 report.indexed += 1;
                 report.chunks += chunks;
-            },
+            }
             Ok(None) => report.unchanged += 1,
             Err(error) => {
                 report.errors.push(format!("{}: {error}", file.rel_path));
                 continue;
-            },
+            }
         }
-        db.conn().execute("UPDATE docs SET source_id = ?1 WHERE path = ?2", params![source, key])?;
-        db.complete_stage(source, &file.rel_path, &file.blake3, Stage::Index).map_err(other)?;
+        db.conn().execute(
+            "UPDATE docs SET source_id = ?1 WHERE path = ?2",
+            params![source, key],
+        )?;
+        db.complete_stage(source, &file.rel_path, &file.blake3, Stage::Index)
+            .map_err(other)?;
     }
     store.checkpoint().await?;
     Ok(report)
@@ -155,10 +195,16 @@ pub async fn import_knowledge(
         legacy,
         rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY | rusqlite::OpenFlags::SQLITE_OPEN_NO_MUTEX,
     )?;
-    let mut statement =
-        conn.prepare("SELECT id, filename, COALESCE(category, ''), content FROM documents ORDER BY id")?;
+    let mut statement = conn.prepare(
+        "SELECT id, filename, COALESCE(category, ''), content FROM documents ORDER BY id",
+    )?;
     let rows = statement.query_map([], |r| {
-        Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?, r.get::<_, String>(2)?, r.get::<_, String>(3)?))
+        Ok((
+            r.get::<_, i64>(0)?,
+            r.get::<_, String>(1)?,
+            r.get::<_, String>(2)?,
+            r.get::<_, String>(3)?,
+        ))
     })?;
     let mut docs: Vec<(String, String)> = Vec::new();
     let mut seen = std::collections::HashSet::new();
@@ -170,8 +216,16 @@ pub async fn import_knowledge(
             continue;
         }
         bytes += content.len() as u64;
-        let base = if category.is_empty() { filename } else { format!("{category}/{filename}") };
-        let key = if seen.insert(base.clone()) { format!("{label}:{base}") } else { format!("{label}:{base}#{id}") };
+        let base = if category.is_empty() {
+            filename
+        } else {
+            format!("{category}/{filename}")
+        };
+        let key = if seen.insert(base.clone()) {
+            format!("{label}:{base}")
+        } else {
+            format!("{label}:{base}#{id}")
+        };
         docs.push((key, content));
     }
     let mut report = serde_json::json!({
@@ -187,24 +241,42 @@ pub async fn import_knowledge(
     let db = if layout.db_path.exists() {
         let existing = HomeDb::open(layout).map_err(other)?;
         existing
-            .backup(&layout.backup_dir(aphrody_store::time::now_ms()), &layout.scope.label(), "pre-import-knowledge")
+            .backup(
+                &layout.backup_dir(aphrody_store::time::now_ms()),
+                &layout.scope.label(),
+                "pre-import-knowledge",
+            )
             .map_err(other)?;
         existing
     } else {
         HomeDb::open(layout).map_err(other)?
     };
-    let source = db.upsert_source("legacy-knowledge", label, Some(&legacy.to_string_lossy())).map_err(other)?;
+    let source = db
+        .upsert_source("legacy-knowledge", label, Some(&legacy.to_string_lossy()))
+        .map_err(other)?;
     let store = Arc::new(RagStore::open(&layout.db_path)?);
     let indexer = RagIndexer::new(Arc::clone(&store));
     let options = IndexOptions::default();
     let (mut indexed, mut unchanged, mut chunks, mut errors) = (0_u64, 0_u64, 0_u64, 0_u64);
     for (key, content) in &docs {
-        match indexer.index_document(key, content, i64::try_from(content.len()).unwrap_or(i64::MAX), 0, &options).await {
+        match indexer
+            .index_document(
+                key,
+                content,
+                i64::try_from(content.len()).unwrap_or(i64::MAX),
+                0,
+                &options,
+            )
+            .await
+        {
             Ok(Some((n, _))) => {
                 indexed += 1;
                 chunks += n as u64;
-                db.conn().execute("UPDATE docs SET source_id = ?1 WHERE path = ?2", params![source, key])?;
-            },
+                db.conn().execute(
+                    "UPDATE docs SET source_id = ?1 WHERE path = ?2",
+                    params![source, key],
+                )?;
+            }
             Ok(None) => unchanged += 1,
             Err(_) => errors += 1,
         }
@@ -231,7 +303,11 @@ mod tests {
             "/// Reciprocal rank fusion merges channels.\npub fn fuse() { helper(); }\nfn helper() {}\n",
         )
         .unwrap();
-        std::fs::write(dir.path().join("README.md"), "# Notes\n\nThe pipeline is incremental by content hash.\n").unwrap();
+        std::fs::write(
+            dir.path().join("README.md"),
+            "# Notes\n\nThe pipeline is incremental by content hash.\n",
+        )
+        .unwrap();
         std::fs::write(dir.path().join(".env"), "TOKEN=secret-value").unwrap();
         dir
     }
@@ -250,19 +326,31 @@ mod tests {
 
         let db = HomeDb::open_read_only(&layout.db_path).unwrap();
         let docs: Vec<String> = {
-            let mut s = db.conn().prepare("SELECT path FROM docs ORDER BY path").unwrap();
-            s.query_map([], |r| r.get(0)).unwrap().map(Result::unwrap).collect()
+            let mut s = db
+                .conn()
+                .prepare("SELECT path FROM docs ORDER BY path")
+                .unwrap();
+            s.query_map([], |r| r.get(0))
+                .unwrap()
+                .map(Result::unwrap)
+                .collect()
         };
         assert_eq!(docs, ["repo:README.md", "repo:src/lib.rs"]);
         // The secret file never entered any table.
         let leaked: i64 = db
             .conn()
-            .query_row("SELECT count(*) FROM files WHERE rel_path = '.env'", [], |r| r.get(0))
+            .query_row(
+                "SELECT count(*) FROM files WHERE rel_path = '.env'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(leaked, 0);
 
         // One query reaches the chunk and the graph node.
-        let hits = crate::home::unified_search(&db, "fuse", &crate::home::UnifiedOptions::default()).unwrap();
+        let hits =
+            crate::home::unified_search(&db, "fuse", &crate::home::UnifiedOptions::default())
+                .unwrap();
         assert!(hits.iter().any(|h| h.kind == crate::home::HitKind::Chunk));
         assert!(hits.iter().any(|h| h.kind == crate::home::HitKind::Node));
 
@@ -290,17 +378,37 @@ mod tests {
             .unwrap();
         }
         let before = std::fs::read(&legacy).unwrap();
-        let dry = import_knowledge(&layout, &legacy, "knowledge", false).await.unwrap();
-        assert_eq!((dry["documents"].as_u64(), dry["empty_skipped"].as_u64()), (Some(2), Some(1)));
-        assert!(!layout.db_path.exists(), "a dry run must not create the database");
+        let dry = import_knowledge(&layout, &legacy, "knowledge", false)
+            .await
+            .unwrap();
+        assert_eq!(
+            (dry["documents"].as_u64(), dry["empty_skipped"].as_u64()),
+            (Some(2), Some(1))
+        );
+        assert!(
+            !layout.db_path.exists(),
+            "a dry run must not create the database"
+        );
 
-        let first = import_knowledge(&layout, &legacy, "knowledge", true).await.unwrap();
+        let first = import_knowledge(&layout, &legacy, "knowledge", true)
+            .await
+            .unwrap();
         assert_eq!(first["indexed"], 2);
-        let again = import_knowledge(&layout, &legacy, "knowledge", true).await.unwrap();
-        assert_eq!((again["indexed"].as_u64(), again["unchanged"].as_u64()), (Some(0), Some(2)));
+        let again = import_knowledge(&layout, &legacy, "knowledge", true)
+            .await
+            .unwrap();
+        assert_eq!(
+            (again["indexed"].as_u64(), again["unchanged"].as_u64()),
+            (Some(0), Some(2))
+        );
         let db = HomeDb::open_read_only(&layout.db_path).unwrap();
-        let hits = crate::home::unified_search(&db, "fusion", &crate::home::UnifiedOptions::default()).unwrap();
-        assert!(hits.iter().any(|h| h.path.as_deref() == Some("knowledge:lore/a.md")));
+        let hits =
+            crate::home::unified_search(&db, "fusion", &crate::home::UnifiedOptions::default())
+                .unwrap();
+        assert!(
+            hits.iter()
+                .any(|h| h.path.as_deref() == Some("knowledge:lore/a.md"))
+        );
         assert!(hits.iter().all(|h| !h.snippet.is_empty()));
         assert_eq!(std::fs::read(&legacy).unwrap(), before);
     }
@@ -311,17 +419,28 @@ mod tests {
         let layout = HomeLayout::in_state(state.path(), &HomeScope::Global).unwrap();
         let repo = tree();
         run_pipeline(&layout, "repo", repo.path()).await.unwrap();
-        std::fs::write(repo.path().join("README.md"), "# Notes\n\nChanged text about vectors.\n").unwrap();
+        std::fs::write(
+            repo.path().join("README.md"),
+            "# Notes\n\nChanged text about vectors.\n",
+        )
+        .unwrap();
         std::fs::remove_file(repo.path().join("src/lib.rs")).unwrap();
         let report = run_pipeline(&layout, "repo", repo.path()).await.unwrap();
         assert_eq!(report.indexed, 1);
         assert_eq!(report.removed, 1);
         let db = HomeDb::open_read_only(&layout.db_path).unwrap();
-        let docs: i64 = db.conn().query_row("SELECT count(*) FROM docs", [], |r| r.get(0)).unwrap();
+        let docs: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM docs", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(docs, 1);
-        let hits = crate::home::unified_search(&db, "vectors", &crate::home::UnifiedOptions::default()).unwrap();
+        let hits =
+            crate::home::unified_search(&db, "vectors", &crate::home::UnifiedOptions::default())
+                .unwrap();
         assert!(!hits.is_empty());
-        let gone = crate::home::unified_search(&db, "fuse", &crate::home::UnifiedOptions::default()).unwrap();
+        let gone =
+            crate::home::unified_search(&db, "fuse", &crate::home::UnifiedOptions::default())
+                .unwrap();
         assert!(gone.iter().all(|h| h.kind != crate::home::HitKind::Chunk));
     }
 }

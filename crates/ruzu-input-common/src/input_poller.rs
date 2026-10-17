@@ -2007,8 +2007,12 @@ mod tests {
                 })),
             });
             let sample = BasicMotion {
-                accel_x: 0.25, accel_y: -0.5, accel_z: -1.0,
-                gyro_x: 0.125, gyro_y: -0.25, gyro_z: 0.5,
+                accel_x: 0.25,
+                accel_y: -0.5,
+                accel_z: -1.0,
+                gyro_x: 0.125,
+                gyro_y: -0.25,
+                gyro_z: 0.5,
                 delta_timestamp: 5_000,
             };
             // Continuous motion must notify even when two samples are equal.
@@ -2020,9 +2024,14 @@ mod tests {
             assert_eq!(values.len(), 2);
             for value in values.iter() {
                 assert_eq!(value.delta_timestamp, 5_000);
-                for (axis, expected) in [(&value.accel.x, 0.25), (&value.accel.y, -0.5),
-                    (&value.accel.z, -1.0), (&value.gyro.x, 0.125),
-                    (&value.gyro.y, -0.25), (&value.gyro.z, 0.5)] {
+                for (axis, expected) in [
+                    (&value.accel.x, 0.25),
+                    (&value.accel.y, -0.5),
+                    (&value.accel.z, -1.0),
+                    (&value.gyro.x, 0.125),
+                    (&value.gyro.y, -0.25),
+                    (&value.gyro.z, 0.5),
+                ] {
                     assert_eq!(axis.raw_value, expected);
                     assert_eq!(axis.properties.threshold, threshold.unwrap_or(0.007));
                     assert_eq!(axis.properties.deadzone, 0.0);

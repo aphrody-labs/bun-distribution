@@ -44,13 +44,17 @@ impl Default for Homography {
 }
 
 impl Homography {
-    pub const IDENTITY: Homography = Homography([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
+    pub const IDENTITY: Homography =
+        Homography([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
 
     pub fn apply(&self, p: [f64; 2]) -> [f64; 2] {
         let m = &self.0;
         let w = m[2][0] * p[0] + m[2][1] * p[1] + m[2][2];
         let w = if w.abs() < 1e-12 { 1e-12 } else { w };
-        [(m[0][0] * p[0] + m[0][1] * p[1] + m[0][2]) / w, (m[1][0] * p[0] + m[1][1] * p[1] + m[1][2]) / w]
+        [
+            (m[0][0] * p[0] + m[0][1] * p[1] + m[0][2]) / w,
+            (m[1][0] * p[0] + m[1][1] * p[1] + m[1][2]) / w,
+        ]
     }
 
     /// `self ∘ other` (apply `other` first).
@@ -83,9 +87,21 @@ impl Homography {
             return None;
         }
         let inv = [
-            [c00, m[0][2] * m[2][1] - m[0][1] * m[2][2], m[0][1] * m[1][2] - m[0][2] * m[1][1]],
-            [c01, m[0][0] * m[2][2] - m[0][2] * m[2][0], m[0][2] * m[1][0] - m[0][0] * m[1][2]],
-            [c02, m[0][1] * m[2][0] - m[0][0] * m[2][1], m[0][0] * m[1][1] - m[0][1] * m[1][0]],
+            [
+                c00,
+                m[0][2] * m[2][1] - m[0][1] * m[2][2],
+                m[0][1] * m[1][2] - m[0][2] * m[1][1],
+            ],
+            [
+                c01,
+                m[0][0] * m[2][2] - m[0][2] * m[2][0],
+                m[0][2] * m[1][0] - m[0][0] * m[1][2],
+            ],
+            [
+                c02,
+                m[0][1] * m[2][0] - m[0][0] * m[2][1],
+                m[0][0] * m[1][1] - m[0][1] * m[1][0],
+            ],
         ];
         Some(Homography(inv.map(|r| r.map(|v| v / det))).normalized())
     }
@@ -97,7 +113,11 @@ impl Homography {
 
     /// Uniform scale `k` about `c`.
     pub fn scale_about(k: f64, c: [f64; 2]) -> Homography {
-        Homography([[k, 0.0, c[0] * (1.0 - k)], [0.0, k, c[1] * (1.0 - k)], [0.0, 0.0, 1.0]])
+        Homography([
+            [k, 0.0, c[0] * (1.0 - k)],
+            [0.0, k, c[1] * (1.0 - k)],
+            [0.0, 0.0, 1.0],
+        ])
     }
 
     /// `(1 - t) · self + t · other` element-wise (both normalised to `h33 = 1`): blends between
@@ -191,7 +211,10 @@ impl Homography {
 /// Angle (degrees, y down = clockwise positive like After Effects' Rotation) and length of `b - a`.
 pub fn angle_and_length(a: [f64; 2], b: [f64; 2]) -> (f64, f64) {
     let d = sub(b, a);
-    (d[1].atan2(d[0]).to_degrees(), (d[0] * d[0] + d[1] * d[1]).sqrt())
+    (
+        d[1].atan2(d[0]).to_degrees(),
+        (d[0] * d[0] + d[1] * d[1]).sqrt(),
+    )
 }
 
 /// `angle` moved by multiples of 360° to be closest to `prev` (continuous rotation curves).
@@ -214,16 +237,31 @@ pub(crate) fn mul(a: [[f64; 3]; 3], b: [[f64; 3]; 3]) -> [[f64; 3]; 3] {
 }
 
 fn normalise(p: &[[f64; 2]; 4]) -> ([[f64; 2]; 4], [[f64; 3]; 3]) {
-    let c = [p.iter().map(|q| q[0]).sum::<f64>() / 4.0, p.iter().map(|q| q[1]).sum::<f64>() / 4.0];
-    let d = p.iter().map(|q| ((q[0] - c[0]).powi(2) + (q[1] - c[1]).powi(2)).sqrt()).sum::<f64>() / 4.0;
-    let s = if d > 1e-12 { std::f64::consts::SQRT_2 / d } else { 1.0 };
+    let c = [
+        p.iter().map(|q| q[0]).sum::<f64>() / 4.0,
+        p.iter().map(|q| q[1]).sum::<f64>() / 4.0,
+    ];
+    let d = p
+        .iter()
+        .map(|q| ((q[0] - c[0]).powi(2) + (q[1] - c[1]).powi(2)).sqrt())
+        .sum::<f64>()
+        / 4.0;
+    let s = if d > 1e-12 {
+        std::f64::consts::SQRT_2 / d
+    } else {
+        1.0
+    };
     let t = [[s, 0.0, -s * c[0]], [0.0, s, -s * c[1]], [0.0, 0.0, 1.0]];
     (p.map(|q| [s * (q[0] - c[0]), s * (q[1] - c[1])]), t)
 }
 
 fn inv_similarity(t: [[f64; 3]; 3]) -> [[f64; 3]; 3] {
     let s = t[0][0];
-    [[1.0 / s, 0.0, -t[0][2] / s], [0.0, 1.0 / s, -t[1][2] / s], [0.0, 0.0, 1.0]]
+    [
+        [1.0 / s, 0.0, -t[0][2] / s],
+        [0.0, 1.0 / s, -t[1][2] / s],
+        [0.0, 0.0, 1.0],
+    ]
 }
 
 #[cfg(test)]
@@ -236,27 +274,51 @@ mod tests {
 
     #[test]
     fn homography_recovers_known_projection() {
-        let h = Homography([[0.9, 0.12, 30.0], [-0.08, 1.1, -12.0], [0.0004, -0.0002, 1.0]]);
-        let src = [[100.0, 100.0], [700.0, 120.0], [680.0, 500.0], [90.0, 520.0]];
+        let h = Homography([
+            [0.9, 0.12, 30.0],
+            [-0.08, 1.1, -12.0],
+            [0.0004, -0.0002, 1.0],
+        ]);
+        let src = [
+            [100.0, 100.0],
+            [700.0, 120.0],
+            [680.0, 500.0],
+            [90.0, 520.0],
+        ];
         let dst = src.map(|p| h.apply(p));
         let got = Homography::from_points(src, dst).unwrap();
         for i in 0..3 {
             for j in 0..3 {
-                assert!((got.0[i][j] - h.0[i][j]).abs() < 1e-6 * (1.0 + h.0[i][j].abs()), "{:?}", got.0);
+                assert!(
+                    (got.0[i][j] - h.0[i][j]).abs() < 1e-6 * (1.0 + h.0[i][j].abs()),
+                    "{:?}",
+                    got.0
+                );
             }
         }
         for p in [[0.0, 0.0], [400.0, 300.0], [1000.0, 50.0]] {
             assert!(close(got.apply(p), h.apply(p), 1e-6));
         }
         // Degenerate (collinear) input has no solution.
-        assert!(Homography::from_points([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], dst).is_none());
+        assert!(
+            Homography::from_points([[0.0, 0.0], [1.0, 1.0], [2.0, 2.0], [3.0, 3.0]], dst)
+                .is_none()
+        );
     }
 
     #[test]
     fn affine_and_similarity() {
-        let a = Homography::affine_from_points([[0.0, 0.0], [10.0, 0.0], [0.0, 10.0]], [[5.0, 5.0], [15.0, 7.0], [3.0, 15.0]]).unwrap();
+        let a = Homography::affine_from_points(
+            [[0.0, 0.0], [10.0, 0.0], [0.0, 10.0]],
+            [[5.0, 5.0], [15.0, 7.0], [3.0, 15.0]],
+        )
+        .unwrap();
         assert!(close(a.apply([10.0, 10.0]), [13.0, 17.0], 1e-9));
-        let s = Homography::similarity_from_points([[0.0, 0.0], [10.0, 0.0]], [[1.0, 1.0], [1.0, 21.0]]).unwrap();
+        let s = Homography::similarity_from_points(
+            [[0.0, 0.0], [10.0, 0.0]],
+            [[1.0, 1.0], [1.0, 21.0]],
+        )
+        .unwrap();
         assert!(close(s.apply([0.0, 10.0]), [-19.0, 1.0], 1e-9));
         let (ang, len) = angle_and_length([1.0, 1.0], [1.0, 21.0]);
         assert!((ang - 90.0).abs() < 1e-9 && (len - 20.0).abs() < 1e-9);

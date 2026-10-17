@@ -14,7 +14,13 @@
 /// Not available on wasm32 targets (requires tonic transport / mio).
 /// Use `protojson_conv` for serialization on wasm32.
 #[cfg(not(target_family = "wasm"))]
-#[allow(clippy::all, clippy::pedantic, clippy::nursery, clippy::restriction, warnings)]
+#[allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::restriction,
+    warnings
+)]
 pub mod proto {
     include!("gen/lf.a2a.v1.rs");
 }
@@ -23,7 +29,13 @@ pub mod proto {
 ///
 /// Available on all targets including wasm32. These are pure prost message
 /// structs with pbjson serde derives — no tonic or networking dependencies.
-#[allow(clippy::all, clippy::pedantic, clippy::nursery, clippy::restriction, warnings)]
+#[allow(
+    clippy::all,
+    clippy::pedantic,
+    clippy::nursery,
+    clippy::restriction,
+    warnings
+)]
 pub mod protojson {
     include!(concat!(env!("OUT_DIR"), "/lf.a2a.v1.rs"));
     include!(concat!(env!("OUT_DIR"), "/lf.a2a.v1.serde.rs"));

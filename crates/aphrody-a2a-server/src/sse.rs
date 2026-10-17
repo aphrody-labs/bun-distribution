@@ -14,11 +14,11 @@ pub fn sse_from_stream<T: serde::Serialize + Send + 'static>(
             Ok(val) => {
                 let data = serde_json::to_string(&val).unwrap_or_default();
                 Event::default().data(data)
-            },
+            }
             Err(err) => {
                 let error_json = serde_json::to_string(&err.to_jsonrpc_error()).unwrap_or_default();
                 Event::default().data(error_json)
-            },
+            }
         };
         Ok::<_, Infallible>(event)
     });
@@ -36,12 +36,12 @@ pub fn sse_jsonrpc_stream<T: serde::Serialize + Send + 'static>(
                 let result_val = serde_json::to_value(&val).unwrap_or_default();
                 let resp = aphrody_a2a::JsonRpcResponse::success(request_id.clone(), result_val);
                 serde_json::to_string(&resp).unwrap_or_default()
-            },
+            }
             Err(err) => {
                 let resp =
                     aphrody_a2a::JsonRpcResponse::error(request_id.clone(), err.to_jsonrpc_error());
                 serde_json::to_string(&resp).unwrap_or_default()
-            },
+            }
         };
         Ok::<_, Infallible>(Event::default().data(data))
     });
@@ -60,7 +60,9 @@ mod tests {
     #[tokio::test]
     async fn test_sse_from_stream_ok() {
         let s: BoxStream<'static, Result<serde_json::Value, A2AError>> =
-            Box::pin(stream::once(async { Ok(serde_json::json!({"key": "value"})) }));
+            Box::pin(stream::once(async {
+                Ok(serde_json::json!({"key": "value"}))
+            }));
         let sse = sse_from_stream(s);
         let resp = sse.into_response();
         assert_eq!(resp.status(), 200);
@@ -85,7 +87,9 @@ mod tests {
     #[tokio::test]
     async fn test_sse_jsonrpc_stream_ok() {
         let s: BoxStream<'static, Result<serde_json::Value, A2AError>> =
-            Box::pin(stream::once(async { Ok(serde_json::json!({"status": "ok"})) }));
+            Box::pin(stream::once(async {
+                Ok(serde_json::json!({"status": "ok"}))
+            }));
         let sse = sse_jsonrpc_stream(JsonRpcId::Number(1), s);
         let resp = sse.into_response();
         let body = resp.into_body().collect().await.unwrap().to_bytes();
@@ -121,6 +125,9 @@ mod tests {
         let body_str = String::from_utf8(body.to_vec()).unwrap();
         // Should contain multiple data lines
         let data_count = body_str.matches("data:").count();
-        assert!(data_count >= 3, "expected >= 3 data lines, got {data_count}");
+        assert!(
+            data_count >= 3,
+            "expected >= 3 data lines, got {data_count}"
+        );
     }
 }

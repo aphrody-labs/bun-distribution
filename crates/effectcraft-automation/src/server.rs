@@ -30,22 +30,33 @@ pub struct McpServer {
 
 impl McpServer {
     pub fn new(backend: Backend) -> Self {
-        Self { backend, autosave: None }
+        Self {
+            backend,
+            autosave: None,
+        }
     }
 
     /// Opt in to durable headless checkpoints in a separate folder per server.
     /// `root` is the platform config directory; settings are read by the caller.
     pub fn with_autosave(mut self, root: &Path) -> crate::Result<Self> {
-        let s = self.backend.session().ok_or_else(|| crate::Error::BadArgs("--autosave is for headless MCP; the bridged app owns its auto-saves".into()))?;
+        let s = self.backend.session().ok_or_else(|| {
+            crate::Error::BadArgs(
+                "--autosave is for headless MCP; the bridged app owns its auto-saves".into(),
+            )
+        })?;
         s.autosave.background = false;
-        let autosave = AutoSave::new(root, &s.prefs).map_err(|e| crate::Error::Other(format!("MCP auto-save: {e}")))?;
+        let autosave = AutoSave::new(root, &s.prefs)
+            .map_err(|e| crate::Error::Other(format!("MCP auto-save: {e}")))?;
         s.autosave_folder_override = Some(autosave.folder().to_path_buf());
         self.autosave = Some(autosave);
         Ok(self)
     }
 
     fn autosave_info(&self) -> Value {
-        self.autosave.as_ref().map(AutoSave::info).unwrap_or_else(|| json!({"enabled": false}))
+        self.autosave
+            .as_ref()
+            .map(AutoSave::info)
+            .unwrap_or_else(|| json!({"enabled": false}))
     }
 
     fn checkpoint(&mut self, finish: bool) -> std::io::Result<()> {
@@ -105,29 +116,39 @@ impl McpServer {
     /// progress, be cancelled and let other requests through while it runs (`long_job`). The
     /// reader thread is detached: when writing a reply fails, the server returns at once instead
     /// of waiting for a read that may never complete.
-    pub fn serve(&mut self, input: impl BufRead + Send + 'static, mut output: impl Write) -> std::io::Result<()> {
+    pub fn serve(
+        &mut self,
+        input: impl BufRead + Send + 'static,
+        mut output: impl Write,
+    ) -> std::io::Result<()> {
         let (tx, inbox) = std::sync::mpsc::channel::<Option<String>>();
         // A read error ends the input like EOF and is returned once the queued requests are answered.
         let read_error = std::sync::Arc::new(std::sync::Mutex::new(None::<std::io::Error>));
         let reader_error = read_error.clone();
-        std::thread::Builder::new().name("mcp-input".into()).spawn(move || {
-            for line in input.lines() {
-                let line = match line {
-                    Ok(line) => line,
-                    Err(e) => {
-                        *reader_error.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(e);
-                        break;
+        std::thread::Builder::new()
+            .name("mcp-input".into())
+            .spawn(move || {
+                for line in input.lines() {
+                    let line = match line {
+                        Ok(line) => line,
+                        Err(e) => {
+                            *reader_error
+                                .lock()
+                                .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(e);
+                            break;
+                        }
+                    };
+                    if tx.send(Some(line)).is_err() {
+                        return;
                     }
-                };
-                if tx.send(Some(line)).is_err() {
-                    return;
                 }
-            }
-            let _ = tx.send(None);
-        })?;
+                let _ = tx.send(None);
+            })?;
         let served = (|| {
             while let Ok(Some(line)) = inbox.recv() {
-                let long = serde_json::from_str::<Value>(line.trim()).ok().and_then(|m| crate::long_job::long_call(self, &m));
+                let long = serde_json::from_str::<Value>(line.trim())
+                    .ok()
+                    .and_then(|m| crate::long_job::long_call(self, &m));
                 if let Some(call) = long {
                     if !self.run_long(call, &inbox, &mut output)? {
                         break;
@@ -140,7 +161,11 @@ impl McpServer {
                     output.flush()?;
                 }
             }
-            match read_error.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take() {
+            match read_error
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take()
+            {
                 Some(e) => Err(e),
                 None => Ok(()),
             }
@@ -148,23 +173,42 @@ impl McpServer {
         match (served, self.checkpoint(true)) {
             (r, Ok(())) => r,
             (Ok(()), Err(e)) => Err(e),
-            (Err(transport), Err(save)) => Err(std::io::Error::other(format!("{transport}; {save}"))),
+            (Err(transport), Err(save)) => {
+                Err(std::io::Error::other(format!("{transport}; {save}")))
+            }
         }
     }
 
     /// Serve on stdin/stdout (the MCP stdio transport).
     pub fn serve_stdio(&mut self) -> std::io::Result<()> {
-        self.serve(std::io::BufReader::new(std::io::stdin()), std::io::stdout().lock())
+        self.serve(
+            std::io::BufReader::new(std::io::stdin()),
+            std::io::stdout().lock(),
+        )
     }
 
     fn request(&mut self, method: &str, params: &Value) -> Result<Value, (i64, String)> {
         match method {
             "initialize" => {
-                let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or("");
-                let version = PROTOCOL_VERSIONS.iter().find(|v| **v == asked).copied().unwrap_or(PROTOCOL_VERSIONS.first().copied().unwrap_or("2025-06-18"));
-                let mode = if self.backend.is_bridge() { "bridge" } else { "headless" };
+                let asked = params
+                    .get("protocolVersion")
+                    .and_then(Value::as_str)
+                    .unwrap_or("");
+                let version = PROTOCOL_VERSIONS
+                    .iter()
+                    .find(|v| **v == asked)
+                    .copied()
+                    .unwrap_or(PROTOCOL_VERSIONS.first().copied().unwrap_or("2025-06-18"));
+                let mode = if self.backend.is_bridge() {
+                    "bridge"
+                } else {
+                    "headless"
+                };
                 let instructions = if self.autosave.is_some() {
-                    format!("{INSTRUCTIONS} Headless auto-save and recovery: {}", self.autosave_info())
+                    format!(
+                        "{INSTRUCTIONS} Headless auto-save and recovery: {}",
+                        self.autosave_info()
+                    )
                 } else {
                     INSTRUCTIONS.to_string()
                 };
@@ -178,14 +222,23 @@ impl McpServer {
             }
             "ping" => Ok(json!({})),
             "tools/list" => {
-                let tools: Vec<Value> = tools::available(self.backend.is_bridge()).map(|t| t.descriptor()).collect();
+                let tools: Vec<Value> = tools::available(self.backend.is_bridge())
+                    .map(|t| t.descriptor())
+                    .collect();
                 Ok(json!({"tools": tools}))
             }
             "tools/call" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
+                let name = params
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(json!({}));
                 if tools::available(self.backend.is_bridge()).all(|t| t.name != name) {
-                    let hint = if tools::find(name).is_some() { format!(" ({})", crate::backend::NEED_BRIDGE) } else { String::new() };
+                    let hint = if tools::find(name).is_some() {
+                        format!(" ({})", crate::backend::NEED_BRIDGE)
+                    } else {
+                        String::new()
+                    };
                     return Err((INVALID_PARAMS, format!("unknown tool `{name}`{hint}")));
                 }
                 if let Some(m) = tools::find(name).and_then(|t| t.unknown_arg(&args)) {
@@ -212,8 +265,14 @@ impl McpServer {
                 if self.autosave.is_some()
                     && name == "get_project"
                     && result["isError"] == false
-                    && let Some(text) = result.get_mut("content").and_then(Value::as_array_mut).and_then(|c| c.first_mut()).and_then(|c| c.get_mut("text"))
-                    && let Some(summary) = text.as_str().and_then(|t| serde_json::from_str::<Value>(t).ok())
+                    && let Some(text) = result
+                        .get_mut("content")
+                        .and_then(Value::as_array_mut)
+                        .and_then(|c| c.first_mut())
+                        .and_then(|c| c.get_mut("text"))
+                    && let Some(summary) = text
+                        .as_str()
+                        .and_then(|t| serde_json::from_str::<Value>(t).ok())
                 {
                     let mut summary = summary;
                     summary["autosave"] = self.autosave_info();
@@ -227,14 +286,19 @@ impl McpServer {
             ]})),
             "resources/templates/list" => Ok(json!({"resourceTemplates": []})),
             "resources/read" => {
-                let uri = params.get("uri").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
+                let uri = params
+                    .get("uri")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
                 let tool = match uri {
                     DOCUMENT_URI => "doc_inspect",
                     COMMANDS_URI => "command_list",
                     _ => return Err((RESOURCE_NOT_FOUND, format!("resource not found: {uri}"))),
                 };
                 match self.guarded(tool, &json!({})) {
-                    Ok(Reply::Json(v)) => Ok(json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": v.to_string()}]})),
+                    Ok(Reply::Json(v)) => Ok(
+                        json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": v.to_string()}]}),
+                    ),
                     Ok(Reply::Image { .. }) => Err((INTERNAL_ERROR, "unexpected image".into())),
                     Err(e) => Err((INTERNAL_ERROR, e.to_string())),
                 }
@@ -267,8 +331,15 @@ impl McpServer {
     /// serving (docs/mcp.md).
     pub(crate) fn guarded(&mut self, name: &str, args: &Value) -> Result<Reply, Error> {
         let backend = &mut self.backend;
-        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| tools::run(backend, name, args))).unwrap_or_else(|p| {
-            let msg = p.downcast_ref::<&str>().map(|s| s.to_string()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "panic".into());
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            tools::run(backend, name, args)
+        }))
+        .unwrap_or_else(|p| {
+            let msg = p
+                .downcast_ref::<&str>()
+                .map(|s| s.to_string())
+                .or_else(|| p.downcast_ref::<String>().cloned())
+                .unwrap_or_else(|| "panic".into());
             Err(Error::Other(format!("internal error: {msg}")))
         })
     }
@@ -281,7 +352,10 @@ const COMMANDS_URI: &str = "effectcraft://commands";
 /// Whether a request declares MCP 2026-07-28 or later in its `_meta` (a "modern" client, which
 /// negotiates per request instead of through `initialize`).
 pub(crate) fn is_modern(params: &Value) -> bool {
-    params.pointer("/_meta/io.modelcontextprotocol~1protocolVersion").and_then(Value::as_str).is_some_and(|v| v >= "2026-07-28")
+    params
+        .pointer("/_meta/io.modelcontextprotocol~1protocolVersion")
+        .and_then(Value::as_str)
+        .is_some_and(|v| v >= "2026-07-28")
 }
 
 /// Modern clients reject list/read results without `resultType`, `ttlMs` and `cacheScope`; those
@@ -290,12 +364,16 @@ pub(crate) fn is_modern(params: &Value) -> bool {
 /// for ten minutes); reads follow the project, so they are never cached.
 pub(crate) fn modern_result_fields(method: &str, params: &Value, result: &mut Value) {
     let ttl_ms = match method {
-        "tools/list" | "resources/list" | "resources/templates/list" | "prompts/list" => Some(600_000),
+        "tools/list" | "resources/list" | "resources/templates/list" | "prompts/list" => {
+            Some(600_000)
+        }
         "resources/read" => Some(0),
         "tools/call" => None,
         _ => return,
     };
-    let Some(obj) = result.as_object_mut().filter(|_| is_modern(params)) else { return };
+    let Some(obj) = result.as_object_mut().filter(|_| is_modern(params)) else {
+        return;
+    };
     obj.insert("resultType".into(), json!("complete"));
     if let Some(ttl_ms) = ttl_ms {
         obj.insert("ttlMs".into(), json!(ttl_ms));

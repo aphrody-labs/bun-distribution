@@ -17,7 +17,11 @@ fn synthetic(w: usize, h: usize) -> Vec<u8> {
             let r = (x * 255 / w) as i32 + n;
             let g = (y * 255 / h) as i32 + n;
             let b = (((x / 37) ^ (y / 29)) & 0xFF) as i32 / 2 + 64 + n;
-            v.extend_from_slice(&[r.clamp(0, 255) as u8, g.clamp(0, 255) as u8, b.clamp(0, 255) as u8]);
+            v.extend_from_slice(&[
+                r.clamp(0, 255) as u8,
+                g.clamp(0, 255) as u8,
+                b.clamp(0, 255) as u8,
+            ]);
         }
     }
     v
@@ -45,34 +49,83 @@ fn bench_24mp_jpeg() {
     let mp = (w * h) as f64 / 1e6;
     let px = synthetic(w, h);
     let img = EncodeImage::new(w as u32, h as u32, 3, Samples::U8(&px));
-    let plain =
-        time("encode JPEG q90 4:2:0 (jpeg-encoder)", mp, 1, || encode_jpeg(&img, 90, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap());
+    let plain = time("encode JPEG q90 4:2:0 (jpeg-encoder)", mp, 1, || {
+        encode_jpeg(&img, 90, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap()
+    });
     println!("  size {:.1} MB", plain.len() as f64 / 1e6);
 
-    time("decode full → linear Rgb32f", mp, 3, || decode(&plain, DecodeOptions::default()).unwrap());
-    time("decode fit 2048 (DCT 1/2 + resample)", mp, 3, || decode(&plain, DecodeOptions::fit(2048, 2048)).unwrap());
-    time("decode_thumbnail 256 (DCT 1/8, no preview)", mp, 5, || decode_thumbnail(&plain, 256).unwrap());
+    time("decode full → linear Rgb32f", mp, 3, || {
+        decode(&plain, DecodeOptions::default()).unwrap()
+    });
+    time("decode fit 2048 (DCT 1/2 + resample)", mp, 3, || {
+        decode(&plain, DecodeOptions::fit(2048, 2048)).unwrap()
+    });
+    time("decode_thumbnail 256 (DCT 1/8, no preview)", mp, 5, || {
+        decode_thumbnail(&plain, 256).unwrap()
+    });
 
     // Camera-style file: 320×213 EXIF thumbnail covers a 256 px request.
     let small: Vec<u8> = synthetic(320, 213);
-    let thumb = encode_jpeg(&EncodeImage::new(320, 213, 3, Samples::U8(&small)), 80, ChromaSubsampling::S420, &EncodeMeta::default()).unwrap();
+    let thumb = encode_jpeg(
+        &EncodeImage::new(320, 213, 3, Samples::U8(&small)),
+        80,
+        ChromaSubsampling::S420,
+        &EncodeMeta::default(),
+    )
+    .unwrap();
     let exif = exif_with_thumbnail(&thumb);
-    let cam = encode_jpeg(&img, 90, ChromaSubsampling::S420, &EncodeMeta { exif: Some(&exif), ..Default::default() }).unwrap();
-    let t = time("decode_thumbnail 256 (EXIF preview)", mp, 20, || decode_thumbnail(&cam, 256).unwrap());
+    let cam = encode_jpeg(
+        &img,
+        90,
+        ChromaSubsampling::S420,
+        &EncodeMeta {
+            exif: Some(&exif),
+            ..Default::default()
+        },
+    )
+    .unwrap();
+    let t = time("decode_thumbnail 256 (EXIF preview)", mp, 20, || {
+        decode_thumbnail(&cam, 256).unwrap()
+    });
     assert_eq!(t.source, ThumbnailSource::ExifThumbnail);
 
     let d = decode(&plain, DecodeOptions::default()).unwrap();
-    time("to_working (sRGB → Rec.2020 matrix)", mp, 3, || to_working(&d));
+    time("to_working (sRGB → Rec.2020 matrix)", mp, 3, || {
+        to_working(&d)
+    });
     let rgba = d.to_srgb8();
-    time("encode PNG 8-bit", mp, 1, || encode_png(&EncodeImage::rgba8(&rgba), &EncodeMeta::default()).unwrap());
-    time("encode TIFF 8-bit deflate", mp, 1, || encode_tiff(&EncodeImage::rgba8(&rgba), TiffCompression::Deflate, &EncodeMeta::default()).unwrap());
+    time("encode PNG 8-bit", mp, 1, || {
+        encode_png(&EncodeImage::rgba8(&rgba), &EncodeMeta::default()).unwrap()
+    });
+    time("encode TIFF 8-bit deflate", mp, 1, || {
+        encode_tiff(
+            &EncodeImage::rgba8(&rgba),
+            TiffCompression::Deflate,
+            &EncodeMeta::default(),
+        )
+        .unwrap()
+    });
     #[cfg(feature = "jxl")]
     for (label, o) in [
-        ("encode JPEG XL q90 effort fast", JxlOptions { effort: JxlEffort::Fast, ..Default::default() }),
+        (
+            "encode JPEG XL q90 effort fast",
+            JxlOptions {
+                effort: JxlEffort::Fast,
+                ..Default::default()
+            },
+        ),
         ("encode JPEG XL q90 effort normal", JxlOptions::default()),
-        ("encode JPEG XL lossless", JxlOptions { lossless: true, ..Default::default() }),
+        (
+            "encode JPEG XL lossless",
+            JxlOptions {
+                lossless: true,
+                ..Default::default()
+            },
+        ),
     ] {
-        let b = time(label, mp, 1, || encode_jxl(&img, &o, &EncodeMeta::default()).unwrap());
+        let b = time(label, mp, 1, || {
+            encode_jxl(&img, &o, &EncodeMeta::default()).unwrap()
+        });
         println!("  size {:.1} MB", b.len() as f64 / 1e6);
     }
 }

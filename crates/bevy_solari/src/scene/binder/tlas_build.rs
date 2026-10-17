@@ -36,7 +36,7 @@ use bevy_render::{
     renderer::RenderDevice,
 };
 use core::marker::PhantomData;
-use wgpu::{hal, BufferUses};
+use wgpu::{BufferUses, hal};
 
 /// Size of one TLAS instance descriptor, on both Vulkan and DXR.
 pub const INSTANCE_DESCRIPTOR_SIZE: u64 = 64;

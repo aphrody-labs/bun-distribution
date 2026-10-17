@@ -13,16 +13,29 @@ use super::{ArtboardPick, Encoded, FormatOption};
 const C: &str = "document.export";
 
 /// The options `document.formats` lists for EMF and WMF.
-pub(super) const OPTIONS: &[FormatOption] = &[super::ARTBOARD, super::ARTBOARDS, super::RANGE, super::USE_ARTBOARDS];
+pub(super) const OPTIONS: &[FormatOption] = &[
+    super::ARTBOARD,
+    super::ARTBOARDS,
+    super::RANGE,
+    super::USE_ARTBOARDS,
+];
 
 /// Encode `doc` as `kind`: the chosen artboard (default the first), or with `use_artboards` one
 /// picture per chosen artboard (default all).
-pub(super) fn encode(doc: &Document, p: &Value, use_artboards: Option<bool>, kind: Kind) -> Result<Encoded> {
+pub(super) fn encode(
+    doc: &Document,
+    p: &Value,
+    use_artboards: Option<bool>,
+    kind: Kind,
+) -> Result<Encoded> {
     let f = super::format(kind.id()).ok_or_else(|| bad(C, "no metafile format"))?;
     let pick: ArtboardPick = super::encode::options(f, p)?;
     let n = doc.artboards.len();
     let boards = match use_artboards {
-        Some(true) => pick.resolve(n).map_err(|e| bad(C, e))?.unwrap_or_else(|| (0..n).collect()),
+        Some(true) => pick
+            .resolve(n)
+            .map_err(|e| bad(C, e))?
+            .unwrap_or_else(|| (0..n).collect()),
         _ => vec![pick.one(n).map_err(|e| bad(C, e))?],
     };
     // Raster effects (shadows, glows, blurs) as images, as PDF export does.
@@ -30,7 +43,11 @@ pub(super) fn encode(doc: &Document, p: &Value, use_artboards: Option<bool>, kin
     let src = flat.as_ref().unwrap_or(doc);
     let mut enc = Encoded::default();
     for b in boards {
-        let region = doc.artboards.get(b).ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?.rect;
+        let region = doc
+            .artboards
+            .get(b)
+            .ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))?
+            .rect;
         let out = vectorcraft_metafile::export(src, region, kind).map_err(|e| bad(C, e))?;
         enc.files.push((Some(b), out.bytes));
         for w in out.warnings {

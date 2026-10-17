@@ -31,32 +31,54 @@ fn ev(kind: PointerKind, x: f64, y: f64) -> PointerEvent {
 fn a_drag_held_still_keeps_its_preview() {
     let mut s = Session::new();
     // A child of a rotated frame, the case the canvas showed stale while dragging.
-    let f = id_of(&s.execute("frame.create", &json!({"x": 100, "y": 100, "width": 300, "height": 200})).unwrap()["id"]).unwrap();
-    s.execute("node.set", &json!({"id": f, "rotation": 25})).unwrap();
+    let f = id_of(
+        &s.execute(
+            "frame.create",
+            &json!({"x": 100, "y": 100, "width": 300, "height": 200}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    s.execute("node.set", &json!({"id": f, "rotation": 25}))
+        .unwrap();
     let r = rect(&mut s, Some(f));
     // Snapping would pull the layer onto the frame's edges and centre.
     s.ds_mut().unwrap().view.snap_objects = false;
     s.execute("select.set", &json!({"ids": [r]})).unwrap();
     let c = s.doc().unwrap().world_bounds(r).unwrap().center();
     s.pointer(&ev(PointerKind::Down, c.x, c.y)).unwrap();
-    s.pointer(&ev(PointerKind::Move, c.x + 60.0, c.y + 30.0)).unwrap();
+    s.pointer(&ev(PointerKind::Move, c.x + 60.0, c.y + 30.0))
+        .unwrap();
     let moved = doc(&s);
     let rev = s.ds().unwrap().revision;
     for _ in 0..5 {
-        s.pointer(&ev(PointerKind::Move, c.x + 60.0, c.y + 30.0)).unwrap();
+        s.pointer(&ev(PointerKind::Move, c.x + 60.0, c.y + 30.0))
+            .unwrap();
     }
-    assert!(Arc::ptr_eq(&moved, &doc(&s)), "the same move again keeps the document");
+    assert!(
+        Arc::ptr_eq(&moved, &doc(&s)),
+        "the same move again keeps the document"
+    );
     assert_eq!(s.ds().unwrap().revision, rev);
     // The layer moved with the pointer, in page space.
     let b = s.doc().unwrap().world_bounds(r).unwrap().center();
-    assert!((b.x - c.x - 60.0).abs() < 1.0 && (b.y - c.y - 30.0).abs() < 1.0, "{b:?} from {c:?}");
+    assert!(
+        (b.x - c.x - 60.0).abs() < 1.0 && (b.y - c.y - 30.0).abs() < 1.0,
+        "{b:?} from {c:?}"
+    );
     // Shift (a modifier change without a move) and a real move still update the preview.
-    s.pointer(&PointerEvent { shift: true, ..ev(PointerKind::Move, c.x + 60.0, c.y + 30.0) }).unwrap();
+    s.pointer(&PointerEvent {
+        shift: true,
+        ..ev(PointerKind::Move, c.x + 60.0, c.y + 30.0)
+    })
+    .unwrap();
     assert!(!Arc::ptr_eq(&moved, &doc(&s)));
     let shifted = doc(&s);
-    s.pointer(&ev(PointerKind::Move, c.x + 90.0, c.y + 30.0)).unwrap();
+    s.pointer(&ev(PointerKind::Move, c.x + 90.0, c.y + 30.0))
+        .unwrap();
     assert!(!Arc::ptr_eq(&shifted, &doc(&s)));
-    s.pointer(&ev(PointerKind::Up, c.x + 90.0, c.y + 30.0)).unwrap();
+    s.pointer(&ev(PointerKind::Up, c.x + 90.0, c.y + 30.0))
+        .unwrap();
     // A new drag to the same spot as the last move of the previous one is not mistaken for it.
     let c = s.doc().unwrap().world_bounds(r).unwrap().center();
     let before = doc(&s);
@@ -72,7 +94,8 @@ fn a_preview_that_changes_nothing_keeps_the_document() {
     s.begin_interaction("Edit").unwrap();
     let set = |s: &mut Session, x: f64| {
         let props = serde_json::Map::from_iter([("x".to_string(), json!(x))]);
-        s.preview(|d, _| crate::cmd::props::apply("node.set", d, r, &props)).unwrap();
+        s.preview(|d, _| crate::cmd::props::apply("node.set", d, r, &props))
+            .unwrap();
     };
     set(&mut s, 10.0);
     let first = doc(&s);
@@ -81,5 +104,8 @@ fn a_preview_that_changes_nothing_keeps_the_document() {
     set(&mut s, 12.0);
     assert!(!Arc::ptr_eq(&first, &doc(&s)));
     s.commit_interaction().unwrap();
-    assert_eq!(s.doc().unwrap().node(r).unwrap().transform.as_coeffs()[4], 12.0);
+    assert_eq!(
+        s.doc().unwrap().node(r).unwrap().transform.as_coeffs()[4],
+        12.0
+    );
 }

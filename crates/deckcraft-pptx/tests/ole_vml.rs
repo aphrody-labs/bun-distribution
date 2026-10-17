@@ -44,14 +44,19 @@ fn deck() -> Vec<u8> {
             d = format!("{}{CONTROLS}{}", &s[..at], &s[at..]).into_bytes();
         } else if name == "ppt/slides/_rels/slide1.xml.rels" {
             let s = String::from_utf8(d).expect("utf8");
-            d = s.replace("</Relationships>", &format!("{SLIDE_RELS}</Relationships>")).into_bytes();
+            d = s
+                .replace("</Relationships>", &format!("{SLIDE_RELS}</Relationships>"))
+                .into_bytes();
         }
         out.start_file(name, o).expect("start");
         out.write_all(&d).expect("write");
     }
     for (name, data) in [
         ("ppt/drawings/vmlDrawing1.vml", VML.as_bytes().to_vec()),
-        ("ppt/drawings/_rels/vmlDrawing1.vml.rels", VML_RELS.as_bytes().to_vec()),
+        (
+            "ppt/drawings/_rels/vmlDrawing1.vml.rels",
+            VML_RELS.as_bytes().to_vec(),
+        ),
         ("ppt/media/other.png", png(10)),
         ("ppt/media/preview.png", png(200)),
     ] {
@@ -64,8 +69,19 @@ fn deck() -> Vec<u8> {
 #[test]
 fn an_ole_object_without_a_picture_shows_its_vml_preview() {
     let p = deckcraft_pptx::import(&deck()).expect("import");
-    let s = p.slides[0].shapes.iter().find(|s| s.name == "Object 3").expect("frame");
-    let ShapeKind::Opaque { preview: Some(m), label, .. } = &s.kind else { panic!("{:?}", s.kind) };
+    let s = p.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "Object 3")
+        .expect("frame");
+    let ShapeKind::Opaque {
+        preview: Some(m),
+        label,
+        ..
+    } = &s.kind
+    else {
+        panic!("{:?}", s.kind)
+    };
     assert_eq!(label, "Thing.1");
     let media = p.media.iter().find(|x| x.id == *m).expect("media");
     // The shape whose id is the object's spid, not the first one in the drawing.
@@ -75,10 +91,25 @@ fn an_ole_object_without_a_picture_shows_its_vml_preview() {
 #[test]
 fn activex_controls_show_their_pictures() {
     let p = deckcraft_pptx::import(&deck()).expect("import");
-    let s = p.slides[0].shapes.iter().find(|s| s.name == "CheckBox1").expect("control picture");
-    let ShapeKind::Picture { fill } = &s.kind else { panic!("{:?}", s.kind) };
-    assert_eq!(p.media.iter().find(|m| m.id == fill.media).map(|m| m.name.as_str()), Some("preview.png"));
+    let s = p.slides[0]
+        .shapes
+        .iter()
+        .find(|s| s.name == "CheckBox1")
+        .expect("control picture");
+    let ShapeKind::Picture { fill } = &s.kind else {
+        panic!("{:?}", s.kind)
+    };
+    assert_eq!(
+        p.media
+            .iter()
+            .find(|m| m.id == fill.media)
+            .map(|m| m.name.as_str()),
+        Some("preview.png")
+    );
     let x = s.xfrm.expect("xfrm");
     assert_eq!((x.x, x.y, x.w, x.h), (1.0, 2.0, 10.0, 5.0));
-    assert!(!p.slides[0].shapes.iter().any(|s| s.name == "NoPicture"), "a control without a picture draws nothing");
+    assert!(
+        !p.slides[0].shapes.iter().any(|s| s.name == "NoPicture"),
+        "a control without a picture draws nothing"
+    );
 }

@@ -3,10 +3,10 @@
 //! [struct-like]: https://doc.rust-lang.org/book/ch05-01-defining-structs.html
 use crate::generics::impl_generic_info_methods;
 use crate::{
-    attributes::{impl_custom_attribute_methods, CustomAttributes},
-    ty::impl_type_methods,
     ApplyError, Generics, NamedField, PartialReflect, Reflect, ReflectCloneError, ReflectKind,
     ReflectMut, ReflectOwned, ReflectRef, Type, TypeInfo, TypePath,
+    attributes::{CustomAttributes, impl_custom_attribute_methods},
+    ty::impl_type_methods,
 };
 use alloc::{borrow::Cow, boxed::Box, vec::Vec};
 use bevy_platform::collections::HashMap;

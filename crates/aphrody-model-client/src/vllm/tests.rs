@@ -27,7 +27,10 @@ struct Mock {
 async fn serve(
     replies: Vec<(StatusCode, String)>,
 ) -> (String, Arc<Mock>, tokio::task::JoinHandle<()>) {
-    let mock = Arc::new(Mock { replies: Mutex::new(replies), ..Mock::default() });
+    let mock = Arc::new(Mock {
+        replies: Mutex::new(replies),
+        ..Mock::default()
+    });
     let router = Router::new()
         .fallback(any(
             |State(mock): State<Arc<Mock>>, uri: Uri, headers: HeaderMap, body: String| async move {
@@ -36,13 +39,18 @@ async fn serve(
                 } else {
                     serde_json::from_str(&body).expect("body JSON")
                 };
-                mock.requests.lock().expect("requests").push((uri.to_string(), headers, value));
+                mock.requests
+                    .lock()
+                    .expect("requests")
+                    .push((uri.to_string(), headers, value));
                 let (status, body) = mock.replies.lock().expect("replies").remove(0);
                 (status, body)
             },
         ))
         .with_state(mock.clone());
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
     let address = listener.local_addr().expect("address");
     let task = tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
@@ -55,7 +63,10 @@ fn ok(value: Value) -> (StatusCode, String) {
 }
 fn turn() -> ChatTurn {
     ChatTurn {
-        messages: vec![ChatMessage { role: Role::User, parts: vec![Part::Text("hello".into())] }],
+        messages: vec![ChatMessage {
+            role: Role::User,
+            parts: vec![Part::Text("hello".into())],
+        }],
         ..ChatTurn::default()
     }
 }
@@ -86,13 +97,25 @@ async fn routes_auth_queries_and_native_response_shapes() {
         api.metrics().await.expect("metrics"),
         "# HELP vllm metric\nvllm:num_requests_running 2\n"
     );
-    assert_eq!(api.tokenize("m", "hello!").await.expect("tokenize").tokens, vec![11, 12]);
-    assert_eq!(api.detokenize("m", &[11, 12]).await.expect("detokenize"), "hello!");
+    assert_eq!(
+        api.tokenize("m", "hello!").await.expect("tokenize").tokens,
+        vec![11, 12]
+    );
+    assert_eq!(
+        api.detokenize("m", &[11, 12]).await.expect("detokenize"),
+        "hello!"
+    );
     let score = api
         .score(&json!({"model":"m","text_1":"q","text_2":["a","b"],"use_activation":false}))
         .await
         .expect("score");
-    assert_eq!(score.data[0], ScoreResult { index: 0, score: 0.1 });
+    assert_eq!(
+        score.data[0],
+        ScoreResult {
+            index: 0,
+            score: 0.1
+        }
+    );
     assert_eq!(score.metadata["usage"]["prompt_tokens"], 3);
     let request = json!({"model":"m","input":["hello"],"task":"token_embed"});
     assert_eq!(
@@ -136,11 +159,33 @@ async fn embeddings_and_rerank_obey_input_and_top_n_contracts() {
         client.embed(&["a", "b"]).await.expect("embed"),
         vec![vec![0.1, 0.2], vec![0.3, 0.4]]
     );
-    assert_eq!(client.rerank("q", &["a", "b"], None).await.expect("rerank")[0].index, 1);
-    assert_eq!(client.rerank("q", &["a", "b"], Some(1)).await.expect("rerank").len(), 1);
-    assert!(client.rerank("q", &["a"], Some(0)).await.expect("zero").is_empty());
+    assert_eq!(
+        client.rerank("q", &["a", "b"], None).await.expect("rerank")[0].index,
+        1
+    );
+    assert_eq!(
+        client
+            .rerank("q", &["a", "b"], Some(1))
+            .await
+            .expect("rerank")
+            .len(),
+        1
+    );
+    assert!(
+        client
+            .rerank("q", &["a"], Some(0))
+            .await
+            .expect("zero")
+            .is_empty()
+    );
     assert!(client.embed(&[]).await.expect("empty").is_empty());
-    assert!(client.rerank("q", &[], None).await.expect("empty").is_empty());
+    assert!(
+        client
+            .rerank("q", &[], None)
+            .await
+            .expect("empty")
+            .is_empty()
+    );
     let seen = mock.requests.lock().expect("requests");
     assert_eq!(seen.len(), 3);
     assert_eq!(seen[0].0, "/v1/embeddings");
@@ -172,7 +217,13 @@ async fn malformed_batches_and_tokenization_are_rejected() {
     assert!(client.rerank("q", &["a", "b"], None).await.is_err());
     assert!(client.rerank("q", &["a"], None).await.is_err());
     assert!(client.api().tokenize("m", "a").await.is_err());
-    assert!(client.api().score(&json!({"text_1":"a","text_2":"b"})).await.is_err());
+    assert!(
+        client
+            .api()
+            .score(&json!({"text_1":"a","text_2":"b"}))
+            .await
+            .is_err()
+    );
     assert!(client.api().detokenize("m", &[u64::MAX]).await.is_err());
     task.abort();
 }
@@ -183,8 +234,14 @@ async fn retries_errors_and_decode_failure_use_shared_policy() {
     let (base, mock, task) = serve(vec![
         (StatusCode::SERVICE_UNAVAILABLE, "loading".into()),
         ok(json!({"version":"ready"})),
-        (StatusCode::UNAUTHORIZED, json!({"error":{"message":"invalid key"}}).to_string()),
-        (StatusCode::BAD_REQUEST, json!({"detail":"unsupported pooling task"}).to_string()),
+        (
+            StatusCode::UNAUTHORIZED,
+            json!({"error":{"message":"invalid key"}}).to_string(),
+        ),
+        (
+            StatusCode::BAD_REQUEST,
+            json!({"detail":"unsupported pooling task"}).to_string(),
+        ),
         (StatusCode::OK, "not JSON".into()),
     ])
     .await;
@@ -214,13 +271,24 @@ async fn chat_stream_preserves_vllm_options_and_usage() {
     tls();
     let (base, mock, task) = serve(vec![(StatusCode::OK, CHAT.into())]).await;
     let mut runtime = ProviderRuntime::keyless(format!("{base}/v1"));
-    runtime.default_options.extra.insert("top_k".into(), json!(20));
+    runtime
+        .default_options
+        .extra
+        .insert("top_k".into(), json!(20));
     let client = VllmClient::from_provider(runtime, "served-name");
     let mut turn = turn();
     turn.options.extra.insert("top_k".into(), json!(5));
-    turn.options.extra.insert("chat_template_kwargs".into(), json!({"enable_thinking":false}));
-    let events: Vec<_> =
-        client.stream(turn).await.expect("stream").map(|r| r.expect("event")).collect().await;
+    turn.options.extra.insert(
+        "chat_template_kwargs".into(),
+        json!({"enable_thinking":false}),
+    );
+    let events: Vec<_> = client
+        .stream(turn)
+        .await
+        .expect("stream")
+        .map(|r| r.expect("event"))
+        .collect()
+        .await;
     assert_eq!(events[1], ModelStreamEvent::TextDelta("hi".into()));
     assert!(
         matches!(&events[2],ModelStreamEvent::Completed{usage:Some(usage),..} if usage.total_tokens==4)
@@ -249,8 +317,13 @@ async fn deadlines_cover_headers_native_body_and_sse_idle() {
                 )
             }),
         )
-        .route("/v1/chat/completions", any(|| async { std::future::pending::<String>().await }));
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        .route(
+            "/v1/chat/completions",
+            any(|| async { std::future::pending::<String>().await }),
+        );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
     let base = format!("http://{}", listener.local_addr().expect("addr"));
     let task = tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
@@ -279,7 +352,9 @@ async fn deadlines_cover_headers_native_body_and_sse_idle() {
             )
         }),
     );
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
     let base = format!("http://{}", listener.local_addr().expect("addr"));
     let task = tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
@@ -322,20 +397,31 @@ async fn dropping_chat_stream_releases_http_body() {
                         (guard, true),
                     ))
                 });
-                ([("content-type", "text/event-stream")], axum::body::Body::from_stream(body))
+                (
+                    [("content-type", "text/event-stream")],
+                    axum::body::Body::from_stream(body),
+                )
                     .into_response()
             }
         }),
     );
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
     let base = format!("http://{}", listener.local_addr().expect("addr"));
     let task = tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
     });
     let client = VllmClient::new(VllmConfig::new("m").with_base_url(base));
     let mut stream = client.stream(turn()).await.expect("stream");
-    assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::Created))));
-    assert!(matches!(stream.next().await, Some(Ok(ModelStreamEvent::TextDelta(_)))));
+    assert!(matches!(
+        stream.next().await,
+        Some(Ok(ModelStreamEvent::Created))
+    ));
+    assert!(matches!(
+        stream.next().await,
+        Some(Ok(ModelStreamEvent::TextDelta(_)))
+    ));
     drop(stream);
     tokio::time::timeout(Duration::from_secs(2), dropped_rx.recv())
         .await
@@ -373,7 +459,11 @@ async fn advanced_inputs_and_binary_pooling_keep_wire_data() {
     api.rerank_request(&rerank).await.expect("advanced rerank");
     let tokens = json!({"model":"m","messages":[{"role":"user","content":"hi"}],"add_special_tokens":false,"chat_template_kwargs":{"enable_thinking":false}});
     api.tokenize_request(&tokens).await.expect("chat tokenize");
-    assert!(api.score(&json!({"queries":"q","documents":["a"]})).await.is_err());
+    assert!(
+        api.score(&json!({"queries":"q","documents":["a"]}))
+            .await
+            .is_err()
+    );
     {
         let seen = mock.requests.lock().expect("requests");
         assert_eq!(seen[0].2, embed);
@@ -394,7 +484,9 @@ async fn advanced_inputs_and_binary_pooling_keep_wire_data() {
             )
         }),
     );
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind");
     let base = format!("http://{}", listener.local_addr().expect("addr"));
     let task = tokio::spawn(async move {
         axum::serve(listener, router).await.expect("serve");
@@ -402,9 +494,12 @@ async fn advanced_inputs_and_binary_pooling_keep_wire_data() {
     let api = VllmApi::new(base, None);
     let output = api.pooling_bytes(&json!({"model":"m","input":"hi","encoding_format":"bytes","embed_dtype":"float32","endianness":"little"})).await.expect("binary");
     assert_eq!(output.headers["content-type"], "application/octet-stream");
-    let metadata: Value =
-        serde_json::from_str(output.headers["metadata"].to_str().expect("metadata header"))
-            .expect("metadata JSON");
+    let metadata: Value = serde_json::from_str(
+        output.headers["metadata"]
+            .to_str()
+            .expect("metadata header"),
+    )
+    .expect("metadata JSON");
     assert_eq!(metadata["data"][0]["embed_dtype"], "float32");
     assert_eq!(metadata["data"][0]["end"], 4);
     assert_eq!(output.data.as_ref(), &[0, 0, 128, 63]);

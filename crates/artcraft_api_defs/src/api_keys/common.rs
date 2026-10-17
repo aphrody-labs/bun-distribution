@@ -13,30 +13,30 @@ use tokens::tokens::users::UserToken;
 /// in a UI. The full value is returned exactly once, at creation time.
 #[derive(Clone, Debug, Serialize, Deserialize, ToSchema)]
 pub struct ApiKeyInfo {
-  pub token: ApiKeyToken,
+    pub token: ApiKeyToken,
 
-  /// First 20 characters of the API key. The full secret is never returned
-  /// after creation.
-  pub truncated_api_key: String,
+    /// First 20 characters of the API key. The full secret is never returned
+    /// after creation.
+    pub truncated_api_key: String,
 
-  pub name: String,
-  pub maybe_description: Option<String>,
+    pub name: String,
+    pub maybe_description: Option<String>,
 
-  pub owner_user_token: UserToken,
+    pub owner_user_token: UserToken,
 
-  pub ip_address_creation: String,
-  pub ip_address_update: String,
+    pub ip_address_creation: String,
+    pub ip_address_update: String,
 
-  pub created_at: DateTime<Utc>,
-  pub updated_at: DateTime<Utc>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 
-  /// Soft-delete timestamp. `None` for live keys.
-  pub maybe_deleted_at: Option<DateTime<Utc>>,
+    /// Soft-delete timestamp. `None` for live keys.
+    pub maybe_deleted_at: Option<DateTime<Utc>>,
 }
 
 /// Path info for endpoints addressed by the API key's `token` (NOT the secret
 /// `api_key` value): `GET` / `DELETE` / `PUT` `/v1/api_keys/{api_key_token}`.
 #[derive(Deserialize, ToSchema)]
 pub struct ApiKeyPathInfo {
-  pub api_key_token: ApiKeyToken,
+    pub api_key_token: ApiKeyToken,
 }

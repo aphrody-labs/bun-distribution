@@ -264,13 +264,21 @@ mod tests {
         const CHILD: &str = "RUZU_TEST_UDP_MAPPING_SETTING";
         if std::env::var_os(CHILD).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
-                .args(["--exact", "input_mapping::tests::udp_controller_setting_keeps_motion_available"])
-                .env(CHILD, "1").status().unwrap().success());
+                .args([
+                    "--exact",
+                    "input_mapping::tests::udp_controller_setting_keeps_motion_available"
+                ])
+                .env(CHILD, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         let mut factory = MappingFactory::new();
         for enabled in [false, true, false] {
-            common::settings::values_mut().enable_udp_controller.set_value(enabled);
+            common::settings::values_mut()
+                .enable_udp_controller
+                .set_value(enabled);
             let mut input = button("cemuhookudp", 4);
             factory.begin_mapping(polling::InputType::Button);
             factory.register_input(&input);

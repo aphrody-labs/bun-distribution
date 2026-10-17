@@ -17,14 +17,20 @@ type Pixels = Vec<[u8; 4]>;
 
 fn harness() -> Option<Harness> {
     let built = std::panic::catch_unwind(|| {
-        egui_kittest::Harness::builder().with_size(egui::vec2(900.0, 640.0)).with_pixels_per_point(1.0).with_max_steps(64).wgpu().build_eframe(|cc| {
-            PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
-            let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
-            if let Some(rs) = cc.wgpu_render_state.as_ref() {
-                app.set_wgpu(rs.clone());
-            }
-            app
-        })
+        egui_kittest::Harness::builder()
+            .with_size(egui::vec2(900.0, 640.0))
+            .with_pixels_per_point(1.0)
+            .with_max_steps(64)
+            .wgpu()
+            .build_eframe(|cc| {
+                PhotocraftApp::setup_context(&cc.egui_ctx, Default::default());
+                let mut app =
+                    PhotocraftApp::new(photocraft_engine::Session::new(), Default::default());
+                if let Some(rs) = cc.wgpu_render_state.as_ref() {
+                    app.set_wgpu(rs.clone());
+                }
+                app
+            })
     });
     match built {
         Ok(h) => Some(h),
@@ -67,18 +73,33 @@ fn frames(h: &mut Harness, c: Case) -> (Pixels, Pixels, Pixels, bool) {
         let app = h.state_mut();
         // Close what an earlier case left open.
         while app.session.active().is_some() {
-            app.run("file.close", json!({"discard": true})).expect("close");
+            app.run("file.close", json!({"discard": true}))
+                .expect("close");
         }
-        app.run("file.new", json!({"width": 300, "height": 200, "depth": c.depth, "background": "white"})).expect("new");
-        app.run("edit.fill", json!({"color": "#1a2550"})).expect("fill");
+        app.run(
+            "file.new",
+            json!({"width": 300, "height": 200, "depth": c.depth, "background": "white"}),
+        )
+        .expect("new");
+        app.run("edit.fill", json!({"color": "#1a2550"}))
+            .expect("fill");
         app.run("paint.stroke", json!({"points": [[60, 60, 1], [240, 140, 1]], "size": 12, "hardness": 1.0, "color": "#ffffff"})).expect("line");
-        app.run("tools.setColors", json!({"foreground": [0.0, 0.0, 0.0, 1.0]})).expect("colours");
+        app.run(
+            "tools.setColors",
+            json!({"foreground": [0.0, 0.0, 0.0, 1.0]}),
+        )
+        .expect("colours");
         let brush = json!({"size": 30, "hardness": c.hardness, "pressureSize": c.pressure, "smoothing": {"amount": c.smoothing}});
-        app.run("tools.setBrush", json!({ "brush": brush })).expect("brush");
+        app.run("tools.setBrush", json!({ "brush": brush }))
+            .expect("brush");
         app.sync_views();
         app.ui.view.flip_horizontal = c.flip;
     }
-    control(h, "ui.set", json!({"tool": "brush", "zoom": c.zoom, "center": [150, 100]}));
+    control(
+        h,
+        "ui.set",
+        json!({"tool": "brush", "zoom": c.zoom, "center": [150, 100]}),
+    );
     // The smoothing tool option syncs on the first frame with the Brush: set it after.
     h.state_mut().session.tools.brush.smoothing.amount = c.smoothing;
     let canvas = |h: &mut Harness| {
@@ -95,7 +116,11 @@ fn frames(h: &mut Harness, c: Case) -> (Pixels, Pixels, Pixels, bool) {
     };
     let before = canvas(h);
     let pressure = |t: f64| if c.pressure { 0.3 + 0.7 * t } else { 1.0 };
-    control(h, "ui.pointer", json!({"events": [{"kind": "down", "x": 100, "y": 100, "pressure": pressure(0.0)}]}));
+    control(
+        h,
+        "ui.pointer",
+        json!({"events": [{"kind": "down", "x": 100, "y": 100, "pressure": pressure(0.0)}]}),
+    );
     let n = 14;
     let mut last = (100.0, 100.0);
     for i in 1..=n {
@@ -105,17 +130,29 @@ fn frames(h: &mut Harness, c: Case) -> (Pixels, Pixels, Pixels, bool) {
     }
     times.sort_by(f64::total_cmp);
     // Pointer move → stroke rendered → frame built (canvas refresh and upload included).
-    eprintln!("{c:?}: move-to-frame median {:.2} ms, max {:.2} ms", times[times.len() / 2], times[times.len() - 1]);
+    eprintln!(
+        "{c:?}: move-to-frame median {:.2} ms, max {:.2} ms",
+        times[times.len() / 2],
+        times[times.len() - 1]
+    );
     let drawing = canvas(h);
     let gpu = h.state().perf.gpu && !c.flip;
-    control(h, "ui.pointer", json!({"events": [{"kind": "up", "x": last.0, "y": last.1}]}));
+    control(
+        h,
+        "ui.pointer",
+        json!({"events": [{"kind": "up", "x": last.0, "y": last.1}]}),
+    );
     let done = canvas(h);
     (before, drawing, done, gpu)
 }
 
 fn max_diff(a: &[[u8; 4]], b: &[[u8; 4]]) -> u8 {
     assert_eq!(a.len(), b.len());
-    a.iter().zip(b).flat_map(|(p, q)| (0..3).map(move |i| p[i].abs_diff(q[i]))).max().unwrap_or(0)
+    a.iter()
+        .zip(b)
+        .flat_map(|(p, q)| (0..3).map(move |i| p[i].abs_diff(q[i])))
+        .max()
+        .unwrap_or(0)
 }
 
 #[test]
@@ -126,20 +163,65 @@ fn the_canvas_shows_the_committed_stroke_while_it_is_drawn() {
     let mut cases = Vec::new();
     for zoom in [0.5, 1.0, 4.0, 12.0] {
         for smoothing in [0.0, 0.1, 0.5] {
-            cases.push(Case { zoom, smoothing, hardness: 0.0, depth: 8, pressure: false, flip: false });
+            cases.push(Case {
+                zoom,
+                smoothing,
+                hardness: 0.0,
+                depth: 8,
+                pressure: false,
+                flip: false,
+            });
         }
     }
-    cases.push(Case { zoom: 4.0, smoothing: 0.1, hardness: 1.0, depth: 8, pressure: false, flip: false });
-    cases.push(Case { zoom: 4.0, smoothing: 0.1, hardness: 0.0, depth: 16, pressure: false, flip: false });
-    cases.push(Case { zoom: 4.0, smoothing: 0.1, hardness: 0.0, depth: 8, pressure: true, flip: false });
-    cases.push(Case { zoom: 4.0, smoothing: 0.1, hardness: 0.0, depth: 8, pressure: false, flip: true });
-    cases.push(Case { zoom: 12.0, smoothing: 0.5, hardness: 0.0, depth: 16, pressure: true, flip: true });
+    cases.push(Case {
+        zoom: 4.0,
+        smoothing: 0.1,
+        hardness: 1.0,
+        depth: 8,
+        pressure: false,
+        flip: false,
+    });
+    cases.push(Case {
+        zoom: 4.0,
+        smoothing: 0.1,
+        hardness: 0.0,
+        depth: 16,
+        pressure: false,
+        flip: false,
+    });
+    cases.push(Case {
+        zoom: 4.0,
+        smoothing: 0.1,
+        hardness: 0.0,
+        depth: 8,
+        pressure: true,
+        flip: false,
+    });
+    cases.push(Case {
+        zoom: 4.0,
+        smoothing: 0.1,
+        hardness: 0.0,
+        depth: 8,
+        pressure: false,
+        flip: true,
+    });
+    cases.push(Case {
+        zoom: 12.0,
+        smoothing: 0.5,
+        hardness: 0.0,
+        depth: 16,
+        pressure: true,
+        flip: true,
+    });
     let mut gpu_seen = false;
     for c in cases {
         let (before, drawing, done, gpu) = frames(&mut h, c);
         gpu_seen |= gpu;
         // The stroke is on screen while drawing (not a blank canvas compared with a blank one)…
-        assert!(max_diff(&before, &drawing) > 100, "{c:?}: the stroke shows while drawing");
+        assert!(
+            max_diff(&before, &drawing) > 100,
+            "{c:?}: the stroke shows while drawing"
+        );
         // …and is exactly what release leaves there: nothing extra (no stand-in shape), nothing missing.
         let d = max_diff(&drawing, &done);
         assert!(d <= 1, "{c:?}: the canvas changed by {d}/255 on release");

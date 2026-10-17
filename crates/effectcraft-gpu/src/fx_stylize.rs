@@ -103,7 +103,13 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
             let s = ctx.params.f("split") / 100.0;
             cc_split(e, ctx, b, s, s)
         }
-        "ec.distort.ccsplit2" => cc_split(e, ctx, b, ctx.params.f("split1") / 100.0, ctx.params.f("split2") / 100.0),
+        "ec.distort.ccsplit2" => cc_split(
+            e,
+            ctx,
+            b,
+            ctx.params.f("split1") / 100.0,
+            ctx.params.f("split2") / 100.0,
+        ),
         "ec.distort.cctiler" => cc_tiler(e, ctx, b),
         "ec.distort.ccgriddler" => cc_griddler(e, ctx, b),
         "ec.distort.liquify" => liquify(e, ctx, b),
@@ -116,7 +122,13 @@ pub(crate) fn apply(e: &mut Enc, id: &str, ctx: &EffectCtx, b: GBuf) -> Option<G
 }
 
 /// Run a same-size per-pixel kernel over the buffer.
-fn run(e: &mut Enc, entry: &str, p: &Params, mut b: GBuf, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn run(
+    e: &mut Enc,
+    entry: &str,
+    p: &Params,
+    mut b: GBuf,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let out = e.scratch(b.img.width, b.img.height);
     e.pixels(entry, p, &b.img, None, &out, data);
     b.img = out;
@@ -164,8 +176,18 @@ fn cc_threshold(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 }
 
 fn cc_threshold_rgb(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let t = [ctx.params.f("redThreshold"), ctx.params.f("greenThreshold"), ctx.params.f("blueThreshold")].map(|v| v as f32 / 255.0);
-    let inv = [ctx.params.b("invertRed"), ctx.params.b("invertGreen"), ctx.params.b("invertBlue")].map(u32::from);
+    let t = [
+        ctx.params.f("redThreshold"),
+        ctx.params.f("greenThreshold"),
+        ctx.params.f("blueThreshold"),
+    ]
+    .map(|v| v as f32 / 255.0);
+    let inv = [
+        ctx.params.b("invertRed"),
+        ctx.params.b("invertGreen"),
+        ctx.params.b("invertBlue"),
+    ]
+    .map(u32::from);
     let blend = ctx.params.f("blend") as f32 / 100.0;
     point(
         e,
@@ -234,7 +256,13 @@ fn vignette(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 
 // ---------------------------------------------------------------- warps (fxs_warp)
 
-fn warp(e: &mut Enc, mode: u32, f: impl FnOnce(&mut Params), b: GBuf, data: Option<&wgpu::Buffer>) -> Option<GBuf> {
+fn warp(
+    e: &mut Enc,
+    mode: u32,
+    f: impl FnOnce(&mut Params),
+    b: GBuf,
+    data: Option<&wgpu::Buffer>,
+) -> Option<GBuf> {
     let mut p = Params::default();
     p.u[0][0] = mode;
     f(&mut p);
@@ -244,13 +272,25 @@ fn warp(e: &mut Enc, mode: u32, f: impl FnOnce(&mut Params), b: GBuf, data: Opti
 fn mirror(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let c = b.to_px(ctx.params.v2("center"));
     let a = ctx.params.f("angle").to_radians();
-    warp(e, 1, |p| p.f[0] = [c.0 as f32, c.1 as f32, a.cos() as f32, a.sin() as f32], b, None)
+    warp(
+        e,
+        1,
+        |p| p.f[0] = [c.0 as f32, c.1 as f32, a.cos() as f32, a.sin() as f32],
+        b,
+        None,
+    )
 }
 
 fn spherize(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let r = (ctx.params.f("radius") * b.scale).max(1.0);
     let c = b.to_px(ctx.params.v2("center"));
-    warp(e, 2, |p| p.f[0] = [c.0 as f32, c.1 as f32, r as f32, 0.0], b, None)
+    warp(
+        e,
+        2,
+        |p| p.f[0] = [c.0 as f32, c.1 as f32, r as f32, 0.0],
+        b,
+        None,
+    )
 }
 
 fn polar(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -279,8 +319,16 @@ fn cc_slant(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         return Some(b);
     }
     let stretch = ctx.params.b("stretching");
-    let xs = if stretch { 1.0 / (1.0 + k * k).sqrt() } else { 1.0 };
-    let hinv = if height.abs() < 1e-6 { 1e6 } else { 1.0 / height };
+    let xs = if stretch {
+        1.0 / (1.0 + k * k).sqrt()
+    } else {
+        1.0
+    };
+    let hinv = if height.abs() < 1e-6 {
+        1e6
+    } else {
+        1.0 / height
+    };
     if !ctx.adjustment {
         let lean = (k * ctx.layer_size[1] * b.scale * height.max(1.0)).abs();
         let grow = ((height - 1.0).max(0.0) * ctx.layer_size[1] * b.scale).max(lean);
@@ -302,7 +350,10 @@ fn cc_slant(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 fn cc_smear(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let reach = ctx.params.f("reach") / 100.0;
     if !ctx.adjustment {
-        b.pad(e, effectcraft_effects::cc_smear_pad(ctx, [b.img.width, b.img.height], b.offset, b.scale))?;
+        b.pad(
+            e,
+            effectcraft_effects::cc_smear_pad(ctx, [b.img.width, b.img.height], b.offset, b.scale),
+        )?;
     }
     let from = b.to_px(ctx.params.v2("from"));
     let to = b.to_px(ctx.params.v2("to"));
@@ -369,15 +420,25 @@ fn optics_compensation(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf
     let corners = [(lx, ly), (lx + lw, ly), (lx, ly + lh), (lx + lw, ly + lh)];
     if reverse && resize > 0 && !ctx.adjustment {
         let c = b.to_px(ctx.params.v2("viewCenter"));
-        let rc = corners.iter().map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt()).fold(0.0, f64::max);
+        let rc = corners
+            .iter()
+            .map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt())
+            .fold(0.0, f64::max);
         let th = rc / r_ref * half;
         let cap = lw.max(lh) * [0.0, 0.5, 1.5, 3.5][resize.min(3) as usize];
-        let grow = if th < FRAC_PI_2 - 1e-3 { (f * th.tan() - rc).max(0.0) } else { cap };
+        let grow = if th < FRAC_PI_2 - 1e-3 {
+            (f * th.tan() - rc).max(0.0)
+        } else {
+            cap
+        };
         b.pad(e, grow.min(cap).min(4096.0).ceil() as u32)?;
     }
     let c = b.to_px(ctx.params.v2("viewCenter"));
     let fit = if optimal {
-        let rc = corners.iter().map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt()).fold(1.0, f64::max);
+        let rc = corners
+            .iter()
+            .map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt())
+            .fold(1.0, f64::max);
         if reverse {
             let th = (rc / r_ref * half).min(FRAC_PI_2 - 1e-3);
             (f * th.tan() / rc).max(1.0)
@@ -434,7 +495,11 @@ fn liquify(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         return None;
     }
     let off = ctx.params.v2("distortionMeshOffset");
-    let data: Vec<f32> = mesh.d.iter().flat_map(|d| [d[0] as f32, d[1] as f32]).collect();
+    let data: Vec<f32> = mesh
+        .d
+        .iter()
+        .flat_map(|d| [d[0] as f32, d[1] as f32])
+        .collect();
     let buf = e.data(&data);
     let (scale, o) = (b.scale, b.offset);
     warp(
@@ -458,7 +523,13 @@ fn twirl_legacy(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let (lw, lh) = (ctx.layer_size[0] * b.scale, ctx.layer_size[1] * b.scale);
     let r = (ctx.params.f("radius") / 100.0 * lw.min(lh) * 0.5).max(1.0);
     let c = b.to_px(ctx.params.v2("center"));
-    warp(e, 10, |p| p.f[0] = [c.0 as f32, c.1 as f32, r as f32, ang as f32], b, None)
+    warp(
+        e,
+        10,
+        |p| p.f[0] = [c.0 as f32, c.1 as f32, r as f32, ang as f32],
+        b,
+        None,
+    )
 }
 
 fn ripple_pulse(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -494,15 +565,29 @@ fn power_pin(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     }
     let persp = (ctx.params.f("perspective") / 100.0).clamp(0.0, 1.0);
     let (lw, lh) = (ctx.layer_size[0].max(1.0), ctx.layer_size[1].max(1.0));
-    let ex = [ctx.params.f("expandTop"), ctx.params.f("expandLeft"), ctx.params.f("expandRight"), ctx.params.f("expandBottom")];
+    let ex = [
+        ctx.params.f("expandTop"),
+        ctx.params.f("expandLeft"),
+        ctx.params.f("expandRight"),
+        ctx.params.f("expandBottom"),
+    ];
     let (x0, y0) = (-ex[1] / 100.0 * lw, -ex[0] / 100.0 * lh);
     let (x1, y1) = (lw + ex[2] / 100.0 * lw, lh + ex[3] / 100.0 * lh);
-    let corners = [ctx.params.v2("topLeft"), ctx.params.v2("topRight"), ctx.params.v2("bottomRight"), ctx.params.v2("bottomLeft")];
+    let corners = [
+        ctx.params.v2("topLeft"),
+        ctx.params.v2("topRight"),
+        ctx.params.v2("bottomRight"),
+        ctx.params.v2("bottomLeft"),
+    ];
     if !ctx.adjustment {
         let mut need = 0.0f64;
         for c in &corners {
             let (px, py) = b.to_px(*c);
-            need = need.max(-px).max(-py).max(px - b.img.width as f64).max(py - b.img.height as f64);
+            need = need
+                .max(-px)
+                .max(-py)
+                .max(px - b.img.width as f64)
+                .max(py - b.img.height as f64);
         }
         if need > 0.0 {
             b.pad(e, need.ceil().min(4096.0) as u32 + 1)?;
@@ -512,7 +597,9 @@ fn power_pin(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         let p = b.to_px(c);
         vec2(p.0, p.1)
     });
-    let Some(inv) = Mat3::square_to_quad(q).inverse() else { return Some(b) };
+    let Some(inv) = Mat3::square_to_quad(q).inverse() else {
+        return Some(b);
+    };
     let r = inv.0.map(|r| [r[0] as f32, r[1] as f32, r[2] as f32, 0.0]);
     let (sc, off) = (b.scale, b.offset);
     warp(
@@ -538,7 +625,10 @@ fn power_pin(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
 }
 
 fn flo_motion(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
-    let knots = [(ctx.params.v2("knot1"), ctx.params.f("amount1") / 100.0), (ctx.params.v2("knot2"), ctx.params.f("amount2") / 100.0)];
+    let knots = [
+        (ctx.params.v2("knot1"), ctx.params.f("amount1") / 100.0),
+        (ctx.params.v2("knot2"), ctx.params.f("amount2") / 100.0),
+    ];
     if knots.iter().all(|k| k.1 == 0.0) {
         return Some(b);
     }
@@ -563,7 +653,12 @@ fn flo_motion(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
 // ---------------------------------------------------------------- separable tables
 
 /// Per-column `fx(x + 0.5)` then per-row `fy(y + 0.5)`, `k` values each.
-fn axis_table<const K: usize>(w: u32, h: u32, fx: impl Fn(f64) -> [f64; K], fy: impl Fn(f64) -> [f64; K]) -> Vec<f32> {
+fn axis_table<const K: usize>(
+    w: u32,
+    h: u32,
+    fx: impl Fn(f64) -> [f64; K],
+    fy: impl Fn(f64) -> [f64; K],
+) -> Vec<f32> {
     let mut v = Vec::with_capacity((w + h) as usize * K);
     v.extend((0..w).flat_map(|x| fx(x as f64 + 0.5).map(|t| t as f32)));
     v.extend((0..h).flat_map(|y| fy(y as f64 + 0.5).map(|t| t as f32)));
@@ -584,20 +679,38 @@ fn offset(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let blend = ctx.params.f("blend") as f32 / 100.0;
     let (cx, cy) = (w / 2.0, h / 2.0);
     let (sx, sy) = b.to_px(shift);
-    let data = axis_table(b.img.width, b.img.height, |x| [(x - (sx - cx)).rem_euclid(w)], |y| [(y - (sy - cy)).rem_euclid(h)]);
+    let data = axis_table(
+        b.img.width,
+        b.img.height,
+        |x| [(x - (sx - cx)).rem_euclid(w)],
+        |y| [(y - (sy - cy)).rem_euclid(h)],
+    );
     table(e, b, &data, false, blend.max(0.0))
 }
 
 fn cc_tiler(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let s = (ctx.params.f("scale") / 100.0).max(0.001);
     if !ctx.adjustment {
-        b.pad(e, effectcraft_effects::util::layer_cover_pad(ctx, [b.img.width, b.img.height], b.offset, b.scale))?;
+        b.pad(
+            e,
+            effectcraft_effects::util::layer_cover_pad(
+                ctx,
+                [b.img.width, b.img.height],
+                b.offset,
+                b.scale,
+            ),
+        )?;
     }
     let c = b.to_px(ctx.params.v2("center"));
     let blend = (ctx.params.f("blendWithOriginal") / 100.0) as f32;
     let (x0, y0, w, h) = layer_rect(ctx, &b);
     let (w, h) = (w.max(1.0), h.max(1.0));
-    let data = axis_table(b.img.width, b.img.height, |x| [x0 + (c.0 + (x - c.0) / s - x0).rem_euclid(w)], |y| [y0 + (c.1 + (y - c.1) / s - y0).rem_euclid(h)]);
+    let data = axis_table(
+        b.img.width,
+        b.img.height,
+        |x| [x0 + (c.0 + (x - c.0) / s - x0).rem_euclid(w)],
+        |y| [y0 + (c.1 + (y - c.1) / s - y0).rem_euclid(h)],
+    );
     table(e, b, &data, true, blend)
 }
 
@@ -616,7 +729,12 @@ fn cc_griddler(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
         let tc = o + (((p - o) / t).floor() + 0.5) * t;
         [tc, p - tc]
     };
-    let data = axis_table(b.img.width, b.img.height, |x| centre(x, x0), |y| centre(y, y0));
+    let data = axis_table(
+        b.img.width,
+        b.img.height,
+        |x| centre(x, x0),
+        |y| centre(y, y0),
+    );
     let mut p = Params::default();
     p.u[0] = [b.img.width, cut as u32, 0, 0];
     p.f[0] = [cr as f32, sr as f32, hs as f32, vs as f32];
@@ -642,13 +760,22 @@ fn motion_tile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     } else {
         let ow = (lw * ctx.params.f("outputWidth") / 100.0).max(1.0 / s);
         let oh = (lh * ctx.params.f("outputHeight") / 100.0).max(1.0 / s);
-        ((ow * s).round().max(1.0) as u32, (oh * s).round().max(1.0) as u32, [(ow - lw) * 0.5 * s, (oh - lh) * 0.5 * s])
+        (
+            (ow * s).round().max(1.0) as u32,
+            (oh * s).round().max(1.0) as u32,
+            [(ow - lw) * 0.5 * s, (oh - lh) * 0.5 * s],
+        )
     };
     if !e.g.fits(nw, nh) {
         return None;
     }
     let split = |t: f64| [t.floor(), t - t.floor()];
-    let data = axis_table(nw, nh, |x| split(((x - noff[0]) / s - tc[0]) / tw + 0.5), |y| split(((y - noff[1]) / s - tc[1]) / th + 0.5));
+    let data = axis_table(
+        nw,
+        nh,
+        |x| split(((x - noff[0]) / s - tc[0]) / tw + 0.5),
+        |y| split(((y - noff[1]) / s - tc[1]) / th + 0.5),
+    );
     let mut p = Params::default();
     p.u[0] = [nw, hshift as u32, mirror as u32, 0];
     p.f[0] = [phase as f32, (lw * s) as f32, (lh * s) as f32, 0.0];
@@ -656,7 +783,11 @@ fn motion_tile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let buf = e.data(&data);
     let out = e.scratch(nw, nh);
     e.pixels("fxs_motiontile", &p, &b.img, None, &out, Some(&buf));
-    Some(GBuf { img: out, offset: noff, scale: s })
+    Some(GBuf {
+        img: out,
+        offset: noff,
+        scale: s,
+    })
 }
 
 fn repetile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
@@ -674,7 +805,10 @@ fn repetile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     if w < 1.0 || h < 1.0 {
         return Some(b);
     }
-    let (nw, nh) = ((w + l + r).round().max(1.0) as u32, (h + u + d).round().max(1.0) as u32);
+    let (nw, nh) = (
+        (w + l + r).round().max(1.0) as u32,
+        (h + u + d).round().max(1.0) as u32,
+    );
     if !e.g.fits(nw, nh) {
         return None;
     }
@@ -690,7 +824,11 @@ fn repetile(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let buf = e.data(&data);
     let out = e.scratch(nw, nh);
     e.pixels("fxs_repetile", &p, &b.img, None, &out, Some(&buf));
-    Some(GBuf { img: out, offset: [l, u], scale: s })
+    Some(GBuf {
+        img: out,
+        offset: [l, u],
+        scale: s,
+    })
 }
 
 fn magnify(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
@@ -708,11 +846,20 @@ fn magnify(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     }
     let op = (ctx.params.f("opacity") / 100.0) as f32;
     let mode = ctx.params.e("blendingMode") as usize;
-    let blend = effectcraft_effects::MAGNIFY_MODES.get(mode.wrapping_sub(1)).copied();
+    let blend = effectcraft_effects::MAGNIFY_MODES
+        .get(mode.wrapping_sub(1))
+        .copied();
     if ctx.params.b("resizeLayer") && link == 0 && !ctx.adjustment {
         let (lx, ly, lw, lh) = layer_rect(ctx, &b);
         let reach = size.max(0.0);
-        let over = [lx - (c.0 - reach), (c.0 + reach) - (lx + lw), ly - (c.1 - reach), (c.1 + reach) - (ly + lh)].into_iter().fold(0.0, f64::max);
+        let over = [
+            lx - (c.0 - reach),
+            (c.0 + reach) - (lx + lw),
+            ly - (c.1 - reach),
+            (c.1 + reach) - (ly + lh),
+        ]
+        .into_iter()
+        .fold(0.0, f64::max);
         b.pad(e, over.min(4096.0).ceil() as u32)?;
     }
     let c = b.to_px(ctx.params.v2("center"));
@@ -721,7 +868,12 @@ fn magnify(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         let sp = c + d / mag;
         [d, sp, sp.floor() + 0.5]
     };
-    let data = axis_table(b.img.width, b.img.height, |x| axis(x, c.0), |y| axis(y, c.1));
+    let data = axis_table(
+        b.img.width,
+        b.img.height,
+        |x| axis(x, c.0),
+        |y| axis(y, c.1),
+    );
     let (kind, mode_id) = match blend {
         None => (0, 0),
         Some(BlendMode::Normal) => (1, 0),
@@ -743,7 +895,11 @@ fn scatter(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     if amt <= 0.0 {
         return Some(b);
     }
-    let seed = if ctx.params.b("randomizeEveryFrame") { ctx.seed ^ ((ctx.time * 1000.0) as u32).wrapping_mul(0x9e37_79b9) } else { ctx.seed };
+    let seed = if ctx.params.b("randomizeEveryFrame") {
+        ctx.seed ^ ((ctx.time * 1000.0) as u32).wrapping_mul(0x9e37_79b9)
+    } else {
+        ctx.seed
+    };
     let mut p = Params::default();
     p.u[0] = [ctx.params.e("grain"), seed, 0, 0];
     p.f[0][0] = amt as f32;
@@ -761,21 +917,34 @@ fn brush_strokes(e: &mut Enc, ctx: &EffectCtx, b: GBuf) -> Option<GBuf> {
     let cell = (size * 2.0).max(1.0);
     let (w, h) = (b.img.width, b.img.height);
     let cell_of = |i: u32| (i as f64 / cell).floor() as i64 as u32;
-    let (ncx, ncy) = (cell_of(w.saturating_sub(1)) + 1, cell_of(h.saturating_sub(1)) + 1);
+    let (ncx, ncy) = (
+        cell_of(w.saturating_sub(1)) + 1,
+        cell_of(h.saturating_sub(1)) + 1,
+    );
     if (ncx as u64 * ncy as u64 * 6 + (w + h) as u64) >= 1 << 24 {
         return None;
     }
-    let mut data: Vec<f32> = (0..w).map(|x| cell_of(x) as f32).chain((0..h).map(|y| cell_of(y) as f32)).collect();
+    let mut data: Vec<f32> = (0..w)
+        .map(|x| cell_of(x) as f32)
+        .chain((0..h).map(|y| cell_of(y) as f32))
+        .collect();
     data.reserve((ncx * ncy * 6) as usize);
     for cy in 0..ncy {
         for cx in 0..ncx {
-            let hh = |k: u32| effectcraft_raster::hash_noise(cx.wrapping_add(k.wrapping_mul(7919)), cy, seed) as f64;
+            let hh = |k: u32| {
+                effectcraft_raster::hash_noise(cx.wrapping_add(k.wrapping_mul(7919)), cy, seed)
+                    as f64
+            };
             let a = (ang + (hh(0) - 0.5) * rnd * 60.0).to_radians();
             let l = len * (0.5 + hh(1));
             let (dx, dy) = (a.sin(), -a.cos());
             let jit = (hh(2) - 0.5) * size;
             let n = l.ceil().clamp(1.0, 32.0);
-            let m = if (hh(3) as f32) < density.min(1.0) { 1.0 } else { 0.0 };
+            let m = if (hh(3) as f32) < density.min(1.0) {
+                1.0
+            } else {
+                0.0
+            };
             data.extend([dx as f32, dy as f32, l as f32, jit as f32, n as f32, m]);
         }
     }
@@ -798,7 +967,10 @@ fn roughen_edges(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let evo = ctx.params.f("evolution") as f32 / 360.0;
     let st = ctx.params.f("stretch") as f32;
     let (sx, sy) = (1.0 + st.max(0.0), 1.0 + (-st).max(0.0));
-    let cycle = ctx.params.b("evolutionOptions/cycleEvolution").then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0) as f32);
+    let cycle = ctx
+        .params
+        .b("evolutionOptions/cycleEvolution")
+        .then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0) as f32);
     let (evo, evo_w, c) = match cycle {
         Some(c) => {
             let ev = evo.rem_euclid(c);
@@ -817,9 +989,16 @@ fn roughen_edges(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         _ => (1.0, 1.0, 1.0, false),
     };
     let extra = if kind == 4 || kind == 5 { 1.0 } else { 0.0 };
-    let seed = ctx.seed ^ 0x40f1 ^ (ctx.params.f("evolutionOptions/randomSeed").round() as i64 as u32).wrapping_mul(0x9e37_79b9);
+    let seed = ctx.seed
+        ^ 0x40f1
+        ^ (ctx.params.f("evolutionOptions/randomSeed").round() as i64 as u32)
+            .wrapping_mul(0x9e37_79b9);
     // util::gauss_plane of the alpha (edges repeated); the kernel reads .w.
-    let d = if border > 0.05 { gaussian_blur(e, &b.img, border * 0.5, border * 0.5, true) } else { b.img.clone() };
+    let d = if border > 0.05 {
+        gaussian_blur(e, &b.img, border * 0.5, border * 0.5, true)
+    } else {
+        b.img.clone()
+    };
     let mut p = Params::default();
     p.u[0] = [seed, cycle.is_some() as u32, colored as u32, 0];
     p.f[0] = [ox as f32, oy as f32, scale * sx, scale * sy];
@@ -838,7 +1017,9 @@ fn texturize(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     if k == 0.0 {
         return Some(b);
     }
-    let Some(tex) = ctx.layer_param("textureLayer", true) else { return Some(b) };
+    let Some(tex) = ctx.layer_param("textureLayer", true) else {
+        return Some(b);
+    };
     if tex.buf.img.is_empty() {
         return None;
     }
@@ -883,9 +1064,21 @@ fn corner_pin(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     });
     let quad = Mat3::square_to_quad(q);
     let o = b.to_px([0.0, 0.0]);
-    let m = quad * Mat3::scale(vec2(1.0 / (w * b.scale), 1.0 / (h * b.scale))) * Mat3::translate(vec2(-o.0, -o.1));
+    let m = quad
+        * Mat3::scale(vec2(1.0 / (w * b.scale), 1.0 / (h * b.scale)))
+        * Mat3::translate(vec2(-o.0, -o.1));
     let empty = e.image(b.img.width, b.img.height);
-    b.img = ops::warp(e, &empty, &b.img, &m, Sampling::Bilinear, BlendMode::Normal, 1.0, 0, None);
+    b.img = ops::warp(
+        e,
+        &empty,
+        &b.img,
+        &m,
+        Sampling::Bilinear,
+        BlendMode::Normal,
+        1.0,
+        0,
+        None,
+    );
     Some(b)
 }
 
@@ -916,13 +1109,25 @@ pub(crate) fn glow(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
         b.pad(e, (radius * 1.5).ceil() as u32 + 2)?;
     }
     let mut p = Params::default();
-    p.u[0] = [(colors == 1) as u32, (ctx.params.e("based") == 0) as u32, ctx.params.e("colorLooping"), 0];
-    p.f[0] = [thr, ctx.params.f("colorLoops") as f32, (ctx.params.f("colorPhase") / 360.0) as f32, ctx.params.f("abMidpoint") as f32 / 100.0];
+    p.u[0] = [
+        (colors == 1) as u32,
+        (ctx.params.e("based") == 0) as u32,
+        ctx.params.e("colorLooping"),
+        0,
+    ];
+    p.f[0] = [
+        thr,
+        ctx.params.f("colorLoops") as f32,
+        (ctx.params.f("colorPhase") / 360.0) as f32,
+        ctx.params.f("abMidpoint") as f32 / 100.0,
+    ];
     let bright = e.image(b.img.width, b.img.height);
     if colors == 2 {
         // Arbitrary Map: Curves tables per channel (see effects::curves).
         let mut parts = ctx.params.s("arbitraryMap").split('|');
-        let curves: Vec<Option<effectcraft_effects::Curve>> = (0..3).map(|_| parts.next().and_then(effectcraft_effects::Curve::parse)).collect();
+        let curves: Vec<Option<effectcraft_effects::Curve>> = (0..3)
+            .map(|_| parts.next().and_then(effectcraft_effects::Curve::parse))
+            .collect();
         let mut data = vec![0.0f32];
         let mut offs = [-1.0f32; 3];
         for (i, c) in curves.iter().enumerate() {
@@ -972,7 +1177,11 @@ fn transform_matrix(pr: &effectcraft_effects::Params, b: &GBuf) -> Mat3 {
     let anchor = b.to_px(pr.v2("anchor"));
     let pos = b.to_px(pr.v2("position"));
     let sh = pr.f("scaleHeight");
-    let sw = if pr.b("uniform") { sh } else { pr.f("scaleWidth") };
+    let sw = if pr.b("uniform") {
+        sh
+    } else {
+        pr.f("scaleWidth")
+    };
     Mat3::translate(vec2(pos.0, pos.1))
         * Mat3::rotate_deg(pr.f("rotation"))
         * Mat3::skew_deg(pr.f("skew"), pr.f("skewAxis"))
@@ -985,17 +1194,33 @@ fn transform_matrix(pr: &effectcraft_effects::Params, b: &GBuf) -> Mat3 {
 pub(crate) fn transform(e: &mut Enc, ctx: &EffectCtx, mut b: GBuf) -> Option<GBuf> {
     let (angle, phase, n) = effectcraft_effects::transform_shutter(ctx)?;
     let host = ctx.env.host?;
-    let sampling = if ctx.params.e("sampling") == 1 { Sampling::Bicubic } else { Sampling::Bilinear };
+    let sampling = if ctx.params.e("sampling") == 1 {
+        Sampling::Bicubic
+    } else {
+        Sampling::Bilinear
+    };
     let fd = 1.0 / ctx.fps();
     let (w, h) = (b.img.width, b.img.height);
     let mut acc = e.image(w, h);
     let mut count = 0u32;
     for k in 0..n {
         let t = ctx.time + (phase + angle * k as f64 / (n - 1) as f64) / 360.0 * fd;
-        let Some(pr) = host.params_at(t) else { continue };
+        let Some(pr) = host.params_at(t) else {
+            continue;
+        };
         let op = pr.f("opacity") as f32 / 100.0;
         let empty = e.image(w, h);
-        let one = ops::warp(e, &empty, &b.img, &transform_matrix(&pr, &b), sampling, BlendMode::Normal, op, 0, None);
+        let one = ops::warp(
+            e,
+            &empty,
+            &b.img,
+            &transform_matrix(&pr, &b),
+            sampling,
+            BlendMode::Normal,
+            op,
+            0,
+            None,
+        );
         let sum = e.image(w, h);
         e.pixels("fxs_add", &Params::default(), &acc, Some(&one), &sum, None);
         acc = sum;

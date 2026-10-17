@@ -12,7 +12,15 @@ pub const KAPPA: f64 = 0.552_284_749_830_793_6;
 /// Rectangle with 4 corner anchors, clockwise from the top-left.
 pub fn rectangle(r: Rect) -> PathData {
     let r = r.abs();
-    PathData::single(SubPath::polyline(&[Point::new(r.x0, r.y0), Point::new(r.x1, r.y0), Point::new(r.x1, r.y1), Point::new(r.x0, r.y1)], true))
+    PathData::single(SubPath::polyline(
+        &[
+            Point::new(r.x0, r.y0),
+            Point::new(r.x1, r.y0),
+            Point::new(r.x1, r.y1),
+            Point::new(r.x0, r.y1),
+        ],
+        true,
+    ))
 }
 
 /// Rounded rectangle (8 anchors). The radius is clamped to half the shorter side.
@@ -24,7 +32,12 @@ pub fn rounded_rectangle(r: Rect, radius: f64) -> PathData {
     }
     let k = rad * KAPPA;
     let (x0, y0, x1, y1) = (r.x0, r.y0, r.x1, r.y1);
-    let a = |p: (f64, f64), hin: (f64, f64), hout: (f64, f64)| Anchor { p: p.into(), h_in: hin.into(), h_out: hout.into(), kind: AnchorKind::Corner };
+    let a = |p: (f64, f64), hin: (f64, f64), hout: (f64, f64)| Anchor {
+        p: p.into(),
+        h_in: hin.into(),
+        h_out: hout.into(),
+        kind: AnchorKind::Corner,
+    };
     let anchors = vec![
         a((x0 + rad, y0), (x0 + rad - k, y0), (x0 + rad, y0)),
         a((x1 - rad, y0), (x1 - rad, y0), (x1 - rad + k, y0)),
@@ -46,7 +59,12 @@ pub fn ellipse(r: Rect) -> PathData {
     let ry = r.height() / 2.0;
     let kx = rx * KAPPA;
     let ky = ry * KAPPA;
-    let s = |p: Point, hin: Vec2| Anchor { p, h_in: p + hin, h_out: p - hin, kind: AnchorKind::Smooth };
+    let s = |p: Point, hin: Vec2| Anchor {
+        p,
+        h_in: p + hin,
+        h_out: p - hin,
+        kind: AnchorKind::Smooth,
+    };
     let anchors = vec![
         s(Point::new(c.x - rx, c.y), Vec2::new(0.0, ky)),
         s(Point::new(c.x, c.y - ry), Vec2::new(-kx, 0.0)),
@@ -101,8 +119,20 @@ pub fn arc(a: Point, b: Point, slope: f64, closed: bool) -> PathData {
     let corner = Point::new(b.x, a.y);
     let h1 = a + (corner - a) * k;
     let h2 = b + (corner - b) * k;
-    let mut anchors =
-        vec![Anchor { p: a, h_in: a, h_out: h1, kind: AnchorKind::Corner }, Anchor { p: b, h_in: h2, h_out: b, kind: AnchorKind::Corner }];
+    let mut anchors = vec![
+        Anchor {
+            p: a,
+            h_in: a,
+            h_out: h1,
+            kind: AnchorKind::Corner,
+        },
+        Anchor {
+            p: b,
+            h_in: h2,
+            h_out: b,
+            kind: AnchorKind::Corner,
+        },
+    ];
     if closed {
         let o = Point::new(a.x, b.y);
         anchors.push(Anchor::corner(o));
@@ -111,7 +141,13 @@ pub fn arc(a: Point, b: Point, slope: f64, closed: bool) -> PathData {
 }
 
 /// Archimedean-style spiral approximating InDesign's Spiral tool (decay-based, `segments` quarter turns).
-pub fn spiral(center: Point, radius: f64, decay_percent: f64, segments: u32, clockwise: bool) -> PathData {
+pub fn spiral(
+    center: Point,
+    radius: f64,
+    decay_percent: f64,
+    segments: u32,
+    clockwise: bool,
+) -> PathData {
     let decay = (decay_percent / 100.0).clamp(0.05, 0.9999);
     let dir = if clockwise { 1.0 } else { -1.0 };
     let mut anchors = Vec::new();
@@ -125,7 +161,12 @@ pub fn spiral(center: Point, radius: f64, decay_percent: f64, segments: u32, clo
         let r_next = r * decay;
         let h_in = p - t * (KAPPA * (r + r_prev) / 2.0);
         let h_out = p + t * (KAPPA * (r + r_next) / 2.0);
-        anchors.push(Anchor { p, h_in: if i == 0 { p } else { h_in }, h_out: if i == segments { p } else { h_out }, kind: AnchorKind::Smooth });
+        anchors.push(Anchor {
+            p,
+            h_in: if i == 0 { p } else { h_in },
+            h_out: if i == segments { p } else { h_out },
+            kind: AnchorKind::Smooth,
+        });
         r *= decay;
     }
     // InDesign spirals wind inward from the outer point; reverse so the path starts at the centre end.
@@ -159,11 +200,20 @@ pub fn polar_grid(r: Rect, concentric: u32, radial: u32) -> Vec<PathData> {
     let mut out = Vec::new();
     for i in 1..=concentric + 1 {
         let f = i as f64 / (concentric + 1) as f64;
-        out.push(ellipse(Rect::from_center_size(c, (r.width() * f, r.height() * f))));
+        out.push(ellipse(Rect::from_center_size(
+            c,
+            (r.width() * f, r.height() * f),
+        )));
     }
     for i in 0..radial.max(1) {
         let a = -PI / 2.0 + TAU * i as f64 / radial.max(1) as f64;
-        out.push(line(c, Point::new(c.x + r.width() / 2.0 * a.cos(), c.y + r.height() / 2.0 * a.sin())));
+        out.push(line(
+            c,
+            Point::new(
+                c.x + r.width() / 2.0 * a.cos(),
+                c.y + r.height() / 2.0 * a.sin(),
+            ),
+        ));
     }
     out
 }
@@ -200,7 +250,10 @@ mod tests {
         let p = rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 100.0);
         assert_eq!(p.anchor_count(), 8);
         assert_eq!(p.bounds(), Some(Rect::new(0.0, 0.0, 20.0, 10.0)));
-        assert_eq!(rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 0.0).anchor_count(), 4);
+        assert_eq!(
+            rounded_rectangle(Rect::new(0.0, 0.0, 20.0, 10.0), 0.0).anchor_count(),
+            4
+        );
     }
 
     #[test]
@@ -215,7 +268,11 @@ mod tests {
     fn star_alternates_radii() {
         let p = star(Point::ZERO, 10.0, 5.0, 5, 0.0);
         assert_eq!(p.anchor_count(), 10);
-        let d: Vec<f64> = p.subpaths[0].anchors.iter().map(|a| a.p.to_vec2().hypot()).collect();
+        let d: Vec<f64> = p.subpaths[0]
+            .anchors
+            .iter()
+            .map(|a| a.p.to_vec2().hypot())
+            .collect();
         assert!((d[0] - 10.0).abs() < 1e-9 && (d[1] - 5.0).abs() < 1e-9);
     }
 
@@ -234,13 +291,19 @@ mod tests {
 
     #[test]
     fn grids() {
-        assert_eq!(rectangular_grid(Rect::new(0.0, 0.0, 10.0, 10.0), 5, 5, true).len(), 11);
+        assert_eq!(
+            rectangular_grid(Rect::new(0.0, 0.0, 10.0, 10.0), 5, 5, true).len(),
+            11
+        );
         assert_eq!(polar_grid(Rect::new(0.0, 0.0, 10.0, 10.0), 5, 5).len(), 11);
     }
 
     #[test]
     fn arc_open_and_closed() {
-        assert_eq!(arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, false).anchor_count(), 2);
+        assert_eq!(
+            arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, false).anchor_count(),
+            2
+        );
         assert!(arc(Point::ZERO, Point::new(10.0, 10.0), 0.0, true).subpaths[0].closed);
     }
 }

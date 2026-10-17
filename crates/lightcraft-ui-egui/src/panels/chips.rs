@@ -18,18 +18,29 @@ const TAIL: f32 = 170.0;
 /// "14 of 120 photos" when a filter narrows the source, else "14 photos".
 pub fn count_text(matching: usize, total: Option<usize>, filtering: bool) -> String {
     match total {
-        Some(t) if filtering && t != matching => crate::i18n::tr_format!("{matching} of {t} photos", matching = matching, t = t),
+        Some(t) if filtering && t != matching => {
+            crate::i18n::tr_format!("{matching} of {t} photos", matching = matching, t = t)
+        }
         _ => crate::i18n::tr_format!("{matching} photos", matching = matching),
     }
 }
 
 /// Width of a chip with `label` (text + the × button).
 fn chip_width(ui: &egui::Ui, label: &str, font: egui::FontId) -> f32 {
-    ui.painter().layout_no_wrap(label.to_string(), font, egui::Color32::WHITE).size().x + 12.0 + 22.0
+    ui.painter()
+        .layout_no_wrap(label.to_string(), font, egui::Color32::WHITE)
+        .size()
+        .x
+        + 12.0
+        + 22.0
 }
 
 /// Localise generated chip labels without rewriting search text or metadata values.
-pub(crate) fn display_label(chip: &FilterChip, filter: &lightcraft_catalog::Filter, catalog: &lightcraft_catalog::Catalog) -> String {
+pub(crate) fn display_label(
+    chip: &FilterChip,
+    filter: &lightcraft_catalog::Filter,
+    catalog: &lightcraft_catalog::Catalog,
+) -> String {
     use crate::i18n::{date_group_label, rules_label, tr};
     if crate::i18n::language() == crate::i18n::Locale::En {
         return chip.label.clone();
@@ -42,27 +53,51 @@ pub(crate) fn display_label(chip: &FilterChip, filter: &lightcraft_catalog::Filt
     if chip.clear.get("label").is_some() {
         let mut labels = filter.labels.clone();
         labels.extend(filter.label.filter(|label| !labels.contains(label)));
-        let names = labels.iter().map(|label| crate::i18n::color_label(catalog, *label)).collect::<Vec<_>>();
-        return format!("{}: {}", tr("Label"), names.join(&format!(" {} ", tr("or"))));
+        let names = labels
+            .iter()
+            .map(|label| crate::i18n::color_label(catalog, *label))
+            .collect::<Vec<_>>();
+        return format!(
+            "{}: {}",
+            tr("Label"),
+            names.join(&format!(" {} ", tr("or")))
+        );
     }
     if chip.clear.get("dateFrom").is_some() || chip.clear.get("dateTo").is_some() {
         return match (&filter.date_from, &filter.date_to) {
-            (Some(from), Some(to)) => format!("{} {} – {}", tr("Captured"), date_group_label(from, false), date_group_label(to, false)),
-            (Some(from), None) => format!("{} {}", tr("Captured from"), date_group_label(from, false)),
+            (Some(from), Some(to)) => format!(
+                "{} {} – {}",
+                tr("Captured"),
+                date_group_label(from, false),
+                date_group_label(to, false)
+            ),
+            (Some(from), None) => {
+                format!("{} {}", tr("Captured from"), date_group_label(from, false))
+            }
             (None, Some(to)) => format!("{} {}", tr("Captured until"), date_group_label(to, false)),
             _ => chip.label.clone(),
         };
     }
     if chip.clear.get("only").is_some() {
-        return format!("{} {}", tr("Only"), crate::i18n::tr_format!("{n} photos", n = filter.only.len()));
+        return format!(
+            "{} {}",
+            tr("Only"),
+            crate::i18n::tr_format!("{n} photos", n = filter.only.len())
+        );
     }
     if let Some((prefix, value)) = chip.label.split_once(": ") {
         let value = if matches!(prefix, "Flag" | "Type") {
             tr(value).to_string()
         } else if prefix == "Date" {
-            filter.date.as_ref().map_or_else(|| value.to_string(), |date| date_group_label(date, false))
+            filter
+                .date
+                .as_ref()
+                .map_or_else(|| value.to_string(), |date| date_group_label(date, false))
         } else if prefix == "Imported" {
-            filter.imported.as_ref().map_or_else(|| value.to_string(), |date| date_group_label(date, false))
+            filter
+                .imported
+                .as_ref()
+                .map_or_else(|| value.to_string(), |date| date_group_label(date, false))
         } else {
             value.to_string()
         };
@@ -96,17 +131,32 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui, chips: &[FilterChip]) {
             break;
         }
         let r = Rect::from_min_size(pos2(x, bar.center().y - 11.0), vec2(w.min(right - x), 22.0));
-        ui.painter().rect(r, 11.0, t.field, Stroke::new(1.0, t.accent.gamma_multiply(0.6)), StrokeKind::Inside);
+        ui.painter().rect(
+            r,
+            11.0,
+            t.field,
+            Stroke::new(1.0, t.accent.gamma_multiply(0.6)),
+            StrokeKind::Inside,
+        );
         let text_r = Rect::from_min_max(r.min, pos2(r.right() - 22.0, r.max.y));
-        ui.painter().with_clip_rect(text_r).text(pos2(r.left() + 10.0, r.center().y), egui::Align2::LEFT_CENTER, &label, font.clone(), t.text);
+        ui.painter().with_clip_rect(text_r).text(
+            pos2(r.left() + 10.0, r.center().y),
+            egui::Align2::LEFT_CENTER,
+            &label,
+            font.clone(),
+            t.text,
+        );
         let xr = Rect::from_center_size(pos2(r.right() - 12.0, r.center().y), vec2(18.0, 18.0));
-        let resp = ui.interact(xr, egui::Id::new(("filter-chip-x", i)), Sense::click()).on_hover_text(crate::i18n::tr("Remove this filter"));
+        let resp = ui
+            .interact(xr, egui::Id::new(("filter-chip-x", i)), Sense::click())
+            .on_hover_text(crate::i18n::tr("Remove this filter"));
         register(ui.ctx(), format!("chip:{i}"), xr);
         let col = if resp.hovered() { t.text } else { t.text_dim };
         let m = 3.5;
         let (a, b) = (xr.center() - vec2(m, m), xr.center() + vec2(m, m));
         ui.painter().line_segment([a, b], Stroke::new(1.3, col));
-        ui.painter().line_segment([pos2(a.x, b.y), pos2(b.x, a.y)], Stroke::new(1.3, col));
+        ui.painter()
+            .line_segment([pos2(a.x, b.y), pos2(b.x, a.y)], Stroke::new(1.3, col));
         if resp.clicked() {
             let _ = app.run("library.filter", c.clear.clone());
             if c.clear.get("text").is_some() {
@@ -118,17 +168,28 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui, chips: &[FilterChip]) {
     }
     let mut child = ui.new_child(
         egui::UiBuilder::new()
-            .max_rect(Rect::from_min_max(pos2(x, bar.top() + 4.0), pos2(right, bar.bottom() - 4.0)))
+            .max_rect(Rect::from_min_max(
+                pos2(x, bar.top() + 4.0),
+                pos2(right, bar.bottom() - 4.0),
+            ))
             .layout(egui::Layout::left_to_right(egui::Align::Center)),
     );
     child.spacing_mut().item_spacing.x = 8.0;
     let hidden = &chips[shown..];
     if !hidden.is_empty() {
-        let more = crate::widgets::text_button(&mut child, "chipsMore", &crate::i18n::tr_format!("+{} more", hidden.len()), false);
+        let more = crate::widgets::text_button(
+            &mut child,
+            "chipsMore",
+            &crate::i18n::tr_format!("+{} more", hidden.len()),
+            false,
+        );
         egui::Popup::menu(&more).show(|ui| {
             for c in hidden {
                 if ui
-                    .button(format!("{}  ✕", display_label(c, &app.session.filter, &app.session.catalog)))
+                    .button(format!(
+                        "{}  ✕",
+                        display_label(c, &app.session.filter, &app.session.catalog)
+                    ))
                     .on_hover_text(crate::i18n::tr("Remove this filter"))
                     .clicked()
                 {
@@ -140,7 +201,14 @@ pub fn show(app: &mut LightcraftApp, ui: &mut egui::Ui, chips: &[FilterChip]) {
             }
         });
     }
-    if crate::widgets::text_button(&mut child, "chipsClearAll", crate::i18n::tr("Clear all"), false).clicked() {
+    if crate::widgets::text_button(
+        &mut child,
+        "chipsClearAll",
+        crate::i18n::tr("Clear all"),
+        false,
+    )
+    .clicked()
+    {
         app.ui.search.clear();
         let _ = app.run("library.clearFilter", json!({}));
     }

@@ -25,7 +25,9 @@ use std::process::Command;
 
 use serde_json::{Value, json};
 
-pub const SECTIONS: &[&str] = &["decode", "seek", "playback", "scrub", "timeline", "export", "project"];
+pub const SECTIONS: &[&str] = &[
+    "decode", "seek", "playback", "scrub", "timeline", "export", "project",
+];
 
 #[derive(Clone)]
 pub struct Opts {
@@ -45,7 +47,10 @@ impl Opts {
 }
 
 fn arg_value(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn main() {
@@ -58,7 +63,10 @@ fn main() {
         return;
     }
     let opts = Opts {
-        repeat: arg_value(&args, "--repeat").and_then(|v| v.parse().ok()).unwrap_or(1).max(1),
+        repeat: arg_value(&args, "--repeat")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(1)
+            .max(1),
         quick: args.iter().any(|a| a == "--quick"),
         gpu: !args.iter().any(|a| a == "--cpu"),
         only: arg_value(&args, "--only"),
@@ -98,19 +106,28 @@ fn run_section(name: &str, o: &Opts) -> Value {
 /// Run each section in a child process under `/usr/bin/time` (peak RSS), then write JSON and
 /// Markdown reports.
 fn orchestrate(args: &[String], o: &Opts) {
-    let wanted: Vec<String> =
-        arg_value(args, "--sections").map(|s| s.split(',').map(str::to_string).collect()).unwrap_or_else(|| SECTIONS.iter().map(|s| s.to_string()).collect());
+    let wanted: Vec<String> = arg_value(args, "--sections")
+        .map(|s| s.split(',').map(str::to_string).collect())
+        .unwrap_or_else(|| SECTIONS.iter().map(|s| s.to_string()).collect());
     let label = arg_value(args, "--label").unwrap_or_else(|| "latest".into());
-    let out = arg_value(args, "--out").map(PathBuf::from).unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/bench"));
+    let out = arg_value(args, "--out")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/bench"));
     std::fs::create_dir_all(&out).expect("output dir");
     let exe = std::env::current_exe().expect("exe");
     let machine = machine_info();
-    println!("FilmCraft bench `{label}`: {}", machine["summary"].as_str().unwrap_or(""));
+    println!(
+        "FilmCraft bench `{label}`: {}",
+        machine["summary"].as_str().unwrap_or("")
+    );
     let mut results = Vec::new();
     for name in &wanted {
         let tmp = out.join(format!(".section-{name}-{}.json", std::process::id()));
         let mut cmd = time_wrapper();
-        cmd.arg(&exe).args(["--section", name, "--json"]).arg(&tmp).args(["--repeat", &o.repeat.to_string()]);
+        cmd.arg(&exe)
+            .args(["--section", name, "--json"])
+            .arg(&tmp)
+            .args(["--repeat", &o.repeat.to_string()]);
         if o.quick {
             cmd.arg("--quick");
         }
@@ -122,7 +139,10 @@ fn orchestrate(args: &[String], o: &Opts) {
         }
         cmd.args(["--hw", &o.hw]);
         eprintln!("== {name} (load {})", playback::load_avg());
-        let output = cmd.stderr(std::process::Stdio::piped()).output().expect("run section");
+        let output = cmd
+            .stderr(std::process::Stdio::piped())
+            .output()
+            .expect("run section");
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
         // pass the child's progress output through (minus the time report)
         for l in child_lines(&stderr) {
@@ -131,7 +151,9 @@ fn orchestrate(args: &[String], o: &Opts) {
         let mut v: Value = std::fs::read(&tmp)
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
-            .unwrap_or_else(|| json!({"section": name, "error": format!("section failed: {}", output.status)}));
+            .unwrap_or_else(
+                || json!({"section": name, "error": format!("section failed: {}", output.status)}),
+            );
         let _ = std::fs::remove_file(&tmp);
         if let Some(rss) = peak_rss_bytes(&stderr) {
             v["peak_rss_mb"] = json!(rss as f64 / 1e6);
@@ -142,7 +164,8 @@ fn orchestrate(args: &[String], o: &Opts) {
     let doc = json!({"label": label, "machine": machine, "repeat": o.repeat, "quick": o.quick, "gpu": o.gpu, "hw": o.hw, "sections": results});
     let jp = out.join(format!("bench-{label}.json"));
     let mp = out.join(format!("bench-{label}.md"));
-    std::fs::write(&jp, serde_json::to_string_pretty(&doc).unwrap_or_default()).expect("write json");
+    std::fs::write(&jp, serde_json::to_string_pretty(&doc).unwrap_or_default())
+        .expect("write json");
     std::fs::write(&mp, markdown(&doc)).expect("write md");
     println!("wrote {} and {}", jp.display(), mp.display());
 }
@@ -151,7 +174,11 @@ fn time_wrapper() -> Command {
     let time = Path::new("/usr/bin/time");
     if time.exists() {
         let mut c = Command::new(time);
-        c.arg(if cfg!(target_os = "macos") { "-l" } else { "-v" });
+        c.arg(if cfg!(target_os = "macos") {
+            "-l"
+        } else {
+            "-v"
+        });
         c
     } else {
         // No `time`: run the section directly (no peak RSS).
@@ -164,7 +191,13 @@ fn time_wrapper() -> Command {
 /// The child's own output: everything before the `time` report (macOS `-l`: a "… real … user …"
 /// line; GNU `-v`: "Command being timed").
 fn child_lines(stderr: &str) -> Vec<&str> {
-    stderr.lines().take_while(|l| !(l.trim_start().starts_with("Command being timed") || (l.contains(" real ") && l.contains(" user ")))).collect()
+    stderr
+        .lines()
+        .take_while(|l| {
+            !(l.trim_start().starts_with("Command being timed")
+                || (l.contains(" real ") && l.contains(" user ")))
+        })
+        .collect()
 }
 
 /// Peak RSS in bytes from `/usr/bin/time -l` (macOS: bytes) or `-v` (GNU: kbytes).
@@ -182,20 +215,41 @@ fn peak_rss_bytes(stderr: &str) -> Option<u64> {
 }
 
 fn sh(cmd: &str, args: &[&str]) -> Option<String> {
-    Command::new(cmd).args(args).output().ok().filter(|o| o.status.success()).map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+    Command::new(cmd)
+        .args(args)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
 }
 
 fn machine_info() -> Value {
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     let cpu = sh("sysctl", &["-n", "machdep.cpu.brand_string"])
         .or_else(|| {
-            std::fs::read_to_string("/proc/cpuinfo")
-                .ok()
-                .and_then(|c| c.lines().find(|l| l.starts_with("model name")).and_then(|l| l.split(':').nth(1)).map(|s| s.trim().to_string()))
+            std::fs::read_to_string("/proc/cpuinfo").ok().and_then(|c| {
+                c.lines()
+                    .find(|l| l.starts_with("model name"))
+                    .and_then(|l| l.split(':').nth(1))
+                    .map(|s| s.trim().to_string())
+            })
         })
-        .or_else(|| sh("powershell", &["-NoProfile", "-Command", "(Get-CimInstance Win32_Processor | Select-Object -First 1).Name"]))
+        .or_else(|| {
+            sh(
+                "powershell",
+                &[
+                    "-NoProfile",
+                    "-Command",
+                    "(Get-CimInstance Win32_Processor | Select-Object -First 1).Name",
+                ],
+            )
+        })
         .unwrap_or_else(|| "unknown CPU".into());
-    let mem_gb = sh("sysctl", &["-n", "hw.memsize"]).and_then(|m| m.parse::<u64>().ok()).map(|b| b as f64 / (1u64 << 30) as f64);
+    let mem_gb = sh("sysctl", &["-n", "hw.memsize"])
+        .and_then(|m| m.parse::<u64>().ok())
+        .map(|b| b as f64 / (1u64 << 30) as f64);
     let os = sh("uname", &["-sr"]).unwrap_or_default();
     let date = sh("date", &["-u", "+%Y-%m-%d %H:%M UTC"]).unwrap_or_default();
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -338,12 +392,32 @@ pub fn section_markdown(v: &Value) -> String {
             ],
             2,
         ),
-        "project" => (&[("what", "operation"), ("clips", "clips"), ("mbytes", "file MB"), ("p50_ms", "p50 ms"), ("min_ms", "min ms"), ("load", "load")], 1),
+        "project" => (
+            &[
+                ("what", "operation"),
+                ("clips", "clips"),
+                ("mbytes", "file MB"),
+                ("p50_ms", "p50 ms"),
+                ("min_ms", "min ms"),
+                ("load", "load"),
+            ],
+            1,
+        ),
         _ => (&[], 1),
     };
-    s += &format!("| {} |\n|{}|\n", cols.iter().map(|c| c.1).collect::<Vec<_>>().join(" | "), cols.iter().map(|_| "---").collect::<Vec<_>>().join("|"));
+    s += &format!(
+        "| {} |\n|{}|\n",
+        cols.iter().map(|c| c.1).collect::<Vec<_>>().join(" | "),
+        cols.iter().map(|_| "---").collect::<Vec<_>>().join("|")
+    );
     for r in &rows {
-        s += &format!("| {} |\n", cols.iter().map(|c| f(r, c.0, prec)).collect::<Vec<_>>().join(" | "));
+        s += &format!(
+            "| {} |\n",
+            cols.iter()
+                .map(|c| f(r, c.0, prec))
+                .collect::<Vec<_>>()
+                .join(" | ")
+        );
     }
     if let Some(m) = v.get("peak_rss_mb") {
         s += &format!(
@@ -365,7 +439,11 @@ fn markdown(doc: &Value) -> String {
         m["summary"].as_str().unwrap_or(""),
         doc["repeat"],
         doc["quick"],
-        if doc["gpu"].as_bool() == Some(true) { "GPU" } else { "CPU" }
+        if doc["gpu"].as_bool() == Some(true) {
+            "GPU"
+        } else {
+            "CPU"
+        }
     );
     for sec in doc["sections"].as_array().into_iter().flatten() {
         s += &section_markdown(sec);

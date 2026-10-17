@@ -182,7 +182,10 @@ pub fn synchroniser(
         )
         .context("aucun binaire ne porte de fonctions dans la base")?;
 
-    let mut b = Bilan { binary_id, ..Bilan::default() };
+    let mut b = Bilan {
+        binary_id,
+        ..Bilan::default()
+    };
 
     let tx = conn.transaction()?;
     tx.execute("DELETE FROM forge_unit WHERE binary_id = ?1", [binary_id])?;
@@ -196,7 +199,7 @@ pub fn synchroniser(
             match statut {
                 statut::PRODUIT => b.produites += 1,
                 statut::BLOQUE => b.bloquees += 1,
-                _ => {},
+                _ => {}
             }
             ins.execute(rusqlite::params![
                 binary_id,
@@ -265,7 +268,10 @@ fn classes(
               WHERE binary_id = ?1 AND vaddr IS NOT NULL AND kind = 'fn'",
         )?;
         let rows = q.query_map([binary_id], |r| {
-            Ok((r.get::<_, i64>(0)?, (r.get::<_, String>(1)?, r.get::<_, i64>(2)?)))
+            Ok((
+                r.get::<_, i64>(0)?,
+                (r.get::<_, String>(1)?, r.get::<_, i64>(2)?),
+            ))
         })?;
         rows.flatten().collect()
     };
@@ -288,7 +294,7 @@ fn classes(
                     match statut.as_str() {
                         statut::PRODUIT => produites += 1,
                         statut::BLOQUE => bloquees += 1,
-                        _ => {},
+                        _ => {}
                     }
                 }
             }
@@ -354,16 +360,25 @@ mod tests {
         // `xor eax,eax ; ret` se releve ; `ff ff ff` non.
         let bytes = vec![0x33, 0xC0, 0xC3, 0xFF, 0xFF, 0xFF, 0xCC, 0xCC];
         let va = 0x1_4000_0000;
-        assert_eq!(classer(&unit(UnitKind::Function, 0, 3, Some(va)), &bytes).0, statut::PRODUIT);
+        assert_eq!(
+            classer(&unit(UnitKind::Function, 0, 3, Some(va)), &bytes).0,
+            statut::PRODUIT
+        );
         let (s, cause) = classer(&unit(UnitKind::Function, 3, 3, Some(va + 3)), &bytes);
         assert_eq!(s, statut::BLOQUE);
         assert!(cause.is_some(), "un blocage doit porter sa cause");
-        assert_eq!(classer(&unit(UnitKind::Padding, 6, 2, Some(va + 6)), &bytes).0, statut::REGLE);
+        assert_eq!(
+            classer(&unit(UnitKind::Padding, 6, 2, Some(va + 6)), &bytes).0,
+            statut::REGLE
+        );
         assert_eq!(
             classer(&unit(UnitKind::InlineData, 3, 3, Some(va + 3)), &bytes).0,
             statut::DONNEES
         );
-        assert_eq!(classer(&unit(UnitKind::SectionData, 0, 8, None), &bytes).0, statut::VERBATIM);
+        assert_eq!(
+            classer(&unit(UnitKind::SectionData, 0, 8, None), &bytes).0,
+            statut::VERBATIM
+        );
     }
 
     #[test]
@@ -396,11 +411,13 @@ mod tests {
         let b = synchroniser(&db, &cover, &bytes, None).expect("sync 2");
         assert_eq!(a, b);
         let conn = rusqlite::Connection::open(&db).expect("relecture");
-        let n: i64 =
-            conn.query_row("SELECT count(*) FROM forge_unit", [], |r| r.get(0)).expect("compte");
+        let n: i64 = conn
+            .query_row("SELECT count(*) FROM forge_unit", [], |r| r.get(0))
+            .expect("compte");
         assert_eq!(n, 1, "la table est reecrite, pas empilee");
-        let statut: String =
-            conn.query_row("SELECT statut FROM v_forge_function", [], |r| r.get(0)).expect("vue");
+        let statut: String = conn
+            .query_row("SELECT statut FROM v_forge_function", [], |r| r.get(0))
+            .expect("vue");
         assert_eq!(statut, statut::PRODUIT, "la vue joint les deux inventaires");
     }
 }

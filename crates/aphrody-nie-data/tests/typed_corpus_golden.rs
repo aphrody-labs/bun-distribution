@@ -49,7 +49,10 @@ fn le_dispatch_type_couvre_les_familles_attendues() {
             }
         }
     }
-    assert!(!par_famille.is_empty(), "corpus présent mais aucun .cfg.bin.json trouvé");
+    assert!(
+        !par_famille.is_empty(),
+        "corpus présent mais aucun .cfg.bin.json trouvé"
+    );
 
     let (mut typees, mut generiques) = (0usize, 0usize);
     let mut labels: BTreeSet<&'static str> = BTreeSet::new();
@@ -72,7 +75,7 @@ fn le_dispatch_type_couvre_les_familles_attendues() {
                     "{cle} → {label} : le parseur a répondu null sur {}",
                     chemin.display()
                 );
-            },
+            }
             None => generiques += 1,
         }
     }
@@ -94,5 +97,8 @@ fn le_dispatch_type_couvre_les_familles_attendues() {
             "famille attendue non typée : {f}"
         );
     }
-    assert!(typees > 0, "aucune famille typée : le dispatch ne répond plus");
+    assert!(
+        typees > 0,
+        "aucune famille typée : le dispatch ne répond plus"
+    );
 }

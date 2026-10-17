@@ -19,22 +19,23 @@
 #![forbid(unused_imports)]
 #![forbid(unused_mut)]
 #![forbid(unused_variables)]
-
 // Always allow
 #![allow(dead_code)]
 #![allow(non_snake_case)]
 
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 
 #[macro_use]
 mod macros;
 
-#[cfg(test)] pub mod test_helpers;
+#[cfg(test)]
+pub mod test_helpers;
 
+pub mod api_safe;
 pub mod by_table;
 pub mod common;
 pub mod error;
 pub mod no_table;
 pub mod tauri;
 pub mod traits;
-pub mod api_safe;

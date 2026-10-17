@@ -24,7 +24,12 @@ impl Params {
             (_, l) if l >= 15 => 1,
             _ => 0,
         };
-        Params { mbedge_limit: (level + 2) * 2 + interior, sub_bedge_limit: level * 2 + interior, interior_limit: interior, hev_threshold }
+        Params {
+            mbedge_limit: (level + 2) * 2 + interior,
+            sub_bedge_limit: level * 2 + interior,
+            interior_limit: interior,
+            hev_threshold,
+        }
     }
 }
 
@@ -47,7 +52,11 @@ pub enum Kind {
 /// same values as the specification's procedures; each step is a plain loop over the lanes, which
 /// the compiler vectorizes.
 #[inline(always)]
-fn filter_lanes<const N: usize, const NORMAL: bool, const MB: bool>(px: &mut [[u8; N]; 8], edge_limit: i16, prm: &Params) {
+fn filter_lanes<const N: usize, const NORMAL: bool, const MB: bool>(
+    px: &mut [[u8; N]; 8],
+    edge_limit: i16,
+    prm: &Params,
+) {
     let (lim, thr) = (prm.interior_limit as i16, prm.hev_threshold as i16);
     let ld = |k: usize| -> [i16; N] { std::array::from_fn(|l| i16::from(px[k][l])) };
     let (p3, p2, p1, p0, q0, q1, q2, q3) = (ld(0), ld(1), ld(2), ld(3), ld(4), ld(5), ld(6), ld(7));
@@ -73,7 +82,14 @@ fn filter_lanes<const N: usize, const NORMAL: bool, const MB: bool>(px: &mut [[u
     let c = |v: i16| v.clamp(-128, 127);
     let out = |v: i16| (c(v) + 128) as u8;
     for l in 0..N {
-        let (sp2, sp1, sp0, sq0, sq1, sq2) = (p2[l] - 128, p1[l] - 128, p0[l] - 128, q0[l] - 128, q1[l] - 128, q2[l] - 128);
+        let (sp2, sp1, sp0, sq0, sq1, sq2) = (
+            p2[l] - 128,
+            p1[l] - 128,
+            p0[l] - 128,
+            q0[l] - 128,
+            q1[l] - 128,
+            q2[l] - 128,
+        );
         if !NORMAL {
             // simple_segment / common_adjust with the outer taps
             let f = c(c(sp1 - sq1) + 3 * (sq0 - sp0)) & m[l];
@@ -114,7 +130,14 @@ fn filter_lanes<const N: usize, const NORMAL: bool, const MB: bool>(px: &mut [[u
 /// edge (`vertical`) has its segments one row apart, a horizontal one one pixel apart. Every
 /// segment must have 4 pixels inside the plane on both sides of the edge; an edge that does not
 /// is left alone.
-pub fn filter_edge<const N: usize>(plane: &mut [u8], stride: usize, start: usize, vertical: bool, kind: Kind, prm: &Params) {
+pub fn filter_edge<const N: usize>(
+    plane: &mut [u8],
+    stride: usize,
+    start: usize,
+    vertical: bool,
+    kind: Kind,
+    prm: &Params,
+) {
     let (step, along) = if vertical { (1, stride) } else { (stride, 1) };
     if start < 4 * step || start + (N - 1) * along + 3 * step >= plane.len() {
         return;
@@ -136,7 +159,9 @@ pub fn filter_edge<const N: usize>(plane: &mut [u8], stride: usize, start: usize
     }
     match kind {
         Kind::Simple => filter_lanes::<N, false, false>(&mut px, prm.mbedge_limit as i16, prm),
-        Kind::SimpleInner => filter_lanes::<N, false, false>(&mut px, prm.sub_bedge_limit as i16, prm),
+        Kind::SimpleInner => {
+            filter_lanes::<N, false, false>(&mut px, prm.sub_bedge_limit as i16, prm)
+        }
         Kind::NormalMb => filter_lanes::<N, true, true>(&mut px, prm.mbedge_limit as i16, prm),
         Kind::NormalSub => filter_lanes::<N, true, false>(&mut px, prm.sub_bedge_limit as i16, prm),
     }

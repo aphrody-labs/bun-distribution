@@ -68,7 +68,11 @@ pub enum RawFntError {
 impl<'a> Fnt<'a> {
     fn check_size(data: &'_ [u8]) -> Result<(), RawFntError> {
         let size = size_of::<FntDirectory>();
-        if data.len() < size { InvalidSizeSnafu {}.fail() } else { Ok(()) }
+        if data.len() < size {
+            InvalidSizeSnafu {}.fail()
+        } else {
+            Ok(())
+        }
     }
 
     fn handle_pod_cast<T>(result: Result<T, PodCastError>) -> T {
@@ -115,7 +119,9 @@ impl<'a> Fnt<'a> {
             });
         }
 
-        Ok(Self { subtables: subtables.into_boxed_slice() })
+        Ok(Self {
+            subtables: subtables.into_boxed_slice(),
+        })
     }
 
     /// Builds the FNT to be placed in a ROM.
@@ -152,7 +158,10 @@ impl<'a> Fnt<'a> {
 impl FntSubtable<'_> {
     /// Returns an iterator over all immediate children (files and directories) in this subtable.
     pub fn iter(&self) -> IterFntSubtable<'_> {
-        IterFntSubtable { data: &self.data, id: self.directory.first_file_id }
+        IterFntSubtable {
+            data: &self.data,
+            id: self.directory.first_file_id,
+        }
     }
 }
 

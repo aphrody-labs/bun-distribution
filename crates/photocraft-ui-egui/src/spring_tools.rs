@@ -79,7 +79,14 @@ pub fn pressed(app: &mut PhotocraftApp, letter: char, before: Tool, plain: bool,
     }
     // The current group's own key cycles it (or keeps it), as a tap always has.
     let tool = app.ui.tool;
-    app.ui.spring = (before.key() != letter).then(|| Spring { previous: before, tool, keys: vec![letter], since: now, used: false, released: false });
+    app.ui.spring = (before.key() != letter).then(|| Spring {
+        previous: before,
+        tool,
+        keys: vec![letter],
+        since: now,
+        used: false,
+        released: false,
+    });
 }
 
 /// The canvas was pressed: a held letter's tool becomes temporary.
@@ -92,7 +99,9 @@ pub fn note_canvas_press(app: &mut PhotocraftApp) {
 /// Once a frame, before the key handling: notice released letters and give the previous tool
 /// back when the switch was temporary and no drag is in progress.
 pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
-    let Some(mut s) = app.ui.spring.take() else { return };
+    let Some(mut s) = app.ui.spring.take() else {
+        return;
+    };
     // Type editing begun with the temporary Type tool keeps it: the edit owns the tool now. So
     // does a tool picked another way while the letter is down.
     if app.ui.text_edit.is_some() || app.ui.tool != s.tool {
@@ -104,7 +113,8 @@ pub fn tick(app: &mut PhotocraftApp, ctx: &egui::Context) {
         if app.drag.is_some() {
             s.used = true;
         }
-        s.keys.retain(|k| key_of(*k).is_some_and(|k| ctx.input(|i| i.key_down(k))));
+        s.keys
+            .retain(|k| key_of(*k).is_some_and(|k| ctx.input(|i| i.key_down(k))));
         if !s.keys.is_empty() {
             app.ui.spring = Some(s);
             return;

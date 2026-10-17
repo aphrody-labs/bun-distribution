@@ -1085,7 +1085,7 @@ impl Curve<f32> for ElasticCurve {
 mod easing_functions {
     use core::f32::consts::{FRAC_PI_2, FRAC_PI_3, PI};
 
-    use bevy_math::{ops, FloatPow};
+    use bevy_math::{FloatPow, ops};
 
     #[inline]
     pub(crate) const fn linear(t: f32) -> f32 {

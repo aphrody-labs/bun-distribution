@@ -51,7 +51,10 @@ pub(crate) fn select_profile_with_environment(
                 .ok_or_else(|| invalid("profile in config.toml must be a string"))
         })
         .transpose()?;
-    Ok(aphrody_config::profile::select_profile(None, configured.as_deref()))
+    Ok(aphrody_config::profile::select_profile(
+        None,
+        configured.as_deref(),
+    ))
 }
 
 pub(crate) fn profile_home(base_home: &Path, profile: Option<&str>) -> PathBuf {
@@ -80,7 +83,10 @@ pub(crate) fn resolve_with_profile(
 ) -> Result<Config, AppServerError> {
     let env = |name: &str| std::env::var(name).ok();
     let mut layers = vec![
-        ConfigLayer::new(LayerSource::Builtin, aphrody_config::builtin_providers_layer_value(&env)),
+        ConfigLayer::new(
+            LayerSource::Builtin,
+            aphrody_config::builtin_providers_layer_value(&env),
+        ),
         ConfigLayer::new(
             LayerSource::Builtin,
             toml::Value::try_from(json!({
@@ -138,7 +144,11 @@ pub(crate) fn optional_bool(params: &Value, name: &str) -> Result<Option<bool>, 
     params
         .get(name)
         .filter(|value| !value.is_null())
-        .map(|value| value.as_bool().ok_or_else(|| invalid(format!("{name} must be a boolean"))))
+        .map(|value| {
+            value
+                .as_bool()
+                .ok_or_else(|| invalid(format!("{name} must be a boolean")))
+        })
         .transpose()
 }
 
@@ -160,14 +170,21 @@ pub(crate) fn optional_string(
 
 pub(crate) fn validate_session_options(params: &Value) -> Result<(), AppServerError> {
     let custom_prompt = optional_string(params, "systemPrompt")?;
-    if custom_prompt.as_deref().is_some_and(|prompt| prompt.trim().is_empty()) {
-        return Err(invalid("systemPrompt must not be blank; omit it to use the default"));
+    if custom_prompt
+        .as_deref()
+        .is_some_and(|prompt| prompt.trim().is_empty())
+    {
+        return Err(invalid(
+            "systemPrompt must not be blank; omit it to use the default",
+        ));
     }
     let builtins = optional_bool(params, "builtins")?.unwrap_or(true);
     let subagents = optional_bool(params, "subagents")?;
     crate::host_tools::HostTools::declare("validation", params.get("tools"))?;
     if subagents == Some(true) {
-        return Err(invalid("subagent delegation is unsupported on this surface"));
+        return Err(invalid(
+            "subagent delegation is unsupported on this surface",
+        ));
     }
     if let Some(owner) = optional_string(params, "permissions")?
         && !matches!(owner.as_str(), "aphrody" | "jan" | "host")
@@ -263,7 +280,7 @@ pub(crate) fn rag_db_path(
             } else {
                 cwd.join(path)
             }
-        },
+        }
         None => home.join("rag/index.db"),
     })
 }

@@ -42,9 +42,14 @@ pub fn polygon_covers_rect(path: &BezPath, r: Rect, tol: f64) -> bool {
     }
     let inner = r.inflate(-tol, -tol);
     sign != 0.0
-        && [Point::new(inner.x0, inner.y0), Point::new(inner.x1, inner.y0), Point::new(inner.x1, inner.y1), Point::new(inner.x0, inner.y1)]
-            .into_iter()
-            .all(|c| fill_contains(path, FillRule::NonZero, c))
+        && [
+            Point::new(inner.x0, inner.y0),
+            Point::new(inner.x1, inner.y0),
+            Point::new(inner.x1, inner.y1),
+            Point::new(inner.x0, inner.y1),
+        ]
+        .into_iter()
+        .all(|c| fill_contains(path, FillRule::NonZero, c))
 }
 
 /// Is `p` inside the filled area of `path` under `rule`? Open subpaths are implicitly closed (as when filled).
@@ -98,12 +103,17 @@ fn closed(path: &BezPath) -> Cow<'_, BezPath> {
 
 /// Distance from `p` to the nearest point on the path outline.
 pub fn distance_to_outline(path: &BezPath, p: Point) -> f64 {
-    path.segments().map(|s| s.nearest(p, 1e-9).distance_sq).fold(f64::INFINITY, f64::min).sqrt()
+    path.segments()
+        .map(|s| s.nearest(p, 1e-9).distance_sq)
+        .fold(f64::INFINITY, f64::min)
+        .sqrt()
 }
 
 /// Is `p` within `tol` of the path's stroke of width `width`?
 pub fn stroke_contains(path: &BezPath, width: f64, tol: f64, p: Point) -> bool {
-    let quick = path.bounding_box().inflate(width / 2.0 + tol, width / 2.0 + tol);
+    let quick = path
+        .bounding_box()
+        .inflate(width / 2.0 + tol, width / 2.0 + tol);
     quick.contains(p) && distance_to_outline(path, p) <= width / 2.0 + tol
 }
 
@@ -127,7 +137,9 @@ pub fn intersects_rect(path: &PathData, r: Rect) -> bool {
         kurbo::Line::new((r.x1, r.y1), (r.x0, r.y1)),
         kurbo::Line::new((r.x0, r.y1), (r.x0, r.y0)),
     ];
-    path.to_bezpath().segments().any(|seg| edges.iter().any(|e| !seg.intersect_line(*e).is_empty()))
+    path.to_bezpath()
+        .segments()
+        .any(|seg| edges.iter().any(|e| !seg.intersect_line(*e).is_empty()))
 }
 
 #[cfg(test)]
@@ -147,14 +159,43 @@ mod tests {
             b.close_path();
             b
         };
-        assert!(polygon_covers_rect(&poly(&[(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]), page, 0.01));
-        assert!(polygon_covers_rect(&poly(&[(50.0, -60.0), (160.0, 50.0), (50.0, 160.0), (-60.0, 50.0)]), page, 0.01), "turned, around it");
+        assert!(polygon_covers_rect(
+            &poly(&[(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]),
+            page,
+            0.01
+        ));
+        assert!(
+            polygon_covers_rect(
+                &poly(&[(50.0, -60.0), (160.0, 50.0), (50.0, 160.0), (-60.0, 50.0)]),
+                page,
+                0.01
+            ),
+            "turned, around it"
+        );
         // The page's bounding box, but its corners are cut away.
-        assert!(!polygon_covers_rect(&poly(&[(50.0, 0.0), (100.0, 50.0), (50.0, 100.0), (0.0, 50.0)]), page, 0.01));
+        assert!(!polygon_covers_rect(
+            &poly(&[(50.0, 0.0), (100.0, 50.0), (50.0, 100.0), (0.0, 50.0)]),
+            page,
+            0.01
+        ));
         // Contains the corners but notches into the page: not convex.
-        assert!(!polygon_covers_rect(&poly(&[(-1.0, -1.0), (101.0, -1.0), (101.0, 101.0), (50.0, 40.0), (-1.0, 101.0)]), page, 0.01));
+        assert!(!polygon_covers_rect(
+            &poly(&[
+                (-1.0, -1.0),
+                (101.0, -1.0),
+                (101.0, 101.0),
+                (50.0, 40.0),
+                (-1.0, 101.0)
+            ]),
+            page,
+            0.01
+        ));
         // Curves and several subpaths aren't judged.
-        assert!(!polygon_covers_rect(&kurbo::Circle::new((50.0, 50.0), 200.0).to_path(0.1), page, 0.01));
+        assert!(!polygon_covers_rect(
+            &kurbo::Circle::new((50.0, 50.0), 200.0).to_path(0.1),
+            page,
+            0.01
+        ));
         let mut two = poly(&[(0.0, 0.0), (100.0, 0.0), (100.0, 100.0), (0.0, 100.0)]);
         two.extend(poly(&[(10.0, 10.0), (20.0, 10.0), (20.0, 20.0)]));
         assert!(!polygon_covers_rect(&two, page, 0.01));
@@ -173,7 +214,9 @@ mod tests {
     #[test]
     fn evenodd_hole() {
         let mut outer = shapes::rectangle(Rect::new(0.0, 0.0, 10.0, 10.0));
-        outer.subpaths.extend(shapes::rectangle(Rect::new(3.0, 3.0, 7.0, 7.0)).subpaths);
+        outer
+            .subpaths
+            .extend(shapes::rectangle(Rect::new(3.0, 3.0, 7.0, 7.0)).subpaths);
         let bp = outer.to_bezpath();
         assert!(!fill_contains(&bp, FillRule::EvenOdd, Point::new(5.0, 5.0)));
         assert!(fill_contains(&bp, FillRule::NonZero, Point::new(5.0, 5.0)));
@@ -191,19 +234,39 @@ mod tests {
         .unwrap();
         let mut closed = open.clone();
         closed.close_path();
-        for p in [Point::new(100.0, 100.0), Point::new(95.0, 85.0), Point::new(92.0, 112.0)] {
+        for p in [
+            Point::new(100.0, 100.0),
+            Point::new(95.0, 85.0),
+            Point::new(92.0, 112.0),
+        ] {
             assert!(closed.winding(p) != 0, "{p:?} is inside the closed sliver");
-            assert!(fill_contains(&open, FillRule::NonZero, p), "{p:?}: the open sliver's fill");
-            assert!(fill_contains(&open, FillRule::EvenOdd, p), "{p:?}: even-odd too");
+            assert!(
+                fill_contains(&open, FillRule::NonZero, p),
+                "{p:?}: the open sliver's fill"
+            );
+            assert!(
+                fill_contains(&open, FillRule::EvenOdd, p),
+                "{p:?}: even-odd too"
+            );
         }
-        assert!(!fill_contains(&open, FillRule::NonZero, Point::new(80.0, 100.0)), "left of the closing line");
+        assert!(
+            !fill_contains(&open, FillRule::NonZero, Point::new(80.0, 100.0)),
+            "left of the closing line"
+        );
         // Mirrored, the closing line is on the other side: still filled.
         let flipped = kurbo::Affine::new([-1.0, 0.0, 0.0, 1.0, 200.0, 0.0]) * open.clone();
-        assert!(fill_contains(&flipped, FillRule::NonZero, Point::new(100.0, 100.0)));
+        assert!(fill_contains(
+            &flipped,
+            FillRule::NonZero,
+            Point::new(100.0, 100.0)
+        ));
         // Two open subpaths: each closes on its own.
         let mut two = open.clone();
         two.extend(kurbo::Affine::translate((0.0, 100.0)) * open.clone());
-        assert!(fill_contains(&two, FillRule::NonZero, Point::new(100.0, 100.0)) && fill_contains(&two, FillRule::NonZero, Point::new(100.0, 200.0)));
+        assert!(
+            fill_contains(&two, FillRule::NonZero, Point::new(100.0, 100.0))
+                && fill_contains(&two, FillRule::NonZero, Point::new(100.0, 200.0))
+        );
     }
 
     #[test]
@@ -241,7 +304,9 @@ mod regress_tests {
         let mut bp = BezPath::new();
         bp.move_to(c.p0);
         bp.curve_to(c.p1, c.p2, c.p3);
-        let worst = (0..=200).map(|i| distance_to_outline(&bp, c.eval(i as f64 / 200.0))).fold(0.0, f64::max);
+        let worst = (0..=200)
+            .map(|i| distance_to_outline(&bp, c.eval(i as f64 / 200.0)))
+            .fold(0.0, f64::max);
         assert!(worst < 1e-6, "{worst}");
     }
 }

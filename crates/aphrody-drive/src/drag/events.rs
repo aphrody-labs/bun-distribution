@@ -45,9 +45,14 @@ pub struct DragEndEvent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase")]
 pub enum DragResult {
-    Dropped { operation: DragOperation, target: Option<String> },
+    Dropped {
+        operation: DragOperation,
+        target: Option<String>,
+    },
     Cancelled,
-    Failed { error: String },
+    Failed {
+        error: String,
+    },
 }
 
 /// A drop onto a window.

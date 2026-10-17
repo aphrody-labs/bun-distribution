@@ -23,8 +23,14 @@ pub fn cargo() -> Command {
 /// Runs `cmd`, echoing `what`; a non-zero exit is an error.
 pub fn run(mut cmd: Command, what: &str) -> Result<(), String> {
     eprintln!("$ {what}");
-    let status = cmd.status().map_err(|e| format!("{what}: failed to spawn: {e}"))?;
-    if status.success() { Ok(()) } else { Err(format!("{what}: exited with {status}")) }
+    let status = cmd
+        .status()
+        .map_err(|e| format!("{what}: failed to spawn: {e}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("{what}: exited with {status}"))
+    }
 }
 
 /// `cargo metadata --no-deps` of the workspace.
@@ -34,7 +40,10 @@ pub fn metadata() -> Result<serde_json::Value, String> {
         .output()
         .map_err(|e| format!("cargo metadata: {e}"))?;
     if !out.status.success() {
-        return Err(format!("cargo metadata failed:\n{}", String::from_utf8_lossy(&out.stderr)));
+        return Err(format!(
+            "cargo metadata failed:\n{}",
+            String::from_utf8_lossy(&out.stderr)
+        ));
     }
     serde_json::from_slice(&out.stdout).map_err(|e| format!("cargo metadata: bad JSON: {e}"))
 }

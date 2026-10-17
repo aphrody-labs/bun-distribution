@@ -25,7 +25,8 @@ use std::io::Write;
 pub fn make_zip(parts: &[(&str, &[u8])]) -> Vec<u8> {
     let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
     for (name, data) in parts {
-        z.start_file(*name, zip::write::SimpleFileOptions::default()).unwrap();
+        z.start_file(*name, zip::write::SimpleFileOptions::default())
+            .unwrap();
         z.write_all(data).unwrap();
     }
     z.finish().unwrap().into_inner()
@@ -36,7 +37,12 @@ pub const ROOT_RELS: &str = r#"<?xml version="1.0"?><Relationships xmlns="http:/
 
 /// A minimal one-sheet package with the given sheet XML body (inside `<worksheet>`), plus
 /// optional extra parts and workbook relationships.
-pub fn minimal(sheet_body: &str, extra_parts: &[(&str, &str)], wb_extra_rels: &str, wb_extra: &str) -> Vec<u8> {
+pub fn minimal(
+    sheet_body: &str,
+    extra_parts: &[(&str, &str)],
+    wb_extra_rels: &str,
+    wb_extra: &str,
+) -> Vec<u8> {
     let wb = format!(
         r#"<?xml version="1.0"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">{wb_extra}<sheets><sheet name="Data" sheetId="1" r:id="rId1"/></sheets></workbook>"#
     );

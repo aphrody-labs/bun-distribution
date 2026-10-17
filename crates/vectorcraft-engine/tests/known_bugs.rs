@@ -6,7 +6,9 @@
 use serde_json::json;
 use vectorcraft_engine::Session;
 use vectorcraft_testkit::fixtures::{exec, rect, select, session};
-use vectorcraft_testkit::invariants::{check_native_roundtrip_exact, check_session, doc_json, first_diff};
+use vectorcraft_testkit::invariants::{
+    check_native_roundtrip_exact, check_session, doc_json, first_diff,
+};
 
 #[test]
 fn bug_group_inside_compound() {
@@ -27,19 +29,35 @@ fn bug_nested_commands_double_journal() {
     exec(&mut s, "transparency.set", json!({"opacity": 0}));
     exec(&mut s, "edit.undo", json!({}));
     let ids: Vec<&str> = s.journal.iter().map(|(id, _)| id.as_str()).collect();
-    assert_eq!(ids, ["file.new", "shape.rectangle", "transparency.set", "edit.undo"], "journal: {ids:?}");
+    assert_eq!(
+        ids,
+        [
+            "file.new",
+            "shape.rectangle",
+            "transparency.set",
+            "edit.undo"
+        ],
+        "journal: {ids:?}"
+    );
     let mut r = Session::new();
     for (id, p) in &s.journal.clone() {
         let _ = r.execute(id, p);
     }
-    let (want, got) = (doc_json(&s.doc().unwrap().doc), doc_json(&r.doc().unwrap().doc));
+    let (want, got) = (
+        doc_json(&s.doc().unwrap().doc),
+        doc_json(&r.doc().unwrap().doc),
+    );
     assert_eq!(want, got, "{}", first_diff(&want, &got, "$"));
 }
 
 #[test]
 fn bug_native_roundtrip_not_bit_exact() {
     let mut s = session();
-    exec(&mut s, "shape.ellipse", json!({"x": 100.1, "y": 60.3, "width": 120.7, "height": 120.9}));
+    exec(
+        &mut s,
+        "shape.ellipse",
+        json!({"x": 100.1, "y": 60.3, "width": 120.7, "height": 120.9}),
+    );
     exec(&mut s, "object.rotate", json!({"angle": 33.3}));
     check_native_roundtrip_exact(&s.doc().unwrap().doc).unwrap();
 }

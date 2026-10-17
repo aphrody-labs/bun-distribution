@@ -65,7 +65,11 @@ static TAG_INNER_TEXT: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"(?is)<[^>]+>").expect("valid regex"));
 
 fn expand_short_hex(hex: &str) -> String {
-    if hex.len() == 3 { hex.chars().flat_map(|c| [c, c]).collect() } else { hex.to_owned() }
+    if hex.len() == 3 {
+        hex.chars().flat_map(|c| [c, c]).collect()
+    } else {
+        hex.to_owned()
+    }
 }
 
 /// Every `#rrggbb`/`#rgb` color literal found (inline styles, `<style>` blocks, `theme-color`
@@ -112,7 +116,11 @@ pub fn seed_color(html: &str) -> u32 {
 pub fn extract_font_stacks(html: &str) -> Vec<String> {
     let mut counts: Vec<(String, u32)> = Vec::new();
     for caps in FONT_FAMILY.captures_iter(html) {
-        let stack = caps[1].trim().trim_end_matches(['"', '\'', '>']).trim().to_owned();
+        let stack = caps[1]
+            .trim()
+            .trim_end_matches(['"', '\'', '>'])
+            .trim()
+            .to_owned();
         if stack.is_empty() {
             continue;
         }
@@ -131,8 +139,10 @@ pub fn extract_font_stacks(html: &str) -> Vec<String> {
 /// caller ([`aphrody_m3_tokens::shape::ALL`] lists the canonical corner radii to snap to).
 #[must_use]
 pub fn extract_corner_radius(html: &str) -> Option<f64> {
-    let mut radii: Vec<f64> =
-        BORDER_RADIUS.captures_iter(html).filter_map(|c| c[1].parse().ok()).collect();
+    let mut radii: Vec<f64> = BORDER_RADIUS
+        .captures_iter(html)
+        .filter_map(|c| c[1].parse().ok())
+        .collect();
     if radii.is_empty() {
         return None;
     }
@@ -156,7 +166,10 @@ pub fn extract_assets(html: &str) -> Vec<AssetRef> {
             } else {
                 "other"
             };
-            AssetRef { url, role: role.to_owned() }
+            AssetRef {
+                url,
+                role: role.to_owned(),
+            }
         })
         .collect()
 }
@@ -174,8 +187,9 @@ pub fn extract_landmarks(html: &str) -> Vec<ComponentNode> {
         } else {
             continue;
         };
-        if let Some((needle, component)) =
-            LANDMARK_TO_M3.iter().find(|(needle, _)| hint.contains(needle))
+        if let Some((needle, component)) = LANDMARK_TO_M3
+            .iter()
+            .find(|(needle, _)| hint.contains(needle))
         {
             nodes.push(ComponentNode {
                 component: (*component).to_owned(),
@@ -228,7 +242,10 @@ mod tests {
         let html = r#"<header>Top</header><nav>Menu</nav><div class="hero-banner">Hi</div><div class="card">A</div>"#;
         let landmarks = extract_landmarks(html);
         let components: Vec<&str> = landmarks.iter().map(|n| n.component.as_str()).collect();
-        assert_eq!(components, vec!["top-app-bar", "navigation-bar", "hero", "card"]);
+        assert_eq!(
+            components,
+            vec!["top-app-bar", "navigation-bar", "hero", "card"]
+        );
     }
 
     #[test]

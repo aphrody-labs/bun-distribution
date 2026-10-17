@@ -121,8 +121,16 @@ impl EndCurve {
 fn neighbours(sp: &SubPath, i: usize) -> [Option<usize>; 2] {
     let n = sp.anchors.len();
     let wrap = sp.closed && n > 1;
-    let prev = if i > 0 { Some(i - 1) } else { wrap.then(|| n - 1) };
-    let next = if i + 1 < n { Some(i + 1) } else { wrap.then_some(0) };
+    let prev = if i > 0 {
+        Some(i - 1)
+    } else {
+        wrap.then(|| n - 1)
+    };
+    let next = if i + 1 < n {
+        Some(i + 1)
+    } else {
+        wrap.then_some(0)
+    };
     [prev, next]
 }
 
@@ -132,25 +140,44 @@ fn neighbours(sp: &SubPath, i: usize) -> [Option<usize>; 2] {
 /// their segment's chord, so the segments beyond don't move and a corner without handles keeps
 /// none. False when there is no anchor `i`.
 pub fn curvature_move(sp: &mut SubPath, i: usize, q: Point) -> bool {
-    let Some(&a) = sp.anchors.get(i) else { return false };
+    let Some(&a) = sp.anchors.get(i) else {
+        return false;
+    };
     let mut own = [a.h_in - a.p, a.h_out - a.p];
     let mut ends = [None; 2];
     for (side, j) in neighbours(sp, i).into_iter().enumerate() {
-        let Some(b) = j.and_then(|j| sp.anchors.get_mut(j)) else { continue };
+        let Some(b) = j.and_then(|j| sp.anchors.get_mut(j)) else {
+            continue;
+        };
         let old = a.p.distance(b.p);
-        let s = if old > 1e-9 { q.distance(b.p) / old } else { 1.0 };
+        let s = if old > 1e-9 {
+            q.distance(b.p) / old
+        } else {
+            1.0
+        };
         let h = if side == 0 { &mut b.h_out } else { &mut b.h_in };
         *h = b.p + (*h - b.p) * s;
         own[side] *= s;
         ends[side] = Some(b.p);
     }
-    let mut m = Anchor { p: q, h_in: q + own[0], h_out: q + own[1], kind: a.kind };
+    let mut m = Anchor {
+        p: q,
+        h_in: q + own[0],
+        h_out: q + own[1],
+        kind: a.kind,
+    };
     if let (AnchorKind::Smooth, [Some(prev), Some(next)]) = (a.kind, ends) {
         let d = next - prev;
         let l = d.hypot();
         if l > 1e-9 {
             // A handle it lacks comes out a third of the way to that side's neighbour.
-            let len = |h: Vec2, to: Point| if h.hypot() > 1e-9 { h.hypot() } else { q.distance(to) / 3.0 };
+            let len = |h: Vec2, to: Point| {
+                if h.hypot() > 1e-9 {
+                    h.hypot()
+                } else {
+                    q.distance(to) / 3.0
+                }
+            };
             m.h_in = q - d * (len(own[0], prev) / l);
             m.h_out = q + d * (len(own[1], next) / l);
         }
@@ -169,7 +196,14 @@ pub fn curvature_insert(sp: &mut SubPath, seg: usize, t: f64) -> Option<usize> {
         return None;
     }
     let line = sp.segment_is_line(seg);
-    let i = sp.insert_anchor(seg, if t.is_finite() { t.clamp(0.0, 1.0) } else { 0.5 });
+    let i = sp.insert_anchor(
+        seg,
+        if t.is_finite() {
+            t.clamp(0.0, 1.0)
+        } else {
+            0.5
+        },
+    );
     if line {
         sp.smooth_anchor(i);
     }
@@ -195,7 +229,10 @@ pub fn curvature_close(sp: &mut SubPath, start: bool, how: EndCurve) {
     if start {
         sp.reverse();
     }
-    if let (Some(first), Some(last)) = (sp.anchors.first().map(|a| a.p), sp.anchors.last().map(|a| a.p)) {
+    if let (Some(first), Some(last)) = (
+        sp.anchors.first().map(|a| a.p),
+        sp.anchors.last().map(|a| a.p),
+    ) {
         bend_last(sp, first, how);
         sp.reverse();
         bend_last(sp, last, EndCurve::Keep);
@@ -209,24 +246,50 @@ pub fn curvature_close(sp: &mut SubPath, start: bool, how: EndCurve) {
 
 /// Bend the last anchor of `sp` into a new segment on to `to`, as `how` says.
 fn bend_last(sp: &mut SubPath, to: Point, how: EndCurve) {
-    let prev = sp.anchors.len().checked_sub(2).and_then(|j| sp.anchors.get(j)).copied();
-    let Some(e) = sp.anchors.last_mut() else { return };
+    let prev = sp
+        .anchors
+        .len()
+        .checked_sub(2)
+        .and_then(|j| sp.anchors.get(j))
+        .copied();
+    let Some(e) = sp.anchors.last_mut() else {
+        return;
+    };
     match how {
         EndCurve::Corner => e.retract(),
         EndCurve::Smooth => {
             let t = prev.map_or(Vec2::ZERO, |b| (to - b.p) / 6.0);
             if t.hypot() > 1e-9 {
-                *e = Anchor { p: e.p, h_in: e.p - t, h_out: e.p + t, kind: AnchorKind::Smooth };
+                *e = Anchor {
+                    p: e.p,
+                    h_in: e.p - t,
+                    h_out: e.p + t,
+                    kind: AnchorKind::Smooth,
+                };
             } else {
                 e.retract();
             }
         }
         EndCurve::Keep => {
             // The way the curve comes in: from its handle, or else the segment's tangent there.
-            let back = if e.has_in() { Some(e.h_in) } else { prev.map(|b| if b.h_out.distance(e.p) > 1e-9 { b.h_out } else { b.p }) };
+            let back = if e.has_in() {
+                Some(e.h_in)
+            } else {
+                prev.map(|b| {
+                    if b.h_out.distance(e.p) > 1e-9 {
+                        b.h_out
+                    } else {
+                        b.p
+                    }
+                })
+            };
             let d = back.map_or(Vec2::ZERO, |b| e.p - b);
             let l = d.hypot();
-            e.h_out = if l > 1e-9 { e.p + d * (e.p.distance(to) / 3.0 / l) } else { e.p };
+            e.h_out = if l > 1e-9 {
+                e.p + d * (e.p.distance(to) / 3.0 / l)
+            } else {
+                e.p
+            };
             if e.has_in() && e.has_out() {
                 e.kind = AnchorKind::Smooth;
             }
@@ -244,13 +307,19 @@ fn subpath<'a>(cx: &ToolContext<'a>, id: NodeId, si: usize) -> Option<&'a SubPat
 
 /// The current point of a selected path: its one direct-selected anchor (path, subpath, anchor).
 fn current_point(cx: &ToolContext) -> Option<(NodeId, usize, usize)> {
-    let mut sets = cx.selection.anchors.iter().filter(|(_, set)| !set.is_empty());
+    let mut sets = cx
+        .selection
+        .anchors
+        .iter()
+        .filter(|(_, set)| !set.is_empty());
     let (&id, set) = sets.next()?;
     if set.len() != 1 || sets.next().is_some() {
         return None;
     }
     let &(si, ai) = set.first()?;
-    subpath(cx, id, si).filter(|sp| ai < sp.anchors.len()).map(|_| (id, si, ai))
+    subpath(cx, id, si)
+        .filter(|sp| ai < sp.anchors.len())
+        .map(|_| (id, si, ai))
 }
 
 /// The current point while it is an end of an open subpath.
@@ -265,25 +334,46 @@ fn current_end(cx: &ToolContext) -> Option<End> {
     // A one-anchor subpath goes on from its end.
     let start = ai == 0 && n > 1;
     let (p, other) = if start { (first, last) } else { (last, first) };
-    Some(End { id, si, start, anchors: n, p, other })
+    Some(End {
+        id,
+        si,
+        start,
+        anchors: n,
+        p,
+        other,
+    })
 }
 
 /// Make anchor `(id, si, ai)` the current point.
 fn select_point((id, si, ai): (NodeId, usize, usize)) -> Action {
-    Action::Exec("select.anchors".into(), json!({"id": id.0, "anchors": [[si, ai]], "mode": "set"}))
+    Action::Exec(
+        "select.anchors".into(),
+        json!({"id": id.0, "anchors": [[si, ai]], "mode": "set"}),
+    )
 }
 
 /// Toggle anchor `(id, si, ai)` of a selected path between smooth and corner.
 fn toggle(cx: &ToolContext, (id, si, ai): (NodeId, usize, usize)) -> Option<Action> {
     let a = subpath(cx, id, si)?.anchors.get(ai)?;
-    let to = if a.kind == AnchorKind::Smooth { "corner" } else { "smooth" };
-    Some(Action::Exec("path.convertAnchor".into(), json!({"id": id.0, "subpath": si, "anchor": ai, "to": to})))
+    let to = if a.kind == AnchorKind::Smooth {
+        "corner"
+    } else {
+        "smooth"
+    };
+    Some(Action::Exec(
+        "path.convertAnchor".into(),
+        json!({"id": id.0, "subpath": si, "anchor": ai, "to": to}),
+    ))
 }
 
 /// Snap targets for dragging anchors `anchors` of subpath `si` of `id` (the rest of the path
 /// pulls).
 fn hold_targets(snap: &mut DrawSnap, cx: &ToolContext, id: NodeId, si: usize, anchors: &[usize]) {
-    let sel = Selection { objects: vec![id], anchors: [(id, anchors.iter().map(|&ai| (si, ai)).collect())].into(), ..Selection::default() };
+    let sel = Selection {
+        objects: vec![id],
+        anchors: [(id, anchors.iter().map(|&ai| (si, ai)).collect())].into(),
+        ..Selection::default()
+    };
     snap.hold(cx, || Targets::for_anchor_drag(cx.doc, &sel));
 }
 
@@ -304,7 +394,11 @@ impl CurvatureTool {
     }
 
     fn params(&self) -> Value {
-        let pts: Vec<Value> = self.pts.iter().map(|(p, c)| json!({"x": p.x, "y": p.y, "corner": c})).collect();
+        let pts: Vec<Value> = self
+            .pts
+            .iter()
+            .map(|(p, c)| json!({"x": p.x, "y": p.y, "corner": c}))
+            .collect();
         let mut v = json!({"points": pts, "closed": self.closed});
         if let Some(id) = self.id {
             v["id"] = json!(id.0);
@@ -331,7 +425,10 @@ impl CurvatureTool {
     /// and the segment to it: the path being drawn, or the selected one whose end is current.
     fn leave(&self, cx: &ToolContext) -> Option<(NodeId, Leave)> {
         match self.active(cx) {
-            Some(id) => self.pts.last().map(|(p, _)| (id, Leave::segment(cx, *p, false))),
+            Some(id) => self
+                .pts
+                .last()
+                .map(|(p, _)| (id, Leave::segment(cx, *p, false))),
             None => current_end(cx).map(|e| (e.id, Leave::segment(cx, e.p, false))),
         }
     }
@@ -340,7 +437,9 @@ impl CurvatureTool {
     /// placed, else it keeps its curve.
     fn how(&self, e: &End) -> EndCurve {
         match self.placed {
-            Some(pl) if (pl.id, pl.si, pl.start, pl.anchors) == (e.id, e.si, e.start, e.anchors) => {
+            Some(pl)
+                if (pl.id, pl.si, pl.start, pl.anchors) == (e.id, e.si, e.start, e.anchors) =>
+            {
                 if pl.corner {
                     EndCurve::Corner
                 } else {
@@ -375,9 +474,17 @@ impl CurvatureTool {
             return Some(out);
         }
         if let Some(e) = end {
-            let q = self.snap.press(cx, p, &[e.id], Some(&Leave::segment(cx, e.p, false)));
+            let q = self
+                .snap
+                .press(cx, p, &[e.id], Some(&Leave::segment(cx, e.p, false)));
             let how = self.how(&e);
-            self.placed = Some(Placed { id: e.id, si: e.si, start: e.start, anchors: e.anchors + 1, corner: ev.mods.alt });
+            self.placed = Some(Placed {
+                id: e.id,
+                si: e.si,
+                start: e.start,
+                anchors: e.anchors + 1,
+                corner: ev.mods.alt,
+            });
             let v = json!({"id": e.id.0, "subpath": e.si, "op": "extend", "end": e.name(), "x": q.x, "y": q.y, "from": how.name()});
             return Some(vec![Action::Exec(EDIT.into(), v)]);
         }
@@ -386,7 +493,10 @@ impl CurvatureTool {
         hold_targets(&mut self.snap, cx, id, si, &[seg, (seg + 1) % n]);
         self.drag = Some((Grab::Inserted(id, si, seg, t), p, true));
         let v = json!({"id": id.0, "subpath": si, "op": "insert", "segment": seg, "t": t});
-        Some(vec![Action::Begin("Curvature".into()), Action::Preview(EDIT.into(), v)])
+        Some(vec![
+            Action::Begin("Curvature".into()),
+            Action::Preview(EDIT.into(), v),
+        ])
     }
 }
 
@@ -442,10 +552,15 @@ impl Tool for CurvatureTool {
                 let p = self.snap.press(cx, p, &[], None);
                 self.pts.push((p, false));
                 self.current = Some(0);
-                vec![Action::Exec("path.curvature".into(), self.params()), Action::Notify("created".into())]
+                vec![
+                    Action::Exec("path.curvature".into(), self.params()),
+                    Action::Notify("created".into()),
+                ]
             }
             PointerKind::Drag => {
-                let Some((grab, start, began)) = self.drag else { return vec![] };
+                let Some((grab, start, began)) = self.drag else {
+                    return vec![];
+                };
                 let mut out = vec![];
                 if !began {
                     if p.distance(start) < cx.tol(3.0) {
@@ -480,9 +595,14 @@ impl Tool for CurvatureTool {
             }
             PointerKind::DoubleClick => {
                 if active.is_none() {
-                    return anchor_in(cx, editable_paths(cx), p, point_tol(cx)).and_then(|hit| toggle(cx, hit)).into_iter().collect();
+                    return anchor_in(cx, editable_paths(cx), p, point_tol(cx))
+                        .and_then(|hit| toggle(cx, hit))
+                        .into_iter()
+                        .collect();
                 }
-                let Some(i) = self.hit_point(cx, p) else { return vec![] };
+                let Some(i) = self.hit_point(cx, p) else {
+                    return vec![];
+                };
                 self.pts[i].1 = !self.pts[i].1;
                 vec![Action::Exec("path.curvature".into(), self.params())]
             }
@@ -496,7 +616,11 @@ impl Tool for CurvatureTool {
     fn claims_key(&self, cx: &ToolContext, key: ToolKey) -> bool {
         matches!(key, ToolKey::Backspace | ToolKey::Delete)
             && self.drag.is_none()
-            && if self.active(cx).is_some() { self.pts.len() > 1 } else { current_point(cx).is_some() }
+            && if self.active(cx).is_some() {
+                self.pts.len() > 1
+            } else {
+                current_point(cx).is_some()
+            }
     }
     fn key(&mut self, cx: &ToolContext, key: ToolKey, _m: Mods) -> Vec<Action> {
         match key {
@@ -511,13 +635,19 @@ impl Tool for CurvatureTool {
                 if drawing || current_point(cx).is_none() {
                     return vec![];
                 }
-                vec![Action::Exec("select.set".into(), json!({"ids": crate::json_ids(&cx.selection.objects)}))]
+                vec![Action::Exec(
+                    "select.set".into(),
+                    json!({"ids": crate::json_ids(&cx.selection.objects)}),
+                )]
             }
             ToolKey::Backspace | ToolKey::Delete if self.claims_key(cx, key) => {
                 if self.active(cx).is_none() {
                     return current_point(cx).map(remove_anchor).into_iter().collect();
                 }
-                let i = self.current.unwrap_or(self.pts.len() - 1).min(self.pts.len() - 1);
+                let i = self
+                    .current
+                    .unwrap_or(self.pts.len() - 1)
+                    .min(self.pts.len() - 1);
                 self.pts.remove(i);
                 if self.pts.len() < 3 {
                     self.closed = false;
@@ -531,7 +661,11 @@ impl Tool for CurvatureTool {
     fn deactivate(&mut self, _cx: &ToolContext) -> Vec<Action> {
         let dragging = self.drag.is_some_and(|d| d.2);
         self.reset();
-        if dragging { vec![Action::Commit] } else { vec![] }
+        if dragging {
+            vec![Action::Commit]
+        } else {
+            vec![]
+        }
     }
     fn overlays(&self, cx: &ToolContext) -> Vec<Overlay> {
         let mut o = self.snap.guides().to_vec();
@@ -545,14 +679,28 @@ impl Tool for CurvatureTool {
             {
                 let n = sp.anchors.len();
                 let near = if e.start {
-                    sp.anchors.iter().take(2).rev().map(Anchor::reversed).collect()
+                    sp.anchors
+                        .iter()
+                        .take(2)
+                        .rev()
+                        .map(Anchor::reversed)
+                        .collect()
                 } else {
-                    sp.anchors.iter().skip(n.saturating_sub(2)).copied().collect()
+                    sp.anchors
+                        .iter()
+                        .skip(n.saturating_sub(2))
+                        .copied()
+                        .collect()
                 };
                 let mut tail = SubPath::new(near, false);
                 curvature_extend(&mut tail, false, h, self.how(&e));
                 tail.to_bezpath_into(&mut bp);
-                o.push(Overlay::Path { path: bp, color: FEEDBACK, width: 1.0, dashed: false });
+                o.push(Overlay::Path {
+                    path: bp,
+                    color: FEEDBACK,
+                    width: 1.0,
+                    dashed: false,
+                });
             }
             return o;
         }
@@ -563,10 +711,20 @@ impl Tool for CurvatureTool {
             let mut pts = self.pts.clone();
             pts.push((h, false));
             catmull_rom(&pts, false).to_bezpath_into(&mut bp);
-            o.push(Overlay::Path { path: bp, color: FEEDBACK, width: 1.0, dashed: false });
+            o.push(Overlay::Path {
+                path: bp,
+                color: FEEDBACK,
+                width: 1.0,
+                dashed: false,
+            });
         }
         for (i, (p, _)) in self.pts.iter().enumerate() {
-            o.push(Overlay::CurvePoint { p: *p, color: FEEDBACK, filled: Some(i) == self.current, size: 6.0 });
+            o.push(Overlay::CurvePoint {
+                p: *p,
+                color: FEEDBACK,
+                filled: Some(i) == self.current,
+                size: 6.0,
+            });
         }
         o
     }
@@ -585,7 +743,8 @@ impl Tool for CurvatureTool {
             return Cursor::PenClose;
         }
         if let Some((id, si, ai)) = anchor_in(cx, editable_paths(cx), p, tol) {
-            let open_end = subpath(cx, id, si).is_some_and(|sp| !sp.closed && (ai == 0 || ai + 1 == sp.anchors.len()));
+            let open_end = subpath(cx, id, si)
+                .is_some_and(|sp| !sp.closed && (ai == 0 || ai + 1 == sp.anchors.len()));
             return if m.alt {
                 Cursor::PenConvert
             } else if open_end {
@@ -616,7 +775,9 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = CurvatureTool::default();
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0));
-        assert!(matches!(&a[0], Action::Exec(c, v) if c == "path.curvature" && v.get("id").is_none() && v["points"].as_array().unwrap().len() == 1));
+        assert!(
+            matches!(&a[0], Action::Exec(c, v) if c == "path.curvature" && v.get("id").is_none() && v["points"].as_array().unwrap().len() == 1)
+        );
         assert_eq!(a[1], Action::Notify("created".into()));
         // Pretend the engine created `id` with one anchor: it is a rect (4 anchors) so it doesn't match.
         let mut s2 = Selection::default();
@@ -628,7 +789,9 @@ mod tests {
         // With four points it matches, so a click appends a fifth.
         t.pts = vec![(Point::new(100.0, 100.0), false); 4];
         let a = t.pointer(&cx2, &PointerEvent::new(PointerKind::Down, 400.0, 400.0));
-        assert!(matches!(&a[0], Action::Exec(_, v) if v["id"] == id.0 && v["points"].as_array().unwrap().len() == 5));
+        assert!(
+            matches!(&a[0], Action::Exec(_, v) if v["id"] == id.0 && v["points"].as_array().unwrap().len() == 5)
+        );
     }
 
     /// Points snap to Smart Guides (#506): the first lands on another object's anchor and says so.
@@ -640,8 +803,15 @@ mod tests {
         let cx = cx(&d, &s, &p);
         let mut t = CurvatureTool::default();
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 202.0, 99.0));
-        assert!(matches!(&a[0], Action::Exec(_, v) if v["points"][0]["x"] == 200.0 && v["points"][0]["y"] == 100.0), "{a:?}");
-        assert!(t.overlays(&cx).iter().any(|o| matches!(o, Overlay::Label { text, .. } if text == "anchor")));
+        assert!(
+            matches!(&a[0], Action::Exec(_, v) if v["points"][0]["x"] == 200.0 && v["points"][0]["y"] == 100.0),
+            "{a:?}"
+        );
+        assert!(
+            t.overlays(&cx)
+                .iter()
+                .any(|o| matches!(o, Overlay::Label { text, .. } if text == "anchor"))
+        );
         t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 202.0, 99.0));
         assert!(t.overlays(&cx).is_empty());
     }
@@ -668,7 +838,12 @@ mod tests {
     /// Every point of `a` lies on `b` (within 1e-6), sampled.
     fn lies_on(a: &SubPath, b: &SubPath) -> bool {
         let b = PathData::single(b.clone());
-        (0..a.segment_count()).all(|i| (0..=20).all(|k| b.nearest(a.segment(i).eval(k as f64 / 20.0)).is_some_and(|n| n.4 < 1e-6)))
+        (0..a.segment_count()).all(|i| {
+            (0..=20).all(|k| {
+                b.nearest(a.segment(i).eval(k as f64 / 20.0))
+                    .is_some_and(|n| n.4 < 1e-6)
+            })
+        })
     }
 
     fn collinear(a: Vec2, b: Vec2) -> bool {
@@ -686,18 +861,33 @@ mod tests {
         assert_eq!(sp.segment(0), before.segment(0));
         assert_eq!(sp.segment(3), before.segment(3));
         // The neighbours keep their handle directions on its segments, and their other handles.
-        assert!(collinear(sp.anchors[1].h_out - sp.anchors[1].p, before.anchors[1].h_out - before.anchors[1].p));
-        assert!(collinear(sp.anchors[3].h_in - sp.anchors[3].p, before.anchors[3].h_in - before.anchors[3].p));
-        assert_eq!((sp.anchors[1].h_in, sp.anchors[3].h_out), (before.anchors[1].h_in, before.anchors[3].h_out));
+        assert!(collinear(
+            sp.anchors[1].h_out - sp.anchors[1].p,
+            before.anchors[1].h_out - before.anchors[1].p
+        ));
+        assert!(collinear(
+            sp.anchors[3].h_in - sp.anchors[3].p,
+            before.anchors[3].h_in - before.anchors[3].p
+        ));
+        assert_eq!(
+            (sp.anchors[1].h_in, sp.anchors[3].h_out),
+            (before.anchors[1].h_in, before.anchors[3].h_out)
+        );
         // The moved smooth point turns along the line through its neighbours.
         let a = sp.anchors[2];
         assert_eq!(a.kind, AnchorKind::Smooth);
-        assert!(collinear(a.h_out - a.p, sp.anchors[3].p - sp.anchors[1].p) && collinear(a.h_in - a.p, a.h_out - a.p));
+        assert!(
+            collinear(a.h_out - a.p, sp.anchors[3].p - sp.anchors[1].p)
+                && collinear(a.h_in - a.p, a.h_out - a.p)
+        );
         assert!((a.h_out - a.p).dot(sp.anchors[3].p - sp.anchors[1].p) > 0.0);
         // A cusp keeps its handle directions; a moved end changes its one segment only.
         assert_eq!(sp.anchors[3].kind, AnchorKind::Corner);
         assert!(curvature_move(&mut sp, 3, pt(360.0, 170.0)));
-        assert!(collinear(sp.anchors[3].h_out - sp.anchors[3].p, before.anchors[3].h_out - before.anchors[3].p));
+        assert!(collinear(
+            sp.anchors[3].h_out - sp.anchors[3].p,
+            before.anchors[3].h_out - before.anchors[3].p
+        ));
         let mut end = before.clone();
         assert!(curvature_move(&mut end, 4, pt(470.0, 20.0)));
         assert_eq!(end.segment(2), before.segment(2));
@@ -728,8 +918,18 @@ mod tests {
         assert_eq!(sp.anchors[5], Anchor::corner(pt(550.0, 120.0)));
         // The point placed then curves through its neighbours as a drawn path's points do.
         curvature_extend(&mut sp, false, pt(650.0, 60.0), EndCurve::Smooth);
-        let drawn = catmull_rom(&[(pt(450.0, 60.0), false), (pt(550.0, 120.0), false), (pt(650.0, 60.0), false)], false);
-        assert_eq!((sp.anchors[5].h_in, sp.anchors[5].h_out), (drawn.anchors[1].h_in, drawn.anchors[1].h_out));
+        let drawn = catmull_rom(
+            &[
+                (pt(450.0, 60.0), false),
+                (pt(550.0, 120.0), false),
+                (pt(650.0, 60.0), false),
+            ],
+            false,
+        );
+        assert_eq!(
+            (sp.anchors[5].h_in, sp.anchors[5].h_out),
+            (drawn.anchors[1].h_in, drawn.anchors[1].h_out)
+        );
         assert!((0..4).all(|i| sp.segment(i) == before.segment(i)));
         // A corner stays one.
         curvature_extend(&mut sp, false, pt(700.0, 100.0), EndCurve::Corner);
@@ -742,7 +942,10 @@ mod tests {
         // A corner end without handles goes on along its segment's tangent.
         let old = sp.anchors[1];
         assert!(old.has_in() && !old.has_out());
-        assert!(collinear(old.h_in - old.p, old.p - before.anchors[1].h_in) && (old.h_in - old.p).dot(old.p - before.anchors[1].h_in) > 0.0);
+        assert!(
+            collinear(old.h_in - old.p, old.p - before.anchors[1].h_in)
+                && (old.h_in - old.p).dot(old.p - before.anchors[1].h_in) > 0.0
+        );
     }
 
     #[test]
@@ -781,7 +984,12 @@ mod tests {
         let mut d = Document::new(800.0, 600.0);
         let l = d.layers[0].id;
         let id = d.alloc_id();
-        d.insert(Some(l), 0, Node::path(id, PathData::single(sp), Appearance::default_art())).unwrap();
+        d.insert(
+            Some(l),
+            0,
+            Node::path(id, PathData::single(sp), Appearance::default_art()),
+        )
+        .unwrap();
         (d, id)
     }
 
@@ -796,12 +1004,23 @@ mod tests {
     }
 
     /// A context without snapping.
-    fn quiet<'a>(d: &'a Document, s: &'a Selection, p: &'a crate::PaintDefaults) -> ToolContext<'a> {
-        ToolContext { smart_guides: false, snap_to_point: false, ..cx(d, s, p) }
+    fn quiet<'a>(
+        d: &'a Document,
+        s: &'a Selection,
+        p: &'a crate::PaintDefaults,
+    ) -> ToolContext<'a> {
+        ToolContext {
+            smart_guides: false,
+            snap_to_point: false,
+            ..cx(d, s, p)
+        }
     }
 
     fn press(t: &mut CurvatureTool, cx: &ToolContext, x: f64, y: f64, alt: bool) -> Vec<Action> {
-        let ev = PointerEvent::new(PointerKind::Down, x, y).with_mods(Mods { alt, ..Mods::default() });
+        let ev = PointerEvent::new(PointerKind::Down, x, y).with_mods(Mods {
+            alt,
+            ..Mods::default()
+        });
         let mut a = t.pointer(cx, &ev);
         a.extend(t.pointer(cx, &PointerEvent::new(PointerKind::Up, x, y)));
         a
@@ -821,16 +1040,32 @@ mod tests {
         let (s, p) = (selected(id, None), paint());
         let cx = quiet(&d, &s, &p);
         let mut t = CurvatureTool::default();
-        assert_eq!(t.cursor(&cx, pt(250.0, 81.0), Mods::default()), Cursor::Move);
-        assert_eq!(t.cursor(&cx, pt(450.0, 61.0), Mods::default()), Cursor::PenContinue);
+        assert_eq!(
+            t.cursor(&cx, pt(250.0, 81.0), Mods::default()),
+            Cursor::Move
+        );
+        assert_eq!(
+            t.cursor(&cx, pt(450.0, 61.0), Mods::default()),
+            Cursor::PenContinue
+        );
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 251.0, 81.0));
-        assert_eq!(a, vec![Action::Exec("select.anchors".into(), json!({"id": id.0, "anchors": [[0, 2]], "mode": "set"}))]);
+        assert_eq!(
+            a,
+            vec![Action::Exec(
+                "select.anchors".into(),
+                json!({"id": id.0, "anchors": [[0, 2]], "mode": "set"})
+            )]
+        );
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 260.0, 140.0));
         assert_eq!(a[0], Action::Begin("Curvature".into()));
-        let moved = edit_op(&a[1]).map(|(op, v)| (op, v["anchor"].clone(), v["x"].clone(), v["y"].clone()));
+        let moved =
+            edit_op(&a[1]).map(|(op, v)| (op, v["anchor"].clone(), v["x"].clone(), v["y"].clone()));
         assert_eq!(moved, Some(("move", json!(2), json!(260.0), json!(140.0))));
         assert!(t.busy());
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 260.0, 140.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 260.0, 140.0)),
+            vec![Action::Commit]
+        );
         // A press without a drag only selects.
         assert_eq!(press(&mut t, &cx, 100.0, 0.0, false).len(), 1);
     }
@@ -842,20 +1077,49 @@ mod tests {
         let s = selected(id, None);
         let cx = quiet(&d, &s, &p);
         let mut t = CurvatureTool::default();
-        let to = |a: &[Action]| a.iter().find(|a| matches!(a, Action::Exec(c, _) if c == "path.convertAnchor")).cloned();
+        let to = |a: &[Action]| {
+            a.iter()
+                .find(|a| matches!(a, Action::Exec(c, _) if c == "path.convertAnchor"))
+                .cloned()
+        };
         let a = press(&mut t, &cx, 100.0, 0.0, true);
-        assert!(matches!(to(&a), Some(Action::Exec(_, v)) if v["anchor"] == 1 && v["to"] == "corner"), "{a:?}");
-        assert_eq!(t.cursor(&cx, pt(100.0, 0.0), Mods { alt: true, ..Mods::default() }), Cursor::PenConvert);
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::DoubleClick, 0.0, 100.0));
-        assert!(matches!(to(&a), Some(Action::Exec(_, v)) if v["anchor"] == 0 && v["to"] == "smooth"), "{a:?}");
+        assert!(
+            matches!(to(&a), Some(Action::Exec(_, v)) if v["anchor"] == 1 && v["to"] == "corner"),
+            "{a:?}"
+        );
+        assert_eq!(
+            t.cursor(
+                &cx,
+                pt(100.0, 0.0),
+                Mods {
+                    alt: true,
+                    ..Mods::default()
+                }
+            ),
+            Cursor::PenConvert
+        );
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::DoubleClick, 0.0, 100.0),
+        );
+        assert!(
+            matches!(to(&a), Some(Action::Exec(_, v)) if v["anchor"] == 0 && v["to"] == "smooth"),
+            "{a:?}"
+        );
         // Delete is the tool's while a point is current, and removes it.
         assert!(!t.claims_key(&cx, ToolKey::Delete));
         let s = selected(id, Some(2));
         let cx = quiet(&d, &s, &p);
         assert!(t.claims_key(&cx, ToolKey::Backspace));
-        assert_eq!(t.key(&cx, ToolKey::Delete, Mods::default()), vec![remove_anchor((id, 0, 2))]);
+        assert_eq!(
+            t.key(&cx, ToolKey::Delete, Mods::default()),
+            vec![remove_anchor((id, 0, 2))]
+        );
         // Esc lets go of the point.
-        assert_eq!(t.key(&cx, ToolKey::Escape, Mods::default()), vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))]);
+        assert_eq!(
+            t.key(&cx, ToolKey::Escape, Mods::default()),
+            vec![Action::Exec("select.set".into(), json!({"ids": [id.0]}))]
+        );
     }
 
     #[test]
@@ -871,9 +1135,18 @@ mod tests {
         assert!(
             matches!(edit_op(&a[1]), Some(("insert", v)) if v["segment"] == 1 && (v["t"].as_f64().unwrap() - 0.5).abs() < 1e-3 && v.get("x").is_none())
         );
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, on.x + 1.0, on.y + 40.0));
-        assert!(matches!(edit_op(&a[0]), Some(("insert", v)) if v["segment"] == 1 && v["y"] == on.y + 40.0), "{a:?}");
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, on.x, on.y + 40.0)), vec![Action::Commit]);
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, on.x + 1.0, on.y + 40.0),
+        );
+        assert!(
+            matches!(edit_op(&a[0]), Some(("insert", v)) if v["segment"] == 1 && v["y"] == on.y + 40.0),
+            "{a:?}"
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, on.x, on.y + 40.0)),
+            vec![Action::Commit]
+        );
     }
 
     #[test]
@@ -884,27 +1157,47 @@ mod tests {
         let (d, id) = doc_with(sp.clone());
         let s = selected(id, Some(4));
         let a = press(&mut t, &quiet(&d, &s, &p), 550.0, 120.0, false);
-        assert!(matches!(edit_op(&a[0]), Some(("extend", v)) if v["end"] == "end" && v["from"] == "keep" && v["x"] == 550.0), "{a:?}");
+        assert!(
+            matches!(edit_op(&a[0]), Some(("extend", v)) if v["end"] == "end" && v["from"] == "keep" && v["x"] == 550.0),
+            "{a:?}"
+        );
         // As the engine does it: the new end is current, and the next click curves through it.
         curvature_extend(&mut sp, false, pt(550.0, 120.0), EndCurve::Keep);
         let (d, id) = doc_with(sp.clone());
         let s = selected(id, Some(5));
         let cx = quiet(&d, &s, &p);
         t.pointer(&cx, &PointerEvent::new(PointerKind::Move, 650.0, 60.0));
-        assert!(t.overlays(&cx).iter().any(|o| matches!(o, Overlay::Path { .. })), "the rubber band shows");
+        assert!(
+            t.overlays(&cx)
+                .iter()
+                .any(|o| matches!(o, Overlay::Path { .. })),
+            "the rubber band shows"
+        );
         let a = press(&mut t, &cx, 650.0, 60.0, true);
-        assert!(matches!(edit_op(&a[0]), Some(("extend", v)) if v["from"] == "smooth"), "{a:?}");
+        assert!(
+            matches!(edit_op(&a[0]), Some(("extend", v)) if v["from"] == "smooth"),
+            "{a:?}"
+        );
         curvature_extend(&mut sp, false, pt(650.0, 60.0), EndCurve::Smooth);
         let (d, id) = doc_with(sp.clone());
         let s = selected(id, Some(6));
         let cx = quiet(&d, &s, &p);
         // The Alt-clicked point stays a corner; a click on the first point closes.
-        assert_eq!(t.cursor(&cx, pt(0.0, 100.0), Mods::default()), Cursor::PenClose);
+        assert_eq!(
+            t.cursor(&cx, pt(0.0, 100.0), Mods::default()),
+            Cursor::PenClose
+        );
         let a = press(&mut t, &cx, 0.0, 100.0, false);
-        assert!(matches!(edit_op(&a[0]), Some(("close", v)) if v["from"] == "corner" && v["end"] == "end"), "{a:?}");
+        assert!(
+            matches!(edit_op(&a[0]), Some(("close", v)) if v["from"] == "corner" && v["end"] == "end"),
+            "{a:?}"
+        );
         // Any other end keeps its curve; the start goes on from the start.
         let s = selected(id, Some(0));
         let a = press(&mut t, &quiet(&d, &s, &p), -50.0, 150.0, false);
-        assert!(matches!(edit_op(&a[0]), Some(("extend", v)) if v["end"] == "start" && v["from"] == "keep"), "{a:?}");
+        assert!(
+            matches!(edit_op(&a[0]), Some(("extend", v)) if v["end"] == "start" && v["from"] == "keep"),
+            "{a:?}"
+        );
     }
 }

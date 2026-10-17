@@ -12,16 +12,31 @@ impl CameraRawPreviewState {
         self.zoom
             .filter(|z| z.is_finite() && *z > 0.0)
             .map(|z| z.clamp(MIN_ZOOM, MAX_ZOOM))
-            .unwrap_or_else(|| (viewport.width().max(1.0) / size.x.max(f32::EPSILON)).min(viewport.height().max(1.0) / size.y.max(f32::EPSILON)).min(MAX_ZOOM))
+            .unwrap_or_else(|| {
+                (viewport.width().max(1.0) / size.x.max(f32::EPSILON))
+                    .min(viewport.height().max(1.0) / size.y.max(f32::EPSILON))
+                    .min(MAX_ZOOM)
+            })
     }
 
     pub(crate) fn image_rect(&mut self, viewport: Rect, size: Vec2) -> Rect {
         let extent = size.max(Vec2::splat(f32::EPSILON)) * self.scale(viewport, size);
-        for (center, (image, visible)) in self.center.iter_mut().zip([(extent.x, viewport.width()), (extent.y, viewport.height())]) {
+        for (center, (image, visible)) in self
+            .center
+            .iter_mut()
+            .zip([(extent.x, viewport.width()), (extent.y, viewport.height())])
+        {
             let margin = (visible.max(1.0) / image.max(1.0) * 0.5).min(0.5);
-            *center = if center.is_finite() { center.clamp(margin, 1.0 - margin) } else { 0.5 };
+            *center = if center.is_finite() {
+                center.clamp(margin, 1.0 - margin)
+            } else {
+                0.5
+            };
         }
-        Rect::from_min_size(viewport.center() - vec2(self.center[0] * extent.x, self.center[1] * extent.y), extent)
+        Rect::from_min_size(
+            viewport.center() - vec2(self.center[0] * extent.x, self.center[1] * extent.y),
+            extent,
+        )
     }
 
     pub(crate) fn zoom_at(&mut self, zoom: f32, at: Pos2, viewport: Rect, size: Vec2) {
@@ -55,8 +70,13 @@ impl CameraRawPreviewState {
 }
 
 /// Validate with the rest of the Camera Raw request before changing anything.
-pub(crate) fn prepare(current: CameraRawPreviewState, value: &Value) -> Result<CameraRawPreviewState, String> {
-    let obj = value.as_object().ok_or("Camera Raw view must be an object")?;
+pub(crate) fn prepare(
+    current: CameraRawPreviewState,
+    value: &Value,
+) -> Result<CameraRawPreviewState, String> {
+    let obj = value
+        .as_object()
+        .ok_or("Camera Raw view must be an object")?;
     let mut next = current;
     for (key, value) in obj {
         match key.as_str() {
@@ -69,7 +89,10 @@ pub(crate) fn prepare(current: CameraRawPreviewState, value: &Value) -> Result<C
                 next.zoom = Some(z as f32);
             }
             "center" => {
-                let a = value.as_array().filter(|a| a.len() == 2).ok_or("Camera Raw center must be [u,v]")?;
+                let a = value
+                    .as_array()
+                    .filter(|a| a.len() == 2)
+                    .ok_or("Camera Raw center must be [u,v]")?;
                 let coordinate = |i| {
                     a.get(i)
                         .and_then(Value::as_f64)
@@ -98,9 +121,19 @@ struct ZoomCapture {
 
 /// One capture shared with the colour sampler. Space/middle drag always pans; S takes
 /// precedence over the persistent Zoom/Hand tool, so a sampler click never zooms.
-pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport: Rect, size: Vec2, sampler: &mut bool) -> (Rect, Response, bool, Option<Rect>) {
+pub(crate) fn interact(
+    ui: &mut Ui,
+    state: &mut CameraRawPreviewState,
+    viewport: Rect,
+    size: Vec2,
+    sampler: &mut bool,
+) -> (Rect, Response, bool, Option<Rect>) {
     let sampling = *sampler;
-    let response = ui.interact(viewport, ui.id().with("cr-sample-preview"), Sense::click_and_drag());
+    let response = ui.interact(
+        viewport,
+        ui.id().with("cr-sample-preview"),
+        Sense::click_and_drag(),
+    );
     let modifiers = ui.input(|i| i.modifiers);
     let temporary_zoom = modifiers.command && (state.hand || sampling);
     let hand = !temporary_zoom && (state.hand && !sampling || ui.input(|i| i.key_down(Key::Space)));
@@ -114,7 +147,9 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
     if response.hovered() {
         ui.input_mut(|i| i.smooth_scroll_delta = Vec2::ZERO);
         match wheel {
-            Some(crate::wheel_nav::Wheel::Zoom(factor)) => state.zoom_at(state.scale(viewport, size) * factor, at, viewport, size),
+            Some(crate::wheel_nav::Wheel::Zoom(factor)) => {
+                state.zoom_at(state.scale(viewport, size) * factor, at, viewport, size)
+            }
             Some(crate::wheel_nav::Wheel::Pan(delta)) => state.pan(delta, viewport, size),
             None => {}
         }
@@ -132,14 +167,29 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
     if response.drag_started_by(PointerButton::Primary) && zoom_tool {
         let start = ui.input(|i| i.pointer.press_origin()).unwrap_or(at);
         if rect.contains(start) {
-            ui.ctx().data_mut(|data| data.insert_temp(capture_id, ZoomCapture { start, image: rect, box_zoom: modifiers.command && !temporary_zoom }));
+            ui.ctx().data_mut(|data| {
+                data.insert_temp(
+                    capture_id,
+                    ZoomCapture {
+                        start,
+                        image: rect,
+                        box_zoom: modifiers.command && !temporary_zoom,
+                    },
+                )
+            });
         }
     }
-    let capture = ui.ctx().data(|data| data.get_temp::<ZoomCapture>(capture_id));
+    let capture = ui
+        .ctx()
+        .data(|data| data.get_temp::<ZoomCapture>(capture_id));
     let mut zoom_box = None;
-    if panning && (response.dragged_by(PointerButton::Primary) || response.dragged_by(PointerButton::Middle)) {
+    if panning
+        && (response.dragged_by(PointerButton::Primary)
+            || response.dragged_by(PointerButton::Middle))
+    {
         state.pan(response.drag_delta(), viewport, size);
-        ui.ctx().set_cursor_icon(crate::tool_cursor::hand(ui.ctx(), true));
+        ui.ctx()
+            .set_cursor_icon(crate::tool_cursor::hand(ui.ctx(), true));
     } else if response.dragged_by(PointerButton::Primary)
         && let Some(capture) = capture
     {
@@ -151,7 +201,13 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
         } else {
             // The anchor is the initial press, not the moving pointer; reversing a scrub
             // follows the same detail instead of drifting across the image.
-            state.zoom_at(state.scale(viewport, size) * (response.drag_delta().x * 0.01).clamp(-1.0, 1.0).exp(), capture.start, viewport, size);
+            state.zoom_at(
+                state.scale(viewport, size)
+                    * (response.drag_delta().x * 0.01).clamp(-1.0, 1.0).exp(),
+                capture.start,
+                viewport,
+                size,
+            );
         }
     } else if response.double_clicked() && hand {
         state.fit();
@@ -174,12 +230,16 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
             if region.width() >= 4.0 && region.height() >= 4.0 {
                 let point = (region.center() - capture.image.min) / capture.image.size();
                 state.zoom = Some(
-                    (capture.image.width() / size.x * (viewport.width() / region.width()).min(viewport.height() / region.height())).clamp(MIN_ZOOM, MAX_ZOOM),
+                    (capture.image.width() / size.x
+                        * (viewport.width() / region.width())
+                            .min(viewport.height() / region.height()))
+                    .clamp(MIN_ZOOM, MAX_ZOOM),
                 );
                 state.center = [point.x, point.y];
             }
         }
-        ui.ctx().data_mut(|data| data.remove::<ZoomCapture>(capture_id));
+        ui.ctx()
+            .data_mut(|data| data.remove::<ZoomCapture>(capture_id));
     }
     response.context_menu(|ui| {
         if ui.button(tl!("Fit in View")).clicked() {
@@ -206,11 +266,23 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
             } else if i.consume_key(Modifiers::COMMAND, Key::Num0) {
                 state.fit();
             }
-            if i.consume_key(Modifiers::COMMAND, Key::Plus) || i.consume_key(Modifiers::COMMAND, Key::Equals) {
-                state.zoom_at(state.scale(viewport, size) * 1.25, viewport.center(), viewport, size);
+            if i.consume_key(Modifiers::COMMAND, Key::Plus)
+                || i.consume_key(Modifiers::COMMAND, Key::Equals)
+            {
+                state.zoom_at(
+                    state.scale(viewport, size) * 1.25,
+                    viewport.center(),
+                    viewport,
+                    size,
+                );
             }
             if i.consume_key(Modifiers::COMMAND, Key::Minus) {
-                state.zoom_at(state.scale(viewport, size) / 1.25, viewport.center(), viewport, size);
+                state.zoom_at(
+                    state.scale(viewport, size) / 1.25,
+                    viewport.center(),
+                    viewport,
+                    size,
+                );
             }
             if i.consume_key(Modifiers::NONE, Key::H) {
                 state.hand = true;
@@ -222,12 +294,31 @@ pub(crate) fn interact(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport:
             }
         });
     }
-    (state.image_rect(viewport, size), response, panning || temporary_zoom, zoom_box)
+    (
+        state.image_rect(viewport, size),
+        response,
+        panning || temporary_zoom,
+        zoom_box,
+    )
 }
 
-pub(crate) fn toolbar(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport: Rect, size: Vec2, sampler: &mut bool) {
-    let zoom_tool = crate::icons::button(ui, "zoom-in", 28.0, !state.hand && !*sampler, tl!("Zoom Tool"));
-    zoom_tool.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Zoom Tool")));
+pub(crate) fn toolbar(
+    ui: &mut Ui,
+    state: &mut CameraRawPreviewState,
+    viewport: Rect,
+    size: Vec2,
+    sampler: &mut bool,
+) {
+    let zoom_tool = crate::icons::button(
+        ui,
+        "zoom-in",
+        28.0,
+        !state.hand && !*sampler,
+        tl!("Zoom Tool"),
+    );
+    zoom_tool.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Zoom Tool"))
+    });
     if zoom_tool.double_clicked() {
         state.fit();
     }
@@ -235,8 +326,11 @@ pub(crate) fn toolbar(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport: 
         state.hand = false;
         *sampler = false;
     }
-    let hand_tool = crate::icons::button(ui, "hand", 28.0, state.hand && !*sampler, tl!("Hand Tool"));
-    hand_tool.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Hand Tool")));
+    let hand_tool =
+        crate::icons::button(ui, "hand", 28.0, state.hand && !*sampler, tl!("Hand Tool"));
+    hand_tool.widget_info(|| {
+        egui::WidgetInfo::labeled(egui::WidgetType::Button, ui.is_enabled(), tl!("Hand Tool"))
+    });
     if hand_tool.double_clicked() {
         state.fit();
     }
@@ -253,7 +347,10 @@ pub(crate) fn toolbar(ui: &mut Ui, state: &mut CameraRawPreviewState, viewport: 
     let mut zoom = state.zoom;
     let mut options = vec![(None, tl!("Fit in View"))];
     let labels = ["25%", "50%", "100%", "200%", "400%", "800%", "1600%"];
-    for (z, label) in [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0].into_iter().zip(labels) {
+    for (z, label) in [0.25, 0.5, 1.0, 2.0, 4.0, 8.0, 16.0]
+        .into_iter()
+        .zip(labels)
+    {
         options.push((Some(z), label));
     }
     let current_label = format!("{:.1}%", state.scale(viewport, size) * 100.0);
@@ -293,7 +390,11 @@ mod tests {
     fn tiny_images_nonfinite_state_and_resize_stay_centered_and_finite() {
         let viewport = Rect::from_min_size(Pos2::ZERO, vec2(600.0, 400.0));
         let size = vec2(40.0, 20.0);
-        let mut view = CameraRawPreviewState { zoom: Some(f32::NAN), center: [f32::INFINITY, f32::NAN], hand: true };
+        let mut view = CameraRawPreviewState {
+            zoom: Some(f32::NAN),
+            center: [f32::INFINITY, f32::NAN],
+            hand: true,
+        };
         assert!(view.image_rect(viewport, size).is_finite());
         view.zoom_at(1.0, pos2(100.0, 100.0), viewport, size);
         assert_eq!(view.image_rect(viewport, size).center(), viewport.center());

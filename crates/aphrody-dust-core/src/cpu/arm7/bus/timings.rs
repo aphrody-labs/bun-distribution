@@ -42,16 +42,37 @@ impl Timings {
         //   they're mapped, what actually happens?
         // - GBA slot, Wi-Fi
 
-        self.0.fill(Cycles { n32: 1, s32: 1, n16: 1, s16: 1 });
+        self.0.fill(Cycles {
+            n32: 1,
+            s32: 1,
+            n16: 1,
+            s16: 1,
+        });
 
         // BIOS: same as unmapped
 
         // Main RAM
-        self.set_range(Cycles { n32: 9, s32: 2, n16: 8, s16: 1 }, (0x0200_0000, 0x02FF_FFFF));
+        self.set_range(
+            Cycles {
+                n32: 9,
+                s32: 2,
+                n16: 8,
+                s16: 1,
+            },
+            (0x0200_0000, 0x02FF_FFFF),
+        );
 
         // SWRAM, ARM7 WRAM, I/O: same as unmapped
 
         // VRAM allocated as ARM7 WRAM
-        self.set_range(Cycles { n32: 2, s32: 2, n16: 1, s16: 1 }, (0x0600_0000, 0x06FF_FFFF));
+        self.set_range(
+            Cycles {
+                n32: 2,
+                s32: 2,
+                n16: 1,
+                s16: 1,
+            },
+            (0x0600_0000, 0x06FF_FFFF),
+        );
     }
 }

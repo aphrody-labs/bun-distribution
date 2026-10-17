@@ -35,21 +35,64 @@ impl Panel {
 
 fn harness(panel: Panel, angle: f64) -> (Harness<'static, EffectcraftApp>, u64, u64) {
     let mut s = Session::default();
-    s.execute("comp.new", json!({"name": "Angles", "width": 320, "height": 180, "duration": 4})).unwrap();
-    let layer = s.execute("layer.newSolid", json!({"name": "Plate", "color": "#40b080"})).unwrap()["layer"].as_u64().unwrap();
+    s.execute(
+        "comp.new",
+        json!({"name": "Angles", "width": 320, "height": 180, "duration": 4}),
+    )
+    .unwrap();
+    let layer = s
+        .execute(
+            "layer.newSolid",
+            json!({"name": "Plate", "color": "#40b080"}),
+        )
+        .unwrap()["layer"]
+        .as_u64()
+        .unwrap();
     let uid = if matches!(panel, Panel::EffectControls) {
-        let fx = s.execute("effect.apply", json!({"layer": layer, "effect": "CC Bend It"})).unwrap()["effects"][0].as_u64().unwrap();
-        s.active_comp().unwrap().layer(LayerId(layer)).unwrap().props.find_group(fx).unwrap().get("bend").unwrap().uid
+        let fx = s
+            .execute(
+                "effect.apply",
+                json!({"layer": layer, "effect": "CC Bend It"}),
+            )
+            .unwrap()["effects"][0]
+            .as_u64()
+            .unwrap();
+        s.active_comp()
+            .unwrap()
+            .layer(LayerId(layer))
+            .unwrap()
+            .props
+            .find_group(fx)
+            .unwrap()
+            .get("bend")
+            .unwrap()
+            .uid
     } else {
-        s.active_comp().unwrap().layer(LayerId(layer)).unwrap().props.prop("transform/rotation").unwrap().uid
+        s.active_comp()
+            .unwrap()
+            .layer(LayerId(layer))
+            .unwrap()
+            .props
+            .prop("transform/rotation")
+            .unwrap()
+            .uid
     };
-    s.execute("prop.set", json!({"layer": layer, "prop": uid, "value": angle})).unwrap();
+    s.execute(
+        "prop.set",
+        json!({"layer": layer, "prop": uid, "value": angle}),
+    )
+    .unwrap();
     let mut app = EffectcraftApp::new(s);
     app.show_panel(panel.kind());
     app.toggle_maximize(panel.kind());
-    app.ui.timeline.layer_reveal.insert(layer, vec!["rotation".into()]);
+    app.ui
+        .timeline
+        .layer_reveal
+        .insert(layer, vec!["rotation".into()]);
     app.ui.timeline.open_layers.insert(layer);
-    let mut h = Harness::builder().with_size(vec2(1600.0, 1000.0)).build_eframe(|_| app);
+    let mut h = Harness::builder()
+        .with_size(vec2(1600.0, 1000.0))
+        .build_eframe(|_| app);
     h.run_steps(4);
     (h, layer, uid)
 }
@@ -75,28 +118,63 @@ fn component(h: &Harness<'_, EffectcraftApp>, panel: Panel, uid: u64, revolution
 
 fn click(h: &mut Harness<'_, EffectcraftApp>, p: Pos2) {
     h.input_mut().events.push(Event::PointerMoved(p));
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: true, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: true,
+        modifiers: Modifiers::NONE,
+    });
     h.step();
-    h.input_mut().events.push(Event::PointerButton { pos: p, button: egui::PointerButton::Primary, pressed: false, modifiers: Modifiers::NONE });
+    h.input_mut().events.push(Event::PointerButton {
+        pos: p,
+        button: egui::PointerButton::Primary,
+        pressed: false,
+        modifiers: Modifiers::NONE,
+    });
     h.run_steps(3);
 }
 
 fn key(h: &mut Harness<'_, EffectcraftApp>, key: Key, modifiers: Modifiers) {
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers });
-    h.input_mut().events.push(Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers,
+    });
+    h.input_mut().events.push(Event::Key {
+        key,
+        physical_key: None,
+        pressed: false,
+        repeat: false,
+        modifiers,
+    });
     h.run_steps(2);
 }
 
 fn begin_edit(h: &mut Harness<'_, EffectcraftApp>, p: Pos2, text: &str) {
     click(h, p);
-    assert!(h.ctx.egui_wants_keyboard_input(), "the numeric editor has focus");
+    assert!(
+        h.ctx.egui_wants_keyboard_input(),
+        "the numeric editor has focus"
+    );
     key(h, Key::A, Modifiers::COMMAND);
     h.input_mut().events.push(Event::Text(text.into()));
     h.step();
 }
 
 fn angle(h: &Harness<'_, EffectcraftApp>, layer: u64, uid: u64) -> f64 {
-    h.state().session.active_comp().unwrap().layer(LayerId(layer)).unwrap().props.find(uid).unwrap().value.as_f64()
+    h.state()
+        .session
+        .active_comp()
+        .unwrap()
+        .layer(LayerId(layer))
+        .unwrap()
+        .props
+        .find(uid)
+        .unwrap()
+        .value
+        .as_f64()
 }
 
 #[test]
@@ -117,8 +195,15 @@ fn cancel_edits(revolutions: bool) {
         begin_edit(&mut h, p, "3");
         key(&mut h, Key::Escape, Modifiers::NONE);
         assert_eq!(angle(&h, layer, uid), 390.5, "{panel:?}: Escape cancels");
-        assert_eq!(h.state().session.history.undo.len(), undo, "cancellation adds no undo step");
-        assert!(!h.ctx.egui_wants_keyboard_input(), "Escape releases the keyboard");
+        assert_eq!(
+            h.state().session.history.undo.len(),
+            undo,
+            "cancellation adds no undo step"
+        );
+        assert!(
+            !h.ctx.egui_wants_keyboard_input(),
+            "Escape releases the keyboard"
+        );
     }
 }
 
@@ -141,7 +226,11 @@ fn invalid_edits(revolutions: bool) {
             begin_edit(&mut h, p, text);
             key(&mut h, Key::Enter, Modifiers::NONE);
             assert_eq!(angle(&h, layer, uid), 390.5, "{panel:?}: reject {text}");
-            assert_eq!(h.state().session.history.undo.len(), undo, "invalid input adds no undo step");
+            assert_eq!(
+                h.state().session.history.undo.len(),
+                undo,
+                "invalid input adds no undo step"
+            );
         }
     }
 }
@@ -186,7 +275,10 @@ fn commit_edits(click_away: bool) {
             }
             assert_eq!(angle(&h, layer, uid), expected, "{panel:?}");
             assert_eq!(h.state().session.history.undo.len(), undo + 1);
-            h.state_mut().session.execute("edit.undo", json!({})).unwrap();
+            h.state_mut()
+                .session
+                .execute("edit.undo", json!({}))
+                .unwrap();
             assert_eq!(angle(&h, layer, uid), 390.5);
         }
     }

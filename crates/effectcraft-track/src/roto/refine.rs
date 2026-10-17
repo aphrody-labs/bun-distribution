@@ -60,7 +60,9 @@ fn shifted(seg: &FrameSeg, px: f64) -> Vec<f32> {
         return seg.matte.iter().map(|v| *v as f32).collect();
     }
     let sd = signed_distance(&seg.matte, seg.w, seg.h);
-    sd.iter().map(|d| ((*d as f64) > -px) as u8 as f32).collect()
+    sd.iter()
+        .map(|d| ((*d as f64) > -px) as u8 as f32)
+        .collect()
 }
 
 /// The soft matte of `seg` (all planes `seg.w × seg.h`), with `rgb` the frame's straight colour.
@@ -82,9 +84,14 @@ pub fn matte_alpha(
     // Roto Brush Matte: Shift Edge (100 % = 10 px), Reduce Chatter, Feather, Contrast.
     let shift_px = p.rb_shift / 100.0 * 10.0 * scale;
     let mut a = shifted(seg, shift_px);
-    let nb: Vec<Vec<f32>> = [prev, next].into_iter().flatten().map(|s| shifted(s, shift_px)).collect();
+    let nb: Vec<Vec<f32>> = [prev, next]
+        .into_iter()
+        .flatten()
+        .map(|s| shifted(s, shift_px))
+        .collect();
     if p.rb_chatter > 0.0 && !nb.is_empty() {
-        let k = (p.rb_chatter / 100.0).clamp(0.0, 1.0) as f32 * (nb.len() as f32 / (nb.len() as f32 + 1.0));
+        let k = (p.rb_chatter / 100.0).clamp(0.0, 1.0) as f32
+            * (nb.len() as f32 / (nb.len() as f32 + 1.0));
         for i in 0..n {
             let m = nb.iter().map(|v| v[i]).sum::<f32>() / nb.len() as f32;
             a[i] += (m - a[i]) * k;
@@ -110,12 +117,26 @@ pub fn matte_alpha(
             }
         }
         let pad = 2 * r + 2;
-        let (x0, y0, x1, y1) = (x0.saturating_sub(pad), y0.saturating_sub(pad), (x1 + pad).min(w), (y1 + pad).min(h));
+        let (x0, y0, x1, y1) = (
+            x0.saturating_sub(pad),
+            y0.saturating_sub(pad),
+            (x1 + pad).min(w),
+            (y1 + pad).min(h),
+        );
         let (cw, ch) = (x1 - x0, y1 - y0);
-        let crop = |src: &dyn Fn(usize) -> f32| -> Vec<f32> { (0..cw * ch).map(|j| src((y0 + j / cw) * w + x0 + j % cw)).collect() };
-        let cimg: Vec<[f32; 3]> = (0..cw * ch).map(|j| rgb[(y0 + j / cw) * w + x0 + j % cw]).collect();
+        let crop = |src: &dyn Fn(usize) -> f32| -> Vec<f32> {
+            (0..cw * ch)
+                .map(|j| src((y0 + j / cw) * w + x0 + j % cw))
+                .collect()
+        };
+        let cimg: Vec<[f32; 3]> = (0..cw * ch)
+            .map(|j| rgb[(y0 + j / cw) * w + x0 + j % cw])
+            .collect();
         let cp = crop(&|i| a[i]);
-        let band: Vec<bool> = crop(&|i| seg.refine[i] as f32).iter().map(|v| *v > 0.0).collect();
+        let band: Vec<bool> = crop(&|i| seg.refine[i] as f32)
+            .iter()
+            .map(|v| *v > 0.0)
+            .collect();
         let outside: Vec<bool> = band.iter().map(|b| !b).collect();
         // Guided filter estimate, then closed-form matting with everything outside the band known.
         let mut q = guided_filter(&cimg, &cp, cw, ch, r, eps);
@@ -123,7 +144,16 @@ pub fn matte_alpha(
             q[j] = if band[j] { q[j].clamp(0.0, 1.0) } else { cp[j] };
         }
         if p.higher_quality {
-            q = matting::closed_form(&cimg, &q, &outside, cw, ch, 1, 1e-5 * (1.0 + p.smooth.max(0.0)) as f32, 50);
+            q = matting::closed_form(
+                &cimg,
+                &q,
+                &outside,
+                cw,
+                ch,
+                1,
+                1e-5 * (1.0 + p.smooth.max(0.0)) as f32,
+                50,
+            );
         }
         // Refine Edge Matte adjustments.
         if p.smooth > 1.0 {
@@ -147,7 +177,10 @@ pub fn matte_alpha(
         // Refine-stage Reduce Chatter: towards the neighbours' mattes inside the band.
         if p.chatter > 0.0 && !nb.is_empty() {
             let k = (p.chatter / 100.0).clamp(0.0, 1.0) as f32 * 0.5;
-            let soft: Vec<Vec<f32>> = nb.iter().map(|v| gauss(v, w, h, (r as f64 / 2.0).max(1.0))).collect();
+            let soft: Vec<Vec<f32>> = nb
+                .iter()
+                .map(|v| gauss(v, w, h, (r as f64 / 2.0).max(1.0)))
+                .collect();
             for i in 0..n {
                 if seg.refine[i] != 0 {
                     let m = soft.iter().map(|v| v[i]).sum::<f32>() / soft.len() as f32;
@@ -159,7 +192,11 @@ pub fn matte_alpha(
     // Motion blur: the matte's motion between the neighbouring frames.
     if p.motion_blur {
         let c = seg.centroid();
-        let v = match (prev.and_then(FrameSeg::centroid), next.and_then(FrameSeg::centroid), c) {
+        let v = match (
+            prev.and_then(FrameSeg::centroid),
+            next.and_then(FrameSeg::centroid),
+            c,
+        ) {
             (Some(a), Some(b), _) => Some([(b[0] - a[0]) / 2.0, (b[1] - a[1]) / 2.0]),
             (Some(a), None, Some(c)) => Some([c[0] - a[0], c[1] - a[1]]),
             (None, Some(b), Some(c)) => Some([b[0] - c[0], b[1] - c[1]]),
@@ -177,7 +214,16 @@ pub fn matte_alpha(
 /// Decontaminate edge colours of `rgb` in place for the matte `alpha` (see
 /// [`matting::decontaminate`]); returns the decontamination map. `band`: the Refine Edge band
 /// (pixels where decontamination always applies).
-pub fn decontaminate(rgb: &mut [[f32; 3]], alpha: &[f32], band: &[u8], w: usize, h: usize, p: &MatteParams, band_radius: f64, scale: f64) -> Vec<f32> {
+pub fn decontaminate(
+    rgb: &mut [[f32; 3]],
+    alpha: &[f32],
+    band: &[u8],
+    w: usize,
+    h: usize,
+    p: &MatteParams,
+    band_radius: f64,
+    scale: f64,
+) -> Vec<f32> {
     if !p.decontaminate {
         return vec![0.0; w * h];
     }
@@ -192,7 +238,17 @@ pub fn decontaminate(rgb: &mut [[f32; 3]], alpha: &[f32], band: &[u8], w: usize,
     } else {
         vec![false; w * h]
     };
-    let region: Vec<bool> = (0..w * h).map(|i| alpha[i] > 0.004 && alpha[i] < 0.996 && (in_band[i] || p.extend_where_smoothed)).collect();
+    let region: Vec<bool> = (0..w * h)
+        .map(|i| alpha[i] > 0.004 && alpha[i] < 0.996 && (in_band[i] || p.extend_where_smoothed))
+        .collect();
     let radius = (band_radius + grow).max(4.0 * scale).round() as usize;
-    matting::decontaminate(rgb, alpha, &region, w, h, radius, (p.decontamination / 100.0).clamp(0.0, 1.0) as f32)
+    matting::decontaminate(
+        rgb,
+        alpha,
+        &region,
+        w,
+        h,
+        radius,
+        (p.decontamination / 100.0).clamp(0.0, 1.0) as f32,
+    )
 }

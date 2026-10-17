@@ -22,7 +22,11 @@ pub trait Store: Send {
     ///
     /// The default buffers the content in memory; [`FsStore`] streams it into the temp file, so
     /// a large snapshot is never held in memory as a whole.
-    fn write_atomic_with(&mut self, name: &str, fill: &mut dyn FnMut(&mut dyn io::Write) -> io::Result<()>) -> io::Result<u64> {
+    fn write_atomic_with(
+        &mut self,
+        name: &str,
+        fill: &mut dyn FnMut(&mut dyn io::Write) -> io::Result<()>,
+    ) -> io::Result<u64> {
         let mut buf = Vec::new();
         fill(&mut buf)?;
         self.write_atomic(name, &buf)?;
@@ -56,7 +60,10 @@ impl FsStore {
     /// Use `dir` (created if missing).
     pub fn open(dir: impl AsRef<Path>) -> io::Result<FsStore> {
         std::fs::create_dir_all(dir.as_ref())?;
-        Ok(FsStore { dir: dir.as_ref().to_path_buf(), appender: None })
+        Ok(FsStore {
+            dir: dir.as_ref().to_path_buf(),
+            appender: None,
+        })
     }
     pub fn dir(&self) -> &Path {
         &self.dir
@@ -98,14 +105,21 @@ impl Store for FsStore {
         Ok(())
     }
 
-    fn write_atomic_with(&mut self, name: &str, fill: &mut dyn FnMut(&mut dyn io::Write) -> io::Result<()>) -> io::Result<u64> {
+    fn write_atomic_with(
+        &mut self,
+        name: &str,
+        fill: &mut dyn FnMut(&mut dyn io::Write) -> io::Result<()>,
+    ) -> io::Result<u64> {
         use std::io::Write;
         if self.appender.as_ref().is_some_and(|(n, _)| n == name) {
             self.appender = None;
         }
         let tmp = self.path(&format!("{name}.tmp"));
         let written = (|| {
-            let mut w = Counter { inner: io::BufWriter::with_capacity(1 << 20, std::fs::File::create(&tmp)?), n: 0 };
+            let mut w = Counter {
+                inner: io::BufWriter::with_capacity(1 << 20, std::fs::File::create(&tmp)?),
+                n: 0,
+            };
             fill(&mut w)?;
             w.flush()?;
             let f = w.inner.into_inner().map_err(|e| e.into_error())?;
@@ -128,13 +142,18 @@ impl Store for FsStore {
         use std::io::Write;
         if self.appender.as_ref().is_none_or(|(n, _)| n != name) {
             let existed = self.path(name).exists();
-            let f = std::fs::OpenOptions::new().create(true).append(true).open(self.path(name))?;
+            let f = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(self.path(name))?;
             if !existed {
                 self.sync_dir();
             }
             self.appender = Some((name.to_string(), f));
         }
-        let Some((_, f)) = self.appender.as_mut() else { return Err(io::Error::other("appender not open")) };
+        let Some((_, f)) = self.appender.as_mut() else {
+            return Err(io::Error::other("appender not open"));
+        };
         let written = f.write_all(data).and_then(|()| f.sync_data());
         if written.is_err() {
             // The handle may be dead (a network share that reconnected, a removed volume): the next
@@ -149,7 +168,10 @@ impl Store for FsStore {
         if self.appender.as_ref().is_some_and(|(n, _)| n == name) {
             self.appender = None;
         }
-        let f = match std::fs::OpenOptions::new().write(true).open(self.path(name)) {
+        let f = match std::fs::OpenOptions::new()
+            .write(true)
+            .open(self.path(name))
+        {
             Ok(f) => f,
             // nothing to cut (an append that failed before creating the file)
             Err(e) if e.kind() == io::ErrorKind::NotFound => return Ok(()),
@@ -165,7 +187,10 @@ impl Store for FsStore {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn background_writer(&self) -> Option<Box<dyn Store>> {
-        Some(Box::new(FsStore { dir: self.dir.clone(), appender: None }))
+        Some(Box::new(FsStore {
+            dir: self.dir.clone(),
+            appender: None,
+        }))
     }
 }
 
@@ -199,10 +224,17 @@ impl MemStore {
         MemStore::default()
     }
     pub fn get(&self, name: &str) -> Option<Vec<u8>> {
-        self.files.lock().unwrap_or_else(|e| e.into_inner()).get(name).cloned()
+        self.files
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get(name)
+            .cloned()
     }
     pub fn set(&self, name: &str, data: Vec<u8>) {
-        self.files.lock().unwrap_or_else(|e| e.into_inner()).insert(name.to_string(), data);
+        self.files
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(name.to_string(), data);
     }
 }
 
@@ -215,11 +247,21 @@ impl Store for MemStore {
         Ok(())
     }
     fn append(&mut self, name: &str, data: &[u8]) -> io::Result<()> {
-        self.files.lock().unwrap_or_else(|e| e.into_inner()).entry(name.to_string()).or_default().extend_from_slice(data);
+        self.files
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .entry(name.to_string())
+            .or_default()
+            .extend_from_slice(data);
         Ok(())
     }
     fn truncate(&mut self, name: &str, len: u64) -> io::Result<()> {
-        if let Some(f) = self.files.lock().unwrap_or_else(|e| e.into_inner()).get_mut(name) {
+        if let Some(f) = self
+            .files
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .get_mut(name)
+        {
             f.truncate(len as usize);
         }
         Ok(())
@@ -228,6 +270,7 @@ impl Store for MemStore {
         "memory".into()
     }
     fn background_writer(&self) -> Option<Box<dyn Store>> {
-        self.background.then(|| Box::new(self.clone()) as Box<dyn Store>)
+        self.background
+            .then(|| Box::new(self.clone()) as Box<dyn Store>)
     }
 }

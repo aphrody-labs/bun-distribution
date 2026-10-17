@@ -15,7 +15,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Insert Paste" => "Umetni lepljenje",
         "Cut (⌘X)" => "Iseci (⌘X)",
         "Copy (⌘C)" => "Kopiraj (⌘C)",
-        "Format Painter (double-click to keep it on)" => "Kopiraj oblikovanje (dupli klik da ostane uključeno)",
+        "Format Painter (double-click to keep it on)" => {
+            "Kopiraj oblikovanje (dupli klik da ostane uključeno)"
+        }
         "Bold (⌘B)" => "Podebljano (⌘B)",
         "Italic (⌘I)" => "Kurziv (⌘I)",
         "Underline (⌘U)" => "Podvučeno (⌘U)",
@@ -275,7 +277,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Edit" => "Uređivanje",
         "Point" => "Pokaži",
         "Calculate" => "Izračunavanje",
-        "Select destination and press Enter or choose Paste" => "Izaberi odredište i pritisni Enter ili izaberi Nalepi",
+        "Select destination and press Enter or choose Paste" => {
+            "Izaberi odredište i pritisni Enter ili izaberi Nalepi"
+        }
         "General" => "Opšte",
         "Number" => "Broj",
         "Currency" => "Valuta",
@@ -378,7 +382,9 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "A CSV file, web page or PDF is a copy: the workbook keeps its own file." => {
             "CSV fajl, veb stranica ili PDF su kopija: radna sveska zadržava svoj fajl."
         }
-        "Save the workbook under another name or in another folder." => "Sačuvaj radnu svesku pod drugim imenom ili u drugoj fascikli.",
+        "Save the workbook under another name or in another folder." => {
+            "Sačuvaj radnu svesku pod drugim imenom ili u drugoj fascikli."
+        }
         "Print Active Sheets" => "Štampaj aktivne listove",
         "Print Entire Workbook" => "Štampaj celu radnu svesku",
         "Fit Sheet on One Page" => "Uklopi list na jednu stranicu",
@@ -388,20 +394,28 @@ pub(super) fn translate(text: &str) -> Option<&'static str> {
         "Previous page" => "Prethodna stranica",
         "Next page" => "Sledeća stranica",
         "Create PDF" => "Napravi PDF",
-        "Save the sheet as a PDF document that keeps its page layout." => "Sačuvaj list kao PDF dokument koji zadržava izgled stranice.",
+        "Save the sheet as a PDF document that keeps its page layout." => {
+            "Sačuvaj list kao PDF dokument koji zadržava izgled stranice."
+        }
         "Change File Type" => "Promeni tip fajla",
         "CSV (Comma delimited)" => "CSV (odvojeno zapetama)",
-        "Save the active sheet as comma-separated text." => "Sačuvaj aktivni list kao tekst odvojen zapetama.",
+        "Save the active sheet as comma-separated text." => {
+            "Sačuvaj aktivni list kao tekst odvojen zapetama."
+        }
         "Web Page (.html)" => "Veb stranica (.html)",
         "Save the workbook as a web page." => "Sačuvaj radnu svesku kao veb stranicu.",
         "Options|General" => "Opcije|Opšte",
         "Options|Save" => "Opcije|Sačuvaj",
         "Show formula bar" => "Prikaži traku formule",
         "Enable AutoComplete for cell values" => "Omogući automatsko dovršavanje vrednosti ćelija",
-        "Save .xlsx workbooks automatically after every change" => "Automatski sačuvaj .xlsx radne sveske posle svake izmene",
+        "Save .xlsx workbooks automatically after every change" => {
+            "Automatski sačuvaj .xlsx radne sveske posle svake izmene"
+        }
         "Workbook calculation" => "Izračunavanje radne sveske",
         "Enable iterative calculation" => "Omogući iterativno izračunavanje",
-        "Calculation settings are saved with the workbook." => "Podešavanja izračunavanja se čuvaju sa radnom sveskom.",
+        "Calculation settings are saved with the workbook." => {
+            "Podešavanja izračunavanja se čuvaju sa radnom sveskom."
+        }
         "Left Margin" => "Leva margina",
         "Right Margin" => "Desna margina",
         "Top Margin" => "Gornja margina",

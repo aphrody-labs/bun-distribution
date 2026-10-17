@@ -2,7 +2,9 @@
 //! (`UiState::panels`). Plain serde, so agents read it with `ui.inspect` (`ui.panels`) and change
 //! it with `ui.set {"panels": {"scopes": {...}, "timecode": {...}, ...}}` (fields merged).
 
-use filmcraft_scopes::{Brightness, ColorSpace, ParadeType, Scale, ScopeKind, Targets, WaveformType};
+use filmcraft_scopes::{
+    Brightness, ColorSpace, ParadeType, Scale, ScopeKind, Targets, WaveformType,
+};
 use filmcraft_time::TimeDisplay;
 use serde::{Deserialize, Serialize};
 
@@ -65,26 +67,94 @@ impl Default for ScopesState {
 }
 
 /// A scopes layout preset: (name, scopes, waveform type, parade type, scale, clamp).
-pub type ScopePreset = (&'static str, &'static [ScopeKind], WaveformType, ParadeType, Scale, bool);
+pub type ScopePreset = (
+    &'static str,
+    &'static [ScopeKind],
+    WaveformType,
+    ParadeType,
+    Scale,
+    bool,
+);
 
 /// The Presets submenu (our own names).
 pub const SCOPE_PRESETS: [ScopePreset; 8] = {
     use ScopeKind::*;
     [
-        ("Waveform (RGB)", &[Waveform], WaveformType::Rgb, ParadeType::Rgb, Scale::Bits8, true),
-        ("Waveform (Luma)", &[Waveform], WaveformType::Luma, ParadeType::Rgb, Scale::Bits8, true),
-        ("Parade (RGB)", &[Parade], WaveformType::Rgb, ParadeType::Rgb, Scale::Bits8, true),
-        ("Vectorscope (YUV)", &[VectorscopeYuv], WaveformType::Rgb, ParadeType::Rgb, Scale::Bits8, true),
-        ("Vectorscope + Waveform YC", &[VectorscopeYuv, Waveform], WaveformType::Yc, ParadeType::Rgb, Scale::Bits8, true),
-        ("Four Scopes (YUV, float, no clamp)", &[VectorscopeYuv, Histogram, Parade, Waveform], WaveformType::Yc, ParadeType::Yuv, Scale::Float, false),
-        ("Four Scopes (RGB, 8 bit)", &[VectorscopeYuv, Histogram, Parade, Waveform], WaveformType::Rgb, ParadeType::Rgb, Scale::Bits8, true),
-        ("HLS Vectorscope + Histogram", &[VectorscopeHls, Histogram], WaveformType::Rgb, ParadeType::Rgb, Scale::Bits8, true),
+        (
+            "Waveform (RGB)",
+            &[Waveform],
+            WaveformType::Rgb,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "Waveform (Luma)",
+            &[Waveform],
+            WaveformType::Luma,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "Parade (RGB)",
+            &[Parade],
+            WaveformType::Rgb,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "Vectorscope (YUV)",
+            &[VectorscopeYuv],
+            WaveformType::Rgb,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "Vectorscope + Waveform YC",
+            &[VectorscopeYuv, Waveform],
+            WaveformType::Yc,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "Four Scopes (YUV, float, no clamp)",
+            &[VectorscopeYuv, Histogram, Parade, Waveform],
+            WaveformType::Yc,
+            ParadeType::Yuv,
+            Scale::Float,
+            false,
+        ),
+        (
+            "Four Scopes (RGB, 8 bit)",
+            &[VectorscopeYuv, Histogram, Parade, Waveform],
+            WaveformType::Rgb,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
+        (
+            "HLS Vectorscope + Histogram",
+            &[VectorscopeHls, Histogram],
+            WaveformType::Rgb,
+            ParadeType::Rgb,
+            Scale::Bits8,
+            true,
+        ),
     ]
 };
 
 impl ScopesState {
     pub fn apply_preset(&mut self, name: &str) -> bool {
-        let Some(p) = SCOPE_PRESETS.iter().find(|p| p.0.eq_ignore_ascii_case(name)) else { return false };
+        let Some(p) = SCOPE_PRESETS
+            .iter()
+            .find(|p| p.0.eq_ignore_ascii_case(name))
+        else {
+            return false;
+        };
         self.shown = p.1.to_vec();
         self.waveform_type = p.2;
         self.parade_type = p.3;
@@ -102,7 +172,8 @@ impl ScopesState {
         } else {
             // keep the menu's order
             self.shown.push(k);
-            self.shown.sort_by_key(|x| ScopeKind::ALL.iter().position(|a| a == x));
+            self.shown
+                .sort_by_key(|x| ScopeKind::ALL.iter().position(|a| a == x));
         }
         self.preset.clear();
     }
@@ -127,7 +198,13 @@ pub enum TcMode {
 }
 
 impl TcMode {
-    pub const ALL: [TcMode; 5] = [TcMode::Current, TcMode::Media, TcMode::Duration, TcMode::InOut, TcMode::Remaining];
+    pub const ALL: [TcMode; 5] = [
+        TcMode::Current,
+        TcMode::Media,
+        TcMode::Duration,
+        TcMode::InOut,
+        TcMode::Remaining,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             TcMode::Current => "Current Time",
@@ -180,7 +257,10 @@ pub struct TimecodeState {
 
 impl Default for TimecodeState {
     fn default() -> Self {
-        TimecodeState { rows: vec![TimecodeRow::default()], show_name: true }
+        TimecodeState {
+            rows: vec![TimecodeRow::default()],
+            show_name: true,
+        }
     }
 }
 
@@ -210,7 +290,12 @@ pub struct ReferenceState {
 
 impl Default for ReferenceState {
     fn default() -> Self {
-        ReferenceState { ganged: false, time: 0, display: RefDisplay::Composite, scopes: vec![ScopeKind::VectorscopeYuv, ScopeKind::Waveform] }
+        ReferenceState {
+            ganged: false,
+            time: 0,
+            display: RefDisplay::Composite,
+            scopes: vec![ScopeKind::VectorscopeYuv, ScopeKind::Waveform],
+        }
     }
 }
 
@@ -236,6 +321,8 @@ pub struct ProgressState {
 
 impl Default for ProgressState {
     fn default() -> Self {
-        ProgressState { show_finished: true }
+        ProgressState {
+            show_finished: true,
+        }
     }
 }

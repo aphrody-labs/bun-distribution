@@ -52,7 +52,11 @@ impl NoteValue {
 #[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum GridValue {
     /// Musical: note value, optionally dotted or triplet.
-    Note { value: NoteValue, dotted: bool, triplet: bool },
+    Note {
+        value: NoteValue,
+        dotted: bool,
+        triplet: bool,
+    },
     /// Absolute seconds (Min:Secs grids: 0.001 … 10 s).
     Seconds(f64),
     /// Frames at the session timecode rate.
@@ -63,14 +67,22 @@ pub enum GridValue {
 
 impl Default for GridValue {
     fn default() -> Self {
-        GridValue::Note { value: NoteValue::Sixteenth, dotted: false, triplet: false }
+        GridValue::Note {
+            value: NoteValue::Sixteenth,
+            dotted: false,
+            triplet: false,
+        }
     }
 }
 
 impl GridValue {
     pub fn label(&self) -> String {
         match self {
-            GridValue::Note { value, dotted, triplet } => {
+            GridValue::Note {
+                value,
+                dotted,
+                triplet,
+            } => {
                 let mut s = value.label().to_string();
                 if *dotted {
                     s.push_str(" dotted");
@@ -86,8 +98,18 @@ impl GridValue {
         }
     }
 
-    fn note_ticks(value: NoteValue, dotted: bool, triplet: bool, map: &TempoMap, at_tick: i64) -> i64 {
-        let base = if value == NoteValue::Bar { map.meter_at_tick(at_tick).ticks_per_bar() } else { value.ticks() };
+    fn note_ticks(
+        value: NoteValue,
+        dotted: bool,
+        triplet: bool,
+        map: &TempoMap,
+        at_tick: i64,
+    ) -> i64 {
+        let base = if value == NoteValue::Bar {
+            map.meter_at_tick(at_tick).ticks_per_bar()
+        } else {
+            value.ticks()
+        };
         let mut t = base;
         if dotted {
             t = t * 3 / 2;
@@ -99,15 +121,27 @@ impl GridValue {
     }
 
     /// The step in samples at position `at` (musical steps depend on tempo).
-    pub fn step_samples(&self, at: Samples, sr: SampleRate, map: &TempoMap, rate: FrameRate) -> Samples {
+    pub fn step_samples(
+        &self,
+        at: Samples,
+        sr: SampleRate,
+        map: &TempoMap,
+        rate: FrameRate,
+    ) -> Samples {
         match *self {
-            GridValue::Note { value, dotted, triplet } => {
+            GridValue::Note {
+                value,
+                dotted,
+                triplet,
+            } => {
                 let t0 = map.samples_to_ticks(at, sr);
                 let dt = Self::note_ticks(value, dotted, triplet, map, t0);
                 (map.tick_to_samples(t0 + dt, sr) - map.tick_to_samples(t0, sr)).max(1)
             }
             GridValue::Seconds(s) => sr.samples(s.clamp(0.000_01, 3600.0)).max(1),
-            GridValue::Frames(f) => to_samples(rate.samples_per_frame(sr) * f.clamp(1, 1_000_000) as f64).max(1),
+            GridValue::Frames(f) => {
+                to_samples(rate.samples_per_frame(sr) * f.clamp(1, 1_000_000) as f64).max(1)
+            }
             GridValue::Samples(n) => n.max(1),
         }
     }
@@ -120,9 +154,19 @@ impl GridValue {
     }
 
     /// The grid line at or before `pos`.
-    pub fn line_at_or_before(&self, pos: Samples, sr: SampleRate, map: &TempoMap, rate: FrameRate) -> Samples {
+    pub fn line_at_or_before(
+        &self,
+        pos: Samples,
+        sr: SampleRate,
+        map: &TempoMap,
+        rate: FrameRate,
+    ) -> Samples {
         match *self {
-            GridValue::Note { value, dotted, triplet } => {
+            GridValue::Note {
+                value,
+                dotted,
+                triplet,
+            } => {
                 let t = map.samples_to_ticks_f(pos, sr).floor() as i64;
                 // Grid lines restart at each bar line so odd meters stay aligned.
                 let bb = map.bar_beat_at_tick(t);
@@ -139,14 +183,32 @@ impl GridValue {
     }
 
     /// The first grid line strictly after `line`.
-    pub fn next_line(&self, line: Samples, sr: SampleRate, map: &TempoMap, rate: FrameRate) -> Samples {
+    pub fn next_line(
+        &self,
+        line: Samples,
+        sr: SampleRate,
+        map: &TempoMap,
+        rate: FrameRate,
+    ) -> Samples {
         let step = self.step_samples(line, sr, map, rate);
         let candidate = self.line_at_or_before(line.saturating_add(step), sr, map, rate);
-        if candidate > line { candidate } else { line.saturating_add(step) }
+        if candidate > line {
+            candidate
+        } else {
+            line.saturating_add(step)
+        }
     }
 
     /// All grid lines within `[start, end)`, capped at `max` lines.
-    pub fn lines(&self, start: Samples, end: Samples, sr: SampleRate, map: &TempoMap, rate: FrameRate, max: usize) -> Vec<Samples> {
+    pub fn lines(
+        &self,
+        start: Samples,
+        end: Samples,
+        sr: SampleRate,
+        map: &TempoMap,
+        rate: FrameRate,
+        max: usize,
+    ) -> Vec<Samples> {
         let mut out = Vec::new();
         let mut p = self.line_at_or_before(start, sr, map, rate);
         while p < end && out.len() < max {
@@ -174,7 +236,10 @@ mod tests {
         assert_eq!(g.step_samples(0, sr, &map, rate), 6000);
         assert_eq!(g.snap(2900, sr, &map, rate), 0);
         assert_eq!(g.snap(3100, sr, &map, rate), 6000);
-        assert_eq!(g.lines(0, 24_000, sr, &map, rate, 100), vec![0, 6000, 12000, 18000]);
+        assert_eq!(
+            g.lines(0, 24_000, sr, &map, rate, 100),
+            vec![0, 6000, 12000, 18000]
+        );
     }
 
     #[test]
@@ -188,15 +253,28 @@ mod tests {
     #[test]
     fn lines_are_capped() {
         let (sr, map, rate) = (SampleRate::HZ_48000, TempoMap::default(), FrameRate::Fps25);
-        assert_eq!(GridValue::Samples(1).lines(0, 1_000_000, sr, &map, rate, 50).len(), 50);
+        assert_eq!(
+            GridValue::Samples(1)
+                .lines(0, 1_000_000, sr, &map, rate, 50)
+                .len(),
+            50
+        );
     }
 
     #[test]
     fn triplets_and_dots() {
         let (sr, map, rate) = (SampleRate::HZ_48000, TempoMap::default(), FrameRate::Fps25);
-        let t = GridValue::Note { value: NoteValue::Quarter, dotted: false, triplet: true };
+        let t = GridValue::Note {
+            value: NoteValue::Quarter,
+            dotted: false,
+            triplet: true,
+        };
         assert_eq!(t.step_samples(0, sr, &map, rate), 16_000);
-        let d = GridValue::Note { value: NoteValue::Quarter, dotted: true, triplet: false };
+        let d = GridValue::Note {
+            value: NoteValue::Quarter,
+            dotted: true,
+            triplet: false,
+        };
         assert_eq!(d.step_samples(0, sr, &map, rate), 36_000);
     }
 }

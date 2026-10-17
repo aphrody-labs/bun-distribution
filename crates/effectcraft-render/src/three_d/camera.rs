@@ -63,7 +63,12 @@ impl CameraState {
     pub fn projection(&self, comp_w: f64, comp_h: f64) -> Mat4 {
         if self.ortho {
             let z = self.zoom;
-            Mat4([[z, 0.0, 0.0, comp_w * 0.5], [0.0, z, 0.0, comp_h * 0.5], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]) * self.view
+            Mat4([
+                [z, 0.0, 0.0, comp_w * 0.5],
+                [0.0, z, 0.0, comp_h * 0.5],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]) * self.view
         } else {
             effectcraft_geom::camera_matrix(comp_w, comp_h, self.eye, self.view, self.zoom)
         }
@@ -89,31 +94,54 @@ impl CameraState {
     pub fn project(&self, comp_w: f64, comp_h: f64, p: Vec3) -> Option<Vec2> {
         let c = self.view.apply(p);
         if self.ortho {
-            return Some(vec2(self.zoom * c.x + comp_w * 0.5, self.zoom * c.y + comp_h * 0.5));
+            return Some(vec2(
+                self.zoom * c.x + comp_w * 0.5,
+                self.zoom * c.y + comp_h * 0.5,
+            ));
         }
         if c.z < NEAR {
             return None;
         }
-        Some(vec2(self.zoom * c.x / c.z + comp_w * 0.5, self.zoom * c.y / c.z + comp_h * 0.5))
+        Some(vec2(
+            self.zoom * c.x / c.z + comp_w * 0.5,
+            self.zoom * c.y / c.z + comp_h * 0.5,
+        ))
     }
     /// Direction from a shaded point towards the viewer.
     pub fn to_viewer(&self, p: Vec3) -> Vec3 {
-        if self.ortho { -self.forward() } else { (self.eye - p).normalize() }
+        if self.ortho {
+            -self.forward()
+        } else {
+            (self.eye - p).normalize()
+        }
     }
 }
 
 /// View matrix from an eye, a forward direction and a screen-down hint.
 pub fn basis_view(eye: Vec3, forward: Vec3, down_hint: Vec3) -> Mat4 {
     let f = forward.normalize();
-    let f = if f.length() == 0.0 { vec3(0.0, 0.0, 1.0) } else { f };
+    let f = if f.length() == 0.0 {
+        vec3(0.0, 0.0, 1.0)
+    } else {
+        f
+    };
     let mut d = down_hint - f * down_hint.dot(f);
     if d.length() < 1e-9 {
-        d = if f.y.abs() < 0.99 { vec3(0.0, 1.0, 0.0) } else { vec3(0.0, 0.0, -1.0) };
+        d = if f.y.abs() < 0.99 {
+            vec3(0.0, 1.0, 0.0)
+        } else {
+            vec3(0.0, 0.0, -1.0)
+        };
         d = d - f * d.dot(f);
     }
     let d = d.normalize();
     let r = d.cross(f).normalize();
-    Mat4([[r.x, r.y, r.z, 0.0], [d.x, d.y, d.z, 0.0], [f.x, f.y, f.z, 0.0], [0.0, 0.0, 0.0, 1.0]]) * Mat4::translate(-eye)
+    Mat4([
+        [r.x, r.y, r.z, 0.0],
+        [d.x, d.y, d.z, 0.0],
+        [f.x, f.y, f.z, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]) * Mat4::translate(-eye)
 }
 
 /// Orientation angles (degrees, AE order X→Y→Z with Z = 0) that point +z along `dir`.
@@ -130,8 +158,17 @@ fn norm360(a: f64) -> f64 {
 }
 
 /// AE's camera presets (35 mm film width 36 mm): (name, focal length mm).
-pub const PRESETS: [(&str, f64); 9] =
-    [("15mm", 15.0), ("20mm", 20.0), ("24mm", 24.0), ("28mm", 28.0), ("35mm", 35.0), ("50mm", 50.0), ("80mm", 80.0), ("135mm", 135.0), ("200mm", 200.0)];
+pub const PRESETS: [(&str, f64); 9] = [
+    ("15mm", 15.0),
+    ("20mm", 20.0),
+    ("24mm", 24.0),
+    ("28mm", 28.0),
+    ("35mm", 35.0),
+    ("50mm", 50.0),
+    ("80mm", 80.0),
+    ("135mm", 135.0),
+    ("200mm", 200.0),
+];
 
 /// Film width the presets assume (mm, measured horizontally).
 pub const FILM_SIZE_MM: f64 = 36.0;
@@ -161,17 +198,26 @@ pub fn default_aperture(comp_w: f64) -> f64 {
 pub fn default_camera(comp_w: f64, comp_h: f64) -> CameraState {
     let zoom = effectcraft_geom::default_camera_zoom(comp_w);
     let eye = vec3(comp_w / 2.0, comp_h / 2.0, -zoom);
-    CameraState { view: basis_view(eye, vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)), eye, zoom, ortho: false, dof: None }
+    CameraState {
+        view: basis_view(eye, vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)),
+        eye,
+        zoom,
+        ortho: false,
+        dof: None,
+    }
 }
 
 /// Whether a camera layer is two-node (auto-orients towards its Point of Interest).
 pub fn is_two_node(layer: &Layer) -> bool {
-    layer.auto_orient == AutoOrient::TowardsPointOfInterest && layer.transform().is_some_and(|t| t.get("poi").is_some())
+    layer.auto_orient == AutoOrient::TowardsPointOfInterest
+        && layer.transform().is_some_and(|t| t.get("poi").is_some())
 }
 
 /// Rotation of a camera/light layer from its Orientation and X/Y/Z Rotation (layer → parent).
 pub fn layer_rotation(ctx: &EvalCtx, layer: &Layer) -> Mat4 {
-    let Some(tr) = layer.transform() else { return Mat4::IDENTITY };
+    let Some(tr) = layer.transform() else {
+        return Mat4::IDENTITY;
+    };
     let o = ctx.v3(layer, tr, "orientation", [0.0; 3]);
     let rx = ctx.f(layer, tr, "rotationX", 0.0);
     let ry = ctx.f(layer, tr, "rotationY", 0.0);
@@ -191,7 +237,12 @@ pub fn parent_world(ctx: &EvalCtx, layer: &Layer) -> Mat4 {
 /// `down_hint` as possible.
 pub fn basis_rotation(fwd: Vec3, down_hint: Vec3) -> Mat4 {
     let m = basis_view(Vec3::ZERO, fwd, down_hint).0;
-    Mat4([[m[0][0], m[1][0], m[2][0], 0.0], [m[0][1], m[1][1], m[2][1], 0.0], [m[0][2], m[1][2], m[2][2], 0.0], [0.0, 0.0, 0.0, 1.0]])
+    Mat4([
+        [m[0][0], m[1][0], m[2][0], 0.0],
+        [m[0][1], m[1][1], m[2][1], 0.0],
+        [m[0][2], m[1][2], m[2][2], 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ])
 }
 
 /// Local rotation (layer → parent) of a camera or light: auto-orient towards the Point of
@@ -215,7 +266,12 @@ pub fn rig_rotation(ctx: &EvalCtx, layer: &Layer) -> Mat4 {
 fn path_tangent(ctx: &EvalCtx, layer: &Layer) -> Option<Vec3> {
     let tr = layer.transform()?;
     // Position (or its separated X/Y/Z dimensions) must be animated.
-    let moving = ["position", "positionX", "positionY", "positionZ"].iter().any(|m| tr.get(m).is_some_and(|p| p.keys.len() > 1 || p.has_expression()));
+    let moving = ["position", "positionX", "positionY", "positionZ"]
+        .iter()
+        .any(|m| {
+            tr.get(m)
+                .is_some_and(|p| p.keys.len() > 1 || p.has_expression())
+        });
     if !moving {
         return None;
     }
@@ -231,7 +287,9 @@ pub fn auto_orient_2d(ctx: &EvalCtx, layer: &Layer) -> f64 {
     if layer.auto_orient != AutoOrient::AlongPath {
         return 0.0;
     }
-    path_tangent(ctx, layer).map(|t| t.y.atan2(t.x).to_degrees()).unwrap_or(0.0)
+    path_tangent(ctx, layer)
+        .map(|t| t.y.atan2(t.x).to_degrees())
+        .unwrap_or(0.0)
 }
 
 /// Whether `id` is `layer` or one of its parents.
@@ -261,15 +319,27 @@ pub fn auto_orient_3d(ctx: &EvalCtx, layer: &Layer, pos: Vec3) -> Option<Mat4> {
             }
             let y = y.normalize();
             let z = t.cross(y);
-            Some(Mat4([[t.x, y.x, z.x, 0.0], [t.y, y.y, z.y, 0.0], [t.z, y.z, z.z, 0.0], [0.0, 0.0, 0.0, 1.0]]))
+            Some(Mat4([
+                [t.x, y.x, z.x, 0.0],
+                [t.y, y.y, z.y, 0.0],
+                [t.z, y.z, z.z, 0.0],
+                [0.0, 0.0, 0.0, 1.0],
+            ]))
         }
         AutoOrient::TowardsCamera => {
             // A camera parented (through any chain) to this layer would recurse.
-            if ctx.comp.active_camera(ctx.time).is_some_and(|c| in_parent_chain(ctx, c, layer.id)) {
+            if ctx
+                .comp
+                .active_camera(ctx.time)
+                .is_some_and(|c| in_parent_chain(ctx, c, layer.id))
+            {
                 return None;
             }
             let eye = active_camera(ctx).eye;
-            let e = parent_world(ctx, layer).inverse().unwrap_or(Mat4::IDENTITY).apply(eye);
+            let e = parent_world(ctx, layer)
+                .inverse()
+                .unwrap_or(Mat4::IDENTITY)
+                .apply(eye);
             let d = pos - e;
             (d.length() > 1e-9).then(|| basis_rotation(d, vec3(0.0, 1.0, 0.0)))
         }
@@ -280,13 +350,23 @@ pub fn auto_orient_3d(ctx: &EvalCtx, layer: &Layer, pos: Vec3) -> Option<Mat4> {
 /// (eye, forward, down) in world space of a camera or light layer.
 pub fn layer_frame(ctx: &EvalCtx, layer: &Layer) -> (Vec3, Vec3, Vec3) {
     let (w, h) = (ctx.comp.width as f64, ctx.comp.height as f64);
-    let Some(tr) = layer.transform() else { return (vec3(w / 2.0, h / 2.0, -1000.0), vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)) };
+    let Some(tr) = layer.transform() else {
+        return (
+            vec3(w / 2.0, h / 2.0, -1000.0),
+            vec3(0.0, 0.0, 1.0),
+            vec3(0.0, 1.0, 0.0),
+        );
+    };
     let parent = parent_world(ctx, layer);
     let pos = Vec3::from(ctx.v3(layer, tr, "position", [w / 2.0, h / 2.0, -1000.0]));
     let local = rig_rotation(ctx, layer);
     let eye = parent.apply(pos);
-    let fwd = parent.apply_vec(local.apply_vec(vec3(0.0, 0.0, 1.0))).normalize();
-    let down = parent.apply_vec(local.apply_vec(vec3(0.0, 1.0, 0.0))).normalize();
+    let fwd = parent
+        .apply_vec(local.apply_vec(vec3(0.0, 0.0, 1.0)))
+        .normalize();
+    let down = parent
+        .apply_vec(local.apply_vec(vec3(0.0, 1.0, 0.0)))
+        .normalize();
     (eye, fwd, down)
 }
 
@@ -295,7 +375,10 @@ pub fn layer_camera(ctx: &EvalCtx, cam: &Layer) -> CameraState {
     let w = ctx.comp.width as f64;
     let (eye, fwd, down) = layer_frame(ctx, cam);
     let opts = cam.props.sub("cameraOptions");
-    let zoom = opts.map(|g| ctx.f(cam, g, "zoom", 1000.0)).unwrap_or(1000.0).max(1e-3);
+    let zoom = opts
+        .map(|g| ctx.f(cam, g, "zoom", 1000.0))
+        .unwrap_or(1000.0)
+        .max(1e-3);
     let dof = opts.filter(|g| ctx.b(cam, g, "dof")).map(|g| Dof {
         focus: ctx.f(cam, g, "focusDistance", zoom),
         aperture: ctx.f(cam, g, "aperture", default_aperture(w)).max(0.0),
@@ -313,7 +396,13 @@ pub fn layer_camera(ctx: &EvalCtx, cam: &Layer) -> CameraState {
             saturation: ctx.f(cam, g, "highlightSaturation", 0.0).clamp(0.0, 100.0) / 100.0,
         },
     });
-    CameraState { view: basis_view(eye, fwd, down), eye, zoom, ortho: false, dof }
+    CameraState {
+        view: basis_view(eye, fwd, down),
+        eye,
+        zoom,
+        ortho: false,
+        dof,
+    }
 }
 
 /// The comp's active camera at the context time (topmost active camera layer, else the default).
@@ -327,7 +416,9 @@ pub fn active_camera(ctx: &EvalCtx) -> CameraState {
 // ---------------------------------------------------------------- 3D views
 
 /// The viewer's 3D views (View ▸ Switch 3D View).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 pub enum View3D {
     #[default]
     ActiveCamera,
@@ -391,11 +482,25 @@ impl View3D {
         }
     }
     pub fn from_id(s: &str) -> Option<View3D> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
-        View3D::ALL.into_iter().find(|v| v.id().eq_ignore_ascii_case(&k) || v.label().replace(' ', "").eq_ignore_ascii_case(&k))
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        View3D::ALL.into_iter().find(|v| {
+            v.id().eq_ignore_ascii_case(&k) || v.label().replace(' ', "").eq_ignore_ascii_case(&k)
+        })
     }
     pub fn is_ortho(self) -> bool {
-        matches!(self, View3D::Front | View3D::Left | View3D::Top | View3D::Back | View3D::Right | View3D::Bottom)
+        matches!(
+            self,
+            View3D::Front
+                | View3D::Left
+                | View3D::Top
+                | View3D::Back
+                | View3D::Right
+                | View3D::Bottom
+        )
     }
 }
 
@@ -413,7 +518,13 @@ impl ViewCam {
     pub fn state(&self) -> CameraState {
         let eye = Vec3::from(self.eye);
         let poi = Vec3::from(self.poi);
-        CameraState { view: basis_view(eye, poi - eye, Vec3::from(self.down)), eye, zoom: self.zoom, ortho: self.ortho, dof: None }
+        CameraState {
+            view: basis_view(eye, poi - eye, Vec3::from(self.down)),
+            eye,
+            zoom: self.zoom,
+            ortho: self.ortho,
+            dof: None,
+        }
     }
 }
 
@@ -422,11 +533,27 @@ pub fn default_view_cam(v: View3D, w: f64, h: f64) -> ViewCam {
     let c = vec3(w / 2.0, h / 2.0, 0.0);
     let zoom = effectcraft_geom::default_camera_zoom(w);
     let far = 10_000.0;
-    let ortho = |fwd: Vec3, down: Vec3| ViewCam { eye: arr(c - fwd * far), poi: arr(c), down: arr(down), zoom: 0.5, ortho: true };
+    let ortho = |fwd: Vec3, down: Vec3| ViewCam {
+        eye: arr(c - fwd * far),
+        poi: arr(c),
+        down: arr(down),
+        zoom: 0.5,
+        ortho: true,
+    };
     let custom = |yaw: f64, pitch: f64| {
         // Orbit the default camera around the comp centre (yaw about y, then pitch).
-        let off = Mat4::rotate_y(yaw).apply_vec(Mat4::rotate_x(pitch).apply_vec(vec3(0.0, 0.0, -zoom * 1.6)));
-        ViewCam { eye: arr(c + off), poi: arr(c), down: [0.0, 1.0, 0.0], zoom, ortho: false }
+        let off = Mat4::rotate_y(yaw).apply_vec(Mat4::rotate_x(pitch).apply_vec(vec3(
+            0.0,
+            0.0,
+            -zoom * 1.6,
+        )));
+        ViewCam {
+            eye: arr(c + off),
+            poi: arr(c),
+            down: [0.0, 1.0, 0.0],
+            zoom,
+            ortho: false,
+        }
     };
     match v {
         View3D::ActiveCamera | View3D::Front => ortho(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 0.0)),
@@ -439,7 +566,13 @@ pub fn default_view_cam(v: View3D, w: f64, h: f64) -> ViewCam {
         View3D::Custom1 => custom(30.0, -20.0),
         View3D::Custom2 => custom(0.0, -35.0),
         View3D::Custom3 => custom(-30.0, -20.0),
-        View3D::Default => ViewCam { eye: arr(vec3(w / 2.0, h / 2.0, -zoom)), poi: arr(c), down: [0.0, 1.0, 0.0], zoom, ortho: false },
+        View3D::Default => ViewCam {
+            eye: arr(vec3(w / 2.0, h / 2.0, -zoom)),
+            poi: arr(c),
+            down: [0.0, 1.0, 0.0],
+            zoom,
+            ortho: false,
+        },
     }
 }
 
@@ -468,7 +601,11 @@ impl Views3D {
     pub const DEFAULT_PANES: [View3D; 3] = [View3D::Top, View3D::Front, View3D::Right];
     /// The view of extra pane `i` (0 = the first beside the main view).
     pub fn pane(&self, i: usize) -> View3D {
-        self.panes.get(i).or_else(|| Self::DEFAULT_PANES.get(i)).copied().unwrap_or_default()
+        self.panes
+            .get(i)
+            .or_else(|| Self::DEFAULT_PANES.get(i))
+            .copied()
+            .unwrap_or_default()
     }
     /// Choose the view of extra pane `i` (ignored past the third).
     pub fn set_pane(&mut self, i: usize, v: View3D) {
@@ -481,7 +618,10 @@ impl Views3D {
         self.panes[i] = v;
     }
     pub fn cam(&self, v: View3D, w: f64, h: f64) -> ViewCam {
-        self.cams.get(&v).copied().unwrap_or_else(|| default_view_cam(v, w, h))
+        self.cams
+            .get(&v)
+            .copied()
+            .unwrap_or_else(|| default_view_cam(v, w, h))
     }
     /// Camera override for rendering: None for the active camera view.
     pub fn override_camera(&self, w: f64, h: f64) -> Option<CameraState> {
@@ -502,11 +642,21 @@ pub struct Rig {
 
 impl Rig {
     pub fn from_view(v: &ViewCam) -> Rig {
-        Rig { eye: Vec3::from(v.eye), poi: Vec3::from(v.poi), zoom: v.zoom, ortho: v.ortho }
+        Rig {
+            eye: Vec3::from(v.eye),
+            poi: Vec3::from(v.poi),
+            zoom: v.zoom,
+            ortho: v.ortho,
+        }
     }
     fn frame(&self) -> (Vec3, Vec3, Vec3) {
-        let s =
-            CameraState { view: basis_view(self.eye, self.poi - self.eye, vec3(0.0, 1.0, 0.0)), eye: self.eye, zoom: self.zoom, ortho: self.ortho, dof: None };
+        let s = CameraState {
+            view: basis_view(self.eye, self.poi - self.eye, vec3(0.0, 1.0, 0.0)),
+            eye: self.eye,
+            zoom: self.zoom,
+            ortho: self.ortho,
+            dof: None,
+        };
         (s.forward(), s.right(), s.down())
     }
     /// Orbit the eye around the point of interest: `yaw` about world Y, `pitch` about the
@@ -521,7 +671,11 @@ impl Rig {
         let new_pitch = (cur_pitch + pitch).clamp(-89.0, 89.0);
         let horiz = vec3(off.x, 0.0, off.z);
         let hl = horiz.length();
-        let az = if hl > 1e-9 { off.x.atan2(-off.z).to_degrees() } else { 0.0 } + yaw;
+        let az = if hl > 1e-9 {
+            off.x.atan2(-off.z).to_degrees()
+        } else {
+            0.0
+        } + yaw;
         let (sp, cp) = new_pitch.to_radians().sin_cos();
         let (sa, ca) = az.to_radians().sin_cos();
         self.eye = self.poi + vec3(sa * cp, sp, -ca * cp) * dist;
@@ -529,7 +683,11 @@ impl Rig {
     /// Pan in the image plane by (`dx`, `dy`) comp pixels (as seen at the point of interest).
     pub fn pan(&mut self, dx: f64, dy: f64) {
         let (_, r, d) = self.frame();
-        let k = if self.ortho { 1.0 / self.zoom.max(1e-9) } else { (self.poi - self.eye).length() / self.zoom.max(1e-9) };
+        let k = if self.ortho {
+            1.0 / self.zoom.max(1e-9)
+        } else {
+            (self.poi - self.eye).length() / self.zoom.max(1e-9)
+        };
         let delta = r * (-dx * k) + d * (-dy * k);
         self.eye += delta;
         self.poi += delta;

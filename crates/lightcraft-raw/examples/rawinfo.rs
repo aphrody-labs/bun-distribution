@@ -9,10 +9,20 @@ use std::time::Instant;
 fn short(v: &Value) -> String {
     let s = match v {
         Value::Ascii(s) => format!("{s:?}"),
-        Value::Byte(b) | Value::Undefined(b) => format!("{} bytes {:02x?}", b.len(), &b[..b.len().min(12)]),
+        Value::Byte(b) | Value::Undefined(b) => {
+            format!("{} bytes {:02x?}", b.len(), &b[..b.len().min(12)])
+        }
         other => {
             let f = other.to_f64_vec();
-            format!("{:?}{}", &f[..f.len().min(12)], if f.len() > 12 { format!(" …({})", f.len()) } else { String::new() })
+            format!(
+                "{:?}{}",
+                &f[..f.len().min(12)],
+                if f.len() > 12 {
+                    format!(" …({})", f.len())
+                } else {
+                    String::new()
+                }
+            )
         }
     };
     s.chars().take(160).collect()
@@ -20,14 +30,28 @@ fn short(v: &Value) -> String {
 
 fn dump(ifd: &Ifd, depth: usize, label: &str) {
     let pad = "  ".repeat(depth);
-    println!("{pad}{label} @{} ({} entries)", ifd.offset, ifd.entries.len());
+    println!(
+        "{pad}{label} @{} ({} entries)",
+        ifd.offset,
+        ifd.entries.len()
+    );
     for e in &ifd.entries {
-        println!("{pad}  {:5} 0x{:04x} {:?}: {}", e.tag, e.tag, e.field_type(), short(&e.value));
+        println!(
+            "{pad}  {:5} 0x{:04x} {:?}: {}",
+            e.tag,
+            e.tag,
+            e.field_type(),
+            short(&e.value)
+        );
     }
     for (i, s) in ifd.sub_ifds.iter().enumerate() {
         dump(s, depth + 1, &format!("SubIFD[{i}]"));
     }
-    for (n, c) in [("Exif", &ifd.exif), ("GPS", &ifd.gps), ("Interop", &ifd.interop)] {
+    for (n, c) in [
+        ("Exif", &ifd.exif),
+        ("GPS", &ifd.gps),
+        ("Interop", &ifd.interop),
+    ] {
         if let Some(c) = c {
             dump(c, depth + 1, n);
         }
@@ -39,7 +63,11 @@ fn main() {
     let tree = args.iter().any(|a| a == "--tree");
     for path in args.iter().filter(|a| !a.starts_with("--")) {
         let bytes = std::fs::read(path).expect("read");
-        println!("== {path} ({:.1} MB) format {:?}", bytes.len() as f64 / 1e6, probe(&bytes));
+        println!(
+            "== {path} ({:.1} MB) format {:?}",
+            bytes.len() as f64 / 1e6,
+            probe(&bytes)
+        );
         if tree && let Ok(t) = Tiff::parse(&bytes) {
             for (i, ifd) in t.ifds.iter().enumerate() {
                 dump(ifd, 0, &format!("IFD{i}"));
@@ -54,7 +82,11 @@ fn main() {
                     RawData::U16(v) => {
                         let mn = *v.iter().min().unwrap_or(&0) as f64;
                         let mx = *v.iter().max().unwrap_or(&0) as f64;
-                        (mn, mx, v.iter().map(|&x| x as f64).sum::<f64>() / v.len() as f64)
+                        (
+                            mn,
+                            mx,
+                            v.iter().map(|&x| x as f64).sum::<f64>() / v.len() as f64,
+                        )
                     }
                     RawData::F32(v) => (
                         v.iter().cloned().fold(f32::MAX, f32::min) as f64,
@@ -95,7 +127,10 @@ fn main() {
                 );
                 let xy = lightcraft_raw::color::as_shot_white_xy(&r);
                 let ct = lightcraft_raw::color::camera_transform(&r, xy);
-                println!("  as-shot xy ({:.4}, {:.4}) wb {:?} fallback {}", xy.x, xy.y, ct.wb, ct.matrix_is_fallback);
+                println!(
+                    "  as-shot xy ({:.4}, {:.4}) wb {:?} fallback {}",
+                    xy.x, xy.y, ct.wb, ct.matrix_is_fallback
+                );
                 for m in [Method::Bilinear, Method::Ppg, Method::Ahd] {
                     let t1 = Instant::now();
                     match r.develop(m) {

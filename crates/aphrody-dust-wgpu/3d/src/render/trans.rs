@@ -35,23 +35,35 @@ pub(super) fn shader_module_src(
         texture_set_vert_outputs,
         texture_frag_inputs,
         texture_get_color,
-    } = ifdef!(pipeline.texture_mapping_enabled(), TextureCode::new(texture_bg_index));
+    } = ifdef!(
+        pipeline.texture_mapping_enabled(),
+        TextureCode::new(texture_bg_index)
+    );
 
-    let ToonCode { toon_uniforms, toon_get_color } =
-        ifdef!(pipeline.mode() >= 2, ToonCode::new(toon_bg_index));
+    let ToonCode {
+        toon_uniforms,
+        toon_get_color,
+    } = ifdef!(pipeline.mode() >= 2, ToonCode::new(toon_bg_index));
 
-    let AttrsCode { attrs_frag_outputs, attrs_init_frag_outputs } =
-        ifdef!(pipeline.attrs_enabled(), AttrsCode::new());
+    let AttrsCode {
+        attrs_frag_outputs,
+        attrs_init_frag_outputs,
+    } = ifdef!(pipeline.attrs_enabled(), AttrsCode::new());
 
-    let FogCode { fog_uniforms, fog_set_frag_outputs } =
-        ifdef!(pipeline.fog_enabled(), FogCode::new(fog_enabled_bg_index));
+    let FogCode {
+        fog_uniforms,
+        fog_set_frag_outputs,
+    } = ifdef!(pipeline.fog_enabled(), FogCode::new(fog_enabled_bg_index));
 
     let get_output_color = get_output_color(pipeline.mode(), pipeline.texture_mapping_enabled());
 
     [
         (
             "if output.color.a < 30.5 / 31.0 { discard; }",
-            ifdef!(pipeline.edge_marking_enabled(), EdgeMarkingCode::new(id_bg_index)),
+            ifdef!(
+                pipeline.edge_marking_enabled(),
+                EdgeMarkingCode::new(id_bg_index)
+            ),
         ),
         (
             "if (output.color.a < alpha_and_ref.alpha_ref) || (output.color.a >= 30.5 / 31.0) { \
@@ -60,7 +72,13 @@ pub(super) fn shader_module_src(
         ),
     ]
     .map(
-        |(alpha_test, EdgeMarkingCode { edge_marking_uniforms, edge_marking_set_frag_outputs })| {
+        |(
+            alpha_test,
+            EdgeMarkingCode {
+                edge_marking_uniforms,
+                edge_marking_set_frag_outputs,
+            },
+        )| {
             format!(
                 "
 struct AlphaAndRefUniform {{
@@ -154,13 +172,21 @@ pub(crate) fn create_pipeline(
 
     let opaque_layout = device.create_pipeline_layout(&crate::wgpu::PipelineLayoutDescriptor {
         label: Some("3D renderer translucent opaque pass pipeline layout"),
-        bind_group_layouts: &bg_layouts_opaque.iter().copied().map(Some).collect::<Vec<_>>(),
+        bind_group_layouts: &bg_layouts_opaque
+            .iter()
+            .copied()
+            .map(Some)
+            .collect::<Vec<_>>(),
         immediate_size: 0,
     });
 
     let trans_layout = device.create_pipeline_layout(&crate::wgpu::PipelineLayoutDescriptor {
         label: Some("3D renderer translucent translucent pass pipeline layout"),
-        bind_group_layouts: &bg_layouts_trans.iter().copied().map(Some).collect::<Vec<_>>(),
+        bind_group_layouts: &bg_layouts_trans
+            .iter()
+            .copied()
+            .map(Some)
+            .collect::<Vec<_>>(),
         immediate_size: 0,
     });
 

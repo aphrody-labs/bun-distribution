@@ -8,7 +8,10 @@ use std::collections::HashSet;
 
 use serde::{Deserialize, Serialize};
 use vectorcraft_color::{BlendMode, Color, GradientKind, GradientPaint, Paint};
-use vectorcraft_doc::{AppearanceItem, CharStyle, Document, Justify, LineCap, LiveShape, Node, NodeId, NodeKind, StrokeAlign, StrokeLayer, TextKind};
+use vectorcraft_doc::{
+    AppearanceItem, CharStyle, Document, Justify, LineCap, LiveShape, Node, NodeId, NodeKind,
+    StrokeAlign, StrokeLayer, TextKind,
+};
 use vectorcraft_effects::RasterFx;
 use vectorcraft_geom::shapes::{self, CornerKind};
 use vectorcraft_geom::{Affine, PathData, Point, Rect};
@@ -20,8 +23,14 @@ use crate::fmt_num;
 pub(crate) type Props = Vec<(&'static str, String)>;
 
 /// A declaration block: `property:value;property:value`.
-pub(crate) fn declarations<'a>(props: impl IntoIterator<Item = &'a (&'static str, String)>) -> String {
-    props.into_iter().map(|(k, v)| format!("{k}:{v}")).collect::<Vec<_>>().join(";")
+pub(crate) fn declarations<'a>(
+    props: impl IntoIterator<Item = &'a (&'static str, String)>,
+) -> String {
+    props
+        .into_iter()
+        .map(|(k, v)| format!("{k}:{v}"))
+        .collect::<Vec<_>>()
+        .join(";")
 }
 
 /// A CSS string.
@@ -73,7 +82,12 @@ pub(crate) fn transparency(n: &Node) -> Props {
 /// rules and the characters using them say, so each face is told apart (Semibold from Bold).
 pub(crate) fn font_descriptor(st: &CharStyle) -> (u16, bool) {
     let fs = st.font_style.to_ascii_lowercase();
-    (vectorcraft_text::style_weight(&st.font_style).round().clamp(1.0, 1000.0) as u16, fs.contains("italic") || fs.contains("oblique"))
+    (
+        vectorcraft_text::style_weight(&st.font_style)
+            .round()
+            .clamp(1.0, 1000.0) as u16,
+        fs.contains("italic") || fs.contains("oblique"),
+    )
 }
 
 /// The font of character style `st`: family, size (the vertical scale; writers stretch the
@@ -81,7 +95,14 @@ pub(crate) fn font_descriptor(st: &CharStyle) -> (u16, bool) {
 /// (600 for Semibold, 300 for Light), `bold` for 700 and left out for 400.
 pub(crate) fn font_props(st: &CharStyle, len: &dyn Fn(f64) -> String) -> Props {
     let mut p = Props::new();
-    let fam = if st.font_family.contains(|c: char| c.is_whitespace() || c == ',') { format!("'{}'", st.font_family) } else { st.font_family.clone() };
+    let fam = if st
+        .font_family
+        .contains(|c: char| c.is_whitespace() || c == ',')
+    {
+        format!("'{}'", st.font_family)
+    } else {
+        st.font_family.clone()
+    };
     p.push(("font-family", fam));
     p.push(("font-size", len(st.size * st.v_scale / 100.0)));
     let (weight, italic) = font_descriptor(st);
@@ -139,7 +160,10 @@ fn color_css(c: &Color, opacity: f32) -> String {
         return c.to_hex();
     }
     let [r, g, b, _] = c.to_rgba8(1.0);
-    format!("rgba({r}, {g}, {b}, {})", fmt_num(opacity.clamp(0.0, 1.0) as f64, 3))
+    format!(
+        "rgba({r}, {g}, {b}, {})",
+        fmt_num(opacity.clamp(0.0, 1.0) as f64, 3)
+    )
 }
 
 // ---------- CSS for objects ----------
@@ -159,7 +183,13 @@ pub enum CssUnits {
 }
 
 impl CssUnits {
-    pub const ALL: [CssUnits; 5] = [CssUnits::Px, CssUnits::Pt, CssUnits::Mm, CssUnits::Cm, CssUnits::In];
+    pub const ALL: [CssUnits; 5] = [
+        CssUnits::Px,
+        CssUnits::Pt,
+        CssUnits::Mm,
+        CssUnits::Cm,
+        CssUnits::In,
+    ];
 
     /// The unit's CSS name.
     pub fn name(self) -> &'static str {
@@ -208,7 +238,13 @@ pub struct CssOptions {
 
 impl Default for CssOptions {
     fn default() -> Self {
-        Self { units: CssUnits::Px, position: false, dimensions: true, unnamed: true, rasterize: false }
+        Self {
+            units: CssUnits::Px,
+            position: false,
+            dimensions: true,
+            unnamed: true,
+            rasterize: false,
+        }
     }
 }
 
@@ -252,7 +288,11 @@ pub struct CssSheet {
 impl CssSheet {
     /// The style sheet: the rules, a blank line between them.
     pub fn text(&self) -> String {
-        self.rules.iter().map(CssRule::text).collect::<Vec<_>>().join("\n\n")
+        self.rules
+            .iter()
+            .map(CssRule::text)
+            .collect::<Vec<_>>()
+            .join("\n\n")
     }
 }
 
@@ -266,7 +306,13 @@ impl CssSheet {
 /// paragraph's alignment; shadows and glows give `box-shadow` (`text-shadow`), a Gaussian blur
 /// `filter: blur()`. Other art is described as its box (see [`CssOptions::rasterize`]).
 pub fn css_rules(doc: &Document, ids: &[NodeId], opts: &CssOptions) -> CssSheet {
-    let mut w = Rules { doc, opts, sheet: CssSheet::default(), seen: HashSet::new(), names: HashSet::new() };
+    let mut w = Rules {
+        doc,
+        opts,
+        sheet: CssSheet::default(),
+        seen: HashSet::new(),
+        names: HashSet::new(),
+    };
     for n in ids.iter().filter_map(|id| doc.node(*id)) {
         w.object(n);
     }
@@ -312,12 +358,21 @@ impl Rules<'_> {
         if !n.visible {
             return;
         }
-        let plain_group =
-            n.name.is_none() && transparency(n).is_empty() && !n.appearance.effects.iter().any(|e| e.visible) && n.extras().mask.is_none();
+        let plain_group = n.name.is_none()
+            && transparency(n).is_empty()
+            && !n.appearance.effects.iter().any(|e| e.visible)
+            && n.extras().mask.is_none();
         match &n.kind {
             NodeKind::Layer { template: true, .. } | NodeKind::Path { guide: true, .. } => {}
-            NodeKind::Layer { children, clip: false, .. } => children.iter().for_each(|c| self.object(c)),
-            NodeKind::Group { children, clip: false } if plain_group => children.iter().for_each(|c| self.object(c)),
+            NodeKind::Layer {
+                children,
+                clip: false,
+                ..
+            } => children.iter().for_each(|c| self.object(c)),
+            NodeKind::Group {
+                children,
+                clip: false,
+            } if plain_group => children.iter().for_each(|c| self.object(c)),
             _ => self.rule(n),
         }
     }
@@ -349,9 +404,16 @@ impl Rules<'_> {
         };
         let class = self.class_name(&name);
         let art = self.art(n);
-        let image = art.unsupported.filter(|_| self.opts.rasterize).map(|_| format!("{class}.png"));
+        let image = art
+            .unsupported
+            .filter(|_| self.opts.rasterize)
+            .map(|_| format!("{class}.png"));
         // A picture covers what the object paints.
-        let bounds = if image.is_some() { n.visual_bounds() } else { n.geometric_bounds() };
+        let bounds = if image.is_some() {
+            n.visual_bounds()
+        } else {
+            n.geometric_bounds()
+        };
         let mut props = self.box_props(bounds);
         match &image {
             Some(file) => {
@@ -367,7 +429,13 @@ impl Rules<'_> {
                 }
             }
         }
-        self.sheet.rules.push(CssRule { id: n.id, selector: format!(".{class}"), props, unsupported: art.unsupported, image });
+        self.sheet.rules.push(CssRule {
+            id: n.id,
+            selector: format!(".{class}"),
+            props,
+            unsupported: art.unsupported,
+            image,
+        });
     }
 
     /// Position and dimensions of a box (as the options ask), from its artboard's top-left.
@@ -376,7 +444,12 @@ impl Rules<'_> {
         let Some(b) = b else { return p };
         if self.opts.position {
             let c = b.center();
-            let ab = self.doc.artboards.iter().find(|a| a.rect.contains(c)).or_else(|| self.doc.artboards.first());
+            let ab = self
+                .doc
+                .artboards
+                .iter()
+                .find(|a| a.rect.contains(c))
+                .or_else(|| self.doc.artboards.first());
             let origin = ab.map_or(Point::ZERO, |a| Point::new(a.rect.x0, a.rect.y0));
             p.push(("position", "absolute".into()));
             p.push(("left", self.len(b.x0 - origin.x)));
@@ -397,7 +470,9 @@ impl Rules<'_> {
             NodeKind::Path { path, live, .. } => {
                 match corners(path, live.as_deref()) {
                     Some(Corners::Square) => {}
-                    Some(Corners::Round(r)) => radius = Some(r.iter().map(|r| self.len(*r)).collect::<Vec<_>>().join(" ")),
+                    Some(Corners::Round(r)) => {
+                        radius = Some(r.iter().map(|r| self.len(*r)).collect::<Vec<_>>().join(" "))
+                    }
                     Some(Corners::Ellipse) => radius = Some("50%".into()),
                     None => art.unsupported("a shape other than a rectangle or an ellipse"),
                 }
@@ -430,20 +505,47 @@ impl Rules<'_> {
     /// A shape's fill (`background-*`) and stroke (`border*`).
     fn paints(&mut self, n: &Node, art: &mut Art) {
         let bounds = n.geometric_bounds().unwrap_or_default();
-        let shown = |i: &&AppearanceItem| i.visible() && !i.paint().is_none() && !matches!(i, AppearanceItem::Stroke(s) if s.width <= 0.0);
+        let shown = |i: &&AppearanceItem| {
+            i.visible()
+                && !i.paint().is_none()
+                && !matches!(i, AppearanceItem::Stroke(s) if s.width <= 0.0)
+        };
         let items: Vec<&AppearanceItem> = n.appearance.items.iter().filter(shown).collect();
-        let fills: Vec<_> = items.iter().filter_map(|i| if let AppearanceItem::Fill(f) = i { Some(f) } else { None }).collect();
-        let strokes: Vec<_> = items.iter().filter_map(|i| if let AppearanceItem::Stroke(s) = i { Some(s) } else { None }).collect();
+        let fills: Vec<_> = items
+            .iter()
+            .filter_map(|i| {
+                if let AppearanceItem::Fill(f) = i {
+                    Some(f)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let strokes: Vec<_> = items
+            .iter()
+            .filter_map(|i| {
+                if let AppearanceItem::Stroke(s) = i {
+                    Some(s)
+                } else {
+                    None
+                }
+            })
+            .collect();
         if fills.len() > 1 || strokes.len() > 1 {
             art.unsupported("several fills or strokes");
         }
-        if items.iter().any(|i| i.blend() != BlendMode::Normal || i.effects().iter().any(|e| e.visible)) {
+        if items
+            .iter()
+            .any(|i| i.blend() != BlendMode::Normal || i.effects().iter().any(|e| e.visible))
+        {
             art.unsupported("blend modes or effects on a fill or stroke");
         }
         // The topmost of each, as the canvas shows it on top.
         if let Some(f) = fills.last() {
             match &f.paint {
-                Paint::Solid { color, .. } => art.props.push(("background-color", color_css(color, f.opacity))),
+                Paint::Solid { color, .. } => art
+                    .props
+                    .push(("background-color", color_css(color, f.opacity))),
                 Paint::Gradient(g) => match self.gradient(g, bounds, f.opacity) {
                     Some(css) => art.props.push(("background-image", css)),
                     None => art.unsupported("a freeform gradient"),
@@ -460,17 +562,27 @@ impl Rules<'_> {
     /// A stroke as a border: weight, style (dashed; dotted for round dots) and colour.
     fn border(&mut self, s: &StrokeLayer, bounds: Rect, art: &mut Art) {
         // Aligned strokes still draw as borders; arrowheads, profiles, brushes and fitted dashes don't.
-        if !vectorcraft_effects::stroke::is_plain(&StrokeLayer { align: StrokeAlign::Center, ..s.clone() }) {
+        if !vectorcraft_effects::stroke::is_plain(&StrokeLayer {
+            align: StrokeAlign::Center,
+            ..s.clone()
+        }) {
             art.unsupported("arrowheads, width profiles, brushes or dashes fitted to corners");
         }
         let style = match &s.dash {
-            Some(d) if d.is_dashed() && s.cap == LineCap::Round && d.pattern.first() == Some(&0.0) => "dotted",
+            Some(d)
+                if d.is_dashed() && s.cap == LineCap::Round && d.pattern.first() == Some(&0.0) =>
+            {
+                "dotted"
+            }
             Some(d) if d.is_dashed() => "dashed",
             _ => "solid",
         };
         let width = self.len(s.width);
         match &s.paint {
-            Paint::Solid { color, .. } => art.props.push(("border", format!("{width} {style} {}", color_css(color, s.opacity)))),
+            Paint::Solid { color, .. } => art.props.push((
+                "border",
+                format!("{width} {style} {}", color_css(color, s.opacity)),
+            )),
             Paint::Gradient(g) => match self.gradient(g, s.paint_bounds(bounds), s.opacity) {
                 Some(css) => {
                     art.props.push(("border", format!("{width} {style}")));
@@ -488,8 +600,17 @@ impl Rules<'_> {
     fn gradient(&mut self, g: &GradientPaint, b: Rect, opacity: f32) -> Option<String> {
         let geom = g.resolve(b);
         let stops = |pos: &dyn Fn(f32) -> f64| {
-            let stops: Vec<String> =
-                g.gradient.expanded().map(|(t, c, o, _)| format!("{} {}%", color_css(&c, o * opacity), fmt_num(pos(t) * 100.0, 2))).collect();
+            let stops: Vec<String> = g
+                .gradient
+                .expanded()
+                .map(|(t, c, o, _)| {
+                    format!(
+                        "{} {}%",
+                        color_css(&c, o * opacity),
+                        fmt_num(pos(t) * 100.0, 2)
+                    )
+                })
+                .collect();
             stops.join(", ")
         };
         match g.gradient.kind {
@@ -505,8 +626,18 @@ impl Rules<'_> {
                 };
                 let line = (b.width() * dir.x).abs() + (b.height() * dir.y).abs();
                 let from = (geom.start - b.center()).dot(dir);
-                let pos = |t: f32| if line > 1e-9 { (from + t as f64 * length) / line + 0.5 } else { t as f64 };
-                Some(format!("linear-gradient({}deg, {})", fmt_num(angle, 2), stops(&pos)))
+                let pos = |t: f32| {
+                    if line > 1e-9 {
+                        (from + t as f64 * length) / line + 0.5
+                    } else {
+                        t as f64
+                    }
+                };
+                Some(format!(
+                    "linear-gradient({}deg, {})",
+                    fmt_num(angle, 2),
+                    stops(&pos)
+                ))
             }
             GradientKind::Radial => {
                 let r = (geom.end - geom.start).hypot();
@@ -518,8 +649,15 @@ impl Rules<'_> {
                 } else {
                     format!("ellipse {} {}", self.len(r), self.len(r * geom.aspect))
                 };
-                let at = format!("at {} {}", self.len(geom.start.x - b.x0), self.len(geom.start.y - b.y0));
-                Some(format!("radial-gradient({shape} {at}, {})", stops(&|t| t as f64)))
+                let at = format!(
+                    "at {} {}",
+                    self.len(geom.start.x - b.x0),
+                    self.len(geom.start.y - b.y0)
+                );
+                Some(format!(
+                    "radial-gradient({shape} {at}, {})",
+                    stops(&|t| t as f64)
+                ))
             }
             GradientKind::Freeform => None,
         }
@@ -530,7 +668,11 @@ impl Rules<'_> {
         if matches!(t.kind, TextKind::OnPath { .. }) {
             art.unsupported("type on a path");
         }
-        if n.appearance.items.iter().any(|i| i.visible() && !i.paint().is_none()) {
+        if n.appearance
+            .items
+            .iter()
+            .any(|i| i.visible() && !i.paint().is_none())
+        {
             art.unsupported("fills or strokes on the type object");
         }
         let st = t.first_style();
@@ -546,7 +688,10 @@ impl Rules<'_> {
         }
         if st.has_stroke() {
             match &st.stroke {
-                Paint::Solid { color, .. } => art.props.push(("-webkit-text-stroke", format!("{} {}", self.len(st.stroke_width), color.to_hex()))),
+                Paint::Solid { color, .. } => art.props.push((
+                    "-webkit-text-stroke",
+                    format!("{} {}", self.len(st.stroke_width), color.to_hex()),
+                )),
                 _ => art.unsupported("type painted with a gradient or a pattern"),
             }
         }
@@ -562,9 +707,13 @@ impl Rules<'_> {
             Justify::Auto | Justify::Left => None,
             Justify::Center => Some("center"),
             Justify::Right => Some("right"),
-            Justify::JustifyLeft | Justify::JustifyCenter | Justify::JustifyRight | Justify::JustifyAll => Some("justify"),
+            Justify::JustifyLeft
+            | Justify::JustifyCenter
+            | Justify::JustifyRight
+            | Justify::JustifyAll => Some("justify"),
         };
-        art.props.extend(align.map(|a| ("text-align", a.to_string())));
+        art.props
+            .extend(align.map(|a| ("text-align", a.to_string())));
         if st.all_caps {
             art.props.push(("text-transform", "uppercase".into()));
         }
@@ -573,27 +722,65 @@ impl Rules<'_> {
     /// Shadows and glows as `box-shadow` (type: `text-shadow`), a Gaussian blur as `filter`.
     fn effects(&mut self, n: &Node, text: bool, art: &mut Art) {
         let fx = &n.appearance.effects;
-        if fx.iter().any(|e| e.visible && !vectorcraft_effects::is_raster(&e.id)) {
+        if fx
+            .iter()
+            .any(|e| e.visible && !vectorcraft_effects::is_raster(&e.id))
+        {
             art.unsupported("live effects");
         }
         let mut shadows = vec![];
         let mut filter = None;
         for f in vectorcraft_effects::raster_effects(fx) {
             match f {
-                RasterFx::DropShadow { opacity, dx, dy, blur, color, .. } => {
-                    shadows.push(format!("{} {} {} {}", self.len(dx), self.len(dy), self.len(blur), color_css(&color, opacity)))
+                RasterFx::DropShadow {
+                    opacity,
+                    dx,
+                    dy,
+                    blur,
+                    color,
+                    ..
+                } => shadows.push(format!(
+                    "{} {} {} {}",
+                    self.len(dx),
+                    self.len(dy),
+                    self.len(blur),
+                    color_css(&color, opacity)
+                )),
+                RasterFx::OuterGlow {
+                    opacity,
+                    blur,
+                    color,
+                    ..
+                } => shadows.push(format!(
+                    "0 0 {} {}",
+                    self.len(blur),
+                    color_css(&color, opacity)
+                )),
+                RasterFx::InnerGlow {
+                    opacity,
+                    blur,
+                    color,
+                    center: false,
+                    ..
+                } if !text => shadows.push(format!(
+                    "inset 0 0 {} {}",
+                    self.len(blur),
+                    color_css(&color, opacity)
+                )),
+                RasterFx::GaussianBlur { radius } => {
+                    filter = Some(format!("blur({})", self.len(radius / 2.0)))
                 }
-                RasterFx::OuterGlow { opacity, blur, color, .. } => shadows.push(format!("0 0 {} {}", self.len(blur), color_css(&color, opacity))),
-                RasterFx::InnerGlow { opacity, blur, color, center: false, .. } if !text => {
-                    shadows.push(format!("inset 0 0 {} {}", self.len(blur), color_css(&color, opacity)))
+                RasterFx::InnerGlow { .. } | RasterFx::Feather { .. } => {
+                    art.unsupported("inner glows or feathering")
                 }
-                RasterFx::GaussianBlur { radius } => filter = Some(format!("blur({})", self.len(radius / 2.0))),
-                RasterFx::InnerGlow { .. } | RasterFx::Feather { .. } => art.unsupported("inner glows or feathering"),
                 RasterFx::Pixel(_) => art.unsupported("pixel effects"),
             }
         }
         if !shadows.is_empty() {
-            art.props.push((if text { "text-shadow" } else { "box-shadow" }, shadows.join(", ")));
+            art.props.push((
+                if text { "text-shadow" } else { "box-shadow" },
+                shadows.join(", "),
+            ));
         }
         art.props.extend(filter.map(|f| ("filter", f)));
     }
@@ -617,8 +804,17 @@ fn corners(path: &PathData, live: Option<&LiveShape>) -> Option<Corners> {
     // Sizes and radii in document units.
     match live.map(LiveShape::folded).as_ref() {
         // CSS rounds corners only: an inverted round or chamfered corner has no border radius.
-        Some(LiveShape::Rectangle { w, h, radii, kinds, xf })
-            if upright(xf) && radii.iter().zip(kinds).all(|(r, k)| *r <= 0.0 || *k == CornerKind::Round) =>
+        Some(LiveShape::Rectangle {
+            w,
+            h,
+            radii,
+            kinds,
+            xf,
+        }) if upright(xf)
+            && radii
+                .iter()
+                .zip(kinds)
+                .all(|(r, k)| *r <= 0.0 || *k == CornerKind::Round) =>
         {
             // The radii as drawn, none past half the shorter side (CSS draws one further when its
             // neighbours leave room).
@@ -636,7 +832,11 @@ fn corners(path: &PathData, live: Option<&LiveShape>) -> Option<Corners> {
             (sweep < 1e-6 || (sweep - 360.0).abs() < 1e-6).then_some(Corners::Ellipse)
         }
         Some(
-            LiveShape::Rectangle { .. } | LiveShape::Ellipse { .. } | LiveShape::Polygon { .. } | LiveShape::Line { .. } | LiveShape::Path { .. },
+            LiveShape::Rectangle { .. }
+            | LiveShape::Ellipse { .. }
+            | LiveShape::Polygon { .. }
+            | LiveShape::Line { .. }
+            | LiveShape::Path { .. },
         ) => None,
         None => is_upright_rectangle(path).then_some(Corners::Square),
     }
@@ -644,8 +844,13 @@ fn corners(path: &PathData, live: Option<&LiveShape>) -> Option<Corners> {
 
 /// One closed subpath of four straight sides along the axes.
 fn is_upright_rectangle(path: &PathData) -> bool {
-    let ([sp], Some(b)) = (path.subpaths.as_slice(), path.bounds()) else { return false };
-    let corner = |p: Point| ((p.x - b.x0).abs() < 1e-6 || (p.x - b.x1).abs() < 1e-6) && ((p.y - b.y0).abs() < 1e-6 || (p.y - b.y1).abs() < 1e-6);
+    let ([sp], Some(b)) = (path.subpaths.as_slice(), path.bounds()) else {
+        return false;
+    };
+    let corner = |p: Point| {
+        ((p.x - b.x0).abs() < 1e-6 || (p.x - b.x1).abs() < 1e-6)
+            && ((p.y - b.y0).abs() < 1e-6 || (p.y - b.y1).abs() < 1e-6)
+    };
     sp.closed
         && sp.anchors.len() == 4
         && (0..sp.segment_count()).all(|i| sp.segment_is_line(i))

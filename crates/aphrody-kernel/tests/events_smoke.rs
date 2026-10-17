@@ -26,7 +26,11 @@ struct CollectingSubscriber {
 
 impl CollectingSubscriber {
     fn new(name: &str, topics: Vec<String>) -> Self {
-        Self { name: name.to_string(), topics, received: Mutex::new(Vec::new()) }
+        Self {
+            name: name.to_string(),
+            topics,
+            received: Mutex::new(Vec::new()),
+        }
     }
 }
 
@@ -44,7 +48,12 @@ impl Subscriber for CollectingSubscriber {
 }
 
 fn evt(topic: &str) -> Event {
-    Event::new(topic, EventLevel::Info, "test", serde_json::json!({"topic": topic}))
+    Event::new(
+        topic,
+        EventLevel::Info,
+        "test",
+        serde_json::json!({"topic": topic}),
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -121,7 +130,11 @@ async fn ndjson_sink_appends_event() {
     let path = dir.path().join("nested").join("events.ndjson");
 
     let bus = EventBus::new(0);
-    let sink = Arc::new(NdjsonSinkSubscriber::new("ndjson", path.clone(), Vec::<String>::new()));
+    let sink = Arc::new(NdjsonSinkSubscriber::new(
+        "ndjson",
+        path.clone(),
+        Vec::<String>::new(),
+    ));
     bus.subscribe(sink.clone()).await;
 
     bus.publish(evt("alpha")).await.unwrap();

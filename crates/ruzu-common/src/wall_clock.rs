@@ -216,9 +216,15 @@ mod tests {
         for frequency in [NS_PER_SEC + 1, 2_500_000_000, 4_000_000_000] {
             assert!(create_x64_clock(true, frequency).is_native());
             assert!(!create_x64_clock(false, frequency).is_native());
-            assert_ne!(crate::uint128::get_fixed_point64_factor(NS_PER_SEC, frequency), 0);
+            assert_ne!(
+                crate::uint128::get_fixed_point64_factor(NS_PER_SEC, frequency),
+                0
+            );
         }
-        assert_eq!(crate::uint128::get_fixed_point64_factor(NS_PER_SEC, NS_PER_SEC), 0);
+        assert_eq!(
+            crate::uint128::get_fixed_point64_factor(NS_PER_SEC, NS_PER_SEC),
+            0
+        );
     }
 
     #[test]

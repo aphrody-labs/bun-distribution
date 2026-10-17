@@ -40,14 +40,28 @@ fn covered(word: [f32; 4], text: &[[f32; 4]]) -> f32 {
     if !total.is_finite() || total <= 0.0 {
         return 0.0;
     }
-    let inside: f32 =
-        text.iter().map(|g| area([word[0].max(g[0]), word[1].max(g[1]), word[2].min(g[2]), word[3].min(g[3])])).filter(|a| a.is_finite()).sum();
+    let inside: f32 = text
+        .iter()
+        .map(|g| {
+            area([
+                word[0].max(g[0]),
+                word[1].max(g[1]),
+                word[2].min(g[2]),
+                word[3].min(g[3]),
+            ])
+        })
+        .filter(|a| a.is_finite())
+        .sum();
     (inside / total).min(1.0)
 }
 
 impl Default for OcrSettings {
     fn default() -> Self {
-        OcrSettings { dpi: 300.0, language: "en".into(), skip_text_pages: true }
+        OcrSettings {
+            dpi: 300.0,
+            language: "en".into(),
+            skip_text_pages: true,
+        }
     }
 }
 
@@ -64,7 +78,11 @@ pub struct OcrPage {
 
 impl OcrPage {
     pub fn text(&self) -> String {
-        self.words.iter().map(|w| w.text.as_str()).collect::<Vec<_>>().join(" ")
+        self.words
+            .iter()
+            .map(|w| w.text.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 
@@ -101,7 +119,10 @@ impl OcrJob {
     /// Read the pages. `progress(done, total)` is called before each page; returning `false`
     /// stops (the pages read so far are returned).
     pub fn run(self, ocr: &Ocr, mut progress: impl FnMut(usize, usize) -> bool) -> Vec<OcrPage> {
-        let config = RenderConfig { password: self.password.as_deref().map(Arc::from), ..Default::default() };
+        let config = RenderConfig {
+            password: self.password.as_deref().map(Arc::from),
+            ..Default::default()
+        };
         let mut r = PageRenderer::new(self.bytes.clone(), config);
         let mut out = Vec::new();
         let total = self.pages.len();
@@ -109,13 +130,31 @@ impl OcrJob {
             if !progress(done, total) {
                 break;
             }
-            let Some(info) = self.infos.get(page) else { continue };
-            let skip = |why: &str| OcrPage { page, words: Vec::new(), already_on_page: 0, skipped: Some(why.into()) };
+            let Some(info) = self.infos.get(page) else {
+                continue;
+            };
+            let skip = |why: &str| OcrPage {
+                page,
+                words: Vec::new(),
+                already_on_page: 0,
+                skipped: Some(why.into()),
+            };
             // The boxes of the page's own text (an earlier OCR layer's included), in view space.
             let existing: Vec<[f32; 4]> = r
-                .render(RenderRequest { page, kind: RequestKind::Text, scale: 1.0, ..Default::default() })
+                .render(RenderRequest {
+                    page,
+                    kind: RequestKind::Text,
+                    scale: 1.0,
+                    ..Default::default()
+                })
                 .text
-                .map(|t| t.glyphs.iter().filter(|g| !g.text.trim().is_empty()).map(|g| g.rect).collect())
+                .map(|t| {
+                    t.glyphs
+                        .iter()
+                        .filter(|g| !g.text.trim().is_empty())
+                        .map(|g| g.rect)
+                        .collect()
+                })
                 .unwrap_or_default();
             if self.settings.skip_text_pages && !existing.is_empty() {
                 out.push(skip("the page already contains text"));
@@ -124,8 +163,17 @@ impl OcrJob {
             // A scan is read at its own resolution (enlarging it only blurs the letters), at most
             // the chosen one.
             let wanted = self.settings.dpi.clamp(72.0, 600.0) / 72.0;
-            let scale = self.native.get(page).copied().flatten().map_or(wanted, |n| n.clamp(1.0, wanted));
-            let shot = r.render(RenderRequest { page, scale, ..Default::default() });
+            let scale = self
+                .native
+                .get(page)
+                .copied()
+                .flatten()
+                .map_or(wanted, |n| n.clamp(1.0, wanted));
+            let shot = r.render(RenderRequest {
+                page,
+                scale,
+                ..Default::default()
+            });
             if let Some(e) = shot.error {
                 out.push(skip(&e));
                 continue;
@@ -143,10 +191,20 @@ impl OcrJob {
                 [u as f64, v as f64]
             };
             // Words the page's own text already has are not added a second time.
-            let (fresh, already): (Vec<_>, Vec<_>) =
-                lines.iter().flat_map(|l| &l.words).partition(|w| covered(w.rect.map(|v| v / scale), &existing) < ALREADY_ON_PAGE);
-            let words = fresh.into_iter().map(|w| PlacedWord::place(w, to_user)).collect();
-            out.push(OcrPage { page, words, already_on_page: already.len(), skipped: None });
+            let (fresh, already): (Vec<_>, Vec<_>) = lines
+                .iter()
+                .flat_map(|l| &l.words)
+                .partition(|w| covered(w.rect.map(|v| v / scale), &existing) < ALREADY_ON_PAGE);
+            let words = fresh
+                .into_iter()
+                .map(|w| PlacedWord::place(w, to_user))
+                .collect();
+            out.push(OcrPage {
+                page,
+                words,
+                already_on_page: already.len(),
+                skipped: None,
+            });
         }
         progress(total, total);
         out
@@ -158,7 +216,11 @@ impl Session {
     pub fn ocr_job(&self, id: DocId, pages: &[usize], settings: OcrSettings) -> Option<OcrJob> {
         let doc = self.get(id)?;
         let all = doc.info.pages.len();
-        let pages: Vec<usize> = if pages.is_empty() { (0..all).collect() } else { pages.iter().copied().filter(|p| *p < all).collect() };
+        let pages: Vec<usize> = if pages.is_empty() {
+            (0..all).collect()
+        } else {
+            pages.iter().copied().filter(|p| *p < all).collect()
+        };
         let native = (0..all)
             .map(|p| {
                 if !pages.contains(&p) {
@@ -175,23 +237,49 @@ impl Session {
                     .reduce(f32::max)
             })
             .collect();
-        Some(OcrJob { bytes: doc.bytes.clone(), password: doc.password.clone(), infos: doc.info.pages.clone(), native, pages, settings })
+        Some(OcrJob {
+            bytes: doc.bytes.clone(),
+            password: doc.password.clone(),
+            infos: doc.info.pages.clone(),
+            native,
+            pages,
+            settings,
+        })
     }
 
     /// Add the words found by [`OcrJob::run`] as one undoable step. Returns the number of words.
     pub fn apply_ocr(&mut self, id: DocId, found: &[OcrPage]) -> Result<usize, EditError> {
-        let edits: Vec<Edit> =
-            found.iter().filter(|p| !p.words.is_empty()).map(|p| Edit::AddOcrText { page: p.page, words: p.words.clone() }).collect();
+        let edits: Vec<Edit> = found
+            .iter()
+            .filter(|p| !p.words.is_empty())
+            .map(|p| Edit::AddOcrText {
+                page: p.page,
+                words: p.words.clone(),
+            })
+            .collect();
         let words = found.iter().map(|p| p.words.len()).sum();
         if !edits.is_empty() {
-            self.apply(id, Edit::Batch { label: "Recognize text".into(), edits })?;
+            self.apply(
+                id,
+                Edit::Batch {
+                    label: "Recognize text".into(),
+                    edits,
+                },
+            )?;
         }
         Ok(words)
     }
 
     /// Recognise text on `pages` and add it, in one call (the CLI and agents use this).
-    pub fn recognize_text(&mut self, id: DocId, pages: &[usize], settings: OcrSettings) -> Result<Vec<OcrPage>, String> {
-        let job = self.ocr_job(id, pages, settings).ok_or("no such document")?;
+    pub fn recognize_text(
+        &mut self,
+        id: DocId,
+        pages: &[usize],
+        settings: OcrSettings,
+    ) -> Result<Vec<OcrPage>, String> {
+        let job = self
+            .ocr_job(id, pages, settings)
+            .ok_or("no such document")?;
         if let Some(why) = self.get(id).and_then(|d| d.read_only_reason.clone()) {
             return Err(why);
         }
@@ -227,16 +315,23 @@ pub fn recognize_file(
     progress: impl FnMut(usize, usize) -> bool,
 ) -> Result<FileResult, String> {
     let mut s = Session::new();
-    let id = s.open(name, None, bytes.clone(), password).map_err(|e| e.to_string())?;
+    let id = s
+        .open(name, None, bytes.clone(), password)
+        .map_err(|e| e.to_string())?;
     if let Some(why) = s.get(id).and_then(|d| d.read_only_reason.clone()) {
         return Err(why);
     }
-    let job = s.ocr_job(id, &[], settings).ok_or("the document could not be read")?;
+    let job = s
+        .ocr_job(id, &[], settings)
+        .ok_or("the document could not be read")?;
     let pages = job.run(ocr, progress);
     if s.apply_ocr(id, &pages).map_err(|e| e.to_string())? == 0 {
         return Ok(FileResult { bytes, pages });
     }
-    Ok(FileResult { bytes: s.save_bytes(id).map_err(|e| e.to_string())?, pages })
+    Ok(FileResult {
+        bytes: s.save_bytes(id).map_err(|e| e.to_string())?,
+        pages,
+    })
 }
 
 #[cfg(test)]
@@ -248,7 +343,9 @@ mod tests {
     #[test]
     fn words_over_existing_text_count_as_already_there() {
         // Glyph em boxes of "Total" at 12 pt, five letters side by side.
-        let glyphs: Vec<[f32; 4]> = (0..5).map(|i| [100.0 + 7.0 * i as f32, 50.0, 107.0 + 7.0 * i as f32, 62.0]).collect();
+        let glyphs: Vec<[f32; 4]> = (0..5)
+            .map(|i| [100.0 + 7.0 * i as f32, 50.0, 107.0 + 7.0 * i as f32, 62.0])
+            .collect();
         // OCR's tight box around the same ink.
         assert!(covered([100.5, 52.0, 134.0, 61.0], &glyphs) >= ALREADY_ON_PAGE);
         // A word in a picture further down, and one beside the text on the same line.
@@ -266,10 +363,23 @@ mod tests {
         let twice = [[0.0, 0.0, 10.0, 10.0], [0.0, 0.0, 10.0, 10.0]];
         assert_eq!(covered([0.0, 0.0, 10.0, 10.0], &twice), 1.0);
         // Empty, inverted and non-finite boxes cover nothing and are covered by nothing.
-        for word in [[5.0, 5.0, 5.0, 9.0], [9.0, 0.0, 1.0, 9.0], [f32::NAN, 0.0, 9.0, 9.0], [0.0, 0.0, f32::INFINITY, 9.0]] {
+        for word in [
+            [5.0, 5.0, 5.0, 9.0],
+            [9.0, 0.0, 1.0, 9.0],
+            [f32::NAN, 0.0, 9.0, 9.0],
+            [0.0, 0.0, f32::INFINITY, 9.0],
+        ] {
             assert_eq!(covered(word, &twice), 0.0, "{word:?}");
         }
-        let broken = [[f32::NAN; 4], [f32::NEG_INFINITY, f32::NEG_INFINITY, f32::INFINITY, f32::INFINITY]];
+        let broken = [
+            [f32::NAN; 4],
+            [
+                f32::NEG_INFINITY,
+                f32::NEG_INFINITY,
+                f32::INFINITY,
+                f32::INFINITY,
+            ],
+        ];
         let c = covered([0.0, 0.0, 10.0, 10.0], &broken);
         assert!((0.0..=1.0).contains(&c), "{c}");
     }

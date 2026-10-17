@@ -8,12 +8,12 @@
 //! aspect <= 3:1, 655,360 <= pixels <= 8,294,400), so the resolution tiers and custom size
 //! calculator in `gpt_image_2_resolution` are reused as-is.
 
-pub mod gpt_image_2p5_text_to_image_params;
+pub mod gpt_image_2p5_background;
 pub mod gpt_image_2p5_edit_image_params;
 pub mod gpt_image_2p5_image_size;
-pub mod gpt_image_2p5_quality;
-pub mod gpt_image_2p5_background;
-pub mod gpt_image_2p5_output_format;
 pub mod gpt_image_2p5_num_images;
+pub mod gpt_image_2p5_output_format;
 pub mod gpt_image_2p5_pricing;
+pub mod gpt_image_2p5_quality;
+pub mod gpt_image_2p5_text_to_image_params;
 pub mod raw;

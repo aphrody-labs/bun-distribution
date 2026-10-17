@@ -95,7 +95,12 @@ impl Report {
             function_bytes: cover.bytes_by_kind(UnitKind::Function),
             ..Default::default()
         };
-        r.code_bytes = cover.units.iter().filter(|u| u.kind.is_code()).map(|u| u.len).sum();
+        r.code_bytes = cover
+            .units
+            .iter()
+            .filter(|u| u.kind.is_code())
+            .map(|u| u.len)
+            .sum();
 
         let by_va = registry.by_va()?;
         for u in &cover.units {
@@ -122,14 +127,16 @@ impl Report {
             match entry.map(|e| e.status) {
                 Some(MatchStatus::Semantic) => r.matched_semantic.add(u.len),
                 Some(MatchStatus::Wip) => r.wip.add(u.len),
-                _ => {},
+                _ => {}
             }
         }
         // Une entrée est orpheline si aucune unité ne COMMENCE à son adresse :
         // c'est le signal que l'adresse vient d'un autre build ou tombe au
         // milieu d'une fonction réelle.
-        r.orphan_entries =
-            by_va.keys().filter(|va| !cover.units.iter().any(|u| u.va == Some(**va))).count();
+        r.orphan_entries = by_va
+            .keys()
+            .filter(|va| !cover.units.iter().any(|u| u.va == Some(**va)))
+            .count();
         Ok(r)
     }
 
@@ -190,7 +197,15 @@ mod tests {
     use aphrody_nie_pe::Unit;
 
     fn unit(id: &str, kind: UnitKind, off: usize, len: usize, va: Option<u64>) -> Unit {
-        Unit { id: id.into(), kind, section: None, file_off: off, len, va, sha256: String::new() }
+        Unit {
+            id: id.into(),
+            kind,
+            section: None,
+            file_off: off,
+            len,
+            va,
+            sha256: String::new(),
+        }
     }
 
     fn cover() -> Cover {
@@ -199,8 +214,20 @@ mod tests {
             sha256: String::new(),
             units: vec![
                 unit("hdr", UnitKind::PeHeaders, 0, 100, None),
-                unit("fn.140001000", UnitKind::Function, 100, 400, Some(0x1_4000_1000)),
-                unit("fn.140002000", UnitKind::Function, 500, 200, Some(0x1_4000_2000)),
+                unit(
+                    "fn.140001000",
+                    UnitKind::Function,
+                    100,
+                    400,
+                    Some(0x1_4000_1000),
+                ),
+                unit(
+                    "fn.140002000",
+                    UnitKind::Function,
+                    500,
+                    200,
+                    Some(0x1_4000_2000),
+                ),
                 unit("res..text.2bc", UnitKind::CodeResidue, 700, 100, None),
                 unit("data.rdata", UnitKind::SectionData, 800, 200, None),
             ],
@@ -286,8 +313,15 @@ mod tests {
         let mut c = cover();
         c.units[2].len = 3; // fn.140002000 fait désormais exactement 3 octets
         let r = Report::build(&c, &Registry::default(), &asm).unwrap();
-        assert_eq!(r.assembled.units, 1, "seule l'unité de taille compatible compte");
+        assert_eq!(
+            r.assembled.units, 1,
+            "seule l'unité de taille compatible compte"
+        );
         assert_eq!(r.assembled.bytes, 3);
-        assert_eq!(r.produced_bytes(), 103, "en-têtes (100) + corps assemblé (3)");
+        assert_eq!(
+            r.produced_bytes(),
+            103,
+            "en-têtes (100) + corps assemblé (3)"
+        );
     }
 }

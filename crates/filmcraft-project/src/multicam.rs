@@ -82,20 +82,30 @@ pub struct MulticamSource {
 impl MulticamSource {
     /// Angles that have a video track (the grid), in camera order: `(angle, camera)`.
     pub fn video_angles(&self) -> impl Iterator<Item = (usize, &Camera)> {
-        self.cameras.iter().enumerate().filter(|(_, c)| c.video_track.is_some())
+        self.cameras
+            .iter()
+            .enumerate()
+            .filter(|(_, c)| c.video_track.is_some())
     }
     /// Enabled video angles: the cameras shown in the Multi-Camera view (keys 1–9 pick from these).
     pub fn shown_angles(&self) -> Vec<usize> {
-        self.video_angles().filter(|(_, c)| c.enabled).map(|(i, _)| i).collect()
+        self.video_angles()
+            .filter(|(_, c)| c.enabled)
+            .map(|(i, _)| i)
+            .collect()
     }
     /// Angle whose video is on `track`.
     pub fn angle_of_video_track(&self, track: TrackId) -> Option<usize> {
-        self.cameras.iter().position(|c| c.video_track == Some(track))
+        self.cameras
+            .iter()
+            .position(|c| c.video_track == Some(track))
     }
     /// Whether an audio track belongs to a camera with video (switchable) rather than to an
     /// audio-only source.
     pub fn camera_of_audio_track(&self, track: TrackId) -> Option<usize> {
-        self.cameras.iter().position(|c| c.audio_tracks.contains(&track))
+        self.cameras
+            .iter()
+            .position(|c| c.audio_tracks.contains(&track))
     }
     /// The audio tracks that play for `angle` (None = all of them, as in a plain nest).
     /// Audio-only sources always play; camera audio follows [`MulticamAudio`].
@@ -146,7 +156,9 @@ impl crate::TrackItem {
     /// ordinary nest). Any nested sequence can be a multi-camera clip: without camera data its
     /// video tracks are the angles.
     pub fn multicam_angle(&self, _nested: &Sequence) -> Option<usize> {
-        self.multicam.filter(|m| m.enabled).map(|m| m.angle as usize)
+        self.multicam
+            .filter(|m| m.enabled)
+            .map(|m| m.angle as usize)
     }
 }
 
@@ -165,7 +177,11 @@ impl Sequence {
                 .map(|(i, t)| Camera {
                     name: t.name.clone(),
                     video_track: Some(t.id),
-                    audio_tracks: self.audio_tracks.get(i).map(|a| vec![a.id]).unwrap_or_default(),
+                    audio_tracks: self
+                        .audio_tracks
+                        .get(i)
+                        .map(|a| vec![a.id])
+                        .unwrap_or_default(),
                     enabled: true,
                     source: None,
                 })

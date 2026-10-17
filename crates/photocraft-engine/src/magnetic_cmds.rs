@@ -35,19 +35,27 @@ pub struct EdgeSource {
 
 /// The active layer when it has pixels of its own.
 fn pixel_layer(d: &DocState) -> Option<LayerId> {
-    d.active_layer.filter(|id| d.doc.layer(*id).is_some_and(|l| l.surface().is_some()))
+    d.active_layer
+        .filter(|id| d.doc.layer(*id).is_some_and(|l| l.surface().is_some()))
 }
 
 impl EdgeSource {
     /// For the session's active document; `None` without one.
     pub fn new(s: &Session) -> Option<EdgeSource> {
         let d = s.active()?;
-        Some(EdgeSource { doc: d.doc.clone(), layer: pixel_layer(d), revision: d.revision, tracer: Tracer::new(d.doc.bounds()) })
+        Some(EdgeSource {
+            doc: d.doc.clone(),
+            layer: pixel_layer(d),
+            revision: d.revision,
+            tracer: Tracer::new(d.doc.bounds()),
+        })
     }
 
     /// Whether this still shows the session's active document, layer and revision.
     pub fn is_current(&self, s: &Session) -> bool {
-        s.active().is_some_and(|d| d.doc.id == self.doc.id && d.revision == self.revision && pixel_layer(d) == self.layer)
+        s.active().is_some_and(|d| {
+            d.doc.id == self.doc.id && d.revision == self.revision && pixel_layer(d) == self.layer
+        })
     }
 
     /// The document this reads.
@@ -64,9 +72,16 @@ impl EdgeSource {
 
     /// The border from `from` to `to` along the edges near `guide`, the pointer's path between them
     /// (see [`Tracer::trace`]).
-    pub fn trace(&mut self, from: [f64; 2], to: [f64; 2], guide: &[[f64; 2]], s: Settings) -> Vec<[f64; 2]> {
+    pub fn trace(
+        &mut self,
+        from: [f64; 2],
+        to: [f64; 2],
+        guide: &[[f64; 2]],
+        s: Settings,
+    ) -> Vec<[f64; 2]> {
         let (doc, layer) = (&self.doc, self.layer);
-        self.tracer.trace(&mut |r| read(doc, layer, r), from, to, guide, s)
+        self.tracer
+            .trace(&mut |r| read(doc, layer, r), from, to, guide, s)
     }
 }
 
@@ -76,18 +91,28 @@ fn read(doc: &Document, layer: Option<LayerId>, r: Rect) -> Vec<[u8; 4]> {
         Some(surface) => sel::rgba8_image(surface, r),
         None => {
             let q = |v: f32| (v.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
-            photocraft_compose::render(doc, r).px.iter().map(|p| p.map(q)).collect()
+            photocraft_compose::render(doc, r)
+                .px
+                .iter()
+                .map(|p| p.map(q))
+                .collect()
         }
     }
 }
 
 fn bad(msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: CMD.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: CMD.into(),
+        msg: msg.into(),
+    }
 }
 
 /// `points`: `[[x, y], …]` of finite numbers.
 fn points(p: &Value) -> Result<Vec<[f64; 2]>> {
-    let a = p.get("points").and_then(Value::as_array).ok_or_else(|| bad("`points` must be [[x, y], …]"))?;
+    let a = p
+        .get("points")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad("`points` must be [[x, y], …]"))?;
     if a.len() > MAX_POINTS {
         return Err(bad(format!("at most {MAX_POINTS} points")));
     }
@@ -106,9 +131,13 @@ fn points(p: &Value) -> Result<Vec<[f64; 2]>> {
 fn number(p: &Value, key: &str, default: f64, range: std::ops::RangeInclusive<f64>) -> Result<f64> {
     match p.get(key) {
         None => Ok(default),
-        Some(v) => {
-            v.as_f64().filter(|x| range.contains(x)).ok_or_else(|| bad(format!("`{key}` must be a number in {}..{} (got {v})", range.start(), range.end())))
-        }
+        Some(v) => v.as_f64().filter(|x| range.contains(x)).ok_or_else(|| {
+            bad(format!(
+                "`{key}` must be a number in {}..{} (got {v})",
+                range.start(),
+                range.end()
+            ))
+        }),
     }
 }
 
@@ -119,10 +148,17 @@ fn magnetic_lasso(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let trace = match p.get("trace") {
         None => true,
-        Some(v) => v.as_bool().ok_or_else(|| bad("`trace` must be true or false"))?,
+        Some(v) => v
+            .as_bool()
+            .ok_or_else(|| bad("`trace` must be true or false"))?,
     };
     let outline = if trace {
-        let width = number(p, "width", 10.0, magnetic::WIDTH_RANGE.0..=magnetic::WIDTH_RANGE.1)?;
+        let width = number(
+            p,
+            "width",
+            10.0,
+            magnetic::WIDTH_RANGE.0..=magnetic::WIDTH_RANGE.1,
+        )?;
         let contrast = number(p, "contrast", 10.0, 1.0..=100.0)?;
         let straight = match p.get("close").map(Value::as_str) {
             None | Some(Some("magnetic")) => false,
@@ -144,9 +180,19 @@ fn magnetic_lasso(s: &mut Session, p: &Value) -> Result<Value> {
 /// The closed border through the fastening points `pts`, each snapped to the nearest prominent
 /// edge first, as the tool places them. The last point joins the first along the edges, or
 /// straight with `straight`.
-fn trace_border(src: &mut EdgeSource, pts: &[[f64; 2]], settings: Settings, straight: bool) -> Result<Vec<[f64; 2]>> {
+fn trace_border(
+    src: &mut EdgeSource,
+    pts: &[[f64; 2]],
+    settings: Settings,
+    straight: bool,
+) -> Result<Vec<[f64; 2]>> {
     let b = src.tracer.bounds();
-    let inside = |q: &[f64; 2]| [q[0].clamp(b.x0 as f64, b.x1 as f64), q[1].clamp(b.y0 as f64, b.y1 as f64)];
+    let inside = |q: &[f64; 2]| {
+        [
+            q[0].clamp(b.x0 as f64, b.x1 as f64),
+            q[1].clamp(b.y0 as f64, b.y1 as f64),
+        ]
+    };
     let mut ring: Vec<[f64; 2]> = pts.iter().map(inside).collect();
     if let Some(&first) = ring.first() {
         ring.push(first);
@@ -156,7 +202,9 @@ fn trace_border(src: &mut EdgeSource, pts: &[[f64; 2]], settings: Settings, stra
     }
     ring.pop();
     let anchors: Vec<[f64; 2]> = ring.iter().filter_map(|q| src.snap(*q, settings)).collect();
-    let Some(&first) = anchors.first() else { return Err(EngineError::Other("the document has no pixels".into())) };
+    let Some(&first) = anchors.first() else {
+        return Err(EngineError::Other("the document has no pixels".into()));
+    };
     let mut out = vec![first];
     for w in anchors.windows(2) {
         out.extend(src.trace(w[0], w[1], &[], settings).into_iter().skip(1));
@@ -170,7 +218,9 @@ fn trace_border(src: &mut EdgeSource, pts: &[[f64; 2]], settings: Settings, stra
 }
 
 fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no document open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no document open".into())
 }
 
 /// Magnetic Lasso command specs.

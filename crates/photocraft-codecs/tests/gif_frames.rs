@@ -1,6 +1,9 @@
 //! `decode_gif_frames`: every frame of an animated GIF, composited, with its delay.
 
-use photocraft_codecs::{AnimationFrame, CodecError, DecodeOptions, DecodeWarning, Format, Limits, decode, decode_gif_frames};
+use photocraft_codecs::{
+    AnimationFrame, CodecError, DecodeOptions, DecodeWarning, Format, Limits, decode,
+    decode_gif_frames,
+};
 
 const RED: [u8; 4] = [255, 0, 0, 255];
 const GREEN: [u8; 4] = [0, 255, 0, 255];
@@ -101,7 +104,11 @@ fn every_frame_comes_back_in_order_with_its_delay() {
 #[test]
 fn a_smaller_frame_is_drawn_over_the_previous_one() {
     // Frame 2 is one pixel at x = 1, kept ("do not dispose", 1): the screen is red, blue.
-    let all = frames(&raw_gif(2, 1, &[(0, 0, 2, 1, 1, &[0, 0]), (1, 0, 1, 1, 1, &[2])]));
+    let all = frames(&raw_gif(
+        2,
+        1,
+        &[(0, 0, 2, 1, 1, &[0, 0]), (1, 0, 1, 1, 1, &[2])],
+    ));
     assert_eq!(all.len(), 2);
     assert_eq!(pixels(&all[0]), [RED, RED].concat());
     assert_eq!(pixels(&all[1]), [RED, BLUE].concat());
@@ -111,7 +118,11 @@ fn a_smaller_frame_is_drawn_over_the_previous_one() {
 #[test]
 fn disposal_to_background_clears_the_previous_frame() {
     // Frame 1 (disposal 2, restore to background) covers the screen; frame 2 draws one pixel.
-    let all = frames(&raw_gif(2, 1, &[(0, 0, 2, 1, 2, &[1, 1]), (1, 0, 1, 1, 1, &[2])]));
+    let all = frames(&raw_gif(
+        2,
+        1,
+        &[(0, 0, 2, 1, 2, &[1, 1]), (1, 0, 1, 1, 1, &[2])],
+    ));
     assert_eq!(pixels(&all[0]), [GREEN, GREEN].concat());
     assert_eq!(pixels(&all[1]), [CLEAR, BLUE].concat());
 }
@@ -120,7 +131,15 @@ fn disposal_to_background_clears_the_previous_frame() {
 fn disposal_to_previous_restores_what_was_there() {
     // Frame 1 is kept; frame 2 (disposal 3, restore previous) paints one pixel over it, so frame
     // 3, which draws elsewhere, sees frame 1 again.
-    let all = frames(&raw_gif(2, 1, &[(0, 0, 2, 1, 1, &[0, 0]), (0, 0, 1, 1, 3, &[1]), (1, 0, 1, 1, 1, &[2])]));
+    let all = frames(&raw_gif(
+        2,
+        1,
+        &[
+            (0, 0, 2, 1, 1, &[0, 0]),
+            (0, 0, 1, 1, 3, &[1]),
+            (1, 0, 1, 1, 1, &[2]),
+        ],
+    ));
     assert_eq!(pixels(&all[1]), [GREEN, RED].concat());
     assert_eq!(pixels(&all[2]), [RED, BLUE].concat());
 }
@@ -132,7 +151,12 @@ fn a_damaged_later_frame_keeps_the_frames_before_it() {
     let cut = &good[..good.len() - 12];
     let all = frames(cut);
     assert!((1..3).contains(&all.len()), "{} frames", all.len());
-    assert_eq!(all[0].image.warnings, [DecodeWarning::Truncated { format: Format::Gif }]);
+    assert_eq!(
+        all[0].image.warnings,
+        [DecodeWarning::Truncated {
+            format: Format::Gif
+        }]
+    );
     assert!(all[1..].iter().all(|f| f.image.warnings.is_empty()));
 }
 
@@ -154,15 +178,38 @@ fn every_prefix_of_a_gif_returns() {
 #[test]
 fn dimension_limits_apply() {
     let g = solid_gif(&[RED], 4, 4, 100);
-    let opts = DecodeOptions { limits: Limits { max_width: 3, ..Limits::default() }, ..Default::default() };
-    assert!(matches!(decode_gif_frames(&g, &opts), Err(CodecError::LimitExceeded(_))));
+    let opts = DecodeOptions {
+        limits: Limits {
+            max_width: 3,
+            ..Limits::default()
+        },
+        ..Default::default()
+    };
+    assert!(matches!(
+        decode_gif_frames(&g, &opts),
+        Err(CodecError::LimitExceeded(_))
+    ));
 }
 
 #[test]
 fn the_byte_budget_covers_all_frames_together() {
     // One 4x4 RGBA frame is 64 bytes: two frames fit in 128, three do not.
-    let limits = Limits { max_alloc: 128, ..Limits::default() };
-    let opts = DecodeOptions { limits, ..Default::default() };
-    assert_eq!(decode_gif_frames(&solid_gif(&[RED, GREEN], 4, 4, 100), &opts).unwrap().len(), 2);
-    assert!(matches!(decode_gif_frames(&solid_gif(&[RED, GREEN, BLUE], 4, 4, 100), &opts), Err(CodecError::LimitExceeded(_))));
+    let limits = Limits {
+        max_alloc: 128,
+        ..Limits::default()
+    };
+    let opts = DecodeOptions {
+        limits,
+        ..Default::default()
+    };
+    assert_eq!(
+        decode_gif_frames(&solid_gif(&[RED, GREEN], 4, 4, 100), &opts)
+            .unwrap()
+            .len(),
+        2
+    );
+    assert!(matches!(
+        decode_gif_frames(&solid_gif(&[RED, GREEN, BLUE], 4, 4, 100), &opts),
+        Err(CodecError::LimitExceeded(_))
+    ));
 }

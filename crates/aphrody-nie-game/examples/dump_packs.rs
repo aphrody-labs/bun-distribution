@@ -132,12 +132,20 @@ fn safe_relpath(internal: &str) -> Option<PathBuf> {
             c => out.push(c),
         }
     }
-    if out.as_os_str().is_empty() { None } else { Some(out) }
+    if out.as_os_str().is_empty() {
+        None
+    } else {
+        Some(out)
+    }
 }
 
 /// Taille de sortie attendue (décompressée) d'une entrée CPK.
 fn expected_len(e: &CpkEntry) -> u64 {
-    if e.is_compressed { e.extract_size } else { e.size }
+    if e.is_compressed {
+        e.extract_size
+    } else {
+        e.size
+    }
 }
 
 /// Compteurs partagés du run.
@@ -158,13 +166,21 @@ fn main() -> Result<()> {
     let out_dir = cli.out.clone().unwrap_or_else(|| data_dir.clone());
 
     if let Some(n) = cli.jobs {
-        rayon::ThreadPoolBuilder::new().num_threads(n).build_global().ok();
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(n)
+            .build_global()
+            .ok();
     }
 
     eprintln!("→ montage VFS depuis {}", data_dir.display());
     let mut vfs = Vfs::new();
-    vfs.init(&data_dir).context("VFS init échoué (cpk_list.cfg.bin introuvable/illisible)")?;
-    eprintln!("  {} fichiers logiques, {} CPK uniques", vfs.asset_count(), vfs.cpk_count());
+    vfs.init(&data_dir)
+        .context("VFS init échoué (cpk_list.cfg.bin introuvable/illisible)")?;
+    eprintln!(
+        "  {} fichiers logiques, {} CPK uniques",
+        vfs.asset_count(),
+        vfs.cpk_count()
+    );
 
     // Groupage par CPK (chaque CPK ouvert une seule fois), filtré par préfixe, dédupliqué
     // par l'index VFS (dernier gagnant). On collecte en propriétaire pour traverser rayon.
@@ -242,9 +258,9 @@ fn main() -> Result<()> {
         if abort.load(Ordering::Relaxed) {
             return;
         }
-        if let Err(e) =
-            process_cpk(&packs_dir, cpk, wanted, &out_dir, cli.force, &stats, &abort, reserve)
-        {
+        if let Err(e) = process_cpk(
+            &packs_dir, cpk, wanted, &out_dir, cli.force, &stats, &abort, reserve,
+        ) {
             stats.errors.fetch_add(wanted.len(), Ordering::Relaxed);
             eprintln!("⚠ CPK {cpk}: {e:#}");
         }
@@ -259,7 +275,11 @@ fn main() -> Result<()> {
     eprintln!(
         "✓ terminé en {secs:.1}s — écrits {w}, ignorés {sk}, manquants {mi}, erreurs {er} ; {:.2} Gio ({:.0} Mio/s)",
         by as f64 / 1e9,
-        if secs > 0.0 { by as f64 / 1e6 / secs } else { 0.0 }
+        if secs > 0.0 {
+            by as f64 / 1e6 / secs
+        } else {
+            0.0
+        }
     );
     if abort.load(Ordering::Relaxed) {
         bail!(
@@ -286,7 +306,10 @@ fn process_cpk(
     // d'extraction → on compte ces fichiers comme « manquants » avec un seul avertissement.
     if cpk.is_empty() || !packs_dir.join(cpk).is_file() {
         stats.missing.fetch_add(wanted.len(), Ordering::Relaxed);
-        eprintln!("⚠ CPK absent/sans nom — {} fichier(s) ignoré(s) : {cpk:?}", wanted.len());
+        eprintln!(
+            "⚠ CPK absent/sans nom — {} fichier(s) ignoré(s) : {cpk:?}",
+            wanted.len()
+        );
         return Ok(());
     }
 
@@ -314,13 +337,16 @@ fn process_cpk(
             return Ok(());
         }
         let base = internal.rsplit('/').next().unwrap_or(internal);
-        let entry = by_full.get(internal.as_str()).copied().or_else(|| by_base.get(base).copied());
+        let entry = by_full
+            .get(internal.as_str())
+            .copied()
+            .or_else(|| by_base.get(base).copied());
         let entry = match entry {
             Some(e) => e,
             None => {
                 stats.missing.fetch_add(1, Ordering::Relaxed);
                 continue;
-            },
+            }
         };
 
         let Some(rel) = safe_relpath(internal) else {
@@ -346,7 +372,7 @@ fn process_cpk(
                 stats.errors.fetch_add(1, Ordering::Relaxed);
                 eprintln!("⚠ extract {internal}: {e:#}");
                 continue;
-            },
+            }
         };
 
         if let Some(parent) = out_path.parent() {
@@ -357,7 +383,8 @@ fn process_cpk(
         {
             let f = File::create(&tmp).with_context(|| format!("création {}", tmp.display()))?;
             let mut bw = BufWriter::new(f);
-            bw.write_all(&data).with_context(|| format!("écriture {}", tmp.display()))?;
+            bw.write_all(&data)
+                .with_context(|| format!("écriture {}", tmp.display()))?;
             bw.flush().ok();
         }
         fs::rename(&tmp, &out_path).with_context(|| format!("rename → {}", out_path.display()))?;

@@ -10,7 +10,14 @@
 //!   encoder), with optional TPDF dither.
 //! * [`wav_float_header`] heads a float WAV written while it grows (recording).
 //! * [`peaks`] builds multi-resolution min/max overviews for waveform drawing.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod aiff;
 mod buffer;
@@ -97,7 +104,11 @@ pub struct AudioInfo {
 impl AudioInfo {
     /// Duration in seconds.
     pub fn duration_secs(&self) -> f64 {
-        if self.sample_rate == 0 { 0.0 } else { self.frames as f64 / f64::from(self.sample_rate) }
+        if self.sample_rate == 0 {
+            0.0
+        } else {
+            self.frames as f64 / f64::from(self.sample_rate)
+        }
     }
 }
 
@@ -124,7 +135,12 @@ pub struct EncodeOptions {
 
 impl Default for EncodeOptions {
     fn default() -> Self {
-        Self { format: FileFormat::Wav, bit_depth: BitDepth::Int24, dither: false, bwf: None }
+        Self {
+            format: FileFormat::Wav,
+            bit_depth: BitDepth::Int24,
+            dither: false,
+            bwf: None,
+        }
     }
 }
 
@@ -134,7 +150,10 @@ fn id3v2_len(b: &[u8]) -> Option<usize> {
         return None;
     }
     let flags = *b.get(5)?;
-    let size = b.get(6..10)?.iter().fold(0usize, |acc, &x| (acc << 7) | usize::from(x & 0x7F));
+    let size = b
+        .get(6..10)?
+        .iter()
+        .fold(0usize, |acc, &x| (acc << 7) | usize::from(x & 0x7F));
     Some(10 + size + if flags & 0x10 != 0 { 10 } else { 0 })
 }
 
@@ -157,7 +176,11 @@ fn detect_by_magic(b: &[u8], depth: u32) -> Option<FileFormat> {
         // MP4 / M4A: the sample entry inside `stsd` names the codec.
         let found = b.windows(4).position(|w| w == b"stsd");
         let codec = found.and_then(|p| b.get(p.checked_add(16)?..p.checked_add(20)?));
-        return Some(if codec == Some(b"alac") { FileFormat::Alac } else { FileFormat::Aac });
+        return Some(if codec == Some(b"alac") {
+            FileFormat::Alac
+        } else {
+            FileFormat::Aac
+        });
     }
     if let Some(len) = id3v2_len(b) {
         if depth == 0
@@ -195,7 +218,8 @@ fn detect_by_ext(ext: &str) -> FileFormat {
 
 /// Identify a file by its magic bytes, falling back to the extension hint (`"wav"`, `".flac"`).
 pub fn detect_format(bytes: &[u8], ext_hint: Option<&str>) -> FileFormat {
-    detect_by_magic(bytes, 0).unwrap_or_else(|| ext_hint.map(detect_by_ext).unwrap_or(FileFormat::Other))
+    detect_by_magic(bytes, 0)
+        .unwrap_or_else(|| ext_hint.map(detect_by_ext).unwrap_or(FileFormat::Other))
 }
 
 /// Read a file's format, sample rate, channel count, length and BWF metadata.
@@ -251,10 +275,19 @@ pub fn decode(bytes: &[u8], ext_hint: Option<&str>) -> Result<(AudioInfo, AudioB
 /// Encode `buf` as WAV/BWF, AIFF/AIFF-C or FLAC. Samples are clamped to [-1, 1].
 pub fn encode(buf: &AudioBuffer, opts: &EncodeOptions) -> Result<Vec<u8>> {
     match opts.format {
-        FileFormat::Wav => wav::encode(buf, opts.bit_depth, opts.dither, opts.bwf.as_ref(), false, None),
+        FileFormat::Wav => wav::encode(
+            buf,
+            opts.bit_depth,
+            opts.dither,
+            opts.bwf.as_ref(),
+            false,
+            None,
+        ),
         FileFormat::Aiff => aiff::encode(buf, opts.bit_depth, opts.dither),
         FileFormat::Flac => flac::encode(buf, opts.bit_depth, opts.dither),
-        other => Err(AudioError::Unsupported(format!("encoding {other:?} is not supported"))),
+        other => Err(AudioError::Unsupported(format!(
+            "encoding {other:?} is not supported"
+        ))),
     }
 }
 
@@ -273,15 +306,33 @@ pub fn encode_format_for(name: &str) -> Option<FileFormat> {
 
 /// Encode a WAV file in the RF64 layout regardless of size (normally used only above 4 GiB).
 pub fn encode_wav_rf64(buf: &AudioBuffer, opts: &EncodeOptions) -> Result<Vec<u8>> {
-    wav::encode(buf, opts.bit_depth, opts.dither, opts.bwf.as_ref(), true, None)
+    wav::encode(
+        buf,
+        opts.bit_depth,
+        opts.dither,
+        opts.bwf.as_ref(),
+        true,
+        None,
+    )
 }
 
 /// Like [`encode`], with an explicit WAV speaker mask (`dwChannelMask`, e.g. 0x60F) for layouts
 /// a channel count alone cannot identify (7.0 vs 6.1, 5.1.4 vs 7.1.2, Ambisonics = 0). AIFF and
 /// FLAC have fixed channel orders and ignore it.
-pub fn encode_with_channel_mask(buf: &AudioBuffer, opts: &EncodeOptions, mask: u32) -> Result<Vec<u8>> {
+pub fn encode_with_channel_mask(
+    buf: &AudioBuffer,
+    opts: &EncodeOptions,
+    mask: u32,
+) -> Result<Vec<u8>> {
     match opts.format {
-        FileFormat::Wav => wav::encode(buf, opts.bit_depth, opts.dither, opts.bwf.as_ref(), false, Some(mask)),
+        FileFormat::Wav => wav::encode(
+            buf,
+            opts.bit_depth,
+            opts.dither,
+            opts.bwf.as_ref(),
+            false,
+            Some(mask),
+        ),
         _ => encode(buf, opts),
     }
 }
@@ -296,7 +347,9 @@ pub fn wav_channel_mask(bytes: &[u8]) -> Option<u32> {
 /// switches to RF64 above 4 GiB.
 pub fn wav_float_header(channels: usize, sample_rate: u32, frames: u64) -> Result<Vec<u8>> {
     if channels == 0 || sample_rate == 0 {
-        return Err(AudioError::Encode("a WAV needs channels and a sample rate".into()));
+        return Err(AudioError::Encode(
+            "a WAV needs channels and a sample rate".into(),
+        ));
     }
     wav::header(channels, sample_rate, (32, true), None, None, frames, false)
 }

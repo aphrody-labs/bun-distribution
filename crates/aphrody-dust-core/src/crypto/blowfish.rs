@@ -132,7 +132,10 @@ impl Blowfish {
     /// modulated by the `seed` which is normally the gamecode found in the ROM header. The `level` is the number of times to
     /// modulate the key using the seed.
     pub fn new(key: &BlowfishKey, seed: u32, level: BlowfishLevel) -> Self {
-        let mut blowfish = Self { subkeys: [0; 18], sbox: [[0; 0x100]; 4] };
+        let mut blowfish = Self {
+            subkeys: [0; 18],
+            sbox: [[0; 0x100]; 4],
+        };
         bytemuck::bytes_of_mut(&mut blowfish).copy_from_slice(&key.0);
 
         let mut code0 = seed;
@@ -207,7 +210,11 @@ impl BlowfishKey {
         let mut file = open_file(path)?;
         let size = file.metadata()?.len() as usize;
         if size < 0x30 + size_of::<Self>() {
-            return TooSmallSnafu { expected: 0x30 + size_of::<Self>(), actual: size }.fail();
+            return TooSmallSnafu {
+                expected: 0x30 + size_of::<Self>(),
+                actual: size,
+            }
+            .fail();
         }
 
         let mut key = [0; size_of::<Self>()];

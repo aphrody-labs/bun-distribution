@@ -21,7 +21,10 @@ fn exif_orientation_6() -> Vec<u8> {
 /// The thumbnail is flat mid grey so a test can tell it from the photo.
 fn iphone_like() -> Vec<u8> {
     build(&Spec {
-        props: vec![Prop::Icc(icc::write_named(NamedSpace::DisplayP3)), Prop::Irot(3)],
+        props: vec![
+            Prop::Icc(icc::write_named(NamedSpace::DisplayP3)),
+            Prop::Irot(3),
+        ],
         exif: Some(exif_orientation_6()),
         thumbnail: Some(&|_, _| [126, 128, 128]),
         ignored_aux: vec!["urn:com:apple:photo:2020:aux:hdrgainmap"],
@@ -35,7 +38,16 @@ fn an_iphone_like_heic_decodes_upright_in_display_p3() {
     assert_eq!(sniff(&bytes), Some(Format::Heif));
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     // irot 3 = 90° clockwise, applied by the decoder; the EXIF Orientation is not applied again.
-    assert_eq!((d.width, d.height, d.source_width, d.source_height, d.orientation), (64, 96, 64, 96, 1));
+    assert_eq!(
+        (
+            d.width,
+            d.height,
+            d.source_width,
+            d.source_height,
+            d.orientation
+        ),
+        (64, 96, 64, 96, 1)
+    );
     assert_eq!(d.space.named, Some(NamedSpace::DisplayP3));
     assert_eq!(d.space.origin, SpaceOrigin::IccMatrixTrc);
     assert_eq!((d.bit_depth, d.has_alpha, d.float), (8, false, false));
@@ -43,10 +55,16 @@ fn an_iphone_like_heic_decodes_upright_in_display_p3() {
     // No nclx and no VUI: limited range, BT.601; neutral chroma stays neutral.
     let srgb = d.to_srgb8();
     let px = srgb.data[0];
-    assert!(px[0].abs_diff(px[1]) <= 1 && px[1].abs_diff(px[2]) <= 1, "{px:?}");
+    assert!(
+        px[0].abs_diff(px[1]) <= 1 && px[1].abs_diff(px[2]) <= 1,
+        "{px:?}"
+    );
 
     let h = read_header(&bytes).unwrap();
-    assert_eq!((h.format, h.width, h.height, h.orientation), (Format::Heif, 64, 96, 1));
+    assert_eq!(
+        (h.format, h.width, h.height, h.orientation),
+        (Format::Heif, 64, 96, 1)
+    );
 }
 
 #[test]
@@ -54,11 +72,19 @@ fn a_small_decode_uses_the_embedded_thumbnail() {
     let bytes = iphone_like();
     // The 48 × 32 thumbnail, turned like the photo, covers a 32-pixel request.
     let d = decode(&bytes, DecodeOptions::fit(32, 32)).unwrap();
-    assert!(d.width.max(d.height) <= 32 && d.height > d.width, "{}x{}", d.width, d.height);
+    assert!(
+        d.width.max(d.height) <= 32 && d.height > d.width,
+        "{}x{}",
+        d.width,
+        d.height
+    );
     assert_eq!((d.source_width, d.source_height), (64, 96));
     assert_eq!(d.space.named, Some(NamedSpace::DisplayP3));
     let flat = d.to_srgb8();
-    assert!(flat.data.iter().all(|p| *p == flat.data[0]), "the flat thumbnail, not the photo");
+    assert!(
+        flat.data.iter().all(|p| *p == flat.data[0]),
+        "the flat thumbnail, not the photo"
+    );
     // A thumbnail too small for the request: the photo is decoded and resized.
     let d = decode(&bytes, DecodeOptions::fit(60, 60)).unwrap();
     assert_eq!((d.width.max(d.height), d.source_width), (60, 64));
@@ -71,7 +97,11 @@ fn a_small_decode_uses_the_embedded_thumbnail() {
 #[test]
 fn nclx_colour_and_ten_bit() {
     // Display P3 primaries, sRGB transfer, BT.709 matrix, full range: the nclx alone names the space.
-    let bytes = build(&Spec { bit_depth: 10, props: vec![Prop::Nclx(12, 13, 1, true)], ..Spec::new(64, 32, &|x, _| [(x * 16) as u16, 512, 512]) });
+    let bytes = build(&Spec {
+        bit_depth: 10,
+        props: vec![Prop::Nclx(12, 13, 1, true)],
+        ..Spec::new(64, 32, &|x, _| [(x * 16) as u16, 512, 512])
+    });
     let d = decode(&bytes, DecodeOptions::default()).unwrap();
     assert_eq!(d.space.named, Some(NamedSpace::DisplayP3));
     assert_eq!(d.space.origin, SpaceOrigin::Container);
@@ -93,6 +123,12 @@ fn hostile_heic_is_an_error_never_a_panic() {
         }
         let _ = decode_thumbnail(b, 16);
     }
-    let r = decode(&bytes, DecodeOptions { max_pixels: 64 * 96 - 1, ..Default::default() });
+    let r = decode(
+        &bytes,
+        DecodeOptions {
+            max_pixels: 64 * 96 - 1,
+            ..Default::default()
+        },
+    );
     assert!(matches!(r, Err(Error::TooLarge(64, 96))), "{r:?}");
 }

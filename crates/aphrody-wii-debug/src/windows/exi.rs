@@ -132,92 +132,101 @@ fn show_channel(ui: &mut egui::Ui, ch: &ChannelInfo) {
         ui.strong(ch.name);
         ui.separator();
 
-        Grid::new(format!("{}_csr", ch.name)).num_columns(4).striped(true).show(ui, |ui| {
-            ui.label("CSR");
-            ui.monospace(format!("{:#010X}", ch.csr_raw));
-            ui.label("");
-            ui.label("");
-            ui.end_row();
+        Grid::new(format!("{}_csr", ch.name))
+            .num_columns(4)
+            .striped(true)
+            .show(ui, |ui| {
+                ui.label("CSR");
+                ui.monospace(format!("{:#010X}", ch.csr_raw));
+                ui.label("");
+                ui.label("");
+                ui.end_row();
 
-            ui.label("Device");
-            flag(ui, ch.device_connected);
-            ui.label("Clock");
-            ui.monospace(format!("{} ({})", ch.clock, clock_mhz(ch.clock)));
-            ui.end_row();
+                ui.label("Device");
+                flag(ui, ch.device_connected);
+                ui.label("Clock");
+                ui.monospace(format!("{} ({})", ch.clock, clock_mhz(ch.clock)));
+                ui.end_row();
 
-            ui.label("CS");
-            ui.monospace(chip_select_str(ch.chip_select));
-            ui.label("");
-            ui.label("");
-            ui.end_row();
+                ui.label("CS");
+                ui.monospace(chip_select_str(ch.chip_select));
+                ui.label("");
+                ui.label("");
+                ui.end_row();
 
-            // Interrupt status row
-            ui.label("EXIINT");
-            ui.horizontal(|ui| {
-                flag(ui, ch.exi_int);
-                ui.label("Mask");
-                flag(ui, ch.exi_int_mask);
+                // Interrupt status row
+                ui.label("EXIINT");
+                ui.horizontal(|ui| {
+                    flag(ui, ch.exi_int);
+                    ui.label("Mask");
+                    flag(ui, ch.exi_int_mask);
+                });
+                ui.label("TCINT");
+                ui.horizontal(|ui| {
+                    flag(ui, ch.tc_int);
+                    ui.label("Mask");
+                    flag(ui, ch.tc_int_mask);
+                });
+                ui.end_row();
+
+                ui.label("EXTINT");
+                ui.horizontal(|ui| {
+                    flag(ui, ch.ext_int);
+                    ui.label("Mask");
+                    flag(ui, ch.ext_int_mask);
+                });
+                ui.label("");
+                ui.label("");
+                ui.end_row();
             });
-            ui.label("TCINT");
-            ui.horizontal(|ui| {
-                flag(ui, ch.tc_int);
-                ui.label("Mask");
-                flag(ui, ch.tc_int_mask);
-            });
-            ui.end_row();
-
-            ui.label("EXTINT");
-            ui.horizontal(|ui| {
-                flag(ui, ch.ext_int);
-                ui.label("Mask");
-                flag(ui, ch.ext_int_mask);
-            });
-            ui.label("");
-            ui.label("");
-            ui.end_row();
-        });
 
         ui.add_space(4.0);
 
-        Grid::new(format!("{}_cr", ch.name)).num_columns(4).striped(true).show(ui, |ui| {
-            ui.label("CR");
-            ui.label("");
-            ui.label("");
-            ui.label("");
-            ui.end_row();
+        Grid::new(format!("{}_cr", ch.name))
+            .num_columns(4)
+            .striped(true)
+            .show(ui, |ui| {
+                ui.label("CR");
+                ui.label("");
+                ui.label("");
+                ui.label("");
+                ui.end_row();
 
-            ui.label("TSTART");
-            flag(ui, ch.transfer_start);
-            ui.label("DMA");
-            flag(ui, ch.dma_mode);
-            ui.end_row();
+                ui.label("TSTART");
+                flag(ui, ch.transfer_start);
+                ui.label("DMA");
+                flag(ui, ch.dma_mode);
+                ui.end_row();
 
-            ui.label("RW");
-            ui.monospace(ch.transfer_type);
-            ui.label("TLEN");
-            ui.monospace(format!("{} B", ch.transfer_length + 1));
-            ui.end_row();
-        });
+                ui.label("RW");
+                ui.monospace(ch.transfer_type);
+                ui.label("TLEN");
+                ui.monospace(format!("{} B", ch.transfer_length + 1));
+                ui.end_row();
+            });
 
         ui.add_space(4.0);
 
-        Grid::new(format!("{}_dma", ch.name)).num_columns(2).striped(true).show(ui, |ui| {
-            ui.label("DMA");
-            ui.label("");
-            ui.end_row();
+        Grid::new(format!("{}_dma", ch.name))
+            .num_columns(2)
+            .striped(true)
+            .show(ui, |ui| {
+                ui.label("DMA");
+                ui.label("");
+                ui.end_row();
 
-            ui.label("Addr");
-            ui.monospace(format!("{:#010X}", ch.dma_addr));
-            ui.end_row();
+                ui.label("Addr");
+                ui.monospace(format!("{:#010X}", ch.dma_addr));
+                ui.end_row();
 
-            ui.label("Length");
-            ui.monospace(format!("{} B", ch.dma_length));
-            ui.end_row();
+                ui.label("Length");
+                ui.monospace(format!("{} B", ch.dma_length));
+                ui.end_row();
 
-            ui.label("Data");
-            ui.monospace(format!("{:#010X}", ch.data_raw));
-            ui.end_row();
-        });
+                ui.label("Data");
+                ui.monospace(format!("{:#010X}", ch.data_raw));
+                ui.end_row();
+            });
     });
 }
 

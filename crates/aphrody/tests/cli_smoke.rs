@@ -75,16 +75,28 @@ fn version_json_has_expected_schema() {
         .expect("aphrody version --json stdout must be valid JSON");
 
     // Every key declared in VersionCommand::execute must be present and a string.
-    for key in &["version", "commit", "built", "target", "profile", "repo", "license", "a2a"] {
+    for key in &[
+        "version", "commit", "built", "target", "profile", "repo", "license", "a2a",
+    ] {
         let field = value
             .get(*key)
             .unwrap_or_else(|| panic!("version --json missing key `{key}`.\nJSON:\n{value:#}"));
-        assert!(field.is_string(), "version --json key `{key}` must be a string, got {field:?}");
+        assert!(
+            field.is_string(),
+            "version --json key `{key}` must be a string, got {field:?}"
+        );
     }
 
     // Pin the load-bearing constant fields to their compiled-in values.
-    assert_eq!(value["version"], env!("CARGO_PKG_VERSION"), "version must echo CARGO_PKG_VERSION");
-    assert_eq!(value["license"], "Apache-2.0", "license field must be Apache-2.0");
+    assert_eq!(
+        value["version"],
+        env!("CARGO_PKG_VERSION"),
+        "version must echo CARGO_PKG_VERSION"
+    );
+    assert_eq!(
+        value["license"], "Apache-2.0",
+        "license field must be Apache-2.0"
+    );
     assert_eq!(
         value["repo"], "https://github.com/aphrody-labs/aphrody",
         "repo field must be the canonical repository URL"
@@ -99,7 +111,10 @@ fn version_text_exit_zero_and_banner() {
         .arg("version")
         .assert()
         .success()
-        .stdout(predicate::str::contains(format!("aphrody {}", env!("CARGO_PKG_VERSION"))))
+        .stdout(predicate::str::contains(format!(
+            "aphrody {}",
+            env!("CARGO_PKG_VERSION")
+        )))
         .stdout(predicate::str::contains("license:   Apache-2.0"))
         .stdout(predicate::str::contains("commit:"));
 }
@@ -136,7 +151,9 @@ fn re_triage_self_detects_format() {
     // `format` is serialised lowercase by aphrody-re::Format (#[serde(rename_all
     // = "lowercase")]): pe32/pe64/elf32/elf64. The test binary is always one of
     // these on a supported host — never "unknown".
-    let format = report["format"].as_str().expect("triage `format` must be a string");
+    let format = report["format"]
+        .as_str()
+        .expect("triage `format` must be a string");
     assert!(
         matches!(format, "pe32" | "pe64" | "elf32" | "elf64"),
         "triage of the aphrody binary should detect a real executable format, got {format:?}"
@@ -148,16 +165,33 @@ fn re_triage_self_detects_format() {
         "triage of a real binary must report an `arch`, got {:?}",
         report["arch"]
     );
-    let sections = report["sections"].as_array().expect("triage `sections` must be an array");
-    assert!(!sections.is_empty(), "triage of a real binary must list at least one section");
+    let sections = report["sections"]
+        .as_array()
+        .expect("triage `sections` must be an array");
+    assert!(
+        !sections.is_empty(),
+        "triage of a real binary must list at least one section"
+    );
 
     // SHA-256 is always populated (64 lowercase hex chars).
-    let sha = report["sha256"].as_str().expect("triage `sha256` must be a string");
-    assert_eq!(sha.len(), 64, "sha256 must be 64 hex chars, got {} chars", sha.len());
-    assert!(sha.chars().all(|c| c.is_ascii_hexdigit()), "sha256 must be hex-only, got {sha:?}");
+    let sha = report["sha256"]
+        .as_str()
+        .expect("triage `sha256` must be a string");
+    assert_eq!(
+        sha.len(),
+        64,
+        "sha256 must be 64 hex chars, got {} chars",
+        sha.len()
+    );
+    assert!(
+        sha.chars().all(|c| c.is_ascii_hexdigit()),
+        "sha256 must be hex-only, got {sha:?}"
+    );
 
     // `size` must be the byte length of the file we triaged.
-    let on_disk = std::fs::metadata(self_bin()).expect("binary must be stat-able").len();
+    let on_disk = std::fs::metadata(self_bin())
+        .expect("binary must be stat-able")
+        .len();
     assert_eq!(
         report["size"].as_u64(),
         Some(on_disk),
@@ -177,11 +211,17 @@ fn re_triage_pretty_is_valid_json() {
     assert!(output.status.success(), "re triage --pretty must exit 0");
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains('\n'), "--pretty output should span multiple lines");
+    assert!(
+        stdout.contains('\n'),
+        "--pretty output should span multiple lines"
+    );
 
     let report: Value =
         serde_json::from_str(&stdout).expect("re triage --pretty stdout must be valid JSON");
-    assert!(report["format"].is_string(), "pretty triage must still carry a `format`");
+    assert!(
+        report["format"].is_string(),
+        "pretty triage must still carry a `format`"
+    );
 }
 
 // ===========================================================================
@@ -250,7 +290,15 @@ fn re_strings_honours_limit() {
     std::fs::write(&blob, &bytes).expect("write blob");
 
     let output = aphrody()
-        .args(["re", "strings", blob.to_str().unwrap(), "--min-len", "6", "--limit", "3"])
+        .args([
+            "re",
+            "strings",
+            blob.to_str().unwrap(),
+            "--min-len",
+            "6",
+            "--limit",
+            "3",
+        ])
         .output()
         .expect("aphrody re strings --limit must produce output");
 
@@ -282,14 +330,28 @@ fn re_sections_self_lists_sections() {
 
     let sections: Value =
         serde_json::from_slice(&output.stdout).expect("re sections stdout must be valid JSON");
-    let arr = sections.as_array().expect("re sections output must be a JSON array");
-    assert!(!arr.is_empty(), "a real binary must expose at least one section");
+    let arr = sections
+        .as_array()
+        .expect("re sections output must be a JSON array");
+    assert!(
+        !arr.is_empty(),
+        "a real binary must expose at least one section"
+    );
 
     // Each row must carry the documented Section fields.
     let first = &arr[0];
-    assert!(first["name"].is_string(), "section row must have a string `name`");
-    assert!(first["vaddr"].is_u64(), "section row must have an unsigned `vaddr`");
-    assert!(first["size"].is_u64(), "section row must have an unsigned `size`");
+    assert!(
+        first["name"].is_string(),
+        "section row must have a string `name`"
+    );
+    assert!(
+        first["vaddr"].is_u64(),
+        "section row must have an unsigned `vaddr`"
+    );
+    assert!(
+        first["size"].is_u64(),
+        "section row must have an unsigned `size`"
+    );
 }
 
 // ===========================================================================
@@ -335,30 +397,62 @@ fn scan_tree_reflects_known_layout() {
     let report: Value = serde_json::from_str(&raw).expect("scan tree report must be valid JSON");
 
     // byGroup must contain exactly the `crates` group with 2 dirs / 3 files.
-    let by_group = report["byGroup"].as_array().expect("`byGroup` must be an array");
+    let by_group = report["byGroup"]
+        .as_array()
+        .expect("`byGroup` must be an array");
     let crates = by_group
         .iter()
         .find(|g| g["group"] == "crates")
         .expect("byGroup must contain the `crates` group");
-    assert_eq!(crates["dirs"].as_u64(), Some(2), "crates group must report 2 top-level dirs");
-    assert_eq!(crates["files"].as_u64(), Some(3), "crates group must report 3 files total");
+    assert_eq!(
+        crates["dirs"].as_u64(),
+        Some(2),
+        "crates group must report 2 top-level dirs"
+    );
+    assert_eq!(
+        crates["files"].as_u64(),
+        Some(3),
+        "crates group must report 3 files total"
+    );
     // bytes = 4 + 6 + 8 = 18.
-    assert_eq!(crates["bytes"].as_u64(), Some(18), "crates group total bytes must be 18");
+    assert_eq!(
+        crates["bytes"].as_u64(),
+        Some(18),
+        "crates group total bytes must be 18"
+    );
 
     // directories[] must name both alpha and beta.
-    let dirs = report["directories"].as_array().expect("`directories` must be an array");
+    let dirs = report["directories"]
+        .as_array()
+        .expect("`directories` must be an array");
     let names: Vec<&str> = dirs.iter().filter_map(|d| d["name"].as_str()).collect();
-    assert!(names.contains(&"alpha"), "directories must include `alpha`, got {names:?}");
-    assert!(names.contains(&"beta"), "directories must include `beta`, got {names:?}");
+    assert!(
+        names.contains(&"alpha"),
+        "directories must include `alpha`, got {names:?}"
+    );
+    assert!(
+        names.contains(&"beta"),
+        "directories must include `beta`, got {names:?}"
+    );
 
     // alpha holds 2 files; beta (recursively, incl. sub/) holds 1 file.
     let alpha_entry = dirs.iter().find(|d| d["name"] == "alpha").unwrap();
     let beta_entry = dirs.iter().find(|d| d["name"] == "beta").unwrap();
-    assert_eq!(alpha_entry["files"].as_u64(), Some(2), "alpha must report 2 files");
-    assert_eq!(beta_entry["files"].as_u64(), Some(1), "beta must report 1 file (incl. sub/)");
+    assert_eq!(
+        alpha_entry["files"].as_u64(),
+        Some(2),
+        "alpha must report 2 files"
+    );
+    assert_eq!(
+        beta_entry["files"].as_u64(),
+        Some(1),
+        "beta must report 1 file (incl. sub/)"
+    );
 
     // The root recorded in the report must point at our tempdir.
-    let reported_root = report["root"].as_str().expect("report must carry a `root` string");
+    let reported_root = report["root"]
+        .as_str()
+        .expect("report must carry a `root` string");
     assert!(
         Path::new(reported_root).ends_with(root.file_name().unwrap()),
         "report root {reported_root:?} should reference the tempdir {root:?}"
@@ -409,5 +503,8 @@ fn completions_pwsh_emits_script() {
 /// `value_enum` only accepts bash/elvish/fish/powershell|pwsh/zsh).
 #[test]
 fn completions_rejects_unknown_shell() {
-    aphrody().args(["completions", "not-a-shell"]).assert().failure();
+    aphrody()
+        .args(["completions", "not-a-shell"])
+        .assert()
+        .failure();
 }

@@ -45,11 +45,19 @@ impl Method {
 }
 
 fn lin(c: f32) -> f32 {
-    if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) }
+    if c <= 0.04045 {
+        c / 12.92
+    } else {
+        ((c + 0.055) / 1.055).powf(2.4)
+    }
 }
 fn enc(c: f32) -> f32 {
     let c = c.clamp(0.0, 1.0);
-    if c <= 0.003_130_8 { 12.92 * c } else { 1.055 * c.powf(1.0 / 2.4) - 0.055 }
+    if c <= 0.003_130_8 {
+        12.92 * c
+    } else {
+        1.055 * c.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 fn to_oklab(rgb: [f32; 3]) -> [f32; 3] {
@@ -94,12 +102,18 @@ fn out_of_space(m: Method, p: [f32; 3]) -> [f32; 3] {
 
 /// Smooth's progress across a segment at u = 0, 1/16, …, 1 (Photoshop 27.11, measured as the
 /// position along the Oklab line between the two stop colours).
-const SMOOTH_EASE: [f32; 17] = [0.0, 0.0438, 0.099, 0.1644, 0.2303, 0.2988, 0.3667, 0.433, 0.4974, 0.5642, 0.6302, 0.6985, 0.7656, 0.8333, 0.8945, 0.9517, 1.0];
+const SMOOTH_EASE: [f32; 17] = [
+    0.0, 0.0438, 0.099, 0.1644, 0.2303, 0.2988, 0.3667, 0.433, 0.4974, 0.5642, 0.6302, 0.6985,
+    0.7656, 0.8333, 0.8945, 0.9517, 1.0,
+];
 
 fn smooth_ease(u: f32) -> f32 {
     let x = u.clamp(0.0, 1.0) * 16.0;
     let i = (x.floor() as usize).min(15);
-    let (a, b) = (SMOOTH_EASE.get(i).copied().unwrap_or(0.0), SMOOTH_EASE.get(i + 1).copied().unwrap_or(1.0));
+    let (a, b) = (
+        SMOOTH_EASE.get(i).copied().unwrap_or(0.0),
+        SMOOTH_EASE.get(i + 1).copied().unwrap_or(1.0),
+    );
     a + (b - a) * (x - i as f32)
 }
 
@@ -112,13 +126,20 @@ fn eval(stops: &[(f32, [f32; 3])], mids: &[f32], smooth: f32, t: f32, m: Method)
     if t >= stops[n - 1].0 {
         return stops[n - 1].1;
     }
-    let i = stops.windows(2).position(|w| t >= w[0].0 && t <= w[1].0).unwrap_or(0);
+    let i = stops
+        .windows(2)
+        .position(|w| t >= w[0].0 && t <= w[1].0)
+        .unwrap_or(0);
     let (t0, t1) = (stops[i].0, stops[i + 1].0);
     let h = (t1 - t0).max(1e-6);
     let mut u = (t - t0) / h;
     // Midpoint: where the segment reaches 50 % (default 0.5 = identity).
     let mid = mids.get(i).copied().unwrap_or(0.5).clamp(0.05, 0.95);
-    u = if u <= mid { 0.5 * u / mid } else { 0.5 + 0.5 * (u - mid) / (1.0 - mid) };
+    u = if u <= mid {
+        0.5 * u / mid
+    } else {
+        0.5 + 0.5 * (u - mid) / (1.0 - mid)
+    };
     let (p0, p1) = (stops[i].1, stops[i + 1].1);
     if m == Method::Smooth {
         let e = smooth_ease(u);
@@ -137,7 +158,12 @@ fn eval(stops: &[(f32, [f32; 3])], mids: &[f32], smooth: f32, t: f32, m: Method)
     };
     let (m0, m1) = (tangent(i), tangent(i + 1));
     let (u2, u3) = (u * u, u * u * u);
-    let (h00, h10, h01, h11) = (2.0 * u3 - 3.0 * u2 + 1.0, u3 - 2.0 * u2 + u, -2.0 * u3 + 3.0 * u2, u3 - u2);
+    let (h00, h10, h01, h11) = (
+        2.0 * u3 - 3.0 * u2 + 1.0,
+        u3 - 2.0 * u2 + u,
+        -2.0 * u3 + 3.0 * u2,
+        u3 - u2,
+    );
     std::array::from_fn(|c| {
         let linear = p0[c] + (p1[c] - p0[c]) * u;
         let spline = h00 * p0[c] + h10 * h * m0[c] + h01 * p1[c] + h11 * h * m1[c];
@@ -145,13 +171,22 @@ fn eval(stops: &[(f32, [f32; 3])], mids: &[f32], smooth: f32, t: f32, m: Method)
         // Catmull-Rom tangents can overshoot neighboring stops, turning even a flat segment into
         // a dip. Smoothness should bend the ramp without inventing colours outside this segment.
         let (lo, hi) = (p0[c].min(p1[c]), p0[c].max(p1[c]));
-        if lo.is_finite() && hi.is_finite() { value.clamp(lo, hi) } else { value }
+        if lo.is_finite() && hi.is_finite() {
+            value.clamp(lo, hi)
+        } else {
+            value
+        }
     })
 }
 
 /// Dense linear stops reproducing Photoshop's interpolation. Returns the input unchanged when it
 /// already interpolates linearly in sRGB.
-pub fn bake(stops: Vec<(f32, Color)>, midpoints: &[f32], smoothness: f32, method: Method) -> Vec<(f32, Color)> {
+pub fn bake(
+    stops: Vec<(f32, Color)>,
+    midpoints: &[f32],
+    smoothness: f32,
+    method: Method,
+) -> Vec<(f32, Color)> {
     let plain_mids = midpoints.iter().all(|m| (m - 0.5).abs() < 1e-3);
     // Classic interpolates in the stops' own model: Lab stops (Lab documents) blend in L*a*b*, which the
     // compositors' sRGB interpolation can't reproduce (psd-tools 4x4_16bit_lab).
@@ -163,16 +198,42 @@ pub fn bake(stops: Vec<(f32, Color)>, midpoints: &[f32], smoothness: f32, method
     s.sort_by(|a, b| a.0.total_cmp(&b.0));
     let alpha = |t: f32| -> f32 {
         // Stop colours carry no alpha in Photoshop (opacity has its own stops); keep the nearest.
-        s.iter().min_by(|a, b| (a.0 - t).abs().total_cmp(&(b.0 - t).abs())).map_or(1.0, |x| x.1.alpha)
+        s.iter()
+            .min_by(|a, b| (a.0 - t).abs().total_cmp(&(b.0 - t).abs()))
+            .map_or(1.0, |x| x.1.alpha)
     };
-    let pts: Vec<(f32, [f32; 3])> = s.iter().map(|(t, c)| (*t, if lab { [c.c[0], c.c[1], c.c[2]] } else { into_space(method, c.to_rgb()) })).collect();
+    let pts: Vec<(f32, [f32; 3])> = s
+        .iter()
+        .map(|(t, c)| {
+            (
+                *t,
+                if lab {
+                    [c.c[0], c.c[1], c.c[2]]
+                } else {
+                    into_space(method, c.to_rgb())
+                },
+            )
+        })
+        .collect();
     const N: usize = 96;
     let mut out: Vec<(f32, Color)> = (0..=N)
         .map(|k| {
             let t = k as f32 / N as f32;
             let v = eval(&pts, midpoints, smoothness.clamp(0.0, 1.0), t, method);
             if lab {
-                return (t, Color { mode: ColorMode::Lab, c: [v[0].clamp(0.0, 1.0), v[1].clamp(0.0, 1.0), v[2].clamp(0.0, 1.0), 0.0], alpha: alpha(t) });
+                return (
+                    t,
+                    Color {
+                        mode: ColorMode::Lab,
+                        c: [
+                            v[0].clamp(0.0, 1.0),
+                            v[1].clamp(0.0, 1.0),
+                            v[2].clamp(0.0, 1.0),
+                            0.0,
+                        ],
+                        alpha: alpha(t),
+                    },
+                );
             }
             let rgb = out_of_space(method, v);
             (t, Color::rgba(rgb[0], rgb[1], rgb[2], alpha(t)))
@@ -187,7 +248,10 @@ mod tests {
     use super::*;
 
     fn at(stops: &[(f32, Color)], t: f32) -> [f32; 3] {
-        let i = stops.windows(2).position(|w| t >= w[0].0 && t <= w[1].0).unwrap();
+        let i = stops
+            .windows(2)
+            .position(|w| t >= w[0].0 && t <= w[1].0)
+            .unwrap();
         let (a, b) = (&stops[i], &stops[i + 1]);
         let u = (t - a.0) / (b.0 - a.0);
         let (x, y) = (a.1.to_rgb(), b.1.to_rgb());
@@ -203,11 +267,20 @@ mod tests {
     #[test]
     fn smoothness_eases_between_two_stops() {
         // Two stops, 100 % smoothness: t + ½(smoothstep(t) − t) (Catmull-Rom with half-slope ends).
-        let s = bake(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], &[0.5], 1.0, Method::Classic);
+        let s = bake(
+            vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+            &[0.5],
+            1.0,
+            Method::Classic,
+        );
         for t in [0.1f32, 0.25, 0.5, 0.75, 0.9] {
             let ss = t * t * (3.0 - 2.0 * t);
             let want = t + 0.5 * (ss - t);
-            assert!((at(&s, t)[0] - want).abs() < 2e-3, "{t}: {} vs {want}", at(&s, t)[0]);
+            assert!(
+                (at(&s, t)[0] - want).abs() < 2e-3,
+                "{t}: {} vs {want}",
+                at(&s, t)[0]
+            );
         }
     }
 
@@ -215,17 +288,33 @@ mod tests {
     fn smoothness_does_not_overshoot_a_flat_stop_segment() {
         let gray = |v: f32| Color::rgb(v, v, v);
         let dark = 28.0 / 255.0;
-        let stops = vec![(0.0, gray(202.0 / 255.0)), (0.27, gray(dark)), (0.53, gray(dark)), (0.72, gray(148.0 / 255.0))];
+        let stops = vec![
+            (0.0, gray(202.0 / 255.0)),
+            (0.27, gray(dark)),
+            (0.53, gray(dark)),
+            (0.72, gray(148.0 / 255.0)),
+        ];
         let baked = bake(stops, &[0.5, 0.5, 0.5], 1.0, Method::Classic);
         let sample = at(&baked, 0.4);
-        assert!(sample.iter().all(|v| (*v - dark).abs() < 1e-4), "flat segment dipped below its stops: {sample:?}");
+        assert!(
+            sample.iter().all(|v| (*v - dark).abs() < 1e-4),
+            "flat segment dipped below its stops: {sample:?}"
+        );
     }
 
     #[test]
     fn perceptual_matches_photoshop_sample() {
         // Measured from Photoshop's composite (ag-psd gradient-mode): orange→blue, Perceptual,
         // 100 % smoothness; at t≈0.491 Photoshop shows (0.592, 0.612, 0.596).
-        let s = bake(vec![(0.0, Color::rgb(0.882, 0.602, 0.201)), (1.0, Color::rgb(0.164, 0.568, 0.851))], &[0.5], 1.0, Method::Perceptual);
+        let s = bake(
+            vec![
+                (0.0, Color::rgb(0.882, 0.602, 0.201)),
+                (1.0, Color::rgb(0.164, 0.568, 0.851)),
+            ],
+            &[0.5],
+            1.0,
+            Method::Perceptual,
+        );
         let p = at(&s, 0.491);
         for (got, want) in p.iter().zip([0.592f32, 0.612, 0.596]) {
             assert!((got - want).abs() < 0.01, "{p:?}");
@@ -242,21 +331,48 @@ mod tests {
         // Photoshop 27.11, Gradient tool, Method Smooth, dither off, 256 px wide, every 32 px.
         type Row = (&'static str, [f32; 3], [f32; 3], [[u8; 3]; 8]);
         let measured: [Row; 2] = [
-            ("black→white", [0.0; 3], [1.0; 3], [[0; 3], [4; 3], [29; 3], [63; 3], [99; 3], [137; 3], [179; 3], [221; 3]]),
+            (
+                "black→white",
+                [0.0; 3],
+                [1.0; 3],
+                [
+                    [0; 3], [4; 3], [29; 3], [63; 3], [99; 3], [137; 3], [179; 3], [221; 3],
+                ],
+            ),
             (
                 "red→blue",
                 [1.0, 0.0, 0.0],
                 [0.0, 0.0, 1.0],
-                [[255, 0, 0], [232, 51, 67], [202, 71, 105], [171, 81, 136], [140, 83, 162], [109, 80, 188], [76, 69, 213], [41, 49, 236]],
+                [
+                    [255, 0, 0],
+                    [232, 51, 67],
+                    [202, 71, 105],
+                    [171, 81, 136],
+                    [140, 83, 162],
+                    [109, 80, 188],
+                    [76, 69, 213],
+                    [41, 49, 236],
+                ],
             ),
         ];
         for (name, a, b, want) in measured {
-            let s = bake(vec![(0.0, Color::rgb(a[0], a[1], a[2])), (1.0, Color::rgb(b[0], b[1], b[2]))], &[0.5], 1.0, Method::Smooth);
+            let s = bake(
+                vec![
+                    (0.0, Color::rgb(a[0], a[1], a[2])),
+                    (1.0, Color::rgb(b[0], b[1], b[2])),
+                ],
+                &[0.5],
+                1.0,
+                Method::Smooth,
+            );
             for (k, w) in want.iter().enumerate() {
                 let x = k * 32;
                 let got = at(&s, (x as f32 + 0.5) / 256.0).map(|v| (v * 255.0).round() as i32);
                 for c in 0..3 {
-                    assert!((got[c] - i32::from(w[c])).abs() <= 2, "{name} x {x}: {got:?} vs Photoshop {w:?}");
+                    assert!(
+                        (got[c] - i32::from(w[c])).abs() <= 2,
+                        "{name} x {x}: {got:?} vs Photoshop {w:?}"
+                    );
                 }
             }
         }
@@ -266,10 +382,26 @@ mod tests {
     fn classic_lab_stops_interpolate_in_lab() {
         // Lab documents blend Classic gradients in L*a*b* (psd-tools 4x4_16bit_lab): the half-way
         // colour is the Lab average, even without smoothness.
-        let lab = |l: f32, a: f32, b: f32| Color { mode: ColorMode::Lab, c: [l / 100.0, (a + 128.0) / 255.0, (b + 128.0) / 255.0, 0.0], alpha: 1.0 };
-        let s = bake(vec![(0.0, lab(19.07, 52.29, -85.08)), (1.0, lab(54.29, 80.81, 69.91))], &[0.5], 0.0, Method::Classic);
+        let lab = |l: f32, a: f32, b: f32| Color {
+            mode: ColorMode::Lab,
+            c: [l / 100.0, (a + 128.0) / 255.0, (b + 128.0) / 255.0, 0.0],
+            alpha: 1.0,
+        };
+        let s = bake(
+            vec![
+                (0.0, lab(19.07, 52.29, -85.08)),
+                (1.0, lab(54.29, 80.81, 69.91)),
+            ],
+            &[0.5],
+            0.0,
+            Method::Classic,
+        );
         assert!(s.len() > 2 && s.iter().all(|(_, c)| c.mode == ColorMode::Lab));
-        let mid = s.iter().find(|(t, _)| (t - 0.5).abs() < 1e-6).map(|(_, c)| *c).unwrap();
+        let mid = s
+            .iter()
+            .find(|(t, _)| (t - 0.5).abs() < 1e-6)
+            .map(|(_, c)| *c)
+            .unwrap();
         let want = lab(36.68, 66.55, -7.585);
         for i in 0..3 {
             assert!((mid.c[i] - want.c[i]).abs() < 1e-4, "{mid:?}");
@@ -278,7 +410,12 @@ mod tests {
 
     #[test]
     fn midpoint_shifts_the_half_way_colour() {
-        let s = bake(vec![(0.0, Color::BLACK), (1.0, Color::WHITE)], &[0.25], 0.0, Method::Classic);
+        let s = bake(
+            vec![(0.0, Color::BLACK), (1.0, Color::WHITE)],
+            &[0.25],
+            0.0,
+            Method::Classic,
+        );
         assert!((at(&s, 0.25)[0] - 0.5).abs() < 0.01);
     }
 }

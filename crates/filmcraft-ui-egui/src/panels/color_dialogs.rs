@@ -19,7 +19,12 @@ pub fn open_interpret(app: &mut FilmcraftApp, params: &Value) {
             if v.is_empty()
                 && let Some(q) = s.active_sequence()
             {
-                v = s.state.selection.iter().filter_map(|c| q.find_item(*c).map(|(_, it)| it.item.0)).collect();
+                v = s
+                    .state
+                    .selection
+                    .iter()
+                    .filter_map(|c| q.find_item(*c).map(|(_, it)| it.item.0))
+                    .collect();
                 v.dedup();
             }
             v
@@ -27,15 +32,30 @@ pub fn open_interpret(app: &mut FilmcraftApp, params: &Value) {
     };
     let current = items
         .first()
-        .and_then(|i| app.session.execute("media.colorInfo", json!({"item": i})).ok())
+        .and_then(|i| {
+            app.session
+                .execute("media.colorInfo", json!({"item": i}))
+                .ok()
+        })
         .and_then(|v| v["override"].as_str().map(str::to_string))
         .unwrap_or_else(|| "auto".into());
-    app.ui.color_dialog = Some(ColorDialog::Interpret { items, color_space: current });
+    app.ui.color_dialog = Some(ColorDialog::Interpret {
+        items,
+        color_space: current,
+    });
 }
 
 pub fn open_sequence(app: &mut FilmcraftApp) {
-    let c = app.session.active_sequence().map(|q| q.settings.color).unwrap_or(filmcraft_color::ColorPipeline::REC709);
-    app.ui.color_dialog = Some(ColorDialog::Sequence { working_space: c.working.id().into(), wide_gamut: c.wide_gamut, auto_tone_map: c.auto_tone_map });
+    let c = app
+        .session
+        .active_sequence()
+        .map(|q| q.settings.color)
+        .unwrap_or(filmcraft_color::ColorPipeline::REC709);
+    app.ui.color_dialog = Some(ColorDialog::Sequence {
+        working_space: c.working.id().into(),
+        wide_gamut: c.wide_gamut,
+        auto_tone_map: c.auto_tone_map,
+    });
 }
 
 fn radio(app: &mut FilmcraftApp, ui: &mut egui::Ui, id: &str, selected: bool, label: &str) -> bool {
@@ -58,7 +78,9 @@ fn buttons(app: &mut FilmcraftApp, ui: &mut egui::Ui) -> (bool, bool) {
 }
 
 pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
-    let Some(mut d) = app.ui.color_dialog.clone() else { return };
+    let Some(mut d) = app.ui.color_dialog.clone() else {
+        return;
+    };
     let mut open = true;
     let mut apply: Option<(&'static str, Value)> = None;
     let mut close = false;
@@ -66,7 +88,11 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
         ColorDialog::Interpret { items, color_space } => {
             let detected = items
                 .first()
-                .and_then(|i| app.session.execute("media.colorInfo", json!({"item": i})).ok())
+                .and_then(|i| {
+                    app.session
+                        .execute("media.colorInfo", json!({"item": i}))
+                        .ok()
+                })
                 .and_then(|v| v["detectedLabel"].as_str().map(str::to_string))
                 .unwrap_or_else(|| "—".into());
             let n = items.len();
@@ -78,29 +104,58 @@ pub fn show(app: &mut FilmcraftApp, ctx: &egui::Context) {
                 .default_width(380.0)
                 .show(ctx, |ui| {
                     ui.label(
-                        egui::RichText::new(if n == 1 { tlf!("Color Management · {n} item", n) } else { tlf!("Color Management · {n} items", n) }).strong(),
+                        egui::RichText::new(if n == 1 {
+                            tlf!("Color Management · {n} item", n)
+                        } else {
+                            tlf!("Color Management · {n} items", n)
+                        })
+                        .strong(),
                     );
-                    ui.label(tlf!("Media colour space (from file metadata): {detected}", detected));
+                    ui.label(tlf!(
+                        "Media colour space (from file metadata): {detected}",
+                        detected
+                    ));
                     ui.add_space(4.0);
                     ui.label(tl!("Override media colour space:"));
-                    if radio(app, ui, "colorDialog.space.auto", color_space == "auto", tl!("Use file metadata")) {
+                    if radio(
+                        app,
+                        ui,
+                        "colorDialog.space.auto",
+                        color_space == "auto",
+                        tl!("Use file metadata"),
+                    ) {
                         *color_space = "auto".into();
                     }
-                    egui::ScrollArea::vertical().max_height(300.0).show(ui, |ui| {
-                        for cs in ColorSpace::ALL {
-                            if radio(app, ui, &format!("colorDialog.space.{}", cs.id()), color_space == cs.id(), cs.label()) {
-                                *color_space = cs.id().into();
+                    egui::ScrollArea::vertical()
+                        .max_height(300.0)
+                        .show(ui, |ui| {
+                            for cs in ColorSpace::ALL {
+                                if radio(
+                                    app,
+                                    ui,
+                                    &format!("colorDialog.space.{}", cs.id()),
+                                    color_space == cs.id(),
+                                    cs.label(),
+                                ) {
+                                    *color_space = cs.id().into();
+                                }
                             }
-                        }
-                    });
+                        });
                     let (ok, cancel) = buttons(app, ui);
                     if ok {
-                        apply = Some(("clip.interpretFootage", json!({"items": items, "colorSpace": color_space})));
+                        apply = Some((
+                            "clip.interpretFootage",
+                            json!({"items": items, "colorSpace": color_space}),
+                        ));
                     }
                     close = ok || cancel;
                 });
         }
-        ColorDialog::Sequence { working_space, wide_gamut, auto_tone_map } => {
+        ColorDialog::Sequence {
+            working_space,
+            wide_gamut,
+            auto_tone_map,
+        } => {
             egui::Window::new(tl!("Sequence Color Management"))
                 .id(egui::Id::new("Sequence Color Management"))
                 .open(&mut open)

@@ -86,7 +86,10 @@ impl Normal {
 
     #[must_use]
     pub fn reset(self) -> Self {
-        Normal { stage: Stage::Initial, ..self }
+        Normal {
+            stage: Stage::Initial,
+            ..self
+        }
     }
 }
 
@@ -129,7 +132,10 @@ impl super::RomDevice for Normal {
             let Some(secure_area) = self.contents.secure_area_mut() else {
                 return Ok(());
             };
-            let key_buf = self.key_buf.as_ref().expect("key_buf should be initialized");
+            let key_buf = self
+                .key_buf
+                .as_ref()
+                .expect("key_buf should be initialized");
             if secure_area.read_le::<u64>(0) == 0xE7FF_DEFF_E7FF_DEFF {
                 secure_area[..8].copy_from_slice(b"encryObj");
                 let level_3_key_buf = key_buf.level_3::<2>();
@@ -163,17 +169,18 @@ impl super::RomDevice for Normal {
                             output[..output_len.get() as usize].fill(0xFF);
                             return;
                         }
-                    },
+                    }
 
                     0x00 => {
                         if cmd.read_be::<u64>(0) & 0x00FF_FFFF_FFFF_FFFF == 0 {
                             for start_i in (0..output_len.get() as usize).step_by(0x1000) {
                                 let len = 0x1000.min(output_len.get() as usize - start_i);
-                                self.contents.read_slice(0, &mut output[start_i..start_i + len]);
+                                self.contents
+                                    .read_slice(0, &mut output[start_i..start_i + len]);
                             }
                             return;
                         }
-                    },
+                    }
 
                     0x90 => {
                         if cmd.read_be::<u64>(0) & 0x00FF_FFFF_FFFF_FFFF == 0 {
@@ -183,15 +190,15 @@ impl super::RomDevice for Normal {
                             }
                             return;
                         }
-                    },
+                    }
 
                     0x3C => {
                         self.stage = Stage::Key1;
                         output[..output_len.get() as usize].fill(0xFF);
                         return;
-                    },
+                    }
 
-                    _ => {},
+                    _ => {}
                 }
                 // TODO: What value is returned?
                 #[cfg(feature = "log")]
@@ -201,7 +208,7 @@ impl super::RomDevice for Normal {
                     cmd.read_be::<u64>(0)
                 );
                 output[..output_len.get() as usize].fill(0xFF);
-            },
+            }
 
             Stage::Key1 => {
                 #[cfg(feature = "log")]
@@ -229,7 +236,7 @@ impl super::RomDevice for Normal {
                         // TODO: What value is returned?
                         output[..output_len.get() as usize].fill(0xFF);
                         return;
-                    },
+                    }
 
                     0x1 => {
                         let chip_id = self.chip_id;
@@ -237,7 +244,7 @@ impl super::RomDevice for Normal {
                             output.write_le(i, chip_id);
                         }
                         return;
-                    },
+                    }
 
                     0x2 => {
                         // TODO: What's the actual range of the address command bytes?
@@ -250,7 +257,7 @@ impl super::RomDevice for Normal {
                                 .read_slice(start_addr, &mut output[start_i..start_i + len]);
                         }
                         return;
-                    },
+                    }
 
                     // 0x6 => {
                     //     // TODO: What value is returned?
@@ -262,9 +269,9 @@ impl super::RomDevice for Normal {
                         self.stage = Stage::Key2;
                         make_zero(&mut output[..output_len.get() as usize]);
                         return;
-                    },
+                    }
 
-                    _ => {},
+                    _ => {}
                 }
                 // TODO: What value is returned?
                 #[cfg(feature = "log")]
@@ -274,7 +281,7 @@ impl super::RomDevice for Normal {
                     cmd.read_be::<u64>(0)
                 );
                 make_zero(&mut output[..output_len.get() as usize]);
-            },
+            }
 
             Stage::Key2 => {
                 #[cfg(feature = "log")]
@@ -292,24 +299,24 @@ impl super::RomDevice for Normal {
                         while start_i < output_len.get() as usize {
                             let len = ((page_end - addr as u64) as usize)
                                 .min(output_len.get() as usize - start_i);
-                            self.contents.read_slice(addr, &mut output[start_i..start_i + len]);
+                            self.contents
+                                .read_slice(addr, &mut output[start_i..start_i + len]);
                             addr = page_start;
                             start_i += len;
                         }
                         return;
                         // }
-                    },
+                    }
 
-                    0xB8
-                        if cmd.read_be::<u64>(0) & 0x00FF_FFFF_FFFF_FFFF == 0 => {
-                            let chip_id = self.chip_id;
-                            for i in (0..output_len.get() as usize).step_by(4) {
-                                output.write_le(i, chip_id);
-                            }
-                            return;
-                        },
+                    0xB8 if cmd.read_be::<u64>(0) & 0x00FF_FFFF_FFFF_FFFF == 0 => {
+                        let chip_id = self.chip_id;
+                        for i in (0..output_len.get() as usize).step_by(4) {
+                            output.write_le(i, chip_id);
+                        }
+                        return;
+                    }
 
-                    _ => {},
+                    _ => {}
                 }
                 #[cfg(feature = "log")]
                 slog::warn!(
@@ -319,15 +326,15 @@ impl super::RomDevice for Normal {
                 );
                 // self.stage = Stage::Invalid;
                 make_zero(&mut output[..output_len.get() as usize]);
-            }, // Stage::Invalid => {
-               //     #[cfg(feature = "log")]
-               //     slog::warn!(
-               //         self.logger,
-               //         "Unknown ROM command after entering invalid state: {:016X}",
-               //         cmd.read_be::<u64>(0)
-               //     );
-               //     make_zero(&mut output[..output_len.get() as usize]);
-               // }
+            } // Stage::Invalid => {
+              //     #[cfg(feature = "log")]
+              //     slog::warn!(
+              //         self.logger,
+              //         "Unknown ROM command after entering invalid state: {:016X}",
+              //         cmd.read_be::<u64>(0)
+              //     );
+              //     make_zero(&mut output[..output_len.get() as usize]);
+              // }
         }
     }
 }

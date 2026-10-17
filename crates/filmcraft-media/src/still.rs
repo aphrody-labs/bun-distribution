@@ -52,11 +52,17 @@ pub fn decode_raster(name: &str, bytes: &[u8]) -> Result<Raster> {
     if ycbcr_tiff::sniff(bytes) {
         return ycbcr_tiff::decode(name, bytes);
     }
-    let img = image::load_from_memory(bytes).map_err(|e| MediaError::Decode(format!("{name}: {e}")))?;
+    let img =
+        image::load_from_memory(bytes).map_err(|e| MediaError::Decode(format!("{name}: {e}")))?;
     let has_alpha = img.color().has_alpha();
     let rgba = img.to_rgba8();
     let (width, height) = rgba.dimensions();
-    Ok(Raster { width, height, rgba: rgba.into_raw(), has_alpha })
+    Ok(Raster {
+        width,
+        height,
+        rgba: rgba.into_raw(),
+        has_alpha,
+    })
 }
 
 pub struct StillSource {
@@ -74,11 +80,29 @@ impl StillSource {
             return hdr::still(name, bytes);
         }
         let r = decode_raster(name, bytes)?;
-        Ok(Self::from_rgba(name, r.width, r.height, r.rgba, r.has_alpha, bytes.len() as u64))
+        Ok(Self::from_rgba(
+            name,
+            r.width,
+            r.height,
+            r.rgba,
+            r.has_alpha,
+            bytes.len() as u64,
+        ))
     }
 
-    pub fn from_rgba(name: &str, w: u32, h: u32, rgba: Vec<u8>, has_alpha: bool, file_size: u64) -> Self {
-        let codec = name.rsplit('.').next().unwrap_or("image").to_ascii_uppercase();
+    pub fn from_rgba(
+        name: &str,
+        w: u32,
+        h: u32,
+        rgba: Vec<u8>,
+        has_alpha: bool,
+        file_size: u64,
+    ) -> Self {
+        let codec = name
+            .rsplit('.')
+            .next()
+            .unwrap_or("image")
+            .to_ascii_uppercase();
         let info = MediaInfo {
             name: name.to_string(),
             kind: MediaKind::Still,
@@ -89,7 +113,11 @@ impl StillSource {
                 frame_rate: FrameRate::FPS_29_97,
                 par: (1, 1),
                 codec,
-                pixel_format: if has_alpha { "RGBA 8-bit".into() } else { "RGB 8-bit".into() },
+                pixel_format: if has_alpha {
+                    "RGBA 8-bit".into()
+                } else {
+                    "RGB 8-bit".into()
+                },
                 color: filmcraft_color::ColorInfo::SRGB_FULL,
                 has_alpha,
                 bitrate: None,
@@ -100,7 +128,10 @@ impl StillSource {
             start_timecode: None,
             file_size: Some(file_size),
         };
-        Self { info, frame: Arc::new(VideoFrame::rgba8(w, h, rgba)) }
+        Self {
+            info,
+            frame: Arc::new(VideoFrame::rgba8(w, h, rgba)),
+        }
     }
 }
 
@@ -111,7 +142,12 @@ impl MediaSource for StillSource {
     fn video_frame(&self, _req: FrameRequest) -> Result<Arc<VideoFrame>> {
         Ok(self.frame.clone())
     }
-    fn audio(&self, _start: i64, _frames: usize, _sample_rate: u32) -> Result<filmcraft_frame::AudioBuffer> {
+    fn audio(
+        &self,
+        _start: i64,
+        _frames: usize,
+        _sample_rate: u32,
+    ) -> Result<filmcraft_frame::AudioBuffer> {
         Err(MediaError::NoStream("audio"))
     }
 }

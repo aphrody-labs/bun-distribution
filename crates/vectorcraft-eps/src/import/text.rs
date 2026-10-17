@@ -46,11 +46,19 @@ fn style_word(w: &str) -> String {
 /// Oblique`), `TimesNewRomanPS-BoldMT` → (`Times New Roman`, `Bold`).
 pub fn family_style(name: &str) -> (String, String) {
     let name = match name.split_once('+') {
-        Some((prefix, rest)) if prefix.len() == 6 && prefix.bytes().all(|b| b.is_ascii_uppercase()) => rest,
+        Some((prefix, rest))
+            if prefix.len() == 6 && prefix.bytes().all(|b| b.is_ascii_uppercase()) =>
+        {
+            rest
+        }
         _ => name,
     };
     let name = match name.rsplit_once('*') {
-        Some((base, n)) if !base.is_empty() && !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) => base,
+        Some((base, n))
+            if !base.is_empty() && !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            base
+        }
         _ => name,
     };
     if let Some(face) = vectorcraft_text::FontDb::global().find_postscript(name) {
@@ -58,7 +66,10 @@ pub fn family_style(name: &str) -> (String, String) {
     }
     let (family, style) = name.split_once('-').unwrap_or((name, ""));
     let trim = |s: &str| -> String {
-        let s = ["PSMT", "MT", "PS"].iter().find_map(|suffix| s.strip_suffix(suffix)).unwrap_or(s);
+        let s = ["PSMT", "MT", "PS"]
+            .iter()
+            .find_map(|suffix| s.strip_suffix(suffix))
+            .unwrap_or(s);
         // Words: a capital after a small letter starts one.
         let mut out = String::with_capacity(s.len() + 4);
         let mut prev_lower = false;
@@ -89,13 +100,21 @@ impl Interp<'_> {
             }
             DefineFont => {
                 let font = self.pop_dict()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", "definefont".into()))?;
-                font.borrow_mut().entry(Key::name("FontName")).or_insert_with(|| k.obj());
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "definefont".into()))?;
+                font.borrow_mut()
+                    .entry(Key::name("FontName"))
+                    .or_insert_with(|| k.obj());
                 self.fonts.borrow_mut().insert(k, Obj::Dict(font.clone()));
                 self.push(Obj::Dict(font))?;
             }
             UndefineFont => {
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", "undefinefont".into()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "undefinefont".into()))?;
                 self.fonts.borrow_mut().remove(&k);
             }
             ScaleFont | MakeFont => {
@@ -114,8 +133,12 @@ impl Interp<'_> {
             }
             SelectFont => {
                 let m = match self.pop()? {
-                    Obj::Array { items, .. } => matrix_of(&items.borrow()).ok_or(PsError::Ps("typecheck", "selectfont".into()))?,
-                    o => Affine::scale(o.as_num().ok_or(PsError::Ps("typecheck", "selectfont".into()))?),
+                    Obj::Array { items, .. } => matrix_of(&items.borrow())
+                        .ok_or(PsError::Ps("typecheck", "selectfont".into()))?,
+                    o => Affine::scale(
+                        o.as_num()
+                            .ok_or(PsError::Ps("typecheck", "selectfont".into()))?,
+                    ),
                 };
                 let k = self.pop()?;
                 let font = self.find_font(&k)?;
@@ -135,14 +158,24 @@ impl Interp<'_> {
                     let font = self.find_font(&k)?;
                     return self.push(Obj::Dict(font));
                 }
-                let key = k.key().ok_or(PsError::Ps("typecheck", "findresource".into()))?;
+                let key = k
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "findresource".into()))?;
                 let v = self.category(&category)?.borrow().get(&key).cloned();
-                self.push(v.ok_or_else(|| PsError::Ps("undefinedresource", k.text().map(|t| t.to_string()).unwrap_or_default()))?)?;
+                self.push(v.ok_or_else(|| {
+                    PsError::Ps(
+                        "undefinedresource",
+                        k.text().map(|t| t.to_string()).unwrap_or_default(),
+                    )
+                })?)?;
             }
             DefineResource => {
                 let category = self.pop()?;
                 let v = self.pop()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", "defineresource".into()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "defineresource".into()))?;
                 // A category is defined by its implementation dictionary.
                 if category.text().as_deref() == Some("Category") && !matches!(v, Obj::Dict(_)) {
                     return ps_err("typecheck", "defineresource");
@@ -152,12 +185,18 @@ impl Interp<'_> {
             }
             UndefineResource => {
                 let category = self.pop()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", "undefineresource".into()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "undefineresource".into()))?;
                 self.instances(&category)?.borrow_mut().remove(&k);
             }
             ResourceStatus => {
                 let category = self.pop()?;
-                let k = self.pop()?.key().ok_or(PsError::Ps("typecheck", "resourcestatus".into()))?;
+                let k = self
+                    .pop()?
+                    .key()
+                    .ok_or(PsError::Ps("typecheck", "resourcestatus".into()))?;
                 let known = self.instances(&category)?.borrow().contains_key(&k);
                 if known {
                     self.push(Obj::Int(1))?;
@@ -215,9 +254,13 @@ impl Interp<'_> {
                 self.char_path(&s)?;
             }
             // A glyph procedure gives its width (`w0x w0y` first).
-            SetCacheDevice => self.glyph_width = Some(self.nums::<6>()?[..2].try_into().unwrap_or_default()),
+            SetCacheDevice => {
+                self.glyph_width = Some(self.nums::<6>()?[..2].try_into().unwrap_or_default())
+            }
             SetCharWidth => self.glyph_width = Some(self.nums::<2>()?),
-            SetCacheDevice2 => self.glyph_width = Some(self.nums::<10>()?[..2].try_into().unwrap_or_default()),
+            SetCacheDevice2 => {
+                self.glyph_width = Some(self.nums::<10>()?[..2].try_into().unwrap_or_default())
+            }
             RootFont => {
                 let font = match self.g.font.clone() {
                     Some(f) => f,
@@ -265,7 +308,8 @@ impl Interp<'_> {
     fn type3_font(&self) -> Option<DictRef> {
         let font = self.g.font.clone()?;
         let f = font.borrow();
-        let builds = f.contains_key(&Key::name("BuildGlyph")) || f.contains_key(&Key::name("BuildChar"));
+        let builds =
+            f.contains_key(&Key::name("BuildGlyph")) || f.contains_key(&Key::name("BuildChar"));
         let type3 = f.get(&Key::name("FontType")).and_then(Obj::as_num) == Some(3.0) && builds;
         drop(f);
         type3.then_some(font)
@@ -273,7 +317,9 @@ impl Interp<'_> {
 
     /// How far `s` moves the current point (user space).
     fn width_of(&mut self, s: &[u8]) -> Res<Vec2> {
-        let Some(font) = self.type3_font() else { return Ok(self.set_type(s, Point::ZERO)?.2) };
+        let Some(font) = self.type3_font() else {
+            return Ok(self.set_type(s, Point::ZERO)?.2);
+        };
         let mut w = Vec2::ZERO;
         for &code in s {
             w += self.type3_glyph(&font, Glyph::Code(code), Point::new(w.x, w.y), false)?;
@@ -289,7 +335,11 @@ impl Interp<'_> {
             let w = self.type3_glyph(font, Glyph::Code(code), at, true)?;
             let d = match spacing {
                 Spacing::Plain | Spacing::Kern(_) => w,
-                Spacing::Add(a, c) => w + *a + c.filter(|(ch, _)| *ch == i64::from(code)).map_or(Vec2::ZERO, |(_, v)| v),
+                Spacing::Add(a, c) => {
+                    w + *a
+                        + c.filter(|(ch, _)| *ch == i64::from(code))
+                            .map_or(Vec2::ZERO, |(_, v)| v)
+                }
                 Spacing::Widths(v, op) => {
                     let n = |k: usize| v.get(k).copied();
                     match op {
@@ -307,7 +357,11 @@ impl Interp<'_> {
                 self.call(p.clone())?;
             }
         }
-        let text: String = s.iter().map(|b| char::from(*b)).filter(|c| !c.is_control()).collect();
+        let text: String = s
+            .iter()
+            .map(|b| char::from(*b))
+            .filter(|c| !c.is_control())
+            .collect();
         self.group_glyphs(start, &text);
         Ok(())
     }
@@ -318,16 +372,24 @@ impl Interp<'_> {
         let (fm, build_glyph, build_char, encoding) = {
             let f = font.borrow();
             let get = |k: &str| f.get(&Key::name(k)).cloned();
-            let fm = get("FontMatrix").and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow()))).unwrap_or(Affine::scale(0.001));
+            let fm = get("FontMatrix")
+                .and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow())))
+                .unwrap_or(Affine::scale(0.001));
             (fm, get("BuildGlyph"), get("BuildChar"), get("Encoding"))
         };
         let code_of = |name: &str| -> Option<u8> {
             let items = encoding.as_ref()?.items()?.to_vec();
-            items.iter().position(|o| o.text().as_deref() == Some(name)).and_then(|i| u8::try_from(i).ok())
+            items
+                .iter()
+                .position(|o| o.text().as_deref() == Some(name))
+                .and_then(|i| u8::try_from(i).ok())
         };
         let (name, code) = match glyph {
             Glyph::Code(c) => {
-                let name = encoding.as_ref().and_then(|e| e.items()?.get(usize::from(c))).and_then(|o| o.text());
+                let name = encoding
+                    .as_ref()
+                    .and_then(|e| e.items()?.get(usize::from(c)))
+                    .and_then(|o| o.text());
                 (name.unwrap_or_else(|| Rc::from(".notdef")), Some(c))
             }
             Glyph::Name(n) => {
@@ -340,7 +402,9 @@ impl Interp<'_> {
             (None, Some(p), Some(c)) => Some((p, Obj::Int(i64::from(c)))),
             _ => None,
         };
-        let Some((proc, arg)) = arg else { return Ok(Vec2::ZERO) };
+        let Some((proc, arg)) = arg else {
+            return Ok(Vec2::ZERO);
+        };
         // A glyph that shows type in its own font would draw itself without end.
         if self.out.apart >= MAX_APART {
             return ps_err("limitcheck", "a Type 3 glyph");
@@ -352,7 +416,10 @@ impl Interp<'_> {
         self.g.null |= !paint;
         self.glyph_width = None;
         self.out.apart += 1;
-        let r = self.push(Obj::Dict(font.clone())).and_then(|()| self.push(arg)).and_then(|()| self.call(proc));
+        let r = self
+            .push(Obj::Dict(font.clone()))
+            .and_then(|()| self.push(arg))
+            .and_then(|()| self.call(proc));
         self.out.apart -= 1;
         let [wx, wy] = self.glyph_width.take().unwrap_or_default();
         self.saved.truncate(depth);
@@ -365,12 +432,21 @@ impl Interp<'_> {
     /// are several under the same clips.
     fn group_glyphs(&mut self, start: usize, text: &str) {
         let here = self.out.chain(&self.g.clips);
-        let Some(drawn) = self.out.drawn.get(start..) else { return };
-        let same = drawn.iter().all(|(c, _)| c.iter().map(|c| c.id).eq(here.iter().map(|c| c.id)));
+        let Some(drawn) = self.out.drawn.get(start..) else {
+            return;
+        };
+        let same = drawn
+            .iter()
+            .all(|(c, _)| c.iter().map(|c| c.id).eq(here.iter().map(|c| c.id)));
         if drawn.len() < 2 || !same {
             return;
         }
-        let children: Vec<Arc<Node>> = self.out.drawn.drain(start..).map(|(_, n)| Arc::new(n)).collect();
+        let children: Vec<Arc<Node>> = self
+            .out
+            .drawn
+            .drain(start..)
+            .map(|(_, n)| Arc::new(n))
+            .collect();
         let mut group = Node::group(NodeId(0), children);
         group.name = Some(text.chars().take(64).collect());
         let clips = self.g.clips.clone();
@@ -387,8 +463,19 @@ impl Interp<'_> {
         d.insert(Key::name("FontName"), key.obj());
         d.insert(Key::name("FontType"), Obj::Int(1));
         d.insert(Key::name("FontMatrix"), matrix_obj(Affine::scale(0.001)));
-        d.insert(Key::name("FontBBox"), Obj::array(vec![Obj::Int(0), Obj::Int(-250), Obj::Int(1000), Obj::Int(1000)]));
-        d.insert(Key::name("Encoding"), Obj::array(vec![Obj::name(".notdef"); 256]));
+        d.insert(
+            Key::name("FontBBox"),
+            Obj::array(vec![
+                Obj::Int(0),
+                Obj::Int(-250),
+                Obj::Int(1000),
+                Obj::Int(1000),
+            ]),
+        );
+        d.insert(
+            Key::name("Encoding"),
+            Obj::array(vec![Obj::name(".notdef"); 256]),
+        );
         let font = Rc::new(std::cell::RefCell::new(d));
         self.fonts.borrow_mut().insert(key, Obj::Dict(font.clone()));
         Ok(font)
@@ -401,11 +488,21 @@ impl Interp<'_> {
             None => self.find_font(&Obj::name(DEFAULT_FONT))?,
         };
         let f = font.borrow();
-        let name = f.get(&Key::name("FontName")).and_then(Obj::text).map_or_else(|| DEFAULT_FONT.to_string(), |n| n.to_string());
-        let m = f.get(&Key::name("FontMatrix")).and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow()))).unwrap_or(Affine::scale(0.001));
+        let name = f
+            .get(&Key::name("FontName"))
+            .and_then(Obj::text)
+            .map_or_else(|| DEFAULT_FONT.to_string(), |n| n.to_string());
+        let m = f
+            .get(&Key::name("FontMatrix"))
+            .and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow())))
+            .unwrap_or(Affine::scale(0.001));
         // Type 1 glyphs are in 1000-unit space; a Type 42 font's glyph space is one unit an em
         // (its FontMatrix, usually the identity, is already the em's).
-        let units = if f.get(&Key::name("FontType")).and_then(Obj::as_num) == Some(42.0) { 1.0 } else { 1000.0 };
+        let units = if f.get(&Key::name("FontType")).and_then(Obj::as_num) == Some(42.0) {
+            1.0
+        } else {
+            1000.0
+        };
         Ok((name, m * Affine::scale(units)))
     }
 
@@ -425,16 +522,37 @@ impl Interp<'_> {
         }
         let (family, font_style) = family_style(&name);
         // The available family's own spelling: `MicrosoftYaHei` is Microsoft YaHei, not "Microsoft Ya Hei".
-        let font_family = vectorcraft_text::FontDb::global().find_family(&family).unwrap_or(family);
-        let text: String = s.iter().map(|b| char::from(*b)).filter(|c| !c.is_control()).collect();
-        let fill = if self.g.paint.is_none() { Paint::solid(vectorcraft_color::Color::BLACK) } else { self.g.paint.clone() };
-        let style = CharStyle { font_family, font_style, size, fill, stroke: Paint::None, ..CharStyle::default() };
+        let font_family = vectorcraft_text::FontDb::global()
+            .find_family(&family)
+            .unwrap_or(family);
+        let text: String = s
+            .iter()
+            .map(|b| char::from(*b))
+            .filter(|c| !c.is_control())
+            .collect();
+        let fill = if self.g.paint.is_none() {
+            Paint::solid(vectorcraft_color::Color::BLACK)
+        } else {
+            self.g.paint.clone()
+        };
+        let style = CharStyle {
+            font_family,
+            font_style,
+            size,
+            fill,
+            stroke: Paint::None,
+            ..CharStyle::default()
+        };
         let mut t = TextObject::point(Point::ZERO, &text, style);
         let layout = vectorcraft_text::layout(vectorcraft_text::FontDb::global(), &t);
         t.xf = m * Affine::scale_non_uniform(1.0 / size, -1.0 / size);
         t.cached_bounds = Some(layout.bounds);
         let adv: f64 = layout.glyphs.iter().map(|g| g.advance).sum();
-        Ok((t, layout, f1 * Point::new(adv / size, 0.0) - f1 * Point::ZERO))
+        Ok((
+            t,
+            layout,
+            f1 * Point::new(adv / size, 0.0) - f1 * Point::ZERO,
+        ))
     }
 
     /// `show`: point type at the current point, which moves past it.
@@ -443,7 +561,8 @@ impl Interp<'_> {
         let (t, _, adv) = self.set_type(s, at)?;
         if !self.g.paint.is_none() && !t.plain_text().trim().is_empty() {
             let clips = self.g.clips.clone();
-            self.out.push(Node::new(NodeId(0), NodeKind::Text(Box::new(t))), &clips);
+            self.out
+                .push(Node::new(NodeId(0), NodeKind::Text(Box::new(t))), &clips);
         }
         self.g.cur = Some(self.xf() * (at + adv));
         Ok(())
@@ -487,7 +606,10 @@ enum Glyph {
 /// A font scaled or transformed by `m` (`scalefont`, `makefont`).
 fn transformed(font: &DictRef, m: Affine) -> DictRef {
     let mut d = font.borrow().clone();
-    let fm = d.get(&Key::name("FontMatrix")).and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow()))).unwrap_or(Affine::scale(0.001));
+    let fm = d
+        .get(&Key::name("FontMatrix"))
+        .and_then(|o| o.items().and_then(|i| matrix_of(&i.borrow())))
+        .unwrap_or(Affine::scale(0.001));
     d.insert(Key::name("FontMatrix"), matrix_obj(m * fm));
     Rc::new(std::cell::RefCell::new(d))
 }

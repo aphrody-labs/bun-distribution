@@ -116,8 +116,13 @@ pub struct GpuCanvas {
 /// (Core WebGPU guarantees it; WebGL2 needs `EXT_color_buffer_float`, and some drivers lack it.)
 pub fn supports_f16_canvas(adapter: &wgpu::Adapter) -> bool {
     let f = adapter.get_texture_format_features(FORMAT_HIGH);
-    let usages = wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::COPY_SRC;
-    f.allowed_usages.contains(usages) && f.flags.contains(wgpu::TextureFormatFeatureFlags::FILTERABLE)
+    let usages = wgpu::TextureUsages::TEXTURE_BINDING
+        | wgpu::TextureUsages::RENDER_ATTACHMENT
+        | wgpu::TextureUsages::COPY_DST
+        | wgpu::TextureUsages::COPY_SRC;
+    f.allowed_usages.contains(usages)
+        && f.flags
+            .contains(wgpu::TextureFormatFeatureFlags::FILTERABLE)
 }
 
 impl GpuCanvas {
@@ -129,7 +134,9 @@ impl GpuCanvas {
     /// Like [`GpuCanvas::new`] with a preferred texture tile side (`PHOTOCRAFT_GPU_TILE` wins).
     pub fn with_tile(rs: &RenderState, tile: Option<u32>) -> Self {
         let max = rs.device.limits().max_texture_dimension_2d;
-        let env_tile = std::env::var("PHOTOCRAFT_GPU_TILE").ok().and_then(|v| v.parse::<u32>().ok());
+        let env_tile = std::env::var("PHOTOCRAFT_GPU_TILE")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok());
         let tile = env_tile.or(tile).unwrap_or(DEFAULT_TILE).clamp(64, max);
         let high = match std::env::var("PHOTOCRAFT_CANVAS_F16").ok().as_deref() {
             _ if !supports_f16_canvas(&rs.adapter) => HighPolicy::Off,
@@ -139,12 +146,25 @@ impl GpuCanvas {
         };
         // Device loss and uncaptured errors mark this flag instead of panicking (#243).
         let health = photocraft_gpu::DeviceHealth::watch(&rs.device);
-        let mut res = Resources::new(&rs.device, &rs.queue, rs.target_format, high != HighPolicy::Off);
+        let mut res = Resources::new(
+            &rs.device,
+            &rs.queue,
+            rs.target_format,
+            high != HighPolicy::Off,
+        );
         res.health = health.clone();
         res.separate_mip_targets = rs.adapter.get_info().backend == wgpu::Backend::Dx12;
         rs.renderer.write().callback_resources.insert(res);
-        log::info!("gpu canvas: target {:?}, max texture {max}, tile {tile}, 16F canvas {high:?}", rs.target_format);
-        Self { rs: rs.clone(), tile, high, health }
+        log::info!(
+            "gpu canvas: target {:?}, max texture {max}, tile {tile}, 16F canvas {high:?}",
+            rs.target_format
+        );
+        Self {
+            rs: rs.clone(),
+            tile,
+            high,
+            health,
+        }
     }
 
     /// The device's health flag (shared with the wgpu compositor and the paint callback).
@@ -163,7 +183,10 @@ impl GpuCanvas {
         let mut r = self.rs.renderer.write();
         if let Some(res) = r.callback_resources.get_mut::<Resources>() {
             res.compositor = None;
-            res.compositor_failed = Some(photocraft_gpu::Unsupported(self.fault().map_or_else(|| "GPU canvas released".into(), |f| f.to_string())));
+            res.compositor_failed = Some(photocraft_gpu::Unsupported(
+                self.fault()
+                    .map_or_else(|| "GPU canvas released".into(), |f| f.to_string()),
+            ));
             res.docs.clear();
             res.luts.clear();
             res.display_lut_signatures.clear();
@@ -184,14 +207,22 @@ impl GpuCanvas {
         self.rs.device.limits().max_texture_dimension_2d as usize
     }
 
-    pub fn format_for(&self, depth: photocraft_doc::SampleType, size: [u32; 2]) -> wgpu::TextureFormat {
+    pub fn format_for(
+        &self,
+        depth: photocraft_doc::SampleType,
+        size: [u32; 2],
+    ) -> wgpu::TextureFormat {
         let px = size[0] as u64 * size[1] as u64;
         let high = match self.high {
             HighPolicy::Off => false,
             HighPolicy::Budget => px <= F16_BUDGET_PX,
             HighPolicy::Always => true,
         };
-        if high && depth != photocraft_doc::SampleType::U8 { FORMAT_HIGH } else { FORMAT }
+        if high && depth != photocraft_doc::SampleType::U8 {
+            FORMAT_HIGH
+        } else {
+            FORMAT
+        }
     }
 
     /// Format and GPU bytes (all tiles, all mip levels) of document `key`'s canvas texture.
@@ -202,7 +233,13 @@ impl GpuCanvas {
         let bytes = d
             .tiles
             .iter()
-            .map(|t| (0..t.levels.len() as u32).map(|l| ((t.rect[2] >> l).max(1) as u64) * ((t.rect[3] >> l).max(1) as u64) * bpp).sum::<u64>())
+            .map(|t| {
+                (0..t.levels.len() as u32)
+                    .map(|l| {
+                        ((t.rect[2] >> l).max(1) as u64) * ((t.rect[3] >> l).max(1) as u64) * bpp
+                    })
+                    .sum::<u64>()
+            })
             .sum();
         Some((d.format, bytes))
     }
@@ -234,9 +271,15 @@ impl GpuCanvas {
     /// created for it and it is drawn on the CPU canvas.
     pub fn fits_canvas(&self, doc: &photocraft_doc::Document) -> bool {
         let size = [doc.size.width, doc.size.height];
-        let bytes = canvas_texture_bytes(size, self.tile, texel_bytes(self.format_for(doc.depth, size)));
+        let bytes = canvas_texture_bytes(
+            size,
+            self.tile,
+            texel_bytes(self.format_for(doc.depth, size)),
+        );
         let r = self.rs.renderer.read();
-        r.callback_resources.get::<Resources>().is_some_and(|res| bytes <= res.canvas_budget)
+        r.callback_resources
+            .get::<Resources>()
+            .is_some_and(|res| bytes <= res.canvas_budget)
     }
 
     /// Cap lower-stack composite reuse; zero disables it for profiling the uncached path.
@@ -263,8 +306,16 @@ impl GpuCanvas {
     /// lower-stack chunks). Keep the scorecard's memory measurements inclusive of reuse.
     pub fn compositor_bytes(&self) -> Option<(u64, usize)> {
         let r = self.rs.renderer.read();
-        let c = r.callback_resources.get::<Resources>()?.compositor.as_ref()?;
-        Some((c.resident_bytes(), c.fx_cache_bytes().saturating_add(usize::try_from(c.composite_cache_bytes()).unwrap_or(usize::MAX))))
+        let c = r
+            .callback_resources
+            .get::<Resources>()?
+            .compositor
+            .as_ref()?;
+        Some((
+            c.resident_bytes(),
+            c.fx_cache_bytes()
+                .saturating_add(usize::try_from(c.composite_cache_bytes()).unwrap_or(usize::MAX)),
+        ))
     }
 
     /// Set the checkerboard and gamut warning colours.
@@ -278,17 +329,25 @@ impl GpuCanvas {
     /// Whether document `doc` has been uploaded with this size.
     pub fn has(&self, doc: u64, size: [u32; 2]) -> bool {
         let r = self.rs.renderer.read();
-        r.callback_resources.get::<Resources>().and_then(|res| res.docs.get(&doc)).is_some_and(|d| d.size == size)
+        r.callback_resources
+            .get::<Resources>()
+            .and_then(|res| res.docs.get(&doc))
+            .is_some_and(|d| d.size == size)
     }
 
     /// Whether [`GpuCanvas::composite`] would draw `doc` with the wgpu compositor (rather than
     /// fall back to the CPU compositor).
     pub fn supports(&self, doc: &photocraft_doc::Document) -> bool {
-        if std::env::var_os("PHOTOCRAFT_CPU_COMPOSE").is_some() || doc.size.width == 0 || doc.size.height == 0 {
+        if std::env::var_os("PHOTOCRAFT_CPU_COMPOSE").is_some()
+            || doc.size.width == 0
+            || doc.size.height == 0
+        {
             return false;
         }
         let r = self.rs.renderer.read();
-        let Some(res) = r.callback_resources.get::<Resources>() else { return false };
+        let Some(res) = r.callback_resources.get::<Resources>() else {
+            return false;
+        };
         if res.compositor_failed.is_some() {
             return false;
         }
@@ -307,13 +366,23 @@ impl GpuCanvas {
 
     /// Replace the whole document image with a `format` texture of premultiplied `texels`.
     fn upload_full_as(&self, doc: u64, size: [u32; 2], format: wgpu::TextureFormat, texels: &[u8]) {
-        if size[0] == 0 || size[1] == 0 || texels.len() as u64 != size[0] as u64 * size[1] as u64 * texel_bytes(format) || !self.health.is_ok() {
+        if size[0] == 0
+            || size[1] == 0
+            || texels.len() as u64 != size[0] as u64 * size[1] as u64 * texel_bytes(format)
+            || !self.health.is_ok()
+        {
             return;
         }
         let (device, queue) = (&self.rs.device, &self.rs.queue);
         let mut renderer = self.rs.renderer.write();
-        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return };
-        if res.docs.get(&doc).is_none_or(|d| d.size != size || d.format != format) {
+        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+            return;
+        };
+        if res
+            .docs
+            .get(&doc)
+            .is_none_or(|d| d.size != size || d.format != format)
+        {
             let Some(tex) = DocTextures::new(device, res, size, self.tile, format) else {
                 res.docs.remove(&doc);
                 return;
@@ -334,8 +403,12 @@ impl GpuCanvas {
         }
         let (device, queue) = (&self.rs.device, &self.rs.queue);
         let mut renderer = self.rs.renderer.write();
-        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return false };
-        let Some(d) = res.docs.get(&doc) else { return false };
+        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+            return false;
+        };
+        let Some(d) = res.docs.get(&doc) else {
+            return false;
+        };
         if texels.len() as u64 != size[0] as u64 * size[1] as u64 * texel_bytes(d.format)
             || origin[0].saturating_add(size[0]) > d.size[0]
             || origin[1].saturating_add(size[1]) > d.size[1]
@@ -346,19 +419,37 @@ impl GpuCanvas {
             return true;
         }
         d.write(queue, origin, size, size[0], texels);
-        d.regenerate_mips(device, queue, res, [origin[0], origin[1], origin[0] + size[0], origin[1] + size[1]]);
+        d.regenerate_mips(
+            device,
+            queue,
+            res,
+            [
+                origin[0],
+                origin[1],
+                origin[0] + size[0],
+                origin[1] + size[1],
+            ],
+        );
         true
     }
 
     /// The texture format of uploaded document `doc`.
     fn format_of(&self, doc: u64) -> Option<wgpu::TextureFormat> {
         let r = self.rs.renderer.read();
-        r.callback_resources.get::<Resources>().and_then(|res| res.docs.get(&doc)).map(|d| d.format)
+        r.callback_resources
+            .get::<Resources>()
+            .and_then(|res| res.docs.get(&doc))
+            .map(|d| d.format)
     }
 
     /// Upload a CPU composite covering the whole document (a preview of a document of `depth`:
     /// see [`GpuCanvas::format_for`]).
-    pub fn upload_buffer_full(&self, doc: u64, buf: &photocraft_compose::Buffer, depth: photocraft_doc::SampleType) {
+    pub fn upload_buffer_full(
+        &self,
+        doc: u64,
+        buf: &photocraft_compose::Buffer,
+        depth: photocraft_doc::SampleType,
+    ) {
         let size = [buf.rect.width(), buf.rect.height()];
         let format = self.format_for(depth, size);
         self.upload_full_as(doc, size, format, &texels(format, &buf.px));
@@ -367,11 +458,18 @@ impl GpuCanvas {
     /// Upload a CPU composite of a sub-rectangle (in document pixels, `buf.rect`).
     pub fn upload_buffer_rect(&self, doc: u64, buf: &photocraft_compose::Buffer) -> bool {
         let r = buf.rect;
-        let Some(format) = self.format_of(doc) else { return false };
+        let Some(format) = self.format_of(doc) else {
+            return false;
+        };
         if r.x0 < 0 || r.y0 < 0 {
             return false;
         }
-        self.upload_rect(doc, [r.x0 as u32, r.y0 as u32], [r.width(), r.height()], &texels(format, &buf.px))
+        self.upload_rect(
+            doc,
+            [r.x0 as u32, r.y0 as u32],
+            [r.width(), r.height()],
+            &texels(format, &buf.px),
+        )
     }
 
     /// Composite `region` of `doc` with the wgpu compositor straight into its display texture
@@ -391,20 +489,27 @@ impl GpuCanvas {
             return Err(photocraft_gpu::Unsupported("empty document".into()));
         }
         if std::env::var_os("PHOTOCRAFT_CPU_COMPOSE").is_some() {
-            return Err(photocraft_gpu::Unsupported("disabled by PHOTOCRAFT_CPU_COMPOSE".into()));
+            return Err(photocraft_gpu::Unsupported(
+                "disabled by PHOTOCRAFT_CPU_COMPOSE".into(),
+            ));
         }
         if let Some(f) = self.fault() {
             return Err(photocraft_gpu::Unsupported(f.to_string()));
         }
         let mut renderer = self.rs.renderer.write();
-        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return Err(photocraft_gpu::Unsupported("no GPU canvas".into())) };
+        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+            return Err(photocraft_gpu::Unsupported("no GPU canvas".into()));
+        };
         // A driver that couldn't build the pipelines once won't later: stay on the CPU compositor.
         if let Some(e) = &res.compositor_failed {
             return Err(e.clone());
         }
         let mut comp = match res.compositor.take() {
             Some(c) => c,
-            None => match photocraft_gpu::Compositor::try_new_with_format(device, photocraft_gpu::Compositor::preferred_acc_format(&self.rs.adapter)) {
+            None => match photocraft_gpu::Compositor::try_new_with_format(
+                device,
+                photocraft_gpu::Compositor::preferred_acc_format(&self.rs.adapter),
+            ) {
                 Ok(c) => c,
                 Err(e) => {
                     log::warn!("{e}; using the CPU compositor");
@@ -423,8 +528,15 @@ impl GpuCanvas {
         comp.set_focus(res.compositor_focus);
         let key = doc.id.0;
         let format = self.format_for(doc.depth, size);
-        let fresh = res.docs.get(&key).is_none_or(|d| d.size != size || d.format != format);
-        let region = if fresh { doc.bounds() } else { region.intersect(&doc.bounds()) };
+        let fresh = res
+            .docs
+            .get(&key)
+            .is_none_or(|d| d.size != size || d.format != format);
+        let region = if fresh {
+            doc.bounds()
+        } else {
+            region.intersect(&doc.bounds())
+        };
         // Checked before allocating a new canvas texture only: `render` plans (and refuses) itself.
         if fresh && let Err(e) = comp.supports(doc) {
             res.compositor = Some(comp);
@@ -447,7 +559,9 @@ impl GpuCanvas {
         }
         let (Some(pipe), Some(d)) = (res.encode_pipeline(format), res.docs.get(&key)) else {
             res.compositor = Some(comp);
-            return Err(photocraft_gpu::Unsupported(format!("no {format:?} canvas texture or pipeline")));
+            return Err(photocraft_gpu::Unsupported(format!(
+                "no {format:?} canvas texture or pipeline"
+            )));
         };
         let bgl = &res.encode_bgl;
         // A float canvas keeps values above 1.0 (32-bit documents, for the 32-bit preview).
@@ -458,18 +572,39 @@ impl GpuCanvas {
             comp.render(device, queue, doc, region, |enc, out| {
                 for t in &d.tiles {
                     let [tx, ty, tw, th] = t.rect.map(|v| v as i32);
-                    let r = out.rect.intersect(&photocraft_geom::Rect::from_xywh(tx, ty, tw as u32, th as u32));
+                    let r = out.rect.intersect(&photocraft_geom::Rect::from_xywh(
+                        tx, ty, tw as u32, th as u32,
+                    ));
                     if r.is_empty() {
                         continue;
                     }
-                    let offset = [out.rect.x0 - tx, out.rect.y0 - ty, i32::from(encode_srgb), keep_hdr];
-                    let ubuf = init_buffer(device, "pc_encode", &offset.iter().flat_map(|v| v.to_le_bytes()).collect::<Vec<u8>>(), wgpu::BufferUsages::UNIFORM);
+                    let offset = [
+                        out.rect.x0 - tx,
+                        out.rect.y0 - ty,
+                        i32::from(encode_srgb),
+                        keep_hdr,
+                    ];
+                    let ubuf = init_buffer(
+                        device,
+                        "pc_encode",
+                        &offset
+                            .iter()
+                            .flat_map(|v| v.to_le_bytes())
+                            .collect::<Vec<u8>>(),
+                        wgpu::BufferUsages::UNIFORM,
+                    );
                     let bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
                         label: Some("pc_encode"),
                         layout: bgl,
                         entries: &[
-                            wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(out.view) },
-                            wgpu::BindGroupEntry { binding: 1, resource: ubuf.as_entire_binding() },
+                            wgpu::BindGroupEntry {
+                                binding: 0,
+                                resource: wgpu::BindingResource::TextureView(out.view),
+                            },
+                            wgpu::BindGroupEntry {
+                                binding: 1,
+                                resource: ubuf.as_entire_binding(),
+                            },
                         ],
                     });
                     let mut pass = enc.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -478,7 +613,10 @@ impl GpuCanvas {
                             view: &t.levels[0],
                             resolve_target: None,
                             depth_slice: None,
-                            ops: wgpu::Operations { load: wgpu::LoadOp::Load, store: wgpu::StoreOp::Store },
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
                         })],
                         depth_stencil_attachment: None,
                         timestamp_writes: None,
@@ -487,13 +625,20 @@ impl GpuCanvas {
                     });
                     pass.set_pipeline(pipe);
                     pass.set_bind_group(0, &bg, &[]);
-                    pass.set_scissor_rect((r.x0 - tx) as u32, (r.y0 - ty) as u32, r.width(), r.height());
+                    pass.set_scissor_rect(
+                        (r.x0 - tx) as u32,
+                        (r.y0 - ty) as u32,
+                        r.width(),
+                        r.height(),
+                    );
                     pass.draw(0..3, 0..1);
                 }
             })
         }));
         let Ok(result) = result else {
-            self.health.mark(photocraft_gpu::Fault::Lost("the GPU compositor stopped (internal error)".into()));
+            self.health.mark(photocraft_gpu::Fault::Lost(
+                "the GPU compositor stopped (internal error)".into(),
+            ));
             res.docs.remove(&key);
             return Err(photocraft_gpu::Unsupported("GPU device lost".into()));
         };
@@ -503,7 +648,17 @@ impl GpuCanvas {
             None => result,
         };
         if result.is_ok() {
-            d.regenerate_mips(device, queue, res, [region.x0 as u32, region.y0 as u32, region.x1 as u32, region.y1 as u32]);
+            d.regenerate_mips(
+                device,
+                queue,
+                res,
+                [
+                    region.x0 as u32,
+                    region.y0 as u32,
+                    region.x1 as u32,
+                    region.y1 as u32,
+                ],
+            );
             if std::env::var_os("PHOTOCRAFT_GPU_SYNC").is_some() {
                 // Benchmarking: wait for the GPU so callers can time the whole refresh.
                 #[cfg(not(target_arch = "wasm32"))]
@@ -530,20 +685,36 @@ impl GpuCanvas {
     ) -> Refresh {
         if let Some(f) = self.fault() {
             // Nothing reaches the GPU any more; the app switches to the CPU canvas.
-            return Refresh { kind: "lost", fallback: Some(f.to_string()), ..Default::default() };
+            return Refresh {
+                kind: "lost",
+                fallback: Some(f.to_string()),
+                ..Default::default()
+            };
         }
         if !self.fits_canvas(doc) {
             // Neither compositor can fill textures that are never created: the CPU canvas draws
             // it. A set left from before the canvas grew is stale, so it goes too.
-            if let Some(res) = self.rs.renderer.write().callback_resources.get_mut::<Resources>() {
+            if let Some(res) = self
+                .rs
+                .renderer
+                .write()
+                .callback_resources
+                .get_mut::<Resources>()
+            {
                 res.docs.remove(&key);
             }
-            return Refresh { kind: REFRESH_OVER_BUDGET, fallback: Some(OVER_CANVAS_BUDGET.into()), ..Default::default() };
+            return Refresh {
+                kind: REFRESH_OVER_BUDGET,
+                fallback: Some(OVER_CANVAS_BUDGET.into()),
+                ..Default::default()
+            };
         }
         let bounds = doc.bounds();
         let size = [doc.size.width, doc.size.height];
         let format = self.format_for(doc.depth, size);
-        let damage = damage.filter(|_| self.has(key, size) && self.format_of(key) == Some(format)).map(|r| r.intersect(&bounds));
+        let damage = damage
+            .filter(|_| self.has(key, size) && self.format_of(key) == Some(format))
+            .map(|r| r.intersect(&bounds));
         let t0 = now_ms();
         let mut out = Refresh::default();
         if damage.is_some_and(|r| r.is_empty()) {
@@ -553,10 +724,18 @@ impl GpuCanvas {
         }
         let region = damage.unwrap_or(bounds);
         let encode_srgb = display.is_some_and(|d| d.encode_srgb);
-        let gpu = if key == doc.id.0 { self.composite(doc, region, encode_srgb) } else { Err(photocraft_gpu::Unsupported("preview texture".into())) };
+        let gpu = if key == doc.id.0 {
+            self.composite(doc, region, encode_srgb)
+        } else {
+            Err(photocraft_gpu::Unsupported("preview texture".into()))
+        };
         match gpu {
             Ok(stats) => {
-                out.kind = if damage.is_some() { "gpu-rect" } else { "gpu-full" };
+                out.kind = if damage.is_some() {
+                    "gpu-rect"
+                } else {
+                    "gpu-full"
+                };
                 out.px = region.width() as u64 * region.height() as u64;
                 out.composite_ms = now_ms() - t0;
                 out.uploads = stats.tiles_uploaded as u64;
@@ -589,7 +768,12 @@ impl GpuCanvas {
     /// Composite the whole of `doc` with the CPU compositor into document `key`'s texture, band by
     /// band (each band converted and uploaded before the next is rendered), so a huge document
     /// never needs a full-size float composite or texture-format copy in memory.
-    pub fn upload_composite(&self, key: u64, doc: &photocraft_doc::Document, display: Option<&photocraft_engine::display_color::CanvasDisplay>) {
+    pub fn upload_composite(
+        &self,
+        key: u64,
+        doc: &photocraft_doc::Document,
+        display: Option<&photocraft_engine::display_color::CanvasDisplay>,
+    ) {
         let size = [doc.size.width, doc.size.height];
         if size[0] == 0 || size[1] == 0 || !self.health.is_ok() {
             return;
@@ -598,8 +782,14 @@ impl GpuCanvas {
         let (device, queue) = (&self.rs.device, &self.rs.queue);
         {
             let mut renderer = self.rs.renderer.write();
-            let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return };
-            if res.docs.get(&key).is_none_or(|d| d.size != size || d.format != format) {
+            let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+                return;
+            };
+            if res
+                .docs
+                .get(&key)
+                .is_none_or(|d| d.size != size || d.format != format)
+            {
                 let Some(tex) = DocTextures::new(device, res, size, self.tile, format) else {
                     res.docs.remove(&key);
                     return;
@@ -614,8 +804,18 @@ impl GpuCanvas {
             }
             texels_into(format, &texture_buffer(display, &band).px, &mut rgba);
             let renderer = self.rs.renderer.read();
-            let d = renderer.callback_resources.get::<Resources>().and_then(|r| r.docs.get(&key)).ok_or(())?;
-            d.write(queue, [0, band.rect.y0 as u32], [size[0], band.rect.height()], size[0], &rgba);
+            let d = renderer
+                .callback_resources
+                .get::<Resources>()
+                .and_then(|r| r.docs.get(&key))
+                .ok_or(())?;
+            d.write(
+                queue,
+                [0, band.rect.y0 as u32],
+                [size[0], band.rect.height()],
+                size[0],
+                &rgba,
+            );
             drop(renderer);
             // Flush the staged band so its staging memory is reclaimed while the next renders.
             queue.submit(std::iter::empty::<wgpu::CommandBuffer>());
@@ -636,9 +836,16 @@ impl GpuCanvas {
     /// Free textures, display LUTs and their signatures for documents not in `live`.
     pub fn retain(&self, live: &[u64]) {
         let mut renderer = self.rs.renderer.write();
-        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return };
+        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+            return;
+        };
         if res.docs.keys().any(|k| !live.contains(k)) {
-            let gone: Vec<u64> = res.docs.keys().filter(|k| !live.contains(k)).copied().collect();
+            let gone: Vec<u64> = res
+                .docs
+                .keys()
+                .filter(|k| !live.contains(k))
+                .copied()
+                .collect();
             if let Some(c) = res.compositor.as_mut() {
                 for k in &gone {
                     c.forget_doc(photocraft_doc::DocId(*k));
@@ -649,25 +856,41 @@ impl GpuCanvas {
         // LUTs and identity-transform signatures can outlive document textures. Prune both,
         // or a preserved-ID reopen can skip rebuilding a missing LUT.
         res.luts.retain(|k, _| live.contains(&k.0));
-        res.display_lut_signatures.retain(|k, _| live.contains(&k.0));
+        res.display_lut_signatures
+            .retain(|k, _| live.contains(&k.0));
     }
 
     pub(crate) fn display_lut_signature(&self, doc: u64, output: u32) -> Option<(u64, u8)> {
         let renderer = self.rs.renderer.read();
-        renderer.callback_resources.get::<Resources>()?.display_lut_signatures.get(&(doc, output)).copied()
+        renderer
+            .callback_resources
+            .get::<Resources>()?
+            .display_lut_signatures
+            .get(&(doc, output))
+            .copied()
     }
 
     /// Whether document `doc` has a display LUT for display `output` (tests).
     #[cfg(test)]
     pub(crate) fn has_display_lut(&self, doc: u64, output: u32) -> bool {
         let renderer = self.rs.renderer.read();
-        renderer.callback_resources.get::<Resources>().is_some_and(|r| r.luts.contains_key(&(doc, output)))
+        renderer
+            .callback_resources
+            .get::<Resources>()
+            .is_some_and(|r| r.luts.contains_key(&(doc, output)))
     }
 
-    pub(crate) fn cache_display_lut_signature(&self, doc: u64, output: u32, signature: u64, mode: u8) {
+    pub(crate) fn cache_display_lut_signature(
+        &self,
+        doc: u64,
+        output: u32,
+        signature: u64,
+        mode: u8,
+    ) {
         let mut renderer = self.rs.renderer.write();
         if let Some(res) = renderer.callback_resources.get_mut::<Resources>() {
-            res.display_lut_signatures.insert((doc, output), (signature, mode));
+            res.display_lut_signatures
+                .insert((doc, output), (signature, mode));
         }
     }
 
@@ -680,7 +903,9 @@ impl GpuCanvas {
         }
         let (device, queue) = (&self.rs.device, &self.rs.queue);
         let mut renderer = self.rs.renderer.write();
-        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else { return };
+        let Some(res) = renderer.callback_resources.get_mut::<Resources>() else {
+            return;
+        };
         res.display_lut_signatures.remove(&(doc, output));
         match rgba {
             None => {
@@ -688,7 +913,10 @@ impl GpuCanvas {
             }
             Some(bytes) => {
                 if size < 2 || bytes.len() as u64 != (size as u64).pow(3) * 4 {
-                    log::warn!("set_display_lut: {} bytes for a {size}³ LUT; ignored", bytes.len());
+                    log::warn!(
+                        "set_display_lut: {} bytes for a {size}³ LUT; ignored",
+                        bytes.len()
+                    );
                     return;
                 }
                 let bg = lut_bind_group(device, queue, &res.lut_bgl, size, bytes);
@@ -707,7 +935,11 @@ impl GpuCanvas {
         }
         let (device, queue) = (&self.rs.device, &self.rs.queue);
         let renderer = self.rs.renderer.read();
-        let d = renderer.callback_resources.get::<Resources>()?.docs.get(&key)?;
+        let d = renderer
+            .callback_resources
+            .get::<Resources>()?
+            .docs
+            .get(&key)?;
         let bpp = texel_bytes(d.format);
         let (w, h) = (d.size[0] as usize, d.size[1] as usize);
         let mut out = vec![[0.0f32; 4]; w.checked_mul(h)?];
@@ -720,14 +952,24 @@ impl GpuCanvas {
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             });
-            let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("pc_canvas_readback") });
+            let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("pc_canvas_readback"),
+            });
             enc.copy_texture_to_buffer(
                 t.texture.as_image_copy(),
                 wgpu::TexelCopyBufferInfo {
                     buffer: &buf,
-                    layout: wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(row as u32), rows_per_image: Some(th) },
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(row as u32),
+                        rows_per_image: Some(th),
+                    },
                 },
-                wgpu::Extent3d { width: tw, height: th, depth_or_array_layers: 1 },
+                wgpu::Extent3d {
+                    width: tw,
+                    height: th,
+                    depth_or_array_layers: 1,
+                },
             );
             queue.submit([enc.finish()]);
             let slice = buf.slice(..);
@@ -749,7 +991,10 @@ impl GpuCanvas {
 
     /// Add the paint callback drawing `params` into `rect` (clipped by the painter's clip rect).
     pub fn paint(painter: &egui::Painter, rect: egui::Rect, params: ViewParams) {
-        painter.add(egui_wgpu::Callback::new_paint_callback(rect, CanvasCallback { rect, params }));
+        painter.add(egui_wgpu::Callback::new_paint_callback(
+            rect,
+            CanvasCallback { rect, params },
+        ));
     }
 }
 
@@ -798,20 +1043,35 @@ pub fn use_adapter_limits(setup: &mut egui_wgpu::WgpuSetup) {
 
 /// [`use_adapter_limits`], calling `on_adapter` with the chosen adapter just before the device
 /// is requested (the desktop app records it in its crash-safe startup marker).
-pub fn use_adapter_limits_with(setup: &mut egui_wgpu::WgpuSetup, on_adapter: impl Fn(&wgpu::Adapter) + Send + Sync + 'static) {
+pub fn use_adapter_limits_with(
+    setup: &mut egui_wgpu::WgpuSetup,
+    on_adapter: impl Fn(&wgpu::Adapter) + Send + Sync + 'static,
+) {
     if let egui_wgpu::WgpuSetup::CreateNew(create) = setup {
         create.device_descriptor = std::sync::Arc::new(move |adapter| {
             on_adapter(adapter);
-            wgpu::DeviceDescriptor { label: Some("photocraft wgpu device"), required_limits: device_limits(adapter), ..Default::default() }
+            wgpu::DeviceDescriptor {
+                label: Some("photocraft wgpu device"),
+                required_limits: device_limits(adapter),
+                ..Default::default()
+            }
         });
     }
 }
 
 /// egui's base limits (WebGL2's on GL) with the adapter's maximum texture and buffer sizes.
 pub fn device_limits(adapter: &wgpu::Adapter) -> wgpu::Limits {
-    let base = if adapter.get_info().backend == wgpu::Backend::Gl { wgpu::Limits::downlevel_webgl2_defaults() } else { wgpu::Limits::default() };
+    let base = if adapter.get_info().backend == wgpu::Backend::Gl {
+        wgpu::Limits::downlevel_webgl2_defaults()
+    } else {
+        wgpu::Limits::default()
+    };
     let a = adapter.limits();
-    wgpu::Limits { max_texture_dimension_2d: a.max_texture_dimension_2d, max_buffer_size: a.max_buffer_size, ..base }
+    wgpu::Limits {
+        max_texture_dimension_2d: a.max_texture_dimension_2d,
+        max_buffer_size: a.max_buffer_size,
+        ..base
+    }
 }
 
 /// Milliseconds since first call (monotonic). Always 0 on wasm, where `std::time` is unavailable.
@@ -819,7 +1079,11 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
-        START.get_or_init(std::time::Instant::now).elapsed().as_secs_f64() * 1000.0
+        START
+            .get_or_init(std::time::Instant::now)
+            .elapsed()
+            .as_secs_f64()
+            * 1000.0
     }
     #[cfg(target_arch = "wasm32")]
     0.0
@@ -903,12 +1167,23 @@ impl GpuInfo {
             wgpu::DeviceType::Other => "other",
         }
         .to_string();
-        self.driver = [info.driver.as_str(), info.driver_info.as_str()].iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" ");
+        self.driver = [info.driver.as_str(), info.driver_info.as_str()]
+            .iter()
+            .filter(|s| !s.is_empty())
+            .copied()
+            .collect::<Vec<_>>()
+            .join(" ");
     }
 
     /// Human-readable lines for Help › System Info.
     pub fn lines(&self) -> Vec<String> {
-        let or = |s: &str, d: &str| if s.is_empty() || (s == "auto" && d == "auto") { tl!(d).to_string() } else { s.to_string() };
+        let or = |s: &str, d: &str| {
+            if s.is_empty() || (s == "auto" && d == "auto") {
+                tl!(d).to_string()
+            } else {
+                s.to_string()
+            }
+        };
         let mut v = vec![
             {
                 let template = "Graphics adapter: {adapter}";
@@ -916,7 +1191,13 @@ impl GpuInfo {
             },
             {
                 let template = "Backend: {backend} ({type})";
-                crate::i18n::fmt(tl!(template), &[("backend", &or(&self.backend, "unknown")), ("type", &or(&self.device_type, "unknown type"))])
+                crate::i18n::fmt(
+                    tl!(template),
+                    &[
+                        ("backend", &or(&self.backend, "unknown")),
+                        ("type", &or(&self.device_type, "unknown type")),
+                    ],
+                )
             },
             {
                 let template = "Driver: {driver}";
@@ -932,7 +1213,13 @@ impl GpuInfo {
             },
             {
                 let template = "Image compositor: {processor}";
-                crate::i18n::fmt(tl!(template), &[("processor", if self.canvas == "gpu" { "GPU" } else { "CPU" })])
+                crate::i18n::fmt(
+                    tl!(template),
+                    &[(
+                        "processor",
+                        if self.canvas == "gpu" { "GPU" } else { "CPU" },
+                    )],
+                )
             },
             {
                 let template = "Window renderer: {renderer}";
@@ -990,7 +1277,11 @@ impl Perf {
         self.spans.insert(name, (ms * 100.0).round() / 100.0);
     }
     pub fn frame(&mut self, ms: f64) {
-        self.ui_ms = if self.ui_ms == 0.0 { ms } else { self.ui_ms * 0.9 + ms * 0.1 };
+        self.ui_ms = if self.ui_ms == 0.0 {
+            ms
+        } else {
+            self.ui_ms * 0.9 + ms * 0.1
+        };
         self.max_decay += 1.0;
         if ms > self.ui_max_ms || self.max_decay > 60.0 {
             self.ui_max_ms = ms;
@@ -1040,18 +1331,29 @@ fn texels_into(format: wgpu::TextureFormat, px: &[[f32; 4]], out: &mut Vec<u8>) 
     }
     fn rgba16f(src: &[[f32; 4]], dst: &mut [u8]) {
         for (o, p) in dst.as_chunks_mut::<8>().0.iter_mut().zip(src) {
-            let a = if p[3].is_nan() { 0.0 } else { p[3].clamp(0.0, 1.0) };
-            let [r, g, b, a] = [p[0].max(0.0) * a, p[1].max(0.0) * a, p[2].max(0.0) * a, a].map(|v| f32_to_f16(v).to_le_bytes());
+            let a = if p[3].is_nan() {
+                0.0
+            } else {
+                p[3].clamp(0.0, 1.0)
+            };
+            let [r, g, b, a] = [p[0].max(0.0) * a, p[1].max(0.0) * a, p[2].max(0.0) * a, a]
+                .map(|v| f32_to_f16(v).to_le_bytes());
             *o = [r[0], r[1], g[0], g[1], b[0], b[1], a[0], a[1]];
         }
     }
     let bpp = texel_bytes(format) as usize;
-    let convert = if format == FORMAT_HIGH { rgba16f } else { rgba8 };
+    let convert = if format == FORMAT_HIGH {
+        rgba16f
+    } else {
+        rgba8
+    };
     out.clear();
     out.resize(px.len() * bpp, 0);
     #[cfg(not(target_arch = "wasm32"))]
     if px.len() > 1 << 18 {
-        let threads = std::thread::available_parallelism().map_or(4, |n| n.get()).min(16);
+        let threads = std::thread::available_parallelism()
+            .map_or(4, |n| n.get())
+            .min(16);
         let chunk = px.len().div_ceil(threads);
         std::thread::scope(|s| {
             for (src, dst) in px.chunks(chunk).zip(out.chunks_mut(chunk * bpp)) {
@@ -1082,7 +1384,9 @@ fn f32_to_f16(v: f32) -> u16 {
     let h = if a >= OVERFLOW {
         0x7bff
     } else if a < MIN_NORMAL {
-        (f32::from_bits(a) + f32::from_bits(DENORM_MAGIC)).to_bits().wrapping_sub(DENORM_MAGIC) as u16
+        (f32::from_bits(a) + f32::from_bits(DENORM_MAGIC))
+            .to_bits()
+            .wrapping_sub(DENORM_MAGIC) as u16
     } else {
         // Rebias the exponent and round the 13 dropped mantissa bits to nearest even.
         let odd = (a >> 13) & 1;
@@ -1116,7 +1420,10 @@ fn texel_to_f32(format: wgpu::TextureFormat, b: &[u8]) -> [f32; 4] {
     let mut o = [0.0f32; 4];
     for (i, v) in o.iter_mut().enumerate() {
         *v = if format == FORMAT_HIGH {
-            f16_to_f32(u16::from_le_bytes([b.get(i * 2).copied().unwrap_or(0), b.get(i * 2 + 1).copied().unwrap_or(0)]))
+            f16_to_f32(u16::from_le_bytes([
+                b.get(i * 2).copied().unwrap_or(0),
+                b.get(i * 2 + 1).copied().unwrap_or(0),
+            ]))
         } else {
             f32::from(b.get(i).copied().unwrap_or(0)) / 255.0
         };
@@ -1141,11 +1448,15 @@ pub const OVER_BUDGET: &str = "layers exceed the GPU memory budget; full refresh
 /// rest is uploaded per refresh as the view needs it.
 pub fn memory_budget(allowance: u64, pixels: u64, ram: Option<u64>) -> u64 {
     let ram = ram.unwrap_or(16 << 30);
-    allowance.saturating_sub(pixels).min(ram / 4).max(MIN_GPU_BUDGET)
+    allowance
+        .saturating_sub(pixels)
+        .min(ram / 4)
+        .max(MIN_GPU_BUDGET)
 }
 
 /// Why a document whose display textures don't fit [`canvas_budget`] is drawn on the CPU canvas.
-pub const OVER_CANVAS_BUDGET: &str = "the canvas exceeds the GPU texture budget; drawing it on the CPU canvas";
+pub const OVER_CANVAS_BUDGET: &str =
+    "the canvas exceeds the GPU texture budget; drawing it on the CPU canvas";
 
 /// [`Refresh::kind`] when the document's display textures don't fit [`canvas_budget`]: nothing
 /// was created, and the caller draws the CPU canvas instead.
@@ -1165,14 +1476,21 @@ pub fn canvas_budget(ram: Option<u64>) -> u64 {
 pub fn canvas_texture_bytes(size: [u32; 2], tile: u32, bpp: u64) -> u64 {
     let tile = tile.max(1);
     // (how many tiles, their side) along one axis: whole tiles, then the remainder.
-    let spans = |n: u32| [(n / tile, tile), (u32::from(!n.is_multiple_of(tile)), n % tile)];
+    let spans = |n: u32| {
+        [
+            (n / tile, tile),
+            (u32::from(!n.is_multiple_of(tile)), n % tile),
+        ]
+    };
     let mut total = 0u64;
     for (nx, w) in spans(size[0]) {
         for (ny, h) in spans(size[1]) {
             if nx == 0 || ny == 0 {
                 continue;
             }
-            let one = (0..mip_count(w, h)).map(|l| u64::from((w >> l).max(1)) * u64::from((h >> l).max(1)) * bpp).fold(0, u64::saturating_add);
+            let one = (0..mip_count(w, h))
+                .map(|l| u64::from((w >> l).max(1)) * u64::from((h >> l).max(1)) * bpp)
+                .fold(0, u64::saturating_add);
             total = total.saturating_add(one.saturating_mul(u64::from(nx) * u64::from(ny)));
         }
     }
@@ -1184,7 +1502,10 @@ pub fn canvas_texture_bytes(size: [u32; 2], tile: u32, bpp: u64) -> u64 {
 pub fn physical_memory() -> Option<u64> {
     static RAM: std::sync::OnceLock<Option<u64>> = std::sync::OnceLock::new();
     *RAM.get_or_init(|| {
-        if let Some(mb) = std::env::var("PHOTOCRAFT_RAM_MB").ok().and_then(|v| v.trim().parse::<u64>().ok()) {
+        if let Some(mb) = std::env::var("PHOTOCRAFT_RAM_MB")
+            .ok()
+            .and_then(|v| v.trim().parse::<u64>().ok())
+        {
             return mb.checked_mul(1 << 20);
         }
         detect_physical_memory()
@@ -1193,29 +1514,50 @@ pub fn physical_memory() -> Option<u64> {
 
 #[cfg(target_os = "macos")]
 fn detect_physical_memory() -> Option<u64> {
-    let out = std::process::Command::new("/usr/sbin/sysctl").args(["-n", "hw.memsize"]).output().ok()?;
+    let out = std::process::Command::new("/usr/sbin/sysctl")
+        .args(["-n", "hw.memsize"])
+        .output()
+        .ok()?;
     String::from_utf8(out.stdout).ok()?.trim().parse().ok()
 }
 
 #[cfg(target_os = "linux")]
 fn detect_physical_memory() -> Option<u64> {
     let info = std::fs::read_to_string("/proc/meminfo").ok()?;
-    let kb: u64 = info.lines().find_map(|l| l.strip_prefix("MemTotal:"))?.trim().trim_end_matches("kB").trim().parse().ok()?;
+    let kb: u64 = info
+        .lines()
+        .find_map(|l| l.strip_prefix("MemTotal:"))?
+        .trim()
+        .trim_end_matches("kB")
+        .trim()
+        .parse()
+        .ok()?;
     kb.checked_mul(1024)
 }
 
 #[cfg(target_os = "freebsd")]
 fn detect_physical_memory() -> Option<u64> {
-    let out = std::process::Command::new("/sbin/sysctl").args(["-n", "hw.physmem"]).output().ok()?;
+    let out = std::process::Command::new("/sbin/sysctl")
+        .args(["-n", "hw.physmem"])
+        .output()
+        .ok()?;
     String::from_utf8(out.stdout).ok()?.trim().parse().ok()
 }
 
 #[cfg(windows)]
 fn detect_physical_memory() -> Option<u64> {
-    winsafe::GlobalMemoryStatusEx().map(|m| m.ullTotalPhys).ok().filter(|b| *b > 0)
+    winsafe::GlobalMemoryStatusEx()
+        .map(|m| m.ullTotalPhys)
+        .ok()
+        .filter(|b| *b > 0)
 }
 
-#[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "freebsd", windows)))]
+#[cfg(not(any(
+    target_os = "macos",
+    target_os = "linux",
+    target_os = "freebsd",
+    windows
+)))]
 fn detect_physical_memory() -> Option<u64> {
     None
 }
@@ -1278,13 +1620,29 @@ pub struct CanvasStyle {
 
 impl Default for CanvasStyle {
     fn default() -> Self {
-        Self { checker_square: 8.0, checker_light: [1.0; 3], checker_dark: [0.8; 3], gamut_color: [0.5; 3], gamut_opacity: 1.0 }
+        Self {
+            checker_square: 8.0,
+            checker_light: [1.0; 3],
+            checker_dark: [0.8; 3],
+            gamut_color: [0.5; 3],
+            gamut_opacity: 1.0,
+        }
     }
 }
 
 /// A `size`³ RGBA8 3D texture bound for the canvas shader.
-fn lut_bind_group(device: &wgpu::Device, queue: &wgpu::Queue, bgl: &wgpu::BindGroupLayout, size: u32, bytes: &[u8]) -> wgpu::BindGroup {
-    let extent = wgpu::Extent3d { width: size, height: size, depth_or_array_layers: size };
+fn lut_bind_group(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    bgl: &wgpu::BindGroupLayout,
+    size: u32,
+    bytes: &[u8],
+) -> wgpu::BindGroup {
+    let extent = wgpu::Extent3d {
+        width: size,
+        height: size,
+        depth_or_array_layers: size,
+    };
     let texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("pc_display_lut"),
         size: extent,
@@ -1296,22 +1654,43 @@ fn lut_bind_group(device: &wgpu::Device, queue: &wgpu::Queue, bgl: &wgpu::BindGr
         view_formats: &[],
     });
     queue.write_texture(
-        wgpu::TexelCopyTextureInfo { texture: &texture, mip_level: 0, origin: wgpu::Origin3d::ZERO, aspect: wgpu::TextureAspect::All },
+        wgpu::TexelCopyTextureInfo {
+            texture: &texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
         bytes,
-        wgpu::TexelCopyBufferLayout { offset: 0, bytes_per_row: Some(size * 4), rows_per_image: Some(size) },
+        wgpu::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(size * 4),
+            rows_per_image: Some(size),
+        },
         extent,
     );
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
     device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("pc_display_lut"),
         layout: bgl,
-        entries: &[wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&view) }],
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: wgpu::BindingResource::TextureView(&view),
+        }],
     })
 }
 
 /// The 2³ identity LUT (unused unless a document has none and `display` is set).
 fn identity_lut_bytes() -> Vec<u8> {
-    (0..8).flat_map(|i| [if i & 1 != 0 { 255 } else { 0 }, if i & 2 != 0 { 255 } else { 0 }, if i & 4 != 0 { 255 } else { 0 }, 0]).collect()
+    (0..8)
+        .flat_map(|i| {
+            [
+                if i & 1 != 0 { 255 } else { 0 },
+                if i & 2 != 0 { 255 } else { 0 },
+                if i & 4 != 0 { 255 } else { 0 },
+                0,
+            ]
+        })
+        .collect()
 }
 
 struct ViewGpu {
@@ -1339,7 +1718,11 @@ fn uniform_entry(binding: u32, size: u64, vis: wgpu::ShaderStages) -> wgpu::Bind
     wgpu::BindGroupLayoutEntry {
         binding,
         visibility: vis,
-        ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: NonZeroU64::new(size) },
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Uniform,
+            has_dynamic_offset: false,
+            min_binding_size: NonZeroU64::new(size),
+        },
         count: None,
     }
 }
@@ -1380,14 +1763,30 @@ fn pipeline(
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some(label),
         layout: Some(layout),
-        vertex: wgpu::VertexState { module, entry_point: Some(vs), buffers: &[], compilation_options: Default::default() },
-        primitive: wgpu::PrimitiveState { topology: wgpu::PrimitiveTopology::TriangleList, ..Default::default() },
+        vertex: wgpu::VertexState {
+            module,
+            entry_point: Some(vs),
+            buffers: &[],
+            compilation_options: Default::default(),
+        },
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            ..Default::default()
+        },
         depth_stencil: None,
-        multisample: wgpu::MultisampleState { count: 1, mask: !0, alpha_to_coverage_enabled: false },
+        multisample: wgpu::MultisampleState {
+            count: 1,
+            mask: !0,
+            alpha_to_coverage_enabled: false,
+        },
         fragment: Some(wgpu::FragmentState {
             module,
             entry_point: Some(fs),
-            targets: &[Some(wgpu::ColorTargetState { format, blend, write_mask: wgpu::ColorWrites::ALL })],
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend,
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
             compilation_options: Default::default(),
         }),
         multiview_mask: None,
@@ -1396,9 +1795,16 @@ fn pipeline(
 }
 
 impl Resources {
-    fn new(device: &wgpu::Device, queue: &wgpu::Queue, target: wgpu::TextureFormat, high: bool) -> Self {
-        let module =
-            device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("pc_canvas"), source: wgpu::ShaderSource::Wgsl(CANVAS_WGSL.into()) });
+    fn new(
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        target: wgpu::TextureFormat,
+        high: bool,
+    ) -> Self {
+        let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("pc_canvas"),
+            source: wgpu::ShaderSource::Wgsl(CANVAS_WGSL.into()),
+        });
         let vis = wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT;
         let view_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("pc_canvas_view"),
@@ -1418,7 +1824,10 @@ impl Resources {
             },
             count: None,
         };
-        let lut_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: Some("pc_display_lut"), entries: &[lut_entry] });
+        let lut_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("pc_display_lut"),
+            entries: &[lut_entry],
+        });
         let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("pc_canvas"),
             bind_group_layouts: &[Some(&view_bgl), Some(&tile_bgl), Some(&lut_bgl)],
@@ -1442,8 +1851,24 @@ impl Resources {
                 operation: wgpu::BlendOperation::Add,
             },
         };
-        let shadow_pipeline = pipeline(device, "pc_canvas_shadow", &shadow_layout, &module, ("vs_shadow", "fs_shadow"), target, Some(blend));
-        let tile_pipeline = pipeline(device, "pc_canvas_tile", &layout, &module, ("vs_tile", "fs_tile"), target, Some(blend));
+        let shadow_pipeline = pipeline(
+            device,
+            "pc_canvas_shadow",
+            &shadow_layout,
+            &module,
+            ("vs_shadow", "fs_shadow"),
+            target,
+            Some(blend),
+        );
+        let tile_pipeline = pipeline(
+            device,
+            "pc_canvas_tile",
+            &layout,
+            &module,
+            ("vs_tile", "fs_tile"),
+            target,
+            Some(blend),
+        );
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("pc_canvas_trilinear"),
             mag_filter: wgpu::FilterMode::Linear,
@@ -1452,13 +1877,39 @@ impl Resources {
             ..Default::default()
         });
 
-        let mip_module = device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("pc_mip"), source: wgpu::ShaderSource::Wgsl(MIP_WGSL.into()) });
-        let mip_bgl =
-            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { label: Some("pc_mip"), entries: &[texture_entry(0), sampler_entry(1)] });
-        let mip_layout =
-            device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("pc_mip"), bind_group_layouts: &[Some(&mip_bgl)], immediate_size: 0 });
-        let mip_pipeline = pipeline(device, "pc_mip", &mip_layout, &mip_module, ("vs", "fs"), FORMAT, None);
-        let mip_pipeline_high = high.then(|| pipeline(device, "pc_mip_16f", &mip_layout, &mip_module, ("vs", "fs"), FORMAT_HIGH, None));
+        let mip_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("pc_mip"),
+            source: wgpu::ShaderSource::Wgsl(MIP_WGSL.into()),
+        });
+        let mip_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("pc_mip"),
+            entries: &[texture_entry(0), sampler_entry(1)],
+        });
+        let mip_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("pc_mip"),
+            bind_group_layouts: &[Some(&mip_bgl)],
+            immediate_size: 0,
+        });
+        let mip_pipeline = pipeline(
+            device,
+            "pc_mip",
+            &mip_layout,
+            &mip_module,
+            ("vs", "fs"),
+            FORMAT,
+            None,
+        );
+        let mip_pipeline_high = high.then(|| {
+            pipeline(
+                device,
+                "pc_mip_16f",
+                &mip_layout,
+                &mip_module,
+                ("vs", "fs"),
+                FORMAT_HIGH,
+                None,
+            )
+        });
         let mip_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("pc_mip"),
             mag_filter: wgpu::FilterMode::Linear,
@@ -1466,8 +1917,10 @@ impl Resources {
             ..Default::default()
         });
         // Compositor output (straight RGBA32F chunk) -> premultiplied RGBA8 display tile.
-        let encode_module =
-            device.create_shader_module(wgpu::ShaderModuleDescriptor { label: Some("pc_encode"), source: wgpu::ShaderSource::Wgsl(ENCODE_WGSL.into()) });
+        let encode_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("pc_encode"),
+            source: wgpu::ShaderSource::Wgsl(ENCODE_WGSL.into()),
+        });
         let unfilterable = wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::FRAGMENT,
@@ -1480,15 +1933,36 @@ impl Resources {
         };
         let encode_bgl = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             label: Some("pc_encode"),
-            entries: &[unfilterable, uniform_entry(1, 16, wgpu::ShaderStages::FRAGMENT)],
+            entries: &[
+                unfilterable,
+                uniform_entry(1, 16, wgpu::ShaderStages::FRAGMENT),
+            ],
         });
         let encode_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("pc_encode"),
             bind_group_layouts: &[Some(&encode_bgl)],
             immediate_size: 0,
         });
-        let encode_pipeline = pipeline(device, "pc_encode", &encode_layout, &encode_module, ("vs", "fs"), FORMAT, None);
-        let encode_pipeline_high = high.then(|| pipeline(device, "pc_encode_16f", &encode_layout, &encode_module, ("vs", "fs"), FORMAT_HIGH, None));
+        let encode_pipeline = pipeline(
+            device,
+            "pc_encode",
+            &encode_layout,
+            &encode_module,
+            ("vs", "fs"),
+            FORMAT,
+            None,
+        );
+        let encode_pipeline_high = high.then(|| {
+            pipeline(
+                device,
+                "pc_encode_16f",
+                &encode_layout,
+                &encode_module,
+                ("vs", "fs"),
+                FORMAT_HIGH,
+                None,
+            )
+        });
         let identity_lut = lut_bind_group(device, queue, &lut_bgl, 2, &identity_lut_bytes());
         Self {
             lut_bgl,
@@ -1524,12 +1998,20 @@ impl Resources {
 
     /// The pipeline encoding compositor output into a `format` tile.
     fn encode_pipeline(&self, format: wgpu::TextureFormat) -> Option<&wgpu::RenderPipeline> {
-        if format == FORMAT_HIGH { self.encode_pipeline_high.as_ref() } else { Some(&self.encode_pipeline) }
+        if format == FORMAT_HIGH {
+            self.encode_pipeline_high.as_ref()
+        } else {
+            Some(&self.encode_pipeline)
+        }
     }
 
     /// The mip-chain pipeline for `format` tiles.
     fn mip_pipeline(&self, format: wgpu::TextureFormat) -> Option<&wgpu::RenderPipeline> {
-        if format == FORMAT_HIGH { self.mip_pipeline_high.as_ref() } else { Some(&self.mip_pipeline) }
+        if format == FORMAT_HIGH {
+            self.mip_pipeline_high.as_ref()
+        } else {
+            Some(&self.mip_pipeline)
+        }
     }
 }
 
@@ -1539,9 +2021,21 @@ fn mip_count(w: u32, h: u32) -> u32 {
 
 /// A buffer holding `contents`, like `DeviceExt::create_buffer_init` but without its panic when
 /// the device was lost (an invalid buffer has no mapped range): the buffer is then just invalid.
-fn init_buffer(device: &wgpu::Device, label: &str, contents: &[u8], usage: wgpu::BufferUsages) -> wgpu::Buffer {
-    let size = (contents.len() as u64).next_multiple_of(wgpu::COPY_BUFFER_ALIGNMENT).max(wgpu::COPY_BUFFER_ALIGNMENT);
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor { label: Some(label), size, usage, mapped_at_creation: true });
+fn init_buffer(
+    device: &wgpu::Device,
+    label: &str,
+    contents: &[u8],
+    usage: wgpu::BufferUsages,
+) -> wgpu::Buffer {
+    let size = (contents.len() as u64)
+        .next_multiple_of(wgpu::COPY_BUFFER_ALIGNMENT)
+        .max(wgpu::COPY_BUFFER_ALIGNMENT);
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some(label),
+        size,
+        usage,
+        mapped_at_creation: true,
+    });
     if let Ok(mut view) = buffer.slice(..).get_mapped_range_mut()
         && view.len() >= contents.len()
     {
@@ -1554,7 +2048,13 @@ fn init_buffer(device: &wgpu::Device, label: &str, contents: &[u8], usage: wgpu:
 impl DocTextures {
     /// The texture set for a `size` canvas, or `None` (nothing created) when it doesn't fit
     /// the canvas budget.
-    fn new(device: &wgpu::Device, res: &Resources, size: [u32; 2], tile: u32, format: wgpu::TextureFormat) -> Option<Self> {
+    fn new(
+        device: &wgpu::Device,
+        res: &Resources,
+        size: [u32; 2],
+        tile: u32,
+        format: wgpu::TextureFormat,
+    ) -> Option<Self> {
         if canvas_texture_bytes(size, tile, texel_bytes(format)) > res.canvas_budget {
             return None;
         }
@@ -1565,7 +2065,11 @@ impl DocTextures {
                 let levels_n = mip_count(w, h);
                 let texture = device.create_texture(&wgpu::TextureDescriptor {
                     label: Some("pc_canvas_tile"),
-                    size: wgpu::Extent3d { width: w, height: h, depth_or_array_layers: 1 },
+                    size: wgpu::Extent3d {
+                        width: w,
+                        height: h,
+                        depth_or_array_layers: 1,
+                    },
                     mip_level_count: levels_n,
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
@@ -1577,29 +2081,68 @@ impl DocTextures {
                     view_formats: &[],
                 });
                 let levels = (0..levels_n)
-                    .map(|l| texture.create_view(&wgpu::TextureViewDescriptor { base_mip_level: l, mip_level_count: Some(1), ..Default::default() }))
+                    .map(|l| {
+                        texture.create_view(&wgpu::TextureViewDescriptor {
+                            base_mip_level: l,
+                            mip_level_count: Some(1),
+                            ..Default::default()
+                        })
+                    })
                     .collect();
                 let full = texture.create_view(&wgpu::TextureViewDescriptor::default());
-                let uniform = init_buffer(device, "pc_canvas_tile", &f32_bytes(&[tx as f32, ty as f32, w as f32, h as f32]), wgpu::BufferUsages::UNIFORM);
+                let uniform = init_buffer(
+                    device,
+                    "pc_canvas_tile",
+                    &f32_bytes(&[tx as f32, ty as f32, w as f32, h as f32]),
+                    wgpu::BufferUsages::UNIFORM,
+                );
                 let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("pc_canvas_tile"),
                     layout: &res.tile_bgl,
                     entries: &[
-                        wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&full) },
-                        wgpu::BindGroupEntry { binding: 1, resource: uniform.as_entire_binding() },
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&full),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: uniform.as_entire_binding(),
+                        },
                     ],
                 });
-                tiles.push(Tile { rect: [tx, ty, w, h], texture, levels, bind_group, _uniform: uniform });
+                tiles.push(Tile {
+                    rect: [tx, ty, w, h],
+                    texture,
+                    levels,
+                    bind_group,
+                    _uniform: uniform,
+                });
             }
         }
-        Some(Self { size, format, tiles })
+        Some(Self {
+            size,
+            format,
+            tiles,
+        })
     }
 
     /// Write `size` pixels at document `origin` from `texels` (in the texture format, row stride
     /// `stride` pixels) into every overlapping tile's level 0.
-    fn write(&self, queue: &wgpu::Queue, origin: [u32; 2], size: [u32; 2], stride: u32, texels: &[u8]) {
+    fn write(
+        &self,
+        queue: &wgpu::Queue,
+        origin: [u32; 2],
+        size: [u32; 2],
+        stride: u32,
+        texels: &[u8],
+    ) {
         let bpp = texel_bytes(self.format);
-        let (x0, y0, x1, y1) = (origin[0], origin[1], origin[0] + size[0], origin[1] + size[1]);
+        let (x0, y0, x1, y1) = (
+            origin[0],
+            origin[1],
+            origin[0] + size[0],
+            origin[1] + size[1],
+        );
         for t in &self.tiles {
             let [tx, ty, tw, th] = t.rect;
             let (ix0, iy0, ix1, iy1) = (x0.max(tx), y0.max(ty), x1.min(tx + tw), y1.min(ty + th));
@@ -1611,23 +2154,50 @@ impl DocTextures {
                 wgpu::TexelCopyTextureInfo {
                     texture: &t.texture,
                     mip_level: 0,
-                    origin: wgpu::Origin3d { x: ix0 - tx, y: iy0 - ty, z: 0 },
+                    origin: wgpu::Origin3d {
+                        x: ix0 - tx,
+                        y: iy0 - ty,
+                        z: 0,
+                    },
                     aspect: wgpu::TextureAspect::All,
                 },
                 texels,
-                wgpu::TexelCopyBufferLayout { offset, bytes_per_row: Some(stride * bpp as u32), rows_per_image: Some(iy1 - iy0) },
-                wgpu::Extent3d { width: ix1 - ix0, height: iy1 - iy0, depth_or_array_layers: 1 },
+                wgpu::TexelCopyBufferLayout {
+                    offset,
+                    bytes_per_row: Some(stride * bpp as u32),
+                    rows_per_image: Some(iy1 - iy0),
+                },
+                wgpu::Extent3d {
+                    width: ix1 - ix0,
+                    height: iy1 - iy0,
+                    depth_or_array_layers: 1,
+                },
             );
         }
     }
 
     /// Rebuild the mip chain inside document rect `r` (x0, y0, x1, y1) with 2×2 box filtering.
-    fn regenerate_mips(&self, device: &wgpu::Device, queue: &wgpu::Queue, res: &Resources, r: [u32; 4]) {
-        let Some(mip_pipeline) = res.mip_pipeline(self.format) else { return };
-        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("pc_mips") });
+    fn regenerate_mips(
+        &self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        res: &Resources,
+        r: [u32; 4],
+    ) {
+        let Some(mip_pipeline) = res.mip_pipeline(self.format) else {
+            return;
+        };
+        let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+            label: Some("pc_mips"),
+        });
         for t in &self.tiles {
             let [tx, ty, tw, th] = t.rect;
-            let (mut x0, mut y0, mut x1, mut y1) = (r[0].max(tx), r[1].max(ty), r[2].min(tx + tw), r[3].min(ty + th));
+            let (mut x0, mut y0, mut x1, mut y1) = (
+                r[0].max(tx),
+                r[1].max(ty),
+                r[2].min(tx + tw),
+                r[3].min(ty + th),
+            );
             if x0 >= x1 || y0 >= y1 {
                 continue;
             }
@@ -1641,8 +2211,14 @@ impl DocTextures {
                     label: Some("pc_mip"),
                     layout: &res.mip_bgl,
                     entries: &[
-                        wgpu::BindGroupEntry { binding: 0, resource: wgpu::BindingResource::TextureView(&t.levels[level - 1]) },
-                        wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(&res.mip_sampler) },
+                        wgpu::BindGroupEntry {
+                            binding: 0,
+                            resource: wgpu::BindingResource::TextureView(&t.levels[level - 1]),
+                        },
+                        wgpu::BindGroupEntry {
+                            binding: 1,
+                            resource: wgpu::BindingResource::Sampler(&res.mip_sampler),
+                        },
                     ],
                 });
                 // Keep the sampled source and render attachment in separate resources on DX12
@@ -1653,12 +2229,17 @@ impl DocTextures {
                 let scratch = res.separate_mip_targets.then(|| {
                     let scratch = device.create_texture(&wgpu::TextureDescriptor {
                         label: Some("pc_mip_scratch"),
-                        size: wgpu::Extent3d { width: lw, height: lh, depth_or_array_layers: 1 },
+                        size: wgpu::Extent3d {
+                            width: lw,
+                            height: lh,
+                            depth_or_array_layers: 1,
+                        },
                         mip_level_count: 1,
                         sample_count: 1,
                         dimension: wgpu::TextureDimension::D2,
                         format: self.format,
-                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                            | wgpu::TextureUsages::COPY_SRC,
                         view_formats: &[],
                     });
                     let view = scratch.create_view(&Default::default());
@@ -1674,7 +2255,10 @@ impl DocTextures {
                         view: target,
                         resolve_target: None,
                         depth_slice: None,
-                        ops: wgpu::Operations { load, store: wgpu::StoreOp::Store },
+                        ops: wgpu::Operations {
+                            load,
+                            store: wgpu::StoreOp::Store,
+                        },
                     })],
                     depth_stencil_attachment: None,
                     timestamp_writes: None,
@@ -1689,9 +2273,23 @@ impl DocTextures {
                 if let Some((scratch, _)) = &scratch {
                     let origin = wgpu::Origin3d { x: x0, y: y0, z: 0 };
                     encoder.copy_texture_to_texture(
-                        wgpu::TexelCopyTextureInfo { texture: scratch, mip_level: 0, origin, aspect: wgpu::TextureAspect::All },
-                        wgpu::TexelCopyTextureInfo { texture: &t.texture, mip_level: level as u32, origin, aspect: wgpu::TextureAspect::All },
-                        wgpu::Extent3d { width: x1 - x0, height: y1 - y0, depth_or_array_layers: 1 },
+                        wgpu::TexelCopyTextureInfo {
+                            texture: scratch,
+                            mip_level: 0,
+                            origin,
+                            aspect: wgpu::TextureAspect::All,
+                        },
+                        wgpu::TexelCopyTextureInfo {
+                            texture: &t.texture,
+                            mip_level: level as u32,
+                            origin,
+                            aspect: wgpu::TextureAspect::All,
+                        },
+                        wgpu::Extent3d {
+                            width: x1 - x0,
+                            height: y1 - y0,
+                            depth_or_array_layers: 1,
+                        },
                     );
                 }
             }
@@ -1719,15 +2317,33 @@ fn filter_mode(scale: f32) -> (f32, f32) {
     }
 }
 
-fn map_doc_px(origin: [f32; 2], scale: f32, center: [f32; 2], cos: f32, sin: f32, x: f32, y: f32) -> [f32; 2] {
+fn map_doc_px(
+    origin: [f32; 2],
+    scale: f32,
+    center: [f32; 2],
+    cos: f32,
+    sin: f32,
+    x: f32,
+    y: f32,
+) -> [f32; 2] {
     let dx = x - center[0];
     let dy = y - center[1];
     let rx = dx * cos - dy * sin;
     let ry = dx * sin + dy * cos;
-    [origin[0] + center[0] * scale + rx * scale, origin[1] + center[1] * scale + ry * scale]
+    [
+        origin[0] + center[0] * scale + rx * scale,
+        origin[1] + center[1] * scale + ry * scale,
+    ]
 }
 
-fn tile_screen_aabb(origin: [f32; 2], scale: f32, center: [f32; 2], cos: f32, sin: f32, tile: [f32; 4]) -> (f32, f32, f32, f32) {
+fn tile_screen_aabb(
+    origin: [f32; 2],
+    scale: f32,
+    center: [f32; 2],
+    cos: f32,
+    sin: f32,
+    tile: [f32; 4],
+) -> (f32, f32, f32, f32) {
     let [tx, ty, tw, th] = tile;
     if sin.abs() < 1e-8 && (cos - 1.0).abs() < 1e-8 {
         let x0 = origin[0] + tx * scale;
@@ -1764,19 +2380,35 @@ impl CanvasCallback {
         ([ox, oy], scale)
     }
 
-    fn uniforms(&self, screen: [u32; 2], ppp: f32, out_linear: bool, style: &CanvasStyle) -> [f32; VIEW_FLOATS] {
+    fn uniforms(
+        &self,
+        screen: [u32; 2],
+        ppp: f32,
+        out_linear: bool,
+        style: &CanvasStyle,
+    ) -> [f32; VIEW_FLOATS] {
         let p = &self.params;
         let (origin, scale) = self.placement(ppp);
         let (mode, lod) = filter_mode(scale);
         // The pixel grid shows above 500% (the constants are shared with the CPU path,
         // pixel_grid.rs). `p.zoom` is screen points per document pixel; the shared threshold is
         // in device pixels, so scale by the display's pixels per point.
-        let grid = if p.pixel_grid && crate::pixel_grid::shows_at(p.zoom * ppp) { crate::pixel_grid::STRENGTH } else { 0.0 };
-        let square = if style.checker_square > 0.0 { (style.checker_square * ppp).round().max(1.0) } else { 0.0 };
+        let grid = if p.pixel_grid && crate::pixel_grid::shows_at(p.zoom * ppp) {
+            crate::pixel_grid::STRENGTH
+        } else {
+            0.0
+        };
+        let square = if style.checker_square > 0.0 {
+            (style.checker_square * ppp).round().max(1.0)
+        } else {
+            0.0
+        };
         let (l, d, g) = (style.checker_light, style.checker_dark, style.gamut_color);
         // 32-bit preview: linear-light gain 2^exposure (0 = off) and 1 / gamma.
         let (gain, inv_gamma) = match p.hdr {
-            Some([e, gm]) if e.is_finite() && gm.is_finite() && gm > 0.0 => (2f32.powf(e.clamp(-20.0, 20.0)), 1.0 / gm.max(0.01)),
+            Some([e, gm]) if e.is_finite() && gm.is_finite() && gm > 0.0 => {
+                (2f32.powf(e.clamp(-20.0, 20.0)), 1.0 / gm.max(0.01))
+            }
             _ => (0.0, 1.0),
         };
         [
@@ -1792,8 +2424,16 @@ impl CanvasCallback {
             lod,
             grid,
             square,
-            if p.offset[0].is_finite() { p.offset[0] } else { 0.0 },
-            if p.offset[1].is_finite() { p.offset[1] } else { 0.0 },
+            if p.offset[0].is_finite() {
+                p.offset[0]
+            } else {
+                0.0
+            },
+            if p.offset[1].is_finite() {
+                p.offset[1]
+            } else {
+                0.0
+            },
             p.display as f32,
             if out_linear { 1.0 } else { 0.0 },
             l[0],
@@ -1809,11 +2449,19 @@ impl CanvasCallback {
             g[2],
             inv_gamma,
             {
-                let r = if p.rotation.is_finite() { p.rotation } else { 0.0 };
+                let r = if p.rotation.is_finite() {
+                    p.rotation
+                } else {
+                    0.0
+                };
                 if r.abs() < 1e-8 { 1.0 } else { r.cos() }
             },
             {
-                let r = if p.rotation.is_finite() { p.rotation } else { 0.0 };
+                let r = if p.rotation.is_finite() {
+                    p.rotation
+                } else {
+                    0.0
+                };
                 if r.abs() < 1e-8 { 0.0 } else { r.sin() }
             },
             p.center[0],
@@ -1831,11 +2479,18 @@ impl CallbackTrait for CanvasCallback {
         _encoder: &mut wgpu::CommandEncoder,
         resources: &mut CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
-        let Some(res) = resources.get_mut::<Resources>() else { return Vec::new() };
+        let Some(res) = resources.get_mut::<Resources>() else {
+            return Vec::new();
+        };
         if !res.health.is_ok() {
             return Vec::new();
         }
-        let data = self.uniforms(screen.size_in_pixels, screen.pixels_per_point, res.out_linear, &res.style);
+        let data = self.uniforms(
+            screen.size_in_pixels,
+            screen.pixels_per_point,
+            res.out_linear,
+            &res.style,
+        );
         let (bgl, sampler) = (&res.view_bgl, &res.sampler);
         let v = res.views.entry(self.params.view_key).or_insert_with(|| {
             let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -1848,11 +2503,21 @@ impl CallbackTrait for CanvasCallback {
                 label: Some("pc_canvas_view"),
                 layout: bgl,
                 entries: &[
-                    wgpu::BindGroupEntry { binding: 0, resource: buffer.as_entire_binding() },
-                    wgpu::BindGroupEntry { binding: 1, resource: wgpu::BindingResource::Sampler(sampler) },
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: buffer.as_entire_binding(),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(sampler),
+                    },
                 ],
             });
-            ViewGpu { buffer, bind_group, frame_data: [f32::NAN; VIEW_FLOATS] }
+            ViewGpu {
+                buffer,
+                bind_group,
+                frame_data: [f32::NAN; VIEW_FLOATS],
+            }
         });
         if v.frame_data != data {
             queue.write_buffer(&v.buffer, 0, &f32_bytes(&data));
@@ -1861,12 +2526,21 @@ impl CallbackTrait for CanvasCallback {
         Vec::new()
     }
 
-    fn paint(&self, info: egui::PaintCallbackInfo, pass: &mut wgpu::RenderPass<'static>, resources: &CallbackResources) {
-        let Some(res) = resources.get::<Resources>() else { return };
+    fn paint(
+        &self,
+        info: egui::PaintCallbackInfo,
+        pass: &mut wgpu::RenderPass<'static>,
+        resources: &CallbackResources,
+    ) {
+        let Some(res) = resources.get::<Resources>() else {
+            return;
+        };
         if !res.health.is_ok() {
             return;
         }
-        let Some(view) = res.views.get(&self.params.view_key) else { return };
+        let Some(view) = res.views.get(&self.params.view_key) else {
+            return;
+        };
         let [sw, sh] = info.screen_size_px;
         let clip = info.clip_rect_in_pixels();
         if clip.width_px <= 0 || clip.height_px <= 0 || sw == 0 || sh == 0 {
@@ -1874,28 +2548,53 @@ impl CallbackTrait for CanvasCallback {
         }
         // Work in whole-screen pixel coordinates; the scissor does the clipping.
         pass.set_viewport(0.0, 0.0, sw as f32, sh as f32, 0.0, 1.0);
-        pass.set_scissor_rect(clip.left_px.max(0) as u32, clip.top_px.max(0) as u32, clip.width_px as u32, clip.height_px as u32);
+        pass.set_scissor_rect(
+            clip.left_px.max(0) as u32,
+            clip.top_px.max(0) as u32,
+            clip.width_px as u32,
+            clip.height_px as u32,
+        );
         pass.set_bind_group(0, &view.bind_group, &[]);
         if self.params.shadow {
             pass.set_pipeline(&res.shadow_pipeline);
             pass.draw(0..6, 0..1);
         }
-        let Some(doc) = res.docs.get(&self.params.doc) else { return };
+        let Some(doc) = res.docs.get(&self.params.doc) else {
+            return;
+        };
         if doc.size != self.params.doc_size {
             return;
         }
         let (origin, scale) = self.placement(info.pixels_per_point);
         let (cx0, cy0) = (clip.left_px as f32, clip.top_px as f32);
         let (cx1, cy1) = (cx0 + clip.width_px as f32, cy0 + clip.height_px as f32);
-        let rot = if self.params.rotation.is_finite() { self.params.rotation } else { 0.0 };
-        let (cos, sin) = if rot.abs() < 1e-8 { (1.0, 0.0) } else { (rot.cos(), rot.sin()) };
+        let rot = if self.params.rotation.is_finite() {
+            self.params.rotation
+        } else {
+            0.0
+        };
+        let (cos, sin) = if rot.abs() < 1e-8 {
+            (1.0, 0.0)
+        } else {
+            (rot.cos(), rot.sin())
+        };
         let cen = self.params.center;
-        let [ox, oy] = self.params.offset.map(|v| if v.is_finite() { v } else { 0.0 });
+        let [ox, oy] = self
+            .params
+            .offset
+            .map(|v| if v.is_finite() { v } else { 0.0 });
         pass.set_pipeline(&res.tile_pipeline);
-        pass.set_bind_group(2, res.luts.get(&(self.params.doc, self.params.output)).unwrap_or(&res.identity_lut), &[]);
+        pass.set_bind_group(
+            2,
+            res.luts
+                .get(&(self.params.doc, self.params.output))
+                .unwrap_or(&res.identity_lut),
+            &[],
+        );
         for t in &doc.tiles {
             let [tx, ty, tw, th] = t.rect.map(|v| v as f32);
-            let (x0, y0, x1, y1) = tile_screen_aabb(origin, scale, cen, cos, sin, [tx + ox, ty + oy, tw, th]);
+            let (x0, y0, x1, y1) =
+                tile_screen_aabb(origin, scale, cen, cos, sin, [tx + ox, ty + oy, tw, th]);
             if x1 < cx0 || y1 < cy0 || x0 > cx1 || y0 > cy1 {
                 continue;
             }
@@ -2182,25 +2881,45 @@ mod tests {
             for ty in (0..size[1]).step_by(tile as usize) {
                 for tx in (0..size[0]).step_by(tile as usize) {
                     let (w, h) = (tile.min(size[0] - tx), tile.min(size[1] - ty));
-                    total += (0..mip_count(w, h)).map(|l| u64::from((w >> l).max(1)) * u64::from((h >> l).max(1)) * bpp).sum::<u64>();
+                    total += (0..mip_count(w, h))
+                        .map(|l| u64::from((w >> l).max(1)) * u64::from((h >> l).max(1)) * bpp)
+                        .sum::<u64>();
                 }
             }
             total
         };
-        for (size, tile) in [([1, 1], 64), ([300, 200], 64), ([128, 64], 64), ([1000, 7], 256), ([8192, 8193], 8192), ([20_000, 9_000], 8192)] {
+        for (size, tile) in [
+            ([1, 1], 64),
+            ([300, 200], 64),
+            ([128, 64], 64),
+            ([1000, 7], 256),
+            ([8192, 8193], 8192),
+            ([20_000, 9_000], 8192),
+        ] {
             for bpp in [4, 8] {
-                assert_eq!(canvas_texture_bytes(size, tile, bpp), brute(size, tile, bpp), "{size:?} tile {tile}");
+                assert_eq!(
+                    canvas_texture_bytes(size, tile, bpp),
+                    brute(size, tile, bpp),
+                    "{size:?} tile {tile}"
+                );
             }
         }
         assert_eq!(canvas_texture_bytes([0, 500], 64, 4), 0);
         // A canvas declared in a few bytes of a file is priced without building (or looping over) it.
         let huge = canvas_texture_bytes([300_000, 300_000], 8192, 4);
         assert!(huge > 300_000u64 * 300_000 * 4 && huge > canvas_budget(Some(1 << 40)));
-        assert_eq!(canvas_texture_bytes([u32::MAX, u32::MAX], 64, 8), u64::MAX, "saturates");
+        assert_eq!(
+            canvas_texture_bytes([u32::MAX, u32::MAX], 64, 8),
+            u64::MAX,
+            "saturates"
+        );
         // A quarter of RAM (16 GB assumed), never below the compositor's floor.
         assert_eq!(canvas_budget(None), 4 << 30);
         assert_eq!(canvas_budget(Some(1 << 30)), MIN_GPU_BUDGET);
-        assert!(canvas_texture_bytes([12_000, 8_000], DEFAULT_TILE, 8) < canvas_budget(None), "a 96 MP 16-bit canvas stays on the GPU");
+        assert!(
+            canvas_texture_bytes([12_000, 8_000], DEFAULT_TILE, 8) < canvas_budget(None),
+            "a 96 MP 16-bit canvas stays on the GPU"
+        );
     }
 
     #[test]
@@ -2211,14 +2930,18 @@ mod tests {
         assert!(gpu_view_ok(false, 0.0, 1.0));
         assert!(gpu_view_ok(false, 45.0_f32.to_radians(), 1.0));
         assert!(!gpu_view_ok(true, 45.0_f32.to_radians(), 1.0));
-        assert!(!gpu_view_ok(false, 0.0, 2.0), "pixel aspect correction draws on the CPU");
+        assert!(
+            !gpu_view_ok(false, 0.0, 2.0),
+            "pixel aspect correction draws on the CPU"
+        );
         // Identity packing: rotation 0 matches the unrotated origin + scale map.
         let origin = [10.0, 20.0];
         let (scale, center) = (2.0, [40.0, 8.0]);
         let a = map_doc_px(origin, scale, center, 1.0, 0.0, 5.0, 9.0);
         assert!((a[0] - (origin[0] + 5.0 * scale)).abs() < 1e-4);
         assert!((a[1] - (origin[1] + 9.0 * scale)).abs() < 1e-4);
-        let (x0, y0, x1, y1) = tile_screen_aabb(origin, scale, center, 1.0, 0.0, [0.0, 0.0, 10.0, 4.0]);
+        let (x0, y0, x1, y1) =
+            tile_screen_aabb(origin, scale, center, 1.0, 0.0, [0.0, 0.0, 10.0, 4.0]);
         assert!((x0 - origin[0]).abs() < 1e-4 && (y0 - origin[1]).abs() < 1e-4);
         assert!((x1 - (origin[0] + 20.0)).abs() < 1e-4 && (y1 - (origin[1] + 8.0)).abs() < 1e-4);
     }
@@ -2236,7 +2959,10 @@ mod tests {
         assert_eq!(mip_count(1, 1), 1);
         assert_eq!(mip_count(4096, 100), 13);
         assert_eq!(mip_count(5, 3), 3);
-        assert_eq!(premultiply_rgba8(&[[1.0, 0.5, 0.0, 0.5]]), vec![128, 64, 0, 128]);
+        assert_eq!(
+            premultiply_rgba8(&[[1.0, 0.5, 0.0, 0.5]]),
+            vec![128, 64, 0, 128]
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -2258,18 +2984,29 @@ mod tests {
         assert_eq!(f32_to_f16(f32::INFINITY), 0x7bff);
         assert_eq!(f32_to_f16(f32::NAN), 0);
         assert_eq!(f32_to_f16(-2.0), 0xc000);
-        assert_eq!(premultiply_rgba16f(&[[2.0, -1.0, f32::NAN, 0.5]]), [0x00, 0x3c, 0, 0, 0, 0, 0x00, 0x38]);
+        assert_eq!(
+            premultiply_rgba16f(&[[2.0, -1.0, f32::NAN, 0.5]]),
+            [0x00, 0x3c, 0, 0, 0, 0, 0x00, 0x38]
+        );
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     #[test]
     fn shaders_validate() {
         use wgpu::naga;
-        for (name, src) in [("canvas", CANVAS_WGSL), ("mip", MIP_WGSL), ("encode", ENCODE_WGSL)] {
-            let module = naga::front::wgsl::parse_str(src).unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));
-            naga::valid::Validator::new(naga::valid::ValidationFlags::all(), naga::valid::Capabilities::empty())
-                .validate(&module)
-                .unwrap_or_else(|e| panic!("{name}: {e:?}"));
+        for (name, src) in [
+            ("canvas", CANVAS_WGSL),
+            ("mip", MIP_WGSL),
+            ("encode", ENCODE_WGSL),
+        ] {
+            let module = naga::front::wgsl::parse_str(src)
+                .unwrap_or_else(|e| panic!("{name}: {}", e.emit_to_string(src)));
+            naga::valid::Validator::new(
+                naga::valid::ValidationFlags::all(),
+                naga::valid::Capabilities::empty(),
+            )
+            .validate(&module)
+            .unwrap_or_else(|e| panic!("{name}: {e:?}"));
         }
     }
 }

@@ -56,14 +56,26 @@ impl Default for Color {
 }
 
 impl Color {
-    pub const BLACK: Color = Color::Rgb { r: 0.0, g: 0.0, b: 0.0 };
-    pub const WHITE: Color = Color::Rgb { r: 1.0, g: 1.0, b: 1.0 };
+    pub const BLACK: Color = Color::Rgb {
+        r: 0.0,
+        g: 0.0,
+        b: 0.0,
+    };
+    pub const WHITE: Color = Color::Rgb {
+        r: 1.0,
+        g: 1.0,
+        b: 1.0,
+    };
 
     pub fn rgb(r: f32, g: f32, b: f32) -> Self {
         Color::Rgb { r, g, b }
     }
     pub fn rgb8(r: u8, g: u8, b: u8) -> Self {
-        Color::Rgb { r: r as f32 / 255.0, g: g as f32 / 255.0, b: b as f32 / 255.0 }
+        Color::Rgb {
+            r: r as f32 / 255.0,
+            g: g as f32 / 255.0,
+            b: b as f32 / 255.0,
+        }
     }
     pub fn cmyk(c: f32, m: f32, y: f32, k: f32) -> Self {
         Color::Cmyk { c, m, y, k }
@@ -81,7 +93,9 @@ impl Color {
     pub fn to_rgb(&self) -> [f32; 3] {
         match *self {
             Color::Rgb { r, g, b } if cms::rgb_is_srgb() => [r, g, b],
-            Color::Cmyk { c, m, y, k } if cms::cmyk_is_device() => cms::naive_cmyk_to_rgb([c, m, y, k]),
+            Color::Cmyk { c, m, y, k } if cms::cmyk_is_device() => {
+                cms::naive_cmyk_to_rgb([c, m, y, k])
+            }
             // Illustrator's Gray is ink percentage: 0 = white, 1 = black.
             Color::Gray { k } => [1.0 - k; 3],
             Color::Lab { l, a, b } => cms::lab::lab_to_srgb(cms::Lab::new(l, a, b)),
@@ -127,7 +141,12 @@ impl Color {
                 if k >= 1.0 {
                     return [0.0, 0.0, 0.0, 1.0];
                 }
-                [(1.0 - r - k) / (1.0 - k), (1.0 - g - k) / (1.0 - k), (1.0 - b - k) / (1.0 - k), k]
+                [
+                    (1.0 - r - k) / (1.0 - k),
+                    (1.0 - g - k) / (1.0 - k),
+                    (1.0 - b - k) / (1.0 - k),
+                    k,
+                ]
             }
         }
     }
@@ -162,7 +181,11 @@ impl Color {
             _ => (c, 0.0, x),
         };
         let m = v - c;
-        Color::Rgb { r: r + m, g: g + m, b: b + m }
+        Color::Rgb {
+            r: r + m,
+            g: g + m,
+            b: b + m,
+        }
     }
     /// `#rrggbb` (display RGB).
     pub fn to_hex(&self) -> String {
@@ -235,7 +258,11 @@ impl Color {
     pub fn lerp(&self, other: &Color, t: f32) -> Color {
         let a = self.to_rgb();
         let b = other.to_rgb();
-        Color::rgb(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t)
+        Color::rgb(
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+        )
     }
     /// The colour model this colour is authored in.
     pub fn model(&self) -> cms::Model {
@@ -281,13 +308,26 @@ impl Color {
             return self;
         }
         match self {
-            Color::Cmyk { c, m, y, k } => Color::Cmyk { c: c * t, m: m * t, y: y * t, k: k * t },
+            Color::Cmyk { c, m, y, k } => Color::Cmyk {
+                c: c * t,
+                m: m * t,
+                y: y * t,
+                k: k * t,
+            },
             Color::Gray { k } => Color::Gray { k: k * t },
             Color::Rgb { r, g, b } => {
                 let w = |v: f32| v + (1.0 - v) * (1.0 - t);
-                Color::Rgb { r: w(r), g: w(g), b: w(b) }
+                Color::Rgb {
+                    r: w(r),
+                    g: w(g),
+                    b: w(b),
+                }
             }
-            Color::Lab { l, a, b } => Color::Lab { l: 100.0 - (100.0 - l) * t, a: a * t, b: b * t },
+            Color::Lab { l, a, b } => Color::Lab {
+                l: 100.0 - (100.0 - l) * t,
+                a: a * t,
+                b: b * t,
+            },
         }
     }
     pub fn model_name(&self) -> &'static str {
@@ -352,7 +392,11 @@ pub fn tint_percent(t: f32) -> f32 {
 
 impl Paint {
     pub fn solid(c: Color) -> Self {
-        Paint::Solid { color: c, swatch: None, tint: 1.0 }
+        Paint::Solid {
+            color: c,
+            swatch: None,
+            tint: 1.0,
+        }
     }
     pub fn is_none(&self) -> bool {
         matches!(self, Paint::None)
@@ -365,7 +409,11 @@ impl Paint {
     }
     /// The Registration colour: 100% of every ink, linked to [`swatch::REGISTRATION`].
     pub fn registration() -> Self {
-        Paint::Solid { color: Color::cmyk(1.0, 1.0, 1.0, 1.0), swatch: Some(swatch::REGISTRATION.into()), tint: 1.0 }
+        Paint::Solid {
+            color: Color::cmyk(1.0, 1.0, 1.0, 1.0),
+            swatch: Some(swatch::REGISTRATION.into()),
+            tint: 1.0,
+        }
     }
     /// Is this a colour linked to the Registration swatch (it prints on every plate)?
     pub fn is_registration(&self) -> bool {
@@ -374,8 +422,16 @@ impl Paint {
     pub fn label(&self) -> String {
         match self {
             Paint::None => "None".into(),
-            Paint::Solid { color, swatch: Some(n), tint } if *tint < 1.0 => format!("{n} {}% ({})", tint_percent(*tint), color.to_hex()),
-            Paint::Solid { color, swatch: Some(n), .. } => format!("{n} ({})", color.to_hex()),
+            Paint::Solid {
+                color,
+                swatch: Some(n),
+                tint,
+            } if *tint < 1.0 => format!("{n} {}% ({})", tint_percent(*tint), color.to_hex()),
+            Paint::Solid {
+                color,
+                swatch: Some(n),
+                ..
+            } => format!("{n} ({})", color.to_hex()),
             Paint::Solid { color, .. } => color.to_hex(),
             Paint::Gradient(g) => format!("{} gradient", g.gradient.kind.label()),
             Paint::Pattern { pattern, .. } => format!("pattern {pattern}"),
@@ -384,7 +440,10 @@ impl Paint {
     /// Apply `f` to the colours of this paint that can link to a swatch (a solid colour, each
     /// gradient stop) with their link and tint; `f` returns true when it changed them. A colour
     /// left without a link gets tint 1. Returns whether anything changed.
-    pub fn map_links(&mut self, f: &mut dyn FnMut(&mut Color, &mut Option<String>, &mut f32) -> bool) -> bool {
+    pub fn map_links(
+        &mut self,
+        f: &mut dyn FnMut(&mut Color, &mut Option<String>, &mut f32) -> bool,
+    ) -> bool {
         let mut one = |c: &mut Color, link: &mut Option<String>, tint: &mut f32| {
             let changed = f(c, link, tint);
             if link.is_none() {
@@ -393,8 +452,14 @@ impl Paint {
             changed
         };
         match self {
-            Paint::Solid { color, swatch, tint } => one(color, swatch, tint),
-            Paint::Gradient(g) => g.gradient.stops.iter_mut().fold(false, |ch, s| one(&mut s.color, &mut s.swatch, &mut s.tint) | ch),
+            Paint::Solid {
+                color,
+                swatch,
+                tint,
+            } => one(color, swatch, tint),
+            Paint::Gradient(g) => g.gradient.stops.iter_mut().fold(false, |ch, s| {
+                one(&mut s.color, &mut s.swatch, &mut s.tint) | ch
+            }),
             _ => false,
         }
     }
@@ -414,7 +479,9 @@ mod tests {
 
     #[test]
     fn hsb_roundtrip() {
-        for hex in ["#ff0000", "#00ff00", "#0000ff", "#336699", "#ffffff", "#000000", "#c0ffee"] {
+        for hex in [
+            "#ff0000", "#00ff00", "#0000ff", "#336699", "#ffffff", "#000000", "#c0ffee",
+        ] {
             let c = Color::from_hex(hex).unwrap();
             let [h, s, v] = c.to_hsb();
             assert_eq!(Color::from_hsb(h, s, v).to_hex(), hex, "{hex}");
@@ -423,8 +490,14 @@ mod tests {
 
     #[test]
     fn cmyk_conversions() {
-        assert_eq!(Color::cmyk(0.0, 0.0, 0.0, 1.0).to_rgb_uncalibrated(), [0.0, 0.0, 0.0]);
-        assert_eq!(Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb_uncalibrated(), [0.0, 1.0, 1.0]);
+        assert_eq!(
+            Color::cmyk(0.0, 0.0, 0.0, 1.0).to_rgb_uncalibrated(),
+            [0.0, 0.0, 0.0]
+        );
+        assert_eq!(
+            Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb_uncalibrated(),
+            [0.0, 1.0, 1.0]
+        );
         // Managed display: paper is white, 100% cyan is a press cyan (not #00ffff).
         assert_eq!(Color::cmyk(0.0, 0.0, 0.0, 0.0).to_hex(), "#ffffff");
         let [r, g, b] = Color::cmyk(1.0, 0.0, 0.0, 0.0).to_rgb();
@@ -447,15 +520,27 @@ mod tests {
 
     #[test]
     fn complement_keeps_the_model() {
-        assert_eq!(Color::rgb(1.0, 0.0, 0.0).complement_keep_model(), Color::rgb(0.0, 1.0, 1.0));
+        assert_eq!(
+            Color::rgb(1.0, 0.0, 0.0).complement_keep_model(),
+            Color::rgb(0.0, 1.0, 1.0)
+        );
         // Same as turning the hue by 180° for RGB.
         let c = Color::rgb8(204, 102, 51);
         assert_eq!(c.complement_keep_model().to_hex(), c.complement().to_hex());
-        assert_eq!(Color::cmyk(0.0, 1.0, 1.0, 0.2).complement_keep_model(), Color::cmyk(1.0, 0.0, 0.0, 0.2));
+        assert_eq!(
+            Color::cmyk(0.0, 1.0, 1.0, 0.2).complement_keep_model(),
+            Color::cmyk(1.0, 0.0, 0.0, 0.2)
+        );
         assert_eq!(Color::gray(0.3).complement_keep_model(), Color::gray(0.3));
         assert_eq!(Color::gray(0.25).invert_keep_model(), Color::gray(0.75));
-        assert!(matches!(Color::cmyk(0.0, 1.0, 1.0, 0.0).invert_keep_model(), Color::Cmyk { .. }));
-        assert_eq!(Color::rgb(1.0, 1.0, 0.0).invert_keep_model(), Color::rgb(0.0, 0.0, 1.0));
+        assert!(matches!(
+            Color::cmyk(0.0, 1.0, 1.0, 0.0).invert_keep_model(),
+            Color::Cmyk { .. }
+        ));
+        assert_eq!(
+            Color::rgb(1.0, 1.0, 0.0).invert_keep_model(),
+            Color::rgb(0.0, 0.0, 1.0)
+        );
     }
 
     #[test]
@@ -466,9 +551,15 @@ mod tests {
         assert_eq!(red.in_model(Model::Rgb), red, "already RGB: unchanged");
         assert_eq!(Color::gray(0.25).in_model(Model::Gray), Color::gray(0.25));
         assert_eq!(Color::WHITE.in_model(Model::Gray), Color::gray(0.0));
-        assert_eq!(keep_model(Color::cmyk(0.1, 0.2, 0.3, 0.0), red).model(), Model::Cmyk);
+        assert_eq!(
+            keep_model(Color::cmyk(0.1, 0.2, 0.3, 0.0), red).model(),
+            Model::Cmyk
+        );
         assert_eq!(keep_model(Color::gray(0.5), red).model(), Model::Gray);
-        assert_eq!(keep_model(red, Color::rgb(0.0, 0.5, 1.0)), Color::rgb(0.0, 0.5, 1.0));
+        assert_eq!(
+            keep_model(red, Color::rgb(0.0, 0.5, 1.0)),
+            Color::rgb(0.0, 0.5, 1.0)
+        );
     }
 
     #[test]
@@ -482,23 +573,67 @@ mod tests {
             };
             a.model() == b.model() && v(a).iter().zip(v(b)).all(|(x, y)| (x - y).abs() < 1e-6)
         };
-        assert!(close(Color::cmyk(0.5, 1.0, 0.0, 0.2).tinted(0.4), Color::cmyk(0.2, 0.4, 0.0, 0.08)));
+        assert!(close(
+            Color::cmyk(0.5, 1.0, 0.0, 0.2).tinted(0.4),
+            Color::cmyk(0.2, 0.4, 0.0, 0.08)
+        ));
         assert!(close(Color::gray(0.5).tinted(0.5), Color::gray(0.25)));
-        assert!(close(Color::rgb(1.0, 0.0, 0.5).tinted(0.4), Color::rgb(1.0, 0.6, 0.8)), "RGB mixes toward white");
-        assert!(close(Color::lab(40.0, 60.0, -20.0).tinted(0.25), Color::lab(85.0, 15.0, -5.0)), "Lab mixes toward paper white");
-        assert_eq!(Color::rgb(0.2, 0.4, 0.6).tinted(1.0), Color::rgb(0.2, 0.4, 0.6));
-        assert_eq!(Color::cmyk(0.3, 0.3, 0.3, 0.3).tinted(0.0), Color::cmyk(0.0, 0.0, 0.0, 0.0));
-        assert_eq!(Color::rgb(0.0, 0.0, 0.0).tinted(-1.0).to_hex(), "#ffffff", "clamped");
+        assert!(
+            close(
+                Color::rgb(1.0, 0.0, 0.5).tinted(0.4),
+                Color::rgb(1.0, 0.6, 0.8)
+            ),
+            "RGB mixes toward white"
+        );
+        assert!(
+            close(
+                Color::lab(40.0, 60.0, -20.0).tinted(0.25),
+                Color::lab(85.0, 15.0, -5.0)
+            ),
+            "Lab mixes toward paper white"
+        );
+        assert_eq!(
+            Color::rgb(0.2, 0.4, 0.6).tinted(1.0),
+            Color::rgb(0.2, 0.4, 0.6)
+        );
+        assert_eq!(
+            Color::cmyk(0.3, 0.3, 0.3, 0.3).tinted(0.0),
+            Color::cmyk(0.0, 0.0, 0.0, 0.0)
+        );
+        assert_eq!(
+            Color::rgb(0.0, 0.0, 0.0).tinted(-1.0).to_hex(),
+            "#ffffff",
+            "clamped"
+        );
         assert_eq!(tint_percent(0.404), 40.0);
     }
 
     #[test]
     fn tints_serialize_only_below_full_and_read_old_files() {
-        let full = serde_json::to_string(&Paint::Solid { color: Color::gray(1.0), swatch: Some("Ink".into()), tint: 1.0 }).unwrap();
+        let full = serde_json::to_string(&Paint::Solid {
+            color: Color::gray(1.0),
+            swatch: Some("Ink".into()),
+            tint: 1.0,
+        })
+        .unwrap();
         assert!(!full.contains("tint"), "{full}");
-        let old: Paint = serde_json::from_str(r#"{"type":"solid","color":{"model":"gray","k":1.0},"swatch":"Ink"}"#).unwrap();
-        assert_eq!(old, Paint::Solid { color: Color::gray(1.0), swatch: Some("Ink".into()), tint: 1.0 });
-        let t = Paint::Solid { color: Color::gray(0.4), swatch: Some("Ink".into()), tint: 0.4 };
+        let old: Paint = serde_json::from_str(
+            r#"{"type":"solid","color":{"model":"gray","k":1.0},"swatch":"Ink"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            old,
+            Paint::Solid {
+                color: Color::gray(1.0),
+                swatch: Some("Ink".into()),
+                tint: 1.0
+            }
+        );
+        let t = Paint::Solid {
+            color: Color::gray(0.4),
+            swatch: Some("Ink".into()),
+            tint: 0.4,
+        };
         let s = serde_json::to_string(&t).unwrap();
         assert!(s.contains("\"tint\":0.4"), "{s}");
         assert_eq!(serde_json::from_str::<Paint>(&s).unwrap(), t);
@@ -507,7 +642,11 @@ mod tests {
 
     #[test]
     fn mapping_links_resets_the_tint_of_unlinked_colours() {
-        let mut p = Paint::Solid { color: Color::gray(0.4), swatch: Some("Ink".into()), tint: 0.4 };
+        let mut p = Paint::Solid {
+            color: Color::gray(0.4),
+            swatch: Some("Ink".into()),
+            tint: 0.4,
+        };
         assert!(p.map_links(&mut |_, l, _| l.take().is_some()));
         assert_eq!(p, Paint::solid(Color::gray(0.4)));
         let mut g = Paint::Gradient(Box::new(GradientPaint::new(Gradient::default())));
@@ -516,8 +655,15 @@ mod tests {
             *t = 0.5;
             true
         });
-        let Paint::Gradient(g) = g else { panic!("a gradient") };
-        assert!(g.gradient.stops.iter().all(|s| s.swatch.as_deref() == Some("Ink") && s.tint == 0.5));
+        let Paint::Gradient(g) = g else {
+            panic!("a gradient")
+        };
+        assert!(
+            g.gradient
+                .stops
+                .iter()
+                .all(|s| s.swatch.as_deref() == Some("Ink") && s.tint == 0.5)
+        );
     }
 
     #[test]
@@ -531,8 +677,13 @@ mod tests {
         assert_eq!(c.invert_keep_model().model(), cms::Model::Lab);
         // Results of colour operations on a Lab colour stay Lab, and the conversion is exact.
         let red = Color::rgb(1.0, 0.0, 0.0);
-        let Color::Lab { l, a, b } = keep_model(c, red) else { panic!("Lab") };
-        assert!((l - 54.29).abs() < 0.1 && (a - 80.8).abs() < 0.3 && (b - 69.9).abs() < 0.3, "{l} {a} {b}");
+        let Color::Lab { l, a, b } = keep_model(c, red) else {
+            panic!("Lab")
+        };
+        assert!(
+            (l - 54.29).abs() < 0.1 && (a - 80.8).abs() < 0.3 && (b - 69.9).abs() < 0.3,
+            "{l} {a} {b}"
+        );
         assert_eq!(keep_model(c, red).to_hex(), "#ff0000");
         assert_eq!(Color::lab(100.0, 0.0, 0.0).to_hex(), "#ffffff");
         assert_eq!(Color::lab(0.0, 0.0, 0.0).to_rgb_uncalibrated(), [0.0; 3]);

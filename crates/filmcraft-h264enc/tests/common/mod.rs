@@ -14,7 +14,13 @@ pub struct Yuv {
 
 impl Yuv {
     pub fn frame(&self) -> filmcraft_h264enc::YuvFrame<'_> {
-        filmcraft_h264enc::YuvFrame { y: &self.y, u: &self.u, v: &self.v, y_stride: self.w, uv_stride: self.w / 2 }
+        filmcraft_h264enc::YuvFrame {
+            y: &self.y,
+            u: &self.u,
+            v: &self.v,
+            y_stride: self.w,
+            uv_stride: self.w / 2,
+        }
     }
     pub fn bytes(&self) -> Vec<u8> {
         let mut v = self.y.clone();
@@ -52,7 +58,11 @@ pub fn synth(w: usize, h: usize, t: usize) -> Yuv {
                 }
                 1 => {
                     // mild noise over a slow ramp (like film grain)
-                    let n = (hash((xx as u32).wrapping_mul(7919) ^ (yy as u32).wrapping_mul(104729) ^ (t as u32).wrapping_mul(1_000_003)) & 31) as f32;
+                    let n = (hash(
+                        (xx as u32).wrapping_mul(7919)
+                            ^ (yy as u32).wrapping_mul(104729)
+                            ^ (t as u32).wrapping_mul(1_000_003),
+                    ) & 31) as f32;
                     60.0 + (xx as f32 * 0.1 + yy as f32 * 0.05) % 120.0 + n
                 }
                 2 => {
@@ -70,14 +80,23 @@ pub fn synth(w: usize, h: usize, t: usize) -> Yuv {
                         || (inr(ly, 3, 4) && bar && bits & 4 != 0)
                         || (inr(ly, 8, 9) && bar && bits & 8 != 0)
                         || (inr(ly, 12, 13) && bar && bits & 16 != 0);
-                    if ly < 14 && lx < 11 && stroke { 235.0 } else { 20.0 }
+                    if ly < 14 && lx < 11 && stroke {
+                        235.0
+                    } else {
+                        20.0
+                    }
                 }
                 _ => {
                     // panning texture with sub-pixel motion
                     let px = xx as f32 + tf * 1.75;
                     let py = yy as f32 + tf * 0.5;
                     let c = ((px / 9.0).sin() + (py / 7.0).cos() + ((px + py) / 23.0).sin()) * 40.0;
-                    let checker = if ((px / 32.0).floor() as i64 + (py / 32.0).floor() as i64) % 2 == 0 { 30.0 } else { -30.0 };
+                    let checker =
+                        if ((px / 32.0).floor() as i64 + (py / 32.0).floor() as i64) % 2 == 0 {
+                            30.0
+                        } else {
+                            -30.0
+                        };
                     128.0 + c + checker
                 }
             };
@@ -124,7 +143,15 @@ pub fn out_dir(name: &str) -> PathBuf {
 /// - `-err_detect`: also report the non-conformances ffmpeg tolerates by default.
 pub fn ffmpeg_decode(file: &Path) -> (String, Vec<u8>) {
     let out = Command::new(ffmpeg().unwrap())
-        .args(["-nostdin", "-hide_banner", "-v", "warning", "-err_detect", "+crccheck+bitstream+buffer+explode", "-i"])
+        .args([
+            "-nostdin",
+            "-hide_banner",
+            "-v",
+            "warning",
+            "-err_detect",
+            "+crccheck+bitstream+buffer+explode",
+            "-i",
+        ])
         .arg(file)
         .args(["-f", "rawvideo", "-pix_fmt", "yuv420p", "-"])
         .output()
@@ -138,8 +165,14 @@ pub fn ffmpeg_decode(file: &Path) -> (String, Vec<u8>) {
 
 /// Annex-B NAL units of `stream` as byte ranges (start code included).
 pub fn annexb_nals(stream: &[u8]) -> Vec<std::ops::Range<usize>> {
-    let starts: Vec<usize> = (0..stream.len().saturating_sub(3)).filter(|&i| stream[i..i + 3] == [0, 0, 1]).collect();
-    starts.iter().enumerate().map(|(k, &s)| s..starts.get(k + 1).copied().unwrap_or(stream.len())).collect()
+    let starts: Vec<usize> = (0..stream.len().saturating_sub(3))
+        .filter(|&i| stream[i..i + 3] == [0, 0, 1])
+        .collect();
+    starts
+        .iter()
+        .enumerate()
+        .map(|(k, &s)| s..starts.get(k + 1).copied().unwrap_or(stream.len()))
+        .collect()
 }
 
 /// Raw frames produced by ffmpeg from a lavfi source.
@@ -147,17 +180,42 @@ pub fn ffmpeg_source(src: &str, w: usize, h: usize, frames: usize) -> Vec<Yuv> {
     let out = Command::new(ffmpeg().unwrap())
         .args(["-v", "error", "-f", "lavfi", "-i"])
         .arg(format!("{src}=size={w}x{h}:rate=30"))
-        .args(["-frames:v", &frames.to_string(), "-f", "rawvideo", "-pix_fmt", "yuv420p", "-"])
+        .args([
+            "-frames:v",
+            &frames.to_string(),
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "yuv420p",
+            "-",
+        ])
         .output()
         .expect("run ffmpeg");
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let fs = w * h * 3 / 2;
-    out.stdout.chunks_exact(fs).map(|c| Yuv { w, h, y: c[..w * h].to_vec(), u: c[w * h..w * h * 5 / 4].to_vec(), v: c[w * h * 5 / 4..].to_vec() }).collect()
+    out.stdout
+        .chunks_exact(fs)
+        .map(|c| Yuv {
+            w,
+            h,
+            y: c[..w * h].to_vec(),
+            u: c[w * h..w * h * 5 / 4].to_vec(),
+            v: c[w * h * 5 / 4..].to_vec(),
+        })
+        .collect()
 }
 
 pub fn psnr(a: &[u8], b: &[u8]) -> f64 {
     assert_eq!(a.len(), b.len());
-    let se: f64 = a.iter().zip(b).map(|(&x, &y)| (x as f64 - y as f64).powi(2)).sum();
+    let se: f64 = a
+        .iter()
+        .zip(b)
+        .map(|(&x, &y)| (x as f64 - y as f64).powi(2))
+        .sum();
     if se == 0.0 {
         return 99.0;
     }

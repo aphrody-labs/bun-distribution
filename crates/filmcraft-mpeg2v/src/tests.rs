@@ -12,7 +12,11 @@ pub(crate) struct W {
 
 impl W {
     pub(crate) fn new() -> W {
-        W { out: Vec::new(), acc: 0, n: 0 }
+        W {
+            out: Vec::new(),
+            acc: 0,
+            n: 0,
+        }
     }
     pub(crate) fn put(&mut self, v: u32, bits: u32) {
         for i in (0..bits).rev() {
@@ -106,7 +110,11 @@ fn intra_stream(dc_luma: i32) -> Vec<u8> {
                 } else {
                     // size 6 covers |diff| < 64
                     w.code("1111 0");
-                    let v = if diff > 0 { diff as u32 } else { (diff + 63) as u32 };
+                    let v = if diff > 0 {
+                        diff as u32
+                    } else {
+                        (diff + 63) as u32
+                    };
                     w.put(v, 6);
                 }
             } else {
@@ -123,7 +131,10 @@ fn intra_stream(dc_luma: i32) -> Vec<u8> {
 fn decodes_a_hand_built_intra_picture() {
     let s = intra_stream(160);
     let info = probe(&s).unwrap();
-    assert_eq!((info.width, info.height, info.mpeg2, info.frame_rate), (32, 16, true, Some((25, 1))));
+    assert_eq!(
+        (info.width, info.height, info.mpeg2, info.frame_rate),
+        (32, 16, true, Some((25, 1)))
+    );
     assert_eq!(info.codec_name(), "MPEG-2 Video (Main@Main)");
     let mut d = Decoder::new();
     let mut pics = d.decode(&s, 7).unwrap();
@@ -131,7 +142,10 @@ fn decodes_a_hand_built_intra_picture() {
     assert_eq!(pics.len(), 1);
     let p = &pics[0];
     assert_eq!(d.errors(), 0);
-    assert_eq!((p.width, p.height, p.pts, p.picture_type), (32, 16, 7, PictureType::I));
+    assert_eq!(
+        (p.width, p.height, p.pts, p.picture_type),
+        (32, 16, 7, PictureType::I)
+    );
     // DC 160 everywhere (the mismatch-control toggle of F[7][7] is far below rounding)
     assert!(p.y.iter().all(|&v| v == 160), "{:?}", &p.y[..8]);
     assert!(p.cb.iter().chain(&p.cr).all(|&v| v == 128));

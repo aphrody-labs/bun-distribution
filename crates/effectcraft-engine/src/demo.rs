@@ -26,22 +26,39 @@ fn hex(h: &str) -> [f64; 4] {
 
 /// Eased keyframes (Easy Ease on every key).
 fn keys(list: &[(f64, Value)]) -> Vec<Keyframe> {
-    list.iter().map(|(s, v)| Keyframe::new(t(*s), v.clone()).eased()).collect()
+    list.iter()
+        .map(|(s, v)| Keyframe::new(t(*s), v.clone()).eased())
+        .collect()
 }
 
 /// Keyframes with a strong "expo out" ease: fast start, long settle.
 fn keys_out(list: &[(f64, Value)]) -> Vec<Keyframe> {
-    let mut k: Vec<Keyframe> = list.iter().map(|(s, v)| Keyframe::new(t(*s), v.clone())).collect();
+    let mut k: Vec<Keyframe> = list
+        .iter()
+        .map(|(s, v)| Keyframe::new(t(*s), v.clone()))
+        .collect();
     let n = k.len();
     for (i, key) in k.iter_mut().enumerate() {
         let d = key.value.dims().max(1);
         if i + 1 < n {
             key.out_interp = Interp::Bezier;
-            key.out_ease = vec![Ease { speed: 0.0, influence: 0.05 }; d];
+            key.out_ease = vec![
+                Ease {
+                    speed: 0.0,
+                    influence: 0.05
+                };
+                d
+            ];
         }
         if i > 0 {
             key.in_interp = Interp::Bezier;
-            key.in_ease = vec![Ease { speed: 0.0, influence: 0.85 }; d];
+            key.in_ease = vec![
+                Ease {
+                    speed: 0.0,
+                    influence: 0.85
+                };
+                d
+            ];
         }
     }
     k
@@ -59,7 +76,9 @@ fn anim(l: &mut Layer, path: &str, k: Vec<Keyframe>) {
 }
 
 fn effect(p: &mut Project, l: &mut Layer, id: &str, size: [f64; 2], params: &[(&str, Value)]) {
-    let Some(spec) = effectcraft_effects::find(id) else { return };
+    let Some(spec) = effectcraft_effects::find(id) else {
+        return;
+    };
     let mut next = p.next_id;
     let mut g = effectcraft_effects::instantiate(spec, &mut Ids(&mut next), spec.name, size);
     p.next_id = next;
@@ -82,15 +101,43 @@ fn contents(l: &mut Layer, items: Vec<PropGroup>) {
 }
 
 fn text_layer(p: &mut Project, comp: &Comp, name: &str, doc: TextDoc, pos: [f64; 2]) -> Layer {
-    let mut l = build::layer(p, comp, name, LayerSource::Text, (comp.width, comp.height), None);
+    let mut l = build::layer(
+        p,
+        comp,
+        name,
+        LayerSource::Text,
+        (comp.width, comp.height),
+        None,
+    );
     set(&mut l, "text/sourceText", Value::Text(Box::new(doc)));
-    set(&mut l, "transform/position", Value::Vec3([pos[0], pos[1], 0.0]));
+    set(
+        &mut l,
+        "transform/position",
+        Value::Vec3([pos[0], pos[1], 0.0]),
+    );
     l
 }
 
 fn solid_layer(p: &mut Project, comp: &Comp, folder: ItemId, name: &str, color: [f32; 3]) -> Layer {
-    let sid = p.add_item(name, Label::Red, Some(folder), ItemKind::Solid(Solid { color, width: comp.width, height: comp.height, pixel_aspect: 1.0 }));
-    build::layer(p, comp, name, LayerSource::Solid { item: sid }, (comp.width, comp.height), None)
+    let sid = p.add_item(
+        name,
+        Label::Red,
+        Some(folder),
+        ItemKind::Solid(Solid {
+            color,
+            width: comp.width,
+            height: comp.height,
+            pixel_aspect: 1.0,
+        }),
+    );
+    build::layer(
+        p,
+        comp,
+        name,
+        LayerSource::Solid { item: sid },
+        (comp.width, comp.height),
+        None,
+    )
 }
 
 fn lower_third(p: &mut Project) -> Comp {
@@ -105,33 +152,95 @@ fn lower_third(p: &mut Project) -> Comp {
             false,
             [-280.0, 0.0],
             [280.0, 0.0],
-            Gradient { colors: vec![(0.0, [0.18, 0.55, 0.92, 1.0]), (1.0, [0.55, 0.32, 0.98, 1.0])], opacities: vec![(0.0, 1.0), (1.0, 1.0)] },
+            Gradient {
+                colors: vec![
+                    (0.0, [0.18, 0.55, 0.92, 1.0]),
+                    (1.0, [0.55, 0.32, 0.98, 1.0]),
+                ],
+                opacities: vec![(0.0, 1.0), (1.0, 1.0)],
+            },
         );
         let g = build::shape_group(&mut ids, "Bar", vec![rect, gfill]);
         contents(&mut bar, vec![g]);
     }
     p.next_id = next;
-    set(&mut bar, "transform/position", Value::Vec3([440.0, 900.0, 0.0]));
-    anim(&mut bar, "transform/scale", keys_out(&[(0.0, Value::Vec3([0.0, 100.0, 100.0])), (0.7, Value::Vec3([100.0, 100.0, 100.0]))]));
+    set(
+        &mut bar,
+        "transform/position",
+        Value::Vec3([440.0, 900.0, 0.0]),
+    );
+    anim(
+        &mut bar,
+        "transform/scale",
+        keys_out(&[
+            (0.0, Value::Vec3([0.0, 100.0, 100.0])),
+            (0.7, Value::Vec3([100.0, 100.0, 100.0])),
+        ]),
+    );
     let mut title = text_layer(
         p,
         &c,
         "Built with EffectCraft",
-        TextDoc { text: "Built with EffectCraft".into(), size: 40.0, style: "SemiBold".into(), justify: Justify::Center, ..Default::default() },
+        TextDoc {
+            text: "Built with EffectCraft".into(),
+            size: 40.0,
+            style: "SemiBold".into(),
+            justify: Justify::Center,
+            ..Default::default()
+        },
         [440.0, 914.0],
     );
-    anim(&mut title, "transform/opacity", keys(&[(0.4, Value::Scalar(0.0)), (0.9, Value::Scalar(100.0))]));
+    anim(
+        &mut title,
+        "transform/opacity",
+        keys(&[(0.4, Value::Scalar(0.0)), (0.9, Value::Scalar(100.0))]),
+    );
     c.layers = vec![title, bar];
     c
 }
 
-fn solid_sized(p: &mut Project, comp: &Comp, folder: ItemId, name: &str, color: [f32; 3], w: u32, h: u32) -> Layer {
-    let sid = p.add_item(name, Label::Red, Some(folder), ItemKind::Solid(Solid { color, width: w, height: h, pixel_aspect: 1.0 }));
-    build::layer(p, comp, name, LayerSource::Solid { item: sid }, (w, h), None)
+fn solid_sized(
+    p: &mut Project,
+    comp: &Comp,
+    folder: ItemId,
+    name: &str,
+    color: [f32; 3],
+    w: u32,
+    h: u32,
+) -> Layer {
+    let sid = p.add_item(
+        name,
+        Label::Red,
+        Some(folder),
+        ItemKind::Solid(Solid {
+            color,
+            width: w,
+            height: h,
+            pixel_aspect: 1.0,
+        }),
+    );
+    build::layer(
+        p,
+        comp,
+        name,
+        LayerSource::Solid { item: sid },
+        (w, h),
+        None,
+    )
 }
 
 /// A 3D card: a solid with a diagonal gradient and a thin border grid.
-fn card(p: &mut Project, comp: &Comp, folder: ItemId, name: &str, a: &str, b: &str, size: (u32, u32), pos: [f64; 3], rot_y: f64) -> Layer {
+fn card(
+    p: &mut Project,
+    comp: &Comp,
+    folder: ItemId,
+    name: &str,
+    a: &str,
+    b: &str,
+    size: (u32, u32),
+    pos: [f64; 3],
+    rot_y: f64,
+) -> Layer {
     let mut l = solid_sized(p, comp, folder, name, [1.0, 1.0, 1.0], size.0, size.1);
     let (w, h) = (size.0 as f64, size.1 as f64);
     effect(
@@ -139,7 +248,12 @@ fn card(p: &mut Project, comp: &Comp, folder: ItemId, name: &str, a: &str, b: &s
         &mut l,
         "ec.generate.gradientramp",
         [w, h],
-        &[("start", Value::Vec2([0.0, 0.0])), ("end", Value::Vec2([w, h])), ("startColor", Value::Color(hex(a))), ("endColor", Value::Color(hex(b)))],
+        &[
+            ("start", Value::Vec2([0.0, 0.0])),
+            ("end", Value::Vec2([w, h])),
+            ("startColor", Value::Color(hex(a))),
+            ("endColor", Value::Color(hex(b))),
+        ],
     );
     effect(
         p,
@@ -160,8 +274,16 @@ fn card(p: &mut Project, comp: &Comp, folder: ItemId, name: &str, a: &str, b: &s
     set(&mut l, "transform/position", Value::Vec3(pos));
     set(&mut l, "transform/rotationY", Value::Scalar(rot_y));
     set(&mut l, "materialOptions/castsShadows", Value::Enum(1));
-    set(&mut l, "materialOptions/specularIntensity", Value::Scalar(35.0));
-    set(&mut l, "materialOptions/specularShininess", Value::Scalar(40.0));
+    set(
+        &mut l,
+        "materialOptions/specularIntensity",
+        Value::Scalar(35.0),
+    );
+    set(
+        &mut l,
+        "materialOptions/specularShininess",
+        Value::Scalar(40.0),
+    );
     l
 }
 
@@ -186,28 +308,99 @@ fn showcase_3d(p: &mut Project, solids: ItemId) -> Comp {
         ],
     );
     floor.switches.three_d = true;
-    set(&mut floor, "transform/position", Value::Vec3([960.0, 800.0, 500.0]));
-    set(&mut floor, "transform/scale", Value::Vec3([400.0, 400.0, 100.0]));
+    set(
+        &mut floor,
+        "transform/position",
+        Value::Vec3([960.0, 800.0, 500.0]),
+    );
+    set(
+        &mut floor,
+        "transform/scale",
+        Value::Vec3([400.0, 400.0, 100.0]),
+    );
     set(&mut floor, "transform/rotationX", Value::Scalar(90.0));
-    set(&mut floor, "materialOptions/specularIntensity", Value::Scalar(10.0));
+    set(
+        &mut floor,
+        "materialOptions/specularIntensity",
+        Value::Scalar(10.0),
+    );
 
     // Cards at different depths and angles; the centre pair intersects.
-    let left = card(p, &c, solids, "Card Blue", "#2E7BF0", "#7A4DFF", (520, 340), [520.0, 560.0, 120.0], 28.0);
-    let right = card(p, &c, solids, "Card Coral", "#FF6A5C", "#FFB347", (520, 340), [1420.0, 560.0, 260.0], -32.0);
-    let mut x1 = card(p, &c, solids, "Cross A", "#1FD1A5", "#2E7BF0", (460, 460), [960.0, 470.0, 520.0], 40.0);
-    set(&mut x1, "materialOptions/lightTransmission", Value::Scalar(30.0));
-    let x2 = card(p, &c, solids, "Cross B", "#F0E14A", "#FF6A5C", (460, 460), [960.0, 470.0, 520.0], -40.0);
+    let left = card(
+        p,
+        &c,
+        solids,
+        "Card Blue",
+        "#2E7BF0",
+        "#7A4DFF",
+        (520, 340),
+        [520.0, 560.0, 120.0],
+        28.0,
+    );
+    let right = card(
+        p,
+        &c,
+        solids,
+        "Card Coral",
+        "#FF6A5C",
+        "#FFB347",
+        (520, 340),
+        [1420.0, 560.0, 260.0],
+        -32.0,
+    );
+    let mut x1 = card(
+        p,
+        &c,
+        solids,
+        "Cross A",
+        "#1FD1A5",
+        "#2E7BF0",
+        (460, 460),
+        [960.0, 470.0, 520.0],
+        40.0,
+    );
+    set(
+        &mut x1,
+        "materialOptions/lightTransmission",
+        Value::Scalar(30.0),
+    );
+    let x2 = card(
+        p,
+        &c,
+        solids,
+        "Cross B",
+        "#F0E14A",
+        "#FF6A5C",
+        (460, 460),
+        [960.0, 470.0, 520.0],
+        -40.0,
+    );
     // Hero title in 3D space, gently turning.
     let mut title = text_layer(
         p,
         &c,
         "3D Title",
-        TextDoc { text: "CLASSIC 3D".into(), size: 150.0, style: "Bold".into(), tracking: 60.0, justify: Justify::Center, ..Default::default() },
+        TextDoc {
+            text: "CLASSIC 3D".into(),
+            size: 150.0,
+            style: "Bold".into(),
+            tracking: 60.0,
+            justify: Justify::Center,
+            ..Default::default()
+        },
         [960.0, 560.0],
     );
     title.switches.three_d = true;
-    set(&mut title, "transform/position", Value::Vec3([960.0, 600.0, -160.0]));
-    anim(&mut title, "transform/rotationY", keys(&[(0.0, Value::Scalar(-18.0)), (10.0, Value::Scalar(18.0))]));
+    set(
+        &mut title,
+        "transform/position",
+        Value::Vec3([960.0, 600.0, -160.0]),
+    );
+    anim(
+        &mut title,
+        "transform/rotationY",
+        keys(&[(0.0, Value::Scalar(-18.0)), (10.0, Value::Scalar(18.0))]),
+    );
     set(&mut title, "materialOptions/castsShadows", Value::Enum(1));
 
     // Camera: two-node, 35 mm, sweeping around the set with depth of field on the title.
@@ -217,28 +410,78 @@ fn showcase_3d(p: &mut Project, solids: ItemId) -> Comp {
     set(&mut cam, "cameraOptions/dof", Value::Bool(true));
     set(&mut cam, "cameraOptions/aperture", Value::Scalar(40.0));
     set(&mut cam, "cameraOptions/blurLevel", Value::Scalar(100.0));
-    set(&mut cam, "transform/poi", Value::Vec3([960.0, 560.0, 150.0]));
+    set(
+        &mut cam,
+        "transform/poi",
+        Value::Vec3([960.0, 560.0, 150.0]),
+    );
     anim(
         &mut cam,
         "transform/position",
-        keys(&[(0.0, Value::Vec3([-200.0, 160.0, -1500.0])), (5.0, Value::Vec3([1100.0, 80.0, -1850.0])), (10.0, Value::Vec3([2150.0, 220.0, -1300.0]))]),
+        keys(&[
+            (0.0, Value::Vec3([-200.0, 160.0, -1500.0])),
+            (5.0, Value::Vec3([1100.0, 80.0, -1850.0])),
+            (10.0, Value::Vec3([2150.0, 220.0, -1300.0])),
+        ]),
     );
-    anim(&mut cam, "cameraOptions/focusDistance", keys(&[(0.0, Value::Scalar(1700.0)), (5.0, Value::Scalar(1900.0)), (10.0, Value::Scalar(1650.0))]));
+    anim(
+        &mut cam,
+        "cameraOptions/focusDistance",
+        keys(&[
+            (0.0, Value::Scalar(1700.0)),
+            (5.0, Value::Scalar(1900.0)),
+            (10.0, Value::Scalar(1650.0)),
+        ]),
+    );
 
     // Key light: warm spot casting soft shadows. Fill: cool ambient.
-    let mut key = build::layer(p, &c, "Key Light", LayerSource::Light { kind: effectcraft_project::LightKind::Spot }, (1920, 1080), None);
-    set(&mut key, "transform/position", Value::Vec3([500.0, -500.0, -700.0]));
-    set(&mut key, "transform/poi", Value::Vec3([960.0, 600.0, 300.0]));
+    let mut key = build::layer(
+        p,
+        &c,
+        "Key Light",
+        LayerSource::Light {
+            kind: effectcraft_project::LightKind::Spot,
+        },
+        (1920, 1080),
+        None,
+    );
+    set(
+        &mut key,
+        "transform/position",
+        Value::Vec3([500.0, -500.0, -700.0]),
+    );
+    set(
+        &mut key,
+        "transform/poi",
+        Value::Vec3([960.0, 600.0, 300.0]),
+    );
     set(&mut key, "lightOptions/intensity", Value::Scalar(150.0));
     set(&mut key, "lightOptions/color", Value::Color(hex("#FFE6C7")));
     set(&mut key, "lightOptions/coneAngle", Value::Scalar(110.0));
     set(&mut key, "lightOptions/coneFeather", Value::Scalar(60.0));
     set(&mut key, "lightOptions/castsShadows", Value::Bool(true));
     set(&mut key, "lightOptions/shadowDarkness", Value::Scalar(70.0));
-    set(&mut key, "lightOptions/shadowDiffusion", Value::Scalar(12.0));
-    let mut fill = build::layer(p, &c, "Fill Light", LayerSource::Light { kind: effectcraft_project::LightKind::Ambient }, (1920, 1080), None);
+    set(
+        &mut key,
+        "lightOptions/shadowDiffusion",
+        Value::Scalar(12.0),
+    );
+    let mut fill = build::layer(
+        p,
+        &c,
+        "Fill Light",
+        LayerSource::Light {
+            kind: effectcraft_project::LightKind::Ambient,
+        },
+        (1920, 1080),
+        None,
+    );
     set(&mut fill, "lightOptions/intensity", Value::Scalar(35.0));
-    set(&mut fill, "lightOptions/color", Value::Color(hex("#B9C8FF")));
+    set(
+        &mut fill,
+        "lightOptions/color",
+        Value::Color(hex("#B9C8FF")),
+    );
 
     // 2D caption on top (2D layers break 3D groups, so it always draws over the 3D scene).
     let mut caption = text_layer(
@@ -256,7 +499,11 @@ fn showcase_3d(p: &mut Project, solids: ItemId) -> Comp {
         },
         [960.0, 1000.0],
     );
-    anim(&mut caption, "transform/opacity", keys(&[(0.3, Value::Scalar(0.0)), (1.2, Value::Scalar(100.0))]));
+    anim(
+        &mut caption,
+        "transform/opacity",
+        keys(&[(0.3, Value::Scalar(0.0)), (1.2, Value::Scalar(100.0))]),
+    );
 
     c.layers = vec![caption, cam, key, fill, title, left, right, x1, x2, floor];
     c
@@ -274,7 +521,12 @@ pub fn demo_project() -> Project {
 
     // Lower third precomp.
     let lt = lower_third(&mut p);
-    let lt_id = p.add_item("Lower Third", Label::Sandstone, Some(precomps), ItemKind::Comp(lt.into()));
+    let lt_id = p.add_item(
+        "Lower Third",
+        Label::Sandstone,
+        Some(precomps),
+        ItemKind::Comp(lt.into()),
+    );
 
     // Background: radial gradient.
     let mut bg = solid_layer(&mut p, &comp, solids, "Background", [0.0, 0.0, 0.0]);
@@ -293,14 +545,43 @@ pub fn demo_project() -> Project {
     );
 
     // Controller null drives the rings' rotation.
-    let mut null = build::layer(&mut p, &comp, "Controller", LayerSource::Null, (100, 100), None);
-    set(&mut null, "transform/anchor", Value::Vec3([50.0, 50.0, 0.0]));
-    set(&mut null, "transform/position", Value::Vec3([960.0, 540.0, 0.0]));
-    anim(&mut null, "transform/rotation", vec![Keyframe::new(t(0.0), Value::Scalar(-30.0)), Keyframe::new(t(10.0), Value::Scalar(60.0))]);
+    let mut null = build::layer(
+        &mut p,
+        &comp,
+        "Controller",
+        LayerSource::Null,
+        (100, 100),
+        None,
+    );
+    set(
+        &mut null,
+        "transform/anchor",
+        Value::Vec3([50.0, 50.0, 0.0]),
+    );
+    set(
+        &mut null,
+        "transform/position",
+        Value::Vec3([960.0, 540.0, 0.0]),
+    );
+    anim(
+        &mut null,
+        "transform/rotation",
+        vec![
+            Keyframe::new(t(0.0), Value::Scalar(-30.0)),
+            Keyframe::new(t(10.0), Value::Scalar(60.0)),
+        ],
+    );
     let null_id = null.id;
 
     // Orbit rings with trim-path write-on.
-    let mut rings = build::layer(&mut p, &comp, "Orbit Rings", LayerSource::Shape, (1920, 1080), None);
+    let mut rings = build::layer(
+        &mut p,
+        &comp,
+        "Orbit Rings",
+        LayerSource::Shape,
+        (1920, 1080),
+        None,
+    );
     let mut next = p.next_id;
     {
         let mut ids = Ids(&mut next);
@@ -326,14 +607,40 @@ pub fn demo_project() -> Project {
         contents(&mut rings, vec![g1, g2]);
     }
     p.next_id = next;
-    set(&mut rings, "transform/position", Value::Vec3([50.0, 50.0, 0.0]));
+    set(
+        &mut rings,
+        "transform/position",
+        Value::Vec3([50.0, 50.0, 0.0]),
+    );
     rings.parent = Some(null_id);
-    anim(&mut rings, "contents/group#1/contents/trim/end", keys(&[(0.2, Value::Scalar(0.0)), (1.8, Value::Scalar(100.0))]));
-    anim(&mut rings, "contents/group#2/contents/trim/end", keys(&[(0.5, Value::Scalar(0.0)), (2.3, Value::Scalar(100.0))]));
-    anim(&mut rings, "contents/group#2/contents/trim/offset", vec![Keyframe::new(t(0.0), Value::Scalar(0.0)), Keyframe::new(t(10.0), Value::Scalar(-240.0))]);
+    anim(
+        &mut rings,
+        "contents/group#1/contents/trim/end",
+        keys(&[(0.2, Value::Scalar(0.0)), (1.8, Value::Scalar(100.0))]),
+    );
+    anim(
+        &mut rings,
+        "contents/group#2/contents/trim/end",
+        keys(&[(0.5, Value::Scalar(0.0)), (2.3, Value::Scalar(100.0))]),
+    );
+    anim(
+        &mut rings,
+        "contents/group#2/contents/trim/offset",
+        vec![
+            Keyframe::new(t(0.0), Value::Scalar(0.0)),
+            Keyframe::new(t(10.0), Value::Scalar(-240.0)),
+        ],
+    );
 
     // Tick burst: a repeater of rounded bars around the centre.
-    let mut burst = build::layer(&mut p, &comp, "Tick Burst", LayerSource::Shape, (1920, 1080), None);
+    let mut burst = build::layer(
+        &mut p,
+        &comp,
+        "Tick Burst",
+        LayerSource::Shape,
+        (1920, 1080),
+        None,
+    );
     let mut next = p.next_id;
     {
         let mut ids = Ids(&mut next);
@@ -352,13 +659,38 @@ pub fn demo_project() -> Project {
         contents(&mut burst, vec![g]);
     }
     p.next_id = next;
-    anim(&mut burst, "transform/scale", keys_out(&[(0.0, Value::Vec3([60.0, 60.0, 100.0])), (1.6, Value::Vec3([100.0, 100.0, 100.0]))]));
-    anim(&mut burst, "transform/rotation", vec![Keyframe::new(t(0.0), Value::Scalar(0.0)), Keyframe::new(t(10.0), Value::Scalar(-45.0))]);
-    anim(&mut burst, "transform/opacity", keys(&[(0.0, Value::Scalar(0.0)), (1.0, Value::Scalar(55.0))]));
+    anim(
+        &mut burst,
+        "transform/scale",
+        keys_out(&[
+            (0.0, Value::Vec3([60.0, 60.0, 100.0])),
+            (1.6, Value::Vec3([100.0, 100.0, 100.0])),
+        ]),
+    );
+    anim(
+        &mut burst,
+        "transform/rotation",
+        vec![
+            Keyframe::new(t(0.0), Value::Scalar(0.0)),
+            Keyframe::new(t(10.0), Value::Scalar(-45.0)),
+        ],
+    );
+    anim(
+        &mut burst,
+        "transform/opacity",
+        keys(&[(0.0, Value::Scalar(0.0)), (1.0, Value::Scalar(55.0))]),
+    );
     burst.blend_mode = BlendMode::Add;
 
     // Accent line under the title.
-    let mut line = build::layer(&mut p, &comp, "Accent Line", LayerSource::Shape, (1920, 1080), None);
+    let mut line = build::layer(
+        &mut p,
+        &comp,
+        "Accent Line",
+        LayerSource::Shape,
+        (1920, 1080),
+        None,
+    );
     let mut next = p.next_id;
     {
         let mut ids = Ids(&mut next);
@@ -369,7 +701,10 @@ pub fn demo_project() -> Project {
             [-320.0, 0.0],
             [320.0, 0.0],
             Gradient {
-                colors: vec![(0.0, [0.24, 0.56, 0.96, 1.0]), (1.0, [0.56, 0.42, 1.0, 1.0])],
+                colors: vec![
+                    (0.0, [0.24, 0.56, 0.96, 1.0]),
+                    (1.0, [0.56, 0.42, 1.0, 1.0]),
+                ],
                 opacities: vec![(0.0, 0.0), (0.2, 1.0), (0.8, 1.0), (1.0, 0.0)],
             },
         );
@@ -377,15 +712,33 @@ pub fn demo_project() -> Project {
         contents(&mut line, vec![g]);
     }
     p.next_id = next;
-    set(&mut line, "transform/position", Value::Vec3([960.0, 600.0, 0.0]));
-    anim(&mut line, "transform/scale", keys_out(&[(1.1, Value::Vec3([0.0, 100.0, 100.0])), (2.2, Value::Vec3([100.0, 100.0, 100.0]))]));
+    set(
+        &mut line,
+        "transform/position",
+        Value::Vec3([960.0, 600.0, 0.0]),
+    );
+    anim(
+        &mut line,
+        "transform/scale",
+        keys_out(&[
+            (1.1, Value::Vec3([0.0, 100.0, 100.0])),
+            (2.2, Value::Vec3([100.0, 100.0, 100.0])),
+        ]),
+    );
 
     // Title with a per-character rise + fade animator.
     let mut title = text_layer(
         &mut p,
         &comp,
         "EFFECTCRAFT",
-        TextDoc { text: "EFFECTCRAFT".into(), size: 148.0, style: "Bold".into(), tracking: 120.0, justify: Justify::Center, ..Default::default() },
+        TextDoc {
+            text: "EFFECTCRAFT".into(),
+            size: 148.0,
+            style: "Bold".into(),
+            tracking: 120.0,
+            justify: Justify::Center,
+            ..Default::default()
+        },
         [960.0, 560.0],
     );
     let mut next = p.next_id;
@@ -403,7 +756,11 @@ pub fn demo_project() -> Project {
             pr.value = Value::Vec3([60.0, 60.0, 100.0]);
             pr
         });
-        let mut a = build::text_animator(&mut ids, "Animator 1", [pos, op, sc].into_iter().flatten().collect());
+        let mut a = build::text_animator(
+            &mut ids,
+            "Animator 1",
+            [pos, op, sc].into_iter().flatten().collect(),
+        );
         if let Some(sel) = a.group_mut("selectors/#1")
             && let Some(adv) = sel.sub_mut("advanced")
             && let Some(sh) = adv.get_mut("shape")
@@ -415,13 +772,21 @@ pub fn demo_project() -> Project {
         }
     }
     p.next_id = next;
-    anim(&mut title, "text/animators/#1/selectors/#1/start", keys(&[(0.6, Value::Scalar(0.0)), (2.2, Value::Scalar(100.0))]));
+    anim(
+        &mut title,
+        "text/animators/#1/selectors/#1/start",
+        keys(&[(0.6, Value::Scalar(0.0)), (2.2, Value::Scalar(100.0))]),
+    );
     effect(
         &mut p,
         &mut title,
         "ec.stylize.glow",
         size,
-        &[("threshold", Value::Scalar(40.0)), ("radius", Value::Scalar(36.0)), ("intensity", Value::Scalar(0.9))],
+        &[
+            ("threshold", Value::Scalar(40.0)),
+            ("radius", Value::Scalar(36.0)),
+            ("intensity", Value::Scalar(0.9)),
+        ],
     );
 
     // Subtitle.
@@ -440,12 +805,30 @@ pub fn demo_project() -> Project {
         },
         [960.0, 666.0],
     );
-    anim(&mut sub, "transform/opacity", keys(&[(1.8, Value::Scalar(0.0)), (2.6, Value::Scalar(100.0))]));
-    anim(&mut sub, "transform/position", keys(&[(1.8, Value::Vec3([960.0, 690.0, 0.0])), (2.6, Value::Vec3([960.0, 666.0, 0.0]))]));
+    anim(
+        &mut sub,
+        "transform/opacity",
+        keys(&[(1.8, Value::Scalar(0.0)), (2.6, Value::Scalar(100.0))]),
+    );
+    anim(
+        &mut sub,
+        "transform/position",
+        keys(&[
+            (1.8, Value::Vec3([960.0, 690.0, 0.0])),
+            (2.6, Value::Vec3([960.0, 666.0, 0.0])),
+        ]),
+    );
 
     // Lower third precomp in at 5s.
     let ltc = p.comp(lt_id).cloned();
-    let mut lower = build::layer(&mut p, &comp, "Lower Third", LayerSource::Comp { item: lt_id }, (1920, 1080), ltc.map(|c| c.duration));
+    let mut lower = build::layer(
+        &mut p,
+        &comp,
+        "Lower Third",
+        LayerSource::Comp { item: lt_id },
+        (1920, 1080),
+        ltc.map(|c| c.duration),
+    );
     lower.start_time = t(5.0);
     lower.in_point = t(5.0);
     lower.out_point = t(9.5);
@@ -458,9 +841,19 @@ pub fn demo_project() -> Project {
         }
     }
     comp.work_area = (Tick::ZERO, t(10.0));
-    p.add_item(MAIN_COMP, Label::Sandstone, None, ItemKind::Comp(comp.into()));
+    p.add_item(
+        MAIN_COMP,
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(comp.into()),
+    );
     let show = showcase_3d(&mut p, solids);
-    p.add_item(SHOWCASE_3D, Label::Sandstone, None, ItemKind::Comp(show.into()));
+    p.add_item(
+        SHOWCASE_3D,
+        Label::Sandstone,
+        None,
+        ItemKind::Comp(show.into()),
+    );
     p.fix_next_id();
     p
 }

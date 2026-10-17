@@ -41,7 +41,13 @@ impl Color {
     /// Per-channel blend toward `other` in sRGB (alpha included); `t` is clamped to 0..=1.
     /// Hosts use it for scheme re-tints (dynamic color transitions).
     pub fn mix(self, other: Self, t: f32) -> Self {
-        let t = if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t };
+        let t = if t < 0.0 {
+            0.0
+        } else if t > 1.0 {
+            1.0
+        } else {
+            t
+        };
         let a = self.rgba();
         let b = other.rgba();
         let channel = |i: usize| {
@@ -54,7 +60,13 @@ impl Color {
     /// The same colour with its alpha scaled by `opacity` (0..=1).
     pub fn with_opacity(self, opacity: f32) -> Self {
         let [r, g, b, a] = self.rgba();
-        let o = if opacity < 0.0 { 0.0 } else if opacity > 1.0 { 1.0 } else { opacity };
+        let o = if opacity < 0.0 {
+            0.0
+        } else if opacity > 1.0 {
+            1.0
+        } else {
+            opacity
+        };
         Self::argb((f32::from(a) * o + 0.5) as u8, r, g, b)
     }
 }

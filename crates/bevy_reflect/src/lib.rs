@@ -665,11 +665,10 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
-        reflect_trait,
+        FromReflect, GetPath, PartialReflect, Reflect, ReflectDeserialize, ReflectFromReflect,
+        ReflectPath, ReflectSerialize, TypePath, reflect_trait,
         structs::{GetField, Struct},
         tuple_struct::{GetTupleStructField, TupleStruct},
-        FromReflect, GetPath, PartialReflect, Reflect, ReflectDeserialize, ReflectFromReflect,
-        ReflectPath, ReflectSerialize, TypePath,
     };
 
     #[cfg(feature = "functions")]
@@ -701,9 +700,9 @@ pub use erased_serde;
 #[doc(hidden)]
 pub mod __macro_exports {
     use crate::{
-        array::DynamicArray, enums::DynamicEnum, list::DynamicList, map::DynamicMap,
-        structs::DynamicStruct, tuple::DynamicTuple, tuple_struct::DynamicTupleStruct,
-        GetTypeRegistration, TypeRegistry,
+        GetTypeRegistration, TypeRegistry, array::DynamicArray, enums::DynamicEnum,
+        list::DynamicList, map::DynamicMap, structs::DynamicStruct, tuple::DynamicTuple,
+        tuple_struct::DynamicTupleStruct,
     };
 
     /// Re-exports of items from the [`alloc`] crate.
@@ -860,7 +859,7 @@ pub mod __macro_exports {
     reason = "We don't need the exact value of Pi here."
 )]
 mod tests {
-    use ::serde::{de::DeserializeSeed, Deserialize, Serialize};
+    use ::serde::{Deserialize, Serialize, de::DeserializeSeed};
     use alloc::{
         borrow::Cow,
         boxed::Box,
@@ -878,8 +877,8 @@ mod tests {
     };
     use disqualified::ShortName;
     use ron::{
-        ser::{to_string_pretty, PrettyConfig},
         Deserializer,
+        ser::{PrettyConfig, to_string_pretty},
     };
     use static_assertions::{assert_impl_all, assert_not_impl_all};
 
@@ -1952,13 +1951,17 @@ mod tests {
 
         // Assert
         let expected = MyStruct { foo: 123 };
-        assert!(expected
-            .reflect_partial_eq(reflected.as_partial_reflect())
-            .unwrap_or_default());
+        assert!(
+            expected
+                .reflect_partial_eq(reflected.as_partial_reflect())
+                .unwrap_or_default()
+        );
         let not_expected = MyStruct { foo: 321 };
-        assert!(!not_expected
-            .reflect_partial_eq(reflected.as_partial_reflect())
-            .unwrap_or_default());
+        assert!(
+            !not_expected
+                .reflect_partial_eq(reflected.as_partial_reflect())
+                .unwrap_or_default()
+        );
     }
 
     #[test]
@@ -2973,7 +2976,9 @@ mod tests {
 
             let info = <SomeStruct as Typed>::type_info();
             assert_eq!(
-                Some(" Some struct.\n\n # Example\n\n ```ignore (This is only used for a unit test, no need to doc test)\n let some_struct = SomeStruct;\n ```"),
+                Some(
+                    " Some struct.\n\n # Example\n\n ```ignore (This is only used for a unit test, no need to doc test)\n let some_struct = SomeStruct;\n ```"
+                ),
                 info.docs()
             );
 
@@ -2985,7 +2990,9 @@ mod tests {
 
             let info = <SomeOtherStruct as Typed>::type_info();
             assert_eq!(
-                Some("The compiler automatically converts `///`-style comments into `#[doc]` attributes.\nOf course, you _could_ use the attribute directly if you wanted to.\nBoth will be reflected."),
+                Some(
+                    "The compiler automatically converts `///`-style comments into `#[doc]` attributes.\nOf course, you _could_ use the attribute directly if you wanted to.\nBoth will be reflected."
+                ),
                 info.docs()
             );
 
@@ -3432,7 +3439,10 @@ bevy_reflect::tests::Test {
 
         // Can use `TypePath`
         let path = <Foo<NotTypePath> as TypePath>::type_path();
-        assert_eq!("bevy_reflect::tests::can_opt_out_type_path::Foo<bevy_reflect::tests::can_opt_out_type_path::NotTypePath>", path);
+        assert_eq!(
+            "bevy_reflect::tests::can_opt_out_type_path::Foo<bevy_reflect::tests::can_opt_out_type_path::NotTypePath>",
+            path
+        );
 
         // Can register the type
         let mut registry = TypeRegistry::default();
@@ -4125,12 +4135,16 @@ bevy_reflect::tests::Test {
         registry.register::<AutoPrefix>();
         registry.register::<ManualPrefix>();
 
-        assert!(registry
-            .get_type_data::<foo::bar::ReflectBaz>(TypeId::of::<AutoPrefix>())
-            .is_some());
-        assert!(registry
-            .get_type_data::<foo::bar::ReflectBaz>(TypeId::of::<ManualPrefix>())
-            .is_some());
+        assert!(
+            registry
+                .get_type_data::<foo::bar::ReflectBaz>(TypeId::of::<AutoPrefix>())
+                .is_some()
+        );
+        assert!(
+            registry
+                .get_type_data::<foo::bar::ReflectBaz>(TypeId::of::<ManualPrefix>())
+                .is_some()
+        );
     }
 
     #[cfg(feature = "auto_register")]
@@ -4236,7 +4250,7 @@ bevy_reflect::tests::Test {
     #[cfg(feature = "glam")]
     mod glam {
         use super::*;
-        use ::glam::{quat, vec3, Quat, Vec3};
+        use ::glam::{Quat, Vec3, quat, vec3};
 
         #[test]
         fn quat_serialization() {

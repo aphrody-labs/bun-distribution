@@ -17,8 +17,9 @@ pub fn should_include(path: &str, target_locales: &[&str]) -> bool {
     if target_locales.contains(&parent) {
         return true;
     }
-    const KNOWN: &[&str] =
-        &["fr", "en", "de", "es", "it", "pt", "ko", "ja", "zh_hans", "zh_hant", "ar", "ru"];
+    const KNOWN: &[&str] = &[
+        "fr", "en", "de", "es", "it", "pt", "ko", "ja", "zh_hans", "zh_hant", "ar", "ru",
+    ];
     !KNOWN.contains(&parent)
 }
 
@@ -33,7 +34,9 @@ pub fn plan(
     let archive_by_path: BTreeMap<&str, &str> = indexed
         .iter()
         .filter_map(|(field, archive)| {
-            field.strip_prefix("data/").map(|path| (path, archive.as_str()))
+            field
+                .strip_prefix("data/")
+                .map(|path| (path, archive.as_str()))
         })
         .collect();
     let mut seen = BTreeSet::new();
@@ -58,12 +61,19 @@ pub fn plan(
     let mut missing_archive = Vec::new();
     for path in &paths {
         if let Some(archive) = archive_by_path.get(path.as_str()) {
-            by_archive.entry((*archive).to_string()).or_default().push(path.clone());
+            by_archive
+                .entry((*archive).to_string())
+                .or_default()
+                .push(path.clone());
         } else {
             missing_archive.push(path.clone());
         }
     }
-    PredecodePlan { paths, by_archive, missing_archive }
+    PredecodePlan {
+        paths,
+        by_archive,
+        missing_archive,
+    }
 }
 
 #[cfg(test)]
@@ -85,7 +95,10 @@ mod tests {
             ("data/dx11/menu/a/fr/a.g4tx".into(), "b.cpk".into()),
         ];
         let result = plan(&priority, &indexed, true, &["fr"]);
-        assert_eq!(result.paths, vec!["dx11/menu/a/fr/a.g4tx", "dx11/menu/a/base.g4tx"]);
+        assert_eq!(
+            result.paths,
+            vec!["dx11/menu/a/fr/a.g4tx", "dx11/menu/a/base.g4tx"]
+        );
         assert_eq!(result.by_archive["b.cpk"], vec!["dx11/menu/a/fr/a.g4tx"]);
         assert!(result.missing_archive.is_empty());
     }

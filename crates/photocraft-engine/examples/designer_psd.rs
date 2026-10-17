@@ -47,25 +47,51 @@ impl Gen {
     }
 
     fn active(&self) -> u64 {
-        self.s.active().and_then(|d| d.active_layer).map_or(0, |l| l.0)
+        self.s
+            .active()
+            .and_then(|d| d.active_layer)
+            .map_or(0, |l| l.0)
     }
 
     /// One leaf layer of a kind picked from the running counter; returns its id.
     fn leaf(&mut self) -> u64 {
         let i = self.n;
         self.n += 1;
-        let name = format!("{} {}", NAMES[i % NAMES.len()], if i.is_multiple_of(3) { String::new() } else { format!("#{i}") }).trim().to_string();
+        let name = format!(
+            "{} {}",
+            NAMES[i % NAMES.len()],
+            if i.is_multiple_of(3) {
+                String::new()
+            } else {
+                format!("#{i}")
+            }
+        )
+        .trim()
+        .to_string();
         let (x, y) = ((i * 97 % 1400) as i64, (i * 53 % 1000) as i64);
-        let colour = format!("#{:02x}{:02x}{:02x}", (i * 47 % 256), (i * 91 % 256), (i * 23 % 256));
+        let colour = format!(
+            "#{:02x}{:02x}{:02x}",
+            (i * 47 % 256),
+            (i * 91 % 256),
+            (i * 23 % 256)
+        );
         let id = match i % 17 {
             3 => {
                 let v = self.run("type.create", json!({"x": x, "y": y + 40, "text": format!("Headline {i}: Autumn collection"), "size": 36, "name": name}));
-                v.get("layer").and_then(Value::as_u64).unwrap_or_else(|| self.active())
+                v.get("layer")
+                    .and_then(Value::as_u64)
+                    .unwrap_or_else(|| self.active())
             }
             7 => {
-                self.run("layer.newAdjustmentLayer.curves", json!({"points": [[0, 0], [128, 150], [255, 255]]}));
+                self.run(
+                    "layer.newAdjustmentLayer.curves",
+                    json!({"points": [[0, 0], [128, 150], [255, 255]]}),
+                );
                 let id = self.active();
-                self.run("layer.setProps", json!({"layer": id, "name": format!("Curves {i}")}));
+                self.run(
+                    "layer.setProps",
+                    json!({"layer": id, "name": format!("Curves {i}")}),
+                );
                 id
             }
             11 => {
@@ -78,17 +104,26 @@ impl Gen {
             }
             _ => {
                 self.run("layer.new.layer", json!({"name": name}));
-                self.run("select.rect", json!({"x": x, "y": y, "width": 180 + i % 5 * 40, "height": 120 + i % 3 * 30}));
+                self.run(
+                    "select.rect",
+                    json!({"x": x, "y": y, "width": 180 + i % 5 * 40, "height": 120 + i % 3 * 30}),
+                );
                 self.run("edit.fill", json!({"contents": "color", "color": colour}));
                 self.run("select.deselect", json!({}));
                 self.active()
             }
         };
         if i % 4 == 1 {
-            self.run("layer.layerStyle.dropShadow", json!({"layer": id, "distance": 6, "size": 10}));
+            self.run(
+                "layer.layerStyle.dropShadow",
+                json!({"layer": id, "distance": 6, "size": 10}),
+            );
             if i % 8 == 1 {
                 self.run("layer.select", json!({"layer": id}));
-                self.run("layer.layerStyle.stroke", json!({"size": 2, "color": "#ffffff", "add": true}));
+                self.run(
+                    "layer.layerStyle.stroke",
+                    json!({"size": 2, "color": "#ffffff", "add": true}),
+                );
             }
         }
         if i % 6 == 2 {
@@ -100,9 +135,15 @@ impl Gen {
             self.run("layer.vectorMask.add", json!({"layer": id, "path": path}));
         }
         if i % 9 == 4 {
-            self.run("layer.setProps", json!({"layer": id, "locks": {"all": true}}));
+            self.run(
+                "layer.setProps",
+                json!({"layer": id, "locks": {"all": true}}),
+            );
         } else if i % 9 == 6 {
-            self.run("layer.setProps", json!({"layer": id, "locks": {"position": true}}));
+            self.run(
+                "layer.setProps",
+                json!({"layer": id, "locks": {"position": true}}),
+            );
         }
         if i % 8 == 3 {
             self.run("layer.setProps", json!({"layer": id, "visible": false}));
@@ -112,9 +153,15 @@ impl Gen {
         }
         if i % 13 == 6 {
             self.run("layer.select", json!({"layer": id}));
-            self.run("layer.smartObjects.convertToSmartObject", json!({"layer": id}));
+            self.run(
+                "layer.smartObjects.convertToSmartObject",
+                json!({"layer": id}),
+            );
         }
-        self.s.active().and_then(|d| d.active_layer).map_or(id, |l| l.0)
+        self.s
+            .active()
+            .and_then(|d| d.active_layer)
+            .map_or(id, |l| l.0)
     }
 
     /// `count` items above the active layer, the item at `nest` (if any) a group built one
@@ -123,8 +170,17 @@ impl Gen {
         let mut ids = Vec::new();
         for k in 0..count {
             if depth < 3 && k == count / 2 {
-                let sub = format!("{name} › Level {} {}", depth + 2, ["Cards", "サブグループ", "Details", "Variants"][depth % 4]);
-                ids.push(self.group(&sub, depth + 1, count.saturating_sub(2).max(3), !self.n.is_multiple_of(3)));
+                let sub = format!(
+                    "{name} › Level {} {}",
+                    depth + 2,
+                    ["Cards", "サブグループ", "Details", "Variants"][depth % 4]
+                );
+                ids.push(self.group(
+                    &sub,
+                    depth + 1,
+                    count.saturating_sub(2).max(3),
+                    !self.n.is_multiple_of(3),
+                ));
             } else {
                 let id = self.leaf();
                 // Clip every 7th layer to the one below it (inside the same group).
@@ -138,7 +194,9 @@ impl Gen {
         for id in &ids[1..] {
             self.run("layer.select", json!({"layer": id, "mode": "toggle"}));
         }
-        let g = self.run("layer.groupLayers", json!({"name": name}))["layer"].as_u64().unwrap_or_else(|| self.active());
+        let g = self.run("layer.groupLayers", json!({"name": name}))["layer"]
+            .as_u64()
+            .unwrap_or_else(|| self.active());
         if depth == 1 && self.n.is_multiple_of(2) {
             self.run("layer.layerStyle.dropShadow", json!({"layer": g}));
         }
@@ -149,14 +207,26 @@ impl Gen {
 }
 
 fn main() -> Result<(), String> {
-    let out = std::env::args().nth(1).unwrap_or_else(|| "designer.psd".into());
-    let mut g = Gen { s: Session::new(), n: 0 };
-    g.run("file.new", json!({"width": 1600, "height": 1200, "name": "designer"}));
+    let out = std::env::args()
+        .nth(1)
+        .unwrap_or_else(|| "designer.psd".into());
+    let mut g = Gen {
+        s: Session::new(),
+        n: 0,
+    };
+    g.run(
+        "file.new",
+        json!({"width": 1600, "height": 1200, "name": "designer"}),
+    );
     let groups = [
         ("Footer", 6, false),
         ("Retouching — dodge & burn, frequency separation", 7, true),
         ("Typography / 本文", 6, false),
-        ("Product Grid — Autumn/Winter 2026 campaign (final, do not edit)", 8, true),
+        (
+            "Product Grid — Autumn/Winter 2026 campaign (final, do not edit)",
+            8,
+            true,
+        ),
         ("ヒーローセクション", 7, true),
         ("Navigation", 5, false),
         ("Header / Logo lockup", 6, true),
@@ -173,9 +243,14 @@ fn main() -> Result<(), String> {
     g.run("layer.select", json!({"layer": a}));
     g.run("layer.select", json!({"layer": b, "mode": "toggle"}));
     g.run("layer.linkLayers", json!({}));
-    let doc = g.s.active().map(|d| (*d.doc).clone()).ok_or("no document")?;
+    let doc =
+        g.s.active()
+            .map(|d| (*d.doc).clone())
+            .ok_or("no document")?;
     let layers = doc.walk().len();
-    let bytes = photocraft_io::export(&doc, &out, &Default::default()).map_err(|e| e.to_string())?.bytes;
+    let bytes = photocraft_io::export(&doc, &out, &Default::default())
+        .map_err(|e| e.to_string())?
+        .bytes;
     std::fs::write(&out, &bytes).map_err(|e| e.to_string())?;
     println!("wrote {out}: {layers} layers, {} bytes", bytes.len());
     Ok(())

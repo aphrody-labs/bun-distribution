@@ -45,7 +45,9 @@ pub fn days_from_civil(y: i32, m: u32, d: u32) -> i64 {
 pub fn unix_now_ms() -> Option<f64> {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let d = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok()?;
+        let d = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?;
         Some(d.as_secs_f64() * 1000.0)
     }
     #[cfg(target_arch = "wasm32")]
@@ -100,7 +102,11 @@ pub fn days_in_month(y: i32, m: u32) -> u32 {
 /// Days in a month of a date system's calendar: like [`days_in_month`], except that February
 /// 1900 has 29 days in the 1900 system (serial 60 is the fictitious 1900-02-29).
 pub fn days_in_month_in(sys: DateSystem, y: i32, m: u32) -> u32 {
-    if sys == DateSystem::D1900 && y == 1900 && m == 2 { 29 } else { days_in_month(y, m) }
+    if sys == DateSystem::D1900 && y == 1900 && m == 2 {
+        29
+    } else {
+        days_in_month(y, m)
+    }
 }
 
 /// Last serial that is a valid date in a date system: 9999-12-31 (2958465 in the 1900 system, 2957003 in the 1904 system).
@@ -117,11 +123,17 @@ pub fn max_serial(sys: DateSystem) -> i64 {
 /// `None` before the epoch or after 9999-12-31.
 pub fn serial_from_ymd(sys: DateSystem, year: i64, month: i64, day: i64) -> Option<f64> {
     // DATE(): years 0–1899 are added to 1900.
-    let y = if (0..1900).contains(&year) { year + 1900 } else { year };
+    let y = if (0..1900).contains(&year) {
+        year + 1900
+    } else {
+        year
+    };
     let m0 = month.checked_sub(1)?;
     let y = y.checked_add(m0.div_euclid(12))?;
     let m = m0.rem_euclid(12) + 1;
-    if !(1900..=9999).contains(&y) && sys == DateSystem::D1900 || !(1904..=9999).contains(&y) && sys == DateSystem::D1904 {
+    if !(1900..=9999).contains(&y) && sys == DateSystem::D1900
+        || !(1904..=9999).contains(&y) && sys == DateSystem::D1904
+    {
         return None;
     }
     let first = days_from_civil(y as i32, m as u32, 1);
@@ -188,9 +200,29 @@ pub fn time_fraction(h: f64, m: f64, s: f64) -> f64 {
     (h * 3600.0 + m * 60.0 + s) / 86400.0
 }
 
-pub const MONTHS: [&str; 12] =
-    ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-pub const WEEKDAYS: [&str; 7] = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+pub const MONTHS: [&str; 12] = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+];
+pub const WEEKDAYS: [&str; 7] = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+];
 
 #[cfg(test)]
 mod tests {
@@ -213,15 +245,30 @@ mod tests {
         assert_eq!(serial_from_ymd(s, 2000, 1, 1), Some(36526.0));
         assert_eq!(serial_from_ymd(s, 2026, 10, 7), Some(46302.0));
         assert_eq!(serial_from_ymd(s, 9999, 12, 31), Some(2958465.0));
-        assert_eq!(serial_from_ymd(DateSystem::D1904, 9999, 12, 31), Some(2957003.0));
+        assert_eq!(
+            serial_from_ymd(DateSystem::D1904, 9999, 12, 31),
+            Some(2957003.0)
+        );
         assert_eq!(serial_from_ymd(DateSystem::D1904, 9999, 12, 32), None);
         assert!(datetime_from_serial(DateSystem::D1904, 2957003.5).is_some());
         assert!(datetime_from_serial(DateSystem::D1904, 2957004.0).is_none());
-        assert_eq!(serial_from_ymd(s, 2020, 13, 1), serial_from_ymd(s, 2021, 1, 1));
-        assert_eq!(serial_from_ymd(s, 2020, 3, 0), serial_from_ymd(s, 2020, 2, 29));
-        assert_eq!(serial_from_ymd(s, 120, 1, 1), serial_from_ymd(s, 2020, 1, 1));
+        assert_eq!(
+            serial_from_ymd(s, 2020, 13, 1),
+            serial_from_ymd(s, 2021, 1, 1)
+        );
+        assert_eq!(
+            serial_from_ymd(s, 2020, 3, 0),
+            serial_from_ymd(s, 2020, 2, 29)
+        );
+        assert_eq!(
+            serial_from_ymd(s, 120, 1, 1),
+            serial_from_ymd(s, 2020, 1, 1)
+        );
         assert_eq!(serial_from_ymd(DateSystem::D1904, 1904, 1, 1), Some(0.0));
-        assert_eq!(serial_from_ymd(DateSystem::D1904, 2000, 1, 1), Some(35064.0));
+        assert_eq!(
+            serial_from_ymd(DateSystem::D1904, 2000, 1, 1),
+            Some(35064.0)
+        );
     }
 
     #[test]
@@ -243,12 +290,19 @@ mod tests {
         assert_eq!(serial_from_ymd(s, 1900, 1, -1), None);
         assert_eq!(serial_from_ymd(s, 1900, 0, 1), None);
         // Later years keep the real calendar.
-        assert_eq!(serial_from_ymd(s, 1901, 2, 29), serial_from_ymd(s, 1901, 3, 1));
+        assert_eq!(
+            serial_from_ymd(s, 1901, 2, 29),
+            serial_from_ymd(s, 1901, 3, 1)
+        );
         assert_eq!(serial_from_ymd(s, 1904, 2, 29), Some(1521.0));
         // Every serial up to 1900-12-31 comes back from its own year, month and day.
         for serial in 0..=366 {
             let d = datetime_from_serial(s, serial as f64).unwrap();
-            assert_eq!(serial_from_ymd(s, d.year as i64, d.month as i64, d.day as i64), Some(serial as f64), "{d:?}");
+            assert_eq!(
+                serial_from_ymd(s, d.year as i64, d.month as i64, d.day as i64),
+                Some(serial as f64),
+                "{d:?}"
+            );
         }
         assert_eq!(days_in_month_in(s, 1900, 2), 29);
         assert_eq!(days_in_month_in(s, 1901, 2), 28);
@@ -277,7 +331,10 @@ mod tests {
         let s = DateSystem::D1900;
         for serial in [1.0, 59.0, 60.0, 61.0, 36526.0, 46302.0, 2958465.0] {
             let d = datetime_from_serial(s, serial).unwrap();
-            assert_eq!(serial_from_ymd(s, d.year as i64, d.month as i64, d.day as i64), Some(serial));
+            assert_eq!(
+                serial_from_ymd(s, d.year as i64, d.month as i64, d.day as i64),
+                Some(serial)
+            );
         }
         let d = datetime_from_serial(s, 60.0).unwrap();
         assert_eq!((d.year, d.month, d.day), (1900, 2, 29));

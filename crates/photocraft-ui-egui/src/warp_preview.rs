@@ -18,7 +18,11 @@ const MAX_PER_AXIS: usize = 240;
 /// Normalised sample positions `(us, vs)` for `mesh` shown at `zoom` screen px per document px.
 /// Both include every grid line (0, the knots and 1) in increasing order.
 pub fn samples(mesh: &BezierMesh, zoom: f64) -> (Vec<f64>, Vec<f64>) {
-    let zoom = if zoom.is_finite() && zoom > 0.0 { zoom } else { 1.0 };
+    let zoom = if zoom.is_finite() && zoom > 0.0 {
+        zoom
+    } else {
+        1.0
+    };
     let (cols, rows) = (mesh.us.len() - 1, mesh.vs.len() - 1);
     let nx = mesh.nx();
     // Screen size of each cell's control points: bounds how far the cell's surface can stretch.
@@ -38,7 +42,11 @@ pub fn samples(mesh: &BezierMesh, zoom: f64) -> (Vec<f64>, Vec<f64>) {
                 }
             }
             let ext = ((hi[0] - lo[0]).max(hi[1] - lo[1]) * zoom).abs();
-            let n = if ext.is_finite() { (ext / SEGMENT_PX).ceil() as usize } else { MIN_PER_CELL };
+            let n = if ext.is_finite() {
+                (ext / SEGMENT_PX).ceil() as usize
+            } else {
+                MIN_PER_CELL
+            };
             let n = n.clamp(MIN_PER_CELL, MAX_PER_CELL);
             *cu = (*cu).max(n);
             *cv = (*cv).max(n);
@@ -68,7 +76,10 @@ pub fn triangle_order(pos: &[[f32; 2]], rest: &[[f32; 2]], row: usize) -> Vec<u3
     for j in 0..rows.saturating_sub(1) {
         for i in 0..row - 1 {
             let a = j * row + i;
-            cells.push(((moved(a) + moved(a + 1) + moved(a + row) + moved(a + row + 1)) / 4.0, a));
+            cells.push((
+                (moved(a) + moved(a + 1) + moved(a + row) + moved(a + row + 1)) / 4.0,
+                a,
+            ));
         }
     }
     cells.sort_by(|x, y| y.0.total_cmp(&x.0));
@@ -116,19 +127,39 @@ mod tests {
             assert!(us.iter().any(|u| (u - k).abs() < 1e-12), "{k}");
         }
         assert!(us.windows(2).all(|w| w[1] > w[0]) && vs.windows(2).all(|w| w[1] > w[0]));
-        assert!(us.len() <= MAX_PER_AXIS + 8 && vs.len() <= MAX_PER_AXIS + 8, "{} x {}", us.len(), vs.len());
+        assert!(
+            us.len() <= MAX_PER_AXIS + 8 && vs.len() <= MAX_PER_AXIS + 8,
+            "{} x {}",
+            us.len(),
+            vs.len()
+        );
     }
 
     #[test]
     fn the_most_displaced_cells_are_drawn_first() {
         // A 4 x 3 vertex grid; the middle column was pulled 30 px right, so it moved most.
-        let rest: Vec<[f32; 2]> = (0..3).flat_map(|j| (0..4).map(move |i| [i as f32 * 10.0, j as f32 * 10.0])).collect();
-        let pos: Vec<[f32; 2]> = rest.iter().enumerate().map(|(k, p)| if k % 4 == 1 || k % 4 == 2 { [p[0] + 30.0, p[1]] } else { *p }).collect();
+        let rest: Vec<[f32; 2]> = (0..3)
+            .flat_map(|j| (0..4).map(move |i| [i as f32 * 10.0, j as f32 * 10.0]))
+            .collect();
+        let pos: Vec<[f32; 2]> = rest
+            .iter()
+            .enumerate()
+            .map(|(k, p)| {
+                if k % 4 == 1 || k % 4 == 2 {
+                    [p[0] + 30.0, p[1]]
+                } else {
+                    *p
+                }
+            })
+            .collect();
         let idx = triangle_order(&pos, &rest, 4);
         assert_eq!(idx.len(), 2 * 2 * 3 * 3);
         // Cells come in whole pairs of triangles, and displacement never rises along the list.
         let moved = |k: u32| (pos[k as usize][0] - rest[k as usize][0]).abs();
-        let per_cell: Vec<f32> = idx.chunks(6).map(|c| c.iter().map(|k| moved(*k)).sum::<f32>()).collect();
+        let per_cell: Vec<f32> = idx
+            .chunks(6)
+            .map(|c| c.iter().map(|k| moved(*k)).sum::<f32>())
+            .collect();
         assert!(per_cell.windows(2).all(|w| w[0] >= w[1]), "{per_cell:?}");
         assert!(per_cell[0] > per_cell[per_cell.len() - 1]);
         assert!(triangle_order(&pos, &rest[..5], 4).is_empty());
@@ -138,7 +169,12 @@ mod tests {
     fn an_unwarped_mesh_stays_cheap() {
         let m = BezierMesh::identity([0.0, 0.0, 100.0, 100.0], 1, 1);
         let (us, vs) = samples(&m, 1.0);
-        assert!(us.len() <= 20 && vs.len() <= 20, "{} x {}", us.len(), vs.len());
+        assert!(
+            us.len() <= 20 && vs.len() <= 20,
+            "{} x {}",
+            us.len(),
+            vs.len()
+        );
     }
 
     #[test]

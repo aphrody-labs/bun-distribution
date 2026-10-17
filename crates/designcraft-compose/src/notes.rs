@@ -42,9 +42,29 @@ pub(crate) struct Notes {
 
 impl Notes {
     pub fn new(doc: &Document, story: &Story) -> Notes {
-        let refs: Vec<usize> = if story.notes.is_empty() { Vec::new() } else { story.text.match_indices(FOOTNOTE_REF).map(|(i, _)| i).collect() };
-        let start = if refs.is_empty() { 1 } else { doc.footnote_start(story.id) };
-        Notes { numbers: vec![start; refs.len()], refs, num: start, key: None, placed: Vec::new(), cache: HashMap::new(), notes: story.notes.clone() }
+        let refs: Vec<usize> = if story.notes.is_empty() {
+            Vec::new()
+        } else {
+            story
+                .text
+                .match_indices(FOOTNOTE_REF)
+                .map(|(i, _)| i)
+                .collect()
+        };
+        let start = if refs.is_empty() {
+            1
+        } else {
+            doc.footnote_start(story.id)
+        };
+        Notes {
+            numbers: vec![start; refs.len()],
+            refs,
+            num: start,
+            key: None,
+            placed: Vec::new(),
+            cache: HashMap::new(),
+            notes: story.notes.clone(),
+        }
     }
 
     pub fn active(&self) -> bool {
@@ -52,7 +72,13 @@ impl Notes {
     }
 
     /// Number the references in a paragraph (shaped on `page`) and hand their labels to the shaper.
-    pub fn number_refs(&mut self, doc: &Document, prange: Range<usize>, page: Option<usize>, sub: &mut SubstCtx) {
+    pub fn number_refs(
+        &mut self,
+        doc: &Document,
+        prange: Range<usize>,
+        page: Option<usize>,
+        sub: &mut SubstCtx,
+    ) {
         let o = &doc.footnote_options;
         let key = page.and_then(|p| match o.restart {
             NoteRestart::Never => None,
@@ -69,10 +95,12 @@ impl Notes {
             }
             self.numbers[k] = self.num;
             self.num += 1;
-            sub.notes.insert(self.refs[k], o.label(self.numbers[k], false));
+            sub.notes
+                .insert(self.refs[k], o.label(self.numbers[k], false));
         }
         sub.note_position = o.ref_position;
-        sub.note_style = (o.ref_char_style != designcraft_doc::NO_CHAR_STYLE).then(|| o.ref_char_style.clone());
+        sub.note_style =
+            (o.ref_char_style != designcraft_doc::NO_CHAR_STYLE).then(|| o.ref_char_style.clone());
     }
 
     /// Footnote indices referenced by a line's glyphs.
@@ -88,7 +116,14 @@ impl Notes {
         v
     }
 
-    fn compose(&mut self, doc: &Document, k: usize, w: f64, f: &FrameSpec, opts: &ComposeOptions) -> (Arc<ComposedStory>, f64) {
+    fn compose(
+        &mut self,
+        doc: &Document,
+        k: usize,
+        w: f64,
+        f: &FrameSpec,
+        opts: &ComposeOptions,
+    ) -> (Arc<ComposedStory>, f64) {
         let o = &doc.footnote_options;
         let label = format!("{}{}", o.label(self.numbers[k], true), o.separator);
         let key = (k, label.clone(), w.to_bits());
@@ -98,7 +133,11 @@ impl Notes {
         let spec = FrameSpec {
             id: ItemId(0),
             area: Rect::new(0.0, 0.0, w.max(1.0), 1.0e6),
-            opts: TextFrameOptions { first_baseline: o.first_baseline, first_baseline_min: o.first_baseline_min, ..Default::default() },
+            opts: TextFrameOptions {
+                first_baseline: o.first_baseline,
+                first_baseline_min: o.first_baseline_min,
+                ..Default::default()
+            },
             vertical: false,
             exclusions: vec![],
             page_name: f.page_name.clone(),
@@ -114,8 +153,17 @@ impl Notes {
             label: Some(label),
             xrefs: opts.xrefs.clone(),
         };
-        let cs = crate::compose(doc, &self.notes[k].text, std::slice::from_ref(&spec), &nopts);
-        let h = cs.frames.first().and_then(|ft| ft.lines.last()).map_or(0.0, |l| l.baseline + l.descent);
+        let cs = crate::compose(
+            doc,
+            &self.notes[k].text,
+            std::slice::from_ref(&spec),
+            &nopts,
+        );
+        let h = cs
+            .frames
+            .first()
+            .and_then(|ft| ft.lines.last())
+            .map_or(0.0, |l| l.baseline + l.descent);
         let v = (Arc::new(cs), h);
         self.cache.insert(key, v.clone());
         v
@@ -123,7 +171,16 @@ impl Notes {
 
     /// Height the footnotes of column (fi, col) take, with `extra` footnotes added.
     #[allow(clippy::too_many_arguments)]
-    pub fn reserve(&mut self, doc: &Document, fi: usize, col: usize, extra: &[usize], w: f64, f: &FrameSpec, opts: &ComposeOptions) -> f64 {
+    pub fn reserve(
+        &mut self,
+        doc: &Document,
+        fi: usize,
+        col: usize,
+        extra: &[usize],
+        w: f64,
+        f: &FrameSpec,
+        opts: &ComposeOptions,
+    ) -> f64 {
         let o = &doc.footnote_options;
         let mut n = 0usize;
         let mut h = 0.0;
@@ -135,19 +192,45 @@ impl Notes {
             n += 1;
             h += self.compose(doc, k, w, f, opts).1;
         }
-        if n == 0 { 0.0 } else { h + o.space_between * (n - 1) as f64 + o.space_before }
+        if n == 0 {
+            0.0
+        } else {
+            h + o.space_between * (n - 1) as f64 + o.space_before
+        }
     }
 
-    pub fn place(&mut self, doc: &Document, k: usize, fi: usize, col: usize, w: f64, f: &FrameSpec, opts: &ComposeOptions) {
+    pub fn place(
+        &mut self,
+        doc: &Document,
+        k: usize,
+        fi: usize,
+        col: usize,
+        w: f64,
+        f: &FrameSpec,
+        opts: &ComposeOptions,
+    ) {
         if self.placed.iter().any(|p| p.k == k) {
             return;
         }
         let (text, h) = self.compose(doc, k, w, f, opts);
-        self.placed.push(Placed { k, fi, col, h, text });
+        self.placed.push(Placed {
+            k,
+            fi,
+            col,
+            h,
+            text,
+        });
     }
 
     /// Stack each column's footnotes against its bottom, rule above the first.
-    pub fn finish(&mut self, doc: &Document, story: &Story, frames: &[FrameSpec], cols: &[Vec<Rect>], out: &mut ComposedStory) {
+    pub fn finish(
+        &mut self,
+        doc: &Document,
+        story: &Story,
+        frames: &[FrameSpec],
+        cols: &[Vec<Rect>],
+        out: &mut ComposedStory,
+    ) {
         if self.placed.is_empty() {
             return;
         }
@@ -157,9 +240,17 @@ impl Notes {
         groups.sort_unstable();
         groups.dedup();
         for (fi, ci) in groups {
-            let (Some(_), Some(col)) = (frames.get(fi), cols.get(fi).and_then(|c| c.get(ci))) else { continue };
-            let here: Vec<&Placed> = self.placed.iter().filter(|p| p.fi == fi && p.col == ci).collect();
-            let total: f64 = here.iter().map(|p| p.h).sum::<f64>() + o.space_between * (here.len() - 1) as f64;
+            let (Some(_), Some(col)) = (frames.get(fi), cols.get(fi).and_then(|c| c.get(ci)))
+            else {
+                continue;
+            };
+            let here: Vec<&Placed> = self
+                .placed
+                .iter()
+                .filter(|p| p.fi == fi && p.col == ci)
+                .collect();
+            let total: f64 =
+                here.iter().map(|p| p.h).sum::<f64>() + o.space_between * (here.len() - 1) as f64;
             let top = col.y1 - total;
             let ft = &mut out.frames[fi];
             if o.rule.on && o.rule.weight > 0.0 {
@@ -192,7 +283,10 @@ impl Notes {
 
 /// The placed footnote with id `id`: (frame index, footnote).
 pub fn find_note(cs: &ComposedStory, id: u64) -> Option<(usize, &PlacedNote)> {
-    cs.frames.iter().enumerate().find_map(|(fi, ft)| ft.notes.iter().find(|n| n.id == id).map(|n| (fi, n)))
+    cs.frames
+        .iter()
+        .enumerate()
+        .find_map(|(fi, ft)| ft.notes.iter().find(|n| n.id == id).map(|n| (fi, n)))
 }
 
 /// Footnote text hit at frame-inner point `p`: (footnote id, byte in the footnote's story).

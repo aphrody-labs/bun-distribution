@@ -50,7 +50,10 @@ impl Debugger {
 
     pub fn add_breakpoint(&mut self, addr: u32) {
         if !self.breakpoints.iter().any(|b| b.addr == addr) {
-            self.breakpoints.push(Breakpoint { addr, enabled: true });
+            self.breakpoints.push(Breakpoint {
+                addr,
+                enabled: true,
+            });
         }
     }
 
@@ -227,12 +230,12 @@ impl Debugger {
                 } else {
                     emulator.run_until_vsync();
                 }
-            },
+            }
             EmulatorState::Step => {
                 self.trace_step(emulator);
                 emulator.step();
                 self.state = EmulatorState::Paused;
-            },
+            }
             EmulatorState::RunUntilVsync => {
                 if self.is_tracing() || self.is_dsp_tracing() || self.has_active_breakpoints() {
                     emulator.prepare_frame();
@@ -249,7 +252,7 @@ impl Debugger {
                     emulator.run_until_vsync();
                 }
                 self.state = EmulatorState::Paused;
-            },
+            }
             EmulatorState::RunUntilAddress(addr) => {
                 while emulator.gekko.pc != addr {
                     self.drain_events(emulator);
@@ -261,7 +264,7 @@ impl Debugger {
                     }
                 }
                 self.state = EmulatorState::Paused;
-            },
+            }
             EmulatorState::RunUntilDsp => {
                 loop {
                     let hit = self.drain_events_until_dsp(emulator);
@@ -276,8 +279,8 @@ impl Debugger {
                     }
                 }
                 self.state = EmulatorState::Paused;
-            },
-            EmulatorState::Paused => {},
+            }
+            EmulatorState::Paused => {}
         }
     }
 }

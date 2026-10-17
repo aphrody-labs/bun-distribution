@@ -32,8 +32,8 @@ impl DumpElfSymbols {
             match name {
                 "$d" | "$a" | "$t" => {
                     continue;
-                },
-                _ => {},
+                }
+                _ => {}
             }
             if name.starts_with(".L") && symbol.is_local() {
                 continue;

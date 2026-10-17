@@ -88,6 +88,9 @@ impl Preserved {
     }
     /// Total bytes held.
     pub fn byte_len(&self) -> usize {
-        self.parts.iter().chain(self.vml.iter()).fold(0usize, |n, p| n.saturating_add(p.data.len()))
+        self.parts
+            .iter()
+            .chain(self.vml.iter())
+            .fold(0usize, |n, p| n.saturating_add(p.data.len()))
     }
 }

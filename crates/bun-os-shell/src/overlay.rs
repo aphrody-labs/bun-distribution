@@ -61,11 +61,19 @@ fn row(
             flex_grow: 1.0,
             ..default()
         });
-        c.spawn((kit.text("", ts::BODY_MEDIUM, R::Primary), Bind::QuickValue(action)));
+        c.spawn((
+            kit.text("", ts::BODY_MEDIUM, R::Primary),
+            Bind::QuickValue(action),
+        ));
     });
 }
 
-pub fn spawn_quick(mut commands: Commands, kit: Res<Kit>, running: Res<Running>, shell: Res<Shell>) {
+pub fn spawn_quick(
+    mut commands: Commands,
+    kit: Res<Kit>,
+    running: Res<Running>,
+    shell: Res<Shell>,
+) {
     let in_game = running.machine.is_some() || running.external.is_some();
     let title = running
         .machine_game
@@ -125,11 +133,32 @@ pub fn spawn_quick(mut commands: Commands, kit: Res<Kit>, running: Res<Running>,
                         ));
                     });
                 if in_game {
-                    row(sheet, &kit, "play_arrow", "action.resume", QuickAction::Resume, true);
+                    row(
+                        sheet,
+                        &kit,
+                        "play_arrow",
+                        "action.resume",
+                        QuickAction::Resume,
+                        true,
+                    );
                 }
-                row(sheet, &kit, "home", "action.home", QuickAction::Home, !in_game);
+                row(
+                    sheet,
+                    &kit,
+                    "home",
+                    "action.home",
+                    QuickAction::Home,
+                    !in_game,
+                );
                 if in_game {
-                    row(sheet, &kit, "close", "action.close-game", QuickAction::CloseGame, false);
+                    row(
+                        sheet,
+                        &kit,
+                        "close",
+                        "action.close-game",
+                        QuickAction::CloseGame,
+                        false,
+                    );
                 }
                 for (glyph, key, action) in [
                     ("photo_camera", "action.screenshot", QuickAction::Screenshot),
@@ -165,10 +194,7 @@ pub fn spawn_quick(mut commands: Commands, kit: Res<Kit>, running: Res<Running>,
                                     h.spawn(kit.icon(glyph, icon::SM, R::Primary));
                                     h.spawn(kit.text(t(key), ts::LABEL, R::Primary));
                                 });
-                            panel.spawn((
-                                kit.text("", ts::BODY_MEDIUM, R::OnSurfaceVariant),
-                                bind,
-                            ));
+                            panel.spawn((kit.text("", ts::BODY_MEDIUM, R::OnSurfaceVariant), bind));
                         });
                 }
             });
@@ -214,7 +240,11 @@ pub fn spawn_power(mut commands: Commands, kit: Res<Kit>, shell: Res<Shell>) {
                     ("logout", desktop, PowerAction::Desktop),
                     ("bedtime", "action.sleep", PowerAction::Sleep),
                     ("restart_alt", "action.restart-pc", PowerAction::Restart),
-                    ("power_settings_new", "action.shutdown", PowerAction::Shutdown),
+                    (
+                        "power_settings_new",
+                        "action.shutdown",
+                        PowerAction::Shutdown,
+                    ),
                 ] {
                     let label = t(key);
                     let mut e = d.spawn((

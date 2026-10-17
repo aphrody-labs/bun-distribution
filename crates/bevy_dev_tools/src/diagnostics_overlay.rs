@@ -9,7 +9,7 @@ use bevy_app::prelude::*;
 use bevy_color::{palettes, prelude::*};
 use bevy_diagnostic::{Diagnostic, DiagnosticPath, DiagnosticsStore, FrameTimeDiagnosticsPlugin};
 use bevy_ecs::{prelude::*, relationship::Relationship};
-use bevy_pbr::{diagnostic::MaterialAllocatorDiagnosticPlugin, StandardMaterial};
+use bevy_pbr::{StandardMaterial, diagnostic::MaterialAllocatorDiagnosticPlugin};
 use bevy_picking::prelude::*;
 use bevy_render::diagnostic::MeshAllocatorDiagnosticPlugin;
 use bevy_text::prelude::*;
@@ -303,7 +303,9 @@ fn rebuild_diagnostics_list(
         commands.entity(entity).despawn_children();
 
         let Ok(diagnostics_overlay) = diagnostics_overlays.get(child_of.get()) else {
-            panic!("DiagnosticsOverlayContents has been tempered with. Parent was not a DiagnosticsOverlay.");
+            panic!(
+                "DiagnosticsOverlayContents has been tempered with. Parent was not a DiagnosticsOverlay."
+            );
         };
 
         for (i, diagnostic_overlay_item) in diagnostics_overlay.items.iter().enumerate() {
@@ -436,7 +438,9 @@ fn drag_by_header(
     if let Ok(child_of) = diagnostics_overlay_headers.get(entity) {
         event.propagate(false);
         let Ok(mut node) = diagnostics_overlays.get_mut(child_of.get()) else {
-            panic!("DiagnosticsOverlayHeader has been tempered with. Parent was not a DiagnosticsOverlay.");
+            panic!(
+                "DiagnosticsOverlayHeader has been tempered with. Parent was not a DiagnosticsOverlay."
+            );
         };
         let delta = event.delta;
         let Val::Px(top) = &mut node.top else {

@@ -7,7 +7,9 @@ use serde_json::{Map, Value, json};
 use vectorcraft_doc::{ExportAsset, NodeId};
 
 use super::edit::{roots_of, selected_roots};
-use super::fileio::{SCREEN_SETTINGS_KEYS, check_screen_settings, export_screens, store_screen_settings};
+use super::fileio::{
+    SCREEN_SETTINGS_KEYS, check_screen_settings, export_screens, store_screen_settings,
+};
 use super::*;
 
 /// The longest asset name kept (characters).
@@ -33,7 +35,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             remove
         ),
-        cmd!("assets.rename", "Rename Asset", [], None, "{asset: id, name} rename an asset (its files' names)", has_doc, rename),
+        cmd!(
+            "assets.rename",
+            "Rename Asset",
+            [],
+            None,
+            "{asset: id, name} rename an asset (its files' names)",
+            has_doc,
+            rename
+        ),
         cmd!(
             query "assets.list",
             "Assets",
@@ -92,15 +102,26 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad(C, "select the art to collect (or give its ids)"));
     }
     let name = str_param(p, "name").and_then(clean_name);
-    let sets: Vec<Vec<NodeId>> = if bool_or(p, "multiple", true) { ids.iter().map(|id| vec![*id]).collect() } else { vec![ids] };
+    let sets: Vec<Vec<NodeId>> = if bool_or(p, "multiple", true) {
+        ids.iter().map(|id| vec![*id]).collect()
+    } else {
+        vec![ids]
+    };
     if name.is_some() && sets.len() > 1 {
-        return Err(bad(C, "a name names one asset: give multiple: false, or one object"));
+        return Err(bad(
+            C,
+            "a name names one asset: give multiple: false, or one object",
+        ));
     }
-    let existing = |d: &vectorcraft_doc::Document, nodes: &[NodeId]| d.assets.iter().find(|a| a.nodes == nodes).map(|a| a.id);
+    let existing = |d: &vectorcraft_doc::Document, nodes: &[NodeId]| {
+        d.assets.iter().find(|a| a.nodes == nodes).map(|a| a.id)
+    };
     let d = &s.doc()?.doc;
     // Nothing new: no undo step.
     if sets.iter().all(|set| existing(d, set).is_some()) {
-        return Ok(json!({ "assets": sets.iter().filter_map(|set| existing(d, set)).collect::<Vec<_>>(), "added": 0 }));
+        return Ok(
+            json!({ "assets": sets.iter().filter_map(|set| existing(d, set)).collect::<Vec<_>>(), "added": 0 }),
+        );
     }
     s.edit("Collect for Export", |d, _| {
         let (mut out, mut added) = (vec![], 0);
@@ -110,7 +131,10 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
                 continue;
             }
             let own = match nodes.as_slice() {
-                [one] => d.node(*one).and_then(|n| n.name.as_deref()).and_then(clean_name),
+                [one] => d
+                    .node(*one)
+                    .and_then(|n| n.name.as_deref())
+                    .and_then(clean_name),
                 _ => None,
             };
             let name = name.clone().or(own).unwrap_or_else(|| d.next_asset_name());
@@ -125,14 +149,30 @@ fn add(s: &mut Session, p: &Value) -> Result<Value> {
 
 /// The asset ids of param `key`.
 fn asset_ids(p: &Value, key: &str, cmd: &str) -> Result<Vec<u64>> {
-    let ids = p.get(key).and_then(Value::as_array).ok_or_else(|| bad(cmd, format!("`{key}` must be an array of asset ids (see assets.list)")))?;
-    ids.iter().map(|v| v.as_u64().ok_or_else(|| bad(cmd, format!("{v} is not an asset id")))).collect()
+    let ids = p.get(key).and_then(Value::as_array).ok_or_else(|| {
+        bad(
+            cmd,
+            format!("`{key}` must be an array of asset ids (see assets.list)"),
+        )
+    })?;
+    ids.iter()
+        .map(|v| {
+            v.as_u64()
+                .ok_or_else(|| bad(cmd, format!("{v} is not an asset id")))
+        })
+        .collect()
 }
 
 fn remove(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "assets.remove";
     let ids = asset_ids(p, "assets", C)?;
-    let n = s.doc()?.doc.assets.iter().filter(|a| ids.contains(&a.id)).count();
+    let n = s
+        .doc()?
+        .doc
+        .assets
+        .iter()
+        .filter(|a| ids.contains(&a.id))
+        .count();
     if n == 0 {
         return Err(bad(C, "no such assets (see assets.list)"));
     }
@@ -144,9 +184,20 @@ fn remove(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "assets.rename";
-    let id = p.get("asset").and_then(Value::as_u64).ok_or_else(|| bad(C, "`asset` is the asset id (see assets.list)"))?;
-    let name = str_param(p, "name").and_then(clean_name).ok_or_else(|| bad(C, "give the asset a name"))?;
-    let at = s.doc()?.doc.assets.iter().position(|a| a.id == id).ok_or_else(|| bad(C, format!("no asset {id}")))?;
+    let id = p
+        .get("asset")
+        .and_then(Value::as_u64)
+        .ok_or_else(|| bad(C, "`asset` is the asset id (see assets.list)"))?;
+    let name = str_param(p, "name")
+        .and_then(clean_name)
+        .ok_or_else(|| bad(C, "give the asset a name"))?;
+    let at = s
+        .doc()?
+        .doc
+        .assets
+        .iter()
+        .position(|a| a.id == id)
+        .ok_or_else(|| bad(C, format!("no asset {id}")))?;
     s.edit("Rename Asset", |d, _| {
         if let Some(a) = d.assets.get_mut(at) {
             a.name = name;
@@ -161,7 +212,11 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
         .assets
         .iter()
         .map(|a| {
-            let bounds = a.nodes.iter().filter_map(|id| d.node(*id)?.visual_bounds()).reduce(|x, y| x.union(y));
+            let bounds = a
+                .nodes
+                .iter()
+                .filter_map(|id| d.node(*id)?.visual_bounds())
+                .reduce(|x, y| x.union(y));
             json!({
                 "id": a.id,
                 "name": a.name,
@@ -176,7 +231,15 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 /// The shared export settings of the document (the [`SCREEN_SETTINGS_KEYS`] it has).
 fn shared_settings(s: &Session) -> Result<Map<String, Value>> {
     let saved = &s.doc()?.doc.export_settings;
-    Ok(SCREEN_SETTINGS_KEYS.iter().filter_map(|k| Some((k.to_string(), saved.get(*k).filter(|v| !v.is_null())?.clone()))).collect())
+    Ok(SCREEN_SETTINGS_KEYS
+        .iter()
+        .filter_map(|k| {
+            Some((
+                k.to_string(),
+                saved.get(*k).filter(|v| !v.is_null())?.clone(),
+            ))
+        })
+        .collect())
 }
 
 /// `base` with the settings of `p` over it: a given value replaces (null removes) the saved one;
@@ -207,7 +270,10 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     if !q.contains_key("assets") {
         let all: Vec<u64> = s.doc()?.doc.assets.iter().map(|a| a.id).collect();
         if all.is_empty() {
-            return Err(bad(C, "no assets yet: collect art for export first (assets.add)"));
+            return Err(bad(
+                C,
+                "no assets yet: collect art for export first (assets.add)",
+            ));
         }
         q.insert("assets".into(), json!(all));
     }
@@ -217,8 +283,17 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
 fn settings_set(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "assets.settings.set";
     let o = p.as_object().ok_or_else(|| bad(C, "give the settings to change, e.g. {\"formats\": [{\"format\": \"png\", \"scale\": \"2x\"}]}"))?;
-    if let Some(k) = o.keys().find(|k| !SCREEN_SETTINGS_KEYS.contains(&k.as_str())) {
-        return Err(bad(C, format!("`{k}` isn't an export setting: {}", SCREEN_SETTINGS_KEYS.join(", "))));
+    if let Some(k) = o
+        .keys()
+        .find(|k| !SCREEN_SETTINGS_KEYS.contains(&k.as_str()))
+    {
+        return Err(bad(
+            C,
+            format!(
+                "`{k}` isn't an export setting: {}",
+                SCREEN_SETTINGS_KEYS.join(", ")
+            ),
+        ));
     }
     let mut settings = s.doc()?.doc.export_settings.clone();
     overlay(&mut settings, o);

@@ -20,7 +20,9 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 use vectorcraft_color::Paint;
-use vectorcraft_doc::{Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer};
+use vectorcraft_doc::{
+    Appearance, AppearanceItem, Document, FillLayer, Node, NodeId, NodeKind, StrokeLayer,
+};
 use vectorcraft_geom::{BezPath, Rect};
 
 pub use colorize::{art_colors, colorize, instance_art, stain, tint_node};
@@ -141,7 +143,13 @@ pub struct Calligraphic {
 
 impl Default for Calligraphic {
     fn default() -> Self {
-        Self { angle: 0.0, roundness: 100.0, size: 3.0, variation: [0.0; 3], modes: None }
+        Self {
+            angle: 0.0,
+            roundness: 100.0,
+            size: 3.0,
+            variation: [0.0; 3],
+            modes: None,
+        }
     }
 }
 
@@ -152,7 +160,15 @@ impl Calligraphic {
 
     /// How angle, roundness and size vary.
     pub fn modes(&self) -> [Variation; 3] {
-        self.modes.unwrap_or_else(|| self.variation.map(|v| if v != 0.0 { Variation::Random } else { Variation::Fixed }))
+        self.modes.unwrap_or_else(|| {
+            self.variation.map(|v| {
+                if v != 0.0 {
+                    Variation::Random
+                } else {
+                    Variation::Fixed
+                }
+            })
+        })
     }
     /// Does the pen's pressure change the nib?
     pub fn uses_pressure(&self) -> bool {
@@ -238,7 +254,12 @@ impl Default for Scatter {
 
 impl Scatter {
     /// The ranges of size (%), spacing (%), scatter (%) and rotation (°).
-    pub const RANGES: [(f64, f64); 4] = [(1.0, 10000.0), (1.0, 10000.0), (-1000.0, 1000.0), (-180.0, 180.0)];
+    pub const RANGES: [(f64, f64); 4] = [
+        (1.0, 10000.0),
+        (1.0, 10000.0),
+        (-1000.0, 1000.0),
+        (-180.0, 180.0),
+    ];
 
     /// Size, spacing, scatter and rotation, each as its (first, second) values.
     pub fn values(&self) -> [(f64, f64); 4] {
@@ -246,7 +267,15 @@ impl Scatter {
     }
     /// How size, spacing, scatter and rotation vary.
     pub fn modes(&self) -> [Variation; 4] {
-        self.modes.unwrap_or_else(|| self.values().map(|(a, b)| if a != b { Variation::Random } else { Variation::Fixed }))
+        self.modes.unwrap_or_else(|| {
+            self.values().map(|(a, b)| {
+                if a != b {
+                    Variation::Random
+                } else {
+                    Variation::Fixed
+                }
+            })
+        })
     }
 }
 
@@ -413,7 +442,15 @@ impl Bristle {
 
 impl Default for Bristle {
     fn default() -> Self {
-        Self { shape: BristleShape::RoundPoint, size: 6.0, length: 100.0, density: 50.0, thickness: 40.0, opacity: 75.0, stiffness: 50.0 }
+        Self {
+            shape: BristleShape::RoundPoint,
+            size: 6.0,
+            length: 100.0,
+            density: 50.0,
+            thickness: 40.0,
+            opacity: 75.0,
+            stiffness: 50.0,
+        }
     }
 }
 
@@ -421,7 +458,11 @@ impl Default for Bristle {
 
 /// `v` within `(lo, hi)`; `fallback` (kept within too) when it isn't a number.
 fn within(v: f64, (lo, hi): (f64, f64), fallback: f64) -> f64 {
-    if v.is_finite() { v.clamp(lo, hi) } else { fallback.clamp(lo, hi) }
+    if v.is_finite() {
+        v.clamp(lo, hi)
+    } else {
+        fallback.clamp(lo, hi)
+    }
 }
 
 fn within_pair((a, b): (f64, f64), range: (f64, f64), fallback: f64) -> (f64, f64) {
@@ -445,9 +486,13 @@ impl Brush {
         match &self.kind {
             BrushKind::Scatter(s) => vec![&s.art],
             BrushKind::Art(a) => vec![&a.art],
-            BrushKind::Pattern(p) => {
-                std::iter::once(&p.side).chain([&p.outer_corner, &p.inner_corner, &p.start, &p.end].into_iter().flatten()).collect()
-            }
+            BrushKind::Pattern(p) => std::iter::once(&p.side)
+                .chain(
+                    [&p.outer_corner, &p.inner_corner, &p.start, &p.end]
+                        .into_iter()
+                        .flatten(),
+                )
+                .collect(),
             BrushKind::Calligraphic(_) | BrushKind::Bristle(_) => vec![],
         }
     }
@@ -492,9 +537,12 @@ impl Brush {
                 let d = Bristle::default();
                 b.size = within(b.size, Bristle::SIZE_RANGE, d.size);
                 b.length = within(b.length, Bristle::LENGTH_RANGE, d.length);
-                for (v, fallback) in
-                    [(&mut b.density, d.density), (&mut b.thickness, d.thickness), (&mut b.opacity, d.opacity), (&mut b.stiffness, d.stiffness)]
-                {
+                for (v, fallback) in [
+                    (&mut b.density, d.density),
+                    (&mut b.thickness, d.thickness),
+                    (&mut b.opacity, d.opacity),
+                    (&mut b.stiffness, d.stiffness),
+                ] {
                     *v = within(*v, Bristle::PERCENT_RANGE, fallback);
                 }
             }
@@ -520,12 +568,17 @@ pub fn parse_library(v: &serde_json::Value) -> Vec<Brush> {
         b.sanitize();
         Some(b)
     };
-    v.as_array().map(|a| a.iter().filter_map(parse).collect()).unwrap_or_default()
+    v.as_array()
+        .map(|a| a.iter().filter_map(parse).collect())
+        .unwrap_or_default()
 }
 
 /// Store `lib` as the document's brush library.
 pub fn store(doc: &mut Document, lib: &[Brush]) {
-    doc.unknown.insert(DOC_KEY.into(), serde_json::to_value(lib).unwrap_or_default());
+    doc.unknown.insert(
+        DOC_KEY.into(),
+        serde_json::to_value(lib).unwrap_or_default(),
+    );
 }
 
 /// Find a brush by name.
@@ -535,7 +588,10 @@ pub fn find(doc: &Document, name: &str) -> Option<Brush> {
 
 /// The current brush name (Paintbrush tool, Brushes panel highlight).
 pub fn current(doc: &Document) -> Option<String> {
-    doc.unknown.get(CURRENT_KEY).and_then(|v| v.as_str()).map(str::to_string)
+    doc.unknown
+        .get(CURRENT_KEY)
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
 }
 
 /// A unique name based on `base` ("Base", "Base 2", …).
@@ -561,7 +617,11 @@ fn tolerance(scale: f64) -> f64 {
 /// appearances carry no brushes (so they never recurse). Stroke-level opacity/blend are the
 /// caller's job (`StrokeLayer::opacity`).
 pub fn stroke_pieces(brush: &Brush, bp: &BezPath, stroke: &StrokeLayer) -> Vec<Node> {
-    let w = if stroke.width > 0.0 { stroke.width } else { 1.0 };
+    let w = if stroke.width > 0.0 {
+        stroke.width
+    } else {
+        1.0
+    };
     let mut out = match &brush.kind {
         BrushKind::Calligraphic(c) => calli::calligraphic(c, bp, w, stroke, &brush.name),
         BrushKind::Bristle(b) => calli::bristle(b, bp, w, &stroke.paint, &brush.name),
@@ -584,8 +644,16 @@ pub fn node_pieces(doc: &Document, n: &Node) -> Option<Vec<Node>> {
     let mut out = vec![];
     let mut any = false;
     for item in &n.appearance.items {
-        let AppearanceItem::Stroke(st) = item else { continue };
-        let Some(b) = st.brush.as_deref().and_then(|name| lib.iter().find(|x| x.name == name)) else { continue };
+        let AppearanceItem::Stroke(st) = item else {
+            continue;
+        };
+        let Some(b) = st
+            .brush
+            .as_deref()
+            .and_then(|name| lib.iter().find(|x| x.name == name))
+        else {
+            continue;
+        };
         if !st.visible || st.paint.is_none() {
             any = true;
             continue;
@@ -621,7 +689,10 @@ pub fn node_bezpath(n: &Node) -> Option<BezPath> {
 
 /// Does `n` have a stroke with a brush?
 pub fn has_brush(n: &Node) -> bool {
-    n.appearance.items.iter().any(|i| matches!(i, AppearanceItem::Stroke(s) if s.brush.is_some() && s.visible))
+    n.appearance
+        .items
+        .iter()
+        .any(|i| matches!(i, AppearanceItem::Stroke(s) if s.brush.is_some() && s.visible))
 }
 
 /// Expand a brushed path: a group of [the path with its fills and unbrushed strokes (if any
@@ -630,7 +701,9 @@ pub fn expand(doc: &Document, n: &Node) -> Option<Node> {
     let pieces = node_pieces(doc, n)?;
     let mut children: Vec<Arc<Node>> = vec![];
     let mut base = n.clone();
-    base.appearance.items.retain(|i| !matches!(i, AppearanceItem::Stroke(s) if s.brush.is_some()));
+    base.appearance
+        .items
+        .retain(|i| !matches!(i, AppearanceItem::Stroke(s) if s.brush.is_some()));
     let painted = base.appearance.items.iter().any(|i| match i {
         AppearanceItem::Fill(f) => f.visible && !f.paint.is_none(),
         AppearanceItem::Stroke(s) => s.visible && !s.paint.is_none() && s.width > 0.0,
@@ -649,7 +722,14 @@ pub fn expand(doc: &Document, n: &Node) -> Option<Node> {
 
 /// A filled path node painted with `paint` (brush output).
 pub(crate) fn filled(path: vectorcraft_geom::PathData, paint: &Paint) -> Node {
-    Node::path(NodeId(0), path, Appearance { items: vec![AppearanceItem::Fill(FillLayer::new(paint.clone()))], ..Default::default() })
+    Node::path(
+        NodeId(0),
+        path,
+        Appearance {
+            items: vec![AppearanceItem::Fill(FillLayer::new(paint.clone()))],
+            ..Default::default()
+        },
+    )
 }
 
 /// A sample stroke for previews (a gentle S-curve in a `w`×`h` box).
@@ -657,13 +737,19 @@ pub fn preview_path(w: f64, h: f64) -> BezPath {
     let mut bp = BezPath::new();
     let (x0, x1) = (h * 0.5, w - h * 0.5);
     bp.move_to((x0, h * 0.5));
-    bp.curve_to((x0 + (x1 - x0) * 0.35, h * 0.05), (x0 + (x1 - x0) * 0.65, h * 0.95), (x1, h * 0.5));
+    bp.curve_to(
+        (x0 + (x1 - x0) * 0.35, h * 0.05),
+        (x0 + (x1 - x0) * 0.65, h * 0.95),
+        (x1, h * 0.5),
+    );
     bp
 }
 
 /// Union of the geometric bounds of `nodes`.
 pub fn pieces_bounds(nodes: &[Node]) -> Option<Rect> {
-    nodes.iter().fold(None, |acc, n| vectorcraft_geom::union_opt(acc, n.visual_bounds()))
+    nodes.iter().fold(None, |acc, n| {
+        vectorcraft_geom::union_opt(acc, n.visual_bounds())
+    })
 }
 
 #[cfg(test)]

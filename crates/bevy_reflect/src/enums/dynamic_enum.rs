@@ -1,14 +1,14 @@
 use bevy_reflect_derive::impl_type_path;
 
 use crate::{
+    ApplyError, PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut, ReflectOwned,
+    ReflectRef, TypeInfo,
     enums::{
-        enum_debug, enum_hash, enum_partial_cmp, enum_partial_eq, Enum, VariantFieldIter,
-        VariantType,
+        Enum, VariantFieldIter, VariantType, enum_debug, enum_hash, enum_partial_cmp,
+        enum_partial_eq,
     },
     structs::{DynamicStruct, Struct},
     tuple::{DynamicTuple, Tuple},
-    ApplyError, PartialReflect, Reflect, ReflectCloneError, ReflectKind, ReflectMut, ReflectOwned,
-    ReflectRef, TypeInfo,
 };
 
 use alloc::{boxed::Box, string::String};

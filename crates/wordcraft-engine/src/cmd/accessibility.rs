@@ -20,7 +20,10 @@ const BLANK_RUN: usize = 3;
 
 /// The checker's findings for `doc`, errors first, then warnings, then tips (each in document order).
 pub fn check(doc: &Document) -> Vec<Value> {
-    let mut c = Checker { doc, issues: Vec::new() };
+    let mut c = Checker {
+        doc,
+        issues: Vec::new(),
+    };
     c.run();
     let rank = |v: &Value| match v["kind"].as_str() {
         Some("error") => 0,
@@ -38,7 +41,11 @@ struct Checker<'a> {
 }
 
 fn at(path: &Path, off: usize) -> Pos {
-    Pos { story: StoryRef::Body, path: path.clone(), off }
+    Pos {
+        story: StoryRef::Body,
+        path: path.clone(),
+        off,
+    }
 }
 
 impl Checker<'_> {
@@ -54,7 +61,9 @@ impl Checker<'_> {
         let mut tables: Vec<Path> = Vec::new();
         let mut blank: Vec<Path> = Vec::new();
         for path in doc.para_paths(StoryRef::Body) {
-            let Some(p) = doc.para(StoryRef::Body, &path) else { continue };
+            let Some(p) = doc.para(StoryRef::Body, &path) else {
+                continue;
+            };
             if let Some((tp, _, _)) = path.cell()
                 && !tables.contains(&tp)
             {
@@ -62,7 +71,9 @@ impl Checker<'_> {
             }
             self.objects(&path, p);
             // Empty paragraphs in a row (top level, no section break): spacing made with Enter.
-            let consecutive = blank.last().is_none_or(|b| b.0.len() == 1 && path.0.len() == 1 && b.last() + 1 == path.last());
+            let consecutive = blank
+                .last()
+                .is_none_or(|b| b.0.len() == 1 && path.0.len() == 1 && b.last() + 1 == path.last());
             if path.0.len() == 1 && p.text.trim().is_empty() && p.section.is_none() && consecutive {
                 blank.push(path.clone());
             } else {
@@ -73,7 +84,10 @@ impl Checker<'_> {
                 }
             }
             let rp = doc.styles.resolve_para(&p.props);
-            if let Some(l) = rp.outline_level.filter(|_| !p.plain_text().trim().is_empty()) {
+            if let Some(l) = rp
+                .outline_level
+                .filter(|_| !p.plain_text().trim().is_empty())
+            {
                 if let Some(prev) = last_level
                     && l > prev + 1
                 {
@@ -111,18 +125,24 @@ impl Checker<'_> {
     /// Alt text and reading order of the drawings in paragraph `p`.
     fn objects(&mut self, path: &Path, p: &Paragraph) {
         for off in p.object_offsets() {
-            let Some(o) = p.object_at(off).filter(|o| o.is_drawing()) else { continue };
+            let Some(o) = p.object_at(off).filter(|o| o.is_drawing()) else {
+                continue;
+            };
             let pos = at(path, off);
             let select = json!({"anchor": pos, "focus": at(path, off + OBJ.len_utf8())});
             // Ink: every stroke is its own object, so asking about each would bury the report.
             if o.is_decorative() || o.ink().is_some() {
                 continue;
             }
-            let titled = o.frame().is_some_and(|(_, _, f)| !f.alt.title.trim().is_empty());
+            let titled = o
+                .frame()
+                .is_some_and(|(_, _, f)| !f.alt.title.trim().is_empty());
             let described = !o.alt_text().trim().is_empty() || titled;
             if !described && !self.speaks_for_itself(o) {
                 let (rule, issue) = match o {
-                    InlineObject::Graphic { .. } => ("altText", "Chart or diagram has no alternative text"),
+                    InlineObject::Graphic { .. } => {
+                        ("altText", "Chart or diagram has no alternative text")
+                    }
                     _ => ("altText", "Missing alternative text"),
                 };
                 self.push(json!({
@@ -144,12 +164,14 @@ impl Checker<'_> {
 
     /// A text box with text in it is read out as that text.
     fn speaks_for_itself(&self, o: &InlineObject) -> bool {
-        o.text_box().and_then(|id| self.doc.parts.get(&id)).is_some_and(|part| {
-            part.blocks.iter().any(|b| match &**b {
-                Block::Para(p) => !p.plain_text().trim().is_empty(),
-                _ => true,
+        o.text_box()
+            .and_then(|id| self.doc.parts.get(&id))
+            .is_some_and(|part| {
+                part.blocks.iter().any(|b| match &**b {
+                    Block::Para(p) => !p.plain_text().trim().is_empty(),
+                    _ => true,
+                })
             })
-        })
     }
 
     /// Text whose colour is too close to what it's drawn on (WCAG 2: 4.5:1, 3:1 for large text).
@@ -157,7 +179,11 @@ impl Checker<'_> {
         let doc = self.doc;
         let cell = path.cell().and_then(|(tp, r, c)| {
             let t = doc.table(StoryRef::Body, &tp)?;
-            t.rows.get(r).and_then(|row| row.cells.get(c)).and_then(|c| c.props.shading).or(t.props.shading)
+            t.rows
+                .get(r)
+                .and_then(|row| row.cells.get(c))
+                .and_then(|c| c.props.shading)
+                .or(t.props.shading)
         });
         let page = doc.settings.page_color.unwrap_or(Rgb::WHITE);
         let mut start = 0usize;
@@ -168,8 +194,15 @@ impl Checker<'_> {
                 continue;
             }
             let rc = doc.styles.resolve_char(p.props.style.as_deref(), &r.props);
-            let TextColor::Rgb(fg) = rc.color else { continue };
-            let bg = rc.highlight.or(rc.shading).or(para_shading).or(cell).unwrap_or(page);
+            let TextColor::Rgb(fg) = rc.color else {
+                continue;
+            };
+            let bg = rc
+                .highlight
+                .or(rc.shading)
+                .or(para_shading)
+                .or(cell)
+                .unwrap_or(page);
             let ratio = contrast_ratio(fg, bg);
             let large = rc.size >= 18.0 || (rc.bold && rc.size >= 14.0);
             let need = if large { 3.0 } else { 4.5 };
@@ -187,7 +220,15 @@ impl Checker<'_> {
             v.extend([r as u32, c as u32, 0]);
             at(&Path(v), 0)
         };
-        if t.props.caption.as_deref().is_none_or(|s| s.trim().is_empty()) && t.props.description.as_deref().is_none_or(|s| s.trim().is_empty()) {
+        if t.props
+            .caption
+            .as_deref()
+            .is_none_or(|s| s.trim().is_empty())
+            && t.props
+                .description
+                .as_deref()
+                .is_none_or(|s| s.trim().is_empty())
+        {
             self.push(json!({"kind": "warning", "rule": "tableAltText", "issue": "Table has no alternative text", "where": tp.0, "pos": cell_pos(0, 0), "fix": "Give it a title or description (table.altText)"}));
         }
         if t.rows.len() >= 2 && !t.rows.first().is_some_and(|r| r.props.header) {
@@ -220,7 +261,11 @@ impl Checker<'_> {
                 }
             }
         }
-        if t.rows.iter().flat_map(|r| &r.cells).any(|c| c.span() > 1 || c.props.vmerge != VMerge::None) {
+        if t.rows
+            .iter()
+            .flat_map(|r| &r.cells)
+            .any(|c| c.span() > 1 || c.props.vmerge != VMerge::None)
+        {
             self.push(json!({"kind": "tip", "rule": "mergedCells", "issue": "Table has merged cells, which screen readers can lose track of", "where": tp.0, "pos": cell_pos(0, 0), "fix": "Split the merged cells (Table Layout › Merge)"}));
         }
     }
@@ -242,7 +287,11 @@ fn kind_of(o: &InlineObject) -> &'static str {
 fn luminance(c: Rgb) -> f64 {
     let ch = |v: u8| {
         let s = v as f64 / 255.0;
-        if s <= 0.04045 { s / 12.92 } else { ((s + 0.055) / 1.055).powf(2.4) }
+        if s <= 0.04045 {
+            s / 12.92
+        } else {
+            ((s + 0.055) / 1.055).powf(2.4)
+        }
     };
     0.2126 * ch(c.0) + 0.7152 * ch(c.1) + 0.0722 * ch(c.2)
 }
@@ -268,7 +317,12 @@ mod tests {
             .as_array()
             .unwrap()
             .iter()
-            .map(|i| (i["kind"].as_str().unwrap().to_string(), i["rule"].as_str().unwrap_or("").to_string()))
+            .map(|i| {
+                (
+                    i["kind"].as_str().unwrap().to_string(),
+                    i["rule"].as_str().unwrap_or("").to_string(),
+                )
+            })
             .collect()
     }
 
@@ -286,9 +340,19 @@ mod tests {
         assert!(rules(&mut s).contains(&("error".into(), "altText".into())));
         // The issue says how to fix it: select the object, run the action.
         let v = s.run("file.accessibility", &json!({})).unwrap();
-        let i = v["issues"].as_array().unwrap().iter().find(|i| i["rule"] == "altText").unwrap().clone();
+        let i = v["issues"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|i| i["rule"] == "altText")
+            .unwrap()
+            .clone();
         s.run("select.range", &i["select"]).unwrap();
-        s.run(i["action"]["command"].as_str().unwrap(), &i["action"]["params"]).unwrap();
+        s.run(
+            i["action"]["command"].as_str().unwrap(),
+            &i["action"]["params"],
+        )
+        .unwrap();
         assert!(!rules(&mut s).iter().any(|(_, r)| r == "altText"));
     }
 
@@ -303,19 +367,37 @@ mod tests {
         for _ in 0..4 {
             s.run("text.newParagraph", &json!({})).unwrap();
         }
-        s.run("insert.table", &json!({"rows": 3, "cols": 2})).unwrap();
+        s.run("insert.table", &json!({"rows": 3, "cols": 2}))
+            .unwrap();
         s.run("text.insert", &json!({"text": "Year"})).unwrap();
         let r = rules(&mut s);
-        for want in
-            [("warning", "contrast"), ("tip", "blankParagraphs"), ("warning", "tableHeader"), ("warning", "tableAltText"), ("warning", "blankRow")]
-        {
-            assert!(r.contains(&(want.0.into(), want.1.into())), "{want:?} in {r:?}");
+        for want in [
+            ("warning", "contrast"),
+            ("tip", "blankParagraphs"),
+            ("warning", "tableHeader"),
+            ("warning", "tableAltText"),
+            ("warning", "blankRow"),
+        ] {
+            assert!(
+                r.contains(&(want.0.into(), want.1.into())),
+                "{want:?} in {r:?}"
+            );
         }
         // Fix the header row from the issue's action, with the caret where it says.
         let v = s.run("file.accessibility", &json!({})).unwrap();
-        let i = v["issues"].as_array().unwrap().iter().find(|i| i["rule"] == "tableHeader").unwrap().clone();
+        let i = v["issues"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|i| i["rule"] == "tableHeader")
+            .unwrap()
+            .clone();
         s.run("caret.set", &json!({"pos": i["pos"]})).unwrap();
-        s.run(i["action"]["command"].as_str().unwrap(), &i["action"]["params"]).unwrap();
+        s.run(
+            i["action"]["command"].as_str().unwrap(),
+            &i["action"]["params"],
+        )
+        .unwrap();
         assert!(!rules(&mut s).iter().any(|(_, r)| r == "tableHeader"));
     }
 }

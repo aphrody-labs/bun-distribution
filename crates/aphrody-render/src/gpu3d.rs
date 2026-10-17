@@ -294,7 +294,10 @@ impl Renderer3d {
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             label: Some("3d-globals"),
             layout: &bgl,
-            entries: &[wgpu::BindGroupEntry { binding: 0, resource: globals.as_entire_binding() }],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: globals.as_entire_binding(),
+            }],
         });
         Self {
             device,
@@ -367,7 +370,10 @@ impl Renderer3d {
     /// [`Gpu3dError::Readback`] when mapping the result fails.
     pub fn render_prepared(&mut self, prepared: &Prepared3d) -> Result<Frame3d, Gpu3dError> {
         let draw_calls = self.draw(prepared, &Output::Offscreen);
-        let offscreen = self.offscreen.as_ref().expect("the offscreen target is created by draw");
+        let offscreen = self
+            .offscreen
+            .as_ref()
+            .expect("the offscreen target is created by draw");
         let (width, height) = (offscreen.width, offscreen.height);
         let bytes_per_row = offscreen.bytes_per_row;
 
@@ -385,16 +391,24 @@ impl Renderer3d {
         let row_bytes = width as usize * 4;
         let mut rgba = vec![0_u8; row_bytes * height as usize];
         {
-            let data =
-                slice.get_mapped_range().map_err(|err| Gpu3dError::Readback(err.to_string()))?;
-            for (dst, src) in
-                rgba.chunks_exact_mut(row_bytes).zip(data.chunks_exact(bytes_per_row as usize))
+            let data = slice
+                .get_mapped_range()
+                .map_err(|err| Gpu3dError::Readback(err.to_string()))?;
+            for (dst, src) in rgba
+                .chunks_exact_mut(row_bytes)
+                .zip(data.chunks_exact(bytes_per_row as usize))
             {
                 dst.copy_from_slice(&src[..row_bytes]);
             }
         }
         offscreen.readback.unmap();
-        Ok(Frame3d { rgba, width, height, adapter: self.adapter.clone(), draw_calls })
+        Ok(Frame3d {
+            rgba,
+            width,
+            height,
+            adapter: self.adapter.clone(),
+            draw_calls,
+        })
     }
 
     /// Render an already prepared frame into the renderer's resolve texture
@@ -403,7 +417,11 @@ impl Renderer3d {
     /// call that changes the canvas size.
     pub fn render_to_texture(&mut self, prepared: &Prepared3d) -> &wgpu::Texture {
         self.draw(prepared, &Output::Offscreen);
-        &self.offscreen.as_ref().expect("the offscreen target is created by draw").resolve
+        &self
+            .offscreen
+            .as_ref()
+            .expect("the offscreen target is created by draw")
+            .resolve
     }
 
     /// Render an already prepared frame into a host-owned view — typically a
@@ -422,7 +440,15 @@ impl Renderer3d {
         target_size: (u32, u32),
         origin: (u32, u32),
     ) -> u32 {
-        self.draw(prepared, &Output::View { view, format, size: target_size, origin })
+        self.draw(
+            prepared,
+            &Output::View {
+                view,
+                format,
+                size: target_size,
+                origin,
+            },
+        )
     }
 
     fn pipeline(
@@ -432,7 +458,10 @@ impl Renderer3d {
         double_sided: bool,
         transparent: bool,
     ) {
-        if self.pipelines.contains_key(&(format, samples, double_sided, transparent)) {
+        if self
+            .pipelines
+            .contains_key(&(format, samples, double_sided, transparent))
+        {
             return;
         }
         let blend = transparent.then_some(wgpu::BlendState {
@@ -449,46 +478,56 @@ impl Renderer3d {
         });
         // sRGB targets encode in hardware: the shader then outputs linear.
         let constants = [("OUTPUT_LINEAR", if format.is_srgb() { 1.0 } else { 0.0 })];
-        let pipeline = self.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: Some("3d-mesh"),
-            layout: Some(&self.layout),
-            vertex: wgpu::VertexState {
-                module: &self.shader,
-                entry_point: Some("vs_main"),
-                buffers: &vertex_layouts(),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &self.shader,
-                entry_point: Some("fs_main"),
-                targets: &[Some(wgpu::ColorTargetState {
-                    format,
-                    blend,
-                    write_mask: wgpu::ColorWrites::ALL,
-                })],
-                compilation_options: wgpu::PipelineCompilationOptions {
-                    constants: &constants,
+        let pipeline = self
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: Some("3d-mesh"),
+                layout: Some(&self.layout),
+                vertex: wgpu::VertexState {
+                    module: &self.shader,
+                    entry_point: Some("vs_main"),
+                    buffers: &vertex_layouts(),
+                    compilation_options: wgpu::PipelineCompilationOptions::default(),
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &self.shader,
+                    entry_point: Some("fs_main"),
+                    targets: &[Some(wgpu::ColorTargetState {
+                        format,
+                        blend,
+                        write_mask: wgpu::ColorWrites::ALL,
+                    })],
+                    compilation_options: wgpu::PipelineCompilationOptions {
+                        constants: &constants,
+                        ..Default::default()
+                    },
+                }),
+                primitive: wgpu::PrimitiveState {
+                    topology: wgpu::PrimitiveTopology::TriangleList,
+                    front_face: wgpu::FrontFace::Ccw,
+                    cull_mode: if double_sided {
+                        None
+                    } else {
+                        Some(wgpu::Face::Back)
+                    },
                     ..Default::default()
                 },
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: if double_sided { None } else { Some(wgpu::Face::Back) },
-                ..Default::default()
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: DEPTH_FORMAT,
-                depth_write_enabled: Some(!transparent),
-                depth_compare: Some(wgpu::CompareFunction::Less),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState { count: samples, ..Default::default() },
-            multiview_mask: None,
-            cache: None,
-        });
-        self.pipelines.insert((format, samples, double_sided, transparent), pipeline);
+                depth_stencil: Some(wgpu::DepthStencilState {
+                    format: DEPTH_FORMAT,
+                    depth_write_enabled: Some(!transparent),
+                    depth_compare: Some(wgpu::CompareFunction::Less),
+                    stencil: wgpu::StencilState::default(),
+                    bias: wgpu::DepthBiasState::default(),
+                }),
+                multisample: wgpu::MultisampleState {
+                    count: samples,
+                    ..Default::default()
+                },
+                multiview_mask: None,
+                cache: None,
+            });
+        self.pipelines
+            .insert((format, samples, double_sided, transparent), pipeline);
     }
 
     fn texture(
@@ -501,7 +540,11 @@ impl Renderer3d {
     ) -> wgpu::Texture {
         self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some(label),
-            size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count,
             dimension: wgpu::TextureDimension::D2,
@@ -518,8 +561,14 @@ impl Renderer3d {
             return;
         }
         let msaa = (samples > 1).then(|| {
-            self.texture("3d-msaa", size, format, wgpu::TextureUsages::RENDER_ATTACHMENT, samples)
-                .create_view(&wgpu::TextureViewDescriptor::default())
+            self.texture(
+                "3d-msaa",
+                size,
+                format,
+                wgpu::TextureUsages::RENDER_ATTACHMENT,
+                samples,
+            )
+            .create_view(&wgpu::TextureViewDescriptor::default())
         });
         let depth = self
             .texture(
@@ -530,12 +579,22 @@ impl Renderer3d {
                 samples,
             )
             .create_view(&wgpu::TextureViewDescriptor::default());
-        self.attachments =
-            Some(Attachments { width: size.0, height: size.1, samples, format, msaa, depth });
+        self.attachments = Some(Attachments {
+            width: size.0,
+            height: size.1,
+            samples,
+            format,
+            msaa,
+            depth,
+        });
     }
 
     fn ensure_offscreen(&mut self, width: u32, height: u32) {
-        if self.offscreen.as_ref().is_some_and(|o| o.width == width && o.height == height) {
+        if self
+            .offscreen
+            .as_ref()
+            .is_some_and(|o| o.width == width && o.height == height)
+        {
             return;
         }
         let resolve = self.texture(
@@ -556,8 +615,14 @@ impl Renderer3d {
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
-        self.offscreen =
-            Some(Offscreen { width, height, resolve, resolve_view, readback, bytes_per_row });
+        self.offscreen = Some(Offscreen {
+            width,
+            height,
+            resolve,
+            resolve_view,
+            readback,
+            bytes_per_row,
+        });
     }
 
     fn upload_meshes(&mut self, prepared: &Prepared3d) {
@@ -571,18 +636,25 @@ impl Renderer3d {
                 .positions
                 .iter()
                 .zip(&mesh.normals)
-                .map(|(p, n)| VertexGpu { position: *p, normal: *n })
+                .map(|(p, n)| VertexGpu {
+                    position: *p,
+                    normal: *n,
+                })
                 .collect();
-            let vertices = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("3d-vertices"),
-                contents: bytemuck::cast_slice(&vertices),
-                usage: wgpu::BufferUsages::VERTEX,
-            });
-            let indices = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("3d-indices"),
-                contents: bytemuck::cast_slice(&mesh.indices),
-                usage: wgpu::BufferUsages::INDEX,
-            });
+            let vertices = self
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("3d-vertices"),
+                    contents: bytemuck::cast_slice(&vertices),
+                    usage: wgpu::BufferUsages::VERTEX,
+                });
+            let indices = self
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("3d-indices"),
+                    contents: bytemuck::cast_slice(&mesh.indices),
+                    usage: wgpu::BufferUsages::INDEX,
+                });
             self.meshes.insert(
                 *key,
                 GpuMesh {
@@ -594,7 +666,8 @@ impl Renderer3d {
             );
         }
         let frame = self.frame;
-        self.meshes.retain(|_, m| frame.saturating_sub(m.last_used) <= MESH_TTL_FRAMES);
+        self.meshes
+            .retain(|_, m| frame.saturating_sub(m.last_used) <= MESH_TTL_FRAMES);
         let resident: std::collections::HashSet<u64> = self.meshes.keys().copied().collect();
         self.mesh_cache.retain(|k| resident.contains(&k));
     }
@@ -652,7 +725,11 @@ impl Renderer3d {
                     vector_kind: [to_light.x, to_light.y, to_light.z, 0.0],
                     radiance_range: [radiance[0], radiance[1], radiance[2], 0.0],
                 },
-                PreparedLight::Point { position, radiance, range } => LightGpu {
+                PreparedLight::Point {
+                    position,
+                    radiance,
+                    range,
+                } => LightGpu {
                     vector_kind: [position.x, position.y, position.z, 1.0],
                     radiance_range: [radiance[0], radiance[1], radiance[2], range],
                 },
@@ -662,7 +739,12 @@ impl Renderer3d {
         let (light_vp, shadow, shadow_light) = match &prepared.shadow {
             Some(setup) => (
                 setup.view_proj.cols,
-                [setup.normal_offset, setup.depth_bias, setup.resolution as f32, 0.0],
+                [
+                    setup.normal_offset,
+                    setup.depth_bias,
+                    setup.resolution as f32,
+                    0.0,
+                ],
                 setup.light as u32,
             ),
             None => (crate::math3d::Mat4::IDENTITY.cols, [0.0; 4], u32::MAX),
@@ -674,10 +756,16 @@ impl Renderer3d {
             sky: [s[0], s[1], s[2], 0.0],
             ground: [gr[0], gr[1], gr[2], 0.0],
             shadow,
-            counts: [prepared.lights.len().min(MAX_LIGHTS) as u32, shadow_light, 0, 0],
+            counts: [
+                prepared.lights.len().min(MAX_LIGHTS) as u32,
+                shadow_light,
+                0,
+                0,
+            ],
             lights,
         };
-        self.queue.write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
+        self.queue
+            .write_buffer(&self.globals, 0, bytemuck::bytes_of(&globals));
     }
 
     /// Encode and submit one frame to `output` (with the readback copy for
@@ -687,7 +775,12 @@ impl Renderer3d {
         let samples = prepared.samples;
         let (format, size, origin) = match *output {
             Output::Offscreen => (COLOR_FORMAT, (prepared.width, prepared.height), (0, 0)),
-            Output::View { format, size, origin, .. } => (format, size, origin),
+            Output::View {
+                format,
+                size,
+                origin,
+                ..
+            } => (format, size, origin),
         };
         for batch in &prepared.batches {
             self.pipeline(format, samples, batch.double_sided, batch.transparent);
@@ -705,11 +798,18 @@ impl Renderer3d {
                 self.shadow = shadow_target(&self.device, &self.shadow_bgl, setup.resolution);
             }
         }
-        let attachments = self.attachments.as_ref().expect("attachments were just ensured");
+        let attachments = self
+            .attachments
+            .as_ref()
+            .expect("attachments were just ensured");
         let target_view = match *output {
             Output::Offscreen => {
-                &self.offscreen.as_ref().expect("offscreen target was just ensured").resolve_view
-            },
+                &self
+                    .offscreen
+                    .as_ref()
+                    .expect("offscreen target was just ensured")
+                    .resolve_view
+            }
             Output::View { view, .. } => view,
         };
         // Viewport clamped to the attachment (WebGPU requires it in bounds).
@@ -717,19 +817,23 @@ impl Renderer3d {
         let vy = origin.1.min(size.1.saturating_sub(1));
         let vw = prepared.width.min(size.0 - vx).max(1);
         let vh = prepared.height.min(size.1 - vy).max(1);
-        let clear = prepared.clear.map_or(wgpu::Color::TRANSPARENT, |c| wgpu::Color {
-            r: f64::from(c.r) / 255.0,
-            g: f64::from(c.g) / 255.0,
-            b: f64::from(c.b) / 255.0,
-            a: f64::from(c.a) / 255.0,
-        });
+        let clear = prepared
+            .clear
+            .map_or(wgpu::Color::TRANSPARENT, |c| wgpu::Color {
+                r: f64::from(c.r) / 255.0,
+                g: f64::from(c.g) / 255.0,
+                b: f64::from(c.b) / 255.0,
+                a: f64::from(c.a) / 255.0,
+            });
         let (view, resolve_target) = match &attachments.msaa {
             Some(msaa) => (msaa, Some(target_view)),
             None => (target_view, None),
         };
         let mut encoder = self
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("3d-frame") });
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("3d-frame"),
+            });
         let mut draw_calls = 0_u32;
         if prepared.shadow.is_some() {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -942,15 +1046,23 @@ mod tests {
             Err(err) => {
                 eprintln!("skipping gpu3d_matches_cpu_reference: {err}");
                 return;
-            },
+            }
         };
-        println!("adapter: {} ({})", renderer.adapter().name, renderer.adapter().backend);
+        println!(
+            "adapter: {} ({})",
+            renderer.adapter().name,
+            renderer.adapter().backend
+        );
         for samples in [1, 4] {
             let mut scene = showcase_scene3d(320, 200);
             scene.samples = samples;
             let ratio = parity(&scene, &mut renderer);
             println!("showcase x{samples}: {:.4}% within 3/255", ratio * 100.0);
-            assert!(ratio >= 0.99, "x{samples}: only {:.4}% within tolerance", ratio * 100.0);
+            assert!(
+                ratio >= 0.99,
+                "x{samples}: only {:.4}% within tolerance",
+                ratio * 100.0
+            );
         }
         let grid = instanced_grid_scene3d(320, 180, 64);
         let ratio = parity(&grid, &mut renderer);
@@ -967,10 +1079,16 @@ mod tests {
         let scene = instanced_grid_scene3d(160, 90, 256);
         let first = renderer.render(&scene).expect("render");
         // 256 instances of 2 meshes: 2 shadow-pass draws + 2 main-pass draws.
-        assert_eq!(first.draw_calls, 4, "instancing must not scale draws with instances");
+        assert_eq!(
+            first.draw_calls, 4,
+            "instancing must not scale draws with instances"
+        );
         assert_eq!(renderer.resident_meshes(), 2);
         let second = renderer.render(&scene).expect("render");
-        assert_eq!(first.rgba, second.rgba, "rendering must be stable across frames");
+        assert_eq!(
+            first.rgba, second.rgba,
+            "rendering must be stable across frames"
+        );
         assert_eq!(renderer.resident_meshes(), 2);
     }
 }

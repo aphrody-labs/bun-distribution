@@ -88,7 +88,10 @@ pub enum SttError {
 
     /// A required environment variable is absent or not valid Unicode.
     #[error("missing env var `{var}`: {source}")]
-    MissingEnv { var: &'static str, source: std::env::VarError },
+    MissingEnv {
+        var: &'static str,
+        source: std::env::VarError,
+    },
 
     /// Audio input bytes were empty or too short to be transcribed.
     #[error("audio input is empty")]
@@ -386,8 +389,11 @@ mod tests {
 
     #[test]
     fn transcript_delta_round_trip() {
-        let original =
-            TranscriptDelta { text: "partial...".to_owned(), is_final: false, segment_id: 3 };
+        let original = TranscriptDelta {
+            text: "partial...".to_owned(),
+            is_final: false,
+            segment_id: 3,
+        };
         let serialised = serde_json::to_string(&original).expect("serialise");
         let restored: TranscriptDelta = serde_json::from_str(&serialised).expect("deserialise");
         assert_eq!(restored.text, "partial...");
@@ -428,7 +434,10 @@ mod tests {
 
         let err = crate::stt::whisper_api::WhisperApiProvider::from_env_with_key_var(key)
             .expect_err("should fail with missing env");
-        assert!(matches!(err, SttError::MissingEnv { .. }), "unexpected error variant: {err}");
+        assert!(
+            matches!(err, SttError::MissingEnv { .. }),
+            "unexpected error variant: {err}"
+        );
     }
 
     #[test]
@@ -439,7 +448,10 @@ mod tests {
 
         let err = crate::stt::elevenlabs_stt::ElevenLabsSttProvider::from_env_with_key_var(key)
             .expect_err("should fail with missing env");
-        assert!(matches!(err, SttError::MissingEnv { .. }), "unexpected error variant: {err}");
+        assert!(
+            matches!(err, SttError::MissingEnv { .. }),
+            "unexpected error variant: {err}"
+        );
     }
 
     // ── Verbose JSON payload parsing ──────────────────────────────────────────

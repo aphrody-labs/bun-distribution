@@ -32,11 +32,23 @@ impl<'a> Records<'a> {
         if self.pos >= self.stream.len() {
             return Ok(None);
         }
-        let head = self.stream.get(self.pos..self.pos.saturating_add(4)).ok_or_else(|| invalid("truncated record header"))?;
-        let id = u16::from_le_bytes([head.first().copied().unwrap_or(0), head.get(1).copied().unwrap_or(0)]);
-        let len = usize::from(u16::from_le_bytes([head.get(2).copied().unwrap_or(0), head.get(3).copied().unwrap_or(0)]));
+        let head = self
+            .stream
+            .get(self.pos..self.pos.saturating_add(4))
+            .ok_or_else(|| invalid("truncated record header"))?;
+        let id = u16::from_le_bytes([
+            head.first().copied().unwrap_or(0),
+            head.get(1).copied().unwrap_or(0),
+        ]);
+        let len = usize::from(u16::from_le_bytes([
+            head.get(2).copied().unwrap_or(0),
+            head.get(3).copied().unwrap_or(0),
+        ]));
         let start = self.pos + 4;
-        let data = self.stream.get(start..start.saturating_add(len)).ok_or_else(|| invalid("truncated record"))?;
+        let data = self
+            .stream
+            .get(start..start.saturating_add(len))
+            .ok_or_else(|| invalid("truncated record"))?;
         self.pos = start + len;
         Ok(Some((id, data)))
     }
@@ -48,7 +60,9 @@ impl<'a> Records<'a> {
 
     /// The next record with its `Continue` records, or `None` at the end of the stream.
     pub fn next_record(&mut self) -> Result<Option<Record<'a>>, IoError> {
-        let Some((id, data)) = self.raw()? else { return Ok(None) };
+        let Some((id, data)) = self.raw()? else {
+            return Ok(None);
+        };
         let mut parts = vec![data];
         while self.peek_id() == Some(CONTINUE) && parts.len() < MAX_PARTS {
             if let Some((_, more)) = self.raw()? {
@@ -68,13 +82,22 @@ pub(super) struct Cursor<'a, 'b> {
 
 impl<'a, 'b> Cursor<'a, 'b> {
     pub fn new(parts: &'b [&'a [u8]]) -> Self {
-        Cursor { parts, part: 0, pos: 0 }
+        Cursor {
+            parts,
+            part: 0,
+            pos: 0,
+        }
     }
 
     /// Skips to the next part when the current one is used up. Returns whether a new part began.
     fn settle(&mut self) -> bool {
         let mut moved = false;
-        while self.parts.get(self.part).is_some_and(|p| self.pos >= p.len()) && self.part + 1 < self.parts.len() {
+        while self
+            .parts
+            .get(self.part)
+            .is_some_and(|p| self.pos >= p.len())
+            && self.part + 1 < self.parts.len()
+        {
             self.part += 1;
             self.pos = 0;
             moved = true;
@@ -84,7 +107,12 @@ impl<'a, 'b> Cursor<'a, 'b> {
 
     pub fn u8(&mut self) -> Result<u8, IoError> {
         self.settle();
-        let b = self.parts.get(self.part).and_then(|p| p.get(self.pos)).copied().ok_or_else(|| invalid("record is shorter than its contents"))?;
+        let b = self
+            .parts
+            .get(self.part)
+            .and_then(|p| p.get(self.pos))
+            .copied()
+            .ok_or_else(|| invalid("record is shorter than its contents"))?;
         self.pos += 1;
         Ok(b)
     }
@@ -94,7 +122,12 @@ impl<'a, 'b> Cursor<'a, 'b> {
     }
 
     pub fn u32(&mut self) -> Result<u32, IoError> {
-        Ok(u32::from_le_bytes([self.u8()?, self.u8()?, self.u8()?, self.u8()?]))
+        Ok(u32::from_le_bytes([
+            self.u8()?,
+            self.u8()?,
+            self.u8()?,
+            self.u8()?,
+        ]))
     }
 
     pub fn f64(&mut self) -> Result<f64, IoError> {
@@ -114,8 +147,16 @@ impl<'a, 'b> Cursor<'a, 'b> {
 
     /// Bytes left in the record (all parts).
     pub fn remaining(&self) -> usize {
-        let here = self.parts.get(self.part).map_or(0, |p| p.len().saturating_sub(self.pos));
-        here + self.parts.iter().skip(self.part + 1).map(|p| p.len()).sum::<usize>()
+        let here = self
+            .parts
+            .get(self.part)
+            .map_or(0, |p| p.len().saturating_sub(self.pos));
+        here + self
+            .parts
+            .iter()
+            .skip(self.part + 1)
+            .map(|p| p.len())
+            .sum::<usize>()
     }
 
     /// The rest of the record as one buffer.
@@ -140,11 +181,18 @@ impl<'a, 'b> Cursor<'a, 'b> {
         }
         let mut units: Vec<u16> = Vec::with_capacity(cch.min(self.remaining()));
         while units.len() < cch {
-            let at_end = self.parts.get(self.part).is_none_or(|p| self.pos >= p.len());
+            let at_end = self
+                .parts
+                .get(self.part)
+                .is_none_or(|p| self.pos >= p.len());
             if at_end && self.settle() {
                 high = self.u8()? & 1 != 0;
             }
-            units.push(if high { self.u16()? } else { u16::from(self.u8()?) });
+            units.push(if high {
+                self.u16()?
+            } else {
+                u16::from(self.u8()?)
+            });
         }
         Ok(String::from_utf16_lossy(&units))
     }
@@ -167,8 +215,16 @@ impl<'a, 'b> Cursor<'a, 'b> {
     pub fn rich_string(&mut self) -> Result<String, IoError> {
         let cch = usize::from(self.u16()?);
         let flags = self.u8()?;
-        let runs = if flags & 0x08 != 0 { usize::from(self.u16()?) } else { 0 };
-        let ext = if flags & 0x04 != 0 { self.u32()? as usize } else { 0 };
+        let runs = if flags & 0x08 != 0 {
+            usize::from(self.u16()?)
+        } else {
+            0
+        };
+        let ext = if flags & 0x04 != 0 {
+            self.u32()? as usize
+        } else {
+            0
+        };
         let text = self.chars(cch, flags & 1 != 0)?;
         let extra = runs.saturating_mul(4).saturating_add(ext);
         if extra > self.remaining() {

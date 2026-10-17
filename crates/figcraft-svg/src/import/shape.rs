@@ -37,8 +37,12 @@ pub(crate) fn recognize(path: &BezPath, unstroked: bool) -> Option<Prim> {
         return None;
     }
     let tol = TOL * w.max(h);
-    let ends = (els.first().and_then(PathEl::end_point), els.iter().rev().find_map(PathEl::end_point));
-    let closed = matches!(els.last(), Some(PathEl::ClosePath)) || (unstroked && matches!(ends, (Some(a), Some(b)) if a.distance(b) <= tol * 1e-3));
+    let ends = (
+        els.first().and_then(PathEl::end_point),
+        els.iter().rev().find_map(PathEl::end_point),
+    );
+    let closed = matches!(els.last(), Some(PathEl::ClosePath))
+        || (unstroked && matches!(ends, (Some(a), Some(b)) if a.distance(b) <= tol * 1e-3));
     if !closed {
         return None;
     }
@@ -56,7 +60,9 @@ pub(crate) fn recognize(path: &BezPath, unstroked: bool) -> Option<Prim> {
     // A rounded rectangle's area is w·h − (4 − π)·r²; where its straight edges start (the end
     // points nearest that) gives r exactly.
     let area = path.area().abs();
-    let estimate = ((w * h - area) / (4.0 - std::f64::consts::PI)).max(0.0).sqrt();
+    let estimate = ((w * h - area) / (4.0 - std::f64::consts::PI))
+        .max(0.0)
+        .sqrt();
     let mut radius = els
         .iter()
         .filter_map(PathEl::end_point)
@@ -70,7 +76,9 @@ pub(crate) fn recognize(path: &BezPath, unstroked: bool) -> Option<Prim> {
     }
     // Rounding noise off (7.999999999999998 → 8).
     radius = (radius * 1e6).round() / 1e6;
-    let on_rect = samples.iter().all(|p| round_box_distance(*p, bb, radius).abs() <= tol);
+    let on_rect = samples
+        .iter()
+        .all(|p| round_box_distance(*p, bb, radius).abs() <= tol);
     let perimeter = 2.0 * (w + h) - (8.0 - 2.0 * std::f64::consts::PI) * radius;
     (on_rect && close(length(), perimeter)).then_some(Prim::Rect { rect: bb, radius })
 }
@@ -111,10 +119,16 @@ pub(crate) fn place(world: Affine, origin: Point, w: f64, h: f64) -> Option<(Aff
     let m = world * Affine::translate(origin.to_vec2());
     let [a, b, c, d, e, f] = m.as_coeffs();
     let (sx, sy) = ((a * a + b * b).sqrt(), (c * c + d * d).sqrt());
-    if !(sx > 1e-9 && sy > 1e-9 && [a, b, c, d, e, f].iter().all(|v| v.is_finite())) || (a * c + b * d).abs() > 1e-6 * sx * sy {
+    if !(sx > 1e-9 && sy > 1e-9 && [a, b, c, d, e, f].iter().all(|v| v.is_finite()))
+        || (a * c + b * d).abs() > 1e-6 * sx * sy
+    {
         return None;
     }
-    Some((Affine::new([a / sx, b / sx, c / sy, d / sy, e, f]), w * sx, h * sy))
+    Some((
+        Affine::new([a / sx, b / sx, c / sy, d / sy, e, f]),
+        w * sx,
+        h * sy,
+    ))
 }
 
 /// How much `world` scales lengths (stroke widths, blur radii): the square root of its area scale.

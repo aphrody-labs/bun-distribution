@@ -96,7 +96,9 @@ impl Drop for KScopedSchedulerLockAndSleep<'_> {
             if let Some(timer) = timer {
                 // The caller retains its KThread across the wait, and this
                 // guard still owns the scheduler lock during registration.
-                unsafe { timer.register_absolute_task_by_id(thread_id, thread_ptr, timeout_tick); }
+                unsafe {
+                    timer.register_absolute_task_by_id(thread_id, thread_ptr, timeout_tick);
+                }
             }
         }
 

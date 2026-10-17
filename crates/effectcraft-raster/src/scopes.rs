@@ -25,7 +25,11 @@ pub enum ColorStandard {
 }
 
 impl ColorStandard {
-    pub const ALL: [ColorStandard; 3] = [ColorStandard::Rec601, ColorStandard::Rec709, ColorStandard::Rec2020];
+    pub const ALL: [ColorStandard; 3] = [
+        ColorStandard::Rec601,
+        ColorStandard::Rec709,
+        ColorStandard::Rec2020,
+    ];
     /// (Kr, Kb).
     pub fn coefficients(self) -> (f32, f32) {
         match self {
@@ -42,7 +46,11 @@ impl ColorStandard {
         }
     }
     pub fn from_name(s: &str) -> Option<ColorStandard> {
-        match s.to_ascii_lowercase().replace([' ', '.', '-', '_'], "").as_str() {
+        match s
+            .to_ascii_lowercase()
+            .replace([' ', '.', '-', '_'], "")
+            .as_str()
+        {
             "rec601" | "601" | "bt601" => Some(ColorStandard::Rec601),
             "rec709" | "709" | "bt709" => Some(ColorStandard::Rec709),
             "rec2020" | "2020" | "bt2020" => Some(ColorStandard::Rec2020),
@@ -53,7 +61,11 @@ impl ColorStandard {
     pub fn ycbcr(self, rgb: [f32; 3]) -> [f32; 3] {
         let (kr, kb) = self.coefficients();
         let y = kr * rgb[0] + (1.0 - kr - kb) * rgb[1] + kb * rgb[2];
-        [y, (rgb[2] - y) / (2.0 * (1.0 - kb)), (rgb[0] - y) / (2.0 * (1.0 - kr))]
+        [
+            y,
+            (rgb[2] - y) / (2.0 * (1.0 - kb)),
+            (rgb[0] - y) / (2.0 * (1.0 - kr)),
+        ]
     }
 }
 
@@ -110,8 +122,13 @@ impl ScopeKind {
         }
     }
     pub fn from_name(s: &str) -> Option<ScopeKind> {
-        let n = s.to_ascii_lowercase().replace([' ', '(', ')', '_', '-'], "");
-        Self::ALL.iter().copied().find(|k| k.name().to_ascii_lowercase() == n || k.label().to_ascii_lowercase().replace([' ', '(', ')'], "") == n)
+        let n = s
+            .to_ascii_lowercase()
+            .replace([' ', '(', ')', '_', '-'], "");
+        Self::ALL.iter().copied().find(|k| {
+            k.name().to_ascii_lowercase() == n
+                || k.label().to_ascii_lowercase().replace([' ', '(', ')'], "") == n
+        })
     }
     /// Vectorscopes are square.
     pub fn is_vectorscope(self) -> bool {
@@ -134,14 +151,24 @@ pub struct ScopeOpts {
 
 impl Default for ScopeOpts {
     fn default() -> Self {
-        ScopeOpts { standard: ColorStandard::Rec709, float: false, clamp: true, width: 256, height: 256 }
+        ScopeOpts {
+            standard: ColorStandard::Rec709,
+            float: false,
+            clamp: true,
+            width: 256,
+            height: 256,
+        }
     }
 }
 
 impl ScopeOpts {
     /// Signal range shown on the value axis.
     pub fn range(&self) -> (f32, f32) {
-        if self.float { (-0.25, 1.25) } else { (0.0, 1.0) }
+        if self.float {
+            (-0.25, 1.25)
+        } else {
+            (0.0, 1.0)
+        }
     }
     /// Plot row (0 = top) of a value, or `None` when off-scale.
     fn row(&self, v: f32) -> Option<usize> {
@@ -168,7 +195,12 @@ pub struct Scope {
 impl Scope {
     fn new(w: u32, h: u32) -> Scope {
         let n = w as usize * h as usize;
-        Scope { width: w, height: h, planes: [vec![0.0; n], vec![0.0; n], vec![0.0; n]], counts: [vec![0; n], vec![0; n], vec![0; n]] }
+        Scope {
+            width: w,
+            height: h,
+            planes: [vec![0.0; n], vec![0.0; n], vec![0.0; n]],
+            counts: [vec![0; n], vec![0; n], vec![0; n]],
+        }
     }
     fn merge(mut self, o: Scope) -> Scope {
         for c in 0..3 {
@@ -181,10 +213,26 @@ impl Scope {
     fn normalise(&mut self) {
         // Logarithmic density (like a phosphor trace) so faint traces stay visible next to
         // dense ones.
-        let max = self.counts.iter().flat_map(|p| p.iter()).copied().max().unwrap_or(0).max(1) as f32;
+        let max = self
+            .counts
+            .iter()
+            .flat_map(|p| p.iter())
+            .copied()
+            .max()
+            .unwrap_or(0)
+            .max(1) as f32;
         let k = 1.0 / (1.0 + max).ln();
         for c in 0..3 {
-            self.planes[c] = self.counts[c].iter().map(|&n| if n == 0 { 0.0 } else { (0.25 + 0.75 * (1.0 + n as f32).ln() * k).min(1.0) }).collect();
+            self.planes[c] = self.counts[c]
+                .iter()
+                .map(|&n| {
+                    if n == 0 {
+                        0.0
+                    } else {
+                        (0.25 + 0.75 * (1.0 + n as f32).ln() * k).min(1.0)
+                    }
+                })
+                .collect();
         }
     }
     /// Total count of plane `c`.
@@ -193,7 +241,11 @@ impl Scope {
     }
     /// The cell of plane `c` with the most samples, as (x, y).
     pub fn peak(&self, c: usize) -> (u32, u32) {
-        let (i, _) = self.counts[c].iter().enumerate().max_by_key(|(_, n)| **n).unwrap_or((0, &0));
+        let (i, _) = self.counts[c]
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, n)| **n)
+            .unwrap_or((0, &0));
         (i as u32 % self.width.max(1), i as u32 / self.width.max(1))
     }
     /// Straight RGBA8 picture: plane 0 red, 1 green, 2 blue (`mono`: all planes white).
@@ -222,7 +274,11 @@ impl Scope {
 #[inline]
 fn rgb(img: &Image, i: usize, clamp: bool) -> [f32; 3] {
     let p = img.data[i];
-    let mut c = if p[3] > 1e-6 { [p[0] / p[3], p[1] / p[3], p[2] / p[3]] } else { [0.0; 3] };
+    let mut c = if p[3] > 1e-6 {
+        [p[0] / p[3], p[1] / p[3], p[2] / p[3]]
+    } else {
+        [0.0; 3]
+    };
     // Composite over black, as a monitor shows the frame.
     let a = p[3].clamp(0.0, 1.0);
     for v in &mut c {
@@ -237,7 +293,11 @@ fn rgb(img: &Image, i: usize, clamp: bool) -> [f32; 3] {
 /// Compute a scope of `img`.
 pub fn compute(img: &Image, kind: ScopeKind, o: &ScopeOpts) -> Scope {
     let (w, h) = (o.width.max(8), o.height.max(8));
-    let o = ScopeOpts { width: w, height: h, ..*o };
+    let o = ScopeOpts {
+        width: w,
+        height: h,
+        ..*o
+    };
     if img.is_empty() {
         return Scope::new(w, h);
     }
@@ -249,7 +309,13 @@ pub fn compute(img: &Image, kind: ScopeKind, o: &ScopeOpts) -> Scope {
             let mut s = Scope::new(w, h);
             for &y in chunk {
                 for x in 0..iw {
-                    plot(&mut s, kind, &o, rgb(img, y * iw + x, o.clamp), x as f32 / iw as f32);
+                    plot(
+                        &mut s,
+                        kind,
+                        &o,
+                        rgb(img, y * iw + x, o.clamp),
+                        x as f32 / iw as f32,
+                    );
                 }
             }
             s
@@ -376,7 +442,11 @@ pub fn hls(c: [f32; 3]) -> (f32, f32, f32) {
     if d < 1e-6 {
         return (0.0, l, 0.0);
     }
-    let s = if l > 0.5 { d / (2.0 - max - min).max(1e-6) } else { d / (max + min).max(1e-6) };
+    let s = if l > 0.5 {
+        d / (2.0 - max - min).max(1e-6)
+    } else {
+        d / (max + min).max(1e-6)
+    };
     let h = if max == r {
         ((g - b) / d).rem_euclid(6.0)
     } else if max == g {
@@ -391,7 +461,11 @@ pub fn hls(c: [f32; 3]) -> (f32, f32, f32) {
 /// [`ScopeKind::Histogram`] scope's first row).
 pub fn histogram_bars(s: &Scope) -> [Vec<u32>; 3] {
     let w = s.width as usize;
-    [s.counts[0][..w].to_vec(), s.counts[1][..w].to_vec(), s.counts[2][..w].to_vec()]
+    [
+        s.counts[0][..w].to_vec(),
+        s.counts[1][..w].to_vec(),
+        s.counts[2][..w].to_vec(),
+    ]
 }
 
 /// Where a vectorscope target (75 % colour bars' primaries and secondaries) sits, as (u, v) in
@@ -430,7 +504,11 @@ mod tests {
     #[test]
     fn waveform_of_flat_grey_is_one_line() {
         let img = solid(64, 32, [0.5, 0.5, 0.5]);
-        let o = ScopeOpts { width: 64, height: 101, ..Default::default() };
+        let o = ScopeOpts {
+            width: 64,
+            height: 101,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::WaveformLuma, &o);
         // 0.5 sits on row 50 of 0..=100; every sample lands there.
         assert_eq!(s.total(0), 64 * 32);
@@ -450,7 +528,11 @@ mod tests {
                 img.set(x, y, [v, 1.0 - v, 0.0, 1.0]);
             }
         }
-        let o = ScopeOpts { width: w, height: 101, ..Default::default() };
+        let o = ScopeOpts {
+            width: w,
+            height: 101,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::WaveformRgb, &o);
         for x in 0..w as usize {
             // Red: row 100 - x; green: row x.
@@ -479,7 +561,11 @@ mod tests {
     #[test]
     fn vectorscope_places_red_on_its_target() {
         let img = solid(16, 16, [1.0, 0.0, 0.0]);
-        let o = ScopeOpts { width: 101, height: 101, ..Default::default() };
+        let o = ScopeOpts {
+            width: 101,
+            height: 101,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::VectorscopeYuv, &o);
         let [_, cb, cr] = ColorStandard::Rec709.ycbcr([1.0, 0.0, 0.0]);
         let (x, y) = s.peak(0);
@@ -491,7 +577,13 @@ mod tests {
         // HLS: fully saturated green at 120° on the rim.
         let h = compute(&solid(8, 8, [0.0, 1.0, 0.0]), ScopeKind::VectorscopeHls, &o);
         let a = 120f32.to_radians();
-        assert_eq!(h.peak(0), (((0.5 * a.cos() + 0.5) * 100.0).round() as u32, ((0.5 - 0.5 * a.sin()) * 100.0).round() as u32));
+        assert_eq!(
+            h.peak(0),
+            (
+                ((0.5 * a.cos() + 0.5) * 100.0).round() as u32,
+                ((0.5 - 0.5 * a.sin()) * 100.0).round() as u32
+            )
+        );
     }
 
     #[test]
@@ -504,7 +596,11 @@ mod tests {
                 img.set(x, y, [v, v, v, 1.0]);
             }
         }
-        let o = ScopeOpts { width: 256, height: 64, ..Default::default() };
+        let o = ScopeOpts {
+            width: 256,
+            height: 64,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::Histogram, &o);
         let bars = histogram_bars(&s);
         for b in &bars {
@@ -516,7 +612,11 @@ mod tests {
         let hot = solid(4, 4, [1.2, 1.2, 1.2]);
         let unclamped = ScopeOpts { clamp: false, ..o };
         assert_eq!(compute(&hot, ScopeKind::Histogram, &unclamped).total(0), 0);
-        let fl = ScopeOpts { clamp: false, float: true, ..o };
+        let fl = ScopeOpts {
+            clamp: false,
+            float: true,
+            ..o
+        };
         let f = histogram_bars(&compute(&hot, ScopeKind::Histogram, &fl));
         let expect = (((1.2 + 0.25) / 1.5) * 255.0f32).round() as usize;
         assert_eq!(f[0][expect], 16);
@@ -527,7 +627,11 @@ mod tests {
     #[test]
     fn parade_splits_channels_into_thirds() {
         let img = solid(30, 3, [1.0, 0.5, 0.0]);
-        let o = ScopeOpts { width: 90, height: 101, ..Default::default() };
+        let o = ScopeOpts {
+            width: 90,
+            height: 101,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::ParadeRgb, &o);
         // Red trace in the first third at the top, green mid-height in the second, blue at the
         // bottom of the third.
@@ -546,10 +650,17 @@ mod tests {
     #[test]
     fn yc_waveform_has_chroma_trace() {
         let img = solid(8, 8, [1.0, 0.0, 0.0]);
-        let o = ScopeOpts { width: 8, height: 101, ..Default::default() };
+        let o = ScopeOpts {
+            width: 8,
+            height: 101,
+            ..Default::default()
+        };
         let s = compute(&img, ScopeKind::WaveformYc, &o);
         let [y, cb, cr] = ColorStandard::Rec709.ycbcr([1.0, 0.0, 0.0]);
         assert_eq!(s.peak(0).1, ((1.0 - y) * 100.0).round() as u32);
-        assert_eq!(s.peak(2).1, ((1.0 - (cb * cb + cr * cr).sqrt()) * 100.0).round() as u32);
+        assert_eq!(
+            s.peak(2).1,
+            ((1.0 - (cb * cb + cr * cr).sqrt()) * 100.0).round() as u32
+        );
     }
 }

@@ -12,15 +12,28 @@ pub const CROP_MARKS: &str = "cropMarks";
 
 /// Does `n` carry a visible Crop Marks effect?
 pub fn has_crop_marks(n: &Node) -> bool {
-    n.appearance.effects.iter().any(|e| e.visible && e.id == CROP_MARKS)
+    n.appearance
+        .effects
+        .iter()
+        .any(|e| e.visible && e.id == CROP_MARKS)
 }
 
 /// The art of an object with Crop Marks: a group (with the object's id, name and transparency) of
 /// the object itself, without the effect, and the marks around its visual bounds (the last Crop
 /// Marks effect's style). `None` without a visible Crop Marks effect.
 pub fn crop_marks_art(n: &Node) -> Option<Node> {
-    let fx = n.appearance.effects.iter().rev().find(|e| e.visible && e.id == CROP_MARKS)?;
-    let style = fx.params.get("style").and_then(|v| v.as_str()).and_then(MarkStyle::parse).unwrap_or_default();
+    let fx = n
+        .appearance
+        .effects
+        .iter()
+        .rev()
+        .find(|e| e.visible && e.id == CROP_MARKS)?;
+    let style = fx
+        .params
+        .get("style")
+        .and_then(|v| v.as_str())
+        .and_then(MarkStyle::parse)
+        .unwrap_or_default();
     let bounds = n.visual_bounds()?;
     let marks = TrimMarks::of(style).group(bounds, &mut || n.id);
     let mut object = n.clone();
@@ -49,19 +62,32 @@ mod tests {
 
     #[test]
     fn the_marks_surround_the_object_and_follow_it() {
-        let mut n = Node::path(NodeId(7), shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)), Appearance::default_art());
+        let mut n = Node::path(
+            NodeId(7),
+            shapes::rectangle(Rect::new(0.0, 0.0, 100.0, 50.0)),
+            Appearance::default_art(),
+        );
         assert!(crop_marks_art(&n).is_none());
         n.opacity = 0.5;
-        n.appearance.effects.push(Effect { id: CROP_MARKS.into(), params: json!({"style": "japanese"}), visible: true });
+        n.appearance.effects.push(Effect {
+            id: CROP_MARKS.into(),
+            params: json!({"style": "japanese"}),
+            visible: true,
+        });
         let art = crop_marks_art(&n).unwrap();
         assert_eq!((art.id, art.opacity), (NodeId(7), 0.5));
-        let [object, marks] = art.children().unwrap().as_slice() else { panic!() };
+        let [object, marks] = art.children().unwrap().as_slice() else {
+            panic!()
+        };
         assert!(object.appearance.effects.is_empty() && object.opacity == 1.0);
         assert_eq!(marks.children().unwrap().len(), 24, "Japanese marks");
         // Around the stroked bounds (0.5 outside the path), by the marks' reach.
         let reach = TrimMarks::of(MarkStyle::Japanese).reach() + 0.5;
         let b = art.visual_bounds().unwrap();
-        assert!((b.x0 + reach).abs() < 2.0 && (b.x1 - 100.0 - reach).abs() < 2.0, "{b:?}");
+        assert!(
+            (b.x0 + reach).abs() < 2.0 && (b.x1 - 100.0 - reach).abs() < 2.0,
+            "{b:?}"
+        );
         // Moved, the marks move along.
         n.transform(vectorcraft_geom::Affine::translate((40.0, 0.0)), false);
         let b2 = crop_marks_art(&n).unwrap().visual_bounds().unwrap();

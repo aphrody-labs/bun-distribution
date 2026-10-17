@@ -163,7 +163,12 @@ impl VlmRunner {
         let weights = installed_path(&store, entry, "weights")?;
         let mmproj = installed_path(&store, entry, "mmproj")?;
 
-        Ok(Self { binary: source.path().to_path_buf(), weights, mmproj, options })
+        Ok(Self {
+            binary: source.path().to_path_buf(),
+            weights,
+            mmproj,
+            options,
+        })
     }
 
     /// The resolved runner binary.
@@ -180,7 +185,8 @@ impl VlmRunner {
     pub fn read(&self, image: &Path) -> Result<PageResult> {
         let started = std::time::Instant::now();
 
-        let output = Command::new(&self.binary).no_window()
+        let output = Command::new(&self.binary)
+            .no_window()
             .arg("-m")
             .arg(&self.weights)
             .arg("--mmproj")
@@ -199,7 +205,10 @@ impl VlmRunner {
             .arg("0")
             .arg("--no-warmup")
             .output()
-            .map_err(|source| OcrError::Io { path: self.binary.clone(), source })?;
+            .map_err(|source| OcrError::Io {
+                path: self.binary.clone(),
+                source,
+            })?;
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
@@ -212,8 +221,9 @@ impl VlmRunner {
 
         let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
         let document = Document::parse(&stdout);
-        let text =
-            document.to_markdown().map_or(PageText::None, |markdown| PageText::Text { markdown });
+        let text = document
+            .to_markdown()
+            .map_or(PageText::None, |markdown| PageText::Text { markdown });
 
         Ok(PageResult {
             image: image.to_path_buf(),
@@ -293,8 +303,10 @@ pub fn list_images_sorted(dir: &Path) -> Result<Vec<PathBuf>> {
 
 /// Every image file directly under `dir`.
 fn list_images(dir: &Path) -> Result<Vec<PathBuf>> {
-    let entries = std::fs::read_dir(dir)
-        .map_err(|source| OcrError::Io { path: dir.to_path_buf(), source })?;
+    let entries = std::fs::read_dir(dir).map_err(|source| OcrError::Io {
+        path: dir.to_path_buf(),
+        source,
+    })?;
     Ok(entries
         .filter_map(core::result::Result::ok)
         .map(|entry| entry.path())
@@ -305,9 +317,14 @@ fn list_images(dir: &Path) -> Result<Vec<PathBuf>> {
 /// Whether a path looks like an image this pipeline can hand to a model.
 #[must_use]
 pub fn is_image(path: &Path) -> bool {
-    path.extension().and_then(|e| e.to_str()).is_some_and(|ext| {
-        matches!(ext.to_ascii_lowercase().as_str(), "jpg" | "jpeg" | "png" | "webp" | "bmp")
-    })
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|ext| {
+            matches!(
+                ext.to_ascii_lowercase().as_str(),
+                "jpg" | "jpeg" | "png" | "webp" | "bmp"
+            )
+        })
 }
 
 /// Resolve the weights and projector of a catalog vision entry.
@@ -317,7 +334,10 @@ pub fn is_image(path: &Path) -> bool {
 pub(crate) fn resolve_artifacts(model_id: &str) -> Result<(PathBuf, PathBuf)> {
     let entry = Catalog::builtin().get(model_id)?;
     let store = ModelStore::open()?;
-    Ok((installed_path(&store, entry, "weights")?, installed_path(&store, entry, "mmproj")?))
+    Ok((
+        installed_path(&store, entry, "weights")?,
+        installed_path(&store, entry, "mmproj")?,
+    ))
 }
 
 /// Resolve one role of a catalog entry to an installed path.
@@ -344,7 +364,10 @@ pub(crate) fn tail(text: &str, limit: usize) -> String {
     if trimmed.chars().count() <= limit {
         return trimmed.to_owned();
     }
-    trimmed.chars().skip(trimmed.chars().count() - limit).collect()
+    trimmed
+        .chars()
+        .skip(trimmed.chars().count() - limit)
+        .collect()
 }
 
 #[cfg(test)]
@@ -369,15 +392,20 @@ mod tests {
         }
         let mut found = list_images(dir.path()).unwrap();
         found.sort();
-        let names: Vec<String> =
-            found.iter().map(|p| p.file_name().unwrap().to_string_lossy().into_owned()).collect();
+        let names: Vec<String> = found
+            .iter()
+            .map(|p| p.file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
         assert_eq!(names, vec!["1-0001.jpg", "2-0002.jpg"]);
     }
 
     #[test]
     fn listing_a_missing_directory_is_an_io_error_not_a_panic() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(matches!(list_images(&dir.path().join("absent")), Err(OcrError::Io { .. })));
+        assert!(matches!(
+            list_images(&dir.path().join("absent")),
+            Err(OcrError::Io { .. })
+        ));
     }
 
     #[test]
@@ -386,7 +414,9 @@ mod tests {
         assert!(!none.has_text());
         assert_eq!(none.markdown(), None);
 
-        let some = PageText::Text { markdown: "hello".into() };
+        let some = PageText::Text {
+            markdown: "hello".into(),
+        };
         assert!(some.has_text());
         assert_eq!(some.markdown(), Some("hello"));
 

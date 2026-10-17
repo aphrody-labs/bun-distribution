@@ -208,7 +208,9 @@ pub fn show_lua(
             .show(ui, |ui| {
                 for line in logs {
                     ui.label(
-                        RichText::new(line).monospace().color(Color32::from_rgb(200, 200, 200)),
+                        RichText::new(line)
+                            .monospace()
+                            .color(Color32::from_rgb(200, 200, 200)),
                     );
                 }
             });

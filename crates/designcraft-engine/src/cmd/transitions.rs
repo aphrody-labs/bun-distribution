@@ -15,12 +15,30 @@ fn spreads_of(d: &designcraft_doc::Document, p: &Value) -> Result<Vec<usize>> {
     if let Some(si) = p.get("spread").and_then(Value::as_u64) {
         return Ok(vec![si as usize]);
     }
-    let pages: Vec<usize> =
-        p.get("pages").and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).map(|n| n as usize).collect()).unwrap_or_default();
+    let pages: Vec<usize> = p
+        .get("pages")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_u64)
+                .map(|n| n as usize)
+                .collect()
+        })
+        .unwrap_or_default();
     if pages.is_empty() {
-        return Err(bad("page.transition", "give `pages` (1-based), `spread` or `all`"));
+        return Err(bad(
+            "page.transition",
+            "give `pages` (1-based), `spread` or `all`",
+        ));
     }
-    let mut v: Vec<usize> = pages.iter().filter_map(|n| n.checked_sub(1).and_then(|i| d.page_loc(i)).map(|(si, _)| si)).collect();
+    let mut v: Vec<usize> = pages
+        .iter()
+        .filter_map(|n| {
+            n.checked_sub(1)
+                .and_then(|i| d.page_loc(i))
+                .map(|(si, _)| si)
+        })
+        .collect();
     v.dedup();
     Ok(v)
 }
@@ -39,18 +57,28 @@ pub fn specs() -> Vec<CommandSpec> {
                 let t = if kind == "none" {
                     None
                 } else {
-                    let k: TransitionKind =
-                        serde_json::from_value(json!(kind)).map_err(|_| bad("page.transition", format!("unknown kind `{kind}`")))?;
+                    let k: TransitionKind = serde_json::from_value(json!(kind))
+                        .map_err(|_| bad("page.transition", format!("unknown kind `{kind}`")))?;
                     Some(PageTransition {
                         kind: k,
-                        duration: p.get("duration").and_then(Value::as_f64).unwrap_or(1.0).clamp(0.0, 60.0),
-                        horizontal: p.get("horizontal").and_then(Value::as_bool).unwrap_or(false),
+                        duration: p
+                            .get("duration")
+                            .and_then(Value::as_f64)
+                            .unwrap_or(1.0)
+                            .clamp(0.0, 60.0),
+                        horizontal: p
+                            .get("horizontal")
+                            .and_then(Value::as_bool)
+                            .unwrap_or(false),
                     })
                 };
                 let list = spreads_of(&s.doc()?.doc, p)?;
                 s.edit(|d, _| {
                     for si in &list {
-                        let sp = d.spreads.get_mut(*si).ok_or_else(|| bad("page.transition", format!("no spread {si}")))?;
+                        let sp = d
+                            .spreads
+                            .get_mut(*si)
+                            .ok_or_else(|| bad("page.transition", format!("no spread {si}")))?;
                         if let Some(pg) = Arc::make_mut(sp).pages.first_mut() {
                             pg.transition = t;
                         }
@@ -85,8 +113,15 @@ mod tests {
     fn transitions_go_into_the_pdf() {
         let mut s = Session::new();
         s.execute("file.new", &json!({"pages": 3})).unwrap();
-        s.execute("page.transition", &json!({"pages": [2], "kind": "wipe", "duration": 2})).unwrap();
-        assert_eq!(s.execute("page.transitions", &json!({})).unwrap()[0]["kind"], "wipe");
+        s.execute(
+            "page.transition",
+            &json!({"pages": [2], "kind": "wipe", "duration": 2}),
+        )
+        .unwrap();
+        assert_eq!(
+            s.execute("page.transitions", &json!({})).unwrap()[0]["kind"],
+            "wipe"
+        );
         let r = s.execute("file.exportPdf", &json!({})).unwrap();
         let bytes = super::super::file::base64_decode(r["base64"].as_str().unwrap());
         let text = String::from_utf8_lossy(&bytes);
@@ -96,21 +131,45 @@ mod tests {
         // The updated file still reads, with all its pages.
         assert_eq!(designcraft_render::pdf_page_count(&bytes), Some(3));
         // Exported as spreads: one PDF page.
-        let r = s.execute("file.exportPdf", &json!({"spreads": true})).unwrap();
+        let r = s
+            .execute("file.exportPdf", &json!({"spreads": true}))
+            .unwrap();
         let bytes = super::super::file::base64_decode(r["base64"].as_str().unwrap());
-        assert_eq!(String::from_utf8_lossy(&bytes).matches("/Trans<<").count(), 1);
+        assert_eq!(
+            String::from_utf8_lossy(&bytes).matches("/Trans<<").count(),
+            1
+        );
         // With transparency too, the page keeps both its group and its transition.
-        let id = s.execute("frame.create", &json!({"rect": [100, 100, 200, 200]})).unwrap()["id"].clone();
-        s.execute("object.opacity", &json!({"ids": [id], "opacity": 0.5})).unwrap();
+        let id = s
+            .execute("frame.create", &json!({"rect": [100, 100, 200, 200]}))
+            .unwrap()["id"]
+            .clone();
+        s.execute("object.opacity", &json!({"ids": [id], "opacity": 0.5}))
+            .unwrap();
         let r = s.execute("file.exportPdf", &json!({"pages": [1]})).unwrap();
         let bytes = super::super::file::base64_decode(r["base64"].as_str().unwrap());
         assert_eq!(designcraft_render::pdf_page_count(&bytes), Some(1));
-        s.execute("page.transition", &json!({"pages": [1], "kind": "fade"})).unwrap();
+        s.execute("page.transition", &json!({"pages": [1], "kind": "fade"}))
+            .unwrap();
         let r = s.execute("file.exportPdf", &json!({"pages": [1]})).unwrap();
-        let text = String::from_utf8_lossy(&super::super::file::base64_decode(r["base64"].as_str().unwrap())).to_string();
+        let text = String::from_utf8_lossy(&super::super::file::base64_decode(
+            r["base64"].as_str().unwrap(),
+        ))
+        .to_string();
         let last = &text[text.rfind("/Type/Page/").unwrap()..];
-        assert!(last.contains("/S/Fade") && last[..last.find("endobj").unwrap()].contains("/S/Transparency"), "{last}");
-        s.execute("page.transition", &json!({"all": true, "kind": "none"})).unwrap();
-        assert!(s.execute("page.transitions", &json!({})).unwrap().as_array().unwrap().is_empty());
+        assert!(
+            last.contains("/S/Fade")
+                && last[..last.find("endobj").unwrap()].contains("/S/Transparency"),
+            "{last}"
+        );
+        s.execute("page.transition", &json!({"all": true, "kind": "none"}))
+            .unwrap();
+        assert!(
+            s.execute("page.transitions", &json!({}))
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
     }
 }

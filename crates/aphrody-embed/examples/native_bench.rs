@@ -332,7 +332,10 @@ fn print_row(mut row: Row<'_>) {
     } else {
         (
             format!("{:.0}", percentile(&row.latencies, 0.5).as_secs_f64() * 1e3),
-            format!("{:.0}", percentile(&row.latencies, 0.95).as_secs_f64() * 1e3),
+            format!(
+                "{:.0}",
+                percentile(&row.latencies, 0.95).as_secs_f64() * 1e3
+            ),
         )
     };
     println!(
@@ -357,10 +360,14 @@ type AnyResult<T> = Result<T, Box<dyn std::error::Error>>;
 fn main() -> AnyResult<()> {
     let args: Vec<String> = std::env::args().collect();
     let chunks: usize = list(&args, "--chunks", "2000")[0].parse()?;
-    let threads: Vec<usize> =
-        list(&args, "--threads", "8,12").iter().map(|s| s.parse()).collect::<Result<_, _>>()?;
-    let batches: Vec<usize> =
-        list(&args, "--batch", "16,32,64").iter().map(|s| s.parse()).collect::<Result<_, _>>()?;
+    let threads: Vec<usize> = list(&args, "--threads", "8,12")
+        .iter()
+        .map(|s| s.parse())
+        .collect::<Result<_, _>>()?;
+    let batches: Vec<usize> = list(&args, "--batch", "16,32,64")
+        .iter()
+        .map(|s| s.parse())
+        .collect::<Result<_, _>>()?;
     let modes = list(&args, "--mode", "stream,bulk");
     let task = list(&args, "--task", "embed").remove(0);
     let max_seq_len: usize = list(&args, "--max-seq-len", "0")[0].parse()?;
@@ -371,14 +378,19 @@ fn main() -> AnyResult<()> {
     };
 
     let corpus = web_corpus(chunks, 0x0B0C_5EED);
-    if let Some(path) = list(&args, "--dump-corpus", "").first().filter(|p| !p.is_empty()) {
+    if let Some(path) = list(&args, "--dump-corpus", "")
+        .first()
+        .filter(|p| !p.is_empty())
+    {
         // Lets external baselines (PyTorch, ONNX Runtime) run on the identical corpus.
         std::fs::write(path, serde_json::to_string(&corpus)?)?;
         println!("wrote {chunks} chunks to {path}");
         return Ok(());
     }
     let refs: Vec<&str> = corpus.iter().map(String::as_str).collect();
-    let cpus = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(0);
+    let cpus = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(0);
     println!("load average before: {}", load_average());
     let unit = if task == "rerank" { "pairs" } else { "chunks" };
     println!(
@@ -395,7 +407,12 @@ fn main() -> AnyResult<()> {
             let dir = ensure_model(&spec, &spec.default_dir())?;
             for &t in &threads {
                 for &b in &batches {
-                    let opts = EmbedOptions { max_seq_len, batch_size: b, threads: t, backend };
+                    let opts = EmbedOptions {
+                        max_seq_len,
+                        batch_size: b,
+                        threads: t,
+                        backend,
+                    };
                     let embedder = Embedder::load(&dir, &spec, opts)?;
                     // Warm-up: page in weights and grow allocator arenas.
                     embedder.embed_batch(&refs[..b.min(refs.len())], TextKind::Passage)?;
@@ -412,11 +429,11 @@ fn main() -> AnyResult<()> {
                                     latencies.push(t0.elapsed());
                                     assert_eq!(out.len(), batch.len());
                                 }
-                            },
+                            }
                             "bulk" => {
                                 let out = embedder.embed_batch(&refs, TextKind::Passage)?;
                                 assert_eq!(out.len(), refs.len());
-                            },
+                            }
                             other => return Err(format!("unknown mode {other}").into()),
                         }
                         print_row(Row {
@@ -443,7 +460,7 @@ fn main() -> AnyResult<()> {
                 words as f64 / chunks as f64,
                 tokens as f64 / chunks as f64,
             );
-        },
+        }
         "rerank" => {
             let model_id =
                 list(&args, "--model", aphrody_embed::native::DEFAULT_RERANKER_ID).remove(0);
@@ -457,7 +474,12 @@ fn main() -> AnyResult<()> {
                 .collect();
             for &t in &threads {
                 for &b in &batches {
-                    let opts = EmbedOptions { max_seq_len, batch_size: b, threads: t, backend };
+                    let opts = EmbedOptions {
+                        max_seq_len,
+                        batch_size: b,
+                        threads: t,
+                        backend,
+                    };
                     let reranker = aphrody_embed::native::Reranker::load(&dir, &spec, opts)?;
                     reranker.score(&queries[0], &refs[..b.min(refs.len())])?;
                     reset_peak_rss();
@@ -485,7 +507,7 @@ fn main() -> AnyResult<()> {
                 "\nreranker={} pairs={chunks} (8-word query + 60-200-word passage) cpus={cpus}",
                 spec.versioned_id()
             );
-        },
+        }
         other => return Err(format!("unknown task {other}").into()),
     }
     println!("load average after: {}", load_average());

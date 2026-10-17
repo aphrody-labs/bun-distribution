@@ -11,7 +11,14 @@
 //! (and upgrade it on open); older builds refuse a newer library with [`CatalogError::Newer`]
 //! instead of reading part of it.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod dates;
 pub mod folders;
@@ -61,7 +68,9 @@ pub enum CatalogError {
     Io(String),
     /// The library was written by a newer LightCraft (a newer catalog format, or a change this
     /// version doesn't know). Nothing was read into the session and nothing was modified.
-    #[error("this library was written by a newer version of LightCraft ({0}); update LightCraft to open it. The library was left unchanged.")]
+    #[error(
+        "this library was written by a newer version of LightCraft ({0}); update LightCraft to open it. The library was left unchanged."
+    )]
     Newer(String),
 }
 
@@ -285,7 +294,12 @@ pub struct Catalog {
 
 impl Catalog {
     pub fn new() -> Catalog {
-        Catalog { next_photo: 1, next_album: 1, next_stack: 1, ..Default::default() }
+        Catalog {
+            next_photo: 1,
+            next_album: 1,
+            next_stack: 1,
+            ..Default::default()
+        }
     }
 
     // ---- ids
@@ -330,23 +344,33 @@ impl Catalog {
     /// sidebar lists them: folders first, then by their place if the user ordered them (those
     /// without one after, by name), else by name.
     pub fn album_children(&self, parent: Option<AlbumId>) -> Vec<&Album> {
-        let mut kids: Vec<&Album> = self.albums.values().filter(|a| a.parent == parent).collect();
+        let mut kids: Vec<&Album> = self
+            .albums
+            .values()
+            .filter(|a| a.parent == parent)
+            .collect();
         kids.sort_by_cached_key(|a| album_order_key(a));
         kids
     }
     /// [`Self::album_children`] of every folder (and of the top level, under `None`) in one pass:
     /// what a tree view that draws all of them wants each frame.
-    pub fn album_children_by_parent(&self) -> std::collections::HashMap<Option<AlbumId>, Vec<&Album>> {
-        let mut map: std::collections::HashMap<Option<AlbumId>, Vec<&Album>> = std::collections::HashMap::new();
+    pub fn album_children_by_parent(
+        &self,
+    ) -> std::collections::HashMap<Option<AlbumId>, Vec<&Album>> {
+        let mut map: std::collections::HashMap<Option<AlbumId>, Vec<&Album>> =
+            std::collections::HashMap::new();
         for a in self.albums.values() {
             map.entry(a.parent).or_default().push(a);
         }
-        map.values_mut().for_each(|kids| kids.sort_by_cached_key(|a| album_order_key(a)));
+        map.values_mut()
+            .for_each(|kids| kids.sort_by_cached_key(|a| album_order_key(a)));
         map
     }
     /// Whether anything inside `parent` has a place of its own (the folder is ordered by hand).
     pub fn album_children_are_ordered(&self, parent: Option<AlbumId>) -> bool {
-        self.albums.values().any(|a| a.parent == parent && a.order.is_some())
+        self.albums
+            .values()
+            .any(|a| a.parent == parent && a.order.is_some())
     }
     /// The Quick Collection, once something was added to it.
     pub fn quick_collection(&self) -> Option<AlbumId> {
@@ -355,8 +379,14 @@ impl Catalog {
 
     /// Albums (regular and smart) that contain the photo.
     pub fn albums_of(&self, id: PhotoId) -> Vec<AlbumId> {
-        let Some(p) = self.photos.get(&id) else { return Vec::new() };
-        self.albums.values().filter(|a| self.album_contains(a.id, p)).map(|a| a.id).collect()
+        let Some(p) = self.photos.get(&id) else {
+            return Vec::new();
+        };
+        self.albums
+            .values()
+            .filter(|a| self.album_contains(a.id, p))
+            .map(|a| a.id)
+            .collect()
     }
 
     /// Whether album `id` contains `p` (a smart album evaluates its rules; deleted photos are in
@@ -364,7 +394,9 @@ impl Catalog {
     pub fn album_contains(&self, id: AlbumId, p: &Photo) -> bool {
         match self.albums.get(&id) {
             // guarded: a smart album testing smart albums can't loop or recurse without end
-            Some(Album { smart: Some(rules), .. }) => !p.deleted && rules::smart_album_holds(id, p.id, || rules.matches(p, self)),
+            Some(Album {
+                smart: Some(rules), ..
+            }) => !p.deleted && rules::smart_album_holds(id, p.id, || rules.matches(p, self)),
             Some(a) => a.photos.contains(&p.id),
             None => false,
         }
@@ -380,7 +412,12 @@ impl Catalog {
             if !seen.insert(a) {
                 continue;
             }
-            let tested = self.albums.get(&a).and_then(|al| al.smart.as_deref()).map(Filter::albums_tested).unwrap_or_default();
+            let tested = self
+                .albums
+                .get(&a)
+                .and_then(|al| al.smart.as_deref())
+                .map(Filter::albums_tested)
+                .unwrap_or_default();
             if tested.contains(&to) {
                 return true;
             }
@@ -393,8 +430,13 @@ impl Catalog {
     /// `RuleSet::upgrade`): typically a rule testing an album that has since been deleted. Empty
     /// for a sound smart album, a plain album or no album.
     pub fn smart_album_problems(&self, id: AlbumId) -> Vec<rules::Problem> {
-        let Some(filter) = self.albums.get(&id).and_then(|a| a.smart.as_deref()) else { return Vec::new() };
-        let mut out: Vec<rules::Problem> = self.album_filter_problem(filter, Some(id)).into_iter().collect();
+        let Some(filter) = self.albums.get(&id).and_then(|a| a.smart.as_deref()) else {
+            return Vec::new();
+        };
+        let mut out: Vec<rules::Problem> = self
+            .album_filter_problem(filter, Some(id))
+            .into_iter()
+            .collect();
         if let Some(mut rules) = filter.rule_set.clone() {
             rules.upgrade();
             out.extend(rules.check_for(self, Some(id)));
@@ -404,20 +446,32 @@ impl Catalog {
 
     /// A loop through `filter`'s own album field (not its rules): smart album `owner` filtered to
     /// itself, or to an album that leads back to it.
-    pub fn album_filter_problem(&self, filter: &Filter, owner: Option<AlbumId>) -> Option<rules::Problem> {
+    pub fn album_filter_problem(
+        &self,
+        filter: &Filter,
+        owner: Option<AlbumId>,
+    ) -> Option<rules::Problem> {
         let (a, owner) = (filter.album?, owner?);
         (a == owner || self.album_reaches(a, owner)).then(|| rules::Problem {
             path: Vec::new(),
             field: Some("album".into()),
             issue: rules::Issue::AlbumLoop,
-            message: format!("its album filter (album {}) would make this album include itself", a.0),
+            message: format!(
+                "its album filter (album {}) would make this album include itself",
+                a.0
+            ),
         })
     }
 
     /// The photos of an album: the stored list, or a smart album's current matches (id order).
     pub fn album_photos(&self, id: AlbumId) -> Vec<PhotoId> {
         match self.albums.get(&id) {
-            Some(Album { smart: Some(_), .. }) => self.photos.values().filter(|p| self.album_contains(id, p)).map(|p| p.id).collect(),
+            Some(Album { smart: Some(_), .. }) => self
+                .photos
+                .values()
+                .filter(|p| self.album_contains(id, p))
+                .map(|p| p.id)
+                .collect(),
             Some(a) => a.photos.clone(),
             None => Vec::new(),
         }
@@ -427,8 +481,16 @@ impl Catalog {
     pub fn album_count(&self, id: AlbumId) -> usize {
         match self.albums.get(&id) {
             // counted in place: no id list is built just for its length
-            Some(Album { smart: Some(_), .. }) => self.photos.values().filter(|p| self.album_contains(id, p)).count(),
-            Some(a) => a.photos.iter().filter(|p| self.photos.get(p).is_some_and(|p| !p.deleted)).count(),
+            Some(Album { smart: Some(_), .. }) => self
+                .photos
+                .values()
+                .filter(|p| self.album_contains(id, p))
+                .count(),
+            Some(a) => a
+                .photos
+                .iter()
+                .filter(|p| self.photos.get(p).is_some_and(|p| !p.deleted))
+                .count(),
             None => 0,
         }
     }
@@ -436,27 +498,38 @@ impl Catalog {
     /// Smart-album rules must not reference another smart album (no recursion) or deleted photos.
     fn validate_rules(&self, rules: &Filter) -> Result<()> {
         if rules.deleted {
-            return Err(CatalogError::Invalid("smart album rules can't select deleted photos".into()));
+            return Err(CatalogError::Invalid(
+                "smart album rules can't select deleted photos".into(),
+            ));
         }
         if let Some(a) = rules.album
             && self.albums.get(&a).is_some_and(Album::is_smart)
         {
-            return Err(CatalogError::Invalid("smart album rules can't reference another smart album".into()));
+            return Err(CatalogError::Invalid(
+                "smart album rules can't reference another smart album".into(),
+            ));
         }
         Ok(())
     }
 
     /// The name of a colour label: its custom name, else the colour (`Red`).
     pub fn label_name(&self, l: ColorLabel) -> String {
-        self.label_names.get(&l).cloned().unwrap_or_else(|| format!("{l:?}"))
+        self.label_names
+            .get(&l)
+            .cloned()
+            .unwrap_or_else(|| format!("{l:?}"))
     }
     /// A listed keyword's attributes (any case), `None` when it isn't listed.
     pub fn keyword_info(&self, path: &str) -> Option<&keywords::KeywordInfo> {
-        self.keyword_list.get(&keywords::clean(path).to_lowercase()).map(|k| &k.info)
+        self.keyword_list
+            .get(&keywords::clean(path).to_lowercase())
+            .map(|k| &k.info)
     }
     /// How the keyword list spells a listed keyword (any case), `None` when it isn't listed.
     pub fn listed_path(&self, path: &str) -> Option<&str> {
-        self.keyword_list.get(&keywords::clean(path).to_lowercase()).map(|k| k.path.as_str())
+        self.keyword_list
+            .get(&keywords::clean(path).to_lowercase())
+            .map(|k| k.path.as_str())
     }
     /// The keyword list: keywords listed on their own or given attributes, by path.
     pub fn listed_keywords(&self) -> impl Iterator<Item = &keywords::ListedKeyword> {
@@ -471,13 +544,20 @@ impl Catalog {
         let name = name.trim();
         // any case, accents included (Été / été), as rules compare names
         let name_lower = name.to_lowercase();
-        self.label_names.iter().find(|(_, n)| n.trim().to_lowercase() == name_lower).map(|(l, _)| *l).or_else(|| ColorLabel::parse(name))
+        self.label_names
+            .iter()
+            .find(|(_, n)| n.trim().to_lowercase() == name_lower)
+            .map(|(l, _)| *l)
+            .or_else(|| ColorLabel::parse(name))
     }
 
     // ---- writes
 
     fn photo_mut(&mut self, id: PhotoId) -> Result<&mut Photo> {
-        self.photos.get_mut(&id).map(Arc::make_mut).ok_or(CatalogError::NoPhoto(id))
+        self.photos
+            .get_mut(&id)
+            .map(Arc::make_mut)
+            .ok_or(CatalogError::NoPhoto(id))
     }
     fn album_mut(&mut self, id: AlbumId) -> Result<&mut Album> {
         self.albums.get_mut(&id).ok_or(CatalogError::NoAlbum(id))
@@ -494,7 +574,10 @@ impl Catalog {
         Ok(match op {
             Op::AddPhoto { photo } => {
                 if self.photos.contains_key(&photo.id) {
-                    return Err(CatalogError::Invalid(format!("photo {:?} exists", photo.id)));
+                    return Err(CatalogError::Invalid(format!(
+                        "photo {:?} exists",
+                        photo.id
+                    )));
                 }
                 let id = photo.id;
                 self.next_photo = self.next_photo.max(id.0 + 1);
@@ -504,7 +587,9 @@ impl Catalog {
             Op::RemovePhoto { id } => {
                 let p = self.photos.remove(&id).ok_or(CatalogError::NoPhoto(id))?;
                 // album membership is restored by the batch the engine builds (see `delete_permanently`)
-                Op::AddPhoto { photo: Box::new((*p).clone()) }
+                Op::AddPhoto {
+                    photo: Box::new((*p).clone()),
+                }
             }
             Op::SetRating { id, rating } => {
                 if rating > 5 {
@@ -516,37 +601,68 @@ impl Catalog {
             }
             Op::SetFlag { id, flag } => {
                 let p = self.photo_mut(id)?;
-                Op::SetFlag { id, flag: std::mem::replace(&mut p.flag, flag) }
+                Op::SetFlag {
+                    id,
+                    flag: std::mem::replace(&mut p.flag, flag),
+                }
             }
             Op::SetLabel { id, label } => {
                 let p = self.photo_mut(id)?;
-                Op::SetLabel { id, label: std::mem::replace(&mut p.label, label) }
+                Op::SetLabel {
+                    id,
+                    label: std::mem::replace(&mut p.label, label),
+                }
             }
-            Op::SetDevelop { id, settings, label, edited } => {
+            Op::SetDevelop {
+                id,
+                settings,
+                label,
+                edited,
+            } => {
                 let p = self.photo_mut(id)?;
                 let old = std::mem::replace(&mut p.develop, settings);
                 let old_edit = std::mem::replace(&mut p.edited, edited);
-                Op::SetDevelop { id, settings: old, label, edited: old_edit }
+                Op::SetDevelop {
+                    id,
+                    settings: old,
+                    label,
+                    edited: old_edit,
+                }
             }
             Op::SetMeta { id, meta } => {
                 let p = self.photo_mut(id)?;
-                Op::SetMeta { id, meta: Box::new(std::mem::replace(&mut p.meta, *meta)) }
+                Op::SetMeta {
+                    id,
+                    meta: Box::new(std::mem::replace(&mut p.meta, *meta)),
+                }
             }
             Op::SetDeleted { id, deleted } => {
                 let p = self.photo_mut(id)?;
-                Op::SetDeleted { id, deleted: std::mem::replace(&mut p.deleted, deleted) }
+                Op::SetDeleted {
+                    id,
+                    deleted: std::mem::replace(&mut p.deleted, deleted),
+                }
             }
             Op::SetLocal { id, local } => {
                 let p = self.photo_mut(id)?;
-                Op::SetLocal { id, local: std::mem::replace(&mut p.local, local) }
+                Op::SetLocal {
+                    id,
+                    local: std::mem::replace(&mut p.local, local),
+                }
             }
             Op::SetVersions { id, versions } => {
                 let p = self.photo_mut(id)?;
-                Op::SetVersions { id, versions: std::mem::replace(&mut p.versions, versions) }
+                Op::SetVersions {
+                    id,
+                    versions: std::mem::replace(&mut p.versions, versions),
+                }
             }
             Op::SetHistory { id, history } => {
                 let p = self.photo_mut(id)?;
-                Op::SetHistory { id, history: std::mem::replace(&mut p.history, history) }
+                Op::SetHistory {
+                    id,
+                    history: std::mem::replace(&mut p.history, history),
+                }
             }
             Op::PushHistory { id, step } => {
                 let p = self.photo_mut(id)?;
@@ -564,25 +680,43 @@ impl Catalog {
                 if old_cursor.is_none() {
                     Op::SetHistory { id, history: old }
                 } else {
-                    Op::Batch { ops: vec![Op::SetHistory { id, history: old }, Op::SetHistoryCursor { id, cursor: old_cursor }] }
+                    Op::Batch {
+                        ops: vec![
+                            Op::SetHistory { id, history: old },
+                            Op::SetHistoryCursor {
+                                id,
+                                cursor: old_cursor,
+                            },
+                        ],
+                    }
                 }
             }
             Op::SetHistoryCursor { id, cursor } => {
                 let p = self.photo_mut(id)?;
-                Op::SetHistoryCursor { id, cursor: std::mem::replace(&mut p.history_cursor, cursor) }
+                Op::SetHistoryCursor {
+                    id,
+                    cursor: std::mem::replace(&mut p.history_cursor, cursor),
+                }
             }
             Op::AddAlbum { album } => {
                 if self.albums.contains_key(&album.id) {
-                    return Err(CatalogError::Invalid(format!("album {:?} exists", album.id)));
+                    return Err(CatalogError::Invalid(format!(
+                        "album {:?} exists",
+                        album.id
+                    )));
                 }
                 if let Some(parent) = album.parent
                     && !self.albums.get(&parent).is_some_and(|a| a.folder)
                 {
-                    return Err(CatalogError::Invalid("parent must be an existing folder".into()));
+                    return Err(CatalogError::Invalid(
+                        "parent must be an existing folder".into(),
+                    ));
                 }
                 if let Some(rules) = &album.smart {
                     if album.folder || !album.photos.is_empty() {
-                        return Err(CatalogError::Invalid("a smart album holds rules, not photos".into()));
+                        return Err(CatalogError::Invalid(
+                            "a smart album holds rules, not photos".into(),
+                        ));
                     }
                     self.validate_rules(rules)?;
                 }
@@ -600,18 +734,25 @@ impl Catalog {
             }
             Op::RenameAlbum { id, name } => {
                 let a = self.album_mut(id)?;
-                Op::RenameAlbum { id, name: std::mem::replace(&mut a.name, name) }
+                Op::RenameAlbum {
+                    id,
+                    name: std::mem::replace(&mut a.name, name),
+                }
             }
             Op::MoveAlbum { id, parent } => {
                 if let Some(p) = parent {
                     if p == id || !self.albums.get(&p).is_some_and(|a| a.folder) {
-                        return Err(CatalogError::Invalid("parent must be another folder".into()));
+                        return Err(CatalogError::Invalid(
+                            "parent must be another folder".into(),
+                        ));
                     }
                     // no cycles
                     let mut cur = Some(p);
                     while let Some(c) = cur {
                         if c == id {
-                            return Err(CatalogError::Invalid("cannot move a folder into itself".into()));
+                            return Err(CatalogError::Invalid(
+                                "cannot move a folder into itself".into(),
+                            ));
                         }
                         cur = self.albums.get(&c).and_then(|a| a.parent);
                     }
@@ -624,26 +765,54 @@ impl Catalog {
                 let old_order = a.order.take();
                 let old_parent = std::mem::replace(&mut a.parent, parent);
                 match old_order {
-                    Some(_) => Op::Batch { ops: vec![Op::MoveAlbum { id, parent: old_parent }, Op::SetAlbumOrder { id, order: old_order }] },
-                    None => Op::MoveAlbum { id, parent: old_parent },
+                    Some(_) => Op::Batch {
+                        ops: vec![
+                            Op::MoveAlbum {
+                                id,
+                                parent: old_parent,
+                            },
+                            Op::SetAlbumOrder {
+                                id,
+                                order: old_order,
+                            },
+                        ],
+                    },
+                    None => Op::MoveAlbum {
+                        id,
+                        parent: old_parent,
+                    },
                 }
             }
             Op::SetAlbumOrder { id, order } => {
                 let a = self.album_mut(id)?;
-                Op::SetAlbumOrder { id, order: std::mem::replace(&mut a.order, order) }
+                Op::SetAlbumOrder {
+                    id,
+                    order: std::mem::replace(&mut a.order, order),
+                }
             }
             Op::SetAlbumPhotos { id, photos } => {
                 let a = self.album_mut(id)?;
                 if (a.folder || a.smart.is_some()) && !photos.is_empty() {
                     return Err(CatalogError::Invalid(
-                        if a.folder { "folders can't hold photos" } else { "smart albums update automatically" }.into(),
+                        if a.folder {
+                            "folders can't hold photos"
+                        } else {
+                            "smart albums update automatically"
+                        }
+                        .into(),
                     ));
                 }
-                Op::SetAlbumPhotos { id, photos: std::mem::replace(&mut a.photos, photos) }
+                Op::SetAlbumPhotos {
+                    id,
+                    photos: std::mem::replace(&mut a.photos, photos),
+                }
             }
             Op::SetAlbumCover { id, cover } => {
                 let a = self.album_mut(id)?;
-                Op::SetAlbumCover { id, cover: std::mem::replace(&mut a.cover, cover) }
+                Op::SetAlbumCover {
+                    id,
+                    cover: std::mem::replace(&mut a.cover, cover),
+                }
             }
             Op::SetAlbumRules { id, rules } => {
                 self.validate_rules(&rules)?;
@@ -651,11 +820,17 @@ impl Catalog {
                 let Some(old) = a.smart.as_mut() else {
                     return Err(CatalogError::Invalid("not a smart album".into()));
                 };
-                Op::SetAlbumRules { id, rules: std::mem::replace(old, rules) }
+                Op::SetAlbumRules {
+                    id,
+                    rules: std::mem::replace(old, rules),
+                }
             }
             Op::AddStack { stack } => {
                 if self.stacks.contains_key(&stack.id) {
-                    return Err(CatalogError::Invalid(format!("stack {:?} exists", stack.id)));
+                    return Err(CatalogError::Invalid(format!(
+                        "stack {:?} exists",
+                        stack.id
+                    )));
                 }
                 self.validate_stack(stack.id, &stack.photos)?;
                 let id = stack.id;
@@ -667,19 +842,30 @@ impl Catalog {
                 let s = self.stacks.remove(&id).ok_or(CatalogError::NoStack(id))?;
                 Op::AddStack { stack: s }
             }
-            Op::SetStack { id, photos, collapsed } => {
+            Op::SetStack {
+                id,
+                photos,
+                collapsed,
+            } => {
                 if !self.stacks.contains_key(&id) {
                     return Err(CatalogError::NoStack(id));
                 }
                 self.validate_stack(id, &photos)?;
                 let s = self.stacks.get_mut(&id).ok_or(CatalogError::NoStack(id))?;
-                let old = Op::SetStack { id, photos: std::mem::replace(&mut s.photos, photos), collapsed: s.collapsed };
+                let old = Op::SetStack {
+                    id,
+                    photos: std::mem::replace(&mut s.photos, photos),
+                    collapsed: s.collapsed,
+                };
                 s.collapsed = collapsed;
                 old
             }
             Op::SetAnalysis { id, analysis } => {
                 let p = self.photo_mut(id)?;
-                Op::SetAnalysis { id, analysis: std::mem::replace(&mut p.analysis, analysis) }
+                Op::SetAnalysis {
+                    id,
+                    analysis: std::mem::replace(&mut p.analysis, analysis),
+                }
             }
             Op::SetCaptured { id, captured } => {
                 if let Some(c) = &captured
@@ -688,15 +874,35 @@ impl Catalog {
                     return Err(CatalogError::Invalid(format!("not a date: {c}")));
                 }
                 let p = self.photo_mut(id)?;
-                Op::SetCaptured { id, captured: std::mem::replace(&mut p.captured, captured) }
+                Op::SetCaptured {
+                    id,
+                    captured: std::mem::replace(&mut p.captured, captured),
+                }
             }
-            Op::Relink { id, file_name, source, format } => {
+            Op::Relink {
+                id,
+                file_name,
+                source,
+                format,
+            } => {
                 let p = self.photo_mut(id)?;
                 let old_name = std::mem::replace(&mut p.file_name, file_name);
                 let old_format = format.map(|f| std::mem::replace(&mut p.format, f));
-                Op::Relink { id, file_name: old_name, source: std::mem::replace(&mut p.source, source), format: old_format }
+                Op::Relink {
+                    id,
+                    file_name: old_name,
+                    source: std::mem::replace(&mut p.source, source),
+                    format: old_format,
+                }
             }
-            Op::SetContent { id, width, height, file_size, content_hash, preview_only } => {
+            Op::SetContent {
+                id,
+                width,
+                height,
+                file_size,
+                content_hash,
+                preview_only,
+            } => {
                 let p = self.photo_mut(id)?;
                 Op::SetContent {
                     id,
@@ -709,22 +915,38 @@ impl Catalog {
             }
             Op::SetEmbeddedLens { id, lens } => {
                 let p = self.photo_mut(id)?;
-                Op::SetEmbeddedLens { id, lens: std::mem::replace(&mut p.embedded_lens, lens.map(|l| *l)).map(Box::new) }
+                Op::SetEmbeddedLens {
+                    id,
+                    lens: std::mem::replace(&mut p.embedded_lens, lens.map(|l| *l)).map(Box::new),
+                }
             }
             Op::SetAsShotWb { id, wb } => {
                 if wb.is_some_and(|(t, tint)| !(t.is_finite() && tint.is_finite())) {
-                    return Err(CatalogError::Invalid("as-shot white balance is not a number".into()));
+                    return Err(CatalogError::Invalid(
+                        "as-shot white balance is not a number".into(),
+                    ));
                 }
                 let p = self.photo_mut(id)?;
-                Op::SetAsShotWb { id, wb: std::mem::replace(&mut p.as_shot_wb, wb) }
+                Op::SetAsShotWb {
+                    id,
+                    wb: std::mem::replace(&mut p.as_shot_wb, wb),
+                }
             }
-            Op::SetFile { id, file_name, source } => {
+            Op::SetFile {
+                id,
+                file_name,
+                source,
+            } => {
                 if file_name.trim().is_empty() {
                     return Err(CatalogError::Invalid("empty file name".into()));
                 }
                 let p = self.photo_mut(id)?;
                 let old_name = std::mem::replace(&mut p.file_name, file_name);
-                Op::SetFile { id, file_name: old_name, source: std::mem::replace(&mut p.source, source) }
+                Op::SetFile {
+                    id,
+                    file_name: old_name,
+                    source: std::mem::replace(&mut p.source, source),
+                }
             }
             Op::SetLabelName { label, name } => {
                 let name = name.map(|n| n.trim().to_string()).filter(|n| !n.is_empty());
@@ -741,11 +963,20 @@ impl Catalog {
                 }
                 let key = path.to_lowercase();
                 let old = match info {
-                    Some(info) => self.keyword_list.insert(key, keywords::ListedKeyword { path: path.clone(), info }),
+                    Some(info) => self.keyword_list.insert(
+                        key,
+                        keywords::ListedKeyword {
+                            path: path.clone(),
+                            info,
+                        },
+                    ),
                     None => self.keyword_list.remove(&key),
                 };
                 match old {
-                    Some(old) => Op::SetKeyword { path: old.path, info: Some(old.info) },
+                    Some(old) => Op::SetKeyword {
+                        path: old.path,
+                        info: Some(old.info),
+                    },
                     None => Op::SetKeyword { path, info: None },
                 }
             }
@@ -758,12 +989,16 @@ impl Catalog {
                 Op::SetBrowsed { folder, at: old }
             }
             Op::SetFolderRecord { folder, record } => {
-                let key = folders::record_key(&folder).ok_or_else(|| CatalogError::Invalid(format!("not a folder: {folder}")))?;
+                let key = folders::record_key(&folder)
+                    .ok_or_else(|| CatalogError::Invalid(format!("not a folder: {folder}")))?;
                 let old = match record.filter(|r| !r.is_empty()) {
                     Some(r) => self.folder_records.insert(key.clone(), r),
                     None => self.folder_records.remove(&key),
                 };
-                Op::SetFolderRecord { folder: key, record: old }
+                Op::SetFolderRecord {
+                    folder: key,
+                    record: old,
+                }
             }
             Op::Batch { ops } => {
                 let mut inverses = Vec::with_capacity(ops.len());
@@ -792,7 +1027,10 @@ impl Catalog {
             .albums
             .values()
             .filter(|a| a.photos.contains(&id))
-            .map(|a| Op::SetAlbumPhotos { id: a.id, photos: a.photos.iter().copied().filter(|p| *p != id).collect() })
+            .map(|a| Op::SetAlbumPhotos {
+                id: a.id,
+                photos: a.photos.iter().copied().filter(|p| *p != id).collect(),
+            })
             .collect();
         ops.extend(self.remove_from_stacks_ops(&[id]));
         ops.push(Op::RemovePhoto { id });
@@ -808,7 +1046,15 @@ impl Catalog {
             .albums
             .values()
             .filter(|a| a.photos.iter().any(|p| gone.contains(p)))
-            .map(|a| Op::SetAlbumPhotos { id: a.id, photos: a.photos.iter().copied().filter(|p| !gone.contains(p)).collect() })
+            .map(|a| Op::SetAlbumPhotos {
+                id: a.id,
+                photos: a
+                    .photos
+                    .iter()
+                    .copied()
+                    .filter(|p| !gone.contains(p))
+                    .collect(),
+            })
             .collect();
         ops.extend(self.remove_from_stacks_ops(ids));
         ops.extend(gone.iter().map(|id| Op::RemovePhoto { id: *id }));
@@ -856,7 +1102,13 @@ impl Catalog {
 /// How siblings are listed: folders first, then the ones with a place of their own by it, then by
 /// name; the id settles any tie.
 fn album_order_key(a: &Album) -> (bool, bool, u32, String, AlbumId) {
-    (!a.folder, a.order.is_none(), a.order.unwrap_or(0), a.name.to_lowercase(), a.id)
+    (
+        !a.folder,
+        a.order.is_none(),
+        a.order.unwrap_or(0),
+        a.name.to_lowercase(),
+        a.id,
+    )
 }
 
 #[cfg(test)]

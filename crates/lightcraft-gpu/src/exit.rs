@@ -49,7 +49,13 @@ pub(crate) fn wait_idle(timeout: Duration) -> bool {
 
 impl Gate {
     pub const fn new() -> Gate {
-        Gate { state: Mutex::new(State { closed: false, busy: 0 }), idle: Condvar::new() }
+        Gate {
+            state: Mutex::new(State {
+                closed: false,
+                busy: 0,
+            }),
+            idle: Condvar::new(),
+        }
     }
 
     fn lock(&self) -> MutexGuard<'_, State> {
@@ -75,8 +81,14 @@ impl Gate {
         let t0 = Instant::now();
         let mut s = self.lock();
         while s.busy > 0 {
-            let Some(left) = timeout.checked_sub(t0.elapsed()).filter(|d| !d.is_zero()) else { return false };
-            s = self.idle.wait_timeout(s, left).unwrap_or_else(|e| e.into_inner()).0;
+            let Some(left) = timeout.checked_sub(t0.elapsed()).filter(|d| !d.is_zero()) else {
+                return false;
+            };
+            s = self
+                .idle
+                .wait_timeout(s, left)
+                .unwrap_or_else(|e| e.into_inner())
+                .0;
         }
         true
     }
@@ -107,14 +119,20 @@ mod tests {
         assert!(gate.enter().is_none(), "nothing new once closed");
         drop(inner);
         let t0 = Instant::now();
-        assert!(!gate.wait_idle(Duration::from_millis(50)), "the outer work is still in flight");
+        assert!(
+            !gate.wait_idle(Duration::from_millis(50)),
+            "the outer work is still in flight"
+        );
         assert!(t0.elapsed() >= Duration::from_millis(50));
         std::thread::scope(|s| {
             s.spawn(move || {
                 std::thread::sleep(Duration::from_millis(100));
                 drop(outer);
             });
-            assert!(gate.wait_idle(Duration::from_secs(30)), "woken when the work ends");
+            assert!(
+                gate.wait_idle(Duration::from_secs(30)),
+                "woken when the work ends"
+            );
         });
         assert!(gate.enter().is_none());
     }

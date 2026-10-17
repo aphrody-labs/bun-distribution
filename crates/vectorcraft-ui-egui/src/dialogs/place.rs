@@ -29,43 +29,83 @@ pub(super) const SPEC: DialogSpec = DialogSpec {
 
 /// The options row: (field, label, tooltip).
 const OPTIONS: [(&str, &str, &str); 3] = [
-    ("link", "Link", "Keep a link to an image file instead of only embedding it"),
-    ("template", "Template", "Place onto a new locked, dimmed template layer below the current layer"),
-    ("replace", "Replace", "Swap the selected object for the file, keeping its place and transform"),
+    (
+        "link",
+        "Link",
+        "Keep a link to an image file instead of only embedding it",
+    ),
+    (
+        "template",
+        "Template",
+        "Place onto a new locked, dimmed template layer below the current layer",
+    ),
+    (
+        "replace",
+        "Replace",
+        "Swap the selected object for the file, keeping its place and transform",
+    ),
 ];
 
 fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
     let t = Tokens::get(ui.ctx());
-    let files: Vec<Value> = d.fields.get("files").and_then(Value::as_array).cloned().unwrap_or_default();
+    let files: Vec<Value> = d
+        .fields
+        .get("files")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
     let info = d.fields.get("__info").cloned().unwrap_or_default();
-    widgets::subheader(ui, if files.len() == 1 { tl!("File") } else { tl!("Files") });
+    widgets::subheader(
+        ui,
+        if files.len() == 1 {
+            tl!("File")
+        } else {
+            tl!("Files")
+        },
+    );
     widgets::list_box(ui, |ui| {
-        egui::ScrollArea::vertical().max_height(180.0).auto_shrink([false, true]).show(ui, |ui| {
-            ui.set_width(ui.available_width());
-            for (i, f) in files.iter().enumerate() {
-                let path = f.get("path").and_then(Value::as_str);
-                let name = path
-                    .map(vectorcraft_engine::cmd::fileio::file_name)
-                    .or_else(|| f.get("name").and_then(Value::as_str).map(str::to_string))
-                    .unwrap_or_default();
-                ui.horizontal(|ui| {
-                    ui.add_space(6.0);
-                    ui.vertical(|ui| {
-                        ui.add_space(3.0);
-                        let label = ui.label(egui::RichText::new(name).font(theme::semibold(12.0)).color(t.text_strong));
-                        if let Some(p) = path {
-                            label.on_hover_text(p);
-                        }
-                        ui.label(egui::RichText::new(info[i].as_str().unwrap_or_default()).size(11.5).color(t.text_dim));
-                        ui.add_space(3.0);
+        egui::ScrollArea::vertical()
+            .max_height(180.0)
+            .auto_shrink([false, true])
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                for (i, f) in files.iter().enumerate() {
+                    let path = f.get("path").and_then(Value::as_str);
+                    let name = path
+                        .map(vectorcraft_engine::cmd::fileio::file_name)
+                        .or_else(|| f.get("name").and_then(Value::as_str).map(str::to_string))
+                        .unwrap_or_default();
+                    ui.horizontal(|ui| {
+                        ui.add_space(6.0);
+                        ui.vertical(|ui| {
+                            ui.add_space(3.0);
+                            let label = ui.label(
+                                egui::RichText::new(name)
+                                    .font(theme::semibold(12.0))
+                                    .color(t.text_strong),
+                            );
+                            if let Some(p) = path {
+                                label.on_hover_text(p);
+                            }
+                            ui.label(
+                                egui::RichText::new(info[i].as_str().unwrap_or_default())
+                                    .size(11.5)
+                                    .color(t.text_dim),
+                            );
+                            ui.add_space(3.0);
+                        });
                     });
-                });
-            }
-        });
+                }
+            });
     });
     if files.len() > 1 {
         ui.add_space(4.0);
-        widgets::dim_label(ui, tl!("Click to place each file at 100%, or drag to size it; arrow keys switch files, Esc skips one."));
+        widgets::dim_label(
+            ui,
+            tl!(
+                "Click to place each file at 100%, or drag to size it; arrow keys switch files, Esc skips one."
+            ),
+        );
     }
     ui.add_space(10.0);
     // The options row.
@@ -74,7 +114,11 @@ fn body(_: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
         for (key, label, tip) in OPTIONS {
             let on = d.bool(key);
             let enabled = key != "replace" || d.bool("__replace");
-            let tip = if key == "link" { link_tip(d) } else { tl!(tip).to_string() };
+            let tip = if key == "link" {
+                link_tip(d)
+            } else {
+                tl!(tip).to_string()
+            };
             if widgets::check_tip(ui, tl!(label), on && enabled, enabled, &tip) {
                 d.fields.insert(key.into(), json!(!on));
             }
@@ -99,7 +143,9 @@ pub(crate) fn link_tip(d: &Dialog) -> String {
                 tl!("VectorCraft documents: one locked object, updated when the file changes."),
             ]
         }
-        _ => vec![tl!("Keep a link to an image file instead of only embedding it")],
+        _ => vec![tl!(
+            "Keep a link to an image file instead of only embedding it"
+        )],
     };
     lines.join("\n")
 }

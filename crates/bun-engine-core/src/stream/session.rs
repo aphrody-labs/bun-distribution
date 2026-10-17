@@ -31,7 +31,10 @@ use crate::bevy::{
         renderer::{RenderContext, RenderDevice, RenderQueue, ViewQuery},
         view::ViewTarget,
     },
-    window::{CursorGrabMode, CursorOptions, Monitor, PrimaryMonitor, PrimaryWindow, Window, WindowFocused},
+    window::{
+        CursorGrabMode, CursorOptions, Monitor, PrimaryMonitor, PrimaryWindow, Window,
+        WindowFocused,
+    },
     winit::{EventLoopProxyWrapper, WinitUserEvent},
 };
 
@@ -146,9 +149,16 @@ impl Core {
             format!(
                 "decoder {} [{}]",
                 self.shared.decoder.lock().unwrap(),
-                if self.shared.zero_copy.load(Ordering::Relaxed) { "zero-copy D3D11->D3D12" } else { "CPU copy" }
+                if self.shared.zero_copy.load(Ordering::Relaxed) {
+                    "zero-copy D3D11->D3D12"
+                } else {
+                    "CPU copy"
+                }
             ),
-            format!("fps {:.1}  recv {:.1} Mb/s  frames {}  skipped {}", recent.fps, mbps, stats.presented, view.drops),
+            format!(
+                "fps {:.1}  recv {:.1} Mb/s  frames {}  skipped {}",
+                recent.fps, mbps, stats.presented, view.drops
+            ),
             format!(
                 "net+fec {:.2}  decode cpu {:.2} gpu {:.2}  render {:.2}  present gpu {:.2} ms",
                 m.net,
@@ -157,7 +167,10 @@ impl Core {
                 m.render,
                 m.present_gpu.unwrap_or(m.gpu)
             ),
-            format!("recv->glass {:.2} ms (p95 {:.2})  host {:.1} ms", m.recv_to_glass, recent.p95_recv_to_glass, m.host),
+            format!(
+                "recv->glass {:.2} ms (p95 {:.2})  host {:.1} ms",
+                m.recv_to_glass, recent.p95_recv_to_glass, m.host
+            ),
             format!(
                 "fec rebuilt {} shards  lost {} frames  pkts {}",
                 receive.recovered_shards, receive.lost_frames, receive.packets
@@ -195,9 +208,16 @@ pub struct StreamPlugin {
 impl StreamPlugin {
     pub fn new(opts: Options, codec: Codec, feed: Feed) -> Self {
         let (control, control_status, host_label) = match &feed {
-            Feed::Remote { control, control_status, host, .. } => {
-                (Some(control.clone()), Some(control_status.clone()), host.clone())
-            }
+            Feed::Remote {
+                control,
+                control_status,
+                host,
+                ..
+            } => (
+                Some(control.clone()),
+                Some(control_status.clone()),
+                host.clone(),
+            ),
             Feed::Loopback => (None, None, "loopback".into()),
         };
         let core = Core {
@@ -224,7 +244,10 @@ impl StreamPlugin {
             started: Instant::now(),
             opts,
         };
-        Self { core: Arc::new(core), feed: Mutex::new(Some(feed)) }
+        Self {
+            core: Arc::new(core),
+            feed: Mutex::new(Some(feed)),
+        }
     }
 
     /// The engine plugin this client needs: DX12 (NV12 sharing), low-latency present, reactive
@@ -232,11 +255,18 @@ impl StreamPlugin {
     pub fn engine(&self) -> crate::runtime::BunEnginePlugin {
         use crate::bevy::window::PresentMode;
         let opts = &self.core.opts;
-        let mut engine = crate::runtime::BunEnginePlugin::windowed(format!("Bun Engine stream - {}", self.core.host_label));
+        let mut engine = crate::runtime::BunEnginePlugin::windowed(format!(
+            "Bun Engine stream - {}",
+            self.core.host_label
+        ));
         engine.size = Some(opts.window.unwrap_or((opts.width, opts.height)));
         engine.escape_exits = false;
         engine.low_latency = true;
-        engine.present_mode = if opts.vsync { PresentMode::AutoVsync } else { PresentMode::AutoNoVsync };
+        engine.present_mode = if opts.vsync {
+            PresentMode::AutoVsync
+        } else {
+            PresentMode::AutoNoVsync
+        };
         engine.frame_latency = Some(1);
         engine.backends = Some(wgpu::Backends::DX12);
         engine
@@ -276,7 +306,9 @@ impl Plugin for StreamPlugin {
             .insert_non_send(Hud(HudRaster::new()))
             .add_systems(Update, (start, forward_input, status, hud).chain())
             .add_systems(Last, finish);
-        let Some(render_app) = app.get_sub_app_mut(RenderApp) else { return };
+        let Some(render_app) = app.get_sub_app_mut(RenderApp) else {
+            return;
+        };
         render_app
             .insert_resource(core)
             .insert_resource(StreamGpu(Mutex::new(GpuState::default())))
@@ -347,8 +379,18 @@ fn decode_loop(
             return waker.wake();
         }
     };
-    *shared.decoder.lock().unwrap() = format!("{}{}", decoder.name, if decoder.hardware { " (DXVA)" } else { " (software)" });
-    shared.zero_copy.store(decoder.zero_copy(), Ordering::Relaxed);
+    *shared.decoder.lock().unwrap() = format!(
+        "{}{}",
+        decoder.name,
+        if decoder.hardware {
+            " (DXVA)"
+        } else {
+            " (software)"
+        }
+    );
+    shared
+        .zero_copy
+        .store(decoder.zero_copy(), Ordering::Relaxed);
     for frame in frames {
         let meta = FrameMeta {
             index: frame.index,
@@ -386,9 +428,15 @@ fn start(
     mut exit: MessageWriter<AppExit>,
 ) {
     let Some(device) = device else { return };
-    let Some(feed) = pending.0.lock().unwrap().take() else { return };
+    let Some(feed) = pending.0.lock().unwrap().take() else {
+        return;
+    };
     let core = &core.0;
-    if let Some(mhz) = monitors.iter().next().and_then(|m| m.refresh_rate_millihertz) {
+    if let Some(mhz) = monitors
+        .iter()
+        .next()
+        .and_then(|m| m.refresh_rate_millihertz)
+    {
         core.refresh_mhz.store(mhz, Ordering::Relaxed);
     }
     if let Ok(window) = windows.single() {
@@ -409,12 +457,21 @@ fn start(
     }
 }
 
-fn spawn_threads(core: &Arc<Core>, feed: Feed, device: &wgpu::Device, waker: Waker, threads: &StreamThreads) -> Result<(), String> {
+fn spawn_threads(
+    core: &Arc<Core>,
+    feed: Feed,
+    device: &wgpu::Device,
+    waker: Waker,
+    threads: &StreamThreads,
+) -> Result<(), String> {
     let mut threads = threads.0.lock().unwrap();
     let luid = wgpu_adapter_luid(device)?;
     let (frames_tx, frames_rx) = mpsc::channel::<Frame>();
     let (mailbox, shared) = (core.mailbox.clone(), core.shared.clone());
-    let (codec, size) = (core.codec, (core.opts.width, core.opts.height, core.opts.fps));
+    let (codec, size) = (
+        core.codec,
+        (core.opts.width, core.opts.height, core.opts.fps),
+    );
     let decode_waker = waker.clone();
     threads.push(
         std::thread::Builder::new()
@@ -423,8 +480,18 @@ fn spawn_threads(core: &Arc<Core>, feed: Feed, device: &wgpu::Device, waker: Wak
             .map_err(|e| e.to_string())?,
     );
     match feed {
-        Feed::Remote { video, ping, video_key, control, .. } => {
-            let bind = if video.is_ipv6() { "[::]:0" } else { "0.0.0.0:0" };
+        Feed::Remote {
+            video,
+            ping,
+            video_key,
+            control,
+            ..
+        } => {
+            let bind = if video.is_ipv6() {
+                "[::]:0"
+            } else {
+                "0.0.0.0:0"
+            };
             let socket = UdpSocket::bind(bind).map_err(|e| e.to_string())?;
             let shared = core.shared.clone();
             let ping = Some((video, ping));
@@ -432,9 +499,16 @@ fn spawn_threads(core: &Arc<Core>, feed: Feed, device: &wgpu::Device, waker: Wak
                 std::thread::Builder::new()
                     .name("stream-receive".into())
                     .spawn(move || {
-                        receive_loop(socket, video_key, ping, frames_tx, || {
-                            let _ = control.send(Command::RequestIdr);
-                        }, shared)
+                        receive_loop(
+                            socket,
+                            video_key,
+                            ping,
+                            frames_tx,
+                            || {
+                                let _ = control.send(Command::RequestIdr);
+                            },
+                            shared,
+                        )
                     })
                     .map_err(|e| e.to_string())?,
             );
@@ -473,7 +547,16 @@ fn spawn_threads(core: &Arc<Core>, feed: Feed, device: &wgpu::Device, waker: Wak
             threads.push(
                 std::thread::Builder::new()
                     .name("stream-receive".into())
-                    .spawn(move || receive_loop(socket, None, None, frames_tx, || force_idr.store(true, Ordering::Release), shared))
+                    .spawn(move || {
+                        receive_loop(
+                            socket,
+                            None,
+                            None,
+                            frames_tx,
+                            || force_idr.store(true, Ordering::Release),
+                            shared,
+                        )
+                    })
                     .map_err(|e| e.to_string())?,
             );
         }
@@ -481,13 +564,22 @@ fn spawn_threads(core: &Arc<Core>, feed: Feed, device: &wgpu::Device, waker: Wak
     Ok(())
 }
 
-fn set_capture(core: &Core, state: &mut StreamInput, cursor: &mut Query<&mut CursorOptions, With<PrimaryWindow>>, on: bool) {
+fn set_capture(
+    core: &Core,
+    state: &mut StreamInput,
+    cursor: &mut Query<&mut CursorOptions, With<PrimaryWindow>>,
+    on: bool,
+) {
     if !core.remote() {
         return;
     }
     state.captured = on;
     if let Ok(mut options) = cursor.single_mut() {
-        options.grab_mode = if on { CursorGrabMode::Confined } else { CursorGrabMode::None };
+        options.grab_mode = if on {
+            CursorGrabMode::Confined
+        } else {
+            CursorGrabMode::None
+        };
         options.visible = !on;
     }
 }
@@ -518,8 +610,11 @@ fn forward_input(
     let remote = core.remote();
     for event in keys.read() {
         let (code, pressed) = (event.key_code, event.state == ButtonState::Pressed);
-        state.modifiers =
-            if pressed { state.modifiers | input::modifier_bit(code) } else { state.modifiers & !input::modifier_bit(code) };
+        state.modifiers = if pressed {
+            state.modifiers | input::modifier_bit(code)
+        } else {
+            state.modifiers & !input::modifier_bit(code)
+        };
         let combo = input::MODIFIER_CTRL | input::MODIFIER_ALT | input::MODIFIER_SHIFT;
         if pressed && state.modifiers & combo == combo {
             match code {
@@ -569,7 +664,10 @@ fn forward_input(
         if mx != 0.0 || my != 0.0 {
             state.motion.0 -= mx;
             state.motion.1 -= my;
-            core.send(Command::Input(input::mouse_move(mx.clamp(-32768.0, 32767.0) as i16, my.clamp(-32768.0, 32767.0) as i16)));
+            core.send(Command::Input(input::mouse_move(
+                mx.clamp(-32768.0, 32767.0) as i16,
+                my.clamp(-32768.0, 32767.0) as i16,
+            )));
         }
     }
     for event in buttons.read() {
@@ -613,7 +711,11 @@ fn forward_input(
         }
         for index in 0..4u8 {
             let slot = usize::from(index);
-            let pad = state.slots.get(slot).and_then(|e| pads.get(*e).ok()).map(|(_, p)| crate::window::pad_from_bevy(p));
+            let pad = state
+                .slots
+                .get(slot)
+                .and_then(|e| pads.get(*e).ok())
+                .map(|(_, p)| crate::window::pad_from_bevy(p));
             if pad == state.pads[slot] {
                 continue;
             }
@@ -621,8 +723,16 @@ fn forward_input(
                 core.send(Command::Input(input::controller_arrival(index)));
             }
             state.pads[slot] = pad;
-            let mask = state.pads.iter().enumerate().fold(0u16, |m, (i, p)| if p.is_some() { m | (1 << i) } else { m });
-            core.send(Command::Input(input::gamepad(index, mask, &pad.unwrap_or_default())));
+            let mask = state
+                .pads
+                .iter()
+                .enumerate()
+                .fold(0u16, |m, (i, p)| if p.is_some() { m | (1 << i) } else { m });
+            core.send(Command::Input(input::gamepad(
+                index,
+                mask,
+                &pad.unwrap_or_default(),
+            )));
         }
     }
 }
@@ -636,10 +746,19 @@ fn status(core: Res<StreamCore>, mut exit: MessageWriter<AppExit>) {
     } else if let Some(status) = core.control_status.as_ref()
         && status.stopped.load(Ordering::SeqCst)
     {
-        let why = status.termination.lock().unwrap().clone().unwrap_or_default();
+        let why = status
+            .termination
+            .lock()
+            .unwrap()
+            .clone()
+            .unwrap_or_default();
         eprintln!("bun-engine stream: {why}");
         exit.write(AppExit::Success);
-    } else if core.opts.seconds.is_some_and(|s| core.started.elapsed().as_secs_f64() >= s) {
+    } else if core
+        .opts
+        .seconds
+        .is_some_and(|s| core.started.elapsed().as_secs_f64() >= s)
+    {
         exit.write(AppExit::Success);
     }
 }
@@ -660,7 +779,10 @@ fn hud(
     let lines = core.hud_lines(state.captured);
     if let Ok(mut window) = windows.single_mut() {
         let title = lines.join("  |  ");
-        window.title = format!("Bun Engine stream - {}", title.chars().take(200).collect::<String>());
+        window.title = format!(
+            "Bun Engine stream - {}",
+            title.chars().take(200).collect::<String>()
+        );
     }
     if core.show_hud.load(Ordering::Relaxed)
         && let Some(raster) = raster.0.as_mut()
@@ -694,11 +816,19 @@ pub(crate) fn finish(
     let receive = *core.shared.receive.lock().unwrap();
     let (decoded, replaced) = core.mailbox.counters();
     let view = *core.view.lock().unwrap();
-    println!("bun-engine stream report ({}, {}, Bevy runtime)", core.host_label, core.codec.name());
+    println!(
+        "bun-engine stream report ({}, {}, Bevy runtime)",
+        core.host_label,
+        core.codec.name()
+    );
     println!(
         "decoder: {} [{}]",
         core.shared.decoder.lock().unwrap(),
-        if core.shared.zero_copy.load(Ordering::Relaxed) { "zero-copy D3D11 -> D3D12 NV12 ring" } else { "CPU copy" }
+        if core.shared.zero_copy.load(Ordering::Relaxed) {
+            "zero-copy D3D11 -> D3D12 NV12 ring"
+        } else {
+            "CPU copy"
+        }
     );
     println!(
         "present mode: {}  stream {}x{}@{}",
@@ -753,15 +883,22 @@ fn render_stream(
 ) {
     let core = &core.0;
     let (target, camera) = view.into_inner();
-    let (Some(out), Some(format), Some(size)) = (target.out_texture(), target.out_texture_view_format(), camera.physical_target_size)
-    else {
+    let (Some(out), Some(format), Some(size)) = (
+        target.out_texture(),
+        target.out_texture_view_format(),
+        camera.physical_target_size,
+    ) else {
         return;
     };
     let device = device.wgpu_device();
     let queue: &wgpu::Queue = &queue;
     let mut gpu = gpu.0.lock().unwrap();
     let gpu = &mut *gpu;
-    if gpu.presenter.as_ref().is_none_or(|p| p.target_format() != format) {
+    if gpu
+        .presenter
+        .as_ref()
+        .is_none_or(|p| p.target_format() != format)
+    {
         gpu.presenter = Some(Presenter::new(device, format, core.opts.sharpness));
         gpu.current_slot = None;
     }
@@ -784,9 +921,17 @@ fn render_stream(
     let mut fresh = false;
     if let Some(frame) = frame {
         let age = frame.meta.completed.elapsed().as_nanos() as u64;
-        let decision = decide_present(age, core.refresh_mhz.load(Ordering::Relaxed), &mut gpu.tracker);
+        let decision = decide_present(
+            age,
+            core.refresh_mhz.load(Ordering::Relaxed),
+            &mut gpu.tracker,
+        );
         match frame.picture {
-            Picture::Shared { generation, slot, fence_value } => {
+            Picture::Shared {
+                generation,
+                slot,
+                fence_value,
+            } => {
                 let current = presenter.ring().is_some_and(|r| r.generation == generation);
                 if decision == PresentDecision::Skip || !current {
                     core.mailbox.release(slot);
@@ -802,7 +947,12 @@ fn render_stream(
                     fresh = true;
                 }
             }
-            Picture::Cpu { width, height, pitch, nv12 } => {
+            Picture::Cpu {
+                width,
+                height,
+                pitch,
+                nv12,
+            } => {
                 if decision == PresentDecision::Render {
                     presenter.upload_cpu(device, queue, width, height, pitch, &nv12);
                     gpu.pending_meta = Some(frame.meta);
@@ -821,7 +971,14 @@ fn render_stream(
         return core.fail(e);
     }
     let size = (size.x, size.y);
-    presenter.encode(device, queue, ctx.command_encoder(), out, size, core.show_hud.load(Ordering::Relaxed));
+    presenter.encode(
+        device,
+        queue,
+        ctx.command_encoder(),
+        out,
+        size,
+        core.show_hud.load(Ordering::Relaxed),
+    );
     *core.view.lock().unwrap() = ViewInfo {
         stream: presenter.stream_size().unwrap_or((0, 0)),
         viewport: presenter.viewport(size).unwrap_or_default(),
@@ -833,7 +990,12 @@ fn render_stream(
 
 /// `Render` cleanup, after Bevy submitted and presented: fence the frame and record its latency
 /// samples when the GPU finishes it; release the ring slots it superseded.
-fn signal_presented(core: Res<StreamCore>, gpu: Res<StreamGpu>, device: Res<RenderDevice>, queue: Res<RenderQueue>) {
+fn signal_presented(
+    core: Res<StreamCore>,
+    gpu: Res<StreamGpu>,
+    device: Res<RenderDevice>,
+    queue: Res<RenderQueue>,
+) {
     let core = core.0.clone();
     let mut gpu = gpu.0.lock().unwrap();
     let gpu = &mut *gpu;
@@ -849,7 +1011,9 @@ fn signal_presented(core: Res<StreamCore>, gpu: Res<StreamGpu>, device: Res<Rend
             }
             let Some(meta) = meta else { return };
             let capture = clock.as_ref().and_then(|c| c.capture_of(meta.index));
-            let decoded_gpu = (meta.fence_value != 0).then(|| mailbox.decode_clock.done(meta.fence_value)).flatten();
+            let decoded_gpu = (meta.fence_value != 0)
+                .then(|| mailbox.decode_clock.done(meta.fence_value))
+                .flatten();
             let sample = Sample {
                 net: between(meta.first_packet, meta.completed),
                 queue: between(meta.completed, meta.decode_start),
@@ -872,5 +1036,9 @@ fn signal_presented(core: Res<StreamCore>, gpu: Res<StreamGpu>, device: Res<Rend
 
 /// Resolve `host:port` for UDP streams.
 pub fn socket_addr(host: &str, port: u16) -> Result<SocketAddr, String> {
-    (host, port).to_socket_addrs().map_err(|e| e.to_string())?.next().ok_or_else(|| format!("cannot resolve {host}"))
+    (host, port)
+        .to_socket_addrs()
+        .map_err(|e| e.to_string())?
+        .next()
+        .ok_or_else(|| format!("cannot resolve {host}"))
 }

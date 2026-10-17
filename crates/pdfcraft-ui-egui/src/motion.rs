@@ -54,7 +54,9 @@ impl AnimationEffects {
     }
 
     pub fn parse(value: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|choice| choice.name().eq_ignore_ascii_case(value))
+        Self::ALL
+            .into_iter()
+            .find(|choice| choice.name().eq_ignore_ascii_case(value))
     }
 
     /// Whether the window animates, given whether the system asks for no animations.
@@ -92,7 +94,13 @@ pub struct Motion {
 
 impl Default for Motion {
     fn default() -> Self {
-        Self { reduced: false, source: None, asked_at: f64::NEG_INFINITY, egui_times: None, wheel: WheelReader::default() }
+        Self {
+            reduced: false,
+            source: None,
+            asked_at: f64::NEG_INFINITY,
+            egui_times: None,
+            wheel: WheelReader::default(),
+        }
     }
 }
 
@@ -117,7 +125,10 @@ impl Motion {
             return;
         }
         let options = ctx.options(|o| o.input_options);
-        let motion = ctx.input(|i| self.wheel.read(&i.events, i.viewport_rect().height(), &options));
+        let motion = ctx.input(|i| {
+            self.wheel
+                .read(&i.events, i.viewport_rect().height(), &options)
+        });
         ctx.input_mut(|i| i.smooth_scroll_delta = motion.scroll);
         let pass = ctx.cumulative_pass_nr();
         ctx.data_mut(|d| d.insert_temp(zoom_id(), (pass, motion.zoom)));
@@ -131,8 +142,14 @@ impl Motion {
         }
         // Checked every pass, so a style replaced since can't bring the animations back.
         let style = ctx.global_style();
-        let egui_times = *self.egui_times.get_or_insert((style.animation_time, style.scroll_animation));
-        let wanted = if animate { egui_times } else { (0.0, ScrollAnimation::none()) };
+        let egui_times = *self
+            .egui_times
+            .get_or_insert((style.animation_time, style.scroll_animation));
+        let wanted = if animate {
+            egui_times
+        } else {
+            (0.0, ScrollAnimation::none())
+        };
         if (style.animation_time, style.scroll_animation) != wanted {
             ctx.all_styles_mut(|s| (s.animation_time, s.scroll_animation) = wanted);
         }
@@ -188,13 +205,23 @@ struct WheelReader {
 
 impl WheelReader {
     /// `page_height` is what one `MouseWheelUnit::Page` scrolls: the window's height in points.
-    fn read(&mut self, events: &[Event], page_height: f32, options: &egui::InputOptions) -> WheelMotion {
+    fn read(
+        &mut self,
+        events: &[Event],
+        page_height: f32,
+        options: &egui::InputOptions,
+    ) -> WheelMotion {
         let mut delta = Vec2::ZERO;
         let mut zoom = 1.0_f32;
         let mut modifiers = self.touch.unwrap_or_default();
         for event in events {
             match event {
-                Event::MouseWheel { unit, delta: step, phase, modifiers: latest } => match phase {
+                Event::MouseWheel {
+                    unit,
+                    delta: step,
+                    phase,
+                    modifiers: latest,
+                } => match phase {
                     TouchPhase::Start => {
                         self.touch = Some(*latest);
                         modifiers = *latest;
@@ -256,11 +283,21 @@ mod tests {
     use std::rc::Rc;
 
     fn wheel(unit: MouseWheelUnit, delta: Vec2, phase: TouchPhase, modifiers: Modifiers) -> Event {
-        Event::MouseWheel { unit, delta, phase, modifiers }
+        Event::MouseWheel {
+            unit,
+            delta,
+            phase,
+            modifiers,
+        }
     }
 
     fn notch(dy: f32, modifiers: Modifiers) -> Event {
-        wheel(MouseWheelUnit::Line, vec2(0.0, dy), TouchPhase::Move, modifiers)
+        wheel(
+            MouseWheelUnit::Line,
+            vec2(0.0, dy),
+            TouchPhase::Move,
+            modifiers,
+        )
     }
 
     fn read(events: &[Event]) -> WheelMotion {
@@ -270,51 +307,129 @@ mod tests {
     #[test]
     fn a_step_is_read_whole_in_its_units() {
         let line = egui::InputOptions::default().line_scroll_speed;
-        assert_eq!(read(&[notch(-1.0, Modifiers::NONE)]), WheelMotion { scroll: vec2(0.0, -line), zoom: 1.0 });
-        assert_eq!(read(&[notch(-1.0, Modifiers::NONE), notch(-2.0, Modifiers::NONE)]).scroll, vec2(0.0, -3.0 * line), "steps of one pass add up");
-        let points = wheel(MouseWheelUnit::Point, vec2(3.0, -250.0), TouchPhase::Move, Modifiers::NONE);
+        assert_eq!(
+            read(&[notch(-1.0, Modifiers::NONE)]),
+            WheelMotion {
+                scroll: vec2(0.0, -line),
+                zoom: 1.0
+            }
+        );
+        assert_eq!(
+            read(&[notch(-1.0, Modifiers::NONE), notch(-2.0, Modifiers::NONE)]).scroll,
+            vec2(0.0, -3.0 * line),
+            "steps of one pass add up"
+        );
+        let points = wheel(
+            MouseWheelUnit::Point,
+            vec2(3.0, -250.0),
+            TouchPhase::Move,
+            Modifiers::NONE,
+        );
         assert_eq!(read(&[points]).scroll, vec2(3.0, -250.0));
-        let page = wheel(MouseWheelUnit::Page, vec2(0.0, -1.0), TouchPhase::Move, Modifiers::NONE);
+        let page = wheel(
+            MouseWheelUnit::Page,
+            vec2(0.0, -1.0),
+            TouchPhase::Move,
+            Modifiers::NONE,
+        );
         assert_eq!(read(&[page]).scroll, vec2(0.0, -600.0));
-        assert_eq!(read(&[]), WheelMotion { scroll: Vec2::ZERO, zoom: 1.0 }, "and nothing is left for a later pass");
+        assert_eq!(
+            read(&[]),
+            WheelMotion {
+                scroll: Vec2::ZERO,
+                zoom: 1.0
+            },
+            "and nothing is left for a later pass"
+        );
     }
 
     #[test]
     fn modifiers_turn_the_wheel_sideways_or_into_zoom() {
         let line = egui::InputOptions::default().line_scroll_speed;
-        assert_eq!(read(&[notch(-1.0, Modifiers::SHIFT)]).scroll, vec2(-line, 0.0));
-        let sideways = wheel(MouseWheelUnit::Point, vec2(-30.0, 0.0), TouchPhase::Move, Modifiers::ALT);
+        assert_eq!(
+            read(&[notch(-1.0, Modifiers::SHIFT)]).scroll,
+            vec2(-line, 0.0)
+        );
+        let sideways = wheel(
+            MouseWheelUnit::Point,
+            vec2(-30.0, 0.0),
+            TouchPhase::Move,
+            Modifiers::ALT,
+        );
         assert_eq!(read(&[sideways]).scroll, vec2(0.0, -30.0));
         let zoomed = read(&[notch(1.0, Modifiers::COMMAND)]);
         assert_eq!(zoomed.scroll, Vec2::ZERO, "a zooming wheel doesn't scroll");
         let step = (egui::InputOptions::default().scroll_zoom_speed * line).exp();
         assert!((zoomed.zoom - step).abs() < 1e-6, "{zoomed:?}");
         assert!((read(&[notch(-1.0, Modifiers::COMMAND)]).zoom - 1.0 / step).abs() < 1e-6);
-        assert!((read(&[Event::Zoom(1.5), Event::Zoom(2.0)]).zoom - 3.0).abs() < 1e-6, "pinch events multiply");
+        assert!(
+            (read(&[Event::Zoom(1.5), Event::Zoom(2.0)]).zoom - 3.0).abs() < 1e-6,
+            "pinch events multiply"
+        );
     }
 
     #[test]
     fn a_touch_gesture_keeps_its_modifiers_and_ends_clean() {
         let mut reader = WheelReader::default();
         let options = egui::InputOptions::default();
-        let point = |dy: f32, phase, modifiers| wheel(MouseWheelUnit::Point, vec2(0.0, dy), phase, modifiers);
+        let point = |dy: f32, phase, modifiers| {
+            wheel(MouseWheelUnit::Point, vec2(0.0, dy), phase, modifiers)
+        };
         // ⌘ held as the fingers land, let go before the momentum: still zooming.
-        let began =
-            reader.read(&[point(0.0, TouchPhase::Start, Modifiers::COMMAND), point(20.0, TouchPhase::Move, Modifiers::COMMAND)], 600.0, &options);
+        let began = reader.read(
+            &[
+                point(0.0, TouchPhase::Start, Modifiers::COMMAND),
+                point(20.0, TouchPhase::Move, Modifiers::COMMAND),
+            ],
+            600.0,
+            &options,
+        );
         assert!(began.zoom > 1.0 && began.scroll == Vec2::ZERO, "{began:?}");
-        let momentum = reader.read(&[point(20.0, TouchPhase::Move, Modifiers::NONE)], 600.0, &options);
-        assert!(momentum.zoom > 1.0 && momentum.scroll == Vec2::ZERO, "{momentum:?}");
+        let momentum = reader.read(
+            &[point(20.0, TouchPhase::Move, Modifiers::NONE)],
+            600.0,
+            &options,
+        );
+        assert!(
+            momentum.zoom > 1.0 && momentum.scroll == Vec2::ZERO,
+            "{momentum:?}"
+        );
         // The pass it ends in moves nothing, and the next gesture starts without the modifier.
-        let ended = reader.read(&[point(20.0, TouchPhase::Move, Modifiers::NONE), point(0.0, TouchPhase::End, Modifiers::NONE)], 600.0, &options);
-        assert_eq!(ended, WheelMotion { scroll: Vec2::ZERO, zoom: 1.0 });
-        assert_eq!(reader.read(&[point(-20.0, TouchPhase::Move, Modifiers::NONE)], 600.0, &options).scroll, vec2(0.0, -20.0));
+        let ended = reader.read(
+            &[
+                point(20.0, TouchPhase::Move, Modifiers::NONE),
+                point(0.0, TouchPhase::End, Modifiers::NONE),
+            ],
+            600.0,
+            &options,
+        );
+        assert_eq!(
+            ended,
+            WheelMotion {
+                scroll: Vec2::ZERO,
+                zoom: 1.0
+            }
+        );
+        assert_eq!(
+            reader
+                .read(
+                    &[point(-20.0, TouchPhase::Move, Modifiers::NONE)],
+                    600.0,
+                    &options
+                )
+                .scroll,
+            vec2(0.0, -20.0)
+        );
     }
 
     #[test]
     fn numbers_that_are_not_finite_move_nothing() {
         for bad in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
             let scrolled = read(&[notch(bad, Modifiers::NONE), notch(-1.0, Modifiers::NONE)]);
-            assert!(scrolled.scroll.x.is_finite() && scrolled.scroll.y.is_finite(), "{bad}: {scrolled:?}");
+            assert!(
+                scrolled.scroll.x.is_finite() && scrolled.scroll.y.is_finite(),
+                "{bad}: {scrolled:?}"
+            );
             assert_eq!(read(&[notch(bad, Modifiers::COMMAND)]).zoom, 1.0, "{bad}");
             assert_eq!(read(&[Event::Zoom(bad)]).zoom, 1.0, "{bad}");
         }
@@ -325,9 +440,18 @@ mod tests {
     }
 
     /// One pass of a bare egui context, a sixtieth of a second after the last.
-    fn pass(ctx: &egui::Context, time: &mut f64, events: Vec<Event>, mut seen: impl FnMut(&egui::Context)) {
+    fn pass(
+        ctx: &egui::Context,
+        time: &mut f64,
+        events: Vec<Event>,
+        mut seen: impl FnMut(&egui::Context),
+    ) {
         *time += 1.0 / 60.0;
-        let raw = egui::RawInput { time: Some(*time), events, ..Default::default() };
+        let raw = egui::RawInput {
+            time: Some(*time),
+            events,
+            ..Default::default()
+        };
         // A bare context's first frame uploads the font atlas; nothing paints it here.
         ctx.run_ui(raw, |ui| seen(ui.ctx())).textures_delta.clear();
     }
@@ -358,8 +482,16 @@ mod tests {
             }
             let page_height = ctx.input(|i| i.viewport_rect().height());
             let at_once = WheelReader::default().read(&[event], page_height, &options);
-            assert!((scrolled - at_once.scroll).length() < 0.01, "{modifiers:?} {unit:?}: egui scrolled {scrolled:?}, read {:?}", at_once.scroll);
-            assert!((zoomed / at_once.zoom - 1.0).abs() < 1e-3, "{modifiers:?} {unit:?}: egui zoomed {zoomed}, read {}", at_once.zoom);
+            assert!(
+                (scrolled - at_once.scroll).length() < 0.01,
+                "{modifiers:?} {unit:?}: egui scrolled {scrolled:?}, read {:?}",
+                at_once.scroll
+            );
+            assert!(
+                (zoomed / at_once.zoom - 1.0).abs() < 1e-3,
+                "{modifiers:?} {unit:?}: egui zoomed {zoomed}, read {}",
+                at_once.zoom
+            );
             // What makes the reader necessary: egui's first pass holds part of the step back.
             let first = first.expect("passes ran");
             assert!(
@@ -372,7 +504,10 @@ mod tests {
     #[test]
     fn reduced_motion_hands_egui_the_whole_step_and_stops_its_animations() {
         let ctx = egui::Context::default();
-        let mut motion = Motion { reduced: true, ..Default::default() };
+        let mut motion = Motion {
+            reduced: true,
+            ..Default::default()
+        };
         let line = egui::InputOptions::default().line_scroll_speed;
         let mut time = 0.0;
         let mut seen = Vec::new();
@@ -383,10 +518,20 @@ mod tests {
                 seen.push(ctx.input(|i| i.smooth_scroll_delta));
             });
         }
-        assert_eq!(seen.first(), Some(&vec2(0.0, -line)), "the whole notch in the pass it arrives");
-        assert!(seen.iter().skip(1).all(|d| *d == Vec2::ZERO), "and none of egui's easing after it: {seen:?}");
+        assert_eq!(
+            seen.first(),
+            Some(&vec2(0.0, -line)),
+            "the whole notch in the pass it arrives"
+        );
+        assert!(
+            seen.iter().skip(1).all(|d| *d == Vec2::ZERO),
+            "and none of egui's easing after it: {seen:?}"
+        );
         let style = ctx.global_style();
-        assert_eq!((style.animation_time, style.scroll_animation), (0.0, egui::style::ScrollAnimation::none()));
+        assert_eq!(
+            (style.animation_time, style.scroll_animation),
+            (0.0, egui::style::ScrollAnimation::none())
+        );
         for theme in [egui::Theme::Light, egui::Theme::Dark] {
             assert_eq!(ctx.style_of(theme).animation_time, 0.0, "{theme:?}");
         }
@@ -415,28 +560,59 @@ mod tests {
             });
         }
         assert!(eased.iter().all(|(ours, eguis)| ours == eguis), "{eased:?}");
-        assert!(eased[0].0 > 1.0 && eased[0].0 < step, "egui eases the step: {eased:?}");
+        assert!(
+            eased[0].0 > 1.0 && eased[0].0 < step,
+            "egui eases the step: {eased:?}"
+        );
         let (style, default) = (ctx.global_style(), egui::Style::default());
-        assert_eq!((style.animation_time, style.scroll_animation), (default.animation_time, default.scroll_animation));
+        assert_eq!(
+            (style.animation_time, style.scroll_animation),
+            (default.animation_time, default.scroll_animation)
+        );
     }
 
     #[test]
     fn the_preference_overrides_the_system_for_every_animation() {
         use AnimationEffects::{Off, On, System};
-        assert_eq!(AnimationEffects::default(), System, "the system's setting is followed unless the user chooses");
+        assert_eq!(
+            AnimationEffects::default(),
+            System,
+            "the system's setting is followed unless the user chooses"
+        );
         for choice in AnimationEffects::ALL {
             assert_eq!(AnimationEffects::parse(choice.name()), Some(choice));
         }
-        assert_eq!((AnimationEffects::parse("OFF"), AnimationEffects::parse("smooth")), (Some(Off), None));
-        let (line, egui_default) = (egui::InputOptions::default().line_scroll_speed, egui::Style::default());
+        assert_eq!(
+            (
+                AnimationEffects::parse("OFF"),
+                AnimationEffects::parse("smooth")
+            ),
+            (Some(Off), None)
+        );
+        let (line, egui_default) = (
+            egui::InputOptions::default().line_scroll_speed,
+            egui::Style::default(),
+        );
         let egui_times = (egui_default.animation_time, egui_default.scroll_animation);
         // The system's answer, the choice, and whether the window then animates.
-        for (reduced, effects, animates) in
-            [(false, System, true), (true, System, false), (false, On, true), (true, On, true), (false, Off, false), (true, Off, false)]
-        {
-            assert_eq!(effects.animates(reduced), animates, "{effects:?}, system reduced: {reduced}");
+        for (reduced, effects, animates) in [
+            (false, System, true),
+            (true, System, false),
+            (false, On, true),
+            (true, On, true),
+            (false, Off, false),
+            (true, Off, false),
+        ] {
+            assert_eq!(
+                effects.animates(reduced),
+                animates,
+                "{effects:?}, system reduced: {reduced}"
+            );
             let ctx = egui::Context::default();
-            let mut motion = Motion { reduced, ..Default::default() };
+            let mut motion = Motion {
+                reduced,
+                ..Default::default()
+            };
             let (mut time, mut first) = (0.0, None);
             pass(&ctx, &mut time, vec![notch(-1.0, Modifiers::NONE)], |ctx| {
                 motion.begin_pass(ctx, effects);
@@ -450,24 +626,47 @@ mod tests {
                 "{effects:?}, system reduced: {reduced}: {first:?}"
             );
             let style = ctx.global_style();
-            let times = if animates { egui_times } else { (0.0, ScrollAnimation::none()) };
-            assert_eq!((style.animation_time, style.scroll_animation), times, "{effects:?}, system reduced: {reduced}");
+            let times = if animates {
+                egui_times
+            } else {
+                (0.0, ScrollAnimation::none())
+            };
+            assert_eq!(
+                (style.animation_time, style.scroll_animation),
+                times,
+                "{effects:?}, system reduced: {reduced}"
+            );
         }
         // A choice made while running applies from the next pass, and choosing back undoes it.
         let ctx = egui::Context::default();
         let mut motion = Motion::default();
         let mut time = 0.0;
-        for (effects, times) in [(Off, (0.0, ScrollAnimation::none())), (System, egui_times), (Off, (0.0, ScrollAnimation::none())), (On, egui_times)]
-        {
-            pass(&ctx, &mut time, Vec::new(), |ctx| motion.begin_pass(ctx, effects));
+        for (effects, times) in [
+            (Off, (0.0, ScrollAnimation::none())),
+            (System, egui_times),
+            (Off, (0.0, ScrollAnimation::none())),
+            (On, egui_times),
+        ] {
+            pass(&ctx, &mut time, Vec::new(), |ctx| {
+                motion.begin_pass(ctx, effects)
+            });
             let style = ctx.global_style();
-            assert_eq!((style.animation_time, style.scroll_animation), times, "{effects:?}");
+            assert_eq!(
+                (style.animation_time, style.scroll_animation),
+                times,
+                "{effects:?}"
+            );
         }
         // The row's labels are translated: the heading, and On and Off as they suit it.
         let de = crate::i18n::Lang::from_code("de").expect("German ships");
-        assert_eq!(crate::i18n::tr(de, "Animation effects"), "Animationseffekte");
-        let labels: Vec<&str> =
-            AnimationEffects::ALL.into_iter().map(|choice| crate::i18n::tr_ctx(de, "animation effects", choice.label())).collect();
+        assert_eq!(
+            crate::i18n::tr(de, "Animation effects"),
+            "Animationseffekte"
+        );
+        let labels: Vec<&str> = AnimationEffects::ALL
+            .into_iter()
+            .map(|choice| crate::i18n::tr_ctx(de, "animation effects", choice.label()))
+            .collect();
         assert_eq!(labels, ["Systemeinstellung verwenden", "Ein", "Aus"]);
         for lang in crate::i18n::Lang::all() {
             for english in ["Animation effects", "On", "Off"] {
@@ -476,7 +675,11 @@ mod tests {
                 } else {
                     crate::i18n::tr_ctx(lang, "animation effects", english)
                 };
-                assert!(lang.code() == "en" || shown != english, "{}: {english} is not translated", lang.code());
+                assert!(
+                    lang.code() == "en" || shown != english,
+                    "{}: {english} is not translated",
+                    lang.code()
+                );
             }
         }
     }
@@ -491,31 +694,52 @@ mod tests {
             let (mut time, mut hover) = (0.0, Vec::new());
             for _ in 0..12 {
                 time += 1.0 / 60.0;
-                let raw = egui::RawInput { time: Some(time), events: vec![Event::PointerMoved(egui::pos2(20.0, 20.0))], ..Default::default() };
+                let raw = egui::RawInput {
+                    time: Some(time),
+                    events: vec![Event::PointerMoved(egui::pos2(20.0, 20.0))],
+                    ..Default::default()
+                };
                 ctx.run_ui(raw, |ui| {
                     motion.begin_pass(ui.ctx(), effects);
-                    let (_, response) = ui.allocate_exact_size(vec2(100.0, 40.0), egui::Sense::click());
+                    let (_, response) =
+                        ui.allocate_exact_size(vec2(100.0, 40.0), egui::Sense::click());
                     hover.push(crate::theme::Press::track(ui, &response).hover);
                 })
                 .textures_delta
                 .clear();
             }
             // The first frame the pointer is found over the control.
-            let first = hover.iter().copied().find(|amount| *amount > 0.0).expect("the pointer is over the control");
+            let first = hover
+                .iter()
+                .copied()
+                .find(|amount| *amount > 0.0)
+                .expect("the pointer is over the control");
             assert_eq!(first < 1.0, eased, "{effects:?}: {hover:?}");
-            assert_eq!(hover.last(), Some(&1.0), "{effects:?}: the wash is whole in the end either way: {hover:?}");
+            assert_eq!(
+                hover.last(),
+                Some(&1.0),
+                "{effects:?}: the wash is whole in the end either way: {hover:?}"
+            );
         }
     }
 
     #[test]
     fn a_zoom_read_in_an_earlier_pass_is_never_used_again() {
         let ctx = egui::Context::default();
-        let mut motion = Motion { reduced: true, ..Default::default() };
+        let mut motion = Motion {
+            reduced: true,
+            ..Default::default()
+        };
         let mut time = 0.0;
-        pass(&ctx, &mut time, vec![notch(1.0, Modifiers::COMMAND)], |ctx| {
-            motion.begin_pass(ctx, AnimationEffects::System);
-            assert!(zoom_delta(ctx) > 1.0);
-        });
+        pass(
+            &ctx,
+            &mut time,
+            vec![notch(1.0, Modifiers::COMMAND)],
+            |ctx| {
+                motion.begin_pass(ctx, AnimationEffects::System);
+                assert!(zoom_delta(ctx) > 1.0);
+            },
+        );
         // A pass that didn't begin here (a host that draws without `logic`): egui's own answer.
         pass(&ctx, &mut time, Vec::new(), |ctx| {
             let eguis = ctx.input(|i| i.zoom_delta());
@@ -537,21 +761,36 @@ mod tests {
             ..Default::default()
         };
         let mut time = 0.0;
-        pass(&ctx, &mut time, Vec::new(), |ctx| motion.begin_pass(ctx, AnimationEffects::System));
+        pass(&ctx, &mut time, Vec::new(), |ctx| {
+            motion.begin_pass(ctx, AnimationEffects::System)
+        });
         assert!(motion.reduced, "asked in the first pass");
         answer.set(Some(false));
         for _ in 0..30 {
-            pass(&ctx, &mut time, Vec::new(), |ctx| motion.begin_pass(ctx, AnimationEffects::System));
+            pass(&ctx, &mut time, Vec::new(), |ctx| {
+                motion.begin_pass(ctx, AnimationEffects::System)
+            });
         }
-        assert!(motion.reduced && asked.get() == 1, "not asked again within half a second ({} times)", asked.get());
+        assert!(
+            motion.reduced && asked.get() == 1,
+            "not asked again within half a second ({} times)",
+            asked.get()
+        );
         // Back at the window later: the first pass asks.
         time += ASK_EVERY;
-        pass(&ctx, &mut time, Vec::new(), |ctx| motion.begin_pass(ctx, AnimationEffects::System));
+        pass(&ctx, &mut time, Vec::new(), |ctx| {
+            motion.begin_pass(ctx, AnimationEffects::System)
+        });
         assert!(!motion.reduced);
         answer.set(None);
         motion.reduced = true;
         time += ASK_EVERY;
-        pass(&ctx, &mut time, Vec::new(), |ctx| motion.begin_pass(ctx, AnimationEffects::System));
-        assert!(motion.reduced && asked.get() == 3, "no answer leaves the last one standing");
+        pass(&ctx, &mut time, Vec::new(), |ctx| {
+            motion.begin_pass(ctx, AnimationEffects::System)
+        });
+        assert!(
+            motion.reduced && asked.get() == 3,
+            "no answer leaves the last one standing"
+        );
     }
 }

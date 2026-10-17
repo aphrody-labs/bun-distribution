@@ -43,7 +43,8 @@ pub fn derive_key(passphrase: &str, salt: &[u8], iterations: u32) -> [u8; 32] {
 pub fn generate_random_bytes(len: usize) -> Result<Vec<u8>> {
     let rng = SystemRandom::new();
     let mut buf = vec![0u8; len];
-    rng.fill(&mut buf).map_err(|_| anyhow::anyhow!("failed to generate secure random bytes"))?;
+    rng.fill(&mut buf)
+        .map_err(|_| anyhow::anyhow!("failed to generate secure random bytes"))?;
     Ok(buf)
 }
 
@@ -55,7 +56,8 @@ pub fn encrypt_aes_gcm(
 ) -> Result<(Vec<u8>, [u8; NONCE_LEN], [u8; TAG_LEN])> {
     let rng = SystemRandom::new();
     let mut nonce_bytes = [0u8; NONCE_LEN];
-    rng.fill(&mut nonce_bytes).map_err(|_| anyhow::anyhow!("failed to generate AES nonce"))?;
+    rng.fill(&mut nonce_bytes)
+        .map_err(|_| anyhow::anyhow!("failed to generate AES nonce"))?;
 
     let nonce = Nonce::try_assume_unique_for_key(&nonce_bytes)
         .map_err(|_| anyhow::anyhow!("invalid nonce length"))?;
@@ -101,9 +103,11 @@ pub fn decrypt_aes_gcm(
     in_out.extend_from_slice(ciphertext);
     in_out.extend_from_slice(tag);
 
-    let decrypted = opening_key.open_in_place(Aad::empty(), &mut in_out).map_err(|_| {
-        anyhow::anyhow!("AES-256-GCM decryption or authentication tag verification failed")
-    })?;
+    let decrypted = opening_key
+        .open_in_place(Aad::empty(), &mut in_out)
+        .map_err(|_| {
+            anyhow::anyhow!("AES-256-GCM decryption or authentication tag verification failed")
+        })?;
 
     Ok(decrypted.to_vec())
 }

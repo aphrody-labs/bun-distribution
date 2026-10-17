@@ -34,8 +34,9 @@ pub(crate) const UV_COMMANDS: &[&str] = &[
 ];
 
 /// Subcommands that always dispatch to `cargo <cmd> …`.
-pub(crate) const CARGO_COMMANDS: &[&str] =
-    &["check", "clippy", "doc", "fmt", "fetch", "fix", "clean", "metadata", "tree"];
+pub(crate) const CARGO_COMMANDS: &[&str] = &[
+    "check", "clippy", "doc", "fmt", "fetch", "fix", "clean", "metadata", "tree",
+];
 
 /// "Universal" actions whose ecosystem is resolved at runtime from the
 /// presence of `Cargo.toml` / `pyproject.toml` / `go.mod` / `package.json`.
@@ -112,7 +113,12 @@ mod tests {
     // -----------------------------------------------------------------
     #[test]
     fn every_categorised_token_is_in_nl_engine_tokens() {
-        for cat in [BYPASS_ENGINES, UV_COMMANDS, CARGO_COMMANDS, STANDARD_ACTIONS] {
+        for cat in [
+            BYPASS_ENGINES,
+            UV_COMMANDS,
+            CARGO_COMMANDS,
+            STANDARD_ACTIONS,
+        ] {
             for tok in cat {
                 assert!(
                     NL_ENGINE_TOKENS.contains(tok),
@@ -145,7 +151,10 @@ mod tests {
                 !is_natural_language_prompt(&argv(tok)),
                 "{tok:?} must be classified as an engine token (not NL)"
             );
-            assert!(NL_ENGINE_TOKENS.contains(&tok), "{tok:?} must appear in NL_ENGINE_TOKENS");
+            assert!(
+                NL_ENGINE_TOKENS.contains(&tok),
+                "{tok:?} must appear in NL_ENGINE_TOKENS"
+            );
         }
         // Sanity: an obvious engine invocation with extra args.
         assert!(!is_natural_language_prompt(&[

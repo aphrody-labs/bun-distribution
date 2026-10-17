@@ -40,15 +40,15 @@ mod main_window;
 mod migration_worker;
 mod multiplayer;
 mod overlay_dialog;
+mod render;
 #[cfg(target_os = "macos")]
 mod render_window;
-mod render;
+#[cfg(target_os = "linux")]
+mod render_window_wayland;
 #[cfg(target_os = "windows")]
 mod render_window_windows;
 #[cfg(target_os = "linux")]
 mod render_window_x11;
-#[cfg(target_os = "linux")]
-mod render_window_wayland;
 mod startup_checks;
 mod status_bar;
 mod uisettings;

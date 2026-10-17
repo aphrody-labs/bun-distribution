@@ -34,9 +34,11 @@ pub(crate) fn keep_background_at_bottom(bg: Option<LayerId>, doc: &Document) -> 
 /// Can `l` become the Background? Groups and adjustment layers have no pixels of their own.
 fn convertible(l: &Layer) -> std::result::Result<(), String> {
     match l.content {
-        LayerContent::Group(_) | LayerContent::Adjustment(_) => {
-            Err(format!("{} {} layer can't become the Background", l.content.article(), l.content.kind_name()))
-        }
+        LayerContent::Group(_) | LayerContent::Adjustment(_) => Err(format!(
+            "{} {} layer can't become the Background",
+            l.content.article(),
+            l.content.kind_name()
+        )),
         _ => Ok(()),
     }
 }
@@ -46,19 +48,27 @@ fn can_convert(s: &Session) -> std::result::Result<(), String> {
     if background_id(&d.doc).is_some() {
         return Err("the document already has a Background layer".into());
     }
-    let l = d.active_layer.and_then(|id| d.doc.layer(id)).ok_or("no active layer")?;
+    let l = d
+        .active_layer
+        .and_then(|id| d.doc.layer(id))
+        .ok_or("no active layer")?;
     convertible(l)
 }
 
 fn background_from_layer(s: &mut Session, p: &Value) -> Result<Value> {
     let id = match p.get("layer") {
         None | Some(Value::Null) => crate::commands::layer_param(s, p)?,
-        Some(v) => LayerId(v.as_u64().ok_or_else(|| EngineError::BadParams { cmd: CMD.into(), msg: "`layer` must be a layer id".into() })?),
+        Some(v) => LayerId(v.as_u64().ok_or_else(|| EngineError::BadParams {
+            cmd: CMD.into(),
+            msg: "`layer` must be a layer id".into(),
+        })?),
     };
     let bg = s.tools.background;
     s.edit("Background From Layer", |doc, active| {
         if background_id(doc).is_some() {
-            return Err(EngineError::Other("the document already has a Background layer".into()));
+            return Err(EngineError::Other(
+                "the document already has a Background layer".into(),
+            ));
         }
         let l = doc.layer(id).ok_or(EngineError::NoLayer(id))?;
         convertible(l).map_err(EngineError::Other)?;
@@ -110,13 +120,32 @@ mod tests {
     /// square at (2, 2); the rest of it is transparent.
     fn session(depth: u32) -> (Session, [LayerId; 3]) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 12, "depth": depth})).unwrap();
-        s.execute("layer.new.layerFromBackground", json!({})).unwrap();
+        s.execute(
+            "file.new",
+            json!({"width": 16, "height": 12, "depth": depth}),
+        )
+        .unwrap();
+        s.execute("layer.new.layerFromBackground", json!({}))
+            .unwrap();
         let l0 = doc(&s).layers[0].id;
-        let id = |s: &mut Session, name: &str| LayerId(s.execute("layer.new.layer", json!({"name": name})).unwrap()["layer"].as_u64().unwrap());
+        let id = |s: &mut Session, name: &str| {
+            LayerId(
+                s.execute("layer.new.layer", json!({"name": name})).unwrap()["layer"]
+                    .as_u64()
+                    .unwrap(),
+            )
+        };
         let a = id(&mut s, "A");
-        s.execute("select.rect", json!({"x": 2, "y": 2, "width": 4, "height": 4})).unwrap();
-        s.execute("edit.fill", json!({"contents": "color", "color": "#ff0000"})).unwrap();
+        s.execute(
+            "select.rect",
+            json!({"x": 2, "y": 2, "width": 4, "height": 4}),
+        )
+        .unwrap();
+        s.execute(
+            "edit.fill",
+            json!({"contents": "color", "color": "#ff0000"}),
+        )
+        .unwrap();
         s.execute("select.deselect", json!({})).unwrap();
         let b = id(&mut s, "B");
         (s, [l0, a, b])
@@ -131,16 +160,28 @@ mod tests {
     }
 
     fn pixel(s: &Session, x: i32, y: i32) -> Vec<f32> {
-        doc(s).layers[0].surface().unwrap().read_region(Rect::new(x, y, x + 1, y + 1))
+        doc(s).layers[0]
+            .surface()
+            .unwrap()
+            .read_region(Rect::new(x, y, x + 1, y + 1))
     }
 
     /// A Background (the white one `file.new` makes) with A and B above it.
     fn with_background() -> (Session, [LayerId; 3]) {
         let mut s = Session::new();
-        s.execute("file.new", json!({"width": 16, "height": 12})).unwrap();
+        s.execute("file.new", json!({"width": 16, "height": 12}))
+            .unwrap();
         let bg = doc(&s).layers[0].id;
-        let a = LayerId(s.execute("layer.new.layer", json!({"name": "A"})).unwrap()["layer"].as_u64().unwrap());
-        let b = LayerId(s.execute("layer.new.layer", json!({"name": "B"})).unwrap()["layer"].as_u64().unwrap());
+        let a = LayerId(
+            s.execute("layer.new.layer", json!({"name": "A"})).unwrap()["layer"]
+                .as_u64()
+                .unwrap(),
+        );
+        let b = LayerId(
+            s.execute("layer.new.layer", json!({"name": "B"})).unwrap()["layer"]
+                .as_u64()
+                .unwrap(),
+        );
         (s, [bg, a, b])
     }
 
@@ -154,16 +195,30 @@ mod tests {
             assert_eq!(s.execute(CMD, json!({})).unwrap()["layer"], a.0);
             assert_eq!(order(&s), [a, l0, b], "{depth}: drops to the bottom");
             let l = &doc(&s).layers[0];
-            assert!(doc(&s).is_background(l.id) && l.name == "Background", "{depth}");
+            assert!(
+                doc(&s).is_background(l.id) && l.name == "Background",
+                "{depth}"
+            );
             assert_eq!(s.active().unwrap().active_layer, Some(a));
             // Its pixels stay; transparency takes the background colour (blue).
             let red = pixel(&s, 3, 3);
             let blue = pixel(&s, 10, 10);
-            assert!((red[0] - 1.0).abs() < 1e-3 && red[2].abs() < 1e-3 && (red[3] - 1.0).abs() < 1e-3, "{depth}: {red:?}");
-            assert!(blue[0].abs() < 1e-3 && (blue[2] - 1.0).abs() < 1e-3 && (blue[3] - 1.0).abs() < 1e-3, "{depth}: {blue:?}");
+            assert!(
+                (red[0] - 1.0).abs() < 1e-3 && red[2].abs() < 1e-3 && (red[3] - 1.0).abs() < 1e-3,
+                "{depth}: {red:?}"
+            );
+            assert!(
+                blue[0].abs() < 1e-3
+                    && (blue[2] - 1.0).abs() < 1e-3
+                    && (blue[3] - 1.0).abs() < 1e-3,
+                "{depth}: {blue:?}"
+            );
             // Now there is a Background: the item greys, Layer from Background is back.
             assert!(!s.is_enabled(CMD));
-            assert!(s.execute(CMD, json!({"layer": b.0})).is_err(), "{depth}: one Background per document");
+            assert!(
+                s.execute(CMD, json!({"layer": b.0})).is_err(),
+                "{depth}: one Background per document"
+            );
             assert!(s.is_enabled("layer.new.layerFromBackground"));
             // One step: undo restores the layer where it was, transparent.
             assert!(s.undo());
@@ -181,7 +236,11 @@ mod tests {
         let (mut s, [l0, a, b]) = session(8);
         s.execute("layer.select", json!({"layer": b.0})).unwrap();
         s.execute("layer.groupLayers", json!({})).unwrap();
-        s.execute("layer.setProps", json!({"layer": b.0, "opacity": 0.5, "visible": false})).unwrap();
+        s.execute(
+            "layer.setProps",
+            json!({"layer": b.0, "opacity": 0.5, "visible": false}),
+        )
+        .unwrap();
         s.execute("layer.select", json!({"layer": b.0})).unwrap();
         s.execute(CMD, json!({})).unwrap();
         let d = doc(&s);
@@ -207,7 +266,13 @@ mod tests {
         assert!(s.execute(CMD, json!({"layer": bg.0})).is_err());
         // Bad params.
         let (mut s, [_, a, _]) = session(8);
-        for p in [json!({"layer": "A"}), json!({"layer": -1}), json!({"layer": 1.5}), json!({"layer": 99999}), json!({"layer": [a.0]})] {
+        for p in [
+            json!({"layer": "A"}),
+            json!({"layer": -1}),
+            json!({"layer": 1.5}),
+            json!({"layer": 99999}),
+            json!({"layer": [a.0]}),
+        ] {
             assert!(s.execute(CMD, p.clone()).is_err(), "{p}");
         }
         assert!(doc(&s).background().is_none());
@@ -216,7 +281,8 @@ mod tests {
         s.execute("layer.groupLayers", json!({})).unwrap();
         assert!(!s.is_enabled(CMD), "the group is active");
         assert!(s.execute(CMD, json!({})).is_err());
-        s.execute("layer.newAdjustmentLayer.invert", json!({})).unwrap();
+        s.execute("layer.newAdjustmentLayer.invert", json!({}))
+            .unwrap();
         assert!(!s.is_enabled(CMD));
         assert!(s.execute(CMD, json!({})).is_err());
         assert!(doc(&s).background().is_none());
@@ -227,34 +293,82 @@ mod tests {
         let (mut s, [bg, a, b]) = with_background();
         // Arrange: the Background doesn't move, and nothing goes below it. (The menu greys these
         // for the Background in the shell's enable rules; here an agent asks anyway.)
-        for cmd in ["layer.arrange.bringForward", "layer.arrange.bringToFront", "layer.arrange.sendBackward", "layer.arrange.sendToBack"] {
+        for cmd in [
+            "layer.arrange.bringForward",
+            "layer.arrange.bringToFront",
+            "layer.arrange.sendBackward",
+            "layer.arrange.sendToBack",
+        ] {
             assert!(s.execute(cmd, json!({"layer": bg.0})).is_err(), "{cmd}");
             assert_eq!(order(&s), [bg, a, b], "{cmd}");
         }
-        assert!(s.execute("layer.arrange.sendBackward", json!({"layer": a.0})).is_err());
-        s.execute("layer.arrange.sendToBack", json!({"layer": b.0})).unwrap();
-        assert_eq!(order(&s), [bg, b, a], "Send to Back stops above the Background");
+        assert!(
+            s.execute("layer.arrange.sendBackward", json!({"layer": a.0}))
+                .is_err()
+        );
+        s.execute("layer.arrange.sendToBack", json!({"layer": b.0}))
+            .unwrap();
+        assert_eq!(
+            order(&s),
+            [bg, b, a],
+            "Send to Back stops above the Background"
+        );
         // Dragging in the Layers panel (layer.moveTo).
-        assert!(s.execute("layer.moveTo", json!({"layer": bg.0, "target": a.0, "position": "above"})).is_err());
-        assert!(s.execute("layer.moveTo", json!({"layer": a.0, "target": bg.0, "position": "below"})).is_err());
-        assert!(s.execute("layer.moveTo", json!({"layer": a.0, "target": bg.0, "position": "below", "copy": true})).is_err());
-        assert!(s.execute("layer.moveTo", json!({"layers": [bg.0, a.0], "target": b.0, "position": "above"})).is_err());
+        assert!(
+            s.execute(
+                "layer.moveTo",
+                json!({"layer": bg.0, "target": a.0, "position": "above"})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "layer.moveTo",
+                json!({"layer": a.0, "target": bg.0, "position": "below"})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "layer.moveTo",
+                json!({"layer": a.0, "target": bg.0, "position": "below", "copy": true})
+            )
+            .is_err()
+        );
+        assert!(
+            s.execute(
+                "layer.moveTo",
+                json!({"layers": [bg.0, a.0], "target": b.0, "position": "above"})
+            )
+            .is_err()
+        );
         assert_eq!(order(&s), [bg, b, a]);
-        s.execute("layer.moveTo", json!({"layer": a.0, "target": bg.0, "position": "above"})).unwrap();
+        s.execute(
+            "layer.moveTo",
+            json!({"layer": a.0, "target": bg.0, "position": "above"}),
+        )
+        .unwrap();
         assert_eq!(order(&s), [bg, a, b], "above the Background is fine");
         // ⌥-dragging the Background copies it above; the copy is a normal layer.
-        s.execute("layer.moveTo", json!({"layer": bg.0, "target": b.0, "position": "above", "copy": true})).unwrap();
+        s.execute(
+            "layer.moveTo",
+            json!({"layer": bg.0, "target": b.0, "position": "above", "copy": true}),
+        )
+        .unwrap();
         assert_eq!(doc(&s).layers.len(), 4);
         assert_eq!(doc(&s).layers[0].id, bg);
         assert!(s.undo());
         // Reverse with the Background among the selected layers.
         s.execute("layer.select", json!({"layer": bg.0})).unwrap();
-        s.execute("layer.select", json!({"layer": b.0, "mode": "add"})).unwrap();
+        s.execute("layer.select", json!({"layer": b.0, "mode": "add"}))
+            .unwrap();
         assert!(s.execute("layer.arrange.reverse", json!({})).is_err());
         assert_eq!(order(&s), [bg, a, b]);
         // As a normal layer it moves freely again.
-        s.execute("layer.new.layerFromBackground", json!({})).unwrap();
-        s.execute("layer.arrange.bringToFront", json!({"layer": bg.0})).unwrap();
+        s.execute("layer.new.layerFromBackground", json!({}))
+            .unwrap();
+        s.execute("layer.arrange.bringToFront", json!({"layer": bg.0}))
+            .unwrap();
         assert_eq!(order(&s), [a, b, bg]);
     }
 }

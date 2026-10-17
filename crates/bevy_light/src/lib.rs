@@ -7,13 +7,13 @@ extern crate alloc;
 use bevy_app::{App, Plugin, PostUpdate, Update};
 use bevy_asset::{AssetApp, AssetEventSystems};
 use bevy_camera::{
+    Camera, Camera3d, CameraUpdateSystems, RenderTarget, ShadowLodOrigin,
     primitives::{Aabb, CascadesFrusta, CubemapFrusta, Frustum, Sphere},
     visibility::{
         CascadesVisibleEntities, CubemapVisibleEntities, InheritedVisibility, NoCpuCulling,
         NoFrustumCulling, RenderLayers, ViewVisibility, VisibilityRange, VisibilitySystems,
         VisibleEntities, VisibleEntityRanges, VisibleMeshEntities,
     },
-    Camera, Camera3d, CameraUpdateSystems, RenderTarget, ShadowLodOrigin,
 };
 use bevy_ecs::{entity::EntityHashSet, prelude::*, system::QueryLens};
 #[cfg(feature = "bevy_gizmos")]
@@ -22,23 +22,23 @@ use bevy_log::warn_once;
 use bevy_math::Vec3A;
 use bevy_mesh::Mesh3d;
 use bevy_reflect::prelude::*;
-use bevy_transform::{components::GlobalTransform, TransformSystems};
+use bevy_transform::{TransformSystems, components::GlobalTransform};
 use bevy_utils::Parallel;
 use core::{any::TypeId, mem, ops::DerefMut};
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 
 pub mod cluster;
-use cluster::assign::assign_objects_to_clusters;
 pub use cluster::ClusteredDecal;
+use cluster::assign::assign_objects_to_clusters;
 mod ambient_light;
 pub use ambient_light::{AmbientLight, GlobalAmbientLight};
 use bevy_camera::visibility::SetViewVisibility;
 
 mod probe;
 pub use probe::{
-    automatically_add_parallax_correction_components, AtmosphereEnvironmentMapLight,
-    EnvironmentMapLight, GeneratedEnvironmentMapLight, IrradianceVolume, LightProbe,
-    ParallaxCorrection, Skybox,
+    AtmosphereEnvironmentMapLight, EnvironmentMapLight, GeneratedEnvironmentMapLight,
+    IrradianceVolume, LightProbe, ParallaxCorrection, Skybox,
+    automatically_add_parallax_correction_components,
 };
 pub mod atmosphere;
 pub use atmosphere::Atmosphere;
@@ -49,17 +49,17 @@ use cascade::build_directional_light_cascades;
 pub use cascade::{CascadeShadowConfig, CascadeShadowConfigBuilder, Cascades};
 mod point_light;
 pub use point_light::{
-    update_point_light_frusta, PointLight, PointLightShadowMap, PointLightTexture,
+    PointLight, PointLightShadowMap, PointLightTexture, update_point_light_frusta,
 };
 mod spot_light;
 pub use spot_light::{
-    orthonormalize, spot_light_clip_from_view, spot_light_world_from_view,
-    update_spot_light_frusta, SpotLight, SpotLightTexture,
+    SpotLight, SpotLightTexture, orthonormalize, spot_light_clip_from_view,
+    spot_light_world_from_view, update_spot_light_frusta,
 };
 mod directional_light;
 pub use directional_light::{
-    update_directional_light_frusta, DirectionalLight, DirectionalLightShadowMap,
-    DirectionalLightTexture, SunDisk,
+    DirectionalLight, DirectionalLightShadowMap, DirectionalLightTexture, SunDisk,
+    update_directional_light_frusta,
 };
 mod rect_light;
 pub use rect_light::RectLight;
@@ -73,9 +73,8 @@ pub mod gizmos;
 pub mod prelude {
     #[doc(hidden)]
     pub use crate::{
-        light_consts, AmbientLight, DirectionalLight, EnvironmentMapLight,
-        GeneratedEnvironmentMapLight, GlobalAmbientLight, LightProbe, PointLight, RectLight,
-        SpotLight,
+        AmbientLight, DirectionalLight, EnvironmentMapLight, GeneratedEnvironmentMapLight,
+        GlobalAmbientLight, LightProbe, PointLight, RectLight, SpotLight, light_consts,
     };
 
     #[doc(hidden)]
@@ -84,8 +83,8 @@ pub mod prelude {
 }
 
 use crate::{
-    atmosphere::{extract_chromatic_phase_textures, ScatteringMedium},
-    cluster::{add_light_probe_and_decal_aabbs, ClusterVisibilityClass, Clusters},
+    atmosphere::{ScatteringMedium, extract_chromatic_phase_textures},
+    cluster::{ClusterVisibilityClass, Clusters, add_light_probe_and_decal_aabbs},
     directional_light::validate_shadow_map_size,
     point_light::update_point_light_bounding_spheres,
     spot_light::update_spot_light_bounding_spheres,

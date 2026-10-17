@@ -64,7 +64,10 @@ impl EngineData {
             #[cfg(feature = "interp-arm9-interlocks")]
             bus_cycle: 0,
             #[cfg(feature = "interp-arm9-interlocks")]
-            interlocks: [Interlock { port_ab: 0, port_c: 0 }; 16],
+            interlocks: [Interlock {
+                port_ab: 0,
+                port_c: 0,
+            }; 16],
             data_cycles: 0,
             #[cfg(feature = "debugger-hooks")]
             next_breakpoint_addr: 0xFFFF_FFFF,
@@ -75,7 +78,9 @@ impl EngineData {
 
 #[inline]
 fn add_cycles(emu: &mut Emu<Interpreter>, cycles: RawTimestamp) {
-    emu.arm9.schedule.set_cur_time(emu.arm9.schedule.cur_time() + Timestamp(cycles));
+    emu.arm9
+        .schedule
+        .set_cur_time(emu.arm9.schedule.cur_time() + Timestamp(cycles));
 }
 
 const ARM_BKPT: u32 = 0xE120_0070;
@@ -89,7 +94,11 @@ fn prefetch_arm<const RESET_DATA_CYCLES: bool, const INC_R15: bool>(emu: &mut Em
     }
     #[cfg(feature = "interp-arm9-interlocks")]
     {
-        if unlikely(!can_execute(emu, fetch_addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+        if unlikely(!can_execute(
+            emu,
+            fetch_addr,
+            emu.arm9.engine_data.regs.is_in_priv_mode(),
+        )) {
             // Cause a prefetch abort when run by replacing the prefetced instruction with BKPT
             emu.arm9.engine_data.pipeline[1] = ARM_BKPT as PipelineEntry;
             add_cycles(emu, emu.arm9.engine_data.data_cycles as RawTimestamp);
@@ -97,7 +106,10 @@ fn prefetch_arm<const RESET_DATA_CYCLES: bool, const INC_R15: bool>(emu: &mut Em
             let instr = bus::read_32::<CpuAccess, _, true>(emu, fetch_addr);
             let cycles = emu.arm9.cp15.timings.get(fetch_addr).code;
             emu.arm9.engine_data.pipeline[1] = instr as PipelineEntry;
-            add_cycles(emu, cycles.max(emu.arm9.engine_data.data_cycles) as RawTimestamp);
+            add_cycles(
+                emu,
+                cycles.max(emu.arm9.engine_data.data_cycles) as RawTimestamp,
+            );
         }
         if RESET_DATA_CYCLES {
             emu.arm9.engine_data.data_cycles = 1;
@@ -117,8 +129,11 @@ fn prefetch_thumb<const RESET_DATA_CYCLES: bool, const INC_R15: bool>(emu: &mut 
         // from TCM, but timings are the same as long as concurrent data/code access waitstates are
         // not emulated.
         if fetch_addr & 2 == 0 {
-            if unlikely(!can_execute(emu, fetch_addr, emu.arm9.engine_data.regs.is_in_priv_mode()))
-            {
+            if unlikely(!can_execute(
+                emu,
+                fetch_addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 // Cause a prefetch abort when run by replacing the prefetced instructions with BKPT
                 emu.arm9.engine_data.pipeline[1] = thumb_pipeline_entry(
                     THUMB_BKPT as PipelineEntry | (THUMB_BKPT as PipelineEntry) << 16,
@@ -129,7 +144,10 @@ fn prefetch_thumb<const RESET_DATA_CYCLES: bool, const INC_R15: bool>(emu: &mut 
                 let cycles = emu.arm9.cp15.timings.get(fetch_addr).code;
                 emu.arm9.engine_data.pipeline[1] =
                     thumb_pipeline_entry(new_instrs as PipelineEntry);
-                add_cycles(emu, cycles.max(emu.arm9.engine_data.data_cycles) as RawTimestamp);
+                add_cycles(
+                    emu,
+                    cycles.max(emu.arm9.engine_data.data_cycles) as RawTimestamp,
+                );
             }
         } else {
             emu.arm9.engine_data.pipeline[1] =
@@ -151,7 +169,11 @@ fn apply_reg_interlock_1<const PORT_C: bool>(emu: &mut Emu<Interpreter>, reg: u8
     #[cfg(feature = "interp-arm9-interlocks")]
     {
         let interlock = emu.arm9.engine_data.interlocks[reg as usize];
-        let interlock_end = if PORT_C { interlock.port_c } else { interlock_c.port_ab };
+        let interlock_end = if PORT_C {
+            interlock.port_c
+        } else {
+            interlock_c.port_ab
+        };
         if emu.arm9.engine_data.bus_cycle < interlock_end {
             add_cycles(
                 emu,
@@ -181,7 +203,11 @@ fn apply_reg_interlocks_2<const OFFSET_A: u8, const B_PORT_C: bool>(
             - OFFSET_A as SignedTimestamp)
             .max({
                 let interlock_b = emu.arm9.engine_data.interlocks[reg_b as usize];
-                (if B_PORT_C { interlock_b.port_c } else { interlock_b.port_ab }) as SignedTimestamp
+                (if B_PORT_C {
+                    interlock_b.port_c
+                } else {
+                    interlock_b.port_ab
+                }) as SignedTimestamp
             });
         if (emu.arm9.engine_data.bus_cycle as SignedTimestamp) < interlock_end {
             add_cycles(
@@ -217,7 +243,11 @@ fn apply_reg_interlocks_3<const OFFSET_AB: u8, const C_PORT_C: bool>(
             )
             .max({
                 let interlock_c = emu.arm9.engine_data.interlocks[reg_c as usize];
-                (if C_PORT_C { interlock_c.port_c } else { interlock_c.port_ab }) as SignedTimestamp
+                (if C_PORT_C {
+                    interlock_c.port_c
+                } else {
+                    interlock_c.port_ab
+                }) as SignedTimestamp
             });
         if (emu.arm9.engine_data.bus_cycle as SignedTimestamp) < interlock_end {
             add_cycles(
@@ -313,9 +343,12 @@ macro_rules! get_next_breakpoint {
         #[cfg(feature = "debugger-hooks")]
         if !$emu.arm9.debug.breakpoints.is_empty() {
             let (Ok(i) | Err(i)) = $emu.arm9.debug.breakpoints.binary_search(&$addr);
-            $emu.arm9.engine_data.next_breakpoint_addr = $emu.arm9.debug.breakpoints
-                [if i >= $emu.arm9.debug.breakpoints.len() { 0 } else { i }]
-                & !$mask;
+            $emu.arm9.engine_data.next_breakpoint_addr =
+                $emu.arm9.debug.breakpoints[if i >= $emu.arm9.debug.breakpoints.len() {
+                    0
+                } else {
+                    i
+                }] & !$mask;
         }
     };
 }
@@ -334,7 +367,7 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
                 emu.arm9.engine_data.r15_increment = 4 >> thumb as u8;
             }
             thumb
-        },
+        }
         StateSource::Cpsr => emu.arm9.engine_data.regs.cpsr.thumb_state(),
     } {
         addr &= !1;
@@ -344,7 +377,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         // not emulated.
         #[cfg(feature = "interp-pipeline")]
         if addr & 2 == 0 {
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.pipeline = [
                     thumb_pipeline_entry(THUMB_BKPT as PipelineEntry),
                     thumb_pipeline_entry(THUMB_BKPT as PipelineEntry),
@@ -361,7 +398,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
             }
             reg!(emu.arm9, 15) = addr.wrapping_add(4);
         } else {
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.pipeline[0] =
                     thumb_pipeline_entry(THUMB_BKPT as PipelineEntry);
                 add_cycles(emu, 1);
@@ -373,7 +414,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
                 add_cycles(emu, first_cycles as RawTimestamp);
             }
             addr = addr.wrapping_add(4);
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.pipeline[1] = thumb_pipeline_entry(
                     THUMB_BKPT as PipelineEntry | (THUMB_BKPT as PipelineEntry) << 16,
                 );
@@ -390,14 +435,21 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         #[cfg(not(feature = "interp-pipeline"))]
         {
             if addr & 2 == 0 {
-                if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+                if unlikely(!can_execute(
+                    emu,
+                    addr,
+                    emu.arm9.engine_data.regs.is_in_priv_mode(),
+                )) {
                     add_cycles(emu, 2);
                 } else {
                     let cycles = emu.arm9.cp15.timings.get(addr).code;
                     add_cycles(emu, cycles as RawTimestamp + 1);
                 }
-            } else if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode()))
-            {
+            } else if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.thumb_next_instr = THUMB_BKPT;
                 add_cycles(emu, 1);
             } else {
@@ -413,7 +465,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         get_next_breakpoint!(emu, addr, 3);
         #[cfg(feature = "interp-pipeline")]
         {
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.pipeline[0] = ARM_BKPT as PipelineEntry;
                 add_cycles(emu, 1);
             } else {
@@ -423,7 +479,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
                 add_cycles(emu, first_cycles as RawTimestamp);
             }
             addr = addr.wrapping_add(4);
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 emu.arm9.engine_data.pipeline[1] = ARM_BKPT as PipelineEntry;
                 add_cycles(emu, 1);
             } else {
@@ -436,7 +496,11 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
         }
         #[cfg(not(feature = "interp-pipeline"))]
         {
-            if unlikely(!can_execute(emu, addr, emu.arm9.engine_data.regs.is_in_priv_mode())) {
+            if unlikely(!can_execute(
+                emu,
+                addr,
+                emu.arm9.engine_data.regs.is_in_priv_mode(),
+            )) {
                 add_cycles(emu, 2);
             } else {
                 let cycles = emu.arm9.cp15.timings.get(addr).code;
@@ -451,8 +515,13 @@ fn reload_pipeline<const STATE_SOURCE: StateSource>(emu: &mut Emu<Interpreter>) 
 fn set_cpsr_update_control(emu: &mut Emu<Interpreter>, value: Psr) {
     let prev_value = emu.arm9.engine_data.regs.cpsr;
     emu.arm9.engine_data.regs.cpsr = value;
-    emu.arm9.irqs.set_enabled_in_cpsr(!value.irqs_disabled(), &mut emu.arm9.schedule);
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_value.mode(), value.mode());
+    emu.arm9
+        .irqs
+        .set_enabled_in_cpsr(!value.irqs_disabled(), &mut emu.arm9.schedule);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_value.mode(), value.mode());
 }
 
 fn restore_spsr(emu: &mut Emu<Interpreter>) {
@@ -478,7 +547,9 @@ fn handle_undefined<const THUMB: bool>(emu: &mut Emu<Interpreter>, _instr: u32) 
     #[cfg(feature = "debugger-hooks")]
     if let Some(undef_hook) = emu.arm9.undef_hook() {
         if unsafe { undef_hook.get()(emu, _instr, THUMB) } {
-            emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+            emu.arm9
+                .schedule
+                .set_target_time(emu.arm9.schedule.cur_time());
             emu.arm9.was_stopped_by_debug_hook = true;
             emu.arm9.is_stopped = true;
         }
@@ -507,7 +578,10 @@ fn handle_undefined<const THUMB: bool>(emu: &mut Emu<Interpreter>, _instr: u32) 
     {
         emu.arm9.engine_data.r15_increment = 4;
     }
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::UNDEFINED);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::UNDEFINED);
     emu.arm9.engine_data.regs.spsr = prev_cpsr;
     reg!(emu.arm9, 14) = reg!(emu.arm9, 15).wrapping_sub(4 >> THUMB as u8);
     reg!(emu.arm9, 15) = emu.arm9.engine_data.exc_vectors_start | 0x4;
@@ -518,14 +592,20 @@ fn handle_swi<const THUMB: bool>(emu: &mut Emu<Interpreter>, number: u8) {
     #[cfg(feature = "debugger-hooks")]
     if let Some(swi_hook) = emu.arm9.swi_hook() {
         if unsafe { swi_hook.get()(emu, number) } {
-            emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+            emu.arm9
+                .schedule
+                .set_target_time(emu.arm9.schedule.cur_time());
             emu.arm9.was_stopped_by_debug_hook = true;
             emu.arm9.is_stopped = true;
         }
     }
 
     if emu.arm9.hle_bios_enabled() && emu.arm9.cp15.control().high_exc_vectors() {
-        enter_hle_swi::<true>(emu, number, reg!(emu.arm9, 15).wrapping_sub(4 >> THUMB as u8));
+        enter_hle_swi::<true>(
+            emu,
+            number,
+            reg!(emu.arm9, 15).wrapping_sub(4 >> THUMB as u8),
+        );
         return;
     }
 
@@ -540,14 +620,19 @@ fn handle_swi<const THUMB: bool>(emu: &mut Emu<Interpreter>, number: u8) {
     }
     add_bus_cycles(emu, 2);
     let prev_cpsr = emu.arm9.engine_data.regs.cpsr;
-    emu.arm9.engine_data.regs.cpsr =
-        prev_cpsr.with_mode(Mode::SUPERVISOR).with_thumb_state(false).with_irqs_disabled(true);
+    emu.arm9.engine_data.regs.cpsr = prev_cpsr
+        .with_mode(Mode::SUPERVISOR)
+        .with_thumb_state(false)
+        .with_irqs_disabled(true);
     emu.arm9.irqs.set_enabled_in_cpsr(false, ());
     #[cfg(feature = "interp-pipeline-accurate-reloads")]
     {
         emu.arm9.engine_data.r15_increment = 4;
     }
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
     emu.arm9.engine_data.regs.spsr = prev_cpsr;
     reg!(emu.arm9, 14) = reg!(emu.arm9, 15).wrapping_sub(4 >> THUMB as u8);
     reg!(emu.arm9, 15) = emu.arm9.engine_data.exc_vectors_start | 0x8;
@@ -565,7 +650,9 @@ fn handle_prefetch_abort<const THUMB: bool>(emu: &mut Emu<Interpreter>) {
     #[cfg(feature = "debugger-hooks")]
     if let Some(prefetch_abort_hook) = emu.arm9.prefetch_abort_hook() {
         if unsafe { prefetch_abort_hook.get()(emu) } {
-            emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+            emu.arm9
+                .schedule
+                .set_target_time(emu.arm9.schedule.cur_time());
             emu.arm9.was_stopped_by_debug_hook = true;
             emu.arm9.is_stopped = true;
         }
@@ -581,14 +668,19 @@ fn handle_prefetch_abort<const THUMB: bool>(emu: &mut Emu<Interpreter>) {
     }
     add_bus_cycles(emu, 2);
     let prev_cpsr = emu.arm9.engine_data.regs.cpsr;
-    emu.arm9.engine_data.regs.cpsr =
-        prev_cpsr.with_mode(Mode::ABORT).with_thumb_state(false).with_irqs_disabled(true);
+    emu.arm9.engine_data.regs.cpsr = prev_cpsr
+        .with_mode(Mode::ABORT)
+        .with_thumb_state(false)
+        .with_irqs_disabled(true);
     emu.arm9.irqs.set_enabled_in_cpsr(false, ());
     #[cfg(feature = "interp-pipeline-accurate-reloads")]
     {
         emu.arm9.engine_data.r15_increment = 4;
     }
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::ABORT);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::ABORT);
     emu.arm9.engine_data.regs.spsr = prev_cpsr;
     reg!(emu.arm9, 14) = reg!(emu.arm9, 15).wrapping_sub((!THUMB as u32) << 2);
     reg!(emu.arm9, 15) = emu.arm9.engine_data.exc_vectors_start | 0xC;
@@ -608,23 +700,33 @@ fn handle_data_abort<const THUMB: bool>(emu: &mut Emu<Interpreter>, _addr: u32) 
     #[cfg(feature = "debugger-hooks")]
     if let Some(data_abort_hook) = emu.arm9.data_abort_hook() {
         if unsafe { data_abort_hook.get()(emu, _addr) } {
-            emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+            emu.arm9
+                .schedule
+                .set_target_time(emu.arm9.schedule.cur_time());
             emu.arm9.was_stopped_by_debug_hook = true;
             emu.arm9.is_stopped = true;
         }
     }
     let prev_cpsr = emu.arm9.engine_data.regs.cpsr;
-    emu.arm9.engine_data.regs.cpsr =
-        prev_cpsr.with_mode(Mode::ABORT).with_thumb_state(false).with_irqs_disabled(true);
+    emu.arm9.engine_data.regs.cpsr = prev_cpsr
+        .with_mode(Mode::ABORT)
+        .with_thumb_state(false)
+        .with_irqs_disabled(true);
     emu.arm9.irqs.set_enabled_in_cpsr(false, ());
     #[cfg(feature = "interp-pipeline-accurate-reloads")]
     {
         emu.arm9.engine_data.r15_increment = 4;
     }
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::ABORT);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::ABORT);
     emu.arm9.engine_data.regs.spsr = prev_cpsr;
-    reg!(emu.arm9, 14) =
-        if THUMB { reg!(emu.arm9, 15).wrapping_add(2) } else { reg!(emu.arm9, 15).wrapping_sub(4) };
+    reg!(emu.arm9, 14) = if THUMB {
+        reg!(emu.arm9, 15).wrapping_add(2)
+    } else {
+        reg!(emu.arm9, 15).wrapping_sub(4)
+    };
     reg!(emu.arm9, 15) = emu.arm9.engine_data.exc_vectors_start | 0x10;
     reload_pipeline::<{ StateSource::Arm }>(emu);
 }
@@ -634,21 +736,33 @@ fn enter_hle_swi<const FROM_USER_CODE: bool>(
     number: u8,
     return_addr: u32,
 ) {
-    let spsr = if FROM_USER_CODE { emu.arm9.engine_data.regs.cpsr } else { spsr!(emu.arm9) };
+    let spsr = if FROM_USER_CODE {
+        emu.arm9.engine_data.regs.cpsr
+    } else {
+        spsr!(emu.arm9)
+    };
 
     if FROM_USER_CODE {
         let prev_mode = emu.arm9.engine_data.regs.cpsr.mode();
         emu.arm9.engine_data.regs.cpsr.set_mode(Mode::SUPERVISOR);
-        emu.arm9.engine_data.regs.update_mode::<false>(prev_mode, Mode::SUPERVISOR);
+        emu.arm9
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_mode, Mode::SUPERVISOR);
         reg!(emu.arm9, 14) = return_addr;
         emu.arm9.engine_data.regs.spsr = spsr;
     }
 
     reg!(emu.arm9, 13) = reg!(emu.arm9, 13).wrapping_sub(0x10);
     let base_addr = reg!(emu.arm9, 13);
-    for (i, value) in [spsr.raw(), reg!(emu.arm9, 11), reg!(emu.arm9, 12), reg!(emu.arm9, 14)]
-        .into_iter()
-        .enumerate()
+    for (i, value) in [
+        spsr.raw(),
+        reg!(emu.arm9, 11),
+        reg!(emu.arm9, 12),
+        reg!(emu.arm9, 14),
+    ]
+    .into_iter()
+    .enumerate()
     {
         bus::write_32::<CpuAccess, _>(emu, base_addr.wrapping_add((i << 2) as u32), value);
     }
@@ -680,7 +794,10 @@ fn return_from_hle_swi(emu: &mut Emu<Interpreter>) {
 
     let prev_cpsr = emu.arm9.engine_data.regs.cpsr;
     emu.arm9.engine_data.regs.cpsr = prev_cpsr.with_mode(Mode::SUPERVISOR);
-    emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
+    emu.arm9
+        .engine_data
+        .regs
+        .update_mode::<false>(prev_cpsr.mode(), Mode::SUPERVISOR);
 
     let base_addr = reg!(emu.arm9, 13);
     reg!(emu.arm9, 13) = base_addr.wrapping_add(0x10);
@@ -701,7 +818,10 @@ fn enter_hle_irq<const FROM_USER_CODE: bool>(emu: &mut Emu<Interpreter>, return_
         let prev_cpsr = emu.arm9.engine_data.regs.cpsr;
         emu.arm9.engine_data.regs.cpsr = prev_cpsr.with_mode(Mode::IRQ).with_irqs_disabled(true);
         emu.arm9.irqs.set_enabled_in_cpsr(false, ());
-        emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
+        emu.arm9
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
         emu.arm9.engine_data.regs.spsr = prev_cpsr;
     }
 
@@ -777,7 +897,10 @@ impl CoreData for EngineData {
     fn setup_direct_boot(emu: &mut Emu<Interpreter>, entry_addr: u32) {
         let prev_mode = emu.arm9.engine_data.regs.cpsr.mode();
         emu.arm9.engine_data.regs.cpsr.set_mode(Mode::SYSTEM);
-        emu.arm9.engine_data.regs.update_mode::<false>(prev_mode, Mode::SYSTEM);
+        emu.arm9
+            .engine_data
+            .regs
+            .update_mode::<false>(prev_mode, Mode::SYSTEM);
         for reg in 0..12 {
             reg!(emu.arm9, reg) = 0;
         }
@@ -790,7 +913,10 @@ impl CoreData for EngineData {
         #[cfg(feature = "interp-arm9-interlocks")]
         {
             emu.arm9.engine_data.bus_cycle = 0;
-            emu.arm9.engine_data.interlocks = [Interlock { port_ab: 0, port_c: 0 }; 16];
+            emu.arm9.engine_data.interlocks = [Interlock {
+                port_ab: 0,
+                port_c: 0,
+            }; 16];
         };
         reg!(emu.arm9, 15) = entry_addr;
         reload_pipeline::<{ StateSource::R15Bit0 }>(emu);
@@ -1028,14 +1154,19 @@ impl Arm9Data for EngineData {
                         {
                             emu.arm9.engine_data.r15_increment = 4;
                         }
-                        emu.arm9.engine_data.regs.update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
+                        emu.arm9
+                            .engine_data
+                            .regs
+                            .update_mode::<false>(prev_cpsr.mode(), Mode::IRQ);
                         emu.arm9.engine_data.regs.spsr = prev_cpsr;
                         reg!(emu.arm9, 14) = return_addr;
                         reg!(emu.arm9, 15) = emu.arm9.engine_data.exc_vectors_start | 0x18;
                         reload_pipeline::<{ StateSource::Arm }>(emu);
                     }
                 } else if emu.arm9.irqs.halted() {
-                    emu.arm9.schedule.set_cur_time(emu.arm9.schedule.target_time());
+                    emu.arm9
+                        .schedule
+                        .set_cur_time(emu.arm9.schedule.target_time());
                     continue;
                 }
                 while emu.arm9.schedule.cur_time() < emu.arm9.schedule.target_time() {
@@ -1046,7 +1177,9 @@ impl Arm9Data for EngineData {
                         if emu.arm9.engine_data.next_breakpoint_addr == r15 {
                             if let Some(breakpoint_hook) = emu.arm9.breakpoint_hook().as_ref() {
                                 if unsafe { breakpoint_hook.get()(emu, r15) } {
-                                    emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+                                    emu.arm9
+                                        .schedule
+                                        .set_target_time(emu.arm9.schedule.cur_time());
                                     emu.arm9.was_stopped_by_debug_hook = true;
                                     emu.arm9.is_stopped = true;
                                     return;
@@ -1057,7 +1190,9 @@ impl Arm9Data for EngineData {
                             if emu.arm9.debug.single_step_started {
                                 emu.arm9.debug.single_step = false;
                                 emu.arm9.debug.single_step_started = false;
-                                emu.arm9.schedule.set_target_time(emu.arm9.schedule.cur_time());
+                                emu.arm9
+                                    .schedule
+                                    .set_target_time(emu.arm9.schedule.cur_time());
                                 emu.arm9.was_stopped_by_debug_hook = true;
                                 emu.arm9.is_stopped = true;
                                 return;

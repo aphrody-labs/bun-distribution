@@ -3,7 +3,14 @@
 //! Document space is integer pixels with the origin at the canvas top-left.
 //! Layers may extend beyond the canvas (negative coordinates are valid).
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +47,12 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub const EMPTY: Rect = Rect { x0: 0, y0: 0, x1: 0, y1: 0 };
+    pub const EMPTY: Rect = Rect {
+        x0: 0,
+        y0: 0,
+        x1: 0,
+        y1: 0,
+    };
 
     pub const fn new(x0: i32, y0: i32, x1: i32, y1: i32) -> Self {
         Self { x0, y0, x1, y1 }
@@ -53,11 +65,19 @@ impl Rect {
     }
     /// Horizontal extent; 0 when `x1 <= x0`. Exact even for i32-extreme edges.
     pub fn width(&self) -> u32 {
-        if self.x1 > self.x0 { self.x1.abs_diff(self.x0) } else { 0 }
+        if self.x1 > self.x0 {
+            self.x1.abs_diff(self.x0)
+        } else {
+            0
+        }
     }
     /// Vertical extent; 0 when `y1 <= y0`. Exact even for i32-extreme edges.
     pub fn height(&self) -> u32 {
-        if self.y1 > self.y0 { self.y1.abs_diff(self.y0) } else { 0 }
+        if self.y1 > self.y0 {
+            self.y1.abs_diff(self.y0)
+        } else {
+            0
+        }
     }
     pub fn size(&self) -> Size {
         Size::new(self.width(), self.height())
@@ -67,13 +87,22 @@ impl Rect {
     }
     /// `other` lies entirely inside `self` (an empty `other` is contained in anything).
     pub fn contains_rect(&self, other: &Rect) -> bool {
-        other.is_empty() || (other.x0 >= self.x0 && other.y0 >= self.y0 && other.x1 <= self.x1 && other.y1 <= self.y1)
+        other.is_empty()
+            || (other.x0 >= self.x0
+                && other.y0 >= self.y0
+                && other.x1 <= self.x1
+                && other.y1 <= self.y1)
     }
     pub fn contains(&self, x: i32, y: i32) -> bool {
         x >= self.x0 && x < self.x1 && y >= self.y0 && y < self.y1
     }
     pub fn intersect(&self, o: &Rect) -> Rect {
-        let r = Rect::new(self.x0.max(o.x0), self.y0.max(o.y0), self.x1.min(o.x1), self.y1.min(o.y1));
+        let r = Rect::new(
+            self.x0.max(o.x0),
+            self.y0.max(o.y0),
+            self.x1.min(o.x1),
+            self.y1.min(o.y1),
+        );
         if r.is_empty() { Rect::EMPTY } else { r }
     }
     pub fn union(&self, o: &Rect) -> Rect {
@@ -83,20 +112,38 @@ impl Rect {
         if o.is_empty() {
             return *self;
         }
-        Rect::new(self.x0.min(o.x0), self.y0.min(o.y0), self.x1.max(o.x1), self.y1.max(o.y1))
+        Rect::new(
+            self.x0.min(o.x0),
+            self.y0.min(o.y0),
+            self.x1.max(o.x1),
+            self.y1.max(o.y1),
+        )
     }
     pub fn translate(&self, dx: i32, dy: i32) -> Rect {
-        Rect::new(self.x0.saturating_add(dx), self.y0.saturating_add(dy), self.x1.saturating_add(dx), self.y1.saturating_add(dy))
+        Rect::new(
+            self.x0.saturating_add(dx),
+            self.y0.saturating_add(dy),
+            self.x1.saturating_add(dx),
+            self.y1.saturating_add(dy),
+        )
     }
     pub fn inflate(&self, d: i32) -> Rect {
-        Rect::new(self.x0.saturating_sub(d), self.y0.saturating_sub(d), self.x1.saturating_add(d), self.y1.saturating_add(d))
+        Rect::new(
+            self.x0.saturating_sub(d),
+            self.y0.saturating_sub(d),
+            self.x1.saturating_add(d),
+            self.y1.saturating_add(d),
+        )
     }
     /// All tiles overlapping this rect.
     pub fn tiles(&self) -> impl Iterator<Item = TileCoord> + use<> {
         let (a, b) = if self.is_empty() {
             (TileCoord::new(0, 0), TileCoord::new(-1, -1))
         } else {
-            (TileCoord::containing(self.x0, self.y0), TileCoord::containing(self.x1 - 1, self.y1 - 1))
+            (
+                TileCoord::containing(self.x0, self.y0),
+                TileCoord::containing(self.x1 - 1, self.y1 - 1),
+            )
         };
         (a.ty..=b.ty).flat_map(move |ty| (a.tx..=b.tx).map(move |tx| TileCoord::new(tx, ty)))
     }
@@ -117,7 +164,12 @@ impl TileCoord {
         Self::new(x.div_euclid(TILE_SIZE), y.div_euclid(TILE_SIZE))
     }
     pub fn rect(&self) -> Rect {
-        Rect::from_xywh(self.tx * TILE_SIZE, self.ty * TILE_SIZE, TILE_SIZE as u32, TILE_SIZE as u32)
+        Rect::from_xywh(
+            self.tx * TILE_SIZE,
+            self.ty * TILE_SIZE,
+            TILE_SIZE as u32,
+            TILE_SIZE as u32,
+        )
     }
 }
 
@@ -146,17 +198,25 @@ impl Default for Affine {
 }
 
 impl Affine {
-    pub const IDENTITY: Affine = Affine { m: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0] };
+    pub const IDENTITY: Affine = Affine {
+        m: [1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+    };
 
     pub fn translate(dx: f64, dy: f64) -> Self {
-        Affine { m: [1.0, 0.0, 0.0, 1.0, dx, dy] }
+        Affine {
+            m: [1.0, 0.0, 0.0, 1.0, dx, dy],
+        }
     }
     pub fn scale(s: f64) -> Self {
-        Affine { m: [s, 0.0, 0.0, s, 0.0, 0.0] }
+        Affine {
+            m: [s, 0.0, 0.0, s, 0.0, 0.0],
+        }
     }
     pub fn rotate(radians: f64) -> Self {
         let (s, c) = radians.sin_cos();
-        Affine { m: [c, s, -s, c, 0.0, 0.0] }
+        Affine {
+            m: [c, s, -s, c, 0.0, 0.0],
+        }
     }
     /// `self * other`: apply `other` first, then `self`.
     pub fn then(&self, other: &Affine) -> Affine {
@@ -165,7 +225,16 @@ impl Affine {
     pub fn mul(&self, o: &Affine) -> Affine {
         let [a, b, c, d, e, f] = self.m;
         let [oa, ob, oc, od, oe, of] = o.m;
-        Affine { m: [a * oa + c * ob, b * oa + d * ob, a * oc + c * od, b * oc + d * od, a * oe + c * of + e, b * oe + d * of + f] }
+        Affine {
+            m: [
+                a * oa + c * ob,
+                b * oa + d * ob,
+                a * oc + c * od,
+                b * oc + d * od,
+                a * oe + c * of + e,
+                b * oe + d * of + f,
+            ],
+        }
     }
     pub fn apply(&self, p: Point) -> Point {
         let [a, b, c, d, e, f] = self.m;
@@ -181,7 +250,16 @@ impl Affine {
         }
         let [a, b, c, d, e, f] = self.m;
         let inv = 1.0 / det;
-        Some(Affine { m: [d * inv, -b * inv, -c * inv, a * inv, (c * f - d * e) * inv, (b * e - a * f) * inv] })
+        Some(Affine {
+            m: [
+                d * inv,
+                -b * inv,
+                -c * inv,
+                a * inv,
+                (c * f - d * e) * inv,
+                (b * e - a * f) * inv,
+            ],
+        })
     }
 }
 
@@ -222,7 +300,14 @@ mod tests {
     fn rect_tiles_enumeration() {
         let r = Rect::new(-10, 0, 300, 10);
         let t: Vec<_> = r.tiles().collect();
-        assert_eq!(t, vec![TileCoord::new(-1, 0), TileCoord::new(0, 0), TileCoord::new(1, 0)]);
+        assert_eq!(
+            t,
+            vec![
+                TileCoord::new(-1, 0),
+                TileCoord::new(0, 0),
+                TileCoord::new(1, 0)
+            ]
+        );
         assert_eq!(Rect::EMPTY.tiles().count(), 0);
         assert_eq!(Rect::new(0, 0, 256, 256).tiles().count(), 1);
         assert_eq!(Rect::new(0, 0, 257, 257).tiles().count(), 4);
@@ -230,7 +315,9 @@ mod tests {
 
     #[test]
     fn affine_inverse_roundtrip() {
-        let t = Affine::translate(5.0, -3.0).then(&Affine::rotate(0.7)).then(&Affine::scale(2.5));
+        let t = Affine::translate(5.0, -3.0)
+            .then(&Affine::rotate(0.7))
+            .then(&Affine::scale(2.5));
         let inv = t.inverse().unwrap();
         let p = Point::new(12.0, -7.5);
         let q = inv.apply(t.apply(p));

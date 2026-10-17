@@ -122,7 +122,11 @@ const SPECIALS: &[(u8, char)] = &[
 /// Non-spacing diacritics 0xC1–0xCF: (code, base letters, composed letters).
 const DIACRITICS: &[(u8, &str, &str)] = &[
     (0xc1, "AEIOUaeiou", "ÀÈÌÒÙàèìòù"),
-    (0xc2, "ACEILNORSUYZacegilnorsuyz", "ÁĆÉÍĹŃÓŔŚÚÝŹáćéģíĺńóŕśúýź"),
+    (
+        0xc2,
+        "ACEILNORSUYZacegilnorsuyz",
+        "ÁĆÉÍĹŃÓŔŚÚÝŹáćéģíĺńóŕśúýź",
+    ),
     (0xc3, "ACEGHIJOSUWYaceghijosuwy", "ÂĈÊĜĤÎĴÔŜÛŴŶâĉêĝĥîĵôŝûŵŷ"),
     (0xc4, "AINOUainou", "ÃĨÑÕŨãĩñõũ"),
     (0xc5, "AEIOUaeiou", "ĀĒĪŌŪāēīōū"),
@@ -147,7 +151,10 @@ pub fn encode_6937(c: char) -> Option<Vec<u8>> {
     if (' '..='~').contains(&c) {
         return Some(vec![c as u8]);
     }
-    if let Some((b, _)) = SPECIALS.iter().find(|x| x.1 == c && x.0 != 0xa4 && x.0 != 0xa6) {
+    if let Some((b, _)) = SPECIALS
+        .iter()
+        .find(|x| x.1 == c && x.0 != 0xa4 && x.0 != 0xa6)
+    {
         return Some(vec![*b]);
     }
     for (d, bases, comp) in DIACRITICS {
@@ -251,7 +258,14 @@ fn ascii_field(b: &[u8]) -> String {
 }
 
 fn tc_frames(b: &[u8], rate: FrameRate) -> i64 {
-    fields_to_frames(b[0] as i64, b[1] as i64, b[2] as i64, b[3] as i64, rate, false)
+    fields_to_frames(
+        b[0] as i64,
+        b[1] as i64,
+        b[2] as i64,
+        b[3] as i64,
+        rate,
+        false,
+    )
 }
 
 pub fn parse(bytes: &[u8]) -> Result<Document> {
@@ -280,9 +294,19 @@ pub fn parse(bytes: &[u8]) -> Result<Document> {
             if underline {
                 text.push_str("</u>");
             }
-            let text = text.lines().map(str::trim).filter(|l| !l.is_empty()).collect::<Vec<_>>().join("\n");
+            let text = text
+                .lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty())
+                .collect::<Vec<_>>()
+                .join("\n");
             if tout > tin && !text.is_empty() {
-                doc.cues.push(Cue { start: rate.tick_of((tin - start).max(0)), end: rate.tick_of((tout - start).max(0)), text, ..Default::default() });
+                doc.cues.push(Cue {
+                    start: rate.tick_of((tin - start).max(0)),
+                    end: rate.tick_of((tout - start).max(0)),
+                    text,
+                    ..Default::default()
+                });
             }
         }
     };
@@ -312,7 +336,8 @@ pub fn parse(bytes: &[u8]) -> Result<Document> {
     }
     finish(cur.take(), &mut doc);
     if bytes.len() > GSI && !(bytes.len() - GSI).is_multiple_of(TTI) {
-        doc.warnings.push("trailing bytes after the last TTI block".into());
+        doc.warnings
+            .push("trailing bytes after the last TTI block".into());
     }
     Ok(doc)
 }
@@ -331,7 +356,9 @@ fn put(buf: &mut [u8], at: usize, len: usize, s: &str) {
 /// Write `doc` at `rate` (25 fps → `STL25.01`; 29.97 / 30 → `STL30.01`; others are written at 25).
 pub fn write(doc: &Document, rate: Option<FrameRate>) -> Vec<u8> {
     let (rate, dfc) = match rate {
-        Some(r) if r == FrameRate::FPS_29_97 || r == FrameRate::FPS_30 => (FrameRate::FPS_29_97, "STL30.01"),
+        Some(r) if r == FrameRate::FPS_29_97 || r == FrameRate::FPS_30 => {
+            (FrameRate::FPS_29_97, "STL30.01")
+        }
         _ => (FrameRate::FPS_25, "STL25.01"),
     };
     // TTI blocks first (the GSI counts them)
@@ -345,13 +372,21 @@ pub fn write(doc: &Document, rate: Option<FrameRate>) -> Vec<u8> {
         let tout = rate.frame_at(rate.snap_nearest(c.end)).max(tin + 1);
         first_in.get_or_insert(tin);
         let text = encode_text(&c.text);
-        let chunks: Vec<&[u8]> = if text.is_empty() { vec![&[][..]] } else { split_tf(&text) };
+        let chunks: Vec<&[u8]> = if text.is_empty() {
+            vec![&[][..]]
+        } else {
+            split_tf(&text)
+        };
         let lines = c.text.lines().count().clamp(1, 11);
         for (k, chunk) in chunks.iter().enumerate() {
             let mut b = [0u8; TTI];
             b[0] = 0;
             b[1..3].copy_from_slice(&sn.to_le_bytes());
-            b[3] = if k + 1 == chunks.len() { 0xff } else { k.min(0xfd) as u8 };
+            b[3] = if k + 1 == chunks.len() {
+                0xff
+            } else {
+                k.min(0xfd) as u8
+            };
             b[4] = 0;
             for (at, f) in [(5, tin), (9, tout)] {
                 let (_, h, m, s, fr) = frames_to_fields(f, rate, false);
@@ -433,8 +468,18 @@ mod tests {
         let long = "x".repeat(150);
         let doc = Document {
             cues: vec![
-                Cue { start: FrameRate::FPS_25.tick_of(25), end: FrameRate::FPS_25.tick_of(75), text: "<i>Hello</i>\nWörld".into(), ..Default::default() },
-                Cue { start: FrameRate::FPS_25.tick_of(100), end: FrameRate::FPS_25.tick_of(150), text: long.clone(), ..Default::default() },
+                Cue {
+                    start: FrameRate::FPS_25.tick_of(25),
+                    end: FrameRate::FPS_25.tick_of(75),
+                    text: "<i>Hello</i>\nWörld".into(),
+                    ..Default::default()
+                },
+                Cue {
+                    start: FrameRate::FPS_25.tick_of(100),
+                    end: FrameRate::FPS_25.tick_of(150),
+                    text: long.clone(),
+                    ..Default::default()
+                },
             ],
             ..Default::default()
         };
@@ -447,7 +492,10 @@ mod tests {
         assert_eq!(&tti0[5..9], &[0, 0, 1, 0]);
         assert_eq!(&tti0[9..13], &[0, 0, 3, 0]);
         assert_eq!(tti0[3], 0xff);
-        assert_eq!(&tti0[16..24], &[0x80, b'H', b'e', b'l', b'l', b'o', 0x81, 0x8a]);
+        assert_eq!(
+            &tti0[16..24],
+            &[0x80, b'H', b'e', b'l', b'l', b'o', 0x81, 0x8a]
+        );
         assert_eq!(b[GSI + TTI + 3], 0);
         assert_eq!(b[GSI + 2 * TTI + 3], 0xff);
         let back = parse(&b).unwrap();
@@ -462,7 +510,12 @@ mod tests {
     fn literal_angle_brackets_are_not_discarded_as_markup() {
         let literal = "2 < 3 > 1, x < y > z, and 5 <7> 6";
         let doc = Document {
-            cues: vec![Cue { start: FrameRate::FPS_25.tick_of(25), end: FrameRate::FPS_25.tick_of(75), text: literal.into(), ..Default::default() }],
+            cues: vec![Cue {
+                start: FrameRate::FPS_25.tick_of(25),
+                end: FrameRate::FPS_25.tick_of(75),
+                text: literal.into(),
+                ..Default::default()
+            }],
             ..Default::default()
         };
         let encoded = write(&doc, Some(FrameRate::FPS_25));
@@ -477,7 +530,12 @@ mod tests {
     #[test]
     fn programme_start_is_subtracted() {
         let doc = Document {
-            cues: vec![Cue { start: FrameRate::FPS_25.tick_of(250), end: FrameRate::FPS_25.tick_of(300), text: "A".into(), ..Default::default() }],
+            cues: vec![Cue {
+                start: FrameRate::FPS_25.tick_of(250),
+                end: FrameRate::FPS_25.tick_of(300),
+                text: "A".into(),
+                ..Default::default()
+            }],
             ..Default::default()
         };
         let mut b = write(&doc, None);

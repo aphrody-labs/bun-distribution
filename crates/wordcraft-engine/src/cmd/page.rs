@@ -2,7 +2,8 @@
 
 use serde_json::{Value, json};
 use wordcraft_doc::section::{
-    Columns, DocGrid, DocGridType, LineNumbering, MAX_CHAR_SPACE, MAX_GRID_PITCH, MIN_GRID_PITCH, SectionProps, SectionStart,
+    Columns, DocGrid, DocGridType, LineNumbering, MAX_CHAR_SPACE, MAX_GRID_PITCH, MIN_GRID_PITCH,
+    SectionProps, SectionStart,
 };
 use wordcraft_doc::{Block, Pos, StoryRef};
 
@@ -115,7 +116,10 @@ fn line_numbers(s: &mut Session, v: &Value) -> CmdResult {
         // Options alone keep the current numbering's other settings; a new mode alone starts over.
         let mut l = match (&x.line_numbers, options) {
             (Some(cur), true) => cur.clone(),
-            (None, true) => LineNumbering { restart: R::Continuous, ..Default::default() },
+            (None, true) => LineNumbering {
+                restart: R::Continuous,
+                ..Default::default()
+            },
             _ => LineNumbering::default(),
         };
         if let Some(r) = restart.or(if options { None } else { Some(R::Continuous) }) {
@@ -137,7 +141,9 @@ fn line_numbers(s: &mut Session, v: &Value) -> CmdResult {
 /// Hyphenation: automatic on or off, and its options (Hyphenation Options).
 fn hyphenation(s: &mut Session, v: &Value) -> CmdResult {
     let st = &mut s.doc.settings;
-    let options = ["zone", "caps", "limit"].iter().any(|k| v.get(*k).is_some_and(|x| !x.is_null()));
+    let options = ["zone", "caps", "limit"]
+        .iter()
+        .any(|k| v.get(*k).is_some_and(|x| !x.is_null()));
     match p::bool(v, "value") {
         Some(on) => st.auto_hyphenation = on,
         None if !options => st.auto_hyphenation = !st.auto_hyphenation,
@@ -152,7 +158,9 @@ fn hyphenation(s: &mut Session, v: &Value) -> CmdResult {
     if let Some(n) = p::u64(v, "limit") {
         st.consecutive_hyphen_limit = n.min(32_767) as u32;
     }
-    Ok(json!({"value": st.auto_hyphenation, "zone": st.hyphenation_zone, "caps": st.hyphenate_caps, "limit": st.consecutive_hyphen_limit}))
+    Ok(
+        json!({"value": st.auto_hyphenation, "zone": st.hyphenation_zone, "caps": st.hyphenate_caps, "limit": st.consecutive_hyphen_limit}),
+    )
 }
 
 /// Manual hyphenation: the next word after `from` that starts a line after a line wrapped at a
@@ -161,7 +169,9 @@ fn hyphenation(s: &mut Session, v: &Value) -> CmdResult {
 /// Accepting is `caret.set` to `pos` plus the chosen point, then `text.optionalHyphen`.
 fn manual_hyphenation(s: &mut Session, v: &Value) -> CmdResult {
     let from = match v.get("from") {
-        Some(f) if !f.is_null() => super::parse_pos(f).ok_or_else(|| CmdError::Params("bad `from`".into()))?,
+        Some(f) if !f.is_null() => {
+            super::parse_pos(f).ok_or_else(|| CmdError::Params("bad `from`".into()))?
+        }
         _ => s.sel.ordered().0,
     };
     let lim = wordcraft_proof::hyphen::Limits::default();
@@ -170,23 +180,56 @@ fn manual_hyphenation(s: &mut Session, v: &Value) -> CmdResult {
     let mut best: Option<(Pos, Value)> = None;
     for page in &layout.pages {
         for it in &page.items {
-            let wordcraft_layout::Placed::Lines { story, path, para, l0, l1, .. } = it else { continue };
+            let wordcraft_layout::Placed::Lines {
+                story,
+                path,
+                para,
+                l0,
+                l1,
+                ..
+            } = it
+            else {
+                continue;
+            };
             if *story != StoryRef::Body {
                 continue;
             }
-            let Some(text) = s.doc.para_at(&Pos { story: *story, path: path.clone(), off: 0 }).map(|p| p.text.clone()) else { continue };
+            let Some(text) = s
+                .doc
+                .para_at(&Pos {
+                    story: *story,
+                    path: path.clone(),
+                    off: 0,
+                })
+                .map(|p| p.text.clone())
+            else {
+                continue;
+            };
             for li in (*l0).max(1)..*l1 {
-                let (Some(prev), Some(line)) = (para.lines.get(li - 1), para.lines.get(li)) else { continue };
+                let (Some(prev), Some(line)) = (para.lines.get(li - 1), para.lines.get(li)) else {
+                    continue;
+                };
                 if prev.end != wordcraft_layout::LineEnd::Wrap || prev.hyphen.is_some() {
                     continue;
                 }
-                let at = Pos { story: *story, path: path.clone(), off: line.start };
+                let at = Pos {
+                    story: *story,
+                    path: path.clone(),
+                    off: line.start,
+                };
                 if at < from || best.as_ref().is_some_and(|(b, _)| *b <= at) {
                     continue;
                 }
-                let Some(rest) = text.get(line.start..) else { continue };
-                let len = rest.char_indices().find(|(_, c)| !(c.is_alphabetic() || *c == '\'' || *c == '\u{2019}')).map_or(rest.len(), |(i, _)| i);
-                let Some(word) = rest.get(..len) else { continue };
+                let Some(rest) = text.get(line.start..) else {
+                    continue;
+                };
+                let len = rest
+                    .char_indices()
+                    .find(|(_, c)| !(c.is_alphabetic() || *c == '\'' || *c == '\u{2019}'))
+                    .map_or(rest.len(), |(i, _)| i);
+                let Some(word) = rest.get(..len) else {
+                    continue;
+                };
                 // A word with an optional hyphen already breaks where its author said.
                 if rest.get(len..).is_some_and(|r| r.starts_with('\u{ad}'))
                     || word.chars().count() < lim.min_word
@@ -199,7 +242,10 @@ fn manual_hyphenation(s: &mut Session, v: &Value) -> CmdResult {
                 let room = prev.right - prev.end_x();
                 let hyphen_w = para
                     .x_of(li, line.start)
-                    .zip(para.x_of(li, line.start + word.chars().next().map_or(0, char::len_utf8)))
+                    .zip(para.x_of(
+                        li,
+                        line.start + word.chars().next().map_or(0, char::len_utf8),
+                    ))
                     .map_or(6.0, |(a, b)| (b - a) * 0.6);
                 let fits = |pt: usize| {
                     let bytes = word.char_indices().nth(pt).map_or(word.len(), |(i, _)| i);
@@ -208,12 +254,19 @@ fn manual_hyphenation(s: &mut Session, v: &Value) -> CmdResult {
                         _ => false,
                     }
                 };
-                let Some(suggest) = points.iter().copied().filter(|pt| fits(*pt)).max() else { continue };
-                best = Some((at.clone(), json!({"word": word, "pos": super::pos_json(&at), "points": points, "suggest": suggest})));
+                let Some(suggest) = points.iter().copied().filter(|pt| fits(*pt)).max() else {
+                    continue;
+                };
+                best = Some((
+                    at.clone(),
+                    json!({"word": word, "pos": super::pos_json(&at), "points": points, "suggest": suggest}),
+                ));
             }
         }
     }
-    Ok(best.map(|(_, v)| v).unwrap_or_else(|| json!({"done": true})))
+    Ok(best
+        .map(|(_, v)| v)
+        .unwrap_or_else(|| json!({"done": true})))
 }
 
 fn block_of(s: &Session) -> usize {
@@ -222,13 +275,20 @@ fn block_of(s: &Session) -> usize {
 
 pub fn sect(s: &Session) -> SectionProps {
     let i = s.doc.section_index_of(block_of(s));
-    s.doc.sections().get(i).map(|(_, x)| (*x).clone()).unwrap_or_default()
+    s.doc
+        .sections()
+        .get(i)
+        .map(|(_, x)| (*x).clone())
+        .unwrap_or_default()
 }
 
 /// Apply to the section(s) of the selection.
 pub(crate) fn with_sect(s: &mut Session, f: impl Fn(&mut SectionProps)) -> CmdResult {
     let (a, b) = s.sel.ordered();
-    let (i0, i1) = (a.path.0.first().copied().unwrap_or(0) as usize, b.path.0.first().copied().unwrap_or(0) as usize);
+    let (i0, i1) = (
+        a.path.0.first().copied().unwrap_or(0) as usize,
+        b.path.0.first().copied().unwrap_or(0) as usize,
+    );
     let ends: Vec<usize> = s.doc.sections().iter().map(|(e, _)| *e).collect();
     let first = ends.iter().position(|e| i0 <= *e).unwrap_or(0);
     let last = ends.iter().position(|e| i1 <= *e).unwrap_or(first);
@@ -243,10 +303,25 @@ pub(crate) fn with_sect(s: &mut Session, f: impl Fn(&mut SectionProps)) -> CmdRe
 /// or the section's.
 pub fn text_direction_at(s: &Session) -> wordcraft_doc::props::TextDirection {
     if let Some((tp, r, c)) = s.sel.focus.path.cell() {
-        return s.doc.table(s.sel.focus.story, &tp).and_then(|t| t.rows.get(r)?.cells.get(c).map(|cl| cl.props.text_direction)).unwrap_or_default();
+        return s
+            .doc
+            .table(s.sel.focus.story, &tp)
+            .and_then(|t| {
+                t.rows
+                    .get(r)?
+                    .cells
+                    .get(c)
+                    .map(|cl| cl.props.text_direction)
+            })
+            .unwrap_or_default();
     }
     if let Some((_, id)) = super::objects::text_box_target(s) {
-        return s.doc.parts.get(&id).map(|p| p.body.vert.turn()).unwrap_or_default();
+        return s
+            .doc
+            .parts
+            .get(&id)
+            .map(|p| p.body.vert.turn())
+            .unwrap_or_default();
     }
     sect(s).text_direction
 }
@@ -279,8 +354,16 @@ fn text_direction(s: &mut Session, v: &Value) -> CmdResult {
 
 /// The default font size (Normal style), which the character pitch is based on.
 fn grid_font_size(s: &Session) -> f32 {
-    let size = s.doc.styles.resolve_char(Some("Normal"), &wordcraft_doc::CharProps::default()).size;
-    if size.is_finite() { size.clamp(1.0, 1584.0) } else { 10.5 }
+    let size = s
+        .doc
+        .styles
+        .resolve_char(Some("Normal"), &wordcraft_doc::CharProps::default())
+        .size;
+    if size.is_finite() {
+        size.clamp(1.0, 1584.0)
+    } else {
+        10.5
+    }
 }
 
 fn grid_result(x: &SectionProps, font_size: f32) -> Value {
@@ -300,15 +383,26 @@ fn document_grid(s: &mut Session, v: &Value) -> CmdResult {
     let kind = match p::str(v, "type") {
         None => None,
         Some("none" | "default") => Some(DocGridType::Default),
-        Some(t) => Some(DocGridType::from_ooxml(t).ok_or_else(|| CmdError::Params(format!("unknown grid type `{t}`")))?),
+        Some(t) => Some(
+            DocGridType::from_ooxml(t)
+                .ok_or_else(|| CmdError::Params(format!("unknown grid type `{t}`")))?,
+        ),
     };
     let lines = p::u64(v, "linesPerPage").map(|n| n.clamp(1, 1000) as f32);
     let chars = p::u64(v, "charsPerLine").map(|n| n.clamp(1, 1000) as f32);
     let line_pitch = p::f32(v, "linePitch").map(|x| x.clamp(MIN_GRID_PITCH, MAX_GRID_PITCH));
-    let char_space =
-        v.get("charSpace").and_then(Value::as_f64).filter(|x| x.is_finite()).map(|x| x.clamp(-(MAX_CHAR_SPACE as f64), MAX_CHAR_SPACE as f64) as i32);
+    let char_space = v
+        .get("charSpace")
+        .and_then(Value::as_f64)
+        .filter(|x| x.is_finite())
+        .map(|x| x.clamp(-(MAX_CHAR_SPACE as f64), MAX_CHAR_SPACE as f64) as i32);
     let size = grid_font_size(s);
-    if kind.is_none() && lines.is_none() && chars.is_none() && line_pitch.is_none() && char_space.is_none() {
+    if kind.is_none()
+        && lines.is_none()
+        && chars.is_none()
+        && line_pitch.is_none()
+        && char_space.is_none()
+    {
         return Ok(grid_result(&sect(s), size));
     }
     with_sect(s, |x| {
@@ -387,7 +481,11 @@ fn size(s: &mut Session, v: &Value) -> CmdResult {
         return Err(CmdError::Params("page size must be 1\"–22\"".into()));
     }
     with_sect(s, |x| {
-        let (pw, ph) = if x.landscape { (w.max(h), w.min(h)) } else { (w.min(h), w.max(h)) };
+        let (pw, ph) = if x.landscape {
+            (w.max(h), w.min(h))
+        } else {
+            (w.min(h), w.max(h))
+        };
         x.page_w = pw;
         x.page_h = ph;
     })
@@ -422,7 +520,12 @@ fn columns(s: &mut Session, v: &Value) -> CmdResult {
     };
     // Equal columns keep one spacing; unequal ones remember the first gap for a later switch back.
     let space = widths.first().map(|w| w.1).unwrap_or(space);
-    let cols = Columns { count: count as u32, space, separator: sep, widths };
+    let cols = Columns {
+        count: count as u32,
+        space,
+        separator: sep,
+        widths,
+    };
     match p::str(v, "apply").unwrap_or("section") {
         "section" => with_sect(s, |x| x.columns = cols.clone()),
         "document" => {
@@ -439,29 +542,48 @@ fn columns(s: &mut Session, v: &Value) -> CmdResult {
             breaks(s, &json!({"kind": "continuous"}))?;
             with_sect(s, |x| x.columns = cols.clone())
         }
-        x => Err(CmdError::Params(format!("unknown apply `{x}` (section, document or forward)"))),
+        x => Err(CmdError::Params(format!(
+            "unknown apply `{x}` (section, document or forward)"
+        ))),
     }
 }
 
 /// `[[width, space after], …]` in points: 1–12 columns, each at least 0.25", that fit the text
 /// width (`tw`).
 fn column_widths(v: &Value, tw: f32) -> Result<Vec<(f32, f32)>, CmdError> {
-    let bad = || CmdError::Params("widths: [[width, space after], …] in points, 1–12 columns".into());
-    let a = v.as_array().filter(|a| (1..=12).contains(&a.len())).ok_or_else(bad)?;
+    let bad =
+        || CmdError::Params("widths: [[width, space after], …] in points, 1–12 columns".into());
+    let a = v
+        .as_array()
+        .filter(|a| (1..=12).contains(&a.len()))
+        .ok_or_else(bad)?;
     let mut out = Vec::with_capacity(a.len());
     for (i, c) in a.iter().enumerate() {
-        let num = |k: usize| c.get(k).and_then(Value::as_f64).map(|x| x as f32).filter(|x| x.is_finite());
+        let num = |k: usize| {
+            c.get(k)
+                .and_then(Value::as_f64)
+                .map(|x| x as f32)
+                .filter(|x| x.is_finite())
+        };
         let w = num(0).ok_or_else(bad)?;
         // The last column has no space after it.
-        let sp = if i + 1 == a.len() { 0.0 } else { num(1).unwrap_or(0.0) };
+        let sp = if i + 1 == a.len() {
+            0.0
+        } else {
+            num(1).unwrap_or(0.0)
+        };
         if w < 18.0 || !(0.0..=300.0).contains(&sp) {
-            return Err(CmdError::Params("each column must be at least 0.25\" wide, with 0–300 pt after it".into()));
+            return Err(CmdError::Params(
+                "each column must be at least 0.25\" wide, with 0–300 pt after it".into(),
+            ));
         }
         out.push((w, sp));
     }
     let total: f32 = out.iter().map(|(w, sp)| w + sp).sum();
     if total > tw + 1.0 {
-        return Err(CmdError::Params(format!("the columns ({total:.0} pt) are wider than the text ({tw:.0} pt)")));
+        return Err(CmdError::Params(format!(
+            "the columns ({total:.0} pt) are wider than the text ({tw:.0} pt)"
+        )));
     }
     Ok(out)
 }
@@ -469,10 +591,26 @@ fn column_widths(v: &Value, tw: f32) -> Result<Vec<(f32, f32)>, CmdError> {
 fn breaks(s: &mut Session, v: &Value) -> CmdResult {
     let kind = p::str(v, "kind").unwrap_or("page");
     let start = match kind {
-        "page" => return super::text::specs().iter().find(|c| c.id == "text.pageBreak").map(|c| (c.run)(s, v)).unwrap_or_else(|| sel_result(s)),
-        "column" => return super::text::specs().iter().find(|c| c.id == "text.columnBreak").map(|c| (c.run)(s, v)).unwrap_or_else(|| sel_result(s)),
+        "page" => {
+            return super::text::specs()
+                .iter()
+                .find(|c| c.id == "text.pageBreak")
+                .map(|c| (c.run)(s, v))
+                .unwrap_or_else(|| sel_result(s));
+        }
+        "column" => {
+            return super::text::specs()
+                .iter()
+                .find(|c| c.id == "text.columnBreak")
+                .map(|c| (c.run)(s, v))
+                .unwrap_or_else(|| sel_result(s));
+        }
         "textWrapping" => {
-            return super::text::specs().iter().find(|c| c.id == "text.lineBreak").map(|c| (c.run)(s, v)).unwrap_or_else(|| sel_result(s));
+            return super::text::specs()
+                .iter()
+                .find(|c| c.id == "text.lineBreak")
+                .map(|c| (c.run)(s, v))
+                .unwrap_or_else(|| sel_result(s));
         }
         "nextPage" => SectionStart::NextPage,
         "continuous" => SectionStart::Continuous,
@@ -485,7 +623,9 @@ fn breaks(s: &mut Session, v: &Value) -> CmdResult {
     let old = s.sel.clone();
     let (at, end) = old.ordered();
     if at.story != wordcraft_doc::StoryRef::Body || at.path.depth() > 0 {
-        return Err(CmdError::Failed("section breaks go in the main text".into()));
+        return Err(CmdError::Failed(
+            "section breaks go in the main text".into(),
+        ));
     }
     // Section break: the paragraph before the caret ends a section with the current props; the
     // new section (after) takes them too and starts as requested.
@@ -509,7 +649,17 @@ fn breaks(s: &mut Session, v: &Value) -> CmdResult {
     // The selection keeps its text, which now starts the new section.
     let first = Pos { off: 0, ..new };
     let last = shifted_by_split(&end, &at, &first);
-    s.sel = if old.anchor <= old.focus { Selection { anchor: first, focus: last } } else { Selection { anchor: last, focus: first } };
+    s.sel = if old.anchor <= old.focus {
+        Selection {
+            anchor: first,
+            focus: last,
+        }
+    } else {
+        Selection {
+            anchor: last,
+            focus: first,
+        }
+    };
     let _ = Block::Para;
     sel_result(s)
 }
@@ -521,7 +671,14 @@ fn shifted_by_split(p: &Pos, at: &Pos, new: &Pos) -> Pos {
         return p.clone();
     }
     if p.path == at.path {
-        return if p.off >= at.off { Pos { off: p.off.saturating_sub(at.off), ..new.clone() } } else { p.clone() };
+        return if p.off >= at.off {
+            Pos {
+                off: p.off.saturating_sub(at.off),
+                ..new.clone()
+            }
+        } else {
+            p.clone()
+        };
     }
     let mut q = p.clone();
     if let (Some(first), Some(i)) = (q.path.0.first_mut(), at.path.0.first())
@@ -545,7 +702,8 @@ mod tests {
     fn text_direction_turns_the_section_or_the_cell() {
         use wordcraft_doc::props::TextDirection;
         let mut s = doc();
-        s.run("layout.textDirection", &json!({"value": "down"})).unwrap();
+        s.run("layout.textDirection", &json!({"value": "down"}))
+            .unwrap();
         assert_eq!(sect(&s).text_direction, TextDirection::Down);
         assert_eq!(text_direction_at(&s), TextDirection::Down);
         // Without a value: the next one, like Word's button.
@@ -553,12 +711,17 @@ mod tests {
         assert_eq!(sect(&s).text_direction, TextDirection::Up);
         s.run("edit.undo", &json!({})).unwrap();
         assert_eq!(sect(&s).text_direction, TextDirection::Down);
-        assert!(s.run("layout.textDirection", &json!({"value": "diagonal"})).is_err());
+        assert!(
+            s.run("layout.textDirection", &json!({"value": "diagonal"}))
+                .is_err()
+        );
         assert_eq!(sect(&s).text_direction, TextDirection::Down);
         // In a table cell it turns the cell, not the section.
-        s.run("insert.table", &json!({"rows": 1, "cols": 2})).unwrap();
+        s.run("insert.table", &json!({"rows": 1, "cols": 2}))
+            .unwrap();
         assert!(s.sel.focus.path.cell().is_some());
-        s.run("layout.textDirection", &json!({"value": "btLr"})).unwrap();
+        s.run("layout.textDirection", &json!({"value": "btLr"}))
+            .unwrap();
         assert_eq!(text_direction_at(&s), TextDirection::Up);
         assert_eq!(sect(&s).text_direction, TextDirection::Down);
     }
@@ -570,18 +733,36 @@ mod tests {
     fn section_break_keeps_the_selected_text() {
         let mut s = Session::new(wordcraft_doc::Document::from_text("one\ntwo"));
         s.run("select.text", &json!({"text": "one"})).unwrap();
-        s.run("layout.break", &json!({"kind": "continuous"})).unwrap();
+        s.run("layout.break", &json!({"kind": "continuous"}))
+            .unwrap();
         assert_eq!(s.selected_text(), "one");
         assert_eq!(s.doc.sections().len(), 2);
         let texts = |d: &wordcraft_doc::Document| -> Vec<String> {
-            d.body.iter().filter_map(|b| if let Block::Para(p) = &**b { Some(p.plain_text().to_string()) } else { None }).collect()
+            d.body
+                .iter()
+                .filter_map(|b| {
+                    if let Block::Para(p) = &**b {
+                        Some(p.plain_text().to_string())
+                    } else {
+                        None
+                    }
+                })
+                .collect()
         };
         assert_eq!(texts(&s.doc), ["", "one", "two"]);
         // A backward selection in the middle of a paragraph keeps its text and direction too.
         let mut s = Session::new(wordcraft_doc::Document::from_text("alpha beta\ngamma"));
-        let p = |off| Pos { story: StoryRef::Body, path: wordcraft_doc::Path::top(0), off };
-        s.sel = Selection { anchor: p(10), focus: p(6) };
-        s.run("layout.break", &json!({"kind": "continuous"})).unwrap();
+        let p = |off| Pos {
+            story: StoryRef::Body,
+            path: wordcraft_doc::Path::top(0),
+            off,
+        };
+        s.sel = Selection {
+            anchor: p(10),
+            focus: p(6),
+        };
+        s.run("layout.break", &json!({"kind": "continuous"}))
+            .unwrap();
         assert_eq!(s.selected_text(), "beta");
         assert!(s.sel.anchor > s.sel.focus);
         assert_eq!(texts(&s.doc), ["alpha ", "beta", "gamma"]);
@@ -590,7 +771,8 @@ mod tests {
         let mut s = Session::new(wordcraft_doc::Document::from_text("one\ntwo"));
         s.run("select.text", &json!({"text": "one"})).unwrap();
         s.run("caret.end", &json!({})).unwrap();
-        s.run("layout.break", &json!({"kind": "continuous"})).unwrap();
+        s.run("layout.break", &json!({"kind": "continuous"}))
+            .unwrap();
         let back = wordcraft_docx::read(&wordcraft_docx::write(&s.doc).unwrap()).unwrap();
         assert_eq!(back.sections().len(), 2);
         assert_eq!(back.last_section.start, SectionStart::Continuous);
@@ -602,7 +784,9 @@ mod tests {
             .iter()
             .filter_map(|it| match it {
                 crate::layout::Placed::Lines { path, y, .. } => {
-                    let Some(Block::Para(p)) = s.doc.body.get(path.last()).map(|b| &**b) else { return None };
+                    let Some(Block::Para(p)) = s.doc.body.get(path.last()).map(|b| &**b) else {
+                        return None;
+                    };
                     (!p.plain_text().is_empty()).then(|| (p.plain_text().to_string(), *y))
                 }
                 _ => None,
@@ -618,15 +802,27 @@ mod tests {
     fn unequal_columns_with_a_line_between() {
         let mut s = doc();
         let tw = sect(&s).text_width();
-        s.run("layout.columns", &json!({"widths": [[150.0, 24.0], [tw - 174.0, 0.0]], "separator": true})).unwrap();
+        s.run(
+            "layout.columns",
+            &json!({"widths": [[150.0, 24.0], [tw - 174.0, 0.0]], "separator": true}),
+        )
+        .unwrap();
         let c = sect(&s).columns;
         assert_eq!((c.count, c.separator, c.widths.len()), (2, true, 2));
         assert_eq!(c.widths.first(), Some(&(150.0, 24.0)));
         s.run("edit.undo", &json!({})).unwrap();
         assert_eq!(sect(&s).columns, Columns::default());
         // Too wide, too narrow, too many, or nonsense: refused.
-        for bad in [json!([[tw, 36.0], [100.0, 0.0]]), json!([[5.0, 0.0], [100.0, 0.0]]), json!(vec![[40.0, 0.0]; 13]), json!("x")] {
-            assert!(s.run("layout.columns", &json!({"widths": bad})).is_err(), "{bad}");
+        for bad in [
+            json!([[tw, 36.0], [100.0, 0.0]]),
+            json!([[5.0, 0.0], [100.0, 0.0]]),
+            json!(vec![[40.0, 0.0]; 13]),
+            json!("x"),
+        ] {
+            assert!(
+                s.run("layout.columns", &json!({"widths": bad})).is_err(),
+                "{bad}"
+            );
         }
     }
 
@@ -635,15 +831,25 @@ mod tests {
     fn columns_apply_to_the_document_or_from_the_caret_on() {
         let mut s = doc();
         s.run("layout.break", &json!({"kind": "nextPage"})).unwrap();
-        s.run("layout.columns", &json!({"count": 3, "apply": "document"})).unwrap();
+        s.run("layout.columns", &json!({"count": 3, "apply": "document"}))
+            .unwrap();
         assert!(s.doc.sections().iter().all(|(_, x)| x.columns.count == 3));
         let mut s = doc();
         s.run("caret.docEnd", &json!({})).unwrap();
-        s.run("layout.columns", &json!({"count": 2, "apply": "forward"})).unwrap();
-        let counts: Vec<u32> = s.doc.sections().iter().map(|(_, x)| x.columns.count).collect();
+        s.run("layout.columns", &json!({"count": 2, "apply": "forward"}))
+            .unwrap();
+        let counts: Vec<u32> = s
+            .doc
+            .sections()
+            .iter()
+            .map(|(_, x)| x.columns.count)
+            .collect();
         assert_eq!(counts, vec![1, 2]);
         assert_eq!(s.doc.last_section.start, SectionStart::Continuous);
-        assert!(s.run("layout.columns", &json!({"count": 2, "apply": "elsewhere"})).is_err());
+        assert!(
+            s.run("layout.columns", &json!({"count": 2, "apply": "elsewhere"}))
+                .is_err()
+        );
     }
 
     /// #407 Line Numbers options: start, count by, distance and restart; options alone keep the
@@ -652,15 +858,31 @@ mod tests {
     fn line_numbering_options() {
         use wordcraft_doc::section::LineNumberRestart;
         let mut s = Session::new(wordcraft_doc::Document::from_text("One\nTwo"));
-        s.run("layout.lineNumbers", &json!({"value": "restartSection", "start": 5, "countBy": 2, "distance": 18})).unwrap();
+        s.run(
+            "layout.lineNumbers",
+            &json!({"value": "restartSection", "start": 5, "countBy": 2, "distance": 18}),
+        )
+        .unwrap();
         let l = s.doc.last_section.line_numbers.clone().unwrap();
-        assert_eq!((l.start, l.count_by, l.distance, l.restart), (5, 2, 18.0, LineNumberRestart::Section));
-        s.run("layout.lineNumbers", &json!({"countBy": 1e9, "start": -3})).unwrap();
+        assert_eq!(
+            (l.start, l.count_by, l.distance, l.restart),
+            (5, 2, 18.0, LineNumberRestart::Section)
+        );
+        s.run("layout.lineNumbers", &json!({"countBy": 1e9, "start": -3}))
+            .unwrap();
         let l = s.doc.last_section.line_numbers.clone().unwrap();
-        assert_eq!((l.start, l.count_by, l.restart), (5, 100, LineNumberRestart::Section), "clamped, mode kept");
-        s.run("layout.lineNumbers", &json!({"value": "none"})).unwrap();
+        assert_eq!(
+            (l.start, l.count_by, l.restart),
+            (5, 100, LineNumberRestart::Section),
+            "clamped, mode kept"
+        );
+        s.run("layout.lineNumbers", &json!({"value": "none"}))
+            .unwrap();
         assert!(s.doc.last_section.line_numbers.is_none());
-        assert!(s.run("layout.lineNumbers", &json!({"value": "sometimes"})).is_err());
+        assert!(
+            s.run("layout.lineNumbers", &json!({"value": "sometimes"}))
+                .is_err()
+        );
     }
 
     /// #407 Hyphenation Options: options don't toggle automatic hyphenation; Manual finds a
@@ -669,18 +891,30 @@ mod tests {
     #[test]
     fn hyphenation_options_and_manual_hyphenation() {
         let mut s = Session::new(wordcraft_doc::Document::from_text(
-            &"a extraordinarily be uncharacteristic of responsibilities the considerations ".repeat(12),
+            &"a extraordinarily be uncharacteristic of responsibilities the considerations "
+                .repeat(12),
         ));
-        let r = s.run("layout.hyphenation", &json!({"zone": 36, "caps": false, "limit": 3})).unwrap();
-        assert_eq!(r, json!({"value": false, "zone": 36.0, "caps": false, "limit": 3}));
+        let r = s
+            .run(
+                "layout.hyphenation",
+                &json!({"zone": 36, "caps": false, "limit": 3}),
+            )
+            .unwrap();
+        assert_eq!(
+            r,
+            json!({"value": false, "zone": 36.0, "caps": false, "limit": 3})
+        );
         s.run("layout.hyphenation", &json!({})).unwrap();
         assert!(s.doc.settings.auto_hyphenation, "nothing given toggles");
-        s.run("layout.hyphenation", &json!({"value": false})).unwrap();
+        s.run("layout.hyphenation", &json!({"value": false}))
+            .unwrap();
         // Accept every candidate (which words they are depends on the fonts).
         let mut found = 0;
         let mut from = json!(null);
         while found < 5 {
-            let c = s.run("layout.manualHyphenation", &json!({"from": from})).unwrap();
+            let c = s
+                .run("layout.manualHyphenation", &json!({"from": from}))
+                .unwrap();
             if c["done"] == true {
                 break;
             }
@@ -689,7 +923,8 @@ mod tests {
             assert!(!pts.is_empty() && pts.contains(&c["suggest"]), "{c}");
             let at = c["suggest"].as_u64().unwrap() as usize;
             let mut pos = c["pos"].clone();
-            let off = pos["off"].as_u64().unwrap() as usize + word.char_indices().nth(at).unwrap().0;
+            let off =
+                pos["off"].as_u64().unwrap() as usize + word.char_indices().nth(at).unwrap().0;
             pos["off"] = json!(off);
             s.run("caret.set", &json!({"pos": pos})).unwrap();
             s.run("text.optionalHyphen", &json!({})).unwrap();
@@ -699,7 +934,20 @@ mod tests {
         }
         // Some line of thirty or so starts with a long word that fits hyphenated above, whatever the font.
         assert!(found > 0, "no candidates");
-        assert_eq!(s.doc.plain_text(wordcraft_doc::StoryRef::Body).matches('\u{ad}').count(), found);
-        assert!(s.run("layout.manualHyphenation", &json!({"from": {"block": 999, "off": 0}})).unwrap()["done"] == true);
+        assert_eq!(
+            s.doc
+                .plain_text(wordcraft_doc::StoryRef::Body)
+                .matches('\u{ad}')
+                .count(),
+            found
+        );
+        assert!(
+            s.run(
+                "layout.manualHyphenation",
+                &json!({"from": {"block": 999, "off": 0}})
+            )
+            .unwrap()["done"]
+                == true
+        );
     }
 }

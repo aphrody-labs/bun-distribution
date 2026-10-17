@@ -14,13 +14,15 @@ use std::collections::{BTreeSet, HashMap};
 
 use filmcraft_media::Generator;
 use filmcraft_project::{
-    ItemId, ItemKind, Label, Marker, MarkerId, MarkerKind, ParamValue, Project, Sequence, TrackKind, Transition, TransitionAlign, TransitionId, find_effect,
+    ItemId, ItemKind, Label, Marker, MarkerId, MarkerKind, ParamValue, Project, Sequence,
+    TrackKind, Transition, TransitionAlign, TransitionId, find_effect,
 };
 use filmcraft_time::{FrameRate, Tick, fields_to_frames, format_timecode_frames};
 
 use crate::common::{
-    Builder, MediaSpec, empty_sequence, file_name, file_stem, frames_round, generator_of, item_path, on_frame, overwrite, relative_path, resolve_path,
-    sanitize_reel, scaled, settings_for, transition_effect, transition_name,
+    Builder, MediaSpec, empty_sequence, file_name, file_stem, frames_round, generator_of,
+    item_path, on_frame, overwrite, relative_path, resolve_path, sanitize_reel, scaled,
+    settings_for, transition_effect, transition_name,
 };
 use crate::{ExportOptions, Format, ImportOptions, Imported, ReelMode, Report, Result};
 
@@ -47,11 +49,21 @@ struct Tc {
 
 fn parse_tc(s: &str) -> Option<Tc> {
     let parts: Vec<&str> = s.split([':', ';', '.', ',']).collect();
-    if parts.len() != 4 || parts.iter().any(|p| p.is_empty() || !p.bytes().all(|b| b.is_ascii_digit())) {
+    if parts.len() != 4
+        || parts
+            .iter()
+            .any(|p| p.is_empty() || !p.bytes().all(|b| b.is_ascii_digit()))
+    {
         return None;
     }
     let n: Vec<i64> = parts.iter().map(|p| p.parse().unwrap_or(0)).collect();
-    Some(Tc { h: n[0], m: n[1], s: n[2], f: n[3], df: s.contains(';') || s.contains(',') })
+    Some(Tc {
+        h: n[0],
+        m: n[1],
+        s: n[2],
+        f: n[3],
+        df: s.contains(';') || s.contains(','),
+    })
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -83,7 +95,11 @@ fn parse_channels(s: &str) -> Option<Vec<Ch>> {
             "V" => out.push(Ch::V),
             "A" | "A1" => out.push(Ch::A(1)),
             "AA" => out.extend([Ch::A(1), Ch::A(2)]),
-            p if p.starts_with('A') && p[1..].parse::<usize>().is_ok_and(|n| (1..=99).contains(&n)) => out.push(Ch::A(p[1..].parse().ok()?)),
+            p if p.starts_with('A')
+                && p[1..].parse::<usize>().is_ok_and(|n| (1..=99).contains(&n)) =>
+            {
+                out.push(Ch::A(p[1..].parse().ok()?))
+            }
             _ => return None,
         }
     }
@@ -106,7 +122,12 @@ fn parse_event_line(l: &str) -> Option<Line> {
         return None;
     }
     let n = toks.len();
-    let tcs = [parse_tc(toks[n - 4])?, parse_tc(toks[n - 3])?, parse_tc(toks[n - 2])?, parse_tc(toks[n - 1])?];
+    let tcs = [
+        parse_tc(toks[n - 4])?,
+        parse_tc(toks[n - 3])?,
+        parse_tc(toks[n - 2])?,
+        parse_tc(toks[n - 1])?,
+    ];
     let reel = toks[1].to_string();
     let chans = parse_channels(toks[2])?;
     let mid = &toks[3..n - 4];
@@ -122,10 +143,20 @@ fn parse_event_line(l: &str) -> Option<Line> {
         },
         "KB" => (Trans::KeyBackground, 0),
         "KO" => (Trans::KeyOut, num_at(1).unwrap_or(0)),
-        w if w.starts_with('W') => (Trans::Wipe(w[1..].parse().unwrap_or(1)), num_at(1).unwrap_or(0)),
+        w if w.starts_with('W') => (
+            Trans::Wipe(w[1..].parse().unwrap_or(1)),
+            num_at(1).unwrap_or(0),
+        ),
         _ => return None,
     };
-    Some(Line { num: toks[0].to_string(), reel, chans, trans, dur, tcs })
+    Some(Line {
+        num: toks[0].to_string(),
+        reel,
+        chans,
+        trans,
+        dur,
+        tcs,
+    })
 }
 
 #[derive(Clone, Debug, Default)]
@@ -150,7 +181,12 @@ struct Parsed {
 }
 
 fn parse(text: &str, report: &mut Report) -> Parsed {
-    let mut p = Parsed { title: None, events: Vec::new(), any_df: false, max_ff: 0 };
+    let mut p = Parsed {
+        title: None,
+        events: Vec::new(),
+        any_df: false,
+        max_ff: 0,
+    };
     let mut df = false;
     for raw in text.lines() {
         let l = raw.trim();
@@ -169,7 +205,9 @@ fn parse(text: &str, report: &mut Report) -> Parsed {
         }
         if let Some(c) = l.strip_prefix('*') {
             let c = c.trim();
-            let Some(ev) = p.events.last_mut() else { continue };
+            let Some(ev) = p.events.last_mut() else {
+                continue;
+            };
             let cu = c.to_ascii_uppercase();
             let value = |prefix: &str| c[prefix.len()..].trim().to_string();
             if cu.starts_with("FROM CLIP NAME:") {
@@ -182,7 +220,9 @@ fn parse(text: &str, report: &mut Report) -> Parsed {
                 ev.effect = Some(value("EFFECT NAME:"));
             } else if cu.starts_with("LOC:") {
                 let rest = value("LOC:");
-                let mut it = rest.splitn(3, char::is_whitespace).filter(|s| !s.is_empty());
+                let mut it = rest
+                    .splitn(3, char::is_whitespace)
+                    .filter(|s| !s.is_empty());
                 if let Some(tc) = it.next().and_then(parse_tc) {
                     let rest2: Vec<&str> = rest.split_whitespace().skip(1).collect();
                     let (color, name) = match rest2.split_first() {
@@ -198,7 +238,10 @@ fn parse(text: &str, report: &mut Report) -> Parsed {
             let toks: Vec<&str> = l.split_whitespace().collect();
             if toks.len() >= 3 {
                 // `M2 REEL fps tc`; reels with spaces are joined back.
-                let fps_i = toks.iter().rposition(|t| t.parse::<f64>().is_ok() && parse_tc(t).is_none()).unwrap_or(2);
+                let fps_i = toks
+                    .iter()
+                    .rposition(|t| t.parse::<f64>().is_ok() && parse_tc(t).is_none())
+                    .unwrap_or(2);
                 let reel = toks[1..fps_i.max(2)].join(" ");
                 if let Ok(fps) = toks[fps_i].parse::<f64>()
                     && let Some(ev) = p.events.last_mut()
@@ -209,7 +252,12 @@ fn parse(text: &str, report: &mut Report) -> Parsed {
             continue;
         }
         if upper.starts_with("AUD") {
-            let extra: Vec<Ch> = l.split_whitespace().skip(1).filter_map(|t| t.parse::<usize>().ok()).map(Ch::A).collect();
+            let extra: Vec<Ch> = l
+                .split_whitespace()
+                .skip(1)
+                .filter_map(|t| t.parse::<usize>().ok())
+                .map(Ch::A)
+                .collect();
             if let Some(line) = p.events.last_mut().and_then(|e| e.lines.last_mut()) {
                 line.chans.extend(extra);
             }
@@ -224,24 +272,39 @@ fn parse(text: &str, report: &mut Report) -> Parsed {
                 p.max_ff = p.max_ff.max(tc.f);
                 p.any_df |= tc.df;
             }
-            if let Some(e) = p.events.last_mut().filter(|e| e.lines.last().is_some_and(|last| last.num == line.num)) {
+            if let Some(e) = p
+                .events
+                .last_mut()
+                .filter(|e| e.lines.last().is_some_and(|last| last.num == line.num))
+            {
                 e.lines.push(line);
             } else {
-                p.events.push(Event { lines: vec![line], df, ..Default::default() });
+                p.events.push(Event {
+                    lines: vec![line],
+                    df,
+                    ..Default::default()
+                });
             }
             continue;
         }
         if upper.starts_with(">>>") || upper.starts_with("REM") {
             continue;
         }
-        report.warn(format!("unrecognised EDL line ignored: {}", l.chars().take(60).collect::<String>()));
+        report.warn(format!(
+            "unrecognised EDL line ignored: {}",
+            l.chars().take(60).collect::<String>()
+        ));
     }
     p
 }
 
 fn guess_rate(p: &Parsed) -> FrameRate {
     if p.any_df {
-        if p.max_ff >= 30 { FrameRate::FPS_59_94 } else { FrameRate::FPS_29_97 }
+        if p.max_ff >= 30 {
+            FrameRate::FPS_59_94
+        } else {
+            FrameRate::FPS_29_97
+        }
     } else if p.max_ff >= 30 {
         FrameRate::FPS_60
     } else if p.max_ff >= 25 {
@@ -308,18 +371,33 @@ impl Ctx<'_> {
     }
 
     /// Media item for a line.
-    fn media(&mut self, reel: &str, clip: Option<&str>, file: Option<&str>, chans: &[Ch]) -> ItemId {
+    fn media(
+        &mut self,
+        reel: &str,
+        clip: Option<&str>,
+        file: Option<&str>,
+        chans: &[Ch],
+    ) -> ItemId {
         let (w, h) = (self.seq.settings.width, self.seq.settings.height);
         let spec = MediaSpec {
             duration: None,
-            video: chans.contains(&Ch::V).then_some((w, h, self.rate)).or(self.has_video.then_some((w, h, self.rate))),
-            audio: chans.iter().any(|c| matches!(c, Ch::A(_))).then_some((48_000, 2)).or(self.has_audio.then_some((48_000, 2))),
+            video: chans
+                .contains(&Ch::V)
+                .then_some((w, h, self.rate))
+                .or(self.has_video.then_some((w, h, self.rate))),
+            audio: chans
+                .iter()
+                .any(|c| matches!(c, Ch::A(_)))
+                .then_some((48_000, 2))
+                .or(self.has_audio.then_some((48_000, 2))),
             ..Default::default()
         };
         if let Some(f) = file {
             let path = resolve_path(f, self.opts.base_dir.as_deref());
             let name = file_name(&path).to_string();
-            return self.b.file_media(&format!("file:{path}"), &name, &path, &spec, None);
+            return self
+                .b
+                .file_media(&format!("file:{path}"), &name, &path, &spec, None);
         }
         let name = clip.filter(|c| !c.is_empty()).unwrap_or(reel).to_string();
         let key = format!("reel:{reel}|{name}");
@@ -359,7 +437,11 @@ impl Ctx<'_> {
         video_base: usize,
     ) -> Vec<(TrackKind, usize, filmcraft_project::ClipId)> {
         let mut out = Vec::new();
-        let link = if line.chans.len() > 1 { Some(self.b.link_id()) } else { None };
+        let link = if line.chans.len() > 1 {
+            Some(self.b.link_id())
+        } else {
+            None
+        };
         let base = self.rate.timecode_base() as f64;
         let chans: BTreeSet<Ch> = line.chans.iter().copied().collect();
         for ch in chans {
@@ -399,14 +481,28 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
         Some(r) => r,
         None => {
             let r = guess_rate(&parsed);
-            report.info(format!("EDL has no frame rate; assumed {r} (set ImportOptions::edl_frame_rate to override)"));
+            report.info(format!(
+                "EDL has no frame rate; assumed {r} (set ImportOptions::edl_frame_rate to override)"
+            ));
             r
         }
     };
-    let title = parsed.title.clone().or_else(|| opts.name.clone()).unwrap_or_else(|| "EDL Sequence".into());
+    let title = parsed
+        .title
+        .clone()
+        .or_else(|| opts.name.clone())
+        .unwrap_or_else(|| "EDL Sequence".into());
     let mut settings = settings_for(rate, 1920, 1080, parsed.any_df);
     settings.drop_frame = parsed.any_df && rate.supports_drop_frame();
-    let mut ctx = Ctx { b: Builder::new(&title), seq: empty_sequence(settings), rate, start_tc: 0, opts, has_video: false, has_audio: false };
+    let mut ctx = Ctx {
+        b: Builder::new(&title),
+        seq: empty_sequence(settings),
+        rate,
+        start_tc: 0,
+        opts,
+        has_video: false,
+        has_audio: false,
+    };
     for ev in &parsed.events {
         for l in &ev.lines {
             ctx.has_video |= l.chans.contains(&Ch::V);
@@ -416,9 +512,15 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
     // Sequence start: the hour of the first record timecode.
     let first_rec = {
         let c = &ctx;
-        parsed.events.iter().flat_map(|e| e.lines.iter().map(move |l| c.frames(l.tcs[2], e.df))).min().unwrap_or(0)
+        parsed
+            .events
+            .iter()
+            .flat_map(|e| e.lines.iter().map(move |l| c.frames(l.tcs[2], e.df)))
+            .min()
+            .unwrap_or(0)
     };
-    let (_, h, _, _, _) = filmcraft_time::frames_to_fields(first_rec, rate, ctx.seq.settings.drop_frame);
+    let (_, h, _, _, _) =
+        filmcraft_time::frames_to_fields(first_rec, rate, ctx.seq.settings.drop_frame);
     ctx.start_tc = fields_to_frames(h, 0, 0, 0, rate, ctx.seq.settings.drop_frame).min(first_rec);
     ctx.seq.start_timecode = ctx.start_tc;
     if source_tc_warning(&parsed) {
@@ -448,7 +550,9 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
     if ctx.seq.audio_tracks.is_empty() {
         ctx.b.ensure_tracks(&mut ctx.seq, TrackKind::Audio, 1);
     }
-    let seq_id = ctx.b.reserve_sequence(&title, ctx.seq.settings.clone(), None);
+    let seq_id = ctx
+        .b
+        .reserve_sequence(&title, ctx.seq.settings.clone(), None);
     let seq = std::mem::replace(&mut ctx.seq, empty_sequence(Default::default()));
     ctx.b.put_sequence(seq_id, seq);
     ctx.b.top.push(seq_id);
@@ -456,7 +560,10 @@ pub(crate) fn import(text: &str, opts: &ImportOptions, report: &mut Report) -> R
 }
 
 fn source_tc_warning(p: &Parsed) -> bool {
-    p.events.iter().flat_map(|e| &e.lines).any(|l| l.reel != "BL" && l.tcs[0].h > 0)
+    p.events
+        .iter()
+        .flat_map(|e| &e.lines)
+        .any(|l| l.reel != "BL" && l.tcs[0].h > 0)
 }
 
 fn import_event(ctx: &mut Ctx, ev: &Event, report: &mut Report) {
@@ -476,8 +583,15 @@ fn import_event(ctx: &mut Ctx, ev: &Event, report: &mut Report) {
             // Incoming clip.
             let mut placed = Vec::new();
             if !to_black {
-                let file = if ev.files.len() >= 2 { ev.files.get(1) } else { ev.files.first() };
-                let clip = ev.to_clip.as_deref().or(ev.from_clip.as_deref().filter(|_| from_black));
+                let file = if ev.files.len() >= 2 {
+                    ev.files.get(1)
+                } else {
+                    ev.files.first()
+                };
+                let clip = ev
+                    .to_clip
+                    .as_deref()
+                    .or(ev.from_clip.as_deref().filter(|_| from_black));
                 let item = ctx.media(&l2.reel, clip, file.map(String::as_str), &l2.chans);
                 let name = clip.unwrap_or(&l2.reel).to_string();
                 let src = ctx.src(l2.tcs[0], df);
@@ -488,14 +602,24 @@ fn import_event(ctx: &mut Ctx, ev: &Event, report: &mut Report) {
             for ch in chans {
                 let (kind, idx) = ctx.track_index(ch, 0);
                 ctx.b.ensure_tracks(&mut ctx.seq, kind, idx + 1);
-                let to = placed.iter().find(|(k, i, _)| *k == kind && *i == idx).map(|p| p.2);
+                let to = placed
+                    .iter()
+                    .find(|(k, i, _)| *k == kind && *i == idx)
+                    .map(|p| p.2);
                 let track = &mut ctx.seq.tracks_mut(kind)[idx];
-                let from = if from_black { None } else { track.items.iter().find(|i| i.end() == t0).map(|i| i.id) };
+                let from = if from_black {
+                    None
+                } else {
+                    track.items.iter().find(|i| i.end() == t0).map(|i| i.id)
+                };
                 let mut align = TransitionAlign::StartAtCut;
                 if to_black {
                     // Fade out: extend the outgoing clip through the transition.
                     if let Some(fid) = from {
-                        let blocked = track.items.iter().any(|o| o.id != fid && o.start < t0 + d && o.end() > t0);
+                        let blocked = track
+                            .items
+                            .iter()
+                            .any(|o| o.id != fid && o.start < t0 + d && o.end() > t0);
                         if let Some(it) = track.item_mut(fid)
                             && !blocked
                         {
@@ -508,15 +632,35 @@ fn import_event(ctx: &mut Ctx, ev: &Event, report: &mut Report) {
                     continue;
                 }
                 let audio = kind == TrackKind::Audio;
-                let cache = if audio { &mut audio_effect } else { &mut video_effect };
-                let eff = cache.get_or_insert_with(|| transition_for(l2.trans, ev.effect.as_deref(), audio, report)).clone();
+                let cache = if audio {
+                    &mut audio_effect
+                } else {
+                    &mut video_effect
+                };
+                let eff = cache
+                    .get_or_insert_with(|| {
+                        transition_for(l2.trans, ev.effect.as_deref(), audio, report)
+                    })
+                    .clone();
                 let id = TransitionId(ctx.b.alloc());
                 let track = &mut ctx.seq.tracks_mut(kind)[idx];
-                track.transitions.push(Transition { id, effect: eff, start: t0, duration: d, from, to, align, reverse: false });
+                track.transitions.push(Transition {
+                    id,
+                    effect: eff,
+                    start: t0,
+                    duration: d,
+                    from,
+                    to,
+                    align,
+                    reverse: false,
+                });
                 track.sort();
             }
         }
-        [l1, l2] if l1.trans == Trans::KeyBackground && matches!(l2.trans, Trans::Key | Trans::KeyOut) => {
+        [l1, l2]
+            if l1.trans == Trans::KeyBackground
+                && matches!(l2.trans, Trans::Key | Trans::KeyOut) =>
+        {
             report.info("EDL key events imported as background on V1 and foreground on V2");
             if l2.trans == Trans::KeyOut {
                 report.warn("EDL key-out fade was imported as a plain key");
@@ -527,7 +671,11 @@ fn import_event(ctx: &mut Ctx, ev: &Event, report: &mut Report) {
         }
         lines => {
             if lines.len() > 1 {
-                report.warn(format!("EDL event {} has {} lines; imported as separate cuts", lines[0].num, lines.len()));
+                report.warn(format!(
+                    "EDL event {} has {} lines; imported as separate cuts",
+                    lines[0].num,
+                    lines.len()
+                ));
             }
             for l in lines {
                 match l.trans {
@@ -557,20 +705,41 @@ fn lay_cut(ctx: &mut Ctx, ev: &Event, l: &Line, video_base: usize, df: bool, m2:
     if t1 <= t0 {
         return;
     }
-    let clip = if video_base > 0 { ev.to_clip.as_deref().or(ev.from_clip.as_deref()) } else { ev.from_clip.as_deref() };
-    let file = if video_base > 0 && ev.files.len() > 1 { ev.files.get(1) } else { ev.files.first() };
+    let clip = if video_base > 0 {
+        ev.to_clip.as_deref().or(ev.from_clip.as_deref())
+    } else {
+        ev.from_clip.as_deref()
+    };
+    let file = if video_base > 0 && ev.files.len() > 1 {
+        ev.files.get(1)
+    } else {
+        ev.files.first()
+    };
     let item = ctx.media(&l.reel, clip, file.map(String::as_str), &l.chans);
     let name = clip.unwrap_or(&l.reel).to_string();
     let src = ctx.src(l.tcs[0], df);
     ctx.lay(l, item, &name, t0, t1 - t0, src, *m2, video_base);
 }
 
-fn transition_for(t: Trans, effect_name: Option<&str>, audio: bool, report: &mut Report) -> filmcraft_project::EffectInstance {
+fn transition_for(
+    t: Trans,
+    effect_name: Option<&str>,
+    audio: bool,
+    report: &mut Report,
+) -> filmcraft_project::EffectInstance {
     if let Some(n) = effect_name {
         let effect = transition_effect(n, audio, report);
-        if audio && effect.def().is_some_and(|d| d.kind != filmcraft_project::EffectKind::AudioTransition) {
-            report.warn(format!("transition \"{n}\" is not an audio transition; imported as Constant Power"));
-            return find_effect("constant_power").map(|d| d.instance()).unwrap_or(effect);
+        if audio
+            && effect
+                .def()
+                .is_some_and(|d| d.kind != filmcraft_project::EffectKind::AudioTransition)
+        {
+            report.warn(format!(
+                "transition \"{n}\" is not an audio transition; imported as Constant Power"
+            ));
+            return find_effect("constant_power")
+                .map(|d| d.instance())
+                .unwrap_or(effect);
         }
         return effect;
     }
@@ -584,7 +753,10 @@ fn transition_for(t: Trans, effect_name: Option<&str>, audio: bool, report: &mut
             match code {
                 1 => {}
                 2 => {
-                    e.params.insert("direction".into(), filmcraft_project::Param::new(ParamValue::Choice(0)));
+                    e.params.insert(
+                        "direction".into(),
+                        filmcraft_project::Param::new(ParamValue::Choice(0)),
+                    );
                 }
                 c => report.warn(format!("SMPTE wipe code {c:03} imported as a plain Wipe")),
             }
@@ -654,12 +826,27 @@ impl Exp<'_> {
         } else {
             match self.opts.edl.reel_mode {
                 ReelMode::Ax => "AX".to_string(),
-                ReelMode::ClipName => sanitize_reel(&self.p.item(item).map(|i| i.name.clone()).unwrap_or_default(), max),
+                ReelMode::ClipName => sanitize_reel(
+                    &self
+                        .p
+                        .item(item)
+                        .map(|i| i.name.clone())
+                        .unwrap_or_default(),
+                    max,
+                ),
                 ReelMode::FileName => {
-                    let tape = self.p.item(item).and_then(|i| i.metadata.get("Tape Name")).cloned();
+                    let tape = self
+                        .p
+                        .item(item)
+                        .and_then(|i| i.metadata.get("Tape Name"))
+                        .cloned();
                     let src = tape.unwrap_or_else(|| match item_path(self.p, base) {
                         Some(path) => file_stem(path).to_string(),
-                        None => self.p.item(item).map(|i| i.name.clone()).unwrap_or_default(),
+                        None => self
+                            .p
+                            .item(item)
+                            .map(|i| i.name.clone())
+                            .unwrap_or_default(),
                     });
                     let mut r = sanitize_reel(&src, max);
                     // Distinct media must get distinct reels.
@@ -668,7 +855,11 @@ impl Exp<'_> {
                         n += 1;
                         let suffix = format!("{n}");
                         let keep = max.saturating_sub(suffix.len());
-                        r = format!("{}{}", &sanitize_reel(&src, max)[..keep.min(sanitize_reel(&src, max).len())], suffix);
+                        r = format!(
+                            "{}{}",
+                            &sanitize_reel(&src, max)[..keep.min(sanitize_reel(&src, max).len())],
+                            suffix
+                        );
                     }
                     self.used_reels.insert(r.clone(), base);
                     r
@@ -689,7 +880,11 @@ impl Exp<'_> {
             .p
             .item(base)
             .and_then(|i| i.as_media())
-            .and_then(|m| m.info.start_timecode.map(|tc| self.rate.frame_at(m.frame_rate().tick_of(tc))))
+            .and_then(|m| {
+                m.info
+                    .start_timecode
+                    .map(|tc| self.rate.frame_at(m.frame_rate().tick_of(tc)))
+            })
             .unwrap_or(0);
         start + frames_round(self.rate, t)
     }
@@ -725,15 +920,36 @@ fn chan_code(set: &BTreeSet<Ch>) -> Option<&'static str> {
 }
 
 fn signed_scaled(d: Tick, speed: f64) -> Tick {
-    if d.0 < 0 { -scaled(-d, speed) } else { scaled(d, speed) }
+    if d.0 < 0 {
+        -scaled(-d, speed)
+    } else {
+        scaled(d, speed)
+    }
 }
 
-pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: &mut Report) -> Result<String> {
+pub(crate) fn export(
+    p: &Project,
+    seq_id: ItemId,
+    opts: &ExportOptions,
+    report: &mut Report,
+) -> Result<String> {
     let seq = p.sequence(seq_id).ok_or(crate::Error::NoSequence(seq_id))?;
     let rate = seq.settings.frame_rate;
     let df = seq.settings.drop_frame && rate.supports_drop_frame();
-    let mut x = Exp { p, seq, rate, df, opts, reels: HashMap::new(), used_reels: HashMap::new() };
-    let title = opts.name.clone().or_else(|| p.item(seq_id).map(|i| i.name.clone())).unwrap_or_default();
+    let mut x = Exp {
+        p,
+        seq,
+        rate,
+        df,
+        opts,
+        reels: HashMap::new(),
+        used_reels: HashMap::new(),
+    };
+    let title = opts
+        .name
+        .clone()
+        .or_else(|| p.item(seq_id).map(|i| i.name.clone()))
+        .unwrap_or_default();
 
     let mut events: Vec<OutEvent> = Vec::new();
     let mut tracks: Vec<(TrackKind, usize, Ch)> = Vec::new();
@@ -745,7 +961,9 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
     for &a in &opts.edl.audio_tracks {
         if a < seq.audio_tracks.len() {
             if a >= 4 {
-                report.warn("EDL export supports at most four audio channels; A5 and above were skipped");
+                report.warn(
+                    "EDL export supports at most four audio channels; A5 and above were skipped",
+                );
                 continue;
             }
             tracks.push((TrackKind::Audio, a, Ch::A(a + 1)));
@@ -753,7 +971,11 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
     }
     if seq.video_tracks.len() > 1
         && opts.edl.video_track.is_some()
-        && seq.video_tracks.iter().enumerate().any(|(i, t)| Some(i) != opts.edl.video_track && !t.items.is_empty())
+        && seq
+            .video_tracks
+            .iter()
+            .enumerate()
+            .any(|(i, t)| Some(i) != opts.edl.video_track && !t.items.is_empty())
     {
         report.info("EDLs hold one video track; other video tracks were not exported (use export_edl_per_track)");
     }
@@ -769,7 +991,10 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
             if !on_frame(rate, it.start) || !on_frame(rate, it.duration) {
                 report.warn("sub-frame clip positions were rounded to frames in the EDL");
             }
-            if matches!(p.item(it.item).map(|i| &i.kind), Some(ItemKind::Sequence(_))) {
+            if matches!(
+                p.item(it.item).map(|i| &i.kind),
+                Some(ItemKind::Sequence(_))
+            ) {
                 report.warn("nested sequences are exported to EDL as a single source (reel AX)");
             }
             if !it.enabled {
@@ -787,20 +1012,38 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
             if let Some(t) = tr_out {
                 rec1 = rec1.min(t.start).max(rec0);
             }
-            let speed = if it.frame_hold.is_some() { 0.0 } else { it.speed };
+            let speed = if it.frame_hold.is_some() {
+                0.0
+            } else {
+                it.speed
+            };
             let mut lines = Vec::new();
             let mut comments = Vec::new();
             let mut trans_name = None;
             if let Some(t) = tr_in {
                 let s = t.start;
-                let (l1_reel, l1_src, from_name, from_item) = match t.from.and_then(|f| track.item(f)) {
-                    Some(a) => {
-                        let r = x.reel(a.item, report);
-                        (r, a.source_in + signed_scaled(s - a.start, a.speed), Some(a.name.clone()), Some(a.item))
-                    }
-                    None => ("BL".to_string(), Tick::ZERO, None, None),
-                };
-                lines.push(OutLine { item: from_item, reel: l1_reel, chan: chs.clone(), trans: "C".into(), dur: None, src: (l1_src, l1_src), rec: (s, s) });
+                let (l1_reel, l1_src, from_name, from_item) =
+                    match t.from.and_then(|f| track.item(f)) {
+                        Some(a) => {
+                            let r = x.reel(a.item, report);
+                            (
+                                r,
+                                a.source_in + signed_scaled(s - a.start, a.speed),
+                                Some(a.name.clone()),
+                                Some(a.item),
+                            )
+                        }
+                        None => ("BL".to_string(), Tick::ZERO, None, None),
+                    };
+                lines.push(OutLine {
+                    item: from_item,
+                    reel: l1_reel,
+                    chan: chs.clone(),
+                    trans: "C".into(),
+                    dur: None,
+                    src: (l1_src, l1_src),
+                    rec: (s, s),
+                });
                 src0 = match it.frame_hold {
                     Some(h) => h,
                     None => it.source_in + signed_scaled(s - it.start, it.speed),
@@ -862,22 +1105,41 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
                 comments.push(format!("EFFECT NAME: {n}"));
             }
             let m2 = if speed != 1.0 || it.reverse {
-                let fps = if it.frame_hold.is_some() { 0.0 } else { speed * rate.timecode_base() as f64 * if it.reverse { -1.0 } else { 1.0 } };
+                let fps = if it.frame_hold.is_some() {
+                    0.0
+                } else {
+                    speed * rate.timecode_base() as f64 * if it.reverse { -1.0 } else { 1.0 }
+                };
                 Some((reel.clone(), fps, src0))
             } else {
                 None
             };
             if let Some(ef) = crate::common::standard_effects(it).next() {
-                report.warn(format!("effect \"{}\" cannot be represented in an EDL", ef.def().map(|d| d.name).unwrap_or(&ef.effect)));
+                report.warn(format!(
+                    "effect \"{}\" cannot be represented in an EDL",
+                    ef.def().map(|d| d.name).unwrap_or(&ef.effect)
+                ));
             }
             let simple = tr_in.is_none() && m2.is_none();
             events.push(OutEvent {
-                merge: if simple { it.link.map(|l| (l, it.item, rec0, rec1, src0, 0, it.enabled)) } else { None },
+                merge: if simple {
+                    it.link
+                        .map(|l| (l, it.item, rec0, rec1, src0, 0, it.enabled))
+                } else {
+                    None
+                },
                 lines,
                 comments,
                 m2,
                 channels: [ch].into_iter().collect(),
-                order: (rec0, if kind == TrackKind::Video { 0 } else { 1 + idx as u8 }),
+                order: (
+                    rec0,
+                    if kind == TrackKind::Video {
+                        0
+                    } else {
+                        1 + idx as u8
+                    },
+                ),
             });
             // Fade to black after this clip.
             if let Some(t) = tr_out.filter(|t| t.to.is_none()) {
@@ -894,7 +1156,15 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
                 }
                 events.push(OutEvent {
                     lines: vec![
-                        OutLine { item: Some(it.item), reel: reel.clone(), chan: chs.clone(), trans: "C".into(), dur: None, src: (a_src, a_src), rec: (s, s) },
+                        OutLine {
+                            item: Some(it.item),
+                            reel: reel.clone(),
+                            chan: chs.clone(),
+                            trans: "C".into(),
+                            dur: None,
+                            src: (a_src, a_src),
+                            rec: (s, s),
+                        },
                         OutLine {
                             item: None,
                             reel: "BL".into(),
@@ -909,7 +1179,14 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
                     m2: None,
                     merge: None,
                     channels: [ch].into_iter().collect(),
-                    order: (s, if kind == TrackKind::Video { 0 } else { 1 + idx as u8 }),
+                    order: (
+                        s,
+                        if kind == TrackKind::Video {
+                            0
+                        } else {
+                            1 + idx as u8
+                        },
+                    ),
                 });
             }
         }
@@ -937,9 +1214,17 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
 
     let mut out = String::new();
     out.push_str(&format!("TITLE: {title}\n"));
-    out.push_str(if df { "FCM: DROP FRAME\n" } else { "FCM: NON-DROP FRAME\n" });
+    out.push_str(if df {
+        "FCM: DROP FRAME\n"
+    } else {
+        "FCM: NON-DROP FRAME\n"
+    });
     let w = opts.edl.reel_len.max(8);
-    let mut markers: Vec<&Marker> = if opts.edl.markers { seq.markers.iter().collect() } else { Vec::new() };
+    let mut markers: Vec<&Marker> = if opts.edl.markers {
+        seq.markers.iter().collect()
+    } else {
+        Vec::new()
+    };
     markers.sort_by_key(|m| m.start);
     let mut mi = 0;
     let n_events = merged.len();
@@ -964,7 +1249,12 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
             && let Some(l) = ev.lines.last()
         {
             let sign = if *fps < 0.0 { "-" } else { "" };
-            out.push_str(&format!("M2   {:<w$}       {sign}{:05.1}                {}\n", reel, fps.abs(), x.tc(src_tc(&x, l, *entry))));
+            out.push_str(&format!(
+                "M2   {:<w$}       {sign}{:05.1}                {}\n",
+                reel,
+                fps.abs(),
+                x.tc(src_tc(&x, l, *entry))
+            ));
         }
         for c in &ev.comments {
             out.push_str(&format!("* {c}\n"));
@@ -973,7 +1263,12 @@ pub(crate) fn export(p: &Project, seq_id: ItemId, opts: &ExportOptions, report: 
         let end = ev.lines.last().map(|l| l.rec.1).unwrap_or(Tick::ZERO);
         while mi < markers.len() && (markers[mi].start < end || i + 1 == n_events) {
             let m = markers[mi];
-            out.push_str(&format!("* LOC: {} {:<7} {}\n", x.tc(x.rec_frames(m.start)), color_word(m.color), m.name));
+            out.push_str(&format!(
+                "* LOC: {} {:<7} {}\n",
+                x.tc(x.rec_frames(m.start)),
+                color_word(m.color),
+                m.name
+            ));
             mi += 1;
         }
     }
@@ -992,11 +1287,18 @@ fn src_tc(x: &Exp, l: &OutLine, t: Tick) -> i64 {
 fn edl_transition(e: &filmcraft_project::EffectInstance, report: &mut Report) -> (String, String) {
     let name = transition_name(e).to_ascii_uppercase();
     match e.effect.as_str() {
-        "cross_dissolve" | "constant_power" | "constant_gain" | "exponential_fade" | "film_dissolve" | "additive_dissolve" | "non_additive_dissolve" => {
-            ("D".into(), name)
-        }
+        "cross_dissolve"
+        | "constant_power"
+        | "constant_gain"
+        | "exponential_fade"
+        | "film_dissolve"
+        | "additive_dissolve"
+        | "non_additive_dissolve" => ("D".into(), name),
         "wipe" => {
-            let dir = e.param("direction").and_then(|p| p.value.as_f64()).unwrap_or(3.0) as u32;
+            let dir = e
+                .param("direction")
+                .and_then(|p| p.value.as_f64())
+                .unwrap_or(3.0) as u32;
             match dir {
                 0 => ("W002".into(), name),
                 3 => ("W001".into(), name),
@@ -1007,7 +1309,10 @@ fn edl_transition(e: &filmcraft_project::EffectInstance, report: &mut Report) ->
             }
         }
         _ => {
-            report.info(format!("transition \"{}\" written as a dissolve with an EFFECT NAME comment", transition_name(e)));
+            report.info(format!(
+                "transition \"{}\" written as a dissolve with an EFFECT NAME comment",
+                transition_name(e)
+            ));
             ("D".into(), name)
         }
     }
@@ -1020,19 +1325,31 @@ mod tests {
     #[test]
     fn channels() {
         assert_eq!(parse_channels("B"), Some(vec![Ch::V, Ch::A(1)]));
-        assert_eq!(parse_channels("AA/V"), Some(vec![Ch::A(1), Ch::A(2), Ch::V]));
+        assert_eq!(
+            parse_channels("AA/V"),
+            Some(vec![Ch::A(1), Ch::A(2), Ch::V])
+        );
         assert_eq!(parse_channels("A4"), Some(vec![Ch::A(4)]));
         assert_eq!(parse_channels("X"), None);
     }
 
     #[test]
     fn event_lines() {
-        let l = parse_event_line("002  REEL_B   V     D    030 02:00:10:00 02:00:15:00 01:00:05:00 01:00:10:00").unwrap();
+        let l = parse_event_line(
+            "002  REEL_B   V     D    030 02:00:10:00 02:00:15:00 01:00:05:00 01:00:10:00",
+        )
+        .unwrap();
         assert_eq!(l.trans, Trans::Dissolve);
         assert_eq!(l.dur, 30);
-        let k = parse_event_line("003  KEY      V     K B      00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00").unwrap();
+        let k = parse_event_line(
+            "003  KEY      V     K B      00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00",
+        )
+        .unwrap();
         assert_eq!(k.trans, Trans::KeyBackground);
-        let w = parse_event_line("004  R        V     W001 015 00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00").unwrap();
+        let w = parse_event_line(
+            "004  R        V     W001 015 00:00:00:00 00:00:01:00 01:00:00:00 01:00:01:00",
+        )
+        .unwrap();
         assert_eq!(w.trans, Trans::Wipe(1));
         assert!(parse_event_line("* comment").is_none());
         assert!(parse_tc("01;00;00;02").unwrap().df);

@@ -51,7 +51,12 @@ impl Flash {
 
     #[must_use]
     pub fn reset(self) -> Self {
-        Flash { contents: self.contents.reset(), ir_cmd: 0, first_ir_data_byte: false, ..self }
+        Flash {
+            contents: self.contents.reset(),
+            ir_cmd: 0,
+            first_ir_data_byte: false,
+            ..self
+        }
     }
 
     #[inline]
@@ -105,7 +110,7 @@ impl super::SpiDevice for Flash {
                 let contents_ = self.contents.contents_mut();
                 contents_[..contents.len()].copy_from_slice(&contents);
                 contents_[contents.len()..].fill(0);
-            },
+            }
             SaveReloadContents::New => self.contents.contents_mut().fill(0xFF),
         }
     }
@@ -135,12 +140,12 @@ impl super::SpiDevice for Flash {
                     0x00 => {
                         // Pass-through to FLASH chip
                         self.contents.handle_byte(value, first, last)
-                    },
+                    }
 
                     0x08 => {
                         // Read ID
                         0xAA
-                    },
+                    }
 
                     _command => {
                         #[cfg(feature = "log")]
@@ -157,7 +162,7 @@ impl super::SpiDevice for Flash {
                             }
                         );
                         0
-                    },
+                    }
                 }
             }
         } else {

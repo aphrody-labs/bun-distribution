@@ -4,7 +4,9 @@
 use aphrody_nie_formats::g4tx;
 
 fn main() {
-    let path = std::env::args().nth(1).expect("usage: inspect_g4tx <fichier.g4tx>");
+    let path = std::env::args()
+        .nth(1)
+        .expect("usage: inspect_g4tx <fichier.g4tx>");
     let data = std::fs::read(&path).expect("lire g4tx");
     let tx = g4tx::parse(&data).expect("parse g4tx");
     println!("{path} : {} texture(s) principale(s)", tx.textures.len());

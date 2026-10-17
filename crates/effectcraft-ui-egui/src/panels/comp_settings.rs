@@ -14,10 +14,34 @@ use crate::theme::Tokens;
 
 /// AE's composition presets: (name, width, height, pixel aspect, fps). "Custom" is implicit.
 pub const PRESETS: &[(&str, u32, u32, f64, f64)] = &[
-    ("Social Media Portrait HD · 1080x1920 · 30 fps", 1080, 1920, 1.0, 30.0),
-    ("Social Media Landscape HD · 1920x1080 · 30 fps", 1920, 1080, 1.0, 30.0),
-    ("Social Media Square · 1080x1080 · 30 fps", 1080, 1080, 1.0, 30.0),
-    ("Social Media Portrait · 1080x1350 · 30 fps", 1080, 1350, 1.0, 30.0),
+    (
+        "Social Media Portrait HD · 1080x1920 · 30 fps",
+        1080,
+        1920,
+        1.0,
+        30.0,
+    ),
+    (
+        "Social Media Landscape HD · 1920x1080 · 30 fps",
+        1920,
+        1080,
+        1.0,
+        30.0,
+    ),
+    (
+        "Social Media Square · 1080x1080 · 30 fps",
+        1080,
+        1080,
+        1.0,
+        30.0,
+    ),
+    (
+        "Social Media Portrait · 1080x1350 · 30 fps",
+        1080,
+        1350,
+        1.0,
+        30.0,
+    ),
     ("NTSC DV", 720, 480, 0.9091, 29.97),
     ("NTSC DV Widescreen", 720, 480, 1.2121, 29.97),
     ("NTSC D1", 720, 486, 0.9091, 29.97),
@@ -64,7 +88,9 @@ pub const PIXEL_ASPECTS: &[(&str, f64)] = &[
     ("DVCPRO HD 1080 (1.5)", 1.5),
 ];
 
-const FRAME_RATES: &[f64] = &[8.0, 10.0, 12.0, 12.5, 15.0, 23.976, 24.0, 25.0, 29.97, 30.0, 48.0, 50.0, 59.94, 60.0, 120.0];
+const FRAME_RATES: &[f64] = &[
+    8.0, 10.0, 12.0, 12.5, 15.0, 23.976, 24.0, 25.0, 29.97, 30.0, 48.0, 50.0, 59.94, 60.0, 120.0,
+];
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Tab {
@@ -133,7 +159,10 @@ impl Default for CompDraft {
 /// `16:9 (1.78)`: the nearest small whole-number ratio and its decimal.
 pub fn aspect_label(w: f64, h: f64) -> String {
     let r = w / h.max(1.0);
-    let best = (1..=32u32).map(|b| ((r * b as f64).round() as u32, b)).filter(|(a, _)| *a > 0).find(|(a, b)| (*a as f64 / *b as f64 - r).abs() < 0.006);
+    let best = (1..=32u32)
+        .map(|b| ((r * b as f64).round() as u32, b))
+        .filter(|(a, _)| *a > 0)
+        .find(|(a, b)| (*a as f64 / *b as f64 - r).abs() < 0.006);
     match best {
         Some((a, b)) => format!("{a}:{b} ({r:.2})"),
         None => format!("{r:.2}"),
@@ -151,17 +180,36 @@ fn color_name(c: [f32; 3]) -> &'static str {
 
 /// AE prints the hour without a leading zero: `0;00;10;00`.
 fn ae_timecode(smpte: &str) -> String {
-    let (neg, rest) = smpte.strip_prefix('-').map_or((false, smpte), |r| (true, r));
-    let rest = rest.strip_prefix('0').filter(|r| r.as_bytes().first().is_some_and(u8::is_ascii_digit)).unwrap_or(rest);
+    let (neg, rest) = smpte
+        .strip_prefix('-')
+        .map_or((false, smpte), |r| (true, r));
+    let rest = rest
+        .strip_prefix('0')
+        .filter(|r| r.as_bytes().first().is_some_and(u8::is_ascii_digit))
+        .unwrap_or(rest);
     format!("{}{rest}", if neg { "-" } else { "" })
 }
 
-fn timecode_field(ui: &mut egui::Ui, buf: &mut Option<String>, secs: &mut f64, rate: FrameRate, min_frames: i64) -> egui::Response {
+fn timecode_field(
+    ui: &mut egui::Ui,
+    buf: &mut Option<String>,
+    secs: &mut f64,
+    rate: FrameRate,
+    min_frames: i64,
+) -> egui::Response {
     let df = rate.supports_drop_frame();
     // Durations are whole frames in AE: 10 s at 29.97 fps is 0;00;10;00, not 9;29.
-    let shown = ae_timecode(&format_timecode_frames((*secs * rate.as_f64()).round() as i64, rate, df));
+    let shown = ae_timecode(&format_timecode_frames(
+        (*secs * rate.as_f64()).round() as i64,
+        rate,
+        df,
+    ));
     let mut text = buf.clone().unwrap_or_else(|| shown.clone());
-    let r = ui.add(egui::TextEdit::singleline(&mut text).desired_width(96.0).font(Tokens::mono(12.0)));
+    let r = ui.add(
+        egui::TextEdit::singleline(&mut text)
+            .desired_width(96.0)
+            .font(Tokens::mono(12.0)),
+    );
     if r.changed() {
         *buf = Some(text.clone());
     }
@@ -171,7 +219,11 @@ fn timecode_field(ui: &mut egui::Ui, buf: &mut Option<String>, secs: &mut f64, r
         }
         *buf = None;
     }
-    let base = format!("Base {}{}", rate.timecode_base(), if df { "drop" } else { "" });
+    let base = format!(
+        "Base {}{}",
+        rate.timecode_base(),
+        if df { "drop" } else { "" }
+    );
     ui.label(egui::RichText::new(format!("is {shown}  {base}")).color(Color32::GRAY));
     r
 }
@@ -191,11 +243,16 @@ pub fn choose_name(
     custom: &[CompPreset],
     cmds: &mut Vec<(&'static str, serde_json::Value)>,
 ) {
-    let Some(mut name) = d.preset_name.take() else { return };
+    let Some(mut name) = d.preset_name.take() else {
+        return;
+    };
     let mut keep = true;
     let r = ui.add(egui::TextEdit::singleline(&mut name).desired_width(ui.available_width()));
     auto.add("dialog.comp.presetName", r.rect, "Preset Name");
-    if ui.data_mut(|m| m.remove_temp::<bool>(name_focus_id())).unwrap_or(false) {
+    if ui
+        .data_mut(|m| m.remove_temp::<bool>(name_focus_id()))
+        .unwrap_or(false)
+    {
         r.request_focus();
     }
     let trimmed = name.trim();
@@ -215,7 +272,11 @@ pub fn choose_name(
     let mut save = r.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
     let mut cancel = ui.input(|i| i.key_pressed(egui::Key::Escape));
     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-        let b = ui.add_enabled(ok, egui::Button::new(egui::RichText::new(tr("   OK   ")).color(Color32::WHITE)).fill(t.accent));
+        let b = ui.add_enabled(
+            ok,
+            egui::Button::new(egui::RichText::new(tr("   OK   ")).color(Color32::WHITE))
+                .fill(t.accent),
+        );
         auto.add("dialog.comp.presetNameSave", b.rect, "OK");
         save |= b.clicked();
         let c = ui.button(tr("Cancel"));
@@ -236,7 +297,10 @@ pub fn choose_name(
 
 /// Whether the draft's frame size, pixel aspect and frame rate are those of a preset.
 fn matches(d: &CompDraft, w: u32, h: u32, par: f64, fps: f64) -> bool {
-    w == d.width && h == d.height && (par - d.pixel_aspect).abs() < 1e-3 && (fps - d.fps).abs() < 1e-3
+    w == d.width
+        && h == d.height
+        && (par - d.pixel_aspect).abs() < 1e-3
+        && (fps - d.fps).abs() < 1e-3
 }
 
 /// Draw the dialog. Returns `Some(params)` when OK is pressed, `Some(Null)` on Cancel. `custom`
@@ -258,7 +322,11 @@ pub fn show(
     });
     ui.add_space(8.0);
     ui.horizontal(|ui| {
-        for (tab, label, key) in [(Tab::Basic, "Basic", "basic"), (Tab::Advanced, "Advanced", "advanced"), (Tab::Renderer, "3D Renderer", "renderer")] {
+        for (tab, label, key) in [
+            (Tab::Basic, "Basic", "basic"),
+            (Tab::Advanced, "Advanced", "advanced"),
+            (Tab::Renderer, "3D Renderer", "renderer"),
+        ] {
             let r = ui.selectable_label(d.tab == tab, label);
             auto.add(&format!("dialog.comp.tab.{key}"), r.rect, label);
             if r.clicked() {
@@ -270,189 +338,314 @@ pub fn show(
     let rate = FrameRate::from_f64(d.fps);
     match d.tab {
         Tab::Basic => {
-            egui::Grid::new("comp-basic").num_columns(2).spacing([12.0, 9.0]).show(ui, |ui| {
-                ui.label(tr("Preset:"));
-                // The user's own presets win over a built-in one with the same values.
-                let own = custom.iter().find(|q| matches(d, q.width, q.height, q.pixel_aspect, q.frame_rate));
-                let current = own
-                    .map(|q| q.name.as_str())
-                    .or_else(|| PRESETS.iter().find(|(_, w, h, par, f)| matches(d, *w, *h, *par, *f)).map(|p| p.0))
-                    .unwrap_or("Custom");
-                ui.horizontal(|ui| {
-                    let r = egui::ComboBox::from_id_salt("comp-preset").width(300.0).selected_text(current).show_ui(ui, |ui| {
-                        // Your own presets first, then the built-in ones.
-                        for q in custom {
-                            if ui.selectable_label(q.name == current, &q.name).clicked() {
-                                (d.width, d.height, d.pixel_aspect, d.fps) = (q.width, q.height, q.pixel_aspect, q.frame_rate);
-                            }
-                        }
-                        if !custom.is_empty() {
-                            ui.separator();
-                        }
-                        for (name, w, h, par, f) in PRESETS {
-                            if ui.selectable_label(*name == current, *name).clicked() {
-                                (d.width, d.height, d.pixel_aspect, d.fps) = (*w, *h, *par, *f);
-                            }
-                        }
-                    });
-                    auto.add("dialog.comp.preset", r.response.rect, "Preset");
-                    let (save_r, _) = ui.allocate_exact_size(vec2(20.0, 20.0), egui::Sense::hover());
-                    let save = crate::widgets::icon_button(ui, save_r, Icon::Plus, d.preset_name.is_some(), t, egui::Id::new("comp-preset-save"))
-                        .on_hover_text(tr("Save Preset…"));
-                    auto.add("dialog.comp.presetSave", save_r, "Save Preset");
-                    if save.clicked() {
-                        d.preset_name = Some(own.map(|q| q.name.clone()).unwrap_or_default());
-                        ui.data_mut(|m| m.insert_temp(name_focus_id(), true));
-                    }
-                    if let Some(q) = own {
-                        let (del_r, _) = ui.allocate_exact_size(vec2(20.0, 20.0), egui::Sense::hover());
-                        let del = crate::widgets::icon_button(ui, del_r, Icon::Trash, false, t, egui::Id::new("comp-preset-delete"))
-                            .on_hover_text(tr("Delete Preset"));
-                        auto.add("dialog.comp.presetDelete", del_r, "Delete Preset");
-                        if del.clicked() {
-                            cmds.push(("comp.deletePreset", json!({"name": q.name})));
-                        }
-                    }
-                });
-                ui.end_row();
-                ui.label(tr("Width:"));
-                ui.horizontal(|ui| {
-                    let (ow, oh) = (d.width, d.height);
-                    let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.width).range(4..=30000).suffix(" px")));
-                    auto.add("dialog.comp.width", r.rect, "Width");
-                    let lbl = format!("Lock Aspect Ratio to {}", aspect_label(ow as f64, oh as f64));
-                    let r = ui.checkbox(&mut d.lock_aspect, lbl);
-                    auto.add("dialog.comp.lockAspect", r.rect, "Lock Aspect Ratio");
-                    if d.lock_aspect && ow != d.width && ow > 0 {
-                        d.height = ((d.width as f64) * oh as f64 / ow as f64).round().max(4.0) as u32;
-                    }
-                });
-                ui.end_row();
-                ui.label(tr("Height:"));
-                let (ow, oh) = (d.width, d.height);
-                let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.height).range(4..=30000).suffix(" px")));
-                auto.add("dialog.comp.height", r.rect, "Height");
-                if d.lock_aspect && oh != d.height && oh > 0 {
-                    d.width = ((d.height as f64) * ow as f64 / oh as f64).round().max(4.0) as u32;
-                }
-                ui.end_row();
-                ui.label(tr("Pixel Aspect Ratio:"));
-                ui.horizontal(|ui| {
-                    let cur = PIXEL_ASPECTS
+            egui::Grid::new("comp-basic")
+                .num_columns(2)
+                .spacing([12.0, 9.0])
+                .show(ui, |ui| {
+                    ui.label(tr("Preset:"));
+                    // The user's own presets win over a built-in one with the same values.
+                    let own = custom
                         .iter()
-                        .find(|(_, v)| (v - d.pixel_aspect).abs() < 1e-3)
-                        .map(|p| p.0.to_string())
-                        .unwrap_or_else(|| format!("{:.2}", d.pixel_aspect));
-                    let r = egui::ComboBox::from_id_salt("comp-par").width(220.0).selected_text(cur).show_ui(ui, |ui| {
-                        for (name, v) in PIXEL_ASPECTS {
-                            if ui.selectable_label((v - d.pixel_aspect).abs() < 1e-3, *name).clicked() {
-                                d.pixel_aspect = *v;
+                        .find(|q| matches(d, q.width, q.height, q.pixel_aspect, q.frame_rate));
+                    let current = own
+                        .map(|q| q.name.as_str())
+                        .or_else(|| {
+                            PRESETS
+                                .iter()
+                                .find(|(_, w, h, par, f)| matches(d, *w, *h, *par, *f))
+                                .map(|p| p.0)
+                        })
+                        .unwrap_or("Custom");
+                    ui.horizontal(|ui| {
+                        let r = egui::ComboBox::from_id_salt("comp-preset")
+                            .width(300.0)
+                            .selected_text(current)
+                            .show_ui(ui, |ui| {
+                                // Your own presets first, then the built-in ones.
+                                for q in custom {
+                                    if ui.selectable_label(q.name == current, &q.name).clicked() {
+                                        (d.width, d.height, d.pixel_aspect, d.fps) =
+                                            (q.width, q.height, q.pixel_aspect, q.frame_rate);
+                                    }
+                                }
+                                if !custom.is_empty() {
+                                    ui.separator();
+                                }
+                                for (name, w, h, par, f) in PRESETS {
+                                    if ui.selectable_label(*name == current, *name).clicked() {
+                                        (d.width, d.height, d.pixel_aspect, d.fps) =
+                                            (*w, *h, *par, *f);
+                                    }
+                                }
+                            });
+                        auto.add("dialog.comp.preset", r.response.rect, "Preset");
+                        let (save_r, _) =
+                            ui.allocate_exact_size(vec2(20.0, 20.0), egui::Sense::hover());
+                        let save = crate::widgets::icon_button(
+                            ui,
+                            save_r,
+                            Icon::Plus,
+                            d.preset_name.is_some(),
+                            t,
+                            egui::Id::new("comp-preset-save"),
+                        )
+                        .on_hover_text(tr("Save Preset…"));
+                        auto.add("dialog.comp.presetSave", save_r, "Save Preset");
+                        if save.clicked() {
+                            d.preset_name = Some(own.map(|q| q.name.clone()).unwrap_or_default());
+                            ui.data_mut(|m| m.insert_temp(name_focus_id(), true));
+                        }
+                        if let Some(q) = own {
+                            let (del_r, _) =
+                                ui.allocate_exact_size(vec2(20.0, 20.0), egui::Sense::hover());
+                            let del = crate::widgets::icon_button(
+                                ui,
+                                del_r,
+                                Icon::Trash,
+                                false,
+                                t,
+                                egui::Id::new("comp-preset-delete"),
+                            )
+                            .on_hover_text(tr("Delete Preset"));
+                            auto.add("dialog.comp.presetDelete", del_r, "Delete Preset");
+                            if del.clicked() {
+                                cmds.push(("comp.deletePreset", json!({"name": q.name})));
                             }
                         }
                     });
-                    auto.add("dialog.comp.pixelAspect", r.response.rect, "Pixel Aspect Ratio");
-                    ui.label(
-                        egui::RichText::new(tr_args("Frame Aspect Ratio: {}", &[&(aspect_label(d.width as f64 * d.pixel_aspect, d.height as f64))]))
-                            .color(Color32::GRAY),
-                    );
-                });
-                ui.end_row();
-                ui.label(tr("Frame Rate:"));
-                ui.horizontal(|ui| {
-                    // Any rate can be typed; the list holds the common ones.
-                    let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.fps).range(1.0..=999.0).speed(0.01).max_decimals(3)));
-                    auto.add("dialog.comp.frameRate", r.rect, "Frame Rate");
-                    let r = egui::ComboBox::from_id_salt("comp-fps").width(18.0).selected_text("").show_ui(ui, |ui| {
-                        for f in FRAME_RATES {
-                            if ui.selectable_label((d.fps - f).abs() < 1e-3, format!("{f}")).clicked() {
-                                d.fps = *f;
-                            }
+                    ui.end_row();
+                    ui.label(tr("Width:"));
+                    ui.horizontal(|ui| {
+                        let (ow, oh) = (d.width, d.height);
+                        let r = ui.add(crate::widgets::drag_value(
+                            egui::DragValue::new(&mut d.width)
+                                .range(4..=30000)
+                                .suffix(" px"),
+                        ));
+                        auto.add("dialog.comp.width", r.rect, "Width");
+                        let lbl = format!(
+                            "Lock Aspect Ratio to {}",
+                            aspect_label(ow as f64, oh as f64)
+                        );
+                        let r = ui.checkbox(&mut d.lock_aspect, lbl);
+                        auto.add("dialog.comp.lockAspect", r.rect, "Lock Aspect Ratio");
+                        if d.lock_aspect && ow != d.width && ow > 0 {
+                            d.height =
+                                ((d.width as f64) * oh as f64 / ow as f64).round().max(4.0) as u32;
                         }
                     });
-                    auto.add("dialog.comp.frameRates", r.response.rect, "Frame Rate presets");
-                    ui.label(tr("frames per second"));
-                    if rate.supports_drop_frame() {
-                        ui.label(egui::RichText::new(tr("Drop Frame")).color(Color32::GRAY));
+                    ui.end_row();
+                    ui.label(tr("Height:"));
+                    let (ow, oh) = (d.width, d.height);
+                    let r = ui.add(crate::widgets::drag_value(
+                        egui::DragValue::new(&mut d.height)
+                            .range(4..=30000)
+                            .suffix(" px"),
+                    ));
+                    auto.add("dialog.comp.height", r.rect, "Height");
+                    if d.lock_aspect && oh != d.height && oh > 0 {
+                        d.width =
+                            ((d.height as f64) * ow as f64 / oh as f64).round().max(4.0) as u32;
                     }
+                    ui.end_row();
+                    ui.label(tr("Pixel Aspect Ratio:"));
+                    ui.horizontal(|ui| {
+                        let cur = PIXEL_ASPECTS
+                            .iter()
+                            .find(|(_, v)| (v - d.pixel_aspect).abs() < 1e-3)
+                            .map(|p| p.0.to_string())
+                            .unwrap_or_else(|| format!("{:.2}", d.pixel_aspect));
+                        let r = egui::ComboBox::from_id_salt("comp-par")
+                            .width(220.0)
+                            .selected_text(cur)
+                            .show_ui(ui, |ui| {
+                                for (name, v) in PIXEL_ASPECTS {
+                                    if ui
+                                        .selectable_label((v - d.pixel_aspect).abs() < 1e-3, *name)
+                                        .clicked()
+                                    {
+                                        d.pixel_aspect = *v;
+                                    }
+                                }
+                            });
+                        auto.add(
+                            "dialog.comp.pixelAspect",
+                            r.response.rect,
+                            "Pixel Aspect Ratio",
+                        );
+                        ui.label(
+                            egui::RichText::new(tr_args(
+                                "Frame Aspect Ratio: {}",
+                                &[&(aspect_label(
+                                    d.width as f64 * d.pixel_aspect,
+                                    d.height as f64,
+                                ))],
+                            ))
+                            .color(Color32::GRAY),
+                        );
+                    });
+                    ui.end_row();
+                    ui.label(tr("Frame Rate:"));
+                    ui.horizontal(|ui| {
+                        // Any rate can be typed; the list holds the common ones.
+                        let r = ui.add(crate::widgets::drag_value(
+                            egui::DragValue::new(&mut d.fps)
+                                .range(1.0..=999.0)
+                                .speed(0.01)
+                                .max_decimals(3),
+                        ));
+                        auto.add("dialog.comp.frameRate", r.rect, "Frame Rate");
+                        let r = egui::ComboBox::from_id_salt("comp-fps")
+                            .width(18.0)
+                            .selected_text("")
+                            .show_ui(ui, |ui| {
+                                for f in FRAME_RATES {
+                                    if ui
+                                        .selectable_label((d.fps - f).abs() < 1e-3, format!("{f}"))
+                                        .clicked()
+                                    {
+                                        d.fps = *f;
+                                    }
+                                }
+                            });
+                        auto.add(
+                            "dialog.comp.frameRates",
+                            r.response.rect,
+                            "Frame Rate presets",
+                        );
+                        ui.label(tr("frames per second"));
+                        if rate.supports_drop_frame() {
+                            ui.label(egui::RichText::new(tr("Drop Frame")).color(Color32::GRAY));
+                        }
+                    });
+                    ui.end_row();
+                    ui.label("");
+                    let mb = d.width as f64 * d.height as f64 * 4.0 / (1024.0 * 1024.0);
+                    ui.label(
+                        egui::RichText::new(tr_args(
+                            "{} x {}, {}MB per 8bpc frame",
+                            &[&d.width, &d.height, &format!("{mb:.1}")],
+                        ))
+                        .color(Color32::GRAY),
+                    );
+                    ui.end_row();
+                    ui.label(tr("Start Timecode:"));
+                    let r = ui
+                        .horizontal(|ui| {
+                            timecode_field(ui, &mut d.start_tc, &mut d.start, rate, i64::MIN / 4)
+                        })
+                        .inner;
+                    auto.add("dialog.comp.startTimecode", r.rect, "Start Timecode");
+                    ui.end_row();
+                    ui.label(tr("Duration:"));
+                    let r = ui
+                        .horizontal(|ui| {
+                            timecode_field(ui, &mut d.dur_tc, &mut d.duration, rate, 1)
+                        })
+                        .inner;
+                    auto.add("dialog.comp.duration", r.rect, "Duration");
+                    ui.end_row();
+                    ui.label(tr("Background Color:"));
+                    ui.horizontal(|ui| {
+                        let r = crate::widgets::srgb_color_button(ui, &mut d.bg);
+                        auto.add("dialog.comp.background", r.rect, "Background Color");
+                        ui.label(color_name(d.bg));
+                    });
+                    ui.end_row();
                 });
-                ui.end_row();
-                ui.label("");
-                let mb = d.width as f64 * d.height as f64 * 4.0 / (1024.0 * 1024.0);
-                ui.label(egui::RichText::new(tr_args("{} x {}, {}MB per 8bpc frame", &[&d.width, &d.height, &format!("{mb:.1}")])).color(Color32::GRAY));
-                ui.end_row();
-                ui.label(tr("Start Timecode:"));
-                let r = ui.horizontal(|ui| timecode_field(ui, &mut d.start_tc, &mut d.start, rate, i64::MIN / 4)).inner;
-                auto.add("dialog.comp.startTimecode", r.rect, "Start Timecode");
-                ui.end_row();
-                ui.label(tr("Duration:"));
-                let r = ui.horizontal(|ui| timecode_field(ui, &mut d.dur_tc, &mut d.duration, rate, 1)).inner;
-                auto.add("dialog.comp.duration", r.rect, "Duration");
-                ui.end_row();
-                ui.label(tr("Background Color:"));
-                ui.horizontal(|ui| {
-                    let r = crate::widgets::srgb_color_button(ui, &mut d.bg);
-                    auto.add("dialog.comp.background", r.rect, "Background Color");
-                    ui.label(color_name(d.bg));
-                });
-                ui.end_row();
-            });
         }
         Tab::Advanced => {
-            egui::Grid::new("comp-adv").num_columns(2).spacing([12.0, 9.0]).show(ui, |ui| {
-                ui.label(tr("Anchor:"));
-                egui::Grid::new("comp-anchor").spacing([2.0, 2.0]).show(ui, |ui| {
-                    for i in 0..9u8 {
-                        let on = d.anchor == i;
-                        let b = egui::Button::new(if on { "●" } else { "" }).min_size(vec2(22.0, 22.0)).fill(if on { t.accent } else { t.field_bg });
-                        let r = ui.add(b);
-                        auto.add(&format!("dialog.comp.anchor.{i}"), r.rect, "Anchor");
-                        if r.clicked() {
-                            d.anchor = i;
-                        }
-                        if i % 3 == 2 {
-                            ui.end_row();
-                        }
-                    }
+            egui::Grid::new("comp-adv")
+                .num_columns(2)
+                .spacing([12.0, 9.0])
+                .show(ui, |ui| {
+                    ui.label(tr("Anchor:"));
+                    egui::Grid::new("comp-anchor")
+                        .spacing([2.0, 2.0])
+                        .show(ui, |ui| {
+                            for i in 0..9u8 {
+                                let on = d.anchor == i;
+                                let b = egui::Button::new(if on { "●" } else { "" })
+                                    .min_size(vec2(22.0, 22.0))
+                                    .fill(if on { t.accent } else { t.field_bg });
+                                let r = ui.add(b);
+                                auto.add(&format!("dialog.comp.anchor.{i}"), r.rect, "Anchor");
+                                if r.clicked() {
+                                    d.anchor = i;
+                                }
+                                if i % 3 == 2 {
+                                    ui.end_row();
+                                }
+                            }
+                        });
+                    ui.end_row();
+                    ui.label("");
+                    let r = ui.checkbox(
+                        &mut d.preserve_frame_rate,
+                        tr("Preserve frame rate when nested or in render queue"),
+                    );
+                    auto.add(
+                        "dialog.comp.preserveFrameRate",
+                        r.rect,
+                        "Preserve frame rate when nested or in render queue",
+                    );
+                    ui.end_row();
+                    ui.label("");
+                    let r = ui.checkbox(
+                        &mut d.preserve_resolution,
+                        tr("Preserve resolution when nested"),
+                    );
+                    auto.add(
+                        "dialog.comp.preserveResolution",
+                        r.rect,
+                        "Preserve resolution when nested",
+                    );
+                    ui.end_row();
+                    ui.label(egui::RichText::new(tr("Motion Blur")).strong());
+                    ui.end_row();
+                    ui.label(tr("Shutter Angle:"));
+                    let r = ui.add(crate::widgets::drag_value(
+                        egui::DragValue::new(&mut d.shutter_angle)
+                            .range(0.0..=720.0)
+                            .suffix("°"),
+                    ));
+                    auto.add("dialog.comp.shutterAngle", r.rect, "Shutter Angle");
+                    ui.end_row();
+                    ui.label(tr("Shutter Phase:"));
+                    let r = ui.add(crate::widgets::drag_value(
+                        egui::DragValue::new(&mut d.shutter_phase)
+                            .range(-360.0..=360.0)
+                            .suffix("°"),
+                    ));
+                    auto.add("dialog.comp.shutterPhase", r.rect, "Shutter Phase");
+                    ui.end_row();
+                    ui.label(tr("Samples Per Frame:"));
+                    let r = ui.add(crate::widgets::drag_value(
+                        egui::DragValue::new(&mut d.samples).range(2..=64),
+                    ));
+                    auto.add("dialog.comp.samples", r.rect, "Samples Per Frame");
+                    ui.end_row();
+                    ui.label(tr("Adaptive Sample Limit:"));
+                    let r = ui.add(crate::widgets::drag_value(
+                        egui::DragValue::new(&mut d.adaptive_limit).range(16..=256),
+                    ));
+                    auto.add("dialog.comp.adaptiveLimit", r.rect, "Adaptive Sample Limit");
+                    ui.end_row();
                 });
-                ui.end_row();
-                ui.label("");
-                let r = ui.checkbox(&mut d.preserve_frame_rate, tr("Preserve frame rate when nested or in render queue"));
-                auto.add("dialog.comp.preserveFrameRate", r.rect, "Preserve frame rate when nested or in render queue");
-                ui.end_row();
-                ui.label("");
-                let r = ui.checkbox(&mut d.preserve_resolution, tr("Preserve resolution when nested"));
-                auto.add("dialog.comp.preserveResolution", r.rect, "Preserve resolution when nested");
-                ui.end_row();
-                ui.label(egui::RichText::new(tr("Motion Blur")).strong());
-                ui.end_row();
-                ui.label(tr("Shutter Angle:"));
-                let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.shutter_angle).range(0.0..=720.0).suffix("°")));
-                auto.add("dialog.comp.shutterAngle", r.rect, "Shutter Angle");
-                ui.end_row();
-                ui.label(tr("Shutter Phase:"));
-                let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.shutter_phase).range(-360.0..=360.0).suffix("°")));
-                auto.add("dialog.comp.shutterPhase", r.rect, "Shutter Phase");
-                ui.end_row();
-                ui.label(tr("Samples Per Frame:"));
-                let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.samples).range(2..=64)));
-                auto.add("dialog.comp.samples", r.rect, "Samples Per Frame");
-                ui.end_row();
-                ui.label(tr("Adaptive Sample Limit:"));
-                let r = ui.add(crate::widgets::drag_value(egui::DragValue::new(&mut d.adaptive_limit).range(16..=256)));
-                auto.add("dialog.comp.adaptiveLimit", r.rect, "Adaptive Sample Limit");
-                ui.end_row();
-            });
         }
         Tab::Renderer => {
             ui.horizontal(|ui| {
                 ui.label(tr("Renderer:"));
-                let r = egui::ComboBox::from_id_salt("comp-renderer").selected_text(tr(if d.advanced_3d { "Advanced 3D" } else { "Classic 3D" })).show_ui(
-                    ui,
-                    |ui| {
+                let r = egui::ComboBox::from_id_salt("comp-renderer")
+                    .selected_text(tr(if d.advanced_3d {
+                        "Advanced 3D"
+                    } else {
+                        "Classic 3D"
+                    }))
+                    .show_ui(ui, |ui| {
                         ui.selectable_value(&mut d.advanced_3d, false, tr("Classic 3D"));
                         ui.selectable_value(&mut d.advanced_3d, true, tr("Advanced 3D"));
-                    },
-                );
+                    });
                 auto.add("dialog.comp.renderer", r.response.rect, "Renderer");
             });
         }
@@ -460,7 +653,10 @@ pub fn show(
     ui.add_space(14.0);
     ui.horizontal(|ui| {
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            let r = ui.add(egui::Button::new(egui::RichText::new(tr("   OK   ")).color(Color32::WHITE)).fill(t.accent));
+            let r = ui.add(
+                egui::Button::new(egui::RichText::new(tr("   OK   ")).color(Color32::WHITE))
+                    .fill(t.accent),
+            );
             auto.add("dialog.comp.ok", r.rect, "OK");
             if r.clicked() {
                 out = Some(params(d));

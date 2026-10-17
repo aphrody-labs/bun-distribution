@@ -218,8 +218,10 @@ fn shape_of(text: &Span, bytes: &[u8], start: u64, len: u64) -> Shape {
         [a] if a.mnemonic() == Mnemonic::Ret => Shape::Stub,
         // `jmp rel32` nu : trampoline.
         [a] if a.mnemonic() == Mnemonic::Jmp && a.op0_kind() == OpKind::NearBranch64 => {
-            Shape::Thunk { target: a.near_branch64() }
-        },
+            Shape::Thunk {
+                target: a.near_branch64(),
+            }
+        }
         [a, b] => match (a.mnemonic(), b.mnemonic()) {
             // `mov eax, imm32 ; ret`
             (Mnemonic::Mov, Mnemonic::Ret)
@@ -228,25 +230,27 @@ fn shape_of(text: &Span, bytes: &[u8], start: u64, len: u64) -> Shape {
                     && a.op1_kind() == OpKind::Immediate32 =>
             {
                 Shape::ConstRet(a.immediate32())
-            },
+            }
             // `xor eax, eax ; ret`
             (Mnemonic::Xor, Mnemonic::Ret)
                 if a.op0_register() == Register::EAX && a.op1_register() == Register::EAX =>
             {
                 Shape::Stub
-            },
+            }
             // `lea rax, [rip+disp] ; ret`
             (Mnemonic::Lea, Mnemonic::Ret)
                 if a.op0_register() == Register::RAX && a.is_ip_rel_memory_operand() =>
             {
                 Shape::PtrRet(a.ip_rel_memory_address())
-            },
+            }
             // Ajustement de `this` puis saut : thunk d'héritage multiple.
             (Mnemonic::Add | Mnemonic::Lea, Mnemonic::Jmp)
                 if b.op0_kind() == OpKind::NearBranch64 =>
             {
-                Shape::Thunk { target: b.near_branch64() }
-            },
+                Shape::Thunk {
+                    target: b.near_branch64(),
+                }
+            }
             _ => Shape::Other,
         },
         _ => Shape::Other,
@@ -293,7 +297,11 @@ fn decode_body(text: &Span, bytes: &[u8], start: u64, limit: u64) -> Option<Body
             && insn.is_ip_rel_memory_operand()
         {
             let iat = insn.ip_rel_memory_address();
-            return Some(Body { len: end - start, targets, thunk_iat: Some(iat) });
+            return Some(Body {
+                len: end - start,
+                targets,
+                thunk_iat: Some(iat),
+            });
         }
         match insn.flow_control() {
             FlowControl::Call
@@ -315,17 +323,25 @@ fn decode_body(text: &Span, bytes: &[u8], start: u64, limit: u64) -> Option<Body
                 }
                 if insn.flow_control() == FlowControl::UnconditionalBranch {
                     if end > furthest_branch {
-                        return Some(Body { len: end - start, targets, thunk_iat: None });
+                        return Some(Body {
+                            len: end - start,
+                            targets,
+                            thunk_iat: None,
+                        });
                     }
                     last_term = Some(end);
                 }
-            },
+            }
             FlowControl::Return => {
                 if end > furthest_branch {
-                    return Some(Body { len: end - start, targets, thunk_iat: None });
+                    return Some(Body {
+                        len: end - start,
+                        targets,
+                        thunk_iat: None,
+                    });
                 }
                 last_term = Some(end);
-            },
+            }
             FlowControl::Interrupt => {
                 // `int3` de remplissage : le corps s'arrête à l'instruction
                 // précédente, sauf s'il s'agit du tout premier octet.
@@ -337,8 +353,8 @@ fn decode_body(text: &Span, bytes: &[u8], start: u64, limit: u64) -> Option<Body
                     targets,
                     thunk_iat: None,
                 });
-            },
-            _ => {},
+            }
+            _ => {}
         }
         if end - start > MAX_LEAF_LEN {
             return None;
@@ -347,7 +363,11 @@ fn decode_body(text: &Span, bytes: &[u8], start: u64, limit: u64) -> Option<Body
     // Borne atteinte sans conclusion : on retient jusqu'au dernier terminateur
     // franchi, s'il y en a eu un. Sans ce repli, une fonction dont une branche
     // vise au-delà de la borne était entièrement perdue.
-    last_term.map(|e| Body { len: e - start, targets, thunk_iat: None })
+    last_term.map(|e| Body {
+        len: e - start,
+        targets,
+        thunk_iat: None,
+    })
 }
 
 /// Récupère les fonctions feuilles de `.text` hors `.pdata` et les ingère dans
@@ -373,7 +393,10 @@ pub fn recover_leaves(
     let image_base = pe.image_base;
 
     let span_of = |name: &str| -> Option<Span> {
-        let s = pe.sections.iter().find(|s| s.name().is_ok_and(|n| n.starts_with(name)))?;
+        let s = pe
+            .sections
+            .iter()
+            .find(|s| s.name().is_ok_and(|n| n.starts_with(name)))?;
         let len = s.virtual_size.min(s.size_of_raw_data) as usize;
         Some(Span {
             va: image_base + u64::from(s.virtual_address),
@@ -407,19 +430,25 @@ pub fn recover_leaves(
     // reconnaissance de forme : sans elles, une seconde exécution ne « verrait »
     // que ses propres découvertes et rapporterait un résidu faussement énorme.
     let known_sizes: Vec<(u64, u64)> = {
-        let mut q =
-            db.conn().prepare("SELECT vaddr, size FROM function WHERE binary_id=?1 AND size>0")?;
-        q.query_map([bin], |r| Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64)))?
-            .collect::<std::result::Result<Vec<_>, _>>()?
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr, size FROM function WHERE binary_id=?1 AND size>0")?;
+        q.query_map([bin], |r| {
+            Ok((r.get::<_, i64>(0)? as u64, r.get::<_, i64>(1)? as u64))
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?
     };
     let known: Vec<u64> = {
-        let mut q = db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1")?;
         q.query_map([bin], |r| r.get::<_, i64>(0).map(|v| v as u64))?
             .collect::<std::result::Result<Vec<_>, _>>()?
     };
     let sizeless: Vec<u64> = {
-        let mut q =
-            db.conn().prepare("SELECT vaddr FROM function WHERE binary_id=?1 AND size=0")?;
+        let mut q = db
+            .conn()
+            .prepare("SELECT vaddr FROM function WHERE binary_id=?1 AND size=0")?;
         q.query_map([bin], |r| r.get::<_, i64>(0).map(|v| v as u64))?
             .collect::<std::result::Result<Vec<_>, _>>()?
     };
@@ -466,8 +495,11 @@ pub fn recover_leaves(
     // Feuilles déjà en base : celles qui tombent dans un trou `.pdata`. Elles
     // sont re-mesurées à chaque passe pour rester cohérentes avec les débuts
     // découverts depuis.
-    let known_leaves: Vec<u64> =
-        known_sizes.iter().map(|&(a, _)| a).filter(|&a| in_ranges(&gaps, a)).collect();
+    let known_leaves: Vec<u64> = known_sizes
+        .iter()
+        .map(|&(a, _)| a)
+        .filter(|&a| in_ranges(&gaps, a))
+        .collect();
     let mut new_leaves: HashSet<u64> = leaves.clone();
     // Feuilles découvertes par balayage linéaire des résidus, sans qu'aucune
     // référence ne les désigne : confiance moindre, provenance distincte.
@@ -551,15 +583,19 @@ pub fn recover_leaves(
                 Ok(k) => bounds.get(k + 1).copied().unwrap_or(u64::MAX),
                 Err(k) => bounds.get(k).copied().unwrap_or(u64::MAX),
             };
-            let next =
-                cand.get(i + 1).copied().unwrap_or(u64::MAX).min(next_known).min(gap_end_of(a));
+            let next = cand
+                .get(i + 1)
+                .copied()
+                .unwrap_or(u64::MAX)
+                .min(next_known)
+                .min(gap_end_of(a));
             match decode_body(&text, &bytes, a, next) {
                 Some(b) => {
                     sizes.insert(a, b.len);
                     if let Some(iat) = b.thunk_iat {
                         thunks.insert(a, iat);
                     }
-                },
+                }
                 None => stats.rejected += 1,
             }
         }
@@ -620,7 +656,7 @@ pub fn recover_leaves(
                             found += 1;
                             let next = a + body.len.max(1);
                             a = next + count_filler(&text, &bytes, next, fe);
-                        },
+                        }
                         // Rien de décodable ici (données inline, table de saut,
                         // milieu d'instruction) : on se recale sur la frontière
                         // de 16 octets suivante — MSVC aligne les fonctions à
@@ -640,7 +676,7 @@ pub fn recover_leaves(
                                 n += 16;
                             }
                             a = n;
-                        },
+                        }
                     }
                 }
             }
@@ -744,7 +780,7 @@ pub fn recover_leaves(
             Shape::ConstRet(_) => stats.shape_const += 1,
             Shape::PtrRet(_) => stats.shape_ptr += 1,
             Shape::Stub => stats.shape_stub += 1,
-            Shape::Other => {},
+            Shape::Other => {}
         }
         if sh != Shape::Other {
             shapes.insert(a, sh);
@@ -776,8 +812,10 @@ pub fn recover_leaves(
         for (&a, &len) in &all_sizes {
             // Un thunk d'import porte le nom exact de la fonction importée ;
             // sinon la forme reconnue donne un nom structurel.
-            let iat =
-                thunks.get(&a).and_then(|iat| iat_names.get(iat)).map(|n| format!("thunk_{n}"));
+            let iat = thunks
+                .get(&a)
+                .and_then(|iat| iat_names.get(iat))
+                .map(|n| format!("thunk_{n}"));
             if iat.is_some() {
                 stats.thunks_named += 1;
             }
@@ -788,7 +826,11 @@ pub fn recover_leaves(
                 Some(Shape::Stub) => Some(format!("stub_{a:x}")),
                 Some(Shape::Other) | None => None,
             });
-            let src = if thunks.contains_key(&a) { "iat-thunk" } else { "leaf-shape" };
+            let src = if thunks.contains_key(&a) {
+                "iat-thunk"
+            } else {
+                "leaf-shape"
+            };
             let (nm, src) = match &name {
                 Some(n) => (Some(n.as_str()), Some(src)),
                 None => (None, None),
@@ -812,14 +854,18 @@ pub fn recover_leaves(
                         // `leaf-ref` : désignée par un appel direct ou un
                         // pointeur de données — c'est une fonction au sens
                         // fort, pas seulement une suite d'octets décodable.
-                        let prov = if scanned.contains(&a) { "leaf-scan" } else { "leaf-ref" };
+                        let prov = if scanned.contains(&a) {
+                            "leaf-scan"
+                        } else {
+                            "leaf-ref"
+                        };
                         tx.prepare_cached(
                             "INSERT INTO function(binary_id, vaddr, size, name, name_source, subsystem, subsys_src, role, confidence)
                              VALUES(?1,?2,?3,?4,?5,'standalone',?6,'leaf',0.0)",
                         )?
                         .execute(rusqlite::params![bin, a as i64, len as i64, nm, src, prov])?;
                         continue;
-                    },
+                    }
                 }
             };
             upd.execute(rusqlite::params![id, len as i64, nm, src])?;
@@ -856,7 +902,9 @@ pub fn recover_leaves(
                 continue;
             };
             let tgt: Option<(String, f64)> = get
-                .query_row(rusqlite::params![bin, target as i64], |r| Ok((r.get(0)?, r.get(1)?)))
+                .query_row(rusqlite::params![bin, target as i64], |r| {
+                    Ok((r.get(0)?, r.get(1)?))
+                })
                 .ok();
             let Some((sub, conf)) = tgt else { continue };
             if sub == "standalone" {
@@ -914,7 +962,9 @@ fn preceded_by_filler(text: &Span, bytes: &[u8], va: u64) -> bool {
         return false;
     }
     let off = text.off + (va - 1 - text.va) as usize;
-    bytes.get(off).is_some_and(|&b| matches!(b, 0xCC | 0x90 | 0x00))
+    bytes
+        .get(off)
+        .is_some_and(|&b| matches!(b, 0xCC | 0x90 | 0x00))
 }
 
 /// Longueur du **run** de remplissage (`0xCC`, `0x00`, `0x90`) en tête de
@@ -933,7 +983,9 @@ fn count_filler(text: &Span, bytes: &[u8], a: u64, b: u64) -> u64 {
     let Some(buf) = bytes.get(off..off + (b - a) as usize) else {
         return 0;
     };
-    buf.iter().take_while(|&&c| c == 0xCC || c == 0x00 || c == 0x90).count() as u64
+    buf.iter()
+        .take_while(|&&c| c == 0xCC || c == 0x00 || c == 0x90)
+        .count() as u64
 }
 
 /// Table `adresse virtuelle de l'entrée IAT → nom d'import` (`DLL_Fonction`,
@@ -957,7 +1009,12 @@ mod tests {
 
     /// Construit un `Span` de test couvrant `bytes` à partir de `va`.
     fn span(va: u64, len: usize) -> Span {
-        Span { va, end: va + len as u64, off: 0, len }
+        Span {
+            va,
+            end: va + len as u64,
+            off: 0,
+            len,
+        }
     }
 
     #[test]
@@ -989,7 +1046,11 @@ mod tests {
         let bytes = [0xCC, 0xCC, 0x90, 0x00, 0x48, 0xCC, 0xCC];
         let sp = span(0x1000, bytes.len());
         assert_eq!(count_filler(&sp, &bytes, 0x1000, 0x1007), 4);
-        assert_eq!(count_filler(&sp, &bytes, 0x1004, 0x1007), 0, "commence sur du code");
+        assert_eq!(
+            count_filler(&sp, &bytes, 0x1004, 0x1007),
+            0,
+            "commence sur du code"
+        );
         assert_eq!(count_filler(&sp, &bytes, 0x1005, 0x1007), 2);
     }
 
@@ -999,7 +1060,10 @@ mod tests {
         // c3               ret
         let bytes = [0xB8, 0xB1, 0x2B, 0x7D, 0x53, 0xC3];
         let sp = span(0x1000, bytes.len());
-        assert_eq!(shape_of(&sp, &bytes, 0x1000, 6), Shape::ConstRet(0x537D_2BB1));
+        assert_eq!(
+            shape_of(&sp, &bytes, 0x1000, 6),
+            Shape::ConstRet(0x537D_2BB1)
+        );
     }
 
     #[test]
@@ -1020,7 +1084,10 @@ mod tests {
         let bytes = [0x48, 0x83, 0xC1, 0x08, 0xE9, 0x00, 0x01, 0x00, 0x00];
         let sp = span(0x1000, bytes.len());
         // fin du `jmp` = 0x1009, + 0x100 → 0x1109
-        assert_eq!(shape_of(&sp, &bytes, 0x1000, 9), Shape::Thunk { target: 0x1109 });
+        assert_eq!(
+            shape_of(&sp, &bytes, 0x1000, 9),
+            Shape::Thunk { target: 0x1109 }
+        );
     }
 
     #[test]

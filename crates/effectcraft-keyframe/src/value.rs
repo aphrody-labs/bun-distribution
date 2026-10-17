@@ -88,7 +88,12 @@ impl ShapePath {
     }
     /// Rectangle centred at `c` (clockwise from top-left, as AE builds mask rectangles).
     pub fn rect(c: [f64; 2], w: f64, h: f64) -> ShapePath {
-        let (x0, y0, x1, y1) = (c[0] - w / 2.0, c[1] - h / 2.0, c[0] + w / 2.0, c[1] + h / 2.0);
+        let (x0, y0, x1, y1) = (
+            c[0] - w / 2.0,
+            c[1] - h / 2.0,
+            c[0] + w / 2.0,
+            c[1] + h / 2.0,
+        );
         ShapePath::polygon(&[[x0, y0], [x1, y0], [x1, y1], [x0, y1]], true)
     }
     /// Ellipse with four Bezier arcs (kappa 0.5523).
@@ -96,7 +101,12 @@ impl ShapePath {
         const K: f64 = 0.552_284_749_8;
         let (rx, ry) = (w / 2.0, h / 2.0);
         ShapePath {
-            vertices: vec![[c[0], c[1] - ry], [c[0] + rx, c[1]], [c[0], c[1] + ry], [c[0] - rx, c[1]]],
+            vertices: vec![
+                [c[0], c[1] - ry],
+                [c[0] + rx, c[1]],
+                [c[0], c[1] + ry],
+                [c[0] - rx, c[1]],
+            ],
             in_tangents: vec![[-rx * K, 0.0], [0.0, -ry * K], [rx * K, 0.0], [0.0, ry * K]],
             out_tangents: vec![[rx * K, 0.0], [0.0, ry * K], [-rx * K, 0.0], [0.0, -ry * K]],
             closed: true,
@@ -107,7 +117,12 @@ impl ShapePath {
         if self.len() != o.len() {
             return if t < 1.0 { self.clone() } else { o.clone() };
         }
-        let l = |a: &[[f64; 2]], b: &[[f64; 2]]| a.iter().zip(b).map(|(p, q)| [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]).collect();
+        let l = |a: &[[f64; 2]], b: &[[f64; 2]]| {
+            a.iter()
+                .zip(b)
+                .map(|(p, q)| [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t])
+                .collect()
+        };
         ShapePath {
             vertices: l(&self.vertices, &o.vertices),
             in_tangents: l(&self.in_tangents, &o.in_tangents),
@@ -151,7 +166,10 @@ pub struct Gradient {
 
 impl Default for Gradient {
     fn default() -> Self {
-        Gradient { colors: vec![(0.0, [1.0, 1.0, 1.0, 1.0]), (1.0, [0.0, 0.0, 0.0, 1.0])], opacities: vec![(0.0, 1.0), (1.0, 1.0)] }
+        Gradient {
+            colors: vec![(0.0, [1.0, 1.0, 1.0, 1.0]), (1.0, [0.0, 0.0, 0.0, 1.0])],
+            opacities: vec![(0.0, 1.0), (1.0, 1.0)],
+        }
     }
 }
 
@@ -185,7 +203,10 @@ impl Gradient {
 
     /// The opacity stops alone at `t` (0..1). A new opacity stop takes this value.
     pub fn opacity_at(&self, t: f64) -> f32 {
-        sample_stops(&self.opacities, t.clamp(0.0, 1.0), |a, b, f| a + (b - a) * f as f32).unwrap_or(1.0)
+        sample_stops(&self.opacities, t.clamp(0.0, 1.0), |a, b, f| {
+            a + (b - a) * f as f32
+        })
+        .unwrap_or(1.0)
     }
 }
 
@@ -213,7 +234,11 @@ fn gradient_json(j: &serde_json::Value) -> Option<Gradient> {
             let c = effectcraft_color::Rgba::from_hex(s)?;
             return Some([c.r, c.g, c.b, c.a]);
         }
-        let a: Vec<f32> = c.as_array()?.iter().map(|x| x.as_f64().map(|v| v as f32)).collect::<Option<_>>()?;
+        let a: Vec<f32> = c
+            .as_array()?
+            .iter()
+            .map(|x| x.as_f64().map(|v| v as f32))
+            .collect::<Option<_>>()?;
         match a.len() {
             3 => Some([a[0], a[1], a[2], 1.0]),
             4 => Some([a[0], a[1], a[2], a[3]]),
@@ -228,7 +253,9 @@ fn gradient_json(j: &serde_json::Value) -> Option<Gradient> {
         a.iter()
             .enumerate()
             .map(|(i, s)| match s.as_array() {
-                Some(p) if p.len() == 2 && p[0].is_number() => Some((p[0].as_f64()?, color(&p[1])?)),
+                Some(p) if p.len() == 2 && p[0].is_number() => {
+                    Some((p[0].as_f64()?, color(&p[1])?))
+                }
                 _ => Some((i as f64 / (n - 1) as f64, color(s)?)),
             })
             .collect()
@@ -255,7 +282,13 @@ fn gradient_json(j: &serde_json::Value) -> Option<Gradient> {
     let mut colors = colors;
     colors.sort_by(|a, b| a.0.total_cmp(&b.0));
     let opacities = opacities.unwrap_or_else(|| colors.iter().map(|(p, c)| (*p, c[3])).collect());
-    Some(Gradient { colors: colors.into_iter().map(|(p, c)| (p, [c[0], c[1], c[2], 1.0])).collect(), opacities })
+    Some(Gradient {
+        colors: colors
+            .into_iter()
+            .map(|(p, c)| (p, [c[0], c[1], c[2], 1.0]))
+            .collect(),
+        opacities,
+    })
 }
 
 /// The value of a property.
@@ -315,12 +348,22 @@ impl Value {
     }
     /// Can be interpolated (otherwise keyframes behave as hold).
     pub fn interpolates(&self) -> bool {
-        matches!(self, Value::Scalar(_) | Value::Vec2(_) | Value::Vec3(_) | Value::Color(_) | Value::Path(_) | Value::Gradient(_))
+        matches!(
+            self,
+            Value::Scalar(_)
+                | Value::Vec2(_)
+                | Value::Vec3(_)
+                | Value::Color(_)
+                | Value::Path(_)
+                | Value::Gradient(_)
+        )
     }
     pub fn lerp(&self, o: &Value, t: f64) -> Value {
         match (self, o) {
             (Value::Path(a), Value::Path(b)) => Value::Path(a.lerp(b, t)),
-            (Value::Gradient(a), Value::Gradient(b)) if a.colors.len() == b.colors.len() && a.opacities.len() == b.opacities.len() => {
+            (Value::Gradient(a), Value::Gradient(b))
+                if a.colors.len() == b.colors.len() && a.opacities.len() == b.opacities.len() =>
+            {
                 let colors = a
                     .colors
                     .iter()
@@ -333,13 +376,23 @@ impl Value {
                         (x.0 + (y.0 - x.0) * t, c)
                     })
                     .collect();
-                let opacities = a.opacities.iter().zip(&b.opacities).map(|(x, y)| (x.0 + (y.0 - x.0) * t, x.1 + (y.1 - x.1) * t as f32)).collect();
+                let opacities = a
+                    .opacities
+                    .iter()
+                    .zip(&b.opacities)
+                    .map(|(x, y)| (x.0 + (y.0 - x.0) * t, x.1 + (y.1 - x.1) * t as f32))
+                    .collect();
                 Value::Gradient(Gradient { colors, opacities })
             }
             _ if self.interpolates() && self.dims() > 0 && self.dims() == o.dims() => {
                 let a = self.components();
                 let b = o.components();
-                self.with_components(&a.iter().zip(&b).map(|(x, y)| x + (y - x) * t).collect::<Vec<_>>())
+                self.with_components(
+                    &a.iter()
+                        .zip(&b)
+                        .map(|(x, y)| x + (y - x) * t)
+                        .collect::<Vec<_>>(),
+                )
             }
             _ => {
                 if t < 1.0 {
@@ -355,11 +408,18 @@ impl Value {
     }
     pub fn as_vec2(&self) -> [f64; 2] {
         let c = self.components();
-        [c.first().copied().unwrap_or(0.0), c.get(1).copied().unwrap_or(0.0)]
+        [
+            c.first().copied().unwrap_or(0.0),
+            c.get(1).copied().unwrap_or(0.0),
+        ]
     }
     pub fn as_vec3(&self) -> [f64; 3] {
         let c = self.components();
-        [c.first().copied().unwrap_or(0.0), c.get(1).copied().unwrap_or(0.0), c.get(2).copied().unwrap_or(0.0)]
+        [
+            c.first().copied().unwrap_or(0.0),
+            c.get(1).copied().unwrap_or(0.0),
+            c.get(2).copied().unwrap_or(0.0),
+        ]
     }
     pub fn as_color(&self) -> [f32; 4] {
         let c = self.components();
@@ -379,10 +439,18 @@ impl Value {
         }
     }
     pub fn as_path(&self) -> Option<&ShapePath> {
-        if let Value::Path(p) = self { Some(p) } else { None }
+        if let Value::Path(p) = self {
+            Some(p)
+        } else {
+            None
+        }
     }
     pub fn as_text(&self) -> Option<&TextDoc> {
-        if let Value::Text(t) = self { Some(t) } else { None }
+        if let Value::Text(t) = self {
+            Some(t)
+        } else {
+            None
+        }
     }
     pub fn as_layer(&self) -> Option<u64> {
         if let Value::Layer(l) = self { *l } else { None }
@@ -424,7 +492,9 @@ impl Value {
             Value::Color(_) => {
                 if let Some(s) = j.as_str() {
                     let c = effectcraft_color::Rgba::from_hex(s)?;
-                    return Some(Value::Color([c.r as f64, c.g as f64, c.b as f64, c.a as f64]));
+                    return Some(Value::Color([
+                        c.r as f64, c.g as f64, c.b as f64, c.a as f64,
+                    ]));
                 }
                 let mut c = nums(j)?;
                 if c.len() == 3 {
@@ -432,7 +502,10 @@ impl Value {
                 }
                 Some(self.with_components(&c))
             }
-            Value::Bool(_) => j.as_bool().or_else(|| j.as_f64().map(|v| v != 0.0)).map(Value::Bool),
+            Value::Bool(_) => j
+                .as_bool()
+                .or_else(|| j.as_f64().map(|v| v != 0.0))
+                .map(Value::Bool),
             Value::Str(_) => j.as_str().map(|s| Value::Str(s.to_string())),
             Value::Text(t) => {
                 if let Some(s) = j.as_str() {
@@ -440,17 +513,23 @@ impl Value {
                     t.set_text(s);
                     Some(Value::Text(Box::new(t)))
                 } else {
-                    serde_json::from_value::<TextDoc>(j.clone()).ok().map(|mut t| {
-                        t.normalize();
-                        Value::Text(Box::new(t))
-                    })
+                    serde_json::from_value::<TextDoc>(j.clone())
+                        .ok()
+                        .map(|mut t| {
+                            t.normalize();
+                            Value::Text(Box::new(t))
+                        })
                 }
             }
             Value::Layer(_) => Some(Value::Layer(j.as_u64())),
-            Value::Path(_) => serde_json::from_value::<ShapePath>(j.clone()).ok().map(Value::Path).or_else(|| serde_json::from_value::<Value>(j.clone()).ok()),
-            Value::Gradient(_) => {
-                serde_json::from_value::<Value>(j.clone()).ok().filter(|v| matches!(v, Value::Gradient(_))).or_else(|| gradient_json(j).map(Value::Gradient))
-            }
+            Value::Path(_) => serde_json::from_value::<ShapePath>(j.clone())
+                .ok()
+                .map(Value::Path)
+                .or_else(|| serde_json::from_value::<Value>(j.clone()).ok()),
+            Value::Gradient(_) => serde_json::from_value::<Value>(j.clone())
+                .ok()
+                .filter(|v| matches!(v, Value::Gradient(_)))
+                .or_else(|| gradient_json(j).map(Value::Gradient)),
         }
     }
     /// JSON for display/automation (numbers/arrays for numeric kinds).

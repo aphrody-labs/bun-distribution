@@ -16,7 +16,11 @@ struct BitWriter {
 
 impl BitWriter {
     fn new() -> Self {
-        Self { out: Vec::new(), acc: 0, nbits: 0 }
+        Self {
+            out: Vec::new(),
+            acc: 0,
+            nbits: 0,
+        }
     }
 
     /// Write the low `n` (≤ 32) bits of `v`, MSB first.
@@ -66,7 +70,11 @@ fn crc8(data: &[u8]) -> u8 {
     for &b in data {
         crc ^= b;
         for _ in 0..8 {
-            crc = if crc & 0x80 != 0 { (crc << 1) ^ 0x07 } else { crc << 1 };
+            crc = if crc & 0x80 != 0 {
+                (crc << 1) ^ 0x07
+            } else {
+                crc << 1
+            };
         }
     }
     crc
@@ -77,7 +85,11 @@ fn crc16(data: &[u8]) -> u16 {
     for &b in data {
         crc ^= u16::from(b) << 8;
         for _ in 0..8 {
-            crc = if crc & 0x8000 != 0 { (crc << 1) ^ 0x8005 } else { crc << 1 };
+            crc = if crc & 0x8000 != 0 {
+                (crc << 1) ^ 0x8005
+            } else {
+                crc << 1
+            };
         }
     }
     crc
@@ -90,7 +102,15 @@ fn write_utf8_number(w: &mut BitWriter, v: u64) {
         return;
     }
     // Payload bits available for an n-byte coding: 5n + 1 (n = 2..=6), 36 for n = 7.
-    let n: u32 = (2..=7).find(|&n| if n == 7 { true } else { v < (1u64 << (5 * n + 1)) }).unwrap_or(7);
+    let n: u32 = (2..=7)
+        .find(|&n| {
+            if n == 7 {
+                true
+            } else {
+                v < (1u64 << (5 * n + 1))
+            }
+        })
+        .unwrap_or(7);
     let cont_bits = 6 * (n - 1);
     let lead_payload = if n == 7 { 0 } else { 7 - n };
     let prefix: u64 = (0xFFu64 << (8 - n)) & 0xFF;
@@ -163,7 +183,11 @@ fn best_rice(part: &[u64]) -> (u32, u64) {
     }
     let sum: u64 = part.iter().sum();
     let mean = sum / part.len() as u64;
-    let guess = if mean == 0 { 0 } else { 63 - mean.leading_zeros() };
+    let guess = if mean == 0 {
+        0
+    } else {
+        63 - mean.leading_zeros()
+    };
     let mut best = (0u32, u64::MAX);
     for k in guess.saturating_sub(1)..=(guess + 1).min(30) {
         let cost = part.len() as u64 * u64::from(k + 1) + part.iter().map(|&u| u >> k).sum::<u64>();
@@ -204,13 +228,29 @@ fn plan_residual(u: &[u64], block_len: usize, pred_order: usize) -> RicePlan {
         let wide = params.iter().any(|&k| k > 14);
         bits += 6 + parts as u64 * if wide { 5 } else { 4 };
         if best.as_ref().is_none_or(|b| bits < b.bits) {
-            best = Some(RicePlan { order: p, params, bits, wide });
+            best = Some(RicePlan {
+                order: p,
+                params,
+                bits,
+                wide,
+            });
         }
     }
-    best.unwrap_or(RicePlan { order: 0, params: vec![0], bits: u64::MAX, wide: false })
+    best.unwrap_or(RicePlan {
+        order: 0,
+        params: vec![0],
+        bits: u64::MAX,
+        wide: false,
+    })
 }
 
-fn write_residual(w: &mut BitWriter, u: &[u64], block_len: usize, pred_order: usize, plan: &RicePlan) {
+fn write_residual(
+    w: &mut BitWriter,
+    u: &[u64],
+    block_len: usize,
+    pred_order: usize,
+    plan: &RicePlan,
+) {
     w.write(u64::from(plan.wide), 2);
     w.write(u64::from(plan.order), 4);
     let parts = 1usize << plan.order;
@@ -240,11 +280,17 @@ fn write_subframe(w: &mut BitWriter, x: &[i64], bps: u32) {
     let verbatim_bits = n as u64 * u64::from(bps);
     let mut best: Option<(usize, Vec<u64>, RicePlan)> = None;
     for order in 0..=4usize.min(n.saturating_sub(1)) {
-        let Some(res) = fixed_residual(x, order) else { continue };
+        let Some(res) = fixed_residual(x, order) else {
+            continue;
+        };
         let u: Vec<u64> = res.into_iter().map(zigzag).collect();
         let plan = plan_residual(&u, n, order);
         let bits = plan.bits.saturating_add(order as u64 * u64::from(bps));
-        if bits < verbatim_bits && best.as_ref().is_none_or(|b| bits < b.2.bits.saturating_add(b.0 as u64 * u64::from(bps))) {
+        if bits < verbatim_bits
+            && best
+                .as_ref()
+                .is_none_or(|b| bits < b.2.bits.saturating_add(b.0 as u64 * u64::from(bps)))
+        {
             best = Some((order, u, plan));
         }
     }
@@ -273,16 +319,25 @@ pub(crate) fn encode(buf: &AudioBuffer, depth: BitDepth, dither: bool) -> Result
     validate_buffer(buf)?;
     let channels = buf.channels.len();
     if channels > 8 {
-        return Err(AudioError::Unsupported(format!("FLAC supports at most 8 channels, got {channels}")));
+        return Err(AudioError::Unsupported(format!(
+            "FLAC supports at most 8 channels, got {channels}"
+        )));
     }
     if buf.sample_rate > 655_350 {
-        return Err(AudioError::Unsupported(format!("FLAC sample rate {} exceeds 655350 Hz", buf.sample_rate)));
+        return Err(AudioError::Unsupported(format!(
+            "FLAC sample rate {} exceeds 655350 Hz",
+            buf.sample_rate
+        )));
     }
     let bps: u32 = match depth {
         BitDepth::Int16 => 16,
         BitDepth::Int24 => 24,
         BitDepth::Int32 => 32,
-        BitDepth::Float32 => return Err(AudioError::Unsupported("FLAC cannot store 32-bit float samples".into())),
+        BitDepth::Float32 => {
+            return Err(AudioError::Unsupported(
+                "FLAC cannot store 32-bit float samples".into(),
+            ));
+        }
     };
     let frames = buf.frames();
     let total = frames as u64;
@@ -291,8 +346,13 @@ pub(crate) fn encode(buf: &AudioBuffer, depth: BitDepth, dither: bool) -> Result
     }
 
     let mut out = Vec::new();
-    out.try_reserve(frames.saturating_mul(channels).saturating_mul(bps as usize / 8) / 2)
-        .map_err(|_| AudioError::TooLarge("cannot allocate FLAC output".into()))?;
+    out.try_reserve(
+        frames
+            .saturating_mul(channels)
+            .saturating_mul(bps as usize / 8)
+            / 2,
+    )
+    .map_err(|_| AudioError::TooLarge("cannot allocate FLAC output".into()))?;
     out.extend_from_slice(b"fLaC");
     let mut si = BitWriter::new();
     si.write(1, 1); // last metadata block
@@ -341,7 +401,12 @@ pub(crate) fn encode(buf: &AudioBuffer, depth: BitDepth, dither: bool) -> Result
         w.write(u64::from(crc8(&header)), 8);
         for (ch, q) in buf.channels.iter().zip(quantizers.iter_mut()) {
             block.clear();
-            block.extend(ch.get(start..start + len).unwrap_or_default().iter().map(|&s| i64::from(q.quantize(s))));
+            block.extend(
+                ch.get(start..start + len)
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|&s| i64::from(q.quantize(s))),
+            );
             write_subframe(&mut w, &block, bps);
         }
         let mut frame = w.into_bytes();

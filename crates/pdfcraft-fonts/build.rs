@@ -17,7 +17,10 @@ fn main() {
             Err(e) if std::env::var_os("CRAFT_FONTS_REQUIRED").is_some() => {
                 println!("cargo::error=CRAFT_FONTS_DIR={}: {e}", dir.display());
             }
-            Err(e) => println!("cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}", dir.display()),
+            Err(e) => println!(
+                "cargo::warning=building without craft-fonts: CRAFT_FONTS_DIR={}: {e}",
+                dir.display()
+            ),
         }
     }
     src.push_str("];\n");
@@ -29,23 +32,37 @@ fn main() {
 
 /// Family-name prefixes of the faces AGENTS.md §1.1 forbids: Adobe's Source families and Noto
 /// CJK, which is Source Han under another name. The test in `src/craft.rs` has the same list.
-const BARRED_FAMILIES: [&str; 5] = ["Source Han", "Source Serif", "Source Sans", "Noto Sans CJK", "Noto Serif CJK"];
+const BARRED_FAMILIES: [&str; 5] = [
+    "Source Han",
+    "Source Serif",
+    "Source Sans",
+    "Noto Sans CJK",
+    "Noto Serif CJK",
+];
 
 /// One `CraftFont { .. }` initialiser per manifest line.
 fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
     let manifest = dir.join("fonts/manifest.txt");
     println!("cargo::rerun-if-changed={}", manifest.display());
-    let text = std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
+    let text =
+        std::fs::read_to_string(&manifest).map_err(|e| format!("{}: {e}", manifest.display()))?;
     let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
     let mut out = String::new();
-    for line in text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+    for line in text
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
         let f: Vec<&str> = line.split(" | ").map(str::trim).collect();
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
         };
         // AGENTS.md §1.1 bars Adobe's type designs whatever their licence, so a checkout that
         // carries one (craft-fonts has Noto Sans CJK, which is Source Han) never embeds it.
-        if BARRED_FAMILIES.iter().any(|barred| family.starts_with(barred)) {
+        if BARRED_FAMILIES
+            .iter()
+            .any(|barred| family.starts_with(barred))
+        {
             println!("cargo::warning=craft-fonts: not embedding {family} {style} (AGENTS.md §1.1)");
             continue;
         }
@@ -55,14 +72,23 @@ fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
         let telugu = scripts.split(',').any(|s| s.trim() == "Telu");
         // And the Hebrew ones (small), for Hebrew text and Edit text on the web.
         let hebrew = scripts.split(',').any(|s| s.trim() == "Hebr");
-        let web_face =
-            (*family == "BIZ UDPGothic" && *style == "Regular") || arabic || telugu || hebrew || scripts.split(',').any(|s| s.trim() == "Thai");
+        let web_face = (*family == "BIZ UDPGothic" && *style == "Regular")
+            || arabic
+            || telugu
+            || hebrew
+            || scripts.split(',').any(|s| s.trim() == "Thai");
         if wasm && !web_face {
             continue;
         }
-        let path = dir.join(file).canonicalize().map_err(|e| format!("{file}: {e}"))?;
+        let path = dir
+            .join(file)
+            .canonicalize()
+            .map_err(|e| format!("{file}: {e}"))?;
         println!("cargo::rerun-if-changed={}", path.display());
-        let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
+        let scripts: Vec<String> = scripts
+            .split(',')
+            .map(|s| format!("{:?}", s.trim()))
+            .collect();
         let _ = writeln!(
             out,
             "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",

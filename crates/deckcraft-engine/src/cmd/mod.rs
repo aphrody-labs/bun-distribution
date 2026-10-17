@@ -72,40 +72,70 @@ pub fn always(_: &Session) -> std::result::Result<(), String> {
     Ok(())
 }
 pub fn has_doc(s: &Session) -> std::result::Result<(), String> {
-    s.active().map(|_| ()).ok_or_else(|| "no presentation open".into())
+    s.active()
+        .map(|_| ())
+        .ok_or_else(|| "no presentation open".into())
 }
 pub fn has_slide(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.doc.slides.is_empty() || d.selection.target != crate::Target::Slides) { Ok(()) } else { Err("no slides".into()) }
+    if s.active()
+        .is_some_and(|d| !d.doc.slides.is_empty() || d.selection.target != crate::Target::Slides)
+    {
+        Ok(())
+    } else {
+        Err("no slides".into())
+    }
 }
 pub const NOTHING_SELECTED: &str = "nothing selected";
 pub const SELECT_TWO: &str = "select two or more objects";
 pub fn has_selection(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| !d.selection.shapes.is_empty()) { Ok(()) } else { Err(NOTHING_SELECTED.into()) }
+    if s.active().is_some_and(|d| !d.selection.shapes.is_empty()) {
+        Ok(())
+    } else {
+        Err(NOTHING_SELECTED.into())
+    }
 }
 pub fn has_two(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.shapes.len() >= 2) { Ok(()) } else { Err(SELECT_TWO.into()) }
+    if s.active().is_some_and(|d| d.selection.shapes.len() >= 2) {
+        Ok(())
+    } else {
+        Err(SELECT_TWO.into())
+    }
 }
 pub fn has_text(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.text.is_some()) { Ok(()) } else { Err("no text insertion point".into()) }
+    if s.active().is_some_and(|d| d.selection.text.is_some()) {
+        Ok(())
+    } else {
+        Err("no text insertion point".into())
+    }
 }
 /// Text editing or shapes with text selected (formatting commands apply to either).
 pub fn has_text_or_shapes(s: &Session) -> std::result::Result<(), String> {
     has_doc(s)?;
-    if s.active().is_some_and(|d| d.selection.text.is_some() || !d.selection.shapes.is_empty()) {
+    if s.active()
+        .is_some_and(|d| d.selection.text.is_some() || !d.selection.shapes.is_empty())
+    {
         Ok(())
     } else {
         Err("select text or a shape".into())
     }
 }
 pub fn can_undo(s: &Session) -> std::result::Result<(), String> {
-    if s.active().is_some_and(|d| !d.history.undo.is_empty()) { Ok(()) } else { Err("nothing to undo".into()) }
+    if s.active().is_some_and(|d| !d.history.undo.is_empty()) {
+        Ok(())
+    } else {
+        Err("nothing to undo".into())
+    }
 }
 pub fn can_redo(s: &Session) -> std::result::Result<(), String> {
-    if s.active().is_some_and(|d| !d.history.redo.is_empty()) { Ok(()) } else { Err("nothing to redo".into()) }
+    if s.active().is_some_and(|d| !d.history.redo.is_empty()) {
+        Ok(())
+    } else {
+        Err("nothing to redo".into())
+    }
 }
 
 macro_rules! cmd {
@@ -153,7 +183,10 @@ pub fn find_command(id: &str) -> Option<&'static CommandSpec> {
 // ---------- param helpers ----------
 
 pub(crate) fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
-    EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
+    EngineError::BadParams {
+        cmd: cmd.into(),
+        msg: msg.into(),
+    }
 }
 pub(crate) fn f64_param(p: &Value, key: &str) -> Option<f64> {
     p.get(key).and_then(Value::as_f64).filter(|v| v.is_finite())
@@ -171,13 +204,24 @@ pub(crate) fn str_param<'a>(p: &'a Value, key: &str) -> Option<&'a str> {
     p.get(key).and_then(Value::as_str)
 }
 pub(crate) fn usize_param(p: &Value, key: &str) -> Option<usize> {
-    p.get(key).and_then(Value::as_u64).and_then(|v| usize::try_from(v).ok())
+    p.get(key)
+        .and_then(Value::as_u64)
+        .and_then(|v| usize::try_from(v).ok())
 }
 pub(crate) fn id_param(p: &Value, key: &str) -> Option<ShapeId> {
-    p.get(key).and_then(Value::as_u64).and_then(|v| u32::try_from(v).ok()).map(ShapeId)
+    p.get(key)
+        .and_then(Value::as_u64)
+        .and_then(|v| u32::try_from(v).ok())
+        .map(ShapeId)
 }
 pub(crate) fn ids_param(p: &Value, key: &str) -> Option<Vec<ShapeId>> {
-    p.get(key).and_then(Value::as_array).map(|a| a.iter().filter_map(Value::as_u64).filter_map(|v| u32::try_from(v).ok()).map(ShapeId).collect())
+    p.get(key).and_then(Value::as_array).map(|a| {
+        a.iter()
+            .filter_map(Value::as_u64)
+            .filter_map(|v| u32::try_from(v).ok())
+            .map(ShapeId)
+            .collect()
+    })
 }
 /// `[x, y, w, h]` in points.
 pub(crate) fn rect_param(p: &Value, key: &str) -> Option<Xfrm> {
@@ -230,10 +274,15 @@ pub(crate) fn color_value(v: &Value) -> Option<deckcraft_model::ColorRef> {
             let mut c = if let Some(s) = o.get("scheme").and_then(Value::as_str) {
                 ColorRef::scheme(deckcraft_color::SchemeSlot::from_xml(s)?)
             } else {
-                ColorRef::rgb(deckcraft_color::Rgba::from_hex(o.get("rgb").and_then(Value::as_str)?)?)
+                ColorRef::rgb(deckcraft_color::Rgba::from_hex(
+                    o.get("rgb").and_then(Value::as_str)?,
+                )?)
             };
             for (k, val) in o {
-                if let Some(t) = deckcraft_color::ColorTransform::from_xml(k, val.as_i64().and_then(|x| i32::try_from(x).ok())) {
+                if let Some(t) = deckcraft_color::ColorTransform::from_xml(
+                    k,
+                    val.as_i64().and_then(|x| i32::try_from(x).ok()),
+                ) {
                     c.mods.push(t);
                 }
             }
@@ -245,12 +294,19 @@ pub(crate) fn color_value(v: &Value) -> Option<deckcraft_model::ColorRef> {
 
 /// Look a shape up by id in the edited tree.
 pub(crate) fn shape_of(s: &Session, id: ShapeId) -> Result<deckcraft_model::Shape> {
-    s.doc()?.shape(id).cloned().ok_or_else(|| EngineError::Other(format!("no shape {id}")))
+    s.doc()?
+        .shape(id)
+        .cloned()
+        .ok_or_else(|| EngineError::Other(format!("no shape {id}")))
 }
 
 /// Effective box of a shape (placeholders inherit theirs). A table's box is at least as tall as its
 /// rows are drawn (rows grow to fit their text), so handles and hit tests match what is shown.
-pub fn xfrm_of(doc: &deckcraft_model::Presentation, sel: &crate::Selection, shape: &deckcraft_model::Shape) -> Xfrm {
+pub fn xfrm_of(
+    doc: &deckcraft_model::Presentation,
+    sel: &crate::Selection,
+    shape: &deckcraft_model::Shape,
+) -> Xfrm {
     let mut x = shape.xfrm.unwrap_or_else(|| ctx_xfrm(doc, sel, shape));
     if let deckcraft_model::ShapeKind::Table(t) = &shape.kind {
         let drawn: f64 = table_drawn_heights(doc, sel, t).iter().sum();
@@ -262,36 +318,67 @@ pub fn xfrm_of(doc: &deckcraft_model::Presentation, sel: &crate::Selection, shap
 }
 
 /// Row heights of table `t` as drawn: a stored height is a minimum, rows grow to fit their text.
-pub fn table_drawn_heights(doc: &deckcraft_model::Presentation, sel: &crate::Selection, t: &deckcraft_model::Table) -> Vec<f64> {
+pub fn table_drawn_heights(
+    doc: &deckcraft_model::Presentation,
+    sel: &crate::Selection,
+    t: &deckcraft_model::Table,
+) -> Vec<f64> {
     match text::ctx_for(doc, sel) {
         Some(ctx) => deckcraft_render::table_row_heights(&ctx, t, &deckcraft_text::NoFields),
         None => t.rows.iter().map(|r| r.height).collect(),
     }
 }
 
-fn ctx_xfrm(doc: &deckcraft_model::Presentation, sel: &crate::Selection, shape: &deckcraft_model::Shape) -> Xfrm {
+fn ctx_xfrm(
+    doc: &deckcraft_model::Presentation,
+    sel: &crate::Selection,
+    shape: &deckcraft_model::Shape,
+) -> Xfrm {
     use deckcraft_model::resolve::{self, Ctx};
     match sel.target {
-        crate::Target::Slides => doc.slides.get(sel.slide).and_then(|s| Ctx::for_slide(doc, s)).map(|c| resolve::xfrm(&c, shape)),
-        crate::Target::Master { master } => doc.masters.get(master).map(|m| resolve::xfrm(&Ctx::for_master(doc, m), shape)),
-        crate::Target::Layout { master, layout } => {
-            doc.masters.get(master).and_then(|m| m.layouts.get(layout).map(|l| resolve::xfrm(&Ctx::for_layout(doc, m, l), shape)))
-        }
+        crate::Target::Slides => doc
+            .slides
+            .get(sel.slide)
+            .and_then(|s| Ctx::for_slide(doc, s))
+            .map(|c| resolve::xfrm(&c, shape)),
+        crate::Target::Master { master } => doc
+            .masters
+            .get(master)
+            .map(|m| resolve::xfrm(&Ctx::for_master(doc, m), shape)),
+        crate::Target::Layout { master, layout } => doc.masters.get(master).and_then(|m| {
+            m.layouts
+                .get(layout)
+                .map(|l| resolve::xfrm(&Ctx::for_layout(doc, m, l), shape))
+        }),
     }
     .unwrap_or_default()
 }
 
 /// Run `f` on each target shape (copy-on-write), materialising inherited boxes first.
-pub(crate) fn edit_shapes(s: &mut Session, p: &Value, cmd: &str, f: impl Fn(&mut deckcraft_model::Shape) -> Result<()>) -> Result<Value> {
+pub(crate) fn edit_shapes(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    f: impl Fn(&mut deckcraft_model::Shape) -> Result<()>,
+) -> Result<Value> {
     let ids = targets(s, p)?;
     if ids.is_empty() {
         return Err(bad(cmd, "no shapes selected"));
     }
     s.edit(|doc, sel| {
         let boxes: Vec<(ShapeId, Xfrm)> = {
-            let st_shapes: Vec<deckcraft_model::Shape> =
-                ids.iter().filter_map(|id| current_shapes(doc, sel).and_then(|v| deckcraft_model::find_shape(v, *id)).cloned()).collect();
-            st_shapes.iter().map(|sh| (sh.id, xfrm_of(doc, sel, sh))).collect()
+            let st_shapes: Vec<deckcraft_model::Shape> = ids
+                .iter()
+                .filter_map(|id| {
+                    current_shapes(doc, sel)
+                        .and_then(|v| deckcraft_model::find_shape(v, *id))
+                        .cloned()
+                })
+                .collect();
+            st_shapes
+                .iter()
+                .map(|sh| (sh.id, xfrm_of(doc, sel, sh)))
+                .collect()
         };
         let shapes = crate::shapes_mut(doc, sel).ok_or_else(|| bad(cmd, "no slide"))?;
         let mut n = 0;
@@ -313,21 +400,37 @@ pub(crate) fn edit_shapes(s: &mut Session, p: &Value, cmd: &str, f: impl Fn(&mut
 
 /// [`edit_shapes`] for edits a locked object refuses (move, size, rotate, flip, reshape, crop):
 /// locked targets are left out, and when every target is locked nothing changes.
-pub(crate) fn edit_geometry(s: &mut Session, p: &Value, cmd: &str, f: impl Fn(&mut deckcraft_model::Shape) -> Result<()>) -> Result<Value> {
+pub(crate) fn edit_geometry(
+    s: &mut Session,
+    p: &Value,
+    cmd: &str,
+    f: impl Fn(&mut deckcraft_model::Shape) -> Result<()>,
+) -> Result<Value> {
     let ids = targets(s, p)?;
     let st = s.doc()?;
-    let free: Vec<u32> = ids.iter().filter(|id| !st.shape(**id).is_some_and(|x| x.locked)).map(|id| id.0).collect();
+    let free: Vec<u32> = ids
+        .iter()
+        .filter(|id| !st.shape(**id).is_some_and(|x| x.locked))
+        .map(|id| id.0)
+        .collect();
     if !ids.is_empty() && free.is_empty() {
         return Err(bad(cmd, "the object is locked"));
     }
     edit_shapes(s, &with_param(p, "ids", Value::from(free)), cmd, f)
 }
 
-pub(crate) fn current_shapes<'a>(doc: &'a deckcraft_model::Presentation, sel: &crate::Selection) -> Option<&'a Vec<deckcraft_model::Shape>> {
+pub(crate) fn current_shapes<'a>(
+    doc: &'a deckcraft_model::Presentation,
+    sel: &crate::Selection,
+) -> Option<&'a Vec<deckcraft_model::Shape>> {
     match sel.target {
         crate::Target::Slides => doc.slides.get(sel.slide).map(|s| &s.shapes),
         crate::Target::Master { master } => doc.masters.get(master).map(|m| &m.shapes),
-        crate::Target::Layout { master, layout } => doc.masters.get(master).and_then(|m| m.layouts.get(layout)).map(|l| &l.shapes),
+        crate::Target::Layout { master, layout } => doc
+            .masters
+            .get(master)
+            .and_then(|m| m.layouts.get(layout))
+            .map(|l| &l.shapes),
     }
 }
 
@@ -336,7 +439,11 @@ pub fn base64_encode(data: &[u8]) -> String {
     const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for chunk in data.chunks(3) {
-        let b = [chunk.first().copied().unwrap_or(0), chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk.first().copied().unwrap_or(0),
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = ((b[0] as u32) << 16) | ((b[1] as u32) << 8) | b[2] as u32;
         for (i, shift) in [18, 12, 6, 0].iter().enumerate() {
             if i <= chunk.len() {

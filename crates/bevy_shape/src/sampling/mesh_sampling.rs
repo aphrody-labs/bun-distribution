@@ -5,8 +5,8 @@ use alloc::vec::Vec;
 use bevy_math::Vec3;
 use rand::RngExt;
 use rand_distr::{
-    weighted::{Error as WeightedError, WeightedAliasIndex},
     Distribution,
+    weighted::{Error as WeightedError, WeightedAliasIndex},
 };
 
 /// A [distribution] that caches data to allow fast sampling from a collection of triangles.

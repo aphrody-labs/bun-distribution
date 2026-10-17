@@ -44,11 +44,18 @@ pub(crate) fn round2_signed64(x: i64, n: u32) -> i64 {
     if n == 0 {
         return x;
     }
-    if x >= 0 { (x + (1 << (n - 1))) >> n } else { -((-x + (1 << (n - 1))) >> n) }
+    if x >= 0 {
+        (x + (1 << (n - 1))) >> n
+    } else {
+        -((-x + (1 << (n - 1))) >> n)
+    }
 }
 
 pub(crate) fn has_newmv(mode: usize) -> bool {
-    matches!(mode, NEWMV | NEW_NEWMV | NEAR_NEWMV | NEW_NEARMV | NEAREST_NEWMV | NEW_NEARESTMV)
+    matches!(
+        mode,
+        NEWMV | NEW_NEWMV | NEAR_NEWMV | NEW_NEARMV | NEAREST_NEWMV | NEW_NEARESTMV
+    )
 }
 
 impl TileDecoder<'_, '_> {
@@ -79,7 +86,10 @@ impl TileDecoder<'_, '_> {
             let typ = fh.gm_type[rf] as usize;
             let gm = &fh.gm_params[rf];
             if typ == TRANSLATION {
-                mv = [gm[0] >> (WARPEDMODEL_PREC_BITS - 3), gm[1] >> (WARPEDMODEL_PREC_BITS - 3)];
+                mv = [
+                    gm[0] >> (WARPEDMODEL_PREC_BITS - 3),
+                    gm[1] >> (WARPEDMODEL_PREC_BITS - 3),
+                ];
             } else if typ != IDENTITY {
                 let bw = block_width(self.b.mi_size) as i64;
                 let bh = block_height(self.b.mi_size) as i64;
@@ -89,9 +99,15 @@ impl TileDecoder<'_, '_> {
                 let xc = (gm[2] as i64 - p) * x + gm[3] as i64 * y + gm[0] as i64;
                 let yc = gm[4] as i64 * x + (gm[5] as i64 - p) * y + gm[1] as i64;
                 if fh.allow_high_precision_mv {
-                    mv = [round2_signed64(yc, WARPEDMODEL_PREC_BITS as u32 - 3) as i32, round2_signed64(xc, WARPEDMODEL_PREC_BITS as u32 - 3) as i32];
+                    mv = [
+                        round2_signed64(yc, WARPEDMODEL_PREC_BITS as u32 - 3) as i32,
+                        round2_signed64(xc, WARPEDMODEL_PREC_BITS as u32 - 3) as i32,
+                    ];
                 } else {
-                    mv = [round2_signed64(yc, WARPEDMODEL_PREC_BITS as u32 - 2) as i32 * 2, round2_signed64(xc, WARPEDMODEL_PREC_BITS as u32 - 2) as i32 * 2];
+                    mv = [
+                        round2_signed64(yc, WARPEDMODEL_PREC_BITS as u32 - 2) as i32 * 2,
+                        round2_signed64(xc, WARPEDMODEL_PREC_BITS as u32 - 2) as i32 * 2,
+                    ];
                 }
             }
         }
@@ -103,7 +119,10 @@ impl TileDecoder<'_, '_> {
     pub(crate) fn find_mv_stack(&mut self, is_compound: bool) {
         let bw4 = self.b.bw4 as isize;
         let bh4 = self.b.bh4 as isize;
-        let mut s = MvStack { global_mvs: [self.setup_global_mv(0), [0, 0]], ..Default::default() };
+        let mut s = MvStack {
+            global_mvs: [self.setup_global_mv(0), [0, 0]],
+            ..Default::default()
+        };
         if is_compound {
             s.global_mvs[1] = self.setup_global_mv(1);
         }
@@ -189,7 +208,10 @@ impl TileDecoder<'_, '_> {
                 break;
             }
             let mi = &self.t.mi;
-            let mut len = bw4.min(NUM_4X4_BLOCKS_WIDE[mi.mi_size[mi.idx(mv_row as usize, mv_col as usize)] as usize] as isize);
+            let mut len = bw4.min(
+                NUM_4X4_BLOCKS_WIDE[mi.mi_size[mi.idx(mv_row as usize, mv_col as usize)] as usize]
+                    as isize,
+            );
             if delta_row.abs() > 1 {
                 len = len.max(2);
             }
@@ -222,7 +244,10 @@ impl TileDecoder<'_, '_> {
                 break;
             }
             let mi = &self.t.mi;
-            let mut len = bh4.min(NUM_4X4_BLOCKS_HIGH[mi.mi_size[mi.idx(mv_row as usize, mv_col as usize)] as usize] as isize);
+            let mut len = bh4.min(
+                NUM_4X4_BLOCKS_HIGH[mi.mi_size[mi.idx(mv_row as usize, mv_col as usize)] as usize]
+                    as isize,
+            );
             if delta_col.abs() > 1 {
                 len = len.max(2);
             }
@@ -238,7 +263,9 @@ impl TileDecoder<'_, '_> {
     fn scan_point(&mut self, delta_row: isize, delta_col: isize, is_compound: bool) {
         let mv_row = self.b.mi_row as isize + delta_row;
         let mv_col = self.b.mi_col as isize + delta_col;
-        if self.inside(mv_row, mv_col) && self.t.mi.written[self.t.mi.idx(mv_row as usize, mv_col as usize)] {
+        if self.inside(mv_row, mv_col)
+            && self.t.mi.written[self.t.mi.idx(mv_row as usize, mv_col as usize)]
+        {
             self.add_ref_mv_candidate(mv_row as usize, mv_col as usize, is_compound, 4);
         }
     }
@@ -291,7 +318,8 @@ impl TileDecoder<'_, '_> {
             self.lower_mv_precision(&mut cand);
             if delta_row == 0 && delta_col == 0 {
                 let g = self.mvs.global_mvs[0];
-                self.mvs.zero_mv_context = ((cand[0] - g[0]).abs() >= 16 || (cand[1] - g[1]).abs() >= 16) as usize;
+                self.mvs.zero_mv_context =
+                    ((cand[0] - g[0]).abs() >= 16 || (cand[1] - g[1]).abs() >= 16) as usize;
             }
             let n = self.mvs.num_mv_found;
             let idx = (0..n).find(|&i| self.mvs.ref_stack_mv[i][0] == cand);
@@ -316,11 +344,15 @@ impl TileDecoder<'_, '_> {
             self.lower_mv_precision(&mut c1);
             if delta_row == 0 && delta_col == 0 {
                 let g = self.mvs.global_mvs;
-                self.mvs.zero_mv_context =
-                    ((c0[0] - g[0][0]).abs() >= 16 || (c0[1] - g[0][1]).abs() >= 16 || (c1[0] - g[1][0]).abs() >= 16 || (c1[1] - g[1][1]).abs() >= 16) as usize;
+                self.mvs.zero_mv_context = ((c0[0] - g[0][0]).abs() >= 16
+                    || (c0[1] - g[0][1]).abs() >= 16
+                    || (c1[0] - g[1][0]).abs() >= 16
+                    || (c1[1] - g[1][1]).abs() >= 16)
+                    as usize;
             }
             let n = self.mvs.num_mv_found;
-            let idx = (0..n).find(|&i| self.mvs.ref_stack_mv[i][0] == c0 && self.mvs.ref_stack_mv[i][1] == c1);
+            let idx = (0..n)
+                .find(|&i| self.mvs.ref_stack_mv[i][0] == c0 && self.mvs.ref_stack_mv[i][1] == c1);
             if let Some(i) = idx {
                 self.mvs.weight_stack[i] += 2;
             } else if n < MAX_REF_MV_STACK_SIZE {
@@ -331,7 +363,13 @@ impl TileDecoder<'_, '_> {
         }
     }
 
-    fn add_ref_mv_candidate(&mut self, mv_row: usize, mv_col: usize, is_compound: bool, weight: u32) {
+    fn add_ref_mv_candidate(
+        &mut self,
+        mv_row: usize,
+        mv_col: usize,
+        is_compound: bool,
+        weight: u32,
+    ) {
         let mi = &self.t.mi;
         let i = mi.idx(mv_row, mv_col);
         if !mi.is_inter[i] {
@@ -356,7 +394,10 @@ impl TileDecoder<'_, '_> {
         let cand_size = mi.mi_size[i] as usize;
         let large = block_width(cand_size).min(block_height(cand_size)) >= 8;
         let gm0 = self.fs.fh.gm_type[self.b.ref_frame[0] as usize] as usize;
-        let mut cand = if (cand_mode == GLOBALMV || cand_mode == GLOBAL_GLOBALMV) && gm0 > TRANSLATION && large {
+        let mut cand = if (cand_mode == GLOBALMV || cand_mode == GLOBAL_GLOBALMV)
+            && gm0 > TRANSLATION
+            && large
+        {
             self.mvs.global_mvs[0]
         } else {
             let m = mi.mv[i][cand_list];
@@ -380,7 +421,10 @@ impl TileDecoder<'_, '_> {
     fn compound_search_stack(&mut self, mv_row: usize, mv_col: usize, weight: u32) {
         let mi = &self.t.mi;
         let i = mi.idx(mv_row, mv_col);
-        let mut cand = [[mi.mv[i][0].row as i32, mi.mv[i][0].col as i32], [mi.mv[i][1].row as i32, mi.mv[i][1].col as i32]];
+        let mut cand = [
+            [mi.mv[i][0].row as i32, mi.mv[i][0].col as i32],
+            [mi.mv[i][1].row as i32, mi.mv[i][1].col as i32],
+        ];
         let cand_mode = mi.y_mode[i] as usize;
         if cand_mode == GLOBAL_GLOBALMV {
             for (rl, c) in cand.iter_mut().enumerate() {
@@ -394,7 +438,9 @@ impl TileDecoder<'_, '_> {
         }
         self.mvs.found_match = true;
         let n = self.mvs.num_mv_found;
-        if let Some(idx) = (0..n).find(|&k| self.mvs.ref_stack_mv[k][0] == cand[0] && self.mvs.ref_stack_mv[k][1] == cand[1]) {
+        if let Some(idx) = (0..n).find(|&k| {
+            self.mvs.ref_stack_mv[k][0] == cand[0] && self.mvs.ref_stack_mv[k][1] == cand[1]
+        }) {
             self.mvs.weight_stack[idx] += weight;
         } else if n < MAX_REF_MV_STACK_SIZE {
             self.mvs.ref_stack_mv[n] = cand;
@@ -438,14 +484,22 @@ impl TileDecoder<'_, '_> {
         for pass in 0..2 {
             let mut idx = 0;
             while idx < num4x4 && self.mvs.num_mv_found < 2 {
-                let (mv_row, mv_col) = if pass == 0 { (mi_row - 1, mi_col + idx) } else { (mi_row + idx, mi_col - 1) };
+                let (mv_row, mv_col) = if pass == 0 {
+                    (mi_row - 1, mi_col + idx)
+                } else {
+                    (mi_row + idx, mi_col - 1)
+                };
                 if !self.inside(mv_row, mv_col) {
                     break;
                 }
                 self.add_extra_mv_candidate(mv_row as usize, mv_col as usize, is_compound);
                 let mi = &self.t.mi;
                 let sz = mi.mi_size[mi.idx(mv_row as usize, mv_col as usize)] as usize;
-                idx += if pass == 0 { NUM_4X4_BLOCKS_WIDE[sz] } else { NUM_4X4_BLOCKS_HIGH[sz] } as isize;
+                idx += if pass == 0 {
+                    NUM_4X4_BLOCKS_WIDE[sz]
+                } else {
+                    NUM_4X4_BLOCKS_HIGH[sz]
+                } as isize;
             }
         }
         if is_compound {
@@ -469,7 +523,9 @@ impl TileDecoder<'_, '_> {
             }
             let n = self.mvs.num_mv_found;
             if n == 1 {
-                if combined[0][0] == self.mvs.ref_stack_mv[0][0] && combined[0][1] == self.mvs.ref_stack_mv[0][1] {
+                if combined[0][0] == self.mvs.ref_stack_mv[0][0]
+                    && combined[0][1] == self.mvs.ref_stack_mv[0][1]
+                {
                     self.mvs.ref_stack_mv[n] = combined[1];
                 } else {
                     self.mvs.ref_stack_mv[n] = combined[0];
@@ -630,7 +686,9 @@ impl TileDecoder<'_, '_> {
         let mut do_top_right = true;
         if self.b.avail_u {
             let mi = &self.t.mi;
-            let src_w = NUM_4X4_BLOCKS_WIDE[mi.mi_size[mi.idx(mi_row as usize - 1, mi_col as usize)] as usize] as isize;
+            let src_w = NUM_4X4_BLOCKS_WIDE
+                [mi.mi_size[mi.idx(mi_row as usize - 1, mi_col as usize)] as usize]
+                as isize;
             if w4 <= src_w {
                 let col_offset = -(mi_col & (src_w - 1));
                 if col_offset < 0 {
@@ -644,7 +702,9 @@ impl TileDecoder<'_, '_> {
                 let mut i = 0;
                 while i < w4.min(mi_cols - mi_col) {
                     let mi = &self.t.mi;
-                    let src_w = NUM_4X4_BLOCKS_WIDE[mi.mi_size[mi.idx(mi_row as usize - 1, (mi_col + i) as usize)] as usize] as isize;
+                    let src_w = NUM_4X4_BLOCKS_WIDE
+                        [mi.mi_size[mi.idx(mi_row as usize - 1, (mi_col + i) as usize)] as usize]
+                        as isize;
                     let step = w4.min(src_w);
                     self.add_sample(-1, i);
                     i += step;
@@ -653,7 +713,9 @@ impl TileDecoder<'_, '_> {
         }
         if self.b.avail_l {
             let mi = &self.t.mi;
-            let src_h = NUM_4X4_BLOCKS_HIGH[mi.mi_size[mi.idx(mi_row as usize, mi_col as usize - 1)] as usize] as isize;
+            let src_h = NUM_4X4_BLOCKS_HIGH
+                [mi.mi_size[mi.idx(mi_row as usize, mi_col as usize - 1)] as usize]
+                as isize;
             if h4 <= src_h {
                 let row_offset = -(mi_row & (src_h - 1));
                 if row_offset < 0 {
@@ -664,7 +726,9 @@ impl TileDecoder<'_, '_> {
                 let mut i = 0;
                 while i < h4.min(mi_rows - mi_row) {
                     let mi = &self.t.mi;
-                    let src_h = NUM_4X4_BLOCKS_HIGH[mi.mi_size[mi.idx((mi_row + i) as usize, mi_col as usize - 1)] as usize] as isize;
+                    let src_h = NUM_4X4_BLOCKS_HIGH
+                        [mi.mi_size[mi.idx((mi_row + i) as usize, mi_col as usize - 1)] as usize]
+                        as isize;
                     let step = h4.min(src_h);
                     self.add_sample(i, -1);
                     i += step;
@@ -706,12 +770,19 @@ impl TileDecoder<'_, '_> {
         let cand_col = mv_col & !(cand_w4 - 1);
         let mid_y = cand_row * 4 + cand_h4 * 2 - 1;
         let mid_x = cand_col * 4 + cand_w4 * 2 - 1;
-        let threshold = block_width(self.b.mi_size).max(block_height(self.b.mi_size)).clamp(16, 112);
+        let threshold = block_width(self.b.mi_size)
+            .max(block_height(self.b.mi_size))
+            .clamp(16, 112);
         let cm = mi.mv[mi.idx(cand_row as usize, cand_col as usize)][0];
         let mv_diff_row = (cm.row as i32 - self.b.mv_i[0][0]).abs();
         let mv_diff_col = (cm.col as i32 - self.b.mv_i[0][1]).abs();
         let valid = mv_diff_row + mv_diff_col <= threshold;
-        let cand = [mid_y as i32 * 8, mid_x as i32 * 8, mid_y as i32 * 8 + cm.row as i32, mid_x as i32 * 8 + cm.col as i32];
+        let cand = [
+            mid_y as i32 * 8,
+            mid_x as i32 * 8,
+            mid_y as i32 * 8 + cm.row as i32,
+            mid_x as i32 * 8 + cm.col as i32,
+        ];
         self.mvs.num_samples_scanned += 1;
         if !valid && self.mvs.num_samples_scanned > 1 {
             return;
@@ -724,6 +795,9 @@ impl TileDecoder<'_, '_> {
 
     #[inline]
     pub(crate) fn inside(&self, r: isize, c: isize) -> bool {
-        c >= self.mi_col_start as isize && c < self.mi_col_end as isize && r >= self.mi_row_start as isize && r < self.mi_row_end as isize
+        c >= self.mi_col_start as isize
+            && c < self.mi_col_end as isize
+            && r >= self.mi_row_start as isize
+            && r < self.mi_row_end as isize
     }
 }

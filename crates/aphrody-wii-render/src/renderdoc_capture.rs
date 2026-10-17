@@ -18,17 +18,21 @@ impl RenderDocCapture {
                     "RenderDoc API initialized"
                 );
                 Some(api)
-            },
+            }
             Err(err) => {
                 tracing::warn!(
                     ?err,
                     "RenderDoc API unavailable; captures are disabled until RenderDoc is injected or on PATH"
                 );
                 None
-            },
+            }
         };
 
-        Self { api, capture_next_emulated_frame: false, active_frame_capture: false }
+        Self {
+            api,
+            capture_next_emulated_frame: false,
+            active_frame_capture: false,
+        }
     }
 
     pub(crate) fn request_next_emulated_frame(&mut self) {

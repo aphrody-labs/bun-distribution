@@ -47,7 +47,10 @@ impl Frontend {
 
     pub fn set_resolution_scale_shift(&self, value: u8) {
         assert!(value <= 4, "DS resolution scale must be between 1x and 16x");
-        self.0.borrow_mut().renderer.set_resolution_scale_shift(value);
+        self.0
+            .borrow_mut()
+            .renderer
+            .set_resolution_scale_shift(value);
     }
 
     pub fn submitted_frames(&self) -> u64 {
@@ -104,7 +107,9 @@ impl RendererTx for Tx {
             shared.capture_renderer.render_line(0, &shared.capture_data);
             for y in 0..SCREEN_HEIGHT {
                 if y + 1 < SCREEN_HEIGHT {
-                    shared.capture_renderer.render_line((y + 1) as u8, &shared.capture_data);
+                    shared
+                        .capture_renderer
+                        .render_line((y + 1) as u8, &shared.capture_data);
                 }
                 shared.capture_renderer.postprocess_line(
                     y as u8,
@@ -124,7 +129,9 @@ impl AccelRendererRx for Rx {
     }
 
     fn read_capture_scanline(&mut self) -> &Scanline<u32> {
-        self.scanline.0.copy_from_slice(&self.shared.borrow().capture_lines[self.next_scanline].0);
+        self.scanline
+            .0
+            .copy_from_slice(&self.shared.borrow().capture_lines[self.next_scanline].0);
         self.next_scanline += 1;
         &self.scanline
     }
@@ -135,7 +142,10 @@ pub fn init(
     queue: Arc<crate::wgpu::Queue>,
     resolution_scale_shift: u8,
 ) -> (Tx, Rx, Frontend) {
-    assert!(resolution_scale_shift <= 4, "DS resolution scale must be between 1x and 16x");
+    assert!(
+        resolution_scale_shift <= 4,
+        "DS resolution scale must be between 1x and 16x"
+    );
     let shared = Rc::new(RefCell::new(Shared {
         renderer: Renderer::new(device, queue, resolution_scale_shift),
         // The upstream data records consist exclusively of numeric fields,
@@ -149,7 +159,11 @@ pub fn init(
     }));
     (
         Tx(Rc::clone(&shared)),
-        Rx { shared: Rc::clone(&shared), next_scanline: 0, scanline: Scanline([0; 256]) },
+        Rx {
+            shared: Rc::clone(&shared),
+            next_scanline: 0,
+            scanline: Scanline([0; 256]),
+        },
         Frontend(shared),
     )
 }

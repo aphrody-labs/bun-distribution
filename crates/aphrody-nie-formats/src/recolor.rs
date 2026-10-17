@@ -56,9 +56,18 @@ impl Ramp {
     pub fn from_three(primary: [u8; 3], secondary: [u8; 3], accent: [u8; 3]) -> Self {
         Self {
             stops: alloc::vec![
-                Stop { position: 0.0, color: primary },
-                Stop { position: 0.5, color: secondary },
-                Stop { position: 1.0, color: accent },
+                Stop {
+                    position: 0.0,
+                    color: primary
+                },
+                Stop {
+                    position: 0.5,
+                    color: secondary
+                },
+                Stop {
+                    position: 1.0,
+                    color: accent
+                },
             ],
             strength: 1.0,
         }
@@ -107,8 +116,11 @@ impl Ramp {
     /// Si la chaîne est vide, si une couleur n'est pas un hexadécimal RGB, ou si une position
     /// n'est pas un nombre de `0.0` à `1.0`.
     pub fn parse(spec: &str) -> Result<Self, String> {
-        let morceaux: Vec<&str> =
-            spec.split(',').map(str::trim).filter(|s| !s.is_empty()).collect();
+        let morceaux: Vec<&str> = spec
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .collect();
         if morceaux.is_empty() {
             return Err("rampe vide — attendu « #RRGGBB[@position],… »".to_string());
         }
@@ -124,17 +136,25 @@ impl Ramp {
                         return Err(alloc::format!("position {v} hors de 0.0..=1.0"));
                     }
                     (c.trim(), v)
-                },
+                }
                 // Répartition uniforme. Un arrêt unique se pose en 0.0 et tient toute la rampe.
                 None if dernier == 0 => (*m, 0.0),
                 None => (*m, i as f32 / dernier as f32),
             };
-            stops.push(Stop { position, color: parse_hex_rgb(couleur)? });
+            stops.push(Stop {
+                position,
+                color: parse_hex_rgb(couleur)?,
+            });
         }
         stops.sort_by(|a, b| {
-            a.position.partial_cmp(&b.position).unwrap_or(core::cmp::Ordering::Equal)
+            a.position
+                .partial_cmp(&b.position)
+                .unwrap_or(core::cmp::Ordering::Equal)
         });
-        Ok(Self { stops, strength: 1.0 })
+        Ok(Self {
+            stops,
+            strength: 1.0,
+        })
     }
 }
 
@@ -164,7 +184,13 @@ impl Recolor {
     /// Le filtre qui ne change rien.
     #[must_use]
     pub fn identity() -> Self {
-        Self { hue_shift: 0.0, saturation: 1.0, value: 1.0, ramp: None, alpha_min: 1 }
+        Self {
+            hue_shift: 0.0,
+            saturation: 1.0,
+            value: 1.0,
+            ramp: None,
+            alpha_min: 1,
+        }
     }
 
     /// Vrai si le filtre laisserait toute image inchangée — de quoi refuser tôt un `recolor`
@@ -241,7 +267,11 @@ pub fn rgb_to_hsv(rgb: [u8; 3]) -> [f32; 3] {
     } else {
         60.0 * ((r - g) / delta + 4.0)
     };
-    let s = if max <= f32::EPSILON { 0.0 } else { delta / max };
+    let s = if max <= f32::EPSILON {
+        0.0
+    } else {
+        delta / max
+    };
     [wrap360(h), s, max]
 }
 
@@ -346,7 +376,10 @@ mod tests {
     fn un_decalage_de_120_degres_permute_les_canaux() {
         // Rouge → vert → bleu → rouge : c'est la vérification que le décalage est cyclique et
         // que `wrap360` traite bien 360 comme 0.
-        let f = Recolor { hue_shift: 120.0, ..Recolor::identity() };
+        let f = Recolor {
+            hue_shift: 120.0,
+            ..Recolor::identity()
+        };
         let mut px = [255, 0, 0, 255];
         f.apply_rgba(&mut px);
         assert_eq!(px, [0, 255, 0, 255]);
@@ -360,8 +393,16 @@ mod tests {
     fn un_decalage_negatif_vaut_son_complement() {
         let mut a = [255, 0, 0, 255];
         let mut b = [255, 0, 0, 255];
-        Recolor { hue_shift: -120.0, ..Recolor::identity() }.apply_rgba(&mut a);
-        Recolor { hue_shift: 240.0, ..Recolor::identity() }.apply_rgba(&mut b);
+        Recolor {
+            hue_shift: -120.0,
+            ..Recolor::identity()
+        }
+        .apply_rgba(&mut a);
+        Recolor {
+            hue_shift: 240.0,
+            ..Recolor::identity()
+        }
+        .apply_rgba(&mut b);
         assert_eq!(a, b);
     }
 
@@ -383,7 +424,11 @@ mod tests {
 
     #[test]
     fn les_pixels_sous_le_seuil_alpha_sont_laisses_intacts() {
-        let f = Recolor { hue_shift: 180.0, alpha_min: 8, ..Recolor::identity() };
+        let f = Recolor {
+            hue_shift: 180.0,
+            alpha_min: 8,
+            ..Recolor::identity()
+        };
         let mut px = [200, 100, 50, 7, 200, 100, 50, 8];
         f.apply_rgba(&mut px);
         assert_eq!(&px[0..4], &[200, 100, 50, 7], "sous le seuil : intact");
@@ -417,7 +462,10 @@ mod tests {
     fn une_force_nulle_laisse_l_original() {
         let mut ramp = Ramp::from_three([255, 0, 0], [255, 0, 0], [255, 0, 0]);
         ramp.strength = 0.0;
-        let f = Recolor { ramp: Some(ramp), ..Recolor::identity() };
+        let f = Recolor {
+            ramp: Some(ramp),
+            ..Recolor::identity()
+        };
         let mut px = [10, 20, 30, 255];
         f.apply_rgba(&mut px);
         assert_eq!(px, [10, 20, 30, 255]);
@@ -437,7 +485,10 @@ mod tests {
     fn un_tampon_tronque_ne_panique_pas() {
         // `chunks_exact_mut(4)` ignore le reste : une longueur non multiple de 4 est une entrée
         // malformée, pas un panic.
-        let f = Recolor { hue_shift: 45.0, ..Recolor::identity() };
+        let f = Recolor {
+            hue_shift: 45.0,
+            ..Recolor::identity()
+        };
         let mut px = [10, 20, 30, 255, 99, 98];
         f.apply_rgba(&mut px);
         assert_eq!(&px[4..], &[99, 98]);
@@ -457,7 +508,10 @@ mod tests {
 
     #[test]
     fn la_saturation_nulle_rend_un_gris_de_meme_valeur() {
-        let f = Recolor { saturation: 0.0, ..Recolor::identity() };
+        let f = Recolor {
+            saturation: 0.0,
+            ..Recolor::identity()
+        };
         let mut px = [255, 0, 0, 255];
         f.apply_rgba(&mut px);
         assert_eq!(px, [255, 255, 255, 255], "TSV : V du rouge pur vaut 1.0");

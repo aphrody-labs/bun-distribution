@@ -74,7 +74,7 @@ impl ServerState {
                 Err(e) => {
                     error!("Failed to serialize broadcast message: {e}");
                     return;
-                },
+                }
             };
             let clients = self.clients.read().await;
             for member in &room.members {
@@ -99,7 +99,7 @@ impl ServerState {
                 Err(e) => {
                     error!("Failed to serialize town broadcast message: {e}");
                     return;
-                },
+                }
             };
             let clients = self.clients.read().await;
             for visitor in town.visitors.values() {
@@ -150,7 +150,10 @@ impl NetServer {
     /// Creates a new server bound to a specific socket address.
     #[must_use]
     pub fn new(addr: SocketAddr) -> Self {
-        Self { state: Arc::new(ServerState::new()), addr }
+        Self {
+            state: Arc::new(ServerState::new()),
+            addr,
+        }
     }
 
     /// Access reference to the server state.
@@ -162,7 +165,10 @@ impl NetServer {
     /// Starts the server listener and internal tick synchronization loops.
     pub async fn run(&self) -> anyhow::Result<()> {
         let listener = TcpListener::bind(self.addr).await?;
-        info!("aphrody-nie-net multiplayer server listening on ws://{}", self.addr);
+        info!(
+            "aphrody-nie-net multiplayer server listening on ws://{}",
+            self.addr
+        );
         self.run_on_listener(listener).await
     }
 
@@ -257,13 +263,19 @@ impl NetServer {
                         .last_tick_inputs
                         .get(&match_data.player_ids[0])
                         .copied()
-                        .unwrap_or(PlayerTickInput { tick: next_tick, ..Default::default() });
+                        .unwrap_or(PlayerTickInput {
+                            tick: next_tick,
+                            ..Default::default()
+                        });
 
                     let away_input = match_data
                         .last_tick_inputs
                         .get(&match_data.player_ids[1])
                         .copied()
-                        .unwrap_or(PlayerTickInput { tick: next_tick, ..Default::default() });
+                        .unwrap_or(PlayerTickInput {
+                            tick: next_tick,
+                            ..Default::default()
+                        });
 
                     match_data.session.queue_local_input(home_input);
                     match_data.session.receive_remote_input(away_input);
@@ -308,10 +320,12 @@ async fn handle_connection(
     stream: TcpStream,
     peer: SocketAddr,
 ) -> anyhow::Result<()> {
-    let ws_stream =
-        tokio::time::timeout(Duration::from_secs(10), tokio_tungstenite::accept_async(stream))
-            .await
-            .context("WebSocket handshake timed out")??;
+    let ws_stream = tokio::time::timeout(
+        Duration::from_secs(10),
+        tokio_tungstenite::accept_async(stream),
+    )
+    .await
+    .context("WebSocket handshake timed out")??;
     let (mut ws_sender, mut ws_receiver) = ws_stream.split();
     let (tx, mut rx) = mpsc::channel::<Message>(512);
 
@@ -344,16 +358,21 @@ async fn handle_connection(
         let net_msg: NetMessage = match serde_json::from_str(text) {
             Ok(m) => m,
             Err(e) => {
-                let err_msg = NetMessage::Error { message: format!("Malformed packet: {e}") };
+                let err_msg = NetMessage::Error {
+                    message: format!("Malformed packet: {e}"),
+                };
                 if let Ok(json) = serde_json::to_string(&err_msg) {
                     let _ = tx.try_send(Message::Text(json.into()));
                 }
                 continue;
-            },
+            }
         };
 
         match net_msg {
-            NetMessage::Hello { client_version: _, player_name } => {
+            NetMessage::Hello {
+                client_version: _,
+                player_name,
+            } => {
                 let pid = format!("p_{}", uuid::Uuid::new_v4().simple());
                 current_player_id = Some(pid.clone());
 
@@ -365,13 +384,17 @@ async fn handle_connection(
                 let mut clients = state.clients.write().await;
                 clients.insert(
                     pid.clone(),
-                    ConnectedClient { _player_id: pid.clone(), player_name, tx: tx.clone() },
+                    ConnectedClient {
+                        _player_id: pid.clone(),
+                        player_name,
+                        tx: tx.clone(),
+                    },
                 );
 
                 if let Ok(json) = serde_json::to_string(&welcome) {
                     let _ = tx.try_send(Message::Text(json.into()));
                 }
-            },
+            }
 
             NetMessage::CreateRoom { config } => {
                 if let Some(ref pid) = current_player_id {
@@ -390,17 +413,18 @@ async fn handle_connection(
                             if let Ok(json) = serde_json::to_string(&resp) {
                                 let _ = tx.try_send(Message::Text(json.into()));
                             }
-                        },
+                        }
                         Err(e) => {
-                            let err_msg =
-                                NetMessage::Error { message: format!("Create room failed: {e}") };
+                            let err_msg = NetMessage::Error {
+                                message: format!("Create room failed: {e}"),
+                            };
                             if let Ok(json) = serde_json::to_string(&err_msg) {
                                 let _ = tx.try_send(Message::Text(json.into()));
                             }
-                        },
+                        }
                     }
                 }
-            },
+            }
 
             NetMessage::JoinRoom { inacode, password } => {
                 if let Some(ref pid) = current_player_id {
@@ -427,17 +451,18 @@ async fn handle_connection(
                             let update_msg = NetMessage::RoomUpdate { room: room_info };
                             drop(lobby);
                             state.broadcast_to_room(&inacode, &update_msg).await;
-                        },
+                        }
                         Err(e) => {
-                            let err_msg =
-                                NetMessage::Error { message: format!("Join room failed: {e}") };
+                            let err_msg = NetMessage::Error {
+                                message: format!("Join room failed: {e}"),
+                            };
                             if let Ok(json) = serde_json::to_string(&err_msg) {
                                 let _ = tx.try_send(Message::Text(json.into()));
                             }
-                        },
+                        }
                     }
                 }
-            },
+            }
 
             NetMessage::SetReady { ready } => {
                 if let Some(ref pid) = current_player_id {
@@ -445,7 +470,9 @@ async fn handle_connection(
                     if let Ok((inacode, all_ready)) = lobby.set_ready(pid, ready)
                         && let Some(room) = lobby.get_room(&inacode)
                     {
-                        let update_msg = NetMessage::RoomUpdate { room: room.to_info() };
+                        let update_msg = NetMessage::RoomUpdate {
+                            room: room.to_info(),
+                        };
                         let host_id = room.host_id.clone();
                         let members = room.members.clone();
 
@@ -486,7 +513,7 @@ async fn handle_connection(
                         state.broadcast_to_room(&inacode, &update_msg).await;
                     }
                 }
-            },
+            }
 
             NetMessage::InputTick { tick: _, input } => {
                 if let Some(ref pid) = current_player_id {
@@ -498,9 +525,12 @@ async fn handle_connection(
                         }
                     }
                 }
-            },
+            }
 
-            NetMessage::Ping { seq, client_time_ms } => {
+            NetMessage::Ping {
+                seq,
+                client_time_ms,
+            } => {
                 let pong = NetMessage::Pong {
                     seq,
                     client_time_ms,
@@ -512,7 +542,7 @@ async fn handle_connection(
                 if let Ok(json) = serde_json::to_string(&pong) {
                     let _ = tx.try_send(Message::Text(json.into()));
                 }
-            },
+            }
 
             NetMessage::QueueMatch { mode, rank_points } => {
                 if let Some(ref pid) = current_player_id {
@@ -533,14 +563,14 @@ async fn handle_connection(
                     let mut mm = state.matchmaker.write().await;
                     mm.enqueue(ticket);
                 }
-            },
+            }
 
             NetMessage::CancelQueue => {
                 if let Some(ref pid) = current_player_id {
                     let mut mm = state.matchmaker.write().await;
                     mm.cancel(pid);
                 }
-            },
+            }
 
             // --- Kizuna Town & Avatar Message Handlers ---
             NetMessage::UpdateAvatar { avatar } => {
@@ -548,7 +578,7 @@ async fn handle_connection(
                     let mut avatars = state.avatars.write().await;
                     avatars.insert(pid.clone(), avatar);
                 }
-            },
+            }
 
             NetMessage::JoinKizunaTown { town_owner_id } => {
                 if let Some(ref pid) = current_player_id {
@@ -602,11 +632,17 @@ async fn handle_connection(
                         velocity: visitor.velocity,
                         yaw: visitor.yaw,
                     };
-                    state.broadcast_to_town(&target_owner, &join_notify, Some(pid)).await;
+                    state
+                        .broadcast_to_town(&target_owner, &join_notify, Some(pid))
+                        .await;
                 }
-            },
+            }
 
-            NetMessage::TownMove { position, velocity, yaw } => {
+            NetMessage::TownMove {
+                position,
+                velocity,
+                yaw,
+            } => {
                 if let Some(ref pid) = current_player_id {
                     let town_id = {
                         let mut kizuna = state.kizuna.write().await;
@@ -630,7 +666,7 @@ async fn handle_connection(
                         state.broadcast_to_town(tid, &move_msg, Some(pid)).await;
                     }
                 }
-            },
+            }
 
             NetMessage::TownEmote { stamp_id } => {
                 if let Some(ref pid) = current_player_id {
@@ -647,12 +683,14 @@ async fn handle_connection(
                     };
 
                     if let Some(ref tid) = town_id {
-                        let emote_msg =
-                            NetMessage::TownEmoteSync { player_id: pid.clone(), stamp_id };
+                        let emote_msg = NetMessage::TownEmoteSync {
+                            player_id: pid.clone(),
+                            stamp_id,
+                        };
                         state.broadcast_to_town(tid, &emote_msg, None).await;
                     }
                 }
-            },
+            }
 
             NetMessage::TownChat { message } => {
                 if let Some(ref pid) = current_player_id {
@@ -677,7 +715,7 @@ async fn handle_connection(
                         state.broadcast_to_town(tid, &chat_msg, None).await;
                     }
                 }
-            },
+            }
 
             NetMessage::TownPlaceObject { object } => {
                 if let Some(ref pid) = current_player_id {
@@ -690,7 +728,7 @@ async fn handle_connection(
                         let _ = tx.try_send(Message::Text(json.into()));
                     }
                 }
-            },
+            }
 
             NetMessage::TownRemoveObject { instance_id } => {
                 if let Some(ref pid) = current_player_id {
@@ -699,7 +737,7 @@ async fn handle_connection(
                         town.remove_object(&instance_id);
                     }
                 }
-            },
+            }
 
             NetMessage::TownPlaceCharacter { character } => {
                 if let Some(ref pid) = current_player_id {
@@ -712,7 +750,7 @@ async fn handle_connection(
                         let _ = tx.try_send(Message::Text(json.into()));
                     }
                 }
-            },
+            }
 
             NetMessage::TownRemoveCharacter { instance_id } => {
                 if let Some(ref pid) = current_player_id {
@@ -721,9 +759,12 @@ async fn handle_connection(
                         town.remove_character(&instance_id);
                     }
                 }
-            },
+            }
 
-            NetMessage::TownChallenge { target_player_id, mode } => {
+            NetMessage::TownChallenge {
+                target_player_id,
+                mode,
+            } => {
                 if let Some(ref pid) = current_player_id {
                     let name = {
                         let clients = state.clients.read().await;
@@ -737,11 +778,16 @@ async fn handle_connection(
                         from_player_name: name,
                         mode,
                     };
-                    state.send_to_player(&target_player_id, &challenge_msg).await;
+                    state
+                        .send_to_player(&target_player_id, &challenge_msg)
+                        .await;
                 }
-            },
+            }
 
-            NetMessage::TownChallengeResponse { from_player_id, accept } => {
+            NetMessage::TownChallengeResponse {
+                from_player_id,
+                accept,
+            } => {
                 if let Some(ref pid) = current_player_id {
                     if accept {
                         let room_cfg = RoomConfig {
@@ -800,32 +846,36 @@ async fn handle_connection(
                             state.broadcast_to_room(&inacode, &start_msg).await;
                         }
                     } else {
-                        let decline_msg =
-                            NetMessage::Error { message: "Le défi a été refusé.".to_string() };
+                        let decline_msg = NetMessage::Error {
+                            message: "Le défi a été refusé.".to_string(),
+                        };
                         state.send_to_player(&from_player_id, &decline_msg).await;
                     }
                 }
-            },
+            }
 
             NetMessage::UpdateSquadSummary { squad } => {
                 if let Some(ref pid) = current_player_id {
                     let mut squads = state.squads.write().await;
                     squads.insert(pid.clone(), squad);
                 }
-            },
+            }
 
             NetMessage::TownInspectSquad { target_player_id } => {
                 let squad = {
                     let squads = state.squads.read().await;
                     squads.get(&target_player_id).cloned()
                 };
-                let resp = NetMessage::TownSquadInspected { player_id: target_player_id, squad };
+                let resp = NetMessage::TownSquadInspected {
+                    player_id: target_player_id,
+                    squad,
+                };
                 if let Ok(json) = serde_json::to_string(&resp) {
                     let _ = tx.try_send(Message::Text(json.into()));
                 }
-            },
+            }
 
-            _ => {},
+            _ => {}
         }
     }
 
@@ -844,7 +894,9 @@ async fn handle_connection(
         if let Ok(Some(inacode)) = lobby.leave_room(pid)
             && let Some(room) = lobby.get_room(&inacode)
         {
-            let update = NetMessage::RoomUpdate { room: room.to_info() };
+            let update = NetMessage::RoomUpdate {
+                room: room.to_info(),
+            };
             drop(lobby);
             state.broadcast_to_room(&inacode, &update).await;
         }

@@ -54,7 +54,10 @@ mod tests_placement_source {
     #[test]
     fn une_source_inconnue_reste_refusee() {
         assert!(!PlacementSource::allows_rendering(Some("guessed"), true));
-        assert!(!PlacementSource::allows_rendering(Some("bone-region"), false));
+        assert!(!PlacementSource::allows_rendering(
+            Some("bone-region"),
+            false
+        ));
     }
 }
 
@@ -146,7 +149,10 @@ impl MenuAssetIndex {
 
     fn insert_path(&mut self, path: &str) {
         if let Some(basename) = path.rsplit('/').next() {
-            self.assets_by_basename.entry(basename.to_owned()).or_default().push(path.to_owned());
+            self.assets_by_basename
+                .entry(basename.to_owned())
+                .or_default()
+                .push(path.to_owned());
         }
         if path.contains("/menu/obj/") && path.ends_with(".objbin") {
             self.objbin_paths.push(path.to_owned());
@@ -156,7 +162,9 @@ impl MenuAssetIndex {
             && let Some(stem) = name.strip_suffix("_setting.cfg.bin")
             && !stem.is_empty()
         {
-            self.setting_paths.entry(stem.to_owned()).or_insert_with(|| path.to_owned());
+            self.setting_paths
+                .entry(stem.to_owned())
+                .or_insert_with(|| path.to_owned());
         }
     }
 
@@ -170,14 +178,24 @@ impl MenuAssetIndex {
     /// Resolves an asset path using the game's locale fallback order.
     #[must_use]
     pub fn resolve_asset(&self, logical_path: &str, locale: &str) -> Option<String> {
-        let basename = logical_path.rsplit('/').next().filter(|value| !value.is_empty())?;
-        choose_asset_basename(self.assets_by_basename.get(basename)?.clone(), basename, locale)
+        let basename = logical_path
+            .rsplit('/')
+            .next()
+            .filter(|value| !value.is_empty())?;
+        choose_asset_basename(
+            self.assets_by_basename.get(basename)?.clone(),
+            basename,
+            locale,
+        )
     }
 
     /// Resolves an OBJBIN path, accepting the setting's prefix form when necessary.
     #[must_use]
     pub fn resolve_objbin(&self, logical_path: &str) -> Option<String> {
-        let basename = logical_path.rsplit('/').next().filter(|value| !value.is_empty())?;
+        let basename = logical_path
+            .rsplit('/')
+            .next()
+            .filter(|value| !value.is_empty())?;
         let stem = basename.strip_suffix(".objbin").unwrap_or(basename);
         let prefix = alloc::format!("{stem}_");
         self.objbin_paths
@@ -207,7 +225,10 @@ pub fn resolve_asset_basename<'a>(
     logical_path: &str,
     locale: &str,
 ) -> Option<String> {
-    let basename = logical_path.rsplit('/').next().filter(|value| !value.is_empty())?;
+    let basename = logical_path
+        .rsplit('/')
+        .next()
+        .filter(|value| !value.is_empty())?;
     let matches = paths
         .into_iter()
         .filter(|path| {
@@ -229,17 +250,22 @@ pub fn choose_asset_basename(
 ) -> Option<String> {
     matches.sort_unstable();
 
-    if let Some(path) = matches.iter().find(|path| parent_segment(path, basename.len()) == locale) {
+    if let Some(path) = matches
+        .iter()
+        .find(|path| parent_segment(path, basename.len()) == locale)
+    {
         return Some(path.clone());
     }
-    if let Some(path) =
-        matches.iter().find(|path| !is_locale_tag(parent_segment(path, basename.len())))
+    if let Some(path) = matches
+        .iter()
+        .find(|path| !is_locale_tag(parent_segment(path, basename.len())))
     {
         return Some(path.clone());
     }
     for fallback in ["common", "en"] {
-        if let Some(path) =
-            matches.iter().find(|path| parent_segment(path, basename.len()) == fallback)
+        if let Some(path) = matches
+            .iter()
+            .find(|path| parent_segment(path, basename.len()) == fallback)
         {
             return Some(path.clone());
         }
@@ -251,7 +277,9 @@ fn parent_segment(path: &str, basename_len: usize) -> &str {
     let Some(directory_end) = path.len().checked_sub(basename_len + 1) else {
         return "";
     };
-    path.get(..directory_end).and_then(|directory| directory.rsplit('/').next()).unwrap_or("")
+    path.get(..directory_end)
+        .and_then(|directory| directory.rsplit('/').next())
+        .unwrap_or("")
 }
 
 /// Returns whether a path segment is a known IEVR locale directory.
@@ -318,7 +346,13 @@ pub fn place_on_canvas(layout: &G4pkmLayout, sprite_w: u32, sprite_h: u32) -> Sc
         1.0
     };
 
-    ScreenTransform { x_px, y_px, scale_x, scale_y, rot: pose.rot }
+    ScreenTransform {
+        x_px,
+        y_px,
+        scale_x,
+        scale_y,
+        rot: pose.rot,
+    }
 }
 
 /// Taille, en pixels de l'espace de référence, que l'os de placement **désigne**.
@@ -359,7 +393,10 @@ pub struct BoneRegionPart {
 /// gauche. Le suffixe est donc une position, pas une texture.
 fn region_name_of_bone(bone: &str) -> &str {
     let sans_tete = bone.strip_prefix('_').unwrap_or(bone);
-    sans_tete.strip_suffix("_r").or_else(|| sans_tete.strip_suffix("_l")).unwrap_or(sans_tete)
+    sans_tete
+        .strip_suffix("_r")
+        .or_else(|| sans_tete.strip_suffix("_l"))
+        .unwrap_or(sans_tete)
 }
 
 /// Les régions que les os de ce squelette NOMMENT, avec le transform de chacun.
@@ -411,8 +448,9 @@ pub fn bone_region_parts(
             continue;
         }
         let cherche = region_name_of_bone(&bone.name);
-        let Some((region, w, h)) =
-            regions.iter().find(|(nom, _, _)| nom.eq_ignore_ascii_case(cherche))
+        let Some((region, w, h)) = regions
+            .iter()
+            .find(|(nom, _, _)| nom.eq_ignore_ascii_case(cherche))
         else {
             continue;
         };
@@ -430,9 +468,23 @@ pub fn bone_region_parts(
 /// cherchée : c'est l'os qui a déjà nommé ce qu'il dessine.
 fn transform_for_pose(pose: crate::g4pkm::Transform2D, w: u32, h: u32) -> ScreenTransform {
     let (x_px, y_px) = pose.to_css_1280x720();
-    let scale_x = if w > 0 { pose.scale_x * (CANVAS_W / REF_W) / w as f32 } else { 1.0 };
-    let scale_y = if h > 0 { pose.scale_y * (CANVAS_H / REF_H) / h as f32 } else { 1.0 };
-    ScreenTransform { x_px, y_px, scale_x, scale_y, rot: pose.rot }
+    let scale_x = if w > 0 {
+        pose.scale_x * (CANVAS_W / REF_W) / w as f32
+    } else {
+        1.0
+    };
+    let scale_y = if h > 0 {
+        pose.scale_y * (CANVAS_H / REF_H) / h as f32
+    } else {
+        1.0
+    };
+    ScreenTransform {
+        x_px,
+        y_px,
+        scale_x,
+        scale_y,
+        rot: pose.rot,
+    }
 }
 
 /// Raffine une pose de placement pour un sprite donné (port de `PickBestPoseForSprite`).
@@ -630,10 +682,26 @@ fn blit_sprite(canvas: &mut [u8], cw: i64, ch: i64, s: &CompositeSprite) {
         (t.x_px + vx * cos - vy * sin, t.y_px + vx * sin + vy * cos)
     };
     let corners = [fwd(0.0, 0.0), fwd(qw, 0.0), fwd(0.0, qh), fwd(qw, qh)];
-    let min_x = corners.iter().map(|c| c.0).fold(f32::INFINITY, f32::min).floor() as i64;
-    let max_x = corners.iter().map(|c| c.0).fold(f32::NEG_INFINITY, f32::max).ceil() as i64;
-    let min_y = corners.iter().map(|c| c.1).fold(f32::INFINITY, f32::min).floor() as i64;
-    let max_y = corners.iter().map(|c| c.1).fold(f32::NEG_INFINITY, f32::max).ceil() as i64;
+    let min_x = corners
+        .iter()
+        .map(|c| c.0)
+        .fold(f32::INFINITY, f32::min)
+        .floor() as i64;
+    let max_x = corners
+        .iter()
+        .map(|c| c.0)
+        .fold(f32::NEG_INFINITY, f32::max)
+        .ceil() as i64;
+    let min_y = corners
+        .iter()
+        .map(|c| c.1)
+        .fold(f32::INFINITY, f32::min)
+        .floor() as i64;
+    let max_y = corners
+        .iter()
+        .map(|c| c.1)
+        .fold(f32::NEG_INFINITY, f32::max)
+        .ceil() as i64;
     let (x0, y0) = (min_x.max(0), min_y.max(0));
     let (x1, y1) = (max_x.min(cw), max_y.min(ch));
     if x0 >= x1 || y0 >= y1 {
@@ -724,7 +792,10 @@ impl AttachSlot {
     ///    bas à droite, ce qu'ils sont. Le repère centré les aurait envoyés à x≈1811, hors écran.
     #[must_use]
     pub fn to_css(&self) -> (f32, f32) {
-        (self.pose.x * (CANVAS_W / REF_W), -self.pose.y * (CANVAS_H / REF_H))
+        (
+            self.pose.x * (CANVAS_W / REF_W),
+            -self.pose.y * (CANVAS_H / REF_H),
+        )
     }
 }
 
@@ -844,8 +915,11 @@ pub fn list_view_ring_slots(
     let columns = params.line_num as usize;
     let mut slots = Vec::with_capacity(capacity);
     for (_, root) in roots {
-        let mut children: Vec<_> =
-            layout.bones.iter().filter(|bone| bone.parent_index == root.index as i32).collect();
+        let mut children: Vec<_> = layout
+            .bones
+            .iter()
+            .filter(|bone| bone.parent_index == root.index as i32)
+            .collect();
         children.sort_by(|left, right| left.name.cmp(&right.name));
         for child in children.into_iter().take(columns) {
             let pose = child.local_bind_pose;
@@ -883,7 +957,12 @@ fn sample_bilinear(rgba: &[u8], tw: u32, th: u32, u: f32, v: f32) -> (f32, f32, 
     let (y0c, y1c) = (cy(y0), cy(y0 + 1.0));
     let lerp = |a: f32, b: f32, t: f32| a + (b - a) * t;
     let mix = |a: (f32, f32, f32, f32), b: (f32, f32, f32, f32), t: f32| {
-        (lerp(a.0, b.0, t), lerp(a.1, b.1, t), lerp(a.2, b.2, t), lerp(a.3, b.3, t))
+        (
+            lerp(a.0, b.0, t),
+            lerp(a.1, b.1, t),
+            lerp(a.2, b.2, t),
+            lerp(a.3, b.3, t),
+        )
     };
     let top = mix(texel(x0c, y0c), texel(x1c, y0c), fx);
     let bot = mix(texel(x0c, y1c), texel(x1c, y1c), fx);
@@ -911,7 +990,10 @@ mod tests {
             bones: alloc::vec![],
             world_pose_by_name: alloc::collections::BTreeMap::new(),
         };
-        assert_eq!(PlacementSource::from_g4pkm(&empty), PlacementSource::Unresolved);
+        assert_eq!(
+            PlacementSource::from_g4pkm(&empty),
+            PlacementSource::Unresolved
+        );
     }
     use super::*;
     use crate::g4pkm::G4pkmBone;
@@ -953,14 +1035,23 @@ mod tests {
     fn index_uses_exact_setting_and_shortest_objbin_prefix_match() {
         let source = MemoryAssets {
             assets: BTreeMap::from([
-                ("data/common/gamedata/menu/cfg/main_menu_setting.cfg.bin".to_owned(), vec![1]),
+                (
+                    "data/common/gamedata/menu/cfg/main_menu_setting.cfg.bin".to_owned(),
+                    vec![1],
+                ),
                 (
                     "data/common/gamedata/menu/cfg/victory_road_main_menu_setting.cfg.bin"
                         .to_owned(),
                     vec![2],
                 ),
-                ("data/common/gamedata/menu/obj/btl01_10_battle_title.objbin".to_owned(), vec![3]),
-                ("data/common/gamedata/menu/obj/btl01_10_extra_long.objbin".to_owned(), vec![4]),
+                (
+                    "data/common/gamedata/menu/obj/btl01_10_battle_title.objbin".to_owned(),
+                    vec![3],
+                ),
+                (
+                    "data/common/gamedata/menu/obj/btl01_10_extra_long.objbin".to_owned(),
+                    vec![4],
+                ),
             ]),
         };
         let index = MenuAssetIndex::from_source(&source);
@@ -988,11 +1079,22 @@ mod tests {
     /// Construit un layout synthétique (la map nom→pose n'est pas requise par
     /// `pick_best_pose`, qui itère `bones` directement).
     fn layout(bones: Vec<G4pkmBone>) -> G4pkmLayout {
-        G4pkmLayout { bones, world_pose_by_name: BTreeMap::new() }
+        G4pkmLayout {
+            bones,
+            world_pose_by_name: BTreeMap::new(),
+        }
     }
 
     fn tf(x: f32, y: f32, sx: f32, sy: f32) -> Transform2D {
-        Transform2D { x, y, scale_x: sx, scale_y: sy, rot: 0.0, anchor_x: 0.5, anchor_y: 0.5 }
+        Transform2D {
+            x,
+            y,
+            scale_x: sx,
+            scale_y: sy,
+            rot: 0.0,
+            anchor_x: 0.5,
+            anchor_y: 0.5,
+        }
     }
 
     /// Un bone plein écran (0,0,1920,1080) → centre canvas (640,360) et scale = ratio
@@ -1003,8 +1105,16 @@ mod tests {
         let st = place_on_canvas(&layout, 1920, 1080);
         assert!((st.x_px - 640.0).abs() < 0.5, "x={}", st.x_px);
         assert!((st.y_px - 360.0).abs() < 0.5, "y={}", st.y_px);
-        assert!((st.scale_x - 1280.0 / 1920.0).abs() < 1e-4, "sx={}", st.scale_x);
-        assert!((st.scale_y - 720.0 / 1080.0).abs() < 1e-4, "sy={}", st.scale_y);
+        assert!(
+            (st.scale_x - 1280.0 / 1920.0).abs() < 1e-4,
+            "sx={}",
+            st.scale_x
+        );
+        assert!(
+            (st.scale_y - 720.0 / 1080.0).abs() < 1e-4,
+            "sy={}",
+            st.scale_y
+        );
     }
 
     /// Bone décalé : `win00_04/_cursor01` (tx=-40, ty=40) → CSS (640 - 40·2/3, 360 - 40·2/3).
@@ -1014,8 +1124,18 @@ mod tests {
         let st = place_on_canvas(&layout, 80, 80);
         let expect_x = 640.0 + (-40.0) * (1280.0 / 1920.0);
         let expect_y = 360.0 - 40.0 * (720.0 / 1080.0);
-        assert!((st.x_px - expect_x).abs() < 0.5, "x={} exp={}", st.x_px, expect_x);
-        assert!((st.y_px - expect_y).abs() < 0.5, "y={} exp={}", st.y_px, expect_y);
+        assert!(
+            (st.x_px - expect_x).abs() < 0.5,
+            "x={} exp={}",
+            st.x_px,
+            expect_x
+        );
+        assert!(
+            (st.y_px - expect_y).abs() < 0.5,
+            "y={} exp={}",
+            st.y_px,
+            expect_y
+        );
     }
 
     /// Bone de placement identité (locator) + bone feuille à la taille du sprite → la scale
@@ -1039,7 +1159,10 @@ mod tests {
     fn taille_designee_rend_la_region_visee() {
         let l = layout(alloc::vec![bone("_bg", tf(0.0, 0.0, 2640.0, 1080.0))]);
         let t = taille_designee(&l, 2640, 1364).expect("os avec géométrie");
-        assert!((t.0 - 2640.0).abs() < 0.5 && (t.1 - 1080.0).abs() < 0.5, "{t:?}");
+        assert!(
+            (t.0 - 2640.0).abs() < 0.5 && (t.1 - 1080.0).abs() < 0.5,
+            "{t:?}"
+        );
 
         let locator = layout(alloc::vec![bone("_atc", tf(10.0, 20.0, 1.0, 1.0))]);
         assert!(taille_designee(&locator, 2640, 1364).is_none());
@@ -1067,7 +1190,10 @@ mod tests {
         let noms: alloc::vec::Vec<&str> = parts.iter().map(|p| p.region.as_str()).collect();
         // Trois parties, dans l'ordre des os — et PAS le slot de texte, qui ne nomme aucune
         // région : un `_text_*` est rempli par le texte du jeu, pas par un morceau d'atlas.
-        assert_eq!(noms, alloc::vec!["notice_base01", "notice_base02", "icon_trophy01"]);
+        assert_eq!(
+            noms,
+            alloc::vec!["notice_base01", "notice_base02", "icon_trophy01"]
+        );
         // Le locator identité n'est pas une partie : il positionne, il ne dessine pas.
         assert_eq!(parts.len(), 3);
         // L'échelle est calculée contre la RÉGION, pas contre l'atlas : un os de 912 de large
@@ -1097,7 +1223,10 @@ mod tests {
     /// dimensionnelle la rate ; la règle de nom la retrouve.
     #[test]
     fn une_plaque_etiree_reste_reconnue_par_son_nom() {
-        let l = layout(alloc::vec![bone("_town_name_telop01", tf(0.0, 0.0, 468.0, 68.0))]);
+        let l = layout(alloc::vec![bone(
+            "_town_name_telop01",
+            tf(0.0, 0.0, 468.0, 68.0)
+        )]);
         let regions = alloc::vec![("town_name_telop01".into(), 240_u32, 68_u32)];
         let parts = bone_region_parts(&l, &regions);
         assert_eq!(parts.len(), 1);
@@ -1109,7 +1238,10 @@ mod tests {
     /// Un os qui ne nomme aucune région n'en invente pas une.
     #[test]
     fn un_os_sans_region_ne_dessine_rien() {
-        let l = layout(alloc::vec![bone("_touch_list01", tf(0.0, 0.0, 400.0, 200.0))]);
+        let l = layout(alloc::vec![bone(
+            "_touch_list01",
+            tf(0.0, 0.0, 400.0, 200.0)
+        )]);
         let regions = alloc::vec![("autre_chose01".into(), 400_u32, 200_u32)];
         assert!(bone_region_parts(&l, &regions).is_empty());
     }
@@ -1155,7 +1287,11 @@ mod tests {
         };
 
         let slots = attach_slots(&obj, &sk);
-        assert_eq!(slots.len(), 2, "l'os absent ne doit produire aucun emplacement");
+        assert_eq!(
+            slots.len(),
+            2,
+            "l'os absent ne doit produire aucun emplacement"
+        );
         assert_eq!(slots[0].bone, "_atc_item01");
         assert_eq!(slots[0].target_hash, cible);
         assert_eq!(slots[0].index, 0);
@@ -1168,7 +1304,10 @@ mod tests {
         let (x1, y1) = slots[1].to_css();
         assert!((x0 - 1757.0 * 1280.0 / 1920.0).abs() < 0.5, "x0={x0}");
         assert!((x0 - x1).abs() < f32::EPSILON, "même colonne");
-        assert!(x0 < CANVAS_W && y0 < CANVAS_H, "dans le canvas : ({x0}, {y0})");
+        assert!(
+            x0 < CANVAS_W && y0 < CANVAS_H,
+            "dans le canvas : ({x0}, {y0})"
+        );
         assert!(y1 > y0, "index croissant = plus bas à l'écran");
     }
 
@@ -1188,7 +1327,12 @@ mod tests {
             for column in 0..5 {
                 let mut cell = bone(
                     &format!("_list{row:02}_{:02}", column + 1),
-                    tf(232.0 + column as f32 * 350.0, -60.0 - row as f32 * 200.0, 1.0, 1.0),
+                    tf(
+                        232.0 + column as f32 * 350.0,
+                        -60.0 - row as f32 * 200.0,
+                        1.0,
+                        1.0,
+                    ),
                 );
                 cell.index = bones.len();
                 cell.parent_index = root_index as i32;
@@ -1197,13 +1341,21 @@ mod tests {
         }
         let slots = list_view_ring_slots(
             &layout(bones),
-            ListViewParams { view_start: 1, view_num: 4, line_num: 5, locator_num: 30 },
+            ListViewParams {
+                view_start: 1,
+                view_num: 4,
+                line_num: 5,
+                locator_num: 30,
+            },
             "_pos_atc_list_base",
             2,
         );
 
         assert_eq!(slots.len(), 30);
-        assert_eq!(slots.iter().filter(|slot| slot.initially_visible).count(), 20);
+        assert_eq!(
+            slots.iter().filter(|slot| slot.initially_visible).count(),
+            20
+        );
         assert!((slots[0].x_px - 154.666_67).abs() < 0.001);
         assert!((slots[0].y_px - 173.333_34).abs() < 0.001);
         assert!((slots[19].x_px - 1088.0).abs() < 0.001);
@@ -1216,7 +1368,9 @@ mod tests {
     /// 1920×1080) → l'objet positionné est centré et remplit le canvas.
     #[test]
     fn real_option02_02_fullscreen_object() {
-        let dir = crate::vfs::resolve_game_dir().to_string_lossy().into_owned();
+        let dir = crate::vfs::resolve_game_dir()
+            .to_string_lossy()
+            .into_owned();
         let data = std::path::Path::new(&dir).join("data");
         if !crate::vfs::donnees_disponibles(&data) {
             eprintln!("skip real_option02_02_fullscreen_object : jeu absent");
@@ -1227,8 +1381,10 @@ mod tests {
             eprintln!("skip : vfs.init KO");
             return;
         }
-        let Some(g4pkm_path) =
-            vfs.iter().map(|(p, _)| p.to_string()).find(|p| p.ends_with("option02_02.g4pkm"))
+        let Some(g4pkm_path) = vfs
+            .iter()
+            .map(|(p, _)| p.to_string())
+            .find(|p| p.ends_with("option02_02.g4pkm"))
         else {
             eprintln!("skip : option02_02.g4pkm introuvable");
             return;
@@ -1244,7 +1400,11 @@ mod tests {
         );
         assert!((st.x_px - 640.0).abs() < 1.0, "x={}", st.x_px);
         assert!((st.y_px - 360.0).abs() < 1.0, "y={}", st.y_px);
-        assert!((st.scale_x - 1280.0 / 1920.0).abs() < 1e-3, "sx={}", st.scale_x);
+        assert!(
+            (st.scale_x - 1280.0 / 1920.0).abs() < 1e-3,
+            "sx={}",
+            st.scale_x
+        );
     }
 
     // ── Compositeur CPU ─────────────────────────────────────────────────────
@@ -1263,28 +1423,51 @@ mod tests {
             &rgba,
             4,
             4,
-            ScreenTransform { x_px: 4.0, y_px: 4.0, scale_x: 1.0, scale_y: 1.0, rot: 0.0 },
+            ScreenTransform {
+                x_px: 4.0,
+                y_px: 4.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                rot: 0.0,
+            },
             0.5,
             0.5,
         );
         let canvas = compose(8, 8, &[sprite]);
         assert_eq!(at(&canvas, 8, 4, 4), (255, 0, 0, 255), "centre rouge");
         assert_eq!(at(&canvas, 8, 2, 2), (255, 0, 0, 255), "coin sprite rouge");
-        assert_eq!(at(&canvas, 8, 0, 0), (0, 0, 0, 0), "hors sprite transparent");
-        assert_eq!(at(&canvas, 8, 7, 7), (0, 0, 0, 0), "hors sprite transparent");
+        assert_eq!(
+            at(&canvas, 8, 0, 0),
+            (0, 0, 0, 0),
+            "hors sprite transparent"
+        );
+        assert_eq!(
+            at(&canvas, 8, 7, 7),
+            (0, 0, 0, 0),
+            "hors sprite transparent"
+        );
     }
 
     /// La teinte multiplie le sprite avant le mélange : un blanc teinté de moitié sort gris.
     #[test]
     fn la_teinte_multiplie_le_sprite() {
         let blanc = alloc::vec![255u8, 255, 255, 255].repeat(16);
-        let tf = ScreenTransform { x_px: 4.0, y_px: 4.0, scale_x: 1.0, scale_y: 1.0, rot: 0.0 };
+        let tf = ScreenTransform {
+            x_px: 4.0,
+            y_px: 4.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            rot: 0.0,
+        };
         let mut s = CompositeSprite::neutre(&blanc, 4, 4, tf, 0.5, 0.5);
         s.couleur = [0.5, 0.5, 0.5, 1.0];
         let canvas = compose(8, 8, &[s]);
         let (r, g, b, a) = at(&canvas, 8, 4, 4);
         assert_eq!(a, 255, "opacité conservée");
-        assert!((120..=136).contains(&r) && r == g && g == b, "gris attendu, obtenu ({r},{g},{b})");
+        assert!(
+            (120..=136).contains(&r) && r == g && g == b,
+            "gris attendu, obtenu ({r},{g},{b})"
+        );
     }
 
     /// Le mode additif AJOUTE au fond au lieu de le remplacer : deux gris superposés éclaircissent.
@@ -1292,16 +1475,38 @@ mod tests {
     #[test]
     fn le_mode_additif_eclaircit_au_lieu_de_remplacer() {
         let gris = alloc::vec![100u8, 100, 100, 255].repeat(16);
-        let tf = ScreenTransform { x_px: 4.0, y_px: 4.0, scale_x: 1.0, scale_y: 1.0, rot: 0.0 };
+        let tf = ScreenTransform {
+            x_px: 4.0,
+            y_px: 4.0,
+            scale_x: 1.0,
+            scale_y: 1.0,
+            rot: 0.0,
+        };
         let fond = CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5);
         let mut halo = CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5);
         halo.mode = BlendMode::Additif;
 
-        let normal = compose(8, 8, &[fond, CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5)]);
-        assert_eq!(at(&normal, 8, 4, 4).0, 100, "en « over », le second remplace : inchangé");
+        let normal = compose(
+            8,
+            8,
+            &[fond, CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5)],
+        );
+        assert_eq!(
+            at(&normal, 8, 4, 4).0,
+            100,
+            "en « over », le second remplace : inchangé"
+        );
 
-        let additif = compose(8, 8, &[CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5), halo]);
-        assert_eq!(at(&additif, 8, 4, 4).0, 200, "en additif, les deux s'ajoutent");
+        let additif = compose(
+            8,
+            8,
+            &[CompositeSprite::neutre(&gris, 4, 4, tf, 0.5, 0.5), halo],
+        );
+        assert_eq!(
+            at(&additif, 8, 4, 4).0,
+            200,
+            "en additif, les deux s'ajoutent"
+        );
     }
 
     /// Z-order : le 2e sprite (bleu) est dessiné PAR-DESSUS le 1er (rouge) → bleu gagne.
@@ -1311,13 +1516,23 @@ mod tests {
         let blue = alloc::vec![0u8, 0, 255, 255].repeat(16);
         let mk = |rgba: &[u8]| -> ScreenTransform {
             let _ = rgba;
-            ScreenTransform { x_px: 4.0, y_px: 4.0, scale_x: 1.0, scale_y: 1.0, rot: 0.0 }
+            ScreenTransform {
+                x_px: 4.0,
+                y_px: 4.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                rot: 0.0,
+            }
         };
         let sprites = alloc::vec![
             CompositeSprite::neutre(&red, 4, 4, mk(&red), 0.5, 0.5),
             CompositeSprite::neutre(&blue, 4, 4, mk(&blue), 0.5, 0.5),
         ];
         let canvas = compose(8, 8, &sprites);
-        assert_eq!(at(&canvas, 8, 4, 4), (0, 0, 255, 255), "le dernier dessiné (bleu) gagne");
+        assert_eq!(
+            at(&canvas, 8, 4, 4),
+            (0, 0, 255, 255),
+            "le dernier dessiné (bleu) gagne"
+        );
     }
 }

@@ -138,15 +138,27 @@ fn heading(ui: &mut Ui, s: &str) {
 
 /// A choice from `options` ((value, label)) in a drop-down.
 fn choice<T: PartialEq + Clone>(ui: &mut Ui, id: &str, value: &mut T, options: &[(T, &str)]) {
-    let label = options.iter().find(|(v, _)| v == value).map(|(_, l)| tl!(l).to_string()).unwrap_or_default();
-    egui::ComboBox::from_id_salt(id).selected_text(label).width(150.0).show_ui(ui, |ui| {
-        for (v, l) in options {
-            ui.selectable_value(value, v.clone(), tl!(l));
-        }
-    });
+    let label = options
+        .iter()
+        .find(|(v, _)| v == value)
+        .map(|(_, l)| tl!(l).to_string())
+        .unwrap_or_default();
+    egui::ComboBox::from_id_salt(id)
+        .selected_text(label)
+        .width(150.0)
+        .show_ui(ui, |ui| {
+            for (v, l) in options {
+                ui.selectable_value(value, v.clone(), tl!(l));
+            }
+        });
 }
 
-const LEADERS: [(&str, &str); 4] = [("none", "(none)"), ("dot", "........"), ("hyphen", "--------"), ("underscore", "________")];
+const LEADERS: [(&str, &str); 4] = [
+    ("none", "(none)"),
+    ("dot", "........"),
+    ("hyphen", "--------"),
+    ("underscore", "________"),
+];
 
 fn leader_char(l: &str) -> Option<char> {
     match l {
@@ -162,10 +174,18 @@ fn leader_char(l: &str) -> Option<char> {
 fn sample(ui: &mut Ui, lines: &[(usize, String, String)], right: bool, leader: Option<char>) {
     let t = Tokens::get(ui.ctx());
     let row = 17.0;
-    let (rect, _) = ui.allocate_exact_size(vec2(260.0, row * lines.len().max(1) as f32 + 10.0), Sense::hover());
+    let (rect, _) = ui.allocate_exact_size(
+        vec2(260.0, row * lines.len().max(1) as f32 + 10.0),
+        Sense::hover(),
+    );
     let p = ui.painter_at(rect);
     p.rect_filled(rect, 2.0, egui::Color32::WHITE);
-    p.rect_stroke(rect, 2.0, egui::Stroke::new(1.0, t.border_strong), egui::StrokeKind::Inside);
+    p.rect_stroke(
+        rect,
+        2.0,
+        egui::Stroke::new(1.0, t.border_strong),
+        egui::StrokeKind::Inside,
+    );
     let font = egui::FontId::proportional(11.0);
     let ink = egui::Color32::BLACK;
     for (i, (level, text, page)) in lines.iter().enumerate() {
@@ -179,14 +199,22 @@ fn sample(ui: &mut Ui, lines: &[(usize, String, String)], right: bool, leader: O
         }
         let pg = p.layout_no_wrap(page.clone(), font.clone(), ink);
         let pw = pg.size().x;
-        let px = if right { rect.right() - 8.0 - pw } else { x + w + 4.0 };
+        let px = if right {
+            rect.right() - 8.0 - pw
+        } else {
+            x + w + 4.0
+        };
         p.galley(egui::pos2(px, y), pg, ink);
         if right && let Some(c) = leader {
             let dots = p.layout_no_wrap(c.to_string(), font.clone(), egui::Color32::from_gray(90));
             let step = dots.size().x.max(2.0);
             let mut dx = x + w + 4.0;
             while dx + step < px - 3.0 {
-                p.galley(egui::pos2(dx, y), dots.clone(), egui::Color32::from_gray(90));
+                p.galley(
+                    egui::pos2(dx, y),
+                    dots.clone(),
+                    egui::Color32::from_gray(90),
+                );
                 dx += step;
             }
         }
@@ -199,11 +227,21 @@ fn sample(ui: &mut Ui, lines: &[(usize, String, String)], right: bool, leader: O
 /// Labels every document has.
 const BUILT_IN_LABELS: [&str; 3] = ["Equation", "Figure", "Table"];
 
-const NUMBER_FORMATS: [(&str, &str); 5] =
-    [("ARABIC", "1, 2, 3, …"), ("alphabetic", "a, b, c, …"), ("ALPHABETIC", "A, B, C, …"), ("roman", "i, ii, iii, …"), ("ROMAN", "I, II, III, …")];
+const NUMBER_FORMATS: [(&str, &str); 5] = [
+    ("ARABIC", "1, 2, 3, …"),
+    ("alphabetic", "a, b, c, …"),
+    ("ALPHABETIC", "A, B, C, …"),
+    ("roman", "i, ii, iii, …"),
+    ("ROMAN", "I, II, III, …"),
+];
 
-const SEPARATORS: [(&str, &str); 5] =
-    [("-", "- (hyphen)"), (".", ". (period)"), (":", ": (colon)"), ("\u{2014}", "\u{2014} (em dash)"), ("\u{2013}", "\u{2013} (en dash)")];
+const SEPARATORS: [(&str, &str); 5] = [
+    ("-", "- (hyphen)"),
+    (".", ". (period)"),
+    (":", ": (colon)"),
+    ("\u{2014}", "\u{2014} (em dash)"),
+    ("\u{2013}", "\u{2013} (en dash)"),
+];
 
 /// The Caption dialog's fields.
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -266,8 +304,16 @@ impl CaptionForm {
             "ROMAN" => "I",
             _ => "1",
         };
-        let chapter = if self.chapter { format!("1{}", self.separator) } else { String::new() };
-        let label = if self.exclude_label { String::new() } else { format!("{} ", self.label) };
+        let chapter = if self.chapter {
+            format!("1{}", self.separator)
+        } else {
+            String::new()
+        };
+        let label = if self.exclude_label {
+            String::new()
+        } else {
+            format!("{} ", self.label)
+        };
         format!("{label}{chapter}{n}")
     }
 
@@ -292,24 +338,46 @@ fn caption_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CaptionForm) -> Next {
     ui.label(tl!("Caption:"));
     ui.horizontal(|ui| {
         ui.label(f.preview());
-        ui.add(egui::TextEdit::singleline(&mut f.text).desired_width(220.0).hint_text(tl!("Caption text")));
+        ui.add(
+            egui::TextEdit::singleline(&mut f.text)
+                .desired_width(220.0)
+                .hint_text(tl!("Caption text")),
+        );
     });
     ui.add_space(6.0);
     let mut then = None;
-    egui::Grid::new("cap_opts").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("Label:"));
-        let labels: Vec<(String, &str)> = f.labels.iter().map(|l| (l.clone(), l.as_str())).collect();
-        egui::ComboBox::from_id_salt("cap_label").selected_text(tl!(&f.label)).width(150.0).show_ui(ui, |ui| {
-            for (v, l) in &labels {
-                ui.selectable_value(&mut f.label, v.clone(), tl!(l));
-            }
+    egui::Grid::new("cap_opts")
+        .num_columns(2)
+        .spacing(vec2(10.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Label:"));
+            let labels: Vec<(String, &str)> =
+                f.labels.iter().map(|l| (l.clone(), l.as_str())).collect();
+            egui::ComboBox::from_id_salt("cap_label")
+                .selected_text(tl!(&f.label))
+                .width(150.0)
+                .show_ui(ui, |ui| {
+                    for (v, l) in &labels {
+                        ui.selectable_value(&mut f.label, v.clone(), tl!(l));
+                    }
+                });
+            ui.end_row();
+            ui.label(tl!("Position:"));
+            choice(
+                ui,
+                "cap_pos",
+                &mut f.position,
+                &[
+                    ("below".to_string(), "Below the item"),
+                    ("above".to_string(), "Above the item"),
+                ],
+            );
+            ui.end_row();
         });
-        ui.end_row();
-        ui.label(tl!("Position:"));
-        choice(ui, "cap_pos", &mut f.position, &[("below".to_string(), "Below the item"), ("above".to_string(), "Above the item")]);
-        ui.end_row();
-    });
-    ui.checkbox(&mut f.exclude_label, tl!("Leave the label out of the caption"));
+    ui.checkbox(
+        &mut f.exclude_label,
+        tl!("Leave the label out of the caption"),
+    );
     ui.add_space(4.0);
     ui.horizontal(|ui| {
         if ui.button(tl!("New Label…")).clicked() {
@@ -318,13 +386,19 @@ fn caption_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CaptionForm) -> Next {
             then = Some(RefsDialog::NewLabel(n));
         }
         let custom = !BUILT_IN_LABELS.contains(&f.label.as_str());
-        if ui.add_enabled(custom, egui::Button::new(tl!("Delete Label"))).clicked() {
+        if ui
+            .add_enabled(custom, egui::Button::new(tl!("Delete Label")))
+            .clicked()
+        {
             app.ui.caption_labels.retain(|l| *l != f.label);
             f.labels.retain(|l| *l != f.label);
             f.label = "Figure".into();
         }
         if ui.button(tl!("Numbering…")).clicked() {
-            then = Some(RefsDialog::CaptionNumbering { was: Box::new(f.clone()), form: f.clone() });
+            then = Some(RefsDialog::CaptionNumbering {
+                was: Box::new(f.clone()),
+                form: f.clone(),
+            });
         }
     });
     if let Some(g) = then {
@@ -334,36 +408,69 @@ fn caption_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CaptionForm) -> Next {
     if ok && let Err(e) = app.run("references.caption", f.params()) {
         app.status(e);
     }
-    if ok || cancel { Next::Close } else { Next::Stay }
+    if ok || cancel {
+        Next::Close
+    } else {
+        Next::Stay
+    }
 }
 
 fn numbering_ui(ui: &mut Ui, f: &mut CaptionForm, was: &CaptionForm) -> Next {
-    egui::Grid::new("cap_num").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("Format:"));
-        let opts: Vec<(String, &str)> = NUMBER_FORMATS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
-        choice(ui, "cap_fmt", &mut f.format, &opts);
-        ui.end_row();
-    });
-    ui.checkbox(&mut f.chapter, tl!("Add the chapter number"));
-    ui.add_enabled_ui(f.chapter, |ui| {
-        egui::Grid::new("cap_chap").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-            ui.label(tl!("Chapters begin at:"));
-            let opts: Vec<(u8, String)> = (1..=9u8).map(|l| (l, crate::i18n::fmt(tl!("Heading {n}"), &[("n", &l.to_string())]))).collect();
-            let shown = opts.iter().find(|(l, _)| *l == f.chapter_level).map(|(_, s)| s.clone()).unwrap_or_default();
-            egui::ComboBox::from_id_salt("cap_level").selected_text(shown).width(150.0).show_ui(ui, |ui| {
-                for (l, s) in &opts {
-                    ui.selectable_value(&mut f.chapter_level, *l, s);
-                }
-            });
-            ui.end_row();
-            ui.label(tl!("Separator:"));
-            let opts: Vec<(String, &str)> = SEPARATORS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
-            choice(ui, "cap_sep", &mut f.separator, &opts);
+    egui::Grid::new("cap_num")
+        .num_columns(2)
+        .spacing(vec2(10.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Format:"));
+            let opts: Vec<(String, &str)> = NUMBER_FORMATS
+                .iter()
+                .map(|(v, l)| (v.to_string(), *l))
+                .collect();
+            choice(ui, "cap_fmt", &mut f.format, &opts);
             ui.end_row();
         });
+    ui.checkbox(&mut f.chapter, tl!("Add the chapter number"));
+    ui.add_enabled_ui(f.chapter, |ui| {
+        egui::Grid::new("cap_chap")
+            .num_columns(2)
+            .spacing(vec2(10.0, 6.0))
+            .show(ui, |ui| {
+                ui.label(tl!("Chapters begin at:"));
+                let opts: Vec<(u8, String)> = (1..=9u8)
+                    .map(|l| {
+                        (
+                            l,
+                            crate::i18n::fmt(tl!("Heading {n}"), &[("n", &l.to_string())]),
+                        )
+                    })
+                    .collect();
+                let shown = opts
+                    .iter()
+                    .find(|(l, _)| *l == f.chapter_level)
+                    .map(|(_, s)| s.clone())
+                    .unwrap_or_default();
+                egui::ComboBox::from_id_salt("cap_level")
+                    .selected_text(shown)
+                    .width(150.0)
+                    .show_ui(ui, |ui| {
+                        for (l, s) in &opts {
+                            ui.selectable_value(&mut f.chapter_level, *l, s);
+                        }
+                    });
+                ui.end_row();
+                ui.label(tl!("Separator:"));
+                let opts: Vec<(String, &str)> = SEPARATORS
+                    .iter()
+                    .map(|(v, l)| (v.to_string(), *l))
+                    .collect();
+                choice(ui, "cap_sep", &mut f.separator, &opts);
+                ui.end_row();
+            });
     });
     ui.add_space(4.0);
-    ui.label(crate::i18n::fmt(tl!("Example: {sample}"), &[("sample", &f.preview())]));
+    ui.label(crate::i18n::fmt(
+        tl!("Example: {sample}"),
+        &[("sample", &f.preview())],
+    ));
     let (ok, cancel) = buttons(ui, tl!("OK"));
     if ok {
         return go(RefsDialog::Caption(f.clone()));
@@ -379,7 +486,14 @@ fn new_label_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CaptionForm) -> Next {
     let r = ui.add(egui::TextEdit::singleline(&mut f.new_label).desired_width(260.0));
     r.request_focus();
     let (ok, cancel) = buttons(ui, tl!("OK"));
-    let name: String = f.new_label.chars().filter(|c| !matches!(c, '"' | '\\') && !c.is_control()).take(40).collect::<String>().trim().to_string();
+    let name: String = f
+        .new_label
+        .chars()
+        .filter(|c| !matches!(c, '"' | '\\') && !c.is_control())
+        .take(40)
+        .collect::<String>()
+        .trim()
+        .to_string();
     if ok && !name.is_empty() {
         if !f.labels.contains(&name) {
             f.labels.push(name.clone());
@@ -389,7 +503,11 @@ fn new_label_ui(app: &mut WordApp, ui: &mut Ui, f: &mut CaptionForm) -> Next {
         }
         f.label = name;
     }
-    if ok || cancel { go(RefsDialog::Caption(f.clone())) } else { Next::Stay }
+    if ok || cancel {
+        go(RefsDialog::Caption(f.clone()))
+    } else {
+        Next::Stay
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -409,12 +527,17 @@ pub struct IndexForm {
 
 /// The first field in the body whose name is `name`.
 fn body_field(app: &WordApp, name: &str) -> Option<FieldCode> {
-    app.session.doc.body.iter().filter_map(|b| b.as_para()).flat_map(|p| p.objects.iter()).find_map(|o| match o {
-        wordcraft_doc::InlineObject::Field { instr, .. } => {
-            Some(FieldCode::parse(instr)).filter(|f| f.name == name && (name != "TOC" || !f.has('c')))
-        }
-        _ => None,
-    })
+    app.session
+        .doc
+        .body
+        .iter()
+        .filter_map(|b| b.as_para())
+        .flat_map(|p| p.objects.iter())
+        .find_map(|o| match o {
+            wordcraft_doc::InlineObject::Field { instr, .. } => Some(FieldCode::parse(instr))
+                .filter(|f| f.name == name && (name != "TOC" || !f.has('c'))),
+            _ => None,
+        })
 }
 
 impl IndexForm {
@@ -423,12 +546,22 @@ impl IndexForm {
         match body_field(app, "INDEX") {
             Some(f) => IndexForm {
                 kind: if f.has('r') { "runIn" } else { "indented" }.into(),
-                columns: f.arg('c').and_then(|c| c.trim().parse().ok()).unwrap_or(1).clamp(1, 4),
+                columns: f
+                    .arg('c')
+                    .and_then(|c| c.trim().parse().ok())
+                    .unwrap_or(1)
+                    .clamp(1, 4),
                 right_align: f.arg('e').is_some_and(|e| e.contains('\t')),
                 leader: "dot".into(),
                 headings: f.has('h'),
             },
-            None => IndexForm { kind: "indented".into(), columns: 2, right_align: false, leader: "dot".into(), headings: true },
+            None => IndexForm {
+                kind: "indented".into(),
+                columns: 2,
+                right_align: false,
+                leader: "dot".into(),
+                headings: true,
+            },
         }
     }
 
@@ -446,7 +579,16 @@ fn index_ui(app: &mut WordApp, ui: &mut Ui, f: &mut IndexForm) -> Next {
             v.push((0, "A".to_string(), String::new()));
         }
         if f.kind == "runIn" {
-            v.push((0, format!("{}: {}, 4; {}", tl!("Atmosphere"), tl!("Ionosphere"), tl!("Mesosphere")), page("3")));
+            v.push((
+                0,
+                format!(
+                    "{}: {}, 4; {}",
+                    tl!("Atmosphere"),
+                    tl!("Ionosphere"),
+                    tl!("Mesosphere")
+                ),
+                page("3"),
+            ));
         } else {
             v.push((0, tl!("Atmosphere").to_string(), page("1")));
             v.push((1, tl!("Ionosphere").to_string(), page("3")));
@@ -456,29 +598,33 @@ fn index_ui(app: &mut WordApp, ui: &mut Ui, f: &mut IndexForm) -> Next {
     };
     sample(ui, &lines, f.right_align, leader_char(&f.leader));
     ui.add_space(6.0);
-    egui::Grid::new("idx").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("Type:"));
-        ui.horizontal(|ui| {
-            ui.radio_value(&mut f.kind, "indented".to_string(), tl!("Indented"));
-            ui.radio_value(&mut f.kind, "runIn".to_string(), tl!("Run-in"));
+    egui::Grid::new("idx")
+        .num_columns(2)
+        .spacing(vec2(10.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Type:"));
+            ui.horizontal(|ui| {
+                ui.radio_value(&mut f.kind, "indented".to_string(), tl!("Indented"));
+                ui.radio_value(&mut f.kind, "runIn".to_string(), tl!("Run-in"));
+            });
+            ui.end_row();
+            ui.label(tl!("Columns:"));
+            ui.add(egui::DragValue::new(&mut f.columns).range(1..=4));
+            ui.end_row();
+            ui.label("");
+            ui.checkbox(&mut f.right_align, tl!("Page numbers at the right margin"));
+            ui.end_row();
+            ui.label(tl!("Tab leader:"));
+            ui.add_enabled_ui(f.right_align, |ui| {
+                let opts: Vec<(String, &str)> =
+                    LEADERS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
+                choice(ui, "idx_leader", &mut f.leader, &opts);
+            });
+            ui.end_row();
+            ui.label("");
+            ui.checkbox(&mut f.headings, tl!("Letter headings"));
+            ui.end_row();
         });
-        ui.end_row();
-        ui.label(tl!("Columns:"));
-        ui.add(egui::DragValue::new(&mut f.columns).range(1..=4));
-        ui.end_row();
-        ui.label("");
-        ui.checkbox(&mut f.right_align, tl!("Page numbers at the right margin"));
-        ui.end_row();
-        ui.label(tl!("Tab leader:"));
-        ui.add_enabled_ui(f.right_align, |ui| {
-            let opts: Vec<(String, &str)> = LEADERS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
-            choice(ui, "idx_leader", &mut f.leader, &opts);
-        });
-        ui.end_row();
-        ui.label("");
-        ui.checkbox(&mut f.headings, tl!("Letter headings"));
-        ui.end_row();
-    });
     ui.add_space(4.0);
     if ui.button(tl!("Mark Entry…")).clicked() {
         return go(RefsDialog::MarkEntry(MarkForm::read(app)));
@@ -487,7 +633,11 @@ fn index_ui(app: &mut WordApp, ui: &mut Ui, f: &mut IndexForm) -> Next {
     if ok && let Err(e) = app.run("references.index", f.params()) {
         app.status(e);
     }
-    if ok || cancel { Next::Close } else { Next::Stay }
+    if ok || cancel {
+        Next::Close
+    } else {
+        Next::Stay
+    }
 }
 
 /// The Mark Index Entry dialog's fields.
@@ -508,7 +658,14 @@ pub struct MarkForm {
 
 impl MarkForm {
     pub fn read(app: &WordApp) -> MarkForm {
-        let bookmarks: Vec<String> = app.session.doc.bookmarks().into_iter().map(|(n, _)| n).filter(|n| !n.starts_with('_')).collect();
+        let bookmarks: Vec<String> = app
+            .session
+            .doc
+            .bookmarks()
+            .into_iter()
+            .map(|(n, _)| n)
+            .filter(|n| !n.starts_with('_'))
+            .collect();
         MarkForm {
             entry: app.session.selected_text().trim().to_string(),
             subentry: String::new(),
@@ -539,31 +696,48 @@ impl MarkForm {
 
 fn mark_ui(app: &mut WordApp, ui: &mut Ui, f: &mut MarkForm) -> Next {
     heading(ui, "Index");
-    egui::Grid::new("xe").num_columns(2).spacing(vec2(10.0, 6.0)).show(ui, |ui| {
-        ui.label(tl!("Main entry:"));
-        ui.add(egui::TextEdit::singleline(&mut f.entry).desired_width(220.0));
-        ui.end_row();
-        ui.label(tl!("Subentry:"));
-        ui.add(egui::TextEdit::singleline(&mut f.subentry).desired_width(220.0));
-        ui.end_row();
-    });
+    egui::Grid::new("xe")
+        .num_columns(2)
+        .spacing(vec2(10.0, 6.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Main entry:"));
+            ui.add(egui::TextEdit::singleline(&mut f.entry).desired_width(220.0));
+            ui.end_row();
+            ui.label(tl!("Subentry:"));
+            ui.add(egui::TextEdit::singleline(&mut f.subentry).desired_width(220.0));
+            ui.end_row();
+        });
     heading(ui, "Options");
     ui.horizontal(|ui| {
         ui.radio_value(&mut f.option, "see".to_string(), tl!("Cross-reference:"));
-        ui.add_enabled(f.option == "see", egui::TextEdit::singleline(&mut f.see).desired_width(160.0));
+        ui.add_enabled(
+            f.option == "see",
+            egui::TextEdit::singleline(&mut f.see).desired_width(160.0),
+        );
     });
     ui.radio_value(&mut f.option, "page".to_string(), tl!("This page"));
     ui.horizontal(|ui| {
         ui.add_enabled_ui(!f.bookmarks.is_empty(), |ui| {
-            ui.radio_value(&mut f.option, "range".to_string(), tl!("Pages of bookmark:"));
+            ui.radio_value(
+                &mut f.option,
+                "range".to_string(),
+                tl!("Pages of bookmark:"),
+            );
         });
         ui.add_enabled_ui(f.option == "range", |ui| {
-            let opts: Vec<(String, &str)> = f.bookmarks.iter().map(|b| (b.clone(), b.as_str())).collect();
-            egui::ComboBox::from_id_salt("xe_bm").selected_text(f.bookmark.clone()).width(140.0).show_ui(ui, |ui| {
-                for (v, l) in &opts {
-                    ui.selectable_value(&mut f.bookmark, v.clone(), *l);
-                }
-            });
+            let opts: Vec<(String, &str)> = f
+                .bookmarks
+                .iter()
+                .map(|b| (b.clone(), b.as_str()))
+                .collect();
+            egui::ComboBox::from_id_salt("xe_bm")
+                .selected_text(f.bookmark.clone())
+                .width(140.0)
+                .show_ui(ui, |ui| {
+                    for (v, l) in &opts {
+                        ui.selectable_value(&mut f.bookmark, v.clone(), *l);
+                    }
+                });
         });
     });
     heading(ui, "Page number style");
@@ -582,15 +756,28 @@ fn mark_ui(app: &mut WordApp, ui: &mut Ui, f: &mut MarkForm) -> Next {
                 close = true;
             }
             let can = !f.entry.trim().is_empty();
-            if ui.add_enabled(can, egui::Button::new(tl!("Mark All"))).clicked() {
+            if ui
+                .add_enabled(can, egui::Button::new(tl!("Mark All")))
+                .clicked()
+            {
                 f.message = match app.run("references.markEntry", f.params(true)) {
-                    Ok(v) => {
-                        crate::i18n::fmt(tl!("{n} entries marked."), &[("n", &v.get("marked").and_then(Value::as_u64).unwrap_or(0).to_string())])
-                    }
+                    Ok(v) => crate::i18n::fmt(
+                        tl!("{n} entries marked."),
+                        &[(
+                            "n",
+                            &v.get("marked")
+                                .and_then(Value::as_u64)
+                                .unwrap_or(0)
+                                .to_string(),
+                        )],
+                    ),
                     Err(e) => e,
                 };
             }
-            if ui.add_enabled(can, crate::widgets::primary_button(ui, tl!("Mark"))).clicked() {
+            if ui
+                .add_enabled(can, crate::widgets::primary_button(ui, tl!("Mark")))
+                .clicked()
+            {
                 f.message = match app.run("references.markEntry", f.params(false)) {
                     Ok(_) => tl!("Entry marked.").to_string(),
                     Err(e) => e,
@@ -624,13 +811,25 @@ pub struct TocForm {
 impl TocForm {
     /// The table in the document, or the defaults for a new one.
     pub fn read(app: &WordApp) -> TocForm {
-        let f = body_field(app, "TOC").unwrap_or_else(|| FieldCode::parse(r#"TOC \o "1-3" \h \z \u"#));
-        let levels = f.arg('o').and_then(wordcraft_engine::cmd::references::level_range).map_or(3, |r| r.1);
+        let f =
+            body_field(app, "TOC").unwrap_or_else(|| FieldCode::parse(r#"TOC \o "1-3" \h \z \u"#));
+        let levels = f
+            .arg('o')
+            .and_then(wordcraft_engine::cmd::references::level_range)
+            .map_or(3, |r| r.1);
         let listed: Vec<(String, u8)> = f
             .arg('t')
             .map(|t| {
                 let parts: Vec<&str> = t.split(',').map(str::trim).collect();
-                parts.chunks(2).filter_map(|c| Some((c.first()?.to_string(), c.get(1)?.parse::<u8>().ok()?.clamp(1, 9)))).collect()
+                parts
+                    .chunks(2)
+                    .filter_map(|c| {
+                        Some((
+                            c.first()?.to_string(),
+                            c.get(1)?.parse::<u8>().ok()?.clamp(1, 9),
+                        ))
+                    })
+                    .collect()
             })
             .unwrap_or_default();
         let style_levels = app
@@ -639,8 +838,21 @@ impl TocForm {
             .styles
             .styles
             .iter()
-            .filter(|s| s.kind == StyleKind::Paragraph && !s.hidden && !s.id.starts_with("Heading") && !s.id.starts_with("TOC"))
-            .map(|s| (s.name.clone(), listed.iter().find(|(n, _)| n.eq_ignore_ascii_case(&s.name)).map_or(0, |(_, l)| *l)))
+            .filter(|s| {
+                s.kind == StyleKind::Paragraph
+                    && !s.hidden
+                    && !s.id.starts_with("Heading")
+                    && !s.id.starts_with("TOC")
+            })
+            .map(|s| {
+                (
+                    s.name.clone(),
+                    listed
+                        .iter()
+                        .find(|(n, _)| n.eq_ignore_ascii_case(&s.name))
+                        .map_or(0, |(_, l)| *l),
+                )
+            })
             .collect();
         // Right-aligned page numbers: no `\p` separator, or a tab one.
         let leader = app
@@ -649,7 +861,12 @@ impl TocForm {
             .body
             .iter()
             .filter_map(|b| b.as_para())
-            .find(|p| p.props.style.as_deref().is_some_and(|s| s.starts_with("TOC") && s != "TOCHeading"))
+            .find(|p| {
+                p.props
+                    .style
+                    .as_deref()
+                    .is_some_and(|s| s.starts_with("TOC") && s != "TOCHeading")
+            })
             .and_then(|p| p.props.tabs.as_ref()?.last().map(|t| t.leader));
         TocForm {
             page_numbers: !f.has('n'),
@@ -672,7 +889,12 @@ impl TocForm {
 
     /// `references.toc` parameters.
     pub fn params(&self) -> Value {
-        let styles: serde_json::Map<String, Value> = self.style_levels.iter().filter(|(_, l)| *l > 0).map(|(n, l)| (n.clone(), json!(l))).collect();
+        let styles: serde_json::Map<String, Value> = self
+            .style_levels
+            .iter()
+            .filter(|(_, l)| *l > 0)
+            .map(|(n, l)| (n.clone(), json!(l)))
+            .collect();
         json!({
             "levels": self.levels,
             "pageNumbers": self.page_numbers,
@@ -691,7 +913,15 @@ fn toc_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm) -> Next {
     let lines: Vec<(usize, String, String)> = (1..=f.levels.min(3))
         .map(|l| {
             let name = crate::i18n::fmt(tl!("Heading {n}"), &[("n", &l.to_string())]);
-            (l as usize - 1, name, if f.page_numbers { (l * 2 - 1).to_string() } else { String::new() })
+            (
+                l as usize - 1,
+                name,
+                if f.page_numbers {
+                    (l * 2 - 1).to_string()
+                } else {
+                    String::new()
+                },
+            )
         })
         .collect();
     sample(ui, &lines, f.right_align, leader_char(&f.leader));
@@ -702,7 +932,8 @@ fn toc_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm) -> Next {
         ui.horizontal(|ui| {
             ui.label(tl!("Tab leader:"));
             ui.add_enabled_ui(f.right_align, |ui| {
-                let opts: Vec<(String, &str)> = LEADERS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
+                let opts: Vec<(String, &str)> =
+                    LEADERS.iter().map(|(v, l)| (v.to_string(), *l)).collect();
                 choice(ui, "toc_leader", &mut f.leader, &opts);
             });
         });
@@ -716,10 +947,16 @@ fn toc_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm) -> Next {
     let mut then = None;
     ui.horizontal(|ui| {
         if ui.button(tl!("Options…")).clicked() {
-            then = Some(RefsDialog::TocOptions { was: Box::new(f.clone()), form: f.clone() });
+            then = Some(RefsDialog::TocOptions {
+                was: Box::new(f.clone()),
+                form: f.clone(),
+            });
         }
         if ui.button(tl!("Modify…")).clicked() {
-            then = Some(RefsDialog::TocStyles { form: f.clone(), level: 1 });
+            then = Some(RefsDialog::TocStyles {
+                form: f.clone(),
+                level: 1,
+            });
         }
     });
     if let Some(g) = then {
@@ -729,22 +966,45 @@ fn toc_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm) -> Next {
     if ok && let Err(e) = app.run("references.toc", f.params()) {
         app.status(e);
     }
-    if ok || cancel { Next::Close } else { Next::Stay }
+    if ok || cancel {
+        Next::Close
+    } else {
+        Next::Stay
+    }
 }
 
 fn toc_options_ui(_app: &mut WordApp, ui: &mut Ui, f: &mut TocForm, was: &TocForm) -> Next {
     heading(ui, "Collect entries from:");
-    ui.checkbox(&mut f.heading_styles, crate::i18n::fmt(tl!("Heading styles (levels 1–{n})"), &[("n", &f.levels.to_string())]));
+    ui.checkbox(
+        &mut f.heading_styles,
+        crate::i18n::fmt(
+            tl!("Heading styles (levels 1–{n})"),
+            &[("n", &f.levels.to_string())],
+        ),
+    );
     ui.label(tl!("Other styles and their TOC level:"));
-    egui::ScrollArea::vertical().max_height(180.0).show(ui, |ui| {
-        egui::Grid::new("toc_styles").num_columns(2).spacing(vec2(10.0, 3.0)).show(ui, |ui| {
-            for (name, level) in f.style_levels.iter_mut() {
-                ui.label(name.as_str());
-                ui.add(egui::DragValue::new(level).range(0..=9).custom_formatter(|v, _| if v < 0.5 { String::new() } else { format!("{v:.0}") }));
-                ui.end_row();
-            }
+    egui::ScrollArea::vertical()
+        .max_height(180.0)
+        .show(ui, |ui| {
+            egui::Grid::new("toc_styles")
+                .num_columns(2)
+                .spacing(vec2(10.0, 3.0))
+                .show(ui, |ui| {
+                    for (name, level) in f.style_levels.iter_mut() {
+                        ui.label(name.as_str());
+                        ui.add(egui::DragValue::new(level).range(0..=9).custom_formatter(
+                            |v, _| {
+                                if v < 0.5 {
+                                    String::new()
+                                } else {
+                                    format!("{v:.0}")
+                                }
+                            },
+                        ));
+                        ui.end_row();
+                    }
+                });
         });
-    });
     ui.checkbox(&mut f.outline_levels, tl!("Outline levels"));
     ui.checkbox(&mut f.tc_fields, tl!("TC entry fields"));
     ui.add_space(4.0);
@@ -770,24 +1030,39 @@ fn toc_options_ui(_app: &mut WordApp, ui: &mut Ui, f: &mut TocForm, was: &TocFor
 /// comes back here when it closes.
 fn toc_styles_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm, level: &mut u8) -> Next {
     ui.label(tl!("Styles:"));
-    egui::ScrollArea::vertical().max_height(200.0).show(ui, |ui| {
-        for l in 1..=9u8 {
-            let name = app.session.doc.styles.get(&format!("TOC{l}")).map(|s| s.name.clone()).unwrap_or_else(|| format!("TOC {l}"));
-            ui.selectable_value(level, l, name);
-        }
-    });
+    egui::ScrollArea::vertical()
+        .max_height(200.0)
+        .show(ui, |ui| {
+            for l in 1..=9u8 {
+                let name = app
+                    .session
+                    .doc
+                    .styles
+                    .get(&format!("TOC{l}"))
+                    .map(|s| s.name.clone())
+                    .unwrap_or_else(|| format!("TOC {l}"));
+                ui.selectable_value(level, l, name);
+            }
+        });
     ui.add_space(6.0);
     if ui.button(tl!("Modify…")).clicked()
         && let Some(mut d) = Dialog::modify_style(app, &format!("TOC{level}"))
     {
         if let Dialog::ModifyStyle { resume, .. } = &mut d {
-            *resume = Some(Box::new(Dialog::Refs(Box::new(RefsDialog::TocStyles { form: f.clone(), level: *level }))));
+            *resume = Some(Box::new(Dialog::Refs(Box::new(RefsDialog::TocStyles {
+                form: f.clone(),
+                level: *level,
+            }))));
         }
         app.dialog = Some(d);
         return Next::Close;
     }
     let (ok, cancel) = buttons(ui, tl!("OK"));
-    if ok || cancel { go(RefsDialog::Toc(f.clone())) } else { Next::Stay }
+    if ok || cancel {
+        go(RefsDialog::Toc(f.clone()))
+    } else {
+        Next::Stay
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -795,7 +1070,17 @@ fn toc_styles_ui(app: &mut WordApp, ui: &mut Ui, f: &mut TocForm, level: &mut u8
 
 /// Source types with their fields: (kind, label, recommended fields). A field is (key, label).
 const SOURCE_TYPES: [(&str, &str, &[(&str, &str)]); 9] = [
-    ("book", "Book", &[("author", "Author"), ("title", "Title"), ("year", "Year"), ("city", "City"), ("publisher", "Publisher")]),
+    (
+        "book",
+        "Book",
+        &[
+            ("author", "Author"),
+            ("title", "Title"),
+            ("year", "Year"),
+            ("city", "City"),
+            ("publisher", "Publisher"),
+        ],
+    ),
     (
         "bookSection",
         "Chapter in a book",
@@ -812,7 +1097,14 @@ const SOURCE_TYPES: [(&str, &str, &[(&str, &str)]); 9] = [
     (
         "article",
         "Journal article",
-        &[("author", "Author"), ("title", "Title"), ("journal", "Journal"), ("year", "Year"), ("volume", "Volume"), ("pages", "Pages")],
+        &[
+            ("author", "Author"),
+            ("title", "Title"),
+            ("journal", "Journal"),
+            ("year", "Year"),
+            ("volume", "Volume"),
+            ("pages", "Pages"),
+        ],
     ),
     (
         "periodical",
@@ -840,7 +1132,17 @@ const SOURCE_TYPES: [(&str, &str, &[(&str, &str)]); 9] = [
             ("publisher", "Publisher"),
         ],
     ),
-    ("report", "Report", &[("author", "Author"), ("title", "Title"), ("year", "Year"), ("publisher", "Institution"), ("city", "City")]),
+    (
+        "report",
+        "Report",
+        &[
+            ("author", "Author"),
+            ("title", "Title"),
+            ("year", "Year"),
+            ("publisher", "Institution"),
+            ("city", "City"),
+        ],
+    ),
     (
         "website",
         "Website",
@@ -854,8 +1156,27 @@ const SOURCE_TYPES: [(&str, &str, &[(&str, &str)]); 9] = [
             ("url", "URL"),
         ],
     ),
-    ("film", "Film", &[("author", "Author"), ("title", "Title"), ("publisher", "Studio"), ("year", "Year")]),
-    ("other", "Other", &[("author", "Author"), ("title", "Title"), ("year", "Year"), ("city", "City"), ("publisher", "Publisher")]),
+    (
+        "film",
+        "Film",
+        &[
+            ("author", "Author"),
+            ("title", "Title"),
+            ("publisher", "Studio"),
+            ("year", "Year"),
+        ],
+    ),
+    (
+        "other",
+        "Other",
+        &[
+            ("author", "Author"),
+            ("title", "Title"),
+            ("year", "Year"),
+            ("city", "City"),
+            ("publisher", "Publisher"),
+        ],
+    ),
 ];
 
 /// Every field "show all bibliography fields" adds, after the type's own.
@@ -918,15 +1239,33 @@ pub struct SourceForm {
 
 impl SourceForm {
     pub fn new(cite: bool, back: bool) -> SourceForm {
-        SourceForm { source: Source { kind: "book".into(), ..Default::default() }, show_all: false, edit: false, cite, back }
+        SourceForm {
+            source: Source {
+                kind: "book".into(),
+                ..Default::default()
+            },
+            show_all: false,
+            edit: false,
+            cite,
+            back,
+        }
     }
 
     /// The fields shown: the type's own, or every field.
     pub fn fields(&self) -> Vec<(&'static str, &'static str)> {
-        let own = SOURCE_TYPES.iter().find(|(k, ..)| *k == self.source.kind).map(|(_, _, f)| *f).unwrap_or(SOURCE_TYPES[0].2);
+        let own = SOURCE_TYPES
+            .iter()
+            .find(|(k, ..)| *k == self.source.kind)
+            .map(|(_, _, f)| *f)
+            .unwrap_or(SOURCE_TYPES[0].2);
         let mut v: Vec<(&str, &str)> = own.to_vec();
         if self.show_all {
-            v.extend(ALL_FIELDS.iter().filter(|(k, _)| !own.iter().any(|(o, _)| o == k) && *k != "tag").copied());
+            v.extend(
+                ALL_FIELDS
+                    .iter()
+                    .filter(|(k, _)| !own.iter().any(|(o, _)| o == k) && *k != "tag")
+                    .copied(),
+            );
         }
         v.push(("tag", "Tag"));
         v
@@ -934,34 +1273,53 @@ impl SourceForm {
 }
 
 fn source_ui(app: &mut WordApp, ui: &mut Ui, f: &mut SourceForm) -> Next {
-    egui::Grid::new("src").num_columns(2).spacing(vec2(10.0, 5.0)).show(ui, |ui| {
-        ui.label(tl!("Source type:"));
-        let shown = SOURCE_TYPES.iter().find(|(k, ..)| *k == f.source.kind).map(|(_, l, _)| tl!(l).to_string()).unwrap_or_default();
-        egui::ComboBox::from_id_salt("src_kind").selected_text(shown).width(200.0).show_ui(ui, |ui| {
-            for (k, l, _) in SOURCE_TYPES {
-                ui.selectable_value(&mut f.source.kind, k.to_string(), tl!(l));
+    egui::Grid::new("src")
+        .num_columns(2)
+        .spacing(vec2(10.0, 5.0))
+        .show(ui, |ui| {
+            ui.label(tl!("Source type:"));
+            let shown = SOURCE_TYPES
+                .iter()
+                .find(|(k, ..)| *k == f.source.kind)
+                .map(|(_, l, _)| tl!(l).to_string())
+                .unwrap_or_default();
+            egui::ComboBox::from_id_salt("src_kind")
+                .selected_text(shown)
+                .width(200.0)
+                .show_ui(ui, |ui| {
+                    for (k, l, _) in SOURCE_TYPES {
+                        ui.selectable_value(&mut f.source.kind, k.to_string(), tl!(l));
+                    }
+                });
+            ui.end_row();
+            let edit = f.edit;
+            for (key, label) in f.fields() {
+                ui.label(format!("{}:", tl!(label)));
+                if let Some(v) = field_mut(&mut f.source, key) {
+                    let hint = match key {
+                        "author" => tl!("Last, First; Last, First"),
+                        "tag" => tl!("Made from the author and year when empty"),
+                        _ => "",
+                    };
+                    ui.add_enabled(
+                        !(edit && key == "tag"),
+                        egui::TextEdit::singleline(v)
+                            .desired_width(260.0)
+                            .hint_text(hint),
+                    );
+                }
+                ui.end_row();
             }
         });
-        ui.end_row();
-        let edit = f.edit;
-        for (key, label) in f.fields() {
-            ui.label(format!("{}:", tl!(label)));
-            if let Some(v) = field_mut(&mut f.source, key) {
-                let hint = match key {
-                    "author" => tl!("Last, First; Last, First"),
-                    "tag" => tl!("Made from the author and year when empty"),
-                    _ => "",
-                };
-                ui.add_enabled(!(edit && key == "tag"), egui::TextEdit::singleline(v).desired_width(260.0).hint_text(hint));
-            }
-            ui.end_row();
-        }
-    });
     ui.checkbox(&mut f.show_all, tl!("Show every bibliography field"));
     let (ok, cancel) = buttons(ui, tl!("OK"));
     if ok {
         let src = serde_json::to_value(&f.source).unwrap_or(Value::Null);
-        let r = if f.cite { app.run("references.citation", json!({"source": src})) } else { app.run("references.sources", json!({"add": src})) };
+        let r = if f.cite {
+            app.run("references.citation", json!({"source": src}))
+        } else {
+            app.run("references.sources", json!({"add": src}))
+        };
         if let Err(e) = r {
             app.status(e);
         }
@@ -969,7 +1327,11 @@ fn source_ui(app: &mut WordApp, ui: &mut Ui, f: &mut SourceForm) -> Next {
     if (ok || cancel) && f.back {
         return go(RefsDialog::Sources { selected: None });
     }
-    if ok || cancel { Next::Close } else { Next::Stay }
+    if ok || cancel {
+        Next::Close
+    } else {
+        Next::Stay
+    }
 }
 
 fn sources_ui(app: &mut WordApp, ui: &mut Ui, selected: &mut Option<usize>) -> Next {
@@ -980,37 +1342,57 @@ fn sources_ui(app: &mut WordApp, ui: &mut Ui, selected: &mut Option<usize>) -> N
         .sources
         .iter()
         .map(|s| {
-            let parts: Vec<&str> = [s.author.as_str(), s.title.as_str(), s.year.as_str()].into_iter().filter(|x| !x.is_empty()).collect();
+            let parts: Vec<&str> = [s.author.as_str(), s.title.as_str(), s.year.as_str()]
+                .into_iter()
+                .filter(|x| !x.is_empty())
+                .collect();
             format!("{} — {}", s.tag, parts.join("; "))
         })
         .collect();
     ui.label(tl!("Sources in this document:"));
-    egui::Frame::new().stroke(egui::Stroke::new(1.0, t.border_strong)).inner_margin(4.0).show(ui, |ui| {
-        ui.set_min_size(vec2(380.0, 160.0));
-        egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
-            if list.is_empty() {
-                ui.label(egui::RichText::new(tl!("No sources yet.")).color(t.text_dim));
-            }
-            for (i, l) in list.iter().enumerate() {
-                if ui.selectable_label(*selected == Some(i), l).clicked() {
-                    *selected = Some(i);
-                }
-            }
+    egui::Frame::new()
+        .stroke(egui::Stroke::new(1.0, t.border_strong))
+        .inner_margin(4.0)
+        .show(ui, |ui| {
+            ui.set_min_size(vec2(380.0, 160.0));
+            egui::ScrollArea::vertical()
+                .max_height(220.0)
+                .show(ui, |ui| {
+                    if list.is_empty() {
+                        ui.label(egui::RichText::new(tl!("No sources yet.")).color(t.text_dim));
+                    }
+                    for (i, l) in list.iter().enumerate() {
+                        if ui.selectable_label(*selected == Some(i), l).clicked() {
+                            *selected = Some(i);
+                        }
+                    }
+                });
         });
-    });
-    let src = selected.and_then(|i| app.session.doc.sources.get(i)).cloned();
+    let src = selected
+        .and_then(|i| app.session.doc.sources.get(i))
+        .cloned();
     let mut next = Next::Stay;
     ui.add_space(6.0);
     ui.horizontal(|ui| {
         if ui.button(tl!("New…")).clicked() {
             next = go(RefsDialog::Source(Box::new(SourceForm::new(false, true))));
         }
-        if ui.add_enabled(src.is_some(), egui::Button::new(tl!("Edit…"))).clicked()
+        if ui
+            .add_enabled(src.is_some(), egui::Button::new(tl!("Edit…")))
+            .clicked()
             && let Some(s) = &src
         {
-            next = go(RefsDialog::Source(Box::new(SourceForm { source: s.clone(), show_all: false, edit: true, cite: false, back: true })));
+            next = go(RefsDialog::Source(Box::new(SourceForm {
+                source: s.clone(),
+                show_all: false,
+                edit: true,
+                cite: false,
+                back: true,
+            })));
         }
-        if ui.add_enabled(src.is_some(), egui::Button::new(tl!("Delete"))).clicked()
+        if ui
+            .add_enabled(src.is_some(), egui::Button::new(tl!("Delete")))
+            .clicked()
             && let Some(s) = &src
         {
             if let Err(e) = app.run("references.sources", json!({"remove": s.tag})) {
@@ -1018,7 +1400,9 @@ fn sources_ui(app: &mut WordApp, ui: &mut Ui, selected: &mut Option<usize>) -> N
             }
             *selected = None;
         }
-        if ui.add_enabled(src.is_some(), egui::Button::new(tl!("Insert Citation"))).clicked()
+        if ui
+            .add_enabled(src.is_some(), egui::Button::new(tl!("Insert Citation")))
+            .clicked()
             && let Some(s) = &src
         {
             if let Err(e) = app.run("references.citation", json!({"tag": s.tag})) {
@@ -1048,7 +1432,10 @@ mod tests {
     use crate::Services;
 
     fn app(text: &str) -> WordApp {
-        WordApp::new(Session::new(wordcraft_doc::Document::from_text(text)), Services::default())
+        WordApp::new(
+            Session::new(wordcraft_doc::Document::from_text(text)),
+            Services::default(),
+        )
     }
 
     fn form(a: &WordApp) -> RefsDialog {
@@ -1077,10 +1464,16 @@ mod tests {
     fn caption_dialog_numbers_with_chapters() {
         let mut a = app("Results\nA chart");
         a.run("select.text", json!({"text": "Results"})).unwrap();
-        a.run("styles.apply", json!({"style": "Heading 1"})).unwrap();
+        a.run("styles.apply", json!({"style": "Heading 1"}))
+            .unwrap();
         a.run("select.text", json!({"text": "A chart"})).unwrap();
-        assert_eq!(a.run("references.caption", json!({})).unwrap(), json!({"pending": "caption"}));
-        let RefsDialog::Caption(mut f) = form(&a) else { panic!() };
+        assert_eq!(
+            a.run("references.caption", json!({})).unwrap(),
+            json!({"pending": "caption"})
+        );
+        let RefsDialog::Caption(mut f) = form(&a) else {
+            panic!()
+        };
         assert_eq!((f.label.as_str(), f.labels.len()), ("Figure", 3));
         // New Label…, then Numbering… with a chapter number.
         f.new_label = "Plate".into();
@@ -1093,8 +1486,17 @@ mod tests {
         f.text = "Growth".into();
         assert_eq!(f.preview(), "Plate 1.A");
         a.run("references.caption", f.params()).unwrap();
-        assert!(instrs(&a).contains(&"SEQ Plate \\* ALPHABETIC \\s 1".to_string()), "{:?}", instrs(&a));
-        assert!(a.session.doc.plain_text(StoryRef::Body).contains("Plate 1.A: Growth"));
+        assert!(
+            instrs(&a).contains(&"SEQ Plate \\* ALPHABETIC \\s 1".to_string()),
+            "{:?}",
+            instrs(&a)
+        );
+        assert!(
+            a.session
+                .doc
+                .plain_text(StoryRef::Body)
+                .contains("Plate 1.A: Growth")
+        );
         // The label is offered next time and saved with the preferences.
         assert!(CaptionForm::read(&a).labels.contains(&"Plate".to_string()));
         assert_eq!(a.prefs().caption_labels, vec!["Plate".to_string()]);
@@ -1106,22 +1508,47 @@ mod tests {
     fn index_and_mark_entry_dialogs_write_switches() {
         let mut a = app("Kilns are hot.\nMore text.");
         a.run("select.text", json!({"text": "Kilns"})).unwrap();
-        assert_eq!(a.run("references.markEntry", json!({})).unwrap(), json!({"pending": "markEntry"}));
-        let RefsDialog::MarkEntry(mut m) = form(&a) else { panic!() };
+        assert_eq!(
+            a.run("references.markEntry", json!({})).unwrap(),
+            json!({"pending": "markEntry"})
+        );
+        let RefsDialog::MarkEntry(mut m) = form(&a) else {
+            panic!()
+        };
         assert_eq!(m.entry, "Kilns");
         m.subentry = "firing".into();
         m.italic = true;
         a.run("references.markEntry", m.params(false)).unwrap();
-        assert!(instrs(&a).contains(&"XE \"Kilns:firing\" \\i".to_string()), "{:?}", instrs(&a));
+        assert!(
+            instrs(&a).contains(&"XE \"Kilns:firing\" \\i".to_string()),
+            "{:?}",
+            instrs(&a)
+        );
         a.run("caret.docEnd", json!({})).unwrap();
-        assert_eq!(a.run("references.index", json!({})).unwrap(), json!({"pending": "index"}));
-        let RefsDialog::Index(mut f) = form(&a) else { panic!() };
-        assert_eq!((f.columns, f.kind.as_str(), f.headings), (2, "indented", true));
+        assert_eq!(
+            a.run("references.index", json!({})).unwrap(),
+            json!({"pending": "index"})
+        );
+        let RefsDialog::Index(mut f) = form(&a) else {
+            panic!()
+        };
+        assert_eq!(
+            (f.columns, f.kind.as_str(), f.headings),
+            (2, "indented", true)
+        );
         f.kind = "runIn".into();
         f.right_align = true;
         a.run("references.index", f.params()).unwrap();
-        assert!(instrs(&a).contains(&"INDEX \\h \"A\" \\c \"2\" \\e \"\t\" \\r".to_string()), "{:?}", instrs(&a));
-        assert_eq!(IndexForm::read(&a), f, "the dialog shows the index's settings");
+        assert!(
+            instrs(&a).contains(&"INDEX \\h \"A\" \\c \"2\" \\e \"\t\" \\r".to_string()),
+            "{:?}",
+            instrs(&a)
+        );
+        assert_eq!(
+            IndexForm::read(&a),
+            f,
+            "the dialog shows the index's settings"
+        );
     }
 
     /// #402: Custom Table of Contents and its Options make the TOC switches, and the dialog
@@ -1130,22 +1557,41 @@ mod tests {
     fn custom_table_of_contents_dialog() {
         let mut a = app("Intro\nNote");
         a.run("select.text", json!({"text": "Intro"})).unwrap();
-        a.run("styles.apply", json!({"style": "Heading 1"})).unwrap();
+        a.run("styles.apply", json!({"style": "Heading 1"}))
+            .unwrap();
         a.run("select.text", json!({"text": "Note"})).unwrap();
         a.run("styles.apply", json!({"style": "Quote"})).unwrap();
         a.run("caret.docStart", json!({})).unwrap();
         a.run("ui.dialog", json!({"name": "toc"})).unwrap();
-        let RefsDialog::Toc(mut f) = form(&a) else { panic!() };
-        assert_eq!((f.levels, f.hyperlinks, f.right_align, f.heading_styles, f.outline_levels), (3, true, true, true, true));
+        let RefsDialog::Toc(mut f) = form(&a) else {
+            panic!()
+        };
+        assert_eq!(
+            (
+                f.levels,
+                f.hyperlinks,
+                f.right_align,
+                f.heading_styles,
+                f.outline_levels
+            ),
+            (3, true, true, true, true)
+        );
         f.levels = 2;
         f.hyperlinks = false;
         f.leader = "hyphen".into();
         // Options…: the Quote style at level 2.
-        f.style_levels.iter_mut().find(|(n, _)| n == "Quote").unwrap().1 = 2;
+        f.style_levels
+            .iter_mut()
+            .find(|(n, _)| n == "Quote")
+            .unwrap()
+            .1 = 2;
         a.run("references.toc", f.params()).unwrap();
         assert_eq!(instrs(&a)[0], "TOC \\o \"1-2\" \\z \\u \\t \"Quote,2\"");
         let text = a.session.doc.plain_text(StoryRef::Body);
-        assert!(text.contains("Intro\t1") && text.contains("Note\t1"), "{text}");
+        assert!(
+            text.contains("Intro\t1") && text.contains("Note\t1"),
+            "{text}"
+        );
         assert_eq!(TocForm::read(&a), f);
     }
 
@@ -1155,26 +1601,56 @@ mod tests {
     fn create_and_edit_source() {
         let mut a = app("Studios matter ");
         a.run("caret.docEnd", json!({})).unwrap();
-        assert_eq!(a.run("references.citation", json!({})).unwrap(), json!({"pending": "createSource"}));
-        let RefsDialog::Source(mut f) = form(&a) else { panic!() };
+        assert_eq!(
+            a.run("references.citation", json!({})).unwrap(),
+            json!({"pending": "createSource"})
+        );
+        let RefsDialog::Source(mut f) = form(&a) else {
+            panic!()
+        };
         let f = &mut *f;
         f.source.kind = "website".into();
         let shown = f.fields().len();
         assert!(f.fields().iter().any(|(k, l)| *k == "url" && *l == "URL"));
         f.show_all = true;
         assert!(f.fields().len() > shown && f.fields().iter().any(|(k, _)| *k == "doi"));
-        for (k, v) in [("author", "Rivera, Alex"), ("title", "Kilns Online"), ("year", "2024"), ("url", "https://example.org"), ("doi", "10.1/x")] {
+        for (k, v) in [
+            ("author", "Rivera, Alex"),
+            ("title", "Kilns Online"),
+            ("year", "2024"),
+            ("url", "https://example.org"),
+            ("doi", "10.1/x"),
+        ] {
             *field_mut(&mut f.source, k).unwrap() = v.into();
         }
-        a.run("references.citation", json!({"source": serde_json::to_value(&f.source).unwrap()})).unwrap();
-        assert!(a.session.doc.plain_text(StoryRef::Body).contains("(Rivera, 2024)"));
+        a.run(
+            "references.citation",
+            json!({"source": serde_json::to_value(&f.source).unwrap()}),
+        )
+        .unwrap();
+        assert!(
+            a.session
+                .doc
+                .plain_text(StoryRef::Body)
+                .contains("(Rivera, 2024)")
+        );
         assert_eq!(a.session.doc.sources[0].doi, "10.1/x");
         // Manage Sources › Edit…: a new year shows in the citation.
-        assert_eq!(a.run("references.sources", json!({})).unwrap(), json!({"pending": "sourceManager"}));
+        assert_eq!(
+            a.run("references.sources", json!({})).unwrap(),
+            json!({"pending": "sourceManager"})
+        );
         let mut src = a.session.doc.sources[0].clone();
         src.year = "2025".into();
         a.run("references.sources", json!({"add": src})).unwrap();
-        assert!(a.session.doc.plain_text(StoryRef::Body).contains("(Rivera, 2025)"), "{}", a.session.doc.plain_text(StoryRef::Body));
+        assert!(
+            a.session
+                .doc
+                .plain_text(StoryRef::Body)
+                .contains("(Rivera, 2025)"),
+            "{}",
+            a.session.doc.plain_text(StoryRef::Body)
+        );
         assert_eq!(a.session.doc.sources.len(), 1);
     }
 }

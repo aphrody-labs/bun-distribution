@@ -15,7 +15,11 @@ pub fn icdf_bits(icdf: &[u8], s: usize) -> f32 {
 }
 
 fn count_table(nls: usize) -> &'static [u8] {
-    if nls == 10 { PULSE_COUNT[10] } else { PULSE_COUNT[9] }
+    if nls == 10 {
+        PULSE_COUNT[10]
+    } else {
+        PULSE_COUNT[9]
+    }
 }
 
 fn shell(enc: &mut RangeEncoder, v: &[i32], count: i32) {
@@ -37,7 +41,12 @@ fn shell(enc: &mut RangeEncoder, v: &[i32], count: i32) {
 }
 
 /// Codes the frame's pulses (`len` a multiple of 16).
-pub fn encode(enc: &mut RangeEncoder, pulses: &[i32], signal_type: usize, quant_offset_type: usize) {
+pub fn encode(
+    enc: &mut RangeEncoder,
+    pulses: &[i32],
+    signal_type: usize,
+    quant_offset_type: usize,
+) {
     let nblk = pulses.len() / 16;
     let mut nls = vec![0usize; nblk];
     let mut sums = vec![0i32; nblk];
@@ -64,7 +73,11 @@ pub fn encode(enc: &mut RangeEncoder, pulses: &[i32], signal_type: usize, quant_
     for rl in 0..9 {
         let mut bits = icdf_bits(rl_tab, rl);
         for b in 0..nblk {
-            bits += if nls[b] == 0 { icdf_bits(PULSE_COUNT[rl], sums[b] as usize) } else { icdf_bits(PULSE_COUNT[rl], 17) };
+            bits += if nls[b] == 0 {
+                icdf_bits(PULSE_COUNT[rl], sums[b] as usize)
+            } else {
+                icdf_bits(PULSE_COUNT[rl], 17)
+            };
         }
         if bits < best.0 {
             best = (bits, rl);

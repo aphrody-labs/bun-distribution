@@ -124,7 +124,10 @@ pub struct LocalSurface {
 #[must_use]
 pub fn find_local_surface(surface: Surface, directories: &[PathBuf]) -> Option<LocalSurface> {
     let declaration = spec(surface);
-    if !matches!(declaration.boundary, Boundary::LocalStdio | Boundary::LocalProcess) {
+    if !matches!(
+        declaration.boundary,
+        Boundary::LocalStdio | Boundary::LocalProcess
+    ) {
         return None;
     }
     let binary = declaration.binary?;
@@ -133,7 +136,10 @@ pub fn find_local_surface(surface: Surface, directories: &[PathBuf]) -> Option<L
         .iter()
         .map(|dir| dir.join(&filename))
         .find(|path| path.is_file())
-        .map(|executable| LocalSurface { spec: declaration, executable })
+        .map(|executable| LocalSurface {
+            spec: declaration,
+            executable,
+        })
 }
 
 /// PATH directories in system order. Callers can prepend a release directory

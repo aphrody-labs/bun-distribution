@@ -46,7 +46,7 @@ fn drain_buf<const SYSTEM: SystemId>(
         match cmd {
             NOP_CMD | INV_VTX_CACHE_CMD => {
                 pos += 1;
-            },
+            }
             CP_CMD => {
                 if remaining < 6 {
                     break;
@@ -58,7 +58,7 @@ fn drain_buf<const SYSTEM: SystemId>(
                 pos += 6;
 
                 gp.load_cp(&data);
-            },
+            }
             XF_CMD => {
                 if remaining < 5 {
                     break;
@@ -76,7 +76,7 @@ fn drain_buf<const SYSTEM: SystemId>(
                 gp.load_xf(renderer, data);
 
                 pos += total;
-            },
+            }
             BP_CMD => {
                 if remaining < 5 {
                     break;
@@ -89,7 +89,7 @@ fn drain_buf<const SYSTEM: SystemId>(
 
                 let mut view = mmio.ram_view_mut();
                 gp.load_bp(renderer, &mut view, &data);
-            },
+            }
             LOAD_INDX_A_CMD | LOAD_INDX_B_CMD | LOAD_INDX_C_CMD | LOAD_INDX_D_CMD => {
                 if remaining < 5 {
                     break;
@@ -113,7 +113,7 @@ fn drain_buf<const SYSTEM: SystemId>(
 
                 let view = mmio.ram_view();
                 gp.load_indexed_xf(renderer, &view, cp_array_index, index, xf_addr, xf_count);
-            },
+            }
             CALL_DL_CMD => {
                 if remaining < 9 {
                     break;
@@ -135,7 +135,7 @@ fn drain_buf<const SYSTEM: SystemId>(
                         buf.reserve(crate::flipper::gx::jit::VEC_OVERREAD_BYTES);
 
                         buf
-                    },
+                    }
                     None => {
                         tracing::warn!(
                             addr = format_args!("{addr:#010X}").to_string(),
@@ -143,12 +143,12 @@ fn drain_buf<const SYSTEM: SystemId>(
                             "CallDisplayList: source not mapped"
                         );
                         continue;
-                    },
+                    }
                 };
 
                 let _ = self::drain_buf::<SYSTEM>(gp, mmio, renderer, &dl_buf);
                 gp.dl_scratch = dl_buf;
-            },
+            }
             DRAW_COMMANDS_START..=DRAW_COMMANDS_END => {
                 if remaining < 3 {
                     break;
@@ -217,15 +217,18 @@ fn drain_buf<const SYSTEM: SystemId>(
                     pos = scan;
                 } else {
                     let vertex_data = &fifo[pos + 3..pos + total];
-                    let entry = [super::vertex::DrawBatchEntry { cmd, vertex_count: count }];
+                    let entry = [super::vertex::DrawBatchEntry {
+                        cmd,
+                        vertex_count: count,
+                    }];
                     gp.create_draw_batch(mmio, renderer, vertex_data, &entry);
                     pos += total;
                 }
-            },
+            }
             _ => {
                 tracing::error!(cmd = cmd, "unknown FIFO command");
                 pos += 1;
-            },
+            }
         }
 
         if let Some(rec) = gp.recorder.as_deref_mut()

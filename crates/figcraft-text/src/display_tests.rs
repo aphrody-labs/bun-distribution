@@ -2,7 +2,9 @@ use super::*;
 
 /// Every shown char 10 units wide, left to right.
 fn edges(v: &VisualLine) -> Vec<(f64, f64)> {
-    let chars: Vec<(f64, f64)> = (0..v.text.chars().count()).map(|k| (k as f64 * 10.0, k as f64 * 10.0 + 10.0)).collect();
+    let chars: Vec<(f64, f64)> = (0..v.text.chars().count())
+        .map(|k| (k as f64 * 10.0, k as f64 * 10.0 + 10.0))
+        .collect();
     v.cluster_edges(&chars)
 }
 
@@ -122,15 +124,30 @@ fn elision_keeps_the_start_and_follows_the_direction() {
     // The ellipsis is at the left of a right-to-left name; its right end (the start) stays.
     assert_eq!(v.text, "…םולש");
     // Nothing fits: just the ellipsis.
-    assert_eq!(elide("abcdef", |v: &VisualLine| v.text.chars().count() <= 1).text, "…");
+    assert_eq!(
+        elide("abcdef", |v: &VisualLine| v.text.chars().count() <= 1).text,
+        "…"
+    );
     // A letter is never cut from its marks.
-    let v = elide("بَبَبَبَ", |v: &VisualLine| v.text.chars().count() <= 3);
+    let v = elide("بَبَبَبَ", |v: &VisualLine| {
+        v.text.chars().count() <= 3
+    });
     assert!(v.text.contains('\u{064E}'));
 }
 
 #[test]
 fn junk_input_never_panics() {
-    for s in ["", " ", "\u{0644}", "\u{064E}", "\u{0644}\u{0627}", "a\nב\tc", "\u{202E}\u{2067}x\u{2069}", "ـبـ", "‏‎‏"] {
+    for s in [
+        "",
+        " ",
+        "\u{0644}",
+        "\u{064E}",
+        "\u{0644}\u{0627}",
+        "a\nב\tc",
+        "\u{202E}\u{2067}x\u{2069}",
+        "ـبـ",
+        "‏‎‏",
+    ] {
         let v = visual_line(s);
         let e = edges(&v);
         for i in 0..=v.len + 2 {
@@ -151,7 +168,9 @@ fn junk_input_never_panics() {
 /// The joined forms are the ones the shaper picks in context (when Noto Sans Arabic is built in).
 #[test]
 fn presentation_forms_match_the_shaper() {
-    let Some(face) = crate::find_face("Noto Sans Arabic", "Regular").filter(|f| f.family == "Noto Sans Arabic") else {
+    let Some(face) =
+        crate::find_face("Noto Sans Arabic", "Regular").filter(|f| f.family == "Noto Sans Arabic")
+    else {
         eprintln!("no Noto Sans Arabic; skipping");
         return;
     };
@@ -174,14 +193,31 @@ fn presentation_forms_match_the_shaper() {
             let l = crate::layout(&t, None, None);
             let at = s.chars().position(|c| c == base).unwrap();
             // The font may draw a letter as a skeleton plus dots: compare the cluster's advance.
-            let shaped: f64 = l.glyphs.iter().filter(|g| g.char_start <= at && at < g.char_end).map(|g| g.advance).sum();
+            let shaped: f64 = l
+                .glyphs
+                .iter()
+                .filter(|g| g.char_start <= at && at < g.char_end)
+                .map(|g| g.advance)
+                .sum();
             // (Kerning and contextual alternates shift it a little: the right form is the nearest.)
-            let adv = |c: u32| char::from_u32(c).map_or(f64::NAN, |c| face.advance(face.glyph_for(c)) * t.style.font_size / face.upem);
-            let nearest =
-                (iso as u32..iso as u32 + u32::from(n)).min_by(|a, b| (adv(*a) - shaped).abs().total_cmp(&(adv(*b) - shaped).abs())).unwrap();
+            let adv = |c: u32| {
+                char::from_u32(c).map_or(f64::NAN, |c| {
+                    face.advance(face.glyph_for(c)) * t.style.font_size / face.upem
+                })
+            };
+            let nearest = (iso as u32..iso as u32 + u32::from(n))
+                .min_by(|a, b| {
+                    (adv(*a) - shaped)
+                        .abs()
+                        .total_cmp(&(adv(*b) - shaped).abs())
+                })
+                .unwrap();
             // Noto draws a lone heh wider than its isolated presentation form (a design choice).
             if (adv(nearest) - adv(form as u32)).abs() > 1e-9 && s != "\u{0647}" {
-                wrong.push(format!("{base:?} in {s:?} should show as {form:?} ({shaped} vs {})", adv(form as u32)));
+                wrong.push(format!(
+                    "{base:?} in {s:?} should show as {form:?} ({shaped} vs {})",
+                    adv(form as u32)
+                ));
             }
         }
     }

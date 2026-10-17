@@ -41,7 +41,17 @@ fn inv3(m: [f64; 9]) -> Option<[f64; 9]> {
     let det = m[0] * c[0] + m[1] * c[3] + m[2] * c[6];
     (det.abs() > 1e-9).then(|| {
         let d = 1.0 / det;
-        [c[0] * d, c[1] * d, c[2] * d, c[3] * d, c[4] * d, c[5] * d, c[6] * d, c[7] * d, c[8] * d]
+        [
+            c[0] * d,
+            c[1] * d,
+            c[2] * d,
+            c[3] * d,
+            c[4] * d,
+            c[5] * d,
+            c[6] * d,
+            c[7] * d,
+            c[8] * d,
+        ]
     })
 }
 
@@ -70,7 +80,13 @@ fn subsets(classes: &[[f64; 4]]) -> Vec<Subset> {
             _ => None,
         };
         if let Some(ninv) = ninv {
-            out.push(Subset { idx, n, ninv, cols, penalty });
+            out.push(Subset {
+                idx,
+                n,
+                ninv,
+                cols,
+                penalty,
+            });
         }
     };
     for a in 0..k {
@@ -92,14 +108,26 @@ fn subsets(classes: &[[f64; 4]]) -> Vec<Subset> {
 pub(crate) fn count_ambiguous(pix: &[Px], classes: &[[f64; 4]]) -> usize {
     pix.iter()
         .filter(|px| {
-            let p = [f64::from(px[0]), f64::from(px[1]), f64::from(px[2]), f64::from(px[3])];
-            !classes.iter().any(|cv| (0..4).map(|j| (p[j] - cv[j]).powi(2)).sum::<f64>().sqrt() < PURE)
+            let p = [
+                f64::from(px[0]),
+                f64::from(px[1]),
+                f64::from(px[2]),
+                f64::from(px[3]),
+            ];
+            !classes
+                .iter()
+                .any(|cv| (0..4).map(|j| (p[j] - cv[j]).powi(2)).sum::<f64>().sqrt() < PURE)
         })
         .count()
 }
 
 /// Coverage planes, one `width × height` plane per class (each pixel's weights sum to 1).
-pub(crate) fn unmix(pix: &[Px], width: usize, height: usize, classes: &[[f64; 4]]) -> (Vec<Vec<f32>>, Vec<f32>) {
+pub(crate) fn unmix(
+    pix: &[Px],
+    width: usize,
+    height: usize,
+    classes: &[[f64; 4]],
+) -> (Vec<Vec<f32>>, Vec<f32>) {
     let k = classes.len();
     let n = width.saturating_mul(height);
     let mut planes = vec![vec![0.0f32; n]; k];
@@ -107,7 +135,12 @@ pub(crate) fn unmix(pix: &[Px], width: usize, height: usize, classes: &[[f64; 4]
     let mut residual = vec![0.0f32; n];
     let subs = subsets(classes);
     for (i, px) in pix.iter().take(n).enumerate() {
-        let p = [f64::from(px[0]), f64::from(px[1]), f64::from(px[2]), f64::from(px[3])];
+        let p = [
+            f64::from(px[0]),
+            f64::from(px[1]),
+            f64::from(px[2]),
+            f64::from(px[3]),
+        ];
         // Fast path: a pixel that is (nearly) exactly one class.
         let mut near = (f64::MAX, 0usize);
         for (c, cv) in classes.iter().enumerate() {
@@ -175,7 +208,11 @@ mod tests {
     use super::*;
 
     fn classes() -> Vec<[f64; 4]> {
-        vec![[1.0, 0.0, 0.0, 1.0], [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 0.0, 0.0]]
+        vec![
+            [1.0, 0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0, 1.0],
+            [0.0, 0.0, 0.0, 0.0],
+        ]
     }
 
     #[test]
@@ -199,7 +236,11 @@ mod tests {
         // Red at 40% coverage over nothing: premultiplied (0.4, 0, 0, 0.4).
         let pix = vec![[0.4, 0.0, 0.0, 0.4]];
         let (pl, _) = unmix(&pix, 1, 1, &classes());
-        assert!((pl[0][0] - 0.4).abs() < 0.02 && (pl[2][0] - 0.6).abs() < 0.02, "{:?}", (pl[0][0], pl[2][0]));
+        assert!(
+            (pl[0][0] - 0.4).abs() < 0.02 && (pl[2][0] - 0.6).abs() < 0.02,
+            "{:?}",
+            (pl[0][0], pl[2][0])
+        );
     }
 
     #[test]

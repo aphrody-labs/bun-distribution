@@ -39,9 +39,19 @@ pub struct ControlRequest {
 }
 
 impl ControlRequest {
-    pub fn new(method: impl Into<String>, params: Value) -> (Self, std::sync::mpsc::Receiver<Value>) {
+    pub fn new(
+        method: impl Into<String>,
+        params: Value,
+    ) -> (Self, std::sync::mpsc::Receiver<Value>) {
         let (tx, rx) = std::sync::mpsc::channel();
-        (Self { method: method.into(), params, reply: tx }, rx)
+        (
+            Self {
+                method: method.into(),
+                params,
+                reply: tx,
+            },
+            rx,
+        )
     }
 }
 
@@ -69,7 +79,13 @@ fn err(e: impl std::fmt::Display) -> Outcome {
 fn modifiers(p: &Value) -> egui::Modifiers {
     let m = p.get("modifiers").unwrap_or(p);
     let b = |k: &str| m.get(k).and_then(Value::as_bool).unwrap_or(false);
-    as_pressed(egui::Modifiers { alt: b("alt"), ctrl: b("ctrl"), shift: b("shift"), mac_cmd: cfg!(target_os = "macos") && b("command"), command: b("command") })
+    as_pressed(egui::Modifiers {
+        alt: b("alt"),
+        ctrl: b("ctrl"),
+        shift: b("shift"),
+        mac_cmd: cfg!(target_os = "macos") && b("command"),
+        command: b("command"),
+    })
 }
 
 /// `m` as egui-winit reports a physical press: off macOS Control is the primary modifier, so
@@ -86,12 +102,21 @@ fn as_pressed(mut m: egui::Modifiers) -> egui::Modifiers {
 /// Resolve a point from `{id}` (element centre) or `{x, y}`.
 fn point(app: &FilmcraftApp, p: &Value) -> Result<egui::Pos2, String> {
     if let Some(id) = p.get("id").and_then(Value::as_str) {
-        let e = app.auto.find(id).ok_or_else(|| format!("{RETRY}no element `{id}` (see ui.elements)"))?;
+        let e = app
+            .auto
+            .find(id)
+            .ok_or_else(|| format!("{RETRY}no element `{id}` (see ui.elements)"))?;
         let fx = p.get("fx").and_then(Value::as_f64).unwrap_or(0.5) as f32;
         let fy = p.get("fy").and_then(Value::as_f64).unwrap_or(0.5) as f32;
-        return Ok(egui::pos2(e.rect[0] + e.rect[2] * fx, e.rect[1] + e.rect[3] * fy));
+        return Ok(egui::pos2(
+            e.rect[0] + e.rect[2] * fx,
+            e.rect[1] + e.rect[3] * fy,
+        ));
     }
-    let x = p.get("x").and_then(Value::as_f64).ok_or("need `id` or `x`,`y`")?;
+    let x = p
+        .get("x")
+        .and_then(Value::as_f64)
+        .ok_or("need `id` or `x`,`y`")?;
     let y = p.get("y").and_then(Value::as_f64).ok_or("need `y`")?;
     Ok(egui::pos2(x as f32, y as f32))
 }
@@ -101,7 +126,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
     let s = |k: &str| p.get(k).and_then(Value::as_str);
     match req.method.as_str() {
         "engine.execute" | "ui.menu.invoke" => {
-            let Some(id) = s("command").or(s("id")) else { return err("missing `command`") };
+            let Some(id) = s("command").or(s("id")) else {
+                return err("missing `command`");
+            };
             let params = p.get("params").cloned().unwrap_or(json!({}));
             match crate::menus::invoke(app, ctx, id, params) {
                 Ok(v) => ok(v),
@@ -112,7 +139,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             Ok(v) => ok(v),
             Err(e) => err(e),
         },
-        "ui.menu.list" => ok(serde_json::to_value(crate::menus::menu_items(app)).unwrap_or_default()),
+        "ui.menu.list" => {
+            ok(serde_json::to_value(crate::menus::menu_items(app)).unwrap_or_default())
+        }
         "ui.inspect" => ok(inspect(app, ctx)),
         "perf.stats" => ok(crate::perf::stats(app)),
         "ui.elements" => {
@@ -170,7 +199,10 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             if let Some(r) = s("playbackRes") {
                 app.ui.program.res = PlaybackRes::ALL
                     .into_iter()
-                    .find(|x| x.label().eq_ignore_ascii_case(r) || format!("{x:?}").eq_ignore_ascii_case(r))
+                    .find(|x| {
+                        x.label().eq_ignore_ascii_case(r)
+                            || format!("{x:?}").eq_ignore_ascii_case(r)
+                    })
                     .unwrap_or(app.ui.program.res);
             }
             if let Some(tl) = p.get("timeline") {
@@ -195,7 +227,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
                         app.ui.timeline.show_thumbnails = false;
                     } else {
                         let Some(mode) = ThumbnailMode::from_name(m) else {
-                            return err(format!("unknown thumbnail mode `{m}` (off, head, headAndTail, continuous)"));
+                            return err(format!(
+                                "unknown thumbnail mode `{m}` (off, head, headAndTail, continuous)"
+                            ));
                         };
                         app.ui.timeline.show_thumbnails = true;
                         app.ui.timeline.thumbnail_mode = mode;
@@ -218,8 +252,14 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             }
             // Monitor view state (serde fields of `MonitorView`), merged into the current state.
             for k in ["program", "source"] {
-                let Some(patch) = p.get(k).and_then(Value::as_object) else { continue };
-                let mv = if k == "program" { &mut app.ui.program } else { &mut app.ui.source };
+                let Some(patch) = p.get(k).and_then(Value::as_object) else {
+                    continue;
+                };
+                let mv = if k == "program" {
+                    &mut app.ui.program
+                } else {
+                    &mut app.ui.source
+                };
                 let mut cur = serde_json::to_value(&*mv).unwrap_or_default();
                 if let Some(o) = cur.as_object_mut() {
                     for (f, v) in patch {
@@ -259,8 +299,12 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             // Project panel / Media Browser view state (`panels::project`, `panels::media_browser`), merged
             for (k, which) in [("projectPanel", 0), ("mediaBrowser", 1)] {
                 let Some(patch) = p.get(k) else { continue };
-                let mut cur =
-                    if which == 0 { serde_json::to_value(&app.ui.project_panel) } else { serde_json::to_value(&app.ui.media_browser) }.unwrap_or_default();
+                let mut cur = if which == 0 {
+                    serde_json::to_value(&app.ui.project_panel)
+                } else {
+                    serde_json::to_value(&app.ui.media_browser)
+                }
+                .unwrap_or_default();
                 merge(&mut cur, patch);
                 let r = if which == 0 {
                     serde_json::from_value(cur).map(|v| app.ui.project_panel = v)
@@ -289,14 +333,18 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             }
             // fields of the open Edit / Clip / File dialog (`panels::clip_dialogs`)
             if let Some(m) = p.get("clipDialog").and_then(Value::as_object) {
-                let Some(d) = app.ui.clip_dialog.as_mut() else { return err("no clip dialog is open") };
+                let Some(d) = app.ui.clip_dialog.as_mut() else {
+                    return err("no clip dialog is open");
+                };
                 for (k, v) in m {
                     d.params[k.as_str()] = v.clone();
                 }
             }
             // fields of the open M3.11 menu dialog (`panels::menu_dialogs`)
             if let Some(m) = p.get("menuDialog").and_then(Value::as_object) {
-                let Some(d) = app.ui.extras.dialog.as_mut() else { return err("no menu dialog is open") };
+                let Some(d) = app.ui.extras.dialog.as_mut() else {
+                    return err("no menu dialog is open");
+                };
                 for (k, v) in m {
                     d.params[k.as_str()] = v.clone();
                 }
@@ -304,7 +352,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             ok(Value::Null)
         }
         "ui.panel.show" | "ui.panel.close" => {
-            let Some(panel) = s("panel").and_then(PanelKind::from_name) else { return err("unknown `panel`") };
+            let Some(panel) = s("panel").and_then(PanelKind::from_name) else {
+                return err("unknown `panel`");
+            };
             if req.method == "ui.panel.show" {
                 app.show_panel(panel);
             } else {
@@ -317,7 +367,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
         "ui.click" | "ui.move" => {
             let pos = match point(app, p) {
                 Ok(p) => p,
-                Err(e) if e.starts_with(RETRY) => return Outcome::Retry(e.trim_start_matches(RETRY).to_string()),
+                Err(e) if e.starts_with(RETRY) => {
+                    return Outcome::Retry(e.trim_start_matches(RETRY).to_string());
+                }
                 Err(e) => return err(e),
             };
             let m = modifiers(p);
@@ -331,31 +383,58 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
                 };
                 let count = p.get("count").and_then(Value::as_u64).unwrap_or(1);
                 for _ in 0..count {
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: true, modifiers: m });
-                    app.synthetic.push(egui::Event::PointerButton { pos, button, pressed: false, modifiers: m });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: true,
+                        modifiers: m,
+                    });
+                    app.synthetic.push(egui::Event::PointerButton {
+                        pos,
+                        button,
+                        pressed: false,
+                        modifiers: m,
+                    });
                 }
             }
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.drag" => {
-            let (Some(from), Some(to)) = (p.get("from"), p.get("to")) else { return err("need `from` and `to`") };
+            let (Some(from), Some(to)) = (p.get("from"), p.get("to")) else {
+                return err("need `from` and `to`");
+            };
             let (a, b) = match (point(app, from), point(app, to)) {
                 (Ok(a), Ok(b)) => (a, b),
-                (Err(e), _) | (_, Err(e)) if e.starts_with(RETRY) => return Outcome::Retry(e.trim_start_matches(RETRY).to_string()),
+                (Err(e), _) | (_, Err(e)) if e.starts_with(RETRY) => {
+                    return Outcome::Retry(e.trim_start_matches(RETRY).to_string());
+                }
                 (Err(e), _) | (_, Err(e)) => return err(e),
             };
             let steps = p.get("steps").and_then(Value::as_u64).unwrap_or(12).max(2);
             let m = modifiers(p);
             app.synthetic.push(egui::Event::ModifiersChanged(m));
             app.synthetic.push(egui::Event::PointerMoved(a));
-            app.synthetic.push(egui::Event::PointerButton { pos: a, button: egui::PointerButton::Primary, pressed: true, modifiers: m });
+            app.synthetic.push(egui::Event::PointerButton {
+                pos: a,
+                button: egui::PointerButton::Primary,
+                pressed: true,
+                modifiers: m,
+            });
             for i in 1..=steps {
                 let f = i as f32 / steps as f32;
-                app.synthetic.push(egui::Event::PointerMoved(a + (b - a) * f));
+                app.synthetic
+                    .push(egui::Event::PointerMoved(a + (b - a) * f));
             }
-            app.synthetic.push(egui::Event::PointerButton { pos: b, button: egui::PointerButton::Primary, pressed: false, modifiers: m });
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic.push(egui::Event::PointerButton {
+                pos: b,
+                button: egui::PointerButton::Primary,
+                pressed: false,
+                modifiers: m,
+            });
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.scroll" => {
@@ -365,7 +444,8 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             };
             let dx = p.get("dx").and_then(Value::as_f64).unwrap_or(0.0) as f32;
             let dy = p.get("dy").and_then(Value::as_f64).unwrap_or(0.0) as f32;
-            app.synthetic.push(egui::Event::ModifiersChanged(modifiers(p)));
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(modifiers(p)));
             app.synthetic.push(egui::Event::PointerMoved(pos));
             app.synthetic.push(egui::Event::MouseWheel {
                 unit: egui::MouseWheelUnit::Point,
@@ -379,24 +459,51 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
                 pressed: false,
                 modifiers: Default::default(),
             });
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.key" => {
-            let Some(name) = s("key") else { return err("missing `key`") };
-            let Some((m, key)) = crate::menus::parse_shortcut(name) else { return err(format!("unknown key `{name}`")) };
+            let Some(name) = s("key") else {
+                return err("missing `key`");
+            };
+            let Some((m, key)) = crate::menus::parse_shortcut(name) else {
+                return err(format!("unknown key `{name}`"));
+            };
             let m = as_pressed(m | modifiers(p));
             app.synthetic.push(egui::Event::ModifiersChanged(m));
-            app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: m });
-            app.synthetic.push(egui::Event::Key { key, physical_key: None, pressed: false, repeat: false, modifiers: m });
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            app.synthetic.push(egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: m,
+            });
+            app.synthetic.push(egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: m,
+            });
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             Outcome::AfterInput
         }
         "ui.type" => {
-            let Some(text) = s("text") else { return err("missing `text`") };
-            app.synthetic.push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
+            let Some(text) = s("text") else {
+                return err("missing `text`");
+            };
+            app.synthetic
+                .push(egui::Event::ModifiersChanged(egui::Modifiers::NONE));
             app.synthetic.push(egui::Event::Text(text.to_string()));
-            app.synthetic.push(egui::Event::Key { key: egui::Key::F35, physical_key: None, pressed: false, repeat: false, modifiers: Default::default() });
+            app.synthetic.push(egui::Event::Key {
+                key: egui::Key::F35,
+                physical_key: None,
+                pressed: false,
+                repeat: false,
+                modifiers: Default::default(),
+            });
             Outcome::AfterInput
         }
         "ui.timeline.hit" => {
@@ -407,7 +514,9 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             ok(crate::panels::timeline::hit_json(app, pos, modifiers(p)))
         }
         "ui.timeline.locate" => {
-            let Some(c) = p.get("clip").and_then(Value::as_u64) else { return err("need `clip`") };
+            let Some(c) = p.get("clip").and_then(Value::as_u64) else {
+                return err("need `clip`");
+            };
             match crate::panels::timeline::locate(app, c, s("edge")) {
                 Some((x, y)) => ok(json!({"x": x, "y": y})),
                 None => err("clip not visible in the timeline"),
@@ -422,11 +531,16 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
             ok(json!({"playing": app.playback.playing, "playhead": app.session.playhead().0}))
         }
         "ui.screenshot" => {
-            let crop = s("panel").and_then(PanelKind::from_name).and_then(|pk| app.auto.find(&format!("panel.{}", pk.id())).map(|e| e.rect));
+            let crop = s("panel")
+                .and_then(PanelKind::from_name)
+                .and_then(|pk| app.auto.find(&format!("panel.{}", pk.id())).map(|e| e.rect));
             let crop = crop.or_else(|| s("id").and_then(|id| app.auto.find(id).map(|e| e.rect)));
             // Bring the window on screen so a frame is presented, without taking keyboard focus.
             app.raise_for_control(ctx);
-            Outcome::Screenshot { path: s("path").map(str::to_string), crop }
+            Outcome::Screenshot {
+                path: s("path").map(str::to_string),
+                crop,
+            }
         }
         "ui.resize" => {
             let w = p.get("width").and_then(Value::as_f64).unwrap_or(1600.0) as f32;
@@ -440,20 +554,33 @@ pub fn handle(app: &mut FilmcraftApp, ctx: &egui::Context, req: &ControlRequest)
                 ctx.send_viewport_cmd(egui::ViewportCommand::Focus);
                 return ok(Value::Null);
             }
-            let Some(object) = p.as_object().filter(|object| object.len() == 1 && object.contains_key("id")) else {
+            let Some(object) = p
+                .as_object()
+                .filter(|object| object.len() == 1 && object.contains_key("id"))
+            else {
                 return err("ui.focus expects {} or {id: string}");
             };
-            let Some(id) = object.get("id").and_then(Value::as_str) else { return err("ui.focus needs a string `id`") };
-            let Some(element) = app.auto.find(id) else { return err(format!("no element `{id}` (see ui.elements)")) };
-            let Some(widget_id) = element.response_id else { return err(format!("element `{id}` has no focusable widget")) };
-            let Some(response) = ctx.read_response(widget_id) else { return err(format!("widget `{id}` is not present")) };
+            let Some(id) = object.get("id").and_then(Value::as_str) else {
+                return err("ui.focus needs a string `id`");
+            };
+            let Some(element) = app.auto.find(id) else {
+                return err(format!("no element `{id}` (see ui.elements)"));
+            };
+            let Some(widget_id) = element.response_id else {
+                return err(format!("element `{id}` has no focusable widget"));
+            };
+            let Some(response) = ctx.read_response(widget_id) else {
+                return err(format!("widget `{id}` is not present"));
+            };
             if !response.enabled()
                 || !response.sense.is_focusable()
                 || !response.interact_rect.is_finite()
                 || !response.interact_rect.is_positive()
                 || !response.interact_rect.intersects(ctx.content_rect())
             {
-                return err(format!("widget `{id}` is not enabled, visible and focusable"));
+                return err(format!(
+                    "widget `{id}` is not enabled, visible and focusable"
+                ));
             }
             // A widget target never activates the native window. The next ui.inspect reports
             // actual focus ownership separately from this request acknowledgement.
@@ -490,7 +617,12 @@ fn merge(v: &mut Value, patch: &Value) {
 pub fn inspect(app: &FilmcraftApp, ctx: &egui::Context) -> Value {
     let size = ctx.content_rect().size();
     let keyboard_focus = ctx.memory(|memory| memory.focused()).map(|id| {
-        let elements: Vec<_> = app.auto.previous.iter().filter(|element| element.response_id == Some(id)).collect();
+        let elements: Vec<_> = app
+            .auto
+            .previous
+            .iter()
+            .filter(|element| element.response_id == Some(id))
+            .collect();
         json!({
             "widgetId": format!("{:016x}", id.value()),
             "elementIds": elements.iter().map(|element| element.id.as_str()).collect::<Vec<_>>(),
@@ -517,14 +649,24 @@ pub fn inspect(app: &FilmcraftApp, ctx: &egui::Context) -> Value {
 }
 
 /// Save a screenshot (optionally cropped to a rect in points) as PNG; returns the reply JSON.
-pub fn save_screenshot(ctx: &egui::Context, image: &egui::ColorImage, path: Option<&str>, crop: Option<[f32; 4]>) -> Value {
+pub fn save_screenshot(
+    ctx: &egui::Context,
+    image: &egui::ColorImage,
+    path: Option<&str>,
+    crop: Option<[f32; 4]>,
+) -> Value {
     let ppp = ctx.pixels_per_point();
     let [w, h] = image.size;
     let (x0, y0, cw, ch) = match crop {
         Some([x, y, cw, ch]) => {
             let x0 = ((x * ppp) as usize).min(w);
             let y0 = ((y * ppp) as usize).min(h);
-            (x0, y0, ((cw * ppp) as usize).min(w - x0), ((ch * ppp) as usize).min(h - y0))
+            (
+                x0,
+                y0,
+                ((cw * ppp) as usize).min(w - x0),
+                ((ch * ppp) as usize).min(h - y0),
+            )
         }
         None => (0, 0, w, h),
     };
@@ -538,11 +680,18 @@ pub fn save_screenshot(ctx: &egui::Context, image: &egui::ColorImage, path: Opti
     if cfg!(target_arch = "wasm32") {
         // No filesystem on the web: the PNG comes back in the reply.
         return match encode_png(&rgba, cw as u32, ch as u32) {
-            Ok(png) => json!({"ok": true, "result": {"pngBase64": base64(&png), "width": cw, "height": ch}}),
+            Ok(png) => {
+                json!({"ok": true, "result": {"pngBase64": base64(&png), "width": cw, "height": ch}})
+            }
             Err(e) => json!({"ok": false, "error": e}),
         };
     }
-    let path = path.map(str::to_string).unwrap_or_else(|| filmcraft_engine::temp_dir().join("filmcraft-screenshot.png").to_string_lossy().to_string());
+    let path = path.map(str::to_string).unwrap_or_else(|| {
+        filmcraft_engine::temp_dir()
+            .join("filmcraft-screenshot.png")
+            .to_string_lossy()
+            .to_string()
+    });
     match encode_png(&rgba, cw as u32, ch as u32) {
         Ok(png) => match std::fs::write(&path, png) {
             Ok(()) => json!({"ok": true, "result": {"path": path, "width": cw, "height": ch}}),
@@ -557,7 +706,9 @@ pub fn base64(data: &[u8]) -> String {
     const A: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity(data.len().div_ceil(3) * 4);
     for c in data.chunks(3) {
-        let n = (c[0] as u32) << 16 | (*c.get(1).unwrap_or(&0) as u32) << 8 | *c.get(2).unwrap_or(&0) as u32;
+        let n = (c[0] as u32) << 16
+            | (*c.get(1).unwrap_or(&0) as u32) << 8
+            | *c.get(2).unwrap_or(&0) as u32;
         for k in 0..4 {
             if k <= c.len() {
                 out.push(A[(n >> (18 - 6 * k) & 63) as usize] as char);
@@ -584,7 +735,11 @@ pub fn encode_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>, String> {
         for &b in d {
             c ^= b as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { (c >> 1) ^ 0xEDB8_8320 } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    (c >> 1) ^ 0xEDB8_8320
+                } else {
+                    c >> 1
+                };
             }
         }
         !c
@@ -624,7 +779,15 @@ pub fn encode_png(rgba: &[u8], w: u32, h: u32) -> Result<Vec<u8>, String> {
 mod base64_tests {
     #[test]
     fn rfc4648_vectors() {
-        for (i, o) in [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")] {
+        for (i, o) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
             assert_eq!(super::base64(i.as_bytes()), o);
         }
     }

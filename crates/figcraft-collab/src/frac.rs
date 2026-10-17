@@ -87,7 +87,10 @@ fn shorten(k: &str) -> String {
 /// Split a valid key into its integer part and fraction.
 fn split(key: &str) -> Result<(&[u8], &[u8]), KeyError> {
     let b = key.as_bytes();
-    let n = b.first().and_then(|h| int_len(*h)).ok_or_else(|| KeyError::Invalid(shorten(key)))?;
+    let n = b
+        .first()
+        .and_then(|h| int_len(*h))
+        .ok_or_else(|| KeyError::Invalid(shorten(key)))?;
     if b.len() < n {
         return Err(KeyError::Invalid(shorten(key)));
     }
@@ -101,7 +104,13 @@ pub fn validate(key: &str) -> Result<(), KeyError> {
         return Err(bad());
     }
     let (int, frac) = split(key)?;
-    if int.iter().skip(1).chain(frac).any(|c| digit_value(*c).is_none()) || frac.last() == Some(&b'0') {
+    if int
+        .iter()
+        .skip(1)
+        .chain(frac)
+        .any(|c| digit_value(*c).is_none())
+        || frac.last() == Some(&b'0')
+    {
         return Err(bad());
     }
     if is_smallest_int(int) && frac.is_empty() {
@@ -124,7 +133,9 @@ fn midpoint(a: &[u8], b: Option<&[u8]>) -> Result<Vec<u8>, KeyError> {
         if let Some(bb) = b {
             // Shared prefix (missing digits of `a` read as 0).
             let mut n = 0;
-            while n < bb.len() && a.get(n).copied().unwrap_or(b'0') == bb.get(n).copied().unwrap_or(0) {
+            while n < bb.len()
+                && a.get(n).copied().unwrap_or(b'0') == bb.get(n).copied().unwrap_or(0)
+            {
                 n += 1;
             }
             if n > 0 {
@@ -139,7 +150,10 @@ fn midpoint(a: &[u8], b: Option<&[u8]>) -> Result<Vec<u8>, KeyError> {
             None => 0,
         };
         let db = match b {
-            Some(bb) => bb.first().and_then(|c| digit_value(*c)).ok_or(KeyError::Order)?,
+            Some(bb) => bb
+                .first()
+                .and_then(|c| digit_value(*c))
+                .ok_or(KeyError::Order)?,
             None => BASE,
         };
         if db <= da {
@@ -309,7 +323,13 @@ pub fn n_between(a: Option<&str>, b: Option<&str>, n: usize) -> Result<Vec<Strin
     Ok(out)
 }
 
-fn fill(a: Option<&str>, b: Option<&str>, n: usize, out: &mut Vec<String>, depth: usize) -> Result<(), KeyError> {
+fn fill(
+    a: Option<&str>,
+    b: Option<&str>,
+    n: usize,
+    out: &mut Vec<String>,
+    depth: usize,
+) -> Result<(), KeyError> {
     if n == 0 {
         return Ok(());
     }

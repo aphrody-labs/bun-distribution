@@ -36,7 +36,9 @@ impl GridSize {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|g| g.id().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|g| g.id().eq_ignore_ascii_case(s))
     }
     /// Edge of one grid cell in screen points (the grid does not scale with the zoom).
     pub fn cell(self) -> f32 {
@@ -49,7 +51,11 @@ impl GridSize {
 }
 
 const fn hex(v: u32) -> Color {
-    Color::Rgb { r: ((v >> 16) & 0xff) as f32 / 255.0, g: ((v >> 8) & 0xff) as f32 / 255.0, b: (v & 0xff) as f32 / 255.0 }
+    Color::Rgb {
+        r: ((v >> 16) & 0xff) as f32 / 255.0,
+        g: ((v >> 8) & 0xff) as f32 / 255.0,
+        b: (v & 0xff) as f32 / 255.0,
+    }
 }
 
 /// Transparency grid colour presets (VectorCraft's own pairs). Any other pair is "Custom".
@@ -83,7 +89,9 @@ impl ExportText {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        [ExportText::Editable, ExportText::Appearance].into_iter().find(|e| e.id().eq_ignore_ascii_case(s))
+        [ExportText::Editable, ExportText::Appearance]
+            .into_iter()
+            .find(|e| e.id().eq_ignore_ascii_case(s))
     }
 }
 
@@ -101,11 +109,32 @@ impl Default for Quotes {
 }
 
 impl Quotes {
-    pub const ENGLISH: Self = Self { double: ['“', '”'], single: ['‘', '’'] };
+    pub const ENGLISH: Self = Self {
+        double: ['“', '”'],
+        single: ['‘', '’'],
+    };
     /// Double-quote pairs offered by Document Setup.
-    pub const DOUBLE_CHOICES: &[[char; 2]] = &[['“', '”'], ['„', '“'], ['„', '”'], ['”', '”'], ['«', '»'], ['»', '«'], ['「', '」'], ['"', '"']];
+    pub const DOUBLE_CHOICES: &[[char; 2]] = &[
+        ['“', '”'],
+        ['„', '“'],
+        ['„', '”'],
+        ['”', '”'],
+        ['«', '»'],
+        ['»', '«'],
+        ['「', '」'],
+        ['"', '"'],
+    ];
     /// Single-quote pairs offered by Document Setup.
-    pub const SINGLE_CHOICES: &[[char; 2]] = &[['‘', '’'], ['‚', '‘'], ['‚', '’'], ['’', '’'], ['‹', '›'], ['›', '‹'], ['『', '』'], ['\'', '\'']];
+    pub const SINGLE_CHOICES: &[[char; 2]] = &[
+        ['‘', '’'],
+        ['‚', '‘'],
+        ['‚', '’'],
+        ['’', '’'],
+        ['‹', '›'],
+        ['›', '‹'],
+        ['『', '』'],
+        ['\'', '\''],
+    ];
 
     /// Is `c` one of these opening quotes?
     fn is_open(&self, c: char) -> bool {
@@ -114,7 +143,9 @@ impl Quotes {
 
     /// A quote opens after nothing, whitespace, an opening bracket, a dash or another opening quote.
     fn opens(&self, prev: Option<char>) -> bool {
-        prev.is_none_or(|p| p.is_whitespace() || matches!(p, '(' | '[' | '{' | '—' | '–') || self.is_open(p))
+        prev.is_none_or(|p| {
+            p.is_whitespace() || matches!(p, '(' | '[' | '{' | '—' | '–') || self.is_open(p)
+        })
     }
 
     /// `text` with straight quotes (`"` and `'`) replaced by these quotes: opening or closing by
@@ -139,28 +170,133 @@ impl Quotes {
 /// also picks its quotes).
 pub const LANGUAGES: &[(&str, Quotes)] = &[
     ("English: USA", Quotes::ENGLISH),
-    ("English: UK", Quotes { double: ['“', '”'], single: ['‘', '’'] }),
-    ("German", Quotes { double: ['„', '“'], single: ['‚', '‘'] }),
-    ("German: Swiss", Quotes { double: ['«', '»'], single: ['‹', '›'] }),
-    ("French", Quotes { double: ['«', '»'], single: ['‹', '›'] }),
-    ("Italian", Quotes { double: ['«', '»'], single: ['‘', '’'] }),
-    ("Spanish", Quotes { double: ['«', '»'], single: ['‘', '’'] }),
-    ("Portuguese", Quotes { double: ['«', '»'], single: ['‘', '’'] }),
-    ("Dutch", Quotes { double: ['“', '”'], single: ['‘', '’'] }),
-    ("Danish", Quotes { double: ['»', '«'], single: ['›', '‹'] }),
-    ("Swedish", Quotes { double: ['”', '”'], single: ['’', '’'] }),
-    ("Finnish", Quotes { double: ['”', '”'], single: ['’', '’'] }),
-    ("Norwegian", Quotes { double: ['«', '»'], single: ['‘', '’'] }),
-    ("Polish", Quotes { double: ['„', '”'], single: ['‚', '’'] }),
-    ("Czech", Quotes { double: ['„', '“'], single: ['‚', '‘'] }),
-    ("Russian", Quotes { double: ['«', '»'], single: ['„', '“'] }),
-    ("Japanese", Quotes { double: ['「', '」'], single: ['『', '』'] }),
-    ("Chinese", Quotes { double: ['“', '”'], single: ['‘', '’'] }),
+    (
+        "English: UK",
+        Quotes {
+            double: ['“', '”'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "German",
+        Quotes {
+            double: ['„', '“'],
+            single: ['‚', '‘'],
+        },
+    ),
+    (
+        "German: Swiss",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‹', '›'],
+        },
+    ),
+    (
+        "French",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‹', '›'],
+        },
+    ),
+    (
+        "Italian",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "Spanish",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "Portuguese",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "Dutch",
+        Quotes {
+            double: ['“', '”'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "Danish",
+        Quotes {
+            double: ['»', '«'],
+            single: ['›', '‹'],
+        },
+    ),
+    (
+        "Swedish",
+        Quotes {
+            double: ['”', '”'],
+            single: ['’', '’'],
+        },
+    ),
+    (
+        "Finnish",
+        Quotes {
+            double: ['”', '”'],
+            single: ['’', '’'],
+        },
+    ),
+    (
+        "Norwegian",
+        Quotes {
+            double: ['«', '»'],
+            single: ['‘', '’'],
+        },
+    ),
+    (
+        "Polish",
+        Quotes {
+            double: ['„', '”'],
+            single: ['‚', '’'],
+        },
+    ),
+    (
+        "Czech",
+        Quotes {
+            double: ['„', '“'],
+            single: ['‚', '‘'],
+        },
+    ),
+    (
+        "Russian",
+        Quotes {
+            double: ['«', '»'],
+            single: ['„', '“'],
+        },
+    ),
+    (
+        "Japanese",
+        Quotes {
+            double: ['「', '」'],
+            single: ['『', '』'],
+        },
+    ),
+    (
+        "Chinese",
+        Quotes {
+            double: ['“', '”'],
+            single: ['‘', '’'],
+        },
+    ),
 ];
 
 /// The quotes of a [`LANGUAGES`] entry (case-insensitive).
 pub fn language_quotes(language: &str) -> Option<Quotes> {
-    LANGUAGES.iter().find(|(l, _)| l.eq_ignore_ascii_case(language)).map(|(_, q)| *q)
+    LANGUAGES
+        .iter()
+        .find(|(l, _)| l.eq_ignore_ascii_case(language))
+        .map(|(_, q)| *q)
 }
 
 /// The transparency flattener preset Document Setup uses unless another is chosen.
@@ -186,7 +322,9 @@ impl Background {
         }
     }
     pub fn parse(s: &str) -> Option<Self> {
-        Self::ALL.into_iter().find(|b| b.id().eq_ignore_ascii_case(s))
+        Self::ALL
+            .into_iter()
+            .find(|b| b.id().eq_ignore_ascii_case(s))
     }
 }
 
@@ -268,11 +406,16 @@ impl DocSetup {
     }
     /// The name of the grid colour preset in use, or "Custom".
     pub fn grid_colors_name(&self) -> &'static str {
-        GRID_COLOR_PRESETS.iter().find(|(_, c)| *c == self.grid_colors).map_or("Custom", |(n, _)| n)
+        GRID_COLOR_PRESETS
+            .iter()
+            .find(|(_, c)| *c == self.grid_colors)
+            .map_or("Custom", |(n, _)| n)
     }
     /// The flattener preset in use.
     pub fn flattener(&self) -> &str {
-        self.flattener_preset.as_deref().unwrap_or(DEFAULT_FLATTENER)
+        self.flattener_preset
+            .as_deref()
+            .unwrap_or(DEFAULT_FLATTENER)
     }
 }
 
@@ -283,7 +426,10 @@ mod tests {
     #[test]
     fn quotes_open_and_close_by_context() {
         let mut prev = None;
-        assert_eq!(Quotes::ENGLISH.apply("\"Hi,\" it's 'x'", &mut prev), "“Hi,” it’s ‘x’");
+        assert_eq!(
+            Quotes::ENGLISH.apply("\"Hi,\" it's 'x'", &mut prev),
+            "“Hi,” it’s ‘x’"
+        );
         let german = language_quotes("german").unwrap();
         let mut prev = Some('(');
         assert_eq!(german.apply("\"a\"", &mut prev), "„a“");
@@ -297,8 +443,14 @@ mod tests {
 
     #[test]
     fn bleed_grows_the_artboard() {
-        let s = DocSetup { bleed: [9.0, 9.0, 4.0, 2.0], ..Default::default() };
-        assert_eq!(s.bleed_rect(Rect::new(0.0, 0.0, 100.0, 50.0)), Rect::new(-4.0, -9.0, 102.0, 59.0));
+        let s = DocSetup {
+            bleed: [9.0, 9.0, 4.0, 2.0],
+            ..Default::default()
+        };
+        assert_eq!(
+            s.bleed_rect(Rect::new(0.0, 0.0, 100.0, 50.0)),
+            Rect::new(-4.0, -9.0, 102.0, 59.0)
+        );
         assert!(s.has_bleed() && !DocSetup::default().has_bleed());
     }
 
@@ -309,9 +461,18 @@ mod tests {
         assert_eq!(d.flattener(), "Medium Resolution");
         assert_eq!(Background::parse("WHITE"), Some(Background::White));
         assert_eq!(GridSize::parse("LARGE"), Some(GridSize::Large));
-        assert_eq!(ExportText::parse("appearance"), Some(ExportText::Appearance));
+        assert_eq!(
+            ExportText::parse("appearance"),
+            Some(ExportText::Appearance)
+        );
         // A partial setup fills in the rest.
         let s: DocSetup = serde_json::from_str(r#"{"bleed":[1,2,3,4]}"#).unwrap();
-        assert_eq!(s, DocSetup { bleed: [1.0, 2.0, 3.0, 4.0], ..DocSetup::default() });
+        assert_eq!(
+            s,
+            DocSetup {
+                bleed: [1.0, 2.0, 3.0, 4.0],
+                ..DocSetup::default()
+            }
+        );
     }
 }

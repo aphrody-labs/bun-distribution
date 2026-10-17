@@ -10,7 +10,12 @@ const RGGB: [u8; 4] = [0, 1, 1, 2];
 fn xtrans(packing: RafPacking, bits: u32) -> RafSpec {
     let (w, h) = (30, 18);
     let white = ((1u32 << bits) - 1) as u16;
-    let mut s = RafSpec::new(w, h, mosaic_cfa(&scene(w, h), w, &XTRANS, 6, 256, white), XTRANS.to_vec());
+    let mut s = RafSpec::new(
+        w,
+        h,
+        mosaic_cfa(&scene(w, h), w, &XTRANS, 6, 256, white),
+        XTRANS.to_vec(),
+    );
     s.bits = bits;
     s.packing = packing;
     s.black = vec![256; 36];
@@ -20,7 +25,12 @@ fn xtrans(packing: RafPacking, bits: u32) -> RafSpec {
 
 #[test]
 fn every_storage_decodes_exactly() {
-    for (packing, bits) in [(RafPacking::U16 { le: true }, 14), (RafPacking::U16 { le: false }, 16), (RafPacking::Lsb12, 12), (RafPacking::Words14, 14)] {
+    for (packing, bits) in [
+        (RafPacking::U16 { le: true }, 14),
+        (RafPacking::U16 { le: false }, 16),
+        (RafPacking::Lsb12, 12),
+        (RafPacking::Words14, 14),
+    ] {
         let spec = xtrans(packing, bits);
         let b = spec.build();
         assert_eq!(identify(&b), Some(RawFormat::Raf));
@@ -47,7 +57,10 @@ fn xtrans_metadata() {
     assert_eq!(s.camera_wb, Some([2.0, 1.0, 1.5]));
     assert!((s.baseline_exposure - 0.72).abs() < 1e-9);
     assert_eq!(s.orientation, 6);
-    assert_eq!((s.make.as_deref(), s.model.as_deref()), (Some("FUJIFILM"), Some("X-Synthetic")));
+    assert_eq!(
+        (s.make.as_deref(), s.model.as_deref()),
+        (Some("FUJIFILM"), Some("X-Synthetic"))
+    );
     assert!(s.warnings.is_empty(), "{:?}", s.warnings);
 }
 
@@ -57,12 +70,22 @@ fn xtrans_develops() {
     spec.orientation = 6;
     let b = spec.build();
     for m in [Demosaic::Bilinear, Demosaic::Mhc, Demosaic::Ahd] {
-        let d = develop(&b, &DevelopOptions { demosaic: m, ..Default::default() }).unwrap();
+        let d = develop(
+            &b,
+            &DevelopOptions {
+                demosaic: m,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         // Cropped to 26×14, then rotated.
         assert_eq!((d.width, d.height), (14, 26));
         assert_eq!(d.info.format, RawFormat::Raf);
         // The repeat seen from the crop origin (2, 2).
-        assert_eq!(d.info.cfa.as_deref(), Some("GRBGBR/BGGRGG/RGGBGG/GBRGRB/RGGBGG/BGGRGG"));
+        assert_eq!(
+            d.info.cfa.as_deref(),
+            Some("GRBGBR/BGGRGG/RGGBGG/GBRGRB/RGGBGG/BGGRGG")
+        );
         assert_eq!(d.info.wb_multipliers, [2.0, 1.0, 1.5]);
     }
 }
@@ -74,10 +97,21 @@ fn xtrans_white_balance_is_per_site() {
     // applied per column pair, as for Bayer, would tint it).
     let (w, h) = (36, 24);
     let rgb: Vec<[f32; 3]> = vec![[0.4 / 2.0, 0.4, 0.4 / 1.5]; w * h];
-    let spec = RafSpec { black: vec![256], ..RafSpec::new(w, h, mosaic_cfa(&rgb, w, &XTRANS, 6, 256, 16383), XTRANS.to_vec()) };
+    let spec = RafSpec {
+        black: vec![256],
+        ..RafSpec::new(
+            w,
+            h,
+            mosaic_cfa(&rgb, w, &XTRANS, 6, 256, 16383),
+            XTRANS.to_vec(),
+        )
+    };
     let d = develop(&spec.build(), &DevelopOptions::default()).unwrap();
     for p in d.rgb.as_chunks::<3>().0 {
-        assert!(p[0].abs_diff(p[1]) <= 2 && p[2].abs_diff(p[1]) <= 2, "{p:?}");
+        assert!(
+            p[0].abs_diff(p[1]) <= 2 && p[2].abs_diff(p[1]) <= 2,
+            "{p:?}"
+        );
     }
 }
 
@@ -85,15 +119,27 @@ fn xtrans_white_balance_is_per_site() {
 fn bayer_layouts() {
     let (w, h) = (24, 16);
     for cfa in [RGGB, [2, 1, 1, 0]] {
-        for (packing, bits) in [(RafPacking::Lsb12, 12), (RafPacking::Words14, 14), (RafPacking::U16 { le: true }, 14)] {
+        for (packing, bits) in [
+            (RafPacking::Lsb12, 12),
+            (RafPacking::Words14, 14),
+            (RafPacking::U16 { le: true }, 14),
+        ] {
             let white = ((1u32 << bits) - 1) as u16;
             let data = mosaic_cfa(&scene(w, h), w, &cfa, 2, 64, white);
-            let spec = RafSpec { bits, packing, black: vec![64, 64, 64, 64], ..RafSpec::new(w, h, data, cfa.to_vec()) };
+            let spec = RafSpec {
+                bits,
+                packing,
+                black: vec![64, 64, 64, 64],
+                ..RafSpec::new(w, h, data, cfa.to_vec())
+            };
             let s = decode(&spec.build(), &Limits::default()).unwrap();
             assert_eq!(s.data, spec.data);
             assert_eq!(s.cfa.as_ref().unwrap().phase(0, 0), cfa, "{packing:?}");
             let d = develop_sensor(&s, &DevelopOptions::default()).unwrap();
-            assert_eq!(d.info.cfa.as_deref(), Some(if cfa == RGGB { "RGGB" } else { "BGGR" }));
+            assert_eq!(
+                d.info.cfa.as_deref(),
+                Some(if cfa == RGGB { "RGGB" } else { "BGGR" })
+            );
         }
     }
 }
@@ -121,12 +167,24 @@ fn unsupported_variants_report_and_keep_the_preview() {
 fn bad_layouts_and_sizes_fail_cleanly() {
     // A Bayer FujiLayout that is not a Bayer pattern.
     let spec = RafSpec::new(8, 4, vec![100; 32], vec![0, 0, 2, 2]);
-    assert!(matches!(decode(&spec.build(), &Limits::default()), Err(RawError::Unsupported(_))));
+    assert!(matches!(
+        decode(&spec.build(), &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
     // Dimensions beyond the limits are rejected before allocating.
     let spec = xtrans(RafPacking::U16 { le: true }, 14);
-    let limits = Limits { max_pixels: 100, ..Limits::default() };
-    assert!(matches!(decode(&spec.build(), &limits), Err(RawError::LimitExceeded(_))));
+    let limits = Limits {
+        max_pixels: 100,
+        ..Limits::default()
+    };
+    assert!(matches!(
+        decode(&spec.build(), &limits),
+        Err(RawError::LimitExceeded(_))
+    ));
     // A truncated strip.
     let b = spec.build();
-    assert!(matches!(decode(&b[..b.len() - 7], &Limits::default()), Err(RawError::Malformed(_))));
+    assert!(matches!(
+        decode(&b[..b.len() - 7], &Limits::default()),
+        Err(RawError::Malformed(_))
+    ));
 }

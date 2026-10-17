@@ -12,7 +12,11 @@ fn text(r: &crate::ToolResult) -> Value {
 
 fn three_boards() -> Headless {
     let mut h = Headless::new();
-    h.call("engine.execute", json!({"command": "file.new", "params": {"width": 50, "height": 30, "artboards": 3}})).unwrap();
+    h.call(
+        "engine.execute",
+        json!({"command": "file.new", "params": {"width": 50, "height": 30, "artboards": 3}}),
+    )
+    .unwrap();
     h
 }
 
@@ -29,13 +33,31 @@ fn export_with_a_range_writes_one_file_per_artboard() {
     for (f, board) in files.iter().zip(["Artboard-1", "Artboard-3"]) {
         let p = f.as_str().unwrap();
         assert!(p.ends_with(&format!("icon-{board}.png")), "{p}");
-        let img = image::load_from_memory(&std::fs::read(p).unwrap()).unwrap().to_rgba8();
+        let img = image::load_from_memory(&std::fs::read(p).unwrap())
+            .unwrap()
+            .to_rgba8();
         assert_eq!(img.dimensions(), (100, 60), "144 ppi");
         assert!(img.pixels().all(|px| px[3] == 255), "white background");
     }
     // Without a path the files come back as bytes.
-    let r = text(&call_tool(&mut h, "export", &json!({"format": "jpg", "options": {"useArtboards": true}})));
-    let names: Vec<&str> = r["files"].as_array().unwrap().iter().map(|f| f["name"].as_str().unwrap()).collect();
-    assert_eq!(names, ["Untitled-1-Artboard-1.jpg", "Untitled-1-Artboard-2.jpg", "Untitled-1-Artboard-3.jpg"]);
+    let r = text(&call_tool(
+        &mut h,
+        "export",
+        &json!({"format": "jpg", "options": {"useArtboards": true}}),
+    ));
+    let names: Vec<&str> = r["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| f["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "Untitled-1-Artboard-1.jpg",
+            "Untitled-1-Artboard-2.jpg",
+            "Untitled-1-Artboard-3.jpg"
+        ]
+    );
     let _ = std::fs::remove_dir_all(dir);
 }

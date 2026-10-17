@@ -170,8 +170,14 @@ impl DictionaryParamData {
             sub_category: field_i64(v, "sub_category").unwrap_or(0),
             cond2: owned(field_str(v, "cond2").unwrap_or("")),
             cond3: owned(field_str(v, "cond3").unwrap_or("")),
-            observation_offset: obs.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            observation_count: obs.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            observation_offset: obs
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            observation_count: obs
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }
@@ -237,8 +243,14 @@ impl DictionaryObservationActionPlay {
         let al = v.get("acttion_list").and_then(Value::as_array);
         Some(Self {
             play_no: field_i64(v, "play_no").unwrap_or(0),
-            action_offset: al.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            action_count: al.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            action_offset: al
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            action_count: al
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }
@@ -269,8 +281,14 @@ impl DictionaryObservationActionData {
         let pl = v.get("playlist").and_then(Value::as_array);
         Some(Self {
             actiontype_id: field_hash(v, "actiontype_id"),
-            play_offset: pl.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            play_count: pl.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            play_offset: pl
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            play_count: pl
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
         })
     }
 }

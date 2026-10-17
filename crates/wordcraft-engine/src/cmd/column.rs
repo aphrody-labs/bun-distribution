@@ -32,8 +32,13 @@ pub fn specs() -> Vec<CommandSpec> {
 
 /// Result: the corners, each block row's text and whether column mode is on.
 fn result(s: &Session) -> CmdResult {
-    let rows: Vec<String> = s.column_segments().map(|segs| segs.iter().map(|(a, b)| row_text(s, a, b)).collect()).unwrap_or_default();
-    Ok(json!({"anchor": pos_json(&s.sel.anchor), "focus": pos_json(&s.sel.focus), "rows": rows, "columnMode": s.column_mode}))
+    let rows: Vec<String> = s
+        .column_segments()
+        .map(|segs| segs.iter().map(|(a, b)| row_text(s, a, b)).collect())
+        .unwrap_or_default();
+    Ok(
+        json!({"anchor": pos_json(&s.sel.anchor), "focus": pos_json(&s.sel.focus), "rows": rows, "columnMode": s.column_mode}),
+    )
 }
 
 fn row_text(s: &Session, a: &Pos, b: &Pos) -> String {
@@ -41,14 +46,20 @@ fn row_text(s: &Session, a: &Pos, b: &Pos) -> String {
     if a.path != b.path || a.story != b.story {
         return String::new();
     }
-    s.doc.para_at(&a).and_then(|p| p.text.get(a.off.min(b.off)..b.off.max(a.off))).map(str::to_string).unwrap_or_default()
+    s.doc
+        .para_at(&a)
+        .and_then(|p| p.text.get(a.off.min(b.off)..b.off.max(a.off)))
+        .map(str::to_string)
+        .unwrap_or_default()
 }
 
 /// `{"page": n, "x": pt, "y": pt}`.
 fn point(v: &Value, name: &str) -> Result<(usize, f32, f32), CmdError> {
     match (p::u64(v, "page"), p::f32(v, "x"), p::f32(v, "y")) {
         (Some(pg), Some(x), Some(y)) => Ok((usize::try_from(pg).unwrap_or(usize::MAX), x, y)),
-        _ => Err(CmdError::Params(format!("`{name}` needs `page`, `x` and `y`"))),
+        _ => Err(CmdError::Params(format!(
+            "`{name}` needs `page`, `x` and `y`"
+        ))),
     }
 }
 
@@ -58,11 +69,19 @@ fn select_column(s: &mut Session, v: &Value) -> CmdResult {
         let b = parse_pos(fv).ok_or_else(|| CmdError::Params("bad `focus`".into()))?;
         let (a, b) = (s.doc.clamp(&a), s.doc.clamp(&b));
         if a.story != b.story {
-            return Err(CmdError::Params("`anchor` and `focus` must be in the same story".into()));
+            return Err(CmdError::Params(
+                "`anchor` and `focus` must be in the same story".into(),
+            ));
         }
         let l = s.layout();
-        let xa = l.caret_on(&a, s.page_hint).map(|c| c.x).ok_or_else(|| CmdError::Failed("`anchor` isn't laid out".into()))?;
-        let xb = l.caret_on(&b, s.page_hint).map(|c| c.x).ok_or_else(|| CmdError::Failed("`focus` isn't laid out".into()))?;
+        let xa = l
+            .caret_on(&a, s.page_hint)
+            .map(|c| c.x)
+            .ok_or_else(|| CmdError::Failed("`anchor` isn't laid out".into()))?;
+        let xb = l
+            .caret_on(&b, s.page_hint)
+            .map(|c| c.x)
+            .ok_or_else(|| CmdError::Failed("`focus` isn't laid out".into()))?;
         make(s, a, b, xa, xb);
         return result(s);
     }
@@ -71,8 +90,12 @@ fn select_column(s: &mut Session, v: &Value) -> CmdResult {
         let (tp, tx, ty) = point(tv, "to")?;
         let story = super::story_param(s, v);
         let l = s.layout();
-        let a = l.hit(fp, fx, fy, story).ok_or_else(|| CmdError::Params("no text at `from`".into()))?;
-        let b = l.hit(tp, tx, ty, story).ok_or_else(|| CmdError::Params("no text at `to`".into()))?;
+        let a = l
+            .hit(fp, fx, fy, story)
+            .ok_or_else(|| CmdError::Params("no text at `from`".into()))?;
+        let b = l
+            .hit(tp, tx, ty, story)
+            .ok_or_else(|| CmdError::Params("no text at `to`".into()))?;
         s.page_hint = tp;
         make(s, a, b, fx, tx);
         return result(s);
@@ -82,7 +105,11 @@ fn select_column(s: &mut Session, v: &Value) -> CmdResult {
     s.column_mode = on;
     if on {
         let f = s.sel.focus.clone();
-        let x = s.layout().caret_on(&f, s.page_hint).map(|c| c.x).unwrap_or(0.0);
+        let x = s
+            .layout()
+            .caret_on(&f, s.page_hint)
+            .map(|c| c.x)
+            .unwrap_or(0.0);
         make(s, f.clone(), f, x, x);
         s.status = "Column selection: the arrow keys extend the block, Esc ends it".into();
     } else {
@@ -93,28 +120,52 @@ fn select_column(s: &mut Session, v: &Value) -> CmdResult {
 
 /// Make the block between corners `a` and `b` whose page x are `xa` and `xb`.
 fn make(s: &mut Session, a: Pos, b: Pos, xa: f32, xb: f32) {
-    let (xa, xb) = (if xa.is_finite() { xa } else { 0.0 }, if xb.is_finite() { xb } else { 0.0 });
+    let (xa, xb) = (
+        if xa.is_finite() { xa } else { 0.0 },
+        if xb.is_finite() { xb } else { 0.0 },
+    );
     let (left, right) = (xa.min(xb), xa.max(xb));
     let l = s.layout();
     let segments = l.column_segments(&s.doc, &a, &b, left, right, s.page_hint, MAX_LINES);
-    s.sel = Selection { anchor: a, focus: b };
-    s.column = Some(ColumnBlock { sel: s.sel.clone(), anchor_x: xa, focus_x: xb, segments, cells: None });
+    s.sel = Selection {
+        anchor: a,
+        focus: b,
+    };
+    s.column = Some(ColumnBlock {
+        sel: s.sel.clone(),
+        anchor_x: xa,
+        focus_x: xb,
+        segments,
+        cells: None,
+    });
     s.pending = None;
 }
 
 /// Column mode: the caret moved to `to`; grow the block to it (keeping the goal column on
 /// Up/Down).
 fn extend_to(s: &mut Session, to: Pos) {
-    let Some(block) = s.column.clone() else { return };
+    let Some(block) = s.column.clone() else {
+        return;
+    };
     let x = match s.goal_x {
         Some(gx) => gx,
-        None => s.layout().caret_on(&to, s.page_hint).map(|c| c.x).unwrap_or(block.focus_x),
+        None => s
+            .layout()
+            .caret_on(&to, s.page_hint)
+            .map(|c| c.x)
+            .unwrap_or(block.focus_x),
     };
     make(s, block.sel.anchor, to, block.anchor_x, x);
 }
 
 /// Run a command with the column block in mind (called by `Session::run` for every command).
-pub(crate) fn dispatch(s: &mut Session, id: &str, mutates: bool, run: fn(&mut Session, &Value) -> CmdResult, v: &Value) -> CmdResult {
+pub(crate) fn dispatch(
+    s: &mut Session,
+    id: &str,
+    mutates: bool,
+    run: fn(&mut Session, &Value) -> CmdResult,
+    v: &Value,
+) -> CmdResult {
     // A block the selection has moved away from is gone.
     if s.column.as_ref().is_some_and(|c| c.sel != s.sel) {
         s.column = None;
@@ -138,7 +189,9 @@ pub(crate) fn dispatch(s: &mut Session, id: &str, mutates: bool, run: fn(&mut Se
         extend_to(s, to);
         return result(s);
     }
-    if matches!(id, "caret.set" | "select.collapse") || (mutates && !id.starts_with("format.") && !id.starts_with("para.")) {
+    if matches!(id, "caret.set" | "select.collapse")
+        || (mutates && !id.starts_with("format.") && !id.starts_with("para."))
+    {
         s.column_mode = false;
     }
     // Extending the selection (Shift+arrows, Shift+click, a drag) goes on from where it really
@@ -154,12 +207,16 @@ pub(crate) fn dispatch(s: &mut Session, id: &str, mutates: bool, run: fn(&mut Se
         super::table::extend_selection(s, to);
         return super::sel_result(s);
     }
-    let Some(segs) = s.column_segments().map(<[(Pos, Pos)]>::to_vec) else { return run(s, v) };
+    let Some(segs) = s.column_segments().map(<[(Pos, Pos)]>::to_vec) else {
+        return run(s, v);
+    };
     let cells = s.cell_range().is_some();
     match id {
         // Whole cells: table commands take the rectangle between the corners, and Tab moves on
         // from it without clearing it, as in Word.
-        _ if cells && (id.starts_with("table.") || matches!(id, "text.tab" | "text.backTab")) => run(s, v),
+        _ if cells && (id.starts_with("table.") || matches!(id, "text.tab" | "text.backTab")) => {
+            run(s, v)
+        }
         "edit.copy" => copy(s, &segs),
         "edit.cut" => {
             let r = copy(s, &segs)?;
@@ -171,14 +228,22 @@ pub(crate) fn dispatch(s: &mut Session, id: &str, mutates: bool, run: fn(&mut Se
             super::sel_result(s)
         }
         "format.changeCase" | "format.clear" | "format.resetChar" => per_row(s, run, v, &segs),
-        _ if id.starts_with("format.") || id.starts_with("para.") || id == "select.column" => run(s, v),
+        _ if id.starts_with("format.") || id.starts_with("para.") || id == "select.column" => {
+            run(s, v)
+        }
         // Pasting formatting (the format painter) leaves the text alone.
-        _ if mutates && (id.starts_with("text.") || (id.starts_with("edit.paste") && id != "edit.pasteFormat")) => {
+        _ if mutates
+            && (id.starts_with("text.")
+                || (id.starts_with("edit.paste") && id != "edit.pasteFormat")) =>
+        {
             delete(s, &segs)?;
             run(s, v)
         }
         _ if mutates => {
-            let at = segs.first().map(|(a, _)| s.doc.clamp(a)).unwrap_or_else(|| s.sel.focus.clone());
+            let at = segs
+                .first()
+                .map(|(a, _)| s.doc.clamp(a))
+                .unwrap_or_else(|| s.sel.focus.clone());
             s.sel = Selection::caret(at);
             s.column = None;
             run(s, v)
@@ -194,7 +259,11 @@ fn copy(s: &mut Session, segs: &[(Pos, Pos)]) -> CmdResult {
     let mut rows = Vec::new();
     for (a, b) in segs {
         let (a, b) = (s.doc.clamp(a), s.doc.clamp(b));
-        let frag = if a.path == b.path && a.story == b.story && a != b { s.doc.copy_range(&a, &b) } else { Fragment::default() };
+        let frag = if a.path == b.path && a.story == b.story && a != b {
+            s.doc.copy_range(&a, &b)
+        } else {
+            Fragment::default()
+        };
         // Text boxes in a row keep their stories (keyed by this document's part ids).
         parts.extend(frag.parts);
         let mut para = frag
@@ -228,7 +297,10 @@ fn delete(s: &mut Session, segs: &[(Pos, Pos)]) -> Result<(), CmdError> {
             s.doc.delete_range(&a, &b)?;
         }
     }
-    let at = segs.first().map(|(a, _)| s.doc.clamp(a)).unwrap_or_else(|| s.sel.focus.clone());
+    let at = segs
+        .first()
+        .map(|(a, _)| s.doc.clamp(a))
+        .unwrap_or_else(|| s.sel.focus.clone());
     s.sel = Selection::caret(at);
     s.column = None;
     s.column_mode = false;
@@ -238,14 +310,22 @@ fn delete(s: &mut Session, segs: &[(Pos, Pos)]) -> Result<(), CmdError> {
 }
 
 /// Run a selection command once per non-empty row, then restore the block.
-fn per_row(s: &mut Session, run: fn(&mut Session, &Value) -> CmdResult, v: &Value, segs: &[(Pos, Pos)]) -> CmdResult {
+fn per_row(
+    s: &mut Session,
+    run: fn(&mut Session, &Value) -> CmdResult,
+    v: &Value,
+    segs: &[(Pos, Pos)],
+) -> CmdResult {
     let block = s.column.take();
     for (a, b) in segs.iter().rev() {
         let (a, b) = (s.doc.clamp(a), s.doc.clamp(b));
         if a == b || a.path != b.path {
             continue;
         }
-        s.sel = Selection { anchor: a, focus: b };
+        s.sel = Selection {
+            anchor: a,
+            focus: b,
+        };
         if let Err(e) = run(s, v) {
             s.column = block;
             return Err(e);

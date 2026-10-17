@@ -51,7 +51,17 @@ pub struct Spec<'a> {
 
 impl<'a> Spec<'a> {
     pub fn new(width: u32, height: u32, sample: Sampler<'a>) -> Spec<'a> {
-        Spec { width, height, bit_depth: 8, sample, props: Vec::new(), exif: None, alpha: None, thumbnail: None, ignored_aux: Vec::new() }
+        Spec {
+            width,
+            height,
+            bit_depth: 8,
+            sample,
+            props: Vec::new(),
+            exif: None,
+            alpha: None,
+            thumbnail: None,
+            ignored_aux: Vec::new(),
+        }
     }
 }
 
@@ -105,7 +115,12 @@ struct Cabac {
 
 impl Cabac {
     fn new() -> Cabac {
-        Cabac { low: 0, range: 510, first: true, outstanding: 0 }
+        Cabac {
+            low: 0,
+            range: 510,
+            first: true,
+            outstanding: 0,
+        }
     }
 
     fn put_bit(&mut self, out: &mut Bits, b: u32) {
@@ -388,12 +403,25 @@ impl File {
 
     fn add(&mut self, kind: &'static [u8; 4], data: Vec<u8>, props: Vec<(u8, bool)>) -> u16 {
         let id = self.items.len() as u16 + 1;
-        self.items.push(Item { id, kind, data, props, hidden: false });
+        self.items.push(Item {
+            id,
+            kind,
+            data,
+            props,
+            hidden: false,
+        });
         id
     }
 
     /// A coded image of `w` × `h` (a grid when larger than a tile); returns its item id.
-    fn image(&mut self, w: u32, h: u32, bit_depth: u8, mono: bool, sample: &dyn Fn(u32, u32) -> [u16; 3]) -> u16 {
+    fn image(
+        &mut self,
+        w: u32,
+        h: u32,
+        bit_depth: u8,
+        mono: bool,
+        sample: &dyn Fn(u32, u32) -> [u16; 3],
+    ) -> u16 {
         let (cols, rows) = (w.div_ceil(TILE), h.div_ceil(TILE));
         let ispe = |w: u32, h: u32| {
             let mut p = w.to_be_bytes().to_vec();
@@ -405,7 +433,9 @@ impl File {
         let mut tiles = Vec::new();
         for r in 0..rows {
             for c in 0..cols {
-                let coded = picture(bit_depth, mono, &|x, y| sample((c * TILE + x).min(w - 1), (r * TILE + y).min(h - 1)));
+                let coded = picture(bit_depth, mono, &|x, y| {
+                    sample((c * TILE + x).min(w - 1), (r * TILE + y).min(h - 1))
+                });
                 let hv = *hvcc_prop.get_or_insert_with(|| self.prop(bx(b"hvcC", &coded.hvcc)));
                 tiles.push(self.add(b"hvc1", coded.data, vec![(hv, true), (tile_ispe, false)]));
             }
@@ -453,11 +483,17 @@ impl File {
         }
         let iref = full_box(b"iref", 0, &iref);
         let ipco = bx(b"ipco", &self.props.concat());
-        let mut ipma = (self.items.iter().filter(|i| !i.props.is_empty()).count() as u32).to_be_bytes().to_vec();
+        let mut ipma = (self.items.iter().filter(|i| !i.props.is_empty()).count() as u32)
+            .to_be_bytes()
+            .to_vec();
         for it in self.items.iter().filter(|i| !i.props.is_empty()) {
             ipma.extend_from_slice(&it.id.to_be_bytes());
             ipma.push(it.props.len() as u8);
-            ipma.extend(it.props.iter().map(|&(i, essential)| i | if essential { 0x80 } else { 0 }));
+            ipma.extend(
+                it.props
+                    .iter()
+                    .map(|&(i, essential)| i | if essential { 0x80 } else { 0 }),
+            );
         }
         let iprp = bx(b"iprp", &[ipco, full_box(b"ipma", 0, &ipma)].concat());
         let iloc = |base: u32| {
@@ -473,9 +509,30 @@ impl File {
             }
             full_box(b"iloc", 1, &l)
         };
-        let meta = |base| full_box(b"meta", 0, &[hdlr.clone(), pitm.clone(), iloc(base), iinf.clone(), iref.clone(), iprp.clone()].concat());
+        let meta = |base| {
+            full_box(
+                b"meta",
+                0,
+                &[
+                    hdlr.clone(),
+                    pitm.clone(),
+                    iloc(base),
+                    iinf.clone(),
+                    iref.clone(),
+                    iprp.clone(),
+                ]
+                .concat(),
+            )
+        };
         let start = (ftyp.len() + meta(0).len() + 8) as u32;
-        let mdat = bx(b"mdat", &self.items.iter().flat_map(|i| i.data.iter().copied()).collect::<Vec<u8>>());
+        let mdat = bx(
+            b"mdat",
+            &self
+                .items
+                .iter()
+                .flat_map(|i| i.data.iter().copied())
+                .collect::<Vec<u8>>(),
+        );
         [ftyp, meta(start), mdat].concat()
     }
 }
@@ -525,16 +582,25 @@ pub fn build(spec: &Spec<'_>) -> Vec<u8> {
         f.refs.push((b"auxl", id, vec![primary]));
     };
     if let Some(alpha) = spec.alpha {
-        aux(&mut f, "urn:mpeg:hevc:2015:auxid:1", &|x, y| [alpha(x, y), 0, 0]);
+        aux(&mut f, "urn:mpeg:hevc:2015:auxid:1", &|x, y| {
+            [alpha(x, y), 0, 0]
+        });
     }
     for urn in &spec.ignored_aux {
         aux(&mut f, urn, &|x, y| [((x + y) % 256) as u16, 0, 0]);
     }
     if let Some(sample) = spec.thumbnail {
         // Half the size, with the primary image's colour and orientation (not its crop).
-        let id = f.image(spec.width / 2, spec.height / 2, spec.bit_depth, false, sample);
+        let id = f.image(
+            spec.width / 2,
+            spec.height / 2,
+            spec.bit_depth,
+            false,
+            sample,
+        );
         if let Some(it) = f.items.iter_mut().find(|i| i.id == id) {
-            it.props.extend(assoc.iter().filter(|a| !a.2).map(|&(i, e, _)| (i, e)));
+            it.props
+                .extend(assoc.iter().filter(|a| !a.2).map(|&(i, e, _)| (i, e)));
         }
         f.refs.push((b"thmb", id, vec![primary]));
     }

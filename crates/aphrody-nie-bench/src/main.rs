@@ -28,7 +28,10 @@ const WARMUP: usize = 3;
 const RUNS: usize = 7;
 
 #[derive(Parser)]
-#[command(name = "aphrody-nie-bench", about = "Banc d'essai des hot paths (côté Rust)")]
+#[command(
+    name = "aphrody-nie-bench",
+    about = "Banc d'essai des hot paths (côté Rust)"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -132,7 +135,10 @@ fn bench_crilayla(input: &PathBuf, iters: usize) -> anyhow::Result<()> {
 /// préfixe non compressé de 256 octets que CRILAYLA place en fin de flux.
 fn make_sample(cpk: &PathBuf, out: &PathBuf, max_mib: usize) -> anyhow::Result<()> {
     let mut buf = fs::read(cpk).with_context(|| format!("lecture de {}", cpk.display()))?;
-    let name = cpk.file_name().and_then(|n| n.to_str()).context("nom de fichier CPK invalide")?;
+    let name = cpk
+        .file_name()
+        .and_then(|n| n.to_str())
+        .context("nom de fichier CPK invalide")?;
     // Les blocs d'un CPK sont chiffrés (XOR dérivé du nom) : sans ça, aucun magic en clair.
     aphrody_nie_formats::cpk::decrypt_cpk_in_place(&mut buf, name);
 
@@ -189,7 +195,7 @@ fn main() -> anyhow::Result<()> {
         Cmd::Crc32 { mib } => {
             bench_crc32(mib);
             Ok(())
-        },
+        }
         Cmd::Crilayla { input, iters } => bench_crilayla(&input, iters),
         Cmd::Sample { cpk, out, max_mib } => make_sample(&cpk, &out, max_mib),
     }

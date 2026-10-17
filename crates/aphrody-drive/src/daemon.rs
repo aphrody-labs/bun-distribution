@@ -64,11 +64,18 @@ pub fn lookup_daemon(
     if let Some(path) = override_path.filter(|value| !value.is_empty()) {
         return Some(PathBuf::from(path));
     }
-    let beside = exe_dir.into_iter().flat_map(|dir| names.iter().map(move |name| dir.join(name)));
+    let beside = exe_dir
+        .into_iter()
+        .flat_map(|dir| names.iter().map(move |name| dir.join(name)));
     let on_path = path_var
         .into_iter()
         .flat_map(std::env::split_paths)
-        .flat_map(|dir| names.iter().map(move |name| dir.join(name)).collect::<Vec<_>>());
+        .flat_map(|dir| {
+            names
+                .iter()
+                .map(move |name| dir.join(name))
+                .collect::<Vec<_>>()
+        });
     beside.chain(on_path).find(|candidate| candidate.is_file())
 }
 
@@ -78,7 +85,9 @@ pub fn lookup_daemon(
 /// When no candidate exists; the message lists where it looked.
 pub fn find_daemon_binary() -> Result<PathBuf, String> {
     let names = daemon_file_names(std::env::consts::EXE_SUFFIX, TARGET_TRIPLE);
-    let exe_dir = std::env::current_exe().ok().and_then(|exe| exe.parent().map(Path::to_path_buf));
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|exe| exe.parent().map(Path::to_path_buf));
     let override_path = std::env::var_os(DAEMON_ENV);
     let path_var = std::env::var_os("PATH");
     lookup_daemon(override_path.as_deref(), exe_dir.as_deref(), path_var.as_deref(), &names)
@@ -134,15 +143,18 @@ fn daemon_command(binary: &Path, data_dir: &Path) -> Command {
     command.arg("--data-dir").arg(data_dir).stdin(Stdio::null());
     let logs = data_dir.join("logs");
     let log_file = std::fs::create_dir_all(&logs).and_then(|()| {
-        std::fs::OpenOptions::new().create(true).append(true).open(logs.join("daemon.log"))
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(logs.join("daemon.log"))
     });
     match log_file.and_then(|file| file.try_clone().map(|clone| (file, clone))) {
         Ok((out, err)) => {
             command.stdout(out).stderr(err);
-        },
+        }
         Err(_) => {
             command.stdout(Stdio::null()).stderr(Stdio::null());
-        },
+        }
     }
     command
 }
@@ -153,7 +165,11 @@ fn daemon_command(binary: &Path, data_dir: &Path) -> Command {
 pub fn next_backoff(previous: Duration, uptime: Duration) -> Duration {
     const MIN: Duration = Duration::from_secs(1);
     const MAX: Duration = Duration::from_secs(30);
-    if uptime >= Duration::from_secs(60) { MIN } else { (previous * 2).clamp(MIN, MAX) }
+    if uptime >= Duration::from_secs(60) {
+        MIN
+    } else {
+        (previous * 2).clamp(MIN, MAX)
+    }
 }
 
 /// Snapshot of the daemon for the frontend.
@@ -233,7 +249,10 @@ impl Supervisor {
         let mut status = self.status.subscribe();
         match tokio::time::timeout(timeout, status.wait_for(|status| status.running)).await {
             Ok(Ok(_)) => Ok(()),
-            _ => Err(format!("Daemon not available at {} after {timeout:?}", self.socket_addr)),
+            _ => Err(format!(
+                "Daemon not available at {} after {timeout:?}",
+                self.socket_addr
+            )),
         }
     }
 
@@ -272,9 +291,16 @@ impl Supervisor {
     }
 
     fn set_status(&self, running: bool, started_by_us: bool) {
-        let previous = self.status.send_replace(DaemonStatus { running, started_by_us });
+        let previous = self.status.send_replace(DaemonStatus {
+            running,
+            started_by_us,
+        });
         if previous.running != running {
-            let event = if running { "daemon-connected" } else { "daemon-disconnected" };
+            let event = if running {
+                "daemon-connected"
+            } else {
+                "daemon-disconnected"
+            };
             let _ = self.app.emit(event, ());
         }
     }
@@ -282,7 +308,11 @@ impl Supervisor {
     /// Spawn the daemon and wait (3 s) until it answers.
     async fn spawn_daemon(&self) -> Result<(), String> {
         let binary = find_daemon_binary()?;
-        log::info!("starting {} --data-dir {}", binary.display(), self.data_dir.display());
+        log::info!(
+            "starting {} --data-dir {}",
+            binary.display(),
+            self.data_dir.display()
+        );
         let _ = self.app.emit("daemon-starting", ());
         let child = daemon_command(&binary, &self.data_dir)
             .spawn()
@@ -308,7 +338,9 @@ impl Supervisor {
     /// The exit status of the owned child, if it exited; clears it.
     fn child_exit(&self) -> Option<std::process::ExitStatus> {
         let mut guard = self.child.lock();
-        let status = guard.as_mut().and_then(|child| child.try_wait().ok().flatten());
+        let status = guard
+            .as_mut()
+            .and_then(|child| child.try_wait().ok().flatten());
         if status.is_some() {
             *guard = None;
         }
@@ -409,7 +441,10 @@ mod tests {
         let path_var = std::env::join_paths([&path_a, &path_b]).unwrap();
 
         // Nothing anywhere.
-        assert_eq!(lookup_daemon(None, Some(&exe_dir), Some(&path_var), &names), None);
+        assert_eq!(
+            lookup_daemon(None, Some(&exe_dir), Some(&path_var), &names),
+            None
+        );
 
         // Only on the second PATH entry, under the triple name.
         touch(&path_b.join("sd-daemon-triple"));
@@ -439,11 +474,21 @@ mod tests {
 
         // The override wins over everything; an empty override is ignored.
         assert_eq!(
-            lookup_daemon(Some(OsStr::new("/x/sd")), Some(&exe_dir), Some(&path_var), &names),
+            lookup_daemon(
+                Some(OsStr::new("/x/sd")),
+                Some(&exe_dir),
+                Some(&path_var),
+                &names
+            ),
             Some(PathBuf::from("/x/sd"))
         );
         assert_eq!(
-            lookup_daemon(Some(OsStr::new("")), Some(&exe_dir), Some(&path_var), &names),
+            lookup_daemon(
+                Some(OsStr::new("")),
+                Some(&exe_dir),
+                Some(&path_var),
+                &names
+            ),
             Some(exe_dir.join("sd-daemon"))
         );
     }
@@ -460,8 +505,14 @@ mod tests {
     fn backoff_doubles_then_resets() {
         let second = Duration::from_secs(1);
         assert_eq!(next_backoff(second, Duration::ZERO), Duration::from_secs(2));
-        assert_eq!(next_backoff(Duration::from_secs(20), Duration::ZERO), Duration::from_secs(30));
-        assert_eq!(next_backoff(Duration::from_secs(20), Duration::from_secs(61)), second);
+        assert_eq!(
+            next_backoff(Duration::from_secs(20), Duration::ZERO),
+            Duration::from_secs(30)
+        );
+        assert_eq!(
+            next_backoff(Duration::from_secs(20), Duration::from_secs(61)),
+            second
+        );
         assert_eq!(next_backoff(Duration::ZERO, Duration::ZERO), second);
     }
 
@@ -477,11 +528,19 @@ mod tests {
                 BufReader::new(reader).read_line(&mut line).await.unwrap();
                 let request: Value = serde_json::from_str(&line).unwrap();
                 let reply = serde_json::json!({ "JsonOk": request });
-                writer.write_all(format!("{reply}\n").as_bytes()).await.unwrap();
+                writer
+                    .write_all(format!("{reply}\n").as_bytes())
+                    .await
+                    .unwrap();
             }
         });
-        let reply = request(&addr, &serde_json::json!({"Query": {"method": "m"}})).await.unwrap();
-        assert_eq!(reply, serde_json::json!({"JsonOk": {"Query": {"method": "m"}}}));
+        let reply = request(&addr, &serde_json::json!({"Query": {"method": "m"}}))
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            serde_json::json!({"JsonOk": {"Query": {"method": "m"}}})
+        );
         assert!(is_daemon_running(&addr).await);
         server.await.unwrap();
         // Nothing listens there any more.

@@ -2,7 +2,19 @@
 
 macro_rules! id_type {
     ($name:ident) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Default, serde::Serialize, serde::Deserialize)]
+        #[derive(
+            Debug,
+            Clone,
+            Copy,
+            PartialEq,
+            Eq,
+            Hash,
+            PartialOrd,
+            Ord,
+            Default,
+            serde::Serialize,
+            serde::Deserialize,
+        )]
         #[serde(transparent)]
         pub struct $name(pub u64);
         impl std::fmt::Display for $name {

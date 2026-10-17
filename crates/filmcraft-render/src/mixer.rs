@@ -47,8 +47,13 @@ use std::sync::{Arc, Mutex, OnceLock};
 use filmcraft_audio_dsp::AudioEffect;
 use filmcraft_audio_dsp::channels::{self as chans, Layout, Mixdown, Pan51};
 use filmcraft_frame::AudioBuffer;
-use filmcraft_project::mixer::{LANE_MUTE, LANE_PAN, LANE_PAN51_CENTER, LANE_PAN51_LFE, LANE_PAN51_X, LANE_PAN51_Y, LANE_VOLUME, fx_lane, send_lane};
-use filmcraft_project::{AudioChannels, EffectInstance, InputMap, Param, ParamValue, Project, Sequence, Track, TrackId};
+use filmcraft_project::mixer::{
+    LANE_MUTE, LANE_PAN, LANE_PAN51_CENTER, LANE_PAN51_LFE, LANE_PAN51_X, LANE_PAN51_Y,
+    LANE_VOLUME, fx_lane, send_lane,
+};
+use filmcraft_project::{
+    AudioChannels, EffectInstance, InputMap, Param, ParamValue, Project, Sequence, Track, TrackId,
+};
 use filmcraft_time::Tick;
 use rayon::prelude::*;
 
@@ -94,7 +99,13 @@ impl LiveMix {
     }
     /// Hold a control at `value` (a fader or knob being touched/moved).
     pub fn hold(&self, strip: TrackId, lane: &str, value: f64) {
-        lock(&self.overrides).insert((strip, lane.to_string()), Override { value, release: None });
+        lock(&self.overrides).insert(
+            (strip, lane.to_string()),
+            Override {
+                value,
+                release: None,
+            },
+        );
         self.active.store(true, Ordering::Release);
     }
     /// Release a held control at `at`: playback ramps from the held value back to the automation
@@ -122,7 +133,9 @@ impl LiveMix {
         self.active.load(Ordering::Acquire)
     }
     pub fn get(&self, strip: TrackId, lane: &str) -> Option<Override> {
-        lock(&self.overrides).get(&(strip, lane.to_string())).copied()
+        lock(&self.overrides)
+            .get(&(strip, lane.to_string()))
+            .copied()
     }
     pub fn overrides(&self) -> HashMap<(TrackId, String), Override> {
         lock(&self.overrides).clone()
@@ -202,7 +215,11 @@ pub fn balance(pan: f32) -> (f32, f32) {
 
 #[inline]
 fn db_gain(db: f64) -> f32 {
-    if db <= filmcraft_project::mixer::FADER_MIN_DB { 0.0 } else { 10f64.powf(db / 20.0) as f32 }
+    if db <= filmcraft_project::mixer::FADER_MIN_DB {
+        0.0
+    } else {
+        10f64.powf(db / 20.0) as f32
+    }
 }
 
 // ------------------------------------------------------------------------------------- lanes
@@ -217,18 +234,31 @@ struct Lane<'a> {
 }
 
 impl<'a> Lane<'a> {
-    fn new(track: &'a Track, strip: TrackId, key: &str, ovs: &HashMap<(TrackId, String), Override>) -> Self {
+    fn new(
+        track: &'a Track,
+        strip: TrackId,
+        key: &str,
+        ovs: &HashMap<(TrackId, String), Override>,
+    ) -> Self {
         let reads = track.mixer.mode.reads();
         let param = track.lane(key).filter(|p| reads && p.is_animated());
         let hold = filmcraft_project::mixer::lane_info(key).is_some_and(|i| i.hold);
-        Lane { param, stat: track.lane_static(key).unwrap_or(0.0), ov: ovs.get(&(strip, key.to_string())).copied(), hold }
+        Lane {
+            param,
+            stat: track.lane_static(key).unwrap_or(0.0),
+            ov: ovs.get(&(strip, key.to_string())).copied(),
+            hold,
+        }
     }
     fn auto(&self, t: Tick) -> f64 {
         match self.param {
             None => self.stat,
             Some(p) if self.hold => {
                 let i = p.keyframes.partition_point(|k| k.time <= t);
-                p.keyframes[i.saturating_sub(1)].value.as_f64().unwrap_or(0.0)
+                p.keyframes[i.saturating_sub(1)]
+                    .value
+                    .as_f64()
+                    .unwrap_or(0.0)
             }
             Some(p) => p.scalar_at(t),
         }
@@ -236,7 +266,10 @@ impl<'a> Lane<'a> {
     /// The value when it is the same at every sample.
     fn constant(&self) -> Option<f64> {
         match self.ov {
-            Some(Override { value, release: None }) => Some(value),
+            Some(Override {
+                value,
+                release: None,
+            }) => Some(value),
             Some(_) => None,
             None => self.param.is_none().then_some(self.stat),
         }
@@ -244,7 +277,10 @@ impl<'a> Lane<'a> {
     fn at(&self, t: Tick) -> f64 {
         match self.ov {
             None => self.auto(t),
-            Some(Override { value, release: None }) => value,
+            Some(Override {
+                value,
+                release: None,
+            }) => value,
             Some(o) => o.at(t, self.auto(t)),
         }
     }
@@ -318,10 +354,21 @@ fn inserts<'a>(track: &'a Track, post: bool) -> Vec<Insert<'a>> {
         .iter()
         .enumerate()
         .take(filmcraft_project::mixer::MAX_INSERTS)
-        .filter(|(_, e)| e.enabled && e.post_fader == post && !e.param("bypass").and_then(|p| p.value.as_bool()).unwrap_or(false))
+        .filter(|(_, e)| {
+            e.enabled
+                && e.post_fader == post
+                && !e
+                    .param("bypass")
+                    .and_then(|p| p.value.as_bool())
+                    .unwrap_or(false)
+        })
         .filter_map(|(slot, e)| mapping(&e.effect).map(|m| (slot, e, m)))
         .map(|(slot, e, map)| {
-            let effect = if reads { Cow::Borrowed(e) } else { Cow::Owned(strip_keyframes(e)) };
+            let effect = if reads {
+                Cow::Borrowed(e)
+            } else {
+                Cow::Owned(strip_keyframes(e))
+            };
             Insert { slot, effect, map }
         })
         .collect()
@@ -360,7 +407,14 @@ impl<'a> Plan<'a> {
         }
         let m = seq.master_strip();
         let mw = width_of(m.channels);
-        strips.push(Strip { track: Cow::Owned(m), kind: Kind::Master, width: mw, pre: Vec::new(), post: Vec::new(), silent: false });
+        strips.push(Strip {
+            track: Cow::Owned(m),
+            kind: Kind::Master,
+            width: mw,
+            pre: Vec::new(),
+            post: Vec::new(),
+            silent: false,
+        });
         let mi = strips.len() - 1;
         // master inserts borrow from the sequence (same effects as the owned copy)
         {
@@ -372,7 +426,15 @@ impl<'a> Plan<'a> {
                     .take(filmcraft_project::mixer::MAX_INSERTS)
                     .filter(|(_, e)| e.enabled && e.post_fader == post)
                     .filter_map(|(slot, e)| {
-                        mapping(&e.effect).map(|map| Insert { slot, effect: if reads { Cow::Borrowed(e) } else { Cow::Owned(strip_keyframes(e)) }, map })
+                        mapping(&e.effect).map(|map| Insert {
+                            slot,
+                            effect: if reads {
+                                Cow::Borrowed(e)
+                            } else {
+                                Cow::Owned(strip_keyframes(e))
+                            },
+                            map,
+                        })
                     })
                     .collect()
             };
@@ -398,7 +460,12 @@ impl<'a> Plan<'a> {
         }
         // routes
         let ntr = seq.audio_tracks.len();
-        let index_of = |id: TrackId| seq.submix_tracks.iter().position(|t| t.id == id).map(|i| ntr + i);
+        let index_of = |id: TrackId| {
+            seq.submix_tracks
+                .iter()
+                .position(|t| t.id == id)
+                .map(|i| ntr + i)
+        };
         let mut routes = Vec::new();
         for (si, s) in strips.iter().enumerate() {
             if s.kind == Kind::Master {
@@ -406,13 +473,36 @@ impl<'a> Plan<'a> {
             }
             // submixes may only feed submixes after them (no feedback)
             let valid = |ti: usize| s.kind == Kind::Track || ti > si;
-            for (k, snd) in s.track.mixer.sends.iter().enumerate().take(filmcraft_project::mixer::MAX_SENDS) {
+            for (k, snd) in s
+                .track
+                .mixer
+                .sends
+                .iter()
+                .enumerate()
+                .take(filmcraft_project::mixer::MAX_SENDS)
+            {
                 if let Some(ti) = index_of(snd.target).filter(|&ti| valid(ti)) {
-                    routes.push(RouteSpec { src: si, tap: if snd.pre_fader { Tap::Pre } else { Tap::Post }, send: Some(k), target: ti });
+                    routes.push(RouteSpec {
+                        src: si,
+                        tap: if snd.pre_fader { Tap::Pre } else { Tap::Post },
+                        send: Some(k),
+                        target: ti,
+                    });
                 }
             }
-            let target = s.track.mixer.output.and_then(index_of).filter(|&ti| valid(ti)).unwrap_or(mi);
-            routes.push(RouteSpec { src: si, tap: Tap::Out, send: None, target });
+            let target = s
+                .track
+                .mixer
+                .output
+                .and_then(index_of)
+                .filter(|&ti| valid(ti))
+                .unwrap_or(mi);
+            routes.push(RouteSpec {
+                src: si,
+                tap: Tap::Out,
+                send: None,
+                target,
+            });
         }
         let mut plan = Plan { strips, routes };
         plan.solo(ovs);
@@ -422,10 +512,14 @@ impl<'a> Plan<'a> {
     /// Solo-mute and static-mute pruning.
     fn solo(&mut self, ovs: &HashMap<(TrackId, String), Override>) {
         let n = self.strips.len();
-        let soloed: Vec<usize> = (0..n).filter(|&i| self.strips[i].kind != Kind::Master && self.strips[i].track.solo).collect();
+        let soloed: Vec<usize> = (0..n)
+            .filter(|&i| self.strips[i].kind != Kind::Master && self.strips[i].track.solo)
+            .collect();
         if !soloed.is_empty() {
             let mut keep: HashSet<usize> = soloed.iter().copied().collect();
-            keep.extend((0..n).filter(|&i| self.strips[i].kind != Kind::Master && self.strips[i].track.mixer.solo_safe));
+            keep.extend((0..n).filter(|&i| {
+                self.strips[i].kind != Kind::Master && self.strips[i].track.mixer.solo_safe
+            }));
             let seeds: Vec<usize> = keep.iter().copied().collect();
             // downstream and upstream closures
             for &s in &seeds {
@@ -455,7 +549,9 @@ impl<'a> Plan<'a> {
         // statically muted with nothing before the mute that is heard: skip entirely
         for (i, s) in self.strips.iter_mut().enumerate() {
             let id = s.track.id;
-            let mute_static = Lane::new(&s.track, id, LANE_MUTE, ovs).constant().is_some_and(|m| m >= 0.5);
+            let mute_static = Lane::new(&s.track, id, LANE_MUTE, ovs)
+                .constant()
+                .is_some_and(|m| m >= 0.5);
             let pre_sends = self.routes.iter().any(|r| r.src == i && r.tap == Tap::Pre);
             if s.kind != Kind::Master && mute_static && !pre_sends {
                 s.silent = true;
@@ -483,7 +579,12 @@ impl<'a> Plan<'a> {
 
     /// Longest pre-roll the inserts need for a fresh graph (samples).
     fn preroll(&self, t: Tick, sr: u32) -> usize {
-        let s = self.strips.iter().flat_map(|s| s.pre.iter().chain(&s.post)).map(|i| (i.map.preroll)(&i.effect, t)).fold(0.0, f64::max);
+        let s = self
+            .strips
+            .iter()
+            .flat_map(|s| s.pre.iter().chain(&s.post))
+            .map(|i| (i.map.preroll)(&i.effect, t))
+            .fold(0.0, f64::max);
         (s.min(MAX_PREROLL_S) * sr as f64).ceil() as usize
     }
 }
@@ -499,7 +600,15 @@ struct DelayLine {
 
 impl DelayLine {
     fn new(len: usize, channels: usize) -> Self {
-        DelayLine { buf: if len == 0 { Vec::new() } else { vec![vec![0.0; len]; channels] }, len, pos: 0 }
+        DelayLine {
+            buf: if len == 0 {
+                Vec::new()
+            } else {
+                vec![vec![0.0; len]; channels]
+            },
+            len,
+            pos: 0,
+        }
     }
     fn is_empty(&self) -> bool {
         self.len == 0
@@ -545,7 +654,9 @@ struct GraphState {
 
 fn build_state(plan: &Plan, sr: u32) -> GraphState {
     let mk = |v: &[Insert], w: usize| -> Vec<Box<dyn AudioEffect>> {
-        v.iter().filter_map(|i| filmcraft_audio_dsp::create_effect(i.map.dsp, sr as f32, w)).collect()
+        v.iter()
+            .filter_map(|i| filmcraft_audio_dsp::create_effect(i.map.dsp, sr as f32, w))
+            .collect()
     };
     let mut strips: Vec<StripState> = plan
         .strips
@@ -555,22 +666,48 @@ fn build_state(plan: &Plan, sr: u32) -> GraphState {
             let post = mk(&s.post, s.width);
             let lat_pre = pre.iter().map(|d| d.latency()).sum();
             let lat_post = post.iter().map(|d| d.latency()).sum();
-            StripState { pre, post, lat_pre, lat_post, in_lat: 0, delays: Vec::new() }
+            StripState {
+                pre,
+                post,
+                lat_pre,
+                lat_post,
+                in_lat: 0,
+                delays: Vec::new(),
+            }
         })
         .collect();
-    let tap_lat = |s: &StripState, tap: Tap| s.in_lat + if tap == Tap::Pre { s.lat_pre } else { s.lat_pre + s.lat_post };
+    let tap_lat = |s: &StripState, tap: Tap| {
+        s.in_lat
+            + if tap == Tap::Pre {
+                s.lat_pre
+            } else {
+                s.lat_pre + s.lat_post
+            }
+    };
     // strips are in topological order (routes only go forward)
     for i in 0..strips.len() {
-        let in_lat = plan.routes.iter().filter(|r| r.target == i).map(|r| tap_lat(&strips[r.src], r.tap)).max().unwrap_or(0);
+        let in_lat = plan
+            .routes
+            .iter()
+            .filter(|r| r.target == i)
+            .map(|r| tap_lat(&strips[r.src], r.tap))
+            .max()
+            .unwrap_or(0);
         strips[i].in_lat = in_lat;
     }
     for r in &plan.routes {
         let d = strips[r.target].in_lat - tap_lat(&strips[r.src], r.tap);
-        strips[r.src].delays.push(DelayLine::new(d, plan.strips[r.target].width));
+        strips[r.src]
+            .delays
+            .push(DelayLine::new(d, plan.strips[r.target].width));
     }
     let m = strips.len() - 1;
     let latency = strips[m].in_lat + strips[m].lat_pre + strips[m].lat_post;
-    GraphState { next_out: 0, strips, latency }
+    GraphState {
+        next_out: 0,
+        strips,
+        latency,
+    }
 }
 
 fn cache() -> &'static Mutex<HashMap<u64, Vec<GraphState>>> {
@@ -623,14 +760,26 @@ fn convert_width(buf: &Bus, layout: Layout, to: usize) -> Bus {
         }
         _ => {
             let refs: Vec<&[f32]> = buf.iter().map(Vec::as_slice).collect();
-            chans::convert(&refs, Layout::from_channels(buf.len()), Layout::from_channels(to), Mixdown::FrontRear)
+            chans::convert(
+                &refs,
+                Layout::from_channels(buf.len()),
+                Layout::from_channels(to),
+                Mixdown::FrontRear,
+            )
         }
     }
 }
 
 /// Run `chain` over `buf` (input-time samples from `x0`) with parameters at content time
 /// `x - lat` updated on the absolute [`PARAM_BLOCK`] grid.
-fn run_inserts(chain: &mut [Box<dyn AudioEffect>], ins: &[Insert], buf: &mut Bus, x0: i64, lat: usize, sr: u32) {
+fn run_inserts(
+    chain: &mut [Box<dyn AudioEffect>],
+    ins: &[Insert],
+    buf: &mut Bus,
+    x0: i64,
+    lat: usize,
+    sr: u32,
+) {
     if chain.is_empty() {
         return;
     }
@@ -640,7 +789,10 @@ fn run_inserts(chain: &mut [Box<dyn AudioEffect>], ins: &[Insert], buf: &mut Bus
     let refresh: Vec<bool> = ins
         .iter()
         .map(|e| {
-            !matches!(e.effect.effect.as_str(), "parametric_eq" | "dynamics" | "studio_reverb") || e.effect.params.values().any(|p| !p.keyframes.is_empty())
+            !matches!(
+                e.effect.effect.as_str(),
+                "parametric_eq" | "dynamics" | "studio_reverb"
+            ) || e.effect.params.values().any(|p| !p.keyframes.is_empty())
         })
         .collect();
     let mut i = 0usize;
@@ -648,7 +800,10 @@ fn run_inserts(chain: &mut [Box<dyn AudioEffect>], ins: &[Insert], buf: &mut Bus
         let pos = x0 + i as i64;
         let end = (((pos.div_euclid(PARAM_BLOCK) + 1) * PARAM_BLOCK - x0) as usize).min(n);
         // parameters of the whole grid block (also when a request starts mid-block)
-        let t = Tick::from_units(pos.div_euclid(PARAM_BLOCK) * PARAM_BLOCK - lat as i64, sr as i64);
+        let t = Tick::from_units(
+            pos.div_euclid(PARAM_BLOCK) * PARAM_BLOCK - lat as i64,
+            sr as i64,
+        );
         for ((d, e), refresh) in chain.iter_mut().zip(ins).zip(&refresh) {
             if i == 0 || *refresh {
                 (e.map.apply)(d.as_mut(), &e.effect, t);
@@ -684,7 +839,14 @@ fn apply_gain(buf: &mut Bus, g: Option<f32>, per: &[f32]) {
 }
 
 /// Apply a pan/balance lane (values −100 … 100) with `law`.
-fn apply_pan(buf: &mut Bus, lane: &Lane, c0: i64, sr: u32, law: fn(f32) -> (f32, f32), scratch: &mut [f32]) {
+fn apply_pan(
+    buf: &mut Bus,
+    lane: &Lane,
+    c0: i64,
+    sr: u32,
+    law: fn(f32) -> (f32, f32),
+    scratch: &mut [f32],
+) {
     match lane.fill(c0, sr, scratch, |v| v as f32) {
         Some(p) => {
             let (gl, gr) = law(p / 100.0);
@@ -712,11 +874,34 @@ struct StripOut {
 }
 
 /// The 5.1 panner of a strip feeding a 5.1 bus: `buf` (the strip's width) → 6 channels.
-fn pan51(buf: &Bus, layout: Layout, tr: &Track, id: TrackId, ovs: &HashMap<(TrackId, String), Override>, c0: i64, sr: u32) -> Bus {
+fn pan51(
+    buf: &Bus,
+    layout: Layout,
+    tr: &Track,
+    id: TrackId,
+    ovs: &HashMap<(TrackId, String), Override>,
+    c0: i64,
+    sr: u32,
+) -> Bus {
     let n = buf.first().map_or(0, Vec::len);
-    let lanes = [LANE_PAN51_X, LANE_PAN51_Y, LANE_PAN51_CENTER, LANE_PAN51_LFE].map(|k| Lane::new(tr, id, k, ovs));
-    let input: Vec<&[f32]> = if layout == Layout::Mono { vec![buf[0].as_slice()] } else { buf.iter().map(Vec::as_slice).collect() };
-    let pan = |v: [f64; 4]| Pan51 { x: (v[0] / 100.0) as f32, y: (v[1] / 100.0) as f32, center: (v[2] / 100.0) as f32, lfe: db_gain(v[3]) };
+    let lanes = [
+        LANE_PAN51_X,
+        LANE_PAN51_Y,
+        LANE_PAN51_CENTER,
+        LANE_PAN51_LFE,
+    ]
+    .map(|k| Lane::new(tr, id, k, ovs));
+    let input: Vec<&[f32]> = if layout == Layout::Mono {
+        vec![buf[0].as_slice()]
+    } else {
+        buf.iter().map(Vec::as_slice).collect()
+    };
+    let pan = |v: [f64; 4]| Pan51 {
+        x: (v[0] / 100.0) as f32,
+        y: (v[1] / 100.0) as f32,
+        center: (v[2] / 100.0) as f32,
+        lfe: db_gain(v[3]),
+    };
     let consts: Vec<Option<f64>> = lanes.iter().map(Lane::constant).collect();
     if consts.iter().all(Option::is_some) {
         let m = chans::pan51_matrix(layout, pan([0, 1, 2, 3].map(|i| consts[i].unwrap_or(0.0))));
@@ -725,7 +910,10 @@ fn pan51(buf: &Bus, layout: Layout, tr: &Track, id: TrackId, ovs: &HashMap<(Trac
     let mut out = silent(6, n);
     for i in 0..n {
         let t = Tick::from_units(c0 + i as i64, sr as i64);
-        let m = chans::pan51_matrix(layout, pan([0, 1, 2, 3].map(|k| consts[k].unwrap_or_else(|| lanes[k].at(t)))));
+        let m = chans::pan51_matrix(
+            layout,
+            pan([0, 1, 2, 3].map(|k| consts[k].unwrap_or_else(|| lanes[k].at(t)))),
+        );
         for (o, row) in m.iter().enumerate() {
             let mut acc = 0.0f32;
             for (g, x) in row.iter().zip(&input) {
@@ -738,12 +926,26 @@ fn pan51(buf: &Bus, layout: Layout, tr: &Track, id: TrackId, ovs: &HashMap<(Trac
 }
 
 #[allow(clippy::too_many_arguments)]
-fn run_strip(plan: &Plan, si: usize, st: &mut StripState, mut buf: Bus, x0: i64, skip: usize, sr: u32, ovs: &HashMap<(TrackId, String), Override>) -> StripOut {
+fn run_strip(
+    plan: &Plan,
+    si: usize,
+    st: &mut StripState,
+    mut buf: Bus,
+    x0: i64,
+    skip: usize,
+    sr: u32,
+    ovs: &HashMap<(TrackId, String), Override>,
+) -> StripOut {
     let s = &plan.strips[si];
     let tr: &Track = &s.track;
     let id = tr.id;
     let n = buf[0].len();
-    let my_routes: Vec<(usize, &RouteSpec)> = plan.routes.iter().enumerate().filter(|(_, r)| r.src == si).collect();
+    let my_routes: Vec<(usize, &RouteSpec)> = plan
+        .routes
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| r.src == si)
+        .collect();
     let mut outs: Vec<(usize, Bus)> = Vec::new();
     let mut scratch = vec![0f32; n];
     // input map / mono fold (tracks; stereo-wide strips only)
@@ -777,7 +979,12 @@ fn run_strip(plan: &Plan, si: usize, st: &mut StripState, mut buf: Bus, x0: i64,
     run_inserts(&mut st.pre, &s.pre, &mut buf, x0, lat_a, sr);
     let lat_b = st.in_lat + st.lat_pre;
     let c_b = x0 - lat_b as i64;
-    let send = |tap: Tap, buf: &Bus, c0: i64, scratch: &mut [f32], st: &mut StripState, outs: &mut Vec<(usize, Bus)>| {
+    let send = |tap: Tap,
+                buf: &Bus,
+                c0: i64,
+                scratch: &mut [f32],
+                st: &mut StripState,
+                outs: &mut Vec<(usize, Bus)>| {
         for (k, (ri, r)) in my_routes.iter().enumerate() {
             if r.tap != tap {
                 continue;
@@ -814,15 +1021,26 @@ fn run_strip(plan: &Plan, si: usize, st: &mut StripState, mut buf: Bus, x0: i64,
     let vol = Lane::new(tr, id, LANE_VOLUME, ovs);
     let g = vol.fill(c_b, sr, &mut scratch, db_gain);
     apply_gain(&mut buf, g, &scratch);
-    let meter: Vec<f32> = buf.iter().map(|c| c[skip.min(n)..].iter().fold(0f32, |a, x| a.max(x.abs()))).collect();
+    let meter: Vec<f32> = buf
+        .iter()
+        .map(|c| c[skip.min(n)..].iter().fold(0f32, |a, x| a.max(x.abs())))
+        .collect();
     run_inserts(&mut st.post, &s.post, &mut buf, x0, lat_b, sr);
     let lat_c = lat_b + st.lat_post;
     let c_c = x0 - lat_c as i64;
     send(Tap::Post, &buf, c_c, &mut scratch, st, &mut outs);
     if s.kind == Kind::Master {
-        return StripOut { routes: outs, meter, out: Some(buf) };
+        return StripOut {
+            routes: outs,
+            meter,
+            out: Some(buf),
+        };
     }
-    let out_w = my_routes.iter().find(|(_, r)| r.tap == Tap::Out).map(|(_, r)| plan.strips[r.target].width).unwrap_or(2);
+    let out_w = my_routes
+        .iter()
+        .find(|(_, r)| r.tap == Tap::Out)
+        .map(|(_, r)| plan.strips[r.target].width)
+        .unwrap_or(2);
     if out_w == 6 {
         buf = pan51(&buf, layout, tr, id, ovs, c_c, sr);
     } else {
@@ -830,16 +1048,34 @@ fn run_strip(plan: &Plan, si: usize, st: &mut StripState, mut buf: Bus, x0: i64,
             buf = convert_width(&buf, layout, 2);
         }
         let pan = Lane::new(tr, id, LANE_PAN, ovs);
-        apply_pan(&mut buf, &pan, c_c, sr, if mono { pan_law_mono } else { balance }, &mut scratch);
+        apply_pan(
+            &mut buf,
+            &pan,
+            c_c,
+            sr,
+            if mono { pan_law_mono } else { balance },
+            &mut scratch,
+        );
     }
     send(Tap::Out, &buf, c_c, &mut scratch, st, &mut outs);
-    StripOut { routes: outs, meter, out: None }
+    StripOut {
+        routes: outs,
+        meter,
+        out: None,
+    }
 }
 
 /// Mix `frames` samples of the sequence starting at sample `start` through the mixer graph, at the
 /// Mix's width (2 channels, or 6 in L, R, C, LFE, Ls, Rs order for a 5.1 Mix). `live` adds the UI's
 /// held controls and receives the meters.
-pub fn mix_graph(project: &Project, seq: &Sequence, start: i64, frames: usize, sources: &dyn SourceProvider, live: Option<&LiveMix>) -> AudioBuffer {
+pub fn mix_graph(
+    project: &Project,
+    seq: &Sequence,
+    start: i64,
+    frames: usize,
+    sources: &dyn SourceProvider,
+    live: Option<&LiveMix>,
+) -> AudioBuffer {
     mix_graph_at(project, seq, start, frames, sources, live, 0)
 }
 
@@ -855,18 +1091,27 @@ pub(crate) fn mix_graph_at(
     depth: u32,
 ) -> AudioBuffer {
     let sr = seq.settings.sample_rate.max(1);
-    let ovs = live.filter(|l| l.is_active()).map(LiveMix::overrides).unwrap_or_default();
+    let ovs = live
+        .filter(|l| l.is_active())
+        .map(LiveMix::overrides)
+        .unwrap_or_default();
     let plan = Plan::build(seq, &ovs);
     let key = plan.structure_hash(sr);
     let taken = {
         let mut c = lock(cache());
-        c.get_mut(&key).and_then(|v| v.iter().position(|g| g.next_out == start).map(|i| v.swap_remove(i)))
+        c.get_mut(&key).and_then(|v| {
+            v.iter()
+                .position(|g| g.next_out == start)
+                .map(|i| v.swap_remove(i))
+        })
     };
     let (mut st, skip) = match taken {
         Some(st) => (st, 0usize),
         None => {
             let st = build_state(&plan, sr);
-            let pre = plan.preroll(Tick::from_units(start, sr as i64), sr).max(st.latency);
+            let pre = plan
+                .preroll(Tick::from_units(start, sr as i64), sr)
+                .max(st.latency);
             (st, pre)
         }
     };
@@ -876,9 +1121,16 @@ pub(crate) fn mix_graph_at(
     let ns = plan.strips.len();
     let mut bus: Vec<Option<Bus>> = (0..ns).map(|_| None).collect();
     let mut meters: Vec<(TrackId, Vec<f32>)> = Vec::new();
-    let range = filmcraft_time::TimeRange::from_bounds(Tick::from_units(x0, sr as i64), Tick::from_units(x0 + total as i64, sr as i64));
+    let range = filmcraft_time::TimeRange::from_bounds(
+        Tick::from_units(x0, sr as i64),
+        Tick::from_units(x0 + total as i64, sr as i64),
+    );
     // tracks: independent, in parallel
-    let ntr = plan.strips.iter().take_while(|s| s.kind == Kind::Track).count();
+    let ntr = plan
+        .strips
+        .iter()
+        .take_while(|s| s.kind == Kind::Track)
+        .count();
     let (track_states, rest) = st.strips.split_at_mut(ntr);
     let track_outs: Vec<Option<StripOut>> = track_states
         .par_iter_mut()
@@ -889,12 +1141,21 @@ pub(crate) fn mix_graph_at(
                 ss.delays.iter_mut().for_each(DelayLine::clear);
                 return None;
             }
-            let has_clips = s.track.items.iter().any(|i| i.enabled && i.range().overlaps(&range));
-            if !has_clips && s.pre.is_empty() && s.post.is_empty() && ss.delays.iter().all(DelayLine::is_empty) {
+            let has_clips = s
+                .track
+                .items
+                .iter()
+                .any(|i| i.enabled && i.range().overlaps(&range));
+            if !has_clips
+                && s.pre.is_empty()
+                && s.post.is_empty()
+                && ss.delays.iter().all(DelayLine::is_empty)
+            {
                 return None;
             }
             let input = if has_clips {
-                let mut v = track_input_at(project, &s.track, x0, total, sr, sources, &ovs, depth).channels;
+                let mut v =
+                    track_input_at(project, &s.track, x0, total, sr, sources, &ovs, depth).channels;
                 v.resize(s.width, vec![0.0; total]);
                 v
             } else {
@@ -903,7 +1164,10 @@ pub(crate) fn mix_graph_at(
             Some(run_strip(&plan, si, ss, input, x0, skip, sr, &ovs))
         })
         .collect();
-    let deliver = |o: StripOut, si: usize, bus: &mut Vec<Option<Bus>>, meters: &mut Vec<(TrackId, Vec<f32>)>| {
+    let deliver = |o: StripOut,
+                   si: usize,
+                   bus: &mut Vec<Option<Bus>>,
+                   meters: &mut Vec<(TrackId, Vec<f32>)>| {
         meters.push((plan.strips[si].track.id, o.meter));
         for (ri, sig) in o.routes {
             let t = plan.routes[ri].target;
@@ -951,5 +1215,8 @@ pub(crate) fn mix_graph_at(
     if let Some(l) = live {
         l.post_meters(&meters);
     }
-    AudioBuffer { sample_rate: sr, channels: out.into_iter().map(|c| c[skip..].to_vec()).collect() }
+    AudioBuffer {
+        sample_rate: sr,
+        channels: out.into_iter().map(|c| c[skip..].to_vec()).collect(),
+    }
 }

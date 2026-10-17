@@ -26,7 +26,8 @@ fn saved_file_is_versioned_and_save_copy_keeps_state() {
     let v: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(v["schema_version"], filmcraft_format::SCHEMA_VERSION);
     assert_eq!(v["format"], "filmcraft.project");
-    s.execute("sequence.addEdit", json!({"seconds": 1.0})).unwrap();
+    s.execute("sequence.addEdit", json!({"seconds": 1.0}))
+        .unwrap();
     assert!(s.is_dirty());
     let copy = d.join("copy.fcproj").to_string_lossy().to_string();
     s.execute("file.saveCopy", json!({"path": copy})).unwrap();
@@ -39,9 +40,16 @@ fn saved_file_is_versioned_and_save_copy_keeps_state() {
     s.execute("file.revert", json!({})).unwrap();
     assert!(!s.is_dirty());
     assert_ne!(*t.project, *s.project);
-    assert!(!Session::default().is_enabled("file.revert"), "nothing to revert to before a save");
+    assert!(
+        !Session::default().is_enabled("file.revert"),
+        "nothing to revert to before a save"
+    );
     // No temp files left next to the project.
-    let stray: Vec<_> = std::fs::read_dir(&d).unwrap().filter_map(|e| e.ok()).filter(|e| e.file_name().to_string_lossy().ends_with(".tmp")).collect();
+    let stray: Vec<_> = std::fs::read_dir(&d)
+        .unwrap()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_name().to_string_lossy().ends_with(".tmp"))
+        .collect();
     assert!(stray.is_empty());
     let _ = std::fs::remove_dir_all(&d);
 }
@@ -49,7 +57,8 @@ fn saved_file_is_versioned_and_save_copy_keeps_state() {
 #[test]
 fn legacy_project_opens_and_first_save_keeps_a_backup() {
     let d = temp_dir("legacy");
-    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../filmcraft-format/tests/fixtures/v1-edit.fcproj");
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../filmcraft-format/tests/fixtures/v1-edit.fcproj");
     let path = d.join("old.fcproj");
     std::fs::copy(&fixture, &path).unwrap();
     let p = path.to_string_lossy().to_string();
@@ -58,11 +67,21 @@ fn legacy_project_opens_and_first_save_keeps_a_backup() {
     assert_eq!(r["schemaVersion"], 1);
     assert_eq!(r["migrated"], true);
     assert_eq!(s.project.name, "Legacy Edit");
-    assert!(s.drain_events().iter().any(|e| matches!(e, Event::Toast { message, .. } if message.contains("Upgraded"))));
+    assert!(
+        s.drain_events()
+            .iter()
+            .any(|e| matches!(e, Event::Toast { message, .. } if message.contains("Upgraded")))
+    );
     let r = s.execute("file.save", json!({})).unwrap();
     let backup = r["backup"].as_str().unwrap().to_string();
-    assert!(backup.ends_with("old (schema v1 backup).fcproj"), "{backup}");
-    assert_eq!(std::fs::read(&backup).unwrap(), std::fs::read(&fixture).unwrap());
+    assert!(
+        backup.ends_with("old (schema v1 backup).fcproj"),
+        "{backup}"
+    );
+    assert_eq!(
+        std::fs::read(&backup).unwrap(),
+        std::fs::read(&fixture).unwrap()
+    );
     let v: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
     assert_eq!(v["schema_version"], filmcraft_format::SCHEMA_VERSION);
     // Second save: no new backup.
@@ -71,7 +90,10 @@ fn legacy_project_opens_and_first_save_keeps_a_backup() {
     let mut v = v;
     v["schema_version"] = json!(filmcraft_format::SCHEMA_VERSION + 1);
     std::fs::write(&path, serde_json::to_vec(&v).unwrap()).unwrap();
-    let e = Session::default().execute("file.open", json!({"path": p})).unwrap_err().to_string();
+    let e = Session::default()
+        .execute("file.open", json!({"path": p}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("newer version of FilmCraft"), "{e}");
     let _ = std::fs::remove_dir_all(&d);
 }
@@ -80,7 +102,10 @@ fn legacy_project_opens_and_first_save_keeps_a_backup() {
 fn project_is_named_after_its_file() {
     let d = temp_dir("name");
     let mut s = demo();
-    let a = d.join("Apollo 11 - Tranquility.fcproj").to_string_lossy().to_string();
+    let a = d
+        .join("Apollo 11 - Tranquility.fcproj")
+        .to_string_lossy()
+        .to_string();
     s.execute("file.saveAs", json!({"path": a})).unwrap();
     assert_eq!(s.project.name, "Apollo 11 - Tranquility");
     assert_eq!(s.project.root.name, "Apollo 11 - Tranquility");
@@ -100,17 +125,26 @@ fn open_demo_project_clears_saved_path_so_save_does_not_overwrite() {
     let d = temp_dir("demo-path");
     let original = d.join("original.fcproj").to_string_lossy().to_string();
     let mut s = Session::default();
-    s.execute("file.newProject", json!({"name": "Original"})).unwrap();
-    s.execute("file.newBin", json!({"name": "ORIGINAL"})).unwrap();
+    s.execute("file.newProject", json!({"name": "Original"}))
+        .unwrap();
+    s.execute("file.newBin", json!({"name": "ORIGINAL"}))
+        .unwrap();
     s.execute("file.saveAs", json!({"path": original})).unwrap();
     s.execute("file.openDemoProject", json!({})).unwrap();
     assert!(s.path.is_none(), "demo is unsaved, like New Project");
     let err = s.execute("file.save", json!({})).unwrap_err().to_string();
     assert!(err.contains("no path") || err.contains("Save As"), "{err}");
     let mut reopen = Session::default();
-    reopen.execute("file.open", json!({"path": original})).unwrap();
+    reopen
+        .execute("file.open", json!({"path": original}))
+        .unwrap();
     assert!(
-        reopen.project.root.children.iter().any(|e| matches!(e, filmcraft_project::BinEntry::Bin(b) if b.name == "ORIGINAL")),
+        reopen
+            .project
+            .root
+            .children
+            .iter()
+            .any(|e| matches!(e, filmcraft_project::BinEntry::Bin(b) if b.name == "ORIGINAL")),
         "original.fcproj still has the ORIGINAL bin"
     );
     let _ = std::fs::remove_dir_all(&d);

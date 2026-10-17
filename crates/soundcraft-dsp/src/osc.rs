@@ -16,7 +16,14 @@ pub enum Waveform {
 }
 
 impl Waveform {
-    pub const ALL: [Waveform; 6] = [Waveform::Sine, Waveform::Square, Waveform::Saw, Waveform::Triangle, Waveform::WhiteNoise, Waveform::PinkNoise];
+    pub const ALL: [Waveform; 6] = [
+        Waveform::Sine,
+        Waveform::Square,
+        Waveform::Saw,
+        Waveform::Triangle,
+        Waveform::WhiteNoise,
+        Waveform::PinkNoise,
+    ];
 
     /// Waveform for a choice index (out of range → Sine).
     pub fn from_index(i: usize) -> Waveform {
@@ -49,7 +56,11 @@ pub(crate) struct Osc {
 
 impl Osc {
     pub(crate) fn new(seed: u32) -> Self {
-        Self { phase: 0.0, rng: Rng::new(seed), pink: PinkNoise::new() }
+        Self {
+            phase: 0.0,
+            rng: Rng::new(seed),
+            pink: PinkNoise::new(),
+        }
     }
 
     pub(crate) fn reset(&mut self) {
@@ -60,7 +71,11 @@ impl Osc {
     /// Produces one sample; `inc` is frequency / sample rate.
     #[inline]
     pub(crate) fn next(&mut self, wave: Waveform, inc: f32) -> f32 {
-        let dt = if inc.is_finite() { inc.clamp(0.0, 0.49) } else { 0.0 };
+        let dt = if inc.is_finite() {
+            inc.clamp(0.0, 0.49)
+        } else {
+            0.0
+        };
         let t = self.phase;
         let out = match wave {
             Waveform::Sine => (t * TAU).sin(),

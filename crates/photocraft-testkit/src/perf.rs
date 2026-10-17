@@ -6,7 +6,14 @@
 //!   interval; on Linux [`process_peak_rss_bytes`] also reads the kernel's exact high-water mark.
 //! - [`Summary`]: p50 / p95 / max of a scenario's samples (nearest-rank percentiles).
 //! - [`row`] / [`report`]: the JSON shape `xtask perf` reads.
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -62,7 +69,8 @@ impl RssSampler {
 
     /// Starts a new window: the peak becomes the current resident size.
     pub fn reset(&self) {
-        self.peak.store(current_rss_bytes().unwrap_or(0), Ordering::Relaxed);
+        self.peak
+            .store(current_rss_bytes().unwrap_or(0), Ordering::Relaxed);
     }
 
     /// The peak resident size since the last [`reset`](Self::reset) (or start), including now.
@@ -105,7 +113,12 @@ impl Summary {
     pub fn of(samples: &[f64]) -> Option<Self> {
         let mut v: Vec<f64> = samples.iter().copied().filter(|x| x.is_finite()).collect();
         v.sort_by(f64::total_cmp);
-        Some(Self { n: v.len(), p50: rank(&v, 0.5)?, p95: rank(&v, 0.95)?, max: *v.last()? })
+        Some(Self {
+            n: v.len(),
+            p50: rank(&v, 0.5)?,
+            p95: rank(&v, 0.95)?,
+            max: *v.last()?,
+        })
     }
 }
 
@@ -127,8 +140,17 @@ pub fn row(name: &str, samples: &[f64], peak_rss: Option<u64>, gpu_bytes: Option
 /// A bench's whole report: its name, free-form context (document size, adapter…), the rows and
 /// the process's peak RSS (the kernel's high-water mark where there is one, else the highest
 /// sampled peak).
-pub fn report(bench: &str, context: Value, rows: Vec<Value>, sampler: Option<&RssSampler>) -> Value {
-    let sampled = rows.iter().filter_map(|r| r["peak_rss_bytes"].as_u64()).chain(sampler.and_then(RssSampler::peak)).max();
+pub fn report(
+    bench: &str,
+    context: Value,
+    rows: Vec<Value>,
+    sampler: Option<&RssSampler>,
+) -> Value {
+    let sampled = rows
+        .iter()
+        .filter_map(|r| r["peak_rss_bytes"].as_u64())
+        .chain(sampler.and_then(RssSampler::peak))
+        .max();
     let process_peak = process_peak_rss_bytes().or(sampled);
     json!({
         "bench": bench,
@@ -162,7 +184,10 @@ mod tests {
 
     #[test]
     fn vm_hwm_parses() {
-        assert_eq!(parse_vm_hwm("Name:\tx\nVmHWM:\t  2048 kB\nVmRSS: 1 kB\n"), Some(2048 * 1024));
+        assert_eq!(
+            parse_vm_hwm("Name:\tx\nVmHWM:\t  2048 kB\nVmRSS: 1 kB\n"),
+            Some(2048 * 1024)
+        );
         assert_eq!(parse_vm_hwm("VmHWM: lots\n"), None);
         assert_eq!(parse_vm_hwm(""), None);
     }

@@ -51,7 +51,11 @@ struct Shared {
 
 impl Shared {
     fn new(total: u64) -> Self {
-        Shared { state: Mutex::new(State::Running { bytes: 0, total }), cancel: Arc::new(AtomicBool::new(false)), task: None }
+        Shared {
+            state: Mutex::new(State::Running { bytes: 0, total }),
+            cancel: Arc::new(AtomicBool::new(false)),
+            task: None,
+        }
     }
 
     fn set(&self, s: State) {
@@ -62,7 +66,10 @@ impl Shared {
     }
 
     fn get(&self) -> State {
-        self.state.lock().unwrap_or_else(PoisonError::into_inner).clone()
+        self.state
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
     }
 }
 
@@ -76,19 +83,38 @@ impl Downloads {
     /// Start fetching `spec` into `<models dir>/.downloads/`. Different models can download side by side; the same
     /// one is started once.
     /// The activity stack shows it (as `name`) until the thread ends; its ✕ stops it like [`Downloads::discard`].
-    pub fn start(&mut self, spec: Download, models_dir: &Path, activity: &Activity, name: &str) -> Result<(), String> {
-        if self.jobs.get(spec.id.as_str()).is_some_and(|j| matches!(j.get(), State::Running { .. })) {
+    pub fn start(
+        &mut self,
+        spec: Download,
+        models_dir: &Path,
+        activity: &Activity,
+        name: &str,
+    ) -> Result<(), String> {
+        if self
+            .jobs
+            .get(spec.id.as_str())
+            .is_some_and(|j| matches!(j.get(), State::Running { .. }))
+        {
             return Err("that model is already downloading".into());
         }
         let staging = models_dir.join(STAGING);
-        std::fs::create_dir_all(&staging).map_err(|e| format!("could not create the download folder: {e}"))?;
+        std::fs::create_dir_all(&staging)
+            .map_err(|e| format!("could not create the download folder: {e}"))?;
         let cancel = Arc::new(AtomicBool::new(false));
-        let task = activity.start("download", "Downloading model", Cancel::Flag(cancel.clone()));
+        let task = activity.start(
+            "download",
+            "Downloading model",
+            Cancel::Flag(cancel.clone()),
+        );
         task.set_unit(Unit::Bytes);
         task.detail(name);
         task.progress(0, spec.size_bytes);
         let total = spec.size_bytes;
-        let shared = Arc::new(Shared { state: Mutex::new(State::Running { bytes: 0, total }), cancel, task: Some(task.handle()) });
+        let shared = Arc::new(Shared {
+            state: Mutex::new(State::Running { bytes: 0, total }),
+            cancel,
+            task: Some(task.handle()),
+        });
         let worker = shared.clone();
         let id = spec.id.clone();
         std::thread::Builder::new()
@@ -96,7 +122,9 @@ impl Downloads {
             .spawn(move || {
                 // the row goes when the thread ends, however it ends
                 let _task = task;
-                let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| run(&spec, spec.base(), &staging, &worker)));
+                let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    run(&spec, spec.base(), &staging, &worker)
+                }));
                 if outcome.is_err() {
                     worker.set(State::Failed("the download stopped unexpectedly".into()));
                 }
@@ -110,24 +138,36 @@ impl Downloads {
     #[cfg(test)]
     pub(crate) fn arrived(&mut self, id: &str, path: PathBuf, sha256: &str) {
         let j = Shared::new(0);
-        j.set(State::Done { path, sha256: sha256.to_string() });
+        j.set(State::Done {
+            path,
+            sha256: sha256.to_string(),
+        });
         self.jobs.insert(id.to_string(), Arc::new(j));
     }
 
     /// Every download this session has started and not discarded, by model id.
     pub fn snapshot(&self) -> Vec<(String, State)> {
-        let mut all: Vec<_> = self.jobs.iter().map(|(id, j)| (id.clone(), j.get())).filter(|(_, s)| *s != State::Cancelled).collect();
+        let mut all: Vec<_> = self
+            .jobs
+            .iter()
+            .map(|(id, j)| (id.clone(), j.get()))
+            .filter(|(_, s)| *s != State::Cancelled)
+            .collect();
         all.sort_by(|a, b| a.0.cmp(&b.0));
         all
     }
 
     pub fn running(&self) -> bool {
-        self.jobs.values().any(|j| matches!(j.get(), State::Running { .. }))
+        self.jobs
+            .values()
+            .any(|j| matches!(j.get(), State::Running { .. }))
     }
 
     /// Stop a running download, or discard a finished one (its staged file is deleted). `true` if there was one.
     pub fn discard(&mut self, id: &str) -> bool {
-        let Some(job) = self.jobs.get(id) else { return false };
+        let Some(job) = self.jobs.get(id) else {
+            return false;
+        };
         job.cancel.store(true, Ordering::Relaxed);
         match job.get() {
             // the thread notices, deletes the partial file and marks itself cancelled
@@ -145,7 +185,8 @@ impl Downloads {
 
     /// The staged file at `path` has been installed (its copy is the model now) or is no longer wanted.
     pub fn staged_file_used(&mut self, path: &Path) {
-        self.jobs.retain(|_, j| !matches!(j.get(), State::Done { path: p, .. } if p == path));
+        self.jobs
+            .retain(|_, j| !matches!(j.get(), State::Done { path: p, .. } if p == path));
     }
 
     /// Downloads that have arrived and been checked, ready to install: (model id, staged file, its SHA-256).
@@ -195,7 +236,9 @@ fn explain(e: &lightcraft_fetch::DownloadError) -> String {
     match e {
         DownloadError::AllMirrorsFailed { errors, .. } => {
             let detail: String = errors.join("; ").chars().take(300).collect();
-            format!("could not download the model ({detail}): check the internet connection, or get the file from its page and add it yourself")
+            format!(
+                "could not download the model ({detail}): check the internet connection, or get the file from its page and add it yourself"
+            )
         }
         other => other.to_string(),
     }
@@ -203,11 +246,31 @@ fn explain(e: &lightcraft_fetch::DownloadError) -> String {
 
 /// Fetch `spec` from `mirror` (the address without the file name) into `staging`, check it and leave it there.
 #[cfg(not(target_arch = "wasm32"))]
-fn fetch(spec: &Download, mirror: &str, staging: &Path, shared: &Shared) -> Result<(), lightcraft_fetch::DownloadError> {
-    let file = lightcraft_fetch::FileSpec { name: &spec.file_name, size: Some(spec.size_bytes), sha256: Some(&spec.sha256), max: spec.size_bytes };
-    lightcraft_fetch::download(&[file], &[mirror.to_string()], staging, &lightcraft_fetch::Options::default(), &shared.cancel, &mut |p| {
-        shared.set(State::Running { bytes: p.done.min(spec.size_bytes), total: spec.size_bytes });
-    })
+fn fetch(
+    spec: &Download,
+    mirror: &str,
+    staging: &Path,
+    shared: &Shared,
+) -> Result<(), lightcraft_fetch::DownloadError> {
+    let file = lightcraft_fetch::FileSpec {
+        name: &spec.file_name,
+        size: Some(spec.size_bytes),
+        sha256: Some(&spec.sha256),
+        max: spec.size_bytes,
+    };
+    lightcraft_fetch::download(
+        &[file],
+        &[mirror.to_string()],
+        staging,
+        &lightcraft_fetch::Options::default(),
+        &shared.cancel,
+        &mut |p| {
+            shared.set(State::Running {
+                bytes: p.done.min(spec.size_bytes),
+                total: spec.size_bytes,
+            });
+        },
+    )
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -220,7 +283,10 @@ fn run(spec: &Download, mirror: &str, staging: &Path, shared: &Shared) {
     let target = staging.join(&spec.file_name);
     let part = staging.join(format!("{}.part", spec.file_name));
     match fetch(spec, mirror, staging, shared) {
-        Ok(()) => shared.set(State::Done { path: target, sha256: spec.sha256.to_string() }),
+        Ok(()) => shared.set(State::Done {
+            path: target,
+            sha256: spec.sha256.to_string(),
+        }),
         #[cfg(not(target_arch = "wasm32"))]
         Err(lightcraft_fetch::DownloadError::Cancelled) => {
             let _ = std::fs::remove_file(&part);
@@ -276,7 +342,13 @@ mod tests {
                         break;
                     }
                 }
-                let _ = s.write_all(format!("HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).as_bytes());
+                let _ = s.write_all(
+                    format!(
+                        "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    )
+                    .as_bytes(),
+                );
                 let _ = s.write_all(&body);
             }
         });
@@ -296,7 +368,13 @@ mod tests {
                         break;
                     }
                 }
-                let _ = s.write_all(format!("HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n", body.len()).as_bytes());
+                let _ = s.write_all(
+                    format!(
+                        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        body.len()
+                    )
+                    .as_bytes(),
+                );
                 for chunk in body.chunks(4096) {
                     if s.write_all(chunk).is_err() {
                         break;
@@ -329,7 +407,14 @@ mod tests {
         d.start(spec, &dir, &activity, "Test Model").unwrap();
         let rows = activity.list();
         assert_eq!(rows.len(), 1);
-        assert_eq!((rows[0].kind, rows[0].label.as_str(), rows[0].detail.as_str()), ("download", "Downloading model", "Test Model"));
+        assert_eq!(
+            (
+                rows[0].kind,
+                rows[0].label.as_str(),
+                rows[0].detail.as_str()
+            ),
+            ("download", "Downloading model", "Test Model")
+        );
         assert_eq!((rows[0].unit, rows[0].total), (Unit::Bytes, 400_000));
         assert!(rows[0].cancellable);
         activity.cancel(rows[0].id).unwrap();
@@ -348,13 +433,22 @@ mod tests {
         let mirror = serve("200 OK", bytes.clone());
         let shared = Shared::new(spec.size_bytes);
         run(&spec, &mirror, &staging, &shared);
-        let State::Done { path, sha256 } = shared.get() else { panic!("{:?}", shared.get()) };
-        assert_eq!((std::fs::read(&path).unwrap(), sha256), (bytes, spec.sha256.to_string()));
+        let State::Done { path, sha256 } = shared.get() else {
+            panic!("{:?}", shared.get())
+        };
+        assert_eq!(
+            (std::fs::read(&path).unwrap(), sha256),
+            (bytes, spec.sha256.to_string())
+        );
         assert!(!staging.join("test-model.onnx.part").exists());
         // asked again with the copy still staged: no fetch needed (nothing listens there)
         let again = Shared::new(spec.size_bytes);
         run(&spec, "http://127.0.0.1:1/m", &staging, &again);
-        assert!(matches!(again.get(), State::Done { .. }), "{:?}", again.get());
+        assert!(
+            matches!(again.get(), State::Done { .. }),
+            "{:?}",
+            again.get()
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -367,7 +461,11 @@ mod tests {
         let spec = spec_for(&[7u8; 5000]);
         let shared = Shared::new(spec.size_bytes);
         run(&spec, &serve("200 OK", vec![8u8; 5000]), &staging, &shared);
-        assert!(matches!(shared.get(), State::Failed(_)), "{:?}", shared.get());
+        assert!(
+            matches!(shared.get(), State::Failed(_)),
+            "{:?}",
+            shared.get()
+        );
         // nothing is left behind: not the file, not a partial one
         assert_eq!(std::fs::read_dir(&staging).unwrap().count(), 0);
         let _ = std::fs::remove_dir_all(&dir);
@@ -379,10 +477,15 @@ mod tests {
         let staging = dir.join(STAGING);
         std::fs::create_dir_all(&staging).unwrap();
         let spec = spec_for(b"abc");
-        for mirror in ["http://127.0.0.1:1/m".to_string(), serve("404 Not Found", b"not found".to_vec())] {
+        for mirror in [
+            "http://127.0.0.1:1/m".to_string(),
+            serve("404 Not Found", b"not found".to_vec()),
+        ] {
             let shared = Shared::new(3);
             run(&spec, &mirror, &staging, &shared);
-            let State::Failed(why) = shared.get() else { panic!("{:?}", shared.get()) };
+            let State::Failed(why) = shared.get() else {
+                panic!("{:?}", shared.get())
+            };
             assert!(why.contains("internet connection"), "{why}");
         }
         assert_eq!(std::fs::read_dir(&staging).unwrap().count(), 0);
@@ -419,7 +522,10 @@ mod tests {
         assert!(d.running());
         let started = std::time::Instant::now();
         drop(d);
-        assert!(started.elapsed() < Duration::from_millis(900), "quitting must not wait for a transfer to finish");
+        assert!(
+            started.elapsed() < Duration::from_millis(900),
+            "quitting must not wait for a transfer to finish"
+        );
         assert_eq!(shared.get(), State::Cancelled);
         handle.join().unwrap();
     }
@@ -431,7 +537,10 @@ mod tests {
         std::fs::write(&file, b"x").unwrap();
         let mut d = Downloads::default();
         let shared = Arc::new(Shared::new(1));
-        shared.set(State::Done { path: file.clone(), sha256: String::new() });
+        shared.set(State::Done {
+            path: file.clone(),
+            sha256: String::new(),
+        });
         d.jobs.insert("m".into(), shared);
         assert_eq!(d.snapshot().len(), 1);
         assert!(!d.running());

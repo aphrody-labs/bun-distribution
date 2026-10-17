@@ -20,13 +20,19 @@ use crate::proto;
 /// Convert a `serde_json::Value` map to a `prost_types::Struct`.
 pub fn to_proto_struct(value: &HashMap<String, Value>) -> prost_types::Struct {
     prost_types::Struct {
-        fields: value.iter().map(|(k, v)| (k.clone(), json_value_to_proto_value(v))).collect(),
+        fields: value
+            .iter()
+            .map(|(k, v)| (k.clone(), json_value_to_proto_value(v)))
+            .collect(),
     }
 }
 
 /// Convert a `prost_types::Struct` to a `serde_json::Value` map.
 pub fn from_proto_struct(s: &prost_types::Struct) -> HashMap<String, Value> {
-    s.fields.iter().map(|(k, v)| (k.clone(), proto_value_to_json_value(v))).collect()
+    s.fields
+        .iter()
+        .map(|(k, v)| (k.clone(), proto_value_to_json_value(v)))
+        .collect()
 }
 
 /// Convert a `serde_json::Value` to `prost_types::Value`.
@@ -57,25 +63,31 @@ pub fn proto_value_to_json_value(v: &prost_types::Value) -> Value {
     match &v.kind {
         Some(Kind::NullValue(_)) => Value::Null,
         Some(Kind::BoolValue(b)) => Value::Bool(*b),
-        Some(Kind::NumberValue(n)) => {
-            serde_json::Number::from_f64(*n).map(Value::Number).unwrap_or(Value::Null)
-        },
+        Some(Kind::NumberValue(n)) => serde_json::Number::from_f64(*n)
+            .map(Value::Number)
+            .unwrap_or(Value::Null),
         Some(Kind::StringValue(s)) => Value::String(s.clone()),
         Some(Kind::ListValue(list)) => {
             Value::Array(list.values.iter().map(proto_value_to_json_value).collect())
-        },
+        }
         Some(Kind::StructValue(s)) => {
-            let map: serde_json::Map<String, Value> =
-                s.fields.iter().map(|(k, v)| (k.clone(), proto_value_to_json_value(v))).collect();
+            let map: serde_json::Map<String, Value> = s
+                .fields
+                .iter()
+                .map(|(k, v)| (k.clone(), proto_value_to_json_value(v)))
+                .collect();
             Value::Object(map)
-        },
+        }
         None => Value::Null,
     }
 }
 
 /// Convert `chrono::DateTime<Utc>` to `prost_types::Timestamp`.
 pub fn to_proto_timestamp(dt: &chrono::DateTime<chrono::Utc>) -> prost_types::Timestamp {
-    prost_types::Timestamp { seconds: dt.timestamp(), nanos: dt.timestamp_subsec_nanos() as i32 }
+    prost_types::Timestamp {
+        seconds: dt.timestamp(),
+        nanos: dt.timestamp_subsec_nanos() as i32,
+    }
 }
 
 /// Convert `prost_types::Timestamp` to `chrono::DateTime<Utc>`.
@@ -92,7 +104,11 @@ fn opt_metadata_from_proto(s: &Option<prost_types::Struct>) -> Option<HashMap<St
 }
 
 fn empty_to_none(s: &str) -> Option<String> {
-    if s.is_empty() { None } else { Some(s.to_string()) }
+    if s.is_empty() {
+        None
+    } else {
+        Some(s.to_string())
+    }
 }
 
 fn non_positive_to_none(value: Option<i32>) -> Option<i32> {
@@ -211,7 +227,11 @@ pub fn from_proto_message(m: &proto::Message) -> Message {
         role: from_proto_role(m.role),
         parts: m.parts.iter().map(from_proto_part).collect(),
         metadata: opt_metadata_from_proto(&m.metadata),
-        extensions: if m.extensions.is_empty() { None } else { Some(m.extensions.clone()) },
+        extensions: if m.extensions.is_empty() {
+            None
+        } else {
+            Some(m.extensions.clone())
+        },
         reference_task_ids: if m.reference_task_ids.is_empty() {
             None
         } else {
@@ -262,7 +282,11 @@ pub fn from_proto_artifact(a: &proto::Artifact) -> Artifact {
         description: empty_to_none(&a.description),
         parts: a.parts.iter().map(from_proto_part).collect(),
         metadata: opt_metadata_from_proto(&a.metadata),
-        extensions: if a.extensions.is_empty() { None } else { Some(a.extensions.clone()) },
+        extensions: if a.extensions.is_empty() {
+            None
+        } else {
+            Some(a.extensions.clone())
+        },
     }
 }
 
@@ -293,11 +317,15 @@ pub fn from_proto_task(t: &proto::Task) -> Task {
     Task {
         id: t.id.clone(),
         context_id: t.context_id.clone(),
-        status: t.status.as_ref().map(from_proto_task_status).unwrap_or(TaskStatus {
-            state: TaskState::Unspecified,
-            message: None,
-            timestamp: None,
-        }),
+        status: t
+            .status
+            .as_ref()
+            .map(from_proto_task_status)
+            .unwrap_or(TaskStatus {
+                state: TaskState::Unspecified,
+                message: None,
+                timestamp: None,
+            }),
         artifacts: if t.artifacts.is_empty() {
             None
         } else {
@@ -324,7 +352,10 @@ pub fn to_proto_authentication_info(a: &AuthenticationInfo) -> proto::Authentica
 }
 
 pub fn from_proto_authentication_info(a: &proto::AuthenticationInfo) -> AuthenticationInfo {
-    AuthenticationInfo { scheme: a.scheme.clone(), credentials: empty_to_none(&a.credentials) }
+    AuthenticationInfo {
+        scheme: a.scheme.clone(),
+        credentials: empty_to_none(&a.credentials),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -352,7 +383,10 @@ pub fn from_proto_task_push_notification_config(
         id: empty_to_none(&c.id),
         task_id: c.task_id.clone(),
         token: empty_to_none(&c.token),
-        authentication: c.authentication.as_ref().map(from_proto_authentication_info),
+        authentication: c
+            .authentication
+            .as_ref()
+            .map(from_proto_authentication_info),
         tenant: empty_to_none(&c.tenant),
     }
 }
@@ -389,7 +423,11 @@ pub fn from_proto_send_message_configuration(
             .as_ref()
             .map(from_proto_task_push_notification_config),
         history_length: c.history_length,
-        return_immediately: if c.return_immediately { Some(true) } else { None },
+        return_immediately: if c.return_immediately {
+            Some(true)
+        } else {
+            None
+        },
     }
 }
 
@@ -401,7 +439,10 @@ pub fn to_proto_send_message_request(r: &SendMessageRequest) -> proto::SendMessa
     proto::SendMessageRequest {
         tenant: r.tenant.clone().unwrap_or_default(),
         message: Some(to_proto_message(&r.message)),
-        configuration: r.configuration.as_ref().map(to_proto_send_message_configuration),
+        configuration: r
+            .configuration
+            .as_ref()
+            .map(to_proto_send_message_configuration),
         metadata: opt_metadata_to_proto(&r.metadata),
     }
 }
@@ -414,7 +455,10 @@ pub fn from_proto_send_message_request(r: &proto::SendMessageRequest) -> SendMes
             .as_ref()
             .map(from_proto_message)
             .unwrap_or_else(|| Message::new(Role::User, vec![])),
-        configuration: r.configuration.as_ref().map(from_proto_send_message_configuration),
+        configuration: r
+            .configuration
+            .as_ref()
+            .map(from_proto_send_message_configuration),
         metadata: opt_metadata_from_proto(&r.metadata),
     }
 }
@@ -452,11 +496,18 @@ pub fn from_proto_list_tasks_request(r: &proto::ListTasksRequest) -> ListTasksRe
     ListTasksRequest {
         tenant: empty_to_none(&r.tenant),
         context_id: empty_to_none(&r.context_id),
-        status: if r.status == 0 { None } else { Some(from_proto_task_state(r.status)) },
+        status: if r.status == 0 {
+            None
+        } else {
+            Some(from_proto_task_state(r.status))
+        },
         page_size: non_positive_to_none(r.page_size),
         page_token: empty_to_none(&r.page_token),
         history_length: r.history_length,
-        status_timestamp_after: r.status_timestamp_after.as_ref().and_then(from_proto_timestamp),
+        status_timestamp_after: r
+            .status_timestamp_after
+            .as_ref()
+            .and_then(from_proto_timestamp),
         include_artifacts: r.include_artifacts,
     }
 }
@@ -498,25 +549,35 @@ pub fn from_proto_cancel_task_request(r: &proto::CancelTaskRequest) -> CancelTas
 pub fn to_proto_subscribe_to_task_request(
     r: &SubscribeToTaskRequest,
 ) -> proto::SubscribeToTaskRequest {
-    proto::SubscribeToTaskRequest { tenant: r.tenant.clone().unwrap_or_default(), id: r.id.clone() }
+    proto::SubscribeToTaskRequest {
+        tenant: r.tenant.clone().unwrap_or_default(),
+        id: r.id.clone(),
+    }
 }
 
 pub fn from_proto_subscribe_to_task_request(
     r: &proto::SubscribeToTaskRequest,
 ) -> SubscribeToTaskRequest {
-    SubscribeToTaskRequest { tenant: empty_to_none(&r.tenant), id: r.id.clone() }
+    SubscribeToTaskRequest {
+        tenant: empty_to_none(&r.tenant),
+        id: r.id.clone(),
+    }
 }
 
 pub fn to_proto_get_extended_agent_card_request(
     r: &GetExtendedAgentCardRequest,
 ) -> proto::GetExtendedAgentCardRequest {
-    proto::GetExtendedAgentCardRequest { tenant: r.tenant.clone().unwrap_or_default() }
+    proto::GetExtendedAgentCardRequest {
+        tenant: r.tenant.clone().unwrap_or_default(),
+    }
 }
 
 pub fn from_proto_get_extended_agent_card_request(
     r: &proto::GetExtendedAgentCardRequest,
 ) -> GetExtendedAgentCardRequest {
-    GetExtendedAgentCardRequest { tenant: empty_to_none(&r.tenant) }
+    GetExtendedAgentCardRequest {
+        tenant: empty_to_none(&r.tenant),
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -580,7 +641,11 @@ pub fn from_proto_list_task_push_notification_configs_request(
     ListTaskPushNotificationConfigsRequest {
         tenant: empty_to_none(&r.tenant),
         task_id: r.task_id.clone(),
-        page_size: if r.page_size == 0 { None } else { Some(r.page_size) },
+        page_size: if r.page_size == 0 {
+            None
+        } else {
+            Some(r.page_size)
+        },
         page_token: empty_to_none(&r.page_token),
     }
 }
@@ -589,7 +654,11 @@ pub fn to_proto_list_task_push_notification_configs_response(
     r: &ListTaskPushNotificationConfigsResponse,
 ) -> proto::ListTaskPushNotificationConfigsResponse {
     proto::ListTaskPushNotificationConfigsResponse {
-        configs: r.configs.iter().map(to_proto_task_push_notification_config).collect(),
+        configs: r
+            .configs
+            .iter()
+            .map(to_proto_task_push_notification_config)
+            .collect(),
         next_page_token: r.next_page_token.clone().unwrap_or_default(),
     }
 }
@@ -598,7 +667,11 @@ pub fn from_proto_list_task_push_notification_configs_response(
     r: &proto::ListTaskPushNotificationConfigsResponse,
 ) -> ListTaskPushNotificationConfigsResponse {
     ListTaskPushNotificationConfigsResponse {
-        configs: r.configs.iter().map(from_proto_task_push_notification_config).collect(),
+        configs: r
+            .configs
+            .iter()
+            .map(from_proto_task_push_notification_config)
+            .collect(),
         next_page_token: empty_to_none(&r.next_page_token),
     }
 }
@@ -609,12 +682,12 @@ pub fn from_proto_list_task_push_notification_configs_response(
 
 pub fn to_proto_send_message_response(r: &SendMessageResponse) -> proto::SendMessageResponse {
     let payload = match r {
-        SendMessageResponse::Task(t) => {
-            Some(proto::send_message_response::Payload::Task(to_proto_task(t)))
-        },
-        SendMessageResponse::Message(m) => {
-            Some(proto::send_message_response::Payload::Message(to_proto_message(m)))
-        },
+        SendMessageResponse::Task(t) => Some(proto::send_message_response::Payload::Task(
+            to_proto_task(t),
+        )),
+        SendMessageResponse::Message(m) => Some(proto::send_message_response::Payload::Message(
+            to_proto_message(m),
+        )),
     };
     proto::SendMessageResponse { payload }
 }
@@ -625,10 +698,10 @@ pub fn from_proto_send_message_response(
     match &r.payload {
         Some(proto::send_message_response::Payload::Task(t)) => {
             Some(SendMessageResponse::Task(from_proto_task(t)))
-        },
+        }
         Some(proto::send_message_response::Payload::Message(m)) => {
             Some(SendMessageResponse::Message(from_proto_message(m)))
-        },
+        }
         None => None,
     }
 }
@@ -654,11 +727,15 @@ pub fn from_proto_task_status_update_event(
     TaskStatusUpdateEvent {
         task_id: e.task_id.clone(),
         context_id: e.context_id.clone(),
-        status: e.status.as_ref().map(from_proto_task_status).unwrap_or(TaskStatus {
-            state: TaskState::Unspecified,
-            message: None,
-            timestamp: None,
-        }),
+        status: e
+            .status
+            .as_ref()
+            .map(from_proto_task_status)
+            .unwrap_or(TaskStatus {
+                state: TaskState::Unspecified,
+                message: None,
+                timestamp: None,
+            }),
         metadata: opt_metadata_from_proto(&e.metadata),
     }
 }
@@ -682,14 +759,18 @@ pub fn from_proto_task_artifact_update_event(
     TaskArtifactUpdateEvent {
         task_id: e.task_id.clone(),
         context_id: e.context_id.clone(),
-        artifact: e.artifact.as_ref().map(from_proto_artifact).unwrap_or(Artifact {
-            artifact_id: String::new(),
-            name: None,
-            description: None,
-            parts: vec![],
-            metadata: None,
-            extensions: None,
-        }),
+        artifact: e
+            .artifact
+            .as_ref()
+            .map(from_proto_artifact)
+            .unwrap_or(Artifact {
+                artifact_id: String::new(),
+                name: None,
+                description: None,
+                parts: vec![],
+                metadata: None,
+                extensions: None,
+            }),
         append: if e.append { Some(true) } else { None },
         last_chunk: if e.last_chunk { Some(true) } else { None },
         metadata: opt_metadata_from_proto(&e.metadata),
@@ -699,9 +780,9 @@ pub fn from_proto_task_artifact_update_event(
 pub fn to_proto_stream_response(r: &StreamResponse) -> proto::StreamResponse {
     let payload = match r {
         StreamResponse::Task(t) => Some(proto::stream_response::Payload::Task(to_proto_task(t))),
-        StreamResponse::Message(m) => {
-            Some(proto::stream_response::Payload::Message(to_proto_message(m)))
-        },
+        StreamResponse::Message(m) => Some(proto::stream_response::Payload::Message(
+            to_proto_message(m),
+        )),
         StreamResponse::StatusUpdate(s) => Some(proto::stream_response::Payload::StatusUpdate(
             to_proto_task_status_update_event(s),
         )),
@@ -716,16 +797,16 @@ pub fn from_proto_stream_response(r: &proto::StreamResponse) -> Option<StreamRes
     match &r.payload {
         Some(proto::stream_response::Payload::Task(t)) => {
             Some(StreamResponse::Task(from_proto_task(t)))
-        },
+        }
         Some(proto::stream_response::Payload::Message(m)) => {
             Some(StreamResponse::Message(from_proto_message(m)))
-        },
-        Some(proto::stream_response::Payload::StatusUpdate(s)) => {
-            Some(StreamResponse::StatusUpdate(from_proto_task_status_update_event(s)))
-        },
-        Some(proto::stream_response::Payload::ArtifactUpdate(a)) => {
-            Some(StreamResponse::ArtifactUpdate(from_proto_task_artifact_update_event(a)))
-        },
+        }
+        Some(proto::stream_response::Payload::StatusUpdate(s)) => Some(
+            StreamResponse::StatusUpdate(from_proto_task_status_update_event(s)),
+        ),
+        Some(proto::stream_response::Payload::ArtifactUpdate(a)) => Some(
+            StreamResponse::ArtifactUpdate(from_proto_task_artifact_update_event(a)),
+        ),
         None => None,
     }
 }
@@ -751,11 +832,17 @@ pub fn from_proto_agent_interface(i: &proto::AgentInterface) -> AgentInterface {
 }
 
 pub fn to_proto_agent_provider(p: &AgentProvider) -> proto::AgentProvider {
-    proto::AgentProvider { organization: p.organization.clone(), url: p.url.clone() }
+    proto::AgentProvider {
+        organization: p.organization.clone(),
+        url: p.url.clone(),
+    }
 }
 
 pub fn from_proto_agent_provider(p: &proto::AgentProvider) -> AgentProvider {
-    AgentProvider { organization: p.organization.clone(), url: p.url.clone() }
+    AgentProvider {
+        organization: p.organization.clone(),
+        url: p.url.clone(),
+    }
 }
 
 pub fn to_proto_agent_extension(e: &AgentExtension) -> proto::AgentExtension {
@@ -796,7 +883,12 @@ pub fn from_proto_agent_capabilities(c: &proto::AgentCapabilities) -> AgentCapab
         extensions: if c.extensions.is_empty() {
             None
         } else {
-            Some(c.extensions.iter().map(from_proto_agent_extension).collect())
+            Some(
+                c.extensions
+                    .iter()
+                    .map(from_proto_agent_extension)
+                    .collect(),
+            )
         },
         extended_agent_card: c.extended_agent_card,
     }
@@ -825,13 +917,30 @@ pub fn from_proto_agent_skill(s: &proto::AgentSkill) -> AgentSkill {
         name: s.name.clone(),
         description: s.description.clone(),
         tags: s.tags.clone(),
-        examples: if s.examples.is_empty() { None } else { Some(s.examples.clone()) },
-        input_modes: if s.input_modes.is_empty() { None } else { Some(s.input_modes.clone()) },
-        output_modes: if s.output_modes.is_empty() { None } else { Some(s.output_modes.clone()) },
+        examples: if s.examples.is_empty() {
+            None
+        } else {
+            Some(s.examples.clone())
+        },
+        input_modes: if s.input_modes.is_empty() {
+            None
+        } else {
+            Some(s.input_modes.clone())
+        },
+        output_modes: if s.output_modes.is_empty() {
+            None
+        } else {
+            Some(s.output_modes.clone())
+        },
         security_requirements: if s.security_requirements.is_empty() {
             None
         } else {
-            Some(s.security_requirements.iter().map(from_proto_security_requirement).collect())
+            Some(
+                s.security_requirements
+                    .iter()
+                    .map(from_proto_security_requirement)
+                    .collect(),
+            )
         },
     }
 }
@@ -886,7 +995,7 @@ pub fn to_proto_security_scheme(s: &SecurityScheme) -> proto::SecurityScheme {
                     open_id_connect_url: oi.open_id_connect_url.clone(),
                 },
             ))
-        },
+        }
         SecurityScheme::MutualTls(mt) => Some(proto::security_scheme::Scheme::MtlsSecurityScheme(
             proto::MutualTlsSecurityScheme {
                 description: mt.description.clone().unwrap_or_default(),
@@ -904,38 +1013,40 @@ pub fn from_proto_security_scheme(s: &proto::SecurityScheme) -> Option<SecurityS
                 name: ak.name.clone(),
                 description: empty_to_none(&ak.description),
             }))
-        },
+        }
         Some(proto::security_scheme::Scheme::HttpAuthSecurityScheme(ha)) => {
             Some(SecurityScheme::HttpAuth(HttpAuthSecurityScheme {
                 scheme: ha.scheme.clone(),
                 description: empty_to_none(&ha.description),
                 bearer_format: empty_to_none(&ha.bearer_format),
             }))
-        },
+        }
         Some(proto::security_scheme::Scheme::Oauth2SecurityScheme(oa)) => {
             Some(SecurityScheme::OAuth2(OAuth2SecurityScheme {
                 description: empty_to_none(&oa.description),
-                flows: oa.flows.as_ref().and_then(from_proto_oauth_flows).unwrap_or(
-                    OAuthFlows::ClientCredentials(ClientCredentialsOAuthFlow {
+                flows: oa
+                    .flows
+                    .as_ref()
+                    .and_then(from_proto_oauth_flows)
+                    .unwrap_or(OAuthFlows::ClientCredentials(ClientCredentialsOAuthFlow {
                         token_url: String::new(),
                         scopes: HashMap::new(),
                         refresh_url: None,
-                    }),
-                ),
+                    })),
                 oauth2_metadata_url: empty_to_none(&oa.oauth2_metadata_url),
             }))
-        },
+        }
         Some(proto::security_scheme::Scheme::OpenIdConnectSecurityScheme(oi)) => {
             Some(SecurityScheme::OpenIdConnect(OpenIdConnectSecurityScheme {
                 open_id_connect_url: oi.open_id_connect_url.clone(),
                 description: empty_to_none(&oi.description),
             }))
-        },
+        }
         Some(proto::security_scheme::Scheme::MtlsSecurityScheme(mt)) => {
             Some(SecurityScheme::MutualTls(MutualTlsSecurityScheme {
                 description: empty_to_none(&mt.description),
             }))
-        },
+        }
         None => None,
     }
 }
@@ -954,7 +1065,10 @@ pub fn to_proto_security_requirement(r: &SecurityRequirement) -> proto::Security
 }
 
 pub fn from_proto_security_requirement(r: &proto::SecurityRequirement) -> SecurityRequirement {
-    r.schemes.iter().map(|(k, v)| (k.clone(), v.list.clone())).collect()
+    r.schemes
+        .iter()
+        .map(|(k, v)| (k.clone(), v.list.clone()))
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -964,44 +1078,44 @@ pub fn from_proto_security_requirement(r: &proto::SecurityRequirement) -> Securi
 #[allow(deprecated)]
 pub fn to_proto_oauth_flows(f: &OAuthFlows) -> proto::OAuthFlows {
     let flow = match f {
-        OAuthFlows::AuthorizationCode(ac) => {
-            Some(proto::o_auth_flows::Flow::AuthorizationCode(proto::AuthorizationCodeOAuthFlow {
+        OAuthFlows::AuthorizationCode(ac) => Some(proto::o_auth_flows::Flow::AuthorizationCode(
+            proto::AuthorizationCodeOAuthFlow {
                 authorization_url: ac.authorization_url.clone(),
                 token_url: ac.token_url.clone(),
                 refresh_url: ac.refresh_url.clone().unwrap_or_default(),
                 scopes: ac.scopes.clone(),
                 pkce_required: ac.pkce_required.unwrap_or(false),
-            }))
-        },
-        OAuthFlows::ClientCredentials(cc) => {
-            Some(proto::o_auth_flows::Flow::ClientCredentials(proto::ClientCredentialsOAuthFlow {
+            },
+        )),
+        OAuthFlows::ClientCredentials(cc) => Some(proto::o_auth_flows::Flow::ClientCredentials(
+            proto::ClientCredentialsOAuthFlow {
                 token_url: cc.token_url.clone(),
                 refresh_url: cc.refresh_url.clone().unwrap_or_default(),
                 scopes: cc.scopes.clone(),
-            }))
-        },
-        OAuthFlows::DeviceCode(dc) => {
-            Some(proto::o_auth_flows::Flow::DeviceCode(proto::DeviceCodeOAuthFlow {
+            },
+        )),
+        OAuthFlows::DeviceCode(dc) => Some(proto::o_auth_flows::Flow::DeviceCode(
+            proto::DeviceCodeOAuthFlow {
                 device_authorization_url: dc.device_authorization_url.clone(),
                 token_url: dc.token_url.clone(),
                 refresh_url: dc.refresh_url.clone().unwrap_or_default(),
                 scopes: dc.scopes.clone(),
-            }))
-        },
-        OAuthFlows::Implicit(im) => {
-            Some(proto::o_auth_flows::Flow::Implicit(proto::ImplicitOAuthFlow {
+            },
+        )),
+        OAuthFlows::Implicit(im) => Some(proto::o_auth_flows::Flow::Implicit(
+            proto::ImplicitOAuthFlow {
                 authorization_url: im.authorization_url.clone(),
                 refresh_url: im.refresh_url.clone().unwrap_or_default(),
                 scopes: im.scopes.clone(),
-            }))
-        },
-        OAuthFlows::Password(pw) => {
-            Some(proto::o_auth_flows::Flow::Password(proto::PasswordOAuthFlow {
+            },
+        )),
+        OAuthFlows::Password(pw) => Some(proto::o_auth_flows::Flow::Password(
+            proto::PasswordOAuthFlow {
                 token_url: pw.token_url.clone(),
                 refresh_url: pw.refresh_url.clone().unwrap_or_default(),
                 scopes: pw.scopes.clone(),
-            }))
-        },
+            },
+        )),
     };
     proto::OAuthFlows { flow }
 }
@@ -1017,14 +1131,14 @@ pub fn from_proto_oauth_flows(f: &proto::OAuthFlows) -> Option<OAuthFlows> {
                 refresh_url: empty_to_none(&ac.refresh_url),
                 pkce_required: if ac.pkce_required { Some(true) } else { None },
             }))
-        },
+        }
         Some(proto::o_auth_flows::Flow::ClientCredentials(cc)) => {
             Some(OAuthFlows::ClientCredentials(ClientCredentialsOAuthFlow {
                 token_url: cc.token_url.clone(),
                 scopes: cc.scopes.clone(),
                 refresh_url: empty_to_none(&cc.refresh_url),
             }))
-        },
+        }
         Some(proto::o_auth_flows::Flow::DeviceCode(dc)) => {
             Some(OAuthFlows::DeviceCode(DeviceCodeOAuthFlow {
                 device_authorization_url: dc.device_authorization_url.clone(),
@@ -1032,21 +1146,21 @@ pub fn from_proto_oauth_flows(f: &proto::OAuthFlows) -> Option<OAuthFlows> {
                 scopes: dc.scopes.clone(),
                 refresh_url: empty_to_none(&dc.refresh_url),
             }))
-        },
+        }
         Some(proto::o_auth_flows::Flow::Implicit(im)) => {
             Some(OAuthFlows::Implicit(ImplicitOAuthFlow {
                 authorization_url: im.authorization_url.clone(),
                 scopes: im.scopes.clone(),
                 refresh_url: empty_to_none(&im.refresh_url),
             }))
-        },
+        }
         Some(proto::o_auth_flows::Flow::Password(pw)) => {
             Some(OAuthFlows::Password(PasswordOAuthFlow {
                 token_url: pw.token_url.clone(),
                 scopes: pw.scopes.clone(),
                 refresh_url: empty_to_none(&pw.refresh_url),
             }))
-        },
+        }
         None => None,
     }
 }
@@ -1060,14 +1174,22 @@ pub fn to_proto_agent_card(c: &AgentCard) -> proto::AgentCard {
         name: c.name.clone(),
         description: c.description.clone(),
         version: c.version.clone(),
-        supported_interfaces: c.supported_interfaces.iter().map(to_proto_agent_interface).collect(),
+        supported_interfaces: c
+            .supported_interfaces
+            .iter()
+            .map(to_proto_agent_interface)
+            .collect(),
         provider: c.provider.as_ref().map(to_proto_agent_provider),
         documentation_url: c.documentation_url.clone(),
         capabilities: Some(to_proto_agent_capabilities(&c.capabilities)),
         security_schemes: c
             .security_schemes
             .as_ref()
-            .map(|ss| ss.iter().map(|(k, v)| (k.clone(), to_proto_security_scheme(v))).collect())
+            .map(|ss| {
+                ss.iter()
+                    .map(|(k, v)| (k.clone(), to_proto_security_scheme(v)))
+                    .collect()
+            })
             .unwrap_or_default(),
         security_requirements: c
             .security_requirements
@@ -1120,12 +1242,22 @@ pub fn from_proto_agent_card(c: &proto::AgentCard) -> AgentCard {
         security_requirements: if c.security_requirements.is_empty() {
             None
         } else {
-            Some(c.security_requirements.iter().map(from_proto_security_requirement).collect())
+            Some(
+                c.security_requirements
+                    .iter()
+                    .map(from_proto_security_requirement)
+                    .collect(),
+            )
         },
         signatures: if c.signatures.is_empty() {
             None
         } else {
-            Some(c.signatures.iter().map(from_proto_agent_card_signature).collect())
+            Some(
+                c.signatures
+                    .iter()
+                    .map(from_proto_agent_card_signature)
+                    .collect(),
+            )
         },
     }
 }
@@ -1262,7 +1394,11 @@ mod tests {
         let sr = StreamResponse::StatusUpdate(TaskStatusUpdateEvent {
             task_id: "t1".to_string(),
             context_id: "c1".to_string(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             metadata: None,
         });
         let proto_sr = to_proto_stream_response(&sr);
@@ -1275,7 +1411,11 @@ mod tests {
         let resp = SendMessageResponse::Task(Task {
             id: "t1".to_string(),
             context_id: "c1".to_string(),
-            status: TaskStatus { state: TaskState::Submitted, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Submitted,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
@@ -1333,7 +1473,10 @@ mod tests {
     fn test_struct_roundtrip() {
         let mut map = HashMap::new();
         map.insert("str".to_string(), Value::String("hello".to_string()));
-        map.insert("num".to_string(), Value::Number(serde_json::Number::from_f64(42.0).unwrap()));
+        map.insert(
+            "num".to_string(),
+            Value::Number(serde_json::Number::from_f64(42.0).unwrap()),
+        );
         map.insert("bool".to_string(), Value::Bool(true));
         map.insert("null".to_string(), Value::Null);
         let proto_s = to_proto_struct(&map);
@@ -1481,7 +1624,11 @@ mod tests {
             tasks: vec![Task {
                 id: "t1".to_string(),
                 context_id: "c1".to_string(),
-                status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+                status: TaskStatus {
+                    state: TaskState::Completed,
+                    message: None,
+                    timestamp: None,
+                },
                 artifacts: None,
                 history: None,
                 metadata: None,
@@ -1514,7 +1661,10 @@ mod tests {
 
     #[test]
     fn test_subscribe_to_task_request_roundtrip() {
-        let req = SubscribeToTaskRequest { id: "t1".to_string(), tenant: Some("ten".to_string()) };
+        let req = SubscribeToTaskRequest {
+            id: "t1".to_string(),
+            tenant: Some("ten".to_string()),
+        };
         let proto = to_proto_subscribe_to_task_request(&req);
         let back = from_proto_subscribe_to_task_request(&proto);
         assert_eq!(req, back);
@@ -1522,7 +1672,9 @@ mod tests {
 
     #[test]
     fn test_get_extended_agent_card_request_roundtrip() {
-        let req = GetExtendedAgentCardRequest { tenant: Some("ten".to_string()) };
+        let req = GetExtendedAgentCardRequest {
+            tenant: Some("ten".to_string()),
+        };
         let proto = to_proto_get_extended_agent_card_request(&req);
         let back = from_proto_get_extended_agent_card_request(&proto);
         assert_eq!(req, back);
@@ -1604,7 +1756,11 @@ mod tests {
         let task = Task {
             id: "t1".to_string(),
             context_id: "c1".to_string(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
@@ -1910,7 +2066,11 @@ mod tests {
         let task = Task {
             id: "t1".to_string(),
             context_id: "c1".to_string(),
-            status: TaskStatus { state: TaskState::Completed, message: None, timestamp: None },
+            status: TaskStatus {
+                state: TaskState::Completed,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: Some(vec![
                 Message::new(Role::User, vec![Part::text("q")]),
@@ -2020,7 +2180,10 @@ mod tests {
 
     #[test]
     fn test_authentication_info_no_credentials() {
-        let auth = AuthenticationInfo { scheme: "Bearer".to_string(), credentials: None };
+        let auth = AuthenticationInfo {
+            scheme: "Bearer".to_string(),
+            credentials: None,
+        };
         let proto = to_proto_authentication_info(&auth);
         let back = from_proto_authentication_info(&proto);
         assert_eq!(auth, back);
@@ -2090,7 +2253,10 @@ mod tests {
     #[test]
     fn test_security_requirement_roundtrip() {
         let mut req: SecurityRequirement = HashMap::new();
-        req.insert("oauth2".to_string(), vec!["read".to_string(), "write".to_string()]);
+        req.insert(
+            "oauth2".to_string(),
+            vec!["read".to_string(), "write".to_string()],
+        );
         req.insert("api_key".to_string(), vec![]);
         let proto = to_proto_security_requirement(&req);
         let back = from_proto_security_requirement(&proto);

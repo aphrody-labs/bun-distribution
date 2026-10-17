@@ -9,7 +9,10 @@ use std::path::PathBuf;
 
 /// The text of a panic payload (`panic!("…")` gives a `&str` or a `String`).
 pub fn panic_message(payload: &(dyn Any + Send)) -> String {
-    match (payload.downcast_ref::<&str>(), payload.downcast_ref::<String>()) {
+    match (
+        payload.downcast_ref::<&str>(),
+        payload.downcast_ref::<String>(),
+    ) {
         (Some(s), _) => (*s).to_string(),
         (_, Some(s)) => s.clone(),
         _ => "unknown panic".into(),
@@ -32,11 +35,28 @@ pub fn install_hook(log: PathBuf) {
     let default = panic::take_hook();
     panic::set_hook(Box::new(move |info| {
         default(info);
-        let at = info.location().map(|l| format!("{}:{}", l.file(), l.line())).unwrap_or_default();
-        let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-        let thread = std::thread::current().name().unwrap_or("unnamed").to_string();
-        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&log) {
-            let _ = writeln!(f, "{secs} [{thread}] panic at {at}: {}", panic_message(info.payload()));
+        let at = info
+            .location()
+            .map(|l| format!("{}:{}", l.file(), l.line()))
+            .unwrap_or_default();
+        let secs = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        let thread = std::thread::current()
+            .name()
+            .unwrap_or("unnamed")
+            .to_string();
+        if let Ok(mut f) = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log)
+        {
+            let _ = writeln!(
+                f,
+                "{secs} [{thread}] panic at {at}: {}",
+                panic_message(info.payload())
+            );
         }
     }));
 }
@@ -50,6 +70,10 @@ mod tests {
         assert_eq!(catch("ok", || 7), Ok(7));
         let e = catch("`demo.cmd`", || -> u32 { panic!("boom {}", 1) }).unwrap_err();
         assert_eq!(e, "`demo.cmd` failed unexpectedly: boom 1");
-        assert!(catch("x", || std::panic::panic_any(5u8)).unwrap_err().ends_with("unknown panic"));
+        assert!(
+            catch("x", || std::panic::panic_any(5u8))
+                .unwrap_err()
+                .ends_with("unknown panic")
+        );
     }
 }

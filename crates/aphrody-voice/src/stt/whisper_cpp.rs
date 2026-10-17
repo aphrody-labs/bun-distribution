@@ -85,7 +85,11 @@ impl WhisperSource {
 }
 
 fn file_name(stem: &str) -> String {
-    if cfg!(windows) { format!("{stem}.exe") } else { stem.to_owned() }
+    if cfg!(windows) {
+        format!("{stem}.exe")
+    } else {
+        stem.to_owned()
+    }
 }
 
 fn non_empty_env(var: &str) -> Option<String> {
@@ -112,7 +116,11 @@ fn in_dir_flat(dir: &Path) -> Option<PathBuf> {
 /// Look for the CLI in `dir` and in each layout a release is known to use.
 fn in_dir(dir: &Path) -> Option<PathBuf> {
     BIN_SUBDIRS.iter().find_map(|sub| {
-        let root = if sub.is_empty() { dir.to_path_buf() } else { dir.join(sub) };
+        let root = if sub.is_empty() {
+            dir.to_path_buf()
+        } else {
+            dir.join(sub)
+        };
         in_dir_flat(&root)
     })
 }
@@ -129,7 +137,9 @@ pub fn find_managed_in(root: &Path) -> Option<PathBuf> {
         .map(|entry| entry.path())
         .filter(|path| {
             path.is_dir()
-                && path.file_name().is_some_and(|n| n.to_string_lossy().starts_with("whisper-"))
+                && path
+                    .file_name()
+                    .is_some_and(|n| n.to_string_lossy().starts_with("whisper-"))
         })
         .collect();
 
@@ -187,7 +197,11 @@ pub fn resolve() -> Option<WhisperSource> {
     }
     // A distribution package (Bun OS: extra/whisper-cpp) wins over the
     // managed download.
-    let system: &[&str] = if cfg!(unix) { &["/usr/bin", "/usr/local/bin"] } else { &[] };
+    let system: &[&str] = if cfg!(unix) {
+        &["/usr/bin", "/usr/local/bin"]
+    } else {
+        &[]
+    };
     if let Some(found) = system.iter().find_map(|dir| in_dir(Path::new(dir))) {
         return Some(WhisperSource::Path(found));
     }
@@ -276,7 +290,10 @@ impl WhisperCppBackend {
     /// resolution failure surfaces on the first transcription call, where it
     /// can be reported with context.
     pub fn new(model: impl Into<String>) -> Self {
-        Self { model: model.into(), threads: None }
+        Self {
+            model: model.into(),
+            threads: None,
+        }
     }
 
     /// Pin the worker thread count.
@@ -363,9 +380,15 @@ pub(crate) fn parse_json_output(raw: &str) -> Result<Transcript, SttError> {
             }
             text.push_str(trimmed);
         }
-        #[expect(clippy::cast_precision_loss, reason = "offsets are milliseconds of audio")]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "offsets are milliseconds of audio"
+        )]
         let start = seg.offsets.from as f32 / 1000.0;
-        #[expect(clippy::cast_precision_loss, reason = "offsets are milliseconds of audio")]
+        #[expect(
+            clippy::cast_precision_loss,
+            reason = "offsets are milliseconds of audio"
+        )]
         let end = seg.offsets.to as f32 / 1000.0;
         last_end = last_end.max(end);
         segments.push(TranscriptSegment {
@@ -378,7 +401,10 @@ pub(crate) fn parse_json_output(raw: &str) -> Result<Transcript, SttError> {
 
     Ok(Transcript {
         text,
-        language: parsed.result.language.filter(|l| !l.is_empty() && l != "auto"),
+        language: parsed
+            .result
+            .language
+            .filter(|l| !l.is_empty() && l != "auto"),
         duration_s: (last_end > 0.0).then_some(last_end),
         segments,
     })
@@ -422,9 +448,12 @@ impl SttProvider for WhisperCppBackend {
             .map_err(|e| SttError::Other(format!("cannot create a work directory: {e}")))?;
         let input = dir.path().join("audio.wav");
         let out_prefix = dir.path().join("out");
-        tokio::fs::write(&input, wav::encode_pcm16(&decoded.samples, decoded.sample_rate))
-            .await
-            .map_err(|e| SttError::Other(format!("cannot write the work WAV: {e}")))?;
+        tokio::fs::write(
+            &input,
+            wav::encode_pcm16(&decoded.samples, decoded.sample_rate),
+        )
+        .await
+        .map_err(|e| SttError::Other(format!("cannot write the work WAV: {e}")))?;
 
         let mut cmd = tokio::process::Command::new(binary.path()).no_window();
         cmd.arg("-m")
@@ -492,7 +521,11 @@ impl SttProvider for WhisperCppBackend {
         }
 
         let transcript = self.transcribe(&buf, opts).await?;
-        let delta = TranscriptDelta { text: transcript.text, is_final: true, segment_id: 0 };
+        let delta = TranscriptDelta {
+            text: transcript.text,
+            is_final: true,
+            segment_id: 0,
+        };
         Ok(futures::stream::once(async move { Ok(delta) }))
     }
 }
@@ -513,7 +546,11 @@ mod tests {
             touch(&dir.path().join(version).join(file_name("whisper-cli")));
         }
         let found = find_managed_in(dir.path()).unwrap();
-        assert!(found.to_string_lossy().contains("v1.7.6"), "{}", found.display());
+        assert!(
+            found.to_string_lossy().contains("v1.7.6"),
+            "{}",
+            found.display()
+        );
     }
 
     #[test]
@@ -527,7 +564,10 @@ mod tests {
                 nested = nested.join(part);
             }
             touch(&nested.join(file_name("whisper-cli")));
-            assert!(find_managed_in(dir.path()).is_some(), "layout {sub} not found");
+            assert!(
+                find_managed_in(dir.path()).is_some(),
+                "layout {sub} not found"
+            );
         }
     }
 
@@ -541,7 +581,11 @@ mod tests {
     #[test]
     fn managed_scan_ignores_unrelated_runtimes() {
         let dir = tempfile::tempdir().unwrap();
-        touch(&dir.path().join("llama-b10549").join(file_name("whisper-cli")));
+        touch(
+            &dir.path()
+                .join("llama-b10549")
+                .join(file_name("whisper-cli")),
+        );
         assert!(find_managed_in(dir.path()).is_none());
     }
 
@@ -592,7 +636,10 @@ mod tests {
 
     #[test]
     fn malformed_json_is_a_deserialise_error() {
-        assert!(matches!(parse_json_output("not json"), Err(SttError::Deserialise(_))));
+        assert!(matches!(
+            parse_json_output("not json"),
+            Err(SttError::Deserialise(_))
+        ));
     }
 
     #[tokio::test]

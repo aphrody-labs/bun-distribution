@@ -12,11 +12,11 @@ use tokens::tokens::tags::TagToken;
 
 #[derive(Deserialize, ToSchema)]
 pub struct ListMediaFilesWithTagPathInfo {
-  pub tag_token: TagToken,
+    pub tag_token: TagToken,
 }
 
 #[derive(Deserialize, ToSchema, IntoParams)]
 pub struct ListMediaFilesWithTagQueryParams {
-  pub cursor: Option<String>,
-  pub limit: Option<u32>,
+    pub cursor: Option<String>,
+    pub limit: Option<u32>,
 }

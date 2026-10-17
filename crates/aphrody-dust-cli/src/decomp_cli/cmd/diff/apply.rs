@@ -68,8 +68,12 @@ impl ApplyDiffCmd {
             return Ok(());
         }
 
-        let mut tui =
-            ApplyTui::new(diff, input_path.to_path_buf(), config, config_path.to_path_buf());
+        let mut tui = ApplyTui::new(
+            diff,
+            input_path.to_path_buf(),
+            config,
+            config_path.to_path_buf(),
+        );
         ratatui::run(|terminal| tui.run(terminal))?;
 
         Ok(())
@@ -97,7 +101,9 @@ impl ApplyDiffCmd {
     }
 
     fn get_input_path(&self) -> PathBuf {
-        self.input_path.clone().unwrap_or(PathBuf::from(super::new::DEFAULT_OUT_FILE_NAME))
+        self.input_path
+            .clone()
+            .unwrap_or(PathBuf::from(super::new::DEFAULT_OUT_FILE_NAME))
     }
 }
 
@@ -168,7 +174,10 @@ impl ApplyTui {
     }
 
     fn selected_pos(&self) -> usize {
-        self.action_list_state.selected().unwrap_or(0).min(self.diff.actions.len() - 1)
+        self.action_list_state
+            .selected()
+            .unwrap_or(0)
+            .min(self.diff.actions.len() - 1)
     }
 
     fn draw(&mut self, frame: &mut Frame) -> Result<()> {
@@ -182,7 +191,11 @@ impl ApplyTui {
 
         let action_pos = self.selected_pos();
         let action_list_block = Block::bordered()
-            .title(format!("Diff actions ({}/{})", action_pos, self.diff.actions.len()))
+            .title(format!(
+                "Diff actions ({}/{})",
+                action_pos,
+                self.diff.actions.len()
+            ))
             .merge_borders(MergeStrategy::Exact);
         let list = List::new(self.actions().map(|(action, approval)| {
             Line::from(vec![action.action.short_line().fg(approval.color())])
@@ -193,8 +206,9 @@ impl ApplyTui {
 
         let selected_action = &self.diff.actions[action_pos];
 
-        let description_block =
-            Block::bordered().title("Description").merge_borders(MergeStrategy::Exact);
+        let description_block = Block::bordered()
+            .title("Description")
+            .merge_borders(MergeStrategy::Exact);
         let description = Paragraph::new(selected_action.description_text()?)
             .block(description_block)
             .wrap(Wrap { trim: true })
@@ -225,29 +239,86 @@ impl ApplyTui {
             TuiState::ConfirmQuit { confirmed } => Line::from(vec![
                 format!(
                     "Are you sure? {} good/bad markings will be lost.  ",
-                    self.approvals.iter().filter(|&&a| a != ActionApproval::Skip).count(),
+                    self.approvals
+                        .iter()
+                        .filter(|&&a| a != ActionApproval::Skip)
+                        .count(),
                 )
                 .into(),
-                " y ".bg(if confirmed { Color::LightBlue } else { Color::White }).bold(),
-                " Yes  ".fg(if confirmed { Color::LightBlue } else { Color::White }),
-                " n ".bg(if !confirmed { Color::LightBlue } else { Color::White }).bold(),
-                " No  ".fg(if !confirmed { Color::LightBlue } else { Color::White }),
+                " y "
+                    .bg(if confirmed {
+                        Color::LightBlue
+                    } else {
+                        Color::White
+                    })
+                    .bold(),
+                " Yes  ".fg(if confirmed {
+                    Color::LightBlue
+                } else {
+                    Color::White
+                }),
+                " n "
+                    .bg(if !confirmed {
+                        Color::LightBlue
+                    } else {
+                        Color::White
+                    })
+                    .bold(),
+                " No  ".fg(if !confirmed {
+                    Color::LightBlue
+                } else {
+                    Color::White
+                }),
                 " ↵ ".bg(Color::White).bold(),
-                if confirmed { " Quit  ".into() } else { " Go back  ".into() },
+                if confirmed {
+                    " Quit  ".into()
+                } else {
+                    " Go back  ".into()
+                },
             ]),
             TuiState::ConfirmApply { confirmed } => Line::from(vec![
                 format!(
                     "Are you sure? ({} actions to apply, {} to discard)  ",
-                    self.approvals.iter().filter(|&&a| a == ActionApproval::Good).count(),
-                    self.approvals.iter().filter(|&&a| a == ActionApproval::Bad).count(),
+                    self.approvals
+                        .iter()
+                        .filter(|&&a| a == ActionApproval::Good)
+                        .count(),
+                    self.approvals
+                        .iter()
+                        .filter(|&&a| a == ActionApproval::Bad)
+                        .count(),
                 )
                 .into(),
-                " y ".bg(if confirmed { Color::LightBlue } else { Color::White }).bold(),
-                " Yes  ".fg(if confirmed { Color::LightBlue } else { Color::White }),
-                " n ".bg(if !confirmed { Color::LightBlue } else { Color::White }).bold(),
-                " No  ".fg(if !confirmed { Color::LightBlue } else { Color::White }),
+                " y "
+                    .bg(if confirmed {
+                        Color::LightBlue
+                    } else {
+                        Color::White
+                    })
+                    .bold(),
+                " Yes  ".fg(if confirmed {
+                    Color::LightBlue
+                } else {
+                    Color::White
+                }),
+                " n "
+                    .bg(if !confirmed {
+                        Color::LightBlue
+                    } else {
+                        Color::White
+                    })
+                    .bold(),
+                " No  ".fg(if !confirmed {
+                    Color::LightBlue
+                } else {
+                    Color::White
+                }),
                 " ↵ ".bg(Color::White).bold(),
-                if confirmed { " Apply  ".into() } else { " Go back  ".into() },
+                if confirmed {
+                    " Apply  ".into()
+                } else {
+                    " Go back  ".into()
+                },
             ]),
             TuiState::Error => Line::from(vec![
                 format!("Error occurred while applying, see {LOG_FILE_NAME}  ").red(),
@@ -270,9 +341,9 @@ impl ApplyTui {
         match event::read()? {
             Event::Key(key_event) => match key_event.kind {
                 KeyEventKind::Press => self.handle_key_press(key_event),
-                _ => {},
+                _ => {}
             },
-            _ => {},
+            _ => {}
         };
         Ok(())
     }
@@ -290,48 +361,48 @@ impl ApplyTui {
                     } else {
                         self.quit();
                     }
-                },
+                }
                 KeyCode::Char('c') if ctrl => {
                     self.quit();
-                },
+                }
                 KeyCode::Down => {
                     self.action_list_state.scroll_down_by(speed);
                     self.description_scroll_y = 0;
-                },
+                }
                 KeyCode::Up => {
                     self.action_list_state.scroll_up_by(speed);
                     self.description_scroll_y = 0;
-                },
+                }
                 KeyCode::Home => {
                     self.action_list_state.select_first();
                     self.description_scroll_y = 0;
-                },
+                }
                 KeyCode::End => {
                     self.action_list_state.select_last();
                     self.description_scroll_y = 0;
-                },
+                }
                 KeyCode::Char('j') => {
                     self.description_scroll_y = self.description_scroll_y.saturating_add(1)
-                },
+                }
                 KeyCode::Char('k') => {
                     self.description_scroll_y = self.description_scroll_y.saturating_sub(1)
-                },
+                }
                 KeyCode::Char('1') => {
                     let pos = self.selected_pos();
                     self.approvals[pos] = ActionApproval::Good;
-                },
+                }
                 KeyCode::Char('2') => {
                     let pos = self.selected_pos();
                     self.approvals[pos] = ActionApproval::Bad;
-                },
+                }
                 KeyCode::Char('3') => {
                     let pos = self.selected_pos();
                     self.approvals[pos] = ActionApproval::Skip;
-                },
+                }
                 KeyCode::Enter if self.approvals.iter().any(|&a| a != ActionApproval::Skip) => {
                     self.state = TuiState::ConfirmApply { confirmed: false };
-                },
-                _ => {},
+                }
+                _ => {}
             },
             TuiState::ConfirmQuit { confirmed } => match key_event.code {
                 KeyCode::Char('y') | KeyCode::Left => *confirmed = true,
@@ -342,8 +413,8 @@ impl ApplyTui {
                     } else {
                         self.state = TuiState::Normal;
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             },
             TuiState::ConfirmApply { confirmed } => match key_event.code {
                 KeyCode::Char('y') | KeyCode::Left => *confirmed = true,
@@ -377,23 +448,23 @@ impl ApplyTui {
                                 } else {
                                     self.state = TuiState::Normal;
                                 }
-                            },
+                            }
                             Err(e) => {
                                 log::error!("{e}");
                                 self.state = TuiState::Error;
-                            },
+                            }
                         }
                     } else {
                         self.state = TuiState::Normal;
                     }
-                },
-                _ => {},
+                }
+                _ => {}
             },
             TuiState::Error => match key_event.code {
                 KeyCode::Enter => {
                     self.state = TuiState::Normal;
-                },
-                _ => {},
+                }
+                _ => {}
             },
         }
     }
@@ -411,13 +482,18 @@ fn apply_actions<'a>(
     let mut delinks_map = DelinksMap::from_config(
         config,
         config_path,
-        DelinksMapOptions { migrate_sections: false, generate_gap_files: false },
+        DelinksMapOptions {
+            migrate_sections: false,
+            generate_gap_files: false,
+        },
     )?;
     let mut symbol_maps = SymbolMaps::from_config(config_path, config)?;
     let mut relocations_map = RelocationsMap::from_config(config, config_path)?;
 
     fn get_delinks(delinks_map: &mut DelinksMap, module: ModuleKind) -> Result<&mut Delinks> {
-        delinks_map.get_mut(module).with_context(|| format!("Failed to get delinks for {}", module))
+        delinks_map
+            .get_mut(module)
+            .with_context(|| format!("Failed to get delinks for {}", module))
     }
 
     fn get_symbol_id(
@@ -481,35 +557,41 @@ fn apply_actions<'a>(
                     delinks.sections.add(section.as_section()?)?;
                     log::info!("Added section {} to {}", section.name, module);
                 }
-            },
+            }
             DiffAction::AddGlobalCategory(category) => {
                 let delinks = get_delinks(delinks_map, module)?;
                 delinks.global_categories.add(category.clone());
                 log::info!("Added progress category {} to {}", category, module);
-            },
+            }
             DiffAction::RemoveGlobalCategory(category) => {
                 let delinks = get_delinks(delinks_map, module)?;
                 delinks.global_categories.remove(category);
                 log::info!("Removed progress category {} from {}", category, module);
-            },
+            }
             DiffAction::AddDelink(delink_file) => {
                 let delinks = get_delinks(delinks_map, module)?;
                 delinks.files.push(delink_file.as_delink_file()?);
                 log::info!("Added delink file '{}' to {}", delink_file.name, module);
-            },
+            }
             DiffAction::DeleteDelink(delink_file) => {
                 let delinks = get_delinks(delinks_map, module)?;
                 let pos = delinks.files.iter().position(|d| d.name == delink_file.name)
                 .with_context(|| format!("Failed to delete delink file '{}' in {} because it was not found in delinks.txt", delink_file.name, module))?;
                 delinks.files.remove(pos);
                 log::info!("Removed delink file '{}' from {}", delink_file.name, module);
-            },
-            DiffAction::ChangeDelinkSections { delink_name, sections } => {
+            }
+            DiffAction::ChangeDelinkSections {
+                delink_name,
+                sections,
+            } => {
                 let delinks = get_delinks(delinks_map, module)?;
-                let delink =
-                    delinks.files.iter_mut().find(|d| d.name == *delink_name).with_context(
-                        || format!("Failed to get delink file '{}' in {}", delink_name, module),
-                    )?;
+                let delink = delinks
+                    .files
+                    .iter_mut()
+                    .find(|d| d.name == *delink_name)
+                    .with_context(|| {
+                        format!("Failed to get delink file '{}' in {}", delink_name, module)
+                    })?;
                 for section in &sections.removed {
                     delink.sections.remove(&section.name).with_context(|| format!(
                         "Could not remove section {} in delink '{}' from {} because the section does not exist",
@@ -538,13 +620,20 @@ fn apply_actions<'a>(
                         module
                     );
                 }
-            },
-            DiffAction::ChangeDelinkComplete { delink_name, before: _, after } => {
+            }
+            DiffAction::ChangeDelinkComplete {
+                delink_name,
+                before: _,
+                after,
+            } => {
                 let delinks = get_delinks(delinks_map, module)?;
-                let delink =
-                    delinks.files.iter_mut().find(|d| d.name == *delink_name).with_context(
-                        || format!("Failed to get delink file '{}' in {}", delink_name, module),
-                    )?;
+                let delink = delinks
+                    .files
+                    .iter_mut()
+                    .find(|d| d.name == *delink_name)
+                    .with_context(|| {
+                        format!("Failed to get delink file '{}' in {}", delink_name, module)
+                    })?;
                 delink.complete = *after;
                 log::info!(
                     "Marked delink file '{}' in {} as {}",
@@ -552,13 +641,19 @@ fn apply_actions<'a>(
                     module,
                     if *after { "complete" } else { "incomplete" }
                 );
-            },
-            DiffAction::AddDelinkCategory { delink_name, category } => {
+            }
+            DiffAction::AddDelinkCategory {
+                delink_name,
+                category,
+            } => {
                 let delinks = get_delinks(delinks_map, module)?;
-                let delink =
-                    delinks.files.iter_mut().find(|d| d.name == *delink_name).with_context(
-                        || format!("Failed to get delink file '{}' in {}", delink_name, module),
-                    )?;
+                let delink = delinks
+                    .files
+                    .iter_mut()
+                    .find(|d| d.name == *delink_name)
+                    .with_context(|| {
+                        format!("Failed to get delink file '{}' in {}", delink_name, module)
+                    })?;
                 delink.categories.add(category.clone());
                 log::info!(
                     "Added progress category {} to delink file '{}' in {}",
@@ -566,13 +661,19 @@ fn apply_actions<'a>(
                     delink_name,
                     module
                 );
-            },
-            DiffAction::RemoveDelinkCategory { delink_name, category } => {
+            }
+            DiffAction::RemoveDelinkCategory {
+                delink_name,
+                category,
+            } => {
                 let delinks = get_delinks(delinks_map, module)?;
-                let delink =
-                    delinks.files.iter_mut().find(|d| d.name == *delink_name).with_context(
-                        || format!("Failed to get delink file '{}' in {}", delink_name, module),
-                    )?;
+                let delink = delinks
+                    .files
+                    .iter_mut()
+                    .find(|d| d.name == *delink_name)
+                    .with_context(|| {
+                        format!("Failed to get delink file '{}' in {}", delink_name, module)
+                    })?;
                 delink.categories.remove(category);
                 log::info!(
                     "Removed progress category {} from delink file '{}' in {}",
@@ -580,12 +681,17 @@ fn apply_actions<'a>(
                     delink_name,
                     module
                 );
-            },
+            }
             DiffAction::AddSymbol(symbol) => {
                 let symbol_map = symbol_maps.get_mut(module);
                 symbol_map.add(symbol.as_symbol());
-                log::info!("Added symbol {} at {:#010x} to {}", symbol.name, symbol.addr.0, module);
-            },
+                log::info!(
+                    "Added symbol {} at {:#010x} to {}",
+                    symbol.name,
+                    symbol.addr.0,
+                    module
+                );
+            }
             DiffAction::DeleteSymbol(symbol) => {
                 let symbol_map = symbol_maps.get_mut(module);
                 let id = get_symbol_id(symbol_map, &symbol.name, symbol.addr.0, module)?;
@@ -598,12 +704,16 @@ fn apply_actions<'a>(
                     symbol.addr.0,
                     module
                 );
-            },
+            }
             DiffAction::ChangeSymbol(symbol) => {
                 let symbol_map = symbol_maps.get_mut(module);
                 let id = get_symbol_id(symbol_map, symbol.name.before(), symbol.addr.0, module)?;
                 symbol_map.remove(id).with_context(|| {
-                    format!("Failed to change symbol '{}' in {}", symbol.name.before(), module)
+                    format!(
+                        "Failed to change symbol '{}' in {}",
+                        symbol.name.before(),
+                        module
+                    )
                 })?;
                 symbol_map.add(symbol.as_symbol_after());
                 log::info!(
@@ -612,7 +722,7 @@ fn apply_actions<'a>(
                     symbol.addr.0,
                     module
                 );
-            },
+            }
             DiffAction::AddRelocation(relocation) => {
                 let relocations = get_relocations(relocations_map, module)?;
                 relocations.add(relocation.as_relocation())?;
@@ -623,7 +733,7 @@ fn apply_actions<'a>(
                     addend_to_string(relocation.addend.0),
                     module
                 );
-            },
+            }
             DiffAction::DeleteRelocation(relocation) => {
                 let relocations = get_relocations(relocations_map, module)?;
                 relocations.remove(relocation.from.0).with_context(|| {
@@ -639,7 +749,7 @@ fn apply_actions<'a>(
                     addend_to_string(relocation.addend.0),
                     module
                 );
-            },
+            }
             DiffAction::ChangeRelocation(relocation) => {
                 let relocations = get_relocations(relocations_map, module)?;
                 relocations.remove(relocation.from.0).with_context(|| {
@@ -656,19 +766,24 @@ fn apply_actions<'a>(
                     addend_to_string(relocation.addend.after().0),
                     module
                 );
-            },
+            }
             DiffAction::Group(actions) => {
                 log::info!("Applying {} related actions...", actions.len());
                 for action in actions {
                     apply_action(action, delinks_map, symbol_maps, relocations_map)?;
                 }
-            },
+            }
         };
         Ok(())
     }
 
     for action in actions {
-        apply_action(action, &mut delinks_map, &mut symbol_maps, &mut relocations_map)?;
+        apply_action(
+            action,
+            &mut delinks_map,
+            &mut symbol_maps,
+            &mut relocations_map,
+        )?;
     }
 
     delinks_map.to_files(config, config_path)?;
@@ -691,49 +806,70 @@ impl DiffAction {
                 let num_changes =
                     sections.added.len() + sections.removed.len() + sections.diffs.len();
                 format!("CHANGE {} SECTIONS", num_changes)
-            },
+            }
             DiffAction::AddGlobalCategory(category) => format!("ADD CATEGORY {}", category),
             DiffAction::RemoveGlobalCategory(category) => format!("REMOVE CATEGORY {}", category),
 
             DiffAction::AddDelink(delink_file) => {
                 format!("ADD DELINK {}", delink_file.name)
-            },
+            }
             DiffAction::DeleteDelink(delink_file) => format!("DELETE DELINK {}", delink_file.name),
-            DiffAction::ChangeDelinkSections { delink_name, sections } => {
+            DiffAction::ChangeDelinkSections {
+                delink_name,
+                sections,
+            } => {
                 let num_changes =
                     sections.added.len() + sections.removed.len() + sections.diffs.len();
                 format!("CHANGE {} SECTIONS in {}", num_changes, delink_name)
-            },
-            DiffAction::ChangeDelinkComplete { delink_name, before: _, after } => {
-                format!("{} {}", if *after { "COMPLETE" } else { "UNCOMPLETE" }, delink_name)
-            },
-            DiffAction::AddDelinkCategory { delink_name: _, category } => {
+            }
+            DiffAction::ChangeDelinkComplete {
+                delink_name,
+                before: _,
+                after,
+            } => {
+                format!(
+                    "{} {}",
+                    if *after { "COMPLETE" } else { "UNCOMPLETE" },
+                    delink_name
+                )
+            }
+            DiffAction::AddDelinkCategory {
+                delink_name: _,
+                category,
+            } => {
                 format!("ADD DELINK CATEGORY {}", category)
-            },
-            DiffAction::RemoveDelinkCategory { delink_name: _, category } => {
+            }
+            DiffAction::RemoveDelinkCategory {
+                delink_name: _,
+                category,
+            } => {
                 format!("REMOVE DELINK CATEGORY {}", category)
-            },
+            }
 
             DiffAction::AddSymbol(new_symbol) => format!("ADD {}", new_symbol.name),
             DiffAction::DeleteSymbol(deleted_symbol) => format!("DELETE {}", deleted_symbol.name),
             DiffAction::ChangeSymbol(symbol_diff) => {
                 format!("CHANGE {}", symbol_diff.name.before())
-            },
+            }
 
             DiffAction::AddRelocation(new_relocation) => {
                 format!("ADD RELOC {:#010x}", new_relocation.from.0)
-            },
+            }
             DiffAction::DeleteRelocation(deleted_relocation) => {
                 format!("DELETE RELOC {:#010x}", deleted_relocation.from.0)
-            },
+            }
             DiffAction::ChangeRelocation(relocation_diff) => {
                 format!("CHANGE RELOC {:#010x}", relocation_diff.from.0)
-            },
+            }
 
             DiffAction::Group(module_diff_actions) => {
                 let first = &module_diff_actions[0];
-                format!("{} (+{})", first.action.short_line(), module_diff_actions.len() - 1)
-            },
+                format!(
+                    "{} (+{})",
+                    first.action.short_line(),
+                    module_diff_actions.len() - 1
+                )
+            }
         }
     }
 
@@ -755,7 +891,10 @@ impl DiffAction {
                         .diffs
                         .values()
                         .map(|s| {
-                            Ok(diff_line_compare(s.as_section_before()?, s.as_section_after()?))
+                            Ok(diff_line_compare(
+                                s.as_section_before()?,
+                                s.as_section_after()?,
+                            ))
                         })
                         .collect::<Result<Vec<_>>>()?;
                     lines.extend(diff_lines.iter().map(|[before, _]| before.clone()));
@@ -769,13 +908,13 @@ impl DiffAction {
                     }
                 }
                 lines
-            },
+            }
             DiffAction::AddGlobalCategory(category) => {
                 vec![format!("In {module}, add a progress category: {}", category).into()]
-            },
+            }
             DiffAction::RemoveGlobalCategory(category) => {
                 vec![format!("In {module}, remove a progress category: {}", category).into()]
-            },
+            }
 
             DiffAction::AddDelink(delink_file) => vec![
                 format!("In {module}, add a delink file called {}", delink_file.name).into(),
@@ -785,7 +924,10 @@ impl DiffAction {
                 format!("In {module}, remove the delink file {}", delink_file.name).into(),
                 diff_line_remove(delink_file.as_delink_file()?),
             ],
-            DiffAction::ChangeDelinkSections { delink_name, sections } => {
+            DiffAction::ChangeDelinkSections {
+                delink_name,
+                sections,
+            } => {
                 let mut lines = vec![
                     format!("In {module}, update sections in delink file {delink_name}:").into(),
                 ];
@@ -820,8 +962,12 @@ impl DiffAction {
                     }
                 }
                 lines
-            },
-            DiffAction::ChangeDelinkComplete { delink_name, before: _, after } => vec![
+            }
+            DiffAction::ChangeDelinkComplete {
+                delink_name,
+                before: _,
+                after,
+            } => vec![
                 format!(
                     "In {module}, mark the delink file {} as {}",
                     delink_name,
@@ -829,7 +975,10 @@ impl DiffAction {
                 )
                 .into(),
             ],
-            DiffAction::AddDelinkCategory { delink_name, category } => {
+            DiffAction::AddDelinkCategory {
+                delink_name,
+                category,
+            } => {
                 vec![
                     format!(
                         "In {module}, add the progress category '{}' to delink file {}",
@@ -837,8 +986,11 @@ impl DiffAction {
                     )
                     .into(),
                 ]
-            },
-            DiffAction::RemoveDelinkCategory { delink_name, category } => vec![
+            }
+            DiffAction::RemoveDelinkCategory {
+                delink_name,
+                category,
+            } => vec![
                 format!(
                     "In {module}, remove the progress category '{}' from delink file {}",
                     category, delink_name
@@ -875,7 +1027,7 @@ impl DiffAction {
                     before,
                     after,
                 ]
-            },
+            }
 
             DiffAction::AddRelocation(relocation) => vec![
                 format!(
@@ -913,7 +1065,7 @@ impl DiffAction {
                     before,
                     after,
                 ]
-            },
+            }
 
             DiffAction::Group(actions) => {
                 let mut lines = vec![
@@ -925,7 +1077,7 @@ impl DiffAction {
                     lines.push("".into());
                 }
                 lines
-            },
+            }
         };
 
         Ok(lines)
@@ -1031,7 +1183,10 @@ impl NewDelinkFile {
         Ok(DelinkFile::new(DelinkFileOptions {
             name: self.name.clone(),
             sections: Sections::from_sections(
-                self.sections.iter().map(NewSection::as_section).collect::<Result<_>>()?,
+                self.sections
+                    .iter()
+                    .map(NewSection::as_section)
+                    .collect::<Result<_>>()?,
             )?,
             complete: self.complete,
             categories: self.categories.clone(),

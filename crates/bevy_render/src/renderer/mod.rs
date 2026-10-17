@@ -14,7 +14,7 @@ pub(crate) use wgpu_wrapper::wgpu_wrapper;
 use crate::{
     settings::{RenderResources, WgpuSettings, WgpuSettingsPriority},
     sync_world::MainEntity,
-    view::{screenshot::SubmitScreenshotCommandsState, ExtractedWindow, ViewTarget},
+    view::{ExtractedWindow, ViewTarget, screenshot::SubmitScreenshotCommandsState},
 };
 use bevy_camera::NormalizedRenderTarget;
 use bevy_ecs::schedule::ScheduleLabel;

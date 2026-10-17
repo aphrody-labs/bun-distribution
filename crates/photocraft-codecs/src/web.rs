@@ -46,7 +46,11 @@ pub fn lzw_encode(indices: &[u8], min_code_size: u8) -> Vec<u8> {
     let mut size = min + 1;
     let mut next = eoi + 1;
     let mut dict: HashMap<u32, u16> = HashMap::with_capacity(4096);
-    let mut out = BitSink { bytes: Vec::with_capacity(indices.len() / 2 + 16), acc: 0, nbits: 0 };
+    let mut out = BitSink {
+        bytes: Vec::with_capacity(indices.len() / 2 + 16),
+        acc: 0,
+        nbits: 0,
+    };
     out.put(clear, size);
     let Some((&first, rest)) = indices.split_first() else {
         out.put(eoi, size);
@@ -106,13 +110,22 @@ pub fn encode_gif_indexed(
 ) -> Result<Vec<u8>, CodecError> {
     let (w, h) = (width as usize, height as usize);
     if width == 0 || height == 0 || width > 65535 || height > 65535 || indices.len() != w * h {
-        return Err(gif_err("GIF size must be 1..=65535 and match the index data"));
+        return Err(gif_err(
+            "GIF size must be 1..=65535 and match the index data",
+        ));
     }
-    if palette.is_empty() || palette.len() > 256 || indices.iter().any(|&i| usize::from(i) >= palette.len()) {
-        return Err(gif_err("palette must have 1..=256 entries covering every index"));
+    if palette.is_empty()
+        || palette.len() > 256
+        || indices.iter().any(|&i| usize::from(i) >= palette.len())
+    {
+        return Err(gif_err(
+            "palette must have 1..=256 entries covering every index",
+        ));
     }
     // Colour table size: 2^(bits) entries, bits ≥ 1.
-    let bits = (1..=8u8).find(|b| (1usize << b) >= palette.len()).unwrap_or(8);
+    let bits = (1..=8u8)
+        .find(|b| (1usize << b) >= palette.len())
+        .unwrap_or(8);
     let mut out = b"GIF89a".to_vec();
     out.extend((width as u16).to_le_bytes());
     out.extend((height as u16).to_le_bytes());
@@ -161,7 +174,12 @@ pub struct GifFrame {
 
 /// Encode an animated GIF (GIF89a). Each frame carries its own local colour table; `loop_forever`
 /// adds the NETSCAPE2.0 looping extension.
-pub fn encode_gif_animated(width: u32, height: u32, frames: &[GifFrame], loop_forever: bool) -> Result<Vec<u8>, CodecError> {
+pub fn encode_gif_animated(
+    width: u32,
+    height: u32,
+    frames: &[GifFrame],
+    loop_forever: bool,
+) -> Result<Vec<u8>, CodecError> {
     let (w, h) = (width as usize, height as usize);
     if width == 0 || height == 0 || width > 65535 || height > 65535 {
         return Err(gif_err("GIF size must be 1..=65535"));
@@ -181,10 +199,18 @@ pub fn encode_gif_animated(width: u32, height: u32, frames: &[GifFrame], loop_fo
         out.extend([0x03, 0x01, 0x00, 0x00, 0x00]); // loop count 0 = forever
     }
     for f in frames {
-        if f.palette.is_empty() || f.palette.len() > 256 || f.indices.len() != w * h || f.indices.iter().any(|&i| usize::from(i) >= f.palette.len()) {
-            return Err(gif_err("every frame's palette must have 1..=256 entries covering its indices"));
+        if f.palette.is_empty()
+            || f.palette.len() > 256
+            || f.indices.len() != w * h
+            || f.indices.iter().any(|&i| usize::from(i) >= f.palette.len())
+        {
+            return Err(gif_err(
+                "every frame's palette must have 1..=256 entries covering its indices",
+            ));
         }
-        let bits = (1..=8u8).find(|b| (1usize << b) >= f.palette.len()).unwrap_or(8);
+        let bits = (1..=8u8)
+            .find(|b| (1usize << b) >= f.palette.len())
+            .unwrap_or(8);
         // Graphic Control Extension: delay and optional transparency. Every frame covers the whole
         // image, so an opaque one is left in place (disposal 1), while one with a transparent index
         // is cleared afterwards (disposal 2): otherwise the frames before it show through.
@@ -228,7 +254,9 @@ fn put_multibyte(out: &mut Vec<u8>, v: u32) {
 pub fn encode_wbmp(width: u32, height: u32, white: &[bool]) -> Result<Vec<u8>, CodecError> {
     let (w, h) = (width as usize, height as usize);
     if width == 0 || height == 0 || white.len() != w * h {
-        return Err(CodecError::InvalidImage("WBMP size must match the pixel data".into()));
+        return Err(CodecError::InvalidImage(
+            "WBMP size must match the pixel data".into(),
+        ));
     }
     let mut out = vec![0u8, 0u8];
     put_multibyte(&mut out, width);
@@ -300,10 +328,15 @@ pub fn encode_jpeg_rgb8(
 ) -> Result<Vec<u8>, CodecError> {
     let e = |e: jpeg_encoder::EncodingError| CodecError::encode(Format::Jpeg, e);
     let (Ok(w16), Ok(h16)) = (u16::try_from(width), u16::try_from(height)) else {
-        return Err(CodecError::encode(Format::Jpeg, "JPEG dimensions are limited to 65535"));
+        return Err(CodecError::encode(
+            Format::Jpeg,
+            "JPEG dimensions are limited to 65535",
+        ));
     };
     if rgb.len() != width as usize * height as usize * 3 {
-        return Err(CodecError::InvalidImage("RGB data does not match the size".into()));
+        return Err(CodecError::InvalidImage(
+            "RGB data does not match the size".into(),
+        ));
     }
     let mut out = Vec::new();
     let mut enc = jpeg_encoder::Encoder::new(&mut out, quality.clamp(1, 100));
@@ -312,7 +345,11 @@ pub fn encode_jpeg_rgb8(
     // jpeg-encoder 0.6 writes corrupt baseline scans when optimised Huffman tables meet 4:2:0
     // (both zune-jpeg and image-rs decode them green); progressive output is fine.
     enc.set_optimized_huffman_tables(progressive || (optimized && !subsampled));
-    enc.set_sampling_factor(if subsampled { jpeg_encoder::SamplingFactor::R_4_2_0 } else { jpeg_encoder::SamplingFactor::R_4_4_4 });
+    enc.set_sampling_factor(if subsampled {
+        jpeg_encoder::SamplingFactor::R_4_2_0
+    } else {
+        jpeg_encoder::SamplingFactor::R_4_4_4
+    });
     if let Some(d) = dpi.filter(|d| *d >= 1.0) {
         let v = d.round().min(65535.0) as u16;
         enc.set_density(jpeg_encoder::Density::Inch { x: v, y: v });
@@ -327,7 +364,8 @@ pub fn encode_jpeg_rgb8(
     if let Some(icc) = icc {
         enc.add_icc_profile(icc).map_err(e)?;
     }
-    enc.encode(rgb, w16, h16, jpeg_encoder::ColorType::Rgb).map_err(e)?;
+    enc.encode(rgb, w16, h16, jpeg_encoder::ColorType::Rgb)
+        .map_err(e)?;
     Ok(out)
 }
 
@@ -338,23 +376,43 @@ mod tests {
     fn decode_rgba(bytes: &[u8]) -> (u32, u32, Vec<u8>) {
         let img = crate::decode(bytes).unwrap();
         let (w, h) = img.dimensions();
-        (w, h, img.convert(crate::ChannelLayout::Rgba, crate::SampleType::U8).data().to_vec())
+        (
+            w,
+            h,
+            img.convert(crate::ChannelLayout::Rgba, crate::SampleType::U8)
+                .data()
+                .to_vec(),
+        )
     }
 
     fn pattern(w: usize, h: usize, n: usize) -> Vec<u8> {
-        (0..w * h).map(|i| (((i % w) * 7 + (i / w) * 13 + (i * i) % 5) % n) as u8).collect()
+        (0..w * h)
+            .map(|i| (((i % w) * 7 + (i / w) * 13 + (i * i) % 5) % n) as u8)
+            .collect()
     }
 
     #[test]
     fn gif_roundtrips_through_the_decoder() {
-        let pal: Vec<[u8; 3]> = (0..200).map(|i| [i as u8, (255 - i) as u8, (i * 3 % 256) as u8]).collect();
-        for (w, h, interlaced) in [(1, 1, false), (37, 23, false), (37, 23, true), (300, 200, false)] {
+        let pal: Vec<[u8; 3]> = (0..200)
+            .map(|i| [i as u8, (255 - i) as u8, (i * 3 % 256) as u8])
+            .collect();
+        for (w, h, interlaced) in [
+            (1, 1, false),
+            (37, 23, false),
+            (37, 23, true),
+            (300, 200, false),
+        ] {
             let idx = pattern(w, h, pal.len());
-            let bytes = encode_gif_indexed(w as u32, h as u32, &idx, &pal, None, interlaced).unwrap();
+            let bytes =
+                encode_gif_indexed(w as u32, h as u32, &idx, &pal, None, interlaced).unwrap();
             let (dw, dh, px) = decode_rgba(&bytes);
             assert_eq!((dw, dh), (w as u32, h as u32));
             for (i, k) in idx.iter().enumerate() {
-                assert_eq!(&px[i * 4..i * 4 + 3], &pal[*k as usize], "pixel {i} of {w}x{h} interlaced={interlaced}");
+                assert_eq!(
+                    &px[i * 4..i * 4 + 3],
+                    &pal[*k as usize],
+                    "pixel {i} of {w}x{h} interlaced={interlaced}"
+                );
             }
         }
     }
@@ -382,10 +440,16 @@ mod tests {
         let idx: Vec<u8> = (0..512 * 512)
             .map(|i| {
                 seed = seed.wrapping_mul(1_103_515_245).wrapping_add(12345);
-                if (i / 512) % 64 < 32 { (seed >> 16) as u8 } else { 7 }
+                if (i / 512) % 64 < 32 {
+                    (seed >> 16) as u8
+                } else {
+                    7
+                }
             })
             .collect();
-        let pal: Vec<[u8; 3]> = (0..256).map(|i| [i as u8, i as u8, 255 - i as u8]).collect();
+        let pal: Vec<[u8; 3]> = (0..256)
+            .map(|i| [i as u8, i as u8, 255 - i as u8])
+            .collect();
         let bytes = encode_gif_indexed(512, 512, &idx, &pal, None, false).unwrap();
         let (_, _, px) = decode_rgba(&bytes);
         for (i, k) in idx.iter().enumerate().step_by(97) {
@@ -408,10 +472,24 @@ mod tests {
     #[test]
     fn progressive_jpeg_decodes() {
         let rgb: Vec<u8> = (0..64 * 48 * 3).map(|i| (i % 251) as u8).collect();
-        let base = encode_jpeg_rgb8(64, 48, &rgb, 80, false, false, None, Some(72.0), Some("<x:xmpmeta/>")).unwrap();
+        let base = encode_jpeg_rgb8(
+            64,
+            48,
+            &rgb,
+            80,
+            false,
+            false,
+            None,
+            Some(72.0),
+            Some("<x:xmpmeta/>"),
+        )
+        .unwrap();
         let prog = encode_jpeg_rgb8(64, 48, &rgb, 80, true, true, None, None, None).unwrap();
         assert_ne!(base, prog);
-        assert_eq!(crate::decode(&base).unwrap().meta.xmp.as_deref(), Some("<x:xmpmeta/>"));
+        assert_eq!(
+            crate::decode(&base).unwrap().meta.xmp.as_deref(),
+            Some("<x:xmpmeta/>")
+        );
         // SOF2 marks a progressive frame.
         assert!(prog.windows(2).any(|w| w == [0xFF, 0xC2]));
         assert_eq!(crate::decode(&prog).unwrap().dimensions(), (64, 48));
@@ -422,10 +500,14 @@ mod tests {
     fn web_jpeg_xmp_resolution_follows_the_density() {
         let rgb = vec![100u8; 8 * 8 * 3];
         let xmp = r#"<rdf:Description tiff:XResolution="300/1" tiff:YResolution="300/1"/>"#;
-        let out = encode_jpeg_rgb8(8, 8, &rgb, 80, false, false, None, Some(72.0), Some(xmp)).unwrap();
+        let out =
+            encode_jpeg_rgb8(8, 8, &rgb, 80, false, false, None, Some(72.0), Some(xmp)).unwrap();
         let img = crate::decode(&out).unwrap();
         assert_eq!(img.meta.dpi, Some((72.0, 72.0)));
-        assert_eq!(img.meta.xmp.as_deref().and_then(crate::xmp_resolution), Some((72.0, 72.0)));
+        assert_eq!(
+            img.meta.xmp.as_deref().and_then(crate::xmp_resolution),
+            Some((72.0, 72.0))
+        );
     }
 }
 
@@ -438,13 +520,26 @@ mod subsampling_tests {
     #[test]
     fn every_option_combination_decodes_to_the_source() {
         let (w, h) = (64u32, 48u32);
-        let rgb: Vec<u8> = (0..w * h).flat_map(|i| [((i % w) * 4) as u8, 76, ((i / w) * 5) as u8]).collect();
+        let rgb: Vec<u8> = (0..w * h)
+            .flat_map(|i| [((i % w) * 4) as u8, 76, ((i / w) * 5) as u8])
+            .collect();
         for q in [30, 60, 95] {
             for (prog, opt) in [(false, false), (false, true), (true, false), (true, true)] {
                 let bytes = encode_jpeg_rgb8(w, h, &rgb, q, prog, opt, None, None, None).unwrap();
-                let ours = crate::decode(&bytes).unwrap().convert(crate::ChannelLayout::Rgb, crate::SampleType::U8);
-                let err = ours.data().iter().zip(&rgb).map(|(a, b)| i32::from(*a).abs_diff(i32::from(*b))).max().unwrap();
-                assert!(err < 24, "q{q} progressive={prog} optimized={opt}: max error {err}");
+                let ours = crate::decode(&bytes)
+                    .unwrap()
+                    .convert(crate::ChannelLayout::Rgb, crate::SampleType::U8);
+                let err = ours
+                    .data()
+                    .iter()
+                    .zip(&rgb)
+                    .map(|(a, b)| i32::from(*a).abs_diff(i32::from(*b)))
+                    .max()
+                    .unwrap();
+                assert!(
+                    err < 24,
+                    "q{q} progressive={prog} optimized={opt}: max error {err}"
+                );
             }
         }
     }
@@ -457,7 +552,12 @@ mod anim_tests {
     #[test]
     fn animated_gif_has_header_and_frames() {
         let frames: Vec<GifFrame> = (0..3)
-            .map(|i| GifFrame { indices: vec![i as u8; 4], palette: vec![[0, 0, 0], [255, 0, 0], [0, 255, 0]], transparent: None, delay_cs: 4 })
+            .map(|i| GifFrame {
+                indices: vec![i as u8; 4],
+                palette: vec![[0, 0, 0], [255, 0, 0], [0, 255, 0]],
+                transparent: None,
+                delay_cs: 4,
+            })
             .collect();
         let g = encode_gif_animated(2, 2, &frames, true).unwrap();
         assert_eq!(&g[..6], b"GIF89a");
@@ -473,21 +573,44 @@ mod anim_tests {
 
     #[test]
     fn transparent_frames_are_cleared_before_the_next() {
-        let frame = |transparent| GifFrame { indices: vec![0, 1, 1, 1], palette: vec![[0, 0, 0], [255, 0, 0]], transparent, delay_cs: 4 };
+        let frame = |transparent| GifFrame {
+            indices: vec![0, 1, 1, 1],
+            palette: vec![[0, 0, 0], [255, 0, 0]],
+            transparent,
+            delay_cs: 4,
+        };
         // The Graphic Control Extension's packed byte follows its 0x21 0xF9 0x04 introducer.
-        let packed = |g: &[u8]| g.windows(4).find(|w| w[..3] == [0x21, 0xF9, 0x04]).map(|w| w[3]).unwrap();
+        let packed = |g: &[u8]| {
+            g.windows(4)
+                .find(|w| w[..3] == [0x21, 0xF9, 0x04])
+                .map(|w| w[3])
+                .unwrap()
+        };
         let opaque = encode_gif_animated(2, 2, &[frame(None)], false).unwrap();
         assert_eq!(packed(&opaque), 0x04, "disposal 1, no transparency");
         let clear = encode_gif_animated(2, 2, &[frame(Some(0))], false).unwrap();
-        assert_eq!(packed(&clear), 0x09, "disposal 2 with the transparency flag");
+        assert_eq!(
+            packed(&clear),
+            0x09,
+            "disposal 2 with the transparency flag"
+        );
         let px = crate::decode(&clear).unwrap().to_rgba8();
-        assert_eq!((px[3], &px[4..8]), (0, &[255, 0, 0, 255][..]), "index 0 transparent, index 1 red");
+        assert_eq!(
+            (px[3], &px[4..8]),
+            (0, &[255, 0, 0, 255][..]),
+            "index 0 transparent, index 1 red"
+        );
     }
 
     #[test]
     fn rejects_bad_frames() {
         assert!(encode_gif_animated(2, 2, &[], false).is_err());
-        let bad = GifFrame { indices: vec![0; 3], palette: vec![[0, 0, 0]], transparent: None, delay_cs: 1 };
+        let bad = GifFrame {
+            indices: vec![0; 3],
+            palette: vec![[0, 0, 0]],
+            transparent: None,
+            delay_cs: 1,
+        };
         assert!(encode_gif_animated(2, 2, &[bad], false).is_err());
     }
 }

@@ -66,20 +66,25 @@ fn run(out: *mut ShBuf, body: impl FnOnce() -> Result<Vec<u8>, String>) -> c_int
         return -1;
     }
     // SAFETY: non-null checked above; reset so a failed call never leaves a stale buffer.
-    unsafe { *out = ShBuf { ptr: ptr::null_mut(), len: 0 } };
+    unsafe {
+        *out = ShBuf {
+            ptr: ptr::null_mut(),
+            len: 0,
+        }
+    };
     match catch_unwind(AssertUnwindSafe(body)) {
         Ok(Ok(bytes)) => {
             give(out, bytes);
             0
-        },
+        }
         Ok(Err(message)) => {
             set_error(message);
             -1
-        },
+        }
         Err(_) => {
             set_error("internal panic");
             -2
-        },
+        }
     }
 }
 
@@ -123,7 +128,11 @@ pub extern "C" fn shenron_dbxv2_version() -> *const c_char {
 pub extern "C" fn shenron_dbxv2_last_error() -> *const c_char {
     LAST_ERROR.with(|slot| {
         let bytes = slot.borrow();
-        if bytes.is_empty() { c"".as_ptr() } else { bytes.as_ptr().cast() }
+        if bytes.is_empty() {
+            c"".as_ptr()
+        } else {
+            bytes.as_ptr().cast()
+        }
     })
 }
 
@@ -188,7 +197,9 @@ pub unsafe extern "C" fn shenron_dbxv2_cpk_extract(
 ) -> c_int {
     // SAFETY: forwarded caller contract.
     let (bytes, name) = unsafe { (input(data, len), text(name)) };
-    run(out, || api::cpk_extract(bytes, name).map_err(|error| error.to_string()))
+    run(out, || {
+        api::cpk_extract(bytes, name).map_err(|error| error.to_string())
+    })
 }
 
 /// JSON summary of an EMB/EMD/ESK/EMM/BAC/BCM/BCS/BDM/BSA/EAN/CMS/CUS/PUP/MSG buffer.
@@ -211,7 +222,9 @@ pub unsafe extern "C" fn shenron_dbxv2_summarize(
 }
 
 fn pack_u32(value: usize) -> Result<[u8; 4], String> {
-    u32::try_from(value).map(u32::to_le_bytes).map_err(|error| error.to_string())
+    u32::try_from(value)
+        .map(u32::to_le_bytes)
+        .map_err(|error| error.to_string())
 }
 
 /// Decode HCA/ADX/AWB/ACB to WAV; see the module table for the packed output layout.
@@ -272,7 +285,8 @@ pub unsafe extern "C" fn shenron_dbxv2_cpk_read_file(
     let (path, entry) = unsafe { (text(cpk_path), text(entry)) };
     run(out, || {
         let range = (len > 0).then_some((start, len));
-        api::cpk_read_file(std::path::Path::new(path), entry, range).map_err(|error| error.to_string())
+        api::cpk_read_file(std::path::Path::new(path), entry, range)
+            .map_err(|error| error.to_string())
     })
 }
 
@@ -289,7 +303,9 @@ pub unsafe extern "C" fn shenron_dbxv2_emb_to_png(
 ) -> c_int {
     // SAFETY: forwarded caller contract.
     let bytes = unsafe { input(data, len) };
-    run(out, || api::emb_to_png(bytes, index as usize).map_err(|error| error.to_string()))
+    run(out, || {
+        api::emb_to_png(bytes, index as usize).map_err(|error| error.to_string())
+    })
 }
 
 /// Assembled model JSON. `emb`/`esk` may be null with length 0.
@@ -308,11 +324,22 @@ pub unsafe extern "C" fn shenron_dbxv2_model_json(
     out: *mut ShBuf,
 ) -> c_int {
     // SAFETY: forwarded caller contract.
-    let (name, emd, emb, esk) =
-        unsafe { (text(name), input(emd, emd_len), input(emb, emb_len), input(esk, esk_len)) };
+    let (name, emd, emb, esk) = unsafe {
+        (
+            text(name),
+            input(emd, emd_len),
+            input(emb, emb_len),
+            input(esk, esk_len),
+        )
+    };
     run(out, || {
-        let value = api::model_json(name, emd, (!emb.is_empty()).then_some(emb), (!esk.is_empty()).then_some(esk))
-            .map_err(|error| error.to_string())?;
+        let value = api::model_json(
+            name,
+            emd,
+            (!emb.is_empty()).then_some(emb),
+            (!esk.is_empty()).then_some(esk),
+        )
+        .map_err(|error| error.to_string())?;
         json_bytes(&value)
     })
 }
@@ -333,11 +360,22 @@ pub unsafe extern "C" fn shenron_dbxv2_model_glb(
     out: *mut ShBuf,
 ) -> c_int {
     // SAFETY: forwarded caller contract.
-    let (name, emd, emb, esk) =
-        unsafe { (text(name), input(emd, emd_len), input(emb, emb_len), input(esk, esk_len)) };
+    let (name, emd, emb, esk) = unsafe {
+        (
+            text(name),
+            input(emd, emd_len),
+            input(emb, emb_len),
+            input(esk, esk_len),
+        )
+    };
     run(out, || {
-        api::model_glb(name, emd, (!emb.is_empty()).then_some(emb), (!esk.is_empty()).then_some(esk))
-            .map_err(|error| error.to_string())
+        api::model_glb(
+            name,
+            emd,
+            (!emb.is_empty()).then_some(emb),
+            (!esk.is_empty()).then_some(esk),
+        )
+        .map_err(|error| error.to_string())
     })
 }
 
@@ -346,10 +384,18 @@ pub unsafe extern "C" fn shenron_dbxv2_model_glb(
 /// # Safety
 /// `data` valid for `len` bytes, `out` writable.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn shenron_dbxv2_usm_to_video(data: *const u8, len: usize, out: *mut ShBuf) -> c_int {
+pub unsafe extern "C" fn shenron_dbxv2_usm_to_video(
+    data: *const u8,
+    len: usize,
+    out: *mut ShBuf,
+) -> c_int {
     // SAFETY: forwarded caller contract.
     let bytes = unsafe { input(data, len) };
-    run(out, || api::usm_to_video(bytes).map(|(video, _)| video).map_err(|error| error.to_string()))
+    run(out, || {
+        api::usm_to_video(bytes)
+            .map(|(video, _)| video)
+            .map_err(|error| error.to_string())
+    })
 }
 
 /// Validate and return a TTF/OTF/WOFF font.
@@ -357,8 +403,16 @@ pub unsafe extern "C" fn shenron_dbxv2_usm_to_video(data: *const u8, len: usize,
 /// # Safety
 /// `data` valid for `len` bytes, `out` writable.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn shenron_dbxv2_font_to_sfnt(data: *const u8, len: usize, out: *mut ShBuf) -> c_int {
+pub unsafe extern "C" fn shenron_dbxv2_font_to_sfnt(
+    data: *const u8,
+    len: usize,
+    out: *mut ShBuf,
+) -> c_int {
     // SAFETY: forwarded caller contract.
     let bytes = unsafe { input(data, len) };
-    run(out, || api::font_to_sfnt(bytes).map(|(font, _)| font).map_err(|error| error.to_string()))
+    run(out, || {
+        api::font_to_sfnt(bytes)
+            .map(|(font, _)| font)
+            .map_err(|error| error.to_string())
+    })
 }

@@ -89,7 +89,13 @@ impl Color {
     pub fn parse(s: &str) -> Option<Color> {
         let mut parts = s.split(',').map(|p| p.trim().parse::<f64>().ok());
         let (r, g, b) = (parts.next()??, parts.next()??, parts.next()??);
-        let c = |v: f64| if v.is_finite() { (v / 255.0).clamp(0.0, 1.0) } else { 0.0 };
+        let c = |v: f64| {
+            if v.is_finite() {
+                (v / 255.0).clamp(0.0, 1.0)
+            } else {
+                0.0
+            }
+        };
         Some(Color([c(r), c(g), c(b)]))
     }
 }
@@ -115,7 +121,12 @@ pub struct Edge {
 
 impl Default for Edge {
     fn default() -> Self {
-        Edge { presence: Presence::Visible, thickness: 0.5, color: Color::BLACK, stroke: Stroke::Solid }
+        Edge {
+            presence: Presence::Visible,
+            thickness: 0.5,
+            color: Color::BLACK,
+            stroke: Stroke::Solid,
+        }
     }
 }
 
@@ -138,11 +149,20 @@ impl Border {
         if self.presence != Presence::Visible {
             return [false; 4];
         }
-        [self.edges[0].visible(), self.edges[1].visible(), self.edges[2].visible(), self.edges[3].visible()]
+        [
+            self.edges[0].visible(),
+            self.edges[1].visible(),
+            self.edges[2].visible(),
+            self.edges[3].visible(),
+        ]
     }
 
     pub fn fill(&self) -> Option<Color> {
-        if self.presence == Presence::Visible { self.fill } else { None }
+        if self.presence == Presence::Visible {
+            self.fill
+        } else {
+            None
+        }
     }
 }
 
@@ -171,14 +191,24 @@ pub struct Font {
 impl Default for Font {
     /// XFA's default font: Courier 10 pt.
     fn default() -> Self {
-        Font { typeface: "Courier".into(), size: 10.0, bold: false, italic: false, underline: false, color: Color::BLACK }
+        Font {
+            typeface: "Courier".into(),
+            size: 10.0,
+            bold: false,
+            italic: false,
+            underline: false,
+            color: Color::BLACK,
+        }
     }
 }
 
 impl Font {
     pub fn apply(&self, spec: &FontSpec) -> Font {
         Font {
-            typeface: spec.typeface.clone().unwrap_or_else(|| self.typeface.clone()),
+            typeface: spec
+                .typeface
+                .clone()
+                .unwrap_or_else(|| self.typeface.clone()),
             size: spec.size.unwrap_or(self.size),
             bold: spec.bold.unwrap_or(self.bold),
             italic: spec.italic.unwrap_or(self.italic),
@@ -334,7 +364,10 @@ pub enum Node {
 impl Common {
     /// The top-left corner of a positioned box of `w` by `h`, from `x`, `y` and the anchor.
     pub fn top_left(&self, w: f64, h: f64) -> (f64, f64) {
-        (self.x.unwrap_or(0.0) - w * self.anchor.h, self.y.unwrap_or(0.0) - h * self.anchor.v)
+        (
+            self.x.unwrap_or(0.0) - w * self.anchor.h,
+            self.y.unwrap_or(0.0) - h * self.anchor.v,
+        )
     }
 }
 
@@ -361,7 +394,11 @@ pub struct Occur {
 
 impl Default for Occur {
     fn default() -> Self {
-        Occur { min: 1, max: Some(1), initial: 1 }
+        Occur {
+            min: 1,
+            max: Some(1),
+            initial: 1,
+        }
     }
 }
 
@@ -496,7 +533,12 @@ impl Field {
             if self.item_values.is_empty() || self.item_values.iter().any(|s| s == one) {
                 return one.to_string();
             }
-            self.items.iter().position(|shown| shown == one).and_then(|i| self.item_values.get(i)).cloned().unwrap_or_else(|| one.to_string())
+            self.items
+                .iter()
+                .position(|shown| shown == one)
+                .and_then(|i| self.item_values.get(i))
+                .cloned()
+                .unwrap_or_else(|| one.to_string())
         };
         if self.choice.multi {
             // Each value once, and never more than there are items.
@@ -513,7 +555,12 @@ impl Field {
             out.join("\n")
         } else {
             // One value: the first line, should the data hold several.
-            saved(v.lines().map(str::trim).find(|l| !l.is_empty()).unwrap_or(""))
+            saved(
+                v.lines()
+                    .map(str::trim)
+                    .find(|l| !l.is_empty())
+                    .unwrap_or(""),
+            )
         }
     }
 }
@@ -547,7 +594,11 @@ impl Value {
         match self {
             Value::Empty => true,
             Value::Text(t) => t.trim().is_empty(),
-            Value::Rich(r) => r.paragraphs.iter().all(|p| p.runs.iter().all(|r| r.text.trim().is_empty() && r.embed.is_none())),
+            Value::Rich(r) => r.paragraphs.iter().all(|p| {
+                p.runs
+                    .iter()
+                    .all(|r| r.text.trim().is_empty() && r.embed.is_none())
+            }),
             _ => false,
         }
     }
@@ -570,7 +621,11 @@ pub struct RichText {
 
 impl RichText {
     pub fn plain(&self) -> String {
-        self.paragraphs.iter().map(|p| p.runs.iter().map(|r| r.text.as_str()).collect::<String>()).collect::<Vec<_>>().join("\n")
+        self.paragraphs
+            .iter()
+            .map(|p| p.runs.iter().map(|r| r.text.as_str()).collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -623,7 +678,12 @@ pub struct Rect {
 
 impl Rect {
     pub fn new(x: f64, y: f64, w: f64, h: f64) -> Rect {
-        Rect { x, y, w, h: h.max(0.0) }
+        Rect {
+            x,
+            y,
+            w,
+            h: h.max(0.0),
+        }
     }
 
     pub fn right(&self) -> f64 {
@@ -635,7 +695,12 @@ impl Rect {
     }
 
     pub fn inset(&self, m: &Margin) -> Rect {
-        Rect::new(self.x + m.left, self.y + m.top, (self.w - m.horizontal()).max(0.0), (self.h - m.vertical()).max(0.0))
+        Rect::new(
+            self.x + m.left,
+            self.y + m.top,
+            (self.w - m.horizontal()).max(0.0),
+            (self.h - m.vertical()).max(0.0),
+        )
     }
 }
 

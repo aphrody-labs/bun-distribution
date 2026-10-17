@@ -87,11 +87,19 @@ fn malformed<T>(why: &'static str) -> Result<T> {
 }
 
 fn f32s(raw: &[u8]) -> Vec<f32> {
-    raw.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+    raw.as_chunks::<4>()
+        .0
+        .iter()
+        .map(|b| f32::from_le_bytes(*b))
+        .collect()
 }
 
 fn i64s(raw: &[u8]) -> Vec<i64> {
-    raw.as_chunks::<8>().0.iter().map(|b| i64::from_le_bytes(*b)).collect()
+    raw.as_chunks::<8>()
+        .0
+        .iter()
+        .map(|b| i64::from_le_bytes(*b))
+        .collect()
 }
 
 /// A list of varints in a packed field (`start..end`), appended to `out`.
@@ -128,7 +136,9 @@ fn attribute(w: &mut Walker<Cursor<&[u8]>>, end: u64) -> Result<(String, Attr)> 
                 // packed floats
                 let at = w.pos()?;
                 let raw = w.bytes(at, e, (MAX_LIST * 4) as u64)?;
-                if !raw.len().is_multiple_of(4) || floats.len().saturating_add(raw.len() / 4) > MAX_LIST {
+                if !raw.len().is_multiple_of(4)
+                    || floats.len().saturating_add(raw.len() / 4) > MAX_LIST
+                {
                     return malformed("an attribute float list is invalid or too long");
                 }
                 floats.extend(f32s(&raw));
@@ -167,7 +177,12 @@ fn attribute(w: &mut Walker<Cursor<&[u8]>>, end: u64) -> Result<(String, Attr)> 
 }
 
 fn node(w: &mut Walker<Cursor<&[u8]>>, end: u64) -> Result<Node> {
-    let mut n = Node { op: String::new(), inputs: Vec::new(), outputs: Vec::new(), attrs: HashMap::new() };
+    let mut n = Node {
+        op: String::new(),
+        inputs: Vec::new(),
+        outputs: Vec::new(),
+        attrs: HashMap::new(),
+    };
     while let Some((num, f)) = w.next(end)? {
         match (num, f) {
             (1, Wire::Len { start, end: e }) => {
@@ -207,7 +222,11 @@ fn node(w: &mut Walker<Cursor<&[u8]>>, end: u64) -> Result<Node> {
 }
 
 /// A weight tensor (`TensorProto`): its name, shape and float32 or int64 values.
-fn tensor(w: &mut Walker<Cursor<&[u8]>>, end: u64, budget: &mut usize) -> Result<(String, Option<Weight>)> {
+fn tensor(
+    w: &mut Walker<Cursor<&[u8]>>,
+    end: u64,
+    budget: &mut usize,
+) -> Result<(String, Option<Weight>)> {
     let (mut name, mut dtype) = (String::new(), 0u64);
     let mut dims: Vec<u64> = Vec::new();
     let mut raw: Option<&[u8]> = None;
@@ -224,7 +243,9 @@ fn tensor(w: &mut Walker<Cursor<&[u8]>>, end: u64, budget: &mut usize) -> Result
             (4, Wire::Len { end: e, .. }) => {
                 let at = w.pos()?;
                 let bytes = w.bytes(at, e, max_bytes)?;
-                if !bytes.len().is_multiple_of(4) || float_data.len().saturating_add(bytes.len() / 4) > *budget {
+                if !bytes.len().is_multiple_of(4)
+                    || float_data.len().saturating_add(bytes.len() / 4) > *budget
+                {
                     return malformed("invalid or excessive packed float weights");
                 }
                 float_data.extend(f32s(&bytes));
@@ -253,12 +274,20 @@ fn tensor(w: &mut Walker<Cursor<&[u8]>>, end: u64, budget: &mut usize) -> Result
                 if raw.is_some() || e.saturating_sub(start) > max_bytes {
                     return malformed("repeated or excessive raw weights");
                 }
-                let from = usize::try_from(start).map_err(|_| ProbeError::Malformed("weight offset overflow"))?;
-                let to = usize::try_from(e).map_err(|_| ProbeError::Malformed("weight offset overflow"))?;
-                raw = Some((*w.r.get_ref()).get(from..to).ok_or(ProbeError::Malformed("short raw weights"))?);
+                let from = usize::try_from(start)
+                    .map_err(|_| ProbeError::Malformed("weight offset overflow"))?;
+                let to = usize::try_from(e)
+                    .map_err(|_| ProbeError::Malformed("weight offset overflow"))?;
+                raw = Some(
+                    (*w.r.get_ref())
+                        .get(from..to)
+                        .ok_or(ProbeError::Malformed("short raw weights"))?,
+                );
                 w.seek_to(e)?;
             }
-            (13, Wire::Len { .. }) | (14, Wire::Varint(1..)) => return malformed("external tensor data is unsupported"),
+            (13, Wire::Len { .. }) | (14, Wire::Varint(1..)) => {
+                return malformed("external tensor data is unsupported");
+            }
             (_, Wire::Len { end: e, .. }) => w.seek_to(e)?,
             _ => {}
         }
@@ -269,8 +298,11 @@ fn tensor(w: &mut Walker<Cursor<&[u8]>>, end: u64, budget: &mut usize) -> Result
     let mut elements: usize = 1;
     let mut shape = Vec::new();
     for d in &dims {
-        let d = usize::try_from(*d).map_err(|_| ProbeError::Malformed("a tensor dimension is too large"))?;
-        elements = elements.checked_mul(d).ok_or(ProbeError::Malformed("a tensor is too large"))?;
+        let d = usize::try_from(*d)
+            .map_err(|_| ProbeError::Malformed("a tensor dimension is too large"))?;
+        elements = elements
+            .checked_mul(d)
+            .ok_or(ProbeError::Malformed("a tensor is too large"))?;
         shape.push(d);
     }
     if elements > *budget {
@@ -327,15 +359,19 @@ fn value_info(w: &mut Walker<Cursor<&[u8]>>, end: u64) -> Result<(String, Vec<us
             }
             (2, Wire::Len { end: e, .. }) => {
                 // TypeProto > tensor_type (1) > shape (2) > dim (1) > dim_value (1)
-                let mut info = crate::onnx::TensorInfo { name: String::new(), elem_type: 0, shape: Vec::new() };
+                let mut info = crate::onnx::TensorInfo {
+                    name: String::new(),
+                    elem_type: 0,
+                    shape: Vec::new(),
+                };
                 crate::onnx::type_proto(w, e, &mut info)?;
                 shape = info
                     .shape
                     .iter()
                     .map(|d| match d {
-                        crate::onnx::Dim::Fixed(v) => {
-                            usize::try_from(*v).map_err(|_| ProbeError::Malformed("a declared dimension exceeds this platform"))
-                        }
+                        crate::onnx::Dim::Fixed(v) => usize::try_from(*v).map_err(|_| {
+                            ProbeError::Malformed("a declared dimension exceeds this platform")
+                        }),
                         crate::onnx::Dim::Dynamic(_) => Ok(0),
                     })
                     .collect::<Result<_>>()?;
@@ -361,18 +397,32 @@ pub fn load(bytes: &[u8]) -> Result<Graph> {
     if info.opset.is_none_or(|v| !(10..=17).contains(&v)) {
         return malformed("only ONNX default-domain opsets 10 through 17 are supported");
     }
-    if info.inputs.iter().chain(&info.outputs).any(|v| v.shape.iter().any(|d| matches!(d, crate::onnx::Dim::Fixed(0)))) {
+    if info.inputs.iter().chain(&info.outputs).any(|v| {
+        v.shape
+            .iter()
+            .any(|d| matches!(d, crate::onnx::Dim::Fixed(0)))
+    }) {
         return malformed("a declared input/output has a zero dimension");
     }
-    if info.inputs.iter().chain(&info.outputs).any(|v| v.elem_type != 1) {
+    if info
+        .inputs
+        .iter()
+        .chain(&info.outputs)
+        .any(|v| v.elem_type != 1)
+    {
         return malformed("model inputs and outputs must be float32");
     }
     if total == 0 {
         return malformed("the file is empty");
     }
     let mut cursor = Cursor::new(bytes);
-    let mut w = Walker { r: &mut cursor, total, fields: 0 };
-    let (mut nodes, mut weights, mut inputs, mut outputs) = (Vec::new(), HashMap::new(), Vec::new(), Vec::new());
+    let mut w = Walker {
+        r: &mut cursor,
+        total,
+        fields: 0,
+    };
+    let (mut nodes, mut weights, mut inputs, mut outputs) =
+        (Vec::new(), HashMap::new(), Vec::new(), Vec::new());
     let mut budget = MAX_ELEMENTS;
     let mut saw_graph = false;
     while let Some((n, f)) = w.next(total)? {
@@ -417,7 +467,9 @@ pub fn load(bytes: &[u8]) -> Result<Graph> {
                             outputs.push(value_info(&mut w, e)?.0);
                             w.seek_to(e)?;
                         }
-                        (15, Wire::Len { .. }) => return malformed("sparse initializers are unsupported"),
+                        (15, Wire::Len { .. }) => {
+                            return malformed("sparse initializers are unsupported");
+                        }
                         (_, Wire::Len { end: e, .. }) => w.seek_to(e)?,
                         _ => {}
                     }
@@ -435,7 +487,12 @@ pub fn load(bytes: &[u8]) -> Result<Graph> {
     if inputs.is_empty() || outputs.is_empty() {
         return malformed("the graph has no inputs or no outputs");
     }
-    Ok(Graph { nodes, weights, inputs, outputs })
+    Ok(Graph {
+        nodes,
+        weights,
+        inputs,
+        outputs,
+    })
 }
 
 #[cfg(test)]

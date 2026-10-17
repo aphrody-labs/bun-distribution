@@ -11,7 +11,9 @@ use crate::{Session, bad, spec};
 /// first) when its page was deleted or became a divider.
 fn settle(s: &mut Session, cmd: &str) -> crate::Result<()> {
     let doc = s.doc()?;
-    let Some(open) = doc.first_open_page() else { return Err(bad(cmd, "a file needs a page that isn't a divider")) };
+    let Some(open) = doc.first_open_page() else {
+        return Err(bad(cmd, "a file needs a page that isn't a divider"));
+    };
     let page = s.page()?;
     if !doc.pages.contains(&page) || doc.is_divider(page) {
         let ds = s.ds_mut()?;
@@ -25,52 +27,73 @@ fn settle(s: &mut Session, cmd: &str) -> crate::Result<()> {
 
 pub fn specs() -> Vec<CommandSpec> {
     vec![
-        spec!("page.add", "Add page", "{name?} (a name starting with a hyphen adds a divider)", true, |s, p| {
-            let background = s.new_page_background();
-            let doc = s.doc_mut()?;
-            let name = string(p, "name").unwrap_or_else(|| format!("Page {}", doc.pages.len() + 1));
-            let id = doc.add_page(&name);
-            if let NodeKind::Page { background: b, .. } = &mut doc.get_mut(id)?.kind {
-                *b = background;
-            }
-            if doc.is_divider(id) {
-                return Ok(json!({"id": id, "divider": true}));
-            }
-            let ds = s.ds_mut()?;
-            ds.page = id;
-            ds.selection.clear();
-            ds.zoom_to_fit();
-            Ok(json!({"id": id}))
-        }),
-        spec!("page.select", "Go to page", "{id | index}", false, |s, p| {
-            let doc = s.doc()?;
-            let id = match id(p, "id") {
-                Some(i) => i,
-                None => {
-                    let k = req_num("page.select", p, "index")? as usize;
-                    *doc.pages.get(k).ok_or_else(|| bad("page.select", "no such page"))?
+        spec!(
+            "page.add",
+            "Add page",
+            "{name?} (a name starting with a hyphen adds a divider)",
+            true,
+            |s, p| {
+                let background = s.new_page_background();
+                let doc = s.doc_mut()?;
+                let name =
+                    string(p, "name").unwrap_or_else(|| format!("Page {}", doc.pages.len() + 1));
+                let id = doc.add_page(&name);
+                if let NodeKind::Page { background: b, .. } = &mut doc.get_mut(id)?.kind {
+                    *b = background;
                 }
-            };
-            if !doc.pages.contains(&id) {
-                return Err(bad("page.select", format!("{id} is not a page")));
+                if doc.is_divider(id) {
+                    return Ok(json!({"id": id, "divider": true}));
+                }
+                let ds = s.ds_mut()?;
+                ds.page = id;
+                ds.selection.clear();
+                ds.zoom_to_fit();
+                Ok(json!({"id": id}))
             }
-            if doc.is_divider(id) {
-                return Err(bad("page.select", "a divider isn't a page to open"));
+        ),
+        spec!(
+            "page.select",
+            "Go to page",
+            "{id | index}",
+            false,
+            |s, p| {
+                let doc = s.doc()?;
+                let id = match id(p, "id") {
+                    Some(i) => i,
+                    None => {
+                        let k = req_num("page.select", p, "index")? as usize;
+                        *doc.pages
+                            .get(k)
+                            .ok_or_else(|| bad("page.select", "no such page"))?
+                    }
+                };
+                if !doc.pages.contains(&id) {
+                    return Err(bad("page.select", format!("{id} is not a page")));
+                }
+                if doc.is_divider(id) {
+                    return Err(bad("page.select", "a divider isn't a page to open"));
+                }
+                let ds = s.ds_mut()?;
+                ds.page = id;
+                ds.selection.clear();
+                ds.text_edit = None;
+                ds.zoom_to_fit();
+                ok()
             }
-            let ds = s.ds_mut()?;
-            ds.page = id;
-            ds.selection.clear();
-            ds.text_edit = None;
-            ds.zoom_to_fit();
-            ok()
-        }),
-        spec!("page.rename", "Rename page", "{id?, name} (an empty page named with a leading hyphen becomes a divider)", true, |s, p| {
-            let name = req_string("page.rename", p, "name")?;
-            let id = id(p, "id").unwrap_or(s.page()?);
-            s.doc_mut()?.get_mut(id)?.name = name;
-            settle(s, "page.rename")?;
-            ok()
-        }),
+        ),
+        spec!(
+            "page.rename",
+            "Rename page",
+            "{id?, name} (an empty page named with a leading hyphen becomes a divider)",
+            true,
+            |s, p| {
+                let name = req_string("page.rename", p, "name")?;
+                let id = id(p, "id").unwrap_or(s.page()?);
+                s.doc_mut()?.get_mut(id)?.name = name;
+                settle(s, "page.rename")?;
+                ok()
+            }
+        ),
         spec!("page.delete", "Delete page", "{id?}", true, |s, p| {
             let id = id(p, "id").unwrap_or(s.page()?);
             s.doc_mut()?.remove(id)?;
@@ -107,14 +130,21 @@ pub fn specs() -> Vec<CommandSpec> {
             doc.pages.insert(k, id);
             ok()
         }),
-        spec!("page.setBackground", "Page background", "{id?, color}", true, |s, p| {
-            let c = color(p, "color").ok_or_else(|| bad("page.setBackground", "`color` required"))?;
-            let id = id(p, "id").unwrap_or(s.page()?);
-            if let NodeKind::Page { background, .. } = &mut s.doc_mut()?.get_mut(id)?.kind {
-                *background = c;
+        spec!(
+            "page.setBackground",
+            "Page background",
+            "{id?, color}",
+            true,
+            |s, p| {
+                let c = color(p, "color")
+                    .ok_or_else(|| bad("page.setBackground", "`color` required"))?;
+                let id = id(p, "id").unwrap_or(s.page()?);
+                if let NodeKind::Page { background, .. } = &mut s.doc_mut()?.get_mut(id)?.kind {
+                    *background = c;
+                }
+                ok()
             }
-            ok()
-        }),
+        ),
         spec!("page.list", "List pages", "{}", false, |s, _| {
             let doc = s.doc()?;
             let cur = s.page()?;
@@ -126,40 +156,71 @@ pub fn specs() -> Vec<CommandSpec> {
                     .collect(),
             ))
         }),
-        spec!("guide.add", "Add guide", "{vertical (bool), offset, frame? | page?} → {index}", true, |s, p| {
-            let owner = guide_owner(s, "guide.add", p)?;
-            let offset = req_num("guide.add", p, "offset")?.clamp(-1e7, 1e7);
-            let g = Guide { vertical: boolean(p, "vertical").unwrap_or(true), offset };
-            let guides = s.doc_mut()?.get_mut(owner)?.guides_mut();
-            if guides.len() >= 10_000 {
-                return Err(bad("guide.add", "too many guides"));
+        spec!(
+            "guide.add",
+            "Add guide",
+            "{vertical (bool), offset, frame? | page?} → {index}",
+            true,
+            |s, p| {
+                let owner = guide_owner(s, "guide.add", p)?;
+                let offset = req_num("guide.add", p, "offset")?.clamp(-1e7, 1e7);
+                let g = Guide {
+                    vertical: boolean(p, "vertical").unwrap_or(true),
+                    offset,
+                };
+                let guides = s.doc_mut()?.get_mut(owner)?.guides_mut();
+                if guides.len() >= 10_000 {
+                    return Err(bad("guide.add", "too many guides"));
+                }
+                guides.push(g);
+                Ok(json!({"index": guides.len() - 1}))
             }
-            guides.push(g);
-            Ok(json!({"index": guides.len() - 1}))
-        }),
-        spec!("guide.move", "Move guide", "{index, offset, frame? | page?}", true, |s, p| {
-            let owner = guide_owner(s, "guide.move", p)?;
-            let k = guide_index("guide.move", p)?;
-            let offset = req_num("guide.move", p, "offset")?.clamp(-1e7, 1e7);
-            s.doc_mut()?.get_mut(owner)?.guides_mut().get_mut(k).ok_or_else(|| bad("guide.move", "no such guide"))?.offset = offset;
-            ok()
-        }),
-        spec!("guide.remove", "Remove guide", "{index?, frame? | page?} (no index: the selected guide)", true, |s, p| {
-            let (owner, k) = match p.get("index") {
-                None | Some(Value::Null) => s.ds()?.selected_guide().ok_or_else(|| bad("guide.remove", "no guide is selected (pass `index`)"))?,
-                Some(_) => (guide_owner(s, "guide.remove", p)?, guide_index("guide.remove", p)?),
-            };
-            let guides = s.doc_mut()?.get_mut(owner)?.guides_mut();
-            if k >= guides.len() {
-                return Err(bad("guide.remove", "no such guide"));
+        ),
+        spec!(
+            "guide.move",
+            "Move guide",
+            "{index, offset, frame? | page?}",
+            true,
+            |s, p| {
+                let owner = guide_owner(s, "guide.move", p)?;
+                let k = guide_index("guide.move", p)?;
+                let offset = req_num("guide.move", p, "offset")?.clamp(-1e7, 1e7);
+                s.doc_mut()?
+                    .get_mut(owner)?
+                    .guides_mut()
+                    .get_mut(k)
+                    .ok_or_else(|| bad("guide.move", "no such guide"))?
+                    .offset = offset;
+                ok()
             }
-            guides.remove(k);
-            let ds = s.ds_mut()?;
-            if ds.guide == Some((owner, k)) {
-                ds.guide = None;
+        ),
+        spec!(
+            "guide.remove",
+            "Remove guide",
+            "{index?, frame? | page?} (no index: the selected guide)",
+            true,
+            |s, p| {
+                let (owner, k) = match p.get("index") {
+                    None | Some(Value::Null) => s.ds()?.selected_guide().ok_or_else(|| {
+                        bad("guide.remove", "no guide is selected (pass `index`)")
+                    })?,
+                    Some(_) => (
+                        guide_owner(s, "guide.remove", p)?,
+                        guide_index("guide.remove", p)?,
+                    ),
+                };
+                let guides = s.doc_mut()?.get_mut(owner)?.guides_mut();
+                if k >= guides.len() {
+                    return Err(bad("guide.remove", "no such guide"));
+                }
+                guides.remove(k);
+                let ds = s.ds_mut()?;
+                if ds.guide == Some((owner, k)) {
+                    ds.guide = None;
+                }
+                ok()
             }
-            ok()
-        }),
+        ),
         spec!(
             "guide.select",
             "Select guide",
@@ -189,11 +250,17 @@ pub fn specs() -> Vec<CommandSpec> {
                 })
             }
         ),
-        spec!("guide.clear", "Remove all guides", "{frame? | page?}", true, |s, p| {
-            let owner = guide_owner(s, "guide.clear", p)?;
-            s.doc_mut()?.get_mut(owner)?.guides_mut().clear();
-            ok()
-        }),
+        spec!(
+            "guide.clear",
+            "Remove all guides",
+            "{frame? | page?}",
+            true,
+            |s, p| {
+                let owner = guide_owner(s, "guide.clear", p)?;
+                s.doc_mut()?.get_mut(owner)?.guides_mut().clear();
+                ok()
+            }
+        ),
     ]
 }
 

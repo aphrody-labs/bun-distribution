@@ -5,7 +5,9 @@
 
 use std::collections::BTreeMap;
 
-use egui::{Align2, Color32, CornerRadius, Id, Rect, Response, Sense, Stroke, StrokeKind, Ui, pos2, vec2};
+use egui::{
+    Align2, Color32, CornerRadius, Id, Rect, Response, Sense, Stroke, StrokeKind, Ui, pos2, vec2,
+};
 use figcraft_engine::templates::{Kind, TEMPLATES, Template};
 use serde_json::json;
 
@@ -43,7 +45,10 @@ impl Section {
     }
 
     pub fn parse(id: &str) -> Option<Section> {
-        Section::ALL.into_iter().map(|(section, ..)| section).find(|section| section.id() == id)
+        Section::ALL
+            .into_iter()
+            .map(|(section, ..)| section)
+            .find(|section| section.id() == id)
     }
 }
 
@@ -66,12 +71,36 @@ const FIRST_RUN: usize = 4;
 
 /// The Getting started tips: (title, what to do, the command whose shortcut shows).
 const TIPS: [(&str, &str, &str); 6] = [
-    (tr_noop("Draw a frame"), tr_noop("Pick the Frame tool, then drag on the canvas or choose a device size"), "tool.frame"),
-    (tr_noop("Add auto layout"), tr_noop("Select layers and they space themselves as their content changes"), "layout.add"),
-    (tr_noop("Make a component"), tr_noop("Turn a layer into a component, reuse it, and change every copy at once"), "component.create"),
-    (tr_noop("Prototype"), tr_noop("Link frames on the Prototype tab, then present the flow"), "proto.present"),
-    (tr_noop("Share with a code"), tr_noop("Start sharing with the Share button, then pass on the code it gives"), "collab.share"),
-    (tr_noop("Export"), tr_noop("Export frames and layers as PNG, JPG, SVG or PDF"), "file.export"),
+    (
+        tr_noop("Draw a frame"),
+        tr_noop("Pick the Frame tool, then drag on the canvas or choose a device size"),
+        "tool.frame",
+    ),
+    (
+        tr_noop("Add auto layout"),
+        tr_noop("Select layers and they space themselves as their content changes"),
+        "layout.add",
+    ),
+    (
+        tr_noop("Make a component"),
+        tr_noop("Turn a layer into a component, reuse it, and change every copy at once"),
+        "component.create",
+    ),
+    (
+        tr_noop("Prototype"),
+        tr_noop("Link frames on the Prototype tab, then present the flow"),
+        "proto.present",
+    ),
+    (
+        tr_noop("Share with a code"),
+        tr_noop("Start sharing with the Share button, then pass on the code it gives"),
+        "collab.share",
+    ),
+    (
+        tr_noop("Export"),
+        tr_noop("Export frames and layers as PNG, JPG, SVG or PDF"),
+        "file.export",
+    ),
 ];
 
 /// A row of the home screen's file lists.
@@ -92,17 +121,42 @@ pub(crate) fn file_row(ui: &Ui, t: &Tokens, r: Rect, resp: &Response, row: &File
         ui.painter().rect_filled(r, CornerRadius::same(5), t.hover);
     }
     if let Some((icon, tint)) = row.mark {
-        icons::paint(ui.painter(), Rect::from_min_size(pos2(r.min.x + 8.0, r.center().y - 8.0), vec2(16.0, 16.0)), icon, tint);
+        icons::paint(
+            ui.painter(),
+            Rect::from_min_size(pos2(r.min.x + 8.0, r.center().y - 8.0), vec2(16.0, 16.0)),
+            icon,
+            tint,
+        );
     }
-    let detail = ui.painter().text(pos2(r.max.x - 8.0, r.center().y), Align2::RIGHT_CENTER, row.detail, regular(row.detail_size), row.detail_ink);
-    let name = widgets::elide_font(ui, row.name, (detail.min.x - r.min.x - 44.0).max(40.0), regular(12.0));
-    ui.painter().text(pos2(r.min.x + 32.0, r.center().y), Align2::LEFT_CENTER, name, regular(12.0), row.ink);
+    let detail = ui.painter().text(
+        pos2(r.max.x - 8.0, r.center().y),
+        Align2::RIGHT_CENTER,
+        row.detail,
+        regular(row.detail_size),
+        row.detail_ink,
+    );
+    let name = widgets::elide_font(
+        ui,
+        row.name,
+        (detail.min.x - r.min.x - 44.0).max(40.0),
+        regular(12.0),
+    );
+    ui.painter().text(
+        pos2(r.min.x + 32.0, r.center().y),
+        Align2::LEFT_CENTER,
+        name,
+        regular(12.0),
+        row.ink,
+    );
 }
 
 /// A row of Recents' own lists: laid out in place, named for screen readers, ringed with the
 /// keyboard on it; true when chosen.
 fn listed(ui: &mut Ui, t: &Tokens, id: Id, height: f32, row: &FileRow) -> bool {
-    let (r, _) = ui.allocate_exact_size(vec2(ui.available_width().min(640.0), height), Sense::hover());
+    let (r, _) = ui.allocate_exact_size(
+        vec2(ui.available_width().min(640.0), height),
+        Sense::hover(),
+    );
     let resp = ui.interact(r, id, Sense::click());
     a11y::button(&resp, row.name);
     file_row(ui, t, r, &resp, row);
@@ -112,37 +166,61 @@ fn listed(ui: &mut Ui, t: &Tokens, id: Id, height: f32, row: &FileRow) -> bool {
 
 pub fn show(app: &mut FigApp, ui: &mut Ui) {
     let t = Tokens::get(ui.ctx());
-    egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.panel)).show(ui, |ui| {
-        let rect = ui.max_rect();
-        let left = Rect::from_min_size(rect.min, vec2(SIDEBAR, rect.height()));
-        ui.painter().line_segment([left.right_top(), left.right_bottom()], Stroke::new(1.0, t.border));
-        sidebar(app, ui, &t, left);
-        if app.ui.home_view.section == Section::Online {
-            // Your online files lay themselves out in the area (and scroll their own list).
-            let area = Rect::from_min_max(pos2(left.max.x + 40.0, rect.min.y + 24.0), rect.max - vec2(40.0, 24.0));
-            crate::online::section(app, ui, area, &t);
-            opened_join(app);
-            return;
-        }
-        let main = Rect::from_min_max(pos2(left.max.x, rect.min.y), rect.max);
-        ui.scope_builder(egui::UiBuilder::new().max_rect(main), |ui| {
-            egui::ScrollArea::vertical().id_salt("home").auto_shrink([false, false]).show(ui, |ui| {
-                egui::Frame::NONE.inner_margin(egui::Margin::symmetric(40, 24)).show(ui, |ui| {
-                    ui.spacing_mut().item_spacing = vec2(GAP, 0.0);
-                    match app.ui.home_view.section {
-                        Section::Templates => templates(app, ui, &t),
-                        _ => recents(app, ui, &t),
-                    }
-                });
+    egui::CentralPanel::default()
+        .frame(egui::Frame::NONE.fill(t.panel))
+        .show(ui, |ui| {
+            let rect = ui.max_rect();
+            let left = Rect::from_min_size(rect.min, vec2(SIDEBAR, rect.height()));
+            ui.painter().line_segment(
+                [left.right_top(), left.right_bottom()],
+                Stroke::new(1.0, t.border),
+            );
+            sidebar(app, ui, &t, left);
+            if app.ui.home_view.section == Section::Online {
+                // Your online files lay themselves out in the area (and scroll their own list).
+                let area = Rect::from_min_max(
+                    pos2(left.max.x + 40.0, rect.min.y + 24.0),
+                    rect.max - vec2(40.0, 24.0),
+                );
+                crate::online::section(app, ui, area, &t);
+                opened_join(app);
+                return;
+            }
+            let main = Rect::from_min_max(pos2(left.max.x, rect.min.y), rect.max);
+            ui.scope_builder(egui::UiBuilder::new().max_rect(main), |ui| {
+                egui::ScrollArea::vertical()
+                    .id_salt("home")
+                    .auto_shrink([false, false])
+                    .show(ui, |ui| {
+                        egui::Frame::NONE
+                            .inner_margin(egui::Margin::symmetric(40, 24))
+                            .show(ui, |ui| {
+                                ui.spacing_mut().item_spacing = vec2(GAP, 0.0);
+                                match app.ui.home_view.section {
+                                    Section::Templates => templates(app, ui, &t),
+                                    _ => recents(app, ui, &t),
+                                }
+                            });
+                    });
             });
         });
-    });
 }
 
 fn sidebar(app: &mut FigApp, ui: &mut Ui, t: &Tokens, left: Rect) {
     let mut y = left.min.y + 20.0;
-    icons::paint(ui.painter(), Rect::from_min_size(pos2(left.min.x + 16.0, y), vec2(20.0, 20.0)), Icon::Logo, ACCENT);
-    ui.painter().text(pos2(left.min.x + 44.0, y + 10.0), Align2::LEFT_CENTER, "FigCraft", semibold(14.0), t.text);
+    icons::paint(
+        ui.painter(),
+        Rect::from_min_size(pos2(left.min.x + 16.0, y), vec2(20.0, 20.0)),
+        Icon::Logo,
+        ACCENT,
+    );
+    ui.painter().text(
+        pos2(left.min.x + 44.0, y + 10.0),
+        Align2::LEFT_CENTER,
+        "FigCraft",
+        semibold(14.0),
+        t.text,
+    );
     y += 48.0;
     for (section, icon, label) in Section::ALL {
         let r = Rect::from_min_size(pos2(left.min.x + 8.0, y), vec2(SIDEBAR - 16.0, 32.0));
@@ -150,11 +228,26 @@ fn sidebar(app: &mut FigApp, ui: &mut Ui, t: &Tokens, left: Rect) {
         let current = app.ui.home_view.section == section;
         a11y::tab(&resp, tr(label), current);
         if current || resp.hovered() {
-            ui.painter().rect_filled(r, CornerRadius::same(5), if current { t.selected_row } else { t.hover });
+            ui.painter().rect_filled(
+                r,
+                CornerRadius::same(5),
+                if current { t.selected_row } else { t.hover },
+            );
         }
         focus_ring(ui, t, r, &resp, 5);
-        icons::paint(ui.painter(), Rect::from_min_size(pos2(r.min.x + 10.0, r.center().y - 8.0), vec2(16.0, 16.0)), icon, t.icon);
-        ui.painter().text(pos2(r.min.x + 36.0, r.center().y), Align2::LEFT_CENTER, tr(label), regular(12.0), t.text);
+        icons::paint(
+            ui.painter(),
+            Rect::from_min_size(pos2(r.min.x + 10.0, r.center().y - 8.0), vec2(16.0, 16.0)),
+            icon,
+            t.icon,
+        );
+        ui.painter().text(
+            pos2(r.min.x + 36.0, r.center().y),
+            Align2::LEFT_CENTER,
+            tr(label),
+            regular(12.0),
+            t.text,
+        );
         if resp.clicked() {
             app.ui.home_view.section = section;
         }
@@ -165,14 +258,28 @@ fn sidebar(app: &mut FigApp, ui: &mut Ui, t: &Tokens, left: Rect) {
 /// A ring around a card or row that has the keyboard.
 fn focus_ring(ui: &Ui, t: &Tokens, rect: Rect, resp: &Response, radius: u8) {
     if resp.has_focus() {
-        ui.painter().rect_stroke(rect, CornerRadius::same(radius), Stroke::new(2.0, t.focus), StrokeKind::Outside);
+        ui.painter().rect_stroke(
+            rect,
+            CornerRadius::same(radius),
+            Stroke::new(2.0, t.focus),
+            StrokeKind::Outside,
+        );
     }
 }
 
 /// A card's background and border (lit on hover, ringed with the keyboard on it).
 fn card_frame(ui: &Ui, t: &Tokens, rect: Rect, resp: &Response) {
-    ui.painter().rect_filled(rect, CornerRadius::same(8), if resp.hovered() { t.hover } else { t.panel });
-    ui.painter().rect_stroke(rect, CornerRadius::same(8), Stroke::new(1.0, t.border), StrokeKind::Inside);
+    ui.painter().rect_filled(
+        rect,
+        CornerRadius::same(8),
+        if resp.hovered() { t.hover } else { t.panel },
+    );
+    ui.painter().rect_stroke(
+        rect,
+        CornerRadius::same(8),
+        Stroke::new(1.0, t.border),
+        StrokeKind::Inside,
+    );
     focus_ring(ui, t, rect, resp, 8);
 }
 
@@ -183,7 +290,11 @@ fn heading(ui: &mut Ui, t: &Tokens, text: &str) {
 
 fn subheading(ui: &mut Ui, t: &Tokens, text: &str) {
     ui.add_space(28.0);
-    ui.label(egui::RichText::new(text).font(semibold(12.0)).color(t.text_secondary));
+    ui.label(
+        egui::RichText::new(text)
+            .font(semibold(12.0))
+            .color(t.text_secondary),
+    );
     ui.add_space(12.0);
 }
 
@@ -193,7 +304,10 @@ fn action_card(ui: &mut Ui, t: &Tokens, icon: Icon, title: &str, sub: &str) -> b
     a11y::button(&resp, title);
     // One line each inside the card; a long translation ends with an ellipsis, in full on hover.
     let text_w = r.width() - 72.0;
-    let (title_shown, sub_shown) = (widgets::elide_font(ui, title, text_w, semibold(12.0)), widgets::elide(ui, sub, text_w));
+    let (title_shown, sub_shown) = (
+        widgets::elide_font(ui, title, text_w, semibold(12.0)),
+        widgets::elide(ui, sub, text_w),
+    );
     if title_shown != title || sub_shown != sub {
         resp = resp.on_hover_text(format!("{title}\n{sub}"));
     }
@@ -201,8 +315,20 @@ fn action_card(ui: &mut Ui, t: &Tokens, icon: Icon, title: &str, sub: &str) -> b
     let ir = Rect::from_min_size(pos2(r.min.x + 16.0, r.center().y - 16.0), vec2(32.0, 32.0));
     ui.painter().rect_filled(ir, CornerRadius::same(6), ACCENT);
     icons::paint(ui.painter(), ir.shrink(8.0), icon, Color32::WHITE);
-    ui.painter().text(pos2(r.min.x + 60.0, r.center().y - 8.0), Align2::LEFT_CENTER, title_shown, semibold(12.0), t.text);
-    ui.painter().text(pos2(r.min.x + 60.0, r.center().y + 9.0), Align2::LEFT_CENTER, sub_shown, regular(11.0), t.text_secondary);
+    ui.painter().text(
+        pos2(r.min.x + 60.0, r.center().y - 8.0),
+        Align2::LEFT_CENTER,
+        title_shown,
+        semibold(12.0),
+        t.text,
+    );
+    ui.painter().text(
+        pos2(r.min.x + 60.0, r.center().y + 9.0),
+        Align2::LEFT_CENTER,
+        sub_shown,
+        regular(11.0),
+        t.text_secondary,
+    );
     resp.clicked()
 }
 
@@ -210,8 +336,20 @@ fn recents(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     heading(ui, t, tr("Recents"));
     let (mut new_file, mut open) = (false, false);
     ui.horizontal(|ui| {
-        new_file = action_card(ui, t, Icon::Plus, tr("New design file"), tr("Start from a blank canvas"));
-        open = action_card(ui, t, Icon::Page, tr("Open file"), tr("Open .figcraft, .svg or images"));
+        new_file = action_card(
+            ui,
+            t,
+            Icon::Plus,
+            tr("New design file"),
+            tr("Start from a blank canvas"),
+        );
+        open = action_card(
+            ui,
+            t,
+            Icon::Page,
+            tr("Open file"),
+            tr("Open .figcraft, .svg or images"),
+        );
     });
     if new_file {
         app.run("file.new", json!({}));
@@ -241,8 +379,14 @@ fn recents(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
         let mut switch = None;
         for (i, d) in app.session.docs.iter().enumerate() {
             let detail = d.path.as_deref().unwrap_or_default();
-            let row =
-                FileRow { mark: Some((Icon::Logo, ACCENT)), name: &d.doc.name, ink: t.text, detail, detail_size: 11.0, detail_ink: t.text_secondary };
+            let row = FileRow {
+                mark: Some((Icon::Logo, ACCENT)),
+                name: &d.doc.name,
+                ink: t.text,
+                detail,
+                detail_size: 11.0,
+                detail_ink: t.text_secondary,
+            };
             if listed(ui, t, ui.id().with(("open", d.uid)), 36.0, &row) {
                 switch = Some(i);
             }
@@ -267,8 +411,18 @@ fn recents(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     subheading(ui, t, tr("Recent files"));
     let mut open_path = None;
     for p in recents.iter().take(12) {
-        let name = std::path::Path::new(p).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or_else(|| p.clone());
-        let row = FileRow { mark: None, name: &name, ink: t.text, detail: p, detail_size: 10.0, detail_ink: t.text_tertiary };
+        let name = std::path::Path::new(p)
+            .file_name()
+            .map(|f| f.to_string_lossy().to_string())
+            .unwrap_or_else(|| p.clone());
+        let row = FileRow {
+            mark: None,
+            name: &name,
+            ink: t.text,
+            detail: p,
+            detail_size: 10.0,
+            detail_ink: t.text_tertiary,
+        };
         if listed(ui, t, ui.id().with(("recent", p.as_str())), 32.0, &row) {
             open_path = Some(p.clone());
         }
@@ -283,7 +437,12 @@ fn recents(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
 /// The file joined from the home screen (a code, or one of your online files) opened in a tab of
 /// its own: show it. (A join that was left is forgotten.)
 fn opened_join(app: &mut FigApp) {
-    match app.ui.live.home_join.map(|id| app.session.live.get(id).map(figcraft_engine::live::Live::syncing)) {
+    match app.ui.live.home_join.map(|id| {
+        app.session
+            .live
+            .get(id)
+            .map(figcraft_engine::live::Live::syncing)
+    }) {
         Some(Some(true)) => {
             app.ui.live.home_join = None;
             app.ui.home = false;
@@ -300,10 +459,20 @@ fn getting_started(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     let columns = if width >= 720.0 { 3 } else { 1 };
     let (cell_w, cell_h) = ((width - 32.0) / columns as f32, 62.0);
     let rows = TIPS.len().div_ceil(columns);
-    let (rect, _) = ui.allocate_exact_size(vec2(width, 52.0 + rows as f32 * cell_h + 8.0), Sense::hover());
+    let (rect, _) = ui.allocate_exact_size(
+        vec2(width, 52.0 + rows as f32 * cell_h + 8.0),
+        Sense::hover(),
+    );
     a11y::container_bounds(ui, rect);
-    ui.painter().rect_filled(rect, CornerRadius::same(8), t.field);
-    ui.painter().text(rect.min + vec2(16.0, 24.0), Align2::LEFT_CENTER, tr("Getting started"), semibold(13.0), t.text);
+    ui.painter()
+        .rect_filled(rect, CornerRadius::same(8), t.field);
+    ui.painter().text(
+        rect.min + vec2(16.0, 24.0),
+        Align2::LEFT_CENTER,
+        tr("Getting started"),
+        semibold(13.0),
+        t.text,
+    );
     let close = Rect::from_min_size(pos2(rect.max.x - 36.0, rect.min.y + 12.0), vec2(24.0, 24.0));
     if widgets::icon_button_at(
         ui,
@@ -317,29 +486,72 @@ fn getting_started(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     }
     for (i, (title, line, command)) in TIPS.into_iter().enumerate() {
         let cell = Rect::from_min_size(
-            rect.min + vec2(16.0 + (i % columns) as f32 * cell_w, 48.0 + (i / columns) as f32 * cell_h),
+            rect.min
+                + vec2(
+                    16.0 + (i % columns) as f32 * cell_w,
+                    48.0 + (i / columns) as f32 * cell_h,
+                ),
             vec2(cell_w - 16.0, cell_h),
         );
         let badge = Rect::from_min_size(cell.min + vec2(0.0, 2.0), vec2(20.0, 20.0));
-        ui.painter().rect_filled(badge, CornerRadius::same(10), t.panel);
-        ui.painter().text(badge.center(), Align2::CENTER_CENTER, (i + 1).to_string(), semibold(10.0), t.text_secondary);
+        ui.painter()
+            .rect_filled(badge, CornerRadius::same(10), t.panel);
+        ui.painter().text(
+            badge.center(),
+            Align2::CENTER_CENTER,
+            (i + 1).to_string(),
+            semibold(10.0),
+            t.text_secondary,
+        );
         let x = cell.min.x + 30.0;
-        let title_end = ui.painter().text(pos2(x, cell.min.y + 12.0), Align2::LEFT_CENTER, tr(title), semibold(12.0), t.text).max.x;
+        let title_end = ui
+            .painter()
+            .text(
+                pos2(x, cell.min.y + 12.0),
+                Align2::LEFT_CENTER,
+                tr(title),
+                semibold(12.0),
+                t.text,
+            )
+            .max
+            .x;
         if let Some(key) = shortcut(command) {
-            ui.painter().text(pos2(title_end + 8.0, cell.min.y + 12.0), Align2::LEFT_CENTER, key, regular(11.0), t.text_tertiary);
+            ui.painter().text(
+                pos2(title_end + 8.0, cell.min.y + 12.0),
+                Align2::LEFT_CENTER,
+                key,
+                regular(11.0),
+                t.text_tertiary,
+            );
         }
-        let galley = lines(ui, tr(line), regular(11.0), t.text_secondary, cell.max.x - x, 2);
-        ui.painter().galley(pos2(x, cell.min.y + 24.0), galley, t.text_secondary);
+        let galley = lines(
+            ui,
+            tr(line),
+            regular(11.0),
+            t.text_secondary,
+            cell.max.x - x,
+            2,
+        );
+        ui.painter()
+            .galley(pos2(x, cell.min.y + 24.0), galley, t.text_secondary);
     }
 }
 
 /// A command's shortcut as this platform writes it, as the keymap has it now.
 pub(crate) fn shortcut(command: &str) -> Option<String> {
-    crate::shortcuts::shortcut(command).map(|key| figcraft_engine::keymap::display(key, crate::shortcuts::platform()))
+    crate::shortcuts::shortcut(command)
+        .map(|key| figcraft_engine::keymap::display(key, crate::shortcuts::platform()))
 }
 
 /// `text` wrapped at `width`, at most `rows` lines (the last one ends with an ellipsis).
-fn lines(ui: &Ui, text: &str, font: egui::FontId, color: Color32, width: f32, rows: usize) -> std::sync::Arc<egui::Galley> {
+fn lines(
+    ui: &Ui,
+    text: &str,
+    font: egui::FontId,
+    color: Color32,
+    width: f32,
+    rows: usize,
+) -> std::sync::Arc<egui::Galley> {
     let mut job = egui::text::LayoutJob::simple(text.to_string(), font, color, width.max(1.0));
     job.wrap.max_rows = rows;
     ui.fonts_mut(|f| f.layout_job(job))
@@ -350,17 +562,32 @@ fn matches(template: &Template, query: &str, kind: Option<Kind>) -> bool {
     let has = |s: &str| s.to_lowercase().contains(&q);
     kind.is_none_or(|k| k == template.kind)
         && (q.is_empty()
-            || [template.name, template.description, template.kind.label()].into_iter().any(|s| has(s) || has(tr(s)))
+            || [template.name, template.description, template.kind.label()]
+                .into_iter()
+                .any(|s| has(s) || has(tr(s)))
             || has(template.size))
 }
 
 fn templates(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     heading(ui, t, tr("Templates"));
     ui.horizontal(|ui| {
-        let search = widgets::text_input(ui, Id::new("home_template_search"), &mut app.ui.home_view.query, 260.0, tr("Search templates"));
+        let search = widgets::text_input(
+            ui,
+            Id::new("home_template_search"),
+            &mut app.ui.home_view.query,
+            260.0,
+            tr("Search templates"),
+        );
         a11y::text(&search, tr("Search templates"), &app.ui.home_view.query);
-        let labels: Vec<&str> = std::iter::once(tr("All")).chain(Kind::ALL.iter().map(|k| tr(k.label()))).collect();
-        let active = app.ui.home_view.kind.and_then(|k| Kind::ALL.iter().position(|x| *x == k)).map_or(0, |i| i + 1);
+        let labels: Vec<&str> = std::iter::once(tr("All"))
+            .chain(Kind::ALL.iter().map(|k| tr(k.label())))
+            .collect();
+        let active = app
+            .ui
+            .home_view
+            .kind
+            .and_then(|k| Kind::ALL.iter().position(|x| *x == k))
+            .map_or(0, |i| i + 1);
         ui.scope(|ui| {
             ui.set_max_width((labels.len() as f32 * 124.0).min(ui.available_width()));
             if let Some(i) = widgets::segmented_text(ui, &labels, active) {
@@ -370,12 +597,23 @@ fn templates(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
     });
     ui.add_space(24.0);
     let (query, kind) = (app.ui.home_view.query.clone(), app.ui.home_view.kind);
-    let shown: Vec<&Template> = TEMPLATES.iter().filter(|x| matches(x, &query, kind)).collect();
+    let shown: Vec<&Template> = TEMPLATES
+        .iter()
+        .filter(|x| matches(x, &query, kind))
+        .collect();
     if shown.is_empty() {
         ui.add_space(24.0);
-        ui.label(egui::RichText::new(tr("No templates match your search")).font(semibold(13.0)).color(t.text));
+        ui.label(
+            egui::RichText::new(tr("No templates match your search"))
+                .font(semibold(13.0))
+                .color(t.text),
+        );
         ui.add_space(6.0);
-        ui.label(egui::RichText::new(tr("Try another word, or look at every kind.")).font(regular(12.0)).color(t.text_secondary));
+        ui.label(
+            egui::RichText::new(tr("Try another word, or look at every kind."))
+                .font(regular(12.0))
+                .color(t.text_secondary),
+        );
         ui.add_space(14.0);
         if widgets::button(ui, tr("Show all templates"), false, true).clicked() {
             app.ui.home_view.query.clear();
@@ -390,19 +628,27 @@ fn templates(app: &mut FigApp, ui: &mut Ui, t: &Tokens) {
 fn template_grid(app: &mut FigApp, ui: &mut Ui, t: &Tokens, list: &[&Template]) {
     let columns = (((ui.available_width() + GAP) / (CARD_W + GAP)).floor() as usize).max(1);
     let dark = ui.visuals().dark_mode;
-    let mut thumbs: Thumbs = ui.data(|d| d.get_temp(Id::new("template_thumbs"))).unwrap_or_default();
+    let mut thumbs: Thumbs = ui
+        .data(|d| d.get_temp(Id::new("template_thumbs")))
+        .unwrap_or_default();
     let mut chosen = None;
     let mut rendered = false;
     for row in list.chunks(columns) {
         ui.horizontal(|ui| {
             for template in row {
                 let key = (template.id, dark);
-                if !thumbs.0.contains_key(&key) && ui.is_rect_visible(Rect::from_min_size(ui.cursor().min, vec2(CARD_W, CARD_H))) {
+                if !thumbs.0.contains_key(&key)
+                    && ui
+                        .is_rect_visible(Rect::from_min_size(ui.cursor().min, vec2(CARD_W, CARD_H)))
+                {
                     if rendered {
                         // One a frame keeps the screen moving; the rest follow.
                         ui.ctx().request_repaint();
                     } else {
-                        thumbs.0.insert(key, thumbnail(ui.ctx(), template, app.session.new_page_background()));
+                        thumbs.0.insert(
+                            key,
+                            thumbnail(ui.ctx(), template, app.session.new_page_background()),
+                        );
                         rendered = true;
                     }
                 }
@@ -415,7 +661,12 @@ fn template_grid(app: &mut FigApp, ui: &mut Ui, t: &Tokens, list: &[&Template]) 
     }
     ui.data_mut(|d| d.insert_temp(Id::new("template_thumbs"), thumbs));
     if let Some(template) = chosen
-        && app.run("file.newFromTemplate", json!({"template": template.id, "name": tr(template.name)})).is_some()
+        && app
+            .run(
+                "file.newFromTemplate",
+                json!({"template": template.id, "name": tr(template.name)}),
+            )
+            .is_some()
     {
         app.ui.home = false;
     }
@@ -427,7 +678,12 @@ fn template_card(ui: &mut Ui, t: &Tokens, template: &Template, thumb: Option<&Th
     a11y::button(&resp, &format!("{name}: {description}"));
     card_frame(ui, t, r, &resp);
     let picture = Rect::from_min_size(r.min, vec2(CARD_W, THUMB_H)).shrink(1.0);
-    let top = CornerRadius { nw: 7, ne: 7, sw: 0, se: 0 };
+    let top = CornerRadius {
+        nw: 7,
+        ne: 7,
+        sw: 0,
+        se: 0,
+    };
     match thumb {
         Some(thumb) => {
             ui.painter().rect_filled(picture, top, thumb.page);
@@ -435,21 +691,47 @@ fn template_card(ui: &mut Ui, t: &Tokens, template: &Template, thumb: Option<&Th
             let inner = picture.shrink(10.0);
             let fit = (inner.width() / size.x).min(inner.height() / size.y);
             let image = Rect::from_center_size(inner.center(), size * fit);
-            ui.painter().image(thumb.texture.id(), image, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+            ui.painter().image(
+                thumb.texture.id(),
+                image,
+                Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+                Color32::WHITE,
+            );
         }
         None => {
             ui.painter().rect_filled(picture, top, t.field);
-            icons::paint(ui.painter(), Rect::from_center_size(picture.center(), vec2(20.0, 20.0)), Icon::Frame, t.icon_secondary);
+            icons::paint(
+                ui.painter(),
+                Rect::from_center_size(picture.center(), vec2(20.0, 20.0)),
+                Icon::Frame,
+                t.icon_secondary,
+            );
         }
     }
-    ui.painter().line_segment([picture.left_bottom(), picture.right_bottom()], Stroke::new(1.0, t.border));
+    ui.painter().line_segment(
+        [picture.left_bottom(), picture.right_bottom()],
+        Stroke::new(1.0, t.border),
+    );
     let (x, w) = (r.min.x + 14.0, CARD_W - 28.0);
     let y = picture.max.y + 20.0;
-    ui.painter().text(pos2(x, y), Align2::LEFT_CENTER, widgets::elide_font(ui, name, w, semibold(12.0)), semibold(12.0), t.text);
+    ui.painter().text(
+        pos2(x, y),
+        Align2::LEFT_CENTER,
+        widgets::elide_font(ui, name, w, semibold(12.0)),
+        semibold(12.0),
+        t.text,
+    );
     let galley = lines(ui, description, regular(11.0), t.text_secondary, w, 2);
-    ui.painter().galley(pos2(x, y + 11.0), galley, t.text_secondary);
+    ui.painter()
+        .galley(pos2(x, y + 11.0), galley, t.text_secondary);
     let tag = format!("{} · {}", tr(template.kind.label()), template.size);
-    ui.painter().text(pos2(x, r.max.y - 15.0), Align2::LEFT_CENTER, widgets::elide_font(ui, &tag, w, regular(10.0)), regular(10.0), t.text_tertiary);
+    ui.painter().text(
+        pos2(x, r.max.y - 15.0),
+        Align2::LEFT_CENTER,
+        widgets::elide_font(ui, &tag, w, regular(10.0)),
+        regular(10.0),
+        t.text_tertiary,
+    );
     resp.clicked()
 }
 
@@ -465,26 +747,52 @@ struct Thumb {
 struct Thumbs(BTreeMap<(&'static str, bool), Option<Thumb>>);
 
 /// Build `template` and render the top of its first page to fit a card.
-fn thumbnail(ctx: &egui::Context, template: &Template, background: figcraft_color::Color) -> Option<Thumb> {
+fn thumbnail(
+    ctx: &egui::Context,
+    template: &Template,
+    background: figcraft_color::Color,
+) -> Option<Thumb> {
     let doc = template.build(background).ok()?;
     let frames = doc.node(doc.first_page()?)?.children.clone();
-    let bounds = frames.iter().filter_map(|id| figcraft_render::export_bounds(&doc, *id)).reduce(|a, b| a.union(b))?;
+    let bounds = frames
+        .iter()
+        .filter_map(|id| figcraft_render::export_bounds(&doc, *id))
+        .reduce(|a, b| a.union(b))?;
     if !(bounds.width() > 0.0 && bounds.height() > 0.0) {
         return None;
     }
     // A page much taller than a card shows its top, as wide as the card.
     let (w, h) = (f64::from(CARD_W - 22.0), f64::from(THUMB_H - 22.0));
-    let area = figcraft_geom::Rect::new(bounds.x0, bounds.y0, bounds.x1, bounds.y1.min(bounds.y0 + bounds.width() * h / w * 1.5));
+    let area = figcraft_geom::Rect::new(
+        bounds.x0,
+        bounds.y0,
+        bounds.x1,
+        bounds.y1.min(bounds.y0 + bounds.width() * h / w * 1.5),
+    );
     let scale = (w / area.width()).min(h / area.height()) * f64::from(ctx.pixels_per_point());
     let pix = figcraft_render::render_area(&doc, &frames, area, scale.min(1.0))?;
     let image = crate::render_worker::screen_image(&pix, doc.color_profile);
-    let texture = ctx.load_texture(format!("template-thumb-{}", template.id), image, egui::TextureOptions::LINEAR);
-    Some(Thumb { texture, page: crate::theme::c32(background) })
+    let texture = ctx.load_texture(
+        format!("template-thumb-{}", template.id),
+        image,
+        egui::TextureOptions::LINEAR,
+    );
+    Some(Thumb {
+        texture,
+        page: crate::theme::c32(background),
+    })
 }
 
 /// Tests: the templates whose pictures are cached for the light or dark theme.
 #[cfg(test)]
 pub(crate) fn cached_thumbnails(ctx: &egui::Context, dark: bool) -> Vec<&'static str> {
-    let thumbs: Thumbs = ctx.data(|d| d.get_temp(Id::new("template_thumbs"))).unwrap_or_default();
-    thumbs.0.iter().filter(|((_, d), thumb)| *d == dark && thumb.is_some()).map(|((id, _), _)| *id).collect()
+    let thumbs: Thumbs = ctx
+        .data(|d| d.get_temp(Id::new("template_thumbs")))
+        .unwrap_or_default();
+    thumbs
+        .0
+        .iter()
+        .filter(|((_, d), thumb)| *d == dark && thumb.is_some())
+        .map(|((id, _), _)| *id)
+        .collect()
 }

@@ -24,7 +24,9 @@ pub struct ScreenshotControl {
 
 impl ScreenshotControl {
     pub fn new() -> Self {
-        Self { pending: CaptureRequest::None }
+        Self {
+            pending: CaptureRequest::None,
+        }
     }
 
     pub fn request(&mut self, req: CaptureRequest) {
@@ -63,7 +65,7 @@ pub fn capture_texture(
         _ => {
             tracing::warn!(?format, "capture_texture: unsupported texture format");
             return None;
-        },
+        }
     };
 
     let bytes_per_row = align_up(width as u64 * 4, 256);
@@ -94,7 +96,11 @@ pub fn capture_texture(
                 rows_per_image: Some(height),
             },
         },
-        wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
     );
     queue.submit([encoder.finish()]);
 
@@ -130,7 +136,11 @@ pub fn capture_texture(
     }
     staging.unmap();
 
-    Some(CapturedFrame { width, height, rgba })
+    Some(CapturedFrame {
+        width,
+        height,
+        rgba,
+    })
 }
 
 pub fn save_png_async(path: PathBuf, frame: CapturedFrame, force_opaque: bool) {
@@ -161,12 +171,17 @@ pub fn write_png(path: &Path, mut frame: CapturedFrame, force_opaque: bool) -> s
     encoder.set_depth(png::BitDepth::Eight);
 
     let mut png_writer = encoder.write_header().map_err(std::io::Error::other)?;
-    png_writer.write_image_data(&frame.rgba).map_err(std::io::Error::other)?;
+    png_writer
+        .write_image_data(&frame.rgba)
+        .map_err(std::io::Error::other)?;
 
     Ok(())
 }
 
 pub fn timestamped_path(prefix: &str) -> PathBuf {
-    let millis = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0);
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
     gecko::paths::resolve("screenshots").join(format!("{prefix}_{millis}.png"))
 }

@@ -30,7 +30,8 @@ fn opening_another_library_drops_the_old_librarys_cached_panels() {
     // the grid's own list is cached too
     assert!(!app.session.visible().is_empty());
 
-    app.run("app.openLibrary", json!({"path": b.to_string_lossy()})).unwrap();
+    app.run("app.openLibrary", json!({"path": b.to_string_lossy()}))
+        .unwrap();
     assert!(app.session.catalog.is_empty(), "library B is empty");
     let (cat, caches) = (&app.session.catalog, &mut app.caches);
     assert_eq!(caches.counts(cat).total, 0, "All Photos count");
@@ -59,7 +60,10 @@ fn recent_submenu(app: &LightcraftApp) -> Vec<crate::menubar::MenuNode> {
     use crate::menubar::MenuNode;
     let bar = crate::menubar::menu_bar(app);
     let file = &bar.iter().find(|(t, _)| t == "File").unwrap().1;
-    match file.iter().find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == "Open Recent Library")) {
+    match file
+        .iter()
+        .find(|n| matches!(n, MenuNode::Submenu { label, .. } if label == "Open Recent Library"))
+    {
         Some(MenuNode::Submenu { children, .. }) => children.clone(),
         _ => panic!("no Open Recent Library submenu in {file:?}"),
     }
@@ -74,23 +78,46 @@ fn new_library_creates_opens_and_is_remembered_and_named() {
     app.library_changed(&egui::Context::default());
     assert_eq!(app.window_title(), "LightCraft — first");
 
-    let r = app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": "Client A"})).unwrap();
+    let r = app
+        .run(
+            "app.newLibrary",
+            json!({"path": dir.to_string_lossy(), "name": "Client A"}),
+        )
+        .unwrap();
     assert_eq!(r["name"], "Client A");
     let a = dir.join("Client A");
     assert_eq!(app.session.library.as_ref().unwrap().dir, a);
-    assert!(lightcraft_engine::library::is_library(&a), "the catalog is written");
+    assert!(
+        lightcraft_engine::library::is_library(&a),
+        "the catalog is written"
+    );
     assert_eq!(app.window_title(), "LightCraft — Client A");
     assert_eq!(app.ui.settings.library_path, a.to_string_lossy());
 
     // a second New Library at the same place is refused and the current one stays open
-    let e = app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": "Client A"})).unwrap_err();
+    let e = app
+        .run(
+            "app.newLibrary",
+            json!({"path": dir.to_string_lossy(), "name": "Client A"}),
+        )
+        .unwrap_err();
     assert!(e.contains("library here already"), "{e}");
-    let e = app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": "../x"})).unwrap_err();
+    let e = app
+        .run(
+            "app.newLibrary",
+            json!({"path": dir.to_string_lossy(), "name": "../x"}),
+        )
+        .unwrap_err();
     assert!(e.contains("library name"), "{e}");
     assert_eq!(app.session.library.as_ref().unwrap().dir, a);
 
     let list = app.run("app.recentLibraries", json!({})).unwrap();
-    let names: Vec<_> = list.as_array().unwrap().iter().map(|r| r["name"].as_str().unwrap().to_string()).collect();
+    let names: Vec<_> = list
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["name"].as_str().unwrap().to_string())
+        .collect();
     assert_eq!(names, ["Client A", "first"]);
     assert_eq!(list[0]["open"], true);
     assert_eq!(list[1]["exists"], true);
@@ -100,8 +127,15 @@ fn new_library_creates_opens_and_is_remembered_and_named() {
     let first = items
         .iter()
         .find_map(|n| match n {
-            crate::menubar::MenuNode::Item { id, params, enabled, .. }
-                if id == "app.openLibrary" && params["path"].as_str().is_some_and(|p| p.ends_with("first")) =>
+            crate::menubar::MenuNode::Item {
+                id,
+                params,
+                enabled,
+                ..
+            } if id == "app.openLibrary"
+                && params["path"]
+                    .as_str()
+                    .is_some_and(|p| p.ends_with("first")) =>
             {
                 assert!(*enabled);
                 Some(params.clone())
@@ -122,7 +156,13 @@ fn new_library_from_the_menu_asks_for_a_name_then_a_location() {
     let loc = dir.to_string_lossy().into_owned();
     app.services.pick_folder = Some(Box::new(move || Some(loc.clone())));
     app.run("app.newLibrary", json!({})).unwrap();
-    let Some(crate::state::Dialog::TextPrompt { value, command, key, .. }) = app.ui.dialog.as_mut() else {
+    let Some(crate::state::Dialog::TextPrompt {
+        value,
+        command,
+        key,
+        ..
+    }) = app.ui.dialog.as_mut()
+    else {
         panic!("no name prompt: {:?}", app.ui.dialog)
     };
     assert_eq!(value, lightcraft_engine::library::DEFAULT_NAME);
@@ -130,8 +170,12 @@ fn new_library_from_the_menu_asks_for_a_name_then_a_location() {
     *value = "Wedding".into();
     // what the dialog's OK runs
     app.ui.dialog = None;
-    app.run("app.newLibrary", json!({"name": "Wedding"})).unwrap();
-    assert_eq!(app.session.library.as_ref().unwrap().dir, dir.join("Wedding"));
+    app.run("app.newLibrary", json!({"name": "Wedding"}))
+        .unwrap();
+    assert_eq!(
+        app.session.library.as_ref().unwrap().dir,
+        dir.join("Wedding")
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }
 
@@ -147,16 +191,27 @@ fn missing_recent_libraries_are_greyed_out_and_pruned_and_the_list_is_capped() {
         .iter()
         .any(|n| matches!(n, crate::menubar::MenuNode::Item { params, enabled: false, .. } if params["path"] == gone.as_str()));
     assert!(disabled, "missing library greyed out");
-    let e = app.run("app.openLibrary", json!({"path": gone})).unwrap_err();
+    let e = app
+        .run("app.openLibrary", json!({"path": gone}))
+        .unwrap_err();
     assert!(e.contains("no longer there"), "{e}");
-    assert!(!std::path::Path::new(&gone).exists(), "no empty library created in its place");
+    assert!(
+        !std::path::Path::new(&gone).exists(),
+        "no empty library created in its place"
+    );
     assert!(app.ui.settings.recent_libraries.is_empty());
     assert!(app.session.library.as_ref().unwrap().dir.ends_with("first"));
 
     for i in 0..20 {
-        crate::panels::settings::remember_library(&mut app.ui.settings.recent_libraries, &format!("/x/{i}"));
+        crate::panels::settings::remember_library(
+            &mut app.ui.settings.recent_libraries,
+            &format!("/x/{i}"),
+        );
     }
-    assert_eq!(app.ui.settings.recent_libraries.len(), crate::state::RECENT_LIBRARIES);
+    assert_eq!(
+        app.ui.settings.recent_libraries.len(),
+        crate::state::RECENT_LIBRARIES
+    );
     assert_eq!(app.ui.settings.recent_libraries[0], "/x/19");
     app.run("app.clearRecentLibraries", json!({})).unwrap();
     assert!(app.ui.settings.recent_libraries.is_empty());
@@ -169,18 +224,32 @@ fn missing_recent_libraries_are_greyed_out_and_pruned_and_the_list_is_capped() {
 fn switching_to_a_locked_library_keeps_the_current_one_open() {
     let dir = temp("lockedlib");
     let mut app = app_in(&dir);
-    app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": "Other"})).unwrap();
-    app.run("app.openLibrary", json!({"path": dir.join("first").to_string_lossy()})).unwrap();
+    app.run(
+        "app.newLibrary",
+        json!({"path": dir.to_string_lossy(), "name": "Other"}),
+    )
+    .unwrap();
+    app.run(
+        "app.openLibrary",
+        json!({"path": dir.join("first").to_string_lossy()}),
+    )
+    .unwrap();
     // "another program" holds Other's lock
     let other = dir.join("Other");
     let held = lightcraft_catalog::LibraryLock::acquire(&other, "someone else").unwrap();
-    let e = app.run("app.openLibrary", json!({"path": other.to_string_lossy()})).unwrap_err();
+    let e = app
+        .run("app.openLibrary", json!({"path": other.to_string_lossy()}))
+        .unwrap_err();
     assert!(e.contains("already open"), "{e}");
-    assert!(app.session.library.as_ref().unwrap().dir.ends_with("first"), "the current library stays");
+    assert!(
+        app.session.library.as_ref().unwrap().dir.ends_with("first"),
+        "the current library stays"
+    );
     assert!(app.session.library.as_ref().unwrap().on_disk);
     assert!(app.ui.settings.library_path.ends_with("first"));
     drop(held);
-    app.run("app.openLibrary", json!({"path": other.to_string_lossy()})).unwrap();
+    app.run("app.openLibrary", json!({"path": other.to_string_lossy()}))
+        .unwrap();
     assert!(app.session.library.as_ref().unwrap().dir.ends_with("Other"));
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -191,12 +260,27 @@ fn switching_to_a_locked_library_keeps_the_current_one_open() {
 fn library_names_must_work_as_folder_names_on_every_system() {
     let dir = temp("libnames");
     let mut app = app_in(&dir);
-    for bad in ["a<b", "a>b", "a:b", "a\"b", "a/b", "a\\b", "a|b", "a?b", "a*b", "name.", "..", " ", "a\u{7}"] {
-        let e = app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": bad})).unwrap_err();
+    for bad in [
+        "a<b", "a>b", "a:b", "a\"b", "a/b", "a\\b", "a|b", "a?b", "a*b", "name.", "..", " ",
+        "a\u{7}",
+    ] {
+        let e = app
+            .run(
+                "app.newLibrary",
+                json!({"path": dir.to_string_lossy(), "name": bad}),
+            )
+            .unwrap_err();
         assert!(e.contains("library name"), "{bad:?}: {e}");
     }
     assert!(app.session.library.as_ref().unwrap().dir.ends_with("first"));
-    app.run("app.newLibrary", json!({"path": dir.to_string_lossy(), "name": "  Trip 2026  "})).unwrap();
-    assert_eq!(app.session.library.as_ref().unwrap().dir, dir.join("Trip 2026"));
+    app.run(
+        "app.newLibrary",
+        json!({"path": dir.to_string_lossy(), "name": "  Trip 2026  "}),
+    )
+    .unwrap();
+    assert_eq!(
+        app.session.library.as_ref().unwrap().dir,
+        dir.join("Trip 2026")
+    );
     let _ = std::fs::remove_dir_all(&dir);
 }

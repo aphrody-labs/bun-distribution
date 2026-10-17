@@ -119,8 +119,13 @@ impl Default for Options {
 
 fn size(text: Option<String>) -> Result<(u32, u32), String> {
     let text = text.ok_or("missing WxH")?;
-    let (w, h) = text.split_once(['x', 'X']).ok_or_else(|| format!("bad size {text}"))?;
-    let (w, h) = (w.parse::<u32>().map_err(|e| e.to_string())?, h.parse::<u32>().map_err(|e| e.to_string())?);
+    let (w, h) = text
+        .split_once(['x', 'X'])
+        .ok_or_else(|| format!("bad size {text}"))?;
+    let (w, h) = (
+        w.parse::<u32>().map_err(|e| e.to_string())?,
+        h.parse::<u32>().map_err(|e| e.to_string())?,
+    );
     Ok((w & !1, h & !1))
 }
 
@@ -142,19 +147,35 @@ impl Options {
                     sized = true;
                 }
                 "--fps" => o.fps = value()?.parse().map_err(|e| format!("--fps: {e}"))?,
-                "--bitrate" => o.bitrate_kbps = value()?.parse().map_err(|e| format!("--bitrate: {e}"))?,
+                "--bitrate" => {
+                    o.bitrate_kbps = value()?.parse().map_err(|e| format!("--bitrate: {e}"))?
+                }
                 "--codec" => {
                     let v = value()?;
-                    o.codec = if v == "auto" { None } else { Some(Codec::parse(&v).ok_or_else(|| format!("unknown codec {v}"))?) };
+                    o.codec = if v == "auto" {
+                        None
+                    } else {
+                        Some(Codec::parse(&v).ok_or_else(|| format!("unknown codec {v}"))?)
+                    };
                 }
-                "--packet-size" => o.packet_size = value()?.parse().map_err(|e| format!("--packet-size: {e}"))?,
+                "--packet-size" => {
+                    o.packet_size = value()?
+                        .parse()
+                        .map_err(|e| format!("--packet-size: {e}"))?
+                }
                 "--encrypt-video" => o.encrypt_video = true,
                 "--window" => o.window = Some(size(Some(value()?))?),
                 "--vsync" => o.vsync = true,
-                "--sharpness" => o.sharpness = value()?.parse().map_err(|e| format!("--sharpness: {e}"))?,
+                "--sharpness" => {
+                    o.sharpness = value()?.parse().map_err(|e| format!("--sharpness: {e}"))?
+                }
                 "--no-hud" => o.hud = false,
-                "--seconds" => o.seconds = Some(value()?.parse().map_err(|e| format!("--seconds: {e}"))?),
-                "--loss" => o.loss_percent = value()?.parse().map_err(|e| format!("--loss: {e}"))?,
+                "--seconds" => {
+                    o.seconds = Some(value()?.parse().map_err(|e| format!("--seconds: {e}"))?)
+                }
+                "--loss" => {
+                    o.loss_percent = value()?.parse().map_err(|e| format!("--loss: {e}"))?
+                }
                 "--fec" => o.fec_percent = value()?.parse().map_err(|e| format!("--fec: {e}"))?,
                 flag if flag.starts_with("--") => return Err(format!("unknown option {flag}")),
                 host => o.host = Some(host.to_string()),
@@ -181,7 +202,11 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
 
     let opts = Options::parse(args)?;
     if opts.loopback {
-        return run(session::StreamPlugin::new(opts, Codec::H264, session::Feed::Loopback));
+        return run(session::StreamPlugin::new(
+            opts,
+            Codec::H264,
+            session::Feed::Loopback,
+        ));
     }
     let address = opts.host.clone().unwrap();
     let identity = http::Identity::load_or_create(&http::config_dir())?;
@@ -194,7 +219,9 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
     if opts.pair || host.server_cert.is_none() || !info.paired {
         let digits = http::random::<4>();
         let pin: String = digits.iter().map(|d| char::from(b'0' + d % 10)).collect();
-        println!("pairing: enter PIN {pin} on the host (Sunshine web UI > PIN, or the Wolf pairing URL from its log)");
+        println!(
+            "pairing: enter PIN {pin} on the host (Sunshine web UI > PIN, or the Wolf pairing URL from its log)"
+        );
         host.pair(&identity, &pin, "bun-engine")?;
         println!("paired with {}", host.address);
         if opts.pair {
@@ -236,8 +263,18 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
     });
     let rikey = http::random::<16>();
     let rikey_id = i32::from_be_bytes(http::random::<4>());
-    println!("launching {} ({}) at {}x{}@{}", app.0, app.1, opts.width, opts.height, opts.fps);
-    let url = host.launch(&identity, &info, app.1, (opts.width, opts.height, opts.fps), &rikey, rikey_id)?;
+    println!(
+        "launching {} ({}) at {}x{}@{}",
+        app.0, app.1, opts.width, opts.height, opts.fps
+    );
+    let url = host.launch(
+        &identity,
+        &info,
+        app.1,
+        (opts.width, opts.height, opts.fps),
+        &rikey,
+        rikey_id,
+    )?;
     let mut rtsp = rtsp::RtspClient::new(&url, &host.address);
     let mut config = rtsp::StreamConfig {
         width: opts.width,
@@ -283,7 +320,10 @@ pub fn main(args: impl Iterator<Item = String>) -> Result<(), String> {
         control: tx,
         control_status: status,
     };
-    let opts = Options { packet_size: config.packet_size, ..opts };
+    let opts = Options {
+        packet_size: config.packet_size,
+        ..opts
+    };
     let result = run(session::StreamPlugin::new(opts, config.codec, feed));
     let _ = control_thread.join();
     result
@@ -302,7 +342,11 @@ fn run(plugin: session::StreamPlugin) -> Result<(), String> {
     #[derive(Resource)]
     struct Failure(Arc<Mutex<Option<String>>>);
 
-    fn collect(mut exits: MessageReader<AppExit>, engine: Res<crate::runtime::EngineExit>, sink: Res<Failure>) {
+    fn collect(
+        mut exits: MessageReader<AppExit>,
+        engine: Res<crate::runtime::EngineExit>,
+        sink: Res<Failure>,
+    ) {
         if exits.read().next().is_some() && engine.failure.is_some() {
             *sink.0.lock().unwrap() = engine.failure.clone();
         }
@@ -326,5 +370,8 @@ fn run(plugin: session::StreamPlugin) -> Result<(), String> {
 
 #[cfg(not(windows))]
 pub fn main(_args: impl Iterator<Item = String>) -> Result<(), String> {
-    Err("bun-engine stream needs the Windows hardware decoder path (Media Foundation + D3D12)".into())
+    Err(
+        "bun-engine stream needs the Windows hardware decoder path (Media Foundation + D3D12)"
+            .into(),
+    )
 }

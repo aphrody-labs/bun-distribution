@@ -10,7 +10,10 @@ use crate::params::id_of;
 use crate::proto_run::{branch, literal, set_mode, set_variable};
 
 fn var_id(doc: &Document, name: &str) -> String {
-    doc.variables.get(name).map(|v| v.id.clone()).unwrap_or_default()
+    doc.variables
+        .get(name)
+        .map(|v| v.id.clone())
+        .unwrap_or_default()
 }
 
 fn num(n: f64) -> Expr {
@@ -21,17 +24,69 @@ fn num(n: f64) -> Expr {
 /// layer bound to the label and a rectangle bound to the colour.
 fn setup() -> (Session, NodeId, NodeId, NodeId, NodeId) {
     let mut s = Session::new();
-    let a = id_of(&s.execute("frame.create", &json!({"x": 0, "y": 0, "width": 100, "height": 100, "name": "A"})).unwrap()["id"]).unwrap();
-    let b = id_of(&s.execute("frame.create", &json!({"x": 200, "y": 0, "width": 100, "height": 100, "name": "B"})).unwrap()["id"]).unwrap();
-    let t = id_of(&s.execute("text.create", &json!({"text": "x", "x": 10, "y": 10, "parent": a})).unwrap()["id"]).unwrap();
-    let r = id_of(&s.execute("shape.rectangle", &json!({"x": 10, "y": 50, "width": 10, "height": 10, "parent": a})).unwrap()["id"]).unwrap();
-    s.execute("variable.createCollection", &json!({"name": "Theme", "modes": ["Light", "Dark"]})).unwrap();
-    for (name, kind, value) in [("count", "number", json!(0)), ("label", "string", json!("Zero")), ("bg", "color", json!("#FFFFFF"))] {
-        s.execute("variable.create", &json!({"collection": "Theme", "name": name, "type": kind, "value": value})).unwrap();
+    let a = id_of(
+        &s.execute(
+            "frame.create",
+            &json!({"x": 0, "y": 0, "width": 100, "height": 100, "name": "A"}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    let b = id_of(
+        &s.execute(
+            "frame.create",
+            &json!({"x": 200, "y": 0, "width": 100, "height": 100, "name": "B"}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    let t = id_of(
+        &s.execute(
+            "text.create",
+            &json!({"text": "x", "x": 10, "y": 10, "parent": a}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    let r = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 10, "y": 50, "width": 10, "height": 10, "parent": a}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    s.execute(
+        "variable.createCollection",
+        &json!({"name": "Theme", "modes": ["Light", "Dark"]}),
+    )
+    .unwrap();
+    for (name, kind, value) in [
+        ("count", "number", json!(0)),
+        ("label", "string", json!("Zero")),
+        ("bg", "color", json!("#FFFFFF")),
+    ] {
+        s.execute(
+            "variable.create",
+            &json!({"collection": "Theme", "name": name, "type": kind, "value": value}),
+        )
+        .unwrap();
     }
-    s.execute("variable.set", &json!({"variable": "bg", "mode": "Dark", "value": "#000000"})).unwrap();
-    s.execute("variable.bind", &json!({"ids": [t], "field": "characters", "variable": "label"})).unwrap();
-    s.execute("variable.bind", &json!({"ids": [r], "field": "fill", "variable": "bg"})).unwrap();
+    s.execute(
+        "variable.set",
+        &json!({"variable": "bg", "mode": "Dark", "value": "#000000"}),
+    )
+    .unwrap();
+    s.execute(
+        "variable.bind",
+        &json!({"ids": [t], "field": "characters", "variable": "label"}),
+    )
+    .unwrap();
+    s.execute(
+        "variable.bind",
+        &json!({"ids": [r], "field": "fill", "variable": "bg"}),
+    )
+    .unwrap();
     (s, a, b, t, r)
 }
 
@@ -43,16 +98,31 @@ fn chars(doc: &Document, t: NodeId) -> String {
 }
 
 fn fill_hex(doc: &Document, r: NodeId) -> Option<String> {
-    doc.node(r).and_then(|n| n.fills.first()).and_then(|p| p.solid_color()).map(|c| c.to_hex())
+    doc.node(r)
+        .and_then(|n| n.fills.first())
+        .and_then(|p| p.solid_color())
+        .map(|c| c.to_hex())
 }
 
 #[test]
 fn literals_parse_by_the_variable_type() {
-    assert_eq!(literal(VariableType::Number, &json!("4")), Some(VariableValue::Number(4.0)));
-    assert_eq!(literal(VariableType::Boolean, &json!(true)), Some(VariableValue::Boolean(true)));
+    assert_eq!(
+        literal(VariableType::Number, &json!("4")),
+        Some(VariableValue::Number(4.0))
+    );
+    assert_eq!(
+        literal(VariableType::Boolean, &json!(true)),
+        Some(VariableValue::Boolean(true))
+    );
     assert_eq!(literal(VariableType::Boolean, &json!({})), None);
-    assert_eq!(literal(VariableType::String, &json!(3)), Some(VariableValue::String("3".into())));
-    assert!(matches!(literal(VariableType::Color, &json!("#FF0000")), Some(VariableValue::Color(_))));
+    assert_eq!(
+        literal(VariableType::String, &json!(3)),
+        Some(VariableValue::String("3".into()))
+    );
+    assert!(matches!(
+        literal(VariableType::Color, &json!("#FF0000")),
+        Some(VariableValue::Color(_))
+    ));
     assert_eq!(literal(VariableType::Number, &json!("lots")), None);
 }
 
@@ -66,22 +136,58 @@ fn set_variable_evaluates_expressions_where_the_layer_is() {
     for _ in 0..2 {
         assert!(set_variable(&mut doc, a, &count, &json!(null), Some(&inc)));
     }
-    assert_eq!(doc.variables.resolve(&count, &Default::default()), Some(VariableValue::Number(2.0)));
+    assert_eq!(
+        doc.variables.resolve(&count, &Default::default()),
+        Some(VariableValue::Number(2.0))
+    );
     // label = "Count: " + count reaches the bound text.
-    let text = Expr::op(ExprOp::Add, vec![Expr::Value(VariableValue::String("Count: ".into())), Expr::var(&count)]);
+    let text = Expr::op(
+        ExprOp::Add,
+        vec![
+            Expr::Value(VariableValue::String("Count: ".into())),
+            Expr::var(&count),
+        ],
+    );
     assert!(set_variable(&mut doc, t, &label, &json!(null), Some(&text)));
     assert_eq!(chars(&doc, t), "Count: 2");
     // A number result fits a string variable as text; a boolean doesn't fit a number.
-    assert!(set_variable(&mut doc, t, &label, &json!(null), Some(&Expr::var(&count))));
+    assert!(set_variable(
+        &mut doc,
+        t,
+        &label,
+        &json!(null),
+        Some(&Expr::var(&count))
+    ));
     assert_eq!(chars(&doc, t), "2");
     let truth = Expr::op(ExprOp::Equals, vec![Expr::var(&count), num(2.0)]);
-    assert!(!set_variable(&mut doc, a, &count, &json!(null), Some(&truth)));
+    assert!(!set_variable(
+        &mut doc,
+        a,
+        &count,
+        &json!(null),
+        Some(&truth)
+    ));
     // Errors (division by zero, missing variables) leave the value alone.
     let div0 = Expr::op(ExprOp::Divide, vec![Expr::var(&count), num(0.0)]);
-    assert!(!set_variable(&mut doc, a, &count, &json!(null), Some(&div0)));
-    assert!(!set_variable(&mut doc, a, &count, &json!(null), Some(&Expr::var("nope"))));
+    assert!(!set_variable(
+        &mut doc,
+        a,
+        &count,
+        &json!(null),
+        Some(&div0)
+    ));
+    assert!(!set_variable(
+        &mut doc,
+        a,
+        &count,
+        &json!(null),
+        Some(&Expr::var("nope"))
+    ));
     assert!(!set_variable(&mut doc, a, "nope", &json!(1), None));
-    assert_eq!(doc.variables.resolve(&count, &Default::default()), Some(VariableValue::Number(2.0)));
+    assert_eq!(
+        doc.variables.resolve(&count, &Default::default()),
+        Some(VariableValue::Number(2.0))
+    );
     // A plain value still works.
     assert!(set_variable(&mut doc, a, &label, &json!("Done"), None));
     assert_eq!(chars(&doc, t), "Done");
@@ -91,24 +197,74 @@ fn set_variable_evaluates_expressions_where_the_layer_is() {
 fn set_mode_switches_the_prototype_and_keeps_nested_choices() {
     let (mut s, a, b, _, r) = setup();
     // B chose Light explicitly; a group inside A chose Light too (nested: it wins).
-    s.execute("variable.setMode", &json!({"ids": [b], "collection": "Theme", "mode": "Light"})).unwrap();
-    let g = id_of(&s.execute("frame.create", &json!({"x": 40, "y": 40, "width": 20, "height": 20, "parent": a})).unwrap()["id"]).unwrap();
-    let r2 = id_of(&s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5, "parent": g})).unwrap()["id"]).unwrap();
-    s.execute("variable.bind", &json!({"ids": [r2], "field": "fill", "variable": "bg"})).unwrap();
-    s.execute("variable.setMode", &json!({"ids": [g], "collection": "Theme", "mode": "Light"})).unwrap();
+    s.execute(
+        "variable.setMode",
+        &json!({"ids": [b], "collection": "Theme", "mode": "Light"}),
+    )
+    .unwrap();
+    let g = id_of(
+        &s.execute(
+            "frame.create",
+            &json!({"x": 40, "y": 40, "width": 20, "height": 20, "parent": a}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    let r2 = id_of(
+        &s.execute(
+            "shape.rectangle",
+            &json!({"x": 0, "y": 0, "width": 5, "height": 5, "parent": g}),
+        )
+        .unwrap()["id"],
+    )
+    .unwrap();
+    s.execute(
+        "variable.bind",
+        &json!({"ids": [r2], "field": "fill", "variable": "bg"}),
+    )
+    .unwrap();
+    s.execute(
+        "variable.setMode",
+        &json!({"ids": [g], "collection": "Theme", "mode": "Light"}),
+    )
+    .unwrap();
     let mut doc = s.doc().unwrap().clone();
     let theme = doc.variables.collections[0].clone();
-    let dark = theme.modes.iter().find(|m| m.name == "Dark").map(|m| m.id.clone()).unwrap();
+    let dark = theme
+        .modes
+        .iter()
+        .find(|m| m.name == "Dark")
+        .map(|m| m.id.clone())
+        .unwrap();
     assert_eq!(fill_hex(&doc, r).as_deref(), Some("FFFFFF"));
     assert!(set_mode(&mut doc, a, &theme.id, &dark));
-    assert_eq!(fill_hex(&doc, r).as_deref(), Some("000000"), "bound layers follow the new mode");
-    assert_eq!(fill_hex(&doc, r2).as_deref(), Some("FFFFFF"), "a mode chosen inside the frame still wins");
+    assert_eq!(
+        fill_hex(&doc, r).as_deref(),
+        Some("000000"),
+        "bound layers follow the new mode"
+    );
+    assert_eq!(
+        fill_hex(&doc, r2).as_deref(),
+        Some("FFFFFF"),
+        "a mode chosen inside the frame still wins"
+    );
     let page = doc.page_of(a).unwrap();
-    assert_eq!(doc.node(page).unwrap().var_modes.get(&theme.id), Some(&dark));
-    assert_eq!(doc.node(b).unwrap().var_modes.get(&theme.id), Some(&dark), "top-level frames that chose a mode switch too");
+    assert_eq!(
+        doc.node(page).unwrap().var_modes.get(&theme.id),
+        Some(&dark)
+    );
+    assert_eq!(
+        doc.node(b).unwrap().var_modes.get(&theme.id),
+        Some(&dark),
+        "top-level frames that chose a mode switch too"
+    );
     // Collections and modes by name; unknown ones change nothing.
     assert!(set_mode(&mut doc, b, "Theme", "Light"));
-    assert_eq!(fill_hex(&doc, r).as_deref(), Some("FFFFFF"), "modes by name");
+    assert_eq!(
+        fill_hex(&doc, r).as_deref(),
+        Some("FFFFFF"),
+        "modes by name"
+    );
     assert!(!set_mode(&mut doc, a, "Theme", "nope"));
     assert!(!set_mode(&mut doc, a, "Nope", &dark));
 }
@@ -121,21 +277,39 @@ fn conditional_branches_follow_variables() {
     let blocks = vec![
         ConditionalBlock {
             condition: Some(Expr::op(ExprOp::Greater, vec![Expr::var(&count), num(5.0)])),
-            actions: vec![Action::Navigate { dest: b, preserve_scroll: false }],
+            actions: vec![Action::Navigate {
+                dest: b,
+                preserve_scroll: false,
+            }],
         },
-        ConditionalBlock { condition: Some(Expr::op(ExprOp::Equals, vec![Expr::var(&count), num(0.0)])), actions: vec![Action::Back] },
-        ConditionalBlock { condition: None, actions: vec![Action::CloseOverlay] },
+        ConditionalBlock {
+            condition: Some(Expr::op(ExprOp::Equals, vec![Expr::var(&count), num(0.0)])),
+            actions: vec![Action::Back],
+        },
+        ConditionalBlock {
+            condition: None,
+            actions: vec![Action::CloseOverlay],
+        },
     ];
     assert_eq!(branch(&doc, a, &blocks), [Action::Back]);
     let mut d2 = doc.clone();
     assert!(set_variable(&mut d2, a, &count, &json!(9), None));
-    assert_eq!(branch(&d2, a, &blocks), [Action::Navigate { dest: b, preserve_scroll: false }]);
+    assert_eq!(
+        branch(&d2, a, &blocks),
+        [Action::Navigate {
+            dest: b,
+            preserve_scroll: false
+        }]
+    );
     assert!(set_variable(&mut d2, a, &count, &json!(3), None));
     assert_eq!(branch(&d2, a, &blocks), [Action::CloseOverlay], "else");
     // Without an else, nothing runs; a condition that errors is false.
     let no_else = &blocks[..1];
     assert!(branch(&d2, a, no_else).is_empty());
-    let broken = [ConditionalBlock { condition: Some(Expr::var("nope")), actions: vec![Action::Back] }];
+    let broken = [ConditionalBlock {
+        condition: Some(Expr::var("nope")),
+        actions: vec![Action::Back],
+    }];
     assert!(branch(&d2, a, &broken).is_empty());
 }
 
@@ -152,26 +326,57 @@ fn interaction_commands_take_conditional_actions() {
     s.execute("proto.interaction.add", &json!({"ids": [a], "trigger": {"type": "onClick"}, "actions": [conditional, {"type": "setVariableMode", "collection": "Theme", "mode": "Dark"}]}))
         .unwrap();
     let it = s.doc().unwrap().node(a).unwrap().interactions[0].clone();
-    let Action::Conditional { blocks } = &it.actions[0] else { panic!("{it:?}") };
+    let Action::Conditional { blocks } = &it.actions[0] else {
+        panic!("{it:?}")
+    };
     assert_eq!(blocks.len(), 2);
-    assert!(matches!(&blocks[1].actions[0], Action::SetVariable { expr: Some(_), .. }));
+    assert!(matches!(
+        &blocks[1].actions[0],
+        Action::SetVariable { expr: Some(_), .. }
+    ));
     // Collections and modes named by name are stored by id.
     let theme = s.doc().unwrap().variables.collections[0].clone();
-    let dark = theme.modes.iter().find(|m| m.name == "Dark").map(|m| m.id.clone()).unwrap();
-    assert_eq!(it.actions[1], Action::SetVariableMode { collection: theme.id, mode: dark });
+    let dark = theme
+        .modes
+        .iter()
+        .find(|m| m.name == "Dark")
+        .map(|m| m.id.clone())
+        .unwrap();
+    assert_eq!(
+        it.actions[1],
+        Action::SetVariableMode {
+            collection: theme.id,
+            mode: dark
+        }
+    );
     // Destinations inside branches must exist.
     let bad = json!({"type": "conditional", "blocks": [{"actions": [{"type": "navigate", "dest": 99_999}]}]});
-    assert!(s.execute("proto.interaction.add", &json!({"ids": [a], "action": bad})).is_err());
+    assert!(
+        s.execute("proto.interaction.add", &json!({"ids": [a], "action": bad}))
+            .is_err()
+    );
     // Saved files keep them.
     let saved = crate::cmd::file::file_bytes(s.ds().unwrap()).unwrap();
     let (back, _) = figcraft_format::load_bytes(&saved).unwrap();
-    assert_eq!(back.node(a).unwrap().interactions, s.doc().unwrap().node(a).unwrap().interactions, "saved and loaded");
+    assert_eq!(
+        back.node(a).unwrap().interactions,
+        s.doc().unwrap().node(a).unwrap().interactions,
+        "saved and loaded"
+    );
 }
 
 #[test]
 fn junk_conditional_actions_never_panic() {
     let (mut s, a, b, _, _) = setup();
-    let junk = [json!(null), json!(-1), json!(1e308), json!("x"), json!([]), json!({}), json!(true)];
+    let junk = [
+        json!(null),
+        json!(-1),
+        json!(1e308),
+        json!("x"),
+        json!([]),
+        json!({}),
+        json!(true),
+    ];
     let shapes = |j: &serde_json::Value| {
         [
             json!({"type": "conditional", "blocks": j}),
@@ -184,13 +389,22 @@ fn junk_conditional_actions_never_panic() {
     };
     for j in &junk {
         for action in shapes(j) {
-            if s.execute("proto.interaction.add", &json!({"ids": [a], "action": action})).is_ok() {
+            if s.execute(
+                "proto.interaction.add",
+                &json!({"ids": [a], "action": action}),
+            )
+            .is_ok()
+            {
                 // Whatever was accepted runs without panicking.
                 let mut doc = s.doc().unwrap().clone();
                 for it in doc.node(a).unwrap().interactions.clone() {
                     for act in figcraft_doc::proto::walk(&it.actions) {
                         match act {
-                            Action::SetVariable { variable, value, expr } => {
+                            Action::SetVariable {
+                                variable,
+                                value,
+                                expr,
+                            } => {
                                 let _ = set_variable(&mut doc, a, variable, value, expr.as_ref());
                             }
                             Action::SetVariableMode { collection, mode } => {

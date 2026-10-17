@@ -73,7 +73,7 @@ fn decoder_valeur(charge: [u8; 8], tt: u32) -> String {
             } else {
                 format!("{d}")
             }
-        },
+        }
         t => format!("{}@0x{brut:x}", nom_type(t)),
     }
 }
@@ -85,13 +85,16 @@ fn lire(pid: i32, addr: u64, n: usize) -> Option<Vec<u8>> {
 
 /// Lit un `u32` little-endian.
 fn u32_at(buf: &[u8], off: usize) -> Option<u32> {
-    buf.get(off..off + 4).map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
+    buf.get(off..off + 4)
+        .map(|b| u32::from_le_bytes([b[0], b[1], b[2], b[3]]))
 }
 
 /// Lit un `u64` little-endian.
 fn u64_at(buf: &[u8], off: usize) -> Option<u64> {
     let b = buf.get(off..off + 8)?;
-    Some(u64::from_le_bytes([b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7]]))
+    Some(u64::from_le_bytes([
+        b[0], b[1], b[2], b[3], b[4], b[5], b[6], b[7],
+    ]))
 }
 
 /// Rend le nom d'une `TString` Lua, si l'objet a bien cette forme.
@@ -149,7 +152,11 @@ fn relever_nodes(pid: i32, tstring: u64, limite: usize) -> Vec<Releve> {
         };
         let mut charge = [0u8; 8];
         charge.copy_from_slice(&buf[..8]);
-        out.push(Releve { node, valeur: decoder_valeur(charge, val_tt), tt: val_tt & TT_MASK });
+        out.push(Releve {
+            node,
+            valeur: decoder_valeur(charge, val_tt),
+            tt: val_tt & TT_MASK,
+        });
     }
     out
 }
@@ -212,7 +219,10 @@ pub fn lua_field(
         println!("  aucune TString internée « {nom} » — le champ n'existe pas dans ce process.");
         return Ok(());
     }
-    println!("  {} objet(s) TString « {nom} » (pid {pid})", tstrings.len());
+    println!(
+        "  {} objet(s) TString « {nom} » (pid {pid})",
+        tstrings.len()
+    );
 
     let mut total = 0usize;
     for ts in &tstrings {
@@ -226,7 +236,10 @@ pub fn lua_field(
         if releves.is_empty() {
             continue;
         }
-        println!("\n  TString 0x{ts:x} — {} entrée(s) de table", releves.len());
+        println!(
+            "\n  TString 0x{ts:x} — {} entrée(s) de table",
+            releves.len()
+        );
         for r in &releves {
             total += 1;
             println!("    node 0x{:012x}  {nom} = {}", r.node, r.valeur);
@@ -289,20 +302,24 @@ pub fn palettes(
             break;
         };
         if attendus.contains(&id) {
-            let argb =
-                [octets[offset + 4], octets[offset + 5], octets[offset + 6], octets[offset + 7]];
+            let argb = [
+                octets[offset + 4],
+                octets[offset + 5],
+                octets[offset + 6],
+                octets[offset + 7],
+            ];
             // Un identifiant peut réapparaître ailleurs qu'en tête d'entrée — le balayage est
             // libre, au pas de 4 octets. Les entrées de la vraie table sont OPAQUES : privilégier
             // `alpha = 255` écarte ces coïncidences, qui rendaient des couleurs semi-transparentes.
             match vus.entry(id) {
                 std::collections::btree_map::Entry::Vacant(v) => {
                     v.insert(argb);
-                },
+                }
                 std::collections::btree_map::Entry::Occupied(mut o) => {
                     if o.get()[0] != 0xFF && argb[0] == 0xFF {
                         o.insert(argb);
                     }
-                },
+                }
             }
         }
         offset += 4;

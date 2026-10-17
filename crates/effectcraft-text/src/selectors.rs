@@ -120,7 +120,16 @@ pub struct Range {
 
 impl Default for Range {
     fn default() -> Self {
-        Range { start: 0.0, end: 1.0, offset: 0.0, amount: 1.0, shape: Shape::Square, smoothness: 1.0, ease_high: 0.0, ease_low: 0.0 }
+        Range {
+            start: 0.0,
+            end: 1.0,
+            offset: 0.0,
+            amount: 1.0,
+            shape: Shape::Square,
+            smoothness: 1.0,
+            ease_high: 0.0,
+            ease_low: 0.0,
+        }
     }
 }
 
@@ -184,7 +193,11 @@ pub fn range_value(r: &Range, i: usize, n: usize) -> f64 {
                     0.0
                 }
             };
-            if e - s <= 1e-12 { 0.0 } else { edge(c - s).min(edge(e - c)) }
+            if e - s <= 1e-12 {
+                0.0
+            } else {
+                edge(c - s).min(edge(e - c))
+            }
         }
         shape => {
             if e - s <= 1e-12 {
@@ -195,7 +208,11 @@ pub fn range_value(r: &Range, i: usize, n: usize) -> f64 {
                     _ => 0.0,
                 }
             } else {
-                ease(shape_value(shape, (c - s) / (e - s)), r.ease_high, r.ease_low)
+                ease(
+                    shape_value(shape, (c - s) / (e - s)),
+                    r.ease_high,
+                    r.ease_low,
+                )
             }
         }
     };
@@ -212,7 +229,10 @@ pub fn splitmix(mut x: u64) -> u64 {
 }
 
 fn hash3(a: u64, b: u64, c: u64) -> u64 {
-    splitmix(splitmix(splitmix(a) ^ b.wrapping_mul(0x632B_E59B_D9B4_E019)) ^ c.wrapping_mul(0x8CB9_2BA7_2F3D_8DD7))
+    splitmix(
+        splitmix(splitmix(a) ^ b.wrapping_mul(0x632B_E59B_D9B4_E019))
+            ^ c.wrapping_mul(0x8CB9_2BA7_2F3D_8DD7),
+    )
 }
 
 /// Randomize Order: a seeded permutation `p` with `p[i]` = the position unit `i` takes.
@@ -259,7 +279,16 @@ pub struct Wiggly {
 
 impl Default for Wiggly {
     fn default() -> Self {
-        Wiggly { max: 1.0, min: -1.0, wiggles_per_second: 2.0, correlation: 0.5, temporal_phase: 0.0, spatial_phase: 0.0, lock_dimensions: false, seed: 0 }
+        Wiggly {
+            max: 1.0,
+            min: -1.0,
+            wiggles_per_second: 2.0,
+            correlation: 0.5,
+            temporal_phase: 0.0,
+            spatial_phase: 0.0,
+            lock_dimensions: false,
+            seed: 0,
+        }
     }
 }
 
@@ -270,7 +299,13 @@ pub fn wiggly_value(w: &Wiggly, t: f64, i: usize, dim: usize) -> f64 {
     let shared = noise1(tau, w.seed, ch * 2);
     // Each unit's own channel; Spatial Phase slides the pattern along the units.
     let along = i as f64 * 0.61 + w.spatial_phase / 360.0;
-    let own = 0.5 * noise1(tau + along, w.seed ^ 0xA5A5, ch * 2 + 1) + 0.5 * noise1(tau * 1.37 + along * 1.7, w.seed ^ (i as u64 + 1).wrapping_mul(0x9E37), ch);
+    let own = 0.5 * noise1(tau + along, w.seed ^ 0xA5A5, ch * 2 + 1)
+        + 0.5
+            * noise1(
+                tau * 1.37 + along * 1.7,
+                w.seed ^ (i as u64 + 1).wrapping_mul(0x9E37),
+                ch,
+            );
     let c = w.correlation.clamp(0.0, 1.0);
     let v = (c * shared + (1.0 - c) * own.clamp(-1.0, 1.0)).clamp(-1.0, 1.0);
     w.min + (v + 1.0) * 0.5 * (w.max - w.min)
@@ -281,7 +316,12 @@ mod tests {
     use super::*;
 
     fn r(start: f64, end: f64, shape: Shape) -> Range {
-        Range { start, end, shape, ..Default::default() }
+        Range {
+            start,
+            end,
+            shape,
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -292,7 +332,10 @@ mod tests {
         assert!((range_value(&rg, 1, 4) - 0.5).abs() < 1e-9);
         assert_eq!(range_value(&rg, 2, 4), 0.0);
         // Smoothness 0: hard edge at the unit centre.
-        let hard = Range { smoothness: 0.0, ..rg };
+        let hard = Range {
+            smoothness: 0.0,
+            ..rg
+        };
         assert_eq!(range_value(&hard, 1, 4), 1.0);
         let hard2 = Range { end: 0.3, ..hard };
         assert_eq!(range_value(&hard2, 1, 4), 0.0);
@@ -303,12 +346,18 @@ mod tests {
     #[test]
     fn shapes_profiles() {
         let n = 5;
-        let up: Vec<f64> = (0..n).map(|i| range_value(&r(0.0, 1.0, Shape::RampUp), i, n)).collect();
+        let up: Vec<f64> = (0..n)
+            .map(|i| range_value(&r(0.0, 1.0, Shape::RampUp), i, n))
+            .collect();
         assert!(up.windows(2).all(|w| w[1] > w[0]));
         assert!((up[0] - 0.1).abs() < 1e-9 && (up[4] - 0.9).abs() < 1e-9);
-        let down: Vec<f64> = (0..n).map(|i| range_value(&r(0.0, 1.0, Shape::RampDown), i, n)).collect();
+        let down: Vec<f64> = (0..n)
+            .map(|i| range_value(&r(0.0, 1.0, Shape::RampDown), i, n))
+            .collect();
         assert!((down[0] - 0.9).abs() < 1e-9);
-        let tri: Vec<f64> = (0..n).map(|i| range_value(&r(0.0, 1.0, Shape::Triangle), i, n)).collect();
+        let tri: Vec<f64> = (0..n)
+            .map(|i| range_value(&r(0.0, 1.0, Shape::Triangle), i, n))
+            .collect();
         assert!((tri[2] - 1.0).abs() < 1e-9 && (tri[0] - tri[4]).abs() < 1e-9 && tri[0] < 0.5);
         let round = range_value(&r(0.0, 1.0, Shape::Round), 0, n);
         assert!(round > tri[0], "round bulges above triangle");
@@ -319,11 +368,17 @@ mod tests {
         assert_eq!(range_value(&r(0.8, 1.0, Shape::RampDown), 0, n), 1.0);
         assert_eq!(range_value(&r(0.0, 0.2, Shape::Triangle), 4, n), 0.0);
         // Offset moves the range.
-        let off = Range { offset: 0.6, ..r(0.0, 0.2, Shape::Square) };
+        let off = Range {
+            offset: 0.6,
+            ..r(0.0, 0.2, Shape::Square)
+        };
         assert_eq!(range_value(&off, 0, n), 0.0);
         assert!((range_value(&off, 3, n) - 1.0).abs() < 1e-9);
         // Amount scales (and may invert).
-        let neg = Range { amount: -0.5, ..Range::default() };
+        let neg = Range {
+            amount: -0.5,
+            ..Range::default()
+        };
         assert!((range_value(&neg, 2, n) + 0.5).abs() < 1e-9);
     }
 
@@ -368,7 +423,10 @@ mod tests {
 
     #[test]
     fn wiggly_is_deterministic_smooth_and_bounded() {
-        let w = Wiggly { seed: 3, ..Default::default() };
+        let w = Wiggly {
+            seed: 3,
+            ..Default::default()
+        };
         let a = wiggly_value(&w, 1.234, 5, 0);
         assert_eq!(a, wiggly_value(&w, 1.234, 5, 0));
         for i in 0..50 {
@@ -379,16 +437,29 @@ mod tests {
         let d = (wiggly_value(&w, 1.0, 2, 0) - wiggly_value(&w, 1.001, 2, 0)).abs();
         assert!(d < 0.02, "{d}");
         // Correlation 100%: all units identical; 0%: they differ.
-        let c1 = Wiggly { correlation: 1.0, ..w };
+        let c1 = Wiggly {
+            correlation: 1.0,
+            ..w
+        };
         assert_eq!(wiggly_value(&c1, 0.7, 0, 0), wiggly_value(&c1, 0.7, 9, 0));
-        let c0 = Wiggly { correlation: 0.0, ..w };
+        let c0 = Wiggly {
+            correlation: 0.0,
+            ..w
+        };
         assert_ne!(wiggly_value(&c0, 0.7, 0, 0), wiggly_value(&c0, 0.7, 9, 0));
         // Lock Dimensions: same value in every dimension.
-        let lk = Wiggly { lock_dimensions: true, ..w };
+        let lk = Wiggly {
+            lock_dimensions: true,
+            ..w
+        };
         assert_eq!(wiggly_value(&lk, 0.7, 3, 0), wiggly_value(&lk, 0.7, 3, 1));
         assert_ne!(wiggly_value(&w, 0.7, 3, 0), wiggly_value(&w, 0.7, 3, 1));
         // Min/Max map the range.
-        let pos = Wiggly { min: 0.0, max: 1.0, ..w };
+        let pos = Wiggly {
+            min: 0.0,
+            max: 1.0,
+            ..w
+        };
         assert!((0..30).all(|i| wiggly_value(&pos, i as f64 * 0.3, i, 0) >= 0.0));
         // Changes over time.
         assert_ne!(wiggly_value(&w, 0.0, 1, 0), wiggly_value(&w, 0.8, 1, 0));

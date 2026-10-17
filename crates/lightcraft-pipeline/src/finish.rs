@@ -29,8 +29,17 @@ fn curve_luts(c: &ToneCurve) -> Option<[Lut1; 3]> {
         return None;
     }
     const N: usize = 1024;
-    let (s1, s2, s3) = ((c.split_shadows / 100.0) as f32, (c.split_mid / 100.0) as f32, (c.split_highlights / 100.0) as f32);
-    let regions = [(0.0, s1, c.shadows), (s1, s2, c.darks), (s2, s3, c.lights), (s3, 1.0, c.highlights)];
+    let (s1, s2, s3) = (
+        (c.split_shadows / 100.0) as f32,
+        (c.split_mid / 100.0) as f32,
+        (c.split_highlights / 100.0) as f32,
+    );
+    let regions = [
+        (0.0, s1, c.shadows),
+        (s1, s2, c.darks),
+        (s2, s3, c.lights),
+        (s3, 1.0, c.highlights),
+    ];
     let mut base = Lut1::from_fn(N, |x| {
         let mut d = 0.0;
         for (a, b, amt) in regions {
@@ -50,10 +59,18 @@ fn curve_luts(c: &ToneCurve) -> Option<[Lut1; 3]> {
     }
     let to_pts = |p: &[Point]| p.iter().map(|q| (q.x, q.y)).collect::<Vec<_>>();
     if master {
-        base = MonotoneCurve::new(&to_pts(&c.master)).to_lut(N).compose(&base);
+        base = MonotoneCurve::new(&to_pts(&c.master))
+            .to_lut(N)
+            .compose(&base);
     }
     let per = [&c.red, &c.green, &c.blue];
-    Some(std::array::from_fn(|i| if chans[i] { MonotoneCurve::new(&to_pts(per[i])).to_lut(N).compose(&base) } else { base.clone() }))
+    Some(std::array::from_fn(|i| {
+        if chans[i] {
+            MonotoneCurve::new(&to_pts(per[i])).to_lut(N).compose(&base)
+        } else {
+            base.clone()
+        }
+    }))
 }
 
 /// Vignette (post-crop) parameters.
@@ -92,7 +109,9 @@ fn grain_noise(x: f32, y: f32, seed: u32) -> f32 {
     let (x0, y0) = (x.floor(), y.floor());
     let (fx, fy) = (x - x0, y - y0);
     let h = |i: i32, j: i32| {
-        let mut v = (i as u32).wrapping_mul(GRAIN_HASH[0]) ^ (j as u32).wrapping_mul(GRAIN_HASH[1]) ^ seed.wrapping_mul(GRAIN_HASH[2]);
+        let mut v = (i as u32).wrapping_mul(GRAIN_HASH[0])
+            ^ (j as u32).wrapping_mul(GRAIN_HASH[1])
+            ^ seed.wrapping_mul(GRAIN_HASH[2]);
         v ^= v >> 13;
         v = v.wrapping_mul(GRAIN_HASH[3]);
         v ^= v >> 15;
@@ -212,7 +231,11 @@ impl FinishParams {
     ) -> FinishParams {
         let effects = s.section_enabled("effects");
         let (clar, tex, dehaze) = if effects {
-            ((s.effects.clarity / 100.0) as f32, (s.effects.texture / 100.0) as f32, (s.effects.dehaze / 100.0) as f32)
+            (
+                (s.effects.clarity / 100.0) as f32,
+                (s.effects.texture / 100.0) as f32,
+                (s.effects.dehaze / 100.0) as f32,
+            )
         } else {
             (0.0, 0.0, 0.0)
         };
@@ -220,16 +243,30 @@ impl FinishParams {
         let gain = 2f32.powf(ev);
         let grain = (s.grain.amount > 0.0 && effects).then(|| {
             let cell = (0.0006 + (s.grain.size / 100.0) as f32 * 0.0024) * px_per_long as f32;
-            ((s.grain.amount / 100.0) as f32 * 0.13, cell.max(0.6), (s.grain.roughness / 100.0) as f32, s.grain.seed)
+            (
+                (s.grain.amount / 100.0) as f32 * 0.13,
+                cell.max(0.6),
+                (s.grain.roughness / 100.0) as f32,
+                s.grain.seed,
+            )
         });
         let calibration = s.section_enabled("calibration");
         let peak = s.hdr.peak();
         FinishParams {
             peak,
-            calib: if calibration { crate::colorops::calibration_matrix(&s.calibration) } else { None },
-            shadow_tint: if calibration { (s.calibration.shadows_tint / 100.0) as f32 } else { 0.0 },
+            calib: if calibration {
+                crate::colorops::calibration_matrix(&s.calibration)
+            } else {
+                None
+            },
+            shadow_tint: if calibration {
+                (s.calibration.shadows_tint / 100.0) as f32
+            } else {
+                0.0
+            },
             tone: base_tone(s, info, peak),
-            lut: crate::lut::get(&s.profile.id).map(|l| (l, (s.profile.amount / 100.0).clamp(0.0, 2.0) as f32)),
+            lut: crate::lut::get(&s.profile.id)
+                .map(|l| (l, (s.profile.amount / 100.0).clamp(0.0, 2.0) as f32)),
             ops: ColorOps::new(s),
             curves: curve_luts(&s.curve),
             refine_sat: (s.curve.refine_saturation / 100.0).clamp(0.0, 1.0) as f32,
@@ -256,7 +293,9 @@ impl FinishParams {
             w,
             h,
             px_per_long,
-            view: frame.view.map_or([0.0, 0.0, w as f32, h as f32], |v| [v.x as f32, v.y as f32, v.full_w as f32, v.full_h as f32]),
+            view: frame.view.map_or([0.0, 0.0, w as f32, h as f32], |v| {
+                [v.x as f32, v.y as f32, v.full_w as f32, v.full_h as f32]
+            }),
         }
     }
 
@@ -308,11 +347,19 @@ pub(crate) fn finish(
     let data = finish_with(p, &fp, false, |e| match trc {
         OutputTrc::Srgb => [enc(e[0]), enc(e[1]), enc(e[2]), 255],
         t => {
-            let x = e.map(|v| enc(t.encode(lightcraft_color::transfer::srgb_to_linear(v.clamp(0.0, 1.0)))));
+            let x = e.map(|v| {
+                enc(t.encode(lightcraft_color::transfer::srgb_to_linear(
+                    v.clamp(0.0, 1.0),
+                )))
+            });
             [x[0], x[1], x[2], 255]
         }
     });
-    Rgba8 { width: w, height: h, data }
+    Rgba8 {
+        width: w,
+        height: h,
+        data,
+    }
 }
 
 /// [`finish`] into 16-bit display-encoded or 32-bit float linear samples (output primaries).
@@ -333,13 +380,17 @@ pub(crate) fn finish_deep(
     let trc = fp.out_trc;
     let samples = match depth {
         OutputDepth::F32Linear => {
-            let v = finish_with(p, &fp, true, |e| e.map(|v| srgb_to_linear(v.clamp(0.0, 1.0))));
+            let v = finish_with(p, &fp, true, |e| {
+                e.map(|v| srgb_to_linear(v.clamp(0.0, 1.0)))
+            });
             DeepSamples::F32(v.into_flattened())
         }
         OutputDepth::F32Hdr => {
             // the sRGB curve extended past 1 (it is unbounded), so values up to `peak` survive
             let peak = fp.peak;
-            let v = finish_with(p, &fp, true, |e| e.map(|v| srgb_to_linear(v.max(0.0)).clamp(0.0, peak)));
+            let v = finish_with(p, &fp, true, |e| {
+                e.map(|v| srgb_to_linear(v.max(0.0)).clamp(0.0, peak))
+            });
             DeepSamples::F32(v.into_flattened())
         }
         _ => {
@@ -351,7 +402,12 @@ pub(crate) fn finish_deep(
             DeepSamples::U16(v.into_flattened())
         }
     };
-    DeepImage { width: w, height: h, space, samples }
+    DeepImage {
+        width: w,
+        height: h,
+        space,
+        samples,
+    }
 }
 
 /// The per-pixel stage: every output pixel's colour in the output primaries, encoded with the sRGB
@@ -386,8 +442,19 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
         grain,
         ..
     } = fp;
-    let (hl, sh, clar, tex, dehaze, sharpen, sharpen_mask, air, air_pre, gain, ev) =
-        (*hl, *sh, *clar, *tex, *dehaze, *sharpen, *sharpen_mask, *air, *air_pre, *gain, *ev);
+    let (hl, sh, clar, tex, dehaze, sharpen, sharpen_mask, air, air_pre, gain, ev) = (
+        *hl,
+        *sh,
+        *clar,
+        *tex,
+        *dehaze,
+        *sharpen,
+        *sharpen_mask,
+        *air,
+        *air_pre,
+        *gain,
+        *ev,
+    );
     let terms: Vec<[f32; MASK_TERMS]> = p.masks.iter().map(|m| mask_terms(&m.adjust)).collect();
     let out_to_norm = fp.out_to_norm;
     let long = fp.ow.max(fp.oh);
@@ -403,7 +470,11 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
         for (x, px) in row.iter_mut().enumerate() {
             let i = y * w + x;
             let raw = p.img.data[i];
-            let mut c = if gain == 1.0 { raw } else { raw.map(|v| v * gain) };
+            let mut c = if gain == 1.0 {
+                raw
+            } else {
+                raw.map(|v| v * gain)
+            };
             let l_pre = p.log_l.data[i];
             let l0 = l_pre + ev;
 
@@ -419,18 +490,42 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                     l[k] += a * t[k];
                 }
                 if t[MASK_SUMS] > 0.0 {
-                    tint_col = Some(([t[MASK_SUMS + 1], t[MASK_SUMS + 2], 0.0], a * t[MASK_SUMS + 3]));
+                    tint_col = Some((
+                        [t[MASK_SUMS + 1], t[MASK_SUMS + 2], 0.0],
+                        a * t[MASK_SUMS + 3],
+                    ));
                 }
             }
-            let [l_exp, l_temp, l_tint, l_con, l_hl, l_sh, l_wh, l_bl, l_tex, l_clar, l_dehaze, l_sat, l_hue, l_sharp, l_noise, l_moire, l_defringe] =
-                l;
+            let [
+                l_exp,
+                l_temp,
+                l_tint,
+                l_con,
+                l_hl,
+                l_sh,
+                l_wh,
+                l_bl,
+                l_tex,
+                l_clar,
+                l_dehaze,
+                l_sat,
+                l_hue,
+                l_sharp,
+                l_noise,
+                l_moire,
+                l_defringe,
+            ] = l;
 
             // --- local Moiré (and the colour part of Noise): chromaticity towards its blur
             let mt = (l_moire + 0.5 * l_noise.max(0.0)).clamp(-1.0, 1.0);
             if mt != 0.0
                 && let Some(cb) = &p.chroma_blur
             {
-                let (y, ch0, cb) = (luminance_2020(c), crate::masks::chromaticity(raw), cb.data[i]);
+                let (y, ch0, cb) = (
+                    luminance_2020(c),
+                    crate::masks::chromaticity(raw),
+                    cb.data[i],
+                );
                 c = std::array::from_fn(|k| ((ch0[k] + (cb[k] - ch0[k]) * mt) * y).max(0.0));
             }
             // --- local Defringe: desaturate purple / green fringes along edges
@@ -467,13 +562,21 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
             }
             if l_temp != 0.0 || l_tint != 0.0 {
                 let y0 = luminance_2020(c);
-                c = [c[0] * (1.0 + 0.3 * l_temp), c[1] * (1.0 - 0.22 * l_tint), c[2] * (1.0 - 0.3 * l_temp).max(0.0)];
+                c = [
+                    c[0] * (1.0 + 0.3 * l_temp),
+                    c[1] * (1.0 - 0.22 * l_tint),
+                    c[2] * (1.0 - 0.3 * l_temp).max(0.0),
+                ];
                 let y1 = luminance_2020(c).max(1e-9);
                 c = c.map(|v| v * y0 / y1);
             }
 
             // --- local tone in log luminance
-            let l1 = if dz != 0.0 || l_exp != 0.0 { log_lum(c) } else { l0 };
+            let l1 = if dz != 0.0 || l_exp != 0.0 {
+                log_lum(c)
+            } else {
+                l0
+            };
             let shift = l1 - l0;
             let base = p.base.data[i] + ev + shift;
             let mut delta = 0.0f32;
@@ -509,7 +612,11 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                 let tame = 1.0 - 0.6 * smooth(0.4, 1.6, det.abs());
                 delta += tx * 1.1 * det.clamp(-1.0, 1.0) * tame;
                 if sp != 0.0 {
-                    let m = if sharpen_mask > 0.0 { smooth(sharpen_mask * 0.25, sharpen_mask * 0.25 + 0.15, det.abs()) } else { 1.0 };
+                    let m = if sharpen_mask > 0.0 {
+                        smooth(sharpen_mask * 0.25, sharpen_mask * 0.25 + 0.15, det.abs())
+                    } else {
+                        1.0
+                    };
                     delta += sp * 1.3 * det.clamp(-0.8, 0.8) * m;
                 }
             }
@@ -533,7 +640,11 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
             // --- tone map on luminance, highlight desaturation
             let yl = luminance_2020(c);
             let o = tone.apply(yl);
-            let mut d = if yl > 1e-9 { c.map(|v| v * o / yl) } else { [0.0; 3] };
+            let mut d = if yl > 1e-9 {
+                c.map(|v| v * o / yl)
+            } else {
+                [0.0; 3]
+            };
             let k = tone.chroma_scale(o);
             if k != 1.0 {
                 d = d.map(|v| o + (v - o) * k);
@@ -548,7 +659,11 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
             d = ops.apply(d, l_sat, l_hue);
             if let Some((dir, amt)) = tint_col {
                 let lab = lightcraft_color::perceptual::oklab_from_2020(d);
-                d = lightcraft_color::perceptual::oklab_to_2020([lab[0], lab[1] + dir[0] * 0.08 * amt, lab[2] + dir[1] * 0.08 * amt]);
+                d = lightcraft_color::perceptual::oklab_to_2020([
+                    lab[0],
+                    lab[1] + dir[0] * 0.08 * amt,
+                    lab[2] + dir[1] * 0.08 * amt,
+                ]);
             }
 
             // --- vignette (display linear, post-crop)
@@ -557,7 +672,10 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                 let vv = (vy + y as f32 + 0.5) / vh * 2.0 - 1.0;
                 let sx = 1.0 + (aspect - 1.0) * v.aspect_mix;
                 let sy = 1.0 + (1.0 / aspect - 1.0) * v.aspect_mix;
-                let (ax, ay) = ((u * sx.max(1.0) / sx.max(sy)).abs(), (vv * sy.max(1.0) / sx.max(sy)).abs());
+                let (ax, ay) = (
+                    (u * sx.max(1.0) / sx.max(sy)).abs(),
+                    (vv * sy.max(1.0) / sx.max(sy)).abs(),
+                );
                 let dist = (ax.powf(v.power) + ay.powf(v.power)).powf(1.0 / v.power);
                 let t = smooth(v.start, v.start + v.width, dist);
                 if t > 0.0 {
@@ -603,7 +721,10 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                 None => mul3(to_out, d),
             };
             let (mapped, t) = gamut_map_to(r, *out_luma, peak);
-            if fp.proof.as_ref().is_some_and(|pp| pp.display_warning) && warn.is_none() && out_of_gamut(r, t) {
+            if fp.proof.as_ref().is_some_and(|pp| pp.display_warning)
+                && warn.is_none()
+                && out_of_gamut(r, t)
+            {
                 warn = Some(crate::output::PROOF_DISPLAY_WARNING);
             }
             r = mapped;
@@ -629,7 +750,13 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                 let e0 = e;
                 e = if hdr {
                     // above SDR white the curves continue with slope 1 from their end point
-                    std::array::from_fn(|k| if e[k] > 1.0 { l[k].eval(1.0) + (e[k] - 1.0) } else { l[k].eval(e[k]) })
+                    std::array::from_fn(|k| {
+                        if e[k] > 1.0 {
+                            l[k].eval(1.0) + (e[k] - 1.0)
+                        } else {
+                            l[k].eval(e[k])
+                        }
+                    })
                 } else {
                     [l[0].eval(e[0]), l[1].eval(e[1]), l[2].eval(e[2])]
                 };
@@ -639,10 +766,14 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
             }
             if let Some((amt, cell, rough, seed)) = *grain {
                 let n = out_to_norm.apply(Point::new(x as f64 + 0.5, y as f64 + 0.5));
-                let (gx, gy) = ((n.x * fp.ow) as f32 / long as f32, (n.y * fp.oh) as f32 / long as f32);
+                let (gx, gy) = (
+                    (n.x * fp.ow) as f32 / long as f32,
+                    (n.y * fp.oh) as f32 / long as f32,
+                );
                 let sc = fp.px_per_long as f32 / cell;
                 let mut g = grain_noise(gx * sc, gy * sc, seed);
-                g = g * (1.0 - rough * 0.5) + grain_noise(gx * sc * 2.3, gy * sc * 2.3, seed ^ 0x55) * rough * 0.7;
+                g = g * (1.0 - rough * 0.5)
+                    + grain_noise(gx * sc * 2.3, gy * sc * 2.3, seed ^ 0x55) * rough * 0.7;
                 let mut lum = 0.2126 * e[0] + 0.7152 * e[1] + 0.0722 * e[2];
                 if hdr {
                     lum = lum.clamp(0.0, 1.0);
@@ -655,11 +786,19 @@ pub(crate) fn finish_with<T: Copy + Default + Send>(
                     // the LUT sees SDR values; the part above SDR white is carried over
                     let c = e.map(|v| v.clamp(0.0, 1.0));
                     let m = l.apply(c);
-                    [e[0] + (m[0] - c[0]) * k, e[1] + (m[1] - c[1]) * k, e[2] + (m[2] - c[2]) * k]
+                    [
+                        e[0] + (m[0] - c[0]) * k,
+                        e[1] + (m[1] - c[1]) * k,
+                        e[2] + (m[2] - c[2]) * k,
+                    ]
                 }
                 Some((l, k)) => {
                     let m = l.apply(e.map(|v| v.clamp(0.0, 1.0)));
-                    [e[0] + (m[0] - e[0]) * k, e[1] + (m[1] - e[1]) * k, e[2] + (m[2] - e[2]) * k]
+                    [
+                        e[0] + (m[0] - e[0]) * k,
+                        e[1] + (m[1] - e[1]) * k,
+                        e[2] + (m[2] - e[2]) * k,
+                    ]
                 }
                 None => e,
             };
@@ -678,7 +817,10 @@ const GAMUT_WARN: f32 = 0.995;
 #[inline]
 fn out_of_gamut(r: [f32; 3], t: f32) -> bool {
     let (lo, hi) = (r[0].min(r[1]).min(r[2]), r[0].max(r[1]).max(r[2]));
-    t < GAMUT_WARN && (hi - lo) > 0.02 * hi.abs().max(1e-3) && hi - lo > 1e-3 && (lo < -1e-3 || (hi > 1.0 && lo < 1.0))
+    t < GAMUT_WARN
+        && (hi - lo) > 0.02 * hi.abs().max(1e-3)
+        && hi - lo > 1e-3
+        && (lo < -1e-3 || (hi > 1.0 && lo < 1.0))
 }
 
 #[inline]
@@ -709,7 +851,11 @@ pub fn gamut_map_to(r: [f32; 3], luma: [f32; 3], peak: f32) -> ([f32; 3], f32) {
             t = t.min((peak - yy) / (c - yy).max(1e-9));
         }
     }
-    if t < 1.0 { (r.map(|c| yy + (c - yy) * t), t) } else { (r, 1.0) }
+    if t < 1.0 {
+        (r.map(|c| yy + (c - yy) * t), t)
+    } else {
+        (r, 1.0)
+    }
 }
 
 /// Local Defringe weight of a scene-linear colour `c` whose log luminance differs by `det` from

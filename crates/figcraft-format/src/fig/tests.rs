@@ -104,30 +104,69 @@ fn xy(x: f64, y: f64) -> Kv<'static> {
     o(vec![("x", f(x)), ("y", f(y))])
 }
 fn at(x: f64, y: f64) -> Kv<'static> {
-    o(vec![("m00", f(1.0)), ("m01", f(0.0)), ("m02", f(x)), ("m10", f(0.0)), ("m11", f(1.0)), ("m12", f(y))])
+    o(vec![
+        ("m00", f(1.0)),
+        ("m01", f(0.0)),
+        ("m02", f(x)),
+        ("m10", f(0.0)),
+        ("m11", f(1.0)),
+        ("m12", f(y)),
+    ])
 }
 fn rgb(r: f64, gr: f64, b: f64) -> Kv<'static> {
     o(vec![("r", f(r)), ("g", f(gr)), ("b", f(b)), ("a", f(1.0))])
 }
 fn solid(r: f64, gr: f64, b: f64) -> Kv<'static> {
-    o(vec![("type", e("SOLID")), ("color", rgb(r, gr, b)), ("opacity", f(1.0)), ("visible", Kv::Bool(true))])
+    o(vec![
+        ("type", e("SOLID")),
+        ("color", rgb(r, gr, b)),
+        ("opacity", f(1.0)),
+        ("visible", Kv::Bool(true)),
+    ])
 }
 fn root_guid() -> Kv<'static> {
     o(vec![("sessionID", u(0)), ("localID", u(0))])
 }
 fn alias_data(l: u64) -> Kv<'static> {
-    o(vec![("value", o(vec![("alias", o(vec![("guid", g(l))]))])), ("dataType", e("ALIAS"))])
+    o(vec![
+        ("value", o(vec![("alias", o(vec![("guid", g(l))]))])),
+        ("dataType", e("ALIAS")),
+    ])
 }
 fn prop_ref(def: u64, field: &'static str) -> Kv<'static> {
-    let data = o(vec![("value", o(vec![("propRefValue", o(vec![("defId", g(def))]))])), ("dataType", e("PROP_REF"))]);
-    o(vec![("entries", arr(vec![o(vec![("variableData", data), ("variableField", e(field))])]))])
+    let data = o(vec![
+        (
+            "value",
+            o(vec![("propRefValue", o(vec![("defId", g(def))]))]),
+        ),
+        ("dataType", e("PROP_REF")),
+    ]);
+    o(vec![(
+        "entries",
+        arr(vec![o(vec![
+            ("variableData", data),
+            ("variableField", e(field)),
+        ])]),
+    )])
 }
 
 /// A node: id (0: the document), parent (id, position), type, name and further fields.
-fn node(id: u64, par: Option<(u64, &str)>, ty: &'static str, name: &str, mut more: Vec<(&'static str, Kv<'static>)>) -> Kv<'static> {
+fn node(
+    id: u64,
+    par: Option<(u64, &str)>,
+    ty: &'static str,
+    name: &str,
+    mut more: Vec<(&'static str, Kv<'static>)>,
+) -> Kv<'static> {
     let mut v = vec![("guid", if id == 0 { root_guid() } else { g(id) })];
     if let Some((p, pos)) = par {
-        v.push(("parentIndex", o(vec![("guid", if p == 0 { root_guid() } else { g(p) }), ("position", s(pos))])));
+        v.push((
+            "parentIndex",
+            o(vec![
+                ("guid", if p == 0 { root_guid() } else { g(p) }),
+                ("position", s(pos)),
+            ]),
+        ));
     }
     v.push(("type", e(ty)));
     v.push(("name", s(name)));
@@ -138,7 +177,12 @@ fn node(id: u64, par: Option<(u64, &str)>, ty: &'static str, name: &str, mut mor
 /// A path blob: a closed triangle.
 fn triangle_blob() -> Vec<u8> {
     let mut b = Vec::new();
-    for (cmd, pts) in [(1u8, vec![0.0f32, 0.0]), (2, vec![10.0, 0.0]), (2, vec![5.0, 8.0]), (0, vec![])] {
+    for (cmd, pts) in [
+        (1u8, vec![0.0f32, 0.0]),
+        (2, vec![10.0, 0.0]),
+        (2, vec![5.0, 8.0]),
+        (0, vec![]),
+    ] {
         b.push(cmd);
         for p in pts {
             b.extend_from_slice(&p.to_le_bytes());
@@ -151,7 +195,8 @@ fn triangle_blob() -> Vec<u8> {
 pub(super) fn png() -> Vec<u8> {
     let img = image::RgbaImage::from_pixel(2, 1, image::Rgba([255, 0, 0, 255]));
     let mut out = Vec::new();
-    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png).unwrap();
+    img.write_to(&mut std::io::Cursor::new(&mut out), image::ImageFormat::Png)
+        .unwrap();
     out
 }
 
@@ -164,15 +209,34 @@ const HASH: [u8; 20] = [0xab; 20];
 /// note; styles and variables on the internal page.
 fn message() -> Kv<'static> {
     let modes = arr(vec![
-        o(vec![("id", g(90)), ("name", s("Light")), ("sortPosition", s("!"))]),
-        o(vec![("id", g(91)), ("name", s("Dark")), ("sortPosition", s("\""))]),
+        o(vec![
+            ("id", g(90)),
+            ("name", s("Light")),
+            ("sortPosition", s("!")),
+        ]),
+        o(vec![
+            ("id", g(91)),
+            ("name", s("Dark")),
+            ("sortPosition", s("\"")),
+        ]),
     ]);
-    let color_value = |c| o(vec![("value", o(vec![("colorValue", c)])), ("dataType", e("COLOR"))]);
+    let color_value = |c| {
+        o(vec![
+            ("value", o(vec![("colorValue", c)])),
+            ("dataType", e("COLOR")),
+        ])
+    };
     let values = o(vec![(
         "entries",
         arr(vec![
-            o(vec![("modeID", g(90)), ("variableData", color_value(rgb(1.0, 1.0, 1.0)))]),
-            o(vec![("modeID", g(91)), ("variableData", color_value(rgb(0.0, 0.0, 0.0)))]),
+            o(vec![
+                ("modeID", g(90)),
+                ("variableData", color_value(rgb(1.0, 1.0, 1.0))),
+            ]),
+            o(vec![
+                ("modeID", g(91)),
+                ("variableData", color_value(rgb(0.0, 0.0, 0.0))),
+            ]),
         ]),
     )]);
     let click = o(vec![
@@ -189,24 +253,61 @@ fn message() -> Kv<'static> {
             ])]),
         ),
     ]);
-    let font = |style: &str| o(vec![("family", s("Inter")), ("style", s(style)), ("postscript", s(""))]);
+    let font = |style: &str| {
+        o(vec![
+            ("family", s("Inter")),
+            ("style", s(style)),
+            ("postscript", s("")),
+        ])
+    };
     let text = o(vec![
         ("characters", s("Hi there")),
-        ("characterStyleIDs", arr(vec![u(0), u(0), u(0), u(5), u(5), u(5)])),
-        ("styleOverrideTable", arr(vec![o(vec![("fontName", font("Bold")), ("styleID", u(5))])])),
+        (
+            "characterStyleIDs",
+            arr(vec![u(0), u(0), u(0), u(5), u(5), u(5)]),
+        ),
+        (
+            "styleOverrideTable",
+            arr(vec![o(vec![("fontName", font("Bold")), ("styleID", u(5))])]),
+        ),
     ]);
     let nodes = vec![
         node(0, None, "DOCUMENT", "Document", vec![]),
         node(1, Some((0, "!")), "CANVAS", "Page A", vec![]),
-        node(2, Some((0, "~")), "CANVAS", "Internal", vec![("internalOnly", Kv::Bool(true))]),
-        node(3, Some((2, "!")), "RECTANGLE", "Brand", vec![("styleType", e("FILL")), ("fillPaints", arr(vec![solid(0.0, 0.0, 1.0)]))]),
-        node(4, Some((2, "\"")), "VARIABLE_SET", "Theme", vec![("variableSetModes", modes)]),
+        node(
+            2,
+            Some((0, "~")),
+            "CANVAS",
+            "Internal",
+            vec![("internalOnly", Kv::Bool(true))],
+        ),
+        node(
+            3,
+            Some((2, "!")),
+            "RECTANGLE",
+            "Brand",
+            vec![
+                ("styleType", e("FILL")),
+                ("fillPaints", arr(vec![solid(0.0, 0.0, 1.0)])),
+            ],
+        ),
+        node(
+            4,
+            Some((2, "\"")),
+            "VARIABLE_SET",
+            "Theme",
+            vec![("variableSetModes", modes)],
+        ),
         node(
             5,
             Some((2, "#")),
             "VARIABLE",
             "surface",
-            vec![("variableSetID", o(vec![("guid", g(4))])), ("variableResolvedType", e("COLOR")), ("variableDataValues", values)],
+            vec![
+                ("variableSetID", o(vec![("guid", g(4))])),
+                ("variableResolvedType", e("COLOR")),
+                ("variableDataValues", values),
+            ],
         ),
         // Listed before the frame, but its position puts it second.
         node(
@@ -238,7 +339,11 @@ fn message() -> Kv<'static> {
             Some((20, "!")),
             "ELLIPSE",
             "Icon",
-            vec![("size", xy(16.0, 16.0)), ("transform", at(12.0, 12.0)), ("parameterConsumptionMap", prop_ref(80, "VISIBLE"))],
+            vec![
+                ("size", xy(16.0, 16.0)),
+                ("transform", at(12.0, 12.0)),
+                ("parameterConsumptionMap", prop_ref(80, "VISIBLE")),
+            ],
         ),
         node(
             10,
@@ -248,10 +353,19 @@ fn message() -> Kv<'static> {
             vec![
                 ("size", xy(400.0, 300.0)),
                 ("fillPaints", arr(vec![solid(1.0, 1.0, 1.0)])),
-                ("prototypeStartingPoint", o(vec![("name", s("Main flow")), ("position", s("!"))])),
+                (
+                    "prototypeStartingPoint",
+                    o(vec![("name", s("Main flow")), ("position", s("!"))]),
+                ),
                 (
                     "variableModeBySetMap",
-                    o(vec![("entries", arr(vec![o(vec![("variableSetID", o(vec![("guid", g(4))])), ("variableModeID", g(91))])]))]),
+                    o(vec![(
+                        "entries",
+                        arr(vec![o(vec![
+                            ("variableSetID", o(vec![("guid", g(4))])),
+                            ("variableModeID", g(91)),
+                        ])]),
+                    )]),
                 ),
             ],
         ),
@@ -264,7 +378,13 @@ fn message() -> Kv<'static> {
                 ("size", xy(50.0, 40.0)),
                 ("transform", at(10.0, 20.0)),
                 ("cornerRadius", f(6.0)),
-                ("fillPaints", arr(vec![o(vec![("type", e("IMAGE")), ("image", o(vec![("hash", Kv::Bytes(HASH.to_vec()))]))])])),
+                (
+                    "fillPaints",
+                    arr(vec![o(vec![
+                        ("type", e("IMAGE")),
+                        ("image", o(vec![("hash", Kv::Bytes(HASH.to_vec()))])),
+                    ])]),
+                ),
                 ("strokePaints", arr(vec![solid(0.0, 0.0, 0.0)])),
                 ("strokeWeight", f(2.0)),
                 ("prototypeInteractions", arr(vec![click])),
@@ -284,7 +404,17 @@ fn message() -> Kv<'static> {
                 ("textData", text),
             ],
         ),
-        node(13, Some((10, "#")), "FRAME", "Group", vec![("size", xy(30.0, 30.0)), ("transform", at(100.0, 100.0)), ("resizeToFit", Kv::Bool(true))]),
+        node(
+            13,
+            Some((10, "#")),
+            "FRAME",
+            "Group",
+            vec![
+                ("size", xy(30.0, 30.0)),
+                ("transform", at(100.0, 100.0)),
+                ("resizeToFit", Kv::Bool(true)),
+            ],
+        ),
         node(
             14,
             Some((13, "!")),
@@ -294,7 +424,13 @@ fn message() -> Kv<'static> {
                 ("size", xy(10.0, 8.0)),
                 ("transform", at(5.0, 6.0)),
                 ("fillPaints", arr(vec![solid(1.0, 0.0, 0.0)])),
-                ("fillGeometry", arr(vec![o(vec![("windingRule", e("NONZERO")), ("commandsBlob", u(0))])])),
+                (
+                    "fillGeometry",
+                    arr(vec![o(vec![
+                        ("windingRule", e("NONZERO")),
+                        ("commandsBlob", u(0)),
+                    ])]),
+                ),
             ],
         ),
         node(
@@ -302,7 +438,12 @@ fn message() -> Kv<'static> {
             Some((13, "\"")),
             "STAR",
             "Star",
-            vec![("size", xy(20.0, 20.0)), ("transform", at(10.0, 10.0)), ("count", u(6)), ("starInnerScale", f(0.5))],
+            vec![
+                ("size", xy(20.0, 20.0)),
+                ("transform", at(10.0, 10.0)),
+                ("count", u(6)),
+                ("starInnerScale", f(0.5)),
+            ],
         ),
         node(
             16,
@@ -325,7 +466,14 @@ fn message() -> Kv<'static> {
             vec![
                 ("size", xy(10.0, 10.0)),
                 ("transform", at(20.0, 200.0)),
-                ("fillPaints", arr(vec![o(vec![("type", e("SOLID")), ("color", rgb(0.0, 0.0, 0.0)), ("colorVar", alias_data(5))])])),
+                (
+                    "fillPaints",
+                    arr(vec![o(vec![
+                        ("type", e("SOLID")),
+                        ("color", rgb(0.0, 0.0, 0.0)),
+                        ("colorVar", alias_data(5)),
+                    ])]),
+                ),
             ],
         ),
         node(
@@ -342,15 +490,33 @@ fn message() -> Kv<'static> {
                     "symbolData",
                     o(vec![
                         ("symbolID", g(20)),
-                        ("symbolOverrides", arr(vec![o(vec![("guidPath", o(vec![("guids", arr(vec![g(21)]))])), ("name", s("Renamed icon"))])])),
+                        (
+                            "symbolOverrides",
+                            arr(vec![o(vec![
+                                ("guidPath", o(vec![("guids", arr(vec![g(21)]))])),
+                                ("name", s("Renamed icon")),
+                            ])]),
+                        ),
                     ]),
                 ),
-                ("componentPropAssignments", arr(vec![o(vec![("defID", g(80)), ("value", o(vec![("boolValue", Kv::Bool(false))]))])])),
+                (
+                    "componentPropAssignments",
+                    arr(vec![o(vec![
+                        ("defID", g(80)),
+                        ("value", o(vec![("boolValue", Kv::Bool(false))])),
+                    ])]),
+                ),
             ],
         ),
         node(19, Some((10, "'")), "STICKY", "Note", vec![]),
     ];
-    o(vec![("nodeChanges", arr(nodes)), ("blobs", arr(vec![o(vec![("bytes", Kv::Bytes(triangle_blob()))])]))])
+    o(vec![
+        ("nodeChanges", arr(nodes)),
+        (
+            "blobs",
+            arr(vec![o(vec![("bytes", Kv::Bytes(triangle_blob()))])]),
+        ),
+    ])
 }
 
 /// `canvas.fig`: magic, version, deflated schema, zstd message.
@@ -359,7 +525,10 @@ pub(super) fn canvas(schema: &Schema, msg: &Kv) -> Vec<u8> {
     let mut z = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
     z.write_all(&encode::schema(schema)).unwrap();
     let schema_chunk = z.finish().unwrap();
-    let msg_chunk = ruzstd::encoding::compress_to_vec(&encode::message(schema, root, msg).unwrap()[..], ruzstd::encoding::CompressionLevel::Fastest);
+    let msg_chunk = ruzstd::encoding::compress_to_vec(
+        &encode::message(schema, root, msg).unwrap()[..],
+        ruzstd::encoding::CompressionLevel::Fastest,
+    );
     let mut out = b"fig-kiwi".to_vec();
     out.extend_from_slice(&101u32.to_le_bytes());
     for c in [schema_chunk, msg_chunk] {
@@ -371,9 +540,17 @@ pub(super) fn canvas(schema: &Schema, msg: &Kv) -> Vec<u8> {
 
 fn zip_file(canvas: &[u8]) -> Vec<u8> {
     let mut z = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
-    let stored = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
-    let image_name = format!("images/{}", HASH.iter().map(|b| format!("{b:02x}")).collect::<String>());
-    for (name, bytes) in [("canvas.fig", canvas.to_vec()), ("meta.json", br#"{"file_name":"Fixture"}"#.to_vec()), (image_name.as_str(), png())] {
+    let stored =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let image_name = format!(
+        "images/{}",
+        HASH.iter().map(|b| format!("{b:02x}")).collect::<String>()
+    );
+    for (name, bytes) in [
+        ("canvas.fig", canvas.to_vec()),
+        ("meta.json", br#"{"file_name":"Fixture"}"#.to_vec()),
+        (image_name.as_str(), png()),
+    ] {
         z.start_file(name, stored).unwrap();
         z.write_all(&bytes).unwrap();
     }
@@ -385,7 +562,9 @@ fn fixture() -> Vec<u8> {
 }
 
 fn named<'d>(doc: &'d figcraft_doc::Document, name: &str) -> &'d figcraft_doc::Node {
-    doc.nodes().find(|n| n.name == name).unwrap_or_else(|| panic!("no layer {name}"))
+    doc.nodes()
+        .find(|n| n.name == name)
+        .unwrap_or_else(|| panic!("no layer {name}"))
 }
 
 #[test]
@@ -395,25 +574,53 @@ fn kiwi_round_trip() {
     assert_eq!(back.defs.len(), sc.defs.len());
     for (a, b) in sc.defs.iter().zip(&back.defs) {
         assert_eq!((a.name.as_str(), a.kind), (b.name.as_str(), b.kind));
-        let fields = |d: &Def| d.fields.iter().map(|f| (f.name.clone(), f.ty, f.array, f.value)).collect::<Vec<_>>();
+        let fields = |d: &Def| {
+            d.fields
+                .iter()
+                .map(|f| (f.name.clone(), f.ty, f.array, f.value))
+                .collect::<Vec<_>>()
+        };
         assert_eq!(fields(a), fields(b));
     }
     let msg = message();
     let root = sc.find("Message").unwrap();
-    assert_eq!(back.decode_message(root, &encode::message(&sc, root, &msg).unwrap()).unwrap(), msg);
+    assert_eq!(
+        back.decode_message(root, &encode::message(&sc, root, &msg).unwrap())
+            .unwrap(),
+        msg
+    );
 }
 
 #[test]
 fn kiwi_scalars() {
     let names = ["f", "i", "u", "i64", "u64", "s", "b"];
-    let types = [Type::Float, Type::Int, Type::Uint, Type::Int64, Type::Uint64, Type::Str, Type::Bool];
+    let types = [
+        Type::Float,
+        Type::Int,
+        Type::Uint,
+        Type::Int64,
+        Type::Uint64,
+        Type::Str,
+        Type::Bool,
+    ];
     let fields = names
         .iter()
         .zip(types)
         .enumerate()
-        .map(|(i, (n, t))| Field { name: n.to_string(), ty: Some(t), array: false, value: i as u32 + 1 })
+        .map(|(i, (n, t))| Field {
+            name: n.to_string(),
+            ty: Some(t),
+            array: false,
+            value: i as u32 + 1,
+        })
         .collect();
-    let sc = Schema { defs: vec![Def { name: "M".into(), kind: Kind::Message, fields }] };
+    let sc = Schema {
+        defs: vec![Def {
+            name: "M".into(),
+            kind: Kind::Message,
+            fields,
+        }],
+    };
     let cases = [
         (0.0f32, 0i32, 0u32, 0i64, 0u64),
         (-1.5, -7, 300, i64::MIN, u64::MAX),
@@ -440,7 +647,11 @@ fn kiwi_scalars() {
         w.var_uint(0);
         let got = sc.decode_message(0, &w.0).unwrap();
         // Denormals are stored as zero.
-        let want_f = if fv.abs() < f32::MIN_POSITIVE { 0.0 } else { fv };
+        let want_f = if fv.abs() < f32::MIN_POSITIVE {
+            0.0
+        } else {
+            fv
+        };
         assert_eq!(got.get("f"), Some(&Kv::Float(want_f)));
         assert_eq!(got.get("i"), Some(&Kv::Int(i64::from(iv))));
         assert_eq!(got.get("u"), Some(&Kv::Uint(u64::from(uv))));
@@ -464,40 +675,85 @@ fn imports_the_fixture() {
     // Siblings by position: the frame comes first even though it's listed after the component.
     assert_eq!(doc.node(page.children[0]).unwrap().name, "Screen");
     let screen = named(&doc, "Screen");
-    let names: Vec<&str> = screen.children.iter().map(|c| doc.node(*c).unwrap().name.as_str()).collect();
-    assert_eq!(names, ["Photo", "Title", "Group", "Styled", "Card", "Button copy", "Note"]);
+    let names: Vec<&str> = screen
+        .children
+        .iter()
+        .map(|c| doc.node(*c).unwrap().name.as_str())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "Photo",
+            "Title",
+            "Group",
+            "Styled",
+            "Card",
+            "Button copy",
+            "Note"
+        ]
+    );
     // Image fill from the archive.
     let photo = named(&doc, "Photo");
-    let figcraft_doc::color::PaintKind::Image(img) = &photo.fills[0].kind else { panic!("not an image fill") };
-    assert_eq!(doc.images.get(&img.image).map(|i| (i.width, i.height)), Some((2, 1)));
+    let figcraft_doc::color::PaintKind::Image(img) = &photo.fills[0].kind else {
+        panic!("not an image fill")
+    };
+    assert_eq!(
+        doc.images.get(&img.image).map(|i| (i.width, i.height)),
+        Some((2, 1))
+    );
     assert_eq!((photo.corners.radii[0], photo.stroke.weight), (6.0, 2.0));
     // Text with a bold run over "the".
-    let NodeKind::Text(t) = &named(&doc, "Title").kind else { panic!("not text") };
+    let NodeKind::Text(t) = &named(&doc, "Title").kind else {
+        panic!("not text")
+    };
     assert_eq!(t.characters, "Hi there");
     assert_eq!(t.style.font_size, 16.0);
     assert_eq!(t.runs.len(), 1);
-    assert_eq!((t.runs[0].start, t.runs[0].end, t.runs[0].style.font_style.as_str()), (3, 6, "Bold"));
+    assert_eq!(
+        (
+            t.runs[0].start,
+            t.runs[0].end,
+            t.runs[0].style.font_style.as_str()
+        ),
+        (3, 6, "Bold")
+    );
     // The group's children keep their place on the page (group at 100, 100).
     assert!(matches!(named(&doc, "Group").kind, NodeKind::Group));
     let tri = named(&doc, "Tri");
     assert!(matches!(&tri.kind, NodeKind::Vector { network } if !network.regions.is_empty()));
     let abs = doc.world_transform(tri.id).translation();
-    assert!((abs.x - 105.0).abs() < 1e-6 && (abs.y - 106.0).abs() < 1e-6, "{abs:?}");
-    assert!(matches!(named(&doc, "Star").kind, NodeKind::Star { count: 6, .. }));
+    assert!(
+        (abs.x - 105.0).abs() < 1e-6 && (abs.y - 106.0).abs() < 1e-6,
+        "{abs:?}"
+    );
+    assert!(matches!(
+        named(&doc, "Star").kind,
+        NodeKind::Star { count: 6, .. }
+    ));
     // The linked style supplies the paint.
     let styled = named(&doc, "Styled");
     assert_eq!(styled.styles.fill.as_deref(), Some("1:3"));
     assert!(doc.styles.iter().any(|s| s.name == "Brand"));
-    let figcraft_doc::color::PaintKind::Solid { color } = styled.fills[0].kind else { panic!("not solid") };
+    let figcraft_doc::color::PaintKind::Solid { color } = styled.fills[0].kind else {
+        panic!("not solid")
+    };
     assert_eq!((color.r, color.g, color.b), (0.0, 0.0, 1.0));
     // Variables, the fill binding and the explicit mode.
     assert_eq!(doc.variables.collections.len(), 1);
     assert_eq!(doc.variables.variables[0].kind, VariableType::Color);
-    assert_eq!(named(&doc, "Card").bound.get("fill").map(String::as_str), Some("1:5"));
-    assert_eq!(screen.var_modes.get("1:4").map(String::as_str), Some("1:91"));
+    assert_eq!(
+        named(&doc, "Card").bound.get("fill").map(String::as_str),
+        Some("1:5")
+    );
+    assert_eq!(
+        screen.var_modes.get("1:4").map(String::as_str),
+        Some("1:91")
+    );
     // The component keeps its property; the instance is expanded with the value applied.
     let button = named(&doc, "Button");
-    assert!(matches!(&button.kind, NodeKind::Component { props, .. } if props.contains_key("Show icon")));
+    assert!(
+        matches!(&button.kind, NodeKind::Component { props, .. } if props.contains_key("Show icon"))
+    );
     let inst = named(&doc, "Button copy");
     assert!(
         matches!(&inst.kind, NodeKind::Instance { component, props } if *component == button.id && props.get("Show icon") == Some(&Value::Bool(false)))
@@ -507,13 +763,25 @@ fn imports_the_fixture() {
     assert!(!icon.visible);
     // Prototype: the click navigates to the component; the flow starts at the screen.
     let it = &photo.interactions[0];
-    assert!(matches!(it.actions[0], figcraft_doc::proto::Action::Navigate { dest, .. } if dest == button.id));
+    assert!(
+        matches!(it.actions[0], figcraft_doc::proto::Action::Navigate { dest, .. } if dest == button.id)
+    );
     assert_eq!(it.duration_ms, 250);
-    let Some(NodeKind::Page { flows, .. }) = doc.node(doc.pages[0]).map(|p| &p.kind) else { panic!("no page") };
-    assert_eq!((flows[0].name.as_str(), flows[0].start), ("Main flow", screen.id));
+    let Some(NodeKind::Page { flows, .. }) = doc.node(doc.pages[0]).map(|p| &p.kind) else {
+        panic!("no page")
+    };
+    assert_eq!(
+        (flows[0].name.as_str(), flows[0].start),
+        ("Main flow", screen.id)
+    );
     // The sticky note comes in as a frame, with a warning.
     assert!(matches!(named(&doc, "Note").kind, NodeKind::Frame));
-    assert!(warnings.iter().any(|w| w.contains("sticky layers import as frames")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .any(|w| w.contains("sticky layers import as frames")),
+        "{warnings:?}"
+    );
 }
 
 #[test]
@@ -549,7 +817,10 @@ fn other_files_are_not_fig() {
 struct Lcg(u64);
 impl Lcg {
     fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.0 = self
+            .0
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         self.0 >> 33
     }
 }
@@ -622,12 +893,35 @@ fn mangled_kiwi_never_panics() {
 #[test]
 fn hostile_input_is_refused() {
     // A message that contains itself, nested past the depth cap.
-    let field = |ty, array| vec![Field { name: "m".into(), ty: Some(ty), array, value: 1 }];
-    let nested = Schema { defs: vec![Def { name: "Message".into(), kind: Kind::Message, fields: field(Type::Def(0), false) }] };
+    let field = |ty, array| {
+        vec![Field {
+            name: "m".into(),
+            ty: Some(ty),
+            array,
+            value: 1,
+        }]
+    };
+    let nested = Schema {
+        defs: vec![Def {
+            name: "Message".into(),
+            kind: Kind::Message,
+            fields: field(Type::Def(0), false),
+        }],
+    };
     assert!(nested.decode_message(0, &[1u8; 10_000]).is_err());
     // An array count larger than the data.
-    let array = Schema { defs: vec![Def { name: "Message".into(), kind: Kind::Message, fields: field(Type::Uint, true) }] };
-    assert!(array.decode_message(0, &[1, 0xff, 0xff, 0xff, 0xff, 0x0f]).is_err());
+    let array = Schema {
+        defs: vec![Def {
+            name: "Message".into(),
+            kind: Kind::Message,
+            fields: field(Type::Uint, true),
+        }],
+    };
+    assert!(
+        array
+            .decode_message(0, &[1, 0xff, 0xff, 0xff, 0xff, 0x0f])
+            .is_err()
+    );
     // A field type naming a missing definition.
     let mut w = encode::Writer::default();
     w.var_uint(1);
@@ -640,9 +934,24 @@ fn hostile_input_is_refused() {
     w.var_uint(1);
     assert!(Schema::decode(&w.0).is_err());
     // A schema without a Message definition.
-    let c = canvas(&Schema { defs: vec![Def { name: "Message".into(), kind: Kind::Message, fields: vec![] }] }, &Kv::Object(vec![]));
+    let c = canvas(
+        &Schema {
+            defs: vec![Def {
+                name: "Message".into(),
+                kind: Kind::Message,
+                fields: vec![],
+            }],
+        },
+        &Kv::Object(vec![]),
+    );
     let renamed: Vec<u8> = {
-        let sc = Schema { defs: vec![Def { name: "Other".into(), kind: Kind::Message, fields: vec![] }] };
+        let sc = Schema {
+            defs: vec![Def {
+                name: "Other".into(),
+                kind: Kind::Message,
+                fields: vec![],
+            }],
+        };
         let mut z = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
         z.write_all(&encode::schema(&sc)).unwrap();
         let sch = z.finish().unwrap();
@@ -658,10 +967,31 @@ fn hostile_input_is_refused() {
 
 #[test]
 fn instances_inside_their_own_main_stop() {
-    let sym = node(5, Some((1, "!")), "SYMBOL", "Loop", vec![("size", xy(10.0, 10.0))]);
-    let inner = node(6, Some((5, "!")), "INSTANCE", "Self", vec![("symbolData", o(vec![("symbolID", g(5))]))]);
-    let doc_nodes = vec![node(0, None, "DOCUMENT", "D", vec![]), node(1, Some((0, "!")), "CANVAS", "P", vec![]), sym, inner];
-    let (doc, _) = import(&canvas(&schema(), &o(vec![("nodeChanges", arr(doc_nodes))])), "x").unwrap();
+    let sym = node(
+        5,
+        Some((1, "!")),
+        "SYMBOL",
+        "Loop",
+        vec![("size", xy(10.0, 10.0))],
+    );
+    let inner = node(
+        6,
+        Some((5, "!")),
+        "INSTANCE",
+        "Self",
+        vec![("symbolData", o(vec![("symbolID", g(5))]))],
+    );
+    let doc_nodes = vec![
+        node(0, None, "DOCUMENT", "D", vec![]),
+        node(1, Some((0, "!")), "CANVAS", "P", vec![]),
+        sym,
+        inner,
+    ];
+    let (doc, _) = import(
+        &canvas(&schema(), &o(vec![("nodeChanges", arr(doc_nodes))])),
+        "x",
+    )
+    .unwrap();
     assert!(doc.nodes().any(|n| n.name == "Self"));
 }
 
@@ -670,9 +1000,13 @@ mod tail;
 
 /// `.fig` files in the folder `FIGCRAFT_FIG_SAMPLES` names (none when it's unset).
 pub(super) fn samples() -> Vec<std::path::PathBuf> {
-    let Some(dir) = std::env::var_os("FIGCRAFT_FIG_SAMPLES") else { return Vec::new() };
+    let Some(dir) = std::env::var_os("FIGCRAFT_FIG_SAMPLES") else {
+        return Vec::new();
+    };
     let dir = std::fs::read_dir(dir).into_iter().flatten().flatten();
-    dir.map(|e| e.path()).filter(|p| p.extension().is_some_and(|x| x == "fig")).collect()
+    dir.map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "fig"))
+        .collect()
 }
 
 /// Local only (`FIGCRAFT_FIG_SAMPLES`): every file imports without warnings.
@@ -680,7 +1014,8 @@ pub(super) fn samples() -> Vec<std::path::PathBuf> {
 fn local_samples_import() {
     for p in samples() {
         let bytes = std::fs::read(&p).unwrap();
-        let (doc, warnings) = import(&bytes, "sample").unwrap_or_else(|e| panic!("{}: {e}", p.display()));
+        let (doc, warnings) =
+            import(&bytes, "sample").unwrap_or_else(|e| panic!("{}: {e}", p.display()));
         assert!(warnings.is_empty(), "{}: {warnings:?}", p.display());
         assert!(doc.node_count() > 5, "{}", p.display());
     }
@@ -690,7 +1025,9 @@ fn local_samples_import() {
 /// folder (for working on the importer).
 #[test]
 fn dump_samples() {
-    let Ok(out) = std::env::var("FIG_DUMP") else { return };
+    let Ok(out) = std::env::var("FIG_DUMP") else {
+        return;
+    };
     for p in samples() {
         let bytes = std::fs::read(&p).unwrap();
         let a = Archive::open(&bytes).unwrap();
@@ -705,13 +1042,29 @@ fn dump_samples() {
                     Some(t) => format!("{t:?}"),
                     None => String::new(),
                 };
-                txt += &format!("  {} {}{} = {}\n", f.name, ty, if f.array { "[]" } else { "" }, f.value);
+                txt += &format!(
+                    "  {} {}{} = {}\n",
+                    f.name,
+                    ty,
+                    if f.array { "[]" } else { "" },
+                    f.value
+                );
             }
         }
         std::fs::write(format!("{out}/{stem}.schema.txt"), txt).unwrap();
-        let msg = schema.decode_message(schema.find("Message").unwrap(), &message).unwrap();
-        std::fs::write(format!("{out}/{stem}.json"), serde_json::to_string_pretty(&debug_json(&msg)).unwrap()).unwrap();
+        let msg = schema
+            .decode_message(schema.find("Message").unwrap(), &message)
+            .unwrap();
+        std::fs::write(
+            format!("{out}/{stem}.json"),
+            serde_json::to_string_pretty(&debug_json(&msg)).unwrap(),
+        )
+        .unwrap();
         let (rest, _) = map::to_rest(&msg, &stem);
-        std::fs::write(format!("{out}/{stem}.rest.json"), serde_json::to_string_pretty(&rest).unwrap()).unwrap();
+        std::fs::write(
+            format!("{out}/{stem}.rest.json"),
+            serde_json::to_string_pretty(&rest).unwrap(),
+        )
+        .unwrap();
     }
 }

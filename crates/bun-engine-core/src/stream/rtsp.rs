@@ -44,7 +44,10 @@ struct Response {
 
 impl Response {
     fn header(&self, name: &str) -> Option<&str> {
-        self.headers.iter().find(|(k, _)| k.eq_ignore_ascii_case(name)).map(|(_, v)| v.as_str())
+        self.headers
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v.as_str())
     }
 }
 
@@ -67,21 +70,43 @@ impl RtspClient {
         let rest = url.split("://").nth(1).unwrap_or(url);
         let authority = rest.split('/').next().unwrap_or(rest);
         let (host, port) = match authority.rsplit_once(':') {
-            Some((h, p)) if !h.is_empty() => (h.trim_matches(['[', ']']).to_string(), p.parse().unwrap_or(48010)),
+            Some((h, p)) if !h.is_empty() => (
+                h.trim_matches(['[', ']']).to_string(),
+                p.parse().unwrap_or(48010),
+            ),
             _ => (authority.to_string(), 48010),
         };
-        let host = if host.is_empty() || host == "0.0.0.0" { fallback_host.to_string() } else { host };
+        let host = if host.is_empty() || host == "0.0.0.0" {
+            fallback_host.to_string()
+        } else {
+            host
+        };
         let target = format!("rtsp://{host}:{port}");
-        Self { host, port, target, cseq: 0, session: None }
+        Self {
+            host,
+            port,
+            target,
+            cseq: 0,
+            session: None,
+        }
     }
 
     pub fn host(&self) -> &str {
         &self.host
     }
 
-    fn request(&mut self, method: &str, target: &str, headers: &[(&str, String)], body: &str) -> Result<Response, String> {
+    fn request(
+        &mut self,
+        method: &str,
+        target: &str,
+        headers: &[(&str, String)],
+        body: &str,
+    ) -> Result<Response, String> {
         self.cseq += 1;
-        let mut text = format!("{method} {target} RTSP/1.0\r\nCSeq: {}\r\nX-GS-ClientVersion: {CLIENT_VERSION}\r\nHost: {}\r\n", self.cseq, self.host);
+        let mut text = format!(
+            "{method} {target} RTSP/1.0\r\nCSeq: {}\r\nX-GS-ClientVersion: {CLIENT_VERSION}\r\nHost: {}\r\n",
+            self.cseq, self.host
+        );
         if let Some(session) = self.session.as_ref() {
             text.push_str(&format!("Session: {session}\r\n"));
         }
@@ -90,10 +115,17 @@ impl RtspClient {
         }
         text.push_str("\r\n");
         text.push_str(body);
-        let addr = (self.host.as_str(), self.port).to_socket_addrs().map_err(|e| e.to_string())?.next().ok_or("unresolved RTSP host")?;
-        let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5)).map_err(|e| format!("RTSP {addr}: {e}"))?;
+        let addr = (self.host.as_str(), self.port)
+            .to_socket_addrs()
+            .map_err(|e| e.to_string())?
+            .next()
+            .ok_or("unresolved RTSP host")?;
+        let mut stream = TcpStream::connect_timeout(&addr, Duration::from_secs(5))
+            .map_err(|e| format!("RTSP {addr}: {e}"))?;
         stream.set_read_timeout(Some(Duration::from_secs(15))).ok();
-        stream.write_all(text.as_bytes()).map_err(|e| e.to_string())?;
+        stream
+            .write_all(text.as_bytes())
+            .map_err(|e| e.to_string())?;
         let mut raw = Vec::new();
         let mut buf = [0u8; 4096];
         loop {
@@ -106,7 +138,11 @@ impl RtspClient {
                     if let Some(split) = text.find("\r\n\r\n") {
                         let len = text[..split]
                             .lines()
-                            .find_map(|l| l.split_once(':').filter(|(k, _)| k.trim().eq_ignore_ascii_case("content-length")))
+                            .find_map(|l| {
+                                l.split_once(':').filter(|(k, _)| {
+                                    k.trim().eq_ignore_ascii_case("content-length")
+                                })
+                            })
                             .and_then(|(_, v)| v.trim().parse::<usize>().ok())
                             .unwrap_or(0);
                         if raw.len() >= split + 4 + len {
@@ -122,11 +158,22 @@ impl RtspClient {
         let split = text.find("\r\n\r\n").unwrap_or(text.len());
         let mut lines = text[..split].lines();
         let status_line = lines.next().unwrap_or("");
-        let status = status_line.split_whitespace().nth(1).and_then(|s| s.parse().ok()).unwrap_or(0);
+        let status = status_line
+            .split_whitespace()
+            .nth(1)
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
         let headers = lines
-            .filter_map(|l| l.split_once(':').map(|(k, v)| (k.trim().to_string(), v.trim().to_string())))
+            .filter_map(|l| {
+                l.split_once(':')
+                    .map(|(k, v)| (k.trim().to_string(), v.trim().to_string()))
+            })
             .collect();
-        let response = Response { status, headers, body: text.get(split + 4..).unwrap_or("").to_string() };
+        let response = Response {
+            status,
+            headers,
+            body: text.get(split + 4..).unwrap_or("").to_string(),
+        };
         if response.status != 200 {
             return Err(format!("RTSP {method} {target}: {status_line}"));
         }
@@ -151,15 +198,24 @@ impl RtspClient {
         let describe = self.request(
             "DESCRIBE",
             &target,
-            &[("Accept", "application/sdp".into()), ("If-Modified-Since", "Thu, 01 Jan 1970 00:00:00 GMT".into())],
+            &[
+                ("Accept", "application/sdp".into()),
+                ("If-Modified-Since", "Thu, 01 Jan 1970 00:00:00 GMT".into()),
+            ],
             "",
         )?;
         session.supports_av1 = describe.body.contains("AV1/90000");
         session.supports_hevc = describe.body.contains("sprop-parameter-sets=AAAAAU");
-        session.encryption_supported = sdp_attribute(&describe.body, "x-ss-general.encryptionSupported").unwrap_or(0);
-        let requested = sdp_attribute(&describe.body, "x-ss-general.encryptionRequested").unwrap_or(0);
+        session.encryption_supported =
+            sdp_attribute(&describe.body, "x-ss-general.encryptionSupported").unwrap_or(0);
+        let requested =
+            sdp_attribute(&describe.body, "x-ss-general.encryptionRequested").unwrap_or(0);
         if config.codec == Codec::Av1 && !session.supports_av1 {
-            config.codec = if session.supports_hevc { Codec::Hevc } else { Codec::H264 };
+            config.codec = if session.supports_hevc {
+                Codec::Hevc
+            } else {
+                Codec::H264
+            };
         }
         if config.codec == Codec::Hevc && !session.supports_hevc {
             config.codec = Codec::H264;
@@ -177,18 +233,27 @@ impl RtspClient {
         };
         let audio = setup(self, "streamid=audio/0/0")?;
         session.audio_port = Self::server_port(&audio).unwrap_or(48000);
-        let id = audio.header("Session").ok_or("RTSP SETUP returned no session")?;
+        let id = audio
+            .header("Session")
+            .ok_or("RTSP SETUP returned no session")?;
         self.session = Some(id.split(';').next().unwrap_or(id).trim().to_string());
         let video = setup(self, "streamid=video/0/0")?;
         session.video_port = Self::server_port(&video)?;
-        session.video_ping = video.header("X-SS-Ping-Payload").and_then(|p| p.as_bytes().try_into().ok());
+        session.video_ping = video
+            .header("X-SS-Ping-Payload")
+            .and_then(|p| p.as_bytes().try_into().ok());
         let control = setup(self, "streamid=control/13/0")?;
         session.control_port = Self::server_port(&control)?;
-        session.connect_data = control.header("X-SS-Connect-Data").and_then(|v| v.parse().ok()).unwrap_or(0);
+        session.connect_data = control
+            .header("X-SS-Connect-Data")
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
 
         // Encrypted control is always used when offered; video encryption on request (or demand).
         let mut enabled = session.encryption_supported & 0x01;
-        if session.encryption_supported & 0x02 != 0 && (config.encrypt_video || requested & 0x02 != 0) {
+        if session.encryption_supported & 0x02 != 0
+            && (config.encrypt_video || requested & 0x02 != 0)
+        {
             enabled |= 0x02;
         }
         session.encryption_enabled = enabled;
@@ -199,7 +264,10 @@ impl RtspClient {
         self.request(
             "ANNOUNCE",
             "streamid=control/13/0",
-            &[("Content-type", "application/sdp".into()), ("Content-length", sdp.len().to_string())],
+            &[
+                ("Content-type", "application/sdp".into()),
+                ("Content-length", sdp.len().to_string()),
+            ],
             &sdp,
         )?;
         self.request("PLAY", "/", &[], "")?;
@@ -211,7 +279,10 @@ impl RtspClient {
         let bitrate = bitrate.min(100_000);
         let mut a: Vec<(&str, String)> = vec![
             ("x-ml-general.featureFlags", "2".into()),
-            ("x-ss-general.encryptionEnabled", session.encryption_enabled.to_string()),
+            (
+                "x-ss-general.encryptionEnabled",
+                session.encryption_enabled.to_string(),
+            ),
             ("x-ss-video[0].chromaSamplingType", "0".into()),
             ("x-nv-video[0].clientViewportWd", config.width.to_string()),
             ("x-nv-video[0].clientViewportHt", config.height.to_string()),
@@ -224,7 +295,10 @@ impl RtspClient {
             ("x-nv-video[0].initialPeakBitrateKbps", bitrate.to_string()),
             ("x-nv-vqos[0].bw.minimumBitrateKbps", bitrate.to_string()),
             ("x-nv-vqos[0].bw.maximumBitrateKbps", bitrate.to_string()),
-            ("x-ml-video.configuredBitrateKbps", config.bitrate_kbps.to_string()),
+            (
+                "x-ml-video.configuredBitrateKbps",
+                config.bitrate_kbps.to_string(),
+            ),
             ("x-nv-vqos[0].fec.enable", "1".into()),
             ("x-nv-vqos[0].videoQualityScoreUpdateTime", "5000".into()),
             ("x-nv-vqos[0].qosTrafficType", "0".into()),
@@ -251,7 +325,10 @@ impl RtspClient {
         a.extend([
             ("x-nv-video[0].dynamicRangeMode", "0".into()),
             ("x-nv-video[0].maxNumReferenceFrames", "1".into()),
-            ("x-nv-video[0].clientRefreshRateX100", (config.fps * 100).to_string()),
+            (
+                "x-nv-video[0].clientRefreshRateX100",
+                (config.fps * 100).to_string(),
+            ),
             ("x-nv-audio.surround.numChannels", "2".into()),
             ("x-nv-audio.surround.channelMask", "3".into()),
             ("x-nv-audio.surround.enable", "0".into()),
@@ -260,8 +337,15 @@ impl RtspClient {
             // Rec. 709, limited range.
             ("x-nv-video[0].encoderCscMode", "2".into()),
         ]);
-        let family = if self.host.contains(':') { "IPv6" } else { "IPv4" };
-        let mut sdp = format!("v=0\r\no=android 0 {CLIENT_VERSION} IN {family} {}\r\ns=NVIDIA Streaming Client\r\n", self.host);
+        let family = if self.host.contains(':') {
+            "IPv6"
+        } else {
+            "IPv4"
+        };
+        let mut sdp = format!(
+            "v=0\r\no=android 0 {CLIENT_VERSION} IN {family} {}\r\ns=NVIDIA Streaming Client\r\n",
+            self.host
+        );
         for (k, v) in a {
             sdp.push_str(&format!("a={k}:{v} \r\n"));
         }

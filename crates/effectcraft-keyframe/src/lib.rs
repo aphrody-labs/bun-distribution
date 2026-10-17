@@ -8,14 +8,24 @@
 //!   (pixels/second), evaluated through an arc-length table.
 //! * Auto-Bezier and continuous-Bezier keys derive their tangents from their neighbours.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 pub mod text_doc;
 pub mod value;
 
 use effectcraft_time::{TICKS_PER_SECOND, Tick};
 use serde::{Deserialize, Serialize};
-pub use text_doc::{BaselineOption, CharStyle, Composer, Direction, FigureStyle, FigureWidth, Kerning, OpenType, ParaStyle, StyleRun};
+pub use text_doc::{
+    BaselineOption, CharStyle, Composer, Direction, FigureStyle, FigureWidth, Kerning, OpenType,
+    ParaStyle, StyleRun,
+};
 pub use value::{FeatherPoint, Gradient, Justify, ShapePath, TextDoc, Value};
 
 /// Temporal interpolation on one side of a keyframe.
@@ -47,13 +57,19 @@ pub struct Ease {
 
 impl Default for Ease {
     fn default() -> Self {
-        Ease { speed: 0.0, influence: 1.0 / 6.0 }
+        Ease {
+            speed: 0.0,
+            influence: 1.0 / 6.0,
+        }
     }
 }
 
 impl Ease {
     /// Easy Ease: zero speed, 33.33 % influence.
-    pub const EASY: Ease = Ease { speed: 0.0, influence: 1.0 / 3.0 };
+    pub const EASY: Ease = Ease {
+        speed: 0.0,
+        influence: 1.0 / 3.0,
+    };
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -140,7 +156,10 @@ impl Keyframe {
             Interp::Bezier if auto => KeyHalf::Auto,
             Interp::Bezier => KeyHalf::Bezier,
         };
-        KeyIcon { left: side(self.in_interp, self.auto_bezier), right: side(self.out_interp, self.auto_bezier) }
+        KeyIcon {
+            left: side(self.in_interp, self.auto_bezier),
+            right: side(self.out_interp, self.auto_bezier),
+        }
     }
 }
 
@@ -268,16 +287,27 @@ impl SpatialSeg {
         SpatialSeg { p, table }
     }
     fn point(p: &[[f64; 3]; 4], u: f64) -> [f64; 3] {
-        [bez(p[0][0], p[1][0], p[2][0], p[3][0], u), bez(p[0][1], p[1][1], p[2][1], p[3][1], u), bez(p[0][2], p[1][2], p[2][2], p[3][2], u)]
+        [
+            bez(p[0][0], p[1][0], p[2][0], p[3][0], u),
+            bez(p[0][1], p[1][1], p[2][1], p[3][1], u),
+            bez(p[0][2], p[1][2], p[2][2], p[3][2], u),
+        ]
     }
     /// |dB/du|.
     fn tangent_len(p: &[[f64; 3]; 4], u: f64) -> f64 {
-        (0..3).map(|k| bez_d(p[0][k], p[1][k], p[2][k], p[3][k], u).powi(2)).sum::<f64>().sqrt()
+        (0..3)
+            .map(|k| bez_d(p[0][k], p[1][k], p[2][k], p[3][k], u).powi(2))
+            .sum::<f64>()
+            .sqrt()
     }
     /// Arc length between `a` and `b` (Gauss-Legendre; exact enough on one table cell).
     fn arc(p: &[[f64; 3]; 4], a: f64, b: f64) -> f64 {
         let (m, h) = ((a + b) * 0.5, (b - a) * 0.5);
-        GAUSS.iter().map(|(x, w)| w * Self::tangent_len(p, m + h * x)).sum::<f64>() * h
+        GAUSS
+            .iter()
+            .map(|(x, w)| w * Self::tangent_len(p, m + h * x))
+            .sum::<f64>()
+            * h
     }
     fn length(&self) -> f64 {
         *self.table.last().unwrap_or(&0.0)
@@ -294,7 +324,9 @@ impl SpatialSeg {
         }
         let s = s.clamp(0.0, len);
         let i = self.table.partition_point(|&v| v < s).clamp(1, ARC_N);
-        let (Some(&a), Some(&b)) = (self.table.get(i - 1), self.table.get(i)) else { return self.p[0] };
+        let (Some(&a), Some(&b)) = (self.table.get(i - 1), self.table.get(i)) else {
+            return self.p[0];
+        };
         let (u0, u1) = ((i - 1) as f64 / ARC_N as f64, i as f64 / ARC_N as f64);
         let mut u = u0 + if b > a { (s - a) / (b - a) } else { 0.0 } * (u1 - u0);
         for _ in 0..4 {
@@ -326,14 +358,24 @@ fn auto_spatial(keys: &[Keyframe], i: usize) -> ([f64; 3], [f64; 3]) {
     }
     let a = v3(&keys[i.saturating_sub(1)].value);
     let c = v3(&keys[(i + 1).min(keys.len() - 1)].value);
-    let tout = [(c[0] - a[0]) / 6.0, (c[1] - a[1]) / 6.0, (c[2] - a[2]) / 6.0];
+    let tout = [
+        (c[0] - a[0]) / 6.0,
+        (c[1] - a[1]) / 6.0,
+        (c[2] - a[2]) / 6.0,
+    ];
     ([-tout[0], -tout[1], -tout[2]], tout)
 }
 
 /// Effective spatial tangents of key `i` (auto or stored).
 pub fn spatial_tangents(keys: &[Keyframe], i: usize) -> ([f64; 3], [f64; 3]) {
-    let Some(key) = keys.get(i) else { return ([0.0; 3], [0.0; 3]) };
-    if key.spatial_auto { auto_spatial(keys, i) } else { (key.spatial_in, key.spatial_out) }
+    let Some(key) = keys.get(i) else {
+        return ([0.0; 3], [0.0; 3]);
+    };
+    if key.spatial_auto {
+        auto_spatial(keys, i)
+    } else {
+        (key.spatial_in, key.spatial_out)
+    }
 }
 
 /// Spatial tangents of key `i` as motion-path handles: [`spatial_tangents`], with a side that
@@ -342,7 +384,9 @@ pub fn spatial_tangents(keys: &[Keyframe], i: usize) -> ([f64; 3], [f64; 3]) {
 /// the neighbouring key. After Effects shows Bezier handles there to drag the path into a curve.
 pub fn spatial_handles(keys: &[Keyframe], i: usize) -> ([f64; 3], [f64; 3]) {
     let (mut tin, mut tout) = spatial_tangents(keys, i);
-    let Some(p) = keys.get(i).map(|k| v3(&k.value)) else { return (tin, tout) };
+    let Some(p) = keys.get(i).map(|k| v3(&k.value)) else {
+        return (tin, tout);
+    };
     // Toward key `j`'s control point on this segment (its in side when `j` follows `i`).
     let toward = |j: usize, after: bool| -> Option<[f64; 3]> {
         let q = v3(&keys.get(j)?.value);
@@ -350,7 +394,8 @@ pub fn spatial_handles(keys: &[Keyframe], i: usize) -> ([f64; 3], [f64; 3]) {
         let t = if after { jin } else { jout };
         let d = [q[0] + t[0] - p[0], q[1] + t[1] - p[1], q[2] + t[2] - p[2]];
         let dl = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
-        let len = ((q[0] - p[0]).powi(2) + (q[1] - p[1]).powi(2) + (q[2] - p[2]).powi(2)).sqrt() / 3.0;
+        let len =
+            ((q[0] - p[0]).powi(2) + (q[1] - p[1]).powi(2) + (q[2] - p[2]).powi(2)).sqrt() / 3.0;
         (dl > 1e-9).then(|| d.map(|v| v * len / dl))
     };
     let none = |t: [f64; 3]| t == [0.0; 3];
@@ -376,13 +421,17 @@ fn effective_ease(keys: &[Keyframe], i: usize, d: usize, spatial: bool, out: boo
         let slope = if spatial {
             let a = v3(&keys[i - 1].value);
             let c = v3(&keys[i + 1].value);
-            ((c[0] - a[0]).powi(2) + (c[1] - a[1]).powi(2) + (c[2] - a[2]).powi(2)).sqrt() / dt.max(1e-12)
+            ((c[0] - a[0]).powi(2) + (c[1] - a[1]).powi(2) + (c[2] - a[2]).powi(2)).sqrt()
+                / dt.max(1e-12)
         } else {
             let a = keys[i - 1].value.components();
             let c = keys[i + 1].value.components();
             (c.get(d).unwrap_or(&0.0) - a.get(d).unwrap_or(&0.0)) / dt.max(1e-12)
         };
-        return Ease { speed: slope, influence: 1.0 / 6.0 };
+        return Ease {
+            speed: slope,
+            influence: 1.0 / 6.0,
+        };
     }
     list.get(d).or(list.first()).copied().unwrap_or_default()
 }
@@ -410,20 +459,39 @@ pub fn side_ease(keys: &[Keyframe], i: usize, d: usize, spatial: bool, out: bool
             let dv = b.get(d).unwrap_or(&0.0) - a.get(d).unwrap_or(&0.0);
             if out { dv } else { -dv }
         };
-        return Some(Ease { speed: dv / dur, influence: 1.0 / 3.0 });
+        return Some(Ease {
+            speed: dv / dur,
+            influence: 1.0 / 3.0,
+        });
     }
-    Some(effective_ease(keys, i, if is_spatial { 0 } else { d }, is_spatial, out))
+    Some(effective_ease(
+        keys,
+        i,
+        if is_spatial { 0 } else { d },
+        is_spatial,
+        out,
+    ))
 }
 
 /// Arc length of the spatial segment `i` → `i + 1` (motion-path length).
 pub fn spatial_segment_length(keys: &[Keyframe], i: usize) -> f64 {
-    let Some(next) = i.checked_add(1) else { return 0.0 };
-    let (Some(a), Some(b)) = (keys.get(i), keys.get(next)) else { return 0.0 };
+    let Some(next) = i.checked_add(1) else {
+        return 0.0;
+    };
+    let (Some(a), Some(b)) = (keys.get(i), keys.get(next)) else {
+        return 0.0;
+    };
     let p0 = v3(&a.value);
     let p3 = v3(&b.value);
     let (_, out_t) = spatial_tangents(keys, i);
     let (in_t, _) = spatial_tangents(keys, next);
-    SpatialSeg::new([p0, [p0[0] + out_t[0], p0[1] + out_t[1], p0[2] + out_t[2]], [p3[0] + in_t[0], p3[1] + in_t[1], p3[2] + in_t[2]], p3]).length()
+    SpatialSeg::new([
+        p0,
+        [p0[0] + out_t[0], p0[1] + out_t[1], p0[2] + out_t[2]],
+        [p3[0] + in_t[0], p3[1] + in_t[1], p3[2] + in_t[2]],
+        p3,
+    ])
+    .length()
 }
 
 /// Re-time roving keyframes: each run of roving keys between two fixed (non-roving) keys gets
@@ -446,7 +514,9 @@ pub fn retime_roving(keys: &mut [Keyframe], spatial: bool) -> bool {
     let mut changed = false;
     let mut a = 0;
     while a < n - 1 {
-        let Some(b) = (a + 1..n).find(|&j| !keys[j].roving) else { break };
+        let Some(b) = (a + 1..n).find(|&j| !keys[j].roving) else {
+            break;
+        };
         if b > a + 1 {
             // Cumulative path length (spatial) or value distance (other) of the run a..=b.
             let mut acc = vec![0.0];
@@ -456,19 +526,30 @@ pub fn retime_roving(keys: &mut [Keyframe], spatial: bool) -> bool {
                 } else {
                     let x = keys[i].value.components();
                     let y = keys[i + 1].value.components();
-                    x.iter().zip(&y).map(|(p, q)| (q - p) * (q - p)).sum::<f64>().sqrt()
+                    x.iter()
+                        .zip(&y)
+                        .map(|(p, q)| (q - p) * (q - p))
+                        .sum::<f64>()
+                        .sqrt()
                 };
                 acc.push(acc.last().unwrap_or(&0.0) + len);
             }
             let total = *acc.last().unwrap_or(&0.0);
             let (t0, t1) = (keys[a].time, keys[b].time);
             for (o, i) in (a + 1..b).enumerate() {
-                let f = if total > 1e-9 { acc[o + 1] / total } else { (o + 1) as f64 / (b - a) as f64 };
+                let f = if total > 1e-9 {
+                    acc[o + 1] / total
+                } else {
+                    (o + 1) as f64 / (b - a) as f64
+                };
                 let span = i128::from(t1.0) - i128::from(t0.0);
                 let mut retimed = i128::from(t0.0) + (span as f64 * f).round() as i128;
                 // Keep every roving key strictly between its neighbours: a zero-length segment would otherwise
                 // put it on a fixed key's time, and two keys can't share a time.
-                let (lo, hi) = (i128::from(keys[i - 1].time.0) + 1, i128::from(t1.0) - (b - i) as i128);
+                let (lo, hi) = (
+                    i128::from(keys[i - 1].time.0) + 1,
+                    i128::from(t1.0) - (b - i) as i128,
+                );
                 if lo <= hi {
                     retimed = retimed.clamp(lo, hi);
                 }
@@ -490,7 +571,10 @@ pub fn retime_roving(keys: &mut [Keyframe], spatial: bool) -> bool {
 /// Reverse a run of keys in time within `[first, last]` (Time-Reverse Keyframes): key `i` moves
 /// to `first + last - t` and in/out sides swap.
 pub fn time_reverse(keys: &mut [Keyframe]) {
-    let (Some(first), Some(last)) = (keys.first().map(|k| k.time), keys.last().map(|k| k.time)) else { return };
+    let (Some(first), Some(last)) = (keys.first().map(|k| k.time), keys.last().map(|k| k.time))
+    else {
+        return;
+    };
     for k in keys.iter_mut() {
         // Imported Tick values may span i64's full range; keep the intermediate exact.
         let reversed = i128::from(first.0) + i128::from(last.0) - i128::from(k.time.0);
@@ -536,19 +620,48 @@ pub fn segment_value(keys: &[Keyframe], i: usize, t: Tick, spatial: bool) -> Val
         let p3 = v3(&b.value);
         let (_, out_t) = spatial_tangents(keys, i);
         let (in_t, _) = spatial_tangents(keys, i + 1);
-        let seg = SpatialSeg::new([p0, [p0[0] + out_t[0], p0[1] + out_t[1], p0[2] + out_t[2]], [p3[0] + in_t[0], p3[1] + in_t[1], p3[2] + in_t[2]], p3]);
+        let seg = SpatialSeg::new([
+            p0,
+            [p0[0] + out_t[0], p0[1] + out_t[1], p0[2] + out_t[2]],
+            [p3[0] + in_t[0], p3[1] + in_t[1], p3[2] + in_t[2]],
+            p3,
+        ]);
         let len = seg.length();
         let f = if lin_out && lin_in || len <= 1e-12 {
             x
         } else {
-            let eo = if lin_out { Ease { speed: len / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i, 0, true, true) };
-            let ei = if lin_in { Ease { speed: len / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i + 1, 0, true, false) };
-            ease_progress(eo.speed * dur / len, eo.influence, ei.speed * dur / len, ei.influence, x)
+            let eo = if lin_out {
+                Ease {
+                    speed: len / dur,
+                    influence: 1.0 / 3.0,
+                }
+            } else {
+                effective_ease(keys, i, 0, true, true)
+            };
+            let ei = if lin_in {
+                Ease {
+                    speed: len / dur,
+                    influence: 1.0 / 3.0,
+                }
+            } else {
+                effective_ease(keys, i + 1, 0, true, false)
+            };
+            ease_progress(
+                eo.speed * dur / len,
+                eo.influence,
+                ei.speed * dur / len,
+                ei.influence,
+                x,
+            )
         };
         // A straight path (both handles on the chord, as auto-Bezier keys on a line have) is the
         // chord itself: interpolate it exactly instead of through the arc-length table.
         let p = if on_chord(p0, seg.p[1], p3) && on_chord(p0, seg.p[2], p3) {
-            [p0[0] + (p3[0] - p0[0]) * f, p0[1] + (p3[1] - p0[1]) * f, p0[2] + (p3[2] - p0[2]) * f]
+            [
+                p0[0] + (p3[0] - p0[0]) * f,
+                p0[1] + (p3[1] - p0[1]) * f,
+                p0[2] + (p3[2] - p0[2]) * f,
+            ]
         } else {
             seg.at_length(f * len)
         };
@@ -561,20 +674,60 @@ pub fn segment_value(keys: &[Keyframe], i: usize, t: Tick, spatial: bool) -> Val
     let cb = b.value.components();
     if ca.is_empty() || ca.len() != cb.len() {
         // Paths, gradients: ease on dimension 0 as overall progress.
-        let eo = if lin_out { Ease { speed: 1.0 / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i, 0, false, true) };
-        let ei = if lin_in { Ease { speed: 1.0 / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i + 1, 0, false, false) };
-        let f = ease_progress(eo.speed * dur, eo.influence, ei.speed * dur, ei.influence, x);
+        let eo = if lin_out {
+            Ease {
+                speed: 1.0 / dur,
+                influence: 1.0 / 3.0,
+            }
+        } else {
+            effective_ease(keys, i, 0, false, true)
+        };
+        let ei = if lin_in {
+            Ease {
+                speed: 1.0 / dur,
+                influence: 1.0 / 3.0,
+            }
+        } else {
+            effective_ease(keys, i + 1, 0, false, false)
+        };
+        let f = ease_progress(
+            eo.speed * dur,
+            eo.influence,
+            ei.speed * dur,
+            ei.influence,
+            x,
+        );
         return a.value.lerp(&b.value, f);
     }
     let mut out = Vec::with_capacity(ca.len());
     for d in 0..ca.len() {
         let dv = cb[d] - ca[d];
-        let eo = if lin_out { Ease { speed: dv / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i, d, false, true) };
-        let ei = if lin_in { Ease { speed: dv / dur, influence: 1.0 / 3.0 } } else { effective_ease(keys, i + 1, d, false, false) };
+        let eo = if lin_out {
+            Ease {
+                speed: dv / dur,
+                influence: 1.0 / 3.0,
+            }
+        } else {
+            effective_ease(keys, i, d, false, true)
+        };
+        let ei = if lin_in {
+            Ease {
+                speed: dv / dur,
+                influence: 1.0 / 3.0,
+            }
+        } else {
+            effective_ease(keys, i + 1, d, false, false)
+        };
         // Bezier in (time, value) space directly: P1 = (i0, v0 + s0*i0*dur), P2 = (1-i1, v1 - s1*i1*dur).
         let (i0, i1) = (eo.influence.clamp(0.0, 1.0), ei.influence.clamp(0.0, 1.0));
         let u = solve_u(0.0, i0, 1.0 - i1, 1.0, x);
-        let v = bez(ca[d], ca[d] + eo.speed * i0 * dur, cb[d] - ei.speed * i1 * dur, cb[d], u);
+        let v = bez(
+            ca[d],
+            ca[d] + eo.speed * i0 * dur,
+            cb[d] - ei.speed * i1 * dur,
+            cb[d],
+            u,
+        );
         out.push(v);
     }
     a.value.with_components(&out)
@@ -583,14 +736,27 @@ pub fn segment_value(keys: &[Keyframe], i: usize, t: Tick, spatial: bool) -> Val
 /// Numeric velocity (units/s per dimension) at `t` by central difference.
 pub fn velocity(keys: &[Keyframe], t: Tick, spatial: bool) -> Vec<f64> {
     let h = Tick(TICKS_PER_SECOND / 1000);
-    let (Some(a), Some(b)) = (evaluate(keys, t - h, spatial), evaluate(keys, t + h, spatial)) else { return vec![] };
+    let (Some(a), Some(b)) = (
+        evaluate(keys, t - h, spatial),
+        evaluate(keys, t + h, spatial),
+    ) else {
+        return vec![];
+    };
     let dt = 2.0 * secs(h);
-    a.components().iter().zip(b.components()).map(|(x, y)| (y - x) / dt).collect()
+    a.components()
+        .iter()
+        .zip(b.components())
+        .map(|(x, y)| (y - x) / dt)
+        .collect()
 }
 
 /// Speed (magnitude of velocity).
 pub fn speed(keys: &[Keyframe], t: Tick, spatial: bool) -> f64 {
-    velocity(keys, t, spatial).iter().map(|v| v * v).sum::<f64>().sqrt()
+    velocity(keys, t, spatial)
+        .iter()
+        .map(|v| v * v)
+        .sum::<f64>()
+        .sqrt()
 }
 
 /// Insert or replace (same time) a key; keeps keys sorted. Returns its index.
@@ -663,8 +829,15 @@ mod tests {
     #[test]
     fn time_reverse_handles_deserialized_tick_extremes() {
         // Tick's public serde representation can contain values beyond from_seconds_f64's cap.
-        for (first, last) in [(i64::MIN, i64::MIN + 10), (i64::MAX - 10, i64::MAX), (i64::MIN, i64::MAX)] {
-            let mut keys = vec![Keyframe::new(Tick(first), Value::Scalar(1.0)), Keyframe::new(Tick(last), Value::Scalar(2.0))];
+        for (first, last) in [
+            (i64::MIN, i64::MIN + 10),
+            (i64::MAX - 10, i64::MAX),
+            (i64::MIN, i64::MAX),
+        ] {
+            let mut keys = vec![
+                Keyframe::new(Tick(first), Value::Scalar(1.0)),
+                Keyframe::new(Tick(last), Value::Scalar(2.0)),
+            ];
             time_reverse(&mut keys);
             assert_eq!(keys[0].time, Tick(first));
             assert_eq!(keys[0].value, Value::Scalar(2.0));
@@ -707,20 +880,76 @@ mod tests {
         // Original Rotation probe via AEsync 2.0.4, AE 26.3x87, 2026-10-05.
         // AE retains each handle's requested influence even when their sum exceeds 100%.
         for (from, to, out_speed, out_inf, in_speed, in_inf, samples) in [
-            (0.0, 100.0, 0.0, 0.8, 0.0, 0.8, [(0.1, 0.59243939036327), (0.25, 4.76438030608764), (0.4, 18.4284394271562), (0.75, 95.2356196939123)]),
-            (0.0, 100.0, 20.0, 0.8, 80.0, 0.6, [(0.1, 2.25754942621577), (0.25, 6.99841889412931), (0.4, 14.9334636959052), (0.75, 73.8196785378389)]),
-            (100.0, 0.0, -20.0, 0.6, -80.0, 0.8, [(0.1, 97.6395466334594), (0.25, 91.597048571292), (0.4, 74.5367957474338), (0.75, 22.3789127753126)]),
+            (
+                0.0,
+                100.0,
+                0.0,
+                0.8,
+                0.0,
+                0.8,
+                [
+                    (0.1, 0.59243939036327),
+                    (0.25, 4.76438030608764),
+                    (0.4, 18.4284394271562),
+                    (0.75, 95.2356196939123),
+                ],
+            ),
+            (
+                0.0,
+                100.0,
+                20.0,
+                0.8,
+                80.0,
+                0.6,
+                [
+                    (0.1, 2.25754942621577),
+                    (0.25, 6.99841889412931),
+                    (0.4, 14.9334636959052),
+                    (0.75, 73.8196785378389),
+                ],
+            ),
+            (
+                100.0,
+                0.0,
+                -20.0,
+                0.6,
+                -80.0,
+                0.8,
+                [
+                    (0.1, 97.6395466334594),
+                    (0.25, 91.597048571292),
+                    (0.4, 74.5367957474338),
+                    (0.75, 22.3789127753126),
+                ],
+            ),
         ] {
             let mut a = Keyframe::new(s(0.0), Value::Scalar(from));
             let mut b = Keyframe::new(s(1.0), Value::Scalar(to));
             a.out_interp = Interp::Bezier;
             b.in_interp = Interp::Bezier;
-            a.out_ease = vec![Ease { speed: out_speed, influence: out_inf }];
-            b.in_ease = vec![Ease { speed: in_speed, influence: in_inf }];
+            a.out_ease = vec![Ease {
+                speed: out_speed,
+                influence: out_inf,
+            }];
+            b.in_ease = vec![Ease {
+                speed: in_speed,
+                influence: in_inf,
+            }];
             for (time, expected) in samples {
-                let value = evaluate(&[a.clone(), b.clone()], s(time), false).unwrap().as_f64();
-                assert!((value - expected).abs() < 1e-7, "{time}: {value} != {expected}");
-                let normalized = ease_progress(out_speed / (to - from), out_inf, in_speed / (to - from), in_inf, time);
+                let value = evaluate(&[a.clone(), b.clone()], s(time), false)
+                    .unwrap()
+                    .as_f64();
+                assert!(
+                    (value - expected).abs() < 1e-7,
+                    "{time}: {value} != {expected}"
+                );
+                let normalized = ease_progress(
+                    out_speed / (to - from),
+                    out_inf,
+                    in_speed / (to - from),
+                    in_inf,
+                    time,
+                );
                 assert!((from + normalized * (to - from) - expected).abs() < 1e-7);
             }
         }
@@ -733,7 +962,10 @@ mod tests {
             let u = 0.5 + ((time - 0.5) / 4.0_f64).cbrt();
             let expected = bez(0.0, 0.0, 1.0, 1.0, u);
             let actual = ease_progress(0.0, 1.0, 0.0, 1.0, time);
-            assert!((actual - expected).abs() < 1e-10, "{time}: {actual} != {expected}");
+            assert!(
+                (actual - expected).abs() < 1e-10,
+                "{time}: {actual} != {expected}"
+            );
         }
     }
 
@@ -742,11 +974,23 @@ mod tests {
     fn gradients_coerce_from_plain_json() {
         let g = Value::Gradient(Gradient::default());
         let plain = serde_json::json!({"colors": [[0, [0, 0.5, 1, 1]], [1, "#ffff00"]], "opacities": [[0, 1], [1, 0.5]]});
-        let Some(Value::Gradient(a)) = g.coerce_json(&plain) else { panic!("object form") };
-        assert_eq!(a.colors, vec![(0.0, [0.0, 0.5, 1.0, 1.0]), (1.0, [1.0, 1.0, 0.0, 1.0])]);
+        let Some(Value::Gradient(a)) = g.coerce_json(&plain) else {
+            panic!("object form")
+        };
+        assert_eq!(
+            a.colors,
+            vec![(0.0, [0.0, 0.5, 1.0, 1.0]), (1.0, [1.0, 1.0, 0.0, 1.0])]
+        );
         assert_eq!(a.opacities, vec![(0.0, 1.0), (1.0, 0.5)]);
-        let Some(Value::Gradient(b)) = g.coerce_json(&serde_json::json!(["#ff0000", "#00ff00", "#0000ff"])) else { panic!("list form") };
-        assert_eq!(b.colors.iter().map(|c| c.0).collect::<Vec<_>>(), vec![0.0, 0.5, 1.0]);
+        let Some(Value::Gradient(b)) =
+            g.coerce_json(&serde_json::json!(["#ff0000", "#00ff00", "#0000ff"]))
+        else {
+            panic!("list form")
+        };
+        assert_eq!(
+            b.colors.iter().map(|c| c.0).collect::<Vec<_>>(),
+            vec![0.0, 0.5, 1.0]
+        );
         assert_eq!(b.opacities.len(), 3);
         // The tagged form (what prop.get returns) still round-trips.
         assert_eq!(g.coerce_json(&g.to_json()), Some(g.clone()));
@@ -757,41 +1001,75 @@ mod tests {
     /// in the opacity stops, so feeding its alpha into a colour stop would apply 50% twice (25%).
     #[test]
     fn gradient_tracks_sample_separately() {
-        let g = Gradient { colors: vec![(0.0, [1.0, 0.0, 0.0, 0.8]), (1.0, [0.0, 0.0, 1.0, 0.4])], opacities: vec![(0.0, 0.5), (1.0, 0.5)] };
+        let g = Gradient {
+            colors: vec![(0.0, [1.0, 0.0, 0.0, 0.8]), (1.0, [0.0, 0.0, 1.0, 0.4])],
+            opacities: vec![(0.0, 0.5), (1.0, 0.5)],
+        };
         let c = g.color_at(0.5);
-        assert!((c[0] - 0.5).abs() < 1e-6 && (c[2] - 0.5).abs() < 1e-6, "{c:?}");
-        assert!((c[3] - 0.6).abs() < 1e-6, "the colour track's own alpha, without opacity: {c:?}");
+        assert!(
+            (c[0] - 0.5).abs() < 1e-6 && (c[2] - 0.5).abs() < 1e-6,
+            "{c:?}"
+        );
+        assert!(
+            (c[3] - 0.6).abs() < 1e-6,
+            "the colour track's own alpha, without opacity: {c:?}"
+        );
         assert!((g.opacity_at(0.5) - 0.5).abs() < 1e-6);
-        assert!((g.sample(0.5)[3] - 0.3).abs() < 1e-6, "sample still applies opacity once");
+        assert!(
+            (g.sample(0.5)[3] - 0.3).abs() < 1e-6,
+            "sample still applies opacity once"
+        );
         // A stop added at 50% from the opacity track keeps 50%: sampled again, it is still 50%.
         let mut with_stop = g.clone();
         with_stop.opacities.insert(1, (0.5, g.opacity_at(0.5)));
         assert!((with_stop.opacity_at(0.5) - 0.5).abs() < 1e-6);
-        assert!((with_stop.sample(0.5)[3] - 0.3).abs() < 1e-6, "adding a stop doesn't change the look");
+        assert!(
+            (with_stop.sample(0.5)[3] - 0.3).abs() < 1e-6,
+            "adding a stop doesn't change the look"
+        );
         // Outside the stops, and with none: the ends hold, and an empty track is opaque white.
         assert_eq!(g.color_at(-1.0), [1.0, 0.0, 0.0, 0.8]);
         assert_eq!(g.color_at(2.0), [0.0, 0.0, 1.0, 0.4]);
-        let empty = Gradient { colors: vec![], opacities: vec![] };
-        assert_eq!((empty.color_at(0.3), empty.opacity_at(0.3)), ([1.0; 4], 1.0));
+        let empty = Gradient {
+            colors: vec![],
+            opacities: vec![],
+        };
+        assert_eq!(
+            (empty.color_at(0.3), empty.opacity_at(0.3)),
+            ([1.0; 4], 1.0)
+        );
     }
 
     /// #612: the editor saves the typed form, so one colour stop (which the plain JSON parser
     /// rejects) and each stop's RGBA come back exactly.
     #[test]
     fn typed_gradient_round_trips_one_stop_and_rgba() {
-        let one = Value::Gradient(Gradient { colors: vec![(0.25, [0.1, 0.2, 0.3, 0.7])], opacities: vec![(0.0, 1.0), (0.6, 0.35)] });
+        let one = Value::Gradient(Gradient {
+            colors: vec![(0.25, [0.1, 0.2, 0.3, 0.7])],
+            opacities: vec![(0.0, 1.0), (0.6, 0.35)],
+        });
         let cur = Value::Gradient(Gradient::default());
         assert_eq!(cur.coerce_json(&one.to_json()), Some(one.clone()));
-        assert_eq!(cur.coerce_json(&serde_json::json!({"colors": [[0.25, [0.1, 0.2, 0.3, 0.7]]]})), None, "plain JSON needs two colours");
+        assert_eq!(
+            cur.coerce_json(&serde_json::json!({"colors": [[0.25, [0.1, 0.2, 0.3, 0.7]]]})),
+            None,
+            "plain JSON needs two colours"
+        );
     }
 
     #[test]
     fn linear_and_hold() {
-        let keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(2.0), Value::Scalar(100.0))];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)),
+            Keyframe::new(s(2.0), Value::Scalar(100.0)),
+        ];
         assert_eq!(evaluate(&keys, s(1.0), false), Some(Value::Scalar(50.0)));
         assert_eq!(evaluate(&keys, s(-1.0), false), Some(Value::Scalar(0.0)));
         assert_eq!(evaluate(&keys, s(3.0), false), Some(Value::Scalar(100.0)));
-        let held = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)).hold(), Keyframe::new(s(2.0), Value::Scalar(100.0))];
+        let held = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)).hold(),
+            Keyframe::new(s(2.0), Value::Scalar(100.0)),
+        ];
         assert_eq!(evaluate(&held, s(1.999), false), Some(Value::Scalar(0.0)));
     }
 
@@ -799,16 +1077,25 @@ mod tests {
     fn hold_key_keeps_its_incoming_segment_linear() {
         // Hold on the second key (in and out, as KeyframeInterpolationType.HOLD sets it) holds
         // what comes after it, not the linear motion into it.
-        let keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(2.0), Value::Scalar(100.0)).hold()];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)),
+            Keyframe::new(s(2.0), Value::Scalar(100.0)).hold(),
+        ];
         assert_eq!(evaluate(&keys, s(0.5), false), Some(Value::Scalar(25.0)));
-        let keys = vec![Keyframe::new(s(0.0), Value::Vec2([0.0, 0.0])), Keyframe::new(s(2.0), Value::Vec2([100.0, 0.0])).hold()];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([0.0, 0.0])),
+            Keyframe::new(s(2.0), Value::Vec2([100.0, 0.0])).hold(),
+        ];
         let p = evaluate(&keys, s(0.5), true).unwrap().as_vec2();
         assert!((p[0] - 25.0).abs() < 0.01, "{p:?}");
     }
 
     #[test]
     fn easy_ease_is_symmetric_and_slow_at_ends() {
-        let keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)).eased(), Keyframe::new(s(1.0), Value::Scalar(100.0)).eased()];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)).eased(),
+            Keyframe::new(s(1.0), Value::Scalar(100.0)).eased(),
+        ];
         let mid = evaluate(&keys, s(0.5), false).unwrap().as_f64();
         assert!((mid - 50.0).abs() < 1e-6, "{mid}");
         let early = evaluate(&keys, s(0.1), false).unwrap().as_f64();
@@ -824,8 +1111,14 @@ mod tests {
         let mut b = Keyframe::new(s(2.0), Value::Scalar(100.0));
         a.out_interp = Interp::Bezier;
         b.in_interp = Interp::Bezier;
-        a.out_ease = vec![Ease { speed: 50.0, influence: 1.0 / 3.0 }];
-        b.in_ease = vec![Ease { speed: 50.0, influence: 1.0 / 3.0 }];
+        a.out_ease = vec![Ease {
+            speed: 50.0,
+            influence: 1.0 / 3.0,
+        }];
+        b.in_ease = vec![Ease {
+            speed: 50.0,
+            influence: 1.0 / 3.0,
+        }];
         let keys = vec![a, b];
         for i in 0..=20 {
             let t = i as f64 * 0.1;
@@ -836,9 +1129,15 @@ mod tests {
 
     #[test]
     fn spatial_linear_constant_speed() {
-        let keys = vec![Keyframe::new(s(0.0), Value::Vec2([0.0, 0.0])), Keyframe::new(s(1.0), Value::Vec2([300.0, 400.0]))];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([0.0, 0.0])),
+            Keyframe::new(s(1.0), Value::Vec2([300.0, 400.0])),
+        ];
         let p = evaluate(&keys, s(0.5), true).unwrap().as_vec2();
-        assert!((p[0] - 150.0).abs() < 0.5 && (p[1] - 200.0).abs() < 0.5, "{p:?}");
+        assert!(
+            (p[0] - 150.0).abs() < 0.5 && (p[1] - 200.0).abs() < 0.5,
+            "{p:?}"
+        );
     }
 
     /// #456: along a curved spatial path with linear (constant-speed) keys the speed graph is
@@ -853,9 +1152,15 @@ mod tests {
         b.spatial_in = [80.0, 250.0, 0.0];
         let keys = vec![a, b];
         let len = spatial_segment_length(&keys, 0);
-        let speeds: Vec<f64> = (1..400).map(|i| speed(&keys, s(i as f64 * 0.005), true)).collect();
+        let speeds: Vec<f64> = (1..400)
+            .map(|i| speed(&keys, s(i as f64 * 0.005), true))
+            .collect();
         for v in &speeds {
-            assert!((v - len / 2.0).abs() < 1e-3 * len, "speed {v} vs {}", len / 2.0);
+            assert!(
+                (v - len / 2.0).abs() < 1e-3 * len,
+                "speed {v} vs {}",
+                len / 2.0
+            );
         }
     }
 
@@ -876,8 +1181,14 @@ mod tests {
     #[test]
     fn straight_auto_bezier_path_is_exact() {
         // Auto-Bezier ends now have handles along the line; the chord is still hit exactly.
-        let keys = vec![Keyframe::new(s(0.0), Value::Vec2([40.0, 50.0])), Keyframe::new(s(2.0), Value::Vec2([120.0, 50.0]))];
-        assert_eq!(segment_value(&keys, 0, s(1.0), true), Value::Vec2([80.0, 50.0]));
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Vec2([40.0, 50.0])),
+            Keyframe::new(s(2.0), Value::Vec2([120.0, 50.0])),
+        ];
+        assert_eq!(
+            segment_value(&keys, 0, s(1.0), true),
+            Value::Vec2([80.0, 50.0])
+        );
     }
 
     /// #880: a motion path whose arc length overflows (huge coordinates, as the Position field
@@ -890,7 +1201,11 @@ mod tests {
             [[f64::INFINITY, 0.0], [0.0, f64::NEG_INFINITY], [20.0, 0.0]],
         ];
         for path in paths {
-            let mut keys: Vec<Keyframe> = path.iter().enumerate().map(|(i, &v)| Keyframe::new(s(i as f64 * 2.0), Value::Vec2(v))).collect();
+            let mut keys: Vec<Keyframe> = path
+                .iter()
+                .enumerate()
+                .map(|(i, &v)| Keyframe::new(s(i as f64 * 2.0), Value::Vec2(v)))
+                .collect();
             for eased in [false, true] {
                 if eased {
                     keys = keys.into_iter().map(Keyframe::eased).collect();
@@ -909,21 +1224,48 @@ mod tests {
         // Measured on After Effects 26.3 with original paths (docs/fidelity/README.md): each
         // auto-Bezier key's out tangent is (next - previous) / 6 and its in tangent the mirror,
         // whatever the key times. End keys use their one neighbour: (neighbour - key) / 6.
-        let p = [[40.0, 300.0, 0.0], [260.0, 80.0, 20.0], [700.0, 420.0, -40.0], [1100.0, 150.0, 0.0]];
-        let mut keys: Vec<Keyframe> = [0.0, 0.2, 1.5, 1.8].iter().zip(p).map(|(&t, v)| Keyframe::new(s(t), Value::Vec3(v))).collect();
-        let sixth = |a: [f64; 3], b: [f64; 3]| [(b[0] - a[0]) / 6.0, (b[1] - a[1]) / 6.0, (b[2] - a[2]) / 6.0];
+        let p = [
+            [40.0, 300.0, 0.0],
+            [260.0, 80.0, 20.0],
+            [700.0, 420.0, -40.0],
+            [1100.0, 150.0, 0.0],
+        ];
+        let mut keys: Vec<Keyframe> = [0.0, 0.2, 1.5, 1.8]
+            .iter()
+            .zip(p)
+            .map(|(&t, v)| Keyframe::new(s(t), Value::Vec3(v)))
+            .collect();
+        let sixth = |a: [f64; 3], b: [f64; 3]| {
+            [
+                (b[0] - a[0]) / 6.0,
+                (b[1] - a[1]) / 6.0,
+                (b[2] - a[2]) / 6.0,
+            ]
+        };
         let neg = |v: [f64; 3]| [-v[0], -v[1], -v[2]];
         let close = |a: [f64; 3], b: [f64; 3]| a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-9);
-        let want = [sixth(p[0], p[1]), sixth(p[0], p[2]), sixth(p[1], p[3]), sixth(p[2], p[3])];
+        let want = [
+            sixth(p[0], p[1]),
+            sixth(p[0], p[2]),
+            sixth(p[1], p[3]),
+            sixth(p[2], p[3]),
+        ];
         for (i, out) in want.into_iter().enumerate() {
             let (tin, tout) = spatial_tangents(&keys, i);
-            assert!(close(tout, out) && close(tin, neg(out)), "key {i}: {tin:?} {tout:?}");
+            assert!(
+                close(tout, out) && close(tin, neg(out)),
+                "key {i}: {tin:?} {tout:?}"
+            );
         }
         // Moving a key in time leaves every tangent as it was.
         keys[1].time = s(1.2);
         assert!(close(spatial_tangents(&keys, 1).1, sixth(p[0], p[2])));
         // A key between two coincident neighbours, and a lone key, have none.
-        let still = [[5.0, 5.0], [9.0, 1.0], [5.0, 5.0]].iter().enumerate().map(|(i, &v)| Keyframe::new(s(i as f64), Value::Vec2(v))).collect::<Vec<_>>();
+        let still = [[5.0, 5.0], [9.0, 1.0], [5.0, 5.0]]
+            .iter()
+            .enumerate()
+            .map(|(i, &v)| Keyframe::new(s(i as f64), Value::Vec2(v)))
+            .collect::<Vec<_>>();
         assert_eq!(spatial_tangents(&still, 1), ([0.0; 3], [0.0; 3]));
         assert_eq!(spatial_tangents(&still[..1], 0), ([0.0; 3], [0.0; 3]));
     }
@@ -941,11 +1283,20 @@ mod tests {
 
     #[test]
     fn colors_and_paths_interpolate() {
-        let keys = vec![Keyframe::new(s(0.0), Value::Color([0.0, 0.0, 0.0, 1.0])), Keyframe::new(s(1.0), Value::Color([1.0, 0.5, 0.0, 1.0]))];
-        assert_eq!(evaluate(&keys, s(0.5), false).unwrap().as_color(), [0.5, 0.25, 0.0, 1.0]);
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Color([0.0, 0.0, 0.0, 1.0])),
+            Keyframe::new(s(1.0), Value::Color([1.0, 0.5, 0.0, 1.0])),
+        ];
+        assert_eq!(
+            evaluate(&keys, s(0.5), false).unwrap().as_color(),
+            [0.5, 0.25, 0.0, 1.0]
+        );
         let a = ShapePath::rect([0.0, 0.0], 10.0, 10.0);
         let b = ShapePath::rect([0.0, 0.0], 20.0, 20.0);
-        let keys = vec![Keyframe::new(s(0.0), Value::Path(a)), Keyframe::new(s(1.0), Value::Path(b))];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Path(a)),
+            Keyframe::new(s(1.0), Value::Path(b)),
+        ];
         let v = evaluate(&keys, s(0.5), false).unwrap();
         assert_eq!(v.as_path().unwrap().vertices[0], [-7.5, -7.5]);
     }
@@ -963,10 +1314,17 @@ mod tests {
         keys[1].roving = true;
         assert!(retime_roving(&mut keys, true));
         // 300 of 400 px → 75 % of the 2 s span.
-        assert!((keys[1].time.seconds() - 1.5).abs() < 1e-6, "{}", keys[1].time.seconds());
+        assert!(
+            (keys[1].time.seconds() - 1.5).abs() < 1e-6,
+            "{}",
+            keys[1].time.seconds()
+        );
         let v0 = speed(&keys, s(0.5), true);
         let v1 = speed(&keys, s(1.8), true);
-        assert!((v0 - 200.0).abs() < 1.0 && (v1 - 200.0).abs() < 1.0, "{v0} {v1}");
+        assert!(
+            (v0 - 200.0).abs() < 1.0 && (v1 - 200.0).abs() < 1.0,
+            "{v0} {v1}"
+        );
         // First/last keys can't rove.
         keys[0].roving = true;
         retime_roving(&mut keys, true);
@@ -977,20 +1335,31 @@ mod tests {
     fn roving_keys_never_share_a_time_with_a_fixed_key() {
         // Zero-length last segment (issue #532) and zero-length first segment.
         for xs in [[0.0, 40.0, 120.0, 120.0], [0.0, 0.0, 40.0, 120.0]] {
-            let mut keys: Vec<Keyframe> = xs.iter().enumerate().map(|(i, x)| Keyframe::new(s(i as f64), Value::Vec2([*x, 64.0]))).collect();
+            let mut keys: Vec<Keyframe> = xs
+                .iter()
+                .enumerate()
+                .map(|(i, x)| Keyframe::new(s(i as f64), Value::Vec2([*x, 64.0])))
+                .collect();
             for k in &mut keys {
                 k.spatial_auto = false;
             }
             keys[1].roving = true;
             keys[2].roving = true;
             retime_roving(&mut keys, true);
-            assert!(keys.windows(2).all(|w| w[0].time < w[1].time), "{xs:?}: {:?}", keys.iter().map(|k| k.time).collect::<Vec<_>>());
+            assert!(
+                keys.windows(2).all(|w| w[0].time < w[1].time),
+                "{xs:?}: {:?}",
+                keys.iter().map(|k| k.time).collect::<Vec<_>>()
+            );
         }
     }
 
     #[test]
     fn side_ease_reports_linear_and_eased_sides() {
-        let keys = vec![Keyframe::new(s(0.0), Value::Scalar(0.0)), Keyframe::new(s(2.0), Value::Scalar(100.0)).eased()];
+        let keys = vec![
+            Keyframe::new(s(0.0), Value::Scalar(0.0)),
+            Keyframe::new(s(2.0), Value::Scalar(100.0)).eased(),
+        ];
         let out = side_ease(&keys, 0, 0, false, true).unwrap();
         assert!((out.speed - 50.0).abs() < 1e-9);
         let inn = side_ease(&keys, 1, 0, false, false).unwrap();
@@ -1000,11 +1369,19 @@ mod tests {
 
     #[test]
     fn time_reverse_mirrors_keys() {
-        let mut keys =
-            vec![Keyframe::new(s(1.0), Value::Scalar(0.0)).eased(), Keyframe::new(s(2.0), Value::Scalar(5.0)), Keyframe::new(s(4.0), Value::Scalar(10.0))];
+        let mut keys = vec![
+            Keyframe::new(s(1.0), Value::Scalar(0.0)).eased(),
+            Keyframe::new(s(2.0), Value::Scalar(5.0)),
+            Keyframe::new(s(4.0), Value::Scalar(10.0)),
+        ];
         keys[0].out_interp = Interp::Hold;
         time_reverse(&mut keys);
-        assert_eq!(keys.iter().map(|k| k.time.seconds().round() as i64).collect::<Vec<_>>(), vec![1, 3, 4]);
+        assert_eq!(
+            keys.iter()
+                .map(|k| k.time.seconds().round() as i64)
+                .collect::<Vec<_>>(),
+            vec![1, 3, 4]
+        );
         assert_eq!(keys[0].value, Value::Scalar(10.0));
         assert_eq!(keys[2].in_interp, Interp::Hold);
     }

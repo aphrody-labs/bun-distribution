@@ -107,11 +107,22 @@ impl ShapeTool {
             "polygon" | "star" => {
                 let v = p - start;
                 let r = v.hypot().max(0.01);
-                let rot = if m.shift { 0.0 } else { (v.atan2().to_degrees() + 90.0) % 360.0 };
-                if self.id == "polygon" {
-                    ("shape.polygon".into(), json!({ "cx": start.x, "cy": start.y, "radius": r, "sides": self.sides, "rotation": rot }))
+                let rot = if m.shift {
+                    0.0
                 } else {
-                    let ratio = if m.alt { straight_ratio(self.points).unwrap_or(self.star_ratio) } else { self.star_ratio };
+                    (v.atan2().to_degrees() + 90.0) % 360.0
+                };
+                if self.id == "polygon" {
+                    (
+                        "shape.polygon".into(),
+                        json!({ "cx": start.x, "cy": start.y, "radius": r, "sides": self.sides, "rotation": rot }),
+                    )
+                } else {
+                    let ratio = if m.alt {
+                        straight_ratio(self.points).unwrap_or(self.star_ratio)
+                    } else {
+                        self.star_ratio
+                    };
                     (
                         "shape.star".into(),
                         json!({ "cx": start.x, "cy": start.y, "radius1": r, "radius2": r * ratio, "points": self.points, "rotation": rot }),
@@ -119,13 +130,25 @@ impl ShapeTool {
                 }
             }
             "lineSegment" => {
-                let (a, b) = if m.alt { (start - (p - start), p) } else { (start, p) };
-                ("shape.line".into(), json!({ "x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y }))
+                let (a, b) = if m.alt {
+                    (start - (p - start), p)
+                } else {
+                    (start, p)
+                };
+                (
+                    "shape.line".into(),
+                    json!({ "x1": a.x, "y1": a.y, "x2": b.x, "y2": b.y }),
+                )
             }
             _ => {
                 let r = drag_rect(start, p, m);
-                let cmd = if self.id == "ellipse" { "shape.ellipse" } else { "shape.rectangle" };
-                let mut v = json!({ "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height() });
+                let cmd = if self.id == "ellipse" {
+                    "shape.ellipse"
+                } else {
+                    "shape.rectangle"
+                };
+                let mut v =
+                    json!({ "x": r.x0, "y": r.y0, "width": r.width(), "height": r.height() });
                 if self.id == "roundedRectangle" {
                     v["radius"] = json!(self.corner_radius);
                 }
@@ -147,8 +170,16 @@ pub(crate) fn space_moves(start: &mut Point, last: &mut Point, ev: &PointerEvent
 /// The rectangle a drag from `start` to `p` draws: Shift makes it a square, Alt draws it from its
 /// centre.
 pub(crate) fn drag_rect(start: Point, p: Point, m: Mods) -> Rect {
-    let d = if m.shift { square(p - start) } else { p - start };
-    if m.alt { Rect::from_points(start - d, start + d) } else { Rect::from_points(start, start + d) }
+    let d = if m.shift {
+        square(p - start)
+    } else {
+        p - start
+    };
+    if m.alt {
+        Rect::from_points(start - d, start + d)
+    } else {
+        Rect::from_points(start, start + d)
+    }
 }
 
 impl Tool for ShapeTool {
@@ -172,8 +203,12 @@ impl Tool for ShapeTool {
                 vec![]
             }
             PointerKind::Drag => {
-                let Some(mut s) = self.start else { return vec![] };
-                let pos = self.snap.drag(cx, ev.pos, self.leave(cx, s, ev.mods).as_ref());
+                let Some(mut s) = self.start else {
+                    return vec![];
+                };
+                let pos = self
+                    .snap
+                    .drag(cx, ev.pos, self.leave(cx, s, ev.mods).as_ref());
                 let ev = &PointerEvent { pos, ..*ev };
                 space_moves(&mut s, &mut self.last, ev, self.began);
                 self.start = Some(s);
@@ -194,21 +229,28 @@ impl Tool for ShapeTool {
                 out
             }
             PointerKind::Up => {
-                let Some(s) = self.start.take() else { return vec![] };
+                let Some(s) = self.start.take() else {
+                    return vec![];
+                };
                 self.snap.clear();
                 self.inner = None;
                 if self.began {
                     self.began = false;
                     vec![Action::Commit]
                 } else {
-                    vec![Action::Dialog(self.id.into(), json!({ "x": s.x, "y": s.y }))]
+                    vec![Action::Dialog(
+                        self.id.into(),
+                        json!({ "x": s.x, "y": s.y }),
+                    )]
                 }
             }
             _ => vec![],
         }
     }
     fn key(&mut self, _cx: &ToolContext, key: ToolKey, _mods: Mods) -> Vec<Action> {
-        let Some(s) = self.start.filter(|_| self.began) else { return vec![] };
+        let Some(s) = self.start.filter(|_| self.began) else {
+            return vec![];
+        };
         let changed = match (self.id, key) {
             ("polygon", ToolKey::Up) => {
                 self.sides = (self.sides + 1).min(1000);
@@ -253,13 +295,18 @@ impl Tool for ShapeTool {
         if let Some(s) = self.start.filter(|_| self.began && cx.measurement_labels) {
             // A box's size as drawn (from its centre with Alt, square with Shift).
             let (w, h) = match self.id {
-                "polygon" | "star" | "lineSegment" => ((self.last - s).x.abs(), (self.last - s).y.abs()),
+                "polygon" | "star" | "lineSegment" => {
+                    ((self.last - s).x.abs(), (self.last - s).y.abs())
+                }
                 _ => {
                     let r = drag_rect(s, self.last, self.mods);
                     (r.width(), r.height())
                 }
             };
-            o.push(Overlay::Measure { p: self.last, text: cx.size_label(w, h) });
+            o.push(Overlay::Measure {
+                p: self.last,
+                text: cx.size_label(w, h),
+            });
         }
         o
     }
@@ -296,8 +343,17 @@ mod tests {
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 10.0, 10.0));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 50.0, 30.0));
         assert_eq!(a[0], Action::Begin("Rectangle".into()));
-        assert_eq!(a[1], Action::Preview("shape.rectangle".into(), json!({"x": 10.0, "y": 10.0, "width": 40.0, "height": 20.0})));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 50.0, 30.0)), vec![Action::Commit]);
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "shape.rectangle".into(),
+                json!({"x": 10.0, "y": 10.0, "width": 40.0, "height": 20.0})
+            )
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 50.0, 30.0)),
+            vec![Action::Commit]
+        );
     }
 
     #[test]
@@ -306,23 +362,50 @@ mod tests {
         let s = Selection::default();
         let p = paint();
         let cx = cx(&d, &s, &p);
-        let space = Mods { space: true, ..Default::default() };
+        let space = Mods {
+            space: true,
+            ..Default::default()
+        };
         let mut t = ShapeTool::new("rectangle");
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 50.0, 50.0));
         t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 120.0));
         // Space held: the 100 × 70 rectangle follows the pointer.
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 250.0, 170.0).with_mods(space));
-        assert_eq!(a.last(), Some(&Action::Preview("shape.rectangle".into(), json!({"x": 150.0, "y": 100.0, "width": 100.0, "height": 70.0}))));
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 250.0, 170.0).with_mods(space),
+        );
+        assert_eq!(
+            a.last(),
+            Some(&Action::Preview(
+                "shape.rectangle".into(),
+                json!({"x": 150.0, "y": 100.0, "width": 100.0, "height": 70.0})
+            ))
+        );
         // Let go of Space: it grows again, from where it was moved to.
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 270.0, 190.0));
-        assert_eq!(a.last(), Some(&Action::Preview("shape.rectangle".into(), json!({"x": 150.0, "y": 100.0, "width": 120.0, "height": 90.0}))));
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 270.0, 190.0)), vec![Action::Commit]);
+        assert_eq!(
+            a.last(),
+            Some(&Action::Preview(
+                "shape.rectangle".into(),
+                json!({"x": 150.0, "y": 100.0, "width": 120.0, "height": 90.0})
+            ))
+        );
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 270.0, 190.0)),
+            vec![Action::Commit]
+        );
         // A star (drawn from its centre) moves its centre.
         let mut t = ShapeTool::new("star");
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 50.0, 50.0));
         t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 80.0, 50.0));
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 90.0, 60.0).with_mods(space));
-        assert!(matches!(a.last(), Some(Action::Preview(_, v)) if v["cx"] == 60.0 && v["cy"] == 60.0), "{a:?}");
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 90.0, 60.0).with_mods(space),
+        );
+        assert!(
+            matches!(a.last(), Some(Action::Preview(_, v)) if v["cx"] == 60.0 && v["cy"] == 60.0),
+            "{a:?}"
+        );
     }
 
     /// During a star drag, Ctrl/Cmd keeps the inner radius while the outer one follows the pointer
@@ -334,35 +417,70 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let radii = |a: &[Action]| match a.last() {
-            Some(Action::Preview(_, v)) => (v["radius1"].as_f64().unwrap(), v["radius2"].as_f64().unwrap()),
+            Some(Action::Preview(_, v)) => (
+                v["radius1"].as_f64().unwrap(),
+                v["radius2"].as_f64().unwrap(),
+            ),
             other => panic!("{other:?}"),
         };
-        let ctrl = Mods { cmd: true, ..Default::default() };
+        let ctrl = Mods {
+            cmd: true,
+            ..Default::default()
+        };
         let mut t = ShapeTool::new("star");
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 50.0, 50.0));
         let (r1, r2) = radii(&t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 90.0, 50.0)));
         assert_eq!((r1, r2), (40.0, 20.0));
         // Ctrl: the inner radius stays 20 as the outer one grows to 80.
-        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 90.0, 50.0).with_mods(ctrl));
-        let (r1, r2) = radii(&t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 130.0, 50.0).with_mods(ctrl)));
-        assert!((r1 - 80.0).abs() < 1e-9 && (r2 - 20.0).abs() < 1e-9, "{r1} {r2}");
+        t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 90.0, 50.0).with_mods(ctrl),
+        );
+        let (r1, r2) = radii(&t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 130.0, 50.0).with_mods(ctrl),
+        ));
+        assert!(
+            (r1 - 80.0).abs() < 1e-9 && (r2 - 20.0).abs() < 1e-9,
+            "{r1} {r2}"
+        );
         // Let go: the ratio (a quarter) stays.
         let (r1, r2) = radii(&t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 50.0)));
         assert!((r2 / r1 - 0.25).abs() < 1e-9, "{r1} {r2}");
         // Alt: straight shoulders, about 0.382 for five points.
-        let alt = Mods { alt: true, ..Default::default() };
-        let (r1, r2) = radii(&t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 150.0, 50.0).with_mods(alt)));
+        let alt = Mods {
+            alt: true,
+            ..Default::default()
+        };
+        let (r1, r2) = radii(&t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 150.0, 50.0).with_mods(alt),
+        ));
         assert!((r2 / r1 - 0.381_966).abs() < 1e-5, "{}", r2 / r1);
         assert_eq!(straight_ratio(4), None, "four points can't line up");
-        assert_eq!(t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 150.0, 50.0)), vec![Action::Commit]);
+        assert_eq!(
+            t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 150.0, 50.0)),
+            vec![Action::Commit]
+        );
     }
 
     #[test]
     fn shift_square_alt_center() {
         let t = ShapeTool::new("ellipse");
-        let (c, v) = t.command(Point::new(0.0, 0.0), Point::new(10.0, 4.0), Mods { shift: true, alt: true, ..Default::default() });
+        let (c, v) = t.command(
+            Point::new(0.0, 0.0),
+            Point::new(10.0, 4.0),
+            Mods {
+                shift: true,
+                alt: true,
+                ..Default::default()
+            },
+        );
         assert_eq!(c, "shape.ellipse");
-        assert_eq!(v, json!({"x": -10.0, "y": -10.0, "width": 20.0, "height": 20.0}));
+        assert_eq!(
+            v,
+            json!({"x": -10.0, "y": -10.0, "width": 20.0, "height": 20.0})
+        );
     }
 
     #[test]
@@ -401,26 +519,55 @@ mod tests {
         let p = paint();
         let cx = cx(&d, &s, &p);
         let mut t = ShapeTool::new("rectangle");
-        let anchor = |o: &[Overlay], at: Point| o.iter().any(|o| matches!(o, Overlay::Label { text, p, .. } if text == "anchor" && *p == at));
+        let anchor = |o: &[Overlay], at: Point| {
+            o.iter().any(
+                |o| matches!(o, Overlay::Label { text, p, .. } if text == "anchor" && *p == at),
+            )
+        };
         t.pointer(&cx, &PointerEvent::new(PointerKind::Move, 98.0, 102.0));
         assert!(anchor(&t.overlays(&cx), Point::new(100.0, 100.0)));
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 98.0, 102.0));
         let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 198.0, 202.0));
-        assert_eq!(a[1], Action::Preview("shape.rectangle".into(), json!({"x": 100.0, "y": 100.0, "width": 100.0, "height": 100.0})));
+        assert_eq!(
+            a[1],
+            Action::Preview(
+                "shape.rectangle".into(),
+                json!({"x": 100.0, "y": 100.0, "width": 100.0, "height": 100.0})
+            )
+        );
         let o = t.overlays(&cx);
         assert!(anchor(&o, Point::new(200.0, 200.0)), "{o:?}");
-        assert!(o.iter().any(|o| matches!(o, Overlay::Measure { text, .. } if text == &cx.size_label(100.0, 100.0))));
+        assert!(o.iter().any(
+            |o| matches!(o, Overlay::Measure { text, .. } if text == &cx.size_label(100.0, 100.0))
+        ));
         // Alt draws from the centre: the label gives the whole size.
-        let alt = Mods { alt: true, ..Mods::default() };
-        t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 198.0, 202.0).with_mods(alt));
-        assert!(t.overlays(&cx).iter().any(|o| matches!(o, Overlay::Measure { text, .. } if text == &cx.size_label(200.0, 200.0))));
+        let alt = Mods {
+            alt: true,
+            ..Mods::default()
+        };
+        t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 198.0, 202.0).with_mods(alt),
+        );
+        assert!(t.overlays(&cx).iter().any(
+            |o| matches!(o, Overlay::Measure { text, .. } if text == &cx.size_label(200.0, 200.0))
+        ));
         t.pointer(&cx, &PointerEvent::new(PointerKind::Up, 198.0, 202.0));
         assert!(t.overlays(&cx).is_empty());
         // A line with Shift keeps to 45° steps, sliding into line with the rect's right side.
         let mut t = ShapeTool::new("lineSegment");
         t.pointer(&cx, &PointerEvent::new(PointerKind::Down, 300.0, 300.0));
-        let shift = Mods { shift: true, ..Mods::default() };
-        let a = t.pointer(&cx, &PointerEvent::new(PointerKind::Drag, 203.0, 302.0).with_mods(shift));
-        assert!(matches!(&a[..], [_, Action::Preview(_, v)] if v["x2"] == 200.0 && (v["y2"].as_f64().unwrap() - 300.0).abs() < 1e-9), "{a:?}");
+        let shift = Mods {
+            shift: true,
+            ..Mods::default()
+        };
+        let a = t.pointer(
+            &cx,
+            &PointerEvent::new(PointerKind::Drag, 203.0, 302.0).with_mods(shift),
+        );
+        assert!(
+            matches!(&a[..], [_, Action::Preview(_, v)] if v["x2"] == 200.0 && (v["y2"].as_f64().unwrap() - 300.0).abs() < 1e-9),
+            "{a:?}"
+        );
     }
 }

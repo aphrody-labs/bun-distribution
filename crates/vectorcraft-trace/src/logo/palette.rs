@@ -17,7 +17,11 @@ pub(crate) fn parse_hex(s: &str) -> Option<[u8; 3]> {
 
 fn rgb255(p: &Px) -> [f64; 3] {
     let a = f64::from(p[3]).max(1e-6);
-    [f64::from(p[0]) / a * 255.0, f64::from(p[1]) / a * 255.0, f64::from(p[2]) / a * 255.0]
+    [
+        f64::from(p[0]) / a * 255.0,
+        f64::from(p[1]) / a * 255.0,
+        f64::from(p[2]) / a * 255.0,
+    ]
 }
 
 /// Opaque pixels whose 3×3 neighbourhood is uniform (variance below `max_var`): edge pixels, which
@@ -29,7 +33,9 @@ fn solid_pixels(pix: &[Px], w: usize, h: usize, max_var: f64) -> Vec<[f64; 3]> {
     }
     for y in 1..h - 1 {
         for x in 1..w - 1 {
-            let Some(c) = pix.get(y * w + x) else { continue };
+            let Some(c) = pix.get(y * w + x) else {
+                continue;
+            };
             if c[3] <= 0.98 {
                 continue;
             }
@@ -37,7 +43,9 @@ fn solid_pixels(pix: &[Px], w: usize, h: usize, max_var: f64) -> Vec<[f64; 3]> {
             let mut opaque = true;
             for dy in 0..3 {
                 for dx in 0..3 {
-                    let Some(q) = pix.get((y + dy - 1) * w + (x + dx - 1)) else { continue };
+                    let Some(q) = pix.get((y + dy - 1) * w + (x + dx - 1)) else {
+                        continue;
+                    };
                     if q[3] <= 0.98 {
                         opaque = false;
                     }
@@ -68,7 +76,10 @@ fn dist2(a: [f64; 3], b: [f64; 3]) -> f64 {
 struct Lcg(u64);
 impl Lcg {
     fn next(&mut self) -> f64 {
-        self.0 = self.0.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+        self.0 = self
+            .0
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
         ((self.0 >> 33) as f64) / ((1u64 << 31) as f64)
     }
 }
@@ -77,7 +88,10 @@ fn kmeans(px: &[[f64; 3]], k: usize, seed: u64) -> (Vec<[f64; 3]>, Vec<usize>, f
     let mut rng = Lcg(seed);
     let mut c: Vec<[f64; 3]> = vec![px[(rng.next() * px.len() as f64) as usize % px.len()]];
     while c.len() < k {
-        let d: Vec<f64> = px.iter().map(|p| c.iter().map(|q| dist2(*p, *q)).fold(f64::MAX, f64::min)).collect();
+        let d: Vec<f64> = px
+            .iter()
+            .map(|p| c.iter().map(|q| dist2(*p, *q)).fold(f64::MAX, f64::min))
+            .collect();
         let total: f64 = d.iter().sum();
         if total <= 0.0 {
             break;
@@ -96,7 +110,9 @@ fn kmeans(px: &[[f64; 3]], k: usize, seed: u64) -> (Vec<[f64; 3]>, Vec<usize>, f
     let mut lab = vec![0usize; px.len()];
     for _ in 0..30 {
         for (i, p) in px.iter().enumerate() {
-            lab[i] = (0..c.len()).min_by(|&a, &b| dist2(*p, c[a]).total_cmp(&dist2(*p, c[b]))).unwrap_or(0);
+            lab[i] = (0..c.len())
+                .min_by(|&a, &b| dist2(*p, c[a]).total_cmp(&dist2(*p, c[b])))
+                .unwrap_or(0);
         }
         let mut sum = vec![[0.0f64; 3]; c.len()];
         let mut cnt = vec![0usize; c.len()];
@@ -108,7 +124,11 @@ fn kmeans(px: &[[f64; 3]], k: usize, seed: u64) -> (Vec<[f64; 3]>, Vec<usize>, f
         }
         for (i, ci) in c.iter_mut().enumerate() {
             if cnt[i] > 0 {
-                *ci = [sum[i][0] / cnt[i] as f64, sum[i][1] / cnt[i] as f64, sum[i][2] / cnt[i] as f64];
+                *ci = [
+                    sum[i][0] / cnt[i] as f64,
+                    sum[i][1] / cnt[i] as f64,
+                    sum[i][2] / cnt[i] as f64,
+                ];
             }
         }
     }
@@ -131,8 +151,12 @@ pub(crate) fn auto_palette(pix: &[Px], w: usize, h: usize, max_colors: usize) ->
         px = px.into_iter().step_by(stride).collect();
     }
     let k = max_colors.clamp(1, 12).min(px.len());
-    let best = (0..4u64).map(|s| kmeans(&px, k, 0x9e37_79b9 + s * 7919)).min_by(|a, b| a.2.total_cmp(&b.2));
-    let Some((cent, lab, _)) = best else { return Vec::new() };
+    let best = (0..4u64)
+        .map(|s| kmeans(&px, k, 0x9e37_79b9 + s * 7919))
+        .min_by(|a, b| a.2.total_cmp(&b.2));
+    let Some((cent, lab, _)) = best else {
+        return Vec::new();
+    };
     let mut cnt = vec![0usize; cent.len()];
     for &l in &lab {
         if let Some(c) = cnt.get_mut(l) {
@@ -140,8 +164,12 @@ pub(crate) fn auto_palette(pix: &[Px], w: usize, h: usize, max_colors: usize) ->
         }
     }
     let total = lab.len().max(1);
-    let mut groups: Vec<([f64; 3], usize)> =
-        cent.iter().zip(&cnt).filter(|(c, n)| **n * 1000 > total && !c.iter().all(|&v| v >= f64::from(WHITE_MIN))).map(|(c, &n)| (*c, n)).collect();
+    let mut groups: Vec<([f64; 3], usize)> = cent
+        .iter()
+        .zip(&cnt)
+        .filter(|(c, n)| **n * 1000 > total && !c.iter().all(|&v| v >= f64::from(WHITE_MIN)))
+        .map(|(c, &n)| (*c, n))
+        .collect();
     // Centres closer than 20 are one colour split by noise.
     loop {
         let mut merged = false;
@@ -163,7 +191,10 @@ pub(crate) fn auto_palette(pix: &[Px], w: usize, h: usize, max_colors: usize) ->
         }
     }
     groups.sort_by_key(|g| std::cmp::Reverse(g.1));
-    groups.iter().map(|(c, _)| c.map(|v| v.round().clamp(0.0, 255.0) as u8)).collect()
+    groups
+        .iter()
+        .map(|(c, _)| c.map(|v| v.round().clamp(0.0, 255.0) as u8))
+        .collect()
 }
 
 /// How far apart (in RGB) two tones of one colour may be: a scan's paper is a tenth darker in one
@@ -179,7 +210,12 @@ pub(crate) fn fold_tones(pix: &[Px], mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> 
     loop {
         let close: Vec<(usize, usize)> = (0..palette.len())
             .flat_map(|i| (i + 1..palette.len()).map(move |j| (i, j)))
-            .filter(|&(i, j)| palette.get(i).zip(palette.get(j)).is_some_and(|(a, b)| apart(*a, *b) <= TONES_APART))
+            .filter(|&(i, j)| {
+                palette
+                    .get(i)
+                    .zip(palette.get(j))
+                    .is_some_and(|(a, b)| apart(*a, *b) <= TONES_APART)
+            })
             .collect();
         if close.is_empty() {
             return palette;
@@ -189,14 +225,18 @@ pub(crate) fn fold_tones(pix: &[Px], mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> 
         let mut thirds = vec![[0usize; 3]; close.len()];
         for p in pix.iter().filter(|p| p[3] > 0.9) {
             let c = rgb255(p);
-            let Some(near) = (0..palette.len()).min_by(|&i, &j| dist2(c, palette[i].map(f64::from)).total_cmp(&dist2(c, palette[j].map(f64::from))))
-            else {
+            let Some(near) = (0..palette.len()).min_by(|&i, &j| {
+                dist2(c, palette[i].map(f64::from)).total_cmp(&dist2(c, palette[j].map(f64::from)))
+            }) else {
                 continue;
             };
             for (k, &(i, j)) in close.iter().enumerate() {
                 if near == i || near == j {
                     let (a, b) = (palette[i].map(f64::from), palette[j].map(f64::from));
-                    let t = (0..3).map(|ch| (c[ch] - a[ch]) * (b[ch] - a[ch])).sum::<f64>() / dist2(a, b).max(1e-9);
+                    let t = (0..3)
+                        .map(|ch| (c[ch] - a[ch]) * (b[ch] - a[ch]))
+                        .sum::<f64>()
+                        / dist2(a, b).max(1e-9);
                     thirds[k][if t < 1.0 / 3.0 {
                         0
                     } else if t <= 2.0 / 3.0 {
@@ -210,13 +250,23 @@ pub(crate) fn fold_tones(pix: &[Px], mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> 
         // The pair with the most between it, if that is no fewer than a third of what the lesser
         // end has.
         let filled = |t: &[usize; 3]| t[1] as f64 / (t[0].min(t[2]).max(1)) as f64;
-        let Some((k, _)) = thirds.iter().enumerate().filter(|(_, t)| filled(t) >= 1.0 / 3.0).max_by(|a, b| filled(a.1).total_cmp(&filled(b.1)))
+        let Some((k, _)) = thirds
+            .iter()
+            .enumerate()
+            .filter(|(_, t)| filled(t) >= 1.0 / 3.0)
+            .max_by(|a, b| filled(a.1).total_cmp(&filled(b.1)))
         else {
             return palette;
         };
         let ((i, j), t) = (close[k], thirds[k]);
-        let (na, nb) = ((t[0] + t[1] / 2).max(1) as f64, (t[2] + t[1] / 2).max(1) as f64);
-        palette[i] = [0, 1, 2].map(|ch| ((f64::from(palette[i][ch]) * na + f64::from(palette[j][ch]) * nb) / (na + nb)).round() as u8);
+        let (na, nb) = (
+            (t[0] + t[1] / 2).max(1) as f64,
+            (t[2] + t[1] / 2).max(1) as f64,
+        );
+        palette[i] = [0, 1, 2].map(|ch| {
+            ((f64::from(palette[i][ch]) * na + f64::from(palette[j][ch]) * nb) / (na + nb)).round()
+                as u8
+        });
         palette.remove(j);
     }
 }
@@ -226,7 +276,13 @@ pub(crate) fn fold_tones(pix: &[Px], mut palette: Vec<[u8; 3]>) -> Vec<[u8; 3]> 
 /// with a large error is a colour that is missing, such as the small accent that was too few
 /// pixels to be found at first. Groups of at least three such pixels at least 25 away from every
 /// known colour are returned, most common first.
-pub(crate) fn unexplained_colours(pix: &[Px], w: usize, h: usize, residual: &[f32], known: &[[u8; 3]]) -> Vec<[u8; 3]> {
+pub(crate) fn unexplained_colours(
+    pix: &[Px],
+    w: usize,
+    h: usize,
+    residual: &[f32],
+    known: &[[u8; 3]],
+) -> Vec<[u8; 3]> {
     let mut pal: Vec<[f64; 3]> = known.iter().map(|c| c.map(f64::from)).collect();
     pal.push([255.0, 255.0, 255.0]);
     let at = |x: usize, y: usize| pix.get(y * w + x).filter(|p| p[3] > 0.98).map(rgb255);
@@ -237,7 +293,9 @@ pub(crate) fn unexplained_colours(pix: &[Px], w: usize, h: usize, residual: &[f3
                 continue;
             }
             let Some(c) = at(x, y) else { continue };
-            let uniform = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].iter().all(|&(xx, yy)| at(xx, yy).is_some_and(|q| dist2(q, c) < 100.0));
+            let uniform = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
+                .iter()
+                .all(|&(xx, yy)| at(xx, yy).is_some_and(|q| dist2(q, c) < 100.0));
             if !uniform || pal.iter().any(|q| dist2(*q, c) < 625.0) {
                 continue;
             }
@@ -254,7 +312,10 @@ pub(crate) fn unexplained_colours(pix: &[Px], w: usize, h: usize, residual: &[f3
     }
     groups.retain(|g| g.1 >= 3);
     groups.sort_by_key(|g| std::cmp::Reverse(g.1));
-    groups.iter().map(|(c, _)| c.map(|v| v.round().clamp(0.0, 255.0) as u8)).collect()
+    groups
+        .iter()
+        .map(|(c, _)| c.map(|v| v.round().clamp(0.0, 255.0) as u8))
+        .collect()
 }
 
 /// Share of solid pixels within a small colour distance of a palette colour (white included).
@@ -266,7 +327,10 @@ pub(crate) fn flat_fraction(pix: &[Px], w: usize, h: usize, palette: &[[u8; 3]])
     }
     let mut pal: Vec<[f64; 3]> = palette.iter().map(|c| c.map(f64::from)).collect();
     pal.push([255.0, 255.0, 255.0]);
-    let near = px.iter().filter(|p| pal.iter().any(|q| dist2(**p, *q) < 22.0 * 22.0)).count();
+    let near = px
+        .iter()
+        .filter(|p| pal.iter().any(|q| dist2(**p, *q) < 22.0 * 22.0))
+        .count();
     near as f64 / px.len() as f64
 }
 
@@ -279,7 +343,12 @@ mod tests {
             .map(|i| {
                 let p = f(i % w, i / w);
                 let a = f32::from(p[3]) / 255.0;
-                [f32::from(p[0]) / 255.0 * a, f32::from(p[1]) / 255.0 * a, f32::from(p[2]) / 255.0 * a, a]
+                [
+                    f32::from(p[0]) / 255.0 * a,
+                    f32::from(p[1]) / 255.0 * a,
+                    f32::from(p[2]) / 255.0 * a,
+                    a,
+                ]
             })
             .collect()
     }
@@ -325,9 +394,14 @@ mod tests {
 
     #[test]
     fn a_gradient_is_not_flat() {
-        let pix = blocks(64, 16, |x, _| [(x * 4) as u8, 255 - (x * 4) as u8, 128, 255]);
+        let pix = blocks(64, 16, |x, _| {
+            [(x * 4) as u8, 255 - (x * 4) as u8, 128, 255]
+        });
         let pal = auto_palette(&pix, 64, 16, 6);
-        assert!(flat_fraction(&pix, 64, 16, &pal) < 0.93, "gradient scored flat");
+        assert!(
+            flat_fraction(&pix, 64, 16, &pal) < 0.93,
+            "gradient scored flat"
+        );
     }
 
     #[test]

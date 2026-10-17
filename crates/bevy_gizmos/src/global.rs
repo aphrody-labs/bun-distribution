@@ -4,9 +4,9 @@ use bevy_app::{App, Last, Plugin};
 use bevy_ecs::schedule::IntoScheduleConfigs;
 
 use crate::{
+    GizmoMeshSystems,
     config::DefaultGizmoConfigGroup,
     gizmos::{GizmoBuffer, Gizmos},
-    GizmoMeshSystems,
 };
 
 static GLOBAL_GIZMO: Mutex<GizmoBuffer<DefaultGizmoConfigGroup, ()>> =

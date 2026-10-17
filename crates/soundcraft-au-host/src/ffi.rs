@@ -170,19 +170,59 @@ struct AudioUnitParameterInfo {
 
 #[link(name = "AudioToolbox", kind = "framework")]
 unsafe extern "C" {
-    fn AudioComponentFindNext(component: AudioComponent, desc: *const AudioComponentDescription) -> AudioComponent;
+    fn AudioComponentFindNext(
+        component: AudioComponent,
+        desc: *const AudioComponentDescription,
+    ) -> AudioComponent;
     fn AudioComponentCopyName(component: AudioComponent, name: *mut CFTypeRef) -> OSStatus;
-    fn AudioComponentGetDescription(component: AudioComponent, desc: *mut AudioComponentDescription) -> OSStatus;
+    fn AudioComponentGetDescription(
+        component: AudioComponent,
+        desc: *mut AudioComponentDescription,
+    ) -> OSStatus;
     fn AudioComponentGetVersion(component: AudioComponent, version: *mut u32) -> OSStatus;
     fn AudioComponentInstanceNew(component: AudioComponent, instance: *mut AudioUnit) -> OSStatus;
     fn AudioComponentInstanceDispose(instance: AudioUnit) -> OSStatus;
     fn AudioUnitInitialize(unit: AudioUnit) -> OSStatus;
     fn AudioUnitUninitialize(unit: AudioUnit) -> OSStatus;
-    fn AudioUnitGetPropertyInfo(unit: AudioUnit, id: u32, scope: u32, element: u32, size: *mut u32, writable: *mut u8) -> OSStatus;
-    fn AudioUnitGetProperty(unit: AudioUnit, id: u32, scope: u32, element: u32, data: *mut c_void, size: *mut u32) -> OSStatus;
-    fn AudioUnitSetProperty(unit: AudioUnit, id: u32, scope: u32, element: u32, data: *const c_void, size: u32) -> OSStatus;
-    fn AudioUnitGetParameter(unit: AudioUnit, id: u32, scope: u32, element: u32, value: *mut f32) -> OSStatus;
-    fn AudioUnitSetParameter(unit: AudioUnit, id: u32, scope: u32, element: u32, value: f32, offset: u32) -> OSStatus;
+    fn AudioUnitGetPropertyInfo(
+        unit: AudioUnit,
+        id: u32,
+        scope: u32,
+        element: u32,
+        size: *mut u32,
+        writable: *mut u8,
+    ) -> OSStatus;
+    fn AudioUnitGetProperty(
+        unit: AudioUnit,
+        id: u32,
+        scope: u32,
+        element: u32,
+        data: *mut c_void,
+        size: *mut u32,
+    ) -> OSStatus;
+    fn AudioUnitSetProperty(
+        unit: AudioUnit,
+        id: u32,
+        scope: u32,
+        element: u32,
+        data: *const c_void,
+        size: u32,
+    ) -> OSStatus;
+    fn AudioUnitGetParameter(
+        unit: AudioUnit,
+        id: u32,
+        scope: u32,
+        element: u32,
+        value: *mut f32,
+    ) -> OSStatus;
+    fn AudioUnitSetParameter(
+        unit: AudioUnit,
+        id: u32,
+        scope: u32,
+        element: u32,
+        value: f32,
+        offset: u32,
+    ) -> OSStatus;
     fn AudioUnitRender(
         unit: AudioUnit,
         action_flags: *mut u32,
@@ -192,7 +232,13 @@ unsafe extern "C" {
         data: *mut AudioBufferList,
     ) -> OSStatus;
     fn AudioUnitReset(unit: AudioUnit, scope: u32, element: u32) -> OSStatus;
-    fn MusicDeviceMIDIEvent(unit: AudioUnit, status: u32, data1: u32, data2: u32, offset: u32) -> OSStatus;
+    fn MusicDeviceMIDIEvent(
+        unit: AudioUnit,
+        status: u32,
+        data1: u32,
+        data2: u32,
+        offset: u32,
+    ) -> OSStatus;
 }
 
 #[link(name = "CoreFoundation", kind = "framework")]
@@ -209,8 +255,20 @@ unsafe extern "C" {
     fn CFDataCreate(alloc: CFTypeRef, bytes: *const u8, length: CFIndex) -> CFTypeRef;
     fn CFDataGetLength(d: CFTypeRef) -> CFIndex;
     fn CFDataGetBytePtr(d: CFTypeRef) -> *const u8;
-    fn CFPropertyListCreateData(alloc: CFTypeRef, plist: CFTypeRef, format: CFIndex, options: usize, error: *mut CFTypeRef) -> CFTypeRef;
-    fn CFPropertyListCreateWithData(alloc: CFTypeRef, data: CFTypeRef, options: usize, format: *mut CFIndex, error: *mut CFTypeRef) -> CFTypeRef;
+    fn CFPropertyListCreateData(
+        alloc: CFTypeRef,
+        plist: CFTypeRef,
+        format: CFIndex,
+        options: usize,
+        error: *mut CFTypeRef,
+    ) -> CFTypeRef;
+    fn CFPropertyListCreateWithData(
+        alloc: CFTypeRef,
+        data: CFTypeRef,
+        options: usize,
+        format: *mut CFIndex,
+        error: *mut CFTypeRef,
+    ) -> CFTypeRef;
 }
 
 /// Releases a CF object we own (null is ignored).
@@ -259,7 +317,10 @@ pub struct RawComponent {
 
 /// Every component of type `ty` that can be instantiated synchronously.
 pub fn components(ty: u32) -> Vec<RawComponent> {
-    let desc = AudioComponentDescription { component_type: ty, ..Default::default() };
+    let desc = AudioComponentDescription {
+        component_type: ty,
+        ..Default::default()
+    };
     let mut out = Vec::new();
     let mut comp: AudioComponent = ptr::null_mut();
     for _ in 0..MAX_COMPONENTS {
@@ -279,12 +340,25 @@ pub fn components(ty: u32) -> Vec<RawComponent> {
             let _ = AudioComponentGetVersion(comp, &mut version);
             (ds, ns)
         };
-        let full = if ns == 0 { cf_string(name) } else { String::new() };
+        let full = if ns == 0 {
+            cf_string(name)
+        } else {
+            String::new()
+        };
         release(name);
-        if ds != 0 || d.component_type != ty || d.component_flags & K_AUDIO_COMPONENT_FLAG_REQUIRES_ASYNC != 0 {
+        if ds != 0
+            || d.component_type != ty
+            || d.component_flags & K_AUDIO_COMPONENT_FLAG_REQUIRES_ASYNC != 0
+        {
             continue;
         }
-        out.push(RawComponent { ty, subtype: d.component_sub_type, manufacturer: d.component_manufacturer, name: full, version });
+        out.push(RawComponent {
+            ty,
+            subtype: d.component_sub_type,
+            manufacturer: d.component_manufacturer,
+            name: full,
+            version,
+        });
     }
     out
 }
@@ -336,7 +410,9 @@ unsafe extern "C" fn input_callback(
         for i in 0..n.min(64) {
             let b = &mut *first.add(i);
             let last = input.bufs.len().saturating_sub(1);
-            let Some(src) = input.bufs.get_mut(i.min(last)) else { continue };
+            let Some(src) = input.bufs.get_mut(i.min(last)) else {
+                continue;
+            };
             if b.data.is_null() {
                 // Lend our buffer (the unit may process in place; it is ours to scribble on).
                 if src.len() >= frames {
@@ -349,7 +425,11 @@ unsafe extern "C" fn input_callback(
             let room = (b.data_byte_size as usize / 4).min(frames);
             let dst = std::slice::from_raw_parts_mut(b.data as *mut f32, room);
             for (k, d) in dst.iter_mut().enumerate() {
-                *d = if k < avail { src.get(k).copied().unwrap_or(0.0) } else { 0.0 };
+                *d = if k < avail {
+                    src.get(k).copied().unwrap_or(0.0)
+                } else {
+                    0.0
+                };
             }
         }
     }
@@ -378,9 +458,18 @@ unsafe impl Send for Instance {}
 
 impl Instance {
     /// Creates (but does not initialize) the component `(ty, subtype, manufacturer)`.
-    pub fn new(ty: u32, subtype: u32, manufacturer: u32, has_input: bool) -> Result<Instance, String> {
-        let desc =
-            AudioComponentDescription { component_type: ty, component_sub_type: subtype, component_manufacturer: manufacturer, ..Default::default() };
+    pub fn new(
+        ty: u32,
+        subtype: u32,
+        manufacturer: u32,
+        has_input: bool,
+    ) -> Result<Instance, String> {
+        let desc = AudioComponentDescription {
+            component_type: ty,
+            component_sub_type: subtype,
+            component_manufacturer: manufacturer,
+            ..Default::default()
+        };
         // SAFETY: `desc` is a valid description.
         let comp = unsafe { AudioComponentFindNext(ptr::null_mut(), &desc) };
         if comp.is_null() {
@@ -388,7 +477,9 @@ impl Instance {
         }
         let mut d = AudioComponentDescription::default();
         // SAFETY: `comp` is a live component; `d` is a local of the right type.
-        if unsafe { AudioComponentGetDescription(comp, &mut d) } == 0 && d.component_flags & K_AUDIO_COMPONENT_FLAG_REQUIRES_ASYNC != 0 {
+        if unsafe { AudioComponentGetDescription(comp, &mut d) } == 0
+            && d.component_flags & K_AUDIO_COMPONENT_FLAG_REQUIRES_ASYNC != 0
+        {
             return Err("requires asynchronous instantiation (not supported)".into());
         }
         let mut unit: AudioUnit = ptr::null_mut();
@@ -397,13 +488,23 @@ impl Instance {
         if st != 0 || unit.is_null() {
             return Err(format!("AudioComponentInstanceNew failed ({st})"));
         }
-        let input = Box::into_raw(Box::new(InputState { bufs: Vec::new(), frames: 0 }));
-        let empty = AudioBuffer { number_channels: 1, data_byte_size: 0, data: ptr::null_mut() };
+        let input = Box::into_raw(Box::new(InputState {
+            bufs: Vec::new(),
+            frames: 0,
+        }));
+        let empty = AudioBuffer {
+            number_channels: 1,
+            data_byte_size: 0,
+            data: ptr::null_mut(),
+        };
         Ok(Instance {
             unit,
             input,
             outputs: Vec::new(),
-            abl: AudioBufferList { number_buffers: 0, buffers: [empty; MAX_AU_CHANNELS] },
+            abl: AudioBufferList {
+                number_buffers: 0,
+                buffers: [empty; MAX_AU_CHANNELS],
+            },
             has_input,
             initialized: false,
             channels: 0,
@@ -416,14 +517,32 @@ impl Instance {
     fn set_property<T>(&self, id: u32, scope: u32, element: u32, value: &T) -> OSStatus {
         // SAFETY: `value` points at a live `T` of `size_of::<T>()` bytes, matching what the
         // property expects (callers pass the documented type).
-        unsafe { AudioUnitSetProperty(self.unit, id, scope, element, (value as *const T).cast(), std::mem::size_of::<T>() as u32) }
+        unsafe {
+            AudioUnitSetProperty(
+                self.unit,
+                id,
+                scope,
+                element,
+                (value as *const T).cast(),
+                std::mem::size_of::<T>() as u32,
+            )
+        }
     }
 
     fn get_f64(&self, id: u32) -> Option<f64> {
         let mut v = 0f64;
         let mut size = std::mem::size_of::<f64>() as u32;
         // SAFETY: the property is a `Float64`; `v`/`size` are locals of the right types.
-        let st = unsafe { AudioUnitGetProperty(self.unit, id, SCOPE_GLOBAL, 0, (&mut v as *mut f64).cast(), &mut size) };
+        let st = unsafe {
+            AudioUnitGetProperty(
+                self.unit,
+                id,
+                SCOPE_GLOBAL,
+                0,
+                (&mut v as *mut f64).cast(),
+                &mut size,
+            )
+        };
         (st == 0 && v.is_finite()).then_some(v)
     }
 
@@ -445,7 +564,12 @@ impl Instance {
     /// (Re)configures and initializes the unit for `sample_rate`, `max_frames`-frame slices and
     /// (preferably) `channels` channels on its main input and output buses. Returns the channel
     /// count it accepted. Not realtime-safe (allocates the buffers).
-    pub fn configure(&mut self, sample_rate: f64, max_frames: usize, channels: usize) -> Result<usize, String> {
+    pub fn configure(
+        &mut self,
+        sample_rate: f64,
+        max_frames: usize,
+        channels: usize,
+    ) -> Result<usize, String> {
         if self.initialized {
             // SAFETY: the unit is live and initialized.
             unsafe { AudioUnitUninitialize(self.unit) };
@@ -455,7 +579,10 @@ impl Instance {
         let mf = max_frames.clamp(1, MAX_SLICE);
         let _ = self.set_property(PROP_MAX_FRAMES, SCOPE_GLOBAL, 0, &(mf as u32));
         if self.has_input {
-            let cb = AuRenderCallbackStruct { input_proc: Some(input_callback), input_proc_ref_con: self.input.cast() };
+            let cb = AuRenderCallbackStruct {
+                input_proc: Some(input_callback),
+                input_proc_ref_con: self.input.cast(),
+            };
             let st = self.set_property(PROP_SET_RENDER_CALLBACK, SCOPE_INPUT, 0, &cb);
             if st != 0 {
                 return Err(format!("cannot set the input callback ({st})"));
@@ -473,7 +600,11 @@ impl Instance {
                 *t = ch;
             }
             let o = self.format(SCOPE_OUTPUT, sample_rate, ch);
-            let i = if self.has_input { self.format(SCOPE_INPUT, sample_rate, ch) } else { 0 };
+            let i = if self.has_input {
+                self.format(SCOPE_INPUT, sample_rate, ch)
+            } else {
+                0
+            };
             if o != 0 || i != 0 {
                 last = if o != 0 { o } else { i };
                 continue;
@@ -486,7 +617,9 @@ impl Instance {
             }
             last = st;
         }
-        let ch = ok.ok_or_else(|| format!("the unit accepts no 1/2/{want}-channel float format ({last})"))?;
+        let ch = ok.ok_or_else(|| {
+            format!("the unit accepts no 1/2/{want}-channel float format ({last})")
+        })?;
         self.initialized = true;
         self.channels = ch;
         self.sample_rate = sample_rate;
@@ -494,7 +627,11 @@ impl Instance {
         // SAFETY: the callback only runs inside `AudioUnitRender`, which is not running now
         // (we hold `&mut self`), so this exclusive access does not alias.
         let input = unsafe { &mut *self.input };
-        input.bufs = if self.has_input { (0..ch).map(|_| vec![0.0; mf]).collect() } else { Vec::new() };
+        input.bufs = if self.has_input {
+            (0..ch).map(|_| vec![0.0; mf]).collect()
+        } else {
+            Vec::new()
+        };
         input.frames = 0;
         self.max_frames = mf;
         Ok(ch)
@@ -527,14 +664,23 @@ impl Instance {
         }
         let n = self.outputs.len().min(MAX_AU_CHANNELS);
         for (b, out) in self.abl.buffers.iter_mut().zip(self.outputs.iter_mut()) {
-            *b = AudioBuffer { number_channels: 1, data_byte_size: (frames * 4) as u32, data: out.as_mut_ptr().cast() };
+            *b = AudioBuffer {
+                number_channels: 1,
+                data_byte_size: (frames * 4) as u32,
+                data: out.as_mut_ptr().cast(),
+            };
         }
         self.abl.number_buffers = n as u32;
-        let ts = AudioTimeStamp { sample_time: self.sample_time, flags: TIMESTAMP_SAMPLE_TIME_VALID, ..Default::default() };
+        let ts = AudioTimeStamp {
+            sample_time: self.sample_time,
+            flags: TIMESTAMP_SAMPLE_TIME_VALID,
+            ..Default::default()
+        };
         let mut flags = 0u32;
         // SAFETY: the unit is initialized; `ts` and `flags` are locals; `abl` holds `n` buffers
         // each pointing at `frames` floats we own; the input callback's state is alive.
-        let st = unsafe { AudioUnitRender(self.unit, &mut flags, &ts, 0, frames as u32, &mut self.abl) };
+        let st =
+            unsafe { AudioUnitRender(self.unit, &mut flags, &ts, 0, frames as u32, &mut self.abl) };
         self.sample_time += frames as f64;
         if st == 0 { Ok(()) } else { Err(st) }
     }
@@ -583,7 +729,15 @@ impl Instance {
     /// A MIDI channel message at `offset` frames into the next render.
     pub fn midi(&self, status: u8, data1: u8, data2: u8, offset: u32) -> bool {
         // SAFETY: the unit is live; the call only takes integers.
-        unsafe { MusicDeviceMIDIEvent(self.unit, u32::from(status), u32::from(data1), u32::from(data2), offset) == 0 }
+        unsafe {
+            MusicDeviceMIDIEvent(
+                self.unit,
+                u32::from(status),
+                u32::from(data1),
+                u32::from(data2),
+                offset,
+            ) == 0
+        }
     }
 
     pub fn get_param(&self, id: u32) -> Option<f32> {
@@ -603,7 +757,16 @@ impl Instance {
         let mut size = 0u32;
         let mut writable = 0u8;
         // SAFETY: the unit is live; out pointers are locals.
-        let st = unsafe { AudioUnitGetPropertyInfo(self.unit, PROP_PARAMETER_LIST, SCOPE_GLOBAL, 0, &mut size, &mut writable) };
+        let st = unsafe {
+            AudioUnitGetPropertyInfo(
+                self.unit,
+                PROP_PARAMETER_LIST,
+                SCOPE_GLOBAL,
+                0,
+                &mut size,
+                &mut writable,
+            )
+        };
         if st != 0 || size == 0 {
             return Vec::new();
         }
@@ -611,12 +774,23 @@ impl Instance {
         let mut ids = vec![0u32; n];
         let mut size = (n * 4) as u32;
         // SAFETY: `ids` has room for `size` bytes.
-        let st = unsafe { AudioUnitGetProperty(self.unit, PROP_PARAMETER_LIST, SCOPE_GLOBAL, 0, ids.as_mut_ptr().cast(), &mut size) };
+        let st = unsafe {
+            AudioUnitGetProperty(
+                self.unit,
+                PROP_PARAMETER_LIST,
+                SCOPE_GLOBAL,
+                0,
+                ids.as_mut_ptr().cast(),
+                &mut size,
+            )
+        };
         if st != 0 {
             return Vec::new();
         }
         ids.truncate(size as usize / 4);
-        ids.into_iter().filter_map(|id| self.param_info(id)).collect()
+        ids.into_iter()
+            .filter_map(|id| self.param_info(id))
+            .collect()
     }
 
     fn param_info(&self, id: u32) -> Option<RawParam> {
@@ -625,18 +799,38 @@ impl Instance {
         let mut size = std::mem::size_of::<AudioUnitParameterInfo>() as u32;
         // SAFETY: `info` is a local of the documented type and size.
         let st = unsafe {
-            AudioUnitGetProperty(self.unit, PROP_PARAMETER_INFO, SCOPE_GLOBAL, id, (&mut info as *mut AudioUnitParameterInfo).cast(), &mut size)
+            AudioUnitGetProperty(
+                self.unit,
+                PROP_PARAMETER_INFO,
+                SCOPE_GLOBAL,
+                id,
+                (&mut info as *mut AudioUnitParameterInfo).cast(),
+                &mut size,
+            )
         };
         if st != 0 {
             return None;
         }
         let owned = info.flags & PARAM_FLAG_CF_NAME_RELEASE != 0;
-        let mut name = if info.flags & PARAM_FLAG_HAS_CF_NAME != 0 { cf_string(info.cf_name_string) } else { String::new() };
+        let mut name = if info.flags & PARAM_FLAG_HAS_CF_NAME != 0 {
+            cf_string(info.cf_name_string)
+        } else {
+            String::new()
+        };
         if name.is_empty() {
-            let bytes: Vec<u8> = info.name.iter().take_while(|&&c| c != 0).map(|&c| c as u8).collect();
+            let bytes: Vec<u8> = info
+                .name
+                .iter()
+                .take_while(|&&c| c != 0)
+                .map(|&c| c as u8)
+                .collect();
             name = String::from_utf8_lossy(&bytes).into_owned();
         }
-        let custom_unit = if info.unit == UNIT_CUSTOM { cf_string(info.unit_name) } else { String::new() };
+        let custom_unit = if info.unit == UNIT_CUSTOM {
+            cf_string(info.unit_name)
+        } else {
+            String::new()
+        };
         if owned {
             if info.flags & PARAM_FLAG_HAS_CF_NAME != 0 {
                 release(info.cf_name_string);
@@ -645,7 +839,11 @@ impl Instance {
                 release(info.unit_name);
             }
         }
-        let value_strings = if info.unit == UNIT_INDEXED { self.value_strings(id) } else { Vec::new() };
+        let value_strings = if info.unit == UNIT_INDEXED {
+            self.value_strings(id)
+        } else {
+            Vec::new()
+        };
         Some(RawParam {
             id,
             name,
@@ -664,7 +862,14 @@ impl Instance {
         let mut size = std::mem::size_of::<CFTypeRef>() as u32;
         // SAFETY: the property is a `CFArrayRef` (returned +1); `arr` is a local pointer.
         let st = unsafe {
-            AudioUnitGetProperty(self.unit, PROP_PARAMETER_VALUE_STRINGS, SCOPE_GLOBAL, id, (&mut arr as *mut CFTypeRef).cast(), &mut size)
+            AudioUnitGetProperty(
+                self.unit,
+                PROP_PARAMETER_VALUE_STRINGS,
+                SCOPE_GLOBAL,
+                id,
+                (&mut arr as *mut CFTypeRef).cast(),
+                &mut size,
+            )
         };
         if st != 0 || arr.is_null() {
             return Vec::new();
@@ -672,7 +877,9 @@ impl Instance {
         // SAFETY: `arr` is a live CFArray we own; indices are below its count.
         let out = unsafe {
             let n = CFArrayGetCount(arr).clamp(0, MAX_VALUE_STRINGS);
-            (0..n).map(|i| cf_string(CFArrayGetValueAtIndex(arr, i))).collect()
+            (0..n)
+                .map(|i| cf_string(CFArrayGetValueAtIndex(arr, i)))
+                .collect()
         };
         release(arr);
         out
@@ -683,14 +890,31 @@ impl Instance {
         let mut plist: CFTypeRef = ptr::null();
         let mut size = std::mem::size_of::<CFTypeRef>() as u32;
         // SAFETY: the property is a `CFPropertyListRef` returned +1; `plist` is a local pointer.
-        let st = unsafe { AudioUnitGetProperty(self.unit, PROP_CLASS_INFO, SCOPE_GLOBAL, 0, (&mut plist as *mut CFTypeRef).cast(), &mut size) };
+        let st = unsafe {
+            AudioUnitGetProperty(
+                self.unit,
+                PROP_CLASS_INFO,
+                SCOPE_GLOBAL,
+                0,
+                (&mut plist as *mut CFTypeRef).cast(),
+                &mut size,
+            )
+        };
         if st != 0 || plist.is_null() {
             release(plist);
             return None;
         }
         let mut err: CFTypeRef = ptr::null();
         // SAFETY: `plist` is a live property list; `err` is a local out pointer.
-        let data = unsafe { CFPropertyListCreateData(ptr::null(), plist, CF_PROPERTY_LIST_BINARY_FORMAT, 0, &mut err) };
+        let data = unsafe {
+            CFPropertyListCreateData(
+                ptr::null(),
+                plist,
+                CF_PROPERTY_LIST_BINARY_FORMAT,
+                0,
+                &mut err,
+            )
+        };
         release(err);
         release(plist);
         if data.is_null() {
@@ -700,7 +924,11 @@ impl Instance {
         let out = unsafe {
             let len = CFDataGetLength(data);
             let p = CFDataGetBytePtr(data);
-            if len <= 0 || len as usize > MAX_STATE || p.is_null() { None } else { Some(std::slice::from_raw_parts(p, len as usize).to_vec()) }
+            if len <= 0 || len as usize > MAX_STATE || p.is_null() {
+                None
+            } else {
+                Some(std::slice::from_raw_parts(p, len as usize).to_vec())
+            }
         };
         release(data);
         out
@@ -719,7 +947,9 @@ impl Instance {
         }
         let mut err: CFTypeRef = ptr::null();
         // SAFETY: `data` is a live CFData; the format out pointer may be null; `err` is local.
-        let plist = unsafe { CFPropertyListCreateWithData(ptr::null(), data, 0, ptr::null_mut(), &mut err) };
+        let plist = unsafe {
+            CFPropertyListCreateWithData(ptr::null(), data, 0, ptr::null_mut(), &mut err)
+        };
         release(err);
         release(data);
         if plist.is_null() {
@@ -727,7 +957,11 @@ impl Instance {
         }
         // SAFETY: `plist` is a live CF object we own.
         let is_dict = unsafe { CFGetTypeID(plist) == CFDictionaryGetTypeID() };
-        let st = if is_dict { self.set_property(PROP_CLASS_INFO, SCOPE_GLOBAL, 0, &plist) } else { -50 };
+        let st = if is_dict {
+            self.set_property(PROP_CLASS_INFO, SCOPE_GLOBAL, 0, &plist)
+        } else {
+            -50
+        };
         release(plist);
         st == 0
     }
@@ -762,7 +996,10 @@ mod tests {
         assert_eq!(std::mem::offset_of!(AudioBufferListHeader, first), 8);
         assert_eq!(std::mem::size_of::<AuRenderCallbackStruct>(), 16);
         assert_eq!(std::mem::offset_of!(AudioUnitParameterInfo, unit_name), 56);
-        assert_eq!(std::mem::offset_of!(AudioUnitParameterInfo, cf_name_string), 72);
+        assert_eq!(
+            std::mem::offset_of!(AudioUnitParameterInfo, cf_name_string),
+            72
+        );
         assert_eq!(std::mem::offset_of!(AudioUnitParameterInfo, flags), 96);
         assert_eq!(std::mem::size_of::<AudioUnitParameterInfo>(), 104);
     }

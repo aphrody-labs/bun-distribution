@@ -18,7 +18,14 @@
 //! [`Plugin::apply`] runs a filter on a [`photocraft_raster::Surface`], blending by the selection.
 //! The process-wide [`registry`] holds the installed plug-ins.
 #![forbid(unsafe_code)]
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod apply;
 pub mod manifest;

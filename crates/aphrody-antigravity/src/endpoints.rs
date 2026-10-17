@@ -212,9 +212,9 @@ mod tests {
     fn user_agent_matches_agy_shape() {
         // Verified live: antigravity/cli/<ver> (aidev_client; os_type=…; arch=…; auth_method=…)
         let ua = antigravity_user_agent(Some("consumer"));
-        assert!(
-            ua.starts_with(&format!("antigravity/cli/{ANTIGRAVITY_CLI_VERSION} (aidev_client;"))
-        );
+        assert!(ua.starts_with(&format!(
+            "antigravity/cli/{ANTIGRAVITY_CLI_VERSION} (aidev_client;"
+        )));
         assert!(ua.contains("auth_method=consumer"));
         assert!(ua.contains("os_type="));
         assert!(ua.contains("arch="));

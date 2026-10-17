@@ -1,7 +1,7 @@
 use crate::{
     change_detection::{AtomicTick, CheckChangeTicks, ComponentTicks, MaybeLocation, Tick},
     component::ComponentInfo,
-    storage::{blob_array::BlobArray, thin_array_ptr::ThinArrayPtr, TableRow},
+    storage::{TableRow, blob_array::BlobArray, thin_array_ptr::ThinArrayPtr},
 };
 use bevy_ptr::{OwningPtr, Ptr, UnsafeCellDeref};
 use core::{cell::UnsafeCell, mem::needs_drop, num::NonZeroUsize, panic::Location};

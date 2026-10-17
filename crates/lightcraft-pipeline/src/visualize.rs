@@ -32,17 +32,31 @@ pub enum Overlay {
     Spots(u8),
     /// The evaluated alpha of mask `id` (a [`lightcraft_develop::Mask`] id), drawn as `view` in
     /// `color` at `opacity` (0..100; the colour views only).
-    Mask { id: u16, view: MaskView, color: [u8; 3], opacity: u8 },
+    Mask {
+        id: u16,
+        view: MaskView,
+        color: [u8; 3],
+        opacity: u8,
+    },
     /// The evaluated alpha of every visible mask that has components, drawn as one `view` in
     /// `color` at `opacity` (0..100; the colour views only) — every mask's region at once.
-    AllMasks { view: MaskView, color: [u8; 3], opacity: u8 },
+    AllMasks {
+        view: MaskView,
+        color: [u8; 3],
+        opacity: u8,
+    },
     /// Visualize HDR (photos edited in HDR): the SDR image dimmed to grey, with every pixel the HDR
     /// rendition puts above SDR white painted by how far above it is ([`HDR_BANDS`]).
     HdrRange,
 }
 
 /// [`Overlay::HdrRange`] colours (sRGB) for 0–1, 1–2, 2–3 and ≥ 3 stops above SDR white.
-pub const HDR_BANDS: [[u8; 3]; 4] = [[255, 214, 92], [255, 150, 40], [235, 64, 52], [214, 60, 210]];
+pub const HDR_BANDS: [[u8; 3]; 4] = [
+    [255, 214, 92],
+    [255, 150, 40],
+    [235, 64, 52],
+    [214, 60, 210],
+];
 
 /// How [`Overlay::Mask`] draws the mask.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -61,7 +75,13 @@ pub enum MaskView {
 }
 
 impl MaskView {
-    pub const ALL: [MaskView; 5] = [MaskView::Color, MaskView::ColorOnBw, MaskView::ImageOnBlack, MaskView::ImageOnWhite, MaskView::WhiteOnBlack];
+    pub const ALL: [MaskView; 5] = [
+        MaskView::Color,
+        MaskView::ColorOnBw,
+        MaskView::ImageOnBlack,
+        MaskView::ImageOnWhite,
+        MaskView::WhiteOnBlack,
+    ];
 
     /// Stable name (control channel, settings).
     pub fn name(self) -> &'static str {
@@ -109,7 +129,10 @@ fn unpack_mask(v: u64) -> Overlay {
     let rgb = (v >> 20) & 0xff_ffff;
     Overlay::Mask {
         id: (v & 0xffff) as u16,
-        view: MaskView::ALL.get(((v >> 16) & 0xf) as usize).copied().unwrap_or_default(),
+        view: MaskView::ALL
+            .get(((v >> 16) & 0xf) as usize)
+            .copied()
+            .unwrap_or_default(),
         color: [(rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8],
         opacity: ((v >> 44) & 0x7f).min(100) as u8,
     }
@@ -122,8 +145,17 @@ impl Overlay {
             Overlay::None => (0, 0.0),
             Overlay::PointColorRange(i) => (1, i as f64),
             Overlay::Spots(t) => (2, t as f64),
-            Overlay::Mask { id, view, color, opacity } => (3, pack_mask(id, view, color, opacity) as f64),
-            Overlay::AllMasks { view, color, opacity } => (5, pack_mask(0, view, color, opacity) as f64),
+            Overlay::Mask {
+                id,
+                view,
+                color,
+                opacity,
+            } => (3, pack_mask(id, view, color, opacity) as f64),
+            Overlay::AllMasks {
+                view,
+                color,
+                opacity,
+            } => (5, pack_mask(0, view, color, opacity) as f64),
             Overlay::HdrRange => (4, 0.0),
         }
     }
@@ -138,7 +170,10 @@ impl Overlay {
             5 if v.is_finite() && v >= 0.0 => {
                 let rgb = (v as u64 >> 20) & 0xff_ffff;
                 Overlay::AllMasks {
-                    view: MaskView::ALL.get(((v as u64 >> 16) & 0xf) as usize).copied().unwrap_or_default(),
+                    view: MaskView::ALL
+                        .get(((v as u64 >> 16) & 0xf) as usize)
+                        .copied()
+                        .unwrap_or_default(),
                     color: [(rgb >> 16) as u8, (rgb >> 8) as u8, rgb as u8],
                     opacity: ((v as u64 >> 44) & 0x7f).min(100) as u8,
                 }
@@ -153,8 +188,17 @@ impl Overlay {
             Overlay::None => 0,
             Overlay::PointColorRange(i) => 0x1000 + i as u64,
             Overlay::Spots(t) => 0x2000 + t as u64,
-            Overlay::Mask { id, view, color, opacity } => 3 << 60 | pack_mask(id, view, color, opacity),
-            Overlay::AllMasks { view, color, opacity } => 5 << 60 | pack_mask(0, view, color, opacity),
+            Overlay::Mask {
+                id,
+                view,
+                color,
+                opacity,
+            } => 3 << 60 | pack_mask(id, view, color, opacity),
+            Overlay::AllMasks {
+                view,
+                color,
+                opacity,
+            } => 5 << 60 | pack_mask(0, view, color, opacity),
             Overlay::HdrRange => 0x4000,
         }
     }
@@ -162,7 +206,10 @@ impl Overlay {
     /// The mask an [`Overlay::Mask`] shows (if it exists in `s` and has components).
     pub fn mask(self, s: &DevelopSettings) -> Option<&lightcraft_develop::Mask> {
         match self {
-            Overlay::Mask { id, .. } => s.masks.iter().find(|m| m.id == id as u32 && !m.components.is_empty()),
+            Overlay::Mask { id, .. } => s
+                .masks
+                .iter()
+                .find(|m| m.id == id as u32 && !m.components.is_empty()),
             _ => None,
         }
     }
@@ -183,7 +230,13 @@ pub fn adjust_settings(o: Overlay, s: &mut Cow<'_, DevelopSettings>) {
 /// Draw overlay `o` over `img` (rendered with `plan`). `mask` is the evaluated alpha of the mask
 /// an [`Overlay::Mask`] shows, at the image's size (see [`Overlay::mask`]); `masks` is the set of
 /// alphas an [`Overlay::AllMasks`] shows, one per visible mask with components.
-pub fn apply(img: &mut Rgba8, o: Overlay, plan: &Plan<'_>, mask: Option<&Plane>, masks: Option<&[Plane]>) {
+pub fn apply(
+    img: &mut Rgba8,
+    o: Overlay,
+    plan: &Plan<'_>,
+    mask: Option<&Plane>,
+    masks: Option<&[Plane]>,
+) {
     match o {
         // drawn by the renderer from the HDR rendition ([`hdr_range`])
         Overlay::None | Overlay::HdrRange => {}
@@ -193,12 +246,21 @@ pub fn apply(img: &mut Rgba8, o: Overlay, plan: &Plan<'_>, mask: Option<&Plane>,
             }
         }
         Overlay::Spots(t) => spots(img, t, plan.px_per_long),
-        Overlay::Mask { view, color, opacity, .. } => {
+        Overlay::Mask {
+            view,
+            color,
+            opacity,
+            ..
+        } => {
             if let Some(a) = mask.filter(|a| (a.width, a.height) == (img.width, img.height)) {
                 mask_view(img, a, view, color, opacity);
             }
         }
-        Overlay::AllMasks { view, color, opacity } => {
+        Overlay::AllMasks {
+            view,
+            color,
+            opacity,
+        } => {
             if let Some(planes) = masks {
                 for a in planes {
                     if (a.width, a.height) == (img.width, img.height) {
@@ -255,7 +317,11 @@ fn spots(img: &mut Rgba8, t: u8, ppl: f64) {
     let b = lightcraft_raster::blur::gaussian(&l, (SPOT_SIGMA * ppl).max(0.8) as f32);
     let thr = spot_threshold(t);
     for (i, px) in img.data.iter_mut().enumerate() {
-        let v = if (l.data[i] - b.data[i]).abs() > thr { 255 } else { 0 };
+        let v = if (l.data[i] - b.data[i]).abs() > thr {
+            255
+        } else {
+            0
+        };
         *px = [v, v, v, 255];
     }
 }
@@ -266,7 +332,11 @@ fn point_color_range(img: &mut Rgba8, k: &PointK) {
     let w = img.width;
     for_rows(&mut img.data, w, |_, row| {
         for px in row.iter_mut() {
-            let lin = [lut[px[0] as usize], lut[px[1] as usize], lut[px[2] as usize]];
+            let lin = [
+                lut[px[0] as usize],
+                lut[px[1] as usize],
+                lut[px[2] as usize],
+            ];
             let c = std::array::from_fn(|r| m[r][0] * lin[0] + m[r][1] * lin[1] + m[r][2] * lin[2]);
             let [l, ch, h] = lab_to_lch(oklab_from_2020(c));
             let a = k.weight(l, ch, h);
@@ -281,7 +351,9 @@ fn point_color_range(img: &mut Rgba8, k: &PointK) {
 /// Draw [`Overlay::HdrRange`] on `img` (the SDR render) from `hdr` (the HDR render of the same
 /// request, float linear with luminance weights `luma`): grey below SDR white, band colours above.
 pub fn hdr_range(img: &mut Rgba8, hdr: &crate::DeepImage, luma: [f32; 3]) {
-    let crate::DeepSamples::F32(v) = &hdr.samples else { return };
+    let crate::DeepSamples::F32(v) = &hdr.samples else {
+        return;
+    };
     if (hdr.width, hdr.height) != (img.width, img.height) {
         return;
     }
@@ -296,7 +368,9 @@ pub fn hdr_range(img: &mut Rgba8, hdr: &crate::DeepImage, luma: [f32; 3]) {
                 let stops = lum.log2();
                 let band = HDR_BANDS[(stops as usize).min(HDR_BANDS.len() - 1)];
                 for k in 0..3 {
-                    p[k] = (grey * 0.25 + band[k] as f32 * 0.75).round().clamp(0.0, 255.0) as u8;
+                    p[k] = (grey * 0.25 + band[k] as f32 * 0.75)
+                        .round()
+                        .clamp(0.0, 255.0) as u8;
                 }
             } else {
                 let g = grey.round().clamp(0.0, 255.0) as u8;
@@ -319,15 +393,28 @@ mod tests {
         let src = Rgb32f::from_fn(400, 300, |x, y| {
             let d = |cx: f32, cy: f32| ((x as f32 - cx).powi(2) + (y as f32 - cy).powi(2)).sqrt();
             let base = 0.1 + 0.3 * x as f32 / 400.0;
-            if d(100.0, 100.0) < 2.5 || d(300.0, 200.0) < 2.5 { [base * 0.5; 3] } else { [base; 3] }
+            if d(100.0, 100.0) < 2.5 || d(300.0, 200.0) < 2.5 {
+                [base * 0.5; 3]
+            } else {
+                [base; 3]
+            }
         });
         let info = SourceInfo::default();
         let s = DevelopSettings::default();
         for size in [400, 200] {
-            let req = RenderRequest { overlay: Overlay::Spots(50), ..RenderRequest::fit(size, size) };
+            let req = RenderRequest {
+                overlay: Overlay::Spots(50),
+                ..RenderRequest::fit(size, size)
+            };
             let v = render(&src, &info, &s, &req).image;
-            let at = |x: f64, y: f64| v.data[(y * v.height as f64) as usize * v.width + (x * v.width as f64) as usize];
-            assert_eq!(at(0.25, 1.0 / 3.0), [255, 255, 255, 255], "speck at size {size}");
+            let at = |x: f64, y: f64| {
+                v.data[(y * v.height as f64) as usize * v.width + (x * v.width as f64) as usize]
+            };
+            assert_eq!(
+                at(0.25, 1.0 / 3.0),
+                [255, 255, 255, 255],
+                "speck at size {size}"
+            );
             assert_eq!(at(0.75, 2.0 / 3.0), [255, 255, 255, 255]);
             assert_eq!(at(0.5, 0.5), [0, 0, 0, 255], "smooth gradient is black");
             let white = v.data.iter().filter(|p| p[0] == 255).count() as f64 / v.data.len() as f64;
@@ -341,25 +428,51 @@ mod tests {
     #[test]
     fn point_color_range_keeps_the_selected_colour_only() {
         // left half orange, right half blue
-        let src = Rgb32f::from_fn(32, 16, |x, _| if x < 16 { [0.4, 0.15, 0.04] } else { [0.03, 0.06, 0.35] });
+        let src = Rgb32f::from_fn(32, 16, |x, _| {
+            if x < 16 {
+                [0.4, 0.15, 0.04]
+            } else {
+                [0.03, 0.06, 0.35]
+            }
+        });
         let info = SourceInfo::default();
-        let plain = render(&src, &info, &DevelopSettings::default(), &RenderRequest::fit(32, 16)).image;
+        let plain = render(
+            &src,
+            &info,
+            &DevelopSettings::default(),
+            &RenderRequest::fit(32, 16),
+        )
+        .image;
         // sample the orange as it renders
         let px = plain.data[8 * 32 + 4];
         let lin = [px[0], px[1], px[2]].map(|v| srgb_to_linear(v as f32 / 255.0));
         let c = SRGB.to_space(&REC2020).apply_f32(lin);
         let [l, ch, h] = lab_to_lch(oklab_from_2020(c));
         let mut s = DevelopSettings::default();
-        s.point_colors.push(PointColor { lum: l as f64, chroma: ch as f64, hue: (h as f64).to_degrees(), hue_shift: 80.0, ..Default::default() });
-        let req = RenderRequest { overlay: Overlay::PointColorRange(0), ..RenderRequest::fit(32, 16) };
+        s.point_colors.push(PointColor {
+            lum: l as f64,
+            chroma: ch as f64,
+            hue: (h as f64).to_degrees(),
+            hue_shift: 80.0,
+            ..Default::default()
+        });
+        let req = RenderRequest {
+            overlay: Overlay::PointColorRange(0),
+            ..RenderRequest::fit(32, 16)
+        };
         let v = render(&src, &info, &s, &req).image;
         let (o, b) = (v.data[8 * 32 + 4], v.data[8 * 32 + 28]);
         // the orange stays orange (and unshifted: the overlay shows the selection, not the edit)
-        assert!(o[0].abs_diff(px[0]) <= 2 && o[2].abs_diff(px[2]) <= 2, "{o:?} vs {px:?}");
+        assert!(
+            o[0].abs_diff(px[0]) <= 2 && o[2].abs_diff(px[2]) <= 2,
+            "{o:?} vs {px:?}"
+        );
         // the blue turns grey
         assert!(b[0].abs_diff(b[2]) <= 1, "{b:?}");
         // without the overlay the edit shows
-        let e = render(&src, &info, &s, &RenderRequest::fit(32, 16)).image.data[8 * 32 + 4];
+        let e = render(&src, &info, &s, &RenderRequest::fit(32, 16))
+            .image
+            .data[8 * 32 + 4];
         assert!(e[1].abs_diff(px[1]) > 10, "{e:?} vs {px:?}");
     }
 
@@ -367,24 +480,70 @@ mod tests {
     fn mask_overlay_shows_the_evaluated_alpha() {
         use lightcraft_develop::{Mask, MaskComponent, MaskOp, MaskShape};
         use lightcraft_geom::Point;
-        let src = Rgb32f::from_fn(80, 40, |x, _| if x < 40 { [0.18, 0.18, 0.18] } else { [0.05, 0.1, 0.3] });
+        let src = Rgb32f::from_fn(80, 40, |x, _| {
+            if x < 40 {
+                [0.18, 0.18, 0.18]
+            } else {
+                [0.05, 0.1, 0.3]
+            }
+        });
         let info = SourceInfo::default();
-        let shape = MaskShape::Radial { center: Point::new(0.25, 0.5), rx: 0.15, ry: 0.15, angle: 0.0, feather: 10.0, invert: false };
+        let shape = MaskShape::Radial {
+            center: Point::new(0.25, 0.5),
+            rx: 0.15,
+            ry: 0.15,
+            angle: 0.0,
+            feather: 10.0,
+            invert: false,
+        };
         let mut s = DevelopSettings::default();
-        s.masks.push(Mask { id: 7, components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape }], ..Default::default() });
+        s.masks.push(Mask {
+            id: 7,
+            components: vec![MaskComponent {
+                name: None,
+                op: MaskOp::Add,
+                invert: false,
+                shape,
+            }],
+            ..Default::default()
+        });
         let plain = render(&src, &info, &s, &RenderRequest::fit(80, 40)).image;
         let shot = |s: &DevelopSettings, view: MaskView| {
-            let o = Overlay::Mask { id: 7, view, color: [255, 0, 0], opacity: 100 };
-            render(&src, &info, s, &RenderRequest { overlay: o, ..RenderRequest::fit(80, 40) }).image
+            let o = Overlay::Mask {
+                id: 7,
+                view,
+                color: [255, 0, 0],
+                opacity: 100,
+            };
+            render(
+                &src,
+                &info,
+                s,
+                &RenderRequest {
+                    overlay: o,
+                    ..RenderRequest::fit(80, 40)
+                },
+            )
+            .image
         };
         let (inside, outside) = (20 * 80 + 20, 20 * 80 + 70);
         let c = shot(&s, MaskView::Color);
-        assert_eq!(c.data[inside], [255, 0, 0, 255], "full tint inside the mask");
+        assert_eq!(
+            c.data[inside],
+            [255, 0, 0, 255],
+            "full tint inside the mask"
+        );
         assert_eq!(c.data[outside], plain.data[outside], "untouched outside");
         let bw = shot(&s, MaskView::WhiteOnBlack);
-        assert_eq!((bw.data[inside], bw.data[outside]), ([255; 4], [0, 0, 0, 255]));
+        assert_eq!(
+            (bw.data[inside], bw.data[outside]),
+            ([255; 4], [0, 0, 0, 255])
+        );
         let ib = shot(&s, MaskView::ImageOnBlack);
-        assert_eq!((ib.data[inside], ib.data[outside]), (plain.data[inside], [0, 0, 0, 255]));
+        assert_eq!(
+            (ib.data[inside], ib.data[outside]),
+            (plain.data[inside], [0, 0, 0, 255])
+        );
         let iw = shot(&s, MaskView::ImageOnWhite);
         assert_eq!(iw.data[outside], [255; 4]);
         let g = shot(&s, MaskView::ColorOnBw).data[outside];
@@ -393,13 +552,44 @@ mod tests {
         s.masks[0].visible = false;
         assert_eq!(shot(&s, MaskView::WhiteOnBlack).data[inside], [255; 4]);
         // an unknown mask draws nothing
-        let o = Overlay::Mask { id: 9, view: MaskView::WhiteOnBlack, color: [0; 3], opacity: 50 };
-        assert_eq!(render(&src, &info, &s, &RenderRequest { overlay: o, ..RenderRequest::fit(80, 40) }).image, plain);
+        let o = Overlay::Mask {
+            id: 9,
+            view: MaskView::WhiteOnBlack,
+            color: [0; 3],
+            opacity: 50,
+        };
+        assert_eq!(
+            render(
+                &src,
+                &info,
+                &s,
+                &RenderRequest {
+                    overlay: o,
+                    ..RenderRequest::fit(80, 40)
+                }
+            )
+            .image,
+            plain
+        );
         // parts round trip (web worker requests) and distinct cache keys
-        let o = Overlay::Mask { id: 513, view: MaskView::ImageOnWhite, color: [12, 200, 255], opacity: 65 };
+        let o = Overlay::Mask {
+            id: 513,
+            view: MaskView::ImageOnWhite,
+            color: [12, 200, 255],
+            opacity: 65,
+        };
         let (k, v) = o.to_parts();
         assert_eq!(Overlay::from_parts(k, v), o);
-        assert_ne!(o.key(), Overlay::Mask { id: 513, view: MaskView::Color, color: [12, 200, 255], opacity: 65 }.key());
+        assert_ne!(
+            o.key(),
+            Overlay::Mask {
+                id: 513,
+                view: MaskView::Color,
+                color: [12, 200, 255],
+                opacity: 65
+            }
+            .key()
+        );
         assert_eq!(MaskView::WhiteOnBlack.next(), MaskView::Color);
         assert_eq!(MaskView::parse("colorOnBw"), Some(MaskView::ColorOnBw));
     }
@@ -410,36 +600,94 @@ mod tests {
         use lightcraft_geom::Point;
         let src = Rgb32f::from_fn(80, 40, |_, _| [0.1, 0.1, 0.1]);
         let info = SourceInfo::default();
-        let left = MaskShape::Radial { center: Point::new(0.25, 0.5), rx: 0.15, ry: 0.15, angle: 0.0, feather: 10.0, invert: false };
-        let right = MaskShape::Radial { center: Point::new(0.75, 0.5), rx: 0.15, ry: 0.15, angle: 0.0, feather: 10.0, invert: false };
+        let left = MaskShape::Radial {
+            center: Point::new(0.25, 0.5),
+            rx: 0.15,
+            ry: 0.15,
+            angle: 0.0,
+            feather: 10.0,
+            invert: false,
+        };
+        let right = MaskShape::Radial {
+            center: Point::new(0.75, 0.5),
+            rx: 0.15,
+            ry: 0.15,
+            angle: 0.0,
+            feather: 10.0,
+            invert: false,
+        };
         let mut s = DevelopSettings::default();
         s.masks.push(Mask {
             id: 1,
             visible: true,
-            components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: left }],
+            components: vec![MaskComponent {
+                name: None,
+                op: MaskOp::Add,
+                invert: false,
+                shape: left,
+            }],
             ..Default::default()
         });
         s.masks.push(Mask {
             id: 2,
             visible: true,
-            components: vec![MaskComponent { name: None, op: MaskOp::Add, invert: false, shape: right }],
+            components: vec![MaskComponent {
+                name: None,
+                op: MaskOp::Add,
+                invert: false,
+                shape: right,
+            }],
             ..Default::default()
         });
         let plain = render(&src, &info, &s, &RenderRequest::fit(80, 40)).image;
-        let o = Overlay::AllMasks { view: MaskView::WhiteOnBlack, color: [255, 0, 0], opacity: 100 };
-        let img = render(&src, &info, &s, &RenderRequest { overlay: o, ..RenderRequest::fit(80, 40) }).image;
+        let o = Overlay::AllMasks {
+            view: MaskView::WhiteOnBlack,
+            color: [255, 0, 0],
+            opacity: 100,
+        };
+        let img = render(
+            &src,
+            &info,
+            &s,
+            &RenderRequest {
+                overlay: o,
+                ..RenderRequest::fit(80, 40)
+            },
+        )
+        .image;
         let (in_l, in_r, mid) = (20 * 80 + 12, 20 * 80 + 60, 20 * 80 + 40);
         assert_eq!(img.data[in_l], [255; 4], "left mask region painted");
         assert_eq!(img.data[in_r], [255; 4], "right mask region painted");
         assert_eq!(img.data[mid], [0, 0, 0, 255], "between the masks: black");
         // a hidden mask is skipped
         s.masks[1].visible = false;
-        let img2 = render(&src, &info, &s, &RenderRequest { overlay: o, ..RenderRequest::fit(80, 40) }).image;
-        assert_eq!(img2.data[in_r], plain.data[in_r], "hidden right mask not painted");
+        let img2 = render(
+            &src,
+            &info,
+            &s,
+            &RenderRequest {
+                overlay: o,
+                ..RenderRequest::fit(80, 40)
+            },
+        )
+        .image;
+        assert_eq!(
+            img2.data[in_r], plain.data[in_r],
+            "hidden right mask not painted"
+        );
         assert_eq!(img2.data[in_l], [255; 4], "visible left mask still painted");
         // parts round trip and a stable, distinct cache key
         let (k, v) = o.to_parts();
         assert_eq!(Overlay::from_parts(k, v), o);
-        assert_ne!(o.key(), Overlay::Mask { id: 1, view: MaskView::WhiteOnBlack, color: [255, 0, 0], opacity: 100 }.key());
+        assert_ne!(
+            o.key(),
+            Overlay::Mask {
+                id: 1,
+                view: MaskView::WhiteOnBlack,
+                color: [255, 0, 0],
+                opacity: 100
+            }
+            .key()
+        );
     }
 }

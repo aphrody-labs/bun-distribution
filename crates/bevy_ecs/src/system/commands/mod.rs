@@ -23,7 +23,7 @@ use crate::{
         Entities, Entity, EntityAllocator, EntityClonerBuilder, EntityNotSpawnedError,
         InvalidEntityError, OptIn, OptOut,
     },
-    error::{warn, BevyError, ErrorContext},
+    error::{BevyError, ErrorContext, warn},
     event::{EntityEvent, Event},
     message::Message,
     observer::{IntoEntityObserver, IntoObserver},

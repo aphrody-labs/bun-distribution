@@ -180,8 +180,11 @@ impl RendererMetal {
         let layers = if layers.iter().all(|layer| layer.layer_stack_mask & bit != 0) {
             layers
         } else {
-            filtered = layers.iter().filter(|layer| layer.layer_stack_mask & bit != 0)
-                .cloned().collect::<Vec<_>>();
+            filtered = layers
+                .iter()
+                .filter(|layer| layer.layer_stack_mask & bit != 0)
+                .cloned()
+                .collect::<Vec<_>>();
             &filtered
         };
         if layers.is_empty() {
@@ -347,11 +350,17 @@ impl RendererMetal {
             self.base_data.settings.screenshot_layer_stack,
         );
         let filtered;
-        let sources = if sources.iter().all(|layer| layer.layer_stack_mask & bit != 0) {
+        let sources = if sources
+            .iter()
+            .all(|layer| layer.layer_stack_mask & bit != 0)
+        {
             sources
         } else {
-            filtered = sources.iter().filter(|layer| layer.layer_stack_mask & bit != 0)
-                .cloned().collect::<Vec<_>>();
+            filtered = sources
+                .iter()
+                .filter(|layer| layer.layer_stack_mask & bit != 0)
+                .cloned()
+                .collect::<Vec<_>>();
             &filtered
         };
         let result = (|| {
@@ -399,7 +408,11 @@ impl RendererBase for RendererMetal {
 
     fn composite(&mut self, layers: &[FramebufferConfig]) {
         self.composite_impl(layers);
-        if let Some(capture) = self.frame_capture.as_mut().filter(|capture| capture.needs_boundary()) {
+        if let Some(capture) = self
+            .frame_capture
+            .as_mut()
+            .filter(|capture| capture.needs_boundary())
+        {
             // Capture only command buffers created and committed inside the
             // interval. Flush partial recording without adding a GPU idle wait.
             match self.rasterizer.scheduler().flush() {
@@ -451,7 +464,8 @@ impl RendererBase for RendererMetal {
         layout: FramebufferLayout,
         layer_stack: ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId,
     ) {
-        self.base_data.request_screenshot(data, callback, layout, layer_stack);
+        self.base_data
+            .request_screenshot(data, callback, layout, layer_stack);
     }
 
     fn set_guest_memory_writer(&mut self, writer: crate::renderer_base::GuestMemoryWriter) {
@@ -601,7 +615,8 @@ mod tests {
                         texture: foreground.clone(),
                         crop: [0.0, 0.0, 1.0, 1.0],
                         blending: mode,
-                        layer_stack_mask: ruzu_core::hle::service::nvnflinger::hwc_layer::DEFAULT_LAYER_STACK_MASK,
+                        layer_stack_mask:
+                            ruzu_core::hle::service::nvnflinger::hwc_layer::DEFAULT_LAYER_STACK_MASK,
                     },
                 ];
                 let (download, _) = renderer.render_to_buffer(&layers, &layout).unwrap();

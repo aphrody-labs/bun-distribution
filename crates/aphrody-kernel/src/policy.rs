@@ -11,10 +11,15 @@ impl DispatchPolicy {
         };
         let content = std::fs::read_to_string(path)
             .map_err(|e| format!("failed to read execution policy: {e}"))?;
-        PolicyParser::new().parse(&content).map(Self).map_err(|e| e.to_string())
+        PolicyParser::new()
+            .parse(&content)
+            .map(Self)
+            .map_err(|e| e.to_string())
     }
     pub(crate) fn allows(&self, tool: &str) -> Result<(), String> {
-        let result = self.0.evaluate_with_approval(&[tool.into()], ApprovalPolicy::Never);
+        let result = self
+            .0
+            .evaluate_with_approval(&[tool.into()], ApprovalPolicy::Never);
         result.is_allowed().then_some(()).ok_or_else(|| {
             result
                 .explanation

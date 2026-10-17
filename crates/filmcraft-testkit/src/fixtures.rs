@@ -36,11 +36,19 @@ pub fn fixtures_dir(sub: &str) -> PathBuf {
 /// `.tmp-<pid>-<thread>-<n>` and the extension is kept (ffmpeg chooses the muxer from it).
 pub fn temp_path(out: &Path) -> PathBuf {
     static N: AtomicUsize = AtomicUsize::new(0);
-    let tid = format!("{:?}", std::thread::current().id()).replace(|c: char| !c.is_ascii_alphanumeric(), "");
+    let tid = format!("{:?}", std::thread::current().id())
+        .replace(|c: char| !c.is_ascii_alphanumeric(), "");
     let n = N.fetch_add(1, Ordering::Relaxed);
-    let stem = out.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+    let stem = out
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
     let name = match out.extension() {
-        Some(ext) => format!("{stem}.tmp-{}-{tid}-{n}.{}", std::process::id(), ext.to_string_lossy()),
+        Some(ext) => format!(
+            "{stem}.tmp-{}-{tid}-{n}.{}",
+            std::process::id(),
+            ext.to_string_lossy()
+        ),
         None => format!("{stem}.tmp-{}-{tid}-{n}", std::process::id()),
     };
     out.with_file_name(name)
@@ -85,8 +93,15 @@ pub fn report(name: &str, status: Status) {
 
 /// Run a fixture generator and [`report`] it: `cached` when every path in `outputs` existed
 /// before, `made` when `generate` succeeded, `skipped` otherwise.
-pub fn generate_and_report<T>(name: &str, outputs: &[PathBuf], generate: impl FnOnce() -> Option<T>) -> Option<T> {
-    let existed = !outputs.is_empty() && outputs.iter().all(|p| std::fs::metadata(p).is_ok_and(|m| m.len() > 0));
+pub fn generate_and_report<T>(
+    name: &str,
+    outputs: &[PathBuf],
+    generate: impl FnOnce() -> Option<T>,
+) -> Option<T> {
+    let existed = !outputs.is_empty()
+        && outputs
+            .iter()
+            .all(|p| std::fs::metadata(p).is_ok_and(|m| m.len() > 0));
     let r = generate();
     report(
         name,
@@ -116,13 +131,16 @@ mod tests {
         let b = temp_path(out);
         assert_ne!(a, b);
         assert_eq!(a.extension().unwrap(), "mp4");
-        let other = std::thread::spawn(move || temp_path(Path::new("/x/clip.mp4"))).join().unwrap();
+        let other = std::thread::spawn(move || temp_path(Path::new("/x/clip.mp4")))
+            .join()
+            .unwrap();
         assert_ne!(a, other);
     }
 
     #[test]
     fn generate_is_cached_and_atomic() {
-        let dir = std::env::temp_dir().join(format!("filmcraft-testkit-gen-{}", std::process::id()));
+        let dir =
+            std::env::temp_dir().join(format!("filmcraft-testkit-gen-{}", std::process::id()));
         let out = dir.join("f.bin");
         let _ = std::fs::remove_file(&out);
         assert!(generate(&out, |_| false).is_none());

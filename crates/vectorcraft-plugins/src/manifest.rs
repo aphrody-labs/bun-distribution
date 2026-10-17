@@ -73,7 +73,12 @@ impl ParamSpec {
             ParamSpec::Number { min, max, default } => json!(default.clamp(*min, *max)),
             ParamSpec::Int { min, max, default } => json!((*default).clamp(*min, *max)),
             ParamSpec::Bool { default } => json!(default),
-            ParamSpec::Choice { options, default } => json!(default.clone().or_else(|| options.first().cloned()).unwrap_or_default()),
+            ParamSpec::Choice { options, default } => json!(
+                default
+                    .clone()
+                    .or_else(|| options.first().cloned())
+                    .unwrap_or_default()
+            ),
         }
     }
 }
@@ -94,7 +99,11 @@ pub struct Manifest {
     #[serde(default)]
     pub author: String,
     /// Parameters in declaration (dialog) order; a JSON object `{"name": spec, …}` in the manifest.
-    #[serde(default, deserialize_with = "ordered_params", serialize_with = "params_as_object")]
+    #[serde(
+        default,
+        deserialize_with = "ordered_params",
+        serialize_with = "params_as_object"
+    )]
     pub params: Vec<(String, ParamSpec)>,
 }
 
@@ -102,10 +111,15 @@ impl Manifest {
     /// Parses and validates manifest JSON.
     pub fn parse(bytes: &[u8]) -> Result<Manifest> {
         if bytes.len() > MAX_MANIFEST_BYTES {
-            return Err(Error::Manifest(format!("manifest is {} bytes (limit {MAX_MANIFEST_BYTES})", bytes.len())));
+            return Err(Error::Manifest(format!(
+                "manifest is {} bytes (limit {MAX_MANIFEST_BYTES})",
+                bytes.len()
+            )));
         }
-        let text = std::str::from_utf8(bytes).map_err(|_| Error::Manifest("manifest is not UTF-8".into()))?;
-        let man: Manifest = serde_json::from_str(text).map_err(|e| Error::Manifest(format!("manifest: {e}")))?;
+        let text = std::str::from_utf8(bytes)
+            .map_err(|_| Error::Manifest("manifest is not UTF-8".into()))?;
+        let man: Manifest =
+            serde_json::from_str(text).map_err(|e| Error::Manifest(format!("manifest: {e}")))?;
         man.validate()?;
         Ok(man)
     }
@@ -125,33 +139,51 @@ impl Manifest {
 
     fn validate(&self) -> Result<()> {
         if !valid_id(&self.id) {
-            return Err(Error::Manifest(format!("invalid id {:?}: use 1-64 characters from A-Z a-z 0-9 . _ -", self.id)));
+            return Err(Error::Manifest(format!(
+                "invalid id {:?}: use 1-64 characters from A-Z a-z 0-9 . _ -",
+                self.id
+            )));
         }
         let name = self.name.trim();
         if name.is_empty() || name.chars().count() > 64 || name.chars().any(char::is_control) {
-            return Err(Error::Manifest("`name` must be 1-64 printable characters".into()));
+            return Err(Error::Manifest(
+                "`name` must be 1-64 printable characters".into(),
+            ));
         }
         if self.version.len() > 32 || self.description.len() > 1024 || self.author.len() > 128 {
-            return Err(Error::Manifest("`version`, `description` or `author` is too long".into()));
+            return Err(Error::Manifest(
+                "`version`, `description` or `author` is too long".into(),
+            ));
         }
         for (k, spec) in &self.params {
             if !valid_key(k) {
                 return Err(Error::Manifest(format!("invalid parameter name {k:?}")));
             }
             match spec {
-                ParamSpec::Number { min, max, default } if !(min.is_finite() && max.is_finite() && default.is_finite()) || min > max => {
+                ParamSpec::Number { min, max, default }
+                    if !(min.is_finite() && max.is_finite() && default.is_finite())
+                        || min > max =>
+                {
                     return Err(Error::Manifest(format!("parameter `{k}`: bad range")));
                 }
-                ParamSpec::Int { min, max, .. } if min > max => return Err(Error::Manifest(format!("parameter `{k}`: bad range"))),
+                ParamSpec::Int { min, max, .. } if min > max => {
+                    return Err(Error::Manifest(format!("parameter `{k}`: bad range")));
+                }
                 ParamSpec::Choice { options, default } => {
                     if options.is_empty()
                         || options.len() > 64
-                        || options.iter().any(|o| o.is_empty() || o.len() > 64 || o.chars().any(char::is_control))
+                        || options.iter().any(|o| {
+                            o.is_empty() || o.len() > 64 || o.chars().any(char::is_control)
+                        })
                     {
-                        return Err(Error::Manifest(format!("parameter `{k}`: choices must be 1-64 non-empty, printable strings")));
+                        return Err(Error::Manifest(format!(
+                            "parameter `{k}`: choices must be 1-64 non-empty, printable strings"
+                        )));
                     }
                     if default.as_ref().is_some_and(|d| !options.contains(d)) {
-                        return Err(Error::Manifest(format!("parameter `{k}`: default is not one of the options")));
+                        return Err(Error::Manifest(format!(
+                            "parameter `{k}`: default is not one of the options"
+                        )));
                     }
                 }
                 _ => {}
@@ -167,12 +199,20 @@ impl Manifest {
             .params
             .iter()
             .map(|(k, spec)| match spec {
-                ParamSpec::Number { min, max, default } => format!("{k}: {min}..{max} ({})", default.clamp(*min, *max)),
-                ParamSpec::Int { min, max, default } => format!("{k}: int {min}..{max} ({})", (*default).clamp(*min, *max)),
+                ParamSpec::Number { min, max, default } => {
+                    format!("{k}: {min}..{max} ({})", default.clamp(*min, *max))
+                }
+                ParamSpec::Int { min, max, default } => {
+                    format!("{k}: int {min}..{max} ({})", (*default).clamp(*min, *max))
+                }
                 ParamSpec::Bool { default } => format!("{k}: bool ({default})"),
                 ParamSpec::Choice { options, .. } => {
                     let opts: Vec<String> = options.iter().map(|o| format!("{o:?}")).collect();
-                    format!("{k}: {} ({})", opts.join("|"), spec.default_value().as_str().unwrap_or_default())
+                    format!(
+                        "{k}: {} ({})",
+                        opts.join("|"),
+                        spec.default_value().as_str().unwrap_or_default()
+                    )
                 }
             })
             .collect();
@@ -181,7 +221,10 @@ impl Manifest {
 
     /// Every parameter at its default value.
     pub fn defaults(&self) -> Map<String, Value> {
-        self.params.iter().map(|(k, spec)| (k.clone(), spec.default_value())).collect()
+        self.params
+            .iter()
+            .map(|(k, spec)| (k.clone(), spec.default_value()))
+            .collect()
     }
 
     /// Validates user `params` against the schema: missing keys take their defaults, numbers are
@@ -191,7 +234,11 @@ impl Manifest {
         let given = match params {
             Value::Null => &Map::new(),
             Value::Object(m) => m,
-            _ => return Err(Error::Params("plug-in parameters must be a JSON object".into())),
+            _ => {
+                return Err(Error::Params(
+                    "plug-in parameters must be a JSON object".into(),
+                ));
+            }
         };
         let mut out = Map::new();
         for (k, spec) in &self.params {
@@ -201,7 +248,12 @@ impl Manifest {
             };
             let wrong = |what: &str| Error::Params(format!("`{k}` must be {what}"));
             let resolved = match spec {
-                ParamSpec::Number { min, max, .. } => json!(v.as_f64().filter(|f| f.is_finite()).ok_or_else(|| wrong("a number"))?.clamp(*min, *max)),
+                ParamSpec::Number { min, max, .. } => json!(
+                    v.as_f64()
+                        .filter(|f| f.is_finite())
+                        .ok_or_else(|| wrong("a number"))?
+                        .clamp(*min, *max)
+                ),
                 ParamSpec::Int { min, max, .. } => {
                     // Keep JSON integers exact: f64 cannot represent every i64 or its bounds.
                     let value = if let Some(i) = v.as_i64() {
@@ -210,7 +262,10 @@ impl Manifest {
                         // Past i64::MAX, so past any maximum.
                         *max
                     } else {
-                        let f = v.as_f64().filter(|f| f.is_finite()).ok_or_else(|| wrong("a number"))?;
+                        let f = v
+                            .as_f64()
+                            .filter(|f| f.is_finite())
+                            .ok_or_else(|| wrong("a number"))?;
                         (f.round() as i64).clamp(*min, *max)
                     };
                     json!(value)
@@ -219,7 +274,10 @@ impl Manifest {
                 ParamSpec::Choice { options, .. } => {
                     let s = v.as_str().ok_or_else(|| wrong("a string"))?;
                     if !options.iter().any(|o| o == s) {
-                        return Err(Error::Params(format!("`{k}` must be one of {}", options.join(", "))));
+                        return Err(Error::Params(format!(
+                            "`{k}` must be one of {}",
+                            options.join(", ")
+                        )));
                     }
                     json!(s)
                 }
@@ -231,7 +289,9 @@ impl Manifest {
 }
 
 /// Reads the `params` object keeping its key order (serde_json's `Map` would sort it).
-fn ordered_params<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Vec<(String, ParamSpec)>, D::Error> {
+fn ordered_params<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> std::result::Result<Vec<(String, ParamSpec)>, D::Error> {
     struct V;
     impl<'de> serde::de::Visitor<'de> for V {
         type Value = Vec<(String, ParamSpec)>;
@@ -241,14 +301,21 @@ fn ordered_params<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result
         fn visit_unit<E: serde::de::Error>(self) -> std::result::Result<Self::Value, E> {
             Ok(Vec::new())
         }
-        fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> std::result::Result<Self::Value, A::Error> {
+        fn visit_map<A: serde::de::MapAccess<'de>>(
+            self,
+            mut map: A,
+        ) -> std::result::Result<Self::Value, A::Error> {
             let mut out: Vec<(String, ParamSpec)> = Vec::new();
             while let Some((k, v)) = map.next_entry::<String, ParamSpec>()? {
                 if out.len() >= MAX_PARAMS {
-                    return Err(serde::de::Error::custom(format!("too many parameters (limit {MAX_PARAMS})")));
+                    return Err(serde::de::Error::custom(format!(
+                        "too many parameters (limit {MAX_PARAMS})"
+                    )));
                 }
                 if out.iter().any(|(o, _)| *o == k) {
-                    return Err(serde::de::Error::custom(format!("parameter `{k}` is declared twice")));
+                    return Err(serde::de::Error::custom(format!(
+                        "parameter `{k}` is declared twice"
+                    )));
                 }
                 out.push((k, v));
             }
@@ -258,7 +325,10 @@ fn ordered_params<'de, D: serde::Deserializer<'de>>(d: D) -> std::result::Result
     d.deserialize_any(V)
 }
 
-fn params_as_object<S: serde::Serializer>(p: &[(String, ParamSpec)], s: S) -> std::result::Result<S::Ok, S::Error> {
+fn params_as_object<S: serde::Serializer>(
+    p: &[(String, ParamSpec)],
+    s: S,
+) -> std::result::Result<S::Ok, S::Error> {
     use serde::ser::SerializeMap;
     let mut m = s.serialize_map(Some(p.len()))?;
     for (k, v) in p {
@@ -269,7 +339,10 @@ fn params_as_object<S: serde::Serializer>(p: &[(String, ParamSpec)], s: S) -> st
 
 /// `[A-Za-z0-9._-]{1,64}`.
 pub fn valid_id(id: &str) -> bool {
-    (1..=64).contains(&id.len()) && id.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
+    (1..=64).contains(&id.len())
+        && id
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'_' | b'-'))
 }
 
 /// `[A-Za-z0-9_]{1,64}`, not starting with `_` and not a key the commands and dialogs use
@@ -295,16 +368,30 @@ mod tests {
         let m = Manifest::parse(FULL.as_bytes()).unwrap();
         assert_eq!(m.id, "org.example.tone");
         assert_eq!(m.kind, Kind::Effect);
-        assert_eq!(m.params.iter().map(|p| p.0.as_str()).collect::<Vec<_>>(), ["amount", "mode", "mono", "seed"]);
-        assert_eq!(m.params_doc(), r#"{amount: 0..100 (50), mode: "soft"|"hard" (hard), mono: bool (false), seed: int 0..9 (0)}"#);
-        assert_eq!(Value::Object(m.defaults()), json!({"amount": 50.0, "mode": "hard", "mono": false, "seed": 0}));
+        assert_eq!(
+            m.params.iter().map(|p| p.0.as_str()).collect::<Vec<_>>(),
+            ["amount", "mode", "mono", "seed"]
+        );
+        assert_eq!(
+            m.params_doc(),
+            r#"{amount: 0..100 (50), mode: "soft"|"hard" (hard), mono: bool (false), seed: int 0..9 (0)}"#
+        );
+        assert_eq!(
+            Value::Object(m.defaults()),
+            json!({"amount": 50.0, "mode": "hard", "mono": false, "seed": 0})
+        );
     }
 
     #[test]
     fn resolves_defaults_clamps_and_rejects_wrong_types() {
         let m = Manifest::parse(FULL.as_bytes()).unwrap();
-        let p = m.resolve_params(&json!({"amount": 500, "seed": 3.6, "junk": 1})).unwrap();
-        assert_eq!(Value::Object(p), json!({"amount": 100.0, "mode": "hard", "mono": false, "seed": 4}));
+        let p = m
+            .resolve_params(&json!({"amount": 500, "seed": 3.6, "junk": 1}))
+            .unwrap();
+        assert_eq!(
+            Value::Object(p),
+            json!({"amount": 100.0, "mode": "hard", "mono": false, "seed": 4})
+        );
         assert!(m.resolve_params(&json!({"amount": "lots"})).is_err());
         assert!(m.resolve_params(&json!({"mode": "medium"})).is_err());
         assert!(m.resolve_params(&json!({"mono": 1})).is_err());
@@ -350,7 +437,11 @@ mod tests {
             m.params_doc(),
             "{count: int 1..10 (1), seed: int -9007199254740995..-9007199254740993 (-9007199254740993), amount: 0..100 (100)}"
         );
-        for given in [Value::Null, json!({}), json!({"count": null, "seed": null, "amount": null})] {
+        for given in [
+            Value::Null,
+            json!({}),
+            json!({"count": null, "seed": null, "amount": null}),
+        ] {
             assert_eq!(Value::Object(m.resolve_params(&given).unwrap()), expected);
         }
     }

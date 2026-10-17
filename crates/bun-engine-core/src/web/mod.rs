@@ -35,7 +35,8 @@ use crate::bevy::{
 use crate::firmware::{FirmwareError, FirmwareStream};
 use crate::machine::{Machine, Screen};
 use crate::runtime::{
-    BunEnginePlugin, EngineInput, EngineSystems, ExternalPads, MachineAppExt, MachineSlot, MachineStatus,
+    BunEnginePlugin, EngineInput, EngineSystems, ExternalPads, MachineAppExt, MachineSlot,
+    MachineStatus,
 };
 
 /// Systems compiled into this module (bun-engine ids).
@@ -79,12 +80,19 @@ impl FirmwareVerifier {
     }
 
     pub fn push(&mut self, chunk: &[u8]) -> Result<(), JsError> {
-        self.0.as_mut().ok_or_else(|| JsError::new("verifier finished"))?.push(chunk).map_err(js_error)
+        self.0
+            .as_mut()
+            .ok_or_else(|| JsError::new("verifier finished"))?
+            .push(chunk)
+            .map_err(js_error)
     }
 
     /// Decoded, verified bytes.
     pub fn finish(&mut self) -> Result<Uint8Array, JsError> {
-        let stream = self.0.take().ok_or_else(|| JsError::new("verifier finished"))?;
+        let stream = self
+            .0
+            .take()
+            .ok_or_else(|| JsError::new("verifier finished"))?;
         let firmware = stream.finish().map_err(js_error)?;
         Ok(Uint8Array::from(firmware.bytes.as_slice()))
     }
@@ -95,7 +103,9 @@ fn js_error(e: FirmwareError) -> JsError {
 }
 
 fn option<T: JsCast>(options: &JsValue, key: &str) -> Option<T> {
-    Reflect::get(options, &key.into()).ok().and_then(|v| v.dyn_into::<T>().ok())
+    Reflect::get(options, &key.into())
+        .ok()
+        .and_then(|v| v.dyn_into::<T>().ok())
 }
 
 /// Firmware for machines that need it: the caller's bytes (a verified free component or a
@@ -110,10 +120,23 @@ fn require_firmware(options: &JsValue, console: &str) -> Result<Vec<u8>, JsError
         stream.push(&bios.to_vec()).map_err(js_error)?;
         return Ok(stream.finish().map_err(js_error)?.bytes);
     }
-    Err(crate::firmware::for_console(console).into_iter().next().map_or_else(
-        || JsError::new(&format!("{console} needs a BIOS and no open-source replacement is registered")),
-        |c| js_error(FirmwareError::Missing { component: c.id, console: c.console, file: c.file }),
-    ))
+    Err(crate::firmware::for_console(console)
+        .into_iter()
+        .next()
+        .map_or_else(
+            || {
+                JsError::new(&format!(
+                    "{console} needs a BIOS and no open-source replacement is registered"
+                ))
+            },
+            |c| {
+                js_error(FirmwareError::Missing {
+                    component: c.id,
+                    console: c.console,
+                    file: c.file,
+                })
+            },
+        ))
 }
 
 #[allow(unused_variables)]
@@ -121,20 +144,30 @@ fn build_machine(system: &str, rom: &[u8], options: &JsValue) -> Result<Box<dyn 
     let err = |e: String| JsError::new(&e);
     match system {
         #[cfg(feature = "nds")]
-        "nds" | "nintendo-ds" => Ok(Box::new(crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?)),
+        "nds" | "nintendo-ds" => Ok(Box::new(
+            crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?,
+        )),
         #[cfg(feature = "ctr")]
-        "3ds" | "ctr" | "nintendo-3ds" => Ok(Box::new(crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?)),
+        "3ds" | "ctr" | "nintendo-3ds" => Ok(Box::new(
+            crate::machine::handheld::HandheldMachine::from_image("rom", rom).map_err(err)?,
+        )),
         #[cfg(feature = "nes")]
-        "nes" | "nintendo-nes" => Ok(Box::new(crate::machine::nes::Nes::from_rom("rom.nes", rom).map_err(err)?)),
+        "nes" | "nintendo-nes" => Ok(Box::new(
+            crate::machine::nes::Nes::from_rom("rom.nes", rom).map_err(err)?,
+        )),
         #[cfg(feature = "gba")]
         "gba" | "nintendo-game-boy-advance" => {
             let bios = option::<Uint8Array>(options, "bios").map(|b| b.to_vec());
-            Ok(Box::new(crate::machine::gba::Gba::from_rom(rom, bios.as_deref()).map_err(err)?))
+            Ok(Box::new(
+                crate::machine::gba::Gba::from_rom(rom, bios.as_deref()).map_err(err)?,
+            ))
         }
         #[cfg(feature = "psx")]
         "psx" | "sony-playstation" => {
             let bios = require_firmware(options, "sony-playstation")?;
-            Ok(Box::new(crate::machine::psx::Psx::new(&bios, rom).map_err(err)?))
+            Ok(Box::new(
+                crate::machine::psx::Psx::new(&bios, rom).map_err(err)?,
+            ))
         }
         other => Err(JsError::new(&format!(
             "system `{other}` is not compiled into this module (available: {})",
@@ -201,18 +234,26 @@ fn page_status(
         shared.first_frame_ms = Some(js_sys::Date::now() - shared.started_at);
     }
     // Every 15 frames (and the first one) is enough for diagnostics; screens() copies.
-    if status.frames != shared.hashed_at && (shared.hashed_at == 0 || status.frames - shared.hashed_at >= 15) {
+    if status.frames != shared.hashed_at
+        && (shared.hashed_at == 0 || status.frames - shared.hashed_at >= 15)
+    {
         let screens = slot.0.screens();
         shared.hash = fnv1a(&screens);
         shared.lit = screens.iter().any(|s| s.rgb.iter().any(|&b| b > 16));
         shared.hashed_at = status.frames;
     }
     if status.stopped && shared.stopped.is_none() {
-        shared.stopped = Some(slot.0.diagnostic().unwrap_or_else(|| "the machine stopped".into()));
+        shared.stopped = Some(
+            slot.0
+                .diagnostic()
+                .unwrap_or_else(|| "the machine stopped".into()),
+        );
     }
     if shared.stop {
         shared.stop = false;
-        shared.stopped.get_or_insert_with(|| "stopped by the page".into());
+        shared
+            .stopped
+            .get_or_insert_with(|| "stopped by the page".into());
         exit.write(AppExit::Success);
     }
 }
@@ -233,7 +274,11 @@ pub struct Emulator {
 /// One machine per module instance: winit cannot recreate its browser event loop, so switching
 /// games means a page reload (or a fresh module instance).
 #[wasm_bindgen]
-pub fn start(canvas: HtmlCanvasElement, rom: Uint8Array, options: JsValue) -> Result<Emulator, JsError> {
+pub fn start(
+    canvas: HtmlCanvasElement,
+    rom: Uint8Array,
+    options: JsValue,
+) -> Result<Emulator, JsError> {
     let started_at = js_sys::Date::now();
     let system: String = option::<js_sys::JsString>(&options, "system")
         .map(String::from)
@@ -251,9 +296,16 @@ pub fn start(canvas: HtmlCanvasElement, rom: Uint8Array, options: JsValue) -> Re
         }
     };
     if canvas.id().is_empty() {
-        canvas.set_id(&format!("bun-engine-canvas-{}", CANVASES.fetch_add(1, Ordering::Relaxed)));
+        canvas.set_id(&format!(
+            "bun-engine-canvas-{}",
+            CANVASES.fetch_add(1, Ordering::Relaxed)
+        ));
     }
-    let shared = Arc::new(Mutex::new(Shared { started_at, system: machine.name(), ..Shared::default() }));
+    let shared = Arc::new(Mutex::new(Shared {
+        started_at,
+        system: machine.name(),
+        ..Shared::default()
+    }));
 
     let window = Window {
         title: "Bun Engine".into(),
@@ -265,13 +317,23 @@ pub fn start(canvas: HtmlCanvasElement, rom: Uint8Array, options: JsValue) -> Re
     let mut app = App::new();
     app.add_plugins(
         DefaultPlugins
-            .set(WindowPlugin { primary_window: Some(window), ..Default::default() })
+            .set(WindowPlugin {
+                primary_window: Some(window),
+                ..Default::default()
+            })
             .set(ImagePlugin::default_nearest()),
     )
-    .add_plugins(BunEnginePlugin { default_plugins: false, escape_exits: false, ..BunEnginePlugin::windowed("Bun Engine") })
+    .add_plugins(BunEnginePlugin {
+        default_plugins: false,
+        escape_exits: false,
+        ..BunEnginePlugin::windowed("Bun Engine")
+    })
     .insert_resource(Page(shared.clone()))
     .add_systems(PreUpdate, page_keys.before(EngineSystems::Input))
-    .add_systems(RunFixedMainLoop, page_touch.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop))
+    .add_systems(
+        RunFixedMainLoop,
+        page_touch.in_set(RunFixedMainLoopSystems::BeforeFixedMainLoop),
+    )
     .add_systems(Last, page_status);
     app.insert_machine(machine);
     // On the web the winit runner hands the app to requestAnimationFrame and returns.
@@ -289,7 +351,8 @@ impl Emulator {
 
     /// Touch on the bottom screen in its own pixels (DS 256x192, 3DS 320x240).
     pub fn set_touch(&self, x: f64, y: f64, down: bool) {
-        self.shared.lock().unwrap().touch = down.then(|| (x.clamp(0.0, 1023.0) as u16, y.clamp(0.0, 1023.0) as u16));
+        self.shared.lock().unwrap().touch =
+            down.then(|| (x.clamp(0.0, 1023.0) as u16, y.clamp(0.0, 1023.0) as u16));
     }
 
     /// Ask the app to exit at the end of the current frame.

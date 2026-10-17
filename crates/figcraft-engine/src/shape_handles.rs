@@ -65,7 +65,12 @@ fn corner(prev: Point, cur: Point, next: Point) -> Option<Corner> {
     }
     let into = v1 / l1 + v2 / l2;
     let half = (v1 / l1).dot(v2 / l2).clamp(-1.0, 1.0).acos() / 2.0;
-    (into.hypot() > 1e-9 && half > 1e-6).then(|| Corner { at: cur, into: into.normalize(), half, max_r: l1.min(l2) / 2.0 * half.tan() })
+    (into.hypot() > 1e-9 && half > 1e-6).then(|| Corner {
+        at: cur,
+        into: into.normalize(),
+        half,
+        max_r: l1.min(l2) / 2.0 * half.tan(),
+    })
 }
 
 /// The corners of `n` that have handles, with their current radii.
@@ -74,15 +79,32 @@ fn corners(n: &Node) -> Vec<(Corner, f64)> {
     let r = n.corners.radii;
     match n.kind {
         NodeKind::Polygon { count } => top(&figcraft_geom::polygon_points(w, h, count), r[0]),
-        NodeKind::Star { count, inner_ratio } => top(&figcraft_geom::star_points(w, h, count, inner_ratio), r[0]),
+        NodeKind::Star { count, inner_ratio } => {
+            top(&figcraft_geom::star_points(w, h, count, inner_ratio), r[0])
+        }
         _ if n.kind.has_independent_corners() => {
             let max_r = w.min(h) / 2.0;
             let quarter = std::f64::consts::FRAC_PI_4;
-            [(0.0, 0.0, 1.0, 1.0), (w, 0.0, -1.0, 1.0), (w, h, -1.0, -1.0), (0.0, h, 1.0, -1.0)]
-                .iter()
-                .zip(r)
-                .map(|(&(x, y, dx, dy), r)| (Corner { at: Point::new(x, y), into: Vec2::new(dx, dy).normalize(), half: quarter, max_r }, r))
-                .collect()
+            [
+                (0.0, 0.0, 1.0, 1.0),
+                (w, 0.0, -1.0, 1.0),
+                (w, h, -1.0, -1.0),
+                (0.0, h, 1.0, -1.0),
+            ]
+            .iter()
+            .zip(r)
+            .map(|(&(x, y, dx, dy), r)| {
+                (
+                    Corner {
+                        at: Point::new(x, y),
+                        into: Vec2::new(dx, dy).normalize(),
+                        half: quarter,
+                        max_r,
+                    },
+                    r,
+                )
+            })
+            .collect()
         }
         _ => vec![],
     }
@@ -98,31 +120,44 @@ fn top(pts: &[Point], r: f64) -> Vec<(Corner, f64)> {
 
 /// The node whose handles show: the only selected layer, unlocked, visible and at least
 /// [`MIN_PX`] on screen; with its local → page transform and the local inset.
-fn target<'a>(doc: &'a Document, sel: &[NodeId], zoom: f64) -> Option<(NodeId, &'a Node, Affine, f64)> {
+fn target<'a>(
+    doc: &'a Document,
+    sel: &[NodeId],
+    zoom: f64,
+) -> Option<(NodeId, &'a Node, Affine, f64)> {
     let [id] = sel else { return None };
     let n = doc.node(*id)?;
     let t = doc.world_transform(*id);
     let s = t.determinant().abs().sqrt();
     let ok = !n.locked && n.visible && zoom.is_finite() && zoom > 0.0 && s.is_finite() && s > 1e-9;
-    (ok && n.width.min(n.height) * s * zoom >= MIN_PX && n.kind.has_corner_radius() && !matches!(n.kind, NodeKind::Vector { .. }))
-        .then(|| (*id, n, t, INSET_PX / (zoom * s)))
+    (ok && n.width.min(n.height) * s * zoom >= MIN_PX
+        && n.kind.has_corner_radius()
+        && !matches!(n.kind, NodeKind::Vector { .. }))
+    .then(|| (*id, n, t, INSET_PX / (zoom * s)))
 }
 
 /// A star's ratio handle (local) for `ratio`.
 fn ratio_point(n: &Node, count: u32, ratio: f64) -> Option<Point> {
-    figcraft_geom::star_points(n.width, n.height, count, ratio).get(1).copied()
+    figcraft_geom::star_points(n.width, n.height, count, ratio)
+        .get(1)
+        .copied()
 }
 
 /// The shape handles of the selection at `zoom` (screen pixels per page unit): each handle and
 /// where it is (page coordinates).
 pub fn handles(doc: &Document, sel: &[NodeId], zoom: f64) -> Vec<(ShapeHandle, [f64; 2])> {
-    let Some((_, n, t, inset)) = target(doc, sel, zoom) else { return vec![] };
+    let Some((_, n, t, inset)) = target(doc, sel, zoom) else {
+        return vec![];
+    };
     let pt = |p: Point| {
         let q = t * p;
         [q.x, q.y]
     };
-    let mut out: Vec<(ShapeHandle, [f64; 2])> =
-        corners(n).iter().enumerate().map(|(i, (c, r))| (ShapeHandle::Radius { corner: i }, pt(c.handle(*r, inset)))).collect();
+    let mut out: Vec<(ShapeHandle, [f64; 2])> = corners(n)
+        .iter()
+        .enumerate()
+        .map(|(i, (c, r))| (ShapeHandle::Radius { corner: i }, pt(c.handle(*r, inset))))
+        .collect();
     if let NodeKind::Star { count, inner_ratio } = n.kind
         && let Some(p) = ratio_point(n, count, inner_ratio)
     {
@@ -144,7 +179,13 @@ pub fn hit(doc: &Document, sel: &[NodeId], p: Point, zoom: f64) -> Option<(NodeI
 
 /// The `node.set` props for handle `h` of layer `id` dragged to page point `p` (`alt`: only that
 /// corner of a rectangle or frame).
-pub fn drag(doc: &Document, id: NodeId, h: ShapeHandle, p: Point, alt: bool) -> Option<Map<String, Value>> {
+pub fn drag(
+    doc: &Document,
+    id: NodeId,
+    h: ShapeHandle,
+    p: Point,
+    alt: bool,
+) -> Option<Map<String, Value>> {
     let n = doc.node(id)?;
     let q = doc.world_transform(id).inverse() * p;
     if !(q.x.is_finite() && q.y.is_finite()) {
@@ -154,20 +195,30 @@ pub fn drag(doc: &Document, id: NodeId, h: ShapeHandle, p: Point, alt: bool) -> 
         ShapeHandle::Radius { corner } => {
             let r = corners(n).get(corner)?.0.radius(q);
             let key = if alt && n.kind.has_independent_corners() {
-                ["topLeftRadius", "topRightRadius", "bottomRightRadius", "bottomLeftRadius"].get(corner).copied()?
+                [
+                    "topLeftRadius",
+                    "topRightRadius",
+                    "bottomRightRadius",
+                    "bottomLeftRadius",
+                ]
+                .get(corner)
+                .copied()?
             } else {
                 "cornerRadius"
             };
             Some(Map::from_iter([(key.to_string(), json!(r))]))
         }
         ShapeHandle::Ratio => {
-            let NodeKind::Star { count, .. } = n.kind else { return None };
+            let NodeKind::Star { count, .. } = n.kind else {
+                return None;
+            };
             // Along the inner point's ray, measured on the unit circle the star's box maps from.
             let (rx, ry) = (n.width / 2.0, n.height / 2.0);
             let dir = ratio_point(n, count, 1.0)?;
             let ray = Vec2::new(dir.x / rx - 1.0, dir.y / ry - 1.0);
             let k = Vec2::new(q.x / rx - 1.0, q.y / ry - 1.0).dot(ray) / ray.hypot2().max(1e-12);
-            k.is_finite().then(|| Map::from_iter([("innerRadius".to_string(), json!(k.clamp(0.001, 1.0)))]))
+            k.is_finite()
+                .then(|| Map::from_iter([("innerRadius".to_string(), json!(k.clamp(0.001, 1.0)))]))
         }
     }
 }
@@ -177,7 +228,10 @@ pub fn value(doc: &Document, id: NodeId, h: ShapeHandle) -> Option<f64> {
     let n = doc.node(id)?;
     let v = match (h, &n.kind) {
         (ShapeHandle::Ratio, NodeKind::Star { inner_ratio, .. }) => inner_ratio * 100.0,
-        (ShapeHandle::Radius { corner }, _) => corners(n).into_iter().nth(corner).map(|(c, r)| r.clamp(0.0, c.max_r))?,
+        (ShapeHandle::Radius { corner }, _) => corners(n)
+            .into_iter()
+            .nth(corner)
+            .map(|(c, r)| r.clamp(0.0, c.max_r))?,
         _ => return None,
     };
     Some((v * 10.0).round() / 10.0)
@@ -185,7 +239,10 @@ pub fn value(doc: &Document, id: NodeId, h: ShapeHandle) -> Option<f64> {
 
 /// Where handle `h` of `id` is now at `zoom` (the readout's anchor while dragging).
 pub fn handle_at(doc: &Document, id: NodeId, h: ShapeHandle, zoom: f64) -> Option<[f64; 2]> {
-    handles(doc, &[id], zoom).into_iter().find(|(x, _)| *x == h).map(|(_, at)| at)
+    handles(doc, &[id], zoom)
+        .into_iter()
+        .find(|(x, _)| *x == h)
+        .map(|(_, at)| at)
 }
 
 /// The readout of a shape handle drag: the handle, its value and where it is.

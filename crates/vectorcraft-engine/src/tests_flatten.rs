@@ -12,12 +12,15 @@ use super::*;
 /// Colours here go through the process-wide colour settings, which the colour management tests
 /// change: one at a time with them.
 fn settings_lock() -> std::sync::MutexGuard<'static, ()> {
-    crate::tests_colormgmt::GLOBAL.lock().unwrap_or_else(|e| e.into_inner())
+    crate::tests_colormgmt::GLOBAL
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
 }
 
 fn session() -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": 200, "height": 200})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 200}))
+        .unwrap();
     s
 }
 
@@ -27,7 +30,13 @@ fn run(s: &mut Session, id: &str, p: Value) -> Value {
 
 /// An unstroked rectangle filled with `color`.
 fn rect(s: &mut Session, x: f64, y: f64, w: f64, h: f64, color: &str) -> u64 {
-    let id = run(s, "shape.rectangle", json!({"x": x, "y": y, "width": w, "height": h}))["id"].as_u64().unwrap();
+    let id = run(
+        s,
+        "shape.rectangle",
+        json!({"x": x, "y": y, "width": w, "height": h}),
+    )["id"]
+        .as_u64()
+        .unwrap();
     run(s, "paint.setFill", json!({"color": color, "ids": [id]}));
     run(s, "paint.setStroke", json!({"none": true, "ids": [id]}));
     id
@@ -43,13 +52,27 @@ fn exists(s: &Session, id: u64) -> bool {
 
 /// The document over white at 1 px per point.
 fn picture(s: &Session) -> Rendered {
-    Renderer::new().render_region(&s.doc().unwrap().doc, Rect::new(0.0, 0.0, 200.0, 200.0), 1.0, true)
+    Renderer::new().render_region(
+        &s.doc().unwrap().doc,
+        Rect::new(0.0, 0.0, 200.0, 200.0),
+        1.0,
+        true,
+    )
 }
 
 fn flatten(s: &mut Session, p: Value) -> (Vec<u64>, u64, u64) {
     let r = run(s, "object.flattenTransparency", p);
-    let ids = r["ids"].as_array().unwrap().iter().map(|v| v.as_u64().unwrap()).collect();
-    (ids, r["vector"].as_u64().unwrap(), r["rasterized"].as_u64().unwrap())
+    let ids = r["ids"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap())
+        .collect();
+    (
+        ids,
+        r["vector"].as_u64().unwrap(),
+        r["rasterized"].as_u64().unwrap(),
+    )
 }
 
 fn outline(n: &Node) -> BezPath {
@@ -66,22 +89,36 @@ fn outline(n: &Node) -> BezPath {
 /// The flat-colour regions in a flattened group.
 fn regions(s: &Session, group: u64) -> Vec<Node> {
     let g = node(s, group);
-    g.children().unwrap().iter().filter(|c| matches!(c.kind, NodeKind::Path { .. } | NodeKind::Compound { .. })).map(|c| (**c).clone()).collect()
+    g.children()
+        .unwrap()
+        .iter()
+        .filter(|c| matches!(c.kind, NodeKind::Path { .. } | NodeKind::Compound { .. }))
+        .map(|c| (**c).clone())
+        .collect()
 }
 
 /// A pixel centre well inside `n` (2 pt from its edges).
 fn interior(n: &Node) -> Option<Point> {
     let bp = outline(n);
     let b = bp.bounding_box();
-    let inside = |p: Point| [(0.0, 0.0), (2.0, 0.0), (-2.0, 0.0), (0.0, 2.0), (0.0, -2.0)].iter().all(|(dx, dy)| bp.winding(p + (*dx, *dy)) != 0);
+    let inside = |p: Point| {
+        [(0.0, 0.0), (2.0, 0.0), (-2.0, 0.0), (0.0, 2.0), (0.0, -2.0)]
+            .iter()
+            .all(|(dx, dy)| bp.winding(p + (*dx, *dy)) != 0)
+    };
     (b.y0.floor() as i32..b.y1.ceil() as i32)
-        .flat_map(|y| (b.x0.floor() as i32..b.x1.ceil() as i32).map(move |x| Point::new(x as f64 + 0.5, y as f64 + 0.5)))
+        .flat_map(|y| {
+            (b.x0.floor() as i32..b.x1.ceil() as i32)
+                .map(move |x| Point::new(x as f64 + 0.5, y as f64 + 0.5))
+        })
         .find(|p| inside(*p))
 }
 
 /// A region's colour over white, as 8-bit RGB.
 fn shown(n: &Node) -> [u8; 3] {
-    let AppearanceItem::Fill(f) = &n.appearance.items[0] else { panic!("a region has one fill") };
+    let AppearanceItem::Fill(f) = &n.appearance.items[0] else {
+        panic!("a region has one fill")
+    };
     let [r, g, b] = f.paint.color().unwrap().to_rgb();
     let a = n.opacity;
     let q = |v: f32| ((v * a + 1.0 - a) * 255.0).round() as u8;
@@ -102,7 +139,10 @@ fn assert_regions_match(s: &Session, before: &Rendered, group: u64, tol: u8, wha
     for r in &regions {
         let Some(p) = interior(r) else { continue };
         let (want, got) = (pixel(before, p), shown(r));
-        assert!(want.iter().zip(got).all(|(a, b)| a.abs_diff(b) <= tol), "{what}: at {p:?} the art showed {want:?}, the region has {got:?}");
+        assert!(
+            want.iter().zip(got).all(|(a, b)| a.abs_diff(b) <= tol),
+            "{what}: at {p:?} the art showed {want:?}, the region has {got:?}"
+        );
     }
 }
 
@@ -125,19 +165,39 @@ fn two_half_transparent_rects_give_three_regions_with_their_pixels() {
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#ff0000");
     let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#0000ff");
-    run(&mut s, "transparency.set", json!({"ids": [a, b], "opacity": 50}));
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [a, b], "opacity": 50}),
+    );
     let before = picture(&s);
     let (ids, vector, rasterized) = flatten(&mut s, json!({"ids": [a, b]}));
     assert_eq!((ids.len(), vector, rasterized), (1, 3, 0));
     assert!(!exists(&s, a) && !exists(&s, b), "the objects are replaced");
     let rs = regions(&s, ids[0]);
     assert_eq!(rs.len(), 3);
-    assert!(rs.iter().all(|r| r.opacity == 1.0 && r.has_default_transparency()), "regions are opaque");
+    assert!(
+        rs.iter()
+            .all(|r| r.opacity == 1.0 && r.has_default_transparency()),
+        "regions are opaque"
+    );
     assert_regions_match(&s, &before, ids[0], 1, "50% rects");
     // Red alone over white is pink; blue over red over white is purple.
-    let at = |p: Point| rs.iter().find(|r| outline(r).winding(p) != 0).map(shown).unwrap();
+    let at = |p: Point| {
+        rs.iter()
+            .find(|r| outline(r).winding(p) != 0)
+            .map(shown)
+            .unwrap()
+    };
     assert_eq!(at(Point::new(30.0, 30.0)), [255, 128, 128]);
-    assert!(at(Point::new(85.0, 85.0)).iter().zip([128, 64, 191]).all(|(x, y)| x.abs_diff(y) <= 1), "{:?}", at(Point::new(85.0, 85.0)));
+    assert!(
+        at(Point::new(85.0, 85.0))
+            .iter()
+            .zip([128, 64, 191])
+            .all(|(x, y)| x.abs_diff(y) <= 1),
+        "{:?}",
+        at(Point::new(85.0, 85.0))
+    );
     assert_eq!(s.doc().unwrap().selection.objects, vec![NodeId(ids[0])]);
 }
 
@@ -146,11 +206,19 @@ fn every_blend_mode_flattens_to_its_pixels() {
     let _settings = settings_lock();
     for mode in BlendMode::ALL {
         // Normal at full opacity is no transparency: nothing to flatten.
-        for opacity in if mode == BlendMode::Normal { &[70][..] } else { &[100, 70][..] } {
+        for opacity in if mode == BlendMode::Normal {
+            &[70][..]
+        } else {
+            &[100, 70][..]
+        } {
             let mut s = session();
             let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#cc6633");
             let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#4d99e6");
-            run(&mut s, "transparency.set", json!({"ids": [b], "blend": mode.label(), "opacity": opacity}));
+            run(
+                &mut s,
+                "transparency.set",
+                json!({"ids": [b], "blend": mode.label(), "opacity": opacity}),
+            );
             let before = picture(&s);
             let (ids, vector, _) = flatten(&mut s, json!({"ids": [a, b]}));
             assert_eq!(vector, 3, "{mode:?}");
@@ -159,10 +227,20 @@ fn every_blend_mode_flattens_to_its_pixels() {
             // The overlap is the reference formula's colour.
             let [r, g, b] = [0xcc, 0x66, 0x33].map(|v| v as f32 / 255.0);
             let src = [0x4d, 0x99, 0xe6].map(|v| v as f32 / 255.0);
-            let want = vectorcraft_color::blend::composite(mode, [r, g, b, 1.0], [src[0], src[1], src[2], *opacity as f32 / 100.0]);
-            let overlap = regions(&s, ids[0]).into_iter().find(|r| outline(r).winding(Point::new(85.0, 85.0)) != 0).unwrap();
+            let want = vectorcraft_color::blend::composite(
+                mode,
+                [r, g, b, 1.0],
+                [src[0], src[1], src[2], *opacity as f32 / 100.0],
+            );
+            let overlap = regions(&s, ids[0])
+                .into_iter()
+                .find(|r| outline(r).winding(Point::new(85.0, 85.0)) != 0)
+                .unwrap();
             let got = shown(&overlap);
-            assert!((0..3).all(|i| (want[i] * 255.0 - got[i] as f32).abs() <= 0.5 + 1e-3), "{mode:?} at {opacity}%: {got:?} vs {want:?}");
+            assert!(
+                (0..3).all(|i| (want[i] * 255.0 - got[i] as f32).abs() <= 0.5 + 1e-3),
+                "{mode:?} at {opacity}%: {got:?} vs {want:?}"
+            );
         }
     }
 }
@@ -176,11 +254,19 @@ fn groups_flatten_as_they_composite() {
             run(s, "select.set", json!({"ids": [b, c]}));
             let g = run(s, "object.group", json!({}))["id"].clone();
             run(s, "appearance.addFill", json!({"ids": [g]}));
-            run(s, "appearance.setItem", json!({"ids": [g], "index": 0, "color": "#ffff00", "opacity": 50, "blend": "Multiply"}));
+            run(
+                s,
+                "appearance.setItem",
+                json!({"ids": [g], "index": 0, "color": "#ffff00", "opacity": 50, "blend": "Multiply"}),
+            );
         }),
         ("knockout shape", |s, _, b, c| {
             run(s, "transparency.set", json!({"ids": [b], "opacity": 50}));
-            run(s, "transparency.set", json!({"ids": [c], "opacity": 40, "knockoutShape": true}));
+            run(
+                s,
+                "transparency.set",
+                json!({"ids": [c], "opacity": 40, "knockoutShape": true}),
+            );
             run(s, "select.set", json!({"ids": [b, c]}));
             run(s, "object.group", json!({}));
             run(s, "transparency.set", json!({"knockout": "on"}));
@@ -192,33 +278,62 @@ fn groups_flatten_as_they_composite() {
             run(s, "transparency.set", json!({"knockout": "on"}));
         }),
         ("non-isolated group with opacity", |s, _, b, c| {
-            run(s, "transparency.set", json!({"ids": [c], "blend": "Multiply"}));
+            run(
+                s,
+                "transparency.set",
+                json!({"ids": [c], "blend": "Multiply"}),
+            );
             run(s, "select.set", json!({"ids": [b, c]}));
             run(s, "object.group", json!({}));
             run(s, "transparency.set", json!({"opacity": 60}));
         }),
         ("isolated group", |s, _, b, c| {
-            run(s, "transparency.set", json!({"ids": [c], "blend": "Difference"}));
+            run(
+                s,
+                "transparency.set",
+                json!({"ids": [c], "blend": "Difference"}),
+            );
             run(s, "select.set", json!({"ids": [b, c]}));
             run(s, "object.group", json!({}));
-            run(s, "transparency.set", json!({"opacity": 80, "isolate": true}));
+            run(
+                s,
+                "transparency.set",
+                json!({"opacity": 80, "isolate": true}),
+            );
         }),
         ("blending group with blending content", |s, _, b, c| {
-            run(s, "transparency.set", json!({"ids": [c], "blend": "Multiply"}));
+            run(
+                s,
+                "transparency.set",
+                json!({"ids": [c], "blend": "Multiply"}),
+            );
             run(s, "select.set", json!({"ids": [b, c]}));
             run(s, "object.group", json!({}));
-            run(s, "transparency.set", json!({"blend": "Screen", "opacity": 90}));
+            run(
+                s,
+                "transparency.set",
+                json!({"blend": "Screen", "opacity": 90}),
+            );
         }),
         ("non-isolated knockout group", |s, _, b, c| {
             run(s, "transparency.set", json!({"ids": [b], "opacity": 50}));
-            run(s, "transparency.set", json!({"ids": [c], "blend": "Multiply", "opacity": 80}));
+            run(
+                s,
+                "transparency.set",
+                json!({"ids": [c], "blend": "Multiply", "opacity": 80}),
+            );
             run(s, "select.set", json!({"ids": [b, c]}));
             run(s, "object.group", json!({}));
             run(s, "transparency.set", json!({"knockout": "on"}));
         }),
         ("clip group", |s, _, b, c| {
             run(s, "transparency.set", json!({"ids": [b], "opacity": 50}));
-            let e = run(s, "shape.ellipse", json!({"x": 40, "y": 40, "width": 120, "height": 120}))["id"].clone();
+            let e = run(
+                s,
+                "shape.ellipse",
+                json!({"x": 40, "y": 40, "width": 120, "height": 120}),
+            )["id"]
+                .clone();
             run(s, "select.set", json!({"ids": [b, c, e]}));
             run(s, "object.clippingMask.make", json!({}));
         }),
@@ -232,9 +347,15 @@ fn groups_flatten_as_they_composite() {
         let before = picture(&s);
         run(&mut s, "select.all", json!({}));
         let (ids, vector, rasterized) = flatten(&mut s, json!({}));
-        assert!(ids.len() == 1 && vector >= 3 && rasterized == 0, "{what}: {ids:?} {vector} {rasterized}");
+        assert!(
+            ids.len() == 1 && vector >= 3 && rasterized == 0,
+            "{what}: {ids:?} {vector} {rasterized}"
+        );
         assert_regions_match(&s, &before, ids[0], 2, what);
-        assert!(changed(&before, &picture(&s)) < 0.02, "{what}: the look changed");
+        assert!(
+            changed(&before, &picture(&s)) < 0.02,
+            "{what}: the look changed"
+        );
     }
 }
 
@@ -245,25 +366,40 @@ fn balance_trades_vector_regions_for_an_image() {
         let mut s = session();
         let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#ff8000");
         let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#0080ff");
-        run(&mut s, "transparency.set", json!({"ids": [b], "opacity": 50, "blend": "Multiply"}));
+        run(
+            &mut s,
+            "transparency.set",
+            json!({"ids": [b], "opacity": 50, "blend": "Multiply"}),
+        );
         (s, a, b)
     };
     let (mut s, a, b) = setup();
     assert_eq!(flatten(&mut s, json!({"ids": [a, b], "balance": 100})).1, 3);
     let (mut s, a, b) = setup();
     let before = picture(&s);
-    let (ids, vector, rasterized) = flatten(&mut s, json!({"ids": [a, b], "balance": 0, "clipComplexRegions": true, "lineArtPpi": 144}));
+    let (ids, vector, rasterized) = flatten(
+        &mut s,
+        json!({"ids": [a, b], "balance": 0, "clipComplexRegions": true, "lineArtPpi": 144}),
+    );
     assert_eq!((vector, rasterized), (0, 1));
     let g = node(&s, ids[0]);
     let clip = &g.children().unwrap()[0];
     assert!(clip.clips(), "clipped to the regions");
-    let NodeKind::Image(im) = &clip.children().unwrap()[1].kind else { panic!("an image") };
+    let NodeKind::Image(im) = &clip.children().unwrap()[1].kind else {
+        panic!("an image")
+    };
     assert!(im.width >= 300, "at the line art resolution: {}", im.width);
     assert!(changed(&before, &picture(&s)) < 0.02);
     // Unclipped, the image is a plain rectangle.
     let (mut s, a, b) = setup();
-    let (ids, ..) = flatten(&mut s, json!({"ids": [a, b], "balance": 0, "clipComplexRegions": false}));
-    assert!(matches!(node(&s, ids[0]).children().unwrap()[0].kind, NodeKind::Image(_)));
+    let (ids, ..) = flatten(
+        &mut s,
+        json!({"ids": [a, b], "balance": 0, "clipComplexRegions": false}),
+    );
+    assert!(matches!(
+        node(&s, ids[0]).children().unwrap()[0].kind,
+        NodeKind::Image(_)
+    ));
     assert!(changed(&before, &picture(&s)) < 0.02);
     // In between, a group splitting into more regions than the balance allows is rasterized.
     let (mut s, a, b) = setup();
@@ -282,9 +418,16 @@ fn gradients_rasterize_and_flat_areas_stay_vector() {
             json!({"ids": [g], "gradient": {"kind": "linear", "stops": [{"offset": 0, "color": "#ff0000"}, {"offset": 1, "color": "#0000ff"}]}}),
         );
         let t = rect(&mut s, 80.0, 80.0, 100.0, 100.0, "#20c040");
-        run(&mut s, "transparency.set", json!({"ids": [t], "opacity": 50}));
+        run(
+            &mut s,
+            "transparency.set",
+            json!({"ids": [t], "opacity": 50}),
+        );
         let before = picture(&s);
-        let (ids, vector, rasterized) = flatten(&mut s, json!({"ids": [g, t], "preset": "high", "clipComplexRegions": clip}));
+        let (ids, vector, rasterized) = flatten(
+            &mut s,
+            json!({"ids": [g, t], "preset": "high", "clipComplexRegions": clip}),
+        );
         assert_eq!(rasterized, 1, "clip {clip}");
         assert!(vector >= 1, "the green alone stays vector (clip {clip})");
         assert_regions_match(&s, &before, ids[0], 1, "gradient");
@@ -298,12 +441,19 @@ fn flatten_is_one_undo_step() {
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#ff0000");
     let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#0000ff");
-    run(&mut s, "transparency.set", json!({"ids": [b], "opacity": 50}));
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [b], "opacity": 50}),
+    );
     let steps = s.doc().unwrap().history.undo.len();
     let doc = s.doc().unwrap().doc.clone();
     flatten(&mut s, json!({"ids": [a, b]}));
     assert_eq!(s.doc().unwrap().history.undo.len(), steps + 1);
-    assert_eq!(s.doc().unwrap().history.undo.last().unwrap().label, "Flatten Transparency");
+    assert_eq!(
+        s.doc().unwrap().history.undo.last().unwrap().label,
+        "Flatten Transparency"
+    );
     run(&mut s, "edit.undo", json!({}));
     assert_eq!(s.doc().unwrap().doc.layers, doc.layers);
     run(&mut s, "edit.redo", json!({}));
@@ -318,10 +468,16 @@ fn flattening_objects_that_share_an_id_removes_both() {
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#ff0000");
     let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#0000ff");
-    run(&mut s, "transparency.set", json!({"ids": [a, b], "opacity": 50}));
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [a, b], "opacity": 50}),
+    );
     let mut doc = (*s.doc().unwrap().doc).clone();
     doc.node_mut(NodeId(b)).unwrap().id = NodeId(a);
-    let flat = crate::cmd::flatten::flatten_document(&doc, &crate::cmd::FlattenOptions::default()).unwrap().unwrap();
+    let flat = crate::cmd::flatten::flatten_document(&doc, &crate::cmd::FlattenOptions::default())
+        .unwrap()
+        .unwrap();
     let art = flat.layers[0].children().unwrap();
     assert_eq!(art.len(), 1, "one group where the two objects were");
     assert!(matches!(art[0].kind, NodeKind::Group { .. }) && art[0].id != NodeId(a));
@@ -332,25 +488,54 @@ fn objects_without_transparency_stay_unless_outlined() {
     let _settings = settings_lock();
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 50.0, 50.0, "#ff0000");
-    run(&mut s, "transparency.set", json!({"ids": [a], "opacity": 50}));
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [a], "opacity": 50}),
+    );
     let far = rect(&mut s, 120.0, 120.0, 50.0, 50.0, "#00ff00");
-    run(&mut s, "paint.setStroke", json!({"color": "#000000", "ids": [far]}));
-    let text = run(&mut s, "text.create", json!({"x": 10, "y": 150, "text": "Hi", "size": 24}))["id"].as_u64().unwrap();
+    run(
+        &mut s,
+        "paint.setStroke",
+        json!({"color": "#000000", "ids": [far]}),
+    );
+    let text = run(
+        &mut s,
+        "text.create",
+        json!({"x": 10, "y": 150, "text": "Hi", "size": 24}),
+    )["id"]
+        .as_u64()
+        .unwrap();
     // Nothing transparent: nothing happens.
     let steps = s.doc().unwrap().history.undo.len();
     let (ids, vector, rasterized) = flatten(&mut s, json!({"ids": [far, text]}));
-    assert_eq!((ids, vector, rasterized, s.doc().unwrap().history.undo.len()), (vec![far, text], 0, 0, steps));
+    assert_eq!(
+        (ids, vector, rasterized, s.doc().unwrap().history.undo.len()),
+        (vec![far, text], 0, 0, steps)
+    );
     // The transparent rectangle is flattened; the others keep their ids.
     let (ids, vector, _) = flatten(&mut s, json!({"ids": [a, far, text]}));
     assert_eq!(vector, 1);
-    assert!(exists(&s, far) && exists(&s, text) && !exists(&s, a) && ids.contains(&far) && ids.contains(&text));
+    assert!(
+        exists(&s, far)
+            && exists(&s, text)
+            && !exists(&s, a)
+            && ids.contains(&far)
+            && ids.contains(&text)
+    );
     // On request, type and strokes are outlined too.
-    let (ids, ..) = flatten(&mut s, json!({"ids": [far, text], "textToOutlines": true, "strokesToOutlines": true}));
+    let (ids, ..) = flatten(
+        &mut s,
+        json!({"ids": [far, text], "textToOutlines": true, "strokesToOutlines": true}),
+    );
     assert!(!exists(&s, far) && !exists(&s, text) && ids.len() == 2);
     for id in ids {
         node(&s, id).walk(&mut |c| {
             assert!(!matches!(c.kind, NodeKind::Text(_)), "type is outlined");
-            assert!(c.appearance.stroke().is_none_or(|st| st.paint.is_none()), "strokes are outlined");
+            assert!(
+                c.appearance.stroke().is_none_or(|st| st.paint.is_none()),
+                "strokes are outlined"
+            );
         });
     }
 }
@@ -360,11 +545,18 @@ fn preserve_alpha_composites_over_nothing() {
     let _settings = settings_lock();
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#ff0000");
-    run(&mut s, "transparency.set", json!({"ids": [a], "opacity": 50}));
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [a], "opacity": 50}),
+    );
     let before = picture(&s);
     let (ids, ..) = flatten(&mut s, json!({"ids": [a], "preserveAlpha": true}));
     let r = &regions(&s, ids[0])[0];
-    assert_eq!((r.opacity, r.appearance.fill_paint()), (0.5, Paint::solid(Color::rgb(1.0, 0.0, 0.0))));
+    assert_eq!(
+        (r.opacity, r.appearance.fill_paint()),
+        (0.5, Paint::solid(Color::rgb(1.0, 0.0, 0.0)))
+    );
     assert_regions_match(&s, &before, ids[0], 1, "preserve alpha");
     // Over white by default: opaque pink.
     run(&mut s, "edit.undo", json!({}));
@@ -378,19 +570,44 @@ fn single_paints_keep_their_colour_and_overprint() {
     let _settings = settings_lock();
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 100.0, 100.0, "#000000");
-    run(&mut s, "paint.setFill", json!({"ids": [a], "color": {"c": 0, "m": 100, "y": 50, "k": 0}}));
-    run(&mut s, "object.setOverprint", json!({"ids": [a], "fill": true}));
+    run(
+        &mut s,
+        "paint.setFill",
+        json!({"ids": [a], "color": {"c": 0, "m": 100, "y": 50, "k": 0}}),
+    );
+    run(
+        &mut s,
+        "object.setOverprint",
+        json!({"ids": [a], "fill": true}),
+    );
     let b = rect(&mut s, 60.0, 60.0, 100.0, 100.0, "#0000ff");
-    run(&mut s, "transparency.set", json!({"ids": [b], "opacity": 50}));
-    let cmyk_region = |s: &Session, ids: &[u64]| regions(s, ids[0]).into_iter().find(|r| outline(r).winding(Point::new(30.0, 30.0)) != 0).unwrap();
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [b], "opacity": 50}),
+    );
+    let cmyk_region = |s: &Session, ids: &[u64]| {
+        regions(s, ids[0])
+            .into_iter()
+            .find(|r| outline(r).winding(Point::new(30.0, 30.0)) != 0)
+            .unwrap()
+    };
     let (ids, ..) = flatten(&mut s, json!({"ids": [a, b]}));
     let r = cmyk_region(&s, &ids);
-    let AppearanceItem::Fill(f) = &r.appearance.items[0] else { panic!() };
-    assert!(matches!(f.paint.color(), Some(Color::Cmyk { .. })) && f.overprint, "{:?}", f);
+    let AppearanceItem::Fill(f) = &r.appearance.items[0] else {
+        panic!()
+    };
+    assert!(
+        matches!(f.paint.color(), Some(Color::Cmyk { .. })) && f.overprint,
+        "{:?}",
+        f
+    );
     run(&mut s, "edit.undo", json!({}));
     let (ids, ..) = flatten(&mut s, json!({"ids": [a, b], "preserveOverprints": false}));
     let r = cmyk_region(&s, &ids);
-    let AppearanceItem::Fill(f) = &r.appearance.items[0] else { panic!() };
+    let AppearanceItem::Fill(f) = &r.appearance.items[0] else {
+        panic!()
+    };
     assert!(matches!(f.paint.color(), Some(Color::Rgb { .. })) && !f.overprint);
 }
 
@@ -399,21 +616,58 @@ fn options_come_from_presets_and_params() {
     let _settings = settings_lock();
     use crate::cmd::FlattenOptions;
     let high = FlattenOptions::preset("High Resolution").unwrap();
-    assert_eq!((high.balance, high.line_art_ppi, high.clip_complex_regions), (100.0, 1200.0, true));
-    assert_eq!(FlattenOptions::default(), FlattenOptions::preset("medium").unwrap());
-    assert_ne!(FlattenOptions::preset("low"), FlattenOptions::preset("medium"));
-    let o = FlattenOptions::from_params(&json!({"preset": "low", "balance": 40, "options": {"antiAlias": false}})).unwrap();
-    assert_eq!((o.balance, o.gradient_ppi, o.anti_alias), (40.0, 150.0, false));
-    for bad in [json!({"preset": "ultra"}), json!({"balance": 120}), json!({"lineArtPpi": 0}), json!({"balance": "lots"})] {
+    assert_eq!(
+        (high.balance, high.line_art_ppi, high.clip_complex_regions),
+        (100.0, 1200.0, true)
+    );
+    assert_eq!(
+        FlattenOptions::default(),
+        FlattenOptions::preset("medium").unwrap()
+    );
+    assert_ne!(
+        FlattenOptions::preset("low"),
+        FlattenOptions::preset("medium")
+    );
+    let o = FlattenOptions::from_params(
+        &json!({"preset": "low", "balance": 40, "options": {"antiAlias": false}}),
+    )
+    .unwrap();
+    assert_eq!(
+        (o.balance, o.gradient_ppi, o.anti_alias),
+        (40.0, 150.0, false)
+    );
+    for bad in [
+        json!({"preset": "ultra"}),
+        json!({"balance": 120}),
+        json!({"lineArtPpi": 0}),
+        json!({"balance": "lots"}),
+    ] {
         assert!(FlattenOptions::from_params(&bad).is_err(), "{bad}");
     }
     let mut s = session();
     let a = rect(&mut s, 10.0, 10.0, 50.0, 50.0, "#ff0000");
-    run(&mut s, "transparency.set", json!({"ids": [a], "opacity": 50}));
-    assert!(s.execute("object.flattenTransparency", &json!({"ids": [a], "balance": -1})).is_err());
+    run(
+        &mut s,
+        "transparency.set",
+        json!({"ids": [a], "opacity": 50}),
+    );
+    assert!(
+        s.execute(
+            "object.flattenTransparency",
+            &json!({"ids": [a], "balance": -1})
+        )
+        .is_err()
+    );
     run(&mut s, "select.none", json!({}));
-    assert!(s.execute("object.flattenTransparency", &json!({})).is_err(), "nothing to flatten");
-    let r = run(&mut s, "object.flattenTransparency", json!({"ids": [a], "preset": "high"}));
+    assert!(
+        s.execute("object.flattenTransparency", &json!({})).is_err(),
+        "nothing to flatten"
+    );
+    let r = run(
+        &mut s,
+        "object.flattenTransparency",
+        json!({"ids": [a], "preset": "high"}),
+    );
     assert_eq!(r["options"]["lineArtPpi"], 1200.0);
 }
 
@@ -424,29 +678,81 @@ fn a_mixed_scene_looks_the_same_flattened() {
         let mut s = session();
         rect(&mut s, 0.0, 0.0, 200.0, 200.0, "#ffcc00");
         let r = rect(&mut s, 30.0, 30.0, 80.0, 80.0, "#3355cc");
-        run(&mut s, "paint.setStroke", json!({"color": "#000000", "ids": [r]}));
+        run(
+            &mut s,
+            "paint.setStroke",
+            json!({"color": "#000000", "ids": [r]}),
+        );
         run(&mut s, "stroke.set", json!({"weight": 8, "ids": [r]}));
-        run(&mut s, "transparency.set", json!({"ids": [r], "opacity": 60}));
-        let t = run(&mut s, "text.create", json!({"x": 40, "y": 170, "text": "Hi", "size": 48, "color": "#e01010"}))["id"].clone();
-        run(&mut s, "transparency.set", json!({"ids": [t], "opacity": 70, "blend": "Multiply"}));
-        let e = run(&mut s, "shape.ellipse", json!({"x": 120, "y": 40, "width": 60, "height": 60}))["id"].clone();
-        run(&mut s, "paint.setFill", json!({"color": "#20a040", "ids": [e]}));
-        run(&mut s, "effect.apply", json!({"effect": "stylize.dropShadow", "ids": [e]}));
+        run(
+            &mut s,
+            "transparency.set",
+            json!({"ids": [r], "opacity": 60}),
+        );
+        let t = run(
+            &mut s,
+            "text.create",
+            json!({"x": 40, "y": 170, "text": "Hi", "size": 48, "color": "#e01010"}),
+        )["id"]
+            .clone();
+        run(
+            &mut s,
+            "transparency.set",
+            json!({"ids": [t], "opacity": 70, "blend": "Multiply"}),
+        );
+        let e = run(
+            &mut s,
+            "shape.ellipse",
+            json!({"x": 120, "y": 40, "width": 60, "height": 60}),
+        )["id"]
+            .clone();
+        run(
+            &mut s,
+            "paint.setFill",
+            json!({"color": "#20a040", "ids": [e]}),
+        );
+        run(
+            &mut s,
+            "effect.apply",
+            json!({"effect": "stylize.dropShadow", "ids": [e]}),
+        );
         let m = rect(&mut s, 130.0, 130.0, 40.0, 40.0, "#8040c0");
-        run(&mut s, "transparency.set", json!({"ids": [m], "opacity": 50}));
+        run(
+            &mut s,
+            "transparency.set",
+            json!({"ids": [m], "opacity": 50}),
+        );
         run(&mut s, "select.set", json!({"ids": [m]}));
-        let sym = run(&mut s, "symbol.new", json!({"name": "Half"}))["id"].as_u64().unwrap();
-        assert!(matches!(node(&s, sym).kind, NodeKind::SymbolInstance { .. }));
+        let sym = run(&mut s, "symbol.new", json!({"name": "Half"}))["id"]
+            .as_u64()
+            .unwrap();
+        assert!(matches!(
+            node(&s, sym).kind,
+            NodeKind::SymbolInstance { .. }
+        ));
         let before = picture(&s);
         run(&mut s, "select.all", json!({}));
-        let (ids, vector, rasterized) = flatten(&mut s, json!({"preset": preset, "lineArtPpi": 216, "gradientPpi": 144}));
-        assert!(ids.len() == 1 && rasterized == 1, "{preset}: the shadow is rasterized ({ids:?}, {rasterized})");
+        let (ids, vector, rasterized) = flatten(
+            &mut s,
+            json!({"preset": preset, "lineArtPpi": 216, "gradientPpi": 144}),
+        );
+        assert!(
+            ids.len() == 1 && rasterized == 1,
+            "{preset}: the shadow is rasterized ({ids:?}, {rasterized})"
+        );
         assert!(preset == "low" || vector > 4, "{preset}: {vector} regions");
         let mut kinds = vec![];
         node(&s, ids[0]).walk(&mut |c| kinds.push(c.kind_label()));
-        assert!(!kinds.iter().any(|k| ["Type", "Symbol"].contains(k)), "{preset}: {kinds:?}");
+        assert!(
+            !kinds.iter().any(|k| ["Type", "Symbol"].contains(k)),
+            "{preset}: {kinds:?}"
+        );
         let diff = changed(&before, &picture(&s));
-        assert!(diff < 0.03, "{preset}: {:.1}% of the pixels changed", diff * 100.0);
+        assert!(
+            diff < 0.03,
+            "{preset}: {:.1}% of the pixels changed",
+            diff * 100.0
+        );
     }
 }
 
@@ -467,7 +773,11 @@ fn opacity_masks_are_rasterized_with_their_look() {
         "paint.setFill",
         json!({"ids": [m], "gradient": {"kind": "linear", "stops": [{"offset": 0, "color": "#ffffff"}, {"offset": 1, "color": "#000000"}]}}),
     );
-    run(&mut s, "transparency.makeOpacityMask", json!({"ids": [a, m]}));
+    run(
+        &mut s,
+        "transparency.makeOpacityMask",
+        json!({"ids": [a, m]}),
+    );
     assert!(node(&s, a).extras().mask.is_some());
     let before = picture(&s);
     run(&mut s, "select.all", json!({}));

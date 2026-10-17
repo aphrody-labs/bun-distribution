@@ -15,7 +15,10 @@ impl<'a> OverlayTable<'a> {
     where
         O: Into<Cow<'a, [Overlay]>>,
     {
-        Self { overlays: overlays.into(), signature }
+        Self {
+            overlays: overlays.into(),
+            signature,
+        }
     }
 
     /// Returns the overlays in the table.
@@ -56,7 +59,10 @@ impl<'a> OverlayTable<'a> {
 
     /// Returns a [`DisplayOverlayTable`] which implements [`Display`].
     pub fn display(&'a self, indent: usize) -> DisplayOverlayTable<'a> {
-        DisplayOverlayTable { overlay_table: self, indent }
+        DisplayOverlayTable {
+            overlay_table: self,
+            indent,
+        }
     }
 }
 
@@ -71,7 +77,9 @@ impl Display for DisplayOverlayTable<'_> {
         let i = " ".repeat(self.indent);
         let overlay_table = &self.overlay_table;
         let overlays = overlay_table.overlays();
-        let signature = overlay_table.signature().map_or("None".to_string(), |s| s.to_string());
+        let signature = overlay_table
+            .signature()
+            .map_or("None".to_string(), |s| s.to_string());
 
         writeln!(f, "{i}Overlay Table:")?;
         writeln!(f, "{i}Signature: {signature}")?;

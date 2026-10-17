@@ -81,7 +81,11 @@ impl OpenAiProxyAdapter {
         // Validate immediately so callers get a clear error at construction
         // time rather than at the first network call.
         Url::parse(&base_url)?;
-        Ok(Self { api_key, base_url, client: Some(Client::new()) })
+        Ok(Self {
+            api_key,
+            base_url,
+            client: Some(Client::new()),
+        })
     }
 
     /// Constructs an adapter from environment variables.
@@ -129,18 +133,32 @@ impl GatewayAdapter for OpenAiProxyAdapter {
             .await?;
         if !response.status().is_success() {
             let status = response.status().as_u16();
-            return Err(GatewayError::UpstreamStatus { status, body: String::new() });
+            return Err(GatewayError::UpstreamStatus {
+                status,
+                body: String::new(),
+            });
         }
         Ok(())
     }
 
     async fn chat(&self, req: ChatRequest) -> Result<ChatResponse, GatewayError> {
-        openai_compat::chat(&self.http_client(), self.endpoint_url()?, &self.api_key, req).await
+        openai_compat::chat(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 
     async fn chat_stream(&self, req: ChatRequest) -> Result<ChunkStream, GatewayError> {
-        openai_compat::chat_stream(&self.http_client(), self.endpoint_url()?, &self.api_key, req)
-            .await
+        openai_compat::chat_stream(
+            &self.http_client(),
+            self.endpoint_url()?,
+            &self.api_key,
+            req,
+        )
+        .await
     }
 }
 
@@ -165,7 +183,9 @@ mod tests {
     }
 
     async fn models_server(status: &'static str) -> String {
-        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.expect("bind");
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("bind");
         let addr = listener.local_addr().expect("addr");
         tokio::spawn(async move {
             let (mut socket, _) = listener.accept().await.expect("accept");
@@ -239,6 +259,9 @@ mod tests {
     fn invalid_base_url_rejected() {
         let err = OpenAiProxyAdapter::new("key", "://invalid").unwrap_err();
         // Either a URL parse error or a config error; both are acceptable.
-        assert!(matches!(err, GatewayError::Url(_) | GatewayError::Config(_)));
+        assert!(matches!(
+            err,
+            GatewayError::Url(_) | GatewayError::Config(_)
+        ));
     }
 }

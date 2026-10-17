@@ -30,7 +30,10 @@ pub(crate) struct RenderConfig<'a> {
 }
 
 fn verifier_dimensions(width: u32, height: u32) -> Result<()> {
-    ensure!(width > 0 && height > 0, "la sortie doit avoir une largeur et une hauteur positives");
+    ensure!(
+        width > 0 && height > 0,
+        "la sortie doit avoir une largeur et une hauteur positives"
+    );
     ensure!(
         width <= MAX_SIDE
             && height <= MAX_SIDE
@@ -49,7 +52,10 @@ fn charger(glb_path: &Path) -> Result<glb::Model> {
 /// Rend un modèle CPU ou GPU en gardant le GPU vivant pendant toute la rotation.
 enum Renderer<'a> {
     Cpu(&'a glb::Model),
-    Gpu { renderer: Box<GpuRenderer>, model: GpuModel },
+    Gpu {
+        renderer: Box<GpuRenderer>,
+        model: GpuModel,
+    },
 }
 
 impl<'a> Renderer<'a> {
@@ -58,15 +64,20 @@ impl<'a> Renderer<'a> {
             return Ok(Self::Cpu(model));
         }
         let backend = backend.parse::<Backend>().map_err(anyhow::Error::msg)?;
-        let renderer =
-            GpuRenderer::with_options(GpuOptions { backend, allow_software: !hardware_only })?;
+        let renderer = GpuRenderer::with_options(GpuOptions {
+            backend,
+            allow_software: !hardware_only,
+        })?;
         let info = renderer.adapter_info();
         println!(
             "gpu backend={:?} adaptateur={:?} type={:?} pilote={:?}",
             info.backend, info.name, info.device_type, info.driver
         );
         let gpu_model = renderer.upload(model);
-        Ok(Self::Gpu { renderer: Box::new(renderer), model: gpu_model })
+        Ok(Self::Gpu {
+            renderer: Box::new(renderer),
+            model: gpu_model,
+        })
     }
 
     fn frame(&mut self, angle: f32, width: u32, height: u32) -> Result<Vec<u8>> {
@@ -75,12 +86,16 @@ impl<'a> Renderer<'a> {
             Self::Gpu { renderer, model } => {
                 let rgba = renderer.render(
                     model,
-                    Camera { yaw: -angle, ..Default::default() }.clamped(),
+                    Camera {
+                        yaw: -angle,
+                        ..Default::default()
+                    }
+                    .clamped(),
                     width,
                     height,
                 )?;
                 Ok(composer_fond(&rgba, width, height))
-            },
+            }
         }
     }
 }
@@ -151,8 +166,14 @@ pub(crate) fn glb_gif(
 ) -> Result<()> {
     verifier_dimensions(config.width, config.height)?;
     ensure!(frames >= 2, "un GIF turntable exige au moins 2 images");
-    ensure!(frames <= MAX_GIF_FRAMES, "un GIF est limité à {MAX_GIF_FRAMES} images");
-    ensure!(fps > 0 && fps <= 120, "la cadence GIF doit être comprise entre 1 et 120 i/s");
+    ensure!(
+        frames <= MAX_GIF_FRAMES,
+        "un GIF est limité à {MAX_GIF_FRAMES} images"
+    );
+    ensure!(
+        fps > 0 && fps <= 120,
+        "la cadence GIF doit être comprise entre 1 et 120 i/s"
+    );
 
     let model = charger(glb_path)?;
     let mut renderer = Renderer::new(&model, config.gpu, config.backend, config.hardware_only)?;
@@ -165,7 +186,9 @@ pub(crate) fn glb_gif(
         let rgba = renderer.frame(angle, config.width, config.height)?;
         let buffer = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(config.width, config.height, rgba)
             .context("taille de frame GIF incohérente")?;
-        encoder.encode_frame(Frame::from_parts(buffer, 0, 0, delay)).context("frame GIF")?;
+        encoder
+            .encode_frame(Frame::from_parts(buffer, 0, 0, delay))
+            .context("frame GIF")?;
     }
     println!(
         "gif={} source={} dimensions={}×{} frames={frames} fps={fps} rendu={}",
@@ -198,7 +221,12 @@ mod tests {
             let buffer = ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(2, 2, vec![255; 16])
                 .expect("frame RGBA");
             encoder
-                .encode_frame(Frame::from_parts(buffer, 0, 0, Delay::from_numer_denom_ms(1000, 12)))
+                .encode_frame(Frame::from_parts(
+                    buffer,
+                    0,
+                    0,
+                    Delay::from_numer_denom_ms(1000, 12),
+                ))
                 .expect("frame GIF");
         }
         assert!(out.starts_with(b"GIF89a"));

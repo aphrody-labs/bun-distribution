@@ -46,7 +46,10 @@ pub async fn client_for_vps(profile: Option<&str>, service: &str) -> Result<(Ovh
             Err(e) => tried.push(format!("{} ({e})", info.id)),
         }
     }
-    bail!("VPS {service} not found in any OVH profile (tried: {})", tried.join(", "))
+    bail!(
+        "VPS {service} not found in any OVH profile (tried: {})",
+        tried.join(", ")
+    )
 }
 
 fn is_forbidden(error: &anyhow::Error) -> bool {
@@ -74,13 +77,26 @@ pub fn mask_identity(identity: &str) -> String {
 pub async fn auth_status(profile: Option<&str>, json: bool) -> Result<()> {
     let (creds, source) = load_profile_credentials_with_source(profile)?;
     let client = OvhClient::new(creds)?;
-    let details: Value = client.get("/auth/details").await.context("GET /auth/details failed")?;
-    let text = |key: &str| details.get(key).and_then(Value::as_str).map(ToString::to_string);
+    let details: Value = client
+        .get("/auth/details")
+        .await
+        .context("GET /auth/details failed")?;
+    let text = |key: &str| {
+        details
+            .get(key)
+            .and_then(Value::as_str)
+            .map(ToString::to_string)
+    };
     let account = text("account").or_else(|| text("user"));
     let identities: Vec<String> = details
         .get("identities")
         .and_then(Value::as_array)
-        .map(|list| list.iter().filter_map(Value::as_str).map(mask_identity).collect())
+        .map(|list| {
+            list.iter()
+                .filter_map(Value::as_str)
+                .map(mask_identity)
+                .collect()
+        })
         .unwrap_or_default();
 
     if json {
@@ -99,7 +115,10 @@ pub async fn auth_status(profile: Option<&str>, json: bool) -> Result<()> {
     println!("Endpoint: {}", client.base_url());
     println!("Source des identifiants: {source}");
     println!("Compte: {}", account.as_deref().unwrap_or("?"));
-    println!("Méthode (API): {}", text("method").as_deref().unwrap_or("?"));
+    println!(
+        "Méthode (API): {}",
+        text("method").as_deref().unwrap_or("?")
+    );
     for identity in identities {
         println!("Identité: {identity}");
     }
@@ -134,7 +153,11 @@ pub fn format_services_table(services: &[ServiceInfo]) -> String {
             state,
             short_date(s.expiration.as_deref()),
             s.renew_mode.as_deref().unwrap_or("-"),
-            if s.delete_at_expiration() { "OUI" } else { "non" }
+            if s.delete_at_expiration() {
+                "OUI"
+            } else {
+                "non"
+            }
         ));
     }
     out
@@ -183,7 +206,10 @@ pub async fn collect_alerts(
     for service in &all {
         // A stopped VPS is only visible on its own API; an expired one refuses it (HTTP 460).
         let runtime = if service.is_vps() {
-            vps.get_vps(&service.resource_name).await.ok().map(|v| v.state)
+            vps.get_vps(&service.resource_name)
+                .await
+                .ok()
+                .map(|v| v.state)
         } else {
             None
         };
@@ -284,7 +310,9 @@ async fn quote_with_fallback(
     client: OvhClient,
     request: &RenewRequest<'_>,
 ) -> Result<(OvhClient, RenewQuote)> {
-    let first = ServicesManager::new(&client).renew_quote(request.service_id, request.period).await;
+    let first = ServicesManager::new(&client)
+        .renew_quote(request.service_id, request.period)
+        .await;
     match first {
         Ok(quote) => Ok((client, quote)),
         Err(error) if client.auth_mode() == AuthMode::OAuth2 && is_forbidden(&error) => {
@@ -303,7 +331,7 @@ async fn quote_with_fallback(
                 .renew_quote(request.service_id, request.period)
                 .await?;
             Ok((fallback, quote))
-        },
+        }
         Err(error) => Err(error),
     }
 }
@@ -326,10 +354,16 @@ pub async fn renew_flow(client: OvhClient, request: &RenewRequest<'_>) -> Result
         return Ok(());
     }
     let order = manager.renew(request.service_id, &quote).await?;
-    println!("Commande {} créée ({}): {}", order.order_id, order.price_with_tax, order.url);
+    println!(
+        "Commande {} créée ({}): {}",
+        order.order_id, order.price_with_tax, order.url
+    );
     if request.pay {
         let method = manager.pay_order(order.order_id).await?;
-        println!("Commande {} payée avec le moyen de paiement {method}.", order.order_id);
+        println!(
+            "Commande {} payée avec le moyen de paiement {method}.",
+            order.order_id
+        );
     } else {
         println!("Commande non payée: payer dans l'espace client ou relancer avec --pay.");
     }
@@ -357,8 +391,18 @@ pub async fn services_renew(
         info.renew_mode.as_deref().unwrap_or("-")
     );
     let label = info.resource_name.clone();
-    renew_flow(client, &RenewRequest { profile, service_id, label: &label, period, apply, pay })
-        .await
+    renew_flow(
+        client,
+        &RenewRequest {
+            profile,
+            service_id,
+            label: &label,
+            period,
+            apply,
+            pay,
+        },
+    )
+    .await
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -438,7 +482,14 @@ pub async fn domain_renew(
     );
     renew_flow(
         client,
-        &RenewRequest { profile, service_id: info.service_id, label: domain, period, apply, pay },
+        &RenewRequest {
+            profile,
+            service_id: info.service_id,
+            label: domain,
+            period,
+            apply,
+            pay,
+        },
     )
     .await
 }
@@ -470,7 +521,9 @@ pub async fn domain_autorenew(
         );
         return Ok(());
     }
-    ServicesManager::new(&client).set_renew_mode(info.service_id, on).await?;
+    ServicesManager::new(&client)
+        .set_renew_mode(info.service_id, on)
+        .await?;
     let after = DomainManager::new(&client).info(domain).await?;
     println!("Renouvellement de {domain}: {}", after.renewal_state);
     Ok(())
@@ -544,8 +597,11 @@ pub async fn domain_nameservers(
     }
 
     let task = manager.set_name_servers(domain, &hosts).await?;
-    let task_id =
-        task.get("id").map(ToString::to_string).filter(|id| !id.is_empty()).ok_or_else(|| {
+    let task_id = task
+        .get("id")
+        .map(ToString::to_string)
+        .filter(|id| !id.is_empty())
+        .ok_or_else(|| {
             anyhow!(
                 "OVH n'a pas renvoyé l'ID de tâche; inspectez les tâches DNS avant toute relance"
             )
@@ -593,7 +649,10 @@ fn validate_nameserver_apply(apply: bool, ds_cache_expired: bool) -> Result<()> 
 
 fn is_pending_dns_update(task: &Value) -> bool {
     task.get("function").and_then(Value::as_str) == Some("DomainDnsUpdate")
-        && matches!(task.get("status").and_then(Value::as_str), Some("todo" | "doing" | "error"))
+        && matches!(
+            task.get("status").and_then(Value::as_str),
+            Some("todo" | "doing" | "error")
+        )
 }
 
 async fn ensure_no_pending_dns_update(manager: &DomainManager<'_>, domain: &str) -> Result<()> {
@@ -602,7 +661,9 @@ async fn ensure_no_pending_dns_update(manager: &DomainManager<'_>, domain: &str)
         if is_pending_dns_update(&task) {
             bail!(
                 "tâche DomainDnsUpdate {} en statut {}; inspectez-la avant toute nouvelle déclaration",
-                task.get("id").map(ToString::to_string).unwrap_or_else(|| id.to_string()),
+                task.get("id")
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| id.to_string()),
                 task.get("status").and_then(Value::as_str).unwrap_or("?")
             );
         }
@@ -623,7 +684,11 @@ pub async fn domain_dnssec(
     change: &DnssecChange<'_>,
     json_output: bool,
 ) -> Result<()> {
-    let keys = change.keys.iter().map(|k| DnssecKey::parse(k)).collect::<Result<Vec<_>>>()?;
+    let keys = change
+        .keys
+        .iter()
+        .map(|k| DnssecKey::parse(k))
+        .collect::<Result<Vec<_>>>()?;
     let client = client_for(profile)?;
     let manager = DomainManager::new(&client);
     let info = manager.info(domain).await?;
@@ -660,17 +725,17 @@ pub async fn domain_dnssec(
         match hosted.as_deref() {
             Some("disabled" | "disableInProgress") | None => {
                 println!("Signature OVH déjà retirée ou en cours de retrait, rien à faire.");
-            },
+            }
             _ if !change.apply => {
                 println!(
                     "[PLAN] Désactiver la signature DNSSEC OVH de {domain}. Passez --apply pour confirmer."
                 );
-            },
+            }
             _ => {
                 manager.disable_hosted_dnssec(domain).await?;
                 let after = manager.hosted_dnssec(domain).await?;
                 println!("Signature DNSSEC OVH de {domain}: {after}");
-            },
+            }
         }
         return Ok(());
     }
@@ -724,7 +789,7 @@ pub async fn dns_export(profile: Option<&str>, zone: &str, output: Option<&Path>
             std::fs::write(path, &bind)
                 .with_context(|| format!("cannot write {}", path.display()))?;
             println!("Zone {zone} exportée vers {}", path.display());
-        },
+        }
         None => println!("{bind}"),
     }
     Ok(())
@@ -742,7 +807,11 @@ pub async fn dns_backup(profile: Option<&str>, dir: &Path) -> Result<()> {
         std::fs::write(&path, bind).with_context(|| format!("cannot write {}", path.display()))?;
         println!("  - {zone} -> {}", path.display());
     }
-    println!("{} zone(s) sauvegardée(s) dans {}", zones.len(), dir.display());
+    println!(
+        "{} zone(s) sauvegardée(s) dans {}",
+        zones.len(),
+        dir.display()
+    );
     Ok(())
 }
 
@@ -768,7 +837,7 @@ pub fn format_sync_report(report: &SyncReport) -> String {
                         current.difference(&wanted).count()
                     )
                 }
-            },
+            }
         };
         out.push_str(&format!(
             "Groupe {}: {} ressource(s), {status}\n",
@@ -815,8 +884,14 @@ mod tests {
     #[test]
     fn identity_masking_hides_the_client_id() {
         let masked = mask_identity("urn:v1:eu:identity:credential:eu0000-ovh/oauth2-EU.secretid");
-        assert_eq!(masked, "urn:v1:eu:identity:credential:eu0000-ovh/oauth2-***");
-        assert_eq!(mask_identity("urn:v1:eu:identity:user:abc"), "urn:v1:eu:identity:user:abc");
+        assert_eq!(
+            masked,
+            "urn:v1:eu:identity:credential:eu0000-ovh/oauth2-***"
+        );
+        assert_eq!(
+            mask_identity("urn:v1:eu:identity:user:abc"),
+            "urn:v1:eu:identity:user:abc"
+        );
     }
 
     #[test]
@@ -920,7 +995,10 @@ mod tests {
         let info = domain_info("hosting", &["dns109.ovh.net", "ns109.ovh.net"]);
         let plan = nameserver_plan(
             &info,
-            &["duke.ns.cloudflare.com".into(), "veda.ns.cloudflare.com".into()],
+            &[
+                "duke.ns.cloudflare.com".into(),
+                "veda.ns.cloudflare.com".into(),
+            ],
         )
         .expect("supported type");
 
@@ -930,10 +1008,16 @@ mod tests {
 
     #[test]
     fn nameserver_plan_is_idempotent_after_external_declaration() {
-        let info = domain_info("external", &["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"]);
+        let info = domain_info(
+            "external",
+            &["duke.ns.cloudflare.com", "veda.ns.cloudflare.com"],
+        );
         let plan = nameserver_plan(
             &info,
-            &["veda.ns.cloudflare.com".into(), "duke.ns.cloudflare.com".into()],
+            &[
+                "veda.ns.cloudflare.com".into(),
+                "duke.ns.cloudflare.com".into(),
+            ],
         )
         .expect("supported type");
 
@@ -950,13 +1034,17 @@ mod tests {
 
     #[test]
     fn pending_dns_update_detects_nonterminal_tasks_only() {
-        assert!(is_pending_dns_update(&json!({ "function": "DomainDnsUpdate", "status": "todo" })));
+        assert!(is_pending_dns_update(
+            &json!({ "function": "DomainDnsUpdate", "status": "todo" })
+        ));
         assert!(is_pending_dns_update(
             &json!({ "function": "DomainDnsUpdate", "status": "error" })
         ));
         assert!(!is_pending_dns_update(
             &json!({ "function": "DomainDnsUpdate", "status": "done" })
         ));
-        assert!(!is_pending_dns_update(&json!({ "function": "DomainRenew", "status": "doing" })));
+        assert!(!is_pending_dns_update(
+            &json!({ "function": "DomainRenew", "status": "doing" })
+        ));
     }
 }

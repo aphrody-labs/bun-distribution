@@ -73,14 +73,33 @@ fn fetch_window(r: &RefPlane, x0: i32, y0: i32, w: usize, h: usize, win: &mut [u
 }
 
 #[allow(clippy::too_many_arguments)]
-fn predict_unscaled(r: &RefPlane, x: i32, y: i32, w: usize, h: usize, filter: u8, bit_depth: u8, out: &mut [u16], tmp: &mut [u16], win: &mut [u16]) {
+fn predict_unscaled(
+    r: &RefPlane,
+    x: i32,
+    y: i32,
+    w: usize,
+    h: usize,
+    filter: u8,
+    bit_depth: u8,
+    out: &mut [u16],
+    tmp: &mut [u16],
+    win: &mut [u16],
+) {
     let (x0, y0) = (x >> 4, y >> 4);
     let (fx, fy) = ((x & 15) as usize, (y & 15) as usize);
     let max = (1i32 << bit_depth) - 1;
-    let inside = x0 - 3 >= 0 && y0 - 3 >= 0 && x0 + w as i32 + 4 <= r.last_x && y0 + h as i32 + 4 <= r.last_y;
+    let inside = x0 - 3 >= 0
+        && y0 - 3 >= 0
+        && x0 + w as i32 + 4 <= r.last_x
+        && y0 + h as i32 + 4 <= r.last_y;
     // Source view with origin at (x0 - 3, y0 - 3): the reference band itself when the window
     // lies inside the picture and inside one band.
-    let span = if inside { r.frame.span(r.plane, (y0 - 3) as usize, (y0 + h as i32 + 5) as usize) } else { None };
+    let span = if inside {
+        r.frame
+            .span(r.plane, (y0 - 3) as usize, (y0 + h as i32 + 5) as usize)
+    } else {
+        None
+    };
     let (src, ss, so): (&[u16], usize, usize) = match span {
         Some((data, o)) => (data, r.frame.strides[r.plane], o + (x0 - 3) as usize),
         None => {
@@ -98,13 +117,24 @@ fn predict_unscaled(r: &RefPlane, x: i32, y: i32, w: usize, h: usize, filter: u8
         (_, 0) => {
             let f = taps(filter, fx);
             for i in 0..h {
-                filter_h(&src[so + (i + 3) * ss..], f, max, &mut out[i * w..i * w + w]);
+                filter_h(
+                    &src[so + (i + 3) * ss..],
+                    f,
+                    max,
+                    &mut out[i * w..i * w + w],
+                );
             }
         }
         (0, _) => {
             let f = taps(filter, fy);
             for i in 0..h {
-                filter_v(&src[so + i * ss + 3..], ss, f, max, &mut out[i * w..i * w + w]);
+                filter_v(
+                    &src[so + i * ss + 3..],
+                    ss,
+                    f,
+                    max,
+                    &mut out[i * w..i * w + w],
+                );
             }
         }
         _ => {
@@ -181,7 +211,11 @@ fn filter_h_n<const W: usize>(s: &[u16], f: &[i16], max: i32, o: &mut [u16]) {
 #[inline(always)]
 fn narrow8<const W: usize>(acc: &[u16; W], o: &mut [u16; W]) {
     for j in 0..W {
-        o[j] = if acc[j] < 0xC000 { (acc[j] >> 7).min(255) } else { 0 };
+        o[j] = if acc[j] < 0xC000 {
+            (acc[j] >> 7).min(255)
+        } else {
+            0
+        };
     }
 }
 
@@ -239,7 +273,19 @@ fn filter_v_n<const W: usize>(s: &[u16], ss: usize, f: &[i16], max: i32, o: &mut
 
 /// General process of 8.5.2.4 (any step).
 #[allow(clippy::too_many_arguments)]
-fn predict_scaled(r: &RefPlane, x: i32, y: i32, step_x: i32, step_y: i32, w: usize, h: usize, filter: u8, bit_depth: u8, out: &mut [u16], tmp: &mut [u16]) {
+fn predict_scaled(
+    r: &RefPlane,
+    x: i32,
+    y: i32,
+    step_x: i32,
+    step_y: i32,
+    w: usize,
+    h: usize,
+    filter: u8,
+    bit_depth: u8,
+    out: &mut [u16],
+    tmp: &mut [u16],
+) {
     let max = (1i32 << bit_depth) - 1;
     let ih = ((((h as i32 - 1) * step_y + 15) >> 4) + 8) as usize;
     for row in 0..ih {
@@ -250,7 +296,8 @@ fn predict_scaled(r: &RefPlane, x: i32, y: i32, step_x: i32, step_y: i32, w: usi
             let f = taps(filter, (p & 15) as usize);
             let mut acc = 0i32;
             for t in 0..8 {
-                acc += f[t] as i32 * src[((p >> 4) + t as i32 - 3).clamp(0, r.last_x) as usize] as i32;
+                acc +=
+                    f[t] as i32 * src[((p >> 4) + t as i32 - 3).clamp(0, r.last_x) as usize] as i32;
             }
             tmp[row * w + c] = ((acc + 64) >> 7).clamp(0, max) as u16;
         }
@@ -276,7 +323,9 @@ mod tests {
     #[test]
     fn scaled_path_with_unit_step_matches_unscaled() {
         let (w, h) = (40usize, 30usize);
-        let data: Vec<u16> = (0..w * h).map(|i| ((i * 37 + (i / w) * 11) % 256) as u16).collect();
+        let data: Vec<u16> = (0..w * h)
+            .map(|i| ((i * 37 + (i / w) * 11) % 256) as u16)
+            .collect();
         let info = crate::frame::FrameInfo {
             width: w as u32,
             height: h as u32,
@@ -297,14 +346,37 @@ mod tests {
         }
         let chroma = vec![0u16; 32 * 32];
         let frame = Frame::from_planes(info, [&full, &chroma, &chroma]);
-        let r = RefPlane { frame: &frame, plane: 0, last_x: w as i32 - 1, last_y: h as i32 - 1 };
+        let r = RefPlane {
+            frame: &frame,
+            plane: 0,
+            last_x: w as i32 - 1,
+            last_y: h as i32 - 1,
+        };
         let mut tmp = vec![0u16; 80 * 80];
         for filter in 0..4u8 {
-            for &(x, y) in &[(0, 0), (5, 3), (16 * 7 + 5, 16 * 9 + 11), (-40, -3), (16 * 36 + 1, 16 * 25 + 15), (16 * 10, 16 * 10 + 8)] {
+            for &(x, y) in &[
+                (0, 0),
+                (5, 3),
+                (16 * 7 + 5, 16 * 9 + 11),
+                (-40, -3),
+                (16 * 36 + 1, 16 * 25 + 15),
+                (16 * 10, 16 * 10 + 8),
+            ] {
                 for &(bw, bh) in &[(4usize, 4usize), (8, 8), (16, 8)] {
                     let mut a = vec![0u16; bw * bh];
                     let mut b = vec![0u16; bw * bh];
-                    predict_unscaled(&r, x, y, bw, bh, filter, 8, &mut a, &mut tmp, &mut [0u16; 71 * 71]);
+                    predict_unscaled(
+                        &r,
+                        x,
+                        y,
+                        bw,
+                        bh,
+                        filter,
+                        8,
+                        &mut a,
+                        &mut tmp,
+                        &mut [0u16; 71 * 71],
+                    );
                     predict_scaled(&r, x, y, 16, 16, bw, bh, filter, 8, &mut b, &mut tmp);
                     assert_eq!(a, b, "filter {filter} pos ({x},{y}) {bw}x{bh}");
                 }

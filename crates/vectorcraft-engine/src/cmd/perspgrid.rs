@@ -14,7 +14,9 @@ use serde_json::{Value, json};
 use vectorcraft_doc::{Document, NodeId};
 use vectorcraft_geom::{Point, Rect, Vec2};
 use vectorcraft_tools::distort::perspective::Plane;
-use vectorcraft_tools::distort::perspective::define::{BUILTINS, LETTER, first_artboard, is_builtin};
+use vectorcraft_tools::distort::perspective::define::{
+    BUILTINS, LETTER, first_artboard, is_builtin,
+};
 use vectorcraft_tools::distort::perspective::widget::{WidgetCorner, WidgetPlace};
 use vectorcraft_tools::distort::perspective::{GridDefinition, PerspectiveGrid};
 use vectorcraft_tools::{PointerEvent, PointerKind, ToolKey};
@@ -161,15 +163,23 @@ impl Session {
     /// Every perspective grid preset: the built-in views, then the saved ones.
     pub fn perspective_presets(&self) -> Vec<GridDefinition> {
         let ab = self.preset_artboard();
-        let builtins = BUILTINS.iter().filter_map(|b| PerspectiveGrid::builtin(b.0, ab)).map(|g| g.definition());
-        builtins.chain(self.prefs.perspective_presets.iter().cloned()).collect()
+        let builtins = BUILTINS
+            .iter()
+            .filter_map(|b| PerspectiveGrid::builtin(b.0, ab))
+            .map(|g| g.definition());
+        builtins
+            .chain(self.prefs.perspective_presets.iter().cloned())
+            .collect()
     }
 
     /// The preset `name` (any case): a built-in view or a saved one.
     pub fn perspective_preset(&self, name: &str) -> Option<GridDefinition> {
         match PerspectiveGrid::builtin(name, self.preset_artboard()) {
             Some(g) => Some(g.definition()),
-            None => self.persp_saved_index(name).and_then(|i| self.prefs.perspective_presets.get(i)).cloned(),
+            None => self
+                .persp_saved_index(name)
+                .and_then(|i| self.prefs.perspective_presets.get(i))
+                .cloned(),
         }
     }
 
@@ -180,22 +190,33 @@ impl Session {
             return Some(g);
         }
         let def = self.perspective_preset(name)?;
-        PerspectiveGrid::normal(def.kind, ab).with_definition(&def).ok()
+        PerspectiveGrid::normal(def.kind, ab)
+            .with_definition(&def)
+            .ok()
     }
 
     /// The first free "Perspective Preset N": the name a new preset gets.
     pub fn new_perspective_preset_name(&self) -> String {
-        (1..).map(|i| format!("Perspective Preset {i}")).find(|n| !self.persp_preset_taken(n, None)).unwrap_or_default()
+        (1..)
+            .map(|i| format!("Perspective Preset {i}"))
+            .find(|n| !self.persp_preset_taken(n, None))
+            .unwrap_or_default()
     }
 
     /// The index of the saved preset `name` (any case).
     fn persp_saved_index(&self, name: &str) -> Option<usize> {
-        self.prefs.perspective_presets.iter().position(|q| q.name.eq_ignore_ascii_case(name.trim()))
+        self.prefs
+            .perspective_presets
+            .iter()
+            .position(|q| q.name.eq_ignore_ascii_case(name.trim()))
     }
 
     /// Whether `name` is a built-in view's or a saved preset's other than the one at `except`.
     fn persp_preset_taken(&self, name: &str, except: Option<usize>) -> bool {
-        is_builtin(name) || self.persp_saved_index(name).is_some_and(|i| Some(i) != except)
+        is_builtin(name)
+            || self
+                .persp_saved_index(name)
+                .is_some_and(|i| Some(i) != except)
     }
 
     /// The name of the first preset among `candidates` whose fields `def` has ("" for none).
@@ -248,13 +269,33 @@ pub(crate) fn grid_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let name = match (str_param(p, "name"), p.get("kind").and_then(Value::as_u64)) {
         (Some(n), _) => n.to_string(),
         (None, Some(k @ 1..=3)) => PerspectiveGrid::normal(k as u8, LETTER).name,
-        _ => return Err(bad(C, "kind must be 1, 2 or 3, or give a preset `name` (see perspective.presets.list)")),
+        _ => {
+            return Err(bad(
+                C,
+                "kind must be 1, 2 or 3, or give a preset `name` (see perspective.presets.list)",
+            ));
+        }
     };
     let old = grid_of(&s.doc()?.doc);
-    let ab = s.doc()?.doc.artboards.first().map(|a| a.rect).ok_or_else(|| EngineError::Other("no artboard".into()))?;
-    let g = s.perspective_preset_grid(&name, ab).ok_or_else(|| bad(C, format!("no perspective grid preset named `{name}`")))?;
+    let ab = s
+        .doc()?
+        .doc
+        .artboards
+        .first()
+        .map(|a| a.rect)
+        .ok_or_else(|| EngineError::Other("no artboard".into()))?;
+    let g = s
+        .perspective_preset_grid(&name, ab)
+        .ok_or_else(|| bad(C, format!("no perspective grid preset named `{name}`")))?;
     // The objects stay attached and the view options stay as they were.
-    let g = PerspectiveGrid { attached: old.attached, locked: old.locked, lock_station: old.lock_station, snap: old.snap, rulers: old.rulers, ..g };
+    let g = PerspectiveGrid {
+        attached: old.attached,
+        locked: old.locked,
+        lock_station: old.lock_station,
+        snap: old.snap,
+        rulers: old.rulers,
+        ..g
+    };
     s.edit("Perspective Grid Preset", |d, _| {
         store_grid(d, &g);
         Ok(())
@@ -283,22 +324,33 @@ fn presets_save(s: &mut Session, p: &Value) -> Result<Value> {
         None => s.new_perspective_preset_name(),
     };
     if is_builtin(&name) {
-        return Err(bad(C, format!("`{name}` is a built-in preset and can't change: save it under another name")));
+        return Err(bad(
+            C,
+            format!("`{name}` is a built-in preset and can't change: save it under another name"),
+        ));
     }
     let at = s.persp_saved_index(&name);
     let saved = at.and_then(|i| s.prefs.perspective_presets.get(i)).cloned();
     // A saved preset changes from its own fields unless `preset` says where to start.
     let base = match (str_param(p, "preset"), &saved) {
-        (Some(b), _) => {
-            s.perspective_preset(b).ok_or_else(|| bad(C, format!("no perspective grid preset named `{b}` (see perspective.presets.list)")))?
-        }
+        (Some(b), _) => s.perspective_preset(b).ok_or_else(|| {
+            bad(
+                C,
+                format!("no perspective grid preset named `{b}` (see perspective.presets.list)"),
+            )
+        })?,
         (None, Some(old)) => old.clone(),
-        (None, None) => s.active().map(|d| grid_of(&d.doc).definition()).unwrap_or_default(),
+        (None, None) => s
+            .active()
+            .map(|d| grid_of(&d.doc).definition())
+            .unwrap_or_default(),
     };
     let mut def = base.merged(p).map_err(|e| bad(C, e))?;
     def.name = match str_param(p, "newName").map(str::trim) {
         Some("") => return Err(bad(C, "`newName` is empty")),
-        Some(n) if s.persp_preset_taken(n, at) => return Err(bad(C, format!("a preset named `{n}` exists"))),
+        Some(n) if s.persp_preset_taken(n, at) => {
+            return Err(bad(C, format!("a preset named `{n}` exists")));
+        }
         Some(n) => n.to_string(),
         None => saved.map_or(name, |old| old.name),
     };
@@ -316,7 +368,9 @@ fn presets_delete(s: &mut Session, p: &Value) -> Result<Value> {
     if is_builtin(name) {
         return Err(bad(C, format!("`{name}` is a built-in preset and stays")));
     }
-    let i = s.persp_saved_index(name).ok_or_else(|| bad(C, format!("no saved preset named `{name}`")))?;
+    let i = s
+        .persp_saved_index(name)
+        .ok_or_else(|| bad(C, format!("no saved preset named `{name}`")))?;
     Ok(json!({ "deleted": s.prefs.perspective_presets.remove(i).name }))
 }
 
@@ -326,18 +380,26 @@ fn presets_export(s: &mut Session, p: &Value) -> Result<Value> {
         Some(names) => {
             let find = |n: &Value| {
                 let n = n.as_str().unwrap_or_default();
-                s.perspective_preset(n).ok_or_else(|| bad(C, format!("no perspective grid preset named `{n}`")))
+                s.perspective_preset(n)
+                    .ok_or_else(|| bad(C, format!("no perspective grid preset named `{n}`")))
             };
             names.iter().map(find).collect::<Result<Vec<_>>>()?
         }
         None => s.prefs.perspective_presets.clone(),
     };
     if presets.is_empty() {
-        return Err(bad(C, "no saved presets to export (name built-in ones in `names`)"));
+        return Err(bad(
+            C,
+            "no saved presets to export (name built-in ones in `names`)",
+        ));
     }
     let count = presets.len();
     let presets = presets.iter().map(|d| json!(d)).collect();
-    let text = serde_json::to_string_pretty(&PresetFile { format: PRESET_FORMAT.into(), presets }).map_err(|e| bad(C, e.to_string()))?;
+    let text = serde_json::to_string_pretty(&PresetFile {
+        format: PRESET_FORMAT.into(),
+        presets,
+    })
+    .map_err(|e| bad(C, e.to_string()))?;
     match str_param(p, "path") {
         Some(path) => {
             super::fileio::write_file(path, text.as_bytes())?;
@@ -349,29 +411,53 @@ fn presets_export(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn presets_import(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "perspective.presets.import";
-    let bytes = match (str_param(p, "path"), str_param(p, "data"), str_param(p, "dataBase64")) {
+    let bytes = match (
+        str_param(p, "path"),
+        str_param(p, "data"),
+        str_param(p, "dataBase64"),
+    ) {
         (Some(path), ..) => super::fileio::read_file(path)?,
         (None, Some(text), _) => text.as_bytes().to_vec(),
-        (None, None, Some(b64)) => vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(C, "bad dataBase64"))?,
+        (None, None, Some(b64)) => {
+            vectorcraft_format::base64_decode(b64).ok_or_else(|| bad(C, "bad dataBase64"))?
+        }
         _ => return Err(bad(C, "give `path`, `data` or `dataBase64`")),
     };
-    let file: PresetFile = serde_json::from_slice(&bytes).map_err(|e| bad(C, format!("not a perspective grid presets file: {e}")))?;
+    let file: PresetFile = serde_json::from_slice(&bytes)
+        .map_err(|e| bad(C, format!("not a perspective grid presets file: {e}")))?;
     if file.format != PRESET_FORMAT {
-        return Err(bad(C, format!("not a perspective grid presets file (format `{}`)", file.format)));
+        return Err(bad(
+            C,
+            format!(
+                "not a perspective grid presets file (format `{}`)",
+                file.format
+            ),
+        ));
     }
     if file.presets.len() > MAX_IMPORT {
         return Err(bad(C, format!("more than {MAX_IMPORT} presets")));
     }
     // Every preset is checked as Define Grid checks its fields before any is added.
     let base = GridDefinition::default();
-    let check = |v: &Value| base.merged(v).map_err(|e| bad(C, format!("`{}`: {e}", v["name"].as_str().unwrap_or("?"))));
+    let check = |v: &Value| {
+        base.merged(v)
+            .map_err(|e| bad(C, format!("`{}`: {e}", v["name"].as_str().unwrap_or("?"))))
+    };
     let presets = file.presets.iter().map(check).collect::<Result<Vec<_>>>()?;
     let replace = bool_or(p, "replace", false);
     let mut imported = vec![];
     for mut preset in presets {
         // A built-in view comes in as a saved copy ("2P-Normal View"…): the built-in one stays.
-        let name = preset.name.trim().trim_start_matches('[').trim_end_matches(']').trim();
-        let base = Some(name).filter(|n| !n.is_empty()).unwrap_or("Perspective Preset").to_string();
+        let name = preset
+            .name
+            .trim()
+            .trim_start_matches('[')
+            .trim_end_matches(']')
+            .trim();
+        let base = Some(name)
+            .filter(|n| !n.is_empty())
+            .unwrap_or("Perspective Preset")
+            .to_string();
         match s.persp_saved_index(&base).filter(|_| replace) {
             Some(i) => {
                 if let Some(slot) = s.prefs.perspective_presets.get_mut(i) {
@@ -391,7 +477,11 @@ fn presets_import(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// Toggle (or set, with `on`) a view option of the grid.
-fn view_option(s: &mut Session, p: &Value, field: fn(&mut PerspectiveGrid) -> &mut bool) -> Result<Value> {
+fn view_option(
+    s: &mut Session,
+    p: &Value,
+    field: fn(&mut PerspectiveGrid) -> &mut bool,
+) -> Result<Value> {
     let want = p.get("on").and_then(Value::as_bool);
     let mut g = silent(s, |g| {
         let f = field(g);
@@ -419,7 +509,12 @@ fn rulers(s: &mut Session, p: &Value) -> Result<Value> {
 /// Snap to Grid for a move of `ids` from page point `from` to `to` (unless `p` says `snap: false`):
 /// the plane and depth of the first one and the plane-space correction that lands the edge of the
 /// joint bounds of the objects there nearer a gridline on it.
-pub(crate) fn snap_fix(doc: &Document, ids: &[NodeId], p: &Value, (from, to): (Point, Point)) -> Option<(Plane, f64, Vec2)> {
+pub(crate) fn snap_fix(
+    doc: &Document,
+    ids: &[NodeId],
+    p: &Value,
+    (from, to): (Point, Point),
+) -> Option<(Plane, f64, Vec2)> {
     let g = grid_of(doc);
     if !bool_or(p, "snap", g.snap) {
         return None;
@@ -433,11 +528,17 @@ fn widget_options(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "perspective.widget.options";
     let mut o = s.prefs.perspective_widget;
     if let Some(v) = p.get("show") {
-        o.show = v.as_bool().ok_or_else(|| bad(C, "show must be true or false"))?;
+        o.show = v
+            .as_bool()
+            .ok_or_else(|| bad(C, "show must be true or false"))?;
     }
     if let Some(v) = p.get("position") {
-        o.position =
-            v.as_str().and_then(WidgetCorner::parse).ok_or_else(|| bad(C, "position must be topLeft, topRight, bottomLeft or bottomRight"))?;
+        o.position = v.as_str().and_then(WidgetCorner::parse).ok_or_else(|| {
+            bad(
+                C,
+                "position must be topLeft, topRight, bottomLeft or bottomRight",
+            )
+        })?;
     }
     s.prefs.perspective_widget = o;
     Ok(json!(o))
@@ -446,7 +547,11 @@ fn widget_options(s: &mut Session, p: &Value) -> Result<Value> {
 impl Session {
     /// The Plane Switching Widget's part of a pointer event: a press on it picks the plane (its
     /// drag and release go nowhere); None when the event isn't the widget's.
-    pub(crate) fn plane_widget_pointer(&mut self, ev: &PointerEvent, view: crate::ViewInfo) -> Option<Result<Vec<crate::UiRequest>>> {
+    pub(crate) fn plane_widget_pointer(
+        &mut self,
+        ev: &PointerEvent,
+        view: crate::ViewInfo,
+    ) -> Option<Result<Vec<crate::UiRequest>>> {
         match ev.kind {
             PointerKind::Down => {
                 let w = self.prefs.perspective_widget;
@@ -455,10 +560,16 @@ impl Session {
                 if !g.visible {
                     return None;
                 }
-                let place = WidgetPlace { screen: view.screen.as_ref(), corner: w.position };
+                let place = WidgetPlace {
+                    screen: view.screen.as_ref(),
+                    corner: w.position,
+                };
                 let plane = g.widget_hit_at(&st.doc, 1.0 / view.zoom.max(1e-9), place, ev.pos)?;
                 self.plane_widget_press = true;
-                Some(self.execute("perspective.plane.set", &json!({ "plane": plane.id() })).map(|_| vec![]))
+                Some(
+                    self.execute("perspective.plane.set", &json!({ "plane": plane.id() }))
+                        .map(|_| vec![]),
+                )
             }
             PointerKind::Drag if self.plane_widget_press => Some(Ok(vec![])),
             PointerKind::Up if std::mem::take(&mut self.plane_widget_press) => Some(Ok(vec![])),
@@ -476,6 +587,8 @@ impl Session {
             ToolKey::Digit(4) => Plane::None,
             _ => return None,
         };
-        PerspectiveGrid::current(&self.active()?.doc).visible.then_some(plane)
+        PerspectiveGrid::current(&self.active()?.doc)
+            .visible
+            .then_some(plane)
     }
 }

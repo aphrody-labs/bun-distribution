@@ -12,21 +12,32 @@ use std::path::Path;
 
 fn main() -> std::process::ExitCode {
     let mut args = std::env::args().skip(1);
-    let vfs_path =
-        args.next().expect("arg 1 : chemin interne VFS (ex. data/dx11/menu/.../foo.g4tx)");
-    let dump_path = args.next().expect("arg 2 : chemin fichier dumpé sur disque");
+    let vfs_path = args
+        .next()
+        .expect("arg 1 : chemin interne VFS (ex. data/dx11/menu/.../foo.g4tx)");
+    let dump_path = args
+        .next()
+        .expect("arg 2 : chemin fichier dumpé sur disque");
 
-    let dir = aphrody_nie_formats::vfs::resolve_game_dir().to_string_lossy().into_owned();
+    let dir = aphrody_nie_formats::vfs::resolve_game_dir()
+        .to_string_lossy()
+        .into_owned();
     let mut vfs = Vfs::new();
-    vfs.init(Path::new(&dir).join("data").as_path()).expect("vfs init");
+    vfs.init(Path::new(&dir).join("data").as_path())
+        .expect("vfs init");
 
-    let vfs_bytes = vfs.read(&vfs_path).unwrap_or_else(|e| panic!("vfs.read({vfs_path}): {e}"));
+    let vfs_bytes = vfs
+        .read(&vfs_path)
+        .unwrap_or_else(|e| panic!("vfs.read({vfs_path}): {e}"));
 
     let dump_bytes =
         std::fs::read(&dump_path).unwrap_or_else(|e| panic!("fs::read({dump_path}): {e}"));
 
     if vfs_bytes == dump_bytes {
-        println!("OK — {vfs_path} : {} octets identiques (VFS == dump)", vfs_bytes.len());
+        println!(
+            "OK — {vfs_path} : {} octets identiques (VFS == dump)",
+            vfs_bytes.len()
+        );
         std::process::ExitCode::SUCCESS
     } else {
         eprintln!(

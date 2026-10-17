@@ -48,17 +48,37 @@ return 0;
         std::env::temp_dir().join(format!("iecode-shader-parity-{}", std::process::id()));
     fs::create_dir_all(&directory).unwrap();
     let input = directory.join("reference.c");
-    let output = directory.join(if cfg!(windows) { "reference.exe" } else { "reference" });
+    let output = directory.join(if cfg!(windows) {
+        "reference.exe"
+    } else {
+        "reference"
+    });
     fs::write(&input, harness).unwrap();
-    let compile = Command::new(std::env::var_os("CC").unwrap_or_else(|| if cfg!(windows) { "clang".into() } else { "cc".into() }))
-        // The unchanged SDK uses an int loop index with a u32 table count.
-        .args(["-std=c11", "-Wall", "-Wextra", "-Werror", "-Wno-sign-compare"])
-        .arg(&input)
-        .arg("-o")
-        .arg(&output)
-        .output()
-        .unwrap();
-    assert!(compile.status.success(), "{}", String::from_utf8_lossy(&compile.stderr));
+    let compile = Command::new(std::env::var_os("CC").unwrap_or_else(|| {
+        if cfg!(windows) {
+            "clang".into()
+        } else {
+            "cc".into()
+        }
+    }))
+    // The unchanged SDK uses an int loop index with a u32 table count.
+    .args([
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Wno-sign-compare",
+    ])
+    .arg(&input)
+    .arg("-o")
+    .arg(&output)
+    .output()
+    .unwrap();
+    assert!(
+        compile.status.success(),
+        "{}",
+        String::from_utf8_lossy(&compile.stderr)
+    );
     let reference = Command::new(&output).output().unwrap();
     assert!(reference.status.success());
     let mut expected = Vec::new();
@@ -68,15 +88,19 @@ return 0;
                 let mut map = OutputMap::default();
                 map.add(kind, register, mask).unwrap();
                 map.add(3, register, 3).unwrap();
-                for value in
-                    core::iter::once(map.mask as u32).chain(map.data).chain([map.mode, map.clock])
+                for value in core::iter::once(map.mask as u32)
+                    .chain(map.data)
+                    .chain([map.mode, map.clock])
                 {
                     expected.extend(value.to_ne_bytes());
                 }
             }
         }
     }
-    assert_eq!(reference.stdout, expected, "1344 SDK shader output-map cases");
+    assert_eq!(
+        reference.stdout, expected,
+        "1344 SDK shader output-map cases"
+    );
     fs::remove_file(input).unwrap();
     fs::remove_file(output).unwrap();
     fs::remove_dir(directory).unwrap();

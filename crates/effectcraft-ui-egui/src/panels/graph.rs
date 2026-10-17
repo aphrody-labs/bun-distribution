@@ -19,8 +19,12 @@ use crate::{EffectcraftApp, widgets};
 
 type Actions = Vec<(String, serde_json::Value)>;
 
-const DIM_COLORS: [Color32; 4] =
-    [Color32::from_rgb(0xe0, 0x55, 0x55), Color32::from_rgb(0x5c, 0xc8, 0x5c), Color32::from_rgb(0x50, 0x8c, 0xf0), Color32::from_rgb(0xe8, 0xc8, 0x40)];
+const DIM_COLORS: [Color32; 4] = [
+    Color32::from_rgb(0xe0, 0x55, 0x55),
+    Color32::from_rgb(0x5c, 0xc8, 0x5c),
+    Color32::from_rgb(0x50, 0x8c, 0xf0),
+    Color32::from_rgb(0xe8, 0xc8, 0x40),
+];
 const PROP_COLORS: [Color32; 6] = [
     Color32::from_rgb(0xe8, 0xc8, 0x40),
     Color32::from_rgb(0xd0, 0x70, 0xe0),
@@ -73,7 +77,11 @@ fn speed_graph(app: &EffectcraftApp, comp: &Comp) -> bool {
             let props = shown_props(app, comp);
             !props.is_empty()
                 && props.iter().all(|(lid, uid)| {
-                    comp.layer(*lid).and_then(|l| l.props.find(*uid)).is_some_and(|pr| pr.spatial && matches!(pr.value, Value::Vec2(_) | Value::Vec3(_)))
+                    comp.layer(*lid)
+                        .and_then(|l| l.props.find(*uid))
+                        .is_some_and(|pr| {
+                            pr.spatial && matches!(pr.value, Value::Vec2(_) | Value::Vec3(_))
+                        })
                 })
         }
     }
@@ -83,10 +91,23 @@ fn shown_props(app: &EffectcraftApp, comp: &Comp) -> Vec<(LayerId, u64)> {
     let st = &app.session.state;
     let numeric = |pr: &Property| !pr.value.components().is_empty() && pr.value.interpolates();
     if app.ui.timeline.graph_show_selected && !st.selected_props.is_empty() {
-        return st.selected_props.iter().filter(|(l, u)| comp.layer(*l).and_then(|l| l.props.find(*u)).is_some_and(numeric)).copied().collect();
+        return st
+            .selected_props
+            .iter()
+            .filter(|(l, u)| {
+                comp.layer(*l)
+                    .and_then(|l| l.props.find(*u))
+                    .is_some_and(numeric)
+            })
+            .copied()
+            .collect();
     }
     let mut v = vec![];
-    for l in comp.layers.iter().filter(|l| st.selected_layers.contains(&l.id)) {
+    for l in comp
+        .layers
+        .iter()
+        .filter(|l| st.selected_layers.contains(&l.id))
+    {
         l.props.walk("", &mut |_, pr| {
             if (pr.is_animated() || pr.has_expression()) && numeric(pr) {
                 v.push((l.id, pr.uid));
@@ -98,21 +119,42 @@ fn shown_props(app: &EffectcraftApp, comp: &Comp) -> Vec<(LayerId, u64)> {
 
 fn shown_dims(l: &Layer, pr: &Property) -> usize {
     let n = pr.value.components().len();
-    if pr.shown_dims > 0 && !l.is_3d() { (pr.shown_dims as usize).min(n) } else { n.min(4) }
+    if pr.shown_dims > 0 && !l.is_3d() {
+        (pr.shown_dims as usize).min(n)
+    } else {
+        n.min(4)
+    }
 }
 
 /// Build the curves for the visible time span.
-fn curves<'a>(app: &EffectcraftApp, comp: &'a Comp, ectx: &EvalCtx, tm: TMap, plot: Rect, speed: bool) -> Vec<Curve<'a>> {
+fn curves<'a>(
+    app: &EffectcraftApp,
+    comp: &'a Comp,
+    ectx: &EvalCtx,
+    tm: TMap,
+    plot: Rect,
+    speed: bool,
+) -> Vec<Curve<'a>> {
     let sel = &app.session.state.selected_keys;
     let n = ((plot.width() / 2.0) as usize).max(2);
     let mut out = vec![];
     for (pi, (lid, uid)) in shown_props(app, comp).into_iter().enumerate() {
         let Some(l) = comp.layer(lid) else { continue };
-        let Some(pr) = l.props.find(uid) else { continue };
+        let Some(pr) = l.props.find(uid) else {
+            continue;
+        };
         let spatial = pr.spatial && matches!(pr.value, Value::Vec2(_) | Value::Vec3(_));
-        let dims = if speed && spatial { 1 } else { shown_dims(l, pr) };
+        let dims = if speed && spatial {
+            1
+        } else {
+            shown_dims(l, pr)
+        };
         for d in 0..dims {
-            let color = if dims > 1 { DIM_COLORS[d % 4] } else { PROP_COLORS[pi % PROP_COLORS.len()] };
+            let color = if dims > 1 {
+                DIM_COLORS[d % 4]
+            } else {
+                PROP_COLORS[pi % PROP_COLORS.len()]
+            };
             let mut pts = Vec::with_capacity(n);
             for i in 0..n {
                 let x = plot.min.x + plot.width() * i as f32 / (n - 1) as f32;
@@ -123,40 +165,91 @@ fn curves<'a>(app: &EffectcraftApp, comp: &'a Comp, ectx: &EvalCtx, tm: TMap, pl
                     if spatial {
                         effectcraft_engine::keyframe::speed(&pr.keys, lt, true)
                     } else {
-                        effectcraft_engine::keyframe::velocity(&pr.keys, lt, false).get(d).copied().unwrap_or(0.0).abs()
+                        effectcraft_engine::keyframe::velocity(&pr.keys, lt, false)
+                            .get(d)
+                            .copied()
+                            .unwrap_or(0.0)
+                            .abs()
                     }
                 } else {
-                    ectx.at(tt).value(l, pr).components().get(d).copied().unwrap_or(0.0)
+                    ectx.at(tt)
+                        .value(l, pr)
+                        .components()
+                        .get(d)
+                        .copied()
+                        .unwrap_or(0.0)
                 };
                 pts.push((ct, v));
             }
             let mut keys = vec![];
             for (i, k) in pr.keys.iter().enumerate() {
-                let ks = sel.contains(&KeyRef { layer: lid, prop: uid, time: k.time });
+                let ks = sel.contains(&KeyRef {
+                    layer: lid,
+                    prop: uid,
+                    time: k.time,
+                });
                 let kt = l.comp_time(k.time).seconds();
                 let ed = if spatial { 0 } else { d };
                 let mut handles = vec![];
                 let mut side_speeds = vec![];
                 for out_side in [false, true] {
-                    let Some(e) = side_ease(&pr.keys, i, ed, pr.spatial, out_side) else { continue };
+                    let Some(e) = side_ease(&pr.keys, i, ed, pr.spatial, out_side) else {
+                        continue;
+                    };
                     let j = if out_side { i + 1 } else { i - 1 };
                     let dur = (pr.keys[j].time.seconds() - k.time.seconds()).abs();
                     side_speeds.push(e.speed.abs());
                     let dt = e.influence * dur * if out_side { 1.0 } else { -1.0 };
-                    let (hv, show) = if speed { (e.speed.abs(), true) } else { (k.value.components().get(d).copied().unwrap_or(0.0) + e.speed * dt, !spatial) };
-                    let bezier = if out_side { k.out_interp == Interp::Bezier } else { k.in_interp == Interp::Bezier };
+                    let (hv, show) = if speed {
+                        (e.speed.abs(), true)
+                    } else {
+                        (
+                            k.value.components().get(d).copied().unwrap_or(0.0) + e.speed * dt,
+                            !spatial,
+                        )
+                    };
+                    let bezier = if out_side {
+                        k.out_interp == Interp::Bezier
+                    } else {
+                        k.in_interp == Interp::Bezier
+                    };
                     if ks && show && (bezier || speed) {
-                        handles.push(Handle { out: out_side, t: kt + dt, v: hv, speed: e.speed, dur });
+                        handles.push(Handle {
+                            out: out_side,
+                            t: kt + dt,
+                            v: hv,
+                            speed: e.speed,
+                            dur,
+                        });
                     }
                 }
                 let v = if speed {
-                    if side_speeds.is_empty() { 0.0 } else { side_speeds.iter().sum::<f64>() / side_speeds.len() as f64 }
+                    if side_speeds.is_empty() {
+                        0.0
+                    } else {
+                        side_speeds.iter().sum::<f64>() / side_speeds.len() as f64
+                    }
                 } else {
                     k.value.components().get(d).copied().unwrap_or(0.0)
                 };
-                keys.push(KeyPt { idx: i, time: k.time, t: kt, v, sel: ks, handles });
+                keys.push(KeyPt {
+                    idx: i,
+                    time: k.time,
+                    t: kt,
+                    v,
+                    sel: ks,
+                    handles,
+                });
             }
-            out.push(Curve { layer: l, prop: pr, dim: d, color, pts, keys, editable: !spatial });
+            out.push(Curve {
+                layer: l,
+                prop: pr,
+                dim: d,
+                color,
+                pts,
+                keys,
+                editable: !spatial,
+            });
         }
     }
     out
@@ -182,8 +275,14 @@ impl ButtonBar {
     const MORE_W: f32 = 24.0;
 
     fn new(ctx: &egui::Context, bar: Rect) -> Self {
-        let chosen = ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::new(MORE_POPUP).with("chosen")));
-        ButtonBar { x: bar.min.x + 8.0, limit: bar.max.x - 8.0 - Self::MORE_W - 4.0, hidden: Vec::new(), chosen }
+        let chosen =
+            ctx.data_mut(|d| d.remove_temp::<String>(egui::Id::new(MORE_POPUP).with("chosen")));
+        ButtonBar {
+            x: bar.min.x + 8.0,
+            limit: bar.max.x - 8.0 - Self::MORE_W - 4.0,
+            hidden: Vec::new(),
+            chosen,
+        }
     }
 
     /// The "»" button and its menu, when buttons did not fit.
@@ -192,11 +291,30 @@ impl ButtonBar {
             return;
         }
         let t = app.tokens;
-        let r = Rect::from_min_size(pos2(bar.max.x - 8.0 - Self::MORE_W, bar.center().y - 9.0), vec2(Self::MORE_W, 18.0));
+        let r = Rect::from_min_size(
+            pos2(bar.max.x - 8.0 - Self::MORE_W, bar.center().y - 9.0),
+            vec2(Self::MORE_W, 18.0),
+        );
         let pid = egui::Id::new(MORE_POPUP);
-        let resp = ui.interact(r, pid.with("button"), Sense::click()).on_hover_text(crate::i18n::tr("More"));
-        p.rect_filled(r, 3.0, if resp.hovered() { t.hover } else { Color32::from_rgb(0x2c, 0x2c, 0x2c) });
-        p.text(r.center(), Align2::CENTER_CENTER, "»", Tokens::ui(12.0), t.text);
+        let resp = ui
+            .interact(r, pid.with("button"), Sense::click())
+            .on_hover_text(crate::i18n::tr("More"));
+        p.rect_filled(
+            r,
+            3.0,
+            if resp.hovered() {
+                t.hover
+            } else {
+                Color32::from_rgb(0x2c, 0x2c, 0x2c)
+            },
+        );
+        p.text(
+            r.center(),
+            Align2::CENTER_CENTER,
+            "»",
+            Tokens::ui(12.0),
+            t.text,
+        );
         app.auto.add("timeline.graph.more", r, "More");
         if resp.clicked() {
             let open = widgets::popup_is_open(ui, pid);
@@ -210,8 +328,11 @@ impl ButtonBar {
         let chosen = widgets::popup_list(ui, pid, pos, r, rows, 0, |ui| {
             let mut chosen = None;
             for (id, label, on, tip) in &self.hidden {
-                let item = ui.selectable_label(*on, label.as_str()).on_hover_text(tip.as_str());
-                app.auto.add(&format!("timeline.graph.more.{id}"), item.rect, tip);
+                let item = ui
+                    .selectable_label(*on, label.as_str())
+                    .on_hover_text(tip.as_str());
+                app.auto
+                    .add(&format!("timeline.graph.more.{id}"), item.rect, tip);
                 if item.clicked() {
                     chosen = Some(id.clone());
                 }
@@ -237,14 +358,21 @@ fn text_button(
     tip: &str,
 ) -> bool {
     let t = app.tokens;
-    let w = p.layout_no_wrap(label.to_string(), Tokens::ui(11.0), t.text).size().x + 14.0;
+    let w = p
+        .layout_no_wrap(label.to_string(), Tokens::ui(11.0), t.text)
+        .size()
+        .x
+        + 14.0;
     // Once one button overflows, the rest follow it into the menu (they keep their order).
     if !bar.hidden.is_empty() || bar.x + w > bar.limit {
-        bar.hidden.push((id.to_string(), label.to_string(), on, tip.to_string()));
+        bar.hidden
+            .push((id.to_string(), label.to_string(), on, tip.to_string()));
         return bar.chosen.as_deref() == Some(id);
     }
     let r = Rect::from_min_size(pos2(bar.x, y - 9.0), vec2(w, 18.0));
-    let resp = ui.interact(r, egui::Id::new(("graph-btn", id)), Sense::click()).on_hover_text(tip);
+    let resp = ui
+        .interact(r, egui::Id::new(("graph-btn", id)), Sense::click())
+        .on_hover_text(tip);
     p.rect_filled(
         r,
         3.0,
@@ -256,23 +384,42 @@ fn text_button(
             Color32::from_rgb(0x2c, 0x2c, 0x2c)
         },
     );
-    p.text(r.center(), Align2::CENTER_CENTER, label, Tokens::ui(11.0), if on { Color32::WHITE } else { t.text });
+    p.text(
+        r.center(),
+        Align2::CENTER_CENTER,
+        label,
+        Tokens::ui(11.0),
+        if on { Color32::WHITE } else { t.text },
+    );
     app.auto.add(&format!("timeline.graph.{id}"), r, tip);
     bar.x += w + 4.0;
     resp.clicked()
 }
 
 /// Draw the Graph Editor into `area` (the right side of the Timeline) and queue edits.
-pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painter, comp: &Comp, ectx: &EvalCtx, tm: TMap, area: Rect, actions: &mut Actions) {
+pub(crate) fn show(
+    app: &mut EffectcraftApp,
+    ui: &mut egui::Ui,
+    p: &egui::Painter,
+    comp: &Comp,
+    ectx: &EvalCtx,
+    tm: TMap,
+    area: Rect,
+    actions: &mut Actions,
+) {
     let t = app.tokens;
     let ctx = ui.ctx().clone();
     let footer_h = 28.0;
-    let plot = Rect::from_min_max(area.min + vec2(0.0, 6.0), pos2(area.max.x, area.max.y - footer_h));
+    let plot = Rect::from_min_max(
+        area.min + vec2(0.0, 6.0),
+        pos2(area.max.x, area.max.y - footer_h),
+    );
     let bar = Rect::from_min_max(pos2(area.min.x, area.max.y - footer_h), area.max);
     // Background first so keys and handles (added later) sit on top for hit-testing.
     let bg = ui.interact(plot, egui::Id::new("graph-bg"), Sense::click_and_drag());
     p.rect_filled(area, 0.0, Color32::from_rgb(0x1d, 0x1d, 0x1d));
-    app.auto.add("timeline.graph", plot, &app.ui.timeline.graph_mode.clone());
+    app.auto
+        .add("timeline.graph", plot, &app.ui.timeline.graph_mode.clone());
     let speed = speed_graph(app, comp);
     let cs = curves(app, comp, ectx, tm, plot, speed);
 
@@ -303,8 +450,13 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
     let auto = (lo - pad, hi + pad);
     // While a key or handle is being dragged the scale stays put (no feedback loop).
     let drag_id = egui::Id::new("graph-dragging");
-    let dragging = ctx.data(|d| d.get_temp::<bool>(drag_id)).unwrap_or(false) && ctx.input(|i| i.pointer.any_down());
-    let (lo, hi) = if app.ui.timeline.graph_auto_zoom && !dragging { auto } else { app.ui.timeline.graph_range.unwrap_or(auto) };
+    let dragging = ctx.data(|d| d.get_temp::<bool>(drag_id)).unwrap_or(false)
+        && ctx.input(|i| i.pointer.any_down());
+    let (lo, hi) = if app.ui.timeline.graph_auto_zoom && !dragging {
+        auto
+    } else {
+        app.ui.timeline.graph_range.unwrap_or(auto)
+    };
     if app.ui.timeline.graph_auto_zoom && !dragging {
         app.ui.timeline.graph_range = Some((lo, hi));
     }
@@ -317,8 +469,17 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
     let mut gv = (lo / step).ceil() * step;
     while gv <= hi {
         let y = ymap(gv);
-        pc.line_segment([pos2(plot.min.x, y), pos2(plot.max.x, y)], Stroke::new(1.0, Color32::from_white_alpha(12)));
-        pc.text(pos2(plot.min.x + 4.0, y - 1.0), Align2::LEFT_BOTTOM, fmt(gv, step), Tokens::ui(10.0), t.text_faint);
+        pc.line_segment(
+            [pos2(plot.min.x, y), pos2(plot.max.x, y)],
+            Stroke::new(1.0, Color32::from_white_alpha(12)),
+        );
+        pc.text(
+            pos2(plot.min.x + 4.0, y - 1.0),
+            Align2::LEFT_BOTTOM,
+            fmt(gv, step),
+            Tokens::ui(10.0),
+            t.text_faint,
+        );
         gv += step;
     }
     if cs.is_empty() {
@@ -350,7 +511,14 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
                         c.color,
                         c.pts
                             .iter()
-                            .map(|(ct, v)| pos2(tm.x(*ct), plot.max.y - ((v - rlo) / span) as f32 * plot.height() * 0.9 - plot.height() * 0.05))
+                            .map(|(ct, v)| {
+                                pos2(
+                                    tm.x(*ct),
+                                    plot.max.y
+                                        - ((v - rlo) / span) as f32 * plot.height() * 0.9
+                                        - plot.height() * 0.05,
+                                )
+                            })
                             .collect(),
                     )
                 })
@@ -360,16 +528,35 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
     }
     // Curves.
     for c in &cs {
-        let pts: Vec<Pos2> = c.pts.iter().map(|(ct, v)| pos2(tm.x(*ct), ymap(*v))).collect();
+        let pts: Vec<Pos2> = c
+            .pts
+            .iter()
+            .map(|(ct, v)| pos2(tm.x(*ct), ymap(*v)))
+            .collect();
         pc.add(egui::Shape::line(pts, Stroke::new(1.5, c.color)));
     }
     // Transform box around several selected keys (inside below the keys, handles above).
     let sel_keys: Vec<super::graph_tools::SelKey> = cs
         .iter()
-        .flat_map(|c| c.keys.iter().filter(|k| k.sel).map(move |k| super::graph_tools::SelKey { t: k.t, v: k.v, dim: c.dim, editable: c.editable }))
+        .flat_map(|c| {
+            c.keys
+                .iter()
+                .filter(|k| k.sel)
+                .map(move |k| super::graph_tools::SelKey {
+                    t: k.t,
+                    v: k.v,
+                    dim: c.dim,
+                    editable: c.editable,
+                })
+        })
         .collect();
-    let all_key_times: Vec<(u64, usize, f64)> = cs.iter().flat_map(|c| c.keys.iter().map(move |k| (c.prop.uid, k.idx, k.t))).collect();
-    super::graph_tools::transform_box(app, ui, &pc, &sel_keys, tm, &ymap, &vmap, speed, false, actions);
+    let all_key_times: Vec<(u64, usize, f64)> = cs
+        .iter()
+        .flat_map(|c| c.keys.iter().map(move |k| (c.prop.uid, k.idx, k.t)))
+        .collect();
+    super::graph_tools::transform_box(
+        app, ui, &pc, &sel_keys, tm, &ymap, &vmap, speed, false, actions,
+    );
     // Keys and handles.
     let mut key_screens: Vec<(serde_json::Value, Pos2)> = vec![];
     for c in &cs {
@@ -384,12 +571,23 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
             // Handles (selected keys).
             for h in &k.handles {
                 let hp = pos2(tm.x(h.t), ymap(h.v));
-                pc.line_segment([kp, hp], Stroke::new(1.0, Color32::from_rgb(0xd8, 0xd8, 0x60)));
+                pc.line_segment(
+                    [kp, hp],
+                    Stroke::new(1.0, Color32::from_rgb(0xd8, 0xd8, 0x60)),
+                );
                 pc.circle_filled(hp, 3.5, Color32::from_rgb(0xd8, 0xd8, 0x60));
                 let side = if h.out { "out" } else { "in" };
                 let hr = Rect::from_center_size(hp, vec2(10.0, 10.0));
-                let hresp = ui.interact(hr, egui::Id::new(("ghandle", uid, d, k.idx, side)), Sense::drag());
-                app.auto.add(&format!("timeline.graph.handle.{uid}.{d}.{}.{side}", k.idx), hr, "Bezier handle");
+                let hresp = ui.interact(
+                    hr,
+                    egui::Id::new(("ghandle", uid, d, k.idx, side)),
+                    Sense::drag(),
+                );
+                app.auto.add(
+                    &format!("timeline.graph.handle.{uid}.{d}.{}.{side}", k.idx),
+                    hr,
+                    "Bezier handle",
+                );
                 // The same side's handles of every selected key move with it, by as much as the
                 // pointer moved (After Effects), in one undo step.
                 if hresp.drag_started() {
@@ -397,35 +595,56 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
                         .iter()
                         .flat_map(|c2| {
                             c2.keys.iter().flat_map(move |k2| {
-                                k2.handles.iter().filter(|h2| h2.out == h.out).map(move |h2| HandleGrab {
-                                    layer: c2.layer.id,
-                                    prop: c2.prop.uid,
-                                    dim: c2.editable.then_some(c2.dim),
-                                    time: k2.time,
-                                    out: h2.out,
-                                    key: (k2.t, k2.v),
-                                    end: (h2.t, h2.v),
-                                    negative: h2.speed < 0.0,
-                                    dur: h2.dur,
-                                })
+                                k2.handles
+                                    .iter()
+                                    .filter(|h2| h2.out == h.out)
+                                    .map(move |h2| HandleGrab {
+                                        layer: c2.layer.id,
+                                        prop: c2.prop.uid,
+                                        dim: c2.editable.then_some(c2.dim),
+                                        time: k2.time,
+                                        out: h2.out,
+                                        key: (k2.t, k2.v),
+                                        end: (h2.t, h2.v),
+                                        negative: h2.speed < 0.0,
+                                        dur: h2.dur,
+                                    })
                             })
                         })
                         .collect();
                     let press = ui.input(|i| i.pointer.press_origin()).unwrap_or(hp);
-                    ctx.data_mut(|dd| dd.insert_temp::<HandleDrag>(handle_drag_id(), (press, grabs)));
+                    ctx.data_mut(|dd| {
+                        dd.insert_temp::<HandleDrag>(handle_drag_id(), (press, grabs))
+                    });
                 }
                 if hresp.dragged()
                     && let Some(pt) = hresp.interact_pointer_pos()
-                    && let Some((press, grabs)) = ctx.data(|dd| dd.get_temp::<HandleDrag>(handle_drag_id()))
+                    && let Some((press, grabs)) =
+                        ctx.data(|dd| dd.get_temp::<HandleDrag>(handle_drag_id()))
                 {
                     ctx.data_mut(|dd| dd.insert_temp(drag_id, true));
                     // Shift keeps the handle on the time or the value axis, whichever moved more (as for keys).
-                    let (time_ok, value_ok) = shift_axes(ui.input(|i| i.modifiers.shift), pt.x - press.x, pt.y - press.y);
-                    let dt = if time_ok { tm.t(pt.x) - tm.t(press.x) } else { 0.0 };
-                    let dv = if value_ok { vmap(pt.y) - vmap(press.y) } else { 0.0 };
+                    let (time_ok, value_ok) = shift_axes(
+                        ui.input(|i| i.modifiers.shift),
+                        pt.x - press.x,
+                        pt.y - press.y,
+                    );
+                    let dt = if time_ok {
+                        tm.t(pt.x) - tm.t(press.x)
+                    } else {
+                        0.0
+                    };
+                    let dv = if value_ok {
+                        vmap(pt.y) - vmap(press.y)
+                    } else {
+                        0.0
+                    };
                     let merge = format!("ghandle-{uid}-{}", k.idx);
                     for g in &grabs {
-                        actions.push(("keys.setEase".into(), g.ease(g.end.0 + dt, g.end.1 + dv, speed, &merge)));
+                        actions.push((
+                            "keys.setEase".into(),
+                            g.ease(g.end.0 + dt, g.end.1 + dv, speed, &merge),
+                        ));
                     }
                 }
                 if hresp.drag_stopped() {
@@ -437,12 +656,29 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
                 }
             }
             // The key itself.
-            let col = if k.sel { t.keyframe_selected } else { Color32::from_gray(0xe0) };
+            let col = if k.sel {
+                t.keyframe_selected
+            } else {
+                Color32::from_gray(0xe0)
+            };
             pc.rect_filled(Rect::from_center_size(kp, vec2(7.0, 7.0)), 0.0, col);
-            pc.rect_stroke(Rect::from_center_size(kp, vec2(7.0, 7.0)), 0.0, Stroke::new(1.0, c.color), StrokeKind::Outside);
+            pc.rect_stroke(
+                Rect::from_center_size(kp, vec2(7.0, 7.0)),
+                0.0,
+                Stroke::new(1.0, c.color),
+                StrokeKind::Outside,
+            );
             let kr = Rect::from_center_size(kp, vec2(11.0, 11.0));
-            let kresp = ui.interact(kr, egui::Id::new(("gkey", uid, d, k.idx)), Sense::click_and_drag());
-            app.auto.add(&format!("timeline.graph.key.{uid}.{d}.{}", k.idx), kr, &c.prop.name);
+            let kresp = ui.interact(
+                kr,
+                egui::Id::new(("gkey", uid, d, k.idx)),
+                Sense::click_and_drag(),
+            );
+            app.auto.add(
+                &format!("timeline.graph.key.{uid}.{d}.{}", k.idx),
+                kr,
+                &c.prop.name,
+            );
             let mods = ui.input(|i| i.modifiers);
             let key = &c.prop.keys[k.idx];
             if kresp.clicked() && mods.command {
@@ -451,13 +687,23 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
                 if mods.alt {
                     actions.push(("keys.toggleHold".into(), json!({})));
                 } else {
-                    let linear = key.in_interp == Interp::Linear && key.out_interp == Interp::Linear;
-                    actions.push(("keys.interpolation".into(), json!({"interpolation": if linear { "autoBezier" } else { "linear" }})));
+                    let linear =
+                        key.in_interp == Interp::Linear && key.out_interp == Interp::Linear;
+                    actions.push((
+                        "keys.interpolation".into(),
+                        json!({"interpolation": if linear { "autoBezier" } else { "linear" }}),
+                    ));
                 }
             } else if kresp.clicked() && mods.shift {
-                actions.push(("keys.select".into(), json!({"keys": [kjson.clone()], "toggle": true})));
+                actions.push((
+                    "keys.select".into(),
+                    json!({"keys": [kjson.clone()], "toggle": true}),
+                ));
             } else if (kresp.clicked() || kresp.drag_started()) && !k.sel {
-                actions.push(("keys.select".into(), json!({"keys": [kjson.clone()], "add": mods.shift})));
+                actions.push((
+                    "keys.select".into(),
+                    json!({"keys": [kjson.clone()], "add": mods.shift}),
+                ));
             }
             // A drag moves every selected key, by how far the pointer went from where the button
             // went down (the key doesn't jump under the pointer); Shift keeps it to the time or
@@ -475,9 +721,23 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
                 let (dx, dy) = (pt.x - g.press.x, pt.y - g.press.y);
                 let (time_ok, value_ok) = shift_axes(mods.shift, dx, dy);
                 // Graph Editor ▸ Snap: to the current time and other keys.
-                let others: Vec<f64> = all_key_times.iter().filter(|(u, i, _)| !(*u == uid && *i == k.idx)).map(|x| x.2).collect();
-                let t = if time_ok { super::graph_tools::snap_time(app, tm, (g.t + (tm.t(pt.x) - tm.t(g.press.x))).max(0.0), &others) } else { g.t };
-                let mut params = json!({"timeOffset": t - g.t, "merge": "graph-key", "fromStart": true});
+                let others: Vec<f64> = all_key_times
+                    .iter()
+                    .filter(|(u, i, _)| !(*u == uid && *i == k.idx))
+                    .map(|x| x.2)
+                    .collect();
+                let t = if time_ok {
+                    super::graph_tools::snap_time(
+                        app,
+                        tm,
+                        (g.t + (tm.t(pt.x) - tm.t(g.press.x))).max(0.0),
+                        &others,
+                    )
+                } else {
+                    g.t
+                };
+                let mut params =
+                    json!({"timeOffset": t - g.t, "merge": "graph-key", "fromStart": true});
                 if value_ok && !speed && c.editable {
                     params["valueOffset"] = json!(vmap(pt.y) - vmap(g.press.y));
                     params["dim"] = json!(d);
@@ -491,14 +751,19 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
         }
     }
 
-    super::graph_tools::transform_box(app, ui, &pc, &sel_keys, tm, &ymap, &vmap, speed, true, actions);
+    super::graph_tools::transform_box(
+        app, ui, &pc, &sel_keys, tm, &ymap, &vmap, speed, true, actions,
+    );
 
     // Background: click deselects keys, drag box-selects.
     if bg.clicked() {
         actions.push(("keys.select".into(), json!({"keys": []})));
     }
     if bg.dragged()
-        && let (Some(o), Some(cur)) = (ctx.input(|i| i.pointer.press_origin()), bg.interact_pointer_pos())
+        && let (Some(o), Some(cur)) = (
+            ctx.input(|i| i.pointer.press_origin()),
+            bg.interact_pointer_pos(),
+        )
     {
         let br = Rect::from_two_pos(o, cur);
         pc.rect_filled(br, 0.0, t.accent.gamma_multiply(0.12));
@@ -509,12 +774,24 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
         && let Some(br) = ctx.data(|d| d.get_temp::<Rect>(egui::Id::new("graph-box")))
     {
         ctx.data_mut(|d| d.remove::<Rect>(egui::Id::new("graph-box")));
-        let keys: Vec<serde_json::Value> = key_screens.iter().filter(|(_, sp)| br.contains(*sp)).map(|(k, _)| k.clone()).collect();
-        actions.push(("keys.select".into(), json!({"keys": keys, "add": ui.input(|i| i.modifiers.shift)})));
+        let keys: Vec<serde_json::Value> = key_screens
+            .iter()
+            .filter(|(_, sp)| br.contains(*sp))
+            .map(|(k, _)| k.clone())
+            .collect();
+        actions.push((
+            "keys.select".into(),
+            json!({"keys": keys, "add": ui.input(|i| i.modifiers.shift)}),
+        ));
     }
     // Wheel over the graph with Alt/Ctrl zooms the value axis (turns auto-zoom off).
     if ui.rect_contains_pointer(plot) {
-        let (dy, zoom) = ui.input(|i| (i.smooth_scroll_delta.y, i.modifiers.ctrl || i.modifiers.command));
+        let (dy, zoom) = ui.input(|i| {
+            (
+                i.smooth_scroll_delta.y,
+                i.modifiers.ctrl || i.modifiers.command,
+            )
+        });
         if zoom && dy.abs() > 0.0 {
             let k = (-dy as f64 / 200.0).exp();
             let mid = (lo + hi) / 2.0;
@@ -525,11 +802,18 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
 
     // Button bar.
     p.rect_filled(bar, 0.0, t.panel_bg);
-    p.line_segment([bar.left_top(), bar.right_top()], Stroke::new(1.0, t.separator));
+    p.line_segment(
+        [bar.left_top(), bar.right_top()],
+        Stroke::new(1.0, t.separator),
+    );
     let y = bar.center().y;
     let mut buttons = ButtonBar::new(&ctx, bar);
     let tl = &app.ui.timeline;
-    let (auto_type, show_sel, auto_on) = (tl.graph_mode == "auto", tl.graph_show_selected, tl.graph_auto_zoom);
+    let (auto_type, show_sel, auto_on) = (
+        tl.graph_mode == "auto",
+        tl.graph_show_selected,
+        tl.graph_auto_zoom,
+    );
     if text_button(
         app,
         ui,
@@ -541,57 +825,196 @@ pub(crate) fn show(app: &mut EffectcraftApp, ui: &mut egui::Ui, p: &egui::Painte
         "autoSelectGraphType",
         "Auto-Select Graph Type (speed graph for spatial properties, else value graph)",
     ) {
-        app.ui.timeline.graph_mode = if auto_type { if speed { "speed" } else { "value" } } else { "auto" }.into();
+        app.ui.timeline.graph_mode = if auto_type {
+            if speed { "speed" } else { "value" }
+        } else {
+            "auto"
+        }
+        .into();
     }
     // Choosing a graph type turns Auto-Select off, as in After Effects.
-    if text_button(app, ui, p, &mut buttons, y, "Value", !speed, "valueGraph", "Edit Value Graph") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Value",
+        !speed,
+        "valueGraph",
+        "Edit Value Graph",
+    ) {
         app.ui.timeline.graph_mode = "value".into();
     }
-    if text_button(app, ui, p, &mut buttons, y, "Speed", speed, "speedGraph", "Edit Speed Graph") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Speed",
+        speed,
+        "speedGraph",
+        "Edit Speed Graph",
+    ) {
         app.ui.timeline.graph_mode = "speed".into();
     }
     buttons.x += 6.0;
-    if text_button(app, ui, p, &mut buttons, y, "Selected", show_sel, "showSelected", "Show Selected Properties (else all animated properties)") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Selected",
+        show_sel,
+        "showSelected",
+        "Show Selected Properties (else all animated properties)",
+    ) {
         app.ui.timeline.graph_show_selected = !show_sel;
     }
-    if text_button(app, ui, p, &mut buttons, y, "Auto-zoom", auto_on, "autoZoom", "Auto-zoom graph height") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Auto-zoom",
+        auto_on,
+        "autoZoom",
+        "Auto-zoom graph height",
+    ) {
         app.ui.timeline.graph_auto_zoom = !auto_on;
     }
-    if text_button(app, ui, p, &mut buttons, y, "Fit", false, "fit", "Fit all graphs to view") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Fit",
+        false,
+        "fit",
+        "Fit all graphs to view",
+    ) {
         app.ui.timeline.graph_auto_zoom = true;
         app.ui.timeline.pps = None;
     }
-    if text_button(app, ui, p, &mut buttons, y, "Fit Selection", false, "fitSelection", "Fit selection to view") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Fit Selection",
+        false,
+        "fitSelection",
+        "Fit selection to view",
+    ) {
         fit_selection(app, &cs, tm, plot);
     }
     buttons.x += 6.0;
-    let (snap, reference, tbox) = (app.ui.timeline.graph_snap, app.ui.timeline.graph_reference, app.ui.timeline.graph_transform_box);
-    if text_button(app, ui, p, &mut buttons, y, "Snap", snap, "snap", "Snap (key drags snap to the current time and other keys)") {
+    let (snap, reference, tbox) = (
+        app.ui.timeline.graph_snap,
+        app.ui.timeline.graph_reference,
+        app.ui.timeline.graph_transform_box,
+    );
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Snap",
+        snap,
+        "snap",
+        "Snap (key drags snap to the current time and other keys)",
+    ) {
         app.ui.timeline.graph_snap = !snap;
     }
-    if text_button(app, ui, p, &mut buttons, y, "Reference", reference, "reference", "Show Reference Graph") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Reference",
+        reference,
+        "reference",
+        "Show Reference Graph",
+    ) {
         app.ui.timeline.graph_reference = !reference;
     }
-    if text_button(app, ui, p, &mut buttons, y, "Transform Box", tbox, "transformBox", "Show Transform Box when multiple keys are selected") {
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Transform Box",
+        tbox,
+        "transformBox",
+        "Show Transform Box when multiple keys are selected",
+    ) {
         app.ui.timeline.graph_transform_box = !tbox;
     }
     buttons.x += 6.0;
-    let pos_sel = app.session.state.selected_props.iter().find_map(|(l, u)| super::timeline::is_position(comp.layer(*l)?, *u).then_some(l.0));
-    if text_button(app, ui, p, &mut buttons, y, "Separate Dimensions", false, "separateDimensions", "Separate Dimensions (Position)")
-        && let Some(l) = pos_sel.or(app.session.state.selected_layers.first().map(|l| l.0))
+    let pos_sel = app
+        .session
+        .state
+        .selected_props
+        .iter()
+        .find_map(|(l, u)| super::timeline::is_position(comp.layer(*l)?, *u).then_some(l.0));
+    if text_button(
+        app,
+        ui,
+        p,
+        &mut buttons,
+        y,
+        "Separate Dimensions",
+        false,
+        "separateDimensions",
+        "Separate Dimensions (Position)",
+    ) && let Some(l) = pos_sel.or(app.session.state.selected_layers.first().map(|l| l.0))
     {
         actions.push(("prop.separateDimensions".into(), json!({"layer": l})));
     }
     buttons.x += 6.0;
     for (label, cmd, params, tip) in [
-        ("Hold", "keys.interpolation", json!({"interpolation": "hold"}), "Convert selected keyframes to Hold"),
-        ("Linear", "keys.interpolation", json!({"interpolation": "linear"}), "Convert selected keyframes to Linear"),
-        ("Auto Bezier", "keys.interpolation", json!({"interpolation": "autoBezier"}), "Convert selected keyframes to Auto Bezier"),
+        (
+            "Hold",
+            "keys.interpolation",
+            json!({"interpolation": "hold"}),
+            "Convert selected keyframes to Hold",
+        ),
+        (
+            "Linear",
+            "keys.interpolation",
+            json!({"interpolation": "linear"}),
+            "Convert selected keyframes to Linear",
+        ),
+        (
+            "Auto Bezier",
+            "keys.interpolation",
+            json!({"interpolation": "autoBezier"}),
+            "Convert selected keyframes to Auto Bezier",
+        ),
         ("Easy Ease", "keys.easyEase", json!({}), "Easy Ease (F9)"),
-        ("Ease In", "keys.easyEaseIn", json!({}), "Easy Ease In (Shift+F9)"),
-        ("Ease Out", "keys.easyEaseOut", json!({}), "Easy Ease Out (Ctrl+Shift+F9)"),
+        (
+            "Ease In",
+            "keys.easyEaseIn",
+            json!({}),
+            "Easy Ease In (Shift+F9)",
+        ),
+        (
+            "Ease Out",
+            "keys.easyEaseOut",
+            json!({}),
+            "Easy Ease Out (Ctrl+Shift+F9)",
+        ),
     ] {
-        let id = cmd.trim_start_matches("keys.").to_string() + label.split_whitespace().next().unwrap_or("");
+        let id = cmd.trim_start_matches("keys.").to_string()
+            + label.split_whitespace().next().unwrap_or("");
         if text_button(app, ui, p, &mut buttons, y, label, false, &id, tip) {
             actions.push((cmd.into(), params));
         }
@@ -644,9 +1067,20 @@ fn nice_step(raw: f64) -> f64 {
 }
 
 fn fmt(v: f64, step: f64) -> String {
-    let dec = if step >= 1.0 { 0 } else { (-step.log10()).ceil() as usize };
+    let dec = if step >= 1.0 {
+        0
+    } else {
+        (-step.log10()).ceil() as usize
+    };
     let s = format!("{v:.dec$}");
-    if s.trim_start_matches('-').chars().all(|c| c == '0' || c == '.') { s.trim_start_matches('-').to_string() } else { s }
+    if s.trim_start_matches('-')
+        .chars()
+        .all(|c| c == '0' || c == '.')
+    {
+        s.trim_start_matches('-').to_string()
+    } else {
+        s
+    }
 }
 
 /// A Graph Editor key drag: where the button went down and the grabbed key's comp time then.
@@ -691,8 +1125,7 @@ impl HandleGrab {
             (v - self.key.1) / dt * dir
         };
         let side = if self.out { "out" } else { "in" };
-        let mut params =
-            json!({"layer": self.layer.0, "prop": self.prop, "time": self.time.seconds(), "side": side, "speed": sp, "influence": influence, "merge": merge});
+        let mut params = json!({"layer": self.layer.0, "prop": self.prop, "time": self.time.seconds(), "side": side, "speed": sp, "influence": influence, "merge": merge});
         if let Some(d) = self.dim {
             params["dim"] = json!(d);
         }
@@ -709,7 +1142,11 @@ fn handle_drag_id() -> egui::Id {
 
 /// Which axes a drag may move on (time, value): both, or with Shift only the one the pointer moved more along.
 fn shift_axes(shift: bool, dx: f32, dy: f32) -> (bool, bool) {
-    if shift { (dx.abs() >= dy.abs(), dy.abs() > dx.abs()) } else { (true, true) }
+    if shift {
+        (dx.abs() >= dy.abs(), dy.abs() > dx.abs())
+    } else {
+        (true, true)
+    }
 }
 
 #[cfg(test)]

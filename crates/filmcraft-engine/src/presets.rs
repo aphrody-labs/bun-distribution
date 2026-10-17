@@ -20,7 +20,9 @@
 use std::path::{Path, PathBuf};
 
 use filmcraft_geom::{Affine, Vec2};
-use filmcraft_project::{ClipId, EffectInstance, Keyframe, Mask, MaskPath, Param, ParamValue, TrackItem, TrackKind};
+use filmcraft_project::{
+    ClipId, EffectInstance, Keyframe, Mask, MaskPath, Param, ParamValue, TrackItem, TrackKind,
+};
 use filmcraft_time::{TICKS_PER_SECOND, Tick};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -45,7 +47,9 @@ impl KeyframeMode {
         match s.to_ascii_lowercase().replace([' ', '_', '-'], "").as_str() {
             "scale" => Some(KeyframeMode::Scale),
             "anchorin" | "anchortoin" | "anchortoinpoint" | "in" => Some(KeyframeMode::AnchorToIn),
-            "anchorout" | "anchortoout" | "anchortooutpoint" | "out" => Some(KeyframeMode::AnchorToOut),
+            "anchorout" | "anchortoout" | "anchortooutpoint" | "out" => {
+                Some(KeyframeMode::AnchorToOut)
+            }
             _ => None,
         }
     }
@@ -115,31 +119,49 @@ impl PresetLibrary {
     }
     /// Built-in and user presets (user presets shadow built-ins of the same name).
     pub fn all(&self) -> Vec<EffectPreset> {
-        let mut v: Vec<EffectPreset> = builtin_presets().into_iter().filter(|b| !self.user.iter().any(|u| u.name == b.name)).collect();
+        let mut v: Vec<EffectPreset> = builtin_presets()
+            .into_iter()
+            .filter(|b| !self.user.iter().any(|u| u.name == b.name))
+            .collect();
         v.extend(self.user.iter().cloned());
         v
     }
     pub fn find(&self, name: &str) -> Option<EffectPreset> {
-        self.user.iter().find(|p| p.name == name).cloned().or_else(|| builtin_presets().into_iter().find(|p| p.name == name))
+        self.user
+            .iter()
+            .find(|p| p.name == name)
+            .cloned()
+            .or_else(|| builtin_presets().into_iter().find(|p| p.name == name))
     }
 }
 
 fn file_bytes(presets: &[EffectPreset]) -> Vec<u8> {
-    let f = PresetFile { format: FILE_FORMAT.into(), version: 1, presets: presets.to_vec() };
+    let f = PresetFile {
+        format: FILE_FORMAT.into(),
+        version: 1,
+        presets: presets.to_vec(),
+    };
     serde_json::to_vec_pretty(&f).unwrap_or_default()
 }
 
 fn parse_file(bytes: &[u8]) -> std::result::Result<Vec<EffectPreset>, String> {
-    let f: PresetFile = serde_json::from_slice(bytes).map_err(|e| format!("not an effect preset file: {e}"))?;
+    let f: PresetFile =
+        serde_json::from_slice(bytes).map_err(|e| format!("not an effect preset file: {e}"))?;
     if f.format != FILE_FORMAT {
         return Err(format!("not an effect preset file (format `{}`)", f.format));
     }
     if f.version > 1 {
-        return Err(format!("preset file version {} is newer than this build reads (1)", f.version));
+        return Err(format!(
+            "preset file version {} is newer than this build reads (1)",
+            f.version
+        ));
     }
     for p in &f.presets {
         if p.effects.iter().any(|e| e.def().is_none()) {
-            return Err(format!("preset `{}` uses an effect this build doesn't have", p.name));
+            return Err(format!(
+                "preset `{}` uses an effect this build doesn't have",
+                p.name
+            ));
         }
     }
     Ok(f.presets)
@@ -154,15 +176,17 @@ fn kf(t_secs: f64, v: ParamValue) -> Keyframe {
 /// A fresh instance of a built-in effect (a bare instance named `id` if the registry lacks it,
 /// which the preset tests rule out).
 pub(crate) fn effect_instance(id: &str) -> EffectInstance {
-    filmcraft_project::find_effect(id).map(|d| d.instance()).unwrap_or_else(|| EffectInstance {
-        effect: id.to_string(),
-        enabled: true,
-        params: Default::default(),
-        masks: Vec::new(),
-        post_fader: false,
-        essential: false,
-        layer: None,
-    })
+    filmcraft_project::find_effect(id)
+        .map(|d| d.instance())
+        .unwrap_or_else(|| EffectInstance {
+            effect: id.to_string(),
+            enabled: true,
+            params: Default::default(),
+            masks: Vec::new(),
+            post_fader: false,
+            essential: false,
+            layer: None,
+        })
 }
 
 fn effect(id: &str, params: &[(&str, ParamValue)]) -> EffectInstance {
@@ -182,7 +206,13 @@ fn animate(e: &mut EffectInstance, param: &str, keys: Vec<Keyframe>) {
     }
 }
 
-fn preset(name: &str, description: &str, keyframes: KeyframeMode, secs: f64, effects: Vec<EffectInstance>) -> EffectPreset {
+fn preset(
+    name: &str,
+    description: &str,
+    keyframes: KeyframeMode,
+    secs: f64,
+    effects: Vec<EffectInstance>,
+) -> EffectPreset {
     EffectPreset {
         name: name.into(),
         description: description.into(),
@@ -198,40 +228,139 @@ fn preset(name: &str, description: &str, keyframes: KeyframeMode, secs: f64, eff
 pub fn builtin_presets() -> Vec<EffectPreset> {
     let f = ParamValue::Float;
     let mut blur_in = effect("gaussian_blur", &[]);
-    animate(&mut blur_in, "blurriness", vec![kf(0.0, f(60.0)), kf(1.0, f(0.0))]);
+    animate(
+        &mut blur_in,
+        "blurriness",
+        vec![kf(0.0, f(60.0)), kf(1.0, f(0.0))],
+    );
     let mut blur_out = effect("gaussian_blur", &[]);
-    animate(&mut blur_out, "blurriness", vec![kf(9.0, f(0.0)), kf(10.0, f(60.0))]);
+    animate(
+        &mut blur_out,
+        "blurriness",
+        vec![kf(9.0, f(0.0)), kf(10.0, f(60.0))],
+    );
     let mut fade_in = effect("opacity", &[]);
-    animate(&mut fade_in, "opacity", vec![kf(0.0, f(0.0)), kf(1.0, f(100.0))]);
+    animate(
+        &mut fade_in,
+        "opacity",
+        vec![kf(0.0, f(0.0)), kf(1.0, f(100.0))],
+    );
     let mut fade_out = effect("opacity", &[]);
-    animate(&mut fade_out, "opacity", vec![kf(9.0, f(100.0)), kf(10.0, f(0.0))]);
+    animate(
+        &mut fade_out,
+        "opacity",
+        vec![kf(9.0, f(100.0)), kf(10.0, f(0.0))],
+    );
     let mut mosaic_in = effect("mosaic", &[]);
-    animate(&mut mosaic_in, "horizontal", vec![kf(0.0, f(8.0)), kf(1.0, f(400.0))]);
-    animate(&mut mosaic_in, "vertical", vec![kf(0.0, f(5.0)), kf(1.0, f(225.0))]);
+    animate(
+        &mut mosaic_in,
+        "horizontal",
+        vec![kf(0.0, f(8.0)), kf(1.0, f(400.0))],
+    );
+    animate(
+        &mut mosaic_in,
+        "vertical",
+        vec![kf(0.0, f(5.0)), kf(1.0, f(225.0))],
+    );
     // soft oval vignette: darken outside an inverted, heavily feathered ellipse
     let mut vignette = effect("brightness_contrast", &[("brightness", f(-60.0))]);
-    let mut m = Mask::new("Mask (1)", MaskPath::ellipse(Vec2::new(960.0, 540.0), Vec2::new(900.0, 520.0)));
+    let mut m = Mask::new(
+        "Mask (1)",
+        MaskPath::ellipse(Vec2::new(960.0, 540.0), Vec2::new(900.0, 520.0)),
+    );
     m.inverted = true;
     m.feather.value = f(320.0);
     vignette.masks.push(m);
-    let mut spotlight = effect("brightness_contrast", &[("brightness", f(18.0)), ("contrast", f(10.0))]);
-    let mut m = Mask::new("Mask (1)", MaskPath::ellipse(Vec2::new(960.0, 540.0), Vec2::new(420.0, 420.0)));
+    let mut spotlight = effect(
+        "brightness_contrast",
+        &[("brightness", f(18.0)), ("contrast", f(10.0))],
+    );
+    let mut m = Mask::new(
+        "Mask (1)",
+        MaskPath::ellipse(Vec2::new(960.0, 540.0), Vec2::new(420.0, 420.0)),
+    );
     m.feather.value = f(160.0);
     spotlight.masks.push(m);
-    let warm =
-        effect("tint", &[("black", ParamValue::Color([0.08, 0.04, 0.02, 1.0])), ("white", ParamValue::Color([1.0, 0.93, 0.8, 1.0])), ("amount", f(35.0))]);
-    let mut pip = effect("motion", &[("scale", f(35.0)), ("position", ParamValue::Vec2(Vec2::new(1530.0, 270.0)))]);
+    let warm = effect(
+        "tint",
+        &[
+            ("black", ParamValue::Color([0.08, 0.04, 0.02, 1.0])),
+            ("white", ParamValue::Color([1.0, 0.93, 0.8, 1.0])),
+            ("amount", f(35.0)),
+        ],
+    );
+    let mut pip = effect(
+        "motion",
+        &[
+            ("scale", f(35.0)),
+            ("position", ParamValue::Vec2(Vec2::new(1530.0, 270.0))),
+        ],
+    );
     pip.enabled = true;
     vec![
-        preset("Blur In", "Gaussian Blur from 60 to 0 over the first second", KeyframeMode::AnchorToIn, 10.0, vec![blur_in]),
-        preset("Blur Out", "Gaussian Blur from 0 to 60 over the last second", KeyframeMode::AnchorToOut, 10.0, vec![blur_out]),
-        preset("Fade In", "Opacity 0 → 100 % over the first second", KeyframeMode::AnchorToIn, 10.0, vec![fade_in]),
-        preset("Fade Out", "Opacity 100 → 0 % over the last second", KeyframeMode::AnchorToOut, 10.0, vec![fade_out]),
-        preset("Mosaic In", "Large blocks resolving to the picture over the first second", KeyframeMode::AnchorToIn, 10.0, vec![mosaic_in]),
-        preset("Soft Vignette", "Darkens outside a feathered oval mask", KeyframeMode::Scale, 10.0, vec![vignette]),
-        preset("Spotlight", "Brightens inside a feathered circular mask", KeyframeMode::Scale, 10.0, vec![spotlight]),
-        preset("Warm Tint", "Warm highlights, brown shadows", KeyframeMode::Scale, 10.0, vec![warm]),
-        preset("PiP 35% Upper Right", "Picture-in-picture: 35 % scale in the upper right", KeyframeMode::Scale, 10.0, vec![pip]),
+        preset(
+            "Blur In",
+            "Gaussian Blur from 60 to 0 over the first second",
+            KeyframeMode::AnchorToIn,
+            10.0,
+            vec![blur_in],
+        ),
+        preset(
+            "Blur Out",
+            "Gaussian Blur from 0 to 60 over the last second",
+            KeyframeMode::AnchorToOut,
+            10.0,
+            vec![blur_out],
+        ),
+        preset(
+            "Fade In",
+            "Opacity 0 → 100 % over the first second",
+            KeyframeMode::AnchorToIn,
+            10.0,
+            vec![fade_in],
+        ),
+        preset(
+            "Fade Out",
+            "Opacity 100 → 0 % over the last second",
+            KeyframeMode::AnchorToOut,
+            10.0,
+            vec![fade_out],
+        ),
+        preset(
+            "Mosaic In",
+            "Large blocks resolving to the picture over the first second",
+            KeyframeMode::AnchorToIn,
+            10.0,
+            vec![mosaic_in],
+        ),
+        preset(
+            "Soft Vignette",
+            "Darkens outside a feathered oval mask",
+            KeyframeMode::Scale,
+            10.0,
+            vec![vignette],
+        ),
+        preset(
+            "Spotlight",
+            "Brightens inside a feathered circular mask",
+            KeyframeMode::Scale,
+            10.0,
+            vec![spotlight],
+        ),
+        preset(
+            "Warm Tint",
+            "Warm highlights, brown shadows",
+            KeyframeMode::Scale,
+            10.0,
+            vec![warm],
+        ),
+        preset(
+            "PiP 35% Upper Right",
+            "Picture-in-picture: 35 % scale in the upper right",
+            KeyframeMode::Scale,
+            10.0,
+            vec![pip],
+        ),
     ]
 }
 
@@ -252,8 +381,19 @@ fn media_len(it: &TrackItem) -> Tick {
 }
 
 /// Build a preset from effects of a clip. `mt` = the clip's media time at the playhead.
-pub fn capture(it: &TrackItem, idx: &[usize], name: &str, description: &str, mode: Option<KeyframeMode>, mt: Tick, size: (u32, u32)) -> EffectPreset {
-    let mut effects: Vec<EffectInstance> = idx.iter().filter_map(|i| it.effects.get(*i).cloned()).collect();
+pub fn capture(
+    it: &TrackItem,
+    idx: &[usize],
+    name: &str,
+    description: &str,
+    mode: Option<KeyframeMode>,
+    mt: Tick,
+    size: (u32, u32),
+) -> EffectPreset {
+    let mut effects: Vec<EffectInstance> = idx
+        .iter()
+        .filter_map(|i| it.effects.get(*i).cloned())
+        .collect();
     for e in &mut effects {
         e.essential = false;
         for p in params_mut(e) {
@@ -317,7 +457,13 @@ pub fn instantiate(p: &EffectPreset, target: &TrackItem, size: (u32, u32)) -> Ve
         // Point params scale only when they are positions (the def kind says so)
         let point_ids: Vec<String> = e
             .def()
-            .map(|d| d.params.iter().filter(|q| matches!(q.kind, filmcraft_project::ParamKind::Point)).map(|q| q.id.to_string()).collect())
+            .map(|d| {
+                d.params
+                    .iter()
+                    .filter(|q| matches!(q.kind, filmcraft_project::ParamKind::Point))
+                    .map(|q| q.id.to_string())
+                    .collect()
+            })
             .unwrap_or_default();
         for (id, prm) in e.params.iter_mut() {
             for k in &mut prm.keyframes {
@@ -369,9 +515,21 @@ pub fn instantiate(p: &EffectPreset, target: &TrackItem, size: (u32, u32)) -> Ve
 /// parameter at different times (Fade In, then Fade Out) add up instead of replacing each other.
 fn merge_keyframes(new: &mut EffectInstance, old: &EffectInstance) {
     for (id, p) in new.params.iter_mut() {
-        let (Some(first), Some(last)) = (p.keyframes.first().map(|k| k.time), p.keyframes.last().map(|k| k.time)) else { continue };
-        let Some(o) = old.params.get(id) else { continue };
-        p.keyframes.extend(o.keyframes.iter().filter(|k| k.time < first || k.time > last).cloned());
+        let (Some(first), Some(last)) = (
+            p.keyframes.first().map(|k| k.time),
+            p.keyframes.last().map(|k| k.time),
+        ) else {
+            continue;
+        };
+        let Some(o) = old.params.get(id) else {
+            continue;
+        };
+        p.keyframes.extend(
+            o.keyframes
+                .iter()
+                .filter(|k| k.time < first || k.time > last)
+                .cloned(),
+        );
         p.keyframes.sort_by_key(|k| k.time);
     }
 }
@@ -386,8 +544,17 @@ pub fn put_effects(it: &mut TrackItem, effects: Vec<EffectInstance>) {
             *slot = e;
             continue;
         }
-        let audio = e.def().is_some_and(|d| d.kind == filmcraft_project::EffectKind::Audio);
-        let pos = if audio { it.effects.len() } else { it.effects.iter().position(|x| x.def().is_some_and(|d| d.intrinsic)).unwrap_or(it.effects.len()) };
+        let audio = e
+            .def()
+            .is_some_and(|d| d.kind == filmcraft_project::EffectKind::Audio);
+        let pos = if audio {
+            it.effects.len()
+        } else {
+            it.effects
+                .iter()
+                .position(|x| x.def().is_some_and(|d| d.intrinsic))
+                .unwrap_or(it.effects.len())
+        };
         it.effects.insert(pos, e);
     }
 }
@@ -404,12 +571,28 @@ fn spec(
     run: Run,
     journal: bool,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut: None, params, enabled, run, journal }
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 pub(crate) fn commands() -> Vec<CommandSpec> {
     vec![
-        spec("presets.list", "List Effect Presets", "{}", always, list, false),
+        spec(
+            "presets.list",
+            "List Effect Presets",
+            "{}",
+            always,
+            list,
+            false,
+        ),
         spec(
             "presets.save",
             "Save Preset",
@@ -418,11 +601,46 @@ pub(crate) fn commands() -> Vec<CommandSpec> {
             save,
             true,
         ),
-        spec("presets.apply", "Apply Preset", r#"{"preset":str,"clips":[id]?}"#, has_seq, apply, true),
-        spec("presets.delete", "Delete Preset", r#"{"name":str}"#, always, delete, true),
-        spec("presets.rename", "Rename Preset", r#"{"name":str,"to":str}"#, always, rename, true),
-        spec("presets.export", "Export Presets", r#"{"path":str,"names":[str]?}"#, always, export, false),
-        spec("presets.import", "Import Presets", r#"{"path":str}"#, always, import, true),
+        spec(
+            "presets.apply",
+            "Apply Preset",
+            r#"{"preset":str,"clips":[id]?}"#,
+            has_seq,
+            apply,
+            true,
+        ),
+        spec(
+            "presets.delete",
+            "Delete Preset",
+            r#"{"name":str}"#,
+            always,
+            delete,
+            true,
+        ),
+        spec(
+            "presets.rename",
+            "Rename Preset",
+            r#"{"name":str,"to":str}"#,
+            always,
+            rename,
+            true,
+        ),
+        spec(
+            "presets.export",
+            "Export Presets",
+            r#"{"path":str,"names":[str]?}"#,
+            always,
+            export,
+            false,
+        ),
+        spec(
+            "presets.import",
+            "Import Presets",
+            r#"{"path":str}"#,
+            always,
+            import,
+            true,
+        ),
     ]
 }
 
@@ -443,24 +661,47 @@ fn list(s: &mut Session, _: &Value) -> Result<Value> {
 }
 
 fn clip_size(s: &Session, it: &TrackItem) -> (u32, u32) {
-    filmcraft_render::source_size(&s.project, it.item).or_else(|| s.active_sequence().map(|q| (q.settings.width, q.settings.height))).unwrap_or(hd())
+    filmcraft_render::source_size(&s.project, it.item)
+        .or_else(|| {
+            s.active_sequence()
+                .map(|q| (q.settings.width, q.settings.height))
+        })
+        .unwrap_or(hd())
 }
 
 fn save(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad("presets.save", "need a `name`"))?.to_string();
+    let name = str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad("presets.save", "need a `name`"))?
+        .to_string();
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let clip = clip_p(p, "clip")
-        .or_else(|| s.state.selection.iter().copied().find(|c| seq.find_item(*c).and_then(|(t, _)| seq.track(t)).is_some_and(|t| t.kind == TrackKind::Video)))
+        .or_else(|| {
+            s.state.selection.iter().copied().find(|c| {
+                seq.find_item(*c)
+                    .and_then(|(t, _)| seq.track(t))
+                    .is_some_and(|t| t.kind == TrackKind::Video)
+            })
+        })
         .or_else(|| s.state.selection.first().copied())
         .ok_or_else(|| bad("presets.save", "select a clip"))?;
-    let (_, it) = seq.find_item(clip).ok_or_else(|| bad("presets.save", "no such clip"))?;
+    let (_, it) = seq
+        .find_item(clip)
+        .ok_or_else(|| bad("presets.save", "no such clip"))?;
     let idx: Vec<usize> = match p.get("effects").and_then(Value::as_array) {
-        Some(a) => a.iter().filter_map(|v| v.as_u64().map(|n| n as usize)).filter(|i| *i < it.effects.len()).collect(),
+        Some(a) => a
+            .iter()
+            .filter_map(|v| v.as_u64().map(|n| n as usize))
+            .filter(|i| *i < it.effects.len())
+            .collect(),
         // default: the standard (non-intrinsic, non-layer) effects
         None => (0..it.effects.len())
             .filter(|i| {
                 let e = &it.effects[*i];
-                e.def().is_some_and(|d| !d.intrinsic) && !filmcraft_project::graphic::is_layer(e) && !e.essential
+                e.def().is_some_and(|d| !d.intrinsic)
+                    && !filmcraft_project::graphic::is_layer(e)
+                    && !e.essential
             })
             .collect(),
     };
@@ -470,11 +711,22 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
     let mode = match str_p(p, "keyframes") {
         None => Some(KeyframeMode::Scale),
         Some(k) if k.eq_ignore_ascii_case("none") => None,
-        Some(k) => Some(KeyframeMode::from_name(k).ok_or_else(|| bad("presets.save", format!("unknown keyframe mode `{k}`")))?),
+        Some(k) => Some(
+            KeyframeMode::from_name(k)
+                .ok_or_else(|| bad("presets.save", format!("unknown keyframe mode `{k}`")))?,
+        ),
     };
     let mt = it.source_time_at(s.playhead().clamp(it.start, it.end() - Tick(1)));
     let size = clip_size(s, it);
-    let preset = capture(it, &idx, &name, str_p(p, "description").unwrap_or(""), mode, mt, size);
+    let preset = capture(
+        it,
+        &idx,
+        &name,
+        str_p(p, "description").unwrap_or(""),
+        mode,
+        mt,
+        size,
+    );
     let out = preset_json(&preset);
     s.presets.user.retain(|x| x.name != name);
     s.presets.user.push(preset);
@@ -483,8 +735,13 @@ fn save(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn apply(s: &mut Session, p: &Value) -> Result<Value> {
-    let name = str_p(p, "preset").or_else(|| str_p(p, "name")).ok_or_else(|| bad("presets.apply", "need `preset`"))?;
-    let preset = s.presets.find(name).ok_or_else(|| bad("presets.apply", format!("no preset `{name}`")))?;
+    let name = str_p(p, "preset")
+        .or_else(|| str_p(p, "name"))
+        .ok_or_else(|| bad("presets.apply", "need `preset`"))?;
+    let preset = s
+        .presets
+        .find(name)
+        .ok_or_else(|| bad("presets.apply", format!("no preset `{name}`")))?;
     let clips: Vec<ClipId> = match p.get("clips").and_then(Value::as_array) {
         Some(a) => a.iter().filter_map(|v| v.as_u64().map(ClipId)).collect(),
         None => s.state.selection.clone(),
@@ -492,10 +749,16 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
     if clips.is_empty() {
         return Err(bad("presets.apply", "select clips first"));
     }
-    let audio = preset.effects.iter().all(|e| e.def().is_some_and(|d| d.kind == filmcraft_project::EffectKind::Audio));
+    let audio = preset.effects.iter().all(|e| {
+        e.def()
+            .is_some_and(|d| d.kind == filmcraft_project::EffectKind::Audio)
+    });
     let sizes: Vec<(ClipId, (u32, u32))> = {
         let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-        clips.iter().filter_map(|c| seq.find_item(*c).map(|(_, it)| (*c, clip_size(s, it)))).collect()
+        clips
+            .iter()
+            .filter_map(|c| seq.find_item(*c).map(|(_, it)| (*c, clip_size(s, it))))
+            .collect()
     };
     let label = format!("Apply Preset {}", preset.name);
     let n = s.edit_sequence(&label, |q, _, _| {
@@ -505,14 +768,21 @@ fn apply(s: &mut Session, p: &Value) -> Result<Value> {
                 continue;
             }
             for it in t.items.iter_mut().filter(|i| clips.contains(&i.id)) {
-                let size = sizes.iter().find(|(c, _)| *c == it.id).map(|x| x.1).unwrap_or(hd());
+                let size = sizes
+                    .iter()
+                    .find(|(c, _)| *c == it.id)
+                    .map(|x| x.1)
+                    .unwrap_or(hd());
                 let fx = instantiate(&preset, it, size);
                 put_effects(it, fx);
                 n += 1;
             }
         }
         if n == 0 {
-            return Err(bad("presets.apply", "the preset doesn't fit the selected clips (video/audio)"));
+            return Err(bad(
+                "presets.apply",
+                "the preset doesn't fit the selected clips (video/audio)",
+            ));
         }
         Ok(n)
     })?;
@@ -526,7 +796,11 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
     if s.presets.user.len() == before {
         return Err(bad(
             "presets.delete",
-            if builtin_presets().iter().any(|b| b.name == name) { "built-in presets cannot be deleted" } else { "no such preset" },
+            if builtin_presets().iter().any(|b| b.name == name) {
+                "built-in presets cannot be deleted"
+            } else {
+                "no such preset"
+            },
         ));
     }
     s.presets.persist().map_err(EngineError::Other)?;
@@ -535,11 +809,23 @@ fn delete(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn rename(s: &mut Session, p: &Value) -> Result<Value> {
     let name = str_p(p, "name").ok_or_else(|| bad("presets.rename", "need `name`"))?;
-    let to = str_p(p, "to").map(str::trim).filter(|t| !t.is_empty()).ok_or_else(|| bad("presets.rename", "need `to`"))?.to_string();
+    let to = str_p(p, "to")
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .ok_or_else(|| bad("presets.rename", "need `to`"))?
+        .to_string();
     if s.presets.user.iter().any(|x| x.name == to) {
-        return Err(bad("presets.rename", format!("a preset named `{to}` exists")));
+        return Err(bad(
+            "presets.rename",
+            format!("a preset named `{to}` exists"),
+        ));
     }
-    let pr = s.presets.user.iter_mut().find(|x| x.name == name).ok_or_else(|| bad("presets.rename", "no such user preset"))?;
+    let pr = s
+        .presets
+        .user
+        .iter_mut()
+        .find(|x| x.name == name)
+        .ok_or_else(|| bad("presets.rename", "no such user preset"))?;
     pr.name = to;
     s.presets.persist().map_err(EngineError::Other)?;
     Ok(Value::Null)
@@ -551,7 +837,10 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
     let chosen: Vec<EffectPreset> = match p.get("names").and_then(Value::as_array) {
         Some(n) => {
             let names: Vec<&str> = n.iter().filter_map(Value::as_str).collect();
-            let v: Vec<EffectPreset> = all.into_iter().filter(|x| names.contains(&x.name.as_str())).collect();
+            let v: Vec<EffectPreset> = all
+                .into_iter()
+                .filter(|x| names.contains(&x.name.as_str()))
+                .collect();
             if v.len() != names.len() {
                 return Err(bad("presets.export", "unknown preset name"));
             }
@@ -563,13 +852,18 @@ fn export(s: &mut Session, p: &Value) -> Result<Value> {
         return Err(bad("presets.export", "no presets to export"));
     }
     // through the host: atomic on the desktop, a download on the web (no filesystem there)
-    s.services.write_file(path, &file_bytes(&chosen)).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(path, &file_bytes(&chosen))
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     Ok(json!({"path": path, "count": chosen.len()}))
 }
 
 fn import(s: &mut Session, p: &Value) -> Result<Value> {
     let path = str_p(p, "path").ok_or_else(|| bad("presets.import", "need `path`"))?;
-    let bytes = s.services.read_file(path).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    let bytes = s
+        .services
+        .read_file(path)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     let presets = parse_file(&bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     let names: Vec<String> = presets.iter().map(|x| x.name.clone()).collect();
     for pr in presets {

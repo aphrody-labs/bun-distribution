@@ -35,7 +35,11 @@ fn zeros_then_one(bits: &mut Bits<'_>, source_bits: usize) -> Result<u32> {
 }
 
 /// Decode one coefficient line of `width.div_ceil(4)` sets (RDD 34 §6.3.6) and return exactly `width` values.
-pub(crate) fn vld_decode_line(bits: &mut Bits<'_>, source_bits: usize, width: usize) -> Result<Vec<i32>> {
+pub(crate) fn vld_decode_line(
+    bits: &mut Bits<'_>,
+    source_bits: usize,
+    width: usize,
+) -> Result<Vec<i32>> {
     if width == 0 {
         return Ok(Vec::new()); // no sets: the state machine below would never terminate
     }
@@ -121,7 +125,11 @@ pub(crate) fn vld_decode_line(bits: &mut Bits<'_>, source_bits: usize, width: us
         if abs_v {
             for v in abs {
                 let v = v as i32;
-                out.push(if v != 0 && bit(bits, source_bits)? == 1 { -v } else { v });
+                out.push(if v != 0 && bit(bits, source_bits)? == 1 {
+                    -v
+                } else {
+                    v
+                });
             }
         }
         if abs_e {
@@ -163,7 +171,11 @@ pub(crate) struct Plane {
 
 impl Plane {
     pub fn zeros(width: usize, height: usize) -> Plane {
-        Plane { width, height, data: vec![0; width.saturating_mul(height)] }
+        Plane {
+            width,
+            height,
+            data: vec![0; width.saturating_mul(height)],
+        }
     }
     pub fn row(&self, y: usize) -> Option<&[i32]> {
         let start = y.checked_mul(self.width)?;
@@ -198,12 +210,18 @@ fn sat(v: i64) -> i32 {
 fn inverse_1d(l: &[i32], h: &[i32], phase: u8) -> Result<Vec<i32>> {
     let (n, p) = (l.len() + h.len(), isize::from(phase));
     if band_rows(n, phase) != (l.len(), h.len()) || phase > 1 {
-        return Err(RawError::Corrupt("ARW6 wavelet: band sizes do not match".into()));
+        return Err(RawError::Corrupt(
+            "ARW6 wavelet: band sizes do not match".into(),
+        ));
     }
     let even: Vec<i32> = l
         .iter()
         .enumerate()
-        .map(|(j, &lv)| sat(i64::from(lv) - ((i64::from(at(h, j as isize - 1 + p)) + i64::from(at(h, j as isize + p)) + 2) >> 2)))
+        .map(|(j, &lv)| {
+            sat(i64::from(lv)
+                - ((i64::from(at(h, j as isize - 1 + p)) + i64::from(at(h, j as isize + p)) + 2)
+                    >> 2))
+        })
         .collect();
     let mut x = vec![0; n];
     let (lo, hi) = (usize::from(phase), 1 - usize::from(phase));
@@ -211,7 +229,9 @@ fn inverse_1d(l: &[i32], h: &[i32], phase: u8) -> Result<Vec<i32>> {
         *xv = e;
     }
     for (k, (xv, &hv)) in x.iter_mut().skip(hi).step_by(2).zip(h).enumerate() {
-        *xv = sat(i64::from(hv) + ((i64::from(at(&even, k as isize - p)) + i64::from(at(&even, k as isize + 1 - p))) >> 1));
+        *xv = sat(i64::from(hv)
+            + ((i64::from(at(&even, k as isize - p)) + i64::from(at(&even, k as isize + 1 - p)))
+                >> 1));
     }
     Ok(x)
 }
@@ -219,18 +239,43 @@ fn inverse_1d(l: &[i32], h: &[i32], phase: u8) -> Result<Vec<i32>> {
 /// Gathers the lines of the `low`/`high` pair along one axis (columns when `vertical`), transforms them, and scatters back.
 fn lines(low: &Plane, high: &Plane, phase: u8, vertical: bool) -> Result<Plane> {
     if !low.ok() || !high.ok() {
-        return Err(RawError::Corrupt("ARW6 wavelet: plane size mismatch".into()));
+        return Err(RawError::Corrupt(
+            "ARW6 wavelet: plane size mismatch".into(),
+        ));
     }
-    let (across_l, across_h) = if vertical { (low.width, high.width) } else { (low.height, high.height) };
+    let (across_l, across_h) = if vertical {
+        (low.width, high.width)
+    } else {
+        (low.height, high.height)
+    };
     if across_l != across_h {
-        return Err(RawError::Corrupt("ARW6 wavelet: band sizes do not match".into()));
+        return Err(RawError::Corrupt(
+            "ARW6 wavelet: band sizes do not match".into(),
+        ));
     }
-    let (nl, nh) = if vertical { (low.height, high.height) } else { (low.width, high.width) };
+    let (nl, nh) = if vertical {
+        (low.height, high.height)
+    } else {
+        (low.width, high.width)
+    };
     let n = nl + nh;
-    let (w, h) = if vertical { (across_l, n) } else { (n, across_l) };
+    let (w, h) = if vertical {
+        (across_l, n)
+    } else {
+        (n, across_l)
+    };
     let mut out = Plane::zeros(w, h);
     let get = |p: &Plane, i: usize| -> Vec<i32> {
-        if vertical { p.data.iter().skip(i).step_by(p.width.max(1)).copied().collect() } else { p.row(i).map(<[i32]>::to_vec).unwrap_or_default() }
+        if vertical {
+            p.data
+                .iter()
+                .skip(i)
+                .step_by(p.width.max(1))
+                .copied()
+                .collect()
+        } else {
+            p.row(i).map(<[i32]>::to_vec).unwrap_or_default()
+        }
     };
     for i in 0..across_l {
         let x = inverse_1d(&get(low, i), &get(high, i), phase)?;
@@ -256,7 +301,13 @@ pub(crate) fn inverse_53_1d_cols(low: &Plane, high: &Plane, phase: u8) -> Result
 }
 
 /// 2-D inverse, RDD 34 §6.5 order: vertical IWT (phase `vphase`) on (ll, lh) and (hl, hh), then horizontal (phase 0).
-pub(crate) fn inverse_53_2d(ll: &Plane, lh: &Plane, hl: &Plane, hh: &Plane, vphase: u8) -> Result<Plane> {
+pub(crate) fn inverse_53_2d(
+    ll: &Plane,
+    lh: &Plane,
+    hl: &Plane,
+    hh: &Plane,
+    vphase: u8,
+) -> Result<Plane> {
     let lo = inverse_53_1d_rows(ll, lh, vphase)?;
     let hi = inverse_53_1d_rows(hl, hh, vphase)?;
     inverse_53_1d_cols(&lo, &hi, 0)
@@ -309,7 +360,13 @@ mod tests {
         // RDD 34:2015 §6.3.6, Figure 6.9: 8 sets, 91 bits
         let s = "1000010110000010000100110000101000010100110100000000000011000010010001001010011100110000000";
         let (v, used) = line(s, 32);
-        assert_eq!(v, vec![6, 0, -8, 4, 0, 0, 0, 0, -9, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            v,
+            vec![
+                6, 0, -8, 4, 0, 0, 0, 0, -9, 20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 0, 0, 0,
+                0, 0, 0, 0, 0
+            ]
+        );
         assert_eq!(used, 91);
     }
     #[test]
@@ -335,7 +392,10 @@ mod tests {
     #[test]
     fn dpt_moves_up_down_and_to_zero() {
         let (v, used) = line("1011000100101111111110011101001011111100000", 20);
-        assert_eq!(v, vec![1, 0, 0, 0, 7, 7, -7, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            v,
+            vec![1, 0, 0, 0, 7, 7, -7, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+        );
         assert_eq!(used, 43);
     }
     #[test]
@@ -355,10 +415,16 @@ mod tests {
         let mut climb = vec![0u8; 64];
         climb[0] = 0x80; // "1 0 0^n 1" with n > MAX_DPT
         let mut b = Bits::new(&climb);
-        assert!(matches!(vld_decode_line(&mut b, 512, 16), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            vld_decode_line(&mut b, 512, 16),
+            Err(RawError::Corrupt(_))
+        ));
         let short = bits_of("10"); // needs more bits than it has
         let mut b = Bits::new(&short);
-        assert!(matches!(vld_decode_line(&mut b, 2, 16), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            vld_decode_line(&mut b, 2, 16),
+            Err(RawError::Corrupt(_))
+        ));
     }
     proptest::proptest! {
         #[test]
@@ -369,13 +435,20 @@ mod tests {
     }
 
     fn col(v: &[i32]) -> Plane {
-        Plane { width: 1, height: v.len(), data: v.to_vec() }
+        Plane {
+            width: 1,
+            height: v.len(),
+            data: v.to_vec(),
+        }
     }
     #[test]
     fn dequant_parity_rule() {
-        for (qi, table) in
-            [(0u32, [-3, -2, -1, 0, 1, 2, 3]), (1, [-6, -5, -2, 0, 2, 5, 6]), (2, [-13, -10, -5, 0, 5, 10, 13]), (3, [-27, -20, -11, 0, 11, 20, 27])]
-        {
+        for (qi, table) in [
+            (0u32, [-3, -2, -1, 0, 1, 2, 3]),
+            (1, [-6, -5, -2, 0, 2, 5, 6]),
+            (2, [-13, -10, -5, 0, 5, 10, 13]),
+            (3, [-27, -20, -11, 0, 11, 20, 27]),
+        ] {
             for (q, v) in (-3..=3).zip(table) {
                 assert_eq!(dequant(q, qi), v, "q={q} qi={qi}");
             }
@@ -385,7 +458,11 @@ mod tests {
     fn quantize_inverts_dequant() {
         for qi in 0..6 {
             for q in -50..=50 {
-                assert_eq!(crate::vendor::arw6_testenc::quantize(dequant(q, qi), qi), q, "q={q} qi={qi}");
+                assert_eq!(
+                    crate::vendor::arw6_testenc::quantize(dequant(q, qi), qi),
+                    q,
+                    "q={q} qi={qi}"
+                );
             }
         }
     }
@@ -398,10 +475,23 @@ mod tests {
     fn extreme_coefficients_do_not_overflow() {
         for v in [i32::MAX, i32::MIN] {
             for (w, h) in [(7usize, 9usize), (16, 16), (9, 16)] {
-                let p = |w, h| Plane { width: w, height: h, data: vec![v; w * h] };
+                let p = |w, h| Plane {
+                    width: w,
+                    height: h,
+                    data: vec![v; w * h],
+                };
                 for ph in 0..2u8 {
                     let (lh, lw) = (band_rows(h, ph), band_rows(w, 0));
-                    assert!(inverse_53_2d(&p(lw.0, lh.0), &p(lw.0, lh.1), &p(lw.1, lh.0), &p(lw.1, lh.1), ph).is_ok());
+                    assert!(
+                        inverse_53_2d(
+                            &p(lw.0, lh.0),
+                            &p(lw.0, lh.1),
+                            &p(lw.1, lh.0),
+                            &p(lw.1, lh.1),
+                            ph
+                        )
+                        .is_ok()
+                    );
                 }
                 let (w3, h3) = (w * 8, h * 8);
                 let mut sizes = vec![];
@@ -442,10 +532,30 @@ mod tests {
     #[test]
     fn inverse_53_hand_vectors() {
         // computed by hand from RDD 34 §6.5 with X[-1] := X[1], X[n] := X[n-2]; checked against the Phase 0 model
-        assert_eq!(inverse_53_1d_rows(&col(&[10, 20]), &col(&[3, -4]), 0).unwrap().data, vec![8, 17, 20, 16]);
-        assert_eq!(inverse_53_1d_rows(&col(&[10, 20]), &col(&[3, -4]), 1).unwrap().data, vec![13, 10, 12, 22]);
-        assert_eq!(inverse_53_1d_rows(&col(&[10, 20, 30]), &col(&[3, -4]), 0).unwrap().data, vec![8, 17, 20, 22, 32]);
-        assert_eq!(inverse_53_1d_rows(&col(&[3, -4]), &col(&[10, 20, 30]), 1).unwrap().data, vec![5, -5, 9, -17, 13]);
+        assert_eq!(
+            inverse_53_1d_rows(&col(&[10, 20]), &col(&[3, -4]), 0)
+                .unwrap()
+                .data,
+            vec![8, 17, 20, 16]
+        );
+        assert_eq!(
+            inverse_53_1d_rows(&col(&[10, 20]), &col(&[3, -4]), 1)
+                .unwrap()
+                .data,
+            vec![13, 10, 12, 22]
+        );
+        assert_eq!(
+            inverse_53_1d_rows(&col(&[10, 20, 30]), &col(&[3, -4]), 0)
+                .unwrap()
+                .data,
+            vec![8, 17, 20, 22, 32]
+        );
+        assert_eq!(
+            inverse_53_1d_rows(&col(&[3, -4]), &col(&[10, 20, 30]), 1)
+                .unwrap()
+                .data,
+            vec![5, -5, 9, -17, 13]
+        );
     }
     #[test]
     fn inverse_53_rejects_mismatched_bands() {

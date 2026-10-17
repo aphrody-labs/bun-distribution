@@ -35,7 +35,11 @@ pub type MediaScan = Arc<Mutex<Option<Vec<(String, Option<Stamp>)>>>>;
 #[cfg(not(target_arch = "wasm32"))]
 fn stamp(path: &str) -> Option<Stamp> {
     let meta = std::fs::metadata(path).ok()?;
-    let modified = meta.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?;
+    let modified = meta
+        .modified()
+        .ok()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .ok()?;
     Some((meta.len(), modified.as_nanos()))
 }
 
@@ -60,7 +64,10 @@ pub fn media_files(p: &Project) -> BTreeSet<String> {
 
 /// `media.refreshChanged`: stamp the project's media files now and read the changed ones again.
 pub(crate) fn refresh_changed(s: &mut Session, _: &Value) -> Result<Value> {
-    let now = media_files(&s.project).into_iter().map(|p| (p.clone(), stamp(&p))).collect();
+    let now = media_files(&s.project)
+        .into_iter()
+        .map(|p| (p.clone(), stamp(&p)))
+        .collect();
     s.apply_media_stamps(now)
 }
 
@@ -77,10 +84,12 @@ impl Session {
         }
         let slot: MediaScan = Arc::default();
         let out = slot.clone();
-        let spawned = std::thread::Builder::new().name("media-watch".into()).spawn(move || {
-            let stamps = files.into_iter().map(|p| (p.clone(), stamp(&p))).collect();
-            *out.lock().unwrap_or_else(PoisonError::into_inner) = Some(stamps);
-        });
+        let spawned = std::thread::Builder::new()
+            .name("media-watch".into())
+            .spawn(move || {
+                let stamps = files.into_iter().map(|p| (p.clone(), stamp(&p))).collect();
+                *out.lock().unwrap_or_else(PoisonError::into_inner) = Some(stamps);
+            });
         if spawned.is_ok() {
             self.media_scan = Some(slot);
         }
@@ -88,7 +97,12 @@ impl Session {
 
     /// Apply a finished look (`None` while there is none, or it is still running).
     pub fn poll_media_scan(&mut self) -> Option<Result<Value>> {
-        let stamps = self.media_scan.as_ref()?.lock().unwrap_or_else(PoisonError::into_inner).take()?;
+        let stamps = self
+            .media_scan
+            .as_ref()?
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()?;
         self.media_scan = None;
         Some(self.apply_media_stamps(stamps))
     }
@@ -120,8 +134,12 @@ impl Session {
         let mut fresh = Vec::new();
         let mut failed = BTreeSet::new();
         for (id, it) in &self.project.items {
-            let Some(m) = it.as_media().filter(|m| !m.offline) else { continue };
-            let MediaRef::File { path } = &m.media else { continue };
+            let Some(m) = it.as_media().filter(|m| !m.offline) else {
+                continue;
+            };
+            let MediaRef::File { path } = &m.media else {
+                continue;
+            };
             if !changed.contains(path) || failed.contains(path) {
                 continue;
             }
@@ -132,7 +150,9 @@ impl Session {
                     if info.kind == filmcraft_media::MediaKind::Still
                         && let Some(v) = info.video.as_mut()
                     {
-                        v.frame_rate = crate::settings::timebase_rate(&self.prefs.media.indeterminate_timebase);
+                        v.frame_rate = crate::settings::timebase_rate(
+                            &self.prefs.media.indeterminate_timebase,
+                        );
                     }
                     let identity = crate::relink::identity_of(&*self.services, path).ok();
                     fresh.push((*id, path.clone(), info, identity, src));

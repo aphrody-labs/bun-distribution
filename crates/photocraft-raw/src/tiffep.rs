@@ -31,14 +31,21 @@ const SONY_WB_RGGB_LEVELS: u16 = 0x7313;
 fn raw_ifd(t: &Tiff, ifds: &[Ifd]) -> Option<Ifd> {
     ifds.iter()
         .filter(|i| t.tag_uint(i, tag::PHOTOMETRIC) == Some(PHOTOMETRIC_CFA))
-        .max_by_key(|i| u64::from(t.tag_uint(i, tag::IMAGE_WIDTH).unwrap_or(0)) * u64::from(t.tag_uint(i, tag::IMAGE_LENGTH).unwrap_or(0)))
+        .max_by_key(|i| {
+            u64::from(t.tag_uint(i, tag::IMAGE_WIDTH).unwrap_or(0))
+                * u64::from(t.tag_uint(i, tag::IMAGE_LENGTH).unwrap_or(0))
+        })
         .cloned()
 }
 
 /// `true` for Sony ARW files whose raw IFD is not CFA data (the reduced-size
 /// lossless "M" / "S" YCbCr variants): recognised, but not decoded.
 pub(crate) fn is_sony_non_cfa(t: &Tiff, ifds: &[Ifd]) -> bool {
-    ifds.iter().any(|i| i.has(SONY_RAW_FILE_TYPE)) && ifds.iter().any(|i| t.tag_ascii(i, tag::MAKE).is_some_and(|m| m.to_ascii_uppercase().starts_with("SONY")))
+    ifds.iter().any(|i| i.has(SONY_RAW_FILE_TYPE))
+        && ifds.iter().any(|i| {
+            t.tag_ascii(i, tag::MAKE)
+                .is_some_and(|m| m.to_ascii_uppercase().starts_with("SONY"))
+        })
 }
 
 /// CFA from the TIFF/EP tags of the raw IFD, or the EXIF CFAPattern.
@@ -46,12 +53,24 @@ pub(crate) fn cfa(t: &Tiff, raw: &Ifd, ifds: &[Ifd]) -> Option<Cfa> {
     let dim = t.tag_uints(raw, tag::CFA_REPEAT_PATTERN_DIM);
     let pat = t.tag_uints(raw, tag::CFA_PATTERN);
     let (rows, cols, colors) = match (dim.as_slice(), pat) {
-        ([r, c], p) if p.len() == (*r as usize) * (*c as usize) && !p.is_empty() => (*r as usize, *c as usize, p),
+        ([r, c], p) if p.len() == (*r as usize) * (*c as usize) && !p.is_empty() => {
+            (*r as usize, *c as usize, p)
+        }
         _ => {
             // EXIF CFAPattern: two 16-bit counts (columns, rows) then the colours.
-            let e = ifds.iter().find_map(|i| i.get(tag::EXIF_CFA_PATTERN).copied())?;
+            let e = ifds
+                .iter()
+                .find_map(|i| i.get(tag::EXIF_CFA_PATTERN).copied())?;
             let b = t.raw(&e)?;
-            let rd = |o: usize| b.get(o..o + 2).map(|s| if t.le { u16::from_le_bytes([s[0], s[1]]) } else { u16::from_be_bytes([s[0], s[1]]) });
+            let rd = |o: usize| {
+                b.get(o..o + 2).map(|s| {
+                    if t.le {
+                        u16::from_le_bytes([s[0], s[1]])
+                    } else {
+                        u16::from_be_bytes([s[0], s[1]])
+                    }
+                })
+            };
             let (c, r) = (usize::from(rd(0)?), usize::from(rd(2)?));
             let p = b.get(4..4 + r.checked_mul(c)?)?;
             (r, c, p.iter().map(|&v| u32::from(v)).collect())
@@ -60,8 +79,17 @@ pub(crate) fn cfa(t: &Tiff, raw: &Ifd, ifds: &[Ifd]) -> Option<Cfa> {
     if rows == 0 || cols == 0 || rows > 16 || cols > 16 {
         return None;
     }
-    let colors = colors.into_iter().map(|c| u8::try_from(c).ok().filter(|c| *c <= 2)).collect::<Option<Vec<u8>>>()?;
-    Some(Cfa { width: cols, height: rows, colors, origin_x: 0, origin_y: 0 })
+    let colors = colors
+        .into_iter()
+        .map(|c| u8::try_from(c).ok().filter(|c| *c <= 2))
+        .collect::<Option<Vec<u8>>>()?;
+    Some(Cfa {
+        width: cols,
+        height: rows,
+        colors,
+        origin_x: 0,
+        origin_y: 0,
+    })
 }
 
 /// Nikon maker note: "Nikon\0", version, then an embedded TIFF header whose
@@ -105,11 +133,19 @@ pub(crate) fn padded_width(data: &[u16], w: usize, h: usize, bits: u32) -> usize
     if w < 256 || h < 2 || data.len() < w.saturating_mul(h) {
         return w;
     }
-    let Some(&fill) = data.get((h / 2) * w + w - 1) else { return w };
+    let Some(&fill) = data.get((h / 2) * w + w - 1) else {
+        return w;
+    };
     if u32::from(fill) >= (1u32 << bits.min(16)) / 4 {
         return w;
     }
-    let padding = |x: usize| (0..h).filter(|&y| data.get(y * w + x) == Some(&fill)).count() * 10 >= h * 9;
+    let padding = |x: usize| {
+        (0..h)
+            .filter(|&y| data.get(y * w + x) == Some(&fill))
+            .count()
+            * 10
+            >= h * 9
+    };
     let mut aw = w;
     while aw > w - 128 && padding(aw - 1) {
         aw -= 1;
@@ -121,30 +157,53 @@ pub(crate) fn decode(t: &Tiff, format: RawFormat, limits: &Limits) -> Result<Sen
     let ifds = t.all_ifds();
     let Some(raw) = raw_ifd(t, &ifds) else {
         if is_sony_non_cfa(t, &ifds) {
-            return Err(RawError::unsupported("Sony reduced-size (M / S) lossless ARW"));
+            return Err(RawError::unsupported(
+                "Sony reduced-size (M / S) lossless ARW",
+            ));
         }
-        return Err(RawError::unsupported(format!("{}: no CFA image found", format.name())));
+        return Err(RawError::unsupported(format!(
+            "{}: no CFA image found",
+            format.name()
+        )));
     };
-    let nikon = if format == RawFormat::Nef { nikon_maker_note(t, &ifds) } else { None };
+    let nikon = if format == RawFormat::Nef {
+        nikon_maker_note(t, &ifds)
+    } else {
+        None
+    };
     let craw = format == RawFormat::Arw && sony::is_craw(t, &raw);
     let plane = if craw {
         sony::read_craw(t, &raw, limits)?
-    } else if format == RawFormat::Nef && t.tag_uint(&raw, tag::COMPRESSION) == Some(nefc::NIKON_COMPRESSION) {
+    } else if format == RawFormat::Nef
+        && t.tag_uint(&raw, tag::COMPRESSION) == Some(nefc::NIKON_COMPRESSION)
+    {
         nefc::read_compressed(t, &raw, nikon.as_ref(), limits)?
     } else {
         read_plane(t, &raw, limits, JpegLayout::Quads)?
     };
     if plane.samples != 1 {
-        return Err(RawError::unsupported(format!("CFA data with {} samples per pixel", plane.samples)));
+        return Err(RawError::unsupported(format!(
+            "CFA data with {} samples per pixel",
+            plane.samples
+        )));
     }
-    let cfa = cfa(t, &raw, &ifds).ok_or_else(|| RawError::unsupported(format!("{}: CFA pattern not recorded", format.name())))?;
+    let cfa = cfa(t, &raw, &ifds).ok_or_else(|| {
+        RawError::unsupported(format!("{}: CFA pattern not recorded", format.name()))
+    })?;
     if !cfa.is_bayer() {
-        return Err(RawError::unsupported(format!("{}x{} non-Bayer CFA", cfa.height, cfa.width)));
+        return Err(RawError::unsupported(format!(
+            "{}x{} non-Bayer CFA",
+            cfa.height, cfa.width
+        )));
     }
     let mut warnings = Vec::new();
     // Nikon pads some sensor rows on the right (a D3200 NEF: 46 columns of 256, in 97.5% of the
     // rows exactly, after 6034 image columns); they are not image data.
-    let width = if format == RawFormat::Nef { padded_width(&plane.data, plane.width, plane.height, plane.bits) } else { plane.width };
+    let width = if format == RawFormat::Nef {
+        padded_width(&plane.data, plane.width, plane.height, plane.bits)
+    } else {
+        plane.width
+    };
     let full = Rect::new(0, 0, width, plane.height);
     let make = ifds.iter().find_map(|i| t.tag_ascii(i, tag::MAKE));
     let model = ifds.iter().find_map(|i| t.tag_ascii(i, tag::MODEL));
@@ -155,13 +214,23 @@ pub(crate) fn decode(t: &Tiff, format: RawFormat, limits: &Limits) -> Result<Sen
         // 12-bit D750 / D850 / Z 50 files store 600 / 400 / 1008 while their
         // darkest samples are about a quarter of that (measured on CC0
         // raw.pixls.us samples, documented in LightCraft's NEF decoder).
-        Some((n, m)) => n.tag_floats(m, NIKON_BLACK_LEVEL).into_iter().map(|v| if plane.bits == 12 { v / 4.0 } else { v }).collect(),
+        Some((n, m)) => n
+            .tag_floats(m, NIKON_BLACK_LEVEL)
+            .into_iter()
+            .map(|v| if plane.bits == 12 { v / 4.0 } else { v })
+            .collect(),
         None => t.tag_floats(&raw, SONY_BLACK_LEVEL),
     };
     let black = if let Some(b) = bl.first() {
         BlackLevels::uniform(*b as f32)
     } else if let Some(v) = rggb_by_position(&cfa, &vendor_black) {
-        BlackLevels { rows: 2, cols: 2, values: v.to_vec(), delta_h: Vec::new(), delta_v: Vec::new() }
+        BlackLevels {
+            rows: 2,
+            cols: 2,
+            values: v.to_vec(),
+            delta_h: Vec::new(),
+            delta_v: Vec::new(),
+        }
     } else if craw {
         // cRAW files of the first generation (an ILCE-7 writes none) carry no
         // BlackLevel tag; the tone curve maps the black code to 512, so their
@@ -174,7 +243,10 @@ pub(crate) fn decode(t: &Tiff, format: RawFormat, limits: &Limits) -> Result<Sen
         // NEF's darkest samples are 0–4 (noise around zero), median 81 of 4095.
         BlackLevels::uniform(0.0)
     } else {
-        warnings.push(format!("{}: black level not recorded in a documented tag; assumed 0", format.name()));
+        warnings.push(format!(
+            "{}: black level not recorded in a documented tag; assumed 0",
+            format.name()
+        ));
         BlackLevels::uniform(0.0)
     };
     let wl = t.tag_floats(&raw, tag::WHITE_LEVEL);
@@ -188,15 +260,26 @@ pub(crate) fn decode(t: &Tiff, format: RawFormat, limits: &Limits) -> Result<Sen
             _ => None,
         },
         None => match t.tag_floats(&raw, SONY_WB_RGGB_LEVELS).as_slice() {
-            [r, g1, g2, b] if *g1 + *g2 > 0.0 => Some([2.0 * r / (g1 + g2), 1.0, 2.0 * b / (g1 + g2)]),
+            [r, g1, g2, b] if *g1 + *g2 > 0.0 => {
+                Some([2.0 * r / (g1 + g2), 1.0, 2.0 * b / (g1 + g2)])
+            }
             _ => None,
         },
     }
     .filter(|m| m.iter().all(|v| (0.25..8.0).contains(v)));
     // DNG-style DefaultCropOrigin / DefaultCropSize (some vendors write them in the raw IFD).
     let mut crop = full;
-    if let ([ox, oy], [cw, ch]) = (t.tag_floats(&raw, tag::DEFAULT_CROP_ORIGIN).as_slice(), t.tag_floats(&raw, tag::DEFAULT_CROP_SIZE).as_slice()) {
-        let f = |v: f64| if v.is_finite() && v >= 0.0 { v.round() as usize } else { 0 };
+    if let ([ox, oy], [cw, ch]) = (
+        t.tag_floats(&raw, tag::DEFAULT_CROP_ORIGIN).as_slice(),
+        t.tag_floats(&raw, tag::DEFAULT_CROP_SIZE).as_slice(),
+    ) {
+        let f = |v: f64| {
+            if v.is_finite() && v >= 0.0 {
+                v.round() as usize
+            } else {
+                0
+            }
+        };
         let r = Rect::new(f(*ox), f(*oy), f(*cw), f(*ch)).intersect(&full);
         if !r.is_empty() {
             crop = r;
@@ -239,7 +322,11 @@ mod padding_tests {
         (0..w * h)
             .map(|i| {
                 let (x, y) = (i % w, i / w);
-                if x >= w - pad { if y % 20 == 7 { fill + 2 } else { fill } } else { ((x * 37 + y * 101) % 3000) as u16 }
+                if x >= w - pad {
+                    if y % 20 == 7 { fill + 2 } else { fill }
+                } else {
+                    ((x * 37 + y * 101) % 3000) as u16
+                }
             })
             .collect()
     }

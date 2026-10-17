@@ -3,13 +3,13 @@ use crate::{
     bundle::{Bundle, BundleRemover, InsertMode},
     change_detection::MaybeLocation,
     component::{Component, ComponentCloneBehavior, ComponentCloneFn, ComponentId, ComponentInfo},
-    entity::{hash_map::EntityHashMap, Entity, EntityAllocator, EntityMapper},
+    entity::{Entity, EntityAllocator, EntityMapper, hash_map::EntityHashMap},
     query::DebugCheckedUnwrap,
     relationship::RelationshipHookMode,
     world::World,
 };
 use alloc::{boxed::Box, collections::VecDeque, vec::Vec};
-use bevy_platform::collections::{hash_map::Entry, HashMap, HashSet};
+use bevy_platform::collections::{HashMap, HashSet, hash_map::Entry};
 use bevy_ptr::{Ptr, PtrMut};
 use bevy_utils::prelude::DebugName;
 use bumpalo::Bump;
@@ -1483,7 +1483,7 @@ mod tests {
         use super::*;
         use crate::reflect::{AppTypeRegistry, ReflectComponent, ReflectFromWorld};
         use alloc::vec;
-        use bevy_reflect::{std_traits::ReflectDefault, CreateTypeData, Reflect, ReflectFromPtr};
+        use bevy_reflect::{CreateTypeData, Reflect, ReflectFromPtr, std_traits::ReflectDefault};
 
         #[test]
         fn clone_entity_using_reflect() {
@@ -1661,9 +1661,11 @@ mod tests {
 
             EntityCloner::build_opt_out(&mut world).clone_entity(e, e_clone);
 
-            assert!(world
-                .get::<A>(e_clone)
-                .is_some_and(|comp| *comp == A { field: 10 }));
+            assert!(
+                world
+                    .get::<A>(e_clone)
+                    .is_some_and(|comp| *comp == A { field: 10 })
+            );
         }
 
         #[test]
@@ -1840,9 +1842,11 @@ mod tests {
             .clone_entity(e, e_clone);
 
         assert!(world.get::<A>(e_clone).is_some());
-        assert!(world
-            .get::<B>(e_clone)
-            .is_some_and(|c| *c == B { field: 5 }));
+        assert!(
+            world
+                .get::<B>(e_clone)
+                .is_some_and(|c| *c == B { field: 5 })
+        );
     }
 
     #[test]
@@ -1868,9 +1872,11 @@ mod tests {
             .insert_mode(InsertMode::Keep)
             .clone_entity(e, e_clone);
 
-        assert!(world
-            .get::<A>(e_clone)
-            .is_some_and(|c| *c == A { field: 8 }));
+        assert!(
+            world
+                .get::<A>(e_clone)
+                .is_some_and(|c| *c == A { field: 8 })
+        );
         assert!(world.get::<B>(e_clone).is_none());
         assert!(world.get::<C>(e_clone).is_some());
     }

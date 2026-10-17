@@ -15,10 +15,20 @@ use crate::{VectorcraftApp, widgets};
 /// The dialog kind of Eyedropper Options.
 pub const KIND: &str = "eyedropperOptions";
 
-pub(super) const SPEC: DialogSpec = DialogSpec { heading: |_| tl!("Eyedropper Options").into(), body, confirm, min_width: 460.0, ..DialogSpec::FORM };
+pub(super) const SPEC: DialogSpec = DialogSpec {
+    heading: |_| tl!("Eyedropper Options").into(),
+    body,
+    confirm,
+    min_width: 460.0,
+    ..DialogSpec::FORM
+};
 
 /// The raster sample sizes: (pixels square, label).
-const SAMPLE_SIZES: [(u64, &str); 3] = [(1, "Point Sample"), (3, "3 x 3 Average"), (5, "5 x 5 Average")];
+const SAMPLE_SIZES: [(u64, &str); 3] = [
+    (1, "Point Sample"),
+    (3, "3 x 3 Average"),
+    (5, "5 x 5 Average"),
+];
 
 /// The rows of a Picks Up / Applies tree: (JSON pointer into the tree, label, depth).
 const TREE: &[(&str, &str, u8)] = &[
@@ -72,9 +82,13 @@ fn tree(ui: &mut egui::Ui, d: &mut Dialog, key: &str, title: &str) {
     ui.vertical(|ui| {
         ui.label(egui::RichText::new(tl!(title)).strong());
         ui.add_space(4.0);
-        let Some(t) = d.fields.get_mut(key) else { return };
+        let Some(t) = d.fields.get_mut(key) else {
+            return;
+        };
         for (path, label, depth) in TREE {
-            let Some(node) = t.pointer_mut(path) else { continue };
+            let Some(node) = t.pointer_mut(path) else {
+                continue;
+            };
             let s = state(node);
             ui.horizontal(|ui| {
                 ui.add_space(*depth as f32 * 18.0);
@@ -87,13 +101,21 @@ fn tree(ui: &mut egui::Ui, d: &mut Dialog, key: &str, title: &str) {
 }
 
 fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
-    let size = d.fields.get("sampleSize").and_then(Value::as_u64).unwrap_or(1);
-    let current = SAMPLE_SIZES.iter().find(|(n, _)| *n == size).map_or(SAMPLE_SIZES[0].1, |s| s.1);
+    let size = d
+        .fields
+        .get("sampleSize")
+        .and_then(Value::as_u64)
+        .unwrap_or(1);
+    let current = SAMPLE_SIZES
+        .iter()
+        .find(|(n, _)| *n == size)
+        .map_or(SAMPLE_SIZES[0].1, |s| s.1);
     ui.horizontal(|ui| {
         widgets::dim_label(ui, tl!("Raster Sample Size:"));
         let labels = SAMPLE_SIZES.map(|s| s.1);
         if let Some(i) = widgets::dropdown(ui, "eyedropper-sample", current, &labels, 150.0) {
-            d.fields.insert("sampleSize".into(), json!(SAMPLE_SIZES[i].0));
+            d.fields
+                .insert("sampleSize".into(), json!(SAMPLE_SIZES[i].0));
         }
     });
     ui.add_space(10.0);
@@ -106,7 +128,11 @@ fn body(_app: &mut VectorcraftApp, ui: &mut egui::Ui, d: &mut Dialog) -> bool {
 }
 
 fn confirm(app: &mut VectorcraftApp, d: &Dialog) -> Result<Value, String> {
-    super::run_and_close(app, "eyedropper.setOptions", Value::Object(d.fields.clone()))
+    super::run_and_close(
+        app,
+        "eyedropper.setOptions",
+        Value::Object(d.fields.clone()),
+    )
 }
 
 #[cfg(test)]
@@ -117,8 +143,11 @@ mod tests {
     #[test]
     fn the_trees_set_the_options() {
         let mut app = VectorcraftApp::new(Session::new(), Default::default());
-        app.run("tool.options", json!({"tool": "eyedropper"})).unwrap();
-        let text = crate::tests_labels::painted_text(&mut app, |app, ui| super::super::show(app, ui.ctx()));
+        app.run("tool.options", json!({"tool": "eyedropper"}))
+            .unwrap();
+        let text = crate::tests_labels::painted_text(&mut app, |app, ui| {
+            super::super::show(app, ui.ctx())
+        });
         for label in [
             "Eyedropper Options",
             "Raster Sample Size:",
@@ -141,7 +170,12 @@ mod tests {
         super::super::confirm(&mut app).unwrap();
         let o = app.session.prefs.eyedropper;
         assert_eq!(
-            (o.sample_size, o.apply.appearance.stroke.dash, o.apply.appearance.fill.color, o.pick_up.appearance.stroke.dash),
+            (
+                o.sample_size,
+                o.apply.appearance.stroke.dash,
+                o.apply.appearance.fill.color,
+                o.pick_up.appearance.stroke.dash
+            ),
             (5, false, true, true)
         );
         assert!(app.ui.dialog.is_none());

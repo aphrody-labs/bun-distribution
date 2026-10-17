@@ -11,9 +11,20 @@ const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwx
 pub fn encode(data: &[u8]) -> String {
     let mut out = String::with_capacity(data.len().div_ceil(3).saturating_mul(4));
     for chunk in data.chunks(3) {
-        let b = [chunk.first().copied().unwrap_or(0), chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk.first().copied().unwrap_or(0),
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
-        let sym = |shift: u32| char::from(ALPHABET.get(((n >> shift) & 63) as usize).copied().unwrap_or(b'A'));
+        let sym = |shift: u32| {
+            char::from(
+                ALPHABET
+                    .get(((n >> shift) & 63) as usize)
+                    .copied()
+                    .unwrap_or(b'A'),
+            )
+        };
         out.push(sym(18));
         out.push(sym(12));
         out.push(if chunk.len() > 1 { sym(6) } else { '=' });
@@ -38,8 +49,14 @@ fn value(c: u8) -> Option<u32> {
 /// than [`MAX_DECODED_BYTES`].
 pub fn decode(text: &str) -> Option<Vec<u8>> {
     let syms: Vec<u8> = text.bytes().filter(|c| !c.is_ascii_whitespace()).collect();
-    let body = syms.strip_suffix(b"==").or_else(|| syms.strip_suffix(b"=")).unwrap_or(&syms);
-    if body.contains(&b'=') || (syms.len() != body.len() && !syms.len().is_multiple_of(4)) || body.len() % 4 == 1 {
+    let body = syms
+        .strip_suffix(b"==")
+        .or_else(|| syms.strip_suffix(b"="))
+        .unwrap_or(&syms);
+    if body.contains(&b'=')
+        || (syms.len() != body.len() && !syms.len().is_multiple_of(4))
+        || body.len() % 4 == 1
+    {
         return None;
     }
     if body.len() / 4 * 3 > MAX_DECODED_BYTES {
@@ -63,15 +80,25 @@ mod tests {
 
     #[test]
     fn rfc4648_vectors_round_trip() {
-        for (plain, enc) in
-            [("", ""), ("f", "Zg=="), ("fo", "Zm8="), ("foo", "Zm9v"), ("foob", "Zm9vYg=="), ("fooba", "Zm9vYmE="), ("foobar", "Zm9vYmFy")]
-        {
+        for (plain, enc) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+            ("fooba", "Zm9vYmE="),
+            ("foobar", "Zm9vYmFy"),
+        ] {
             assert_eq!(encode(plain.as_bytes()), enc);
             assert_eq!(decode(enc).unwrap(), plain.as_bytes());
         }
         let all: Vec<u8> = (0..=255).collect();
         assert_eq!(decode(&encode(&all)).unwrap(), all);
-        assert_eq!(decode("Zm9v\nYmE=").unwrap(), b"fooba", "whitespace is ignored");
+        assert_eq!(
+            decode("Zm9v\nYmE=").unwrap(),
+            b"fooba",
+            "whitespace is ignored"
+        );
         assert_eq!(decode("Zm9vYmE").unwrap(), b"fooba", "padding is optional");
     }
 

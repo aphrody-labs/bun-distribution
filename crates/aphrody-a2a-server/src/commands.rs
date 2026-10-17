@@ -87,7 +87,9 @@ pub struct CommandRegistry {
 
 impl CommandRegistry {
     pub fn new() -> Self {
-        CommandRegistry { commands: RwLock::new(HashMap::new()) }
+        CommandRegistry {
+            commands: RwLock::new(HashMap::new()),
+        }
     }
 
     /// Register a command and (recursively) any sub-commands. Returns
@@ -95,7 +97,10 @@ impl CommandRegistry {
     pub async fn register(&self, command: Arc<dyn Command>) -> bool {
         let mut store = self.commands.write().await;
         if store.contains_key(command.name()) {
-            tracing::warn!(name = command.name(), "command already registered, skipping");
+            tracing::warn!(
+                name = command.name(),
+                "command already registered, skipping"
+            );
             return false;
         }
         let name = command.name().to_string();
@@ -144,8 +149,11 @@ fn describe(command: &dyn Command, visited: &mut Vec<String>) -> Option<CommandD
         return None;
     }
     visited.push(name.clone());
-    let subs =
-        command.sub_commands().iter().filter_map(|sub| describe(sub.as_ref(), visited)).collect();
+    let subs = command
+        .sub_commands()
+        .iter()
+        .filter_map(|sub| describe(sub.as_ref(), visited))
+        .collect();
     Some(CommandDescriptor {
         name,
         description: command.description().to_string(),
@@ -199,7 +207,10 @@ mod tests {
             false
         }
         async fn execute(&self, _: Vec<String>) -> Result<CommandExecutionResponse, A2AError> {
-            Ok(CommandExecutionResponse { name: self.name().into(), data: json!("child") })
+            Ok(CommandExecutionResponse {
+                name: self.name().into(),
+                data: json!("child"),
+            })
         }
     }
 
@@ -215,7 +226,10 @@ mod tests {
             vec![Arc::new(ChildCommand)]
         }
         async fn execute(&self, _: Vec<String>) -> Result<CommandExecutionResponse, A2AError> {
-            Ok(CommandExecutionResponse { name: self.name().into(), data: json!("parent") })
+            Ok(CommandExecutionResponse {
+                name: self.name().into(),
+                data: json!("parent"),
+            })
         }
     }
 
@@ -224,7 +238,10 @@ mod tests {
         let reg = CommandRegistry::new();
         assert!(reg.register(Arc::new(EchoCommand)).await);
         let cmd = reg.get("echo").await.expect("present");
-        let result = cmd.execute(vec!["hello".into(), "world".into()]).await.unwrap();
+        let result = cmd
+            .execute(vec!["hello".into(), "world".into()])
+            .await
+            .unwrap();
         assert_eq!(result.data, json!({ "echo": "hello world" }));
     }
 

@@ -10,7 +10,14 @@ use crate::state::FrameState;
 pub(crate) fn upscale(fs: &FrameState, input: &FrameBuf) -> FrameBuf {
     let fh = &fs.fh;
     let up_w = fh.upscaled_width as usize;
-    let mut out = FrameBuf::new(up_w, fh.frame_height as usize, fs.num_planes, fs.ssx, fs.ssy, fs.bit_depth as u8);
+    let mut out = FrameBuf::new(
+        up_w,
+        fh.frame_height as usize,
+        fs.num_planes,
+        fs.ssx,
+        fs.ssy,
+        fs.bit_depth as u8,
+    );
     let max = (1i32 << fs.bit_depth) - 1;
     for plane in 0..fs.num_planes {
         let (sub_x, sub_y) = if plane > 0 { (fs.ssx, fs.ssy) } else { (0, 0) };
@@ -20,7 +27,10 @@ pub(crate) fn upscale(fs: &FrameState, input: &FrameBuf) -> FrameBuf {
         let sb = SUPERRES_SCALE_BITS as i64;
         let step_x = (((down_w as i64) << sb) + (up_pw as i64 / 2)) / up_pw as i64;
         let err = up_pw as i64 * step_x - ((down_w as i64) << sb);
-        let mut initial = (-(((up_pw - down_w) as i64) << (sb - 1)) + up_pw as i64 / 2) / up_pw as i64 + (1 << (SUPERRES_EXTRA_BITS - 1)) - err / 2;
+        let mut initial = (-(((up_pw - down_w) as i64) << (sb - 1)) + up_pw as i64 / 2)
+            / up_pw as i64
+            + (1 << (SUPERRES_EXTRA_BITS - 1))
+            - err / 2;
         initial &= SUPERRES_SCALE_MASK as i64;
         let mi_w = fh.mi_cols as usize >> sub_x;
         let max_x = (mi_w * 4 - 1) as i64;
@@ -34,7 +44,8 @@ pub(crate) fn upscale(fs: &FrameState, input: &FrameBuf) -> FrameBuf {
                 let subpel = ((src_x & SUPERRES_SCALE_MASK as i64) >> SUPERRES_EXTRA_BITS) as usize;
                 let mut sum = 0i32;
                 for k in 0..SUPERRES_FILTER_TAPS {
-                    let sx = (src_px + k as i64 - SUPERRES_FILTER_OFFSET as i64).clamp(0, max_x) as usize;
+                    let sx = (src_px + k as i64 - SUPERRES_FILTER_OFFSET as i64).clamp(0, max_x)
+                        as usize;
                     sum += row[sx] as i32 * UPSCALE_FILTER[subpel][k] as i32;
                 }
                 dst.set(x, y, ((sum + 64) >> FILTER_BITS).clamp(0, max) as u16);
@@ -74,7 +85,12 @@ impl LrCtx<'_> {
 /// Loop restoration (7.17): returns LrFrame given UpscaledCurrFrame and UpscaledCdefFrame.
 /// Bands of 64 luma rows are restored in parallel: every unit reads only the two input frames
 /// and writes only its own samples.
-pub(crate) fn loop_restoration(fs: &FrameState, cur: &FrameBuf, cdef: &FrameBuf, pool: &Pool) -> FrameBuf {
+pub(crate) fn loop_restoration(
+    fs: &FrameState,
+    cur: &FrameBuf,
+    cdef: &FrameBuf,
+    pool: &Pool,
+) -> FrameBuf {
     let fh = &fs.fh;
     let mut lr = cdef.clone();
     let up_w = fh.upscaled_width as i32;
@@ -85,13 +101,20 @@ pub(crate) fn loop_restoration(fs: &FrameState, cur: &FrameBuf, cdef: &FrameBuf,
     pool.map_mut(&mut planes, |b, band| {
         // Rows of 4 luma samples in this band.
         let (start, end) = ranges[b];
-        let (row0, row1) = ((start / 4) as i32, (end / 4).min(fh.frame_height as usize) as i32);
+        let (row0, row1) = (
+            (start / 4) as i32,
+            (end / 4).min(fh.frame_height as usize) as i32,
+        );
         for (plane, out) in band.iter_mut().enumerate().take(fs.num_planes) {
             let rtype_frame = fh.lr.frame_restoration_type[plane];
             if rtype_frame == RESTORE_NONE as u8 {
                 continue;
             }
-            let (sub_x, sub_y) = if plane > 0 { (fs.ssx as i32, fs.ssy as i32) } else { (0, 0) };
+            let (sub_x, sub_y) = if plane > 0 {
+                (fs.ssx as i32, fs.ssy as i32)
+            } else {
+                (0, 0)
+            };
             let unit_size = fh.lr.loop_restoration_size[plane] as i32;
             let unit_rows = fs.lr_unit_rows[plane] as i32;
             let unit_cols = fs.lr_unit_cols[plane] as i32;
@@ -103,7 +126,14 @@ pub(crate) fn loop_restoration(fs: &FrameState, cur: &FrameBuf, cdef: &FrameBuf,
                 let stripe_num = (luma_y + 8) / 64;
                 let stripe_start_y = (-8 + stripe_num * 64) >> sub_y;
                 let stripe_end_y = stripe_start_y + (64 >> sub_y) - 1;
-                let ctx = LrCtx { cur: &cur.planes[plane], cdef: &cdef.planes[plane], plane_end_x, plane_end_y, stripe_start_y, stripe_end_y };
+                let ctx = LrCtx {
+                    cur: &cur.planes[plane],
+                    cdef: &cdef.planes[plane],
+                    plane_end_x,
+                    plane_end_y,
+                    stripe_start_y,
+                    stripe_end_y,
+                };
                 let unit_row = (unit_rows - 1).min(((row * 4 + 8) >> sub_y) / unit_size);
                 let mut col = 0;
                 while col * 4 < up_w {
@@ -115,8 +145,12 @@ pub(crate) fn loop_restoration(fs: &FrameState, cur: &FrameBuf, cdef: &FrameBuf,
                     if w > 0 && h > 0 {
                         let ui = (unit_row * unit_cols + unit_col) as usize;
                         match fs.lr.lr_type[plane][ui] {
-                            t if t == RESTORE_WIENER as u8 => wiener(fs, &ctx, out, plane, ui, x, y, w, h, bd),
-                            t if t == RESTORE_SGRPROJ as u8 => self_guided(fs, &ctx, out, plane, ui, x, y, w, h, bd),
+                            t if t == RESTORE_WIENER as u8 => {
+                                wiener(fs, &ctx, out, plane, ui, x, y, w, h, bd)
+                            }
+                            t if t == RESTORE_SGRPROJ as u8 => {
+                                self_guided(fs, &ctx, out, plane, ui, x, y, w, h, bd)
+                            }
                             _ => {}
                         }
                     }
@@ -131,7 +165,18 @@ pub(crate) fn loop_restoration(fs: &FrameState, cur: &FrameBuf, cdef: &FrameBuf,
 }
 
 #[allow(clippy::too_many_arguments)]
-fn wiener(fs: &FrameState, ctx: &LrCtx, out: &mut RowBand, plane: usize, ui: usize, x: i32, y: i32, w: i32, h: i32, bd: u32) {
+fn wiener(
+    fs: &FrameState,
+    ctx: &LrCtx,
+    out: &mut RowBand,
+    plane: usize,
+    ui: usize,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    bd: u32,
+) {
     let round0: u32 = if bd == 12 { 5 } else { 3 };
     let round1: u32 = if bd == 12 { 9 } else { 11 };
     let coef = &fs.lr.lr_wiener[plane][ui];
@@ -175,7 +220,18 @@ fn wiener(fs: &FrameState, ctx: &LrCtx, out: &mut RowBand, plane: usize, ui: usi
 }
 
 #[allow(clippy::too_many_arguments)]
-fn self_guided(fs: &FrameState, ctx: &LrCtx, out: &mut RowBand, plane: usize, ui: usize, x: i32, y: i32, w: i32, h: i32, bd: u32) {
+fn self_guided(
+    fs: &FrameState,
+    ctx: &LrCtx,
+    out: &mut RowBand,
+    plane: usize,
+    ui: usize,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    bd: u32,
+) {
     let set = fs.lr.lr_sgr_set[plane][ui] as usize;
     let mut flt0 = [[0i32; 4]; 4];
     let mut flt1 = [[0i32; 4]; 4];
@@ -203,11 +259,25 @@ fn self_guided(fs: &FrameState, ctx: &LrCtx, out: &mut RowBand, plane: usize, ui
 
 #[inline(always)]
 fn round2_64(x: i64, n: u32) -> i64 {
-    if n == 0 { x } else { (x + (1i64 << (n - 1))) >> n }
+    if n == 0 {
+        x
+    } else {
+        (x + (1i64 << (n - 1))) >> n
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
-fn box_filter(ctx: &LrCtx, x: i32, y: i32, w: i32, h: i32, set: usize, pass: usize, bd: u32, f: &mut [[i32; 4]; 4]) {
+fn box_filter(
+    ctx: &LrCtx,
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+    set: usize,
+    pass: usize,
+    bd: u32,
+    f: &mut [[i32; 4]; 4],
+) {
     let r = SGR_PARAMS[set][pass * 2] as i32;
     if r == 0 {
         return;
@@ -254,7 +324,11 @@ fn box_filter(ctx: &LrCtx, x: i32, y: i32, w: i32, h: i32, set: usize, pass: usi
             for dy in -1..=1i32 {
                 for dx in -1..=1i32 {
                     let weight = if pass == 0 {
-                        if ((i + dy) & 1) != 0 { if dx == 0 { 6 } else { 5 } } else { 0 }
+                        if ((i + dy) & 1) != 0 {
+                            if dx == 0 { 6 } else { 5 }
+                        } else {
+                            0
+                        }
                     } else if dx == 0 || dy == 0 {
                         4
                     } else {
@@ -265,7 +339,8 @@ fn box_filter(ctx: &LrCtx, x: i32, y: i32, w: i32, h: i32, set: usize, pass: usi
                 }
             }
             let v = a * ctx.cdef.at((x + j) as usize, (y + i) as usize) as i64 + b;
-            f[i as usize][j as usize] = round2_64(v, (SGRPROJ_SGR_BITS + shift - SGRPROJ_RST_BITS) as u32) as i32;
+            f[i as usize][j as usize] =
+                round2_64(v, (SGRPROJ_SGR_BITS + shift - SGRPROJ_RST_BITS) as u32) as i32;
         }
     }
 }

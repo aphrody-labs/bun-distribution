@@ -76,7 +76,10 @@ fn is_indexed(name: &str, prefix: &str) -> bool {
 
 /// Lit une paire `[offset, count]` depuis les deux premières variables d'un noeud `_REF_`.
 fn ref_pair(node: &Node<'_>) -> RefRange {
-    RefRange { offset: node.int(0), count: node.int(1) }
+    RefRange {
+        offset: node.int(0),
+        count: node.int(1),
+    }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -297,7 +300,10 @@ fn parse_effect_infos(children: &[Node<'_>], out: &mut Vec<TeamBuildEffectInfo>)
             if let Some(info) = current.take() {
                 out.push(info);
             }
-            current = Some(TeamBuildEffectInfo { count: child.int(0), effect_data_ref: None });
+            current = Some(TeamBuildEffectInfo {
+                count: child.int(0),
+                effect_data_ref: None,
+            });
         } else if name.starts_with("TEAM_BUILD_EFFECT_INFO_REF_EFFECT_DATA_")
             && let Some(info) = current.as_mut()
             && child.var_count() >= 2

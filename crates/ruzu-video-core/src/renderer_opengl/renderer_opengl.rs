@@ -567,7 +567,8 @@ impl RendererBase for RendererOpenGL {
         layout: FramebufferLayout,
         layer_stack: ruzu_core::hle::service::nvnflinger::hwc_layer::LayerStackId,
     ) {
-        self.base_data.request_screenshot(data, callback, layout, layer_stack);
+        self.base_data
+            .request_screenshot(data, callback, layout, layer_stack);
     }
 
     fn set_shader_cache_gpu_reader(&mut self, reader: crate::renderer_base::ShaderCacheGpuReader) {

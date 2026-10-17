@@ -52,10 +52,22 @@ fn settings_saved_before_process_versions_load_as_v1() {
     // existing catalog, sidecar and preset on the rendering it was made with
     assert_eq!(s.process, ProcessVersion(1));
     assert_eq!(s.process, ProcessVersion::legacy());
-    assert_eq!((s.light.exposure, s.light.highlights, s.masks.len(), s.detail.sharpen_amount), (0.4, -60.0, 1, 40.0));
+    assert_eq!(
+        (
+            s.light.exposure,
+            s.light.highlights,
+            s.masks.len(),
+            s.detail.sharpen_amount
+        ),
+        (0.4, -60.0, 1, 40.0)
+    );
     // the smallest legacy file too, and settings nested in other records (history, versions)
-    assert_eq!(DevelopSettings::from_json(&json!({})).unwrap().process, ProcessVersion(1));
-    let nested: Vec<DevelopSettings> = serde_json::from_value(json!([{}, {"light": {"exposure": 1.0}}])).unwrap();
+    assert_eq!(
+        DevelopSettings::from_json(&json!({})).unwrap().process,
+        ProcessVersion(1)
+    );
+    let nested: Vec<DevelopSettings> =
+        serde_json::from_value(json!([{}, {"light": {"exposure": 1.0}}])).unwrap();
     assert!(nested.iter().all(|s| s.process == ProcessVersion(1)));
     // saved again, they gain no field: files and preview-cache keys (`hash64`) stay as they were
     assert!(s.to_json().get("process").is_none());
@@ -64,14 +76,21 @@ fn settings_saved_before_process_versions_load_as_v1() {
 #[test]
 fn new_settings_get_the_latest_process() {
     assert_eq!(DevelopSettings::default().process, ProcessVersion::LATEST);
-    assert_eq!(DevelopSettings::for_raw(5200.0, 4.0).process, ProcessVersion::LATEST);
+    assert_eq!(
+        DevelopSettings::for_raw(5200.0, 4.0).process,
+        ProcessVersion::LATEST
+    );
     assert_eq!(ProcessVersion::LATEST, Process::LATEST.version());
     assert_eq!(ProcessVersion::V1, ProcessVersion(1));
     // the processes are listed oldest first, the latest last, each with its own number
     let versions: Vec<u32> = Process::ALL.iter().map(|p| p.version().0).collect();
     assert!(versions.windows(2).all(|w| w[0] < w[1]), "{versions:?}");
     assert_eq!(Process::ALL.last(), Some(&Process::LATEST));
-    assert!(Process::ALL.iter().all(|p| p.version().process() == *p && p.version().is_known()));
+    assert!(
+        Process::ALL
+            .iter()
+            .all(|p| p.version().process() == *p && p.version().is_known())
+    );
 }
 
 #[test]
@@ -82,7 +101,10 @@ fn v1_is_left_out_when_saving_and_other_processes_are_kept() {
     s.process = ProcessVersion(2);
     let v = s.to_json();
     assert_eq!(v["process"], json!(2));
-    assert_eq!(DevelopSettings::from_json(&v).unwrap().process, ProcessVersion(2));
+    assert_eq!(
+        DevelopSettings::from_json(&v).unwrap().process,
+        ProcessVersion(2)
+    );
     assert_ne!(s.hash64(), before, "another process is another preview");
 }
 
@@ -93,16 +115,36 @@ fn unknown_process_numbers_load_and_render_with_the_newest_known() {
     assert_eq!(s.process, ProcessVersion(7));
     assert_eq!(s.process.process(), Process::LATEST);
     assert!(!s.process.is_known());
-    assert!(!s.process.is_outdated(), "never downgraded by Update to Current Process");
+    assert!(
+        !s.process.is_outdated(),
+        "never downgraded by Update to Current Process"
+    );
     assert_eq!(s.to_json()["process"], json!(7));
-    assert_eq!(s.merged(&json!({"light": {"exposure": 1.0}})).unwrap().process, ProcessVersion(7));
+    assert_eq!(
+        s.merged(&json!({"light": {"exposure": 1.0}}))
+            .unwrap()
+            .process,
+        ProcessVersion(7)
+    );
     // below V1 (no LightCraft writes it): rendered as V1, and updatable
-    let zero = DevelopSettings::from_json(&json!({"process": 0})).unwrap().process;
-    assert_eq!((zero.process(), zero.is_known(), zero.is_outdated()), (Process::V1, false, true));
-    let max = DevelopSettings::from_json(&json!({"process": u32::MAX})).unwrap().process;
+    let zero = DevelopSettings::from_json(&json!({"process": 0}))
+        .unwrap()
+        .process;
+    assert_eq!(
+        (zero.process(), zero.is_known(), zero.is_outdated()),
+        (Process::V1, false, true)
+    );
+    let max = DevelopSettings::from_json(&json!({"process": u32::MAX}))
+        .unwrap()
+        .process;
     assert_eq!(max.process(), Process::LATEST);
     // a whole number written as a float is that number
-    assert_eq!(DevelopSettings::from_json(&json!({"process": 2.0})).unwrap().process, ProcessVersion(2));
+    assert_eq!(
+        DevelopSettings::from_json(&json!({"process": 2.0}))
+            .unwrap()
+            .process,
+        ProcessVersion(2)
+    );
 }
 
 #[test]
@@ -125,7 +167,11 @@ fn a_damaged_process_value_reads_as_v1_and_keeps_the_edits() {
         v["process"] = bad.clone();
         let s = DevelopSettings::from_json(&v).unwrap_or_else(|e| panic!("{bad}: {e}"));
         assert_eq!(s.process, ProcessVersion::V1, "{bad}");
-        assert_eq!((s.light.exposure, s.masks.len(), s.curve.master.len()), (0.4, 1, 3), "{bad}: the rest of the settings load");
+        assert_eq!(
+            (s.light.exposure, s.masks.len(), s.curve.master.len()),
+            (0.4, 1, 3),
+            "{bad}: the rest of the settings load"
+        );
         // nested in other records too (history, versions, the catalog)
         let nested: Vec<DevelopSettings> = serde_json::from_value(json!([v])).unwrap();
         assert_eq!(nested[0].process, ProcessVersion::V1);
@@ -134,28 +180,53 @@ fn a_damaged_process_value_reads_as_v1_and_keeps_the_edits() {
 
 #[test]
 fn the_process_is_not_an_edit_nor_part_of_copied_settings() {
-    let mut s = DevelopSettings { process: ProcessVersion(LATEST_PLUS_ONE), ..Default::default() };
-    assert!(s.is_unedited(), "a photo on another process is not edited for that");
+    let mut s = DevelopSettings {
+        process: ProcessVersion(LATEST_PLUS_ONE),
+        ..Default::default()
+    };
+    assert!(
+        s.is_unedited(),
+        "a photo on another process is not edited for that"
+    );
     s.light.exposure = 1.0;
     assert!(!s.is_unedited());
     // resetting a section or a slider leaves the process alone
     s.reset_section(Section::Light);
     assert_eq!(s.process, ProcessVersion(LATEST_PLUS_ONE));
     // copy / paste / sync / presets: no group carries the process, so the target keeps its own
-    assert!(SettingsGroup::ALL.iter().all(|g| !g.keys().contains(&"process")));
+    assert!(
+        SettingsGroup::ALL
+            .iter()
+            .all(|g| !g.keys().contains(&"process"))
+    );
     s.light.exposure = 1.0;
     let copied = extract_groups(&s, &SettingsGroup::ALL);
     assert!(copied.get("process").is_none());
     let target = DevelopSettings::from_json(&legacy()).unwrap();
     let pasted = apply_partial(&target, &copied, 1.0);
-    assert_eq!((pasted.process, pasted.light.exposure), (ProcessVersion(1), 1.0));
+    assert_eq!(
+        (pasted.process, pasted.light.exposure),
+        (ProcessVersion(1), 1.0)
+    );
     // (at another amount, without Grain: its integer seed doesn't survive scaling, a separate issue)
-    let groups: Vec<SettingsGroup> = SettingsGroup::ALL.into_iter().filter(|g| *g != SettingsGroup::Grain).collect();
+    let groups: Vec<SettingsGroup> = SettingsGroup::ALL
+        .into_iter()
+        .filter(|g| *g != SettingsGroup::Grain)
+        .collect();
     let preset = Preset::from_settings("p", "P", "User", &s, &groups);
     let half = preset.apply(&target, 0.5);
-    assert_eq!((half.process, half.light.exposure), (ProcessVersion(1), 0.7));
+    assert_eq!(
+        (half.process, half.light.exposure),
+        (ProcessVersion(1), 0.7)
+    );
     // a partial that names a process explicitly (Apply Settings JSON) sets it
-    assert_eq!(target.merged(&json!({"process": LATEST_PLUS_ONE})).unwrap().process, ProcessVersion(LATEST_PLUS_ONE));
+    assert_eq!(
+        target
+            .merged(&json!({"process": LATEST_PLUS_ONE}))
+            .unwrap()
+            .process,
+        ProcessVersion(LATEST_PLUS_ONE)
+    );
 }
 
 /// A process other than the latest: a newer LightCraft's number (no older one than V1 exists).

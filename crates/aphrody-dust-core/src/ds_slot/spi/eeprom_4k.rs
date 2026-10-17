@@ -139,7 +139,7 @@ impl super::SpiDevice for Eeprom4k {
             SaveReloadContents::Existing(contents) => {
                 self.contents[..contents.len()].copy_from_slice(&contents);
                 self.contents[contents.len()..].fill(0);
-            },
+            }
             SaveReloadContents::New => self.contents.fill(0xFF),
         }
     }
@@ -171,13 +171,13 @@ impl super::SpiDevice for Eeprom4k {
                 // Write enable
                 self.status.set_write_enabled(true);
                 0xFF // High-Z
-            },
+            }
 
             0x04 | 0x0C => {
                 // Write disable
                 self.status.set_write_enabled(false);
                 0xFF // High-Z
-            },
+            }
 
             0x05 | 0x0D => {
                 // Read status register
@@ -187,7 +187,7 @@ impl super::SpiDevice for Eeprom4k {
                 } else {
                     self.status.0
                 }
-            },
+            }
 
             0x01 | 0x09 => {
                 // Write status register
@@ -198,7 +198,7 @@ impl super::SpiDevice for Eeprom4k {
                     }
                 }
                 0xFF // High-Z
-            },
+            }
 
             0x03 | 0x0B => {
                 // Read
@@ -207,20 +207,20 @@ impl super::SpiDevice for Eeprom4k {
                         self.cur_addr = (value as u16 & 8) << 5;
                         self.cur_command_pos += 1;
                         0xFF // High-Z
-                    },
+                    }
                     1 => {
                         self.cur_addr |= value as u16;
                         self.cur_command_pos += 1;
                         0xFF // High-Z
-                    },
+                    }
                     _ => {
                         let result =
                             unsafe { self.contents.read_unchecked(self.cur_addr as usize) };
                         self.cur_addr = (self.cur_addr + 1) & 0x1FF;
                         result
-                    },
+                    }
                 }
-            },
+            }
 
             0x02 | 0x0A => {
                 // Write
@@ -229,17 +229,17 @@ impl super::SpiDevice for Eeprom4k {
                         0 => {
                             self.cur_addr = (value as u16 & 8) << 5;
                             self.cur_command_pos += 1;
-                        },
+                        }
                         1 => {
                             self.cur_addr |= value as u16;
                             self.cur_command_pos += 1;
-                        },
+                        }
                         _ => {
                             unsafe {
                                 self.contents.write_unchecked(self.cur_addr as usize, value);
                             }
                             self.cur_addr = (self.cur_addr & 0x1F0) | ((self.cur_addr + 1) & 0xF);
-                        },
+                        }
                     }
                     if last {
                         self.status.set_write_enabled(false);
@@ -247,7 +247,7 @@ impl super::SpiDevice for Eeprom4k {
                     }
                 }
                 0xFF // High-Z
-            },
+            }
 
             _ => {
                 if first {
@@ -255,7 +255,7 @@ impl super::SpiDevice for Eeprom4k {
                     slog::warn!(self.logger, "Unrecognized command: {:#X}", self.cur_command);
                 }
                 0xFF // High-Z
-            },
+            }
         }
     }
 }

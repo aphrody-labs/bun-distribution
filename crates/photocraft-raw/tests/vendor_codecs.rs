@@ -12,7 +12,12 @@ const CURVE: [u16; 4] = [8000, 10400, 12900, 14100];
 fn tone(code: u16) -> u16 {
     let pts = [0u32, 8000, 10400, 12900, 14100, 16384];
     let x = u32::from(code) * 8;
-    let y: u32 = pts.windows(2).enumerate().filter(|(_, w)| x > w[0]).map(|(i, w)| (x.min(w[1]) - w[0]) << i).sum();
+    let y: u32 = pts
+        .windows(2)
+        .enumerate()
+        .filter(|(_, w)| x > w[0])
+        .map(|(i, w)| (x.min(w[1]) - w[0]) << i)
+        .sum();
     (y / 4).min(16383) as u16
 }
 
@@ -56,13 +61,19 @@ fn craw_wide_ranges_lose_only_low_bits() {
     for y in 0..h {
         for g in 0..w / 32 {
             for parity in 0..2 {
-                let run: Vec<u16> = (0..16).map(|i| codes[y * w + g * 32 + 2 * i + parity]).collect();
+                let run: Vec<u16> = (0..16)
+                    .map(|i| codes[y * w + g * 32 + 2 * i + parity])
+                    .collect();
                 let range = run.iter().max().unwrap() - run.iter().min().unwrap();
                 let step = (0..5).map(|k| 1u16 << k).find(|s| 128 * s > range).unwrap();
                 for (i, &c) in run.iter().enumerate() {
                     let got = d.data[y * w + g * 32 + 2 * i + parity];
                     let lo = tone(c.saturating_sub(step - 1));
-                    assert!(got <= tone(c) && got >= lo, "code {c} step {step}: got {got}, want {lo}..={}", tone(c));
+                    assert!(
+                        got <= tone(c) && got >= lo,
+                        "code {c} step {step}: got {got}, want {lo}..={}",
+                        tone(c)
+                    );
                 }
             }
         }
@@ -95,7 +106,10 @@ fn craw_unusual_variants_are_unsupported() {
     assert!(decode(&ok, &Limits::default()).is_ok());
     // A non-increasing tone curve is not guessed at.
     let bad_curve = sony_craw(32, h, &codes32, [9000, 8000, 12000, 13000]);
-    assert!(matches!(decode(&bad_curve, &Limits::default()), Err(RawError::Unsupported(_))));
+    assert!(matches!(
+        decode(&bad_curve, &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
     // Truncated strip.
     let cut = &ok[..ok.len() - 20];
     assert!(decode(cut, &Limits::default()).is_err());
@@ -133,7 +147,11 @@ fn craw_without_a_black_level_tag_reads_black_from_the_tone_curve() {
     hide_raw_sub_ifd_tag(&mut b, 0x7310);
     let s = decode(&b, &Limits::default()).unwrap();
     assert_eq!(s.black.values, vec![512.0]);
-    assert!(!s.warnings.iter().any(|w| w.contains("black level")), "{:?}", s.warnings);
+    assert!(
+        !s.warnings.iter().any(|w| w.contains("black level")),
+        "{:?}",
+        s.warnings
+    );
     // With the tag present the level is the same: 512 either way.
     let b = sony_craw(w, h, &codes, CURVE);
     let s = decode(&b, &Limits::default()).unwrap();
@@ -188,12 +206,21 @@ fn rw2_compressed_formats_fall_back() {
     // Width not made of whole blocks.
     let mut b = rw2(20, 4, &data, 12);
     patch_ifd0_short(&mut b, 0x0002, 19);
-    assert!(matches!(decode(&b, &Limits::default()), Err(RawError::Unsupported(_))));
+    assert!(matches!(
+        decode(&b, &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
     // Sizes beyond the limits are refused before allocating.
     let mut b = rw2(20, 4, &data, 12);
     patch_ifd0_short(&mut b, 0x0003, 60000);
-    let tight = Limits { max_pixels: 1 << 16, ..Limits::default() };
-    assert!(matches!(decode(&b, &tight), Err(RawError::LimitExceeded(_))));
+    let tight = Limits {
+        max_pixels: 1 << 16,
+        ..Limits::default()
+    };
+    assert!(matches!(
+        decode(&b, &tight),
+        Err(RawError::LimitExceeded(_))
+    ));
 }
 
 #[test]
@@ -228,12 +255,21 @@ fn orf_truncated_in_ifd0_is_malformed_not_the_compressed_variant() {
     assert!(decode(&b, &Limits::default()).is_ok());
     let ifd = u32::from_le_bytes(b[4..8].try_into().unwrap()) as usize;
     let n = u16::from_le_bytes([b[ifd], b[ifd + 1]]) as usize;
-    let entries: Vec<u16> = (0..n).map(|i| u16::from_le_bytes([b[ifd + 2 + 12 * i], b[ifd + 3 + 12 * i]])).collect();
+    let entries: Vec<u16> = (0..n)
+        .map(|i| u16::from_le_bytes([b[ifd + 2 + 12 * i], b[ifd + 3 + 12 * i]]))
+        .collect();
     let at = |tag: u16| ifd + 2 + 12 * entries.iter().position(|&t| t == tag).unwrap();
     // Cut right before the StripByteCounts entry: width, height and compression survive.
     let cut = at(279);
     assert!(cut > at(259), "compression precedes the byte counts");
-    assert!(matches!(decode(&b[..cut], &Limits::default()), Err(RawError::Malformed(_))), "{:?}", decode(&b[..cut], &Limits::default()).err());
+    assert!(
+        matches!(
+            decode(&b[..cut], &Limits::default()),
+            Err(RawError::Malformed(_))
+        ),
+        "{:?}",
+        decode(&b[..cut], &Limits::default()).err()
+    );
     // No prefix of the file reads as the compressed variant: the compression declaration is
     // intact or gone, never "compressed".
     for cut in 0..b.len() {
@@ -256,5 +292,8 @@ fn orf_packed_or_compressed_falls_back() {
             b[e + 8..e + 12].copy_from_slice(&((w * h) as u32).to_le_bytes());
         }
     }
-    assert!(matches!(decode(&b, &Limits::default()), Err(RawError::Unsupported(_))));
+    assert!(matches!(
+        decode(&b, &Limits::default()),
+        Err(RawError::Unsupported(_))
+    ));
 }

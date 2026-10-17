@@ -17,7 +17,10 @@ struct Counting(Rc<RefCell<usize>>);
 
 impl PrintService for Counting {
     fn printers(&mut self) -> Vec<Printer> {
-        vec![Printer { name: "Office".into(), default: true }]
+        vec![Printer {
+            name: "Office".into(),
+            default: true,
+        }]
     }
 
     fn print(&mut self, _: &PrintJob) -> Result<String, String> {
@@ -33,7 +36,9 @@ fn postscript_is_saved_not_printed() {
     let w = written.clone();
     let services = Services {
         print: Some(Box::new(Counting(sent.clone()))),
-        pick_save: Some(Box::new(|pick: &crate::FilePick| Some(format!("/tmp/{}", pick.name)))),
+        pick_save: Some(Box::new(|pick: &crate::FilePick| {
+            Some(format!("/tmp/{}", pick.name))
+        })),
         write: Some(Box::new(move |p: &str, b: &[u8]| {
             w.borrow_mut().push((p.to_string(), b.to_vec()));
             Ok(())
@@ -41,12 +46,31 @@ fn postscript_is_saved_not_printed() {
         ..Default::default()
     };
     let mut app = VectorcraftApp::new(Session::new(), services);
-    app.run("file.new", json!({"width": 100, "height": 80, "artboards": 2})).unwrap();
+    app.run(
+        "file.new",
+        json!({"width": 100, "height": 80, "artboards": 2}),
+    )
+    .unwrap();
     // A .ps path: PostScript, at the level asked for.
-    let r = app.run("file.print", json!({"path": "/tmp/job.ps", "level": 2})).unwrap();
-    assert_eq!((r["format"].clone(), r["printed"].clone(), r["pages"].clone()), (json!("postscript"), json!(false), json!(2)), "{r}");
+    let r = app
+        .run("file.print", json!({"path": "/tmp/job.ps", "level": 2}))
+        .unwrap();
+    assert_eq!(
+        (
+            r["format"].clone(),
+            r["printed"].clone(),
+            r["pages"].clone()
+        ),
+        (json!("postscript"), json!(false), json!(2)),
+        "{r}"
+    );
     // No path: a picked .ps file.
-    let r = app.run("file.print", json!({"format": "postscript", "settings": {"copies": 2}})).unwrap();
+    let r = app
+        .run(
+            "file.print",
+            json!({"format": "postscript", "settings": {"copies": 2}}),
+        )
+        .unwrap();
     assert_eq!(r["pages"], 4);
     let w = written.borrow();
     assert_eq!(w.len(), 2);
@@ -59,7 +83,8 @@ fn postscript_is_saved_not_printed() {
     assert_eq!(*sent.borrow(), 0, "nothing went to the printer");
     drop(w);
     // A PDF still goes to the printer.
-    app.run("file.print", json!({"settings": {"copies": 1}})).unwrap();
+    app.run("file.print", json!({"settings": {"copies": 1}}))
+        .unwrap();
     assert_eq!(*sent.borrow(), 1);
     assert!(app.run("file.print", json!({"format": "ps2"})).is_err());
 }
@@ -83,23 +108,39 @@ fn desktop_print_pending_receipt_and_refusal_are_distinct() {
             let release = self.release.clone();
             let refused = self.refused;
             Some(Arc::new(move |job| {
-                release.lock().unwrap().recv_timeout(std::time::Duration::from_secs(10)).unwrap();
+                release
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(std::time::Duration::from_secs(10))
+                    .unwrap();
                 assert_eq!(job.printer, Some("Office Laser"));
                 assert!(job.pdf.starts_with(b"%PDF-"));
-                if refused { Err("queue refused this job".into()) } else { Ok("Sent to Office Laser".into()) }
+                if refused {
+                    Err("queue refused this job".into())
+                } else {
+                    Ok("Sent to Office Laser".into())
+                }
             }))
         }
     }
     for refused in [false, true] {
         let (release, wait) = mpsc::channel();
         let services = Services {
-            print: Some(Box::new(AsyncPrinter { release: Arc::new(Mutex::new(wait)), refused })),
-            write_shared: Some(Arc::new(|_, _| Err("printing must not write a document".into()))),
+            print: Some(Box::new(AsyncPrinter {
+                release: Arc::new(Mutex::new(wait)),
+                refused,
+            })),
+            write_shared: Some(Arc::new(|_, _| {
+                Err("printing must not write a document".into())
+            })),
             ..Default::default()
         };
         let mut app = VectorcraftApp::new(Session::new(), services);
-        app.run("file.new", json!({ "width": 100, "height": 80 })).unwrap();
-        let pending = app.run("file.print", json!({ "printer": "Office Laser" })).unwrap();
+        app.run("file.new", json!({ "width": 100, "height": 80 }))
+            .unwrap();
+        let pending = app
+            .run("file.print", json!({ "printer": "Office Laser" }))
+            .unwrap();
         assert_eq!(pending["background"], true);
         assert_eq!(pending["printed"], false);
         assert_eq!(pending["pages"], 1);

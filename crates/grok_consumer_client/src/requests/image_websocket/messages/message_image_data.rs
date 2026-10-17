@@ -1,44 +1,43 @@
 use serde::Deserialize;
 
-
 /// Images with a binary blob and URLs.
 /// We may receive several of these for a single prompt.
 #[derive(Deserialize, Clone, Debug)]
 pub struct MessageImageData {
-  /// UUID.
-  /// Probably an identifier for the original request/prompt.
-  pub request_id: String, // Option<String>,
+    /// UUID.
+    /// Probably an identifier for the original request/prompt.
+    pub request_id: String, // Option<String>,
 
-  /// UUID.
-  /// This turns out to be the file ID in the image URL (and `job_id`).
-  pub id: Option<String>,
+    /// UUID.
+    /// This turns out to be the file ID in the image URL (and `job_id`).
+    pub id: Option<String>,
 
-  /// UUID.
-  /// This turns out to be the file ID in the image URL (and `id`).
-  pub job_id: Option<String>,
+    /// UUID.
+    /// This turns out to be the file ID in the image URL (and `id`).
+    pub job_id: Option<String>,
 
-  /// Eg. null, "0", "50", "100"
-  pub percentage_complete: Option<f32>,
+    /// Eg. null, "0", "50", "100"
+    pub percentage_complete: Option<f32>,
 
-  /// The user's prompt
-  pub prompt: String,  //pub prompt: Option<String>,
+    /// The user's prompt
+    pub prompt: String, //pub prompt: Option<String>,
 
-  /// The X.ai enriched prompt
-  pub full_prompt: String, //pub full_prompt: Option<String>,
+    /// The X.ai enriched prompt
+    pub full_prompt: String, //pub full_prompt: Option<String>,
 
-  /// URL to the image.
-  pub url: String, //pub url: Option<String>,
-  
-  // We don't need to decode - let's just download again
-  // /// Base64 encoded image blob.
-  // pub blob: Option<String>,
+    /// URL to the image.
+    pub url: String, //pub url: Option<String>,
 
-  // /// NSFW flag
-  // pub r_rated: Option<bool>,
+                     // We don't need to decode - let's just download again
+                     // /// Base64 encoded image blob.
+                     // pub blob: Option<String>,
 
-  // /// Name of the model used to generate the image
-  // /// eg. "imagine_h_1", "imagine_x_1"
-  // pub model_name: Option<String>,
+                     // /// NSFW flag
+                     // pub r_rated: Option<bool>,
+
+                     // /// Name of the model used to generate the image
+                     // /// eg. "imagine_h_1", "imagine_x_1"
+                     // pub model_name: Option<String>,
 }
 
 /*

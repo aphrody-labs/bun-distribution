@@ -19,7 +19,11 @@ fn lightroom_folder(root: &Path) -> PathBuf {
     let dir = root.join("Lightroom");
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("Lightroom Catalog.lrcat"), b"not really SQLite").unwrap();
-    for f in ["Lightroom Catalog.lrcat-wal", "Lightroom Catalog.lrcat-shm", "Lightroom Catalog.lrcat.lock"] {
+    for f in [
+        "Lightroom Catalog.lrcat-wal",
+        "Lightroom Catalog.lrcat-shm",
+        "Lightroom Catalog.lrcat.lock",
+    ] {
         std::fs::write(dir.join(f), b"").unwrap();
     }
     for d in [
@@ -35,7 +39,10 @@ fn lightroom_folder(root: &Path) -> PathBuf {
 }
 
 fn names(dir: &Path) -> Vec<std::ffi::OsString> {
-    let mut v: Vec<_> = std::fs::read_dir(dir).unwrap().map(|e| e.unwrap().file_name()).collect();
+    let mut v: Vec<_> = std::fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name())
+        .collect();
     v.sort();
     v
 }
@@ -45,16 +52,27 @@ fn refused(root: &Path, path: &Path, catalog: &Path) {
     let before = names(&root.join("Lightroom"));
     let mut s = Session::new();
     match s.open_library(path, true) {
-        Err(EngineError::LightroomCatalog { path: p, catalog: c }) => {
+        Err(EngineError::LightroomCatalog {
+            path: p,
+            catalog: c,
+        }) => {
             assert_eq!(p, path);
             assert_eq!(c.as_deref(), Some(catalog), "{}", path.display());
         }
         other => panic!("{}: {other:?}", path.display()),
     }
     assert!(s.library.is_none());
-    assert_eq!(names(&root.join("Lightroom")), before, "nothing written next to the catalog");
+    assert_eq!(
+        names(&root.join("Lightroom")),
+        before,
+        "nothing written next to the catalog"
+    );
     if path.is_dir() {
-        assert!(!path.join("catalog.snap").exists() && !path.join("catalog.lock").exists(), "no library created in {}", path.display());
+        assert!(
+            !path.join("catalog.snap").exists() && !path.join("catalog.lock").exists(),
+            "no library created in {}",
+            path.display()
+        );
     }
 }
 
@@ -77,8 +95,15 @@ fn each_part_of_a_lightroom_catalog_is_refused() {
     ] {
         refused(&root, &p, &catalog);
     }
-    let e = Session::new().open_library(&dir, false).unwrap_err().to_string();
-    assert!(e.contains("Lightroom Classic catalog, not a LightCraft library") && e.contains("Import Lightroom Catalog"), "{e}");
+    let e = Session::new()
+        .open_library(&dir, false)
+        .unwrap_err()
+        .to_string();
+    assert!(
+        e.contains("Lightroom Classic catalog, not a LightCraft library")
+            && e.contains("Import Lightroom Catalog"),
+        "{e}"
+    );
     let _ = std::fs::remove_dir_all(&root);
 }
 
@@ -88,12 +113,23 @@ fn an_lrdata_folder_whose_catalog_was_renamed_finds_the_one_next_to_it() {
     let dir = root.join("Lightroom");
     std::fs::create_dir_all(dir.join("Old Name Previews.lrdata")).unwrap();
     std::fs::write(dir.join("New Name.lrcat"), b"x").unwrap();
-    refused(&root, &dir.join("Old Name Previews.lrdata"), &dir.join("New Name.lrcat"));
+    refused(
+        &root,
+        &dir.join("Old Name Previews.lrdata"),
+        &dir.join("New Name.lrcat"),
+    );
     // no catalog anywhere: still refused (it is Lightroom's data), with nothing to import
     let lone = root.join("lone");
     std::fs::create_dir_all(lone.join("Gone Previews.lrdata")).unwrap();
-    assert_eq!(lightroom_catalog_at(&lone.join("Gone Previews.lrdata")), Some(LightroomPlace { catalog: None }));
-    assert_eq!(lightroom_catalog_at(&lone.join("Gone.lrcat")), Some(LightroomPlace { catalog: None }), "a missing .lrcat path");
+    assert_eq!(
+        lightroom_catalog_at(&lone.join("Gone Previews.lrdata")),
+        Some(LightroomPlace { catalog: None })
+    );
+    assert_eq!(
+        lightroom_catalog_at(&lone.join("Gone.lrcat")),
+        Some(LightroomPlace { catalog: None }),
+        "a missing .lrcat path"
+    );
     assert!(!lone.join("Gone.lrcat").exists());
     let _ = std::fs::remove_dir_all(&root);
 }
@@ -148,7 +184,10 @@ fn odd_folders_never_fail_the_check() {
     assert_eq!(lightroom_catalog_at(&root.join("missing/deeper")), None);
     assert_eq!(lightroom_catalog_at(Path::new("")), None);
     assert_eq!(lightroom_catalog_at(Path::new("/")), None);
-    assert!(lightroom_catalog_at(Path::new("x.LRCAT")).is_some(), "case-insensitive");
+    assert!(
+        lightroom_catalog_at(Path::new("x.LRCAT")).is_some(),
+        "case-insensitive"
+    );
     // a one-letter name with a multibyte character never cuts inside it
     let _ = lightroom_catalog_at(&root.join("é"));
     let _ = lightroom_catalog_at(&root.join("ataé-data"));
@@ -164,15 +203,31 @@ fn odd_folders_never_fail_the_check() {
             let bad = root.join(std::ffi::OsStr::from_bytes(b"caf\xe9 Previews.lrdata"));
             std::fs::create_dir_all(&bad).unwrap();
             std::fs::write(root.join("Cat.lrcat"), b"x").unwrap();
-            assert_eq!(lightroom_catalog_at(&bad), Some(LightroomPlace { catalog: Some(root.join("Cat.lrcat")) }), "non-UTF-8 name");
+            assert_eq!(
+                lightroom_catalog_at(&bad),
+                Some(LightroomPlace {
+                    catalog: Some(root.join("Cat.lrcat"))
+                }),
+                "non-UTF-8 name"
+            );
         }
-        let lr = root.join(if utf8_only { std::ffi::OsStr::new("lr") } else { std::ffi::OsStr::from_bytes(b"\xff\xfe") });
+        let lr = root.join(if utf8_only {
+            std::ffi::OsStr::new("lr")
+        } else {
+            std::ffi::OsStr::from_bytes(b"\xff\xfe")
+        });
         std::fs::create_dir_all(&lr).unwrap();
         if !utf8_only {
             std::fs::write(lr.join(std::ffi::OsStr::from_bytes(b"\xff.lrcat")), b"x").unwrap();
         }
         std::fs::write(lr.join("b.lrcat"), b"x").unwrap();
-        assert_eq!(lightroom_catalog_at(&lr), Some(LightroomPlace { catalog: Some(lr.join("b.lrcat")) }), "non-UTF-8 entries skipped");
+        assert_eq!(
+            lightroom_catalog_at(&lr),
+            Some(LightroomPlace {
+                catalog: Some(lr.join("b.lrcat"))
+            }),
+            "non-UTF-8 entries skipped"
+        );
         // a symlink to a catalog folder is one too; a dangling one is not
         std::os::unix::fs::symlink(&lr, root.join("link")).unwrap();
         assert!(lightroom_catalog_at(&root.join("link")).is_some());

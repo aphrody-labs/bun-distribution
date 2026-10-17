@@ -21,8 +21,12 @@ const DEFAULT_GCP_PROJECT: &str = "aphrody-production";
 /// Environment variables that select the project, in precedence order after the `project`
 /// argument. The first two are the historical ones; the others are the names the Google client
 /// libraries and the Aphrody Vertex tooling already use.
-const GCP_PROJECT_ENV: [&str; 4] =
-    ["CLOUDSDK_CORE_PROJECT", "GCP_PROJECT", "GOOGLE_CLOUD_PROJECT", "APHRODY_VERTEX_PROJECT"];
+const GCP_PROJECT_ENV: [&str; 4] = [
+    "CLOUDSDK_CORE_PROJECT",
+    "GCP_PROJECT",
+    "GOOGLE_CLOUD_PROJECT",
+    "APHRODY_VERTEX_PROJECT",
+];
 
 /// The kernel-owned cloud control plane (GitHub and Google Cloud).
 #[derive(Debug, Default)]
@@ -55,7 +59,9 @@ fn resolve_repo_path(given: Option<&str>) -> Result<PathBuf, SubsystemError> {
         )));
     }
     std::env::current_dir().map_err(|e| {
-        SubsystemError::Failed(format!("failed to determine current working directory: {e}"))
+        SubsystemError::Failed(format!(
+            "failed to determine current working directory: {e}"
+        ))
     })
 }
 
@@ -368,7 +374,10 @@ mod tests {
         assert!(matches!(res_unknown, Err(SubsystemError::UnknownTool(_))));
 
         let res_bad_path = cloud
-            .call("github_status", json!({ "repo_path": "C:\\nonexistent\\invalid\\path\\12345" }))
+            .call(
+                "github_status",
+                json!({ "repo_path": "C:\\nonexistent\\invalid\\path\\12345" }),
+            )
             .await;
         assert!(res_bad_path.is_err());
     }
@@ -377,7 +386,10 @@ mod tests {
     fn gcp_project_resolution_order_keeps_the_historical_default() {
         // Nothing configured: the historical default, reported as such.
         let none = table::<&str, &str>([]);
-        assert_eq!(resolve_gcp_project(&none, None), ("aphrody-production".to_owned(), "default"));
+        assert_eq!(
+            resolve_gcp_project(&none, None),
+            ("aphrody-production".to_owned(), "default")
+        );
         // Each variable wins over the ones after it, and the argument wins over all of them.
         let all = table([
             ("APHRODY_VERTEX_PROJECT", "vertex"),
@@ -385,16 +397,27 @@ mod tests {
             ("GCP_PROJECT", "gcp"),
             ("CLOUDSDK_CORE_PROJECT", "sdk"),
         ]);
-        assert_eq!(resolve_gcp_project(&all, None), ("sdk".to_owned(), "CLOUDSDK_CORE_PROJECT"));
-        assert_eq!(resolve_gcp_project(&all, Some("given")), ("given".to_owned(), "argument"));
+        assert_eq!(
+            resolve_gcp_project(&all, None),
+            ("sdk".to_owned(), "CLOUDSDK_CORE_PROJECT")
+        );
+        assert_eq!(
+            resolve_gcp_project(&all, Some("given")),
+            ("given".to_owned(), "argument")
+        );
         let without_sdk = table([
             ("APHRODY_VERTEX_PROJECT", "vertex"),
             ("GOOGLE_CLOUD_PROJECT", "google"),
             ("GCP_PROJECT", "gcp"),
         ]);
-        assert_eq!(resolve_gcp_project(&without_sdk, None), ("gcp".to_owned(), "GCP_PROJECT"));
-        let without_gcp =
-            table([("APHRODY_VERTEX_PROJECT", "vertex"), ("GOOGLE_CLOUD_PROJECT", "google")]);
+        assert_eq!(
+            resolve_gcp_project(&without_sdk, None),
+            ("gcp".to_owned(), "GCP_PROJECT")
+        );
+        let without_gcp = table([
+            ("APHRODY_VERTEX_PROJECT", "vertex"),
+            ("GOOGLE_CLOUD_PROJECT", "google"),
+        ]);
         assert_eq!(
             resolve_gcp_project(&without_gcp, None),
             ("google".to_owned(), "GOOGLE_CLOUD_PROJECT")
@@ -409,6 +432,9 @@ mod tests {
     #[test]
     fn empty_gcp_project_inputs_count_as_unset() {
         let env = table([("CLOUDSDK_CORE_PROJECT", ""), ("GCP_PROJECT", "gcp")]);
-        assert_eq!(resolve_gcp_project(&env, Some("")), ("gcp".to_owned(), "GCP_PROJECT"));
+        assert_eq!(
+            resolve_gcp_project(&env, Some("")),
+            ("gcp".to_owned(), "GCP_PROJECT")
+        );
     }
 }

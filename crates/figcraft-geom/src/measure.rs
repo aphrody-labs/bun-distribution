@@ -54,10 +54,17 @@ impl Polyline {
             return None;
         }
         let s = t.clamp(0.0, 1.0) * len;
-        let i = self.lengths.partition_point(|l| *l <= s).clamp(1, self.points.len().saturating_sub(1).max(1));
+        let i = self
+            .lengths
+            .partition_point(|l| *l <= s)
+            .clamp(1, self.points.len().saturating_sub(1).max(1));
         let (a, b) = (*self.points.get(i - 1)?, *self.points.get(i)?);
         let (la, lb) = (*self.lengths.get(i - 1)?, *self.lengths.get(i)?);
-        let u = if lb - la > 1e-12 { ((s - la) / (lb - la)).clamp(0.0, 1.0) } else { 0.0 };
+        let u = if lb - la > 1e-12 {
+            ((s - la) / (lb - la)).clamp(0.0, 1.0)
+        } else {
+            0.0
+        };
         let d = b - a;
         let n = d.turn_90() / d.hypot().max(1e-12);
         Some((a.lerp(b, u), n))
@@ -74,7 +81,11 @@ impl Polyline {
             let (a, b) = (w[0], w[1]);
             let d = b - a;
             let l2 = d.hypot2();
-            let u = if l2 > 1e-18 { ((p - a).dot(d) / l2).clamp(0.0, 1.0) } else { 0.0 };
+            let u = if l2 > 1e-18 {
+                ((p - a).dot(d) / l2).clamp(0.0, 1.0)
+            } else {
+                0.0
+            };
             let dist = (a.lerp(b, u) - p).hypot();
             if best.is_none_or(|(_, bd)| dist < bd) {
                 let s = self.lengths.get(i).copied().unwrap_or(0.0) + u * l2.sqrt();

@@ -40,7 +40,17 @@
 //! - **v15**: project notes (`Project::notes`, Window ▸ Project Notes). No-op step; older builds
 //!   would drop them when saving.
 
-#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable))]
+#![cfg_attr(
+    not(test),
+    deny(
+        clippy::unwrap_used,
+        clippy::expect_used,
+        clippy::panic,
+        clippy::unimplemented,
+        clippy::todo,
+        clippy::unreachable
+    )
+)]
 
 pub mod atomic;
 pub mod autosave;
@@ -59,8 +69,10 @@ pub type Migration = fn(Value) -> Result<Value, String>;
 
 /// `MIGRATIONS[i]` upgrades schema `i + 1` to `i + 2`. Append one function per schema bump; never
 /// edit a shipped one.
-pub const MIGRATIONS: &[Migration] =
-    &[v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6, v6_to_v7, v7_to_v8, v8_to_v9, v9_to_v10, v10_to_v11, v11_to_v12, v12_to_v13, v13_to_v14, v14_to_v15];
+pub const MIGRATIONS: &[Migration] = &[
+    v1_to_v2, v2_to_v3, v3_to_v4, v4_to_v5, v5_to_v6, v6_to_v7, v7_to_v8, v8_to_v9, v9_to_v10,
+    v10_to_v11, v11_to_v12, v12_to_v13, v13_to_v14, v14_to_v15,
+];
 
 /// The schema version this build writes (and the newest it reads).
 pub const SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32 + 1;
@@ -133,7 +145,12 @@ struct EnvelopeIn {
 impl EnvelopeIn {
     fn loaded(self, schema_version: u32) -> Loaded {
         let view = self.view.and_then(|v| serde_json::from_value(v).ok());
-        Loaded { project: self.project, schema_version, generator: self.generator, view }
+        Loaded {
+            project: self.project,
+            schema_version,
+            generator: self.generator,
+            view,
+        }
     }
 }
 
@@ -163,15 +180,26 @@ pub fn encode(project: &Project, pretty: bool) -> Vec<u8> {
 /// outside the schema's promises: builds that do not know it ignore it, and it is dropped rather
 /// than migrated when it cannot be read.
 pub fn encode_with_view(project: &Project, view: Option<&ProjectView>, pretty: bool) -> Vec<u8> {
-    let env = EnvelopeOut { format: FORMAT_ID, schema_version: SCHEMA_VERSION, generator: generator(), project, view };
-    let r = if pretty { serde_json::to_vec_pretty(&env) } else { serde_json::to_vec(&env) };
+    let env = EnvelopeOut {
+        format: FORMAT_ID,
+        schema_version: SCHEMA_VERSION,
+        generator: generator(),
+        project,
+        view,
+    };
+    let r = if pretty {
+        serde_json::to_vec_pretty(&env)
+    } else {
+        serde_json::to_vec(&env)
+    };
     // Serializing plain data (string keys, finite numbers or null) cannot fail.
     r.unwrap_or_default()
 }
 
 /// Detect the schema version of a parsed document.
 pub fn detect_version(doc: &Value) -> Result<u32, FormatError> {
-    let probe: Probe = serde_json::from_value(doc.clone()).map_err(|e| FormatError::NotAProject(e.to_string()))?;
+    let probe: Probe =
+        serde_json::from_value(doc.clone()).map_err(|e| FormatError::NotAProject(e.to_string()))?;
     probe_version(&probe)
 }
 
@@ -180,7 +208,9 @@ fn probe_version(p: &Probe) -> Result<u32, FormatError> {
         if let Some(f) = &p.format
             && f != FORMAT_ID
         {
-            return Err(FormatError::NotAProject(format!("format is `{f}`, expected `{FORMAT_ID}`")));
+            return Err(FormatError::NotAProject(format!(
+                "format is `{f}`, expected `{FORMAT_ID}`"
+            )));
         }
         return Ok(v);
     }
@@ -193,23 +223,33 @@ fn probe_version(p: &Probe) -> Result<u32, FormatError> {
             v => v,
         });
     }
-    Err(FormatError::NotAProject("no `schema_version` and not a legacy project".into()))
+    Err(FormatError::NotAProject(
+        "no `schema_version` and not a legacy project".into(),
+    ))
 }
 
 /// Read a project file (any supported schema).
 pub fn decode(bytes: &[u8]) -> Result<Loaded, FormatError> {
-    let probe: Probe = serde_json::from_slice(bytes)
-        .map_err(|e| if e.is_syntax() || e.is_eof() { FormatError::Corrupt(e.to_string()) } else { FormatError::NotAProject(e.to_string()) })?;
+    let probe: Probe = serde_json::from_slice(bytes).map_err(|e| {
+        if e.is_syntax() || e.is_eof() {
+            FormatError::Corrupt(e.to_string())
+        } else {
+            FormatError::NotAProject(e.to_string())
+        }
+    })?;
     let found = probe_version(&probe)?;
     check_supported(found)?;
     if found == SCHEMA_VERSION {
         // Fast path: deserialize straight into the model.
-        let env: EnvelopeIn = serde_json::from_slice(bytes).map_err(|e| FormatError::Corrupt(e.to_string()))?;
+        let env: EnvelopeIn =
+            serde_json::from_slice(bytes).map_err(|e| FormatError::Corrupt(e.to_string()))?;
         return validate_loaded(env.loaded(found));
     }
-    let doc: Value = serde_json::from_slice(bytes).map_err(|e| FormatError::Corrupt(e.to_string()))?;
+    let doc: Value =
+        serde_json::from_slice(bytes).map_err(|e| FormatError::Corrupt(e.to_string()))?;
     let doc = migrate_with(MIGRATIONS, doc, found)?;
-    let env: EnvelopeIn = serde_json::from_value(doc).map_err(|e| FormatError::Corrupt(format!("after upgrading from schema v{found}: {e}")))?;
+    let env: EnvelopeIn = serde_json::from_value(doc)
+        .map_err(|e| FormatError::Corrupt(format!("after upgrading from schema v{found}: {e}")))?;
     validate_loaded(env.loaded(found))
 }
 
@@ -224,14 +264,25 @@ fn validate_loaded(mut loaded: Loaded) -> Result<Loaded, FormatError> {
         let name = item.name.clone();
         match &mut item.kind {
             filmcraft_project::ItemKind::Media(m) if m.info.audio_streams.len() > max => {
-                log::warn!("media `{name}`: {} audio streams, keeping the first {max}", m.info.audio_streams.len());
+                log::warn!(
+                    "media `{name}`: {} audio streams, keeping the first {max}",
+                    m.info.audio_streams.len()
+                );
                 m.info.audio_streams.truncate(max);
             }
             filmcraft_project::ItemKind::Sequence(sequence) => {
                 let sequence = std::sync::Arc::make_mut(sequence);
-                for clip in sequence.audio_tracks.iter_mut().flat_map(|t| t.items.iter_mut()) {
+                for clip in sequence
+                    .audio_tracks
+                    .iter_mut()
+                    .flat_map(|t| t.items.iter_mut())
+                {
                     if clip.audio_stream >= max {
-                        log::warn!("sequence `{name}`: clip `{}` uses audio stream {}, reset to 0", clip.name, clip.audio_stream);
+                        log::warn!(
+                            "sequence `{name}`: clip `{}` uses audio stream {}, reset to 0",
+                            clip.name,
+                            clip.audio_stream
+                        );
                         clip.audio_stream = 0;
                     }
                 }
@@ -241,7 +292,9 @@ fn validate_loaded(mut loaded: Loaded) -> Result<Loaded, FormatError> {
     }
     for item in loaded.project.sequences() {
         if let filmcraft_project::ItemKind::Sequence(sequence) = &item.kind {
-            sequence.check_bounds().map_err(|e| FormatError::Corrupt(format!("sequence `{}`: {e}", item.name)))?;
+            sequence
+                .check_bounds()
+                .map_err(|e| FormatError::Corrupt(format!("sequence `{}`: {e}", item.name)))?;
         }
     }
     Ok(loaded)
@@ -249,10 +302,16 @@ fn validate_loaded(mut loaded: Loaded) -> Result<Loaded, FormatError> {
 
 fn check_supported(found: u32) -> Result<(), FormatError> {
     if found > SCHEMA_VERSION {
-        return Err(FormatError::TooNew { found, supported: SCHEMA_VERSION });
+        return Err(FormatError::TooNew {
+            found,
+            supported: SCHEMA_VERSION,
+        });
     }
     if found < OLDEST_SCHEMA {
-        return Err(FormatError::TooOld { found, oldest: OLDEST_SCHEMA });
+        return Err(FormatError::TooOld {
+            found,
+            oldest: OLDEST_SCHEMA,
+        });
     }
     Ok(())
 }
@@ -261,10 +320,16 @@ fn check_supported(found: u32) -> Result<(), FormatError> {
 pub fn migrate_with(table: &[Migration], mut doc: Value, from: u32) -> Result<Value, FormatError> {
     let target = table.len() as u32 + 1;
     if from > target {
-        return Err(FormatError::TooNew { found: from, supported: target });
+        return Err(FormatError::TooNew {
+            found: from,
+            supported: target,
+        });
     }
     if from == 0 {
-        return Err(FormatError::TooOld { found: 0, oldest: 1 });
+        return Err(FormatError::TooOld {
+            found: 0,
+            oldest: 1,
+        });
     }
     for v in from..target {
         let step = table[(v - 1) as usize];
@@ -273,7 +338,12 @@ pub fn migrate_with(table: &[Migration], mut doc: Value, from: u32) -> Result<Va
             Some(o) => {
                 o.insert("schema_version".into(), Value::from(v + 1));
             }
-            None => return Err(FormatError::Migration { from: v, msg: "migration produced a non-object document".into() }),
+            None => {
+                return Err(FormatError::Migration {
+                    from: v,
+                    msg: "migration produced a non-object document".into(),
+                });
+            }
         }
     }
     Ok(doc)
@@ -281,7 +351,9 @@ pub fn migrate_with(table: &[Migration], mut doc: Value, from: u32) -> Result<Va
 
 /// v1 → v2: wrap the bare project in the envelope and drop the per-project `version` field.
 fn v1_to_v2(doc: Value) -> Result<Value, String> {
-    let Value::Object(mut project) = doc else { return Err("expected a JSON object".into()) };
+    let Value::Object(mut project) = doc else {
+        return Err("expected a JSON object".into());
+    };
     project.remove("version");
     Ok(serde_json::json!({
         "format": FORMAT_ID,
@@ -373,11 +445,26 @@ mod tests {
     #[test]
     fn damaged_sequence_settings_are_rejected_before_rendering() {
         let mut p = Project::new("Invalid sequence");
-        let id = p.new_sequence("Bad", filmcraft_project::SequenceSettings::default(), 1, 1, None);
-        for (width, height, sample_rate) in [(0, 90, 48000), (160, 0, 48000), (160, 90, 0), (65536, 90, 48000), (32768, 16384, 48000)] {
+        let id = p.new_sequence(
+            "Bad",
+            filmcraft_project::SequenceSettings::default(),
+            1,
+            1,
+            None,
+        );
+        for (width, height, sample_rate) in [
+            (0, 90, 48000),
+            (160, 0, 48000),
+            (160, 90, 0),
+            (65536, 90, 48000),
+            (32768, 16384, 48000),
+        ] {
             let settings = &mut p.sequence_mut(id).unwrap().settings;
             (settings.width, settings.height, settings.sample_rate) = (width, height, sample_rate);
-            assert!(matches!(decode(&encode(&p, false)), Err(FormatError::Corrupt(_))));
+            assert!(matches!(
+                decode(&encode(&p, false)),
+                Err(FormatError::Corrupt(_))
+            ));
         }
     }
 
@@ -393,20 +480,44 @@ mod tests {
         let layer = p.add_item(
             "Layer",
             filmcraft_project::Label::Iris,
-            ItemKind::AdjustmentLayer { width: 1920, height: 1080, rate, duration: rate.tick_of(48) },
+            ItemKind::AdjustmentLayer {
+                width: 1920,
+                height: 1080,
+                rate,
+                duration: rate.tick_of(48),
+            },
             None,
         );
-        let settings = SequenceSettings { width: 15360, height: 8640, ..Default::default() };
+        let settings = SequenceSettings {
+            width: 15360,
+            height: 8640,
+            ..Default::default()
+        };
         let seq = p.new_sequence("Sequence 01", settings, 1, 1, None);
         let range = TimeRange::new(Tick::ZERO, rate.tick_of(48));
-        let a = p.make_track_item(layer, TrackKind::Video, Tick::ZERO, range, rate).unwrap();
-        let b = p.make_track_item(layer, TrackKind::Video, rate.tick_of(24), range, rate).unwrap();
-        let mut c = p.make_track_item(layer, TrackKind::Video, rate.tick_of(200), range, rate).unwrap();
+        let a = p
+            .make_track_item(layer, TrackKind::Video, Tick::ZERO, range, rate)
+            .unwrap();
+        let b = p
+            .make_track_item(layer, TrackKind::Video, rate.tick_of(24), range, rate)
+            .unwrap();
+        let mut c = p
+            .make_track_item(layer, TrackKind::Video, rate.tick_of(200), range, rate)
+            .unwrap();
         c.duration = Tick::ZERO;
         p.sequence_mut(seq).unwrap().video_tracks[0].items = vec![a, b, c];
-        assert!(p.sequence(seq).unwrap().check().is_err(), "the sequence breaks the editor's invariants");
-        let loaded = decode(&encode(&p, false)).unwrap_or_else(|e| panic!("a project that opened before is refused: {e}"));
-        assert_eq!(loaded.project.sequence(seq).unwrap().video_tracks[0].items.len(), 3);
+        assert!(
+            p.sequence(seq).unwrap().check().is_err(),
+            "the sequence breaks the editor's invariants"
+        );
+        let loaded = decode(&encode(&p, false))
+            .unwrap_or_else(|e| panic!("a project that opened before is refused: {e}"));
+        assert_eq!(
+            loaded.project.sequence(seq).unwrap().video_tracks[0]
+                .items
+                .len(),
+            3
+        );
     }
 
     #[test]
@@ -432,8 +543,23 @@ mod tests {
         let view = ProjectView {
             open_sequences: vec![seq],
             active_sequence: Some(seq),
-            sequences: [(seq, SequenceView { pps: 80.0, scroll: 1.5, v_scroll: 0.0, a_scroll: 4.0, video_track_h: 60.0, audio_track_h: 56.0 })].into(),
-            playheads: [(seq, filmcraft_time::Tick(3 * filmcraft_time::TICKS_PER_SECOND))].into(),
+            sequences: [(
+                seq,
+                SequenceView {
+                    pps: 80.0,
+                    scroll: 1.5,
+                    v_scroll: 0.0,
+                    a_scroll: 4.0,
+                    video_track_h: 60.0,
+                    audio_track_h: 56.0,
+                },
+            )]
+            .into(),
+            playheads: [(
+                seq,
+                filmcraft_time::Tick(3 * filmcraft_time::TICKS_PER_SECOND),
+            )]
+            .into(),
         };
         for pretty in [true, false] {
             let l = decode(&encode_with_view(&p, Some(&view), pretty)).unwrap();
@@ -441,17 +567,33 @@ mod tests {
             assert_eq!(decode(&encode(&p, pretty)).unwrap().view, None);
         }
         // the project is the same bytes with or without a view beside it
-        let mut doc: Value = serde_json::from_slice(&encode_with_view(&p, Some(&view), false)).unwrap();
-        assert_eq!(doc["project"], serde_json::from_slice::<Value>(&encode(&p, false)).unwrap()["project"]);
+        let mut doc: Value =
+            serde_json::from_slice(&encode_with_view(&p, Some(&view), false)).unwrap();
+        assert_eq!(
+            doc["project"],
+            serde_json::from_slice::<Value>(&encode(&p, false)).unwrap()["project"]
+        );
         // a view that is not one: dropped, the project loads
-        for junk in [serde_json::json!(7), serde_json::json!({"open_sequences": {"a": 1}}), serde_json::json!({"sequences": [1]}), Value::Null] {
+        for junk in [
+            serde_json::json!(7),
+            serde_json::json!({"open_sequences": {"a": 1}}),
+            serde_json::json!({"sequences": [1]}),
+            Value::Null,
+        ] {
             doc["view"] = junk;
             let l = decode(&serde_json::to_vec(&doc).unwrap()).unwrap();
             assert_eq!((l.view, &l.project), (None, &p));
         }
         // unknown ids are not this crate's business (the editor checks them against the project)
         doc["view"] = serde_json::json!({"open_sequences": [424242]});
-        assert_eq!(decode(&serde_json::to_vec(&doc).unwrap()).unwrap().view.unwrap().open_sequences, [ItemId(424242)]);
+        assert_eq!(
+            decode(&serde_json::to_vec(&doc).unwrap())
+                .unwrap()
+                .view
+                .unwrap()
+                .open_sequences,
+            [ItemId(424242)]
+        );
     }
 
     /// A clip with unresolved "auto" points (NaN) is written with `null` coordinates. Such a file
@@ -464,25 +606,53 @@ mod tests {
         let layer = p.add_item(
             "Layer",
             filmcraft_project::Label::Iris,
-            ItemKind::AdjustmentLayer { width: 3840, height: 2160, rate: FrameRate::FPS_24, duration: FrameRate::FPS_24.tick_of(48) },
+            ItemKind::AdjustmentLayer {
+                width: 3840,
+                height: 2160,
+                rate: FrameRate::FPS_24,
+                duration: FrameRate::FPS_24.tick_of(48),
+            },
             None,
         );
         let seq = p.new_sequence("Sequence 01", SequenceSettings::default(), 1, 1, None);
-        let ti = p.make_track_item(layer, TrackKind::Video, Tick::ZERO, TimeRange::new(Tick::ZERO, FrameRate::FPS_24.tick_of(48)), FrameRate::FPS_24).unwrap();
+        let ti = p
+            .make_track_item(
+                layer,
+                TrackKind::Video,
+                Tick::ZERO,
+                TimeRange::new(Tick::ZERO, FrameRate::FPS_24.tick_of(48)),
+                FrameRate::FPS_24,
+            )
+            .unwrap();
         p.sequence_mut(seq).unwrap().video_tracks[0].items.push(ti);
         for pretty in [true, false] {
             let bytes = encode(&p, pretty);
             let text = String::from_utf8(bytes.clone()).unwrap();
-            assert!(text.replace([' ', '\n'], "").contains(r#"{"Vec2":{"x":null,"y":null}}"#), "the file holds NaN points as null");
-            let l = decode(&bytes).unwrap_or_else(|e| panic!("a file with `null` points is refused: {e}"));
-            let motion = l.project.sequence(seq).unwrap().video_tracks[0].items[0].effect("motion").unwrap().clone();
+            assert!(
+                text.replace([' ', '\n'], "")
+                    .contains(r#"{"Vec2":{"x":null,"y":null}}"#),
+                "the file holds NaN points as null"
+            );
+            let l = decode(&bytes)
+                .unwrap_or_else(|e| panic!("a file with `null` points is refused: {e}"));
+            let motion = l.project.sequence(seq).unwrap().video_tracks[0].items[0]
+                .effect("motion")
+                .unwrap()
+                .clone();
             let anchor = motion.params["anchor"].value.as_vec2().unwrap();
             assert!(anchor.x.is_nan() && anchor.y.is_nan(), "still auto");
             assert_eq!(motion.params["scale"].value.as_f64(), Some(100.0));
-            assert_eq!(encode(&l.project, pretty), bytes, "and the file is written back the same");
+            assert_eq!(
+                encode(&l.project, pretty),
+                bytes,
+                "and the file is written back the same"
+            );
             // a `null` where no "auto" exists is still a damaged file
             let broken = text.replacen("3840", "null", 1);
-            assert!(matches!(decode(broken.as_bytes()), Err(FormatError::Corrupt(_))));
+            assert!(matches!(
+                decode(broken.as_bytes()),
+                Err(FormatError::Corrupt(_))
+            ));
         }
     }
 
@@ -506,10 +676,19 @@ mod tests {
 
     #[test]
     fn rejects_foreign_and_damaged() {
-        assert!(matches!(decode(br#"{"hello": 1}"#), Err(FormatError::NotAProject(_))));
-        assert!(matches!(decode(br#"{"format":"other","schema_version":1}"#), Err(FormatError::NotAProject(_))));
+        assert!(matches!(
+            decode(br#"{"hello": 1}"#),
+            Err(FormatError::NotAProject(_))
+        ));
+        assert!(matches!(
+            decode(br#"{"format":"other","schema_version":1}"#),
+            Err(FormatError::NotAProject(_))
+        ));
         let b = encode(&Project::new("x"), false);
-        assert!(matches!(decode(&b[..b.len() / 2]), Err(FormatError::Corrupt(_))));
+        assert!(matches!(
+            decode(&b[..b.len() / 2]),
+            Err(FormatError::Corrupt(_))
+        ));
     }
 
     #[test]
@@ -533,7 +712,13 @@ mod tests {
         assert_eq!(out["trail"], "a");
         let out = migrate_with(table, serde_json::json!({"x": 1}), 4).unwrap();
         assert_eq!(out, serde_json::json!({"x": 1}));
-        assert!(matches!(migrate_with(table, serde_json::json!({}), 5), Err(FormatError::TooNew { found: 5, supported: 4 })));
+        assert!(matches!(
+            migrate_with(table, serde_json::json!({}), 5),
+            Err(FormatError::TooNew {
+                found: 5,
+                supported: 4
+            })
+        ));
         let e = migrate_with(&[a, fail], serde_json::json!({}), 1).unwrap_err();
         assert!(matches!(e, FormatError::Migration { from: 2, .. }), "{e}");
     }

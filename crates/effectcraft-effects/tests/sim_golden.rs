@@ -21,7 +21,9 @@
 //! here and at the commit that pinned the hash, and compare the frames: identical frames mean
 //! the code didn't change, and the new hash goes into [`LIBM_VARIANTS`].
 
-use effectcraft_effects::{Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find};
+use effectcraft_effects::{
+    Buf, EffectCtx, EffectEnv, EffectHost, LayerPixels, Params, apply, default_value, find,
+};
 use effectcraft_keyframe::Value;
 use effectcraft_raster::Image;
 
@@ -47,7 +49,11 @@ fn layer(hdr: bool) -> Image {
                 1.0
             };
             let gain = if hdr && x < 20 { 1.6 } else { 1.0 };
-            let c = [u * gain, v * gain, (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain];
+            let c = [
+                u * gain,
+                v * gain,
+                (0.3 + 0.4 * (u * 9.0).sin().abs()) * gain,
+            ];
             img.set(x, y, [c[0] * a, c[1] * a, c[2] * a, a]);
         }
     }
@@ -77,7 +83,14 @@ struct Host;
 impl EffectHost for Host {
     fn layer(&self, id: u64, _: bool) -> Option<LayerPixels> {
         let img = other(id);
-        Some(LayerPixels { buf: Buf { img, offset: [0.0; 2], scale: 1.0 }, size: [W as f64, H as f64] })
+        Some(LayerPixels {
+            buf: Buf {
+                img,
+                offset: [0.0; 2],
+                scale: 1.0,
+            },
+            size: [W as f64, H as f64],
+        })
     }
     fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
         None
@@ -103,23 +116,73 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.sim.ccrainfall",
             vec![
                 vec![],
-                vec![("drops", n(2000.0)), ("size", n(3.0)), ("wind", n(500.0)), ("extras/appearance", e(1)), ("transferMode", e(0))],
-                vec![("compositeWithOriginal", Value::Bool(false)), ("windVariation", n(50.0)), ("spread", n(20.0)), ("extras/randomSeed", n(9.0))],
+                vec![
+                    ("drops", n(2000.0)),
+                    ("size", n(3.0)),
+                    ("wind", n(500.0)),
+                    ("extras/appearance", e(1)),
+                    ("transferMode", e(0)),
+                ],
+                vec![
+                    ("compositeWithOriginal", Value::Bool(false)),
+                    ("windVariation", n(50.0)),
+                    ("spread", n(20.0)),
+                    ("extras/randomSeed", n(9.0)),
+                ],
             ],
         ),
         (
             "ec.sim.ccsnowfall",
             vec![
                 vec![],
-                vec![("flakes", n(3000.0)), ("size", n(6.0)), ("transferMode", e(1)), ("wind", n(-100.0))],
-                vec![("compositeWithOriginal", Value::Bool(false)), ("opacity", n(60.0))],
+                vec![
+                    ("flakes", n(3000.0)),
+                    ("size", n(6.0)),
+                    ("transferMode", e(1)),
+                    ("wind", n(-100.0)),
+                ],
+                vec![
+                    ("compositeWithOriginal", Value::Bool(false)),
+                    ("opacity", n(60.0)),
+                ],
             ],
         ),
-        ("ec.sim.ccstarburst", vec![vec![], vec![("gridSpacing", n(4.0)), ("blendWithOriginal", n(40.0)), ("speed", n(-2.0)), ("phase", n(30.0))]]),
-        ("ec.sim.ccbubbles", vec![vec![], vec![("bubbleAmount", n(300.0)), ("reflectionType", e(1)), ("shadingType", e(3)), ("bubbleSize", n(2.0))]]),
+        (
+            "ec.sim.ccstarburst",
+            vec![
+                vec![],
+                vec![
+                    ("gridSpacing", n(4.0)),
+                    ("blendWithOriginal", n(40.0)),
+                    ("speed", n(-2.0)),
+                    ("phase", n(30.0)),
+                ],
+            ],
+        ),
+        (
+            "ec.sim.ccbubbles",
+            vec![
+                vec![],
+                vec![
+                    ("bubbleAmount", n(300.0)),
+                    ("reflectionType", e(1)),
+                    ("shadingType", e(3)),
+                    ("bubbleSize", n(2.0)),
+                ],
+            ],
+        ),
         (
             "ec.sim.ccdrizzle",
-            vec![vec![], vec![("dripRate", n(30.0)), ("longevity", n(2.0)), ("displacement", n(20.0)), ("shading/diffuse", n(50.0)), ("rippling", n(720.0))]],
+            vec![
+                vec![],
+                vec![
+                    ("dripRate", n(30.0)),
+                    ("longevity", n(2.0)),
+                    ("displacement", n(20.0)),
+                    ("shading/diffuse", n(50.0)),
+                    ("rippling", n(720.0)),
+                ],
+            ],
         ),
         (
             "ec.sim.cchair",
@@ -132,12 +195,25 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                     ("weight", n(1.0)),
                     ("constantMass", Value::Bool(true)),
                 ],
-                vec![("hairfallMap/mapLayer", l(MAP)), ("hairfallMap/mapStrength", n(50.0)), ("hairfallMap/addNoise", n(30.0))],
+                vec![
+                    ("hairfallMap/mapLayer", l(MAP)),
+                    ("hairfallMap/mapStrength", n(50.0)),
+                    ("hairfallMap/addNoise", n(30.0)),
+                ],
             ],
         ),
         (
             "ec.sim.ccmrmercury",
-            vec![vec![], vec![("birthRate", n(5.0)), ("velocity", n(3.0)), ("gravity", n(1.0)), ("animation", e(1)), ("blobInfluence", n(150.0))]],
+            vec![
+                vec![],
+                vec![
+                    ("birthRate", n(5.0)),
+                    ("velocity", n(3.0)),
+                    ("gravity", n(1.0)),
+                    ("animation", e(1)),
+                    ("blobInfluence", n(150.0)),
+                ],
+            ],
         ),
         (
             "ec.sim.caustics",
@@ -164,19 +240,49 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             vec![
                 vec![],
                 vec![("view", e(1))],
-                vec![("view", e(1)), ("ground/ground", l(MAP)), ("ground/waveStrength", n(0.5)), ("heightMapControls/renderDryAreasAs", e(1))],
-                vec![("wireframeControls/horizontalRotation", n(30.0)), ("simulation/gridResolution", n(30.0)), ("simulation/reflectEdges", e(5))],
+                vec![
+                    ("view", e(1)),
+                    ("ground/ground", l(MAP)),
+                    ("ground/waveStrength", n(0.5)),
+                    ("heightMapControls/renderDryAreasAs", e(1)),
+                ],
+                vec![
+                    ("wireframeControls/horizontalRotation", n(30.0)),
+                    ("simulation/gridResolution", n(30.0)),
+                    ("simulation/reflectEdges", e(5)),
+                ],
             ],
         ),
         (
             "ec.sim.foam",
             vec![
                 vec![],
-                vec![("view", e(2)), ("producer/productionRate", n(3.0)), ("rendering/bubbleTexture", e(1)), ("rendering/blendMode", e(1))],
-                vec![("view", e(2)), ("producer/productionRate", n(2.0)), ("rendering/bubbleOrientation", e(2))],
-                vec![("view", e(1)), ("flowMap/flowMap", l(MAP)), ("flowMap/flowMapSteepness", n(0.5))],
-                vec![("view", e(2)), ("rendering/environmentMap", l(TEX)), ("rendering/reflectionStrength", n(0.5))],
-                vec![("view", e(2)), ("rendering/bubbleTexture", e(5)), ("rendering/bubbleTextureLayer", l(TEX))],
+                vec![
+                    ("view", e(2)),
+                    ("producer/productionRate", n(3.0)),
+                    ("rendering/bubbleTexture", e(1)),
+                    ("rendering/blendMode", e(1)),
+                ],
+                vec![
+                    ("view", e(2)),
+                    ("producer/productionRate", n(2.0)),
+                    ("rendering/bubbleOrientation", e(2)),
+                ],
+                vec![
+                    ("view", e(1)),
+                    ("flowMap/flowMap", l(MAP)),
+                    ("flowMap/flowMapSteepness", n(0.5)),
+                ],
+                vec![
+                    ("view", e(2)),
+                    ("rendering/environmentMap", l(TEX)),
+                    ("rendering/reflectionStrength", n(0.5)),
+                ],
+                vec![
+                    ("view", e(2)),
+                    ("rendering/bubbleTexture", e(5)),
+                    ("rendering/bubbleTextureLayer", l(TEX)),
+                ],
             ],
         ),
         (
@@ -185,7 +291,12 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                 vec![],
                 vec![("view", e(0))],
                 vec![("view", e(0)), ("render", e(1))],
-                vec![("view", e(0)), ("render", e(2)), ("shape/pattern", e(3)), ("cameraPosition/yRotation", n(25.0))],
+                vec![
+                    ("view", e(0)),
+                    ("render", e(2)),
+                    ("shape/pattern", e(3)),
+                    ("cameraPosition/yRotation", n(25.0)),
+                ],
                 vec![
                     ("view", e(0)),
                     ("textures/backLayer", l(TEX)),
@@ -201,8 +312,17 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
             "ec.sim.carddance",
             vec![
                 vec![],
-                vec![("yRotation/yRotSource", e(1)), ("yRotation/yRotMultiplier", n(90.0)), ("backLayer", l(TEX))],
-                vec![("gradientLayer1", l(MAP)), ("zPosition/zPosSource", e(1)), ("zPosition/zPosMultiplier", n(2.0)), ("cameraPosition/yRotation", n(30.0))],
+                vec![
+                    ("yRotation/yRotSource", e(1)),
+                    ("yRotation/yRotMultiplier", n(90.0)),
+                    ("backLayer", l(TEX)),
+                ],
+                vec![
+                    ("gradientLayer1", l(MAP)),
+                    ("zPosition/zPosSource", e(1)),
+                    ("zPosition/zPosMultiplier", n(2.0)),
+                    ("cameraPosition/yRotation", n(30.0)),
+                ],
             ],
         ),
         (
@@ -219,7 +339,12 @@ fn cases() -> Vec<(&'static str, Vec<Set>)> {
                     ("timingRandomness", n(0.5)),
                     ("rotationJitter/xRotJitterAmount", n(20.0)),
                 ],
-                vec![("completion", n(50.0)), ("backSelf", Value::Bool(true)), ("cameraPosition/yRotation", n(20.0)), ("positionJitter/zJitterAmount", n(1.0))],
+                vec![
+                    ("completion", n(50.0)),
+                    ("backSelf", Value::Bool(true)),
+                    ("cameraPosition/yRotation", n(20.0)),
+                    ("positionJitter/zJitterAmount", n(1.0)),
+                ],
             ],
         ),
     ]
@@ -246,7 +371,13 @@ fn fnv(img: &Image) -> u64 {
 fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
     let spec = find(id).unwrap_or_else(|| panic!("no effect {id}"));
     let size = [W as f64, H as f64];
-    let mut params = Params { values: spec.params.iter().map(|p| (p.id.to_string(), default_value(p, size))).collect() };
+    let mut params = Params {
+        values: spec
+            .params
+            .iter()
+            .map(|p| (p.id.to_string(), default_value(p, size)))
+            .collect(),
+    };
     for (k, v) in set {
         assert!(params.values.contains_key(*k), "{id}: unknown param {k}");
         params.values.insert(k.to_string(), v.clone());
@@ -256,22 +387,47 @@ fn render(id: &str, set: &Set, time: f64, bpc8: bool, half: bool) -> Image {
         img.clamp01();
         img.quantize(255.0);
     }
-    let mut buf = Buf { img, offset: [0.0; 2], scale: 1.0 };
+    let mut buf = Buf {
+        img,
+        offset: [0.0; 2],
+        scale: 1.0,
+    };
     if half {
         // A half-resolution preview buffer padded by 3 px.
         let (w2, h2) = (W / 2, H / 2);
         let mut small = Image::new(w2, h2);
         for y in 0..h2 {
             for x in 0..w2 {
-                small.set(x, y, buf.img.sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0));
+                small.set(
+                    x,
+                    y,
+                    buf.img
+                        .sample_bilinear(x as f64 * 2.0 + 1.0, y as f64 * 2.0 + 1.0),
+                );
             }
         }
-        buf = Buf { img: small, offset: [0.0; 2], scale: 0.5 };
+        buf = Buf {
+            img: small,
+            offset: [0.0; 2],
+            scale: 0.5,
+        };
         buf.pad(3);
     }
     let host = Host;
-    let env = EffectEnv { host: Some(&host), frame_rate: 30.0, comp_time: time, ..Default::default() };
-    let ctx = EffectCtx { params: &params, time, layer_size: size, seed: 1, adjustment: false, env };
+    let env = EffectEnv {
+        host: Some(&host),
+        frame_rate: 30.0,
+        comp_time: time,
+        ..Default::default()
+    };
+    let ctx = EffectCtx {
+        params: &params,
+        time,
+        layer_size: size,
+        seed: 1,
+        adjustment: false,
+        env,
+    };
     let mut out = apply(spec, &ctx, buf).img;
     if bpc8 {
         out.clamp01();
@@ -295,10 +451,23 @@ fn hashes() -> Vec<(String, u64)> {
                 }
                 for t in TIMES {
                     let img = render(id, set, t, bpc8, half);
-                    let name = format!("{id}/{si}/{}{}/t{t}", if bpc8 { "8bpc" } else { "32bpc" }, if half { "/half" } else { "" });
+                    let name = format!(
+                        "{id}/{si}/{}{}/t{t}",
+                        if bpc8 { "8bpc" } else { "32bpc" },
+                        if half { "/half" } else { "" }
+                    );
                     if let Some(d) = &out_dir {
-                        let bytes: Vec<u8> = img.data.iter().flat_map(|p| p.iter().flat_map(|c| c.to_le_bytes())).collect();
-                        let file = format!("{}_{}x{}.f32", name.replace('/', "_"), img.width, img.height);
+                        let bytes: Vec<u8> = img
+                            .data
+                            .iter()
+                            .flat_map(|p| p.iter().flat_map(|c| c.to_le_bytes()))
+                            .collect();
+                        let file = format!(
+                            "{}_{}x{}.f32",
+                            name.replace('/', "_"),
+                            img.width,
+                            img.height
+                        );
                         std::fs::write(d.join(file), bytes).unwrap();
                     }
                     v.push((name, fnv(&img)));
@@ -322,15 +491,25 @@ fn sim_effects_golden_hashes() {
     if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
         assert_eq!(got.len(), GOLDEN.len(), "case count");
         let bad = mismatches(&got, GOLDEN, LIBM_VARIANTS);
-        assert!(bad.is_empty(), "CPU output changed (if it may be libm, see the module docs):\n{}", bad.join("\n"));
+        assert!(
+            bad.is_empty(),
+            "CPU output changed (if it may be libm, see the module docs):\n{}",
+            bad.join("\n")
+        );
     }
 }
 
 /// The cases whose hash is neither the pinned one nor one of the case's [`LIBM_VARIANTS`].
-fn mismatches(got: &[(String, u64)], golden: &[(&str, u64)], variants: &[(&str, u64, &str)]) -> Vec<String> {
+fn mismatches(
+    got: &[(String, u64)],
+    golden: &[(&str, u64)],
+    variants: &[(&str, u64, &str)],
+) -> Vec<String> {
     got.iter()
         .zip(golden)
-        .filter(|((n, h), (gn, gh))| n != gn || (h != gh && !variants.iter().any(|(vn, vh, _)| vn == n && vh == h)))
+        .filter(|((n, h), (gn, gh))| {
+            n != gn || (h != gh && !variants.iter().any(|(vn, vh, _)| vn == n && vh == h))
+        })
         .map(|((n, h), (_, gh))| format!("{n}: 0x{h:016x} (pinned 0x{gh:016x})"))
         .collect()
 }
@@ -342,17 +521,33 @@ fn libm_variants_are_accepted_for_their_case_only() {
     let variants = [("a", 9, "another libm")];
     let got = |a: u64, b: u64| vec![("a".to_string(), a), ("b".to_string(), b)];
     assert!(mismatches(&got(1, 2), &golden, &variants).is_empty());
-    assert!(mismatches(&got(9, 2), &golden, &variants).is_empty(), "the variant");
-    assert_eq!(mismatches(&got(9, 9), &golden, &variants), ["b: 0x0000000000000009 (pinned 0x0000000000000002)"], "not another case's");
+    assert!(
+        mismatches(&got(9, 2), &golden, &variants).is_empty(),
+        "the variant"
+    );
+    assert_eq!(
+        mismatches(&got(9, 9), &golden, &variants),
+        ["b: 0x0000000000000009 (pinned 0x0000000000000002)"],
+        "not another case's"
+    );
     assert_eq!(mismatches(&got(3, 2), &golden, &variants).len(), 1);
-    assert!(LIBM_VARIANTS.iter().all(|(n, ..)| GOLDEN.iter().any(|(g, _)| g == n)), "every variant names a pinned case");
+    assert!(
+        LIBM_VARIANTS
+            .iter()
+            .all(|(n, ..)| GOLDEN.iter().any(|(g, _)| g == n)),
+        "every variant names a pinned case"
+    );
 }
 
 /// Hashes also accepted for a case: the same frame rendered by the same code with another macOS
 /// release's libm (case, hash, where it was seen).
 const LIBM_VARIANTS: &[(&str, u64, &str)] = &[
     // #232: the pinning commit (ce6ece4) renders byte-identical frames there.
-    ("ec.sim.ccmrmercury/1/32bpc/t2.2", 0x3823bd73a3cdab0d, "macOS 27.2 (26B5091g), rustc 1.98.0"),
+    (
+        "ec.sim.ccmrmercury/1/32bpc/t2.2",
+        0x3823bd73a3cdab0d,
+        "macOS 27.2 (26B5091g), rustc 1.98.0",
+    ),
 ];
 
 /// Pinned hashes (aarch64 macOS).
@@ -733,10 +928,22 @@ const GOLDEN: &[(&str, u64)] = &[
     ("ec.transition.cardwipe/0/32bpc/t1.5", 0xe2b8332b96a1c76e),
     ("ec.transition.cardwipe/0/32bpc/t0.8", 0xe2b8332b96a1c76e),
     ("ec.transition.cardwipe/0/32bpc/t2.2", 0xe2b8332b96a1c76e),
-    ("ec.transition.cardwipe/0/8bpc/half/t0.5", 0x730351fffb20e0c8),
-    ("ec.transition.cardwipe/0/8bpc/half/t1.5", 0x730351fffb20e0c8),
-    ("ec.transition.cardwipe/0/8bpc/half/t0.8", 0x730351fffb20e0c8),
-    ("ec.transition.cardwipe/0/8bpc/half/t2.2", 0x730351fffb20e0c8),
+    (
+        "ec.transition.cardwipe/0/8bpc/half/t0.5",
+        0x730351fffb20e0c8,
+    ),
+    (
+        "ec.transition.cardwipe/0/8bpc/half/t1.5",
+        0x730351fffb20e0c8,
+    ),
+    (
+        "ec.transition.cardwipe/0/8bpc/half/t0.8",
+        0x730351fffb20e0c8,
+    ),
+    (
+        "ec.transition.cardwipe/0/8bpc/half/t2.2",
+        0x730351fffb20e0c8,
+    ),
     ("ec.transition.cardwipe/1/8bpc/t0.5", 0x955dfd5e5761773a),
     ("ec.transition.cardwipe/1/8bpc/t1.5", 0x955dfd5e5761773a),
     ("ec.transition.cardwipe/1/8bpc/t0.8", 0x955dfd5e5761773a),

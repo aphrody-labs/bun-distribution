@@ -83,12 +83,20 @@ fn setup(s: &Scene, clip: &[[f32; 4]], range: std::ops::Range<usize>) -> Vec<STr
     let (w, h) = (s.width as f64, s.height as f64);
     let mut out = vec![];
     for t in range.step_by(3) {
-        let ids = [s.indices[t] as usize, s.indices[t + 1] as usize, s.indices[t + 2] as usize];
+        let ids = [
+            s.indices[t] as usize,
+            s.indices[t + 1] as usize,
+            s.indices[t + 2] as usize,
+        ];
         let mat = s.vertices[ids[0]].material as usize;
         if !s.materials.get(mat).is_some_and(|m| m.visible) {
             continue;
         }
-        let poly = vec![(clip[ids[0]], [1.0, 0.0, 0.0]), (clip[ids[1]], [0.0, 1.0, 0.0]), (clip[ids[2]], [0.0, 0.0, 1.0])];
+        let poly = vec![
+            (clip[ids[0]], [1.0, 0.0, 0.0]),
+            (clip[ids[1]], [0.0, 1.0, 0.0]),
+            (clip[ids[2]], [0.0, 0.0, 1.0]),
+        ];
         let poly = clip_poly(poly);
         if poly.len() < 3 {
             continue;
@@ -98,7 +106,12 @@ fn setup(s: &Scene, clip: &[[f32; 4]], range: std::ops::Range<usize>) -> Vec<STr
             .map(|(c, wt)| {
                 let iw = 1.0 / c[3];
                 let (nx, ny) = (c[0] * iw, c[1] * iw);
-                ([(nx as f64 + 1.0) * 0.5 * w, (1.0 - ny as f64) * 0.5 * h], c[2] * iw, iw, *wt)
+                (
+                    [(nx as f64 + 1.0) * 0.5 * w, (1.0 - ny as f64) * 0.5 * h],
+                    c[2] * iw,
+                    iw,
+                    *wt,
+                )
             })
             .collect();
         // Facing from the polygon's screen-space winding (y down: negative = front).
@@ -152,9 +165,15 @@ fn cover(t: &STri, px: f64, py: f64) -> Option<(f32, [f32; 3])> {
     let [a, b, c] = t.p;
     let area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
     // Orient so the area is positive.
-    let (b, c, swap) = if area < 0.0 { (c, b, true) } else { (b, c, false) };
+    let (b, c, swap) = if area < 0.0 {
+        (c, b, true)
+    } else {
+        (b, c, false)
+    };
     let area = area.abs();
-    let edge = |p: [f64; 2], q: [f64; 2]| -> f64 { (q[0] - p[0]) * (py - p[1]) - (q[1] - p[1]) * (px - p[0]) };
+    let edge = |p: [f64; 2], q: [f64; 2]| -> f64 {
+        (q[0] - p[0]) * (py - p[1]) - (q[1] - p[1]) * (px - p[0])
+    };
     let top_left = |p: [f64; 2], q: [f64; 2]| -> bool {
         let (dx, dy) = (q[0] - p[0], q[1] - p[1]);
         dy < 0.0 || (dy == 0.0 && dx > 0.0)
@@ -189,7 +208,14 @@ fn frag(s: &Scene, t: &STri, l: [f32; 3]) -> Frag {
             wv[k] += l[c] * t.w[c][k];
         }
     }
-    let mut f = Frag { pos: [0.0; 3], normal: [0.0; 3], uv: [0.0; 2], tangent: [0.0; 4], material: v[0].material, front: t.front };
+    let mut f = Frag {
+        pos: [0.0; 3],
+        normal: [0.0; 3],
+        uv: [0.0; 2],
+        tangent: [0.0; 4],
+        material: v[0].material,
+        front: t.front,
+    };
     for k in 0..3 {
         let x = wv[k];
         for i in 0..3 {
@@ -228,101 +254,124 @@ pub fn render(s: &Scene) -> Target {
     let ob = bin(&opaque);
     let tb = bin(&trans);
     let view = s.view;
-    let cam_z = |p: [f32; 3]| view[2][0] * p[0] + view[2][1] * p[1] + view[2][2] * p[2] + view[2][3];
+    let cam_z =
+        |p: [f32; 3]| view[2][0] * p[0] + view[2][1] * p[1] + view[2][2] * p[2] + view[2][3];
     let mut color = vec![[0.0f32; 4]; w * h];
     let mut depth = vec![f32::INFINITY; w * h];
-    color.par_chunks_mut(w * BAND as usize).zip(depth.par_chunks_mut(w * BAND as usize)).enumerate().for_each(|(band, (crow, drow))| {
-        let y0 = band as i32 * BAND;
-        let rows = crow.len() / w;
-        // Visibility: (screen tri, ndc z, weights).
-        let mut vis: Vec<(u32, f32, [f32; 3])> = vec![(u32::MAX, 0.0, [0.0; 3]); rows * w];
-        for &ti in &ob[band] {
-            let t = &opaque[ti as usize];
-            for y in t.bbox[1].max(y0)..t.bbox[3].min(y0 + rows as i32) {
-                let r = (y - y0) as usize * w;
-                for x in t.bbox[0]..t.bbox[2] {
-                    if let Some((z, l)) = cover(t, x as f64 + 0.5, y as f64 + 0.5) {
-                        let v = &mut vis[r + x as usize];
-                        if z > v.1 && z <= 1.0 {
-                            *v = (ti, z, l);
-                        }
-                    }
-                }
-            }
-        }
-        // A discarded opaque fragment (alpha test, back face) lets the next nearer-than-nothing
-        // surface through only on a second look; keep it simple: resolve again without it.
-        for i in 0..rows * w {
-            let (ti, _, l) = vis[i];
-            if ti == u32::MAX {
-                continue;
-            }
-            let t = &opaque[ti as usize];
-            let f = frag(s, t, l);
-            match shade(s, &f) {
-                Some(c) => {
-                    crow[i] = c;
-                    drow[i] = cam_z(f.pos);
-                }
-                None => {
-                    // Find the nearest surviving fragment under this pixel.
-                    let (x, y) = ((i % w) as f64 + 0.5, (y0 as usize + i / w) as f64 + 0.5);
-                    let mut best: Option<(f32, [f32; 4], f32)> = None;
-                    for &tj in &ob[band] {
-                        if tj == ti {
-                            continue;
-                        }
-                        let t2 = &opaque[tj as usize];
-                        if (x as i32) < t2.bbox[0] || (x as i32) >= t2.bbox[2] || (y as i32) < t2.bbox[1] || (y as i32) >= t2.bbox[3] {
-                            continue;
-                        }
-                        if let Some((z, l2)) = cover(t2, x, y)
-                            && best.is_none_or(|b| z > b.0)
-                        {
-                            let f2 = frag(s, t2, l2);
-                            if let Some(c) = shade(s, &f2) {
-                                best = Some((z, c, cam_z(f2.pos)));
+    color
+        .par_chunks_mut(w * BAND as usize)
+        .zip(depth.par_chunks_mut(w * BAND as usize))
+        .enumerate()
+        .for_each(|(band, (crow, drow))| {
+            let y0 = band as i32 * BAND;
+            let rows = crow.len() / w;
+            // Visibility: (screen tri, ndc z, weights).
+            let mut vis: Vec<(u32, f32, [f32; 3])> = vec![(u32::MAX, 0.0, [0.0; 3]); rows * w];
+            for &ti in &ob[band] {
+                let t = &opaque[ti as usize];
+                for y in t.bbox[1].max(y0)..t.bbox[3].min(y0 + rows as i32) {
+                    let r = (y - y0) as usize * w;
+                    for x in t.bbox[0]..t.bbox[2] {
+                        if let Some((z, l)) = cover(t, x as f64 + 0.5, y as f64 + 0.5) {
+                            let v = &mut vis[r + x as usize];
+                            if z > v.1 && z <= 1.0 {
+                                *v = (ti, z, l);
                             }
                         }
                     }
-                    if let Some((z, c, d)) = best {
+                }
+            }
+            // A discarded opaque fragment (alpha test, back face) lets the next nearer-than-nothing
+            // surface through only on a second look; keep it simple: resolve again without it.
+            for i in 0..rows * w {
+                let (ti, _, l) = vis[i];
+                if ti == u32::MAX {
+                    continue;
+                }
+                let t = &opaque[ti as usize];
+                let f = frag(s, t, l);
+                match shade(s, &f) {
+                    Some(c) => {
                         crow[i] = c;
-                        drow[i] = d;
-                        vis[i].1 = z;
-                    } else {
-                        vis[i].1 = 0.0;
+                        drow[i] = cam_z(f.pos);
+                    }
+                    None => {
+                        // Find the nearest surviving fragment under this pixel.
+                        let (x, y) = ((i % w) as f64 + 0.5, (y0 as usize + i / w) as f64 + 0.5);
+                        let mut best: Option<(f32, [f32; 4], f32)> = None;
+                        for &tj in &ob[band] {
+                            if tj == ti {
+                                continue;
+                            }
+                            let t2 = &opaque[tj as usize];
+                            if (x as i32) < t2.bbox[0]
+                                || (x as i32) >= t2.bbox[2]
+                                || (y as i32) < t2.bbox[1]
+                                || (y as i32) >= t2.bbox[3]
+                            {
+                                continue;
+                            }
+                            if let Some((z, l2)) = cover(t2, x, y)
+                                && best.is_none_or(|b| z > b.0)
+                            {
+                                let f2 = frag(s, t2, l2);
+                                if let Some(c) = shade(s, &f2) {
+                                    best = Some((z, c, cam_z(f2.pos)));
+                                }
+                            }
+                        }
+                        if let Some((z, c, d)) = best {
+                            crow[i] = c;
+                            drow[i] = d;
+                            vis[i].1 = z;
+                        } else {
+                            vis[i].1 = 0.0;
+                        }
                     }
                 }
             }
-        }
-        // Transparent fragments in order, over the opaque result.
-        for &ti in &tb[band] {
-            let t = &trans[ti as usize];
-            for y in t.bbox[1].max(y0)..t.bbox[3].min(y0 + rows as i32) {
-                let r = (y - y0) as usize * w;
-                for x in t.bbox[0]..t.bbox[2] {
-                    let i = r + x as usize;
-                    if let Some((z, l)) = cover(t, x as f64 + 0.5, y as f64 + 0.5)
-                        && z > vis[i].1
-                        && z <= 1.0
-                        && let Some(c) = shade(s, &frag(s, t, l))
-                    {
-                        let d = crow[i];
-                        let k = 1.0 - c[3];
-                        crow[i] = [c[0] + d[0] * k, c[1] + d[1] * k, c[2] + d[2] * k, c[3] + d[3] * k];
+            // Transparent fragments in order, over the opaque result.
+            for &ti in &tb[band] {
+                let t = &trans[ti as usize];
+                for y in t.bbox[1].max(y0)..t.bbox[3].min(y0 + rows as i32) {
+                    let r = (y - y0) as usize * w;
+                    for x in t.bbox[0]..t.bbox[2] {
+                        let i = r + x as usize;
+                        if let Some((z, l)) = cover(t, x as f64 + 0.5, y as f64 + 0.5)
+                            && z > vis[i].1
+                            && z <= 1.0
+                            && let Some(c) = shade(s, &frag(s, t, l))
+                        {
+                            let d = crow[i];
+                            let k = 1.0 - c[3];
+                            crow[i] = [
+                                c[0] + d[0] * k,
+                                c[1] + d[1] * k,
+                                c[2] + d[2] * k,
+                                c[3] + d[3] * k,
+                            ];
+                        }
                     }
                 }
             }
-        }
-    });
-    Target { width: s.width, height: s.height, color, depth }
+        });
+    Target {
+        width: s.width,
+        height: s.height,
+        color,
+        depth,
+    }
 }
 
 // ---------------------------------------------------------------- shadow maps
 
 fn basis(eye: [f64; 3], fwd: [f64; 3], down: [f64; 3]) -> [[f32; 4]; 3] {
     use effectcraft_geom::vec3;
-    let m = crate::three_d::camera::basis_view(vec3(eye[0], eye[1], eye[2]), vec3(fwd[0], fwd[1], fwd[2]), vec3(down[0], down[1], down[2]));
+    let m = crate::three_d::camera::basis_view(
+        vec3(eye[0], eye[1], eye[2]),
+        vec3(fwd[0], fwd[1], fwd[2]),
+        vec3(down[0], down[1], down[2]),
+    );
     [0, 1, 2].map(|r| m.0[r].map(|v| v as f32))
 }
 
@@ -333,16 +382,24 @@ fn shadow_raster(s: &Scene, m: &ShadowMap, casters: &[usize]) -> Vec<f32> {
     let c = n as f32 * 0.5;
     const NEAR: f32 = 1.0;
     for &t in casters {
-        let ids = [s.indices[3 * t] as usize, s.indices[3 * t + 1] as usize, s.indices[3 * t + 2] as usize];
+        let ids = [
+            s.indices[3 * t] as usize,
+            s.indices[3 * t + 1] as usize,
+            s.indices[3 * t + 2] as usize,
+        ];
         let mat = &s.materials[s.vertices[ids[0]].material as usize];
-        let alpha_tex = (mat.alpha_mode != 0 && mat.tex_base >= 0).then(|| &s.textures[mat.tex_base as usize]);
+        let alpha_tex =
+            (mat.alpha_mode != 0 && mat.tex_base >= 0).then(|| &s.textures[mat.tex_base as usize]);
         // Light space, clipped against the near plane (perspective).
         let q: Vec<([f32; 3], [f32; 2])> = ids
             .iter()
             .map(|&i| {
                 let p = s.vertices[i].pos;
                 let v = &m.view;
-                ([0, 1, 2].map(|r| v[r][0] * p[0] + v[r][1] * p[1] + v[r][2] * p[2] + v[r][3]), s.vertices[i].uv)
+                (
+                    [0, 1, 2].map(|r| v[r][0] * p[0] + v[r][1] * p[1] + v[r][2] * p[2] + v[r][3]),
+                    s.vertices[i].uv,
+                )
             })
             .collect();
         let mut poly = q;
@@ -357,7 +414,14 @@ fn shadow_raster(s: &Scene, m: &ShadowMap, casters: &[usize]) -> Vec<f32> {
                 if (da >= 0.0) != (db >= 0.0) {
                     let k = da / (da - db);
                     let lerp = |x: f32, y: f32| x + (y - x) * k;
-                    out.push(([lerp(a.0[0], b.0[0]), lerp(a.0[1], b.0[1]), lerp(a.0[2], b.0[2])], [lerp(a.1[0], b.1[0]), lerp(a.1[1], b.1[1])]));
+                    out.push((
+                        [
+                            lerp(a.0[0], b.0[0]),
+                            lerp(a.0[1], b.0[1]),
+                            lerp(a.0[2], b.0[2]),
+                        ],
+                        [lerp(a.1[0], b.1[0]), lerp(a.1[1], b.1[1])],
+                    ));
                 }
             }
             poly = out;
@@ -370,10 +434,23 @@ fn shadow_raster(s: &Scene, m: &ShadowMap, casters: &[usize]) -> Vec<f32> {
             .iter()
             .map(|(p, uv)| {
                 if m.ortho {
-                    ([(p[0] * m.focal + c) as f64, (p[1] * m.focal + c) as f64], 1.0, p[2], *uv)
+                    (
+                        [(p[0] * m.focal + c) as f64, (p[1] * m.focal + c) as f64],
+                        1.0,
+                        p[2],
+                        *uv,
+                    )
                 } else {
                     let iz = 1.0 / p[2];
-                    ([(p[0] * m.focal * iz + c) as f64, (p[1] * m.focal * iz + c) as f64], iz, p[2], *uv)
+                    (
+                        [
+                            (p[0] * m.focal * iz + c) as f64,
+                            (p[1] * m.focal * iz + c) as f64,
+                        ],
+                        iz,
+                        p[2],
+                        *uv,
+                    )
                 }
             })
             .collect();
@@ -399,11 +476,24 @@ fn shadow_raster(s: &Scene, m: &ShadowMap, casters: &[usize]) -> Vec<f32> {
                     }
                     let l = [e0 as f32, e1 as f32, e2 as f32];
                     let (z, uv) = if m.ortho {
-                        (l[0] * tri[0].2 + l[1] * tri[1].2 + l[2] * tri[2].2, [0, 1].map(|i| l[0] * tri[0].3[i] + l[1] * tri[1].3[i] + l[2] * tri[2].3[i]))
+                        (
+                            l[0] * tri[0].2 + l[1] * tri[1].2 + l[2] * tri[2].2,
+                            [0, 1].map(|i| {
+                                l[0] * tri[0].3[i] + l[1] * tri[1].3[i] + l[2] * tri[2].3[i]
+                            }),
+                        )
                     } else {
                         let iz = l[0] * tri[0].1 + l[1] * tri[1].1 + l[2] * tri[2].1;
                         let z = 1.0 / iz;
-                        (z, [0, 1].map(|i| (l[0] * tri[0].3[i] * tri[0].1 + l[1] * tri[1].3[i] * tri[1].1 + l[2] * tri[2].3[i] * tri[2].1) * z))
+                        (
+                            z,
+                            [0, 1].map(|i| {
+                                (l[0] * tri[0].3[i] * tri[0].1
+                                    + l[1] * tri[1].3[i] * tri[1].1
+                                    + l[2] * tri[2].3[i] * tri[2].1)
+                                    * z
+                            }),
+                        )
                     };
                     let px = &mut d[y * n + x];
                     if z >= *px {
@@ -425,7 +515,11 @@ fn shadow_raster(s: &Scene, m: &ShadowMap, casters: &[usize]) -> Vec<f32> {
 /// Build the shadow maps of every shadow-casting light (lights marked `shadow == 0`).
 pub(crate) fn shadow_maps(s: &mut Scene, draft: bool) {
     let casters: Vec<usize> = (0..s.indices.len() / 3)
-        .filter(|&t| s.materials.get(s.vertices[s.indices[3 * t] as usize].material as usize).is_some_and(|m| m.casts_shadows))
+        .filter(|&t| {
+            s.materials
+                .get(s.vertices[s.indices[3 * t] as usize].material as usize)
+                .is_some_and(|m| m.casts_shadows)
+        })
         .collect();
     if casters.is_empty() {
         for l in &mut s.lights {
@@ -442,7 +536,9 @@ pub(crate) fn shadow_maps(s: &mut Scene, draft: bool) {
         }
     }
     let centre = [0, 1, 2].map(|k| (lo[k] + hi[k]) * 0.5);
-    let radius = ((hi[0] - lo[0]).powi(2) + (hi[1] - lo[1]).powi(2) + (hi[2] - lo[2]).powi(2)).sqrt() * 0.5 + 1.0;
+    let radius =
+        ((hi[0] - lo[0]).powi(2) + (hi[1] - lo[1]).powi(2) + (hi[2] - lo[2]).powi(2)).sqrt() * 0.5
+            + 1.0;
     let size = if draft { 512 } else { 1024 };
     let mut maps: Vec<ShadowMap> = vec![];
     for li in 0..s.lights.len() {
@@ -455,17 +551,41 @@ pub(crate) fn shadow_maps(s: &mut Scene, draft: bool) {
         let soft = 1.0 + (l.shadow_diffusion * 0.5).min(24.0);
         let pos = l.pos.map(|v| v as f64);
         let dir = l.dir.map(|v| v as f64);
-        let hint = if dir[1].abs() < 0.9 { [0.0, 1.0, 0.0] } else { [0.0, 0.0, 1.0] };
+        let hint = if dir[1].abs() < 0.9 {
+            [0.0, 1.0, 0.0]
+        } else {
+            [0.0, 0.0, 1.0]
+        };
         match l.kind {
             0 => {
-                let eye = [centre[0] - dir[0] * radius * 2.0, centre[1] - dir[1] * radius * 2.0, centre[2] - dir[2] * radius * 2.0];
+                let eye = [
+                    centre[0] - dir[0] * radius * 2.0,
+                    centre[1] - dir[1] * radius * 2.0,
+                    centre[2] - dir[2] * radius * 2.0,
+                ];
                 let focal = (size as f64 * 0.5 / radius) as f32;
-                maps.push(ShadowMap { view: basis(eye, dir, hint), focal, ortho: true, size, offset: 0, bias: 1.5, radius: soft });
+                maps.push(ShadowMap {
+                    view: basis(eye, dir, hint),
+                    focal,
+                    ortho: true,
+                    size,
+                    offset: 0,
+                    bias: 1.5,
+                    radius: soft,
+                });
             }
             1 => {
                 let half = (l.cos_outer.clamp(-1.0, 1.0).acos() as f64 + 0.05).min(1.45);
                 let focal = (size as f64 * 0.5 / half.tan()) as f32;
-                maps.push(ShadowMap { view: basis(pos, dir, hint), focal, ortho: false, size, offset: 0, bias: 1.5, radius: soft });
+                maps.push(ShadowMap {
+                    view: basis(pos, dir, hint),
+                    focal,
+                    ortho: false,
+                    size,
+                    offset: 0,
+                    bias: 1.5,
+                    radius: soft,
+                });
             }
             _ => {
                 let fs = size / 2;
@@ -477,13 +597,24 @@ pub(crate) fn shadow_maps(s: &mut Scene, draft: bool) {
                     ([0.0, 0.0, 1.0], [0.0, 1.0, 0.0]),
                     ([0.0, 0.0, -1.0], [0.0, 1.0, 0.0]),
                 ] {
-                    maps.push(ShadowMap { view: basis(pos, f, d), focal: fs as f32 * 0.5, ortho: false, size: fs, offset: 0, bias: 1.5, radius: soft });
+                    maps.push(ShadowMap {
+                        view: basis(pos, f, d),
+                        focal: fs as f32 * 0.5,
+                        ortho: false,
+                        size: fs,
+                        offset: 0,
+                        bias: 1.5,
+                        radius: soft,
+                    });
                 }
             }
         }
         s.lights[li].shadow = first;
     }
-    let texels: Vec<Vec<f32>> = maps.par_iter().map(|m| shadow_raster(s, m, &casters)).collect();
+    let texels: Vec<Vec<f32>> = maps
+        .par_iter()
+        .map(|m| shadow_raster(s, m, &casters))
+        .collect();
     for (m, t) in maps.iter_mut().zip(texels) {
         m.offset = s.shadow_texels.len() as u32;
         s.shadow_texels.extend(t);

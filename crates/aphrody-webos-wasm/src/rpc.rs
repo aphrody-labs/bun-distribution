@@ -33,8 +33,13 @@ fn sd_path(path: &str) -> Value {
 }
 
 fn path_of(sd: &Value) -> Result<String, String> {
-    let physical = sd.get("Physical").ok_or("only Physical paths exist in the browser")?;
-    let path = physical.get("path").and_then(Value::as_str).ok_or("path missing")?;
+    let physical = sd
+        .get("Physical")
+        .ok_or("only Physical paths exist in the browser")?;
+    let path = physical
+        .get("path")
+        .and_then(Value::as_str)
+        .ok_or("path missing")?;
     let norm = vpath::normalize(path.as_bytes()).map_err(vfs_err)?;
     String::from_utf8(norm).map_err(|e| e.to_string())
 }
@@ -58,9 +63,10 @@ fn content_kind(ext: &str) -> &'static str {
 fn file_json(path: &str, kind: FileKind, size: u64, now: &str) -> Value {
     let name = path.rsplit('/').next().unwrap_or(path);
     let extension = match kind {
-        FileKind::File => {
-            name.rsplit_once('.').filter(|(stem, _)| !stem.is_empty()).map(|(_, e)| e)
-        },
+        FileKind::File => name
+            .rsplit_once('.')
+            .filter(|(stem, _)| !stem.is_empty())
+            .map(|(_, e)| e),
         FileKind::Dir => None,
     };
     json!({
@@ -111,8 +117,11 @@ fn sort_files(files: &mut [Value], sort_by: &str, folders_first: bool) {
     let size = |v: &Value| v["size"].as_u64().unwrap_or(0);
     let is_dir = |v: &Value| v["kind"] == "Directory";
     files.sort_by(|a, b| {
-        let dirs =
-            if folders_first { is_dir(b).cmp(&is_dir(a)) } else { std::cmp::Ordering::Equal };
+        let dirs = if folders_first {
+            is_dir(b).cmp(&is_dir(a))
+        } else {
+            std::cmp::Ordering::Equal
+        };
         dirs.then_with(|| match sort_by {
             "size" => size(b).cmp(&size(a)),
             _ => key(a).cmp(&key(b)),
@@ -130,7 +139,9 @@ fn directory_listing(fs: &mut impl Vfs, payload: &Value, now: &str) -> Reply {
         payload["folders_first"].as_bool().unwrap_or(false),
     );
     let total = files.len();
-    let limit = payload["limit"].as_u64().map_or(DEFAULT_LIMIT, |n| n as usize);
+    let limit = payload["limit"]
+        .as_u64()
+        .map_or(DEFAULT_LIMIT, |n| n as usize);
     files.truncate(limit);
     Ok(json!({ "files": files, "total_count": total, "has_more": total > limit }))
 }
@@ -354,7 +365,9 @@ fn rename(fs: &mut impl Vfs, payload: &Value) -> Reply {
 }
 
 fn delete(fs: &mut impl Vfs, payload: &Value) -> Reply {
-    let paths = payload["targets"]["paths"].as_array().ok_or("targets missing")?;
+    let paths = payload["targets"]["paths"]
+        .as_array()
+        .ok_or("targets missing")?;
     for sd in paths {
         let path = path_of(sd)?;
         if path == "/" || path == HOME {
@@ -373,7 +386,10 @@ pub fn handle(fs: &mut impl Vfs, request: &Value, now: &str) -> Reply {
     if request.as_str() == Some("Ping") {
         return Ok(json!("Pong"));
     }
-    let call = request.get("Query").or_else(|| request.get("Action")).ok_or("malformed request")?;
+    let call = request
+        .get("Query")
+        .or_else(|| request.get("Action"))
+        .ok_or("malformed request")?;
     let method = call["method"].as_str().ok_or("method missing")?;
     let payload = &call["payload"];
     fs.mkdir_all(HOME.as_bytes()).map_err(vfs_err)?;
@@ -390,11 +406,11 @@ pub fn handle(fs: &mut impl Vfs, request: &Value, now: &str) -> Reply {
         "query:files.by_path" => {
             let path = payload["path"].as_str().ok_or("path missing")?;
             node(fs, path, now)
-        },
+        }
         "query:files.by_id" => {
             let id = payload["file_id"].as_str().ok_or("file_id missing")?;
             node(fs, id.strip_prefix("webos:").ok_or("unknown file id")?, now)
-        },
+        }
         "action:files.rename" => rename(fs, payload),
         "action:files.delete" => delete(fs, payload),
         other => Err(format!("{other} is not served by the browser backend")),
@@ -428,7 +444,8 @@ mod tests {
     fn lists_searches_renames_and_deletes() {
         let mut fs = OpfsVfs::new();
         fs.mkdir_all(b"/home/user/docs").expect("mkdir");
-        fs.write(b"/home/user/docs/Notes.md", b"hello").expect("write");
+        fs.write(b"/home/user/docs/Notes.md", b"hello")
+            .expect("write");
         fs.write(b"/home/user/b.txt", b"xy").expect("write");
         let listing = query(
             &mut fs,
@@ -439,8 +456,11 @@ mod tests {
         assert_eq!(files[0]["name"], "docs");
         assert_eq!(files[1]["name"], "b.txt");
         assert_eq!(files[1]["size"], 2);
-        let found =
-            query(&mut fs, "query:search.files", json!({ "query": "notes", "scope": "Library" }));
+        let found = query(
+            &mut fs,
+            "query:search.files",
+            json!({ "query": "notes", "scope": "Library" }),
+        );
         assert_eq!(found["json"]["total_found"], 1);
         let rename_req = json!({ "Action": { "method": "action:files.rename", "library_id": null,
             "payload": { "target": sd_path("/home/user/b.txt"), "new_name": "c.txt" } } });
@@ -467,8 +487,15 @@ mod tests {
         );
         let spaces = query(&mut fs, "query:spaces.list", json!(null));
         let space_id = spaces["json"]["spaces"][0]["id"].clone();
-        let layout = query(&mut fs, "query:spaces.get_layout", json!({ "space_id": space_id }));
-        assert_eq!(layout["json"]["groups"][0]["group"]["group_type"], "Locations");
+        let layout = query(
+            &mut fs,
+            "query:spaces.get_layout",
+            json!({ "space_id": space_id }),
+        );
+        assert_eq!(
+            layout["json"]["groups"][0]["group"]["group_type"],
+            "Locations"
+        );
         assert_eq!(layout["json"]["space"]["id"], space_id);
         let del = json!({ "Action": { "method": "action:files.delete", "library_id": null,
             "payload": { "targets": { "paths": [sd_path(HOME)] } } } });

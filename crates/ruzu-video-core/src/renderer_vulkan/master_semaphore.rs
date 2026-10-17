@@ -368,10 +368,8 @@ impl MasterSemaphore {
     ) -> vk::Result {
         if self.synchronization2_core || self.synchronization2_khr.is_some() {
             let command_buffer_infos = [
-                vk::CommandBufferSubmitInfo::default()
-                    .command_buffer(upload_cmdbuf),
-                vk::CommandBufferSubmitInfo::default()
-                    .command_buffer(cmdbuf),
+                vk::CommandBufferSubmitInfo::default().command_buffer(upload_cmdbuf),
+                vk::CommandBufferSubmitInfo::default().command_buffer(cmdbuf),
             ];
             let mut signal_infos = [
                 vk::SemaphoreSubmitInfo::default()
@@ -490,10 +488,8 @@ impl MasterSemaphore {
     ) -> vk::Result {
         if self.synchronization2_core || self.synchronization2_khr.is_some() {
             let command_buffer_infos = [
-                vk::CommandBufferSubmitInfo::default()
-                    .command_buffer(upload_cmdbuf),
-                vk::CommandBufferSubmitInfo::default()
-                    .command_buffer(cmdbuf),
+                vk::CommandBufferSubmitInfo::default().command_buffer(upload_cmdbuf),
+                vk::CommandBufferSubmitInfo::default().command_buffer(cmdbuf),
             ];
             let signal_info = vk::SemaphoreSubmitInfo::default()
                 .semaphore(signal_semaphore)

@@ -10,7 +10,10 @@ use filmcraft_speech::{Options, Transcriber, word_error_rate};
 fn main() {
     let mut args = std::env::args().skip(1);
     let dir = std::path::PathBuf::from(args.next().expect("model dir"));
-    let id = dir.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+    let id = dir
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
     let t0 = std::time::Instant::now();
     let w = filmcraft_speech::whisper::Whisper::load(&dir, &id).expect("load");
     eprintln!("loaded {id} in {:.2}s", t0.elapsed().as_secs_f64());
@@ -24,16 +27,30 @@ fn main() {
             "--diarize" => diarize = true,
             l if l.starts_with("--lang=") => language = Some(l[7..].to_string()),
             p => {
-                let audio: Vec<f32> = std::fs::read(p).expect("read").as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect();
+                let audio: Vec<f32> = std::fs::read(p)
+                    .expect("read")
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
+                    .map(|b| f32::from_le_bytes(*b))
+                    .collect();
                 let t1 = std::time::Instant::now();
-                let opts = Options { language: language.clone(), diarize, ..Default::default() };
-                let t = w.transcribe(&audio, &opts, &mut |_, _| true).expect("transcribe");
+                let opts = Options {
+                    language: language.clone(),
+                    diarize,
+                    ..Default::default()
+                };
+                let t = w
+                    .transcribe(&audio, &opts, &mut |_, _| true)
+                    .expect("transcribe");
                 let secs = t1.elapsed().as_secs_f64();
                 audio_s += audio.len() as f64 / 16_000.0;
                 cpu_s += secs;
                 let hyp = t.text();
                 print!("{p} [{} {:.1}s]: {hyp}", t.language, secs);
-                if let Ok(r) = std::fs::read_to_string(std::path::Path::new(p).with_extension("txt")) {
+                if let Ok(r) =
+                    std::fs::read_to_string(std::path::Path::new(p).with_extension("txt"))
+                {
                     let n = r.split_whitespace().count();
                     let e = word_error_rate(&r, &hyp);
                     errs += e * n as f64;

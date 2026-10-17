@@ -1,6 +1,6 @@
 //! A framework for theming.
 use bevy_app::{Propagate, PropagateOver};
-use bevy_color::{palettes, Color};
+use bevy_color::{Color, palettes};
 use bevy_ecs::{
     change_detection::DetectChanges,
     component::Component,
@@ -14,7 +14,7 @@ use bevy_ecs::{
 };
 use bevy_log::warn_once;
 use bevy_platform::collections::HashMap;
-use bevy_reflect::{prelude::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use bevy_text::TextColor;
 use bevy_ui::{BackgroundColor, BorderColor};
 use smol_str::SmolStr;

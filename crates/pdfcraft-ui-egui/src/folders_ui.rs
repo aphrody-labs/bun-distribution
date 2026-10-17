@@ -73,9 +73,15 @@ impl PinnedFolders {
     /// [`MAX_PINNED`]. Settings are untrusted, so anything else is ignored. A folder that is
     /// missing right now is kept (a synced drive may be offline) and shown as unavailable.
     pub(crate) fn restore(&mut self, value: &serde_json::Value) {
-        let Some(items) = value.as_array() else { return };
+        let Some(items) = value.as_array() else {
+            return;
+        };
         let mut folders = Vec::new();
-        for folder in items.iter().filter_map(serde_json::Value::as_str).filter_map(clean) {
+        for folder in items
+            .iter()
+            .filter_map(serde_json::Value::as_str)
+            .filter_map(clean)
+        {
             if folders.len() >= MAX_PINNED {
                 break;
             }
@@ -99,60 +105,106 @@ fn clean(path: &str) -> Option<String> {
     }
     let trimmed = path.trim_end_matches(['/', '\\']);
     // The file system root ("/") keeps its separator, as does a Windows drive root ("C:\").
-    let path = if trimmed.is_empty() || trimmed.ends_with(':') { path } else { trimmed };
-    std::path::Path::new(path).is_absolute().then(|| path.to_string())
+    let path = if trimmed.is_empty() || trimmed.ends_with(':') {
+        path
+    } else {
+        trimmed
+    };
+    std::path::Path::new(path)
+        .is_absolute()
+        .then(|| path.to_string())
 }
 
 /// The PDFs directly inside `folder` (not its subfolders, and not hidden files), newest first.
 pub fn list(folder: &str) -> FolderListing {
     let mut files = Vec::new();
     let Ok(entries) = std::fs::read_dir(folder) else {
-        return FolderListing { folder: folder.to_string(), files, total: 0, unavailable: true };
+        return FolderListing {
+            folder: folder.to_string(),
+            files,
+            total: 0,
+            unavailable: true,
+        };
     };
     for entry in entries.flatten().take(MAX_ENTRIES) {
         let name = entry.file_name().to_string_lossy().into_owned();
         let path = entry.path();
-        if name.starts_with('.') || !path.extension().is_some_and(|e| e.eq_ignore_ascii_case("pdf")) {
+        if name.starts_with('.')
+            || !path
+                .extension()
+                .is_some_and(|e| e.eq_ignore_ascii_case("pdf"))
+        {
             continue;
         }
         // Follows links, like opening the file does.
-        let Ok(meta) = std::fs::metadata(&path) else { continue };
+        let Ok(meta) = std::fs::metadata(&path) else {
+            continue;
+        };
         if meta.is_file() {
-            files.push(FolderFile { name, path: path.to_string_lossy().into_owned(), size: meta.len(), modified: meta.modified().ok() });
+            files.push(FolderFile {
+                name,
+                path: path.to_string_lossy().into_owned(),
+                size: meta.len(),
+                modified: meta.modified().ok(),
+            });
         }
     }
     let total = files.len();
     // Newest first; `None` sorts before any time, so files without one come last.
-    files.sort_by(|a, b| b.modified.cmp(&a.modified).then_with(|| a.name.cmp(&b.name)));
+    files.sort_by(|a, b| {
+        b.modified
+            .cmp(&a.modified)
+            .then_with(|| a.name.cmp(&b.name))
+    });
     files.truncate(MAX_LISTED);
-    FolderListing { folder: folder.to_string(), files, total, unavailable: false }
+    FolderListing {
+        folder: folder.to_string(),
+        files,
+        total,
+        unavailable: false,
+    }
 }
 
 /// The last part of `folder`'s path, for headings and messages.
 pub fn folder_name(folder: &str) -> String {
-    std::path::Path::new(folder).file_name().map_or_else(|| folder.to_string(), |n| n.to_string_lossy().into_owned())
+    std::path::Path::new(folder)
+        .file_name()
+        .map_or_else(|| folder.to_string(), |n| n.to_string_lossy().into_owned())
 }
 
 /// Where `folder` is, in words, so two folders with the same name can be told apart without a
 /// long path: "iCloud Drive", "OneDrive · Contoso", "Documents › Work", or the parent path with
 /// the home folder as "~". The full path is shown on hover.
 pub fn location(folder: &str) -> String {
-    let home = std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" }).map(std::path::PathBuf::from);
+    let home = std::env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
+        .map(std::path::PathBuf::from);
     location_in(folder, home.as_deref())
 }
 
 /// [`location`] with the home folder given (tests).
 pub fn location_in(folder: &str, home: Option<&std::path::Path>) -> String {
     use std::path::Path;
-    let parent = Path::new(folder).parent().unwrap_or_else(|| Path::new(folder));
+    let parent = Path::new(folder)
+        .parent()
+        .unwrap_or_else(|| Path::new(folder));
     let Some(rel) = home.and_then(|h| parent.strip_prefix(h).ok()) else {
         return parent.to_string_lossy().into_owned();
     };
-    let parts: Vec<String> = rel.components().map(|c| c.as_os_str().to_string_lossy().into_owned()).collect();
-    let (place, rest) = match parts.iter().map(String::as_str).collect::<Vec<_>>().as_slice() {
+    let parts: Vec<String> = rel
+        .components()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    let (place, rest) = match parts
+        .iter()
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .as_slice()
+    {
         [] => return "~".to_string(),
         // macOS keeps iCloud Drive and File Provider cloud drives under ~/Library.
-        ["Library", "Mobile Documents", "com~apple~CloudDocs", ..] => ("iCloud Drive".to_string(), 3),
+        ["Library", "Mobile Documents", "com~apple~CloudDocs", ..] => {
+            ("iCloud Drive".to_string(), 3)
+        }
         ["Library", "CloudStorage", drive, ..] => (cloud_drive(drive), 3),
         _ => (String::new(), 0),
     };
@@ -176,8 +228,16 @@ fn cloud_drive(folder: &str) -> String {
     // Business accounts are named after the organisation with its spaces removed, which can be
     // very long: its first part is enough to tell accounts apart.
     let account = account.split('-').next().unwrap_or(account);
-    let account: String = if account.chars().count() > 32 { account.chars().take(31).chain(['…']).collect() } else { account.to_string() };
-    if account.is_empty() { provider.to_string() } else { format!("{provider} · {account}") }
+    let account: String = if account.chars().count() > 32 {
+        account.chars().take(31).chain(['…']).collect()
+    } else {
+        account.to_string()
+    };
+    if account.is_empty() {
+        provider.to_string()
+    } else {
+        format!("{provider} · {account}")
+    }
 }
 
 impl PdfCraftApp {
@@ -185,7 +245,8 @@ impl PdfCraftApp {
     pub fn pin_folder_dialog(&mut self) {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            let dialog = rfd::AsyncFileDialog::new().set_title(tl!("Pin a folder to Home").to_string());
+            let dialog =
+                rfd::AsyncFileDialog::new().set_title(tl!("Pin a folder to Home").to_string());
             self.ask_one(crate::pickers::Ask::Folder(dialog), None, |app, dir| {
                 app.pin_folder(&dir.to_string_lossy());
             });
@@ -207,7 +268,10 @@ impl PdfCraftApp {
             return true;
         }
         if self.pinned.folders.len() >= MAX_PINNED {
-            self.notify_fmt("You can pin up to {n} folders. Unpin one first.", &[("n", &MAX_PINNED.to_string())]);
+            self.notify_fmt(
+                "You can pin up to {n} folders. Unpin one first.",
+                &[("n", &MAX_PINNED.to_string())],
+            );
             return false;
         }
         self.pinned.folders.push(folder);
@@ -236,7 +300,11 @@ impl PdfCraftApp {
             return;
         }
         // `now < last` means the clock restarted (a new context in tests): list again.
-        let due = self.pinned.stale || self.pinned.last_scan.is_none_or(|last| now < last || now - last >= RESCAN_SECS);
+        let due = self.pinned.stale
+            || self
+                .pinned
+                .last_scan
+                .is_none_or(|last| now < last || now - last >= RESCAN_SECS);
         if !due {
             return;
         }
@@ -255,7 +323,11 @@ impl PdfCraftApp {
         };
         if self.run_inline {
             work();
-        } else if std::thread::Builder::new().name("pdfcraft-folders".into()).spawn(work).is_err() {
+        } else if std::thread::Builder::new()
+            .name("pdfcraft-folders".into())
+            .spawn(work)
+            .is_err()
+        {
             // No worker: try again when the next listing is due.
             return;
         }
@@ -265,14 +337,19 @@ impl PdfCraftApp {
 
     /// Take a finished listing, if there is one.
     fn poll_pinned(&mut self) {
-        let Some(slot) = &self.pinned.scan else { return };
+        let Some(slot) = &self.pinned.scan else {
+            return;
+        };
         let done = slot.lock().unwrap_or_else(PoisonError::into_inner).take();
         match done {
             Some(listings) => {
                 self.pinned.scan = None;
                 // A folder unpinned while it was being listed stays gone.
                 let folders = &self.pinned.folders;
-                self.pinned.listings = listings.into_iter().filter(|l| folders.contains(&l.folder)).collect();
+                self.pinned.listings = listings
+                    .into_iter()
+                    .filter(|l| folders.contains(&l.folder))
+                    .collect();
             }
             // The worker ended without a result (it panicked): list again when due.
             None if Arc::strong_count(slot) == 1 => self.pinned.scan = None,
@@ -314,20 +391,26 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
             let (icon, _) = ui.allocate_exact_size(vec2(22.0, 22.0), Sense::hover());
             icons::paint(ui, icon, "folder", 20.0, t.icon);
-            ui.label(egui::RichText::new(crate::bidi::visual(&name)).font(theme::semibold(14.0))).on_hover_text(folder);
+            ui.label(egui::RichText::new(crate::bidi::visual(&name)).font(theme::semibold(14.0)))
+                .on_hover_text(folder);
             ui.add_space(4.0);
             // Leave room for Unpin: a long location is cut short, never the button.
             let room = (ui.available_width() - 110.0).max(0.0);
             ui.scope(|ui| {
                 ui.set_max_width(room);
-                let place = egui::RichText::new(crate::bidi::visual(&location(folder))).font(theme::regular(12.0)).color(t.text_faint);
-                ui.add(egui::Label::new(place).truncate()).on_hover_text(folder);
+                let place = egui::RichText::new(crate::bidi::visual(&location(folder)))
+                    .font(theme::regular(12.0))
+                    .color(t.text_faint);
+                ui.add(egui::Label::new(place).truncate())
+                    .on_hover_text(folder);
             });
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let resp = widgets::ghost_button(ui, "x", tl!("Unpin"));
                 // Every folder has an Unpin button: say which one it is.
                 let label = crate::i18n::fmt(tl!("Unpin {folder}"), &[("folder", &name)]);
-                resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &label));
+                resp.widget_info(|| {
+                    egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &label)
+                });
                 if resp.clicked() {
                     unpin = Some(folder.clone());
                 }
@@ -342,7 +425,12 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             continue;
         };
         if listing.unavailable {
-            note(ui, tl!("This folder isn't available right now. It may have moved, or its drive or cloud sync is offline."));
+            note(
+                ui,
+                tl!(
+                    "This folder isn't available right now. It may have moved, or its drive or cloud sync is offline."
+                ),
+            );
             continue;
         }
         if listing.files.is_empty() {
@@ -350,12 +438,18 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             continue;
         }
         let expanded = app.pinned.expanded.contains(folder);
-        let shown = if expanded { listing.files.len() } else { listing.files.len().min(SHOWN) };
+        let shown = if expanded {
+            listing.files.len()
+        } else {
+            listing.files.len().min(SHOWN)
+        };
         for f in listing.files.iter().take(shown) {
-            let (rect, resp) = ui.allocate_exact_size(vec2(ui.available_width(), 38.0), Sense::click());
+            let (rect, resp) =
+                ui.allocate_exact_size(vec2(ui.available_width(), 38.0), Sense::click());
             resp.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, &f.name));
             if resp.hovered() {
-                ui.painter().rect_filled(rect, CornerRadius::same(8), t.hover);
+                ui.painter()
+                    .rect_filled(rect, CornerRadius::same(8), t.hover);
             }
             icons::paint(
                 ui,
@@ -366,10 +460,27 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
             );
             let size = crate::panels::human_size(usize::try_from(f.size).unwrap_or(usize::MAX));
             let when = f.modified.map(crate::combine_ui::ago).unwrap_or_default();
-            let detail = if when.is_empty() { size } else { format!("{when}  ·  {size}") };
-            let detail = ui.painter().text(rect.right_center() - vec2(12.0, 0.0), Align2::RIGHT_CENTER, detail, theme::regular(12.0), t.text_muted);
+            let detail = if when.is_empty() {
+                size
+            } else {
+                format!("{when}  ·  {size}")
+            };
+            let detail = ui.painter().text(
+                rect.right_center() - vec2(12.0, 0.0),
+                Align2::RIGHT_CENTER,
+                detail,
+                theme::regular(12.0),
+                t.text_muted,
+            );
             let width = detail.left() - 16.0 - (rect.left() + 62.0);
-            widgets::row_text(ui, rect.min + vec2(62.0, 19.0), crate::bidi::visual(&f.name), theme::medium(13.0), t.text, width);
+            widgets::row_text(
+                ui,
+                rect.min + vec2(62.0, 19.0),
+                crate::bidi::visual(&f.name),
+                theme::medium(13.0),
+                t.text,
+                width,
+            );
             if resp.on_hover_text(&f.path).clicked() {
                 open = Some(f.path.clone());
             }
@@ -379,13 +490,20 @@ pub(crate) fn section(app: &mut PdfCraftApp, ui: &mut egui::Ui) {
         if more > 0 || (expanded && (listing.files.len() > SHOWN || capped)) {
             ui.horizontal(|ui| {
                 ui.add_space(30.0);
-                let label = if expanded { tl!("Show less").to_string() } else { crate::i18n::fmt(tl!("Show {n} more"), &[("n", &more.to_string())]) };
+                let label = if expanded {
+                    tl!("Show less").to_string()
+                } else {
+                    crate::i18n::fmt(tl!("Show {n} more"), &[("n", &more.to_string())])
+                };
                 if (more > 0 || listing.files.len() > SHOWN) && ui.link(label).clicked() {
                     toggle = Some(folder.clone());
                 }
                 if expanded && capped {
                     let n = listing.files.len().to_string();
-                    let text = crate::i18n::fmt(tl!("The newest {n} of {total} PDFs"), &[("n", &n), ("total", &listing.total.to_string())]);
+                    let text = crate::i18n::fmt(
+                        tl!("The newest {n} of {total} PDFs"),
+                        &[("n", &n), ("total", &listing.total.to_string())],
+                    );
                     ui.label(egui::RichText::new(text).color(t.text_faint));
                 }
             });
@@ -430,8 +548,16 @@ mod tests {
         items.extend(many.iter().map(|f| serde_json::json!(f)));
         p.restore(&serde_json::Value::Array(items));
         assert_eq!(p.folders.len(), MAX_PINNED);
-        assert_eq!(p.folders.first(), Some(&a), "trailing separator trimmed, duplicate dropped");
-        assert!(p.folders.iter().all(|f| std::path::Path::new(f).is_absolute()));
+        assert_eq!(
+            p.folders.first(),
+            Some(&a),
+            "trailing separator trimmed, duplicate dropped"
+        );
+        assert!(
+            p.folders
+                .iter()
+                .all(|f| std::path::Path::new(f).is_absolute())
+        );
         p.restore(&serde_json::json!("not a list"));
         assert_eq!(p.folders.len(), MAX_PINNED, "garbage keeps what is there");
     }
@@ -452,24 +578,55 @@ mod tests {
     fn locations_are_said_in_words() {
         let home = Some(std::path::Path::new("/Users/me"));
         let at = |p: &str| location_in(p, home);
-        assert_eq!(at("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Scans"), "iCloud Drive");
-        assert_eq!(at("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Personal/Scans"), "iCloud Drive › Personal");
-        assert_eq!(at("/Users/me/Library/CloudStorage/OneDrive-ContosoLtd-salesandservice/Scans"), "OneDrive · ContosoLtd");
-        assert_eq!(at("/Users/me/Library/CloudStorage/OneDrive-Personal/Scans"), "OneDrive · Personal");
-        assert_eq!(at("/Users/me/Library/CloudStorage/OneDrive-SharedLibraries-Contoso/Team/Scans"), "SharePoint · Contoso › Team");
-        assert_eq!(at("/Users/me/Library/CloudStorage/GoogleDrive-me@example.com/My Drive/Scans"), "Google Drive · me@example.com › My Drive");
-        assert_eq!(at("/Users/me/Library/CloudStorage/Dropbox/Scans"), "Dropbox");
+        assert_eq!(
+            at("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Scans"),
+            "iCloud Drive"
+        );
+        assert_eq!(
+            at("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Personal/Scans"),
+            "iCloud Drive › Personal"
+        );
+        assert_eq!(
+            at("/Users/me/Library/CloudStorage/OneDrive-ContosoLtd-salesandservice/Scans"),
+            "OneDrive · ContosoLtd"
+        );
+        assert_eq!(
+            at("/Users/me/Library/CloudStorage/OneDrive-Personal/Scans"),
+            "OneDrive · Personal"
+        );
+        assert_eq!(
+            at("/Users/me/Library/CloudStorage/OneDrive-SharedLibraries-Contoso/Team/Scans"),
+            "SharePoint · Contoso › Team"
+        );
+        assert_eq!(
+            at("/Users/me/Library/CloudStorage/GoogleDrive-me@example.com/My Drive/Scans"),
+            "Google Drive · me@example.com › My Drive"
+        );
+        assert_eq!(
+            at("/Users/me/Library/CloudStorage/Dropbox/Scans"),
+            "Dropbox"
+        );
         assert_eq!(at("/Users/me/Documents/Work/Scans"), "Documents › Work");
         assert_eq!(at("/Users/me/Scans"), "~");
         assert_eq!(at("/Volumes/NAS/Scans"), "/Volumes/NAS");
-        assert_eq!(location_in("/Users/me/Documents/Scans", None), "/Users/me/Documents");
-        let long = format!("/Users/me/Library/CloudStorage/OneDrive-{}/Scans", "x".repeat(50));
-        assert_eq!(at(&long).chars().count(), "OneDrive · ".chars().count() + 32);
+        assert_eq!(
+            location_in("/Users/me/Documents/Scans", None),
+            "/Users/me/Documents"
+        );
+        let long = format!(
+            "/Users/me/Library/CloudStorage/OneDrive-{}/Scans",
+            "x".repeat(50)
+        );
+        assert_eq!(
+            at(&long).chars().count(),
+            "OneDrive · ".chars().count() + 32
+        );
     }
 
     #[test]
     fn a_missing_folder_lists_as_unavailable() {
-        let missing = std::env::temp_dir().join(format!("pdfcraft-no-such-folder-{}", std::process::id()));
+        let missing =
+            std::env::temp_dir().join(format!("pdfcraft-no-such-folder-{}", std::process::id()));
         let l = list(&missing.to_string_lossy());
         assert!(l.unavailable);
         assert!(l.files.is_empty());

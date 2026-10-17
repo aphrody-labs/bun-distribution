@@ -5,7 +5,9 @@ use super::Model;
 use crate::utils::mem_prelude::*;
 use core::ops::Range;
 
-static CRC16_VALUES: [u16; 8] = [0xC0C1, 0xC181, 0xC301, 0xC601, 0xCC01, 0xD801, 0xF001, 0xA001];
+static CRC16_VALUES: [u16; 8] = [
+    0xC0C1, 0xC181, 0xC301, 0xC601, 0xCC01, 0xD801, 0xF001, 0xA001,
+];
 
 fn crc16(init: u16, bytes: &[u8]) -> u16 {
     let mut result = init as u32;
@@ -36,8 +38,15 @@ pub enum VerificationRegion {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerificationError {
-    IncorrectSize { expected: usize, got: usize },
-    IncorrectCrc16 { region: VerificationRegion, calculated: u16, expected: u16 },
+    IncorrectSize {
+        expected: usize,
+        got: usize,
+    },
+    IncorrectCrc16 {
+        region: VerificationRegion,
+        calculated: u16,
+        expected: u16,
+    },
 }
 
 fn check_crc(
@@ -52,7 +61,11 @@ fn check_crc(
     if calculated == expected {
         Ok(())
     } else {
-        Err(VerificationError::IncorrectCrc16 { region, calculated, expected })
+        Err(VerificationError::IncorrectCrc16 {
+            region,
+            calculated,
+            expected,
+        })
     }
 }
 
@@ -77,7 +90,13 @@ pub fn verify(firmware: &[u8], model: Model) -> Result<(), VerificationError> {
 
     let mask = firmware.len() - 1;
     let wifi_len = firmware.read_le::<u16>(0x2C) as usize;
-    check_crc(firmware, VerificationRegion::Wifi, 0, 0x2C..0x2C + wifi_len, 0x2A)?;
+    check_crc(
+        firmware,
+        VerificationRegion::Wifi,
+        0,
+        0x2C..0x2C + wifi_len,
+        0x2A,
+    )?;
     check_crc(
         firmware,
         VerificationRegion::Ap1,

@@ -45,7 +45,11 @@ impl Yuv {
         let mut v = vec![0u8; cw * ch];
         let px = |x: usize, yy: usize| -> (i32, i32, i32) {
             let i = (yy.min(h - 1) * w + x.min(w - 1)) * stride;
-            (i32::from(rgb[i]), i32::from(rgb[i + 1]), i32::from(rgb[i + 2]))
+            (
+                i32::from(rgb[i]),
+                i32::from(rgb[i + 1]),
+                i32::from(rgb[i + 2]),
+            )
         };
         for yy in 0..h {
             for x in 0..w {
@@ -63,11 +67,19 @@ impl Yuv {
                     b += pb;
                 }
                 let (r, g, b) = ((r + 2) >> 2, (g + 2) >> 2, (b + 2) >> 2);
-                u[cy * cw + cx] = (((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
-                v[cy * cw + cx] = (((112 * r - 94 * g - 18 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
+                u[cy * cw + cx] =
+                    (((-38 * r - 74 * g + 112 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
+                v[cy * cw + cx] =
+                    (((112 * r - 94 * g - 18 * b + 128) >> 8) + 128).clamp(0, 255) as u8;
             }
         }
-        Yuv { width, height, y, u, v }
+        Yuv {
+            width,
+            height,
+            y,
+            u,
+            v,
+        }
     }
 }
 
@@ -90,7 +102,9 @@ pub enum Vp8Error {
 impl std::fmt::Display for Vp8Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Vp8Error::Dimensions => write!(f, "VP8 frames are 1 to {MAX_DIMENSION} pixels per side"),
+            Vp8Error::Dimensions => {
+                write!(f, "VP8 frames are 1 to {MAX_DIMENSION} pixels per side")
+            }
             Vp8Error::Planes => write!(f, "plane sizes do not match the dimensions"),
         }
     }
@@ -177,7 +191,10 @@ impl Block {
         for (pos, &idx) in ZIGZAG.iter().enumerate() {
             coeffs[pos] = raster[idx];
         }
-        let eob = (first..16).rev().find(|&p| coeffs[p] != 0).map_or(first, |p| p + 1);
+        let eob = (first..16)
+            .rev()
+            .find(|&p| coeffs[p] != 0)
+            .map_or(first, |p| p + 1);
         Block { coeffs, first, eob }
     }
 
@@ -196,7 +213,9 @@ struct Stats {
 
 impl Stats {
     fn new() -> Stats {
-        Stats { node: vec![[[[[0; 2]; 11]; 3]; 8]; 4] }
+        Stats {
+            node: vec![[[[[0; 2]; 11]; 3]; 8]; 4],
+        }
     }
 }
 
@@ -206,7 +225,9 @@ fn tree_path(value: u8, start: usize) -> Vec<(usize, bool)> {
     fn find(node: usize, value: u8, path: &mut Vec<(usize, bool)>) -> bool {
         for bit in [false, true] {
             let i = node + usize::from(bit);
-            let Some(&entry) = COEFF_TREE.get(i) else { continue };
+            let Some(&entry) = COEFF_TREE.get(i) else {
+                continue;
+            };
             path.push((node >> 1, bit));
             if entry <= 0 {
                 if (-entry) as u8 == value {
@@ -321,13 +342,21 @@ impl<'a> Encoder<'a> {
 
     #[inline]
     fn src_c(&self, plane: &[u8], x: usize, y: usize) -> i32 {
-        let (w, h) = ((self.src.width as usize).div_ceil(2), (self.src.height as usize).div_ceil(2));
+        let (w, h) = (
+            (self.src.width as usize).div_ceil(2),
+            (self.src.height as usize).div_ceil(2),
+        );
         i32::from(plane[y.min(h - 1) * w + x.min(w - 1)])
     }
 
     /// Encodes one 4×4 block: residual → coefficients → quantized (in raster order, with the
     /// quantization factors) → the dequantized coefficients the decoder will see.
-    fn code_block(residual: &[i32; 16], dc_factor: i32, ac_factor: i32, with_dc: bool) -> ([i32; 16], [i32; 16]) {
+    fn code_block(
+        residual: &[i32; 16],
+        dc_factor: i32,
+        ac_factor: i32,
+        with_dc: bool,
+    ) -> ([i32; 16], [i32; 16]) {
         let coeffs = fdct(residual);
         let mut quantized = [0i32; 16];
         let mut dequantized = [0i32; 16];
@@ -410,12 +439,18 @@ impl<'a> Encoder<'a> {
                 }
                 b_modes[b] = best.1;
                 b_sse += best.0;
-                let residual: [i32; 16] = std::array::from_fn(|i| sub_src[i] - i32::from(best.2[i]));
-                let (quantized, dequantized) = Self::code_block(&residual, self.q.y_dc, self.q.y_ac, true);
+                let residual: [i32; 16] =
+                    std::array::from_fn(|i| sub_src[i] - i32::from(best.2[i]));
+                let (quantized, dequantized) =
+                    Self::code_block(&residual, self.q.y_dc, self.q.y_ac, true);
                 let recon = idct(&dequantized);
                 for r in 0..4 {
                     for c in 0..4 {
-                        self.rec_y.set(bx + c, by + r, (i32::from(best.2[r * 4 + c]) + recon[r * 4 + c]).clamp(0, 255) as u8);
+                        self.rec_y.set(
+                            bx + c,
+                            by + r,
+                            (i32::from(best.2[r * 4 + c]) + recon[r * 4 + c]).clamp(0, 255) as u8,
+                        );
                     }
                 }
                 b_blocks.push(Block::from_raster(&quantized, 0));
@@ -468,7 +503,11 @@ impl<'a> Encoder<'a> {
                 for r in 0..4 {
                     for c in 0..4 {
                         let i = ((b >> 2) * 4 + r) * 16 + (b & 3) * 4 + c;
-                        self.rec_y.set(bx + c, by + r, (i32::from(best_pred[i]) + recon[r * 4 + c]).clamp(0, 255) as u8);
+                        self.rec_y.set(
+                            bx + c,
+                            by + r,
+                            (i32::from(best_pred[i]) + recon[r * 4 + c]).clamp(0, 255) as u8,
+                        );
                     }
                 }
             }
@@ -505,7 +544,10 @@ impl<'a> Encoder<'a> {
         }
         let mut u_blocks = Vec::with_capacity(4);
         let mut v_blocks = Vec::with_capacity(4);
-        for (plane_src, pred, blocks, is_u) in [(&src_u, &pred_u, &mut u_blocks, true), (&src_v, &pred_v, &mut v_blocks, false)] {
+        for (plane_src, pred, blocks, is_u) in [
+            (&src_u, &pred_u, &mut u_blocks, true),
+            (&src_v, &pred_v, &mut v_blocks, false),
+        ] {
             for b in 0..4 {
                 let mut residual = [0i32; 16];
                 for r in 0..4 {
@@ -514,7 +556,8 @@ impl<'a> Encoder<'a> {
                         residual[r * 4 + c] = plane_src[i] - i32::from(pred[i]);
                     }
                 }
-                let (quantized, dequantized) = Self::code_block(&residual, self.q.uv_dc, self.q.uv_ac, true);
+                let (quantized, dequantized) =
+                    Self::code_block(&residual, self.q.uv_dc, self.q.uv_ac, true);
                 let recon = idct(&dequantized);
                 let (bx, by) = (cx0 + (b & 1) * 4, cy0 + (b >> 1) * 4);
                 for r in 0..4 {
@@ -536,13 +579,26 @@ impl<'a> Encoder<'a> {
             && y_blocks.iter().all(|b| !b.has_coeffs())
             && u_blocks.iter().all(|b| !b.has_coeffs())
             && v_blocks.iter().all(|b| !b.has_coeffs());
-        self.mbs.push(Macroblock { y_mode, b_modes, uv_mode, y2, y: y_blocks, u: u_blocks, v: v_blocks, skip });
+        self.mbs.push(Macroblock {
+            y_mode,
+            b_modes,
+            uv_mode,
+            y2,
+            y: y_blocks,
+            u: u_blocks,
+            v: v_blocks,
+            skip,
+        });
     }
 
     /// Runs `f` over every token bool of the frame in coding order, with the non-zero contexts
     /// maintained exactly as the decoder does (RFC 6386 §13.3; skipped macroblocks reset them,
     /// leaving Y2 alone for `B_PRED` macroblocks).
-    fn walk_tokens(&self, mut f: impl FnMut(&Block, usize, usize), mut on_mb: impl FnMut(usize, &Macroblock)) {
+    fn walk_tokens(
+        &self,
+        mut f: impl FnMut(&Block, usize, usize),
+        mut on_mb: impl FnMut(usize, &Macroblock),
+    ) {
         let mut above: Vec<Ctx> = vec![[0; 9]; self.mb_cols];
         for mby in 0..self.mb_rows {
             let mut left: Ctx = [0; 9];
@@ -567,7 +623,11 @@ impl<'a> Encoder<'a> {
                     left[8] = t;
                     a[8] = t;
                 }
-                let ty = if mb.y2.is_some() { TYPE_Y_AFTER_Y2 } else { TYPE_Y_WITH_DC };
+                let ty = if mb.y2.is_some() {
+                    TYPE_Y_AFTER_Y2
+                } else {
+                    TYPE_Y_WITH_DC
+                };
                 for (i, b) in mb.y.iter().enumerate() {
                     let (ai, li) = (i & 3, i >> 2);
                     let ctx = usize::from(left[li] + a[ai]);
@@ -604,7 +664,9 @@ impl<'a> Encoder<'a> {
                             continue;
                         }
                         // Probability of a 0 branch, kept inside 1..=255.
-                        let est = ((u64::from(zeros) * 256 + u64::from(total) / 2) / u64::from(total)).clamp(1, 255) as u8;
+                        let est = ((u64::from(zeros) * 256 + u64::from(total) / 2)
+                            / u64::from(total))
+                        .clamp(1, 255) as u8;
                         // Only worth the update bits when the estimate moves the coding cost.
                         let cost = |pr: u8| -> f64 {
                             let p0 = f64::from(pr) / 256.0;
@@ -621,7 +683,12 @@ impl<'a> Encoder<'a> {
         probs
     }
 
-    fn write_frame(&self, probs: &[[[[u8; 11]; 3]; 8]; 4], loop_filter_level: u8, qi: u8) -> Vec<u8> {
+    fn write_frame(
+        &self,
+        probs: &[[[[u8; 11]; 3]; 8]; 4],
+        loop_filter_level: u8,
+        qi: u8,
+    ) -> Vec<u8> {
         // First partition: frame header, then per-macroblock prediction records.
         let mut h = BoolEncoder::new();
         h.put_flag(false); // color_space: BT.601-like
@@ -677,7 +744,11 @@ impl<'a> Encoder<'a> {
                         } else {
                             self.sub_mode_of(&self.mbs[mby * self.mb_cols + mbx - 1], b + 3)
                         };
-                        h.put_tree(BMODE_TREE, &KF_BMODE_PROBS[usize::from(above)][usize::from(left)], mb.b_modes[b]);
+                        h.put_tree(
+                            BMODE_TREE,
+                            &KF_BMODE_PROBS[usize::from(above)][usize::from(left)],
+                            mb.b_modes[b],
+                        );
                     }
                 }
                 h.put_tree(UV_MODE_TREE, &KF_UV_MODE_PROB, mb.uv_mode);
@@ -735,11 +806,15 @@ impl<'a> Encoder<'a> {
 
 /// Encodes `yuv` as one VP8 key frame (the payload of a WebP `VP8 ` chunk).
 pub fn encode_frame(yuv: &Yuv, params: Params) -> Result<Vec<u8>, Vp8Error> {
-    if yuv.width == 0 || yuv.height == 0 || yuv.width > MAX_DIMENSION || yuv.height > MAX_DIMENSION {
+    if yuv.width == 0 || yuv.height == 0 || yuv.width > MAX_DIMENSION || yuv.height > MAX_DIMENSION
+    {
         return Err(Vp8Error::Dimensions);
     }
     let (w, h) = (yuv.width as usize, yuv.height as usize);
-    if yuv.y.len() != w * h || yuv.u.len() != w.div_ceil(2) * h.div_ceil(2) || yuv.v.len() != yuv.u.len() {
+    if yuv.y.len() != w * h
+        || yuv.u.len() != w.div_ceil(2) * h.div_ceil(2)
+        || yuv.v.len() != yuv.u.len()
+    {
         return Err(Vp8Error::Planes);
     }
     let qi = quantizer_index(params.quality);
@@ -763,7 +838,11 @@ pub fn encode_frame(yuv: &Yuv, params: Params) -> Result<Vec<u8>, Vp8Error> {
     );
     let probs = enc.choose_probs(&stats);
     // The loop filter smooths block edges in proportion to the quantizer; none at the finest.
-    let loop_filter_level = if qi == 0 { 0 } else { (u32::from(qi) / 2 + 4).min(63) as u8 };
+    let loop_filter_level = if qi == 0 {
+        0
+    } else {
+        (u32::from(qi) / 2 + 4).min(63) as u8
+    };
     Ok(enc.write_frame(&probs, loop_filter_level, qi))
 }
 
@@ -781,13 +860,23 @@ mod tests {
             assert!(qi >= last, "quality {q}");
             last = qi;
         }
-        assert!((8..=14).contains(&quantizer_index(90)), "{}", quantizer_index(90));
-        assert!((24..=32).contains(&quantizer_index(75)), "{}", quantizer_index(75));
+        assert!(
+            (8..=14).contains(&quantizer_index(90)),
+            "{}",
+            quantizer_index(90)
+        );
+        assert!(
+            (24..=32).contains(&quantizer_index(75)),
+            "{}",
+            quantizer_index(75)
+        );
     }
 
     #[test]
     fn tokens_cover_every_magnitude() {
-        for v in [0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 18, 19, 34, 35, 66, 67, 1000, 2048] {
+        for v in [
+            0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 18, 19, 34, 35, 66, 67, 1000, 2048,
+        ] {
             let (tok, extra) = token_of(v);
             let base = match extra {
                 None => i32::from(tok),
@@ -817,10 +906,28 @@ mod tests {
 
     #[test]
     fn rejects_bad_dimensions() {
-        let y = Yuv { width: 0, height: 4, y: vec![], u: vec![], v: vec![] };
-        assert_eq!(encode_frame(&y, Params { quality: 80 }).unwrap_err(), Vp8Error::Dimensions);
-        let y = Yuv { width: 4, height: 4, y: vec![0; 15], u: vec![0; 4], v: vec![0; 4] };
-        assert_eq!(encode_frame(&y, Params { quality: 80 }).unwrap_err(), Vp8Error::Planes);
+        let y = Yuv {
+            width: 0,
+            height: 4,
+            y: vec![],
+            u: vec![],
+            v: vec![],
+        };
+        assert_eq!(
+            encode_frame(&y, Params { quality: 80 }).unwrap_err(),
+            Vp8Error::Dimensions
+        );
+        let y = Yuv {
+            width: 4,
+            height: 4,
+            y: vec![0; 15],
+            u: vec![0; 4],
+            v: vec![0; 4],
+        };
+        assert_eq!(
+            encode_frame(&y, Params { quality: 80 }).unwrap_err(),
+            Vp8Error::Planes
+        );
     }
 
     #[test]
@@ -833,7 +940,8 @@ mod tests {
         assert_eq!(&frame[3..6], &[0x9d, 0x01, 0x2a]);
         assert_eq!(u16::from_le_bytes([frame[6], frame[7]]) & 0x3fff, 20);
         assert_eq!(u16::from_le_bytes([frame[8], frame[9]]) & 0x3fff, 13);
-        let first_size = (u32::from(frame[0]) | (u32::from(frame[1]) << 8) | (u32::from(frame[2]) << 16)) >> 5;
+        let first_size =
+            (u32::from(frame[0]) | (u32::from(frame[1]) << 8) | (u32::from(frame[2]) << 16)) >> 5;
         assert!((10 + first_size as usize) < frame.len());
     }
 }

@@ -4,7 +4,9 @@
 //! are muxed with the bundled MP4/MOV writer.
 
 use crate::bitstream::{BitWriter, escape_rbsp};
-use crate::isobmff::{AvcConfig, Brand, FourCc, Mp4Writer, SampleEntry, TrackConfig, WriteSample, WriterOptions};
+use crate::isobmff::{
+    AvcConfig, Brand, FourCc, Mp4Writer, SampleEntry, TrackConfig, WriteSample, WriterOptions,
+};
 use crate::{Result, VideoError};
 use std::io::Cursor;
 
@@ -64,7 +66,13 @@ fn pps() -> Vec<u8> {
 }
 
 /// One I picture (IDR or non-IDR reference) of I_PCM macroblocks, each a solid Y'CbCr colour.
-fn pcm_picture(idr: bool, frame_num: u32, mb_w: usize, mb_h: usize, color: &dyn Fn(usize, usize) -> [u8; 3]) -> Vec<u8> {
+fn pcm_picture(
+    idr: bool,
+    frame_num: u32,
+    mb_w: usize,
+    mb_h: usize,
+    color: &dyn Fn(usize, usize) -> [u8; 3],
+) -> Vec<u8> {
     let mut w = BitWriter::new();
     w.write_ue(0); // first_mb_in_slice
     w.write_ue(7); // I (all slices)
@@ -105,27 +113,52 @@ fn length_prefixed(nal: &[u8]) -> Vec<u8> {
 
 /// Y'CbCr of frame `i` of [`h264_mp4`] (limited range; luma steps so every frame differs).
 pub fn frame_color(i: usize) -> [u8; 3] {
-    [(20 + (i * 7) % 200) as u8, (60 + (i * 13) % 130) as u8, (200 - (i * 11) % 130) as u8]
+    [
+        (20 + (i * 7) % 200) as u8,
+        (60 + (i * 13) % 130) as u8,
+        (200 - (i * 11) % 130) as u8,
+    ]
 }
 
 /// H.264 MP4 of `mb_w` × `mb_h` macroblocks, `n` frames at `fps` (integer), an IDR picture every
 /// `gop` frames; `color(frame, mb_x, mb_y)` gives each macroblock's Y'CbCr.
-pub fn h264_mp4_with(n: usize, gop: usize, mb_w: usize, mb_h: usize, fps: u32, color: &dyn Fn(usize, usize, usize) -> [u8; 3]) -> Result<Vec<u8>> {
+pub fn h264_mp4_with(
+    n: usize,
+    gop: usize,
+    mb_w: usize,
+    mb_h: usize,
+    fps: u32,
+    color: &dyn Fn(usize, usize, usize) -> [u8; 3],
+) -> Result<Vec<u8>> {
     let (mb_w, mb_h) = (mb_w.clamp(1, 120), mb_h.clamp(1, 68));
     let fps = fps.clamp(1, 240);
     let avcc = AvcConfig::new(vec![sps(mb_w, mb_h)], vec![pps()], 4);
-    let mut mw = Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mp4)).map_err(err)?;
+    let mut mw =
+        Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mp4)).map_err(err)?;
     let entry = SampleEntry::avc(avcc, (mb_w * 16) as u16, (mb_h * 16) as u16);
-    let t = mw.add_track(TrackConfig::new(entry, fps * 100)).map_err(err)?;
+    let t = mw
+        .add_track(TrackConfig::new(entry, fps * 100))
+        .map_err(err)?;
     let mut frame_num = 0;
     for i in 0..n.min(100_000) {
         let idr = i % gop.max(1) == 0;
         if idr {
             frame_num = 0;
         }
-        let au = length_prefixed(&pcm_picture(idr, frame_num, mb_w, mb_h, &|x, y| color(i, x, y)));
+        let au = length_prefixed(&pcm_picture(idr, frame_num, mb_w, mb_h, &|x, y| {
+            color(i, x, y)
+        }));
         frame_num += 1;
-        mw.write_sample(t, WriteSample { data: &au, duration: 100, composition_offset: 0, is_sync: idr }).map_err(err)?;
+        mw.write_sample(
+            t,
+            WriteSample {
+                data: &au,
+                duration: 100,
+                composition_offset: 0,
+                is_sync: idr,
+            },
+        )
+        .map_err(err)?;
     }
     Ok(mw.finish().map_err(err)?.into_inner())
 }
@@ -139,17 +172,34 @@ pub fn h264_mp4(n: usize, gop: usize) -> Result<Vec<u8>> {
 /// a white block that moves one macroblock per frame (so frames are visibly different).
 pub fn test_pattern_mp4(secs: u32) -> Result<Vec<u8>> {
     // Limited-range BT.601 Y'CbCr of 75 % bars: white, yellow, cyan, green, magenta, red, blue.
-    const BARS: [[u8; 3]; 7] = [[180, 128, 128], [162, 44, 142], [131, 156, 44], [112, 72, 58], [84, 184, 198], [65, 100, 212], [35, 212, 114]];
+    const BARS: [[u8; 3]; 7] = [
+        [180, 128, 128],
+        [162, 44, 142],
+        [131, 156, 44],
+        [112, 72, 58],
+        [84, 184, 198],
+        [65, 100, 212],
+        [35, 212, 114],
+    ];
     let (w, h) = (20usize, 12usize);
-    h264_mp4_with(secs.clamp(1, 600) as usize * 24, 24, w, h, 24, &|i, x, y| {
-        if y == 9 && x == i % w {
-            [235, 128, 128]
-        } else if y >= 8 {
-            [16 + (x * 219 / w) as u8, 128, 128]
-        } else {
-            BARS.get(x * BARS.len() / w).copied().unwrap_or([16, 128, 128])
-        }
-    })
+    h264_mp4_with(
+        secs.clamp(1, 600) as usize * 24,
+        24,
+        w,
+        h,
+        24,
+        &|i, x, y| {
+            if y == 9 && x == i % w {
+                [235, 128, 128]
+            } else if y >= 8 {
+                [16 + (x * 219 / w) as u8, 128, 128]
+            } else {
+                BARS.get(x * BARS.len() / w)
+                    .copied()
+                    .unwrap_or([16, 128, 128])
+            }
+        },
+    )
 }
 
 /// A MOV with `n` ProRes 422 HQ frames (64x48) at 25 fps; frame i has luma 16 + 8 i (8-bit scale).
@@ -157,14 +207,29 @@ pub fn prores_mov(n: usize) -> Result<Vec<u8>> {
     use crate::prores::{ChromaFormat, Encoder, Frame, Profile};
     let (w, h) = (64u32, 48u32);
     let mut enc = Encoder::new(Profile::Hq, w, h);
-    let mut mw = Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mov)).map_err(err)?;
-    let t = mw.add_track(TrackConfig::new(SampleEntry::prores(FourCc(*b"apch"), w as u16, h as u16), 25)).map_err(err)?;
+    let mut mw =
+        Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mov)).map_err(err)?;
+    let t = mw
+        .add_track(TrackConfig::new(
+            SampleEntry::prores(FourCc(*b"apch"), w as u16, h as u16),
+            25,
+        ))
+        .map_err(err)?;
     for i in 0..n.min(10_000) {
         let mut f = Frame::new(w, h, ChromaFormat::Yuv422, 10, false);
         let y = ((16 + 8 * (i as u32 % 27)) << 2) as u16;
         f.y.iter_mut().for_each(|s| *s = y);
         let data = enc.encode(&f).map_err(err)?;
-        mw.write_sample(t, WriteSample { data: &data, duration: 1, composition_offset: 0, is_sync: true }).map_err(err)?;
+        mw.write_sample(
+            t,
+            WriteSample {
+                data: &data,
+                duration: 1,
+                composition_offset: 0,
+                is_sync: true,
+            },
+        )
+        .map_err(err)?;
     }
     Ok(mw.finish().map_err(err)?.into_inner())
 }
@@ -172,13 +237,27 @@ pub fn prores_mov(n: usize) -> Result<Vec<u8>> {
 /// A MOV with `n` Motion JPEG frames (32x24) at 10 fps; frame i is grey level 30 i.
 pub fn mjpeg_mov(n: usize) -> Result<Vec<u8>> {
     let (w, h) = (32u32, 24u32);
-    let mut mw = Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mov)).map_err(err)?;
-    let t = mw.add_track(TrackConfig::new(SampleEntry::jpeg(w as u16, h as u16), 10)).map_err(err)?;
+    let mut mw =
+        Mp4Writer::new(Cursor::new(Vec::new()), WriterOptions::new(Brand::Mov)).map_err(err)?;
+    let t = mw
+        .add_track(TrackConfig::new(SampleEntry::jpeg(w as u16, h as u16), 10))
+        .map_err(err)?;
     for i in 0..n.min(10_000) {
         let img = image::RgbImage::from_pixel(w, h, image::Rgb([(30 * (i % 9)) as u8; 3]));
         let mut jpg = Vec::new();
-        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpg, 95).encode_image(&img).map_err(err)?;
-        mw.write_sample(t, WriteSample { data: &jpg, duration: 1, composition_offset: 0, is_sync: true }).map_err(err)?;
+        image::codecs::jpeg::JpegEncoder::new_with_quality(&mut jpg, 95)
+            .encode_image(&img)
+            .map_err(err)?;
+        mw.write_sample(
+            t,
+            WriteSample {
+                data: &jpg,
+                duration: 1,
+                composition_offset: 0,
+                is_sync: true,
+            },
+        )
+        .map_err(err)?;
     }
     Ok(mw.finish().map_err(err)?.into_inner())
 }

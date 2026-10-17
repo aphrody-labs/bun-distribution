@@ -1,7 +1,7 @@
 use crate::{
-    list::{DynamicList, ListInfo},
-    serde::{de::registration_utils::try_get_registration, TypedReflectDeserializer},
     TypeRegistry,
+    list::{DynamicList, ListInfo},
+    serde::{TypedReflectDeserializer, de::registration_utils::try_get_registration},
 };
 use core::{fmt, fmt::Formatter};
 use serde::de::{SeqAccess, Visitor};

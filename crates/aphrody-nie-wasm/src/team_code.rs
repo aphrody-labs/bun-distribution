@@ -24,7 +24,10 @@ pub fn team_code_encode(formation_id: &str, slots_json: &str) -> Result<String, 
     let slots: Vec<Slot> = serde_json::from_str(slots_json).map_err(|error| error.to_string())?;
     let slots = slots
         .into_iter()
-        .map(|slot| owner::TeamCodeSlot { slot: slot.slot, chara_id: slot.chara_id })
+        .map(|slot| owner::TeamCodeSlot {
+            slot: slot.slot,
+            chara_id: slot.chara_id,
+        })
         .collect::<Vec<_>>();
     Ok(owner::encode_team_code(formation_id, &slots))
 }
@@ -38,7 +41,10 @@ pub fn team_code_decode(encoded: &str) -> Result<String, String> {
         slots: decoded
             .slots
             .into_iter()
-            .map(|slot| Slot { slot: slot.slot, chara_id: slot.chara_id })
+            .map(|slot| Slot {
+                slot: slot.slot,
+                chara_id: slot.chara_id,
+            })
             .collect(),
     };
     serde_json::to_string(&decoded).map_err(|error| error.to_string())
@@ -76,7 +82,10 @@ mod tests {
             assert_eq!(decoded["slots"], fixture["slots"]);
             let native = owner::decode_team_code(&encoded).unwrap();
             assert_eq!(native.formation_id, formation);
-            assert_eq!(native.slots.len(), fixture["slots"].as_array().unwrap().len());
+            assert_eq!(
+                native.slots.len(),
+                fixture["slots"].as_array().unwrap().len()
+            );
         }
         for fixture in fixtures["decodeOnly"].as_array().unwrap() {
             let actual: serde_json::Value = serde_json::from_str(

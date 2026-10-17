@@ -38,127 +38,297 @@ type VecOp = fn(&Value, &[u8], &[u8]) -> Result<Vec<u8>, String>;
 
 /// Structured operations: `(name, summary, handler)`.
 pub static JSON_OPS: &[(&str, &str, JsonOp)] = &[
-    ("chunk", "Split a source file into line-addressed chunks", op_chunk),
-    ("detect_language", "Language of a path from its extension", op_detect_language),
-    ("normalize_newlines", "CRLF and CR to LF", op_normalize_newlines),
-    ("measure", "Length of a text in utf16, chars or bytes", op_measure),
-    ("split_sentences", "Sentence split with line ranges", op_split_sentences),
+    (
+        "chunk",
+        "Split a source file into line-addressed chunks",
+        op_chunk,
+    ),
+    (
+        "detect_language",
+        "Language of a path from its extension",
+        op_detect_language,
+    ),
+    (
+        "normalize_newlines",
+        "CRLF and CR to LF",
+        op_normalize_newlines,
+    ),
+    (
+        "measure",
+        "Length of a text in utf16, chars or bytes",
+        op_measure,
+    ),
+    (
+        "split_sentences",
+        "Sentence split with line ranges",
+        op_split_sentences,
+    ),
     ("rrf", "Reciprocal rank fusion", op_rrf),
-    ("rrf_weighted", "Weighted reciprocal rank fusion", op_rrf_weighted),
-    ("fuse_scores", "Relative or distribution based score fusion", op_fuse_scores),
-    ("apply_source_weights", "Source boosts and quota promotion", op_apply_source_weights),
+    (
+        "rrf_weighted",
+        "Weighted reciprocal rank fusion",
+        op_rrf_weighted,
+    ),
+    (
+        "fuse_scores",
+        "Relative or distribution based score fusion",
+        op_fuse_scores,
+    ),
+    (
+        "apply_source_weights",
+        "Source boosts and quota promotion",
+        op_apply_source_weights,
+    ),
     ("mmr", "Maximal marginal relevance selection", op_mmr),
-    ("minmax_normalize", "Min-max rescale of scores", op_minmax_normalize),
+    (
+        "minmax_normalize",
+        "Min-max rescale of scores",
+        op_minmax_normalize,
+    ),
     ("merge_top_k", "Merge per-shard top-k lists", op_merge_top_k),
-    ("eval_parse_gold", "Parse a JSONL gold set", op_eval_parse_gold),
-    ("eval_normalize_url", "Eval URL normalisation", op_eval_normalize_url),
-    ("eval_matches_url", "Boundary-aware expected URL match", op_eval_matches_url),
-    ("eval_is_hit", "Whether a retrieved hit satisfies a case", op_eval_is_hit),
-    ("eval_first_hit_rank", "1-based rank of the first hit, 0 when none", op_eval_first_hit_rank),
-    ("eval_ndcg_at_k", "nDCG at k for one case", op_eval_ndcg_at_k),
-    ("eval_run_case", "Score one case against its results", op_eval_run_case),
-    ("eval_aggregate", "Recall, MRR and nDCG over cases", op_eval_aggregate),
-    ("eval_aggregate_by_tag", "Aggregates grouped by tag", op_eval_aggregate_by_tag),
+    (
+        "eval_parse_gold",
+        "Parse a JSONL gold set",
+        op_eval_parse_gold,
+    ),
+    (
+        "eval_normalize_url",
+        "Eval URL normalisation",
+        op_eval_normalize_url,
+    ),
+    (
+        "eval_matches_url",
+        "Boundary-aware expected URL match",
+        op_eval_matches_url,
+    ),
+    (
+        "eval_is_hit",
+        "Whether a retrieved hit satisfies a case",
+        op_eval_is_hit,
+    ),
+    (
+        "eval_first_hit_rank",
+        "1-based rank of the first hit, 0 when none",
+        op_eval_first_hit_rank,
+    ),
+    (
+        "eval_ndcg_at_k",
+        "nDCG at k for one case",
+        op_eval_ndcg_at_k,
+    ),
+    (
+        "eval_run_case",
+        "Score one case against its results",
+        op_eval_run_case,
+    ),
+    (
+        "eval_aggregate",
+        "Recall, MRR and nDCG over cases",
+        op_eval_aggregate,
+    ),
+    (
+        "eval_aggregate_by_tag",
+        "Aggregates grouped by tag",
+        op_eval_aggregate_by_tag,
+    ),
     ("eval_quantile", "Nearest-rank quantile", op_eval_quantile),
-    ("eval_latency_stats", "p50 and p95 latency", op_eval_latency_stats),
+    (
+        "eval_latency_stats",
+        "p50 and p95 latency",
+        op_eval_latency_stats,
+    ),
     ("eval_report", "Full report from cases", op_eval_report),
-    ("eval_gate_check", "Check an aggregate against a gate expression", op_eval_gate_check),
+    (
+        "eval_gate_check",
+        "Check an aggregate against a gate expression",
+        op_eval_gate_check,
+    ),
     ("eval_compare", "Compare two reports", op_eval_compare),
 ];
 
 /// Dense-vector operations: `(name, summary, handler)`.
 pub static VEC_OPS: &[(&str, &str, VecOp)] = &[
-    ("normalize_f32", "L2 normalise rows (zero norm kept)", |p, a, _| {
-        let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
-        let out = vectors_f32::normalize(&rows_f32(a, rows, width)?)?;
-        Ok(put_f32(out.iter().flatten()))
-    }),
-    ("normalize_f64", "L2 normalise rows with the 1e-12 clamp", |p, a, _| {
-        let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
-        let out = vectors_f64::normalize(&rows_f64(a, rows, width)?)?;
-        Ok(put_f64(out.iter().flatten()))
-    }),
-    ("similarities_f32", "left * right^T, row-major", |p, a, b| {
-        let (lr, rr, w) = (usize_of(p, "rows")?, usize_of(p, "right_rows")?, usize_of(p, "width")?);
-        let out =
-            vectors_f32::similarities_flat(&flat_f32(a, lr, w)?, &flat_f32(b, rr, w)?, lr, rr, w)?;
-        Ok(put_f32(out.iter()))
-    }),
-    ("similarities_f64", "left * right^T, row-major", |p, a, b| {
-        let (lr, rr, w) = (usize_of(p, "rows")?, usize_of(p, "right_rows")?, usize_of(p, "width")?);
-        let out =
-            vectors_f64::similarities_flat(&flat_f64(a, lr, w)?, &flat_f64(b, rr, w)?, lr, rr, w)?;
-        Ok(put_f64(out.iter()))
-    }),
+    (
+        "normalize_f32",
+        "L2 normalise rows (zero norm kept)",
+        |p, a, _| {
+            let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
+            let out = vectors_f32::normalize(&rows_f32(a, rows, width)?)?;
+            Ok(put_f32(out.iter().flatten()))
+        },
+    ),
+    (
+        "normalize_f64",
+        "L2 normalise rows with the 1e-12 clamp",
+        |p, a, _| {
+            let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
+            let out = vectors_f64::normalize(&rows_f64(a, rows, width)?)?;
+            Ok(put_f64(out.iter().flatten()))
+        },
+    ),
+    (
+        "similarities_f32",
+        "left * right^T, row-major",
+        |p, a, b| {
+            let (lr, rr, w) = (
+                usize_of(p, "rows")?,
+                usize_of(p, "right_rows")?,
+                usize_of(p, "width")?,
+            );
+            let out = vectors_f32::similarities_flat(
+                &flat_f32(a, lr, w)?,
+                &flat_f32(b, rr, w)?,
+                lr,
+                rr,
+                w,
+            )?;
+            Ok(put_f32(out.iter()))
+        },
+    ),
+    (
+        "similarities_f64",
+        "left * right^T, row-major",
+        |p, a, b| {
+            let (lr, rr, w) = (
+                usize_of(p, "rows")?,
+                usize_of(p, "right_rows")?,
+                usize_of(p, "width")?,
+            );
+            let out = vectors_f64::similarities_flat(
+                &flat_f64(a, lr, w)?,
+                &flat_f64(b, rr, w)?,
+                lr,
+                rr,
+                w,
+            )?;
+            Ok(put_f64(out.iter()))
+        },
+    ),
     ("mean_f32", "Mean embedding", |p, a, _| {
         let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
-        Ok(put_f32(vectors_f32::mean(&rows_f32(a, rows, width)?)?.iter()))
+        Ok(put_f32(
+            vectors_f32::mean(&rows_f32(a, rows, width)?)?.iter(),
+        ))
     }),
     ("mean_f64", "Mean embedding", |p, a, _| {
         let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
-        Ok(put_f64(vectors_f64::mean(&rows_f64(a, rows, width)?)?.iter()))
+        Ok(put_f64(
+            vectors_f64::mean(&rows_f64(a, rows, width)?)?.iter(),
+        ))
     }),
-    ("squared_distances_f32", "Squared Euclidean distances rows x centroids", |p, a, b| {
-        let (rows, cr, w) =
-            (usize_of(p, "rows")?, usize_of(p, "right_rows")?, usize_of(p, "width")?);
-        let out = vectors_f32::squared_distances(&rows_f32(a, rows, w)?, &rows_f32(b, cr, w)?)?;
-        Ok(put_f32(out.iter().flatten()))
-    }),
-    ("squared_distances_f64", "Squared Euclidean distances rows x centroids", |p, a, b| {
-        let (rows, cr, w) =
-            (usize_of(p, "rows")?, usize_of(p, "right_rows")?, usize_of(p, "width")?);
-        let out = vectors_f64::squared_distances(&rows_f64(a, rows, w)?, &rows_f64(b, cr, w)?)?;
-        Ok(put_f64(out.iter().flatten()))
-    }),
-    ("update_centers_f64", "Recompute cluster centers; params.labels", |p, a, b| {
-        let (rows, cr, w) =
-            (usize_of(p, "rows")?, usize_of(p, "right_rows")?, usize_of(p, "width")?);
-        let labels: Vec<usize> = from_field(p, "labels")?;
-        let out =
-            vectors_f64::update_centers(&rows_f64(a, rows, w)?, &labels, &rows_f64(b, cr, w)?)?;
-        Ok(put_f64(out.iter().flatten()))
-    }),
+    (
+        "squared_distances_f32",
+        "Squared Euclidean distances rows x centroids",
+        |p, a, b| {
+            let (rows, cr, w) = (
+                usize_of(p, "rows")?,
+                usize_of(p, "right_rows")?,
+                usize_of(p, "width")?,
+            );
+            let out = vectors_f32::squared_distances(&rows_f32(a, rows, w)?, &rows_f32(b, cr, w)?)?;
+            Ok(put_f32(out.iter().flatten()))
+        },
+    ),
+    (
+        "squared_distances_f64",
+        "Squared Euclidean distances rows x centroids",
+        |p, a, b| {
+            let (rows, cr, w) = (
+                usize_of(p, "rows")?,
+                usize_of(p, "right_rows")?,
+                usize_of(p, "width")?,
+            );
+            let out = vectors_f64::squared_distances(&rows_f64(a, rows, w)?, &rows_f64(b, cr, w)?)?;
+            Ok(put_f64(out.iter().flatten()))
+        },
+    ),
+    (
+        "update_centers_f64",
+        "Recompute cluster centers; params.labels",
+        |p, a, b| {
+            let (rows, cr, w) = (
+                usize_of(p, "rows")?,
+                usize_of(p, "right_rows")?,
+                usize_of(p, "width")?,
+            );
+            let labels: Vec<usize> = from_field(p, "labels")?;
+            let out =
+                vectors_f64::update_centers(&rows_f64(a, rows, w)?, &labels, &rows_f64(b, cr, w)?)?;
+            Ok(put_f64(out.iter().flatten()))
+        },
+    ),
     ("dot_f32", "Dot product of two vectors", |_, a, b| {
         Ok(put_f32([fusion::dot(&f32s(a)?, &f32s(b)?)].iter()))
     }),
-    ("cosine_f32", "Cosine similarity of two vectors", |_, a, b| {
-        Ok(put_f32([fusion::cosine(&f32s(a)?, &f32s(b)?)].iter()))
-    }),
-    ("l2_normalize_f32", "L2 normalise each row in place semantics", |p, a, _| {
-        let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
-        let mut flat = flat_f32(a, rows, width)?;
-        if width > 0 {
-            for row in flat.chunks_exact_mut(width) {
-                fusion::l2_normalize(row);
+    (
+        "cosine_f32",
+        "Cosine similarity of two vectors",
+        |_, a, b| Ok(put_f32([fusion::cosine(&f32s(a)?, &f32s(b)?)].iter())),
+    ),
+    (
+        "l2_normalize_f32",
+        "L2 normalise each row in place semantics",
+        |p, a, _| {
+            let (rows, width) = (usize_of(p, "rows")?, usize_of(p, "width")?);
+            let mut flat = flat_f32(a, rows, width)?;
+            if width > 0 {
+                for row in flat.chunks_exact_mut(width) {
+                    fusion::l2_normalize(row);
+                }
             }
-        }
-        Ok(put_f32(flat.iter()))
-    }),
-    ("top_k_cosine_f32", "Exact top-k by cosine: a=query, b=matrix", |p, a, b| {
-        let (dim, k) = (usize_of(p, "dim")?, usize_of(p, "k")?);
-        Ok(put_hits(&fusion::top_k_exact(&f32s(a)?, &f32s(b)?, dim, k)))
-    }),
-    ("top_k_dot_f32", "Exact top-k by dot, unit vectors: a=query, b=matrix", |p, a, b| {
-        let (dim, k) = (usize_of(p, "dim")?, usize_of(p, "k")?);
-        Ok(put_hits(&fusion::top_k_dot(&f32s(a)?, &f32s(b)?, dim, k)))
-    }),
-    ("quantize_i8", "Symmetric int8 quantisation: out = f32 scale then i8 codes", |_, a, _| {
-        let (codes, scale) = fusion::quantize_i8(&f32s(a)?);
-        let mut out = scale.to_le_bytes().to_vec();
-        out.extend(codes.iter().map(|c| c.to_le_bytes()[0]));
-        Ok(out)
-    }),
-    ("top_k_i8", "Approximate top-k: b = rows*dim i8 codes then rows f32 scales", |p, a, b| {
-        let (dim, k, rows) = (usize_of(p, "dim")?, usize_of(p, "k")?, usize_of(p, "rows")?);
-        let code_len = rows.checked_mul(dim).ok_or("shape overflow")?;
-        let scale_len = rows.checked_mul(4).ok_or("shape overflow")?;
-        if b.len() != code_len.checked_add(scale_len).ok_or("shape overflow")? {
-            return Err("codes and scales do not match rows x dim".into());
-        }
-        let codes: Vec<i8> = b[..code_len].iter().map(|&c| i8::from_le_bytes([c])).collect();
-        let scales = f32s(&b[code_len..])?;
-        Ok(put_hits(&fusion::top_k_i8(&f32s(a)?, &codes, &scales, dim, k)))
-    }),
+            Ok(put_f32(flat.iter()))
+        },
+    ),
+    (
+        "top_k_cosine_f32",
+        "Exact top-k by cosine: a=query, b=matrix",
+        |p, a, b| {
+            let (dim, k) = (usize_of(p, "dim")?, usize_of(p, "k")?);
+            Ok(put_hits(&fusion::top_k_exact(&f32s(a)?, &f32s(b)?, dim, k)))
+        },
+    ),
+    (
+        "top_k_dot_f32",
+        "Exact top-k by dot, unit vectors: a=query, b=matrix",
+        |p, a, b| {
+            let (dim, k) = (usize_of(p, "dim")?, usize_of(p, "k")?);
+            Ok(put_hits(&fusion::top_k_dot(&f32s(a)?, &f32s(b)?, dim, k)))
+        },
+    ),
+    (
+        "quantize_i8",
+        "Symmetric int8 quantisation: out = f32 scale then i8 codes",
+        |_, a, _| {
+            let (codes, scale) = fusion::quantize_i8(&f32s(a)?);
+            let mut out = scale.to_le_bytes().to_vec();
+            out.extend(codes.iter().map(|c| c.to_le_bytes()[0]));
+            Ok(out)
+        },
+    ),
+    (
+        "top_k_i8",
+        "Approximate top-k: b = rows*dim i8 codes then rows f32 scales",
+        |p, a, b| {
+            let (dim, k, rows) = (usize_of(p, "dim")?, usize_of(p, "k")?, usize_of(p, "rows")?);
+            let code_len = rows.checked_mul(dim).ok_or("shape overflow")?;
+            let scale_len = rows.checked_mul(4).ok_or("shape overflow")?;
+            if b.len() != code_len.checked_add(scale_len).ok_or("shape overflow")? {
+                return Err("codes and scales do not match rows x dim".into());
+            }
+            let codes: Vec<i8> = b[..code_len]
+                .iter()
+                .map(|&c| i8::from_le_bytes([c]))
+                .collect();
+            let scales = f32s(&b[code_len..])?;
+            Ok(put_hits(&fusion::top_k_i8(
+                &f32s(a)?,
+                &codes,
+                &scales,
+                dim,
+                k,
+            )))
+        },
+    ),
 ];
 
 /// JSON document describing this surface.
@@ -178,11 +348,15 @@ pub fn manifest() -> String {
 }
 
 fn list_json(ops: &[(&str, &str, JsonOp)]) -> Vec<Value> {
-    ops.iter().map(|(n, s, _)| json!({ "name": n, "summary": s })).collect()
+    ops.iter()
+        .map(|(n, s, _)| json!({ "name": n, "summary": s }))
+        .collect()
 }
 
 fn list_vec(ops: &[(&str, &str, VecOp)]) -> Vec<Value> {
-    ops.iter().map(|(n, s, _)| json!({ "name": n, "summary": s })).collect()
+    ops.iter()
+        .map(|(n, s, _)| json!({ "name": n, "summary": s }))
+        .collect()
 }
 
 /// Run a structured operation. `input` is a JSON document (empty means `{}`).
@@ -229,7 +403,9 @@ fn usize_of(p: &Value, key: &str) -> Result<usize, String> {
 }
 
 fn from_field<T: DeserializeOwned>(p: &Value, key: &str) -> Result<T, String> {
-    let v = p.get(key).ok_or_else(|| format!("missing parameter: {key}"))?;
+    let v = p
+        .get(key)
+        .ok_or_else(|| format!("missing parameter: {key}"))?;
     serde_json::from_value(v.clone()).map_err(|e| format!("invalid parameter {key}: {e}"))
 }
 
@@ -324,15 +500,19 @@ struct Scored {
 }
 
 fn scored(rows: Vec<(Id, f64)>) -> Vec<Scored> {
-    rows.into_iter().map(|(id, score)| Scored { id, score }).collect()
+    rows.into_iter()
+        .map(|(id, score)| Scored { id, score })
+        .collect()
 }
 
 fn hex(bytes: &[u8]) -> String {
     use std::fmt::Write as _;
-    bytes.iter().fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
-        let _ = write!(s, "{b:02x}");
-        s
-    })
+    bytes
+        .iter()
+        .fold(String::with_capacity(bytes.len() * 2), |mut s, b| {
+            let _ = write!(s, "{b:02x}");
+            s
+        })
 }
 
 // ---------------------------------------------------------------- chunking and text
@@ -465,7 +645,11 @@ fn op_split_sentences(v: Value) -> Result<Value, String> {
     let sentences: Vec<S> =
         text::split_sentences_with_offsets(&i.text, i.base_line, i.cjk_sentence_breaks)
             .into_iter()
-            .map(|s| S { text: s.text, start_line: s.start_line, end_line: s.end_line })
+            .map(|s| S {
+                text: s.text,
+                start_line: s.start_line,
+                end_line: s.end_line,
+            })
             .collect();
     out(&sentences)
 }
@@ -507,7 +691,11 @@ fn op_rrf_weighted(v: Value) -> Result<Value, String> {
         k: f64,
     }
     let i: In = parse(v)?;
-    let lists: Vec<(&[Id], f64)> = i.lists.iter().map(|l| (l.ids.as_slice(), l.weight)).collect();
+    let lists: Vec<(&[Id], f64)> = i
+        .lists
+        .iter()
+        .map(|l| (l.ids.as_slice(), l.weight))
+        .collect();
     out(&scored(fusion::rrf_weighted(&lists, i.k)))
 }
 
@@ -529,10 +717,16 @@ fn op_fuse_scores(v: Value) -> Result<Value, String> {
         scaling: Scaling,
     }
     let i: In = parse(v)?;
-    let owned: Vec<Vec<(Id, f64)>> =
-        i.lists.iter().map(|l| l.items.iter().map(|s| (s.id.clone(), s.score)).collect()).collect();
-    let lists: Vec<(&[(Id, f64)], f64)> =
-        owned.iter().zip(&i.lists).map(|(o, l)| (o.as_slice(), l.weight)).collect();
+    let owned: Vec<Vec<(Id, f64)>> = i
+        .lists
+        .iter()
+        .map(|l| l.items.iter().map(|s| (s.id.clone(), s.score)).collect())
+        .collect();
+    let lists: Vec<(&[(Id, f64)], f64)> = owned
+        .iter()
+        .zip(&i.lists)
+        .map(|(o, l)| (o.as_slice(), l.weight))
+        .collect();
     let scaling = match i.scaling {
         Scaling::MinMax => ScoreScaling::MinMax,
         Scaling::DistBased => ScoreScaling::DistBased,
@@ -586,7 +780,10 @@ fn op_apply_source_weights(v: Value) -> Result<Value, String> {
     let weights: Vec<SourceWeight> = i
         .weights
         .into_iter()
-        .map(|w| SourceWeight { source_id: w.source_id, weight: w.weight })
+        .map(|w| SourceWeight {
+            source_id: w.source_id,
+            weight: w.weight,
+        })
         .collect();
     let quota = i.quota.map(|q| QuotaRule {
         source_id: q.source_id,
@@ -601,7 +798,12 @@ fn op_apply_source_weights(v: Value) -> Result<Value, String> {
         i.top_n,
     )
     .into_iter()
-    .map(|c| CandidateJson { id: c.id, source_id: c.source_id, kind: c.kind, score: c.score })
+    .map(|c| CandidateJson {
+        id: c.id,
+        source_id: c.source_id,
+        kind: c.kind,
+        score: c.score,
+    })
     .collect();
     out(&result)
 }
@@ -620,8 +822,11 @@ fn op_mmr(v: Value) -> Result<Value, String> {
         top_n: usize,
     }
     let i: In = parse(v)?;
-    let candidates: Vec<(Id, Vec<f32>, f64)> =
-        i.candidates.into_iter().map(|c| (c.id, c.embedding, c.score)).collect();
+    let candidates: Vec<(Id, Vec<f32>, f64)> = i
+        .candidates
+        .into_iter()
+        .map(|c| (c.id, c.embedding, c.score))
+        .collect();
     out(&fusion::mmr(&candidates, i.lambda, i.top_n))
 }
 
@@ -647,8 +852,11 @@ fn op_merge_top_k(v: Value) -> Result<Value, String> {
         k: usize,
     }
     let i: In = parse(v)?;
-    let parts =
-        i.parts.into_iter().map(|p| p.into_iter().map(|h| (h.index, h.score)).collect()).collect();
+    let parts = i
+        .parts
+        .into_iter()
+        .map(|p| p.into_iter().map(|h| (h.index, h.score)).collect())
+        .collect();
     let merged: Vec<Hit> = fusion::merge_top_k(parts, i.k)
         .into_iter()
         .map(|(index, score)| Hit { index, score })
@@ -671,7 +879,9 @@ fn normalizer(strip_origin: Option<&str>) -> Result<UrlNormalizer, String> {
         None => Ok(UrlNormalizer::default()),
         Some("") => Ok(UrlNormalizer { strip_origin: None }),
         Some(re) => regex::Regex::new(re)
-            .map(|r| UrlNormalizer { strip_origin: Some(r) })
+            .map(|r| UrlNormalizer {
+                strip_origin: Some(r),
+            })
             .map_err(|e| format!("invalid strip_origin regex: {e}")),
     }
 }
@@ -867,8 +1077,16 @@ mod tests {
     fn unknown_operations_and_bad_input_are_errors() {
         assert!(call_json("nope", "{}").unwrap_err().contains("unknown"));
         assert!(call_json("rrf", "{").unwrap_err().contains("invalid json"));
-        assert!(call_json("rrf", "{}").unwrap_err().contains("invalid input"));
-        assert!(call_vec("nope", "", &[], &[]).unwrap_err().contains("unknown"));
+        assert!(
+            call_json("rrf", "{}")
+                .unwrap_err()
+                .contains("invalid input")
+        );
+        assert!(
+            call_vec("nope", "", &[], &[])
+                .unwrap_err()
+                .contains("unknown")
+        );
         assert!(call_vec("dot_f32", "", &[1, 2, 3], &[]).is_err());
     }
 
@@ -893,16 +1111,29 @@ mod tests {
         );
         assert!(!got.as_array().unwrap().is_empty());
         assert!(
-            call_json("chunk", r#"{"path":"a.md","text":"x","options":{"profile":"zz"}}"#).is_err()
+            call_json(
+                "chunk",
+                r#"{"path":"a.md","text":"x","options":{"profile":"zz"}}"#
+            )
+            .is_err()
         );
-        let prose = jv("chunk", &json!({ "path": "a.txt", "text": "Hello world. Second one." }));
+        let prose = jv(
+            "chunk",
+            &json!({ "path": "a.txt", "text": "Hello world. Second one." }),
+        );
         assert_eq!(prose[0]["kind"], "prose");
     }
 
     #[test]
     fn text_ops() {
-        assert_eq!(jv("detect_language", &json!({ "path": "x.tsx" })), "type_script");
-        assert_eq!(jv("normalize_newlines", &json!({ "text": "a\r\nb\rc" })), "a\nb\nc");
+        assert_eq!(
+            jv("detect_language", &json!({ "path": "x.tsx" })),
+            "type_script"
+        );
+        assert_eq!(
+            jv("normalize_newlines", &json!({ "text": "a\r\nb\rc" })),
+            "a\nb\nc"
+        );
         assert_eq!(jv("measure", &json!({ "text": "a😀", "unit": "utf16" })), 3);
         assert_eq!(jv("measure", &json!({ "text": "a😀", "unit": "chars" })), 2);
         assert_eq!(jv("measure", &json!({ "text": "a😀", "unit": "bytes" })), 5);
@@ -952,7 +1183,10 @@ mod tests {
                 {"id": "c", "embedding": [0.0, 1.0], "score": 0.8}] }),
         );
         assert_eq!(m, json!(["a", "c"]));
-        assert_eq!(jv("minmax_normalize", &json!({ "values": [1.0, 3.0] })), json!([0.0, 1.0]));
+        assert_eq!(
+            jv("minmax_normalize", &json!({ "values": [1.0, 3.0] })),
+            json!([0.0, 1.0])
+        );
         let t = jv(
             "merge_top_k",
             &json!({ "k": 2, "parts": [[{"index": 5, "score": 0.5}], [{"index": 1, "score": 0.9}, {"index": 2, "score": 0.1}]] }),
@@ -972,17 +1206,46 @@ mod tests {
         let hit = |url: &str| json!({ "title": "t", "url": url, "snippet": "s", "score": 1.0 });
         let results = json!([hit("/zzz"), hit("https://dragonballfr.com/a/")]);
         assert_eq!(
-            jv("eval_normalize_url", &json!({ "url": "https://dragonballfr.com/A/" })),
+            jv(
+                "eval_normalize_url",
+                &json!({ "url": "https://dragonballfr.com/A/" })
+            ),
             "/a"
         );
-        assert_eq!(jv("eval_matches_url", &json!({ "actual": "/a/b", "expected": "/a" })), true);
-        assert_eq!(jv("eval_matches_url", &json!({ "actual": "/ab", "expected": "/a" })), false);
-        assert_eq!(jv("eval_first_hit_rank", &json!({ "results": results, "case": case })), 2);
+        assert_eq!(
+            jv(
+                "eval_matches_url",
+                &json!({ "actual": "/a/b", "expected": "/a" })
+            ),
+            true
+        );
+        assert_eq!(
+            jv(
+                "eval_matches_url",
+                &json!({ "actual": "/ab", "expected": "/a" })
+            ),
+            false
+        );
+        assert_eq!(
+            jv(
+                "eval_first_hit_rank",
+                &json!({ "results": results, "case": case })
+            ),
+            2
+        );
         assert!(
-            jv("eval_ndcg_at_k", &json!({ "results": results, "case": case })).as_f64().unwrap()
+            jv(
+                "eval_ndcg_at_k",
+                &json!({ "results": results, "case": case })
+            )
+            .as_f64()
+            .unwrap()
                 > 0.0
         );
-        assert_eq!(jv("eval_is_hit", &json!({ "hit": hit("/a"), "case": case })), true);
+        assert_eq!(
+            jv("eval_is_hit", &json!({ "hit": hit("/a"), "case": case })),
+            true
+        );
         let run = jv(
             "eval_run_case",
             &json!({ "case": case, "results": results, "mode": "hybrid", "latency_ms": 12 }),
@@ -993,19 +1256,31 @@ mod tests {
         assert_eq!(agg["recall"]["5"], 1.0);
         assert!(jv("eval_aggregate_by_tag", &cases).get("t").is_some());
         assert_eq!(
-            jv("eval_gate_check", &json!({ "expr": "recall@5>=0.8", "aggregate": agg }))["ok"],
+            jv(
+                "eval_gate_check",
+                &json!({ "expr": "recall@5>=0.8", "aggregate": agg })
+            )["ok"],
             true
         );
         assert_eq!(
-            jv("eval_gate_check", &json!({ "expr": "recall@1>=0.8", "aggregate": agg }))["ok"],
+            jv(
+                "eval_gate_check",
+                &json!({ "expr": "recall@1>=0.8", "aggregate": agg })
+            )["ok"],
             false
         );
         assert!(
-            call_json("eval_gate_check", &json!({ "expr": "wat", "aggregate": agg }).to_string())
-                .is_err()
+            call_json(
+                "eval_gate_check",
+                &json!({ "expr": "wat", "aggregate": agg }).to_string()
+            )
+            .is_err()
         );
         let report = jv("eval_report", &json!({ "condition": "c", "cases": [run] }));
-        let cmp = jv("eval_compare", &json!({ "baseline": report, "candidate": report }));
+        let cmp = jv(
+            "eval_compare",
+            &json!({ "baseline": report, "candidate": report }),
+        );
         assert_eq!(cmp["mrr"]["delta"], 0.0);
         let other = jv("eval_report", &json!({ "condition": "d", "cases": [run] }));
         assert!(
@@ -1015,15 +1290,30 @@ mod tests {
             )
             .is_err()
         );
-        assert_eq!(jv("eval_quantile", &json!({ "values": [1.0, 2.0, 3.0, 4.0], "q": 0.5 })), 3.0);
-        assert_eq!(jv("eval_latency_stats", &json!({ "latencies_ms": [10.0] }))["p95_ms"], 10.0);
+        assert_eq!(
+            jv(
+                "eval_quantile",
+                &json!({ "values": [1.0, 2.0, 3.0, 4.0], "q": 0.5 })
+            ),
+            3.0
+        );
+        assert_eq!(
+            jv("eval_latency_stats", &json!({ "latencies_ms": [10.0] }))["p95_ms"],
+            10.0
+        );
     }
 
     #[test]
     fn vector_ops_match_core() {
         let v = [3.0_f32, 4.0, 0.0, 2.0];
         let n = read_f32(
-            &call_vec("normalize_f32", r#"{"rows":2,"width":2}"#, &f32_bytes(&v), &[]).unwrap(),
+            &call_vec(
+                "normalize_f32",
+                r#"{"rows":2,"width":2}"#,
+                &f32_bytes(&v),
+                &[],
+            )
+            .unwrap(),
         );
         assert!((n[0] - 0.6).abs() < 1e-6 && (n[1] - 0.8).abs() < 1e-6);
         let sim = read_f32(
@@ -1052,17 +1342,34 @@ mod tests {
         assert_eq!(d, vec![25.0, 4.0]);
         assert_eq!(
             read_f32(
-                &call_vec("dot_f32", "", &f32_bytes(&[1.0, 2.0]), &f32_bytes(&[3.0, 4.0])).unwrap()
+                &call_vec(
+                    "dot_f32",
+                    "",
+                    &f32_bytes(&[1.0, 2.0]),
+                    &f32_bytes(&[3.0, 4.0])
+                )
+                .unwrap()
             ),
             vec![11.0]
         );
         let c = read_f32(
-            &call_vec("cosine_f32", "", &f32_bytes(&[1.0, 0.0]), &f32_bytes(&[1.0, 0.0])).unwrap(),
+            &call_vec(
+                "cosine_f32",
+                "",
+                &f32_bytes(&[1.0, 0.0]),
+                &f32_bytes(&[1.0, 0.0]),
+            )
+            .unwrap(),
         );
         assert!((c[0] - 1.0).abs() < 1e-6);
         let l2 = read_f32(
-            &call_vec("l2_normalize_f32", r#"{"rows":1,"width":2}"#, &f32_bytes(&[3.0, 4.0]), &[])
-                .unwrap(),
+            &call_vec(
+                "l2_normalize_f32",
+                r#"{"rows":1,"width":2}"#,
+                &f32_bytes(&[3.0, 4.0]),
+                &[],
+            )
+            .unwrap(),
         );
         assert!((l2[0] - 0.6).abs() < 1e-6);
         // f64 family and update_centers
@@ -1076,8 +1383,13 @@ mod tests {
         );
         assert_eq!(
             f64s(
-                &call_vec("similarities_f64", r#"{"rows":1,"right_rows":1,"width":2}"#, &b64, &b64)
-                    .unwrap()
+                &call_vec(
+                    "similarities_f64",
+                    r#"{"rows":1,"right_rows":1,"width":2}"#,
+                    &b64,
+                    &b64
+                )
+                .unwrap()
             )
             .unwrap(),
             vec![25.0]
@@ -1103,15 +1415,28 @@ mod tests {
         )
         .unwrap();
         assert_eq!(uc.len(), 16);
-        assert!(call_vec("normalize_f32", r#"{"rows":3,"width":2}"#, &f32_bytes(&v), &[]).is_err());
+        assert!(
+            call_vec(
+                "normalize_f32",
+                r#"{"rows":3,"width":2}"#,
+                &f32_bytes(&v),
+                &[]
+            )
+            .is_err()
+        );
     }
 
     #[test]
     fn top_k_ops_and_int8() {
         let matrix = [1.0_f32, 0.0, 0.0, 1.0, 0.7, 0.7];
         let q = f32_bytes(&[1.0, 0.0]);
-        let hits =
-            call_vec("top_k_cosine_f32", r#"{"dim":2,"k":2}"#, &q, &f32_bytes(&matrix)).unwrap();
+        let hits = call_vec(
+            "top_k_cosine_f32",
+            r#"{"dim":2,"k":2}"#,
+            &q,
+            &f32_bytes(&matrix),
+        )
+        .unwrap();
         assert_eq!(hits.len(), 16);
         assert_eq!(u32::from_le_bytes(hits[0..4].try_into().unwrap()), 0);
         assert_eq!(u32::from_le_bytes(hits[8..12].try_into().unwrap()), 2);

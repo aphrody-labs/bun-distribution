@@ -265,7 +265,13 @@ impl ChatRouter {
     fn supervisor(&self, id: &str) -> Supervisor {
         let dir: String = id
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '.' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '.' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         Supervisor::new(
             StateDirs::new(self.0.context.state_dir.join(dir)),
@@ -274,15 +280,29 @@ impl ChatRouter {
     }
 
     fn provision_request(&self, model: &ModelConfig) -> Option<ChatProvisionRequest> {
-        let ModelConfig::Llama { model, sha256, lora, .. } = model else { return None };
+        let ModelConfig::Llama {
+            model,
+            sha256,
+            lora,
+            ..
+        } = model
+        else {
+            return None;
+        };
         Some(ChatProvisionRequest {
             models_dir: Some(self.0.context.models_dir.clone()),
             declared: self.0.declared.clone(),
-            model: Some(ArtifactSpec { spec: model.clone(), sha256: sha256.clone() }),
+            model: Some(ArtifactSpec {
+                spec: model.clone(),
+                sha256: sha256.clone(),
+            }),
             lora: lora
                 .iter()
                 .map(|l| LoraSpec {
-                    artifact: ArtifactSpec { spec: l.spec.clone(), sha256: l.sha256.clone() },
+                    artifact: ArtifactSpec {
+                        spec: l.spec.clone(),
+                        sha256: l.sha256.clone(),
+                    },
                     scale: l.scale,
                 })
                 .collect(),
@@ -304,12 +324,16 @@ impl ChatRouter {
                     Ok(Err(error)) => (false, Some(error.to_string())),
                     Err(error) => (false, Some(error.to_string())),
                 }
-            },
+            }
             ModelConfig::GeminiWeb { .. } => match self.gemini_client(model).await {
                 Ok(_) => (true, None),
                 Err(reason) => (false, Some(reason)),
             },
-            ModelConfig::Openai { base_url, api_key_env, .. } => {
+            ModelConfig::Openai {
+                base_url,
+                api_key_env,
+                ..
+            } => {
                 let url = format!("{}/models", base_url.trim_end_matches('/'));
                 let mut request = self.0.http.get(url).timeout(Duration::from_secs(3));
                 if let Some(key) = api_key_env.as_deref().and_then(|k| std::env::var(k).ok()) {
@@ -320,12 +344,18 @@ impl ChatRouter {
                     Ok(resp) => (false, Some(format!("upstream answered {}", resp.status()))),
                     Err(error) => (false, Some(format!("upstream unreachable: {error}"))),
                 }
-            },
+            }
         }
     }
 
     async fn gemini_client(&self, model: &ModelConfig) -> Result<Arc<GeminiWebClient>, String> {
-        let ModelConfig::GeminiWeb { id, cookie_file, language, .. } = model else {
+        let ModelConfig::GeminiWeb {
+            id,
+            cookie_file,
+            language,
+            ..
+        } = model
+        else {
             return Err("not a Gemini model".to_owned());
         };
         let mut cache = self.0.gemini.lock().await;
@@ -335,8 +365,9 @@ impl ChatRouter {
         {
             return result.clone();
         }
-        let path =
-            cookie_file.clone().or_else(|| aphrody_gemini_web::Auth::default_cookie_path().ok());
+        let path = cookie_file
+            .clone()
+            .or_else(|| aphrody_gemini_web::Auth::default_cookie_path().ok());
         let result = match path {
             Some(path) if path.is_file() => {
                 match tokio::time::timeout(
@@ -349,7 +380,7 @@ impl ChatRouter {
                     Ok(Err(error)) => Err(format!("Gemini session rejected: {error}")),
                     Err(_) => Err("Gemini session timed out".to_owned()),
                 }
-            },
+            }
             _ => Err("Gemini cookie file not found".to_owned()),
         };
         entry.probed = Some((Instant::now(), result.clone()));
@@ -358,7 +389,14 @@ impl ChatRouter {
 
     /// Start (or reuse) the llama model `config` and return its OpenAI root.
     async fn ensure_llama(&self, config: &ModelConfig) -> Result<String, String> {
-        let ModelConfig::Llama { id, ctx, parallel, extra_args, .. } = config else {
+        let ModelConfig::Llama {
+            id,
+            ctx,
+            parallel,
+            extra_args,
+            ..
+        } = config
+        else {
             return Err("not a llama model".to_owned());
         };
         let mut active = self.0.active.lock().await;
@@ -373,9 +411,16 @@ impl ChatRouter {
             }
             *active = None;
         }
-        let binary = self.0.context.llama_bin.clone().ok_or("llama-server not found")?;
+        let binary = self
+            .0
+            .context
+            .llama_bin
+            .clone()
+            .ok_or("llama-server not found")?;
         let request = self.provision_request(config).unwrap_or_default();
-        let model = provision_chat(&request, |_| {}).await.map_err(|e| e.to_string())?;
+        let model = provision_chat(&request, |_| {})
+            .await
+            .map_err(|e| e.to_string())?;
         let mut options = ChatLaunchOptions {
             ctx: *ctx,
             alias: Some(id.clone()),
@@ -385,9 +430,15 @@ impl ChatRouter {
         options.parallel = parallel.unwrap_or(1);
         options.ensure.keep_alive = Some(LLAMA_KEEP_ALIVE);
         let state = self.supervisor(id).dirs().root().to_path_buf();
-        let chat = launch_chat(&binary, &state, self.0.context.daemon.clone(), &model, &options)
-            .await
-            .map_err(|e| e.to_string())?;
+        let chat = launch_chat(
+            &binary,
+            &state,
+            self.0.context.daemon.clone(),
+            &model,
+            &options,
+        )
+        .await
+        .map_err(|e| e.to_string())?;
         let base = chat.endpoint.base_url();
         *active = Some((id.clone(), base.clone()));
         Ok(base)
@@ -404,7 +455,13 @@ fn error(status: StatusCode, code: &str, message: impl Into<String>) -> Response
 }
 
 async fn health(State(router): State<ChatRouter>) -> Response {
-    let active = router.0.active.lock().await.as_ref().map(|(id, _)| id.clone());
+    let active = router
+        .0
+        .active
+        .lock()
+        .await
+        .as_ref()
+        .map(|(id, _)| id.clone());
     let mut backends = Vec::new();
     for model in &router.0.config.models {
         let (available, reason) = router.availability(model).await;
@@ -436,7 +493,10 @@ async fn models(State(router): State<ChatRouter>) -> Response {
             }));
         }
     }
-    ([(header::CACHE_CONTROL, "no-store")], Json(json!({ "object": "list", "data": data })))
+    (
+        [(header::CACHE_CONTROL, "no-store")],
+        Json(json!({ "object": "list", "data": data })),
+    )
         .into_response()
 }
 
@@ -453,24 +513,41 @@ async fn compact(State(router): State<ChatRouter>, Json(body): Json<Value>) -> R
 }
 
 async fn route_request(router: ChatRouter, mut body: Value, endpoint: &str) -> Response {
-    let Some(id) = body.get("model").and_then(Value::as_str).map(ToOwned::to_owned) else {
-        return error(StatusCode::BAD_REQUEST, "invalid_request_error", "`model` is required");
+    let Some(id) = body
+        .get("model")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+    else {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "invalid_request_error",
+            "`model` is required",
+        );
     };
     let Some(config) = router.find(&id).cloned() else {
-        return error(StatusCode::NOT_FOUND, "model_not_found", format!("unknown model `{id}`"));
+        return error(
+            StatusCode::NOT_FOUND,
+            "model_not_found",
+            format!("unknown model `{id}`"),
+        );
     };
     match &config {
         ModelConfig::Llama { .. } => match router.ensure_llama(&config).await {
             Ok(base) => relay(&router.0.http, &base, endpoint, None, body).await,
             Err(reason) => error(StatusCode::SERVICE_UNAVAILABLE, "model_unavailable", reason),
         },
-        ModelConfig::Openai { base_url, upstream_model, api_key_env, .. } => {
+        ModelConfig::Openai {
+            base_url,
+            upstream_model,
+            api_key_env,
+            ..
+        } => {
             if let Some(name) = upstream_model {
                 body["model"] = json!(name);
             }
             let key = api_key_env.as_deref().and_then(|k| std::env::var(k).ok());
             relay(&router.0.http, base_url, endpoint, key.as_deref(), body).await
-        },
+        }
         ModelConfig::GeminiWeb { variant, .. } => {
             if endpoint != "chat/completions" {
                 return error(
@@ -483,14 +560,20 @@ async fn route_request(router: ChatRouter, mut body: Value, endpoint: &str) -> R
                 Ok(client) => client,
                 Err(reason) => {
                     return error(StatusCode::SERVICE_UNAVAILABLE, "model_unavailable", reason);
-                },
+                }
             };
             let tools_ignored = body.get("tools").is_some_and(|t| !t.is_null());
             let prompt = flatten_messages(body.get("messages").unwrap_or(&Value::Null));
             if prompt.is_empty() {
-                return error(StatusCode::BAD_REQUEST, "invalid_request_error", "no message text");
+                return error(
+                    StatusCode::BAD_REQUEST,
+                    "invalid_request_error",
+                    "no message text",
+                );
             }
-            let selector = GeminiModel::from_id(variant).unwrap_or(GeminiModel::Flash).header();
+            let selector = GeminiModel::from_id(variant)
+                .unwrap_or(GeminiModel::Flash)
+                .header();
             let reply = match tokio::time::timeout(
                 Duration::from_secs(120),
                 client.ask(&prompt, Some(&selector)),
@@ -500,7 +583,7 @@ async fn route_request(router: ChatRouter, mut body: Value, endpoint: &str) -> R
                 Ok(Ok(reply)) => reply.text,
                 Ok(Err(e)) => {
                     return error(StatusCode::BAD_GATEWAY, "upstream_error", e.to_string());
-                },
+                }
                 Err(_) => return error(StatusCode::GATEWAY_TIMEOUT, "timeout", "Gemini timed out"),
             };
             let stream = body.get("stream").and_then(Value::as_bool).unwrap_or(false);
@@ -511,7 +594,7 @@ async fn route_request(router: ChatRouter, mut body: Value, endpoint: &str) -> R
                     .insert("x-aphrody-tools-ignored", HeaderValue::from_static("true"));
             }
             response
-        },
+        }
     }
 }
 
@@ -545,7 +628,10 @@ async fn relay(
                 }
             }
             if !headers.contains_key(header::CONTENT_TYPE) {
-                headers.insert(header::CONTENT_TYPE, HeaderValue::from_static("application/json"));
+                headers.insert(
+                    header::CONTENT_TYPE,
+                    HeaderValue::from_static("application/json"),
+                );
             }
             let mut response = Response::new(Body::from_stream(upstream.bytes_stream()));
             *response.status_mut() = status;
@@ -554,16 +640,20 @@ async fn relay(
                 .headers_mut()
                 .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
             response
-        },
-        Err(e) => {
-            error(StatusCode::BAD_GATEWAY, "upstream_error", format!("upstream unreachable: {e}"))
-        },
+        }
+        Err(e) => error(
+            StatusCode::BAD_GATEWAY,
+            "upstream_error",
+            format!("upstream unreachable: {e}"),
+        ),
     }
 }
 
 /// OpenAI messages as one prompt for a single-turn backend.
 fn flatten_messages(messages: &Value) -> String {
-    let Some(list) = messages.as_array() else { return String::new() };
+    let Some(list) = messages.as_array() else {
+        return String::new();
+    };
     let text_of = |content: &Value| match content {
         Value::String(text) => text.clone(),
         Value::Array(parts) => parts
@@ -576,8 +666,17 @@ fn flatten_messages(messages: &Value) -> String {
     let turns: Vec<(String, String)> = list
         .iter()
         .map(|m| {
-            let role = m.get("role").and_then(Value::as_str).unwrap_or("user").to_owned();
-            (role, text_of(m.get("content").unwrap_or(&Value::Null)).trim().to_owned())
+            let role = m
+                .get("role")
+                .and_then(Value::as_str)
+                .unwrap_or("user")
+                .to_owned();
+            (
+                role,
+                text_of(m.get("content").unwrap_or(&Value::Null))
+                    .trim()
+                    .to_owned(),
+            )
         })
         .filter(|(_, text)| !text.is_empty())
         .collect();
@@ -623,7 +722,13 @@ fn completion_response(model: &str, text: &str, stream: bool) -> Response {
         chunk(json!({ "role": "assistant", "content": text }), Value::Null),
         chunk(json!({}), json!("stop")),
     );
-    ([(header::CONTENT_TYPE, "text/event-stream"), (header::CACHE_CONTROL, "no-store")], sse)
+    (
+        [
+            (header::CONTENT_TYPE, "text/event-stream"),
+            (header::CACHE_CONTROL, "no-store"),
+        ],
+        sse,
+    )
         .into_response()
 }
 
@@ -636,7 +741,10 @@ mod tests {
             models_dir: dir.join("models"),
             state_dir: dir.join("llama"),
             llama_bin: None,
-            daemon: DaemonCommand { program: PathBuf::new(), args: Vec::new() },
+            daemon: DaemonCommand {
+                program: PathBuf::new(),
+                args: Vec::new(),
+            },
         }
     }
 
@@ -653,7 +761,9 @@ mod tests {
         .unwrap();
         config.check().unwrap();
         assert_eq!(config.models.len(), 4);
-        let ModelConfig::Llama { lora, .. } = &config.models[0] else { panic!() };
+        let ModelConfig::Llama { lora, .. } = &config.models[0] else {
+            panic!()
+        };
         assert!((lora[0].scale - 1.0).abs() < f32::EPSILON);
         let dup: RouterConfig = serde_json::from_str(
             r#"{"models":[{"backend":"gemini-web","id":"x"},{"backend":"gemini-web","id":"x"}]}"#,
@@ -688,12 +798,18 @@ mod tests {
             r#"{{"models":[
               {{"backend":"llama","id":"local","model":"qwen3-4b-instruct-2507-q4km"}},
               {{"backend":"gemini-web","id":"gemini-web/flash","cookie_file":"{}"}}]}}"#,
-            dir.path().join("missing.json").display().to_string().replace('\\', "/")
+            dir.path()
+                .join("missing.json")
+                .display()
+                .to_string()
+                .replace('\\', "/")
         ))
         .unwrap();
         let router = ChatRouter::new(config, context(dir.path())).unwrap();
         let app = router.app();
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, app).await });
         let http = reqwest::Client::new();
@@ -706,11 +822,20 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(models["data"], json!([]));
-        let health: Value =
-            http.get(format!("http://{addr}/health")).send().await.unwrap().json().await.unwrap();
+        let health: Value = http
+            .get(format!("http://{addr}/health"))
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
         assert_eq!(health["status"], "unavailable");
         assert_eq!(health["backends"][0]["reason"], "llama-server not found");
-        assert_eq!(health["backends"][1]["reason"], "Gemini cookie file not found");
+        assert_eq!(
+            health["backends"][1]["reason"],
+            "Gemini cookie file not found"
+        );
         let unknown = http
             .post(format!("http://{addr}/v1/chat/completions"))
             .json(&json!({ "model": "nope", "messages": [] }))
@@ -729,8 +854,9 @@ mod tests {
 
     #[tokio::test]
     async fn openai_upstream_is_relayed_with_its_stream() {
-        let upstream =
-            Router::new().route("/v1/models", get(|| async { Json(json!({ "data": [] })) })).route(
+        let upstream = Router::new()
+            .route("/v1/models", get(|| async { Json(json!({ "data": [] })) }))
+            .route(
                 "/v1/chat/completions",
                 post(|Json(body): Json<Value>| async move {
                     (
@@ -742,7 +868,9 @@ mod tests {
                     )
                 }),
             );
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
         let up = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, upstream).await });
 
@@ -752,7 +880,9 @@ mod tests {
         ))
         .unwrap();
         let app = ChatRouter::new(config, context(dir.path())).unwrap().app();
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
         let addr = listener.local_addr().unwrap();
         tokio::spawn(async move { axum::serve(listener, app).await });
         let http = reqwest::Client::new();
@@ -807,7 +937,9 @@ mod tests {
                     "usage": {"input_tokens": 17, "output_tokens": 5, "total_tokens": 22},
                 })).into_response()
             }));
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
         let up = listener.local_addr().unwrap();
         let upstream_task = tokio::spawn(async move { axum::serve(listener, upstream).await });
         let dir = tempfile::tempdir().unwrap();
@@ -817,7 +949,9 @@ mod tests {
         }]}))
         .unwrap();
         let app = ChatRouter::new(config, context(dir.path())).unwrap().app();
-        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(("127.0.0.1", 0))
+            .await
+            .unwrap();
         let addr = listener.local_addr().unwrap();
         let router_task = tokio::spawn(async move { axum::serve(listener, app).await });
         let http = reqwest::Client::new();
@@ -862,7 +996,10 @@ mod tests {
             .unwrap();
         assert_eq!(failure.status(), 429);
         assert_eq!(failure.headers()["retry-after"], "7");
-        assert_eq!(failure.json::<Value>().await.unwrap()["error"]["code"], "rate_limit_exceeded");
+        assert_eq!(
+            failure.json::<Value>().await.unwrap()["error"]["code"],
+            "rate_limit_exceeded"
+        );
         router_task.abort();
         upstream_task.abort();
         assert!(router_task.await.unwrap_err().is_cancelled());
@@ -879,15 +1016,21 @@ mod tests {
         let router = ChatRouter::new(config, context(dir.path())).unwrap();
         for endpoint in ["responses", "responses/compact"] {
             assert_eq!(
-                route_request(router.clone(), json!({"model":"web"}), endpoint).await.status(),
+                route_request(router.clone(), json!({"model":"web"}), endpoint)
+                    .await
+                    .status(),
                 StatusCode::BAD_REQUEST
             );
             assert_eq!(
-                route_request(router.clone(), json!({"model":"missing"}), endpoint).await.status(),
+                route_request(router.clone(), json!({"model":"missing"}), endpoint)
+                    .await
+                    .status(),
                 StatusCode::NOT_FOUND
             );
             assert_eq!(
-                route_request(router.clone(), json!({"input":[]}), endpoint).await.status(),
+                route_request(router.clone(), json!({"input":[]}), endpoint)
+                    .await
+                    .status(),
                 StatusCode::BAD_REQUEST
             );
         }
@@ -896,6 +1039,9 @@ mod tests {
     #[test]
     fn gemini_stream_is_one_delta_then_done() {
         let response = completion_response("gemini-web/flash", "Bonjour", true);
-        assert_eq!(response.headers()[header::CONTENT_TYPE], "text/event-stream");
+        assert_eq!(
+            response.headers()[header::CONTENT_TYPE],
+            "text/event-stream"
+        );
     }
 }

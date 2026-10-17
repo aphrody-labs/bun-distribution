@@ -3,14 +3,14 @@ pub mod allocator;
 pub mod morph;
 
 use crate::{
+    Render, RenderApp, RenderSystems,
     mesh::allocator::{ElementClass, MeshAllocationKey, MeshAllocator, MeshSlabId},
     render_asset::{
-        prepare_assets, AssetExtractionError, PrepareAssetError, RenderAsset, RenderAssetPlugin,
+        AssetExtractionError, PrepareAssetError, RenderAsset, RenderAssetPlugin, prepare_assets,
     },
     render_resource::Buffer,
     renderer::{RenderDevice, RenderQueue},
     texture::GpuImage,
-    Render, RenderApp, RenderSystems,
 };
 use allocator::MeshAllocatorPlugin;
 use bevy_app::{App, Plugin};
@@ -19,8 +19,8 @@ use bevy_camera::primitives::MeshAabb;
 use bevy_ecs::{
     prelude::*,
     system::{
-        lifetimeless::{SRes, SResMut},
         SystemParamItem,
+        lifetimeless::{SRes, SResMut},
     },
 };
 use bevy_encase_derive::ShaderType;

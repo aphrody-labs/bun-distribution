@@ -179,7 +179,10 @@ pub struct FilePick {
 impl FilePick {
     /// A save dialog suggesting `name`.
     pub fn named(name: &str) -> Self {
-        Self { name: name.to_string(), ..Default::default() }
+        Self {
+            name: name.to_string(),
+            ..Default::default()
+        }
     }
 }
 
@@ -247,7 +250,8 @@ pub struct Services {
     pub pick_folder: Option<Box<dyn FnMut() -> Option<String>>>,
     /// Where Data Recovery keeps its copies when not in a folder (the web's browser storage;
     /// tests): installed into the session ([`vectorcraft_engine::cmd::recovery`]).
-    pub recovery_store: Option<std::sync::Arc<dyn vectorcraft_engine::cmd::recovery::RecoveryStore>>,
+    pub recovery_store:
+        Option<std::sync::Arc<dyn vectorcraft_engine::cmd::recovery::RecoveryStore>>,
     /// File → Print: the system's printers and print queue (desktop), the browser's print dialog
     /// (web). Without it Print saves the job as a PDF.
     pub print: Option<Box<dyn print::PrintService>>,
@@ -532,23 +536,40 @@ impl VectorcraftApp {
         self.automation_roots = Some(roots);
         let s = &mut self.services;
         if let Some(read) = s.read.take() {
-            s.read = Some(Box::new(move |p: &str| file_access::check_read(p).and_then(|()| read(p))));
+            s.read = Some(Box::new(move |p: &str| {
+                file_access::check_read(p).and_then(|()| read(p))
+            }));
         }
         if let Some(mut write) = s.write.take() {
-            s.write = Some(Box::new(move |p: &str, b: &[u8]| file_access::check_write(p).and_then(|()| write(p, b))));
+            s.write = Some(Box::new(move |p: &str, b: &[u8]| {
+                file_access::check_write(p).and_then(|()| write(p, b))
+            }));
         }
         if let Some(write) = s.write_shared.take() {
-            s.write_shared = Some(Arc::new(move |p: &str, b: &[u8]| file_access::check_write(p).and_then(|()| write(p, b))));
+            s.write_shared = Some(Arc::new(move |p: &str, b: &[u8]| {
+                file_access::check_write(p).and_then(|()| write(p, b))
+            }));
         }
         if let Some(stream) = s.stream_shared.take() {
-            s.stream_shared = Some(Arc::new(move |p: &str, fill: &mut dyn FnMut(&mut dyn std::io::Write) -> std::io::Result<()>| {
-                file_access::check_write(p).and_then(|()| stream(p, fill))
-            }));
+            s.stream_shared =
+                Some(
+                    Arc::new(
+                        move |p: &str,
+                              fill: &mut dyn FnMut(
+                            &mut dyn std::io::Write,
+                        )
+                            -> std::io::Result<()>| {
+                            file_access::check_write(p).and_then(|()| stream(p, fill))
+                        },
+                    ),
+                );
         }
         // Edit Original and Show in Folder hand a file to another app: only one automation may read.
         for service in [&mut s.open_file, &mut s.reveal] {
             if let Some(mut open) = service.take() {
-                *service = Some(Box::new(move |p: &str| file_access::check_read(p).and_then(|()| open(p))));
+                *service = Some(Box::new(move |p: &str| {
+                    file_access::check_read(p).and_then(|()| open(p))
+                }));
             }
         }
         self
@@ -558,7 +579,8 @@ impl VectorcraftApp {
     pub fn sync_views(&mut self) {
         let docs = self.session.documents();
         self.views.truncate(docs.len());
-        self.views.extend(docs.iter().skip(self.views.len()).map(View::of));
+        self.views
+            .extend(docs.iter().skip(self.views.len()).map(View::of));
     }
 
     pub fn view(&self) -> Option<&View> {
@@ -567,9 +589,15 @@ impl VectorcraftApp {
 
     /// The zero point shown by rulers and position fields; command coordinates stay absolute.
     pub(crate) fn ruler_origin(&self) -> vectorcraft_geom::Point {
-        let origin = self.session.active().map_or(vectorcraft_geom::Point::ZERO, |d| d.doc.ruler_origin);
+        let origin = self
+            .session
+            .active()
+            .map_or(vectorcraft_geom::Point::ZERO, |d| d.doc.ruler_origin);
         // An untrusted file cannot make the ruler's tick loop or position fields overflow.
-        if origin.is_finite() && origin.x.abs() <= vectorcraft_engine::MAX_COORD && origin.y.abs() <= vectorcraft_engine::MAX_COORD {
+        if origin.is_finite()
+            && origin.x.abs() <= vectorcraft_engine::MAX_COORD
+            && origin.y.abs() <= vectorcraft_engine::MAX_COORD
+        {
             origin
         } else {
             vectorcraft_geom::Point::ZERO
@@ -639,7 +667,10 @@ impl VectorcraftApp {
             && let Some(n) = self.session.active().map(|d| d.doc.artboards.len())
             && let Some(p) = params.as_object_mut()
         {
-            p.insert("artboard".into(), serde_json::json!(panels::artboards::selected(self, n)));
+            p.insert(
+                "artboard".into(),
+                serde_json::json!(panels::artboards::selected(self, n)),
+            );
         }
         if id.starts_with("edit.paste") {
             if let Err(e) = self.adopt_system_clipboard() {
@@ -648,7 +679,9 @@ impl VectorcraftApp {
             }
             // Paste (also without formatting) goes to the centre of the view.
             if matches!(id, "edit.paste" | "edit.pasteWithoutFormatting")
-                && ["center", "dx", "dy"].iter().all(|k| params.get(k).is_none())
+                && ["center", "dx", "dy"]
+                    .iter()
+                    .all(|k| params.get(k).is_none())
                 && let Some(c) = self.view().filter(|v| v.fitted).map(|v| v.center)
                 && let Some(p) = params.as_object_mut()
             {
@@ -733,12 +766,16 @@ impl VectorcraftApp {
     }
 
     fn drain_control(&mut self, ctx: &egui::Context) {
-        let Some(rx) = self.control_rx.take() else { return };
+        let Some(rx) = self.control_rx.take() else {
+            return;
+        };
         while let Ok(req) = rx.try_recv() {
             let reply = req.reply.clone();
             // Guarded per request: a panic must not drop the channel (taken out of `self` above).
             let roots = self.automation_roots.clone();
-            let outcome = match file_access::confine(roots.as_ref(), || vectorcraft_engine::guard::catch_panic(|| control::handle(self, ctx, &req))) {
+            let outcome = match file_access::confine(roots.as_ref(), || {
+                vectorcraft_engine::guard::catch_panic(|| control::handle(self, ctx, &req))
+            }) {
                 Ok(outcome) => outcome,
                 Err(msg) => {
                     self.picks.recover();
@@ -754,7 +791,13 @@ impl VectorcraftApp {
                     let token = self.screenshot_token;
                     let settle = ctx.global_style().animation_time as f64 * 2000.0 + 80.0;
                     self.queued_screenshots.push((token, now_ms() + settle, 0));
-                    self.pending_screenshots.push(PendingScreenshot { token, path, data, reply, deadline: now_ms() + settle + 8000.0 });
+                    self.pending_screenshots.push(PendingScreenshot {
+                        token,
+                        path,
+                        data,
+                        reply,
+                        deadline: now_ms() + settle + 8000.0,
+                    });
                 }
             }
         }
@@ -766,7 +809,9 @@ impl VectorcraftApp {
         self.queued_screenshots.retain_mut(|(token, at, frames)| {
             *frames += 1;
             if now >= *at && *frames >= 3 {
-                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(*token)));
+                ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::new(
+                    *token,
+                )));
                 false
             } else {
                 true
@@ -786,8 +831,14 @@ impl VectorcraftApp {
                 .events
                 .iter()
                 .filter_map(|e| match e {
-                    egui::Event::Screenshot { user_data, image, .. } => {
-                        let token = user_data.data.as_ref().and_then(|d| d.downcast_ref::<u64>()).copied()?;
+                    egui::Event::Screenshot {
+                        user_data, image, ..
+                    } => {
+                        let token = user_data
+                            .data
+                            .as_ref()
+                            .and_then(|d| d.downcast_ref::<u64>())
+                            .copied()?;
                         Some((token, image.clone()))
                     }
                     _ => None,
@@ -795,10 +846,16 @@ impl VectorcraftApp {
                 .collect()
         });
         for (token, image) in events {
-            if let Some(i) = self.pending_screenshots.iter().position(|p| p.token == token) {
+            if let Some(i) = self
+                .pending_screenshots
+                .iter()
+                .position(|p| p.token == token)
+            {
                 let p = self.pending_screenshots.remove(i);
                 let roots = self.automation_roots.clone();
-                let _ = p.reply.send(file_access::confine(roots.as_ref(), || control::save_screenshot(self, &image, p.path.as_deref(), p.data)));
+                let _ = p.reply.send(file_access::confine(roots.as_ref(), || {
+                    control::save_screenshot(self, &image, p.path.as_deref(), p.data)
+                }));
             }
         }
         let now = now_ms();
@@ -833,10 +890,16 @@ impl VectorcraftApp {
                 Ok(r) => {
                     let n = |k: &str| r[k].as_array().map_or(0, Vec::len);
                     if n("updated") > 0 {
-                        self.status(format!("Updated {} linked file(s) changed on disk", n("updated")));
+                        self.status(format!(
+                            "Updated {} linked file(s) changed on disk",
+                            n("updated")
+                        ));
                     }
                     if n("ask") > 0 {
-                        dialogs::missing_links::ask_update_changed(self, r["ask"].as_array().cloned().unwrap_or_default());
+                        dialogs::missing_links::ask_update_changed(
+                            self,
+                            r["ask"].as_array().cloned().unwrap_or_default(),
+                        );
                     }
                     if n("modified") > 0 {
                         self.status(format!("{} linked image(s) changed on disk: Update Links shows the new versions", n("modified")));
@@ -845,16 +908,24 @@ impl VectorcraftApp {
                 Err(e) => self.status(e.to_string()),
             }
         }
-        let (last_key, focus_key) = (egui::Id::new("linkWatch.lastScan"), egui::Id::new("linkWatch.focused"));
+        let (last_key, focus_key) = (
+            egui::Id::new("linkWatch.lastScan"),
+            egui::Id::new("linkWatch.focused"),
+        );
         let focused = ctx.input(|i| i.focused);
         let was_focused: bool = ctx.data(|d| d.get_temp(focus_key)).unwrap_or(focused);
         ctx.data_mut(|d| d.insert_temp(focus_key, focused));
         if self.ui.dialog.is_some() || self.session.active().is_none() {
             return;
         }
-        let last: f64 = ctx.data(|d| d.get_temp(last_key)).unwrap_or(f64::NEG_INFINITY);
+        let last: f64 = ctx
+            .data(|d| d.get_temp(last_key))
+            .unwrap_or(f64::NEG_INFINITY);
         // The active document as the last look saw it: its uid and revision.
-        let (seen_key, doc) = (egui::Id::new("linkWatch.seen"), self.session.active().map(|d| (d.uid, d.revision)));
+        let (seen_key, doc) = (
+            egui::Id::new("linkWatch.seen"),
+            self.session.active().map(|d| (d.uid, d.revision)),
+        );
         if now - last >= 2.0 || (focused && !was_focused) {
             // Walking the document's links costs a pass over it: only when a look is due.
             // `start_link_scan` starts none for a document without links, which then doesn't
@@ -869,14 +940,22 @@ impl VectorcraftApp {
         }
         if self.session.link_scan.is_some() {
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
-        } else if ctx.data(|d| d.get_temp::<bool>(egui::Id::new("linkWatch.links"))).unwrap_or(false) {
+        } else if ctx
+            .data(|d| d.get_temp::<bool>(egui::Id::new("linkWatch.links")))
+            .unwrap_or(false)
+        {
             ctx.request_repaint_after(std::time::Duration::from_millis(2000));
-        } else if ctx.data(|d| d.get_temp::<Option<(u64, u64)>>(seen_key)).is_some_and(|seen| seen != doc) {
+        } else if ctx
+            .data(|d| d.get_temp::<Option<(u64, u64)>>(seen_key))
+            .is_some_and(|seen| seen != doc)
+        {
             // The document changed (a file placed into one without links) or another came to the
             // front since that look: wake for the next one even if the app sits idle until then,
             // or a file placed and changed meanwhile is first seen after the change, which is then
             // never acted on.
-            ctx.request_repaint_after(std::time::Duration::from_secs_f64((last + 2.0 - now).clamp(0.0, 2.0)));
+            ctx.request_repaint_after(std::time::Duration::from_secs_f64(
+                (last + 2.0 - now).clamp(0.0, 2.0),
+            ));
         }
     }
 
@@ -898,8 +977,12 @@ impl VectorcraftApp {
     }
 
     fn drain_inbox(&mut self) {
-        let arrived: Vec<(String, Vec<u8>)> =
-            self.services.inbox.as_ref().map(|q| std::mem::take(&mut *q.lock().unwrap_or_else(|e| e.into_inner()))).unwrap_or_default();
+        let arrived: Vec<(String, Vec<u8>)> = self
+            .services
+            .inbox
+            .as_ref()
+            .map(|q| std::mem::take(&mut *q.lock().unwrap_or_else(|e| e.into_inner())))
+            .unwrap_or_default();
         for (name, bytes) in arrived {
             if let Err(e) = io::open_bytes(self, &name, &bytes, None) {
                 io::report_open_error(self, &name, &e);
@@ -913,7 +996,10 @@ pub fn now_ms() -> f64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
         use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs_f64() * 1000.0).unwrap_or(0.0)
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_secs_f64() * 1000.0)
+            .unwrap_or(0.0)
     }
     #[cfg(target_arch = "wasm32")]
     {
@@ -928,8 +1014,13 @@ impl VectorcraftApp {
     /// Type › Recent Fonts: the fonts used last, newest first, as many as Preferences › Type ›
     /// Number of Recent Fonts says.
     pub fn recent_fonts(&self) -> &[String] {
-        let n = usize::try_from(self.session.prefs.recent_fonts_count).unwrap_or(MAX_RECENT_FONTS).clamp(1, MAX_RECENT_FONTS);
-        self.ui.recent_fonts.get(..n).unwrap_or(&self.ui.recent_fonts)
+        let n = usize::try_from(self.session.prefs.recent_fonts_count)
+            .unwrap_or(MAX_RECENT_FONTS)
+            .clamp(1, MAX_RECENT_FONTS);
+        self.ui
+            .recent_fonts
+            .get(..n)
+            .unwrap_or(&self.ui.recent_fonts)
     }
 
     /// The selection's bounding box, rotated with rotated objects ([`Session::transform_box`]). The
@@ -970,16 +1061,26 @@ impl VectorcraftApp {
     /// The language the UI is drawn in: the Preferences dialog's choice while it is open (so a
     /// change shows before OK), else the `interfaceLanguage` preference (`auto` = the system's).
     pub fn ui_language(&self) -> i18n::Lang {
-        let editing =
-            self.ui.dialog.as_ref().filter(|d| d.kind == "preferences").and_then(|d| d.fields.get("interfaceLanguage")).and_then(Value::as_str);
+        let editing = self
+            .ui
+            .dialog
+            .as_ref()
+            .filter(|d| d.kind == "preferences")
+            .and_then(|d| d.fields.get("interfaceLanguage"))
+            .and_then(Value::as_str);
         i18n::Lang::from_pref(editing.unwrap_or(&self.session.prefs.interface_language))
     }
 
     /// Per-frame logic before layout (control channel, shortcuts, inbox). A bug that panics costs
     /// one frame and shows an error, instead of closing the app with unsaved work.
     pub fn logic(&mut self, ctx: &egui::Context) {
-        let confined = self.synthetic_frame.then(|| self.automation_roots.clone()).flatten();
-        if let Err(msg) = file_access::confine(confined.as_ref(), || vectorcraft_engine::guard::catch_panic(|| self.logic_frame(ctx))) {
+        let confined = self
+            .synthetic_frame
+            .then(|| self.automation_roots.clone())
+            .flatten();
+        if let Err(msg) = file_access::confine(confined.as_ref(), || {
+            vectorcraft_engine::guard::catch_panic(|| self.logic_frame(ctx))
+        }) {
             self.picks.recover();
             self.status(format!("Internal error: {msg} (please report this bug)"));
         }
@@ -1017,7 +1118,11 @@ impl VectorcraftApp {
         if let Some(make) = self.services.clipboard_probe.take() {
             self.clipboard_probe = clipboard_probe::Probe::start(make, ctx.clone());
         }
-        if let Some(pasteable) = self.clipboard_probe.as_mut().and_then(|p| p.pasteable(wanted)) {
+        if let Some(pasteable) = self
+            .clipboard_probe
+            .as_mut()
+            .and_then(|p| p.pasteable(wanted))
+        {
             self.system_paste = pasteable;
         } else if !(0.0..SYSTEM_CLIPBOARD_POLL).contains(&(now - self.system_paste_at)) {
             self.clipboard_probe = None;
@@ -1095,15 +1200,24 @@ impl VectorcraftApp {
         let mut files = vec![];
         for f in dropped {
             let path = Some(f.path().to_string_lossy().to_string()).filter(|s| !s.is_empty());
-            let name = path.as_deref().map_or_else(|| "dropped".into(), vectorcraft_engine::cmd::fileio::file_name);
+            let name = path.as_deref().map_or_else(
+                || "dropped".into(),
+                vectorcraft_engine::cmd::fileio::file_name,
+            );
             // Native file drops usually carry a path. Use the same file reader as File → Open
             // (and File → Place), even if the drop handle can't supply the bytes itself.
-            let bytes = if path.is_some() && self.services.read.is_some() { Ok(vec![]) } else { f.bytes() };
+            let bytes = if path.is_some() && self.services.read.is_some() {
+                Ok(vec![])
+            } else {
+                f.bytes()
+            };
             match bytes {
                 Ok(bytes) => {
                     // A backend may give bytes without a path or extension. Sniff their format
                     // before deciding: an SVG opens as a document, a raster image is placed.
-                    let target = if path.is_none() && fileio::detect(&name, &bytes).is_none_or(|f| !f.raster) {
+                    let target = if path.is_none()
+                        && fileio::detect(&name, &bytes).is_none_or(|f| !f.raster)
+                    {
                         place::DropTarget::Open
                     } else {
                         self.drop_target(&name, pos, shift)
@@ -1129,8 +1243,14 @@ impl VectorcraftApp {
             // The UI gone meanwhile has nothing to refresh.
             let _ = tx.send(vectorcraft_text::FontDb::global().installed_fonts_changed());
         };
-        let spawned =
-            if cfg!(target_arch = "wasm32") { None } else { std::thread::Builder::new().name("font-check".into()).spawn(look.clone()).ok() };
+        let spawned = if cfg!(target_arch = "wasm32") {
+            None
+        } else {
+            std::thread::Builder::new()
+                .name("font-check".into())
+                .spawn(look.clone())
+                .ok()
+        };
         if spawned.is_none() {
             look();
         }
@@ -1139,7 +1259,9 @@ impl VectorcraftApp {
 
     /// Rescan the fonts once [`Self::refresh_installed_fonts`]'s look says they changed.
     fn poll_font_check(&mut self, ctx: &egui::Context) {
-        let Some(check) = &self.font_check else { return };
+        let Some(check) = &self.font_check else {
+            return;
+        };
         match check.try_recv() {
             Ok(changed) => {
                 self.font_check = None;
@@ -1148,7 +1270,9 @@ impl VectorcraftApp {
                     let _ = self.run("text.rescanFonts", json!({}));
                 }
             }
-            Err(std::sync::mpsc::TryRecvError::Empty) => ctx.request_repaint_after(std::time::Duration::from_millis(50)),
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                ctx.request_repaint_after(std::time::Duration::from_millis(50))
+            }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => self.font_check = None,
         }
     }
@@ -1159,11 +1283,19 @@ impl VectorcraftApp {
     pub fn raw_input_hook(&mut self, raw: &mut egui::RawInput) {
         // The native menu's key equivalents become the input their keys make, ahead of what came
         // after them (see `native_menu`).
-        let keys = self.services.native_menu.as_mut().map(native_menu::NativeMenu::take_keys).unwrap_or_default();
+        let keys = self
+            .services
+            .native_menu
+            .as_mut()
+            .map(native_menu::NativeMenu::take_keys)
+            .unwrap_or_default();
         // The menu bar does nothing while a file dialog is open (`native_menu`): a key that raced it
         // going inert is dropped.
         if !keys.is_empty() && !self.file_dialog_open() {
-            let events: Vec<egui::Event> = keys.into_iter().flat_map(|k| native_menu::key_events(k, || self.system_clipboard_text())).collect();
+            let events: Vec<egui::Event> = keys
+                .into_iter()
+                .flat_map(|k| native_menu::key_events(k, || self.system_clipboard_text()))
+                .collect();
             raw.events.splice(0..0, events);
         }
         for e in &raw.events {
@@ -1177,15 +1309,22 @@ impl VectorcraftApp {
         self.synthetic_frame = !self.synthetic.is_empty();
         let Some(first) = self.synthetic.first() else {
             if std::mem::take(&mut self.synthetic_modifiers) {
-                raw.events.push(egui::Event::ModifiersChanged(self.host_modifiers));
+                raw.events
+                    .push(egui::Event::ModifiersChanged(self.host_modifiers));
             }
             return;
         };
         // Pointer events go one per frame so egui sees presses, drags and releases as real input;
         // keyboard sequences go up to the key release.
         let n = match first {
-            egui::Event::PointerMoved(_) | egui::Event::PointerButton { .. } | egui::Event::MouseWheel { .. } => 1,
-            _ => self.synthetic.iter().position(|e| matches!(e, egui::Event::Key { pressed: false, .. })).map_or(self.synthetic.len(), |i| i + 1),
+            egui::Event::PointerMoved(_)
+            | egui::Event::PointerButton { .. }
+            | egui::Event::MouseWheel { .. } => 1,
+            _ => self
+                .synthetic
+                .iter()
+                .position(|e| matches!(e, egui::Event::Key { pressed: false, .. }))
+                .map_or(self.synthetic.len(), |i| i + 1),
         };
         if let egui::Event::PointerMoved(p) | egui::Event::PointerButton { pos: p, .. } = first {
             raw.events.push(egui::Event::PointerMoved(*p));
@@ -1195,21 +1334,32 @@ impl VectorcraftApp {
         let held = now
             .iter()
             .find_map(|e| match e {
-                egui::Event::Key { modifiers, .. } | egui::Event::PointerButton { modifiers, .. } | egui::Event::MouseWheel { modifiers, .. } => {
-                    Some(*modifiers)
-                }
+                egui::Event::Key { modifiers, .. }
+                | egui::Event::PointerButton { modifiers, .. }
+                | egui::Event::MouseWheel { modifiers, .. } => Some(*modifiers),
                 _ => None,
             })
-            .or_else(|| match later.iter().find(|e| matches!(e, egui::Event::PointerButton { .. })) {
-                Some(egui::Event::PointerButton { pressed: false, modifiers, .. }) => Some(*modifiers),
-                _ => None,
+            .or_else(|| {
+                match later
+                    .iter()
+                    .find(|e| matches!(e, egui::Event::PointerButton { .. }))
+                {
+                    Some(egui::Event::PointerButton {
+                        pressed: false,
+                        modifiers,
+                        ..
+                    }) => Some(*modifiers),
+                    _ => None,
+                }
             });
         match held {
             Some(m) => {
                 raw.events.push(egui::Event::ModifiersChanged(m));
                 self.synthetic_modifiers = true;
             }
-            None if std::mem::take(&mut self.synthetic_modifiers) => raw.events.push(egui::Event::ModifiersChanged(self.host_modifiers)),
+            None if std::mem::take(&mut self.synthetic_modifiers) => raw
+                .events
+                .push(egui::Event::ModifiersChanged(self.host_modifiers)),
             None => {}
         }
         raw.events.extend(self.synthetic.drain(..n));
@@ -1217,8 +1367,13 @@ impl VectorcraftApp {
 
     /// Lay out the whole window.
     pub fn ui(&mut self, ui: &mut egui::Ui) {
-        let confined = self.synthetic_frame.then(|| self.automation_roots.clone()).flatten();
-        if let Err(msg) = file_access::confine(confined.as_ref(), || vectorcraft_engine::guard::catch_panic(|| self.ui_frame(ui))) {
+        let confined = self
+            .synthetic_frame
+            .then(|| self.automation_roots.clone())
+            .flatten();
+        if let Err(msg) = file_access::confine(confined.as_ref(), || {
+            vectorcraft_engine::guard::catch_panic(|| self.ui_frame(ui))
+        }) {
             self.picks.recover();
             self.status(format!("Internal error: {msg} (please report this bug)"));
         }
@@ -1251,12 +1406,14 @@ impl VectorcraftApp {
         if self.ui.dock && self.ui.screen_mode < 3 {
             dock::show(self, ui);
         }
-        egui::CentralPanel::default().frame(egui::Frame::NONE.fill(t.pasteboard)).show(ui, |ui| {
-            if self.ui.screen_mode < 3 {
-                chrome::doc_tabs(self, ui);
-            }
-            canvas::show(self, ui);
-        });
+        egui::CentralPanel::default()
+            .frame(egui::Frame::NONE.fill(t.pasteboard))
+            .show(ui, |ui| {
+                if self.ui.screen_mode < 3 {
+                    chrome::doc_tabs(self, ui);
+                }
+                canvas::show(self, ui);
+            });
         dock::floating_panel(self, &ctx);
         floating::show(self, &ctx);
         panels::library_panel::show_window(self, &ctx);

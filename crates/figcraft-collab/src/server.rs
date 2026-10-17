@@ -7,7 +7,10 @@ use figcraft_doc::{Document, NodeId};
 use serde::{Deserialize, Serialize};
 
 use crate::change::{Change, Entry, Prop, Target};
-use crate::message::{Accepted, Access, CatchUp, ClientMsg, Hello, PROTOCOL, Peer, Presence, Processed, ServerMsg, Signal, reads_signals};
+use crate::message::{
+    Accepted, Access, CatchUp, ClientMsg, Hello, PROTOCOL, Peer, Presence, Processed, ServerMsg,
+    Signal, reads_signals,
+};
 use crate::replica::{Mode, Replica, create_change};
 use crate::{Error, Limits, docprops, same_secret};
 
@@ -143,17 +146,28 @@ impl Server {
     /// A session carrying on from a saved [`state`](Self::state) (nobody is connected yet; clients
     /// reconnect with their ids). A log that doesn't lead up to the sequence number is dropped
     /// (clients then catch up with a snapshot).
-    pub fn restore(state: SessionState, token: impl Into<String>, limits: Limits) -> Result<Server, Error> {
+    pub fn restore(
+        state: SessionState,
+        token: impl Into<String>,
+        limits: Limits,
+    ) -> Result<Server, Error> {
         let replica = Replica::from_snapshot(&state.snapshot)?;
         let mut server = Server::new(replica.document().clone(), token, limits);
         server.state = replica;
         server.session = state.session;
         server.seq = state.seq;
         server.next_client = server.next_client.max(state.next_client);
-        server.issued = state.issued.into_iter().filter(|(id, _)| *id < server.next_client).collect();
+        server.issued = state
+            .issued
+            .into_iter()
+            .filter(|(id, _)| *id < server.next_client)
+            .collect();
         server.deleted = state.deleted;
         server.removed = state.removed;
-        let contiguous = state.log.windows(2).all(|w| matches!(w, [a, b] if a.seq + 1 == b.seq));
+        let contiguous = state
+            .log
+            .windows(2)
+            .all(|w| matches!(w, [a, b] if a.seq + 1 == b.seq));
         if contiguous && state.log.last().is_none_or(|a| a.seq == state.seq) {
             for a in state.log {
                 server.remember(a);
@@ -170,7 +184,10 @@ impl Server {
 
     /// What changed the lasting state since the last call, oldest first.
     pub fn take_journal(&mut self) -> Vec<Journal> {
-        self.journal.as_mut().map(std::mem::take).unwrap_or_default()
+        self.journal
+            .as_mut()
+            .map(std::mem::take)
+            .unwrap_or_default()
     }
 
     fn note(&mut self, j: Journal) {
@@ -196,16 +213,26 @@ impl Server {
             Journal::Accepted(acc) if acc.seq <= self.seq => Ok(()),
             Journal::Accepted(acc) => {
                 if acc.seq != self.seq + 1 {
-                    return Err(Error::Protocol(format!("batch {} after {}", acc.seq, self.seq)));
+                    return Err(Error::Protocol(format!(
+                        "batch {} after {}",
+                        acc.seq, self.seq
+                    )));
                 }
                 self.accept(acc.author, self.seq, &acc.changes)?;
-                self.issued.entry(acc.author).or_default().note(acc.batch_id, false);
+                self.issued
+                    .entry(acc.author)
+                    .or_default()
+                    .note(acc.batch_id, false);
                 self.next_client = self.next_client.max(acc.author.saturating_add(1));
                 self.remember(acc);
                 Ok(())
             }
             Journal::Refused { client, batch_id } => {
-                if let Some(p) = self.issued.get_mut(&client).filter(|p| batch_id > p.last_batch) {
+                if let Some(p) = self
+                    .issued
+                    .get_mut(&client)
+                    .filter(|p| batch_id > p.last_batch)
+                {
                     p.note(batch_id, true);
                 }
                 Ok(())
@@ -216,7 +243,11 @@ impl Server {
     /// Beyond [`MAX_REMEMBERED`] client ids, forget the oldest one that isn't connected.
     fn forget_oldest(&mut self) {
         if self.issued.len() > MAX_REMEMBERED
-            && let Some(old) = self.issued.keys().copied().find(|k| !self.peers.contains_key(k))
+            && let Some(old) = self
+                .issued
+                .keys()
+                .copied()
+                .find(|k| !self.peers.contains_key(k))
         {
             self.issued.remove(&old);
         }
@@ -258,28 +289,48 @@ impl Server {
     }
 
     /// [`join`](Self::join) with what the client may do: every batch of a viewer is refused.
-    pub fn join_as(&mut self, hello: Hello, access: Access) -> Result<(u32, Vec<Outgoing>), ServerMsg> {
-        let refuse = |reason: &str| ServerMsg::Refused { reason: reason.to_string() };
+    pub fn join_as(
+        &mut self,
+        hello: Hello,
+        access: Access,
+    ) -> Result<(u32, Vec<Outgoing>), ServerMsg> {
+        let refuse = |reason: &str| ServerMsg::Refused {
+            reason: reason.to_string(),
+        };
         if hello.protocol != PROTOCOL {
-            return Err(refuse(&format!("protocol {} isn't supported (this server speaks {PROTOCOL})", hello.protocol)));
+            return Err(refuse(&format!(
+                "protocol {} isn't supported (this server speaks {PROTOCOL})",
+                hello.protocol
+            )));
         }
         if !same_secret(&hello.token, &self.token) {
             return Err(refuse("wrong session token"));
         }
-        let resume = hello.resume.filter(|r| r.session == self.session && self.issued.contains_key(&r.client_id));
-        if self.peers.len() >= self.limits.max_peers && resume.is_none_or(|r| !self.peers.contains_key(&r.client_id)) {
+        let resume = hello
+            .resume
+            .filter(|r| r.session == self.session && self.issued.contains_key(&r.client_id));
+        if self.peers.len() >= self.limits.max_peers
+            && resume.is_none_or(|r| !self.peers.contains_key(&r.client_id))
+        {
             return Err(refuse("the session is full"));
         }
-        if hello.name.chars().count() > self.limits.max_name || hello.color.chars().count() > self.limits.max_name {
+        if hello.name.chars().count() > self.limits.max_name
+            || hello.color.chars().count() > self.limits.max_name
+        {
             return Err(refuse("name or colour too long"));
         }
         if resume.is_none() && self.next_client == u32::MAX {
             return Err(refuse("no client ids left in this session"));
         }
         // The log holds every batch after `floor`.
-        let floor = self.log.front().map_or(self.seq, |a| a.seq.saturating_sub(1));
+        let floor = self
+            .log
+            .front()
+            .map_or(self.seq, |a| a.seq.saturating_sub(1));
         let catch_up = match resume {
-            Some(r) if r.seq <= self.seq && r.seq >= floor => CatchUp::Delta(self.log.iter().filter(|a| a.seq > r.seq).cloned().collect()),
+            Some(r) if r.seq <= self.seq && r.seq >= floor => {
+                CatchUp::Delta(self.log.iter().filter(|a| a.seq > r.seq).cloned().collect())
+            }
             _ => CatchUp::Snapshot(self.state.snapshot().map_err(|e| refuse(&e.to_string()))?),
         };
         let id = match resume {
@@ -296,21 +347,53 @@ impl Server {
         let processed = self.issued.get(&id).cloned().unwrap_or_default();
         self.presence.remove(&id);
         let signals = reads_signals(&hello.client_version);
-        let peer = Peer { client_id: id, name: hello.name, color: hello.color };
-        let others = self.peers.values().filter(|p| p.client_id != id).cloned().collect();
-        let welcome = ServerMsg::Welcome { session: self.session, client_id: id, seq: self.seq, catch_up, processed, peers: others, access };
+        let peer = Peer {
+            client_id: id,
+            name: hello.name,
+            color: hello.color,
+        };
+        let others = self
+            .peers
+            .values()
+            .filter(|p| p.client_id != id)
+            .cloned()
+            .collect();
+        let welcome = ServerMsg::Welcome {
+            session: self.session,
+            client_id: id,
+            seq: self.seq,
+            catch_up,
+            processed,
+            peers: others,
+            access,
+        };
         self.peers.insert(id, peer.clone());
         if access == Access::View {
             self.viewers.insert(id);
         } else {
             self.viewers.remove(&id);
         }
-        let mut outs = vec![Outgoing::To(id, welcome), Outgoing::Others(id, ServerMsg::PeerJoined(peer))];
+        let mut outs = vec![
+            Outgoing::To(id, welcome),
+            Outgoing::Others(id, ServerMsg::PeerJoined(peer)),
+        ];
         if signals {
             self.signals.insert(id);
-            outs.push(Outgoing::To(id, ServerMsg::Signal { client_id: id, signal: Signal::ready() }));
+            outs.push(Outgoing::To(
+                id,
+                ServerMsg::Signal {
+                    client_id: id,
+                    signal: Signal::ready(),
+                },
+            ));
             if let Some(p) = self.spotlight.filter(|p| *p != id) {
-                outs.push(Outgoing::To(id, ServerMsg::Signal { client_id: p, signal: Signal::spotlight(true) }));
+                outs.push(Outgoing::To(
+                    id,
+                    ServerMsg::Signal {
+                        client_id: p,
+                        signal: Signal::spotlight(true),
+                    },
+                ));
             }
         } else {
             self.signals.remove(&id);
@@ -336,40 +419,88 @@ impl Server {
     /// A message from client `from` (which has joined).
     pub fn receive(&mut self, from: u32, msg: ClientMsg) -> Vec<Outgoing> {
         if !self.peers.contains_key(&from) {
-            return vec![Outgoing::To(from, ServerMsg::Refused { reason: "say hello first".into() })];
+            return vec![Outgoing::To(
+                from,
+                ServerMsg::Refused {
+                    reason: "say hello first".into(),
+                },
+            )];
         }
         match msg {
-            ClientMsg::Hello(_) => vec![Outgoing::To(from, ServerMsg::Refused { reason: "already joined".into() })],
+            ClientMsg::Hello(_) => vec![Outgoing::To(
+                from,
+                ServerMsg::Refused {
+                    reason: "already joined".into(),
+                },
+            )],
             // A batch already processed (a copy sent again around a reconnect) is ignored: the
             // client learned what happened to it from the catch-up.
-            ClientMsg::Changes { batch_id, .. } if self.issued.get(&from).is_some_and(|p| batch_id <= p.last_batch) => Vec::new(),
-            ClientMsg::Changes { base_seq, batch_id, changes } => {
-                let result = if self.viewers.contains(&from) { Err(Error::Invalid(VIEW_ONLY.into())) } else { self.accept(from, base_seq, &changes) };
+            ClientMsg::Changes { batch_id, .. }
+                if self
+                    .issued
+                    .get(&from)
+                    .is_some_and(|p| batch_id <= p.last_batch) =>
+            {
+                Vec::new()
+            }
+            ClientMsg::Changes {
+                base_seq,
+                batch_id,
+                changes,
+            } => {
+                let result = if self.viewers.contains(&from) {
+                    Err(Error::Invalid(VIEW_ONLY.into()))
+                } else {
+                    self.accept(from, base_seq, &changes)
+                };
                 if let Some(p) = self.issued.get_mut(&from) {
                     p.note(batch_id, result.is_err());
                 }
                 match result {
                     Ok(()) => {
-                        let acc = Accepted { seq: self.seq, author: from, batch_id, changes };
+                        let acc = Accepted {
+                            seq: self.seq,
+                            author: from,
+                            batch_id,
+                            changes,
+                        };
                         self.remember(acc.clone());
                         self.note(Journal::Accepted(acc.clone()));
                         vec![Outgoing::All(ServerMsg::Changes(acc))]
                     }
                     Err(e) => {
-                        self.note(Journal::Refused { client: from, batch_id });
+                        self.note(Journal::Refused {
+                            client: from,
+                            batch_id,
+                        });
                         let fixes = self.fixes(&changes).unwrap_or_default();
-                        vec![Outgoing::To(from, ServerMsg::Reject { batch_id, reason: reason(&e), fixes })]
+                        vec![Outgoing::To(
+                            from,
+                            ServerMsg::Reject {
+                                batch_id,
+                                reason: reason(&e),
+                                fixes,
+                            },
+                        )]
                     }
                 }
             }
             ClientMsg::Presence(p) => {
                 self.presence.insert(from, p.clone());
-                vec![Outgoing::Others(from, ServerMsg::Presence { client_id: from, presence: p })]
+                vec![Outgoing::Others(
+                    from,
+                    ServerMsg::Presence {
+                        client_id: from,
+                        presence: p,
+                    },
+                )]
             }
             // Checked and cleaned, then passed on to those who read signals; never stored but the
             // current spotlight.
             ClientMsg::Signal(sig) => {
-                let Some(sig) = sig.clean().filter(|s| s.kind != Signal::READY) else { return Vec::new() };
+                let Some(sig) = sig.clean().filter(|s| s.kind != Signal::READY) else {
+                    return Vec::new();
+                };
                 if sig.kind == Signal::SPOTLIGHT {
                     if sig.on() {
                         self.spotlight = Some(from);
@@ -378,7 +509,16 @@ impl Server {
                     }
                 }
                 let to = self.signals.iter().filter(|id| **id != from);
-                to.map(|id| Outgoing::To(*id, ServerMsg::Signal { client_id: from, signal: sig.clone() })).collect()
+                to.map(|id| {
+                    Outgoing::To(
+                        *id,
+                        ServerMsg::Signal {
+                            client_id: from,
+                            signal: sig.clone(),
+                        },
+                    )
+                })
+                .collect()
             }
             ClientMsg::Ack { seq } => {
                 self.acked.insert(from, seq.min(self.seq));
@@ -394,7 +534,12 @@ impl Server {
             | ClientMsg::OpenHosting(_)
             | ClientMsg::Resolve(_)
             | ClientMsg::Report { .. } => {
-                vec![Outgoing::To(from, ServerMsg::Refused { reason: "managing files and libraries needs a connection of its own".into() })]
+                vec![Outgoing::To(
+                    from,
+                    ServerMsg::Refused {
+                        reason: "managing files and libraries needs a connection of its own".into(),
+                    },
+                )]
             }
         }
     }
@@ -424,10 +569,17 @@ impl Server {
     /// Validate and apply a batch; on success it has the next sequence number.
     fn accept(&mut self, from: u32, base_seq: u64, changes: &[Change]) -> Result<(), Error> {
         if changes.len() > self.limits.max_changes {
-            return Err(Error::Invalid(format!("{} changes in one batch (at most {})", changes.len(), self.limits.max_changes)));
+            return Err(Error::Invalid(format!(
+                "{} changes in one batch (at most {})",
+                changes.len(),
+                self.limits.max_changes
+            )));
         }
         if base_seq > self.seq {
-            return Err(Error::Protocol(format!("based on sequence {base_seq}, but the server is at {}", self.seq)));
+            return Err(Error::Protocol(format!(
+                "based on sequence {base_seq}, but the server is at {}",
+                self.seq
+            )));
         }
         for c in changes {
             if let Change::Create { id, .. } = c
@@ -435,13 +587,18 @@ impl Server {
                 && !self.deleted.contains(id)
                 && id.0 >> 32 != u64::from(from)
             {
-                return Err(Error::Invalid(format!("new node {id} isn't in client {from}'s id space")));
+                return Err(Error::Invalid(format!(
+                    "new node {id} isn't in client {from}'s id space"
+                )));
             }
         }
         let mut next = self.state.clone();
         let applied = next.apply(changes, Mode::Strict)?;
         if next.document().node_count() > self.limits.max_nodes {
-            return Err(Error::Invalid(format!("more than {} layers", self.limits.max_nodes)));
+            return Err(Error::Invalid(format!(
+                "more than {} layers",
+                self.limits.max_nodes
+            )));
         }
         let entries = self.check_entries(from, changes, next.document())?;
         for c in changes {
@@ -467,12 +624,19 @@ impl Server {
     /// the space of another client this session gave an id to (unless it was removed before: undo
     /// puts entries back); ids from before the session (space 0, earlier sessions, other files)
     /// are fine.
-    fn check_entries(&self, from: u32, changes: &[Change], after: &Document) -> Result<Vec<(Entry, bool)>, Error> {
+    fn check_entries(
+        &self,
+        from: u32,
+        changes: &[Change],
+        after: &Document,
+    ) -> Result<Vec<(Entry, bool)>, Error> {
         let before = self.state.document();
         let mut touched: BTreeSet<Entry> = BTreeSet::new();
         for c in changes {
             match c {
-                Change::Put { entry, .. } | Change::Remove { entry } if entry.id_space().is_some() => {
+                Change::Put { entry, .. } | Change::Remove { entry }
+                    if entry.id_space().is_some() =>
+                {
                     touched.insert(entry.clone());
                 }
                 // A whole list replaced (the fallback for lists whose ids aren't unique).
@@ -493,9 +657,14 @@ impl Server {
             }
             if now
                 && !self.removed.contains(&entry)
-                && let Some(space) = entry.id_space().filter(|s| *s != from && self.issued.contains_key(s))
+                && let Some(space) = entry
+                    .id_space()
+                    .filter(|s| *s != from && self.issued.contains_key(s))
             {
-                return Err(Error::Invalid(format!("new {} isn't in client {from}'s id space (it is client {space}'s)", entry.describe())));
+                return Err(Error::Invalid(format!(
+                    "new {} isn't in client {from}'s id space (it is client {space}'s)",
+                    entry.describe()
+                )));
             }
             out.push((entry, now));
         }
@@ -513,7 +682,12 @@ impl Server {
         for c in changes {
             match c {
                 Change::Create { id, .. } => {
-                    props.entry(*id).or_default().extend(Prop::FIELDS.iter().copied().chain([Prop::Parent, Prop::Position]));
+                    props.entry(*id).or_default().extend(
+                        Prop::FIELDS
+                            .iter()
+                            .copied()
+                            .chain([Prop::Parent, Prop::Position]),
+                    );
                 }
                 Change::Set { id, prop, .. } => {
                     props.entry(*id).or_default().insert(*prop);
@@ -580,16 +754,25 @@ pub fn weight(changes: &[Change]) -> usize {
         match v {
             serde_json::Value::String(s) => s.len() + 2,
             serde_json::Value::Array(a) => a.iter().map(json).fold(2, usize::saturating_add),
-            serde_json::Value::Object(o) => o.iter().map(|(k, v)| k.len() + 3 + json(v)).fold(2, usize::saturating_add),
+            serde_json::Value::Object(o) => o
+                .iter()
+                .map(|(k, v)| k.len() + 3 + json(v))
+                .fold(2, usize::saturating_add),
             _ => 8,
         }
     }
     changes
         .iter()
         .map(|c| match c {
-            Change::Create { kind, position, props, .. } => {
-                props.iter().map(|(_, v)| 16 + json(&v.0)).fold(64 + json(&kind.0) + position.len(), usize::saturating_add)
-            }
+            Change::Create {
+                kind,
+                position,
+                props,
+                ..
+            } => props
+                .iter()
+                .map(|(_, v)| 16 + json(&v.0))
+                .fold(64 + json(&kind.0) + position.len(), usize::saturating_add),
             Change::Set { value, .. } | Change::SetDoc { value, .. } => 32 + json(&value.0),
             Change::Put { value, .. } => 64 + json(&value.0),
             Change::Delete { .. } => 16,

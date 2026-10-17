@@ -128,7 +128,10 @@ pub fn find_closest_match(
         let normalized_candidate = normalize_text(candidate);
         let score = similarity_score(&normalized_query, &normalized_candidate);
         if score >= threshold && best.as_ref().is_none_or(|current| score > current.score) {
-            best = Some(ClosestMatch { value: (*candidate).to_owned(), score });
+            best = Some(ClosestMatch {
+                value: (*candidate).to_owned(),
+                score,
+            });
         }
     }
     best
@@ -204,29 +207,50 @@ pub fn highlight_matches(text: &str, query: &str) -> Vec<HighlightPart> {
     let (normalized_text, offsets) = normalized_with_offsets(text);
     let normalized_query = normalize_text(query);
     if normalized_query.is_empty() {
-        return vec![HighlightPart { text: text.to_owned(), highlighted: false }];
+        return vec![HighlightPart {
+            text: text.to_owned(),
+            highlighted: false,
+        }];
     }
 
     let Some(normalized_start) = normalized_text.find(&normalized_query) else {
-        return vec![HighlightPart { text: text.to_owned(), highlighted: false }];
+        return vec![HighlightPart {
+            text: text.to_owned(),
+            highlighted: false,
+        }];
     };
     let start_char = normalized_text[..normalized_start].chars().count();
     let matched_char_count = normalized_query.chars().count();
     let end_char = start_char + matched_char_count;
     let Some((start, _)) = offsets.get(start_char).copied() else {
-        return vec![HighlightPart { text: text.to_owned(), highlighted: false }];
+        return vec![HighlightPart {
+            text: text.to_owned(),
+            highlighted: false,
+        }];
     };
     let Some((_, end)) = offsets.get(end_char.saturating_sub(1)).copied() else {
-        return vec![HighlightPart { text: text.to_owned(), highlighted: false }];
+        return vec![HighlightPart {
+            text: text.to_owned(),
+            highlighted: false,
+        }];
     };
 
     let mut parts = Vec::with_capacity(3);
     if start > 0 {
-        parts.push(HighlightPart { text: text[..start].to_owned(), highlighted: false });
+        parts.push(HighlightPart {
+            text: text[..start].to_owned(),
+            highlighted: false,
+        });
     }
-    parts.push(HighlightPart { text: text[start..end].to_owned(), highlighted: true });
+    parts.push(HighlightPart {
+        text: text[start..end].to_owned(),
+        highlighted: true,
+    });
     if end < text.len() {
-        parts.push(HighlightPart { text: text[end..].to_owned(), highlighted: false });
+        parts.push(HighlightPart {
+            text: text[end..].to_owned(),
+            highlighted: false,
+        });
     }
     parts
 }
@@ -288,7 +312,10 @@ mod tests {
 
     #[test]
     fn normalizes_accents_case_and_outer_whitespace() {
-        assert_eq!(normalize_text("  L'Étoffe des Héros  "), "l'etoffe des heros");
+        assert_eq!(
+            normalize_text("  L'Étoffe des Héros  "),
+            "l'etoffe des heros"
+        );
         assert_eq!(normalize_text("カタカナ"), "カタカナ");
     }
 
@@ -315,8 +342,14 @@ mod tests {
             english: Some("Dragon Shot"),
             japanese: Some("ドラゴンショット"),
         };
-        assert_eq!(detect_matched_language("dragon shot", names), Some(MatchedLanguage::English));
-        assert_eq!(detect_matched_language("Tir du Dragn", names), Some(MatchedLanguage::French));
+        assert_eq!(
+            detect_matched_language("dragon shot", names),
+            Some(MatchedLanguage::English)
+        );
+        assert_eq!(
+            detect_matched_language("Tir du Dragn", names),
+            Some(MatchedLanguage::French)
+        );
         assert_eq!(detect_matched_language("", names), None);
         assert_eq!(name_variations(names)[0], "tir du dragon");
     }
@@ -326,8 +359,14 @@ mod tests {
         assert_eq!(
             highlight_matches("L'Étoffe", "etoffe"),
             vec![
-                HighlightPart { text: "L'".to_owned(), highlighted: false },
-                HighlightPart { text: "Étoffe".to_owned(), highlighted: true },
+                HighlightPart {
+                    text: "L'".to_owned(),
+                    highlighted: false
+                },
+                HighlightPart {
+                    text: "Étoffe".to_owned(),
+                    highlighted: true
+                },
             ]
         );
         assert!(!highlight_matches("Dragon", "xyz")[0].highlighted);

@@ -90,10 +90,13 @@ impl W {
 
 /// A widget showing `label` with the clickable parts `targets` (a rectangle, then ellipses).
 fn look(n: i64, label: &str, targets: &[&str]) -> Value {
-    let mut children = vec![json!({"type": "text", "name": "Label", "text": label, "size": 12, "color": "#111111"})];
+    let mut children = vec![
+        json!({"type": "text", "name": "Label", "text": label, "size": 12, "color": "#111111"}),
+    ];
     for (i, t) in targets.iter().enumerate() {
         let kind = if i == 0 { "rectangle" } else { "ellipse" };
-        children.push(json!({"type": kind, "target": t, "width": 20, "height": 20, "fill": "#0D99FF"}));
+        children
+            .push(json!({"type": kind, "target": t, "width": 20, "height": 20, "fill": "#0D99FF"}));
     }
     json!({"state": {"n": n}, "root": {"type": "frame", "name": "Tally", "layout": "horizontal", "gap": 8, "padding": 10, "fill": "#FFFFFF", "children": children}})
 }
@@ -104,7 +107,11 @@ fn tally(extra: impl FnOnce(&mut W) -> String) -> Vec<u8> {
     let mut w = W::default();
     let pre = extra(&mut w);
     let (inc, dec) = (w.has(r#""target":"inc""#), w.has(r#""target":"dec""#));
-    let (two, zero, one) = (w.render(&look(2, "two", &["inc", "dec"])), w.render(&look(0, "zero", &["inc"])), w.render(&look(1, "one", &["inc"])));
+    let (two, zero, one) = (
+        w.render(&look(2, "two", &["inc", "dec"])),
+        w.render(&look(0, "zero", &["inc"])),
+        w.render(&look(1, "one", &["inc"])),
+    );
     w.build(&format!("{pre} (if {inc} (then {two} (return (i32.const 0)))) (if {dec} (then {zero} (return (i32.const 0)))) {one}"))
 }
 
@@ -115,12 +122,20 @@ fn widget_manifest(id: &str, access: &str) -> Value {
 /// A session with the tally widget plugin installed (read access).
 pub(crate) fn session() -> Session {
     let mut s = Session::new();
-    install(&mut s, widget_manifest("org.test.tally", "read"), &tally(|_| String::new()));
+    install(
+        &mut s,
+        widget_manifest("org.test.tally", "read"),
+        &tally(|_| String::new()),
+    );
     s
 }
 
 pub(crate) fn insert(s: &mut Session) -> (NodeId, Value) {
-    let r = ex(s, "widget.insert", json!({"plugin": "org.test.tally", "x": 50, "y": 60}));
+    let r = ex(
+        s,
+        "widget.insert",
+        json!({"plugin": "org.test.tally", "x": 50, "y": 60}),
+    );
     (idv(&r), r)
 }
 
@@ -130,7 +145,13 @@ fn click(s: &mut Session, w: NodeId, target: &str) -> Value {
 
 fn state(s: &mut Session, w: NodeId) -> Value {
     let list = ex(s, "widget.list", json!({}));
-    list["widgets"].as_array().unwrap().iter().find(|x| x["id"] == json!(w)).map(|x| x["state"].clone()).unwrap_or(Value::Null)
+    list["widgets"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|x| x["id"] == json!(w))
+        .map(|x| x["state"].clone())
+        .unwrap_or(Value::Null)
 }
 
 /// The text of widget `w`'s first layer.
@@ -153,37 +174,75 @@ fn err(s: &mut Session, cmd: &str, p: Value) -> String {
 fn a_widget_is_inserted_and_clicked_as_one_undo_step_each() {
     let mut s = session();
     let (w, r) = insert(&mut s);
-    assert_eq!((r["state"].clone(), r["targets"].clone()), (json!({"n": 1}), json!(["inc"])));
+    assert_eq!(
+        (r["state"].clone(), r["targets"].clone()),
+        (json!({"n": 1}), json!(["inc"]))
+    );
     let input = &r["output"];
-    assert_eq!((input["api"].clone(), input["command"].clone()), (json!(3), json!("widget")));
-    assert_eq!(input["widget"], json!({"id": w, "state": {}, "event": null}), "a new widget starts with no state");
+    assert_eq!(
+        (input["api"].clone(), input["command"].clone()),
+        (json!(3), json!("widget"))
+    );
+    assert_eq!(
+        input["widget"],
+        json!({"id": w, "state": {}, "event": null}),
+        "a new widget starts with no state"
+    );
     assert_eq!(undo_len(&s), 1);
     assert_eq!(s.selection(), vec![w]);
     let n = node(&s, w);
     assert!(n.layout.is_some() && !n.locked && n.children.len() == 2);
     let at = n.transform.translation();
-    assert!((at.x - 50.0).abs() < 1e-9 && (at.y - 60.0).abs() < 1e-9, "{at:?}");
-    assert!(n.children.iter().all(|c| node(&s, *c).locked), "the layers inside are locked");
+    assert!(
+        (at.x - 50.0).abs() < 1e-9 && (at.y - 60.0).abs() < 1e-9,
+        "{at:?}"
+    );
+    assert!(
+        n.children.iter().all(|c| node(&s, *c).locked),
+        "the layers inside are locked"
+    );
     assert_eq!(label(&s, w), "one");
     // A click on a layer inside reaches its widget, with the state and the target.
     let c = click(&mut s, n.children[1], "inc");
     assert_eq!(c["id"], json!(w));
     assert_eq!(c["output"]["widget"]["state"], json!({"n": 1}));
     assert_eq!(c["output"]["widget"]["event"], json!({"target": "inc"}));
-    assert_eq!((c["state"].clone(), c["targets"].clone()), (json!({"n": 2}), json!(["inc", "dec"])));
-    assert_eq!((label(&s, w), node(&s, w).children.len(), undo_len(&s)), ("two".into(), 3, 2));
+    assert_eq!(
+        (c["state"].clone(), c["targets"].clone()),
+        (json!({"n": 2}), json!(["inc", "dec"]))
+    );
+    assert_eq!(
+        (label(&s, w), node(&s, w).children.len(), undo_len(&s)),
+        ("two".into(), 3, 2)
+    );
     ex(&mut s, "edit.undo", json!({}));
-    assert_eq!((state(&mut s, w), label(&s, w)), (json!({"n": 1}), "one".into()));
+    assert_eq!(
+        (state(&mut s, w), label(&s, w)),
+        (json!({"n": 1}), "one".into())
+    );
     ex(&mut s, "edit.redo", json!({}));
-    assert_eq!((state(&mut s, w), label(&s, w)), (json!({"n": 2}), "two".into()));
+    assert_eq!(
+        (state(&mut s, w), label(&s, w)),
+        (json!({"n": 2}), "two".into())
+    );
     ex(&mut s, "edit.undo", json!({}));
     ex(&mut s, "edit.undo", json!({}));
-    assert!(s.doc().unwrap().node(w).is_none(), "undoing the insert removes the widget");
+    assert!(
+        s.doc().unwrap().node(w).is_none(),
+        "undoing the insert removes the widget"
+    );
     // Without a position it's centred in the view.
     let (cx, cy) = (s.ds().unwrap().view.cx, s.ds().unwrap().view.cy);
-    let w = idv(&ex(&mut s, "widget.insert", json!({"plugin": "org.test.tally"})));
+    let w = idv(&ex(
+        &mut s,
+        "widget.insert",
+        json!({"plugin": "org.test.tally"}),
+    ));
     let b = s.doc().unwrap().world_bounds(w).unwrap();
-    assert!((b.center().x - cx).abs() <= 1.0 && (b.center().y - cy).abs() <= 1.0, "{b:?} vs {cx},{cy}");
+    assert!(
+        (b.center().x - cx).abs() <= 1.0 && (b.center().y - cy).abs() <= 1.0,
+        "{b:?} vs {cx},{cy}"
+    );
 }
 
 #[test]
@@ -195,8 +254,16 @@ fn widgets_survive_save_reload_duplicating_and_export() {
     let (back, _) = figcraft_format::load_bytes(&bytes).unwrap();
     let mut t = session();
     t.ds_mut().unwrap().doc = std::sync::Arc::new(back);
-    assert_eq!(state(&mut t, w), json!({"n": 2}), "the state is saved with the file");
-    assert_eq!(click(&mut t, w, "dec")["state"], json!({"n": 0}), "and the reloaded widget still works");
+    assert_eq!(
+        state(&mut t, w),
+        json!({"n": 2}),
+        "the state is saved with the file"
+    );
+    assert_eq!(
+        click(&mut t, w, "dec")["state"],
+        json!({"n": 0}),
+        "and the reloaded widget still works"
+    );
     // A duplicate is a widget of its own, with the same state to start with.
     s.execute("select.set", &json!({"ids": [w]})).unwrap();
     ex(&mut s, "edit.duplicate", json!({}));
@@ -204,10 +271,25 @@ fn widgets_survive_save_reload_duplicating_and_export() {
     assert_ne!(copy, w);
     assert_eq!(state(&mut s, copy), json!({"n": 2}));
     click(&mut s, copy, "dec");
-    assert_eq!((state(&mut s, copy), state(&mut s, w)), (json!({"n": 0}), json!({"n": 2})));
-    assert_eq!(ex(&mut s, "widget.list", json!({}))["widgets"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        (state(&mut s, copy), state(&mut s, w)),
+        (json!({"n": 0}), json!({"n": 2}))
+    );
+    assert_eq!(
+        ex(&mut s, "widget.list", json!({}))["widgets"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
     // Exports draw the layers it's made of.
-    let svg = crate::cmd::file::export_bytes(s.doc().unwrap(), &[w], figcraft_doc::ExportFormat::Svg, 1.0).unwrap();
+    let svg = crate::cmd::file::export_bytes(
+        s.doc().unwrap(),
+        &[w],
+        figcraft_doc::ExportFormat::Svg,
+        1.0,
+    )
+    .unwrap();
     let svg = String::from_utf8(svg).unwrap().to_ascii_lowercase();
     assert!(svg.contains("<svg") && svg.contains("0d99ff"), "{svg}");
 }
@@ -226,18 +308,27 @@ fn clicking_a_widget_on_the_canvas_calls_its_plugin_back() {
     assert_eq!(s.tool.overlay.cursor, Cursor::Default);
     s.pointer(&at(PointerKind::Down, text)).unwrap();
     s.pointer(&at(PointerKind::Up, text)).unwrap();
-    assert_eq!((s.selection(), state(&mut s, w)), (vec![w], json!({"n": 1})));
+    assert_eq!(
+        (s.selection(), state(&mut s, w)),
+        (vec![w], json!({"n": 1}))
+    );
     // Over a target: a pointing hand, and a click calls back (one undo step).
     s.pointer(&at(PointerKind::Move, target)).unwrap();
     assert_eq!(s.tool.overlay.cursor, Cursor::Pointer);
     let undo = undo_len(&s);
     s.pointer(&at(PointerKind::Down, target)).unwrap();
     s.pointer(&at(PointerKind::Up, target)).unwrap();
-    assert_eq!((state(&mut s, w), undo_len(&s)), (json!({"n": 2}), undo + 1));
+    assert_eq!(
+        (state(&mut s, w), undo_len(&s)),
+        (json!({"n": 2}), undo + 1)
+    );
     // A quick second click (a double click) is a click too.
     s.pointer(&at(PointerKind::Down, target)).unwrap();
     s.pointer(&at(PointerKind::DoubleClick, target)).unwrap();
-    assert_eq!((undo_len(&s), s.ds().unwrap().interaction.is_none()), (undo + 2, true));
+    assert_eq!(
+        (undo_len(&s), s.ds().unwrap().interaction.is_none()),
+        (undo + 2, true)
+    );
     // Dragging by a target moves the widget instead.
     let before = node(&s, w).transform.translation();
     let to = Point::new(target.x + 40.0, target.y + 30.0);
@@ -245,7 +336,10 @@ fn clicking_a_widget_on_the_canvas_calls_its_plugin_back() {
     s.pointer(&at(PointerKind::Move, to)).unwrap();
     s.pointer(&at(PointerKind::Up, to)).unwrap();
     let after = node(&s, w).transform.translation();
-    assert!(after.x - before.x > 30.0 && state(&mut s, w) == json!({"n": 2}), "{before:?} → {after:?}");
+    assert!(
+        after.x - before.x > 30.0 && state(&mut s, w) == json!({"n": 2}),
+        "{before:?} → {after:?}"
+    );
 }
 
 #[test]
@@ -256,26 +350,61 @@ fn bad_widgets_and_clicks_are_refused_and_roll_back() {
     // A plugin that isn't a widget.
     let plain = json!({"id": "org.test.plain", "name": "Plain", "main": "p.wasm", "api": 2, "permissions": {"access": "write"}});
     install(&mut s, plain, &tally(|_| String::new()));
-    assert!(err(&mut s, "widget.insert", json!({"plugin": "org.test.plain"})).contains("doesn't draw a widget"));
+    assert!(
+        err(&mut s, "widget.insert", json!({"plugin": "org.test.plain"}))
+            .contains("doesn't draw a widget")
+    );
     // Junk, or nothing, drawn: refused, nothing left behind.
     let (layers, undo) = (layer_count(&s), undo_len(&s));
     let mut junk = W::default();
     let body = junk.render(&json!({"root": {"type": "text", "text": "not a frame"}}));
-    install(&mut s, widget_manifest("org.test.junk", "read"), &junk.build(&body));
-    assert!(err(&mut s, "widget.insert", json!({"plugin": "org.test.junk"})).contains("root must be a frame"));
-    install(&mut s, widget_manifest("org.test.blank", "read"), &W::default().build(""));
-    assert!(err(&mut s, "widget.insert", json!({"plugin": "org.test.blank"})).contains("drew no widget"));
+    install(
+        &mut s,
+        widget_manifest("org.test.junk", "read"),
+        &junk.build(&body),
+    );
+    assert!(
+        err(&mut s, "widget.insert", json!({"plugin": "org.test.junk"}))
+            .contains("root must be a frame")
+    );
+    install(
+        &mut s,
+        widget_manifest("org.test.blank", "read"),
+        &W::default().build(""),
+    );
+    assert!(
+        err(&mut s, "widget.insert", json!({"plugin": "org.test.blank"}))
+            .contains("drew no widget")
+    );
     assert_eq!((layer_count(&s), undo_len(&s)), (layers, undo));
     // Clicks on what isn't a widget, or on what it doesn't have.
     let (w, _) = insert(&mut s);
-    assert!(err(&mut s, "widget.click", json!({"id": r, "target": "inc"})).contains("isn't a widget"));
-    assert!(err(&mut s, "widget.click", json!({"id": w, "target": "nope"})).contains("it has: inc"));
+    assert!(
+        err(&mut s, "widget.click", json!({"id": r, "target": "inc"})).contains("isn't a widget")
+    );
+    assert!(
+        err(&mut s, "widget.click", json!({"id": w, "target": "nope"})).contains("it has: inc")
+    );
     assert!(err(&mut s, "widget.click", json!({"id": w})).contains("`target` required"));
     // A runaway callback runs out of fuel and is rolled back.
-    install(&mut s, widget_manifest("org.test.tally", "read"), &tally(|_| "(loop $l (br $l))".into()));
+    install(
+        &mut s,
+        widget_manifest("org.test.tally", "read"),
+        &tally(|_| "(loop $l (br $l))".into()),
+    );
     let undo = undo_len(&s);
-    assert!(err(&mut s, "widget.click", json!({"id": w, "target": "inc", "fuel": 100000})).contains("instruction budget"));
-    assert_eq!((state(&mut s, w), undo_len(&s), label(&s, w)), (json!({"n": 1}), undo, "one".into()));
+    assert!(
+        err(
+            &mut s,
+            "widget.click",
+            json!({"id": w, "target": "inc", "fuel": 100000})
+        )
+        .contains("instruction budget")
+    );
+    assert_eq!(
+        (state(&mut s, w), undo_len(&s), label(&s, w)),
+        (json!({"n": 1}), undo, "one".into())
+    );
     // Without its plugin a widget stays as it is, and says so when clicked.
     ex(&mut s, "plugin.remove", json!({"id": "org.test.tally"}));
     assert!(err(&mut s, "widget.click", json!({"id": w, "target": "inc"})).contains("no plugin"));
@@ -308,8 +437,15 @@ fn plugins_cant_forge_widgets_or_call_widget_commands() {
     assert!(!node(&s, r).plugin_data.contains_key("figcraft.widget"));
     // Text that merely mentions the keys is fine.
     let mut b = W::default();
-    let body = b.call("text.create", &json!({"text": "figcraft.widget", "props": {"pluginData": {"note": "figcraft.widget"}}}));
-    install(&mut s, json!({"id": "org.test.text", "name": "Text", "main": "t.wasm", "permissions": {"access": "write"}}), &b.build(&body));
+    let body = b.call(
+        "text.create",
+        &json!({"text": "figcraft.widget", "props": {"pluginData": {"note": "figcraft.widget"}}}),
+    );
+    install(
+        &mut s,
+        json!({"id": "org.test.text", "name": "Text", "main": "t.wasm", "permissions": {"access": "write"}}),
+        &b.build(&body),
+    );
     let layers = layer_count(&s);
     ex(&mut s, "plugin.run", json!({"id": "org.test.text"}));
     assert_eq!(layer_count(&s), layers + 1);
@@ -319,7 +455,12 @@ fn plugins_cant_forge_widgets_or_call_widget_commands() {
     install(
         &mut s,
         widget_manifest("org.test.tally", "write"),
-        &tally(|b| b.call("shape.rectangle", &json!({"x": 300, "y": 0, "width": 5, "height": 5}))),
+        &tally(|b| {
+            b.call(
+                "shape.rectangle",
+                &json!({"x": 300, "y": 0, "width": 5, "height": 5}),
+            )
+        }),
     );
     let (w, _) = insert(&mut s);
     let (layers, undo) = (layer_count(&s), undo_len(&s));
@@ -331,7 +472,11 @@ fn plugins_cant_forge_widgets_or_call_widget_commands() {
 fn widget_state_syncs_in_a_live_session() {
     use crate::live_tests::{push, relay, serve_as, session as live};
     let (mut s, script) = live();
-    install(&mut s, widget_manifest("org.test.tally", "read"), &tally(|_| String::new()));
+    install(
+        &mut s,
+        widget_manifest("org.test.tally", "read"),
+        &tally(|_| String::new()),
+    );
     s.execute("collab.host", &json!({})).unwrap();
     let (mut server, me, welcome) = serve_as(s.doc().unwrap(), crate::live::Access::Edit);
     push(&script, vec![welcome]);
@@ -343,6 +488,16 @@ fn widget_state_syncs_in_a_live_session() {
     push(&script, back);
     s.live_poll();
     let theirs = server.document().node(w).unwrap();
-    assert_eq!(theirs.plugin_data.get("figcraft.widget.state").map(String::as_str), Some(r#"{"n":2}"#));
-    assert_eq!(theirs.children.len(), 3, "the redrawn layers reached the server");
+    assert_eq!(
+        theirs
+            .plugin_data
+            .get("figcraft.widget.state")
+            .map(String::as_str),
+        Some(r#"{"n":2}"#)
+    );
+    assert_eq!(
+        theirs.children.len(),
+        3,
+        "the redrawn layers reached the server"
+    );
 }

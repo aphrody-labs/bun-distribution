@@ -30,15 +30,24 @@ fn original_dol_executes_through_broadway_and_scheduler() {
 
 #[test]
 fn malformed_header_is_rejected_before_console_creation() {
-    assert!(matches!(Wii::with_dol(&[0; 16]), Err(DolError::TruncatedHeader)));
+    assert!(matches!(
+        Wii::with_dol(&[0; 16]),
+        Err(DolError::TruncatedHeader)
+    ));
 }
 
 #[test]
 fn unmapped_section_and_entry_are_rejected() {
     let mut bytes = fixture();
     bytes[0x48..0x4c].copy_from_slice(&0x8180_0000_u32.to_be_bytes());
-    assert!(matches!(Wii::with_dol(&bytes), Err(DolError::OutsideMemory)));
+    assert!(matches!(
+        Wii::with_dol(&bytes),
+        Err(DolError::OutsideMemory)
+    ));
     let mut bytes = fixture();
     bytes[0xe0..0xe4].copy_from_slice(&0x8000_5000_u32.to_be_bytes());
-    assert!(matches!(Wii::with_dol(&bytes), Err(DolError::OutsideMemory)));
+    assert!(matches!(
+        Wii::with_dol(&bytes),
+        Err(DolError::OutsideMemory)
+    ));
 }

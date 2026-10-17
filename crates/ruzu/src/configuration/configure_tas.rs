@@ -36,7 +36,11 @@ pub fn present(parent: &gtk::Window) {
     let path = common::fs::path_util::get_ruzu_path_string(common::fs::path_util::RuzuPath::TASDir);
     let (path_row, path_entry, browse) = super::shared_widget::path_row("Path", &path);
     browse.set_label("...");
-    for (title, child) in [("TAS", &information), ("Settings", &settings), ("Script Directory", &path_row)] {
+    for (title, child) in [
+        ("TAS", &information),
+        ("Settings", &settings),
+        ("Script Directory", &path_row),
+    ] {
         let frame = gtk::Frame::new(Some(&crate::i18n::tr(title)));
         child.set_margin_top(10);
         child.set_margin_bottom(10);
@@ -78,7 +82,8 @@ pub fn present(parent: &gtk::Window) {
                 Some(&crate::i18n::tr("Cancel")),
             );
             chooser.set_modal(true);
-            let _ = chooser.set_current_folder(Some(&gtk::gio::File::for_path(path_entry.text().as_str())));
+            let _ = chooser
+                .set_current_folder(Some(&gtk::gio::File::for_path(path_entry.text().as_str())));
             let keep_alive = chooser.clone();
             chooser.run_async(move |chooser, response| {
                 if response == gtk::ResponseType::Accept {
@@ -125,7 +130,9 @@ pub fn present(parent: &gtk::Window) {
             values
                 .pause_tas_on_load
                 .set_value(pause_on_load.is_active());
-            values.tas_show_recording_dialog.set_value(show_recording_dialog.is_active());
+            values
+                .tas_show_recording_dialog
+                .set_value(show_recording_dialog.is_active());
             drop(values);
             if let Err(error) = super::qt_config::save_tas_values() {
                 log::error!("Failed to save TAS configuration: {error}");

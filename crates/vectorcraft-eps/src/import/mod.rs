@@ -96,8 +96,13 @@ struct Dsc {
 
 /// The four numbers of a bounding box comment's value, when it has them and they make a box.
 fn box_of(v: &str) -> Option<[f64; 4]> {
-    let n: Vec<f64> = v.split_whitespace().map_while(|w| w.parse::<f64>().ok()).collect();
-    let [x0, y0, x1, y1] = n.as_slice() else { return None };
+    let n: Vec<f64> = v
+        .split_whitespace()
+        .map_while(|w| w.parse::<f64>().ok())
+        .collect();
+    let [x0, y0, x1, y1] = n.as_slice() else {
+        return None;
+    };
     let b = [*x0, *y0, *x1, *y1];
     (b.iter().all(|v| v.is_finite() && v.abs() <= MAX_SIDE) && x1 > x0 && y1 > y0).then_some(b)
 }
@@ -108,7 +113,10 @@ impl Dsc {
         let mut d = Dsc::default();
         let (mut bbox, mut hires, mut atend) = (None, None, false);
         let mut header = true;
-        for raw in ps.split(|b| matches!(b, b'\n' | b'\r')).filter(|l| !l.is_empty()) {
+        for raw in ps
+            .split(|b| matches!(b, b'\n' | b'\r'))
+            .filter(|l| !l.is_empty())
+        {
             // Past the header only comments can matter.
             if !header && !raw.starts_with(b"%%") {
                 continue;
@@ -151,9 +159,13 @@ impl Dsc {
 /// operator that raised it and the procedure it ran in (`fault`).
 fn reason(e: &PsError, fault: Option<&Fault>) -> String {
     let what = match e {
-        PsError::Ps("undefined", at) => format!("it uses `{at}`, which VectorCraft's PostScript reader doesn't know"),
+        PsError::Ps("undefined", at) => {
+            format!("it uses `{at}`, which VectorCraft's PostScript reader doesn't know")
+        }
         PsError::Ps(name, at) => match fault.and_then(|f| f.op) {
-            Some(op) if at.is_empty() || at == op => format!("a PostScript error ({name} in `{op}`)"),
+            Some(op) if at.is_empty() || at == op => {
+                format!("a PostScript error ({name} in `{op}`)")
+            }
             Some(op) => format!("a PostScript error ({name} in `{op}`: {at})"),
             None if at.is_empty() => format!("a PostScript error ({name})"),
             None => format!("a PostScript error ({name} in `{at}`)"),
@@ -180,7 +192,8 @@ pub fn import(bytes: &[u8]) -> Result<Imported, String> {
 /// [`import`], an Illustrator EPS through the editing copy of its art only when `editing_data`
 /// (else what its page prints, as any EPS).
 pub fn import_with(bytes: &[u8], editing_data: bool) -> Result<Imported, String> {
-    let (ps, _) = crate::sections(bytes).ok_or("the file's preview header points outside the file")?;
+    let (ps, _) =
+        crate::sections(bytes).ok_or("the file's preview header points outside the file")?;
     if !ps.starts_with(b"%!") {
         return Err("this is not a PostScript file".into());
     }
@@ -209,16 +222,32 @@ pub fn import_with(bytes: &[u8], editing_data: bool) -> Result<Imported, String>
     // A file in the legacy Illustrator format whose program can't be run (a `.ai` that names the
     // prolog defining its operators without including it): its layers, which the program has.
     let why = match editing_data.then(|| native::program_alone(ps)).flatten() {
-        Some(Ok((document, warnings))) => return Ok(Imported { document, warnings, preview: false }),
+        Some(Ok((document, warnings))) => {
+            return Ok(Imported {
+                document,
+                warnings,
+                preview: false,
+            });
+        }
         Some(Err(e)) => format!("{why}; its layers couldn't be read either ({e})"),
         None => why,
     };
     if let Some(p) = preview::preview(bytes, ps, frame) {
-        let warnings = vec![format!("this file's PostScript couldn't be read ({why}): {}", p.what)];
-        return Ok(Imported { document: p.document, warnings, preview: true });
+        let warnings = vec![format!(
+            "this file's PostScript couldn't be read ({why}): {}",
+            p.what
+        )];
+        return Ok(Imported {
+            document: p.document,
+            warnings,
+            preview: true,
+        });
     }
     if drew {
-        out.warnings.insert(0, format!("the file was read up to an error ({why}): what follows it was left out"));
+        out.warnings.insert(
+            0,
+            format!("the file was read up to an error ({why}): what follows it was left out"),
+        );
         return Ok(finish(out));
     }
     match result {
@@ -226,7 +255,9 @@ pub fn import_with(bytes: &[u8], editing_data: bool) -> Result<Imported, String>
             out.warn("the file draws nothing");
             Ok(finish(out))
         }
-        Err(_) => Err(format!("this PostScript file can't be read ({why}): save it as PDF or SVG in the app that made it")),
+        Err(_) => Err(format!(
+            "this PostScript file can't be read ({why}): save it as PDF or SVG in the app that made it"
+        )),
     }
 }
 
@@ -255,18 +286,44 @@ fn finish_with(out: Out, layers: Vec<Arc<Node>>) -> Imported {
         (doc.swatches, doc.swatch_groups) = (swatches.into(), groups.into());
     }
     // `taken` holds the names `Document::swatch` finds: each swatch's name, and Registration.
-    let mut taken: HashSet<String> = doc.swatches_iter().map(|s| s.name.clone()).chain([REGISTRATION.to_string()]).collect();
+    let mut taken: HashSet<String> = doc
+        .swatches_iter()
+        .map(|s| s.name.clone())
+        .chain([REGISTRATION.to_string()])
+        .collect();
     for (name, color) in out.spots {
         if taken.insert(name.clone()) {
-            doc.swatches.push(Swatch { name, paint: Paint::solid(color), global: true, spot: true });
+            doc.swatches.push(Swatch {
+                name,
+                paint: Paint::solid(color),
+                global: true,
+                spot: true,
+            });
         }
     }
     // Tiling patterns are pattern swatches.
-    for name in doc.patterns.iter().map(|p| p.name.clone()).collect::<Vec<_>>() {
+    for name in doc
+        .patterns
+        .iter()
+        .map(|p| p.name.clone())
+        .collect::<Vec<_>>()
+    {
         if taken.insert(name.clone()) {
-            doc.swatches.push(Swatch { paint: Paint::Pattern { pattern: name.clone(), xf: Affine::IDENTITY }, name, global: false, spot: false });
+            doc.swatches.push(Swatch {
+                paint: Paint::Pattern {
+                    pattern: name.clone(),
+                    xf: Affine::IDENTITY,
+                },
+                name,
+                global: false,
+                spot: false,
+            });
         }
     }
     doc.layers = layers;
-    Imported { document: doc, warnings: out.warnings, preview: false }
+    Imported {
+        document: doc,
+        warnings: out.warnings,
+        preview: false,
+    }
 }

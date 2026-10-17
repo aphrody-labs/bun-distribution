@@ -35,12 +35,19 @@ struct Colors {
 
 impl Colors {
     fn new(file: &File, sh: &Dict) -> (Colors, usize) {
-        let cs = file.get(sh, "ColorSpace").map(|c| color_space(file, c, None)).unwrap_or(Cs::Rgb);
+        let cs = file
+            .get(sh, "ColorSpace")
+            .map(|c| color_space(file, c, None))
+            .unwrap_or(Cs::Rgb);
         let n = cs.components().max(1);
         match file.get(sh, "Function") {
             Some(fo) => {
                 let func = Func::read(file, fo);
-                let dom = file.get(sh, "Domain").map(|d| file.nums(d)).filter(|d| d.len() == 2).unwrap_or_else(|| vec![0.0, 1.0]);
+                let dom = file
+                    .get(sh, "Domain")
+                    .map(|d| file.nums(d))
+                    .filter(|d| d.len() == 2)
+                    .unwrap_or_else(|| vec![0.0, 1.0]);
                 let (t0, t1) = (dom[0], dom[1]);
                 let lut = (0..1024)
                     .map(|i| {
@@ -48,7 +55,13 @@ impl Colors {
                         to8(cs.to_rgb(&func.eval(&[t])))
                     })
                     .collect();
-                (Colors { cs, lut: Some((t0, t1, lut)) }, 1)
+                (
+                    Colors {
+                        cs,
+                        lut: Some((t0, t1, lut)),
+                    },
+                    1,
+                )
             }
             None => (Colors { cs, lut: None }, n),
         }
@@ -66,8 +79,16 @@ impl Colors {
     fn rgb(&self, v: [f64; 3]) -> [u8; 3] {
         match &self.lut {
             Some((t0, t1, lut)) => {
-                let k = if t1 != t0 { (v[0] - t0) / (t1 - t0) } else { 0.0 };
-                let k = if k.is_finite() { k.clamp(0.0, 1.0) } else { 0.0 };
+                let k = if t1 != t0 {
+                    (v[0] - t0) / (t1 - t0)
+                } else {
+                    0.0
+                };
+                let k = if k.is_finite() {
+                    k.clamp(0.0, 1.0)
+                } else {
+                    0.0
+                };
                 lut[(k * 1023.0).round() as usize]
             }
             None => to8(v),
@@ -123,12 +144,21 @@ impl Layout {
         let bpc = file.get_num(sh, "BitsPerCoordinate")? as usize;
         let bpcomp = file.get_num(sh, "BitsPerComponent")? as usize;
         let bpf = file.get_num(sh, "BitsPerFlag").unwrap_or(8.0) as usize;
-        let decode = file.get(sh, "Decode").map(|d| file.nums(d)).unwrap_or_default();
+        let decode = file
+            .get(sh, "Decode")
+            .map(|d| file.nums(d))
+            .unwrap_or_default();
         let ok = |b: usize| matches!(b, 1 | 2 | 4 | 8 | 12 | 16 | 24 | 32);
         if !ok(bpc) || !ok(bpcomp) || !matches!(bpf, 2 | 4 | 8) || decode.len() < 4 + 2 * n {
             return None;
         }
-        Some(Layout { bpc, bpcomp, bpf, n, decode })
+        Some(Layout {
+            bpc,
+            bpcomp,
+            bpf,
+            n,
+            decode,
+        })
     }
 
     fn scale(raw: u64, bits: usize, lo: f64, hi: f64) -> f64 {
@@ -140,14 +170,22 @@ impl Layout {
         let x = r.read(self.bpc)?;
         let y = r.read(self.bpc)?;
         let d = &self.decode;
-        Some(Point::new(Self::scale(x, self.bpc, d[0], d[1]), Self::scale(y, self.bpc, d[2], d[3])))
+        Some(Point::new(
+            Self::scale(x, self.bpc, d[0], d[1]),
+            Self::scale(y, self.bpc, d[2], d[3]),
+        ))
     }
 
     fn comps(&self, r: &mut Bits) -> Option<Vec<f64>> {
         (0..self.n)
             .map(|i| {
                 let v = r.read(self.bpcomp)?;
-                Some(Self::scale(v, self.bpcomp, self.decode[4 + 2 * i], self.decode[5 + 2 * i]))
+                Some(Self::scale(
+                    v,
+                    self.bpcomp,
+                    self.decode[4 + 2 * i],
+                    self.decode[5 + 2 * i],
+                ))
             })
             .collect()
     }
@@ -156,7 +194,13 @@ impl Layout {
 /// A shading rasterised into an image node in page space, for `sh` or a shading-pattern fill.
 /// `sh` is the shading dictionary or stream, `to_page` maps shading space to page space and
 /// `page_box` limits the image (page space). `None` with a note in `skip` when nothing draws.
-pub(crate) fn shading_image(file: &File, sh: &Obj, to_page: Affine, page_box: [f64; 4], skip: &mut Vec<String>) -> Option<SvgImage> {
+pub(crate) fn shading_image(
+    file: &File,
+    sh: &Obj,
+    to_page: Affine,
+    page_box: [f64; 4],
+    skip: &mut Vec<String>,
+) -> Option<SvgImage> {
     let sh_obj = file.resolve(sh);
     let d = sh_obj.dict()?;
     let ty = file.get_num(d, "ShadingType").unwrap_or(0.0) as i32;
@@ -179,7 +223,10 @@ pub(crate) fn shading_image(file: &File, sh: &Obj, to_page: Affine, page_box: [f
                 skip.push(format!("shading type {ty} (layout)"));
                 return None;
             };
-            let mut r = Bits { data: &data, bit: 0 };
+            let mut r = Bits {
+                data: &data,
+                bit: 0,
+            };
             let tris = match ty {
                 4 => free_form(&mut r, &layout, &colors, to_page),
                 5 => {
@@ -210,9 +257,14 @@ fn free_form(r: &mut Bits, l: &Layout, colors: &Colors, m: Affine) -> Vec<[V; 3]
     let mut last: Option<[V; 3]> = None;
     while out.len() < MAX_TRIANGLES {
         let Some(flag) = r.read(l.bpf) else { break };
-        let (Some(p), Some(c)) = (l.point(r), l.comps(r)) else { break };
+        let (Some(p), Some(c)) = (l.point(r), l.comps(r)) else {
+            break;
+        };
         r.align();
-        let v = V { p: m * p, c: colors.value(&c) };
+        let v = V {
+            p: m * p,
+            c: colors.value(&c),
+        };
         // A triangle being started takes the next two vertices whatever their flags.
         if !pending.is_empty() || flag == 0 {
             pending.push(v);
@@ -241,7 +293,10 @@ fn lattice(r: &mut Bits, l: &Layout, colors: &Colors, m: Affine, per_row: usize)
     let mut row = vec![];
     while let (Some(p), Some(c)) = (l.point(r), l.comps(r)) {
         r.align();
-        row.push(V { p: m * p, c: colors.value(&c) });
+        row.push(V {
+            p: m * p,
+            c: colors.value(&c),
+        });
         if row.len() == per_row {
             rows.push(std::mem::take(&mut row));
             if rows.len() * per_row > MAX_TRIANGLES {
@@ -263,14 +318,24 @@ fn lattice(r: &mut Bits, l: &Layout, colors: &Colors, m: Affine, per_row: usize)
 fn bez(p: [Point; 4], t: f64) -> Point {
     let s = 1.0 - t;
     let (a, b, c, d) = (s * s * s, 3.0 * s * s * t, 3.0 * s * t * t, t * t * t);
-    Point::new(a * p[0].x + b * p[1].x + c * p[2].x + d * p[3].x, a * p[0].y + b * p[1].y + c * p[2].y + d * p[3].y)
+    Point::new(
+        a * p[0].x + b * p[1].x + c * p[2].x + d * p[3].x,
+        a * p[0].y + b * p[1].y + c * p[2].y + d * p[3].y,
+    )
 }
 
 /// Types 6 and 7: Coons and tensor-product patches. The 12 boundary points run around the
 /// patch from its first corner (`p00 p01 p02 p03 p13 p23 p33 p32 p31 p30 p20 p10`); tensor
 /// patches add `p11 p12 p22 p21`. Corner colours belong to `p00`, `p03`, `p33` and `p30`.
 /// Flags 1–3 reuse the previous patch's second, third or fourth side as the first.
-fn patches(r: &mut Bits, l: &Layout, colors: &Colors, m: Affine, tensor: bool, page_box: [f64; 4]) -> Vec<[V; 3]> {
+fn patches(
+    r: &mut Bits,
+    l: &Layout,
+    colors: &Colors,
+    m: Affine,
+    tensor: bool,
+    page_box: [f64; 4],
+) -> Vec<[V; 3]> {
     let mut out = vec![];
     let mut prev: Option<([Point; 12], [[f64; 3]; 4])> = None;
     while out.len() < MAX_TRIANGLES {
@@ -342,8 +407,17 @@ fn patches(r: &mut Bits, l: &Layout, colors: &Colors, m: Affine, tensor: bool, p
 }
 
 /// A patch → `n`×`n` cells of two triangles; `u` runs along `p00 → p03`, `v` along `p00 → p30`.
-fn tessellate(g: &[[Point; 4]; 4], tensor: bool, cs: [[f64; 3]; 4], page_box: [f64; 4], out: &mut Vec<[V; 3]>) {
-    let (mut lo, mut hi) = (Point::new(f64::MAX, f64::MAX), Point::new(f64::MIN, f64::MIN));
+fn tessellate(
+    g: &[[Point; 4]; 4],
+    tensor: bool,
+    cs: [[f64; 3]; 4],
+    page_box: [f64; 4],
+    out: &mut Vec<[V; 3]>,
+) {
+    let (mut lo, mut hi) = (
+        Point::new(f64::MAX, f64::MAX),
+        Point::new(f64::MIN, f64::MIN),
+    );
     for p in g.iter().flatten() {
         lo = Point::new(lo.x.min(p.x), lo.y.min(p.y));
         hi = Point::new(hi.x.max(p.x), hi.y.max(p.y));
@@ -355,7 +429,9 @@ fn tessellate(g: &[[Point; 4]; 4], tensor: bool, cs: [[f64; 3]; 4], page_box: [f
     if hi.x < page_box[0] || lo.x > page_box[2] || hi.y < page_box[1] || lo.y > page_box[3] {
         return;
     }
-    let size = (hi.x - lo.x).max(hi.y - lo.y).min(page_box[2] - page_box[0] + page_box[3] - page_box[1]);
+    let size = (hi.x - lo.x)
+        .max(hi.y - lo.y)
+        .min(page_box[2] - page_box[0] + page_box[3] - page_box[1]);
     let n = ((size * MAX_SCALE / 6.0).ceil() as usize).clamp(2, 48);
     let eval = |u: f64, v: f64| -> Point {
         if tensor {
@@ -367,7 +443,10 @@ fn tessellate(g: &[[Point; 4]; 4], tensor: bool, cs: [[f64; 3]; 4], page_box: [f
             let cl = bez([g[0][0], g[1][0], g[2][0], g[3][0]], v);
             let cr = bez([g[0][3], g[1][3], g[2][3], g[3][3]], v);
             let corner = |a: Point, w: f64| a.to_vec2() * w;
-            let s = cb.to_vec2() * (1.0 - v) + ct.to_vec2() * v + cl.to_vec2() * (1.0 - u) + cr.to_vec2() * u
+            let s = cb.to_vec2() * (1.0 - v)
+                + ct.to_vec2() * v
+                + cl.to_vec2() * (1.0 - u)
+                + cr.to_vec2() * u
                 - corner(g[0][0], (1.0 - u) * (1.0 - v))
                 - corner(g[0][3], u * (1.0 - v))
                 - corner(g[3][0], (1.0 - u) * v)
@@ -379,7 +458,10 @@ fn tessellate(g: &[[Point; 4]; 4], tensor: bool, cs: [[f64; 3]; 4], page_box: [f
         // c0 (0,0), c1 (1,0), c2 (1,1), c3 (0,1).
         let mut c = [0.0; 3];
         for (k, ck) in c.iter_mut().enumerate() {
-            *ck = cs[0][k] * (1.0 - u) * (1.0 - v) + cs[1][k] * u * (1.0 - v) + cs[2][k] * u * v + cs[3][k] * (1.0 - u) * v;
+            *ck = cs[0][k] * (1.0 - u) * (1.0 - v)
+                + cs[1][k] * u * (1.0 - v)
+                + cs[2][k] * u * v
+                + cs[3][k] * (1.0 - u) * v;
         }
         c
     };
@@ -387,7 +469,10 @@ fn tessellate(g: &[[Point; 4]; 4], tensor: bool, cs: [[f64; 3]; 4], page_box: [f
     for j in 0..=n {
         for i in 0..=n {
             let (u, v) = (i as f64 / n as f64, j as f64 / n as f64);
-            grid.push(V { p: eval(u, v), c: color(u, v) });
+            grid.push(V {
+                p: eval(u, v),
+                c: color(u, v),
+            });
         }
     }
     for j in 0..n {
@@ -434,7 +519,10 @@ fn image_node(rgba: Vec<u8>, w: usize, h: usize, o: Point, s: f64) -> SvgImage {
 /// Gouraud-shade the triangles (page space) into an image: 2×2 samples per pixel, later
 /// triangles over earlier ones.
 fn rasterize(tris: &[[V; 3]], colors: &Colors, page_box: [f64; 4]) -> Option<SvgImage> {
-    let (mut lo, mut hi) = (Point::new(f64::MAX, f64::MAX), Point::new(f64::MIN, f64::MIN));
+    let (mut lo, mut hi) = (
+        Point::new(f64::MAX, f64::MAX),
+        Point::new(f64::MIN, f64::MIN),
+    );
     for v in tris.iter().flatten() {
         if v.p.x.is_finite() && v.p.y.is_finite() {
             lo = Point::new(lo.x.min(v.p.x), lo.y.min(v.p.y));
@@ -453,10 +541,32 @@ fn rasterize(tris: &[[V; 3]], colors: &Colors, page_box: [f64; 4]) -> Option<Svg
         if area.abs() < 1e-12 || !area.is_finite() {
             continue;
         }
-        let bx0 = q.iter().map(|p| p.x).fold(f64::MAX, f64::min).floor().max(0.0) as usize;
-        let by0 = q.iter().map(|p| p.y).fold(f64::MAX, f64::min).floor().max(0.0) as usize;
-        let bx1 = (q.iter().map(|p| p.x).fold(f64::MIN, f64::max).ceil().max(0.0) as usize).min(sw);
-        let by1 = (q.iter().map(|p| p.y).fold(f64::MIN, f64::max).ceil().max(0.0) as usize).min(sh);
+        let bx0 = q
+            .iter()
+            .map(|p| p.x)
+            .fold(f64::MAX, f64::min)
+            .floor()
+            .max(0.0) as usize;
+        let by0 = q
+            .iter()
+            .map(|p| p.y)
+            .fold(f64::MAX, f64::min)
+            .floor()
+            .max(0.0) as usize;
+        let bx1 = (q
+            .iter()
+            .map(|p| p.x)
+            .fold(f64::MIN, f64::max)
+            .ceil()
+            .max(0.0) as usize)
+            .min(sw);
+        let by1 = (q
+            .iter()
+            .map(|p| p.y)
+            .fold(f64::MIN, f64::max)
+            .ceil()
+            .max(0.0) as usize)
+            .min(sh);
         let eps = 1e-9 * area.abs();
         for y in by0..by1 {
             for x in bx0..bx1 {
@@ -504,7 +614,13 @@ fn rasterize(tris: &[[V; 3]], colors: &Colors, page_box: [f64; 4]) -> Option<Svg
 }
 
 /// Type 1: `Function(x, y)` over `Domain` `[x0 x1 y0 y1]`, mapped by `Matrix`.
-fn function_shading(file: &File, d: &Dict, to_page: Affine, page_box: [f64; 4], skip: &mut Vec<String>) -> Option<SvgImage> {
+fn function_shading(
+    file: &File,
+    d: &Dict,
+    to_page: Affine,
+    page_box: [f64; 4],
+    skip: &mut Vec<String>,
+) -> Option<SvgImage> {
     let Some(fo) = file.get(d, "Function") else {
         skip.push("shading type 1 (no function)".into());
         return None;
@@ -514,16 +630,39 @@ fn function_shading(file: &File, d: &Dict, to_page: Affine, page_box: [f64; 4], 
         skip.push("shading function".into());
         return None;
     }
-    let cs = file.get(d, "ColorSpace").map(|c| color_space(file, c, None)).unwrap_or(Cs::Rgb);
-    let dom = file.get(d, "Domain").map(|x| file.nums(x)).filter(|v| v.len() == 4).unwrap_or_else(|| vec![0.0, 1.0, 0.0, 1.0]);
-    let mtx = file.get(d, "Matrix").map(|x| file.nums(x)).filter(|v| v.len() == 6).map(|v| Affine::new([v[0], v[1], v[2], v[3], v[4], v[5]]));
+    let cs = file
+        .get(d, "ColorSpace")
+        .map(|c| color_space(file, c, None))
+        .unwrap_or(Cs::Rgb);
+    let dom = file
+        .get(d, "Domain")
+        .map(|x| file.nums(x))
+        .filter(|v| v.len() == 4)
+        .unwrap_or_else(|| vec![0.0, 1.0, 0.0, 1.0]);
+    let mtx = file
+        .get(d, "Matrix")
+        .map(|x| file.nums(x))
+        .filter(|v| v.len() == 6)
+        .map(|v| Affine::new([v[0], v[1], v[2], v[3], v[4], v[5]]));
     let full = to_page * mtx.unwrap_or(Affine::IDENTITY);
     if full.determinant().abs() < 1e-12 || !full.as_coeffs().iter().all(|v| v.is_finite()) {
         return None;
     }
-    let corners = [(dom[0], dom[2]), (dom[1], dom[2]), (dom[1], dom[3]), (dom[0], dom[3])].map(|(x, y)| full * Point::new(x, y));
-    let lo = Point::new(corners.iter().map(|p| p.x).fold(f64::MAX, f64::min), corners.iter().map(|p| p.y).fold(f64::MAX, f64::min));
-    let hi = Point::new(corners.iter().map(|p| p.x).fold(f64::MIN, f64::max), corners.iter().map(|p| p.y).fold(f64::MIN, f64::max));
+    let corners = [
+        (dom[0], dom[2]),
+        (dom[1], dom[2]),
+        (dom[1], dom[3]),
+        (dom[0], dom[3]),
+    ]
+    .map(|(x, y)| full * Point::new(x, y));
+    let lo = Point::new(
+        corners.iter().map(|p| p.x).fold(f64::MAX, f64::min),
+        corners.iter().map(|p| p.y).fold(f64::MAX, f64::min),
+    );
+    let hi = Point::new(
+        corners.iter().map(|p| p.x).fold(f64::MIN, f64::max),
+        corners.iter().map(|p| p.y).fold(f64::MIN, f64::max),
+    );
     let (o, s, w, h) = frame(lo, hi, page_box)?;
     let inv = full.inverse();
     let (xa, xb) = (dom[0].min(dom[1]), dom[0].max(dom[1]));
@@ -563,7 +702,10 @@ mod tests {
 
     #[test]
     fn bits_reader_and_alignment() {
-        let mut r = Bits { data: &[0b1010_0000, 0xFF], bit: 0 };
+        let mut r = Bits {
+            data: &[0b1010_0000, 0xFF],
+            bit: 0,
+        };
         assert_eq!(r.read(3), Some(0b101));
         r.align();
         assert_eq!(r.read(8), Some(0xFF));
@@ -573,7 +715,12 @@ mod tests {
 
     #[test]
     fn bezier_ends() {
-        let p = [Point::new(0.0, 0.0), Point::new(1.0, 2.0), Point::new(2.0, 2.0), Point::new(3.0, 0.0)];
+        let p = [
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 2.0),
+            Point::new(2.0, 2.0),
+            Point::new(3.0, 0.0),
+        ];
         assert_eq!(bez(p, 0.0), p[0]);
         assert_eq!(bez(p, 1.0), p[3]);
     }

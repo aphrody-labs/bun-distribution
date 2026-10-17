@@ -303,7 +303,10 @@ mod tests {
     #[test]
     fn web_v5_version_and_network_jobs_share_one_library() {
         assert_eq!(aphrody_web_bridge_abi_version(), 5);
-        assert_eq!(web_internal_bridge_abi_version(), aphrody_web_bridge_abi_version());
+        assert_eq!(
+            web_internal_bridge_abi_version(),
+            aphrody_web_bridge_abi_version()
+        );
 
         // SAFETY: null pointers are rejected before network or credential access.
         let ids = unsafe {
@@ -328,7 +331,11 @@ mod tests {
             assert_eq!(aphrody_web_job_status(id), 1);
             let result = aphrody_web_job_take(id);
             assert!(!result.is_null());
-            assert!(unsafe { CStr::from_ptr(result) }.to_string_lossy().contains("error"));
+            assert!(
+                unsafe { CStr::from_ptr(result) }
+                    .to_string_lossy()
+                    .contains("error")
+            );
             unsafe { aphrody_web_free_string(result) };
         }
     }

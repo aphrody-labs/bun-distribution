@@ -1,6 +1,6 @@
 //! BSN scene function for displaying a plain text string in the correct font.
 use bevy_app::PropagateOver;
-use bevy_scene::{bsn, Scene};
+use bevy_scene::{Scene, bsn};
 use bevy_text::{FontSourceTemplate, FontWeight, TextFont};
 use bevy_ui::widget::Text;
 

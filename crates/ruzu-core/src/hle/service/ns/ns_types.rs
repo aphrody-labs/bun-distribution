@@ -96,14 +96,21 @@ const _: () = assert!(core::mem::size_of::<ApplicationViewV20>() == 0x58);
 /// the C++ V20 alignment gap, which must not expose host padding bytes.
 pub fn write_application_view(dst: &mut [u8], data: &ApplicationViewData, is_fw20: bool) -> usize {
     let size = if is_fw20 { 0x58 } else { 0x50 };
-    if dst.len() < size { return 0; }
+    if dst.len() < size {
+        return 0;
+    }
     dst[..size].fill(0);
     dst[..8].copy_from_slice(&data.application_id.to_le_bytes());
     dst[8..12].copy_from_slice(&data.version.to_le_bytes());
     dst[12..16].copy_from_slice(&data.flags.to_le_bytes());
-    if is_fw20 { dst[16..20].copy_from_slice(&data.unk.to_le_bytes()); }
+    if is_fw20 {
+        dst[16..20].copy_from_slice(&data.unk.to_le_bytes());
+    }
     let start = if is_fw20 { 24 } else { 16 };
-    for (i, state) in [data.download_state, data.download_progress].iter().enumerate() {
+    for (i, state) in [data.download_state, data.download_progress]
+        .iter()
+        .enumerate()
+    {
         let out = &mut dst[start + i * 32..start + (i + 1) * 32];
         out[..8].copy_from_slice(&state.downloaded_size.to_le_bytes());
         out[8..16].copy_from_slice(&state.total_size.to_le_bytes());
@@ -151,9 +158,15 @@ pub struct ApplicationViewWithPromotionData {
     pub promotion: PromotionInfo,
 }
 
-pub fn write_application_view_with_promotion(dst: &mut [u8], data: &ApplicationViewWithPromotionData, is_fw20: bool) -> usize {
+pub fn write_application_view_with_promotion(
+    dst: &mut [u8],
+    data: &ApplicationViewWithPromotionData,
+    is_fw20: bool,
+) -> usize {
     let written = write_application_view(dst, &data.view, is_fw20);
-    if written == 0 || dst.len() - written < 0x20 { return 0; }
+    if written == 0 || dst.len() - written < 0x20 {
+        return 0;
+    }
     let out = &mut dst[written..written + 0x20];
     let p = &data.promotion;
     out[..8].copy_from_slice(&p.start_timestamp.to_le_bytes());
@@ -171,23 +184,48 @@ mod application_view_tests {
 
     #[test]
     fn view_versions_preserve_offsets_and_zero_padding() {
-        assert_eq!(std::mem::offset_of!(ApplicationViewV19, download_state), 0x10);
-        assert_eq!(std::mem::offset_of!(ApplicationViewV20, download_state), 0x18);
-        assert_eq!(std::mem::offset_of!(ApplicationViewV20, download_progress), 0x38);
+        assert_eq!(
+            std::mem::offset_of!(ApplicationViewV19, download_state),
+            0x10
+        );
+        assert_eq!(
+            std::mem::offset_of!(ApplicationViewV20, download_state),
+            0x18
+        );
+        assert_eq!(
+            std::mem::offset_of!(ApplicationViewV20, download_progress),
+            0x38
+        );
         let data = ApplicationViewWithPromotionData {
             view: ApplicationViewData {
-                application_id: 0x1122_3344_5566_7788, version: 0x70000,
-                flags: 0x401f17, unk: 0xaabbccdd,
-                download_state: ApplicationDownloadState { downloaded_size: 123, state: 7, ..Default::default() },
-                download_progress: ApplicationDownloadState { total_size: 456, ..Default::default() },
+                application_id: 0x1122_3344_5566_7788,
+                version: 0x70000,
+                flags: 0x401f17,
+                unk: 0xaabbccdd,
+                download_state: ApplicationDownloadState {
+                    downloaded_size: 123,
+                    state: 7,
+                    ..Default::default()
+                },
+                download_progress: ApplicationDownloadState {
+                    total_size: 456,
+                    ..Default::default()
+                },
             },
-            promotion: PromotionInfo { remaining_time: -123, flags: 3, ..Default::default() },
+            promotion: PromotionInfo {
+                remaining_time: -123,
+                flags: 3,
+                ..Default::default()
+            },
         };
         for modern in [false, true] {
             let size = if modern { 0x58 } else { 0x50 };
             let start = if modern { 24 } else { 16 };
             let mut out = [0xcc; 0x80];
-            assert_eq!(write_application_view_with_promotion(&mut out, &data, modern), size + 32);
+            assert_eq!(
+                write_application_view_with_promotion(&mut out, &data, modern),
+                size + 32
+            );
             assert_eq!(&out[..8], &data.view.application_id.to_le_bytes());
             assert_eq!(&out[8..12], &0x70000u32.to_le_bytes());
             assert_eq!(&out[12..16], &0x401f17u32.to_le_bytes());
@@ -198,12 +236,17 @@ mod application_view_tests {
             assert_eq!(out[size + 28], 3);
             assert_eq!(&out[size + 29..size + 32], &[0; 3]);
             assert!(out[size + 32..].iter().all(|b| *b == 0xcc));
-            if modern { assert_eq!(&out[20..24], &[0; 4]); }
+            if modern {
+                assert_eq!(&out[20..24], &[0; 4]);
+            }
             let mut short = vec![0xcc; size - 1];
             assert_eq!(write_application_view(&mut short, &data.view, modern), 0);
             assert!(short.iter().all(|b| *b == 0xcc));
             let mut partial = vec![0xcc; size + 31];
-            assert_eq!(write_application_view_with_promotion(&mut partial, &data, modern), 0);
+            assert_eq!(
+                write_application_view_with_promotion(&mut partial, &data, modern),
+                0
+            );
             assert_eq!(&partial[..size], &out[..size]);
             assert!(partial[size..].iter().all(|b| *b == 0xcc));
         }

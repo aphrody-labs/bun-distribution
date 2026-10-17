@@ -545,12 +545,15 @@ mod tests {
             let expected = if record.starts_with('"') { b'x' } else { 0xab };
             let patch_text: VirtualFile = Arc::new(VectorVfsFile::new(
                 format!("@enabled\n00000000 {record}\n@stop\n").into_bytes(),
-                "long.pchtxt".into(), None,
+                "long.pchtxt".into(),
+                None,
             ));
-            let source: VirtualFile = Arc::new(VectorVfsFile::new(
-                vec![0; 1025], "input".into(), None,
-            ));
-            let result = IpSwitchCompiler::new(patch_text).apply(&source).unwrap().read_all_bytes();
+            let source: VirtualFile =
+                Arc::new(VectorVfsFile::new(vec![0; 1025], "input".into(), None));
+            let result = IpSwitchCompiler::new(patch_text)
+                .apply(&source)
+                .unwrap()
+                .read_all_bytes();
             assert_eq!(&result[..1024], vec![expected; 1024]);
             assert_eq!(result[1024], 0);
         }

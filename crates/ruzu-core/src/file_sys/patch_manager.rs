@@ -71,7 +71,8 @@ fn get_update_version_string_from_slot(
     slot: ContentProviderUnionSlot,
     update_tid: u64,
 ) -> String {
-    let Some(file) = provider.get_entry_raw_from_slot(slot, update_tid, ContentRecordType::Control) else {
+    let Some(file) = provider.get_entry_raw_from_slot(slot, update_tid, ContentRecordType::Control)
+    else {
         return String::new();
     };
     let control = NCA::new(file, None);
@@ -254,11 +255,7 @@ pub struct PatchManager<'a> {
 impl<'a> PatchManager<'a> {
     /// Apply LayeredFS patches to a RomFS file.
     /// Corresponds to upstream `PatchManager::ApplyLayeredFS`.
-    fn apply_layered_fs(
-        &self,
-        romfs: &mut VirtualFile,
-        record_type: ContentRecordType,
-    ) {
+    fn apply_layered_fs(&self, romfs: &mut VirtualFile, record_type: ContentRecordType) {
         let load_dir = self.get_modification_load_root(false);
         let sdmc_load_dir = self.get_modification_load_root(true);
 
@@ -374,15 +371,21 @@ impl<'a> PatchManager<'a> {
 
     fn get_modification_load_root(&self, sdmc: bool) -> Option<VirtualDir> {
         let controller = self.fs_controller?;
-        let get_root = |id| if sdmc {
-            controller.get_sdmc_modification_load_root(id)
-        } else {
-            controller.get_modification_load_root(id)
+        let get_root = |id| {
+            if sdmc {
+                controller.get_sdmc_modification_load_root(id)
+            } else {
+                controller.get_modification_load_root(id)
+            }
         };
         let root = get_root(self.title_id);
-        let Some(parent) = self.parent_title_id else { return root };
+        let Some(parent) = self.parent_title_id else {
+            return root;
+        };
         LayeredVfsDirectory::make_layered_directory(
-            [root, get_root(parent)].into_iter().flatten().collect(), String::new())
+            [root, get_root(parent)].into_iter().flatten().collect(),
+            String::new(),
+        )
     }
 
     fn get_disabled_addons(&self) -> Vec<String> {
@@ -624,8 +627,7 @@ impl<'a> PatchManager<'a> {
 
         log::info!("Patching NSO for name={}, build_id={}", name, build_id);
 
-        let load_dir = match self.get_modification_load_root(false)
-        {
+        let load_dir = match self.get_modification_load_root(false) {
             Some(dir) => dir,
             None => {
                 log::error!(
@@ -708,8 +710,7 @@ impl<'a> PatchManager<'a> {
             name
         );
 
-        let load_dir = match self.get_modification_load_root(false)
-        {
+        let load_dir = match self.get_modification_load_root(false) {
             Some(dir) => dir,
             None => {
                 log::error!(
@@ -729,8 +730,7 @@ impl<'a> PatchManager<'a> {
     /// Create the enabled cheat list for the supplied NSO build ID.
     /// Corresponds to upstream `PatchManager::CreateCheatList`.
     pub fn create_cheat_list(&self, build_id: &BuildId) -> Vec<CheatEntry> {
-        let load_dir = match self.get_modification_load_root(false)
-        {
+        let load_dir = match self.get_modification_load_root(false) {
             Some(dir) => dir,
             None => {
                 log::error!(
@@ -877,7 +877,9 @@ impl<'a> PatchManager<'a> {
         } else {
             let update_pm = PatchManager {
                 title_id: update_tid,
-                parent_title_id: self.content_provider.and_then(|cp| cp.get_parent_application_id(update_tid)),
+                parent_title_id: self
+                    .content_provider
+                    .and_then(|cp| cp.get_parent_application_id(update_tid)),
                 fs_controller: self.fs_controller,
                 content_provider: self.content_provider,
             };
@@ -1100,11 +1102,15 @@ impl<'a> PatchManager<'a> {
         let cp = self.content_provider?;
         let update_tid = get_update_title_id(self.title_id);
         if cp.has_entry(update_tid, ContentRecordType::Program) {
-            return cp.get_entry_version(update_tid).or_else(||
-                self.parent_title_id.and_then(|parent| cp.get_entry_version(get_update_title_id(parent))));
+            return cp.get_entry_version(update_tid).or_else(|| {
+                self.parent_title_id
+                    .and_then(|parent| cp.get_entry_version(get_update_title_id(parent)))
+            });
         }
-        cp.get_entry_version(self.title_id).or_else(||
-            self.parent_title_id.and_then(|parent| cp.get_entry_version(parent)))
+        cp.get_entry_version(self.title_id).or_else(|| {
+            self.parent_title_id
+                .and_then(|parent| cp.get_entry_version(parent))
+        })
     }
 
     /// Get control metadata (NACP + icon) for this title.
@@ -1117,7 +1123,9 @@ impl<'a> PatchManager<'a> {
         let base_control_nca = match cp.get_entry(self.title_id, ContentRecordType::Control) {
             Some(nca) => nca,
             None => {
-                let Some(parent) = self.parent_title_id else { return (None, None) };
+                let Some(parent) = self.parent_title_id else {
+                    return (None, None);
+                };
                 let control_id = if cp.has_entry(parent, ContentRecordType::Control) {
                     parent
                 } else {
@@ -1145,7 +1153,13 @@ impl<'a> PatchManager<'a> {
             None => return (None, None),
         };
 
-        let romfs = self.patch_romfs(Some(nca), base_romfs, ContentRecordType::Control, None, true);
+        let romfs = self.patch_romfs(
+            Some(nca),
+            base_romfs,
+            ContentRecordType::Control,
+            None,
+            true,
+        );
 
         let extracted = match extract_romfs(Some(romfs)) {
             Some(dir) => dir,
@@ -1365,16 +1379,36 @@ mod tests {
         fn has_entry(&self, id: u64, record: ContentRecordType) -> bool {
             self.entries.keys().any(|&(_, r, t)| r == record && t == id)
         }
-        fn get_entry_version(&self, id: u64) -> Option<u32> { self.versions.get(&id).copied() }
-        fn get_entry_unparsed(&self, _: u64, _: ContentRecordType) -> Option<VirtualFile> { None }
-        fn get_entry_raw(&self, id: u64, record: ContentRecordType) -> Option<VirtualFile> {
-            if record == ContentRecordType::Control { self.requests.lock().unwrap().push(id); }
+        fn get_entry_version(&self, id: u64) -> Option<u32> {
+            self.versions.get(&id).copied()
+        }
+        fn get_entry_unparsed(&self, _: u64, _: ContentRecordType) -> Option<VirtualFile> {
             None
         }
-        fn list_entries_filter(&self, kind: Option<TitleType>, record: Option<ContentRecordType>, id: Option<u64>) -> Vec<ContentProviderEntry> {
-            self.entries.keys().filter(|&&(k, r, t)|
-                kind.is_none_or(|v| v == k) && record.is_none_or(|v| v == r) && id.is_none_or(|v| v == t))
-                .map(|&(_, record_type, title_id)| ContentProviderEntry { title_id, record_type }).collect()
+        fn get_entry_raw(&self, id: u64, record: ContentRecordType) -> Option<VirtualFile> {
+            if record == ContentRecordType::Control {
+                self.requests.lock().unwrap().push(id);
+            }
+            None
+        }
+        fn list_entries_filter(
+            &self,
+            kind: Option<TitleType>,
+            record: Option<ContentRecordType>,
+            id: Option<u64>,
+        ) -> Vec<ContentProviderEntry> {
+            self.entries
+                .keys()
+                .filter(|&&(k, r, t)| {
+                    kind.is_none_or(|v| v == k)
+                        && record.is_none_or(|v| v == r)
+                        && id.is_none_or(|v| v == t)
+                })
+                .map(|&(_, record_type, title_id)| ContentProviderEntry {
+                    title_id,
+                    record_type,
+                })
+                .collect()
         }
     }
 
@@ -1386,25 +1420,54 @@ mod tests {
         for update in [false, true] {
             for own_version in [None, Some(0), Some(42)] {
                 let mut provider = ParentTestProvider::default();
-                provider.entries.insert((TitleType::Application, ContentRecordType::Meta, base), ());
-                provider.entries.insert((TitleType::Application, ContentRecordType::Program, child), ());
-                let queried_id = if update { get_update_title_id(child) } else { child };
-                let parent_id = if update { get_update_title_id(base) } else { base };
-                if update { provider.entries.insert((TitleType::Update, ContentRecordType::Program, queried_id), ()); }
+                provider
+                    .entries
+                    .insert((TitleType::Application, ContentRecordType::Meta, base), ());
+                provider.entries.insert(
+                    (TitleType::Application, ContentRecordType::Program, child),
+                    (),
+                );
+                let queried_id = if update {
+                    get_update_title_id(child)
+                } else {
+                    child
+                };
+                let parent_id = if update {
+                    get_update_title_id(base)
+                } else {
+                    base
+                };
+                if update {
+                    provider.entries.insert(
+                        (TitleType::Update, ContentRecordType::Program, queried_id),
+                        (),
+                    );
+                }
                 provider.versions.insert(parent_id, 77);
-                if let Some(version) = own_version { provider.versions.insert(queried_id, version); }
+                if let Some(version) = own_version {
+                    provider.versions.insert(queried_id, version);
+                }
                 let manager = PatchManager::new(child, &controller, &provider);
                 assert_eq!(manager.parent_title_id, Some(base));
                 assert_eq!(manager.get_game_version(), own_version.or(Some(77)));
                 assert!(manager.get_control_metadata().0.is_none());
-                assert_eq!(*provider.requests.lock().unwrap(), vec![child, get_update_title_id(base)]);
+                assert_eq!(
+                    *provider.requests.lock().unwrap(),
+                    vec![child, get_update_title_id(base)]
+                );
                 provider.requests.lock().unwrap().clear();
-                provider.entries.insert((TitleType::Application, ContentRecordType::Control, base), ());
+                provider.entries.insert(
+                    (TitleType::Application, ContentRecordType::Control, base),
+                    (),
+                );
                 PatchManager::new(child, &controller, &provider).get_control_metadata();
                 assert_eq!(*provider.requests.lock().unwrap(), vec![child, base]);
                 provider.versions.remove(&parent_id);
                 provider.versions.remove(&queried_id);
-                assert_eq!(PatchManager::new(child, &controller, &provider).get_game_version(), None);
+                assert_eq!(
+                    PatchManager::new(child, &controller, &provider).get_game_version(),
+                    None
+                );
             }
         }
     }
@@ -1415,7 +1478,10 @@ mod tests {
         if std::env::var_os(CHILD_PROCESS).is_none() {
             assert!(std::process::Command::new(std::env::current_exe().unwrap())
                 .args(["--exact", std::thread::current().name().unwrap()])
-                .env(CHILD_PROCESS, "1").status().unwrap().success());
+                .env(CHILD_PROCESS, "1")
+                .status()
+                .unwrap()
+                .success());
             return;
         }
         let base = 0x0100_0000_0000_0000;
@@ -1426,49 +1492,100 @@ mod tests {
         let file = |name: &str, byte| -> VirtualFile {
             Arc::new(VectorVfsFile::new(vec![byte], name.to_owned(), None))
         };
-        let parent_mod = dir("shared", vec![], vec![
-            dir("exefs", vec![file("main", 1), file("rtld", 2)], vec![]),
-            dir("romfs", vec![file("same", 1)], vec![]),
-            dir("romfslite", vec![file("same", 5), file("lite", 6)], vec![]),
-        ]);
-        let child_mod = dir("shared", vec![], vec![
-            dir("exefs", vec![file("main", 3)], vec![]),
-            dir("romfs", vec![file("same", 3)], vec![]),
-        ]);
-        let load = dir("load", vec![], vec![
-            dir(&format!("{base:016X}"), vec![], vec![parent_mod]),
-            dir(&format!("{child:016X}"), vec![], vec![child_mod]),
-        ]);
+        let parent_mod = dir(
+            "shared",
+            vec![],
+            vec![
+                dir("exefs", vec![file("main", 1), file("rtld", 2)], vec![]),
+                dir("romfs", vec![file("same", 1)], vec![]),
+                dir("romfslite", vec![file("same", 5), file("lite", 6)], vec![]),
+            ],
+        );
+        let child_mod = dir(
+            "shared",
+            vec![],
+            vec![
+                dir("exefs", vec![file("main", 3)], vec![]),
+                dir("romfs", vec![file("same", 3)], vec![]),
+            ],
+        );
+        let load = dir(
+            "load",
+            vec![],
+            vec![
+                dir(&format!("{base:016X}"), vec![], vec![parent_mod]),
+                dir(&format!("{child:016X}"), vec![], vec![child_mod]),
+            ],
+        );
         let empty = dir("empty", vec![], vec![]);
         let mut controller = FileSystemController::new();
-        controller.set_bis_factory(crate::file_sys::bis_factory::BisFactory::new(empty.clone(), load, empty));
+        controller.set_bis_factory(crate::file_sys::bis_factory::BisFactory::new(
+            empty.clone(),
+            load,
+            empty,
+        ));
         let mut provider = ParentTestProvider::default();
-        provider.entries.insert((TitleType::Application, ContentRecordType::Meta, base), ());
-        provider.entries.insert((TitleType::Application, ContentRecordType::Program, child), ());
+        provider
+            .entries
+            .insert((TitleType::Application, ContentRecordType::Meta, base), ());
+        provider.entries.insert(
+            (TitleType::Application, ContentRecordType::Program, child),
+            (),
+        );
         let manager = PatchManager::new(child, &controller, &provider);
         let exefs = dir("exefs", vec![file("main", 9), file("sdk", 8)], vec![]);
         let patched = manager.patch_exefs(exefs.clone());
         assert_eq!(patched.get_file("main").unwrap().read_all_bytes(), vec![3]);
         assert_eq!(patched.get_file("rtld").unwrap().read_all_bytes(), vec![2]);
         assert_eq!(patched.get_file("sdk").unwrap().read_all_bytes(), vec![8]);
-        let original_romfs = create_romfs(Some(dir("romfs", vec![file("same", 9), file("base", 8)], vec![])), None).unwrap();
-        let patched_romfs = manager.patch_romfs(None, original_romfs.clone(), ContentRecordType::Program, None, true);
+        let original_romfs = create_romfs(
+            Some(dir("romfs", vec![file("same", 9), file("base", 8)], vec![])),
+            None,
+        )
+        .unwrap();
+        let patched_romfs = manager.patch_romfs(
+            None,
+            original_romfs.clone(),
+            ContentRecordType::Program,
+            None,
+            true,
+        );
         let patched_romfs = extract_romfs(Some(patched_romfs)).unwrap();
-        assert_eq!(patched_romfs.get_file("same").unwrap().read_all_bytes(), vec![3]);
-        assert_eq!(patched_romfs.get_file("lite").unwrap().read_all_bytes(), vec![6]);
-        assert_eq!(patched_romfs.get_file("base").unwrap().read_all_bytes(), vec![8]);
+        assert_eq!(
+            patched_romfs.get_file("same").unwrap().read_all_bytes(),
+            vec![3]
+        );
+        assert_eq!(
+            patched_romfs.get_file("lite").unwrap().read_all_bytes(),
+            vec![6]
+        );
+        assert_eq!(
+            patched_romfs.get_file("base").unwrap().read_all_bytes(),
+            vec![8]
+        );
         {
             let mut settings = common::settings::values_mut();
-            settings.disabled_addons.insert(child, vec!["child-only".into(), "duplicate".into()]);
-            settings.disabled_addons.insert(base, vec!["shared".into(), "duplicate".into()]);
+            settings
+                .disabled_addons
+                .insert(child, vec!["child-only".into(), "duplicate".into()]);
+            settings
+                .disabled_addons
+                .insert(base, vec!["shared".into(), "duplicate".into()]);
         }
-        assert_eq!(manager.get_disabled_addons(), vec!["child-only", "duplicate", "shared", "duplicate"]);
+        assert_eq!(
+            manager.get_disabled_addons(),
+            vec!["child-only", "duplicate", "shared", "duplicate"]
+        );
         let patched = manager.patch_exefs(exefs);
         assert_eq!(patched.get_file("main").unwrap().read_all_bytes(), vec![9]);
         assert!(patched.get_file("rtld").is_none());
-        let patched_romfs = manager.patch_romfs(None, original_romfs, ContentRecordType::Program, None, true);
+        let patched_romfs =
+            manager.patch_romfs(None, original_romfs, ContentRecordType::Program, None, true);
         let patched_romfs = extract_romfs(Some(patched_romfs)).unwrap();
-        assert_eq!(patched_romfs.get_file("same").unwrap().read_all_bytes(), vec![9]);
+        assert_eq!(
+            patched_romfs.get_file("same").unwrap().read_all_bytes(),
+            vec![9]
+        );
         assert!(patched_romfs.get_file("lite").is_none());
     }
 
@@ -1484,19 +1601,31 @@ mod tests {
         for files in [
             vec![make_control("control.nacp", b"3.2.1")],
             vec![make_control("Control.nacp", b"3.2.1")],
-            vec![make_control("control.nacp", b"3.2.1"), make_control("Control.nacp", b"9.0.0")],
+            vec![
+                make_control("control.nacp", b"3.2.1"),
+                make_control("Control.nacp", b"9.0.0"),
+            ],
         ] {
             let directory: VirtualDir = Arc::new(VectorVfsDirectory::new(
-                files, Vec::new(), "metadata".to_owned(), None,
+                files,
+                Vec::new(),
+                "metadata".to_owned(),
+                None,
             ));
             let romfs = create_romfs(Some(directory), None).expect("synthetic RomFS");
             assert_eq!(read_update_version_from_romfs(Some(romfs)), "3.2.1");
         }
         assert_eq!(read_update_version_from_romfs(None), "");
         let directory: VirtualDir = Arc::new(VectorVfsDirectory::new(
-            Vec::new(), Vec::new(), "metadata".to_owned(), None,
+            Vec::new(),
+            Vec::new(),
+            "metadata".to_owned(),
+            None,
         ));
-        assert_eq!(read_update_version_from_romfs(create_romfs(Some(directory), None)), "");
+        assert_eq!(
+            read_update_version_from_romfs(create_romfs(Some(directory), None)),
+            ""
+        );
     }
 
     struct RecordingContentProvider {
@@ -1557,10 +1686,8 @@ mod tests {
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
                     .as_nanos();
-                let root = std::env::temp_dir().join(format!(
-                    "ruzu-patch-dump-{}-{nonce}",
-                    std::process::id()
-                ));
+                let root = std::env::temp_dir()
+                    .join(format!("ruzu-patch-dump-{}-{nonce}", std::process::id()));
                 std::fs::create_dir(&root).unwrap();
                 let status = std::process::Command::new(std::env::current_exe().unwrap())
                     .args(["--exact", std::thread::current().name().unwrap()])
@@ -1632,8 +1759,10 @@ mod tests {
                 assert_eq!(std::fs::read(dump.join("nso/main-ABC.nso")).unwrap(), nso);
                 // Case-insensitive filesystems resolve the lowercase spelling
                 // to the same file. Inspect the stored name, not path existence.
-                let names: Vec<_> = std::fs::read_dir(dump.join("nso")).unwrap()
-                    .map(|entry| entry.unwrap().file_name()).collect();
+                let names: Vec<_> = std::fs::read_dir(dump.join("nso"))
+                    .unwrap()
+                    .map(|entry| entry.unwrap().file_name())
+                    .collect();
                 assert_eq!(names, vec![std::ffi::OsString::from("main-ABC.nso")]);
                 // Re-disabling must stop exports, without disabling patch application.
                 std::fs::remove_dir_all(&dump).unwrap();
@@ -1657,9 +1786,10 @@ mod tests {
         }
 
         common::settings::values_mut().dump_nso.set_value(false);
-        let directory = |name: &str, files: Vec<VirtualFile>, dirs: Vec<VirtualDir>| -> VirtualDir {
-            Arc::new(VectorVfsDirectory::new(files, dirs, name.into(), None))
-        };
+        let directory =
+            |name: &str, files: Vec<VirtualFile>, dirs: Vec<VirtualDir>| -> VirtualDir {
+                Arc::new(VectorVfsDirectory::new(files, dirs, name.into(), None))
+            };
         let ips: VirtualFile = Arc::new(VectorVfsFile::new(
             b"PATCH\x00\x01\x00\x00\x01\xAAEOF".to_vec(),
             "ABC.ips".into(),

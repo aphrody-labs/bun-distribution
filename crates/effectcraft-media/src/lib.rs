@@ -13,7 +13,14 @@
 //! (PNG, JPEG, GIF, WebP, TIFF, BMP, OpenEXR, Targa, Radiance HDR); Photoshop documents (merged image or one layer) come
 //! from `effectcraft-psd` and SVG from `effectcraft-svg` (rasterised at any scale).
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 mod convert;
 pub mod downmix;
@@ -59,8 +66,10 @@ impl From<filmcraft_media::MediaError> for MediaError {
 }
 
 /// File extensions recognised as stills.
-pub const STILL_EXTENSIONS: &[&str] =
-    &["png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "exr", "tga", "hdr", "psd", "psb", "svg", "pdf", "ai", "eps"];
+pub const STILL_EXTENSIONS: &[&str] = &[
+    "png", "jpg", "jpeg", "gif", "webp", "tif", "tiff", "bmp", "exr", "tga", "hdr", "psd", "psb",
+    "svg", "pdf", "ai", "eps",
+];
 /// File extensions recognised as audio-only files.
 pub const AUDIO_EXTENSIONS: &[&str] = filmcraft_media::AUDIO_EXTENSIONS;
 /// File extensions recognised as movies.
@@ -80,7 +89,10 @@ pub fn is_importable(path: &std::path::Path) -> bool {
 }
 
 pub(crate) fn ext_of(path: &std::path::Path) -> String {
-    path.extension().and_then(|e| e.to_str()).unwrap_or("").to_ascii_lowercase()
+    path.extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase()
 }
 
 /// The `image` crate format of a still: from its signature, else from its extension (Targa has
@@ -97,5 +109,9 @@ pub(crate) fn still_format(path: &str, bytes: &[u8]) -> Option<image::ImageForma
 }
 
 pub(crate) fn rate_from_fc(r: filmcraft_time::FrameRate) -> effectcraft_time::FrameRate {
-    if r.num > 0 && r.den > 0 { effectcraft_time::FrameRate::new(r.num, r.den) } else { effectcraft_time::FrameRate::FPS_30 }
+    if r.num > 0 && r.den > 0 {
+        effectcraft_time::FrameRate::new(r.num, r.den)
+    } else {
+        effectcraft_time::FrameRate::FPS_30
+    }
 }

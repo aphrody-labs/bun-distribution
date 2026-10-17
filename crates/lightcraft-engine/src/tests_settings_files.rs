@@ -33,13 +33,28 @@ fn damaged_prefs_are_kept_aside_and_reported() {
     assert_eq!(std::fs::read(lib.join(&kept[0])).unwrap(), bad);
     let warnings = s.take_library_warnings();
     assert_eq!(warnings.len(), 1);
-    assert!(warnings[0].contains("prefs.json is damaged") && warnings[0].contains(&kept[0]), "{warnings:?}");
-    assert!(s.take_library_warnings().is_empty(), "each warning is handed out once");
+    assert!(
+        warnings[0].contains("prefs.json is damaged") && warnings[0].contains(&kept[0]),
+        "{warnings:?}"
+    );
+    assert!(
+        s.take_library_warnings().is_empty(),
+        "each warning is handed out once"
+    );
     let info = s.execute("library.info", &json!({})).unwrap();
-    assert_eq!(info["settingsWarnings"].as_array().map(Vec::len), Some(1), "{info}");
+    assert_eq!(
+        info["settingsWarnings"].as_array().map(Vec::len),
+        Some(1),
+        "{info}"
+    );
     // saving goes on (the damaged original is safe in its copy)
-    s.execute("library.preferences", &json!({"cacheMb": 300})).unwrap();
-    assert!(String::from_utf8(std::fs::read(lib.join("prefs.json")).unwrap()).unwrap().contains("300"));
+    s.execute("library.preferences", &json!({"cacheMb": 300}))
+        .unwrap();
+    assert!(
+        String::from_utf8(std::fs::read(lib.join("prefs.json")).unwrap())
+            .unwrap()
+            .contains("300")
+    );
     assert_eq!(std::fs::read(lib.join(&kept[0])).unwrap(), bad);
     drop(s);
     let _ = std::fs::remove_dir_all(&lib);
@@ -82,16 +97,29 @@ fn unreadable_settings_are_not_overwritten() {
     files.files.set("prefs.json", prefs.clone());
     *files.unreadable.lock().unwrap() = vec!["presets.json".into(), "prefs.json".into()];
     let mut s = Session::new();
-    let stores = LibraryStores { dir: "unreadable".into(), catalog: Box::new(MemStore::new()), files: Box::new(files.clone()), on_disk: false };
+    let stores = LibraryStores {
+        dir: "unreadable".into(),
+        catalog: Box::new(MemStore::new()),
+        files: Box::new(files.clone()),
+        on_disk: false,
+    };
     s.open_library_in(stores, true).unwrap();
     let warnings = s.take_library_warnings();
     assert_eq!(warnings.len(), 2, "{warnings:?}");
-    assert!(warnings.iter().all(|w| w.contains("couldn't be read") && w.contains("won't overwrite")), "{warnings:?}");
+    assert!(
+        warnings
+            .iter()
+            .all(|w| w.contains("couldn't be read") && w.contains("won't overwrite")),
+        "{warnings:?}"
+    );
 
     // a preset change and a preference change: neither file is replaced by defaults
     s.execute("preset.create", &json!({"name": "New"})).unwrap();
     let e = s.execute("library.preferences", &json!({"cacheMb": 300}));
-    assert!(e.is_err(), "saving preferences is refused, not done over the unread file");
+    assert!(
+        e.is_err(),
+        "saving preferences is refused, not done over the unread file"
+    );
     assert_eq!(files.files.get("presets.json").unwrap(), presets);
     assert_eq!(files.files.get("prefs.json").unwrap(), prefs);
 }
@@ -107,8 +135,16 @@ fn an_unlockable_library_opens_with_a_warning() {
     let mut s = Session::new().with_fs();
     s.open_library(&lib, false).unwrap();
     let info = s.execute("library.info", &json!({})).unwrap();
-    let listed = info["settingsWarnings"].as_array().cloned().unwrap_or_default();
-    assert!(listed.iter().any(|w| w.as_str().is_some_and(|w| w.contains("without protection against a second program"))), "{info}");
+    let listed = info["settingsWarnings"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    assert!(
+        listed.iter().any(|w| w
+            .as_str()
+            .is_some_and(|w| w.contains("without protection against a second program"))),
+        "{info}"
+    );
     let warnings = s.take_library_warnings();
     assert_eq!(warnings.len(), 1, "{warnings:?}");
     drop(s);

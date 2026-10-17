@@ -542,7 +542,11 @@ impl OllamaGenerateRequest {
     /// A request for `prompt` with every optional field unset.
     #[must_use]
     pub fn new(model: impl Into<String>, prompt: impl Into<String>) -> Self {
-        Self { model: model.into(), prompt: prompt.into(), ..Self::default() }
+        Self {
+            model: model.into(),
+            prompt: prompt.into(),
+            ..Self::default()
+        }
     }
 
     /// The streaming request body. Unset fields are left out.
@@ -657,7 +661,10 @@ mod tests {
     fn keep_alive_and_think_serialise_like_the_go_types() {
         assert_eq!(KeepAlive::FOREVER.to_value(), json!(-1));
         assert_eq!(KeepAlive::UNLOAD.to_value(), json!(0));
-        assert_eq!(KeepAlive::Duration("10m".to_string()).to_value(), json!("10m"));
+        assert_eq!(
+            KeepAlive::Duration("10m".to_string()).to_value(),
+            json!("10m")
+        );
         assert_eq!(Think::Off.to_value(), json!(false));
         assert_eq!(Think::On.to_value(), json!(true));
         assert_eq!(Think::Level("high".to_string()).to_value(), json!("high"));
@@ -668,9 +675,18 @@ mod tests {
         assert_eq!(Think::from_effort(""), None);
         assert_eq!(Think::from_effort("none"), Some(Think::Off));
         assert_eq!(Think::from_effort("OFF"), Some(Think::Off));
-        assert_eq!(Think::from_effort("minimal"), Some(Think::Level("low".to_string())));
-        assert_eq!(Think::from_effort("Medium"), Some(Think::Level("medium".to_string())));
-        assert_eq!(Think::from_effort("max"), Some(Think::Level("max".to_string())));
+        assert_eq!(
+            Think::from_effort("minimal"),
+            Some(Think::Level("low".to_string()))
+        );
+        assert_eq!(
+            Think::from_effort("Medium"),
+            Some(Think::Level("medium".to_string()))
+        );
+        assert_eq!(
+            Think::from_effort("max"),
+            Some(Think::Level("max".to_string()))
+        );
     }
 
     /// The tool-call chunk from `docs/api.md` ("Chat request (Streaming with
@@ -686,7 +702,10 @@ mod tests {
         .expect("tool call chunk");
         assert_eq!(call.message.tool_calls.len(), 1);
         assert_eq!(call.message.tool_calls[0].function.name, "get_weather");
-        assert_eq!(call.message.tool_calls[0].function.arguments, json!({"city": "Tokyo"}));
+        assert_eq!(
+            call.message.tool_calls[0].function.arguments,
+            json!({"city": "Tokyo"})
+        );
         assert!(!call.done);
 
         let last: OllamaChatChunk = serde_json::from_str(
@@ -798,7 +817,10 @@ mod tests {
     #[test]
     fn requests_omit_unset_fields() {
         let minimal = OllamaGenerateRequest::new("m", "hi").to_body();
-        assert_eq!(minimal, json!({"model": "m", "prompt": "hi", "stream": true}));
+        assert_eq!(
+            minimal,
+            json!({"model": "m", "prompt": "hi", "stream": true})
+        );
 
         let mut request = OllamaGenerateRequest::new("m", "fn main() {");
         request.suffix = Some("}".to_string());
@@ -813,7 +835,10 @@ mod tests {
         assert!(body.get("raw").is_none() && body.get("context").is_none());
 
         let mut embed = OllamaEmbedRequest::new("all-minilm", ["a", "b"]);
-        assert_eq!(embed.to_body(), json!({"model": "all-minilm", "input": ["a", "b"]}));
+        assert_eq!(
+            embed.to_body(),
+            json!({"model": "all-minilm", "input": ["a", "b"]})
+        );
         embed.dimensions = Some(256);
         embed.truncate = Some(false);
         let body = embed.to_body();

@@ -60,8 +60,16 @@ struct Plane {
 
 impl Plane {
     fn luma(img: &Image) -> Plane {
-        let d = img.data.par_iter().map(|p| 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2] + 0.25 * p[3]).collect();
-        Plane { w: img.width as usize, h: img.height as usize, d }
+        let d = img
+            .data
+            .par_iter()
+            .map(|p| 0.2126 * p[0] + 0.7152 * p[1] + 0.0722 * p[2] + 0.25 * p[3])
+            .collect();
+        Plane {
+            w: img.width as usize,
+            h: img.height as usize,
+            d,
+        }
     }
     fn half(&self) -> Plane {
         let (w, h) = ((self.w / 2).max(1), (self.h / 2).max(1));
@@ -69,7 +77,9 @@ impl Plane {
             .into_par_iter()
             .map(|i| {
                 let (x, y) = (i % w * 2, i / w * 2);
-                let g = |dx: usize, dy: usize| self.d[(y + dy).min(self.h - 1) * self.w + (x + dx).min(self.w - 1)];
+                let g = |dx: usize, dy: usize| {
+                    self.d[(y + dy).min(self.h - 1) * self.w + (x + dx).min(self.w - 1)]
+                };
                 (g(0, 0) + g(1, 0) + g(0, 1) + g(1, 1)) * 0.25
             })
             .collect();
@@ -77,7 +87,8 @@ impl Plane {
     }
     #[inline]
     fn get(&self, x: i64, y: i64) -> f32 {
-        self.d[y.clamp(0, self.h as i64 - 1) as usize * self.w + x.clamp(0, self.w as i64 - 1) as usize]
+        self.d[y.clamp(0, self.h as i64 - 1) as usize * self.w
+            + x.clamp(0, self.w as i64 - 1) as usize]
     }
 }
 
@@ -109,14 +120,32 @@ pub fn block_flow_window(a: &Image, b: &Image, tile: u32, window: u32, radius: i
     let (w, h) = (a.width as usize, a.height as usize);
     let cols = w.div_ceil(bs).max(1);
     let rows = h.div_ceil(bs).max(1);
-    let mut flow = Flow { width: a.width, height: a.height, block: bs as u32, cols, rows, v: vec![[0.0; 2]; cols * rows] };
-    if a.width != b.width || a.height != b.height || w < bs || h < bs || (w as i64) < win || (h as i64) < win {
+    let mut flow = Flow {
+        width: a.width,
+        height: a.height,
+        block: bs as u32,
+        cols,
+        rows,
+        v: vec![[0.0; 2]; cols * rows],
+    };
+    if a.width != b.width
+        || a.height != b.height
+        || w < bs
+        || h < bs
+        || (w as i64) < win
+        || (h as i64) < win
+    {
         return flow;
     }
     // Pyramids (level 0 = full resolution); stop while blocks still fit.
     let mut pa = vec![Plane::luma(a)];
     let mut pb = vec![Plane::luma(b)];
-    while pa.len() < 4 && pa.last().is_some_and(|p| p.w / 2 >= (bs as i64).max(win) as usize * 2 && p.h / 2 >= (bs as i64).max(win) as usize * 2) {
+    while pa.len() < 4
+        && pa.last().is_some_and(|p| {
+            p.w / 2 >= (bs as i64).max(win) as usize * 2
+                && p.h / 2 >= (bs as i64).max(win) as usize * 2
+        })
+    {
         let (na, nb) = (pa.last().map(Plane::half), pb.last().map(Plane::half));
         pa.extend(na);
         pb.extend(nb);
@@ -156,7 +185,8 @@ pub fn block_flow_window(a: &Image, b: &Image, tile: u32, window: u32, radius: i
                         for dx in -r..=r {
                             let d = [s[0] + dx, s[1] + dy];
                             // A tiny bias towards short vectors breaks ties in flat areas.
-                            let e = sad(la, lb, bx, by, lbs, d[0], d[1]) + 1e-4 * (d[0].abs() + d[1].abs()) as f32;
+                            let e = sad(la, lb, bx, by, lbs, d[0], d[1])
+                                + 1e-4 * (d[0].abs() + d[1].abs()) as f32;
                             if e < best.1 {
                                 best = (d, e);
                             }
@@ -179,10 +209,20 @@ pub fn block_flow_window(a: &Image, b: &Image, tile: u32, window: u32, radius: i
             let e0 = sad(la, lb, bx, by, wsi, d[0], d[1]);
             let fit = |em: f32, ep: f32| {
                 let den = em - 2.0 * e0 + ep;
-                if den > 1e-6 { (0.5 * (em - ep) / den).clamp(-0.5, 0.5) } else { 0.0 }
+                if den > 1e-6 {
+                    (0.5 * (em - ep) / den).clamp(-0.5, 0.5)
+                } else {
+                    0.0
+                }
             };
-            let sx = fit(sad(la, lb, bx, by, wsi, d[0] - 1, d[1]), sad(la, lb, bx, by, wsi, d[0] + 1, d[1]));
-            let sy = fit(sad(la, lb, bx, by, wsi, d[0], d[1] - 1), sad(la, lb, bx, by, wsi, d[0], d[1] + 1));
+            let sx = fit(
+                sad(la, lb, bx, by, wsi, d[0] - 1, d[1]),
+                sad(la, lb, bx, by, wsi, d[0] + 1, d[1]),
+            );
+            let sy = fit(
+                sad(la, lb, bx, by, wsi, d[0], d[1] - 1),
+                sad(la, lb, bx, by, wsi, d[0], d[1] + 1),
+            );
             [d[0] as f32 + sx, d[1] as f32 + sy]
         })
         .collect();
@@ -217,11 +257,14 @@ pub fn mix(a: &Image, b: &Image, w: f32) -> Image {
         return if w < 0.5 { a.clone() } else { b.clone() };
     }
     let mut out = a.clone();
-    out.data.par_iter_mut().zip(b.data.par_iter()).for_each(|(p, q)| {
-        for c in 0..4 {
-            p[c] += (q[c] - p[c]) * w;
-        }
-    });
+    out.data
+        .par_iter_mut()
+        .zip(b.data.par_iter())
+        .for_each(|(p, q)| {
+            for c in 0..4 {
+                p[c] += (q[c] - p[c]) * w;
+            }
+        });
     out
 }
 
@@ -259,7 +302,10 @@ mod tests {
         img.rows_mut().for_each(|(y, row)| {
             for (x, p) in row.iter_mut().enumerate() {
                 let (u, v) = (x as f64 - dx, y as f64);
-                let s = 0.5 + 0.2 * (u * 0.21 + v * 0.07).sin() + 0.15 * (u * 0.05 - v * 0.19).cos() + 0.1 * (u * 0.013 * v * 0.011).sin();
+                let s = 0.5
+                    + 0.2 * (u * 0.21 + v * 0.07).sin()
+                    + 0.15 * (u * 0.05 - v * 0.19).cos()
+                    + 0.1 * (u * 0.013 * v * 0.011).sin();
                 let s = s as f32;
                 *p = [s, s * 0.8, 1.0 - s, 1.0];
             }

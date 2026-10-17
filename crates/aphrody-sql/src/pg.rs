@@ -160,29 +160,34 @@ impl PgPoolBuilder {
             (TlsPolicy::Require, _, _) => {
                 config.ssl_mode(SslMode::Require);
                 true
-            },
+            }
             (TlsPolicy::Disable, _, _) => {
                 config.ssl_mode(SslMode::Disable);
                 false
-            },
+            }
             (TlsPolicy::Auto, SslMode::Disable, local) => {
                 if !local {
                     tracing::warn!(url = %target, "TLS disabled by sslmode=disable on a non-loopback host");
                 }
                 false
-            },
+            }
             (TlsPolicy::Auto, SslMode::Require, _) => true,
             (TlsPolicy::Auto, _, true) => false,
             (TlsPolicy::Auto, _, false) => {
                 config.ssl_mode(SslMode::Require);
                 true
-            },
+            }
         };
 
-        let manager_config = ManagerConfig { recycling_method: self.recycling.clone() };
+        let manager_config = ManagerConfig {
+            recycling_method: self.recycling.clone(),
+        };
         let manager = if use_tls {
             let mut roots = self.extra_roots.clone();
-            for path in url_root_cert.into_iter().chain(std::env::var("PGSSLROOTCERT").ok()) {
+            for path in url_root_cert
+                .into_iter()
+                .chain(std::env::var("PGSSLROOTCERT").ok())
+            {
                 if !path.is_empty() {
                     roots.push(std::fs::read(&path)?);
                 }
@@ -202,7 +207,11 @@ impl PgPoolBuilder {
             .config(pool_config)
             .runtime(Runtime::Tokio1)
             .build()?;
-        Ok(PgPool { pool, tls: use_tls, target: Arc::from(target) })
+        Ok(PgPool {
+            pool,
+            tls: use_tls,
+            target: Arc::from(target),
+        })
     }
 }
 
@@ -290,8 +299,10 @@ static SHARED: OnceLock<Mutex<HashMap<String, PgPool>>> = OnceLock::new();
 ///
 /// See [`PgPoolBuilder::build`].
 pub fn shared_pool(url: &str) -> Result<PgPool> {
-    let mut pools =
-        SHARED.get_or_init(Mutex::default).lock().unwrap_or_else(PoisonError::into_inner);
+    let mut pools = SHARED
+        .get_or_init(Mutex::default)
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
     if let Some(pool) = pools.get(url)
         && !pool.pool.is_closed()
     {
@@ -354,7 +365,7 @@ fn normalize_url(raw: &str) -> (Cow<'_, str>, Option<String>) {
         match key {
             "sslrootcert" => root_cert = Some(percent_decode(value)),
             "sslcert" | "sslkey" | "sslpassword" | "sslcrl" | "sslcompression" | "sslsni"
-            | "gssencmode" => {},
+            | "gssencmode" => {}
             "sslmode" => {
                 let mapped = match value {
                     "verify-ca" | "verify-full" => "require",
@@ -362,11 +373,15 @@ fn normalize_url(raw: &str) -> (Cow<'_, str>, Option<String>) {
                     other => other,
                 };
                 kept.push(format!("sslmode={mapped}"));
-            },
+            }
             _ => kept.push(pair.to_owned()),
         }
     }
-    let url = if kept.is_empty() { base.to_owned() } else { format!("{base}?{}", kept.join("&")) };
+    let url = if kept.is_empty() {
+        base.to_owned()
+    } else {
+        format!("{base}?{}", kept.join("&"))
+    };
     (Cow::Owned(url), root_cert)
 }
 
@@ -393,7 +408,10 @@ fn make_tls_connector(extra_roots_pem: &[Vec<u8>]) -> Result<MakeRustlsConnect> 
     let mut roots = rustls::RootCertStore::empty();
     let native = rustls_native_certs::load_native_certs();
     if !native.errors.is_empty() {
-        tracing::debug!(errors = native.errors.len(), "some native root certificates were skipped");
+        tracing::debug!(
+            errors = native.errors.len(),
+            "some native root certificates were skipped"
+        );
     }
     roots.add_parsable_certificates(native.certs);
     roots.extend(webpki_roots::TLS_SERVER_ROOTS.iter().cloned());
@@ -450,8 +468,13 @@ pub mod vector {
         tx: &tokio_postgres::Transaction<'_>,
         relaxed_order: bool,
     ) -> Result<(), tokio_postgres::Error> {
-        let mode = if relaxed_order { "relaxed_order" } else { "strict_order" };
-        tx.batch_execute(&format!("SET LOCAL hnsw.iterative_scan = {mode}")).await
+        let mode = if relaxed_order {
+            "relaxed_order"
+        } else {
+            "strict_order"
+        };
+        tx.batch_execute(&format!("SET LOCAL hnsw.iterative_scan = {mode}"))
+            .await
     }
 }
 
@@ -480,13 +503,17 @@ mod tests {
     #[test]
     #[cfg(unix)]
     fn unix_socket_paths_are_local() {
-        assert!(is_local(&config("postgresql:///db?host=/var/run/postgresql")));
+        assert!(is_local(&config(
+            "postgresql:///db?host=/var/run/postgresql"
+        )));
     }
 
     #[test]
     #[cfg(not(unix))]
     fn unsupported_socket_paths_do_not_disable_tls() {
-        assert!(!is_local(&config("postgresql:///db?host=/var/run/postgresql")));
+        assert!(!is_local(&config(
+            "postgresql:///db?host=/var/run/postgresql"
+        )));
     }
 
     #[test]
@@ -507,7 +534,10 @@ mod tests {
         let (url, root) = normalize_url(
             "postgres://u:example-password@h/db?sslmode=verify-full&sslrootcert=%2Fetc%2Fca.pem&sslcert=x&application_name=a",
         );
-        assert_eq!(url, "postgres://u:example-password@h/db?sslmode=require&application_name=a");
+        assert_eq!(
+            url,
+            "postgres://u:example-password@h/db?sslmode=require&application_name=a"
+        );
         assert_eq!(root.as_deref(), Some("/etc/ca.pem"));
         let (url, root) = normalize_url("postgres://u@h/db?sslmode=allow");
         assert_eq!(url, "postgres://u@h/db?sslmode=prefer");
@@ -527,11 +557,14 @@ mod tests {
         assert!(remote.uses_tls());
         assert!(!remote.target().contains(":example-password@"));
         assert!(remote.target().contains(":***@"));
-        let forced =
-            PgPool::builder("postgres://u@localhost/db").tls(TlsPolicy::Require).build().unwrap();
+        let forced = PgPool::builder("postgres://u@localhost/db")
+            .tls(TlsPolicy::Require)
+            .build()
+            .unwrap();
         assert!(forced.uses_tls());
-        let disabled =
-            PgPool::builder("postgres://u@db.example.com/db?sslmode=disable").build().unwrap();
+        let disabled = PgPool::builder("postgres://u@db.example.com/db?sslmode=disable")
+            .build()
+            .unwrap();
         assert!(!disabled.uses_tls());
     }
 
@@ -547,14 +580,23 @@ mod tests {
         let a = shared_pool("postgres://u@localhost/shared_a").unwrap();
         let b = shared_pool("postgres://u@localhost/shared_a").unwrap();
         let c = shared_pool("postgres://u@localhost/shared_c").unwrap();
-        assert!(Arc::ptr_eq(&a.target, &b.target), "same URL must reuse the pool");
-        assert!(!Arc::ptr_eq(&a.target, &c.target), "different URL must get its own pool");
+        assert!(
+            Arc::ptr_eq(&a.target, &b.target),
+            "same URL must reuse the pool"
+        );
+        assert!(
+            !Arc::ptr_eq(&a.target, &c.target),
+            "different URL must get its own pool"
+        );
     }
 
     #[test]
     fn vector_helpers_reject_non_finite_values() {
         assert!(vector::from_f64(&[0.5, f64::NAN]).is_none());
-        assert_eq!(vector::from_f64(&[0.5, 1.0]).unwrap().as_slice(), &[0.5_f32, 1.0]);
+        assert_eq!(
+            vector::from_f64(&[0.5, 1.0]).unwrap().as_slice(),
+            &[0.5_f32, 1.0]
+        );
         assert_eq!(vector::from_f32(&[1.0, 2.0]).to_vec(), vec![1.0_f32, 2.0]);
     }
 }

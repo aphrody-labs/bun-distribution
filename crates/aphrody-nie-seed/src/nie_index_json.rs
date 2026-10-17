@@ -65,7 +65,10 @@ fn parse_dat_vaddr(key: &str) -> Option<i64> {
 }
 
 fn parse_hex_const(s: &str) -> Option<i64> {
-    let hex = s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")).unwrap_or(s);
+    let hex = s
+        .strip_prefix("0x")
+        .or_else(|| s.strip_prefix("0X"))
+        .unwrap_or(s);
     u64::from_str_radix(hex, 16).ok().map(|v| v as i64)
 }
 
@@ -105,11 +108,27 @@ pub fn ingest_file(db: &mut Db, binary_id: i64, path: &Path) -> anyhow::Result<S
         let role = f.ro.as_deref().unwrap_or("");
         let confidence = if named { 1.0 } else { 0.0 };
 
-        let fid =
-            ingest::function(&tx, binary_id, vaddr, name, Some("ghidra"), ns, role, confidence)?;
+        let fid = ingest::function(
+            &tx,
+            binary_id,
+            vaddr,
+            name,
+            Some("ghidra"),
+            ns,
+            role,
+            confidence,
+        )?;
         let pagerank = idx.pagerank_scores.get(key).copied().unwrap_or(0.0);
         let n_lines = (f.el - f.sl).max(0);
-        ingest::function_meta(&tx, fid, f.rt.as_deref(), f.p.as_deref(), f.cx, n_lines, pagerank)?;
+        ingest::function_meta(
+            &tx,
+            fid,
+            f.rt.as_deref(),
+            f.p.as_deref(),
+            f.cx,
+            n_lines,
+            pagerank,
+        )?;
         stats.functions += 1;
 
         for s in &f.st {
@@ -140,7 +159,10 @@ pub fn ingest_file(db: &mut Db, binary_id: i64, path: &Path) -> anyhow::Result<S
     for (key, f) in &idx.functions {
         let from = keymap[key.as_str()];
         for callee in &f.ce {
-            let to = keymap.get(callee.as_str()).copied().or_else(|| parse_fun_vaddr(callee));
+            let to = keymap
+                .get(callee.as_str())
+                .copied()
+                .or_else(|| parse_fun_vaddr(callee));
             if let Some(to) = to {
                 ingest::xref(&tx, binary_id, from, to, "call")?;
                 stats.xrefs += 1;

@@ -1,6 +1,6 @@
 use super::Buffers;
 use crate::common::{BgObjPixel, Buffers as BuffersTrait, ObjPixel, WindowPixel};
-use aphrody_dust_core::gpu::{SCREEN_WIDTH, Scanline};
+use aphrody_dust_core::gpu::{Scanline, SCREEN_WIDTH};
 
 impl BuffersTrait for Buffers {
     unsafe fn obj_window(&self) -> &mut [u8; SCREEN_WIDTH / 8] {

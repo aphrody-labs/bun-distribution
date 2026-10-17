@@ -68,13 +68,19 @@ impl CompiledMenuObject {
             self.part_color_rgba.entry(*part).or_insert(*rgba);
         }
         for (part, args) in &object.part_texture_args {
-            self.part_texture_args.entry(*part).or_insert_with(|| args.clone());
+            self.part_texture_args
+                .entry(*part)
+                .or_insert_with(|| args.clone());
         }
         for (part, args) in &object.part_param_args {
-            self.part_param_args.entry(*part).or_insert_with(|| args.clone());
+            self.part_param_args
+                .entry(*part)
+                .or_insert_with(|| args.clone());
         }
         for (part, args) in &object.part_flag_args {
-            self.part_flag_args.entry(*part).or_insert_with(|| args.clone());
+            self.part_flag_args
+                .entry(*part)
+                .or_insert_with(|| args.clone());
         }
         if self.sprite_hash.is_none() {
             self.sprite_hash = object.sprite_texture_hash;

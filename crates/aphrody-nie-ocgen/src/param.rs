@@ -158,8 +158,14 @@ fn flatten<'a>(value: &'a Value, out: &mut Vec<Node<'a>>) {
         return;
     };
     if let Some(name) = object.get("name").and_then(Value::as_str) {
-        let vars = object.get("variables").and_then(Value::as_array).map_or(&[][..], Vec::as_slice);
-        out.push(Node { kind: kind_of(name), vars });
+        let vars = object
+            .get("variables")
+            .and_then(Value::as_array)
+            .map_or(&[][..], Vec::as_slice);
+        out.push(Node {
+            kind: kind_of(name),
+            vars,
+        });
     }
     if let Some(children) = object.get("children") {
         flatten(children, out);
@@ -182,7 +188,9 @@ fn raw(vars: &[Value], index: usize, kind: &str) -> Result<String, Error> {
 fn int(vars: &[Value], index: usize, kind: &str) -> Result<i64, Error> {
     let text = raw(vars, index, kind)?;
     text.parse::<i64>().map_err(|_| {
-        Error::Format(format!("{kind}: variable {index} \u{ab} {text} \u{bb} n'est pas un entier"))
+        Error::Format(format!(
+            "{kind}: variable {index} \u{ab} {text} \u{bb} n'est pas un entier"
+        ))
     })
 }
 
@@ -257,7 +265,7 @@ impl CharaEditParam {
                         .last_mut()
                         .ok_or_else(|| Error::Format(format!("{kind} sans TEX_PARTS parent")))?
                         .mirror = Some(mirror);
-                },
+                }
                 "CHARA_EDIT_PARAM_TEX_PARTS_RIGHT" => {
                     let right = floats::<5>(vars, 0, kind)?;
                     out.tex_parts
@@ -265,9 +273,12 @@ impl CharaEditParam {
                         .and_then(|part| part.mirror.as_mut())
                         .ok_or_else(|| Error::Format(format!("{kind} sans LEFT parent")))?
                         .right = right;
-                },
+                }
                 "CHARA_EDIT_PARAM_TEX_PARTS_COLOR" => {
-                    let color = TexColor { slot: int(vars, 0, kind)?, rgba: rgba(vars, 1, kind)? };
+                    let color = TexColor {
+                        slot: int(vars, 0, kind)?,
+                        rgba: rgba(vars, 1, kind)?,
+                    };
                     let part = out
                         .tex_parts
                         .last_mut()
@@ -276,7 +287,7 @@ impl CharaEditParam {
                         Some(mirror) => mirror.colors.push(color),
                         None => part.colors.push(color),
                     }
-                },
+                }
                 "CHARA_EDIT_PARAM_MDL_PART" => out.mdl_parts.push(MdlPart {
                     slot: int(vars, 0, kind)?,
                     resource_hash: int(vars, 1, kind)?,
@@ -289,7 +300,7 @@ impl CharaEditParam {
                         .last_mut()
                         .ok_or_else(|| Error::Format(format!("{kind} sans MDL_PART parent")))?
                         .rgba = channels;
-                },
+                }
                 "CHARA_EDIT_PARAM_MDL_BONE" => out.bones.push(BoneEdit {
                     bone: int(vars, 0, kind)?,
                     trans: [0.0; 3],
@@ -307,13 +318,16 @@ impl CharaEditParam {
                         "MDL_BONE_ROT" => bone.rot = triple,
                         _ => bone.scale = triple,
                     }
-                },
+                }
                 "CHARA_EDIT_PARAM_SETTING_LIST_BEG" => out.settings = Some(Vec::new()),
                 "CHARA_EDIT_PARAM_SETTING" => {
-                    let setting = Setting { key: int(vars, 0, kind)?, value: int(vars, 1, kind)? };
+                    let setting = Setting {
+                        key: int(vars, 0, kind)?,
+                        value: int(vars, 1, kind)?,
+                    };
                     out.settings.get_or_insert_with(Vec::new).push(setting);
-                },
-                _ => {},
+                }
+                _ => {}
             }
         }
         Ok(out)
@@ -362,7 +376,11 @@ impl CharaEditParam {
         for part in &self.mdl_parts {
             mdl.push(mdl_counters.leaf(
                 "CHARA_EDIT_PARAM_MDL_PART",
-                &[number(part.slot), number(part.resource_hash), text(&part.resource)],
+                &[
+                    number(part.slot),
+                    number(part.resource_hash),
+                    text(&part.resource),
+                ],
             ));
             let colors: Vec<Value> = part.rgba.iter().map(|value| number(*value)).collect();
             mdl.push(mdl_counters.leaf("CHARA_EDIT_PARAM_MDL_COLOR", &colors));

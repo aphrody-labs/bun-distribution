@@ -24,7 +24,12 @@ fn ms_cues(max: usize) -> impl Strategy<Value = Vec<Cue>> {
             .map(|(gap, dur, text)| {
                 let start = t + gap;
                 t = start + dur;
-                Cue { start: Tick(start * MS), end: Tick(t * MS), text, ..Default::default() }
+                Cue {
+                    start: Tick(start * MS),
+                    end: Tick(t * MS),
+                    text,
+                    ..Default::default()
+                }
             })
             .collect()
     })

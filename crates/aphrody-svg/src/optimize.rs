@@ -44,7 +44,11 @@ pub fn optimize(svg: &str, options: OptimizeOptions) -> Result<String> {
         preserve_text: options.preserve_text,
         coordinates_precision: options.coordinates_precision,
         transforms_precision: options.transforms_precision,
-        indent: if options.pretty { usvg::Indent::Spaces(2) } else { usvg::Indent::None },
+        indent: if options.pretty {
+            usvg::Indent::Spaces(2)
+        } else {
+            usvg::Indent::None
+        },
         attributes_indent: usvg::Indent::None,
         ..usvg::WriteOptions::default()
     };

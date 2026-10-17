@@ -102,7 +102,10 @@ fn parse_compte_et_champs_de_base() {
     assert_eq!(t0.skill_id, HashId(0x5B6A_04E9));
     assert_eq!(t0.blank_left_index, 0);
     assert_eq!(t0.blank_right_index, 1);
-    assert_eq!(t0.eldorado_id, None, "0x00000000 → None (port inagle ZERO_HASH)");
+    assert_eq!(
+        t0.eldorado_id, None,
+        "0x00000000 → None (port inagle ZERO_HASH)"
+    );
 
     assert_eq!(telops[1].skill_id, HashId(0x7047_572A));
     assert_eq!(telops[1].blank_left_index, 1);
@@ -118,8 +121,14 @@ fn resolution_marges_gauche_droite_par_langue() {
     // blank[0].left  = ja246 en324 pt290 fr6   it124 de307 es87  zh_hant370 zh_hans347
     // blank[1].right = ja275 en418 pt306 fr245 it308 de382 es176 zh_hant360 zh_hans358
     let t0 = &telops[0];
-    assert_eq!(margins_vec(&t0.left), vec![246, 324, 290, 6, 124, 307, 87, 370, 347]);
-    assert_eq!(margins_vec(&t0.right), vec![275, 418, 306, 245, 308, 382, 176, 360, 358]);
+    assert_eq!(
+        margins_vec(&t0.left),
+        vec![246, 324, 290, 6, 124, 307, 87, 370, 347]
+    );
+    assert_eq!(
+        margins_vec(&t0.right),
+        vec![275, 418, 306, 245, 308, 382, 176, 360, 358]
+    );
     // Accès nommé : cohérence du champ struct et de l'accesseur `get`.
     assert_eq!(t0.left.fr, 6);
     assert_eq!(t0.right.de, 382);
@@ -128,10 +137,16 @@ fn resolution_marges_gauche_droite_par_langue() {
 
     // Entrée 1 : gauche = blank[1].left, droite = blank[1].right.
     let t1 = &telops[1];
-    assert_eq!(margins_vec(&t1.left), vec![270, 417, 306, 243, 308, 379, 175, 355, 354]);
+    assert_eq!(
+        margins_vec(&t1.left),
+        vec![270, 417, 306, 243, 308, 379, 175, 355, 354]
+    );
     // Entrée 2 : gauche = blank[2].left.
     let t2 = &telops[2];
-    assert_eq!(margins_vec(&t2.left), vec![213, 400, 239, 252, 174, 346, 164, 200, 222]);
+    assert_eq!(
+        margins_vec(&t2.left),
+        vec![213, 400, 239, 252, 174, 346, 164, 200, 222]
+    );
 }
 
 #[test]
@@ -168,7 +183,10 @@ fn eldorado_id_non_nul_et_index_hors_borne() {
     // Gauche hors borne → toutes nulles.
     assert_eq!(margins_vec(&t.left), vec![0; 9]);
     // Droite = blank[1].right, résolu.
-    assert_eq!(margins_vec(&t.right), vec![275, 418, 306, 245, 308, 382, 176, 360, 358]);
+    assert_eq!(
+        margins_vec(&t.right),
+        vec![275, 418, 306, 245, 308, 382, 176, 360, 358]
+    );
 }
 
 #[test]

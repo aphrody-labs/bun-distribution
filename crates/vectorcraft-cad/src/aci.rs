@@ -5,8 +5,17 @@
 use crate::ColorDepth;
 
 /// The nine standard colours (index 7 shows white on a dark background and black on paper).
-const STANDARD: [[u8; 3]; 9] =
-    [[255, 0, 0], [255, 255, 0], [0, 255, 0], [0, 255, 255], [0, 0, 255], [255, 0, 255], [255, 255, 255], [128, 128, 128], [192, 192, 192]];
+const STANDARD: [[u8; 3]; 9] = [
+    [255, 0, 0],
+    [255, 255, 0],
+    [0, 255, 0],
+    [0, 255, 255],
+    [0, 0, 255],
+    [255, 0, 255],
+    [255, 255, 255],
+    [128, 128, 128],
+    [192, 192, 192],
+];
 
 /// The brightness of the five shades of each hue.
 const SHADES: [f64; 5] = [1.0, 0.65, 0.5, 0.3, 0.15];
@@ -59,8 +68,21 @@ fn candidates(depth: ColorDepth) -> Box<dyn Iterator<Item = u8>> {
 /// The index of `depth` nearest to `rgb` (squared RGB distance; ties go to the lower index).
 /// Index 7 stands for both white and black, as CAD apps draw it in the background's contrast.
 pub fn nearest_aci(rgb: [u8; 3], depth: ColorDepth) -> u8 {
-    let dist = |c: [u8; 3]| rgb.iter().zip(c).map(|(a, b)| (i32::from(*a) - i32::from(b)).pow(2)).sum::<i32>();
-    candidates(depth).min_by_key(|i| if *i == 7 { dist([255; 3]).min(dist([0; 3])) } else { dist(aci_rgb(*i)) }).unwrap_or(7)
+    let dist = |c: [u8; 3]| {
+        rgb.iter()
+            .zip(c)
+            .map(|(a, b)| (i32::from(*a) - i32::from(b)).pow(2))
+            .sum::<i32>()
+    };
+    candidates(depth)
+        .min_by_key(|i| {
+            if *i == 7 {
+                dist([255; 3]).min(dist([0; 3]))
+            } else {
+                dist(aci_rgb(*i))
+            }
+        })
+        .unwrap_or(7)
 }
 
 #[cfg(test)]
@@ -93,13 +115,25 @@ mod tests {
     #[test]
     fn nearest_index_by_depth() {
         assert_eq!(nearest_aci([255, 0, 0], ColorDepth::Aci8), 1);
-        assert_eq!(nearest_aci([0, 0, 0], ColorDepth::Aci256), 7, "black is index 7");
+        assert_eq!(
+            nearest_aci([0, 0, 0], ColorDepth::Aci256),
+            7,
+            "black is index 7"
+        );
         assert_eq!(nearest_aci([255, 255, 255], ColorDepth::Aci16), 7);
         assert_eq!(nearest_aci([255, 127, 0], ColorDepth::Aci256), 30);
         assert_eq!(nearest_aci([255, 127, 0], ColorDepth::Aci16), 30);
-        assert_eq!(nearest_aci([255, 127, 0], ColorDepth::Aci8), 1, "8 colours: red is nearest");
+        assert_eq!(
+            nearest_aci([255, 127, 0], ColorDepth::Aci8),
+            1,
+            "8 colours: red is nearest"
+        );
         assert_eq!(nearest_aci([60, 60, 60], ColorDepth::Aci16), 250);
         assert_eq!(nearest_aci([100, 100, 100], ColorDepth::Aci8), 8);
-        assert_eq!(nearest_aci([60, 60, 60], ColorDepth::Aci8), 7, "dark greys go to black");
+        assert_eq!(
+            nearest_aci([60, 60, 60], ColorDepth::Aci8),
+            7,
+            "dark greys go to black"
+        );
     }
 }

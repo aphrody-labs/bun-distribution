@@ -6,12 +6,12 @@ use thiserror::Error;
 use crate::{
     component::Components,
     schedule::{
+        AmbiguousSystemConflictsWarning, ConflictingSystems, NodeId, ScheduleGraph, SystemKey,
+        SystemSetKey, SystemTypeSetAmbiguityError,
         graph::{
             DagCrossDependencyError, DagOverlappingGroupError, DagRedundancyError,
             DiGraphToposortError, GraphNodeId,
         },
-        AmbiguousSystemConflictsWarning, ConflictingSystems, NodeId, ScheduleGraph, SystemKey,
-        SystemSetKey, SystemTypeSetAmbiguityError,
     },
     world::World,
 };
@@ -283,7 +283,9 @@ impl ScheduleBuildWarning {
 #[derive(Error, Debug)]
 pub enum ScheduleError {
     /// Operation cannot be completed because the schedule has changed and `Schedule::initialize` needs to be called
-    #[error("Operation cannot be completed because the schedule has changed and `Schedule::initialize` needs to be called")]
+    #[error(
+        "Operation cannot be completed because the schedule has changed and `Schedule::initialize` needs to be called"
+    )]
     Uninitialized,
     /// Method could not find set
     #[error("Set not found")]

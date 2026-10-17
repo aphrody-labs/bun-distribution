@@ -20,11 +20,27 @@ use effectcraft_raster::{Image, Px};
 use rayon::prelude::*;
 
 use crate::generate::value_noise;
-use crate::util::{SRC_NAMES, Src, fit_layer, layer_cover_pad, layer_rect, lerp4, map_xy, pick, premul, remap, smoothstep, src_at, unpremul};
+use crate::util::{
+    SRC_NAMES, Src, fit_layer, layer_cover_pad, layer_rect, lerp4, map_xy, pick, premul, remap,
+    smoothstep, src_at, unpremul,
+};
 use crate::{Buf, EffectCtx, EffectSpec, col, num, p, popup, slider};
 
-fn spec(id: &'static str, name: &'static str, params: Vec<crate::ParamSpec>, render: crate::RenderFn) -> EffectSpec {
-    EffectSpec { id, name, category: "Distort", params, render, gpu: false, float: true }
+fn spec(
+    id: &'static str,
+    name: &'static str,
+    params: Vec<crate::ParamSpec>,
+    render: crate::RenderFn,
+) -> EffectSpec {
+    EffectSpec {
+        id,
+        name,
+        category: "Distort",
+        params,
+        render,
+        gpu: false,
+        float: true,
+    }
 }
 
 fn pt(x: f64, y: f64) -> Value {
@@ -43,7 +59,13 @@ fn fbm(u: f64, v: f64, z: f64, seed: u32, octaves: f64, falloff: f32) -> f32 {
     let (mut sum, mut norm, mut amp, mut f) = (0.0f32, 0.0f32, 1.0f32, 1.0f32);
     for o in 0..n {
         let w = if o + 1 == n && frac > 0.0 { frac } else { 1.0 };
-        sum += value_noise(u as f32 * f, v as f32 * f, z as f32 + o as f32 * 5.17, seed.wrapping_add(o as u32 * 101)) * amp * w;
+        sum += value_noise(
+            u as f32 * f,
+            v as f32 * f,
+            z as f32 + o as f32 * 5.17,
+            seed.wrapping_add(o as u32 * 101),
+        ) * amp
+            * w;
         norm += amp * w;
         amp *= falloff;
         f *= 2.0;
@@ -98,14 +120,17 @@ fn turbulent_displace(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let oct = ctx.params.f("complexity").clamp(1.0, 10.0);
     let evo = ctx.params.f("evolution") / 360.0;
     // Evolution Options: Cycle Evolution loops the noise every `cycle` revolutions.
-    let cycle = (ctx.params.b("evolutionOptions/cycleEvolution")).then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0));
+    let cycle = (ctx.params.b("evolutionOptions/cycleEvolution"))
+        .then(|| ctx.params.f("evolutionOptions/cycle").round().max(1.0));
     let pin_raw = ctx.params.e("pinning");
     let locked = pin_raw >= 8;
     let pin = if locked { pin_raw - 7 } else { pin_raw };
     let falloff = if (3..=5).contains(&kind) { 0.3 } else { 0.5 };
     let (lx, ly, lw, lh) = layer_rect(ctx, &b);
     let edge = (lw.min(lh) * if locked { 0.25 } else { 0.1 }).max(1.0);
-    let seed = (ctx.seed ^ 0x7d15).wrapping_add((ctx.params.f("evolutionOptions/randomSeed") as i64 as u32).wrapping_mul(0x9e37_79b9));
+    let seed = (ctx.seed ^ 0x7d15).wrapping_add(
+        (ctx.params.f("evolutionOptions/randomSeed") as i64 as u32).wrapping_mul(0x9e37_79b9),
+    );
     let n = |u: f64, v: f64, s: u32| {
         let s = seed.wrapping_add(s);
         match cycle {
@@ -113,7 +138,9 @@ fn turbulent_displace(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 // Cross-fade the noise at z and z - c so z = 0 and z = c match.
                 let z = evo.rem_euclid(c);
                 let t = z / c;
-                (fbm(u, v, z, s, oct, falloff) as f64 * (1.0 - t) + fbm(u, v, z - c, s, oct, falloff) as f64 * t) - 0.5
+                (fbm(u, v, z, s, oct, falloff) as f64 * (1.0 - t)
+                    + fbm(u, v, z - c, s, oct, falloff) as f64 * t)
+                    - 0.5
             }
             None => fbm(u, v, evo, s, oct, falloff) as f64 - 0.5,
         }
@@ -126,7 +153,11 @@ fn turbulent_displace(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 let gx = (n(u + e, v, 0) - n(u - e, v, 0)) / (2.0 * e);
                 let gy = (n(u, v + e, 0) - n(u, v - e, 0)) / (2.0 * e);
                 let k = amount * 0.25;
-                if kind == 1 || kind == 4 { (gx * k, gy * k) } else { (-gy * k, gx * k) }
+                if kind == 1 || kind == 4 {
+                    (gx * k, gy * k)
+                } else {
+                    (-gy * k, gx * k)
+                }
             }
             6 => (0.0, n(u, v, 17) * amount),
             7 => (n(u, v, 0) * amount, 0.0),
@@ -137,8 +168,14 @@ fn turbulent_displace(ctx: &EffectCtx, mut b: Buf) -> Buf {
             _ => (n(u, v, 0) * amount, n(u, v, 17) * amount),
         };
         // Measured from the outermost pixel centres, so pinned edges stay exactly in place.
-        let (l, r) = (((x - lx - 0.5) / edge).clamp(0.0, 1.0), ((lx + lw - 0.5 - x) / edge).clamp(0.0, 1.0));
-        let (t, bt) = (((y - ly - 0.5) / edge).clamp(0.0, 1.0), ((ly + lh - 0.5 - y) / edge).clamp(0.0, 1.0));
+        let (l, r) = (
+            ((x - lx - 0.5) / edge).clamp(0.0, 1.0),
+            ((lx + lw - 0.5 - x) / edge).clamp(0.0, 1.0),
+        );
+        let (t, bt) = (
+            ((y - ly - 0.5) / edge).clamp(0.0, 1.0),
+            ((ly + lh - 0.5 - y) / edge).clamp(0.0, 1.0),
+        );
         let k = match pin {
             1 => l.min(r).min(t).min(bt),
             2 => t.min(bt),
@@ -151,7 +188,10 @@ fn turbulent_displace(ctx: &EffectCtx, mut b: Buf) -> Buf {
         };
         let (sx, sy) = (x + dx * k, y + dy * k);
         if locked {
-            return Some((sx.clamp(lx + 0.5, lx + lw - 0.5), sy.clamp(ly + 0.5, ly + lh - 0.5)));
+            return Some((
+                sx.clamp(lx + 0.5, lx + lw - 0.5),
+                sy.clamp(ly + 0.5, ly + lh - 0.5),
+            ));
         }
         Some((sx, sy))
     });
@@ -183,7 +223,10 @@ fn displacement_map(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 crate::util::gen_image(b.img.width, b.img.height, |x, y| {
                     let qx = ((x as f64 + 0.5 - b.offset[0]) * inv + dx).rem_euclid(os[0].max(1.0));
                     let qy = ((y as f64 + 0.5 - b.offset[1]) * inv + dy).rem_euclid(os[1].max(1.0));
-                    o.buf.img.sample_bilinear_clamped(qx * o.buf.scale + o.buf.offset[0], qy * o.buf.scale + o.buf.offset[1])
+                    o.buf.img.sample_bilinear_clamped(
+                        qx * o.buf.scale + o.buf.offset[0],
+                        qy * o.buf.scale + o.buf.offset[1],
+                    )
                 })
             }
             _ => fit_layer(ctx, &b, &o, false),
@@ -212,7 +255,13 @@ fn displacement_map(ctx: &EffectCtx, mut b: Buf) -> Buf {
         }
         let (c, a) = unpremul(map.get(x as i64, y as i64));
         // "Off" turns displacement in that direction off.
-        let d = |s: Src, m: f64| if s == Src::Off { 0.0 } else { (pick(s, c, a) as f64 - 0.5) * 2.0 * m };
+        let d = |s: Src, m: f64| {
+            if s == Src::Off {
+                0.0
+            } else {
+                (pick(s, c, a) as f64 - 0.5) * 2.0 * m
+            }
+        };
         let (dx, dy) = (d(hs, mh), d(vs, mv));
         if dx == 0.0 && dy == 0.0 {
             return px;
@@ -254,17 +303,25 @@ fn optics_compensation(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let resize = if optimal { 0 } else { ctx.params.e("resize") };
     if reverse && resize > 0 && !ctx.adjustment {
         let c = b.to_px(ctx.params.v2("viewCenter"));
-        let rc =
-            [(lx, ly), (lx + lw, ly), (lx, ly + lh), (lx + lw, ly + lh)].iter().map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt()).fold(0.0, f64::max);
+        let rc = [(lx, ly), (lx + lw, ly), (lx, ly + lh), (lx + lw, ly + lh)]
+            .iter()
+            .map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt())
+            .fold(0.0, f64::max);
         let th = rc / r_ref * half;
         let cap = lw.max(lh) * [0.0, 0.5, 1.5, 3.5][resize.min(3) as usize];
-        let grow = if th < FRAC_PI_2 - 1e-3 { (f * th.tan() - rc).max(0.0) } else { cap };
+        let grow = if th < FRAC_PI_2 - 1e-3 {
+            (f * th.tan() - rc).max(0.0)
+        } else {
+            cap
+        };
         b.pad(grow.min(cap).min(4096.0).ceil() as u32);
     }
     let c = b.to_px(ctx.params.v2("viewCenter"));
     let fit = if optimal {
-        let rc =
-            [(lx, ly), (lx + lw, ly), (lx, ly + lh), (lx + lw, ly + lh)].iter().map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt()).fold(1.0, f64::max);
+        let rc = [(lx, ly), (lx + lw, ly), (lx, ly + lh), (lx + lw, ly + lh)]
+            .iter()
+            .map(|p| ((p.0 - c.0).powi(2) + (p.1 - c.1).powi(2)).sqrt())
+            .fold(1.0, f64::max);
         if reverse {
             let th = (rc / r_ref * half).min(FRAC_PI_2 - 1e-3);
             (f * th.tan() / rc).max(1.0)
@@ -319,7 +376,14 @@ fn magnify(ctx: &EffectCtx, mut b: Buf) -> Buf {
         // Let the magnified area extend past the layer edges.
         let (lx, ly, lw, lh) = layer_rect(ctx, &b);
         let reach = size.max(0.0);
-        let over = [lx - (c.0 - reach), (c.0 + reach) - (lx + lw), ly - (c.1 - reach), (c.1 + reach) - (ly + lh)].into_iter().fold(0.0, f64::max);
+        let over = [
+            lx - (c.0 - reach),
+            (c.0 + reach) - (lx + lw),
+            ly - (c.1 - reach),
+            (c.1 + reach) - (ly + lh),
+        ]
+        .into_iter()
+        .fold(0.0, f64::max);
         b.pad(over.min(4096.0).ceil() as u32);
     }
     let c = b.to_px(ctx.params.v2("center"));
@@ -327,8 +391,16 @@ fn magnify(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let seed = ctx.seed ^ 0x3a61;
     map_xy(&mut b.img, |x, y, px| {
         let (dx, dy) = (x as f64 + 0.5 - c.0, y as f64 + 0.5 - c.1);
-        let d = if square { dx.abs().max(dy.abs()) } else { (dx * dx + dy * dy).sqrt() };
-        let w = if feather > 0.01 { 1.0 - smoothstep((size - feather) as f32, size as f32, d as f32) } else { (size - d + 0.5).clamp(0.0, 1.0) as f32 } * op;
+        let d = if square {
+            dx.abs().max(dy.abs())
+        } else {
+            (dx * dx + dy * dy).sqrt()
+        };
+        let w = if feather > 0.01 {
+            1.0 - smoothstep((size - feather) as f32, size as f32, d as f32)
+        } else {
+            (size - d + 0.5).clamp(0.0, 1.0) as f32
+        } * op;
         if w <= 0.0 {
             return if blend.is_none() { [0.0; 4] } else { px };
         }
@@ -338,7 +410,10 @@ fn magnify(ctx: &EffectCtx, mut b: Buf) -> Buf {
             1 => src.sample_bicubic(sx, sy),
             // Scatter: jitter each sample within the enlarged source pixel.
             2 => {
-                let j = |k: u32| (crate::util::hash1(x as u32, y as u32 ^ (k << 20), seed) as f64 - 0.5) * (1.0 - 1.0 / mag).max(0.0);
+                let j = |k: u32| {
+                    (crate::util::hash1(x as u32, y as u32 ^ (k << 20), seed) as f64 - 0.5)
+                        * (1.0 - 1.0 / mag).max(0.0)
+                };
                 src.sample_bilinear(sx.floor() + 0.5 + j(1), sy.floor() + 0.5 + j(2))
             }
             // Standard: nearest source pixel (sharp, blocky at high magnification).
@@ -478,7 +553,10 @@ fn mesh_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let (lw, lh) = (ctx.layer_size[0], ctx.layer_size[1]);
     let vert = |i: usize, j: usize| {
         let o = offs[j * (cols + 1) + i];
-        b.to_px([i as f64 / cols as f64 * lw + o.0, j as f64 / rows as f64 * lh + o.1])
+        b.to_px([
+            i as f64 / cols as f64 * lw + o.0,
+            j as f64 / rows as f64 * lh + o.1,
+        ])
     };
     let (nx, ny) = (cols * q, rows * q);
     let mut dest = Vec::with_capacity((nx + 1) * (ny + 1));
@@ -486,10 +564,20 @@ fn mesh_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
     for gj in 0..=ny {
         for gi in 0..=nx {
             let (ci, cj) = ((gi / q).min(cols - 1), (gj / q).min(rows - 1));
-            let (u, v) = ((gi - ci * q) as f64 / q as f64, (gj - cj * q) as f64 / q as f64);
-            let (p00, p10, p01, p11) = (vert(ci, cj), vert(ci + 1, cj), vert(ci, cj + 1), vert(ci + 1, cj + 1));
-            let x = (p00.0 * (1.0 - u) + p10.0 * u) * (1.0 - v) + (p01.0 * (1.0 - u) + p11.0 * u) * v;
-            let y = (p00.1 * (1.0 - u) + p10.1 * u) * (1.0 - v) + (p01.1 * (1.0 - u) + p11.1 * u) * v;
+            let (u, v) = (
+                (gi - ci * q) as f64 / q as f64,
+                (gj - cj * q) as f64 / q as f64,
+            );
+            let (p00, p10, p01, p11) = (
+                vert(ci, cj),
+                vert(ci + 1, cj),
+                vert(ci, cj + 1),
+                vert(ci + 1, cj + 1),
+            );
+            let x =
+                (p00.0 * (1.0 - u) + p10.0 * u) * (1.0 - v) + (p01.0 * (1.0 - u) + p11.0 * u) * v;
+            let y =
+                (p00.1 * (1.0 - u) + p10.1 * u) * (1.0 - v) + (p01.1 * (1.0 - u) + p11.1 * u) * v;
             dest.push((x, y));
             srcp.push(b.to_px([gi as f64 / nx as f64 * lw, gj as f64 / ny as f64 * lh]));
         }
@@ -503,7 +591,10 @@ fn mesh_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
 fn bez(p0: [f64; 2], p1: [f64; 2], p2: [f64; 2], p3: [f64; 2], t: f64) -> [f64; 2] {
     let u = 1.0 - t;
     let (a, bb, c, d) = (u * u * u, 3.0 * u * u * t, 3.0 * u * t * t, t * t * t);
-    [p0[0] * a + p1[0] * bb + p2[0] * c + p3[0] * d, p0[1] * a + p1[1] * bb + p2[1] * c + p3[1] * d]
+    [
+        p0[0] * a + p1[0] * bb + p2[0] * c + p3[0] * d,
+        p0[1] * a + p1[1] * bb + p2[1] * c + p3[1] * d,
+    ]
 }
 
 fn bezier_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
@@ -517,9 +608,22 @@ fn bezier_warp(ctx: &EffectCtx, mut b: Buf) -> Buf {
 pub fn bezier_grid(ctx: &EffectCtx, offset: [f64; 2], scale: f64) -> (usize, Vec<Pt>, Vec<Pt>) {
     let to_px = |p: [f64; 2]| (p[0] * scale + offset[0], p[1] * scale + offset[1]);
     let g = |id: &str| ctx.params.v2(id);
-    let (tl, tlt, trt, tr) = (g("topLeftVertex"), g("topLeftTangent"), g("topRightTangent"), g("rightTopVertex"));
-    let (rtt, rbt, br) = (g("rightTopTangent"), g("rightBottomTangent"), g("bottomRightVertex"));
-    let (brt, blt, bl) = (g("bottomRightTangent"), g("bottomLeftTangent"), g("leftBottomVertex"));
+    let (tl, tlt, trt, tr) = (
+        g("topLeftVertex"),
+        g("topLeftTangent"),
+        g("topRightTangent"),
+        g("rightTopVertex"),
+    );
+    let (rtt, rbt, br) = (
+        g("rightTopTangent"),
+        g("rightBottomTangent"),
+        g("bottomRightVertex"),
+    );
+    let (brt, blt, bl) = (
+        g("bottomRightTangent"),
+        g("bottomLeftTangent"),
+        g("leftBottomVertex"),
+    );
     let (lbt, ltt) = (g("leftBottomTangent"), g("leftTopTangent"));
     let n = (ctx.params.f("quality").round().clamp(1.0, 10.0) as usize) * 4;
     let (lw, lh) = (ctx.layer_size[0], ctx.layer_size[1]);
@@ -535,7 +639,10 @@ pub fn bezier_grid(ctx: &EffectCtx, offset: [f64; 2], scale: f64) -> (usize, Vec
             let c1 = bez(bl, blt, brt, br, u);
             let mut s = [0.0; 2];
             for k in 0..2 {
-                let bil = (1.0 - u) * (1.0 - v) * tl[k] + u * (1.0 - v) * tr[k] + (1.0 - u) * v * bl[k] + u * v * br[k];
+                let bil = (1.0 - u) * (1.0 - v) * tl[k]
+                    + u * (1.0 - v) * tr[k]
+                    + (1.0 - u) * v * bl[k]
+                    + u * v * br[k];
                 s[k] = (1.0 - v) * c0[k] + v * c1[k] + (1.0 - u) * d0[k] + u * d1[k] - bil;
             }
             dest.push(to_px(s));
@@ -666,7 +773,11 @@ fn page_turn(ctx: &EffectCtx, mut b: Buf) -> Buf {
                 continue;
             }
             let (c, a) = unpremul(v);
-            let c = if back { [0, 1, 2].map(|i| paper[i] * (1.0 - bo) + c[i] * bo) } else { c };
+            let c = if back {
+                [0, 1, 2].map(|i| paper[i] * (1.0 - bo) + c[i] * bo)
+            } else {
+                c
+            };
             return premul(c.map(|v| v * shade), a);
         }
         [0.0; 4]
@@ -679,7 +790,12 @@ fn page_turn(ctx: &EffectCtx, mut b: Buf) -> Buf {
 fn cc_tiler(ctx: &EffectCtx, mut b: Buf) -> Buf {
     let s = (ctx.params.f("scale") / 100.0).max(0.001);
     if !ctx.adjustment {
-        b.pad(layer_cover_pad(ctx, [b.img.width, b.img.height], b.offset, b.scale));
+        b.pad(layer_cover_pad(
+            ctx,
+            [b.img.width, b.img.height],
+            b.offset,
+            b.scale,
+        ));
     }
     let c = b.to_px(ctx.params.v2("center"));
     let blend = (ctx.params.f("blendWithOriginal") / 100.0) as f32;
@@ -730,17 +846,67 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.turbulentdisplace",
             "Turbulent Displace",
             vec![
-                p("displacement", "Displacement", Value::Enum(0), popup(&TURBULENT_KINDS)),
-                p("amount", "Amount", num(50.0), slider(-1000.0, 1000.0, -200.0, 200.0, 1)),
-                p("size", "Size", num(100.0), slider(2.0, 4000.0, 2.0, 400.0, 1)),
-                p("offset", "Offset (Turbulence)", pt(0.5, 0.5), ParamUi::Point),
-                p("complexity", "Complexity", num(1.0), slider(1.0, 10.0, 1.0, 10.0, 1)),
+                p(
+                    "displacement",
+                    "Displacement",
+                    Value::Enum(0),
+                    popup(&TURBULENT_KINDS),
+                ),
+                p(
+                    "amount",
+                    "Amount",
+                    num(50.0),
+                    slider(-1000.0, 1000.0, -200.0, 200.0, 1),
+                ),
+                p(
+                    "size",
+                    "Size",
+                    num(100.0),
+                    slider(2.0, 4000.0, 2.0, 400.0, 1),
+                ),
+                p(
+                    "offset",
+                    "Offset (Turbulence)",
+                    pt(0.5, 0.5),
+                    ParamUi::Point,
+                ),
+                p(
+                    "complexity",
+                    "Complexity",
+                    num(1.0),
+                    slider(1.0, 10.0, 1.0, 10.0, 1),
+                ),
                 p("evolution", "Evolution", num(0.0), ParamUi::Angle),
-                p("evolutionOptions/cycleEvolution", "Cycle Evolution", Value::Bool(false), ParamUi::Checkbox),
-                p("evolutionOptions/cycle", "Cycle (in Revolutions)", num(1.0), slider(1.0, 1000.0, 1.0, 20.0, 0)),
-                p("evolutionOptions/randomSeed", "Random Seed", num(0.0), slider(0.0, 10000.0, 0.0, 1000.0, 0)),
-                p("pinning", "Pinning", Value::Enum(1), popup(&TURBULENT_PINNING)),
-                p("resizeLayer", "Resize Layer", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "evolutionOptions/cycleEvolution",
+                    "Cycle Evolution",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "evolutionOptions/cycle",
+                    "Cycle (in Revolutions)",
+                    num(1.0),
+                    slider(1.0, 1000.0, 1.0, 20.0, 0),
+                ),
+                p(
+                    "evolutionOptions/randomSeed",
+                    "Random Seed",
+                    num(0.0),
+                    slider(0.0, 10000.0, 0.0, 1000.0, 0),
+                ),
+                p(
+                    "pinning",
+                    "Pinning",
+                    Value::Enum(1),
+                    popup(&TURBULENT_PINNING),
+                ),
+                p(
+                    "resizeLayer",
+                    "Resize Layer",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             turbulent_displace,
         ),
@@ -748,16 +914,61 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.displacementmap",
             "Displacement Map",
             vec![
-                p("displacementMapLayer", "Displacement Map Layer", Value::Layer(None), ParamUi::Layer),
+                p(
+                    "displacementMapLayer",
+                    "Displacement Map Layer",
+                    Value::Layer(None),
+                    ParamUi::Layer,
+                ),
                 // The map layer is read without its masks or effects.
-                p("displacementMapLayerSource", "Displacement Map Layer Source", Value::Enum(0), ParamUi::Hidden),
-                p("useForHorizontal", "Use For Horizontal Displacement", Value::Enum(0), srcs()),
-                p("maxHorizontal", "Max Horizontal Displacement", num(5.0), slider(-32000.0, 32000.0, -100.0, 100.0, 1)),
-                p("useForVertical", "Use For Vertical Displacement", Value::Enum(1), srcs()),
-                p("maxVertical", "Max Vertical Displacement", num(5.0), slider(-32000.0, 32000.0, -100.0, 100.0, 1)),
-                p("displacementMapBehavior", "Displacement Map Behavior", Value::Enum(0), popup(&["Center Map", "Stretch Map to Fit", "Tile Map"])),
-                p("wrapPixelsAround", "Wrap Pixels Around", Value::Bool(false), ParamUi::Checkbox),
-                p("expandOutput", "Expand Output", Value::Bool(true), ParamUi::Checkbox),
+                p(
+                    "displacementMapLayerSource",
+                    "Displacement Map Layer Source",
+                    Value::Enum(0),
+                    ParamUi::Hidden,
+                ),
+                p(
+                    "useForHorizontal",
+                    "Use For Horizontal Displacement",
+                    Value::Enum(0),
+                    srcs(),
+                ),
+                p(
+                    "maxHorizontal",
+                    "Max Horizontal Displacement",
+                    num(5.0),
+                    slider(-32000.0, 32000.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "useForVertical",
+                    "Use For Vertical Displacement",
+                    Value::Enum(1),
+                    srcs(),
+                ),
+                p(
+                    "maxVertical",
+                    "Max Vertical Displacement",
+                    num(5.0),
+                    slider(-32000.0, 32000.0, -100.0, 100.0, 1),
+                ),
+                p(
+                    "displacementMapBehavior",
+                    "Displacement Map Behavior",
+                    Value::Enum(0),
+                    popup(&["Center Map", "Stretch Map to Fit", "Tile Map"]),
+                ),
+                p(
+                    "wrapPixelsAround",
+                    "Wrap Pixels Around",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "expandOutput",
+                    "Expand Output",
+                    Value::Bool(true),
+                    ParamUi::Checkbox,
+                ),
             ],
             displacement_map,
         ),
@@ -765,12 +976,37 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.opticscompensation",
             "Optics Compensation",
             vec![
-                p("fieldOfView", "Field Of View (FOV)", num(0.0), slider(0.0, 180.0, 0.0, 180.0, 1)),
-                p("reverseLensDistortion", "Reverse Lens Distortion", Value::Bool(false), ParamUi::Checkbox),
-                p("fovOrientation", "FOV Orientation", Value::Enum(0), popup(&["Horizontal", "Vertical", "Diagonal"])),
+                p(
+                    "fieldOfView",
+                    "Field Of View (FOV)",
+                    num(0.0),
+                    slider(0.0, 180.0, 0.0, 180.0, 1),
+                ),
+                p(
+                    "reverseLensDistortion",
+                    "Reverse Lens Distortion",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "fovOrientation",
+                    "FOV Orientation",
+                    Value::Enum(0),
+                    popup(&["Horizontal", "Vertical", "Diagonal"]),
+                ),
                 p("viewCenter", "View Center", pt(0.5, 0.5), ParamUi::Point),
-                p("optimalPixels", "Optimal Pixels (Invalidates Resize)", Value::Bool(false), ParamUi::Checkbox),
-                p("resize", "Resize", Value::Enum(0), popup(&["Off", "Max 2X", "Max 4X", "Unlimited"])),
+                p(
+                    "optimalPixels",
+                    "Optimal Pixels (Invalidates Resize)",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
+                p(
+                    "resize",
+                    "Resize",
+                    Value::Enum(0),
+                    popup(&["Off", "Max 2X", "Max 4X", "Unlimited"]),
+                ),
             ],
             optics_compensation,
         ),
@@ -778,16 +1014,60 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.magnify",
             "Magnify",
             vec![
-                p("shape", "Shape", Value::Enum(0), popup(&["Circle", "Square"])),
+                p(
+                    "shape",
+                    "Shape",
+                    Value::Enum(0),
+                    popup(&["Circle", "Square"]),
+                ),
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
-                p("magnification", "Magnification", num(200.0), slider(1.0, 10000.0, 100.0, 600.0, 1)),
-                p("link", "Link", Value::Enum(0), popup(&["None", "Size To Magnification", "Size & Feather To Magnification"])),
-                p("size", "Size", num(100.0), slider(0.0, 4000.0, 0.0, 1000.0, 1)),
-                p("feather", "Feather", num(0.0), slider(0.0, 4000.0, 0.0, 200.0, 1)),
+                p(
+                    "magnification",
+                    "Magnification",
+                    num(200.0),
+                    slider(1.0, 10000.0, 100.0, 600.0, 1),
+                ),
+                p(
+                    "link",
+                    "Link",
+                    Value::Enum(0),
+                    popup(&[
+                        "None",
+                        "Size To Magnification",
+                        "Size & Feather To Magnification",
+                    ]),
+                ),
+                p(
+                    "size",
+                    "Size",
+                    num(100.0),
+                    slider(0.0, 4000.0, 0.0, 1000.0, 1),
+                ),
+                p(
+                    "feather",
+                    "Feather",
+                    num(0.0),
+                    slider(0.0, 4000.0, 0.0, 200.0, 1),
+                ),
                 p("opacity", "Opacity", num(100.0), pct(100.0)),
-                p("scaling", "Scaling", Value::Enum(0), popup(&["Standard", "Soft", "Scatter"])),
-                p("blendingMode", "Blending Mode", Value::Enum(1), popup(&MAGNIFY_MODE_NAMES)),
-                p("resizeLayer", "Resize Layer", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "scaling",
+                    "Scaling",
+                    Value::Enum(0),
+                    popup(&["Standard", "Soft", "Scatter"]),
+                ),
+                p(
+                    "blendingMode",
+                    "Blending Mode",
+                    Value::Enum(1),
+                    popup(&MAGNIFY_MODE_NAMES),
+                ),
+                p(
+                    "resizeLayer",
+                    "Resize Layer",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             magnify,
         ),
@@ -796,9 +1076,24 @@ pub fn specs() -> Vec<EffectSpec> {
             "Mesh Warp",
             vec![
                 p("rows", "Rows", num(7.0), slider(1.0, 31.0, 1.0, 31.0, 0)),
-                p("columns", "Columns", num(7.0), slider(1.0, 31.0, 1.0, 31.0, 0)),
-                p("quality", "Quality", num(8.0), slider(1.0, 10.0, 1.0, 10.0, 0)),
-                p("mesh", "Distortion Mesh", Value::Str(String::new()), ParamUi::Hidden),
+                p(
+                    "columns",
+                    "Columns",
+                    num(7.0),
+                    slider(1.0, 31.0, 1.0, 31.0, 0),
+                ),
+                p(
+                    "quality",
+                    "Quality",
+                    num(8.0),
+                    slider(1.0, 10.0, 1.0, 10.0, 0),
+                ),
+                p(
+                    "mesh",
+                    "Distortion Mesh",
+                    Value::Str(String::new()),
+                    ParamUi::Hidden,
+                ),
             ],
             mesh_warp,
         ),
@@ -806,19 +1101,84 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.bezierwarp",
             "Bezier Warp",
             vec![
-                p("topLeftVertex", "Top Left Vertex", pt(0.0, 0.0), ParamUi::Point),
-                p("topLeftTangent", "Top Left Tangent", pt(1.0 / 3.0, 0.0), ParamUi::Point),
-                p("topRightTangent", "Top Right Tangent", pt(2.0 / 3.0, 0.0), ParamUi::Point),
-                p("rightTopVertex", "Right Top Vertex", pt(1.0, 0.0), ParamUi::Point),
-                p("rightTopTangent", "Right Top Tangent", pt(1.0, 1.0 / 3.0), ParamUi::Point),
-                p("rightBottomTangent", "Right Bottom Tangent", pt(1.0, 2.0 / 3.0), ParamUi::Point),
-                p("bottomRightVertex", "Bottom Right Vertex", pt(1.0, 1.0), ParamUi::Point),
-                p("bottomRightTangent", "Bottom Right Tangent", pt(2.0 / 3.0, 1.0), ParamUi::Point),
-                p("bottomLeftTangent", "Bottom Left Tangent", pt(1.0 / 3.0, 1.0), ParamUi::Point),
-                p("leftBottomVertex", "Left Bottom Vertex", pt(0.0, 1.0), ParamUi::Point),
-                p("leftBottomTangent", "Left Bottom Tangent", pt(0.0, 2.0 / 3.0), ParamUi::Point),
-                p("leftTopTangent", "Left Top Tangent", pt(0.0, 1.0 / 3.0), ParamUi::Point),
-                p("quality", "Quality", num(8.0), slider(1.0, 10.0, 1.0, 10.0, 0)),
+                p(
+                    "topLeftVertex",
+                    "Top Left Vertex",
+                    pt(0.0, 0.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "topLeftTangent",
+                    "Top Left Tangent",
+                    pt(1.0 / 3.0, 0.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "topRightTangent",
+                    "Top Right Tangent",
+                    pt(2.0 / 3.0, 0.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "rightTopVertex",
+                    "Right Top Vertex",
+                    pt(1.0, 0.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "rightTopTangent",
+                    "Right Top Tangent",
+                    pt(1.0, 1.0 / 3.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "rightBottomTangent",
+                    "Right Bottom Tangent",
+                    pt(1.0, 2.0 / 3.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "bottomRightVertex",
+                    "Bottom Right Vertex",
+                    pt(1.0, 1.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "bottomRightTangent",
+                    "Bottom Right Tangent",
+                    pt(2.0 / 3.0, 1.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "bottomLeftTangent",
+                    "Bottom Left Tangent",
+                    pt(1.0 / 3.0, 1.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "leftBottomVertex",
+                    "Left Bottom Vertex",
+                    pt(0.0, 1.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "leftBottomTangent",
+                    "Left Bottom Tangent",
+                    pt(0.0, 2.0 / 3.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "leftTopTangent",
+                    "Left Top Tangent",
+                    pt(0.0, 1.0 / 3.0),
+                    ParamUi::Point,
+                ),
+                p(
+                    "quality",
+                    "Quality",
+                    num(8.0),
+                    slider(1.0, 10.0, 1.0, 10.0, 0),
+                ),
             ],
             bezier_warp,
         ),
@@ -829,7 +1189,12 @@ pub fn specs() -> Vec<EffectSpec> {
                 p("bend", "Bend", num(0.0), ParamUi::Angle),
                 p("start", "Start", pt(0.5, 0.2), ParamUi::Point),
                 p("end", "End", pt(0.5, 0.8), ParamUi::Point),
-                p("renderPrestart", "Render Prestart", Value::Enum(1), popup(&["None", "Static"])),
+                p(
+                    "renderPrestart",
+                    "Render Prestart",
+                    Value::Enum(1),
+                    popup(&["None", "Static"]),
+                ),
             ],
             bend_it,
         ),
@@ -839,7 +1204,12 @@ pub fn specs() -> Vec<EffectSpec> {
             vec![
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
                 p("size", "Size", num(50.0), slider(0.0, 400.0, 0.0, 200.0, 1)),
-                p("convergence", "Convergence", num(0.0), slider(-100.0, 100.0, -100.0, 100.0, 1)),
+                p(
+                    "convergence",
+                    "Convergence",
+                    num(0.0),
+                    slider(-100.0, 100.0, -100.0, 100.0, 1),
+                ),
             ],
             cc_lens,
         ),
@@ -847,13 +1217,43 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ccpageturn",
             "CC Page Turn",
             vec![
-                p("foldPosition", "Fold Position", pt(0.7, 0.7), ParamUi::Point),
-                p("foldDirection", "Fold Direction", num(315.0), ParamUi::Angle),
-                p("foldRadius", "Fold Radius", num(20.0), slider(0.0, 1000.0, 0.0, 200.0, 1)),
-                p("lightDirection", "Light Direction", num(-45.0), ParamUi::Angle),
-                p("render", "Render", Value::Enum(0), popup(&["Front & Back Page", "Back Page", "Front Page"])),
+                p(
+                    "foldPosition",
+                    "Fold Position",
+                    pt(0.7, 0.7),
+                    ParamUi::Point,
+                ),
+                p(
+                    "foldDirection",
+                    "Fold Direction",
+                    num(315.0),
+                    ParamUi::Angle,
+                ),
+                p(
+                    "foldRadius",
+                    "Fold Radius",
+                    num(20.0),
+                    slider(0.0, 1000.0, 0.0, 200.0, 1),
+                ),
+                p(
+                    "lightDirection",
+                    "Light Direction",
+                    num(-45.0),
+                    ParamUi::Angle,
+                ),
+                p(
+                    "render",
+                    "Render",
+                    Value::Enum(0),
+                    popup(&["Front & Back Page", "Back Page", "Front Page"]),
+                ),
                 p("backPageOpacity", "Back Opacity", num(75.0), pct(100.0)),
-                p("paperColor", "Paper Color", col(1.0, 1.0, 1.0), ParamUi::Color),
+                p(
+                    "paperColor",
+                    "Paper Color",
+                    col(1.0, 1.0, 1.0),
+                    ParamUi::Color,
+                ),
             ],
             page_turn,
         ),
@@ -861,9 +1261,19 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.cctiler",
             "CC Tiler",
             vec![
-                p("scale", "Scale", num(50.0), slider(1.0, 10000.0, 1.0, 200.0, 1)),
+                p(
+                    "scale",
+                    "Scale",
+                    num(50.0),
+                    slider(1.0, 10000.0, 1.0, 200.0, 1),
+                ),
                 p("center", "Center", pt(0.5, 0.5), ParamUi::Point),
-                p("blendWithOriginal", "Blend w. Original", num(0.0), pct(100.0)),
+                p(
+                    "blendWithOriginal",
+                    "Blend w. Original",
+                    num(0.0),
+                    pct(100.0),
+                ),
             ],
             cc_tiler,
         ),
@@ -871,11 +1281,31 @@ pub fn specs() -> Vec<EffectSpec> {
             "ec.distort.ccgriddler",
             "CC Griddler",
             vec![
-                p("horizontalScale", "Horizontal Scale", num(100.0), slider(1.0, 1000.0, 1.0, 400.0, 1)),
-                p("verticalScale", "Vertical Scale", num(100.0), slider(1.0, 1000.0, 1.0, 400.0, 1)),
-                p("tileSize", "Tile Size", num(10.0), slider(0.5, 100.0, 0.5, 100.0, 1)),
+                p(
+                    "horizontalScale",
+                    "Horizontal Scale",
+                    num(100.0),
+                    slider(1.0, 1000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "verticalScale",
+                    "Vertical Scale",
+                    num(100.0),
+                    slider(1.0, 1000.0, 1.0, 400.0, 1),
+                ),
+                p(
+                    "tileSize",
+                    "Tile Size",
+                    num(10.0),
+                    slider(0.5, 100.0, 0.5, 100.0, 1),
+                ),
                 p("rotation", "Rotation", num(0.0), ParamUi::Angle),
-                p("cutTiles", "Cut Tiles", Value::Bool(false), ParamUi::Checkbox),
+                p(
+                    "cutTiles",
+                    "Cut Tiles",
+                    Value::Bool(false),
+                    ParamUi::Checkbox,
+                ),
             ],
             cc_griddler,
         ),
@@ -892,7 +1322,16 @@ mod tests {
         for y in 0..h {
             for x in 0..w {
                 let a = 1.0;
-                img.set(x, y, [x as f32 / w as f32 * a, y as f32 / h as f32 * a, ((x * 7 + y * 3) % 11) as f32 / 11.0 * a, a]);
+                img.set(
+                    x,
+                    y,
+                    [
+                        x as f32 / w as f32 * a,
+                        y as f32 / h as f32 * a,
+                        ((x * 7 + y * 3) % 11) as f32 / 11.0 * a,
+                        a,
+                    ],
+                );
             }
         }
         img
@@ -900,22 +1339,49 @@ mod tests {
 
     fn run(id: &str, set: &[(&str, Value)], img: Image) -> Buf {
         let s = crate::find(id).unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         let ls = [img.width as f64, img.height as f64];
         for p in &s.params {
             if let (ParamUi::Point, Value::Vec2(v)) = (&p.ui, &p.default) {
-                params.values.insert(p.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
+                params
+                    .values
+                    .insert(p.id.to_string(), Value::Vec2([v[0] * ls[0], v[1] * ls[1]]));
             }
         }
         for (k, v) in set {
             params.values.insert(k.to_string(), v.clone());
         }
-        let ctx = EffectCtx { params: &params, time: 0.5, layer_size: ls, seed: 3, adjustment: false, env: Default::default() };
-        crate::apply(s, &ctx, Buf { img, offset: [0.0, 0.0], scale: 1.0 })
+        let ctx = EffectCtx {
+            params: &params,
+            time: 0.5,
+            layer_size: ls,
+            seed: 3,
+            adjustment: false,
+            env: Default::default(),
+        };
+        crate::apply(
+            s,
+            &ctx,
+            Buf {
+                img,
+                offset: [0.0, 0.0],
+                scale: 1.0,
+            },
+        )
     }
 
     fn max_diff(a: &Image, b: &Image) -> f32 {
-        a.data.iter().zip(&b.data).map(|(p, q)| (0..4).map(|i| (p[i] - q[i]).abs()).fold(0.0, f32::max)).fold(0.0, f32::max)
+        a.data
+            .iter()
+            .zip(&b.data)
+            .map(|(p, q)| (0..4).map(|i| (p[i] - q[i]).abs()).fold(0.0, f32::max))
+            .fold(0.0, f32::max)
     }
 
     #[test]
@@ -923,18 +1389,30 @@ mod tests {
         let img = test_img(32, 24);
         let o = run(
             "ec.distort.displacementmap",
-            &[("useForHorizontal", Value::Enum(9)), ("useForVertical", Value::Enum(9)), ("expandOutput", Value::Bool(false))],
+            &[
+                ("useForHorizontal", Value::Enum(9)),
+                ("useForVertical", Value::Enum(9)),
+                ("expandOutput", Value::Bool(false)),
+            ],
             img.clone(),
         );
         assert_eq!(o.img, img);
         let o = run(
             "ec.distort.displacementmap",
-            &[("useForHorizontal", Value::Enum(8)), ("useForVertical", Value::Enum(10)), ("maxHorizontal", num(2.0)), ("expandOutput", Value::Bool(false))],
+            &[
+                ("useForHorizontal", Value::Enum(8)),
+                ("useForVertical", Value::Enum(10)),
+                ("maxHorizontal", num(2.0)),
+                ("expandOutput", Value::Bool(false)),
+            ],
             img.clone(),
         );
         // Full → +2 px horizontally: pixel x shows source x + 2; Off → no vertical displacement.
         let (a, b2) = (o.img.get(5, 5), img.get(7, 5));
-        assert!((0..4).all(|i| (a[i] - b2[i]).abs() < 1e-5), "{a:?} vs {b2:?}");
+        assert!(
+            (0..4).all(|i| (a[i] - b2[i]).abs() < 1e-5),
+            "{a:?} vs {b2:?}"
+        );
     }
 
     #[test]
@@ -942,18 +1420,33 @@ mod tests {
         let img = test_img(32, 24);
         assert_eq!(run("ec.distort.meshwarp", &[], img.clone()).img, img);
         let zeros = vec!["0,0"; 64].join(" ");
-        assert_eq!(run("ec.distort.meshwarp", &[("mesh", Value::Str(zeros))], img.clone()).img, img);
+        assert_eq!(
+            run(
+                "ec.distort.meshwarp",
+                &[("mesh", Value::Str(zeros))],
+                img.clone()
+            )
+            .img,
+            img
+        );
     }
 
     #[test]
     fn mesh_warp_uniform_offset_translates() {
         let img = test_img(32, 24);
         let shift = vec!["4,0"; 64].join(" ");
-        let o = run("ec.distort.meshwarp", &[("mesh", Value::Str(shift))], img.clone());
+        let o = run(
+            "ec.distort.meshwarp",
+            &[("mesh", Value::Str(shift))],
+            img.clone(),
+        );
         for y in 2..22 {
             for x in 6..30 {
                 let (a, b2) = (o.img.get(x, y), img.get(x - 4, y));
-                assert!((0..4).all(|i| (a[i] - b2[i]).abs() < 1e-4), "({x},{y}) {a:?} vs {b2:?}");
+                assert!(
+                    (0..4).all(|i| (a[i] - b2[i]).abs() < 1e-4),
+                    "({x},{y}) {a:?} vs {b2:?}"
+                );
             }
         }
         assert!(o.img.get(1, 10)[3] < 1e-6);
@@ -969,21 +1462,49 @@ mod tests {
     #[test]
     fn optics_fov_zero_is_identity_and_nonzero_warps() {
         let img = test_img(32, 24);
-        assert_eq!(run("ec.distort.opticscompensation", &[], img.clone()).img, img);
-        assert!(max_diff(&run("ec.distort.opticscompensation", &[("fieldOfView", num(90.0))], img.clone()).img, &img) > 1e-3);
+        assert_eq!(
+            run("ec.distort.opticscompensation", &[], img.clone()).img,
+            img
+        );
+        assert!(
+            max_diff(
+                &run(
+                    "ec.distort.opticscompensation",
+                    &[("fieldOfView", num(90.0))],
+                    img.clone()
+                )
+                .img,
+                &img
+            ) > 1e-3
+        );
     }
 
     #[test]
     fn bend_it_zero_is_identity() {
         let img = test_img(32, 24);
         assert_eq!(run("ec.distort.ccbendit", &[], img.clone()).img, img);
-        assert!(max_diff(&run("ec.distort.ccbendit", &[("bend", num(45.0))], img.clone()).img, &img) > 1e-3);
+        assert!(
+            max_diff(
+                &run("ec.distort.ccbendit", &[("bend", num(45.0))], img.clone()).img,
+                &img
+            ) > 1e-3
+        );
     }
 
     #[test]
     fn magnify_100_is_identity() {
         let img = test_img(32, 24);
-        assert!(max_diff(&run("ec.distort.magnify", &[("magnification", num(100.0))], img.clone()).img, &img) < 1e-6);
+        assert!(
+            max_diff(
+                &run(
+                    "ec.distort.magnify",
+                    &[("magnification", num(100.0))],
+                    img.clone()
+                )
+                .img,
+                &img
+            ) < 1e-6
+        );
         let o = run("ec.distort.magnify", &[("size", num(8.0))], img.clone());
         // Centre pixel unchanged; slightly off-centre samples move toward the centre.
         assert!(max_diff(&o.img, &img) > 1e-3);
@@ -993,7 +1514,12 @@ mod tests {
     #[test]
     fn tiler_100_is_identity_and_50_tiles() {
         let img = test_img(32, 24);
-        assert!(max_diff(&run("ec.distort.cctiler", &[("scale", num(100.0))], img.clone()).img, &img) < 1e-6);
+        assert!(
+            max_diff(
+                &run("ec.distort.cctiler", &[("scale", num(100.0))], img.clone()).img,
+                &img
+            ) < 1e-6
+        );
         let o = run("ec.distort.cctiler", &[], img.clone());
         assert!(o.img.data.iter().all(|p| p[3] > 0.99));
     }
@@ -1001,8 +1527,21 @@ mod tests {
     #[test]
     fn turbulent_displace_zero_amount_is_identity() {
         let img = test_img(32, 24);
-        assert_eq!(run("ec.distort.turbulentdisplace", &[("amount", num(0.0))], img.clone()).img, img);
-        assert!(max_diff(&run("ec.distort.turbulentdisplace", &[], img.clone()).img, &img) > 1e-3);
+        assert_eq!(
+            run(
+                "ec.distort.turbulentdisplace",
+                &[("amount", num(0.0))],
+                img.clone()
+            )
+            .img,
+            img
+        );
+        assert!(
+            max_diff(
+                &run("ec.distort.turbulentdisplace", &[], img.clone()).img,
+                &img
+            ) > 1e-3
+        );
     }
 
     #[test]
@@ -1014,7 +1553,11 @@ mod tests {
     #[test]
     fn page_turn_removes_corner_and_keeps_far_side() {
         let img = test_img(64, 64);
-        let o = run("ec.distort.ccpageturn", &[("foldRadius", num(4.0))], img.clone());
+        let o = run(
+            "ec.distort.ccpageturn",
+            &[("foldRadius", num(4.0))],
+            img.clone(),
+        );
         // Bottom-right corner is lifted away; top-left untouched.
         assert!(o.img.get(63, 63)[3] < 1e-6);
         assert_eq!(o.img.get(2, 2), img.get(2, 2));
@@ -1032,7 +1575,14 @@ mod tests {
     struct FlatHost([f32; 4]);
     impl crate::EffectHost for FlatHost {
         fn layer(&self, _: u64, _: bool) -> Option<crate::LayerPixels> {
-            Some(crate::LayerPixels { buf: Buf { img: Image::filled(8, 8, self.0), offset: [0.0; 2], scale: 1.0 }, size: [8.0, 8.0] })
+            Some(crate::LayerPixels {
+                buf: Buf {
+                    img: Image::filled(8, 8, self.0),
+                    offset: [0.0; 2],
+                    scale: 1.0,
+                },
+                size: [8.0, 8.0],
+            })
         }
         fn audio(&self, _: u64, _: f64, _: usize, _: u32) -> Option<Vec<f32>> {
             None
@@ -1045,7 +1595,13 @@ mod tests {
         // A white map layer → Red = 1 → full positive horizontal displacement everywhere.
         let host = FlatHost([1.0, 1.0, 1.0, 1.0]);
         let s = crate::find("ec.distort.displacementmap").unwrap();
-        let mut params = Params { values: s.params.iter().map(|p| (p.id.to_string(), p.default.clone())).collect() };
+        let mut params = Params {
+            values: s
+                .params
+                .iter()
+                .map(|p| (p.id.to_string(), p.default.clone()))
+                .collect(),
+        };
         for (k, v) in [
             ("displacementMapLayer", Value::Layer(Some(7))),
             ("useForVertical", Value::Enum(10)),
@@ -1055,10 +1611,30 @@ mod tests {
             params.values.insert(k.into(), v);
         }
         for behavior in 0..3 {
-            params.values.insert("displacementMapBehavior".into(), Value::Enum(behavior));
-            let env = crate::EffectEnv { host: Some(&host), ..Default::default() };
-            let ctx = EffectCtx { params: &params, time: 0.0, layer_size: [32.0, 24.0], seed: 1, adjustment: false, env };
-            let o = crate::apply(s, &ctx, Buf { img: img.clone(), offset: [0.0, 0.0], scale: 1.0 });
+            params
+                .values
+                .insert("displacementMapBehavior".into(), Value::Enum(behavior));
+            let env = crate::EffectEnv {
+                host: Some(&host),
+                ..Default::default()
+            };
+            let ctx = EffectCtx {
+                params: &params,
+                time: 0.0,
+                layer_size: [32.0, 24.0],
+                seed: 1,
+                adjustment: false,
+                env,
+            };
+            let o = crate::apply(
+                s,
+                &ctx,
+                Buf {
+                    img: img.clone(),
+                    offset: [0.0, 0.0],
+                    scale: 1.0,
+                },
+            );
             if behavior == 0 {
                 // Center Map: the 8×8 map covers only the middle; outside it nothing moves.
                 assert_eq!(o.img.get(2, 2), img.get(2, 2));
@@ -1075,15 +1651,27 @@ mod tests {
             }
         }
         // Expand Output grows the layer by the maximum displacement.
-        let o = run("ec.distort.displacementmap", &[("maxHorizontal", num(6.0))], img.clone());
+        let o = run(
+            "ec.distort.displacementmap",
+            &[("maxHorizontal", num(6.0))],
+            img.clone(),
+        );
         assert_eq!((o.img.width, o.img.height), (32 + 12, 24 + 12));
     }
 
     #[test]
     fn turbulent_displace_pinning_and_cycle_evolution() {
         let img = test_img(40, 40);
-        let pinned = run("ec.distort.turbulentdisplace", &[("size", num(10.0))], img.clone());
-        let free = run("ec.distort.turbulentdisplace", &[("size", num(10.0)), ("pinning", Value::Enum(0))], img.clone());
+        let pinned = run(
+            "ec.distort.turbulentdisplace",
+            &[("size", num(10.0))],
+            img.clone(),
+        );
+        let free = run(
+            "ec.distort.turbulentdisplace",
+            &[("size", num(10.0)), ("pinning", Value::Enum(0))],
+            img.clone(),
+        );
         // Pin All (the default) holds the border.
         for i in 0..40 {
             assert_eq!(pinned.img.get(i, 0), img.get(i, 0));
@@ -1094,7 +1682,11 @@ mod tests {
         let cyc = |evo: f64| {
             run(
                 "ec.distort.turbulentdisplace",
-                &[("evolution", num(evo)), ("evolutionOptions/cycleEvolution", Value::Bool(true)), ("evolutionOptions/cycle", num(2.0))],
+                &[
+                    ("evolution", num(evo)),
+                    ("evolutionOptions/cycleEvolution", Value::Bool(true)),
+                    ("evolutionOptions/cycle", num(2.0)),
+                ],
                 img.clone(),
             )
             .img
@@ -1102,40 +1694,87 @@ mod tests {
         assert!(max_diff(&cyc(0.0), &cyc(720.0)) < 1e-4);
         assert!(max_diff(&cyc(0.0), &cyc(200.0)) > 1e-3);
         // Random Seed changes the pattern.
-        let seeded = run("ec.distort.turbulentdisplace", &[("size", num(10.0)), ("evolutionOptions/randomSeed", num(5.0))], img);
+        let seeded = run(
+            "ec.distort.turbulentdisplace",
+            &[
+                ("size", num(10.0)),
+                ("evolutionOptions/randomSeed", num(5.0)),
+            ],
+            img,
+        );
         assert!(max_diff(&seeded.img, &pinned.img) > 1e-3);
         // Locked pinning: no sample comes from outside the layer (no transparent pixels pulled
         // in) and the border still holds.
         let opaque = Image::filled(40, 40, [0.5, 0.5, 0.5, 1.0]);
         let strong = [("size", num(10.0)), ("amount", num(80.0))];
-        let left = run("ec.distort.turbulentdisplace", &[strong.as_slice(), &[("pinning", Value::Enum(4))]].concat(), opaque.clone());
-        let locked = run("ec.distort.turbulentdisplace", &[strong.as_slice(), &[("pinning", Value::Enum(11))]].concat(), opaque.clone());
-        assert!(left.img.data.iter().any(|p| p[3] < 0.99), "plain pin lets edges pull in");
-        assert!(locked.img.data.iter().all(|p| p[3] > 0.999), "locked keeps everything inside");
+        let left = run(
+            "ec.distort.turbulentdisplace",
+            &[strong.as_slice(), &[("pinning", Value::Enum(4))]].concat(),
+            opaque.clone(),
+        );
+        let locked = run(
+            "ec.distort.turbulentdisplace",
+            &[strong.as_slice(), &[("pinning", Value::Enum(11))]].concat(),
+            opaque.clone(),
+        );
+        assert!(
+            left.img.data.iter().any(|p| p[3] < 0.99),
+            "plain pin lets edges pull in"
+        );
+        assert!(
+            locked.img.data.iter().all(|p| p[3] > 0.999),
+            "locked keeps everything inside"
+        );
         assert_eq!(TURBULENT_PINNING[11], "Pin Left Locked");
     }
 
     #[test]
     fn magnify_blending_none_and_scaling() {
         let img = test_img(32, 32);
-        let none = run("ec.distort.magnify", &[("size", num(6.0)), ("blendingMode", Value::Enum(0))], img.clone());
+        let none = run(
+            "ec.distort.magnify",
+            &[("size", num(6.0)), ("blendingMode", Value::Enum(0))],
+            img.clone(),
+        );
         assert!(none.img.get(0, 0)[3] < 1e-6);
         assert!(none.img.get(16, 16)[3] > 0.99);
-        let std = run("ec.distort.magnify", &[("magnification", num(400.0))], img.clone());
-        let soft = run("ec.distort.magnify", &[("magnification", num(400.0)), ("scaling", Value::Enum(1))], img.clone());
+        let std = run(
+            "ec.distort.magnify",
+            &[("magnification", num(400.0))],
+            img.clone(),
+        );
+        let soft = run(
+            "ec.distort.magnify",
+            &[("magnification", num(400.0)), ("scaling", Value::Enum(1))],
+            img.clone(),
+        );
         assert!(max_diff(&std.img, &soft.img) > 1e-3);
-        let add = run("ec.distort.magnify", &[("blendingMode", Value::Enum(2))], img);
+        let add = run(
+            "ec.distort.magnify",
+            &[("blendingMode", Value::Enum(2))],
+            img,
+        );
         assert!(max_diff(&add.img, &std.img) > 1e-3);
     }
 
     #[test]
     fn optics_resize_grows_reversed_layers() {
         let img = test_img(32, 24);
-        let set = |r: u32| vec![("fieldOfView", num(120.0)), ("reverseLensDistortion", Value::Bool(true)), ("resize", Value::Enum(r))];
+        let set = |r: u32| {
+            vec![
+                ("fieldOfView", num(120.0)),
+                ("reverseLensDistortion", Value::Bool(true)),
+                ("resize", Value::Enum(r)),
+            ]
+        };
         let off = run("ec.distort.opticscompensation", &set(0), img.clone());
         assert_eq!(off.img.width, 32);
         let max2 = run("ec.distort.opticscompensation", &set(1), img.clone());
-        assert!(max2.img.width > 32 && max2.img.width <= 32 + 2 * 16 + 2, "{}", max2.img.width);
+        assert!(
+            max2.img.width > 32 && max2.img.width <= 32 + 2 * 16 + 2,
+            "{}",
+            max2.img.width
+        );
         let max4 = run("ec.distort.opticscompensation", &set(2), img);
         assert!(max4.img.width >= max2.img.width);
     }
@@ -1144,12 +1783,28 @@ mod tests {
     fn optics_optimal_pixels_fills_or_fits_the_layer() {
         let img = Image::filled(32, 24, [0.5, 0.5, 0.5, 1.0]);
         // Forward: without Optimal Pixels the corners sample outside the layer.
-        let plain = run("ec.distort.opticscompensation", &[("fieldOfView", num(120.0))], img.clone());
+        let plain = run(
+            "ec.distort.opticscompensation",
+            &[("fieldOfView", num(120.0))],
+            img.clone(),
+        );
         assert!(plain.img.get(0, 0)[3] < 0.5);
-        let opt = run("ec.distort.opticscompensation", &[("fieldOfView", num(120.0)), ("optimalPixels", Value::Bool(true))], img.clone());
+        let opt = run(
+            "ec.distort.opticscompensation",
+            &[
+                ("fieldOfView", num(120.0)),
+                ("optimalPixels", Value::Bool(true)),
+            ],
+            img.clone(),
+        );
         assert!(opt.img.get(0, 0)[3] > 0.9 && opt.img.get(31, 23)[3] > 0.9);
         // Reverse: everything fits; Resize is ignored.
-        let rev = [("fieldOfView", num(120.0)), ("reverseLensDistortion", Value::Bool(true)), ("optimalPixels", Value::Bool(true)), ("resize", Value::Enum(2))];
+        let rev = [
+            ("fieldOfView", num(120.0)),
+            ("reverseLensDistortion", Value::Bool(true)),
+            ("optimalPixels", Value::Bool(true)),
+            ("resize", Value::Enum(2)),
+        ];
         let r = run("ec.distort.opticscompensation", &rev, img.clone());
         assert_eq!(r.img.width, 32);
         // The edges of the source now sit inside the layer: empty space around them.

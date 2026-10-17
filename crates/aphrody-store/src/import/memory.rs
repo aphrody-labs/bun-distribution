@@ -27,14 +27,22 @@ pub fn import_memories(
     let has_records = table_exists(&legacy, "memory_records")?;
     let has_items = table_exists(&legacy, "memory_items")?;
     if !has_records && !has_items {
-        report.notes.push("no memory table in the legacy database".into());
+        report
+            .notes
+            .push("no memory table in the legacy database".into());
         return Ok(report);
     }
     if has_records {
-        report.add("records_read", count(&legacy, "SELECT count(*) FROM memory_records")?);
+        report.add(
+            "records_read",
+            count(&legacy, "SELECT count(*) FROM memory_records")?,
+        );
     }
     if has_items {
-        report.add("items_read", count(&legacy, "SELECT count(*) FROM memory_items")?);
+        report.add(
+            "items_read",
+            count(&legacy, "SELECT count(*) FROM memory_items")?,
+        );
     }
     let tx = db.conn.transaction()?;
     let mut inserted = 0_u64;
@@ -125,7 +133,10 @@ mod tests {
         let dry = import_memories(&mut db, &path, "legacy:test", false).unwrap();
         assert!(dry.dry_run);
         assert_eq!(dry.counts["would_insert_or_inserted"], 2);
-        let n: i64 = db.conn().query_row("SELECT count(*) FROM memories", [], |r| r.get(0)).unwrap();
+        let n: i64 = db
+            .conn()
+            .query_row("SELECT count(*) FROM memories", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(n, 0);
 
         let applied = import_memories(&mut db, &path, "legacy:test", true).unwrap();
@@ -137,7 +148,11 @@ mod tests {
         // FTS is in sync and the legacy file is byte-identical.
         let hit: i64 = db
             .conn()
-            .query_row("SELECT count(*) FROM memories_fts WHERE memories_fts MATCH 'gamma'", [], |r| r.get(0))
+            .query_row(
+                "SELECT count(*) FROM memories_fts WHERE memories_fts MATCH 'gamma'",
+                [],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(hit, 1);
         assert_eq!(std::fs::read(&path).unwrap(), before);

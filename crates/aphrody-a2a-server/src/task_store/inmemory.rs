@@ -20,7 +20,9 @@ pub struct InMemoryTaskStore {
 
 impl InMemoryTaskStore {
     pub fn new() -> Self {
-        InMemoryTaskStore { tasks: RwLock::new(HashMap::new()) }
+        InMemoryTaskStore {
+            tasks: RwLock::new(HashMap::new()),
+        }
     }
 }
 
@@ -44,7 +46,9 @@ impl TaskStore for InMemoryTaskStore {
 
     async fn update(&self, task: Task) -> Result<TaskVersion, A2AError> {
         let mut store = self.tasks.write().await;
-        let entry = store.get_mut(&task.id).ok_or_else(|| A2AError::task_not_found(&task.id))?;
+        let entry = store
+            .get_mut(&task.id)
+            .ok_or_else(|| A2AError::task_not_found(&task.id))?;
         entry.version += 1;
         entry.task = task;
         Ok(entry.version)
@@ -96,7 +100,11 @@ impl TaskStore for InMemoryTaskStore {
         let end = (start + page_size).min(total_size);
         let page = tasks[start..end].to_vec();
 
-        let next_page_token = if end < total_size { Some(end.to_string()) } else { None };
+        let next_page_token = if end < total_size {
+            Some(end.to_string())
+        } else {
+            None
+        };
 
         // Apply history length truncation
         let page = page
@@ -134,7 +142,11 @@ mod tests {
         Task {
             id: id.to_string(),
             context_id: ctx.to_string(),
-            status: TaskStatus { state, message: None, timestamp: None },
+            status: TaskStatus {
+                state,
+                message: None,
+                timestamp: None,
+            },
             artifacts: None,
             history: None,
             metadata: None,
@@ -195,9 +207,18 @@ mod tests {
     #[tokio::test]
     async fn test_list_filter_by_context() {
         let store = InMemoryTaskStore::new();
-        store.create(make_task("t1", "c1", TaskState::Submitted)).await.unwrap();
-        store.create(make_task("t2", "c2", TaskState::Working)).await.unwrap();
-        store.create(make_task("t3", "c1", TaskState::Completed)).await.unwrap();
+        store
+            .create(make_task("t1", "c1", TaskState::Submitted))
+            .await
+            .unwrap();
+        store
+            .create(make_task("t2", "c2", TaskState::Working))
+            .await
+            .unwrap();
+        store
+            .create(make_task("t3", "c1", TaskState::Completed))
+            .await
+            .unwrap();
 
         let req = ListTasksRequest {
             context_id: Some("c1".to_string()),
@@ -217,8 +238,14 @@ mod tests {
     #[tokio::test]
     async fn test_list_filter_by_status() {
         let store = InMemoryTaskStore::new();
-        store.create(make_task("t1", "c1", TaskState::Submitted)).await.unwrap();
-        store.create(make_task("t2", "c1", TaskState::Working)).await.unwrap();
+        store
+            .create(make_task("t1", "c1", TaskState::Submitted))
+            .await
+            .unwrap();
+        store
+            .create(make_task("t2", "c1", TaskState::Working))
+            .await
+            .unwrap();
 
         let req = ListTasksRequest {
             context_id: None,
@@ -239,7 +266,10 @@ mod tests {
     async fn test_list_pagination() {
         let store = InMemoryTaskStore::new();
         for i in 0..5 {
-            store.create(make_task(&format!("t{i}"), "c1", TaskState::Submitted)).await.unwrap();
+            store
+                .create(make_task(&format!("t{i}"), "c1", TaskState::Submitted))
+                .await
+                .unwrap();
         }
 
         let req = ListTasksRequest {
@@ -258,8 +288,11 @@ mod tests {
         assert!(!resp.next_page_token.is_empty());
 
         // Get second page
-        let req2 =
-            ListTasksRequest { page_token: Some(resp.next_page_token), page_size: Some(2), ..req };
+        let req2 = ListTasksRequest {
+            page_token: Some(resp.next_page_token),
+            page_size: Some(2),
+            ..req
+        };
         let resp2 = store.list(&req2).await.unwrap();
         assert_eq!(resp2.tasks.len(), 2);
     }
@@ -268,7 +301,10 @@ mod tests {
     async fn test_list_zero_page_size_uses_default_window() {
         let store = InMemoryTaskStore::new();
         for i in 0..3 {
-            store.create(make_task(&format!("t{i}"), "c1", TaskState::Submitted)).await.unwrap();
+            store
+                .create(make_task(&format!("t{i}"), "c1", TaskState::Submitted))
+                .await
+                .unwrap();
         }
 
         let req = ListTasksRequest {

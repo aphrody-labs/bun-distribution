@@ -86,13 +86,18 @@ impl Audio {
         }
         .ok()?;
         stream.play().ok()?;
-        Some(Self { queue, _stream: stream })
+        Some(Self {
+            queue,
+            _stream: stream,
+        })
     }
 
     /// Queues console PCM, dropping the oldest samples when the host falls behind.
     pub fn push(&self, pcm: &[[i16; 2]]) {
         let mut queue = self.queue.lock().unwrap_or_else(|e| e.into_inner());
-        queue.samples.extend(pcm.iter().map(|s| s.map(|v| f32::from(v) / 32768.0)));
+        queue
+            .samples
+            .extend(pcm.iter().map(|s| s.map(|v| f32::from(v) / 32768.0)));
         while queue.samples.len() > TARGET * 4 {
             queue.samples.pop_front();
         }
@@ -100,6 +105,10 @@ impl Audio {
 
     /// Samples currently queued.
     pub fn queued(&self) -> usize {
-        self.queue.lock().unwrap_or_else(|e| e.into_inner()).samples.len()
+        self.queue
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .samples
+            .len()
     }
 }

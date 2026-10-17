@@ -50,7 +50,8 @@ pub trait AudioInput: Send {
     /// Input channels of `device` ("" = the default device).
     fn channels(&self, device: &str) -> u16;
     /// Start capturing from `device` ("" = default), preferably at `sample_rate`.
-    fn start(&mut self, device: &str, sample_rate: u32) -> std::result::Result<InputFormat, String>;
+    fn start(&mut self, device: &str, sample_rate: u32)
+    -> std::result::Result<InputFormat, String>;
     /// Up to `frames` captured frames (planar, every device channel), oldest first. A live device
     /// returns what it has captured; a synthetic one generates exactly `frames`.
     fn read(&mut self, frames: usize) -> Vec<Vec<f32>>;
@@ -83,7 +84,11 @@ pub struct SyntheticInput {
 impl SyntheticInput {
     pub const DEVICE: &'static str = "Synthetic Input";
     pub fn new(signal: Synthetic) -> Self {
-        Self { signal, rate: 48_000, pos: 0 }
+        Self {
+            signal,
+            rate: 48_000,
+            pos: 0,
+        }
     }
     /// Clicks every quarter second at 48 kHz.
     pub fn clicks() -> Self {
@@ -101,10 +106,17 @@ impl AudioInput for SyntheticInput {
             Synthetic::Buffer(b) => b.len().max(1) as u16,
         }
     }
-    fn start(&mut self, device: &str, sample_rate: u32) -> std::result::Result<InputFormat, String> {
+    fn start(
+        &mut self,
+        device: &str,
+        sample_rate: u32,
+    ) -> std::result::Result<InputFormat, String> {
         self.rate = sample_rate.max(1);
         self.pos = 0;
-        Ok(InputFormat { sample_rate: self.rate, channels: self.channels(device) })
+        Ok(InputFormat {
+            sample_rate: self.rate,
+            channels: self.channels(device),
+        })
     }
     fn read(&mut self, frames: usize) -> Vec<Vec<f32>> {
         let p0 = self.pos;
@@ -113,11 +125,22 @@ impl AudioInput for SyntheticInput {
             Synthetic::Clicks { period } => {
                 let period = (*period).max(1);
                 let w = 2.0 * std::f64::consts::PI * 440.0 / self.rate as f64;
-                let c0 = (p0..p0 + frames).map(|i| if i % period == 0 { 0.5 } else { 0.0 }).collect();
-                let c1 = (p0..p0 + frames).map(|i| (0.25 * (w * i as f64).sin()) as f32).collect();
+                let c0 = (p0..p0 + frames)
+                    .map(|i| if i % period == 0 { 0.5 } else { 0.0 })
+                    .collect();
+                let c1 = (p0..p0 + frames)
+                    .map(|i| (0.25 * (w * i as f64).sin()) as f32)
+                    .collect();
                 vec![c0, c1]
             }
-            Synthetic::Buffer(b) => b.iter().map(|c| (p0..p0 + frames).map(|i| c.get(i).copied().unwrap_or(0.0)).collect()).collect(),
+            Synthetic::Buffer(b) => b
+                .iter()
+                .map(|c| {
+                    (p0..p0 + frames)
+                        .map(|i| c.get(i).copied().unwrap_or(0.0))
+                        .collect()
+                })
+                .collect(),
         }
     }
     fn discard(&mut self) {
@@ -148,7 +171,14 @@ pub struct VoiceOverPrefs {
 
 impl Default for VoiceOverPrefs {
     fn default() -> Self {
-        Self { source: String::new(), input_channel: 0, name: "Voice-over".into(), countdown_sound_cues: true, preroll_seconds: 2.0, postroll_seconds: 2.0 }
+        Self {
+            source: String::new(),
+            input_channel: 0,
+            name: "Voice-over".into(),
+            countdown_sound_cues: true,
+            preroll_seconds: 2.0,
+            postroll_seconds: 2.0,
+        }
     }
 }
 
@@ -187,7 +217,8 @@ impl VoiceOver {
         self.rec.is_some()
     }
     fn input(&mut self) -> &mut Box<dyn AudioInput> {
-        self.input.get_or_insert_with(|| Box::new(SyntheticInput::clicks()))
+        self.input
+            .get_or_insert_with(|| Box::new(SyntheticInput::clicks()))
     }
 }
 
@@ -254,7 +285,8 @@ fn audio_track_ref(seq: &Sequence, v: &Value) -> Option<TrackId> {
 pub fn record_track(s: &Session, p: &Value) -> Result<TrackId> {
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     if let Some(v) = p.get("track") {
-        return audio_track_ref(seq, v).ok_or_else(|| bad("audio.voiceover.start", format!("no audio track {v}")));
+        return audio_track_ref(seq, v)
+            .ok_or_else(|| bad("audio.voiceover.start", format!("no audio track {v}")));
     }
     if let Some(t) = seq.audio_tracks.iter().find(|t| t.mixer.record_arm) {
         return Ok(t.id);
@@ -273,19 +305,29 @@ fn can_start(s: &Session) -> std::result::Result<(), String> {
     if s.voiceover.recording() {
         return Err("a voice-over is already recording".into());
     }
-    if s.active_sequence().is_some_and(|q| q.audio_tracks.is_empty()) {
+    if s.active_sequence()
+        .is_some_and(|q| q.audio_tracks.is_empty())
+    {
         return Err("the sequence has no audio track".into());
     }
     Ok(())
 }
 
 fn is_recording(s: &Session) -> std::result::Result<(), String> {
-    if s.voiceover.recording() { Ok(()) } else { Err("no voice-over is recording".into()) }
+    if s.voiceover.recording() {
+        Ok(())
+    } else {
+        Err("no voice-over is recording".into())
+    }
 }
 
 fn settings_json(s: &mut Session) -> Value {
     let vo = s.prefs.voice_over.clone();
-    let source = if vo.source.is_empty() { s.prefs.audio_hardware.default_input.clone() } else { vo.source.clone() };
+    let source = if vo.source.is_empty() {
+        s.prefs.audio_hardware.default_input.clone()
+    } else {
+        vo.source.clone()
+    };
     let input = s.voiceover.input();
     let devices = input.devices();
     let channels = input.channels(&source);
@@ -324,7 +366,8 @@ fn settings(s: &mut Session, p: &Value) -> Result<Value> {
     if vo != s.prefs.voice_over {
         let mut prefs = s.prefs.clone();
         prefs.voice_over = vo;
-        s.set_prefs(prefs).map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
+        s.set_prefs(prefs)
+            .map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
     }
     Ok(settings_json(s))
 }
@@ -340,20 +383,56 @@ fn start(s: &mut Session, p: &Value) -> Result<Value> {
     let (mark_in, mark_out) = (seq.mark_in, seq.mark_out);
     let vo = s.prefs.voice_over.clone();
     let punch = mark_in.is_some() && mark_out.is_some_and(|o| Some(o) > mark_in);
-    let record_start = if punch { mark_in.unwrap_or_default() } else { time_p(s, p, "").unwrap_or(s.playhead()) };
+    let record_start = if punch {
+        mark_in.unwrap_or_default()
+    } else {
+        time_p(s, p, "").unwrap_or(s.playhead())
+    };
     if record_start < Tick::ZERO {
-        return Err(bad("audio.voiceover.start", "the record point cannot be negative"));
+        return Err(bad(
+            "audio.voiceover.start",
+            "the record point cannot be negative",
+        ));
     }
-    let preroll = Tick::from_seconds_f64(f64_p(p, "preroll").unwrap_or(vo.preroll_seconds).clamp(0.0, 60.0));
+    let preroll = Tick::from_seconds_f64(
+        f64_p(p, "preroll")
+            .unwrap_or(vo.preroll_seconds)
+            .clamp(0.0, 60.0),
+    );
     let capture_start = (record_start - preroll).max(Tick::ZERO);
     let punch_out = if punch { mark_out } else { None };
-    let device = if vo.source.is_empty() { s.prefs.audio_hardware.default_input.clone() } else { vo.source.clone() };
-    let format = s.voiceover.input().start(&device, sr).map_err(|e| EngineError::Other(format!("voice-over input: {e}")))?;
-    let channel = vo.input_channel.min(format.channels.saturating_sub(1) as u32);
+    let device = if vo.source.is_empty() {
+        s.prefs.audio_hardware.default_input.clone()
+    } else {
+        vo.source.clone()
+    };
+    let format = s
+        .voiceover
+        .input()
+        .start(&device, sr)
+        .map_err(|e| EngineError::Other(format!("voice-over input: {e}")))?;
+    let channel = vo
+        .input_channel
+        .min(format.channels.saturating_sub(1) as u32);
     s.voiceover.captured.clear();
     s.voiceover.pending_stop = None;
-    s.voiceover.rec = Some(Recording { seq: seq_id, track, record_start, capture_start, punch_out, format, channel });
-    let cues: Vec<i64> = if vo.countdown_sound_cues { cue_times(capture_start, record_start).into_iter().map(|t| t.0).collect() } else { Vec::new() };
+    s.voiceover.rec = Some(Recording {
+        seq: seq_id,
+        track,
+        record_start,
+        capture_start,
+        punch_out,
+        format,
+        channel,
+    });
+    let cues: Vec<i64> = if vo.countdown_sound_cues {
+        cue_times(capture_start, record_start)
+            .into_iter()
+            .map(|t| t.0)
+            .collect()
+    } else {
+        Vec::new()
+    };
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     Ok(json!({
         "recording": true,
@@ -370,7 +449,10 @@ fn start(s: &mut Session, p: &Value) -> Result<Value> {
 /// Playback really started at `time`: drop what was captured so far and count from there.
 fn sync(s: &mut Session, p: &Value) -> Result<Value> {
     if s.voiceover.pending_stop.is_some() {
-        return Err(bad("audio.voiceover.sync", "save or discard the stopped take before restarting capture"));
+        return Err(bad(
+            "audio.voiceover.sync",
+            "save or discard the stopped take before restarting capture",
+        ));
     }
     if s.voiceover.rec.is_none() {
         return Err(bad("audio.voiceover.sync", "no voice-over is recording"));
@@ -379,7 +461,9 @@ fn sync(s: &mut Session, p: &Value) -> Result<Value> {
     s.voiceover.input().discard();
     s.voiceover.captured.clear();
     s.voiceover.pending_stop = None;
-    let Some(rec) = s.voiceover.rec.as_mut() else { return Err(bad("audio.voiceover.sync", "no voice-over is recording")) };
+    let Some(rec) = s.voiceover.rec.as_mut() else {
+        return Err(bad("audio.voiceover.sync", "no voice-over is recording"));
+    };
     rec.capture_start = t.clamp(Tick::ZERO, rec.record_start);
     Ok(json!({"captureStart": rec.capture_start.0}))
 }
@@ -396,32 +480,59 @@ pub(crate) fn media_dir(s: &Session, p: &Value, fallback: &str) -> String {
     if let Some(d) = str_p(p, "dir") {
         return d.to_string();
     }
-    if let Some(d) = s.project.settings.scratch.captured.clone().filter(|d| !d.is_empty()) {
+    if let Some(d) = s
+        .project
+        .settings
+        .scratch
+        .captured
+        .clone()
+        .filter(|d| !d.is_empty())
+    {
         return d;
     }
-    if let Some(d) = s.path.as_deref().and_then(|x| std::path::Path::new(x).parent()).filter(|d| !d.as_os_str().is_empty()) {
+    if let Some(d) = s
+        .path
+        .as_deref()
+        .and_then(|x| std::path::Path::new(x).parent())
+        .filter(|d| !d.as_os_str().is_empty())
+    {
         return d.to_string_lossy().into_owned();
     }
-    let base = s.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| d.to_path_buf()).unwrap_or_else(|| crate::temp_dir().join("FilmCraft"));
+    let base = s
+        .prefs_path
+        .as_ref()
+        .and_then(|p| p.parent())
+        .map(|d| d.to_path_buf())
+        .unwrap_or_else(|| crate::temp_dir().join("FilmCraft"));
     base.join(fallback).to_string_lossy().into_owned()
 }
 
 /// `<dir>/<base> <n>.wav` with the first `n` used by neither a project item nor an existing file;
 /// an error once `n` passes 99 999 (bounded: `file_size` is a filesystem call per try).
 pub(crate) fn unique_wav_path(s: &Session, dir: &str, base: &str) -> Result<String> {
-    let names: std::collections::HashSet<String> = s.project.items.values().map(|i| i.name.clone()).collect();
+    let names: std::collections::HashSet<String> =
+        s.project.items.values().map(|i| i.name.clone()).collect();
     for k in 1..=99_999u32 {
         let file = format!("{base} {k}.wav");
-        let path = std::path::Path::new(dir).join(&file).to_string_lossy().into_owned();
+        let path = std::path::Path::new(dir)
+            .join(&file)
+            .to_string_lossy()
+            .into_owned();
         if !names.contains(&file) && s.services.file_size(&path).is_err() {
             return Ok(path);
         }
     }
-    Err(EngineError::Other(format!("{dir}: no free file name for \"{base} <n>.wav\"")))
+    Err(EngineError::Other(format!(
+        "{dir}: no free file name for \"{base} <n>.wav\""
+    )))
 }
 
 fn stop(s: &mut Session, p: &Value) -> Result<Value> {
-    let rec = s.voiceover.rec.clone().ok_or_else(|| bad("audio.voiceover.stop", "no voice-over is recording"))?;
+    let rec = s
+        .voiceover
+        .rec
+        .clone()
+        .ok_or_else(|| bad("audio.voiceover.stop", "no voice-over is recording"))?;
     if bool_p(p, "discard").unwrap_or(false) {
         s.voiceover.input().stop();
         s.voiceover.rec = None;
@@ -429,18 +540,35 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
         s.voiceover.captured.clear();
         return Ok(json!({"recording": false, "placed": false}));
     }
-    let t_stop = s.voiceover.pending_stop.unwrap_or_else(|| time_p(s, p, "").unwrap_or(s.playhead()));
+    let t_stop = s
+        .voiceover
+        .pending_stop
+        .unwrap_or_else(|| time_p(s, p, "").unwrap_or(s.playhead()));
     let sr = rec.format.sample_rate.max(1) as i64;
     let c0 = rec.capture_start.to_units_floor(sr);
     let r0 = rec.record_start.to_units_floor(sr);
-    let end = rec.punch_out.map_or(t_stop, |o| o.min(t_stop)).to_units_floor(sr);
+    let end = rec
+        .punch_out
+        .map_or(t_stop, |o| o.min(t_stop))
+        .to_units_floor(sr);
     // read the input up to the end of the take
     let want = end.saturating_sub(c0).max(0) as usize;
     if want.saturating_mul(usize::from(rec.format.channels).max(1)) > 268_435_456 {
-        return Err(bad("audio.voiceover.stop", "recording exceeds the input buffer limit"));
+        return Err(bad(
+            "audio.voiceover.stop",
+            "recording exceeds the input buffer limit",
+        ));
     }
     let have = s.voiceover.captured.len();
-    s.voiceover.captured.try_reserve(want.saturating_sub(have)).map_err(|e| bad("audio.voiceover.stop", format!("unable to allocate the recording: {e}")))?;
+    s.voiceover
+        .captured
+        .try_reserve(want.saturating_sub(have))
+        .map_err(|e| {
+            bad(
+                "audio.voiceover.stop",
+                format!("unable to allocate the recording: {e}"),
+            )
+        })?;
     s.voiceover.pending_stop = Some(t_stop);
     let input = s.voiceover.input();
     input.stop();
@@ -451,11 +579,18 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
         s.voiceover.captured.extend_from_slice(c);
     }
     if let Some(error) = input_error {
-        return Err(bad("audio.voiceover.stop", format!("input failed: {error}")));
+        return Err(bad(
+            "audio.voiceover.stop",
+            format!("input failed: {error}"),
+        ));
     }
     s.voiceover.captured.resize(want, 0.0);
     let skip = r0.saturating_sub(c0).clamp(0, want as i64) as usize;
-    let samples = s.voiceover.captured.get(skip..).ok_or_else(|| bad("audio.voiceover.stop", "invalid recording trim range"))?;
+    let samples = s
+        .voiceover
+        .captured
+        .get(skip..)
+        .ok_or_else(|| bad("audio.voiceover.stop", "invalid recording trim range"))?;
     if samples.is_empty() {
         s.voiceover.rec = None;
         s.voiceover.pending_stop = None;
@@ -464,8 +599,15 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let sample_count = samples.len();
     let sequence = s.project.sequence(rec.seq).ok_or(EngineError::NoSequence)?;
-    if !sequence.audio_tracks.iter().any(|track| track.id == rec.track && !track.locked) {
-        return Err(bad("audio.voiceover.stop", "the record track was deleted or locked; restore it before saving the take"));
+    if !sequence
+        .audio_tracks
+        .iter()
+        .any(|track| track.id == rec.track && !track.locked)
+    {
+        return Err(bad(
+            "audio.voiceover.stop",
+            "the record track was deleted or locked; restore it before saving the take",
+        ));
     }
     // write the file
     let dir = record_dir(s, p);
@@ -474,19 +616,35 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
     if !cfg!(target_arch = "wasm32") {
         std::fs::create_dir_all(&dir).map_err(|e| EngineError::Other(format!("{dir}: {e}")))?;
     }
-    let samples = s.voiceover.captured.get(skip..).ok_or_else(|| bad("audio.voiceover.stop", "invalid recording trim range"))?;
+    let samples = s
+        .voiceover
+        .captured
+        .get(skip..)
+        .ok_or_else(|| bad("audio.voiceover.stop", "invalid recording trim range"))?;
     let bytes = write_wav_f32(samples, sr as u32);
-    s.services.write_file(&path, &bytes).map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
+    s.services
+        .write_file(&path, &bytes)
+        .map_err(|e| EngineError::Other(format!("{path}: {e}")))?;
     // import + place as one undo step
     let n0 = s.history.undo.len();
     let item = crate::commands::import_bytes(s, &path, bytes.into(), None)?;
     let dur = Tick::from_units(sample_count as i64, sr);
     let at = rec.record_start;
     let track = rec.track;
-    let rate = s.project.sequence(rec.seq).map(|q| q.settings.frame_rate).unwrap_or_default();
+    let rate = s
+        .project
+        .sequence(rec.seq)
+        .map(|q| q.settings.frame_rate)
+        .unwrap_or_default();
     let clip = s.edit("Record Voice-over", |pr, _| {
         let mut it = pr
-            .make_track_item(item, TrackKind::Audio, at, TimeRange::new(Tick::ZERO, dur), rate)
+            .make_track_item(
+                item,
+                TrackKind::Audio,
+                at,
+                TimeRange::new(Tick::ZERO, dur),
+                rate,
+            )
             .ok_or(EngineError::Other("recording not importable".into()))?;
         it.duration = dur;
         let id = it.id;
@@ -496,8 +654,12 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
             return Err(bad("audio.voiceover.stop", "the record track was deleted"));
         }
         let durations = |_: filmcraft_project::ItemId| -> Option<Tick> { None };
-        let mut ctx =
-            filmcraft_edit::EditCtx { next_id: &mut next, media_duration: &durations, media_start: &|_| Tick::ZERO, min_duration: rate.frame_duration() };
+        let mut ctx = filmcraft_edit::EditCtx {
+            next_id: &mut next,
+            media_duration: &durations,
+            media_start: &|_| Tick::ZERO,
+            min_duration: rate.frame_duration(),
+        };
         filmcraft_edit::overwrite(seq, vec![(track, it)], &mut ctx)?;
         seq.check().map_err(EngineError::Other)?;
         pr.next_id = next;
@@ -505,7 +667,10 @@ fn stop(s: &mut Session, p: &Value) -> Result<Value> {
     });
     crate::clip_ops::collapse_history(s, n0, "Record Voice-over");
     let clip = clip?;
-    let track_label = crate::mixer::strip_label(s.project.sequence(rec.seq).ok_or(EngineError::NoSequence)?, track);
+    let track_label = crate::mixer::strip_label(
+        s.project.sequence(rec.seq).ok_or(EngineError::NoSequence)?,
+        track,
+    );
     s.voiceover.rec = None;
     s.voiceover.pending_stop = None;
     s.voiceover.captured.clear();
@@ -531,7 +696,16 @@ fn spec(
     run: fn(&mut Session, &Value) -> Result<Value>,
     journal: bool,
 ) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut: None, params, enabled, run, journal }
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 pub fn commands() -> Vec<CommandSpec> {
@@ -544,8 +718,29 @@ pub fn commands() -> Vec<CommandSpec> {
             settings,
             true,
         ),
-        spec("audio.voiceover.start", "Start Voice-over Recording", r#"{"track":"A1"|id?,"time":ticks?,"preroll":seconds?}"#, can_start, start, true),
-        spec("audio.voiceover.sync", "Sync Voice-over Capture", r#"{"time":ticks?}"#, is_recording, sync, true),
-        spec("audio.voiceover.stop", "Stop Voice-over Recording", r#"{"time":ticks?,"dir":str?,"discard":bool?}"#, is_recording, stop, true),
+        spec(
+            "audio.voiceover.start",
+            "Start Voice-over Recording",
+            r#"{"track":"A1"|id?,"time":ticks?,"preroll":seconds?}"#,
+            can_start,
+            start,
+            true,
+        ),
+        spec(
+            "audio.voiceover.sync",
+            "Sync Voice-over Capture",
+            r#"{"time":ticks?}"#,
+            is_recording,
+            sync,
+            true,
+        ),
+        spec(
+            "audio.voiceover.stop",
+            "Stop Voice-over Recording",
+            r#"{"time":ticks?,"dir":str?,"discard":bool?}"#,
+            is_recording,
+            stop,
+            true,
+        ),
     ]
 }

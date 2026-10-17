@@ -63,7 +63,13 @@ pub struct OssReadyOptions<'a> {
 
 impl<'a> Default for OssReadyOptions<'a> {
     fn default() -> Self {
-        Self { provider: "llama", model: None, endpoint: None, store_root: None, force: false }
+        Self {
+            provider: "llama",
+            model: None,
+            endpoint: None,
+            store_root: None,
+            force: false,
+        }
     }
 }
 
@@ -168,8 +174,11 @@ pub async fn ensure_oss_ready(opts: OssReadyOptions<'_>) -> Result<OssReadyOutco
 
 async fn ensure_llama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutcome, OssReadyError> {
     let raw_model = opts.model.unwrap_or(DEFAULT_OSS_MODEL);
-    let model_id =
-        if raw_model.is_empty() || raw_model == "default" { DEFAULT_OSS_MODEL } else { raw_model };
+    let model_id = if raw_model.is_empty() || raw_model == "default" {
+        DEFAULT_OSS_MODEL
+    } else {
+        raw_model
+    };
 
     let store = match opts.store_root {
         Some(root) => ModelStore::with_root(root)?,
@@ -193,7 +202,9 @@ async fn ensure_llama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutcom
             catalog_id: resolved.catalog_id().map(ToOwned::to_owned),
         };
 
-        let outcome = downloader.pull(&store, &reference, &pull_opts, |_| {}).await?;
+        let outcome = downloader
+            .pull(&store, &reference, &pull_opts, |_| {})
+            .await?;
         if outcome.transferred() {
             any_downloaded = true;
         }
@@ -215,14 +226,25 @@ async fn ensure_ollama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutco
     } else {
         raw_model
     };
-    let endpoint = opts.endpoint.unwrap_or(DEFAULT_OLLAMA_ENDPOINT).trim_end_matches('/');
+    let endpoint = opts
+        .endpoint
+        .unwrap_or(DEFAULT_OLLAMA_ENDPOINT)
+        .trim_end_matches('/');
 
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(30)).build()?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
 
     let tags_url = format!("{endpoint}/api/tags");
-    let resp = client.get(&tags_url).send().await.map_err(|e| {
-        OssReadyError::EndpointUnavailable { endpoint: endpoint.to_string(), reason: e.to_string() }
-    })?;
+    let resp =
+        client
+            .get(&tags_url)
+            .send()
+            .await
+            .map_err(|e| OssReadyError::EndpointUnavailable {
+                endpoint: endpoint.to_string(),
+                reason: e.to_string(),
+            })?;
 
     if !resp.status().is_success() {
         return Err(OssReadyError::EndpointUnavailable {
@@ -232,10 +254,12 @@ async fn ensure_ollama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutco
     }
 
     let tags_json: serde_json::Value =
-        resp.json().await.map_err(|e| OssReadyError::EndpointUnavailable {
-            endpoint: endpoint.to_string(),
-            reason: format!("malformed JSON response: {e}"),
-        })?;
+        resp.json()
+            .await
+            .map_err(|e| OssReadyError::EndpointUnavailable {
+                endpoint: endpoint.to_string(),
+                reason: format!("malformed JSON response: {e}"),
+            })?;
 
     let mut exists = false;
     if let Some(models) = tags_json.get("models").and_then(|m| m.as_array()) {
@@ -258,9 +282,15 @@ async fn ensure_ollama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutco
             "name": model,
             "stream": false,
         });
-        let pull_resp = client.post(&pull_url).json(&pull_body).send().await.map_err(|e| {
-            OssReadyError::PullFailed { endpoint: endpoint.to_string(), reason: e.to_string() }
-        })?;
+        let pull_resp = client
+            .post(&pull_url)
+            .json(&pull_body)
+            .send()
+            .await
+            .map_err(|e| OssReadyError::PullFailed {
+                endpoint: endpoint.to_string(),
+                reason: e.to_string(),
+            })?;
 
         if !pull_resp.status().is_success() {
             let status = pull_resp.status();
@@ -272,7 +302,10 @@ async fn ensure_ollama_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutco
         }
     }
 
-    Ok(OssReadyOutcome::OllamaReady { model: model.to_string(), endpoint: endpoint.to_string() })
+    Ok(OssReadyOutcome::OllamaReady {
+        model: model.to_string(),
+        endpoint: endpoint.to_string(),
+    })
 }
 
 async fn ensure_lmstudio_ready(
@@ -284,9 +317,14 @@ async fn ensure_lmstudio_ready(
     } else {
         raw_model
     };
-    let endpoint = opts.endpoint.unwrap_or(DEFAULT_LMSTUDIO_ENDPOINT).trim_end_matches('/');
+    let endpoint = opts
+        .endpoint
+        .unwrap_or(DEFAULT_LMSTUDIO_ENDPOINT)
+        .trim_end_matches('/');
 
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(10)).build()?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
 
     let models_url = if endpoint.ends_with("/v1") {
         format!("{endpoint}/models")
@@ -294,9 +332,15 @@ async fn ensure_lmstudio_ready(
         format!("{endpoint}/v1/models")
     };
 
-    let resp = client.get(&models_url).send().await.map_err(|e| {
-        OssReadyError::EndpointUnavailable { endpoint: endpoint.to_string(), reason: e.to_string() }
-    })?;
+    let resp =
+        client
+            .get(&models_url)
+            .send()
+            .await
+            .map_err(|e| OssReadyError::EndpointUnavailable {
+                endpoint: endpoint.to_string(),
+                reason: e.to_string(),
+            })?;
 
     if !resp.status().is_success() {
         return Err(OssReadyError::EndpointUnavailable {
@@ -305,14 +349,22 @@ async fn ensure_lmstudio_ready(
         });
     }
 
-    Ok(OssReadyOutcome::LmStudioReady { model: model.to_string(), endpoint: endpoint.to_string() })
+    Ok(OssReadyOutcome::LmStudioReady {
+        model: model.to_string(),
+        endpoint: endpoint.to_string(),
+    })
 }
 
 async fn ensure_vllm_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutcome, OssReadyError> {
     let model = opts.model.unwrap_or("default");
-    let endpoint = opts.endpoint.unwrap_or(DEFAULT_VLLM_ENDPOINT).trim_end_matches('/');
+    let endpoint = opts
+        .endpoint
+        .unwrap_or(DEFAULT_VLLM_ENDPOINT)
+        .trim_end_matches('/');
 
-    let client = reqwest::Client::builder().timeout(std::time::Duration::from_secs(10)).build()?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
 
     let models_url = if endpoint.ends_with("/v1") {
         format!("{endpoint}/models")
@@ -320,9 +372,15 @@ async fn ensure_vllm_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutcome
         format!("{endpoint}/v1/models")
     };
 
-    let resp = client.get(&models_url).send().await.map_err(|e| {
-        OssReadyError::EndpointUnavailable { endpoint: endpoint.to_string(), reason: e.to_string() }
-    })?;
+    let resp =
+        client
+            .get(&models_url)
+            .send()
+            .await
+            .map_err(|e| OssReadyError::EndpointUnavailable {
+                endpoint: endpoint.to_string(),
+                reason: e.to_string(),
+            })?;
 
     if !resp.status().is_success() {
         return Err(OssReadyError::EndpointUnavailable {
@@ -331,7 +389,10 @@ async fn ensure_vllm_ready(opts: &OssReadyOptions<'_>) -> Result<OssReadyOutcome
         });
     }
 
-    Ok(OssReadyOutcome::VllmReady { model: model.to_string(), endpoint: endpoint.to_string() })
+    Ok(OssReadyOutcome::VllmReady {
+        model: model.to_string(),
+        endpoint: endpoint.to_string(),
+    })
 }
 
 #[cfg(test)]
@@ -349,9 +410,11 @@ mod tests {
 
     #[tokio::test]
     async fn unknown_provider_returns_error() {
-        let res =
-            ensure_oss_ready(OssReadyOptions { provider: "unknown-infer", ..Default::default() })
-                .await;
+        let res = ensure_oss_ready(OssReadyOptions {
+            provider: "unknown-infer",
+            ..Default::default()
+        })
+        .await;
 
         match res {
             Err(OssReadyError::UnknownProvider(name)) => assert_eq!(name, "unknown-infer"),
@@ -383,11 +446,16 @@ mod tests {
         .unwrap();
 
         match res {
-            OssReadyOutcome::LlamaReady { primary_path, all_paths, already_present, .. } => {
+            OssReadyOutcome::LlamaReady {
+                primary_path,
+                all_paths,
+                already_present,
+                ..
+            } => {
                 assert_eq!(primary_path, fake_weights);
                 assert_eq!(all_paths.len(), 1);
                 assert!(already_present);
-            },
+            }
             other => panic!("expected LlamaReady, got {other:?}"),
         }
     }
@@ -404,7 +472,7 @@ mod tests {
         match res {
             Err(OssReadyError::EndpointUnavailable { endpoint, .. }) => {
                 assert!(endpoint.contains("54321"));
-            },
+            }
             other => panic!("expected EndpointUnavailable, got {other:?}"),
         }
     }
@@ -421,7 +489,7 @@ mod tests {
         match res {
             Err(OssReadyError::EndpointUnavailable { endpoint, .. }) => {
                 assert!(endpoint.contains("54322"));
-            },
+            }
             other => panic!("expected EndpointUnavailable, got {other:?}"),
         }
     }

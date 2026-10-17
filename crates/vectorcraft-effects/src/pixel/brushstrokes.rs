@@ -30,8 +30,12 @@ const SALT_SUMI: u64 = 192;
 
 /// Sprayed Strokes' stroke directions, in its Stroke Direction menu's order: (label, parameter
 /// value).
-pub const STROKE_DIRECTIONS: [(&str, &str); 4] =
-    [("Right Diagonal", "rightDiagonal"), ("Horizontal", "horizontal"), ("Left Diagonal", "leftDiagonal"), ("Vertical", "vertical")];
+pub const STROKE_DIRECTIONS: [(&str, &str); 4] = [
+    ("Right Diagonal", "rightDiagonal"),
+    ("Horizontal", "horizontal"),
+    ("Left Diagonal", "leftDiagonal"),
+    ("Vertical", "vertical"),
+];
 
 /// The way Sprayed Strokes are painted.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -43,13 +47,22 @@ pub enum StrokeDirection {
 }
 
 impl StrokeDirection {
-    const ALL: [StrokeDirection; 4] =
-        [StrokeDirection::RightDiagonal, StrokeDirection::Horizontal, StrokeDirection::LeftDiagonal, StrokeDirection::Vertical];
+    const ALL: [StrokeDirection; 4] = [
+        StrokeDirection::RightDiagonal,
+        StrokeDirection::Horizontal,
+        StrokeDirection::LeftDiagonal,
+        StrokeDirection::Vertical,
+    ];
 
     /// The direction of `value` (a [`STROKE_DIRECTIONS`] value, any case); Right Diagonal
     /// otherwise.
     pub fn parse(value: &str) -> Self {
-        pick(&STROKE_DIRECTIONS, &Self::ALL, value, StrokeDirection::RightDiagonal)
+        pick(
+            &STROKE_DIRECTIONS,
+            &Self::ALL,
+            value,
+            StrokeDirection::RightDiagonal,
+        )
     }
 
     /// The unit vector along the strokes (document axes, y down).
@@ -151,28 +164,51 @@ impl<'a> Smear<'a> {
     fn new(px: &[[u8; 4]], w: usize, h: usize, place: &'a Place, len: f64) -> Self {
         let len = if len.is_finite() { len.max(0.0) } else { 0.0 };
         let span = len / place.px;
-        let n = if span.is_finite() { (span.ceil() as usize).saturating_add(1).clamp(1, MAX_SAMPLES) } else { MAX_SAMPLES };
+        let n = if span.is_finite() {
+            (span.ceil() as usize)
+                .saturating_add(1)
+                .clamp(1, MAX_SAMPLES)
+        } else {
+            MAX_SAMPLES
+        };
         let gap = if n > 1 { span / (n - 1) as f64 } else { 0.0 };
         let mut wide = to16(px);
         if gap > 1.0 {
             gaussian(&mut wide, w, 0.5 * gap);
         }
-        let src = wide.iter().map(|p| p.map(|v| f32::from(v) / 65535.0)).collect();
-        Self { src, w, h, place, len, n }
+        let src = wide
+            .iter()
+            .map(|p| p.map(|v| f32::from(v) / 65535.0))
+            .collect();
+        Self {
+            src,
+            w,
+            h,
+            place,
+            len,
+            n,
+        }
     }
 
     /// The premultiplied colour (0..1) averaged along the stroke through `centre` (relative to the
     /// object's centre) along `dir`.
     fn at(&self, centre: Point, dir: Vec2) -> [f32; 4] {
         let half = dir * (0.5 * self.len);
-        let (a, b) = (self.place.to_px * (centre - half), self.place.to_px * (centre + half));
+        let (a, b) = (
+            self.place.to_px * (centre - half),
+            self.place.to_px * (centre + half),
+        );
         if !(a.x.is_finite() && a.y.is_finite() && b.x.is_finite() && b.y.is_finite()) {
             return [0.0; 4];
         }
         // Pixel centres at whole coordinates.
         let (mut x, mut y, step) = match self.n {
             0 | 1 => (0.5 * (a.x + b.x) - 0.5, 0.5 * (a.y + b.y) - 0.5, (0.0, 0.0)),
-            n => (a.x - 0.5, a.y - 0.5, ((b.x - a.x) / (n - 1) as f64, (b.y - a.y) / (n - 1) as f64)),
+            n => (
+                a.x - 0.5,
+                a.y - 0.5,
+                ((b.x - a.x) / (n - 1) as f64, (b.y - a.y) / (n - 1) as f64),
+            ),
         };
         let mut acc = [0.0f32; 4];
         for _ in 0..self.n {
@@ -195,8 +231,16 @@ impl<'a> Smear<'a> {
         // Inside the raster: the four pixels as two pairs.
         if i >= 0 && j >= 0 && (i as usize) + 1 < self.w && (j as usize) + 1 < self.h {
             let at = j as usize * self.w + i as usize;
-            if let (Some([p00, p10]), Some([p01, p11])) = (self.src.get(at..at + 2), self.src.get(at + self.w..at + self.w + 2)) {
-                let (k00, k10, k01, k11) = ((1.0 - fx) * (1.0 - fy), fx * (1.0 - fy), (1.0 - fx) * fy, fx * fy);
+            if let (Some([p00, p10]), Some([p01, p11])) = (
+                self.src.get(at..at + 2),
+                self.src.get(at + self.w..at + self.w + 2),
+            ) {
+                let (k00, k10, k01, k11) = (
+                    (1.0 - fx) * (1.0 - fy),
+                    fx * (1.0 - fy),
+                    (1.0 - fx) * fy,
+                    fx * fy,
+                );
                 for (c, a) in acc.iter_mut().enumerate() {
                     *a += p00[c] * k00 + p10[c] * k10 + p01[c] * k01 + p11[c] * k11;
                 }
@@ -204,9 +248,13 @@ impl<'a> Smear<'a> {
             return;
         }
         for (row, wy) in [(j, 1.0 - fy), (j + 1, fy)] {
-            let Some(row) = usize::try_from(row).ok().filter(|r| *r < self.h) else { continue };
+            let Some(row) = usize::try_from(row).ok().filter(|r| *r < self.h) else {
+                continue;
+            };
             for (col, wx) in [(i, 1.0 - fx), (i + 1, fx)] {
-                let Some(col) = usize::try_from(col).ok().filter(|c| *c < self.w) else { continue };
+                let Some(col) = usize::try_from(col).ok().filter(|c| *c < self.w) else {
+                    continue;
+                };
                 if let Some(p) = self.src.get(row * self.w + col) {
                     let k = wx * wy;
                     for (a, v) in acc.iter_mut().zip(p) {
@@ -236,8 +284,12 @@ fn stroke_shift(salt: u64, q: Point, dir: Vec2, len: f64, width: f64) -> f64 {
         return 0.0;
     }
     let (u, v) = frame(q, dir);
-    let Some(row) = cell(v / width) else { return 0.0 };
-    let Some(col) = cell(u / len + rand(salt, row, 0, 0)) else { return 0.0 };
+    let Some(row) = cell(v / width) else {
+        return 0.0;
+    };
+    let Some(col) = cell(u / len + rand(salt, row, 0, 0)) else {
+        return 0.0;
+    };
     (2.0 * rand(salt, col, row, 1) - 1.0) * JITTER * len
 }
 
@@ -250,7 +302,11 @@ fn streak(salt: u64, q: Point, dir: Vec2, along: f64, across: f64) -> f64 {
 /// The straight colour and coverage of premultiplied `pm` (0..1).
 fn unpremultiply(pm: [f32; 4]) -> ([f32; 3], f32) {
     let a = pm[3].clamp(0.0, 1.0);
-    if a > 1e-6 { ([pm[0], pm[1], pm[2]].map(|v| (v / a).clamp(0.0, 1.0)), a) } else { ([0.0; 3], 0.0) }
+    if a > 1e-6 {
+        ([pm[0], pm[1], pm[2]].map(|v| (v / a).clamp(0.0, 1.0)), a)
+    } else {
+        ([0.0; 3], 0.0)
+    }
 }
 
 /// `a` + (`b` − `a`) × `t`, channel by channel.
@@ -260,7 +316,11 @@ fn mix<const N: usize>(a: [f32; N], b: [f32; N], t: f32) -> [f32; N] {
 
 /// A smooth step from 0 at `t` ≤ 0 to 1 at `t` ≥ 1.
 fn ramp(t: f64) -> f64 {
-    let t = if t.is_finite() { t.clamp(0.0, 1.0) } else { 0.0 };
+    let t = if t.is_finite() {
+        t.clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     t * t * (3.0 - 2.0 * t)
 }
 
@@ -273,7 +333,10 @@ fn unit(p: [u8; 4]) -> [f32; 4] {
 /// black to white or from clear to opaque, the same at any resolution. Empty when the sizes don't
 /// match.
 fn edges(px: &[[u8; 4]], w: usize, h: usize, place: &Place, sigma: f64) -> Vec<f32> {
-    let mut tone: Vec<f32> = px.iter().map(|p| luma(straight(*p)) * f32::from(p[3]) / 255.0).collect();
+    let mut tone: Vec<f32> = px
+        .iter()
+        .map(|p| luma(straight(*p)) * f32::from(p[3]) / 255.0)
+        .collect();
     let mut cover: Vec<f32> = px.iter().map(|p| f32::from(p[3]) / 255.0).collect();
     let s = sigma / place.px;
     blur_plane(&mut tone, w, h, s);
@@ -282,14 +345,28 @@ fn edges(px: &[[u8; 4]], w: usize, h: usize, place: &Place, sigma: f64) -> Vec<f
     // the slope; a pixel is the least it softens by.
     let norm = (s.max(0.8) * TAU.sqrt() / 8.0) as f32;
     let norm = if norm.is_finite() { norm } else { 0.0 };
-    sobel(&tone, w, h).iter().zip(sobel(&cover, w, h)).map(|(t, c)| t.max(c) * norm).collect()
+    sobel(&tone, w, h)
+        .iter()
+        .zip(sobel(&cover, w, h))
+        .map(|(t, c)| t.max(c) * norm)
+        .collect()
 }
 
 /// Accented Edges: the object's edges accented in white chalk when `brightness` (0..50) is high,
 /// in black ink when it's low, about `width` (1..14) wide; `smoothness` (1..15) softens the object
 /// first and leaves out its fainter edges.
-pub(super) fn accented_edges(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, width: f64, brightness: f64, smoothness: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn accented_edges(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    width: f64,
+    brightness: f64,
+    smoothness: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let found = edges(px, w, h, &place, accent_softness(width, smoothness));
     let faint = (0.02 * smoothness.clamp(1.0, 15.0)) as f32;
     let level = (brightness / 50.0).clamp(0.0, 1.0) as f32;
@@ -310,8 +387,18 @@ pub(super) fn accented_edges(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
 /// diagonal strokes and dark areas in left diagonal ones; `balance` (0..100) moves the split
 /// (0 all left diagonal, 100 all right diagonal) and `sharpness` (0..10) brings the detail and
 /// the bristles out.
-pub(super) fn angled_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, balance: f64, len: f64, sharpness: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn angled_strokes(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    balance: f64,
+    len: f64,
+    sharpness: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let smear = Smear::new(px, w, h, &place, len);
     let tones = Tones::new(px, w, h, TONE_SOFTNESS / place.px);
     let split = 1.07 - 1.14 * (balance / 100.0).clamp(0.0, 1.0);
@@ -323,9 +410,17 @@ pub(super) fn angled_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
         let q = place.at(x, y);
         // The split between the directions wanders along the strokes, so they interlock.
         let right = tones.get(x, y) > split + 0.06 * streak(SALT_ANGLED + 3, q, RIGHT, row, row);
-        let (dir, salt) = if right { (RIGHT, SALT_ANGLED) } else { (LEFT, SALT_ANGLED + 1) };
+        let (dir, salt) = if right {
+            (RIGHT, SALT_ANGLED)
+        } else {
+            (LEFT, SALT_ANGLED + 1)
+        };
         let pm = smear.stroke(salt, q, dir, row);
-        let pm = mix(pm, unit(src.get(y * w + x).copied().unwrap_or([0; 4])), detail);
+        let pm = mix(
+            pm,
+            unit(src.get(y * w + x).copied().unwrap_or([0; 4])),
+            detail,
+        );
         let (c, a) = unpremultiply(pm);
         let n = (bristle * streak(SALT_ANGLED + 2, q, dir, 0.5 * smear.len.max(1.0), 0.6)) as f32;
         *p = premultiply(c.map(|v| v + n), a);
@@ -335,8 +430,18 @@ pub(super) fn angled_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pix
 /// Crosshatch: the object's detail kept under pencil hatching along both diagonals, strokes `len`
 /// long, roughening its edges; `sharpness` (0..20) sets how crisp and dark the hatching is,
 /// `passes` (1..3) how many layers of it there are.
-pub(super) fn crosshatch(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, len: f64, sharpness: f64, passes: u32) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn crosshatch(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    len: f64,
+    sharpness: f64,
+    passes: u32,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let smear = Smear::new(px, w, h, &place, len);
     let tones = Tones::new(px, w, h, TONE_SOFTNESS / place.px);
     let sharp = sharpness.clamp(0.0, 20.0);
@@ -348,13 +453,27 @@ pub(super) fn crosshatch(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
         let q = place.at(x, y);
         let line = |k: u32| {
             let dir = if k.is_multiple_of(2) { RIGHT } else { LEFT };
-            streak(SALT_CROSS + u64::from(k), q, dir, smear.len.max(1.0), 0.7 + 0.3 * f64::from(k))
+            streak(
+                SALT_CROSS + u64::from(k),
+                q,
+                dir,
+                smear.len.max(1.0),
+                0.7 + 0.3 * f64::from(k),
+            )
         };
         let first = line(0);
         // The edges roughened along the first hatching.
         let o = q + RIGHT * (roughen * first);
-        let strokes = mix(smear.stroke(SALT_CROSS + 4, o, RIGHT, row), smear.stroke(SALT_CROSS + 5, o, LEFT, row), 0.5);
-        let pm = mix(unit(src.get(y * w + x).copied().unwrap_or([0; 4])), strokes, 0.5);
+        let strokes = mix(
+            smear.stroke(SALT_CROSS + 4, o, RIGHT, row),
+            smear.stroke(SALT_CROSS + 5, o, LEFT, row),
+            0.5,
+        );
+        let pm = mix(
+            unit(src.get(y * w + x).copied().unwrap_or([0; 4])),
+            strokes,
+            0.5,
+        );
         let (mut c, a) = unpremultiply(pm);
         if a <= 0.0 {
             *p = [0; 4];
@@ -364,9 +483,19 @@ pub(super) fn crosshatch(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
         for k in 0..passes.clamp(1, 3) {
             let v = (if k == 0 { first } else { line(k) } * crisp).clamp(-1.0, 1.0);
             // Dark pencil lines and the light paper between them.
-            let s = if v > 0.0 { -(amount * v * shade) } else { -0.6 * amount * v };
+            let s = if v > 0.0 {
+                -(amount * v * shade)
+            } else {
+                -0.6 * amount * v
+            };
             let s = s.clamp(-1.0, 1.0) as f32;
-            c = c.map(|v| if s < 0.0 { v * (1.0 + s) } else { v + (1.0 - v) * s });
+            c = c.map(|v| {
+                if s < 0.0 {
+                    v * (1.0 + s)
+                } else {
+                    v + (1.0 - v) * s
+                }
+            });
         }
         *p = premultiply(c, a);
     });
@@ -375,18 +504,35 @@ pub(super) fn crosshatch(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSp
 /// Dark Strokes: dark areas painted closer to black with short strokes, light areas with long
 /// strokes closer to white; `balance` (0..10) moves the tone between them up, `black` (0..10) and
 /// `white` (0..10) set how dark and how light they get.
-pub(super) fn dark_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, balance: f64, black: f64, white: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn dark_strokes(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    balance: f64,
+    black: f64,
+    white: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let short = Smear::new(px, w, h, &place, DARK_LENGTH);
     let long = Smear::new(px, w, h, &place, LIGHT_LENGTH);
     let tones = Tones::new(px, w, h, TONE_SOFTNESS / place.px);
     let split = 0.15 + 0.07 * balance.clamp(0.0, 10.0);
-    let (black, white) = (0.085 * black.clamp(0.0, 10.0), 0.085 * white.clamp(0.0, 10.0));
+    let (black, white) = (
+        0.085 * black.clamp(0.0, 10.0),
+        0.085 * white.clamp(0.0, 10.0),
+    );
     place.each(px, |x, y, p| {
         let q = place.at(x, y);
         let dark = 1.0 - ramp((tones.get(x, y) - split) / 0.12 + 0.5);
         let painted = |light: bool| {
-            let (smear, dir, salt) = if light { (&long, RIGHT, SALT_DARK) } else { (&short, LEFT, SALT_DARK + 1) };
+            let (smear, dir, salt) = if light {
+                (&long, RIGHT, SALT_DARK)
+            } else {
+                (&short, LEFT, SALT_DARK + 1)
+            };
             let (c, a) = unpremultiply(smear.stroke(salt, q, dir, 1.0));
             let n = 0.7 + 0.3 * streak(salt + 2, q, dir, 0.5 * smear.len, 0.5);
             let c = if light {
@@ -413,28 +559,54 @@ pub(super) fn dark_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
 /// Ink Outlines: the object redrawn in pen and ink, fine outlines over its edges and ink strokes
 /// `len` long in its shadows; `dark` (0..50) darkens the shadows, `light` (0..50) lightens the
 /// highlights.
-pub(super) fn ink_outlines(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, len: f64, dark: f64, light: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn ink_outlines(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    len: f64,
+    dark: f64,
+    light: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let smear = Smear::new(px, w, h, &place, len);
     let found = edges(px, w, h, &place, INK_SOFTNESS);
-    let (dark, light) = ((dark / 50.0).clamp(0.0, 1.0), (light / 50.0).clamp(0.0, 1.0));
+    let (dark, light) = (
+        (dark / 50.0).clamp(0.0, 1.0),
+        (light / 50.0).clamp(0.0, 1.0),
+    );
     let row = (0.25 * smear.len).max(0.75);
     let src = px.to_vec();
     place.each(px, |x, y, p| {
         let q = place.at(x, y);
-        let pm = mix(unit(src.get(y * w + x).copied().unwrap_or([0; 4])), smear.stroke(SALT_INK, q, LEFT, row), 0.5);
+        let pm = mix(
+            unit(src.get(y * w + x).copied().unwrap_or([0; 4])),
+            smear.stroke(SALT_INK, q, LEFT, row),
+            0.5,
+        );
         let (c, a) = unpremultiply(pm);
         if a <= 0.0 {
             *p = [0; 4];
             return;
         }
         let l = f64::from(luma(c));
-        let (shadow, highlight) = (((0.75 - l) / 0.75).clamp(0.0, 1.0), ((l - 0.45) / 0.55).clamp(0.0, 1.0));
-        let (down, up) = ((0.7 * dark * shadow) as f32, (0.7 * light * highlight) as f32);
+        let (shadow, highlight) = (
+            ((0.75 - l) / 0.75).clamp(0.0, 1.0),
+            ((l - 0.45) / 0.55).clamp(0.0, 1.0),
+        );
+        let (down, up) = (
+            (0.7 * dark * shadow) as f32,
+            (0.7 * light * highlight) as f32,
+        );
         let c = c.map(|v| v * (1.0 - down)).map(|v| v + (1.0 - v) * up);
         // Ink lines along the strokes in the shadows, and the outlines.
-        let hatch = ramp(2.0 * streak(SALT_INK + 1, q, LEFT, 1.5 * smear.len.max(1.0), 0.5) + 0.2) * shadow * (0.4 + 1.2 * dark);
-        let outline = (1.5 * f64::from(found.get(y * w + x).copied().unwrap_or(0.0)) - 0.15).clamp(0.0, 1.0);
+        let hatch = ramp(2.0 * streak(SALT_INK + 1, q, LEFT, 1.5 * smear.len.max(1.0), 0.5) + 0.2)
+            * shadow
+            * (0.4 + 1.2 * dark);
+        let outline =
+            (1.5 * f64::from(found.get(y * w + x).copied().unwrap_or(0.0)) - 0.15).clamp(0.0, 1.0);
         let ink = (0.9 * outline).max(0.8 * hatch).min(1.0) as f32;
         *p = premultiply(c.map(|v| v * (1.0 - ink)), a);
     });
@@ -443,20 +615,41 @@ pub(super) fn ink_outlines(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pixel
 /// Spatter: the object as if sprayed with a spatter airbrush, each pixel taking the colour of one
 /// up to [`spatter_shift`] away; `smoothness` (1..15) makes the spatter's grains larger and
 /// smoother.
-pub(super) fn spatter(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, radius: f64, smoothness: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn spatter(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    radius: f64,
+    smoothness: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let grain = 0.3 + 0.15 * smoothness.clamp(1.0, 15.0);
     let most = spatter_shift(radius);
     displace(px, w, h, &place, most, |q| {
-        let n = |salt: u64| 0.6 * smooth_noise(salt, q, grain) + 0.4 * smooth_noise(salt + 2, q, 0.4 * grain);
+        let n = |salt: u64| {
+            0.6 * smooth_noise(salt, q, grain) + 0.4 * smooth_noise(salt + 2, q, 0.4 * grain)
+        };
         Vec2::new(n(SALT_SPATTER), n(SALT_SPATTER + 1)) * (1.8 * most)
     });
 }
 
 /// Sprayed Strokes: the object repainted in sprayed strokes `len` long along `dir`, scattered by
 /// up to [`spray_shift`].
-pub(super) fn sprayed_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, len: f64, radius: f64, dir: StrokeDirection) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn sprayed_strokes(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    len: f64,
+    radius: f64,
+    dir: StrokeDirection,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let smear = Smear::new(px, w, h, &place, len);
     let (dir, spray) = (dir.along(), spray_shift(radius));
     let along = (0.5 * smear.len).max(0.5);
@@ -468,7 +661,8 @@ pub(super) fn sprayed_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pi
         if l > spray && l.is_finite() {
             d *= spray / l;
         }
-        let (c, a) = unpremultiply(smear.stroke(SALT_SPRAYED + 2, q + d, dir, (0.2 * smear.len).max(1.0)));
+        let (c, a) =
+            unpremultiply(smear.stroke(SALT_SPRAYED + 2, q + d, dir, (0.2 * smear.len).max(1.0)));
         *p = premultiply(c, a);
     });
 }
@@ -477,11 +671,24 @@ pub(super) fn sprayed_strokes(px: &mut [[u8; 4]], w: usize, h: usize, space: &Pi
 /// across with soft, bleeding edges and rich blacks; `pressure` (0..15) loads the brush with more
 /// ink and `contrast` (0..40) sets the contrast. It works in the ink (the value): the colours keep
 /// their hue and saturation, and the object keeps its shape.
-pub(super) fn sumi_e(px: &mut [[u8; 4]], w: usize, h: usize, space: &PixelSpace, width: f64, pressure: f64, contrast: f64) {
-    let Some(place) = Place::new(space, w, h) else { return };
+pub(super) fn sumi_e(
+    px: &mut [[u8; 4]],
+    w: usize,
+    h: usize,
+    space: &PixelSpace,
+    width: f64,
+    pressure: f64,
+    contrast: f64,
+) {
+    let Some(place) = Place::new(space, w, h) else {
+        return;
+    };
     let smear = Smear::new(px, w, h, &place, width);
     // The ink around each pixel: the object's darkness by its coverage, softened.
-    let mut wet: Vec<f32> = px.iter().map(|p| (1.0 - luma(straight(*p))) * f32::from(p[3]) / 255.0).collect();
+    let mut wet: Vec<f32> = px
+        .iter()
+        .map(|p| (1.0 - luma(straight(*p))) * f32::from(p[3]) / 255.0)
+        .collect();
     blur_plane(&mut wet, w, h, 0.2 * smear.len / place.px);
     let load = 1.0 + 0.06 * pressure.clamp(0.0, 15.0);
     // How far the ink moves along an S curve: up to once at 20, twice at 40.

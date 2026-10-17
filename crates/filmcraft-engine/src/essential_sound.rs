@@ -39,9 +39,16 @@ pub fn targets(s: &Session, p: &Value) -> Vec<ClipId> {
             None => s.state.selection.clone(),
         },
     };
-    let Some(seq) = s.active_sequence() else { return Vec::new() };
+    let Some(seq) = s.active_sequence() else {
+        return Vec::new();
+    };
     let all = with_links(s, &sel);
-    seq.audio_tracks.iter().flat_map(|t| t.items.iter()).filter(|i| all.contains(&i.id)).map(|i| i.id).collect()
+    seq.audio_tracks
+        .iter()
+        .flat_map(|t| t.items.iter())
+        .filter(|i| all.contains(&i.id))
+        .map(|i| i.id)
+        .collect()
 }
 
 fn mt_of(it: &TrackItem, t: Tick) -> Tick {
@@ -66,7 +73,12 @@ fn update(
     let body = |p: &mut Project, _: &mut crate::EditorState| -> Result<usize> {
         let seq = p.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
         let mut n = 0;
-        for it in seq.audio_tracks.iter_mut().flat_map(|t| t.items.iter_mut()).filter(|i| clips.contains(&i.id)) {
+        for it in seq
+            .audio_tracks
+            .iter_mut()
+            .flat_map(|t| t.items.iter_mut())
+            .filter(|i| clips.contains(&i.id))
+        {
             let old = it.essential.clone();
             let mut next = old.clone();
             f(it, &mut next).map_err(|e| bad(cmd, e))?;
@@ -100,13 +112,21 @@ pub fn presets(s: &Session) -> Vec<Preset> {
 fn type_p(p: &Value, cmd: &str) -> Result<Option<AudioType>> {
     match str_p(p, "type") {
         None => Ok(None),
-        Some(t) => AudioType::parse(t).map(Some).ok_or_else(|| bad(cmd, format!("unknown audio type `{t}` (dialogue, music, sfx, ambience)"))),
+        Some(t) => AudioType::parse(t).map(Some).ok_or_else(|| {
+            bad(
+                cmd,
+                format!("unknown audio type `{t}` (dialogue, music, sfx, ambience)"),
+            )
+        }),
     }
 }
 
 fn clip_json(s: &Session, it: &TrackItem, track: &str) -> Value {
     let t = s.playhead();
-    let level = it.effect("volume").map(|e| e.f64_at("level", mt_of(it, t))).unwrap_or(0.0);
+    let level = it
+        .effect("volume")
+        .map(|e| e.f64_at("level", mt_of(it, t)))
+        .unwrap_or(0.0);
     json!({
         "clip": it.id.0,
         "name": it.name,
@@ -139,7 +159,12 @@ fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
         _ => json!("mixed"),
     };
     let ps = presets(s);
-    let by_type = |t: AudioType| ps.iter().filter(|p| p.kind == t).map(|p| json!({"name": p.name, "builtin": p.builtin})).collect::<Vec<_>>();
+    let by_type = |t: AudioType| {
+        ps.iter()
+            .filter(|p| p.kind == t)
+            .map(|p| json!({"name": p.name, "builtin": p.builtin}))
+            .collect::<Vec<_>>()
+    };
     Ok(json!({
         "clips": out,
         "type": kind,
@@ -152,36 +177,59 @@ fn inspect(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 fn set_type(s: &mut Session, p: &Value) -> Result<Value> {
-    let t = type_p(p, "essentialSound.setType")?.ok_or_else(|| bad("essentialSound.setType", "need `type`"))?;
+    let t = type_p(p, "essentialSound.setType")?
+        .ok_or_else(|| bad("essentialSound.setType", "need `type`"))?;
     let clips = targets(s, p);
-    let n = update(s, "essentialSound.setType", &format!("Set Audio Type to {}", t.label()), None, &clips, |_, e| {
-        if e.as_ref().is_none_or(|x| x.kind != t) {
-            *e = Some(EssentialSound::new(t));
-        }
-        Ok(())
-    })?;
+    let n = update(
+        s,
+        "essentialSound.setType",
+        &format!("Set Audio Type to {}", t.label()),
+        None,
+        &clips,
+        |_, e| {
+            if e.as_ref().is_none_or(|x| x.kind != t) {
+                *e = Some(EssentialSound::new(t));
+            }
+            Ok(())
+        },
+    )?;
     Ok(json!({"clips": n, "type": t.label()}))
 }
 
 fn clear_type(s: &mut Session, p: &Value) -> Result<Value> {
     let clips = targets(s, p);
-    let n = update(s, "essentialSound.clearType", "Clear Audio Type", None, &clips, |_, e| {
-        *e = None;
-        Ok(())
-    })?;
+    let n = update(
+        s,
+        "essentialSound.clearType",
+        "Clear Audio Type",
+        None,
+        &clips,
+        |_, e| {
+            *e = None;
+            Ok(())
+        },
+    )?;
     Ok(json!({"clips": n}))
 }
 
 fn set(s: &mut Session, p: &Value) -> Result<Value> {
     let mut kv: Vec<(String, Value)> = Vec::new();
     if let Some(k) = str_p(p, "key") {
-        kv.push((k.to_string(), p.get("value").cloned().ok_or_else(|| bad("essentialSound.set", "need `value`"))?));
+        kv.push((
+            k.to_string(),
+            p.get("value")
+                .cloned()
+                .ok_or_else(|| bad("essentialSound.set", "need `value`"))?,
+        ));
     }
     if let Some(m) = p.get("values").and_then(Value::as_object) {
         kv.extend(m.iter().map(|(k, v)| (k.clone(), v.clone())));
     }
     if kv.is_empty() {
-        return Err(bad("essentialSound.set", "need `key` + `value` or `values`"));
+        return Err(bad(
+            "essentialSound.set",
+            "need `key` + `value` or `values`",
+        ));
     }
     let clips = targets(s, p);
     if bool_p(p, "begin").unwrap_or(false) {
@@ -189,51 +237,93 @@ fn set(s: &mut Session, p: &Value) -> Result<Value> {
     }
     let keys: Vec<&str> = kv.iter().map(|(k, _)| k.as_str()).collect();
     let merge = format!("essentialSound:{clips:?}:{}", keys.join(","));
-    let n = update(s, "essentialSound.set", "Essential Sound", Some(merge), &clips, |it, e| {
-        let st = e.as_mut().ok_or_else(|| format!("clip `{}` has no audio type; set one first", it.name))?;
-        for (k, v) in &kv {
-            st.set(k, v)?;
-        }
-        Ok(())
-    })?;
+    let n = update(
+        s,
+        "essentialSound.set",
+        "Essential Sound",
+        Some(merge),
+        &clips,
+        |it, e| {
+            let st = e
+                .as_mut()
+                .ok_or_else(|| format!("clip `{}` has no audio type; set one first", it.name))?;
+            for (k, v) in &kv {
+                st.set(k, v)?;
+            }
+            Ok(())
+        },
+    )?;
     Ok(json!({"clips": n}))
 }
 
 fn apply_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "essentialSound.applyPreset";
-    let name = str_p(p, "preset").ok_or_else(|| bad(cmd, "need `preset`"))?.to_string();
+    let name = str_p(p, "preset")
+        .ok_or_else(|| bad(cmd, "need `preset`"))?
+        .to_string();
     let forced = type_p(p, cmd)?;
     let ps = presets(s);
     let clips = targets(s, p);
-    let n = update(s, cmd, &format!("Apply Sound Preset {name}"), None, &clips, |it, e| {
-        let kind = forced.or(e.as_ref().map(|x| x.kind)).ok_or_else(|| format!("clip `{}` has no audio type; pass `type`", it.name))?;
-        let pr =
-            ps.iter().rev().find(|x| x.kind == kind && x.name.eq_ignore_ascii_case(&name)).ok_or_else(|| format!("no {} preset `{name}`", kind.label()))?;
-        *e = Some(es::with_preset(e.as_ref(), pr));
-        Ok(())
-    })?;
+    let n = update(
+        s,
+        cmd,
+        &format!("Apply Sound Preset {name}"),
+        None,
+        &clips,
+        |it, e| {
+            let kind = forced
+                .or(e.as_ref().map(|x| x.kind))
+                .ok_or_else(|| format!("clip `{}` has no audio type; pass `type`", it.name))?;
+            let pr = ps
+                .iter()
+                .rev()
+                .find(|x| x.kind == kind && x.name.eq_ignore_ascii_case(&name))
+                .ok_or_else(|| format!("no {} preset `{name}`", kind.label()))?;
+            *e = Some(es::with_preset(e.as_ref(), pr));
+            Ok(())
+        },
+    )?;
     Ok(json!({"clips": n, "preset": name}))
 }
 
 fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "essentialSound.savePreset";
-    let name = str_p(p, "name").map(str::trim).filter(|n| !n.is_empty()).ok_or_else(|| bad(cmd, "need `name`"))?.to_string();
+    let name = str_p(p, "name")
+        .map(str::trim)
+        .filter(|n| !n.is_empty())
+        .ok_or_else(|| bad(cmd, "need `name`"))?
+        .to_string();
     let clips = targets(s, p);
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
-    let mut st =
-        clips.iter().find_map(|c| seq.find_item(*c).and_then(|(_, i)| i.essential.clone())).ok_or_else(|| bad(cmd, "select a clip with an audio type"))?;
-    if es::builtin_presets().iter().any(|b| b.kind == st.kind && b.name.eq_ignore_ascii_case(&name)) {
+    let mut st = clips
+        .iter()
+        .find_map(|c| seq.find_item(*c).and_then(|(_, i)| i.essential.clone()))
+        .ok_or_else(|| bad(cmd, "select a clip with an audio type"))?;
+    if es::builtin_presets()
+        .iter()
+        .any(|b| b.kind == st.kind && b.name.eq_ignore_ascii_case(&name))
+    {
         return Err(bad(cmd, format!("`{name}` is a built-in preset name")));
     }
     st.preset = name.clone();
-    st.loudness = es::Loudness { enabled: st.loudness.enabled, ..Default::default() };
+    st.loudness = es::Loudness {
+        enabled: st.loudness.enabled,
+        ..Default::default()
+    };
     st.volume = Default::default();
     st.mute = false;
     let kind = st.kind;
     let mut prefs = s.prefs.clone();
-    prefs.essential_sound.user_presets.retain(|u| !(u.settings.kind == kind && u.name.eq_ignore_ascii_case(&name)));
-    prefs.essential_sound.user_presets.push(UserSoundPreset { name: name.clone(), settings: st });
-    s.set_prefs(prefs).map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
+    prefs
+        .essential_sound
+        .user_presets
+        .retain(|u| !(u.settings.kind == kind && u.name.eq_ignore_ascii_case(&name)));
+    prefs.essential_sound.user_presets.push(UserSoundPreset {
+        name: name.clone(),
+        settings: st,
+    });
+    s.set_prefs(prefs)
+        .map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
     // the clips now show the saved preset
     let _ = update(s, cmd, "Save Sound Preset", None, &clips, |_, e| {
         if let Some(x) = e.as_mut().filter(|x| x.kind == kind) {
@@ -246,15 +336,24 @@ fn save_preset(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn delete_preset(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "essentialSound.deletePreset";
-    let name = str_p(p, "name").or_else(|| str_p(p, "preset")).ok_or_else(|| bad(cmd, "need `name`"))?.to_string();
+    let name = str_p(p, "name")
+        .or_else(|| str_p(p, "preset"))
+        .ok_or_else(|| bad(cmd, "need `name`"))?
+        .to_string();
     let kind = type_p(p, cmd)?;
     let mut prefs = s.prefs.clone();
     let before = prefs.essential_sound.user_presets.len();
-    prefs.essential_sound.user_presets.retain(|u| !(u.name.eq_ignore_ascii_case(&name) && kind.is_none_or(|k| k == u.settings.kind)));
+    prefs.essential_sound.user_presets.retain(|u| {
+        !(u.name.eq_ignore_ascii_case(&name) && kind.is_none_or(|k| k == u.settings.kind))
+    });
     if prefs.essential_sound.user_presets.len() == before {
-        return Err(bad(cmd, format!("no user preset `{name}` (built-in presets cannot be deleted)")));
+        return Err(bad(
+            cmd,
+            format!("no user preset `{name}` (built-in presets cannot be deleted)"),
+        ));
     }
-    s.set_prefs(prefs).map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
+    s.set_prefs(prefs)
+        .map_err(|e| EngineError::Other(format!("saving preferences: {e}")))?;
     Ok(json!({"deleted": name}))
 }
 
@@ -297,12 +396,19 @@ fn auto_match(s: &mut Session, p: &Value) -> Result<Value> {
     // measure first (read-only), then write every match in one undo step
     let mut matches: Vec<(ClipId, f64, f64, f64)> = Vec::new(); // clip, measured (without match gain), target, new match gain
     let mut report = Vec::new();
-    for it in seq.audio_tracks.iter().flat_map(|t| t.items.iter()).filter(|i| clips.contains(&i.id)) {
+    for it in seq
+        .audio_tracks
+        .iter()
+        .flat_map(|t| t.items.iter())
+        .filter(|i| clips.contains(&i.id))
+    {
         let Some(st) = it.essential.as_ref() else {
             report.push(json!({"clip": it.id.0, "skipped": "no audio type"}));
             continue;
         };
-        let target = target_p.unwrap_or_else(|| s.prefs.audio.loudness_target(st.kind)).clamp(-60.0, 0.0);
+        let target = target_p
+            .unwrap_or_else(|| s.prefs.audio.loudness_target(st.kind))
+            .clamp(-60.0, 0.0);
         let Some(l) = clip_loudness(it, sr, &provider) else {
             report.push(json!({"clip": it.id.0, "skipped": "silent"}));
             continue;
@@ -315,7 +421,10 @@ fn auto_match(s: &mut Session, p: &Value) -> Result<Value> {
         report.push(json!({"clip": it.id.0, "measuredLufs": measured, "targetLufs": target, "gainDb": gain}));
     }
     if matches.is_empty() {
-        return Err(bad(cmd, "no clips with an audio type and audible audio in the selection"));
+        return Err(bad(
+            cmd,
+            "no clips with an audio type and audible audio in the selection",
+        ));
     }
     let ids: Vec<ClipId> = matches.iter().map(|m| m.0).collect();
     update(s, cmd, "Auto-Match Loudness", None, &ids, |it, e| {
@@ -341,7 +450,13 @@ const DUCK_BRIDGE_S: f32 = 0.25;
 
 /// Level envelope (dBFS, 10 ms hops, 50 ms centred window) of the summed trigger clips over
 /// timeline samples `[a0, a1)`.
-fn trigger_envelope(triggers: &[&TrackItem], a0: i64, a1: i64, sr: u32, sources: &dyn SourceProvider) -> Vec<f32> {
+fn trigger_envelope(
+    triggers: &[&TrackItem],
+    a0: i64,
+    a1: i64,
+    sr: u32,
+    sources: &dyn SourceProvider,
+) -> Vec<f32> {
     let hop = ((sr as f64 * DUCK_HOP_S).round() as usize).max(1);
     let hops = ((a1 - a0).max(0) as usize).div_ceil(hop);
     let mut power = vec![0.0f64; hops];
@@ -362,7 +477,10 @@ fn trigger_envelope(triggers: &[&TrackItem], a0: i64, a1: i64, sr: u32, sources:
         let base = ((pos - a0) as usize) / hop;
         for (k, i) in (0..n).step_by(hop).enumerate() {
             let e = (i + hop).min(n);
-            let pw: f64 = (i..e).map(|j| 0.5 * ((sum[0][j] as f64).powi(2) + (sum[1][j] as f64).powi(2))).sum::<f64>() / (e - i) as f64;
+            let pw: f64 = (i..e)
+                .map(|j| 0.5 * ((sum[0][j] as f64).powi(2) + (sum[1][j] as f64).powi(2)))
+                .sum::<f64>()
+                / (e - i) as f64;
             if let Some(p) = power.get_mut(base + k) {
                 *p = pw;
             }
@@ -385,11 +503,21 @@ fn generate_ducking(s: &mut Session, p: &Value) -> Result<Value> {
     let seq = s.active_sequence().ok_or(EngineError::NoSequence)?;
     let sr = seq.settings.sample_rate.max(1);
     let provider = s.media.provider(s.project.clone(), s.services.clone());
-    let all: Vec<&TrackItem> = seq.audio_tracks.iter().flat_map(|t| t.items.iter()).collect();
+    let all: Vec<&TrackItem> = seq
+        .audio_tracks
+        .iter()
+        .flat_map(|t| t.items.iter())
+        .collect();
     let mut plans: Vec<(ClipId, Vec<(Tick, f64)>, f64)> = Vec::new();
     let mut report = Vec::new();
     for it in all.iter().copied().filter(|i| clips.contains(&i.id)) {
-        let Some(st) = it.essential.as_ref().filter(|e| e.kind.has(Section::Ducking)) else { continue };
+        let Some(st) = it
+            .essential
+            .as_ref()
+            .filter(|e| e.kind.has(Section::Ducking))
+        else {
+            continue;
+        };
         let d = &st.ducking;
         let triggers: Vec<&TrackItem> = all
             .iter()
@@ -400,21 +528,47 @@ fn generate_ducking(s: &mut Session, p: &Value) -> Result<Value> {
                 None => d.against_untyped,
             })
             .collect();
-        let (a0, a1) = (it.start.to_units_floor(sr as i64), it.end().to_units_floor(sr as i64));
+        let (a0, a1) = (
+            it.start.to_units_floor(sr as i64),
+            it.end().to_units_floor(sr as i64),
+        );
         let env = trigger_envelope(&triggers, a0, a1, sr, &provider);
         let thr = filmcraft_audio_dsp::ducking::sensitivity_threshold_db(d.sensitivity as f32);
-        let regions = filmcraft_audio_dsp::ducking::activity(&env, DUCK_HOP_S as f32, thr, DUCK_MIN_ON_S, DUCK_BRIDGE_S);
+        let regions = filmcraft_audio_dsp::ducking::activity(
+            &env,
+            DUCK_HOP_S as f32,
+            thr,
+            DUCK_MIN_ON_S,
+            DUCK_BRIDGE_S,
+        );
         let start_s = a0 as f64 / sr as f64;
         let end_s = a1 as f64 / sr as f64;
-        let abs: Vec<(f64, f64)> = regions.iter().map(|(x, y)| (start_s + x, start_s + y)).collect();
+        let abs: Vec<(f64, f64)> = regions
+            .iter()
+            .map(|(x, y)| (start_s + x, start_s + y))
+            .collect();
         let lvl = it.effect("volume").and_then(|e| e.param("level"));
         let base = match lvl {
-            Some(p) if p.is_animated() => p.keyframes.iter().filter_map(|k| k.value.as_f64()).fold(f64::NEG_INFINITY, f64::max),
+            Some(p) if p.is_animated() => p
+                .keyframes
+                .iter()
+                .filter_map(|k| k.value.as_f64())
+                .fold(f64::NEG_INFINITY, f64::max),
             Some(p) => p.value.as_f64().unwrap_or(0.0),
             None => 0.0,
         };
-        let kfs = filmcraft_audio_dsp::ducking::duck_keyframes(&abs, start_s, end_s, base, d.reduce_db, d.fade_s);
-        let ticks: Vec<(Tick, f64)> = kfs.iter().map(|(t, v)| (Tick::from_seconds_f64(*t).clamp(it.start, it.end()), *v)).collect();
+        let kfs = filmcraft_audio_dsp::ducking::duck_keyframes(
+            &abs,
+            start_s,
+            end_s,
+            base,
+            d.reduce_db,
+            d.fade_s,
+        );
+        let ticks: Vec<(Tick, f64)> = kfs
+            .iter()
+            .map(|(t, v)| (Tick::from_seconds_f64(*t).clamp(it.start, it.end()), *v))
+            .collect();
         report.push(json!({
             "clip": it.id.0,
             "triggers": triggers.iter().map(|t| t.id.0).collect::<Vec<_>>(),
@@ -424,18 +578,25 @@ fn generate_ducking(s: &mut Session, p: &Value) -> Result<Value> {
         plans.push((it.id, ticks, base));
     }
     if plans.is_empty() {
-        return Err(bad(cmd, "select Music or Ambience clips (ducking applies to those types)"));
+        return Err(bad(
+            cmd,
+            "select Music or Ambience clips (ducking applies to those types)",
+        ));
     }
     let seq_id = s.state.active_sequence.ok_or(EngineError::NoSequence)?;
     s.edit("Generate Ducking Keyframes", |pr, _| {
         let seq = pr.sequence_mut(seq_id).ok_or(EngineError::NoSequence)?;
         for (c, ticks, base) in &plans {
-            let Some((_, it)) = seq.find_item_mut(*c) else { continue };
+            let Some((_, it)) = seq.find_item_mut(*c) else {
+                continue;
+            };
             if let Some(e) = it.essential.as_mut() {
                 e.ducking.enabled = true;
             }
             let at: Vec<(Tick, f64)> = ticks.iter().map(|(t, v)| (mt_of(it, *t), *v)).collect();
-            let Some(par) = it.effect_mut("volume").and_then(|e| e.param_mut("level")) else { continue };
+            let Some(par) = it.effect_mut("volume").and_then(|e| e.param_mut("level")) else {
+                continue;
+            };
             par.keyframes.clear();
             par.value = ParamValue::Float(*base);
             for (mt, v) in at {
@@ -447,15 +608,52 @@ fn generate_ducking(s: &mut Session, p: &Value) -> Result<Value> {
     Ok(json!({"clips": report}))
 }
 
-fn spec(id: &'static str, label: &'static str, params: &'static str, enabled: Enabled, run: Run, journal: bool) -> CommandSpec {
-    CommandSpec { id, label, menu: &[], shortcut: None, params, enabled, run, journal }
+fn spec(
+    id: &'static str,
+    label: &'static str,
+    params: &'static str,
+    enabled: Enabled,
+    run: Run,
+    journal: bool,
+) -> CommandSpec {
+    CommandSpec {
+        id,
+        label,
+        menu: &[],
+        shortcut: None,
+        params,
+        enabled,
+        run,
+        journal,
+    }
 }
 
 pub fn commands() -> Vec<CommandSpec> {
     vec![
-        spec("essentialSound.inspect", "Inspect Essential Sound", r#"{"clips":[id]?}"#, always, inspect, false),
-        spec("essentialSound.setType", "Set Audio Type", r#"{"clips":[id]?,"type":"dialogue|music|sfx|ambience"}"#, has_seq, set_type, true),
-        spec("essentialSound.clearType", "Clear Audio Type", r#"{"clips":[id]?}"#, has_seq, clear_type, true),
+        spec(
+            "essentialSound.inspect",
+            "Inspect Essential Sound",
+            r#"{"clips":[id]?}"#,
+            always,
+            inspect,
+            false,
+        ),
+        spec(
+            "essentialSound.setType",
+            "Set Audio Type",
+            r#"{"clips":[id]?,"type":"dialogue|music|sfx|ambience"}"#,
+            has_seq,
+            set_type,
+            true,
+        ),
+        spec(
+            "essentialSound.clearType",
+            "Clear Audio Type",
+            r#"{"clips":[id]?}"#,
+            has_seq,
+            clear_type,
+            true,
+        ),
         spec(
             "essentialSound.set",
             "Essential Sound Setting",
@@ -472,9 +670,37 @@ pub fn commands() -> Vec<CommandSpec> {
             apply_preset,
             true,
         ),
-        spec("essentialSound.savePreset", "Save Sound Preset", r#"{"clips":[id]?,"name":str}"#, has_seq, save_preset, true),
-        spec("essentialSound.deletePreset", "Delete Sound Preset", r#"{"name":str,"type":"dialogue|music|sfx|ambience"?}"#, always, delete_preset, true),
-        spec("essentialSound.autoMatch", "Auto-Match Loudness", r#"{"clips":[id]?,"target":lufs?}"#, has_seq, auto_match, true),
-        spec("essentialSound.generateDucking", "Generate Ducking Keyframes", r#"{"clips":[id]?}"#, has_seq, generate_ducking, true),
+        spec(
+            "essentialSound.savePreset",
+            "Save Sound Preset",
+            r#"{"clips":[id]?,"name":str}"#,
+            has_seq,
+            save_preset,
+            true,
+        ),
+        spec(
+            "essentialSound.deletePreset",
+            "Delete Sound Preset",
+            r#"{"name":str,"type":"dialogue|music|sfx|ambience"?}"#,
+            always,
+            delete_preset,
+            true,
+        ),
+        spec(
+            "essentialSound.autoMatch",
+            "Auto-Match Loudness",
+            r#"{"clips":[id]?,"target":lufs?}"#,
+            has_seq,
+            auto_match,
+            true,
+        ),
+        spec(
+            "essentialSound.generateDucking",
+            "Generate Ducking Keyframes",
+            r#"{"clips":[id]?}"#,
+            has_seq,
+            generate_ducking,
+            true,
+        ),
     ]
 }

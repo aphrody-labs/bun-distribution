@@ -4,7 +4,10 @@
 mod support;
 
 use filmcraft_interchange::{ExportOptions, FcpxmlVersion, Format, detect, import};
-use filmcraft_project::{ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, MediaRef, Param, ParamValue, Project, TrackKind, TransitionAlign};
+use filmcraft_project::{
+    ItemKind, Keyframe, Label, Marker, MarkerId, MarkerKind, MediaRef, Param, ParamValue, Project,
+    TrackKind, TransitionAlign,
+};
 use filmcraft_time::FrameRate;
 use proptest::prelude::*;
 use support::*;
@@ -114,29 +117,74 @@ fn golden_connected_clips() {
     let v1 = &s.video_tracks[0];
     assert_eq!(v1.items.len(), 2);
     let (pier, boats) = (&v1.items[0], &v1.items[1]);
-    assert_eq!((pier.start, pier.duration, pier.source_in), (r.tick_of(0), r.tick_of(72), r.tick_of(24)));
+    assert_eq!(
+        (pier.start, pier.duration, pier.source_in),
+        (r.tick_of(0), r.tick_of(72), r.tick_of(24))
+    );
     assert_eq!(media_key(p, pier.item), "/Media/pier wide.mov");
-    let pos = pier.effect("motion").unwrap().param("position").unwrap().value.as_vec2().unwrap();
-    assert!((pos.x - 1068.0).abs() < 1e-9 && (pos.y - 594.0).abs() < 1e-9, "{pos:?}");
-    assert_eq!(pier.effect("motion").unwrap().param("scale").unwrap().value, ParamValue::Float(150.0));
-    assert_eq!(pier.effect("motion").unwrap().param("rotation").unwrap().value, ParamValue::Float(-90.0));
+    let pos = pier
+        .effect("motion")
+        .unwrap()
+        .param("position")
+        .unwrap()
+        .value
+        .as_vec2()
+        .unwrap();
+    assert!(
+        (pos.x - 1068.0).abs() < 1e-9 && (pos.y - 594.0).abs() < 1e-9,
+        "{pos:?}"
+    );
+    assert_eq!(
+        pier.effect("motion").unwrap().param("scale").unwrap().value,
+        ParamValue::Float(150.0)
+    );
+    assert_eq!(
+        pier.effect("motion")
+            .unwrap()
+            .param("rotation")
+            .unwrap()
+            .value,
+        ParamValue::Float(-90.0)
+    );
     // retimed clip: 2x, source in = 10 s into an asset whose timecode starts at 3600 s
     assert_eq!(boats.speed, 2.0);
-    assert_eq!(boats.source_in, filmcraft_time::Tick(10 * filmcraft_time::TICKS_PER_SECOND));
+    assert_eq!(
+        boats.source_in,
+        filmcraft_time::Tick(10 * filmcraft_time::TICKS_PER_SECOND)
+    );
     assert_eq!(media_key(p, boats.item), "/proj/boats.mov");
     let t = &v1.transitions[0];
-    assert_eq!((t.start, t.duration, t.from, t.to, t.align), (r.tick_of(60), r.tick_of(24), Some(pier.id), Some(boats.id), TransitionAlign::CenterAtCut));
+    assert_eq!(
+        (t.start, t.duration, t.from, t.to, t.align),
+        (
+            r.tick_of(60),
+            r.tick_of(24),
+            Some(pier.id),
+            Some(boats.id),
+            TransitionAlign::CenterAtCut
+        )
+    );
 
     // connected video on lane 1 (V2) with keyframed opacity; compound clip in a gap
     let v2 = &s.video_tracks[1];
     assert_eq!(v2.items.len(), 2);
-    assert_eq!((v2.items[0].start, v2.items[0].duration), (r.tick_of(72), r.tick_of(24)));
-    let op = v2.items[0].effect("opacity").unwrap().param("opacity").unwrap();
+    assert_eq!(
+        (v2.items[0].start, v2.items[0].duration),
+        (r.tick_of(72), r.tick_of(24))
+    );
+    let op = v2.items[0]
+        .effect("opacity")
+        .unwrap()
+        .param("opacity")
+        .unwrap();
     assert_eq!(op.keyframes.len(), 2);
     assert_eq!(op.keyframes[1].value, ParamValue::Float(100.0));
     assert_eq!(op.keyframes[1].time, r.tick_of(12));
     assert_eq!(v2.items[1].start, r.tick_of(120));
-    assert!(matches!(p.item(v2.items[1].item).unwrap().kind, ItemKind::Sequence(_)));
+    assert!(matches!(
+        p.item(v2.items[1].item).unwrap().kind,
+        ItemKind::Sequence(_)
+    ));
     assert_eq!(p.item(v2.items[1].item).unwrap().name, "Compound");
 
     // audio: pier's own audio on A1 (linked), the lane -1 music pushed to A2 by the overlap
@@ -145,21 +193,61 @@ fn golden_connected_clips() {
     assert_eq!(a1[0].link, pier.link);
     assert!(pier.link.is_some());
     let theme = &s.audio_tracks[1].items[0];
-    assert_eq!((theme.start, theme.duration), (r.tick_of(24), r.tick_of(96)));
-    assert_eq!(theme.effect("volume").unwrap().param("level").unwrap().value, ParamValue::Float(-6.0));
-    assert!(p.item(theme.item).unwrap().as_media().unwrap().info.video.is_none());
+    assert_eq!(
+        (theme.start, theme.duration),
+        (r.tick_of(24), r.tick_of(96))
+    );
+    assert_eq!(
+        theme
+            .effect("volume")
+            .unwrap()
+            .param("level")
+            .unwrap()
+            .value,
+        ParamValue::Float(-6.0)
+    );
+    assert!(
+        p.item(theme.item)
+            .unwrap()
+            .as_media()
+            .unwrap()
+            .info
+            .video
+            .is_none()
+    );
     // the boats asset has no audio: nothing on audio from it
-    assert!(s.audio_tracks.iter().flat_map(|t| &t.items).all(|i| i.item != boats.item));
+    assert!(
+        s.audio_tracks
+            .iter()
+            .flat_map(|t| &t.items)
+            .all(|i| i.item != boats.item)
+    );
     // marker on a primary element is a timeline marker
     assert_eq!(s.markers.len(), 1);
     assert_eq!(
-        (s.markers[0].name.as_str(), s.markers[0].comment.as_str(), s.markers[0].start, s.markers[0].duration),
+        (
+            s.markers[0].name.as_str(),
+            s.markers[0].comment.as_str(),
+            s.markers[0].start,
+            s.markers[0].duration
+        ),
         ("Seagull", "nice", r.tick_of(24), filmcraft_time::Tick::ZERO)
     );
     // event became a bin
-    assert!(p.root.children.iter().any(|c| matches!(c, filmcraft_project::BinEntry::Bin(b) if b.name == "Day 1")));
+    assert!(
+        p.root
+            .children
+            .iter()
+            .any(|c| matches!(c, filmcraft_project::BinEntry::Bin(b) if b.name == "Day 1"))
+    );
     assert!(!rep.has_warnings(), "{rep}");
-    let m = p.items.values().find(|i| i.name == "Boats").unwrap().as_media().unwrap();
+    let m = p
+        .items
+        .values()
+        .find(|i| i.name == "Boats")
+        .unwrap()
+        .as_media()
+        .unwrap();
     assert!(matches!(&m.media, MediaRef::File { path } if path == "/proj/boats.mov"));
 }
 
@@ -177,10 +265,43 @@ fn project() -> (Project, filmcraft_project::ItemId) {
     let a1 = clip(&mut p, s, TrackKind::Audio, 0, a, 0, 90, 30);
     link(&mut p, s, &[v1, a1]);
     let v2 = clip(&mut p, s, TrackKind::Video, 0, b, 90, 60, 0);
-    transition(&mut p, s, TrackKind::Video, 0, "cross_dissolve", Some(v1), Some(v2), 80, 20, TransitionAlign::CenterAtCut);
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "cross_dissolve",
+        Some(v1),
+        Some(v2),
+        80,
+        20,
+        TransitionAlign::CenterAtCut,
+    );
     let v3 = clip(&mut p, s, TrackKind::Video, 0, a, 200, 40, 500);
-    transition(&mut p, s, TrackKind::Video, 0, "dip_to_black", None, Some(v3), 200, 10, TransitionAlign::StartAtCut);
-    transition(&mut p, s, TrackKind::Video, 0, "dip_to_black", Some(v3), None, 230, 10, TransitionAlign::EndAtCut);
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "dip_to_black",
+        None,
+        Some(v3),
+        200,
+        10,
+        TransitionAlign::StartAtCut,
+    );
+    transition(
+        &mut p,
+        s,
+        TrackKind::Video,
+        0,
+        "dip_to_black",
+        Some(v3),
+        None,
+        230,
+        10,
+        TransitionAlign::EndAtCut,
+    );
     let up = clip(&mut p, s, TrackKind::Video, 1, nest, 30, 60, 0);
     clip(&mut p, s, TrackKind::Video, 2, b, 160, 30, 10);
     clip(&mut p, s, TrackKind::Audio, 2, mus, 0, 260, 0);
@@ -189,13 +310,24 @@ fn project() -> (Project, filmcraft_project::ItemId) {
         let (_, it) = q.find_item_mut(v2).unwrap();
         it.speed = 2.0;
         let mut sc = Param::new(ParamValue::Float(100.0));
-        sc.keyframes.push(Keyframe::new(r.tick_of(0), ParamValue::Float(100.0)));
-        sc.keyframes.push(Keyframe::new(r.tick_of(60), ParamValue::Float(120.0)));
-        it.effect_mut("motion").unwrap().params.insert("scale".into(), sc);
-        it.effect_mut("motion").unwrap().params.insert("rotation".into(), Param::new(ParamValue::Float(15.0)));
+        sc.keyframes
+            .push(Keyframe::new(r.tick_of(0), ParamValue::Float(100.0)));
+        sc.keyframes
+            .push(Keyframe::new(r.tick_of(60), ParamValue::Float(120.0)));
+        it.effect_mut("motion")
+            .unwrap()
+            .params
+            .insert("scale".into(), sc);
+        it.effect_mut("motion")
+            .unwrap()
+            .params
+            .insert("rotation".into(), Param::new(ParamValue::Float(15.0)));
         let (_, u) = q.find_item_mut(up).unwrap();
         u.enabled = false;
-        u.effect_mut("opacity").unwrap().params.insert("opacity".into(), Param::new(ParamValue::Float(40.0)));
+        u.effect_mut("opacity")
+            .unwrap()
+            .params
+            .insert("opacity".into(), Param::new(ParamValue::Float(40.0)));
         u.markers.push(Marker {
             id: MarkerId(77),
             start: r.tick_of(10),
@@ -215,16 +347,26 @@ fn project() -> (Project, filmcraft_project::ItemId) {
             color: Label::Mango,
         });
         let (_, ai) = q.find_item_mut(a1).unwrap();
-        ai.effect_mut("volume").unwrap().params.insert("level".into(), Param::new(ParamValue::Float(-3.5)));
+        ai.effect_mut("volume")
+            .unwrap()
+            .params
+            .insert("level".into(), Param::new(ParamValue::Float(-3.5)));
     }
     (p, s)
 }
 
 #[test]
 fn roundtrip_all_versions() {
-    for v in [FcpxmlVersion::V1_9, FcpxmlVersion::V1_10, FcpxmlVersion::V1_11] {
+    for v in [
+        FcpxmlVersion::V1_9,
+        FcpxmlVersion::V1_10,
+        FcpxmlVersion::V1_11,
+    ] {
         let (p, s) = project();
-        let o = ExportOptions { fcpxml_version: v, ..Default::default() };
+        let o = ExportOptions {
+            fcpxml_version: v,
+            ..Default::default()
+        };
         let (imp, text, rep) = roundtrip(&p, s, Format::Fcpxml, &o);
         assert!(text.contains(&format!("<fcpxml version=\"{}\">", v.as_str())));
         assert!(text.contains("tcFormat=\"DF\""));
@@ -239,17 +381,54 @@ fn roundtrip_all_versions() {
         let ps = p.sequence(s).unwrap();
         assert_eq!(qs.start_timecode, 107_892);
         assert_eq!(
-            qs.markers.iter().map(|m| (&m.name, m.start, m.duration, m.kind)).collect::<Vec<_>>(),
-            ps.markers.iter().map(|m| (&m.name, m.start, m.duration, m.kind)).collect::<Vec<_>>()
+            qs.markers
+                .iter()
+                .map(|m| (&m.name, m.start, m.duration, m.kind))
+                .collect::<Vec<_>>(),
+            ps.markers
+                .iter()
+                .map(|m| (&m.name, m.start, m.duration, m.kind))
+                .collect::<Vec<_>>()
         );
         let pv = &ps.video_tracks[0].items[1];
         let qv = &qs.video_tracks[0].items[1];
-        assert_eq!(qv.effect("motion").unwrap().param("scale"), pv.effect("motion").unwrap().param("scale"), "{text}");
-        assert_eq!(qv.effect("motion").unwrap().param("rotation").unwrap().value, ParamValue::Float(15.0));
+        assert_eq!(
+            qv.effect("motion").unwrap().param("scale"),
+            pv.effect("motion").unwrap().param("scale"),
+            "{text}"
+        );
+        assert_eq!(
+            qv.effect("motion")
+                .unwrap()
+                .param("rotation")
+                .unwrap()
+                .value,
+            ParamValue::Float(15.0)
+        );
         let up = &qs.video_tracks[1].items[0];
-        assert_eq!(up.effect("opacity").unwrap().param("opacity").unwrap().value, ParamValue::Float(40.0));
-        assert_eq!(up.markers.iter().map(|m| (&m.name, m.start)).collect::<Vec<_>>(), vec![(&"in nest".to_string(), FrameRate::FPS_29_97.tick_of(10))]);
-        let lvl = qs.audio_tracks[0].items[0].effect("volume").unwrap().param("level").unwrap().value.as_f64().unwrap();
+        assert_eq!(
+            up.effect("opacity")
+                .unwrap()
+                .param("opacity")
+                .unwrap()
+                .value,
+            ParamValue::Float(40.0)
+        );
+        assert_eq!(
+            up.markers
+                .iter()
+                .map(|m| (&m.name, m.start))
+                .collect::<Vec<_>>(),
+            vec![(&"in nest".to_string(), FrameRate::FPS_29_97.tick_of(10))]
+        );
+        let lvl = qs.audio_tracks[0].items[0]
+            .effect("volume")
+            .unwrap()
+            .param("level")
+            .unwrap()
+            .value
+            .as_f64()
+            .unwrap();
         assert!((lvl + 3.5).abs() < 1e-9);
     }
 }
@@ -269,9 +448,32 @@ struct G {
 }
 
 fn gen_clip() -> impl Strategy<Value = G> {
-    (0usize..3, 0i64..3, 20i64..150, 0usize..3, 0i64..2000, 0u8..5, prop::bool::weighted(0.9), 0u8..6, 1i64..9, 0u8..3).prop_map(
-        |(track, gap, dur, media, src, speed, enabled, tr, tr_len, audio)| G { track, gap: gap * 5, dur, media, src, speed, enabled, tr, tr_len, audio },
+    (
+        0usize..3,
+        0i64..3,
+        20i64..150,
+        0usize..3,
+        0i64..2000,
+        0u8..5,
+        prop::bool::weighted(0.9),
+        0u8..6,
+        1i64..9,
+        0u8..3,
     )
+        .prop_map(
+            |(track, gap, dur, media, src, speed, enabled, tr, tr_len, audio)| G {
+                track,
+                gap: gap * 5,
+                dur,
+                media,
+                src,
+                speed,
+                enabled,
+                tr,
+                tr_len,
+                audio,
+            },
+        )
 }
 
 proptest! {

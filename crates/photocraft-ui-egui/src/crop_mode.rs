@@ -55,17 +55,31 @@ pub fn moves_image(app: &PhotocraftApp) -> bool {
 /// goes from `from` to `to` degrees (zoom and flip unchanged). `center` itself when anything isn't
 /// finite.
 pub fn pivot_center(center: [f32; 2], c: [f64; 2], from: f32, to: f32, flip: bool) -> [f32; 2] {
-    let a = ViewXform { rect: Rect::ZERO, zoom: 1.0, center, flip, rotation: from, aspect: 1.0 };
+    let a = ViewXform {
+        rect: Rect::ZERO,
+        zoom: 1.0,
+        center,
+        flip,
+        rotation: from,
+        aspect: 1.0,
+    };
     // c's offset from the view centre on screen (at zoom 1), then the same offset in the new view.
     let off = a.to_screen(c[0] as f32, c[1] as f32).to_vec2();
     let u = ViewXform { rotation: to, ..a }.unmap_vec(off);
     let n = [c[0] as f32 - u.x, c[1] as f32 - u.y];
-    if n.iter().all(|v| v.is_finite()) { n } else { center }
+    if n.iter().all(|v| v.is_finite()) {
+        n
+    } else {
+        center
+    }
 }
 
 /// The active document's view rotation in degrees (0 without a view).
 pub fn view_rotation(app: &PhotocraftApp) -> f32 {
-    app.session.active_index().and_then(|i| app.ui.views.get(i)).map_or(0.0, |v| v.rotation)
+    app.session
+        .active_index()
+        .and_then(|i| app.ui.views.get(i))
+        .map_or(0.0, |v| v.rotation)
 }
 
 /// Turns the active view so the frame shows upright while default mode drives it, pivoting about
@@ -75,11 +89,19 @@ pub fn sync(app: &mut PhotocraftApp, pivot: Option<[f64; 2]>) {
     if !turns_view(app) {
         return;
     }
-    let Some(i) = app.session.active_index() else { return };
+    let Some(i) = app.session.active_index() else {
+        return;
+    };
     // Classic Mode: an upright camera, the frame turned on it. Default mode: the frame upright.
-    let want = if classic(app) { 0.0 } else { crate::rotate_view::wrap_deg(-crate::crop_ui::angle(app) as f32) };
+    let want = if classic(app) {
+        0.0
+    } else {
+        crate::rotate_view::wrap_deg(-crate::crop_ui::angle(app) as f32)
+    };
     let flip = app.ui.view.flip_horizontal;
-    let Some(v) = app.ui.views.get_mut(i) else { return };
+    let Some(v) = app.ui.views.get_mut(i) else {
+        return;
+    };
     if v.rotation != want {
         if let Some(p) = pivot.filter(|p| p.iter().all(|v| v.is_finite())) {
             v.center = pivot_center(v.center, p, v.rotation, want, flip);
@@ -100,7 +122,11 @@ pub fn upright(app: &mut PhotocraftApp) {
     if app.ui.tool != Tool::Crop {
         return;
     }
-    if let Some(v) = app.session.active_index().and_then(|i| app.ui.views.get_mut(i)) {
+    if let Some(v) = app
+        .session
+        .active_index()
+        .and_then(|i| app.ui.views.get_mut(i))
+    {
         v.rotation = 0.0;
     }
 }
@@ -134,7 +160,16 @@ pub struct LiveResize {
 /// computed from the press, so the view following the frame can't feed back into the drag.
 /// Returns the proposed frame and the camera's document-space offset without changing the app.
 pub(crate) fn resized_frame(g: LiveResize) -> Option<([f64; 4], [f64; 2])> {
-    let LiveResize { rect, deg, hx, hy, start, q, ratio, alt } = g;
+    let LiveResize {
+        rect,
+        deg,
+        hx,
+        hy,
+        start,
+        q,
+        ratio,
+        alt,
+    } = g;
     let c0 = crate::crop_ui::center(rect);
     let (w0, h0) = (rect[2] - rect[0], rect[3] - rect[1]);
     // The pointer's offset from where it grabbed the handle, in the frame's own axes; the handle
@@ -144,19 +179,37 @@ pub(crate) fn resized_frame(g: LiveResize) -> Option<([f64; 4], [f64; 2])> {
     let n = crate::crop_ui::resized(local, hx, hy, d, ratio, true);
     let (w1, h1) = (n[2] - n[0], n[3] - n[1]);
     // On the image the opposite edge stays put (with ⌥ the centre), so the centre moves.
-    let shift = if alt { [0.0, 0.0] } else { [f64::from(hx) * (w1 - w0) / 2.0, f64::from(hy) * (h1 - h0) / 2.0] };
+    let shift = if alt {
+        [0.0, 0.0]
+    } else {
+        [
+            f64::from(hx) * (w1 - w0) / 2.0,
+            f64::from(hy) * (h1 - h0) / 2.0,
+        ]
+    };
     let s = crate::crop_ui::turn(shift, [0.0, 0.0], deg);
     let c1 = [c0[0] + s[0], c0[1] + s[1]];
-    let f = [c1[0] - w1 / 2.0, c1[1] - h1 / 2.0, c1[0] + w1 / 2.0, c1[1] + h1 / 2.0];
+    let f = [
+        c1[0] - w1 / 2.0,
+        c1[1] - h1 / 2.0,
+        c1[0] + w1 / 2.0,
+        c1[1] + h1 / 2.0,
+    ];
     f.iter().all(|v| v.is_finite()).then_some((f, s))
 }
 
 /// Move the camera with the resized frame to keep the crop box's centre stationary on screen.
 pub fn live_resize(app: &mut PhotocraftApp, g: LiveResize, press: PressView) {
-    let Some((f, s)) = resized_frame(g) else { return };
+    let Some((f, s)) = resized_frame(g) else {
+        return;
+    };
     app.ui.crop_rect = Some(f);
     // The view follows the centre, so the box stays where it was on screen.
-    if let Some(v) = app.session.active_index().and_then(|i| app.ui.views.get_mut(i)) {
+    if let Some(v) = app
+        .session
+        .active_index()
+        .and_then(|i| app.ui.views.get_mut(i))
+    {
         let c = [press.center[0] + s[0] as f32, press.center[1] + s[1] as f32];
         if c.iter().all(|x| x.is_finite()) {
             v.center = c;
@@ -181,7 +234,11 @@ pub fn shift_image(app: &mut PhotocraftApp, d: [f64; 2]) {
         return;
     }
     app.ui.crop_rect = Some(n);
-    if let Some(v) = app.session.active_index().and_then(|i| app.ui.views.get_mut(i)) {
+    if let Some(v) = app
+        .session
+        .active_index()
+        .and_then(|i| app.ui.views.get_mut(i))
+    {
         let c = [v.center[0] - d[0] as f32, v.center[1] - d[1] as f32];
         if c.iter().all(|x| x.is_finite()) {
             v.center = c;
@@ -199,16 +256,33 @@ pub struct PressView {
 
 /// The active view's camera now.
 pub fn press_view(app: &PhotocraftApp) -> Option<PressView> {
-    app.session.active_index().and_then(|i| app.ui.views.get(i)).map(|v| PressView { rotation: v.rotation, center: v.center })
+    app.session
+        .active_index()
+        .and_then(|i| app.ui.views.get(i))
+        .map(|v| PressView {
+            rotation: v.rotation,
+            center: v.center,
+        })
 }
 
 /// Document point `p` as seen through camera `from` re-read through camera `to`: the point that
 /// `to` shows at the screen position where `from` shows `p` (zoom and flip are the same). `p`
 /// itself when anything isn't finite.
 fn remap(p: [f64; 2], from: PressView, to: PressView, flip: bool) -> [f64; 2] {
-    let at = |v: PressView| ViewXform { rect: Rect::ZERO, zoom: 1.0, center: v.center, flip, rotation: v.rotation, aspect: 1.0 };
+    let at = |v: PressView| ViewXform {
+        rect: Rect::ZERO,
+        zoom: 1.0,
+        center: v.center,
+        flip,
+        rotation: v.rotation,
+        aspect: 1.0,
+    };
     let q = at(to).to_doc(at(from).to_screen(p[0] as f32, p[1] as f32));
-    if q.iter().all(|v| v.is_finite()) { q } else { p }
+    if q.iter().all(|v| v.is_finite()) {
+        q
+    } else {
+        p
+    }
 }
 
 /// A pointer point `p` the canvas mapped through the view as it is now, read in the press-time
@@ -234,12 +308,16 @@ pub(crate) fn from_press(app: &PhotocraftApp, press: PressView, p: [f64; 2]) -> 
 pub fn control_point(app: &PhotocraftApp, p: [f64; 2]) -> [f64; 2] {
     let press = match app.crop.drag {
         Some(
-            crate::crop_ui::CropDrag::MoveImage { view, .. } | crate::crop_ui::CropDrag::TurnImage { view, .. } | crate::crop_ui::CropDrag::Resize { view, .. },
+            crate::crop_ui::CropDrag::MoveImage { view, .. }
+            | crate::crop_ui::CropDrag::TurnImage { view, .. }
+            | crate::crop_ui::CropDrag::Resize { view, .. },
         ) => view,
         _ => None,
     };
     match (press, press_view(app)) {
-        (Some(press), Some(now)) if app.ui.tool == Tool::Crop => remap(p, press, now, app.ui.view.flip_horizontal),
+        (Some(press), Some(now)) if app.ui.tool == Tool::Crop => {
+            remap(p, press, now, app.ui.view.flip_horizontal)
+        }
         _ => p,
     }
 }
@@ -247,13 +325,30 @@ pub fn control_point(app: &PhotocraftApp, p: [f64; 2]) -> [f64; 2] {
 /// A default-mode drag inside the box: the image has moved by document vector `d` (in the press
 /// view) since the press, when the frame was `rect` and the view `press`. The frame moves by `-d`
 /// on the image and the view's centre with it, so the box stays put on screen.
-pub fn offset_image(app: &mut PhotocraftApp, rect: [f64; 4], press: Option<PressView>, d: [f64; 2]) {
-    let n = [rect[0] - d[0], rect[1] - d[1], rect[2] - d[0], rect[3] - d[1]];
+pub fn offset_image(
+    app: &mut PhotocraftApp,
+    rect: [f64; 4],
+    press: Option<PressView>,
+    d: [f64; 2],
+) {
+    let n = [
+        rect[0] - d[0],
+        rect[1] - d[1],
+        rect[2] - d[0],
+        rect[3] - d[1],
+    ];
     if !n.iter().all(|v| v.is_finite()) {
         return;
     }
     app.ui.crop_rect = Some(n);
-    let (Some(press), Some(v)) = (press, app.session.active_index().and_then(|i| app.ui.views.get_mut(i))) else { return };
+    let (Some(press), Some(v)) = (
+        press,
+        app.session
+            .active_index()
+            .and_then(|i| app.ui.views.get_mut(i)),
+    ) else {
+        return;
+    };
     let c = [press.center[0] - d[0] as f32, press.center[1] - d[1] as f32];
     if c.iter().all(|x| x.is_finite()) {
         v.center = c;
@@ -263,7 +358,14 @@ pub fn offset_image(app: &mut PhotocraftApp, rect: [f64; 4], press: Option<Press
 /// A screen vector `s` (points, at the current zoom ignored) as a document vector of the same
 /// length: undoes the view's flip and rotation.
 pub fn screen_to_doc_vec(app: &PhotocraftApp, s: [f64; 2]) -> [f64; 2] {
-    let xf = ViewXform { rect: Rect::ZERO, zoom: 1.0, center: [0.0, 0.0], flip: app.ui.view.flip_horizontal, rotation: view_rotation(app), aspect: 1.0 };
+    let xf = ViewXform {
+        rect: Rect::ZERO,
+        zoom: 1.0,
+        center: [0.0, 0.0],
+        flip: app.ui.view.flip_horizontal,
+        rotation: view_rotation(app),
+        aspect: 1.0,
+    };
     let u = xf.unmap_vec(vec2(s[0] as f32, s[1] as f32));
     [f64::from(u.x), f64::from(u.y)]
 }
@@ -274,9 +376,16 @@ pub fn auto_center(app: &mut PhotocraftApp) {
     if !turns_view(app) || classic(app) || !app.ui.tool_options.crop_shield.auto_center_preview {
         return;
     }
-    let Some(c) = finite_frame(app).map(crate::crop_ui::center) else { return };
+    let Some(c) = finite_frame(app).map(crate::crop_ui::center) else {
+        return;
+    };
     let c = [c[0] as f32, c[1] as f32];
-    if let (Some(v), true) = (app.session.active_index().and_then(|i| app.ui.views.get_mut(i)), c.iter().all(|x| x.is_finite())) {
+    if let (Some(v), true) = (
+        app.session
+            .active_index()
+            .and_then(|i| app.ui.views.get_mut(i)),
+        c.iter().all(|x| x.is_finite()),
+    ) {
         v.center = c;
     }
 }
@@ -294,7 +403,13 @@ mod tests {
 
     /// A 200 × 100 document in a 800 × 600 canvas at 100 %, centred, the Crop tool in default mode.
     fn app() -> PhotocraftApp {
-        let doc = Document::with_background("crop", Size::new(200, 100), ColorMode::Rgb, SampleType::U8, Color::WHITE);
+        let doc = Document::with_background(
+            "crop",
+            Size::new(200, 100),
+            ColorMode::Rgb,
+            SampleType::U8,
+            Color::WHITE,
+        );
         let mut s = photocraft_engine::Session::new();
         s.add_document(doc, None);
         let mut app = PhotocraftApp::new(s, crate::Services::default());
@@ -319,10 +434,26 @@ mod tests {
     fn screen_drag(app: &mut PhotocraftApp, pts: &[Pos2], mods: Modifiers) {
         let at = |app: &PhotocraftApp, p: Pos2| xf(app).to_doc(p);
         let d = at(app, pts[0]);
-        tool_event(app, ToolEvent::Down { x: d[0], y: d[1], pressure: 1.0 }, mods);
+        tool_event(
+            app,
+            ToolEvent::Down {
+                x: d[0],
+                y: d[1],
+                pressure: 1.0,
+            },
+            mods,
+        );
         for p in &pts[1..] {
             let d = at(app, *p);
-            tool_event(app, ToolEvent::Move { x: d[0], y: d[1], pressure: 1.0 }, mods);
+            tool_event(
+                app,
+                ToolEvent::Move {
+                    x: d[0],
+                    y: d[1],
+                    pressure: 1.0,
+                },
+                mods,
+            );
         }
         let d = at(app, pts[pts.len() - 1]);
         tool_event(app, ToolEvent::Up { x: d[0], y: d[1] }, mods);
@@ -330,12 +461,19 @@ mod tests {
 
     fn screen_box(app: &PhotocraftApp) -> [Pos2; 4] {
         let x = xf(app);
-        corners(app.ui.crop_rect.unwrap(), crate::crop_ui::angle(app)).map(|p| x.to_screen(p[0] as f32, p[1] as f32))
+        corners(app.ui.crop_rect.unwrap(), crate::crop_ui::angle(app))
+            .map(|p| x.to_screen(p[0] as f32, p[1] as f32))
     }
 
     fn assert_upright(q: [Pos2; 4]) {
-        let ok = (q[0].y - q[1].y).abs() < 0.01 && (q[2].y - q[3].y).abs() < 0.01 && (q[0].x - q[3].x).abs() < 0.01 && (q[1].x - q[2].x).abs() < 0.01;
-        assert!(ok && q[1].x > q[0].x && q[3].y > q[0].y, "not an upright box on screen: {q:?}");
+        let ok = (q[0].y - q[1].y).abs() < 0.01
+            && (q[2].y - q[3].y).abs() < 0.01
+            && (q[0].x - q[3].x).abs() < 0.01
+            && (q[1].x - q[2].x).abs() < 0.01;
+        assert!(
+            ok && q[1].x > q[0].x && q[3].y > q[0].y,
+            "not an upright box on screen: {q:?}"
+        );
     }
 
     fn close(a: [Pos2; 4], b: [Pos2; 4]) -> bool {
@@ -351,9 +489,23 @@ mod tests {
 
     #[test]
     fn a_live_resize_snaps_the_handle_without_feedback_from_the_camera() {
-        for (hx, hy) in [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)] {
+        for (hx, hy) in [
+            (1, 0),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+            (1, 1),
+            (-1, -1),
+            (1, -1),
+            (-1, 1),
+        ] {
             for alt in [false, true] {
-                for (zoom, ppp, flip, ratio) in [(1.0, 1.0, false, false), (0.5, 1.0, false, true), (3.0, 2.0, false, false), (3.0, 2.0, true, true)] {
+                for (zoom, ppp, flip, ratio) in [
+                    (1.0, 1.0, false, false),
+                    (0.5, 1.0, false, true),
+                    (3.0, 2.0, false, false),
+                    (3.0, 2.0, true, true),
+                ] {
                     let mut app = app();
                     app.ppp = ppp;
                     app.ui.views[0].zoom = zoom;
@@ -365,24 +517,49 @@ mod tests {
                     crate::crop_ui::ensure_frame(&mut app);
                     let box0 = screen_box(&app);
                     let c = mid_of(box0);
-                    let from = xf(&app).to_screen(100.0 + hx as f32 * 100.0, 50.0 + hy as f32 * 50.0);
+                    let from =
+                        xf(&app).to_screen(100.0 + hx as f32 * 100.0, 50.0 + hy as f32 * 50.0);
                     let direction = (from - c).normalized();
                     let mods = if alt { Modifiers::ALT } else { NONE };
                     let d = xf(&app).to_doc(from);
-                    tool_event(&mut app, ToolEvent::Down { x: d[0], y: d[1], pressure: 1.0 }, mods);
+                    tool_event(
+                        &mut app,
+                        ToolEvent::Down {
+                            x: d[0],
+                            y: d[1],
+                            pressure: 1.0,
+                        },
+                        mods,
+                    );
                     // Leave the snap radius, then return just inside it. A still pointer must
                     // settle on the canvas edge instead of alternating on opposite sides of it.
                     for offset in [20.0, -2.0, -2.0, -2.0, -2.0, -2.0] {
                         let p = from + direction * offset;
                         let d = xf(&app).to_doc(p);
-                        tool_event(&mut app, ToolEvent::Move { x: d[0], y: d[1], pressure: 1.0 }, mods);
+                        tool_event(
+                            &mut app,
+                            ToolEvent::Move {
+                                x: d[0],
+                                y: d[1],
+                                pressure: 1.0,
+                            },
+                            mods,
+                        );
                         if offset == -2.0 {
-                            assert!(close(screen_box(&app), box0), "handle ({hx}, {hy}), Alt {alt}: {:?}", app.ui.crop_rect);
+                            assert!(
+                                close(screen_box(&app), box0),
+                                "handle ({hx}, {hy}), Alt {alt}: {:?}",
+                                app.ui.crop_rect
+                            );
                         }
                     }
                     let d = xf(&app).to_doc(from + direction * -2.0);
                     tool_event(&mut app, ToolEvent::Up { x: d[0], y: d[1] }, mods);
-                    assert!(close(screen_box(&app), box0), "release: {:?}", app.ui.crop_rect);
+                    assert!(
+                        close(screen_box(&app), box0),
+                        "release: {:?}",
+                        app.ui.crop_rect
+                    );
                 }
             }
         }
@@ -395,16 +572,46 @@ mod tests {
         let before = screen_box(&app);
         // From straight right of the box centre to straight below it: a quarter turn clockwise
         // on screen, so the image turns clockwise and the frame turns -90° on it.
-        screen_drag(&mut app, &[pos2(450.0, 300.0), pos2(440.0, 320.0), pos2(370.0, 380.0)], NONE);
-        assert!((crate::crop_ui::angle(&app) - -90.0).abs() < 0.01, "{}", app.ui.crop_angle);
-        assert!((view_rotation(&app) - 90.0).abs() < 0.01, "the view turned with it");
+        screen_drag(
+            &mut app,
+            &[pos2(450.0, 300.0), pos2(440.0, 320.0), pos2(370.0, 380.0)],
+            NONE,
+        );
+        assert!(
+            (crate::crop_ui::angle(&app) - -90.0).abs() < 0.01,
+            "{}",
+            app.ui.crop_angle
+        );
+        assert!(
+            (view_rotation(&app) - 90.0).abs() < 0.01,
+            "the view turned with it"
+        );
         assert_upright(screen_box(&app));
-        assert!(close(screen_box(&app), before), "the box doesn't move on screen: {:?} vs {before:?}", screen_box(&app));
-        assert_eq!(app.ui.crop_rect, Some([40.0, 30.0, 100.0, 70.0]), "turning keeps the frame");
+        assert!(
+            close(screen_box(&app), before),
+            "the box doesn't move on screen: {:?} vs {before:?}",
+            screen_box(&app)
+        );
+        assert_eq!(
+            app.ui.crop_rect,
+            Some([40.0, 30.0, 100.0, 70.0]),
+            "turning keeps the frame"
+        );
         // ⇧ steps of 15°, still upright.
         let a = 22.0f32.to_radians();
-        screen_drag(&mut app, &[pos2(450.0, 300.0), pos2(370.0 + 80.0 * a.cos(), 300.0 + 80.0 * a.sin())], Modifiers::SHIFT);
-        assert!((crate::crop_ui::angle(&app) - -105.0).abs() < 0.01, "{}", app.ui.crop_angle);
+        screen_drag(
+            &mut app,
+            &[
+                pos2(450.0, 300.0),
+                pos2(370.0 + 80.0 * a.cos(), 300.0 + 80.0 * a.sin()),
+            ],
+            Modifiers::SHIFT,
+        );
+        assert!(
+            (crate::crop_ui::angle(&app) - -105.0).abs() < 0.01,
+            "{}",
+            app.ui.crop_angle
+        );
         assert_upright(screen_box(&app));
         assert!(close(screen_box(&app), before));
         assert!(crate::crop_ui::turning(&app).is_none());
@@ -418,10 +625,23 @@ mod tests {
         assert!(app.ui.tool_options.crop_shield.auto_center_preview);
         with_frame(&mut app);
         assert!(mid_of(screen_box(&app)).distance(pos2(370.0, 300.0)) < 0.01);
-        screen_drag(&mut app, &[pos2(370.0, 300.0), pos2(380.0, 300.0), pos2(390.0, 300.0)], NONE);
-        assert!(mid_of(screen_box(&app)).distance(pos2(370.0, 300.0)) < 0.01, "{:?}", mid_of(screen_box(&app)));
+        screen_drag(
+            &mut app,
+            &[pos2(370.0, 300.0), pos2(380.0, 300.0), pos2(390.0, 300.0)],
+            NONE,
+        );
+        assert!(
+            mid_of(screen_box(&app)).distance(pos2(370.0, 300.0)) < 0.01,
+            "{:?}",
+            mid_of(screen_box(&app))
+        );
         let r = app.ui.crop_rect.unwrap();
-        assert!(r.iter().zip([20.0, 30.0, 80.0, 70.0]).all(|(a, b)| (a - b).abs() < 1e-3), "{r:?}");
+        assert!(
+            r.iter()
+                .zip([20.0, 30.0, 80.0, 70.0])
+                .all(|(a, b)| (a - b).abs() < 1e-3),
+            "{r:?}"
+        );
     }
 
     fn mid_of(q: [Pos2; 4]) -> Pos2 {
@@ -433,21 +653,49 @@ mod tests {
         let mut app = app();
         with_frame(&mut app);
         let before = screen_box(&app);
-        screen_drag(&mut app, &[pos2(370.0, 300.0), pos2(380.0, 305.0), pos2(390.0, 310.0)], NONE);
+        screen_drag(
+            &mut app,
+            &[pos2(370.0, 300.0), pos2(380.0, 305.0), pos2(390.0, 310.0)],
+            NONE,
+        );
         // The image followed the pointer 20, 10 to the right and down: the frame lies that much
         // further up-left on it.
         let r = app.ui.crop_rect.unwrap();
-        assert!(r.iter().zip([20.0, 20.0, 80.0, 60.0]).all(|(a, b)| (a - b).abs() < 1e-3), "{r:?}");
-        assert!(close(screen_box(&app), before), "the box stays put on screen");
+        assert!(
+            r.iter()
+                .zip([20.0, 20.0, 80.0, 60.0])
+                .all(|(a, b)| (a - b).abs() < 1e-3),
+            "{r:?}"
+        );
+        assert!(
+            close(screen_box(&app), before),
+            "the box stays put on screen"
+        );
         // Turned 30° first: the move follows the pointer on screen, along the turned image.
-        screen_drag(&mut app, &[pos2(450.0, 300.0), pos2(370.0 + 80.0 * 30f32.to_radians().cos(), 300.0 + 80.0 * 30f32.to_radians().sin())], NONE);
+        screen_drag(
+            &mut app,
+            &[
+                pos2(450.0, 300.0),
+                pos2(
+                    370.0 + 80.0 * 30f32.to_radians().cos(),
+                    300.0 + 80.0 * 30f32.to_radians().sin(),
+                ),
+            ],
+            NONE,
+        );
         assert!((crate::crop_ui::angle(&app) - -30.0).abs() < 0.01);
-        let (before, c0) = (screen_box(&app), crate::crop_ui::center(app.ui.crop_rect.unwrap()));
+        let (before, c0) = (
+            screen_box(&app),
+            crate::crop_ui::center(app.ui.crop_rect.unwrap()),
+        );
         let img = |app: &PhotocraftApp| xf(app).to_screen(0.0, 0.0);
         let origin = img(&app);
         screen_drag(&mut app, &[pos2(370.0, 300.0), pos2(400.0, 300.0)], NONE);
         assert!(close(screen_box(&app), before), "box put");
-        assert!((img(&app) - origin - vec2(30.0, 0.0)).length() < 0.05, "the image moved 30 right on screen");
+        assert!(
+            (img(&app) - origin - vec2(30.0, 0.0)).length() < 0.05,
+            "the image moved 30 right on screen"
+        );
         let c1 = crate::crop_ui::center(app.ui.crop_rect.unwrap());
         assert!(((c1[0] - c0[0]).hypot(c1[1] - c0[1]) - 30.0).abs() < 1e-3);
     }
@@ -459,14 +707,39 @@ mod tests {
         // A 30° clockwise sweep on screen, held mid-drag.
         let d = |app: &PhotocraftApp, p: Pos2| xf(app).to_doc(p);
         let a = 30f32.to_radians();
-        let (p0, p1) = (pos2(450.0, 300.0), pos2(370.0 + 80.0 * a.cos(), 300.0 + 80.0 * a.sin()));
+        let (p0, p1) = (
+            pos2(450.0, 300.0),
+            pos2(370.0 + 80.0 * a.cos(), 300.0 + 80.0 * a.sin()),
+        );
         let s = d(&app, p0);
-        tool_event(&mut app, ToolEvent::Down { x: s[0], y: s[1], pressure: 1.0 }, NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: s[0],
+                y: s[1],
+                pressure: 1.0,
+            },
+            NONE,
+        );
         let m = d(&app, p1);
-        tool_event(&mut app, ToolEvent::Move { x: m[0], y: m[1], pressure: 1.0 }, NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: m[0],
+                y: m[1],
+                pressure: 1.0,
+            },
+            NONE,
+        );
         let shown = crate::crop_ui::turning(&app).unwrap();
-        assert!((shown - 30.0).abs() < 0.01, "clockwise is positive: {shown}");
-        assert!((crate::crop_ui::angle(&app) - -30.0).abs() < 0.01, "the frame turns the other way on the image");
+        assert!(
+            (shown - 30.0).abs() < 0.01,
+            "clockwise is positive: {shown}"
+        );
+        assert!(
+            (crate::crop_ui::angle(&app) - -30.0).abs() < 0.01,
+            "the frame turns the other way on the image"
+        );
         let m = d(&app, p1);
         tool_event(&mut app, ToolEvent::Up { x: m[0], y: m[1] }, NONE);
         assert_eq!(image_turn(0.0).to_string(), "0", "never -0");
@@ -475,9 +748,25 @@ mod tests {
         app.ui.tool_options.crop_shield.classic_mode = true;
         with_frame(&mut app);
         let s = d(&app, p0);
-        tool_event(&mut app, ToolEvent::Down { x: s[0], y: s[1], pressure: 1.0 }, NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Down {
+                x: s[0],
+                y: s[1],
+                pressure: 1.0,
+            },
+            NONE,
+        );
         let m = d(&app, p1);
-        tool_event(&mut app, ToolEvent::Move { x: m[0], y: m[1], pressure: 1.0 }, NONE);
+        tool_event(
+            &mut app,
+            ToolEvent::Move {
+                x: m[0],
+                y: m[1],
+                pressure: 1.0,
+            },
+            NONE,
+        );
         assert!((crate::crop_ui::turning(&app).unwrap() - 30.0).abs() < 0.01);
     }
 
@@ -494,19 +783,50 @@ mod tests {
             let mid = |q: [Pos2; 4]| pos2((q[0].x + q[2].x) / 2.0, (q[0].y + q[2].y) / 2.0);
             // The box's right edge on screen, dragged 10 then 20 further right.
             let right = pos2(q[1].x, (q[1].y + q[2].y) / 2.0);
-            assert_eq!(crate::crop_ui::cursor(&app, xf(&app).to_doc(right)), Some(egui::CursorIcon::ResizeHorizontal), "screen-space arrow");
+            assert_eq!(
+                crate::crop_ui::cursor(&app, xf(&app).to_doc(right)),
+                Some(egui::CursorIcon::ResizeHorizontal),
+                "screen-space arrow"
+            );
             let at = |app: &PhotocraftApp, p: Pos2| xf(app).to_doc(p);
             let s = at(&app, right);
-            tool_event(&mut app, ToolEvent::Down { x: s[0], y: s[1], pressure: 1.0 }, NONE);
+            tool_event(
+                &mut app,
+                ToolEvent::Down {
+                    x: s[0],
+                    y: s[1],
+                    pressure: 1.0,
+                },
+                NONE,
+            );
             for dx in [10.0, 20.0] {
                 let m = at(&app, right + vec2(dx, 0.0));
-                tool_event(&mut app, ToolEvent::Move { x: m[0], y: m[1], pressure: 1.0 }, NONE);
+                tool_event(
+                    &mut app,
+                    ToolEvent::Move {
+                        x: m[0],
+                        y: m[1],
+                        pressure: 1.0,
+                    },
+                    NONE,
+                );
                 let n = screen_box(&app);
                 assert_upright(n);
-                assert!((n[1].x - (right.x + dx)).abs() < 0.02, "auto={auto} dx={dx}: the handle follows the pointer: {n:?}");
+                assert!(
+                    (n[1].x - (right.x + dx)).abs() < 0.02,
+                    "auto={auto} dx={dx}: the handle follows the pointer: {n:?}"
+                );
                 if auto {
-                    assert!(mid(n).distance(mid(q)) < 0.02, "dx={dx}: live, the box stays centred: {:?} vs {:?}", mid(n), mid(q));
-                    assert!(((n[1].x - n[0].x) - (q[1].x - q[0].x) - 2.0 * dx).abs() < 0.02, "it grows on both sides");
+                    assert!(
+                        mid(n).distance(mid(q)) < 0.02,
+                        "dx={dx}: live, the box stays centred: {:?} vs {:?}",
+                        mid(n),
+                        mid(q)
+                    );
+                    assert!(
+                        ((n[1].x - n[0].x) - (q[1].x - q[0].x) - 2.0 * dx).abs() < 0.02,
+                        "it grows on both sides"
+                    );
                 } else {
                     assert!((n[0].x - q[0].x).abs() < 0.02, "the left edge stays put");
                 }
@@ -516,13 +836,24 @@ mod tests {
             tool_event(&mut app, ToolEvent::Up { x: m[0], y: m[1] }, NONE);
             let n = screen_box(&app);
             if auto {
-                assert!(mid(n).distance(mid(q)) < 0.05, "on release it stays where its centre was: {:?} vs {:?}", mid(n), mid(q));
+                assert!(
+                    mid(n).distance(mid(q)) < 0.05,
+                    "on release it stays where its centre was: {:?} vs {:?}",
+                    mid(n),
+                    mid(q)
+                );
                 // On the image, the opposite edge stayed put: the frame grew 40 px from it.
                 let r = app.ui.crop_rect.unwrap();
-                assert!(((r[2] - r[0]) - 100.0).abs() < 1e-3 && ((r[3] - r[1]) - 40.0).abs() < 1e-3, "{r:?}");
+                assert!(
+                    ((r[2] - r[0]) - 100.0).abs() < 1e-3 && ((r[3] - r[1]) - 40.0).abs() < 1e-3,
+                    "{r:?}"
+                );
                 let left = corners(r, crate::crop_ui::angle(&app))[0];
                 let was = corners([40.0, 30.0, 100.0, 70.0], -90.0)[0];
-                assert!((left[0] - was[0]).abs() < 1e-3 && (left[1] - was[1]).abs() < 1e-3, "{left:?} vs {was:?}");
+                assert!(
+                    (left[0] - was[0]).abs() < 1e-3 && (left[1] - was[1]).abs() < 1e-3,
+                    "{left:?} vs {was:?}"
+                );
             } else {
                 assert!(mid(n).distance(pos2(380.0, 300.0)) < 0.05, "{:?}", mid(n));
             }
@@ -535,11 +866,18 @@ mod tests {
         let right = pos2(q[1].x, (q[1].y + q[2].y) / 2.0);
         screen_drag(&mut app, &[right, right + vec2(10.0, 0.0)], Modifiers::ALT);
         let r = app.ui.crop_rect.unwrap();
-        assert!(((r[0] + r[2]) / 2.0 - 70.0).abs() < 1e-3 && ((r[2] - r[0]) - 80.0).abs() < 1e-3, "{r:?}");
+        assert!(
+            ((r[0] + r[2]) / 2.0 - 70.0).abs() < 1e-3 && ((r[2] - r[0]) - 80.0).abs() < 1e-3,
+            "{r:?}"
+        );
         let mut app = self::app();
         with_frame(&mut app);
         screen_drag(&mut app, &[right, pos2(370.0, 300.0)], NONE);
-        assert_eq!(app.ui.crop_rect, Some([40.0, 30.0, 100.0, 70.0]), "too small: the frame is back");
+        assert_eq!(
+            app.ui.crop_rect,
+            Some([40.0, 30.0, 100.0, 70.0]),
+            "too small: the frame is back"
+        );
         assert_eq!(app.ui.views[0].center, center, "and the view");
     }
 
@@ -550,7 +888,11 @@ mod tests {
         let mut out = Vec::new();
         for classic in [true, false] {
             let mut app = app();
-            app.run("select.rect", json!({"x": 70, "y": 50, "width": 2, "height": 2})).unwrap();
+            app.run(
+                "select.rect",
+                json!({"x": 70, "y": 50, "width": 2, "height": 2}),
+            )
+            .unwrap();
             app.run("edit.fill", json!({"color": "#ff0000"})).unwrap();
             app.run("select.deselect", json!({})).unwrap();
             app.ui.tool_options.crop_shield.classic_mode = classic;
@@ -560,7 +902,11 @@ mod tests {
             app.crop.editing = true;
             crate::crop_ui::ensure_frame(&mut app);
             let want = if classic { 0.0 } else { -30.0 };
-            assert!((view_rotation(&app) - want).abs() < 1e-4, "classic={classic}: {}", view_rotation(&app));
+            assert!(
+                (view_rotation(&app) - want).abs() < 1e-4,
+                "classic={classic}: {}",
+                view_rotation(&app)
+            );
             if !classic {
                 assert_upright(screen_box(&app));
             }
@@ -568,12 +914,18 @@ mod tests {
             crate::canvas::commit_crop(&mut app);
             assert_eq!(view_rotation(&app), 0.0, "classic={classic}: after ↵");
             crate::crop_ui::ensure_frame(&mut app);
-            assert_eq!(view_rotation(&app), 0.0, "classic={classic}: with the next frame");
+            assert_eq!(
+                view_rotation(&app),
+                0.0,
+                "classic={classic}: with the next frame"
+            );
             let st = app.session.active().unwrap();
             assert_eq!(st.history.past_len(), past + 1, "one undo step");
             let surf = st.doc.layers[0].surface().unwrap();
-            let px: Vec<[f32; 4]> =
-                (0..st.doc.size.width as i32).flat_map(|x| (0..st.doc.size.height as i32).map(move |y| (x, y))).map(|(x, y)| surf.rgba(x, y)).collect();
+            let px: Vec<[f32; 4]> = (0..st.doc.size.width as i32)
+                .flat_map(|x| (0..st.doc.size.height as i32).map(move |y| (x, y)))
+                .map(|(x, y)| surf.rgba(x, y))
+                .collect();
             out.push((st.doc.size, px));
             // Esc.
             let mut app = self::app();
@@ -597,7 +949,10 @@ mod tests {
         let center = app.ui.views[0].center;
         app.ui.tool = Tool::Crop;
         crate::crop_ui::ensure_frame(&mut app);
-        assert!(app.crop.default_frame && !app.crop.editing, "no click needed");
+        assert!(
+            app.crop.default_frame && !app.crop.editing,
+            "no click needed"
+        );
         assert_eq!(view_rotation(&app), 0.0);
         assert_eq!(app.ui.views[0].center, center, "about the view's centre");
         // Leaving the tool doesn't bring the turn back.
@@ -616,28 +971,56 @@ mod tests {
         crate::crop_ui::ensure_frame(&mut app);
         assert_eq!(view_rotation(&app), 0.0);
         assert_eq!(app.ui.views[0].center, center, "about the view's centre");
-        assert_eq!((app.ui.crop_rect, app.ui.crop_angle), (Some([40.0, 30.0, 100.0, 70.0]), 12.0), "the frame is unchanged");
+        assert_eq!(
+            (app.ui.crop_rect, app.ui.crop_angle),
+            (Some([40.0, 30.0, 100.0, 70.0]), 12.0),
+            "the frame is unchanged"
+        );
         // P switches modes without bringing the R turn back: default mode turns the view with the
         // frame, Classic Mode puts the camera upright again.
         let press_p = |app: &mut PhotocraftApp| {
             let ctx = egui::Context::default();
-            ctx.input_mut(|i| i.events.push(egui::Event::Key { key: egui::Key::P, physical_key: None, pressed: true, repeat: false, modifiers: NONE }));
+            ctx.input_mut(|i| {
+                i.events.push(egui::Event::Key {
+                    key: egui::Key::P,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: NONE,
+                })
+            });
             assert!(crate::crop_shield::keys(app, &ctx));
         };
         press_p(&mut app);
         assert!(!classic(&app));
-        assert!((view_rotation(&app) - -12.0).abs() < 1e-4, "{}", view_rotation(&app));
+        assert!(
+            (view_rotation(&app) - -12.0).abs() < 1e-4,
+            "{}",
+            view_rotation(&app)
+        );
         press_p(&mut app);
         assert!(classic(&app));
         assert_eq!(view_rotation(&app), 0.0);
         crate::crop_ui::cancel(&mut app);
         crate::crop_ui::ensure_frame(&mut app);
-        assert_eq!(view_rotation(&app), 0.0, "Esc in Classic Mode: still upright");
+        assert_eq!(
+            view_rotation(&app),
+            0.0,
+            "Esc in Classic Mode: still upright"
+        );
     }
 
     fn key(app: &mut PhotocraftApp, key: egui::Key, modifiers: Modifiers) {
         let ctx = egui::Context::default();
-        ctx.input_mut(|i| i.events.push(egui::Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers }));
+        ctx.input_mut(|i| {
+            i.events.push(egui::Event::Key {
+                key,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers,
+            })
+        });
         crate::shortcuts::handle(app, &ctx);
     }
 
@@ -653,14 +1036,24 @@ mod tests {
         let origin = img(&app);
         key(&mut app, egui::Key::ArrowRight, NONE);
         assert!(close(screen_box(&app), before), "the box stays put");
-        assert!((img(&app) - origin - vec2(1.0, 0.0)).length() < 0.02, "the image moved 1 px right on screen");
+        assert!(
+            (img(&app) - origin - vec2(1.0, 0.0)).length() < 0.02,
+            "the image moved 1 px right on screen"
+        );
         key(&mut app, egui::Key::ArrowDown, Modifiers::SHIFT);
-        assert!((img(&app) - origin - vec2(1.0, 10.0)).length() < 0.02, "⇧: 10 px");
+        assert!(
+            (img(&app) - origin - vec2(1.0, 10.0)).length() < 0.02,
+            "⇧: 10 px"
+        );
         assert!(close(screen_box(&app), before));
         assert!(crate::crop_ui::swap_orientation(&mut app));
         assert_upright(screen_box(&app));
         let q = screen_box(&app);
-        assert!(pos2((q[0].x + q[2].x) / 2.0, (q[0].y + q[2].y) / 2.0).distance(pos2(400.0, 300.0)) < 0.05, "Auto Center Preview");
+        assert!(
+            pos2((q[0].x + q[2].x) / 2.0, (q[0].y + q[2].y) / 2.0).distance(pos2(400.0, 300.0))
+                < 0.05,
+            "Auto Center Preview"
+        );
     }
 
     /// Photoshop 25.1 greys out Show Cropped Area and Auto Center Preview in Classic Mode. Show
@@ -674,12 +1067,22 @@ mod tests {
         app.ui.tool_options.crop_shield.classic_mode = true;
         assert!(!crate::crop_shield::hides_outside(&app));
         let canvas = egui::Color32::from_rgb(40, 40, 40);
-        assert_ne!(crate::crop_shield::fill(&app.ui.tool_options.crop_shield, canvas, false), Some(canvas), "the shield, not the opaque canvas");
+        assert_ne!(
+            crate::crop_shield::fill(&app.ui.tool_options.crop_shield, canvas, false),
+            Some(canvas),
+            "the shield, not the opaque canvas"
+        );
         key(&mut app, egui::Key::H, NONE);
         assert_eq!(app.ui.tool, Tool::Crop, "H is taken, not the Hand tool");
-        assert!(!app.ui.tool_options.crop_shield.show_cropped_area, "and changes nothing");
+        assert!(
+            !app.ui.tool_options.crop_shield.show_cropped_area,
+            "and changes nothing"
+        );
         app.ui.tool_options.crop_shield.classic_mode = false;
-        assert!(crate::crop_shield::hides_outside(&app), "the stored choice is back");
+        assert!(
+            crate::crop_shield::hides_outside(&app),
+            "the stored choice is back"
+        );
         key(&mut app, egui::Key::H, NONE);
         assert!(app.ui.tool_options.crop_shield.show_cropped_area);
     }
@@ -690,20 +1093,45 @@ mod tests {
         crate::crop_ui::ensure_frame(&mut app);
         let press = |app: &mut PhotocraftApp| {
             let ctx = egui::Context::default();
-            ctx.input_mut(|i| i.events.push(egui::Event::Key { key: egui::Key::P, physical_key: None, pressed: true, repeat: false, modifiers: NONE }));
+            ctx.input_mut(|i| {
+                i.events.push(egui::Event::Key {
+                    key: egui::Key::P,
+                    physical_key: None,
+                    pressed: true,
+                    repeat: false,
+                    modifiers: NONE,
+                })
+            });
             crate::shortcuts::handle(app, &ctx);
         };
         press(&mut app);
-        assert!(classic(&app) && app.ui.tool == Tool::Crop, "P doesn't pick the Pen tool");
+        assert!(
+            classic(&app) && app.ui.tool == Tool::Crop,
+            "P doesn't pick the Pen tool"
+        );
         press(&mut app);
         assert!(!classic(&app));
         // Mid-drag P is left alone; without a box P is the Pen key.
-        app.crop.drag = Some(CropDrag::Move { start: [0.0, 0.0], rect: [0.0, 0.0, 10.0, 10.0] });
+        app.crop.drag = Some(CropDrag::Move {
+            start: [0.0, 0.0],
+            rect: [0.0, 0.0, 10.0, 10.0],
+        });
         let ctx = egui::Context::default();
-        ctx.input_mut(|i| i.events.push(egui::Event::Key { key: egui::Key::P, physical_key: None, pressed: true, repeat: false, modifiers: NONE }));
+        ctx.input_mut(|i| {
+            i.events.push(egui::Event::Key {
+                key: egui::Key::P,
+                physical_key: None,
+                pressed: true,
+                repeat: false,
+                modifiers: NONE,
+            })
+        });
         assert!(!crate::crop_shield::keys(&mut app, &ctx));
         assert!(!classic(&app));
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.tool = Tool::Crop;
         press(&mut app);
         assert_ne!(app.ui.tool, Tool::Crop);
@@ -720,8 +1148,14 @@ mod tests {
         let (da, db) = (xf(&app).to_doc(a), xf(&app).to_doc(b));
         screen_drag(&mut app, &[a, b], NONE);
         assert!(crate::crop_ui::angle(&app) > 5.0, "{}", app.ui.crop_angle);
-        let (sa, sb) = (xf(&app).to_screen(da[0] as f32, da[1] as f32), xf(&app).to_screen(db[0] as f32, db[1] as f32));
-        assert!((sa.y - sb.y).abs() < 0.01, "the line is level: {sa:?} {sb:?}");
+        let (sa, sb) = (
+            xf(&app).to_screen(da[0] as f32, da[1] as f32),
+            xf(&app).to_screen(db[0] as f32, db[1] as f32),
+        );
+        assert!(
+            (sa.y - sb.y).abs() < 0.01,
+            "the line is level: {sa:?} {sb:?}"
+        );
         assert_upright(screen_box(&app));
     }
 
@@ -739,54 +1173,111 @@ mod tests {
                 {"kind": "move", "x": pts[1][0], "y": pts[1][1]},
                 {"kind": "up", "x": pts[1][0], "y": pts[1][1]},
             ]);
-            let (req, _rx) = crate::control::ControlRequest::new("ui.pointer", json!({"events": ev}));
-            let crate::control::Outcome::Done(v) = crate::control::handle(app, &ctx, &req) else { panic!("ui.pointer didn't finish") };
+            let (req, _rx) =
+                crate::control::ControlRequest::new("ui.pointer", json!({"events": ev}));
+            let crate::control::Outcome::Done(v) = crate::control::handle(app, &ctx, &req) else {
+                panic!("ui.pointer didn't finish")
+            };
             assert_eq!(v["ok"], true, "{v}");
         };
         pointer(&mut app, [[70.0, 50.0], [80.0, 55.0]]);
         let r = app.ui.crop_rect.unwrap();
-        assert!(r.iter().zip([30.0, 25.0, 90.0, 65.0]).all(|(a, b)| (a - b).abs() < 1e-3), "{r:?}");
-        assert!((app.ui.views[0].center[0] - 90.0).abs() < 1e-3 && (app.ui.views[0].center[1] - 45.0).abs() < 1e-3);
+        assert!(
+            r.iter()
+                .zip([30.0, 25.0, 90.0, 65.0])
+                .all(|(a, b)| (a - b).abs() < 1e-3),
+            "{r:?}"
+        );
+        assert!(
+            (app.ui.views[0].center[0] - 90.0).abs() < 1e-3
+                && (app.ui.views[0].center[1] - 45.0).abs() < 1e-3
+        );
         // Outside: from right of the centre (60, 45) to below it, a quarter turn of the image.
         pointer(&mut app, [[140.0, 45.0], [60.0, 125.0]]);
-        assert!((crate::crop_ui::angle(&app) - -90.0).abs() < 0.01, "{}", app.ui.crop_angle);
+        assert!(
+            (crate::crop_ui::angle(&app) - -90.0).abs() < 0.01,
+            "{}",
+            app.ui.crop_angle
+        );
         assert_upright(screen_box(&app));
     }
 
     #[test]
     fn degenerate_input_never_panics() {
         let mut app = app();
-        for frame in
-            [[0.0, 0.0, 0.0, 0.0], [5.0, 5.0, 5.0, 5.0], [f64::NAN, 0.0, 10.0, 10.0], [f64::INFINITY, 0.0, 1e300, 1e300], [-1e300, -1e300, 1e300, 1e300]]
-        {
+        for frame in [
+            [0.0, 0.0, 0.0, 0.0],
+            [5.0, 5.0, 5.0, 5.0],
+            [f64::NAN, 0.0, 10.0, 10.0],
+            [f64::INFINITY, 0.0, 1e300, 1e300],
+            [-1e300, -1e300, 1e300, 1e300],
+        ] {
             for angle in [0.0, f64::NAN, f64::INFINITY, 1e300, -720.5] {
                 app.ui.crop_rect = Some(frame);
                 app.ui.crop_angle = angle;
                 app.crop.default_frame = false;
                 app.crop.editing = true;
                 crate::crop_ui::ensure_frame(&mut app);
-                for p in [pos2(400.0, 300.0), pos2(10.0, 10.0), pos2(f32::NAN, 3.0), pos2(1e30, -1e30)] {
+                for p in [
+                    pos2(400.0, 300.0),
+                    pos2(10.0, 10.0),
+                    pos2(f32::NAN, 3.0),
+                    pos2(1e30, -1e30),
+                ] {
                     screen_drag(&mut app, &[p, p + vec2(15.0, 7.0)], NONE);
-                    screen_drag(&mut app, &[p, p + vec2(15.0, 7.0)], Modifiers::SHIFT | Modifiers::ALT);
+                    screen_drag(
+                        &mut app,
+                        &[p, p + vec2(15.0, 7.0)],
+                        Modifiers::SHIFT | Modifiers::ALT,
+                    );
                 }
                 crate::crop_ui::nudge(&mut app, f64::NAN, 1.0);
                 crate::crop_ui::nudge(&mut app, 1.0, 1.0);
                 crate::crop_ui::swap_orientation(&mut app);
                 auto_center(&mut app);
                 shift_image(&mut app, [f64::NAN, f64::INFINITY]);
-                let press = PressView { rotation: f32::NAN, center: [f32::INFINITY, 0.0] };
-                let g = LiveResize { rect: frame, deg: angle, hx: 1, hy: -1, start: [0.0, f64::NAN], q: [1e300, -1e300], ratio: Some(f64::NAN), alt: false };
+                let press = PressView {
+                    rotation: f32::NAN,
+                    center: [f32::INFINITY, 0.0],
+                };
+                let g = LiveResize {
+                    rect: frame,
+                    deg: angle,
+                    hx: 1,
+                    hy: -1,
+                    start: [0.0, f64::NAN],
+                    q: [1e300, -1e300],
+                    ratio: Some(f64::NAN),
+                    alt: false,
+                };
                 live_resize(&mut app, g, press);
-                assert!(app.ui.crop_rect.is_none_or(|r| r.iter().all(|v| v.is_finite()) || r == frame), "{frame:?} {angle}");
+                assert!(
+                    app.ui
+                        .crop_rect
+                        .is_none_or(|r| r.iter().all(|v| v.is_finite()) || r == frame),
+                    "{frame:?} {angle}"
+                );
                 let v = &app.ui.views[0];
-                assert!(v.rotation.is_finite() && v.center.iter().all(|c| c.is_finite()), "{frame:?} {angle}: {v:?}");
+                assert!(
+                    v.rotation.is_finite() && v.center.iter().all(|c| c.is_finite()),
+                    "{frame:?} {angle}: {v:?}"
+                );
                 crate::crop_ui::cancel(&mut app);
             }
         }
-        assert_eq!(pivot_center([1.0, 2.0], [f64::NAN, 0.0], 0.0, 90.0, false), [1.0, 2.0]);
-        assert_eq!(pivot_center([1.0, 2.0], [0.0, 0.0], f32::NAN, 90.0, true), [1.0, 2.0]);
+        assert_eq!(
+            pivot_center([1.0, 2.0], [f64::NAN, 0.0], 0.0, 90.0, false),
+            [1.0, 2.0]
+        );
+        assert_eq!(
+            pivot_center([1.0, 2.0], [0.0, 0.0], f32::NAN, 90.0, true),
+            [1.0, 2.0]
+        );
         // No view at all (no document).
-        let mut app = PhotocraftApp::new(photocraft_engine::Session::new(), crate::Services::default());
+        let mut app = PhotocraftApp::new(
+            photocraft_engine::Session::new(),
+            crate::Services::default(),
+        );
         app.ui.tool = Tool::Crop;
         app.ui.crop_rect = Some([0.0, 0.0, 10.0, 10.0]);
         app.crop.editing = true;
@@ -800,9 +1291,12 @@ mod tests {
     fn the_options_default_to_photoshops_and_older_settings_load() {
         let s = crate::crop_shield::CropShield::default();
         assert!(!s.classic_mode && s.auto_center_preview);
-        let s: crate::crop_shield::CropShield = serde_json::from_str(r#"{"enabled": false}"#).unwrap();
+        let s: crate::crop_shield::CropShield =
+            serde_json::from_str(r#"{"enabled": false}"#).unwrap();
         assert!(!s.classic_mode && s.auto_center_preview);
-        let s: crate::crop_shield::CropShield = serde_json::from_str(r#"{"classic_mode": true, "auto_center_preview": false}"#).unwrap();
+        let s: crate::crop_shield::CropShield =
+            serde_json::from_str(r#"{"classic_mode": true, "auto_center_preview": false}"#)
+                .unwrap();
         assert!(s.classic_mode && !s.auto_center_preview);
     }
 
@@ -812,9 +1306,20 @@ mod tests {
             for (from, to) in [(0.0, 30.0), (45.0, -90.0), (170.0, -170.0)] {
                 let center = [100.0f32, 50.0];
                 let c = [70.0, 20.0];
-                let a = ViewXform { rect: Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0)), zoom: 2.0, center, flip, rotation: from, aspect: 1.0 };
+                let a = ViewXform {
+                    rect: Rect::from_min_size(Pos2::ZERO, vec2(800.0, 600.0)),
+                    zoom: 2.0,
+                    center,
+                    flip,
+                    rotation: from,
+                    aspect: 1.0,
+                };
                 let n = pivot_center(center, c, from, to, flip);
-                let b = ViewXform { center: n, rotation: to, ..a };
+                let b = ViewXform {
+                    center: n,
+                    rotation: to,
+                    ..a
+                };
                 let (p, q) = (a.to_screen(70.0, 20.0), b.to_screen(70.0, 20.0));
                 assert!(p.distance(q) < 0.01, "{flip} {from} {to}: {p:?} vs {q:?}");
             }
@@ -833,11 +1338,19 @@ mod tests {
             for auto in [true, false] {
                 for (hx, hy) in [(1i8, 0i8), (0, -1), (-1, -1), (1, 1)] {
                     // A corner also with the image's 2:1 ratio held, which both hidden corners keep.
-                    for (grab, ratio) in [(-4.0f32, false), (0.0, false), (4.0, false), (-4.0, true), (4.0, true)] {
+                    for (grab, ratio) in [
+                        (-4.0f32, false),
+                        (0.0, false),
+                        (4.0, false),
+                        (-4.0, true),
+                        (4.0, true),
+                    ] {
                         if ratio && (hx == 0 || hy == 0) {
                             continue;
                         }
-                        let what = format!("Classic Mode {classic}, Auto Center {auto}, handle ({hx}, {hy}), grabbed {grab} px off, ratio {ratio}");
+                        let what = format!(
+                            "Classic Mode {classic}, Auto Center {auto}, handle ({hx}, {hy}), grabbed {grab} px off, ratio {ratio}"
+                        );
                         let mut app = app();
                         app.ui.tool_options.crop_delete = false;
                         app.ui.tool_options.crop_shield.classic_mode = classic;
@@ -847,7 +1360,8 @@ mod tests {
                         app.crop.default_frame = false;
                         crate::canvas::commit_crop(&mut app);
                         let v = &mut app.ui.views[0];
-                        (v.zoom, v.center, v.fit_pending, v.rotation) = (1.0, [50.0, 25.0], false, 0.0);
+                        (v.zoom, v.center, v.fit_pending, v.rotation) =
+                            (1.0, [50.0, 25.0], false, 0.0);
                         app.ui.extras.snap = true;
                         crate::crop_ui::ensure_frame(&mut app);
                         assert_eq!(app.ui.crop_rect, Some([0.0, 0.0, 100.0, 50.0]));
@@ -855,37 +1369,68 @@ mod tests {
                             app.ui.tool_options.crop_ratio = "original".into();
                         }
                         let grab = vec2(f32::from(hx), f32::from(hy)) * grab;
-                        let from = xf(&app).to_screen(50.0 + f32::from(hx) * 50.0, 25.0 + f32::from(hy) * 25.0) + grab;
+                        let from = xf(&app)
+                            .to_screen(50.0 + f32::from(hx) * 50.0, 25.0 + f32::from(hy) * 25.0)
+                            + grab;
                         // Toward the hidden corner (or edge), a screen pixel at a time on the longer axis.
-                        let gap = vec2(f32::from(hx) * if hx < 0 { 40.0 } else { 60.0 }, f32::from(hy) * if hy < 0 { 20.0 } else { 30.0 });
+                        let gap = vec2(
+                            f32::from(hx) * if hx < 0 { 40.0 } else { 60.0 },
+                            f32::from(hy) * if hy < 0 { 20.0 } else { 30.0 },
+                        );
                         let dir = gap / gap.x.abs().max(gap.y.abs());
                         let d = xf(&app).to_doc(from);
-                        tool_event(&mut app, ToolEvent::Down { x: d[0], y: d[1], pressure: 1.0 }, NONE);
+                        tool_event(
+                            &mut app,
+                            ToolEvent::Down {
+                                x: d[0],
+                                y: d[1],
+                                pressure: 1.0,
+                            },
+                            NONE,
+                        );
                         // Drag outward a screen pixel at a time; let go once the moving edges show
                         // the snap to the hidden pixels' edges (as the user would).
                         let snapped = |app: &PhotocraftApp| {
                             let on = |vertical: bool, pos: f64| {
-                                app.prefs_rt
-                                    .snap_lines
-                                    .iter()
-                                    .any(|l| l.vertical == vertical && l.pos == pos && l.kind == photocraft_engine::snap::SnapKind::LayerEdge)
+                                app.prefs_rt.snap_lines.iter().any(|l| {
+                                    l.vertical == vertical
+                                        && l.pos == pos
+                                        && l.kind == photocraft_engine::snap::SnapKind::LayerEdge
+                                })
                             };
                             (hx == 0 || on(true, if hx < 0 { hidden[0] } else { hidden[2] }))
-                                && (hy == 0 || on(false, if hy < 0 { hidden[1] } else { hidden[3] }))
+                                && (hy == 0
+                                    || on(false, if hy < 0 { hidden[1] } else { hidden[3] }))
                         };
                         let mut end = None;
                         for i in 1..=80 {
                             let d = xf(&app).to_doc(from + dir * i as f32);
-                            tool_event(&mut app, ToolEvent::Move { x: d[0], y: d[1], pressure: 1.0 }, NONE);
+                            tool_event(
+                                &mut app,
+                                ToolEvent::Move {
+                                    x: d[0],
+                                    y: d[1],
+                                    pressure: 1.0,
+                                },
+                                NONE,
+                            );
                             if snapped(&app) {
                                 end = Some(from + dir * i as f32);
                                 break;
                             }
                         }
-                        let end = end.unwrap_or_else(|| panic!("{what}: never snapped to the hidden edge"));
+                        let end = end
+                            .unwrap_or_else(|| panic!("{what}: never snapped to the hidden edge"));
                         // Released where it stopped, read through the view as it is now.
                         let end = xf(&app).to_doc(end);
-                        tool_event(&mut app, ToolEvent::Up { x: end[0], y: end[1] }, NONE);
+                        tool_event(
+                            &mut app,
+                            ToolEvent::Up {
+                                x: end[0],
+                                y: end[1],
+                            },
+                            NONE,
+                        );
                         let pick = |h: i8, lo: f64, hi: f64, a: f64, b: f64| match h {
                             -1 => [a, hi],
                             1 => [lo, b],
@@ -893,13 +1438,36 @@ mod tests {
                         };
                         let [x0, x1] = pick(hx, 0.0, 100.0, hidden[0], hidden[2]);
                         let [y0, y1] = pick(hy, 0.0, 50.0, hidden[1], hidden[3]);
-                        assert_eq!(app.ui.crop_rect, Some([x0, y0, x1, y1]), "{what}: the frame lands exactly on the hidden edge");
+                        assert_eq!(
+                            app.ui.crop_rect,
+                            Some([x0, y0, x1, y1]),
+                            "{what}: the frame lands exactly on the hidden edge"
+                        );
                         crate::canvas::commit_crop(&mut app);
                         let st = app.session.active().unwrap();
-                        assert_eq!((st.doc.size.width, st.doc.size.height), ((x1 - x0) as u32, (y1 - y0) as u32), "{what}");
-                        let layer = st.doc.walk().into_iter().map(|(_, _, l)| l.id).next().unwrap();
+                        assert_eq!(
+                            (st.doc.size.width, st.doc.size.height),
+                            ((x1 - x0) as u32, (y1 - y0) as u32),
+                            "{what}"
+                        );
+                        let layer = st
+                            .doc
+                            .walk()
+                            .into_iter()
+                            .map(|(_, _, l)| l.id)
+                            .next()
+                            .unwrap();
                         let r = photocraft_engine::snap::layer_rect(&st.doc, layer).unwrap();
-                        assert_eq!(r, [hidden[0] - x0, hidden[1] - y0, hidden[2] - x0, hidden[3] - y0], "{what}: no transparent strip");
+                        assert_eq!(
+                            r,
+                            [
+                                hidden[0] - x0,
+                                hidden[1] - y0,
+                                hidden[2] - x0,
+                                hidden[3] - y0
+                            ],
+                            "{what}: no transparent strip"
+                        );
                     }
                 }
             }

@@ -67,20 +67,36 @@ fn by_pos<T>(v: &mut [Stop<T>]) {
 }
 
 fn clamp_pos(p: f64) -> f64 {
-    if p.is_finite() { p.clamp(0.0, 1.0) } else { 0.0 }
+    if p.is_finite() {
+        p.clamp(0.0, 1.0)
+    } else {
+        0.0
+    }
 }
 
 impl Draft {
     /// A draft of `g` (stops put in order, locations clamped to 0..1).
     pub fn new(g: &Gradient, target: Option<Target>, neighbors: Vec<(usize, usize)>) -> Draft {
-        let mut d = Draft { target, neighbors, ..Default::default() };
+        let mut d = Draft {
+            target,
+            neighbors,
+            ..Default::default()
+        };
         for &(pos, value) in &g.colors {
             let id = d.fresh();
-            d.colors.push(Stop { id, pos: clamp_pos(pos), value });
+            d.colors.push(Stop {
+                id,
+                pos: clamp_pos(pos),
+                value,
+            });
         }
         for &(pos, value) in &g.opacities {
             let id = d.fresh();
-            d.opacities.push(Stop { id, pos: clamp_pos(pos), value });
+            d.opacities.push(Stop {
+                id,
+                pos: clamp_pos(pos),
+                value,
+            });
         }
         by_pos(&mut d.colors);
         by_pos(&mut d.opacities);
@@ -95,7 +111,10 @@ impl Draft {
 
     /// The draft as a gradient (the tracks are always in order).
     pub fn gradient(&self) -> Gradient {
-        Gradient { colors: self.colors.iter().map(|s| (s.pos, s.value)).collect(), opacities: self.opacities.iter().map(|s| (s.pos, s.value)).collect() }
+        Gradient {
+            colors: self.colors.iter().map(|s| (s.pos, s.value)).collect(),
+            opacities: self.opacities.iter().map(|s| (s.pos, s.value)).collect(),
+        }
     }
 
     pub fn len(&self, track: Track) -> usize {
@@ -127,8 +146,16 @@ impl Draft {
         let g = self.gradient();
         let id = self.fresh();
         match track {
-            Track::Color => self.colors.push(Stop { id, pos, value: g.color_at(pos) }),
-            Track::Opacity => self.opacities.push(Stop { id, pos, value: g.opacity_at(pos) }),
+            Track::Color => self.colors.push(Stop {
+                id,
+                pos,
+                value: g.color_at(pos),
+            }),
+            Track::Opacity => self.opacities.push(Stop {
+                id,
+                pos,
+                value: g.opacity_at(pos),
+            }),
         }
         self.sort();
         self.selected = Some((track, id));
@@ -179,7 +206,11 @@ impl Draft {
     /// Set opacity stop `id` (0..1).
     pub fn set_opacity(&mut self, id: u64, a: f32) {
         if let Some(s) = self.opacities.iter_mut().find(|s| s.id == id) {
-            s.value = if a.is_finite() { a.clamp(0.0, 1.0) } else { s.value };
+            s.value = if a.is_finite() {
+                a.clamp(0.0, 1.0)
+            } else {
+                s.value
+            };
         }
     }
 
@@ -191,7 +222,9 @@ impl Draft {
     /// The draft's stop counts differ from a neighbouring keyframe's, so the two can't
     /// interpolate (gradient keyframes blend only with the same number of stops).
     pub fn mismatched(&self) -> bool {
-        self.neighbors.iter().any(|&(c, o)| c != self.colors.len() || o != self.opacities.len())
+        self.neighbors
+            .iter()
+            .any(|&(c, o)| c != self.colors.len() || o != self.opacities.len())
     }
 }
 
@@ -200,13 +233,31 @@ impl Draft {
 pub fn open(app: &mut EffectcraftApp, p: &Json) -> Result<Json, String> {
     let cid = match p.get("comp").and_then(Json::as_u64) {
         Some(c) => ItemId(c),
-        None => app.session.active_comp_id().ok_or("no composition is open")?,
+        None => app
+            .session
+            .active_comp_id()
+            .ok_or("no composition is open")?,
     };
-    let comp = app.session.project.comp(cid).ok_or_else(|| format!("no composition {}", cid.0))?;
-    let lid = p.get("layer").and_then(Json::as_u64).ok_or("missing `layer`")?;
-    let layer = comp.layer(LayerId(lid)).ok_or_else(|| format!("no layer {lid}"))?;
-    let uid = p.get("prop").and_then(Json::as_u64).ok_or("missing `prop`")?;
-    let prop = layer.props.find(uid).ok_or_else(|| format!("no property @{uid}"))?;
+    let comp = app
+        .session
+        .project
+        .comp(cid)
+        .ok_or_else(|| format!("no composition {}", cid.0))?;
+    let lid = p
+        .get("layer")
+        .and_then(Json::as_u64)
+        .ok_or("missing `layer`")?;
+    let layer = comp
+        .layer(LayerId(lid))
+        .ok_or_else(|| format!("no layer {lid}"))?;
+    let uid = p
+        .get("prop")
+        .and_then(Json::as_u64)
+        .ok_or("missing `prop`")?;
+    let prop = layer
+        .props
+        .find(uid)
+        .ok_or_else(|| format!("no property @{uid}"))?;
     let ct = comp.frame_rate.snap_nearest(app.session.time_of(cid));
     let lt = layer.layer_time(ct);
     let Value::Gradient(g) = prop.value_at(lt) else {
@@ -217,10 +268,25 @@ pub fn open(app: &mut EffectcraftApp, p: &Json) -> Result<Json, String> {
         Value::Gradient(g) => Some((g.colors.len(), g.opacities.len())),
         _ => None,
     };
-    let before = prop.keys.iter().rev().find(|k| k.time < lt).and_then(|k| counts(&k.value));
-    let after = prop.keys.iter().find(|k| k.time > lt).and_then(|k| counts(&k.value));
-    let target = Target { comp: cid.0, layer: lid, prop: uid, time: ct.seconds() };
-    app.dialog_state.gradient = Draft::new(&g, Some(target), before.into_iter().chain(after).collect());
+    let before = prop
+        .keys
+        .iter()
+        .rev()
+        .find(|k| k.time < lt)
+        .and_then(|k| counts(&k.value));
+    let after = prop
+        .keys
+        .iter()
+        .find(|k| k.time > lt)
+        .and_then(|k| counts(&k.value));
+    let target = Target {
+        comp: cid.0,
+        layer: lid,
+        prop: uid,
+        time: ct.seconds(),
+    };
+    app.dialog_state.gradient =
+        Draft::new(&g, Some(target), before.into_iter().chain(after).collect());
     app.dialog = Some(Dialog::GradientEditor);
     Ok(json!({"dialog": "gradientEditor"}))
 }
@@ -255,9 +321,18 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
     super::dialogs::modal(ctx, tr("Gradient Editor"), vec2(520.0, 270.0), t, |ui| {
         let w = ui.available_width().max(200.0);
         let (area, _) = ui.allocate_exact_size(vec2(w, 72.0), Sense::hover());
-        let bar = Rect::from_min_max(pos2(area.min.x + 8.0, area.min.y + 22.0), pos2(area.max.x - 8.0, area.min.y + 48.0));
-        let opacity_row = Rect::from_min_max(pos2(bar.min.x, area.min.y), pos2(bar.max.x, bar.min.y - 2.0));
-        let color_row = Rect::from_min_max(pos2(bar.min.x, bar.max.y + 2.0), pos2(bar.max.x, area.max.y));
+        let bar = Rect::from_min_max(
+            pos2(area.min.x + 8.0, area.min.y + 22.0),
+            pos2(area.max.x - 8.0, area.min.y + 48.0),
+        );
+        let opacity_row = Rect::from_min_max(
+            pos2(bar.min.x, area.min.y),
+            pos2(bar.max.x, bar.min.y - 2.0),
+        );
+        let color_row = Rect::from_min_max(
+            pos2(bar.min.x, bar.max.y + 2.0),
+            pos2(bar.max.x, area.max.y),
+        );
         let pos_of = |x: f32| ((x - bar.min.x) / bar.width().max(1.0)) as f64;
         let x_of = |p: f64| bar.min.x + bar.width() * p as f32;
         let painter = ui.painter().clone();
@@ -270,8 +345,19 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
             let mut x = bar.min.x;
             let mut col = row;
             while x < bar.max.x {
-                let c = if col % 2 == 0 { Color32::from_gray(200) } else { Color32::from_gray(150) };
-                painter.rect_filled(Rect::from_min_max(pos2(x, y), pos2((x + cell).min(bar.max.x), (y + cell).min(bar.max.y))), 0.0, c);
+                let c = if col % 2 == 0 {
+                    Color32::from_gray(200)
+                } else {
+                    Color32::from_gray(150)
+                };
+                painter.rect_filled(
+                    Rect::from_min_max(
+                        pos2(x, y),
+                        pos2((x + cell).min(bar.max.x), (y + cell).min(bar.max.y)),
+                    ),
+                    0.0,
+                    c,
+                );
                 x += cell;
                 col += 1;
             }
@@ -284,13 +370,25 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
             let x0 = bar.min.x + bar.width() * k as f32 / n as f32;
             let x1 = bar.min.x + bar.width() * (k + 1) as f32 / n as f32;
             let c = g.sample((k as f64 + 0.5) / n as f64);
-            painter.rect_filled(Rect::from_min_max(pos2(x0, bar.min.y), pos2(x1, bar.max.y)), 0.0, to_color32(c));
+            painter.rect_filled(
+                Rect::from_min_max(pos2(x0, bar.min.y), pos2(x1, bar.max.y)),
+                0.0,
+                to_color32(c),
+            );
         }
-        painter.rect_stroke(bar, 0.0, Stroke::new(1.0, t.field_border), StrokeKind::Outside);
+        painter.rect_stroke(
+            bar,
+            0.0,
+            Stroke::new(1.0, t.field_border),
+            StrokeKind::Outside,
+        );
         app.auto.add("dialog.gradient.bar", bar, "Gradient");
 
         // Clicking a row's empty space adds a stop there.
-        for (track, rowr, id) in [(Track::Opacity, opacity_row, "dialog.gradient.addOpacity"), (Track::Color, color_row, "dialog.gradient.addColor")] {
+        for (track, rowr, id) in [
+            (Track::Opacity, opacity_row, "dialog.gradient.addOpacity"),
+            (Track::Color, color_row, "dialog.gradient.addColor"),
+        ] {
             let r = ui.interact(rowr, egui::Id::new(("gradient-add", id)), Sense::click());
             app.auto.add(id, rowr, id);
             if r.clicked()
@@ -304,26 +402,49 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         for track in [Track::Opacity, Track::Color] {
             for i in 0..app.dialog_state.gradient.len(track) {
                 let d = &app.dialog_state.gradient;
-                let Some(id) = d.id_at(track, i) else { continue };
+                let Some(id) = d.id_at(track, i) else {
+                    continue;
+                };
                 let (pos, fill) = match track {
-                    Track::Color => d.colors.get(i).map(|s| (s.pos, to_color32([s.value[0], s.value[1], s.value[2], 1.0]))),
-                    Track::Opacity => d.opacities.get(i).map(|s| (s.pos, Color32::from_gray((s.value.clamp(0.0, 1.0) * 255.0) as u8))),
+                    Track::Color => d
+                        .colors
+                        .get(i)
+                        .map(|s| (s.pos, to_color32([s.value[0], s.value[1], s.value[2], 1.0]))),
+                    Track::Opacity => d.opacities.get(i).map(|s| {
+                        (
+                            s.pos,
+                            Color32::from_gray((s.value.clamp(0.0, 1.0) * 255.0) as u8),
+                        )
+                    }),
                 }
                 .unwrap_or((0.0, Color32::WHITE));
                 let selected = d.selected == Some((track, id));
                 let x = x_of(pos);
                 let r = match track {
-                    Track::Opacity => Rect::from_min_max(pos2(x - 5.0, opacity_row.max.y - 15.0), pos2(x + 5.0, opacity_row.max.y)),
-                    Track::Color => Rect::from_min_max(pos2(x - 5.0, color_row.min.y), pos2(x + 5.0, color_row.min.y + 15.0)),
+                    Track::Opacity => Rect::from_min_max(
+                        pos2(x - 5.0, opacity_row.max.y - 15.0),
+                        pos2(x + 5.0, opacity_row.max.y),
+                    ),
+                    Track::Color => Rect::from_min_max(
+                        pos2(x - 5.0, color_row.min.y),
+                        pos2(x + 5.0, color_row.min.y + 15.0),
+                    ),
                 };
                 painter.rect_filled(r, 1.0, fill);
                 painter.rect_stroke(
                     r,
                     1.0,
-                    Stroke::new(if selected { 2.0 } else { 1.0 }, if selected { t.accent } else { t.field_border }),
+                    Stroke::new(
+                        if selected { 2.0 } else { 1.0 },
+                        if selected { t.accent } else { t.field_border },
+                    ),
                     StrokeKind::Outside,
                 );
-                let resp = ui.interact(r.expand(2.0), egui::Id::new(("gradient-stop", track == Track::Color, id)), Sense::click_and_drag());
+                let resp = ui.interact(
+                    r.expand(2.0),
+                    egui::Id::new(("gradient-stop", track == Track::Color, id)),
+                    Sense::click_and_drag(),
+                );
                 let name = match track {
                     Track::Opacity => format!("dialog.gradient.opacityStop.{i}"),
                     Track::Color => format!("dialog.gradient.colorStop.{i}"),
@@ -343,10 +464,20 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
 
         // The selected stop's fields.
         let selected = app.dialog_state.gradient.selected;
-        let selected = selected.and_then(|(track, id)| app.dialog_state.gradient.index_of(track, id).map(|i| (track, id, i)));
+        let selected = selected.and_then(|(track, id)| {
+            app.dialog_state
+                .gradient
+                .index_of(track, id)
+                .map(|i| (track, id, i))
+        });
         ui.horizontal(|ui| {
             let Some((track, id, i)) = selected else {
-                ui.label(egui::RichText::new(tr("Click above the bar to add an opacity stop, below it to add a color stop.")).color(t.text_dim));
+                ui.label(
+                    egui::RichText::new(tr(
+                        "Click above the bar to add an opacity stop, below it to add a color stop.",
+                    ))
+                    .color(t.text_dim),
+                );
                 return;
             };
             ui.label(tr("Location:"));
@@ -357,27 +488,54 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
             }
             .unwrap_or(0.0);
             let mut pct = pos * 100.0;
-            let r = ui.add(egui::DragValue::new(&mut pct).range(0.0..=100.0).speed(0.5).max_decimals(1).suffix("%"));
+            let r = ui.add(
+                egui::DragValue::new(&mut pct)
+                    .range(0.0..=100.0)
+                    .speed(0.5)
+                    .max_decimals(1)
+                    .suffix("%"),
+            );
             app.auto.add("dialog.gradient.location", r.rect, "Location");
             if r.changed() {
                 app.dialog_state.gradient.move_to(track, id, pct / 100.0);
             }
             // Moving can reorder the track: find the stop again by its id, so the fields below
             // show this stop and not the one now at its old index.
-            let Some(i) = app.dialog_state.gradient.index_of(track, id) else { return };
+            let Some(i) = app.dialog_state.gradient.index_of(track, id) else {
+                return;
+            };
             match track {
                 Track::Opacity => {
                     ui.label(tr("Opacity:"));
-                    let mut a = app.dialog_state.gradient.opacities.get(i).map_or(1.0, |s| s.value) as f64 * 100.0;
-                    let r = ui.add(egui::DragValue::new(&mut a).range(0.0..=100.0).speed(0.5).max_decimals(1).suffix("%"));
+                    let mut a = app
+                        .dialog_state
+                        .gradient
+                        .opacities
+                        .get(i)
+                        .map_or(1.0, |s| s.value) as f64
+                        * 100.0;
+                    let r = ui.add(
+                        egui::DragValue::new(&mut a)
+                            .range(0.0..=100.0)
+                            .speed(0.5)
+                            .max_decimals(1)
+                            .suffix("%"),
+                    );
                     app.auto.add("dialog.gradient.opacity", r.rect, "Opacity");
                     if r.changed() {
-                        app.dialog_state.gradient.set_opacity(id, (a / 100.0) as f32);
+                        app.dialog_state
+                            .gradient
+                            .set_opacity(id, (a / 100.0) as f32);
                     }
                 }
                 Track::Color => {
                     ui.label(tr("Color:"));
-                    let c = app.dialog_state.gradient.colors.get(i).map_or([1.0; 4], |s| s.value);
+                    let c = app
+                        .dialog_state
+                        .gradient
+                        .colors
+                        .get(i)
+                        .map_or([1.0; 4], |s| s.value);
                     // The shared colour picker (sRGB, hex field, OK / Cancel); the stop keeps its alpha.
                     let mut rgb = [c[0], c[1], c[2]];
                     let swatch = crate::widgets::srgb_color_button(ui, &mut rgb);
@@ -396,7 +554,13 @@ pub fn show(app: &mut EffectcraftApp, ctx: &egui::Context, t: &Tokens) {
         });
         if app.dialog_state.gradient.mismatched() {
             ui.add_space(4.0);
-            ui.label(egui::RichText::new(tr("These adjacent keyframes cannot interpolate because their stop counts differ.")).color(t.danger).size(11.0));
+            ui.label(
+                egui::RichText::new(tr(
+                    "These adjacent keyframes cannot interpolate because their stop counts differ.",
+                ))
+                .color(t.danger)
+                .size(11.0),
+            );
         }
         ui.add_space(14.0);
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -435,7 +599,14 @@ mod tests {
     use super::*;
 
     fn draft() -> Draft {
-        Draft::new(&Gradient { colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (1.0, [0.0, 0.0, 1.0, 1.0])], opacities: vec![(0.0, 1.0), (1.0, 0.5)] }, None, vec![])
+        Draft::new(
+            &Gradient {
+                colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (1.0, [0.0, 0.0, 1.0, 1.0])],
+                opacities: vec![(0.0, 1.0), (1.0, 0.5)],
+            },
+            None,
+            vec![],
+        )
     }
 
     /// Dragging the first stop past the second keeps the track in order and the same stop
@@ -443,22 +614,40 @@ mod tests {
     #[test]
     fn stops_stay_in_order_and_selected_while_moving() {
         for track in [Track::Color, Track::Opacity] {
-            let g = Gradient { colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (0.6, [0.0, 0.0, 1.0, 1.0])], opacities: vec![(0.0, 1.0), (0.6, 0.5)] };
+            let g = Gradient {
+                colors: vec![(0.0, [1.0, 0.0, 0.0, 1.0]), (0.6, [0.0, 0.0, 1.0, 1.0])],
+                opacities: vec![(0.0, 1.0), (0.6, 0.5)],
+            };
             let mut d = Draft::new(&g, None, vec![]);
             let first = d.id_at(track, 0).unwrap();
             d.selected = Some((track, first));
             d.move_to(track, first, 0.3);
             d.move_to(track, first, 0.8);
-            assert_eq!(d.index_of(track, first), Some(1), "{track:?}: dragged past the stop at 0.6, it is now second");
-            assert_eq!(d.selected, Some((track, first)), "{track:?}: the selection followed it");
+            assert_eq!(
+                d.index_of(track, first),
+                Some(1),
+                "{track:?}: dragged past the stop at 0.6, it is now second"
+            );
+            assert_eq!(
+                d.selected,
+                Some((track, first)),
+                "{track:?}: the selection followed it"
+            );
             let g = d.gradient();
             let positions: Vec<f64> = match track {
                 Track::Color => g.colors.iter().map(|c| c.0).collect(),
                 Track::Opacity => g.opacities.iter().map(|c| c.0).collect(),
             };
-            assert!(positions.windows(2).all(|w| w[0] <= w[1]), "{track:?}: {positions:?}");
+            assert!(
+                positions.windows(2).all(|w| w[0] <= w[1]),
+                "{track:?}: {positions:?}"
+            );
             let added = d.add(track, 0.5);
-            assert_eq!(d.index_of(track, added), Some(0), "{track:?}: the new stop sorts before the stops at 0.6 and 0.8");
+            assert_eq!(
+                d.index_of(track, added),
+                Some(0),
+                "{track:?}: the new stop sorts before the stops at 0.6 and 0.8"
+            );
             assert_eq!(d.selected, Some((track, added)));
         }
         // After the swap the colour track runs blue (at 0) to red (at 1): a stop added at 0.5 is
@@ -484,10 +673,16 @@ mod tests {
         let mut d = draft();
         let id = d.add(Track::Opacity, 0.5);
         let i = d.index_of(Track::Opacity, id).unwrap();
-        assert!((d.opacities[i].value - 0.75).abs() < 1e-6, "the opacity track's own value");
+        assert!(
+            (d.opacities[i].value - 0.75).abs() < 1e-6,
+            "the opacity track's own value"
+        );
         let id = d.add(Track::Color, 0.5);
         let i = d.index_of(Track::Color, id).unwrap();
-        assert!((d.colors[i].value[3] - 1.0).abs() < 1e-6, "colour stops keep their own alpha, not times opacity");
+        assert!(
+            (d.colors[i].value[3] - 1.0).abs() < 1e-6,
+            "colour stops keep their own alpha, not times opacity"
+        );
         d.set_rgb(id, [0.0, 1.0, 0.0]);
         assert_eq!(d.colors[i].value, [0.0, 1.0, 0.0, 1.0]);
         d.set_opacity(d.id_at(Track::Opacity, 0).unwrap(), f32::NAN);
@@ -499,10 +694,16 @@ mod tests {
     #[test]
     fn unchanged_drafts_equal_their_baseline() {
         // Out-of-order and out-of-range stops come in sorted and clamped: still "unchanged".
-        let g = Gradient { colors: vec![(1.2, [0.0, 0.0, 1.0, 1.0]), (0.0, [1.0, 0.0, 0.0, 1.0])], opacities: vec![(0.5, 1.0)] };
+        let g = Gradient {
+            colors: vec![(1.2, [0.0, 0.0, 1.0, 1.0]), (0.0, [1.0, 0.0, 0.0, 1.0])],
+            opacities: vec![(0.5, 1.0)],
+        };
         let d = Draft::new(&g, None, vec![]);
         assert_eq!(d.gradient(), d.baseline);
-        assert_eq!(d.gradient().colors.iter().map(|c| c.0).collect::<Vec<_>>(), vec![0.0, 1.0]);
+        assert_eq!(
+            d.gradient().colors.iter().map(|c| c.0).collect::<Vec<_>>(),
+            vec![0.0, 1.0]
+        );
         let mut e = d.clone();
         e.add(Track::Opacity, 0.2);
         assert_ne!(e.gradient(), e.baseline);
@@ -513,7 +714,13 @@ mod tests {
         let mut d = Draft::new(&Gradient::default(), None, vec![(2, 2), (2, 2)]);
         assert!(!d.mismatched(), "same counts as both neighbours");
         d.add(Track::Color, 0.5);
-        assert!(d.mismatched(), "three colour stops next to keyframes with two");
-        assert!(!Draft::new(&Gradient::default(), None, vec![]).mismatched(), "not animated: no neighbours");
+        assert!(
+            d.mismatched(),
+            "three colour stops next to keyframes with two"
+        );
+        assert!(
+            !Draft::new(&Gradient::default(), None, vec![]).mismatched(),
+            "not animated: no neighbours"
+        );
     }
 }

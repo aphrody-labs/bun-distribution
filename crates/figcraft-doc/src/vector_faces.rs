@@ -30,7 +30,14 @@ impl Face {
 
     /// The fill region for this face.
     pub fn region(&self) -> Region {
-        Region { loops: self.loops.clone(), winding: if self.loops.len() > 1 { WindingRule::EvenOdd } else { WindingRule::NonZero } }
+        Region {
+            loops: self.loops.clone(),
+            winding: if self.loops.len() > 1 {
+                WindingRule::EvenOdd
+            } else {
+                WindingRule::NonZero
+            },
+        }
     }
 
     /// Some point strictly inside the face (not in a hole).
@@ -51,7 +58,8 @@ impl VectorNetwork {
     pub fn faces(&self) -> Vec<Face> {
         let cycles = self.cycles();
         // Each connected piece's outside: its most negative cycle.
-        let mut outside: std::collections::BTreeMap<usize, &Cycle> = std::collections::BTreeMap::new();
+        let mut outside: std::collections::BTreeMap<usize, &Cycle> =
+            std::collections::BTreeMap::new();
         for c in cycles.iter().filter(|c| c.area < -AREA_EPS) {
             let e = outside.entry(c.component).or_insert(c);
             if c.area < e.area {
@@ -79,13 +87,23 @@ impl VectorNetwork {
             let inside: Vec<&(usize, Vec<Vec<usize>>, BezPath, f64)> = boundaries
                 .iter()
                 .filter(|(comp, ..)| *comp != c.component)
-                .filter(|(comp, ..)| self.component_point(&cycles, *comp).is_some_and(|p| outer.winding(p) % 2 != 0))
+                .filter(|(comp, ..)| {
+                    self.component_point(&cycles, *comp)
+                        .is_some_and(|p| outer.winding(p) % 2 != 0)
+                })
                 .collect();
-            let mut face = Face { loops, area: c.area, path: outer };
+            let mut face = Face {
+                loops,
+                area: c.area,
+                path: outer,
+            };
             for (comp, hl, hp, ha) in &inside {
-                let nested = inside
-                    .iter()
-                    .any(|(other, _, op, _)| other != comp && self.component_point(&cycles, *comp).is_some_and(|p| op.winding(p) % 2 != 0));
+                let nested = inside.iter().any(|(other, _, op, _)| {
+                    other != comp
+                        && self
+                            .component_point(&cycles, *comp)
+                            .is_some_and(|p| op.winding(p) % 2 != 0)
+                });
                 if nested {
                     continue;
                 }
@@ -100,7 +118,10 @@ impl VectorNetwork {
 
     /// The smallest face containing `p`.
     pub fn face_at(&self, p: Point) -> Option<Face> {
-        self.faces().into_iter().filter(|f| f.contains(p)).min_by(|a, b| a.area.total_cmp(&b.area))
+        self.faces()
+            .into_iter()
+            .filter(|f| f.contains(p))
+            .min_by(|a, b| a.area.total_cmp(&b.area))
     }
 
     /// The paint bucket: fill the face under `p`, or unfill it when it's filled. Returns the new
@@ -130,8 +151,16 @@ impl VectorNetwork {
         };
         let faces = self.faces();
         let face_keys: Vec<Vec<Vec<usize>>> = faces.iter().map(|f| key(&f.loops)).collect();
-        if !self.regions.iter().all(|r| face_keys.contains(&key(&r.loops))) {
-            let filled: Vec<Region> = faces.iter().filter(|f| f.interior_point().is_some_and(|q| self.fill_contains(q))).map(Face::region).collect();
+        if !self
+            .regions
+            .iter()
+            .all(|r| face_keys.contains(&key(&r.loops)))
+        {
+            let filled: Vec<Region> = faces
+                .iter()
+                .filter(|f| f.interior_point().is_some_and(|q| self.fill_contains(q)))
+                .map(Face::region)
+                .collect();
             self.regions = filled;
         }
         let k = key(&face.loops);
@@ -158,7 +187,9 @@ impl VectorNetwork {
         let mut out: Vec<Vec<(f64, f64, usize, bool)>> = vec![Vec::new(); nv];
         for i in (0..n).filter(|i| valid(*i)) {
             for fwd in [true, false] {
-                let Some((origin, dir, along)) = self.half_edge_dir(i, fwd) else { continue };
+                let Some((origin, dir, along)) = self.half_edge_dir(i, fwd) else {
+                    continue;
+                };
                 if let Some(list) = out.get_mut(origin) {
                     list.push((dir.y.atan2(dir.x), along.y.atan2(along.x), i, fwd));
                 }
@@ -167,7 +198,8 @@ impl VectorNetwork {
         for list in &mut out {
             list.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
         }
-        let origin = |i: usize, fwd: bool| self.segments.get(i).map(|s| if fwd { s.a } else { s.b });
+        let origin =
+            |i: usize, fwd: bool| self.segments.get(i).map(|s| if fwd { s.a } else { s.b });
         let dest = |i: usize, fwd: bool| self.segments.get(i).map(|s| if fwd { s.b } else { s.a });
         // The walk: arrive at v along (i, fwd); leave by the edge before the twin in angular order.
         let next = |i: usize, fwd: bool| -> Option<(usize, bool)> {
@@ -208,8 +240,14 @@ impl VectorNetwork {
                     continue;
                 }
                 let area = self.half_edge_path(&half_edges).area();
-                let component = origin(i, fwd).and_then(|v| comp.get(v).copied()).unwrap_or(0);
-                cycles.push(Cycle { half_edges, area: if area.is_finite() { area } else { 0.0 }, component });
+                let component = origin(i, fwd)
+                    .and_then(|v| comp.get(v).copied())
+                    .unwrap_or(0);
+                cycles.push(Cycle {
+                    half_edges,
+                    area: if area.is_finite() { area } else { 0.0 },
+                    component,
+                });
             }
         }
         cycles
@@ -221,15 +259,36 @@ impl VectorNetwork {
         let s = self.segments.get(i)?;
         let c = self.cubic(i)?;
         let (origin, p0, d, along) = if fwd {
-            (s.a, c.p0, c.deriv().eval(0.0).to_vec2(), c.eval(0.25) - c.p0)
+            (
+                s.a,
+                c.p0,
+                c.deriv().eval(0.0).to_vec2(),
+                c.eval(0.25) - c.p0,
+            )
         } else {
-            (s.b, c.p3, -c.deriv().eval(1.0).to_vec2(), c.eval(0.75) - c.p3)
+            (
+                s.b,
+                c.p3,
+                -c.deriv().eval(1.0).to_vec2(),
+                c.eval(0.75) - c.p3,
+            )
         };
-        let fallback = if fwd { [c.p2 - p0, c.p3 - p0] } else { [c.p1 - p0, c.p0 - p0] };
+        let fallback = if fwd {
+            [c.p2 - p0, c.p3 - p0]
+        } else {
+            [c.p1 - p0, c.p0 - p0]
+        };
         // A zero-length segment gets a nominal direction; the walk stays a permutation, so its
         // cycles still close (and its angle is irrelevant at the usual two-segment vertex).
-        let nominal = if fwd { Vec2::new(1.0, 0.0) } else { Vec2::new(-1.0, 0.0) };
-        let dir = std::iter::once(d).chain(fallback).find(|v| v.hypot() > 1e-9).unwrap_or(nominal);
+        let nominal = if fwd {
+            Vec2::new(1.0, 0.0)
+        } else {
+            Vec2::new(-1.0, 0.0)
+        };
+        let dir = std::iter::once(d)
+            .chain(fallback)
+            .find(|v| v.hypot() > 1e-9)
+            .unwrap_or(nominal);
         Some((origin, dir, if along.hypot() > 1e-9 { along } else { dir }))
     }
 
@@ -237,7 +296,11 @@ impl VectorNetwork {
         let mut path = BezPath::new();
         for (k, (i, fwd)) in half_edges.iter().enumerate() {
             let Some(c) = self.cubic(*i) else { continue };
-            let c = if *fwd { c } else { figcraft_geom::kurbo::CubicBez::new(c.p3, c.p2, c.p1, c.p0) };
+            let c = if *fwd {
+                c
+            } else {
+                figcraft_geom::kurbo::CubicBez::new(c.p3, c.p2, c.p1, c.p0)
+            };
             if k == 0 {
                 path.move_to(c.p0);
             }
@@ -251,16 +314,28 @@ impl VectorNetwork {
     /// loops) are dropped and what's left is chained into loops.
     fn split_loops(&self, half_edges: &[(usize, bool)]) -> Vec<Vec<usize>> {
         let count = |i: usize| half_edges.iter().filter(|h| h.0 == i).count();
-        let kept: Vec<(usize, bool)> = half_edges.iter().copied().filter(|h| count(h.0) == 1).collect();
-        let ends = |h: (usize, bool)| self.segments.get(h.0).map(|s| if h.1 { (s.a, s.b) } else { (s.b, s.a) });
+        let kept: Vec<(usize, bool)> = half_edges
+            .iter()
+            .copied()
+            .filter(|h| count(h.0) == 1)
+            .collect();
+        let ends = |h: (usize, bool)| {
+            self.segments
+                .get(h.0)
+                .map(|s| if h.1 { (s.a, s.b) } else { (s.b, s.a) })
+        };
         let mut used = vec![false; kept.len()];
         let mut loops = Vec::new();
         for start in 0..kept.len() {
             if used.get(start).copied().unwrap_or(true) {
                 continue;
             }
-            let Some(first) = kept.get(start).copied() else { continue };
-            let Some((v0, mut v)) = ends(first) else { continue };
+            let Some(first) = kept.get(start).copied() else {
+                continue;
+            };
+            let Some((v0, mut v)) = ends(first) else {
+                continue;
+            };
             if let Some(u) = used.get_mut(start) {
                 *u = true;
             }
@@ -268,9 +343,13 @@ impl VectorNetwork {
             let mut pos = start;
             while v != v0 {
                 // Prefer the next half-edge in walk order that continues from `v`.
-                let found = (1..=kept.len())
-                    .map(|d| (pos + d) % kept.len())
-                    .find(|j| !used.get(*j).copied().unwrap_or(true) && kept.get(*j).and_then(|h| ends(*h)).is_some_and(|(a, _)| a == v));
+                let found = (1..=kept.len()).map(|d| (pos + d) % kept.len()).find(|j| {
+                    !used.get(*j).copied().unwrap_or(true)
+                        && kept
+                            .get(*j)
+                            .and_then(|h| ends(*h))
+                            .is_some_and(|(a, _)| a == v)
+                });
                 let Some(j) = found else { break };
                 if let Some(u) = used.get_mut(j) {
                     *u = true;
@@ -329,7 +408,9 @@ impl VectorNetwork {
         let c = cycles.iter().find(|c| c.component == comp)?;
         let (i, fwd) = c.half_edges.first().copied()?;
         let s = self.segments.get(i)?;
-        self.vertices.get(if fwd { s.a } else { s.b }).map(|v| v.point())
+        self.vertices
+            .get(if fwd { s.a } else { s.b })
+            .map(|v| v.point())
     }
 }
 
@@ -339,26 +420,31 @@ const AREA_EPS: f64 = 1e-9;
 /// horizontal scanlines.
 pub fn interior_point(path: &BezPath) -> Option<Point> {
     let bb: Rect = path.bounding_box();
-    if !(bb.width() > 0.0 && bb.height() > 0.0 && bb.width().is_finite() && bb.height().is_finite()) {
+    if !(bb.width() > 0.0 && bb.height() > 0.0 && bb.width().is_finite() && bb.height().is_finite())
+    {
         return None;
     }
     let mut lines: Vec<(Point, Point)> = Vec::new();
     let (mut start, mut last) = (Point::ZERO, Point::ZERO);
-    figcraft_geom::kurbo::flatten(path.iter(), bb.width().max(bb.height()) * 1e-3, |el| match el {
-        PathEl::MoveTo(p) => {
-            start = p;
-            last = p;
-        }
-        PathEl::LineTo(p) => {
-            lines.push((last, p));
-            last = p;
-        }
-        PathEl::ClosePath => {
-            lines.push((last, start));
-            last = start;
-        }
-        _ => {}
-    });
+    figcraft_geom::kurbo::flatten(
+        path.iter(),
+        bb.width().max(bb.height()) * 1e-3,
+        |el| match el {
+            PathEl::MoveTo(p) => {
+                start = p;
+                last = p;
+            }
+            PathEl::LineTo(p) => {
+                lines.push((last, p));
+                last = p;
+            }
+            PathEl::ClosePath => {
+                lines.push((last, start));
+                last = start;
+            }
+            _ => {}
+        },
+    );
     let mut best: Option<(f64, Point)> = None;
     for k in [0.5, 0.3, 0.7, 0.15, 0.85, 0.05, 0.95] {
         // An irrational nudge keeps the scanline off vertices.
@@ -371,7 +457,9 @@ pub fn interior_point(path: &BezPath) -> Option<Point> {
             .collect();
         xs.sort_by(f64::total_cmp);
         for pair in xs.chunks_exact(2) {
-            let (Some(a), Some(b)) = (pair.first(), pair.get(1)) else { continue };
+            let (Some(a), Some(b)) = (pair.first(), pair.get(1)) else {
+                continue;
+            };
             let w = b - a;
             if w > best.map(|b| b.0).unwrap_or(1e-9) {
                 best = Some((w, Point::new((a + b) / 2.0, y)));
@@ -387,16 +475,36 @@ mod tests {
     use crate::vector::{Segment, Vertex};
 
     fn square(x: f64, y: f64, s: f64) -> VectorNetwork {
-        VectorNetwork::from_points(&[Point::new(x, y), Point::new(x + s, y), Point::new(x + s, y + s), Point::new(x, y + s)], true)
+        VectorNetwork::from_points(
+            &[
+                Point::new(x, y),
+                Point::new(x + s, y),
+                Point::new(x + s, y + s),
+                Point::new(x, y + s),
+            ],
+            true,
+        )
     }
 
     fn merge(a: &VectorNetwork, b: &VectorNetwork) -> VectorNetwork {
         let mut n = a.clone();
         let (nv, ns) = (n.vertices.len(), n.segments.len());
         n.vertices.extend(b.vertices.iter().copied());
-        n.segments.extend(b.segments.iter().map(|s| Segment { a: s.a + nv, b: s.b + nv, ..*s }));
-        n.regions
-            .extend(b.regions.iter().map(|r| Region { loops: r.loops.iter().map(|l| l.iter().map(|i| i + ns).collect()).collect(), ..r.clone() }));
+        n.segments.extend(b.segments.iter().map(|s| Segment {
+            a: s.a + nv,
+            b: s.b + nv,
+            ..*s
+        }));
+        n.regions.extend(b.regions.iter().map(|r| {
+            Region {
+                loops: r
+                    .loops
+                    .iter()
+                    .map(|l| l.iter().map(|i| i + ns).collect())
+                    .collect(),
+                ..r.clone()
+            }
+        }));
         n
     }
 
@@ -448,10 +556,16 @@ mod tests {
         let mut areas: Vec<f64> = n.faces().iter().map(|f| f.area).collect();
         areas.sort_by(f64::total_cmp);
         assert_eq!(areas.len(), 2);
-        assert!((areas[0] - 2500.0).abs() < 1e-6 && (areas[1] - 7500.0).abs() < 1e-6, "{areas:?}");
+        assert!(
+            (areas[0] - 2500.0).abs() < 1e-6 && (areas[1] - 7500.0).abs() < 1e-6,
+            "{areas:?}"
+        );
         assert_eq!(n.paint(Point::new(10.0, 10.0)), Some(true));
         assert!(n.fill_contains(Point::new(10.0, 10.0)));
-        assert!(!n.fill_contains(Point::new(50.0, 50.0)), "the ring has a hole");
+        assert!(
+            !n.fill_contains(Point::new(50.0, 50.0)),
+            "the ring has a hole"
+        );
         assert_eq!(n.paint(Point::new(50.0, 50.0)), Some(true));
         assert!(n.fill_contains(Point::new(50.0, 50.0)));
         // A third square inside the inner one is the inner face's hole, not the ring's.
@@ -487,10 +601,16 @@ mod tests {
 
     #[test]
     fn curves_and_junk_networks() {
-        let mut circle = figcraft_geom::kurbo::Ellipse::new((50.0, 50.0), (50.0, 50.0), 0.0).to_path(0.01);
+        let mut circle =
+            figcraft_geom::kurbo::Ellipse::new((50.0, 50.0), (50.0, 50.0), 0.0).to_path(0.01);
         circle.close_path();
         let mut n = VectorNetwork::from_path(&circle);
-        let close = n.vertices.iter().enumerate().any(|(i, a)| n.vertices.iter().skip(i + 1).any(|b| (a.point() - b.point()).hypot() < 1e-3));
+        let close = n.vertices.iter().enumerate().any(|(i, a)| {
+            n.vertices
+                .iter()
+                .skip(i + 1)
+                .any(|b| (a.point() - b.point()).hypot() < 1e-3)
+        });
         assert!(!close, "the closing point merges into the first");
         n.regions.clear();
         eprintln!(
@@ -503,9 +623,14 @@ mod tests {
         }
         let f = n.faces();
         assert_eq!(f.len(), 1);
-        assert!((f[0].area - std::f64::consts::PI * 2500.0).abs() < 5.0, "{}", f[0].area);
+        assert!(
+            (f[0].area - std::f64::consts::PI * 2500.0).abs() < 5.0,
+            "{}",
+            f[0].area
+        );
         // Without the ClosePath (kurbo's ellipse outline) it's still one closed, filled loop.
-        let open = figcraft_geom::kurbo::Ellipse::new((50.0, 50.0), (50.0, 50.0), 0.0).to_path(0.01);
+        let open =
+            figcraft_geom::kurbo::Ellipse::new((50.0, 50.0), (50.0, 50.0), 0.0).to_path(0.01);
         let o = VectorNetwork::from_path(&open);
         assert_eq!(o.vertices.len(), n.vertices.len());
         assert_eq!(o.regions.len(), 1);
@@ -517,7 +642,12 @@ mod tests {
         j.segments.push(Segment::line(0, 4));
         j.segments.push(Segment::line(2, 99));
         j.segments.push(Segment::line(1, 1));
-        j.segments.push(Segment { a: 3, b: 3, ta: (5.0, 5.0), tb: (-5.0, 5.0) });
+        j.segments.push(Segment {
+            a: 3,
+            b: 3,
+            ta: (5.0, 5.0),
+            tb: (-5.0, 5.0),
+        });
         j.vertices.push(Vertex::new(0.0, 0.0));
         j.segments.push(Segment::line(0, 5));
         let _ = j.faces();

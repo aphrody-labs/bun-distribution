@@ -171,7 +171,10 @@ impl GrowthTables {
         }
 
         if entry.is_none() {
-            entry = self.lv1.iter().find(|e| e.main_position == params.main_position);
+            entry = self
+                .lv1
+                .iter()
+                .find(|e| e.main_position == params.main_position);
         }
 
         entry
@@ -225,7 +228,10 @@ impl GrowthTables {
         }
 
         if entry.is_none() {
-            entry = self.lv30.iter().find(|e| e.main_position == params.main_position);
+            entry = self
+                .lv30
+                .iter()
+                .find(|e| e.main_position == params.main_position);
         }
 
         entry
@@ -265,7 +271,10 @@ impl GrowthTables {
         }
 
         if entry.is_none() {
-            entry = self.main.iter().find(|e| e.main_position == params.main_position);
+            entry = self
+                .main
+                .iter()
+                .find(|e| e.main_position == params.main_position);
         }
 
         entry
@@ -282,9 +291,11 @@ impl GrowthTables {
 /// Ordre des stats : `Kc, Cr, Tc, Pr, Ps, Ag, It`.
 #[must_use]
 pub fn calculate_stats(tables: &GrowthTables, params: &GrowthParams, level: u8) -> StatBlock {
-    let (Some(lv1), Some(lv30), Some(main)) =
-        (tables.find_lv1(params), tables.find_lv30(params), tables.find_main(params))
-    else {
+    let (Some(lv1), Some(lv30), Some(main)) = (
+        tables.find_lv1(params),
+        tables.find_lv30(params),
+        tables.find_main(params),
+    ) else {
         // Parité avec le TS : données absentes → stats 0 (pas d'invention).
         return StatBlock::default();
     };
@@ -351,7 +362,11 @@ pub fn generate_growth_curve(
     let mut niveau = niveau_debut;
     while niveau <= niveau_fin {
         let stats = calculate_stats(tables, params, niveau);
-        courbe.push(PointCroissance { niveau, stats, total: stats.total() });
+        courbe.push(PointCroissance {
+            niveau,
+            stats,
+            total: stats.total(),
+        });
         // `niveau_fin` peut valoir 255 : on sort avant de déborder.
         let Some(suivant) = niveau.checked_add(1) else {
             break;
@@ -454,7 +469,10 @@ mod tests_courbe {
     #[test]
     fn position_inconnue_rend_zero() {
         let t = tables_du_test_ts();
-        let p = GrowthParams { main_position: 99, ..params_du_test_ts() };
+        let p = GrowthParams {
+            main_position: 99,
+            ..params_du_test_ts()
+        };
         assert_eq!(calculate_stats(&t, &p, 50), StatBlock::default());
     }
 
@@ -558,7 +576,12 @@ mod loader {
                 })
                 .collect();
 
-            Self { lv1, lv30, main, sub }
+            Self {
+                lv1,
+                lv30,
+                main,
+                sub,
+            }
         }
     }
 }
@@ -620,9 +643,18 @@ mod tests {
         // GK rang N : mainPosition 1, sub 0, pattern 0, rank 0.
         let t = GrowthTables::load_embedded();
         let params = p(1, 0, 0, 0);
-        assert_eq!(calculate_stats(&t, &params, 1).as_array(), [12, 13, 12, 10, 11, 9, 11]);
-        assert_eq!(calculate_stats(&t, &params, 30).as_array(), [96, 100, 96, 105, 99, 103, 94]);
-        assert_eq!(calculate_stats(&t, &params, 50).as_array(), [84, 92, 86, 97, 101, 104, 92]);
+        assert_eq!(
+            calculate_stats(&t, &params, 1).as_array(),
+            [12, 13, 12, 10, 11, 9, 11]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 30).as_array(),
+            [96, 100, 96, 105, 99, 103, 94]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 50).as_array(),
+            [84, 92, 86, 97, 101, 104, 92]
+        );
         assert_eq!(
             calculate_stats(&t, &params, 99).as_array(),
             [133, 146, 137, 157, 164, 166, 150]
@@ -636,8 +668,14 @@ mod tests {
         // à DF (GK=1, FW=2, MF=3, DF=4 — types.h:28 / loader.cpp:178).
         let t = GrowthTables::load_embedded();
         let params = p(4, 0, 0, 5);
-        assert_eq!(calculate_stats(&t, &params, 1).as_array(), [12, 13, 12, 10, 11, 9, 11]);
-        assert_eq!(calculate_stats(&t, &params, 30).as_array(), [96, 99, 99, 105, 99, 92, 105]);
+        assert_eq!(
+            calculate_stats(&t, &params, 1).as_array(),
+            [12, 13, 12, 10, 11, 9, 11]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 30).as_array(),
+            [96, 99, 99, 105, 99, 92, 105]
+        );
         assert_eq!(
             calculate_stats(&t, &params, 50).as_array(),
             [129, 135, 136, 146, 151, 130, 164]
@@ -654,8 +692,14 @@ mod tests {
         // Note : le nom conservé pour compatibilité ; mainPosition=2 = FW (types.h:28 / loader.cpp:178).
         let t = GrowthTables::load_embedded();
         let params = p(2, 3, 0, 5);
-        assert_eq!(calculate_stats(&t, &params, 1).as_array(), [13, 14, 12, 10, 10, 9, 11]);
-        assert_eq!(calculate_stats(&t, &params, 30).as_array(), [106, 110, 106, 98, 87, 87, 99]);
+        assert_eq!(
+            calculate_stats(&t, &params, 1).as_array(),
+            [13, 14, 12, 10, 10, 9, 11]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 30).as_array(),
+            [106, 110, 106, 98, 87, 87, 99]
+        );
         // lv50/99 = main[0] exact (sub3 retombe sur la courbe main par fallback).
         assert_eq!(
             calculate_stats(&t, &params, 50).as_array(),
@@ -672,9 +716,18 @@ mod tests {
         // MF pattern 2 (>=2 → fallback pattern 0) rang R : teste la cascade.
         let t = GrowthTables::load_embedded();
         let params = p(3, 0, 2, 2);
-        assert_eq!(calculate_stats(&t, &params, 1).as_array(), [13, 14, 12, 10, 10, 9, 11]);
-        assert_eq!(calculate_stats(&t, &params, 30).as_array(), [103, 110, 106, 98, 92, 87, 99]);
-        assert_eq!(calculate_stats(&t, &params, 50).as_array(), [103, 111, 108, 90, 90, 83, 99]);
+        assert_eq!(
+            calculate_stats(&t, &params, 1).as_array(),
+            [13, 14, 12, 10, 10, 9, 11]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 30).as_array(),
+            [103, 110, 106, 98, 92, 87, 99]
+        );
+        assert_eq!(
+            calculate_stats(&t, &params, 50).as_array(),
+            [103, 111, 108, 90, 90, 83, 99]
+        );
         assert_eq!(
             calculate_stats(&t, &params, 99).as_array(),
             [164, 178, 173, 145, 145, 133, 159]

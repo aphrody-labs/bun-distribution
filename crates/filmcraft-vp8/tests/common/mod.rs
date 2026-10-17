@@ -28,18 +28,112 @@ pub const FIXTURES: &[Fixture] = &[
     fx!("default", "testsrc2", 352, 288, 20, ["-b:v", "600k"]),
     fx!("odd_size", "testsrc2", 177, 99, 12, ["-b:v", "300k"]),
     fx!("tiny", "testsrc2", 33, 17, 10, ["-b:v", "50k"]),
-    fx!("intra_only", "mandelbrot", 352, 288, 6, ["-g", "1", "-b:v", "2M"]),
+    fx!(
+        "intra_only",
+        "mandelbrot",
+        352,
+        288,
+        6,
+        ["-g", "1", "-b:v", "2M"]
+    ),
     fx!("noise_high_rate", "cellauto", 352, 288, 10, ["-b:v", "4M"]),
-    fx!("near_lossless", "testsrc2", 176, 144, 8, ["-qmin", "0", "-qmax", "0", "-b:v", "20M"]),
-    fx!("coarse", "mandelbrot", 352, 288, 12, ["-qmin", "60", "-qmax", "63", "-crf", "62", "-b:v", "100k"]),
-    fx!("partitions8", "testsrc2", 640, 360, 8, ["-b:v", "1M", "-slices", "8"]),
-    fx!("altref_2pass", "mandelbrot", 352, 288, 30, ["2pass", "-b:v", "500k", "-auto-alt-ref", "1", "-lag-in-frames", "16"]),
-    fx!("sharpness7", "testsrc2", 352, 288, 10, ["-b:v", "300k", "-sharpness", "7"]),
-    fx!("version1_bilinear_simple", "testsrc2", 352, 288, 12, ["-b:v", "500k", "-profile:v", "1"]),
-    fx!("version2", "testsrc2", 352, 288, 12, ["-b:v", "500k", "-profile:v", "2"]),
-    fx!("version3_fullpixel", "mandelbrot", 352, 288, 12, ["-b:v", "500k", "-profile:v", "3"]),
-    fx!("realtime_segments", "testsrc2", 352, 288, 20, ["-b:v", "300k", "-deadline", "realtime", "-cpu-used", "8", "-error-resilient", "1"]),
-    fx!("screen", "smptehdbars", 352, 288, 12, ["-b:v", "200k", "-screen-content-mode", "1"]),
+    fx!(
+        "near_lossless",
+        "testsrc2",
+        176,
+        144,
+        8,
+        ["-qmin", "0", "-qmax", "0", "-b:v", "20M"]
+    ),
+    fx!(
+        "coarse",
+        "mandelbrot",
+        352,
+        288,
+        12,
+        ["-qmin", "60", "-qmax", "63", "-crf", "62", "-b:v", "100k"]
+    ),
+    fx!(
+        "partitions8",
+        "testsrc2",
+        640,
+        360,
+        8,
+        ["-b:v", "1M", "-slices", "8"]
+    ),
+    fx!(
+        "altref_2pass",
+        "mandelbrot",
+        352,
+        288,
+        30,
+        [
+            "2pass",
+            "-b:v",
+            "500k",
+            "-auto-alt-ref",
+            "1",
+            "-lag-in-frames",
+            "16"
+        ]
+    ),
+    fx!(
+        "sharpness7",
+        "testsrc2",
+        352,
+        288,
+        10,
+        ["-b:v", "300k", "-sharpness", "7"]
+    ),
+    fx!(
+        "version1_bilinear_simple",
+        "testsrc2",
+        352,
+        288,
+        12,
+        ["-b:v", "500k", "-profile:v", "1"]
+    ),
+    fx!(
+        "version2",
+        "testsrc2",
+        352,
+        288,
+        12,
+        ["-b:v", "500k", "-profile:v", "2"]
+    ),
+    fx!(
+        "version3_fullpixel",
+        "mandelbrot",
+        352,
+        288,
+        12,
+        ["-b:v", "500k", "-profile:v", "3"]
+    ),
+    fx!(
+        "realtime_segments",
+        "testsrc2",
+        352,
+        288,
+        20,
+        [
+            "-b:v",
+            "300k",
+            "-deadline",
+            "realtime",
+            "-cpu-used",
+            "8",
+            "-error-resilient",
+            "1"
+        ]
+    ),
+    fx!(
+        "screen",
+        "smptehdbars",
+        352,
+        288,
+        12,
+        ["-b:v", "200k", "-screen-content-mode", "1"]
+    ),
     fx!(
         "temporal_layers",
         "testsrc2",
@@ -61,15 +155,29 @@ pub const FIXTURES: &[Fixture] = &[
             "ts_number_layers=2:ts_target_bitrate=400,800:ts_rate_decimator=2,1:ts_periodicity=2:ts_layer_id=0,1:ts_layering_mode=2"
         ]
     ),
-    fx!("hd_1080p", "testsrc2", 1920, 1080, 3, ["-b:v", "4M", "-deadline", "realtime", "-cpu-used", "8"]),
+    fx!(
+        "hd_1080p",
+        "testsrc2",
+        1920,
+        1080,
+        3,
+        ["-b:v", "4M", "-deadline", "realtime", "-cpu-used", "8"]
+    ),
 ];
 
 pub fn fixture(name: &str) -> &'static Fixture {
-    FIXTURES.iter().find(|f| f.name == name).unwrap_or_else(|| panic!("unknown fixture {name}"))
+    FIXTURES
+        .iter()
+        .find(|f| f.name == name)
+        .unwrap_or_else(|| panic!("unknown fixture {name}"))
 }
 
 pub fn ffmpeg() -> Option<PathBuf> {
-    for p in ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/usr/bin/ffmpeg"] {
+    for p in [
+        "/opt/homebrew/bin/ffmpeg",
+        "/usr/local/bin/ffmpeg",
+        "/usr/bin/ffmpeg",
+    ] {
         if Path::new(p).exists() {
             return Some(PathBuf::from(p));
         }
@@ -95,7 +203,10 @@ pub fn run(cmd: &mut Command) -> bool {
     match cmd.output() {
         Ok(o) if o.status.success() => true,
         Ok(o) => {
-            eprintln!("command failed: {cmd:?}\n{}", String::from_utf8_lossy(&o.stderr));
+            eprintln!(
+                "command failed: {cmd:?}\n{}",
+                String::from_utf8_lossy(&o.stderr)
+            );
             false
         }
         Err(e) => {
@@ -122,14 +233,29 @@ pub fn ensure(f: &Fixture) -> Option<(PathBuf, PathBuf)> {
     if !ivf.exists() {
         let tmp = dir.join(format!("{}.tmp.{}.ivf", f.name, unique()));
         // the source at an even size, scaled to the fixture's (possibly odd) size
-        let src =
-            format!("{}=size={}x{}:rate=25,scale={}:{},format=yuv420p", f.source, f.width.next_multiple_of(2), f.height.next_multiple_of(2), f.width, f.height);
+        let src = format!(
+            "{}=size={}x{}:rate=25,scale={}:{},format=yuv420p",
+            f.source,
+            f.width.next_multiple_of(2),
+            f.height.next_multiple_of(2),
+            f.width,
+            f.height
+        );
         let two_pass = f.args.first() == Some(&"2pass");
         let args: Vec<&str> = f.args.iter().copied().filter(|a| *a != "2pass").collect();
         let log = dir.join(format!("{}.{}.passlog", f.name, unique()));
         let enc = |pass: Option<u32>| {
             let mut c = Command::new(&ff);
-            c.args(["-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i", &src]);
+            c.args([
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-f",
+                "lavfi",
+                "-i",
+                &src,
+            ]);
             c.args(["-frames:v", &f.frames.to_string(), "-c:v", "libvpx"]);
             c.args(&args);
             if let Some(p) = pass {
@@ -157,8 +283,25 @@ pub fn ensure(f: &Fixture) -> Option<(PathBuf, PathBuf)> {
     if !yuv.exists() {
         let tmp = dir.join(format!("{}.tmp.{}.yuv", f.name, unique()));
         let mut c = Command::new(&ff);
-        c.args(["-hide_banner", "-loglevel", "error", "-y", "-c:v", "libvpx", "-i"]).arg(&ivf);
-        c.args(["-fps_mode", "passthrough", "-f", "rawvideo", "-pix_fmt", "yuv420p"]).arg(&tmp);
+        c.args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-c:v",
+            "libvpx",
+            "-i",
+        ])
+        .arg(&ivf);
+        c.args([
+            "-fps_mode",
+            "passthrough",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "yuv420p",
+        ])
+        .arg(&tmp);
         if !run(&mut c) {
             eprintln!("SKIP {}: reference decode failed", f.name);
             return None;
@@ -176,7 +319,8 @@ pub fn ivf_frames(data: &[u8]) -> Vec<&[u8]> {
     let Some(h) = data.get(6..8) else { return out };
     let mut pos = usize::from(u16::from_le_bytes([h[0], h[1]]));
     while pos + 12 <= data.len() {
-        let size = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+        let size =
+            u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
         pos += 12;
         let end = (pos + size).min(data.len());
         out.push(&data[pos..end]);
@@ -188,7 +332,11 @@ pub fn ivf_frames(data: &[u8]) -> Vec<&[u8]> {
 /// Decode every frame; the pictures in display order.
 pub fn decode_all(frames: &[&[u8]]) -> Vec<Picture> {
     let mut dec = Decoder::new();
-    frames.iter().enumerate().filter_map(|(i, f)| dec.decode(f, i as i64).expect("decode")).collect()
+    frames
+        .iter()
+        .enumerate()
+        .filter_map(|(i, f)| dec.decode(f, i as i64).expect("decode"))
+        .collect()
 }
 
 /// A picture as I420 bytes.

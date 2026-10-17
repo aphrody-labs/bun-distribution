@@ -108,7 +108,10 @@ fn le_crc32_du_navigateur_est_celui_du_jeu() {
 #[test]
 fn les_identifiants_de_calque_figes_dans_les_ecrans_sont_exacts() {
     // apps/nie-web/src/screens/PlayerBank.tsx
-    assert_eq!(aphrody_nie_wasm::crc32("team14_01_chara_bank_list"), 0x1ac9_9083);
+    assert_eq!(
+        aphrody_nie_wasm::crc32("team14_01_chara_bank_list"),
+        0x1ac9_9083
+    );
     // apps/nie-web/src/screens/Shop.tsx
     assert_eq!(aphrody_nie_wasm::crc32("shop01_01_list_base"), 0x992e_f302);
 }

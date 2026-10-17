@@ -19,7 +19,11 @@ fn dir() -> PathBuf {
 
 /// The filter making a 95×63 picture, translucent when `alpha`.
 fn filter(alpha: bool) -> String {
-    let a = if alpha { ",format=gbrapf32le,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='(X*2+Y)/250'" } else { "" };
+    let a = if alpha {
+        ",format=gbrapf32le,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='(X*2+Y)/250'"
+    } else {
+        ""
+    };
     format!("scale={W}:{H}{a}")
 }
 
@@ -29,7 +33,21 @@ fn fixture(ff: &Path, pix_fmt: &str, format: &str, compression: &str) -> Option<
     let vf = filter(pix_fmt.starts_with("gbrap"));
     filmcraft_testkit::fixtures::generate(&out, |tmp| {
         std::process::Command::new(ff)
-            .args(["-y", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=96x64", "-frames:v", "1", "-vf", &vf, "-pix_fmt", pix_fmt])
+            .args([
+                "-y",
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=96x64",
+                "-frames:v",
+                "1",
+                "-vf",
+                &vf,
+                "-pix_fmt",
+                pix_fmt,
+            ])
             .args(["-compression", compression, "-format", format])
             .arg(tmp)
             .status()
@@ -41,20 +59,43 @@ fn fixture(ff: &Path, pix_fmt: &str, format: &str, compression: &str) -> Option<
 fn f16_value(h: u16) -> f32 {
     let sign = if h & 0x8000 != 0 { -1.0 } else { 1.0 };
     let (e, m) = (i32::from((h >> 10) & 0x1F), f32::from(h & 0x3FF));
-    sign * if e == 0 { m * 2f32.powi(-24) } else { (1.0 + m / 1024.0) * 2f32.powi(e - 15) }
+    sign * if e == 0 {
+        m * 2f32.powi(-24)
+    } else {
+        (1.0 + m / 1024.0) * 2f32.powi(e - 15)
+    }
 }
 
 /// ffmpeg's decode of `file` as planar floats in `pix_fmt` (32-bit, or the 16-bit variant ffmpeg
 /// decodes half files to natively when `half`: its conversion to 32 bits is not exact), as
 /// interleaved RGBA.
 fn ffmpeg_rgba(ff: &Path, file: &Path, pix_fmt: &str, half: bool) -> Vec<f32> {
-    let fmt = if half { pix_fmt.replace("f32", "f16") } else { pix_fmt.to_string() };
-    let out = std::process::Command::new(ff).args(["-v", "error", "-i"]).arg(file).args(["-f", "rawvideo", "-pix_fmt", &fmt, "-"]).output().unwrap();
+    let fmt = if half {
+        pix_fmt.replace("f32", "f16")
+    } else {
+        pix_fmt.to_string()
+    };
+    let out = std::process::Command::new(ff)
+        .args(["-v", "error", "-i"])
+        .arg(file)
+        .args(["-f", "rawvideo", "-pix_fmt", &fmt, "-"])
+        .output()
+        .unwrap();
     assert!(out.status.success(), "ffmpeg decode of {}", file.display());
     let v: Vec<f32> = if half {
-        out.stdout.as_chunks::<2>().0.iter().map(|b| f16_value(u16::from_le_bytes(*b))).collect()
+        out.stdout
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|b| f16_value(u16::from_le_bytes(*b)))
+            .collect()
     } else {
-        out.stdout.as_chunks::<4>().0.iter().map(|b| f32::from_le_bytes(*b)).collect()
+        out.stdout
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .map(|b| f32::from_le_bytes(*b))
+            .collect()
     };
     let n = W * H;
     let plane = |k: usize| &v[k * n..(k + 1) * n];
@@ -76,7 +117,10 @@ fn floats(f: &filmcraft_frame::VideoFrame) -> Vec<f32> {
 
 fn max_diff(a: &[f32], b: &[f32]) -> f32 {
     assert_eq!(a.len(), b.len());
-    a.iter().zip(b).map(|(a, b)| (a - b).abs()).fold(0f32, f32::max)
+    a.iter()
+        .zip(b)
+        .map(|(a, b)| (a - b).abs())
+        .fold(0f32, f32::max)
 }
 
 #[test]
@@ -90,7 +134,12 @@ fn exr_stills_match_ffmpeg() {
                     eprintln!("SKIPPED: ffmpeg cannot write {name}");
                     continue;
                 };
-                let src = filmcraft_media::open_bytes("still.exr", std::fs::read(&f).unwrap().into(), &[]).unwrap_or_else(|e| panic!("{name}: {e}"));
+                let src = filmcraft_media::open_bytes(
+                    "still.exr",
+                    std::fs::read(&f).unwrap().into(),
+                    &[],
+                )
+                .unwrap_or_else(|e| panic!("{name}: {e}"));
                 assert_eq!(src.info().kind, MediaKind::Still, "{name}");
                 let v = src.info().video.clone().unwrap();
                 assert_eq!((v.width as usize, v.height as usize), (W, H), "{name}");
@@ -113,8 +162,29 @@ fn exr_sequence_plays_linear_float_frames() {
         let tmp = filmcraft_testkit::fixtures::temp_path(&d);
         std::fs::create_dir_all(&tmp).unwrap();
         let ok = std::process::Command::new(&ff)
-            .args(["-y", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=96x64:rate=25", "-frames:v", "3", "-vf", &filter(true)])
-            .args(["-pix_fmt", "gbrapf32le", "-compression", "zip16", "-format", "half", "-f", "image2"])
+            .args([
+                "-y",
+                "-v",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "testsrc2=size=96x64:rate=25",
+                "-frames:v",
+                "3",
+                "-vf",
+                &filter(true),
+            ])
+            .args([
+                "-pix_fmt",
+                "gbrapf32le",
+                "-compression",
+                "zip16",
+                "-format",
+                "half",
+                "-f",
+                "image2",
+            ])
             .arg(tmp.join("img_%04d.exr"))
             .status()
             .is_ok_and(|s| s.success());
@@ -127,17 +197,38 @@ fn exr_sequence_plays_linear_float_frames() {
         }
     }
     let first = d.join("img_0001.exr").to_string_lossy().to_string();
-    let names: Vec<String> = std::fs::read_dir(&d).unwrap().flatten().map(|e| e.file_name().to_string_lossy().to_string()).collect();
+    let names: Vec<String> = std::fs::read_dir(&d)
+        .unwrap()
+        .flatten()
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
     let frames = sequence_frames(&Numbered::parse(&first).unwrap(), &names);
-    let src = ImageSequenceSource::new("img_0001", frames, FrameRate::FPS_25, Arc::new(|p: &str| std::fs::read(p))).unwrap();
+    let src = ImageSequenceSource::new(
+        "img_0001",
+        frames,
+        FrameRate::FPS_25,
+        Arc::new(|p: &str| std::fs::read(p)),
+    )
+    .unwrap();
     assert_eq!(src.info().kind, MediaKind::ImageSequence);
     assert_eq!(src.frame_count(), 3);
     let v = src.info().video.clone().unwrap();
-    assert_eq!((v.codec.as_str(), v.pixel_format.as_str(), v.has_alpha), ("EXR sequence", "RGBA 16-bit float", true));
+    assert_eq!(
+        (v.codec.as_str(), v.pixel_format.as_str(), v.has_alpha),
+        ("EXR sequence", "RGBA 16-bit float", true)
+    );
     assert_eq!(v.color.transfer, filmcraft_color::Transfer::Linear);
     for i in [2, 0, 1] {
-        let ours = floats(&src.video_frame(FrameRequest::full(FrameRate::FPS_25.tick_of(i))).unwrap());
-        let want = ffmpeg_rgba(&ff, &d.join(format!("img_{:04}.exr", i + 1)), "gbrapf32le", true);
+        let ours = floats(
+            &src.video_frame(FrameRequest::full(FrameRate::FPS_25.tick_of(i)))
+                .unwrap(),
+        );
+        let want = ffmpeg_rgba(
+            &ff,
+            &d.join(format!("img_{:04}.exr", i + 1)),
+            "gbrapf32le",
+            true,
+        );
         assert!(max_diff(&ours, &want) == 0.0, "frame {i}");
     }
 }
@@ -147,12 +238,22 @@ fn exr_sequence_plays_linear_float_frames() {
 /// PXR24 file must give exactly the floats of that uncompressed copy.
 #[test]
 fn exr_pxr24_matches_openexr() {
-    let tool = |args: &[&str]| std::process::Command::new("oiiotool").args(args).status().is_ok_and(|s| s.success());
+    let tool = |args: &[&str]| {
+        std::process::Command::new("oiiotool")
+            .args(args)
+            .status()
+            .is_ok_and(|s| s.success())
+    };
     if !tool(&["--version"]) {
         eprintln!("SKIPPED: oiiotool is not installed");
         return;
     }
-    for (name, depth, channels, size) in [("f4", "float", 4, "95x63"), ("h4", "half", 4, "40x35"), ("f3", "float", 3, "17x16"), ("h3", "half", 3, "16x17")] {
+    for (name, depth, channels, size) in [
+        ("f4", "float", 4, "95x63"),
+        ("h4", "half", 4, "40x35"),
+        ("f3", "float", 3, "17x16"),
+        ("h3", "half", 3, "16x17"),
+    ] {
         let packed = dir().join(format!("pxr24_{name}.exr"));
         let plain = dir().join(format!("pxr24_{name}_plain.exr"));
         let ok = |p: &Path| {
@@ -173,7 +274,15 @@ fn exr_pxr24_matches_openexr() {
                         &t,
                     ])
                 } else {
-                    tool(&[packed.to_string_lossy().as_ref(), "-d", depth, "--compression", "none", "-o", &t])
+                    tool(&[
+                        packed.to_string_lossy().as_ref(),
+                        "-d",
+                        depth,
+                        "--compression",
+                        "none",
+                        "-o",
+                        &t,
+                    ])
                 }
             })
         };
@@ -183,7 +292,12 @@ fn exr_pxr24_matches_openexr() {
         };
         let plain = dir().join(format!("pxr24_{name}_plain.exr"));
         let decode = |p: &Path| {
-            floats(&filmcraft_media::open_bytes("still.exr", std::fs::read(p).unwrap().into(), &[]).unwrap().video_frame(FrameRequest::full(Tick(0))).unwrap())
+            floats(
+                &filmcraft_media::open_bytes("still.exr", std::fs::read(p).unwrap().into(), &[])
+                    .unwrap()
+                    .video_frame(FrameRequest::full(Tick(0)))
+                    .unwrap(),
+            )
         };
         let (ours, want) = (decode(&packed), decode(&plain));
         assert_eq!(max_diff(&ours, &want), 0.0, "{name}");

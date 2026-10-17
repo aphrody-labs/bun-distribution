@@ -128,11 +128,16 @@ mod tests {
         let start_json = r#"{"type":"start","job_id":"j1","kind":"embed","total_steps":100}"#;
         let event = TrainEvent::parse_line(start_json).unwrap();
         match event {
-            TrainEvent::Start { job_id, kind, total_steps, .. } => {
+            TrainEvent::Start {
+                job_id,
+                kind,
+                total_steps,
+                ..
+            } => {
                 assert_eq!(job_id, "j1");
                 assert_eq!(kind, "embed");
                 assert_eq!(total_steps, 100);
-            },
+            }
             other => panic!("unexpected event: {other:?}"),
         }
 
@@ -142,18 +147,23 @@ mod tests {
             TrainEvent::Progress { step, loss, .. } => {
                 assert_eq!(step, 5);
                 assert!((loss - 0.42).abs() < 1e-6);
-            },
+            }
             other => panic!("unexpected event: {other:?}"),
         }
 
         let artifact_json = r#"{"type":"artifact","job_id":"j1","role":"onnx_model","path":"/path/model.onnx","sha256":"abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890","bytes":1024}"#;
         let event = TrainEvent::parse_line(artifact_json).unwrap();
         match event {
-            TrainEvent::Artifact { role, bytes, sha256, .. } => {
+            TrainEvent::Artifact {
+                role,
+                bytes,
+                sha256,
+                ..
+            } => {
                 assert_eq!(role, "onnx_model");
                 assert_eq!(bytes, 1024);
                 assert_eq!(sha256.len(), 64);
-            },
+            }
             other => panic!("unexpected event: {other:?}"),
         }
     }

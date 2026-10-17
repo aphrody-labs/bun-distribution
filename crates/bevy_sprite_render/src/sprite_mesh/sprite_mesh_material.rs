@@ -1,9 +1,9 @@
 use bevy_app::Plugin;
 use bevy_color::{Color, ColorToComponents};
 use bevy_image::{Image, TextureAtlas, TextureAtlasLayout};
-use bevy_math::{vec2, Affine2, Mat3, Rect, Vec2, Vec4};
+use bevy_math::{Affine2, Mat3, Rect, Vec2, Vec4, vec2};
 
-use bevy_asset::{embedded_asset, embedded_path, Asset, AssetApp, AssetPath, Handle};
+use bevy_asset::{Asset, AssetApp, AssetPath, Handle, embedded_asset, embedded_path};
 
 use bevy_reflect::Reflect;
 use bevy_render::{
@@ -12,7 +12,7 @@ use bevy_render::{
 };
 use bevy_shader::ShaderRef;
 use bevy_sprite::{
-    prelude::Sprite, SliceScaleMode, SpriteAlphaMode, SpriteImageMode, SpriteScalingMode,
+    SliceScaleMode, SpriteAlphaMode, SpriteImageMode, SpriteScalingMode, prelude::Sprite,
 };
 
 use crate::{AlphaMode2d, Material2d, Material2dPlugin};

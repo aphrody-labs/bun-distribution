@@ -593,9 +593,11 @@ mod tests {
         events.update();
         events.write(TestEvent { i: 3 });
 
-        assert!(reader
-            .read(&events)
-            .eq([TestEvent { i: 2 }, TestEvent { i: 3 }].iter()));
+        assert!(
+            reader
+                .read(&events)
+                .eq([TestEvent { i: 2 }, TestEvent { i: 3 }].iter())
+        );
     }
 
     #[test]
@@ -606,9 +608,11 @@ mod tests {
     #[test]
     fn test_events_drain_and_read() {
         events_clear_and_read_impl(|events| {
-            assert!(events
-                .drain()
-                .eq(vec![TestEvent { i: 0 }, TestEvent { i: 1 }].into_iter()));
+            assert!(
+                events
+                    .drain()
+                    .eq(vec![TestEvent { i: 0 }, TestEvent { i: 1 }].into_iter())
+            );
         });
     }
 
@@ -724,9 +728,11 @@ mod tests {
         let mut reader = events.get_cursor();
 
         events.extend(vec![TestEvent { i: 0 }, TestEvent { i: 1 }]);
-        assert!(reader
-            .read(&events)
-            .eq([TestEvent { i: 0 }, TestEvent { i: 1 }].iter()));
+        assert!(
+            reader
+                .read(&events)
+                .eq([TestEvent { i: 0 }, TestEvent { i: 1 }].iter())
+        );
     }
 
     // Cursor

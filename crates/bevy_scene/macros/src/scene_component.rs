@@ -1,13 +1,12 @@
 use bevy_ecs_macro_logic::component::{DeriveComponent, StorageAttribute, StorageTy};
-use bevy_macro_utils::{fq_std::FQDefault, BevyManifest, PathType};
+use bevy_macro_utils::{BevyManifest, PathType, fq_std::FQDefault};
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{
-    parenthesized,
+    DeriveInput, LitStr, Path, parenthesized,
     parse::{Parse, ParseStream},
     parse_str,
     token::Paren,
-    DeriveInput, LitStr, Path,
 };
 
 pub(crate) fn derive_scene_component(ast: &mut DeriveInput) -> TokenStream {

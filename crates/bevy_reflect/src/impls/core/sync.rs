@@ -3,7 +3,7 @@ use crate::{
     info::{OpaqueInfo, TypeInfo, Typed},
     kind::{ReflectKind, ReflectMut, ReflectOwned, ReflectRef},
     prelude::*,
-    reflect::{impl_full_reflect, ApplyError},
+    reflect::{ApplyError, impl_full_reflect},
     type_path::DynamicTypePath,
     type_registry::{GetTypeRegistration, ReflectFromPtr, TypeRegistration},
     utility::NonGenericTypeInfoCell,

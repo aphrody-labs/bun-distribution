@@ -1,6 +1,6 @@
 use crate::{AlphaMode2d, Material2d, Material2dPlugin, TileData};
 use bevy_app::{App, Plugin};
-use bevy_asset::{embedded_asset, embedded_path, Asset, AssetPath, Handle, RenderAssetUsages};
+use bevy_asset::{Asset, AssetPath, Handle, RenderAssetUsages, embedded_asset, embedded_path};
 use bevy_color::ColorToPacked;
 use bevy_image::{Image, ImageSampler, ToExtents};
 use bevy_math::UVec2;

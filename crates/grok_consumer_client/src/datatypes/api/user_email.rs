@@ -3,7 +3,7 @@
 pub struct UserEmail(pub String);
 
 impl UserEmail {
-  pub fn to_string(&self) -> String {
-    self.0.clone()
-  }
+    pub fn to_string(&self) -> String {
+        self.0.clone()
+    }
 }

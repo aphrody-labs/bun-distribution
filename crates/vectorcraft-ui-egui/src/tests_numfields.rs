@@ -20,15 +20,35 @@ fn a_focused_field_follows_a_value_changed_from_outside() {
         time += 0.05;
         let screen_rect = Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0)));
         let mut got = (None, Rect::NOTHING);
-        let mut out = ctx.run_ui(egui::RawInput { events, time: Some(time), screen_rect, focused: true, ..Default::default() }, |ui| {
-            got.0 = widgets::range_field(ui, "f", value, 0.0..=1000.0, "%", 2, 80.0);
-            got.1 = ui.min_rect();
-        });
+        let mut out = ctx.run_ui(
+            egui::RawInput {
+                events,
+                time: Some(time),
+                screen_rect,
+                focused: true,
+                ..Default::default()
+            },
+            |ui| {
+                got.0 = widgets::range_field(ui, "f", value, 0.0..=1000.0, "%", 2, 80.0);
+                got.1 = ui.min_rect();
+            },
+        );
         out.textures_delta.clear();
         got
     };
-    let key = |key| Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers: Modifiers::NONE };
-    let button = |pos, pressed| Event::PointerButton { pos, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
+    let key = |key| Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers: Modifiers::NONE,
+    };
+    let button = |pos, pressed| Event::PointerButton {
+        pos,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    };
     // Click into the field showing 100 %.
     let at = frame(100.0, vec![]).1.center();
     frame(100.0, vec![Event::PointerMoved(at), button(at, true)]);
@@ -59,13 +79,29 @@ impl Field {
     fn new() -> Self {
         let ctx = egui::Context::default();
         crate::theme::install_fonts(&ctx);
-        Self { ctx, time: 0.0, rect: Cell::new(Rect::NOTHING), id: Cell::new(egui::Id::NULL), focused: true }
+        Self {
+            ctx,
+            time: 0.0,
+            rect: Cell::new(Rect::NOTHING),
+            id: Cell::new(egui::Id::NULL),
+            focused: true,
+        }
     }
 
-    fn frame(&mut self, events: Vec<Event>, draw: &dyn Fn(&mut egui::Ui) -> Option<f64>) -> Option<f64> {
+    fn frame(
+        &mut self,
+        events: Vec<Event>,
+        draw: &dyn Fn(&mut egui::Ui) -> Option<f64>,
+    ) -> Option<f64> {
         self.time += 0.05;
         let screen_rect = Some(Rect::from_min_size(Pos2::ZERO, vec2(400.0, 200.0)));
-        let input = egui::RawInput { events, time: Some(self.time), screen_rect, focused: self.focused, ..Default::default() };
+        let input = egui::RawInput {
+            events,
+            time: Some(self.time),
+            screen_rect,
+            focused: self.focused,
+            ..Default::default()
+        };
         let mut got = None;
         let mut out = self.ctx.run_ui(input, |ui| {
             self.id.set(ui.id().with("f"));
@@ -77,19 +113,39 @@ impl Field {
     }
 
     fn num(&mut self, events: Vec<Event>) -> Option<f64> {
-        self.frame(events, &|ui| widgets::num_field(ui, "f", Some(100.0), Unit::Pixels, 80.0))
+        self.frame(events, &|ui| {
+            widgets::num_field(ui, "f", Some(100.0), Unit::Pixels, 80.0)
+        })
     }
 
     fn click(&self, count: usize) -> Vec<Event> {
         let at = self.rect.get().center();
-        let button = |pressed| Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE };
-        std::iter::once(Event::PointerMoved(at)).chain((0..count).flat_map(|_| [button(true), button(false)])).collect()
+        let button = |pressed| Event::PointerButton {
+            pos: at,
+            button: PointerButton::Primary,
+            pressed,
+            modifiers: Modifiers::NONE,
+        };
+        std::iter::once(Event::PointerMoved(at))
+            .chain((0..count).flat_map(|_| [button(true), button(false)]))
+            .collect()
     }
 
     fn text_point(&self, text: &str, index: usize, margin: f32) -> Pos2 {
-        let galley = self.ctx.fonts_mut(|f| f.layout_no_wrap(text.to_owned(), egui::FontId::proportional(12.5), egui::Color32::BLACK));
-        let x = galley.pos_from_cursor(egui::text::CCursor::new(index)).left();
-        Pos2::new(self.rect.get().left() + margin + x + 0.1, self.rect.get().center().y)
+        let galley = self.ctx.fonts_mut(|f| {
+            f.layout_no_wrap(
+                text.to_owned(),
+                egui::FontId::proportional(12.5),
+                egui::Color32::BLACK,
+            )
+        });
+        let x = galley
+            .pos_from_cursor(egui::text::CCursor::new(index))
+            .left();
+        Pos2::new(
+            self.rect.get().left() + margin + x + 0.1,
+            self.rect.get().center().y,
+        )
     }
 
     /// The selected character range of the field's text.
@@ -105,7 +161,13 @@ fn enter() -> Event {
 }
 
 fn key(key: Key, modifiers: Modifiers) -> Event {
-    Event::Key { key, physical_key: None, pressed: true, repeat: false, modifiers }
+    Event::Key {
+        key,
+        physical_key: None,
+        pressed: true,
+        repeat: false,
+        modifiers,
+    }
 }
 
 #[test]
@@ -117,10 +179,14 @@ fn math_before_the_unit_suffix_evaluates_in_every_unit() {
         let shown = u.format(u.to_pt(12.0));
         // "12 mm" with "*2" typed after the number, before the suffix.
         let typed = shown.replacen(&u.number(u.to_pt(12.0)), "12*2", 1);
-        let v = u.parse(&typed).unwrap_or_else(|| panic!("{u:?}: `{typed}`"));
+        let v = u
+            .parse(&typed)
+            .unwrap_or_else(|| panic!("{u:?}: `{typed}`"));
         assert!((v - u.to_pt(24.0)).abs() < 1e-9, "{u:?}: `{typed}` → {v}");
         let typed = shown.replacen(&u.number(u.to_pt(12.0)), "12/4", 1);
-        let v = u.parse(&typed).unwrap_or_else(|| panic!("{u:?}: `{typed}`"));
+        let v = u
+            .parse(&typed)
+            .unwrap_or_else(|| panic!("{u:?}: `{typed}`"));
         assert!((v - u.to_pt(3.0)).abs() < 1e-9, "{u:?}: `{typed}` → {v}");
     }
     // The suffix measures the expression; units given in it still win.
@@ -141,7 +207,11 @@ fn focus_selects_the_whole_field_so_typing_replaces_it() {
     f.num(vec![]);
     f.num(f.click(1));
     f.num(vec![]);
-    assert_eq!(f.selection(), Some((0, "100 px".len())), "the unit is selected too");
+    assert_eq!(
+        f.selection(),
+        Some((0, "100 px".len())),
+        "the unit is selected too"
+    );
     f.num(vec![Event::Text("1080/2".into())]);
     assert_eq!(f.num(vec![enter()]), Some(540.0));
 }
@@ -157,7 +227,11 @@ fn double_click_selects_the_whole_field() {
     f.time += 1.0;
     f.num(f.click(1));
     f.num(vec![]);
-    assert!(f.selection().is_some_and(|(a, b)| a == b), "{:?}", f.selection());
+    assert!(
+        f.selection().is_some_and(|(a, b)| a == b),
+        "{:?}",
+        f.selection()
+    );
     f.num(f.click(2));
     f.num(vec![]);
     assert_eq!(f.selection(), Some((0, "100 px".len())));
@@ -183,18 +257,36 @@ fn bare_numbers_in_picas_fields_are_points_when_the_preference_says_so() {
     let mut f = Field::new();
     let typed = |f: &mut Field, u: Unit, text: &str| {
         let pt = Cell::new(u.to_pt(4.0));
-        let draw = |ui: &mut egui::Ui| widgets::num_field(ui, "f", Some(pt.get()), u, 80.0).inspect(|&v| pt.set(v));
+        let draw = |ui: &mut egui::Ui| {
+            widgets::num_field(ui, "f", Some(pt.get()), u, 80.0).inspect(|&v| pt.set(v))
+        };
         f.frame(vec![], &draw);
         f.frame(f.click(1), &draw);
         f.frame(vec![Event::Text(text.into())], &draw);
         f.frame(vec![enter()], &draw)
     };
     let (pc, mm) = (Unit::Picas, Unit::Millimeters);
-    assert_eq!(typed(&mut f, pc, "12"), Some(12.0), "on by default: points in a picas field");
-    assert_eq!(typed(&mut f, pc, "2p6"), Some(30.0), "picas and points as typed");
+    assert_eq!(
+        typed(&mut f, pc, "12"),
+        Some(12.0),
+        "on by default: points in a picas field"
+    );
+    assert_eq!(
+        typed(&mut f, pc, "2p6"),
+        Some(30.0),
+        "picas and points as typed"
+    );
     assert_eq!(typed(&mut f, pc, "1in"), Some(72.0), "a typed unit wins");
-    assert_eq!(typed(&mut f, pc, "10+5"), Some(15.0), "arithmetic in points too");
-    assert_eq!(typed(&mut f, mm, "12"), Some(mm.to_pt(12.0)), "a millimetre field keeps millimetres");
+    assert_eq!(
+        typed(&mut f, pc, "10+5"),
+        Some(15.0),
+        "arithmetic in points too"
+    );
+    assert_eq!(
+        typed(&mut f, mm, "12"),
+        Some(mm.to_pt(12.0)),
+        "a millimetre field keeps millimetres"
+    );
     widgets::set_bare_numbers_are_points(&f.ctx, false);
     assert_eq!(typed(&mut f, pc, "12"), Some(pc.to_pt(12.0)), "off: picas");
     assert_eq!(typed(&mut f, mm, "12"), Some(mm.to_pt(12.0)));
@@ -208,9 +300,16 @@ fn arrow_keys_step_a_focused_field() {
     let mut f = Field::new();
     let u = Unit::Millimeters;
     let mm = Cell::new(4.0);
-    let draw = |ui: &mut egui::Ui| widgets::num_field(ui, "f", Some(u.to_pt(mm.get())), u, 80.0).inspect(|&v| mm.set(u.from_pt(v)));
+    let draw = |ui: &mut egui::Ui| {
+        widgets::num_field(ui, "f", Some(u.to_pt(mm.get())), u, 80.0)
+            .inspect(|&v| mm.set(u.from_pt(v)))
+    };
     f.frame(vec![], &draw);
-    assert_eq!(f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &draw), None, "unfocused");
+    assert_eq!(
+        f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &draw),
+        None,
+        "unfocused"
+    );
     f.frame(f.click(1), &draw);
     f.frame(vec![], &draw);
     // The window needn't report keyboard focus: the field has egui's.
@@ -221,10 +320,21 @@ fn arrow_keys_step_a_focused_field() {
         (Key::ArrowDown, Modifiers::COMMAND, 14.9),
         (Key::ArrowDown, Modifiers::NONE, 13.9),
     ] {
-        assert!(f.frame(vec![key(k, mods)], &draw).is_some(), "{k:?} {mods:?}");
-        assert!((mm.get() - want).abs() < 1e-6, "{k:?} {mods:?}: {}", mm.get());
+        assert!(
+            f.frame(vec![key(k, mods)], &draw).is_some(),
+            "{k:?} {mods:?}"
+        );
+        assert!(
+            (mm.get() - want).abs() < 1e-6,
+            "{k:?} {mods:?}: {}",
+            mm.get()
+        );
     }
-    assert_eq!(f.selection(), Some((0, "13.9 mm".len())), "the new value is selected");
+    assert_eq!(
+        f.selection(),
+        Some((0, "13.9 mm".len())),
+        "the new value is selected"
+    );
     // Enter after the steps commits nothing more.
     assert_eq!(f.frame(vec![enter()], &draw), None);
 }
@@ -237,21 +347,41 @@ fn arrow_keys_step_plain_fields() {
     f.frame(vec![], &angle);
     f.frame(f.click(1), &angle);
     f.frame(vec![], &angle);
-    assert_eq!(f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &angle), Some(11.0));
-    assert_eq!(f.frame(vec![key(Key::ArrowDown, Modifiers::SHIFT)], &angle), Some(1.0));
+    assert_eq!(
+        f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &angle),
+        Some(11.0)
+    );
+    assert_eq!(
+        f.frame(vec![key(Key::ArrowDown, Modifiers::SHIFT)], &angle),
+        Some(1.0)
+    );
     // A count ignores the tenth.
     let mut f = Field::new();
     let count = |ui: &mut egui::Ui| widgets::plain_field(ui, "f", 3.0, "", 0, 80.0);
     f.frame(vec![], &count);
     f.frame(f.click(1), &count);
     f.frame(vec![], &count);
-    assert_eq!(f.frame(vec![key(Key::ArrowUp, Modifiers::COMMAND)], &count), None);
-    assert_eq!(f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &count), Some(4.0));
+    assert_eq!(
+        f.frame(vec![key(Key::ArrowUp, Modifiers::COMMAND)], &count),
+        None
+    );
+    assert_eq!(
+        f.frame(vec![key(Key::ArrowUp, Modifiers::NONE)], &count),
+        Some(4.0)
+    );
 }
 
 /// A wheel turn of `dy` (`unit`s, up positive) with `modifiers`, the pointer at `at`.
 fn wheel(at: Pos2, unit: egui::MouseWheelUnit, dy: f32, modifiers: Modifiers) -> Vec<Event> {
-    vec![Event::PointerMoved(at), Event::MouseWheel { unit, delta: vec2(0.0, dy), phase: egui::TouchPhase::Move, modifiers }]
+    vec![
+        Event::PointerMoved(at),
+        Event::MouseWheel {
+            unit,
+            delta: vec2(0.0, dy),
+            phase: egui::TouchPhase::Move,
+            modifiers,
+        },
+    ]
 }
 
 /// The mouse wheel over a focused numeric field steps it as ↑/↓ do (#485): a notch a step, Shift
@@ -263,32 +393,72 @@ fn the_wheel_steps_a_focused_field_under_the_pointer() {
     let mut f = Field::new();
     let u = Unit::Millimeters;
     let mm = Cell::new(4.0);
-    let draw = |ui: &mut egui::Ui| widgets::num_field(ui, "f", Some(u.to_pt(mm.get())), u, 80.0).inspect(|&v| mm.set(u.from_pt(v)));
+    let draw = |ui: &mut egui::Ui| {
+        widgets::num_field(ui, "f", Some(u.to_pt(mm.get())), u, 80.0)
+            .inspect(|&v| mm.set(u.from_pt(v)))
+    };
     f.frame(vec![], &draw);
     let at = f.rect.get().center();
-    assert_eq!(f.frame(wheel(at, Line, 1.0, Modifiers::NONE), &draw), None, "unfocused");
+    assert_eq!(
+        f.frame(wheel(at, Line, 1.0, Modifiers::NONE), &draw),
+        None,
+        "unfocused"
+    );
     f.frame(f.click(1), &draw);
     f.frame(vec![], &draw);
-    for (dy, mods, want) in
-        [(1.0, Modifiers::NONE, 5.0), (2.0, Modifiers::SHIFT, 25.0), (-1.0, Modifiers::COMMAND, 24.9), (-1.0, Modifiers::NONE, 23.9)]
-    {
-        assert!(f.frame(wheel(at, Line, dy, mods), &draw).is_some(), "{dy} {mods:?}");
-        assert!((mm.get() - want).abs() < 1e-6, "{dy} {mods:?}: {}", mm.get());
+    for (dy, mods, want) in [
+        (1.0, Modifiers::NONE, 5.0),
+        (2.0, Modifiers::SHIFT, 25.0),
+        (-1.0, Modifiers::COMMAND, 24.9),
+        (-1.0, Modifiers::NONE, 23.9),
+    ] {
+        assert!(
+            f.frame(wheel(at, Line, dy, mods), &draw).is_some(),
+            "{dy} {mods:?}"
+        );
+        assert!(
+            (mm.get() - want).abs() < 1e-6,
+            "{dy} {mods:?}: {}",
+            mm.get()
+        );
     }
-    assert_eq!(f.selection(), Some((0, "23.9 mm".len())), "the new value is selected");
+    assert_eq!(
+        f.selection(),
+        Some((0, "23.9 mm".len())),
+        "the new value is selected"
+    );
     // Points: a step for each line's worth, what is left carried to the next turn.
     let line = f.ctx.options(|o| o.input_options.line_scroll_speed);
-    assert_eq!(f.frame(wheel(at, Point, line * 0.6, Modifiers::NONE), &draw), None);
-    assert!(f.frame(wheel(at, Point, line * 0.6, Modifiers::NONE), &draw).is_some());
+    assert_eq!(
+        f.frame(wheel(at, Point, line * 0.6, Modifiers::NONE), &draw),
+        None
+    );
+    assert!(
+        f.frame(wheel(at, Point, line * 0.6, Modifiers::NONE), &draw)
+            .is_some()
+    );
     assert!((mm.get() - 24.9).abs() < 1e-6, "{}", mm.get());
-    assert_eq!(f.frame(wheel(Pos2::new(390.0, 190.0), Line, 1.0, Modifiers::NONE), &draw), None, "the pointer elsewhere");
+    assert_eq!(
+        f.frame(
+            wheel(Pos2::new(390.0, 190.0), Line, 1.0, Modifiers::NONE),
+            &draw
+        ),
+        None,
+        "the pointer elsewhere"
+    );
     // Plain fields (degrees, percent, counts) too.
     let mut f = Field::new();
     let count = |ui: &mut egui::Ui| widgets::plain_field(ui, "f", 3.0, "", 0, 80.0);
     f.frame(vec![], &count);
     f.frame(f.click(1), &count);
     f.frame(vec![], &count);
-    assert_eq!(f.frame(wheel(f.rect.get().center(), Line, -1.0, Modifiers::NONE), &count), Some(2.0));
+    assert_eq!(
+        f.frame(
+            wheel(f.rect.get().center(), Line, -1.0, Modifiers::NONE),
+            &count
+        ),
+        Some(2.0)
+    );
 }
 
 /// The wheel over a focused field steps it and leaves the panel where it is; over an unfocused one
@@ -299,11 +469,13 @@ fn the_wheel_scrolls_the_panel_unless_over_the_focused_field() {
         let mut f = Field::new();
         let offset = Cell::new(0.0);
         let draw = |ui: &mut egui::Ui| {
-            let out = egui::ScrollArea::vertical().max_height(60.0).show(ui, |ui| {
-                let v = widgets::plain_field(ui, "f", 10.0, "", 0, 80.0);
-                ui.add_space(600.0);
-                v
-            });
+            let out = egui::ScrollArea::vertical()
+                .max_height(60.0)
+                .show(ui, |ui| {
+                    let v = widgets::plain_field(ui, "f", 10.0, "", 0, 80.0);
+                    ui.add_space(600.0);
+                    v
+                });
             offset.set(out.state.offset.y);
             out.inner
         };
@@ -314,8 +486,19 @@ fn the_wheel_scrolls_the_panel_unless_over_the_focused_field() {
                 f.click(1)
                     .into_iter()
                     .map(|e| {
-                        if let Event::PointerButton { button, pressed, modifiers, .. } = e {
-                            Event::PointerButton { pos: at, button, pressed, modifiers }
+                        if let Event::PointerButton {
+                            button,
+                            pressed,
+                            modifiers,
+                            ..
+                        } = e
+                        {
+                            Event::PointerButton {
+                                pos: at,
+                                button,
+                                pressed,
+                                modifiers,
+                            }
                         } else {
                             Event::PointerMoved(at)
                         }
@@ -324,14 +507,21 @@ fn the_wheel_scrolls_the_panel_unless_over_the_focused_field() {
                 &draw,
             );
         }
-        let stepped = f.frame(wheel(at, egui::MouseWheelUnit::Line, -2.0, Modifiers::NONE), &draw);
+        let stepped = f.frame(
+            wheel(at, egui::MouseWheelUnit::Line, -2.0, Modifiers::NONE),
+            &draw,
+        );
         for _ in 0..20 {
             f.frame(vec![], &draw);
         }
         if focus {
             assert_eq!((stepped, offset.get()), (Some(8.0), 0.0));
         } else {
-            assert!(stepped.is_none() && offset.get() > 0.0, "{stepped:?} {}", offset.get());
+            assert!(
+                stepped.is_none() && offset.get() > 0.0,
+                "{stepped:?} {}",
+                offset.get()
+            );
         }
     }
 }
@@ -350,7 +540,12 @@ fn field_text(mode: usize) -> &'static str {
 }
 
 fn pointer_button(at: Pos2, pressed: bool) -> Event {
-    Event::PointerButton { pos: at, button: PointerButton::Primary, pressed, modifiers: Modifiers::NONE }
+    Event::PointerButton {
+        pos: at,
+        button: PointerButton::Primary,
+        pressed,
+        modifiers: Modifiers::NONE,
+    }
 }
 
 #[test]
@@ -369,14 +564,29 @@ fn numeric_drag_keeps_its_press_position_with_or_without_prior_focus() {
                 let margin = if mode == 3 { 5.0 } else { 7.0 };
                 let at = f.text_point(field_text(mode), start, margin);
                 let to = f.text_point(field_text(mode), end, margin);
-                f.frame(vec![Event::PointerMoved(at), pointer_button(at, true)], &draw);
-                assert_eq!(f.selection(), Some((start, start)), "mode {mode}, prior focus {focused}");
+                f.frame(
+                    vec![Event::PointerMoved(at), pointer_button(at, true)],
+                    &draw,
+                );
+                assert_eq!(
+                    f.selection(),
+                    Some((start, start)),
+                    "mode {mode}, prior focus {focused}"
+                );
                 f.frame(vec![], &draw); // Holding still must leave the press position alone.
                 f.frame(vec![Event::PointerMoved(to)], &draw);
                 f.frame(vec![pointer_button(to, false)], &draw);
-                assert_eq!(f.selection(), Some((1, 4)), "mode {mode}, {start}->{end}, prior focus {focused}");
+                assert_eq!(
+                    f.selection(),
+                    Some((1, 4)),
+                    "mode {mode}, {start}->{end}, prior focus {focused}"
+                );
                 f.frame(vec![Event::Text("7".into())], &draw);
-                assert_eq!(f.frame(vec![enter()], &draw), Some(1756.0), "replace only the dragged text");
+                assert_eq!(
+                    f.frame(vec![enter()], &draw),
+                    Some(1756.0),
+                    "replace only the dragged text"
+                );
             }
         }
     }
@@ -388,7 +598,10 @@ fn a_new_numeric_click_selects_all_on_release_without_moving_its_press_caret() {
     f.num(vec![]);
     let at = f.rect.get().center();
     f.num(vec![Event::PointerMoved(at), pointer_button(at, true)]);
-    assert!(f.selection().is_some_and(|(a, b)| a == b), "a hold can still start a text drag");
+    assert!(
+        f.selection().is_some_and(|(a, b)| a == b),
+        "a hold can still start a text drag"
+    );
     f.num(vec![]);
     assert!(f.selection().is_some_and(|(a, b)| a == b));
     f.num(vec![pointer_button(at, false)]);
@@ -405,6 +618,10 @@ fn keyboard_focus_keeps_selecting_the_entire_numeric_field() {
         f.frame(vec![], &draw);
         f.frame(vec![key(Key::Tab, Modifiers::NONE)], &draw);
         f.frame(vec![], &draw);
-        assert_eq!(f.selection(), Some((0, field_text(mode).chars().count())), "mode {mode}");
+        assert_eq!(
+            f.selection(),
+            Some((0, field_text(mode).chars().count())),
+            "mode {mode}"
+        );
     }
 }

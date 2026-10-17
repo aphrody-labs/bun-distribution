@@ -76,14 +76,18 @@ const MAX_TOKENS_CEILING: u32 = 8192;
 #[derive(Debug, Clone, Deserialize, Serialize, JsonSchema)]
 pub(crate) struct OcrReadRequest {
     /// Path to the image on the machine running the MCP server.
-    #[schemars(description = "Filesystem path to the image to read. Mutually exclusive with \
-                              image_base64; exactly one of the two is required.")]
+    #[schemars(
+        description = "Filesystem path to the image to read. Mutually exclusive with \
+                              image_base64; exactly one of the two is required."
+    )]
     #[serde(default)]
     pub image_path: Option<String>,
 
     /// Inline image bytes, standard base64 (padded). Max 16 MiB decoded.
-    #[schemars(description = "Base64-encoded image bytes (standard alphabet, padded). Max 16 \
-                              MiB after decode. Mutually exclusive with image_path.")]
+    #[schemars(
+        description = "Base64-encoded image bytes (standard alphabet, padded). Max 16 \
+                              MiB after decode. Mutually exclusive with image_path."
+    )]
     #[serde(default)]
     pub image_base64: Option<String>,
 
@@ -95,16 +99,20 @@ pub(crate) struct OcrReadRequest {
     pub model: Option<String>,
 
     /// OCR execution engine to select ("auto", "ppocr", "vlm").
-    #[schemars(description = "OCR execution engine: 'auto' (default, selects based on model), \
+    #[schemars(
+        description = "OCR execution engine: 'auto' (default, selects based on model), \
                               'ppocr' (deterministic fast ONNX pipeline), or 'vlm' \
-                              (vision-language model through llama.cpp).")]
+                              (vision-language model through llama.cpp)."
+    )]
     #[serde(default)]
     pub engine: Option<String>,
 
     /// Override the trained prompt. Rarely correct — see the crate docs.
-    #[schemars(description = "Override the model's trained prompt. Leave unset: the prompt is \
+    #[schemars(
+        description = "Override the model's trained prompt. Leave unset: the prompt is \
                               not interchangeable between model families, and a wrong prompt \
-                              looks exactly like a page with no text.")]
+                              looks exactly like a page with no text."
+    )]
     #[serde(default)]
     pub prompt: Option<String>,
 
@@ -114,8 +122,10 @@ pub(crate) struct OcrReadRequest {
     pub max_tokens: Option<u32>,
 
     /// Return the model's raw output alongside the markdown, for auditing.
-    #[schemars(description = "Include the model's raw stdout in the response, for auditing a \
-                              surprising result. Default false.")]
+    #[schemars(
+        description = "Include the model's raw stdout in the response, for auditing a \
+                              surprising result. Default false."
+    )]
     #[serde(default)]
     pub keep_raw: Option<bool>,
 }
@@ -140,7 +150,7 @@ fn resolve_engine(
                 .unwrap_or(DEFAULT_PPOCR_MODEL)
                 .to_owned();
             Ok((OcrEngine::PpOcr, model))
-        },
+        }
         "vlm" => {
             let model = model_param
                 .map(str::trim)
@@ -148,7 +158,7 @@ fn resolve_engine(
                 .unwrap_or(DEFAULT_VLM_MODEL)
                 .to_owned();
             Ok((OcrEngine::Vlm, model))
-        },
+        }
         "auto" => {
             if let Some(m) = model_param.map(str::trim).filter(|m| !m.is_empty()) {
                 if m.to_lowercase().contains("ppocr") {
@@ -159,8 +169,10 @@ fn resolve_engine(
             } else {
                 Ok((OcrEngine::Vlm, DEFAULT_VLM_MODEL.to_owned()))
             }
-        },
-        other => Err(format!("unknown engine '{other}': expected 'auto', 'ppocr', or 'vlm'")),
+        }
+        other => Err(format!(
+            "unknown engine '{other}': expected 'auto', 'ppocr', or 'vlm'"
+        )),
     }
 }
 
@@ -188,10 +200,16 @@ fn resolve_source(req: &OcrReadRequest) -> Result<Source, String> {
         (Some(path), None) => {
             let path = std::path::PathBuf::from(path);
             if !path.is_file() {
-                return Err(format!("image_path {} is not a readable file", path.display()));
+                return Err(format!(
+                    "image_path {} is not a readable file",
+                    path.display()
+                ));
             }
-            Ok(Source { path, _scratch: None })
-        },
+            Ok(Source {
+                path,
+                _scratch: None,
+            })
+        }
         (None, Some(encoded)) => {
             let bytes = base64::engine::general_purpose::STANDARD
                 .decode(encoded.as_bytes())
@@ -200,7 +218,10 @@ fn resolve_source(req: &OcrReadRequest) -> Result<Source, String> {
                 return Err("image payload is empty after base64 decode".to_owned());
             }
             if bytes.len() > MAX_IMAGE_BYTES {
-                return Err(format!("image is {}B (> max {MAX_IMAGE_BYTES}B)", bytes.len()));
+                return Err(format!(
+                    "image is {}B (> max {MAX_IMAGE_BYTES}B)",
+                    bytes.len()
+                ));
             }
             let dir =
                 tempfile::tempdir().map_err(|e| format!("cannot create a work directory: {e}"))?;
@@ -209,8 +230,11 @@ fn resolve_source(req: &OcrReadRequest) -> Result<Source, String> {
             let path = dir.path().join("page.png");
             std::fs::write(&path, &bytes)
                 .map_err(|e| format!("cannot stage the inline image: {e}"))?;
-            Ok(Source { path, _scratch: Some(dir) })
-        },
+            Ok(Source {
+                path,
+                _scratch: Some(dir),
+            })
+        }
         (Some(_), Some(_)) => Err("image_path and image_base64 are mutually exclusive".to_owned()),
         (None, None) => Err("one of image_path or image_base64 is required".to_owned()),
     }
@@ -283,7 +307,7 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
                 Ok(Err(err)) => return error_envelope("OCR_BACKEND_ERROR", err.to_string()),
                 Err(err) => {
                     return error_envelope("OCR_INTERNAL", format!("OCR task panicked: {err}"));
-                },
+                }
             };
 
             let texts = regions
@@ -291,14 +315,25 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
                 .map(|r| r.recognition.decoded.text.trim())
                 .filter(|t| !t.is_empty())
                 .collect::<Vec<_>>();
-            let markdown = if texts.is_empty() { None } else { Some(texts.join("\n\n")) };
+            let markdown = if texts.is_empty() {
+                None
+            } else {
+                Some(texts.join("\n\n"))
+            };
 
-            let findings =
-                markdown.as_deref().map(aphrody_ocr_core::audit::audit_text).unwrap_or_default();
-            let blocking = findings.iter().any(aphrody_ocr_core::audit::Finding::is_blocking);
+            let findings = markdown
+                .as_deref()
+                .map(aphrody_ocr_core::audit::audit_text)
+                .unwrap_or_default();
+            let blocking = findings
+                .iter()
+                .any(aphrody_ocr_core::audit::Finding::is_blocking);
 
             let raw = if keep_raw {
-                let blocks = regions.into_iter().map(aphrody_ocr::PpOcr::block).collect::<Vec<_>>();
+                let blocks = regions
+                    .into_iter()
+                    .map(aphrody_ocr::PpOcr::block)
+                    .collect::<Vec<_>>();
                 serde_json::to_string(&blocks).ok()
             } else {
                 None
@@ -315,7 +350,7 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
                 "runner": runner_name,
                 "raw": raw,
             }))
-        },
+        }
         OcrEngine::Vlm => {
             let mut options = aphrody_ocr_vlm::OcrOptions::for_model(&model);
             if let Some(prompt) = req.prompt.as_deref() {
@@ -355,7 +390,7 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
                 Ok(Err(err)) => return error_envelope("OCR_BACKEND_ERROR", err.to_string()),
                 Err(err) => {
                     return error_envelope("OCR_INTERNAL", format!("OCR task panicked: {err}"));
-                },
+                }
             };
 
             // `markdown: null` + `textless: true` is the whole point of this tool: a
@@ -374,8 +409,12 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
             // detector that removes what it flags leaves no trace of what it removed
             // (CLAUDE.md §7). The caller gets the text, the verdict, and enough detail
             // to decide.
-            let findings = markdown.map(aphrody_ocr_core::audit::audit_text).unwrap_or_default();
-            let blocking = findings.iter().any(aphrody_ocr_core::audit::Finding::is_blocking);
+            let findings = markdown
+                .map(aphrody_ocr_core::audit::audit_text)
+                .unwrap_or_default();
+            let blocking = findings
+                .iter()
+                .any(aphrody_ocr_core::audit::Finding::is_blocking);
 
             pretty(&json!({
                 "image": page.image.display().to_string(),
@@ -390,7 +429,7 @@ pub(crate) async fn read(req: OcrReadRequest) -> String {
                 "runner": binary,
                 "raw": page.raw,
             }))
-        },
+        }
     }
 }
 
@@ -419,10 +458,16 @@ mod tests {
         let stuck = "the the the the the the the the the the";
         let findings = aphrody_ocr_core::audit::audit_text(stuck);
         assert!(
-            findings.iter().any(|f| matches!(f, aphrody_ocr_core::audit::Finding::Loop { .. })),
+            findings
+                .iter()
+                .any(|f| matches!(f, aphrody_ocr_core::audit::Finding::Loop { .. })),
             "a stuck generation must be reported: {findings:?}"
         );
-        assert!(findings.iter().any(aphrody_ocr_core::audit::Finding::is_blocking));
+        assert!(
+            findings
+                .iter()
+                .any(aphrody_ocr_core::audit::Finding::is_blocking)
+        );
     }
 
     /// And the audit must not cry wolf: ordinary prose has to come back clean,
@@ -432,7 +477,9 @@ mod tests {
         let clean = "The quick brown fox jumps over the lazy dog.";
         let findings = aphrody_ocr_core::audit::audit_text(clean);
         assert!(
-            !findings.iter().any(aphrody_ocr_core::audit::Finding::is_blocking),
+            !findings
+                .iter()
+                .any(aphrody_ocr_core::audit::Finding::is_blocking),
             "ordinary prose must not be flagged: {findings:?}"
         );
     }
@@ -443,7 +490,10 @@ mod tests {
     #[test]
     fn a_textless_page_is_not_audited_into_a_finding() {
         let none = aphrody_ocr_vlm::PageText::None;
-        let findings = none.markdown().map(aphrody_ocr_core::audit::audit_text).unwrap_or_default();
+        let findings = none
+            .markdown()
+            .map(aphrody_ocr_core::audit::audit_text)
+            .unwrap_or_default();
         assert!(findings.is_empty(), "{findings:?}");
     }
 
@@ -451,10 +501,19 @@ mod tests {
     fn schema_exposes_the_documented_fields() {
         let schema = rmcp::schemars::schema_for!(OcrReadRequest);
         let json = serde_json::to_string(&schema).expect("schema serialise");
-        for field in
-            ["image_path", "image_base64", "model", "engine", "prompt", "max_tokens", "keep_raw"]
-        {
-            assert!(json.contains(&format!("\"{field}\"")), "schema missing {field}: {json}");
+        for field in [
+            "image_path",
+            "image_base64",
+            "model",
+            "engine",
+            "prompt",
+            "max_tokens",
+            "keep_raw",
+        ] {
+            assert!(
+                json.contains(&format!("\"{field}\"")),
+                "schema missing {field}: {json}"
+            );
         }
     }
 
@@ -566,10 +625,15 @@ mod tests {
         let none = aphrody_ocr_vlm::PageText::None;
         assert!(none.markdown().is_none());
         let body = json!({ "markdown": none.markdown(), "textless": none.markdown().is_none() });
-        assert!(body["markdown"].is_null(), "textless page must serialise as null: {body}");
+        assert!(
+            body["markdown"].is_null(),
+            "textless page must serialise as null: {body}"
+        );
         assert_eq!(body["textless"], true);
 
-        let some = aphrody_ocr_vlm::PageText::Text { markdown: "# Plate".to_owned() };
+        let some = aphrody_ocr_vlm::PageText::Text {
+            markdown: "# Plate".to_owned(),
+        };
         let body = json!({ "markdown": some.markdown(), "textless": some.markdown().is_none() });
         assert_eq!(body["markdown"], "# Plate");
         assert_eq!(body["textless"], false);

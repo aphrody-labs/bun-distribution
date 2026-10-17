@@ -14,7 +14,12 @@ pub(crate) struct Reader<'a> {
 impl<'a> Reader<'a> {
     #[inline]
     pub fn new(data: &'a [u8]) -> Self {
-        let mut r = Self { data, next: 0, cache: 0, avail: 0 };
+        let mut r = Self {
+            data,
+            next: 0,
+            cache: 0,
+            avail: 0,
+        };
         r.refill();
         r
     }

@@ -52,7 +52,16 @@ impl LiveStroke {
         let scale = buffer_scale(params.clip, params.scale);
         let params = LiveParams { scale, ..params };
         let (w, h) = buffer_size(params.clip, scale);
-        LiveStroke { params, w, h, alpha: vec![0.0; w * h], placed: 0, last: None, dirty: None, texture: None }
+        LiveStroke {
+            params,
+            w,
+            h,
+            alpha: vec![0.0; w * h],
+            placed: 0,
+            last: None,
+            dirty: None,
+            texture: None,
+        }
     }
 
     /// Stroke coverage (0..1) at buffer pixel `(x, y)`; 0 outside.
@@ -60,7 +69,11 @@ impl LiveStroke {
         if x >= self.w {
             return 0.0;
         }
-        y.checked_mul(self.w).and_then(|i| i.checked_add(x)).and_then(|i| self.alpha.get(i)).copied().unwrap_or(0.0)
+        y.checked_mul(self.w)
+            .and_then(|i| i.checked_add(x))
+            .and_then(|i| self.alpha.get(i))
+            .copied()
+            .unwrap_or(0.0)
     }
 
     /// Buffer size (pixels) and pixels per screen point.
@@ -71,15 +84,28 @@ impl LiveStroke {
     /// Stamp the dabs of `points` (screen positions of the stroke's samples so far) not yet
     /// painted. Returns `true` when anything new was painted.
     pub fn stamp(&mut self, points: &[Pos2]) -> bool {
-        let Some(new) = points.get(self.placed..) else { return false };
+        let Some(new) = points.get(self.placed..) else {
+            return false;
+        };
         if new.is_empty() {
             return false;
         }
-        let LiveParams { clip, scale, r, hard, flow, density, .. } = self.params;
+        let LiveParams {
+            clip,
+            scale,
+            r,
+            hard,
+            flow,
+            density,
+            ..
+        } = self.params;
         let (r, hard) = ((r * scale) as f64, (hard * scale) as f64);
         let mut dabs = Vec::new();
         for q in new {
-            let q = Point::new(((q.x - clip.left()) * scale) as f64, ((q.y - clip.top()) * scale) as f64);
+            let q = Point::new(
+                ((q.x - clip.left()) * scale) as f64,
+                ((q.y - clip.top()) * scale) as f64,
+            );
             if push_dabs(&mut dabs, self.last, q, r) {
                 self.last = Some(q);
             }
@@ -97,7 +123,9 @@ impl LiveStroke {
                 continue;
             }
             for y in y0..y1 {
-                let Some(row) = self.alpha.get_mut(y * self.w + x0..y * self.w + x1) else { continue };
+                let Some(row) = self.alpha.get_mut(y * self.w + x0..y * self.w + x1) else {
+                    continue;
+                };
                 for (x, v) in (x0..x1).zip(row.iter_mut()) {
                     let dd = Point::new(x as f64 + 0.5, y as f64 + 0.5).dist(d);
                     if dd > r {
@@ -136,7 +164,8 @@ impl LiveStroke {
         match (&mut self.texture, self.dirty.take()) {
             (None, _) => {
                 let image = self.region((0, 0, self.w, self.h));
-                self.texture = Some(ctx.load_texture("brush-live-stroke", image, TextureOptions::LINEAR));
+                self.texture =
+                    Some(ctx.load_texture("brush-live-stroke", image, TextureOptions::LINEAR));
             }
             (Some(_), Some(rect)) => {
                 let image = self.region(rect);
@@ -153,26 +182,48 @@ impl LiveStroke {
 /// Pixels per screen point of a buffer covering `clip`: `want`, lowered so no edge exceeds
 /// [`MAX_SIDE`].
 fn buffer_scale(clip: Rect, want: f32) -> f32 {
-    let want = if want.is_finite() && want > 0.0 { want } else { 1.0 };
+    let want = if want.is_finite() && want > 0.0 {
+        want
+    } else {
+        1.0
+    };
     let long = clip.width().max(clip.height());
-    if long.is_finite() && long * want > MAX_SIDE as f32 { MAX_SIDE as f32 / long } else { want }
+    if long.is_finite() && long * want > MAX_SIDE as f32 {
+        MAX_SIDE as f32 / long
+    } else {
+        want
+    }
 }
 
 fn buffer_size(clip: Rect, scale: f32) -> (usize, usize) {
     let side = |v: f32| {
         let v = (v * scale).ceil();
-        if v.is_finite() { (v.max(1.0) as usize).min(MAX_SIDE) } else { 1 }
+        if v.is_finite() {
+            (v.max(1.0) as usize).min(MAX_SIDE)
+        } else {
+            1
+        }
     };
     (side(clip.width()), side(clip.height()))
 }
 
 /// Paint the live stroke whose samples so far are `points` (screen positions) into `painter`,
 /// keeping its buffer in `slot` (a new stroke, or new parameters, start it afresh).
-pub fn paint(slot: &mut Option<LiveStroke>, ctx: &egui::Context, painter: &egui::Painter, params: LiveParams, points: &[Pos2]) {
+pub fn paint(
+    slot: &mut Option<LiveStroke>,
+    ctx: &egui::Context,
+    painter: &egui::Painter,
+    params: LiveParams,
+    points: &[Pos2],
+) {
     let fresh = match slot {
         Some(s) => {
             // the same stroke when painted with the same parameters (at the scale it settled on)
-            let same = s.params == LiveParams { scale: buffer_scale(params.clip, params.scale), ..params };
+            let same = s.params
+                == LiveParams {
+                    scale: buffer_scale(params.clip, params.scale),
+                    ..params
+                };
             !same || points.len() < s.placed
         }
         None => true,
@@ -187,7 +238,12 @@ pub fn paint(slot: &mut Option<LiveStroke>, ctx: &egui::Context, painter: &egui:
     let (w, h, scale) = (s.w as f32, s.h as f32, s.params.scale);
     let rect = Rect::from_min_size(clip.min, egui::vec2(w / scale, h / scale));
     if let Some(t) = s.upload(ctx) {
-        painter.image(t.id(), rect, Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), Color32::WHITE);
+        painter.image(
+            t.id(),
+            rect,
+            Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)),
+            Color32::WHITE,
+        );
     }
 }
 
@@ -217,11 +273,19 @@ mod tests {
         s.stamp(&[pos2(20.0, 100.0)]);
         s.stamp(&[pos2(20.0, 100.0), pos2(380.0, 100.0)]);
         for x in 20..380 {
-            assert!(s.coverage(x, 100) > 0.99, "a gap at x = {x}: {}", s.coverage(x, 100));
+            assert!(
+                s.coverage(x, 100) > 0.99,
+                "a gap at x = {x}: {}",
+                s.coverage(x, 100)
+            );
         }
         // the feather: full inside the core, fading to nothing at the radius
         assert!(s.coverage(200, 104) > 0.99);
-        assert!((0.01..0.99).contains(&s.coverage(200, 108)), "{}", s.coverage(200, 108));
+        assert!(
+            (0.01..0.99).contains(&s.coverage(200, 108)),
+            "{}",
+            s.coverage(200, 108)
+        );
         assert_eq!(s.coverage(200, 111), 0.0);
     }
 
@@ -229,10 +293,21 @@ mod tests {
     /// committed stroke does).
     #[test]
     fn incremental_stamping_matches_painting_the_whole_path() {
-        let pts = [pos2(30.0, 40.0), pos2(200.0, 150.0), pos2(210.0, 152.0), pos2(390.0, 20.0)];
-        let mut once = LiveStroke::new(LiveParams { flow: 0.4, ..params() });
+        let pts = [
+            pos2(30.0, 40.0),
+            pos2(200.0, 150.0),
+            pos2(210.0, 152.0),
+            pos2(390.0, 20.0),
+        ];
+        let mut once = LiveStroke::new(LiveParams {
+            flow: 0.4,
+            ..params()
+        });
         once.stamp(&pts);
-        let mut steps = LiveStroke::new(LiveParams { flow: 0.4, ..params() });
+        let mut steps = LiveStroke::new(LiveParams {
+            flow: 0.4,
+            ..params()
+        });
         for n in 1..=pts.len() {
             steps.stamp(&pts[..n]);
         }
@@ -242,10 +317,18 @@ mod tests {
     #[test]
     fn hostile_input_paints_nothing_and_does_not_panic() {
         let mut s = LiveStroke::new(params());
-        s.stamp(&[pos2(f32::NAN, 3.0), pos2(f32::INFINITY, -1e30), pos2(-5000.0, 9000.0)]);
+        s.stamp(&[
+            pos2(f32::NAN, 3.0),
+            pos2(f32::INFINITY, -1e30),
+            pos2(-5000.0, 9000.0),
+        ]);
         assert!(s.alpha.iter().all(|a| *a == 0.0));
         // an enormous canvas is painted at a capped resolution
-        let big = LiveStroke::new(LiveParams { clip: Rect::from_min_size(Pos2::ZERO, vec2(1e6, 10.0)), scale: 2.0, ..params() });
+        let big = LiveStroke::new(LiveParams {
+            clip: Rect::from_min_size(Pos2::ZERO, vec2(1e6, 10.0)),
+            scale: 2.0,
+            ..params()
+        });
         assert!(big.w <= MAX_SIDE && big.h >= 1);
     }
 }

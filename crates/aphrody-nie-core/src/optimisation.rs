@@ -80,22 +80,54 @@ pub const BUILDS_BASARA: [ProjectionBuild; NB_BUILDS_BASARA as usize] = [
     ProjectionBuild {
         nom: "Muraille (Defender / Wall)",
         description: "Augmente la Pression et le Physique, diminue la Frappe et la Vitesse.",
-        multiplicateurs: [Some(0.7), None, None, Some(1.2), Some(1.25), Some(0.9), Some(1.1)],
+        multiplicateurs: [
+            Some(0.7),
+            None,
+            None,
+            Some(1.2),
+            Some(1.25),
+            Some(0.9),
+            Some(1.1),
+        ],
     },
     ProjectionBuild {
         nom: "Meneur (Playmaker)",
         description: "Augmente le Contrôle et la Technique, diminue la Frappe et la Pression.",
-        multiplicateurs: [Some(0.9), Some(1.25), Some(1.2), None, Some(0.9), None, Some(1.15)],
+        multiplicateurs: [
+            Some(0.9),
+            Some(1.25),
+            Some(1.2),
+            None,
+            Some(0.9),
+            None,
+            Some(1.15),
+        ],
     },
     ProjectionBuild {
         nom: "Voltigeur (Speedster)",
         description: "Augmente drastiquement la Vitesse, diminue la Pression.",
-        multiplicateurs: [Some(0.9), Some(1.1), Some(1.1), None, Some(0.8), Some(1.3), None],
+        multiplicateurs: [
+            Some(0.9),
+            Some(1.1),
+            Some(1.1),
+            None,
+            Some(0.8),
+            Some(1.3),
+            None,
+        ],
     },
     ProjectionBuild {
         nom: "Gardien Infranchissable (GK Wall)",
         description: "Augmente la Technique et le Physique, diminue drastiquement la Frappe.",
-        multiplicateurs: [Some(0.5), Some(0.8), Some(1.3), Some(1.15), Some(1.15), None, None],
+        multiplicateurs: [
+            Some(0.5),
+            Some(0.8),
+            Some(1.3),
+            Some(1.15),
+            Some(1.15),
+            None,
+            None,
+        ],
     },
 ];
 
@@ -125,7 +157,9 @@ pub struct ResultatBuild {
 /// `f64::round` (moitié à l'opposé de zéro) lui est identique.
 #[must_use]
 pub fn projeter_stats_build(base: StatBlock, type_build: u8) -> StatBlock {
-    let projection = BUILDS_BASARA.get(type_build as usize).unwrap_or(&BUILDS_BASARA[0]);
+    let projection = BUILDS_BASARA
+        .get(type_build as usize)
+        .unwrap_or(&BUILDS_BASARA[0]);
 
     let base_arr = base.as_array();
     let mut sortie = base_arr;
@@ -192,7 +226,10 @@ pub fn nom_passif(nom_fr: Option<&str>, nom_en: Option<&str>) -> String {
     fn non_vide(s: Option<&str>) -> Option<&str> {
         s.filter(|v| !v.is_empty())
     }
-    non_vide(nom_fr).or_else(|| non_vide(nom_en)).unwrap_or("Passif").to_string()
+    non_vide(nom_fr)
+        .or_else(|| non_vide(nom_en))
+        .unwrap_or("Passif")
+        .to_string()
 }
 
 /// Un joueur déjà résolu, prêt à être noté.
@@ -338,8 +375,11 @@ pub fn calculer_synergie_equipe(
     }
 
     let nb_joueurs = joueurs.len();
-    let ratio_positions =
-        if nb_joueurs > 0 { nb_positions_correctes as f64 / nb_joueurs as f64 } else { 0.0 };
+    let ratio_positions = if nb_joueurs > 0 {
+        nb_positions_correctes as f64 / nb_joueurs as f64
+    } else {
+        0.0
+    };
 
     // 1. Synergie de placement.
     if ratio_positions >= 0.9 {
@@ -369,8 +409,11 @@ pub fn calculer_synergie_equipe(
         }
     }
 
-    let ratio_element =
-        if nb_joueurs > 0 { compte_dominant as f64 / nb_joueurs as f64 } else { 0.0 };
+    let ratio_element = if nb_joueurs > 0 {
+        compte_dominant as f64 / nb_joueurs as f64
+    } else {
+        0.0
+    };
 
     if ratio_element >= 0.55 && element_dominant != "Void" {
         let element_fr = element_en_francais(element_dominant);
@@ -404,9 +447,15 @@ pub fn calculer_synergie_equipe(
 
     // 4. Passifs d'équipe.
     let compte = |nom: &str| -> usize {
-        ORDRE_ELEMENTS.iter().position(|e| *e == nom).map_or(0, |i| comptes_elements[i])
+        ORDRE_ELEMENTS
+            .iter()
+            .position(|e| *e == nom)
+            .map_or(0, |i| comptes_elements[i])
     };
-    let nb_df = joueurs.iter().filter(|j| j.position_terrain == "DF").count();
+    let nb_df = joueurs
+        .iter()
+        .filter(|j| j.position_terrain == "DF")
+        .count();
 
     let compteurs = compter_ordonne(joueurs.iter().flat_map(|j| j.passifs.iter().cloned()));
     for (nom, n) in &compteurs {
@@ -464,7 +513,10 @@ pub fn calculer_synergie_equipe(
         score_synergie += 15;
     }
 
-    if synergies_actives.iter().any(|s| s.nom == "Harmonie Tactique") {
+    if synergies_actives
+        .iter()
+        .any(|s| s.nom == "Harmonie Tactique")
+    {
         score_synergie += 10;
     }
 
@@ -580,7 +632,12 @@ mod tests {
         assert!(est_passif(None, Some("Passif"), None, None));
         assert!(est_passif(None, None, Some("Boost de Feu"), None));
         assert!(est_passif(None, None, None, Some("Fire BOOST")));
-        assert!(!est_passif(Some("Shoot"), Some("Tir"), Some("Tornade"), None));
+        assert!(!est_passif(
+            Some("Shoot"),
+            Some("Tir"),
+            Some("Tornade"),
+            None
+        ));
     }
 
     #[test]
@@ -605,8 +662,9 @@ mod tests {
 
     #[test]
     fn tous_bien_places_declenche_discipline_tactique() {
-        let equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF")).collect();
+        let equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF"))
+            .collect();
         let r = calculer_synergie_equipe(&equipe, None);
         assert_eq!(r.synergies_actives[0].nom, "Discipline Tactique");
         assert_eq!(r.synergies_actives[0].valeur, 15);
@@ -624,11 +682,14 @@ mod tests {
     /// qu'une des deux gardes a bougé — c'est un arbitrage, pas un détail.
     #[test]
     fn void_est_exclu_de_la_synergie_mais_pas_du_score() {
-        let equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF")).collect();
+        let equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF"))
+            .collect();
         let r = calculer_synergie_equipe(&equipe, None);
         assert!(
-            !r.synergies_actives.iter().any(|s| s.nom.starts_with("Cohésion")),
+            !r.synergies_actives
+                .iter()
+                .any(|s| s.nom.starts_with("Cohésion")),
             "aucune cohésion affichée pour Void"
         );
         assert_eq!(r.score_synergie, 70, "mais les 30 points sont bien comptés");
@@ -636,8 +697,9 @@ mod tests {
 
     #[test]
     fn ratio_de_placement_entre_70_et_90_donne_coordination_de_base() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..8).map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..8)
+            .map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF"))
+            .collect();
         equipe.push(joueur("Hors poste 1", "Void", "FW", "GK"));
         equipe.push(joueur("Hors poste 2", "Void", "FW", "GK"));
         let r = calculer_synergie_equipe(&equipe, None);
@@ -652,7 +714,14 @@ mod tests {
     #[test]
     fn element_dominant_declenche_la_cohesion() {
         let equipe: Vec<JoueurCharge> = (0..10)
-            .map(|i| joueur(&format!("J{i}"), if i < 6 { "Fire" } else { "Wind" }, "MF", "MF"))
+            .map(|i| {
+                joueur(
+                    &format!("J{i}"),
+                    if i < 6 { "Fire" } else { "Wind" },
+                    "MF",
+                    "MF",
+                )
+            })
             .collect();
         let r = calculer_synergie_equipe(&equipe, None);
         let cohesion = r
@@ -670,41 +739,67 @@ mod tests {
     fn egalite_d_elements_tranche_par_l_ordre_wind_forest_fire() {
         // 5 Wind, 5 Fire : `>` strict → Wind gagne, car il est vu en premier.
         let equipe: Vec<JoueurCharge> = (0..10)
-            .map(|i| joueur(&format!("J{i}"), if i < 5 { "Fire" } else { "Wind" }, "MF", "MF"))
+            .map(|i| {
+                joueur(
+                    &format!("J{i}"),
+                    if i < 5 { "Fire" } else { "Wind" },
+                    "MF",
+                    "MF",
+                )
+            })
             .collect();
         let r = calculer_synergie_equipe(
             &equipe,
-            Some(&Entraineur { nom: "Coach".to_string(), element: "Wind".to_string() }),
+            Some(&Entraineur {
+                nom: "Coach".to_string(),
+                element: "Wind".to_string(),
+            }),
         );
         assert!(
-            r.synergies_actives.iter().any(|s| s.nom == "Harmonie Tactique"),
+            r.synergies_actives
+                .iter()
+                .any(|s| s.nom == "Harmonie Tactique"),
             "le dominant doit être Wind, pas Fire"
         );
     }
 
     #[test]
     fn element_inconnu_n_est_compte_nulle_part() {
-        let equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Lumière", "MF", "MF")).collect();
+        let equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Lumière", "MF", "MF"))
+            .collect();
         let r = calculer_synergie_equipe(&equipe, None);
-        assert!(!r.synergies_actives.iter().any(|s| s.nom.starts_with("Cohésion")));
+        assert!(
+            !r.synergies_actives
+                .iter()
+                .any(|s| s.nom.starts_with("Cohésion"))
+        );
         assert_eq!(r.score_synergie, 40);
     }
 
     #[test]
     fn entraineur_du_mauvais_element_produit_une_recommandation() {
-        let equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF")).collect();
-        let coach = Entraineur { nom: "Endou".to_string(), element: "Wind".to_string() };
+        let equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF"))
+            .collect();
+        let coach = Entraineur {
+            nom: "Endou".to_string(),
+            element: "Wind".to_string(),
+        };
         let r = calculer_synergie_equipe(&equipe, Some(&coach));
-        assert!(!r.synergies_actives.iter().any(|s| s.nom == "Harmonie Tactique"));
+        assert!(
+            !r.synergies_actives
+                .iter()
+                .any(|s| s.nom == "Harmonie Tactique")
+        );
         assert!(r.recommandations[0].contains("Envisagez un coach d'élément Fire"));
     }
 
     #[test]
     fn passif_elementaire_donne_un_bonus_plafonne_a_vingt() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF"))
+            .collect();
         // 10 joueurs portant le même passif → count = 10 → valeur 50, plafonnée.
         for j in &mut equipe {
             j.passifs.push("Fureur du Feu".to_string());
@@ -723,19 +818,25 @@ mod tests {
 
     #[test]
     fn passif_elementaire_sans_trois_joueurs_ne_declenche_rien() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Void", "MF", "MF"))
+            .collect();
         equipe[0].element = "Fire".to_string();
         equipe[1].element = "Fire".to_string();
         equipe[0].passifs.push("Boost de Feu".to_string());
         let r = calculer_synergie_equipe(&equipe, None);
-        assert!(!r.synergies_actives.iter().any(|s| s.type_bonus.starts_with("Boost Élémentaire")));
+        assert!(
+            !r.synergies_actives
+                .iter()
+                .any(|s| s.type_bonus.starts_with("Boost Élémentaire"))
+        );
     }
 
     #[test]
     fn passif_defensif_compte_les_df_du_terrain() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..4).map(|i| joueur(&format!("D{i}"), "Void", "DF", "DF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..4)
+            .map(|i| joueur(&format!("D{i}"), "Void", "DF", "DF"))
+            .collect();
         equipe[0].passifs.push("Mur de fer".to_string());
         let r = calculer_synergie_equipe(&equipe, None);
         let mur = r
@@ -750,12 +851,16 @@ mod tests {
 
     #[test]
     fn score_est_borne_a_cent() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Fire", "MF", "MF"))
+            .collect();
         for j in &mut equipe {
             j.passifs.push("Fureur du Feu".to_string());
         }
-        let coach = Entraineur { nom: "Coach".to_string(), element: "Fire".to_string() };
+        let coach = Entraineur {
+            nom: "Coach".to_string(),
+            element: "Fire".to_string(),
+        };
         let r = calculer_synergie_equipe(&equipe, Some(&coach));
         // 40 + 30 + 10 + 20 = 100.
         assert_eq!(r.score_synergie, 100);
@@ -764,8 +869,9 @@ mod tests {
 
     #[test]
     fn passifs_comptes_dans_l_ordre_de_premiere_apparition() {
-        let mut equipe: Vec<JoueurCharge> =
-            (0..10).map(|i| joueur(&format!("J{i}"), "Fire", "DF", "DF")).collect();
+        let mut equipe: Vec<JoueurCharge> = (0..10)
+            .map(|i| joueur(&format!("J{i}"), "Fire", "DF", "DF"))
+            .collect();
         equipe[0].passifs = vec!["Mur de fer".to_string(), "Fureur du Feu".to_string()];
         equipe[1].passifs = vec!["Fureur du Feu".to_string()];
         let r = calculer_synergie_equipe(&equipe, None);

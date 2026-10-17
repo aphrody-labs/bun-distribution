@@ -45,7 +45,10 @@ fn error(id: Value, code: i64, message: impl Into<String>) -> Value {
 
 impl Server {
     pub fn new(backend: Box<dyn Backend>) -> Self {
-        Self { backend, initialized: false }
+        Self {
+            backend,
+            initialized: false,
+        }
     }
 
     pub fn backend(&mut self) -> &mut dyn Backend {
@@ -83,7 +86,8 @@ impl Server {
                 if batch.is_empty() {
                     Some(error(Value::Null, INVALID_REQUEST, "empty batch"))
                 } else {
-                    let replies: Vec<Value> = batch.into_iter().filter_map(|m| self.handle(m)).collect();
+                    let replies: Vec<Value> =
+                        batch.into_iter().filter_map(|m| self.handle(m)).collect();
                     (!replies.is_empty()).then_some(Value::Array(replies))
                 }
             }
@@ -95,14 +99,24 @@ impl Server {
 
     /// Handle one JSON-RPC message; `None` for notifications and responses.
     pub fn handle(&mut self, msg: Value) -> Option<Value> {
-        let Value::Object(o) = &msg else { return Some(error(Value::Null, INVALID_REQUEST, "message must be an object")) };
+        let Value::Object(o) = &msg else {
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "message must be an object",
+            ));
+        };
         let id = o.get("id").cloned();
         let Some(method) = o.get("method").and_then(Value::as_str) else {
             // A response to a server→client request (we send none): ignore. Anything else is invalid.
             if o.contains_key("result") || o.contains_key("error") {
                 return None;
             }
-            return Some(error(id.unwrap_or(Value::Null), INVALID_REQUEST, "missing `method`"));
+            return Some(error(
+                id.unwrap_or(Value::Null),
+                INVALID_REQUEST,
+                "missing `method`",
+            ));
         };
         let params = o.get("params").cloned().unwrap_or(Value::Null);
         let Some(id) = id else {
@@ -110,7 +124,11 @@ impl Server {
             return None;
         };
         if !(id.is_string() || id.is_number()) {
-            return Some(error(Value::Null, INVALID_REQUEST, "`id` must be a string or number"));
+            return Some(error(
+                Value::Null,
+                INVALID_REQUEST,
+                "`id` must be a string or number",
+            ));
         }
         Some(match self.request(method, &params) {
             Ok(r) => response(id, r),
@@ -121,7 +139,9 @@ impl Server {
     fn notification(&mut self, method: &str) {
         match method {
             "notifications/initialized" => self.initialized = true,
-            "notifications/cancelled" | "notifications/progress" | "notifications/roots/list_changed" => {}
+            "notifications/cancelled"
+            | "notifications/progress"
+            | "notifications/roots/list_changed" => {}
             other => log::debug!("ignoring notification {other}"),
         }
     }
@@ -129,8 +149,15 @@ impl Server {
     fn request(&mut self, method: &str, params: &Value) -> Result<Value, (i64, String)> {
         match method {
             "initialize" => {
-                let asked = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSION);
-                let version = if SUPPORTED_VERSIONS.contains(&asked) { asked } else { PROTOCOL_VERSION };
+                let asked = params
+                    .get("protocolVersion")
+                    .and_then(Value::as_str)
+                    .unwrap_or(PROTOCOL_VERSION);
+                let version = if SUPPORTED_VERSIONS.contains(&asked) {
+                    asked
+                } else {
+                    PROTOCOL_VERSION
+                };
                 Ok(json!({
                     "protocolVersion": version,
                     "capabilities": {"tools": {}, "resources": {}},
@@ -147,7 +174,10 @@ impl Server {
             "ping" => Ok(json!({})),
             "tools/list" => Ok(json!({"tools": tool_definitions()})),
             "tools/call" => {
-                let name = params.get("name").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
+                let name = params
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing tool `name`".to_string()))?;
                 let args = params.get("arguments").cloned().unwrap_or(Value::Null);
                 Ok(call_tool(self.backend.as_mut(), name, &args).to_value())
             }
@@ -157,14 +187,19 @@ impl Server {
             ]})),
             "resources/templates/list" => Ok(json!({"resourceTemplates": []})),
             "resources/read" => {
-                let uri = params.get("uri").and_then(Value::as_str).ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
+                let uri = params
+                    .get("uri")
+                    .and_then(Value::as_str)
+                    .ok_or((INVALID_PARAMS, "missing `uri`".to_string()))?;
                 let v = match uri {
                     DOC_URI => self.backend.call("document.inspect", json!({})),
                     COMMANDS_URI => self.backend.call("engine.commands", json!({})),
                     _ => return Err((RESOURCE_NOT_FOUND, format!("resource not found: {uri}"))),
                 }
                 .map_err(|e| (INTERNAL_ERROR, e))?;
-                Ok(json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}))
+                Ok(
+                    json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": serde_json::to_string_pretty(&v).unwrap_or_default()}]}),
+                )
             }
             other => Err((METHOD_NOT_FOUND, format!("method not found: {other}"))),
         }

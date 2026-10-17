@@ -73,16 +73,30 @@ pub fn detect(img: &Plane, max: usize) -> Features {
             let mut descs = Vec::new();
             for (x, y, s) in cands {
                 let (xi, yi) = (x as usize, y as usize);
-                let (dx, dy) = (gx.get(xi.min(gx.width - 1), yi.min(gx.height - 1)), gy.get(xi.min(gx.width - 1), yi.min(gx.height - 1)));
+                let (dx, dy) = (
+                    gx.get(xi.min(gx.width - 1), yi.min(gx.height - 1)),
+                    gy.get(xi.min(gx.width - 1), yi.min(gx.height - 1)),
+                );
                 let angle = dy.atan2(dx);
-                let Some(d) = descriptor(&desc_img, x, y, angle) else { continue };
-                pts.push(Keypoint { x: x * scale, y: y * scale, level: li as u8, angle, strength: s });
+                let Some(d) = descriptor(&desc_img, x, y, angle) else {
+                    continue;
+                };
+                pts.push(Keypoint {
+                    x: x * scale,
+                    y: y * scale,
+                    level: li as u8,
+                    angle,
+                    strength: s,
+                });
                 descs.push(d);
             }
             (pts, descs)
         })
         .collect();
-    let mut all: Vec<(Keypoint, [f32; DESC_LEN])> = per_level.into_iter().flat_map(|(p, d)| p.into_iter().zip(d)).collect();
+    let mut all: Vec<(Keypoint, [f32; DESC_LEN])> = per_level
+        .into_iter()
+        .flat_map(|(p, d)| p.into_iter().zip(d))
+        .collect();
     all.sort_by(|a, b| b.0.strength.total_cmp(&a.0.strength));
     all.truncate(max.saturating_mul(8).max(64));
     let keep = anms(&all.iter().map(|(k, _)| *k).collect::<Vec<_>>(), max);
@@ -96,8 +110,14 @@ pub fn detect(img: &Plane, max: usize) -> Features {
 
 fn gradients(p: &Plane) -> (Plane, Plane) {
     let (w, h) = (p.width, p.height);
-    let gx = Plane::from_fn(w, h, |x, y| (p.get_clamped(x as isize + 1, y as isize) - p.get_clamped(x as isize - 1, y as isize)) * 0.5);
-    let gy = Plane::from_fn(w, h, |x, y| (p.get_clamped(x as isize, y as isize + 1) - p.get_clamped(x as isize, y as isize - 1)) * 0.5);
+    let gx = Plane::from_fn(w, h, |x, y| {
+        (p.get_clamped(x as isize + 1, y as isize) - p.get_clamped(x as isize - 1, y as isize))
+            * 0.5
+    });
+    let gy = Plane::from_fn(w, h, |x, y| {
+        (p.get_clamped(x as isize, y as isize + 1) - p.get_clamped(x as isize, y as isize - 1))
+            * 0.5
+    });
     (gx, gy)
 }
 
@@ -116,7 +136,11 @@ fn harris(lvl: &Plane) -> Vec<(f32, f32, f32)> {
     for i in 0..r.data.len() {
         let (a, b, c) = (xx.data[i], yy.data[i], xy.data[i]);
         let tr = a + b;
-        r.data[i] = if tr > 1e-12 { (a * b - c * c) / tr } else { 0.0 };
+        r.data[i] = if tr > 1e-12 {
+            (a * b - c * c) / tr
+        } else {
+            0.0
+        };
     }
     // threshold relative to the level's strongest response (robust to image contrast)
     let mut sorted: Vec<f32> = r.data.iter().copied().step_by(7).collect();
@@ -150,7 +174,11 @@ fn harris(lvl: &Plane) -> Vec<(f32, f32, f32)> {
                 }
                 let sub = |a: f32, b: f32, c: f32| {
                     let d = a - 2.0 * b + c;
-                    if d.abs() > 1e-12 { (0.5 * (a - c) / d).clamp(-0.5, 0.5) } else { 0.0 }
+                    if d.abs() > 1e-12 {
+                        (0.5 * (a - c) / d).clamp(-0.5, 0.5)
+                    } else {
+                        0.0
+                    }
                 };
                 let ox = sub(r.get(x - 1, y), v, r.get(x + 1, y));
                 let oy = sub(r.get(x, y - 1), v, r.get(x, y + 1));
@@ -272,7 +300,11 @@ pub fn match_features(a: &Features, b: &Features, ratio: f32) -> Vec<(usize, usi
     let ab = nearest(a, b);
     let ba = nearest(b, a);
     let r2 = ratio * ratio;
-    ab.iter().enumerate().filter(|(i, (j, d1, d2))| *j != usize::MAX && *d1 < r2 * *d2 && ba[*j].0 == *i).map(|(i, (j, _, _))| (i, *j)).collect()
+    ab.iter()
+        .enumerate()
+        .filter(|(i, (j, d1, d2))| *j != usize::MAX && *d1 < r2 * *d2 && ba[*j].0 == *i)
+        .map(|(i, (j, _, _))| (i, *j))
+        .collect()
 }
 
 #[cfg(test)]
@@ -284,7 +316,8 @@ mod tests {
             let (u, v) = (x as f32 + 0.5 - dx, y as f32 + 0.5 - dy);
             let a = ((u * 0.071).sin() * (v * 0.053).cos()
                 + (u * 0.023 + v * 0.031).sin() * 0.7
-                + ((u * 0.011).floor() as i32 + (v * 0.013).floor() as i32).rem_euclid(2) as f32 * 0.6)
+                + ((u * 0.011).floor() as i32 + (v * 0.013).floor() as i32).rem_euclid(2) as f32
+                    * 0.6)
                 * 0.25
                 + 0.5;
             a.clamp(0.0, 1.0)

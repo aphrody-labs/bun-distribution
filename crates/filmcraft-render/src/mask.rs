@@ -50,7 +50,11 @@ pub fn prepare(masks: &[Mask], t: Tick, px_scale: f32) -> Vec<FlatMask> {
         .filter(|m| m.mode != MaskMode::None)
         .map(|m| {
             let path = m.path_at(t);
-            let pts = path.flatten(FLATTEN_TOLERANCE / s.max(1e-6)).into_iter().map(|p| [(p.x * s) as f32, (p.y * s) as f32]).collect();
+            let pts = path
+                .flatten(FLATTEN_TOLERANCE / s.max(1e-6))
+                .into_iter()
+                .map(|p| [(p.x * s) as f32, (p.y * s) as f32])
+                .collect();
             FlatMask {
                 pts,
                 feather: (m.feather.f64_at(t).max(0.0) * s) as f32,
@@ -82,7 +86,11 @@ fn seg_dist2(px: f32, py: f32, a: [f32; 2], b: [f32; 2]) -> f32 {
     let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
     let (qx, qy) = (px - a[0], py - a[1]);
     let l2 = dx * dx + dy * dy;
-    let t = if l2 > 0.0 { ((qx * dx + qy * dy) / l2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if l2 > 0.0 {
+        ((qx * dx + qy * dy) / l2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let (ex, ey) = (qx - dx * t, qy - dy * t);
     ex * ex + ey * ey
 }
@@ -160,7 +168,13 @@ pub fn coverage(masks: &[FlatMask], w: usize, h: usize) -> Option<Vec<f32>> {
 }
 
 /// Coverage of an effect's masks on a working image (`px_scale` working px per clip px).
-pub fn effect_coverage(masks: &[Mask], t: Tick, px_scale: f32, w: usize, h: usize) -> Option<Vec<f32>> {
+pub fn effect_coverage(
+    masks: &[Mask],
+    t: Tick,
+    px_scale: f32,
+    w: usize,
+    h: usize,
+) -> Option<Vec<f32>> {
     if masks.is_empty() {
         return None;
     }
@@ -169,20 +183,27 @@ pub fn effect_coverage(masks: &[Mask], t: Tick, px_scale: f32, w: usize, h: usiz
 
 /// `img = lerp(original, img, cov)` on premultiplied pixels.
 pub fn mix(img: &mut Image, original: &Image, cov: &[f32]) {
-    img.px.par_chunks_mut(4).zip(original.px.par_chunks(4)).zip(cov.par_iter()).for_each(|((p, o), &c)| {
-        for k in 0..4 {
-            p[k] = o[k] + (p[k] - o[k]) * c;
-        }
-    });
+    img.px
+        .par_chunks_mut(4)
+        .zip(original.px.par_chunks(4))
+        .zip(cov.par_iter())
+        .for_each(|((p, o), &c)| {
+            for k in 0..4 {
+                p[k] = o[k] + (p[k] - o[k]) * c;
+            }
+        });
 }
 
 /// Scale premultiplied pixels by coverage (opacity masks).
 pub fn scale_by(img: &mut Image, cov: &[f32]) {
-    img.px.par_chunks_mut(4).zip(cov.par_iter()).for_each(|(p, &c)| {
-        for v in p {
-            *v *= c;
-        }
-    });
+    img.px
+        .par_chunks_mut(4)
+        .zip(cov.par_iter())
+        .for_each(|(p, &c)| {
+            for v in p {
+                *v *= c;
+            }
+        });
 }
 
 /// Apply an effect limited to its masks (Premiere: a masked effect only applies inside the mask).
@@ -201,8 +222,18 @@ pub fn apply_effect(img: &mut Image, e: &EffectInstance, cx: &crate::effects::Fx
 }
 
 /// Apply the masks of an item's Opacity effect to its layer (before Motion), if any.
-pub fn apply_opacity_masks(img: &mut Image, item: &filmcraft_project::TrackItem, t: Tick, px_scale: f32) {
-    let Some(op) = item.effect("opacity").filter(|e| e.enabled && !e.masks.is_empty()) else { return };
+pub fn apply_opacity_masks(
+    img: &mut Image,
+    item: &filmcraft_project::TrackItem,
+    t: Tick,
+    px_scale: f32,
+) {
+    let Some(op) = item
+        .effect("opacity")
+        .filter(|e| e.enabled && !e.masks.is_empty())
+    else {
+        return;
+    };
     if let Some(cov) = effect_coverage(&op.masks, t, px_scale, img.w, img.h) {
         scale_by(img, &cov);
     }
@@ -228,7 +259,11 @@ pub fn coverage_at(masks: &[FlatMask], x: f32, y: f32) -> Option<f32> {
             }
             d2 = d2.min(seg_dist2(x, y, a, c));
         }
-        let d = if n < 3 { band(m) } else { d2.sqrt().min(band(m)) };
+        let d = if n < 3 {
+            band(m)
+        } else {
+            d2.sqrt().min(band(m))
+        };
         let sd = if wind != 0 && n >= 3 { d } else { -d };
         let c = falloff(sd + m.expansion, m.feather);
         let v = m.opacity * if m.inverted { 1.0 - c } else { c };
@@ -263,7 +298,10 @@ mod tests {
     #[test]
     fn ellipse_area_matches_analytic() {
         let (rx, ry) = (37.3, 21.7);
-        let m = mask(MaskPath::ellipse(Vec2::new(50.2, 40.1), Vec2::new(rx, ry)), 0.0);
+        let m = mask(
+            MaskPath::ellipse(Vec2::new(50.2, 40.1), Vec2::new(rx, ry)),
+            0.0,
+        );
         let c = effect_coverage(&[m], Tick(0), 1.0, 100, 80).unwrap();
         let area: f64 = c.iter().map(|v| *v as f64).sum();
         let exact = std::f64::consts::PI * rx * ry;
@@ -276,8 +314,18 @@ mod tests {
         let c = effect_coverage(&[m], Tick(0), 1.0, 60, 4).unwrap();
         // edge at x = 20: 0.5 there, saturated 5 px away, symmetric
         let at = |x: usize| c[x];
-        assert!((at(19) + at(20) - 1.0).abs() < 1e-5, "{} {}", at(19), at(20));
-        assert!(at(13) < 1e-6 && at(26) > 1.0 - 1e-6, "{} {}", at(13), at(26));
+        assert!(
+            (at(19) + at(20) - 1.0).abs() < 1e-5,
+            "{} {}",
+            at(19),
+            at(20)
+        );
+        assert!(
+            at(13) < 1e-6 && at(26) > 1.0 - 1e-6,
+            "{} {}",
+            at(13),
+            at(26)
+        );
         for x in 14..26 {
             assert!(at(x + 1) >= at(x), "monotonic");
         }
@@ -307,9 +355,19 @@ mod tests {
 
     #[test]
     fn row_algorithm_matches_brute_force() {
-        let mut a = mask(MaskPath::ellipse(Vec2::new(30.0, 25.0), Vec2::new(20.0, 12.0)), 6.0);
+        let mut a = mask(
+            MaskPath::ellipse(Vec2::new(30.0, 25.0), Vec2::new(20.0, 12.0)),
+            6.0,
+        );
         a.expansion.value = filmcraft_project::ParamValue::Float(-2.0);
-        let mut b = mask(MaskPath::polygon(&[Vec2::new(5.0, 5.0), Vec2::new(50.0, 10.0), Vec2::new(20.0, 45.0)]), 0.0);
+        let mut b = mask(
+            MaskPath::polygon(&[
+                Vec2::new(5.0, 5.0),
+                Vec2::new(50.0, 10.0),
+                Vec2::new(20.0, 45.0),
+            ]),
+            0.0,
+        );
         b.mode = MaskMode::Difference;
         b.inverted = true;
         let flat = prepare(&[a, b], Tick(0), 0.8);
@@ -318,7 +376,11 @@ mod tests {
         for y in 0..h {
             for x in 0..w {
                 let r = coverage_at(&flat, x as f32 + 0.5, y as f32 + 0.5).unwrap();
-                assert!((r - c[y * w + x]).abs() < 1e-5, "({x},{y}) {r} vs {}", c[y * w + x]);
+                assert!(
+                    (r - c[y * w + x]).abs() < 1e-5,
+                    "({x},{y}) {r} vs {}",
+                    c[y * w + x]
+                );
             }
         }
     }

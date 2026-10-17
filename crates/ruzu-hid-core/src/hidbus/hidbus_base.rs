@@ -177,23 +177,43 @@ pub trait HidbusDevice: Send {
 
     /// HidbusBase::ActivateDevice, including virtual OnInit dispatch.
     fn activate_device(&mut self) {
-        if self.base().is_activated { return; }
+        if self.base().is_activated {
+            return;
+        }
         self.base_mut().is_activated = true;
         self.on_init();
     }
     /// HidbusBase::DeactivateDevice calls OnRelease before clearing activation.
     fn deactivate_device(&mut self) {
-        if self.base().is_activated { self.on_release(); }
+        if self.base().is_activated {
+            self.on_release();
+        }
         self.base_mut().is_activated = false;
     }
-    fn is_device_activated(&self) -> bool { self.base().is_device_activated() }
-    fn enable(&mut self, enable: bool) { self.base_mut().enable(enable); }
-    fn is_enabled(&self) -> bool { self.base().is_enabled() }
-    fn is_polling_mode(&self) -> bool { self.base().is_polling_mode() }
-    fn get_polling_mode(&self) -> JoyPollingMode { self.base().get_polling_mode() }
-    fn set_polling_mode(&mut self, mode: JoyPollingMode) { self.base_mut().set_polling_mode(mode); }
-    fn disable_polling_mode(&mut self) { self.base_mut().disable_polling_mode(); }
-    fn set_transfer_memory_address(&mut self, address: u64) { self.base_mut().set_transfer_memory_address(address); }
+    fn is_device_activated(&self) -> bool {
+        self.base().is_device_activated()
+    }
+    fn enable(&mut self, enable: bool) {
+        self.base_mut().enable(enable);
+    }
+    fn is_enabled(&self) -> bool {
+        self.base().is_enabled()
+    }
+    fn is_polling_mode(&self) -> bool {
+        self.base().is_polling_mode()
+    }
+    fn get_polling_mode(&self) -> JoyPollingMode {
+        self.base().get_polling_mode()
+    }
+    fn set_polling_mode(&mut self, mode: JoyPollingMode) {
+        self.base_mut().set_polling_mode(mode);
+    }
+    fn disable_polling_mode(&mut self) {
+        self.base_mut().disable_polling_mode();
+    }
+    fn set_transfer_memory_address(&mut self, address: u64) {
+        self.base_mut().set_transfer_memory_address(address);
+    }
 
     fn on_init(&mut self) {}
     fn on_release(&mut self) {}
@@ -282,7 +302,8 @@ pub(crate) mod tests {
     }
     impl HidbusRuntime for TestRuntime {
         fn signal_send_command_async_event(&self) {
-            self.signals.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            self.signals
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         }
         fn write_memory(&self, address: u64, data: &[u8]) {
             self.writes.lock().unwrap().push((address, data.to_vec()));
@@ -291,10 +312,17 @@ pub(crate) mod tests {
 
     #[test]
     fn activation_dispatches_hooks_once_with_upstream_state_order() {
-        struct Device { base: HidbusBase, calls: Vec<&'static str> }
+        struct Device {
+            base: HidbusBase,
+            calls: Vec<&'static str>,
+        }
         impl HidbusDevice for Device {
-            fn base(&self) -> &HidbusBase { &self.base }
-            fn base_mut(&mut self) -> &mut HidbusBase { &mut self.base }
+            fn base(&self) -> &HidbusBase {
+                &self.base
+            }
+            fn base_mut(&mut self) -> &mut HidbusBase {
+                &mut self.base
+            }
             fn on_init(&mut self) {
                 assert!(self.base.is_activated);
                 self.calls.push("init");
@@ -304,7 +332,10 @@ pub(crate) mod tests {
                 self.calls.push("release");
             }
         }
-        let mut device = Device { base: HidbusBase::new(Arc::new(TestRuntime::default())), calls: Vec::new() };
+        let mut device = Device {
+            base: HidbusBase::new(Arc::new(TestRuntime::default())),
+            calls: Vec::new(),
+        };
         let erased: &mut dyn HidbusDevice = &mut device;
         erased.deactivate_device();
         erased.activate_device();
@@ -320,10 +351,19 @@ pub(crate) mod tests {
     fn concrete_backends_expose_the_hidbus_interface() {
         let devices: Vec<Box<dyn HidbusDevice>> = vec![
             Box::new(super::super::ringcon::RingController::new(
-                Arc::new(parking_lot::Mutex::new(crate::frontend::emulated_controller::EmulatedController::new(crate::hid_types::NpadIdType::Player1))),
-                Arc::new(TestRuntime::default()))),
-            Box::new(super::super::stubbed::HidbusStubbed::new(Arc::new(TestRuntime::default()))),
-            Box::new(super::super::starlink::Starlink::new(Arc::new(TestRuntime::default()))),
+                Arc::new(parking_lot::Mutex::new(
+                    crate::frontend::emulated_controller::EmulatedController::new(
+                        crate::hid_types::NpadIdType::Player1,
+                    ),
+                )),
+                Arc::new(TestRuntime::default()),
+            )),
+            Box::new(super::super::stubbed::HidbusStubbed::new(Arc::new(
+                TestRuntime::default(),
+            ))),
+            Box::new(super::super::starlink::Starlink::new(Arc::new(
+                TestRuntime::default(),
+            ))),
         ];
         for (mut device, expected_id) in devices.into_iter().zip([0x20, 0xff, 0x28]) {
             assert_eq!(device.get_device_id(), expected_id);

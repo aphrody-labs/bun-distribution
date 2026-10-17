@@ -1,3 +1,3 @@
 pub mod cost;
-pub mod video_generation;
 pub(crate) mod request_types;
+pub mod video_generation;

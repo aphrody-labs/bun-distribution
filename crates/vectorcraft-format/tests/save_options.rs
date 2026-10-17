@@ -9,7 +9,10 @@ use std::sync::Arc;
 use serde_json::Value;
 use vectorcraft_doc::links::LinkInfo;
 use vectorcraft_doc::{Document, ImageBlob, ImageObject, Node, NodeKind, Symbol};
-use vectorcraft_format::{ICC_MIME, PRETTY_MAX_BYTES, PRETTY_MAX_OBJECTS, SaveOptions, load, load_file, pdf_content, save_file, save_with};
+use vectorcraft_format::{
+    ICC_MIME, PRETTY_MAX_BYTES, PRETTY_MAX_OBJECTS, SaveOptions, load, load_file, pdf_content,
+    save_file, save_with,
+};
 use vectorcraft_geom::path::{PathData, SubPath};
 use vectorcraft_geom::{Affine, Point};
 use vectorcraft_testkit::fixtures::DocBuilder;
@@ -31,7 +34,8 @@ fn linked_doc() -> Document {
         link: Some(LinkInfo::new("/art/photo.png")),
         placement: Default::default(),
     };
-    d.insert(Some(layer), 0, Node::new(id, NodeKind::Image(Box::new(im)))).unwrap();
+    d.insert(Some(layer), 0, Node::new(id, NodeKind::Image(Box::new(im))))
+        .unwrap();
     let mut blob = ImageBlob::new("image/png", vec![1, 2, 3, 4, 5, 6]);
     blob.proxy = Some(Arc::new(vec![9, 9]));
     d.images.insert("k".into(), blob);
@@ -44,7 +48,14 @@ fn include_linked_files_keeps_the_files_bytes() {
     let plain = save_with(&d, &SaveOptions::default()).unwrap();
     let image = &json_of(&plain)["images"]["k"];
     assert_eq!(image["proxy"], true, "only the preview by default");
-    let full = save_with(&d, &SaveOptions { include_linked: true, ..SaveOptions::default() }).unwrap();
+    let full = save_with(
+        &d,
+        &SaveOptions {
+            include_linked: true,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap();
     let image = &json_of(&full)["images"]["k"];
     assert!(image.get("proxy").is_none());
     let back = load(&full).unwrap();
@@ -53,8 +64,22 @@ fn include_linked_files_keeps_the_files_bytes() {
     // Only the preview loaded (the file was never found): the preview is all there is to write.
     let mut missing = linked_doc();
     let preview = Arc::new(vec![9, 9]);
-    missing.images.insert("k".into(), ImageBlob { mime: "image/png".into(), bytes: preview.clone(), proxy: Some(preview) });
-    let out = save_with(&missing, &SaveOptions { include_linked: true, ..SaveOptions::default() }).unwrap();
+    missing.images.insert(
+        "k".into(),
+        ImageBlob {
+            mime: "image/png".into(),
+            bytes: preview.clone(),
+            proxy: Some(preview),
+        },
+    );
+    let out = save_with(
+        &missing,
+        &SaveOptions {
+            include_linked: true,
+            ..SaveOptions::default()
+        },
+    )
+    .unwrap();
     assert_eq!(json_of(&out)["images"]["k"]["proxy"], true);
 }
 
@@ -74,14 +99,29 @@ fn embedded_profiles_and_pdf_round_trip() {
     assert_eq!(f.doc.color_profiles.rgb.as_deref(), Some("Studio RGB"));
     assert_eq!(pdf_content(&bytes).unwrap(), b"%PDF-1.7 fake");
     // The plain file says what they are; a file without them has neither member.
-    let plain = save_with(&d, &SaveOptions { compress: false, ..o }).unwrap();
+    let plain = save_with(
+        &d,
+        &SaveOptions {
+            compress: false,
+            ..o
+        },
+    )
+    .unwrap();
     let v = json_of(&plain);
-    assert_eq!((v["profiles"]["Studio RGB"]["mime"].as_str(), v["pdf"]["mime"].as_str()), (Some(ICC_MIME), Some("application/pdf")));
+    assert_eq!(
+        (
+            v["profiles"]["Studio RGB"]["mime"].as_str(),
+            v["pdf"]["mime"].as_str()
+        ),
+        (Some(ICC_MIME), Some("application/pdf"))
+    );
     let none = save_with(&d, &SaveOptions::default()).unwrap();
     assert!(json_of(&none).get("profiles").is_none() && pdf_content(&none).is_none());
     assert!(load_file(&none).unwrap().profiles.is_empty());
     // Damaged profile data is left out rather than failing the open.
-    let damaged = String::from_utf8(plain).unwrap().replacen("AAECA/o=", "not base64!", 1);
+    let damaged = String::from_utf8(plain)
+        .unwrap()
+        .replacen("AAECA/o=", "not base64!", 1);
     assert!(load_file(damaged.as_bytes()).unwrap().profiles.is_empty());
 }
 
@@ -89,8 +129,13 @@ fn embedded_profiles_and_pdf_round_trip() {
 fn paths_doc(paths: usize, anchors: usize) -> Document {
     let mut b = DocBuilder::new(1000.0, 1000.0);
     for i in 0..paths {
-        let points: Vec<Point> = (0..anchors).map(|j| Point::new(j as f64, i as f64 + (j % 2) as f64)).collect();
-        let node = b.path_node(PathData::single(SubPath::polyline(&points, false)), Default::default());
+        let points: Vec<Point> = (0..anchors)
+            .map(|j| Point::new(j as f64, i as f64 + (j % 2) as f64))
+            .collect();
+        let node = b.path_node(
+            PathData::single(SubPath::polyline(&points, false)),
+            Default::default(),
+        );
         b.add(node);
     }
     b.doc
@@ -122,7 +167,11 @@ fn anchors_for(paths: usize, bytes: usize) -> usize {
 #[test]
 fn few_objects_with_many_anchors_are_saved_compact() {
     let d = paths_doc(3, anchors_for(3, 2 * PRETTY_MAX_BYTES));
-    assert!(!SaveOptions::for_doc(&d).pretty, "3 objects, but about {} bytes", 2 * PRETTY_MAX_BYTES);
+    assert!(
+        !SaveOptions::for_doc(&d).pretty,
+        "3 objects, but about {} bytes",
+        2 * PRETTY_MAX_BYTES
+    );
     let bytes = save_file(&d);
     assert!(!is_pretty(&bytes));
     assert_eq!(load(&bytes).unwrap().layers[0].count(), d.layers[0].count());
@@ -141,7 +190,10 @@ fn art_outside_the_layers_counts_too() {
     let mut art = paths_doc(1, anchors_for(1, 2 * PRETTY_MAX_BYTES));
     let path = Arc::clone(&art.layers[0]);
     art.layers.clear();
-    d.symbols.push(Symbol { name: "Leaves".into(), art: path });
+    d.symbols.push(Symbol {
+        name: "Leaves".into(),
+        art: path,
+    });
     assert!(!SaveOptions::for_doc(&d).pretty);
     let bytes = save_file(&d);
     assert!(!is_pretty(&bytes));

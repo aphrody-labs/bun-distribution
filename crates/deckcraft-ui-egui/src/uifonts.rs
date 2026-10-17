@@ -32,7 +32,10 @@ pub struct UiFonts {
 
 /// Characters worth a lookup: not ASCII, a space, a control or a private-use character.
 fn wanted(c: char) -> bool {
-    !(c.is_ascii() || c.is_whitespace() || c.is_control() || matches!(c, '\u{E000}'..='\u{F8FF}' | '\u{F0000}'..))
+    !(c.is_ascii()
+        || c.is_whitespace()
+        || c.is_control()
+        || matches!(c, '\u{E000}'..='\u{F8FF}' | '\u{F0000}'..))
 }
 
 /// The faces needed to draw `text`, beyond `have`: one for each character that `covered` says the
@@ -51,7 +54,10 @@ pub fn faces_for_text(
             continue;
         }
         let Some(f) = lookup(c) else { continue };
-        if f.is_color() || f.data().len() > MAX_FACE_BYTES || have.iter().chain(&out).any(|h| h.id() == f.id()) {
+        if f.is_color()
+            || f.data().len() > MAX_FACE_BYTES
+            || have.iter().chain(&out).any(|h| h.id() == f.id())
+        {
             continue;
         }
         out.push(f);
@@ -67,10 +73,22 @@ impl UiFonts {
         }
         let font = egui::FontId::proportional(13.0);
         let new = ctx.fonts_mut(|f| {
-            faces_for_text(text, &self.faces, &mut self.seen, |c| f.has_glyph(&font, c), |c| FontDb::global().fallback_for(c, u32::MAX))
+            faces_for_text(
+                text,
+                &self.faces,
+                &mut self.seen,
+                |c| f.has_glyph(&font, c),
+                |c| FontDb::global().fallback_for(c, u32::MAX),
+            )
         });
         if !new.is_empty() {
-            log::debug!("interface fallback fonts: {}", new.iter().map(|f| f.family.as_str()).collect::<Vec<_>>().join(", "));
+            log::debug!(
+                "interface fallback fonts: {}",
+                new.iter()
+                    .map(|f| f.family.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            );
             self.faces.extend(new);
             self.changed = true;
         }
@@ -181,22 +199,56 @@ mod tests {
         assert_eq!(got.len(), 1, "one face, not one per character");
         // Inter doesn't cover Hangul, so every character was looked up once.
         assert_eq!(looked.get(), 5);
-        assert!(faces_for_text("한국어 발표", &got, &mut seen, |_| false, lookup).is_empty(), "already seen");
+        assert!(
+            faces_for_text("한국어 발표", &got, &mut seen, |_| false, lookup).is_empty(),
+            "already seen"
+        );
         assert_eq!(looked.get(), 5);
         let mut seen = HashSet::new();
-        assert!(faces_for_text("한국어", &[], &mut seen, |_| true, lookup).is_empty(), "the interface draws it");
-        assert!(faces_for_text("abc  \n\t\u{E001}", &[], &mut HashSet::new(), |_| false, lookup).is_empty(), "ASCII, spaces, private use");
-        assert!(faces_for_text("한", std::slice::from_ref(&inter), &mut HashSet::new(), |_| false, lookup).is_empty(), "already borrowed");
+        assert!(
+            faces_for_text("한국어", &[], &mut seen, |_| true, lookup).is_empty(),
+            "the interface draws it"
+        );
+        assert!(
+            faces_for_text(
+                "abc  \n\t\u{E001}",
+                &[],
+                &mut HashSet::new(),
+                |_| false,
+                lookup
+            )
+            .is_empty(),
+            "ASCII, spaces, private use"
+        );
+        assert!(
+            faces_for_text(
+                "한",
+                std::slice::from_ref(&inter),
+                &mut HashSet::new(),
+                |_| false,
+                lookup
+            )
+            .is_empty(),
+            "already borrowed"
+        );
     }
 
     #[test]
     fn interface_text_of_a_presentation() {
         let mut s = deckcraft_engine::Session::with_new();
         let title = s.doc().unwrap().current_slide().unwrap().shapes[0].id.0;
-        s.execute("text.set", &serde_json::json!({"id": title, "text": "한국어 제목"})).unwrap();
-        s.execute("slide.notes", &serde_json::json!({"text": "発表者ノート"})).unwrap();
+        s.execute(
+            "text.set",
+            &serde_json::json!({"id": title, "text": "한국어 제목"}),
+        )
+        .unwrap();
+        s.execute("slide.notes", &serde_json::json!({"text": "発表者ノート"}))
+            .unwrap();
         let t = ui_text(s.doc().unwrap());
-        assert!(t.contains("한국어 제목") && t.contains("発表者ノート"), "{t}");
+        assert!(
+            t.contains("한국어 제목") && t.contains("発表者ノート"),
+            "{t}"
+        );
         assert!(t.starts_with(&s.doc().unwrap().title()));
     }
 }

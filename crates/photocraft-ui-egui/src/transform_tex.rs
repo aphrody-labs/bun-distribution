@@ -41,14 +41,32 @@ impl PreviewTextures {
     /// `image` covers the source with `base_uv` of its extent; `name` keys the texture in egui.
     pub fn new(ctx: &egui::Context, name: String, image: ColorImage, base_uv: [f32; 2]) -> Self {
         let image = Arc::new(image);
-        let tex = ctx.load_texture(format!("{name}-0-linear"), Arc::clone(&image), TextureOptions::LINEAR);
+        let tex = ctx.load_texture(
+            format!("{name}-0-linear"),
+            Arc::clone(&image),
+            TextureOptions::LINEAR,
+        );
         let base_uv = [base_uv[0].clamp(0.0, 1.0), base_uv[1].clamp(0.0, 1.0)];
-        Self { name, images: Mutex::new(vec![image]), base_uv, uploaded: Mutex::new(vec![Level { level: 0, nearest: false, tex, uv: base_uv }]) }
+        Self {
+            name,
+            images: Mutex::new(vec![image]),
+            base_uv,
+            uploaded: Mutex::new(vec![Level {
+                level: 0,
+                nearest: false,
+                tex,
+                uv: base_uv,
+            }]),
+        }
     }
 
     /// Size of the full-resolution level in texels.
     pub fn size(&self) -> [usize; 2] {
-        self.images.lock().unwrap_or_else(PoisonError::into_inner).first().map_or([0, 0], |i| i.size)
+        self.images
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .first()
+            .map_or([0, 0], |i| i.size)
     }
 
     /// The level and filter for a source pixel shown `screen_px` screen pixels wide, where the
@@ -72,7 +90,13 @@ impl PreviewTextures {
     }
 
     /// Texture and uv extent to draw with (uploading a level / filter on first use).
-    pub fn pick(&self, ctx: &egui::Context, zoom: f32, scale: f32, nearest_interpolation: bool) -> (TextureId, [f32; 2]) {
+    pub fn pick(
+        &self,
+        ctx: &egui::Context,
+        zoom: f32,
+        scale: f32,
+        nearest_interpolation: bool,
+    ) -> (TextureId, [f32; 2]) {
         let (level, nearest) = Self::choose(zoom, scale, nearest_interpolation);
         let mut up = self.uploaded.lock().unwrap_or_else(PoisonError::into_inner);
         if let Some(l) = up.iter().find(|l| l.level == level && l.nearest == nearest) {
@@ -80,12 +104,31 @@ impl PreviewTextures {
         }
         let Some((img, uv)) = self.level_image(level) else {
             // Can't build it (shouldn't happen): fall back to the first upload.
-            return up.first().map_or((TextureId::default(), [1.0, 1.0]), |l| (l.tex.id(), l.uv));
+            return up
+                .first()
+                .map_or((TextureId::default(), [1.0, 1.0]), |l| (l.tex.id(), l.uv));
         };
-        let opts = if nearest { TextureOptions::NEAREST } else { TextureOptions::LINEAR };
-        let tex = ctx.load_texture(format!("{}-{level}-{}", self.name, if nearest { "nearest" } else { "linear" }), img, opts);
+        let opts = if nearest {
+            TextureOptions::NEAREST
+        } else {
+            TextureOptions::LINEAR
+        };
+        let tex = ctx.load_texture(
+            format!(
+                "{}-{level}-{}",
+                self.name,
+                if nearest { "nearest" } else { "linear" }
+            ),
+            img,
+            opts,
+        );
         let id = tex.id();
-        up.push(Level { level, nearest, tex, uv });
+        up.push(Level {
+            level,
+            nearest,
+            tex,
+            uv,
+        });
         (id, uv)
     }
 
@@ -105,7 +148,10 @@ impl PreviewTextures {
         let base = imgs.first()?.size;
         // Level k covers size·2^k base texels (the last row/column may be padding).
         let f = (1u64 << k) as f32;
-        let uv = [self.base_uv[0] * base[0] as f32 / (img.size[0] as f32 * f).max(1.0), self.base_uv[1] * base[1] as f32 / (img.size[1] as f32 * f).max(1.0)];
+        let uv = [
+            self.base_uv[0] * base[0] as f32 / (img.size[0] as f32 * f).max(1.0),
+            self.base_uv[1] * base[1] as f32 / (img.size[1] as f32 * f).max(1.0),
+        ];
         Some((img, [uv[0].min(1.0), uv[1].min(1.0)]))
     }
 }
@@ -115,12 +161,29 @@ fn halve(img: &ColorImage) -> ColorImage {
     let [w, h] = img.size;
     let (nw, nh) = (w.div_ceil(2).max(1), h.div_ceil(2).max(1));
     let mut out = vec![Color32::TRANSPARENT; nw * nh];
-    let px = |x: usize, y: usize| img.pixels.get(y.min(h.saturating_sub(1)) * w + x.min(w.saturating_sub(1))).copied().unwrap_or_default();
+    let px = |x: usize, y: usize| {
+        img.pixels
+            .get(y.min(h.saturating_sub(1)) * w + x.min(w.saturating_sub(1)))
+            .copied()
+            .unwrap_or_default()
+    };
     for (y, row) in out.chunks_mut(nw).enumerate() {
         for (x, o) in row.iter_mut().enumerate() {
-            let q = [px(2 * x, 2 * y), px(2 * x + 1, 2 * y), px(2 * x, 2 * y + 1), px(2 * x + 1, 2 * y + 1)];
-            let avg = |c: fn(&Color32) -> u8| ((q.iter().map(|p| u32::from(c(p))).sum::<u32>() + 2) / 4) as u8;
-            *o = Color32::from_rgba_premultiplied(avg(Color32::r), avg(Color32::g), avg(Color32::b), avg(Color32::a));
+            let q = [
+                px(2 * x, 2 * y),
+                px(2 * x + 1, 2 * y),
+                px(2 * x, 2 * y + 1),
+                px(2 * x + 1, 2 * y + 1),
+            ];
+            let avg = |c: fn(&Color32) -> u8| {
+                ((q.iter().map(|p| u32::from(c(p))).sum::<u32>() + 2) / 4) as u8
+            };
+            *o = Color32::from_rgba_premultiplied(
+                avg(Color32::r),
+                avg(Color32::g),
+                avg(Color32::b),
+                avg(Color32::a),
+            );
         }
     }
     ColorImage::new([nw, nh], out)
@@ -136,10 +199,18 @@ pub struct PreviewMask {
     pub density: f32,
 }
 
-pub fn read_surface(surf: &photocraft_raster::Surface, mask: Option<&PreviewMask>, b: photocraft_geom::Rect, max_side: usize) -> (ColorImage, [f32; 2]) {
+pub fn read_surface(
+    surf: &photocraft_raster::Surface,
+    mask: Option<&PreviewMask>,
+    b: photocraft_geom::Rect,
+    max_side: usize,
+) -> (ColorImage, [f32; 2]) {
     let (w, h) = (b.width() as usize, b.height() as usize);
     if w == 0 || h == 0 {
-        return (ColorImage::new([1, 1], vec![Color32::TRANSPARENT]), [1.0, 1.0]);
+        return (
+            ColorImage::new([1, 1], vec![Color32::TRANSPARENT]),
+            [1.0, 1.0],
+        );
     }
     let k = w.max(h).div_ceil(max_side.max(1)).max(1);
     let (tw, th) = (w.div_ceil(k), h.div_ceil(k));
@@ -152,16 +223,23 @@ pub fn read_surface(surf: &photocraft_raster::Surface, mask: Option<&PreviewMask
         let mut buf = vec![[0u8; 4]; w * rows];
         surf.read_rgba8_into(photocraft_geom::Rect::new(b.x0, y0, b.x1, y1), &mut buf);
         if let Some(m) = mask {
-            let v = m.surface.read_region(photocraft_geom::Rect::new(b.x0, y0, b.x1, y1));
+            let v = m
+                .surface
+                .read_region(photocraft_geom::Rect::new(b.x0, y0, b.x1, y1));
             let ch = m.surface.channels().max(1);
             for (p, mv) in buf.iter_mut().zip(v.chunks_exact(ch)) {
-                let k = (1.0 - m.density * (1.0 - mv.first().copied().unwrap_or(1.0))).clamp(0.0, 1.0);
+                let k =
+                    (1.0 - m.density * (1.0 - mv.first().copied().unwrap_or(1.0))).clamp(0.0, 1.0);
                 p[3] = (f32::from(p[3]) * k).round() as u8;
             }
         }
         if k == 1 {
             for (o, p) in out.iter_mut().zip(&buf) {
-                *o = if p[3] == 255 { Color32::from_rgb(p[0], p[1], p[2]) } else { Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3]) };
+                *o = if p[3] == 255 {
+                    Color32::from_rgb(p[0], p[1], p[2])
+                } else {
+                    Color32::from_rgba_unmultiplied(p[0], p[1], p[2], p[3])
+                };
             }
             return;
         }
@@ -186,7 +264,9 @@ pub fn read_surface(surf: &photocraft_raster::Surface, mask: Option<&PreviewMask
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
-        px.par_chunks_mut(tw).enumerate().for_each(|(ty, out)| band(ty, out));
+        px.par_chunks_mut(tw)
+            .enumerate()
+            .for_each(|(ty, out)| band(ty, out));
     }
     #[cfg(target_arch = "wasm32")]
     for (ty, out) in px.chunks_mut(tw).enumerate() {
@@ -203,8 +283,16 @@ mod tests {
     #[test]
     fn level_and_filter_follow_the_on_screen_size() {
         assert_eq!(PreviewTextures::choose(1.0, 1.0, false), (0, false));
-        assert_eq!(PreviewTextures::choose(3.0, 1.0, false), (0, true), "zoomed in: crisp texels");
-        assert_eq!(PreviewTextures::choose(3.0, 2.0, false), (0, false), "enlarged by the transform: smooth");
+        assert_eq!(
+            PreviewTextures::choose(3.0, 1.0, false),
+            (0, true),
+            "zoomed in: crisp texels"
+        );
+        assert_eq!(
+            PreviewTextures::choose(3.0, 2.0, false),
+            (0, false),
+            "enlarged by the transform: smooth"
+        );
         assert_eq!(PreviewTextures::choose(1.0, 1.0, true), (0, true));
         assert_eq!(PreviewTextures::choose(0.25, 1.0, false), (2, false));
         assert_eq!(PreviewTextures::choose(0.3, 1.0, false), (1, false));
@@ -223,7 +311,10 @@ mod tests {
         for y in 0..300 {
             for x in 0..500 {
                 if (x + y) % 2 == 0 {
-                    s.fill_rect(photocraft_geom::Rect::new(x, y, x + 1, y + 1), &[1.0, 1.0, 1.0, 1.0]);
+                    s.fill_rect(
+                        photocraft_geom::Rect::new(x, y, x + 1, y + 1),
+                        &[1.0, 1.0, 1.0, 1.0],
+                    );
                 }
             }
         }
@@ -236,13 +327,22 @@ mod tests {
         // Over the limit: box-filtered (grey-ish average), uv covers the padded edge.
         let (small, uv) = read_surface(&s, None, r, 256);
         assert_eq!(small.size, [250, 150]);
-        assert!((100..=155).contains(&small.pixels[0].a()), "{:?}", small.pixels[0]);
+        assert!(
+            (100..=155).contains(&small.pixels[0].a()),
+            "{:?}",
+            small.pixels[0]
+        );
         assert_eq!(uv, [1.0, 1.0]);
         let (odd, uv) = read_surface(&s, None, photocraft_geom::Rect::new(0, 0, 301, 3), 256);
         assert_eq!(odd.size, [151, 2]);
         assert!(uv[0] < 1.0 && uv[1] < 1.0);
         // Empty rect: a placeholder, no panic.
-        assert_eq!(read_surface(&s, None, photocraft_geom::Rect::new(5, 5, 5, 9), 256).0.size, [1, 1]);
+        assert_eq!(
+            read_surface(&s, None, photocraft_geom::Rect::new(5, 5, 5, 9), 256)
+                .0
+                .size,
+            [1, 1]
+        );
     }
 
     #[test]
@@ -253,7 +353,10 @@ mod tests {
         assert_eq!(t.size(), [5, 3]);
         let (_, uv) = t.pick(&ctx, 0.5, 0.5, false);
         // Level 2 is 2×1 texels covering 8×4 base texels.
-        assert!((uv[0] - 5.0 / 8.0).abs() < 1e-6 && (uv[1] - 3.0 / 4.0).abs() < 1e-6, "{uv:?}");
+        assert!(
+            (uv[0] - 5.0 / 8.0).abs() < 1e-6 && (uv[1] - 3.0 / 4.0).abs() < 1e-6,
+            "{uv:?}"
+        );
         let (a, _) = t.pick(&ctx, 1.0, 1.0, false);
         let (b, _) = t.pick(&ctx, 4.0, 1.0, false);
         assert_ne!(a, b, "a nearest-filtered copy for zoomed-in views");

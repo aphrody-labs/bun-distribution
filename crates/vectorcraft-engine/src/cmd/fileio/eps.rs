@@ -45,7 +45,12 @@ pub(super) const OPTIONS: &[FormatOption] = &[
         default: "null",
         description: "true: one file per chosen artboard (default all), <file>_<artboard>.eps; false or absent: one file of the visible art (naming artboards also uses them)",
     },
-    FormatOption { name: "level", ty: "integer", default: "3", description: "PostScript language level, 2 or 3" },
+    FormatOption {
+        name: "level",
+        ty: "integer",
+        default: "3",
+        description: "PostScript language level, 2 or 3",
+    },
     FormatOption {
         name: "previewFormat",
         ty: "string",
@@ -58,7 +63,12 @@ pub(super) const OPTIONS: &[FormatOption] = &[
         default: "true",
         description: "the colour preview keeps transparency (false: on white)",
     },
-    FormatOption { name: "overprints", ty: "string", default: "\"preserve\"", description: "preserve or discard overprinting fills and strokes" },
+    FormatOption {
+        name: "overprints",
+        ty: "string",
+        default: "\"preserve\"",
+        description: "preserve or discard overprinting fills and strokes",
+    },
     FormatOption {
         name: "flattenerPreset",
         ty: "string",
@@ -83,15 +93,30 @@ pub(super) const OPTIONS: &[FormatOption] = &[
         default: "false",
         description: "the embedded document keeps linked images whole (else their previews)",
     },
-    FormatOption { name: "thumbnails", ty: "boolean", default: "true", description: "a small PNG thumbnail in the file" },
+    FormatOption {
+        name: "thumbnails",
+        ty: "boolean",
+        default: "true",
+        description: "a small PNG thumbnail in the file",
+    },
     FormatOption {
         name: "cmykPostScript",
         ty: "boolean",
         default: "true",
         description: "RGB documents are written in CMYK, for devices without RGB",
     },
-    FormatOption { name: "compatibleGradients", ty: "boolean", default: "false", description: "gradients as stepped fills at level 3 too" },
-    FormatOption { name: "selectedOnly", ty: "boolean", default: "false", description: "only the selected objects, in their layers" },
+    FormatOption {
+        name: "compatibleGradients",
+        ty: "boolean",
+        default: "false",
+        description: "gradients as stepped fills at level 3 too",
+    },
+    FormatOption {
+        name: "selectedOnly",
+        ty: "boolean",
+        default: "false",
+        description: "only the selected objects, in their layers",
+    },
 ];
 
 /// The EPS params, as they come (each checked when read).
@@ -125,7 +150,13 @@ struct Settings {
 }
 
 /// An option read by `read`, or an error listing what it may be.
-fn choice<T>(field: &str, v: Option<String>, read: impl Fn(&str) -> Option<T>, default: T, allowed: &str) -> Result<T> {
+fn choice<T>(
+    field: &str,
+    v: Option<String>,
+    read: impl Fn(&str) -> Option<T>,
+    default: T,
+    allowed: &str,
+) -> Result<T> {
     match v {
         None => Ok(default),
         Some(s) => read(&s).ok_or_else(|| bad(C, format!("EPS {field} `{s}`: {allowed}"))),
@@ -135,23 +166,40 @@ fn choice<T>(field: &str, v: Option<String>, read: impl Fn(&str) -> Option<T>, d
 /// The flattener options `p` asks for (`flattenerPreset` and `flattener` over it), built-in
 /// presets and `saved` ones; discarded overprints are dropped from the flattened art too.
 fn flattener(p: &Params, saved: &[super::super::FlattenerPreset]) -> Result<FlattenOptions> {
-    FlattenOptions::for_export(p.flattener_preset.as_deref(), p.flattener.as_ref(), saved).map_err(|e| bad(C, format!("EPS flattener: {e}")))
+    FlattenOptions::for_export(p.flattener_preset.as_deref(), p.flattener.as_ref(), saved)
+        .map_err(|e| bad(C, format!("EPS flattener: {e}")))
 }
 
 fn params(p: &Value) -> Result<Params> {
-    if p.is_object() { Params::deserialize(p).map_err(|e| bad(C, format!("EPS options: {e}"))) } else { Ok(Params::default()) }
+    if p.is_object() {
+        Params::deserialize(p).map_err(|e| bad(C, format!("EPS options: {e}")))
+    } else {
+        Ok(Params::default())
+    }
 }
 
 fn parse(p: &Value) -> Result<Settings> {
     let q = params(p)?;
     let d = EpsOptions::default();
-    let overprint = choice("overprints", q.overprints.clone(), Overprint::from_id, d.overprint, "preserve or discard")?;
+    let overprint = choice(
+        "overprints",
+        q.overprints.clone(),
+        Overprint::from_id,
+        d.overprint,
+        "preserve or discard",
+    )?;
     let mut flatten = flattener(&q, &[])?;
     flatten.preserve_overprints &= overprint == Overprint::Preserve;
     let level = q.level.as_ref().map(super::dxf::text);
     let eps = EpsOptions {
         level: choice("level", level, Level::from_id, d.level, "2 or 3")?,
-        preview: choice("previewFormat", q.preview_format.clone(), Preview::from_id, d.preview, "none, tiffBw or tiffColor")?,
+        preview: choice(
+            "previewFormat",
+            q.preview_format.clone(),
+            Preview::from_id,
+            d.preview,
+            "none, tiffBw or tiffColor",
+        )?,
         transparent_preview: q.transparent_preview.unwrap_or(true),
         overprint,
         cmyk: q.cmyk_post_script.unwrap_or(true),
@@ -170,7 +218,10 @@ fn parse(p: &Value) -> Result<Settings> {
 
 /// `p` checked (dialogs keep themselves open on an error) and with a saved flattener preset of
 /// `saved` it names written out, as the encoder needs it.
-pub fn resolve(p: &Value, saved: &[super::super::FlattenerPreset]) -> std::result::Result<Value, String> {
+pub fn resolve(
+    p: &Value,
+    saved: &[super::super::FlattenerPreset],
+) -> std::result::Result<Value, String> {
     let run = || -> Result<Value> {
         let q = expanded(C, p, saved)?.unwrap_or_else(|| p.clone());
         parse(&q)?;
@@ -181,12 +232,18 @@ pub fn resolve(p: &Value, saved: &[super::super::FlattenerPreset]) -> std::resul
 
 /// `p` with a saved flattener preset it names written out as `flattener` options, for the
 /// encoder, which knows only the built-in presets; `None` when `p` names none.
-fn expanded(cmd: &str, p: &Value, saved: &[super::super::FlattenerPreset]) -> Result<Option<Value>> {
+fn expanded(
+    cmd: &str,
+    p: &Value,
+    saved: &[super::super::FlattenerPreset],
+) -> Result<Option<Value>> {
     match str_param(p, "flattenerPreset") {
         Some(name) if !name.trim().is_empty() && FlattenOptions::preset(name).is_none() => {
-            let o = FlattenOptions::for_export(Some(name), p.get("flattener"), saved).map_err(|e| bad(cmd, format!("flattener: {e}")))?;
+            let o = FlattenOptions::for_export(Some(name), p.get("flattener"), saved)
+                .map_err(|e| bad(cmd, format!("flattener: {e}")))?;
             let mut q = p.clone();
-            q["flattener"] = serde_json::to_value(o).map_err(|e| EngineError::Other(e.to_string()))?;
+            q["flattener"] =
+                serde_json::to_value(o).map_err(|e| EngineError::Other(e.to_string()))?;
             if let Some(m) = q.as_object_mut() {
                 m.remove("flattenerPreset");
             }
@@ -211,23 +268,45 @@ fn pages(doc: &Document, set: &Settings) -> Result<Vec<(Option<usize>, Rect, Poi
     match boards {
         Some(boards) => boards
             .into_iter()
-            .map(|b| doc.artboards.get(b).map(|a| (Some(b), a.rect, corner(a.rect))).ok_or_else(|| bad(C, format!("no artboard {}", b + 1))))
+            .map(|b| {
+                doc.artboards
+                    .get(b)
+                    .map(|a| (Some(b), a.rect, corner(a.rect)))
+                    .ok_or_else(|| bad(C, format!("no artboard {}", b + 1)))
+            })
             .collect(),
         None => {
-            let art = vectorcraft_render::encode::art_bounds(doc).ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
-            Ok(vec![(None, art, doc.artboards.first().map_or(corner(art), |a| corner(a.rect)))])
+            let art = vectorcraft_render::encode::art_bounds(doc)
+                .ok_or_else(|| bad(C, "nothing to export: the document has no visible art"))?;
+            Ok(vec![(
+                None,
+                art,
+                doc.artboards
+                    .first()
+                    .map_or(corner(art), |a| corner(a.rect)),
+            )])
         }
     }
 }
 
 /// `rect` of `doc` drawn at a pixel a point (fewer when larger than `max` a side), straight RGBA,
 /// transparent or on white.
-fn render(r: &mut vectorcraft_render::Renderer, doc: &Document, rect: Rect, max: f64, transparent: bool) -> Result<Raster> {
+fn render(
+    r: &mut vectorcraft_render::Renderer,
+    doc: &Document,
+    rect: Rect,
+    max: f64,
+    transparent: bool,
+) -> Result<Raster> {
     let long = rect.width().max(rect.height());
     let scale = if long > max { max / long } else { 1.0 };
     vectorcraft_render::raster_size(rect, scale).map_err(|e| bad(C, e))?;
     let img = r.render_region(doc, rect, scale, !transparent);
-    Ok(Raster { width: img.width, height: img.height, rgba: img.to_straight() })
+    Ok(Raster {
+        width: img.width,
+        height: img.height,
+        rgba: img.to_straight(),
+    })
 }
 
 /// What the file carries to reopen: `doc` (with only artboard `board` when the file is one of
@@ -273,7 +352,11 @@ pub(super) fn encode(doc: &Document, p: &Value) -> Result<Encoded> {
     let transparent = doc.layers.iter().any(|l| l.shows_transparency());
     let flat = flatten_document(doc, &set.flatten)?;
     let drawn = flat.as_ref().unwrap_or(doc);
-    let mut enc = Encoded { warnings, joiner: Some("_"), ..Encoded::default() };
+    let mut enc = Encoded {
+        warnings,
+        joiner: Some("_"),
+        ..Encoded::default()
+    };
     if transparent && flat.is_some() {
         enc.warnings.push("transparency is flattened into opaque art and images (EPS has none): see the flattener preset".into());
     }
@@ -283,9 +366,18 @@ pub(super) fn encode(doc: &Document, p: &Value) -> Result<Encoded> {
         let rect = vectorcraft_eps::preview_rect(region, origin);
         let preview = match set.eps.preview {
             Preview::None => None,
-            kind => Some(render(&mut renderer, doc, rect, MAX_PREVIEW, set.eps.transparent_preview && kind == Preview::TiffColor)?),
+            kind => Some(render(
+                &mut renderer,
+                doc,
+                rect,
+                MAX_PREVIEW,
+                set.eps.transparent_preview && kind == Preview::TiffColor,
+            )?),
         };
-        let thumbnail = set.thumbnails.then(|| render(&mut renderer, doc, rect, THUMBNAIL, false)).transpose()?;
+        let thumbnail = set
+            .thumbnails
+            .then(|| render(&mut renderer, doc, rect, THUMBNAIL, false))
+            .transpose()?;
         let o = EpsOptions {
             region,
             origin,
@@ -294,7 +386,8 @@ pub(super) fn encode(doc: &Document, p: &Value) -> Result<Encoded> {
             native: Some(native(&editing, board, set.include_linked)),
             ..set.eps.clone()
         };
-        let out = vectorcraft_eps::export(drawn, &o, preview.as_ref(), thumbnail.as_ref()).map_err(|e| bad(C, e))?;
+        let out = vectorcraft_eps::export(drawn, &o, preview.as_ref(), thumbnail.as_ref())
+            .map_err(|e| bad(C, e))?;
         enc.files.push((board, out.bytes));
         for w in out.warnings {
             if !enc.warnings.contains(&w) {
@@ -312,7 +405,11 @@ fn export_eps(s: &mut Session, p: &Value) -> Result<Value> {
 }
 
 /// `p` with a saved flattener preset of the session's written out (see [`expanded`]).
-pub(super) fn with_flattener<'a>(s: &Session, cmd: &str, p: Cow<'a, Value>) -> Result<Cow<'a, Value>> {
+pub(super) fn with_flattener<'a>(
+    s: &Session,
+    cmd: &str,
+    p: Cow<'a, Value>,
+) -> Result<Cow<'a, Value>> {
     Ok(match expanded(cmd, &p, &s.prefs.flattener_presets)? {
         Some(q) => Cow::Owned(q),
         None => p,

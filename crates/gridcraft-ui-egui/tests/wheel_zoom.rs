@@ -10,14 +10,17 @@ type Harness = egui_kittest::Harness<'static, SheetApp>;
 fn harness() -> Harness {
     let mut session = Session::new();
     session.new_workbook();
-    let mut h = Harness::builder().with_size(egui::vec2(1200.0, 800.0)).with_step_dt(1.0 / 60.0).build_ui_state(
-        |ui, app: &mut SheetApp| {
-            let ctx = ui.ctx().clone();
-            app.logic(&ctx);
-            app.ui(ui);
-        },
-        SheetApp::new(session, Default::default()),
-    );
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1200.0, 800.0))
+        .with_step_dt(1.0 / 60.0)
+        .build_ui_state(
+            |ui, app: &mut SheetApp| {
+                let ctx = ui.ctx().clone();
+                app.logic(&ctx);
+                app.ui(ui);
+            },
+            SheetApp::new(session, Default::default()),
+        );
     h.run_steps(4);
     let over_grid = h.state().grid.rect.unwrap().center();
     h.input_mut().events.push(Event::PointerMoved(over_grid));
@@ -26,25 +29,43 @@ fn harness() -> Harness {
 }
 
 fn zoom(h: &Harness) -> u16 {
-    h.state().session.active().unwrap().wb.active().unwrap().zoom
+    h.state()
+        .session
+        .active()
+        .unwrap()
+        .wb
+        .active()
+        .unwrap()
+        .zoom
 }
 
 fn set_zoom(h: &mut Harness, percent: u16) {
-    h.state_mut().run("view.zoom", json!({"percent": percent})).unwrap();
+    h.state_mut()
+        .run("view.zoom", json!({"percent": percent}))
+        .unwrap();
     h.run_steps(2);
 }
 
 /// Turns the wheel `turns` notches at a time with Ctrl held (up zooms in), each turn `frames`
 /// frames after the last, then lets egui's easing play out.
 fn wheel_turns(h: &mut Harness, turns: &[f32], frames: usize) {
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::COMMAND));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::COMMAND));
     for &t in turns {
         let delta = vec2(0.0, t);
-        h.input_mut().events.push(Event::MouseWheel { unit: MouseWheelUnit::Line, delta, phase: TouchPhase::Move, modifiers: Modifiers::COMMAND });
+        h.input_mut().events.push(Event::MouseWheel {
+            unit: MouseWheelUnit::Line,
+            delta,
+            phase: TouchPhase::Move,
+            modifiers: Modifiers::COMMAND,
+        });
         h.run_steps(frames);
     }
     h.run_steps(60);
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::NONE));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::NONE));
     h.run_steps(2);
 }
 
@@ -62,9 +83,16 @@ fn animated() -> Harness {
 
 /// Turns the wheel `notches` with Ctrl held and records the zoom over the next `frames` frames.
 fn turn_and_watch(h: &mut Harness, notches: f32, frames: usize) -> Vec<u16> {
-    h.input_mut().events.push(Event::ModifiersChanged(Modifiers::COMMAND));
+    h.input_mut()
+        .events
+        .push(Event::ModifiersChanged(Modifiers::COMMAND));
     let delta = vec2(0.0, notches);
-    h.input_mut().events.push(Event::MouseWheel { unit: MouseWheelUnit::Line, delta, phase: TouchPhase::Move, modifiers: Modifiers::COMMAND });
+    h.input_mut().events.push(Event::MouseWheel {
+        unit: MouseWheelUnit::Line,
+        delta,
+        phase: TouchPhase::Move,
+        modifiers: Modifiers::COMMAND,
+    });
     (0..frames)
         .map(|_| {
             h.step();
@@ -77,12 +105,18 @@ fn turn_and_watch(h: &mut Harness, notches: f32, frames: usize) -> Vec<u16> {
 fn with_animations_the_zoom_glides_to_the_step() {
     let mut h = animated();
     let seen = turn_and_watch(&mut h, 1.0, 40);
-    assert!(seen.windows(2).all(|w| w[0] <= w[1]), "only ever towards the step: {seen:?}");
+    assert!(
+        seen.windows(2).all(|w| w[0] <= w[1]),
+        "only ever towards the step: {seen:?}"
+    );
     let between = seen.iter().filter(|&&z| z > 100 && z < 120).count();
     assert!(between >= 3, "on its way over several frames: {seen:?}");
     assert_eq!(seen.last(), Some(&120), "and exactly on the step: {seen:?}");
     let seen = turn_and_watch(&mut h, -1.0, 40);
-    assert!(seen.windows(2).all(|w| w[0] >= w[1]) && seen.iter().any(|&z| z > 100 && z < 120), "{seen:?}");
+    assert!(
+        seen.windows(2).all(|w| w[0] >= w[1]) && seen.iter().any(|&z| z > 100 && z < 120),
+        "{seen:?}"
+    );
     assert_eq!(seen.last(), Some(&100), "{seen:?}");
 }
 
@@ -90,7 +124,10 @@ fn with_animations_the_zoom_glides_to_the_step() {
 fn a_notch_during_a_glide_steps_on_from_where_it_is_going() {
     let mut h = animated();
     let seen = turn_and_watch(&mut h, 1.0, 6);
-    assert!(seen.last().is_some_and(|&z| z > 100 && z < 120), "still gliding: {seen:?}");
+    assert!(
+        seen.last().is_some_and(|&z| z > 100 && z < 120),
+        "still gliding: {seen:?}"
+    );
     turn_and_watch(&mut h, 1.0, 60);
     assert_eq!(zoom(&h), 140);
     let seen = turn_and_watch(&mut h, -1.0, 6);
@@ -104,7 +141,9 @@ fn a_zoom_set_another_way_stops_a_glide() {
     let mut h = animated();
     let seen = turn_and_watch(&mut h, 1.0, 6);
     assert!(seen.last().is_some_and(|&z| z > 100 && z < 120), "{seen:?}");
-    h.state_mut().run("view.zoom", json!({"percent": 150})).unwrap();
+    h.state_mut()
+        .run("view.zoom", json!({"percent": 150}))
+        .unwrap();
     h.run_steps(60);
     assert_eq!(zoom(&h), 150);
     // Setting the percentage the glide had got to doesn't start it again.
@@ -117,9 +156,14 @@ fn a_zoom_set_another_way_stops_a_glide() {
 #[test]
 fn with_view_animations_off_a_notch_steps_at_once() {
     let mut h = animated();
-    h.state_mut().run("view.animations", json!({"on": false})).unwrap();
+    h.state_mut()
+        .run("view.animations", json!({"on": false}))
+        .unwrap();
     let seen = turn_and_watch(&mut h, 1.0, 40);
-    assert!(seen.iter().all(|&z| z == 100 || z == 120), "no percentages in between: {seen:?}");
+    assert!(
+        seen.iter().all(|&z| z == 100 || z == 120),
+        "no percentages in between: {seen:?}"
+    );
     assert_eq!(seen.last(), Some(&120));
 }
 
@@ -172,9 +216,16 @@ fn parts_of_a_notch_add_up_to_whole_steps() {
 #[test]
 fn from_a_zoom_set_another_way_a_notch_goes_to_the_next_step_or_100() {
     let mut h = harness();
-    for (from, notches, to) in
-        [(112, 1.0, 120), (112, -1.0, 100), (121, -1.0, 100), (99, 1.0, 100), (101, -1.0, 100), (385, 1.0, 400), (400, 1.0, 400), (11, -1.0, 10)]
-    {
+    for (from, notches, to) in [
+        (112, 1.0, 120),
+        (112, -1.0, 100),
+        (121, -1.0, 100),
+        (99, 1.0, 100),
+        (101, -1.0, 100),
+        (385, 1.0, 400),
+        (400, 1.0, 400),
+        (11, -1.0, 10),
+    ] {
         set_zoom(&mut h, from);
         wheel(&mut h, notches);
         assert_eq!(zoom(&h), to, "{from}% by {notches}");

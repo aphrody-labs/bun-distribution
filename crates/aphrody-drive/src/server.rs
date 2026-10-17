@@ -34,7 +34,10 @@ struct ServerState {
 /// Whether `id` is a library or content UUID (hex digits and dashes, at least 4 characters).
 #[must_use]
 pub fn is_uuid_like(id: &str) -> bool {
-    id.len() >= 4 && id.bytes().all(|byte| byte.is_ascii_hexdigit() || byte == b'-')
+    id.len() >= 4
+        && id
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() || byte == b'-')
 }
 
 /// Whether `name` is a single safe path component (no separator, no `..`, not hidden).
@@ -46,7 +49,11 @@ pub fn is_safe_component(name: &str) -> bool {
 /// The sidecar directory name for a kind: `thumb` → `thumbs`, `transcript` stays singular.
 #[must_use]
 pub fn kind_dir(kind: &str) -> String {
-    if kind == "transcript" { kind.to_string() } else { format!("{kind}s") }
+    if kind == "transcript" {
+        kind.to_string()
+    } else {
+        format!("{kind}s")
+    }
 }
 
 /// The sidecar file inside a library folder:
@@ -88,7 +95,9 @@ pub async fn find_library_folder(data_dir: &Path, library_id: &str) -> Option<Pa
         let Ok(contents) = tokio::fs::read_to_string(path.join("library.json")).await else {
             continue;
         };
-        let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) else { continue };
+        let Ok(json) = serde_json::from_str::<serde_json::Value>(&contents) else {
+            continue;
+        };
         if json.get("id").and_then(serde_json::Value::as_str) == Some(library_id) {
             return Some(path);
         }
@@ -126,8 +135,9 @@ async fn serve_sidecar(
     if token != state.token {
         return Err(StatusCode::NOT_FOUND);
     }
-    let library_folder =
-        find_library_folder(&state.data_dir, &library_id).await.ok_or(StatusCode::NOT_FOUND)?;
+    let library_folder = find_library_folder(&state.data_dir, &library_id)
+        .await
+        .ok_or(StatusCode::NOT_FOUND)?;
     let path = sidecar_path(&library_folder, &content_uuid, &kind, &file).map_err(|error| {
         log::error!("sidecar request rejected: {error}");
         StatusCode::FORBIDDEN
@@ -135,8 +145,9 @@ async fn serve_sidecar(
     let libraries_root = tokio::fs::canonicalize(state.data_dir.join("libraries"))
         .await
         .map_err(|_| StatusCode::NOT_FOUND)?;
-    let library_root =
-        tokio::fs::canonicalize(&library_folder).await.map_err(|_| StatusCode::NOT_FOUND)?;
+    let library_root = tokio::fs::canonicalize(&library_folder)
+        .await
+        .map_err(|_| StatusCode::NOT_FOUND)?;
     let resolved_path = tokio::fs::canonicalize(&path).await.map_err(|error| {
         if error.kind() == io::ErrorKind::NotFound {
             StatusCode::NOT_FOUND
@@ -156,14 +167,29 @@ async fn serve_sidecar(
             StatusCode::INTERNAL_SERVER_ERROR
         }
     })?;
-    let length = file_handle.metadata().await.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?.len();
+    let length = file_handle
+        .metadata()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .len();
     Response::builder()
         .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, HeaderValue::from_static(content_type(&file)))
+        .header(
+            header::CONTENT_TYPE,
+            HeaderValue::from_static(content_type(&file)),
+        )
         .header(header::CONTENT_LENGTH, length)
-        .header(header::CACHE_CONTROL, HeaderValue::from_static("private, no-store"))
-        .header(header::X_CONTENT_TYPE_OPTIONS, HeaderValue::from_static("nosniff"))
-        .body(Body::from_stream(tokio_util::io::ReaderStream::new(file_handle)))
+        .header(
+            header::CACHE_CONTROL,
+            HeaderValue::from_static("private, no-store"),
+        )
+        .header(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        )
+        .body(Body::from_stream(tokio_util::io::ReaderStream::new(
+            file_handle,
+        )))
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)
 }
 
@@ -181,16 +207,23 @@ fn allowed_webview_origin(origin: &HeaderValue) -> bool {
 async fn add_cors_headers(request: Request, next: Next) -> Response<Body> {
     let origin = request.headers().get(header::ORIGIN).cloned();
     let mut response = next.run(request).await;
-    response.headers_mut().insert(header::VARY, HeaderValue::from_static("Origin"));
+    response
+        .headers_mut()
+        .insert(header::VARY, HeaderValue::from_static("Origin"));
     if let Some(origin) = origin.filter(allowed_webview_origin) {
-        response.headers_mut().insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        response
+            .headers_mut()
+            .insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, origin);
     }
     response
 }
 
 fn router(data_dir: PathBuf, token: String) -> Router {
     Router::new()
-        .route("/{token}/sidecar/{library_id}/{content_uuid}/{kind}/{variant}", get(serve_sidecar))
+        .route(
+            "/{token}/sidecar/{library_id}/{content_uuid}/{kind}/{variant}",
+            get(serve_sidecar),
+        )
         .layer(middleware::from_fn(add_cors_headers))
         .with_state(ServerState { data_dir, token })
 }
@@ -200,8 +233,9 @@ fn router(data_dir: PathBuf, token: String) -> Router {
 /// # Errors
 /// When the port cannot be bound.
 pub async fn start_server(data_dir: PathBuf) -> Result<(String, mpsc::Sender<()>), String> {
-    let listener =
-        TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.map_err(|error| error.to_string())?;
+    let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+        .await
+        .map_err(|error| error.to_string())?;
     let address = listener.local_addr().map_err(|error| error.to_string())?;
     let token = Uuid::new_v4().simple().to_string();
     let url = format!("http://{address}/{token}");
@@ -232,10 +266,14 @@ mod tests {
             "https://tauri.localhost",
             "tauri://localhost",
         ] {
-            assert!(allowed_webview_origin(&HeaderValue::from_str(origin).unwrap()));
+            assert!(allowed_webview_origin(
+                &HeaderValue::from_str(origin).unwrap()
+            ));
         }
         for origin in ["null", "https://example.test", "http://localhost:1422"] {
-            assert!(!allowed_webview_origin(&HeaderValue::from_str(origin).unwrap()));
+            assert!(!allowed_webview_origin(
+                &HeaderValue::from_str(origin).unwrap()
+            ));
         }
     }
 
@@ -248,7 +286,10 @@ mod tests {
         let sidecar = sidecar_path(&library, "abcd", "thumb", "grid.webp").unwrap();
         std::fs::create_dir_all(sidecar.parent().unwrap()).unwrap();
         std::fs::write(&sidecar, b"image").unwrap();
-        let state = ServerState { data_dir: data.path().to_path_buf(), token: "secret".into() };
+        let state = ServerState {
+            data_dir: data.path().to_path_buf(),
+            token: "secret".into(),
+        };
         let request = |token: &str| {
             UrlPath((
                 token.to_string(),
@@ -262,10 +303,18 @@ mod tests {
             serve_sidecar(State(state.clone()), request("wrong")).await,
             Err(StatusCode::NOT_FOUND)
         ));
-        let response = serve_sidecar(State(state), request("secret")).await.unwrap();
+        let response = serve_sidecar(State(state), request("secret"))
+            .await
+            .unwrap();
         assert_eq!(response.status(), StatusCode::OK);
-        assert_eq!(response.headers()[header::CACHE_CONTROL], "private, no-store");
-        assert_eq!(response.headers()[header::X_CONTENT_TYPE_OPTIONS], "nosniff");
+        assert_eq!(
+            response.headers()[header::CACHE_CONTROL],
+            "private, no-store"
+        );
+        assert_eq!(
+            response.headers()[header::X_CONTENT_TYPE_OPTIONS],
+            "nosniff"
+        );
     }
 
     #[cfg(unix)]
@@ -280,7 +329,10 @@ mod tests {
         let sidecar = sidecar_path(&library, "abcd", "thumb", "grid.webp").unwrap();
         std::fs::create_dir_all(sidecar.parent().unwrap()).unwrap();
         std::os::unix::fs::symlink(outside, sidecar).unwrap();
-        let state = ServerState { data_dir: data.path().to_path_buf(), token: "secret".into() };
+        let state = ServerState {
+            data_dir: data.path().to_path_buf(),
+            token: "secret".into(),
+        };
         assert!(matches!(
             serve_sidecar(
                 State(state),
@@ -343,7 +395,10 @@ mod tests {
         std::fs::create_dir_all(&folder).unwrap();
         std::fs::write(folder.join("library.json"), r#"{"id":"1234-abcd"}"#).unwrap();
         std::fs::create_dir_all(data.path().join("libraries").join("other")).unwrap();
-        assert_eq!(find_library_folder(data.path(), "1234-abcd").await, Some(folder));
+        assert_eq!(
+            find_library_folder(data.path(), "1234-abcd").await,
+            Some(folder)
+        );
         assert_eq!(find_library_folder(data.path(), "ffff").await, None);
     }
 }

@@ -17,13 +17,19 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use effectcraft_effects::camera_tracker::{self as ct, AVERAGE_ERROR, METHOD_USED, SOLVE, SOLVE_KEY, TRACKS, TRACKS_KEY};
+use effectcraft_effects::camera_tracker::{
+    self as ct, AVERAGE_ERROR, METHOD_USED, SOLVE, SOLVE_KEY, TRACKS, TRACKS_KEY,
+};
 use effectcraft_keyframe::{Keyframe, Value};
-use effectcraft_project::{AutoOrient, GroupKind, ItemId, ItemKind, Layer, LayerId, Project, PropGroup, Uid};
+use effectcraft_project::{
+    AutoOrient, GroupKind, ItemId, ItemKind, Layer, LayerId, Project, PropGroup, Uid,
+};
 use effectcraft_render::{EvalCtx, ExprHost, FootageSource, LayerCache, Renderer};
 use effectcraft_time::Tick;
 use effectcraft_track::camtrack::linalg::{self, Similarity, V3};
-use effectcraft_track::camtrack::{AnalyzeOpts, CameraSolve, CameraTracks, SolveSettings, Target, TrackAnalyzer};
+use effectcraft_track::camtrack::{
+    AnalyzeOpts, CameraSolve, CameraTracks, SolveSettings, Target, TrackAnalyzer,
+};
 use serde::Serialize;
 
 use crate::offload::JobKind;
@@ -124,8 +130,14 @@ fn str_of(g: &PropGroup, m: &str) -> String {
 
 /// What a tracker's tracks are made from: the layer's frames and Detailed Analysis.
 fn tracks_key(project: &Project, cid: ItemId, l: &Layer, g: &PropGroup) -> String {
-    let detailed = effectcraft_effects::warp_stab::param(&static_params(g), "advanced/detailedAnalysis").is_some_and(Value::as_bool);
-    format!("{}{}", signature(project, cid, l), if detailed { "+detailed" } else { "" })
+    let detailed =
+        effectcraft_effects::warp_stab::param(&static_params(g), "advanced/detailedAnalysis")
+            .is_some_and(Value::as_bool);
+    format!(
+        "{}{}",
+        signature(project, cid, l),
+        if detailed { "+detailed" } else { "" }
+    )
 }
 
 /// Parameters of an instance from static values (the tracker's settings are not animated).
@@ -156,7 +168,9 @@ pub(crate) fn invalidate(before: &Project, after: &mut Project) -> Vec<(ItemId, 
     let mut todo = vec![];
     let mut clears = vec![];
     for (cid, it) in &after.items {
-        let ItemKind::Comp(c) = &it.kind else { continue };
+        let ItemKind::Comp(c) = &it.kind else {
+            continue;
+        };
         for l in &c.layers {
             let Some(fx) = l.effects() else { continue };
             if !fx.groups().any(is_tracker) {
@@ -168,24 +182,39 @@ pub(crate) fn invalidate(before: &Project, after: &mut Project) -> Vec<(ItemId, 
                 if tracked && str_of(g, TRACKS_KEY) != tracks_key(after, *cid, l, g) {
                     clears.push((*cid, l.id, g.uid, true));
                     todo.push((*cid, l.id, g.uid));
-                } else if tracked && str_of(g, SOLVE_KEY) != ct::solve_key(&ct::settings(&static_params(g))) {
+                } else if tracked
+                    && str_of(g, SOLVE_KEY) != ct::solve_key(&ct::settings(&static_params(g)))
+                {
                     clears.push((*cid, l.id, g.uid, false));
                     todo.push((*cid, l.id, g.uid));
-                } else if !tracked && old_layer.and_then(|ol| ol.props.find_group(g.uid)).is_none() {
+                } else if !tracked
+                    && old_layer
+                        .and_then(|ol| ol.props.find_group(g.uid))
+                        .is_none()
+                {
                     todo.push((*cid, l.id, g.uid));
                 }
             }
         }
     }
     for (cid, lid, uid, all) in clears {
-        if let Some(g) = after.comp_mut(cid).and_then(|c| c.layer_mut(lid)).and_then(|l| l.props.find_group_mut(uid)) {
+        if let Some(g) = after
+            .comp_mut(cid)
+            .and_then(|c| c.layer_mut(lid))
+            .and_then(|l| l.props.find_group_mut(uid))
+        {
             clear(g, all);
         }
     }
     todo
 }
 
-fn input_frame(r: &Renderer, ctx: &EvalCtx, layer: &Layer, effect_index: usize) -> Option<(Arc<effectcraft_raster::Image>, [f64; 2])> {
+fn input_frame(
+    r: &Renderer,
+    ctx: &EvalCtx,
+    layer: &Layer,
+    effect_index: usize,
+) -> Option<(Arc<effectcraft_raster::Image>, [f64; 2])> {
     let buf = r.layer_input(ctx, layer, effect_index)?;
     if (buf.scale - 1.0).abs() > 1e-9 && buf.scale > 0.0 {
         let w = (buf.img.width as f64 / buf.scale).round().max(1.0) as u32;
@@ -211,55 +240,100 @@ async fn run_work(w: CamWork, shared: &CameraShared) {
         s.cancelled = true;
         s.finished = true;
     };
-    let Some(comp) = w.project.comp(w.comp) else { return fail("composition missing") };
-    let Some(layer) = comp.layer(w.layer) else { return fail("layer missing") };
+    let Some(comp) = w.project.comp(w.comp) else {
+        return fail("composition missing");
+    };
+    let Some(layer) = comp.layer(w.layer) else {
+        return fail("layer missing");
+    };
     let lt0 = layer.layer_time(w.times[0]).seconds();
-    let fd = if w.times.len() > 1 { layer.layer_time(w.times[1]).seconds() - lt0 } else { comp.frame_duration().seconds() };
+    let fd = if w.times.len() > 1 {
+        layer.layer_time(w.times[1]).seconds() - lt0
+    } else {
+        comp.frame_duration().seconds()
+    };
     let (tracks, fresh) = match w.tracks.clone() {
         Some(t) => (t, false),
         None => {
-            let mut r = Renderer::new(&w.project, w.footage.as_ref(), crate::offload::analysis_opts(accel));
+            let mut r = Renderer::new(
+                &w.project,
+                w.footage.as_ref(),
+                crate::offload::analysis_opts(accel),
+            );
             r.expr = w.expr.as_deref();
             r.cache = Some(&w.cache);
             let r = &r;
             let ctx0 = EvalCtx::new(&w.project, w.comp, comp, Tick::ZERO);
-            let ctx0 = EvalCtx { expr: w.expr.as_deref(), ..ctx0 };
+            let ctx0 = EvalCtx {
+                expr: w.expr.as_deref(),
+                ..ctx0
+            };
             let ctx0 = &ctx0;
-            let frame_at = |t: Tick| crate::offload::in_passes(accel, move |a| input_frame(&r.with_accel(a), &ctx0.at(t), layer, w.effect_index));
+            let frame_at = |t: Tick| {
+                crate::offload::in_passes(accel, move |a| {
+                    input_frame(&r.with_accel(a), &ctx0.at(t), layer, w.effect_index)
+                })
+            };
             {
                 let mut s = lock(&shared.state);
                 s.step = 1;
                 s.total = w.times.len() as u64;
             }
-            let mut an = TrackAnalyzer::new(w.size, AnalyzeOpts { detailed: w.detailed });
+            let mut an = TrackAnalyzer::new(
+                w.size,
+                AnalyzeOpts {
+                    detailed: w.detailed,
+                },
+            );
             let mut next = frame_at(w.times[0]).await;
             for k in 0..w.times.len() {
                 if shared.cancel.load(Ordering::Relaxed) {
                     return cancelled();
                 }
-                let Some(cur) = next.take() else { return fail(&format!("no frame at {:.3} s", w.times[k].seconds())) };
+                let Some(cur) = next.take() else {
+                    return fail(&format!("no frame at {:.3} s", w.times[k].seconds()));
+                };
                 let ((), nf) = crate::offload::join_fetch(
                     accel.is_some(),
-                    || an.push(&effectcraft_track::Frame { img: &cur.0, offset: cur.1 }),
-                    || async { if k + 1 < w.times.len() { frame_at(w.times[k + 1]).await } else { None } },
+                    || {
+                        an.push(&effectcraft_track::Frame {
+                            img: &cur.0,
+                            offset: cur.1,
+                        })
+                    },
+                    || async {
+                        if k + 1 < w.times.len() {
+                            frame_at(w.times[k + 1]).await
+                        } else {
+                            None
+                        }
+                    },
                 )
                 .await;
                 next = nf;
                 let mut s = lock(&shared.state);
                 s.done = k as u64 + 1;
                 s.elapsed = t0.elapsed().as_secs_f64();
-                s.fps = if s.elapsed > 0.0 { s.done as f64 / s.elapsed } else { 0.0 };
+                s.fps = if s.elapsed > 0.0 {
+                    s.done as f64 / s.elapsed
+                } else {
+                    0.0
+                };
                 crate::offload::report(s.done, s.total);
             }
             (Arc::new(an.finish(lt0, fd)), true)
         }
     };
     lock(&shared.state).step = 2;
-    let solve = effectcraft_track::camtrack::solve(&tracks, &w.settings, Some(&shared.cancel)).map_err(|e| e.0);
+    let solve = effectcraft_track::camtrack::solve(&tracks, &w.settings, Some(&shared.cancel))
+        .map_err(|e| e.0);
     if shared.cancel.load(Ordering::Relaxed) {
         return cancelled();
     }
-    *lock(&shared.result) = Some(CamResult { tracks: fresh.then(|| (*tracks).clone()), solve });
+    *lock(&shared.result) = Some(CamResult {
+        tracks: fresh.then(|| (*tracks).clone()),
+        solve,
+    });
     let mut s = lock(&shared.state);
     s.elapsed = t0.elapsed().as_secs_f64();
     s.finished = true;
@@ -267,7 +341,8 @@ async fn run_work(w: CamWork, shared: &CameraShared) {
 
 impl Session {
     pub fn is_camera_analyzing(&self) -> bool {
-        self.camera_job.as_ref().is_some_and(|j| !j.is_finished()) || self.offloaded(JobKind::Camera).is_some()
+        self.camera_job.as_ref().is_some_and(|j| !j.is_finished())
+            || self.offloaded(JobKind::Camera).is_some()
     }
 
     /// Progress of the running (or just finished) analysis.
@@ -275,14 +350,27 @@ impl Session {
         self.camera_job.as_ref().map(|j| j.progress()).or_else(|| {
             self.offloaded(JobKind::Camera).map(|j| {
                 let p = &j.progress;
-                CameraProgress { step: 1, done: p.done, total: p.total, elapsed: p.elapsed, fps: crate::offload::rate(p.done, p.elapsed), ..Default::default() }
+                CameraProgress {
+                    step: 1,
+                    done: p.done,
+                    total: p.total,
+                    elapsed: p.elapsed,
+                    fps: crate::offload::rate(p.done, p.elapsed),
+                    ..Default::default()
+                }
             })
         })
     }
 
     /// The tracker being analysed: (comp, layer, effect uid).
     pub fn camera_target(&self) -> Option<(ItemId, LayerId, Uid)> {
-        self.camera_job.as_ref().map(|j| (j.comp, j.layer, j.effect)).or_else(|| self.offloaded(JobKind::Camera).map(|j| (j.comp, j.layer, j.uid)))
+        self.camera_job
+            .as_ref()
+            .map(|j| (j.comp, j.layer, j.effect))
+            .or_else(|| {
+                self.offloaded(JobKind::Camera)
+                    .map(|j| (j.comp, j.layer, j.uid))
+            })
     }
 
     /// Cancel the running analysis (nothing is written).
@@ -302,7 +390,13 @@ impl Session {
     /// Start analysing 3D Camera Tracker `effect` on `layer` (re-solving the stored tracks when
     /// they are still valid). `wait`: block until done (wasm32 always does). Returns the number
     /// of frames.
-    pub fn start_camera(&mut self, comp: ItemId, layer: LayerId, effect: Uid, wait: bool) -> Result<usize, String> {
+    pub fn start_camera(
+        &mut self,
+        comp: ItemId,
+        layer: LayerId,
+        effect: Uid,
+        wait: bool,
+    ) -> Result<usize, String> {
         if self.is_camera_analyzing() {
             return Err("a 3D Camera Tracker analysis is already running".into());
         }
@@ -311,8 +405,15 @@ impl Session {
         let c = self.project.comp(comp).ok_or("no composition")?;
         let l = c.layer(layer).ok_or("no layer")?;
         let fx = l.effects().ok_or("the layer has no effects")?;
-        let index = fx.groups().position(|g| g.uid == effect).ok_or("no such effect")?;
-        let g = fx.groups().nth(index).filter(|g| is_tracker(g)).ok_or("not a 3D Camera Tracker")?;
+        let index = fx
+            .groups()
+            .position(|g| g.uid == effect)
+            .ok_or("no such effect")?;
+        let g = fx
+            .groups()
+            .nth(index)
+            .filter(|g| is_tracker(g))
+            .ok_or("not a 3D Camera Tracker")?;
         if l.switches.adjustment {
             return Err("3D Camera Tracker needs footage, not an adjustment layer".into());
         }
@@ -336,14 +437,21 @@ impl Session {
             layer,
             effect_index: index,
             size,
-            detailed: params.values.iter().any(|(k, v)| k.ends_with("detailedAnalysis") && v.as_bool()),
+            detailed: params
+                .values
+                .iter()
+                .any(|(k, v)| k.ends_with("detailedAnalysis") && v.as_bool()),
             times,
             tracks: tracks.clone(),
             settings,
         };
         if !wait && self.offloads() {
             drop(work);
-            self.offload_analysis(crate::offload::WorkerJob::Camera { comp, layer, effect })?;
+            self.offload_analysis(crate::offload::WorkerJob::Camera {
+                comp,
+                layer,
+                effect,
+            })?;
             return Ok(n);
         }
         let wait = wait || cfg!(target_arch = "wasm32");
@@ -369,19 +477,33 @@ impl Session {
                     .map_err(|e| e.to_string())?,
             )
         };
-        self.camera_job = Some(CameraJob { shared, thread, comp, layer, effect, key, solve_key });
-        self.events.push(Event::ProjectChanged { revision: self.revision });
+        self.camera_job = Some(CameraJob {
+            shared,
+            thread,
+            comp,
+            layer,
+            effect,
+            key,
+            solve_key,
+        });
+        self.events.push(Event::ProjectChanged {
+            revision: self.revision,
+        });
         self.poll_camera_job();
         Ok(n)
     }
 
     /// Write a finished analysis into its effect (one undo step) and drop the job.
     fn poll_camera_job(&mut self) -> bool {
-        let Some(job) = &self.camera_job else { return false };
+        let Some(job) = &self.camera_job else {
+            return false;
+        };
         if !job.is_finished() {
             return false;
         }
-        let Some(mut job) = self.camera_job.take() else { return false };
+        let Some(mut job) = self.camera_job.take() else {
+            return false;
+        };
         if let Some(t) = job.thread.take() {
             let _ = t.join();
         }
@@ -406,41 +528,65 @@ impl Session {
                         ),
                         false,
                     ),
-                    Err(e) => (String::new(), String::new(), 0.0, format!("3D Camera Tracker: {e}"), true),
+                    Err(e) => (
+                        String::new(),
+                        String::new(),
+                        0.0,
+                        format!("3D Camera Tracker: {e}"),
+                        true,
+                    ),
                 };
-                let r = self.edit(if st.solve_only { "3D Camera Tracker Solve" } else { "3D Camera Tracker Analysis" }, None, |p, _| {
-                    let g = p
-                        .comp_mut(cid)
-                        .and_then(|c| c.layer_mut(lid))
-                        .and_then(|l| l.props.find_group_mut(uid))
-                        .ok_or_else(|| crate::EngineError::Other("the 3D Camera Tracker was removed during analysis".into()))?;
-                    let mut set = |m: &str, v: Value| {
-                        if let Some(pr) = g.prop_mut(m) {
-                            pr.value = v;
+                let r = self.edit(
+                    if st.solve_only {
+                        "3D Camera Tracker Solve"
+                    } else {
+                        "3D Camera Tracker Analysis"
+                    },
+                    None,
+                    |p, _| {
+                        let g = p
+                            .comp_mut(cid)
+                            .and_then(|c| c.layer_mut(lid))
+                            .and_then(|l| l.props.find_group_mut(uid))
+                            .ok_or_else(|| {
+                                crate::EngineError::Other(
+                                    "the 3D Camera Tracker was removed during analysis".into(),
+                                )
+                            })?;
+                        let mut set = |m: &str, v: Value| {
+                            if let Some(pr) = g.prop_mut(m) {
+                                pr.value = v;
+                            }
+                        };
+                        if let Some(t) = &tracks_json {
+                            set(TRACKS, Value::Str(t.clone()));
+                            set(TRACKS_KEY, Value::Str(key.clone()));
                         }
-                    };
-                    if let Some(t) = &tracks_json {
-                        set(TRACKS, Value::Str(t.clone()));
-                        set(TRACKS_KEY, Value::Str(key.clone()));
-                    }
-                    set(SOLVE, Value::Str(solve_json.clone()));
-                    set(SOLVE_KEY, Value::Str(skey.clone()));
-                    set(METHOD_USED, Value::Str(method.clone()));
-                    set(AVERAGE_ERROR, Value::Scalar(avg));
-                    Ok(())
-                });
+                        set(SOLVE, Value::Str(solve_json.clone()));
+                        set(SOLVE_KEY, Value::Str(skey.clone()));
+                        set(METHOD_USED, Value::Str(method.clone()));
+                        set(AVERAGE_ERROR, Value::Scalar(avg));
+                        Ok(())
+                    },
+                );
                 let (msg, failed) = match r {
                     Ok(()) => (msg, failed),
                     Err(e) => (format!("3D Camera Tracker: {e}"), true),
                 };
-                self.events.push(Event::Toast { message: msg, error: failed });
+                self.events.push(Event::Toast {
+                    message: msg,
+                    error: failed,
+                });
             }
             _ => {
                 let msg = match &st.error {
                     Some(e) => format!("3D Camera Tracker analysis failed: {e}"),
                     None => "3D Camera Tracker analysis cancelled".into(),
                 };
-                self.events.push(Event::Toast { message: msg, error: st.error.is_some() });
+                self.events.push(Event::Toast {
+                    message: msg,
+                    error: st.error.is_some(),
+                });
                 self.bump();
             }
         }
@@ -491,17 +637,29 @@ impl Placed {
     pub fn camera(&self, k: usize) -> (V3, V3, f64) {
         let c = &self.solve.frames[k];
         let m = linalg::mm(&self.world.r, &linalg::mt(&c.r()));
-        (self.to_world(c.center), linalg::euler_xyz(&m), c.focal * self.scale)
+        (
+            self.to_world(c.center),
+            linalg::euler_xyz(&m),
+            c.focal * self.scale,
+        )
     }
     /// Analysed frame at comp time `t`.
     pub fn frame_at(&self, t: Tick) -> usize {
-        self.times.iter().enumerate().min_by_key(|(_, x)| (x.0 - t.0).abs()).map(|(i, _)| i).unwrap_or(0).min(self.solve.frames.len().saturating_sub(1))
+        self.times
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, x)| (x.0 - t.0).abs())
+            .map(|(i, _)| i)
+            .unwrap_or(0)
+            .min(self.solve.frames.len().saturating_sub(1))
     }
 }
 
 /// Comp pixels per layer pixel of `layer` (its 2D transform at its In point).
 fn layer_scale(project: &Project, cid: ItemId, layer: &Layer) -> f64 {
-    let Some(comp) = project.comp(cid) else { return 1.0 };
+    let Some(comp) = project.comp(cid) else {
+        return 1.0;
+    };
     let ctx = EvalCtx::new(project, cid, comp, layer.in_point.max(Tick::ZERO));
     let m = ctx.world_matrix(layer).0;
     let s = m[0][0].hypot(m[1][0]);
@@ -520,7 +678,13 @@ pub fn placed(project: &Project, cid: ItemId, lid: LayerId, uid: Uid) -> Option<
     let world = solve.world(comp_size, solve.frames[k0].focal * scale);
     let mut times = analysis_times(comp, layer);
     times.truncate(solve.frames.len());
-    Some(Placed { solve, world, scale, times, comp_size })
+    Some(Placed {
+        solve,
+        world,
+        scale,
+        times,
+        comp_size,
+    })
 }
 
 /// What to create from a target (`camera.createFromSolve`).
@@ -553,7 +717,11 @@ pub fn plane_orientation(normal: V3, right: V3) -> V3 {
     let z = linalg::scale(normal, -1.0);
     let mut x = linalg::sub(right, linalg::scale(z, linalg::dot(right, z)));
     if linalg::norm(x) < 1e-9 {
-        x = if z[0].abs() < 0.9 { [1.0, 0.0, 0.0] } else { [0.0, 1.0, 0.0] };
+        x = if z[0].abs() < 0.9 {
+            [1.0, 0.0, 0.0]
+        } else {
+            [0.0, 1.0, 0.0]
+        };
         x = linalg::sub(x, linalg::scale(z, linalg::dot(x, z)));
     }
     let x = linalg::normalize(x);
@@ -572,7 +740,10 @@ fn norm_angles(a: V3) -> V3 {
 /// Key `path` on `l` at every `(time, value)`.
 pub(crate) fn key_all(l: &mut Layer, path: &str, keys: &[(Tick, Value)]) {
     if let Some(pr) = l.props.prop_mut(path) {
-        pr.keys = keys.iter().map(|(t, v)| Keyframe::new(*t, v.clone())).collect();
+        pr.keys = keys
+            .iter()
+            .map(|(t, v)| Keyframe::new(*t, v.clone()))
+            .collect();
         if let Some((_, v)) = keys.first() {
             pr.value = v.clone();
         }
@@ -603,7 +774,11 @@ pub(crate) fn write_camera(l: &mut Layer, pl: &Placed) {
     }
     key_all(l, "transform/position", &pos);
     key_all(l, "transform/orientation", &ori);
-    let variable = pl.solve.frames.iter().any(|f| (f.focal - pl.solve.frames[0].focal).abs() > 1e-6 * f.focal);
+    let variable = pl
+        .solve
+        .frames
+        .iter()
+        .any(|f| (f.focal - pl.solve.frames[0].focal).abs() > 1e-6 * f.focal);
     if variable {
         key_all(l, "cameraOptions/zoom", &zoom);
     } else if let Some((_, z)) = zoom.first()
@@ -619,9 +794,14 @@ pub(crate) fn write_camera(l: &mut Layer, pl: &Placed) {
     }
     // A one-node camera has no Point of Interest.
     if let Some(tr) = l.props.sub_mut("transform") {
-        tr.children.retain(|c| !matches!(c, effectcraft_project::Node::Prop(p) if p.match_id == "poi"));
+        tr.children
+            .retain(|c| !matches!(c, effectcraft_project::Node::Prop(p) if p.match_id == "poi"));
     }
-    for rot in ["transform/rotationX", "transform/rotationY", "transform/rotation"] {
+    for rot in [
+        "transform/rotationX",
+        "transform/rotationY",
+        "transform/rotation",
+    ] {
         if let Some(pr) = l.props.prop_mut(rot) {
             pr.keys.clear();
             pr.value = Value::Scalar(0.0);
@@ -632,21 +812,39 @@ pub(crate) fn write_camera(l: &mut Layer, pl: &Placed) {
 /// The target for `ids` on frame `k`: when fewer than three points are given, the nearest
 /// solved neighbours (in 3D) complete the plane.
 pub fn target_for(solve: &CameraSolve, ids: &[u32], k: usize) -> Option<Target> {
-    let mut use_ids: Vec<u32> = ids.iter().copied().filter(|i| solve.point(*i).is_some()).collect();
+    let mut use_ids: Vec<u32> = ids
+        .iter()
+        .copied()
+        .filter(|i| solve.point(*i).is_some())
+        .collect();
     if use_ids.is_empty() {
         return None;
     }
     if use_ids.len() < 3 {
         let c = solve.point(use_ids[0])?.pos;
-        let mut others: Vec<(f64, u32)> = solve.visible(k).filter(|p| !use_ids.contains(&p.id)).map(|p| (linalg::norm(linalg::sub(p.pos, c)), p.id)).collect();
+        let mut others: Vec<(f64, u32)> = solve
+            .visible(k)
+            .filter(|p| !use_ids.contains(&p.id))
+            .map(|p| (linalg::norm(linalg::sub(p.pos, c)), p.id))
+            .collect();
         others.sort_by(|a, b| a.0.total_cmp(&b.0));
-        for (_, id) in others.into_iter().take(6usize.saturating_sub(use_ids.len())) {
+        for (_, id) in others
+            .into_iter()
+            .take(6usize.saturating_sub(use_ids.len()))
+        {
             use_ids.push(id);
         }
         let mut t = solve.target(&use_ids, k)?;
         // The target sits on the chosen point(s).
-        let pts: Vec<V3> = ids.iter().filter_map(|i| solve.point(*i)).map(|p| p.pos).collect();
-        t.center = linalg::scale(pts.iter().fold([0.0; 3], |a, b| linalg::add(a, *b)), 1.0 / pts.len() as f64);
+        let pts: Vec<V3> = ids
+            .iter()
+            .filter_map(|i| solve.point(*i))
+            .map(|p| p.pos)
+            .collect();
+        t.center = linalg::scale(
+            pts.iter().fold([0.0; 3], |a, b| linalg::add(a, *b)),
+            1.0 / pts.len() as f64,
+        );
         return Some(t);
     }
     solve.target(&use_ids, k)

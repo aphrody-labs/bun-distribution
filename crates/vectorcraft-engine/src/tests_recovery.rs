@@ -14,8 +14,13 @@ use crate::cmd::recovery::{FolderStore, MemoryStore, RecoveryStore};
 fn session_in(store: &Arc<MemoryStore>) -> Session {
     let mut s = Session::new();
     s.recovery.set_store(store.clone());
-    s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 50, "height": 20})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 100}))
+        .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 10, "y": 10, "width": 50, "height": 20}),
+    )
+    .unwrap();
     s
 }
 
@@ -28,8 +33,13 @@ fn session() -> (Session, Arc<MemoryStore>) {
 
 /// The copies in the store, without their areas.
 fn copies(store: &dyn RecoveryStore) -> Vec<String> {
-    let mut v: Vec<String> =
-        store.list().unwrap().iter().filter_map(|n| n.strip_suffix(".vectorcraft")).map(|n| n.split_once('/').unwrap().1.to_string()).collect();
+    let mut v: Vec<String> = store
+        .list()
+        .unwrap()
+        .iter()
+        .filter_map(|n| n.strip_suffix(".vectorcraft"))
+        .map(|n| n.split_once('/').unwrap().1.to_string())
+        .collect();
     v.sort();
     v
 }
@@ -63,27 +73,53 @@ fn restored(r: serde_json::Value) -> usize {
 fn recovery_save_writes_modified_documents_once() {
     let (mut s, store) = session();
     // A clean second document gets no copy.
-    s.execute("file.new", &json!({"width": 50, "height": 50})).unwrap();
+    s.execute("file.new", &json!({"width": 50, "height": 50}))
+        .unwrap();
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(r["saved"].as_array().unwrap().len(), 1, "{r}");
     let area = s.recovery.own_area().unwrap().to_string();
     assert_eq!(r["saved"][0]["file"], format!("{area}/Untitled-1-1"));
-    assert_eq!(store.list().unwrap(), [format!("{area}/Untitled-1-1.json"), format!("{area}/Untitled-1-1.vectorcraft")]);
-    let doc = store.read(&format!("{area}/Untitled-1-1.vectorcraft")).unwrap();
-    assert_eq!(vectorcraft_format::load(&doc).unwrap().node_count(), s.documents()[0].doc.node_count());
+    assert_eq!(
+        store.list().unwrap(),
+        [
+            format!("{area}/Untitled-1-1.json"),
+            format!("{area}/Untitled-1-1.vectorcraft")
+        ]
+    );
+    let doc = store
+        .read(&format!("{area}/Untitled-1-1.vectorcraft"))
+        .unwrap();
+    assert_eq!(
+        vectorcraft_format::load(&doc).unwrap().node_count(),
+        s.documents()[0].doc.node_count()
+    );
     // Unchanged since: nothing written again.
     let again = s.execute("file.recovery.save", &json!({})).unwrap();
     assert!(again["saved"].as_array().unwrap().is_empty());
-    assert_eq!(again["skipped"][0]["reason"], "unchanged since its last recovery copy");
+    assert_eq!(
+        again["skipped"][0]["reason"],
+        "unchanged since its last recovery copy"
+    );
     // Changed: the same copy is rewritten.
-    s.execute("document.activate", &json!({"index": 0})).unwrap();
-    s.execute("shape.ellipse", &json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap();
+    s.execute("document.activate", &json!({"index": 0}))
+        .unwrap();
+    s.execute(
+        "shape.ellipse",
+        &json!({"x": 100, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(r["saved"][0]["file"], format!("{area}/Untitled-1-1"));
     assert_eq!(copies(store.as_ref()), ["Untitled-1-1"]);
     // The list shows it as the copy of an open document, not one to offer.
     let l = s.execute("file.recovery.list", &json!({})).unwrap();
-    assert_eq!((l["copies"][0]["title"].as_str(), l["copies"][0]["open"].as_bool()), (Some("Untitled-1"), Some(true)));
+    assert_eq!(
+        (
+            l["copies"][0]["title"].as_str(),
+            l["copies"][0]["open"].as_bool()
+        ),
+        (Some("Untitled-1"), Some(true))
+    );
     assert_eq!(l["location"], "memory");
     assert!(offered(&mut s).is_empty());
 }
@@ -102,24 +138,50 @@ fn a_crash_leaves_copies_that_restore_modified_and_titled() {
     let l = s.execute("file.recovery.list", &json!({})).unwrap();
     let copy = &l["copies"][0];
     assert_eq!(copy["file"], format!("{crashed}/Poster-1"));
-    assert_eq!((copy["path"].as_str(), copy["open"].as_bool(), copy["running"].as_bool()), (Some("/art/Poster.svg"), Some(false), Some(false)));
+    assert_eq!(
+        (
+            copy["path"].as_str(),
+            copy["open"].as_bool(),
+            copy["running"].as_bool()
+        ),
+        (Some("/art/Poster.svg"), Some(false), Some(false))
+    );
     let r = s.execute("file.recovery.restore", &json!({})).unwrap();
     assert_eq!(r["restored"][0]["title"], "Poster [Recovered]");
     let st = s.doc().unwrap();
     assert_eq!(st.title(), "Poster [Recovered]");
-    assert!(st.is_dirty() && st.recovered, "restored documents are unsaved");
-    assert_eq!((st.path.as_deref(), st.format, st.doc.node_count()), (Some("/art/Poster.svg"), "svg", nodes));
+    assert!(
+        st.is_dirty() && st.recovered,
+        "restored documents are unsaved"
+    );
+    assert_eq!(
+        (st.path.as_deref(), st.format, st.doc.node_count()),
+        (Some("/art/Poster.svg"), "svg", nodes)
+    );
     // The copy moved into this session's area; the crashed one's area is gone.
     let mine = s.recovery.own_area().unwrap().to_string();
-    assert_eq!(st.recovery.as_ref().unwrap().file, format!("{mine}/Poster-1"));
+    assert_eq!(
+        st.recovery.as_ref().unwrap().file,
+        format!("{mine}/Poster-1")
+    );
     assert_eq!(store.areas().unwrap(), std::slice::from_ref(&mine));
     // Save asks for a path (suggesting the original file) rather than overwriting it.
     let saved = s.execute("document.save", &json!({})).unwrap();
     assert!(saved.get("dataBase64").is_some(), "no path: {saved}");
     assert_eq!(saved["name"], "Poster.svg");
     // Restored once: nothing is left to restore.
-    assert_eq!(restored(s.execute("file.recovery.restore", &json!({})).unwrap()), 0);
-    assert!(s.execute("file.recovery.restore", &json!({"file": format!("{mine}/Poster-1")})).is_err(), "an open document's copy");
+    assert_eq!(
+        restored(s.execute("file.recovery.restore", &json!({})).unwrap()),
+        0
+    );
+    assert!(
+        s.execute(
+            "file.recovery.restore",
+            &json!({"file": format!("{mine}/Poster-1")})
+        )
+        .is_err(),
+        "an open document's copy"
+    );
 }
 
 #[test]
@@ -150,11 +212,25 @@ fn another_running_apps_copies_are_never_offered() {
     let l = b.execute("file.recovery.list", &json!({})).unwrap();
     let rows = l["copies"].as_array().unwrap();
     assert_eq!(rows.len(), 2);
-    assert!(rows.iter().any(|c| c["file"] == a_file.as_str() && c["running"] == true));
+    assert!(
+        rows.iter()
+            .any(|c| c["file"] == a_file.as_str() && c["running"] == true)
+    );
     assert!(offered(&mut b).is_empty());
-    assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 0);
-    assert!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"].as_array().unwrap().is_empty());
-    let e = b.execute("file.recovery.discard", &json!({"file": a_file})).unwrap_err().to_string();
+    assert_eq!(
+        restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+        0
+    );
+    assert!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let e = b
+        .execute("file.recovery.discard", &json!({"file": a_file}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("running"), "{e}");
     assert_eq!(copies(store.as_ref()).len(), 2, "nothing deleted");
     // A quits normally: its area goes, and B still has nothing to offer.
@@ -175,9 +251,15 @@ fn a_crashed_apps_copies_are_offered_once_its_lock_is_released() {
     assert_eq!(offered(&mut b), ["Untitled-1"]);
     // Restored by B, the copy is B's: C, launched at the same time, can't take it.
     let mut c = relaunch(&store);
-    assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+    assert_eq!(
+        restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+        1
+    );
     assert!(offered(&mut c).is_empty(), "B owns the copy now");
-    assert_eq!(restored(c.execute("file.recovery.restore", &json!({})).unwrap()), 0);
+    assert_eq!(
+        restored(c.execute("file.recovery.restore", &json!({})).unwrap()),
+        0
+    );
 }
 
 #[test]
@@ -195,7 +277,10 @@ fn heartbeats_hold_areas_where_the_store_has_no_locks() {
     cmd::recovery::heartbeat(&mut a);
     store.set_now(10_000 + 359 + 300);
     assert!(offered(&mut b).is_empty());
-    assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 0);
+    assert_eq!(
+        restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+        0
+    );
     // A stops beating (it crashed): its copies are offered once three intervals have passed.
     drop(a);
     store.set_now(10_000 + 359 + 361);
@@ -203,8 +288,12 @@ fn heartbeats_hold_areas_where_the_store_has_no_locks() {
     let mut c = relaunch(&store);
     // B restores the copies one by one (as the dialog does): its own heartbeat on A's area doesn't
     // stop it, and C sees the area taken.
-    let file = b.execute("file.recovery.list", &json!({})).unwrap()["copies"][0]["file"].as_str().unwrap().to_string();
-    b.execute("file.recovery.restore", &json!({"file": file})).unwrap();
+    let file = b.execute("file.recovery.list", &json!({})).unwrap()["copies"][0]["file"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    b.execute("file.recovery.restore", &json!({"file": file}))
+        .unwrap();
     assert!(offered(&mut c).is_empty());
     assert_eq!(b.doc().unwrap().title(), "Untitled-1 [Recovered]");
     // Never under three minutes, whatever the interval.
@@ -230,10 +319,18 @@ fn a_paused_app_writes_its_copies_again_and_is_running_again() {
     let a_file = format!("{}/Untitled-1-1", a.recovery.own_area().unwrap());
     let mut b = relaunch(&store);
     b.prefs.autosave_interval = 1;
-    assert!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"].as_array().unwrap().is_empty());
+    assert!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     // A is paused past three minutes: with heartbeats alone, B can't tell it from a crash.
     store.set_now(1_000_000 + 186);
-    assert_eq!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"], json!([a_file.clone()]));
+    assert_eq!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"],
+        json!([a_file.clone()])
+    );
     assert!(copies(store.as_ref()).is_empty());
     // A resumes: its heartbeat finds the copy gone and the next save writes it again, unchanged
     // document or not.
@@ -243,19 +340,42 @@ fn a_paused_app_writes_its_copies_again_and_is_running_again() {
     let r = a.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(r["saved"][0]["file"], a_file.as_str(), "{r}");
     assert_eq!(copies(store.as_ref()), ["Untitled-1-1"]);
-    assert!(cmd::recovery::heartbeat(&mut a).is_empty(), "nothing missing any more");
+    assert!(
+        cmd::recovery::heartbeat(&mut a).is_empty(),
+        "nothing missing any more"
+    );
     // A's heartbeat is newer than the one B wrote taking the area over: A runs again for B.
     let l = b.execute("file.recovery.list", &json!({})).unwrap();
-    assert_eq!((l["copies"][0]["file"].as_str(), l["copies"][0]["running"].as_bool()), (Some(a_file.as_str()), Some(true)));
-    assert!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"].as_array().unwrap().is_empty());
-    assert!(b.execute("file.recovery.discard", &json!({"file": a_file})).is_err());
+    assert_eq!(
+        (
+            l["copies"][0]["file"].as_str(),
+            l["copies"][0]["running"].as_bool()
+        ),
+        (Some(a_file.as_str()), Some(true))
+    );
+    assert!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    assert!(
+        b.execute("file.recovery.discard", &json!({"file": a_file}))
+            .is_err()
+    );
     // A recovery save alone repairs too (no heartbeat in between).
     store.set_now(1_000_000 + 600);
     let mut c = relaunch(&store);
     c.prefs.autosave_interval = 1;
     c.execute("file.recovery.discard", &json!({})).unwrap();
     assert!(copies(store.as_ref()).is_empty());
-    assert_eq!(a.execute("file.recovery.save", &json!({})).unwrap()["saved"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        a.execute("file.recovery.save", &json!({})).unwrap()["saved"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
     assert_eq!(copies(store.as_ref()), ["Untitled-1-1"]);
 }
 
@@ -270,15 +390,31 @@ fn announced_areas_stay_held_while_their_app_is_paused() {
     store.set_now(1_000_000 + 3600);
     let mut b = relaunch(&store);
     assert!(offered(&mut b).is_empty());
-    assert!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"].as_array().unwrap().is_empty());
-    assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 0);
-    assert!(b.execute("file.recovery.discard", &json!({"file": a_file})).unwrap_err().to_string().contains("running"));
+    assert!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+        0
+    );
+    assert!(
+        b.execute("file.recovery.discard", &json!({"file": a_file}))
+            .unwrap_err()
+            .to_string()
+            .contains("running")
+    );
     assert_eq!(copies(store.as_ref()), ["Untitled-1-1"]);
     // A crashes: the browser releases its lock, and its copies are offered once its heartbeat is
     // stale too.
     drop(a);
     assert_eq!(offered(&mut b), ["Untitled-1"]);
-    assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+    assert_eq!(
+        restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+        1
+    );
     // B's area is announced in turn.
     let mut c = relaunch(&store);
     store.set_now(1_000_000 + 7200);
@@ -287,7 +423,11 @@ fn announced_areas_stay_held_while_their_app_is_paused() {
 
 #[test]
 fn an_app_that_leaves_has_its_copies_offered_at_once() {
-    for store in [MemoryStore::without_locks(), MemoryStore::announcing(), MemoryStore::default()] {
+    for store in [
+        MemoryStore::without_locks(),
+        MemoryStore::announcing(),
+        MemoryStore::default(),
+    ] {
         let store = Arc::new(store);
         let mut a = session_in(&store);
         a.execute("file.recovery.save", &json!({})).unwrap();
@@ -298,7 +438,10 @@ fn an_app_that_leaves_has_its_copies_offered_at_once() {
         assert!(a.doc().unwrap().recovery.is_none());
         assert_eq!(copies(store.as_ref()), ["Untitled-1-1"]);
         assert_eq!(offered(&mut b), ["Untitled-1"]);
-        assert_eq!(restored(b.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+        assert_eq!(
+            restored(b.execute("file.recovery.restore", &json!({})).unwrap()),
+            1
+        );
     }
 }
 
@@ -310,28 +453,44 @@ fn folder_areas_are_locked_by_running_apps() {
     let app = |dirty: bool| {
         let mut s = Session::new();
         s.prefs.recovery_folder = folder.clone();
-        s.execute("file.new", &json!({"width": 50, "height": 50})).unwrap();
+        s.execute("file.new", &json!({"width": 50, "height": 50}))
+            .unwrap();
         if dirty {
-            s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5})).unwrap();
+            s.execute(
+                "shape.rectangle",
+                &json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+            )
+            .unwrap();
         }
         s
     };
     let mut a = app(true);
     a.execute("file.recovery.save", &json!({})).unwrap();
     let area = a.recovery.own_area().unwrap().to_string();
-    assert!(dir.join(&area).join(".lock").is_file() && dir.join(&area).join("Untitled-1-1.vectorcraft").is_file());
+    assert!(
+        dir.join(&area).join(".lock").is_file()
+            && dir.join(&area).join("Untitled-1-1.vectorcraft").is_file()
+    );
     // The lock file is held: another app (another handle) can't take it.
     let store = FolderStore::new(&dir);
     assert!(matches!(store.lock(&area), Ok(cmd::recovery::Lock::Busy)));
     let mut b = app(false);
     assert!(offered(&mut b).is_empty());
-    assert!(b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"].as_array().unwrap().is_empty());
+    assert!(
+        b.execute("file.recovery.discard", &json!({})).unwrap()["discarded"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
     assert!(dir.join(&area).join("Untitled-1-1.vectorcraft").is_file());
     // A crashes (its handle closes): B offers its copy, and restoring it tidies A's folder away.
     drop(a);
     assert_eq!(offered(&mut b), ["Untitled-1"]);
     b.execute("file.recovery.restore", &json!({})).unwrap();
-    assert!(!dir.join(&area).exists(), "the crashed app's folder is removed");
+    assert!(
+        !dir.join(&area).exists(),
+        "the crashed app's folder is removed"
+    );
     let mine = b.recovery.own_area().unwrap().to_string();
     assert!(dir.join(&mine).join("Untitled-1-1.vectorcraft").is_file());
     // An empty folder a crash left (no copies) is tidied by the next list.
@@ -360,13 +519,21 @@ fn saving_reverting_or_closing_removes_the_copy() {
     assert!(copies(store.as_ref()).is_empty(), "saved: the copy goes");
     assert!(s.doc().unwrap().recovery.is_none());
     // Revert.
-    s.execute("shape.ellipse", &json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "shape.ellipse",
+        &json!({"x": 100, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(copies(store.as_ref()).len(), 1);
     s.execute("file.revert", &json!({})).unwrap();
     assert!(copies(store.as_ref()).is_empty(), "reverted: the copy goes");
     // Close (discarding the changes).
-    s.execute("shape.ellipse", &json!({"x": 100, "y": 10, "width": 20, "height": 20})).unwrap();
+    s.execute(
+        "shape.ellipse",
+        &json!({"x": 100, "y": 10, "width": 20, "height": 20}),
+    )
+    .unwrap();
     s.execute("file.recovery.save", &json!({})).unwrap();
     s.execute("file.close", &json!({})).unwrap();
     assert!(copies(store.as_ref()).is_empty(), "closed: the copy goes");
@@ -375,7 +542,10 @@ fn saving_reverting_or_closing_removes_the_copy() {
     s.execute("file.recovery.save", &json!({})).unwrap();
     drop(s);
     let mut s2 = relaunch(&store);
-    assert_eq!(restored(s2.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+    assert_eq!(
+        restored(s2.execute("file.recovery.restore", &json!({})).unwrap()),
+        1
+    );
     s2.execute("document.save", &json!({"path": path})).unwrap();
     assert!(copies(store.as_ref()).is_empty());
     let st = s2.doc().unwrap();
@@ -391,7 +561,10 @@ fn undoing_back_to_the_saved_state_drops_the_copy() {
     s.execute("edit.undo", &json!({})).unwrap();
     assert!(!s.doc().unwrap().is_dirty());
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
-    assert!(r["saved"].as_array().unwrap().is_empty() && r["skipped"].as_array().unwrap().is_empty(), "{r}");
+    assert!(
+        r["saved"].as_array().unwrap().is_empty() && r["skipped"].as_array().unwrap().is_empty(),
+        "{r}"
+    );
     assert!(copies(store.as_ref()).is_empty());
 }
 
@@ -404,20 +577,45 @@ fn complex_documents_are_skipped_when_the_preference_says() {
     let layer = d.layers[0].id;
     for i in 0..cmd::recovery::COMPLEX_OBJECTS {
         let id = d.alloc_id();
-        let r = vectorcraft_geom::Rect::new((i % 200) as f64, (i / 200) as f64, (i % 200) as f64 + 1.0, (i / 200) as f64 + 1.0);
-        let n = vectorcraft_doc::Node::path(id, vectorcraft_geom::shapes::rectangle(r), vectorcraft_doc::Appearance::default_art());
+        let r = vectorcraft_geom::Rect::new(
+            (i % 200) as f64,
+            (i / 200) as f64,
+            (i % 200) as f64 + 1.0,
+            (i / 200) as f64 + 1.0,
+        );
+        let n = vectorcraft_doc::Node::path(
+            id,
+            vectorcraft_geom::shapes::rectangle(r),
+            vectorcraft_doc::Appearance::default_art(),
+        );
         d.insert(Some(layer), i, n).unwrap();
     }
     s.add_document(d, None);
     // One more object makes it complex (and modified).
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+    )
+    .unwrap();
     s.prefs.recovery_off_for_complex = true;
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
     assert!(r["saved"].as_array().unwrap().is_empty());
-    assert!(r["skipped"][0]["reason"].as_str().unwrap().starts_with("complex document"), "{r}");
+    assert!(
+        r["skipped"][0]["reason"]
+            .as_str()
+            .unwrap()
+            .starts_with("complex document"),
+        "{r}"
+    );
     assert!(store.list().unwrap().is_empty(), "no copy, no area");
     s.prefs.recovery_off_for_complex = false;
-    assert_eq!(s.execute("file.recovery.save", &json!({})).unwrap()["saved"].as_array().unwrap().len(), 1);
+    assert_eq!(
+        s.execute("file.recovery.save", &json!({})).unwrap()["saved"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
 }
 
 #[test]
@@ -427,33 +625,63 @@ fn discard_deletes_copies_left_behind_only() {
     let crashed = s.recovery.own_area().unwrap().to_string();
     drop(s);
     let mut s = relaunch(&store);
-    s.execute("file.new", &json!({"width": 50, "height": 50})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5})).unwrap();
+    s.execute("file.new", &json!({"width": 50, "height": 50}))
+        .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+    )
+    .unwrap();
     s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(copies(store.as_ref()).len(), 2);
-    assert!(s.execute("file.recovery.discard", &json!({"file": "nope"})).is_err());
+    assert!(
+        s.execute("file.recovery.discard", &json!({"file": "nope"}))
+            .is_err()
+    );
     // The open document's copy stays.
     let r = s.execute("file.recovery.discard", &json!({})).unwrap();
     assert_eq!(r["discarded"], json!([format!("{crashed}/Untitled-1-1")]));
     let mine = s.recovery.own_area().unwrap();
-    assert_eq!(store.list().unwrap(), [format!("{mine}/Untitled-1-1.json"), format!("{mine}/Untitled-1-1.vectorcraft")]);
+    assert_eq!(
+        store.list().unwrap(),
+        [
+            format!("{mine}/Untitled-1-1.json"),
+            format!("{mine}/Untitled-1-1.vectorcraft")
+        ]
+    );
 }
 
 #[test]
 fn without_a_store_the_commands_say_where_to_set_one() {
     let mut s = Session::new();
-    let e = s.execute("file.recovery.list", &json!({})).unwrap_err().to_string();
+    let e = s
+        .execute("file.recovery.list", &json!({}))
+        .unwrap_err()
+        .to_string();
     assert!(e.contains("recoveryFolder"), "{e}");
     // The preference names a folder: copies go there.
     let dir = std::env::temp_dir().join(format!("vc-recovery-folder-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     s.prefs.recovery_folder = dir.to_string_lossy().to_string();
-    assert!(s.execute("file.recovery.list", &json!({})).unwrap()["copies"].as_array().unwrap().is_empty(), "no folder yet: no copies");
-    s.execute("file.new", &json!({"width": 50, "height": 50})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 0, "y": 0, "width": 5, "height": 5})).unwrap();
+    assert!(
+        s.execute("file.recovery.list", &json!({})).unwrap()["copies"]
+            .as_array()
+            .unwrap()
+            .is_empty(),
+        "no folder yet: no copies"
+    );
+    s.execute("file.new", &json!({"width": 50, "height": 50}))
+        .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 0, "y": 0, "width": 5, "height": 5}),
+    )
+    .unwrap();
     s.execute("file.recovery.save", &json!({})).unwrap();
     let area = dir.join(s.recovery.own_area().unwrap());
-    assert!(area.join("Untitled-1-1.vectorcraft").is_file() && area.join("Untitled-1-1.json").is_file());
+    assert!(
+        area.join("Untitled-1-1.vectorcraft").is_file() && area.join("Untitled-1-1.json").is_file()
+    );
     s.execute("file.close", &json!({})).unwrap();
     assert!(!area.join("Untitled-1-1.vectorcraft").exists());
     let _ = std::fs::remove_dir_all(&dir);
@@ -469,11 +697,19 @@ struct Counting {
 impl Counting {
     /// The image entries written since the last call, with their sizes.
     fn images_written(&self) -> Vec<(String, usize)> {
-        std::mem::take(&mut *self.written.lock().unwrap()).into_iter().filter(|(n, _)| n.ends_with(".blob")).collect()
+        std::mem::take(&mut *self.written.lock().unwrap())
+            .into_iter()
+            .filter(|(n, _)| n.ends_with(".blob"))
+            .collect()
     }
 
     fn images(&self) -> Vec<String> {
-        self.inner.list().unwrap().into_iter().filter(|n| n.ends_with(".blob")).collect()
+        self.inner
+            .list()
+            .unwrap()
+            .into_iter()
+            .filter(|n| n.ends_with(".blob"))
+            .collect()
     }
 }
 
@@ -485,7 +721,10 @@ impl RecoveryStore for Counting {
         self.inner.read(name)
     }
     fn write(&self, name: &str, bytes: &[u8]) -> std::result::Result<(), String> {
-        self.written.lock().unwrap().push((name.to_string(), bytes.len()));
+        self.written
+            .lock()
+            .unwrap()
+            .push((name.to_string(), bytes.len()));
         self.inner.write(name, bytes)
     }
     fn remove(&self, name: &str) -> std::result::Result<(), String> {
@@ -510,7 +749,13 @@ fn place_png(s: &mut Session, name: &str, rgb: [u8; 3]) -> Vec<u8> {
 
 /// The document's images: their bytes by key.
 fn images_of(s: &Session) -> std::collections::BTreeMap<String, Vec<u8>> {
-    s.doc().unwrap().doc.images.iter().map(|(k, b)| (k.clone(), b.bytes.to_vec())).collect()
+    s.doc()
+        .unwrap()
+        .doc
+        .images
+        .iter()
+        .map(|(k, b)| (k.clone(), b.bytes.to_vec()))
+        .collect()
 }
 
 #[test]
@@ -518,25 +763,49 @@ fn images_are_kept_apart_and_written_again_only_when_they_change() {
     let store = Arc::new(Counting::default());
     let mut s = Session::new();
     s.recovery.set_store(store.clone());
-    s.execute("file.new", &json!({"width": 200, "height": 100})).unwrap();
+    s.execute("file.new", &json!({"width": 200, "height": 100}))
+        .unwrap();
     let red = place_png(&mut s, "red.png", crate::tests_links::RED);
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(r["saved"][0]["imageBytes"], red.len(), "{r}");
     assert_eq!(store.images_written().len(), 1);
     let area = s.recovery.own_area().unwrap().to_string();
     // The document entry doesn't hold the image.
-    let doc = store.read(&format!("{area}/Untitled-1-1.vectorcraft")).unwrap();
+    let doc = store
+        .read(&format!("{area}/Untitled-1-1.vectorcraft"))
+        .unwrap();
     assert!(vectorcraft_format::load(&doc).unwrap().images.is_empty());
     // An edit that leaves the image alone: the copy is written again, its image isn't.
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 50, "height": 20})).unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 10, "y": 10, "width": 50, "height": 20}),
+    )
+    .unwrap();
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
-    assert_eq!((r["saved"].as_array().unwrap().len(), r["saved"][0]["imageBytes"].as_u64()), (1, Some(0)), "{r}");
-    assert!(store.images_written().is_empty(), "the image isn't written again");
+    assert_eq!(
+        (
+            r["saved"].as_array().unwrap().len(),
+            r["saved"][0]["imageBytes"].as_u64()
+        ),
+        (1, Some(0)),
+        "{r}"
+    );
+    assert!(
+        store.images_written().is_empty(),
+        "the image isn't written again"
+    );
     // A new image: only it is written.
     let blue = place_png(&mut s, "blue.png", crate::tests_links::BLUE);
     let r = s.execute("file.recovery.save", &json!({})).unwrap();
     assert_eq!(r["saved"][0]["imageBytes"], blue.len());
-    assert_eq!(store.images_written().iter().map(|(_, n)| *n).collect::<Vec<_>>(), [blue.len()]);
+    assert_eq!(
+        store
+            .images_written()
+            .iter()
+            .map(|(_, n)| *n)
+            .collect::<Vec<_>>(),
+        [blue.len()]
+    );
     assert_eq!(store.images().len(), 2);
     let images = images_of(&s);
     assert_eq!(images.len(), 2);
@@ -545,14 +814,28 @@ fn images_are_kept_apart_and_written_again_only_when_they_change() {
     drop(s);
     let mut s = Session::new();
     s.recovery.set_store(store.clone());
-    assert_eq!(restored(s.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+    assert_eq!(
+        restored(s.execute("file.recovery.restore", &json!({})).unwrap()),
+        1
+    );
     assert_eq!(images_of(&s), images);
     let mine = s.recovery.own_area().unwrap().to_string();
-    assert!(store.images().iter().all(|n| n.starts_with(&format!("{mine}/"))), "the images moved with the copy, the old area went");
+    assert!(
+        store
+            .images()
+            .iter()
+            .all(|n| n.starts_with(&format!("{mine}/"))),
+        "the images moved with the copy, the old area went"
+    );
     assert_eq!(store.images().len(), 2);
     // Its copy and another document's: once the first is closed, the next copy sweeps its images.
-    s.execute("file.new", &json!({"width": 50, "height": 50})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 1, "y": 1, "width": 5, "height": 5})).unwrap();
+    s.execute("file.new", &json!({"width": 50, "height": 50}))
+        .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 1, "y": 1, "width": 5, "height": 5}),
+    )
+    .unwrap();
     s.execute("file.close", &json!({"index": 0})).unwrap();
     s.execute("file.recovery.save", &json!({})).unwrap();
     assert!(store.images().is_empty(), "{:?}", store.list());
@@ -567,10 +850,20 @@ fn copies_from_before_images_were_kept_apart_still_restore() {
     let d = vectorcraft_doc::Document::clone(&s.doc().unwrap().doc);
     let images = images_of(&s);
     drop(s);
-    store.write("1-1/Old-1.vectorcraft", &vectorcraft_format::save_file(&d)).unwrap();
-    store.write("1-1/Old-1.json", br#"{"title": "Old", "format": "vectorcraft", "saved": 5}"#).unwrap();
+    store
+        .write("1-1/Old-1.vectorcraft", &vectorcraft_format::save_file(&d))
+        .unwrap();
+    store
+        .write(
+            "1-1/Old-1.json",
+            br#"{"title": "Old", "format": "vectorcraft", "saved": 5}"#,
+        )
+        .unwrap();
     let mut s = relaunch(&store);
-    assert_eq!(restored(s.execute("file.recovery.restore", &json!({})).unwrap()), 1);
+    assert_eq!(
+        restored(s.execute("file.recovery.restore", &json!({})).unwrap()),
+        1
+    );
     assert_eq!(images_of(&s), images);
     assert_eq!(s.doc().unwrap().title(), "Untitled-1 [Recovered]");
 }
@@ -626,11 +919,21 @@ fn a_crash_between_a_copys_document_and_its_details_keeps_every_image() {
         }
         place_png(&mut s, "blue.png", crate::tests_links::BLUE);
         let images = images_of(&s);
-        s.recovery.set_store(Arc::new(DiesAfterDocument { inner: store.clone(), dead: Default::default() }));
-        assert!(s.execute("file.recovery.save", &json!({})).is_err(), "the details weren't written");
+        s.recovery.set_store(Arc::new(DiesAfterDocument {
+            inner: store.clone(),
+            dead: Default::default(),
+        }));
+        assert!(
+            s.execute("file.recovery.save", &json!({})).is_err(),
+            "the details weren't written"
+        );
         drop(s);
         let mut s = relaunch(&store);
-        assert_eq!(restored(s.execute("file.recovery.restore", &json!({})).unwrap()), 1, "first copy: {first}");
+        assert_eq!(
+            restored(s.execute("file.recovery.restore", &json!({})).unwrap()),
+            1,
+            "first copy: {first}"
+        );
         assert_eq!(images_of(&s), images, "first copy: {first}");
     }
 }

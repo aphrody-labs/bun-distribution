@@ -26,7 +26,10 @@ fn hardware(s: &Stream) -> Option<Box<dyn VideoDecoder>> {
 #[test]
 fn decoders_share_one_display() {
     let ff = filmcraft_testkit::require_ffmpeg!();
-    let paths: Vec<_> = FIXTURES.iter().filter_map(|(name, _)| named(&ff, name)).collect();
+    let paths: Vec<_> = FIXTURES
+        .iter()
+        .filter_map(|(name, _)| named(&ff, name))
+        .collect();
     let streams: Vec<_> = paths.iter().map(|p| read_stream(p)).collect();
     let Some(first) = streams.first() else { return };
     let Some(hw) = hardware(first) else { return };
@@ -39,11 +42,24 @@ fn decoders_share_one_display() {
         for s in &streams {
             let Some(mut hw) = hardware(s) else { return };
             let n = s.samples.len().min(13);
-            let reference = decode_all(filmcraft_codecs::software_video_decoder(&s.entry).unwrap().as_mut(), &s.samples[..n]);
-            assert_same(&format!("round {round}"), &decode_all(hw.as_mut(), &s.samples[..n]), &reference);
+            let reference = decode_all(
+                filmcraft_codecs::software_video_decoder(&s.entry)
+                    .unwrap()
+                    .as_mut(),
+                &s.samples[..n],
+            );
+            assert_same(
+                &format!("round {round}"),
+                &decode_all(hw.as_mut(), &s.samples[..n]),
+                &reference,
+            );
         }
     }
-    assert_eq!(displays_opened(), opened, "decoders one after another open no display");
+    assert_eq!(
+        displays_opened(),
+        opened,
+        "decoders one after another open no display"
+    );
 
     // several decoders at once on different threads, each used from its own thread, repeatedly
     for round in 0..3 {
@@ -53,10 +69,23 @@ fn decoders_share_one_display() {
                 std::thread::spawn(move || {
                     let s = read_stream(&path);
                     let Some(mut hw) = hardware(&s) else { return };
-                    let reference = decode_all(filmcraft_codecs::software_video_decoder(&s.entry).unwrap().as_mut(), &s.samples);
-                    assert_same(&format!("round {round}, thread {i}"), &decode_all(hw.as_mut(), &s.samples), &reference);
+                    let reference = decode_all(
+                        filmcraft_codecs::software_video_decoder(&s.entry)
+                            .unwrap()
+                            .as_mut(),
+                        &s.samples,
+                    );
+                    assert_same(
+                        &format!("round {round}, thread {i}"),
+                        &decode_all(hw.as_mut(), &s.samples),
+                        &reference,
+                    );
                     hw.reset();
-                    assert_same(&format!("round {round}, thread {i}, after a reset"), &decode_all(hw.as_mut(), &s.samples), &reference);
+                    assert_same(
+                        &format!("round {round}, thread {i}, after a reset"),
+                        &decode_all(hw.as_mut(), &s.samples),
+                        &reference,
+                    );
                 })
             })
             .collect();
@@ -64,5 +93,9 @@ fn decoders_share_one_display() {
             j.join().unwrap();
         }
     }
-    assert_eq!(displays_opened(), opened, "decoders at once on several threads open no display");
+    assert_eq!(
+        displays_opened(),
+        opened,
+        "decoders at once on several threads open no display"
+    );
 }

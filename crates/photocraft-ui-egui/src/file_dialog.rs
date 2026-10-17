@@ -26,7 +26,11 @@ use crate::file_open::display_name;
 pub enum FileDialogRequest {
     /// Files to read: several for File › Open, one for a command that reads a file (Place,
     /// scripts, notes, presets). Starts in `initial_dir` (the last-used folder, UI-217-3).
-    Open { multiple: bool, initial_dir: Option<String>, extensions: Option<Vec<String>> },
+    Open {
+        multiple: bool,
+        initial_dir: Option<String>,
+        extensions: Option<Vec<String>>,
+    },
     /// Which folder to read from. Starts in `initial_dir` when available.
     Folder { initial_dir: Option<String> },
     /// Where to write, starting from `suggested` (a file name, or the document's own path).
@@ -115,18 +119,28 @@ impl PhotocraftApp {
             Some(FileDialogAnswer::Unavailable(why)) => Err(why),
             Some(a) => then(app, a),
         });
-        self.file_dialog = Some(Pending { request: Some(request), answer: None, then });
+        self.file_dialog = Some(Pending {
+            request: Some(request),
+            answer: None,
+            then,
+        });
         Ok(json!({ "fileDialog": kind }))
     }
 
     /// Ask the user to choose a folder, starting in the folder of the most recent file when known.
     /// `then` receives the selected path when the dialog is answered.
-    pub(crate) fn ask_folder(&mut self, then: impl FnOnce(&mut Self, String) -> Result<Value, String> + 'static) -> Result<Value, String> {
+    pub(crate) fn ask_folder(
+        &mut self,
+        then: impl FnOnce(&mut Self, String) -> Result<Value, String> + 'static,
+    ) -> Result<Value, String> {
         let initial_dir = last_used_dir(&self.ui.recent_files);
-        self.ask_file(FileDialogRequest::Folder { initial_dir }, move |app, answer| match answer {
-            FileDialogAnswer::FolderTo(path) => then(app, path),
-            _ => Err(UNEXPECTED.into()),
-        })
+        self.ask_file(
+            FileDialogRequest::Folder { initial_dir },
+            move |app, answer| match answer {
+                FileDialogAnswer::FolderTo(path) => then(app, path),
+                _ => Err(UNEXPECTED.into()),
+            },
+        )
     }
 
     /// Ask where to save: `then` gets the chosen path, with a lowercase extension when
@@ -136,7 +150,11 @@ impl PhotocraftApp {
     /// document was last saved or exported to through a dialog, else beside the document
     /// (#1826, #1866). A caller's explicit directory is kept. The chosen folder is remembered for
     /// the document the dialog was asked for.
-    pub(crate) fn pick_save(&mut self, suggested: &str, then: impl FnOnce(&mut Self, String) -> Result<Value, String> + 'static) -> Result<Value, String> {
+    pub(crate) fn pick_save(
+        &mut self,
+        suggested: &str,
+        then: impl FnOnce(&mut Self, String) -> Result<Value, String> + 'static,
+    ) -> Result<Value, String> {
         let mut suggested = std::path::PathBuf::from(suggested);
         let doc = self.session.active().map(|d| d.doc.id);
         // Closed documents' folders are no longer needed.
@@ -145,23 +163,36 @@ impl PhotocraftApp {
         if suggested.parent().is_some_and(|p| p.as_os_str().is_empty())
             && let Some(dir) = doc
                 .and_then(|d| self.save_dirs.get(&d).cloned())
-                .or_else(|| self.session.active().and_then(|d| d.path.as_deref()).and_then(|p| std::path::Path::new(p).parent()).map(Path::to_path_buf))
+                .or_else(|| {
+                    self.session
+                        .active()
+                        .and_then(|d| d.path.as_deref())
+                        .and_then(|p| std::path::Path::new(p).parent())
+                        .map(Path::to_path_buf)
+                })
         {
             suggested = dir.join(suggested);
         }
-        self.ask_file(FileDialogRequest::Save { suggested: suggested.to_string_lossy().into_owned() }, move |app, answer| match answer {
-            FileDialogAnswer::SaveTo(path) => {
-                let path = Self::lowercased_extension(app, path);
-                // The web answers a download name, which has no folder to remember.
-                if let Some(doc) = doc
-                    && let Some(dir) = Path::new(&path).parent().filter(|p| !p.as_os_str().is_empty())
-                {
-                    app.save_dirs.insert(doc, dir.to_path_buf());
+        self.ask_file(
+            FileDialogRequest::Save {
+                suggested: suggested.to_string_lossy().into_owned(),
+            },
+            move |app, answer| match answer {
+                FileDialogAnswer::SaveTo(path) => {
+                    let path = Self::lowercased_extension(app, path);
+                    // The web answers a download name, which has no folder to remember.
+                    if let Some(doc) = doc
+                        && let Some(dir) = Path::new(&path)
+                            .parent()
+                            .filter(|p| !p.as_os_str().is_empty())
+                    {
+                        app.save_dirs.insert(doc, dir.to_path_buf());
+                    }
+                    then(app, path)
                 }
-                then(app, path)
-            }
-            _ => Err(UNEXPECTED.into()),
-        })
+                _ => Err(UNEXPECTED.into()),
+            },
+        )
     }
 
     /// `X.PSD` → `X.psd`, only the extension: the stem and the folders keep the user's spelling.
@@ -170,17 +201,24 @@ impl PhotocraftApp {
             return path;
         }
         let p = std::path::Path::new(&path);
-        let Some(ext) = p.extension().and_then(|e| e.to_str()) else { return path };
+        let Some(ext) = p.extension().and_then(|e| e.to_str()) else {
+            return path;
+        };
         if ext.bytes().all(|b| !b.is_ascii_uppercase()) {
             return path;
         }
-        p.with_extension(ext.to_ascii_lowercase()).to_string_lossy().into_owned()
+        p.with_extension(ext.to_ascii_lowercase())
+            .to_string_lossy()
+            .into_owned()
     }
 
     /// Ask for a file a command reads (a script, notes, a placed image, presets): `then` gets its
     /// name (the full path on the desktop) and bytes. A file that can't be read fails with
     /// "<file name>: <why>".
-    pub(crate) fn pick_file_bytes(&mut self, then: impl FnOnce(&mut Self, String, Vec<u8>) -> Result<Value, String> + 'static) -> Result<Value, String> {
+    pub(crate) fn pick_file_bytes(
+        &mut self,
+        then: impl FnOnce(&mut Self, String, Vec<u8>) -> Result<Value, String> + 'static,
+    ) -> Result<Value, String> {
         self.pick_file_bytes_filtered(&[], then)
     }
 
@@ -191,28 +229,47 @@ impl PhotocraftApp {
         then: impl FnOnce(&mut Self, String, Vec<u8>) -> Result<Value, String> + 'static,
     ) -> Result<Value, String> {
         let initial_dir = last_used_dir(&self.ui.recent_files);
-        let extensions = (!extensions.is_empty()).then(|| extensions.iter().map(|s| (*s).to_string()).collect());
-        self.ask_file(FileDialogRequest::Open { multiple: false, initial_dir, extensions }, move |app, answer| {
-            let (name, bytes) = read_picked(answer)?;
-            then(app, name, bytes)
-        })
+        let extensions =
+            (!extensions.is_empty()).then(|| extensions.iter().map(|s| (*s).to_string()).collect());
+        self.ask_file(
+            FileDialogRequest::Open {
+                multiple: false,
+                initial_dir,
+                extensions,
+            },
+            move |app, answer| {
+                let (name, bytes) = read_picked(answer)?;
+                then(app, name, bytes)
+            },
+        )
     }
 
     /// File › Open: opens every chosen file, reporting each failure (see [`Self::open_paths`]).
     pub fn open_dialog_file(&mut self) -> Result<Value, String> {
         let initial_dir = last_used_dir(&self.ui.recent_files);
-        self.ask_file(FileDialogRequest::Open { multiple: true, initial_dir, extensions: None }, |app, answer| {
-            match answer {
-                FileDialogAnswer::Paths(paths) => {
-                    app.open_paths(&paths);
+        self.ask_file(
+            FileDialogRequest::Open {
+                multiple: true,
+                initial_dir,
+                extensions: None,
+            },
+            |app, answer| {
+                match answer {
+                    FileDialogAnswer::Paths(paths) => {
+                        app.open_paths(&paths);
+                    }
+                    FileDialogAnswer::Contents(name, bytes) => {
+                        app.open_contents(vec![(name, bytes)])
+                    }
+                    FileDialogAnswer::ContentsMany(files) => app.open_contents(files),
+                    FileDialogAnswer::FolderTo(_) => return Err(UNEXPECTED.into()),
+                    FileDialogAnswer::SaveTo(_) | FileDialogAnswer::Unavailable(_) => {
+                        return Err(UNEXPECTED.into());
+                    }
                 }
-                FileDialogAnswer::Contents(name, bytes) => app.open_contents(vec![(name, bytes)]),
-                FileDialogAnswer::ContentsMany(files) => app.open_contents(files),
-                FileDialogAnswer::FolderTo(_) => return Err(UNEXPECTED.into()),
-                FileDialogAnswer::SaveTo(_) | FileDialogAnswer::Unavailable(_) => return Err(UNEXPECTED.into()),
-            }
-            Ok(Value::Null)
-        })
+                Ok(Value::Null)
+            },
+        )
     }
 
     /// Opens each picked file's contents as its own document, in name order (like
@@ -228,8 +285,13 @@ impl PhotocraftApp {
 
     /// Run `next` on the result of the open dialog's action once it is answered; its result
     /// replaces the action's. False when no dialog is open.
-    pub(crate) fn after_file_dialog(&mut self, next: impl FnOnce(&mut Self, Result<Value, String>) -> Result<Value, String> + 'static) -> bool {
-        let Some(p) = self.file_dialog.as_mut() else { return false };
+    pub(crate) fn after_file_dialog(
+        &mut self,
+        next: impl FnOnce(&mut Self, Result<Value, String>) -> Result<Value, String> + 'static,
+    ) -> bool {
+        let Some(p) = self.file_dialog.as_mut() else {
+            return false;
+        };
         let then = std::mem::replace(&mut p.then, Box::new(|_, _| Ok(Value::Null)));
         p.then = Box::new(move |app, answer| {
             let r = then(app, answer);
@@ -241,14 +303,23 @@ impl PhotocraftApp {
     /// The document `id` becomes active again: an answer applies to the document it was asked
     /// for, even when another one was activated while the dialog was open. `Err` once it's closed.
     pub(crate) fn refocus(&mut self, id: DocId) -> Result<(), String> {
-        let i = self.session.documents().iter().position(|d| d.doc.id == id).ok_or("no document")?;
+        let i = self
+            .session
+            .documents()
+            .iter()
+            .position(|d| d.doc.id == id)
+            .ok_or("no document")?;
         self.session.set_active(i);
         Ok(())
     }
 
     /// Complete a deferred operation on its requesting document without stealing the selected
     /// tab. Restore by ID as script events can close or reorder documents during a save.
-    pub(crate) fn with_document<T>(&mut self, id: DocId, run: impl FnOnce(&mut Self) -> Result<T, String>) -> Result<T, String> {
+    pub(crate) fn with_document<T>(
+        &mut self,
+        id: DocId,
+        run: impl FnOnce(&mut Self) -> Result<T, String>,
+    ) -> Result<T, String> {
         let active = self.session.active().map(|d| d.doc.id);
         self.refocus(id)?;
         let result = run(self);
@@ -266,12 +337,21 @@ impl PhotocraftApp {
     /// Called every frame: shows a queued dialog with `parent` (the window) as its parent, and
     /// continues the action that asked once the answer is in. Its errors go to the status bar.
     pub fn poll_file_dialog(&mut self, ctx: &egui::Context, parent: Option<&eframe::Frame>) {
-        let Some(p) = self.file_dialog.as_mut() else { return };
+        let Some(p) = self.file_dialog.as_mut() else {
+            return;
+        };
         if let Some(request) = p.request.take() {
             let (tx, rx) = mpsc::channel();
             p.answer = Some(rx);
             if let Some(show) = self.services.file_dialog.as_mut() {
-                show(request, parent, FileDialogReply { tx, ctx: ctx.clone() });
+                show(
+                    request,
+                    parent,
+                    FileDialogReply {
+                        tx,
+                        ctx: ctx.clone(),
+                    },
+                );
             }
         }
         let answer = match p.answer.as_ref().map(Receiver::try_recv) {
@@ -280,7 +360,9 @@ impl PhotocraftApp {
             // The reply was dropped unanswered: the dialog couldn't be shown.
             Some(Err(TryRecvError::Disconnected)) | None => None,
         };
-        let Some(Pending { then, .. }) = self.file_dialog.take() else { return };
+        let Some(Pending { then, .. }) = self.file_dialog.take() else {
+            return;
+        };
         if let Err(e) = then(self, answer)
             && e != CANCELLED
         {
@@ -300,10 +382,13 @@ pub(crate) fn last_used_dir(recent: &[String]) -> Option<String> {
 fn read_picked(answer: FileDialogAnswer) -> Result<(String, Vec<u8>), String> {
     match answer {
         FileDialogAnswer::Contents(name, bytes) => Ok((name, bytes)),
-        FileDialogAnswer::ContentsMany(files) => files.into_iter().next().ok_or_else(|| CANCELLED.into()),
+        FileDialogAnswer::ContentsMany(files) => {
+            files.into_iter().next().ok_or_else(|| CANCELLED.into())
+        }
         FileDialogAnswer::Paths(paths) => {
             let path = paths.into_iter().next().ok_or(CANCELLED)?;
-            let bytes = photocraft_format::read_file(std::path::Path::new(&path)).map_err(|e| format!("{}: {e}", display_name(&path)))?;
+            let bytes = photocraft_format::read_file(std::path::Path::new(&path))
+                .map_err(|e| format!("{}: {e}", display_name(&path)))?;
             Ok((path, bytes))
         }
         FileDialogAnswer::FolderTo(_) => Err(UNEXPECTED.into()),
@@ -314,7 +399,12 @@ fn read_picked(answer: FileDialogAnswer) -> Result<(String, Vec<u8>), String> {
 /// A fake dialog service for tests: answers each request with the next of `answers` (`None`:
 /// Cancel), recording the requests.
 #[cfg(test)]
-pub(crate) fn fake(answers: Vec<Option<FileDialogAnswer>>) -> (FileDialogFn, std::rc::Rc<std::cell::RefCell<Vec<FileDialogRequest>>>) {
+pub(crate) fn fake(
+    answers: Vec<Option<FileDialogAnswer>>,
+) -> (
+    FileDialogFn,
+    std::rc::Rc<std::cell::RefCell<Vec<FileDialogRequest>>>,
+) {
     let asked = std::rc::Rc::new(std::cell::RefCell::new(Vec::new()));
     let log = asked.clone();
     let mut answers = answers.into_iter();

@@ -52,20 +52,37 @@ fn fields(command: &str, target: Value, values: Value) -> Map<String, Value> {
 pub(crate) fn open(app: &mut PhotocraftApp) -> Option<u64> {
     let st = app.session.active()?;
     let layer = st.active_layer?;
-    let LayerContent::Fill(Fill::Pattern { scale, id, angle, link, phase, .. }) = &st.doc.layer(layer)?.content else { return None };
+    let LayerContent::Fill(Fill::Pattern {
+        scale,
+        id,
+        angle,
+        link,
+        phase,
+        ..
+    }) = &st.doc.layer(layer)?.content
+    else {
+        return None;
+    };
     let values = json!({"pattern": id, "scale": scale * 100.0, "angle": angle, "link": link, "phase": [phase.0, phase.1]});
-    let f = fields(cmds::SET, json!({"layer": layer.0, "document": st.doc.id.0}), values);
+    let f = fields(
+        cmds::SET,
+        json!({"layer": layer.0, "document": st.doc.id.0}),
+        values,
+    );
     Some(app.ui.open_dialog(crate::state::DialogKind::Command, f))
 }
 
 /// Layer › New Fill Layer › Pattern…: the dialog in front of creating the layer, starting from
 /// the Patterns panel's pattern at 100 %, 0° and linked, as in Photoshop.
 pub(crate) fn open_new(app: &mut PhotocraftApp) -> Result<u64, String> {
-    if let Some(Err(why)) = photocraft_engine::commands::find(cmds::CREATE).map(|c| (c.enabled)(&app.session)) {
+    if let Some(Err(why)) =
+        photocraft_engine::commands::find(cmds::CREATE).map(|c| (c.enabled)(&app.session))
+    {
         return Err(why);
     }
     let st = app.session.active().ok_or("no document open")?;
-    let pattern = photocraft_engine::pattern_cmds::resolve(&app.session, "").ok_or("no patterns")?;
+    let pattern =
+        photocraft_engine::pattern_cmds::resolve(&app.session, "").ok_or("no patterns")?;
     let values = json!({"pattern": pattern.id, "scale": 100.0, "angle": 0.0, "link": true, "phase": [0.0, 0.0]});
     let f = fields(cmds::CREATE, json!({"document": st.doc.id.0}), values);
     Ok(app.ui.open_dialog(crate::state::DialogKind::Command, f))
@@ -96,13 +113,21 @@ fn command(app: &PhotocraftApp, f: &Map<String, Value>) -> Option<(&'static str,
 
 /// An edit dialog whose values are still the layer's.
 fn unchanged(f: &Map<String, Value>) -> bool {
-    f.get("__command").and_then(Value::as_str) == Some(cmds::SET) && KEYS.iter().all(|k| f.get(*k) == f.get("__orig").and_then(|o| o.get(*k)))
+    f.get("__command").and_then(Value::as_str) == Some(cmds::SET)
+        && KEYS
+            .iter()
+            .all(|k| f.get(*k) == f.get("__orig").and_then(|o| o.get(*k)))
 }
 
 /// The document the dialog targets, if it is still the active one.
 fn target_is_active(app: &PhotocraftApp, f: &Map<String, Value>) -> bool {
-    let target = f.get("__params").and_then(|p| p.get("document")).and_then(Value::as_u64);
-    app.session.active().is_some_and(|st| target == Some(st.doc.id.0))
+    let target = f
+        .get("__params")
+        .and_then(|p| p.get("document"))
+        .and_then(Value::as_u64);
+    app.session
+        .active()
+        .is_some_and(|st| target == Some(st.doc.id.0))
 }
 
 /// OK: one engine command. A stale document never receives the edit.
@@ -125,7 +150,10 @@ pub(crate) fn display_doc(app: &mut PhotocraftApp, idx: usize) -> Option<(Arc<Do
         return None;
     };
     let st = app.session.documents().get(idx)?;
-    if !target_is_active(app, &d.fields) || app.session.active_index() != Some(idx) || unchanged(&d.fields) {
+    if !target_is_active(app, &d.fields)
+        || app.session.active_index() != Some(idx)
+        || unchanged(&d.fields)
+    {
         return None;
     }
     let (cmd, params) = command(app, &d.fields)?;
@@ -146,7 +174,14 @@ pub(crate) fn display_doc(app: &mut PhotocraftApp, idx: usize) -> Option<(Arc<Do
     let key = (1 << 47) | (hash.finish() & ((1 << 36) - 1));
     let (document, revision, dialog) = (st.doc.id, st.revision, d.id);
     let shown = Arc::new(photocraft_engine::mode_cmds::display_document(&doc).unwrap_or(doc));
-    app.pattern_fill_preview = Some(Preview { document, revision, dialog, params, shown: shown.clone(), key });
+    app.pattern_fill_preview = Some(Preview {
+        document,
+        revision,
+        dialog,
+        params,
+        shown: shown.clone(),
+        key,
+    });
     Some((shown, key))
 }
 
@@ -159,9 +194,15 @@ fn num(f: &Map<String, Value>, k: &str, d: f64) -> f32 {
 pub(crate) fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, Value>) {
     ui.spacing_mut().item_spacing.y = 6.0;
     ui.horizontal(|ui| {
-        let pat = f.get("pattern").and_then(Value::as_str).unwrap_or_default().to_string();
+        let pat = f
+            .get("pattern")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
         if app.session.patterns.items.is_empty() {
-            ui.label(egui::RichText::new(tl!("No patterns")).color(Tokens::get(ui.ctx()).text_faint));
+            ui.label(
+                egui::RichText::new(tl!("No patterns")).color(Tokens::get(ui.ctx()).text_faint),
+            );
         } else if let Some(id) = crate::preset_panels::pattern_picker(app, ui, &pat) {
             f.insert("pattern".into(), json!(id));
         }
@@ -179,7 +220,8 @@ pub(crate) fn body(app: &PhotocraftApp, ui: &mut egui::Ui, f: &mut Map<String, V
     let mut scale = num(f, "scale", 100.0);
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new(tl!("Scale:")).color(Tokens::get(ui.ctx()).text_dim));
-        if crate::widgets::value_field(ui, &mut scale, min as f32..=max as f32, "%", 70.0).changed() {
+        if crate::widgets::value_field(ui, &mut scale, min as f32..=max as f32, "%", 70.0).changed()
+        {
             f.insert("scale".into(), json!(scale.clamp(min as f32, max as f32)));
         }
     });

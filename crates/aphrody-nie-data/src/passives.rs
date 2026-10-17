@@ -92,7 +92,10 @@ impl LocalizedText {
     /// Retourne le premier texte non vide (fr > en > ja).
     #[must_use]
     pub fn best(&self) -> Option<&str> {
-        self.fr.as_deref().or(self.en.as_deref()).or(self.ja.as_deref())
+        self.fr
+            .as_deref()
+            .or(self.en.as_deref())
+            .or(self.ja.as_deref())
     }
 }
 
@@ -208,8 +211,11 @@ pub fn resolve_text_placeholder(template: &str, value: f64) -> String {
     // si la valeur est un entier (frac == 0.0), on supprime les décimales.
     #[allow(clippy::cast_precision_loss)]
     let is_integer = (value - (value as i64) as f64).abs() < 1e-9 && value.abs() < 1_000_000.0;
-    let value_str =
-        if is_integer { alloc::format!("{:.0}", value) } else { alloc::format!("{value:.2}") };
+    let value_str = if is_integer {
+        alloc::format!("{:.0}", value)
+    } else {
+        alloc::format!("{value:.2}")
+    };
     let s = template.replace("<VALUE>", &value_str);
     // Supprimer les balises couleur [CPASSIVE01], [CPASSIVE02], [C]
     let s = remove_color_tags(&s);
@@ -570,8 +576,10 @@ pub fn parse_player_passives(
                     };
 
                 // Résoudre le buff icon via REF_BUFF_ICON
-                let buff_icon: Option<u8> =
-                    ref_icons.get(&info_id).and_then(|icon_idx| buff_icons.get(icon_idx)).copied();
+                let buff_icon: Option<u8> = ref_icons
+                    .get(&info_id)
+                    .and_then(|icon_idx| buff_icons.get(icon_idx))
+                    .copied();
 
                 // Texte brut (NOUN_INFO par effectId)
                 let eff_u32 = effect_id.get();
@@ -579,15 +587,24 @@ pub fn parse_player_passives(
                 let raw_en = text_en.get(&eff_u32).cloned();
                 let raw_ja = text_ja.get(&eff_u32).cloned();
 
-                let text_raw =
-                    LocalizedText { fr: raw_fr.clone(), en: raw_en.clone(), ja: raw_ja.clone() };
+                let text_raw = LocalizedText {
+                    fr: raw_fr.clone(),
+                    en: raw_en.clone(),
+                    ja: raw_ja.clone(),
+                };
 
                 // Texte résolu (placeholder → valeur)
                 let main_val = eff_params.first().copied().unwrap_or(0.0);
                 let text_resolved = LocalizedText {
-                    fr: raw_fr.as_deref().map(|t| resolve_text_placeholder(t, main_val)),
-                    en: raw_en.as_deref().map(|t| resolve_text_placeholder(t, main_val)),
-                    ja: raw_ja.as_deref().map(|t| resolve_text_placeholder(t, main_val)),
+                    fr: raw_fr
+                        .as_deref()
+                        .map(|t| resolve_text_placeholder(t, main_val)),
+                    en: raw_en
+                        .as_deref()
+                        .map(|t| resolve_text_placeholder(t, main_val)),
+                    ja: raw_ja
+                        .as_deref()
+                        .map(|t| resolve_text_placeholder(t, main_val)),
                 };
 
                 out.push(PlayerPassive {
@@ -636,7 +653,11 @@ pub fn parse_team_passives(root: &Value, text_ja: &BTreeMap<u32, String>) -> Vec
 
             // Résolution texte (JA dans toutes les locales)
             let text_ja_str = text_ja.get(&text_id.get()).cloned();
-            let text = LocalizedText { fr: None, en: None, ja: text_ja_str };
+            let text = LocalizedText {
+                fr: None,
+                en: None,
+                ja: text_ja_str,
+            };
 
             TeamPassive {
                 team_passive_id,
@@ -671,10 +692,18 @@ pub fn parse_lots(root: &Value) -> Vec<TeamPassiveLot> {
             let id = field_hash(v, "id");
             let lot_weight = field_i64(v, "lotWeight").unwrap_or(0);
             let condition = field_optional_str(v, "condition").unwrap_or("").to_string();
-            let rarity_enable_flag =
-                v.get("rarityEnableFlag").and_then(Value::as_i64).map(|n| n != 0).unwrap_or(false);
+            let rarity_enable_flag = v
+                .get("rarityEnableFlag")
+                .and_then(Value::as_i64)
+                .map(|n| n != 0)
+                .unwrap_or(false);
 
-            TeamPassiveLot { id, lot_weight, condition, rarity_enable_flag }
+            TeamPassiveLot {
+                id,
+                lot_weight,
+                condition,
+                rarity_enable_flag,
+            }
         })
         .collect()
 }
@@ -796,10 +825,22 @@ mod tests {
         let raw = "ATT des tirs [CPASSIVE01]+<VALUE> %[C] \\npour les joueurs du même élément";
         let resolved = resolve_text_placeholder(raw, 0.5_f64);
         // Le template du jeu a un espace entre <VALUE> et % : "+0.50 %"
-        assert!(resolved.contains("+0.50"), "valeur non injectée: resolved={resolved:?}");
-        assert!(!resolved.contains("[CPASSIVE01]"), "balise couleur non supprimée: {resolved:?}");
-        assert!(!resolved.contains("[C]"), "balise fin non supprimée: {resolved:?}");
-        assert!(!resolved.contains("<VALUE>"), "placeholder non remplacé: {resolved:?}");
+        assert!(
+            resolved.contains("+0.50"),
+            "valeur non injectée: resolved={resolved:?}"
+        );
+        assert!(
+            !resolved.contains("[CPASSIVE01]"),
+            "balise couleur non supprimée: {resolved:?}"
+        );
+        assert!(
+            !resolved.contains("[C]"),
+            "balise fin non supprimée: {resolved:?}"
+        );
+        assert!(
+            !resolved.contains("<VALUE>"),
+            "placeholder non remplacé: {resolved:?}"
+        );
     }
 
     #[test]
@@ -815,8 +856,14 @@ mod tests {
         // Les tags japonais [風属性/かぜぞくせい] ne doivent PAS être supprimés
         let raw = "[風属性/かぜぞくせい][選手/せんしゅ]のシュートＡＴ[CPASSIVE01]＋<VALUE>％[C]";
         let resolved = resolve_text_placeholder(raw, 1.0_f64);
-        assert!(resolved.contains("[風属性/かぜぞくせい]"), "tag JA supprimé: {resolved:?}");
-        assert!(!resolved.contains("[CPASSIVE01]"), "couleur non supprimée: {resolved:?}");
+        assert!(
+            resolved.contains("[風属性/かぜぞくせい]"),
+            "tag JA supprimé: {resolved:?}"
+        );
+        assert!(
+            !resolved.contains("[CPASSIVE01]"),
+            "couleur non supprimée: {resolved:?}"
+        );
     }
 
     #[test]
@@ -932,7 +979,11 @@ mod tests {
         assert_eq!(p.rarity, 6);
         assert_eq!(p.element, 0);
         assert_eq!(p.buff_icon_type, Some(2));
-        assert!((p.effect_params[0] - 0.5).abs() < 1e-6, "param={}", p.effect_params[0]);
+        assert!(
+            (p.effect_params[0] - 0.5).abs() < 1e-6,
+            "param={}",
+            p.effect_params[0]
+        );
         // Texte résolu
         let resolved_fr = p.text_resolved.fr.as_deref().unwrap_or("");
         assert!(resolved_fr.contains("+0.50"), "resolved={resolved_fr:?}");

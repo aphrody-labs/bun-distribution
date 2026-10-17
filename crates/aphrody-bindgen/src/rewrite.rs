@@ -42,19 +42,22 @@ pub fn rewrite_bindings_for_libraries(source: &str, library_names: &[String]) ->
                                 sig: func.sig,
                                 abi: abi.clone(),
                             });
-                        },
-                        ForeignItem::Fn(_) => {},
-                        _ => {},
+                        }
+                        ForeignItem::Fn(_) => {}
+                        _ => {}
                     }
                 }
-            },
+            }
             other => items.push(other),
         }
     }
 
     let file_attrs = file.attrs;
     let helper = loader_tokens(library_names);
-    let adapters = functions.iter().map(adapter_tokens).collect::<Result<Vec<_>>>()?;
+    let adapters = functions
+        .iter()
+        .map(adapter_tokens)
+        .collect::<Result<Vec<_>>>()?;
 
     let tokens = quote! {
         #(#file_attrs)*
@@ -209,10 +212,17 @@ fn loader_tokens(library_names: &[String]) -> TokenStream {
 
 fn adapter_tokens(function: &Function) -> Result<TokenStream> {
     if !function.sig.generics.params.is_empty() {
-        bail!("cannot generate adapter for generic foreign function `{}`", function.sig.ident);
+        bail!(
+            "cannot generate adapter for generic foreign function `{}`",
+            function.sig.ident
+        );
     }
 
-    let attrs = function.attrs.iter().filter(|attr| !is_link_attr(attr)).collect::<Vec<_>>();
+    let attrs = function
+        .attrs
+        .iter()
+        .filter(|attr| !is_link_attr(attr))
+        .collect::<Vec<_>>();
     let vis = &function.vis;
     let fn_name = &function.sig.ident;
     let abi = &function.abi;
@@ -250,7 +260,10 @@ fn adapter_signature(sig: &Signature) -> Result<AdapterSignature> {
 
     for (index, input) in sig.inputs.iter().enumerate() {
         let FnArg::Typed(pat_type) = input else {
-            bail!("unsupported receiver argument in foreign function `{}`", sig.ident);
+            bail!(
+                "unsupported receiver argument in foreign function `{}`",
+                sig.ident
+            );
         };
 
         let ty = adapter_type(pat_type.ty.as_ref());
@@ -270,7 +283,11 @@ fn adapter_signature(sig: &Signature) -> Result<AdapterSignature> {
         arg_types.push(ty);
     }
 
-    Ok(AdapterSignature { wrapper_inputs, arg_names, arg_types })
+    Ok(AdapterSignature {
+        wrapper_inputs,
+        arg_names,
+        arg_types,
+    })
 }
 
 fn adapter_type(ty: &Type) -> Type {
@@ -321,7 +338,11 @@ fn link_name(attr: &Attribute) -> Option<String> {
     if !meta.path.is_ident("link_name") {
         return None;
     }
-    let Expr::Lit(ExprLit { lit: Lit::Str(value), .. }) = &meta.value else {
+    let Expr::Lit(ExprLit {
+        lit: Lit::Str(value),
+        ..
+    }) = &meta.value
+    else {
         return None;
     };
     Some(value.value())

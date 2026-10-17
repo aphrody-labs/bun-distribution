@@ -114,8 +114,10 @@ pub(crate) struct JobStatusRequest {
     pub id: Option<String>,
 
     /// Restrict a listing to one state.
-    #[schemars(description = "Filter a listing by state: queued, running, succeeded, failed, \
-                              cancelled. Ignored when `id` is set.")]
+    #[schemars(
+        description = "Filter a listing by state: queued, running, succeeded, failed, \
+                              cancelled. Ignored when `id` is set."
+    )]
     #[serde(default)]
     pub state: Option<String>,
 
@@ -130,8 +132,10 @@ pub(crate) struct JobStatusRequest {
     pub limit: Option<u32>,
 
     /// Log lines to return for a single job (0..=500, default 20).
-    #[schemars(description = "Trailing NDJSON log lines to include for a single job (0-500, \
-                              default 20). Ignored for listings.")]
+    #[schemars(
+        description = "Trailing NDJSON log lines to include for a single job (0-500, \
+                              default 20). Ignored for listings."
+    )]
     #[serde(default)]
     pub log_tail: Option<u32>,
 }
@@ -184,15 +188,21 @@ fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
     let payload = req.payload.clone().unwrap_or_else(|| json!({}));
     let encoded_len = serde_json::to_string(&payload).map_or(usize::MAX, |s| s.len());
     if encoded_len > MAX_PAYLOAD_BYTES {
-        return Err(format!("payload is {encoded_len}B (> max {MAX_PAYLOAD_BYTES}B)"));
+        return Err(format!(
+            "payload is {encoded_len}B (> max {MAX_PAYLOAD_BYTES}B)"
+        ));
     }
 
     if kind == "web-pipeline" {
-        let object = payload.as_object().ok_or("web-pipeline payload must be an object")?;
+        let object = payload
+            .as_object()
+            .ok_or("web-pipeline payload must be an object")?;
         if object.len() != 1 || !object.contains_key("args") {
             return Err("web-pipeline payload accepts only args".into());
         }
-        let args = object["args"].as_array().ok_or("web-pipeline args must be an array")?;
+        let args = object["args"]
+            .as_array()
+            .ok_or("web-pipeline args must be an array")?;
         if args.iter().any(|arg| !arg.is_string())
             || !matches!(
                 args.first().and_then(serde_json::Value::as_str),
@@ -209,7 +219,9 @@ fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
             JobHostAffinity::Hosts(hosts) => {
                 if hosts.is_empty()
                     || hosts.len() > 64
-                    || hosts.iter().any(|host| host.trim().is_empty() || host.len() > 128)
+                    || hosts
+                        .iter()
+                        .any(|host| host.trim().is_empty() || host.len() > 128)
                 {
                     return Err(
                         "hosts must contain 1-64 non-empty catalog identities (max 128 bytes each)"
@@ -217,7 +229,7 @@ fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
                     );
                 }
                 HostAffinity::Hosts(hosts.clone())
-            },
+            }
         });
     }
     if let Some(key) = &req.idempotency_key {
@@ -247,7 +259,9 @@ fn build_spec(req: &JobSubmitRequest) -> Result<JobSpec, String> {
 }
 
 fn stats_value(store: &JobStore) -> serde_json::Value {
-    store.stats().map_or_else(|e| json!({ "error": e.to_string() }), |s| json!(s))
+    store
+        .stats()
+        .map_or_else(|e| json!({ "error": e.to_string() }), |s| json!(s))
 }
 
 /// Dispatch `aphrody_job_submit`.
@@ -263,7 +277,9 @@ pub(crate) async fn submit(req: JobSubmitRequest) -> String {
     // every other tool sharing this runtime.
     let joined = tokio::task::spawn_blocking(move || {
         let (store, logs) = open_store()?;
-        let job = store.submit(&spec).map_err(|e| format!("submit failed: {e}"))?;
+        let job = store
+            .submit(&spec)
+            .map_err(|e| format!("submit failed: {e}"))?;
         let log_path = logs.path_for(&job.id);
         let stats = stats_value(&store);
         let db = store.path().map(|p| p.display().to_string());
@@ -298,7 +314,12 @@ pub(crate) async fn submit(req: JobSubmitRequest) -> String {
 
 /// Dispatch `aphrody_job_status`: one job with its logs, or a filtered listing.
 pub(crate) async fn status(req: JobStatusRequest) -> String {
-    let state = match req.state.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+    let state = match req
+        .state
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+    {
         None => None,
         Some(raw) => match aphrody_jobs::JobState::parse(&raw.to_ascii_lowercase()) {
             Some(state) => Some(state),
@@ -310,7 +331,7 @@ pub(crate) async fn status(req: JobStatusRequest) -> String {
                          cancelled"
                     ),
                 );
-            },
+            }
         },
     };
     if let Some(limit) = req.limit
@@ -329,10 +350,14 @@ pub(crate) async fn status(req: JobStatusRequest) -> String {
                 "JOB_BAD_REQUEST",
                 format!("log_tail must be in 0..={MAX_LOG_TAIL} (got {n})"),
             );
-        },
+        }
     };
 
-    let id = req.id.clone().map(|s| s.trim().to_owned()).filter(|s| !s.is_empty());
+    let id = req
+        .id
+        .clone()
+        .map(|s| s.trim().to_owned())
+        .filter(|s| !s.is_empty());
     let kind = req.kind.clone();
     let limit = req.limit.unwrap_or(20);
 
@@ -364,7 +389,9 @@ pub(crate) async fn status(req: JobStatusRequest) -> String {
         if let Some(kind) = kind.as_deref().map(str::trim).filter(|k| !k.is_empty()) {
             filter = filter.kind(kind);
         }
-        let jobs = store.list(&filter).map_err(|e| format!("list failed: {e}"))?;
+        let jobs = store
+            .list(&filter)
+            .map_err(|e| format!("list failed: {e}"))?;
         Ok(json!({ "count": jobs.len(), "jobs": jobs, "queue": stats }))
     })
     .await;
@@ -385,7 +412,9 @@ pub(crate) async fn cancel(req: JobCancelRequest) -> String {
     let id = id.to_owned();
     let joined = tokio::task::spawn_blocking(move || {
         let (store, _) = open_store()?;
-        let job = store.cancel(&id).map_err(|error| format!("cancel failed: {error}"))?;
+        let job = store
+            .cancel(&id)
+            .map_err(|error| format!("cancel failed: {error}"))?;
         Ok::<_, String>(json!({"job":job,"queue":stats_value(&store)}))
     })
     .await;
@@ -425,12 +454,18 @@ mod tests {
             "priority",
             "run_after",
         ] {
-            assert!(submit.contains(&format!("\"{field}\"")), "submit missing {field}");
+            assert!(
+                submit.contains(&format!("\"{field}\"")),
+                "submit missing {field}"
+            );
         }
         let status = serde_json::to_string(&rmcp::schemars::schema_for!(JobStatusRequest))
             .expect("schema serialise");
         for field in ["id", "state", "kind", "limit", "log_tail"] {
-            assert!(status.contains(&format!("\"{field}\"")), "status missing {field}");
+            assert!(
+                status.contains(&format!("\"{field}\"")),
+                "status missing {field}"
+            );
         }
     }
 
@@ -446,15 +481,24 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = JobStore::open(dir.path().join("jobs.db")).unwrap();
         let job = store.submit(&build_spec(&request).unwrap()).unwrap();
-        assert_eq!(job.host_affinity, HostAffinity::Hosts(vec!["vps".into(), "wsl".into()]));
+        assert_eq!(
+            job.host_affinity,
+            HostAffinity::Hosts(vec!["vps".into(), "wsl".into()])
+        );
         assert_eq!(job.state, aphrody_jobs::JobState::Queued);
         assert_eq!(job.attempts, 0);
-        assert_eq!(store.submit(&build_spec(&request).unwrap()).unwrap().id, job.id);
+        assert_eq!(
+            store.submit(&build_spec(&request).unwrap()).unwrap().id,
+            job.id
+        );
         let cancelled = store.cancel(&job.id).unwrap();
         assert_eq!(cancelled.state, aphrody_jobs::JobState::Cancelled);
         drop(store);
         assert_eq!(
-            JobStore::open(dir.path().join("jobs.db")).unwrap().get(&job.id).unwrap(),
+            JobStore::open(dir.path().join("jobs.db"))
+                .unwrap()
+                .get(&job.id)
+                .unwrap(),
             cancelled
         );
     }
@@ -536,7 +580,9 @@ mod tests {
         // submitting, the job is `queued` — not running, not succeeded.
         let dir = tempfile::tempdir().expect("tempdir");
         let store = JobStore::open(dir.path().join("jobs.db")).expect("open");
-        let job = store.submit(&build_spec(&req("transcribe")).expect("spec")).expect("submit");
+        let job = store
+            .submit(&build_spec(&req("transcribe")).expect("spec"))
+            .expect("submit");
         assert_eq!(job.state, aphrody_jobs::JobState::Queued);
         assert_eq!(job.attempts, 0);
         assert!(job.result.is_none());
@@ -560,8 +606,13 @@ mod tests {
 
     #[tokio::test(flavor = "current_thread")]
     async fn an_out_of_range_limit_is_refused() {
-        let request =
-            JobStatusRequest { id: None, state: None, kind: None, limit: Some(0), log_tail: None };
+        let request = JobStatusRequest {
+            id: None,
+            state: None,
+            kind: None,
+            limit: Some(0),
+            log_tail: None,
+        };
         let value: serde_json::Value =
             serde_json::from_str(&status(request).await).expect("parse envelope");
         assert_eq!(value["error"], "JOB_BAD_REQUEST");

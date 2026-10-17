@@ -4,7 +4,7 @@ use bevy_ecs::prelude::*;
 use bevy_input_focus::tab_navigation::TabGroup;
 use bevy_reflect::Reflect;
 use bevy_scene::prelude::*;
-use bevy_ui::{px, widget::Text, FlexDirection, Node};
+use bevy_ui::{FlexDirection, Node, px, widget::Text};
 use bevy_ui_widgets::Activate;
 
 use crate::controls::FeathersButton;

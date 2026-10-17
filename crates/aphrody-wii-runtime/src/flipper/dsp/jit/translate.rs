@@ -73,7 +73,9 @@ impl DspRegCache {
         let vars = std::array::from_fn(|idx| {
             let var = builder.declare_var(types::I16);
             let value =
-                builder.ins().load(types::I16, MemFlagsData::trusted(), sys_ptr, offsets[idx]);
+                builder
+                    .ins()
+                    .load(types::I16, MemFlagsData::trusted(), sys_ptr, offsets[idx]);
             builder.def_var(var, value);
 
             var
@@ -151,7 +153,9 @@ impl DspRegCache {
 
     #[inline]
     fn index(offset: i32) -> Option<usize> {
-        reg_cache_offsets().iter().position(|&candidate| candidate == offset)
+        reg_cache_offsets()
+            .iter()
+            .position(|&candidate| candidate == offset)
     }
 
     #[inline]
@@ -159,7 +163,9 @@ impl DspRegCache {
         if let Some(idx) = Self::index(offset) {
             builder.use_var(self.vars[idx])
         } else {
-            builder.ins().load(types::I16, MemFlagsData::trusted(), sys_ptr, offset)
+            builder
+                .ins()
+                .load(types::I16, MemFlagsData::trusted(), sys_ptr, offset)
         }
     }
 
@@ -196,7 +202,9 @@ impl DspRegCache {
                 self.product_full_stale = true;
             }
         } else {
-            builder.ins().store(MemFlagsData::trusted(), value, sys_ptr, offset);
+            builder
+                .ins()
+                .store(MemFlagsData::trusted(), value, sys_ptr, offset);
         }
     }
 
@@ -206,14 +214,18 @@ impl DspRegCache {
         for (idx, &dirty) in self.dirty.iter().enumerate() {
             if dirty {
                 let value = builder.use_var(self.vars[idx]);
-                builder.ins().store(MemFlagsData::trusted(), value, sys_ptr, offsets[idx]);
+                builder
+                    .ins()
+                    .store(MemFlagsData::trusted(), value, sys_ptr, offsets[idx]);
             }
         }
     }
 
     fn reload(&mut self, builder: &mut FunctionBuilder, sys_ptr: Value) {
         for (idx, offset) in reg_cache_offsets().into_iter().enumerate() {
-            let value = builder.ins().load(types::I16, MemFlagsData::trusted(), sys_ptr, offset);
+            let value = builder
+                .ins()
+                .load(types::I16, MemFlagsData::trusted(), sys_ptr, offset);
             builder.def_var(self.vars[idx], value);
         }
 
@@ -306,7 +318,8 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
     #[inline]
     fn store_u16(&mut self, val: Value, offset: i32) {
-        self.reg_cache.store(self.builder, self.sys_ptr, val, offset);
+        self.reg_cache
+            .store(self.builder, self.sys_ptr, val, offset);
     }
 
     fn simple_reg_offset(slot: u8) -> Option<i32> {
@@ -381,7 +394,7 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
             16 | 17 => {
                 let trunc = self.builder.ins().ireduce(types::I8, value);
                 self.builder.ins().sextend(types::I16, trunc)
-            },
+            }
             _ => value,
         };
         self.store_u16(to_store, off);
@@ -479,8 +492,11 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
     }
 
     pub fn mulx_operands_u16(&mut self, s: u8, t: u8) -> (Value, Value) {
-        let a_off =
-            if s != 0 { abi::dsp_axh_base_offset() } else { abi::dsp_ax_base_offset() } as i32;
+        let a_off = if s != 0 {
+            abi::dsp_axh_base_offset()
+        } else {
+            abi::dsp_ax_base_offset()
+        } as i32;
 
         let b_off = if t != 0 {
             (abi::dsp_axh_base_offset() + 2) as i32
@@ -524,8 +540,11 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
     }
 
     pub fn mulc_operands_i16(&mut self, s: u8, t: u8) -> (Value, Value) {
-        let mid_off =
-            if s != 0 { abi::dsp_ac1_mid_offset() } else { abi::dsp_ac0_mid_offset() } as i32;
+        let mid_off = if s != 0 {
+            abi::dsp_ac1_mid_offset()
+        } else {
+            abi::dsp_ac0_mid_offset()
+        } as i32;
 
         let axh_off = (abi::dsp_axh_base_offset() + (t as usize) * 2) as i32;
         (self.load_u16(mid_off), self.load_u16(axh_off))
@@ -586,7 +605,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let ph_32 = self.builder.ins().uextend(types::I32, ph_u8);
         let mc_32 = self.builder.ins().uextend(types::I32, mid_carry);
         let total_32 = self.builder.ins().iadd(ph_32, mc_32);
-        let carry_32 = self.builder.ins().icmp_imm(IntCC::UnsignedGreaterThan, total_32, 0xFF);
+        let carry_32 = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThan, total_32, 0xFF);
         let carry = self.builder.ins().uextend(types::I16, carry_32);
 
         let ph_eq_7f = self.builder.ins().icmp_imm(IntCC::Equal, ph_u8, 0x7F);
@@ -619,7 +641,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let bit16 = self.builder.ins().band_imm(val40, 0x10000);
         let bit16_set = self.builder.ins().icmp_imm(IntCC::NotEqual, bit16, 0);
 
-        let lower_gt = self.builder.ins().icmp_imm(IntCC::UnsignedGreaterThan, lower, 0x8000);
+        let lower_gt = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThan, lower, 0x8000);
         let lower_eq = self.builder.ins().icmp_imm(IntCC::Equal, lower, 0x8000);
         let lower_eq_and_bit16 = self.builder.ins().band(lower_eq, bit16_set);
         let round_up = self.builder.ins().bor(lower_gt, lower_eq_and_bit16);
@@ -628,12 +653,17 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let sum = self.builder.ins().iadd_imm(val40, 0x10000);
         let rounded = self.builder.ins().band_imm(sum, !0xFFFF_i64);
         let sum_overflow =
-            self.builder.ins().icmp_imm(IntCC::UnsignedGreaterThan, sum, 0xFF_FFFF_FFFF_i64);
+            self.builder
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThan, sum, 0xFF_FFFF_FFFF_i64);
         let sum_overflow_i16 = self.builder.ins().uextend(types::I16, sum_overflow);
         let zero_i16 = self.iconst16(0);
 
         let result = self.builder.ins().select(round_up, rounded, truncated);
-        let carry_out = self.builder.ins().select(round_up, sum_overflow_i16, zero_i16);
+        let carry_out = self
+            .builder
+            .ins()
+            .select(round_up, sum_overflow_i16, zero_i16);
 
         (result, carry_out)
     }
@@ -714,7 +744,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
         let top2 = self.builder.ins().band_imm(r40, 0xC000_0000_i64);
         let tb0 = self.builder.ins().icmp_imm(IntCC::Equal, top2, 0);
-        let tb3 = self.builder.ins().icmp_imm(IntCC::Equal, top2, 0xC000_0000_i64);
+        let tb3 = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::Equal, top2, 0xC000_0000_i64);
         let tb = self.builder.ins().bor(tb0, tb3);
         let tb16 = self.builder.ins().uextend(types::I16, tb);
         let tb_pos = self.builder.ins().ishl_imm(tb16, 5);
@@ -737,7 +770,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         use cranelift_codegen::ir::condcodes::IntCC;
 
         let carry = if sub {
-            self.builder.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, a40, r40)
+            self.builder
+                .ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, a40, r40)
         } else {
             self.builder.ins().icmp(IntCC::UnsignedLessThan, r40, a40)
         };
@@ -822,17 +857,23 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         addr: Value,
         word_bias: i64,
     ) -> Value {
-        let base = self.reg_cache.dmem_base(ptr_field_offset).unwrap_or_else(|| {
-            self.builder.ins().load(
-                types::I64,
-                MemFlagsData::trusted(),
-                self.sys_ptr,
-                ptr_field_offset as i32,
-            )
-        });
+        let base = self
+            .reg_cache
+            .dmem_base(ptr_field_offset)
+            .unwrap_or_else(|| {
+                self.builder.ins().load(
+                    types::I64,
+                    MemFlagsData::trusted(),
+                    self.sys_ptr,
+                    ptr_field_offset as i32,
+                )
+            });
 
-        let biased =
-            if word_bias != 0 { self.builder.ins().iadd_imm(addr, word_bias) } else { addr };
+        let biased = if word_bias != 0 {
+            self.builder.ins().iadd_imm(addr, word_bias)
+        } else {
+            addr
+        };
         let addr64 = self.builder.ins().uextend(types::I64, biased);
         let byte_off = self.builder.ins().ishl_imm(addr64, 1);
 
@@ -852,33 +893,51 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let merge_block = self.builder.create_block();
         self.builder.append_block_param(merge_block, types::I32);
 
-        let is_dram = self.builder.ins().icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
-        self.builder.ins().brif(is_dram, dram_block, &[], not_dram_block, &[]);
+        let is_dram = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
+        self.builder
+            .ins()
+            .brif(is_dram, dram_block, &[], not_dram_block, &[]);
 
         self.builder.switch_to_block(dram_block);
         self.builder.seal_block(dram_block);
         let p = self.emit_dmem_word_addr(abi::dsp_dram_ptr_offset(), addr, 0);
-        let raw = self.builder.ins().load(types::I16, MemFlagsData::trusted(), p, 0);
+        let raw = self
+            .builder
+            .ins()
+            .load(types::I16, MemFlagsData::trusted(), p, 0);
         let be = self.builder.ins().bswap(raw);
         let v = self.builder.ins().uextend(types::I32, be);
         self.builder.ins().jump(merge_block, &[BlockArg::Value(v)]);
 
         self.builder.switch_to_block(not_dram_block);
         self.builder.seal_block(not_dram_block);
-        let is_coef = self.builder.ins().icmp_imm(IntCC::UnsignedLessThan, addr, 0x2000);
-        self.builder.ins().brif(is_coef, coef_block, &[], slow_block, &[]);
+        let is_coef = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThan, addr, 0x2000);
+        self.builder
+            .ins()
+            .brif(is_coef, coef_block, &[], slow_block, &[]);
 
         self.builder.switch_to_block(coef_block);
         self.builder.seal_block(coef_block);
         let p = self.emit_dmem_word_addr(abi::dsp_coef_ptr_offset(), addr, -0x1000);
-        let raw = self.builder.ins().load(types::I16, MemFlagsData::trusted(), p, 0);
+        let raw = self
+            .builder
+            .ins()
+            .load(types::I16, MemFlagsData::trusted(), p, 0);
         let be = self.builder.ins().bswap(raw);
         let v = self.builder.ins().uextend(types::I32, be);
         self.builder.ins().jump(merge_block, &[BlockArg::Value(v)]);
 
         self.builder.switch_to_block(slow_block);
         self.builder.seal_block(slow_block);
-        let f = self.module.declare_func_in_func(self.extern_funcs.read_dmem, self.builder.func);
+        let f = self
+            .module
+            .declare_func_in_func(self.extern_funcs.read_dmem, self.builder.func);
         let inst = self.builder.ins().call(f, &[self.sys_ptr, addr]);
         let v = self.builder.inst_results(inst)[0];
         self.builder.ins().jump(merge_block, &[BlockArg::Value(v)]);
@@ -897,8 +956,13 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let slow_block = self.builder.create_block();
         let merge_block = self.builder.create_block();
 
-        let is_dram = self.builder.ins().icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
-        self.builder.ins().brif(is_dram, dram_block, &[], slow_block, &[]);
+        let is_dram = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
+        self.builder
+            .ins()
+            .brif(is_dram, dram_block, &[], slow_block, &[]);
 
         self.builder.switch_to_block(dram_block);
         self.builder.seal_block(dram_block);
@@ -910,7 +974,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
         self.builder.switch_to_block(slow_block);
         self.builder.seal_block(slow_block);
-        let f = self.module.declare_func_in_func(self.extern_funcs.write_dmem, self.builder.func);
+        let f = self
+            .module
+            .declare_func_in_func(self.extern_funcs.write_dmem, self.builder.func);
         self.builder.ins().call(f, &[self.sys_ptr, addr, value_u32]);
         self.builder.ins().jump(merge_block, &[]);
 
@@ -937,7 +1003,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let x = self.builder.ins().bxor(nar, ar);
         let wr_or1 = self.builder.ins().bor_imm(wr, 1);
         let limit = self.builder.ins().ishl_imm(wr_or1, 1);
-        let wrap = self.builder.ins().icmp(IntCC::UnsignedGreaterThan, x, limit);
+        let wrap = self
+            .builder
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThan, x, limit);
 
         let wrp1 = self.builder.ins().iadd_imm(wr, 1);
         let wrapped = self.builder.ins().isub(nar, wrp1);
@@ -955,7 +1024,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let wr_or1 = self.builder.ins().bor_imm(wr, 1);
         let limit = self.builder.ins().ishl_imm(wr_or1, 1);
         let masked = self.builder.ins().band(x, limit);
-        let wrap = self.builder.ins().icmp(IntCC::UnsignedGreaterThan, masked, wr);
+        let wrap = self
+            .builder
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThan, masked, wr);
 
         let wrp1 = self.builder.ins().iadd_imm(wr, 1);
         let wrapped = self.builder.ins().isub(nar, wrp1);
@@ -984,10 +1056,16 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let t = self.builder.ins().iadd(nar, wrp1);
         let tx = self.builder.ins().bxor(t, nar);
         let u = self.builder.ins().band(tx, dar);
-        let neg_wrap = self.builder.ins().icmp(IntCC::UnsignedLessThanOrEqual, u, wr);
+        let neg_wrap = self
+            .builder
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, u, wr);
         let res_neg = self.builder.ins().select(neg_wrap, t, nar);
 
-        let ge0 = self.builder.ins().icmp_imm(IntCC::SignedGreaterThanOrEqual, ixs, 0);
+        let ge0 = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::SignedGreaterThanOrEqual, ixs, 0);
         let res = self.builder.ins().select(ge0, res_pos, res_neg);
         self.builder.ins().band_imm(res, 0xFFFF)
     }
@@ -1013,7 +1091,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let vm = self.builder.ins().band(vu, mask);
         let avm = self.builder.ins().iadd(am, vm);
         let sum = self.builder.ins().iadd_imm(avm, 1);
-        let carry = self.builder.ins().icmp(IntCC::UnsignedGreaterThan, sum, mask);
+        let carry = self
+            .builder
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThan, sum, mask);
 
         let arv = self.builder.ins().iadd(ar, vs);
         let r0 = self.builder.ins().iadd_imm(arv, 1);
@@ -1022,7 +1103,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let wrp1 = self.builder.ins().band_imm(wrp1_raw, 0xFFFF);
 
         let vp1 = self.builder.ins().iadd_imm(v16, 1);
-        let gt0 = self.builder.ins().icmp_imm(IntCC::SignedGreaterThan, vp1, 0);
+        let gt0 = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::SignedGreaterThan, vp1, 0);
         let ismin = self.builder.ins().icmp_imm(IntCC::Equal, vp1, -32768);
         let cond_pos = self.builder.ins().bor(gt0, ismin);
 
@@ -1034,7 +1118,10 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let not_wr_raw = self.builder.ins().bnot(wr);
         let not_wr = self.builder.ins().band_imm(not_wr_raw, 0xFFFF);
         let low_not_wrap = self.builder.ins().band(not_wr, mask);
-        let carry_again = self.builder.ins().icmp(IntCC::UnsignedLessThan, low_sum, low_not_wrap);
+        let carry_again = self
+            .builder
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, low_sum, low_not_wrap);
         let ncarry = self.builder.ins().bxor_imm(carry, 1);
         let cond_add = self.builder.ins().bor(ncarry, carry_again);
         let r_add_raw = self.builder.ins().iadd(r, wrp1);
@@ -1060,7 +1147,11 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let rev_amount = self.builder.ins().band_imm(rev_amount_raw, 63);
         let amount = self.builder.ins().select(bit6, rev_amount, low6);
 
-        let shift_left = if reversed { self.builder.ins().bxor_imm(bit6, 1) } else { bit6 };
+        let shift_left = if reversed {
+            self.builder.ins().bxor_imm(bit6, 1)
+        } else {
+            bit6
+        };
 
         let ac = self.read_ac_i64(d_const as u8);
         let ac40 = self.builder.ins().band_imm(ac, 0xFF_FFFF_FFFF_i64);
@@ -1093,13 +1184,21 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let merge_block = self.builder.create_block();
         self.builder.append_block_param(merge_block, types::I32);
 
-        let is_iram = self.builder.ins().icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
-        self.builder.ins().brif(is_iram, iram_block, &[], not_iram_block, &[]);
+        let is_iram = self
+            .builder
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThan, addr, 0x1000);
+        self.builder
+            .ins()
+            .brif(is_iram, iram_block, &[], not_iram_block, &[]);
 
         self.builder.switch_to_block(iram_block);
         self.builder.seal_block(iram_block);
         let p = self.emit_dmem_word_addr(abi::dsp_iram_ptr_offset(), addr, 0);
-        let raw = self.builder.ins().load(types::I16, MemFlagsData::trusted(), p, 0);
+        let raw = self
+            .builder
+            .ins()
+            .load(types::I16, MemFlagsData::trusted(), p, 0);
         let be = self.builder.ins().bswap(raw);
         let v = self.builder.ins().uextend(types::I32, be);
         self.builder.ins().jump(merge_block, &[BlockArg::Value(v)]);
@@ -1108,12 +1207,17 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         self.builder.seal_block(not_iram_block);
         let bank = self.builder.ins().band_imm(addr, 0xF000);
         let is_irom = self.builder.ins().icmp_imm(IntCC::Equal, bank, 0x8000);
-        self.builder.ins().brif(is_irom, irom_block, &[], zero_block, &[]);
+        self.builder
+            .ins()
+            .brif(is_irom, irom_block, &[], zero_block, &[]);
 
         self.builder.switch_to_block(irom_block);
         self.builder.seal_block(irom_block);
         let p = self.emit_dmem_word_addr(abi::dsp_irom_ptr_offset(), addr, -0x8000);
-        let raw = self.builder.ins().load(types::I16, MemFlagsData::trusted(), p, 0);
+        let raw = self
+            .builder
+            .ins()
+            .load(types::I16, MemFlagsData::trusted(), p, 0);
         let be = self.builder.ins().bswap(raw);
         let v = self.builder.ins().uextend(types::I32, be);
         self.builder.ins().jump(merge_block, &[BlockArg::Value(v)]);
@@ -1121,7 +1225,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         self.builder.switch_to_block(zero_block);
         self.builder.seal_block(zero_block);
         let zero = self.builder.ins().iconst(types::I32, 0);
-        self.builder.ins().jump(merge_block, &[BlockArg::Value(zero)]);
+        self.builder
+            .ins()
+            .jump(merge_block, &[BlockArg::Value(zero)]);
 
         self.builder.switch_to_block(merge_block);
         self.builder.seal_block(merge_block);
@@ -1154,7 +1260,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
         let sxm_block = self.builder.create_block();
         let join_block = self.builder.create_block();
-        self.builder.ins().brif(sxm_set, sxm_block, &[], join_block, &[]);
+        self.builder
+            .ins()
+            .brif(sxm_set, sxm_block, &[], join_block, &[]);
 
         self.builder.switch_to_block(sxm_block);
         self.builder.seal_block(sxm_block);
@@ -1182,13 +1290,19 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let ptr_off = (base + DspStack::<32>::ptr_offset()) as i32;
 
         let ptr =
-            self.builder.ins().load(types::I8, MemFlagsData::trusted(), self.sys_ptr, ptr_off);
+            self.builder
+                .ins()
+                .load(types::I8, MemFlagsData::trusted(), self.sys_ptr, ptr_off);
         let inc = self.builder.ins().iadd_imm(ptr, 1);
         let new_ptr = self.builder.ins().band_imm(inc, 31);
-        self.builder.ins().store(MemFlagsData::trusted(), new_ptr, self.sys_ptr, ptr_off);
+        self.builder
+            .ins()
+            .store(MemFlagsData::trusted(), new_ptr, self.sys_ptr, ptr_off);
 
         let addr = self.stack_slot_addr(new_ptr);
-        self.builder.ins().store(MemFlagsData::trusted(), value16, addr, data_off);
+        self.builder
+            .ins()
+            .store(MemFlagsData::trusted(), value16, addr, data_off);
     }
 
     fn emit_stack_pop_value(&mut self, base: usize) -> Value {
@@ -1198,13 +1312,20 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let ptr_off = (base + DspStack::<32>::ptr_offset()) as i32;
 
         let ptr =
-            self.builder.ins().load(types::I8, MemFlagsData::trusted(), self.sys_ptr, ptr_off);
+            self.builder
+                .ins()
+                .load(types::I8, MemFlagsData::trusted(), self.sys_ptr, ptr_off);
         let addr = self.stack_slot_addr(ptr);
-        let value = self.builder.ins().load(types::I16, MemFlagsData::trusted(), addr, data_off);
+        let value = self
+            .builder
+            .ins()
+            .load(types::I16, MemFlagsData::trusted(), addr, data_off);
 
         let dec = self.builder.ins().iadd_imm(ptr, -1);
         let new_ptr = self.builder.ins().band_imm(dec, 31);
-        self.builder.ins().store(MemFlagsData::trusted(), new_ptr, self.sys_ptr, ptr_off);
+        self.builder
+            .ins()
+            .store(MemFlagsData::trusted(), new_ptr, self.sys_ptr, ptr_off);
 
         value
     }
@@ -1225,8 +1346,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
     pub fn emit_read_reg_full(&mut self, slot: u32) -> Value {
         self.reg_cache.flush(self.builder, self.sys_ptr);
-        let f =
-            self.module.declare_func_in_func(self.extern_funcs.read_reg_full, self.builder.func);
+        let f = self
+            .module
+            .declare_func_in_func(self.extern_funcs.read_reg_full, self.builder.func);
         let slot_v = self.builder.ins().iconst(types::I32, slot as i64);
         let inst = self.builder.ins().call(f, &[self.sys_ptr, slot_v]);
         self.builder.inst_results(inst)[0]
@@ -1234,11 +1356,14 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 
     pub fn emit_write_reg_full(&mut self, slot: u32, value: Value) {
         self.reg_cache.flush(self.builder, self.sys_ptr);
-        let f =
-            self.module.declare_func_in_func(self.extern_funcs.write_reg_full, self.builder.func);
+        let f = self
+            .module
+            .declare_func_in_func(self.extern_funcs.write_reg_full, self.builder.func);
         let slot_v = self.builder.ins().iconst(types::I32, slot as i64);
         let value_u32 = self.builder.ins().uextend(types::I32, value);
-        self.builder.ins().call(f, &[self.sys_ptr, slot_v, value_u32]);
+        self.builder
+            .ins()
+            .call(f, &[self.sys_ptr, slot_v, value_u32]);
         self.reg_cache.reload(self.builder, self.sys_ptr);
     }
 
@@ -1265,7 +1390,9 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
         let merge_block = self.builder.create_block();
 
         let nz = self.builder.ins().icmp_imm(IntCC::NotEqual, counter, 0);
-        self.builder.ins().brif(nz, push_block, &[], skip_block, &[]);
+        self.builder
+            .ins()
+            .brif(nz, push_block, &[], skip_block, &[]);
 
         self.builder.switch_to_block(push_block);
         self.builder.seal_block(push_block);
@@ -1332,11 +1459,11 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
                 let ge = eqb(self.builder, o, s);
                 let nz = not(self.builder, z);
                 and(self.builder, ge, nz)
-            },
+            }
             0b0011 => {
                 let lt = neb(self.builder, o, s);
                 or(self.builder, lt, z)
-            },
+            }
             0b0100 => not(self.builder, z),
             0b0101 => z,
             0b0110 => not(self.builder, c),
@@ -1347,13 +1474,13 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
                 let either = or(self.builder, as32, tb);
                 let nz = not(self.builder, z);
                 and(self.builder, either, nz)
-            },
+            }
             0b1011 => {
                 let nas = not(self.builder, as32);
                 let ntb = not(self.builder, tb);
                 let neither = and(self.builder, nas, ntb);
                 or(self.builder, neither, z)
-            },
+            }
             0b1100 => not(self.builder, lz),
             0b1101 => lz,
             0b1110 => o,
@@ -1365,13 +1492,19 @@ impl<'a, 'b> TranslatorCtx<'a, 'b> {
 #[cold]
 #[inline(never)]
 pub fn invalid(_ctx: &mut TranslatorCtx, instr: Instruction) {
-    panic!("DSP JIT translate: opcode {:#06x} hit invalid handler", instr.0);
+    panic!(
+        "DSP JIT translate: opcode {:#06x} hit invalid handler",
+        instr.0
+    );
 }
 
 #[cold]
 #[inline(never)]
 pub fn invalid_ext(_ctx: &mut TranslatorCtx, instr: GcDspExt) {
-    panic!("DSP JIT translate: ext opcode {:#04x} hit invalid_ext handler", instr.0);
+    panic!(
+        "DSP JIT translate: ext opcode {:#04x} hit invalid_ext handler",
+        instr.0
+    );
 }
 
 #[inline(always)]
@@ -1390,17 +1523,19 @@ pub fn ext_nop<const SYSTEM: SystemId>(_ctx: &mut TranslatorCtx, _instr: GcDspEx
 #[inline(always)]
 pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr: Instruction) {
     match OP {
-        OP_NOP => {},
+        OP_NOP => {}
         OP_HALT => {
             let csr = ctx.load_csr();
             let updated = ctx.builder.ins().bor_imm(csr, 1i64 << 2);
             ctx.store_csr(updated);
-        },
+        }
         OP_IFCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let skip_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, end_block, &[], skip_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, end_block, &[], skip_block, &[]);
 
             ctx.builder.switch_to_block(skip_block);
             ctx.builder.seal_block(skip_block);
@@ -1412,12 +1547,14 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         OP_JCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1428,12 +1565,14 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         OP_CALLCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1447,13 +1586,15 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
 
         OP_RETCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1464,12 +1605,14 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         OP_RTICC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1484,12 +1627,14 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         OP_JRCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1505,12 +1650,14 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         OP_CALLRCC => {
             let cond_v = ctx.emit_eval_condition(instr.cond());
             let take_block = ctx.builder.create_block();
             let end_block = ctx.builder.create_block();
-            ctx.builder.ins().brif(cond_v, take_block, &[], end_block, &[]);
+            ctx.builder
+                .ins()
+                .brif(cond_v, take_block, &[], end_block, &[]);
 
             ctx.builder.switch_to_block(take_block);
             ctx.builder.seal_block(take_block);
@@ -1529,7 +1676,7 @@ pub fn control<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             ctx.builder.switch_to_block(end_block);
             ctx.builder.seal_block(end_block);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -1552,9 +1699,9 @@ pub fn loops<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, ins
                 None => {
                     let v32 = ctx.emit_read_reg_full(reg as u32);
                     ctx.builder.ins().ireduce(types::I16, v32)
-                },
+                }
             }
-        },
+        }
         _ => unreachable!(),
     };
 
@@ -1573,14 +1720,14 @@ pub fn addr_reg<const OP: u32, const SYSTEM: SystemId>(
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             let ar_off = (abi::dsp_ar_base_offset() + (d as usize) * 2) as i32;
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_IAR => {
             let d = instr.d_14_15();
             let new_ar = ctx.emit_inc_ar(d as u32);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             let ar_off = (abi::dsp_ar_base_offset() + (d as usize) * 2) as i32;
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_SUBARN => {
             let d = instr.d_14_15();
             let ix_off = (abi::dsp_ix_base_offset() + (d as usize) * 2) as i32;
@@ -1589,7 +1736,7 @@ pub fn addr_reg<const OP: u32, const SYSTEM: SystemId>(
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             let ar_off = (abi::dsp_ar_base_offset() + (d as usize) * 2) as i32;
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_ADDARN => {
             let s = instr.s_12_13();
             let d = instr.d_14_15();
@@ -1599,7 +1746,7 @@ pub fn addr_reg<const OP: u32, const SYSTEM: SystemId>(
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             let ar_off = (abi::dsp_ar_base_offset() + (d as usize) * 2) as i32;
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -1620,7 +1767,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             } else {
                 ctx.emit_write_reg(dst, v);
             }
-        },
+        }
         OP_MRR => {
             let src = instr.src();
             let dst = instr.dst();
@@ -1631,7 +1778,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             } else {
                 ctx.emit_write_reg(dst, v);
             }
-        },
+        }
         OP_LR => {
             let dst = instr.d_11_15();
             let imm = instr.imm_16_31();
@@ -1644,7 +1791,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             } else {
                 ctx.emit_write_reg(dst, val);
             }
-        },
+        }
         OP_SR => {
             let src = instr.d_11_15();
             let v = ctx.emit_read_reg(src);
@@ -1652,14 +1799,17 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             let addr = ctx.builder.ins().iconst(types::I32, imm as i64);
             let v_u32 = ctx.builder.ins().uextend(types::I32, v);
             ctx.emit_write_dmem(addr, v_u32);
-        },
+        }
         OP_SI => {
             let addr_low = instr.mem_8_15_u16();
             let addr = (0xFF00u32 | (addr_low as u32)) as i64;
             let addr_v = ctx.builder.ins().iconst(types::I32, addr);
-            let val = ctx.builder.ins().iconst(types::I32, instr.imm_16_31() as i64);
+            let val = ctx
+                .builder
+                .ins()
+                .iconst(types::I32, instr.imm_16_31() as i64);
             ctx.emit_write_dmem(addr_v, val);
-        },
+        }
         OP_LRR | OP_LRRD | OP_LRRI | OP_LRRN => {
             let s = instr.s_9_10();
             let dst = instr.d_11_15();
@@ -1673,7 +1823,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                     let ix_off = (abi::dsp_ix_base_offset() + (s as usize) * 2) as i32;
                     let ix = ctx.load_u16(ix_off);
                     Some(ctx.emit_increase_ar(s as u32, ix))
-                },
+                }
                 _ => None,
             };
 
@@ -1691,7 +1841,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                     ctx.store_u16(ar_v16, ar_off);
                 }
             }
-        },
+        }
         OP_SRR | OP_SRRD | OP_SRRI | OP_SRRN => {
             let ar_idx = instr.s_9_10();
             let src = instr.d_11_15();
@@ -1703,7 +1853,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                     let ix_off = (abi::dsp_ix_base_offset() + (ar_idx as usize) * 2) as i32;
                     let ix = ctx.load_u16(ix_off);
                     Some(ctx.emit_increase_ar(ar_idx as u32, ix))
-                },
+                }
                 _ => None,
             };
 
@@ -1717,7 +1867,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                 let ar_v16 = ctx.builder.ins().ireduce(types::I16, ar_v);
                 ctx.store_u16(ar_v16, ar_off);
             }
-        },
+        }
         OP_LRS => {
             let dst = 24u8 + instr.reg_5_7();
             let mem_low = instr.mem_8_15_u16();
@@ -1733,7 +1883,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             } else {
                 ctx.try_emit_reg_write(dst, val);
             }
-        },
+        }
         OP_SRS => {
             let src = 28u8 + instr.reg_6_7();
             let v = ctx.emit_read_reg(src);
@@ -1745,7 +1895,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             let addr = ctx.builder.ins().uextend(types::I32, addr_u16);
             let v_u32 = ctx.builder.ins().uextend(types::I32, v);
             ctx.emit_write_dmem(addr, v_u32);
-        },
+        }
         OP_SRSH => {
             let src = if instr.s_7_7() != 0 { 17u8 } else { 16u8 };
             let v = ctx.try_emit_reg_read(src).expect("AC*H is simple");
@@ -1757,7 +1907,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
             let addr = ctx.builder.ins().uextend(types::I32, addr_u16);
             let v_u32 = ctx.builder.ins().uextend(types::I32, v);
             ctx.emit_write_dmem(addr, v_u32);
-        },
+        }
         OP_ILRR | OP_ILRRD | OP_ILRRI | OP_ILRRN => {
             let src = instr.s_14_15() as usize;
             let d = instr.d_7_7();
@@ -1771,7 +1921,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                     let ix_off = (abi::dsp_ix_base_offset() + src * 2) as i32;
                     let ix = ctx.load_u16(ix_off);
                     Some(ctx.emit_increase_ar(src as u32, ix))
-                },
+                }
                 _ => None,
             };
 
@@ -1783,7 +1933,7 @@ pub fn load_store<const OP: u32, const SYSTEM: SystemId>(
                 let ar_v16 = ctx.builder.ins().ireduce(types::I16, ar_v);
                 ctx.store_u16(ar_v16, ar_off);
             }
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -1796,7 +1946,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let imm_signed = instr.imm_8_15_i16();
             let v = ctx.iconst16(imm_signed as u16);
             ctx.emit_write_reg(dst, v);
-        },
+        }
         OP_ANDI => {
             let d = instr.d_7_7();
             let imm = instr.imm_16_31();
@@ -1807,7 +1957,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let ac_full = ctx.read_ac_i64(d);
             ctx.emit_update_flags_logic(result, ac_full);
             ctx.emit_clear_oc();
-        },
+        }
         OP_ORI => {
             let d = instr.d_7_7();
             let imm = instr.imm_16_31();
@@ -1818,7 +1968,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let ac_full = ctx.read_ac_i64(d);
             ctx.emit_update_flags_logic(result, ac_full);
             ctx.emit_clear_oc();
-        },
+        }
         OP_XORI => {
             let d = instr.d_7_7();
             let imm = instr.imm_16_31();
@@ -1829,7 +1979,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let ac_full = ctx.read_ac_i64(d);
             ctx.emit_update_flags_logic(result, ac_full);
             ctx.emit_clear_oc();
-        },
+        }
         OP_ANDF => {
             let d = instr.d_7_7();
             let imm = instr.imm_16_31();
@@ -1842,7 +1992,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             );
             let lz_i16 = ctx.builder.ins().uextend(types::I16, lz);
             ctx.emit_set_lz(lz_i16);
-        },
+        }
         OP_ANDCF => {
             let d = instr.d_7_7();
             let imm = instr.imm_16_31();
@@ -1856,7 +2006,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             );
             let lz_i16 = ctx.builder.ins().uextend(types::I16, lz);
             ctx.emit_set_lz(lz_i16);
-        },
+        }
         OP_ADDI => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1868,7 +2018,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b_v, new_ac);
-        },
+        }
         OP_ADDIS => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1879,7 +2029,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b_v, new_ac);
-        },
+        }
         OP_CMPI => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1887,7 +2037,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let b_v = ctx.builder.ins().iconst(types::I64, b);
             let result = ctx.builder.ins().isub(a, b_v);
             ctx.emit_update_flags_sub(a, b_v, result);
-        },
+        }
         OP_CMPIS => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1895,7 +2045,7 @@ pub fn imm_alu<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let b_v = ctx.builder.ins().iconst(types::I64, b);
             let result = ctx.builder.ins().isub(a, b_v);
             ctx.emit_update_flags_sub(a, b_v, result);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -1930,7 +2080,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b, new_ac);
-        },
+        }
         OP_ADD => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1940,7 +2090,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b, new_ac);
-        },
+        }
         OP_ADDAX => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
@@ -1951,7 +2101,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b, new_ac);
-        },
+        }
         OP_ADDAXL => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
@@ -1964,7 +2114,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b, new_ac);
-        },
+        }
         OP_SUBR => {
             let ss = instr.ss();
             let d = instr.d_7_7();
@@ -1976,7 +2126,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(a, b, new_ac);
-        },
+        }
         OP_SUB => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -1986,7 +2136,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(a, b, new_ac);
-        },
+        }
         OP_SUBAX => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
@@ -1996,7 +2146,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             ctx.write_ac_i64(d, result);
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(a, b, new_ac);
-        },
+        }
         OP_ADDP => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2015,7 +2165,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             ctx.set_status_bit(0, c_xor);
             ctx.set_status_bit(1, o_xor);
             ctx.or_status_bit(7, o_xor);
-        },
+        }
         OP_SUBP => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2037,7 +2187,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             ctx.set_status_bit(0, c_xor);
             ctx.set_status_bit(1, o_xor);
             ctx.or_status_bit(7, o_xor);
-        },
+        }
         OP_ADDPAXZ => {
             use cranelift_codegen::ir::condcodes::IntCC;
 
@@ -2056,7 +2206,10 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let sum40 = ctx.builder.ins().band_imm(sum_pre, 0xFF_FFFF_FFFF_i64);
             let bit16 = ctx.builder.ins().band_imm(sum40, 0x10000);
             let bit16_set = ctx.builder.ins().icmp_imm(IntCC::NotEqual, bit16, 0);
-            let lower_gt = ctx.builder.ins().icmp_imm(IntCC::UnsignedGreaterThan, lower, 0x8000);
+            let lower_gt = ctx
+                .builder
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThan, lower, 0x8000);
             let lower_eq = ctx.builder.ins().icmp_imm(IntCC::Equal, lower, 0x8000);
             let lower_eq_and_bit16 = ctx.builder.ins().band(lower_eq, bit16_set);
             let round_up = ctx.builder.ins().bor(lower_gt, lower_eq_and_bit16);
@@ -2065,12 +2218,17 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let plus = ctx.builder.ins().iadd_imm(val40, 0x10000);
             let rounded_path = ctx.builder.ins().band_imm(plus, !0xFFFF_i64);
             let plus_overflow =
-                ctx.builder.ins().icmp_imm(IntCC::UnsignedGreaterThan, plus, 0xFF_FFFF_FFFF_i64);
+                ctx.builder
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThan, plus, 0xFF_FFFF_FFFF_i64);
             let plus_overflow_i16 = ctx.builder.ins().uextend(types::I16, plus_overflow);
             let zero_i16 = ctx.iconst16(0);
 
             let rounded = ctx.builder.ins().select(round_up, rounded_path, truncated);
-            let rounding_carry = ctx.builder.ins().select(round_up, plus_overflow_i16, zero_i16);
+            let rounding_carry = ctx
+                .builder
+                .ins()
+                .select(round_up, plus_overflow_i16, zero_i16);
 
             let result_pre = ctx.builder.ins().iadd(rounded, b);
             let result = ctx.builder.ins().band_imm(result_pre, !0xFFFF_i64);
@@ -2089,7 +2247,7 @@ pub fn add_sub<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             ctx.set_status_bit(0, c_xor);
             ctx.set_status_bit(1, o_xor);
             ctx.or_status_bit(7, o_xor);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2112,7 +2270,7 @@ pub fn move_ops<const OP: u32, const SYSTEM: SystemId>(
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_ac(new_ac);
             ctx.emit_clear_oc();
-        },
+        }
         OP_MOVAX => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
@@ -2129,7 +2287,7 @@ pub fn move_ops<const OP: u32, const SYSTEM: SystemId>(
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_ac(new_ac);
             ctx.emit_clear_oc();
-        },
+        }
         OP_MOV => {
             let d = instr.d_7_7();
             let val = ctx.read_ac_i64(1 - d);
@@ -2138,15 +2296,15 @@ pub fn move_ops<const OP: u32, const SYSTEM: SystemId>(
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_ac(new_ac);
             ctx.emit_clear_oc();
-        },
+        }
         OP_MOVP => {
             let d = instr.d_7_7();
             ctx.move_prod_to_ac(d);
-        },
+        }
         OP_MOVPZ => {
             let d = instr.d_7_7();
             ctx.move_prod_to_ac_zero(d);
-        },
+        }
         OP_MOVNP => {
             use cranelift_codegen::ir::condcodes::IntCC;
 
@@ -2167,7 +2325,7 @@ pub fn move_ops<const OP: u32, const SYSTEM: SystemId>(
             let not_carry = ctx.builder.ins().isub(one, carry);
             let c_val = ctx.builder.ins().bxor(not_carry, prod_zero_i16);
             ctx.set_status_bit(0, c_val);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2185,7 +2343,7 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b_v, new_ac);
-        },
+        }
         OP_INC => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2195,7 +2353,7 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_add(a, b_v, new_ac);
-        },
+        }
         OP_DECM => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2205,7 +2363,7 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(a, b_v, new_ac);
-        },
+        }
         OP_DEC => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2215,7 +2373,7 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(a, b_v, new_ac);
-        },
+        }
         OP_NEG => {
             let d = instr.d_7_7();
             let a = ctx.read_ac_i64(d);
@@ -2225,7 +2383,7 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
 
             let new_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_sub(zero, a, new_ac);
-        },
+        }
         OP_ABS_AC => {
             use cranelift_codegen::ir::condcodes::IntCC;
 
@@ -2240,13 +2398,16 @@ pub fn inc_dec<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, i
             let stored_ac = ctx.read_ac_i64(d);
             ctx.emit_update_flags_ac(stored_ac);
 
-            let still_neg = ctx.builder.ins().icmp_imm(IntCC::SignedLessThan, stored_ac, 0);
+            let still_neg = ctx
+                .builder
+                .ins()
+                .icmp_imm(IntCC::SignedLessThan, stored_ac, 0);
             let o_b8 = ctx.builder.ins().band(was_negative, still_neg);
             let o_i16 = ctx.builder.ins().uextend(types::I16, o_b8);
             ctx.set_status_bit(1, o_i16);
             ctx.or_status_bit(7, o_i16);
             ctx.set_status_bit_const(0, false);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2262,7 +2423,7 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             let b = ctx.read_ac_i64(1);
             let result = ctx.builder.ins().isub(a, b);
             ctx.emit_update_flags_sub(a, b, result);
-        },
+        }
         OP_CMPAXH => {
             let s = instr.s_4_4();
             let r = instr.s_3_3();
@@ -2273,13 +2434,13 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             let b = ctx.builder.ins().ishl_imm(axh_signed, 16);
             let result = ctx.builder.ins().isub(a, b);
             ctx.emit_update_flags_sub(a, b, result);
-        },
+        }
         OP_TST => {
             let r = instr.r_4_4();
             let ac = ctx.read_ac_i64(r);
             ctx.emit_update_flags_ac(ac);
             ctx.emit_clear_oc();
-        },
+        }
         OP_TSTAXH => {
             let r = instr.r_7_7();
             let axh_off = (abi::dsp_axh_base_offset() + (r as usize) * 2) as i32;
@@ -2293,8 +2454,8 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             let mask = !((1i64 << 4) | (1 << 1) | 1) & 0xFFFF;
             let cleared = ctx.builder.ins().band_imm(sr, mask);
             ctx.store_u16(cleared, sr_off);
-        },
-        OP_NX_0 | OP_NX_1 => {},
+        }
+        OP_NX_0 | OP_NX_1 => {}
         OP_CLR => {
             let r = instr.r_4_4();
             let zero64 = ctx.builder.ins().iconst(types::I64, 0);
@@ -2307,7 +2468,7 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             let cleared = ctx.builder.ins().band_imm(sr, mask);
             let updated = ctx.builder.ins().bor_imm(cleared, (1i64 << 5) | (1 << 2));
             ctx.store_u16(updated, sr_off);
-        },
+        }
         OP_CLRP => {
             let pl = ctx.iconst16(0x0000);
             let pm1 = ctx.iconst16(0xFFF0);
@@ -2317,7 +2478,7 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             ctx.store_u16(pm1, abi::dsp_product_mid1_offset() as i32);
             ctx.store_u16(ph, abi::dsp_product_high_offset() as i32);
             ctx.store_u16(pm2, abi::dsp_product_mid2_offset() as i32);
-        },
+        }
         OP_TSTPROD => {
             let (pc, po) = ctx.product_flags_i16();
             let prod = ctx.read_product_i64();
@@ -2325,7 +2486,7 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             ctx.set_status_bit(1, po);
             ctx.or_status_bit(7, po);
             ctx.set_status_bit(0, pc);
-        },
+        }
         OP_CLRL => {
             let r = instr.r_7_7();
             let ac = ctx.read_ac_i64(r);
@@ -2334,7 +2495,7 @@ pub fn cmp_test<const OP: u32, const SYSTEM: SystemId>(
             ctx.emit_update_flags_ac(rounded);
             ctx.set_status_bit_const(1, false);
             ctx.set_status_bit(0, carry);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2390,7 +2551,7 @@ pub fn logic<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, ins
             let ac_full = ctx.read_ac_i64(d);
             ctx.emit_update_flags_logic(result, ac_full);
             ctx.emit_clear_oc();
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2419,7 +2580,7 @@ pub fn shifts<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
             let masked = ctx.builder.ins().band_imm(ac, 0xFF_FFFF_FFFFi64);
             let shifted = ctx.builder.ins().ishl_imm(masked, i);
             finish(ctx, r, shifted);
-        },
+        }
         OP_LSR => {
             let r = instr.r_7_7();
             let i = instr.n() as i64;
@@ -2434,7 +2595,7 @@ pub fn shifts<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
                 ctx.emit_update_flags_ac(ac);
                 ctx.emit_clear_oc();
             }
-        },
+        }
         OP_ASR => {
             let r = instr.r_7_7();
             let i = instr.n() as i64;
@@ -2448,59 +2609,59 @@ pub fn shifts<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
                 ctx.emit_update_flags_ac(ac);
                 ctx.emit_clear_oc();
             }
-        },
+        }
         OP_LSL16 => {
             let r = instr.r_7_7();
             let ac = ctx.read_ac_i64(r);
             let masked = ctx.builder.ins().band_imm(ac, 0xFF_FFFF_FFFFi64);
             let shifted = ctx.builder.ins().ishl_imm(masked, 16);
             finish(ctx, r, shifted);
-        },
+        }
         OP_LSR16 => {
             let r = instr.r_7_7();
             let ac = ctx.read_ac_i64(r);
             let masked = ctx.builder.ins().band_imm(ac, 0xFF_FFFF_FFFFi64);
             let shifted = ctx.builder.ins().ushr_imm(masked, 16);
             finish(ctx, r, shifted);
-        },
+        }
         OP_ASR16 => {
             let r = instr.r_4_4();
             let ac = ctx.read_ac_i64(r);
             let shifted = ctx.builder.ins().sshr_imm(ac, 16);
             finish(ctx, r, shifted);
-        },
+        }
         OP_LSRN => {
             let shift = ctx.load_u16(abi::dsp_ac1_mid_offset() as i32);
             ctx.emit_dynamic_shift(0, shift, 0b01);
-        },
+        }
         OP_ASRN => {
             let shift = ctx.load_u16(abi::dsp_ac1_mid_offset() as i32);
             ctx.emit_dynamic_shift(0, shift, 0b00);
-        },
+        }
         OP_LSRNRX => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
             let axh_off = (abi::dsp_axh_base_offset() + (s as usize) * 2) as i32;
             let shift = ctx.load_u16(axh_off);
             ctx.emit_dynamic_shift(d as u32, shift, 0b11);
-        },
+        }
         OP_ASRNRX => {
             let s = instr.s_6_6();
             let d = instr.d_7_7();
             let axh_off = (abi::dsp_axh_base_offset() + (s as usize) * 2) as i32;
             let shift = ctx.load_u16(axh_off);
             ctx.emit_dynamic_shift(d as u32, shift, 0b10);
-        },
+        }
         OP_LSRNR => {
             let d = instr.d_7_7();
             let other = ctx.read_ac_mid(1 - d);
             ctx.emit_dynamic_shift(d as u32, other, 0b11);
-        },
+        }
         OP_ASRNR => {
             let d = instr.d_7_7();
             let other = ctx.read_ac_mid(1 - d);
             ctx.emit_dynamic_shift(d as u32, other, 0b10);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2520,7 +2681,7 @@ pub fn status<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
             let mask = !(1u16 << idx);
             let new_sr = ctx.builder.ins().band_imm(sr, mask as i64);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_SBSET => {
             let idx = 6 + instr.bit();
             if idx == 13 || idx == 8 {
@@ -2531,37 +2692,37 @@ pub fn status<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
             let bit = 1i64 << idx;
             let new_sr = ctx.builder.ins().bor_imm(sr, bit);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_M2 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().band_imm(sr, !(1i64 << 13) & 0xFFFF);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_M0 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().bor_imm(sr, 1i64 << 13);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_CLR15 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().band_imm(sr, !(1i64 << 15) & 0xFFFF);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_SET15 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().bor_imm(sr, 1i64 << 15);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_SET16 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().band_imm(sr, !(1i64 << 14) & 0xFFFF);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         OP_SET40 => {
             let sr = ctx.load_u16(sr_off);
             let new_sr = ctx.builder.ins().bor_imm(sr, 1i64 << 14);
             ctx.store_u16(new_sr, sr_off);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected OP routed to native translator"),
     }
 }
@@ -2577,25 +2738,25 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let b = ctx.load_u16(axh_off);
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULAXH => {
             let axh_off = abi::dsp_axh_base_offset() as i32;
             let a = ctx.load_u16(axh_off);
             let p = ctx.multiply_i64(a, a);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULX => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
             ctx.multiply_mulx(s, t);
-        },
+        }
         OP_MULC => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
             let (a, b) = ctx.mulc_operands_i16(s, t);
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MADD => {
             let s = (instr.s_7_7() as usize) * 2;
             let ax_off = (abi::dsp_ax_base_offset() + s) as i32;
@@ -2603,7 +2764,7 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let a = ctx.load_u16(ax_off);
             let b = ctx.load_u16(axh_off);
             ctx.multiply_accumulate_i64(a, b, true);
-        },
+        }
         OP_MSUB => {
             let s = (instr.s_7_7() as usize) * 2;
             let ax_off = (abi::dsp_ax_base_offset() + s) as i32;
@@ -2611,13 +2772,13 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let a = ctx.load_u16(ax_off);
             let b = ctx.load_u16(axh_off);
             ctx.multiply_accumulate_i64(a, b, false);
-        },
+        }
         OP_MADDC | OP_MSUBC => {
             let s = instr.s_6_6();
             let t = instr.t_7_7();
             let (a, b) = ctx.mulc_operands_i16(s, t);
             ctx.multiply_accumulate_i64(a, b, OP == OP_MADDC);
-        },
+        }
         OP_MULMV => {
             let s = (instr.r_4_4() as usize) * 2;
             let r = instr.r_7_7();
@@ -2627,7 +2788,7 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let b = ctx.load_u16((abi::dsp_axh_base_offset() + s) as i32);
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULAC => {
             let s = (instr.r_4_4() as usize) * 2;
             let r = instr.r_7_7();
@@ -2637,21 +2798,21 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let b = ctx.load_u16((abi::dsp_axh_base_offset() + s) as i32);
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULXMV => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
             let r = instr.r_7_7();
             ctx.move_prod_to_ac(r);
             ctx.multiply_mulx(s, t);
-        },
+        }
         OP_MULXAC => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
             let r = instr.r_7_7();
             ctx.add_prod_to_ac(r);
             ctx.multiply_mulx(s, t);
-        },
+        }
         OP_MULCMV => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
@@ -2661,7 +2822,7 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
 
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULCAC => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
@@ -2671,13 +2832,13 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
 
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MADDX | OP_MSUBX => {
             let s = instr.s_6_6();
             let t = instr.t_7_7();
             let (a, b) = ctx.mulx_operands_u16(s, t);
             ctx.multiply_accumulate_i64(a, b, OP == OP_MADDX);
-        },
+        }
         OP_MULMVZ => {
             let s = (instr.r_4_4() as usize) * 2;
             let r = instr.r_7_7();
@@ -2687,14 +2848,14 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
             let b = ctx.load_u16((abi::dsp_axh_base_offset() + s) as i32);
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         OP_MULXMVZ => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
             let r = instr.r_7_7();
             ctx.move_prod_to_ac_zero(r);
             ctx.multiply_mulx(s, t);
-        },
+        }
         OP_MULCMVZ => {
             let s = instr.s_3_3();
             let t = instr.t_4_4();
@@ -2704,7 +2865,7 @@ pub fn mul<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, instr
 
             let p = ctx.multiply_i64(a, b);
             ctx.write_product_i64(p);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected mul OP"),
     }
 }
@@ -2719,19 +2880,19 @@ pub fn ext_addr<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, 
             let new_ar = ctx.emit_dec_ar(r as u32);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_EXT_IR => {
             let new_ar = ctx.emit_inc_ar(r as u32);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_EXT_NR => {
             let ix_off = (abi::dsp_ix_base_offset() + r * 2) as i32;
             let ix = ctx.load_u16(ix_off);
             let new_ar = ctx.emit_increase_ar(r as u32, ix);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         _ => unreachable!("DSP JIT: unexpected ext OP routed to native translator"),
     }
 }
@@ -2758,15 +2919,15 @@ pub fn ext_load<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, 
             let new_ar = ctx.emit_inc_ar(s as u32);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_EXT_LN => {
             let ix_off = (abi::dsp_ix_base_offset() + s * 2) as i32;
             let ix = ctx.load_u16(ix_off);
             let new_ar = ctx.emit_increase_ar(s as u32, ix);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -2787,15 +2948,15 @@ pub fn ext_store<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx,
             let new_ar = ctx.emit_inc_ar(d as u32);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
+        }
         OP_EXT_SN => {
             let ix_off = (abi::dsp_ix_base_offset() + d * 2) as i32;
             let ix = ctx.load_u16(ix_off);
             let new_ar = ctx.emit_increase_ar(d as u32, ix);
             let new_ar16 = ctx.builder.ins().ireduce(types::I16, new_ar);
             ctx.store_u16(new_ar16, ar_off);
-        },
-        _ => {},
+        }
+        _ => {}
     }
 }
 
@@ -2885,8 +3046,11 @@ pub fn ext_ld<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
 
     let s_bank = ctx.builder.ins().ushr_imm(ar_s, 10);
     let three_bank = ctx.builder.ins().ushr_imm(ar_3, 10);
-    let same_bank_i8 =
-        ctx.builder.ins().icmp(cranelift_codegen::ir::condcodes::IntCC::Equal, s_bank, three_bank);
+    let same_bank_i8 = ctx.builder.ins().icmp(
+        cranelift_codegen::ir::condcodes::IntCC::Equal,
+        s_bank,
+        three_bank,
+    );
 
     let addr0 = ctx.builder.ins().uextend(types::I32, ar_s);
     let value0_u32 = ctx.emit_read_dmem(addr0);
@@ -2899,7 +3063,9 @@ pub fn ext_ld<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, in
         let diff_block = ctx.builder.create_block();
         let join_block = ctx.builder.create_block();
         ctx.builder.append_block_param(join_block, types::I16);
-        ctx.builder.ins().brif(same_bank_i8, same_block, &[], diff_block, &[]);
+        ctx.builder
+            .ins()
+            .brif(same_bank_i8, same_block, &[], diff_block, &[]);
 
         ctx.builder.switch_to_block(same_block);
         ctx.builder.seal_block(same_block);
@@ -2961,8 +3127,11 @@ pub fn ext_ldax<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, 
 
     let s_bank = ctx.builder.ins().ushr_imm(ar_s, 10);
     let three_bank = ctx.builder.ins().ushr_imm(ar_3, 10);
-    let same_bank_i8 =
-        ctx.builder.ins().icmp(cranelift_codegen::ir::condcodes::IntCC::Equal, s_bank, three_bank);
+    let same_bank_i8 = ctx.builder.ins().icmp(
+        cranelift_codegen::ir::condcodes::IntCC::Equal,
+        s_bank,
+        three_bank,
+    );
 
     let addr_s = ctx.builder.ins().uextend(types::I32, ar_s);
     let high_u32 = ctx.emit_read_dmem(addr_s);
@@ -2973,7 +3142,9 @@ pub fn ext_ldax<const OP: u32, const SYSTEM: SystemId>(ctx: &mut TranslatorCtx, 
         let diff_block = ctx.builder.create_block();
         let join_block = ctx.builder.create_block();
         ctx.builder.append_block_param(join_block, types::I16);
-        ctx.builder.ins().brif(same_bank_i8, same_block, &[], diff_block, &[]);
+        ctx.builder
+            .ins()
+            .brif(same_bank_i8, same_block, &[], diff_block, &[]);
         ctx.builder.switch_to_block(same_block);
         ctx.builder.seal_block(same_block);
         ctx.builder.ins().jump(join_block, &[high.into()]);

@@ -12,4 +12,9 @@ use crate::prefixes::LegacyTokenPrefix;
 pub struct TtsInferenceJobToken(pub String);
 
 impl_string_token!(TtsInferenceJobToken);
-impl_crockford_generator!(TtsInferenceJobToken, 32usize, LegacyTokenPrefix::TtsInferenceJob, CrockfordLower);
+impl_crockford_generator!(
+    TtsInferenceJobToken,
+    32usize,
+    LegacyTokenPrefix::TtsInferenceJob,
+    CrockfordLower
+);

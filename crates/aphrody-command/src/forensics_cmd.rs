@@ -204,19 +204,25 @@ fn map(target: &std::path::Path, out: &std::path::Path) -> miette::Result<()> {
             let path = entry.path();
             let meta = entry.metadata().ok();
             let size = meta.as_ref().map(std::fs::Metadata::len).unwrap_or(0);
-            let ext = path.extension().and_then(|e| e.to_str()).map(|s| s.to_ascii_lowercase());
+            let ext = path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|s| s.to_ascii_lowercase());
 
             let (modified, mtime_unix) = match meta.as_ref().and_then(|m| m.modified().ok()) {
                 Some(t) => {
                     let dt: chrono::DateTime<chrono::Utc> = t.into();
                     (Some(dt.to_rfc3339()), Some(dt.timestamp()))
-                },
+                }
                 None => (None, None),
             };
 
             let secret_meta_only = is_secret_path(path);
-            let sha256 =
-                if !secret_meta_only && size <= MAX_HASH_BYTES { hash_file(path) } else { None };
+            let sha256 = if !secret_meta_only && size <= MAX_HASH_BYTES {
+                hash_file(path)
+            } else {
+                None
+            };
 
             MapEntry {
                 path: path.display().to_string(),
@@ -293,7 +299,10 @@ fn sqlite_schema(db: &std::path::Path) -> miette::Result<()> {
     use rusqlite::{Connection, OpenFlags};
 
     if !db.is_file() {
-        return Err(miette::miette!("forensics sqlite: not a file: {}", db.display()));
+        return Err(miette::miette!(
+            "forensics sqlite: not a file: {}",
+            db.display()
+        ));
     }
 
     // READ_ONLY guarantees we cannot mutate the evidence; NO_MUTEX is safe
@@ -323,7 +332,11 @@ fn sqlite_schema(db: &std::path::Path) -> miette::Result<()> {
         tables.push(row.map_err(|e| miette::miette!("forensics sqlite: row: {e}"))?);
     }
 
-    let report = SqliteReport { db: db.display().to_string(), object_count: tables.len(), tables };
+    let report = SqliteReport {
+        db: db.display().to_string(),
+        object_count: tables.len(),
+        tables,
+    };
 
     let json = serde_json::to_string_pretty(&report)
         .map_err(|e| miette::miette!("forensics sqlite: JSON encode failed: {e}"))?;

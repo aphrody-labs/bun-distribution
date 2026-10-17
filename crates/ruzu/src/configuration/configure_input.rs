@@ -10,10 +10,10 @@
 // Controls screen shows nine tabs rather than a nested tab widget (unlike the
 // Debug screen, which does nest).
 
+use gtk::prelude::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
-use gtk::prelude::*;
 
 use super::configure_dialog::Page;
 use super::configure_input_advanced;
@@ -47,25 +47,52 @@ impl GlobalInputSettings {
     fn new() -> Self {
         let values = common::settings::values();
         Self {
-            motion: gtk::CheckButton::builder().active(*values.motion_enabled.get_value()).build(),
-            vibration: gtk::CheckButton::builder().active(*values.vibration_enabled.get_value()).build(),
-            docked: gtk::CheckButton::builder().active(*values.use_docked_mode.get_value()
-                == common::settings_enums::ConsoleMode::Docked).build(),
+            motion: gtk::CheckButton::builder()
+                .active(*values.motion_enabled.get_value())
+                .build(),
+            vibration: gtk::CheckButton::builder()
+                .active(*values.vibration_enabled.get_value())
+                .build(),
+            docked: gtk::CheckButton::builder()
+                .active(
+                    *values.use_docked_mode.get_value()
+                        == common::settings_enums::ConsoleMode::Docked,
+                )
+                .build(),
         }
     }
 
-    pub(crate) fn bind(&self, motion: &gtk::CheckButton, vibration: &gtk::CheckButton, docked: &gtk::CheckButton) {
-        for (source, target) in [(&self.motion, motion), (&self.vibration, vibration), (&self.docked, docked)] {
-            source.bind_property("active", target, "active").bidirectional().sync_create().build();
+    pub(crate) fn bind(
+        &self,
+        motion: &gtk::CheckButton,
+        vibration: &gtk::CheckButton,
+        docked: &gtk::CheckButton,
+    ) {
+        for (source, target) in [
+            (&self.motion, motion),
+            (&self.vibration, vibration),
+            (&self.docked, docked),
+        ] {
+            source
+                .bind_property("active", target, "active")
+                .bidirectional()
+                .sync_create()
+                .build();
         }
     }
 
     fn apply(&self) {
         let mut values = common::settings::values_mut();
-        values.use_docked_mode.set_value(if self.docked.is_active() {
-            common::settings_enums::ConsoleMode::Docked
-        } else { common::settings_enums::ConsoleMode::Handheld });
-        values.vibration_enabled.set_value(self.vibration.is_active());
+        values
+            .use_docked_mode
+            .set_value(if self.docked.is_active() {
+                common::settings_enums::ConsoleMode::Docked
+            } else {
+                common::settings_enums::ConsoleMode::Handheld
+            });
+        values
+            .vibration_enabled
+            .set_value(self.vibration.is_active());
         values.motion_enabled.set_value(self.motion.is_active());
     }
 }
@@ -93,7 +120,11 @@ pub fn pages(
             )
         })
         .collect();
-    let advanced = configure_input_advanced::page(Rc::clone(&input_subsystem), Arc::clone(&hid_core), Rc::clone(&profiles));
+    let advanced = configure_input_advanced::page(
+        Rc::clone(&input_subsystem),
+        Arc::clone(&hid_core),
+        Rc::clone(&profiles),
+    );
     // Apply these only after all player pages and Advanced, as ConfigureInput
     // does. The last page closure also owns the shared bindings' lifetime.
     pages.push(Page::new(&advanced.title, advanced.widget, move || {
@@ -137,13 +168,15 @@ mod tests {
     fn global_motion_vibration_and_mode_are_shared_between_player_tabs() {
         gtk::init().unwrap();
         let global = GlobalInputSettings::new();
-        let controls: Vec<_> = (0..NUM_PLAYERS).map(|_| {
-            let motion = gtk::CheckButton::new();
-            let vibration = gtk::CheckButton::new();
-            let docked = gtk::CheckButton::new();
-            global.bind(&motion, &vibration, &docked);
-            (motion, vibration, docked)
-        }).collect();
+        let controls: Vec<_> = (0..NUM_PLAYERS)
+            .map(|_| {
+                let motion = gtk::CheckButton::new();
+                let vibration = gtk::CheckButton::new();
+                let docked = gtk::CheckButton::new();
+                global.bind(&motion, &vibration, &docked);
+                (motion, vibration, docked)
+            })
+            .collect();
         for index in [0, 7, 3] {
             for enabled in [false, true] {
                 controls[index].0.set_active(enabled);
@@ -158,7 +191,11 @@ mod tests {
                 let values = common::settings::values();
                 assert_eq!(*values.motion_enabled.get_value(), enabled);
                 assert_eq!(*values.vibration_enabled.get_value(), enabled);
-                assert_eq!(*values.use_docked_mode.get_value() == common::settings_enums::ConsoleMode::Docked, enabled);
+                assert_eq!(
+                    *values.use_docked_mode.get_value()
+                        == common::settings_enums::ConsoleMode::Docked,
+                    enabled
+                );
             }
         }
     }

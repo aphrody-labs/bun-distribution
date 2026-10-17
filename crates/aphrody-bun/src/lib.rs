@@ -141,7 +141,9 @@ pub unsafe extern "C" fn bun_rs_hct_tones(
     if out_palette.is_null() {
         return;
     }
-    let tones_list = [0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 95.0, 99.0, 100.0];
+    let tones_list = [
+        0.0, 10.0, 20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 95.0, 99.0, 100.0,
+    ];
     // SAFETY: caller guarantees out_palette has capacity for 13 elements.
     unsafe {
         for (i, tone) in tones_list.iter().enumerate() {
@@ -284,13 +286,17 @@ pub unsafe extern "C" fn bun_rs_m3_css(request: *const u8, len: usize) -> *mut c
     } else {
         // SAFETY: caller guarantees the pointer covers `len` bytes.
         let bytes = unsafe { std::slice::from_raw_parts(request, len) };
-        std::str::from_utf8(bytes).map_err(|e| e.to_string()).and_then(m3_css)
+        std::str::from_utf8(bytes)
+            .map_err(|e| e.to_string())
+            .and_then(m3_css)
     };
     let envelope = match result {
         Ok(css) => serde_json::json!({ "ok": true, "css": css }),
         Err(error) => serde_json::json!({ "ok": false, "error": error }),
     };
-    std::ffi::CString::new(envelope.to_string()).expect("JSON has no NUL").into_raw()
+    std::ffi::CString::new(envelope.to_string())
+        .expect("JSON has no NUL")
+        .into_raw()
 }
 
 /// Compile a Sass/SCSS string into CSS.
@@ -318,7 +324,9 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
                 *error_occurred = true;
             }
         }
-        return std::ffi::CString::new("Error: empty or null source").unwrap().into_raw();
+        return std::ffi::CString::new("Error: empty or null source")
+            .unwrap()
+            .into_raw();
     }
 
     // SAFETY: caller guarantees the pointer is valid and contains at least `len` bytes.
@@ -332,8 +340,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
                     *error_occurred = true;
                 }
             }
-            return std::ffi::CString::new(format!("UTF-8 error: {}", e)).unwrap().into_raw();
-        },
+            return std::ffi::CString::new(format!("UTF-8 error: {}", e))
+                .unwrap()
+                .into_raw();
+        }
     };
 
     let mut options = grass::Options::default();
@@ -348,8 +358,11 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
         // SAFETY: the caller contract guarantees a valid byte slice of this length.
         let l_slice = unsafe { std::slice::from_raw_parts(load_paths, load_paths_len) };
         if let Ok(s) = std::str::from_utf8(l_slice) {
-            let paths: Vec<std::path::PathBuf> =
-                s.split(';').filter(|p| !p.is_empty()).map(std::path::PathBuf::from).collect();
+            let paths: Vec<std::path::PathBuf> = s
+                .split(';')
+                .filter(|p| !p.is_empty())
+                .map(std::path::PathBuf::from)
+                .collect();
             options = options.load_paths(&paths);
         }
     }
@@ -369,7 +382,7 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
                 }
             }
             std::ffi::CString::new(css).unwrap().into_raw()
-        },
+        }
         Ok(Err(e)) => {
             if !error_occurred.is_null() {
                 // SAFETY: pointer check is non-null.
@@ -377,8 +390,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
                     *error_occurred = true;
                 }
             }
-            std::ffi::CString::new(format!("Sass error: {}", e)).unwrap().into_raw()
-        },
+            std::ffi::CString::new(format!("Sass error: {}", e))
+                .unwrap()
+                .into_raw()
+        }
         Err(_) => {
             if !error_occurred.is_null() {
                 // SAFETY: pointer check is non-null.
@@ -386,8 +401,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass(
                     *error_occurred = true;
                 }
             }
-            std::ffi::CString::new("Rust panic during Sass compilation").unwrap().into_raw()
-        },
+            std::ffi::CString::new("Rust panic during Sass compilation")
+                .unwrap()
+                .into_raw()
+        }
     }
 }
 
@@ -416,7 +433,9 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
                 *error_occurred = true;
             }
         }
-        return std::ffi::CString::new("Error: empty or null path").unwrap().into_raw();
+        return std::ffi::CString::new("Error: empty or null path")
+            .unwrap()
+            .into_raw();
     }
 
     // SAFETY: caller guarantees the pointer is valid and contains at least `len` bytes.
@@ -430,8 +449,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
                     *error_occurred = true;
                 }
             }
-            return std::ffi::CString::new(format!("UTF-8 error: {}", e)).unwrap().into_raw();
-        },
+            return std::ffi::CString::new(format!("UTF-8 error: {}", e))
+                .unwrap()
+                .into_raw();
+        }
     };
 
     let mut options = grass::Options::default();
@@ -446,8 +467,11 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
         // SAFETY: the caller contract guarantees a valid byte slice of this length.
         let l_slice = unsafe { std::slice::from_raw_parts(load_paths, load_paths_len) };
         if let Ok(s) = std::str::from_utf8(l_slice) {
-            let paths: Vec<std::path::PathBuf> =
-                s.split(';').filter(|p| !p.is_empty()).map(std::path::PathBuf::from).collect();
+            let paths: Vec<std::path::PathBuf> = s
+                .split(';')
+                .filter(|p| !p.is_empty())
+                .map(std::path::PathBuf::from)
+                .collect();
             options = options.load_paths(&paths);
         }
     }
@@ -466,7 +490,7 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
                 }
             }
             std::ffi::CString::new(css).unwrap().into_raw()
-        },
+        }
         Ok(Err(e)) => {
             if !error_occurred.is_null() {
                 // SAFETY: pointer check is non-null.
@@ -474,8 +498,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
                     *error_occurred = true;
                 }
             }
-            std::ffi::CString::new(format!("Sass error: {}", e)).unwrap().into_raw()
-        },
+            std::ffi::CString::new(format!("Sass error: {}", e))
+                .unwrap()
+                .into_raw()
+        }
         Err(_) => {
             if !error_occurred.is_null() {
                 // SAFETY: pointer check is non-null.
@@ -483,8 +509,10 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
                     *error_occurred = true;
                 }
             }
-            std::ffi::CString::new("Rust panic during Sass compilation").unwrap().into_raw()
-        },
+            std::ffi::CString::new("Rust panic during Sass compilation")
+                .unwrap()
+                .into_raw()
+        }
     }
 }
 
@@ -498,7 +526,9 @@ pub unsafe extern "C" fn bun_rs_compile_sass_file(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn bun_rs_validate_spec(source: *const u8, len: usize) -> *mut c_char {
     if source.is_null() || len == 0 {
-        return std::ffi::CString::new("{\"score\":100,\"issues\":[]}").unwrap().into_raw();
+        return std::ffi::CString::new("{\"score\":100,\"issues\":[]}")
+            .unwrap()
+            .into_raw();
     }
 
     // SAFETY: caller guarantees the pointer is valid and contains at least `len` bytes.
@@ -512,7 +542,7 @@ pub unsafe extern "C" fn bun_rs_validate_spec(source: *const u8, len: usize) -> 
             )
             .unwrap()
             .into_raw();
-        },
+        }
     };
 
     let (score, issues) = validator::validate_m3_spec(code_str);
@@ -528,7 +558,9 @@ pub unsafe extern "C" fn bun_rs_validate_spec(source: *const u8, len: usize) -> 
         })).collect::<Vec<_>>(),
     });
 
-    std::ffi::CString::new(json.to_string()).expect("JSON serialization escapes NUL").into_raw()
+    std::ffi::CString::new(json.to_string())
+        .expect("JSON serialization escapes NUL")
+        .into_raw()
 }
 
 /// Free a string allocated by Rust (returned by `bun_rs_compile_sass`).
@@ -594,14 +626,22 @@ mod tests {
         // SAFETY: testing FFI find_bytes function with valid haystack and needle pointers.
         unsafe {
             assert_eq!(
-                bun_rs_find_bytes(haystack.as_ptr(), haystack.len(), needle.as_ptr(), needle.len()),
+                bun_rs_find_bytes(
+                    haystack.as_ptr(),
+                    haystack.len(),
+                    needle.as_ptr(),
+                    needle.len()
+                ),
                 9
             );
             assert_eq!(
                 bun_rs_find_bytes(haystack.as_ptr(), haystack.len(), std::ptr::null(), 0),
                 0
             );
-            assert_eq!(bun_rs_find_bytes(std::ptr::null(), 0, std::ptr::null(), 0), 0);
+            assert_eq!(
+                bun_rs_find_bytes(std::ptr::null(), 0, std::ptr::null(), 0),
+                0
+            );
             let not_found = b"missing";
             assert_eq!(
                 bun_rs_find_bytes(
@@ -626,7 +666,14 @@ mod tests {
         unsafe {
             bun_rs_argb_to_hct(seed, &mut h, &mut c, &mut t);
         }
-        assert_eq!((h, c, t), (expected.hue as f32, expected.chroma as f32, expected.tone as f32));
+        assert_eq!(
+            (h, c, t),
+            (
+                expected.hue as f32,
+                expected.chroma as f32,
+                expected.tone as f32
+            )
+        );
 
         let reconstructed = bun_rs_hct_to_argb(h, c, t);
         assert!(
@@ -641,11 +688,19 @@ mod tests {
         let mut p = [0_u32; 13];
         // SAFETY: testing with valid pointer to 13 u32s
         unsafe {
-            bun_rs_hct_tones(seed.hue as f32, seed.chroma as f32, seed.tone as f32, p.as_mut_ptr());
+            bun_rs_hct_tones(
+                seed.hue as f32,
+                seed.chroma as f32,
+                seed.tone as f32,
+                p.as_mut_ptr(),
+            );
         }
         assert_eq!(p[0], 0xFF000000);
         assert_eq!(p[12], 0xFFFFFFFF);
-        assert_eq!(p[4], bun_rs_hct_to_argb(seed.hue as f32, seed.chroma as f32, 40.0));
+        assert_eq!(
+            p[4],
+            bun_rs_hct_to_argb(seed.hue as f32, seed.chroma as f32, 40.0)
+        );
     }
 
     #[test]
@@ -654,19 +709,36 @@ mod tests {
             m3_css(r##"{"sheet":"scheme","seed":"#1a73e8","variant":"vibrant","dark":true}"##)
                 .unwrap();
         assert!(css.contains("color-scheme: dark;") && css.contains("--md-sys-color-primary: #"));
-        assert!(m3_css(r#"{"sheet":"tokens"}"#).unwrap().contains(":root.dark,"));
-        assert!(m3_css(r#"{"sheet":"nope"}"#).unwrap_err().contains("unknown sheet"));
         assert!(
-            m3_css(r##"{"sheet":"tokens","seed":"#zz"}"##).unwrap_err().contains("invalid seed")
+            m3_css(r#"{"sheet":"tokens"}"#)
+                .unwrap()
+                .contains(":root.dark,")
         );
-        assert!(m3_css(r#"{"sheet":"tokens","contrast":3}"#).unwrap_err().contains("contrast"));
+        assert!(
+            m3_css(r#"{"sheet":"nope"}"#)
+                .unwrap_err()
+                .contains("unknown sheet")
+        );
+        assert!(
+            m3_css(r##"{"sheet":"tokens","seed":"#zz"}"##)
+                .unwrap_err()
+                .contains("invalid seed")
+        );
+        assert!(
+            m3_css(r#"{"sheet":"tokens","contrast":3}"#)
+                .unwrap_err()
+                .contains("contrast")
+        );
         let request = br#"{"sheet":"tailwind"}"#;
         // SAFETY: valid buffer; the returned string is freed below.
         unsafe {
             let ptr = bun_rs_m3_css(request.as_ptr(), request.len());
             let json = std::ffi::CStr::from_ptr(ptr).to_str().unwrap().to_owned();
             bun_rs_free_string(ptr);
-            assert!(json.starts_with(r#"{"css":"#) || json.contains(r#""ok":true"#), "{json}");
+            assert!(
+                json.starts_with(r#"{"css":"#) || json.contains(r#""ok":true"#),
+                "{json}"
+            );
         }
     }
 
@@ -683,7 +755,11 @@ mod tests {
         // SAFETY: valid pointer to 49 u32s.
         unsafe { bun_rs_derive_scheme(seed.hue as f32, seed.chroma as f32, false, c.as_mut_ptr()) };
         let primary = scheme.argb(aphrody_m3_tokens::scheme::Role::Primary);
-        assert!(max_channel_delta(c[20], primary) <= 1, "{:#010x} vs {primary:#010x}", c[20]);
+        assert!(
+            max_channel_delta(c[20], primary) <= 1,
+            "{:#010x} vs {primary:#010x}",
+            c[20]
+        );
     }
 
     #[test]

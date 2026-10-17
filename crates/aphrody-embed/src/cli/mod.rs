@@ -21,15 +21,22 @@ use crate::{
 const USAGE: &str = "usage: aphrody-embed worker | serve --port <port> [--host <ip>] [--model-dir <dir>] [--threads <n>] | install [--model-dir <dir>]";
 
 fn env(names: &[&str]) -> Option<String> {
-    names.iter().find_map(|name| std::env::var(name).ok().filter(|v| !v.trim().is_empty()))
+    names
+        .iter()
+        .find_map(|name| std::env::var(name).ok().filter(|v| !v.trim().is_empty()))
 }
 
 fn flag(args: &[String], name: &str) -> Option<String> {
-    args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned()
+    args.iter()
+        .position(|a| a == name)
+        .and_then(|i| args.get(i + 1))
+        .cloned()
 }
 
 fn model_dir(args: &[String]) -> Option<PathBuf> {
-    flag(args, "--model-dir").or_else(|| env(&["APHRODY_EMBED_MODEL_DIR"])).map(PathBuf::from)
+    flag(args, "--model-dir")
+        .or_else(|| env(&["APHRODY_EMBED_MODEL_DIR"]))
+        .map(PathBuf::from)
 }
 
 fn server_config(args: &[String]) -> Result<ServerConfig, String> {
@@ -40,12 +47,20 @@ fn server_config(args: &[String]) -> Result<ServerConfig, String> {
     let port = flag(args, "--port")
         .or_else(|| env(&["APHRODY_EMBED_PORT", "APHRODY_SHENRON_EMBED_PORT"]))
         .ok_or("set --port or APHRODY_EMBED_PORT")?;
-    let port: u16 = port.parse().ok().filter(|p| *p > 0).ok_or(format!("invalid port {port}"))?;
+    let port: u16 = port
+        .parse()
+        .ok()
+        .filter(|p| *p > 0)
+        .ok_or(format!("invalid port {port}"))?;
     let threads = match flag(args, "--threads") {
         Some(n) => n.parse().map_err(|_| format!("invalid thread count {n}"))?,
         None => 0,
     };
-    Ok(ServerConfig { addr: (host, port).into(), model_dir: model_dir(args), threads })
+    Ok(ServerConfig {
+        addr: (host, port).into(),
+        model_dir: model_dir(args),
+        threads,
+    })
 }
 
 fn install(args: &[String]) -> Result<(), String> {
@@ -65,9 +80,15 @@ fn install(args: &[String]) -> Result<(), String> {
 /// code.
 #[must_use]
 pub fn cli_main(args: Vec<OsString>) -> i32 {
-    let args: Vec<String> =
-        args.into_iter().skip(1).map(|a| a.to_string_lossy().into_owned()).collect();
-    if args.iter().any(|arg| matches!(arg.as_str(), "--help" | "-h")) {
+    let args: Vec<String> = args
+        .into_iter()
+        .skip(1)
+        .map(|a| a.to_string_lossy().into_owned())
+        .collect();
+    if args
+        .iter()
+        .any(|arg| matches!(arg.as_str(), "--help" | "-h"))
+    {
         println!("{USAGE}");
         return 0;
     }
@@ -90,6 +111,6 @@ pub fn cli_main(args: Vec<OsString>) -> i32 {
         Err(message) => {
             eprintln!("aphrody-embed: {message}");
             2
-        },
+        }
     }
 }

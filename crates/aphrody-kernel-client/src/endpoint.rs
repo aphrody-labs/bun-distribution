@@ -44,9 +44,10 @@ pub fn endpoint_from(env: EnvLookup<'_>, windows: bool) -> String {
         return format!(r"\\.\pipe\aphrody-os-{user}");
     }
     match env("XDG_RUNTIME_DIR").filter(|directory| !directory.is_empty()) {
-        Some(directory) => {
-            Path::new(&directory).join("aphrody-os.sock").to_string_lossy().into_owned()
-        },
+        Some(directory) => Path::new(&directory)
+            .join("aphrody-os.sock")
+            .to_string_lossy()
+            .into_owned(),
         None => format!("/tmp/aphrody-os-{user}.sock"),
     }
 }
@@ -57,7 +58,10 @@ mod tests {
 
     fn table<'a>(pairs: &'a [(&'a str, &'a str)]) -> impl Fn(&str) -> Option<OsString> + 'a {
         move |key| {
-            pairs.iter().find(|(name, _)| *name == key).map(|(_, value)| OsString::from(*value))
+            pairs
+                .iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| OsString::from(*value))
         }
     }
 
@@ -83,12 +87,18 @@ mod tests {
 
     #[test]
     fn windows_uses_a_per_user_named_pipe() {
-        let env =
-            table(&[("USERNAME", "Some One"), ("USER", "ignored"), ("XDG_RUNTIME_DIR", "/x")]);
+        let env = table(&[
+            ("USERNAME", "Some One"),
+            ("USER", "ignored"),
+            ("XDG_RUNTIME_DIR", "/x"),
+        ]);
         // The user name keeps only ASCII letters, digits, `-` and `_`.
         assert_eq!(endpoint_from(&env, true), r"\\.\pipe\aphrody-os-SomeOne");
         let user_only = table(&[("USER", "someone")]);
-        assert_eq!(endpoint_from(&user_only, true), r"\\.\pipe\aphrody-os-someone");
+        assert_eq!(
+            endpoint_from(&user_only, true),
+            r"\\.\pipe\aphrody-os-someone"
+        );
     }
 
     #[test]
@@ -106,7 +116,10 @@ mod tests {
                 .into_iter()
                 .chain([("USER", "some-one_1")])
                 .collect();
-            assert_eq!(endpoint_from(&table(&pairs), false), "/tmp/aphrody-os-some-one_1.sock");
+            assert_eq!(
+                endpoint_from(&table(&pairs), false),
+                "/tmp/aphrody-os-some-one_1.sock"
+            );
         }
     }
 
@@ -117,7 +130,10 @@ mod tests {
         assert_eq!(endpoint_from(&none, true), r"\\.\pipe\aphrody-os-user");
         // Path separators and dots cannot escape the socket directory or the pipe namespace.
         let hostile = table(&[("USER", "../../etc/pass wd")]);
-        assert_eq!(endpoint_from(&hostile, false), "/tmp/aphrody-os-etcpasswd.sock");
+        assert_eq!(
+            endpoint_from(&hostile, false),
+            "/tmp/aphrody-os-etcpasswd.sock"
+        );
     }
 
     #[cfg(unix)]

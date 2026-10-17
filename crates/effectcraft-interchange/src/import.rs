@@ -6,7 +6,10 @@ use std::collections::{BTreeMap, HashMap};
 use effectcraft_color::{BlendMode, Label};
 use effectcraft_keyframe::{Keyframe, Value};
 use effectcraft_project::build::Ids;
-use effectcraft_project::{AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, Layer, LayerSource, Marker, Node, ParamUi, Project, Property, Solid};
+use effectcraft_project::{
+    AlphaMode, Comp, Footage, FootageKind, ItemId, ItemKind, Layer, LayerSource, Marker, Node,
+    ParamUi, Project, Property, Solid,
+};
 use effectcraft_time::{FrameRate, Tick};
 use filmcraft_media::{Generator, MediaKind};
 use filmcraft_project as fp;
@@ -53,7 +56,11 @@ pub const MAX_DEPTH: usize = 256;
 /// processing instructions, declarations and quoted attribute values).
 pub(crate) fn xml_depth(b: &[u8]) -> usize {
     let (mut i, mut depth, mut max) = (0usize, 0usize, 0usize);
-    let skip_to = |from: usize, end: &[u8]| b.get(from..).and_then(|r| r.windows(end.len()).position(|w| w == end)).map_or(b.len(), |p| from + p + end.len());
+    let skip_to = |from: usize, end: &[u8]| {
+        b.get(from..)
+            .and_then(|r| r.windows(end.len()).position(|w| w == end))
+            .map_or(b.len(), |p| from + p + end.len())
+    };
     while let Some(&c) = b.get(i) {
         if c != b'<' {
             i += 1;
@@ -149,16 +156,41 @@ pub fn import(
             let r = FrameRate::from_f64(f);
             crate::rate_out(r)
         }),
-        name: Some(opts.name.trim_end_matches(|c| c != '.').trim_end_matches('.').to_string()).filter(|s| !s.is_empty()),
+        name: Some(
+            opts.name
+                .trim_end_matches(|c| c != '.')
+                .trim_end_matches('.')
+                .to_string(),
+        )
+        .filter(|s| !s.is_empty()),
     };
     let (imported, report) = filmcraft_interchange::import_with(bytes, format.fc(), &fc_opts)?;
-    let mut res = ImportResult { format: Some(format), ..Default::default() };
+    let mut res = ImportResult {
+        format: Some(format),
+        ..Default::default()
+    };
     for e in &report.entries {
-        if e.count > 1 { res.warnings.push(format!("{} (×{})", e.message, e.count)) } else { res.warnings.push(e.message.clone()) }
+        if e.count > 1 {
+            res.warnings.push(format!("{} (×{})", e.message, e.count))
+        } else {
+            res.warnings.push(e.message.clone())
+        }
     }
-    let folder_name = if opts.name.is_empty() { "Imported Timeline".to_string() } else { opts.name.clone() };
+    let folder_name = if opts.name.is_empty() {
+        "Imported Timeline".to_string()
+    } else {
+        opts.name.clone()
+    };
     res.folder = project.add_item(&folder_name, Label::None, None, ItemKind::Folder);
-    let mut im = Importer { src: &imported.project, project, res, items: HashMap::new(), solids: HashMap::new(), solids_folder: None, bins: HashMap::new() };
+    let mut im = Importer {
+        src: &imported.project,
+        project,
+        res,
+        items: HashMap::new(),
+        solids: HashMap::new(),
+        solids_folder: None,
+        bins: HashMap::new(),
+    };
     im.run(&imported.sequences, probe);
     Ok(im.res)
 }
@@ -202,7 +234,12 @@ impl Importer<'_> {
                             FootageKind::Audio => Label::SeaFoam,
                             _ => Label::Aqua,
                         };
-                        let nid = self.project.add_item(&it.name, label, Some(folder), ItemKind::Footage(f));
+                        let nid = self.project.add_item(
+                            &it.name,
+                            label,
+                            Some(folder),
+                            ItemKind::Footage(f),
+                        );
                         self.items.insert(*id, nid);
                         self.res.items.push(nid);
                     }
@@ -210,11 +247,22 @@ impl Importer<'_> {
                 fp::ItemKind::Sequence(seq) => {
                     let s = &seq.settings;
                     let rate = rate_in(s.frame_rate);
-                    let dur = rate.snap_nearest(tick_in(seq.duration())).max(rate.frame_duration());
+                    let dur = rate
+                        .snap_nearest(tick_in(seq.duration()))
+                        .max(rate.frame_duration());
                     let mut c = Comp::new(s.width.max(1), s.height.max(1), rate, dur);
-                    c.pixel_aspect = if s.par.1 > 0 { s.par.0 as f64 / s.par.1 as f64 } else { 1.0 };
+                    c.pixel_aspect = if s.par.1 > 0 {
+                        s.par.0 as f64 / s.par.1 as f64
+                    } else {
+                        1.0
+                    };
                     c.display_start = rate.tick_of(seq.start_timecode);
-                    let nid = self.project.add_item(&it.name, Label::Sandstone, Some(folder), ItemKind::Comp(std::sync::Arc::new(c)));
+                    let nid = self.project.add_item(
+                        &it.name,
+                        Label::Sandstone,
+                        Some(folder),
+                        ItemKind::Comp(std::sync::Arc::new(c)),
+                    );
                     self.items.insert(*id, nid);
                     self.res.all_comps.push(nid);
                 }
@@ -227,8 +275,17 @@ impl Importer<'_> {
                 self.fill_comp(cid, seq);
             }
         }
-        self.res.comps = top.iter().filter_map(|s| self.items.get(s).copied()).collect();
-        self.res.all_comps.sort_by_key(|c| (!self.res.comps.contains(c), self.res.comps.iter().position(|x| x == c), c.0));
+        self.res.comps = top
+            .iter()
+            .filter_map(|s| self.items.get(s).copied())
+            .collect();
+        self.res.all_comps.sort_by_key(|c| {
+            (
+                !self.res.comps.contains(c),
+                self.res.comps.iter().position(|x| x == c),
+                c.0,
+            )
+        });
     }
 
     fn walk_bin(&mut self, bin: &fp::Bin, folder: ItemId) {
@@ -238,14 +295,22 @@ impl Importer<'_> {
                     self.bins.insert(*i, folder);
                 }
                 fp::BinEntry::Bin(b) => {
-                    let f = self.project.add_item(&b.name, Label::None, Some(folder), ItemKind::Folder);
+                    let f =
+                        self.project
+                            .add_item(&b.name, Label::None, Some(folder), ItemKind::Folder);
                     self.walk_bin(b, f);
                 }
             }
         }
     }
 
-    fn footage(&mut self, name: &str, path: &str, m: &fp::MediaClip, probe: &mut dyn FnMut(&str) -> Option<Footage>) -> Footage {
+    fn footage(
+        &mut self,
+        name: &str,
+        path: &str,
+        m: &fp::MediaClip,
+        probe: &mut dyn FnMut(&str) -> Option<Footage>,
+    ) -> Footage {
         if !m.offline
             && let Some(mut f) = probe(path)
         {
@@ -280,12 +345,24 @@ impl Importer<'_> {
             kind,
             width: v.map(|v| v.width).unwrap_or(0),
             height: v.map(|v| v.height).unwrap_or(0),
-            pixel_aspect: v.map(|v| if v.par.1 > 0 { v.par.0 as f64 / v.par.1 as f64 } else { 1.0 }).unwrap_or(1.0),
+            pixel_aspect: v
+                .map(|v| {
+                    if v.par.1 > 0 {
+                        v.par.0 as f64 / v.par.1 as f64
+                    } else {
+                        1.0
+                    }
+                })
+                .unwrap_or(1.0),
             frame_rate: rate_in(info.frame_rate()),
             duration: tick_in(info.duration),
             has_video: kind != FootageKind::Audio,
             has_audio: info.audio.is_some() || kind == FootageKind::Audio,
-            alpha: if v.is_some_and(|v| v.has_alpha) { AlphaMode::Straight } else { AlphaMode::Ignore },
+            alpha: if v.is_some_and(|v| v.has_alpha) {
+                AlphaMode::Straight
+            } else {
+                AlphaMode::Ignore
+            },
             codec: v.map(|v| v.codec.clone()).unwrap_or_default(),
             missing: true,
             ..Default::default()
@@ -300,19 +377,38 @@ impl Importer<'_> {
         let folder = match self.solids_folder {
             Some(f) => f,
             None => {
-                let f = self.project.add_item("Solids", Label::None, Some(self.res.folder), ItemKind::Folder);
+                let f = self.project.add_item(
+                    "Solids",
+                    Label::None,
+                    Some(self.res.folder),
+                    ItemKind::Folder,
+                );
                 self.solids_folder = Some(f);
                 f
             }
         };
-        let id = self.project.add_item(name, Label::Red, Some(folder), ItemKind::Solid(Solid { color, width: w, height: h, pixel_aspect: 1.0 }));
+        let id = self.project.add_item(
+            name,
+            Label::Red,
+            Some(folder),
+            ItemKind::Solid(Solid {
+                color,
+                width: w,
+                height: h,
+                pixel_aspect: 1.0,
+            }),
+        );
         self.solids.insert((src, w, h), id);
         self.res.items.push(id);
         id
     }
 
     fn fill_comp(&mut self, cid: ItemId, seq: &fp::Sequence) {
-        let mut comp = self.project.comp(cid).cloned().unwrap_or_else(|| Comp::new(1920, 1080, FrameRate::new(30, 1), Tick(1)));
+        let mut comp = self
+            .project
+            .comp(cid)
+            .cloned()
+            .unwrap_or_else(|| Comp::new(1920, 1080, FrameRate::new(30, 1), Tick(1)));
         comp.markers = seq.markers.iter().map(marker_in).collect();
         // Video: the top track's clips first (layer #1); later clips of a track above earlier ones
         // so incoming clips of dissolves cover outgoing ones.
@@ -343,7 +439,12 @@ impl Importer<'_> {
     }
 
     /// The layer source for a clip's item (creating solids on demand).
-    fn source_of(&mut self, ti: &fp::TrackItem, w: u32, h: u32) -> Option<(LayerSource, (u32, u32), bool)> {
+    fn source_of(
+        &mut self,
+        ti: &fp::TrackItem,
+        w: u32,
+        h: u32,
+    ) -> Option<(LayerSource, (u32, u32), bool)> {
         let mut id = ti.item;
         if let Some(fp::ItemKind::Subclip { parent, .. }) = self.src.item(id).map(|i| &i.kind) {
             id = *parent;
@@ -364,11 +465,18 @@ impl Importer<'_> {
                         Generator::ColorMatte { color } => [color[0], color[1], color[2]],
                         Generator::BlackVideo => [0.0; 3],
                         Generator::TransparentVideo | Generator::Tone { .. } => {
-                            self.warn(format!("\"{}\" ({}) has no picture in a composition and was left out", ti.name, g.label()));
+                            self.warn(format!(
+                                "\"{}\" ({}) has no picture in a composition and was left out",
+                                ti.name,
+                                g.label()
+                            ));
                             return None;
                         }
                         _ => {
-                            self.warn(format!("generator \"{}\" was imported as a grey solid", g.label()));
+                            self.warn(format!(
+                                "generator \"{}\" was imported as a grey solid",
+                                g.label()
+                            ));
                             [0.5; 3]
                         }
                     };
@@ -379,9 +487,15 @@ impl Importer<'_> {
             fp::ItemKind::Sequence(s) => {
                 let nid = *self.items.get(&id)?;
                 if s.multicam.is_some() {
-                    self.warn("multi-camera clips were imported as precomps of their source sequence");
+                    self.warn(
+                        "multi-camera clips were imported as precomps of their source sequence",
+                    );
                 }
-                Some((LayerSource::Comp { item: nid }, (s.settings.width, s.settings.height), !s.audio_tracks.is_empty()))
+                Some((
+                    LayerSource::Comp { item: nid },
+                    (s.settings.width, s.settings.height),
+                    !s.audio_tracks.is_empty(),
+                ))
             }
             fp::ItemKind::AdjustmentLayer { .. } => {
                 let sid = self.solid(id, &it.name, [1.0; 3], w, h);
@@ -395,27 +509,54 @@ impl Importer<'_> {
         }
     }
 
-    fn clip_layer(&mut self, comp: &Comp, seq: &fp::Sequence, track: &fp::Track, ti: &fp::TrackItem) -> Option<Layer> {
+    fn clip_layer(
+        &mut self,
+        comp: &Comp,
+        seq: &fp::Sequence,
+        track: &fp::Track,
+        ti: &fp::TrackItem,
+    ) -> Option<Layer> {
         let audio_track = track.kind == fp::TrackKind::Audio;
         let (source, size, has_audio) = self.source_of(ti, comp.width, comp.height)?;
-        let is_adjustment = matches!(self.src.item(ti.item).map(|i| &i.kind), Some(fp::ItemKind::AdjustmentLayer { .. }));
+        let is_adjustment = matches!(
+            self.src.item(ti.item).map(|i| &i.kind),
+            Some(fp::ItemKind::AdjustmentLayer { .. })
+        );
         if audio_track && !has_audio {
             return None;
         }
-        let mut l = effectcraft_project::build::layer(self.project, comp, &ti.name, source.clone(), size, None);
+        let mut l = effectcraft_project::build::layer(
+            self.project,
+            comp,
+            &ti.name,
+            source.clone(),
+            size,
+            None,
+        );
         if is_adjustment {
             l.switches.adjustment = true;
         }
         // ---- timing
         let start = tick_in(ti.start);
         let dur = tick_in(ti.duration);
-        let speed = if ti.speed.abs() < 1e-9 { 1.0 } else { ti.speed.abs() };
+        let speed = if ti.speed.abs() < 1e-9 {
+            1.0
+        } else {
+            ti.speed.abs()
+        };
         let reverse = ti.reverse || ti.speed < 0.0;
         let src_in = tick_in(ti.source_in);
         let span = Tick((dur.0 as f64 * speed).round() as i64);
-        l.stretch = if reverse { -100.0 / speed } else { 100.0 / speed };
-        l.start_time =
-            if reverse { start + Tick(((src_in + span).0 as f64 / speed).round() as i64) } else { start - Tick((src_in.0 as f64 / speed).round() as i64) };
+        l.stretch = if reverse {
+            -100.0 / speed
+        } else {
+            100.0 / speed
+        };
+        l.start_time = if reverse {
+            start + Tick(((src_in + span).0 as f64 / speed).round() as i64)
+        } else {
+            start - Tick((src_in.0 as f64 / speed).round() as i64)
+        };
         l.in_point = start;
         l.out_point = start + dur;
         if (speed - 1.0).abs() > 1e-9 || reverse {
@@ -433,9 +574,20 @@ impl Importer<'_> {
             let id = tr.effect.effect.as_str();
             let dip = id.starts_with("dip_to");
             if !audio_track
-                && !matches!(id, "cross_dissolve" | "dip_to_black" | "dip_to_white" | "film_dissolve" | "additive_dissolve" | "non_additive_dissolve")
+                && !matches!(
+                    id,
+                    "cross_dissolve"
+                        | "dip_to_black"
+                        | "dip_to_white"
+                        | "film_dissolve"
+                        | "additive_dissolve"
+                        | "non_additive_dissolve"
+                )
             {
-                self.warn(format!("transition \"{}\" was imported as a cross dissolve", tr.effect.def().map(|d| d.name).unwrap_or(id)));
+                self.warn(format!(
+                    "transition \"{}\" was imported as a cross dissolve",
+                    tr.effect.def().map(|d| d.name).unwrap_or(id)
+                ));
             }
             if dip && id == "dip_to_white" {
                 self.warn("Dip to White was imported as a dip to the background");
@@ -459,7 +611,10 @@ impl Importer<'_> {
             }
         }
         l.in_point = l.in_point.max(Tick::ZERO);
-        l.out_point = l.out_point.min(comp.duration).max(l.in_point + comp.frame_duration());
+        l.out_point = l
+            .out_point
+            .min(comp.duration)
+            .max(l.in_point + comp.frame_duration());
         // ---- switches
         if audio_track {
             l.switches.video = false;
@@ -472,7 +627,12 @@ impl Importer<'_> {
                 l.switches.audio = false;
             }
         }
-        if ti.frame_hold.is_some() || ti.effects.iter().any(|e| e.effect == "time_remap" && e.params.values().any(|p| p.is_animated())) {
+        if ti.frame_hold.is_some()
+            || ti
+                .effects
+                .iter()
+                .any(|e| e.effect == "time_remap" && e.params.values().any(|p| p.is_animated()))
+        {
             self.time_remap(&mut l, ti);
         }
         // Keyframe times: clip time → layer time.
@@ -500,7 +660,10 @@ impl Importer<'_> {
     }
 
     fn time_remap(&mut self, l: &mut Layer, ti: &fp::TrackItem) {
-        if !matches!(l.source, LayerSource::Footage { .. } | LayerSource::Comp { .. }) {
+        if !matches!(
+            l.source,
+            LayerSource::Footage { .. } | LayerSource::Comp { .. }
+        ) {
             return;
         }
         let Some(h) = ti.frame_hold else {
@@ -508,43 +671,92 @@ impl Importer<'_> {
             return;
         };
         let mut ids = Ids(&mut self.project.next_id);
-        let mut p = ids.prop("timeRemap", "Time Remap", Value::Scalar(tick_in(h).seconds())).with_ui(ParamUi::Number);
+        let mut p = ids
+            .prop(
+                "timeRemap",
+                "Time Remap",
+                Value::Scalar(tick_in(h).seconds()),
+            )
+            .with_ui(ParamUi::Number);
         let (a, b) = (l.layer_time(l.in_point), l.layer_time(l.out_point));
-        p.keys = vec![Keyframe::new(a.min(b), Value::Scalar(tick_in(h).seconds())).hold(), Keyframe::new(a.max(b), Value::Scalar(tick_in(h).seconds())).hold()];
+        p.keys = vec![
+            Keyframe::new(a.min(b), Value::Scalar(tick_in(h).seconds())).hold(),
+            Keyframe::new(a.max(b), Value::Scalar(tick_in(h).seconds())).hold(),
+        ];
         l.props.children.insert(0, Node::Prop(p));
     }
 
-    fn motion(&mut self, l: &mut Layer, ti: &fp::TrackItem, comp: &Comp, size: (u32, u32), to_layer: impl Fn(&Layer, filmcraft_time::Tick) -> Tick) {
+    fn motion(
+        &mut self,
+        l: &mut Layer,
+        ti: &fp::TrackItem,
+        comp: &Comp,
+        size: (u32, u32),
+        to_layer: impl Fn(&Layer, filmcraft_time::Tick) -> Tick,
+    ) {
         let Some(m) = ti.effect("motion") else { return };
         if !m.enabled {
             return;
         }
-        let fit = if ti.scale_to_frame && size.0 > 0 && size.1 > 0 { (comp.width as f64 / size.0 as f64).min(comp.height as f64 / size.1 as f64) } else { 1.0 };
+        let fit = if ti.scale_to_frame && size.0 > 0 && size.1 > 0 {
+            (comp.width as f64 / size.0 as f64).min(comp.height as f64 / size.1 as f64)
+        } else {
+            1.0
+        };
         let lc = l.clone();
         let Some(tr) = l.transform_mut() else { return };
         // Position / anchor (NaN = centred).
         for (src, dst) in [("position", "position"), ("anchor", "anchor")] {
             let Some(p) = m.param(src) else { continue };
-            let v2 = |v: &fp::ParamValue| v.as_vec2().filter(|v| v.x.is_finite() && v.y.is_finite()).map(|v| Value::Vec3([v.x, v.y, 0.0]));
+            let v2 = |v: &fp::ParamValue| {
+                v.as_vec2()
+                    .filter(|v| v.x.is_finite() && v.y.is_finite())
+                    .map(|v| Value::Vec3([v.x, v.y, 0.0]))
+            };
             if let Some(dp) = tr.get_mut(dst) {
                 set_prop(dp, p, |v| v2(v), &lc, &to_layer);
             }
         }
         // Scale: uniform, or Scale (height) + Scale Width.
         if let (Some(s), Some(dp)) = (m.param("scale"), tr.get_mut("scale")) {
-            let uniform = m.param("uniform_scale").and_then(|p| p.value.as_bool()).unwrap_or(true);
+            let uniform = m
+                .param("uniform_scale")
+                .and_then(|p| p.value.as_bool())
+                .unwrap_or(true);
             let sw = m.param("scale_width").filter(|_| !uniform);
             match sw {
-                None => set_prop(dp, s, |v| v.as_f64().map(|x| Value::Vec3([x * fit, x * fit, 100.0])), &lc, &to_layer),
+                None => set_prop(
+                    dp,
+                    s,
+                    |v| v.as_f64().map(|x| Value::Vec3([x * fit, x * fit, 100.0])),
+                    &lc,
+                    &to_layer,
+                ),
                 Some(w) => {
-                    let mut times: Vec<filmcraft_time::Tick> = s.keyframes.iter().chain(&w.keyframes).map(|k| k.time).collect();
+                    let mut times: Vec<filmcraft_time::Tick> = s
+                        .keyframes
+                        .iter()
+                        .chain(&w.keyframes)
+                        .map(|k| k.time)
+                        .collect();
                     times.sort();
                     times.dedup();
                     if times.is_empty() {
-                        dp.value = Value::Vec3([w.f64_at(filmcraft_time::Tick::ZERO) * fit, s.f64_at(filmcraft_time::Tick::ZERO) * fit, 100.0]);
+                        dp.value = Value::Vec3([
+                            w.f64_at(filmcraft_time::Tick::ZERO) * fit,
+                            s.f64_at(filmcraft_time::Tick::ZERO) * fit,
+                            100.0,
+                        ]);
                     } else {
-                        dp.keys =
-                            times.iter().map(|t| Keyframe::new(to_layer(&lc, *t), Value::Vec3([w.f64_at(*t) * fit, s.f64_at(*t) * fit, 100.0]))).collect();
+                        dp.keys = times
+                            .iter()
+                            .map(|t| {
+                                Keyframe::new(
+                                    to_layer(&lc, *t),
+                                    Value::Vec3([w.f64_at(*t) * fit, s.f64_at(*t) * fit, 100.0]),
+                                )
+                            })
+                            .collect();
                         dp.value = dp.keys[0].value.clone();
                     }
                 }
@@ -555,7 +767,13 @@ impl Importer<'_> {
         }
     }
 
-    fn opacity(&mut self, l: &mut Layer, ti: &fp::TrackItem, fades: &[(Tick, Tick, f64, f64)], to_layer: impl Fn(&Layer, filmcraft_time::Tick) -> Tick) {
+    fn opacity(
+        &mut self,
+        l: &mut Layer,
+        ti: &fp::TrackItem,
+        fades: &[(Tick, Tick, f64, f64)],
+        to_layer: impl Fn(&Layer, filmcraft_time::Tick) -> Tick,
+    ) {
         let lc = l.clone();
         if let Some(o) = ti.effect("opacity").filter(|e| e.enabled) {
             if let Some(b) = o.param("blend").and_then(|p| match p.value {
@@ -567,12 +785,18 @@ impl Importer<'_> {
                     None => self.warn(format!("blend mode \"{b}\" was imported as Normal")),
                 }
             }
-            if let (Some(p), Some(dp)) = (o.param("opacity"), l.transform_mut().and_then(|t| t.get_mut("opacity"))) {
+            if let (Some(p), Some(dp)) = (
+                o.param("opacity"),
+                l.transform_mut().and_then(|t| t.get_mut("opacity")),
+            ) {
                 set_prop(dp, p, |v| v.as_f64().map(Value::Scalar), &lc, &to_layer);
             }
         }
         if !fades.is_empty() {
-            let fades: Vec<(Tick, Tick, f64, f64)> = fades.iter().map(|f| (lc.layer_time(f.0), lc.layer_time(f.1), f.2, f.3)).collect();
+            let fades: Vec<(Tick, Tick, f64, f64)> = fades
+                .iter()
+                .map(|f| (lc.layer_time(f.0), lc.layer_time(f.1), f.2, f.3))
+                .collect();
             if let Some(dp) = l.transform_mut().and_then(|t| t.get_mut("opacity")) {
                 apply_fades(dp, &fades, |v, f| Value::Scalar(v.as_f64() * f));
             }
@@ -589,14 +813,29 @@ impl Importer<'_> {
     ) {
         let lc = l.clone();
         let base = ti.gain_db + track.volume_db;
-        let Some(dp) = l.props.prop_mut("audio/levels") else { return };
-        if let Some(v) = ti.effect("volume").filter(|e| e.enabled).and_then(|e| e.param("level")) {
-            set_prop(dp, v, |v| v.as_f64().map(|db| Value::Vec2([db + base, db + base])), &lc, &to_layer);
+        let Some(dp) = l.props.prop_mut("audio/levels") else {
+            return;
+        };
+        if let Some(v) = ti
+            .effect("volume")
+            .filter(|e| e.enabled)
+            .and_then(|e| e.param("level"))
+        {
+            set_prop(
+                dp,
+                v,
+                |v| v.as_f64().map(|db| Value::Vec2([db + base, db + base])),
+                &lc,
+                &to_layer,
+            );
         } else if base != 0.0 {
             dp.value = Value::Vec2([base, base]);
         }
         if !fades.is_empty() {
-            let fades: Vec<(Tick, Tick, f64, f64)> = fades.iter().map(|f| (lc.layer_time(f.0), lc.layer_time(f.1), f.2, f.3)).collect();
+            let fades: Vec<(Tick, Tick, f64, f64)> = fades
+                .iter()
+                .map(|f| (lc.layer_time(f.0), lc.layer_time(f.1), f.2, f.3))
+                .collect();
             apply_fades(dp, &fades, |v, f| {
                 let g = 20.0 * f.max(1e-3).log10();
                 let [a, b] = v.as_vec2();
@@ -616,7 +855,11 @@ fn marker_in(m: &fp::Marker) -> Marker {
         time: tick_in(m.start),
         duration: tick_in(m.duration),
         comment,
-        chapter: if m.kind == fp::MarkerKind::Chapter { m.name.clone() } else { String::new() },
+        chapter: if m.kind == fp::MarkerKind::Chapter {
+            m.name.clone()
+        } else {
+            String::new()
+        },
         ..Default::default()
     }
 }
@@ -664,12 +907,20 @@ fn set_prop(
 
 /// Multiply a property by piecewise-linear fades `(t0, t1, f0, f1)` (layer time): keys at the fade
 /// ends and at the property's own keys, valued `orig(t) ⊗ factor(t)`.
-fn apply_fades(dp: &mut Property, fades: &[(Tick, Tick, f64, f64)], mul: impl Fn(&Value, f64) -> Value) {
+fn apply_fades(
+    dp: &mut Property,
+    fades: &[(Tick, Tick, f64, f64)],
+    mul: impl Fn(&Value, f64) -> Value,
+) {
     let orig = dp.clone();
     let factor = |t: Tick| -> f64 {
         let mut f = 1.0;
         for &(a, b, fa, fb) in fades {
-            let (lo, hi, flo, fhi) = if a <= b { (a, b, fa, fb) } else { (b, a, fb, fa) };
+            let (lo, hi, flo, fhi) = if a <= b {
+                (a, b, fa, fb)
+            } else {
+                (b, a, fb, fa)
+            };
             if t <= lo {
                 // Before a fade-in the layer is invisible; before a fade-out it is full.
                 if flo < fhi {
@@ -693,6 +944,9 @@ fn apply_fades(dp: &mut Property, fades: &[(Tick, Tick, f64, f64)], mul: impl Fn
     }
     times.sort();
     times.dedup();
-    dp.keys = times.iter().map(|&t| Keyframe::new(t, mul(&orig.value_at(t), factor(t)))).collect();
+    dp.keys = times
+        .iter()
+        .map(|&t| Keyframe::new(t, mul(&orig.value_at(t), factor(t))))
+        .collect();
     dp.value = dp.keys[0].value.clone();
 }

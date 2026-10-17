@@ -1,6 +1,6 @@
 use bevy_color::{
-    palettes::tailwind::{SKY_300, SKY_400, SLATE_700},
     Color,
+    palettes::tailwind::{SKY_300, SKY_400, SLATE_700},
 };
 use bevy_ecs::component::Component;
 

@@ -55,17 +55,38 @@ pub struct SnapTarget {
 
 impl SnapTarget {
     pub fn point(pos: [f64; 2], priority: u8, source: SnapSource) -> SnapTarget {
-        SnapTarget { kind: SnapKind::Point, pos, priority, source, span: None }
+        SnapTarget {
+            kind: SnapKind::Point,
+            pos,
+            priority,
+            source,
+            span: None,
+        }
     }
     pub fn vline(x: f64, priority: u8, source: SnapSource) -> SnapTarget {
-        SnapTarget { kind: SnapKind::VLine, pos: [x, 0.0], priority, source, span: None }
+        SnapTarget {
+            kind: SnapKind::VLine,
+            pos: [x, 0.0],
+            priority,
+            source,
+            span: None,
+        }
     }
     pub fn hline(y: f64, priority: u8, source: SnapSource) -> SnapTarget {
-        SnapTarget { kind: SnapKind::HLine, pos: [0.0, y], priority, source, span: None }
+        SnapTarget {
+            kind: SnapKind::HLine,
+            pos: [0.0, y],
+            priority,
+            source,
+            span: None,
+        }
     }
     /// The line limited to `span` (`None`: across the comp).
     pub fn within(self, span: Option<[f64; 2]>) -> SnapTarget {
-        SnapTarget { span: span.map(|[a, b]| [a.min(b), a.max(b)]), ..self }
+        SnapTarget {
+            span: span.map(|[a, b]| [a.min(b), a.max(b)]),
+            ..self
+        }
     }
 }
 
@@ -84,14 +105,22 @@ pub struct SnapFeatures {
 
 impl Default for SnapFeatures {
     fn default() -> Self {
-        SnapFeatures { edges_extended: true, collapsed_features: true }
+        SnapFeatures {
+            edges_extended: true,
+            collapsed_features: true,
+        }
     }
 }
 
 impl SnapFeatures {
     /// The options in the Tools bar's Snapping menu order: (parameter key, label).
-    pub const OPTIONS: [(&'static str, &'static str); 2] =
-        [("edgesExtended", "Snap Edges Extended"), ("collapsedFeatures", "Snap to Features in Collapsed Compositions and Text Layers")];
+    pub const OPTIONS: [(&'static str, &'static str); 2] = [
+        ("edgesExtended", "Snap Edges Extended"),
+        (
+            "collapsedFeatures",
+            "Snap to Features in Collapsed Compositions and Text Layers",
+        ),
+    ];
     /// The option called `key` (an [`OPTIONS`](Self::OPTIONS) key).
     pub fn option_mut(&mut self, key: &str) -> Option<&mut bool> {
         Some(match key {
@@ -122,7 +151,11 @@ pub struct Snap {
 }
 
 fn better(a: (f64, u8), b: (f64, u8)) -> bool {
-    if (a.0 - b.0).abs() < 1e-6 { a.1 < b.1 } else { a.0 < b.0 }
+    if (a.0 - b.0).abs() < 1e-6 {
+        a.1 < b.1
+    } else {
+        a.0 < b.0
+    }
 }
 
 /// Snap feature points `sources` (comp pixels) to the nearest target within `tol` comp pixels.
@@ -137,7 +170,11 @@ pub fn snap(sources: &[[f64; 2]], targets: &[SnapTarget], tol: f64) -> Option<Sn
         for t in targets {
             // (`along`: where the source is along a line, for its span.)
             let (d, slot, along) = match t.kind {
-                SnapKind::Point => (((t.pos[0] - s[0]).powi(2) + (t.pos[1] - s[1]).powi(2)).sqrt(), &mut best_pt, 0.0),
+                SnapKind::Point => (
+                    ((t.pos[0] - s[0]).powi(2) + (t.pos[1] - s[1]).powi(2)).sqrt(),
+                    &mut best_pt,
+                    0.0,
+                ),
                 SnapKind::VLine => ((t.pos[0] - s[0]).abs(), &mut best_x, s[1]),
                 SnapKind::HLine => ((t.pos[1] - s[1]).abs(), &mut best_y, s[0]),
             };
@@ -150,11 +187,18 @@ pub fn snap(sources: &[[f64; 2]], targets: &[SnapTarget], tol: f64) -> Option<Sn
             }
         }
     }
-    let line_best = [best_x.map(|b| b.0.0), best_y.map(|b| b.0.0)].into_iter().flatten().fold(f64::INFINITY, f64::min);
+    let line_best = [best_x.map(|b| b.0.0), best_y.map(|b| b.0.0)]
+        .into_iter()
+        .flatten()
+        .fold(f64::INFINITY, f64::min);
     if let Some((k, s, t)) = best_pt
         && k.0 <= line_best + 1e-9
     {
-        return Some(Snap { delta: [t.pos[0] - s[0], t.pos[1] - s[1]], hits: vec![t], at: t.pos });
+        return Some(Snap {
+            delta: [t.pos[0] - s[0], t.pos[1] - s[1]],
+            hits: vec![t],
+            at: t.pos,
+        });
     }
     if best_x.is_none() && best_y.is_none() {
         return None;
@@ -169,7 +213,11 @@ pub fn snap(sources: &[[f64; 2]], targets: &[SnapTarget], tol: f64) -> Option<Sn
     }
     if let Some((_, s, t)) = best_y {
         delta[1] = t.pos[1] - s[1];
-        at = if at[0].is_nan() { [s[0], t.pos[1]] } else { [at[0], t.pos[1]] };
+        at = if at[0].is_nan() {
+            [s[0], t.pos[1]]
+        } else {
+            [at[0], t.pos[1]]
+        };
         hits.push(t);
     }
     Some(Snap { delta, hits, at })
@@ -179,7 +227,9 @@ pub fn snap(sources: &[[f64; 2]], targets: &[SnapTarget], tol: f64) -> Option<Sn
 /// mask / shape path vertices (no box for layers without bounds).
 pub fn layer_features(ctx: &EvalCtx, layer: &Layer) -> Vec<[f64; 2]> {
     let (m, _) = ctx.layer_to_comp(layer);
-    let mut out = layer_box(ctx, layer, &m).map(|b| b.points()).unwrap_or_default();
+    let mut out = layer_box(ctx, layer, &m)
+        .map(|b| b.points())
+        .unwrap_or_default();
     out.extend(anchor_feature(ctx, layer, &m));
     out.extend(layer_vertices(ctx, layer));
     out
@@ -196,7 +246,12 @@ struct BoxPoints {
 impl BoxPoints {
     /// Corners, edge midpoints and centre.
     fn points(&self) -> Vec<[f64; 2]> {
-        self.corners.iter().chain(&self.mids).chain([&self.center]).copied().collect()
+        self.corners
+            .iter()
+            .chain(&self.mids)
+            .chain([&self.center])
+            .copied()
+            .collect()
     }
 }
 
@@ -228,7 +283,11 @@ pub fn layer_vertices(ctx: &EvalCtx, layer: &Layer) -> Vec<[f64; 2]> {
     let mut out = vec![];
     if let Some(masks) = layer.masks() {
         for g in masks.groups() {
-            if let Some(sp) = g.get("path").map(|pr| ctx.value(layer, pr)).and_then(|v| v.as_path().cloned()) {
+            if let Some(sp) = g
+                .get("path")
+                .map(|pr| ctx.value(layer, pr))
+                .and_then(|v| v.as_path().cloned())
+            {
                 out.extend(sp.vertices.iter().map(|v| {
                     let q = m.apply(vec2(v[0], v[1]));
                     [q.x, q.y]
@@ -237,7 +296,8 @@ pub fn layer_vertices(ctx: &EvalCtx, layer: &Layer) -> Vec<[f64; 2]> {
         }
     }
     for (uid, sp) in shape_paths(ctx, layer) {
-        let pm = m * effectcraft_render::shapes::item_matrix(ctx, layer, uid).unwrap_or(Mat3::IDENTITY);
+        let pm =
+            m * effectcraft_render::shapes::item_matrix(ctx, layer, uid).unwrap_or(Mat3::IDENTITY);
         out.extend(sp.vertices.iter().map(|v| {
             let q = pm.apply(vec2(v[0], v[1]));
             [q.x, q.y]
@@ -249,11 +309,21 @@ pub fn layer_vertices(ctx: &EvalCtx, layer: &Layer) -> Vec<[f64; 2]> {
 /// Shape-layer Path items (uid, evaluated path in the item's group space).
 pub fn shape_paths(ctx: &EvalCtx, layer: &Layer) -> Vec<(u64, effectcraft_keyframe::ShapePath)> {
     let mut out = vec![];
-    let Some(c) = layer.props.sub("contents") else { return out };
-    fn walk(ctx: &EvalCtx, layer: &Layer, g: &effectcraft_project::PropGroup, out: &mut Vec<(u64, effectcraft_keyframe::ShapePath)>) {
+    let Some(c) = layer.props.sub("contents") else {
+        return out;
+    };
+    fn walk(
+        ctx: &EvalCtx,
+        layer: &Layer,
+        g: &effectcraft_project::PropGroup,
+        out: &mut Vec<(u64, effectcraft_keyframe::ShapePath)>,
+    ) {
         for sub in g.groups() {
             if sub.match_id == "path"
-                && let Some(sp) = sub.get("path").map(|pr| ctx.value(layer, pr)).and_then(|v| v.as_path().cloned())
+                && let Some(sp) = sub
+                    .get("path")
+                    .map(|pr| ctx.value(layer, pr))
+                    .and_then(|v| v.as_path().cloned())
             {
                 out.push((sub.uid, sp));
             } else if sub.match_id == "group" || sub.match_id == "contents" {
@@ -286,9 +356,21 @@ struct SnapExpressions<'a> {
 }
 
 impl ExprHost for SnapExpressions<'_> {
-    fn eval(&self, ctx: &EvalCtx, layer: &Layer, prop: &Property, value: &Value) -> Result<Value, String> {
+    fn eval(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        prop: &Property,
+        value: &Value,
+    ) -> Result<Value, String> {
         let key = (ctx.comp_id.0, layer.id.0, prop.uid, ctx.time.0);
-        if let Some(value) = self.values.lock().unwrap_or_else(PoisonError::into_inner).get(&key).cloned() {
+        if let Some(value) = self
+            .values
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .get(&key)
+            .cloned()
+        {
             return value;
         }
         // Never hold the lock while evaluating: expressions may query other properties.
@@ -300,8 +382,17 @@ impl ExprHost for SnapExpressions<'_> {
         result
     }
 
-    fn eval_text_selector(&self, ctx: &EvalCtx, layer: &Layer, prop: &Property, index: usize, total: usize, selector: [f64; 3]) -> Result<[f64; 3], String> {
-        self.inner.eval_text_selector(ctx, layer, prop, index, total, selector)
+    fn eval_text_selector(
+        &self,
+        ctx: &EvalCtx,
+        layer: &Layer,
+        prop: &Property,
+        index: usize,
+        total: usize,
+        selector: [f64; 3],
+    ) -> Result<[f64; 3], String> {
+        self.inner
+            .eval_text_selector(ctx, layer, prop, index, total, selector)
     }
 }
 
@@ -309,8 +400,14 @@ impl ExprHost for SnapExpressions<'_> {
 /// the comp's edges and centre (with `layers`, as the Snapping options allow), and guides and
 /// grid lines (when on). Layers in `exclude` (the dragged ones) are skipped.
 pub fn targets(ctx: &EvalCtx, exclude: &[LayerId], opts: SnapOptions) -> Vec<SnapTarget> {
-    let memo = ctx.expr.map(|inner| SnapExpressions { inner, values: Mutex::default() });
-    let ctx = EvalCtx { expr: memo.as_ref().map(|h| h as &dyn ExprHost), ..*ctx };
+    let memo = ctx.expr.map(|inner| SnapExpressions {
+        inner,
+        values: Mutex::default(),
+    });
+    let ctx = EvalCtx {
+        expr: memo.as_ref().map(|h| h as &dyn ExprHost),
+        ..*ctx
+    };
     targets_in(&ctx, exclude, opts)
 }
 
@@ -321,14 +418,28 @@ fn targets_in(ctx: &EvalCtx, exclude: &[LayerId], opts: SnapOptions) -> Vec<Snap
     let mut out = vec![];
     if opts.layers {
         // The comp's edge and centre lines, along the comp without Snap Edges Extended.
-        let (xs, ys) = if f.edges_extended { (None, None) } else { (Some([0.0, w]), Some([0.0, h])) };
+        let (xs, ys) = if f.edges_extended {
+            (None, None)
+        } else {
+            (Some([0.0, w]), Some([0.0, h]))
+        };
         let mut lines = |x: &[f64], y: &[f64]| {
-            out.extend(x.iter().map(|x| SnapTarget::vline(*x, PRI_COMP, SnapSource::Comp).within(ys)));
-            out.extend(y.iter().map(|y| SnapTarget::hline(*y, PRI_COMP, SnapSource::Comp).within(xs)));
+            out.extend(
+                x.iter()
+                    .map(|x| SnapTarget::vline(*x, PRI_COMP, SnapSource::Comp).within(ys)),
+            );
+            out.extend(
+                y.iter()
+                    .map(|y| SnapTarget::hline(*y, PRI_COMP, SnapSource::Comp).within(xs)),
+            );
         };
         lines(&[0.0, w], &[0.0, h]);
         lines(&[w / 2.0], &[h / 2.0]);
-        out.push(SnapTarget::point([w / 2.0, h / 2.0], PRI_COMP, SnapSource::Comp));
+        out.push(SnapTarget::point(
+            [w / 2.0, h / 2.0],
+            PRI_COMP,
+            SnapSource::Comp,
+        ));
         for l in visible_layers(ctx, exclude) {
             out.extend(layer_targets(ctx, l, true, f));
         }
@@ -362,11 +473,22 @@ fn targets_in(ctx: &EvalCtx, exclude: &[LayerId], opts: SnapOptions) -> Vec<Snap
 const MAX_COLLAPSED_DEPTH: usize = 8;
 
 /// Visible layers of a comp at the context time: active, eye on, and soloed while any layer is.
-fn visible_layers<'a>(ctx: &EvalCtx<'a>, exclude: &'a [LayerId]) -> impl Iterator<Item = &'a Layer> {
+fn visible_layers<'a>(
+    ctx: &EvalCtx<'a>,
+    exclude: &'a [LayerId],
+) -> impl Iterator<Item = &'a Layer> {
     let comp = ctx.comp;
     let time = ctx.time;
-    let any_solo = comp.layers.iter().any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(time));
-    comp.layers.iter().filter(move |l| l.is_active_at(time) && l.switches.video && (!any_solo || l.switches.solo) && !exclude.contains(&l.id))
+    let any_solo = comp
+        .layers
+        .iter()
+        .any(|l| l.switches.solo && l.source.is_av() && l.is_active_at(time));
+    comp.layers.iter().filter(move |l| {
+        l.is_active_at(time)
+            && l.switches.video
+            && (!any_solo || l.switches.solo)
+            && !exclude.contains(&l.id)
+    })
 }
 
 /// A 2D layer's snap targets: its box points, its edges as lines while unrotated (across the
@@ -378,7 +500,13 @@ pub fn layer_targets(ctx: &EvalCtx, l: &Layer, anchor: bool, f: SnapFeatures) ->
     layer_targets_at(ctx, l, anchor, f, 0)
 }
 
-fn layer_targets_at(ctx: &EvalCtx, l: &Layer, anchor: bool, f: SnapFeatures, depth: usize) -> Vec<SnapTarget> {
+fn layer_targets_at(
+    ctx: &EvalCtx,
+    l: &Layer,
+    anchor: bool,
+    f: SnapFeatures,
+    depth: usize,
+) -> Vec<SnapTarget> {
     if l.is_camera() || l.is_light() || l.is_3d() {
         return vec![];
     }
@@ -388,7 +516,11 @@ fn layer_targets_at(ctx: &EvalCtx, l: &Layer, anchor: bool, f: SnapFeatures, dep
     if let Some(b) = layer_box(ctx, l, &m) {
         let [nw, ne, _, sw] = b.corners;
         if (nw[1] - ne[1]).abs() < 1e-6 && (nw[0] - sw[0]).abs() < 1e-6 {
-            let (xs, ys) = if f.edges_extended { (None, None) } else { (Some([nw[0], ne[0]]), Some([nw[1], sw[1]])) };
+            let (xs, ys) = if f.edges_extended {
+                (None, None)
+            } else {
+                (Some([nw[0], ne[0]]), Some([nw[1], sw[1]]))
+            };
             for x in [nw[0], ne[0]] {
                 out.push(SnapTarget::vline(x, PRI_LAYER, src).within(ys));
             }
@@ -396,10 +528,22 @@ fn layer_targets_at(ctx: &EvalCtx, l: &Layer, anchor: bool, f: SnapFeatures, dep
                 out.push(SnapTarget::hline(y, PRI_LAYER, src).within(xs));
             }
         }
-        out.extend(b.points().into_iter().map(|p| SnapTarget::point(p, PRI_LAYER, src)));
+        out.extend(
+            b.points()
+                .into_iter()
+                .map(|p| SnapTarget::point(p, PRI_LAYER, src)),
+        );
     }
-    out.extend(anchor_feature(ctx, l, &m).filter(|_| anchor).map(|p| SnapTarget::point(p, PRI_LAYER, src)));
-    out.extend(layer_vertices(ctx, l).into_iter().map(|p| SnapTarget::point(p, PRI_VERTEX, SnapSource::Vertex(l.id))));
+    out.extend(
+        anchor_feature(ctx, l, &m)
+            .filter(|_| anchor)
+            .map(|p| SnapTarget::point(p, PRI_LAYER, src)),
+    );
+    out.extend(
+        layer_vertices(ctx, l)
+            .into_iter()
+            .map(|p| SnapTarget::point(p, PRI_VERTEX, SnapSource::Vertex(l.id))),
+    );
     if f.collapsed_features
         && l.switches.collapse
         && depth < MAX_COLLAPSED_DEPTH
@@ -423,7 +567,12 @@ fn collapsed_targets(
     f: SnapFeatures,
     depth: usize,
 ) -> Vec<SnapTarget> {
-    let nctx = EvalCtx { comp_id: item, comp: nc, time: ctx.nested_time(l), ..*ctx };
+    let nctx = EvalCtx {
+        comp_id: item,
+        comp: nc,
+        time: ctx.nested_time(l),
+        ..*ctx
+    };
     let axis_aligned = m.0[0][1].abs() < 1e-9 && m.0[1][0].abs() < 1e-9;
     let (sx, ox, sy, oy) = (m.0[0][0], m.0[0][2], m.0[1][1], m.0[1][2]);
     let mut out = vec![];
@@ -438,12 +587,14 @@ fn collapsed_targets(
                     let q = m.apply(vec2(t.pos[0], t.pos[1]));
                     Some(SnapTarget::point([q.x, q.y], t.priority, source))
                 }
-                SnapKind::VLine if axis_aligned => {
-                    Some(SnapTarget::vline(sx * t.pos[0] + ox, t.priority, source).within(t.span.map(|[a, b]| [sy * a + oy, sy * b + oy])))
-                }
-                SnapKind::HLine if axis_aligned => {
-                    Some(SnapTarget::hline(sy * t.pos[1] + oy, t.priority, source).within(t.span.map(|[a, b]| [sx * a + ox, sx * b + ox])))
-                }
+                SnapKind::VLine if axis_aligned => Some(
+                    SnapTarget::vline(sx * t.pos[0] + ox, t.priority, source)
+                        .within(t.span.map(|[a, b]| [sy * a + oy, sy * b + oy])),
+                ),
+                SnapKind::HLine if axis_aligned => Some(
+                    SnapTarget::hline(sy * t.pos[1] + oy, t.priority, source)
+                        .within(t.span.map(|[a, b]| [sx * a + ox, sx * b + ox])),
+                ),
                 _ => None,
             };
             out.extend(mapped);
@@ -467,7 +618,14 @@ pub enum Channel {
 }
 
 impl Channel {
-    pub const ALL: [Channel; 6] = [Channel::Rgb, Channel::Red, Channel::Green, Channel::Blue, Channel::Alpha, Channel::RgbStraight];
+    pub const ALL: [Channel; 6] = [
+        Channel::Rgb,
+        Channel::Red,
+        Channel::Green,
+        Channel::Blue,
+        Channel::Alpha,
+        Channel::RgbStraight,
+    ];
     pub fn id(self) -> &'static str {
         match self {
             Channel::Rgb => "rgb",
@@ -490,16 +648,26 @@ impl Channel {
     }
     pub fn from_name(s: &str) -> Option<Channel> {
         let n = s.to_ascii_lowercase().replace([' ', '_', '-'], "");
-        Channel::ALL.into_iter().find(|c| c.id().to_ascii_lowercase() == n || c.label().to_ascii_lowercase().replace(' ', "") == n)
+        Channel::ALL.into_iter().find(|c| {
+            c.id().to_ascii_lowercase() == n || c.label().to_ascii_lowercase().replace(' ', "") == n
+        })
     }
 }
 
 fn srgb_to_linear(v: f32) -> f32 {
-    if v <= 0.04045 { v / 12.92 } else { ((v + 0.055) / 1.055).powf(2.4) }
+    if v <= 0.04045 {
+        v / 12.92
+    } else {
+        ((v + 0.055) / 1.055).powf(2.4)
+    }
 }
 fn linear_to_srgb(v: f32) -> f32 {
     let v = v.max(0.0);
-    if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 }
+    if v <= 0.003_130_8 {
+        v * 12.92
+    } else {
+        1.055 * v.powf(1.0 / 2.4) - 0.055
+    }
 }
 
 /// 8-bit exposure lookup table: `stops` applied in linear light.
@@ -528,7 +696,13 @@ pub fn display_transform(px: &mut [[u8; 4]], channel: Channel, colorized: bool, 
                     continue;
                 }
                 // Exposure on straight colour, re-premultiplied.
-                let un = |c: u8| if a == 0 { 0 } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+                let un = |c: u8| {
+                    if a == 0 {
+                        0
+                    } else {
+                        ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8
+                    }
+                };
                 let pm = |c: u8| ((ex(un(c)) as u32 * a as u32 + 127) / 255) as u8;
                 [pm(r), pm(g), pm(b), a]
             }
@@ -552,7 +726,13 @@ pub fn display_transform(px: &mut [[u8; 4]], channel: Channel, colorized: bool, 
                 [v, v, v, 255]
             }
             Channel::RgbStraight => {
-                let un = |c: u8| if a == 0 { 0 } else { ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8 };
+                let un = |c: u8| {
+                    if a == 0 {
+                        0
+                    } else {
+                        ((c as u32 * 255 + a as u32 / 2) / a as u32).min(255) as u8
+                    }
+                };
                 [ex(un(r)), ex(un(g)), ex(un(b)), 255]
             }
         };
@@ -666,10 +846,22 @@ impl SimProfile {
     }
 
     pub fn parse(s: &str) -> Option<SimProfile> {
-        let k: String = s.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let k: String = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
         SimProfile::ALL
             .into_iter()
-            .find(|p| p.id().to_ascii_lowercase() == k || p.label().chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase() == k)
+            .find(|p| {
+                p.id().to_ascii_lowercase() == k
+                    || p.label()
+                        .chars()
+                        .filter(|c| c.is_ascii_alphanumeric())
+                        .collect::<String>()
+                        .to_ascii_lowercase()
+                        == k
+            })
             .or(match k.as_str() {
                 "off" => Some(SimProfile::None),
                 "hdtv" | "bt709" => Some(SimProfile::Rec709),
@@ -689,8 +881,14 @@ impl SimProfile {
             SimProfile::P3 => (ColorSpace::DisplayP3.primaries(), Curve::Srgb),
             SimProfile::Srgb => (P709, Curve::Srgb),
             SimProfile::Linear => (P709, Curve::Linear),
-            SimProfile::Ntsc => ([[0.630, 0.340], [0.310, 0.595], [0.155, 0.070]], Curve::Gamma(2.4)),
-            SimProfile::Pal => ([[0.640, 0.330], [0.290, 0.600], [0.150, 0.060]], Curve::Gamma(2.4)),
+            SimProfile::Ntsc => (
+                [[0.630, 0.340], [0.310, 0.595], [0.155, 0.070]],
+                Curve::Gamma(2.4),
+            ),
+            SimProfile::Pal => (
+                [[0.640, 0.330], [0.290, 0.600], [0.150, 0.060]],
+                Curve::Gamma(2.4),
+            ),
             SimProfile::Mac18 => (P709, Curve::Gamma(1.8)),
         })
     }
@@ -763,14 +961,24 @@ impl std::fmt::Debug for IccLut {
 
 impl Serialize for IccLut {
     fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
-        s.serialize_str(&self.0.as_deref().map(|b| effectcraft_track::roto::rle::base64_encode(b)).unwrap_or_default())
+        s.serialize_str(
+            &self
+                .0
+                .as_deref()
+                .map(|b| effectcraft_track::roto::rle::base64_encode(b))
+                .unwrap_or_default(),
+        )
     }
 }
 
 impl<'de> Deserialize<'de> for IccLut {
     fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
         let s = String::deserialize(d)?;
-        Ok(IccLut(effectcraft_track::roto::rle::base64_decode(&s).filter(|b| !b.is_empty()).map(Arc::new)))
+        Ok(IccLut(
+            effectcraft_track::roto::rle::base64_decode(&s)
+                .filter(|b| !b.is_empty())
+                .map(Arc::new),
+        ))
     }
 }
 
@@ -808,9 +1016,16 @@ impl CustomRgb {
     /// Chromaticities inside (0, 1) with y > 0, a gamma in 0.1–10, and primaries that span a
     /// triangle.
     pub fn validate(&self) -> std::result::Result<(), String> {
-        for (n, c) in [("red", self.red), ("green", self.green), ("blue", self.blue), ("white", self.white)] {
+        for (n, c) in [
+            ("red", self.red),
+            ("green", self.green),
+            ("blue", self.blue),
+            ("white", self.white),
+        ] {
             if !(c[0] > 0.0 && c[1] > 0.0 && c[0] < 1.0 && c[1] < 1.0 && c[0] + c[1] <= 1.0) {
-                return Err(format!("{n}: chromaticity x, y must be in (0, 1) with x + y ≤ 1"));
+                return Err(format!(
+                    "{n}: chromaticity x, y must be in (0, 1) with x + y ≤ 1"
+                ));
             }
         }
         if !self.srgb_curve && !(0.1..=10.0).contains(&self.gamma) {
@@ -829,12 +1044,25 @@ impl CustomRgb {
     /// (adapted to D65) and the gamma that fits its neutral ramp.
     pub fn from_icc(bytes: &[u8], path: &str) -> std::result::Result<CustomRgb, String> {
         use effectcraft_color::icc::{Profile, parse_profile};
-        let stem = || std::path::Path::new(path).file_stem().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "ICC Profile".into());
-        let name = |d: &str| if d.trim().is_empty() { stem() } else { d.trim().to_string() };
+        let stem = || {
+            std::path::Path::new(path)
+                .file_stem()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| "ICC Profile".into())
+        };
+        let name = |d: &str| {
+            if d.trim().is_empty() {
+                stem()
+            } else {
+                d.trim().to_string()
+            }
+        };
         let r = |c: [f64; 2]| c.map(|v| (v * 1e5).round() / 1e5);
         match parse_profile(bytes)? {
             Profile::Matrix(p) => {
-                let gamma = (p.trc.iter().map(|t| t.fit_gamma()).sum::<f64>() / 3.0 * 1000.0).round() / 1000.0;
+                let gamma = (p.trc.iter().map(|t| t.fit_gamma()).sum::<f64>() / 3.0 * 1000.0)
+                    .round()
+                    / 1000.0;
                 Ok(CustomRgb {
                     name: name(&p.description),
                     red: r(p.primaries[0]),
@@ -854,7 +1082,10 @@ impl CustomRgb {
                 let adapt = |c: [f64; 2]| {
                     let v = space::mul_vec(&a, [c[0] / c[1], 1.0, (1.0 - c[0] - c[1]) / c[1]]);
                     let sum = v[0] + v[1] + v[2];
-                    let c = [(v[0] / sum).clamp(1e-4, 0.9998), (v[1] / sum).clamp(1e-4, 0.9998)];
+                    let c = [
+                        (v[0] / sum).clamp(1e-4, 0.9998),
+                        (v[1] / sum).clamp(1e-4, 0.9998),
+                    ];
                     // Table rounding can put a primary a hair outside the spectrum locus.
                     let k = (0.9999 / (c[0] + c[1])).min(1.0);
                     [c[0] * k, c[1] * k]
@@ -876,8 +1107,15 @@ impl CustomRgb {
 
     fn prof(&self) -> Prof {
         let m = space::rgb_to_xyz(self.primaries(), self.white);
-        let xyz = if self.white == D65 { m } else { space::mul(&space::bradford(self.white, D65), &m) };
-        Prof { xyz, curve: self.curve() }
+        let xyz = if self.white == D65 {
+            m
+        } else {
+            space::mul(&space::bradford(self.white, D65), &m)
+        };
+        Prof {
+            xyz,
+            curve: self.curve(),
+        }
     }
 }
 
@@ -891,12 +1129,22 @@ struct Prof {
 
 impl Prof {
     fn new(prims: [[f64; 2]; 3], curve: Curve) -> Prof {
-        Prof { xyz: space::rgb_to_xyz(prims, D65), curve }
+        Prof {
+            xyz: space::rgb_to_xyz(prims, D65),
+            curve,
+        }
     }
     /// A colour space (linear when `linear`).
     fn of(cs: ColorSpace, linear: bool) -> Prof {
-        let curve = if linear { Curve::Linear } else { Curve::Space(cs.curve()) };
-        Prof { xyz: cs.to_xyz(), curve }
+        let curve = if linear {
+            Curve::Linear
+        } else {
+            Curve::Space(cs.curve())
+        };
+        Prof {
+            xyz: cs.to_xyz(),
+            curve,
+        }
     }
 }
 
@@ -914,7 +1162,11 @@ impl Conv {
             let m = space::mul(&space::invert(&b.xyz), &a.xyz);
             m.map(|r| r.map(|v| v as f32))
         });
-        Conv { from: a.curve, m, to: b.curve }
+        Conv {
+            from: a.curve,
+            m,
+            to: b.curve,
+        }
     }
     fn apply(&self, c: [f32; 3]) -> [f32; 3] {
         let l = c.map(|v| self.from.decode(v));
@@ -959,12 +1211,20 @@ impl DisplayColor {
         if !dcm {
             // Without display colour management the working space's numbers go to the screen.
             let raw = Conv::new(src, Prof::of(ws, linear));
-            return Some(DisplayColor { sim: None, display: Some(raw), lut: None });
+            return Some(DisplayColor {
+                sim: None,
+                display: Some(raw),
+                lut: None,
+            });
         }
         if sim.profile == SimProfile::MyCustom
             && let Some(lut) = lut_simulation(custom, src, display, sim.preserve_rgb)
         {
-            return Some(DisplayColor { sim: None, display: None, lut: Some(lut) });
+            return Some(DisplayColor {
+                sim: None,
+                display: None,
+                lut: Some(lut),
+            });
         }
         let out = match sim.profile {
             SimProfile::MyCustom => Some(custom.prof()),
@@ -981,15 +1241,22 @@ impl DisplayColor {
             )
         });
         let display = (display != source).then(|| Conv::new(src, Prof::of(display, false)));
-        (sim.is_some() || display.is_some()).then_some(DisplayColor { sim, display, lut: None })
+        (sim.is_some() || display.is_some()).then_some(DisplayColor {
+            sim,
+            display,
+            lut: None,
+        })
     }
 
     /// The conversion a session's viewer uses.
     pub fn of(s: &crate::Session) -> Option<DisplayColor> {
         let st = &s.project.settings;
-        let display = ColorSpace::parse(&s.prefs.previews.display_profile).unwrap_or(ColorSpace::Srgb);
+        let display =
+            ColorSpace::parse(&s.prefs.previews.display_profile).unwrap_or(ColorSpace::Srgb);
         let v = &s.state.viewer;
-        let linear = st.working_space.is_some_and(|w| st.linearize || w.is_linear());
+        let linear = st
+            .working_space
+            .is_some_and(|w| st.linearize || w.is_linear());
         DisplayColor::new(
             st.working_space,
             linear,
@@ -1009,14 +1276,18 @@ impl DisplayColor {
     /// One straight colour (0..1 floats).
     pub fn apply_straight(&self, c: [f32; 3]) -> [f32; 3] {
         if let Some(l) = &self.lut {
-            return l.eval(c.map(|v| v.clamp(0.0, 1.0))).map(|v| v.clamp(0.0, 1.0));
+            return l
+                .eval(c.map(|v| v.clamp(0.0, 1.0)))
+                .map(|v| v.clamp(0.0, 1.0));
         }
         let c = match &self.sim {
             // Through the output's 8-bit encoding (clipped and quantised like the real output),
             // then shown on the display: converted from the output profile, or — Preserve RGB —
             // the output numbers taken as if they were sRGB.
             Some((to, show)) => {
-                let o = to.apply(c).map(|v| (v.clamp(0.0, 1.0) * 255.0).round() / 255.0);
+                let o = to
+                    .apply(c)
+                    .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() / 255.0);
                 show.map_or(o, |b| b.apply(o))
             }
             None => self.display.map_or(c, |d| d.apply(c)),
@@ -1051,14 +1322,23 @@ const SIM_LUT_SIZE_INVERTED: usize = 17;
 /// (`B2A0`, or `A2B0` inverted), clipped and quantised to 8 bits like the real output → what the
 /// device shows (`A2B0`; Preserve RGB: the numbers taken as sRGB) → the display. Baked once per
 /// profile and conversion (the last one is cached).
-fn lut_simulation(custom: &CustomRgb, src: Prof, display: ColorSpace, preserve: bool) -> Option<Arc<effectcraft_color::icc::Lut3d>> {
+fn lut_simulation(
+    custom: &CustomRgb,
+    src: Prof,
+    display: ColorSpace,
+    preserve: bool,
+) -> Option<Arc<effectcraft_color::icc::Lut3d>> {
     type Cache = Option<(u64, Arc<effectcraft_color::icc::Lut3d>)>;
     static CACHE: std::sync::Mutex<Cache> = std::sync::Mutex::new(None);
     custom.icc_lut.0.as_ref()?;
     let key = {
         use std::hash::{Hash, Hasher};
         let mut h = std::collections::hash_map::DefaultHasher::new();
-        (custom.icc_lut.hash(), format!("{src:?}{display:?}{preserve}")).hash(&mut h);
+        (
+            custom.icc_lut.hash(),
+            format!("{src:?}{display:?}{preserve}"),
+        )
+            .hash(&mut h);
         h.finish()
     };
     if let Some((k, l)) = CACHE.lock().ok()?.as_ref()
@@ -1072,12 +1352,20 @@ fn lut_simulation(custom: &CustomRgb, src: Prof, display: ColorSpace, preserve: 
     let disp = Prof::of(display, false);
     let disp_inv = space::invert(&disp.xyz);
     let srgb_to_display = Conv::new(Prof::new(P709, Curve::Srgb), disp);
-    let size = if prof.b2a.is_some() { SIM_LUT_SIZE } else { SIM_LUT_SIZE_INVERTED };
+    let size = if prof.b2a.is_some() {
+        SIM_LUT_SIZE
+    } else {
+        SIM_LUT_SIZE_INVERTED
+    };
     let lut = effectcraft_color::icc::Lut3d::bake(size, |c| {
         let lin = c.map(|v| src.curve.decode(v as f32) as f64);
-        let dev = prof.from_xyz(space::mul_vec(&to_d50, lin), c).map(|v| (v.clamp(0.0, 1.0) * 255.0).round() / 255.0);
+        let dev = prof
+            .from_xyz(space::mul_vec(&to_d50, lin), c)
+            .map(|v| (v.clamp(0.0, 1.0) * 255.0).round() / 255.0);
         if preserve {
-            return srgb_to_display.apply(dev.map(|v| v as f32)).map(|v| v as f64);
+            return srgb_to_display
+                .apply(dev.map(|v| v as f32))
+                .map(|v| v as f64);
         }
         let xyz = space::mul_vec(&from_d50, prof.to_xyz(dev));
         space::mul_vec(&disp_inv, xyz).map(|v| disp.curve.encode(v as f32) as f64)
@@ -1109,7 +1397,13 @@ mod snap_expression_tests {
 
     struct PositionHost(AtomicUsize);
     impl ExprHost for PositionHost {
-        fn eval(&self, ctx: &EvalCtx, _: &Layer, _: &Property, value: &Value) -> Result<Value, String> {
+        fn eval(
+            &self,
+            ctx: &EvalCtx,
+            _: &Layer,
+            _: &Property,
+            value: &Value,
+        ) -> Result<Value, String> {
             self.0.fetch_add(1, Ordering::Relaxed);
             let v = value.components();
             Ok(Value::Vec3([v[0] + 10. * ctx.time.seconds(), v[1], 0.]))
@@ -1119,26 +1413,55 @@ mod snap_expression_tests {
     #[test]
     fn snapping_reuses_expressions_within_one_query_but_refreshes_time_and_edits() {
         let mut s = crate::Session::default();
-        s.execute("comp.new", json!({"width":320,"height":180,"duration":5})).unwrap();
-        let lid = s.execute("layer.newSolid", json!({"width":40,"height":20})).unwrap()["layer"].as_u64().unwrap();
-        s.execute("prop.setExpression", json!({"layer":lid,"path":"transform/position","expression":"value"})).unwrap();
+        s.execute("comp.new", json!({"width":320,"height":180,"duration":5}))
+            .unwrap();
+        let lid = s
+            .execute("layer.newSolid", json!({"width":40,"height":20}))
+            .unwrap()["layer"]
+            .as_u64()
+            .unwrap();
+        s.execute(
+            "prop.setExpression",
+            json!({"layer":lid,"path":"transform/position","expression":"value"}),
+        )
+        .unwrap();
         let cid = s.active_comp_id().unwrap();
         let host = PositionHost(AtomicUsize::new(0));
-        let opts = SnapOptions { layers: true, ..Default::default() };
+        let opts = SnapOptions {
+            layers: true,
+            ..Default::default()
+        };
         let query = |s: &crate::Session, time, cached| {
-            let ctx = EvalCtx { expr: Some(&host), ..EvalCtx::new(&s.project, cid, s.project.comp(cid).unwrap(), time) };
-            if cached { targets(&ctx, &[], opts) } else { targets_in(&ctx, &[], opts) }
+            let ctx = EvalCtx {
+                expr: Some(&host),
+                ..EvalCtx::new(&s.project, cid, s.project.comp(cid).unwrap(), time)
+            };
+            if cached {
+                targets(&ctx, &[], opts)
+            } else {
+                targets_in(&ctx, &[], opts)
+            }
         };
         let expected = query(&s, Tick::ZERO, false);
-        assert!(host.0.swap(0, Ordering::Relaxed) > 1, "fixture must visit the same expression for multiple geometry features");
+        assert!(
+            host.0.swap(0, Ordering::Relaxed) > 1,
+            "fixture must visit the same expression for multiple geometry features"
+        );
         assert_eq!(query(&s, Tick::ZERO, true), expected);
         assert_eq!(host.0.swap(0, Ordering::Relaxed), 1);
         let moved = query(&s, Tick::from_seconds_f64(1.), true);
         assert_ne!(moved, expected, "a new time must not reuse stale targets");
         assert_eq!(host.0.swap(0, Ordering::Relaxed), 1);
-        s.execute("prop.set", json!({"layer":lid,"path":"transform/position","value":[200,100,0]})).unwrap();
+        s.execute(
+            "prop.set",
+            json!({"layer":lid,"path":"transform/position","value":[200,100,0]}),
+        )
+        .unwrap();
         let edited = query(&s, Tick::ZERO, true);
-        assert_ne!(edited, expected, "a new project revision must not reuse stale targets");
+        assert_ne!(
+            edited, expected,
+            "a new project revision must not reuse stale targets"
+        );
         assert_eq!(host.0.swap(0, Ordering::Relaxed), 1);
     }
 }

@@ -68,8 +68,10 @@ impl Catalog {
     /// exact category and article id filters retain catalog order and all fields.
     pub fn search_docs(&self, filter: &SearchFilter) -> Value {
         let query = filter.q.as_deref().unwrap_or("").to_lowercase();
-        let category =
-            filter.category.as_deref().filter(|value| !value.is_empty() && *value != "All");
+        let category = filter
+            .category
+            .as_deref()
+            .filter(|value| !value.is_empty() && *value != "All");
         let id = filter.id.as_deref().filter(|value| !value.is_empty());
         let articles = self.docs.as_array().map(Vec::as_slice).unwrap_or(&[]);
         Value::Array(
@@ -91,11 +93,14 @@ impl Catalog {
                                 .and_then(Value::as_str)
                                 .is_some_and(|value| value.to_lowercase().contains(&query))
                         })
-                        || article.get("tags").and_then(Value::as_array).is_some_and(|tags| {
-                            tags.iter()
-                                .filter_map(Value::as_str)
-                                .any(|tag| tag.to_lowercase().contains(&query))
-                        })
+                        || article
+                            .get("tags")
+                            .and_then(Value::as_array)
+                            .is_some_and(|tags| {
+                                tags.iter()
+                                    .filter_map(Value::as_str)
+                                    .any(|tag| tag.to_lowercase().contains(&query))
+                            })
                 })
                 .cloned()
                 .collect(),
@@ -109,18 +114,30 @@ mod tests {
     use serde_json::json;
 
     fn catalog() -> Catalog {
-        Catalog { docs: docs::load_docs(Path::new("unused")).unwrap(), templates: json!([]) }
+        Catalog {
+            docs: docs::load_docs(Path::new("unused")).unwrap(),
+            templates: json!([]),
+        }
     }
 
     #[test]
     fn all_adapters_share_selection_and_template_filter_rejection() {
         let catalog = catalog();
-        let filter = SearchFilter { q: Some("rust".into()), ..SearchFilter::default() };
+        let filter = SearchFilter {
+            q: Some("rust".into()),
+            ..SearchFilter::default()
+        };
         let docs = catalog.select(CatalogView::Docs, &filter).unwrap();
         assert_eq!(docs, catalog.search_docs(&filter));
-        assert_eq!(catalog.select(CatalogView::All, &filter).unwrap()["docs"], docs);
         assert_eq!(
-            catalog.select(CatalogView::Templates, &filter).unwrap_err().kind(),
+            catalog.select(CatalogView::All, &filter).unwrap()["docs"],
+            docs
+        );
+        assert_eq!(
+            catalog
+                .select(CatalogView::Templates, &filter)
+                .unwrap_err()
+                .kind(),
             io::ErrorKind::InvalidInput
         );
     }
@@ -137,24 +154,45 @@ mod tests {
     #[test]
     fn query_category_id_and_tag_search_share_docs_hub_semantics() {
         let catalog = catalog();
-        let category = SearchFilter { category: Some("Architecture".into()), ..Default::default() };
+        let category = SearchFilter {
+            category: Some("Architecture".into()),
+            ..Default::default()
+        };
         let result = catalog.search_docs(&category);
         assert_eq!(result.as_array().unwrap().len(), 1);
         assert_eq!(result[0]["id"], "runtime-architecture");
-        let tag = SearchFilter { q: Some("hct color".into()), ..Default::default() };
-        assert_eq!(catalog.search_docs(&tag)[0]["id"], "material-3-design-tokens");
-        let id = SearchFilter { id: Some("llms-txt-standard".into()), ..Default::default() };
+        let tag = SearchFilter {
+            q: Some("hct color".into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            catalog.search_docs(&tag)[0]["id"],
+            "material-3-design-tokens"
+        );
+        let id = SearchFilter {
+            id: Some("llms-txt-standard".into()),
+            ..Default::default()
+        };
         assert_eq!(catalog.search_docs(&id).as_array().unwrap().len(), 1);
-        let absent = SearchFilter { q: Some("no-such-doc-xyz".into()), ..Default::default() };
+        let absent = SearchFilter {
+            q: Some("no-such-doc-xyz".into()),
+            ..Default::default()
+        };
         assert_eq!(catalog.search_docs(&absent), json!([]));
-        let all = SearchFilter { category: Some("All".into()), ..Default::default() };
+        let all = SearchFilter {
+            category: Some("All".into()),
+            ..Default::default()
+        };
         assert_eq!(catalog.search_docs(&all), catalog.docs);
     }
 
     #[test]
     fn filtering_preserves_complete_article_metadata() {
         let catalog = catalog();
-        let filter = SearchFilter { id: Some("runtime-architecture".into()), ..Default::default() };
+        let filter = SearchFilter {
+            id: Some("runtime-architecture".into()),
+            ..Default::default()
+        };
         assert_eq!(catalog.search_docs(&filter)[0], catalog.docs[0]);
         assert_eq!(catalog.search_docs(&filter).as_array().unwrap().len(), 1);
     }

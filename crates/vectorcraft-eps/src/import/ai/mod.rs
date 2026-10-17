@@ -52,7 +52,9 @@ const EPS_END: &[u8] = b"%AI9_PrivateDataEnd";
 pub fn eps_data(ps: &[u8]) -> Option<Result<Vec<u8>, String>> {
     let start = find(ps, EPS_BEGIN)? + EPS_BEGIN.len();
     let rest = ps.get(start..)?;
-    let section = rest.get(..find(rest, EPS_END).unwrap_or(rest.len())).unwrap_or_default();
+    let section = rest
+        .get(..find(rest, EPS_END).unwrap_or(rest.len()))
+        .unwrap_or_default();
     Some(eps_section(section))
 }
 
@@ -64,7 +66,9 @@ pub fn has_eps_data(ps: &[u8]) -> bool {
 /// The editing data between the EPS markers: header comments, then the data (encoded or not).
 fn eps_section(section: &[u8]) -> Result<Vec<u8>, String> {
     let mut header = Vec::new();
-    let mut lines = section.split(|b| matches!(b, b'\n' | b'\r')).filter(|l| !l.is_empty());
+    let mut lines = section
+        .split(|b| matches!(b, b'\n' | b'\r'))
+        .filter(|l| !l.is_empty());
     let mut codec = None;
     for line in lines.by_ref() {
         if line.starts_with(b"%AI24_DataStream") {
@@ -111,11 +115,17 @@ pub fn decode_private(raw: &[u8]) -> Result<Vec<u8>, String> {
     if raw.len() as u64 > MAX_DATA {
         return Err(too_large());
     }
-    for (marker, codec) in [(&b"%AI24_ZStandard_Data"[..], Codec::Zstd), (b"%AI12_CompressedData", Codec::Zlib)] {
+    for (marker, codec) in [
+        (&b"%AI24_ZStandard_Data"[..], Codec::Zstd),
+        (b"%AI12_CompressedData", Codec::Zlib),
+    ] {
         if let Some(at) = find(raw, marker) {
             let (header, body) = raw.split_at(at);
             let mut data = header.to_vec();
-            data.extend(codec.decode(body.get(marker.len()..).unwrap_or_default(), MAX_DATA.saturating_sub(header.len() as u64))?);
+            data.extend(codec.decode(
+                body.get(marker.len()..).unwrap_or_default(),
+                MAX_DATA.saturating_sub(header.len() as u64),
+            )?);
             return Ok(data);
         }
     }
@@ -134,7 +144,10 @@ impl Codec {
         let mut out = Vec::new();
         match self {
             Codec::Zlib => {
-                flate2::read::ZlibDecoder::new(data).take(max + 1).read_to_end(&mut out).map_err(|_| damaged("its zlib compression"))?;
+                flate2::read::ZlibDecoder::new(data)
+                    .take(max + 1)
+                    .read_to_end(&mut out)
+                    .map_err(|_| damaged("its zlib compression"))?;
             }
             Codec::Zstd => {
                 // The data may be several frames one after the other, padded with zeros.
@@ -150,9 +163,14 @@ impl Codec {
                     if left == 0 {
                         break;
                     }
-                    let d = ruzstd::decoding::StreamingDecoder::new_with_max_window_size(&mut src, MAX_ZSTD_WINDOW)
+                    let d = ruzstd::decoding::StreamingDecoder::new_with_max_window_size(
+                        &mut src,
+                        MAX_ZSTD_WINDOW,
+                    )
+                    .map_err(|_| damaged("its Zstandard compression"))?;
+                    d.take(left)
+                        .read_to_end(&mut out)
                         .map_err(|_| damaged("its Zstandard compression"))?;
-                    d.take(left).read_to_end(&mut out).map_err(|_| damaged("its Zstandard compression"))?;
                 }
             }
         }

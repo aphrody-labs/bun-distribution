@@ -65,7 +65,10 @@ fn embed(request: &Value) -> Value {
     let Some(texts) = texts.iter().map(Value::as_str).collect::<Option<Vec<_>>>() else {
         return error("expected a JSON array of strings");
     };
-    let kind = request.get("kind").and_then(Value::as_str).unwrap_or("passage");
+    let kind = request
+        .get("kind")
+        .and_then(Value::as_str)
+        .unwrap_or("passage");
     let model = match global_embedder() {
         Ok(embedder) => embedder.spec().versioned_id(),
         Err(err) => return error(err),
@@ -82,7 +85,7 @@ fn embed(request: &Value) -> Value {
                 "count": (bytes.len() / 4).checked_div(dim).unwrap_or(0),
                 "data": base64::engine::general_purpose::STANDARD.encode(bytes),
             })
-        },
+        }
         Err(err) => error(err),
     }
 }
@@ -118,7 +121,7 @@ fn handle(request: &Value) -> Value {
                 return error("invalid rerank arguments");
             };
             serde_json::from_str(&rerank_json(query, &passages.to_string())).unwrap_or_else(error)
-        },
+        }
         Some("install") => install(request),
         _ => error("unknown embedding operation"),
     }
@@ -133,7 +136,10 @@ fn serve(mut input: impl Read, mut output: impl Write) -> io::Result<()> {
         }
         let size = u32::from_le_bytes(prefix) as usize;
         if size > MAX_REQUEST_BYTES {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "embedding request too large"));
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "embedding request too large",
+            ));
         }
         let mut request = vec![0u8; size];
         input.read_exact(&mut request)?;
@@ -144,7 +150,9 @@ fn serve(mut input: impl Read, mut output: impl Write) -> io::Result<()> {
         };
         let mut bytes = response.to_string().into_bytes();
         if bytes.len() > MAX_RESPONSE_BYTES {
-            bytes = error("embedding response too large").to_string().into_bytes();
+            bytes = error("embedding response too large")
+                .to_string()
+                .into_bytes();
         }
         output.write_all(&(bytes.len() as u32).to_le_bytes())?;
         output.write_all(&bytes)?;
@@ -171,7 +179,10 @@ mod tests {
     #[test]
     fn worker_handles_repeated_framed_requests() {
         let mut input = Vec::new();
-        for request in [json!({ "op": "info" }), json!({ "op": "embed", "texts": 5 })] {
+        for request in [
+            json!({ "op": "info" }),
+            json!({ "op": "embed", "texts": 5 }),
+        ] {
             let bytes = request.to_string().into_bytes();
             input.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
             input.extend_from_slice(&bytes);

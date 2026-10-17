@@ -6,7 +6,13 @@ use crate::Ctx;
 use crate::blur::{conv_sep, gaussian_kernel};
 use crate::image::Image;
 
-fn with_blur(src: &Image, out: Rect, ctx: &Ctx, radius: f32, mut f: impl FnMut(f32, f32) -> f32) -> Vec<f32> {
+fn with_blur(
+    src: &Image,
+    out: Rect,
+    ctx: &Ctx,
+    radius: f32,
+    mut f: impl FnMut(f32, f32) -> f32,
+) -> Vec<f32> {
     let k = gaussian_kernel(radius);
     let blurred = conv_sep(src, out, &k, &k, ctx.alpha);
     let mut res = src.crop(out);
@@ -23,7 +29,14 @@ fn with_blur(src: &Image, out: Rect, ctx: &Ctx, radius: f32, mut f: impl FnMut(f
     res
 }
 
-pub(crate) fn unsharp(src: &Image, out: Rect, ctx: &Ctx, amount: f32, radius: f32, threshold: f32) -> Vec<f32> {
+pub(crate) fn unsharp(
+    src: &Image,
+    out: Rect,
+    ctx: &Ctx,
+    amount: f32,
+    radius: f32,
+    threshold: f32,
+) -> Vec<f32> {
     let k = amount / 100.0;
     let t = threshold / 255.0;
     with_blur(src, out, ctx, radius, |o, b| {
@@ -32,7 +45,14 @@ pub(crate) fn unsharp(src: &Image, out: Rect, ctx: &Ctx, amount: f32, radius: f3
     })
 }
 
-pub(crate) fn smart(src: &Image, out: Rect, ctx: &Ctx, amount: f32, radius: f32, reduce_noise: f32) -> Vec<f32> {
+pub(crate) fn smart(
+    src: &Image,
+    out: Rect,
+    ctx: &Ctx,
+    amount: f32,
+    radius: f32,
+    reduce_noise: f32,
+) -> Vec<f32> {
     let k = amount / 100.0;
     let nr = (reduce_noise / 100.0).clamp(0.0, 1.0);
     with_blur(src, out, ctx, radius, |o, b| {

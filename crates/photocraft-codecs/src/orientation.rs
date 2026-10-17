@@ -88,14 +88,30 @@ pub(crate) fn ifd0_entries(b: &[u8]) -> Option<(Order, usize, usize, usize, bool
         if order.u16(b, 4)? != 8 || order.u16(b, 6)? != 0 {
             return None;
         }
-        (usize::try_from(order.u64(b, 8)?).ok()?, 8usize, BIG_ENTRY, 8usize, BIG_HEADER)
+        (
+            usize::try_from(order.u64(b, 8)?).ok()?,
+            8usize,
+            BIG_ENTRY,
+            8usize,
+            BIG_HEADER,
+        )
     } else {
-        (usize::try_from(order.u32(b, 4)?).ok()?, 2usize, ENTRY, 4usize, HEADER)
+        (
+            usize::try_from(order.u32(b, 4)?).ok()?,
+            2usize,
+            ENTRY,
+            4usize,
+            HEADER,
+        )
     };
     if ifd < header {
         return None;
     }
-    let count = if big_tiff { usize::try_from(order.u64(b, ifd)?).ok()? } else { usize::from(order.u16(b, ifd)?) };
+    let count = if big_tiff {
+        usize::try_from(order.u64(b, ifd)?).ok()?
+    } else {
+        usize::from(order.u16(b, ifd)?)
+    };
     let first = ifd.checked_add(count_bytes)?;
     let next_ifd = first.checked_add(count.checked_mul(entry_bytes)?)?;
     if next_ifd.checked_add(next_ifd_bytes)? > b.len() {
@@ -135,13 +151,20 @@ impl Value {
 /// The value of the entry at `e` if it is a well-formed Orientation entry:
 /// exactly one SHORT or LONG.
 fn orientation_value(order: Order, b: &[u8], e: usize, big_tiff: bool) -> Option<Value> {
-    let count = if big_tiff { order.u64(b, e.checked_add(4)?)? } else { u64::from(order.u32(b, e.checked_add(4)?)?) };
+    let count = if big_tiff {
+        order.u64(b, e.checked_add(4)?)?
+    } else {
+        u64::from(order.u32(b, e.checked_add(4)?)?)
+    };
     if order.u16(b, e)? != TAG_ORIENTATION || count != 1 {
         return None;
     }
     let ty = order.u16(b, e.checked_add(2)?)?;
     let value_offset = if big_tiff { 12 } else { 8 };
-    matches!(ty, TYPE_SHORT | TYPE_LONG).then_some(Value { at: e.checked_add(value_offset)?, ty })
+    matches!(ty, TYPE_SHORT | TYPE_LONG).then_some(Value {
+        at: e.checked_add(value_offset)?,
+        ty,
+    })
 }
 
 /// Locates the Orientation value in IFD0.
@@ -151,7 +174,9 @@ fn orientation_value(order: Order, b: &[u8], e: usize, big_tiff: bool) -> Option
 /// even when a later duplicate is well formed.
 fn find_entry(b: &[u8]) -> Option<(Order, Value)> {
     let (order, first, count, entry_bytes, big_tiff) = ifd0_entries(b)?;
-    let e = (0..count).filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?)).find(|&e| order.u16(b, e) == Some(TAG_ORIENTATION))?;
+    let e = (0..count)
+        .filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?))
+        .find(|&e| order.u16(b, e) == Some(TAG_ORIENTATION))?;
     Some((order, orientation_value(order, b, e, big_tiff)?))
 }
 
@@ -160,7 +185,11 @@ fn find_entry(b: &[u8]) -> Option<(Order, Value)> {
 /// malformed or out-of-range values give 1.
 pub fn exif_orientation(exif: &[u8]) -> u16 {
     let b = tiff_body(exif);
-    find_entry(b).and_then(|(order, v)| v.read(order, b)).and_then(|v| u16::try_from(v).ok()).filter(|v| (1..=8).contains(v)).unwrap_or(1)
+    find_entry(b)
+        .and_then(|(order, v)| v.read(order, b))
+        .and_then(|v| u16::try_from(v).ok())
+        .filter(|v| (1..=8).contains(v))
+        .unwrap_or(1)
 }
 
 /// `exif` with its Orientation rewritten to 1, borrowed when there is nothing
@@ -177,15 +206,19 @@ pub fn upright_exif(exif: &[u8]) -> Cow<'_, [u8]> {
     let Some((order, first, count, entry_bytes, big_tiff)) = ifd0_entries(body) else {
         return Cow::Borrowed(exif);
     };
-    let values: Vec<Value> =
-        (0..count).filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?)).filter_map(|e| orientation_value(order, body, e, big_tiff)).collect();
+    let values: Vec<Value> = (0..count)
+        .filter_map(|i| first.checked_add(i.checked_mul(entry_bytes)?))
+        .filter_map(|e| orientation_value(order, body, e, big_tiff))
+        .collect();
     if values.iter().all(|v| v.read(order, body) == Some(1)) {
         return Cow::Borrowed(exif);
     }
     let mut out = exif.to_vec();
     for v in values {
         let one = v.one(order);
-        let slot = prefix.checked_add(v.at).and_then(|at| out.get_mut(at..at.checked_add(one.len())?));
+        let slot = prefix
+            .checked_add(v.at)
+            .and_then(|at| out.get_mut(at..at.checked_add(one.len())?));
         if let Some(slot) = slot {
             slot.copy_from_slice(&one);
         }
@@ -208,13 +241,18 @@ pub fn upright_xmp(xmp: &str) -> Cow<'_, str> {
         out.push_str(head);
         rest = tail;
         // `tiff:Orientation="6"`, `tiff:Orientation='6'` or `<tiff:Orientation>6<`.
-        let open = rest.char_indices().take_while(|&(_, c)| c.is_ascii_whitespace() || matches!(c, '=' | '"' | '\'' | '>')).last();
+        let open = rest
+            .char_indices()
+            .take_while(|&(_, c)| c.is_ascii_whitespace() || matches!(c, '=' | '"' | '\'' | '>'))
+            .last();
         let Some((at, c)) = open else { continue };
         if !matches!(c, '"' | '\'' | '>') {
             continue;
         }
         let start = at + 1;
-        let digits = rest.get(start..).map_or(0, |s| s.bytes().take_while(u8::is_ascii_digit).count());
+        let digits = rest
+            .get(start..)
+            .map_or(0, |s| s.bytes().take_while(u8::is_ascii_digit).count());
         if digits == 0 || rest.get(start..start + digits) == Some("1") {
             continue;
         }
@@ -224,7 +262,11 @@ pub fn upright_xmp(xmp: &str) -> Cow<'_, str> {
         changed = true;
     }
     out.push_str(rest);
-    if changed { Cow::Owned(out) } else { Cow::Borrowed(xmp) }
+    if changed {
+        Cow::Owned(out)
+    } else {
+        Cow::Borrowed(xmp)
+    }
 }
 
 /// Source pixel index for output pixel `(0, y2)` and the step per output column, for
@@ -249,14 +291,23 @@ const BLOCK: usize = 64;
 const BAND: usize = 64;
 
 /// Writes the oriented pixels of one band of output rows, `N` bytes per pixel.
-fn band<const N: usize>(src: &[[u8; N]], dst: &mut [[u8; N]], o: u16, (w, h): (usize, usize), ow: usize, y0: usize) {
+fn band<const N: usize>(
+    src: &[[u8; N]],
+    dst: &mut [[u8; N]],
+    o: u16,
+    (w, h): (usize, usize),
+    ow: usize,
+    y0: usize,
+) {
     let (wi, hi) = (w as isize, h as isize);
     let rows = dst.len() / ow.max(1);
     for x0 in (0..ow).step_by(BLOCK) {
         let x1 = (x0 + BLOCK).min(ow);
         for r in 0..rows {
             let (base, step) = walk(o, wi, hi, (y0 + r) as isize);
-            let Some(out) = dst.get_mut(r * ow + x0..r * ow + x1) else { return };
+            let Some(out) = dst.get_mut(r * ow + x0..r * ow + x1) else {
+                return;
+            };
             let mut i = base + x0 as isize * step;
             for px in out {
                 if let Some(s) = usize::try_from(i).ok().and_then(|i| src.get(i)) {
@@ -269,7 +320,12 @@ fn band<const N: usize>(src: &[[u8; N]], dst: &mut [[u8; N]], o: u16, (w, h): (u
 }
 
 /// Orients `src` (`N` bytes per pixel) into a new buffer, a band of rows per task.
-fn orient_n<const N: usize>(src: &[u8], o: u16, (w, h): (usize, usize), ow: usize) -> Result<Vec<u8>, CodecError> {
+fn orient_n<const N: usize>(
+    src: &[u8],
+    o: u16,
+    (w, h): (usize, usize),
+    ow: usize,
+) -> Result<Vec<u8>, CodecError> {
     let mut out = alloc_zeroed(src.len())?;
     let (s, _) = src.as_chunks::<N>();
     let (d, _) = out.as_chunks_mut::<N>();
@@ -277,7 +333,9 @@ fn orient_n<const N: usize>(src: &[u8], o: u16, (w, h): (usize, usize), ow: usiz
     #[cfg(not(target_arch = "wasm32"))]
     {
         use rayon::prelude::*;
-        d.par_chunks_mut(per).enumerate().for_each(|(b, chunk)| band(s, chunk, o, (w, h), ow, b * BAND));
+        d.par_chunks_mut(per)
+            .enumerate()
+            .for_each(|(b, chunk)| band(s, chunk, o, (w, h), ow, b * BAND));
     }
     #[cfg(target_arch = "wasm32")]
     for (b, chunk) in d.chunks_mut(per).enumerate() {
@@ -289,13 +347,21 @@ fn orient_n<const N: usize>(src: &[u8], o: u16, (w, h): (usize, usize), ow: usiz
 /// A zeroed buffer of `n` bytes, or an error (not an abort) when memory runs out.
 fn alloc_zeroed(n: usize) -> Result<Vec<u8>, CodecError> {
     let mut out = Vec::new();
-    out.try_reserve_exact(n).map_err(|_| CodecError::LimitExceeded(format!("cannot allocate {n} bytes to orient the image")))?;
+    out.try_reserve_exact(n).map_err(|_| {
+        CodecError::LimitExceeded(format!("cannot allocate {n} bytes to orient the image"))
+    })?;
     out.resize(n, 0);
     Ok(out)
 }
 
 /// Pixel-format-agnostic orientation: any byte size per pixel.
-fn orient_bytes(src: &[u8], bpp: usize, o: u16, (w, h): (usize, usize), ow: usize) -> Result<Vec<u8>, CodecError> {
+fn orient_bytes(
+    src: &[u8],
+    bpp: usize,
+    o: u16,
+    (w, h): (usize, usize),
+    ow: usize,
+) -> Result<Vec<u8>, CodecError> {
     match bpp {
         1 => orient_n::<1>(src, o, (w, h), ow),
         2 => orient_n::<2>(src, o, (w, h), ow),
@@ -327,7 +393,9 @@ impl Image {
         let bpp = layout.channels() * sample.bytes();
         // Every layout/sample pair is 1–20 bytes per pixel and has a fixed-size path.
         if !matches!(bpp, 1..=6 | 8 | 10 | 12 | 16 | 20) || w == 0 || h == 0 {
-            return Err(CodecError::InvalidImage(format!("cannot orient {layout:?} {sample:?} {w}x{h}")));
+            return Err(CodecError::InvalidImage(format!(
+                "cannot orient {layout:?} {sample:?} {w}x{h}"
+            )));
         }
         let data = orient_bytes(self.data(), bpp, o, (w, h), ow)?;
         let mut meta = self.meta.clone();
@@ -344,7 +412,9 @@ impl Image {
         if swap {
             meta.dpi = meta.dpi.map(|(x, y)| (y, x));
         }
-        let mut out = Image::from_raw(ow as u32, oh as u32, layout, sample, data)?.with_icc(self.icc).with_meta(meta);
+        let mut out = Image::from_raw(ow as u32, oh as u32, layout, sample, data)?
+            .with_icc(self.icc)
+            .with_meta(meta);
         out.warnings = self.warnings;
         Ok(out)
     }
@@ -356,7 +426,10 @@ mod tests {
 
     #[test]
     fn an_impossible_allocation_is_an_error_not_an_abort() {
-        assert!(matches!(alloc_zeroed(usize::MAX), Err(CodecError::LimitExceeded(_))));
+        assert!(matches!(
+            alloc_zeroed(usize::MAX),
+            Err(CodecError::LimitExceeded(_))
+        ));
         assert!(matches!(orient_n::<1>(&[], 6, (0, 0), 0), Ok(v) if v.is_empty()));
         assert_eq!(alloc_zeroed(3).unwrap(), vec![0, 0, 0]);
     }

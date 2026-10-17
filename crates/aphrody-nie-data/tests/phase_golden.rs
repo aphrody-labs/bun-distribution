@@ -321,7 +321,10 @@ fn fixture_c91_purpose_text_0() {
 
     let text: &PurposeTextItem = &ps.purpose_texts[0];
     // phase_set_c91 PURPOSE_TEXT_ITEM_0 : var[0]=1381738245 → 0x525BA705
-    assert_eq!(text.text_hash, TEXT_HASH_C91_0, "text_hash = HashId(0x525BA705)");
+    assert_eq!(
+        text.text_hash, TEXT_HASH_C91_0,
+        "text_hash = HashId(0x525BA705)"
+    );
     assert_eq!(text.lua_data, "0", "lua_data = \"0\"");
 }
 
@@ -356,9 +359,21 @@ fn fixture_layout_c01_base_0_point() {
     let layout = parse_phase_set_layout(&fixture_layout_c01());
     // LAYOUT_BASE_POINT_0 = ["22,31", "1,25", "-21,01", "0"]
     let pt = layout.bases[0].point;
-    assert!((pt[0] - 22.31_f64).abs() < 1e-9, "point[0] ≈ 22.31 (réel: {})", pt[0]);
-    assert!((pt[1] - 1.25_f64).abs() < 1e-9, "point[1] ≈ 1.25 (réel: {})", pt[1]);
-    assert!((pt[2] - (-21.01_f64)).abs() < 1e-9, "point[2] ≈ -21.01 (réel: {})", pt[2]);
+    assert!(
+        (pt[0] - 22.31_f64).abs() < 1e-9,
+        "point[0] ≈ 22.31 (réel: {})",
+        pt[0]
+    );
+    assert!(
+        (pt[1] - 1.25_f64).abs() < 1e-9,
+        "point[1] ≈ 1.25 (réel: {})",
+        pt[1]
+    );
+    assert!(
+        (pt[2] - (-21.01_f64)).abs() < 1e-9,
+        "point[2] ≈ -21.01 (réel: {})",
+        pt[2]
+    );
     assert_eq!(pt[3], 0.0_f64, "point[3] = 0.0");
 }
 
@@ -389,7 +404,10 @@ fn fixture_title_config_cfg_0() {
     // PHASE_TITLE_CFG_0 : chapter_no=1, title_hash=185538439 → 0x0B0F1787
     // PHASE_TITLE_CFG_REF_TEX_INFO_0 : tex_index=0
     assert_eq!(tc.cfgs[0].chapter_no, 1, "chapter_no = 1");
-    assert_eq!(tc.cfgs[0].title_hash, TITLE_HASH_C01, "title_hash = HashId(0x0B0F1787)");
+    assert_eq!(
+        tc.cfgs[0].title_hash, TITLE_HASH_C01,
+        "title_hash = HashId(0x0B0F1787)"
+    );
     assert_eq!(tc.cfgs[0].tex_index, 0, "tex_index = 0");
 }
 
@@ -454,7 +472,10 @@ fn real_file_c91_purpose_text_0() {
     assert_eq!(ps.purpose_texts.len(), 1, "c91 : 1 PURPOSE_TEXT_ITEM");
 
     // PURPOSE_TEXT_ITEM_0.var[0] = "1381738245" → HashId(0x525BA705)
-    assert_eq!(ps.purpose_texts[0].text_hash, TEXT_HASH_C91_0, "text_hash[0] = HashId(0x525BA705)");
+    assert_eq!(
+        ps.purpose_texts[0].text_hash, TEXT_HASH_C91_0,
+        "text_hash[0] = HashId(0x525BA705)"
+    );
     assert_eq!(ps.purpose_texts[0].lua_data, "0", "lua_data[0] = \"0\"");
 }
 
@@ -581,9 +602,21 @@ fn real_file_layout_c01_base_0_point() {
 
     // LAYOUT_BASE_POINT_0 = ["22,31", "1,25", "-21,01", "0"]
     let pt = layout.bases[0].point;
-    assert!((pt[0] - 22.31_f64).abs() < 1e-9, "point[0] ≈ 22.31 (réel: {})", pt[0]);
-    assert!((pt[1] - 1.25_f64).abs() < 1e-9, "point[1] ≈ 1.25 (réel: {})", pt[1]);
-    assert!((pt[2] - (-21.01_f64)).abs() < 1e-9, "point[2] ≈ -21.01 (réel: {})", pt[2]);
+    assert!(
+        (pt[0] - 22.31_f64).abs() < 1e-9,
+        "point[0] ≈ 22.31 (réel: {})",
+        pt[0]
+    );
+    assert!(
+        (pt[1] - 1.25_f64).abs() < 1e-9,
+        "point[1] ≈ 1.25 (réel: {})",
+        pt[1]
+    );
+    assert!(
+        (pt[2] - (-21.01_f64)).abs() < 1e-9,
+        "point[2] ≈ -21.01 (réel: {})",
+        pt[2]
+    );
     assert_eq!(pt[3], 0.0_f64, "point[3] = 0.0");
 }
 
@@ -629,7 +662,10 @@ fn real_file_title_config_tex_info_0() {
         tc.tex_infos[0].tex_path.contains("chapter01.g4tx"),
         "tex_path contient chapter01.g4tx"
     );
-    assert!(tc.tex_infos[0].tex_path.contains("<LG>"), "tex_path contient <LG>");
+    assert!(
+        tc.tex_infos[0].tex_path.contains("<LG>"),
+        "tex_path contient <LG>"
+    );
 }
 
 #[test]
@@ -642,7 +678,10 @@ fn real_file_title_config_cfg_0() {
     // PHASE_TITLE_CFG_0 : chapter_no=1, title_hash=185538439 → 0x0B0F1787
     // PHASE_TITLE_CFG_REF_TEX_INFO_0 : tex_index=0
     assert_eq!(tc.cfgs[0].chapter_no, 1, "chapter_no = 1");
-    assert_eq!(tc.cfgs[0].title_hash, TITLE_HASH_C01, "title_hash = HashId(0x0B0F1787)");
+    assert_eq!(
+        tc.cfgs[0].title_hash, TITLE_HASH_C01,
+        "title_hash = HashId(0x0B0F1787)"
+    );
     assert_eq!(tc.cfgs[0].tex_index, 0, "tex_index = 0");
 }
 
@@ -656,7 +695,10 @@ fn real_file_title_config_chapters_1_a_9() {
     // Les 9 configs couvrent les chapitres 1 à 9 (dans l'ordre)
     for (i, cfg) in tc.cfgs.iter().enumerate() {
         let expected = (i + 1) as i64;
-        assert_eq!(cfg.chapter_no, expected, "cfgs[{i}].chapter_no = {expected}");
+        assert_eq!(
+            cfg.chapter_no, expected,
+            "cfgs[{i}].chapter_no = {expected}"
+        );
     }
 }
 
@@ -670,5 +712,9 @@ fn real_file_title_config_find_chapter_9() {
     // PHASE_TITLE_CFG_8 : var[0]="9", var[1]="97820597" → HashId(0x05D49FB5)
     let cfg9 = tc.find_chapter(9).expect("chapitre 9 trouvé");
     assert_eq!(cfg9.chapter_no, 9);
-    assert_eq!(cfg9.title_hash, HashId::from_i64(97820597), "title_hash chapitre 9 = 97820597");
+    assert_eq!(
+        cfg9.title_hash,
+        HashId::from_i64(97820597),
+        "title_hash chapitre 9 = 97820597"
+    );
 }

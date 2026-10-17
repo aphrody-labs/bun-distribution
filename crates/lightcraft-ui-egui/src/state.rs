@@ -41,7 +41,15 @@ pub enum RightPanel {
 
 impl RightPanel {
     pub fn is_edit_tool(self) -> bool {
-        matches!(self, RightPanel::Edit | RightPanel::Profiles | RightPanel::Crop | RightPanel::Remove | RightPanel::Masking | RightPanel::RedEye)
+        matches!(
+            self,
+            RightPanel::Edit
+                | RightPanel::Profiles
+                | RightPanel::Crop
+                | RightPanel::Remove
+                | RightPanel::Masking
+                | RightPanel::RedEye
+        )
     }
 }
 
@@ -289,7 +297,10 @@ impl Default for AppSettings {
             external_editor: String::new(),
             external_file: EditFile::default(),
             photocraft_path: String::new(),
-            photocraft_file: EditFile { format: EditFormat::Psd, ..EditFile::default() },
+            photocraft_file: EditFile {
+                format: EditFormat::Psd,
+                ..EditFile::default()
+            },
             memory_mb: 0,
             film_names: true,
             film_badges: true,
@@ -341,7 +352,11 @@ pub struct EditFile {
 
 impl Default for EditFile {
     fn default() -> Self {
-        EditFile { format: EditFormat::Tiff, color_space: EditSpace::AdobeRgb, bit_depth: 16 }
+        EditFile {
+            format: EditFormat::Tiff,
+            color_space: EditSpace::AdobeRgb,
+            bit_depth: 16,
+        }
     }
 }
 
@@ -390,7 +405,11 @@ impl AppSettings {
             AppearanceMode::Dark => false,
             AppearanceMode::Auto => system == Some(egui::Theme::Light),
         };
-        if light { self.light_theme.kind() } else { self.dark_theme.kind() }
+        if light {
+            self.light_theme.kind()
+        } else {
+            self.dark_theme.kind()
+        }
     }
 
     /// Pick `kind` and fix the mode to its family (the View ▸ Theme items).
@@ -402,7 +421,11 @@ impl AppSettings {
             ThemeKind::Silver => self.light_theme = LightTheme::Silver,
             ThemeKind::Paper => self.light_theme = LightTheme::Paper,
         }
-        self.appearance_mode = if kind.is_dark() { AppearanceMode::Dark } else { AppearanceMode::Light };
+        self.appearance_mode = if kind.is_dark() {
+            AppearanceMode::Dark
+        } else {
+            AppearanceMode::Light
+        };
     }
 
     /// Long edge (pixels) to render the loupe at when it is drawn `wanted_px` wide on screen:
@@ -410,10 +433,23 @@ impl AppSettings {
     /// every pixel), never above the photo's own `native_long_edge`, the user's limit, the ceiling
     /// or `texture_side`, the largest texture the GPU allows (egui_glow, i.e. the browser build,
     /// panics on a bigger one, and many WebGL devices allow only 2048 or 4096).
-    pub fn loupe_edge(&self, wanted_px: f32, native_long_edge: usize, texture_side: usize) -> usize {
-        let limit = if self.preview_limit == 0 { LOUPE_EDGE_CEILING } else { self.preview_limit.clamp(512, LOUPE_EDGE_CEILING) } as usize;
+    pub fn loupe_edge(
+        &self,
+        wanted_px: f32,
+        native_long_edge: usize,
+        texture_side: usize,
+    ) -> usize {
+        let limit = if self.preview_limit == 0 {
+            LOUPE_EDGE_CEILING
+        } else {
+            self.preview_limit.clamp(512, LOUPE_EDGE_CEILING)
+        } as usize;
         let ceiling = limit.min(texture_side.max(MIN_TEXTURE_SIDE));
-        let wanted = if wanted_px.is_nan() { 8.0 } else { wanted_px.clamp(8.0, ceiling as f32) } as usize;
+        let wanted = if wanted_px.is_nan() {
+            8.0
+        } else {
+            wanted_px.clamp(8.0, ceiling as f32)
+        } as usize;
         let stepped = wanted.div_ceil(LOUPE_EDGE_STEP) * LOUPE_EDGE_STEP;
         stepped.min(native_long_edge.max(8)).min(ceiling)
     }
@@ -421,14 +457,22 @@ impl AppSettings {
     /// Long edge for warming a neighbouring photo: its loupe size but never above the preview
     /// source level. A full-size decode would replace the open photo's single full-resolution
     /// source in the cache, and nothing is gained by it.
-    pub fn prefetch_edge(&self, wanted_px: f32, native_long_edge: usize, texture_side: usize) -> usize {
-        self.loupe_edge(wanted_px, native_long_edge, texture_side).min(lightcraft_engine::SourceLevel::Preview.max_edge())
+    pub fn prefetch_edge(
+        &self,
+        wanted_px: f32,
+        native_long_edge: usize,
+        texture_side: usize,
+    ) -> usize {
+        self.loupe_edge(wanted_px, native_long_edge, texture_side)
+            .min(lightcraft_engine::SourceLevel::Preview.max_edge())
     }
 
     /// Long edge for the hover (preset / profile) and Before renders, which are stand-ins drawn
     /// over the loupe: capped at the preview source level like the old default.
     pub fn stand_in_edge(&self, loupe_edge: usize, texture_side: usize) -> usize {
-        loupe_edge.min(lightcraft_engine::SourceLevel::Preview.max_edge()).min(texture_side.max(MIN_TEXTURE_SIDE))
+        loupe_edge
+            .min(lightcraft_engine::SourceLevel::Preview.max_edge())
+            .min(texture_side.max(MIN_TEXTURE_SIDE))
     }
 
     /// Long edge of the zoomed frame a window render is cut from, for a photo drawn `drawn_long`
@@ -436,13 +480,23 @@ impl AppSettings {
     /// GPU magnifies the window) or the ceiling. The preview size limit is not applied: it is about
     /// the whole-frame render (see [`crate::region::plan`]).
     pub fn window_frame_edge(&self, drawn_long: f32, native_long_edge: usize) -> usize {
-        let wanted = if drawn_long.is_nan() { 8.0 } else { drawn_long.clamp(8.0, WINDOW_FRAME_CEILING as f32) } as usize;
-        wanted.min(native_long_edge.max(8)).min(WINDOW_FRAME_CEILING)
+        let wanted = if drawn_long.is_nan() {
+            8.0
+        } else {
+            drawn_long.clamp(8.0, WINDOW_FRAME_CEILING as f32)
+        } as usize;
+        wanted
+            .min(native_long_edge.max(8))
+            .min(WINDOW_FRAME_CEILING)
     }
 
     /// The edge Build Standard-Sized Previews uses.
     pub fn standard_preview_edge(&self) -> u32 {
-        if self.preview_limit == 0 { STANDARD_PREVIEW_EDGE } else { self.preview_limit }
+        if self.preview_limit == 0 {
+            STANDARD_PREVIEW_EDGE
+        } else {
+            self.preview_limit
+        }
     }
 }
 
@@ -460,14 +514,26 @@ pub struct PanelWidth {
 impl PanelWidth {
     /// `w` within the limits (the default when it isn't a number).
     pub fn clamp(&self, w: f32) -> f32 {
-        if w.is_finite() { w.clamp(self.min, self.max) } else { self.default }
+        if w.is_finite() {
+            w.clamp(self.min, self.max)
+        } else {
+            self.default
+        }
     }
 }
 
 /// The left sidebar (sources, albums, folders).
-pub const LEFT_WIDTH: PanelWidth = PanelWidth { min: 200.0, default: 268.0, max: 480.0 };
+pub const LEFT_WIDTH: PanelWidth = PanelWidth {
+    min: 200.0,
+    default: 268.0,
+    max: 480.0,
+};
 /// The right panel (Edit, Masking, Info, …).
-pub const RIGHT_WIDTH: PanelWidth = PanelWidth { min: 250.0, default: 270.0, max: 520.0 };
+pub const RIGHT_WIDTH: PanelWidth = PanelWidth {
+    min: 250.0,
+    default: 270.0,
+    max: 520.0,
+};
 /// The photo area the side panels always leave free (as far as their minimum widths allow).
 pub const MIN_PHOTO_WIDTH: f32 = 360.0;
 
@@ -745,13 +811,20 @@ pub struct UiState {
 /// Settings group ids (`SettingsGroup` serde names) a new preset includes by default: everything
 /// but crop, masks, spots and red eye.
 pub fn default_preset_groups() -> Vec<String> {
-    lightcraft_develop::SettingsGroup::default_copy().iter().filter_map(|g| serde_json::to_value(g).ok()?.as_str().map(str::to_string)).collect()
+    lightcraft_develop::SettingsGroup::default_copy()
+        .iter()
+        .filter_map(|g| serde_json::to_value(g).ok()?.as_str().map(str::to_string))
+        .collect()
 }
 
 impl Dialog {
     /// A fresh Create Preset dialog.
     pub fn create_preset() -> Dialog {
-        Dialog::CreatePreset { name: String::new(), group: "User Presets".into(), groups: default_preset_groups() }
+        Dialog::CreatePreset {
+            name: String::new(),
+            group: "User Presets".into(),
+            groups: default_preset_groups(),
+        }
     }
 }
 
@@ -1053,7 +1126,10 @@ impl Default for UiState {
             show_clipping: false,
             histogram: true,
             soft_proof: false,
-            proof: lightcraft_engine::pipeline::Proof { dest_warning: false, ..Default::default() },
+            proof: lightcraft_engine::pipeline::Proof {
+                dest_warning: false,
+                ..Default::default()
+            },
             proof_profile: None,
             proof_intent: lightcraft_engine::proof::ProofIntent::Perceptual,
             proof_paper_ink: false,
@@ -1156,7 +1232,12 @@ impl UiState {
     }
 
     /// Show or hide colour grading wheel `i` (0 shadows, 1 midtones, 2 highlights) on `photo`.
-    pub fn set_grading_hidden(&mut self, photo: lightcraft_catalog::PhotoId, i: usize, hidden: bool) {
+    pub fn set_grading_hidden(
+        &mut self,
+        photo: lightcraft_catalog::PhotoId,
+        i: usize,
+        hidden: bool,
+    ) {
         let mut h = self.grading_hidden_for(photo);
         if let Some(slot) = h.get_mut(i) {
             *slot = hidden;
@@ -1197,7 +1278,8 @@ impl UiState {
         self.left_width = LEFT_WIDTH.clamp(self.left_width);
         self.right_width = RIGHT_WIDTH.clamp(self.right_width);
         self.brush_size = self.brush_size.clamp(0.002, 0.5);
-        self.sidebar.adopt_collapsed(&std::mem::take(&mut self.collapsed_sidebar));
+        self.sidebar
+            .adopt_collapsed(&std::mem::take(&mut self.collapsed_sidebar));
         self.dialog = None;
         self.fullscreen = false;
         if !crate::state::PREVIEW_LIMITS.contains(&self.settings.preview_limit) {
@@ -1212,12 +1294,16 @@ impl UiState {
     }
 }
 
-fn deserialize_favorite_themes<'de, D: serde::Deserializer<'de>>(d: D) -> Result<Vec<String>, D::Error> {
+fn deserialize_favorite_themes<'de, D: serde::Deserializer<'de>>(
+    d: D,
+) -> Result<Vec<String>, D::Error> {
     let values = Vec::<String>::deserialize(d)?;
     let mut seen = std::collections::BTreeSet::new();
     for id in &values {
         if !crate::theme::ThemeKind::ALL.iter().any(|k| k.id() == id) || !seen.insert(id) {
-            return Err(serde::de::Error::custom("unknown or duplicate favorite theme"));
+            return Err(serde::de::Error::custom(
+                "unknown or duplicate favorite theme",
+            ));
         }
     }
     Ok(values)

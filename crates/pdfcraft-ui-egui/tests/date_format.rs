@@ -15,30 +15,39 @@ trailer << /Root 1 0 R >>
 
 /// Some widget shows `text`, as its label or its value (a combo box shows its choice as a value).
 fn shows(h: &Harness<'static, PdfCraftApp>, text: &str) -> bool {
-    h.query_all_by(|n| n.label().is_some_and(|l| l.contains(text)) || n.value().is_some_and(|v| v.contains(text))).next().is_some()
+    h.query_all_by(|n| {
+        n.label().is_some_and(|l| l.contains(text)) || n.value().is_some_and(|v| v.contains(text))
+    })
+    .next()
+    .is_some()
 }
 
 fn retype(h: &mut Harness<'static, PdfCraftApp>, text: &str) {
     // The preferences scroll; bring the field into view before clicking it.
-    h.get_by_role_and_label(Role::TextInput, "Pattern").scroll_to_me();
+    h.get_by_role_and_label(Role::TextInput, "Pattern")
+        .scroll_to_me();
     h.run_steps(4);
     h.get_by_role_and_label(Role::TextInput, "Pattern").click();
     h.run_steps(1);
     h.key_press_modifiers(Modifiers::COMMAND, Key::A);
-    h.get_by_role_and_label(Role::TextInput, "Pattern").type_text(text);
+    h.get_by_role_and_label(Role::TextInput, "Pattern")
+        .type_text(text);
     h.run_steps(2);
 }
 
 #[test]
 fn fill_and_sign_dates_follow_the_date_format_preference_and_it_is_remembered() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, PDF.to_vec()).expect("opens");
-        app.set_option("left", "closed").unwrap();
-        app.set_option("dialog", "preferences").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("form.pdf", None, PDF.to_vec())
+                .expect("opens");
+            app.set_option("left", "closed").unwrap();
+            app.set_option("dialog", "preferences").unwrap();
+            app
+        });
     h.run_steps(4);
     assert_eq!(h.state().session.date_format(), "m/d/yyyy");
     // A valid pattern applies as it's typed, with a preview of today.
@@ -55,7 +64,8 @@ fn fill_and_sign_dates_follow_the_date_format_preference_and_it_is_remembered() 
     h.run_steps(1);
     h.key_press_modifiers(Modifiers::COMMAND, Key::A);
     for c in "yyyy mm dd".chars() {
-        h.get_by_role_and_label(Role::TextInput, "Pattern").type_text(&c.to_string());
+        h.get_by_role_and_label(Role::TextInput, "Pattern")
+            .type_text(&c.to_string());
         h.run_steps(1);
     }
     assert_eq!(h.state().date_format_draft.as_deref(), Some("yyyy mm dd"));
@@ -82,9 +92,20 @@ fn fill_and_sign_dates_follow_the_date_format_preference_and_it_is_remembered() 
     h.run_steps(4);
     let expected = h.state().date_text(None).unwrap();
     let s = h.state();
-    let dates: Vec<_> = s.session.get(s.views[0].id).unwrap().info.annotations.iter().filter_map(|a| a.contents.clone()).collect();
+    let dates: Vec<_> = s
+        .session
+        .get(s.views[0].id)
+        .unwrap()
+        .info
+        .annotations
+        .iter()
+        .filter_map(|a| a.contents.clone())
+        .collect();
     assert_eq!(dates, std::slice::from_ref(&expected));
-    assert!(expected.ends_with('.') && expected.matches('.').count() == 3, "{expected}");
+    assert!(
+        expected.ends_with('.') && expected.matches('.').count() == 3,
+        "{expected}"
+    );
 
     // It survives a restart; an unusable saved pattern keeps the default; the control channel checks it too.
     let mut restored = PdfCraftApp::new();
@@ -101,22 +122,31 @@ fn fill_and_sign_dates_follow_the_date_format_preference_and_it_is_remembered() 
 
 #[test]
 fn month_names_follow_the_date_language_or_else_the_interface_language() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.set_option("date-format", "d mmmm yyyy").unwrap();
-        app.set_option("language", "cs").unwrap();
-        app.set_option("dialog", "preferences").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.set_option("date-format", "d mmmm yyyy").unwrap();
+            app.set_option("language", "cs").unwrap();
+            app.set_option("dialog", "preferences").unwrap();
+            app
+        });
     h.run_steps(3);
     let text = |h: &Harness<'static, PdfCraftApp>| h.state().date_text(None).unwrap();
-    assert_eq!(text(&h), h.state().session.today_text(None, Some("cs")).unwrap(), "follows the interface (Czech)");
+    assert_eq!(
+        text(&h),
+        h.state().session.today_text(None, Some("cs")).unwrap(),
+        "follows the interface (Czech)"
+    );
     // The picker offers following the interface first, then the interface languages.
     assert!(shows(&h, "Stejný jako rozhraní (Čeština)"));
     h.state_mut().set_option("date-language", "es").unwrap();
     h.run_steps(2);
-    assert_eq!(text(&h), h.state().session.today_text(None, Some("es")).unwrap());
+    assert_eq!(
+        text(&h),
+        h.state().session.today_text(None, Some("es")).unwrap()
+    );
     assert!(shows(&h, "Español"));
 
     // Remembered; an unknown saved language is ignored; auto follows the interface again.
@@ -133,17 +163,20 @@ fn month_names_follow_the_date_language_or_else_the_interface_language() {
 
 #[test]
 fn a_date_the_pdf_cannot_hold_is_refused_with_a_warning_first() {
-    let mut h = Harness::builder().with_size(egui::vec2(1400.0, 900.0)).build_eframe(|_cc| {
-        let mut app = PdfCraftApp::new();
-        app.set_option("language", "en").unwrap();
-        app.open_bytes("form.pdf", None, PDF.to_vec()).expect("opens");
-        app.set_option("left", "closed").unwrap();
-        // Japanese weekday names: Fill & Sign text can't hold them yet.
-        app.set_option("date-format", "dddd").unwrap();
-        app.set_option("date-language", "ja").unwrap();
-        app.set_option("dialog", "preferences").unwrap();
-        app
-    });
+    let mut h = Harness::builder()
+        .with_size(egui::vec2(1400.0, 900.0))
+        .build_eframe(|_cc| {
+            let mut app = PdfCraftApp::new();
+            app.set_option("language", "en").unwrap();
+            app.open_bytes("form.pdf", None, PDF.to_vec())
+                .expect("opens");
+            app.set_option("left", "closed").unwrap();
+            // Japanese weekday names: Fill & Sign text can't hold them yet.
+            app.set_option("date-format", "dddd").unwrap();
+            app.set_option("date-language", "ja").unwrap();
+            app.set_option("dialog", "preferences").unwrap();
+            app
+        });
     h.run_steps(3);
     h.get_by_label_contains("can't be written into the PDF yet");
 
@@ -160,7 +193,18 @@ fn a_date_the_pdf_cannot_hold_is_refused_with_a_warning_first() {
     h.drop_at(p);
     h.run_steps(4);
     let s = h.state();
-    assert!(s.session.get(s.views[0].id).unwrap().info.annotations.is_empty(), "nothing placed");
+    assert!(
+        s.session
+            .get(s.views[0].id)
+            .unwrap()
+            .info
+            .annotations
+            .is_empty(),
+        "nothing placed"
+    );
     let toast = s.toast.as_ref().map(|t| t.0.clone()).unwrap_or_default();
-    assert!(toast.contains("can't be written into the PDF yet"), "{toast}");
+    assert!(
+        toast.contains("can't be written into the PDF yet"),
+        "{toast}"
+    );
 }

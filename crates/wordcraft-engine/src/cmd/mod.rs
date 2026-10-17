@@ -105,7 +105,11 @@ pub fn registry() -> Registry {
 /// A shortcut that differs on macOS, where Word for Mac moves it (⌘Q quits, ⌘Space is
 /// Spotlight, ⌘⌥H hides other apps…): `mac` there, `other` everywhere else.
 pub const fn mac_or(mac: &'static str, other: &'static str) -> &'static str {
-    if cfg!(target_os = "macos") { mac } else { other }
+    if cfg!(target_os = "macos") {
+        mac
+    } else {
+        other
+    }
 }
 
 /// A shortcut with no macOS equivalent (Option+letter types the character there).
@@ -152,7 +156,11 @@ pub fn delete_selection(s: &mut Session) -> Result<Pos, CmdError> {
         return Ok(a);
     }
     controls::check_delete(s, &a, &b)?;
-    let at = if s.doc.settings.track_changes { track_delete(s, &a, &b)? } else { s.doc.delete_range(&a, &b)? };
+    let at = if s.doc.settings.track_changes {
+        track_delete(s, &a, &b)?
+    } else {
+        s.doc.delete_range(&a, &b)?
+    };
     s.sel = crate::Selection::caret(at.clone());
     Ok(at)
 }
@@ -162,38 +170,65 @@ pub fn new_revision(s: &mut Session, kind: RevisionKind) -> u32 {
     let date = now_iso();
     // Never one end of a move, nor the deletion a cut may still turn into one.
     let held = s.pending_move.as_ref().map(|m| m.rev);
-    if let Some((i, _)) = s
-        .doc
-        .revisions
-        .iter()
-        .enumerate()
-        .rev()
-        .find(|(i, r)| r.kind == kind && r.author == s.author && r.date == date && r.move_name.is_none() && held != Some(*i as u32))
-    {
+    if let Some((i, _)) = s.doc.revisions.iter().enumerate().rev().find(|(i, r)| {
+        r.kind == kind
+            && r.author == s.author
+            && r.date == date
+            && r.move_name.is_none()
+            && held != Some(*i as u32)
+    }) {
         return i as u32;
     }
-    s.doc.revisions.push(Revision { kind, author: s.author.clone(), date, move_name: None });
+    s.doc.revisions.push(Revision {
+        kind,
+        author: s.author.clone(),
+        date,
+        move_name: None,
+    });
     (s.doc.revisions.len() - 1) as u32
 }
 
 /// Whether the paragraph at `path` is followed by another paragraph in the same container (so
 /// its paragraph mark can be removed by joining the two).
 pub fn has_next_para(s: &Session, story: StoryRef, path: &wordcraft_doc::Path) -> bool {
-    matches!(s.doc.block(story, &path.with_last(path.last().saturating_add(1))), Some(wordcraft_doc::Block::Para(_)))
+    matches!(
+        s.doc
+            .block(story, &path.with_last(path.last().saturating_add(1))),
+        Some(wordcraft_doc::Block::Para(_))
+    )
 }
 
 /// Remove the paragraph mark of the paragraph at `path`: the next paragraph in the same container
 /// joins it. The joined paragraph keeps this paragraph's properties and ends with the next one's
 /// mark (and that mark's revisions). Returns `false`, changing nothing, when no paragraph follows
 /// in the container (a story's or cell's last mark can't be removed).
-pub fn join_next_para(s: &mut Session, story: StoryRef, path: &wordcraft_doc::Path) -> Result<bool, CmdError> {
+pub fn join_next_para(
+    s: &mut Session,
+    story: StoryRef,
+    path: &wordcraft_doc::Path,
+) -> Result<bool, CmdError> {
     if !has_next_para(s, story, path) {
         return Ok(false);
     }
     let next = path.with_last(path.last().saturating_add(1));
     let len = s.doc.para(story, path).map(|p| p.len()).unwrap_or(0);
-    let revs = s.doc.para(story, &next).map(|p| (p.mark.ins, p.mark.del)).unwrap_or_default();
-    s.doc.delete_range(&Pos { story, path: path.clone(), off: len }, &Pos { story, path: next, off: 0 })?;
+    let revs = s
+        .doc
+        .para(story, &next)
+        .map(|p| (p.mark.ins, p.mark.del))
+        .unwrap_or_default();
+    s.doc.delete_range(
+        &Pos {
+            story,
+            path: path.clone(),
+            off: len,
+        },
+        &Pos {
+            story,
+            path: next,
+            off: 0,
+        },
+    )?;
     let p = s.doc.para_mut(story, path)?;
     (p.mark.ins, p.mark.del) = revs;
     p.touch();
@@ -207,12 +242,19 @@ pub(crate) fn track_delete(s: &mut Session, a: &Pos, b: &Pos) -> Result<Pos, Cmd
 }
 
 /// [`track_delete`] marking the deleted text with revision `rid`.
-pub(crate) fn track_delete_as(s: &mut Session, a: &Pos, b: &Pos, rid: u32) -> Result<Pos, CmdError> {
+pub(crate) fn track_delete_as(
+    s: &mut Session,
+    a: &Pos,
+    b: &Pos,
+    rid: u32,
+) -> Result<Pos, CmdError> {
     let author = s.author.clone();
     // Remove text this author inserted (it never existed for the reader); mark the rest.
     let paths = s.doc.paths_between(a, b);
     for path in paths.iter().rev() {
-        let Some(p) = s.doc.para(a.story, path) else { continue };
+        let Some(p) = s.doc.para(a.story, path) else {
+            continue;
+        };
         let from = if *path == a.path { a.off } else { 0 };
         let to = if *path == b.path { b.off } else { p.len() };
         // Text already deleted keeps its deletion (and its author), like Word.
@@ -220,7 +262,10 @@ pub(crate) fn track_delete_as(s: &mut Session, a: &Pos, b: &Pos, rid: u32) -> Re
             .run_ranges()
             .filter(|(r, c)| r.end > from && r.start < to && c.del.is_none())
             .map(|(r, c)| {
-                let own = c.ins.and_then(|i| s.doc.revisions.get(i as usize)).is_some_and(|rv| rv.author == author);
+                let own = c
+                    .ins
+                    .and_then(|i| s.doc.revisions.get(i as usize))
+                    .is_some_and(|rv| rv.author == author);
                 (r.start.max(from), r.end.min(to), own)
             })
             .collect();
@@ -237,9 +282,15 @@ pub(crate) fn track_delete_as(s: &mut Session, a: &Pos, b: &Pos, rid: u32) -> Re
         // marked deleted; one already deleted keeps its deletion. Done after the text so a join
         // can't pull the next paragraph's text into this one's range.
         if *path != b.path && has_next_para(s, a.story, path) {
-            let (ins, del) = s.doc.para(a.story, path).map(|p| (p.mark.ins, p.mark.del)).unwrap_or_default();
+            let (ins, del) = s
+                .doc
+                .para(a.story, path)
+                .map(|p| (p.mark.ins, p.mark.del))
+                .unwrap_or_default();
             if del.is_none() {
-                let own = ins.and_then(|i| s.doc.revisions.get(i as usize)).is_some_and(|rv| rv.author == author);
+                let own = ins
+                    .and_then(|i| s.doc.revisions.get(i as usize))
+                    .is_some_and(|rv| rv.author == author);
                 if own {
                     join_next_para(s, a.story, path)?;
                 } else {
@@ -312,12 +363,21 @@ fn insert_text(s: &mut Session, text: &str, enter: bool) -> Result<(), CmdError>
 /// Is the paragraph at `at` still without letters (empty, or only spaces, digits and
 /// punctuation), with no direction set on it, its style chain or the document defaults?
 fn direction_unset(s: &Session, at: &Pos) -> bool {
-    let Some(p) = s.doc.para_at(at) else { return false };
-    if p.props.bidi.is_some() || p.text.chars().any(char::is_alphabetic) || s.doc.styles.default_para.bidi.is_some() {
+    let Some(p) = s.doc.para_at(at) else {
+        return false;
+    };
+    if p.props.bidi.is_some()
+        || p.text.chars().any(char::is_alphabetic)
+        || s.doc.styles.default_para.bidi.is_some()
+    {
         return false;
     }
     let style = p.props.style.as_deref().unwrap_or("Normal");
-    !s.doc.styles.chain(style).iter().any(|st| st.para.bidi.is_some())
+    !s.doc
+        .styles
+        .chain(style)
+        .iter()
+        .any(|st| st.para.bidi.is_some())
 }
 
 /// Take a paragraph out of its list like Word does when Enter or Backspace ends a list: a
@@ -347,7 +407,13 @@ pub fn split_para(s: &mut Session, at: &Pos) -> Result<Pos, CmdError> {
 fn split_para_as(s: &mut Session, at: &Pos, enter: bool) -> Result<Pos, CmdError> {
     // `num: 0` means "explicitly not in a list", so it isn't a list item.
     let (at_end, style, empty_list) = match s.doc.para_at(at) {
-        Some(p) => (at.off >= p.len(), p.props.style.clone(), p.props.numbering.filter(|n| enter && n.num != 0 && p.is_empty())),
+        Some(p) => (
+            at.off >= p.len(),
+            p.props.style.clone(),
+            p.props
+                .numbering
+                .filter(|n| enter && n.num != 0 && p.is_empty()),
+        ),
         None => return Err(CmdError::Failed("no paragraph at caret".into())),
     };
     if let Some(n) = empty_list {
@@ -355,14 +421,21 @@ fn split_para_as(s: &mut Session, at: &Pos, enter: bool) -> Result<Pos, CmdError
         // the list (Word behaviour).
         let para = s.doc.para_mut(at.story, &at.path)?;
         if n.level > 0 {
-            para.props.numbering = Some(wordcraft_doc::props::NumRef { num: n.num, level: n.level - 1 });
+            para.props.numbering = Some(wordcraft_doc::props::NumRef {
+                num: n.num,
+                level: n.level - 1,
+            });
             para.touch();
         } else {
             leave_list(para);
         }
         return Ok(at.clone());
     }
-    let mark_revs = s.doc.para_at(at).map(|p| (p.mark.ins, p.mark.del)).unwrap_or_default();
+    let mark_revs = s
+        .doc
+        .para_at(at)
+        .map(|p| (p.mark.ins, p.mark.del))
+        .unwrap_or_default();
     let new = s.doc.split_paragraph(at)?;
     if at_end && let Some(st) = style.as_deref() {
         let next = s.doc.styles.get(st).and_then(|x| x.next.clone());
@@ -393,21 +466,33 @@ fn split_para_as(s: &mut Session, at: &Pos, enter: bool) -> Result<Pos, CmdError
 pub fn iso_from_unix_secs(secs: u64) -> String {
     let (y, m, d) = civil_from_days((secs / 86_400) as i64);
     let t = secs % 86_400;
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", t / 3600, t / 60 % 60, t % 60)
+    format!(
+        "{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z",
+        t / 3600,
+        t / 60 % 60,
+        t % 60
+    )
 }
 
 /// Seconds since the Unix epoch (UTC): the system clock, or the browser's on the web.
 pub fn now_unix() -> u64 {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0)
     }
     // `SystemTime::now()` panics on wasm32-unknown-unknown, so ask the browser's clock.
     #[cfg(target_arch = "wasm32")]
     {
         let ms = js_sys::Date::now();
         // Clamp a NaN or pre-epoch clock to 0 rather than fail.
-        if ms.is_finite() && ms > 0.0 { (ms / 1000.0) as u64 } else { 0 }
+        if ms.is_finite() && ms > 0.0 {
+            (ms / 1000.0) as u64
+        } else {
+            0
+        }
     }
 }
 
@@ -432,19 +517,28 @@ pub fn civil_from_days(z: i64) -> (i64, u32, u32) {
 
 /// Story given in params (`"story": "body"` / `{"part": 3}`), else the caret's.
 pub fn story_param(s: &Session, v: &Value) -> StoryRef {
-    v.get("story").and_then(|x| serde_json::from_value(x.clone()).ok()).unwrap_or(s.sel.focus.story)
+    v.get("story")
+        .and_then(|x| serde_json::from_value(x.clone()).ok())
+        .unwrap_or(s.sel.focus.story)
 }
 
 /// The language (`w:lang`) of a paragraph's text: that of its first run with text (else of the
 /// paragraph mark), through styles and the document defaults. Sorting and number parsing follow it.
 pub fn para_lang(doc: &wordcraft_doc::Document, p: &wordcraft_doc::Paragraph) -> Option<String> {
-    let run = p.runs.iter().find(|r| r.len > 0).map(|r| &r.props).unwrap_or(&p.mark);
+    let run = p
+        .runs
+        .iter()
+        .find(|r| r.len > 0)
+        .map(|r| &r.props)
+        .unwrap_or(&p.mark);
     doc.styles.resolve_char(p.props.style.as_deref(), run).lang
 }
 
 /// The document's default text language (`w:docDefaults`, the Normal style).
 pub fn doc_lang(doc: &wordcraft_doc::Document) -> Option<String> {
-    doc.styles.resolve_char(None, &wordcraft_doc::CharProps::default()).lang
+    doc.styles
+        .resolve_char(None, &wordcraft_doc::CharProps::default())
+        .lang
 }
 
 /// The language of text that names none: the document's default, else the editing language (a

@@ -14,25 +14,25 @@ use crate::tags::common::TagDetails;
 /// own (or that are deleted) are silently skipped.
 #[derive(Deserialize, ToSchema)]
 pub struct BulkAddTagsRequest {
-  /// Media files to tag.
-  pub media_file_tokens: Vec<MediaFileToken>,
+    /// Media files to tag.
+    pub media_file_tokens: Vec<MediaFileToken>,
 
-  /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
-  pub maybe_tags: Option<String>,
+    /// Comma-separated tags, e.g. `"cats, Sci-Fi, wallpaper"`.
+    pub maybe_tags: Option<String>,
 
-  /// Tags as a list. Entries are still trimmed.
-  pub maybe_tags_list: Option<Vec<String>>,
+    /// Tags as a list. Entries are still trimmed.
+    pub maybe_tags_list: Option<Vec<String>>,
 }
 
 #[derive(Serialize, ToSchema)]
 pub struct BulkAddTagsSuccessResponse {
-  pub success: bool,
+    pub success: bool,
 
-  /// The subset of the input tokens that were actually tagged: files
-  /// that exist, aren't deleted, and are owned by the caller.
-  pub accepted_media_file_tokens: Vec<MediaFileToken>,
+    /// The subset of the input tokens that were actually tagged: files
+    /// that exist, aren't deleted, and are owned by the caller.
+    pub accepted_media_file_tokens: Vec<MediaFileToken>,
 
-  /// The tags from this request after upsert, with canonical tokens and
-  /// fresh use counts.
-  pub tags: Vec<TagDetails>,
+    /// The tags from this request after upsert, with canonical tokens and
+    /// fresh use counts.
+    pub tags: Vec<TagDetails>,
 }

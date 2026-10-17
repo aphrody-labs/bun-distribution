@@ -30,8 +30,17 @@ fn basis(name: &str, w: f64, h: f64) -> Option<f64> {
 /// The percentage geometry of shapes in symbols with a `viewBox`, each as (value range, number).
 pub(super) fn rewrites(xml: &roxmltree::Document) -> Vec<(Range<usize>, String)> {
     let mut out = Vec::new();
-    for n in xml.descendants().filter(|n| n.is_element() && SHAPES.contains(&n.tag_name().name())) {
-        let Some(scope) = n.ancestors().skip(1).find(|a| SCOPES.contains(&a.tag_name().name())) else { continue };
+    for n in xml
+        .descendants()
+        .filter(|n| n.is_element() && SHAPES.contains(&n.tag_name().name()))
+    {
+        let Some(scope) = n
+            .ancestors()
+            .skip(1)
+            .find(|a| SCOPES.contains(&a.tag_name().name()))
+        else {
+            continue;
+        };
         let Some(vb) = Some(scope)
             .filter(|s| s.tag_name().name() == "symbol")
             .and_then(|s| s.attribute("viewBox"))
@@ -43,7 +52,12 @@ pub(super) fn rewrites(xml: &roxmltree::Document) -> Vec<(Range<usize>, String)>
             continue;
         }
         for a in n.attributes().filter(|a| a.namespace().is_none()) {
-            let percent = a.value().trim().strip_suffix('%').and_then(|v| v.trim().parse::<f64>().ok()).filter(|v| v.is_finite());
+            let percent = a
+                .value()
+                .trim()
+                .strip_suffix('%')
+                .and_then(|v| v.trim().parse::<f64>().ok())
+                .filter(|v| v.is_finite());
             if let (Some(p), Some(of)) = (percent, basis(a.name(), vb.w, vb.h)) {
                 out.push((a.range_value(), (p / 100.0 * of).to_string()));
             }
@@ -63,10 +77,29 @@ mod tests {
               <linearGradient x2="100%"/><pattern><rect width="100%"/></pattern><g><line x2="25%" y2=" 25% "/></g></symbol>
             <symbol id="b"><rect width="100%"/></symbol><use href="#a" width="30%"/></svg>"##;
         let xml = roxmltree::Document::parse(svg).unwrap();
-        let found: Vec<(&str, String)> = rewrites(&xml).into_iter().map(|(r, v)| (&svg[r], v)).collect();
-        let r = (200.0f64 * 200.0 / 2.0 + 100.0 * 100.0 / 2.0).sqrt().to_string();
-        let expected =
-            [("10%", "20"), ("10%", "10"), ("100%", "200"), ("50%", "50"), ("50%", "100"), ("100%", r.as_str()), ("25%", "50"), (" 25% ", "25")];
-        assert_eq!(found.iter().map(|(a, b)| (*a, b.as_str())).collect::<Vec<_>>(), expected);
+        let found: Vec<(&str, String)> = rewrites(&xml)
+            .into_iter()
+            .map(|(r, v)| (&svg[r], v))
+            .collect();
+        let r = (200.0f64 * 200.0 / 2.0 + 100.0 * 100.0 / 2.0)
+            .sqrt()
+            .to_string();
+        let expected = [
+            ("10%", "20"),
+            ("10%", "10"),
+            ("100%", "200"),
+            ("50%", "50"),
+            ("50%", "100"),
+            ("100%", r.as_str()),
+            ("25%", "50"),
+            (" 25% ", "25"),
+        ];
+        assert_eq!(
+            found
+                .iter()
+                .map(|(a, b)| (*a, b.as_str()))
+                .collect::<Vec<_>>(),
+            expected
+        );
     }
 }

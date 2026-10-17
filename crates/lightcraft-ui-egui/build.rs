@@ -37,9 +37,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 /// The code must be a lowercase BCP-47-like tag (`^[a-z]+(-[a-z]+)*$`), so the variant is always a
 /// valid Rust identifier.
 fn variant_for(code: &str) -> Result<String, String> {
-    let valid = !code.is_empty() && code.split('-').all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_lowercase()));
+    let valid = !code.is_empty()
+        && code
+            .split('-')
+            .all(|part| !part.is_empty() && part.bytes().all(|byte| byte.is_ascii_lowercase()));
     if !valid {
-        return Err(format!("locales/{code}-formats.json: the language code must match ^[a-z]+(-[a-z]+)*$"));
+        return Err(format!(
+            "locales/{code}-formats.json: the language code must match ^[a-z]+(-[a-z]+)*$"
+        ));
     }
     Ok(code.split('-').map(capitalize).collect())
 }
@@ -56,19 +61,31 @@ fn generate() -> Result<String, Box<dyn std::error::Error>> {
     let mut catalogs: Vec<(String, String, BTreeMap<String, String>)> = Vec::new();
     for entry in fs::read_dir("locales")? {
         let path = entry?.path();
-        let name = path.file_name().and_then(|name| name.to_str()).unwrap_or_default().to_string();
+        let name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default()
+            .to_string();
         // `en` is the source language: it has no catalog, its formats are the source themselves.
-        let Some(code) = name.strip_suffix("-formats.json").filter(|code| *code != "en") else { continue };
+        let Some(code) = name
+            .strip_suffix("-formats.json")
+            .filter(|code| *code != "en")
+        else {
+            continue;
+        };
         println!("cargo:rerun-if-changed=locales/{name}");
         let variant = variant_for(code)?;
-        let messages: BTreeMap<String, String> =
-            serde_json::from_str(&fs::read_to_string(&path)?).map_err(|error| format!("locales/{name}: {error}"))?;
+        let messages: BTreeMap<String, String> = serde_json::from_str(&fs::read_to_string(&path)?)
+            .map_err(|error| format!("locales/{name}: {error}"))?;
         catalogs.push((code.to_string(), variant, messages));
     }
     catalogs.sort_by(|a, b| a.0.cmp(&b.0));
 
     // Every catalog translates the same messages.
-    let all: BTreeSet<&String> = catalogs.iter().flat_map(|(_, _, messages)| messages.keys()).collect();
+    let all: BTreeSet<&String> = catalogs
+        .iter()
+        .flat_map(|(_, _, messages)| messages.keys())
+        .collect();
     let mut problems = Vec::new();
     for (code, _, messages) in &catalogs {
         for key in &all {
@@ -88,14 +105,18 @@ fn generate() -> Result<String, Box<dyn std::error::Error>> {
     ));
     for english in all {
         let en = serde_json::to_string(english)?;
-        source.push_str(&format!("    ({en} $(, $($args:tt)*)?) => {{\n        match $crate::i18n::language() {{\n"));
+        source.push_str(&format!(
+            "    ({en} $(, $($args:tt)*)?) => {{\n        match $crate::i18n::language() {{\n"
+        ));
         for (_, variant, messages) in &catalogs {
             if let Some(translated) = messages.get(english) {
                 let translated = serde_json::to_string(translated)?;
                 source.push_str(&format!("            $crate::i18n::Locale::{variant} => format!({translated} $(, $($args)*)?),\n"));
             }
         }
-        source.push_str(&format!("            _ => format!({en} $(, $($args)*)?),\n        }}\n    }};\n"));
+        source.push_str(&format!(
+            "            _ => format!({en} $(, $($args)*)?),\n        }}\n    }};\n"
+        ));
     }
     source.push_str(concat!(
         "}\n",
@@ -117,20 +138,32 @@ mod credits {
     /// warning) when missing or malformed. Names come only from people.toml entries the JSON marks
     /// verified (`people_entry`).
     pub fn load() -> (Value, toml::Table) {
-        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/libraries/lightcraft/contributors");
-        let json = read(&dir.join("contributors.json"), "the About window shows no contributors", |t| {
-            serde_json::from_str::<Value>(t).map_err(|e| e.to_string())
-        })
+        let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../docs/libraries/lightcraft/contributors");
+        let json = read(
+            &dir.join("contributors.json"),
+            "the About window shows no contributors",
+            |t| serde_json::from_str::<Value>(t).map_err(|e| e.to_string()),
+        )
         .unwrap_or(Value::Null);
-        let people =
-            read(&dir.join("people.toml"), "contributors are shown by username only", |t| t.parse::<toml::Table>().map_err(|e| e.to_string()))
-                .unwrap_or_default();
+        let people = read(
+            &dir.join("people.toml"),
+            "contributors are shown by username only",
+            |t| t.parse::<toml::Table>().map_err(|e| e.to_string()),
+        )
+        .unwrap_or_default();
         (json, people)
     }
 
-    fn read<T>(path: &std::path::Path, fallback: &str, parse: impl Fn(&str) -> Result<T, String>) -> Option<T> {
+    fn read<T>(
+        path: &std::path::Path,
+        fallback: &str,
+        parse: impl Fn(&str) -> Result<T, String>,
+    ) -> Option<T> {
         println!("cargo:rerun-if-changed={}", path.display());
-        let r = std::fs::read_to_string(path).map_err(|e| e.to_string()).and_then(|t| parse(&t));
+        let r = std::fs::read_to_string(path)
+            .map_err(|e| e.to_string())
+            .and_then(|t| parse(&t));
         if let Err(e) = &r {
             println!("cargo:warning={}: {e}; {fallback}", path.display());
         }
@@ -154,7 +187,10 @@ mod credits {
     }
 
     fn rows(json: &Value, k: &str) -> Vec<Value> {
-        json.get(k).and_then(Value::as_array).cloned().unwrap_or_default()
+        json.get(k)
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
     }
 
     pub fn generate(json: &Value, people: &toml::Table) -> String {
@@ -167,12 +203,24 @@ mod credits {
                 continue;
             }
             // Names only from a verified, self-chosen people.toml entry.
-            let entry = people.get("people").and_then(|p| p.get(login)).filter(|_| c.get("people_entry").and_then(Value::as_bool) == Some(true));
+            let entry = people
+                .get("people")
+                .and_then(|p| p.get(login))
+                .filter(|_| c.get("people_entry").and_then(Value::as_bool) == Some(true));
             let field = |k: &str| entry.and_then(|e| e.get(k)).and_then(toml::Value::as_str);
-            let synced = entry.and_then(|e| e.get("sync_github_name")).and_then(toml::Value::as_bool) == Some(true);
+            let synced = entry
+                .and_then(|e| e.get("sync_github_name"))
+                .and_then(toml::Value::as_bool)
+                == Some(true);
             let display = field("display_name")
                 .filter(|s| !s.trim().is_empty())
-                .or_else(|| if synced { c.get("github_name").and_then(Value::as_str) } else { None });
+                .or_else(|| {
+                    if synced {
+                        c.get("github_name").and_then(Value::as_str)
+                    } else {
+                        None
+                    }
+                });
             let _ = writeln!(
                 o,
                 "    Contributor {{ login: {login:?}, display_name: {}, real_name: {}, prs: {}, commits: {}, lines_added: {}, lines_deleted: {}, binary_added: {}, binary_deleted: {}, first_commit: {}, last_commit: {} }},",

@@ -27,12 +27,20 @@ fn aphrody() -> Command {
 // ---------------------------------------------------------------------------
 #[test]
 fn help_flag_still_works_with_fallback_active() {
-    aphrody().arg("--help").assert().success().stdout(predicate::str::contains("aphrody"));
+    aphrody()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("aphrody"));
 }
 
 #[test]
 fn version_subcommand_still_works_with_fallback_active() {
-    aphrody().arg("version").assert().success().stdout(predicate::str::contains("aphrody "));
+    aphrody()
+        .arg("version")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("aphrody "));
 }
 
 // ---------------------------------------------------------------------------

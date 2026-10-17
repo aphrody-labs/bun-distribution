@@ -23,12 +23,18 @@ pub fn is_three_d(id: &str) -> bool {
 }
 
 fn solid(fx: &[Effect]) -> Option<(usize, &Effect)> {
-    fx.iter().enumerate().find(|(_, e)| e.visible && SOLIDS.contains(&e.id.as_str()))
+    fx.iter()
+        .enumerate()
+        .find(|(_, e)| e.visible && SOLIDS.contains(&e.id.as_str()))
 }
 
 /// Does `n` carry a visible Extrude & Bevel, Inflate or Rotate effect?
 pub fn has_solid(n: &Node) -> bool {
-    solid(&n.appearance.effects).is_some() || n.appearance.items.iter().any(|i| i.visible() && solid(i.effects()).is_some())
+    solid(&n.appearance.effects).is_some()
+        || n.appearance
+            .items
+            .iter()
+            .any(|i| i.visible() && solid(i.effects()).is_some())
 }
 
 /// The Position presets: (id, [rotation X, Y, Z]). Front, Back, Left, Right, Top and Bottom face
@@ -103,10 +109,23 @@ pub fn inflate_options(p: &Value) -> Inflate {
 /// The shape a solid is made from: a path's or a compound path's outline.
 fn profile(n: &Node) -> Option<(PathData, FillRule)> {
     match &n.kind {
-        NodeKind::Path { path, rule, guide: false, clipping: false, .. } => Some((path.clone(), *rule)),
-        NodeKind::Compound { children, rule } => {
-            Some((PathData::new(children.iter().filter_map(|c| c.path_data()).flat_map(|p| p.subpaths.iter().cloned()).collect()), *rule))
-        }
+        NodeKind::Path {
+            path,
+            rule,
+            guide: false,
+            clipping: false,
+            ..
+        } => Some((path.clone(), *rule)),
+        NodeKind::Compound { children, rule } => Some((
+            PathData::new(
+                children
+                    .iter()
+                    .filter_map(|c| c.path_data())
+                    .flat_map(|p| p.subpaths.iter().cloned())
+                    .collect(),
+            ),
+            *rule,
+        )),
         _ => None,
     }
 }
@@ -125,9 +144,13 @@ pub fn validate_solid(n: &Node, id: &str, p: &Value) -> Result<(), String> {
     let label = crate::effect_info(id).map_or("This effect", |e| e.label.trim_end_matches('…'));
     let (path, _) =
         profile(n).ok_or_else(|| format!("{label} currently requires a path or compound path. Convert type, images and groups to paths first."))?;
-    let b = path.bounds().ok_or_else(|| format!("{label} requires a shape with at least two anchors"))?;
+    let b = path
+        .bounds()
+        .ok_or_else(|| format!("{label} requires a shape with at least two anchors"))?;
     if let Some(v) = p.get("bevel")
-        && !v.as_str().is_some_and(|s| s == "none" || BevelShape::parse(s).is_some())
+        && !v
+            .as_str()
+            .is_some_and(|s| s == "none" || BevelShape::parse(s).is_some())
     {
         let names: Vec<_> = BevelShape::ALL.iter().map(|b| b.id()).collect();
         return Err(format!("bevel must be none or one of {}", names.join(", ")));
@@ -145,7 +168,9 @@ fn surface(n: &Node, facets: Vec<Facet>, paint: &Paint, opacity: f32, blend: Ble
             if let Some(c) = paint.color() {
                 let [r, g, b] = c.to_rgb();
                 let s = face.brightness as f32;
-                items.push(AppearanceItem::Fill(FillLayer::new(Paint::solid(Color::rgb(r * s, g * s, b * s)))));
+                items.push(AppearanceItem::Fill(FillLayer::new(Paint::solid(
+                    Color::rgb(r * s, g * s, b * s),
+                ))));
             } else {
                 // Gradients and patterns keep their paint, darkened by a black layer.
                 items.push(AppearanceItem::Fill(FillLayer::new(paint.clone())));
@@ -161,13 +186,22 @@ fn surface(n: &Node, facets: Vec<Facet>, paint: &Paint, opacity: f32, blend: Ble
             let items = items
                 .into_iter()
                 .flat_map(|item| {
-                    let AppearanceItem::Fill(fill) = &item else { return vec![item] };
+                    let AppearanceItem::Fill(fill) = &item else {
+                        return vec![item];
+                    };
                     let mut edge = StrokeLayer::new(fill.paint.clone(), seam);
                     edge.opacity = fill.opacity;
                     vec![item, AppearanceItem::Stroke(edge)]
                 })
                 .collect();
-            Arc::new(Node::path(n.id, face.path(), Appearance { items, ..Default::default() }))
+            Arc::new(Node::path(
+                n.id,
+                face.path(),
+                Appearance {
+                    items,
+                    ..Default::default()
+                },
+            ))
         })
         .collect();
     let mut group = Node::group(n.id, children);
@@ -186,7 +220,9 @@ fn paint_of(item: &AppearanceItem) -> (Paint, f32, BlendMode) {
 /// The area `item` paints on `path`: the path itself for a fill, the stroke's outline for a stroke.
 fn region(path: &PathData, rule: FillRule, item: &AppearanceItem) -> PathData {
     match item {
-        AppearanceItem::Stroke(s) if s.width > 0.0 && s.width.is_finite() => crate::stroke::outline_region(path, rule, s),
+        AppearanceItem::Stroke(s) if s.width > 0.0 && s.width.is_finite() => {
+            crate::stroke::outline_region(path, rule, s)
+        }
         _ => path.clone(),
     }
 }
@@ -194,7 +230,13 @@ fn region(path: &PathData, rule: FillRule, item: &AppearanceItem) -> PathData {
 /// The 3D art of one effect `fx` on `path` (already through the effects before it).
 /// Extrude & Bevel and Inflate build a solid from the outline, painted with the top visible fill
 /// (or, without one, the top stroke); Rotate turns every fill and stroke, each in its own paint.
-fn art_for(n: &Node, fx: &Effect, path: &PathData, rule: FillRule, items: &[&AppearanceItem]) -> Option<Vec<Arc<Node>>> {
+fn art_for(
+    n: &Node,
+    fx: &Effect,
+    path: &PathData,
+    rule: FillRule,
+    items: &[&AppearanceItem],
+) -> Option<Vec<Arc<Node>>> {
     let b = path.bounds()?;
     let p = crate::merged_params(&fx.id, &fx.params);
     if fx.id == ROTATE {
@@ -207,7 +249,11 @@ fn art_for(n: &Node, fx: &Effect, path: &PathData, rule: FillRule, items: &[&App
         }
         return Some(out);
     }
-    let item = items.iter().rev().find(|i| matches!(i, AppearanceItem::Fill(_))).or_else(|| items.last())?;
+    let item = items
+        .iter()
+        .rev()
+        .find(|i| matches!(i, AppearanceItem::Fill(_)))
+        .or_else(|| items.last())?;
     let (paint, opacity, blend) = paint_of(item);
     // A loaded file or a shape edited past the limits keeps drawing its source path instead of
     // failing the frame; commands validate the same evaluator and report its errors.
@@ -227,7 +273,12 @@ pub fn solid_art(n: &Node) -> Option<Node> {
     }
     let (path, rule) = profile(n)?;
     let ctx = GeomContext::of(n);
-    let painted: Vec<&AppearanceItem> = n.appearance.items.iter().filter(|i| crate::paints(i)).collect();
+    let painted: Vec<&AppearanceItem> = n
+        .appearance
+        .items
+        .iter()
+        .filter(|i| crate::paints(i))
+        .collect();
     let mut children = vec![];
     let remaining: Vec<Effect>;
     if let Some((index, fx)) = solid(&n.appearance.effects) {
@@ -244,23 +295,48 @@ pub fn solid_art(n: &Node) -> Option<Node> {
             .collect();
     } else {
         let path = geometry(&path, &n.appearance.effects, &ctx);
-        remaining = n.appearance.effects.iter().filter(|e| !is_geometry(&e.id)).cloned().collect();
+        remaining = n
+            .appearance
+            .effects
+            .iter()
+            .filter(|e| !is_geometry(&e.id))
+            .cloned()
+            .collect();
         for item in &painted {
             if let Some((index, fx)) = solid(item.effects()) {
                 let p = geometry(&path, item.effects().get(..index)?, &ctx.item(item));
                 for mut art in art_for(n, fx, &p, rule, &[*item])? {
-                    Arc::make_mut(&mut art).appearance.effects =
-                        item.effects().iter().skip(index + 1).filter(|e| !is_three_d(&e.id)).cloned().collect();
+                    Arc::make_mut(&mut art).appearance.effects = item
+                        .effects()
+                        .iter()
+                        .skip(index + 1)
+                        .filter(|e| !is_three_d(&e.id))
+                        .cloned()
+                        .collect();
                     children.push(art);
                 }
             } else {
-                children.push(Arc::new(Node::path(n.id, path.clone(), Appearance { items: vec![(*item).clone()], ..Default::default() })));
+                children.push(Arc::new(Node::path(
+                    n.id,
+                    path.clone(),
+                    Appearance {
+                        items: vec![(*item).clone()],
+                        ..Default::default()
+                    },
+                )));
             }
         }
     }
     let mut art = n.clone();
-    art.kind = NodeKind::Group { children, clip: false };
-    art.appearance = Appearance { effects: remaining, ..Default::default() }.into();
+    art.kind = NodeKind::Group {
+        children,
+        clip: false,
+    };
+    art.appearance = Appearance {
+        effects: remaining,
+        ..Default::default()
+    }
+    .into();
     Some(art)
 }
 

@@ -28,11 +28,51 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             all_on_artboard
         ),
-        cmd!("select.none", "Deselect", ["Select"], Some("Cmd+Shift+A"), "{}", has_doc, none),
-        cmd!("select.reselect", "Reselect", ["Select"], Some("Cmd+6"), "{}", has_doc, reselect),
-        cmd!("select.inverse", "Inverse", ["Select"], None, "{}", has_doc, inverse),
-        cmd!("select.nextAbove", "Next Object Above", ["Select"], Some("Cmd+Alt+]"), "{}", has_selection, |s, _| step(s, 1)),
-        cmd!("select.nextBelow", "Next Object Below", ["Select"], Some("Cmd+Alt+["), "{}", has_selection, |s, _| step(s, -1)),
+        cmd!(
+            "select.none",
+            "Deselect",
+            ["Select"],
+            Some("Cmd+Shift+A"),
+            "{}",
+            has_doc,
+            none
+        ),
+        cmd!(
+            "select.reselect",
+            "Reselect",
+            ["Select"],
+            Some("Cmd+6"),
+            "{}",
+            has_doc,
+            reselect
+        ),
+        cmd!(
+            "select.inverse",
+            "Inverse",
+            ["Select"],
+            None,
+            "{}",
+            has_doc,
+            inverse
+        ),
+        cmd!(
+            "select.nextAbove",
+            "Next Object Above",
+            ["Select"],
+            Some("Cmd+Alt+]"),
+            "{}",
+            has_selection,
+            |s, _| step(s, 1)
+        ),
+        cmd!(
+            "select.nextBelow",
+            "Next Object Below",
+            ["Select"],
+            Some("Cmd+Alt+["),
+            "{}",
+            has_selection,
+            |s, _| step(s, -1)
+        ),
         cmd!(
             "select.set",
             "Select Objects",
@@ -69,7 +109,15 @@ pub fn specs() -> Vec<CommandSpec> {
             has_doc,
             key
         ),
-        cmd!("select.anchors", "Select Anchors", [], None, "{id, anchors: [[subpath, anchor]…], mode: \"set\"|\"add\"|\"toggle\"}", has_doc, anchors),
+        cmd!(
+            "select.anchors",
+            "Select Anchors",
+            [],
+            None,
+            "{id, anchors: [[subpath, anchor]…], mode: \"set\"|\"add\"|\"toggle\"}",
+            has_doc,
+            anchors
+        ),
         cmd!(
             "select.segments",
             "Select Segments",
@@ -97,7 +145,9 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             |s, _| {
                 let tint = s.prefs.select_same_tint_percent;
-                same(s, "select.same.fillColor", |a, b| same_paint(&a.appearance.fill_paint(), &b.appearance.fill_paint(), tint))
+                same(s, "select.same.fillColor", |a, b| {
+                    same_paint(&a.appearance.fill_paint(), &b.appearance.fill_paint(), tint)
+                })
             }
         ),
         cmd!(
@@ -109,14 +159,29 @@ pub fn specs() -> Vec<CommandSpec> {
             has_selection,
             |s, _| {
                 let tint = s.prefs.select_same_tint_percent;
-                same(s, "select.same.strokeColor", |a, b| same_paint(&a.appearance.stroke_paint(), &b.appearance.stroke_paint(), tint))
+                same(s, "select.same.strokeColor", |a, b| {
+                    same_paint(
+                        &a.appearance.stroke_paint(),
+                        &b.appearance.stroke_paint(),
+                        tint,
+                    )
+                })
             }
         ),
-        cmd!("select.same.strokeWeight", "Stroke Weight", ["Select", "Same"], None, "{}", has_selection, |s, _| same(
-            s,
+        cmd!(
             "select.same.strokeWeight",
-            |a, b| (a.appearance.stroke_width() - b.appearance.stroke_width()).abs() < 1e-9
-        )),
+            "Stroke Weight",
+            ["Select", "Same"],
+            None,
+            "{}",
+            has_selection,
+            |s, _| same(s, "select.same.strokeWeight", |a, b| (a
+                .appearance
+                .stroke_width()
+                - b.appearance.stroke_width())
+            .abs()
+                < 1e-9)
+        ),
         cmd!(
             "select.same.fillAndStroke",
             "Fill & Stroke",
@@ -128,43 +193,101 @@ pub fn specs() -> Vec<CommandSpec> {
                 let tint = s.prefs.select_same_tint_percent;
                 same(s, "select.same.fillAndStroke", |a, b| {
                     let (x, y) = (&a.appearance, &b.appearance);
-                    same_paint(&x.fill_paint(), &y.fill_paint(), tint) && same_paint(&x.stroke_paint(), &y.stroke_paint(), tint)
+                    same_paint(&x.fill_paint(), &y.fill_paint(), tint)
+                        && same_paint(&x.stroke_paint(), &y.stroke_paint(), tint)
                 })
             }
         ),
-        cmd!("select.same.opacity", "Opacity", ["Select", "Same"], None, "{}", has_selection, |s, _| same(s, "select.same.opacity", |a, b| (a
-            .opacity
-            - b.opacity)
-            .abs()
-            < 1e-6)),
-        cmd!("select.same.blendingMode", "Blending Mode", ["Select", "Same"], None, "{}", has_selection, |s, _| same(
-            s,
+        cmd!(
+            "select.same.opacity",
+            "Opacity",
+            ["Select", "Same"],
+            None,
+            "{}",
+            has_selection,
+            |s, _| same(s, "select.same.opacity", |a, b| (a.opacity - b.opacity)
+                .abs()
+                < 1e-6)
+        ),
+        cmd!(
             "select.same.blendingMode",
-            |a, b| a.blend == b.blend
-        )),
-        cmd!("select.same.appearance", "Appearance", ["Select", "Same"], None, "{}", has_selection, |s, _| same(
-            s,
+            "Blending Mode",
+            ["Select", "Same"],
+            None,
+            "{}",
+            has_selection,
+            |s, _| same(s, "select.same.blendingMode", |a, b| a.blend == b.blend)
+        ),
+        cmd!(
             "select.same.appearance",
-            |a, b| a.appearance == b.appearance && a.opacity == b.opacity && a.blend == b.blend
-        )),
-        cmd!("select.same.shapeType", "Shape", ["Select", "Same"], None, "{}", has_selection, |s, _| same(s, "select.same.shapeType", |a, b| a
-            .kind_label()
-            == b.kind_label())),
-        cmd!("select.object.allOnSameLayers", "All on Same Layers", ["Select", "Object"], None, "{}", has_selection, same_layers),
-        cmd!("select.object.clippingMasks", "Clipping Masks", ["Select", "Object"], None, "{}", has_doc, |s, _| by_kind(s, |n| matches!(
-            n.kind,
-            NodeKind::Path { clipping: true, .. }
-        ))),
-        cmd!("select.object.textObjects", "All Text Objects", ["Select", "Object"], None, "{}", has_doc, |s, _| by_kind(s, |n| matches!(
-            n.kind,
-            NodeKind::Text(_)
-        ))),
-        cmd!("select.object.strayPoints", "Stray Points", ["Select", "Object"], None, "{}", has_doc, |s, _| by_kind(s, |n| n
-            .path_data()
-            .is_some_and(|p| p.anchor_count() == 1))),
-        cmd!("select.object.openPaths", "Open Paths", ["Select", "Object"], None, "{}", has_doc, |s, _| by_kind(s, |n| n
-            .path_data()
-            .is_some_and(|p| !p.is_closed()))),
+            "Appearance",
+            ["Select", "Same"],
+            None,
+            "{}",
+            has_selection,
+            |s, _| same(s, "select.same.appearance", |a, b| a.appearance
+                == b.appearance
+                && a.opacity == b.opacity
+                && a.blend == b.blend)
+        ),
+        cmd!(
+            "select.same.shapeType",
+            "Shape",
+            ["Select", "Same"],
+            None,
+            "{}",
+            has_selection,
+            |s, _| same(s, "select.same.shapeType", |a, b| a.kind_label()
+                == b.kind_label())
+        ),
+        cmd!(
+            "select.object.allOnSameLayers",
+            "All on Same Layers",
+            ["Select", "Object"],
+            None,
+            "{}",
+            has_selection,
+            same_layers
+        ),
+        cmd!(
+            "select.object.clippingMasks",
+            "Clipping Masks",
+            ["Select", "Object"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| by_kind(s, |n| matches!(
+                n.kind,
+                NodeKind::Path { clipping: true, .. }
+            ))
+        ),
+        cmd!(
+            "select.object.textObjects",
+            "All Text Objects",
+            ["Select", "Object"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| by_kind(s, |n| matches!(n.kind, NodeKind::Text(_)))
+        ),
+        cmd!(
+            "select.object.strayPoints",
+            "Stray Points",
+            ["Select", "Object"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| by_kind(s, |n| n.path_data().is_some_and(|p| p.anchor_count() == 1))
+        ),
+        cmd!(
+            "select.object.openPaths",
+            "Open Paths",
+            ["Select", "Object"],
+            None,
+            "{}",
+            has_doc,
+            |s, _| by_kind(s, |n| n.path_data().is_some_and(|p| !p.is_closed()))
+        ),
         cmd!(
             "select.same.graphicStyle",
             "Graphic Style",
@@ -192,9 +315,20 @@ pub fn specs() -> Vec<CommandSpec> {
 /// container, or a group or layer it is in, is hidden, locked or a template layer.
 fn selectable(d: &Document, iso: Option<NodeId>) -> Vec<NodeId> {
     match iso.and_then(|i| d.node(i)) {
-        Some(c) if d.ancestry(c.id).is_some_and(|a| a.iter().all(|i| d.node(*i).is_some_and(|n| n.visible && !n.locked && !n.is_template()))) => {
+        Some(c)
+            if d.ancestry(c.id).is_some_and(|a| {
+                a.iter().all(|i| {
+                    d.node(*i)
+                        .is_some_and(|n| n.visible && !n.locked && !n.is_template())
+                })
+            }) =>
+        {
             // A single object isolated is all there is to select.
-            if c.is_container() { c.layer_art(true) } else { vec![c.id] }
+            if c.is_container() {
+                c.layer_art(true)
+            } else {
+                vec![c.id]
+            }
         }
         Some(_) => vec![],
         None => d.selectable_art(),
@@ -258,10 +392,20 @@ fn all(s: &mut Session, _: &Value) -> Result<Value> {
 fn all_on_artboard(s: &mut Session, p: &Value) -> Result<Value> {
     let st = s.doc()?;
     let i = p.get("artboard").and_then(Value::as_u64).unwrap_or(0) as usize;
-    let r = st.doc.artboards.get(i).map(|a| a.rect).ok_or_else(|| bad("select.allOnArtboard", "no such artboard"))?;
+    let r = st
+        .doc
+        .artboards
+        .get(i)
+        .map(|a| a.rect)
+        .ok_or_else(|| bad("select.allOnArtboard", "no such artboard"))?;
     let ids: Vec<NodeId> = selectable(&st.doc, st.isolation)
         .into_iter()
-        .filter(|id| st.doc.node(*id).and_then(|n| n.geometric_bounds()).is_some_and(|b| b.intersect(r).area() > 0.0 || r.contains(b.center())))
+        .filter(|id| {
+            st.doc
+                .node(*id)
+                .and_then(|n| n.geometric_bounds())
+                .is_some_and(|b| b.intersect(r).area() > 0.0 || r.contains(b.center()))
+        })
         .collect();
     s.select(|_, sel| sel.set(ids.iter().copied()))?;
     ok()
@@ -274,10 +418,15 @@ fn none(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn reselect(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let Some((c, p, from)) = st.last_selection_cmd.clone() else { return ok() };
+    let Some((c, p, from)) = st.last_selection_cmd.clone() else {
+        return ok();
+    };
     // After Deselect, a Same command takes its reference again from the objects that were selected
     // when it ran, those still there (#903).
-    let from: Vec<NodeId> = from.into_iter().filter(|id| st.doc.node(*id).is_some()).collect();
+    let from: Vec<NodeId> = from
+        .into_iter()
+        .filter(|id| st.doc.node(*id).is_some())
+        .collect();
     let restore = st.selection.objects.is_empty() && !from.is_empty();
     if restore {
         s.select(|_, sel| sel.set(from))?;
@@ -291,25 +440,40 @@ fn reselect(s: &mut Session, _: &Value) -> Result<Value> {
 
 fn inverse(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
-    let ids: Vec<NodeId> = selectable(&st.doc, st.isolation).into_iter().filter(|id| !st.selection.contains(*id)).collect();
+    let ids: Vec<NodeId> = selectable(&st.doc, st.isolation)
+        .into_iter()
+        .filter(|id| !st.selection.contains(*id))
+        .collect();
     s.select(|_, sel| sel.set(ids.iter().copied()))?;
     ok()
 }
 
 fn step(s: &mut Session, dir: i64) -> Result<Value> {
     let st = s.doc()?;
-    let Some(cur) = st.selection.objects.first().copied() else { return ok() };
-    let Some((par, idx, _)) = st.doc.position(cur) else { return ok() };
-    let Some(siblings) = st.doc.children(par) else { return ok() };
+    let Some(cur) = st.selection.objects.first().copied() else {
+        return ok();
+    };
+    let Some((par, idx, _)) = st.doc.position(cur) else {
+        return ok();
+    };
+    let Some(siblings) = st.doc.children(par) else {
+        return ok();
+    };
     // The nearest sibling in that direction that `walk_selectable` visits: hidden and locked
     // objects and sublayers are passed over.
     let can = selectable_ids(&st.doc, st.isolation);
     let next = if dir > 0 {
         siblings.iter().skip(idx + 1).find(|n| can.contains(&n.id))
     } else {
-        siblings.iter().take(idx).rev().find(|n| can.contains(&n.id))
+        siblings
+            .iter()
+            .take(idx)
+            .rev()
+            .find(|n| can.contains(&n.id))
     };
-    let Some(id) = next.map(|n| n.id) else { return ok() };
+    let Some(id) = next.map(|n| n.id) else {
+        return ok();
+    };
     s.select(|_, sel| sel.set([id]))?;
     ok()
 }
@@ -334,7 +498,9 @@ fn toggle(s: &mut Session, p: &Value) -> Result<Value> {
     let ids = if p.get("ids").is_some() {
         checked_ids_param(s, p, "ids", "select.toggle")?
     } else {
-        let value = p.get("id").ok_or_else(|| bad("select.toggle", "missing id or ids"))?;
+        let value = p
+            .get("id")
+            .ok_or_else(|| bad("select.toggle", "missing id or ids"))?;
         vec![checked_id(s, value, "select.toggle")?]
     };
     s.select(|_, sel| {
@@ -351,14 +517,26 @@ fn selection_result(s: &Session) -> Result<Value> {
 }
 
 fn key(s: &mut Session, p: &Value) -> Result<Value> {
-    let id = p.get("id").map(|value| checked_id(s, value, "select.key")).transpose()?;
+    let id = p
+        .get("id")
+        .map(|value| checked_id(s, value, "select.key"))
+        .transpose()?;
     if let Some(id) = id {
         let st = s.doc()?;
         // A selected top-level object is the only top-level object among the selected ones of
         // itself and its ancestors.
-        let selected = st.doc.ancestry(id).unwrap_or_default().into_iter().filter(|a| st.selection.contains(*a)).collect();
+        let selected = st
+            .doc
+            .ancestry(id)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|a| st.selection.contains(*a))
+            .collect();
         if super::edit::roots_of(&st.doc, selected) != [id] {
-            return Err(bad("select.key", format!("object {id} is not a selected top-level object")));
+            return Err(bad(
+                "select.key",
+                format!("object {id} is not a selected top-level object"),
+            ));
         }
     }
     s.select(|_, sel| sel.key = id)?;
@@ -368,16 +546,26 @@ fn key(s: &mut Session, p: &Value) -> Result<Value> {
 /// `[[subpath, anchor]…]` anchor references of `cmd`: a malformed entry fails rather than being
 /// left out, which would act on other anchors than the ones given.
 pub(crate) fn checked_refs(v: Option<&Value>, cmd: &str) -> Result<Vec<(usize, usize)>> {
-    let refs = v.and_then(Value::as_array).ok_or_else(|| bad(cmd, "`anchors` must be an array of [subpath, anchor] pairs"))?;
+    let refs = v
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(cmd, "`anchors` must be an array of [subpath, anchor] pairs"))?;
     refs.iter()
         .map(|v| {
             let Some([subpath, anchor]) = v.as_array().map(Vec::as_slice) else {
-                return Err(bad(cmd, format!("invalid anchor reference {v}: expected [subpath, anchor]")));
+                return Err(bad(
+                    cmd,
+                    format!("invalid anchor reference {v}: expected [subpath, anchor]"),
+                ));
             };
             let coordinate = |v: &Value| {
                 v.as_u64()
                     .and_then(|n| usize::try_from(n).ok())
-                    .ok_or_else(|| bad(cmd, format!("invalid anchor index {v}: expected a non-negative integer")))
+                    .ok_or_else(|| {
+                        bad(
+                            cmd,
+                            format!("invalid anchor index {v}: expected a non-negative integer"),
+                        )
+                    })
             };
             Ok((coordinate(subpath)?, coordinate(anchor)?))
         })
@@ -388,10 +576,19 @@ fn segments(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "select.segments";
     let id = checked_id(s, p.get("id").ok_or_else(|| bad(C, "missing id"))?, C)?;
     let refs: BTreeSet<_> = checked_refs(p.get("segments"), C)?.into_iter().collect();
-    let path = s.doc()?.doc.node(id).and_then(|n| n.path_data()).ok_or_else(|| bad(C, "object is not a path"))?;
+    let path = s
+        .doc()?
+        .doc
+        .node(id)
+        .and_then(|n| n.path_data())
+        .ok_or_else(|| bad(C, "object is not a path"))?;
     let mut endpoints = BTreeSet::new();
     for &(si, seg) in &refs {
-        let sp = path.subpaths.get(si).filter(|sp| seg < sp.segment_count()).ok_or_else(|| bad(C, "segment does not exist"))?;
+        let sp = path
+            .subpaths
+            .get(si)
+            .filter(|sp| seg < sp.segment_count())
+            .ok_or_else(|| bad(C, "segment does not exist"))?;
         endpoints.extend([(si, seg), (si, (seg + 1) % sp.anchors.len())]);
     }
     s.select(|_, sel| {
@@ -443,11 +640,19 @@ fn anchors(s: &mut Session, p: &Value) -> Result<Value> {
 
 fn anchors_many(s: &mut Session, p: &Value) -> Result<Value> {
     const C: &str = "select.anchorsMany";
-    let raw = p.get("items").and_then(Value::as_array).ok_or_else(|| bad(C, "`items` must be an array of {id, anchors}"))?;
+    let raw = p
+        .get("items")
+        .and_then(Value::as_array)
+        .ok_or_else(|| bad(C, "`items` must be an array of {id, anchors}"))?;
     let items: Vec<(NodeId, BTreeSet<(usize, usize)>)> = raw
         .iter()
         .map(|it| {
-            let id = checked_id(s, it.get("id").ok_or_else(|| bad(C, "each item needs an id"))?, C)?;
+            let id = checked_id(
+                s,
+                it.get("id")
+                    .ok_or_else(|| bad(C, "each item needs an id"))?,
+                C,
+            )?;
             let refs = checked_refs(it.get("anchors"), C)?;
             Ok((id, refs.into_iter().collect()))
         })
@@ -466,8 +671,11 @@ fn anchors_many(s: &mut Session, p: &Value) -> Result<Value> {
         for (id, refs) in items {
             // A segment pick's endpoints aren't selected anchors: start from none of them.
             let segment_pick = sel.segments.remove(&id).is_some();
-            let all: BTreeSet<(usize, usize)> =
-                d.node(id).and_then(|n| n.path_data()).map(|p| p.anchors().map(|(s, i, _)| (s, i)).collect()).unwrap_or_default();
+            let all: BTreeSet<(usize, usize)> = d
+                .node(id)
+                .and_then(|n| n.path_data())
+                .map(|p| p.anchors().map(|(s, i, _)| (s, i)).collect())
+                .unwrap_or_default();
             // Anything but a path is selected, toggled or deselected as a whole.
             if all.is_empty() {
                 match mode {
@@ -509,20 +717,42 @@ fn anchors_many(s: &mut Session, p: &Value) -> Result<Value> {
 /// swatch are, unless `tint` (General › Select Same Tint %) asks for the same tint too.
 fn same_paint(a: &Paint, b: &Paint, tint: bool) -> bool {
     match (a, b) {
-        (Paint::Solid { swatch: Some(x), tint: ta, .. }, Paint::Solid { swatch: Some(y), tint: tb, .. }) if x == y => !tint || (ta - tb).abs() < 1e-4,
+        (
+            Paint::Solid {
+                swatch: Some(x),
+                tint: ta,
+                ..
+            },
+            Paint::Solid {
+                swatch: Some(y),
+                tint: tb,
+                ..
+            },
+        ) if x == y => !tint || (ta - tb).abs() < 1e-4,
         _ => a == b,
     }
 }
 
 fn same(s: &mut Session, cmd: &str, eq: impl Fn(&Node, &Node) -> bool) -> Result<Value> {
     let st = s.doc()?;
-    let refn = st.selection.objects.first().and_then(|id| st.doc.node(*id)).cloned().ok_or_else(|| bad(cmd, "nothing selected"))?;
+    let refn = st
+        .selection
+        .objects
+        .first()
+        .and_then(|id| st.doc.node(*id))
+        .cloned()
+        .ok_or_else(|| bad(cmd, "nothing selected"))?;
     select_where(s, cmd, &json!({}), |_, n| !n.is_container() && eq(n, &refn))
 }
 
 /// Select the objects [`walk_selectable`] visits that `f` accepts (not looking inside accepted
 /// ones); Select > Reselect repeats `cmd` with `p`.
-fn select_where(s: &mut Session, cmd: &str, p: &Value, f: impl Fn(&Document, &Node) -> bool) -> Result<Value> {
+fn select_where(
+    s: &mut Session,
+    cmd: &str,
+    p: &Value,
+    f: impl Fn(&Document, &Node) -> bool,
+) -> Result<Value> {
     let st = s.doc()?;
     let mut ids = vec![];
     walk_selectable(&st.doc, st.isolation, |n| {
@@ -548,7 +778,9 @@ fn same_graphic_style(s: &mut Session, _: &Value) -> Result<Value> {
         .and_then(|id| super::style::linked_style(&st.doc, st.doc.node(*id)?))
         .map(|g| g.id)
         .ok_or_else(|| bad(cmd, "the selection has no graphic style"))?;
-    select_where(s, cmd, &json!({}), |d, n| n.extras().graphic_style == Some(id) && super::style::linked_style(d, n).is_some())
+    select_where(s, cmd, &json!({}), |d, n| {
+        n.extras().graphic_style == Some(id) && super::style::linked_style(d, n).is_some()
+    })
 }
 
 /// An appearance attribute Select > Same > Appearance Attribute matches.
@@ -560,26 +792,49 @@ enum Attribute {
 fn same_attribute(s: &mut Session, p: &Value) -> Result<Value> {
     let cmd = "select.same.appearanceAttribute";
     let st = s.doc()?;
-    let refn = st.selection.objects.first().and_then(|id| st.doc.node(*id)).ok_or_else(|| bad(cmd, "nothing selected"))?;
+    let refn = st
+        .selection
+        .objects
+        .first()
+        .and_then(|id| st.doc.node(*id))
+        .ok_or_else(|| bad(cmd, "nothing selected"))?;
     let ap = &refn.appearance;
-    let item = p.get("item").and_then(Value::as_u64).map(|i| i as usize).or(s.appearance_item());
+    let item = p
+        .get("item")
+        .and_then(Value::as_u64)
+        .map(|i| i as usize)
+        .or(s.appearance_item());
     let attr = match (item.and_then(|i| ap.items.get(i)), ap.effects.first()) {
         (Some(it), _) => Attribute::Item(it.clone()),
         (None, Some(e)) => Attribute::Effect(e.clone()),
-        (None, None) => {
-            Attribute::Item(ap.items.iter().rev().find(|i| i.is_fill()).cloned().ok_or_else(|| bad(cmd, "the object has no fill, stroke or effect"))?)
-        }
+        (None, None) => Attribute::Item(
+            ap.items
+                .iter()
+                .rev()
+                .find(|i| i.is_fill())
+                .cloned()
+                .ok_or_else(|| bad(cmd, "the object has no fill, stroke or effect"))?,
+        ),
     };
     select_where(s, cmd, p, |_, n| match &attr {
         Attribute::Item(it) => n.appearance.items.contains(it),
-        Attribute::Effect(e) => n.appearance.effects.iter().any(|x| x.id == e.id && x.params == e.params),
+        Attribute::Effect(e) => n
+            .appearance
+            .effects
+            .iter()
+            .any(|x| x.id == e.id && x.params == e.params),
     })
 }
 
 fn same_layers(s: &mut Session, _: &Value) -> Result<Value> {
     let st = s.doc()?;
     // The layers or sublayers the selected objects are on (art in their sublayers too).
-    let layers: BTreeSet<NodeId> = st.selection.objects.iter().filter_map(|id| st.doc.layer_containing(*id)).collect();
+    let layers: BTreeSet<NodeId> = st
+        .selection
+        .objects
+        .iter()
+        .filter_map(|id| st.doc.layer_containing(*id))
+        .collect();
     let mut on = BTreeSet::new();
     for l in layers.iter().filter_map(|l| st.doc.node(*l)) {
         l.walk(&mut |n| {
@@ -587,7 +842,10 @@ fn same_layers(s: &mut Session, _: &Value) -> Result<Value> {
         });
     }
     // The objects Select All takes there (in isolation mode, those in the isolated group or layer).
-    let ids: Vec<NodeId> = selectable(&st.doc, st.isolation).into_iter().filter(|id| on.contains(id)).collect();
+    let ids: Vec<NodeId> = selectable(&st.doc, st.isolation)
+        .into_iter()
+        .filter(|id| on.contains(id))
+        .collect();
     s.select(|_, sel| sel.set(ids.iter().copied()))?;
     ok()
 }

@@ -23,7 +23,11 @@ use serde::Serialize;
 /// ([`export_gate`]): transient memory, given back when the batch ends. Default:
 /// a quarter of the machine's RAM, at most 1.5 GiB (`LIGHTCRAFT_MEMORY_MB` overrides it).
 pub fn default_budget() -> usize {
-    if let Some(mb) = std::env::var("LIGHTCRAFT_MEMORY_MB").ok().and_then(|v| v.trim().parse::<usize>().ok()).filter(|m| *m >= 64) {
+    if let Some(mb) = std::env::var("LIGHTCRAFT_MEMORY_MB")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .filter(|m| *m >= 64)
+    {
         return mb << 20;
     }
     let cap = 3usize << 29; // 1.5 GiB
@@ -38,17 +42,29 @@ fn total_ram() -> Option<usize> {
     #[cfg(target_os = "linux")]
     {
         let s = std::fs::read_to_string("/proc/meminfo").ok()?;
-        let kb: usize = s.lines().find(|l| l.starts_with("MemTotal:"))?.split_whitespace().nth(1)?.parse().ok()?;
+        let kb: usize = s
+            .lines()
+            .find(|l| l.starts_with("MemTotal:"))?
+            .split_whitespace()
+            .nth(1)?
+            .parse()
+            .ok()?;
         Some(kb * 1024)
     }
     #[cfg(target_os = "macos")]
     {
-        let out = std::process::Command::new("/usr/sbin/sysctl").args(["-n", "hw.memsize"]).output().ok()?;
+        let out = std::process::Command::new("/usr/sbin/sysctl")
+            .args(["-n", "hw.memsize"])
+            .output()
+            .ok()?;
         String::from_utf8_lossy(&out.stdout).trim().parse().ok()
     }
     #[cfg(target_os = "freebsd")]
     {
-        let out = std::process::Command::new("/sbin/sysctl").args(["-n", "hw.physmem"]).output().ok()?;
+        let out = std::process::Command::new("/sbin/sysctl")
+            .args(["-n", "hw.physmem"])
+            .output()
+            .ok()?;
         String::from_utf8_lossy(&out.stdout).trim().parse().ok()
     }
     #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "freebsd")))]
@@ -111,7 +127,10 @@ pub struct Permit<'a> {
 
 impl WorkGate {
     pub fn new(limit: usize) -> WorkGate {
-        WorkGate { state: Mutex::new((0, limit)), cv: Condvar::new() }
+        WorkGate {
+            state: Mutex::new((0, limit)),
+            cv: Condvar::new(),
+        }
     }
 
     fn lock(&self) -> std::sync::MutexGuard<'_, (usize, usize)> {
@@ -285,7 +304,11 @@ pub fn heap_stats() -> Option<HeapUsage> {
 /// The GPU renderer's device buffers.
 pub fn gpu_usage() -> GpuUsage {
     let g = lightcraft_gpu::memory();
-    GpuUsage { allocated: g.allocated, pooled: g.pooled, retired: g.retired }
+    GpuUsage {
+        allocated: g.allocated,
+        pooled: g.pooled,
+        retired: g.retired,
+    }
 }
 
 impl crate::Session {
@@ -299,7 +322,10 @@ impl crate::Session {
             preview_sources,
             full_source,
             rendered,
-            engine_bytes: thumb_sources.bytes + preview_sources.bytes + full_source.bytes + rendered.bytes,
+            engine_bytes: thumb_sources.bytes
+                + preview_sources.bytes
+                + full_source.bytes
+                + rendered.bytes,
             gpu: gpu_usage(),
             budget: budget(),
             cache_budget: self.media.budget(),

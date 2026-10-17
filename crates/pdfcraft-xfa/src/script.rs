@@ -112,10 +112,17 @@ fn acroform(doc: &Document) -> Option<(Option<pdfcraft_cos::ObjRef>, Dict)> {
 /// The overrides the document carries.
 pub fn overrides(doc: &Document) -> Overrides {
     let mut out = Overrides::default();
-    let Some((_, acro)) = acroform(doc) else { return out };
-    let Some(o) = acro.get(OVERRIDES_KEY).map(|o| doc.resolve(o)) else { return out };
+    let Some((_, acro)) = acroform(doc) else {
+        return out;
+    };
+    let Some(o) = acro.get(OVERRIDES_KEY).map(|o| doc.resolve(o)) else {
+        return out;
+    };
     let Some(d) = o.as_dict() else { return out };
-    for (which, map) in [(&b"Presence"[..], &mut out.presence), (&b"Access"[..], &mut out.access)] {
+    for (which, map) in [
+        (&b"Presence"[..], &mut out.presence),
+        (&b"Access"[..], &mut out.access),
+    ] {
         if let Some(m) = d.get(which).map(|m| doc.resolve(m))
             && let Some(m) = m.as_dict()
         {
@@ -131,8 +138,12 @@ pub fn overrides(doc: &Document) -> Overrides {
 
 /// Store `ov` in the document (none: the key is removed).
 pub fn set_overrides(doc: &mut Document, ov: &Overrides) -> Result<(), XfaError> {
-    let Some(root) = doc.root() else { return Ok(()) };
-    let Some((acro_ref, mut acro)) = acroform(doc) else { return Ok(()) };
+    let Some(root) = doc.root() else {
+        return Ok(());
+    };
+    let Some((acro_ref, mut acro)) = acroform(doc) else {
+        return Ok(());
+    };
     if ov.is_empty() {
         acro.remove(OVERRIDES_KEY);
     } else {
@@ -159,7 +170,11 @@ pub fn set_overrides(doc: &mut Document, ov: &Overrides) -> Result<(), XfaError>
 /// Index of child `i` among the earlier siblings with the same name.
 fn sib_index(children: &[Node], i: usize) -> usize {
     let name = children.get(i).and_then(|c| c.common().name.as_deref());
-    children.iter().take(i).filter(|c| c.common().name.as_deref() == name && name.is_some()).count()
+    children
+        .iter()
+        .take(i)
+        .filter(|c| c.common().name.as_deref() == name && name.is_some())
+        .count()
 }
 
 fn child_som(parent: &str, name: Option<&str>, index: usize) -> String {
@@ -192,7 +207,14 @@ impl Walker<'_> {
         true
     }
 
-    fn push_events(&mut self, som: &str, scripts: &[Script], calculate: Option<&Script>, validate: Option<&Script>, message: Option<&str>) {
+    fn push_events(
+        &mut self,
+        som: &str,
+        scripts: &[Script],
+        calculate: Option<&Script>,
+        validate: Option<&Script>,
+        message: Option<&str>,
+    ) {
         if self.events.len() >= MAX_EVENTS {
             self.truncated = true;
             return;
@@ -234,16 +256,38 @@ impl Walker<'_> {
     }
 
     fn presence(&self, som: &str, p: Presence) -> String {
-        self.ov.presence.get(som).cloned().unwrap_or_else(|| presence_name(p).to_string())
+        self.ov
+            .presence
+            .get(som)
+            .cloned()
+            .unwrap_or_else(|| presence_name(p).to_string())
     }
 
     fn access(&self, som: &str, a: Access) -> String {
-        self.ov.access.get(som).cloned().unwrap_or_else(|| access_name(a).to_string())
+        self.ov
+            .access
+            .get(som)
+            .cloned()
+            .unwrap_or_else(|| access_name(a).to_string())
     }
 
-    fn field(&mut self, f: &Field, parent_som: &str, index: usize, radio: Option<&str>) -> FormNode {
-        let som = child_som(parent_som, f.common.name.as_deref().or(Some("field")), index);
-        let data_value = self.data.and_then(|d| d.value_at(&data_path(self.tpl, &som))).map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+    fn field(
+        &mut self,
+        f: &Field,
+        parent_som: &str,
+        index: usize,
+        radio: Option<&str>,
+    ) -> FormNode {
+        let som = child_som(
+            parent_som,
+            f.common.name.as_deref().or(Some("field")),
+            index,
+        );
+        let data_value = self
+            .data
+            .and_then(|d| d.value_at(&data_path(self.tpl, &som)))
+            .map(|t| t.trim().to_string())
+            .filter(|t| !t.is_empty());
         let value = match (radio, data_value) {
             // A radio button's value is its on value when the group picked it.
             (Some(selected), _) => {
@@ -251,9 +295,19 @@ impl Walker<'_> {
                 if selected == on { on } else { String::new() }
             }
             (None, Some(v)) => f.saved_value(&v),
-            (None, None) => f.value.plain().map(|v| f.saved_value(v.trim())).unwrap_or_default(),
+            (None, None) => f
+                .value
+                .plain()
+                .map(|v| f.saved_value(v.trim()))
+                .unwrap_or_default(),
         };
-        self.push_events(&som, &f.scripts, f.calculate.as_ref(), f.validate.as_ref(), f.validate_message.as_deref());
+        self.push_events(
+            &som,
+            &f.scripts,
+            f.calculate.as_ref(),
+            f.validate.as_ref(),
+            f.validate_message.as_deref(),
+        );
         FormNode {
             name: f.common.name.clone().unwrap_or_else(|| "field".into()),
             som: som.clone(),
@@ -273,10 +327,17 @@ impl Walker<'_> {
     /// What [`Self::field`] gives a field outside an exclusion group: its data value (as saved)
     /// or its template default.
     fn plain_field_value(tpl: &Template, data: Option<&DataNode>, f: &Field, som: &str) -> String {
-        let data_value = data.and_then(|d| d.value_at(&data_path(tpl, som))).map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+        let data_value = data
+            .and_then(|d| d.value_at(&data_path(tpl, som)))
+            .map(|t| t.trim().to_string())
+            .filter(|t| !t.is_empty());
         match data_value {
             Some(v) => f.saved_value(&v),
-            None => f.value.plain().map(|v| f.saved_value(v.trim())).unwrap_or_default(),
+            None => f
+                .value
+                .plain()
+                .map(|v| f.saved_value(v.trim()))
+                .unwrap_or_default(),
         }
     }
 
@@ -293,7 +354,9 @@ impl Walker<'_> {
             match n {
                 Node::Subform(sf) => {
                     let from_data = match (&sf.common.name, self.data) {
-                        (Some(name), Some(d)) if sf.occur.max != Some(1) => d.count(&data_path(self.tpl, parent_som), name),
+                        (Some(name), Some(d)) if sf.occur.max != Some(1) => {
+                            d.count(&data_path(self.tpl, parent_som), name)
+                        }
                         _ => 0,
                     };
                     let instances = crate::layout::instance_count(&sf.occur, from_data);
@@ -355,17 +418,30 @@ impl Walker<'_> {
                     });
                 }
                 Node::ExclGroup(g) => {
-                    let som = child_som(parent_som, g.common.name.as_deref().or(Some("group")), sib);
-                    let selected =
-                        self.data.and_then(|d| d.text_at(&data_path(self.tpl, &som))).map(|t| t.trim().to_string()).filter(|t| !t.is_empty());
+                    let som =
+                        child_som(parent_som, g.common.name.as_deref().or(Some("group")), sib);
+                    let selected = self
+                        .data
+                        .and_then(|d| d.text_at(&data_path(self.tpl, &som)))
+                        .map(|t| t.trim().to_string())
+                        .filter(|t| !t.is_empty());
                     self.push_events(&som, &g.scripts, None, None, None);
-                    let fields: Vec<Node> = g.fields.iter().map(|f| Node::Field(Box::new(f.clone()))).collect();
+                    let fields: Vec<Node> = g
+                        .fields
+                        .iter()
+                        .map(|f| Node::Field(Box::new(f.clone())))
+                        .collect();
                     let mut children = Vec::new();
                     for (fi, f) in g.fields.iter().enumerate() {
                         if !self.take() {
                             break;
                         }
-                        children.push(self.field(f, &som, sib_index(&fields, fi), Some(selected.as_deref().unwrap_or(""))));
+                        children.push(self.field(
+                            f,
+                            &som,
+                            sib_index(&fields, fi),
+                            Some(selected.as_deref().unwrap_or("")),
+                        ));
                     }
                     out.push(FormNode {
                         name: g.common.name.clone().unwrap_or_else(|| "group".into()),
@@ -391,7 +467,14 @@ impl Walker<'_> {
 /// from the template and `ov`) and every scripted event, in document order, within
 /// [`MAX_FORM_NODES`] objects.
 pub fn form_tree(tpl: &Template, data: Option<&DataNode>, ov: &Overrides) -> LiveForm {
-    let mut w = Walker { tpl, data, ov, events: Vec::new(), nodes: 0, truncated: false };
+    let mut w = Walker {
+        tpl,
+        data,
+        ov,
+        events: Vec::new(),
+        nodes: 0,
+        truncated: false,
+    };
     let root = Node::Subform(Box::new(tpl.root.clone()));
     let mut nodes = w.children(std::slice::from_ref(&root), "", 0);
     let mut root_node = nodes.pop().unwrap_or_default();
@@ -400,7 +483,11 @@ pub fn form_tree(tpl: &Template, data: Option<&DataNode>, ov: &Overrides) -> Liv
     // names them, so their click scripts can run.
     if let Some(ps) = &tpl.root.page_set {
         for (i, area) in ps.areas.iter().enumerate() {
-            let som = area.name.clone().map(|n| format!("{n}[0]")).unwrap_or_else(|| format!("#pageArea[{i}]"));
+            let som = area
+                .name
+                .clone()
+                .map(|n| format!("{n}[0]"))
+                .unwrap_or_else(|| format!("#pageArea[{i}]"));
             let children = w.children(&area.items, &som, 1);
             if children.is_empty() {
                 continue;
@@ -419,7 +506,11 @@ pub fn form_tree(tpl: &Template, data: Option<&DataNode>, ov: &Overrides) -> Liv
             });
         }
     }
-    LiveForm { root: root_node, events: w.events, truncated: w.truncated }
+    LiveForm {
+        root: root_node,
+        events: w.events,
+        truncated: w.truncated,
+    }
 }
 
 /// Does the template declare any script (an event, calculation or validation)? Forms without
@@ -429,7 +520,11 @@ pub fn has_scripts(tpl: &Template) -> bool {
         s.iter().any(|s| !s.text.trim().is_empty())
     }
     fn field(f: &Field) -> bool {
-        any(&f.scripts) || [&f.calculate, &f.validate].into_iter().flatten().any(|s| !s.text.trim().is_empty())
+        any(&f.scripts)
+            || [&f.calculate, &f.validate]
+                .into_iter()
+                .flatten()
+                .any(|s| !s.text.trim().is_empty())
     }
     fn walk(nodes: &[Node], depth: usize) -> bool {
         depth <= MAX_DEPTH
@@ -441,7 +536,13 @@ pub fn has_scripts(tpl: &Template) -> bool {
                 Node::Draw(_) => false,
             })
     }
-    any(&tpl.root.scripts) || walk(&tpl.root.children, 1) || tpl.root.page_set.as_ref().is_some_and(|ps| ps.areas.iter().any(|a| walk(&a.items, 1)))
+    any(&tpl.root.scripts)
+        || walk(&tpl.root.children, 1)
+        || tpl
+            .root
+            .page_set
+            .as_ref()
+            .is_some_and(|ps| ps.areas.iter().any(|a| walk(&a.items, 1)))
 }
 
 /// The template with `ov` applied to its objects (instance 0 of each; scripts that hide one
@@ -497,9 +598,17 @@ pub fn apply_overrides(tpl: &Template, ov: &Overrides) -> Template {
                     if let Some(p) = presence {
                         g.common.presence = p;
                     }
-                    let fields: Vec<Node> = g.fields.iter().map(|f| Node::Field(Box::new(f.clone()))).collect();
+                    let fields: Vec<Node> = g
+                        .fields
+                        .iter()
+                        .map(|f| Node::Field(Box::new(f.clone())))
+                        .collect();
                     for (fi, f) in g.fields.iter_mut().enumerate() {
-                        let fsom = child_som(&som, f.common.name.as_deref().or(Some("field")), sib_index(&fields, fi));
+                        let fsom = child_som(
+                            &som,
+                            f.common.name.as_deref().or(Some("field")),
+                            sib_index(&fields, fi),
+                        );
                         if let Some(p) = ov.presence.get(&fsom) {
                             f.common.presence = Presence::parse(Some(p));
                         }
@@ -521,32 +630,54 @@ pub fn apply_overrides(tpl: &Template, ov: &Overrides) -> Template {
 
 /// The generated fields of the AcroForm by SOM path: `som → (field name, is a radio group)`.
 pub fn fields_by_som(doc: &Document) -> HashMap<String, String> {
-    fn walk(doc: &Document, r: pdfcraft_cos::ObjRef, prefix: &str, out: &mut HashMap<String, String>, depth: usize) {
+    fn walk(
+        doc: &Document,
+        r: pdfcraft_cos::ObjRef,
+        prefix: &str,
+        out: &mut HashMap<String, String>,
+        depth: usize,
+    ) {
         if depth > MAX_DEPTH || out.len() > 100_000 {
             return;
         }
         let o = doc.get(r);
         let Some(d) = o.as_dict() else { return };
-        let t = d.get(b"T").map(|t| doc.resolve(t)).and_then(|t| t.as_string().map(|s| s.to_text()));
+        let t = d
+            .get(b"T")
+            .map(|t| doc.resolve(t))
+            .and_then(|t| t.as_string().map(|s| s.to_text()));
         let name = match (&t, prefix.is_empty()) {
             (Some(t), true) => t.clone(),
             (Some(t), false) => format!("{prefix}.{t}"),
             (None, _) => prefix.to_string(),
         };
-        if let Some(som) = d.get(crate::pdf::SOM_KEY).map(|s| doc.resolve(s)).and_then(|s| s.as_string().map(|s| s.to_text()))
+        if let Some(som) = d
+            .get(crate::pdf::SOM_KEY)
+            .map(|s| doc.resolve(s))
+            .and_then(|s| s.as_string().map(|s| s.to_text()))
             && t.is_some()
         {
             out.insert(som, name.clone());
         }
-        if let Some(kids) = d.get(b"Kids").map(|k| doc.resolve(k)).and_then(|k| k.as_array().cloned()) {
+        if let Some(kids) = d
+            .get(b"Kids")
+            .map(|k| doc.resolve(k))
+            .and_then(|k| k.as_array().cloned())
+        {
             for k in kids.iter().filter_map(Object::as_ref) {
                 walk(doc, k, &name, out, depth + 1);
             }
         }
     }
     let mut out = HashMap::new();
-    let Some((_, acro)) = acroform(doc) else { return out };
-    let fields = acro.get(b"Fields").map(|f| doc.resolve(f)).and_then(|f| f.as_array().cloned()).unwrap_or_default();
+    let Some((_, acro)) = acroform(doc) else {
+        return out;
+    };
+    let fields = acro
+        .get(b"Fields")
+        .map(|f| doc.resolve(f))
+        .and_then(|f| f.as_array().cloned())
+        .unwrap_or_default();
     for f in fields.iter().filter_map(Object::as_ref) {
         walk(doc, f, "", &mut out, 0);
     }
@@ -562,14 +693,30 @@ pub fn rerender(doc: &mut Document, tpl: &Template) -> Result<Report, XfaError> 
     let laid = apply_overrides(tpl, &ov);
     let form = crate::layout(&laid, data.as_ref())?;
     if form.pages.is_empty() {
-        return Err(XfaError::Malformed("the template laid out to no pages".into()));
+        return Err(XfaError::Malformed(
+            "the template laid out to no pages".into(),
+        ));
     }
     // The AcroForm keeps only the fields PdfCraft did not generate.
-    let Some(root) = doc.root() else { return Err(XfaError::NotXfa) };
+    let Some(root) = doc.root() else {
+        return Err(XfaError::NotXfa);
+    };
     if let Some((acro_ref, mut acro)) = acroform(doc) {
-        let fields = acro.get(b"Fields").map(|f| doc.resolve(f)).and_then(|f| f.as_array().cloned()).unwrap_or_default();
-        let kept: Vec<Object> =
-            fields.into_iter().filter(|f| f.as_ref().is_none_or(|r| doc.get(r).as_dict().is_none_or(|d| !d.contains(crate::pdf::SOM_KEY)))).collect();
+        let fields = acro
+            .get(b"Fields")
+            .map(|f| doc.resolve(f))
+            .and_then(|f| f.as_array().cloned())
+            .unwrap_or_default();
+        let kept: Vec<Object> = fields
+            .into_iter()
+            .filter(|f| {
+                f.as_ref().is_none_or(|r| {
+                    doc.get(r)
+                        .as_dict()
+                        .is_none_or(|d| !d.contains(crate::pdf::SOM_KEY))
+                })
+            })
+            .collect();
         acro.set(b"Fields".to_vec(), Object::Array(kept));
         match acro_ref {
             Some(r) => doc.set(r, Object::Dict(acro)),
@@ -580,14 +727,21 @@ pub fn rerender(doc: &mut Document, tpl: &Template) -> Result<Report, XfaError> 
     let mut warnings = form.warnings;
     warnings.extend(written.warnings);
     warnings.dedup();
-    Ok(Report { pages: written.pages, fields: written.fields, template_bytes: packets.xdp.len(), warnings })
+    Ok(Report {
+        pages: written.pages,
+        fields: written.fields,
+        template_bytes: packets.xdp.len(),
+        warnings,
+    })
 }
 
 /// The parsed template of a document's XFA packets.
 pub fn template_of(doc: &Document) -> Result<Template, XfaError> {
     let packets = crate::read_packets(doc)?.ok_or(XfaError::NotXfa)?;
     if packets.xdp.trim().is_empty() {
-        return Err(XfaError::Malformed("the XFA packets hold no template".into()));
+        return Err(XfaError::Malformed(
+            "the XFA packets hold no template".into(),
+        ));
     }
     crate::parse(&packets.xdp).map(|(t, _)| t)
 }
@@ -623,13 +777,18 @@ fn named_in<'a>(nodes: &'a [Node], name: &str, depth: usize) -> Option<&'a Node>
     if depth > MAX_DEPTH {
         return None;
     }
-    nodes.iter().find(|n| n.common().name.as_deref() == Some(name)).or_else(|| {
-        nodes.iter().find_map(|n| match n {
-            Node::Subform(sf) if sf.common.name.is_none() => named_in(&sf.children, name, depth + 1),
-            Node::Area(a) if a.common.name.is_none() => named_in(&a.children, name, depth + 1),
-            _ => None,
+    nodes
+        .iter()
+        .find(|n| n.common().name.as_deref() == Some(name))
+        .or_else(|| {
+            nodes.iter().find_map(|n| match n {
+                Node::Subform(sf) if sf.common.name.is_none() => {
+                    named_in(&sf.children, name, depth + 1)
+                }
+                Node::Area(a) if a.common.name.is_none() => named_in(&a.children, name, depth + 1),
+                _ => None,
+            })
         })
-    })
 }
 
 /// Give the field at `som` in `live`, and every other field bound to the same data node (a
@@ -639,7 +798,12 @@ fn named_in<'a>(nodes: &'a [Node], name: &str, depth: usize) -> Option<&'a Node>
 /// containers, which have no data segment), so it costs the depth, not the form. `None`: a
 /// node bound there is not a plain field the tree can refresh alone (a radio button, an
 /// exclusion group, an object the template doesn't have): rebuild the tree.
-pub fn refresh_value(live: &mut FormNode, tpl: &Template, data: Option<&DataNode>, som: &str) -> Option<bool> {
+pub fn refresh_value(
+    live: &mut FormNode,
+    tpl: &Template,
+    data: Option<&DataNode>,
+    som: &str,
+) -> Option<bool> {
     template_field(tpl, som)?;
     let path = data_path(tpl, som);
     if path.is_empty() {
@@ -659,12 +823,15 @@ pub fn refresh_value(live: &mut FormNode, tpl: &Template, data: Option<&DataNode
         }
         for c in n.children.iter_mut() {
             // No data segment of their own: looked through.
-            let transparent = matches!(c.kind, Some(NodeKind::Area)) || (matches!(c.kind, Some(NodeKind::Subform)) && c.name.starts_with('#'));
+            let transparent = matches!(c.kind, Some(NodeKind::Area))
+                || (matches!(c.kind, Some(NodeKind::Subform)) && c.name.starts_with('#'));
             if transparent {
                 walk(c, tpl, data, path, pos, changed, depth + 1)?;
                 continue;
             }
-            let Some((name, index)) = path.get(pos) else { continue };
+            let Some((name, index)) = path.get(pos) else {
+                continue;
+            };
             if c.name != *name || c.index != *index {
                 continue;
             }
@@ -700,5 +867,8 @@ pub fn refresh_value(live: &mut FormNode, tpl: &Template, data: Option<&DataNode
 
 /// The data tree of a document's datasets packet.
 pub fn data_of(doc: &Document) -> Option<DataNode> {
-    crate::read_packets(doc).ok().flatten().and_then(|p| parse_datasets(&p.xdp))
+    crate::read_packets(doc)
+        .ok()
+        .flatten()
+        .and_then(|p| parse_datasets(&p.xdp))
 }

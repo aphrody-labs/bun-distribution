@@ -6,8 +6,8 @@
 use bevy_app::{App, Plugin, PostUpdate, Startup};
 use bevy_asset::{Assets, Handle};
 use bevy_camera::{
-    visibility::{RenderLayers, Visibility},
     Camera, Camera3d,
+    visibility::{RenderLayers, Visibility},
 };
 use bevy_color::Color;
 use bevy_ecs::{
@@ -28,10 +28,10 @@ use bevy_transform::{
 };
 
 use bevy_gizmos::transform_gizmo::{
-    TransformGizmoAxis, TransformGizmoCamera, TransformGizmoFocus, TransformGizmoMeshMarker,
-    TransformGizmoMode, TransformGizmoRoot, TransformGizmoSettings, TransformGizmoState,
     AXIS_START_OFFSET, COLOR_VIEW, COLOR_X, COLOR_Y, COLOR_Z, CONE_HEIGHT, CONE_RADIUS,
     INACTIVE_ALPHA, ROTATE_RING_RADIUS, SCALE_CUBE_SIZE, SHAFT_LENGTH, SHAFT_RADIUS,
+    TransformGizmoAxis, TransformGizmoCamera, TransformGizmoFocus, TransformGizmoMeshMarker,
+    TransformGizmoMode, TransformGizmoRoot, TransformGizmoSettings, TransformGizmoState,
     VIEW_CIRCLE_MAJOR, VIEW_CIRCLE_MINOR, VIEW_RING_MAJOR, VIEW_RING_MINOR,
 };
 

@@ -28,8 +28,16 @@ fn endou() -> CharaBase {
 
 fn nouns() -> Vec<ParsedNoun> {
     vec![
-        ParsedNoun { hash_id: HashId(0xE551_FF12), name: "Mark".into(), alt_names: vec![] },
-        ParsedNoun { hash_id: HashId(0xE565_5F9E), name: "Evans".into(), alt_names: vec![] },
+        ParsedNoun {
+            hash_id: HashId(0xE551_FF12),
+            name: "Mark".into(),
+            alt_names: vec![],
+        },
+        ParsedNoun {
+            hash_id: HashId(0xE565_5F9E),
+            name: "Evans".into(),
+            alt_names: vec![],
+        },
     ]
 }
 

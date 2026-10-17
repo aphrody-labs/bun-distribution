@@ -8,7 +8,9 @@
 //! reads from a paste itself ([`VectorcraftApp::paste_from_host`]).
 
 use serde_json::{Value, json};
-use vectorcraft_engine::cmd::clipboard::{BITMAP, EMF, EPS, Flavour, PASTE_ORDER, PDF, SVG, TEXT, looks_like_svg, names_a_picture};
+use vectorcraft_engine::cmd::clipboard::{
+    BITMAP, EMF, EPS, Flavour, PASTE_ORDER, PDF, SVG, TEXT, looks_like_svg, names_a_picture,
+};
 
 use crate::VectorcraftApp;
 
@@ -36,16 +38,37 @@ pub(crate) fn import_command(f: &Flavour, center: Option<[f64; 2]>) -> (&'static
         TEXT => {
             let text = String::from_utf8_lossy(&f.data);
             if looks_like_svg(&text) {
-                ("clipboard.importSvg", json!({ "svg": text, "center": center }))
+                (
+                    "clipboard.importSvg",
+                    json!({ "svg": text, "center": center }),
+                )
             } else {
-                ("clipboard.importText", json!({ "text": text, "center": center }))
+                (
+                    "clipboard.importText",
+                    json!({ "text": text, "center": center }),
+                )
             }
         }
-        SVG => ("clipboard.importSvg", json!({ "dataBase64": b64(), "center": center })),
-        PDF => ("clipboard.importPdf", json!({ "dataBase64": b64(), "center": center })),
-        EPS => ("clipboard.importEps", json!({ "dataBase64": b64(), "center": center })),
-        EMF => ("clipboard.importEmf", json!({ "dataBase64": b64(), "center": center })),
-        mime => ("clipboard.importImage", json!({ "dataBase64": b64(), "mime": mime, "center": center })),
+        SVG => (
+            "clipboard.importSvg",
+            json!({ "dataBase64": b64(), "center": center }),
+        ),
+        PDF => (
+            "clipboard.importPdf",
+            json!({ "dataBase64": b64(), "center": center }),
+        ),
+        EPS => (
+            "clipboard.importEps",
+            json!({ "dataBase64": b64(), "center": center }),
+        ),
+        EMF => (
+            "clipboard.importEmf",
+            json!({ "dataBase64": b64(), "center": center }),
+        ),
+        mime => (
+            "clipboard.importImage",
+            json!({ "dataBase64": b64(), "mime": mime, "center": center }),
+        ),
     }
 }
 
@@ -90,24 +113,36 @@ impl VectorcraftApp {
                 if cb.holds_ours() {
                     return Ok(());
                 }
-                let Some(f) = cb.read(&PASTE_ORDER) else { return Ok(()) };
+                let Some(f) = cb.read(&PASTE_ORDER) else {
+                    return Ok(());
+                };
                 // Text that only names a picture (its address, or its image markup) goes with a
                 // browser's copied picture: the picture.
                 let text = String::from_utf8_lossy(&f.data);
                 // Blank text is what some hosts put beside a copied picture. It is not the paste.
-                let f = if f.mime == TEXT && (text.trim().is_empty() || names_a_picture(&text)) { cb.read(&[BITMAP]).unwrap_or(f) } else { f };
+                let f = if f.mime == TEXT && (text.trim().is_empty() || names_a_picture(&text)) {
+                    cb.read(&[BITMAP]).unwrap_or(f)
+                } else {
+                    f
+                };
                 import_command(&f, center)
             }
             // Text only: SVG markup is art, other text is left alone.
             (pasted, None) => {
-                let text =
-                    pasted.map(|f| String::from_utf8_lossy(&f.data).into_owned()).or_else(|| self.services.clipboard_read.as_mut().and_then(|f| f()));
-                let Some(text) = text.filter(|t| looks_like_svg(t)) else { return Ok(()) };
+                let text = pasted
+                    .map(|f| String::from_utf8_lossy(&f.data).into_owned())
+                    .or_else(|| self.services.clipboard_read.as_mut().and_then(|f| f()));
+                let Some(text) = text.filter(|t| looks_like_svg(t)) else {
+                    return Ok(());
+                };
                 if self.clipboard_published.as_deref() == Some(text.as_str()) {
                     return Ok(());
                 }
                 self.clipboard_published = Some(text.clone());
-                ("clipboard.importSvg", json!({ "svg": text, "center": center }))
+                (
+                    "clipboard.importSvg",
+                    json!({ "svg": text, "center": center }),
+                )
             }
         };
         self.session.execute(cmd, &params).map(drop).map_err(|e| {
@@ -119,8 +154,14 @@ impl VectorcraftApp {
     /// The text on the system clipboard, if any.
     pub(crate) fn system_clipboard_text(&mut self) -> Option<String> {
         match self.services.system_clipboard.as_mut() {
-            Some(cb) => cb.read(&[TEXT]).map(|f| String::from_utf8_lossy(&f.data).into_owned()),
-            None => self.services.clipboard_read.as_mut().and_then(|read| read()),
+            Some(cb) => cb
+                .read(&[TEXT])
+                .map(|f| String::from_utf8_lossy(&f.data).into_owned()),
+            None => self
+                .services
+                .clipboard_read
+                .as_mut()
+                .and_then(|read| read()),
         }
     }
 
@@ -128,7 +169,12 @@ impl VectorcraftApp {
     pub(crate) fn system_clipboard_pasteable(&mut self) -> bool {
         match self.services.system_clipboard.as_mut() {
             Some(cb) => cb.has(&PASTE_ORDER),
-            None => self.services.clipboard_read.as_mut().and_then(|read| read()).is_some_and(|t| looks_like_svg(&t)),
+            None => self
+                .services
+                .clipboard_read
+                .as_mut()
+                .and_then(|read| read())
+                .is_some_and(|t| looks_like_svg(&t)),
         }
     }
 }

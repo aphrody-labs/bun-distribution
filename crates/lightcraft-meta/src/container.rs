@@ -30,14 +30,25 @@ pub struct Embedded {
 pub fn embedded(bytes: &[u8]) -> Embedded {
     if bytes.starts_with(b"FUJIFILMCCD-RAW") {
         // Fujifilm RAF: metadata lives in the embedded JPEG whose (offset, length) are big-endian u32s at byte 84
-        let be = |i: usize| bytes.get(i..i + 4).map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize);
+        let be = |i: usize| {
+            bytes
+                .get(i..i + 4)
+                .map(|s| u32::from_be_bytes([s[0], s[1], s[2], s[3]]) as usize)
+        };
         return match (be(84), be(88)) {
-            (Some(o), Some(l)) if o > 0 => bytes.get(o..o.saturating_add(l).min(bytes.len())).map(jpeg_segments).unwrap_or_default(),
+            (Some(o), Some(l)) if o > 0 => bytes
+                .get(o..o.saturating_add(l).min(bytes.len()))
+                .map(jpeg_segments)
+                .unwrap_or_default(),
             _ => Embedded::default(),
         };
     }
     if let Some(c) = crate::cr3::parse_cr3(bytes) {
-        return Embedded { exif: crate::cr3::merged_exif(&c), xmp: c.xmp.map(|b| String::from_utf8_lossy(b).into_owned()), ..Default::default() };
+        return Embedded {
+            exif: crate::cr3::merged_exif(&c),
+            xmp: c.xmp.map(|b| String::from_utf8_lossy(b).into_owned()),
+            ..Default::default()
+        };
     }
     if bytes.starts_with(&[0xff, 0xd8]) {
         jpeg_segments(bytes)
@@ -49,7 +60,9 @@ pub fn embedded(bytes: &[u8]) -> Embedded {
         let ifd0 = &t.ifds[0];
         Embedded {
             exif: Some(bytes.to_vec()),
-            xmp: ifd0.bytes(tags::XMP).map(|b| String::from_utf8_lossy(b).into_owned()),
+            xmp: ifd0
+                .bytes(tags::XMP)
+                .map(|b| String::from_utf8_lossy(b).into_owned()),
             xmp_extended: None,
             icc: ifd0.bytes(tags::ICC_PROFILE).map(|b| b.to_vec()),
             iptc: ifd0.value(tags::IPTC_NAA).map(|v| match v {
@@ -97,7 +110,9 @@ pub fn jpeg_segments(b: &[u8]) -> Embedded {
         let end = (i + 2 + len).min(b.len());
         let payload = &b[i + 4..end];
         match marker {
-            0xe1 if payload.starts_with(b"Exif\0") && out.exif.is_none() => out.exif = Some(payload.get(6..).unwrap_or(&[]).to_vec()),
+            0xe1 if payload.starts_with(b"Exif\0") && out.exif.is_none() => {
+                out.exif = Some(payload.get(6..).unwrap_or(&[]).to_vec())
+            }
             0xe1 if payload.starts_with(XMP_SIG) && out.xmp.is_none() => {
                 out.xmp = Some(String::from_utf8_lossy(&payload[XMP_SIG.len()..]).into_owned());
             }
@@ -109,8 +124,12 @@ pub fn jpeg_segments(b: &[u8]) -> Embedded {
                     ext.push((off, p[40..].to_vec()));
                 }
             }
-            0xe2 if payload.starts_with(b"ICC_PROFILE\0") && payload.len() >= 14 => icc_parts.push((payload[12], payload[14..].to_vec())),
-            0xed if payload.starts_with(b"Photoshop 3.0\0") && out.iptc.is_none() => out.iptc = photoshop_iptc(&payload[14..]),
+            0xe2 if payload.starts_with(b"ICC_PROFILE\0") && payload.len() >= 14 => {
+                icc_parts.push((payload[12], payload[14..].to_vec()))
+            }
+            0xed if payload.starts_with(b"Photoshop 3.0\0") && out.iptc.is_none() => {
+                out.iptc = photoshop_iptc(&payload[14..])
+            }
             _ => {}
         }
         i = end;
@@ -121,7 +140,10 @@ pub fn jpeg_segments(b: &[u8]) -> Embedded {
     }
     if !ext.is_empty() {
         ext.sort_by_key(|p| p.0);
-        out.xmp_extended = Some(String::from_utf8_lossy(&ext.into_iter().flat_map(|p| p.1).collect::<Vec<u8>>()).into_owned());
+        out.xmp_extended = Some(
+            String::from_utf8_lossy(&ext.into_iter().flat_map(|p| p.1).collect::<Vec<u8>>())
+                .into_owned(),
+        );
     }
     out
 }
@@ -151,7 +173,9 @@ pub fn png_chunks(b: &[u8]) -> Embedded {
     while i + 12 <= b.len() {
         let len = u32::from_be_bytes([b[i], b[i + 1], b[i + 2], b[i + 3]]) as usize;
         let typ = &b[i + 4..i + 8];
-        let Some(data) = b.get(i + 8..(i + 8).saturating_add(len)) else { break };
+        let Some(data) = b.get(i + 8..(i + 8).saturating_add(len)) else {
+            break;
+        };
         match typ {
             b"eXIf" => out.exif = Some(crate::strip_exif_header(data).to_vec()),
             b"iTXt" if data.starts_with(b"XML:com.adobe.xmp\0") => {
@@ -181,7 +205,9 @@ pub fn webp_chunks(b: &[u8]) -> Embedded {
     while i + 8 <= b.len() {
         let id = &b[i..i + 4];
         let len = u32::from_le_bytes([b[i + 4], b[i + 5], b[i + 6], b[i + 7]]) as usize;
-        let Some(data) = b.get(i + 8..(i + 8).saturating_add(len)) else { break };
+        let Some(data) = b.get(i + 8..(i + 8).saturating_add(len)) else {
+            break;
+        };
         match id {
             b"EXIF" => out.exif = Some(crate::strip_exif_header(data).to_vec()),
             b"XMP " => out.xmp = Some(String::from_utf8_lossy(data).into_owned()),
@@ -212,7 +238,11 @@ mod tests {
         let mut exif = b"Exif\0\0".to_vec();
         exif.extend(sample_exif(ByteOrder::Big));
         j.extend(seg(0xe1, &exif));
-        let meta = crate::Metadata { title: Some("Sunset".into()), rating: Some(4), ..Default::default() };
+        let meta = crate::Metadata {
+            title: Some("Sunset".into()),
+            rating: Some(4),
+            ..Default::default()
+        };
         let mut xmp = XMP_SIG.to_vec();
         xmp.extend(crate::write_xmp(&meta, Some("{\"exposure\":1.5}")).into_bytes());
         j.extend(seg(0xe1, &xmp));
@@ -259,7 +289,10 @@ mod tests {
             p.extend_from_slice(part);
             j.extend(seg(0xe1, &p));
         }
-        assert_eq!(jpeg_segments(&j).xmp_extended.as_deref(), Some("helloworld"));
+        assert_eq!(
+            jpeg_segments(&j).xmp_extended.as_deref(),
+            Some("helloworld")
+        );
     }
 
     #[test]
@@ -274,7 +307,16 @@ mod tests {
         };
         chunk(b"eXIf", &exif);
         let mut itxt = b"XML:com.adobe.xmp\0\0\0\0\0".to_vec();
-        itxt.extend(crate::write_xmp(&crate::Metadata { label: Some("Red".into()), ..Default::default() }, None).into_bytes());
+        itxt.extend(
+            crate::write_xmp(
+                &crate::Metadata {
+                    label: Some("Red".into()),
+                    ..Default::default()
+                },
+                None,
+            )
+            .into_bytes(),
+        );
         chunk(b"iTXt", &itxt);
         chunk(b"IEND", &[]);
         let m = crate::extract(&p);

@@ -9,7 +9,11 @@ fn crc32(data: &[u8]) -> u32 {
         for (i, e) in t.iter_mut().enumerate() {
             let mut c = i as u32;
             for _ in 0..8 {
-                c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
+                c = if c & 1 != 0 {
+                    0xEDB8_8320 ^ (c >> 1)
+                } else {
+                    c >> 1
+                };
             }
             *e = c;
         }
@@ -35,7 +39,8 @@ impl Zip {
     pub fn add(&mut self, name: &str, data: &[u8], compress: bool) {
         let crc = crc32(data);
         let (method, body) = if compress {
-            let mut e = flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
+            let mut e =
+                flate2::write::DeflateEncoder::new(Vec::new(), flate2::Compression::default());
             let _ = e.write_all(data);
             (8u16, e.finish().unwrap_or_default())
         } else {

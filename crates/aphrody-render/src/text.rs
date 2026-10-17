@@ -102,7 +102,11 @@ pub fn rasterize_line(text: &str, style: TypeStyleName, scale: f32) -> Rasterize
         }
     }
 
-    RasterizedText { width: total_width, height: total_height, coverage: canvas }
+    RasterizedText {
+        width: total_width,
+        height: total_height,
+        coverage: canvas,
+    }
 }
 
 /// Rasterize `text` in `style` at the M3 dp size scaled by `scale` (physical
@@ -188,7 +192,11 @@ pub fn rasterize_multiline(text: &str, style: TypeStyleName, scale: f32) -> Rast
         }
     }
 
-    RasterizedText { width: total_width, height: total_height, coverage: canvas }
+    RasterizedText {
+        width: total_width,
+        height: total_height,
+        coverage: canvas,
+    }
 }
 
 #[cfg(test)]
@@ -206,7 +214,10 @@ mod tests {
     #[test]
     fn non_empty_string_paints_some_coverage() {
         let text = rasterize_line("Aphrody", TypeStyleName::TitleLarge, 2.0);
-        assert!(text.coverage.iter().any(|&b| b > 0), "expected non-zero glyph coverage");
+        assert!(
+            text.coverage.iter().any(|&b| b > 0),
+            "expected non-zero glyph coverage"
+        );
     }
 
     #[test]
@@ -220,7 +231,10 @@ mod tests {
     fn multiline_rasterization_stacks_lines() {
         let single = rasterize_line("Aphrody", TypeStyleName::BodyMedium, 1.0);
         let multi = rasterize_multiline("Aphrody\nOS", TypeStyleName::BodyMedium, 1.0);
-        assert!(multi.height > single.height, "multiline height must exceed single line");
+        assert!(
+            multi.height > single.height,
+            "multiline height must exceed single line"
+        );
         assert!(
             multi.coverage.iter().any(|&b| b > 0),
             "multiline coverage must contain painted pixels"

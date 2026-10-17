@@ -19,7 +19,11 @@ pub(super) struct RepairingModelClient {
 
 impl RepairingModelClient {
     pub(super) fn new(inner: Arc<dyn ModelClient>) -> Self {
-        let model = inner.model_id().rsplit(['/', '\\']).next().unwrap_or(inner.model_id());
+        let model = inner
+            .model_id()
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(inner.model_id());
         let profile = select_profile(model, &[], &builtin_profiles()).clone();
         Self { inner, profile }
     }
@@ -29,20 +33,29 @@ impl RepairingModelClient {
         mut events: Vec<ModelStreamEvent>,
         tools: &[ToolDecl],
     ) -> Vec<ModelStreamEvent> {
-        if events.iter().any(|event| matches!(event, ModelStreamEvent::ToolCall { .. })) {
+        if events
+            .iter()
+            .any(|event| matches!(event, ModelStreamEvent::ToolCall { .. }))
+        {
             return events;
         }
         // Never repair an interrupted response into an executable call. Providers may emit
         // usage-only completion events, so require an explicit successful finish reason.
         let complete = events.iter().any(|event| match event {
-            ModelStreamEvent::Completed { finish_reason: Some(reason), .. } => matches!(
+            ModelStreamEvent::Completed {
+                finish_reason: Some(reason),
+                ..
+            } => matches!(
                 reason.to_ascii_lowercase().as_str(),
                 "stop" | "completed" | "tool_calls" | "function_call"
             ),
             _ => false,
         });
         let interrupted = events.iter().any(|event| match event {
-            ModelStreamEvent::Completed { finish_reason: Some(reason), .. } => !matches!(
+            ModelStreamEvent::Completed {
+                finish_reason: Some(reason),
+                ..
+            } => !matches!(
                 reason.to_ascii_lowercase().as_str(),
                 "stop" | "completed" | "tool_calls" | "function_call"
             ),
@@ -68,7 +81,9 @@ impl RepairingModelClient {
         let calls = extract_inline_tool_calls(candidate, self.profile.tool_dialect);
         if calls.is_empty()
             || !strip_tool_calls(candidate, &calls).is_empty()
-            || calls.iter().any(|call| !tools.iter().any(|tool| tool.name == call.name))
+            || calls
+                .iter()
+                .any(|call| !tools.iter().any(|tool| tool.name == call.name))
         {
             return events;
         }
@@ -130,12 +145,17 @@ impl ModelClient for RepairingModelClient {
         // Buffer each response before classifying text: an ordinary streamed code example must
         // never be partly emitted to the user and subsequently executed as a tool call.
         let stream = self.inner.stream(turn).await?;
-        let adapter = Self { inner: Arc::clone(&self.inner), profile: self.profile.clone() };
+        let adapter = Self {
+            inner: Arc::clone(&self.inner),
+            profile: self.profile.clone(),
+        };
         let recovered = futures::stream::once(async move {
             match stream.try_collect::<Vec<_>>().await {
-                Ok(events) => {
-                    adapter.recover(events, &tools).into_iter().map(Ok).collect::<Vec<_>>()
-                },
+                Ok(events) => adapter
+                    .recover(events, &tools)
+                    .into_iter()
+                    .map(Ok)
+                    .collect::<Vec<_>>(),
                 Err(error) => vec![Err(error)],
             }
         })
@@ -185,7 +205,10 @@ mod tests {
         ] {
             let events = vec![
                 ModelStreamEvent::TextDelta(text.into()),
-                ModelStreamEvent::Completed { usage: None, finish_reason: Some("stop".into()) },
+                ModelStreamEvent::Completed {
+                    usage: None,
+                    finish_reason: Some("stop".into()),
+                },
             ];
             assert_eq!(adapter.recover(events.clone(), &[tool()]), events);
         }
@@ -212,7 +235,12 @@ mod tests {
 
     #[test]
     fn truncated_responses_are_never_executed() {
-        for reason in [None, Some("length"), Some("content_filter"), Some("incomplete")] {
+        for reason in [
+            None,
+            Some("length"),
+            Some("content_filter"),
+            Some("incomplete"),
+        ] {
             let events = vec![
                 ModelStreamEvent::TextDelta(
                     "{\"name\":\"read_file\",\"arguments\":{\"path\":\"a.txt\"}}".into(),
@@ -277,12 +305,20 @@ mod tests {
             .model(ModelChoice::from_client(Arc::new(model)))
             .build()
             .unwrap();
-        let result = runtime.run_once("create and verify hello.txt").await.unwrap();
+        let result = runtime
+            .run_once("create and verify hello.txt")
+            .await
+            .unwrap();
         assert_eq!(
-            std::fs::read_to_string(root.path().join("hello.txt")).unwrap().trim(),
+            std::fs::read_to_string(root.path().join("hello.txt"))
+                .unwrap()
+                .trim(),
             "APHRODY_OSS_SMOKE"
         );
-        assert_eq!(result.last_agent_message.as_deref(), Some("VERIFIED_APHRODY_OSS_SMOKE"));
+        assert_eq!(
+            result.last_agent_message.as_deref(),
+            Some("VERIFIED_APHRODY_OSS_SMOKE")
+        );
         let results: Vec<_> = result
             .events
             .iter()

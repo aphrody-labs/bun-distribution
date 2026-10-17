@@ -67,14 +67,22 @@ pub enum Arm9FooterError {
 impl Arm9Footer {
     /// Creates a new [`Arm9Footer`].
     pub fn new(build_info_offset: u32, overlay_signatures_offset: u32) -> Self {
-        Self { nitrocode: NITROCODE, build_info_offset, overlay_signatures_offset }
+        Self {
+            nitrocode: NITROCODE,
+            build_info_offset,
+            overlay_signatures_offset,
+        }
     }
 
     fn check_size(data: &'_ [u8]) -> Result<(), Arm9FooterError> {
         if data.len() == size_of::<Self>() {
             Ok(())
         } else {
-            WrongSizeSnafu { expected: size_of::<Self>(), actual: data.len() }.fail()
+            WrongSizeSnafu {
+                expected: size_of::<Self>(),
+                actual: data.len(),
+            }
+            .fail()
         }
     }
 
@@ -99,7 +107,11 @@ impl Arm9Footer {
         if self.nitrocode == NITROCODE {
             Ok(())
         } else {
-            NoNitrocodeSnafu { expected: NITROCODE, actual: self.nitrocode }.fail()
+            NoNitrocodeSnafu {
+                expected: NITROCODE,
+                actual: self.nitrocode,
+            }
+            .fail()
         }
     }
 
@@ -131,7 +143,10 @@ impl Arm9Footer {
 
     /// Creates a [`DisplayArm9Footer`] which implements [`Display`].
     pub fn display(&self, indent: usize) -> DisplayArm9Footer<'_> {
-        DisplayArm9Footer { footer: self, indent }
+        DisplayArm9Footer {
+            footer: self,
+            indent,
+        }
     }
 }
 
@@ -144,7 +159,11 @@ pub struct DisplayArm9Footer<'a> {
 impl Display for DisplayArm9Footer<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let i = " ".repeat(self.indent);
-        writeln!(f, "{i} Build info offset .......... : {:#x}", self.footer.build_info_offset)?;
+        writeln!(
+            f,
+            "{i} Build info offset .......... : {:#x}",
+            self.footer.build_info_offset
+        )?;
         writeln!(
             f,
             "{i} Overlay signatures offset .. : {:#x}",

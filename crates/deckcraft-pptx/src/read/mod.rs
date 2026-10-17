@@ -14,8 +14,9 @@ use std::sync::Arc;
 use deckcraft_geom::{Size, emu_to_pt};
 use deckcraft_model::text::TextBody;
 use deckcraft_model::{
-    Background, Comment, CustomShow, Geom, HeaderFooter, Layout, LayoutId, LayoutType, Master, MasterId, MediaId, MediaItem, PhType, Presentation,
-    Properties, Section, ShowSettings, Slide, SlideId, defaults,
+    Background, Comment, CustomShow, Geom, HeaderFooter, Layout, LayoutId, LayoutType, Master,
+    MasterId, MediaId, MediaItem, PhType, Presentation, Properties, Section, ShowSettings, Slide,
+    SlideId, defaults,
 };
 
 use crate::PptxError;
@@ -47,9 +48,19 @@ impl Imp<'_> {
         }
         let data = self.pkg.get(part)?.to_vec();
         let name = opc::file_of(self.pkg.original_name(part).unwrap_or(part)).to_string();
-        let content_type = self.pkg.content_type(part).filter(|c| !c.is_empty()).unwrap_or_else(|| crate::mime_for(&name).to_string());
+        let content_type = self
+            .pkg
+            .content_type(part)
+            .filter(|c| !c.is_empty())
+            .unwrap_or_else(|| crate::mime_for(&name).to_string());
         let id = MediaId(self.alloc());
-        self.media.push(MediaItem { id, name, content_type, data: Arc::new(data), link: None });
+        self.media.push(MediaItem {
+            id,
+            name,
+            content_type,
+            data: Arc::new(data),
+            link: None,
+        });
         self.media_by_part.insert(key, id);
         Some(id)
     }
@@ -61,7 +72,13 @@ impl Imp<'_> {
         let id = MediaId(self.alloc());
         let name = url.rsplit('/').next().unwrap_or(url).to_string();
         let content_type = crate::mime_for(&name).to_string();
-        self.media.push(MediaItem { id, name, content_type, data: Arc::new(vec![]), link: Some(url.to_string()) });
+        self.media.push(MediaItem {
+            id,
+            name,
+            content_type,
+            data: Arc::new(vec![]),
+            link: Some(url.to_string()),
+        });
         id
     }
 }
@@ -75,7 +92,11 @@ pub struct Part {
 
 impl Part {
     pub fn new(pkg: &Package, name: &str, doc: &Doc) -> Self {
-        Part { name: name.to_string(), rels: pkg.rels(name), ns: doc.ns_decls() }
+        Part {
+            name: name.to_string(),
+            rels: pkg.rels(name),
+            ns: doc.ns_decls(),
+        }
     }
     /// Serialize an element with the namespace declarations it needs from the part root.
     pub fn keep(&self, el: &El) -> String {
@@ -117,20 +138,30 @@ pub fn keep_xml(el: &El, ns: &[(String, String)]) -> String {
 }
 
 /// Namespace prefixes whose `mc:Choice` content we understand.
-const SUPPORTED_MC: [&str; 9] = ["p14", "p15", "p159", "a14", "a16", "p1510", "a15", "c14", "p188"];
+const SUPPORTED_MC: [&str; 9] = [
+    "p14", "p15", "p159", "a14", "a16", "p1510", "a15", "c14", "p188",
+];
 
 /// Replace every `mc:AlternateContent` by the children of the branch we can read best.
 pub fn resolve_mc(el: &mut El, depth: usize) {
     if depth > crate::xml::MAX_DEPTH {
         return;
     }
-    if el.children.iter().any(|c| matches!(c, Node::El(e) if e.is("AlternateContent"))) {
+    if el
+        .children
+        .iter()
+        .any(|c| matches!(c, Node::El(e) if e.is("AlternateContent")))
+    {
         let mut out = Vec::with_capacity(el.children.len());
         for c in std::mem::take(&mut el.children) {
             match c {
                 Node::El(ac) if ac.is("AlternateContent") => {
                     let choice = ac.children_named("Choice").find(|ch| {
-                        let req_ok = ch.attr("Requires").unwrap_or("").split_whitespace().all(|r| SUPPORTED_MC.contains(&r));
+                        let req_ok = ch
+                            .attr("Requires")
+                            .unwrap_or("")
+                            .split_whitespace()
+                            .all(|r| SUPPORTED_MC.contains(&r));
                         // Ink content parts are not modelled; prefer their fallback picture.
                         let modelled = !ch.elements().any(|e| e.is("contentPart"));
                         req_ok && modelled
@@ -142,7 +173,9 @@ pub fn resolve_mc(el: &mut El, depth: usize) {
                                 let mut e = e.clone();
                                 // Carry namespace declarations from the branch onto its content.
                                 for (k, v) in b.attrs.iter().chain(ac.attrs.iter()) {
-                                    if k.starts_with("xmlns") && !e.attrs.iter().any(|(a, _)| a == k) {
+                                    if k.starts_with("xmlns")
+                                        && !e.attrs.iter().any(|(a, _)| a == k)
+                                    {
                                         e.attrs.push((k.clone(), v.clone()));
                                     }
                                 }
@@ -182,27 +215,53 @@ fn max_cnvpr(el: &El, m: &mut u32) {
 pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
     let pkg = Package::open(bytes)?;
     let root_rels = pkg.rels("");
-    let pres_path = root_rels.first_of("officeDocument").map(|r| r.target.clone()).unwrap_or_else(|| "ppt/presentation.xml".into());
-    let pres_doc = load(&pkg, &pres_path).ok_or_else(|| PptxError::NotPptx(format!("missing or unreadable {pres_path}")))?;
+    let pres_path = root_rels
+        .first_of("officeDocument")
+        .map(|r| r.target.clone())
+        .unwrap_or_else(|| "ppt/presentation.xml".into());
+    let pres_doc = load(&pkg, &pres_path)
+        .ok_or_else(|| PptxError::NotPptx(format!("missing or unreadable {pres_path}")))?;
     let pres_el = &pres_doc.root;
     if !pres_el.is("presentation") {
-        return Err(PptxError::NotPptx(format!("{pres_path} is not a presentation part")));
+        return Err(PptxError::NotPptx(format!(
+            "{pres_path} is not a presentation part"
+        )));
     }
     let pres_part = Part::new(&pkg, &pres_path, &pres_doc);
 
     // Masters, layouts and slides to read.
     let master_paths: Vec<String> = pres_el
         .child("sldMasterIdLst")
-        .map(|l| l.children_named("sldMasterId").filter_map(|m| pres_part.rels.target(m.attr("r:id").unwrap_or(""))).map(String::from).collect())
+        .map(|l| {
+            l.children_named("sldMasterId")
+                .filter_map(|m| pres_part.rels.target(m.attr("r:id").unwrap_or("")))
+                .map(String::from)
+                .collect()
+        })
         .unwrap_or_default();
-    let master_paths: Vec<String> =
-        if master_paths.is_empty() { pres_part.rels.all_of("slideMaster").map(|r| r.target.clone()).collect() } else { master_paths };
+    let master_paths: Vec<String> = if master_paths.is_empty() {
+        pres_part
+            .rels
+            .all_of("slideMaster")
+            .map(|r| r.target.clone())
+            .collect()
+    } else {
+        master_paths
+    };
     let slide_entries: Vec<(u32, String)> = pres_el
         .child("sldIdLst")
         .map(|l| {
             l.children_named("sldId")
                 .take(10_000)
-                .filter_map(|s| Some((s.u32("id").unwrap_or(0), pres_part.rels.target(s.attr("r:id").unwrap_or(""))?.to_string())))
+                .filter_map(|s| {
+                    Some((
+                        s.u32("id").unwrap_or(0),
+                        pres_part
+                            .rels
+                            .target(s.attr("r:id").unwrap_or(""))?
+                            .to_string(),
+                    ))
+                })
                 .collect()
         })
         .unwrap_or_default();
@@ -248,7 +307,8 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
     if let Some(l) = pres_el.child("custShowLst") {
         for cs in l.children_named("custShow") {
             if let (Some(id), Some(name)) = (cs.attr("id"), cs.attr("name")) {
-                imp.custom_show_names.insert(id.to_string(), name.to_string());
+                imp.custom_show_names
+                    .insert(id.to_string(), name.to_string());
             }
         }
     }
@@ -296,14 +356,25 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
         imp.next = imp.next.saturating_add(200);
         p.masters.push(Arc::new(m));
     }
-    let fallback_layout = p.masters.first().and_then(|m| m.layouts.first()).map(|l| l.id).unwrap_or_default();
+    let fallback_layout = p
+        .masters
+        .first()
+        .and_then(|m| m.layouts.first())
+        .map(|l| l.id)
+        .unwrap_or_default();
 
     // Slides.
     let mut file_slide_ids: HashMap<u32, SlideId> = HashMap::new();
     for (file_id, path, id) in &slide_ids {
-        let Some(doc) = docs.get(&opc::norm(path)) else { continue };
+        let Some(doc) = docs.get(&opc::norm(path)) else {
+            continue;
+        };
         let part = Part::new(&pkg, path, doc);
-        let layout = part.rels.first_of("slideLayout").and_then(|r| layout_by_part.get(&opc::norm(&r.target)).copied()).unwrap_or(fallback_layout);
+        let layout = part
+            .rels
+            .first_of("slideLayout")
+            .and_then(|r| layout_by_part.get(&opc::norm(&r.target)).copied())
+            .unwrap_or(fallback_layout);
         let mut slide = read_slide(&mut imp, &part, doc, *id, layout);
         // Notes.
         if let Some(n) = part.rels.first_of("notesSlide")
@@ -315,7 +386,9 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
         // Comments.
         for c in part.rels.all_of("comments") {
             if let Some(cd) = pkg.xml(&c.target) {
-                slide.comments.extend(read_comments(&pkg, &pres_part, &cd.root));
+                slide
+                    .comments
+                    .extend(read_comments(&pkg, &pres_part, &cd.root));
             }
         }
         file_slide_ids.insert(*file_id, *id);
@@ -328,9 +401,18 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
             for s in sl.children_named("section").take(10_000) {
                 let slides = s
                     .child("sldIdLst")
-                    .map(|l| l.children_named("sldId").filter_map(|x| x.u32("id").and_then(|i| file_slide_ids.get(&i).copied())).collect())
+                    .map(|l| {
+                        l.children_named("sldId")
+                            .filter_map(|x| {
+                                x.u32("id").and_then(|i| file_slide_ids.get(&i).copied())
+                            })
+                            .collect()
+                    })
                     .unwrap_or_default();
-                p.sections.push(Section { name: s.attr("name").unwrap_or("").to_string(), slides });
+                p.sections.push(Section {
+                    name: s.attr("name").unwrap_or("").to_string(),
+                    slides,
+                });
             }
         }
         let kept: String = ext
@@ -354,7 +436,10 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
                         .collect()
                 })
                 .unwrap_or_default();
-            p.custom_shows.push(CustomShow { name: cs.attr("name").unwrap_or("").to_string(), slides });
+            p.custom_shows.push(CustomShow {
+                name: cs.attr("name").unwrap_or("").to_string(),
+                slides,
+            });
         }
     }
     // Show settings.
@@ -370,7 +455,11 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
     {
         let part = Part::new(&pkg, &r.target, &d);
         let mut ctx = shapes::IdCtx::default();
-        let mut m = Master { id: MasterId(imp.alloc()), name: "Notes Master".into(), ..Default::default() };
+        let mut m = Master {
+            id: MasterId(imp.alloc()),
+            name: "Notes Master".into(),
+            ..Default::default()
+        };
         if let Some(t) = part.rels.first_of("theme")
             && let Some(td) = pkg.xml(&t.target)
         {
@@ -394,7 +483,11 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
     if let Some(r) = root_rels.first_of("extended-properties")
         && let Some(d) = pkg.xml(&r.target)
     {
-        p.props.company = d.root.child("Company").map(|c| c.text()).unwrap_or_default();
+        p.props.company = d
+            .root
+            .child("Company")
+            .map(|c| c.text())
+            .unwrap_or_default();
     }
 
     inherit_placeholder_geometry(&mut p);
@@ -406,7 +499,11 @@ pub fn import(bytes: &[u8]) -> Result<Presentation, PptxError> {
 }
 
 fn sane_len(v: f64, dflt: f64) -> f64 {
-    if v.is_finite() && (1.0..=20_000.0).contains(&v) { v } else { dflt }
+    if v.is_finite() && (1.0..=20_000.0).contains(&v) {
+        v
+    } else {
+        dflt
+    }
 }
 
 /// Does the element (or a descendant) reference a relationship?
@@ -418,7 +515,10 @@ pub fn has_rel_refs(el: &El) -> bool {
         let own = e.attrs.iter().any(|(k, v)| {
             !k.starts_with("xmlns")
                 && k.contains(':')
-                && matches!(k.rsplit(':').next(), Some("id" | "embed" | "link" | "dm" | "lo" | "qs" | "cs" | "pict" | "href"))
+                && matches!(
+                    k.rsplit(':').next(),
+                    Some("id" | "embed" | "link" | "dm" | "lo" | "qs" | "cs" | "pict" | "href")
+                )
                 && !v.is_empty()
         });
         own || e.elements().any(|c| rec(c, depth + 1))
@@ -427,7 +527,11 @@ pub fn has_rel_refs(el: &El) -> bool {
 }
 
 pub fn color_map(cm: &El) -> Vec<(String, String)> {
-    cm.attrs.iter().filter(|(k, _)| !k.starts_with("xmlns")).map(|(k, v)| (k.clone(), v.clone())).collect()
+    cm.attrs
+        .iter()
+        .filter(|(k, _)| !k.starts_with("xmlns"))
+        .map(|(k, v)| (k.clone(), v.clone()))
+        .collect()
 }
 
 /// Placeholders read without a geometry (an empty custom geometry, see `shapes::sp`) take the
@@ -452,7 +556,13 @@ fn inherit_placeholder_geometry(p: &mut Presentation) {
             for (i, s) in l.shapes.iter().enumerate() {
                 if unset(&s.geom) {
                     let (_, mp) = deckcraft_model::resolve::parents(&ctx, s);
-                    layout_geoms.push((l.id, i, mp.map(|m| m.geom.clone()).filter(|g| !unset(g)).unwrap_or_default()));
+                    layout_geoms.push((
+                        l.id,
+                        i,
+                        mp.map(|m| m.geom.clone())
+                            .filter(|g| !unset(g))
+                            .unwrap_or_default(),
+                    ));
                 }
             }
         }
@@ -470,11 +580,16 @@ fn inherit_placeholder_geometry(p: &mut Presentation) {
     }
     let mut slide_geoms: Vec<(usize, usize, Geom)> = vec![];
     for (si, sl) in p.slides.iter().enumerate() {
-        let Some(ctx) = deckcraft_model::resolve::Ctx::for_slide(p, sl) else { continue };
+        let Some(ctx) = deckcraft_model::resolve::Ctx::for_slide(p, sl) else {
+            continue;
+        };
         for (i, s) in sl.shapes.iter().enumerate() {
             if unset(&s.geom) {
                 let (lp, mp) = deckcraft_model::resolve::parents(&ctx, s);
-                let g = lp.map(|l| l.geom.clone()).filter(|g| !unset(g)).or_else(|| mp.map(|m| m.geom.clone()).filter(|g| !unset(g)));
+                let g = lp
+                    .map(|l| l.geom.clone())
+                    .filter(|g| !unset(g))
+                    .or_else(|| mp.map(|m| m.geom.clone()).filter(|g| !unset(g)));
                 slide_geoms.push((si, i, g.unwrap_or_default()));
             }
         }
@@ -506,7 +621,10 @@ fn inherit_placeholder_geometry(p: &mut Presentation) {
 }
 
 /// Every shape, groups included.
-fn walk_shapes_mut(shapes: &mut [deckcraft_model::Shape], f: &mut dyn FnMut(&mut deckcraft_model::Shape)) {
+fn walk_shapes_mut(
+    shapes: &mut [deckcraft_model::Shape],
+    f: &mut dyn FnMut(&mut deckcraft_model::Shape),
+) {
     for s in shapes {
         f(s);
         if let deckcraft_model::ShapeKind::Group { children, .. } = &mut s.kind {
@@ -516,13 +634,22 @@ fn walk_shapes_mut(shapes: &mut [deckcraft_model::Shape], f: &mut dyn FnMut(&mut
 }
 
 /// `a:tblStyleLst`: the table styles the file defines.
-fn table_styles(imp: &mut Imp, part: &Part, root: &El) -> Vec<deckcraft_model::table::TableStyleDef> {
+fn table_styles(
+    imp: &mut Imp,
+    part: &Part,
+    root: &El,
+) -> Vec<deckcraft_model::table::TableStyleDef> {
     use deckcraft_model::table::{TableBorder, TablePart, TablePartStyle, TableStyleDef};
     root.children_named("tblStyle")
         .take(256)
         .filter_map(|st| {
             let id = st.attr("styleId")?.to_ascii_uppercase();
-            let mut def = TableStyleDef { id, name: st.attr("styleName").unwrap_or("").to_string(), raw: part.keep(st), ..Default::default() };
+            let mut def = TableStyleDef {
+                id,
+                name: st.attr("styleName").unwrap_or("").to_string(),
+                raw: part.keep(st),
+                ..Default::default()
+            };
             if let Some(bg) = st.child("tblBg") {
                 let mut ps = TablePartStyle::default();
                 if let Some(f) = bg.elements().find(|e| e.local().ends_with("Fill")) {
@@ -531,13 +658,17 @@ fn table_styles(imp: &mut Imp, part: &Part, root: &El) -> Vec<deckcraft_model::t
                 if let Some(fr) = bg.child("fillRef") {
                     ps.fill_ref = Some((
                         fr.u32("idx").unwrap_or(0),
-                        dml::color(fr).unwrap_or(deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent1)),
+                        dml::color(fr).unwrap_or(deckcraft_model::ColorRef::scheme(
+                            deckcraft_color::SchemeSlot::Accent1,
+                        )),
                     ));
                 }
                 def.background = Some(ps);
             }
             for el in st.elements() {
-                let Some(kind) = TablePart::from_xml(el.local()) else { continue };
+                let Some(kind) = TablePart::from_xml(el.local()) else {
+                    continue;
+                };
                 let mut ps = TablePartStyle::default();
                 if let Some(tx) = el.child("tcTxStyle") {
                     ps.text_color = dml::color(tx);
@@ -551,18 +682,29 @@ fn table_styles(imp: &mut Imp, part: &Part, root: &El) -> Vec<deckcraft_model::t
                     if let Some(fr) = tc.child("fillRef") {
                         ps.fill_ref = Some((
                             fr.u32("idx").unwrap_or(0),
-                            dml::color(fr).unwrap_or(deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent1)),
+                            dml::color(fr).unwrap_or(deckcraft_model::ColorRef::scheme(
+                                deckcraft_color::SchemeSlot::Accent1,
+                            )),
                         ));
                     }
                     if let Some(bd) = tc.child("tcBdr") {
-                        for (i, side) in ["left", "right", "top", "bottom", "insideH", "insideV"].iter().enumerate() {
+                        for (i, side) in ["left", "right", "top", "bottom", "insideH", "insideV"]
+                            .iter()
+                            .enumerate()
+                        {
                             let Some(b) = bd.child(side) else { continue };
                             let border = if let Some(ln) = b.child("ln") {
-                                Some(TableBorder::Line { line: dml::line(imp, part, ln) })
+                                Some(TableBorder::Line {
+                                    line: dml::line(imp, part, ln),
+                                })
                             } else {
                                 b.child("lnRef").map(|r| TableBorder::Ref {
                                     idx: r.u32("idx").unwrap_or(0),
-                                    color: dml::color(r).unwrap_or(deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Accent1)),
+                                    color: dml::color(r).unwrap_or(
+                                        deckcraft_model::ColorRef::scheme(
+                                            deckcraft_color::SchemeSlot::Accent1,
+                                        ),
+                                    ),
                                 })
                             };
                             if let Some(slot) = ps.borders.get_mut(i) {
@@ -581,20 +723,34 @@ fn table_styles(imp: &mut Imp, part: &Part, root: &El) -> Vec<deckcraft_model::t
 fn background(imp: &mut Imp, part: &Part, csld: &El) -> Option<Background> {
     let bg = csld.child("bg")?;
     if let Some(pr) = bg.child("bgPr") {
-        return Some(Background::Fill { fill: dml::fill_of(imp, part, pr).unwrap_or(deckcraft_model::Fill::None) });
+        return Some(Background::Fill {
+            fill: dml::fill_of(imp, part, pr).unwrap_or(deckcraft_model::Fill::None),
+        });
     }
     let r = bg.child("bgRef")?;
     Some(Background::Ref {
         idx: r.u32("idx").unwrap_or(1001),
-        color: dml::color(r).unwrap_or(deckcraft_model::ColorRef::scheme(deckcraft_color::SchemeSlot::Bg1)),
+        color: dml::color(r).unwrap_or(deckcraft_model::ColorRef::scheme(
+            deckcraft_color::SchemeSlot::Bg1,
+        )),
     })
 }
 
-fn read_master(imp: &mut Imp, path: &str, doc: &Doc, docs: &HashMap<String, Doc>, layout_by_part: &mut HashMap<String, LayoutId>) -> Master {
+fn read_master(
+    imp: &mut Imp,
+    path: &str,
+    doc: &Doc,
+    docs: &HashMap<String, Doc>,
+    layout_by_part: &mut HashMap<String, LayoutId>,
+) -> Master {
     let pkg = imp.pkg;
     let part = Part::new(pkg, path, doc);
     let root = &doc.root;
-    let mut m = Master { id: MasterId(0), preserve: root.bool("preserve").unwrap_or(false), ..Default::default() };
+    let mut m = Master {
+        id: MasterId(0),
+        preserve: root.bool("preserve").unwrap_or(false),
+        ..Default::default()
+    };
     if let Some(t) = part.rels.first_of("theme")
         && let Some(td) = pkg.xml(&t.target)
     {
@@ -630,7 +786,12 @@ fn read_master(imp: &mut Imp, path: &str, doc: &Doc, docs: &HashMap<String, Doc>
     // Layouts in list order, then any other related layouts.
     let mut lpaths: Vec<String> = root
         .child("sldLayoutIdLst")
-        .map(|l| l.children_named("sldLayoutId").filter_map(|x| part.rels.target(x.attr("r:id").unwrap_or(""))).map(String::from).collect())
+        .map(|l| {
+            l.children_named("sldLayoutId")
+                .filter_map(|x| part.rels.target(x.attr("r:id").unwrap_or("")))
+                .map(String::from)
+                .collect()
+        })
         .unwrap_or_default();
     for r in part.rels.all_of("slideLayout") {
         if !lpaths.iter().any(|x| opc::norm(x) == opc::norm(&r.target)) {
@@ -691,7 +852,9 @@ fn read_layout(imp: &mut Imp, part: &Part, doc: &Doc) -> Layout {
 
 /// A layout's or slide's `clrMapOvr/overrideClrMapping` (None for `masterClrMapping` or none).
 fn color_map_override(root: &El) -> Option<Vec<(String, String)>> {
-    root.child("clrMapOvr")?.child("overrideClrMapping").map(color_map)
+    root.child("clrMapOvr")?
+        .child("overrideClrMapping")
+        .map(color_map)
 }
 
 fn read_slide(imp: &mut Imp, part: &Part, doc: &Doc, id: SlideId, layout: LayoutId) -> Slide {
@@ -729,10 +892,14 @@ fn read_slide(imp: &mut Imp, part: &Part, doc: &Doc, id: SlideId, layout: Layout
 }
 
 fn read_notes(imp: &mut Imp, part: &Part, root: &El) -> TextBody {
-    let Some(tree) = root.path(&["cSld", "spTree"]) else { return TextBody::default() };
+    let Some(tree) = root.path(&["cSld", "spTree"]) else {
+        return TextBody::default();
+    };
     for sp in tree.children_named("sp") {
         let ph = sp.path(&["nvSpPr", "nvPr", "ph"]);
-        let is_body = ph.is_some_and(|ph| matches!(ph.attr("type"), Some("body") | None) && ph.attr("type") != Some("sldImg"));
+        let is_body = ph.is_some_and(|ph| {
+            matches!(ph.attr("type"), Some("body") | None) && ph.attr("type") != Some("sldImg")
+        });
         if is_body && let Some(tx) = sp.child("txBody") {
             let mut t = dml::text_body(imp, part, tx);
             // Notes keep only content: drop body formatting from the notes master placeholder.
@@ -755,23 +922,42 @@ fn read_comments(pkg: &Package, pres: &Part, root: &El) -> Vec<Comment> {
         {
             for a in d.root.elements() {
                 if let Some(id) = a.attr("id") {
-                    authors.insert(id.to_string(), (a.attr("name").unwrap_or("").to_string(), a.attr("initials").unwrap_or("").to_string()));
+                    authors.insert(
+                        id.to_string(),
+                        (
+                            a.attr("name").unwrap_or("").to_string(),
+                            a.attr("initials").unwrap_or("").to_string(),
+                        ),
+                    );
                 }
             }
         }
     }
     fn one(e: &El, authors: &HashMap<String, (String, String)>, depth: usize) -> Comment {
-        let (author, initials) = e.attr("authorId").and_then(|a| authors.get(a).cloned()).unwrap_or_default();
+        let (author, initials) = e
+            .attr("authorId")
+            .and_then(|a| authors.get(a).cloned())
+            .unwrap_or_default();
         let text = if let Some(t) = e.child("text") {
             t.text()
         } else if let Some(tb) = e.child("txBody") {
-            tb.children_named("p").map(|p| p.text()).collect::<Vec<_>>().join("\n")
+            tb.children_named("p")
+                .map(|p| p.text())
+                .collect::<Vec<_>>()
+                .join("\n")
         } else {
             String::new()
         };
         let pos = e.child("pos");
         let replies = if depth < 4 {
-            e.child("replyLst").map(|l| l.children_named("reply").take(1000).map(|r| one(r, authors, depth + 1)).collect()).unwrap_or_default()
+            e.child("replyLst")
+                .map(|l| {
+                    l.children_named("reply")
+                        .take(1000)
+                        .map(|r| one(r, authors, depth + 1))
+                        .collect()
+                })
+                .unwrap_or_default()
         } else {
             vec![]
         };
@@ -787,7 +973,10 @@ fn read_comments(pkg: &Package, pres: &Part, root: &El) -> Vec<Comment> {
             shape: None,
         }
     }
-    root.children_named("cm").take(10_000).map(|c| one(c, &authors, 0)).collect()
+    root.children_named("cm")
+        .take(10_000)
+        .map(|c| one(c, &authors, 0))
+        .collect()
 }
 
 fn read_show(sp: &El, shows: &HashMap<String, String>) -> ShowSettings {
@@ -804,7 +993,10 @@ fn read_show(sp: &El, shows: &HashMap<String, String>) -> ShowSettings {
         s.show_type = "kiosk".into();
     }
     if let Some(r) = sp.child("sldRg") {
-        s.range = Some((r.u32("st").unwrap_or(1).max(1), r.u32("end").unwrap_or(1).max(1)));
+        s.range = Some((
+            r.u32("st").unwrap_or(1).max(1),
+            r.u32("end").unwrap_or(1).max(1),
+        ));
     }
     if let Some(c) = sp.child("custShow") {
         let id = c.attr("id").unwrap_or("");
@@ -847,7 +1039,11 @@ fn header_footer(p: &Presentation) -> HeaderFooter {
                 Some(PhType::Date) => {
                     hf.date = true;
                     if let Some(t) = &sh.text
-                        && !t.paragraphs.iter().flat_map(|p| &p.runs).any(|r| matches!(r.kind, deckcraft_model::text::RunKind::Field { .. }))
+                        && !t
+                            .paragraphs
+                            .iter()
+                            .flat_map(|p| &p.runs)
+                            .any(|r| matches!(r.kind, deckcraft_model::text::RunKind::Field { .. }))
                         && hf.date_text.is_empty()
                     {
                         hf.date_text = t.text();

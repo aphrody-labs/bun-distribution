@@ -33,19 +33,27 @@ impl TypeWidget {
     /// point). None unless the selection is one editable point or area type object (not type on a
     /// path, nor type in perspective, which transforms whole).
     pub fn of(doc: &Document, selection: &Selection, bx: &OrientedBox, zoom: f64) -> Option<Self> {
-        let [id] = selection.objects[..] else { return None };
+        let [id] = selection.objects[..] else {
+            return None;
+        };
         if !doc.is_editable(id) || !zoom.is_finite() || zoom <= 0.0 {
             return None;
         }
         let n = doc.node(id).filter(|n| n.extras().perspective.is_none())?;
-        let NodeKind::Text(t) = &n.kind else { return None };
+        let NodeKind::Text(t) = &n.kind else {
+            return None;
+        };
         let area = match t.kind {
             TextKind::Point => false,
             TextKind::Area { .. } => true,
             _ => return None,
         };
         let r = bx.rect;
-        Some(Self { id, at: bx.to_doc() * Point::new(r.x1 + OFFSET_PX / zoom, r.center().y), area })
+        Some(Self {
+            id,
+            at: bx.to_doc() * Point::new(r.x1 + OFFSET_PX / zoom, r.center().y),
+            area,
+        })
     }
 
     /// The widget the Selection tool can double-click (its bounding box showing).
@@ -63,7 +71,11 @@ impl TypeWidget {
 
     /// The command converting the type to the other kind.
     pub fn command(&self) -> &'static str {
-        if self.area { "type.convertToPointType" } else { "type.convertToAreaType" }
+        if self.area {
+            "type.convertToPointType"
+        } else {
+            "type.convertToAreaType"
+        }
     }
 }
 
@@ -97,29 +109,54 @@ mod tests {
         let point = d.alloc_id();
         let l = d.layers[0].id;
         let t = TextObject::point(Point::new(100.0, 300.0), "Point", Default::default());
-        d.insert(Some(l), 0, Node::new(point, NodeKind::Text(Box::new(t)))).unwrap();
+        d.insert(Some(l), 0, Node::new(point, NodeKind::Text(Box::new(t))))
+            .unwrap();
         let p = paint();
-        for (id, cmd) in [(area, "type.convertToPointType"), (point, "type.convertToAreaType")] {
+        for (id, cmd) in [
+            (area, "type.convertToPointType"),
+            (point, "type.convertToAreaType"),
+        ] {
             let mut s = Selection::default();
             s.add(id);
             let c = cx(&d, &s, &p);
             let bx = selection_box(&c).unwrap();
             let w = TypeWidget::for_tool(&c).unwrap();
             assert_eq!(w.area, id == area);
-            assert!((w.at.x - (bx.rect.x1 + 16.0)).abs() < 1e-9 && (w.at.y - bx.rect.center().y).abs() < 1e-9, "{w:?} {bx:?}");
+            assert!(
+                (w.at.x - (bx.rect.x1 + 16.0)).abs() < 1e-9
+                    && (w.at.y - bx.rect.center().y).abs() < 1e-9,
+                "{w:?} {bx:?}"
+            );
             // The presses and releases of a double-click change nothing (no marquee deselects).
             let mut t = SelectionTool::default();
-            for k in [PointerKind::Down, PointerKind::Up, PointerKind::Down, PointerKind::Up] {
+            for k in [
+                PointerKind::Down,
+                PointerKind::Up,
+                PointerKind::Down,
+                PointerKind::Up,
+            ] {
                 assert_eq!(t.pointer(&c, &ev(k, w.at)), vec![], "{k:?}");
             }
-            let a = t.pointer(&c, &ev(PointerKind::DoubleClick, w.at + vectorcraft_geom::Vec2::new(2.0, 0.0)));
+            let a = t.pointer(
+                &c,
+                &ev(
+                    PointerKind::DoubleClick,
+                    w.at + vectorcraft_geom::Vec2::new(2.0, 0.0),
+                ),
+            );
             assert_eq!(a, vec![Action::Exec(cmd.into(), json!({ "ids": [id.0] }))]);
             assert_eq!(t.cursor(&c, w.at, Mods::default()), Cursor::TypeWidget);
             // A double-click on the type itself still edits it.
             let inside = bx.center();
-            assert_eq!(t.pointer(&c, &ev(PointerKind::DoubleClick, inside)), vec![Action::SwitchTool("type".into())]);
+            assert_eq!(
+                t.pointer(&c, &ev(PointerKind::DoubleClick, inside)),
+                vec![Action::SwitchTool("type".into())]
+            );
             // Hidden bounding box: no widget.
-            let c = ToolContext { show_bbox: false, ..cx(&d, &s, &p) };
+            let c = ToolContext {
+                show_bbox: false,
+                ..cx(&d, &s, &p)
+            };
             assert!(TypeWidget::for_tool(&c).is_none());
         }
         // Two objects, or type on a path: no widget.

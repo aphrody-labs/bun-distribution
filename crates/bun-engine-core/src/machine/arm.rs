@@ -32,9 +32,14 @@ impl Bus {
             // TXFE | RXFE: transmitter idle, no input pending.
             return 0x90;
         }
-        let Some(off) = addr.checked_sub(RAM_BASE).map(|o| o as usize) else { return 0 };
+        let Some(off) = addr.checked_sub(RAM_BASE).map(|o| o as usize) else {
+            return 0;
+        };
         match self.ram.get(off..off + len) {
-            Some(bytes) => bytes.iter().rev().fold(0, |acc, b| acc << 8 | u64::from(*b)),
+            Some(bytes) => bytes
+                .iter()
+                .rev()
+                .fold(0, |acc, b| acc << 8 | u64::from(*b)),
             None => 0,
         }
     }
@@ -44,7 +49,9 @@ impl Bus {
             self.uart.push(value as u8);
             return;
         }
-        let Some(off) = addr.checked_sub(RAM_BASE).map(|o| o as usize) else { return };
+        let Some(off) = addr.checked_sub(RAM_BASE).map(|o| o as usize) else {
+            return;
+        };
         if let Some(bytes) = self.ram.get_mut(off..off + len) {
             for (i, b) in bytes.iter_mut().enumerate() {
                 *b = (value >> (8 * i)) as u8;
@@ -141,7 +148,10 @@ impl ArmFirmware {
     pub fn from_image(image: &[u8], ram_mib: usize) -> Result<Self, String> {
         let mut ram = vec![0; ram_mib << 20];
         let Some(dst) = ram.get_mut(..image.len()) else {
-            return Err(format!("the image ({} bytes) does not fit in {ram_mib} MiB of RAM", image.len()));
+            return Err(format!(
+                "the image ({} bytes) does not fit in {ram_mib} MiB of RAM",
+                image.len()
+            ));
         };
         dst.copy_from_slice(image);
         let bus = Arc::new(Mutex::new(Bus {
@@ -187,7 +197,11 @@ impl Machine for ArmFirmware {
             bus.ticks_left = TICKS_PER_FRAME;
         }
         self.jit.run();
-        if self.bus.lock().expect("bus lock").stopped { Step::Shutdown } else { Step::Frame }
+        if self.bus.lock().expect("bus lock").stopped {
+            Step::Shutdown
+        } else {
+            Step::Frame
+        }
     }
 
     fn screens(&self) -> Vec<Screen> {

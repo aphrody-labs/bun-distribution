@@ -68,7 +68,9 @@ impl LlamaBackend {
     pub fn init_numa(strategy: NumaStrategy) -> crate::Result<LlamaBackend> {
         Self::mark_init()?;
         unsafe {
-            aphrody_llama_sys::llama_numa_init(aphrody_llama_sys::ggml_numa_strategy::from(strategy));
+            aphrody_llama_sys::llama_numa_init(aphrody_llama_sys::ggml_numa_strategy::from(
+                strategy,
+            ));
         }
         Ok(LlamaBackend {})
     }

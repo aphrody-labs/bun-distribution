@@ -72,10 +72,17 @@ async fn a_job_abandoned_by_a_dead_worker_is_finished_by_the_next_one() {
         // no failure, no heartbeat. Exactly what a killed process leaves.
         let running = worker.run_once();
         let killed = tokio::time::timeout(std::time::Duration::from_millis(200), running).await;
-        assert!(killed.is_err(), "the handler must still have been running when dropped");
+        assert!(
+            killed.is_err(),
+            "the handler must still have been running when dropped"
+        );
 
         let stranded = worker.store().get(&submitted.id).unwrap();
-        assert_eq!(stranded.state, JobState::Running, "the claim must be on disk");
+        assert_eq!(
+            stranded.state,
+            JobState::Running,
+            "the claim must be on disk"
+        );
         assert_eq!(stranded.worker.as_deref(), Some("worker-doomed"));
         submitted.id
     }; // both the worker and its connection go away here, as on a crash
@@ -89,13 +96,23 @@ async fn a_job_abandoned_by_a_dead_worker_is_finished_by_the_next_one() {
         Worker::new(JobStore::open(&db).unwrap(), logs, "worker-next").with_handler(Arc::new(Echo));
 
     // Without recovery the job is invisible: it still reads as running.
-    assert!(worker.run_once().await.unwrap().is_none(), "a stale claim must not be claimable");
+    assert!(
+        worker.run_once().await.unwrap().is_none(),
+        "a stale claim must not be claimable"
+    );
 
     let report = worker.recover().unwrap();
-    assert_eq!(report.requeued, vec![job_id.clone()], "the stranded job must come back");
+    assert_eq!(
+        report.requeued,
+        vec![job_id.clone()],
+        "the stranded job must come back"
+    );
 
     let outcome = worker.run_once().await.unwrap();
-    assert_eq!(outcome, Some(aphrody_jobs::Outcome::Succeeded(job_id.clone())));
+    assert_eq!(
+        outcome,
+        Some(aphrody_jobs::Outcome::Succeeded(job_id.clone()))
+    );
 
     let done = worker.store().get(&job_id).unwrap();
     assert_eq!(done.state, JobState::Succeeded);
@@ -113,8 +130,10 @@ async fn the_log_written_before_the_crash_survives_it() {
         let worker = Worker::new(JobStore::open(&db).unwrap(), logs.clone(), "doomed")
             .with_handler(Arc::new(NeverFinishes))
             .with_lease(Duration::seconds(1));
-        let submitted =
-            worker.store().submit(&JobSpec::new("slow", serde_json::json!({}))).unwrap();
+        let submitted = worker
+            .store()
+            .submit(&JobSpec::new("slow", serde_json::json!({})))
+            .unwrap();
         let _ =
             tokio::time::timeout(std::time::Duration::from_millis(200), worker.run_once()).await;
         submitted.id
@@ -124,7 +143,9 @@ async fn the_log_written_before_the_crash_survives_it() {
     // is readable afterwards, which is when someone wants to know how far it got.
     let lines = logs.read(&job_id, None).unwrap();
     assert!(
-        lines.iter().any(|l| l.message.contains("about to be killed")),
+        lines
+            .iter()
+            .any(|l| l.message.contains("about to be killed")),
         "progress logged before the crash must survive it: {lines:?}"
     );
 }

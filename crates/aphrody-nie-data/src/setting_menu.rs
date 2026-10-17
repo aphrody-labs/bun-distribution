@@ -301,7 +301,9 @@ impl SettingListConfig {
     /// Recherche un type de plateforme par son `platform_id`. `None` si absent.
     #[must_use]
     pub fn find_platform_type(&self, platform_id: HashId) -> Option<&SettingPlatformType> {
-        self.platform_types.iter().find(|p| p.platform_id == platform_id)
+        self.platform_types
+            .iter()
+            .find(|p| p.platform_id == platform_id)
     }
 
     /// Résout le type de plateforme référencé par un réglage (`platform_type_id`).
@@ -346,7 +348,9 @@ fn slice_pool<T: Clone>(pool: &[T], offset: i64, count: i64) -> Vec<T> {
     let start = offset.max(0) as usize;
     let len = count.max(0) as usize;
     let end = start.saturating_add(len).min(pool.len());
-    pool.get(start.min(pool.len())..end).map(<[T]>::to_vec).unwrap_or_default()
+    pool.get(start.min(pool.len())..end)
+        .map(<[T]>::to_vec)
+        .unwrap_or_default()
 }
 
 /// Parse une liste à motif INFO + REF : enfants en paires (`INFO_N` clé, `*_REF_*_N` \[offset,count\]).
@@ -396,7 +400,9 @@ pub fn parse_setting_list_config(root: &Value) -> SettingListConfig {
         KeyConfigMappingData::from_node,
     );
     let text_data: Vec<HashId> =
-        parse_pool(root, "EXPLANATION_TEXT_LIST_TEXT_DATA_LIST_BEG_0", |n| n.hash(0));
+        parse_pool(root, "EXPLANATION_TEXT_LIST_TEXT_DATA_LIST_BEG_0", |n| {
+            n.hash(0)
+        });
     let pad_data: Vec<i64> = parse_pool(root, "PAD_GROUPKEY_LIST_DATA_LIST_BEG_0", |n| n.int(0));
 
     SettingListConfig {

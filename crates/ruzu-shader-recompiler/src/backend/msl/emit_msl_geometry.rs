@@ -57,8 +57,14 @@ impl GeometryLayout {
             output_primitives: output_primitives.max(1),
             topology: program.output_topology,
             provoking_vertex_last: options.geometry_provoking_vertex_last,
-            stores_layer: program.info.stores.get(crate::ir::value::Attribute::LAYER.0 as usize),
-            stores_viewport_index: program.info.stores.get(crate::ir::value::Attribute::VIEWPORT_INDEX.0 as usize),
+            stores_layer: program
+                .info
+                .stores
+                .get(crate::ir::value::Attribute::LAYER.0 as usize),
+            stores_viewport_index: program
+                .info
+                .stores
+                .get(crate::ir::value::Attribute::VIEWPORT_INDEX.0 as usize),
         })
     }
 
@@ -288,7 +294,10 @@ mod tests {
                     program.output_vertices = 0;
                 }
                 Emitter::new(&mut program, 0).set_attribute(
-                    Attribute::POSITION_X, Value::ImmF32(0.5), Value::ImmU32(vertex));
+                    Attribute::POSITION_X,
+                    Value::ImmF32(0.5),
+                    Value::ImmU32(vertex),
+                );
                 crate::ir_opt::collect_shader_info_pass::collect_shader_info_pass(&mut program);
                 let actual = source(&program, &RuntimeInfo::default()).unwrap();
                 if let Some(expected) = &reference {
@@ -304,9 +313,17 @@ mod tests {
     fn geometry_layer_is_a_bitcast_and_is_snapshotted_per_complete_primitive() {
         let mut program = geometry_program();
         let mut emitter = Emitter::new(&mut program, 0);
-        emitter.set_attribute(Attribute::LAYER, Value::ImmF32(f32::from_bits(7)), Value::ImmU32(0));
+        emitter.set_attribute(
+            Attribute::LAYER,
+            Value::ImmF32(f32::from_bits(7)),
+            Value::ImmU32(0),
+        );
         emitter.emit_vertex(Value::ImmU32(0));
-        emitter.set_attribute(Attribute::LAYER, Value::ImmF32(f32::from_bits(2)), Value::ImmU32(0));
+        emitter.set_attribute(
+            Attribute::LAYER,
+            Value::ImmF32(f32::from_bits(2)),
+            Value::ImmU32(0),
+        );
         emitter.end_primitive(Value::ImmU32(0));
         crate::ir_opt::collect_shader_info_pass::collect_shader_info_pass(&mut program);
         let source = source(&program, &RuntimeInfo::default()).unwrap();
@@ -317,7 +334,9 @@ mod tests {
         assert!(source.contains("metal::mesh<MslVertexOut, MslGeometryPrimitiveOut,"));
         assert!(source.contains("if (geometry_strip_vertices >= 3u) geometry_mesh.set_primitive"));
         let capture = source.find("geometry_mesh.set_primitive(").unwrap();
-        let stores: Vec<_> = source.match_indices("geometry_primitive_output.layer =").collect();
+        let stores: Vec<_> = source
+            .match_indices("geometry_primitive_output.layer =")
+            .collect();
         assert!(stores[0].0 < capture && capture < stores[1].0);
     }
 
@@ -327,24 +346,49 @@ mod tests {
             let mut program = geometry_program();
             let mut emitter = Emitter::new(&mut program, 0);
             if layer {
-                emitter.set_attribute(Attribute::LAYER, Value::ImmF32(f32::from_bits(2)), Value::ImmU32(0));
+                emitter.set_attribute(
+                    Attribute::LAYER,
+                    Value::ImmF32(f32::from_bits(2)),
+                    Value::ImmU32(0),
+                );
             }
-            emitter.set_attribute(Attribute::VIEWPORT_INDEX, Value::ImmF32(f32::from_bits(15)), Value::ImmU32(0));
+            emitter.set_attribute(
+                Attribute::VIEWPORT_INDEX,
+                Value::ImmF32(f32::from_bits(15)),
+                Value::ImmU32(0),
+            );
             emitter.emit_vertex(Value::ImmU32(0));
-            emitter.set_attribute(Attribute::VIEWPORT_INDEX, Value::ImmF32(f32::from_bits(1)), Value::ImmU32(0));
+            emitter.set_attribute(
+                Attribute::VIEWPORT_INDEX,
+                Value::ImmF32(f32::from_bits(1)),
+                Value::ImmU32(0),
+            );
             crate::ir_opt::collect_shader_info_pass::collect_shader_info_pass(&mut program);
-            let options = MslOptions { language_version: MslVersion::V3_0, ..Default::default() };
+            let options = MslOptions {
+                language_version: MslVersion::V3_0,
+                ..Default::default()
+            };
             let runtime = RuntimeInfo::default();
-            let profile = Profile { support_multi_viewport: true, ..Default::default() };
+            let profile = Profile {
+                support_multi_viewport: true,
+                ..Default::default()
+            };
             let artifact = emit_msl_with_options(&program, &profile, &runtime, &options).unwrap();
             let text = artifact.source.source;
             assert!(text.contains("uint viewport [[viewport_array_index]]"));
-            assert_eq!(text.contains("uint layer [[render_target_array_index]]"), layer);
+            assert_eq!(
+                text.contains("uint layer [[render_target_array_index]]"),
+                layer
+            );
             assert!(text.contains("as_type<uint>(as_type<float>(0x0000000Fu))"));
             let captures = text.find("geometry_mesh.set_primitive(").unwrap();
-            let stores: Vec<_> = text.match_indices("geometry_primitive_output.viewport =").collect();
+            let stores: Vec<_> = text
+                .match_indices("geometry_primitive_output.viewport =")
+                .collect();
             assert!(stores[0].0 < captures && captures < stores[1].0);
-            assert!(emit_msl_with_options(&program, &Profile::default(), &runtime, &options).is_err());
+            assert!(
+                emit_msl_with_options(&program, &Profile::default(), &runtime, &options).is_err()
+            );
         }
     }
 

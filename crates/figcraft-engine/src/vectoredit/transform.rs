@@ -9,7 +9,10 @@ use figcraft_doc::Document;
 use figcraft_geom::{Affine, Point};
 use serde_json::{Value, json};
 
-use super::{VHit, VTool, VectorEdit, default_points, edit, editing, indices, network, ops, selected_points, selection_position};
+use super::{
+    VHit, VTool, VectorEdit, default_points, edit, editing, indices, network, ops, selected_points,
+    selection_position,
+};
 use crate::cmd::CommandSpec;
 use crate::params::*;
 use crate::tools::{Handle, handle_at_corners};
@@ -32,7 +35,12 @@ impl PointBox {
     /// Corners in page coordinates (tl, tr, br, bl).
     pub fn corners(&self) -> [Point; 4] {
         let (f, w, h) = (self.frame, self.width, self.height);
-        [f * Point::ZERO, f * Point::new(w, 0.0), f * Point::new(w, h), f * Point::new(0.0, h)]
+        [
+            f * Point::ZERO,
+            f * Point::new(w, 0.0),
+            f * Point::new(w, h),
+            f * Point::new(0.0, h),
+        ]
     }
 
     pub fn center(&self) -> Point {
@@ -42,8 +50,16 @@ impl PointBox {
     /// The page transform mapping this box onto (x0, y0)–(x1, y1) in its own axes (a reversed
     /// pair flips). An axis without extent keeps its points where they are.
     pub fn onto(&self, x0: f64, y0: f64, x1: f64, y1: f64) -> Affine {
-        let (x0, sx) = if self.width > EPS { (x0, (x1 - x0) / self.width) } else { (0.0, 1.0) };
-        let (y0, sy) = if self.height > EPS { (y0, (y1 - y0) / self.height) } else { (0.0, 1.0) };
+        let (x0, sx) = if self.width > EPS {
+            (x0, (x1 - x0) / self.width)
+        } else {
+            (0.0, 1.0)
+        };
+        let (y0, sy) = if self.height > EPS {
+            (y0, (y1 - y0) / self.height)
+        } else {
+            (0.0, 1.0)
+        };
         self.frame * Affine::new([sx, 0.0, 0.0, sy, x0, y0]) * self.frame.inverse()
     }
 }
@@ -52,17 +68,25 @@ impl PointBox {
 pub fn point_box(doc: &Document, ve: &VectorEdit) -> Option<PointBox> {
     let net = network(doc, ve.id)?;
     let points = selected_points(net, ve);
-    let (x0, y0, x1, y1) = points
-        .iter()
-        .filter_map(|i| net.vertices.get(*i))
-        .fold((f64::INFINITY, f64::INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY), |(a, b, c, d), v| {
-            (a.min(v.x), b.min(v.y), c.max(v.x), d.max(v.y))
-        });
+    let (x0, y0, x1, y1) = points.iter().filter_map(|i| net.vertices.get(*i)).fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(a, b, c, d), v| (a.min(v.x), b.min(v.y), c.max(v.x), d.max(v.y)),
+    );
     let (width, height) = (x1 - x0, y1 - y0);
     if !(x0.is_finite() && y0.is_finite() && width.is_finite() && height.is_finite()) {
         return None;
     }
-    Some(PointBox { frame: doc.world_transform(ve.id) * Affine::translate((x0, y0)), width, height, points })
+    Some(PointBox {
+        frame: doc.world_transform(ve.id) * Affine::translate((x0, y0)),
+        width,
+        height,
+        points,
+    })
 }
 
 /// The box drawn and dragged on the canvas: the Move tool, no open pen path, and two or more
@@ -87,7 +111,13 @@ pub enum BoxHit {
 /// The box's part under page point `p` when it wins over `h`, the network's part there: Bezier
 /// handles come first, then the box's corners, points, the box's edges, segments, the rotation
 /// zones, and the inside of the box last. Edges along an axis without extent are left out.
-pub fn box_hit(doc: &Document, ve: &VectorEdit, h: Option<VHit>, p: Point, zoom: f64) -> Option<BoxHit> {
+pub fn box_hit(
+    doc: &Document,
+    ve: &VectorEdit,
+    h: Option<VHit>,
+    p: Point,
+    zoom: f64,
+) -> Option<BoxHit> {
     let b = shown_box(doc, ve)?;
     match handle_at_corners(&b.corners(), p, zoom, false) {
         Some(handle) => {
@@ -108,14 +138,20 @@ pub fn box_hit(doc: &Document, ve: &VectorEdit, h: Option<VHit>, p: Point, zoom:
         }
         None => {
             let q = b.frame.inverse() * p;
-            (h.is_none() && (0.0..=b.width).contains(&q.x) && (0.0..=b.height).contains(&q.y)).then_some(BoxHit::Inside)
+            (h.is_none() && (0.0..=b.width).contains(&q.x) && (0.0..=b.height).contains(&q.y))
+                .then_some(BoxHit::Inside)
         }
     }
 }
 
 /// Map points `verts` of vector `id` (and the handles at them) through page transform `m`, then
 /// re-fit the vector.
-pub fn transform_points(doc: &mut Document, id: figcraft_doc::NodeId, verts: &[usize], m: Affine) -> Result<()> {
+pub fn transform_points(
+    doc: &mut Document,
+    id: figcraft_doc::NodeId,
+    verts: &[usize],
+    m: Affine,
+) -> Result<()> {
     let w = doc.world_transform(id);
     let local = w.inverse() * m * w;
     edit(doc, id, |net| ops::transform_vertices(net, verts, local))
@@ -124,20 +160,30 @@ pub fn transform_points(doc: &mut Document, id: figcraft_doc::NodeId, verts: &[u
 /// Transform the selected points by `f(box)` (page space) when editing with points selected and
 /// the command names no layers (`p` has no `ids` or `id`); `None` otherwise (it then acts on
 /// layers).
-pub fn transform_in_edit_mode(s: &mut Session, p: &Value, f: impl FnOnce(&PointBox) -> Affine) -> Option<Result<Value>> {
+pub fn transform_in_edit_mode(
+    s: &mut Session,
+    p: &Value,
+    f: impl FnOnce(&PointBox) -> Affine,
+) -> Option<Result<Value>> {
     if get(p, "ids").is_some() || get(p, "id").is_some() {
         return None;
     }
     let ve = editing(s).ok()?;
     let b = point_box(s.doc().ok()?, &ve).filter(|b| !b.points.is_empty())?;
     let m = f(&b);
-    Some(s.doc_mut().and_then(|doc| transform_points(doc, ve.id, &b.points, m)).map(|()| json!({"ok": true})))
+    Some(
+        s.doc_mut()
+            .and_then(|doc| transform_points(doc, ve.id, &b.points, m))
+            .map(|()| json!({"ok": true})),
+    )
 }
 
 /// The selected points' box, or an error naming `cmd`.
 fn selected_box(s: &Session, cmd: &str) -> Result<(VectorEdit, PointBox)> {
     let ve = editing(s)?;
-    let b = point_box(s.doc()?, &ve).filter(|b| !b.points.is_empty()).ok_or_else(|| bad(cmd, "select points"))?;
+    let b = point_box(s.doc()?, &ve)
+        .filter(|b| !b.points.is_empty())
+        .ok_or_else(|| bad(cmd, "select points"))?;
     Ok((ve, b))
 }
 
@@ -178,8 +224,17 @@ pub(super) fn specs() -> Vec<CommandSpec> {
                 let (ve, b) = selected_box(s, "vector.edit.resize")?;
                 let w = num(p, "width").map_or(b.width, |v| v.clamp(0.0, 1e7));
                 let h = num(p, "height").map_or(b.height, |v| v.clamp(0.0, 1e7));
-                let (x0, y0) = if boolean(p, "center").unwrap_or(false) { ((b.width - w) / 2.0, (b.height - h) / 2.0) } else { (0.0, 0.0) };
-                transform_points(s.doc_mut()?, ve.id, &b.points, b.onto(x0, y0, x0 + w, y0 + h))?;
+                let (x0, y0) = if boolean(p, "center").unwrap_or(false) {
+                    ((b.width - w) / 2.0, (b.height - h) / 2.0)
+                } else {
+                    (0.0, 0.0)
+                };
+                transform_points(
+                    s.doc_mut()?,
+                    ve.id,
+                    &b.points,
+                    b.onto(x0, y0, x0 + w, y0 + h),
+                )?;
                 Ok(json!({"ok": true}))
             }
         ),
@@ -193,7 +248,12 @@ pub(super) fn specs() -> Vec<CommandSpec> {
                 let angle = req_num("vector.edit.rotate", p, "angle")?;
                 let c = b.center();
                 let pivot = Point::new(num_or(p, "cx", c.x), num_or(p, "cy", c.y));
-                transform_points(s.doc_mut()?, ve.id, &b.points, figcraft_geom::rotate_about(Affine::IDENTITY, pivot, angle))?;
+                transform_points(
+                    s.doc_mut()?,
+                    ve.id,
+                    &b.points,
+                    figcraft_geom::rotate_about(Affine::IDENTITY, pivot, angle),
+                )?;
                 Ok(json!({"ok": true}))
             }
         ),

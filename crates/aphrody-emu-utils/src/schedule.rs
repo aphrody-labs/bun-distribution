@@ -153,11 +153,11 @@ pub struct Schedule<
 }
 
 impl<
-    T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
-    E: Copy + Eq + Default,
-    ESI: Copy + Eq + From<usize> + Into<usize>,
-    const EVENT_SLOTS: usize,
-> Schedule<T, E, ESI, EVENT_SLOTS>
+        T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
+        E: Copy + Eq + Default,
+        ESI: Copy + Eq + From<usize> + Into<usize>,
+        const EVENT_SLOTS: usize,
+    > Schedule<T, E, ESI, EVENT_SLOTS>
 {
     pub fn new() -> Self {
         let mut slots = [EventSlot {
@@ -167,13 +167,20 @@ impl<
             next_i: ESI::from(0),
         }; EVENT_SLOTS];
         slots[0].time = T::from(RawTimestamp::MAX);
-        Schedule { slots, next_event_time: T::from(RawTimestamp::MAX) }
+        Schedule {
+            slots,
+            next_event_time: T::from(RawTimestamp::MAX),
+        }
     }
 
     #[inline]
     pub fn next_event(&self) -> Option<E> {
         let next_i = self.slots[0].next_i.into();
-        if next_i == 0 { None } else { Some(self.slots[next_i].event) }
+        if next_i == 0 {
+            None
+        } else {
+            Some(self.slots[next_i].event)
+        }
     }
 
     #[inline]
@@ -192,7 +199,10 @@ impl<
         self.slots[0].next_i = next_i;
         let next_slot = &mut self.slots[next_i.into()];
         next_slot.prev_i = ESI::from(0);
-        Some((event, mem::replace(&mut self.next_event_time, next_slot.time)))
+        Some((
+            event,
+            mem::replace(&mut self.next_event_time, next_slot.time),
+        ))
     }
 
     #[inline]
@@ -258,11 +268,11 @@ impl<
 }
 
 impl<
-    T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
-    E: Copy + Eq + Default,
-    ESI: Copy + Eq + From<usize> + Into<usize>,
-    const EVENT_SLOTS: usize,
-> Default for Schedule<T, E, ESI, EVENT_SLOTS>
+        T: Copy + Ord + Add + From<RawTimestamp> + Into<RawTimestamp>,
+        E: Copy + Eq + Default,
+        ESI: Copy + Eq + From<usize> + Into<usize>,
+        const EVENT_SLOTS: usize,
+    > Default for Schedule<T, E, ESI, EVENT_SLOTS>
 {
     fn default() -> Self {
         Self::new()

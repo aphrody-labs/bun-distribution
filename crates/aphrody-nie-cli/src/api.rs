@@ -198,16 +198,24 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 .context("character card could not be read")?
                 .ok_or_else(|| anyhow::anyhow!("character was not found"))?;
             Ok(serde_json::to_value(card)?)
-        },
-        WikiCommand::Search { query: text, limit, database } => {
+        }
+        WikiCommand::Search {
+            query: text,
+            limit,
+            database,
+        } => {
             ensure_query(&text)?;
             if !(1..=50).contains(&limit) {
                 bail!("search limit must be between 1 and 50");
             }
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
-            Ok(serde_json::to_value(query::search_all(&connection, &text, limit)?)?)
-        },
+            Ok(serde_json::to_value(query::search_all(
+                &connection,
+                &text,
+                limit,
+            )?)?)
+        }
         WikiCommand::Item { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -215,7 +223,7 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
             let item = query::get_item(&connection, &id)?
                 .ok_or_else(|| anyhow::anyhow!("item was not found"))?;
             Ok(serde_json::to_value(item)?)
-        },
+        }
         WikiCommand::Skill { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -223,7 +231,7 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
             let skill = query::get_skill(&connection, &id)?
                 .ok_or_else(|| anyhow::anyhow!("skill was not found"))?;
             Ok(serde_json::to_value(skill)?)
-        },
+        }
         WikiCommand::Team { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -231,8 +239,14 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
             let team = query::get_team(&connection, &id)?
                 .ok_or_else(|| anyhow::anyhow!("team was not found"))?;
             Ok(serde_json::to_value(team)?)
-        },
-        WikiCommand::AuraList { query: text, type_slug, page, limit, database } => {
+        }
+        WikiCommand::AuraList {
+            query: text,
+            type_slug,
+            page,
+            limit,
+            database,
+        } => {
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             let page = aphrody_nie_wiki::auras::list_auras(
@@ -245,16 +259,25 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 },
             )?;
             Ok(serde_json::to_value(page)?)
-        },
-        WikiCommand::Aura { id, type_slug, database } => {
+        }
+        WikiCommand::Aura {
+            id,
+            type_slug,
+            database,
+        } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             let aura = aphrody_nie_wiki::auras::get_aura(&connection, &id, type_slug.as_deref())?
                 .ok_or_else(|| anyhow::anyhow!("aura was not found"))?;
             Ok(serde_json::to_value(aura)?)
-        },
-        WikiCommand::TacticList { query: text, page, limit, database } => {
+        }
+        WikiCommand::TacticList {
+            query: text,
+            page,
+            limit,
+            database,
+        } => {
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             let page = aphrody_nie_wiki::tactics::list_tactics(
@@ -266,7 +289,7 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 },
             )?;
             Ok(serde_json::to_value(page)?)
-        },
+        }
         WikiCommand::Tactic { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -274,8 +297,15 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
             let tactic = aphrody_nie_wiki::tactics::get_tactic(&connection, &id)?
                 .ok_or_else(|| anyhow::anyhow!("tactic was not found"))?;
             Ok(serde_json::to_value(tactic)?)
-        },
-        WikiCommand::PassiveList { query: text, category, boost_type, page, limit, database } => {
+        }
+        WikiCommand::PassiveList {
+            query: text,
+            category,
+            boost_type,
+            page,
+            limit,
+            database,
+        } => {
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             let page = aphrody_nie_wiki::passives::list_passives(
@@ -289,7 +319,7 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 },
             )?;
             Ok(serde_json::to_value(page)?)
-        },
+        }
         WikiCommand::Passive { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -297,25 +327,35 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
             let passive = aphrody_nie_wiki::passives::get_passive(&connection, &id)?
                 .ok_or_else(|| anyhow::anyhow!("passive was not found"))?;
             Ok(serde_json::to_value(passive)?)
-        },
+        }
         WikiCommand::PassiveScaling { database } => {
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
-            Ok(serde_json::to_value(aphrody_nie_wiki::passives::list_passive_scaling(
-                &connection,
-            )?)?)
-        },
-        WikiCommand::SkillLookup { query: text, data_root } => {
+            Ok(serde_json::to_value(
+                aphrody_nie_wiki::passives::list_passive_scaling(&connection)?,
+            )?)
+        }
+        WikiCommand::SkillLookup {
+            query: text,
+            data_root,
+        } => {
             ensure_query(&text)?;
             Ok(query::lookup_skill_legacy(&data_root, &text)?)
-        },
-        WikiCommand::ItemLookup { query: text, database } => {
+        }
+        WikiCommand::ItemLookup {
+            query: text,
+            database,
+        } => {
             ensure_query(&text)?;
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             Ok(query::lookup_item_legacy(&connection, &text)?)
-        },
-        WikiCommand::TeamLookup { query: text, database, data_root } => {
+        }
+        WikiCommand::TeamLookup {
+            query: text,
+            database,
+            data_root,
+        } => {
             ensure_query(&text)?;
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
@@ -324,8 +364,14 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 &data_root.join("all-gamedata/teams.json"),
                 &text,
             )?)
-        },
-        WikiCommand::Compare { chara1, chara2, level, database, data_root } => {
+        }
+        WikiCommand::Compare {
+            chara1,
+            chara2,
+            level,
+            database,
+            data_root,
+        } => {
             ensure_query(&chara1)?;
             ensure_query(&chara2)?;
             if !(1..=99).contains(&level) {
@@ -340,8 +386,14 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 &chara2,
                 level,
             )?)?)
-        },
-        WikiCommand::RandomTeam { seed, formation, element, playstyle, database } => {
+        }
+        WikiCommand::RandomTeam {
+            seed,
+            formation,
+            element,
+            playstyle,
+            database,
+        } => {
             ensure_query(&formation)?;
             if formation.len() > 16 {
                 bail!("random-team formation is too long");
@@ -358,12 +410,12 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 playstyle.as_deref(),
                 seed,
             )?)?)
-        },
+        }
         WikiCommand::TeamBuilderList { database } => {
             let connection = mirror::open(database.as_deref())
                 .map_err(|_| anyhow::anyhow!("Wiki data is unavailable"))?;
             Ok(serde_json::to_value(query::team_build_list(&connection)?)?)
-        },
+        }
         WikiCommand::TeamBuilderEntry { id, database } => {
             ensure_identifier(&id)?;
             let connection = mirror::open(database.as_deref())
@@ -372,7 +424,7 @@ pub fn execute_wiki(command: WikiCommand) -> Result<Value> {
                 query::team_build_calc(&connection, &id)?
                     .ok_or_else(|| anyhow::anyhow!("team-builder entry was not found"))?,
             )?)
-        },
+        }
     }
 }
 

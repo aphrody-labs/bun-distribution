@@ -157,8 +157,14 @@ impl SkillViewPresetInfo {
         Some(Self {
             preset_id,
             preset_name: owned(field_str(v, "presetName").unwrap_or("")),
-            data_offset: pd.and_then(|a| a.first()).and_then(Value::as_i64).unwrap_or(0),
-            data_count: pd.and_then(|a| a.get(1)).and_then(Value::as_i64).unwrap_or(0),
+            data_offset: pd
+                .and_then(|a| a.first())
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
+            data_count: pd
+                .and_then(|a| a.get(1))
+                .and_then(Value::as_i64)
+                .unwrap_or(0),
             b_default: field_bool(v, "bDefault").unwrap_or(false),
         })
     }
@@ -226,5 +232,8 @@ pub fn parse_skill_view_preset_config(root: &Value) -> SkillViewPresetConfig {
         }
     }
 
-    SkillViewPresetConfig { preset_data, presets }
+    SkillViewPresetConfig {
+        preset_data,
+        presets,
+    }
 }

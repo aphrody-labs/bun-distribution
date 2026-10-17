@@ -101,7 +101,12 @@ mod tests {
             assert!(url.query().is_none());
         }
         assert!(catalog.routes.iter().any(|route| route.id == "search" && route.integration.contains("robots disallows")));
-        assert!(catalog.routes.iter().any(|route| route.integration == "aphrody_google_dns"));
+        assert!(
+            catalog
+                .routes
+                .iter()
+                .any(|route| route.integration == "aphrody_google_dns")
+        );
         assert_eq!(serde_json::to_value(catalog).unwrap()["schemaVersion"], 1);
     }
 }

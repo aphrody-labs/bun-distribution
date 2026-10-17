@@ -5,7 +5,14 @@
 //! clockwise on screen, 3D uses a left-handed system with +z pointing into the screen, and a 3D
 //! layer's rotation is Orientation (X, Y, Z) followed by X Rotation, Y Rotation, Z Rotation.
 
-#![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
+#![deny(
+    clippy::unwrap_used,
+    clippy::expect_used,
+    clippy::panic,
+    clippy::unimplemented,
+    clippy::todo,
+    clippy::unreachable
+)]
 
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub, SubAssign};
 
@@ -69,7 +76,11 @@ impl Vec3 {
         self.x * o.x + self.y * o.y + self.z * o.z
     }
     pub fn cross(self, o: Vec3) -> Vec3 {
-        vec3(self.y * o.z - self.z * o.y, self.z * o.x - self.x * o.z, self.x * o.y - self.y * o.x)
+        vec3(
+            self.y * o.z - self.z * o.y,
+            self.z * o.x - self.x * o.z,
+            self.x * o.y - self.y * o.x,
+        )
     }
     pub fn length(self) -> f64 {
         self.dot(self).sqrt()
@@ -125,12 +136,22 @@ pub struct Rect {
 }
 
 impl Rect {
-    pub const EMPTY: Rect = Rect { x0: f64::INFINITY, y0: f64::INFINITY, x1: f64::NEG_INFINITY, y1: f64::NEG_INFINITY };
+    pub const EMPTY: Rect = Rect {
+        x0: f64::INFINITY,
+        y0: f64::INFINITY,
+        x1: f64::NEG_INFINITY,
+        y1: f64::NEG_INFINITY,
+    };
     pub fn new(x0: f64, y0: f64, x1: f64, y1: f64) -> Rect {
         Rect { x0, y0, x1, y1 }
     }
     pub fn from_size(w: f64, h: f64) -> Rect {
-        Rect { x0: 0.0, y0: 0.0, x1: w, y1: h }
+        Rect {
+            x0: 0.0,
+            y0: 0.0,
+            x1: w,
+            y1: h,
+        }
     }
     pub fn width(&self) -> f64 {
         (self.x1 - self.x0).max(0.0)
@@ -145,10 +166,20 @@ impl Rect {
         vec2((self.x0 + self.x1) * 0.5, (self.y0 + self.y1) * 0.5)
     }
     pub fn union(&self, o: &Rect) -> Rect {
-        Rect { x0: self.x0.min(o.x0), y0: self.y0.min(o.y0), x1: self.x1.max(o.x1), y1: self.y1.max(o.y1) }
+        Rect {
+            x0: self.x0.min(o.x0),
+            y0: self.y0.min(o.y0),
+            x1: self.x1.max(o.x1),
+            y1: self.y1.max(o.y1),
+        }
     }
     pub fn intersect(&self, o: &Rect) -> Rect {
-        Rect { x0: self.x0.max(o.x0), y0: self.y0.max(o.y0), x1: self.x1.min(o.x1), y1: self.y1.min(o.y1) }
+        Rect {
+            x0: self.x0.max(o.x0),
+            y0: self.y0.max(o.y0),
+            x1: self.x1.min(o.x1),
+            y1: self.y1.min(o.y1),
+        }
     }
     pub fn include(&mut self, p: Vec2) {
         self.x0 = self.x0.min(p.x);
@@ -157,17 +188,32 @@ impl Rect {
         self.y1 = self.y1.max(p.y);
     }
     pub fn inflate(&self, d: f64) -> Rect {
-        Rect { x0: self.x0 - d, y0: self.y0 - d, x1: self.x1 + d, y1: self.y1 + d }
+        Rect {
+            x0: self.x0 - d,
+            y0: self.y0 - d,
+            x1: self.x1 + d,
+            y1: self.y1 + d,
+        }
     }
     pub fn contains(&self, p: Vec2) -> bool {
         p.x >= self.x0 && p.x < self.x1 && p.y >= self.y0 && p.y < self.y1
     }
     pub fn corners(&self) -> [Vec2; 4] {
-        [vec2(self.x0, self.y0), vec2(self.x1, self.y0), vec2(self.x1, self.y1), vec2(self.x0, self.y1)]
+        [
+            vec2(self.x0, self.y0),
+            vec2(self.x1, self.y0),
+            vec2(self.x1, self.y1),
+            vec2(self.x0, self.y1),
+        ]
     }
     /// Smallest integer rect covering this one.
     pub fn round_out(&self) -> Rect {
-        Rect { x0: self.x0.floor(), y0: self.y0.floor(), x1: self.x1.ceil(), y1: self.y1.ceil() }
+        Rect {
+            x0: self.x0.floor(),
+            y0: self.y0.floor(),
+            x1: self.x1.ceil(),
+            y1: self.y1.ceil(),
+        }
     }
 }
 
@@ -196,19 +242,28 @@ impl Mat3 {
     }
     pub fn skew_deg(skew: f64, axis_deg: f64) -> Mat3 {
         let k = skew.to_radians().tan();
-        Mat3::rotate_deg(axis_deg) * Mat3([[1.0, k, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]) * Mat3::rotate_deg(-axis_deg)
+        Mat3::rotate_deg(axis_deg)
+            * Mat3([[1.0, k, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
+            * Mat3::rotate_deg(-axis_deg)
     }
     /// The After Effects 2D layer transform: layer space → parent space.
     /// `p' = position + R(rotation) · S(scale/100) · (p - anchor)`.
     pub fn layer_2d(anchor: Vec2, position: Vec2, scale_pct: Vec2, rotation_deg: f64) -> Mat3 {
-        Mat3::translate(position) * Mat3::rotate_deg(rotation_deg) * Mat3::scale(scale_pct / 100.0) * Mat3::translate(-anchor)
+        Mat3::translate(position)
+            * Mat3::rotate_deg(rotation_deg)
+            * Mat3::scale(scale_pct / 100.0)
+            * Mat3::translate(-anchor)
     }
     pub fn apply(&self, p: Vec2) -> Vec2 {
         let m = &self.0;
         let x = m[0][0] * p.x + m[0][1] * p.y + m[0][2];
         let y = m[1][0] * p.x + m[1][1] * p.y + m[1][2];
         let w = m[2][0] * p.x + m[2][1] * p.y + m[2][2];
-        if w != 1.0 && w != 0.0 { vec2(x / w, y / w) } else { vec2(x, y) }
+        if w != 1.0 && w != 0.0 {
+            vec2(x / w, y / w)
+        } else {
+            vec2(x, y)
+        }
     }
     /// Apply to a direction (ignores translation; affine only).
     pub fn apply_vec(&self, v: Vec2) -> Vec2 {
@@ -220,7 +275,8 @@ impl Mat3 {
     }
     pub fn determinant(&self) -> f64 {
         let m = &self.0;
-        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+            - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
     }
     pub fn inverse(&self) -> Option<Mat3> {
@@ -230,9 +286,21 @@ impl Mat3 {
         }
         let m = &self.0;
         let inv = [
-            [(m[1][1] * m[2][2] - m[1][2] * m[2][1]) / d, (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / d, (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / d],
-            [(m[1][2] * m[2][0] - m[1][0] * m[2][2]) / d, (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / d, (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / d],
-            [(m[1][0] * m[2][1] - m[1][1] * m[2][0]) / d, (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / d, (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / d],
+            [
+                (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / d,
+                (m[0][2] * m[2][1] - m[0][1] * m[2][2]) / d,
+                (m[0][1] * m[1][2] - m[0][2] * m[1][1]) / d,
+            ],
+            [
+                (m[1][2] * m[2][0] - m[1][0] * m[2][2]) / d,
+                (m[0][0] * m[2][2] - m[0][2] * m[2][0]) / d,
+                (m[0][2] * m[1][0] - m[0][0] * m[1][2]) / d,
+            ],
+            [
+                (m[1][0] * m[2][1] - m[1][1] * m[2][0]) / d,
+                (m[0][1] * m[2][0] - m[0][0] * m[2][1]) / d,
+                (m[0][0] * m[1][1] - m[0][1] * m[1][0]) / d,
+            ],
         ];
         Some(Mat3(inv))
     }
@@ -250,7 +318,9 @@ impl Mat3 {
     }
     /// Projective transform mapping the unit square corners to `q` (in order (0,0),(1,0),(1,1),(0,1)).
     pub fn square_to_quad(q: [Vec2; 4]) -> Mat3 {
-        let (x0, y0, x1, y1, x2, y2, x3, y3) = (q[0].x, q[0].y, q[1].x, q[1].y, q[2].x, q[2].y, q[3].x, q[3].y);
+        let (x0, y0, x1, y1, x2, y2, x3, y3) = (
+            q[0].x, q[0].y, q[1].x, q[1].y, q[2].x, q[2].y, q[3].x, q[3].y,
+        );
         let dx1 = x1 - x2;
         let dx2 = x3 - x2;
         let dy1 = y1 - y2;
@@ -258,12 +328,20 @@ impl Mat3 {
         let sx = x0 - x1 + x2 - x3;
         let sy = y0 - y1 + y2 - y3;
         if sx.abs() < 1e-12 && sy.abs() < 1e-12 {
-            return Mat3([[x1 - x0, x3 - x0, x0], [y1 - y0, y3 - y0, y0], [0.0, 0.0, 1.0]]);
+            return Mat3([
+                [x1 - x0, x3 - x0, x0],
+                [y1 - y0, y3 - y0, y0],
+                [0.0, 0.0, 1.0],
+            ]);
         }
         let den = dx1 * dy2 - dx2 * dy1;
         let g = (sx * dy2 - dx2 * sy) / den;
         let h = (dx1 * sy - sx * dy1) / den;
-        Mat3([[x1 - x0 + g * x1, x3 - x0 + h * x3, x0], [y1 - y0 + g * y1, y3 - y0 + h * y3, y0], [g, h, 1.0]])
+        Mat3([
+            [x1 - x0 + g * x1, x3 - x0 + h * x3, x0],
+            [y1 - y0 + g * y1, y3 - y0 + h * y3, y0],
+            [g, h, 1.0],
+        ])
     }
 }
 
@@ -291,7 +369,12 @@ impl Default for Mat4 {
 }
 
 impl Mat4 {
-    pub const IDENTITY: Mat4 = Mat4([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]);
+    pub const IDENTITY: Mat4 = Mat4([
+        [1.0, 0.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]);
     pub fn translate(t: Vec3) -> Mat4 {
         let mut m = Mat4::IDENTITY;
         m.0[0][3] = t.x;
@@ -308,22 +391,43 @@ impl Mat4 {
     }
     pub fn rotate_x(deg: f64) -> Mat4 {
         let (s, c) = deg.to_radians().sin_cos();
-        Mat4([[1.0, 0.0, 0.0, 0.0], [0.0, c, -s, 0.0], [0.0, s, c, 0.0], [0.0, 0.0, 0.0, 1.0]])
+        Mat4([
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, c, -s, 0.0],
+            [0.0, s, c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
     }
     pub fn rotate_y(deg: f64) -> Mat4 {
         let (s, c) = deg.to_radians().sin_cos();
-        Mat4([[c, 0.0, s, 0.0], [0.0, 1.0, 0.0, 0.0], [-s, 0.0, c, 0.0], [0.0, 0.0, 0.0, 1.0]])
+        Mat4([
+            [c, 0.0, s, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [-s, 0.0, c, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
     }
     pub fn rotate_z(deg: f64) -> Mat4 {
         let (s, c) = deg.to_radians().sin_cos();
-        Mat4([[c, -s, 0.0, 0.0], [s, c, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+        Mat4([
+            [c, -s, 0.0, 0.0],
+            [s, c, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
     }
     /// Orientation (degrees, X then Y then Z applied to the vector in that order).
     pub fn orientation(o: Vec3) -> Mat4 {
         Mat4::rotate_z(o.z) * Mat4::rotate_y(o.y) * Mat4::rotate_x(o.x)
     }
     /// The 3D layer transform: layer space → parent space.
-    pub fn layer_3d(anchor: Vec3, position: Vec3, scale_pct: Vec3, orientation: Vec3, rotation: Vec3) -> Mat4 {
+    pub fn layer_3d(
+        anchor: Vec3,
+        position: Vec3,
+        scale_pct: Vec3,
+        orientation: Vec3,
+        rotation: Vec3,
+    ) -> Mat4 {
         Mat4::translate(position)
             * Mat4::orientation(orientation)
             * Mat4::rotate_z(rotation.z)
@@ -335,7 +439,12 @@ impl Mat4 {
     /// Embed a 2D affine transform (z untouched).
     pub fn from_mat3_affine(m: &Mat3) -> Mat4 {
         let a = &m.0;
-        Mat4([[a[0][0], a[0][1], 0.0, a[0][2]], [a[1][0], a[1][1], 0.0, a[1][2]], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]])
+        Mat4([
+            [a[0][0], a[0][1], 0.0, a[0][2]],
+            [a[1][0], a[1][1], 0.0, a[1][2]],
+            [0.0, 0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0, 1.0],
+        ])
     }
     pub fn apply(&self, p: Vec3) -> Vec3 {
         let m = &self.0;
@@ -343,11 +452,19 @@ impl Mat4 {
         let y = m[1][0] * p.x + m[1][1] * p.y + m[1][2] * p.z + m[1][3];
         let z = m[2][0] * p.x + m[2][1] * p.y + m[2][2] * p.z + m[2][3];
         let w = m[3][0] * p.x + m[3][1] * p.y + m[3][2] * p.z + m[3][3];
-        if w != 1.0 && w != 0.0 { vec3(x / w, y / w, z / w) } else { vec3(x, y, z) }
+        if w != 1.0 && w != 0.0 {
+            vec3(x / w, y / w, z / w)
+        } else {
+            vec3(x, y, z)
+        }
     }
     pub fn apply_vec(&self, v: Vec3) -> Vec3 {
         let m = &self.0;
-        vec3(m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z, m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z, m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z)
+        vec3(
+            m[0][0] * v.x + m[0][1] * v.y + m[0][2] * v.z,
+            m[1][0] * v.x + m[1][1] * v.y + m[1][2] * v.z,
+            m[2][0] * v.x + m[2][1] * v.y + m[2][2] * v.z,
+        )
     }
     pub fn transpose(&self) -> Mat4 {
         let mut r = [[0.0; 4]; 4];
@@ -392,7 +509,11 @@ impl Mat4 {
     /// by `w`: used to draw planar 3D layers. `self` must already include the projection.
     pub fn plane_to_mat3(&self) -> Mat3 {
         let m = &self.0;
-        Mat3([[m[0][0], m[0][1], m[0][3]], [m[1][0], m[1][1], m[1][3]], [m[3][0], m[3][1], m[3][3]]])
+        Mat3([
+            [m[0][0], m[0][1], m[0][3]],
+            [m[1][0], m[1][1], m[1][3]],
+            [m[3][0], m[3][1], m[3][3]],
+        ])
     }
 }
 
@@ -415,7 +536,12 @@ impl Mul for Mat4 {
 pub fn camera_matrix(comp_w: f64, comp_h: f64, position: Vec3, view: Mat4, zoom: f64) -> Mat4 {
     let _ = position;
     // Projection: x' = zoom * x / z + cx, y' = zoom * y / z + cy (z in camera space, +z forward).
-    let proj = Mat4([[zoom, 0.0, comp_w * 0.5, 0.0], [0.0, zoom, comp_h * 0.5, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 1.0, 0.0]]);
+    let proj = Mat4([
+        [zoom, 0.0, comp_w * 0.5, 0.0],
+        [0.0, zoom, comp_h * 0.5, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0, 0.0],
+    ]);
     proj * view
 }
 
@@ -430,15 +556,28 @@ pub fn default_camera_zoom(comp_w: f64) -> f64 {
 /// their own orientation; two-node cameras auto-orient to the point of interest).
 pub fn look_at(pos: Vec3, poi: Vec3, extra: Mat4) -> Mat4 {
     let f = (poi - pos).normalize();
-    let f = if f.length() == 0.0 { vec3(0.0, 0.0, 1.0) } else { f };
+    let f = if f.length() == 0.0 {
+        vec3(0.0, 0.0, 1.0)
+    } else {
+        f
+    };
     // y down world; choose up = -y unless parallel.
-    let up = if f.cross(vec3(0.0, -1.0, 0.0)).length() < 1e-9 { vec3(0.0, 0.0, 1.0) } else { vec3(0.0, -1.0, 0.0) };
+    let up = if f.cross(vec3(0.0, -1.0, 0.0)).length() < 1e-9 {
+        vec3(0.0, 0.0, 1.0)
+    } else {
+        vec3(0.0, -1.0, 0.0)
+    };
     let r = up.cross(f).normalize();
     let u = f.cross(r);
     // Camera basis: x = right (screen +x), y = down (screen +y), z = forward.
     let x = -r;
     let y = -u;
-    let rot = Mat4([[x.x, x.y, x.z, 0.0], [y.x, y.y, y.z, 0.0], [f.x, f.y, f.z, 0.0], [0.0, 0.0, 0.0, 1.0]]);
+    let rot = Mat4([
+        [x.x, x.y, x.z, 0.0],
+        [y.x, y.y, y.z, 0.0],
+        [f.x, f.y, f.z, 0.0],
+        [0.0, 0.0, 0.0, 1.0],
+    ]);
     extra * rot * Mat4::translate(-pos)
 }
 
@@ -452,7 +591,12 @@ mod tests {
 
     #[test]
     fn layer_2d_maps_anchor_to_position() {
-        let m = Mat3::layer_2d(vec2(50.0, 25.0), vec2(960.0, 540.0), vec2(200.0, 50.0), 30.0);
+        let m = Mat3::layer_2d(
+            vec2(50.0, 25.0),
+            vec2(960.0, 540.0),
+            vec2(200.0, 50.0),
+            30.0,
+        );
         assert!(close(m.apply(vec2(50.0, 25.0)), vec2(960.0, 540.0)));
         let inv = m.inverse().unwrap();
         let p = vec2(12.0, -7.0);
@@ -467,7 +611,12 @@ mod tests {
 
     #[test]
     fn quad_mapping_hits_corners() {
-        let q = [vec2(10.0, 10.0), vec2(110.0, 20.0), vec2(120.0, 140.0), vec2(5.0, 100.0)];
+        let q = [
+            vec2(10.0, 10.0),
+            vec2(110.0, 20.0),
+            vec2(120.0, 140.0),
+            vec2(5.0, 100.0),
+        ];
         let m = Mat3::square_to_quad(q);
         assert!(close(m.apply(vec2(0.0, 0.0)), q[0]));
         assert!(close(m.apply(vec2(1.0, 0.0)), q[1]));
@@ -477,7 +626,13 @@ mod tests {
 
     #[test]
     fn mat4_inverse_roundtrip() {
-        let m = Mat4::layer_3d(vec3(1.0, 2.0, 3.0), vec3(100.0, 50.0, -20.0), vec3(150.0, 80.0, 100.0), vec3(10.0, 20.0, 30.0), vec3(5.0, -40.0, 12.0));
+        let m = Mat4::layer_3d(
+            vec3(1.0, 2.0, 3.0),
+            vec3(100.0, 50.0, -20.0),
+            vec3(150.0, 80.0, 100.0),
+            vec3(10.0, 20.0, 30.0),
+            vec3(5.0, -40.0, 12.0),
+        );
         let i = m.inverse().unwrap();
         let p = vec3(3.0, -4.0, 5.0);
         assert!((i.apply(m.apply(p)) - p).length() < 1e-9);
@@ -491,7 +646,10 @@ mod tests {
         let view = look_at(pos, vec3(w / 2.0, h / 2.0, 0.0), Mat4::IDENTITY);
         let cam = camera_matrix(w, h, pos, view, zoom);
         let p = cam.apply(vec3(100.0, 200.0, 0.0));
-        assert!((p.x - 100.0).abs() < 1e-6 && (p.y - 200.0).abs() < 1e-6, "{p:?}");
+        assert!(
+            (p.x - 100.0).abs() < 1e-6 && (p.y - 200.0).abs() < 1e-6,
+            "{p:?}"
+        );
     }
 
     proptest::proptest! {

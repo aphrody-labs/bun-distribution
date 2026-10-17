@@ -6,7 +6,10 @@ use clap::Parser;
 
 /// Command-line entry point.
 #[derive(Parser, Debug)]
-#[command(name = "aphrody-nie-ocgen", about = "Génération 3D d'un personnage original")]
+#[command(
+    name = "aphrody-nie-ocgen",
+    about = "Génération 3D d'un personnage original"
+)]
 struct Args {
     /// Sub-command to run.
     #[command(subcommand)]

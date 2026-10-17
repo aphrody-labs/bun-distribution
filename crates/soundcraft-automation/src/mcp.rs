@@ -53,7 +53,12 @@ pub fn tool_definitions() -> Vec<Value> {
             json!({"name": {"type": "string"}, "sample_rate": {"type": "integer"}, "template": {"type": "string", "enum": ["blank", "demo"]}}),
             &[],
         ),
-        tool("open_session", "Open a .scraft session file.", json!({"path": {"type": "string"}}), &["path"]),
+        tool(
+            "open_session",
+            "Open a .scraft session file.",
+            json!({"path": {"type": "string"}}),
+            &["path"],
+        ),
         tool(
             "save_session",
             "Save the session (path required the first time; replace: true to save over another existing file).",
@@ -72,10 +77,30 @@ pub fn tool_definitions() -> Vec<Value> {
             json!({"path": {"type": "string"}, "format": {"type": "string", "enum": ["wav", "aiff", "flac"]}, "bit_depth": {"type": "string"}, "start": {}, "end": {}, "normalize": {"type": "boolean"}}),
             &["path"],
         ),
-        tool("parity", "Feature-parity report against the incumbent's menu catalog.", json!({}), &[]),
-        tool("screenshot", "APP_ONLY. Screenshot the app window (PNG).", json!({"path": {"type": "string"}}), &[]),
-        tool("ui_inspect", "APP_ONLY. UI state: front window, panels, layout rectangles of tracks, dialogs.", json!({}), &[]),
-        tool("ui_set", "APP_ONLY. Set UI state fields, e.g. {\"window\": \"Mix\"}.", json!({"state": {"type": "object"}}), &["state"]),
+        tool(
+            "parity",
+            "Feature-parity report against the incumbent's menu catalog.",
+            json!({}),
+            &[],
+        ),
+        tool(
+            "screenshot",
+            "APP_ONLY. Screenshot the app window (PNG).",
+            json!({"path": {"type": "string"}}),
+            &[],
+        ),
+        tool(
+            "ui_inspect",
+            "APP_ONLY. UI state: front window, panels, layout rectangles of tracks, dialogs.",
+            json!({}),
+            &[],
+        ),
+        tool(
+            "ui_set",
+            "APP_ONLY. Set UI state fields, e.g. {\"window\": \"Mix\"}.",
+            json!({"state": {"type": "object"}}),
+            &["state"],
+        ),
         tool(
             "menu_invoke",
             "APP_ONLY. Invoke a menu item like a click (may open its dialog), e.g. \"Track > New...\".",
@@ -118,28 +143,43 @@ impl<B: Backend> Server<B> {
     }
 
     fn exec(&mut self, cmd: &str, params: Value) -> Result<Value, String> {
-        self.backend.call("engine.execute", json!({"command": cmd, "params": params}))
+        self.backend
+            .call("engine.execute", json!({"command": cmd, "params": params}))
     }
 
     /// Dispatch a tool call.
     pub fn call_tool(&mut self, name: &str, args: &Value) -> Value {
         let a = |k: &str| args.get(k).cloned();
         let r: Result<Value, String> = match name {
-            "list_commands" => self.backend.call("engine.commands", json!({"filter": a("filter")})),
+            "list_commands" => self
+                .backend
+                .call("engine.commands", json!({"filter": a("filter")})),
             "execute" => {
-                let Some(cmd) = args.get("command").and_then(Value::as_str) else { return error_result("`command` required") };
+                let Some(cmd) = args.get("command").and_then(Value::as_str) else {
+                    return error_result("`command` required");
+                };
                 self.exec(cmd, a("params").unwrap_or(json!({})))
             }
             "batch" => {
-                let keep = args.get("keep_going").and_then(Value::as_bool).unwrap_or(false);
+                let keep = args
+                    .get("keep_going")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
                 let Some(calls) = args.get("calls").and_then(Value::as_array) else {
                     return error_result("`calls` must be an array");
                 };
                 let mut out = Vec::new();
                 let mut failed = false;
                 for c in calls.iter().take(1000) {
-                    let Some(cmd) = c.get("command").and_then(Value::as_str).map(str::trim).filter(|s| !s.is_empty()) else {
-                        out.push(json!({"command": "", "ok": false, "error": "`command` required"}));
+                    let Some(cmd) = c
+                        .get("command")
+                        .and_then(Value::as_str)
+                        .map(str::trim)
+                        .filter(|s| !s.is_empty())
+                    else {
+                        out.push(
+                            json!({"command": "", "ok": false, "error": "`command` required"}),
+                        );
                         failed = true;
                         if !keep {
                             break;
@@ -160,9 +200,15 @@ impl<B: Backend> Server<B> {
                 }
                 // Any failure sets isError so agents that only check that flag notice;
                 // keep_going still runs the rest and the payload lists every call.
-                if failed { Err(serde_json::to_string(&out).unwrap_or_default()) } else { Ok(json!(out)) }
+                if failed {
+                    Err(serde_json::to_string(&out).unwrap_or_default())
+                } else {
+                    Ok(json!(out))
+                }
             }
-            "inspect_session" => self.backend.call("session.inspect", json!({"detail": a("detail")})),
+            "inspect_session" => self
+                .backend
+                .call("session.inspect", json!({"detail": a("detail")})),
             "new_session" => self.exec("session.new", args.clone()),
             "open_session" => self.exec("session.open", args.clone()),
             "save_session" => self.exec("session.save", args.clone()),
@@ -200,8 +246,15 @@ impl<B: Backend> Server<B> {
         let id = id?;
         let result: Result<Value, (i64, String)> = match method {
             "initialize" => {
-                let want = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSION);
-                let ver = if SUPPORTED.contains(&want) { want } else { PROTOCOL_VERSION };
+                let want = params
+                    .get("protocolVersion")
+                    .and_then(Value::as_str)
+                    .unwrap_or(PROTOCOL_VERSION);
+                let ver = if SUPPORTED.contains(&want) {
+                    want
+                } else {
+                    PROTOCOL_VERSION
+                };
                 Ok(json!({
                     "protocolVersion": ver,
                     "capabilities": {"tools": {}, "resources": {}},
@@ -224,12 +277,16 @@ impl<B: Backend> Server<B> {
             "resources/read" => {
                 let uri = params.get("uri").and_then(Value::as_str).unwrap_or("");
                 let r = match uri {
-                    "soundcraft://session" => self.backend.call("session.inspect", json!({"detail": "full"})),
+                    "soundcraft://session" => self
+                        .backend
+                        .call("session.inspect", json!({"detail": "full"})),
                     "soundcraft://commands" => self.backend.call("engine.commands", json!({})),
                     _ => Err(format!("unknown resource {uri}")),
                 };
                 match r {
-                    Ok(v) => Ok(json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": v.to_string()}]})),
+                    Ok(v) => Ok(
+                        json!({"contents": [{"uri": uri, "mimeType": "application/json", "text": v.to_string()}]}),
+                    ),
                     Err(e) => Err((-32002, e)),
                 }
             }
@@ -238,7 +295,9 @@ impl<B: Backend> Server<B> {
         };
         Some(match result {
             Ok(r) => json!({"jsonrpc": "2.0", "id": id, "result": r}),
-            Err((code, m)) => json!({"jsonrpc": "2.0", "id": id, "error": {"code": code, "message": m}}),
+            Err((code, m)) => {
+                json!({"jsonrpc": "2.0", "id": id, "error": {"code": code, "message": m}})
+            }
         })
     }
 
@@ -252,10 +311,16 @@ impl<B: Backend> Server<B> {
             let reply = match serde_json::from_str::<Value>(&line) {
                 Ok(Value::Array(batch)) => {
                     let replies: Vec<Value> = batch.iter().filter_map(|m| self.handle(m)).collect();
-                    if replies.is_empty() { None } else { Some(Value::Array(replies)) }
+                    if replies.is_empty() {
+                        None
+                    } else {
+                        Some(Value::Array(replies))
+                    }
                 }
                 Ok(msg) => self.handle(&msg),
-                Err(e) => Some(json!({"jsonrpc": "2.0", "id": null, "error": {"code": -32700, "message": format!("parse error: {e}")}})),
+                Err(e) => Some(
+                    json!({"jsonrpc": "2.0", "id": null, "error": {"code": -32700, "message": format!("parse error: {e}")}}),
+                ),
             };
             if let Some(r) = reply {
                 writeln!(out, "{r}")?;

@@ -12,4 +12,9 @@ use crate::prefixes::TokenPrefix;
 pub struct DownloadJobToken(String);
 
 impl_string_token!(DownloadJobToken);
-impl_crockford_generator!(DownloadJobToken, 32usize, TokenPrefix::DownloadJob, CrockfordLower);
+impl_crockford_generator!(
+    DownloadJobToken,
+    32usize,
+    TokenPrefix::DownloadJob,
+    CrockfordLower
+);

@@ -40,7 +40,11 @@ struct Group {
 
 #[derive(Clone)]
 enum Gesture {
-    Marquee { origin: Pos2, end: Pos2, base: Vec<KeyframeRef> },
+    Marquee {
+        origin: Pos2,
+        end: Pos2,
+        base: Vec<KeyframeRef>,
+    },
     Group(Group),
 }
 
@@ -77,7 +81,14 @@ fn limits(app: &FilmcraftApp, keys: &[KeyframeRef]) -> Option<(i64, i64)> {
     (low <= high).then_some((low, high))
 }
 
-fn update(group: &mut Group, points: &[Point], pos: Pos2, shift: bool, playhead: Tick, rate: FrameRate) {
+fn update(
+    group: &mut Group,
+    points: &[Point],
+    pos: Pos2,
+    shift: bool,
+    playhead: Tick,
+    rate: FrameRate,
+) {
     let offset = f64::from(pos.x - group.press.x) * group.ticks_per_pixel;
     if !offset.is_finite() {
         return;
@@ -90,13 +101,22 @@ fn update(group: &mut Group, points: &[Point], pos: Pos2, shift: bool, playhead:
     }
     let mut closest = 8.0;
     for point in points.iter().filter(|p| group.keys.contains(&p.key)) {
-        for target in std::iter::once(playhead).chain(points.iter().filter(|p| !group.keys.contains(&p.key)).map(|p| p.time)) {
-            let distance = ((target - point.time - requested).0 as f64 * point.pixels_per_tick).abs();
+        for target in std::iter::once(playhead).chain(
+            points
+                .iter()
+                .filter(|p| !group.keys.contains(&p.key))
+                .map(|p| p.time),
+        ) {
+            let distance =
+                ((target - point.time - requested).0 as f64 * point.pixels_per_tick).abs();
             let delta = (target - point.time).0;
             if distance <= closest && (group.low..=group.high).contains(&delta) {
                 closest = distance;
                 group.delta = Tick(delta);
-                group.snap = Some((target, point.rect.center().x + (delta as f64 * point.pixels_per_tick) as f32));
+                group.snap = Some((
+                    target,
+                    point.rect.center().x + (delta as f64 * point.pixels_per_tick) as f32,
+                ));
             }
         }
     }
@@ -104,9 +124,14 @@ fn update(group: &mut Group, points: &[Point], pos: Pos2, shift: bool, playhead:
 
 impl Interaction {
     pub(crate) fn begin(app: &mut FilmcraftApp, ui: &mut egui::Ui, area: Rect, clip: u64) -> Self {
-        let mut state = ui.data(|d| d.get_temp::<State>(state_id())).unwrap_or_default();
+        let mut state = ui
+            .data(|d| d.get_temp::<State>(state_id()))
+            .unwrap_or_default();
         if state.clip != clip {
-            state = State { clip, ..Default::default() };
+            state = State {
+                clip,
+                ..Default::default()
+            };
         }
         let cancelled = ui.input(|i| i.key_pressed(egui::Key::Escape));
         if cancelled {
@@ -120,19 +145,38 @@ impl Interaction {
             && background.drag_started_by(egui::PointerButton::Primary)
             && let Some(origin) = ui.input(|i| i.pointer.press_origin())
         {
-            let base = if ui.input(|i| i.modifiers.shift) { app.ui.keyframe_selection.clone() } else { Vec::new() };
-            state.gesture = Some(Gesture::Marquee { origin, end: origin, base });
+            let base = if ui.input(|i| i.modifiers.shift) {
+                app.ui.keyframe_selection.clone()
+            } else {
+                Vec::new()
+            };
+            state.gesture = Some(Gesture::Marquee {
+                origin,
+                end: origin,
+                base,
+            });
         }
         if let Some(pos) = ui.input(|i| i.pointer.interact_pos()) {
             match &mut state.gesture {
                 Some(Gesture::Marquee { end, .. }) => *end = pos,
-                Some(Gesture::Group(group)) => {
-                    update(group, &state.points, pos, ui.input(|i| i.modifiers.shift), app.session.playhead(), app.session.sequence_rate())
-                }
+                Some(Gesture::Group(group)) => update(
+                    group,
+                    &state.points,
+                    pos,
+                    ui.input(|i| i.modifiers.shift),
+                    app.session.playhead(),
+                    app.session.sequence_rate(),
+                ),
                 None => {}
             }
         }
-        Self { state, points: Vec::new(), area, background, cancelled }
+        Self {
+            state,
+            points: Vec::new(),
+            area,
+            background,
+            cancelled,
+        }
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -162,7 +206,13 @@ impl Interaction {
         let time = super::timeline_time_of(it, key.time);
         let pixels_per_tick = f64::from(lane.width().max(1.0)) / it.duration.0.max(1) as f64;
         if self.area.contains(rect.center()) && ui.clip_rect().contains(rect.center()) {
-            self.points.push(Point { key: key.clone(), rect, time, pixels_per_tick, interp });
+            self.points.push(Point {
+                key: key.clone(),
+                rect,
+                time,
+                pixels_per_tick,
+                interp,
+            });
         }
         if !self.cancelled && response.drag_started_by(egui::PointerButton::Primary) {
             if !app.ui.keyframe_selection.contains(&key) {
@@ -173,7 +223,9 @@ impl Interaction {
             }
             let keys = app.ui.keyframe_selection.clone();
             if let Some((low, high)) = limits(app, &keys) {
-                let press = ui.input(|i| i.pointer.press_origin()).unwrap_or(rect.center());
+                let press = ui
+                    .input(|i| i.pointer.press_origin())
+                    .unwrap_or(rect.center());
                 let mut group = Group {
                     anchor: key.clone(),
                     keys,
@@ -187,7 +239,14 @@ impl Interaction {
                     ended: false,
                 };
                 if let Some(pos) = response.interact_pointer_pos() {
-                    update(&mut group, &self.state.points, pos, shift, app.session.playhead(), app.session.sequence_rate());
+                    update(
+                        &mut group,
+                        &self.state.points,
+                        pos,
+                        shift,
+                        app.session.playhead(),
+                        app.session.sequence_rate(),
+                    );
                 }
                 self.state.gesture = Some(Gesture::Group(group));
             }
@@ -215,25 +274,48 @@ impl Interaction {
             app.ui.keyframe_selection = selected;
             let painter = ui.painter().with_clip_rect(self.area);
             painter.rect_filled(rect, 0.0, app.tokens.accent.linear_multiply(0.15));
-            painter.rect_stroke(rect, 0.0, Stroke::new(1.0, app.tokens.accent), egui::StrokeKind::Inside);
-            app.auto.add("effectControls.marquee", rect, "keyframe selection");
+            painter.rect_stroke(
+                rect,
+                0.0,
+                Stroke::new(1.0, app.tokens.accent),
+                egui::StrokeKind::Inside,
+            );
+            app.auto
+                .add("effectControls.marquee", rect, "keyframe selection");
             for point in &self.points {
-                let color = if app.ui.keyframe_selection.contains(&point.key) { app.tokens.hot_text } else { Color32::from_rgb(0xb0, 0xb0, 0xb0) };
+                let color = if app.ui.keyframe_selection.contains(&point.key) {
+                    app.tokens.hot_text
+                } else {
+                    Color32::from_rgb(0xb0, 0xb0, 0xb0)
+                };
                 paint(&painter, point.rect, point.interp, color);
             }
-            if self.background.drag_stopped_by(egui::PointerButton::Primary) {
+            if self
+                .background
+                .drag_stopped_by(egui::PointerButton::Primary)
+            {
                 self.state.gesture = None;
             }
         }
         if let Some(Gesture::Group(group)) = &self.state.gesture {
             if let Some((time, x)) = group.snap {
-                let rect = Rect::from_min_max(egui::pos2(x - 1.0, self.area.min.y), egui::pos2(x + 1.0, self.area.max.y));
-                ui.painter().with_clip_rect(self.area).line_segment([rect.center_top(), rect.center_bottom()], Stroke::new(1.0, app.tokens.accent));
-                app.auto.add("effectControls.snapTarget", rect, &time.0.to_string());
+                let rect = Rect::from_min_max(
+                    egui::pos2(x - 1.0, self.area.min.y),
+                    egui::pos2(x + 1.0, self.area.max.y),
+                );
+                ui.painter().with_clip_rect(self.area).line_segment(
+                    [rect.center_top(), rect.center_bottom()],
+                    Stroke::new(1.0, app.tokens.accent),
+                );
+                app.auto
+                    .add("effectControls.snapTarget", rect, &time.0.to_string());
             }
             if group.ended {
                 if group.delta != Tick::ZERO {
-                    match app.session.execute("effects.moveKeyframes", json!({"keyframes":group.keys,"delta":group.delta.0})) {
+                    match app.session.execute(
+                        "effects.moveKeyframes",
+                        json!({"keyframes":group.keys,"delta":group.delta.0}),
+                    ) {
                         Ok(result) => {
                             if let Ok(keys) = serde_json::from_value(result["keyframes"].clone()) {
                                 app.ui.keyframe_selection = keys;
@@ -253,7 +335,11 @@ impl Interaction {
 pub(crate) fn paint(painter: &egui::Painter, rect: Rect, interp: Interpolation, color: Color32) {
     match interp {
         Interpolation::Hold => {
-            painter.rect_filled(Rect::from_center_size(rect.center(), vec2(9.0, 9.0)), 0.0, color);
+            painter.rect_filled(
+                Rect::from_center_size(rect.center(), vec2(9.0, 9.0)),
+                0.0,
+                color,
+            );
         }
         Interpolation::Linear => icons::paint(painter, rect, Icon::Keyframe, color),
         _ => {
@@ -276,9 +362,16 @@ mod tests {
             for reverse in [false, true] {
                 it.speed = speed;
                 it.reverse = reverse;
-                for time in [it.start, it.start + Tick(it.duration.0 / 4), it.end() - session.sequence_rate().frame_duration()] {
+                for time in [
+                    it.start,
+                    it.start + Tick(it.duration.0 / 4),
+                    it.end() - session.sequence_rate().frame_duration(),
+                ] {
                     let media = it.moving_source_time_at(time);
-                    assert!((super::super::timeline_time_of(&it, media) - time).abs() <= Tick(2), "speed={speed}, reverse={reverse}");
+                    assert!(
+                        (super::super::timeline_time_of(&it, media) - time).abs() <= Tick(2),
+                        "speed={speed}, reverse={reverse}"
+                    );
                 }
             }
         }
@@ -286,8 +379,18 @@ mod tests {
 
     #[test]
     fn clip_clamping_does_not_extend_the_screen_space_snap_threshold() {
-        let key = KeyframeRef { clip: 1, effect: 0, param: "scale".into(), mask: None, time: Tick::ZERO };
-        let other = KeyframeRef { param: "rotation".into(), time: Tick::from_seconds_f64(0.95), ..key.clone() };
+        let key = KeyframeRef {
+            clip: 1,
+            effect: 0,
+            param: "scale".into(),
+            mask: None,
+            time: Tick::ZERO,
+        };
+        let other = KeyframeRef {
+            param: "rotation".into(),
+            time: Tick::from_seconds_f64(0.95),
+            ..key.clone()
+        };
         let points = [
             Point {
                 key: key.clone(),
@@ -316,8 +419,18 @@ mod tests {
             snap: None,
             ended: false,
         };
-        update(&mut group, &points, egui::pos2(120.0, 0.0), true, Tick::from_seconds_f64(3.0), FrameRate::from_f64(100.0));
+        update(
+            &mut group,
+            &points,
+            egui::pos2(120.0, 0.0),
+            true,
+            Tick::from_seconds_f64(3.0),
+            FrameRate::from_f64(100.0),
+        );
         assert_eq!(group.delta, Tick::from_seconds_f64(1.0));
-        assert!(group.snap.is_none(), "the pointer is 25 px from the target, even though the clamped preview is only 5 px away");
+        assert!(
+            group.snap.is_none(),
+            "the pointer is 25 px from the target, even though the clamped preview is only 5 px away"
+        );
     }
 }

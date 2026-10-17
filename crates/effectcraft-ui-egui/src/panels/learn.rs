@@ -14,7 +14,13 @@ pub fn home_tab(app: &mut EffectcraftApp, ui: &mut egui::Ui, area: Rect) {
     let t = app.tokens;
     let p = ui.painter().with_clip_rect(area);
     let (x, mut y, w) = (area.min.x, area.min.y, area.width());
-    p.text(pos2(x, y + 6.0), Align2::LEFT_CENTER, tr("Learn"), Tokens::semibold(16.0), Color32::WHITE);
+    p.text(
+        pos2(x, y + 6.0),
+        Align2::LEFT_CENTER,
+        tr("Learn"),
+        Tokens::semibold(16.0),
+        Color32::WHITE,
+    );
     p.text(
         pos2(x, y + 26.0),
         Align2::LEFT_CENTER,
@@ -32,16 +38,48 @@ pub fn home_tab(app: &mut EffectcraftApp, ui: &mut egui::Ui, area: Rect) {
             break;
         }
         let resp = ui.interact(r, egui::Id::new(("learn-card", &tut.id)), Sense::click());
-        p.rect_filled(r, 8.0, if resp.hovered() { Color32::from_rgb(0x2c, 0x2e, 0x37) } else { Color32::from_rgb(0x24, 0x26, 0x2e) });
+        p.rect_filled(
+            r,
+            8.0,
+            if resp.hovered() {
+                Color32::from_rgb(0x2c, 0x2e, 0x37)
+            } else {
+                Color32::from_rgb(0x24, 0x26, 0x2e)
+            },
+        );
         // A small original badge: the step count in a circle.
         let badge = Rect::from_min_size(pos2(r.min.x + 16.0, r.min.y + 16.0), vec2(44.0, 44.0));
         p.circle_filled(badge.center(), 22.0, t.accent.gamma_multiply(0.25));
         p.circle_stroke(badge.center(), 22.0, Stroke::new(1.5, t.accent));
-        p.text(badge.center() - vec2(0.0, 5.0), Align2::CENTER_CENTER, tut.steps.len().to_string(), Tokens::semibold(15.0), Color32::WHITE);
-        p.text(badge.center() + vec2(0.0, 10.0), Align2::CENTER_CENTER, "steps", Tokens::ui(9.0), t.text_dim);
+        p.text(
+            badge.center() - vec2(0.0, 5.0),
+            Align2::CENTER_CENTER,
+            tut.steps.len().to_string(),
+            Tokens::semibold(15.0),
+            Color32::WHITE,
+        );
+        p.text(
+            badge.center() + vec2(0.0, 10.0),
+            Align2::CENTER_CENTER,
+            "steps",
+            Tokens::ui(9.0),
+            t.text_dim,
+        );
         let tx = badge.max.x + 16.0;
-        p.text(pos2(tx, r.min.y + 22.0), Align2::LEFT_CENTER, &tut.title, Tokens::semibold(14.0), Color32::WHITE);
-        p.text(pos2(tx, r.min.y + 40.0), Align2::LEFT_CENTER, format!("{} min", tut.minutes), Tokens::ui(11.0), t.text_faint);
+        p.text(
+            pos2(tx, r.min.y + 22.0),
+            Align2::LEFT_CENTER,
+            &tut.title,
+            Tokens::semibold(14.0),
+            Color32::WHITE,
+        );
+        p.text(
+            pos2(tx, r.min.y + 40.0),
+            Align2::LEFT_CENTER,
+            format!("{} min", tut.minutes),
+            Tokens::ui(11.0),
+            t.text_faint,
+        );
         let text_w = (r.max.x - tx - 120.0).max(120.0);
         let g = p.layout(tut.summary.clone(), Tokens::ui(12.0), t.text_dim, text_w);
         p.galley(pos2(tx, r.min.y + 52.0), g, t.text_dim);
@@ -49,10 +87,24 @@ pub fn home_tab(app: &mut EffectcraftApp, ui: &mut egui::Ui, area: Rect) {
         let g = p.layout(steps.join("  ·  "), Tokens::ui(10.5), t.text_faint, text_w);
         p.galley(pos2(tx, r.min.y + 84.0), g, t.text_faint);
         let br = Rect::from_min_size(pos2(r.max.x - 104.0, r.min.y + 16.0), vec2(88.0, 28.0));
-        let label = if running.as_deref() == Some(tut.id.as_str()) { "Resume" } else { "Start" };
-        let clicked = widgets::text_button(ui, br, label, true, &t, egui::Id::new(("learn-start", &tut.id))).clicked();
-        app.auto.add(&format!("home.learn.{}", tut.id), r, &tut.title);
-        app.auto.add(&format!("home.learn.{}.start", tut.id), br, label);
+        let label = if running.as_deref() == Some(tut.id.as_str()) {
+            "Resume"
+        } else {
+            "Start"
+        };
+        let clicked = widgets::text_button(
+            ui,
+            br,
+            label,
+            true,
+            &t,
+            egui::Id::new(("learn-start", &tut.id)),
+        )
+        .clicked();
+        app.auto
+            .add(&format!("home.learn.{}", tut.id), r, &tut.title);
+        app.auto
+            .add(&format!("home.learn.{}.start", tut.id), br, label);
         if clicked || resp.clicked() {
             if running.as_deref() != Some(tut.id.as_str())
                 && let Err(e) = app.session.execute("learn.start", json!({"id": tut.id}))
@@ -72,13 +124,19 @@ fn target_rect(app: &EffectcraftApp, pattern: &str) -> Option<Rect> {
     app.auto
         .previous
         .iter()
-        .find(|e| effectcraft_engine::learn::target_matches(&pat, &e.id) && e.rect[2] > 0.0 && e.rect[3] > 0.0)
+        .find(|e| {
+            effectcraft_engine::learn::target_matches(&pat, &e.id)
+                && e.rect[2] > 0.0
+                && e.rect[3] > 0.0
+        })
         .map(|e| Rect::from_min_size(pos2(e.rect[0], e.rect[1]), vec2(e.rect[2], e.rect[3])))
 }
 
 /// The coach card (bottom right) and the highlight around the current step's target.
 pub fn coach(app: &mut EffectcraftApp, ctx: &egui::Context) {
-    let Some((tut, i)) = app.session.learn_current() else { return };
+    let Some((tut, i)) = app.session.learn_current() else {
+        return;
+    };
     let t = app.tokens;
     let n = tut.steps.len();
     let screen = ctx.content_rect();
@@ -92,9 +150,17 @@ pub fn coach(app: &mut EffectcraftApp, ctx: &egui::Context) {
     {
         let time = ctx.input(|i| i.time);
         let pulse = (0.5 + 0.5 * (time * 4.0).sin()) as f32;
-        let p = ctx.layer_painter(egui::LayerId::new(egui::Order::Foreground, egui::Id::new("learn-highlight")));
+        let p = ctx.layer_painter(egui::LayerId::new(
+            egui::Order::Foreground,
+            egui::Id::new("learn-highlight"),
+        ));
         let hr = r.expand(3.0 + 2.0 * pulse);
-        p.rect_stroke(hr, 5.0, Stroke::new(2.0, t.accent.gamma_multiply(0.6 + 0.4 * pulse)), StrokeKind::Outside);
+        p.rect_stroke(
+            hr,
+            5.0,
+            Stroke::new(2.0, t.accent.gamma_multiply(0.6 + 0.4 * pulse)),
+            StrokeKind::Outside,
+        );
         app.auto.add("learn.highlight", hr, tp);
         ctx.request_repaint_after(std::time::Duration::from_millis(33));
     }

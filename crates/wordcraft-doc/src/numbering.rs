@@ -173,27 +173,94 @@ pub fn levels_for(kind: ListKind) -> Vec<Level> {
                 1 => b,
                 _ => c,
             };
-            let lvl = |format: NumFormat, text: String| Level { format, text, indent: ind, hanging: 18.0, ..Level::default() };
+            let lvl = |format: NumFormat, text: String| Level {
+                format,
+                text,
+                indent: ind,
+                hanging: 18.0,
+                ..Level::default()
+            };
             let n = i + 1;
             match kind {
                 ListKind::Bullet => bullet_level(i, ['•', '○', '▪'][i % 3]),
-                ListKind::BulletChar(c) => bullet_level(i, if i == 0 { c } else { ['•', '○', '▪'][i % 3] }),
-                ListKind::Numbered => lvl(cyc(NumFormat::Decimal, NumFormat::LowerLetter, NumFormat::LowerRoman), format!("%{n}.")),
-                ListKind::NumberedParen => lvl(cyc(NumFormat::Decimal, NumFormat::LowerLetter, NumFormat::LowerRoman), format!("%{n})")),
-                ListKind::UpperLetter => lvl(cyc(NumFormat::UpperLetter, NumFormat::LowerLetter, NumFormat::LowerRoman), format!("%{n}.")),
-                ListKind::LowerLetter => lvl(cyc(NumFormat::LowerLetter, NumFormat::LowerRoman, NumFormat::Decimal), format!("%{n})")),
-                ListKind::LowerLetterDot => lvl(cyc(NumFormat::LowerLetter, NumFormat::LowerRoman, NumFormat::Decimal), format!("%{n}.")),
-                ListKind::LowerRoman => lvl(cyc(NumFormat::LowerRoman, NumFormat::LowerLetter, NumFormat::Decimal), format!("%{n}.")),
+                ListKind::BulletChar(c) => bullet_level(
+                    i,
+                    if i == 0 {
+                        c
+                    } else {
+                        ['•', '○', '▪'][i % 3]
+                    },
+                ),
+                ListKind::Numbered => lvl(
+                    cyc(
+                        NumFormat::Decimal,
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                    ),
+                    format!("%{n}."),
+                ),
+                ListKind::NumberedParen => lvl(
+                    cyc(
+                        NumFormat::Decimal,
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                    ),
+                    format!("%{n})"),
+                ),
+                ListKind::UpperLetter => lvl(
+                    cyc(
+                        NumFormat::UpperLetter,
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                    ),
+                    format!("%{n}."),
+                ),
+                ListKind::LowerLetter => lvl(
+                    cyc(
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                        NumFormat::Decimal,
+                    ),
+                    format!("%{n})"),
+                ),
+                ListKind::LowerLetterDot => lvl(
+                    cyc(
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                        NumFormat::Decimal,
+                    ),
+                    format!("%{n}."),
+                ),
+                ListKind::LowerRoman => lvl(
+                    cyc(
+                        NumFormat::LowerRoman,
+                        NumFormat::LowerLetter,
+                        NumFormat::Decimal,
+                    ),
+                    format!("%{n}."),
+                ),
                 ListKind::Outline => {
-                    let f = [NumFormat::UpperRoman, NumFormat::UpperLetter, NumFormat::Decimal, NumFormat::LowerLetter, NumFormat::LowerRoman]
-                        .get(i)
-                        .copied()
-                        .unwrap_or(NumFormat::Decimal);
+                    let f = [
+                        NumFormat::UpperRoman,
+                        NumFormat::UpperLetter,
+                        NumFormat::Decimal,
+                        NumFormat::LowerLetter,
+                        NumFormat::LowerRoman,
+                    ]
+                    .get(i)
+                    .copied()
+                    .unwrap_or(NumFormat::Decimal);
                     lvl(f, format!("%{n}."))
                 }
                 ListKind::Legal => {
                     let text: String = (1..=n).map(|k| format!("%{k}.")).collect();
-                    Level { format: NumFormat::Decimal, text, indent: 18.0 + 25.0 * i as f32, hanging: 18.0 + 7.0 * i as f32, ..Level::default() }
+                    Level {
+                        format: NumFormat::Decimal,
+                        text,
+                        indent: 18.0 + 25.0 * i as f32,
+                        hanging: 18.0 + 7.0 * i as f32,
+                        ..Level::default()
+                    }
                 }
             }
         })
@@ -209,7 +276,12 @@ impl Numbering {
         self.abstracts.iter().find(|a| a.id == n.abstract_id)
     }
     pub fn level(&self, num: u32, level: u8) -> Option<&Level> {
-        if let Some((_, l)) = self.num(num)?.level_overrides.iter().find(|(i, _)| *i == level) {
+        if let Some((_, l)) = self
+            .num(num)?
+            .level_overrides
+            .iter()
+            .find(|(i, _)| *i == level)
+        {
             return Some(l);
         }
         self.abstract_of(num)?.levels.get(level as usize)
@@ -217,17 +289,36 @@ impl Numbering {
     /// Create a new list of `kind`; returns the `num` id.
     pub fn add_list(&mut self, kind: ListKind) -> u32 {
         let aid = self.abstracts.iter().map(|a| a.id + 1).max().unwrap_or(0);
-        self.abstracts.push(AbstractNum { id: aid, name: None, levels: levels_for(kind) });
+        self.abstracts.push(AbstractNum {
+            id: aid,
+            name: None,
+            levels: levels_for(kind),
+        });
         let nid = self.nums.iter().map(|n| n.id + 1).max().unwrap_or(1).max(1);
-        self.nums.push(Num { id: nid, abstract_id: aid, ..Default::default() });
+        self.nums.push(Num {
+            id: nid,
+            abstract_id: aid,
+            ..Default::default()
+        });
         nid
     }
     /// A new `num` that restarts numbering of an existing list.
     pub fn restart(&mut self, num: u32) -> Option<u32> {
         let a = self.num(num)?.abstract_id;
         let nid = self.nums.iter().map(|n| n.id + 1).max().unwrap_or(1).max(1);
-        let starts = self.abstracts.iter().find(|x| x.id == a).map(|x| x.levels.iter().enumerate().map(|(i, l)| (i as u8, l.start)).collect());
-        self.nums.push(Num { id: nid, abstract_id: a, start_overrides: starts.unwrap_or_default(), ..Default::default() });
+        let starts = self.abstracts.iter().find(|x| x.id == a).map(|x| {
+            x.levels
+                .iter()
+                .enumerate()
+                .map(|(i, l)| (i as u8, l.start))
+                .collect()
+        });
+        self.nums.push(Num {
+            id: nid,
+            abstract_id: a,
+            start_overrides: starts.unwrap_or_default(),
+            ..Default::default()
+        });
         Some(nid)
     }
     /// Find an existing list whose first level matches `kind`, so consecutive bullet clicks reuse it.
@@ -236,7 +327,11 @@ impl Numbering {
         let first = want.first()?;
         self.nums
             .iter()
-            .find(|n| self.abstract_of(n.id).and_then(|a| a.levels.first()).is_some_and(|l| l.format == first.format && l.text == first.text))
+            .find(|n| {
+                self.abstract_of(n.id)
+                    .and_then(|a| a.levels.first())
+                    .is_some_and(|l| l.format == first.format && l.text == first.text)
+            })
             .map(|n| n.id)
     }
 }
@@ -252,7 +347,12 @@ pub struct Counters {
 
 impl Counters {
     /// Advance the counter for `num`/`level` and return the label (`"1."`, `"a)"`, `"•"`).
-    pub fn next_label(&mut self, numbering: &Numbering, num: u32, level: u8) -> Option<(String, Level)> {
+    pub fn next_label(
+        &mut self,
+        numbering: &Numbering,
+        num: u32,
+        level: u8,
+    ) -> Option<(String, Level)> {
         let n = numbering.num(num)?;
         let abs = numbering.abstract_of(num)?;
         let lv = (level as usize).min(8);
@@ -273,7 +373,11 @@ impl Counters {
             }
         }
         if let Some(v) = st.get_mut(lv) {
-            *v = if *v == 0 { def.start.max(if def.start == 0 { 0 } else { 1 }) } else { v.saturating_add(1) };
+            *v = if *v == 0 {
+                def.start.max(if def.start == 0 { 0 } else { 1 })
+            } else {
+                v.saturating_add(1)
+            };
             if *v == 0 {
                 *v = def.start;
             }
@@ -281,7 +385,8 @@ impl Counters {
         // Deeper levels restart, unless they never restart or only restart after a level above
         // this one (Word's lvlRestart).
         for (d, deeper) in st.iter_mut().enumerate().skip(lv + 1) {
-            let restarts = level_def(d).is_none_or(|l| l.restart && l.restart_after.is_none_or(|k| lv < k as usize));
+            let restarts = level_def(d)
+                .is_none_or(|l| l.restart && l.restart_after.is_none_or(|k| lv < k as usize));
             if restarts {
                 *deeper = 0;
             }
@@ -299,7 +404,11 @@ impl Counters {
                 chars.next();
                 let k = (d as usize).saturating_sub(1).min(8);
                 let val = vals.get(k).copied().unwrap_or(0);
-                let val = if val == 0 { level_def(k).map(|l| l.start).unwrap_or(1) } else { val };
+                let val = if val == 0 {
+                    level_def(k).map(|l| l.start).unwrap_or(1)
+                } else {
+                    val
+                };
                 // Legal numbering (w:isLgl) shows every level in Arabic digits, whatever its own
                 // format (二 of a Chinese outline becomes 2 in "2.1").
                 let fmt = match level_def(k).map(|l| l.format).unwrap_or(NumFormat::Decimal) {
@@ -326,9 +435,16 @@ mod tests {
         // shows "part.article" with a zero-padded article (Word's lvlOverride/lvl).
         let mut n = Numbering::default();
         let id = n.add_list(ListKind::Numbered);
-        let lvl = |format, text: &str| Level { format, text: text.into(), ..Level::default() };
+        let lvl = |format, text: &str| Level {
+            format,
+            text: text.into(),
+            ..Level::default()
+        };
         if let Some(num) = n.nums.iter_mut().find(|x| x.id == id) {
-            num.level_overrides = vec![(1, lvl(NumFormat::Decimal, "")), (2, lvl(NumFormat::DecimalZero, "%2.%3"))];
+            num.level_overrides = vec![
+                (1, lvl(NumFormat::Decimal, "")),
+                (2, lvl(NumFormat::DecimalZero, "%2.%3")),
+            ];
         }
         let mut c = Counters::default();
         assert_eq!(c.next_label(&n, id, 1).unwrap().0, "");
@@ -338,7 +454,10 @@ mod tests {
         assert_eq!(c.next_label(&n, id, 2).unwrap().0, "2.01");
         // Levels it doesn't define still come from the abstract list.
         assert_eq!(c.next_label(&n, id, 0).unwrap().0, "1.");
-        assert_eq!(n.level(id, 2).map(|l| l.format), Some(NumFormat::DecimalZero));
+        assert_eq!(
+            n.level(id, 2).map(|l| l.format),
+            Some(NumFormat::DecimalZero)
+        );
     }
 
     #[test]
@@ -383,10 +502,27 @@ mod tests {
         let mut n = Numbering::default();
         let id = n.add_list(ListKind::Numbered);
         if let Some(a) = n.abstracts.first_mut() {
-            a.levels[0] = Level { format: NumFormat::ChineseCounting, text: "第%1章".into(), ..Level::default() };
-            a.levels[1] = Level { format: NumFormat::ChineseCounting, text: "%2、".into(), ..Level::default() };
-            a.levels[2] = Level { format: NumFormat::ChineseCounting, text: "%1.%2.%3".into(), legal: true, ..Level::default() };
-            a.levels[3] = Level { format: NumFormat::ChineseCounting, text: "（%4）".into(), ..Level::default() };
+            a.levels[0] = Level {
+                format: NumFormat::ChineseCounting,
+                text: "第%1章".into(),
+                ..Level::default()
+            };
+            a.levels[1] = Level {
+                format: NumFormat::ChineseCounting,
+                text: "%2、".into(),
+                ..Level::default()
+            };
+            a.levels[2] = Level {
+                format: NumFormat::ChineseCounting,
+                text: "%1.%2.%3".into(),
+                legal: true,
+                ..Level::default()
+            };
+            a.levels[3] = Level {
+                format: NumFormat::ChineseCounting,
+                text: "（%4）".into(),
+                ..Level::default()
+            };
         }
         let mut c = Counters::default();
         let mut l = |lv| c.next_label(&n, id, lv).unwrap().0;

@@ -52,7 +52,11 @@ impl ToolCatalog {
             .collect();
 
         if terms.is_empty() {
-            return list.iter().take(limit).map(|t| ToolSearchResult::from_def(t, 0)).collect();
+            return list
+                .iter()
+                .take(limit)
+                .map(|t| ToolSearchResult::from_def(t, 0))
+                .collect();
         }
 
         let mut scored: Vec<(usize, &ToolDefinition)> = list
@@ -154,7 +158,10 @@ impl ToolSearchTool {
         )
         .with_exposure(ToolExposure::Direct);
 
-        Self { definition, catalog }
+        Self {
+            definition,
+            catalog,
+        }
     }
 }
 
@@ -166,22 +173,28 @@ impl ToolExecutor for ToolSearchTool {
     }
 
     async fn handle(&self, arguments: JsonValue) -> Result<ToolOutput, ToolError> {
-        let query = arguments.get("query").and_then(JsonValue::as_str).ok_or_else(|| {
-            ToolError::InvalidArguments {
+        let query = arguments
+            .get("query")
+            .and_then(JsonValue::as_str)
+            .ok_or_else(|| ToolError::InvalidArguments {
                 tool: "tool_search".to_string(),
                 message: "missing required argument `query` (string)".to_string(),
-            }
-        })?;
+            })?;
 
-        let limit =
-            arguments.get("limit").and_then(JsonValue::as_u64).map(|n| n as usize).unwrap_or(10);
+        let limit = arguments
+            .get("limit")
+            .and_then(JsonValue::as_u64)
+            .map(|n| n as usize)
+            .unwrap_or(10);
 
         let matches = self.catalog.search(query, limit).await;
         let count = matches.len();
 
-        let json_res = serde_json::to_string_pretty(&matches).map_err(|e| {
-            ToolError::Execution { tool: "tool_search".to_string(), message: e.to_string() }
-        })?;
+        let json_res =
+            serde_json::to_string_pretty(&matches).map_err(|e| ToolError::Execution {
+                tool: "tool_search".to_string(),
+                message: e.to_string(),
+            })?;
 
         let text = format!("Found {count} tool(s) matching `{query}`:\n\n{json_res}");
         Ok(ToolOutput::ok(text))

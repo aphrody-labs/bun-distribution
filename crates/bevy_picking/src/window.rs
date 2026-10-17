@@ -15,7 +15,7 @@ use bevy_camera::NormalizedRenderTarget;
 use bevy_ecs::prelude::*;
 
 use crate::{
-    backend::{ray::RayMap, HitData, PointerHits},
+    backend::{HitData, PointerHits, ray::RayMap},
     pointer::{Location, PointerLocation, PointerMap},
 };
 

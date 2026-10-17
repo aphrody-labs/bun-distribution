@@ -46,13 +46,22 @@ pub(crate) struct Scope {
 }
 
 impl Scope {
-    pub const ROOT: Scope = Scope { root: true, isolated: false };
+    pub const ROOT: Scope = Scope {
+        root: true,
+        isolated: false,
+    };
     /// An isolated group's own stack (it starts from a transparent buffer).
-    pub const ISOLATED: Scope = Scope { root: false, isolated: true };
+    pub const ISOLATED: Scope = Scope {
+        root: false,
+        isolated: true,
+    };
 
     /// The stack of a pass-through group inside this one.
     pub fn pass_through(self) -> Scope {
-        Scope { root: false, isolated: self.isolated }
+        Scope {
+            root: false,
+            isolated: self.isolated,
+        }
     }
 }
 
@@ -75,13 +84,18 @@ pub fn advanced_active(layer: &Layer, clipped: &[Layer]) -> bool {
         return false;
     }
     let fx = effects::has_effects(layer);
-    a.knockout != Knockout::None || clips_individually(layer, clipped) || (a.blend_interior && fx) || (!a.transparency_shapes && fx) || hides_effects(layer)
+    a.knockout != Knockout::None
+        || clips_individually(layer, clipped)
+        || (a.blend_interior && fx)
+        || (!a.transparency_shapes && fx)
+        || hides_effects(layer)
 }
 
 /// Whether the layer's effects (or knockout) cover the whole layer: Transparency Shapes Layer
 /// off on a layer that has either.
 pub fn shapeless(layer: &Layer) -> bool {
-    !layer.advanced.transparency_shapes && (layer.advanced.knockout != Knockout::None || effects::has_effects(layer))
+    !layer.advanced.transparency_shapes
+        && (layer.advanced.knockout != Knockout::None || effects::has_effects(layer))
 }
 
 /// Whether `l`, the bottom layer of a stack, is the Background: identified by its locks and kind,
@@ -93,7 +107,9 @@ pub fn is_background(l: &Layer) -> bool {
 /// What a deep knockout reveals over `rect`: the document's initial backdrop with its Background
 /// layer (transparency when it has none, or when it is hidden).
 pub(crate) fn deep_target(cx: &Ctx, rect: Rect) -> Buffer {
-    let Some(doc) = cx.doc else { return Buffer::transparent(rect) };
+    let Some(doc) = cx.doc else {
+        return Buffer::transparent(rect);
+    };
     let mut b = crate::multichannel::backdrop(doc, rect);
     if let Some(bg) = doc.layers.first().filter(|l| l.visible && is_background(l)) {
         composite_layer(bg, &[], &mut b, cx, None, Scope::ROOT);
@@ -104,8 +120,20 @@ pub(crate) fn deep_target(cx: &Ctx, rect: Rect) -> Buffer {
 /// The knockout target of a layer of a stack in `scope`, if it knocks out. `floor` is the
 /// stack's starting backdrop (`None` at the top level, where a shallow knockout reaches the
 /// Background too).
-pub(crate) fn knockout_target<'b>(layer: &Layer, floor: Option<&'b Buffer>, rect: Rect, cx: &Ctx, scope: Scope) -> Option<Cow<'b, Buffer>> {
-    let deep = || if scope.isolated { Buffer::transparent(rect) } else { deep_target(cx, rect) };
+pub(crate) fn knockout_target<'b>(
+    layer: &Layer,
+    floor: Option<&'b Buffer>,
+    rect: Rect,
+    cx: &Ctx,
+    scope: Scope,
+) -> Option<Cow<'b, Buffer>> {
+    let deep = || {
+        if scope.isolated {
+            Buffer::transparent(rect)
+        } else {
+            deep_target(cx, rect)
+        }
+    };
     match layer.advanced.knockout {
         Knockout::None => None,
         Knockout::Shallow => Some(floor.map_or_else(|| Cow::Owned(deep()), Cow::Borrowed)),
@@ -116,7 +144,9 @@ pub(crate) fn knockout_target<'b>(layer: &Layer, floor: Option<&'b Buffer>, rect
 /// Whether `layers` holds a visible unclipped shallow knockout (its stack then keeps a copy of
 /// its starting backdrop).
 pub(crate) fn needs_floor(layers: &[Layer]) -> bool {
-    layers.iter().any(|l| l.visible && !l.clipped && l.advanced.knockout == Knockout::Shallow)
+    layers
+        .iter()
+        .any(|l| l.visible && !l.clipped && l.advanced.knockout == Knockout::Shallow)
 }
 
 /// The shape a layer knocks out over `rect` (row-major): its content's alpha with its masks;
@@ -141,7 +171,14 @@ fn knockout_shape(layer: &Layer, rect: Rect, cx: &Ctx) -> Vec<f32> {
 ///
 /// `clip_alpha` keeps alpha from growing (clipped layers stay inside their base's alpha; a
 /// knockout to transparency may still lower it).
-pub(crate) fn knockout(layer: &Layer, backdrop: &mut Buffer, target: &Buffer, clip_alpha: bool, cx: &Ctx, draw: impl FnOnce(&mut Buffer)) {
+pub(crate) fn knockout(
+    layer: &Layer,
+    backdrop: &mut Buffer,
+    target: &Buffer,
+    clip_alpha: bool,
+    cx: &Ctx,
+    draw: impl FnOnce(&mut Buffer),
+) {
     // Coverage knocks out proportionally. (Photoshop knocks out a little more at anti-aliased
     // shape edges: psd-tools knockout-isolated-groups differs on 0.45 % of its pixels, along
     // ellipse edges; a binary shape matched worse.)
@@ -166,7 +203,13 @@ pub(crate) fn knockout(layer: &Layer, backdrop: &mut Buffer, target: &Buffer, cl
     draw(backdrop);
     let Some(knocked) = knocked else { return };
     let rest = 1.0 - layer.opacity.clamp(0.0, 1.0);
-    for (((p, b), k), s) in backdrop.px.iter_mut().zip(&before.px).zip(&knocked.px).zip(&shape) {
+    for (((p, b), k), s) in backdrop
+        .px
+        .iter_mut()
+        .zip(&before.px)
+        .zip(&knocked.px)
+        .zip(&shape)
+    {
         if *s <= 0.0 {
             continue;
         }
@@ -176,7 +219,16 @@ pub(crate) fn knockout(layer: &Layer, backdrop: &mut Buffer, target: &Buffer, cl
         }
         pm[3] += rest * (b[3] - k[3]);
         let a = pm[3].clamp(0.0, 1.0);
-        *p = if a > 0.0 { [(pm[0] / a).clamp(0.0, 1.0), (pm[1] / a).clamp(0.0, 1.0), (pm[2] / a).clamp(0.0, 1.0), a] } else { [0.0; 4] };
+        *p = if a > 0.0 {
+            [
+                (pm[0] / a).clamp(0.0, 1.0),
+                (pm[1] / a).clamp(0.0, 1.0),
+                (pm[2] / a).clamp(0.0, 1.0),
+                a,
+            ]
+        } else {
+            [0.0; 4]
+        };
     }
 }
 
@@ -185,10 +237,15 @@ pub(crate) fn knockout(layer: &Layer, backdrop: &mut Buffer, target: &Buffer, cl
 /// isolated group, so a clipped layer's knockout (shallow or deep) stops at the bottom of the
 /// clipping group: the base's content.
 pub(crate) fn composite_clipped(clipped: &[Layer], base: &mut Buffer, cx: &Ctx) {
-    let floor = clipped.iter().any(|c| c.visible && c.advanced.knockout != Knockout::None).then(|| base.clone());
+    let floor = clipped
+        .iter()
+        .any(|c| c.visible && c.advanced.knockout != Knockout::None)
+        .then(|| base.clone());
     for c in clipped.iter().filter(|c| c.visible) {
         match &floor {
-            Some(f) if c.advanced.knockout != Knockout::None => knockout(c, base, f, true, cx, |b| composite_atop(c, b, cx)),
+            Some(f) if c.advanced.knockout != Knockout::None => {
+                knockout(c, base, f, true, cx, |b| composite_atop(c, b, cx))
+            }
             _ => composite_atop(c, base, cx),
         }
     }
@@ -197,29 +254,54 @@ pub(crate) fn composite_clipped(clipped: &[Layer], base: &mut Buffer, cx: &Ctx) 
 /// Whether `layer`'s clipped layers blend one by one (Blend Clipped Layers as Group off).
 /// Adjustment layers keep the grouped path (they have no pixels of their own to clip to).
 pub(crate) fn clips_individually(layer: &Layer, clipped: &[Layer]) -> bool {
-    !layer.advanced.blend_clipped && !matches!(layer.content, LayerContent::Adjustment(_)) && clipped.iter().any(|c| c.visible)
+    !layer.advanced.blend_clipped
+        && !matches!(layer.content, LayerContent::Adjustment(_))
+        && clipped.iter().any(|c| c.visible)
 }
 
 /// Blend Clipped Layers as Group off: the base alone (with its knockout `ko`), then each visible
 /// clipped layer composited in its own mode onto the result, inside the base's shape (its alpha
 /// with masks, times its opacity). A clipped layer's shallow knockout stops at the backdrop
 /// beneath the base (the bottom of the clipping group).
-pub(crate) fn composite_clipped_individually(layer: &Layer, clipped: &[Layer], backdrop: &mut Buffer, cx: &Ctx, ko: Option<&Buffer>, scope: Scope) {
+pub(crate) fn composite_clipped_individually(
+    layer: &Layer,
+    clipped: &[Layer],
+    backdrop: &mut Buffer,
+    cx: &Ctx,
+    ko: Option<&Buffer>,
+    scope: Scope,
+) {
     let rect = backdrop.rect;
     let n = backdrop.px.len();
-    let floor = clipped.iter().any(|c| c.visible && c.advanced.knockout == Knockout::Shallow).then(|| backdrop.clone());
+    let floor = clipped
+        .iter()
+        .any(|c| c.visible && c.advanced.knockout == Knockout::Shallow)
+        .then(|| backdrop.clone());
     composite_layer(layer, &[], backdrop, cx, ko, scope);
     let op = layer.opacity.clamp(0.0, 1.0);
     let clip: Vec<f32> = match render_content(layer, rect, cx) {
         Some(b) => b.px.iter().map(|p| p[3] * op).collect(),
-        None => mask_vals(layer, rect, cx).unwrap_or_else(|| vec![1.0; n]).iter().map(|m| m * op).collect(),
+        None => mask_vals(layer, rect, cx)
+            .unwrap_or_else(|| vec![1.0; n])
+            .iter()
+            .map(|m| m * op)
+            .collect(),
     };
     if clip.len() != n {
         return;
     }
     for c in clipped.iter().filter(|c| c.visible) {
         let before = backdrop.clone();
-        let t = knockout_target(c, floor.as_ref(), rect, cx, Scope { root: false, ..scope });
+        let t = knockout_target(
+            c,
+            floor.as_ref(),
+            rect,
+            cx,
+            Scope {
+                root: false,
+                ..scope
+            },
+        );
         composite_layer(c, &[], backdrop, cx, t.as_deref(), scope);
         for ((p, b), k) in backdrop.px.iter_mut().zip(&before.px).zip(&clip) {
             if *k < 1.0 {
@@ -235,7 +317,8 @@ pub(crate) fn hides_effects(layer: &Layer) -> bool {
     let a = &layer.advanced;
     effects::has_effects(layer)
         && ((a.layer_mask_hides_effects && layer.mask.as_ref().is_some_and(|m| m.enabled))
-            || (a.vector_mask_hides_effects && layer.vector_mask.as_ref().is_some_and(|m| m.enabled)))
+            || (a.vector_mask_hides_effects
+                && layer.vector_mask.as_ref().is_some_and(|m| m.enabled)))
 }
 
 /// The layer whose content and effect maps are composited: `layer` itself, or (when a mask hides
@@ -261,10 +344,18 @@ pub(crate) fn hiding_mask(layer: &Layer, rect: Rect, cx: &Ctx) -> Option<Vec<f32
         return None;
     }
     let a = &layer.advanced;
-    let mut only = Layer::new(layer.name.clone(), LayerContent::Raster(photocraft_raster::Surface::new(photocraft_color::PixelFormat::RGBA32F)));
+    let mut only = Layer::new(
+        layer.name.clone(),
+        LayerContent::Raster(photocraft_raster::Surface::new(
+            photocraft_color::PixelFormat::RGBA32F,
+        )),
+    );
     only.id = layer.id;
     only.mask = layer.mask.clone().filter(|_| a.layer_mask_hides_effects);
-    only.vector_mask = layer.vector_mask.clone().filter(|_| a.vector_mask_hides_effects);
+    only.vector_mask = layer
+        .vector_mask
+        .clone()
+        .filter(|_| a.vector_mask_hides_effects);
     mask_vals(&only, rect, cx)
 }
 

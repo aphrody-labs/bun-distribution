@@ -17,7 +17,13 @@ pub struct BoolDecoder<'a> {
 
 impl<'a> BoolDecoder<'a> {
     pub fn new(data: &'a [u8]) -> Self {
-        let mut d = BoolDecoder { data, pos: 0, value: 0, count: -8, range: 255 };
+        let mut d = BoolDecoder {
+            data,
+            pos: 0,
+            value: 0,
+            count: -8,
+            range: 255,
+        };
         d.fill();
         d
     }
@@ -91,7 +97,11 @@ impl<'a> BoolDecoder<'a> {
 
     /// An optional signed field: a flag, then [`Self::read_signed`] when it is set, else 0.
     pub fn read_optional_signed(&mut self, n: u32) -> i32 {
-        if self.read_flag() { self.read_signed(n) } else { 0 }
+        if self.read_flag() {
+            self.read_signed(n)
+        } else {
+            0
+        }
     }
 
     /// `treed_read` (8.1): a tree-coded value. `tree` uses the specification's layout: positive
@@ -108,7 +118,10 @@ impl<'a> BoolDecoder<'a> {
         let mut i = start;
         loop {
             let p = probs.get(i >> 1).copied().unwrap_or(128);
-            let next = tree.get(i + usize::from(self.read_bool(p))).copied().unwrap_or(0);
+            let next = tree
+                .get(i + usize::from(self.read_bool(p)))
+                .copied()
+                .unwrap_or(0);
             if next <= 0 {
                 return (-next) as u8;
             }
@@ -131,7 +144,12 @@ mod tests {
 
     impl BoolEncoder {
         fn new() -> Self {
-            BoolEncoder { out: Vec::new(), range: 255, bottom: 0, bit_count: 24 }
+            BoolEncoder {
+                out: Vec::new(),
+                range: 255,
+                bottom: 0,
+                bit_count: 24,
+            }
         }
         fn add_one(&mut self) {
             let mut i = self.out.len();
@@ -196,7 +214,9 @@ mod tests {
             seed ^= seed << 5;
             seed
         };
-        let bits: Vec<(u8, bool)> = (0..20_000).map(|_| (((rnd() % 255) + 1) as u8, rnd() % 3 == 0)).collect();
+        let bits: Vec<(u8, bool)> = (0..20_000)
+            .map(|_| (((rnd() % 255) + 1) as u8, rnd() % 3 == 0))
+            .collect();
         let mut e = BoolEncoder::new();
         for &(p, b) in &bits {
             e.write(p, b);

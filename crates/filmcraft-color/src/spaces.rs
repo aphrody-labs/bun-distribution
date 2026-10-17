@@ -80,7 +80,11 @@ pub fn npm(p: [[f64; 2]; 3], w: [f64; 2]) -> Mat3 {
     let (r, g, b) = (xyz(p[0]), xyz(p[1]), xyz(p[2]));
     let m = [[r[0], g[0], b[0]], [r[1], g[1], b[1]], [r[2], g[2], b[2]]];
     let s = mul_vec(&inverse(&m), xyz(w));
-    [[m[0][0] * s[0], m[0][1] * s[1], m[0][2] * s[2]], [m[1][0] * s[0], m[1][1] * s[1], m[1][2] * s[2]], [m[2][0] * s[0], m[2][1] * s[1], m[2][2] * s[2]]]
+    [
+        [m[0][0] * s[0], m[0][1] * s[1], m[0][2] * s[2]],
+        [m[1][0] * s[0], m[1][1] * s[1], m[1][2] * s[2]],
+        [m[2][0] * s[0], m[2][1] * s[1], m[2][2] * s[2]],
+    ]
 }
 
 pub fn mul(a: &Mat3, b: &Mat3) -> Mat3 {
@@ -94,7 +98,11 @@ pub fn mul(a: &Mat3, b: &Mat3) -> Mat3 {
 }
 
 pub fn mul_vec(m: &Mat3, v: [f64; 3]) -> [f64; 3] {
-    [m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2], m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2], m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2]]
+    [
+        m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+        m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+        m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+    ]
 }
 
 pub fn inverse(m: &Mat3) -> Mat3 {
@@ -102,9 +110,21 @@ pub fn inverse(m: &Mat3) -> Mat3 {
     let det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
     let k = 1.0 / det;
     [
-        [(e * i - f * h) * k, (c * h - b * i) * k, (b * f - c * e) * k],
-        [(f * g - d * i) * k, (a * i - c * g) * k, (c * d - a * f) * k],
-        [(d * h - e * g) * k, (b * g - a * h) * k, (a * e - b * d) * k],
+        [
+            (e * i - f * h) * k,
+            (c * h - b * i) * k,
+            (b * f - c * e) * k,
+        ],
+        [
+            (f * g - d * i) * k,
+            (a * i - c * g) * k,
+            (c * d - a * f) * k,
+        ],
+        [
+            (d * h - e * g) * k,
+            (b * g - a * h) * k,
+            (a * e - b * d) * k,
+        ],
     ]
 }
 
@@ -124,7 +144,11 @@ pub fn to_f32(m: &Mat3) -> [[f32; 3]; 3] {
 
 #[inline]
 pub fn apply3(m: &[[f32; 3]; 3], c: [f32; 3]) -> [f32; 3] {
-    [m[0][0] * c[0] + m[0][1] * c[1] + m[0][2] * c[2], m[1][0] * c[0] + m[1][1] * c[1] + m[1][2] * c[2], m[2][0] * c[0] + m[2][1] * c[1] + m[2][2] * c[2]]
+    [
+        m[0][0] * c[0] + m[0][1] * c[1] + m[0][2] * c[2],
+        m[1][0] * c[0] + m[1][1] * c[1] + m[1][2] * c[2],
+        m[2][0] * c[0] + m[2][1] * c[1] + m[2][2] * c[2],
+    ]
 }
 
 /// How a colour space's signal becomes light.
@@ -234,15 +258,25 @@ impl ColorSpace {
 
     /// Parse an id or a label (case-insensitive, punctuation ignored).
     pub fn parse(s: &str) -> Option<ColorSpace> {
-        let norm = |x: &str| x.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let norm = |x: &str| {
+            x.chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect::<String>()
+                .to_ascii_lowercase()
+        };
         let n = norm(s);
-        ColorSpace::ALL.into_iter().find(|c| norm(c.id()) == n || norm(c.label()) == n)
+        ColorSpace::ALL
+            .into_iter()
+            .find(|c| norm(c.id()) == n || norm(c.label()) == n)
     }
 
     pub fn gamut(self) -> Gamut {
         match self {
             ColorSpace::Rec709 | ColorSpace::Srgb | ColorSpace::Linear709 => Gamut::Bt709,
-            ColorSpace::Rec2020 | ColorSpace::Rec2100Pq | ColorSpace::Rec2100Hlg | ColorSpace::AppleLog => Gamut::Bt2020,
+            ColorSpace::Rec2020
+            | ColorSpace::Rec2100Pq
+            | ColorSpace::Rec2100Hlg
+            | ColorSpace::AppleLog => Gamut::Bt2020,
             ColorSpace::P3D65 => Gamut::P3D65,
             ColorSpace::SLog3SGamut3Cine => Gamut::SGamut3Cine,
             ColorSpace::SLog3SGamut3 => Gamut::SGamut3,
@@ -305,7 +339,11 @@ pub enum WorkingSpace {
 }
 
 impl WorkingSpace {
-    pub const ALL: [WorkingSpace; 3] = [WorkingSpace::Rec709, WorkingSpace::Rec2100Pq, WorkingSpace::Rec2100Hlg];
+    pub const ALL: [WorkingSpace; 3] = [
+        WorkingSpace::Rec709,
+        WorkingSpace::Rec2100Pq,
+        WorkingSpace::Rec2100Hlg,
+    ];
 
     pub fn id(self) -> &'static str {
         match self {
@@ -322,9 +360,16 @@ impl WorkingSpace {
         }
     }
     pub fn parse(s: &str) -> Option<WorkingSpace> {
-        let norm = |x: &str| x.chars().filter(|c| c.is_ascii_alphanumeric()).collect::<String>().to_ascii_lowercase();
+        let norm = |x: &str| {
+            x.chars()
+                .filter(|c| c.is_ascii_alphanumeric())
+                .collect::<String>()
+                .to_ascii_lowercase()
+        };
         let n = norm(s);
-        WorkingSpace::ALL.into_iter().find(|w| norm(w.id()) == n || norm(w.label()) == n)
+        WorkingSpace::ALL
+            .into_iter()
+            .find(|w| norm(w.id()) == n || norm(w.label()) == n)
     }
     pub fn is_hdr(self) -> bool {
         self != WorkingSpace::Rec709
@@ -350,11 +395,19 @@ pub struct ColorPipeline {
 }
 
 impl ColorPipeline {
-    pub const REC709: ColorPipeline = ColorPipeline { working: WorkingSpace::Rec709, wide_gamut: false, auto_tone_map: true };
+    pub const REC709: ColorPipeline = ColorPipeline {
+        working: WorkingSpace::Rec709,
+        wide_gamut: false,
+        auto_tone_map: true,
+    };
 
     /// Linear primaries of the compositing space.
     pub fn working_gamut(&self) -> Gamut {
-        if self.working.is_hdr() || self.wide_gamut { Gamut::Bt2020 } else { Gamut::Bt709 }
+        if self.working.is_hdr() || self.wide_gamut {
+            Gamut::Bt2020
+        } else {
+            Gamut::Bt709
+        }
     }
     /// The classic pipeline: linear BT.709, display-referred SDR.
     pub fn is_plain(&self) -> bool {
@@ -370,7 +423,11 @@ mod tests {
     fn bt709_npm_matches_published_matrix() {
         // ITU-R BT.709 / sRGB RGB→XYZ (IEC 61966-2-1 rounds to 4 places).
         let m = Gamut::Bt709.to_xyz();
-        let want = [[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]];
+        let want = [
+            [0.4124, 0.3576, 0.1805],
+            [0.2126, 0.7152, 0.0722],
+            [0.0193, 0.1192, 0.9505],
+        ];
         for i in 0..3 {
             for j in 0..3 {
                 assert!((m[i][j] - want[i][j]).abs() < 1e-4, "{i}{j}: {}", m[i][j]);
@@ -378,24 +435,41 @@ mod tests {
         }
         // BT.2020 luma coefficients (BT.2020-2 table 4).
         let l = Gamut::Bt2020.luma();
-        assert!((l[0] - 0.2627).abs() < 1e-4 && (l[1] - 0.6780).abs() < 1e-4 && (l[2] - 0.0593).abs() < 1e-4);
+        assert!(
+            (l[0] - 0.2627).abs() < 1e-4
+                && (l[1] - 0.6780).abs() < 1e-4
+                && (l[2] - 0.0593).abs() < 1e-4
+        );
     }
 
     #[test]
     fn bt2020_to_709_matches_bt2087() {
         // ITU-R BT.2087-0, linear BT.2020 → BT.709 (inverse of the published 709→2020 matrix).
         let m = gamut_matrix(Gamut::Bt709, Gamut::Bt2020);
-        let want = [[0.6274, 0.3293, 0.0433], [0.0691, 0.9195, 0.0114], [0.0164, 0.0880, 0.8956]];
+        let want = [
+            [0.6274, 0.3293, 0.0433],
+            [0.0691, 0.9195, 0.0114],
+            [0.0164, 0.0880, 0.8956],
+        ];
         for i in 0..3 {
             for j in 0..3 {
                 assert!((m[i][j] - want[i][j]).abs() < 1e-4, "{i}{j}: {}", m[i][j]);
             }
         }
         // white maps to white for every gamut pair
-        for a in [Gamut::SGamut3Cine, Gamut::Awg4, Gamut::CinemaGamut, Gamut::DGamut, Gamut::VGamut] {
+        for a in [
+            Gamut::SGamut3Cine,
+            Gamut::Awg4,
+            Gamut::CinemaGamut,
+            Gamut::DGamut,
+            Gamut::VGamut,
+        ] {
             let w = mul_vec(&gamut_matrix(a, Gamut::Bt709), [1.0, 1.0, 1.0]);
             assert!(w.iter().all(|v| (v - 1.0).abs() < 1e-9), "{a:?}: {w:?}");
-            let back = mul(&gamut_matrix(Gamut::Bt709, a), &gamut_matrix(a, Gamut::Bt709));
+            let back = mul(
+                &gamut_matrix(Gamut::Bt709, a),
+                &gamut_matrix(a, Gamut::Bt709),
+            );
             for i in 0..3 {
                 for j in 0..3 {
                     assert!((back[i][j] - IDENTITY[i][j]).abs() < 1e-9);
@@ -410,10 +484,20 @@ mod tests {
             assert_eq!(ColorSpace::parse(c.id()), Some(c));
             assert_eq!(ColorSpace::parse(c.label()), Some(c));
         }
-        assert_eq!(WorkingSpace::parse("Rec. 2100 PQ"), Some(WorkingSpace::Rec2100Pq));
+        assert_eq!(
+            WorkingSpace::parse("Rec. 2100 PQ"),
+            Some(WorkingSpace::Rec2100Pq)
+        );
         assert_eq!(WorkingSpace::parse("rec709"), Some(WorkingSpace::Rec709));
-        let hdr = ColorInfo { transfer: Transfer::Hlg, primaries: Primaries::Bt2020, ..ColorInfo::REC709 };
+        let hdr = ColorInfo {
+            transfer: Transfer::Hlg,
+            primaries: Primaries::Bt2020,
+            ..ColorInfo::REC709
+        };
         assert_eq!(ColorSpace::from_info(&hdr), ColorSpace::Rec2100Hlg);
-        assert_eq!(ColorSpace::from_info(&ColorInfo::REC709), ColorSpace::Rec709);
+        assert_eq!(
+            ColorSpace::from_info(&ColorInfo::REC709),
+            ColorSpace::Rec709
+        );
     }
 }

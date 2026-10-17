@@ -7,8 +7,12 @@ use crate::generate::generate_audio::generate_audio_request_builder::GenerateAud
 use crate::generate::generate_audio::providers::artcraft::build_common::build_artcraft_omni_audio_request;
 use crate::generate::generate_audio::providers::artcraft::suno_sounds::request::ArtcraftSunoSoundsRequestState;
 
-pub fn build_artcraft_suno_sounds(builder: GenerateAudioRequestBuilder) -> Result<AudioGenerationDraftOrRequest, ArtcraftRouterError> {
-  let request = build_artcraft_omni_audio_request(builder, CommonAudioModelEnum::SunoSounds)?;
-  let state = ArtcraftSunoSoundsRequestState { request };
-  Ok(AudioGenerationDraftOrRequest::Request(AudioGenerationRequest::ArtcraftSunoSounds(state)))
+pub fn build_artcraft_suno_sounds(
+    builder: GenerateAudioRequestBuilder,
+) -> Result<AudioGenerationDraftOrRequest, ArtcraftRouterError> {
+    let request = build_artcraft_omni_audio_request(builder, CommonAudioModelEnum::SunoSounds)?;
+    let state = ArtcraftSunoSoundsRequestState { request };
+    Ok(AudioGenerationDraftOrRequest::Request(
+        AudioGenerationRequest::ArtcraftSunoSounds(state),
+    ))
 }

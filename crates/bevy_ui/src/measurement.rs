@@ -1,11 +1,11 @@
 use bevy_ecs::{prelude::Component, reflect::ReflectComponent};
 use bevy_math::Vec2;
-use bevy_reflect::{std_traits::ReflectDefault, Reflect};
+use bevy_reflect::{Reflect, std_traits::ReflectDefault};
 use bevy_text::FontCx;
 use core::fmt::Formatter;
-pub use taffy::style::AvailableSpace;
 use taffy::MaybeMath;
 use taffy::MaybeResolve;
+pub use taffy::style::AvailableSpace;
 
 use crate::widget::ImageMeasure;
 

@@ -8,7 +8,11 @@ use super::*;
 
 fn session(width: f64, height: f64, artboards: usize) -> Session {
     let mut s = Session::new();
-    s.execute("file.new", &json!({"width": width, "height": height, "artboards": artboards})).unwrap();
+    s.execute(
+        "file.new",
+        &json!({"width": width, "height": height, "artboards": artboards}),
+    )
+    .unwrap();
     s
 }
 
@@ -39,45 +43,106 @@ fn emf_kinds(b: &[u8]) -> Vec<u32> {
 fn two_boards() -> Session {
     let mut s = session(100.0, 100.0, 2);
     let second = s.doc().unwrap().doc.artboards[1].rect.x0;
-    s.execute("paint.setStroke", &json!({"none": true})).unwrap();
-    s.execute("paint.setFill", &json!({"color": "#ff0000"})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": 10, "y": 10, "width": 30, "height": 30})).unwrap();
-    s.execute("shape.rectangle", &json!({"x": second + 10.0, "y": 10, "width": 30, "height": 30})).unwrap();
+    s.execute("paint.setStroke", &json!({"none": true}))
+        .unwrap();
+    s.execute("paint.setFill", &json!({"color": "#ff0000"}))
+        .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": 10, "y": 10, "width": 30, "height": 30}),
+    )
+    .unwrap();
+    s.execute(
+        "shape.rectangle",
+        &json!({"x": second + 10.0, "y": 10, "width": 30, "height": 30}),
+    )
+    .unwrap();
     s
 }
 
 #[test]
 fn export_writes_an_emf_or_wmf_of_one_artboard() {
     let mut s = two_boards();
-    let r = s.execute("document.export", &json!({"format": "emf"})).unwrap();
+    let r = s
+        .execute("document.export", &json!({"format": "emf"}))
+        .unwrap();
     assert_eq!(r["format"], "emf");
     let emf = b64(&r);
-    assert_eq!(vectorcraft_metafile::sniff(&emf), Some(vectorcraft_metafile::Kind::Emf));
+    assert_eq!(
+        vectorcraft_metafile::sniff(&emf),
+        Some(vectorcraft_metafile::Kind::Emf)
+    );
     // The first artboard's frame in 0.01 mm.
     let side = (100.0 * 2540.0 / 72.0f64).round() as i32;
-    assert_eq!([i32_at(&emf, 24), i32_at(&emf, 28), i32_at(&emf, 32), i32_at(&emf, 36)], [0, 0, side, side]);
-    assert_eq!(emf_kinds(&emf).iter().filter(|k| **k == 62).count(), 1, "one rectangle on it");
+    assert_eq!(
+        [
+            i32_at(&emf, 24),
+            i32_at(&emf, 28),
+            i32_at(&emf, 32),
+            i32_at(&emf, 36)
+        ],
+        [0, 0, side, side]
+    );
+    assert_eq!(
+        emf_kinds(&emf).iter().filter(|k| **k == 62).count(),
+        1,
+        "one rectangle on it"
+    );
     // The second artboard alone; serialize gives the same bytes.
-    let second = b64(&s.execute("document.export", &json!({"format": "emf", "artboard": 1})).unwrap());
+    let second = b64(&s
+        .execute("document.export", &json!({"format": "emf", "artboard": 1}))
+        .unwrap());
     assert_eq!(emf_kinds(&second).iter().filter(|k| **k == 62).count(), 1);
-    assert_eq!(b64(&s.execute("document.serialize", &json!({"format": "emf"})).unwrap()), emf);
-    let wmf = b64(&s.execute("document.export", &json!({"format": "wmf"})).unwrap());
-    assert_eq!(vectorcraft_metafile::sniff(&wmf), Some(vectorcraft_metafile::Kind::Wmf));
+    assert_eq!(
+        b64(&s
+            .execute("document.serialize", &json!({"format": "emf"}))
+            .unwrap()),
+        emf
+    );
+    let wmf = b64(&s
+        .execute("document.export", &json!({"format": "wmf"}))
+        .unwrap());
+    assert_eq!(
+        vectorcraft_metafile::sniff(&wmf),
+        Some(vectorcraft_metafile::Kind::Wmf)
+    );
     assert_eq!(writable_format(None, Some("x/pic.wmf")).unwrap().id, "wmf");
     assert_eq!(writable_format(Some("EMF"), None).unwrap().id, "emf");
     // One file holds one artboard.
-    assert!(s.execute("document.export", &json!({"format": "emf", "artboards": [0, 1]})).is_err());
+    assert!(
+        s.execute(
+            "document.export",
+            &json!({"format": "emf", "artboards": [0, 1]})
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn use_artboards_writes_one_picture_each_or_the_art() {
     let mut s = two_boards();
-    let r = s.execute("document.export", &json!({"format": "wmf", "useArtboards": true})).unwrap();
+    let r = s
+        .execute(
+            "document.export",
+            &json!({"format": "wmf", "useArtboards": true}),
+        )
+        .unwrap();
     let files = r["files"].as_array().unwrap();
     assert_eq!(files.len(), 2);
-    assert!(files[0]["name"].as_str().unwrap().ends_with("-Artboard-1.wmf"), "{files:?}");
+    assert!(
+        files[0]["name"]
+            .as_str()
+            .unwrap()
+            .ends_with("-Artboard-1.wmf"),
+        "{files:?}"
+    );
     // Without artboards: the bounds of the art (both rectangles).
-    let r = s.execute("document.export", &json!({"format": "emf", "useArtboards": false})).unwrap();
+    let r = s
+        .execute(
+            "document.export",
+            &json!({"format": "emf", "useArtboards": false}),
+        )
+        .unwrap();
     let emf = b64(&r);
     let width_pt = f64::from(i32_at(&emf, 32)) / 2540.0 * 72.0;
     let second = s.doc().unwrap().doc.artboards[1].rect.x0;
@@ -87,29 +152,72 @@ fn use_artboards_writes_one_picture_each_or_the_art() {
 #[test]
 fn raster_effects_are_written_as_images() {
     let mut s = session(200.0, 200.0, 1);
-    let id = s.execute("shape.rectangle", &json!({"x": 50, "y": 50, "width": 60, "height": 60})).unwrap()["id"].clone();
-    s.execute("effect.apply", &json!({"effect": "stylize.dropShadow", "ids": [id]})).unwrap();
-    let r = s.execute("document.export", &json!({"format": "emf"})).unwrap();
-    assert!(r["warnings"].as_array().unwrap().iter().all(|w| !w.as_str().unwrap().contains("raster effects")), "{r}");
+    let id = s
+        .execute(
+            "shape.rectangle",
+            &json!({"x": 50, "y": 50, "width": 60, "height": 60}),
+        )
+        .unwrap()["id"]
+        .clone();
+    s.execute(
+        "effect.apply",
+        &json!({"effect": "stylize.dropShadow", "ids": [id]}),
+    )
+    .unwrap();
+    let r = s
+        .execute("document.export", &json!({"format": "emf"}))
+        .unwrap();
+    assert!(
+        r["warnings"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|w| !w.as_str().unwrap().contains("raster effects")),
+        "{r}"
+    );
     let kinds = emf_kinds(&b64(&r));
-    assert!(kinds.contains(&114), "the shadow is an image with transparency");
+    assert!(
+        kinds.contains(&114),
+        "the shadow is an image with transparency"
+    );
 }
 
 #[test]
 fn metafiles_open_and_place() {
     let mut s = two_boards();
-    let emf = b64(&s.execute("document.export", &json!({"format": "emf"})).unwrap());
-    let wmf = b64(&s.execute("document.export", &json!({"format": "wmf"})).unwrap());
+    let emf = b64(&s
+        .execute("document.export", &json!({"format": "emf"}))
+        .unwrap());
+    let wmf = b64(&s
+        .execute("document.export", &json!({"format": "wmf"}))
+        .unwrap());
     for (name, bytes) in [("pic.emf", &emf), ("pic.wmf", &wmf)] {
-        let r = s.execute("document.open", &json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)})).unwrap();
+        let r = s
+            .execute(
+                "document.open",
+                &json!({"name": name, "dataBase64": vectorcraft_format::base64_encode(bytes)}),
+            )
+            .unwrap();
         assert_eq!(r["format"], &name[4..]);
         assert_eq!(r["warnings"], json!([]));
         let st = s.doc().unwrap();
         let ab = st.doc.artboards[0].rect;
-        assert!((ab.width() - 100.0).abs() < 0.05 && (ab.height() - 100.0).abs() < 0.05, "{ab:?}");
-        let fill = st.doc.layers[0].children().unwrap().iter().find(|n| matches!(n.kind, NodeKind::Path { .. })).unwrap().clone();
+        assert!(
+            (ab.width() - 100.0).abs() < 0.05 && (ab.height() - 100.0).abs() < 0.05,
+            "{ab:?}"
+        );
+        let fill = st.doc.layers[0]
+            .children()
+            .unwrap()
+            .iter()
+            .find(|n| matches!(n.kind, NodeKind::Path { .. }))
+            .unwrap()
+            .clone();
         let b = fill.geometric_bounds().unwrap();
-        assert!((b.x0 - 10.0).abs() < 0.05 && (b.width() - 30.0).abs() < 0.05, "{b:?}");
+        assert!(
+            (b.x0 - 10.0).abs() < 0.05 && (b.width() - 30.0).abs() < 0.05,
+            "{b:?}"
+        );
         // Save can't write the file back: the document has no path.
         assert!(s.doc().unwrap().path.is_none());
     }
@@ -123,7 +231,12 @@ fn metafiles_open_and_place() {
     assert_eq!(placed.name.as_deref(), Some("pic.emf"));
     assert!(matches!(placed.kind, NodeKind::Group { clip: true, .. }));
     let ext = fileio::PLACE_EXTS;
-    assert!(ext.contains(&"emf") && ext.contains(&"wmf") && OPEN_EXTS.contains(&"emf") && OPEN_EXTS.contains(&"wmf"));
+    assert!(
+        ext.contains(&"emf")
+            && ext.contains(&"wmf")
+            && OPEN_EXTS.contains(&"emf")
+            && OPEN_EXTS.contains(&"wmf")
+    );
 }
 
 #[test]
@@ -131,30 +244,63 @@ fn formats_list_emf_and_wmf() {
     let mut s = Session::new();
     let r = s.execute("document.formats", &json!({})).unwrap();
     for k in ["readable", "writable"] {
-        let ids: Vec<&str> = r[k].as_array().unwrap().iter().map(|v| v.as_str().unwrap()).collect();
+        let ids: Vec<&str> = r[k]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|v| v.as_str().unwrap())
+            .collect();
         assert!(ids.contains(&"emf") && ids.contains(&"wmf"), "{k}: {ids:?}");
     }
-    let emf = r["formats"].as_array().unwrap().iter().find(|f| f["id"] == "emf").unwrap();
+    let emf = r["formats"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["id"] == "emf")
+        .unwrap();
     assert_eq!(emf["mime"], "image/emf");
     assert!(emf["options"]["useArtboards"].is_object());
     assert!(open_filters().any(|(label, ext)| label == "EMF" && ext == ["emf"]));
     assert!(place_filters().any(|(label, ext)| label == "WMF" && ext == ["wmf"]));
     // Export for Screens writes the screen formats only.
     let mut s = two_boards();
-    assert!(s.execute("document.exportForScreens", &json!({"formats": [{"format": "emf"}]})).is_err());
+    assert!(
+        s.execute(
+            "document.exportForScreens",
+            &json!({"formats": [{"format": "emf"}]})
+        )
+        .is_err()
+    );
 }
 
 #[test]
 fn a_pasted_metafile_becomes_objects() {
     let mut src = two_boards();
-    let emf = b64(&src.execute("document.export", &json!({"format": "emf"})).unwrap());
+    let emf = b64(&src
+        .execute("document.export", &json!({"format": "emf"}))
+        .unwrap());
     let mut s = session(300.0, 300.0, 1);
-    let r = s.execute("clipboard.importEmf", &json!({"dataBase64": vectorcraft_format::base64_encode(&emf), "center": [150, 150]})).unwrap();
+    let r = s
+        .execute(
+            "clipboard.importEmf",
+            &json!({"dataBase64": vectorcraft_format::base64_encode(&emf), "center": [150, 150]}),
+        )
+        .unwrap();
     assert_eq!(r["count"], 1);
-    s.execute("edit.paste", &json!({"center": [150, 150]})).unwrap();
+    s.execute("edit.paste", &json!({"center": [150, 150]}))
+        .unwrap();
     let pasted = s.doc().unwrap().doc.layers[0].children().unwrap().clone();
     assert_eq!(pasted.len(), 1);
     let b = pasted[0].geometric_bounds().unwrap();
-    assert!((b.center().x - 150.0).abs() < 0.05 && (b.width() - 30.0).abs() < 0.05, "{b:?}");
-    assert!(s.execute("clipboard.importEmf", &json!({"dataBase64": vectorcraft_format::base64_encode(b"%PDF-1.7")})).is_err());
+    assert!(
+        (b.center().x - 150.0).abs() < 0.05 && (b.width() - 30.0).abs() < 0.05,
+        "{b:?}"
+    );
+    assert!(
+        s.execute(
+            "clipboard.importEmf",
+            &json!({"dataBase64": vectorcraft_format::base64_encode(b"%PDF-1.7")})
+        )
+        .is_err()
+    );
 }

@@ -29,7 +29,10 @@ pub struct Layout {
 impl Default for Layout {
     /// What a desktop that names no layout gets: all three, on the right.
     fn default() -> Self {
-        Self { left: Vec::new(), right: vec![Button::Minimize, Button::Maximize, Button::Close] }
+        Self {
+            left: Vec::new(),
+            right: vec![Button::Minimize, Button::Maximize, Button::Close],
+        }
     }
 }
 
@@ -115,7 +118,14 @@ pub fn buttons(ui: &mut egui::Ui, buttons: &[Button]) {
 
 /// Adwaita's look: a round wash of the text colour, stronger on hover and press, and a 16-point
 /// symbolic glyph drawn with lines (no icon files).
-fn paint(painter: &egui::Painter, rect: Rect, button: Button, maximized: bool, t: &Tokens, response: &egui::Response) {
+fn paint(
+    painter: &egui::Painter,
+    rect: Rect,
+    button: Button,
+    maximized: bool,
+    t: &Tokens,
+    response: &egui::Response,
+) {
     let alpha = if response.is_pointer_button_down_on() {
         0.28
     } else if response.hovered() {
@@ -125,26 +135,41 @@ fn paint(painter: &egui::Painter, rect: Rect, button: Button, maximized: bool, t
     };
     painter.circle_filled(rect.center(), BUTTON / 2.0, t.text.gamma_multiply(alpha));
     if response.has_focus() {
-        painter.circle_stroke(rect.center(), BUTTON / 2.0 - 0.5, Stroke::new(1.0, t.accent));
+        painter.circle_stroke(
+            rect.center(),
+            BUTTON / 2.0 - 0.5,
+            Stroke::new(1.0, t.accent),
+        );
     }
     let stroke = Stroke::new(1.25, t.text);
     // The glyph's 16-point square, its corners on pixel centres so lines stay crisp.
     let c = rect.center();
-    let at = |x: f32, y: f32| Pos2::new((c.x - 8.0 + x).round() + 0.5, (c.y - 8.0 + y).round() + 0.5);
+    let at =
+        |x: f32, y: f32| Pos2::new((c.x - 8.0 + x).round() + 0.5, (c.y - 8.0 + y).round() + 0.5);
     match button {
         Button::Minimize => {
             painter.line_segment([at(4.0, 11.0), at(11.0, 11.0)], stroke);
         }
         Button::Maximize if maximized => {
             // Restore: a smaller window in front of another.
-            painter.rect_stroke(Rect::from_two_pos(at(4.0, 6.0), at(10.0, 12.0)), 1.0, stroke, egui::StrokeKind::Middle);
+            painter.rect_stroke(
+                Rect::from_two_pos(at(4.0, 6.0), at(10.0, 12.0)),
+                1.0,
+                stroke,
+                egui::StrokeKind::Middle,
+            );
             painter.line_segment([at(6.0, 6.0), at(6.0, 4.0)], stroke);
             painter.line_segment([at(6.0, 4.0), at(12.0, 4.0)], stroke);
             painter.line_segment([at(12.0, 4.0), at(12.0, 10.0)], stroke);
             painter.line_segment([at(12.0, 10.0), at(10.0, 10.0)], stroke);
         }
         Button::Maximize => {
-            painter.rect_stroke(Rect::from_two_pos(at(4.0, 4.0), at(11.0, 11.0)), 1.0, stroke, egui::StrokeKind::Middle);
+            painter.rect_stroke(
+                Rect::from_two_pos(at(4.0, 4.0), at(11.0, 11.0)),
+                1.0,
+                stroke,
+                egui::StrokeKind::Middle,
+            );
         }
         Button::Close => {
             painter.line_segment([at(4.0, 4.0), at(11.0, 11.0)], stroke);
@@ -163,20 +188,46 @@ const CORNER: f32 = 16.0;
 fn zones(rect: Rect, edge: f32, corner: f32) -> Vec<(ResizeDirection, Rect)> {
     let (l, r, t, b) = (rect.left(), rect.right(), rect.top(), rect.bottom());
     // Never inverted, however small the window.
-    let zone = |x0: f32, x1: f32, y0: f32, y1: f32| Rect::from_min_max(Pos2::new(x0, y0), Pos2::new(x1.max(x0), y1.max(y0)));
+    let zone = |x0: f32, x1: f32, y0: f32, y1: f32| {
+        Rect::from_min_max(Pos2::new(x0, y0), Pos2::new(x1.max(x0), y1.max(y0)))
+    };
     vec![
         (ResizeDirection::NorthWest, zone(l, l + corner, t, t + edge)),
-        (ResizeDirection::NorthWest, zone(l, l + edge, t + edge, t + corner)),
+        (
+            ResizeDirection::NorthWest,
+            zone(l, l + edge, t + edge, t + corner),
+        ),
         (ResizeDirection::NorthEast, zone(r - corner, r, t, t + edge)),
-        (ResizeDirection::NorthEast, zone(r - edge, r, t + edge, t + corner)),
+        (
+            ResizeDirection::NorthEast,
+            zone(r - edge, r, t + edge, t + corner),
+        ),
         (ResizeDirection::SouthWest, zone(l, l + corner, b - edge, b)),
-        (ResizeDirection::SouthWest, zone(l, l + edge, b - corner, b - edge)),
+        (
+            ResizeDirection::SouthWest,
+            zone(l, l + edge, b - corner, b - edge),
+        ),
         (ResizeDirection::SouthEast, zone(r - corner, r, b - edge, b)),
-        (ResizeDirection::SouthEast, zone(r - edge, r, b - corner, b - edge)),
-        (ResizeDirection::North, zone(l + corner, r - corner, t, t + edge)),
-        (ResizeDirection::South, zone(l + corner, r - corner, b - edge, b)),
-        (ResizeDirection::West, zone(l, l + edge, t + corner, b - corner)),
-        (ResizeDirection::East, zone(r - edge, r, t + corner, b - corner)),
+        (
+            ResizeDirection::SouthEast,
+            zone(r - edge, r, b - corner, b - edge),
+        ),
+        (
+            ResizeDirection::North,
+            zone(l + corner, r - corner, t, t + edge),
+        ),
+        (
+            ResizeDirection::South,
+            zone(l + corner, r - corner, b - edge, b),
+        ),
+        (
+            ResizeDirection::West,
+            zone(l, l + edge, t + corner, b - corner),
+        ),
+        (
+            ResizeDirection::East,
+            zone(r - edge, r, t + corner, b - corner),
+        ),
     ]
 }
 
@@ -197,7 +248,12 @@ fn cursor(direction: ResizeDirection) -> CursorIcon {
 /// maximized nor full screen. The zones sit above everything else (in the foreground order), so a
 /// press there resizes instead of reaching the scrollbar or panel under it.
 pub fn resize_edges(ctx: &egui::Context) {
-    let (maximized, fullscreen) = ctx.input(|i| (i.viewport().maximized.unwrap_or(false), i.viewport().fullscreen.unwrap_or(false)));
+    let (maximized, fullscreen) = ctx.input(|i| {
+        (
+            i.viewport().maximized.unwrap_or(false),
+            i.viewport().fullscreen.unwrap_or(false),
+        )
+    });
     if maximized || fullscreen {
         return;
     }
@@ -214,10 +270,13 @@ pub fn resize_edges(ctx: &egui::Context) {
                 if rect.width() <= 0.0 || rect.height() <= 0.0 {
                     continue;
                 }
-                let response = ui.interact(rect, ui.id().with(("edge", n)), Sense::drag()).on_hover_cursor(cursor(direction));
+                let response = ui
+                    .interact(rect, ui.id().with(("edge", n)), Sense::drag())
+                    .on_hover_cursor(cursor(direction));
                 // Sensing only drags, a drag starts on the press itself.
                 if response.drag_started() {
-                    ui.ctx().send_viewport_cmd(egui::ViewportCommand::BeginResize(direction));
+                    ui.ctx()
+                        .send_viewport_cmd(egui::ViewportCommand::BeginResize(direction));
                 }
             }
             // Without the desktop's frame or shadow, a hairline keeps the window apart from
@@ -225,7 +284,10 @@ pub fn resize_edges(ctx: &egui::Context) {
             ui.painter().rect_stroke(
                 screen,
                 0.0,
-                Stroke::new(1.0, Color32::from_black_alpha(if t.dark() { 160 } else { 60 })),
+                Stroke::new(
+                    1.0,
+                    Color32::from_black_alpha(if t.dark() { 160 } else { 60 }),
+                ),
                 egui::StrokeKind::Inside,
             );
         });
@@ -238,33 +300,63 @@ mod tests {
 
     #[test]
     fn gnome_button_layouts_parse() {
-        let close = Layout { left: vec![], right: vec![Button::Close] };
+        let close = Layout {
+            left: vec![],
+            right: vec![Button::Close],
+        };
         assert_eq!(Layout::parse("'appmenu:close'"), close);
         assert_eq!(Layout::parse("appmenu:close\n"), close);
         assert_eq!(Layout::parse(":minimize,maximize,close"), Layout::default());
         assert_eq!(
             Layout::parse("close,minimize,maximize:appmenu"),
-            Layout { left: vec![Button::Close, Button::Minimize, Button::Maximize], right: vec![] }
+            Layout {
+                left: vec![Button::Close, Button::Minimize, Button::Maximize],
+                right: vec![]
+            }
         );
         // No colon: the left side, as GTK reads it.
-        assert_eq!(Layout::parse("close"), Layout { left: vec![Button::Close], right: vec![] });
+        assert_eq!(
+            Layout::parse("close"),
+            Layout {
+                left: vec![Button::Close],
+                right: vec![]
+            }
+        );
         // Unknown names, spaces and repeats.
         assert_eq!(Layout::parse("icon,spacer: close , close,bogus"), close);
-        assert_eq!(Layout::parse(""), Layout { left: vec![], right: vec![] });
+        assert_eq!(
+            Layout::parse(""),
+            Layout {
+                left: vec![],
+                right: vec![]
+            }
+        );
     }
 
     #[test]
     fn widths_cover_the_buttons_and_their_gaps() {
         assert_eq!(super::width(&[]), 0.0);
-        assert_eq!(super::width(&[Button::Close]), super::BUTTON + super::SIDE_GAP);
-        assert_eq!(super::width(&Layout::default().right), 3.0 * super::BUTTON + 2.0 * super::GAP + super::SIDE_GAP);
+        assert_eq!(
+            super::width(&[Button::Close]),
+            super::BUTTON + super::SIDE_GAP
+        );
+        assert_eq!(
+            super::width(&Layout::default().right),
+            3.0 * super::BUTTON + 2.0 * super::GAP + super::SIDE_GAP
+        );
     }
 
     #[test]
     fn resize_zones_line_the_edges_without_overlapping() {
         let window = Rect::from_min_size(Pos2::ZERO, egui::vec2(800.0, 600.0));
         let zones = zones(window, 5.0, 16.0);
-        let at = |x: f32, y: f32| zones.iter().filter(|(_, r)| r.contains(Pos2::new(x, y))).map(|(d, _)| *d).collect::<Vec<_>>();
+        let at = |x: f32, y: f32| {
+            zones
+                .iter()
+                .filter(|(_, r)| r.contains(Pos2::new(x, y)))
+                .map(|(d, _)| *d)
+                .collect::<Vec<_>>()
+        };
         assert_eq!(at(1.0, 1.0), [ResizeDirection::NorthWest]);
         assert_eq!(at(2.0, 12.0), [ResizeDirection::NorthWest]);
         assert_eq!(at(400.0, 2.0), [ResizeDirection::North]);
@@ -272,7 +364,10 @@ mod tests {
         assert_eq!(at(400.0, 599.0), [ResizeDirection::South]);
         assert_eq!(at(1.0, 300.0), [ResizeDirection::West]);
         assert_eq!(at(799.0, 599.0), [ResizeDirection::SouthEast]);
-        assert!(at(400.0, 300.0).is_empty(), "the middle of the window is left alone");
+        assert!(
+            at(400.0, 300.0).is_empty(),
+            "the middle of the window is left alone"
+        );
         assert!(at(12.0, 12.0).is_empty(), "corners stay along the edges");
         // Strips meet without overlapping.
         for y in [0.5, 4.5, 5.5, 15.5, 16.5, 595.5] {
@@ -281,7 +376,11 @@ mod tests {
             }
         }
         // A window smaller than its corners gets empty (not inverted) edge zones.
-        for (_, r) in super::zones(Rect::from_min_size(Pos2::ZERO, egui::vec2(20.0, 20.0)), 5.0, 16.0) {
+        for (_, r) in super::zones(
+            Rect::from_min_size(Pos2::ZERO, egui::vec2(20.0, 20.0)),
+            5.0,
+            16.0,
+        ) {
             assert!(r.width() >= 0.0 && r.height() >= 0.0);
         }
     }

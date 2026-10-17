@@ -5,7 +5,12 @@ use filmcraft_project::{ClipId, ItemId, ItemKind, Project};
 use filmcraft_time::Tick;
 
 fn fixture(name: &str) -> Vec<u8> {
-    std::fs::read(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").join(name)).unwrap()
+    std::fs::read(
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures")
+            .join(name),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -26,7 +31,10 @@ fn bare_version_2_loads_as_schema_v1() {
     let l = decode(&serde_json::to_vec(&v).unwrap()).unwrap();
     assert_eq!(l.schema_version, 1);
     assert!(l.migrated());
-    assert_eq!(l.project.name, decode(&fixture("v1-edit.fcproj")).unwrap().project.name);
+    assert_eq!(
+        l.project.name,
+        decode(&fixture("v1-edit.fcproj")).unwrap().project.name
+    );
 }
 
 #[test]
@@ -61,7 +69,17 @@ fn legacy_audio_field_becomes_primary_stream_and_clip_defaults_to_zero() {
     let clip = &p.sequence(ItemId(21)).unwrap().audio_tracks[0].items[0];
     assert_eq!(clip.audio_stream, 0);
     let again = decode(&encode(&p, false)).unwrap();
-    assert_eq!(again.project.item(ItemId(5)).unwrap().as_media().unwrap().info.audio_streams, media.info.audio_streams);
+    assert_eq!(
+        again
+            .project
+            .item(ItemId(5))
+            .unwrap()
+            .as_media()
+            .unwrap()
+            .info
+            .audio_streams,
+        media.info.audio_streams
+    );
 }
 
 /// Out-of-range audio stream data is repaired on load, never a reason to refuse the project.
@@ -72,16 +90,37 @@ fn hostile_audio_stream_counts_and_indices_are_repaired_not_rejected() {
     for bad in [filmcraft_media::MAX_AUDIO_STREAMS, usize::MAX] {
         p.sequence_mut(seq).unwrap().audio_tracks[0].items[0].audio_stream = bad;
         let loaded = decode(&encode(&p, false)).unwrap().project;
-        assert_eq!(loaded.sequence(seq).unwrap().audio_tracks[0].items[0].audio_stream, 0);
+        assert_eq!(
+            loaded.sequence(seq).unwrap().audio_tracks[0].items[0].audio_stream,
+            0
+        );
     }
-    p.sequence_mut(seq).unwrap().audio_tracks[0].items[0].audio_stream = filmcraft_media::MAX_AUDIO_STREAMS - 1;
+    p.sequence_mut(seq).unwrap().audio_tracks[0].items[0].audio_stream =
+        filmcraft_media::MAX_AUDIO_STREAMS - 1;
     let loaded = decode(&encode(&p, false)).unwrap().project;
-    assert_eq!(loaded.sequence(seq).unwrap().audio_tracks[0].items[0].audio_stream, filmcraft_media::MAX_AUDIO_STREAMS - 1, "in range: kept");
+    assert_eq!(
+        loaded.sequence(seq).unwrap().audio_tracks[0].items[0].audio_stream,
+        filmcraft_media::MAX_AUDIO_STREAMS - 1,
+        "in range: kept"
+    );
     let media = p.item_mut(ItemId(5)).unwrap().as_media_mut().unwrap();
     let stream = media.info.audio_streams[0].clone();
-    media.info.audio_streams.resize(filmcraft_media::MAX_AUDIO_STREAMS + 1, stream);
+    media
+        .info
+        .audio_streams
+        .resize(filmcraft_media::MAX_AUDIO_STREAMS + 1, stream);
     let loaded = decode(&encode(&p, false)).unwrap().project;
-    assert_eq!(loaded.item(ItemId(5)).unwrap().as_media().unwrap().info.audio_streams.len(), filmcraft_media::MAX_AUDIO_STREAMS);
+    assert_eq!(
+        loaded
+            .item(ItemId(5))
+            .unwrap()
+            .as_media()
+            .unwrap()
+            .info
+            .audio_streams
+            .len(),
+        filmcraft_media::MAX_AUDIO_STREAMS
+    );
 }
 
 /// Schema 8 (before M3.10): no time interpolation / Hold Filters / Field Options / source channels
@@ -93,11 +132,34 @@ fn v8_subclip_loads_with_m3_10_defaults() {
     assert!(l.migrated());
     let p = &l.project;
     assert_eq!(p.name, "Schema 8 Edit");
-    let ItemKind::Subclip { parent, range, restrict_trims } = &p.item(ItemId(48)).unwrap().kind else { panic!("not a subclip") };
-    assert_eq!((*parent, range.duration.0 > 0, *restrict_trims), (ItemId(5), true, false));
-    assert!(p.item(ItemId(5)).unwrap().as_media().unwrap().interpret.audio_channels.is_none());
+    let ItemKind::Subclip {
+        parent,
+        range,
+        restrict_trims,
+    } = &p.item(ItemId(48)).unwrap().kind
+    else {
+        panic!("not a subclip")
+    };
+    assert_eq!(
+        (*parent, range.duration.0 > 0, *restrict_trims),
+        (ItemId(5), true, false)
+    );
+    assert!(
+        p.item(ItemId(5))
+            .unwrap()
+            .as_media()
+            .unwrap()
+            .interpret
+            .audio_channels
+            .is_none()
+    );
     let clip = &p.sequence(ItemId(21)).unwrap().video_tracks[0].items[0];
-    assert!(clip.time_interpolation.is_default() && !clip.hold_filters && clip.field_options.is_none() && clip.source_channels.is_empty());
+    assert!(
+        clip.time_interpolation.is_default()
+            && !clip.hold_filters
+            && clip.field_options.is_none()
+            && clip.source_channels.is_empty()
+    );
     // resaved in the current schema, losslessly
     let again = decode(&encode(p, true)).unwrap();
     assert_eq!(again.schema_version, SCHEMA_VERSION);
@@ -136,7 +198,11 @@ pub fn big_project(n: usize) -> Project {
     };
     let v0 = seq.video_tracks[0].items[0].clone();
     let a0 = seq.audio_tracks[0].items[0].clone();
-    for t in seq.video_tracks.iter_mut().chain(seq.audio_tracks.iter_mut()) {
+    for t in seq
+        .video_tracks
+        .iter_mut()
+        .chain(seq.audio_tracks.iter_mut())
+    {
         t.items.clear();
     }
     let mut vt = seq.video_tracks[0].clone();
@@ -174,7 +240,12 @@ pub fn big_project(n: usize) -> Project {
 #[test]
 fn large_project_roundtrip_and_timing() {
     let p = big_project(2000);
-    let clips: usize = p.sequence(ItemId(21)).unwrap().all_tracks().map(|t| t.items.len()).sum();
+    let clips: usize = p
+        .sequence(ItemId(21))
+        .unwrap()
+        .all_tracks()
+        .map(|t| t.items.len())
+        .sum();
     assert_eq!(clips, 2000);
     let reps = 5;
     let t0 = std::time::Instant::now();
@@ -213,15 +284,23 @@ fn v8_loads_without_transcripts_and_v9_roundtrips_them() {
     assert!(l.migrated());
     assert!(l.project.transcripts.is_empty());
     let mut p = l.project;
-    let mut t = filmcraft_project::Transcript { language: "en".into(), source: "manual".into(), ..Default::default() };
-    t.words.push(filmcraft_project::Word::new("Hello", Tick(0), Tick(1000)));
+    let mut t = filmcraft_project::Transcript {
+        language: "en".into(),
+        source: "manual".into(),
+        ..Default::default()
+    };
+    t.words
+        .push(filmcraft_project::Word::new("Hello", Tick(0), Tick(1000)));
     t.words[0].speaker = Some(0);
     t.normalize();
     p.transcripts.insert(ItemId(7), std::sync::Arc::new(t));
     let again = decode(&encode(&p, true)).unwrap();
     assert!(!again.migrated());
     assert_eq!(again.project, p);
-    assert_eq!(again.project.transcripts[&ItemId(7)].speakers[0].name, "Speaker 1");
+    assert_eq!(
+        again.project.transcripts[&ItemId(7)].speakers[0].name,
+        "Speaker 1"
+    );
 }
 
 /// Schema 11 (before M10.7): no source graphics; graphic clips without template / roll /
@@ -251,7 +330,10 @@ fn v10_minimal_loads_with_m3_11_defaults() {
     let p = &l.project;
     assert_eq!(p.name, "Before Search Bins");
     assert!(p.search_bins.is_empty());
-    assert_eq!((p.settings.title_safe, p.settings.action_safe), ((20.0, 20.0), (10.0, 10.0)));
+    assert_eq!(
+        (p.settings.title_safe, p.settings.action_safe),
+        ((20.0, 20.0), (10.0, 10.0))
+    );
     assert_eq!(p.settings.capture_format, "DV");
     assert_eq!(p.settings.scratch, Default::default());
     assert!(p.root.find_bin(filmcraft_project::BinId(1)).is_some());

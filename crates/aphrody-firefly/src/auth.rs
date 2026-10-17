@@ -60,7 +60,10 @@ impl ImsCredentials {
             .ok_or(FireflyError::MissingCredential("FIREFLY_CLIENT_ID"))?;
         let client_secret = non_empty_env("FIREFLY_CLIENT_SECRET")
             .ok_or(FireflyError::MissingCredential("FIREFLY_CLIENT_SECRET"))?;
-        Ok(Self { client_id, client_secret })
+        Ok(Self {
+            client_id,
+            client_secret,
+        })
     }
 }
 
@@ -114,7 +117,11 @@ impl std::fmt::Debug for AccessToken {
 /// A `EXPIRY_SAFETY_MARGIN_SECS` margin is subtracted so callers refresh early.
 #[must_use]
 pub fn interpret_expires_in(expires_in: u64) -> Duration {
-    let secs = if expires_in > 100_000 { expires_in / 1000 } else { expires_in };
+    let secs = if expires_in > 100_000 {
+        expires_in / 1000
+    } else {
+        expires_in
+    };
     let usable = secs.saturating_sub(EXPIRY_SAFETY_MARGIN_SECS);
     Duration::from_secs(usable)
 }
@@ -140,17 +147,28 @@ pub async fn fetch_token(client: &reqwest::Client, creds: &ImsCredentials) -> Re
     let body = resp.text().await?;
 
     if !status.is_success() {
-        return Err(FireflyError::Auth { status: status.as_u16(), body: truncate(&body, 512) });
+        return Err(FireflyError::Auth {
+            status: status.as_u16(),
+            body: truncate(&body, 512),
+        });
     }
 
-    let parsed: ImsTokenResponse = serde_json::from_str(&body).map_err(|source| {
-        FireflyError::Decode { endpoint: IMS_TOKEN_ENDPOINT.to_string(), source }
-    })?;
+    let parsed: ImsTokenResponse =
+        serde_json::from_str(&body).map_err(|source| FireflyError::Decode {
+            endpoint: IMS_TOKEN_ENDPOINT.to_string(),
+            source,
+        })?;
 
     let lifetime = interpret_expires_in(parsed.expires_in);
-    tracing::debug!(valid_for_secs = lifetime.as_secs(), "acquired Firefly IMS access token",);
+    tracing::debug!(
+        valid_for_secs = lifetime.as_secs(),
+        "acquired Firefly IMS access token",
+    );
 
-    Ok(AccessToken { token: parsed.access_token, refresh_after: Instant::now() + lifetime })
+    Ok(AccessToken {
+        token: parsed.access_token,
+        refresh_after: Instant::now() + lifetime,
+    })
 }
 
 /// A reusable, concurrency-safe IMS token cache.
@@ -169,7 +187,10 @@ impl TokenCache {
     /// Build a cache around the given credentials (no network on construction).
     #[must_use]
     pub fn new(creds: ImsCredentials) -> Self {
-        Self { creds, token: tokio::sync::Mutex::new(None) }
+        Self {
+            creds,
+            token: tokio::sync::Mutex::new(None),
+        }
     }
 
     /// The Developer Console client id (sent as the `x-api-key` header).
@@ -206,7 +227,9 @@ impl TokenCache {
 
 impl std::fmt::Debug for TokenCache {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("TokenCache").field("creds", &self.creds).finish_non_exhaustive()
+        f.debug_struct("TokenCache")
+            .field("creds", &self.creds)
+            .finish_non_exhaustive()
     }
 }
 
@@ -256,7 +279,10 @@ mod tests {
 
     #[test]
     fn debug_redacts_secret() {
-        let c = ImsCredentials { client_id: "pub-id".into(), client_secret: "TOPSECRET".into() };
+        let c = ImsCredentials {
+            client_id: "pub-id".into(),
+            client_secret: "TOPSECRET".into(),
+        };
         let rendered = format!("{c:?}");
         assert!(rendered.contains("pub-id"));
         assert!(!rendered.contains("TOPSECRET"));

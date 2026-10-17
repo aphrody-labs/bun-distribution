@@ -54,33 +54,56 @@ impl Session {
         if !self.subscribed.load(Ordering::Relaxed) {
             return false;
         }
-        let prefixes = self.subscription.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        prefixes.is_empty() || prefixes.iter().any(|prefix| event.kind.starts_with(prefix.as_str()))
+        let prefixes = self
+            .subscription
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        prefixes.is_empty()
+            || prefixes
+                .iter()
+                .any(|prefix| event.kind.starts_with(prefix.as_str()))
     }
 
     /// Deliver a response the peer sent to one of the kernel's requests.
     pub(crate) fn resolve(&self, message: Value) {
-        let Some(id) = message.get("id").map(id_key) else { return };
-        let sender =
-            self.pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+        let Some(id) = message.get("id").map(id_key) else {
+            return;
+        };
+        let sender = self
+            .pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .remove(&id);
         if let Some(sender) = sender {
             let _ = sender.send(message);
         }
     }
 
     pub(crate) fn set_scope(&self, scope: crate::auth::SessionScope) {
-        *self.scope.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope);
+        *self
+            .scope
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = Some(scope);
     }
 
     pub(crate) fn scope(&self) -> Option<crate::auth::SessionScope> {
-        self.scope.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()
+        self.scope
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
     }
 
     /// Fail every outstanding kernel request and unregister this peer's subsystems.
     pub(crate) async fn close(&self, kernel: &Kernel) {
-        self.pending.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clear();
+        self.pending
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clear();
         let names = std::mem::take(
-            &mut *self.registered.lock().unwrap_or_else(std::sync::PoisonError::into_inner),
+            &mut *self
+                .registered
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner),
         );
         for name in names {
             kernel.unregister(&name).await;
@@ -110,32 +133,46 @@ pub(crate) fn call_result(outcome: Result<Value, SubsystemError>) -> Value {
                 value["isError"] = json!(false);
             }
             value
-        },
+        }
         Ok(value) => {
             let text = match &value {
                 Value::String(text) => text.clone(),
                 other => serde_json::to_string_pretty(other).unwrap_or_default(),
             };
-            let structured = if value.is_object() { value } else { json!({ "result": value }) };
+            let structured = if value.is_object() {
+                value
+            } else {
+                json!({ "result": value })
+            };
             json!({ "content": [{ "type": "text", "text": text }], "structuredContent": structured, "isError": false })
-        },
+        }
         Err(error) => {
             json!({ "content": [{ "type": "text", "text": error.to_string() }], "isError": true })
-        },
+        }
     }
 }
 
 /// Whether `value` is an MCP `CallToolResult`: a non-empty `content` array of typed parts and
 /// no other keys than the result's own.
 fn is_call_result(value: &Value) -> bool {
-    let Some(object) = value.as_object() else { return false };
-    let typed_parts = object.get("content").and_then(Value::as_array).is_some_and(|parts| {
-        !parts.is_empty()
-            && parts.iter().all(|part| part.get("type").and_then(Value::as_str).is_some())
-    });
+    let Some(object) = value.as_object() else {
+        return false;
+    };
+    let typed_parts = object
+        .get("content")
+        .and_then(Value::as_array)
+        .is_some_and(|parts| {
+            !parts.is_empty()
+                && parts
+                    .iter()
+                    .all(|part| part.get("type").and_then(Value::as_str).is_some())
+        });
     typed_parts
         && object.keys().all(|key| {
-            matches!(key.as_str(), "content" | "isError" | "structuredContent" | "_meta")
+            matches!(
+                key.as_str(),
+                "content" | "isError" | "structuredContent" | "_meta"
+            )
         })
 }
 
@@ -152,12 +189,18 @@ pub(crate) fn from_call_result(result: &Value) -> Result<Value, SubsystemError> 
                 .join("\n")
         })
         .unwrap_or_default();
-    if result.get("isError").and_then(Value::as_bool).unwrap_or(false) {
+    if result
+        .get("isError")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+    {
         return Err(SubsystemError::Failed(text));
     }
     if let Some(structured) = result.get("structuredContent") {
-        if let Some(inner) =
-            structured.as_object().filter(|map| map.len() == 1).and_then(|map| map.get("result"))
+        if let Some(inner) = structured
+            .as_object()
+            .filter(|map| map.len() == 1)
+            .and_then(|map| map.get("result"))
         {
             return Ok(inner.clone());
         }
@@ -170,14 +213,24 @@ pub(crate) fn skill_tool(subsystem: &str, skill: &crate::SkillManifest) -> ToolD
     let properties: Map<String, Value> = skill
         .parameters
         .iter()
-        .map(|name| (name.clone(), json!({ "description": format!("Skill parameter `{name}`.") })))
+        .map(|name| {
+            (
+                name.clone(),
+                json!({ "description": format!("Skill parameter `{name}`.") }),
+            )
+        })
         .collect();
     ToolDefinition::new(
         format!("{SKILL_TOOL_PREFIX}{}", skill.name),
         format!(
             "Skill ({subsystem}): {} Steps: {}.",
             skill.description,
-            skill.steps.iter().map(|s| s.tool.as_str()).collect::<Vec<_>>().join(" -> ")
+            skill
+                .steps
+                .iter()
+                .map(|s| s.tool.as_str())
+                .collect::<Vec<_>>()
+                .join(" -> ")
         ),
         json!({ "type": "object", "properties": properties, "required": skill.parameters }),
     )
@@ -200,7 +253,11 @@ impl Kernel {
 
     /// Handle one inbound message. Returns the response for a request, `None` otherwise.
     pub async fn handle(&self, message: Value, session: &Arc<Session>) -> Option<Value> {
-        let Some(method) = message.get("method").and_then(Value::as_str).map(str::to_owned) else {
+        let Some(method) = message
+            .get("method")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+        else {
             // A response to a request the kernel sent (remote tool call).
             if message.get("id").is_some()
                 && (message.get("result").is_some() || message.get("error").is_some())
@@ -229,7 +286,10 @@ impl Kernel {
         let invalid = |message: String| (-32602, message);
         let forbidden = |message: String| (-32003, message);
         if method != "initialize" && method != "ping" && session.scope().is_none() {
-            return Err((-32001, "initialize with a valid auth token before this request".into()));
+            return Err((
+                -32001,
+                "initialize with a valid auth token before this request".into(),
+            ));
         }
         match method {
             "initialize" => {
@@ -248,7 +308,7 @@ impl Kernel {
                     "instructions": INSTRUCTIONS,
                     "_meta": { "aphrody-os": { "principal": principal } },
                 }))
-            },
+            }
             "ping" => Ok(json!({})),
             "tools/list" => {
                 let scope = session.scope().expect("authenticated request has a scope");
@@ -261,15 +321,20 @@ impl Kernel {
                             .then(|| tool.clone())
                     })
                     .collect::<Vec<_>>();
-                tools.extend(self.skills().await.into_iter().filter_map(|(subsystem, skill)| {
-                    skill
-                        .steps
-                        .iter()
-                        .all(|step| scope.allows_tool(&step.tool))
-                        .then(|| skill_tool(&subsystem, &skill).to_mcp())
-                }));
+                tools.extend(
+                    self.skills()
+                        .await
+                        .into_iter()
+                        .filter_map(|(subsystem, skill)| {
+                            skill
+                                .steps
+                                .iter()
+                                .all(|step| scope.allows_tool(&step.tool))
+                                .then(|| skill_tool(&subsystem, &skill).to_mcp())
+                        }),
+                );
                 Ok(json!({ "tools": tools }))
-            },
+            }
             "tools/call" => {
                 let name = params
                     .get("name")
@@ -282,16 +347,22 @@ impl Kernel {
                         scope.principal
                     )));
                 }
-                let arguments = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+                let arguments = params
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or_else(|| json!({}));
                 match self.call(name, arguments).await {
                     Err(SubsystemError::UnknownTool(tool)) => {
                         Err(invalid(format!("unknown tool: {tool}")))
-                    },
+                    }
                     outcome => Ok(call_result(outcome)),
                 }
-            },
+            }
             "a2a/message/send" => {
-                let source = params.get("sourceAgent").and_then(Value::as_str).unwrap_or("unknown");
+                let source = params
+                    .get("sourceAgent")
+                    .and_then(Value::as_str)
+                    .unwrap_or("unknown");
                 let target = match params.get("target") {
                     None => "aphrody-kernel",
                     Some(Value::String(target)) if !target.trim().is_empty() => target.as_str(),
@@ -308,14 +379,17 @@ impl Kernel {
                         scope.principal
                     )));
                 }
-                let arguments = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+                let arguments = params
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or_else(|| json!({}));
                 let result = match self.call_target(target, tool, arguments).await {
                     Err(SubsystemError::UnknownTool(name)) => {
                         return Err(invalid(format!("unknown tool: {name}")));
-                    },
+                    }
                     Err(SubsystemError::InvalidArguments(message)) => {
                         return Err(invalid(message));
-                    },
+                    }
                     outcome => call_result(outcome),
                 };
                 self.bus().publish(crate::Event {
@@ -324,7 +398,7 @@ impl Kernel {
                     payload: json!({ "target": target, "tool": tool, "result": result }),
                 });
                 Ok(json!({ "accepted": true, "target": target, "result": result }))
-            },
+            }
             "skills/list" => {
                 let scope = session.scope().expect("authenticated request has a scope");
                 Ok(json!({
@@ -336,15 +410,18 @@ impl Kernel {
                     value
                 }).collect::<Vec<_>>()
                 }))
-            },
+            }
             "skills/run" => {
                 let name = params
                     .get("name")
                     .and_then(Value::as_str)
                     .ok_or_else(|| invalid("skills/run requires `name`".into()))?;
                 let scope = session.scope().expect("authenticated request has a scope");
-                if let Some((_, skill)) =
-                    self.skills().await.into_iter().find(|(_, skill)| skill.name == name)
+                if let Some((_, skill)) = self
+                    .skills()
+                    .await
+                    .into_iter()
+                    .find(|(_, skill)| skill.name == name)
                     && !skill.steps.iter().all(|step| scope.allows_tool(&step.tool))
                 {
                     return Err(forbidden(format!(
@@ -352,12 +429,15 @@ impl Kernel {
                         scope.principal
                     )));
                 }
-                let skill_params =
-                    params.get("params").and_then(Value::as_object).cloned().unwrap_or_default();
+                let skill_params = params
+                    .get("params")
+                    .and_then(Value::as_object)
+                    .cloned()
+                    .unwrap_or_default();
                 self.run_skill(name, &skill_params)
                     .await
                     .map_err(|error| (-32000, error.to_string()))
-            },
+            }
             "system/subsystems" => Ok(json!({ "subsystems": self.subsystems().await })),
             "system/audit_status" => Ok(self.audit_status()),
             "system/subsystem_tools" => {
@@ -374,7 +454,7 @@ impl Kernel {
                     "subsystem": name,
                     "tools": tools.into_iter().filter(|tool| scope.allows_tool(&tool.name)).map(|tool| tool.to_mcp()).collect::<Vec<_>>(),
                 }))
-            },
+            }
             "system/register_subsystem" => {
                 let scope = session.scope().expect("authenticated request has a scope");
                 if !scope.register_subsystems {
@@ -395,20 +475,26 @@ impl Kernel {
                     .unwrap_or_else(std::sync::PoisonError::into_inner)
                     .push(name.clone());
                 Ok(json!({ "registered": name, "tools": tools }))
-            },
+            }
             "system/subscribe" => {
                 let kinds: Vec<String> = params
                     .get("kinds")
                     .and_then(Value::as_array)
                     .map(|kinds| {
-                        kinds.iter().filter_map(Value::as_str).map(str::to_owned).collect()
+                        kinds
+                            .iter()
+                            .filter_map(Value::as_str)
+                            .map(str::to_owned)
+                            .collect()
                     })
                     .unwrap_or_default();
-                *session.subscription.lock().unwrap_or_else(std::sync::PoisonError::into_inner) =
-                    kinds;
+                *session
+                    .subscription
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner) = kinds;
                 session.subscribed.store(true, Ordering::Relaxed);
                 Ok(json!({ "subscribed": true }))
-            },
+            }
             "system/publish" => {
                 let scope = session.scope().expect("authenticated request has a scope");
                 if !scope.publish_events {
@@ -434,7 +520,7 @@ impl Kernel {
                     payload: params.get("payload").cloned().unwrap_or(Value::Null),
                 });
                 Ok(json!({ "delivered": delivered }))
-            },
+            }
             other => Err((-32601, format!("method not found: {other}"))),
         }
     }

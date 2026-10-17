@@ -30,7 +30,10 @@ const MAX_CRX_SAMPLES: usize = 200_000_000;
 const MAX_CRX_EDGE: u32 = 65_536;
 /// Unary QP-map prefix length that announces an 8-bit escaped symbol.
 const QP_ESCAPE_ZEROS: u32 = 23;
-const RUN_EXPONENT: [u8; 32] = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+const RUN_EXPONENT: [u8; 32] = [
+    0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 9, 10, 11, 12, 13,
+    14, 15,
+];
 
 fn corrupt(reason: &str) -> RawError {
     RawError::Corrupt(format!("Canon CRX: {reason}"))
@@ -79,7 +82,9 @@ struct Tile {
 pub(crate) fn header_ranges(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Range<usize>>> {
     let tiles = layout(sample, config)?;
     let header = 0..config.header_size as usize;
-    Ok(std::iter::once(header).chain(tiles.into_iter().filter_map(|t| t.qp)).collect())
+    Ok(std::iter::once(header)
+        .chain(tiles.into_iter().filter_map(|t| t.qp))
+        .collect())
 }
 
 /// Decode to full sensor-order CFA samples, including masked borders.
@@ -102,24 +107,49 @@ pub(crate) fn decode(sample: &[u8], config: &Cr3Compression) -> Result<Vec<u16>>
             .enumerate()
             .map(|(p, plane)| {
                 if config.levels == 0 {
-                    let band = plane.bands.first().ok_or_else(|| corrupt("missing lossless band"))?;
+                    let band = plane
+                        .bands
+                        .first()
+                        .ok_or_else(|| corrupt("missing lossless band"))?;
                     lossless_plane(band_bytes(sample, band)?, tile.width / 2, tile.height / 2)
                 } else {
-                    let edges = TileEdges { left: tile.x > 0, right: tile.x + tile.width < width, top: false, bottom: false };
-                    wavelet_plane(sample, plane, tile.width / 2, tile.height / 2, edges, qp.as_ref())
+                    let edges = TileEdges {
+                        left: tile.x > 0,
+                        right: tile.x + tile.width < width,
+                        top: false,
+                        bottom: false,
+                    };
+                    wavelet_plane(
+                        sample,
+                        plane,
+                        tile.width / 2,
+                        tile.height / 2,
+                        edges,
+                        qp.as_ref(),
+                    )
                 }
-                .map_err(|error| RawError::Corrupt(format!("Canon CRX tile ({}, {}), plane {p}: {error}", tile.x, tile.y)))
+                .map_err(|error| {
+                    RawError::Corrupt(format!(
+                        "Canon CRX tile ({}, {}), plane {p}: {error}",
+                        tile.x, tile.y
+                    ))
+                })
             })
             .collect();
         for (p, decoded) in planes.into_iter().enumerate() {
             let decoded = decoded?;
             if output.is_empty() {
-                output.try_reserve_exact(count).map_err(|_| RawError::Limit("CRX sample allocation"))?;
+                output
+                    .try_reserve_exact(count)
+                    .map_err(|_| RawError::Limit("CRX sample allocation"))?;
                 output.resize(count, 0);
             }
             for (i, &value) in decoded.iter().enumerate() {
                 let sensor_value = sensor_sample(value, midpoint, maximum, config.levels != 0)?;
-                let (x, y) = (tile.x + 2 * (i % (tile.width / 2)) + p % 2, tile.y + 2 * (i / (tile.width / 2)) + p / 2);
+                let (x, y) = (
+                    tile.x + 2 * (i % (tile.width / 2)) + p % 2,
+                    tile.y + 2 * (i / (tile.width / 2)) + p / 2,
+                );
                 let slot = y
                     .checked_mul(width)
                     .and_then(|n| n.checked_add(x))
@@ -140,9 +170,18 @@ pub(crate) fn decode(sample: &[u8], config: &Cr3Compression) -> Result<Vec<u16>>
 /// above 16383 at 14 bits, never below 0), while lossless files of the same bodies clip at exactly
 /// 16383. Those samples are clamped to the range the sensor can record.
 fn sensor_sample(value: i32, midpoint: i32, maximum: i32, quantized: bool) -> Result<u16> {
-    let sample = value.checked_add(midpoint).ok_or_else(|| corrupt("decoded sample outside its bit depth"))?;
-    let sample = if quantized { sample.clamp(0, maximum) } else { sample };
-    u16::try_from(sample).ok().filter(|_| sample <= maximum).ok_or_else(|| corrupt("decoded sample outside its bit depth"))
+    let sample = value
+        .checked_add(midpoint)
+        .ok_or_else(|| corrupt("decoded sample outside its bit depth"))?;
+    let sample = if quantized {
+        sample.clamp(0, maximum)
+    } else {
+        sample
+    };
+    u16::try_from(sample)
+        .ok()
+        .filter(|_| sample <= maximum)
+        .ok_or_else(|| corrupt("decoded sample outside its bit depth"))
 }
 
 /// Header-only probing must reject the same unsupported coding variants as full decoding.
@@ -180,16 +219,27 @@ fn supports(config: &Cr3Compression) -> Result<()> {
         )));
     }
     if !(8..=16).contains(&config.bit_depth) {
-        return Err(RawError::Unsupported(format!("Canon CRX {}-bit samples", config.bit_depth)));
+        return Err(RawError::Unsupported(format!(
+            "Canon CRX {}-bit samples",
+            config.bit_depth
+        )));
     }
     if config.levels == 3 && config.tile_height != config.height {
-        return Err(RawError::Unsupported("Canon CRX C-RAW with vertical tiles".into()));
+        return Err(RawError::Unsupported(
+            "Canon CRX C-RAW with vertical tiles".into(),
+        ));
     }
-    if config.version == 0x200 && (config.levels != 3 || config.bit_depth != 14 || config.tile_width != config.width) {
-        return Err(RawError::Unsupported("Canon CRX version 0x200 requires a single-tile 14-bit Bayer C-RAW image".into()));
+    if config.version == 0x200
+        && (config.levels != 3 || config.bit_depth != 14 || config.tile_width != config.width)
+    {
+        return Err(RawError::Unsupported(
+            "Canon CRX version 0x200 requires a single-tile 14-bit Bayer C-RAW image".into(),
+        ));
     }
     if config.median_bit_depth.is_some() {
-        return Err(RawError::Unsupported("Canon CRX extended median-bit-depth header".into()));
+        return Err(RawError::Unsupported(
+            "Canon CRX extended median-bit-depth header".into(),
+        ));
     }
     Ok(())
 }
@@ -197,12 +247,17 @@ fn supports(config: &Cr3Compression) -> Result<()> {
 fn validate_planes(tiles: &[Tile], config: &Cr3Compression) -> Result<()> {
     for tile in tiles {
         for plane in &tile.planes {
-            if !plane.partial || plane.rounded_bits != 0 || plane.bands.len() != 1 + usize::from(config.levels) * 3 {
+            if !plane.partial
+                || plane.rounded_bits != 0
+                || plane.bands.len() != 1 + usize::from(config.levels) * 3
+            {
                 return Err(RawError::Unsupported("Canon CRX plane coding flags".into()));
             }
             for (index, band) in plane.bands.iter().enumerate() {
                 if band.partial {
-                    return Err(RawError::Unsupported("Canon CRX partial subband coding".into()));
+                    return Err(RawError::Unsupported(
+                        "Canon CRX partial subband coding".into(),
+                    ));
                 }
                 if config.levels != 0 {
                     match band.quant {
@@ -211,7 +266,9 @@ fn validate_planes(tiles: &[Tile], config: &Cr3Compression) -> Result<()> {
                         }
                         Quantization::Adaptive { gain, .. } => {
                             if index < 4 && gain != 0 {
-                                return Err(RawError::Unsupported("Canon CRX adaptive quantization subband parameters".into()));
+                                return Err(RawError::Unsupported(
+                                    "Canon CRX adaptive quantization subband parameters".into(),
+                                ));
                             }
                         }
                     }
@@ -223,7 +280,12 @@ fn validate_planes(tiles: &[Tile], config: &Cr3Compression) -> Result<()> {
 }
 
 fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
-    let (width, height, tw, th) = (config.width as usize, config.height as usize, config.tile_width as usize, config.tile_height as usize);
+    let (width, height, tw, th) = (
+        config.width as usize,
+        config.height as usize,
+        config.tile_width as usize,
+        config.tile_height as usize,
+    );
     if width == 0
         || height == 0
         || tw == 0
@@ -239,32 +301,52 @@ fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
     }
     let columns = width.div_ceil(tw);
     let rows = height.div_ceil(th);
-    let tile_count = columns.checked_mul(rows).filter(|&n| n <= MAX_TILES).ok_or(RawError::Limit("CRX tile count"))?;
+    let tile_count = columns
+        .checked_mul(rows)
+        .filter(|&n| n <= MAX_TILES)
+        .ok_or(RawError::Limit("CRX tile count"))?;
     let header_size = config.header_size as usize;
     if header_size > MAX_HEADER_BYTES {
         return Err(RawError::Limit("CRX header size"));
     }
-    let header = sample.get(..header_size).ok_or_else(|| corrupt("truncated tile headers"))?;
+    let header = sample
+        .get(..header_size)
+        .ok_or_else(|| corrupt("truncated tile headers"))?;
     let mut reader = Header { src: header, at: 0 };
     let mut data_at = header_size;
     let mut tiles = Vec::with_capacity(tile_count);
     for index in 0..tile_count {
         let modern = config.version == 0x200;
-        let body = reader.marker(if modern { 0xff11 } else { 0xff01 }, if modern { 16 } else { 8 })?;
-        let tile_size = usize::try_from(be32(body, 0)?).map_err(|_| RawError::Limit("CRX tile size"))?;
+        let body = reader.marker(
+            if modern { 0xff11 } else { 0xff01 },
+            if modern { 16 } else { 8 },
+        )?;
+        let tile_size =
+            usize::try_from(be32(body, 0)?).map_err(|_| RawError::Limit("CRX tile size"))?;
         if usize::from(be16(body, 4)?) != index {
             return Err(corrupt("tile index out of sequence"));
         }
-        let tile_end = data_at.checked_add(tile_size).filter(|&end| end <= sample.len()).ok_or_else(|| corrupt("tile data outside sample"))?;
+        let tile_end = data_at
+            .checked_add(tile_size)
+            .filter(|&end| end <= sample.len())
+            .ok_or_else(|| corrupt("tile data outside sample"))?;
         let qp = if modern {
             let length = be32(body, 8)? as usize;
             let padding = usize::from(be16(body, 12)?);
             if be16(body, 6)? != 0x4000 || be16(body, 14)? != 0 || length == 0 || padding > 7 {
-                return Err(RawError::Unsupported("Canon CRX adaptive quantization tile header".into()));
+                return Err(RawError::Unsupported(
+                    "Canon CRX adaptive quantization tile header".into(),
+                ));
             }
-            let end = data_at.checked_add(length).filter(|&end| end <= tile_end).ok_or_else(|| corrupt("QP data outside tile"))?;
+            let end = data_at
+                .checked_add(length)
+                .filter(|&end| end <= tile_end)
+                .ok_or_else(|| corrupt("QP data outside tile"))?;
             let data = data_at..end;
-            data_at = end.checked_add(padding).filter(|&end| end <= tile_end).ok_or_else(|| corrupt("QP padding outside tile"))?;
+            data_at = end
+                .checked_add(padding)
+                .filter(|&end| end <= tile_end)
+                .ok_or_else(|| corrupt("QP padding outside tile"))?;
             Some(data)
         } else {
             None
@@ -277,17 +359,30 @@ fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
             if flags >> 28 != u32::from(p) {
                 return Err(corrupt("plane index out of sequence"));
             }
-            let plane_end = data_at.checked_add(size).filter(|&end| end <= tile_end).ok_or_else(|| corrupt("plane size exceeds tile"))?;
+            let plane_end = data_at
+                .checked_add(size)
+                .filter(|&end| end <= tile_end)
+                .ok_or_else(|| corrupt("plane size exceeds tile"))?;
             let mut bands = Vec::with_capacity(usize::from(config.levels) * 3 + 1);
             for b in 0..u32::from(config.levels) * 3 + 1 {
-                let body = reader.marker(if modern { 0xff13 } else { 0xff03 }, if modern { 16 } else { 8 })?;
+                let body = reader.marker(
+                    if modern { 0xff13 } else { 0xff03 },
+                    if modern { 16 } else { 8 },
+                )?;
                 let band_size = be32(body, 0)? as usize;
                 let band_flags = be32(body, 4)?;
                 if band_flags >> 28 != b {
                     return Err(corrupt("band index out of sequence"));
                 }
-                let band_end = data_at.checked_add(band_size).filter(|&end| end <= plane_end).ok_or_else(|| corrupt("band size exceeds plane"))?;
-                let padding = if modern { usize::from(be16(body, 12)?) } else { (band_flags & 0x7ffff) as usize };
+                let band_end = data_at
+                    .checked_add(band_size)
+                    .filter(|&end| end <= plane_end)
+                    .ok_or_else(|| corrupt("band size exceeds plane"))?;
+                let padding = if modern {
+                    usize::from(be16(body, 12)?)
+                } else {
+                    (band_flags & 0x7ffff) as usize
+                };
                 if padding > band_size || (modern && padding > 7) {
                     return Err(corrupt("invalid band padding"));
                 }
@@ -296,9 +391,14 @@ fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
                     padding,
                     quant: if modern {
                         if be16(body, 14)? != 0 {
-                            return Err(RawError::Unsupported("Canon CRX adaptive subband reserved field".into()));
+                            return Err(RawError::Unsupported(
+                                "Canon CRX adaptive subband reserved field".into(),
+                            ));
                         }
-                        Quantization::Adaptive { base: be32(body, 8)?, gain: band_flags & 0x07ff_ffff }
+                        Quantization::Adaptive {
+                            base: be32(body, 8)?,
+                            gain: band_flags & 0x07ff_ffff,
+                        }
                     } else {
                         Quantization::Uniform(((band_flags >> 19) & 0xff) as u8)
                     },
@@ -309,15 +409,29 @@ fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
             if data_at != plane_end {
                 return Err(corrupt("band sizes do not sum to plane size"));
             }
-            planes.push(Plane { partial: flags & 0x0800_0000 != 0, rounded_bits: ((flags >> 25) & 3) as u8, bands });
+            planes.push(Plane {
+                partial: flags & 0x0800_0000 != 0,
+                rounded_bits: ((flags >> 25) & 3) as u8,
+                bands,
+            });
         }
         if data_at != tile_end {
             return Err(corrupt("plane sizes do not sum to tile size"));
         }
         let (x, y) = ((index % columns) * tw, (index / columns) * th);
-        tiles.push(Tile { x, y, width: tw.min(width - x), height: th.min(height - y), planes, qp });
+        tiles.push(Tile {
+            x,
+            y,
+            width: tw.min(width - x),
+            height: th.min(height - y),
+            planes,
+            qp,
+        });
     }
-    if header.get(reader.at..).is_none_or(|rest| rest.iter().any(|&byte| byte != 0)) {
+    if header
+        .get(reader.at..)
+        .is_none_or(|rest| rest.iter().any(|&byte| byte != 0))
+    {
         return Err(corrupt("unexpected bytes after tile headers"));
     }
     if data_at != sample.len() {
@@ -327,16 +441,24 @@ fn layout(sample: &[u8], config: &Cr3Compression) -> Result<Vec<Tile>> {
 }
 
 fn band_bytes<'a>(sample: &'a [u8], band: &Band) -> Result<&'a [u8]> {
-    let end =
-        band.data.end.checked_sub(band.padding).filter(|&end| end >= band.data.start).ok_or_else(|| corrupt("band padding exceeds its size"))?;
-    sample.get(band.data.start..end).ok_or_else(|| corrupt("band data outside sample"))
+    let end = band
+        .data
+        .end
+        .checked_sub(band.padding)
+        .filter(|&end| end >= band.data.start)
+        .ok_or_else(|| corrupt("band padding exceeds its size"))?;
+    sample
+        .get(band.data.start..end)
+        .ok_or_else(|| corrupt("band data outside sample"))
 }
 
 fn tile_qp(sample: &[u8], tile: &Tile) -> Result<Option<QpMap>> {
     tile.qp
         .as_ref()
         .map(|range| {
-            let bytes = sample.get(range.clone()).ok_or_else(|| corrupt("QP map outside sample"))?;
+            let bytes = sample
+                .get(range.clone())
+                .ok_or_else(|| corrupt("QP map outside sample"))?;
             qp_map(bytes, tile.width.div_ceil(16), tile.height.div_ceil(4))
         })
         .transpose()
@@ -348,27 +470,48 @@ fn quant_step(value: u8) -> Result<i32> {
     // continues it (step 102); it was checked against a measured step of about 100 on an EOS R50
     // C-RAW file. Nothing above 44 has been seen, so it stays rejected.
     if !(4..=44).contains(&value) {
-        return Err(RawError::Unsupported(format!("Canon CRX quantization value {value}")));
+        return Err(RawError::Unsupported(format!(
+            "Canon CRX quantization value {value}"
+        )));
     }
-    let scale = [40i32, 45, 51, 57, 64, 72].get(usize::from(value % 6)).copied().ok_or_else(|| corrupt("quantization table index"))?;
+    let scale = [40i32, 45, 51, 57, 64, 72]
+        .get(usize::from(value % 6))
+        .copied()
+        .ok_or_else(|| corrupt("quantization table index"))?;
     Ok((scale << (value / 6)) / 64)
 }
 
 fn split_dimension(length: usize, before: bool, after: bool) -> (usize, usize) {
-    (length.div_ceil(2) + usize::from(after && length.is_multiple_of(2)), length / 2 + usize::from(before) + usize::from(after))
+    (
+        length.div_ceil(2) + usize::from(after && length.is_multiple_of(2)),
+        length / 2 + usize::from(before) + usize::from(after),
+    )
 }
 
-fn wavelet_plane(sample: &[u8], plane: &Plane, width: usize, height: usize, edges: TileEdges, qp: Option<&QpMap>) -> Result<Vec<i32>> {
+fn wavelet_plane(
+    sample: &[u8],
+    plane: &Plane,
+    width: usize,
+    height: usize,
+    edges: TileEdges,
+    qp: Option<&QpMap>,
+) -> Result<Vec<i32>> {
     let mut dimensions = vec![(width, height)];
     let mut high_dimensions = Vec::new();
     for _ in 0..3 {
-        let &(w, h) = dimensions.last().ok_or_else(|| corrupt("missing wavelet dimensions"))?;
+        let &(w, h) = dimensions
+            .last()
+            .ok_or_else(|| corrupt("missing wavelet dimensions"))?;
         let (lw, hw) = split_dimension(w, edges.left, edges.right);
         let (lh, hh) = split_dimension(h, edges.top, edges.bottom);
         dimensions.push((lw, lh));
         high_dimensions.push([(hw, lh), (lw, hh), (hw, hh)]);
     }
-    let mut shapes = vec![*dimensions.last().ok_or_else(|| corrupt("missing LL dimensions"))?];
+    let mut shapes = vec![
+        *dimensions
+            .last()
+            .ok_or_else(|| corrupt("missing LL dimensions"))?,
+    ];
     for high in high_dimensions.iter().rev() {
         shapes.extend_from_slice(high);
     }
@@ -384,38 +527,67 @@ fn wavelet_plane(sample: &[u8], plane: &Plane, width: usize, height: usize, edge
             // entropy stream, then crop each row to the synthesis support.
             let mut decoded = None;
             for extra in 0..=2 {
-                let coded_width = w.checked_add(extra).ok_or(RawError::Limit("CRX band width"))?;
+                let coded_width = w
+                    .checked_add(extra)
+                    .ok_or(RawError::Limit("CRX band width"))?;
                 if let Ok(values) = high_frequency_band(bytes, coded_width, h) {
                     if extra == 0 {
                         decoded = Some(values);
                     } else {
                         let mut cropped = Vec::new();
-                        cropped.try_reserve_exact(w * h).map_err(|_| RawError::Limit("CRX cropped band allocation"))?;
+                        cropped
+                            .try_reserve_exact(w * h)
+                            .map_err(|_| RawError::Limit("CRX cropped band allocation"))?;
                         for row in values.chunks_exact(coded_width) {
-                            cropped.extend_from_slice(row.get(..w).ok_or_else(|| corrupt("band crop outside row"))?);
+                            cropped.extend_from_slice(
+                                row.get(..w)
+                                    .ok_or_else(|| corrupt("band crop outside row"))?,
+                            );
                         }
                         decoded = Some(cropped);
                     }
                     break;
                 }
             }
-            decoded.ok_or_else(|| RawError::Corrupt(format!("Canon CRX band {i}: unsupported geometry or corrupt entropy")))?
+            decoded.ok_or_else(|| {
+                RawError::Corrupt(format!(
+                    "Canon CRX band {i}: unsupported geometry or corrupt entropy"
+                ))
+            })?
         };
         for (position, value) in data.iter_mut().enumerate() {
             let step = match band.quant {
                 Quantization::Uniform(value) => quant_step(value)?,
-                Quantization::Adaptive { base, gain } => {
-                    adaptive_step(qp.ok_or_else(|| corrupt("missing QP map"))?, i, position % w, position / w, base, gain)?
-                }
+                Quantization::Adaptive { base, gain } => adaptive_step(
+                    qp.ok_or_else(|| corrupt("missing QP map"))?,
+                    i,
+                    position % w,
+                    position / w,
+                    base,
+                    gain,
+                )?,
             };
-            *value = value.checked_mul(step).ok_or_else(|| corrupt("dequantized coefficient overflow"))?;
+            *value = value
+                .checked_mul(step)
+                .ok_or_else(|| corrupt("dequantized coefficient overflow"))?;
         }
-        bands.push(WaveletBand { width: w, height: h, data });
+        bands.push(WaveletBand {
+            width: w,
+            height: h,
+            data,
+        });
     }
     crx_wavelet::reconstruct(&bands, width, height, 3, edges)
 }
 
-fn adaptive_step(map: &QpMap, band: usize, x: usize, y: usize, base: u32, gain: u32) -> Result<i32> {
+fn adaptive_step(
+    map: &QpMap,
+    band: usize,
+    x: usize,
+    y: usize,
+    base: u32,
+    gain: u32,
+) -> Result<i32> {
     let step = if gain == 0 {
         u64::from(base)
     } else {
@@ -424,25 +596,37 @@ fn adaptive_step(map: &QpMap, band: usize, x: usize, y: usize, base: u32, gain: 
         } else if (7..=9).contains(&band) {
             (y, x / 4)
         } else {
-            return Err(RawError::Unsupported("Canon CRX adaptive low-frequency quantization".into()));
+            return Err(RawError::Unsupported(
+                "Canon CRX adaptive low-frequency quantization".into(),
+            ));
         };
         if row >= map.height || column >= map.width {
             return Err(corrupt("QP coordinate outside map"));
         }
-        let index = row.checked_mul(map.width).and_then(|n| n.checked_add(column)).ok_or(RawError::Limit("CRX QP map index"))?;
-        let first = *map.data.get(index).ok_or_else(|| corrupt("QP coordinate outside map"))?;
+        let index = row
+            .checked_mul(map.width)
+            .and_then(|n| n.checked_add(column))
+            .ok_or(RawError::Limit("CRX QP map index"))?;
+        let first = *map
+            .data
+            .get(index)
+            .ok_or_else(|| corrupt("QP coordinate outside map"))?;
         let value = if band < 7 {
             // An odd-height map (R7: 4732 rows give 1183 QP rows) leaves the
             // last row of the coarser bands without a partner; it is used alone.
             let second_row = (row + 1).min(map.height - 1);
-            let second = *map.data.get(second_row * map.width + column).ok_or_else(|| corrupt("QP average outside map"))?;
+            let second = *map
+                .data
+                .get(second_row * map.width + column)
+                .ok_or_else(|| corrupt("QP average outside map"))?;
             (first + second) / 2
         } else {
             first
         };
         // QP rows are averaged before looking up the integer step. R8 field
         // mutations distinguish this order from averaging dequantization steps.
-        let quant = u8::try_from(value - 124).map_err(|_| corrupt("QP value outside quantization table"))?;
+        let quant = u8::try_from(value - 124)
+            .map_err(|_| corrupt("QP value outside quantization table"))?;
         u64::from(base) + u64::from(gain) * quant_step(quant)? as u64 / 8
     };
     i32::try_from(step.max(1)).map_err(|_| corrupt("adaptive quantization step outside precision"))
@@ -457,32 +641,54 @@ impl<'a> Header<'a> {
     fn marker(&mut self, wanted: u16, wanted_size: usize) -> Result<&'a [u8]> {
         let marker = be16(self.src, self.at)?;
         if marker == wanted + 0x10 {
-            return Err(RawError::Unsupported("Canon CRX ff11/ff12/ff13 marker family".into()));
+            return Err(RawError::Unsupported(
+                "Canon CRX ff11/ff12/ff13 marker family".into(),
+            ));
         }
         if marker != wanted {
             return Err(corrupt("unexpected tile/plane/band marker"));
         }
         let size = usize::from(be16(self.src, self.at + 2)?);
         if size != wanted_size {
-            return Err(RawError::Unsupported(format!("Canon CRX marker {marker:#x} header length {size}")));
+            return Err(RawError::Unsupported(format!(
+                "Canon CRX marker {marker:#x} header length {size}"
+            )));
         }
-        let start = self.at.checked_add(4).ok_or(RawError::Limit("CRX header offset"))?;
-        let end = start.checked_add(size).ok_or(RawError::Limit("CRX header offset"))?;
-        let body = self.src.get(start..end).ok_or_else(|| corrupt("truncated marker header"))?;
+        let start = self
+            .at
+            .checked_add(4)
+            .ok_or(RawError::Limit("CRX header offset"))?;
+        let end = start
+            .checked_add(size)
+            .ok_or(RawError::Limit("CRX header offset"))?;
+        let body = self
+            .src
+            .get(start..end)
+            .ok_or_else(|| corrupt("truncated marker header"))?;
         self.at = end;
         Ok(body)
     }
 }
 
 fn be16(src: &[u8], at: usize) -> Result<u16> {
-    let end = at.checked_add(2).ok_or(RawError::Limit("CRX header offset"))?;
-    let bytes = src.get(at..end).and_then(|s| <[u8; 2]>::try_from(s).ok()).ok_or_else(|| corrupt("truncated header field"))?;
+    let end = at
+        .checked_add(2)
+        .ok_or(RawError::Limit("CRX header offset"))?;
+    let bytes = src
+        .get(at..end)
+        .and_then(|s| <[u8; 2]>::try_from(s).ok())
+        .ok_or_else(|| corrupt("truncated header field"))?;
     Ok(u16::from_be_bytes(bytes))
 }
 
 fn be32(src: &[u8], at: usize) -> Result<u32> {
-    let end = at.checked_add(4).ok_or(RawError::Limit("CRX header offset"))?;
-    let bytes = src.get(at..end).and_then(|s| <[u8; 4]>::try_from(s).ok()).ok_or_else(|| corrupt("truncated header field"))?;
+    let end = at
+        .checked_add(4)
+        .ok_or(RawError::Limit("CRX header offset"))?;
+    let bytes = src
+        .get(at..end)
+        .and_then(|s| <[u8; 4]>::try_from(s).ok())
+        .ok_or_else(|| corrupt("truncated header field"))?;
     Ok(u32::from_be_bytes(bytes))
 }
 
@@ -513,7 +719,10 @@ impl Bits<'_> {
         // Near the end of the stream: bit by bit, so truncation is reported exactly.
         let mut value = 0;
         for _ in 0..count {
-            let byte = self.src.get(self.at / 8).ok_or_else(|| corrupt("truncated entropy stream"))?;
+            let byte = self
+                .src
+                .get(self.at / 8)
+                .ok_or_else(|| corrupt("truncated entropy stream"))?;
             value = (value << 1) | u32::from((byte >> (7 - self.at % 8)) & 1);
             self.at += 1;
         }
@@ -525,7 +734,11 @@ impl Bits<'_> {
         if let Some(window) = self.peek32().filter(|&w| w != 0) {
             let zeros = window.leading_zeros();
             self.at += zeros as usize + 1;
-            return if k <= 20 { Ok((zeros << k) | self.take(k)?) } else { Err(corrupt("Rice parameter exceeds sample precision")) };
+            return if k <= 20 {
+                Ok((zeros << k) | self.take(k)?)
+            } else {
+                Err(corrupt("Rice parameter exceeds sample precision"))
+            };
         }
         let mut zeros = 0;
         while self.take(1)? == 0 {
@@ -563,7 +776,11 @@ impl Bits<'_> {
     }
 
     fn finish(&self) -> Result<()> {
-        let bits = self.src.len().checked_mul(8).ok_or(RawError::Limit("CRX entropy length"))?;
+        let bits = self
+            .src
+            .len()
+            .checked_mul(8)
+            .ok_or(RawError::Limit("CRX entropy length"))?;
         if bits.saturating_sub(self.at) > 7 {
             return Err(corrupt("unconsumed entropy data"));
         }
@@ -606,7 +823,11 @@ fn median(left: i32, above: i32, corner: i32) -> i32 {
 fn run(bits: &mut Bits<'_>, index: &mut usize, remaining: usize) -> Result<usize> {
     let mut length = 1usize;
     while length < remaining {
-        let exponent = u32::from(*RUN_EXPONENT.get(*index).ok_or_else(|| corrupt("run index outside table"))?);
+        let exponent = u32::from(
+            *RUN_EXPONENT
+                .get(*index)
+                .ok_or_else(|| corrupt("run index outside table"))?,
+        );
         if bits.take(1)? == 0 {
             length += bits.take(exponent)? as usize;
             *index = index.saturating_sub(1);
@@ -631,24 +852,38 @@ fn lossless_plane(src: &[u8], width: usize, height: usize) -> Result<Vec<i32>> {
     // Grows per decoded row: a truncated stream fails before the whole plane is reserved.
     let mut output = Vec::new();
     let mut previous = Vec::new();
-    previous.try_reserve_exact(width).map_err(|_| RawError::Limit("CRX row allocation"))?;
+    previous
+        .try_reserve_exact(width)
+        .map_err(|_| RawError::Limit("CRX row allocation"))?;
     previous.resize(width, 0i32);
     let mut current = Vec::new();
-    current.try_reserve_exact(width).map_err(|_| RawError::Limit("CRX row allocation"))?;
+    current
+        .try_reserve_exact(width)
+        .map_err(|_| RawError::Limit("CRX row allocation"))?;
     current.resize(width, 0i32);
     let (mut k, mut run_index) = (0u32, 0usize);
     let mut bits = Bits { src, at: 0 };
     for y in 0..height {
         let mut x = 0;
-        let mut left = previous.first().copied().ok_or_else(|| corrupt("empty plane row"))?;
+        let mut left = previous
+            .first()
+            .copied()
+            .ok_or_else(|| corrupt("empty plane row"))?;
         while x < width {
             let mut interrupted = false;
-            let above = *previous.get(x).ok_or_else(|| corrupt("above sample outside row"))?;
+            let above = *previous
+                .get(x)
+                .ok_or_else(|| corrupt("above sample outside row"))?;
             let right = previous.get(x + 1).copied().unwrap_or(above);
             if x + 1 < width && left == above && left == right && bits.take(1)? != 0 {
                 let length = run(&mut bits, &mut run_index, width - x)?;
-                let end = x.checked_add(length).ok_or(RawError::Limit("CRX run length"))?;
-                current.get_mut(x..end).ok_or_else(|| corrupt("run outside row"))?.fill(left);
+                let end = x
+                    .checked_add(length)
+                    .ok_or(RawError::Limit("CRX run length"))?;
+                current
+                    .get_mut(x..end)
+                    .ok_or_else(|| corrupt("run outside row"))?
+                    .fill(left);
                 x = end;
                 if x == width {
                     continue;
@@ -656,26 +891,45 @@ fn lossless_plane(src: &[u8], width: usize, height: usize) -> Result<Vec<i32>> {
                 // A run interruption always uses regular prediction; no second run flag.
                 interrupted = true;
             }
-            let above = *previous.get(x).ok_or_else(|| corrupt("above sample outside row"))?;
-            let corner = if x == 0 { above } else { *previous.get(x - 1).ok_or_else(|| corrupt("corner sample outside row"))? };
+            let above = *previous
+                .get(x)
+                .ok_or_else(|| corrupt("above sample outside row"))?;
+            let corner = if x == 0 {
+                above
+            } else {
+                *previous
+                    .get(x - 1)
+                    .ok_or_else(|| corrupt("corner sample outside row"))?
+            };
             let right = previous.get(x + 1).copied().unwrap_or(above);
             let symbol = bits.rice(k)?;
-            let prediction = if interrupted { above } else { median(left, above, corner) };
+            let prediction = if interrupted {
+                above
+            } else {
+                median(left, above, corner)
+            };
             let value = prediction
                 .checked_add(signed(symbol))
                 .filter(|v| (-1_048_576..=1_048_575).contains(v))
                 .ok_or_else(|| RawError::Corrupt(format!("Canon CRX prediction outside precision at row {y}, column {x}, k {k}, symbol {symbol}")))?;
-            *current.get_mut(x).ok_or_else(|| corrupt("decoded sample outside row"))? = value;
+            *current
+                .get_mut(x)
+                .ok_or_else(|| corrupt("decoded sample outside row"))? = value;
             left = value;
             let estimate = if y > 0 && x + 1 < width {
-                symbol.checked_add(2 * right.abs_diff(above)).ok_or_else(|| corrupt("Rice estimate overflow"))? / 2
+                symbol
+                    .checked_add(2 * right.abs_diff(above))
+                    .ok_or_else(|| corrupt("Rice estimate overflow"))?
+                    / 2
             } else {
                 symbol
             };
             k = update_rice(k, estimate);
             x += 1;
         }
-        output.try_reserve(width).map_err(|_| RawError::Limit("CRX plane allocation"))?;
+        output
+            .try_reserve(width)
+            .map_err(|_| RawError::Limit("CRX plane allocation"))?;
         output.extend_from_slice(&current);
         std::mem::swap(&mut current, &mut previous);
     }
@@ -693,7 +947,9 @@ fn high_frequency_band(src: &[u8], width: usize, height: usize) -> Result<Vec<i3
     let mut output = Vec::new();
     let row = || -> Result<Vec<i32>> {
         let mut values = Vec::new();
-        values.try_reserve_exact(width).map_err(|_| RawError::Limit("CRX row allocation"))?;
+        values
+            .try_reserve_exact(width)
+            .map_err(|_| RawError::Limit("CRX row allocation"))?;
         values.resize(width, 0);
         Ok(values)
     };
@@ -704,17 +960,27 @@ fn high_frequency_band(src: &[u8], width: usize, height: usize) -> Result<Vec<i3
     for y in 0..height {
         let (mut x, mut left) = (0, 0);
         while x < width {
-            let above = *previous.get(x).ok_or_else(|| corrupt("above coefficient outside row"))?;
+            let above = *previous
+                .get(x)
+                .ok_or_else(|| corrupt("above coefficient outside row"))?;
             let right = previous.get(x + 1).copied().unwrap_or(above);
             let mut nonzero = false;
             if x + 1 < width && left == 0 && above == 0 && right == 0 {
                 if bits.take(1)? != 0 {
                     let length = run(&mut bits, &mut run_index, width - x)?;
-                    let end = x.checked_add(length).ok_or(RawError::Limit("CRX run length"))?;
-                    current.get_mut(x..end).ok_or_else(|| corrupt("coefficient run outside row"))?.fill(0);
+                    let end = x
+                        .checked_add(length)
+                        .ok_or(RawError::Limit("CRX run length"))?;
+                    current
+                        .get_mut(x..end)
+                        .ok_or_else(|| corrupt("coefficient run outside row"))?
+                        .fill(0);
                     // The upper-row context for a zero run is zero, although the
                     // current Rice parameter remains unchanged across the run.
-                    current_k.get_mut(x..end).ok_or_else(|| corrupt("Rice context run outside row"))?.fill(0);
+                    current_k
+                        .get_mut(x..end)
+                        .ok_or_else(|| corrupt("Rice context run outside row"))?
+                        .fill(0);
                     left = 0;
                     x = end;
                     if x == width {
@@ -726,24 +992,35 @@ fn high_frequency_band(src: &[u8], width: usize, height: usize) -> Result<Vec<i3
             let coded = bits.rice(k)?;
             // A zero-run flag 0 or its interruption proves that the coefficient
             // is nonzero. That context omits zero from the signed mapping.
-            let symbol = coded.checked_add(u32::from(nonzero)).ok_or_else(|| corrupt("coefficient symbol overflow"))?;
+            let symbol = coded
+                .checked_add(u32::from(nonzero))
+                .ok_or_else(|| corrupt("coefficient symbol overflow"))?;
             let value = signed(symbol);
             if !(-1_048_576..=1_048_575).contains(&value) {
                 return Err(corrupt("high-frequency coefficient outside precision"));
             }
-            *current.get_mut(x).ok_or_else(|| corrupt("coefficient outside row"))? = value;
+            *current
+                .get_mut(x)
+                .ok_or_else(|| corrupt("coefficient outside row"))? = value;
             left = value;
             k = update_rice(k, coded);
             if y > 0 && x + 1 < width {
-                let upper_right_k = *previous_k.get(x + 1).ok_or_else(|| corrupt("Rice context outside row"))? as u32;
+                let upper_right_k = *previous_k
+                    .get(x + 1)
+                    .ok_or_else(|| corrupt("Rice context outside row"))?
+                    as u32;
                 if upper_right_k > k + 1 {
                     k += 1;
                 }
             }
-            *current_k.get_mut(x).ok_or_else(|| corrupt("Rice context outside row"))? = k as i32;
+            *current_k
+                .get_mut(x)
+                .ok_or_else(|| corrupt("Rice context outside row"))? = k as i32;
             x += 1;
         }
-        output.try_reserve(width).map_err(|_| RawError::Limit("CRX coefficient allocation"))?;
+        output
+            .try_reserve(width)
+            .map_err(|_| RawError::Limit("CRX coefficient allocation"))?;
         output.extend_from_slice(&current);
         std::mem::swap(&mut current, &mut previous);
         std::mem::swap(&mut current_k, &mut previous_k);
@@ -754,12 +1031,18 @@ fn high_frequency_band(src: &[u8], width: usize, height: usize) -> Result<Vec<i3
 }
 
 fn qp_map(src: &[u8], width: usize, height: usize) -> Result<QpMap> {
-    let count = width.checked_mul(height).filter(|&n| width > 0 && n > 0 && n <= MAX_CRX_SAMPLES / 32).ok_or(RawError::Limit("CRX QP map size"))?;
+    let count = width
+        .checked_mul(height)
+        .filter(|&n| width > 0 && n > 0 && n <= MAX_CRX_SAMPLES / 32)
+        .ok_or(RawError::Limit("CRX QP map size"))?;
     let mut data = Vec::new();
-    data.try_reserve_exact(count).map_err(|_| RawError::Limit("CRX QP allocation"))?;
+    data.try_reserve_exact(count)
+        .map_err(|_| RawError::Limit("CRX QP allocation"))?;
     let row = || -> Result<Vec<i32>> {
         let mut values = Vec::new();
-        values.try_reserve_exact(width).map_err(|_| RawError::Limit("CRX QP row allocation"))?;
+        values
+            .try_reserve_exact(width)
+            .map_err(|_| RawError::Limit("CRX QP row allocation"))?;
         values.resize(width, 0);
         Ok(values)
     };
@@ -769,19 +1052,40 @@ fn qp_map(src: &[u8], width: usize, height: usize) -> Result<QpMap> {
     for y in 0..height {
         let mut left = *previous.first().ok_or_else(|| corrupt("empty QP row"))?;
         for x in 0..width {
-            let above = *previous.get(x).ok_or_else(|| corrupt("above QP outside row"))?;
-            let corner = if x == 0 { above } else { *previous.get(x - 1).ok_or_else(|| corrupt("corner QP outside row"))? };
+            let above = *previous
+                .get(x)
+                .ok_or_else(|| corrupt("above QP outside row"))?;
+            let corner = if x == 0 {
+                above
+            } else {
+                *previous
+                    .get(x - 1)
+                    .ok_or_else(|| corrupt("corner QP outside row"))?
+            };
             let right = previous.get(x + 1).copied().unwrap_or(above);
             // The map opens with its first symbol as a 32-bit literal; every later one is Rice coded.
-            let symbol = if x == 0 && y == 0 { (bits.take(16)? << 16) | bits.take(16)? } else { bits.qp_rice(k)? };
-            let value = median(left, above, corner).checked_add(signed(symbol)).ok_or_else(|| corrupt("QP prediction overflow"))?;
+            let symbol = if x == 0 && y == 0 {
+                (bits.take(16)? << 16) | bits.take(16)?
+            } else {
+                bits.qp_rice(k)?
+            };
+            let value = median(left, above, corner)
+                .checked_add(signed(symbol))
+                .ok_or_else(|| corrupt("QP prediction overflow"))?;
             if !(131..=168).contains(&value) {
-                return Err(RawError::Unsupported(format!("Canon CRX adaptive QP value {value}")));
+                return Err(RawError::Unsupported(format!(
+                    "Canon CRX adaptive QP value {value}"
+                )));
             }
-            *current.get_mut(x).ok_or_else(|| corrupt("QP outside row"))? = value;
+            *current
+                .get_mut(x)
+                .ok_or_else(|| corrupt("QP outside row"))? = value;
             left = value;
             let estimate = if y > 0 && x + 1 < width {
-                symbol.checked_add(2 * right.abs_diff(above)).ok_or_else(|| corrupt("QP Rice estimate overflow"))? / 2
+                symbol
+                    .checked_add(2 * right.abs_diff(above))
+                    .ok_or_else(|| corrupt("QP Rice estimate overflow"))?
+                    / 2
             } else {
                 symbol
             };
@@ -791,7 +1095,11 @@ fn qp_map(src: &[u8], width: usize, height: usize) -> Result<QpMap> {
         std::mem::swap(&mut current, &mut previous);
     }
     bits.finish()?;
-    Ok(QpMap { width, height, data })
+    Ok(QpMap {
+        width,
+        height,
+        data,
+    })
 }
 
 #[cfg(test)]
@@ -858,12 +1166,18 @@ mod tests {
     fn interrupted_run_predicts_from_above() {
         // First row [5, 5, 8, 9]. The next row runs three 5s, so interruption at
         // column 3 must predict the above sample 9, then add −2 to obtain 7.
-        assert_eq!(lossless_plane(&[0x00, 0x18, 0x2d, 0xdc], 4, 2).unwrap(), [5, 5, 8, 9, 5, 5, 5, 7]);
+        assert_eq!(
+            lossless_plane(&[0x00, 0x18, 0x2d, 0xdc], 4, 2).unwrap(),
+            [5, 5, 8, 9, 5, 5, 5, 7]
+        );
     }
 
     #[test]
     fn partial_final_run_segment_keeps_its_index() {
-        let mut bits = Bits { src: &[0xc0], at: 0 };
+        let mut bits = Bits {
+            src: &[0xc0],
+            at: 0,
+        };
         let mut index = 11;
         assert_eq!(run(&mut bits, &mut index, 6).unwrap(), 6);
         assert_eq!(index, 12);
@@ -899,7 +1213,10 @@ mod tests {
     #[test]
     fn high_frequency_zero_runs_and_nonzero_mapping() {
         assert_eq!(high_frequency_band(&[0xf0], 2, 2).unwrap(), [0, 0, 0, 0]);
-        assert_eq!(high_frequency_band(&[0x34, 0x80], 2, 2).unwrap(), [1, 0, -1, 1]);
+        assert_eq!(
+            high_frequency_band(&[0x34, 0x80], 2, 2).unwrap(),
+            [1, 0, -1, 1]
+        );
         assert!(high_frequency_band(&[0x34], 2, 2).is_err());
         assert!(high_frequency_band(&[0xf1], 2, 2).is_err());
     }
@@ -908,8 +1225,14 @@ mod tests {
     fn unsupported_wavelet_variant_is_explicit() {
         let mut config = coding();
         config.levels = 2;
-        assert!(matches!(decode(&flat_sample(), &config), Err(RawError::Unsupported(_))));
-        assert!(matches!(validate(&flat_sample(), &config), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            decode(&flat_sample(), &config),
+            Err(RawError::Unsupported(_))
+        ));
+        assert!(matches!(
+            validate(&flat_sample(), &config),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     #[test]
@@ -926,7 +1249,12 @@ mod tests {
         for plane in 0..4 {
             marker(&mut sample, 0xff02, 13, (plane << 28) | 0x0800_0000);
             for band in 0..10 {
-                marker(&mut sample, 0xff03, if band >= 7 { 2 } else { 1 }, (band << 28) | 0x0020_0000);
+                marker(
+                    &mut sample,
+                    0xff03,
+                    if band >= 7 { 2 } else { 1 },
+                    (band << 28) | 0x0020_0000,
+                );
             }
         }
         for _ in 0..4 {
@@ -960,7 +1288,12 @@ mod tests {
         for plane in 0..4 {
             marker(&mut sample, 0xff02, 20, (plane << 28) | 0x0800_0000);
             for band in 0..10 {
-                marker(&mut sample, 0xff03, [8, 1, 1, 1, 1, 1, 1, 2, 2, 2][band as usize], (band << 28) | 0x0020_0000);
+                marker(
+                    &mut sample,
+                    0xff03,
+                    [8, 1, 1, 1, 1, 1, 1, 2, 2, 2][band as usize],
+                    (band << 28) | 0x0020_0000,
+                );
             }
         }
         for _ in 0..4 {
@@ -982,14 +1315,36 @@ mod tests {
         assert_eq!(sensor_sample(8191, 8192, 16383, false).unwrap(), 16383);
         assert_eq!(sensor_sample(-8192, 8192, 16383, false).unwrap(), 0);
         // Lossless planes reproduce the sensor exactly: outside the bit depth is corrupt data.
-        assert!(matches!(sensor_sample(8192, 8192, 16383, false), Err(RawError::Corrupt(_))));
-        assert!(matches!(sensor_sample(-8193, 8192, 16383, false), Err(RawError::Corrupt(_))));
-        assert!(matches!(sensor_sample(i32::MAX, 8192, 16383, true), Err(RawError::Corrupt(_))));
+        assert!(matches!(
+            sensor_sample(8192, 8192, 16383, false),
+            Err(RawError::Corrupt(_))
+        ));
+        assert!(matches!(
+            sensor_sample(-8193, 8192, 16383, false),
+            Err(RawError::Corrupt(_))
+        ));
+        assert!(matches!(
+            sensor_sample(i32::MAX, 8192, 16383, true),
+            Err(RawError::Corrupt(_))
+        ));
     }
 
     #[test]
     fn measured_quantization_and_allocation_limits() {
-        for (quant, expected) in [(4, 1), (9, 1), (10, 2), (16, 4), (22, 8), (26, 12), (32, 25), (36, 40), (41, 72), (42, 80), (43, 90), (44, 102)] {
+        for (quant, expected) in [
+            (4, 1),
+            (9, 1),
+            (10, 2),
+            (16, 4),
+            (22, 8),
+            (26, 12),
+            (32, 25),
+            (36, 40),
+            (41, 72),
+            (42, 80),
+            (43, 90),
+            (44, 102),
+        ] {
             assert_eq!(quant_step(quant).unwrap(), expected);
         }
         assert!(matches!(quant_step(3), Err(RawError::Unsupported(_))));
@@ -1006,43 +1361,75 @@ mod tests {
     #[test]
     fn qp_escape_and_average_precede_the_quantization_table() {
         // 23 zeros, the terminating 1, then the symbol in 8 bits.
-        let mut bits = Bits { src: &[0, 0, 1, 0x18], at: 0 };
+        let mut bits = Bits {
+            src: &[0, 0, 1, 0x18],
+            at: 0,
+        };
         assert_eq!(bits.qp_rice(0).unwrap(), 24);
         assert_eq!(bits.at, 32);
         // 22 zeros are an ordinary Rice prefix.
-        let mut bits = Bits { src: &[0, 0, 2, 0], at: 0 };
+        let mut bits = Bits {
+            src: &[0, 0, 2, 0],
+            at: 0,
+        };
         assert_eq!(bits.qp_rice(0).unwrap(), 22);
         assert_eq!(bits.at, 23);
-        assert!(Bits { src: &[0, 0, 0, 0x80, 0], at: 0 }.qp_rice(0).is_err());
+        assert!(
+            Bits {
+                src: &[0, 0, 0, 0x80, 0],
+                at: 0
+            }
+            .qp_rice(0)
+            .is_err()
+        );
         // The map's first symbol is a 32-bit literal (300 = QP 150 from prediction 0).
         let map = qp_map(&[0, 0, 1, 0x2c, 0x94], 1, 4).unwrap();
         assert_eq!(map.data, [150; 4]);
         assert!(qp_map(&[0, 0, 1, 0x2c, 0x95], 1, 4).is_err());
-        let map = QpMap { width: 1, height: 2, data: vec![150, 153] };
+        let map = QpMap {
+            width: 1,
+            height: 2,
+            data: vec![150, 153],
+        };
         // floor((150+153)/2)=151; integer step 14, gain4/8 gives7. Averaging
         // the nonlinear steps, or rounding QP upward, incorrectly gives8.
         assert_eq!(adaptive_step(&map, 4, 0, 0, 0, 4).unwrap(), 7);
         assert_eq!(adaptive_step(&map, 7, 0, 0, 1, 4).unwrap(), 7);
         assert_eq!(adaptive_step(&map, 7, 0, 1, 0, 16).unwrap(), 36);
-        let low = QpMap { width: 1, height: 2, data: vec![131; 2] };
+        let low = QpMap {
+            width: 1,
+            height: 2,
+            data: vec![131; 2],
+        };
         assert_eq!(adaptive_step(&low, 4, 0, 0, 1, 1).unwrap(), 1);
         assert_eq!(adaptive_step(&low, 4, 0, 0, 0, 1).unwrap(), 1);
         assert_eq!(adaptive_step(&low, 0, 0, 0, 0, 0).unwrap(), 1);
-        assert!(matches!(qp_map(&[0, 0, 1, 4, 0x94], 1, 4), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            qp_map(&[0, 0, 1, 4, 0x94], 1, 4),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     #[test]
     fn qp_168_is_accepted_and_169_is_not() {
         assert_eq!(qp_map(&[0, 0, 1, 0x50, 0x94], 1, 4).unwrap().data, [168; 4]);
-        assert!(matches!(qp_map(&[0, 0, 1, 0x52, 0x94], 1, 4), Err(RawError::Unsupported(_))));
+        assert!(matches!(
+            qp_map(&[0, 0, 1, 0x52, 0x94], 1, 4),
+            Err(RawError::Unsupported(_))
+        ));
     }
 
     #[test]
     fn long_qp_prefixes_and_escapes_as_on_the_eos_r5_mark_ii() {
         // EOS R5 Mark II maps (QP 150–162) jump by up to 12 where k is 0: an 18-zero prefix that an
         // escape after 16 zeros misread, then a real escape (23 zeros, 1, symbol 23 = −12).
-        let src = [0x00, 0x00, 0x01, 0x2c, 0x90, 0x00, 0x01, 0x90, 0x00, 0x00, 0x08, 0xb8];
-        assert_eq!(qp_map(&src, 7, 1).unwrap().data, [150, 150, 150, 159, 159, 159, 147]);
+        let src = [
+            0x00, 0x00, 0x01, 0x2c, 0x90, 0x00, 0x01, 0x90, 0x00, 0x00, 0x08, 0xb8,
+        ];
+        assert_eq!(
+            qp_map(&src, 7, 1).unwrap().data,
+            [150, 150, 150, 159, 159, 159, 147]
+        );
         for end in 0..src.len() {
             assert!(qp_map(&src[..end], 7, 1).is_err());
         }
@@ -1052,10 +1439,17 @@ mod tests {
     fn odd_height_qp_map_uses_its_last_row_alone() {
         // EOS R7 C-RAW: 4732 sensor rows give a 1183-row QP map, so the last
         // row of the coarser high-frequency bands has no partner row.
-        let map = QpMap { width: 1, height: 3, data: vec![150, 153, 151] };
+        let map = QpMap {
+            width: 1,
+            height: 3,
+            data: vec![150, 153, 151],
+        };
         assert_eq!(adaptive_step(&map, 4, 0, 0, 0, 4).unwrap(), 7);
         // Row 2 alone is QP 151; averaging with a missing row would leave the table.
-        assert_eq!(adaptive_step(&map, 4, 0, 1, 0, 4).unwrap(), adaptive_step(&map, 7, 0, 2, 0, 4).unwrap());
+        assert_eq!(
+            adaptive_step(&map, 4, 0, 1, 0, 4).unwrap(),
+            adaptive_step(&map, 7, 0, 2, 0, 4).unwrap()
+        );
         assert!(adaptive_step(&map, 4, 0, 2, 0, 4).is_err());
     }
 
@@ -1107,7 +1501,9 @@ mod tests {
 
     #[test]
     fn optional_cc0_samples_match_external_oracle() {
-        let Some(directory) = std::env::var_os("LIGHTCRAFT_CR3_CORPUS") else { return };
+        let Some(directory) = std::env::var_os("LIGHTCRAFT_CR3_CORPUS") else {
+            return;
+        };
         for (name, expected) in [
             ("cr3-canon-r100-raw.cr3", 0xcbe5299ab9c52630u64),
             ("cr3-canon-m50-raw.cr3", 0x62261f0ba81cfcd2u64),
@@ -1123,9 +1519,19 @@ mod tests {
                 .tracks
                 .iter()
                 .filter_map(|track| {
-                    let lightcraft_meta::cr3::Cr3TrackKind::Raw { cmp1: Some((at, length)), .. } = track.kind else { return None };
+                    let lightcraft_meta::cr3::Cr3TrackKind::Raw {
+                        cmp1: Some((at, length)),
+                        ..
+                    } = track.kind
+                    else {
+                        return None;
+                    };
                     let coding = Cr3Compression::parse(bytes.get(at..at + length)?)?;
-                    Some((u64::from(coding.width) * u64::from(coding.height), coding, track.data?))
+                    Some((
+                        u64::from(coding.width) * u64::from(coding.height),
+                        coding,
+                        track.data?,
+                    ))
                 })
                 .collect::<Vec<_>>();
             candidates.sort_by_key(|entry| entry.0);
@@ -1134,7 +1540,9 @@ mod tests {
             let hash = sensor
                 .iter()
                 .flat_map(|value| value.to_le_bytes())
-                .fold(0xcbf29ce484222325u64, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3));
+                .fold(0xcbf29ce484222325u64, |hash, byte| {
+                    (hash ^ u64::from(byte)).wrapping_mul(0x100000001b3)
+                });
             assert_eq!(hash, expected, "{name}");
         }
     }

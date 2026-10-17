@@ -54,7 +54,10 @@ pub enum MigrationError {
 pub fn plan(migrations: &[Migration]) -> Result<Vec<PlannedMigration>, MigrationError> {
     let mut migrations = migrations.to_vec();
     migrations.sort_by_key(|migration| migration.version);
-    if migrations.windows(2).any(|pair| pair[0].version == pair[1].version) {
+    if migrations
+        .windows(2)
+        .any(|pair| pair[0].version == pair[1].version)
+    {
         return Err(MigrationError::DuplicateVersion);
     }
     Ok(migrations
@@ -102,8 +105,12 @@ pub async fn migrate(client: &mut Client, migrations: &[Migration]) -> Result<()
         return Err(MigrationError::DirtyHistory);
     }
 
-    let applied =
-        client.query(&format!("SELECT version, checksum FROM {HISTORY_TABLE}"), &[]).await?;
+    let applied = client
+        .query(
+            &format!("SELECT version, checksum FROM {HISTORY_TABLE}"),
+            &[],
+        )
+        .await?;
     for row in &applied {
         let version = row.try_get::<_, i64>(0)?;
         let Some(expected) = plan.iter().find(|migration| migration.version == version) else {
@@ -116,7 +123,10 @@ pub async fn migrate(client: &mut Client, migrations: &[Migration]) -> Result<()
     }
 
     for migration in plan {
-        if applied.iter().any(|row| row.try_get::<_, i64>(0).ok() == Some(migration.version)) {
+        if applied
+            .iter()
+            .any(|row| row.try_get::<_, i64>(0).ok() == Some(migration.version))
+        {
             continue;
         }
         let source = migrations
@@ -134,7 +144,12 @@ pub async fn migrate(client: &mut Client, migrations: &[Migration]) -> Result<()
                      (version, description, success, checksum, execution_time) \
                      VALUES ($1, $2, TRUE, $3, $4)"
                 ),
-                &[&migration.version, &migration.description, &migration.checksum, &execution_time],
+                &[
+                    &migration.version,
+                    &migration.description,
+                    &migration.checksum,
+                    &execution_time,
+                ],
             )
             .await?;
         transaction.commit().await?;
@@ -153,20 +168,44 @@ mod tests {
     #[test]
     fn plan_orders_versions_and_uses_sql_as_the_checksum_source() {
         let migrations = [
-            Migration { version: 20, description: "later", sql: "CREATE TABLE later(id BIGINT)" },
-            Migration { version: 10, description: "first", sql: "CREATE TABLE first(id BIGINT)" },
+            Migration {
+                version: 20,
+                description: "later",
+                sql: "CREATE TABLE later(id BIGINT)",
+            },
+            Migration {
+                version: 10,
+                description: "first",
+                sql: "CREATE TABLE first(id BIGINT)",
+            },
         ];
         let plan = plan(&migrations).unwrap();
-        assert_eq!(plan.iter().map(|migration| migration.version).collect::<Vec<_>>(), [10, 20]);
+        assert_eq!(
+            plan.iter()
+                .map(|migration| migration.version)
+                .collect::<Vec<_>>(),
+            [10, 20]
+        );
         assert_ne!(plan[0].checksum, plan[1].checksum);
     }
 
     #[test]
     fn plan_rejects_duplicate_versions_before_database_access() {
         let migrations = [
-            Migration { version: 1, description: "a", sql: "SELECT 1" },
-            Migration { version: 1, description: "b", sql: "SELECT 2" },
+            Migration {
+                version: 1,
+                description: "a",
+                sql: "SELECT 1",
+            },
+            Migration {
+                version: 1,
+                description: "b",
+                sql: "SELECT 2",
+            },
         ];
-        assert!(matches!(plan(&migrations), Err(MigrationError::DuplicateVersion)));
+        assert!(matches!(
+            plan(&migrations),
+            Err(MigrationError::DuplicateVersion)
+        ));
     }
 }

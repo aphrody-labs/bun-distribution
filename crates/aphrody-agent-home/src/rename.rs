@@ -108,10 +108,10 @@ fn is_boundary(after: &str) -> bool {
                 || c.is_whitespace() =>
         {
             true
-        },
-        Some('.' | ';' | ':') => {
-            chars.next().is_none_or(|n| n.is_whitespace() || matches!(n, '"' | '\''))
-        },
+        }
+        Some('.' | ';' | ':') => chars
+            .next()
+            .is_none_or(|n| n.is_whitespace() || matches!(n, '"' | '\'')),
         Some(_) => false,
     }
 }
@@ -143,10 +143,12 @@ pub fn replace_path_refs(text: &str, old: &str, new: &str) -> (String, usize) {
 
 fn rewrite_agent_id(text: &str, old_id: &str, new_id: &str) -> Option<String> {
     let (fm, _) = frontmatter::split(text);
-    let current = frontmatter::parse(fm?).into_iter().find_map(|(k, v)| match (k.as_str(), v) {
-        ("agent_id", frontmatter::FmValue::Scalar(s)) => Some(s),
-        _ => None,
-    })?;
+    let current = frontmatter::parse(fm?)
+        .into_iter()
+        .find_map(|(k, v)| match (k.as_str(), v) {
+            ("agent_id", frontmatter::FmValue::Scalar(s)) => Some(s),
+            _ => None,
+        })?;
     (current.trim() == old_id)
         .then(|| frontmatter::upsert_scalars(text, &[("agent_id", Some(new_id))]))
 }
@@ -182,7 +184,9 @@ fn plan_home(
             continue;
         }
         let original = std::fs::read(&file.abs).map_err(|e| HomeError::io(&file.abs, e))?;
-        let Ok(text) = std::str::from_utf8(&original) else { continue };
+        let Ok(text) = std::str::from_utf8(&original) else {
+            continue;
+        };
         let (mut updated, mut replacements) = replace_path_refs(text, &old_s, &new_s);
         if is_memory_or_user(&file.path)
             && let Some(rewritten) = rewrite_agent_id(&updated, old_id, new_id)
@@ -214,11 +218,17 @@ fn plan_state(state: &Path, from: &Path, to: &Path) -> Result<Vec<Planned>, Home
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => continue,
             Err(e) => return Err(HomeError::io(&path, e)),
         };
-        let Ok(text) = std::str::from_utf8(&original) else { continue };
+        let Ok(text) = std::str::from_utf8(&original) else {
+            continue;
+        };
         // JSON escapes backslashes: rewrite the escaped form too (Windows paths).
         let (updated, a) = replace_path_refs(text, &old_s, &new_s);
         let (updated, b) = if old_s.contains('\\') {
-            replace_path_refs(&updated, &old_s.replace('\\', "\\\\"), &new_s.replace('\\', "\\\\"))
+            replace_path_refs(
+                &updated,
+                &old_s.replace('\\', "\\\\"),
+                &new_s.replace('\\', "\\\\"),
+            )
         } else {
             (updated, 0)
         };
@@ -244,7 +254,11 @@ fn apply_rewrites(
     done: &mut Vec<(PathBuf, Option<Vec<u8>>)>,
 ) -> Result<(), HomeError> {
     for p in home_plan.iter().chain(state_plan) {
-        let path = if p.in_home { to_path.join(&p.rel_or_abs) } else { p.rel_or_abs.clone() };
+        let path = if p.in_home {
+            to_path.join(&p.rel_or_abs)
+        } else {
+            p.rel_or_abs.clone()
+        };
         write_atomic(&path, p.updated.as_bytes())?;
         done.push((path, Some(p.original.clone())));
     }
@@ -276,18 +290,24 @@ pub fn rename_home(opts: &RenameOptions) -> Result<RenameReport, HomeError> {
     let to_id = opts.to.trim().to_string();
     let to_path = opts.root.new_home_path(&to_id)?;
     if to_path == from_path {
-        return Err(HomeError::InvalidHomeName(format!("{to_id} resolves to the current home")));
+        return Err(HomeError::InvalidHomeName(format!(
+            "{to_id} resolves to the current home"
+        )));
     }
     if to_path.exists() {
         return Err(HomeError::HomeExists(to_path));
     }
-    let from_id =
-        UserProfile::load(&from_path)?.agent_id.unwrap_or_else(|| opts.from.trim().to_string());
+    let from_id = UserProfile::load(&from_path)?
+        .agent_id
+        .unwrap_or_else(|| opts.from.trim().to_string());
 
     let home_plan = plan_home(&from_path, &to_path, &from_id, &to_id)?;
     let state_plan = plan_state(&opts.root.state, &from_path, &to_path)?;
-    let dir_name =
-        |p: &Path| p.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+    let dir_name = |p: &Path| {
+        p.file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    };
     let mut report = RenameReport {
         from_path: from_path.clone(),
         to_path: to_path.clone(),
@@ -296,11 +316,17 @@ pub fn rename_home(opts: &RenameOptions) -> Result<RenameReport, HomeError> {
         applied: false,
         home_rewrites: home_plan
             .iter()
-            .map(|p| Rewrite { path: to_path.join(&p.rel_or_abs), replacements: p.replacements })
+            .map(|p| Rewrite {
+                path: to_path.join(&p.rel_or_abs),
+                replacements: p.replacements,
+            })
             .collect(),
         reference_rewrites: state_plan
             .iter()
-            .map(|p| Rewrite { path: p.rel_or_abs.clone(), replacements: p.replacements })
+            .map(|p| Rewrite {
+                path: p.rel_or_abs.clone(),
+                replacements: p.replacements,
+            })
             .collect(),
         namespace_before: ProfileServiceContext::new(
             &from_path,
@@ -350,8 +376,11 @@ mod tests {
 
     #[test]
     fn replaces_only_on_path_boundaries() {
-        let (s, n) =
-            replace_path_refs("/h/ab /h/abc \"/h/ab\" /h/ab/x /h/ab.bak /h/ab.", "/h/ab", "/h/z");
+        let (s, n) = replace_path_refs(
+            "/h/ab /h/abc \"/h/ab\" /h/ab/x /h/ab.bak /h/ab.",
+            "/h/ab",
+            "/h/z",
+        );
         assert_eq!(s, "/h/z /h/abc \"/h/z\" /h/z/x /h/ab.bak /h/z.");
         assert_eq!(n, 4);
     }
@@ -361,17 +390,37 @@ mod tests {
         let root = HomesRoot::resolve_with(state.path(), None, None);
         let home = root.path.join("local");
         let hs = home.display().to_string();
-        write(&home, "USER.md", "---\nname: Sam\nagent_id: local\n---\n\nNotes.\n");
-        write(&home, "MEMORY.md", &format!("---\nagent_id: local\n---\n\nSee {hs}/memory.\n"));
-        write(&home, "memory/2026-10-06.md", "---\nagent_id: local\n---\n\nfact\n");
-        write(&home, "memory/other.md", "---\nagent_id: someone-else\n---\n\nkeep\n");
+        write(
+            &home,
+            "USER.md",
+            "---\nname: Sam\nagent_id: local\n---\n\nNotes.\n",
+        );
+        write(
+            &home,
+            "MEMORY.md",
+            &format!("---\nagent_id: local\n---\n\nSee {hs}/memory.\n"),
+        );
+        write(
+            &home,
+            "memory/2026-10-06.md",
+            "---\nagent_id: local\n---\n\nfact\n",
+        );
+        write(
+            &home,
+            "memory/other.md",
+            "---\nagent_id: someone-else\n---\n\nkeep\n",
+        );
         write(&home, "avatar.png", "binary local");
         write(
             state.path(),
             "config.toml",
             &format!("[profiles.local]\ninstructions = \"Use {hs}.\"\nother = \"{hs}x\"\n"),
         );
-        write(state.path(), "aphrody.json", &format!("{{\"workspace\": \"{hs}\"}}"));
+        write(
+            state.path(),
+            "aphrody.json",
+            &format!("{{\"workspace\": \"{hs}\"}}"),
+        );
         (state, root, home)
     }
 
@@ -419,7 +468,10 @@ mod tests {
         assert!(note.contains("agent_id: discord:42") && note.contains("fact"));
         let other = std::fs::read_to_string(new.join("memory/other.md")).unwrap();
         assert!(other.contains("agent_id: someone-else"));
-        assert_eq!(std::fs::read_to_string(new.join("avatar.png")).unwrap(), "binary local");
+        assert_eq!(
+            std::fs::read_to_string(new.join("avatar.png")).unwrap(),
+            "binary local"
+        );
         let cfg = std::fs::read_to_string(state.path().join("config.toml")).unwrap();
         assert!(cfg.contains(&format!("Use {ns}.")));
         // Not a path boundary: untouched.
@@ -438,9 +490,21 @@ mod tests {
             to: to.into(),
             apply: true,
         };
-        assert!(matches!(rename_home(&mk("local", "taken")), Err(HomeError::HomeExists(_))));
-        assert!(matches!(rename_home(&mk("ghost", "x")), Err(HomeError::HomeNotFound(_))));
-        assert!(matches!(rename_home(&mk("local", "::")), Err(HomeError::InvalidHomeName(_))));
-        assert!(matches!(rename_home(&mk("local", "LOCAL")), Err(HomeError::InvalidHomeName(_))));
+        assert!(matches!(
+            rename_home(&mk("local", "taken")),
+            Err(HomeError::HomeExists(_))
+        ));
+        assert!(matches!(
+            rename_home(&mk("ghost", "x")),
+            Err(HomeError::HomeNotFound(_))
+        ));
+        assert!(matches!(
+            rename_home(&mk("local", "::")),
+            Err(HomeError::InvalidHomeName(_))
+        ));
+        assert!(matches!(
+            rename_home(&mk("local", "LOCAL")),
+            Err(HomeError::InvalidHomeName(_))
+        ));
     }
 }

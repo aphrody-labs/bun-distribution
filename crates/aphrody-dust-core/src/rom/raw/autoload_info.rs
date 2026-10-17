@@ -97,7 +97,11 @@ pub enum RawAutoloadInfoError {
 impl AutoloadInfoEntry {
     fn check_size(data: &'_ [u8]) -> Result<(), RawAutoloadInfoError> {
         let size = size_of::<Self>();
-        if data.len().is_multiple_of(size) { Ok(()) } else { InvalidSizeSnafu {}.fail() }
+        if data.len().is_multiple_of(size) {
+            Ok(())
+        } else {
+            InvalidSizeSnafu {}.fail()
+        }
     }
 
     fn handle_pod_cast<T>(
@@ -183,7 +187,11 @@ impl Display for DisplayAutoloadInfo<'_> {
         let i = " ".repeat(self.indent);
         let info = &self.info;
         writeln!(f, "{i}Type .......... : {}", info.kind)?;
-        writeln!(f, "{i}Base address .. : {:#x}", info.list_entry.base_address)?;
+        writeln!(
+            f,
+            "{i}Base address .. : {:#x}",
+            info.list_entry.base_address
+        )?;
         writeln!(f, "{i}Code size ..... : {:#x}", info.list_entry.code_size)?;
         writeln!(f, "{i}.bss size ..... : {:#x}", info.list_entry.bss_size)?;
         Ok(())

@@ -31,11 +31,18 @@ pub fn value(xmp: &str, key: &str) -> Option<String> {
 }
 
 fn unescape(s: &str) -> String {
-    s.replace("&lt;", "<").replace("&gt;", ">").replace("&quot;", "\"").replace("&apos;", "'").replace("&amp;", "&")
+    s.replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&apos;", "'")
+        .replace("&amp;", "&")
 }
 
 fn esc(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
 }
 
 /// A PDF date (`D:YYYYMMDDHHmmSSOHH'mm'`) as an XMP (ISO 8601) date.
@@ -46,13 +53,24 @@ pub fn iso_date(pdf: &str) -> Option<String> {
         return None;
     }
     let part = |a: usize, b: usize, def: &str| digits.get(a..b).unwrap_or(def).to_string();
-    let (y, mo, da, h, mi, s) = (part(0, 4, "0000"), part(4, 6, "01"), part(6, 8, "01"), part(8, 10, "00"), part(10, 12, "00"), part(12, 14, "00"));
+    let (y, mo, da, h, mi, s) = (
+        part(0, 4, "0000"),
+        part(4, 6, "01"),
+        part(6, 8, "01"),
+        part(8, 10, "00"),
+        part(10, 12, "00"),
+        part(12, 14, "00"),
+    );
     let rest = &d[digits.len()..];
     let tz = match rest.chars().next() {
         Some('Z') | None => "Z".to_string(),
         Some(sign @ ('+' | '-')) => {
             let t: String = rest[1..].chars().filter(|c| c.is_ascii_digit()).collect();
-            format!("{sign}{}:{}", t.get(0..2).unwrap_or("00"), t.get(2..4).unwrap_or("00"))
+            format!(
+                "{sign}{}:{}",
+                t.get(0..2).unwrap_or("00"),
+                t.get(2..4).unwrap_or("00")
+            )
         }
         _ => "Z".to_string(),
     };
@@ -61,7 +79,10 @@ pub fn iso_date(pdf: &str) -> Option<String> {
 
 fn info(doc: &Document, key: &str) -> Option<String> {
     let i = doc.trailer().get(b"Info").map(|i| doc.resolve(i))?;
-    i.as_dict()?.get(key.as_bytes()).and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text())).filter(|s| !s.is_empty())
+    i.as_dict()?
+        .get(key.as_bytes())
+        .and_then(|v| doc.resolve(v).as_string().map(|s| s.to_text()))
+        .filter(|s| !s.is_empty())
 }
 
 /// The XMP packet for `doc` declaring `level`, from its document information.
@@ -71,7 +92,10 @@ pub fn packet(doc: &Document, level: crate::Level) -> String {
         props.push_str(&format!("   <dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">{}</rdf:li></rdf:Alt></dc:title>\n", esc(&t)));
     }
     if let Some(a) = info(doc, "Author") {
-        props.push_str(&format!("   <dc:creator><rdf:Seq><rdf:li>{}</rdf:li></rdf:Seq></dc:creator>\n", esc(&a)));
+        props.push_str(&format!(
+            "   <dc:creator><rdf:Seq><rdf:li>{}</rdf:li></rdf:Seq></dc:creator>\n",
+            esc(&a)
+        ));
     }
     if let Some(s) = info(doc, "Subject") {
         props.push_str(&format!("   <dc:description><rdf:Alt><rdf:li xml:lang=\"x-default\">{}</rdf:li></rdf:Alt></dc:description>\n", esc(&s)));
@@ -83,7 +107,10 @@ pub fn packet(doc: &Document, level: crate::Level) -> String {
         props.push_str(&format!("   <pdf:Producer>{}</pdf:Producer>\n", esc(&p)));
     }
     if let Some(c) = info(doc, "Creator") {
-        props.push_str(&format!("   <xmp:CreatorTool>{}</xmp:CreatorTool>\n", esc(&c)));
+        props.push_str(&format!(
+            "   <xmp:CreatorTool>{}</xmp:CreatorTool>\n",
+            esc(&c)
+        ));
     }
     if let Some(d) = info(doc, "CreationDate").and_then(|d| iso_date(&d)) {
         props.push_str(&format!("   <xmp:CreateDate>{d}</xmp:CreateDate>\n"));
@@ -127,9 +154,18 @@ mod tests {
 
     #[test]
     fn pdf_dates_become_iso_dates() {
-        assert_eq!(iso_date("D:20240105093000+01'00'").as_deref(), Some("2024-01-05T09:30:00+01:00"));
-        assert_eq!(iso_date("D:20240105").as_deref(), Some("2024-01-05T00:00:00Z"));
-        assert_eq!(iso_date("D:20240105120000Z").as_deref(), Some("2024-01-05T12:00:00Z"));
+        assert_eq!(
+            iso_date("D:20240105093000+01'00'").as_deref(),
+            Some("2024-01-05T09:30:00+01:00")
+        );
+        assert_eq!(
+            iso_date("D:20240105").as_deref(),
+            Some("2024-01-05T00:00:00Z")
+        );
+        assert_eq!(
+            iso_date("D:20240105120000Z").as_deref(),
+            Some("2024-01-05T12:00:00Z")
+        );
         assert_eq!(iso_date("junk"), None);
     }
 }

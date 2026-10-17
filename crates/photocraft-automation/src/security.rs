@@ -38,10 +38,14 @@ pub enum LineRead {
 /// `TooLong` leaves the bytes read so far in `line` (lossily decoded); the rest of that line is
 /// still unread unless `line` ends with a newline (see [`discard_rest_of_line`]). A line within
 /// the limit that is not UTF-8 is an `InvalidData` error, and the whole line has been consumed.
-pub fn read_bounded_line(reader: &mut impl BufRead, line: &mut String) -> std::io::Result<LineRead> {
+pub fn read_bounded_line(
+    reader: &mut impl BufRead,
+    line: &mut String,
+) -> std::io::Result<LineRead> {
     line.clear();
     let mut bytes = Vec::new();
-    let n = std::io::Read::take(reader, (MAX_REQUEST_BYTES + 1) as u64).read_until(b'\n', &mut bytes)?;
+    let n = std::io::Read::take(reader, (MAX_REQUEST_BYTES + 1) as u64)
+        .read_until(b'\n', &mut bytes)?;
     if n == 0 {
         Ok(LineRead::Eof)
     } else if n > MAX_REQUEST_BYTES {
@@ -49,7 +53,8 @@ pub fn read_bounded_line(reader: &mut impl BufRead, line: &mut String) -> std::i
         line.push_str(&String::from_utf8_lossy(&bytes));
         Ok(LineRead::TooLong)
     } else {
-        *line = String::from_utf8(bytes).map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        *line = String::from_utf8(bytes)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
         Ok(LineRead::Line)
     }
 }
@@ -74,7 +79,8 @@ pub fn discard_rest_of_line(reader: &mut impl BufRead) -> std::io::Result<()> {
 /// Generate a 256-bit bearer token with the operating system CSPRNG.
 pub fn generate_token() -> Result<String, AutomationError> {
     let mut bytes = [0u8; TOKEN_BYTES];
-    getrandom::fill(&mut bytes).map_err(|e| AutomationError::Other(format!("cannot generate control token: {e}")))?;
+    getrandom::fill(&mut bytes)
+        .map_err(|e| AutomationError::Other(format!("cannot generate control token: {e}")))?;
     let mut token = String::with_capacity(TOKEN_HEX_LEN);
     const HEX: &[u8; 16] = b"0123456789abcdef";
     for byte in bytes {
@@ -87,7 +93,9 @@ pub fn generate_token() -> Result<String, AutomationError> {
 /// Accept only the fixed-width hexadecimal representation emitted by [`generate_token`].
 pub fn validate_token(token: &str) -> Result<(), AutomationError> {
     if token.len() != TOKEN_HEX_LEN || !token.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(AutomationError::BadRequest("control token must contain exactly 64 hexadecimal characters".into()));
+        return Err(AutomationError::BadRequest(
+            "control token must contain exactly 64 hexadecimal characters".into(),
+        ));
     }
     Ok(())
 }
@@ -97,7 +105,11 @@ pub fn token_matches(expected: &str, supplied: &str) -> bool {
     if expected.len() != TOKEN_HEX_LEN || supplied.len() != TOKEN_HEX_LEN {
         return false;
     }
-    expected.bytes().zip(supplied.bytes()).fold(0u8, |different, (a, b)| different | (a ^ b)) == 0
+    expected
+        .bytes()
+        .zip(supplied.bytes())
+        .fold(0u8, |different, (a, b)| different | (a ^ b))
+        == 0
 }
 
 /// Validate the first TCP frame without exposing any control method before authentication.
@@ -105,16 +117,30 @@ pub fn authentication_reply(line: &str, expected_token: &str) -> (Value, bool) {
     let req: Value = match serde_json::from_str(line) {
         Ok(v) => v,
         Err(_) => {
-            return (json!({"id": null, "ok": false, "error": "authentication required"}), false);
+            return (
+                json!({"id": null, "ok": false, "error": "authentication required"}),
+                false,
+            );
         }
     };
     let id = req.get("id").cloned().unwrap_or(Value::Null);
-    let supplied = req.get("params").and_then(|p| p.get("token")).and_then(Value::as_str).unwrap_or("");
-    let ok = req.get("method").and_then(Value::as_str) == Some(AUTH_METHOD) && token_matches(expected_token, supplied);
+    let supplied = req
+        .get("params")
+        .and_then(|p| p.get("token"))
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let ok = req.get("method").and_then(Value::as_str) == Some(AUTH_METHOD)
+        && token_matches(expected_token, supplied);
     if ok {
-        (json!({"id": id, "ok": true, "result": {"authenticated": true}}), true)
+        (
+            json!({"id": id, "ok": true, "result": {"authenticated": true}}),
+            true,
+        )
     } else {
-        (json!({"id": id, "ok": false, "error": "authentication required"}), false)
+        (
+            json!({"id": id, "ok": false, "error": "authentication required"}),
+            false,
+        )
     }
 }
 
@@ -131,7 +157,8 @@ pub fn repeat_auth_reply(line: &str) -> Option<Value> {
 }
 
 fn read_token_file(path: &Path) -> Result<String, AutomationError> {
-    let token = std::fs::read_to_string(path).map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))?;
+    let token = std::fs::read_to_string(path)
+        .map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))?;
     let token = token.trim().to_owned();
     validate_token(&token)?;
     Ok(token)
@@ -139,7 +166,8 @@ fn read_token_file(path: &Path) -> Result<String, AutomationError> {
 
 fn create_token_file(path: &Path, token: &str) -> Result<(), AutomationError> {
     if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
-        std::fs::create_dir_all(parent).map_err(|e| AutomationError::Io(format!("{}: {e}", parent.display())))?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AutomationError::Io(format!("{}: {e}", parent.display())))?;
     }
     let mut options = OpenOptions::new();
     options.write(true).create_new(true);
@@ -148,15 +176,22 @@ fn create_token_file(path: &Path, token: &str) -> Result<(), AutomationError> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    let mut file = options.open(path).map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))?;
+    let mut file = options
+        .open(path)
+        .map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))?;
     writeln!(file, "{token}").map_err(|e| AutomationError::Io(format!("{}: {e}", path.display())))
 }
 
 /// Resolve a server token. With no supplied token or file, a fresh token is returned.
 /// A missing token file is created atomically; an existing one is read and validated.
-pub fn server_token(supplied: Option<&str>, token_file: Option<&Path>) -> Result<String, AutomationError> {
+pub fn server_token(
+    supplied: Option<&str>,
+    token_file: Option<&Path>,
+) -> Result<String, AutomationError> {
     if supplied.is_some() && token_file.is_some() {
-        return Err(AutomationError::BadRequest("use either a control token or a control token file, not both".into()));
+        return Err(AutomationError::BadRequest(
+            "use either a control token or a control token file, not both".into(),
+        ));
     }
     if let Some(token) = supplied {
         validate_token(token)?;
@@ -183,9 +218,14 @@ pub fn server_token(supplied: Option<&str>, token_file: Option<&Path>) -> Result
 }
 
 /// Resolve the token used by a client. Clients never silently generate credentials.
-pub fn client_token(supplied: Option<&str>, token_file: Option<&Path>) -> Result<String, AutomationError> {
+pub fn client_token(
+    supplied: Option<&str>,
+    token_file: Option<&Path>,
+) -> Result<String, AutomationError> {
     if supplied.is_some() && token_file.is_some() {
-        return Err(AutomationError::BadRequest("use either a control token or a control token file, not both".into()));
+        return Err(AutomationError::BadRequest(
+            "use either a control token or a control token file, not both".into(),
+        ));
     }
     if let Some(token) = supplied {
         validate_token(token)?;
@@ -209,7 +249,10 @@ pub struct ConnectionLimiter {
 
 impl ConnectionLimiter {
     pub fn new(max: usize) -> Arc<Self> {
-        Arc::new(Self { active: AtomicUsize::new(0), max })
+        Arc::new(Self {
+            active: AtomicUsize::new(0),
+            max,
+        })
     }
 
     pub fn try_acquire(self: &Arc<Self>) -> Option<ConnectionPermit> {
@@ -218,8 +261,17 @@ impl ConnectionLimiter {
             if current >= self.max {
                 return None;
             }
-            match self.active.compare_exchange_weak(current, current + 1, Ordering::AcqRel, Ordering::Acquire) {
-                Ok(_) => return Some(ConnectionPermit { limiter: Arc::clone(self) }),
+            match self.active.compare_exchange_weak(
+                current,
+                current + 1,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => {
+                    return Some(ConnectionPermit {
+                        limiter: Arc::clone(self),
+                    });
+                }
                 Err(actual) => current = actual,
             }
         }
@@ -243,9 +295,13 @@ pub fn configure_stream(stream: &std::net::TcpStream) -> std::io::Result<()> {
 }
 
 /// Environment-aware token inputs shared by the desktop app and CLI.
-pub fn token_inputs(supplied: Option<String>, token_file: Option<PathBuf>) -> (Option<String>, Option<PathBuf>) {
+pub fn token_inputs(
+    supplied: Option<String>,
+    token_file: Option<PathBuf>,
+) -> (Option<String>, Option<PathBuf>) {
     let supplied = supplied.or_else(|| std::env::var("PHOTOCRAFT_CONTROL_TOKEN").ok());
-    let token_file = token_file.or_else(|| std::env::var_os("PHOTOCRAFT_CONTROL_TOKEN_FILE").map(PathBuf::from));
+    let token_file =
+        token_file.or_else(|| std::env::var_os("PHOTOCRAFT_CONTROL_TOKEN_FILE").map(PathBuf::from));
     (supplied, token_file)
 }
 
@@ -269,10 +325,16 @@ mod tests {
         let input = format!("{}\n", "x".repeat(MAX_REQUEST_BYTES + 1));
         let mut reader = std::io::Cursor::new(input);
         let mut line = String::new();
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap(), LineRead::TooLong);
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line).unwrap(),
+            LineRead::TooLong
+        );
         assert_eq!(line.len(), MAX_REQUEST_BYTES + 1);
         discard_rest_of_line(&mut reader).unwrap();
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap(), LineRead::Eof);
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line).unwrap(),
+            LineRead::Eof
+        );
     }
 
     #[test]
@@ -281,21 +343,36 @@ mod tests {
         let input = format!("xx{}\nnext\n", "é".repeat(MAX_REQUEST_BYTES / 2));
         let mut reader = std::io::Cursor::new(input);
         let mut line = String::new();
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap(), LineRead::TooLong);
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line).unwrap(),
+            LineRead::TooLong
+        );
         discard_rest_of_line(&mut reader).unwrap();
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap(), LineRead::Line);
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line).unwrap(),
+            LineRead::Line
+        );
         assert_eq!(line, "next\n");
         // Invalid UTF-8 consumes its whole line, so the next read starts on the next line.
         let mut reader = std::io::Cursor::new(b"\xff\xfe\nnext\n".to_vec());
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap_err().kind(), std::io::ErrorKind::InvalidData);
-        assert_eq!(read_bounded_line(&mut reader, &mut line).unwrap(), LineRead::Line);
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidData
+        );
+        assert_eq!(
+            read_bounded_line(&mut reader, &mut line).unwrap(),
+            LineRead::Line
+        );
         assert_eq!(line, "next\n");
     }
 
     #[test]
     fn authentication_does_not_dispatch_without_the_token() {
         let token = generate_token().unwrap();
-        let (reply, authenticated) = authentication_reply(r#"{"id":1,"method":"methods","params":{}}"#, &token);
+        let (reply, authenticated) =
+            authentication_reply(r#"{"id":1,"method":"methods","params":{}}"#, &token);
         assert!(!authenticated);
         assert_eq!(reply["error"], "authentication required");
         assert!(reply.get("result").is_none());
@@ -308,7 +385,8 @@ mod tests {
 
     #[test]
     fn repeat_auth_on_an_authenticated_connection_says_so() {
-        let line = json!({"id": 3, "method": AUTH_METHOD, "params": {"token": "anything"}}).to_string();
+        let line =
+            json!({"id": 3, "method": AUTH_METHOD, "params": {"token": "anything"}}).to_string();
         let reply = repeat_auth_reply(&line).unwrap();
         assert_eq!(reply["id"], 3);
         assert_eq!(reply["ok"], false);
@@ -319,7 +397,11 @@ mod tests {
 
     #[test]
     fn token_file_round_trips_between_server_and_client() {
-        let path = std::env::temp_dir().join(format!("photocraft-control-token-{}-{}.txt", std::process::id(), generate_token().unwrap()));
+        let path = std::env::temp_dir().join(format!(
+            "photocraft-control-token-{}-{}.txt",
+            std::process::id(),
+            generate_token().unwrap()
+        ));
         let server = server_token(None, Some(&path)).unwrap();
         let client = client_token(None, Some(&path)).unwrap();
         assert_eq!(server, client);

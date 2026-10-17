@@ -19,7 +19,12 @@ impl Default for BoolEncoder {
 
 impl BoolEncoder {
     pub fn new() -> Self {
-        BoolEncoder { out: Vec::new(), range: 255, bottom: 0, bit_count: 24 }
+        BoolEncoder {
+            out: Vec::new(),
+            range: 255,
+            bottom: 0,
+            bit_count: 24,
+        }
     }
 
     /// Propagates a carry into the bytes already written (never past the start: the coded
@@ -146,7 +151,13 @@ mod tests {
             for i in 0..2 {
                 value = (value << 8) | u32::from(input.get(i).copied().unwrap_or(0));
             }
-            BoolDecoder { input, pos: 2, range: 255, value, bit_count: 0 }
+            BoolDecoder {
+                input,
+                pos: 2,
+                range: 255,
+                value,
+                bit_count: 0,
+            }
         }
         fn get(&mut self, prob: u8) -> bool {
             let split = 1 + (((self.range - 1) * u32::from(prob)) >> 8);

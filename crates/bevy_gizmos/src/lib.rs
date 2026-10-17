@@ -59,6 +59,7 @@ pub mod prelude {
 
     #[doc(hidden)]
     pub use crate::{
+        AppGizmoBuilder, GizmoAsset,
         config::{
             DefaultGizmoConfigGroup, GizmoConfig, GizmoConfigGroup, GizmoConfigStore,
             GizmoLineConfig, GizmoLineJoint, GizmoLineStyle,
@@ -67,7 +68,6 @@ pub mod prelude {
         global::gizmo,
         primitives::{dim2::GizmoPrimitive2d, dim3::GizmoPrimitive3d},
         retained::Gizmo,
-        AppGizmoBuilder, GizmoAsset,
     };
 
     #[doc(hidden)]

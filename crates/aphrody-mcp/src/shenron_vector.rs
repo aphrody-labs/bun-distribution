@@ -85,9 +85,13 @@ pub(crate) async fn index_document(
     if matches!(current, Ok(Ok(Some(_)))) {
         return true;
     }
-    let passage = format!("{title}. {content}").chars().take(1200).collect::<String>();
-    let Some(embedding) =
-        embed(&passage, "passage").await.and_then(|values| vector::from_f64(&values))
+    let passage = format!("{title}. {content}")
+        .chars()
+        .take(1200)
+        .collect::<String>();
+    let Some(embedding) = embed(&passage, "passage")
+        .await
+        .and_then(|values| vector::from_f64(&values))
     else {
         return false;
     };
@@ -135,7 +139,12 @@ async fn embed(text: &str, kind: &str) -> Option<Vec<f64>> {
         .json()
         .await
         .ok()?;
-    let values = payload.get("data")?.as_array()?.first()?.get("embedding")?.as_array()?;
+    let values = payload
+        .get("data")?
+        .as_array()?
+        .first()?
+        .get("embedding")?
+        .as_array()?;
     if values.len() != 384 {
         return None;
     }

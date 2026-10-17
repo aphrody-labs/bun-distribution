@@ -14,8 +14,8 @@ use bevy_ecs::{
 };
 use bevy_input::keyboard::{KeyCode, KeyboardInput};
 use bevy_input_focus::{
-    tab_navigation::{NavAction, TabGroup, TabNavigation},
     FocusCause, FocusedInput, InputFocus, InputFocusVisible,
+    tab_navigation::{NavAction, TabGroup, TabNavigation},
 };
 use bevy_log::warn;
 use bevy_picking::events::PointerPress;

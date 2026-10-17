@@ -36,7 +36,15 @@ pub fn signature(img: &Image) -> Signature {
     let mut n = 0.0;
     for p in &img.data {
         let a = p[3];
-        let c = if a > 1e-6 { [p[0] / a * a.min(1.0), p[1] / a * a.min(1.0), p[2] / a * a.min(1.0)] } else { [0.0; 3] };
+        let c = if a > 1e-6 {
+            [
+                p[0] / a * a.min(1.0),
+                p[1] / a * a.min(1.0),
+                p[2] / a * a.min(1.0),
+            ]
+        } else {
+            [0.0; 3]
+        };
         let b = |v: f32| ((v.clamp(0.0, 1.0) * BINS as f32) as usize).min(BINS - 1);
         hist[b(c[0]) * BINS * BINS + b(c[1]) * BINS + b(c[2])] += 1.0;
         n += 1.0;
@@ -49,7 +57,11 @@ pub fn signature(img: &Image) -> Signature {
     let long = img.width.max(img.height).max(1);
     let thumb = if long > THUMB {
         let s = THUMB as f64 / long as f64;
-        crate::resample(img, ((img.width as f64 * s).round() as u32).max(8), ((img.height as f64 * s).round() as u32).max(8))
+        crate::resample(
+            img,
+            ((img.width as f64 * s).round() as u32).max(8),
+            ((img.height as f64 * s).round() as u32).max(8),
+        )
     } else {
         img.clone()
     };
@@ -62,7 +74,13 @@ fn luma(p: [f32; 4]) -> f32 {
 
 /// Dissimilarity of consecutive frames, 0 (same) … 1 (unrelated).
 pub fn dissimilarity(a: &Signature, b: &Signature) -> f32 {
-    let hist: f32 = a.hist.iter().zip(&b.hist).map(|(x, y)| (x - y).abs()).sum::<f32>() * 0.5;
+    let hist: f32 = a
+        .hist
+        .iter()
+        .zip(&b.hist)
+        .map(|(x, y)| (x - y).abs())
+        .sum::<f32>()
+        * 0.5;
     let (ta, tb) = (&a.thumb, &b.thumb);
     let motion = if ta.width == tb.width && ta.height == tb.height && !ta.is_empty() {
         let f = block_flow(tb, ta, 8, 4);
@@ -72,7 +90,10 @@ pub fn dissimilarity(a: &Signature, b: &Signature) -> f32 {
         for y in 0..tb.height {
             for x in 0..tb.width {
                 let v = f.at(x as f64 + 0.5, y as f64 + 0.5);
-                let pa = ta.sample_bilinear_clamped(x as f64 + 0.5 + v[0] as f64, y as f64 + 0.5 + v[1] as f64);
+                let pa = ta.sample_bilinear_clamped(
+                    x as f64 + 0.5 + v[0] as f64,
+                    y as f64 + 0.5 + v[1] as f64,
+                );
                 err += (luma(pa) - luma(tb.data[tb.idx(x, y)])).abs();
                 n += 1.0;
             }
@@ -100,7 +121,12 @@ pub struct CutOpts {
 
 impl Default for CutOpts {
     fn default() -> Self {
-        CutOpts { threshold: 0.25, peak_ratio: 3.0, window: 4, min_shot: 2 }
+        CutOpts {
+            threshold: 0.25,
+            peak_ratio: 3.0,
+            window: 4,
+            min_shot: 2,
+        }
     }
 }
 
@@ -108,7 +134,12 @@ impl Default for CutOpts {
 pub fn scores(frames: &[Image]) -> Vec<f32> {
     let sigs: Vec<Signature> = frames.par_iter().map(signature).collect();
     let mut out = vec![0.0];
-    out.extend((1..sigs.len()).into_par_iter().map(|i| dissimilarity(&sigs[i - 1], &sigs[i])).collect::<Vec<_>>());
+    out.extend(
+        (1..sigs.len())
+            .into_par_iter()
+            .map(|i| dissimilarity(&sigs[i - 1], &sigs[i]))
+            .collect::<Vec<_>>(),
+    );
     out
 }
 

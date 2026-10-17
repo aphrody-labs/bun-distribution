@@ -26,7 +26,11 @@ pub fn dot(a: V3, b: V3) -> f64 {
     a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
 }
 pub fn cross(a: V3, b: V3) -> V3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 pub fn norm(a: V3) -> f64 {
     dot(a, a).sqrt()
@@ -40,7 +44,11 @@ pub fn mv(m: &M3, v: V3) -> V3 {
 }
 /// `mᵀ v`.
 pub fn mtv(m: &M3, v: V3) -> V3 {
-    [m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2], m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2], m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2]]
+    [
+        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
+        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2],
+        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2],
+    ]
 }
 pub fn mm(a: &M3, b: &M3) -> M3 {
     let mut o = [[0.0; 3]; 3];
@@ -52,7 +60,11 @@ pub fn mm(a: &M3, b: &M3) -> M3 {
     o
 }
 pub fn mt(a: &M3) -> M3 {
-    [[a[0][0], a[1][0], a[2][0]], [a[0][1], a[1][1], a[2][1]], [a[0][2], a[1][2], a[2][2]]]
+    [
+        [a[0][0], a[1][0], a[2][0]],
+        [a[0][1], a[1][1], a[2][1]],
+        [a[0][2], a[1][2], a[2][2]],
+    ]
 }
 pub fn madd(a: &M3, b: &M3, k: f64) -> M3 {
     let mut o = *a;
@@ -67,13 +79,19 @@ pub fn mscale(a: &M3, k: f64) -> M3 {
     madd(&[[0.0; 3]; 3], a, k)
 }
 pub fn det3(m: &M3) -> f64 {
-    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
 }
 pub fn skew(v: V3) -> M3 {
     [[0.0, -v[2], v[1]], [v[2], 0.0, -v[0]], [-v[1], v[0], 0.0]]
 }
 pub fn outer(a: V3, b: V3) -> M3 {
-    [[a[0] * b[0], a[0] * b[1], a[0] * b[2]], [a[1] * b[0], a[1] * b[1], a[1] * b[2]], [a[2] * b[0], a[2] * b[1], a[2] * b[2]]]
+    [
+        [a[0] * b[0], a[0] * b[1], a[0] * b[2]],
+        [a[1] * b[0], a[1] * b[1], a[1] * b[2]],
+        [a[2] * b[0], a[2] * b[1], a[2] * b[2]],
+    ]
 }
 pub fn col(m: &M3, j: usize) -> V3 {
     [m[0][j], m[1][j], m[2][j]]
@@ -86,8 +104,13 @@ pub fn inv3(m: &M3) -> Option<M3> {
     if d.abs() < 1e-300 {
         return None;
     }
-    let c = |r0: usize, c0: usize, r1: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
-    let adj = [[c(1, 1, 2, 2), -c(0, 1, 2, 2), c(0, 1, 1, 2)], [-c(1, 0, 2, 2), c(0, 0, 2, 2), -c(0, 0, 1, 2)], [c(1, 0, 2, 1), -c(0, 0, 2, 1), c(0, 0, 1, 1)]];
+    let c =
+        |r0: usize, c0: usize, r1: usize, c1: usize| m[r0][c0] * m[r1][c1] - m[r0][c1] * m[r1][c0];
+    let adj = [
+        [c(1, 1, 2, 2), -c(0, 1, 2, 2), c(0, 1, 1, 2)],
+        [-c(1, 0, 2, 2), c(0, 0, 2, 2), -c(0, 0, 1, 2)],
+        [c(1, 0, 2, 1), -c(0, 0, 2, 1), c(0, 0, 1, 1)],
+    ];
     Some(mscale(&adj, 1.0 / d))
 }
 
@@ -114,7 +137,9 @@ pub fn log_rot(r: &M3) -> V3 {
     if std::f64::consts::PI - th < 1e-6 {
         // Near π: the axis is the dominant column of R + I.
         let b = madd(r, &I3, 1.0);
-        let j = (0..3).max_by(|&a, &bb| b[a][a].total_cmp(&b[bb][bb])).unwrap_or(0);
+        let j = (0..3)
+            .max_by(|&a, &bb| b[a][a].total_cmp(&b[bb][bb]))
+            .unwrap_or(0);
         let axis = normalize(col(&b, j));
         return scale(axis, th);
     }
@@ -192,7 +217,14 @@ pub fn svd(a: &[f64], m: usize, n: usize) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
             break;
         }
     }
-    let mut s: Vec<f64> = (0..n).map(|j| (0..rows).map(|r| u[r * n + j] * u[r * n + j]).sum::<f64>().sqrt()).collect();
+    let mut s: Vec<f64> = (0..n)
+        .map(|j| {
+            (0..rows)
+                .map(|r| u[r * n + j] * u[r * n + j])
+                .sum::<f64>()
+                .sqrt()
+        })
+        .collect();
     for (j, sj) in s.iter().enumerate() {
         if *sj > 1e-300 {
             for r in 0..rows {
@@ -363,7 +395,11 @@ pub struct Similarity {
 
 impl Default for Similarity {
     fn default() -> Self {
-        Similarity { s: 1.0, r: I3, t: [0.0; 3] }
+        Similarity {
+            s: 1.0,
+            r: I3,
+            t: [0.0; 3],
+        }
     }
 }
 
@@ -397,7 +433,11 @@ pub fn umeyama(src: &[V3], dst: &[V3]) -> Option<Similarity> {
     if det3(&u) * det3(&v) < 0.0 {
         sgn[2] = -1.0;
     }
-    let ud = from_cols(scale(col(&u, 0), sgn[0]), scale(col(&u, 1), sgn[1]), scale(col(&u, 2), sgn[2]));
+    let ud = from_cols(
+        scale(col(&u, 0), sgn[0]),
+        scale(col(&u, 1), sgn[1]),
+        scale(col(&u, 2), sgn[2]),
+    );
     let r = mm(&ud, &mt(&v));
     let s = (d[0] * sgn[0] + d[1] * sgn[1] + d[2] * sgn[2]) / var;
     let t = sub(md, scale(mv(&r, ms), s));
@@ -409,7 +449,11 @@ pub fn umeyama(src: &[V3], dst: &[V3]) -> Option<Similarity> {
 pub fn euler_xyz(m: &M3) -> V3 {
     let sy = (-m[2][0]).clamp(-1.0, 1.0);
     let y = sy.asin();
-    let (x, z) = if sy.abs() < 0.999_999 { (m[2][1].atan2(m[2][2]), m[1][0].atan2(m[0][0])) } else { ((-m[1][2]).atan2(m[1][1]), 0.0) };
+    let (x, z) = if sy.abs() < 0.999_999 {
+        (m[2][1].atan2(m[2][2]), m[1][0].atan2(m[0][0]))
+    } else {
+        ((-m[1][2]).atan2(m[1][1]), 0.0)
+    };
     [x.to_degrees(), y.to_degrees(), z.to_degrees()]
 }
 
@@ -463,20 +507,38 @@ mod tests {
         let (vals, vecs) = sym_eigen(&a, 3);
         for k in 0..3 {
             let v = [vecs[k], vecs[3 + k], vecs[6 + k]];
-            let av = [dot([a[0], a[1], a[2]], v), dot([a[3], a[4], a[5]], v), dot([a[6], a[7], a[8]], v)];
+            let av = [
+                dot([a[0], a[1], a[2]], v),
+                dot([a[3], a[4], a[5]], v),
+                dot([a[6], a[7], a[8]], v),
+            ];
             assert!(norm(sub(av, scale(v, vals[k]))) < 1e-10);
         }
         let mut m = a;
         let mut b = [1.0, 2.0, 3.0];
         assert!(cholesky_solve(&mut m, 3, &mut b));
-        let r = [dot([a[0], a[1], a[2]], b), dot([a[3], a[4], a[5]], b), dot([a[6], a[7], a[8]], b)];
+        let r = [
+            dot([a[0], a[1], a[2]], b),
+            dot([a[3], a[4], a[5]], b),
+            dot([a[6], a[7], a[8]], b),
+        ];
         assert!(norm(sub(r, [1.0, 2.0, 3.0])) < 1e-12);
     }
 
     #[test]
     fn umeyama_recovers_a_similarity() {
-        let t = Similarity { s: 2.5, r: rodrigues([0.1, 0.4, -0.3]), t: [1.0, -2.0, 5.0] };
-        let src = [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 2.0, 3.0]];
+        let t = Similarity {
+            s: 2.5,
+            r: rodrigues([0.1, 0.4, -0.3]),
+            t: [1.0, -2.0, 5.0],
+        };
+        let src = [
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 2.0, 3.0],
+        ];
         let dst: Vec<V3> = src.iter().map(|p| t.apply(*p)).collect();
         let e = umeyama(&src, &dst).unwrap();
         assert!((e.s - 2.5).abs() < 1e-10);

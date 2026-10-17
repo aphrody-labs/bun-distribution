@@ -77,12 +77,19 @@ pub(crate) enum AwesomeAction {
 
 /// Comma-separated preset keys, derived from the single `aphrody_git::PRESETS` table.
 pub(crate) fn preset_names() -> String {
-    PRESETS.iter().map(|(key, ..)| *key).collect::<Vec<_>>().join(", ")
+    PRESETS
+        .iter()
+        .map(|(key, ..)| *key)
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Help line for the `awesome` command group, listing every known preset.
 pub(crate) fn awesome_about() -> String {
-    format!("Curated Awesome lists ecosystem (presets: {})", preset_names())
+    format!(
+        "Curated Awesome lists ecosystem (presets: {})",
+        preset_names()
+    )
 }
 
 fn preset_arg_help(prefix: &str) -> String {
@@ -91,7 +98,13 @@ fn preset_arg_help(prefix: &str) -> String {
 
 pub(crate) async fn execute_docs(action: DocsAction) -> miette::Result<()> {
     match action {
-        DocsAction::Search { query, limit, github, digest, json } => {
+        DocsAction::Search {
+            query,
+            limit,
+            github,
+            digest,
+            json,
+        } => {
             if !github {
                 eprintln!(
                     "{}",
@@ -116,10 +129,10 @@ pub(crate) async fn execute_docs(action: DocsAction) -> miette::Result<()> {
             } else {
                 println!("{}", report.to_markdown());
             }
-        },
+        }
         DocsAction::Awesome { action } => {
             execute_awesome(action).await?;
-        },
+        }
     }
     Ok(())
 }
@@ -137,11 +150,19 @@ pub(crate) async fn execute_awesome(action: AwesomeAction) -> miette::Result<()>
                 );
                 println!("    {}\n", desc);
             }
-        },
-        AwesomeAction::Fetch { source, enrich, json } => {
-            eprintln!("{}", format!("Fetching Awesome list for '{source}'...").cyan());
-            let mut index =
-                fetch_awesome_list(&source).await.map_err(|e| miette::miette!("{e}"))?;
+        }
+        AwesomeAction::Fetch {
+            source,
+            enrich,
+            json,
+        } => {
+            eprintln!(
+                "{}",
+                format!("Fetching Awesome list for '{source}'...").cyan()
+            );
+            let mut index = fetch_awesome_list(&source)
+                .await
+                .map_err(|e| miette::miette!("{e}"))?;
 
             if enrich {
                 eprintln!(
@@ -161,11 +182,20 @@ pub(crate) async fn execute_awesome(action: AwesomeAction) -> miette::Result<()>
             } else {
                 println!("{}", index.to_markdown());
             }
-        },
-        AwesomeAction::Search { query, preset, json } => {
-            eprintln!("{}", format!("Searching Awesome ecosystem for: '{query}'...").cyan());
+        }
+        AwesomeAction::Search {
+            query,
+            preset,
+            json,
+        } => {
+            eprintln!(
+                "{}",
+                format!("Searching Awesome ecosystem for: '{query}'...").cyan()
+            );
             let items = if let Some(ref p) = preset {
-                let index = fetch_awesome_list(p).await.map_err(|e| miette::miette!("{e}"))?;
+                let index = fetch_awesome_list(p)
+                    .await
+                    .map_err(|e| miette::miette!("{e}"))?;
                 index.search(&query)
             } else {
                 let presets: Vec<&str> = PRESETS.iter().map(|(p, _, _, _)| *p).collect();
@@ -194,13 +224,21 @@ pub(crate) async fn execute_awesome(action: AwesomeAction) -> miette::Result<()>
                     println!();
                 }
             }
-        },
+        }
         AwesomeAction::Digest { source, category } => {
-            eprintln!("{}", format!("Building Awesome LLM digest for '{source}'...").cyan());
-            let index = fetch_awesome_list(&source).await.map_err(|e| miette::miette!("{e}"))?;
+            eprintln!(
+                "{}",
+                format!("Building Awesome LLM digest for '{source}'...").cyan()
+            );
+            let index = fetch_awesome_list(&source)
+                .await
+                .map_err(|e| miette::miette!("{e}"))?;
 
             let mut out = format!("# LLM Context Digest: Awesome {}\n\n", index.name);
-            out.push_str(&format!("Source: https://github.com/{}\n\n", index.repository));
+            out.push_str(&format!(
+                "Source: https://github.com/{}\n\n",
+                index.repository
+            ));
 
             for cat in &index.categories {
                 if let Some(ref filter) = category
@@ -218,7 +256,7 @@ pub(crate) async fn execute_awesome(action: AwesomeAction) -> miette::Result<()>
                 out.push('\n');
             }
             println!("{out}");
-        },
+        }
     }
     Ok(())
 }

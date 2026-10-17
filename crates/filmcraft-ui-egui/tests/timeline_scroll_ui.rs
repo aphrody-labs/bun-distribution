@@ -20,10 +20,15 @@ struct Driver {
 impl Driver {
     fn demo() -> Self {
         let mut session = Session::default();
-        session.execute("file.openDemoProject", json!({})).expect("demo project");
+        session
+            .execute("file.openDemoProject", json!({}))
+            .expect("demo project");
         let (tx, rx) = channel();
         let app = FilmcraftApp::new(session).with_control(rx);
-        let harness = Harness::builder().with_size(egui::vec2(1600.0, 980.0)).with_max_steps(10_000).build_eframe(move |_cc| app);
+        let harness = Harness::builder()
+            .with_size(egui::vec2(1600.0, 980.0))
+            .with_max_steps(10_000)
+            .build_eframe(move |_cc| app);
         let mut d = Driver { harness, tx };
         d.frames(4);
         d
@@ -58,7 +63,10 @@ impl Driver {
     }
 
     fn exec(&mut self, command: &str, params: Value) -> Value {
-        self.ok("engine.execute", json!({"command": command, "params": params}))
+        self.ok(
+            "engine.execute",
+            json!({"command": command, "params": params}),
+        )
     }
 }
 
@@ -69,7 +77,13 @@ impl Driver {
 
     fn rect(&mut self, id: &str) -> [f32; 4] {
         let v = self.ok("ui.elements", json!({"prefix": id}));
-        let e = v.as_array().unwrap().iter().find(|e| e["id"] == json!(id)).unwrap_or_else(|| panic!("no element {id}")).clone();
+        let e = v
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|e| e["id"] == json!(id))
+            .unwrap_or_else(|| panic!("no element {id}"))
+            .clone();
         let r = e["rect"].as_array().unwrap();
         [0, 1, 2, 3].map(|k| r[k].as_f64().unwrap() as f32)
     }
@@ -105,7 +119,12 @@ impl Driver {
     }
 
     fn seconds(&mut self) -> f64 {
-        self.app().session.active_sequence().unwrap().duration().seconds()
+        self.app()
+            .session
+            .active_sequence()
+            .unwrap()
+            .duration()
+            .seconds()
     }
 }
 
@@ -118,7 +137,11 @@ fn the_wheel_moves_the_tracks_up_and_down() {
     let mut d = Driver::tall();
     // over the video tracks: wheeling up brings the higher tracks in (Video 1 is at the bottom)
     d.wheel(0.2, 0.0, 40.0, none());
-    assert_eq!(d.view(), (4.0, 50.0, 40.0, 0.0), "the video tracks moved, nothing else");
+    assert_eq!(
+        d.view(),
+        (4.0, 50.0, 40.0, 0.0),
+        "the video tracks moved, nothing else"
+    );
     d.wheel(0.2, 0.0, -25.0, none());
     assert_eq!(d.view(), (4.0, 50.0, 15.0, 0.0));
     // over the audio tracks: wheeling down brings the lower tracks in
@@ -138,7 +161,11 @@ fn cmd_wheel_moves_the_timeline_sideways_and_option_wheel_zooms() {
     let mut d = Driver::tall();
     // Cmd + wheel: sideways, a point of wheel for a point of Timeline; the tracks stay
     d.wheel(0.2, 0.0, -100.0, json!({"command": true}));
-    assert_eq!(d.view(), (6.0, 50.0, 0.0, 0.0), "100 points at 50 points a second: 2 s later");
+    assert_eq!(
+        d.view(),
+        (6.0, 50.0, 0.0, 0.0),
+        "100 points at 50 points a second: 2 s later"
+    );
     d.wheel(0.8, 0.0, 250.0, json!({"command": true}));
     assert_eq!(d.view(), (1.0, 50.0, 0.0, 0.0));
     d.wheel(0.8, 0.0, 1e5, json!({"command": true}));
@@ -151,7 +178,10 @@ fn cmd_wheel_moves_the_timeline_sideways_and_option_wheel_zooms() {
     d.wheel(0.2, 0.0, 20.0, json!({"alt": true}));
     let (scroll, pps, v, a) = d.view();
     assert!((pps - 60.0).abs() < 1e-6, "zoomed in by a fifth: {pps}");
-    assert!((scroll + (tracks[2] as f64 * 0.5) / pps - under_pointer).abs() < 0.02, "the time under the pointer stays there: {scroll}");
+    assert!(
+        (scroll + (tracks[2] as f64 * 0.5) / pps - under_pointer).abs() < 0.02,
+        "the time under the pointer stays there: {scroll}"
+    );
     assert_eq!((v, a), (0.0, 0.0));
     d.wheel(0.2, 0.0, -20.0, json!({"alt": true}));
     assert!((d.view().1 - 48.0).abs() < 1e-6, "and out again");
@@ -169,14 +199,21 @@ fn cmd_wheel_moves_the_timeline_sideways_and_option_wheel_zooms() {
 #[test]
 fn the_mouse_scrolling_setting_swaps_wheel_and_cmd_wheel() {
     let mut d = Driver::tall();
-    assert_eq!(d.app().session.prefs.timeline.mouse_scrolling, "vertical", "Premiere's default on macOS");
+    assert_eq!(
+        d.app().session.prefs.timeline.mouse_scrolling,
+        "vertical",
+        "Premiere's default on macOS"
+    );
     d.app().session.prefs.timeline.mouse_scrolling = "horizontal".into();
     d.wheel(0.2, 0.0, -100.0, none());
     assert_eq!(d.view(), (6.0, 50.0, 0.0, 0.0));
     d.wheel(0.2, 0.0, 40.0, json!({"command": true}));
     assert_eq!(d.view(), (6.0, 50.0, 40.0, 0.0));
     d.wheel(0.2, 0.0, 20.0, json!({"alt": true}));
-    assert!((d.view().1 - 60.0).abs() < 1e-6, "Option + wheel zooms either way");
+    assert!(
+        (d.view().1 - 60.0).abs() < 1e-6,
+        "Option + wheel zooms either way"
+    );
 }
 
 /// The view cannot leave the Timeline: scrolled 39 minutes past a 26 second sequence, nothing was
@@ -191,14 +228,24 @@ fn the_view_stops_ten_minutes_past_the_end_of_the_sequence() {
     assert!((limit - (seconds + 600.0 - width as f64 / 50.0)).abs() < 1e-9);
     // by the wheel
     d.wheel(0.2, 0.0, -1e7, json!({"command": true}));
-    assert!((d.view().0 - limit).abs() < 1e-6, "{} vs {limit}", d.view().0);
+    assert!(
+        (d.view().0 - limit).abs() < 1e-6,
+        "{} vs {limit}",
+        d.view().0
+    );
     d.wheel(0.2, 0.0, -500.0, json!({"command": true}));
     assert!((d.view().0 - limit).abs() < 1e-6);
     // by anything else that moves the view (a script here: the state that was reported stuck)
-    d.ok("ui.set", json!({"timeline": {"pps": 2.9863201066269047, "scroll": 2325.538505030118}}));
+    d.ok(
+        "ui.set",
+        json!({"timeline": {"pps": 2.9863201066269047, "scroll": 2325.538505030118}}),
+    );
     d.frames(4);
     let (scroll, pps, ..) = d.view();
-    assert!((scroll - max_scroll(seconds, width, pps)).abs() < 1e-6 && scroll < 400.0, "{scroll}");
+    assert!(
+        (scroll - max_scroll(seconds, width, pps)).abs() < 1e-6 && scroll < 400.0,
+        "{scroll}"
+    );
     // zoomed out until the whole Timeline is in view, there is nowhere to scroll to
     d.ok("ui.set", json!({"timeline": {"pps": 0.5, "scroll": 50.0}}));
     d.frames(4);
@@ -220,33 +267,59 @@ fn the_scroll_bar_thumb_follows_the_pointer_and_reaches_both_ends() {
     d.ok("ui.set", json!({"timeline": {"scroll": 0.0}}));
     d.frames(3);
     let thumb = d.rect("timeline.zoomBar");
-    assert!((thumb[0] - track[0]).abs() < 0.5 && thumb[2] >= 30.0 && thumb[2] < track[2] / 4.0, "{thumb:?} in {track:?}");
+    assert!(
+        (thumb[0] - track[0]).abs() < 0.5 && thumb[2] >= 30.0 && thumb[2] < track[2] / 4.0,
+        "{thumb:?} in {track:?}"
+    );
     // dragged by its middle it moves with the pointer, and the view with it
     let y = thumb[1] + thumb[3] / 2.0;
     let grab = thumb[0] + thumb[2] / 2.0;
-    d.ok("ui.drag", json!({"from": {"x": grab, "y": y}, "to": {"x": grab + 300.0, "y": y}, "steps": 10}));
+    d.ok(
+        "ui.drag",
+        json!({"from": {"x": grab, "y": y}, "to": {"x": grab + 300.0, "y": y}, "steps": 10}),
+    );
     d.frames(3);
     let moved = d.rect("timeline.zoomBar");
-    assert!((moved[0] - thumb[0] - 300.0).abs() < 2.0, "the thumb went {} points for a 300 point drag", moved[0] - thumb[0]);
+    assert!(
+        (moved[0] - thumb[0] - 300.0).abs() < 2.0,
+        "the thumb went {} points for a 300 point drag",
+        moved[0] - thumb[0]
+    );
     let travel = (track[2] - thumb[2]) as f64;
-    assert!((d.view().0 - 300.0 / travel * limit).abs() < limit * 0.01, "{}", d.view().0);
+    assert!(
+        (d.view().0 - 300.0 / travel * limit).abs() < limit * 0.01,
+        "{}",
+        d.view().0
+    );
     assert_eq!(d.view().1, 50.0, "a drag by the middle does not zoom");
     // dragged past the right end it stops there: the view is at its limit
     let grab = moved[0] + moved[2] / 2.0;
     d.ok("ui.drag", json!({"from": {"x": grab, "y": y}, "to": {"x": track[0] + track[2] + 400.0, "y": y}, "steps": 10}));
     d.frames(3);
     let right = d.rect("timeline.zoomBar");
-    assert!((right[0] + right[2] - (track[0] + track[2])).abs() < 0.5, "{right:?}");
+    assert!(
+        (right[0] + right[2] - (track[0] + track[2])).abs() < 0.5,
+        "{right:?}"
+    );
     assert!((d.view().0 - limit).abs() < 1e-6);
     // and from the right end it comes back: dragged left it leaves the end and follows again
     let grab = right[0] + right[2] / 2.0;
-    d.ok("ui.drag", json!({"from": {"x": grab, "y": y}, "to": {"x": grab - 250.0, "y": y}, "steps": 10}));
+    d.ok(
+        "ui.drag",
+        json!({"from": {"x": grab, "y": y}, "to": {"x": grab - 250.0, "y": y}, "steps": 10}),
+    );
     d.frames(3);
     let back = d.rect("timeline.zoomBar");
-    assert!((right[0] - back[0] - 250.0).abs() < 2.0, "{back:?} from {right:?}");
+    assert!(
+        (right[0] - back[0] - 250.0).abs() < 2.0,
+        "{back:?} from {right:?}"
+    );
     // all the way left: the start of the sequence
     let grab = back[0] + back[2] / 2.0;
-    d.ok("ui.drag", json!({"from": {"x": grab, "y": y}, "to": {"x": track[0] - 500.0, "y": y}, "steps": 10}));
+    d.ok(
+        "ui.drag",
+        json!({"from": {"x": grab, "y": y}, "to": {"x": track[0] - 500.0, "y": y}, "steps": 10}),
+    );
     d.frames(3);
     assert_eq!(d.view().0, 0.0);
     assert!((d.rect("timeline.zoomBar")[0] - track[0]).abs() < 0.5);
@@ -255,7 +328,10 @@ fn the_scroll_bar_thumb_follows_the_pointer_and_reaches_both_ends() {
     d.ok("ui.click", json!({"x": target, "y": y}));
     d.frames(3);
     let jumped = d.rect("timeline.zoomBar");
-    assert!((jumped[0] + jumped[2] / 2.0 - target).abs() < 2.0, "{jumped:?}");
+    assert!(
+        (jumped[0] + jumped[2] / 2.0 - target).abs() < 2.0,
+        "{jumped:?}"
+    );
     // the handles at its ends still zoom: the right one out, the left edge of the view staying
     let at = d.view().0;
     d.ok("ui.drag", json!({"from": {"x": jumped[0] + jumped[2] - 3.0, "y": y}, "to": {"x": jumped[0] + jumped[2] + 60.0, "y": y}, "steps": 8}));
@@ -269,16 +345,26 @@ fn the_scroll_bar_thumb_follows_the_pointer_and_reaches_both_ends() {
 #[test]
 fn continuous_video_thumbnails_ask_for_frames_across_each_clip() {
     let mut d = Driver::demo();
-    d.ok("ui.set", json!({"timeline": {"thumbnails": "head", "pps": 50.0, "scroll": 0.0}}));
+    d.ok(
+        "ui.set",
+        json!({"timeline": {"thumbnails": "head", "pps": 50.0, "scroll": 0.0}}),
+    );
     d.view();
     d.frames(10);
     let head = d.app().frames.stats().request_misses;
     d.ok("ui.set", json!({"timeline": {"thumbnails": "continuous"}}));
     d.frames(3);
     let continuous = d.app().frames.stats().request_misses;
-    assert!(continuous >= head + 5, "continuous thumbnails queued {} more frames", continuous - head);
+    assert!(
+        continuous >= head + 5,
+        "continuous thumbnails queued {} more frames",
+        continuous - head
+    );
     let tl = d.ok("ui.inspect", none())["ui"]["timeline"].clone();
-    assert_eq!((tl["show_thumbnails"].clone(), tl["thumbnail_mode"].clone()), (json!(true), json!("Continuous")));
+    assert_eq!(
+        (tl["show_thumbnails"].clone(), tl["thumbnail_mode"].clone()),
+        (json!(true), json!("Continuous"))
+    );
     d.ok("ui.set", json!({"timeline": {"thumbnails": "off"}}));
     assert!(!d.app().ui.timeline.show_thumbnails);
     let v = d.call("ui.set", json!({"timeline": {"thumbnails": "filmstrip"}}));
@@ -293,26 +379,44 @@ fn home_and_end_bring_the_playhead_into_view() {
     d.frames(3);
     d.exec("playhead.start", json!({}));
     d.frames(3);
-    assert_eq!(d.app().ui.timeline.target_scroll, 0.0, "Home scrolls back to the start");
+    assert_eq!(
+        d.app().ui.timeline.target_scroll,
+        0.0,
+        "Home scrolls back to the start"
+    );
     d.exec("playhead.end", json!({}));
     d.frames(3);
     let end = d.app().session.playhead().seconds();
     let v = &d.app().ui.timeline;
     let width = 1600.0 / v.pps;
-    assert!(v.target_scroll > 3.0 && v.target_scroll <= end && end - v.target_scroll < width, "End shows the playhead: scroll {} end {end}", v.target_scroll);
+    assert!(
+        v.target_scroll > 3.0 && v.target_scroll <= end && end - v.target_scroll < width,
+        "End shows the playhead: scroll {} end {end}",
+        v.target_scroll
+    );
 }
 
 fn repeated_endpoint_navigation_reveals_the_same_playhead(use_keys: bool) {
     let mut d = Driver::demo();
     let project = d.app().session.project.clone();
     let undo = d.app().session.history.undo.len();
-    for (command, key, manual_scroll) in [("playhead.start", "Home", 5.0), ("playhead.end", "End", 0.0)] {
+    for (command, key, manual_scroll) in [
+        ("playhead.start", "Home", 5.0),
+        ("playhead.end", "End", 0.0),
+    ] {
         d.exec(command, json!({}));
         d.frames(3);
         let playhead = d.app().session.playhead();
-        d.ok("ui.set", json!({"timeline": {"pps": 400.0, "scroll": manual_scroll}}));
+        d.ok(
+            "ui.set",
+            json!({"timeline": {"pps": 400.0, "scroll": manual_scroll}}),
+        );
         d.frames(3);
-        assert_eq!(d.view().0, manual_scroll, "manual browsing is allowed while stopped");
+        assert_eq!(
+            d.view().0,
+            manual_scroll,
+            "manual browsing is allowed while stopped"
+        );
         if use_keys {
             d.ok("ui.key", json!({"key": key}));
         } else {
@@ -322,7 +426,10 @@ fn repeated_endpoint_navigation_reveals_the_same_playhead(use_keys: bool) {
         let (scroll, pps, ..) = d.view();
         let x = (playhead.seconds() - scroll) * pps;
         let width = f64::from(d.app().last_timeline_width);
-        assert!((0.0..=width).contains(&x), "{key} reveals an unchanged playhead: x={x}, width={width}, scroll={scroll}");
+        assert!(
+            (0.0..=width).contains(&x),
+            "{key} reveals an unchanged playhead: x={x}, width={width}, scroll={scroll}"
+        );
         assert_eq!(d.app().session.playhead(), playhead);
         assert!(std::sync::Arc::ptr_eq(&project, &d.app().session.project));
         assert_eq!(d.app().session.history.undo.len(), undo);

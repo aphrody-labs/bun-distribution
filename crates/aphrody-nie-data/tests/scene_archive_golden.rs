@@ -176,11 +176,23 @@ fn fixture_flags_valeurs() {
     let cfg = parse_scene_archive_config(&fixture());
 
     // m_sceneArchiveFlags[0].activeTempBitFlagCrc = "0xADCDB833"
-    assert_eq!(cfg.flags[0].active_temp_bit_flag_crc, HashId(0xADCDB833), "flags[0]");
+    assert_eq!(
+        cfg.flags[0].active_temp_bit_flag_crc,
+        HashId(0xADCDB833),
+        "flags[0]"
+    );
     // m_sceneArchiveFlags[1].activeTempBitFlagCrc = "0x584D1EF3"
-    assert_eq!(cfg.flags[1].active_temp_bit_flag_crc, HashId(0x584D1EF3), "flags[1]");
+    assert_eq!(
+        cfg.flags[1].active_temp_bit_flag_crc,
+        HashId(0x584D1EF3),
+        "flags[1]"
+    );
     // m_sceneArchiveFlags[3].activeTempBitFlagCrc = "0xBAA05350"
-    assert_eq!(cfg.flags[2].active_temp_bit_flag_crc, HashId(0xBAA05350), "flags[2]");
+    assert_eq!(
+        cfg.flags[2].active_temp_bit_flag_crc,
+        HashId(0xBAA05350),
+        "flags[2]"
+    );
 }
 
 #[test]
@@ -209,12 +221,19 @@ fn fixture_scene0_champs_complets() {
     assert_eq!(s.map_jump_pos_z, 0, "map_jump_pos_z[0]");
     assert_eq!(s.chapter_no, 0, "chapter_no[0]");
     assert!(!s.is_full_screen_view, "is_full_screen_view[0]");
-    assert_eq!(s.thumbnail_texture_name, HashId(0x412B0428), "thumbnail_texture_name[0]");
+    assert_eq!(
+        s.thumbnail_texture_name,
+        HashId(0x412B0428),
+        "thumbnail_texture_name[0]"
+    );
     assert_eq!(
         s.thumbnail_texture_path, "#/menu/220_img/theater_img/theater_img01_02.g4tx",
         "thumbnail_texture_path[0]"
     );
-    assert_eq!(s.condition, "AAAAABgFNSo9RUMACgEoAAYCNNG3Zz4yAAAAAXg=", "condition[0]");
+    assert_eq!(
+        s.condition, "AAAAABgFNSo9RUMACgEoAAYCNNG3Zz4yAAAAAXg=",
+        "condition[0]"
+    );
     assert_eq!(s.active_flags, vec![0_i64, 0], "activeFlags[0]");
 }
 
@@ -251,7 +270,11 @@ fn fixture_scene3_category_side_story() {
     assert_eq!(s.id, HashId(0xEE2B0CA6), "id[111]");
     assert_eq!(s.category, 2, "category[111]");
     assert_eq!(s.event_id_text, "ev20_00090", "event_id_text[111]");
-    assert_eq!(s.thumbnail_texture_name, HashId(0x02416996), "thumbnail_texture_name[111]");
+    assert_eq!(
+        s.thumbnail_texture_name,
+        HashId(0x02416996),
+        "thumbnail_texture_name[111]"
+    );
 }
 
 #[test]
@@ -323,14 +346,22 @@ fn load_real() -> Option<SceneArchiveConfig> {
 fn real_file_compte_flags() {
     let Some(cfg) = load_real() else { return };
     // scene_archive_config_4.00.18.00 : 6 flags dans m_sceneArchiveFlags
-    assert_eq!(cfg.flags.len(), 6, "6 SCENE_ARCHIVE_FLAGS dans le dump réel");
+    assert_eq!(
+        cfg.flags.len(),
+        6,
+        "6 SCENE_ARCHIVE_FLAGS dans le dump réel"
+    );
 }
 
 #[test]
 fn real_file_compte_scenes() {
     let Some(cfg) = load_real() else { return };
     // scene_archive_config_4.00.18.00: 113 scenes in m_sceneArchiveDataList.
-    assert_eq!(cfg.scenes.len(), 113, "113 SCENE_ARCHIVE_LIST_DATA dans le dump réel");
+    assert_eq!(
+        cfg.scenes.len(),
+        113,
+        "113 SCENE_ARCHIVE_LIST_DATA dans le dump réel"
+    );
 }
 
 #[test]
@@ -338,13 +369,29 @@ fn real_file_flags_valeurs() {
     let Some(cfg) = load_real() else { return };
 
     // m_sceneArchiveFlags[0].activeTempBitFlagCrc = "0xADCDB833"
-    assert_eq!(cfg.flags[0].active_temp_bit_flag_crc, HashId(0xADCDB833), "flags[0]");
+    assert_eq!(
+        cfg.flags[0].active_temp_bit_flag_crc,
+        HashId(0xADCDB833),
+        "flags[0]"
+    );
     // m_sceneArchiveFlags[1].activeTempBitFlagCrc = "0x584D1EF3"
-    assert_eq!(cfg.flags[1].active_temp_bit_flag_crc, HashId(0x584D1EF3), "flags[1]");
+    assert_eq!(
+        cfg.flags[1].active_temp_bit_flag_crc,
+        HashId(0x584D1EF3),
+        "flags[1]"
+    );
     // m_sceneArchiveFlags[3].activeTempBitFlagCrc = "0xBAA05350"
-    assert_eq!(cfg.flags[3].active_temp_bit_flag_crc, HashId(0xBAA05350), "flags[3]");
+    assert_eq!(
+        cfg.flags[3].active_temp_bit_flag_crc,
+        HashId(0xBAA05350),
+        "flags[3]"
+    );
     // m_sceneArchiveFlags[4].activeTempBitFlagCrc = "0x584D1EF3" (doublon de [1])
-    assert_eq!(cfg.flags[4].active_temp_bit_flag_crc, HashId(0x584D1EF3), "flags[4]");
+    assert_eq!(
+        cfg.flags[4].active_temp_bit_flag_crc,
+        HashId(0x584D1EF3),
+        "flags[4]"
+    );
 }
 
 #[test]
@@ -358,12 +405,19 @@ fn real_file_scene0_valeurs() {
     assert_eq!(s.flag_num, 1, "flag_num[0]");
     assert_eq!(s.text_id_title, HashId(0x35B80566), "text_id_title[0]");
     assert_eq!(s.event_id_text, "ev01_00050", "event_id_text[0]");
-    assert_eq!(s.thumbnail_texture_name, HashId(0x412B0428), "thumbnail_texture_name[0]");
+    assert_eq!(
+        s.thumbnail_texture_name,
+        HashId(0x412B0428),
+        "thumbnail_texture_name[0]"
+    );
     assert_eq!(
         s.thumbnail_texture_path, "#/menu/220_img/theater_img/theater_img01_02.g4tx",
         "thumbnail_texture_path[0]"
     );
-    assert_eq!(s.condition, "AAAAABgFNSo9RUMACgEoAAYCNNG3Zz4yAAAAAXg=", "condition[0]");
+    assert_eq!(
+        s.condition, "AAAAABgFNSo9RUMACgEoAAYCNNG3Zz4yAAAAAXg=",
+        "condition[0]"
+    );
     assert_eq!(s.active_flags, vec![0_i64, 0], "activeFlags[0]");
 }
 
@@ -401,7 +455,11 @@ fn real_file_scene111_side_story() {
     assert_eq!(s.id, HashId(0xEE2B0CA6), "id[111]");
     assert_eq!(s.category, 2, "category[111]");
     assert_eq!(s.event_id_text, "ev20_00090", "event_id_text[111]");
-    assert_eq!(s.thumbnail_texture_name, HashId(0x02416996), "thumbnail_texture_name[111]");
+    assert_eq!(
+        s.thumbnail_texture_name,
+        HashId(0x02416996),
+        "thumbnail_texture_name[111]"
+    );
 }
 
 #[test]
@@ -409,7 +467,10 @@ fn real_file_flag_num_toujours_1() {
     let Some(cfg) = load_real() else { return };
     // Dans tout le dump, flag_num = 1 pour toutes les entrées.
     let tous_un = cfg.scenes.iter().all(|s| s.flag_num == 1);
-    assert!(tous_un, "flag_num = 1 pour toutes les 113 scènes du dump réel");
+    assert!(
+        tous_un,
+        "flag_num = 1 pour toutes les 113 scènes du dump réel"
+    );
 }
 
 #[test]
@@ -417,7 +478,10 @@ fn real_file_is_full_screen_view_toujours_false() {
     let Some(cfg) = load_real() else { return };
     // Dans tout le dump, is_full_screen_view = false pour toutes les entrées.
     let tous_false = cfg.scenes.iter().all(|s| !s.is_full_screen_view);
-    assert!(tous_false, "is_full_screen_view = false pour toutes les 113 scènes du dump réel");
+    assert!(
+        tous_false,
+        "is_full_screen_view = false pour toutes les 113 scènes du dump réel"
+    );
 }
 
 #[test]
@@ -427,7 +491,10 @@ fn real_file_filter_by_chapter1() {
     // chapter_no=1 : scène [20] id=0x0CB2C284 (confirmé dans le dump)
     let ch1 = cfg.filter_by_chapter(1);
     assert!(!ch1.is_empty(), "au moins une scène chapter_no=1");
-    assert!(ch1.iter().any(|s| s.id == HashId(0x0CB2C284)), "scène 0x0CB2C284 dans chapter_no=1");
+    assert!(
+        ch1.iter().any(|s| s.id == HashId(0x0CB2C284)),
+        "scène 0x0CB2C284 dans chapter_no=1"
+    );
 }
 
 #[test]
@@ -436,6 +503,9 @@ fn real_file_find_by_id() {
 
     // m_sceneArchiveDataList[0].id = "0xF86C637D"
     let found = cfg.find_by_id(HashId(0xF86C637D));
-    assert!(found.is_some(), "find_by_id(0xF86C637D) doit trouver l'entrée 0");
+    assert!(
+        found.is_some(),
+        "find_by_id(0xF86C637D) doit trouver l'entrée 0"
+    );
     assert_eq!(found.unwrap().event_id_text, "ev01_00050");
 }

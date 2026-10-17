@@ -86,7 +86,7 @@ impl MagikaClass {
                     None => None,
                 };
                 ("inferred", reason)
-            },
+            }
         };
 
         Self {
@@ -129,7 +129,9 @@ impl Classifier {
     /// Returns [`MagikaError::Session`] if the ONNX Runtime cannot initialize
     /// the model (e.g. the runtime shared library is unavailable).
     pub fn new() -> Result<Self, MagikaError> {
-        Ok(Self { session: magika::Session::new()? })
+        Ok(Self {
+            session: magika::Session::new()?,
+        })
     }
 
     /// Classify a file by path.

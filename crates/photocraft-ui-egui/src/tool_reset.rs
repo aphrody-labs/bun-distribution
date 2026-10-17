@@ -48,7 +48,10 @@ pub fn invoke(app: &mut PhotocraftApp, id: &str, params: &Value) -> Option<Resul
                 return Some(Ok(json!({"dialog": d.id, "confirmationPending": true})));
             }
             let fields = json!({MARK: true, "__label": "Reset All Tools", "message": MESSAGE});
-            let id = app.ui.open_dialog(DialogKind::Command, fields.as_object().cloned().unwrap_or_default());
+            let id = app.ui.open_dialog(
+                DialogKind::Command,
+                fields.as_object().cloned().unwrap_or_default(),
+            );
             Some(Ok(json!({"dialog": id, "confirmationPending": true})))
         }
         _ => None,
@@ -118,11 +121,24 @@ pub fn reset_options(o: &mut ToolOptions, tool: Tool) {
     }
     match tool {
         Tool::Move => reset!(move_auto_select, move_target, move_show_transform),
-        Tool::RectMarquee | Tool::EllipseMarquee => reset!(feather, anti_alias, marquee_style, marquee_width, marquee_height),
+        Tool::RectMarquee | Tool::EllipseMarquee => reset!(
+            feather,
+            anti_alias,
+            marquee_style,
+            marquee_width,
+            marquee_height
+        ),
         // The single-pixel marquees are never anti-aliased: Feather is their only option.
         Tool::SingleRowMarquee | Tool::SingleColumnMarquee => reset!(feather),
         Tool::Lasso | Tool::PolygonLasso => reset!(feather, anti_alias),
-        Tool::MagneticLasso => reset!(feather, anti_alias, magnetic_width, magnetic_contrast, magnetic_frequency, magnetic_pressure),
+        Tool::MagneticLasso => reset!(
+            feather,
+            anti_alias,
+            magnetic_width,
+            magnetic_contrast,
+            magnetic_frequency,
+            magnetic_pressure
+        ),
         Tool::MagicWand => reset!(tolerance, anti_alias, contiguous, sample_all_layers),
         Tool::QuickSelection => reset!(sample_all_layers, enhance_edge),
         Tool::ObjectSelection => reset!(sample_all_layers, enhance_edge, object_finder),
@@ -140,23 +156,64 @@ pub fn reset_options(o: &mut ToolOptions, tool: Tool) {
             crop_custom_ratio_width,
             crop_custom_ratio_height,
         ),
-        Tool::PerspectiveCrop => reset!(crop_width, crop_height, crop_resolution, crop_resolution_unit, perspective_crop_grid),
+        Tool::PerspectiveCrop => reset!(
+            crop_width,
+            crop_height,
+            crop_resolution,
+            crop_resolution_unit,
+            perspective_crop_grid
+        ),
         Tool::Eyedropper => reset!(eyedropper_size, eyedropper_sample, eyedropper_ring),
         Tool::Pencil => reset!(pencil_auto_erase),
         Tool::BackgroundEraser => reset!(bg_sampling, bg_limits, bg_tolerance, bg_protect_fg),
-        Tool::ColorReplacement => reset!(cr_mode, cr_sampling, cr_limits, cr_tolerance, cr_anti_alias),
-        Tool::MagicEraser => reset!(tolerance, anti_alias, contiguous, sample_all_layers, magic_eraser_opacity),
-        Tool::Gradient => reset!(gradient_style, gradient_reverse, gradient_dither, gradient_classic, gradient_blend_mode, fill_opacity),
-        Tool::PaintBucket => reset!(bucket_fill_pattern, fill_opacity, tolerance, anti_alias, contiguous, sample_all_layers),
-        Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => reset!(type_font, type_style, type_size, type_aa, type_align),
+        Tool::ColorReplacement => {
+            reset!(cr_mode, cr_sampling, cr_limits, cr_tolerance, cr_anti_alias)
+        }
+        Tool::MagicEraser => reset!(
+            tolerance,
+            anti_alias,
+            contiguous,
+            sample_all_layers,
+            magic_eraser_opacity
+        ),
+        Tool::Gradient => reset!(
+            gradient_style,
+            gradient_reverse,
+            gradient_dither,
+            gradient_classic,
+            gradient_blend_mode,
+            fill_opacity
+        ),
+        Tool::PaintBucket => reset!(
+            bucket_fill_pattern,
+            fill_opacity,
+            tolerance,
+            anti_alias,
+            contiguous,
+            sample_all_layers
+        ),
+        Tool::Type | Tool::VerticalType | Tool::HorizontalTypeMask | Tool::VerticalTypeMask => {
+            reset!(type_font, type_style, type_size, type_aa, type_align)
+        }
         Tool::Zoom => reset!(zoom_scrubby),
         Tool::SpotHealing => reset!(spot_type, sample_all_layers),
         Tool::Healing => reset!(clone_aligned, clone_sample),
-        Tool::Patch => reset!(patch_mode, patch_content_aware, patch_structure, patch_color, sample_all_layers),
+        Tool::Patch => reset!(
+            patch_mode,
+            patch_content_aware,
+            patch_structure,
+            patch_color,
+            sample_all_layers
+        ),
         Tool::ContentAwareMove => reset!(cam_mode, cam_structure, cam_color, sample_all_layers),
         Tool::RedEye => reset!(red_eye_pupil_size, red_eye_darken),
         Tool::CloneStamp => reset!(clone_aligned, clone_sample),
-        Tool::PatternStamp => reset!(pattern_stamp_aligned, pattern_stamp_impressionist, pattern_stamp_scale, pattern_stamp_angle),
+        Tool::PatternStamp => reset!(
+            pattern_stamp_aligned,
+            pattern_stamp_impressionist,
+            pattern_stamp_scale,
+            pattern_stamp_angle
+        ),
         Tool::Blur | Tool::Sharpen => reset!(strength, sample_all_layers, protect_detail),
         Tool::Smudge => reset!(strength, sample_all_layers, finger_painting),
         Tool::Dodge | Tool::Burn => reset!(tone_range, exposure, protect_tones),
@@ -164,8 +221,21 @@ pub fn reset_options(o: &mut ToolOptions, tool: Tool) {
         Tool::Pen => reset!(vector_mode, pen_auto_add_delete),
         Tool::CurvaturePen => reset!(vector_mode),
         Tool::FreeformPen => reset!(vector_mode, curve_fit),
-        Tool::Rectangle | Tool::EllipseShape | Tool::Triangle | Tool::Polygon | Tool::Line | Tool::CustomShape => {
-            reset!(vector_mode, shape_fill, stroke_width, shape_stroke, corner_radius, polygon_sides, line_weight)
+        Tool::Rectangle
+        | Tool::EllipseShape
+        | Tool::Triangle
+        | Tool::Polygon
+        | Tool::Line
+        | Tool::CustomShape => {
+            reset!(
+                vector_mode,
+                shape_fill,
+                stroke_width,
+                shape_stroke,
+                corner_radius,
+                polygon_sides,
+                line_weight
+            )
         }
         Tool::ColorSampler
         | Tool::Ruler
@@ -196,7 +266,8 @@ mod tests {
 
     fn app() -> PhotocraftApp {
         let mut s = photocraft_engine::Session::new();
-        s.execute("file.new", json!({"width": 8, "height": 8})).unwrap();
+        s.execute("file.new", json!({"width": 8, "height": 8}))
+            .unwrap();
         PhotocraftApp::new(s, crate::Services::default())
     }
 
@@ -209,17 +280,31 @@ mod tests {
         app.ui.tool_options.feather = 12.0;
         app.ui.tool = Tool::Move;
         crate::menus::invoke(&mut app, &ctx, RESET, json!({})).unwrap();
-        assert!(app.ui.tool_options.move_auto_select, "Move › Auto-Select is back to its default");
-        assert_eq!(app.ui.tool_options.feather, 12.0, "the marquee's Feather is not the Move tool's");
+        assert!(
+            app.ui.tool_options.move_auto_select,
+            "Move › Auto-Select is back to its default"
+        );
+        assert_eq!(
+            app.ui.tool_options.feather, 12.0,
+            "the marquee's Feather is not the Move tool's"
+        );
 
         app.ui.tool_options.move_auto_select = false;
         let r = crate::menus::invoke(&mut app, &ctx, RESET_ALL, json!({})).unwrap();
         let dialog = r["dialog"].as_u64().unwrap();
-        assert_eq!(app.ui.tool_options.feather, 12.0, "nothing changes before OK");
+        assert_eq!(
+            app.ui.tool_options.feather, 12.0,
+            "nothing changes before OK"
+        );
         crate::dialogs::cancel(&mut app, dialog).unwrap();
-        assert_eq!(app.ui.tool_options.feather, 12.0, "Cancel keeps the options");
+        assert_eq!(
+            app.ui.tool_options.feather, 12.0,
+            "Cancel keeps the options"
+        );
 
-        let dialog = crate::menus::invoke(&mut app, &ctx, RESET_ALL, json!({})).unwrap()["dialog"].as_u64().unwrap();
+        let dialog = crate::menus::invoke(&mut app, &ctx, RESET_ALL, json!({})).unwrap()["dialog"]
+            .as_u64()
+            .unwrap();
         crate::dialogs::confirm(&mut app, dialog).unwrap();
         assert_eq!(app.ui.tool_options, ToolOptions::default());
         assert!(app.ui.dialogs.is_empty());
